@@ -1,0 +1,53 @@
+#Shared module source files
+MODULE_S = area_watflood.f EF_ParseUtilities.f EF_Module.f
+
+#RTE source files
+RTE_S = baseflow.f rdevt.f read_flowinit.f read_r2c.f read_resv_ef.f read_shed_ef.f rerout.f route.f rte.f rte_sub.f synflw.f timer.f write_flowinit.f write_r2c.f
+
+#CLASS source files
+CLASS_S = APREP.f CANADD.f CANALB.f CANVAP.f CGROW.f CHKWAT.f CLASSA.f CLASSB.f CLASSBD.f CLASSBHYD.f CLASSD.f CLASSG.f CLASSI.f CLASSS.f CLASST.f CLASSW.f CLASSZ.f CWCALC.f DIASURF.f DRCOEF.f FLXSURFZ.f GATPREP.f GRALB.f GRDRAN.f GRINFL.f ICEBAL.f SLDIAG.f SNINFL.f SNOADD.f SNOALBA.f SNOALBW.f SNOVAP.f SUBCAN.f TFREEZ.f TMCALC.f TMELT.f TNPOST.f TNPREP.f TPREP.f TSOLVC.f TSOLVE.f TSPOST.f TSPREP.f TWCALC.f WATROF.f WAT_DRAIN.f WEND.f WFILL.f WFLOW.f WPREP.f XIT.f
+
+#MESH source files
+MESH_S = MESH_driver.f wat_ensim.f wf_route.f
+
+#MESH RTE source files
+MESHRTE_S = rdevt.f read_shed_ef.f write_r2c.f
+
+
+#DO NOT MODIFY BELOW THIS LINE
+
+#Clear error flag
+ERROR_FLAG = 0
+
+#Modifications of above with paths
+MODULE_M = .\Modules\$(MODULE_S: = .\Modules\)
+RTE_M = .\RTE\$(RTE_S: = .\RTE\)
+CLASS_M = .\CLASS\$(CLASS_S: = .\CLASS\)
+MESH_M = .\MESH\$(MESH_S: = .\MESH\)
+MESHRTE_M = .\RTE\$(MESHRTE_S: = .\RTE\)
+
+#Object files
+!IFDEF ifort
+MODULE_O = $(MODULE_S:.f=.obj)
+RTE_O = $(RTE_S:.f=.obj)
+CLASS_O = $(CLASS_S:.f=.obj)
+MESH_O = $(MESH_S:.f=.obj)
+MESHRTE_O = $(MESHRTE_S:.f=.obj)
+!ELSEIFDEF g95
+MODULE_O = $(MODULE_S:.f=.o)
+RTE_O = $(RTE_S:.f=.o)
+CLASS_O = $(CLASS_S:.f=.o)
+MESH_O = $(MESH_S:.f=.o)
+MESHRTE_O = $(MESHRTE_S:.f=.o)
+!ELSE
+!IFNDEF target
+ERROR_FLAG = 1
+!ENDIF
+!ENDIF
+
+#Check for compiler
+!IFDEF ifort
+SUBD = ifort
+!ELSEIFDEF g95
+SUBD = g95
+!ENDIF
