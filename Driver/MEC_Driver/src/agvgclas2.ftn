@@ -1,0 +1,75 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+***S/P AGGVEG
+*
+      SUBROUTINE AGVGCLAS2( FRACT, TABLE, VGTYPE, AGGF, NI, NC, NCLASS, 
+     $        NMOS,K)
+*
+*
+#include "impnone.cdk"
+*
+*
+      INTEGER NI, NC, NCLASS, nmos, k, VGTYPE(NCLASS)
+      REAL AGGF(NI,NC,NMOS+1), FRACT(NI,NCLASS), TABLE(NCLASS)
+*
+*
+*Author
+*        Yves Delage
+*Revision
+*001     R. Larocque - Added nmos and k parameters
+*
+*Object
+*        Aggregation of parameters for CLASS that depend on the vegetation
+*        fraction masks.
+*
+*
+*Arguments
+*
+*            - Input -
+* FRACT      Fraction of vegetation (masks)
+* TABLE      Geophysical field value for each type of vegetation 
+*
+*            - Output -
+* AGGF       Aggretated geophysical field representative of an entire
+*            grid area
+*
+*            - Input -
+* NI         Horizontal dimension
+* NC         Number of vegetation classes in CLASS
+* NCLASS     Number of landuse classes
+* NMOS       Number of mosaic tiles
+* K          which mosaic tile to aggregate
+*
+*
+#include "surfacepar.cdk"
+*
+*
+      INTEGER I,J,M
+*
+      REAL totfract
+*
+       
+      do j=1,nc
+         DO i=1,ni
+           aggf(i,j,k) = 0.0
+         END DO
+*
+*
+         DO i=1,ni
+           totfract= 0.
+           DO m=4,nclass
+             if(vgtype(m).eq.j) totfract = totfract + fract(i,m)
+           END DO
+           IF (totfract.GE.critmask) THEN
+              DO m=4,nclass
+                if(vgtype(m).eq.j) aggf(i,j,k) = aggf(i,j,k) 
+     1              + fract(i,m) * table(m)
+              END DO
+              aggf(i,j,k) = aggf(i,j,k) / totfract
+           END IF
+         END DO
+      end do
+*
+*
+*
+      RETURN
+      END

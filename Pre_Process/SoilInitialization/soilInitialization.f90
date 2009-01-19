@@ -1,0 +1,316 @@
+PROGRAM SOIL
+
+IMPLICIT NONE
+
+INTEGER :: NA, NTYPE
+INTEGER,PARAMETER :: IGND=3
+
+!IOSTAT VARIABLE
+INTEGER IOS
+INTEGER :: I, J, M, PAS
+
+INTEGER :: NLTEST, NMTEST
+
+REAL, DIMENSION(:, :, :), ALLOCATABLE :: THPROW, THRROW, THMROW, &
+  BIROW, PSISROW, GRKSROW, HCPSROW, TCSROW, TBARROW, &
+  SANDROW, CLAYROW, ORGMROW, THSAND, THCLAY, THORG
+
+REAL, DIMENSION(:, :), ALLOCATABLE :: SDEPROW, ALGWROW, ALGDROW, TBASROW
+
+INTEGER, DIMENSION(:, :, :), ALLOCATABLE :: ISNDROW, IORG
+
+REAL :: TFREZ, TCICE, TCSAND, TCCLAY, TCOM, RHOSOL, RHOOM, HCPICE, &
+  HCPOM, HCPSND, HCPCLY 
+
+REAL, DIMENSION(3) :: THPORG, THRORG, THMORG, BORG, PSISORG, &
+  GRKSORG
+
+REAL, DIMENSION(IGND) :: DELZ, ZBOT
+
+
+REAL VSAND,VORG,VCLAY,VTOT
+         
+DATA TCICE, TCSAND, TCCLAY, TCOM /  2.24,  2.5,    2.5,    0.25 /
+DATA RHOSOL, RHOOM /  2.65E3, 1.30E3 /    
+DATA HCPICE, HCPOM /  1.9257E6, 2.50E6 /
+DATA HCPSND, HCPCLY  /  2.13E6, 2.38E6 /
+DATA THPORG   /0.93,0.88,0.83/
+DATA THRORG   /0.275,0.620,0.705/
+DATA THMORG   /0.04,0.15,0.22/
+DATA BORG     /2.7,6.1,12.0/
+DATA PSISORG  /0.0103,0.0102,0.0101/
+DATA GRKSORG  /2.8E-4,2.0E-6,1.0E-7/
+DATA TFREZ    /273.16/
+
+
+!CANOPY AND SOIL INFORMATION (CLASS): 
+
+    
+8200  FORMAT (' READING: 'A)
+8400  FORMAT (/' 'A)
+
+
+
+! *********************************************************************
+! Open and read in values from MESH_input_soil_levels.txt file
+! *********************************************************************
+
+OPEN (52, FILE="MESH_input_soil_levels.txt", STATUS="OLD", &
+  IOSTAT=IOS)
+IF (IOS .NE. 0)THEN !CHECK FILE FOR IOSTAT ERRORS
+  WRITE (6, 8400)
+  WRITE (6, *) "MESH_input_soil_levels.txt could not be ", &
+  "opened.  Ensure that the file exists and restart the ", &
+  "program."
+  STOP
+ELSE
+  WRITE (6, 8200, ADVANCE="NO") "MESH_input_soil_levels.txt"
+END IF
+
+DO I=1,IGND
+  READ(52,'(2X,F8.2)') DELZ(I)
+ENDDO
+
+ZBOT(1) = DELZ(1)
+DO I=2,IGND
+  ZBOT(I) = ZBOT(I-1) + DELZ(I)
+ENDDO
+
+CLOSE(UNIT=52)
+WRITE (6, *) " READ: SUCCESSFUL, FILE: CLOSED"
+
+
+! *********************************************************************
+! Open and read in values from MESH_parameters_CLASS.ini file
+! *********************************************************************
+
+OPEN (50, FILE="MESH_parameters_CLASS.ini", STATUS="OLD", &
+  IOSTAT=IOS)
+IF (IOS .NE. 0)THEN !CHECK FILE FOR IOSTAT ERRORS
+  WRITE (6, 8400)
+  WRITE (6, *) "MESH_parameters_CLASS.ini could not be ", &
+    "opened.  Ensure that the file exists and restart the ", &
+    "program."
+  STOP
+ELSE
+    WRITE (6, 8200, ADVANCE="NO") "MESH_parameters_CLASS.ini"
+ENDIF
+
+READ (50,'(2X,6A4)')
+READ (50,'(2X,6A4)')
+READ (50,'(2X,6A4)') 
+READ(50,'(62X,2I5)') NA,NTYPE
+
+NLTEST = NA
+NMTEST = NTYPE
+
+!!!
+!!! ALLOCATE ARRAYS
+!!!
+ALLOCATE ( TBARROW(NA, NTYPE, IGND), TBASROW(NA, NTYPE),THPROW(NA, NTYPE, IGND), &
+  THRROW(NA, NTYPE, IGND), THMROW(NA, NTYPE, IGND), BIROW(NA, NTYPE, IGND), &
+  PSISROW(NA, NTYPE, IGND), GRKSROW(NA, NTYPE, IGND), HCPSROW(NA, NTYPE, IGND), &
+  TCSROW(NA, NTYPE, IGND), ALGWROW(NA, NTYPE), ALGDROW(NA, NTYPE), &
+  SDEPROW(NA, NTYPE), SANDROW(NA, NTYPE, IGND), CLAYROW(NA, NTYPE, IGND), &
+  ORGMROW(NA, NTYPE, IGND), ISNDROW(NA, NTYPE, IGND), IORG(NA, NTYPE, IGND), &
+  THSAND(NA,NTYPE,IGND),  THCLAY(NA,NTYPE,IGND), THORG (NA,NTYPE,IGND), &
+  STAT=PAS)
+IF (PAS .NE. 0) THEN
+  WRITE (6, 8400)
+  WRITE (6, *) "Error allocating canopy and soil info. ", &
+    "variables.  Check that bounds are within an acceptable ", &
+    "range."
+  WRITE (6, *) "Bound 1 (grid squares): ", NA
+  WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
+  WRITE (6, *) "Bound 5 (soil layers): ", IGND
+  STOP
+END IF
+!!!
+!!! END OF ALLOCATIONS
+!!!
+
+I=1
+DO M=1,NMTEST
+  READ(50,*)
+  READ(50,*)
+  READ(50,*)
+  READ(50,*)
+  READ(50,*)
+  READ(50,*)
+  READ(50,*)
+  READ(50,'(8X,F8.3,8X,8X)') SDEPROW(1,M)
+  READ(50,*)
+  READ(50,'(3F10.1)') (SANDROW(1,M,J),J=1,IGND) !soil layers
+  READ(50,'(3F10.1)') (CLAYROW(1,M,J),J=1,IGND)
+  READ(50,'(3F10.1)') (ORGMROW(1,M,J),J=1,IGND)
+  READ(50,'(3F10.2,30X)') (TBARROW(1,M,J),J=1,IGND)
+  READ(50,*)
+  READ(50,*)
+ENDDO
+READ(50,*) 
+READ(50,*) 
+READ(50,*)
+CLOSE(UNIT=50)
+WRITE (6, *) " READ: SUCCESSFUL, FILE: CLOSED"
+
+DO I=2,NLTEST
+  DO M=1,NMTEST
+    DO J=1,IGND
+      SANDROW(I,M,J)=   SANDROW(1,M,J)
+      CLAYROW(I,M,J)=   CLAYROW(1,M,J)
+      ORGMROW(I,M,J)=   ORGMROW(1,M,J)
+      TBARROW(I,M,J)=   TBARROW(1,M,J)
+    ENDDO
+    SDEPROW(I,M)=     SDEPROW(1,M)
+  ENDDO  !DO M=1,NMTEST
+ENDDO  !DO I=2,NLTEST
+
+DO I=1,NLTEST
+  DO M=1,NMTEST
+    DO J=1,IGND
+      TBARROW(I,M,J)=TBARROW(I,M,J)+TFREZ
+    END DO
+    TBASROW(I,M)=TBARROW(I,M,3) 
+    IF(IGND>3)THEN ! should stay this way to work with class
+      DO J=4,IGND
+        TBARROW(I,M,J)=TBARROW(I,M,3)
+        IF(SDEPROW(I,M)<(ZBOT(J-1)+0.001) .AND. &
+          SANDROW(I,M,3)>-2.5)THEN
+          SANDROW(I,M,J)=-3.0
+          CLAYROW(I,M,J)=-3.0
+          ORGMROW(I,M,J)=-3.0
+        ELSE
+          SANDROW(I,M,J)=SANDROW(I,M,3)
+          CLAYROW(I,M,J)=CLAYROW(I,M,3)
+          ORGMROW(I,M,J)=ORGMROW(I,M,3)
+        ENDIF
+      ENDDO
+    ENDIF
+  ENDDO !DO M=1,NMTEST
+ENDDO !DO I=1,NLTEST
+
+DO J=1,IGND
+  DO M=1,NMTEST
+    DO I=1,NLTEST
+      ISNDROW (I,M,J)=NINT(SANDROW(I,M,J))
+      IORG  (I,M,J)=NINT(ORGMROW(I,M,J))
+      IF(ISNDROW(I,M,J).EQ.-4) THEN
+        THPROW (I,M,J)=0.0
+        THRROW(I,M,J)=0.0
+        THMROW(I,M,J)=0.0
+        BIROW    (I,M,J)=0.0
+        PSISROW(I,M,J)=0.0
+        GRKSROW(I,M,J)=0.0
+        HCPSROW(I,M,J)=HCPICE
+        TCSROW(I,M,J)=TCICE
+      ELSEIF(ISNDROW(I,M,J).EQ.-3) THEN
+        THPROW (I,M,J)=0.0
+        THRROW(I,M,J)=0.0
+        THMROW(I,M,J)=0.0
+        BIROW    (I,M,J)=0.0
+        PSISROW(I,M,J)=0.0
+        GRKSROW(I,M,J)=0.0
+        HCPSROW(I,M,J)=HCPSND
+        TCSROW(I,M,J)=TCSAND
+      ELSEIF(ISNDROW(I,M,J).EQ.-2) THEN
+        THPROW (I,M,J)=THPORG(IORG(I,M,J))
+        THRROW(I,M,J)=THRORG(IORG(I,M,J))
+        THMROW(I,M,J)=THMORG(IORG(I,M,J))
+        BIROW    (I,M,J)=BORG(IORG(I,M,J))
+        PSISROW(I,M,J)=PSISORG(IORG(I,M,J))
+        GRKSROW(I,M,J)=GRKSORG(IORG(I,M,J))
+        HCPSROW(I,M,J)=HCPOM
+        TCSROW(I,M,J)=TCOM
+      ELSEIF(SANDROW(I,M,J).GT.0) THEN
+        THPROW (I,M,J)=(-0.126*SANDROW(I,M,J)+48.9)/100.0
+        THRROW (I,M,J)=0.04
+        THMROW (I,M,J)=0.04
+        BIROW  (I,M,J)=0.159*CLAYROW(I,M,J)+2.91
+        PSISROW(I,M,J)=0.01*EXP(-0.0302*SANDROW(I,M,J)+4.33)
+        GRKSROW(I,M,J)=7.0556E-6*(EXP(0.0352*SANDROW(I,M,J)-2.035))
+        VSAND=SANDROW(I,M,J)/(RHOSOL*100.0)
+        VORG=ORGMROW(I,M,J)/(RHOOM*100.0)
+        VCLAY=(100.0-SANDROW(I,M,J)-ORGMROW(I,M,J))/(RHOSOL*100.0)
+        VTOT=VSAND+VCLAY+VORG
+        THSAND(I,M,J)=(1.0-THPROW(I,M,J))*VSAND/VTOT
+        THORG(I,M,J)=(1.0-THPROW(I,M,J))*VORG/VTOT
+        THCLAY(I,M,J)=1.0-THPROW(I,M,J)-THSAND(I,M,J)-THORG(I,M,J)
+        HCPSROW(I,M,J)=(HCPSND*THSAND(I,M,J)+HCPCLY*THCLAY(I,M,J)+ &
+          HCPOM*THORG(I,M,J))/(1.0-THPROW(I,M,J))
+        TCSROW(I,M,J)=(TCSAND*THSAND(I,M,J)+TCOM*THORG(I,M,J)+ &
+          TCCLAY*THCLAY(I,M,J))/(1.0-THPROW(I,M,J))
+      ENDIF
+    ENDDO 
+  ENDDO
+ENDDO
+
+DO M=1,NMTEST
+  DO I=1,NLTEST
+    IF(SANDROW(I,M,1).GE.0.0) THEN
+      ALGWROW(I,M)=0.08+0.0006*SANDROW(I,M,1)
+      ALGDROW(I,M)=MIN(0.14+0.0056*SANDROW(I,M,1),0.45)
+    ELSE
+      ALGWROW(I,M)=0.0
+      ALGDROW(I,M)=0.0
+    ENDIF
+  ENDDO
+ENDDO
+
+!Code to output soil.ini file
+OPEN (UNIT=19,FILE='soil.ini',STATUS='unknown')
+WRITE (19,*) "THPROW 1M1"
+WRITE (19,"(999E20.12)") (THPROW (1,m,1),m=1,NMTEST)
+WRITE (19,*) "THPROW 1M2"
+WRITE (19,"(999E20.12)") (THPROW (1,m,2),m=1,NMTEST)
+WRITE (19,*) "THPROW 1M3"
+WRITE (19,"(999E20.12)") (THPROW (1,m,3),m=1,NMTEST)
+WRITE (19,*) "THRROW 1M1"
+WRITE (19,"(999E20.12)") (THRROW(1,m,1),m=1,NMTEST)
+WRITE (19,*) "THRROW 1M2"
+WRITE (19,"(999E20.12)") (THRROW(1,m,2),m=1,NMTEST)
+WRITE (19,*) "THRROW 1M3"
+WRITE (19,"(999E20.12)") (THRROW(1,m,3),m=1,NMTEST)
+WRITE (19,*) "THMROW 1M1"
+WRITE (19,"(999E20.12)") (THMROW(1,m,1),m=1,NMTEST)
+WRITE (19,*) "THMROW 1M2"
+WRITE (19,"(999E20.12)") (THMROW(1,m,2),m=1,NMTEST)
+WRITE (19,*) "THMROW 1M3"
+WRITE (19,"(999E20.12)") (THMROW(1,m,3),m=1,NMTEST)
+WRITE (19,*) "BIROW 1M1"
+WRITE (19,"(999E20.12)") (BIROW    (1,m,1),m=1,NMTEST)
+WRITE (19,*) "BIROW 1M2"
+WRITE (19,"(999E20.12)") (BIROW    (1,m,2),m=1,NMTEST)
+WRITE (19,*) "BIROW 1M3"
+WRITE (19,"(999E20.12)") (BIROW    (1,m,3),m=1,NMTEST)
+WRITE (19,*) "PSISROW 1M1"
+WRITE (19,"(999E20.12)") (PSISROW(1,m,1),m=1,NMTEST)
+WRITE (19,*) "PSISROW 1M2"
+WRITE (19,"(999E20.12)") (PSISROW(1,m,2),m=1,NMTEST)
+WRITE (19,*) "PSISROW 1M3"
+WRITE (19,"(999E20.12)") (PSISROW(1,m,3),m=1,NMTEST)
+WRITE (19,*) "GRKSROW 1M1"
+WRITE (19,"(999E20.12)") (GRKSROW(1,m,1),m=1,NMTEST)
+WRITE (19,*) "GRKSROW 1M2"
+WRITE (19,"(999E20.12)") (GRKSROW(1,m,2),m=1,NMTEST)
+WRITE (19,*) "GRKSROW 1M3"
+WRITE (19,"(999E20.12)") (GRKSROW(1,m,3),m=1,NMTEST)
+WRITE (19,*) "HCPSROW 1M1"
+WRITE (19,"(999E20.12)") (HCPSROW  (1,m,1),m=1,NMTEST)
+WRITE (19,*) "HCPSROW 1M2"
+WRITE (19,"(999E20.12)") (HCPSROW  (1,m,2),m=1,NMTEST)
+WRITE (19,*) "HCPSROW 1M3"
+WRITE (19,"(999E20.12)") (HCPSROW  (1,m,3),m=1,NMTEST)
+WRITE (19,*) "TCSROW 1M1"
+WRITE (19,"(999E20.12)") (TCSROW   (1,m,1),m=1,NMTEST)
+WRITE (19,*) "TCSROW 1M2"
+WRITE (19,"(999E20.12)") (TCSROW   (1,m,2),m=1,NMTEST)
+WRITE (19,*) "TCSROW 1M3"
+WRITE (19,"(999E20.12)") (TCSROW   (1,m,3),m=1,NMTEST)
+WRITE (19,*) "ALGWROW 1M"
+WRITE (19,"(999E20.12)") (ALGWROW(1,m),m=1,NMTEST)
+WRITE (19,*) "ALGDROW 1M"
+WRITE (19,"(999E20.12)") (ALGDROW(1,m),m=1,NMTEST)
+CLOSE(19)
+
+STOP
+END

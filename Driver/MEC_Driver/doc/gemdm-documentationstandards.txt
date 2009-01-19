@@ -1,0 +1,490 @@
+Voici la version G o o g l e de la page mise en cache de http://collaboration.cmc.ec.gc.ca/science/rpn/gef_html_public/DOCUMENTATION/GENERAL/DOC_NORM_RPN/DOCU_normes_RPN.html extraite le 4 avr 2007 18:49:56 GMT.
+La version  En cache  propose par G o o g l e correspond  la page telle quelle se prsentait lors de la dernire consultation effectue par Google.
+Il se peut que la page ait t modifie depuis cette date. Cliquez ici pour consulter la page actuelle (sans mises en valeur).
+Cette page mise en cache peut renvoyer  des images qui ne sont plus disponibles. Cliquez ici pour obtenir uniquement le texte mis en cache.
+Pour crer un lien avec cette page ou l'inclure dans vos favoris/signets, utilisez l'adresse suivante : http://www.google.com/search?q=cache:nBhKdX1Dca4J:collaboration.cmc.ec.gc.ca/science/rpn/gef_html_public/DOCUMENTATION/GENERAL/DOC_NORM_RPN/DOCU_normes_RPN.html+valin+rpn+standard&hl=fr&ct=clnk&cd=1&gl=ca&client=firefox-a.
+
+Google n'est ni affili aux auteurs de cette page ni responsable de son contenu.
+Les termes de recherche suivants ont t mis en valeur : valin rpn standard 
+NORMES DE DOCUMENTATION RPN/RPN DOCUMENTATION STANDARDS
+
+Revise le 21 mai 1993
+
+Revised may 21, 1993
+
+M. Valin
+
+M. Beland
+
+Categories logiques de documentation/Logical categories for documentation
+
+Il y a trois (3) types de rubriques de documentation.
+
+    * Rubriques OBLIGATOIRES de documentation ou rubriques de niveau 0. Ces rubriques doivent tre presentes dans la documentation du module.
+    * Rubriques de niveau 1. Ces rubriques sont OBLIGATOIRES si elles sont applicables au module documente. p. ex. Si un module fait usage de blocs COMMON, la rubrique *IMPLICITES devient applicable donc OBLIGATOIRE.
+    * Rubriques facultatives ou de niveau 2. Le programmeur peut utiliser a sa discretion ces rubriqes dont le but est d'apporter toute information supplementaire qu'il juge utile.
+
+There are three (3) basic types of documentation sections.
+
+    * MANDATORY documentation sections ( level 0 sections). These sections must be present in the module documentation.
+    * Level 1 documentation sections. These sections are MANDATORY if applicable to the module. If a module uses COMMON blocks, the *IMPLICITS section is applicable and therefore MANDATORY.
+    * Level 2 (optional) documentation sections. The programmer may include at his discretion any relevant section in order to state any useful information. La premiere rubrique DOIT tre la rubrique d'identification (***ID). Les autres rubriques peuvent se trouver dans n'importe quel ordre. On recommande toutefois l'ordre suivant:
+
+The first section MUST be the identification (***ID). The other sections may appear in any order, but the following order is recommended.
+
+***ID***ID
+**
+*AUTEUR*AUTHOR
+**
+*REVISION*REVISION
+**
+*ETAT*STATUS
+**
+*LANGAGE*LANGUAGE
+**
+*OBJET*OBJECT
+**
+*ALGORITHME*ALGORITHM
+**
+*PRECISION*PRECISION
+**
+*LIBRAIRIES*LIBRARIES
+**
+*JCL*JCL
+**
+*PARAMETRES*PARAMETERS
+**
+*SWITCHES*SWITCHES
+**
+*CARTES/CONTROLE*CARDS/CONTROL
+**
+*FICHIERS*FILES
+**
+*MESSAGES*MESSAGES
+**
+*ARGUMENTS*ARGUMENTS
+**
+*IMPLICITES*IMPLICITS
+**
+*ENREGISTREMENTS*RECORDS
+**
+*CONSTANTES*CONSTANTS
+**
+*VARIABLES*VARIABLES
+**
+*TABLES*TABLES
+**
+*MODULES*MODULES
+**
+*MEMOIRE*MEMORY
+**
+*NOTES*NOTES
+**
+****
+
+#
+
+NIVEAURUBRIQUE
+
+0***IDNOM DU MODULECOURTE DESCRIPTION
+
+       o ID peut tre
+
+SYSTEME        -      GROUPE DE PROGRAMMES
+PROGRAMME      -      PROGRAMME PRINCIPAL
+S/P            -      SOUS-PROGRAMME
+FONCTION       -      FONCTION
+IDENT          -      CODE ASSEMBLEUR
+
+
+Cette rubrique contient normalement l'entte du module dans le langage utilise (si le compilateur le permet) ainsi que toutes les declarations associees aux arguments.
+
+0 *AUTEUR
+    Auteur de la redaction originale, affiliation, date. 
+1 *REVISION
+    Liste des diverses revisions du module, y compris les revisions de l'auteur, affiliation, date, les raisons des changements, le numero de la revision. 
+1 *ETAT
+    L'etat actuel (operationnel, experimental, tests effectues par l'implementation etc.) ainsi que la date. 
+0 *LANGAGE
+    Le langage utilise pour la redaction du module. Cette rubrique doit de plus contenir les informations de transportabilite necessaires (dependances machines, etc.). Le langage utilise doit tre specifie. (FORTRAN, PASCAL, COMPASS, SYMPL, APL, ALGOL, C, C++, PERL, etc.) 
+0 *OBJET(nom_du_module)
+    Donne une information complete sur ce que fait le module et sur l'objectif que l'on desirait atteindre. Cette categorie decrira la fonction d'un module, ainsi que ses interactions avec les modules voisins. 
+2 *ALGORITHME
+    Explique comment la fonction decrite sous OBJET est executee. Cette categorie inclut les references ou methodes mathematiques. 
+2 *PRECISION
+    Fait etat de la precision des resultats produit par ce module. 
+2 *LIBRAIRIES
+    Indique ou l'on peut trouver le code source du module, ainsi que les binaires absolus ou relogeables. 
+1 *JCL
+    Donne les cartes JCL necessaires a l'appel et a l'execution d'un programme. 
+2 *PARAMETRES
+    Applicable aux procedures et aux programmes soumis a un pre-processeur. 
+1 *CARTES/CONTROLE Description des directives d'entree du module.
+1 *FICHIERS
+    Description d'utilisation des divers fichiers interface. On trouvera une description plus complete du contenu de ces fichiers a la rubrique ENREGISTREMENTS. 
+1 *MESSAGES
+    Messages a l'operateur, messages imprimes dans la sorti du travail, etc... 
+0 *ARGUMENTS
+    Description des arguments, type, entree ou sortie, tableaux ou scalaires, fonction des arguments. 
+1 *IMPLICITES
+    Description des variables dans les blocs COMMON. Cette rubrique contient la definition des blocs COMMON ainsi que toutes les declarations qui s'y rattachent. 
+2 *ENREGISTREMENTS
+    Description interne des fichiers utilises, du contenu et de la structure des enregistrements. 
+2 *CONSTANTES
+    Constantes d'interet. Les commentaires accompagnant un enonce PARAMETER vont ici. 
+2 *VARIABLES
+    Variables d'interet. 
+2 *TABLES
+    Tableaux/vecteurs d'interet. (p.ex. description des structures en C) 
+1 *MODULES
+    Liste des modules appeles ou qui s'avereraient necessaires pour comprendre le deroulement du module. Le nom du, ou des, module(s) qui appellent le module documente peuvent aussi etre indiques ici, si necessaire. Contient les declarations "external". 
+2 *MEMOIRE
+    La quantite de memoire necessaire. 
+2 *NOTES
+    Notes d'optimisation, cout, caveats, divers commentaires non mentionnes a d'autres rubriques. 
+0 **
+    FIN du bloc de documentation 
+
+LEVELSECTION
+
+0***IDNAME OF MODULESHORT DESCRIPTION
+
+       where ID may be
+
+SYSTEM        -      GROUP OF PROGRAMS
+PROGRAM       -      MAIN PROGRAM
+S/R           -      SUBPROGRAM
+FUNCTION      -      FONCTION
+IDENT         -      ASSEMBLER CODE
+
+
+This section normally contains the module header in the appropriate language as well as the declarations for the formal parameters (if the compiler allows it).
+
+0 *AUTHOR
+    Author of the original module, affiliation, date. 
+1 *REVISION
+    Revision history of the module : who did it, affiliation, when was it done and why, revision number. 
+1 *STATE
+    Current state of the module (operational, experimental, tested by implementation, etc...) and date. 
+0 *LANGUAGE
+    Langage used in this module (FORTRAN, PASCAL, COMPASS, SYMPL, APL, ALGOL, C, C++, PERL, etc.). This section must contain any relevant porting information (machine dependencies, etc...). 
+0 *OBJECT(module_name)
+    Give complete information on the aim of the module and what it is supposed to do. Also include information about related modules if applicable. 
+2 *ALGORITHM
+    Explain how the OBJECT is achieved. This would include mathematical references and methods. 
+2 *PRECISION
+    Give the precision of produced results. 
+2 *LIBRARIES
+    Indicate the location of sources, binaries and relocatables required to load the module 
+1 *JCL
+    Give necessary control cards to execute. 
+2 *PARAMETERS
+    Applies to modules submitted to a preprocessor. 
+1 *CARDS/CONTROL Description of input directive cards.
+1 *FILES
+    A general description of the files used. A more complete description will be found under the haeding RECORDS 
+1 *MESSAGES
+    Messages to the operator or output to the printer etc.. 
+0 *ARGUMENTS
+    Description of the arguments, type, input or output array or scalar, their function. 
+1 *IMPLICITS
+    Description of variables in COMMON blocks. This heading contains the COMMON block definitions and related declarations. 
+2 *RECORDS
+    Internal description of the files used. 
+2 *CONSTANTS
+    Constants of interest. Comments about PARAMETER statements end up here. 
+2 *VARIABLES
+    Variables of interest 
+2 *TABLES
+    Tables and vectors of interest, eg. C structures 
+1 *MODULES
+    List of the modules called in order to understand the progress of the module. Modules which call the documented module may also be listed. Also includes "external" declarations. 
+2 *MEMORY
+    Memory required. 
+2 *NOTES
+    Notes on optimization, cost, timing, other things not covered elsewhere. 
+0 **
+    END of documentation marker.
+
+Definition de la syntaxe/Formal syntax definition.
+DOCUMENTATION:
+
+----->  BLOC_ID -----> ------------------ CARTE_FIN ---->
+                               |             |
+   --BLOC_DOC <--
+
+
+BLOC_ID:
+
+
+-----> CARTE_ID -----  --------------------------------->
+                                 |                      |
+    ----CARTE_NON_CLE <----
+
+
+BLOC_DOC:
+
+-----> CARTE_CLE ----  --------------------------------->
+                                 |                      |
+    ----CARTE_NON_CLE <----
+
+
+CARTE_ID:
+
+--> *** -->CLE_ID-->blanc-->NOM-->blanc-->commentaires-->
+          |                     |
+          |----> (--NOM-->) ----|
+
+
+CARTE_CLE:
+
+----> * --> NOM_DE_RUBRIQUE--->blanc--->commentaires---->
+                             |         |
+                             |-->(nom)-|
+
+
+CARTE_NON_CLE:
+
+
+---->*------->blanc------->n'importe quoi --------------->
+|          |
+|-->blanc--|
+
+
+CARTE_FIN:
+
+---->**------>blanc-------->n'importe quoi--------------->
+
+CLE_ID:
+
+---------------SYSTEME -------->-
+-----------SYSTEM --------->-
+
+--------PROGRAMME --------->-
+---------PROGRAM --------->-
+
+-----------S/P ------------>-
+-----------S/R ------------>-
+
+---------FONCTION---------->-
+---------FUNCTION---------->-
+
+-----------IDENT----------->-
+
+
+NOM_DE_RUBRIQUE:
+
+----------AUTEUR----------
+------AUTHOR----------
+-----REVISION---------
+-------ETAT-----------
+------STATUS----------
+-----LANGUAGE---------
+-----LANGAGE----------
+-------OBJET----------
+-------OBJECT---------
+----ALGORITHME--------
+----ALGORITHM---------
+-----PRECISION--------
+----LIBRAIRIES--------
+----LIBRARIES---------
+--------JCL-----------
+-----PARAMETRES-------
+-----PARAMETERS-------
+----CARTES/CONTROLE---
+-----CARDS/CONTROL----
+------FICHIERS--------
+-------FILES----------
+------MESSAGES--------
+------ARGUMENTS-------
+-----IMPLICITES-------
+-----IMPLICITS--------
+---ENREGISTREMENTS----
+------RECORDS---------
+-----CONSTANTES-------
+-----CONSTANTS--------
+------VARIABLES-------
+--------TABLES--------
+-------MODULES--------
+-------MEMOIRE--------
+-------MEMORY- --------
+--------NOTES---------
+--->
+
+Exemple de documentation/Documentation example
+
+***FONCTION FSTECR ECRIRE UN ENREGISTREMENT DANS UN FICHIER STANDARD
+*
+      FUNCTION FSTECR(F,WORK,NPAK,IUN,ICDATE,CDEET,CNPAS,CNI,CNJ,CNK
+     %,CIP1,CIP2,CIP3,CTYPVAR,CNOMVAR,CETIKET,CGRTYP,CIG1,CIG2,CIG3,
+     % CIG4,CDATYP,REWRIT)
+*
+      IMPLICIT NONE
+      INTEGER FSTECR
+      INTEGER F(*), NPAK, IUN,ICDATE,CDEET,CNPAS,CNI,CNJ,CNK,CIP1,
+     %        CIP2,CIP3,CIG1,CIG2,CIG3,CIG4,CDATYP
+      REAL   WORK(*)
+      CHARACTER *(*) CTYPVAR,CNOMVAR,CETIKET,CGRTYP
+      CHARACTER *9   ECRIUN
+      LOGICAL   REWRIT
+*
+*AUTEUR   M. VALIN AVRIL 1989 DORVAL DRPN CANADA P.Q.
+*
+*REVISION 0.0.0  (AUTREFOIS STDECR - STDECX)
+*         1.0.1  MODIFICATION POUR ECRIRE DANS UN FICHIER RANDOM/SEQ STANDARD
+*         1.0.2  M. Lepine - bug fix pour ICDATE (input only) - fev 1991
+*         1.0.3  M. Lepine - Allocation dynamique du champ de travail work
+*                            sept 1991
+*         1.0.4  M. Lepine - Bug fix reecriture quand ind =0 (mars 1992)
+*         1.0.5  M. Lepine - Ajout du format ieee (mai 1992)
+*
+*
+*LANGAGE  FORTRAN
+*
+*OBJET(FSTECR)
+*         ECRIRE UN ENREGISTREMENT DANS UN FICHIER STANDARD
+*         PLUSIEURS TYPES DE CHAMPS ET DE COMPACTION SONT PERMIS.
+*         CETTE ROUTINE PEUT REECRIRE PAR-DESSUS UN ENREGISTREMENT
+*         DEJA EXISTANT AVEC REWRIT=.TRUE.
+*
+*ALGORITHME
+*         POUR UN FICHIER RANDOM, ON TENTE D'ECRIRE DANS UN ESPACE LIBRE
+*         DE MEME TAILLE (EVENTUELLEMENT PLUS GROS), SINON ON INSERE A LA FIN.
+*         SI CES DEUX TENTATIVES ECHOUENT, ON UTILISE L'ENTREE DU DIRECTEUR
+*         CORRESPONDANT AU PLUS PETIT ESPACE LIBRE (DONT ON PERD A JAMAIS LA
+*         DESCRIPTION).  LE DIRECTEUR SUR DISQUE EST AGRANDI LORSQUE NECESSAIRE.
+*         POUR UN FICHIER SEQUENTIEL, ON ECRIT A LA POSITION COURANTE.
+*
+*
+*ARGUMENTS
+*  IN    F          CHAMP A ECRIRE
+*  IN    WORK       CHAMP DE TRAVAIL DIMENSION(NI*NJ*MAX(1,NK)+NPAK-1)/NPAK+2
+*  IN    NPAK       RAPPORT DE COMPACTION COURRANT (0,1,2,3,4,5,6,10,12,15,30)
+*  IN    IUN        UNITE FORTRAN
+*  IN    CDATE      DATE TIME STAMP CMC ENTIER, SMMJJAAZZR TEMPS ZERO PREVISION
+*  IN    CDEET      PAS DE TEMPS ENTIER (SECONDES, MAX 32767)
+*  IN    CNPAS      NUMERO DU PAS DE TEMPS ENTIER, MAX 32767
+*  IN    CNI        PREMIERE DIMENSION DU CHAMP, MAX 32767
+*  IN    CNJ        DEUXIEME DIMENSION, MAX 32767
+*  IN    CNK        TROISIEME DIMENSION, MAX 4095
+*  IN    CIP1       DESCRIPTEUR 1, MAX 32767 (NORMALEMENT NIVEAU)
+*  IN    CIP2       DESCRIPTEUR 2, MAX 32767
+*  IN    CIP3       DESCRIPTEUR 3, MAX 4095
+*  IN    CTYPVAR    TYPE DE CHAMP, 1 CARACTERE FORMAT L (HOLLERITH)
+*  IN    CNOMVAR    NOM DU CHAMP, 2 CARACTERES FORMAT L (HOLLERITH)
+*  IN    CETIKET    ETIQUETTE, 8 CARACTERES, SENS DEFINI PAR USAGER
+*  IN    CGRTYP     TYPE DE GRILLE, 1 CARACTERE FORMAT L (HOLLERITH)
+*  IN    CIG1       DESCRIPTEUR DE GRILLE 1, ENTIER, MAX 2047
+*  IN    CIG2       DESCRIPTEUR DE GRILLE 2, ENTIER, MAX 2047
+*  IN    CIG3       DESCRIPTEUR DE GRILLE 3, ENTIER, MAX 65535
+*  IN    CIG4       DESCRIPTEUR DE GRILLE 4, ENTIER, MAX 65535
+*  IN    CDATYP     TYPE DU CHAMP (POUR LA COMPRESSION), SOIT
+*                   0=BINAIRE,1=REEL,2=ENTIER,3=CARACTERE
+*  IN    REWRIT     .TRUE. EFFACE L'ENREGISTREMENT ECRIT MEME PLACE
+*                          SI POSSIBLE
+*                   .FALSE. ECRIT SEULEMENT A LA FIN
+*
+*MESSAGES
+*
+*       FSTERRO('FSTECR',' NO PERMISSION TO WRITE ',ERRNPW, FSTECR )
+*       VALID  ('LOGFIL',' ERREUR IP1 IP2 IP3 DOIT ETRE ENTRE')
+*       LOGFIL 'ERROR DANS FSTEFF (QDRGET - QSTWDE)'
+*       LOGFIL 605 ' EFFACE IUN L ENREGISTREMENT EST EFFACE'
+*       LOGFIL 630 'FSTECR IUN EST ETENDU'
+*       LOGFIL 640 ' ECRIT IUN'
+*
+*
+*IMPLICITES
+*
+*  COMMON FSTC88   CE BLOC SERT A LA GESTION DES FICHIERS
+*  ------ ------   STANDARDS (1988 OU AVANT ) QUI SONT OUVERTS.
+*
+
+      COMMON /FSTC88/ IUNTAB(0:41),DIRSIZ(0:40), NBCORR(0:40),
+     %   NUTIL(0:40), NXTADR(0:40), NUMREC(0:40),PRMECR(0:40), 
+     %   NBECR (0:40),NRECUP(0:40), NBEFF (0:40), NBEXT (0:40),
+     %   MSKPRT( 6,0:40),   SEARCH( 6,0:40),MASQUE( 6,0:40), 
+     %   CURSLT( 12,0:40),MODIFS(0:40),NXTSEQ(0:40),CURSEQ(0:40),
+     %   DIAGP, LOGFIL,DEBUG, FASTIO, TOLRNC, MSGLVL,NPAIRE,
+     %   COPYMOD, CHAINE(0:40),EFFDSC(0:40)
+      INTEGER   IUNTAB, DIRSIZ, NUTIL , NXTADR, NUMREC, MSKPRT,
+     %  MASQUE, SEARCH, NBECR , NBRECR, NRECUP, NBEFF, NBEXT , NBCORR,
+     %  LOGFIL, DEBUG,  CURSLT, TOLRNC, MSGLVL, NPAIRE, NXTSEQ, CURSEQ,
+     %  CHAINE, EFFDSC
+      LOGICAL   PRMECR, FASTIO, MODIFS, DIAGP, COPYMOD
+*
+*  IUNTAB  IUNTAB(I) >= 0 EST LE NUMERO D'UNITE DU FICHIER DECRIT
+*                         PAR L'ENTREE I DES TABLES DE CE BLOC.
+*          IUNTAB(I) = -1 INDIQUE UNE ENTREE LIBRE.
+*          IUNTAB(MXSTD1) SERT DE SENTINELLE.
+*
+*  DIRSIZ  TAILLE DU DIRECTEUR SUR DISQUE, I.E. LE NOMBRE MAXIMUM
+*          D'ENTREES QU'IL PEUT CONTENIR. (0 = SEQUENTIEL)
+*  NUTIL   NOMBRE D'ENTREES EFFECTIVEMENT UTILISEES DANS L'INDEX
+*          (MEMOIRE OU DISQUE).
+*  NXTADR  PROCHAINE ADRESSE DISPONIBLE POUR ECRIRE UN ENREGISTREMENT.
+*
+*  NUMREC  POSITION COURANTE DE RECHERCHE DANS LE DIRECTEUR, UTILISEE
+*          POUR PASSER AU 'SUIVANT'.  0 INDIQUE DE PARTIR AU DEBUT,
+*          TANDIS QUE -1 INDIQUE QUE L'OPERATION 'SUIVANT' EST ILLEGALE.
+*          POUR UN FICHIER SEQUENTIEL, NUMREC = 1 (OU 0).
+*          -1 = RIEN DE VALIDE
+*           0 = RIEN DE VALIDE / RECHERCHE DU SUIVANT ACCEPTABLE
+*           1 = APRES QSTSUI/FSTSUI
+*           2 = APRES LECTURE
+*           FSTSEL = 0 / FSTPOS = -1 / FSTSKP = -1 / FSTRWD = -1
+*
+*  MSKPRT  MASQUE PARTIEL COURANT, SPECIFIE PAR LA ROUTINE STDMSQ.
+*  MASQUE  MASQUE DE RECHERCHE COURANT.
+*  SEARCH  VALEUR DE RECHERCHE COURANTE.
+*
+*  PRMECR  INDIQUE SI ON PEUT ECRIRE SUR LE FICHIER (.TRUE.) OU NON.
+*
+*  NBECR   NOMBRE TOTAL D'ECRITURES EFFECTUEES SUR CE FICHIER DEPUIS
+*          SA CREATION (INCLUANT RE-ECRITURES ET RECUPERATIONS).
+*  NBRECR  NOMBRE TOTAL DE RE-ECRITURES EFFECTUEES.
+*  NRECUP  NOMBRE DE FOIS QU'ON A RECUPERE UNE QUELCONQUE ENTREE
+*          DETRUITE (Y COMPRIS LORS D'UNE RE-ECRITURE).
+*  NBEFF   NOMBRE D'ENREGISTREMENTS EFFACES (Y COMPRIS LORS D'UNE
+*          RE-ECRITURE).
+*  NBEXT   NOMBRE DE FOIS QU'ON A ETENDU L'INDEX-DISQUE.
+*  NBCORR  NOMBRE DE FOIS QU'ON A CORRIGE L'ENTETE DU FICHIER.
+*
+*  CURSLT  ENTREE DE DIRECTEUR ACTIVE (LA SEULE SI SEQUENTIEL)
+*
+*  FASTIO  INDIQUE SI ON OPTIMISE L'IO AU PRIX DE LA SECURITE
+*  MODIFS  INDIQUE (POUR FASTIO) SI LE DIRECTEUR D'UN FICHIER A ETE MODIFIE
+*  DIAGP   INDIQUE S'IL FAUT IMPRIMER CERTAINS MESSAGES.
+*  LOGFIL  UNITE FORTRAN QUI RECEVRA LES MESSAGES DE TOUT POIL.
+*  DEBUG   OPTION DE TRACE POUR LA ROUTINE STDDBG.
+*
+*          CE BLOC COMMON CONTIENT AUSSI LE RESULTAT DE L'EXPANSION DE LA
+*          DERNIERE "SLOT" ACTIVE (VOIR DECK PCKUNP) DANS LES VARIABLES
+*          DATE A UBC. LE TOUT EST AUSSI DISPONIBLE SOUS FORME DE TABLE
+*          DANS LE TABLEAU TABPRM (FORMAT HOLLERITH MAX. 4 CARACTERES).
+*
+
+      COMMON /FSTC88/ DATE,   DEET,   NPAS,   NI,   NJ,   NK,NBITS,
+     %  DATYP,  IP1,   IP2,   IP3,   TYPVAR,NOMVAR, ETIQ14, ETIQ58,
+     %  GRTYP,  IG1,   IG2,IG3,   IG4,   SWA,   LNG,   DLTF,   UBC,
+     %  ETIQ56, ETIQ78
+      INTEGER   DATE,   DEET,   NPAS,   NI,   NJ,  NK,NBITS,  DATYP,
+     %   ETIQ14, NOMVAR, TYPVAR, IP1,IP2,   IP3,   GRTYP,  IG1,
+     %   IG2,   IG3,IG4,   SWA,   LNG,   DLTF,   UBC,   ETIQ58,
+     %   ETIQ56, ETIQ78
+      INTEGER   TABPRM(26)
+      EQUIVALENCE   (TABPRM(1),DATE)
+      INTEGER RDSYNC, RDSYN2, SQSYNC, SQSYN2
+      COMMON /FSTSYNC/ RDSYNC, RDSYN2, SQSYNC, SQSYN2
+*
+*MODULES
+*
+
+      EXTERNAL FSTINF, FSTEFF,QSTEOI
+      INTEGER  FSTINF, FSTEFF,QSTEOI,IEOI
+      EXTERNAL QDRGET,QSTWDE,QSTWHD,QSTRHD,QSTWDR,QSTRDR
+      EXTERNAL QSTINT,INCDAT,XXPAK,IIPAK,QSTPKA,QSTPKC,QSTWPM,QSTARG
+      EXTERNAL QSTUPC,WAREAD,WAWRIT,MOVLEV
+      INTEGER  QSTWDE,QSTINT,QDRGET,QSTWHD,QSTRHD,QSTWDR,QSTRDR
+*
+

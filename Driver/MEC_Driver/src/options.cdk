@@ -1,0 +1,253 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+!
+#include "maxlev.cdk"
+!
+!     OPTIONS INITIALISEES PAR LA DYNAMIQUE
+!
+      INTEGER           ICONVEC,IFLUVERT,IGWDRAG,IKFCPCP,ILONGMEL,IOPTIX
+      INTEGER           IRADIA,ISCHMSOL,ISHLCVT(2),ISTCOND, IPCPTYPE
+      INTEGER           ISCHMURB, IWF
+      CHARACTER*16      CONVEC, FLUVERT, GWDRAG, KFCPCP, LONGMEL, OPTIX
+      CHARACTER*16      RADIA, SCHMSOL, SHLCVT(2), STCOND, RADFILES
+      CHARACTER*16      SCHMURB
+      CHARACTER*16      PCPTYPE
+      INTEGER           CW_RAD,DATE(14),DEBUT,KNTRAD
+      INTEGER           LIN_KPH,LIN_LSC,LIN_PBL,LIN_SGO,LIN_V4D
+      INTEGER           MOYHR, NSLOFLUX, RADNIVL(LEVMAX+1)
+      LOGICAL           ADVECTKE,AGREGAT,BKGALB,CHAUF,CLIMAT,CORTM
+      LOGICAL           CORTS,COUPLING,CPL_FLD(6,4),DBGMEM,DIFFUW
+      LOGICAL           DMOM,DRAG,DRYLAPS,EVAP,FOMIC,IMPFLX
+      LOGICAL           INILWC,ICEMELT,KFCMOM,KTICEFRAC,LIMSNODP 
+      LOGICAL           MONTAGN,RADFIX,RADFLTR,REDUC,SATUCO 
+      LOGICAL           SNOALB_ANL,SNOWMELT,STOMATE,STRATOS,TDIAGLIM 
+      LOGICAL           TSCONFC,TS_FLXIR,TYPSOL,WET,Z0DIR
+      REAL              AS2,BETA2,DELT,DZSEDI,EPONGE(LEVMAX),ETRMIN2
+      REAL              FACDIFV,FACTDT,HC2,HF2,HM2,KFCTRIG4(4),KFCTRIGA
+      REAL              KFCRAD,KFCDEPTH,KFCDLEV,KFCDET,KFCTIMEC,KFCTIMEA
+      REAL              KKL2,PARSOL(6),QCO2,TAUFAC,Z0MIN2,Z0TLAT(2)
+      REAL              ZUA,ZTA
+!
+      COMMON /IOPTIONC/ ICONVEC,IFLUVERT,IGWDRAG,IKFCPCP,ILONGMEL,IOPTIX
+      COMMON /IOPTIONC/ IRADIA,ISCHMSOL,ISHLCVT,ISTCOND,IPCPTYPE,ISCHMURB
+!
+      COMMON / OPTIONC/  CONVEC, FLUVERT, GWDRAG, KFCPCP, LONGMEL, OPTIX
+      COMMON / OPTIONC/  RADIA, SCHMSOL, SHLCVT, STCOND,  RADFILES, SCHMURB
+      COMMON / OPTIONC/  PCPTYPE
+!
+      COMMON / OPTIONI/ CW_RAD,DATE,DEBUT,KNTRAD
+      COMMON / OPTIONI/ LIN_KPH,LIN_LSC,LIN_PBL,LIN_SGO,LIN_V4D
+      COMMON / OPTIONI/ MOYHR,NSLOFLUX,RADNIVL, IWF
+!
+      COMMON / OPTIONL/ ADVECTKE,AGREGAT,BKGALB,CHAUF,CLIMAT,CORTM
+      COMMON / OPTIONL/ CORTS,COUPLING,CPL_FLD,DBGMEM,DIFFUW,DMOM
+      COMMON / OPTIONL/ DRAG,DRYLAPS,EVAP,FOMIC,ICEMELT,IMPFLX,INILWC
+      COMMON / OPTIONL/ KFCMOM,KTICEFRAC,LIMSNODP,MONTAGN
+      COMMON / OPTIONL/ RADFIX,RADFLTR,REDUC,SATUCO,SNOALB_ANL,SNOWMELT
+      COMMON / OPTIONL/ STOMATE,STRATOS,TDIAGLIM,TSCONFC,TS_FLXIR
+      COMMON / OPTIONL/ TYPSOL,WET,Z0DIR
+!
+      COMMON / OPTIONR/ AS2,BETA2,DELT,DZSEDI,EPONGE,ETRMIN2,FACDIFV
+      COMMON / OPTIONR/ FACTDT,HC2,HF2,HM2,PARSOL,KFCTRIG4,KFCTRIGA
+      COMMON / OPTIONR/ KFCRAD,KFCDEPTH,KFCDLEV,KFCDET,KFCTIMEC
+      COMMON / OPTIONR/ KFCTIMEA,KKL2,QCO2,TAUFAC,Z0MIN2,Z0TLAT
+      COMMON / OPTIONR/ ZUA,ZTA
+!
+#ifdef OPTIONS_NAMELIST
+!               type chaine de caractere
+      NAMELIST /OPTIONP/CONVEC,FLUVERT,GWDRAG,KFCPCP,LONGMEL
+      NAMELIST /OPTIONP/OPTIX,RADIA,RADFILES,SHLCVT,SCHMSOL,SCHMURB
+      NAMELIST /OPTIONP/STCOND,PCPTYPE
+!               type entier 
+      NAMELIST /OPTIONP/CW_RAD,DATE,DEBUT,KNTRAD
+      NAMELIST /OPTIONP/LIN_KPH,LIN_LSC,LIN_PBL,LIN_SGO,LIN_V4D
+      NAMELIST /OPTIONP/MOYHR,NSLOFLUX,RADNIVL
+!               type logique
+      NAMELIST /OPTIONP/ADVECTKE,AGREGAT,BKGALB,CHAUF,CLIMAT,CORTM
+      NAMELIST /OPTIONP/CORTS,COUPLING,CPL_FLD,DBGMEM,DMOM,DIFFUW
+      NAMELIST /OPTIONP/DRAG,DRYLAPS,EVAP,FOMIC,ICEMELT,IMPFLX,INILWC
+      NAMELIST /OPTIONP/KFCMOM,KTICEFRAC,LIMSNODP,MONTAGN
+      NAMELIST /OPTIONP/RADFLTR,REDUC,SATUCO,SNOALB_ANL
+      NAMELIST /OPTIONP/SNOWMELT,STOMATE,STRATOS,TDIAGLIM,TSCONFC
+      NAMELIST /OPTIONP/TS_FLXIR,TYPSOL,WET,Z0DIR
+!               type reel 
+      NAMELIST /OPTIONP/AS2,BETA2,DELT,DZSEDI,EPONGE,ETRMIN2,FACDIFV
+      NAMELIST /OPTIONP/FACTDT,HC2,HF2,HM2,KFCTRIG4,KFCTRIGA,KFCRAD
+      NAMELIST /OPTIONP/KFCDEPTH,KFCDLEV,KFCDET,KFCTIMEC,KFCTIMEA
+      NAMELIST /OPTIONP/KKL2,PARSOL,QCO2,TAUFAC,Z0MIN2,Z0TLAT
+      NAMELIST /OPTIONP/ZUA,ZTA
+!
+#endif
+#if defined(DOC)
+!
+! CONVEC     convection switch
+! FLUVERT    boundary layer processes switch
+! GWDRAG     gwd formulation switch
+! KFCPCP     switch for conservation of precipitation in kfcp
+! LONGMEL    mixing length formulation
+! OPTIX      choice of 2 parameterizations for cloud 
+!            optical properties: an old one for simpler 
+!            condensation schemes (conds, Sundqvist),
+!            and a newer one for microphysics schemes
+! PCPTYPE    Precipitation type diagnostic switch
+! RADFILES   format of radiation files :
+!            'STD': RPN standard file
+!            'UNF': Fortran unformatted binary file
+! RADIA      radiation switch
+! SCHMSOL    land surface processes switch
+! SCHMURB    urban surface processes switch
+! SHLCVT     shallow convection switches
+! STCOND     condensation switch
+!
+! ICONVEC    integer value for CONVEC  switch
+! IFLUVERT   integer value for FLUVERT switch
+! IGWDRAG    integer value for GWDRAG  switch
+! IKFCPCP    integer value for KFCPCP  switch
+! ILONGMEL   integer value for LONGMEL switch
+! IRADIA     integer value for RADIA   switch
+! ISCHMSOL   integer value for SCHMSOL switch
+! ISCHMURB   integer value for SCHMURB switch
+! ISHLCVT    integer values for SHLCVT  switches
+! ISTCOND    integer value for STCOND  switch
+!
+! IMPFLX     .TRUE. if implicit surface fluxes for vertical diffusion
+!
+! IPCPTYPE   integer value for PCPTYPE  switch
+!
+! CW_RAD     operating mode in s/r cldoptx regarding cloud water
+! DATE       CMC date time stamp
+! DEBUT      timestep of beginning of model run
+!            (for climate runs only)
+! KNTRAD     number of timesteps between calculations
+!            of radiative processes
+! MOYHR      number of timesteps for temporal averages
+! NSLOFLUX   number of timesteps for which surface fluxes
+!            "FC" and "FV" are gradually set from zero to
+!            their full value in a "slow start" fashion"
+!            at the beginning of a time integration
+! RADNIVL    list of levels on which radiation (IR and visible)
+!            calculations are performed
+!
+! ADVECTKE   switch for TKE advection by the dynamics
+! AGREGAT    switch to control aggregation of surface properties
+! CHAUF      sensible heating switch for simplified physics
+! CLIMAT     climate mode switch (only for SEF at this time)
+! DBGMEM     debug switch for physics memory allocation system
+! DMOM       vertical diffusion switch for simplified physics
+! DRAG       surface drag switch for simplified physics
+! DIFFUW     vertical motion diffusion switch
+! EVAP       evaporation switch
+! FOMIC      .TRUE. use Fomichev radiation code
+!            .FALSE. do not use Fomichev radiation code
+! ICEMELT    sea ice melting switch
+! INILWC     initialization of cloud water content switch
+! RADFIX     .TRUE. for active radiation fixes in RADMULT/RADIR/SUN
+!            .FALSE. otherwise
+! RADFLTR    .TRUE. for smoothing of net fluxes.
+!            .FALSE. No smoothing.
+! REDUC      .TRUE. if computations are to be on RADNIVL levels
+!            .FALSE. to compute on all levels (ignore RADNIVL)
+! SATUCO     .TRUE. if water/ice phase for saturation
+!            .FALSE. if water phase only for saturation
+! SNOALB_ANL .true.  snow albedo (ISBA) read from analysis
+!            .false. snow albedo (ISBA) calculated from snow age
+! SNOWMELT   snow melting switch
+! STOMATE    stomatal resistance switch
+! STRATOS    stratospheric mode (similar to CLIMAT mode)
+! TDIAGLIM   .true. , decrease of tdiag limited by temp grad
+!            .false., tdiag not limited 
+! TSCONFC    TS constant (force-restore only)
+! TS_FLXIR   .FALSE. If use TSKIN in calculation of downward flux
+!            .TRUE. If use TT(1200) instead (correction)
+! TYPSOL     soil surface parameters switch
+! WET        .TRUE.  for wet model
+!            .FALSE. for dry model
+! Z0DIR      .TRUE.  for     directional roughness length
+!            .FALSE. for non-directional roughness length
+! CORTM      .true., TM corrected for difference between
+!            original and filtered topography
+!            .false., no correction
+! CORTS      .true., TS and TP corrected for difference
+!             between original and filtered topography
+!            .false., no correction
+! COUPLING   .true. if MEC is coupled to other models via Oasis
+! CPL_FLD    .true. if field is a coupling field in current simulation
+!            1st dim: 1=FC, 2=FV, 3=BM, 4=AL, 5=TG, 6=MC
+!            2nd dim: 1=soil(L), 2=glaciers(G), 3=water(W), 4=ice(I)
+! DRYLAPS    .true., uses dry adiabat
+!            .false., uses Schuman-Newell lapse rate
+! MONTAGN    .true., run with mountains
+!            .false. mountains set to zero
+! BKGALB     .true., clim albedo used as background
+!            .false., albedo computed without background
+! AS2        stable boundary layer AS parameter
+! BETA2      boundary layer beta parameter
+! DELT       true timestep of the model
+! DZSEDI     thickness of the smallest layer (m);  
+!            used to determine sedimentation parameters
+! EPONGE     coefficients that multiply KM to simulate
+!            sponge layer near the top of the model
+! ETRMIN2    minimal value for vertical diffusion in stable mode
+! FACDIFV    factor (usually 1 or 2) that multiplies
+!            the timestep to enhance the effect of the
+!            vertical diffusion
+! FACTDT     =1 for 2-time level integration scheme
+!            =2 for 3-time level integration scheme
+! HC2        relative humidity threshold for onset of moist
+!            convective adjustment
+! HF2        relative humidity threshold for upward moisture flux
+!            during convective adjustment
+! HM2        input to calculate the saturation relative humidity
+!
+! KFCMOM     true. for transfer of momemntum 
+! KFCTRIG4   trigger parameter of Kain-Fritsch convection scheme (WKLCLC) 
+!            will increase from KFCTRIG4(3) to KFCTRIG4(4)
+!            between timestep KFCTRIG4(1) and timestep KFCTRIG4(2)
+! KFCTRIGA   if > 0., resolution for which KFCTRIG4 applies (units: km)
+! KFCRAD     initial convective updratf radius in Kain-Fritsch 
+!            convection scheme
+! KFCDEPTH   minimum depth of cnvective updraft in Kain-Fritsch
+! KFCDLEV    initial level of forced detrainment in Kain-Fritsch
+! KFCDET     total forced detrainment in Kain-Fritsch
+! KFCTIMEC   convective time scale in Kain-Fritsch
+! KFCTIMEA   convective time adjustment in Kain-Fritsch
+! KKL2       sedimentation threshold for mixphase
+! KTICEFRAC  .true. if ice fraction not nil in ktrsnt_mg
+! LIN_KPH    kind of physics for 4dvar
+!            = 0 full       physics
+!            = 1 simplified physics
+! LIN_LSC    simplified large-scale condensation scheme
+!            = 0 no parameterization
+!            = 1 simple condensation scheme
+! LIN_PBL    simplified planetary boundary layer
+!            = 0 no parameterization
+!            = 1 linear diffusion coefficients
+!            = 2 linear diffusion coefficients 
+!                (coefficients from nonlinear low-res run)
+! LIN_SGO    simplified sub-grid orographic effecs
+!            = 0 non parameterization
+! LIN_V4D    configuration of 4dvar
+!            = 0 full physics 
+!            = 1 simplified physics
+! PARSOL     thermal parameters of the soil (force-restore scheme):
+!            1) basic value of heat capacity of soil
+!            2) basic value of heat capacity of snow
+!            3) basic value of heat capacity of ice
+!            4) basic value of heat diffusivity of soil
+!            5) basic value of heat diffusivity of snow
+!            6) basic value of heat diffusivity of ice
+! QCO2       background atmospheric CO2 concentration in ppmv
+! TAUFAC     factor used in the gwd formulation ( = 1/(LENGHT SCALE))
+! Z0MIN2     minimum value of roughness length over the oceans
+! Z0TLAT     1) abs(latitude) in degrees below which Z0T is constant over water 
+!            2) abs(latitude) in degrees above which Z0T is calculated with 
+!               Charnock's formula over water
+! ZUA        height of wind input for surface flux calculations (m), unused if negative
+! ZTA        height of temperature/humidity input for surface flux calculations (m), 
+!            unused if negative
+! IWF        configuration of slope calculations in class
+!            = 0 skip slope calculations
+!            = 1 do slope calculations (MESH)
+
+!
+!
+#endif

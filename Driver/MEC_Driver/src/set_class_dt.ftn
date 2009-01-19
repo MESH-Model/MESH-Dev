@@ -1,0 +1,22 @@
+***S/R SET_CLASS_DT     -  INITIALIZATION OF TIME STEP DURATION
+*                          FOR THE CLASS PACKAGE
+       subroutine set_class_dt(dt)
+*
+*Author
+*          001 V. Fortin (April 2006) Adapt to CLASS 3.3
+*
+*Revisions
+*
+*Object
+*          To initialize the DELTIM constant in CLASS
+*          which specifies the time step
+*
+*Arguments
+*          dt: Time step of the model in seconds
+*
+#include "class_com.cdk"
+*
+       DELTIM=DT
+*
+       return
+       end

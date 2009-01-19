@@ -1,0 +1,332 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+      subroutine agrege1 (
+     $   d   , f   , v   , 
+     $   dsiz, fsiz, vsiz,
+     $   bus_soil, bus_glacier, bus_water, bus_ice, bus_urb,
+     $   siz_soil, siz_glacier, siz_water, siz_ice, siz_urb,
+     $   ni_soil,  ni_glacier,  ni_water,   ni_ice,  ni_urb,
+     $   ptr_soil, ptr_glacier, ptr_water, ptr_ice, ptr_urb,
+     $   ptsurfsiz,
+     $   rangs, poids, ni,
+     $   do_glaciers, do_ice, do_urb)
+#include "impnone.cdk"
+*
+      integer dsiz, fsiz, vsiz, ni, ni_sfc, ptsurfsiz
+      integer ptr_soil(ptsurfsiz), ptr_glacier(ptsurfsiz)
+      integer ptr_water  (ptsurfsiz), ptr_ice  (ptsurfsiz)
+      integer ptr_urb  (ptsurfsiz)
+      integer siz_soil, siz_water, siz_glacier, siz_ice, siz_urb
+      real d(dsiz), f(fsiz), v(vsiz)
+      integer ni_water, ni_soil, ni_ice, ni_glacier, ni_urb
+      integer rangs(ni,*)
+      real bus_water    (siz_water), bus_soil  (siz_soil)
+      real bus_ice(siz_ice), bus_glacier(siz_glacier)
+      real bus_urb(siz_urb)
+      real poids(ni,*)
+      logical do_glaciers, do_ice, do_urb
+*
+*
+*Author
+*             B. Bilodeau Sept 1999
+*
+*Revisions
+* 001         B. Bilodeau (Nov 2000) - New comdeck sfcbus.cdk
+* 002         B. Bilodeau (Feb 2004) - Add "urban" type of surface 
+*                                      Use agg (defined in iniptsurf)
+* 003         B. Bilodeau (Jun 2005) - Add mosaic capability for CLASS
+*
+*Object
+*             Perform the aggregation of arrays orginating
+*             from the 5 surface modules (sea ice, glaciers,
+*             water, soil and urban).
+*
+*Arguments
+*
+*             - Input/Output -
+* D           dynamics bus (dynamics input field)
+* F           permanent bus (historic variables for the physics)
+* V           volatile bus (physics tendencies and other 
+*             output fields from the physics)
+*
+*             - Input -
+* DSIZ        dimension of d
+* FSIZ        dimension of f
+* VSIZ        dimension of v
+* BUS_SOIL    "mini-bus" for soil     surface (from D, F and V)
+* BUS_GLACIER "mini-bus" for glaciers surface (from D, F and V)
+* BUS_WATER   "mini-bus" for water    surface (from D, F and V)
+* BUS_ICE     "mini-bus" for sea ice  surface (from D, F and V)
+* BUS_URB     "mini-bus" for urban    surface (from D, F and V)
+* SIZ_SOIL    dimension of BUS_SOIL
+* SIZ_GLACIER dimension of BUS_GLACIER
+* SIZ_WATER   dimension of BUS_WATER
+* SIZ_ICE     dimension of BUS_ICE
+* SIZ_URB     dimension of BUS_URB
+* NI_SOIL     length of the row for BUS_SOIL
+* NI_GLACIER  length of the row for BUS_GLACIER
+* NI_WATER    length of the row for BUS_WATER
+* NI_ICE      length of the row for BUS_ICE
+* NI_URB      length of the row for BUS_URB
+* NI          length of the full row
+* PTR_SOIL    starting location of each variable in the soil    "mini-bus"
+* PTR_GLACIER    "        "     "   "     "      "   "  glacier     "
+* PTR_WATER      "        "     "   "     "      "   "  water       " 
+* PTR_ICE        "        "     "   "     "      "   "  ice         " 
+* PTR_URB        "        "     "   "     "      "   "  urb         " 
+* PTSURFSIZ   number of elements (variables) in the "mini-buses"
+* RANGS       index  of each "mini-bus" element in the full row
+* POIDS       weight of each "mini-bus" element in the tile
+* DO_GLACIERS .TRUE. some points on the actual row contain glaciers
+*             .FALSE. no  point  "   "    "     "    "       "
+* DO_ICE      .TRUE. some points on the actual row contain sea ice
+*             .FALSE. no  point  "   "    "     "    "       "
+* 
+*
+*
+*IMPLICITES
+*
+#include "phy_macros_f.h"
+#include "sfcbus.cdk"
+*
+#include "nbvarsurf.cdk"
+*
+#include "dimsurf.cdk"
+#include "options.cdk"
+*
+***
+*
+*
+      integer ik_soil, ik_glacier, ik_water, ik_ice, ik_ori, ik_urb
+      integer i, ik, k, m, var 
+      integer sommet, surflen
+      integer n, var_no
+*
+      real bus_ori
+*
+      pointer (bus_ori_, bus_ori(1))
+*
+*     boucle sur les variables du bus de surface
+      do var=1,nvarsurf
+*
+            if (niveaux(var).gt.0) then        !  la variable existe
+*
+               if     (quel_bus(var).eq.1) then !  bus dynamique
+                  bus_ori_ = loc(d(1))
+               else if(quel_bus(var).eq.2) then !  bus permanent
+                  bus_ori_ = loc(f(1))
+               else if(quel_bus(var).eq.3) then !  bus volatil
+                  bus_ori_ = loc(v(1))
+               endif
+*
+               do m=1,mul(var)                  ! tient compte de la multiplicite des champs
+*
+*                 seules certaines variables sont agregees
+                  if (m.eq.agg(var)) then
+*
+*VDIR NODEP
+                  do ik=1,niveaux(var)*ni       ! double boucle sur i et k
+*
+                     k = (ik-1)/ni + 1
+                     i = ik - (k-1)*ni
+*
+*                    agregation des fractions de terre et d'eau
+                     ik_ori = ptdebut(var)                      +  ! debut du champ dans le bus
+     $                        (m-1)*ni                          +  ! multiplicite
+     $                        ik - 1                               ! element ik courant
+*                     
+*
+                     ik_soil = ptr_soil(var)                           +
+     $                         (m-1)*ni_soil                           +
+     $                         (k-1)*ni_soil                           +
+     $                         rangs(i,indx_soil) - 1                  
+*
+                     if (rangs(i,indx_soil).eq.0) ik_soil = 1
+*
+                     ik_water   = ptr_water(var)                       +
+     $                            (m-1)*ni_water                       +
+     $                            (k-1)*ni_water                       +
+     $                            rangs(i,indx_water) - 1
+*
+                     if (rangs(i,indx_water).eq.0) ik_water = 1
+*
+                     bus_ori(ik_ori) =
+     $                      poids(i,indx_soil ) * bus_soil (ik_soil)   +
+     $                      poids(i,indx_water) * bus_water(ik_water)
+                  end do
+*
+*
+*                 si necessaire, agregation des fractions de
+*                 glace marine, de glace continentale et
+*                 de zones urbaines 
+                  if (do_glaciers .or. do_ice .or. do_urb) then
+*VDIR NODEP
+                      do ik=1,niveaux(var)*ni
+*
+                         k = (ik-1)/ni + 1
+                         i = ik - (k-1)*ni
+*
+                         ik_ori = ptdebut(var)                         +
+     $                            (m-1)*ni                             +
+     $                             ik -1
+*
+                         ik_glacier= ptr_glacier(var)                  +
+     $                               (m-1)*ni_glacier                  +
+     $                               (k-1)*ni_glacier                  +
+     $                               rangs(i,indx_glacier) - 1
+*
+                         if (rangs(i,indx_glacier).eq.0) ik_glacier = 1
+*
+                         ik_ice  = ptr_ice(var)                        +
+     $                             (m-1)*ni_ice                        +
+     $                             (k-1)*ni_ice                        +
+     $                             rangs(i,indx_ice) - 1
+*
+                         if (rangs(i,indx_ice).eq.0) ik_ice   = 1
+*
+                         if (schmurb.ne.'NIL') then
+                         ik_urb  = ptr_urb(var)                        +
+     $                             (m-1)*niveaux(var)*ni_urb           +
+     $                             (k-1)*ni_urb                        +
+     $                             rangs(i,indx_urb) - 1
+                         if (rangs(i,indx_urb).eq.0) ik_urb   = 1
+                         endif
+*
+                         bus_ori(ik_ori)                               =
+     $                   bus_ori(ik_ori)                               +
+     $                   poids(i,indx_glacier)* bus_glacier(ik_glacier)+
+     $                   poids(i,indx_ice    )* bus_ice    (ik_ice  )
+*
+                         if (schmurb.ne.'NIL') then
+                         bus_ori(ik_ori)                               =
+     $                   bus_ori(ik_ori)                               +
+     $                   poids(i,indx_urb    )* bus_urb    (ik_urb)
+                         endif
+*
+                      end do
+                  endif
+               endif
+            end do
+         endif
+      end do
+*
+*
+*     Cas particuliers : on moyenne "TSRAD"**4 pour 
+*     les besoins du schema de rayonnement.
+*     tsrad_i est l'indice de la variable "TSRAD";
+*     il est initialise dans le s/p iniptsurf.
+*     Autres exceptions : on moyenne ln(Z0) et ln(Z0T).
+*    
+*
+*     "TSRAD", "Z0" et "Z0T" appartient au bus permanent
+      bus_ori_ = loc(f(1))
+*
+      do n=1,3
+*
+         if (n.eq.1) var_no = tsrad_i
+         if (n.eq.2) var_no = z0_i
+         if (n.eq.3) var_no = z0t_i
+*
+         do m=1,mul(var_no)
+*
+*VDIR NODEP
+            do ik=1,niveaux(var_no)*ni
+*
+               k = (ik-1)/ni + 1
+               i = ik - (k-1)*ni
+*
+*              agregation des fractions de terre, d'eau,
+*              de glace marine, de glaciers continentaux
+*              et de zones urbaines
+               ik_ori = ptdebut(var_no)                                +
+     $                  (m-1)*ni                                       +
+     $                  ik - 1
+                     
+*
+               ik_soil = ptr_soil(var_no)                              +
+     $                   (m-1)*ni_soil                                 +
+     $                   (k-1)*ni_soil                                 +
+     $                   rangs(i,indx_soil) - 1                  
+*
+               if (rangs(i,indx_soil).eq.0) ik_soil = 1
+*
+               ik_water   = ptr_water(var_no)                          +
+     $                      (m-1)*ni_water                             +
+     $                      (k-1)*ni_water                             +
+     $                      rangs(i,indx_water) - 1
+*
+               if (rangs(i,indx_water).eq.0) ik_water = 1
+*
+               ik_glacier= ptr_glacier(var_no)                         +
+     $                     (m-1)*ni_glacier                            +
+     $                     (k-1)*ni_glacier                            +
+     $                     rangs(i,indx_glacier) - 1
+*
+                if (rangs(i,indx_glacier).eq.0) ik_glacier = 1
+*
+               ik_ice  = ptr_ice(var_no)                               +
+     $                   (m-1)*ni_ice                                  +
+     $                   (k-1)*ni_ice                                  +
+     $                   rangs(i,indx_ice) - 1
+*
+               if (rangs(i,indx_ice).eq.0) ik_ice = 1
+*
+               if (schmurb.ne.'NIL') then
+               ik_urb  = ptr_urb(var_no)                               +
+     $                   (m-1)*niveaux(var_no)*ni_urb                  +
+     $                   (k-1)*ni_urb                                  +
+     $                   rangs(i,indx_urb) - 1
+               if (rangs(i,indx_urb).eq.0) ik_urb = 1
+               endif
+*
+*
+*
+               if (var_no.eq.tsrad_i) then
+*
+*              moyenne de la 4eme puissance de tsrad
+*
+               bus_ori(ik_ori) =
+     $            poids(i,indx_soil   ) * (bus_soil   (ik_soil   )**4) +
+     $            poids(i,indx_water  ) * (bus_water  (ik_water  )**4) +
+     $            poids(i,indx_glacier) * (bus_glacier(ik_glacier)**4) +
+     $            poids(i,indx_ice    ) * (bus_ice    (ik_ice    )**4)
+*
+               if (schmurb.ne.'NIL') then
+               bus_ori(ik_ori) =
+     $         bus_ori(ik_ori)                                         +
+     $            poids(i,indx_urb    ) * (bus_urb    (ik_urb    )**4)
+               endif
+*
+               bus_ori(ik_ori) = bus_ori(ik_ori)**0.25
+*
+               else if (var_no.eq.z0_i.or.var_no.eq.z0t_i) then
+*
+*              moyenne logarithmique de "Z0" et de "Z0T"
+*
+               bus_ori(ik_ori) =
+     $                       poids(i,indx_soil   ) *
+     $                       alog(max(1.e-10,bus_soil   (ik_soil   ))) +
+     $                       poids(i,indx_water  ) *
+     $                       alog(max(1.e-10,bus_water  (ik_water  ))) +
+     $                       poids(i,indx_glacier) *
+     $                       alog(max(1.e-10,bus_glacier(ik_glacier))) +
+     $                       poids(i,indx_ice    ) *
+     $                       alog(max(1.e-10,bus_ice    (ik_ice    )))
+*
+               if (schmurb.ne.'NIL') then
+               bus_ori(ik_ori) =
+     $         bus_ori(ik_ori)                                         +
+     $                       poids(i,indx_urb    ) *
+     $                       alog(max(1.e-10,bus_urb    (ik_urb    )))
+               endif
+*
+               bus_ori(ik_ori) = exp(bus_ori(ik_ori))
+*
+               endif
+*
+*
+            end do
+         end do
+      end do
+*
+      return
+      end

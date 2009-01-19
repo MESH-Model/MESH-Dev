@@ -1,0 +1,181 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+***s/r splitst
+*
+      subroutine splitst (cvn,con,cvd1,cvd2,cvs,fmosaik,fmul,cvb,dynini,
+     $                    stagg,string)
+#include "impnone.cdk"
+*
+      character*(*) con,cvn,cvd1,cvd2,cvb,string
+      character*3 cvs
+      integer fmul,fmosaik,dynini,stagg
+*
+*Author
+*          M. Desgagne (Oct 1995)
+*
+*Revision
+* 001      B. Bilodeau (Sept 1996) - Add 2-letter names
+* 002      B. Bilodeau (Aug  1998) - Add staggered levels
+* 003      B. Bilodeau (Jun  2005) - Add mosaic capability for CLASS 
+*                                    and remove fadd
+*
+*Object
+*
+*Arguments
+*            - Output -
+* cvn       formal name (VN)
+* con       output name (ON)
+* cvd1      formal description (VD)
+* cvd2      complete shape (VS)
+* cvs       shape --ROW or SLB or SLS-- (VS)
+* fmosaik   mosaic factor (number of types of soil surfaces for CLASS)
+* fmul      multiplicative factor
+* cvb       bus identification (VB)
+* dynini    flag for initialysation by the dynamics (1=yes)
+* stagg     flag for staggered levels (0=non staggered; 1=staggered)
+*
+*            - Input -
+* string    input description string including all tokens
+*
+*Notes
+*
+*Implicites
+*
+*Modules
+*
+**
+      character*120 dum120,substring
+      integer ion,ivn,ivd,ivs,ivb
+      integer imosaik,ideb,ifin,lst,flag
+*-------------------------------------------------------------------
+*
+      lst = len(string)
+      ivn = index(string,"VN=") + 3
+      ion = index(string,"ON=") + 3
+      ivd = index(string,"VD=") + 3
+      ivs = index(string,"VS=") + 3
+      ivb = index(string,"VB=") + 3
+*
+      if (ion.lt.1) then
+         write (6,800) "STOP IN SPLITST: ON=[NAME] (MANDATORY)",string
+         stop
+      endif
+      if (ivn.lt.1) then
+         write (6,800) "STOP IN SPLITST: VN=[NAME] (MANDATORY)",string
+         stop
+      endif
+      if (ivd.lt.1) then
+         write (6,800) "STOP IN SPLITST: VD=[DESCRIPTION] (MANDATORY)",
+     +                 string
+         stop
+      endif
+      if (ivs.lt.1) then
+         write (6,800) "STOP IN SPLITST: VS=[SHAPE] (MANDATORY)",string
+         stop
+      endif
+      if (ivb.lt.1) then
+         write (6,800) "STOP IN SPLITST: VB=[BUS] (MANDATORY)",string
+         stop
+      endif
+*
+      dum120 = string(ivn:lst)
+      ifin   = index (dum120,';') - 1
+      if (ifin.lt.0) ifin = 120
+      cvn    = dum120(1:ifin)
+      if (cvn.eq." ")  then
+         write(6,800) "STOP IN SPLITST: VN=(NAME) NOT ALLOWED",string
+         stop
+      endif
+*
+      dum120 = string(ion:lst)
+      ifin   = index (dum120,';') - 1
+      if (ifin.lt.0) ifin = 120
+      con    = dum120(1:ifin)
+      if (con.eq." ")  then
+         write(6,800) "STOP IN SPLITST: ON=(NAME) NOT ALLOWED",string
+         stop
+      endif
+*
+      dum120 = string(ivd:lst)
+      ifin   = index (dum120,';') - 1
+      if (ifin.lt.0) ifin = 120
+      cvd1   = dum120(1:ifin)
+      if (cvd1.eq." ")  then
+         write(6,800) "STOP IN SPLITST: VD=(DESCRIPTION) NOT ALLOWED",
+     +                 string
+         stop
+      endif
+*
+      dum120 = string(ivs:lst)
+      substring = dum120
+      ifin   = index (dum120,';') - 1
+      if (ifin.lt.0) ifin = 120
+      cvd2   = dum120(1:ifin)
+      cvs    = dum120(1:ifin)
+      if ((cvs.ne."SLB").and.(cvs.ne."SLS").and.(cvs.ne."ROW"))  then
+         write(6,800) "STOP IN SPLITST: VS=(SHAPE) NOT ALLOWED",string
+         stop
+      endif
+*
+      fmul = 1
+      ideb = index(string,cvs//"*") + 4
+      if (ideb.gt.4) then
+         dum120 = string(ideb:lst)
+         imosaik = index(dum120,"@")
+         if (imosaik.le.0) then
+            ifin = index (dum120,';')
+         else
+            ifin  = imosaik
+         endif
+         if (ifin.gt.1) then
+            dum120(ifin:lst) = ' '
+         endif
+         read (dum120,702,iostat=flag) fmul
+         if (flag.gt.0) fmul = 1
+      endif
+
+      fmosaik = 1
+      ideb = index(substring,"@") + 1
+!     index of fmosaik with respect to string instead of substring
+      ideb = ideb + ivs - 1
+      if (ideb.gt.ivs) then
+         dum120        = string(ideb:lst)
+         ifin = index (dum120,';')
+         if (ifin.gt.1) dum120(ifin:ifin+7) = '        '
+         read (dum120,702,iostat=flag) fmosaik
+         if (flag.gt.0) then
+            fmosaik = 1
+         else
+!           need an extra level for the average
+            fmosaik = fmosaik + 1
+         endif
+      endif
+*
+      dum120 = string(ivb:lst)
+      ifin   = index (dum120,';') - 1
+      if (ifin.lt.0) ifin = 120
+      cvb    = dum120(1:ifin)
+      if ((cvb.ne."E").and.(cvb.ne."D").and.
+     +    (cvb.ne."P").and.(cvb.ne."V"))  then
+         write(6,800) "STOP IN SPLITST: VB=(BUS) NOT ALLOWED",string
+         stop
+      endif
+*
+      dynini = 0
+      dum120 = string(ivb+1:lst)
+      ifin   = index (dum120,';') - 1
+      if (ifin.lt.0) ifin = 120
+      read (dum120(1:ifin),702,iostat=flag) dynini
+      dynini = min(dynini,1)
+*
+      if (cvs.eq.'SLS') then
+         stagg = 1
+      else
+         stagg = 0
+      endif
+*
+ 702  format (i8)
+ 800  format (/1x,a,/"STRING= '",a,"'"/)
+*
+*-------------------------------------------------------------------
+      return
+      end

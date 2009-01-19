@@ -1,0 +1,475 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+***s/p  gesdict
+*
+      subroutine gesdict (n,nk,lindex,lachaine)
+#include "impnone.cdk"
+*
+      character*(*) lachaine
+      integer n,nk,lindex
+*
+*Author
+*          M. Desgagne (Oct 1995)
+*
+*Revision
+* 001      B. Bilodeau (Jan 1996) - Check name conflicts for
+*                                   a given description
+* 002      B. Bilodeau (Sep 1996) - Add 2-letter names
+* 003      B. Bilodeau (Aug 1998) - Add staggered levels
+* 004      B. Bilodeau (Dec 1998) - Add entry bus
+* 005      B. Bilodeau (Feb 1999) - Add fmul to entpar, dynpar, 
+*                                   perpar and volpar
+* 006      G. Bergeron (Oct 1999) - Test if top < maxbus
+* 007      B. Bilodeau (Mar 2000) - Test conflicting output names
+*                                   for a given variable
+* 008      B. Bilodeau (Feb 2004) - 4-letter output names and
+*                                  16-letter names
+* 009      B. Bilodeau (Mar 2005) - Test conflicting variable names
+*                                   and output names
+* 010      B. Bilodeau (Jun 2005) - Forbid SLB*n and SLS*n for n > 1 
+*                                   Add mosaic capability for CLASS
+*
+*Object
+*    Manages the dictionary describing the 4 main buses of the unified
+*    CMC-RPN physics package interface (BUSENT, BUSDYN, BUSPER and BUSVOL).
+*    Each variable has a formal name <bus>nm(*) and a formal
+*    description <bus>dc(*) along with 4 attributes <bus>par(*,4).
+*    The first and second attributes are respectively the starting
+*    index on <bus> and the length of the variable. The third
+*    attribute is the multiplicity factor. The fourth attribute is
+*    the a flag to identify variables that are defined on staggered levels.
+*    The recognized token in "lachaine" are:
+*         VN=  ;       ===> formal name
+*         ON=  ;       ===> output name (2 letters only)
+*         VD=  ;       ===> formal description
+*         VS=  ;       ===> variable shape (accepted shapes are SLB and
+*                           ROW with +, - or * followed by an integer)
+*         VB=  ;       ===> bus identification (D, P and V)
+*
+*Arguments
+*
+*            - Input -
+* n          horizontal dimension
+* nk         vertical dimension
+*
+*            - Output -
+* lindex     starting index on the bus
+*
+*            - Input -
+* lachaine   string identifying the variable attributes
+*
+*Notes
+*
+*Implicites
+#include "buses.cdk"
+*
+*Modules
+*
+**
+*
+      character*1   bus
+      character*4   outname
+      character*3   shape
+      character*7   struc
+      character*16  varname, samename, othername
+      character*48  vdescrp
+      character*60  vardesc
+      character*120 string
+      integer fmosaik,fmul,dynini,stagg
+      integer i,esp
+*
+*-------------------------------------------------------------------
+*
+      call low2up  (lachaine,string)
+      call splitst (varname,outname,vdescrp,struc,shape,fmosaik,fmul,
+     +                                  bus,dynini,stagg,string)
+      vardesc = vdescrp//';VS='//struc
+      lindex  = 0
+*
+      if ((shape.eq.'SLB'.or.shape.eq.'SLS').and.fmul.gt.1) then
+         write(6,908) varname,struc,shape
+         call qqexit(1)
+      endif
+*
+*
+      if (bus.eq."E") then
+         do 10 i=1,enttop
+*
+*           verifier si la meme description existe deja
+            if (vardesc.eq.entdc(i)) then
+               if (varname.ne.entnm(i,1)) then
+                  write (6,903) varname,entnm(i,1),entdc(i)
+                  call qqexit(1)
+               endif
+            endif
+*
+            if (varname.eq.entnm(i,1)) then
+               if (vardesc.ne.entdc(i)) then
+                  write (6,901) varname,vardesc,entdc(i)
+                  call qqexit(1)
+               endif
+               esp = n*nk
+               if (shape.eq."ROW") esp = n
+               if (entpar(i,2).ne.(esp*fmul*fmosaik)) then
+                  write (6,902) varname,entpar(i,2),(esp*fmul*fmosaik)
+                  call qqexit(1)
+               endif
+               lindex = entpar(i,1)
+               goto 601
+            endif
+ 10      continue
+         if (buslck) goto 601
+            enttop = enttop + 1
+            esp = n*nk
+            entpar(enttop,7) = nk
+            if (shape.eq."ROW") then
+               esp = n
+               entpar(enttop,7) = 1
+            endif
+            entpar(enttop,5) = esp
+            esp = esp*fmul*fmosaik
+            entnm(enttop,1) = varname
+            entnm(enttop,2) = outname
+            entdc(enttop) = vardesc
+            entpar(enttop,1) = entspc + 1
+            entpar(enttop,2) = esp
+            entpar(enttop,3) = dynini
+            entpar(enttop,4) = stagg
+            entpar(enttop,6) = fmul
+            entpar(enttop,8) = fmosaik
+            entspc = entpar(enttop,1) + esp - 1
+            lindex = entpar(enttop,1)
+      endif
+*
+      if (bus.eq."D") then
+         do 20 i=1,dyntop
+*
+*           verifier si la meme description existe deja
+            if (vardesc.eq.dyndc(i)) then
+               if (varname.ne.dynnm(i,1)) then
+                  write (6,903) varname,dynnm(i,1),dyndc(i)
+                  call qqexit(1)
+               endif
+            endif
+*
+            if (varname.eq.dynnm(i,1)) then
+               if (vardesc.ne.dyndc(i)) then
+                  write (6,901) varname,vardesc,dyndc(i)
+                  call qqexit(1)
+               endif
+               esp = n*nk
+               if (shape.eq."ROW") esp = n
+               if (dynpar(i,2).ne.(esp*fmul*fmosaik)) then
+                  write (6,902) varname,dynpar(i,2),(esp*fmul*fmosaik)
+                  call qqexit(1)
+               endif
+               lindex = dynpar(i,1)
+               goto 601
+            endif
+ 20      continue
+         if (buslck) goto 601
+            dyntop = dyntop + 1
+            if (dyntop .gt. maxbus) then
+               write(6,906) dyntop,maxbus
+               call qqexit(1)
+            end if
+            esp = n*nk
+            dynpar(dyntop,7) = nk
+            if (shape.eq."ROW") then
+               esp = n
+               dynpar(dyntop,7) = 1
+            endif
+            dynpar(dyntop,5) =  esp
+            esp = esp*fmul*fmosaik
+            dynnm(dyntop,1) = varname
+            dynnm(dyntop,2) = outname
+            dyndc(dyntop) = vardesc
+            dynpar(dyntop,1) = dynspc + 1
+            dynpar(dyntop,2) = esp
+            dynpar(dyntop,3) = dynini
+            dynpar(dyntop,4) = stagg
+            dynpar(dyntop,6) = fmul
+            dynpar(dyntop,8) = fmosaik
+            dynspc = dynpar(dyntop,1) + esp - 1
+            lindex = dynpar(dyntop,1)
+      endif
+*
+      if (bus.eq."P") then
+         do 30 i=1,pertop
+*
+*           verifier si la meme description existe deja
+            if (vardesc.eq.perdc(i)) then
+               if (varname.ne.pernm(i,1)) then
+                  write (6,903) varname,pernm(i,1),perdc(i)
+                  call qqexit(1)
+               endif
+            endif
+*
+            if (varname.eq.pernm(i,1)) then
+               if (vardesc.ne.perdc(i)) then
+                  write (6,901) varname,vardesc,perdc(i)
+                  call qqexit(1)
+               endif
+               esp = n*nk
+               if (shape.eq."ROW") esp = n
+               if (perpar(i,2).ne.(esp*fmul*fmosaik)) then
+                  write (6,902) varname,perpar(i,2),(esp*fmul*fmosaik)
+                  call qqexit(1)
+               endif
+               lindex = perpar(i,1)
+               goto 601
+            endif
+ 30      continue
+         if (buslck) goto 601
+            pertop = pertop + 1
+            if (pertop .gt. maxbus) then
+               write(6,906) pertop,maxbus
+               call qqexit(1)
+            end if
+            esp = n*nk
+            perpar(pertop,7) = nk
+            if (shape.eq."ROW") then
+               esp = n
+               perpar(pertop,7) = 1
+            endif
+            perpar(pertop,5) = esp
+            esp = esp*fmul*fmosaik
+            pernm(pertop,1) = varname
+            pernm(pertop,2) = outname
+            perdc(pertop) = vardesc
+            perpar(pertop,1) = perspc + 1
+            perpar(pertop,2) = esp
+            perpar(pertop,3) = dynini
+            perpar(pertop,4) = stagg
+            perpar(pertop,6) = fmul
+            perpar(pertop,8) = fmosaik
+            perspc = perpar(pertop,1) + esp - 1
+            lindex = perpar(pertop,1)
+      endif
+*
+      if (bus.eq."V") then
+         do 40 i=1,voltop
+*
+*           verifier si la meme description existe deja
+            if (vardesc.eq.voldc(i)) then
+               if (varname.ne.volnm(i,1)) then
+                  write (6,903) varname,volnm(i,1),voldc(i)
+                  call qqexit(1)
+               endif
+            endif
+*
+            if (varname.eq.volnm(i,1)) then
+               if (vardesc.ne.voldc(i)) then
+                  write (6,901) varname,vardesc,voldc(i)
+                  call qqexit(1)
+               endif
+               esp = n*nk
+               if (shape.eq."ROW") esp = n
+               if (volpar(i,2).ne.(esp*fmul*fmosaik)) then
+                  write (6,902) varname,volpar(i,2),(esp*fmul*fmosaik)
+                  call qqexit(1)
+               endif
+               lindex = volpar(i,1)
+               goto 601
+            endif
+ 40      continue
+         if (buslck) goto 601
+            voltop = voltop + 1
+            if (voltop .gt. maxbus) then
+               write(6,906) voltop,maxbus
+               call qqexit(1)
+            end if
+            esp = n*nk
+            volpar(voltop,7) = nk
+            if (shape.eq."ROW") then
+               esp = n
+               volpar(voltop,7) = 1
+            endif
+            volpar(voltop,5) = esp
+            esp = esp*fmul*fmosaik
+            volnm(voltop,1) = varname
+            volnm(voltop,2) = outname
+            voldc(voltop) = vardesc
+            volpar(voltop,1) = volspc + 1
+            volpar(voltop,2) = esp
+            volpar(voltop,3) = dynini
+            volpar(voltop,4) = stagg
+            volpar(voltop,6) = fmul
+            volpar(voltop,8) = fmosaik
+            volspc = volpar(voltop,1) + esp - 1
+            lindex = volpar(voltop,1)
+      endif
+
+ 601  continue
+*
+*
+* verifier que le nom de la variable est unique
+*
+      if (bus.ne.'E') then
+         do i=1,enttop
+            if (varname.eq.entnm(i,1)) then
+               write(6,905) varname,'E'
+               call qqexit(1)
+            endif
+         end do
+      endif
+*
+      if (bus.ne.'D') then
+         do i=1,dyntop
+            if (varname.eq.dynnm(i,1)) then
+               write(6,905) varname,'D'
+               call qqexit(1)
+            endif
+         end do
+      endif
+*
+      if (bus.ne.'P') then
+         do i=1,pertop
+            if (varname.eq.pernm(i,1)) then
+               write(6,905) varname,'P'
+               call qqexit(1)
+            endif
+         end do
+      endif
+*
+      if (bus.ne.'V') then
+         do i=1,voltop
+            if (varname.eq.volnm(i,1)) then
+               write(6,905) varname,'V'
+               call qqexit(1)
+            endif
+         end do
+      endif
+*
+*
+      do i=1,enttop
+*        verifier que le nom de 4 lettres est unique
+         if (outname.eq.entnm(i,2).and.varname.ne.entnm(i,1)) then
+            samename = entnm(i,1)
+            write(6,904) varname, outname, samename
+            call qqexit(1)
+         endif
+*        verifier qu'une variable ne porte qu'un seul nom de 4 lettres
+         if (varname.eq.entnm(i,1).and.outname.ne.entnm(i,2)) then
+            othername = entnm(i,2)
+            write(6,907) varname, outname, othername
+            call qqexit(1)
+         endif
+*        verifier qu'un "varname" ne soit pas identique a un "outname"
+         if (varname.ne.entnm(i,1).and.varname.eq.entnm(i,2)) then
+            othername = entnm(i,2)
+            write(6,908) varname, outname, othername
+            call qqexit(1)
+         endif
+*        verifier qu'un "outname" ne soit pas identique a un "varname"
+         if (outname.eq.entnm(i,1).and.varname.ne.entnm(i,1)) then
+            write(6,908) entnm(i,1), varname, outname
+            call qqexit(1)
+         endif
+      end do
+*
+      do i=1,dyntop
+         if (outname.eq.dynnm(i,2).and.varname.ne.dynnm(i,1)) then
+            samename = dynnm(i,1)
+            write(6,904) varname, outname, samename
+            call qqexit(1)
+         endif
+*        verifier qu'une variable ne porte qu'un seul nom de 4 lettres
+         if (varname.eq.dynnm(i,1).and.outname.ne.dynnm(i,2)) then
+            othername = dynnm(i,2)
+            write(6,907) varname, outname, othername
+            call qqexit(1)
+         endif
+*        verifier qu'un "varname" ne soit pas identique a un "outname"
+         if (varname.ne.dynnm(i,1).and.varname.eq.dynnm(i,2)) then
+            othername = dynnm(i,2)
+            write(6,908) varname, outname, othername
+            call qqexit(1)
+         endif
+*        verifier qu'un "outname" ne soit pas identique a un "varname"
+         if (outname.eq.dynnm(i,1).and.varname.ne.dynnm(i,1)) then
+            write(6,908) dynnm(i,1), varname, outname
+            call qqexit(1)
+         endif
+      end do
+*
+      do i=1,pertop
+         if (outname.eq.pernm(i,2).and.varname.ne.pernm(i,1)) then
+            samename = pernm(i,1)
+            write(6,904) varname, outname, samename
+            call qqexit(1)
+         endif
+         if (varname.eq.pernm(i,1).and.outname.ne.pernm(i,2)) then
+            othername = pernm(i,2)
+            write(6,907) varname, outname, othername
+            call qqexit(1)
+         endif
+*        verifier qu'un "varname" ne soit pas identique a un "outname"
+         if (varname.ne.pernm(i,1).and.varname.eq.pernm(i,2)) then
+            othername = pernm(i,2)
+            write(6,908) varname, outname, othername
+            call qqexit(1)
+         endif
+*        verifier qu'un "outname" ne soit pas identique a un "varname"
+         if (outname.eq.pernm(i,1).and.varname.ne.pernm(i,1)) then
+            write(6,908) pernm(i,1), varname, outname
+            call qqexit(1)
+         endif
+      end do
+*
+      do i=1,voltop
+         if (outname.eq.volnm(i,2).and.varname.ne.volnm(i,1)) then
+            samename = volnm(i,1)
+            write(6,904) varname, outname, samename
+            call qqexit(1)
+         endif
+         if (varname.eq.volnm(i,1).and.outname.ne.volnm(i,2)) then
+            othername = volnm(i,2)
+            write(6,907) varname, outname, othername
+            call qqexit(1)
+         endif
+*        verifier qu'un "varname" ne soit pas identique a un "outname"
+         if (varname.ne.volnm(i,1).and.varname.eq.volnm(i,2)) then
+            othername = volnm(i,2)
+            write(6,908) varname, outname, othername
+            call qqexit(1)
+         endif
+*        verifier qu'un "outname" ne soit pas identique a un "varname"
+         if (outname.eq.volnm(i,1).and.varname.ne.volnm(i,1)) then
+            write(6,908) volnm(i,1), varname, outname
+            call qqexit(1)
+         endif
+      end do
+*
+*
+ 901  format (/1x,"==> STOP IN GESDICT: CONFLICT IN '",a16,
+     +            "' DESCRIPTION."/4x,"ALREADY ACCEPTED: ",a/11x,
+     +            "ATTEMPTED: ",a/)
+ 902  format (/1x,"==> STOP IN GESDICT: CONFLICT IN '",A16,
+     +            "' DIMENSION."/4x,"ALREADY ACCEPTED: ",i9/11x,
+     +            "ATTEMPTED: ",i9/)
+ 903  format (/1x,"==> STOP IN GESDICT: NAME CONFLICT."
+     +            " VARIABLES '",a16,"' AND '",a16,"'"/,
+     +            " SHARE THE SAME DESCRIPTION. DESCRIPTION IS :"/,
+     +            " '",A,"'"/)
+ 904  format (/1x,"==> STOP IN GESDICT: CONFLICT FOR '",A16,
+     +            "' OUTPUT NAME."/5x,'"',a4,'"'," ALREADY ACCEPTED",
+     +            " FOR VARIABLE '",a16,"'."/)
+*
+ 905  format (/1x,"==> STOP IN GESDICT: CONFLICT FOR '",A16,
+     +            "' VARIABLE NAME.",/5x,"THIS NAME HAS",
+     +            " ALREADY BEEN ACCEPTED IN BUS ",'"',a1,'".'/)
+*
+ 906  format (/1x,"==> STOP : ",i4," EXCEEDS MAXBUS (",i4,") !!!")
+     +           
+*
+ 907  format (/1x,"==> STOP IN GESDICT: CONFLICT FOR '",A16,
+     +            "' VARIABLE NAME.",/5x,"THIS VARIABLE HAS",
+     +            " TWO DIFFERENT OUTPUT NAMES: ",
+     +            '"',a4,'"'," AND ",'"',A4,'".'/)
+ 908  format (/1x,"==> STOP IN GESDICT: CONFLICT FOR '",A16,
+     +            "' VARIABLE NAME.",/5x,"VARIABLE ",
+     +            '"',a4,'"'," HAS THE OUTPUT NAME ",'"',A4,'".'/)
+*
+*-------------------------------------------------------------------
+      return
+      end

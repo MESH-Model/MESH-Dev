@@ -1,0 +1,144 @@
+***s/r readgeo - read the geophysical fields from entry program
+*
+#include "model_macros_f.h"
+*
+      subroutine readgeo
+*
+#include "impnone.cdk"
+*
+*author 
+*     Pierre Pellerin - rpn - Oct 2000 (adapted from READPHY v2_11)
+*
+*revision
+* v2_20 - Pellerin P. & Lee V. - initial version
+* v2_21 - Deagegne M.          - Re-organising local geofld
+* v2_21 - Desgagne M.          - rpn_comm stooge for MPI
+* v3_10 - Lee V.               - RPN_bcastc for bcast on MPI_CHARACTER
+* v3_21 - Valcke, S.           - Read land-sea or coupling mask for coupling
+*
+*object
+**      Reads the entire content of bus "geobus" from file "geophy.bin"
+*	
+*arguments
+*	none
+*
+*implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "ptopo.cdk"
+#include "p_bus.cdk"
+#include "p_geobus.cdk"
+#include "c_cplg.cdk"
+*
+*modules
+*
+*notes
+*  The original routine "READPHY" use to read the geophysical fields 
+*  directly into VMM variables. This routine reads the geophysical
+*  fields into a large "geobus" so that the information is transferred
+*  to the "entry" bus of the physics. After that, the "geobus" is
+*  discarded. The former program had an output (BLOCGEO) of VMM 
+*  geophysical variables which is no longer implemented. To obtain 
+*  output of these geophysical fields, we request them from the physics:
+*
+* VMM     xla   xlo   xmg   xmi  xfis  xmt   xgl   xal   xsd
+* OLD    'LAD','LOD','MGD','MGI','MX' ,'MT','GLD','ALD','SDD'
+* NEW    '2A' ,'3A' ,'6A' ,     ,'MF' ,'MN','4A' ,'1A' ,'SD'
+*
+* VMM     xhs   xtm   xts   xtmp xz0   xzp   xlh   xml   xvg
+* OLD    'HS' ,'TMD','TS' ,'TP' ,'Z0D','ZP','LHD','ML' ,'VGD'
+* NEW    '5A' ,'TM' ,'9A' ,'9A' ,'2B' ,'2B','LE' ,     ,'1B'
+*
+**
+      integer i, ierr, err, nfields, osgeo, offg, il_siz
+      data osgeo/33/
+*
+*     ---------------------------------------------------------------
+*
+      err = 0
+      if (Ptopo_myproc.eq.0) then
+*
+          write(Lun_out,9000)
+*
+*         open file
+          open (osgeo,file='../geophy.bin',access='SEQUENTIAL',
+     $             status='OLD',iostat=err,form='UNFORMATTED')
+*
+          if (err.ne.0) then
+             write (Lun_out,8090) 'geophy.bin'
+             err = -1
+          else
+*
+*         read dimensions of geobus for memory allocation
+             read (osgeo) p_bgeo_top, p_bgeo_siz
+             print *,'p_bgeo_top,p_bgeo_siz=',p_bgeo_top, p_bgeo_siz
+             call hpalloc  (pageobus,p_bgeo_siz,ierr,1)
+*
+*         read geobus
+             read(osgeo) (geonm (i,1),i=1,p_bgeo_top),
+     $                   (geonm (i,2),i=1,p_bgeo_top)
+             read(osgeo) (geopar(i,1),i=1,p_bgeo_top),
+     $                   (geopar(i,2),i=1,p_bgeo_top), 
+     $                   (geopar(i,3),i=1,p_bgeo_top),
+     $                   (geopar(i,4),i=1,p_bgeo_top)
+             read(osgeo) (geobus(i),i=1,p_bgeo_siz)
+*
+             close (osgeo)
+*
+          endif
+*
+          IF (C_coupling_L) THEN
+*         Allocate and save mask in global variable for transfer to Oasis
+              il_siz = G_ni*G_nj
+              CALL hpalloc (p_rga_msk, il_siz, ierr, 1)
+              lg_mcpl = .false.
+              DO i=1,p_bgeo_top
+                IF (trim(geonm(i,1)) .eq. 'MCPL') THEN
+*               IF explicit coupling mask exists in data file, use it
+*               (valid points must be = 1, non valid point = 0)
+                    offg= geopar(i,1)
+                    rga_msk(1:il_siz) = geobus(offg:il_siz+offg-1)
+                    lg_mcpl = .true.
+                ELSE IF (trim(geonm(i,1)).eq.'MGEN' .and. .not. lg_mcpl ) THEN
+                    offg= geopar(i,1)
+                    rga_msk(1:il_siz) = geobus(offg:il_siz+offg-1)
+                ENDIF
+              END DO
+          ENDIF
+*
+      endif
+      call gem_stop ('READGEO',err)
+*
+      call RPN_COMM_bcast(p_bgeo_top,   1,"MPI_INTEGER"  ,0,"grid",ierr)
+      call RPN_COMM_bcastc(geonm,maxgeo*48,"MPI_CHARACTER",0,"grid",ierr)
+      call RPN_COMM_bcast(geopar,maxgeo*3,"MPI_INTEGER"  ,0,"grid",ierr)
+*
+*     Re-defining GEOBUS structure in terms of local dimensions
+*
+      nfields = 1
+      geopar(1,2) = l_ni*l_nj*geopar(1,3)*geopar(1,4)
+      do i=2,p_bgeo_top
+         geopar(i,1) = geopar(i-1,1)+l_ni*l_nj*geopar(i-1,3)*geopar(i-1,4)
+         geopar(i,2) = l_ni*l_nj*geopar(i,3)*geopar(i,4)
+         nfields = nfields + geopar(i,3)*geopar(i,4)
+      end do
+      p_bgeo_siz = geopar(p_bgeo_top,1) + l_ni*l_nj*geopar(p_bgeo_top,3)*geopar(p_bgeo_top,4)
+*
+*     allocation of the local geophysical bus (geofld)
+*
+      call hpalloc (pageofld,p_bgeo_siz,ierr,1)
+*
+*     Distributing global geophysical bus (geobus)
+*      
+      call glbdist (geobus,G_ni,G_nj,geofld,1,l_ni,1,l_nj,nfields,0,0)
+*
+      if (Ptopo_myproc.eq.0) call hpdeallc (pageobus ,ierr,1)
+*
+ 8090 format (/' FILE ',a,' MUST BE AVAILABLE'/)
+ 9000 format( /,'READING GEOBUS DATA FILE     (S/R READGEO)',
+     %        /,'===========================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end

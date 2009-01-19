@@ -1,0 +1,9 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+      subroutine class320
+*
+      write(6,'(A)') "SUBROUTINE CLASS330 IS A"
+      write(6,'(A)') "MORE RECENT VERSION OF CLASS320"
+      CALL QQEXIT(1)
+*
+      return
+      end
