@@ -87,8 +87,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !        write(*,*)
 
         open(unit=un,file=fln(fn),status='unknown',iostat=ios)
-	  print*,' un fn et fln(fn) ',un,fn,fln(fn)
-	  print*,'Opened unit=',un,'filename',fln(fn)
+!     print*,' un fn et fln(fn) ',un,fn,fln(fn)
+	  print*,'Opened unit=',un,'filename  ',fln(fn)
 	  if(ios.ne.0)then
 	    print*,'Error opening ',fln(fn),' on unit=',un
 	    print*,'ios = ',ios
@@ -217,7 +217,7 @@ c	  endif
 !       NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE 
 !       The r2c grids are written upside down: 
 !                 south on top, north on bottom    !!!!!!!!!!
-
+!	  write(*,*) outarray(10,10)
         if(no_signf.eq.0)then
           do i=1,ycount_temp
             write(un,1300)(outarray(i,j),j=1,xcount_temp)

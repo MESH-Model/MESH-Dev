@@ -398,7 +398,9 @@ C// First find and copy rank attribute first data over to global array
 		rStat = ToLowerCase(attribName)
 		attLen = LEN_TRIM(attribName)
 		if(attribName(1:attLen) .eq. 'rank')then 
+c reverse the direction of the yi loop
 			do yi=1,yCount
+C		do yi=yCount,1,-1
 				do xi=1,xCount
 					vi = vi+1
 					val = header%r2cp%ep%attList(ai)%val(vi)
@@ -428,6 +430,8 @@ C// First find and copy rank attribute first data over to global array
 
 C// Copy attribute data (not classes yet) over to global attributes
 	vi = 0
+c reverse the direction of the yi loop
+c	do yi=1,yCount
 	do yi=1,yCount
 		do xi=1,xCount
 			vi = vi+1
@@ -519,7 +523,9 @@ c					aclass(rank, ntype+1) = val
 C// Copy class attribute data over to global attributes
       if(unitnum.eq.31)then
 	  vi = 0
+c reverse the direction of the yi loop
 	  do yi=1,yCount
+C	  do yi=yCount,1,-1
 	 	do xi=1,xCount
 			vi = vi+1
 			rank = s(yi,xi)
@@ -543,8 +549,8 @@ C// Copy class attribute data over to global attributes
         
 C// Copy rows and col over to global attributes
 C// I'm not sure if we need this...check with Nick
-	vi = 0
-	do yi=1,yCount
+      vi = 0
+      do yi=1,yCount
 		do xi=1,xCount
 			vi = vi+1
 			rank = s(yi,xi)
@@ -553,7 +559,7 @@ C// I'm not sure if we need this...check with Nick
 				yyy(rank) = yi
 			endif
 		end do
-	end do	
+	  end do	
 
       do i=1,ycount
 	  do j=1,xcount
@@ -727,12 +733,6 @@ CDAN      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.2000.0)then
           stop 'Program aborted in read_shed_ef @ 756'
         endif
 !CRAIG THOMPSON ADDED THIS
-#ifndef OLDWATROUTE
-! taking the square root of the slope, and dividing elev by 100
-! causes erroneous results when used with the old wf_route        
-        slope(n)=sqrt(slope(n)) ! used in river routing (route)
-        elev(n)=0.01*elev(n)
-#endif
         sl2(n)=sqrt(sl1(n))     ! used for overland flow routing (runof6)
 
 !       check to see how many basins/river classes there are:

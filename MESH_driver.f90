@@ -111,7 +111,11 @@ REAL basin_SWE
 !* WF_S: GAUGE'S PARENT GRID SQUARE
 !* WF_QHYD: STREAMFLOW VALUE (_AVG = DAILY AVERAGE)
 !* WF_QSYN: SIMULATED STREAFLOW VALUE
-INTEGER WF_NO, WF_NL, WF_MHRD, WF_KT
+!* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
+!* WF_START_DAY OBSERVED STREAMFLOW START DAY
+!* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
+INTEGER WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, &
+        WF_START_DAY,WF_START_HOUR
 INTEGER WF_IY(M_S),WF_JX(M_S), WF_S(M_S)
 REAL WF_QHYD(M_S),WF_QHYD_AVG(M_S),WF_QSYN(M_S)
 CHARACTER WF_GAGE(M_S)*8
@@ -143,13 +147,15 @@ REAL, DIMENSION(:), ALLOCATABLE :: WF_NHYD, WF_QBASE, WF_QI2, &
 !* HOURLY_STOP_*: Stop day/year for recording hourly averaged data
 !* DAILY_START_*: Start day/year for recording daily averaged data
 !* DAILY_STOP_*: Stop day/year for recording daily averaged data
-INTEGER IHOUR_START,IMIN_START,IDAY_START,IYEAR_START,ISTEP_START
+INTEGER IHOUR_START,IMIN_START,IDAY_START,IMON_START,IYEAR_START,&
+               ISTEP_START
 INTEGER IHOUR_END,IMIN_END,IDAY_END,IYEAR_END
 INTEGER nyy,ndy,nmy,nhy,nrs,toskip
 INTEGER HOURLY_START_DAY, HOURLY_STOP_DAY, DAILY_START_DAY, &
            DAILY_STOP_DAY
 INTEGER HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
            DAILY_STOP_YEAR
+INTEGER JDAY_IND_STRM,JDAY_IND1,JDAY_IND2,JDAY_IND3,JDAY_IND_MET		   
 !===========
 
 
@@ -308,10 +314,10 @@ LOGICAL :: OPN
 !* WF_JRES: X-DIRECTION GAUGE CO-ORDINATE
 !* WF_R: RESERVOIR'S PARENT GRID SQUARE
 !* WF_QREL: RESERVOIR VALUE
-#ifdef OLDWATROUTE
+
 INTEGER :: WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
 INTEGER :: WF_ROUTETIMESTEP, WF_TIMECOUNT, DRIVERTIMESTEP
-#endif
+
 
 !* FRAME_NO: FRAME NUMBER BEING WRITTEN TO R2C-FORMAT FILE
 !* NO_FRAMES: TOTAL NUMBER OF FRAMES IN R2C-FORMAT FILE (TOTAL
@@ -1275,7 +1281,6 @@ DO I=2,NA
   ENDDO  !DO M=1,NMTEST
 ENDDO  !DO I=2,NA
 
-#ifdef OLDWATROUTE
 !> *********************************************************************
 !>  Open and read in values from MESH_input_reservoir.txt file
 !> *********************************************************************
@@ -1288,7 +1293,7 @@ IF( WF_NORESV>0 ) THEN
   DO I=1,WF_NORESV
     READ(21,'(2I5,2G10.3,25X,A12,I2)') WF_IRES(I),WF_JRES(I), &
       WF_B1(I),WF_B2(I),WF_RESNAME(I), WF_RES(I)
-    WF_IRES(I)=INT((REAL(WF_IRES(I))-REAL(IYMIN))/GRDN+1.0)
+    WF_IRES(I)=INT((REAL(WF_IRES(I))-REAL(IYMIN))/GRDN+1.0) 
     WF_JRES(I)=INT((REAL(WF_JRES(I))-REAL(JXMIN))/GRDE+1.0)
 !> check if point is in watershed and in river reaches
     WF_R(I)=0
@@ -1299,8 +1304,8 @@ IF( WF_NORESV>0 ) THEN
     ENDDO
     IF(WF_R(I)==0) THEN
       PRINT *, 'Reservoir Station: ',I,' is not in the basin'
-	      PRINT *, 'Up/Down Coordinate: ', wf_ires(I)
-	      PRINT *, 'Left/Right Coordinate: ', wf_jres(I)
+	      PRINT *, 'Up/Down Coordinate: ', wf_ires(I), Iymin
+	      PRINT *, 'Left/Right Coordinate: ', wf_jres(I),jxmin
       STOP
     ENDIF
     IF(WF_IREACH(WF_R(I))/=I) THEN
@@ -1317,15 +1322,16 @@ IF( WF_NORESV>0 ) THEN
   ENDDO
 ENDIF
 !> leave file open and read in the reservoir files when needed
-#endif
 
-#ifdef OLDWATROUTE
+
+
 !> *********************************************************************
 !> Open and read in values from MESH_input_streamflow.txt file
 !> *********************************************************************
 OPEN(UNIT=22,FILE='MESH_input_streamflow.txt',STATUS='OLD')
 READ(22,*)
-READ(22,'(4I5)') WF_NO,WF_NL,WF_MHRD,WF_KT
+READ(22,'(7I5)') WF_NO,WF_NL,WF_MHRD,WF_KT, WF_START_YEAR,&
+        WF_START_DAY,WF_START_HOUR
 DO I=1,WF_NO
   READ(22,'(2I5,1X,A12)')WF_IY(I),WF_JX(I),WF_GAGE(I)
   WF_IY(I)=INT((REAL(WF_IY(I))-REAL(IYMIN))/GRDN+1.0)
@@ -1336,14 +1342,14 @@ ENDDO
 DO I=1,WF_NO
   WF_S(I)=0
   DO J=1,NA
-    IF( WF_IY(I)==YYY(J).AND.WF_JX(I)==XXX(J) ) THEN
+    IF( WF_JX(I)==xxx(J).AND.WF_IY(I)==yyy(J) ) THEN
       WF_S(I)=J
     ENDIF
   ENDDO
   IF(WF_S(I)==0) THEN
     PRINT *, 'STREAMFLOW GAUGE: ',I,' IS NOT IN THE BASIN'
-	    PRINT *, 'UP/DOWN COORDINATE: ', WF_IY(I)
-	    PRINT *, 'LEFT/RIGHT COORDINATE: ', WF_JX(I)
+	    PRINT *, 'UP/DOWN', WF_IY(I),iymin,yyy(189),ycount
+	    PRINT *, 'LEFT/RIGHT', WF_JX(I),jxmin,xxx(189),xcount
     STOP
 	  ENDIF
 
@@ -1351,25 +1357,51 @@ DO I=1,WF_NO
 	  !if WF_KT is something other than 24 there will be a
 	  !problem
 	  !TODO: find out if WF_KT can/will be a value other than 24
-	  nrs =( (IYEAR_START - IYEAR)*365 + (IDAY_START-IDAY) )
+	 ! nrs =( (IYEAR_START - IYEAR)*365 + (IDAY_START-IDAY) )
 	  !PRINT*, NRS
-	  IF (NRS > 0) THEN
-	    DO J=1, NRS
-	      READ(22,*,IOSTAT=IOS)
-	      IF (IOS < 0) THEN
-	        PRINT *, 'ERROR: end of file reached when reading ', &
-          ' MESH_input_streamflow.txt, The start date in ', &
-          ' MESH_input_run_options.ini may be out of range'
-        STOP
-	      ENDIF
-	    ENDDO
-	  ENDIF
+	 ! IF (NRS > 0) THEN
+	 !  DO J=1, NRS
+	 !     READ(22,*,IOSTAT=IOS)
+	 !   ENDDO
+	 ! ENDIF
 !> ric     initialise smoothed variables
   wf_qsyn(I)=0.0
 	  wf_qhyd_avg(I)=0.0
 ENDDO
+	  ! fixed streamflow start time bug. add in function to enable the 
+	  ! correct start time. Feb2009 aliu. 
+	     call Julian_Day_ID(WF_START_YEAR, WF_START_day,&
+		 Jday_IND1)
+		 call Julian_Day_ID(IYEAR_START, IDAY_START,&
+		 Jday_IND2)
+		 call Julian_Day_ID(IYEAR,IDAY,Jday_IND3)
+!          write (*,*) WF_START_YEAR, WF_START_day, Jday_IND1
+		     if (iyear_start ==0) then 
+		       jday_ind2=jday_ind1
+			 endif
+		 if (jday_ind2 < jday_ind1) then 
+		 PRINT *, 'ERROR: Simulation start date too early, check ', &
+          ' MESH_input_streamflow.txt, The start date in ', &
+          ' MESH_input_run_options.ini may be out of range'
+		  stop
+		  endif
+		 jday_ind_strm=(jday_ind2-jday_ind1)*24/WF_KT
+		 jday_ind_met=jday_ind2-jday_ind3
+		 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		 !skip the unused streamflow records in streamflow.txt .      !
+		 DO J=1, jday_ind_strm                                             !
+	      READ(22,*,IOSTAT=IOS)                                       !
+		   IF (IOS < 0) THEN                                          !
+	         PRINT *, 'ERROR: end of file reached when reading ', &   !
+             ' MESH_input_streamflow.txt, The start date in ', &      !
+             ' MESH_input_run_options.ini may be out of range'        !
+             STOP                                                     !
+	       ENDIF                                                      !
+		 enddo                                                        !
+		  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		  PRINT *, 'Skipping',jday_ind_strm,'Registers in streamflow file'
 !> leave unit open and read new streamflow each hour
-#endif
+
 
 !todo - verify that all checks are needed and in the right spot
 !> *********************************************************************
@@ -1480,12 +1512,12 @@ DO I=1,NA
   ENDDO
 ENDDO
 
-#ifdef OLDWATROUTE
+
 !> routing parameters
 WF_ROUTETIMESTEP=900
 WF_TIMECOUNT=0
 DRIVERTIMESTEP=DELT    ! Be sure it's REAL*8
-#endif
+
 !* JAN: The first time throught he loop, jan=1. Jan will equal 2 after that.
 	JAN=1 
 
@@ -1581,16 +1613,16 @@ DO I=1,NA
   ENDDO
 ENDDO
 
-#ifndef OLDWATROUTE
-!> SET GRID-FORMAT WATROUTE OUTPUT
-DO I = 1, YCOUNT
-  DO J = 1, XCOUNT
-      RUNOFF(I, J) = 0.0
-      RECHARGE(I, J) = 0.0
-!> CDAN            LEAKAGE(I, J) = 0.0
-  END DO
-END DO
-#endif
+! innitialize for notcall oldwatroute
+!> SET GRID-FORMAT WATROUTE OUTPUT           !
+DO I = 1, YCOUNT                            !    
+  DO J = 1, XCOUNT                          !
+      RUNOFF(I, J) = 0.0                    !    
+      RECHARGE(I, J) = 0.0                  !  
+!> CDAN            LEAKAGE(I, J) = 0.0       ! 
+   END DO                                   !  
+END DO                                      !  
+
 
 !> SET GRID OUPUT SUMMARY
 IF (WF_NUM_POINTS .GT. 1) THEN
@@ -1641,10 +1673,10 @@ IF(OPTFLAGS>0) THEN
     WRITE (58,*)
   ENDDO
 ENDIF
-#ifdef OLDWATROUTE
+
 WRITE(58,"('River roughnesses:')")
 WRITE(58,"(5F6.3)") (WF_R2(I),I=1,5)
-#endif
+
 WRITE(58,"('Land class independent hydrologic parameters:')")
 IF(INDEPPAR>0) THEN
   DO I=1,INDEPPAR
@@ -1719,7 +1751,7 @@ IF (RESUMEFLAG == 1 ) THEN
   END IF
   CLOSE (UNIT=88)
 END IF
-
+!MODELFLG='r'
 !> R2C-FORMAT OUTPUT FILES (RUNOFF, RECHARGE, AND LEAKAGE VALUES)
 !> CALL WRITE_R2C TO WRITE R2C-FORMAT FILES
 AUTHOR = "MESH_DRIVER"
@@ -1804,7 +1836,15 @@ IF (HOURLYFLAG == 1) THEN
 ELSE
   ISTEP_START = 2
 ENDIF
-nrs =(nyy*365+ndy)*24*istep_START + nhy*istep_START + nmy/30 !P
+if ((jday_ind2 < jday_ind3) .and. (iyear_start /= 0)) then 
+         PRINT *, 'ERROR: Simulation start date too early, check ', &
+          ' THE MET FORCING DATA RANGE.  The start date in ', &
+          ' MESH_input_run_options.ini may be out of range'
+		  stop
+		  endif
+nrs =JDAY_IND_MET*24*istep_START + nhy*istep_START + nmy/30  !aLIU
+    PRINT *,'NRS=',NRS
+! FIX BUG IN JULIANDAY CALCULATION FOR NRS ---ALIU FEB2009
 !P      nrs =(nyy*365+ndy)*24*istep_START + nhy*istep_START - nmy/30
 IF (IYEAR_START == 0 .AND. IDAY_START == 0 .AND. IMIN_START == 0 &
     .AND. IHOUR_START == 0) THEN !P
@@ -1838,39 +1878,53 @@ DO i=1,nrs
     READ(51,END=999) !Skip the bin's information
   ENDDO
   IF(BASINSHORTWAVEFLAG==1)THEN !Skip the r2c file's information
-    DO J=1,YCOUNT
-      READ(90,END=999)
-    ENDDO
+      READ (90, *, END=999) !:Frame line
+     DO m = 1,YCOUNT
+       READ (90, *, END=999) 
+     END DO
+      READ (90, *, END=999) !:EndFrame line
   ENDIF
   IF(BASINLONGWAVEFLAG==1)THEN
-    DO J=1,YCOUNT
-      READ(91,END=999)
-    ENDDO
+    READ (91, *, END=999) !:Frame line
+     DO m = 1,YCOUNT
+       READ (91, *, END=999) 
+     END DO
+      READ (91, *, END=999) !:EndFrame line
   ENDIF
   IF(BASINRAINFLAG==1)THEN
-    DO J=1,YCOUNT
-      READ(92,END=999)
-    ENDDO
+    READ (92, *, END=999) !:Frame line
+     DO m = 1,YCOUNT
+       READ (92, *, END=999) 
+     END DO
+      READ (92, *, END=999) !:EndFrame line
   ENDIF
   IF(BASINTEMPERATUREFLAG==1)THEN
-    DO J=1,YCOUNT
-      READ(93,END=999)
-    ENDDO
+    READ (93, *, END=999) !:Frame line
+     DO m = 1,YCOUNT
+       READ (93, *, END=999) 
+     END DO
+      READ (93, *, END=999) !:EndFrame line
   ENDIF
   IF(BASINWINDFLAG==1)THEN
-    DO J=1,YCOUNT
-      READ(94,END=999)
-    ENDDO
+    READ (94, *, END=999) !:Frame line
+     DO m = 1,YCOUNT
+       READ (94, *, END=999) 
+     END DO
+      READ (94, *, END=999) !:EndFrame line
   ENDIF
   IF(BASINPRESFLAG==1)THEN
-    DO J=1,YCOUNT
-      READ(95,END=999)
-    ENDDO
+    READ (95, *, END=999) !:Frame line
+     DO m = 1,YCOUNT
+       READ (95, *, END=999) 
+     END DO
+      READ (95, *, END=999) !:EndFrame line
   ENDIF
   IF(BASINHUMIDITYFLAG==1)THEN
-    DO J=1,YCOUNT
-      READ(96,END=999)
-    ENDDO
+    READ (96, *, END=999) !:Frame line
+     DO m = 1,YCOUNT
+       READ (96, *, END=999) 
+     END DO
+      READ (96, *, END=999) !:EndFrame line
   ENDIF
   IF(BASINSHORTWAVEFLAG==2)THEN !Skip the csv file's information
     READ(90,*,END=999)
@@ -1894,14 +1948,14 @@ DO i=1,nrs
     READ(96,*,END=999)
   ENDIF
 ENDDO
+      
 
 !> *********************************************************************
 !> Open and print header information to the output files
 !> *********************************************************************
-#ifdef OLDWATROUTE
+
 OPEN(UNIT=70,FILE=".\" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '\MESH_output_streamflow.csv')
-#endif
 
 !> Set up the CLASSOF* files to print out into the correct directory
 DO I=1, wf_num_points
@@ -2044,11 +2098,11 @@ PRINT *, 'NUMBER OF GRID SQUARES: ',NA
 	PRINT *, 'NUMBER OF LAND CLASSES (WITH IMPERVIOUS): ', NMTEST
 	PRINT *, 'NUMBER OF RIVER CLASSES: ', NRVR
 	PRINT *, 'MINIMUM NUMBER FOR ILG: ',NA*NMTEST
-PRINT *, 'NUMBER OF GRID SQUARES IN X DIRECTION: ', YCOUNT
-PRINT *, 'NUMBER OF GRID SQUARES IN Y DIRECTION: ', XCOUNT
+PRINT *, 'NUMBER OF GRID SQUARES IN West-East DIRECTION: ', XCOUNT
+PRINT *, 'NUMBER OF GRID SQUARES IN South-North DIRECTION: ', YCOUNT
 PRINT *, 'LENGTH OF SIDE OF GRID SQUARE IN M: ', AL
 	PRINT *, 'NUMBER OF DRAINAGE OUTLETS: ', NAA
-#ifdef OLDWATROUTE
+
 	PRINT *, 'NUMBER OF STREAMFLOW GUAGES: ', WF_NO
 DO I=1,WF_NO
   PRINT *,'STREAMFLOW STATION: ',I,'I: ',WF_IY(I),'J: ',WF_JX(I)
@@ -2059,7 +2113,7 @@ IF( WF_NORESV>0 ) THEN
  PRINT *,'RESERVOIR STATION: ',I,'I: ',WF_IRES(I),'J: ',WF_JRES(I)
   ENDDO
 ENDIF
-#endif
+
 
 PRINT *
 PRINT *, 'Found these output locations:'
@@ -2215,7 +2269,7 @@ call resume_state( &
    IHOUR, XXX, YYY, NA, &
    NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
    M_C, M_S, M_R, &
-#ifdef OLDWATROUTE
+
      WF_ROUTETIMESTEP,WF_R1,WF_R2,NAA,IYMIN, &
      WF_IYMAX,JXMIN,WF_JXMAX,WF_IBN,WF_IROUGH, &
      WF_ICHNL,WF_NEXT,WF_IREACH,AL,GRDN,GRDE, &
@@ -2228,7 +2282,7 @@ call resume_state( &
      WF_STORE1,WF_STORE2, &
      DRIVERTIMESTEP,ROFGRD, &
      WF_S, &
-#endif
+
   TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
   FINAL_STORE, TOTAL_AREA)
@@ -2321,7 +2375,7 @@ IF( (HOURLYFLAG == 1 .AND. IMIN==0) & !hourly forcing data
 !> *********************************************************************
 IF (BASINSHORTWAVEFLAG == 1) THEN
   READ (90, *, END=999) !:Frame line
-  DO I = 1, YCOUNT
+  DO I = 1,YCOUNT
     READ (90, *, END=999) (R4SHRTGRID2D(I,J),J=1,XCOUNT)
   END DO
   READ (90, *, END=999) !:EndFrame line
@@ -2332,7 +2386,7 @@ ENDIF
 !> *********************************************************************
 IF (BASINLONGWAVEFLAG == 1) THEN
   READ (91, *, END=999) !:Frame line
-  DO I = 1, YCOUNT
+  DO I = 1,YCOUNT
     READ (91, *, END=999) (R4LONGGRID2D(I,J),J=1,XCOUNT)
   END DO
   READ (91, *, END=999) !:EndFrame line
@@ -2343,7 +2397,7 @@ ENDIF
 !> *********************************************************************
 IF (BASINRAINFLAG == 1) THEN
   READ (92, *, END=999) !:Frame line
-  DO I = 1, YCOUNT
+  DO I = 1,YCOUNT
     READ (92, *, END=999) (R4RAINGRID2D(I,J),J=1,XCOUNT)
   END DO
   READ (92, *, END=999) !:EndFrame line
@@ -2354,7 +2408,7 @@ ENDIF
 !> *********************************************************************
 IF (BASINTEMPERATUREFLAG == 1) THEN
   READ (93, *, END=999) !:Frame line
-  DO I = 1, YCOUNT
+  DO I = 1,YCOUNT
     READ (93, *, END=999) (R4TEMPGRID2D(I,J),J=1,XCOUNT)
   END DO
   READ (93, *, END=999) !:EndFrame line
@@ -2365,7 +2419,7 @@ ENDIF
 !> *********************************************************************
 IF (BASINWINDFLAG == 1) THEN
   READ (94, *, END=999) !:Frame line
-  DO I = 1, YCOUNT
+  DO I = 1,YCOUNT
     READ (94, *, END=999) (R4WINDGRID2D(I,J),J=1,XCOUNT)
   END DO
   READ (94, *, END=999) !:EndFrame line
@@ -2376,7 +2430,7 @@ ENDIF
 !> *********************************************************************
 IF (BASINPRESFLAG == 1) THEN
   READ (95, *, END=999) !:Frame line
-  DO I = 1, YCOUNT
+  DO I =1,YCOUNT
     READ (95, *, END=999) (R4PRESGRID2D(I,J),J=1,XCOUNT)
   END DO
   READ (95, *, END=999) !:EndFrame line
@@ -2387,7 +2441,7 @@ ENDIF
 !> *********************************************************************
 IF (BASINHUMIDITYFLAG == 1) THEN
   READ (96, *, END=999) !:Frame line
-  DO I = 1, YCOUNT
+  DO I = 1,YCOUNT
     READ (96, *, END=999) (R4HUMDGRID2D(I,J),J=1,XCOUNT)
   END DO
   READ (96, *, END=999) !:EndFrame line
@@ -2423,7 +2477,7 @@ END DO
 ENDIF
 
 
-#ifdef OLDWATROUTE
+
 !> *********************************************************************
 !> Read in current reservoir release value
 !> *********************************************************************
@@ -2455,11 +2509,10 @@ IF(WF_NORESV_CTRL>0) THEN
     ENDIF
   ENDIF
 ENDIF
-#endif
 
 
-#ifdef OLDWATROUTE
-!> *********************************************************************
+
+! *********************************************************************
 !> Read in current streamflow value
 !> *********************************************************************
 
@@ -2483,7 +2536,7 @@ ELSE
     ENDDO
 	    ENDIF
 ENDIF
-#endif
+
 !> *********************************************************************
 !> Set some more CLASS parameters
 !> *********************************************************************
@@ -3162,12 +3215,12 @@ IF (MOD (REAL (NCOUNT), 2.0) .EQ. 0.0) THEN !HOURLY TIME STEP
   IF (MODELFLG.EQ."i" .OR. MODELFLG.EQ."r" .OR. MODELFLG.EQ."l") &
       THEN !WRITE RUNOFF DATA
       OUTARRAY = RUNOFF !PASS RUNOFF TO OUTARRAY IN WRITE_R2C
-      CALL WRITE_R2C(261, 31, NO_FRAMES, 1, FRAME_NO, 1, 8)
-  END IF
-
-  IF (MODELFLG .EQ. "r") THEN !WRITE RECHARGE DATA
+      CALL WRITE_R2C(261, 31, NO_FRAMES, 1, FRAME_NO, 1, 6)
+ END IF
+!
+ IF (MODELFLG .EQ. "r") THEN !WRITE RECHARGE DATA
       OUTARRAY = RECHARGE !PASS RUNOFF TO OUTARRAY IN WRITE_R2C
-      CALL WRITE_R2C(262, 32, NO_FRAMES, 1, FRAME_NO, 1, 8)
+      CALL WRITE_R2C(262, 32, NO_FRAMES, 1, FRAME_NO, 1, 6)
   END IF
 
   FRAME_NO = FRAME_NO + 1 !UPDATE COUNTERS
@@ -3460,7 +3513,7 @@ ENDIF
 !> Call routing routine
 !> *********************************************************************
 
-#ifdef OLDWATROUTE
+
 CALL WF_ROUTE(WF_ROUTETIMESTEP,WF_R1,WF_R2, &
      NA,NAA,NTYPE,YCOUNT,XCOUNT,IYMIN, &
      WF_IYMAX,JXMIN,WF_JXMAX,YYY,XXX,WF_IBN,WF_IROUGH, &
@@ -3479,15 +3532,15 @@ DO I=1,WF_NO
   WF_QSYN(I)=WF_QO2(WF_S(I))
   WF_QHYD_AVG(I)=WF_QHYD(I)
 ENDDO
-#endif
 
-#ifndef OLDWATROUTE
+
+
 IF (JAN == 1) THEN
 !>     this is done so that INIT_STORE is not recalculated for
 !>     each iteration when wf_route is not used
   JAN = 2
 ENDIF
-#endif
+
 
 
 !> *********************************************************************
@@ -3498,18 +3551,18 @@ ENDIF
 
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
-#ifdef OLDWATROUTE
+
 !>      write out the spl.csv file
   WRITE(70,'(I5,",",F10.3,100(",",F10.3))') IDAY,(WF_QHYD_AVG(I), &
     WF_QSYN(I),I=1,WF_NO)
-#endif
+
   IF (WF_NUM_POINTS .GT. 1) THEN !FOR MORE THAN ONE OUTPUT
-#ifdef OLDWATROUTE
+
     WRITE (6, "(2I5,100F10.3)", ADVANCE="no") IYEAR, IDAY, &
           (WF_QHYD_AVG(I),WF_QSYN(I),I=1,WF_NO)
-#else
-    WRITE (6, "(2I5)", ADVANCE="no") IYEAR, IDAY
-#endif
+
+   
+
     DO I = 1, WF_NUM_POINTS
       WRITE(6, "('  'A, T18, 3F10.3)") op%DIR_OUT(I), &
         PRE_OUT(I), EVAP_OUT(I), ROF_OUT(I)
@@ -3518,14 +3571,12 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
       ROF_OUT = 0.0
     END DO
   ELSE !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
-#ifdef OLDWATROUTE
+
     WRITE(6, "(2I5, 100F10.3)") IYEAR, IDAY, &
       (WF_QHYD_AVG(I),WF_QSYN(I),I=1,WF_NO), PRE_OUT(1), &
       EVAP_OUT(1), ROF_OUT(1)
-#else
-    WRITE(6, "(2I5, 3F10.3)") IYEAR, IDAY, &
-      PRE_OUT(1), EVAP_OUT(1), ROF_OUT(1)
-#endif
+
+    
     PRE_OUT(1) = 0.0
     EVAP_OUT = 0.0
     ROF_OUT = 0.0
@@ -3537,7 +3588,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 ENDIF
 
 
-#ifndef OLDWATROUTE
+
 !> =====================================================================      
 !> During first time through loop, write out the variables:
 !>  - wf_qi1
@@ -3679,7 +3730,7 @@ If (jan == 2) Then
   end do
   Close(109)
 End If
-#endif
+
 
 ! *********************************************************************
 ! Update time counters and return to beginning of main loop
@@ -3851,7 +3902,6 @@ IF (SAVERESUMEFLAG > 0) THEN !todo: done: use a flag
    IHOUR, XXX, YYY, NA, &
    NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
    M_C, M_S, M_R, &
-#ifdef OLDWATROUTE
      WF_ROUTETIMESTEP,WF_R1,WF_R2,NAA,IYMIN, &
      WF_IYMAX,JXMIN,WF_JXMAX,WF_IBN,WF_IROUGH, &
      WF_ICHNL,WF_NEXT,WF_IREACH,AL,GRDN,GRDE, &
@@ -3864,7 +3914,6 @@ IF (SAVERESUMEFLAG > 0) THEN !todo: done: use a flag
      WF_STORE1,WF_STORE2, &
      DRIVERTIMESTEP,ROFGRD, &
      WF_S, &
-#endif
   TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
   FINAL_STORE, TOTAL_AREA)
