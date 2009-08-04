@@ -1,0 +1,351 @@
+%% Copernicus Publications Manuscript Preparation Template for LaTeX Submissions
+%% ---------------------------------
+%% This template should be used for the following class files: copernicus.cls, copernicus2.cls, copernicus_discussions.cls
+%% The class files, the Copernicus LaTeX Manual with detailed explanations regarding the comments
+%% and some style files are bundled in the Copernicus Latex Package which can be downloaded from the different journal webpages.
+%% For further assistance please contact the Publication Production Office (production@copernicus.org).
+%% http://publications.copernicus.org
+
+
+%% Differing comments regarding the specific class files are highlighted.
+
+
+%% copernicus.cls
+%\documentclass[journal abbreviation]{copernicus}
+\documentclass[hess]{copernicus}
+
+%% copernicus2.cls
+%\documentclass[journal abbreviation]{copernicus2}
+
+%% copernicus_discussions.cls
+%\documentclass[journal abbreviation, hvmath, online]{copernicus_discussions}
+
+
+\begin{document}
+
+
+\title{Land-Surface-Hydrologic-Atmospheric Modelling in Cold Regions}
+\titleheight{10.5cm}
+
+\author[1]{B. Davison}
+\author[2]{V. Fortin}
+\author[4,*]{F. Seglenieks}
+\author[3]{D. Verseghy}
+\author[4]{R. Soulis}
+\author[4]{A. MacLean}
+\author[4]{B. Tolson}
+\author[8]{A. Pietroniro}
+\author[4]{N. Kouwen}
+\author[5]{E. Herrera}
+\author[5]{M. MacDonald}
+\author[6]{C. Donnelly}
+\author[4,**]{P. Dornes}
+\author[4,+]{S. Pohl}
+\author[5]{C. Marsh}
+\author[1]{P. Marsh}
+\author[5]{J. Pomeroy}
+\author[7]{A. Liu}
+\author[5,++]{S. Endrizzi}
+
+\affil[1]{Hydrometeorology and Arctic Laboratory, Meteorological Service of Canada, National Hydrology Research Center, Saskatoon SK Canada S7N 3H5, Canada}
+\affil[2]{Recherche en Pr\'{e}vision Num\'{e}rique, Meteorological Research Division, Environment Canada, Canadian Meteorological Center Dorval QC Canada H9P 1J3, Canada}
+\affil[3]{Climate Research Division, Environment Canada, Toronto ON Canada M3H 5T4, Canada}
+\affil[4]{Department of Civil Engineering, University of Waterloo, Waterloo ON Canada N2L 3G1, Canada}
+\affil[5]{University of Saskatchewan}
+\affil[6]{University of Calgary}
+\affil[7]{Environment Canada, Edmonton}
+\affil[8]{Water Survey of Canada, Meteorological Service of Canada, Lasalle Academy, 373 Sussex Drive Ottawa, ON Canada  K1A 0H3}
+\affil[*]{now at: Environment Canada, Burlington}
+\affil[**]{now at: Argentina}
+\affil[+]{now at: Germany}
+\affil[++]{now at: Oslo}
+
+%% The [] brackets identify the author to the corresponding affiliation, 1, 2, 3, etc. should be inserted.
+
+\runningtitle{L-S-H-A Modelling in Cold Regions}
+
+\runningauthor{B. Davison et al.}
+
+\correspondence{Bruce Davison\\ (bruce.davison@ec.gc.ca)}
+
+
+
+\received{}
+\pubdiscuss{} %% only important for two-stage journals
+\revised{}
+\accepted{}
+\published{}
+
+%% These dates will be inserted by the Publication Production Office during the typesetting process.
+
+
+\firstpage{1}
+
+\maketitle
+
+
+
+\begin{abstract}
+\begin{itemize}
+	\item Model Development Strategy
+	\item Modelling Activities
+	\item Scaling Strategy
+\end{itemize}
+\end{abstract}
+
+
+%% only used for copernicus2.cls
+%\abstract{
+% TEXT
+% \keywords{TEXT}}
+
+\introduction
+%% \introduction[modified heading if necessary]
+This paper describes the modelling activities undertaken for the IP3 Network using the MESH modelling platform \citep{pietroniro_etal:2007}. The milestones for the program are to:
+
+\begin{itemize}
+	\item Establish an operational version of the existing MESH model for all research basin and NWP domains
+	\item Incorporate new process and possible parameterisations into the MESH system
+	\item Improve MESH with new algorithms on each research basin, and evaluate model performance with reference to measured mass and energy balances
+	\item Evaluate performance of coupled models for major cold regions land covers
+\end{itemize}
+
+With the above milestones in mind, the goals of this paper are three-fold. First, to provide some insight into the modelling strategy for the MESH modelling platform. This discussion includes a brief description of the models involved, how they are connected within MESH, some of the challenges associated with model development, and how these challenges can be met. The second goal of this paper is to provide an update as to the status of the milestones stated for the IP3 network, highlighting the work being completed at different spatial scales. The final goal of the paper is to discuss how the IP3 model runs can be inter-linked into a comprehensive scaling strategy.
+
+\section{Model Development Strategy}
+A number of models have independently been developed for different parts of the water or energy cycle on earth. Atmospheric models were first developed in (?) in response to (?). Land surface models were first developed in the late 1960s in response to the needs for general circulation models \citep{manabe:1969}. Lateral flow models were first developed in (?) in response to (?). River routing models were first developed in (?) in response to (?). Cold regions models were first developed in (?) in response to (?).
+
+The different ways in which these types of models have been developed becomes an issue in terms of how to integrate and further develop the models. Although more of an engineering and computer science issue than a physical science issue, the difficulty in integration and development has a direct negative impact on the ability of scientists to meet milestones like those listed for the IP3 network. Due to this negative impact on the scientific community, which is often underestimated, some discussion on the models and model development strategy is necessary. As such, this section describes the models, how they connect to one-another, how model development has proceeded withing the IP3 network, and how this model development process can be improved.
+
+\subsection{The Models}
+The Global Environmental Multi-scale (GEM) model is the atmospheric model developed by the Meteorological Research Branch (MRB) in partnership with the Canadian Meteorological Centre (CMC), both of Environment Canada. The GEM model was developed to forecast the weather, address climate change issues, and perform air quality modelling \citep{cote_etal:1998}. The Canadian Land Surface Scheme (CLASS) was developed for use with the Canadian Global Climate Model (GCM) \citep{verseghy:1991,verseghy_etal:1993,verseghy:2009}. CLASS calculates the vertical water and energy balances of the land surface given initial conditions and atmospheric forcing data. WATDRAIN is an interflow model developed at the University of Waterloo specifically for a coupled version of CLASS and WATFLOOD \citep{soulis_etal:2000}. WATROUTE is the river routing model developed for the hydrological model WATFLOOD \citep{kouwen_mousavi:2002}. All of these models have been coupled into the MESH system.
+
+In addition, two smaller-scale models with superior cold regions process representation have been used in IP3 research to help determine how to paramaterize the MESH model. The Cold Regions Hydrological Model (CRHM) is being developed at the Centre for Hydrology at the University of Saskatchewan in Canada. The model physics for CRHM are described in \cite{pomeroy_etal:2007}. GEOtop \citep{rigon_etal:2006,endrizzi:2007} is a model developed at the University of Trento in Italy. GEOtop is a hydrological model that includes both the energy and the water balance.
+
+\subsection{Model Connections} % Describe the connections between these models.
+Fig.~\ref{eps1} shows the model coupling strategy in conjunction with the data assimilation strategy. Along the top of the figure shows the well established method of incorporating upper air observations into the 4DVar data assimilation system for the GEM model (ref). A similar method is being developed for the land surface by incorporating surface observations and a precipitation analysis into a land data assimilation system (CaLDAS) for the MESH modelling platform (ref). The MESH model has two modes: an online mode and an offline mode. The online mode passes information between the land surface and atmosphere at each timestep, requiring that the surface scheme and routing model be fully coupled with the GEM model. The offline mode simply forces the surface scheme and routing model with atmospheric model output. The offline mode is much more computationally efficient, but fails to capture the interaction between the land-surface and atmosphere at each timestep. There are two versions of the MESH system, one that is integrated with the GEM model (MEC/MESH) and one that stands on its own (standalone MESH). MEC/MESH has the advantage of being able to run online or offline, to automatically read the standard GEM model output files, and to take advantage of the existing geophysical databases used by the GEM model. The standalone version has the advantage of being portable, well documented, updated with the latest version of CLASS, and relatively easily run without the need for much support. The MEC/MESH version is being developed and supported by Recherche en  Pr\'{e}vision Num\'{e}rique at Environment Canada in Montreal while the standalone MESH version is being developed and supported by the Hydrometeorlogical and Arctic Lab at Environment Canada in Saskatoon.
+
+\begin{figure}[h!]
+\vspace*{2mm}
+\begin{center}
+\includegraphics[width=8.3cm]{EPS1.jpg}
+\end{center}
+\caption{Envisioned Environmental Prediction System}
+\label{eps1}
+\end{figure}
+
+Fig.~\ref{eps2} shows the model coupling strategy without the detail about the atmospheric data assimilation but with more information about the MESH system. The land surface scheme in the MEC/MESH system can be selected as either the French land surface scheme ISBA (ref) or version 3.? of CLASS. The land surface scheme in standalone MESH is CLASS 3.4. Both MESH systems use the land surface scheme to calculate overland flow and groundwater recharge, and WATDRAIN to calculate interflow, for each tile in each grid cell. These flow components are then fed into WATROUTE to move the water from grid-square to grid-square.
+
+\begin{figure}[h!]
+\vspace*{2mm}
+\begin{center}
+\includegraphics[width=8.3cm]{EPS2.jpg}
+\end{center}
+\caption{Envisioned Environmental Prediction System in Greater Detail}
+\label{eps2}
+\end{figure}
+
+Although GEOtop and CRHM are not coupled into the MESH system, some cold regions processes from CRHM have been incorporated into an experimental verison of standalone MESH and both models have been used to help determine the best approaches for parameterizing the MESH model. This work is discussed later in the paper.
+
+\subsection{Model Development}
+Each model used within the MESH system has its own model steward which controls the development of that particular model. These individuals meet on an ad-hoc basis to discuss model results and model development, usually under the auspices of collaborative projects focussed on issues larger than simply how the models are developed. Various improvements have been made to help facilitate better collaboration between those who are using, developing and maintaining the models, such as improved documentation for users and developers; and occasional workshops. In addition each steward has his or her own method of managing the changes made to the code, ranging from periodic code version releases to more sophisticated software configuration management tools.
+
+\subsubsection{The Challenges}
+Limitations exist with this method of model development which affect the ability of networks, like the IP3 community, to effectively meet its milestones. One such challenge is the divergence of source code, where different model stewards change some of the common source code to meet specific needs, resulting in two versions of the same piece of code. Given enough time, sustained code divergence can make it impossible to integrate the two versions of code. If enough pieces of code diverge, the natural result is that two different models develop over time, even though they started from the same code.
+
+Another challenge is to get the latest science into the models. Many scientists are not computer programmers, and those that have programming abilities are rarely computer science experts. As such, the relatively small number of model stewards have little choice but to be very intimately involved in the details of incorporating the latest science into the models. This is challenging because the science is often being developed faster than the model stewards can incorporate into the code, mainly because the resources going into the discovery of the physical principles is often higher than the resources going into the model development.
+
+A third, but related, challenge is to incorporate the expertise of engineers and computer scientists into the model development process. A general lack of recognition and resources going into the engineering and computer science work needed to effectively develop models makes it difficult to efficiently manage changes to the models. (BD - AUG 4: RPN/CMC has a lot of good CS in their model development, but I would argue that it lacks good Engineering... not sure if all agree or how to say this exactly.)
+
+A fourth challenge is the lack of documentation that the existing system of development encourages. Due to the fact that the model stewards generally have the entire responsibility as well as the necessary expertise to decipher the code that belongs to their models, there is not much incentive to provide documentation for others who may want to change the code. To a lesser extent, the same result holds for model user documentation. The model stewards have the expertise to run the models without clear documentation. 
+
+Another factor limiting the development of clear documentation is the desire to prevent the proliferation of "bad" modelling. If a model is too easy to setup and run, then it becomes more likely that a greater number of inexperienced people will use the models inappropriately. (BD - AUG 4: Note: I need to read and reference a book I found on this topic.) So the challenge remains as to striking the appropriate balance between making the models easier to develop and use for the right people without making them easier to develop and use for the wrong people. Not to mention how to decide who should and shouldn't develop and run the models.
+
+A final challenge is the method of communication for bugs found in the code. The current approach is ad-hoc and generally limited to each model steward's base of operations. This is unfortunate given the amount of overlap between the various models being developed. A number of software tools exist that can facilitate the tracking of bugs in a distributed manner on the internet, and these are not currently being used within this particular modelling community.
+
+\subsubsection{Potential Solutions}
+Each of the above challenges has a number of possible solutions. The following is a point-by-point description of one potential solution for each challenge.
+
+First, for the problem of source code divergence, one solution is to improve the collaborative process of model development among the model stewards and developers. This can be achieved by implementing a more systematic development cycle and making use of distributed software configuration management tools. A systematic development cycle is standard procedure in engineering, whether building bridges or complex software. This cycle starts with developing requirements, designing solutions, implementing the best design, thorough testing, and finally maintenance of the product. Another way to avoid code divergence is to make code changes more transparent through software configuration management tools. These tools allow developers to track the changes made to all parts of the code, and to easily revert to any previous version of the model. Although some model stewards are currently using software configuration management tools, it would be beneficial for all model stewards to be using the same tool under the same repository.
+
+Incorporating the latest science into the models requires better documentation and coding standards. Some improvements have been made in this area, particularly with CLASS \citep{verseghy:2009}, but further improvements are needed to document the existing code. In addition, if others are go contribute to the development of the code, common standards for code development are needed. Since the models have been developed independently for so long prior to recent collaborative efforts, the different code bases have often been written using different (usually unwritten) standards. This lack of common standards creates difficulties when coupling models.
+
+Incorporating the expertise of computer scientists and engineers first requires a recognition of the expertise that these two professions bring to software development, and then requires a deeper commitment to funding these activities within the model development process.
+
+The documentation problem falls into two categories; documentation for users and documentation for developers. Users who simply want to run the model need detailed information about setting up the model and choosing appropriate parameters, whereas individuals wanting to improve the physics within the model need information linking the source code to the physical principles in question. As already mentioned, some improvements have been made to the documentation, but further improvements are needed.
+
+The challenge around the proliferation of "bad" modelling is much trickier. (BD - AUG 4: To be honest I'm not sure what to say here.)
+
+Communicating bugs found in the code or the documentation is a fairly easy process. A number of bug-tracking tools exist that can be easly used over the internet when the code developers are distributed in various locations. All that's needed here is a commitment to set-up and maintain such a bug-tracking system. In addition, the number of bugs created would be limited by regular code reviews by developers and computer science experts.
+
+Fig.~\ref{management} illustrates a code management methodology that would go a long way to addressing many of the challenges discussed. The three groups of people considered within this management system are MESH model developers, a MESH science and program committee and MESH users. The first step is to develop a list of requirements for the next version of the model. Once requirements have been developed, design and implementation can begin. The branches, trunk and tags represent three streams of code within a common code repository. The trunk is the main stem of the code under constant development. If a model developer wants to make a change to the code, she or he creates a branch of the code from the trunk and work independently on the branch until the changes are complete and the new feature has passed unit tests. Any number of developers can create any number of branches to work on specific features. As each new feature is developed, the branch is merged back into the trunk. Within a software configuration management system, these changes are logged and can be reversed at any time. Two developers working on the same piece of code are automatically prevented from automatically overwriting each others' work. When enough features have been added to create a new release of the model, more comprehensive release testing is performed and documentation is updated. Once this testing is complete, the model changes are discussed by the MESH science and program committee and accepted or rejected. If rejected, the developers continue developing the code until the required changes are completed. If the release is accepted, then it is released to the MESH user community and the cycle continues.
+
+\begin{figure}[h!]
+\vspace*{2mm}
+\begin{center}
+\includegraphics[width=8.3cm]{Management2.jpg}
+\end{center}
+\caption{Envisioned Management of Model Development}
+\label{management}
+\end{figure}
+
+\section{Modelling Activities}
+Overview and show examples of the modelling activities to date.
+
+\subsection{Point Scale}
+Describe CLASS runs (or point MESH runs) being done for IP3 basins.
+
+\subsection{Small Basin Scale}
+Describe standalone MESH runs being done for small IP3 basins.
+
+\subsection{Large Basin Scale}
+Describe Standalone or Coupled MESH and GEM-LAM runs being done for IP3 domain.
+
+\subsection{Remaining Work}
+Describe the remaining modelling work to be done.
+
+\section{Scaling Strategy}
+Point out that we don't actually go from point scale to large basin in coupled mode in sequence. Hydrological modelling work is typically done uncoupled for large and small basins (i.e. with either version of MESH), and because there are already so many other problems in hydrology, we choose to rely on a land-surface model which is sufficiently detailed to compare well against observations at a point, and is sufficiently well balanced to be used coupled to an atmospheric model. Then, offline experiments at the small basin scale can help identify shortcomings and develop new parameterizations which are then applied both at the point scale, on large basins, and in coupled mode.
+
+See the following report for similar arguments on the scaling strategy: http://www.ecmwf.int/publications/li-brary/ecpublications/\_pdf/tm/501-600/tm563.pdf
+
+
+\conclusions
+%% \conclusions[modified heading if necessary]
+
+
+
+
+%\appendix
+%\section{\\ \\ \hspace*{-7mm} HEADING}    %% Appendix A
+%
+%\subsection                               %% Appendix A1, A2, etc.
+
+
+
+
+\begin{acknowledgements}
+TEXT
+\end{acknowledgements}
+
+
+
+\bibliographystyle{copernicus}
+\bibliography{references}
+%\begin{thebibliography}{}
+%
+%\bibitem[Pietroniro et al.(2007)]{Pietroniroetal2007}
+%REFERENCE 1
+%
+%\bibitem[Manabe(1969)]{Manabe1969}
+%REFERENCE 2
+%
+%\bibitem[Cote et al.(1998)]{Coteetal1998}
+%REFERENCE 3
+%
+%\bibitem[Verseghy(1991)]{Verseghy1991}
+%REFERENCE 4
+%
+%\bibitem[Verseghy et al.(1993)]{Verseghyetal1993}
+%REFERENCE 5
+%
+%\bibitem[Verseghy(1999)]{Verseghy2009}
+%REFERENCE 6
+%
+%\end{thebibliography}
+
+
+%% Literature citations
+%% command                        & example result
+%% \citet{jones90}|               & Jones et al.\ (1990)
+%% \citep{jones90}|               & (Jones et al., 1990)
+%% \citep{jones90,jones93}|       & (Jones et al., 1990, 1993)
+%% \citep[p.~32]{jones90}|        & (Jones et al., 1990, p.~32)
+%% \citep[e.g.,][]{jones90}|      & (e.g., Jones et al., 1990)
+%% \citep[e.g.,][p.~32]{jones90}| & (e.g., Jones et al., 1990, p.~32)
+%% \citeauthor{jones90}|          & Jones et al.
+%% \citeyear{jones90}|            & 1990
+
+
+
+
+
+
+%%% FIGURES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+%%% ONE-COLUMN FIGURES
+%
+%%f
+%\begin{figure}[t]
+%\vspace*{2mm}
+%\begin{center}
+%\includegraphics[width=8.3cm]{File Name}
+%\end{center}
+%\caption{Envisioned Environmental Prediction System}
+%\end{figure}
+%
+%
+%
+%%% TWO-COLUMN FIGURES
+%
+%%f
+%\begin{figure*}[t]
+%\vspace*{2mm}
+%\begin{center}
+%\includegraphics[width=12cm]{FILE NAME}
+%\end{center}
+%\caption{TEXT}
+%\end{figure*}
+%
+
+%%% TABLES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+%% ONE-COLUMN TABLE
+%
+%%t
+%\begin{table}[t]
+%\caption{TEXT}
+%\vskip4mm
+%\centering
+%\begin{tabular}{column = lcr}
+%\tophline
+%
+%\middlehline
+%
+%\bottomhline
+%\end{tabular}
+%\end{table}
+%
+%
+%%% TWO-COLUMN TABLE
+%
+%%t
+%\begin{table*}[t]
+%\caption{TEXT}
+%\vskip4mm
+%\centering
+%\begin{tabular}{column = lcr}
+%\tophline
+%
+%\middlehline
+%
+%\bottomhline
+%\end{tabular}
+%\end{table*}
+%
+
+%% The different columns must be seperated with a & command and should
+%% end with \\ to identify the column brake.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% If figures and tables must be numbered 1a, 1b, etc. the following command
+%% should be inserted before the begin{} command.
+
+%\addtocounter{figure}{-1}\renewcommand{\thefigure}{\arabic{figure}a}
+
+
+\end{document}
