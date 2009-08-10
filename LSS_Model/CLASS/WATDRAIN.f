@@ -43,7 +43,7 @@ c	the average value of bsat**c and asat**c where bsat and asat are the saturatio
 c	at the bottom of the layer and at the seepage face respectively. These are equivalent
 c	to normalized baseflow and interflow.
 c
-c	Interfow can be determined by (asat_t0 - asat_t1)*H*thpor/delt
+c	Interfow can be determined by (asat_t0 - asat_t1)*h*thpor/delt
 c	
 c	Input variables:
 c		asat_t0         average saturation at beginning of time step
@@ -84,7 +84,7 @@ c	  switches
 c
 c       no drainage for very thin layer
 	  if(asat_t0 .le.1.0e-8 .or. xdrainh .le. 1.0e-8
-     +  .or. h0 .le. 1.0e-8 .or. H .le. 1.0e-8)then
+     +  .or. h0 .le. 1.0e-8 .or. h .le. 1.0e-8)then
           asat_t1 = asat_t0
           return
 	  endif
@@ -107,7 +107,7 @@ c
 c       xdrainh is fractional change in horizontal conductivity in a depth change h0
         xlh0 = -log(xdrainh)
         xlambda = xlh0/h0
-	  xldh = xlambda*H
+	  xldh = xlambda*h
 c
 c       transition saturations
         asat_c = 1.0-exav(xldh)/c

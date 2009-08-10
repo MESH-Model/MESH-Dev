@@ -4,7 +4,7 @@ C    Combination of Ric's interflow and Ric/Bruce's overland flow 20070126
      2                  ZPLIM,XSLOPE,xdrainh,MANNING_N,DD,condAtSat,
      3                  ZFAV,LZFAV,THLINV,TBARW,DELZW,ZBOTW,THPOR,
      4                  THLMIN,BI,THFC,DODRN,DOVER,DIDRN,ISAND,IWF,IG,
-     5                  ILG,IL1,IL2,JL,IGP1)
+     5                  ILG,IL1,IL2,JL,IGP1,BULK_FC)
 
 
 C     * SEP 16/06 - R.SOULIS/F.SEGLENIEKS/A.PIETRONIRO/B.DAVISON.
@@ -47,7 +47,7 @@ C
 C     * WORK ARRAYS.
 C
       REAL  DODRN (ILG),     DOVER (ILG),
-     1      DIDRN (ILG,IG)
+     1      DIDRN (ILG,IG), BULK_FC(ILG,IG)
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -103,8 +103,8 @@ c	Output from wat_drain
 
 c     Declarations resulting from trying to deal with the code fork of October 14, 2006
 c     TODO some of these variables are not used, and should probably be removed.
-      REAL trunoff(ILG),thlinf0,thliq_eff,
-     +     thliq_avail,thPor_Avail,
+      REAL thlinf0,thliq_eff,
+     +     thliq_avail,thpor_avail,
      +     qsatxx_t0,thliqxx_t0,xiceflg,thlret(ILG,IG),
      +     qsatxx_t1,recharge0,bsat_t0,fvisc,fice,asat_fc
 
@@ -128,15 +128,13 @@ c
           delcharge(i)=0.0
 	  else
           recharge(i)=runoff(i)
-	    trecharge(i)=trunoff(i)
+	    trecharge(i)=trunof(i)
           runoff(i)=0.0
           delcharge(i)=0.0
 	    call watmix(thliq(i,ig),tbarw(i,ig),
      +	  recharge(i)/delzw(i,ig),trecharge(i))
 	  endif
       endif
-
-
 
 C
 C     * PART 1 - OVERLAND FLOW
@@ -217,11 +215,11 @@ c-----------------------------------------------------------------------------
 c
 c
          thliq_avail = max(0.0,thliq(i,j)-thlmin(i,j))
-         thPor_Avail = max(thliq(i,j),thlmin(i,j),thpor(i,j)-thice(i,j))
+         thpor_avail = max(thliq(i,j),thlmin(i,j),thpor(i,j)-thice(i,j))
          if(thliq_avail.gt.0.0 .and. delzw(i,j).gt.0.0) then
 c
 c           preparation of parameters
-            asat_t0 = thliq_avail/thPor_Avail
+            asat_t0 = thliq_avail/thpor_avail
             corrFactor = fvisc(tbarw(i,j),iwfice)
      +        *fice(thliq(i,j),thice(i,j),thpor(i,j),thlmin(i,j),
      +        iwfice,hiceflg)
@@ -231,20 +229,26 @@ c
             H = delzw(i,j)
 	      H0 = 1.0
 c
-c      find average interflow for timestep
-c      operational call to wat_drain
+c      find average interflow for timestep if liquid water content is
+c      greater than bulk field capacity.
 
-
-
+c          If the liquid water content is >= bulk field capacity of a sloping soil horizon
+           IF(THLIQ(I,J).ge.BULK_FC(I,J)) THEN
+c           operational call to wat_drain to calculate interflow
             call WAT_DRAIN(3,H,H0,ztop,xdrainh(i),cc,
      +        XSLOPE(i),condAtSat(i),DD(i),thPor_Avail,corrFactor,
      +        asat_t0,asat_t1)
 
 c           didrn: volume of interflow per land area [m^3/m^2] for
 c           a given soil layer of thickness H = delzw(i,j)
-            didrn(i,j) = (asat_t0-asat_t1)*thPor_Avail*H
+            didrn(i,j) = (asat_t0-asat_t1)*thpor_avail*H
+           ELSE
+c           no interflow
+            didrn(i,j) = 0.0
+           ENDIF
 
-
+c           FROM HERE ONWARDS, WATROF IS NOT DOCUMENTED.
+c           THIS IS SOMETHING THAT NEEDS TO BE DONE.    -Robin
 
 c           share bottom layer, below wetting front with drainage
 
@@ -272,7 +276,7 @@ c
       didrn(i,j)=max(0.0,min(davail,didrn(i,j)))
 
       if(didrn(i,j).gt.1.0e-8)then
-	  call watmix(runoff(i),trunoff(i),didrn(i,j),tbarw(i,j))
+	  call watmix(runoff(i),trunof(i),didrn(i,j),tbarw(i,j))
         THLIQ(I,J) = THLIQ(I,J)-didrn(i,j)/delzw(i,j)
         SUBFLW(I)=SUBFLW(I)+FI(I)*didrn(i,j)
       endif
@@ -288,7 +292,7 @@ c
 c     restore base flow if water left after interflow
         IF(FI(I).GT.0.0) THEN
           thliq(i,ig)=thliq(i,ig)-recharge(i)/delzw(i,ig)
-	    call watmix(runoff(i),trunoff(i),recharge(i),trecharge(i))
+	    call watmix(runoff(i),trunof(i),recharge(i),trecharge(i))
 	    basflw(i)=basflw(i)-fi(i)*delcharge(i)
 	  endif
 
@@ -419,7 +423,7 @@ c
 c     iwfice set to 1 to include ice
 
       integer iwfice
-	real thliq,thice,thpor,thlmin,thliq_eff,thpor_eff,thPor_Avail
+	real thliq,thice,thpor,thlmin,thliq_eff,thpor_eff,thpor_avail
 
 c      thliq_eff = max(0.0,thliq-thlmin)
 c      thpor_eff = max(0.0,thpor-thlmin)
@@ -457,7 +461,7 @@ c******************************************************************************
 c
 c     calculates retention curve effective saturation
       integer iwfice
-      real thliq,thice,thpor,thlmin,thliq_eff,thpor_eff,thPor_Avail
+      real thliq,thice,thpor,thlmin,thliq_eff,thpor_eff,thpor_avail
 
 c      thliq_eff = max(0.0,thliq-thlmin)
 c      thpor_eff = max(0.0,thpor-thlmin)

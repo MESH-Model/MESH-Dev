@@ -15,7 +15,7 @@
      E                 RA,RB,RAGINV,RBINV,RBTINV,RBCINV,TVRTAC,
      F                 TPOTG,RESID,
      G                 TCANO,WZERO,XEVAPM,DCFLXM,WC,DRAGIN,CFLUXM,CFLX,
-     H                 IEVAPC,TRTOP,CFSENS,CFEVAP,QSGADD,QSTOR,A,B,
+     H                 IEVAPC,TRTOP,QSTOR,CFSENS,CFEVAP,QSGADD,A,B,
      I                 ZOMS,ZOHS,LZZ0,LZZ0T,FM,FH,ITER,NITER,KF1,KF2 )
 C               
 C     * FEB 26/08 - D.VERSEGHY. STREAMLINE SOME CALCULATIONS; REMOVE
@@ -345,6 +345,7 @@ C
      3               CPHCHG(I)*RHOAIR(I)*(DQ0DT*RAGINV(I)
      4              +(QZERO(I)-QAC(I))*DRAGIN(I))
               TSTEP(I)=-RESID(I)/DRDT0
+              IF (ABS(TSTEP(I)).GT.100.) TSTEP(I)=SIGN(20.,TSTEP(I))
               TZERO(I)=TZERO(I)+TSTEP(I)
               NITER(I)=NITER(I)+1
               NUMIT=NUMIT+1

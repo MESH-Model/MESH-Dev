@@ -27,8 +27,7 @@
      Q                  JL,     IC,     IG,     IGP1,   IGP2,
      R                  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI, 
      S                  MANNING_N, DD )
-C     * AUG 21/08 - D.HOLMAN. ADD VARIABLES FOR WATROF AND WATDRAIN
-C                             MANNING_N, DD                                  
+C                                                                        
 C     * FEB 25/08 - D.VERSEGHY. MODIFICATIONS REFLECTING CHANGES
 C     *                         ELSEWHERE IN CODE.
 C     * MAR 23/06 - D.VERSEGHY. CHANGES TO ADD MODELLING OF WSNOW;
@@ -160,7 +159,7 @@ C
      1     GRKSAT(ILG,IG),PSISAT(ILG,IG),THLRAT(ILG,IG),
      2     THFC  (ILG,IG),HCPS  (ILG,IG),DELZW (ILG,IG),DELZZ (ILG,IG),
      3     ZBOTW (ILG,IG),XDRAIN(ILG),   XSLOPE(ILG),   GRKFAC(ILG),   
-     4     WFSURF(ILG),   WFCINT(ILG),   DELZ  (IG)
+     4     WFSURF(ILG),   WFCINT(ILG),   DELZ  (IG), BULK_FC(ILG,IG)
 C
       INTEGER             ISAND(ILG,IG)
 C
@@ -289,7 +288,8 @@ C
      R           ZSNOW,  ALBSNO, WSNOCS, WSNOGS, RHOSCS, RHOSGS,
      S           THPOR,  HCPS,   GRKSAT, ISAND,  DELZW,  DELZ,
      T           ILG,    IL1,    IL2,    JL,     IG,     IGP1,
-     U           NLANDCS,NLANDGS,NLANDC, NLANDG  )
+     U                 NLANDCS,NLANDGS,NLANDC, NLANDG,
+     V                 BI, PSISAT, DD, XSLOPE, BULK_FC  )
 C
 C     * CALCULATIONS FOR CANOPY OVER SNOW.
 C
@@ -344,13 +344,13 @@ C
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSCS,THFC,DELZW,XDRAIN,ISAND,
      5                IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
-! Diane Holman added call to watrof, AUG 2008.
+!Craig Thompson added call to watrof, june 2008.
           CALL WATROF(1,THLQCS,THICCS,ZPNDCS,TPNDCS,OVRFLW,TOVRFL,
      1                SUBFLW,TSUBFL,BASFLW,TBASFL,RUNFCS,TRNFCS,FCS,
      2                ZPLMCS,XSLOPE,GRKFAC,MANNING_N,DD,WFCINT,
      3                ZFAV,LZFAV,THLINV,TBRWCS,DELZW,ZBOTW,THPOR,
      4                THLMIN,BI,THFC,DODRN,DOVER,DIDRN,ISAND,IWF,IG,
-     5                ILG,IL1,IL2,JL,IGP1)
+     5                ILG,IL1,IL2,JL,IGP1,BULK_FC,PSISAT)
           CALL TMCALC(TBARCS,THLQCS,THICCS,HCPCS,TPNDCS,ZPNDCS,
      1                TSNOCS,ZSNOCS,ALBSCS,RHOSCS,HCPSCS,TBASCS,
      2                OVRFLW,TOVRFL,RUNFCS,TRNFCS,HMFG,HTC,HTCS,
@@ -417,13 +417,13 @@ C
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSGS,THFC,DELZW,XDRAIN,ISAND,
      5                IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
-! Diane Holman added call to watrof, Aug 2008.
+!Craig Thompson added call to watrof, june 2008.
           CALL WATROF(2,THLQGS,THICGS,ZPNDGS,TPNDGS,OVRFLW,TOVRFL,
      1                SUBFLW,TSUBFL,BASFLW,TBASFL,RUNFGS,TRNFGS,FGS,
      2                ZPLMGS,XSLOPE,GRKFAC,MANNING_N,DD,WFCINT,
      3                ZFAV,LZFAV,THLINV,TBRWGS,DELZW,ZBOTW,THPOR,
      4                THLMIN,BI,THFC,DODRN,DOVER,DIDRN,ISAND,IWF,IG,
-     5                ILG,IL1,IL2,JL,IGP1)
+     5                ILG,IL1,IL2,JL,IGP1,BULK_FC,PSISAT)
           CALL TMCALC(TBARGS,THLQGS,THICGS,HCPGS,TPNDGS,ZPNDGS,
      1                TSNOGS,ZSNOGS,ALBSGS,RHOSGS,HCPSGS,TBASGS,
      2                OVRFLW,TOVRFL,RUNFGS,TRNFGS,HMFG,HTC,HTCS,
@@ -489,13 +489,13 @@ C
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSC,THFC,DELZW,XDRAIN,ISAND,
      5                IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
-!Diane Holman added call to watrof, AUG 2008.
+!Craig Thompson added call to watrof, june 2008.
           CALL WATROF(3,THLQCO,THICCO,ZPONDC,TPONDC,OVRFLW,TOVRFL,
      1                SUBFLW,TSUBFL,BASFLW,TBASFL,RUNFC,TRUNFC,FC,
      2                ZPLIMC,XSLOPE,GRKFAC,MANNING_N,DD,WFCINT,
      3                ZFAV,LZFAV,THLINV,TBARWC,DELZW,ZBOTW,THPOR,
      4                THLMIN,BI,THFC,DODRN,DOVER,DIDRN,ISAND,IWF,IG,
-     5                ILG,IL1,IL2,JL,IGP1)
+     5                ILG,IL1,IL2,JL,IGP1,BULK_FC,PSISAT)
           CALL TMCALC(TBARC,THLQCO,THICCO,HCPCO,TPONDC,ZPONDC,
      1                TSNOWC,ZSNOWC,ALBSC,RHOSC,HCPSC,TBASC,
      2                OVRFLW,TOVRFL,RUNFC,TRUNFC,HMFG,HTC,HTCS,
@@ -555,13 +555,14 @@ C
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSG,THFC,DELZW,XDRAIN,ISAND,
      5                IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
-!Diane added call to watrof, AUG 2008.
+!Craig Thompson added call to watrof, june 2008.
           CALL WATROF(4,THLQGO,THICGO,ZPONDG,TPONDG,OVRFLW,TOVRFL,
      1                SUBFLW,TSUBFL,BASFLW,TBASFL,RUNFG,TRUNFG,FG,
      2                ZPLIMG,XSLOPE,GRKFAC,MANNING_N,DD,WFCINT,
      3                ZFAV,LZFAV,THLINV,TBARWG,DELZW,ZBOTW,THPOR,
      4                THLMIN,BI,THFC,DODRN,DOVER,DIDRN,ISAND,IWF,IG,
-     5                ILG,IL1,IL2,JL,IGP1)
+     5                ILG,IL1,IL2,JL,IGP1,BULK_FC,PSISAT)
+
           CALL TMCALC(TBARG,THLQGO,THICGO,HCPGO,TPONDG,ZPONDG,
      1                TSNOWG,ZSNOWG,ALBSG,RHOSG,HCPSG,TBASG,
      2                OVRFLW,TOVRFL,RUNFG,TRUNFG,HMFG,HTC,HTCS,

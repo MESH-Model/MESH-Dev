@@ -147,16 +147,8 @@
       TYPE(HydrologyParameters) :: hp
 
 
-!> ((((((((((((((((((((((((((((((((((
-!> Set the acceptable version numbers
-!> ))))))))))))))))))))))))))))))))))
-!> todo this should be input file dependant,
-!>  because different files will work with different releases
-!>  so, make them local variables inside each read subroutine.
-      RELEASE(1) = "1.1.a01"
-      RELEASE(2) = "1.1.a02"
-      RELEASE(3) = "1.1.a04"
-      RELEASE(4) = "2.0.000"
+
+	  
 !> DECLARE THE LOCAL VARIABLES
 
 !> ====================================
@@ -192,40 +184,34 @@
 !> dan * (WATROUTE), IS CALLED TO READ THE NEW FILE.
       IF (SHDFILEFLAG == 1) THEN
       ALLOCATE (FLN(999))  !declared in area_watflood module
-      FLN(1) = 'new_shd.r2c'
+      FLN(1) = 'MESH_drainage_database.r2c'
 
 !+      OPEN(UNIT=12,FILE='event/event.evt',STATUS='OLD',IOSTAT=IOS_EVT)
-      OPEN(UNIT=20,FILE='new_shd.r2c',STATUS='OLD',IOSTAT=IOS)
+      OPEN(UNIT=20,FILE='MESH_drainage_database.r2c',
+     + STATUS='OLD',IOSTAT=IOS)
       IF (IOS == 0) THEN
         !CLOSE(12)
         CLOSE(20)
 
-#ifndef OLDWATROUTE
+
 !> these three settings are for producing input files for the new watroute
       MODELFLG = 'r'
-      FLN(31) = 'runoff.r2c'
-      FLN(32) = 'recharge.r2c'
-#endif
+      FLN(31) = 'WR_runoff.r2c'
+      FLN(32) = 'WR_recharge.r2c'
+
 
         PRINT *, "Reading Drainage Database from new_shd.r2c"
 
         OPEN(UNIT=51,FILE='nul')
-#ifdef G95
         OPEN(UNIT=98,FILE='1234500124572321.1265489')
-#endif
-#ifdef IFORT
-        OPEN(UNIT=98,FILE='nul')
-#endif
         CALL READ_SHED_EF (31, 1)
-#ifdef G95
         CLOSE(98,STATUS='delete')
-#endif
-#ifdef IFORT
-        CLOSE(98)
-#endif
         CLOSE(51)
         WRITE (6, *) " READ: SUCCESSFUL, FILE: CLOSED"
 !+        ALLOCATE (FRAC(NA),
+!>
+!>*******************************************************************
+!>
         ALLOCATE (WF_IBN(NA), WF_IROUGH(NA),
      +  WF_ICHNL(NA), WF_NEXT(NA), WF_ELEV(NA), WF_IREACH(NA),
      +  WF_DA(NA), WF_BNKFLL(NA), WF_CHANNELSLOPE(NA),
@@ -263,7 +249,7 @@
 !> Open and read in values from MESH_input_drainage_database.txt file
 !>   if new_shd.r2c file was not found
 !> *********************************************************************
-        OPEN(UNIT=20,FILE='MESH_input_drainage_database.txt',
+        OPEN(UNIT=20,FILE='MESH_drainage_database.txt',
      +       STATUS='OLD', IOSTAT=IOS)
         IF (IOS == 0) THEN
           PRINT *, "Reading Drainage Database from ",
@@ -301,8 +287,7 @@
 !> Define GRDN & GRDE for UTM
           GRDN=AL/1000.
           GRDE=AL/1000.
-        ENDIF
-
+        ENDIF 
         READ(20,'(2I5)') YCOUNT, XCOUNT
 
 !> check if we are going to get an "array bounds out of range" error
@@ -372,7 +357,7 @@
           READ(20,'(5X,2I5,3F10.5,I7,5I5,F5.2,5X,15F5.2)')YYY(I),
      +      XXX(I),WF_DA(I),WF_BNKFLL(I),WF_CHANNELSLOPE(I),
      +      WF_ELEV(I),WF_IBN(I),WF_IROUGH(I),WF_ICHNL(I),
-     +      WF_NEXT(I),WF_IREACH(I),FRAC(I),
+     +      WF_NEXT(I),WF_IREACH(I),FRAC(I), 
      +      (ACLASS(I,J),J=1,NTYPE)
 !> check to make sure land cover areas sum to 100%
           WF_LAND_COUNT=1
@@ -394,6 +379,7 @@
         CLOSE(UNIT=20)
 
       ENDIF ! IF SHDFILE...
+	  
       
       !*   ACLASS: PERCENT-GRU FRACTION FOR EACH GRID SQUARE (WF_ACLASS)
 !The following are used in read_soil_ini
@@ -452,7 +438,9 @@
             STOP
         END IF
       END DO
-
+!>
+!>*******************************************************************
+!>
 !> *********************************************************************
 !> Open and read in values from MESH_input_soil_levels.txt file
 !> *********************************************************************
@@ -497,7 +485,9 @@
      + cp%SANDROW(NA, NTYPE, IGND), cp%CLAYROW(NA, NTYPE, IGND),
      + cp%ORGMROW(NA, NTYPE, IGND), cp%TBARROW(NA, NTYPE, IGND),
      + cp%THLQROW(NA, NTYPE, IGND), cp%THICROW(NA, NTYPE, IGND))
-
+!>
+!>*******************************************************************
+!>
       CALL READ_PARAMETERS_CLASS(
      +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
      +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
@@ -510,9 +500,13 @@
      +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
      +  DAILY_START_YEAR,  DAILY_STOP_YEAR,
      +  IHOUR, IMIN, IDAY, IYEAR, cp )
-
+!>
+!>*******************************************************************
+!>
       CALL READ_SOIL_INI(NTYPE, IGND, NTYPE, NA, sv, SOILINIFLAG)
-
+!>
+!>*******************************************************************
+!>
 !>  ==============================
 !> *********************************************************************
 !> Open and read INITIAL SOIL MOISTURE AND SOIL TEMPERATURE values
@@ -532,7 +526,9 @@
       CALL READ_S_TEMPERATURE_TXT(
      + IGND, YCOUNT, XCOUNT, na, NTYPE,
      + YYY, XXX, cp%TBARROW )
-
+!>
+!>*******************************************************************
+!>
 !> Read the mesh_parameters_hydrology.ini file
       ALLOCATE(hp%ZSNLROW(NA, NTYPE), hp%ZPLGROW(NA, NTYPE),
      +         hp%ZPLSROW(NA, NTYPE))

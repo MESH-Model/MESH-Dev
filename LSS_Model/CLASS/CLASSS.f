@@ -35,8 +35,6 @@
      Y                  ILMOGAT,UEGAT,  HBLGAT, TACGAT, QACGAT,
      Z                  HMFGGAT,HTCGAT, QFCGAT, WSNOGAT,FSNOGAT,
      +                  GFLXGAT,ITCTGAT,MANNROW,MANNGAT,DDROW,DDGAT)
-C     * AUG 21/08 - D.HOLMAN. ADD ,MANNROW,MANNGAT,DDROW,DDGAT
-C                             VARIABLES FOR WATROF AND WAT_DRAIN
 C
 C     * MAR 23/06 - D.VERSEGHY. ADD WSNO,FSNO.
 C     * MAR 18/05 - D.VERSEGHY. ADDITIONAL VARIABLES.
@@ -114,7 +112,7 @@ C
      3        GFLXGAT(ILG,IG)
 C
       INTEGER        ITCTROW(NL,NM,6,50),    ITCTGAT(ILG,6,50)
-      
+
 C * WATROF DECLARATIONS
       REAL  DDROW(NL,NM),MANNROW(NL,NM),DDGAT(ILG),MANNGAT(ILG)
 C
@@ -197,7 +195,7 @@ C----------------------------------------------------------------------
           WTABROW(ILMOS(K),JLMOS(K))=WTABGAT(K)  
           ILMOROW(ILMOS(K),JLMOS(K))=ILMOGAT(K)  
           UEROW  (ILMOS(K),JLMOS(K))=UEGAT(K)  
-          HBLROW (ILMOS(K),JLMOS(K))=HBLGAT(K)
+          HBLROW (ILMOS(K),JLMOS(K))=HBLGAT(K)  
           DDROW (ILMOS(K),JLMOS(K))=DDGAT(K)  
           MANNROW (ILMOS(K),JLMOS(K))=MANNGAT(K)
 100   CONTINUE

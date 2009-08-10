@@ -3383,18 +3383,10 @@ c        enddo
 
 !     OPEN THE FILE
       if (BINARY) then !for binary output
-#ifdef IFORT
         open(unit=57,file='watflow.wfo',status='unknown',
      +       form='unformatted',access='direct',
-     +       recl=1, !ifort
+     +       recl=4, !g95 (recl=1,if ifort) 
      +       iostat=ios)
-#endif
-#ifdef G95
-        open(unit=57,file='watflow.wfo',status='unknown',
-     +       form='unformatted',access='direct',
-     +       recl=4, !g95
-     +       iostat=ios)
-#endif
       else !for ascii output
         open(unit=57,file='watflow.wfo',status='unknown',
      +       iostat=ios)

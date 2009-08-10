@@ -40,7 +40,7 @@ IF (RELFLG .EQ. 1) THEN
     FILE_VER = TRIM (ADJUSTL (FILE_VER))
   END IF
   VER_OK = .FALSE.
-  DO I=1,4 !TODO: MAKE THIS MORE GENERIC
+  DO I=1,6 !TODO: MAKE THIS MORE GENERIC
     IF (FILE_VER .EQ. RELEASE(I)) THEN
       VER_OK = .TRUE.
       EXIT
@@ -86,7 +86,17 @@ READ(23,*)
 READ(23,*)
 
 READ (23,"(5F6.3)") (WF_R2(i),I=1,5)
-
+  DO I=1,5
+   IF (wf_r2(i) <= 0)THEN 
+    WRITE (6, *)
+    WRITE (6, *) "River roughness =0 (in MESH parameters_hydrology.ini) "
+    WRITE (6, *) "Even if you only have only one river class, all initial wf_r2"
+    WRITE (6, *) "values must be non-zero in MESH_parameters_hydrology.ini "
+    WRITE (6, *) "MESH STOP "
+    WRITE (6, *)
+    STOP
+   ENDIF
+ ENDDO
 READ(23,*)
 READ(23,*)
 

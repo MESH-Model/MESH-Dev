@@ -28,7 +28,8 @@
      Q                 ZSNOW,  ALBSNO, WSNOCS, WSNOGS, RHOSCS, RHOSGS,
      R                 THPOR,  HCPS,   GRKSAT, ISAND,  DELZW,  DELZ,
      S                 ILG,    IL1,    IL2,    JL,     IG,     IGP1,
-     T                 NLANDCS,NLANDGS,NLANDC, NLANDG  )
+     T                 NLANDCS,NLANDGS,NLANDC, NLANDG,
+     U                 BI, PSISAT, DD, XSLOPE, BULK_FC  )
 C
 C     * MAR 27/08 - D.VERSEGHY. MOVE MODIFICATION OF GRKSAT IN PRESENCE
 C     *                         OF ICE TO GRINFL AND GRDRAN.
@@ -152,7 +153,8 @@ C
 C     * SOIL INFORMATION ARRAYS.
 C
       REAL THPOR (ILG,IG),HCPS  (ILG,IG),GRKSAT(ILG,IG),
-     1     DELZZ (ILG,IG),DELZW (ILG,IG),DELZ  (IG)
+     1     DELZZ (ILG,IG),DELZW (ILG,IG),DELZ  (IG), 
+     2     BI(ILG,IG),PSISAT(ILG,IG),DD(ILG),XSLOPE(ILG),BULK_FC(ILG,IG)
 C
       INTEGER             ISAND (ILG,IG)
 C
@@ -202,6 +204,17 @@ C
           ELSE
               DELZZ (I,J)=DELZ(J)
           ENDIF
+c         calculate BULK_FC, make sure we don't divide by 0 
+          IF(XSLOPE(I).gt.0.0) THEN
+              BULK_FC(I,J)= (THPOR(I,J)/(BI(I,J)-1))*
+     +          ((2*DD(I)*PSISAT(I,J)*BI(I,J)/XSLOPE(I))**(1/BI(I,J)))*
+     +          ((3*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J))-
+     +           (2*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J)))
+          ELSE
+c         make sure that BULK_FC is high to shut off interflow
+              BULK_FC(I,J) = 2.0
+          ENDIF
+c          print *, "I = ", I, "J = ", J, "BULK_FC(I,J) = ", BULK_FC(I,J)
    50 CONTINUE
 C 
       DO 75 J=1,IGP1

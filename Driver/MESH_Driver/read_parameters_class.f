@@ -96,13 +96,23 @@
      1                  cp%FAREROW(1,M),cp%DDROW(1,M)
         READ(50,'(4E8.1,I8)') cp%XSLPROW(1,M),cp%GRKFROW(1,M),
      1                  cp%MANNROW(1,M),cp%WFCIROW(1,M),cp%MIDROW(1,M)
-        READ(50,'(3F10.1)') (cp%SANDROW(1,M,J),J=1,IGND) !soil layers
-        READ(50,'(3F10.1)') (cp%CLAYROW(1,M,J),J=1,IGND)
-        READ(50,'(3F10.1)') (cp%ORGMROW(1,M,J),J=1,IGND)
-        READ(50,'(6F10.2)') (cp%TBARROW(1,M,J),J=1,IGND),
+!        This requires mesh_parameters_class.ini file to include info on layer 4 to ignd
+!        READ(50,'(3F10.1)') (cp%SANDROW(1,M,J),J=1,IGND) !soil layers
+!        READ(50,'(3F10.1)') (cp%CLAYROW(1,M,J),J=1,IGND)
+!        READ(50,'(3F10.1)') (cp%ORGMROW(1,M,J),J=1,IGND)
+!        READ(50,'(6F10.2)') (cp%TBARROW(1,M,J),J=1,IGND),
+!     1                  cp%TCANROW(1,M),cp%TSNOROW(1,M),cp%TPNDROW(1,M)
+!        READ(50,'(7F10.3)') (cp%THLQROW(1,M,J),J=1,IGND),
+!     1                  (cp%THICROW(1,M,J),J=1,IGND),cp%ZPNDROW(1,M)
+!     1                  cp%MANNROW(1,M),cp%WFCIROW(1,M),cp%MIDROW(1,M)
+!        This requires mesh_parameters_class.ini file to include info on 3 layers only
+        READ(50,'(3F10.1)') (cp%SANDROW(1,M,J),J=1,3) !soil layers
+        READ(50,'(3F10.1)') (cp%CLAYROW(1,M,J),J=1,3)
+        READ(50,'(3F10.1)') (cp%ORGMROW(1,M,J),J=1,3)
+        READ(50,'(6F10.2)') (cp%TBARROW(1,M,J),J=1,3),
      1                  cp%TCANROW(1,M),cp%TSNOROW(1,M),cp%TPNDROW(1,M)
-        READ(50,'(7F10.3)') (cp%THLQROW(1,M,J),J=1,IGND),
-     1                  (cp%THICROW(1,M,J),J=1,IGND),cp%ZPNDROW(1,M)
+        READ(50,'(7F10.3)') (cp%THLQROW(1,M,J),J=1,3),
+     1                  (cp%THICROW(1,M,J),J=1,3),cp%ZPNDROW(1,M)
         READ(50,'(2F10.4,F10.2,F10.3,F10.4,F10.3)')
      +                  cp%RCANROW(1,M),cp%SCANROW(1,M),cp%SNOROW(1,M),
      1                  cp%ALBSROW(1,M),cp%RHOSROW(1,M),cp%GROROW(1,M)
@@ -125,9 +135,9 @@
 
 c     Convert DD from km/km^2 to m/m^2
 c     The formulae in WATROF.f expect m/m^2
-!      DO M=1,NMTEST
-!        cp%DDROW(1,M)= cp%DDROW(1,M)/1000
-!      ENDDO
+      DO M=1,NMTEST
+        cp%DDROW(1,M)= cp%DDROW(1,M)/1000.0
+      ENDDO
 
       RETURN
       END SUBROUTINE READ_PARAMETERS_CLASS
