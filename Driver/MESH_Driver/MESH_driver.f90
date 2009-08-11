@@ -90,7 +90,7 @@ INTEGER BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG, BASINRAINFLAG, &
         BASINTEMPERATUREFLAG, BASINWINDFLAG, BASINPRESFLAG, &
         BASINHUMIDITYFLAG
 INTEGER HOURLYFLAG, RESUMEFLAG, SAVERESUMEFLAG
-INTEGER SHDFILEFLAG, SOILINIFLAG
+INTEGER SHDFILEFLAG, SOILINIFLAG, STREAMFLOWFLAG
 
 !> These variables are used to keep track of the number of forcing files
 !> that are in different formats
@@ -778,7 +778,7 @@ CALL READ_INITIAL_INPUTS( &
   BASINTEMPERATUREFLAG, BASINWINDFLAG, BASINPRESFLAG, &
   BASINHUMIDITYFLAG, HOURLYFLAG, RESUMEFLAG, &
   SHDFILEFLAG, CONFLAGS, RELFLG, SAVERESUMEFLAG, &
-  SOILINIFLAG, IOS, PAS, N, IROVAL, WF_NUM_POINTS, &
+  SOILINIFLAG, STREAMFLOWFLAG, IOS, PAS, N, IROVAL, WF_NUM_POINTS, &
   IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, &
   IYEAR_END,IDAY_END, IHOUR_END, IMIN_END, &
   IRONAME, GENDIR_OUT, &
@@ -1963,6 +1963,9 @@ ENDDO
 OPEN(UNIT=70,FILE=".\" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '\MESH_output_streamflow.csv')
 
+OPEN(UNIT=71,FILE=".\" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '\MESH_output_streamflow_all.csv')
+
 !> Set up the CLASSOF* files to print out into the correct directory
 DO I=1, wf_num_points
   BNAM=op%DIR_OUT(i)
@@ -1997,21 +2000,28 @@ DO I=1, wf_num_points
   WRITE(150+i*10+1,"('IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,SNOMLT,BEG,"// &
    "GTOUT,SNOACC(I),RHOSACC(I),WSNOACC(I),ALTOT,ROFACC(I),"// &
    "ROFOACC(I),ROFSACC(I),ROFBACC(I)')")
-  WRITE(150+i*10+2,"('IDAY,IYEAR,TBARACC(I 1)-TFREZ,THLQACC(I 1),"// &
-   "THICACC(I 1),TBARACC(I 2)-TFREZ,THLQACC(I 2),THICACC(I 2),"// &
-   "TBARACC(I 3)-TFREZ,THLQACC(I 3),THICACC(I 3),TCN,RCANACC(I),"// &
-   "SCANACC(I),TSN,ZSN')")
+  WRITE(150+i*10+2,"('IDAY,IYEAR,"// &
+   "TBARACC(I 1)-TFREZ,THLQACC(I 1),THICACC(I 1),"// &
+   "TBARACC(I 2)-TFREZ,THLQACC(I 2),THICACC(I 2),"// &
+   "TBARACC(I 3)-TFREZ,THLQACC(I 3),THICACC(I 3),"// &
+   "TBARACC(I 4)-TFREZ,THLQACC(I 4),THICACC(I 4),"// &
+   "TBARACC(I 5)-TFREZ,THLQACC(I 5),THICACC(I 5),"// &
+   "TBARACC(I 6)-TFREZ,THLQACC(I 6),THICACC(I 6),"// &
+   "TCN,RCANACC(I),SCANACC(I),TSN,ZSN')")
   WRITE(150+i*10+3,"('IDAY,IYEAR,FSINACC(I),FLINACC(I),"// &
    "TAACC(I)-TFREZ,UVACC(I),PRESACC(I),QAACC(I),PREACC(I),"// &
    "EVAPACC(I)')")
   WRITE(150+i*10+4,"('IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,"// &
    "SNOMLT,BEG,GTOUT,SNOROW(I M),RHOSROW(I M),WSNOROW(I M),ALTOT,"// &
    "ROFROW(I M),TPN,ZPNDROW(I M)')")
-  WRITE(150+i*10+5,"('IHOUR,IMIN,IDAY,IYEAR,TBARROW(I M 1)-TFREZ,"// &
-   "THLQROW(I M 1),THICROW(I M 1),TBARROW(I M 2)-TFREZ,"// &
-   "THLQROW(I M 2),THICROW(I M 2),TBARROW(I M 3)-TFREZ,"// &
-   "THLQROW(I M 3),THICROW(I M 3),TCN,cp%RCANROW(I M),SCANROW(I M),"// &
-   "TSN,ZSN')")
+  WRITE(150+i*10+5,"('IHOUR,IMIN,IDAY,IYEAR,"// &
+   "TBARROW(I M 1)-TFREZ,THLQROW(I M 1),THICROW(I M 1),"// &
+   "TBARROW(I M 2)-TFREZ,THLQROW(I M 2),THICROW(I M 2),"// &
+   "TBARROW(I M 3)-TFREZ,THLQROW(I M 3),THICROW(I M 3),"// &
+   "TBARROW(I M 4)-TFREZ,THLQROW(I M 4),THICROW(I M 4),"// &
+   "TBARROW(I M 5)-TFREZ,THLQROW(I M 5),THICROW(I M 5),"// &
+   "TBARROW(I M 6)-TFREZ,THLQROW(I M 6),THICROW(I M 6),"// &
+   "TCN,cp%RCANROW(I M),SCANROW(I M),TSN,ZSN')")
   WRITE(150+i*10+6,"('IHOUR,IMIN,IDAY,FSDOWN(I),FDLGRD(I),"// &
    "PREGRD(I),TAGRD(I)-TFREZ,UVGRD(I),PRESGRD(I),QAGRD(I)')")
   WRITE(150+i*10+7,"('TROFROW(I M),TROOROW(I M),TROSROW(I M),"// &
@@ -2982,7 +2992,7 @@ DO K=1, WF_NUM_POINTS
                    cp%RHOSROW(I,M),WSNOROW(I,M),ALTOT,ROFROW(I,M), &
                    TPN,cp%ZPNDROW(I,M)
     WRITE(150+k*10+5,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-                   '3(F7.2,",",2(F6.3,",")),(F8.2,","),2(F8.4,","),'// &
+                   '6(F7.2,",",2(F6.3,",")),(F8.2,","),2(F8.4,","),'// &
                    '(F8.2,","),(F8.3,","))') &
                    IHOUR,IMIN,IDAY,IYEAR, &
                    (cp%TBARROW(I,M,J)-TFREZ,cp%THLQROW(I,M,J), &
@@ -3416,7 +3426,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                         BEG,GTOUT,SNOACC(I),RHOSACC(I), &
                         WSNOACC(I),ALTOT,ROFACC(I),ROFOACC(I), &
                         ROFSACC(I),ROFBACC(I)
-        WRITE(150+k*10+2,'((I4,","),(I5,","),5((F8.2,","),'// &
+        WRITE(150+k*10+2,'((I4,","),(I5,","),6((F8.2,","),'// &
                         '2(F6.3,",")),(F8.2,","),2(F7.4,","),'// &
                         '2(F8.2,","),(E12.5,","))') &
                         IDAY,IYEAR,(TBARACC(I,J)-TFREZ, &
@@ -3542,6 +3552,14 @@ ENDIF
 !> Also write daily summary (pre, evap, rof)
 !> *********************************************************************
 
+! write streamflow each timestep if asked for in mesh_input_run_options.ini file
+IF(STREAMFLOWFLAG==1) THEN
+
+!>      write out the MESH_output_streamflow_all.csv file
+  WRITE(71,'(I5,",",I5,",",I5,",",F10.3,100(",",F10.3))') IDAY,IHOUR,IMIN,(WF_QHYD_AVG(I), &
+    WF_QSYN(I),I=1,WF_NO)
+
+ENDIF
 
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
@@ -3980,6 +3998,7 @@ ENDDO
 CLOSE(UNIT=51)
 CLOSE(UNIT=58)
 CLOSE(UNIT=70)
+CLOSE(UNIT=71)
 close(unit=85)
 close(unit=86)
 close(unit=90)

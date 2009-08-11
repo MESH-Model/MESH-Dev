@@ -5,7 +5,7 @@
      +  BASINTEMPERATUREFLAG, BASINWINDFLAG, BASINPRESFLAG,
      +  BASINHUMIDITYFLAG, HOURLYFLAG, RESUMEFLAG,
      +  SHDFILEFLAG, CONFLAGS, RELFLG, SAVERESUMEFLAG,
-     +  SOILINIFLAG, IOS, PAS, N,
+     +  SOILINIFLAG, STREAMFLOWFLAG, IOS, PAS, N,
      +  IROVAL, WF_NUM_POINTS,
      +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
      +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
@@ -20,7 +20,7 @@
      +  BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG, BASINRAINFLAG,
      +  BASINTEMPERATUREFLAG, BASINWINDFLAG, BASINPRESFLAG,
      +  BASINHUMIDITYFLAG, HOURLYFLAG, RESUMEFLAG, SAVERESUMEFLAG,
-     +  SHDFILEFLAG, CONFLAGS, RELFLG, SOILINIFLAG,
+     +  SHDFILEFLAG, CONFLAGS, RELFLG, SOILINIFLAG,STREAMFLOWFLAG,
      +  IOS, PAS, N,
      +  IROVAL, WF_NUM_POINTS,
      +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, !P
@@ -155,6 +155,10 @@
 !*  is 0, the user does not want to use the soil.ini file.
       SOILINIFLAG = 0
 
+!* If STREAMFLOWFLAG is 1, the user wants to output streamflow values for each 
+!* timestep. If STREAMFLOWFLAG is 0, the user will get the default daily file.
+      STREAMFLOWFLAG = 0
+
 !> SET N = 0 RESETS THE CLASS COUNTER.
 !TODO: N is not a flag, move it somewhere else
       N = 0
@@ -247,6 +251,8 @@
             SHDFILEFLAG = IROVAL
           ELSE IF (IRONAME == "SOILINIFLAG") THEN
             SOILINIFLAG = IROVAL
+          ELSE IF (IRONAME == "STREAMFLOWFLAG") THEN
+            STREAMFLOWFLAG = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",
