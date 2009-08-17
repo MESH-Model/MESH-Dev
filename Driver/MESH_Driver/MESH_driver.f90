@@ -3255,15 +3255,25 @@ IF((IHOUR==12).AND.(IMIN==0))  THEN
     basin_SCA = 0.0
     basin_SWE = 0.0
 
-    do I=1,NA
-       if(BASIN_FRACTION(I)/=0.0) then
-          basin_SCA = basin_SCA + FSNOGRD(I)/BASIN_FRACTION(I)
-          basin_SWE = basin_SWE + SNOGRD(I)/BASIN_FRACTION(I)
-       endif
+!    do I=1,NA
+!       if(BASIN_FRACTION(I)/=0.0) then
+!          basin_SCA = basin_SCA + FSNOGRD(I)/BASIN_FRACTION(I)
+!          basin_SWE = basin_SWE + SNOGRD(I)/BASIN_FRACTION(I)
+!       endif
+!    enddo
+!
+!   basin_SCA = basin_SCA/NA
+!   basin_SWE = basin_SWE/NA
+
+! BRUCE DAVISON - AUG 17, 2009 (see notes in my notebook for this day)
+! Fixed calculation of basin averages. Needs documenting and testing.
+    do I=1,NML
+       basin_SCA = basin_SCA + FSNOGAT(I)*cp%FAREROW(ilmos(I),jlmos(I))
+       basin_SWE = basin_SWE + SNOGAT(I)*cp%FAREROW(ilmos(I),jlmos(I))
     enddo
 
-   basin_SCA = basin_SCA/NA
-   basin_SWE = basin_SWE/NA
+   basin_SCA = basin_SCA/TOTAL_AREA
+   basin_SWE = basin_SWE/TOTAL_AREA
 
 ENDIF
 
