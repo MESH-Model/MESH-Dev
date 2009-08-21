@@ -127,8 +127,7 @@ The Global Environmental Multi-scale (GEM) model is the atmospheric model develo
 In addition, two smaller-scale models with superior cold regions process representation have been used in IP3 research to help determine how to paramaterize the MESH model. The Cold Regions Hydrological Model (CRHM) is being developed at the Centre for Hydrology at the University of Saskatchewan in Canada. The model physics for CRHM are described in \cite{pomeroy_etal:2007}. GEOtop \citep{rigon_etal:2006,endrizzi:2007} is a model developed at the University of Trento in Italy. GEOtop is a hydrological model that includes both the energy and the water balance.
 
 \subsection{Model Connections} % Describe the connections between these models.
-Fig.~\ref{eps1} shows the model coupling strategy in conjunction with the data assimilation strategy. Along the top of the figure shows the well established method of incorporating upper air observations into the 4DVar data assimilation system for the GEM model (ref). A similar method is being developed for the land surface by incorporating surface observations and a precipitation analysis into a land data assimilation system (CaLDAS) for the MESH modelling platform (ref). The MESH model has two modes: an online mode and an offline mode. The online mode passes information between the land surface and atmosphere at each timestep, requiring that the surface scheme and routing model be fully coupled with the GEM model. The offline mode simply forces the surface scheme and routing model with atmospheric model output. The offline mode is much more computationally efficient, but fails to capture the interaction between the land-surface and atmosphere at each timestep. There are two versions of the MESH system, one that is integrated with the GEM model (MEC/MESH) and one that stands on its own (standalone MESH). MEC/MESH has the advantage of being able to run online or offline, to automatically read the standard GEM model output files, and to take advantage of the existing geophysical databases used by the GEM model. The standalone version has the advantage of being portable, well documented, updated with the latest version of CLASS, and relatively easily run without the need for much support.{\em (I know of a few grad students who wouldn't say it was easy to run, how about "is not as computationally intensive" or something that shows it doesn't need a supercomputer - FS)}\textcolor{blue}{ (I tried to get this point across by saying it was "relatively easy" to run, but perhaps a little more explanation is needed. - BD)}
- The MEC/MESH version is being developed and supported by Recherche en  Pr\'{e}vision Num\'{e}rique at Environment Canada in Montreal while the standalone MESH version is being developed and supported by the Hydrometeorlogical and Arctic Lab at Environment Canada in Saskatoon.
+Fig.~\ref{eps1} shows the model coupling strategy in conjunction with the data assimilation strategy. Along the top of the figure shows the well established method of incorporating upper air observations into the 4DVar data assimilation system for the GEM model (ref). A similar method is being developed for the land surface by incorporating surface observations and a precipitation analysis into a land data assimilation system (CaLDAS) for the MESH modelling platform (ref). The MESH model has two modes: an online mode and an offline mode. The online mode passes information between the land surface and atmosphere at each timestep, requiring that the surface scheme and routing model be fully coupled with the GEM model. The offline mode simply forces the surface scheme and routing model with atmospheric model output. The offline mode is much more computationally efficient, but fails to capture the interaction between the land-surface and atmosphere at each timestep. There are two versions of the MESH system, one that is integrated with the GEM model (MEC/MESH) and one that stands on its own (standalone MESH). MEC/MESH has the advantage of being able to run online or offline, to automatically read the standard GEM model output files, and to take advantage of the existing geophysical databases used by the GEM model. The standalone version has the advantage of being portable, well documented, updated with the latest version of CLASS, and relatively easy to install. (It's still not necessarily "easy," but the standalone version of MESH is much easier to install than MEC/MESH.) The MEC/MESH version is being developed and supported by Recherche en  Pr\'{e}vision Num\'{e}rique at Environment Canada in Montreal while the standalone MESH version is being developed and supported by the Hydrometeorlogical and Arctic Lab at Environment Canada in Saskatoon.
 
 \begin{figure}[h!]
 \vspace*{2mm}
@@ -139,7 +138,7 @@ Fig.~\ref{eps1} shows the model coupling strategy in conjunction with the data a
 \label{eps1}
 \end{figure}
 
-Fig.~\ref{eps2} shows the model coupling strategy without the detail about the atmospheric data assimilation but with more information about the MESH system. {\em ( "shows the model coupling system focussing on the MESH system"' - FS)}\textcolor{blue}{ (I will change this accordingly - BD) }The land surface scheme in the MEC/MESH system can be selected as either the French land surface scheme ISBA (ref) or version 3.? of CLASS. The land surface scheme in standalone MESH is CLASS 3.4. {\em (Although this is true right now this is going to change, it would be better to say MESH 1.2 uses CLASS 3.4, I don't know if there is a version number associated with MEC/MESH - FS)}\textcolor{blue}{ (Excellent point. I will rework. - BD) }Both MESH systems use the land surface scheme to calculate overland flow and groundwater recharge, and WATDRAIN to calculate interflow, for each tile in each grid cell. {\em (But MEC/MESH with ISBA wouldn't use WATDRAIN would it? - FS)}\textcolor{blue}{ (I think it does... we'll have to check with Vincent - BD ) }These flow components are then fed into WATROUTE to move the water from grid-square to grid-square.
+Fig.~\ref{eps2} shows the model coupling system focussing on the MESH system. The land surface scheme in the MEC/MESH system can be selected as either the French land surface scheme ISBA (ref) or version 3.? of CLASS. The land surface scheme in standalone MESH 1.3 is CLASS 3.4. Both MESH systems use the land surface scheme to calculate overland flow and groundwater recharge, and WATDRAIN to calculate interflow, for each tile in each grid cell. {\em (But MEC/MESH with ISBA wouldn't use WATDRAIN would it? - FS)}\textcolor{blue}{ (I think it does... we'll have to check with Vincent - BD ) }These flow components are then fed into WATROUTE to move the water from grid-square to grid-square.
 
 \begin{figure}[h!]
 \vspace*{2mm}
@@ -170,7 +169,7 @@ Another factor limiting the development of clear documentation is the desire to 
 
 A final challenge is the method of communication for bugs found in the code. The current approach is ad-hoc and generally limited to each model steward's base of operations. This is unfortunate given the amount of overlap between the various models being developed. A number of software tools exist that can facilitate the tracking of bugs in a distributed manner on the internet, and these are not currently being used within this particular modelling community.
 
-{\em (I see that these challenges come from our experience working with CLASS, I'm wondering how much of this can be said for the other models, for WATDRAIN there isn't really any code forking, just Ric writing code that is difficult to understand, but the other points probably apply to WATDRAIN and WATROUTE, not sure about the others - FS)}\textcolor{blue}{ (We actually do have code forking with WATDRAIN. Vincent at RPN re-wrote it to deal with some precision issues and we have the older version. We've also likely code-forked from Nick's WATROUTE. Not sure about GEM though. I agree that the description so far is a bit specific to our experience with CLASS. - BD)}
+{\em (I see that these challenges come from our experience working with CLASS, I'm wondering how much of this can be said for the other models, for WATDRAIN there isn't really any code forking, just Ric writing code that is difficult to understand, but the other points probably apply to WATDRAIN and WATROUTE, not sure about the others - FS)}\textcolor{blue}{ (We actually do have code forking with WATDRAIN. Vincent at RPN re-wrote it to deal with some precision issues and we have the older version. We've also likely code-forked from Nick's WATROUTE. Not sure about GEM. I agree that the description so far is a bit specific to our experience with CLASS. - BD)}
 
 \subsubsection{Potential Solutions}
 Each of the above challenges has a number of possible solutions. The following is a point-by-point description of one potential solution for each challenge.
@@ -185,7 +184,7 @@ Incorporating the expertise of computer scientists and engineers first requires 
 
 The documentation problem falls into two categories; documentation for users and documentation for developers. Users who simply want to run the model need detailed information about setting up the model and choosing appropriate parameters, whereas individuals wanting to improve the physics within the model need information linking the source code to the physical principles in question. As already mentioned, some improvements have been made to the documentation {\em (again this is CLASS specific - FS)}\textcolor{blue}{ (I agree and will see what I can do - BD)}, but further improvements are needed.
 
-The challenge around the proliferation of "bad" modelling is much trickier. (BD - AUG 4: To be honest I'm not sure what to say here.) {\em (I think having clear model user documentation that includes the limitations of the model would help prevent the "bad" modelling - FS)}\textcolor{blue}{ (This idea needs re-thinking. - BD)}
+The challenge around the proliferation of "bad" modelling is much trickier. (BD - AUG 4: To be honest I'm not sure what to say here.) {\em (I think having clear model user documentation that includes the limitations of the model would help prevent the "bad" modelling - FS)}\textcolor{blue}{ (This idea needs re-thinking overall. - BD)}
 
 Communicating bugs found in the code or the documentation is a fairly easy process. A number of bug-tracking tools exist that can be easly used over the internet when the code developers are distributed in various locations. All that's needed here is a commitment to set-up and maintain such a bug-tracking system. In addition, the number of bugs created would be limited by regular code reviews by developers and computer science experts.
 
@@ -202,19 +201,27 @@ Fig.~\ref{management} illustrates a code management methodology that would go a 
 
 {\em (So this is a very broad description of MESH, are we going to go into more detail on the specifics of the model, ie. how is ET calculated, how is drainage handled, how many layers in the snow model, what are the details of the routing scheme, this would add a lot of work and bulk to the report, but perhaps it can be handled by referencing other works, BUT there should probably be something about the GRU concept as in my opinion that really how we go from point scale to modelling large basins and I think the approach is somewhat unique, we could start with my write up from my thesis - FS)}\textcolor{blue}{ (I think we should simply reference the existing literature for model details. We should add something about the GRU in the model description and expand on it in the section on scaling strategies... this would be a good spot for your thesis paragraphs - BD)}
 
-\section{Modelling Activities}
+\section{Progress on IP3 Prediction Milestones}
+
+\subsection{Establishing MESH on IP3 Research Basins}
 Overview and show examples of the modelling activities to date.
 
-\subsection{Point Scale}
-Describe CLASS runs (or point MESH runs) being done for IP3 basins.
+\subsubsection{Point Scale}
+Describe CLASS runs (or point MESH runs) being done for IP3 basins. (Frank. Can you write-up a few paragraphs on your point MESH runs, showing some results?)
 
-\subsection{Small Basin Scale}
-Describe standalone MESH runs being done for small IP3 basins.
+\subsubsection{Small Basin Scale}
+Describe standalone MESH runs being done for small IP3 basins. (I should write-up existing work such as TVC and Wolf Creek.)
 
-\subsection{Large Basin Scale}
+\subsubsection{Large Basin Scale}
 Describe Standalone or Coupled MESH and GEM-LAM runs being done for IP3 domain.
 
 {\em (it would be great (but maybe impossible) to have the point scale runs be part of the small basin scale which is then part of the large basin scale - FS)}\textcolor{blue}{ (We'll see what we can do. - BD) }
+
+\subsection{Process and Parameter Improvements}
+Describe Matt's work on blowing snow. Describe process and parameter improvements on each basin.
+
+\subsection{Improved MESH model performance}
+Show a few results of improvements on each basin.
 
 \subsection{Remaining Work}
 Describe the remaining modelling work to be done.
