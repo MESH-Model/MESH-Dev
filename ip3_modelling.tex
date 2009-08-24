@@ -206,6 +206,20 @@ Fig.~\ref{management} illustrates a code management methodology that would go a 
 \subsection{Establishing MESH on IP3 Research Basins}
 Overview and show examples of the modelling activities to date.
 
+\subsubsection{Research Basins}
+Briefly describe each of the research basins and model domains. (A map would be nice.)
+
+\begin{itemize}
+	\item Trail Valley Creek
+	\item Wolf Creek
+	\item Baker Creek
+	\item Reynold's Creek
+	\item Marmot Creek
+	\item Lake O'Hara
+	\item Edgar's domains
+	\item other?
+\end{itemize}
+
 \subsubsection{Point Scale}
 Describe CLASS runs (or point MESH runs) being done for IP3 basins. (Frank. Can you write-up a few paragraphs on your point MESH runs, showing some results?)
 
@@ -219,6 +233,8 @@ Describe Standalone or Coupled MESH and GEM-LAM runs being done for IP3 domain.
 
 \subsection{Process and Parameter Improvements}
 Describe Matt's work on blowing snow. Describe process and parameter improvements on each basin.
+
+A physically based blowing snow model, the Prairie Blowing Snow Model \cite[PBSM]{pomeroy_li:2000} was coded into standalone MESH 1.2.1. PBSM calculates two-dimensional blowing snow transport and sublimation rates for steady-state conditions using mass and energy balances. The inclusion of PBSM algorithms requires four additional parameters: fetch distance, vegetation height, vegetation density and inter-GRU snow redistribution factors. The inter-GRU snow redistribution factor specifies the fraction of snow transport that is transported from upwind GRUs to a given downwind GRU as opposed to the other downwind GRUs \citep{macdonald_etal:2009}.
 
 \subsection{Improved MESH model performance}
 Show a few results of improvements on each basin.
