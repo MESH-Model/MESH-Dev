@@ -14,6 +14,7 @@
 %\documentclass[journal abbreviation]{copernicus}
 \documentclass[hess]{copernicus}
 \usepackage{color}
+\usepackage{setspace}
 
 %% copernicus2.cls
 %\documentclass[journal abbreviation]{copernicus2}
@@ -43,10 +44,12 @@
 \author[4,**]{P. Dornes}
 \author[4,+]{S. Pohl}
 \author[5]{C. Marsh}
-\author[1]{P. Marsh}
+\author[9]{P. Marsh}
 \author[5]{J. Pomeroy}
 \author[7]{A. Liu}
 \author[5,++]{S. Endrizzi}
+\author[1]{B. Toth}
+\author[9]{C. Spence}
 
 \affil[1]{Hydrometeorology and Arctic Laboratory, Meteorological Service of Canada, National Hydrology Research Center, Saskatoon SK Canada S7N 3H5, Canada}
 \affil[2]{Recherche en Pr\'{e}vision Num\'{e}rique, Meteorological Research Division, Environment Canada, Canadian Meteorological Center Dorval QC Canada H9P 1J3, Canada}
@@ -56,6 +59,7 @@
 \affil[6]{University of Calgary}
 \affil[7]{Environment Canada, Edmonton}
 \affil[8]{Water Survey of Canada, Meteorological Service of Canada, Lasalle Academy, 373 Sussex Drive Ottawa, ON Canada  K1A 0H3}
+\affil[9]{Water Science and Technology Directorate, National Hydrology Research Center, Saskatoon SK Canada S7N 3H5, Canada}
 \affil[*]{now at: Environment Canada, Burlington}
 \affil[**]{now at: Argentina}
 \affil[+]{now at: Germany}
@@ -211,6 +215,11 @@ Briefly describe each of the research basins and model domains. (A map would be 
 
 \begin{itemize}
 	\item Trail Valley Creek
+\end{itemize}
+
+Trail Valley Creek is a small Arctic catchment located about 50 Km north of Inuvik, Northwest Territories. The basin is about 60 km2 in size and dominated by tundra and shrub tundra vegetation. The MESH simulations of this basin are carried out at a resolution of 1 km and will cover the active period of the creek running from May 1 to September 30 of each year. 
+
+\begin{itemize}
 	\item Wolf Creek
 	\item Baker Creek
 	\item Reynold's Creek
@@ -224,7 +233,12 @@ Briefly describe each of the research basins and model domains. (A map would be 
 Describe CLASS runs (or point MESH runs) being done for IP3 basins. (Frank. Can you write-up a few paragraphs on your point MESH runs, showing some results?)
 
 \subsubsection{Small Basin Scale}
-Describe standalone MESH runs being done for small IP3 basins. (I should write-up existing work such as TVC and Wolf Creek.)
+Standalone MESH is being run for a number of small IP3 basins, including Trail Valley Creek, Wolf Creek, Baker Creek, Marmot Creek and Lake O'Hara. These basins range in size from ?? km to ?? km.
+
+\textbf{Trail Valley Creek} - Even though the basin is characterized by relatively low relief previous work has shown that spatial variability in end of winter snow cover and in the components of the snowmelt energy balance has a significant impact on snowmelt runoff and the exchange of energy between the land surface and the atmosphere (Pohl and Marsh 2006). The current work will attempt to capture these inhomogneitites in snow cover and energy inputs in the MESH model. The work will compare model runs using "traditional" vegetation based GRUs (tundra, shrub tundra and sparse forest) with runs using GRUs based on topographical characteristics of the basin. This will enable a more detailed picture of the end of winter snow cover which is used as input to the model by specifically including areas in which blowing snow is preferentially deposited (snow drifts) and areas from which snow is blown off (low snow areas) as separate GRUs. Additionally south and north facing slope areas will be identified and will be given separate forcing energy inputs.
+
+The analysis of the influence of these new GRUs will not be limited to simulated basin runoff but will also include the resulting modelled snow cover distribution and energy exchange. The comparison will show the differences which can be achieved by defining GRUs on the basis of topography.
+
 
 \subsubsection{Large Basin Scale}
 Describe Standalone or Coupled MESH and GEM-LAM runs being done for IP3 domain.
