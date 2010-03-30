@@ -22,12 +22,14 @@
      L                  TCTOPC, TCBOTC, TCTOPG, TCBOTG, 
      M                  THPOR,  THLRET, THLMIN, BI,     PSISAT, GRKSAT,
      N                  THLRAT, THFC,   XDRAIN, HCPS,   DELZ,   
-     O                  DELZW,  ZBOTW,  XSLOPE, GRKFAC, WFSURF, WFCINT,
-     P                  ISAND,  IWF,    ILG,    IL1,    IL2,
+     O                  DELZW,  ZBOTW,  XSLOPE, XDRAINH, WFSURF, KSAT,
+     P                  ISAND,  IWF,    ILG,    IL1,    IL2,    N,
      Q                  JL,     IC,     IG,     IGP1,   IGP2,
      R                  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI, 
      S                  MANNING_N, DD )
 C                                                                        
+C     * DEC 07/09 - D.VERSEGHY. ADD RADD AND SADD TO WPREP CALL.
+C     * JAN 06/09 - D.VERSEGHY. INCREASE LIMITING SNOW AMOUNT.
 C     * FEB 25/08 - D.VERSEGHY. MODIFICATIONS REFLECTING CHANGES
 C     *                         ELSEWHERE IN CODE.
 C     * MAR 23/06 - D.VERSEGHY. CHANGES TO ADD MODELLING OF WSNOW;
@@ -104,7 +106,7 @@ C
 C     * INTEGER CONSTANTS.
 C
       INTEGER IWF,ILG,IL1,IL2,JL,IC,IG,IGP1,IGP2,I,J,NLANDCS,NLANDGS,
-     1        NLANDC,NLANDG,NLANDI,IPTBAD,JPTBAD,KPTBAD,LPTBAD
+     1        NLANDC,NLANDG,NLANDI,IPTBAD,JPTBAD,KPTBAD,LPTBAD,N
 C
 C     * MAIN OUTPUT FIELDS.
 C                                                                                  
@@ -158,8 +160,8 @@ C
       REAL THPOR (ILG,IG),THLRET(ILG,IG),THLMIN(ILG,IG),BI    (ILG,IG),
      1     GRKSAT(ILG,IG),PSISAT(ILG,IG),THLRAT(ILG,IG),
      2     THFC  (ILG,IG),HCPS  (ILG,IG),DELZW (ILG,IG),DELZZ (ILG,IG),
-     3     ZBOTW (ILG,IG),XDRAIN(ILG),   XSLOPE(ILG),   GRKFAC(ILG),   
-     4     WFSURF(ILG),   WFCINT(ILG),   DELZ  (IG), BULK_FC(ILG,IG)
+     3     ZBOTW (ILG,IG),XDRAIN(ILG),   XSLOPE(ILG),   XDRAINH(ILG),   
+     4     WFSURF(ILG),   KSAT(ILG),   DELZ  (IG), BULK_FC(ILG,IG)
 C
       INTEGER             ISAND(ILG,IG)
 C
@@ -195,7 +197,7 @@ C
 C
       INTEGER             LZFAV (ILG)
 C
-C     * INTERNAL WORK ARRAYS FOR CANADD.
+C     * INTERNAL WORK ARRAYS FOR WPREP AND CANADD.
 C
       REAL RADD  (ILG),    SADD  (ILG)
 C
@@ -288,8 +290,8 @@ C
      R           ZSNOW,  ALBSNO, WSNOCS, WSNOGS, RHOSCS, RHOSGS,
      S           THPOR,  HCPS,   GRKSAT, ISAND,  DELZW,  DELZ,
      T           ILG,    IL1,    IL2,    JL,     IG,     IGP1,
-     U                 NLANDCS,NLANDGS,NLANDC, NLANDG,
-     V                 BI, PSISAT, DD, XSLOPE, BULK_FC  )
+     U           NLANDCS,NLANDGS,NLANDC, NLANDG, RADD,   SADD,
+     V           BI, PSISAT, DD, XSLOPE, BULK_FC  )
 C
 C     * CALCULATIONS FOR CANOPY OVER SNOW.
 C
@@ -298,7 +300,7 @@ C
      1                TBARCS,ZSNOCS,WLSTCS,CHCAPS,QFCF,QFCL,QFN,QFC,
      2                HTCC,HTCS,HTC,FCS,CMASCS,TSNOCS,HCPSCS,RHOSCS,
      3                FROOT,THPOR,THLMIN,DELZW,EVLOST,RLOST,IROOT,
-     4                IG,ILG,IL1,IL2,JL    )
+     4                IG,ILG,IL1,IL2,JL,N  )
           CALL CANADD(2,RPCCS,TRPCCS,SPCCS,TSPCCS,RAICNS,SNOCNS,
      1                TCANS,CHCAPS,HTCC,ROFC,ROVG,PCPN,PCPG,
      2                FCS,FSVFS,CWLCPS,CWFCPS,CMASCS,RHOSNI,
@@ -337,32 +339,31 @@ C
      9                THPOR,THLRET,THLMIN,BI,PSISAT,GRKSCS,
      A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,ISAND,IGRN,
      B                IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
-     C                NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL  )
+     C                NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           CALL GRDRAN(1,THLQCS,THICCS,TBRWCS,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFCS,TRNFCS,
      2                QFG,WLSTCS,FCS,EVPCSG,RPCCS,ZPNDCS,
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSCS,THFC,DELZW,XDRAIN,ISAND,
-     5                IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     5                IZERO,IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 !Craig Thompson added call to watrof, june 2008.
-          CALL WATROF(1,THLQCS,THICCS,ZPNDCS,TPNDCS,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,BASFLW,TBASFL,RUNFCS,TRNFCS,FCS,
-     2                ZPLMCS,XSLOPE,GRKFAC,MANNING_N,DD,WFCINT,
-     3                ZFAV,LZFAV,THLINV,TBRWCS,DELZW,ZBOTW,THPOR,
-     4                THLMIN,BI,THFC,DODRN,DOVER,DIDRN,ISAND,IWF,IG,
-     5                ILG,IL1,IL2,JL,IGP1,BULK_FC,PSISAT)
+          CALL WATROF(THLQCS,THICCS,ZPNDCS,TPNDCS,OVRFLW,TOVRFL,
+     1                SUBFLW,TSUBFL,RUNFCS,TRNFCS,FCS,ZPLMCS,
+     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBRWCS,
+     3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
+     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
           CALL TMCALC(TBARCS,THLQCS,THICCS,HCPCS,TPNDCS,ZPNDCS,
      1                TSNOCS,ZSNOCS,ALBSCS,RHOSCS,HCPSCS,TBASCS,
      2                OVRFLW,TOVRFL,RUNFCS,TRNFCS,HMFG,HTC,HTCS,
      3                WTRS,WTRG,FCS,TBRWCS,GZROCS,G12CS,
      4                G23CS,GGEO,TA,WSNOCS,TCTOPC,TCBOTC,GFLXCS,
      5                ZPLMCS,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
-     6                ISAND,IWF,IG,ILG,IL1,IL2,JL)
+     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N)
           CALL CHKWAT(1,PCPR,EVPICS,RUNFCS,WLSTCS,RAICNS,SNOCNS,
      1                RACS,SNCS,ZPNDCS,ZPOND,THLQCS,THICCS,
      2                THLIQC,THICEC,ZSNOCS,RHOSCS,XSNOCS,SNO,
      3                WSNOCS,WSNOW,FCS,FGS,FCS,BAL,THPOR,THLMIN,
-     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL     ) 
+     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL,N   ) 
           CALL SNOALBW(ALBSCS,RHOSCS,ZSNOCS,HCPSCS,
      1                 TSNOCS,FCS,SPCCS,RALB,WSNOCS,RHOMAX,
      2                 ISAND,ILG,IG,IL1,IL2,JL)       
@@ -396,7 +397,7 @@ C
      3                    FGS,EVAPGS,RPCGS,TRPCGS,GZROGS,G12GS,G23GS,
      4                    HCPGS,QMELTG,WSNOGS,ZMAT,TMOVE,WMOVE,ZRMDR,
      5                    TADD,ZMOVE,TBOT,DELZ,ISAND,ICONT,
-     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
           ENDIF
           CALL GRINFL(2,THLQGS,THICGS,TBRWGS,BASFLW,TBASFL,RUNFGS,
      1                TRNFGS,ZFAV,LZFAV,THLINV,QFG,WLSTGS,
@@ -410,32 +411,32 @@ C
      9                THPOR,THLRET,THLMIN,BI,PSISAT,GRKSGS,
      A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,ISAND,IGRN,
      B                IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
-     C                NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL  )
+     C                NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           CALL GRDRAN(2,THLQGS,THICGS,TBRWGS,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFGS,TRNFGS,
      2                QFG,WLSTGS,FGS,EVAPGS,RPCGS,ZPNDGS,
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSGS,THFC,DELZW,XDRAIN,ISAND,
-     5                IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     5                IZERO,IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 !Craig Thompson added call to watrof, june 2008.
-          CALL WATROF(2,THLQGS,THICGS,ZPNDGS,TPNDGS,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,BASFLW,TBASFL,RUNFGS,TRNFGS,FGS,
-     2                ZPLMGS,XSLOPE,GRKFAC,MANNING_N,DD,WFCINT,
-     3                ZFAV,LZFAV,THLINV,TBRWGS,DELZW,ZBOTW,THPOR,
-     4                THLMIN,BI,THFC,DODRN,DOVER,DIDRN,ISAND,IWF,IG,
-     5                ILG,IL1,IL2,JL,IGP1,BULK_FC,PSISAT)
+          CALL WATROF(THLQGS,THICGS,ZPNDGS,TPNDGS,OVRFLW,TOVRFL,
+     1                SUBFLW,TSUBFL,RUNFGS,TRNFGS,FGS,ZPLMGS,
+     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBRWGS,
+     3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
+     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
+     
           CALL TMCALC(TBARGS,THLQGS,THICGS,HCPGS,TPNDGS,ZPNDGS,
      1                TSNOGS,ZSNOGS,ALBSGS,RHOSGS,HCPSGS,TBASGS,
      2                OVRFLW,TOVRFL,RUNFGS,TRNFGS,HMFG,HTC,HTCS,
      3                WTRS,WTRG,FGS,TBRWGS,GZROGS,G12GS,
      4                G23GS,GGEO,TA,WSNOGS,TCTOPG,TCBOTG,GFLXGS,
      5                ZPLMGS,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
-     6                ISAND,IWF,IG,ILG,IL1,IL2,JL)
+     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N)
           CALL CHKWAT(2,PCPR,EVPIGS,RUNFGS,WLSTGS,RAICNS,SNOCNS,
      1                RACS,SNCS,ZPNDGS,ZPOND,THLQGS,THICGS,
      2                THLIQG,THICEG,ZSNOGS,RHOSGS,XSNOGS,SNO,
      3                WSNOGS,WSNOW,FCS,FGS,FGS,BAL,THPOR,THLMIN,
-     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL     ) 
+     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL,N   ) 
           CALL SNOALBW(ALBSGS,RHOSGS,ZSNOGS,HCPSGS,
      1                 TSNOGS,FGS,SPCGS,RALB,WSNOGS,RHOMAX,
      2                 ISAND,ILG,IG,IL1,IL2,JL)       
@@ -448,7 +449,7 @@ C
      1                TBARC,ZSNOWC,WLOSTC,CHCAP,QFCF,QFCL,QFN,QFC,
      2                HTCC,HTCS,HTC,FC,CMASSC,TSNOWC,HCPSC,RHOSC,
      3                FROOT,THPOR,THLMIN,DELZW,EVLOST,RLOST,IROOT,
-     4                IG,ILG,IL1,IL2,JL    )
+     4                IG,ILG,IL1,IL2,JL,N  )
           CALL CANADD(1,RPCC,TRPCC,SPCC,TSPCC,RAICAN,SNOCAN,
      1                TCANO,CHCAP,HTCC,ROFC,ROVG,PCPN,PCPG,
      2                FC,FSVF,CWLCAP,CWFCAP,CMASSC,RHOSNI,
@@ -482,32 +483,32 @@ C
      9                THPOR,THLRET,THLMIN,BI,PSISAT,GRKSC,
      A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,ISAND,IGRN,
      B                IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
-     C                NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL  )
+     C                NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           CALL GRDRAN(3,THLQCO,THICCO,TBARWC,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFC,TRUNFC,
      2                QFG,WLOSTC,FC,EVAPCG,RPCC,ZPONDC,
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSC,THFC,DELZW,XDRAIN,ISAND,
-     5                IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     5                IZERO,IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 !Craig Thompson added call to watrof, june 2008.
-          CALL WATROF(3,THLQCO,THICCO,ZPONDC,TPONDC,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,BASFLW,TBASFL,RUNFC,TRUNFC,FC,
-     2                ZPLIMC,XSLOPE,GRKFAC,MANNING_N,DD,WFCINT,
-     3                ZFAV,LZFAV,THLINV,TBARWC,DELZW,ZBOTW,THPOR,
-     4                THLMIN,BI,THFC,DODRN,DOVER,DIDRN,ISAND,IWF,IG,
-     5                ILG,IL1,IL2,JL,IGP1,BULK_FC,PSISAT)
+          CALL WATROF(THLQCO,THICCO,ZPONDC,TPONDC,OVRFLW,TOVRFL,
+     1                SUBFLW,TSUBFL,RUNFC,TRUNFC,FC,ZPLIMC,
+     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARWC,
+     3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
+     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
+     
           CALL TMCALC(TBARC,THLQCO,THICCO,HCPCO,TPONDC,ZPONDC,
      1                TSNOWC,ZSNOWC,ALBSC,RHOSC,HCPSC,TBASC,
      2                OVRFLW,TOVRFL,RUNFC,TRUNFC,HMFG,HTC,HTCS,
      3                WTRS,WTRG,FC,TBARWC,GZEROC,G12C,
      4                G23C,GGEO,TA,ZERO,TCTOPC,TCBOTC,GFLXC,
      5                ZPLIMC,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
-     6                ISAND,IWF,IG,ILG,IL1,IL2,JL)
+     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N)
           CALL CHKWAT(3,PCPR,EVPIC,RUNFC,WLOSTC,RAICAN,SNOCAN,
      1                RAC,SNC,ZPONDC,ZPOND,THLQCO,THICCO,
      2                THLIQC,THICEC,ZSNOWC,RHOSC,XSNOWC,SNO,
      3                ZERO,ZERO,FCS,FGS,FC,BAL,THPOR,THLMIN,
-     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL     ) 
+     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL,N    ) 
 C
       ENDIF                                                               
 C
@@ -534,7 +535,7 @@ C
      3                    FG,EVAPG,RPCG,TRPCG,GZEROG,G12G,G23G,
      4                    HCPGO,QFREZG,ZERO,ZMAT,TMOVE,WMOVE,ZRMDR,
      5                    TADD,ZMOVE,TBOT,DELZ,ISAND,ICONT,
-     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
           ENDIF
           CALL GRINFL(4,THLQGO,THICGO,TBARWG,BASFLW,TBASFL,RUNFG,
      1                TRUNFG,ZFAV,LZFAV,THLINV,QFG,WLOSTG,
@@ -548,33 +549,32 @@ C
      9                THPOR,THLRET,THLMIN,BI,PSISAT,GRKSG,
      A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,ISAND,IGRN,
      B                IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
-     C                NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL  )
+     C                NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           CALL GRDRAN(4,THLQGO,THICGO,TBARWG,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFG,TRUNFG,
      2                QFG,WLOSTG,FG,EVAPG,RPCG,ZPONDG,
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSG,THFC,DELZW,XDRAIN,ISAND,
-     5                IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     5                IZERO,IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 !Craig Thompson added call to watrof, june 2008.
-          CALL WATROF(4,THLQGO,THICGO,ZPONDG,TPONDG,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,BASFLW,TBASFL,RUNFG,TRUNFG,FG,
-     2                ZPLIMG,XSLOPE,GRKFAC,MANNING_N,DD,WFCINT,
-     3                ZFAV,LZFAV,THLINV,TBARWG,DELZW,ZBOTW,THPOR,
-     4                THLMIN,BI,THFC,DODRN,DOVER,DIDRN,ISAND,IWF,IG,
-     5                ILG,IL1,IL2,JL,IGP1,BULK_FC,PSISAT)
-
+          CALL WATROF(THLQGO,THICGO,ZPONDG,TPONDG,OVRFLW,TOVRFL,
+     1                SUBFLW,TSUBFL,RUNFG,TRUNFG,FG,ZPLIMG,
+     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARWG,
+     3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
+     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
+     
           CALL TMCALC(TBARG,THLQGO,THICGO,HCPGO,TPONDG,ZPONDG,
      1                TSNOWG,ZSNOWG,ALBSG,RHOSG,HCPSG,TBASG,
      2                OVRFLW,TOVRFL,RUNFG,TRUNFG,HMFG,HTC,HTCS,
      3                WTRS,WTRG,FG,TBARWG,GZEROG,G12G,
      4                G23G,GGEO,TA,ZERO,TCTOPG,TCBOTG,GFLXG,
      5                ZPLIMG,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
-     6                ISAND,IWF,IG,ILG,IL1,IL2,JL)
+     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N)
           CALL CHKWAT(4,PCPR,EVPIG,RUNFG,WLOSTG,RAICAN,SNOCAN,
      1                RAC,SNC,ZPONDG,ZPOND,THLQGO,THICGO,
      2                THLIQG,THICEG,ZSNOWG,RHOSG,XSNOWG,SNO,
      3                ZERO,ZERO,FCS,FGS,FG,BAL,THPOR,THLMIN,
-     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL     ) 
+     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL,N   ) 
 C
       ENDIF
 C
@@ -633,7 +633,7 @@ C
                   ROFC(I)=ROFC(I)+SNCAN(I)/DELT
                   ROVG(I)=ROVG(I)+SNCAN(I)/DELT
                   PCPG(I)=PCPG(I)+SNCAN(I)/DELT
-                  HTCC(I)=HTCC(I)-TCAN(I)*SPHW*SNCAN(I)/DELT
+                  HTCC(I)=HTCC(I)-TCAN(I)*SPHICE*SNCAN(I)/DELT
                   SNCAN(I)=0.0
               ENDIF
           ELSE                                                                
@@ -703,7 +703,7 @@ C
               WSNOW(I)=FCS(I)*WSNOCS(I) + FGS(I)*WSNOGS(I) 
               SNO(I)=ZSNOW(I)*RHOSNO(I)                                       
               IF(SNO(I).LT.0.0) SNO(I)=0.0
-              IF(SNO(I).LT.1.0E-3 .AND. SNO(I).GT.0.0) THEN
+              IF(SNO(I).LT.1.0E-2 .AND. SNO(I).GT.0.0) THEN
                   TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TSNOW(I)*(SNO(I)+
      1                WSNOW(I))/DELT)/(OVRFLW(I)+(SNO(I)+WSNOW(I))/
      2                DELT)

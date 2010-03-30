@@ -3,9 +3,7 @@
       SUBROUTINE FLXSURFZ(CDM, CDH, CTU, RIB, FTEMP, FVAP, ILMO,
      X                    UE, FCOR, TA , QA , ZU, ZT, VA,
      Y                    TG , QG , H , Z0 , Z0T,
-     %                    LZZ0, LZZ0T, FM, FH,N,IL1,IL2, ITER,JL )
-
-
+     %                    LZZ0, LZZ0T, FM, FH,N,IL1,IL2,FI,ITER,JL )
       IMPLICIT NONE
       INTEGER N,IL1,IL2,ITER(N),JL
       REAL CDM(N),CDH(N),CTU(N),RIB(N),FCOR(N),ILMO(N)
@@ -13,6 +11,7 @@
       REAL TG(N),QG(N),H(N),Z0(N),UE(N),ZT(N)
       REAL Z0T(N),LZZ0(N),LZZ0T(N)
       REAL fm(N),fh(N)
+      REAL FI(N)
 *
 *Author
 *          Y.Delage (Jul 1990)
@@ -42,6 +41,15 @@
 * 015      V. Fortin (Jun 06) - Modify calculations of LZZ0 and LZZ0T
 *                               to avoid numerical problems with log
 * 016      D. Verseghy (Jun 06) - Loop over IL1-IL2 instead of 1-N
+* 017      J.P. Paquin (Aug 08) - "Synchronization" with flxsurf3
+*                               - Insert code from stabfunc2.cdk (v4.5)
+*                               - VAMIN=2.5 m/s to be coherent with ISBA  
+*                                 (temporary measure VAMIN should be added
+*                                  to physics constants)
+*                                 (changes implemented by L.Duarte on Oct 08)
+* 018      R. Harvey   (Oct 08) - Add fractional subregion cover FI
+*                                 (in addition to ITER) to control
+*                                 calculations over relevant points.
 *
 *Object
 *          to calculate surface layer transfer coefficients and fluxes
@@ -63,7 +71,6 @@
 * FH       heat stability function
 * LZZ0     log ((zu+z0)/z0)
 * LZZ0T    log ((zt+z0)/z0t)
-
 *          - Input -
 * FCOR     Coriolis factor
 * ZU       height of wind input
@@ -81,15 +88,12 @@
 *          SEE DELAGE AND GIRARD BLM 58 (19-31)
 *                "       BLM 82 (23-48)
 *
-
 *     DIVERSES CONSTANTES PHYSIQUES 
 *
-      REAL AS,ASX,CI,BS,BETA,FACTN,HMIN,CLM
+      REAL AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX,CLM
       REAL DELTA,GRAV,KARMAN,CPD
       COMMON / PHYCON / DELTA,GRAV,KARMAN,CPD
-      COMMON / SURFCON / AS,ASX,CI,BS,BETA,FACTN,HMIN
-
-
+      COMMON / CLASSD2 / AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
       INTEGER J
       INTEGER IT,ITMAX
       REAL HMAX,CORMIN,EPSLN
@@ -106,24 +110,26 @@
       SAVE VAMIN
 *
       DATA CORMIN, HMAX /0.7E-4 ,  1500.0/
-      DATA ITMAX / 3  /
-      DATA VAMIN /0.1/
+      DATA ITMAX / 3 /
+* Modification de la valeur de VAMIN de 0.1 a
+* 2.5 pour fitter avec ce qui est dans ISBA
+*      DATA VAMIN /0.1/
+      DATA VAMIN / 2.5 /
+* 
       DATA EPSLN / 1.0e-05 /
 *
-      real a,b,c,d,psi,z
+c      real a,b,c,d,psi,z
       real unsl,hi
-
-
 ************************************************************************
 **  fonctions de couche de surface pour le cas stable                 **
 ************************************************************************
 *
-      d  (unsl) = 4*AS*BETA*unsl
-      c  (hi)   = d(unsl)*hi - hi**2
-      b  (hi)   = d(unsl) - 2*hi
-      a  (z,hi) = sqrt(1 + b(hi)*z - c(hi)*z**2)
-      psi(z,hi) = 0.5 * (a(z,hi)-z*hi-log(1+b(hi)*z*0.5+a(z,hi))-
-     +            b(hi)/(2*sqrt(c(hi)))*asin((b(hi)-2*c(hi)*z)/d(unsl)))
+c      d  (unsl) = 4*AS*BETA*unsl
+c      c  (hi)   = d(unsl)*hi - hi**2
+c      b  (hi)   = d(unsl) - 2*hi
+c      a  (z,hi) = sqrt(1 + b(hi)*z - c(hi)*z**2)
+c      psi(z,hi) = 0.5 * (a(z,hi)-z*hi-log(1+b(hi)*z*0.5+a(z,hi))-
+c     +            b(hi)/(2*sqrt(c(hi)))*asin((b(hi)-2*c(hi)*z)/d(unsl)))
 *
 *   Limites de validite: unsl >= 0 (cas stable ou neutre)
 *                        c > 0 (hi < d)
@@ -132,14 +138,13 @@
 *
 *   Reference :  Y. Delage, BLM, 82 (p23-48) (Eq.33-37)
 ************************************************************************
-
-      DF(ZZ)=(1-ZZ*UNSH)*sqrt(1+d(ilmo(j))*ZZ/(1-ZZ*UNSH))
+      DF(ZZ)=(1-ZZ*UNSH)*sqrt(1+(4*AS*BETA*ilmo(j))*ZZ/(1-ZZ*UNSH))
 *
       RAC3=sqrt(3.0)
       CS=AS*2.5
 *
       DO 1 J=IL1,IL2
-      IF(ITER(J).EQ.1) THEN
+      IF(FI(J).GT.0. .AND. ITER(J).EQ.1) THEN
 *
 *  CALCULATE THE RICHARDSON NUMBER
         ZP=ZU(J)**2/(ZT(J)+Z0(J)-Z0T(J))
@@ -168,11 +173,10 @@
         ILMO(J)=RIB(J)*FM(J)**2/(ZP*FH(J))
       ENDIF
     1 CONTINUE
-
 * - - - - - - - - -  BEGINNING OF ITERATION LOOP - - - - - - - - - - - 
       DO 35 IT=1,ITMAX
       DO 35 J=IL1,IL2
-      IF(ITER(J).EQ.1) THEN
+      IF(FI(J).GT.0. .AND. ITER(J).EQ.1) THEN
         u=max(vamin,va(j))
         ZP=ZU(J)**2/(ZT(J)+Z0(J)-Z0T(J))
         IF(RIB(J).GT.0.)  THEN
@@ -182,27 +186,34 @@
         hl=(ZU(J)+10*Z0(J))*FACTN
         F=MAX(ABS(FCOR(J)),CORMIN)
         hs=BS*sqrt(KARMAN*u/(ILMO(J)*F*fm(j)))
-        H(J)=MAX(HMIN,hs,hl,factn/d(ILMO(J)))
+        H(J)=MAX(HMIN,hs,hl,factn/(4*AS*BETA*ILMO(J)))
         UNSH=1/H(J)
         unsl=ILMO(J)
-        fm(J)=LZZ0(J)+psi(ZU(J)+Z0(J),unsh)-psi(Z0(J),unsh)
-        fh(J)=BETA*(LZZ0T(J)+psi(ZT(J)+Z0(J),unsh)-psi(Z0T(J),unsh))
+*CDIR IEXPAND
+        fm(J)=LZZ0(J)+psi(ZU(J)+Z0(J),unsh,unsl)-psi(Z0(J),unsh,unsl)
+*CDIR IEXPAND
+        fh(J)=BETA*(LZZ0T(J)+psi(ZT(J)+Z0(J),unsh,unsl)-psi(Z0T(J),unsh,
+     %unsl))
         DG=-ZP*FH(J)/FM(J)**2*(1+beta*(DF(ZT(J)+Z0(J))-DF(Z0T(J)))/
      1          (2*FH(J))-(DF(ZU(J)+Z0(J))-DF(Z0(J)))/FM(J))
 *----------------------------------------------------------------------
 *  UNSTABLE CASE
       ELSE
         ILMO(J)=MIN(0.,ILMO(J))
-         X=(1-CI*(ZU(J)+Z0(J))*BETA*ILMO(J))**(1./6)
-         X0=(1-CI*Z0(J)*BETA*ILMO(J))**(1./6.)
-         FM(J)=LZZ0(J)+LOG((X0+1)**2*SQRT(X0**2-X0+1)*(X0**2+X0+1)**1.5
-     %               /((X+1)**2*SQRT(X**2-X+1)*(X**2+X+1)**1.5))
-     %              +RAC3*ATAN(RAC3*((X**2-1)*X0-(X0**2-1)*X)/
-     %              ((X0**2-1)*(X**2-1)+3*X*X0))
-         Y=(1-CI*(ZT(J)+Z0(J))*BETA*ILMO(J))**(1./3)
-         Y0=(1-CI*Z0T(J)*BETA*ILMO(J))**(1./3)
-         FH(J)=BETA*(LZZ0T(J)+1.5*LOG((Y0**2+Y0+1)/(Y**2+Y+1))+RAC3*
-     %        ATAN(RAC3*2*(Y-Y0)/((2*Y0+1)*(2*Y+1)+3)))
+*CDIR IEXPAND
+c         X=(1-CI*(ZU(J)+Z0(J))*BETA*ILMO(J))**(1./6)
+c         X0=(1-CI*Z0(J)*BETA*ILMO(J))**(1./6.)
+c         FM(J)=LZZ0(J)+LOG((X0+1)**2*SQRT(X0**2-X0+1)*(X0**2+X0+1)**1.5
+c     %               /((X+1)**2*SQRT(X**2-X+1)*(X**2+X+1)**1.5))
+c     %              +RAC3*ATAN(RAC3*((X**2-1)*X0-(X0**2-1)*X)/
+c     %              ((X0**2-1)*(X**2-1)+3*X*X0))
+         FM(J)=fmi(zu(j)+z0(j),z0 (j),lzz0 (j),ilmo(j),x,x0)
+*CDIR IEXPAND
+c         Y=(1-CI*(ZT(J)+Z0(J))*BETA*ILMO(J))**(1./3)
+c         Y0=(1-CI*Z0T(J)*BETA*ILMO(J))**(1./3)
+c         FH(J)=BETA*(LZZ0T(J)+1.5*LOG((Y0**2+Y0+1)/(Y**2+Y+1))+RAC3*
+c     %        ATAN(RAC3*2*(Y-Y0)/((2*Y0+1)*(2*Y+1)+3)))
+         FH(J)=fhi(zt(j)+z0(j),z0t(j),lzz0t(j),ilmo(j),y,y0)
          DG=-ZP*FH(J)/FM(J)**2*(1+beta/FH(J)*(1/Y-1/Y0)-2/FM(J)*
      %                (1/X-1/X0))
       ENDIF
@@ -214,9 +225,8 @@
       ENDIF
    35 CONTINUE
 * - - - - - -  - - - END OF ITERATION LOOP - - - - - - - - - - - - - -
-
       DO 80 J=IL1,IL2
-      IF(ITER(J).EQ.1) THEN
+      IF(FI(J).GT.0. .AND. ITER(J).EQ.1) THEN
         u=max(vamin,va(j))
 *----------------------------------------------------------------------
 *  CALCULATE ILMO AND STABILITY FUNCTIONS FROM LOG-LINEAR PROFILE
@@ -253,4 +263,66 @@
       ENDIF
    80 CONTINUE
       RETURN
+      CONTAINS
+
+C   The following code is taken from the RPN/CMC physics library file
+C   /usr/local/env/armnlib/modeles/PHY_shared/ops/v_4.5/RCS/stabfunc2.cdk,v
+
+C   Internal function FMI
+C   Stability function for momentum in the unstable regime (ilmo<0)
+c   Reference: Delage Y. and Girard C. BLM 58 (19-31) Eq. 19
+c
+      REAL FUNCTION FMI(Z2,Z02,LZZ02,ILMO2,X,X0)
+      implicit none
+C
+      REAL, INTENT(IN ) :: Z2,Z02,LZZ02,ILMO2
+      REAL, INTENT(OUT) :: X,X0
+c
+      X =(1-CI*Z2 *BETA*ILMO2)**(0.16666666)
+      X0=(1-CI*Z02*BETA*ILMO2)**(0.16666666)
+      FMI=LZZ02+LOG((X0+1)**2*SQRT(X0**2-X0+1)*(X0**2+X0+1)**1.5
+     %               /((X+1)**2*SQRT(X**2-X+1)*(X**2+X+1)**1.5))
+     %              +RAC3*ATAN(RAC3*((X**2-1)*X0-(X0**2-1)*X)/
+     %              ((X0**2-1)*(X**2-1)+3*X*X0))
+c
+      RETURN
+      END FUNCTION FMI
+c
+C   Internal function FHI
+C   Stability function for heat and moisture in the unstable regime (ilmo<0)
+c   Reference: Delage Y. and Girard C. BLM 58 (19-31) Eq. 17
+c
+      REAL FUNCTION FHI(Z2,Z0T2,LZZ0T2,ILMO2,Y,Y0)
+      implicit none
+C
+      REAL, INTENT(IN ) :: Z2,Z0T2,LZZ0T2,ILMO2
+      REAL, INTENT(OUT) :: Y,Y0
+c
+      Y =(1-CI*Z2  *BETA*ILMO2)**(0.33333333)
+      Y0=(1-CI*Z0T2*BETA*ILMO2)**(0.33333333)
+      FHI=BETA*(LZZ0T2+1.5*LOG((Y0**2+Y0+1)/(Y**2+Y+1))+RAC3*
+     %        ATAN(RAC3*2*(Y-Y0)/((2*Y0+1)*(2*Y+1)+3)))
+c
+      RETURN
+      END FUNCTION FHI
+C
+C   Internal function psi
+C   Stability function for momentum in the stable regime (unsl>0)
+c   Reference :  Y. Delage, BLM, 82 (p23-48) (Eqs.33-37)
+c
+      REAL FUNCTION PSI(Z2,HI2,ILMO2)
+      implicit none
+C
+      REAL a,b,c,d
+      REAL, INTENT(IN ) :: ILMO2,Z2,HI2
+c
+      d = 4*AS*BETA*ILMO2
+      c = d*hi2 - hi2**2
+      b = d - 2*hi2
+      a = sqrt(1 + b*z2 - c*z2**2)
+      psi = 0.5 * (a-z2*hi2-log(1+b*z2*0.5+a)-
+     +            b/(2*sqrt(c))*asin((b-2*c*z2)/d))
+c
+      RETURN
+      END FUNCTION PSI
       END

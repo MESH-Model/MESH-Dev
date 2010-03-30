@@ -2,7 +2,7 @@
      1                  WLOST,CHCAP,QFCF,QFCL,QFN,QFC,HTCC,HTCS,HTC,
      2                  FI,CMASS,TSNOW,HCPSNO,RHOSNO,FROOT,THPOR,
      3                  THLMIN,DELZW,EVLOST,RLOST,IROOT,
-     4                  IG,ILG,IL1,IL2,JL     )
+     4                  IG,ILG,IL1,IL2,JL,N   )
 C                                                                                 
 C     * SEP 15/05 - D.VERSEGHY. REMOVE HARD CODING OF IG=3.
 C     * SEP 13/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
@@ -36,7 +36,7 @@ C
 C                                                                
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IG,ILG,IL1,IL2,JL,I,J
+      INTEGER IG,ILG,IL1,IL2,JL,I,J,N
 C
 C     * INPUT/OUTPUT ARRAYS.
 C
@@ -97,7 +97,7 @@ C
           IF(FI(I).GT.0.)                                          THEN
               HTC (I,J)=HTC(I,J)-FI(I)*(TBAR(I,J)+TFREZ)*THLIQ(I,J)*
      1            HCPW*DELZW(I,J)/DELT
-              IF(FROOT(I,J).GT.0) IROOT(I)=1
+              IF(FROOT(I,J).GT.1.0E-5) IROOT(I)=1
           ENDIF
   100 CONTINUE
 C

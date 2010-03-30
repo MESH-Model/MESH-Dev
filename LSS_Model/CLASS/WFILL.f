@@ -1,8 +1,10 @@
       SUBROUTINE WFILL(WMOVE,TMOVE,LZF,NINF,ZF,TRMDR,R,TR,
      1                 PSIF,GRKINF,THLINF,THLIQX,TBARWX,
      2                 DELZX,ZBOTX,DZF,TIMPND,WADJ,WADD,
-     3                 IFILL,IFIND,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     3                 IFILL,IFIND,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
 
+C     * JAN 06/09 - D.VERSEGHY. CORRECT LZF AND ZF ASSIGNMENTS IN LOOP 
+C     *                         100; ADDITIONAL DZF CHECK IN LOOP 400.
 C     * MAR 22/06 - D.VERSEGHY. MOVE IFILL TEST OUTSIDE ALL IF BLOCKS.
 C     * SEP 23/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
 C     * JUL 29/04 - D.VERSEGHY. PROTECT SENSITIVE CALCULATIONS 
@@ -26,7 +28,7 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J
+      INTEGER IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,N
 C
 C     * OUTPUT FIELDS.
 C                      
@@ -85,8 +87,13 @@ C
                   ZF(I)=ZBOTX(I,J)                                                 
                   LZF(I)=MIN(J+1,IGP1)                                          
               ELSE IF (GRKINF(I,J).LE.1.0E-12)                   THEN
-                  ZF(I)=MAX(ZBOTX(I,J)-DELZX(I,J),0.0)
-                  LZF(I)=J
+                  IF(J.EQ.1) THEN
+                      ZF(I)=0.0
+                      LZF(I)=1
+                  ELSE 
+                      ZF(I)=ZBOTX(I,J-1)
+                      LZF(I)=J-1
+                  ENDIF
                   IFIND(I)=1                                                         
               ENDIF                                                               
           ENDIF                                                                   
@@ -138,9 +145,10 @@ C
                   ELSE                                                            
                       DZF(I)=1.0E+8
                   ENDIF                                                           
-                  IF(DZF(I).GE.DELZX(I,J))              THEN                                        
+                  IF(DZF(I).GT.(DELZX(I,J)+1.0E-5))     THEN                                        
                       WADD(I)=WADD(I)-THLADD*DELZX(I,J)                                   
                   ELSE                                                            
+                      DZF(I)=MIN(DZF(I),DELZX(I,J))
                       LZF(I)=J                                                       
                       IF(J.EQ.1)                 THEN                                             
                           ZF(I)=DZF(I)                                                  
@@ -156,9 +164,9 @@ C
       DO 400 J=1,IGP1
       DO 400 I=IL1,IL2
           IF(IFILL(I).GT.0)                                         THEN
-              IF(TIMPND(I).GE.TRMDR(I) .AND. J.LE.LZF(I))  THEN
+              IF(TIMPND(I).GE.TRMDR(I) .AND. J.LE.LZF(I))      THEN
                   TMOVE(I,J+1)=TBARWX(I,J)                                                
-                  IF(J.EQ.LZF(I))                       THEN                                                   
+                  IF(J.EQ.LZF(I) .AND. DZF(I).LT.DELZX(I,J)) THEN                                                   
                       WMOVE(I,J+1)=THLIQX(I,J)*DZF(I)                                        
                   ELSE                                                                
                       WMOVE(I,J+1)=THLIQX(I,J)*DELZX(I,J)                                   

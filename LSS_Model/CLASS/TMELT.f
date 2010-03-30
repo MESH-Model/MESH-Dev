@@ -2,6 +2,7 @@
      1                 HMFN,HTCS,HTC,FI,HCPSNO,RHOSNO,WSNOW,
      2                 ISAND,IG,ILG,IL1,IL2,JL)
 C                                                                                  
+C     * JAN 06/09 - D.VERSEGHY/M.LAZARE. SPLIT 100 LOOP INTO TWO.
 C     * MAR 24/06 - D.VERSEGHY. ALLOW FOR PRESENCE OF WATER IN SNOW.
 C     * SEP 24/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
 C     * JUL 26/02 - D.VERSEGHY. SHORTENED CLASS4 COMMON BLOCK.
@@ -96,14 +97,21 @@ C-----------------------------------------------------------------------
                   QMELT(I)=0.0
                   HTCS(I)=HTCS(I)+FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
      1                    ZSNOW(I)/DELT
-              ELSE IF(QMELT(I).GT.0. AND. ISAND(I,1).GT.-4)      THEN
+              ENDIF
+              RALB(I)=R(I)
+          ENDIF
+  100 CONTINUE                                                                   
+C
+      DO 200 I=IL1,IL2
+          IF(FI(I).GT.0.)                                          THEN
+              IF(QMELT(I).GT.0. AND. ISAND(I,1).GT.-4)      THEN
                   GZERO(I)=GZERO(I)+QMELT(I)
                   HTCS (I)=HTCS(I)-FI(I)*QMELT(I)
                   HTC(I,1)=HTC(I,1)+FI(I)*QMELT(I)
               ENDIF
               RALB(I)=R(I)
           ENDIF
-  100 CONTINUE                                                                   
+  200 CONTINUE                                                                   
 C                                                                                  
       RETURN                                                                      
       END        

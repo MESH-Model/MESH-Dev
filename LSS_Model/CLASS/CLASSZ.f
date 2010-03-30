@@ -11,6 +11,8 @@
      A                  DELZ,   FCS,    FGS,    FC,     FG,
      B                  IL1,    IL2,    ILG,    IG,     N    )
 C
+C     * JAN 06/09 - D.VERSEGHY. MORE VARIABLES IN PRINT STATEMENTS;
+C     *                         SLIGHTLY INCREASED ACCURACY LIMITS.
 C     * NOV 10/06 - D.VERSEGHY. CHECK THAT SUMS OF ENERGY AND WATER
 C     *                         FLUXES FOR CANOPY, SNOW AND SOIL MATCH
 C     *                         CHANGES IN HEAT AND WATER STORAGE OVER
@@ -155,17 +157,17 @@ C
               WRITE(6,6450) RCAN(I),SCAN(I),TCAN(I)
               STOP
           ENDIF
-          IF(ABS(CTSSTP(I)-QSUMS).GT.1.0) THEN
-              WRITE(6,6442) N,CTSSTP(I),QSUMS
-6442          FORMAT(2X,'SNOW ENERGY BALANCE  ',I8,2F20.8)
+          IF(ABS(CTSSTP(I)-QSUMS).GT.3.0) THEN
+              WRITE(6,6442) N,I,CTSSTP(I),QSUMS
+6442          FORMAT(2X,'SNOW ENERGY BALANCE  ',2I8,2F20.8)
               WRITE(6,6450) FSGS(I),FLGS(I),HFSS(I),
      1            HEVS(I),HMFN(I),HTCS(I)
               WRITE(6,6450) TSNOW(I),SNO(I),WSNOW(I)
               WRITE(6,6451) FCS(I),FGS(I),FC(I),FG(I)
               STOP
           ENDIF
-          IF(ABS(CT1STP(I)-QSUM1).GT.2.0) THEN
-              WRITE(6,6443) N,CT1STP(I),QSUM1
+          IF(ABS(CT1STP(I)-QSUM1).GT.5.0) THEN
+              WRITE(6,6443) N,I,CT1STP(I),QSUM1
               WRITE(6,6450) FSGG(I),FLGG(I),HFSG(I),
      1            HEVG(I),HMFG(I,1),HTC(I,1)
               WRITE(6,6450) FSGS(I),FLGS(I),HFSS(I),
@@ -178,23 +180,27 @@ C
      *            THICE(I,3)*RHOICE*DELZW(I,3),
      *            ZPOND(I)*RHOW
               WRITE(6,6451) FCS(I),FGS(I),FC(I),FG(I),
-     1            DELZW(I,1)
-6443          FORMAT(2X,'LAYER 1 ENERGY BALANCE  ',I8,2F20.8)
+     1            DELZW(I,1),DELZW(I,2),DELZW(I,3)
+6443          FORMAT(2X,'LAYER 1 ENERGY BALANCE  ',2I8,2F20.8)
               STOP
           ENDIF
-          IF(ABS(CT2STP(I)-QSUM2).GT.1.0) THEN
-              WRITE(6,6444) N,CT2STP(I),QSUM2
-6444          FORMAT(2X,'LAYER 2 ENERGY BALANCE  ',I8,2F20.8)
+          IF(ABS(CT2STP(I)-QSUM2).GT.5.0) THEN
+              WRITE(6,6444) N,I,CT2STP(I),QSUM2
+6444          FORMAT(2X,'LAYER 2 ENERGY BALANCE  ',2I8,2F20.8)
               WRITE(6,6450) HMFG(I,2),HTC(I,2),
-     1            THLIQ(I,2),THICE(I,2)
+     1            THLIQ(I,2),THICE(I,2),THPOR(I,2),TBAR(I,2)-TFREZ
+              WRITE(6,6450) HMFG(I,3),HTC(I,3),
+     1            THLIQ(I,3),THICE(I,3),THPOR(I,3),TBAR(I,3)-TFREZ
+              WRITE(6,6450) HMFG(I,1),HTC(I,1),
+     1            THLIQ(I,1),THICE(I,1),THPOR(I,1),TBAR(I,1)-TFREZ
               WRITE(6,6451) FCS(I),FGS(I),FC(I),FG(I),
-     1            DELZW(I,2),HCPS(I,2),DELT
+     1            DELZW(I,2),HCPS(I,2),DELZW(I,3)
 6451          FORMAT(2X,7E20.6)
               STOP
           ENDIF
-          IF(ABS(CT3STP(I)-QSUM3).GT.2.0) THEN
-              WRITE(6,6445) N,CT3STP(I),QSUM3
-6445          FORMAT(2X,'LAYER 3 ENERGY BALANCE  ',I8,2F20.8)
+          IF(ABS(CT3STP(I)-QSUM3).GT.10.0) THEN
+              WRITE(6,6445) N,I,CT3STP(I),QSUM3
+6445          FORMAT(2X,'LAYER 3 ENERGY BALANCE  ',2I8,2F20.8)
               WRITE(6,6450) HMFG(I,3),HTC(I,3),
      1            TBAR(I,3)
               WRITE(6,6450) THLIQ(I,3),THICE(I,3),HCPS(I,3),
@@ -206,17 +212,18 @@ C
 6446          FORMAT(2X,'CANOPY WATER BALANCE  ',I8,2F20.8)
               STOP
           ENDIF
-          IF(ABS(WTSSTP(I)-WSUMS).GT.1.0E-3) THEN
-              WRITE(6,6447) N,WTSSTP(I),WSUMS
-6447          FORMAT(2X,'SNOW WATER BALANCE  ',I8,2F20.8)
+          IF(ABS(WTSSTP(I)-WSUMS).GT.1.0E-2) THEN
+              WRITE(6,6447) N,I,WTSSTP(I),WSUMS
+6447          FORMAT(2X,'SNOW WATER BALANCE  ',2I8,2F20.8)
               WRITE(6,6450) PCPN(I)*DELT,QFN(I)*DELT,
      1            ROFN(I)*DELT,WTRS(I)*DELT
-              WRITE(6,6450) SNO(I),WSNOW(I)
+              WRITE(6,6450) SNO(I),WSNOW(I),TSNOW(I)-TFREZ
+              WRITE(6,6451) FCS(I),FGS(I),FC(I),FG(I)
               STOP
           ENDIF
-          IF(ABS(WTGSTP(I)-WSUMG).GT.1.0E-3) THEN
-              WRITE(6,6448) N,WTGSTP(I),WSUMG
-6448          FORMAT(2X,'GROUND WATER BALANCE  ',I8,2F20.8)
+          IF(ABS(WTGSTP(I)-WSUMG).GT.1.0E-1) THEN
+              WRITE(6,6448) N,I,WTGSTP(I),WSUMG
+6448          FORMAT(2X,'GROUND WATER BALANCE  ',2I8,2F20.8)
               WRITE(6,6450) PCPG(I)*DELT,QFG(I)*DELT,
      1            QFC(I,1)*DELT,QFC(I,2)*DELT,
      2            QFC(I,3)*DELT,ROF(I)*DELT,

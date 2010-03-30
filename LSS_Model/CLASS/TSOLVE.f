@@ -12,6 +12,12 @@
      B                  DCFLXM,CFLUXM,WZERO,TRTOP,A,B,
      C                  ZOMS,ZOHS,LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF)
 C
+C     * DEC 07/09 - D.VERSEGHY. RESTORE EVAPORATION WHEN PRECIPITATION
+C     *                         IS OCCURRING.
+C     * MAR 13/09 - D.VERSEGHY. REPLACE SURFCON COMMON BLOCK WITH CLASSD2;
+C     *                         REVISED CALL TO FLXSURFZ.
+C     * JAN 06/09 - D.VERSEGHY/M.LAZARE. SPLIT IF CONDITIONS FRAMING
+C     *                         300 LOOP.
 C     * FEB 25/08 - D.VERSEGHY. STREAMLINE SOME CALCULATIONS; REMOVE
 C     *                         "ILW" SWITCH; SUPPRESS WATER VAPOUR FLUX
 C     *                         IF PRECIPITATION IS OCCURRING.
@@ -126,7 +132,7 @@ C
       REAL DELT,TFREZ,RGAS,RGASV,GRAV,SBC,VKC,CT,VMIN,HCPW,HCPICE,
      1     HCPSOL,HCPOM,HCPSND,HCPCLY,SPHW,SPHICE,SPHVEG,SPHAIR,
      2     RHOW,RHOICE,TCGLAC,CLHMLT,CLHVAP,DELTA,CGRAV,CKARM,CPD,
-     3     AS,ASX,CI,BS,BETA,FACTN,HMIN
+     3     AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
 C
       COMMON /CLASS1/ DELT,TFREZ                                                  
       COMMON /CLASS2/ RGAS,RGASV,GRAV,SBC,VKC,CT,VMIN
@@ -134,7 +140,7 @@ C
      1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
      2                TCGLAC,CLHMLT,CLHVAP
       COMMON /PHYCON/ DELTA,CGRAV,CKARM,CPD
-      COMMON /SURFCON/ AS,ASX,CI,BS,BETA,FACTN,HMIN
+      COMMON /CLASSD2/ AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
 C-----------------------------------------------------------------------
 C     * INITIALIZATION AND PRE-ITERATION SEQUENCE.
 C
@@ -230,7 +236,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,ITER,JL )
+     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL )
         ENDIF
 C
 C     * REMAINING CALCULATIONS.
@@ -246,7 +252,6 @@ C
      1                TPOTA(I))
               ENDIF
               EVAP(I)=RHOAIR(I)*CFLUX(I)*(QZERO(I)-QA(I)) 
-              IF(PCPR(I).GT.0.0) EVAP(I)=0.0
               QEVAP(I)=CPHCH(I)*EVAP(I)      
               GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
               RESID(I)=QSWNET(I)+QLWIN(I)-QLWOUT(I)-QSENS(I)-QEVAP(I)-
@@ -358,7 +363,6 @@ C
                   ELSE
                       QEVAP(I)=RESID(I)*0.5
                   ENDIF
-                  IF(PCPR(I).GT.0.0) QEVAP(I)=0.0
                   QSENS(I)=RESID(I)-QEVAP(I)
                   RESID(I)=0.
                   EVAP(I)=QEVAP(I)/CPHCH(I)
@@ -378,7 +382,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,JEVAP,JL )
+     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,JEVAP,JL )
         ENDIF
       ENDIF
 C
@@ -407,19 +411,20 @@ C     * POST-ITERATION CLEAN-UP.
 C
       NIT=0
       DO 300 I=IL1,IL2
-          IF(((IWATER(I).EQ.1 .AND. TZERO(I).LT.TFREZ) .OR. 
-     1        (IWATER(I).EQ.2 .AND. TZERO(I).GT.TFREZ)) .OR.
-     2        (ISAND(I,1).EQ.-4 .AND. TZERO(I).GT.TFREZ) .AND. 
-     3        FI(I).GT.0.)                                         THEN
-              TZERO(I)=TFREZ        
-              WZERO(I)=0.622*611.0/PADRY(I)
-              QZERO(I)=WZERO(I)/(1.0+WZERO(I))    
-              TVIRTS(I)=TZERO(I)*(1.0+0.61*QZERO(I))
-              ITER(I)=1
-              NIT=NIT+1 
-          ELSE
-              ITER(I)=0
-          ENDIF  
+          IF(FI(I).GT.0.)                                          THEN
+              IF(((IWATER(I).EQ.1 .AND. TZERO(I).LT.TFREZ) .OR. 
+     1            (IWATER(I).EQ.2 .AND. TZERO(I).GT.TFREZ)) .OR.
+     2            (ISAND(I,1).EQ.-4 .AND. TZERO(I).GT.TFREZ))   THEN 
+                  TZERO(I)=TFREZ        
+                  WZERO(I)=0.622*611.0/PADRY(I)
+                  QZERO(I)=WZERO(I)/(1.0+WZERO(I))    
+                  TVIRTS(I)=TZERO(I)*(1.0+0.61*QZERO(I))
+                  ITER(I)=1
+                  NIT=NIT+1 
+              ELSE
+                  ITER(I)=0
+              ENDIF  
+          ENDIF
   300 CONTINUE
 C
       IF(NIT.GT.0)                                                  THEN 
@@ -435,7 +440,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,ITER,JL )
+     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL )
         ENDIF
       ENDIF
 C
@@ -452,7 +457,6 @@ C
      1                TPOTA(I))
               ENDIF
               EVAP(I)=RHOAIR(I)*CFLUX(I)*(QZERO(I)-QA(I)) 
-              IF(PCPR(I).GT.0.0) EVAP(I)=0.0
               QEVAP(I)=CPHCH(I)*EVAP(I)       
               GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
               QMELT(I)=QSWNET(I)+QLWIN(I)-QLWOUT(I)-QSENS(I)-QEVAP(I)-

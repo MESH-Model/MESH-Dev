@@ -7,6 +7,10 @@
      6                  ILG,IL1,IL2,JL,IC,ICP1,IG,IALC,
      7                  CXTEFF,TRVS,TRIR,RCACC,RCG,RCV,RCT,GC) 
 C
+C     * OCT 16/08 - R.HARVEY.   ADD LARGE LIMIT FOR EFFECTIVE
+C     *                         EXTINCTION COEFFICIENT (CXTEFF) IN
+C     *                         (RARE) CASES WHEN CANOPY TRANSMISSIVITY
+C     *                         IN THE VISIBLE IS ZERO EXACTLY.
 C     * MAR 25/08 - D.VERSEGHY. DISTINGUISH BETWEEN LEAF AREA INDEX
 C     *                         AND PLANT AREA INDEX.
 C     * OCT 19/07 - D.VERSEGHY. SIMPLIFY ALBEDO CALCULATIONS FOR
@@ -87,13 +91,13 @@ C
 C     * COMMON BLOCK AND OTHER PARAMETERS.
 C
       REAL DELT,TFREZ,ALVSWC,ALIRWC,
-     1     TRCLRV,TRCLDV,TRCLRT,TRCLDT  
+     1     TRCLRV,TRCLDV,TRCLRT,TRCLDT,CXTLRG
 C                                                                                  
       COMMON /CLASS1/ DELT,TFREZ                                                  
       COMMON /CLASS7/ CANEXT,XLEAF
  
-      DATA ALVSWC                              
-     1    /  0.17  /
+      DATA ALVSWC,CXTLRG
+     1    /  0.17,1.0E20  /
 C----------------------------------------------------------------------
 C
 C     * INITIALIZE WORK ARRAYS.
@@ -126,7 +130,11 @@ C
               TRCLDT=0.30*EXP(-0.3*PAI(I,J)/0.9659)+0.50*EXP(-0.3*              
      1               PAI(I,J)/0.7071)+0.20*EXP(-0.3*PAI(I,J)/0.2588)   
               TRVS(I)=FCLOUD(I)*TRCLDV+(1.0-FCLOUD(I))*TRCLRV
-              CXTEFF(I,J)=-LOG(TRVS(I))/MAX(PAI(I,J),1.0E-5)
+              IF(TRVS(I).GT.0.0001)                           THEN
+                  CXTEFF(I,J)=-LOG(TRVS(I))/MAX(PAI(I,J),1.0E-5)
+              ELSE
+                  CXTEFF(I,J)=CXTLRG
+              ENDIF
               TRTOT =FCLOUD(I)*TRCLDT+(1.0-FCLOUD(I))*TRCLRT
               TRIR(I)= 2.*TRTOT-TRVS(I)
               TRVSCN(I)=TRVSCN(I)+FCAN(I,J)*TRVS(I)
@@ -168,7 +176,11 @@ C
      1               0.50*MIN(EXP(-0.4*PAI(I,J)),EXP(-0.4/0.7071))+              
      2               0.20*MIN(EXP(-0.4*PAI(I,J)),EXP(-0.4/0.2588))               
               TRVS(I)=FCLOUD(I)*TRCLDV+(1.0-FCLOUD(I))*TRCLRV
-              CXTEFF(I,J)=-LOG(TRVS(I))/MAX(PAI(I,J),1.0E-5)
+              IF(TRVS(I).GT.0.0001)                           THEN
+                  CXTEFF(I,J)=-LOG(TRVS(I))/MAX(PAI(I,J),1.0E-5)
+              ELSE
+                  CXTEFF(I,J)=CXTLRG
+              ENDIF
               TRTOT =FCLOUD(I)*TRCLDT+(1.0-FCLOUD(I))*TRCLRT
               TRIR(I)= 2.*TRTOT-TRVS(I)
               TRVSCN(I)=TRVSCN(I)+FCAN(I,J)*TRVS(I)
@@ -208,7 +220,11 @@ C
               TRCLDT=0.30*EXP(-0.4*PAI(I,J)/0.9659)+0.50*EXP(-0.4*              
      1               PAI(I,J)/0.7071)+0.20*EXP(-0.4*PAI(I,J)/0.2588)                
               TRVS(I)=FCLOUD(I)*TRCLDV+(1.0-FCLOUD(I))*TRCLRV
-              CXTEFF(I,J)=-LOG(TRVS(I))/MAX(PAI(I,J),1.0E-5)
+              IF(TRVS(I).GT.0.0001)                           THEN
+                  CXTEFF(I,J)=-LOG(TRVS(I))/MAX(PAI(I,J),1.0E-5)
+              ELSE
+                  CXTEFF(I,J)=CXTLRG
+              ENDIF
               TRTOT =FCLOUD(I)*TRCLDT+(1.0-FCLOUD(I))*TRCLRT
               TRIR(I)= 2.*TRTOT-TRVS(I)
               TRVSCN(I)=TRVSCN(I)+FCAN(I,J)*TRVS(I)

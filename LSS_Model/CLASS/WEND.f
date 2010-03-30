@@ -1,4 +1,4 @@
-      SUBROUTINE WEND(THLIQX,THICEX,TBARWX,
+      SUBROUTINE WEND(THLIQX,THICEX,TBARWX,ZPOND,TPOND,
      1                BASFLW,TBASFL,RUNOFF,TRUNOF,FI,
      2                WMOVE,TMOVE,LZF,NINF,TRMDR,THLINF,DELZX,
      3                ZMAT,ZRMDR,FDTBND,WADD,TADD,FDT,TFDT,
@@ -6,8 +6,12 @@
      5                TUSED,RDUMMY,ZERO,WEXCES,XDRAIN,
      6                THPOR,THLRET,THLMIN,BI,PSISAT,GRKSAT,
      7                THFC,DELZW,ISAND,IGRN,IGRD,IZERO,
-     8                IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     8                IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
 
+C     * JAN 06/09 - D.VERSEGHY. ADD ZPOND AND TPOND TO SUBROUTINE
+C     *                         CALL; ASSIGN RESIDUAL OF WMOVE TO
+C     *                         PONDED WATER; REVISE LOOP 550;
+C     *                         DELETE CALCULATION OF FDTBND.
 C     * MAY 17/06 - D.VERSEGHY. PROTECT AGAINST DIVISIONS BY ZERO.
 C     * OCT 21/05 - D.VERSEGHY. FIX MINOR BUGS IN CLEANUP AND
 C     *                         RUNOFF TEMPERATURE CALCULATION.
@@ -47,13 +51,13 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K
+      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,N
 C
 C     * OUTPUT FIELDS.
 C
       REAL THLIQX(ILG,IGP1), THICEX(ILG,IGP1), TBARWX(ILG,IGP1), 
-     1     BASFLW(ILG),      TBASFL(ILG),      RUNOFF(ILG),
-     2     TRUNOF(ILG)
+     1     ZPOND (ILG),      TPOND (ILG),      BASFLW(ILG),      
+     2     TBASFL(ILG),      RUNOFF(ILG),      TRUNOF(ILG)
 C
 C     * INPUT FIELDS.
 C
@@ -136,24 +140,15 @@ C
       CALL GRDRAN(IVEG,THLDUM,THIDUM,TDUMW,FDT,TFDT,RDUMMY,RDUMMY,
      1            RDUMMY,RDUMMY,RDUMMY,RDUMMY,FI,ZERO,ZERO,ZERO,
      2            TUSED,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
-     3            BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,
-     4            IZERO,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL  )
-C
-C     * CONSISTENCY CHECKS ON FLOWS INTO AND OUT OF SOIL LAYER 
-C     * CONTAINING WETTING FRONT.
-C
-      DO 150 I=IL1,IL2
-          IF(IGRN(I).GT.0 .AND. LZF(I).LE.IG)                       THEN
-              FDTBND(I)=FDT(I,LZF(I))                                          
-              IF(LZF(I).GT.1)                              THEN 
-                  IF(FDTBND(I).GT.0. .AND. (THLIQX(I,LZF(I)-1)-
-     1                THLMIN(I,LZF(I)-1)).LT. 1.0E-3) FDTBND(I)=0.0  
-              ENDIF
-          ENDIF
+     3            BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,LZF,
+     4            IZERO,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 C
 C     * INITIALIZATION OF ARRAYS IN PREPARATION FOR RE-ALLOCATION OF
-C     * MOISTURE STORES WITHIN SOIL LAYERS.
+C     * MOISTURE STORES WITHIN SOIL LAYERS; SUPPRESS WATER FLOWS 
+C     * CALCULATED IN GRDRAN ABOVE WETTING FRONT; CONSISTENCY CHECK
+C     * FOR WATER FLOWS INTO LAYER CONTAINING WETTING FRONT.
 C
+      DO 150 I=IL1,IL2
           IF(IGRN(I).GT.0)                                       THEN
                NINF(I)=MIN(NINF(I),IGP1)                                                        
           ENDIF                                                                       
@@ -191,9 +186,9 @@ C
       DO 400 J=1,IGP1
       DO 400 I=IL1,IL2
           IF(IGRN(I).GT.0 .AND. K.LE.NINF(I))                       THEN
-              IF(ZRMDR(I,J).GT.1.0E-4 .AND. WMOVE(I,K).GT.0.) THEN                        
+              IF(ZRMDR(I,J).GT.1.0E-5 .AND. WMOVE(I,K).GT.0.) THEN                        
                   ZMAT(I,K,J)=WMOVE(I,K)/THLINF(I,J)                                    
-                  IF(ZMAT(I,K,J).GE.ZRMDR(I,J)) THEN                                  
+                  IF(ZMAT(I,K,J).GT.ZRMDR(I,J)) THEN                                  
                       ZMAT(I,K,J)=ZRMDR(I,J)                                          
                       WMOVE(I,K)=WMOVE(I,K)-ZRMDR(I,J)*THLINF(I,J)                        
                       ZRMDR(I,J)=0.0                                                
@@ -204,6 +199,15 @@ C
               ENDIF                                                               
           ENDIF
   400 CONTINUE
+C
+      DO 450 J=1,IGP1
+      DO 450 I=IL1,IL2
+          IF(IGRN(I).GT.0. AND. WMOVE(I,J).GT.0.0)                  THEN
+              TPOND(I)=(TPOND(I)*ZPOND(I)+TMOVE(I,J)*WMOVE(I,J))/
+     1            (ZPOND(I)+WMOVE(I,J))
+              ZPOND(I)=ZPOND(I)+WMOVE(I,J)
+          ENDIF
+ 450  CONTINUE
 C
 C     * ADD WATER CONTENT AND TEMPERATURE CHANGES DUE TO INFILTRATION
 C     * (WADD, TADD) AND DRAINAGE (WDRA, TDRA) TO WATER REMAINING IN
@@ -227,7 +231,7 @@ C
 C
           DO 550 I=IL1,IL2
               IF(IGRN(I).GT.0 .AND. DELZW(I,J).GT.1.0E-4)           THEN
-                 IF(ZRMDR(I,J).GT.0.)                 THEN 
+                 IF(ZRMDR(I,J).GT.1.0E-5)                 THEN 
                     WREM=THLIQX(I,J)*ZRMDR(I,J)                                             
                     TREM=TBARWX(I,J)*THLIQX(I,J)*ZRMDR(I,J)                                   
                  ELSE                                                                    
@@ -235,12 +239,10 @@ C
                     TREM=0.0                                                            
                  ENDIF                                                                   
                  IF(J.EQ.LZF(I))                      THEN    
-                    THDRAN=THLIQX(I,J)+(FDTBND(I)-FDT(I,J+1))/
-     1                     DELZW(I,J)                          
-                    THINFL=(WADD(I)+WREM-FDT(I,J+1))/DELZW(I,J)                                 
-                    IF(THINFL.LT.THDRAN)   THEN                                           
-                       FDT(I,J)=THDRAN*DELZW(I,J)-WADD(I)-WREM+
-     1                          FDT(I,J+1)                        
+                    THINFL=(WADD(I)+WREM+FDT(I,J)-FDT(I,J+1))/DELZW(I,J)                                 
+                    IF(THINFL.LT.THLMIN(I,J))   THEN                                           
+                       FDT(I,J+1)=WADD(I)+WREM+FDT(I,J)-THLMIN(I,J)*
+     1                            DELZW(I,J)
                     ENDIF                                                               
                  ENDIF                                                                   
                  WDRA=FDT(I,J)-FDT(I,J+1)                                                    
@@ -270,7 +272,7 @@ C
      1                THLINF(I,IGP1)*ZMAT(I,K,IGP1))/(RUNOFF(I)+
      2                THLINF(I,IGP1)*ZMAT(I,K,IGP1))
                   RUNOFF(I)=RUNOFF(I)+THLINF(I,IGP1)*ZMAT(I,K,IGP1)
-              ELSE IF(K.EQ.IGP1 .AND. FDT(I,K).GT.0.0)        THEN
+              ELSE IF(K.EQ.IGP1 .AND. FDT(I,K).GT.1.0E-16)       THEN
                   TBASFL(I)=(TBASFL(I)*BASFLW(I)+FI(I)*(TFDT(I,K)+
      1                TFREZ)*FDT(I,K))/(BASFLW(I)+FI(I)*FDT(I,K))
                   BASFLW(I)=BASFLW(I)+FI(I)*FDT(I,K)

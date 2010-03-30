@@ -15,6 +15,9 @@
      E            IPAI,IHGT,RMAT,H,HS,CWCPAV,GROWA,GROWN,GROWB,
      F            RRESID,SRESID,FRTOT )               
 C
+C     * DEC 23/09 - D.VERSEGHY. IN LIMITING PONDING DEPTH CALCULATIONS,
+C     *                         IDENTIFY PEATLANDS WHERE ISAND(I,2)=-2
+C     * JAN 06/09 - D.VERSEGHY. REINTRODUCE CHECKS ON FRACTIONAL AREAS.
 C     * MAR 25/08 - D.VERSEGHY. DISTINGUISH BETWEEN LEAF AREA INDEX
 C     *                         AND PLANT AREA INDEX.
 C     * JAN 17/08 - D.VERSEGHY. STREAMLINE SOME CALCULATIONS; REMOVE
@@ -375,7 +378,29 @@ C
           FG (I)=1.0-FSNOW(I)-FC(I)                                     
           FCS(I)=FCANS(I,1)+FCANS(I,2)+FCANS(I,3)+FCANS(I,4)            
           FGS(I)=FSNOW(I)-FCS(I)                                        
-C
+          IF(ABS(1.0-FCS(I)-FC(I)).LT.8.0E-5) THEN
+              IF(FCS(I).LT.1.0E-5) THEN
+                FSNOW (I)=0.0 
+              ELSE IF (FC(I).LT.1.0E-5) THEN
+                FSNOW(I)= 1.0  
+              ENDIF
+              IF(FCS(I).GT.0.) THEN
+                FCANS(I,1)=FCANS(I,1)*FSNOW(I)/FCS(I)
+                FCANS(I,2)=FCANS(I,2)*FSNOW(I)/FCS(I)
+                FCANS(I,3)=FCANS(I,3)*FSNOW(I)/FCS(I)
+                FCANS(I,4)=FCANS(I,4)*FSNOW(I)/FCS(I)
+              ENDIF
+              IF(FC(I).GT.0.) THEN
+                FCAN(I,1)=FCAN(I,1)*(1.0-FSNOW(I))/FC(I)
+                FCAN(I,2)=FCAN(I,2)*(1.0-FSNOW(I))/FC(I)
+                FCAN(I,3)=FCAN(I,3)*(1.0-FSNOW(I))/FC(I)
+                FCAN(I,4)=FCAN(I,4)*(1.0-FSNOW(I))/FC(I)
+              ENDIF
+              FCS(I)=MIN(FSNOW(I),1.0)
+              FC(I)=1.0-FCS(I)
+              FGS(I)=0.0
+              FG(I)=0.0
+          ENDIF
           FC (I)=MAX(FC (I),0.0)
           FG (I)=MAX(FG (I),0.0)
           FCS(I)=MAX(FCS(I),0.0)
@@ -389,15 +414,19 @@ C
      1                                   CALL XIT('APREP',-1)
 C
           IF(IWF.EQ.0) THEN
-              IF(ISAND(I,1).EQ.-2) THEN
+              IF(ISAND(I,2).EQ.-2) THEN
                   ZPLIMG(I)=0.10
                   ZPLMGS(I)=0.10
                   ZPLIMC(I)=0.10
                   ZPLMCS(I)=0.10
               ELSE
-                  IF(ISAND(I,1).EQ.-4) ZPLIMG(I)=0.001
-                  IF(ISAND(I,1).EQ.-3) ZPLIMG(I)=0.001
-                  IF(ISAND(I,1).GE. 0) ZPLIMG(I)=0.002
+                  IF(ISAND(I,1).EQ.-4) THEN
+                      ZPLIMG(I)=0.001
+                  ELSEIF(ISAND(I,1).EQ.-3) THEN
+                      ZPLIMG(I)=0.001
+                  ELSE
+                      ZPLIMG(I)=0.002
+                  ENDIF
                   IF(FGS(I).GT.0.0) THEN
                       ZPLMGS(I)=(ZPLIMG(I)*FSNOW(I)*(1.0-FCANMX(I,1)-
      1                          FCANMX(I,2)-FCANMX(I,3)-FCANMX(I,4))+
@@ -743,7 +772,7 @@ C
 375       CONTINUE
           ZROOT=MIN(ZROOT,ZROOTG)
           DO 400 K=1,IG
-              IF(ZROOT.LE.(ZBOTW(I,K)-DELZW(I,K)))                 THEN
+              IF(ZROOT.LE.(ZBOTW(I,K)-DELZW(I,K)+0.0001))          THEN
                   RMAT(I,J,K)=0.0
               ELSEIF(ZROOT.LE.ZBOTW(I,K))                          THEN             
                   RMAT(I,J,K)=(EXP(-3.0*(ZBOTW(I,K)-DELZW(I,K)))-

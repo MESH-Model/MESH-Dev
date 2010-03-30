@@ -21,8 +21,8 @@
      K                  QSWINV, RADJ,   DLON,   RHOSNI, DELZ,   DELZW,  
      L                  ZBOTW,  THPOR,  THLMIN, PSISAT, BI,     PSIWLT, 
      M                  HCPS,   ISAND,  IDAY,   ILG,    IL1,    IL2,    
-     N                  JL,     IC,     ICP1,   IG,     IDISP,  IZREF,
-     O                  IWF,    ILAI,   IHGT,   IALC,   IALS,   IALG)
+     N                  JL,N,   IC,     ICP1,   IG,     IDISP,  IZREF,
+     O                  IWF,    IPAI,   IHGT,   IALC,   IALS,   IALG)
 C
 C     * NOV 30/06 - D.VERSEGHY. CONVERT RADJ TO REGULAR PRECISION.
 C     * APR 13/06 - D.VERSEGHY. SEPARATE GROUND AND SNOW ALBEDOS FOR 
@@ -96,7 +96,7 @@ C
 C     * INTEGER CONSTANTS.
 C
       INTEGER IDAY,ILG,IL1,IL2,JL,IC,ICP1,IG,IDISP,IZREF,IWF,
-     1        ILAI,IHGT,IALC,IALS,IALG,I,J
+     1        IPAI,IHGT,IALC,IALS,IALG,I,J,N
 C
 C     * OUTPUT ARRAYS.
 C
@@ -192,7 +192,7 @@ C
       DO 100 I=IL1,IL2                                                            
           IF(SNO(I).GT.0.0) THEN                                              
               ZSNOW(I)=SNO(I)/RHOSNO(I)                                       
-              IF(ZSNOW(I).GE.SNOLIM(I)) THEN                                     
+              IF(ZSNOW(I).GE.(SNOLIM(I)-0.00001)) THEN                                     
                   FSNOW(I)=1.0                                                   
               ELSE                                                            
                   FSNOW(I)=ZSNOW(I)/SNOLIM(I)
@@ -239,7 +239,7 @@ C
      B            TA,RHOAIR,RADJ,DLON,RHOSNI,DELZ,DELZW,ZBOTW,
      C            THPOR,THLMIN,PSISAT,BI,PSIWLT,HCPS,ISAND,
      D            ILG,IL1,IL2,JL,IC,ICP1,IG,IDAY,IDISP,IZREF,IWF,
-     E            ILAI,IHGT,RMAT,H,HS,CWCPAV,GROWA,GROWN,GROWB,
+     E            IPAI,IHGT,RMAT,H,HS,CWCPAV,GROWA,GROWN,GROWB,
      F            RRESID,SRESID,FRTOT )               
 C
 C     * SNOW ALBEDOS AND TRANSMISSIVITY.

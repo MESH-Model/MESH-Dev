@@ -10,8 +10,11 @@
      9                  THPOR,THLRET,THLMIN,BI,PSISAT,GRKSAT,
      A                  THLRAT,THFC,DELZW,ZBOTW,XDRAIN,ISAND,IGRN,
      B                  IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
-     C                  NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     C                  NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 C
+C     * JAN 06/09 - D.VERSEGHY. MODIFY DELZX AND ZBOTX OF BOTTOM LAYER;
+C     *                         ADDITIONAL THLIQ CHECK IN 350 LOOP;
+C     *                         PASS ADDITIONAL VARIABLES TO WEND.
 C     * MAR 27/08 - D.VERSEGHY. MOVE VISCOSITY ADJUSTMENT TO WPREP.
 C     * OCT 31/06 - R.SOULIS.   ADJUST GRKSAT FOR VISCOSITY OF WATER
 C     *                         AND PRESENCE OF ICE; ADJUST THPOR FOR
@@ -57,7 +60,7 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J
+      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,N
 C  
 C     * INPUT/OUTPUT FIELDS.
 C
@@ -174,12 +177,12 @@ C
               THLIQX(I,IG+1)=THLIQX(I,IG)                                                     
               THICEX(I,IG+1)=THICEX(I,IG)                                                     
               TBARWX(I,IG+1)=TBARWX(I,IG)                                                     
-              IF(XDRAIN(I).GT.0.0) THEN
-                  DELZX(I,IG+1)=999994.9                                                        
+              IF(XDRAIN(I).GT.0.0 .AND. DELZW(I,IG).GT.1.0E-5)  THEN
+                  DELZX(I,IG+1)=999999.                                                        
               ELSE
                   DELZX(I,IG+1)=0.0
               ENDIF
-              ZBOTX (I,IG+1)=999999.                                                         
+              ZBOTX (I,IG+1)=ZBOTX(I,IG)+DELZX(I,IG+1)
               FDT   (I,IG+1)=0.0
               TFDT  (I,IG+1)=0.0
               THLINF(I,IG+1)=THLINF(I,IG)                                                     
@@ -243,7 +246,7 @@ C
               ENDIF
               DO 350 J=1,IG
                   IF(THLIQ(I,J).GE.(THLINF(I,J)-1.0E-6) .AND.
-     1                                    LZF(I).EQ.J)         THEN
+     1                    THLIQ(I,J).GT.0.0001 .AND. LZF(I).EQ.J)  THEN
                       ZF(I)=ZBOTW(I,J)
                       LZF(I)=J+1
                       NINF(I)=J+2
@@ -267,7 +270,7 @@ C
       CALL WFILL(WMOVE,TMOVE,LZF,NINF,ZF,TRMDR,R,TR,
      1           PSIF,GRKINF,THLINF,THLIQX,TBARWX,
      2           DELZX,ZBOTX,DZF,TIMPND,WADJ,WADD,
-     3           IFILL,IFIND,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     3           IFILL,IFIND,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
 C
 C     * CALL "WFLOW" TO DO PROCESSING FOR PERIOD OF SATURATED
 C     * INFILTRATION.
@@ -276,12 +279,12 @@ C
      1           R,TR,EVAP,PSIF,GRKINF,THLINF,THLIQX,TBARWX,
      2           DELZX,ZBOTX,FMAX,ZF,DZF,DTFLOW,THLNLZ,
      3           THLQLZ,DZDISP,WDISP,WABS,ITER,NEND,ISIMP,
-     4           IGRN,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     4           IGRN,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
 C
 C     * RECALCULATE TEMPERATURES AND LIQUID MOISTURE CONTENTS OF
 C     * SOIL LAYERS FOLLOWING INFILTRATION.
 C
-      CALL WEND(THLIQX,THICEX,TBARWX,
+      CALL WEND(THLIQX,THICEX,TBARWX,ZPOND,TPOND,
      1          BASFLW,TBASFL,RUNOFF,TRUNOF,FI,
      2          WMOVE,TMOVE,LZF,NINF,TRMDR,THLINF,DELZX,
      3          ZMAT,ZRMDR,FDTBND,WADD,TADD,FDT,TFDT,
@@ -289,7 +292,7 @@ C
      5          TUSED,RDUMMY,ZERO,WEXCES,XDRAIN,
      6          THPOR,THLRET,THLMIN,BI,PSISAT,GRKSAT,
      7          THFC,DELZW,ISAND,IGRN,IGRD,IZERO,
-     8          IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     8          IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
 C
       DO 800 J=1,IG
       DO 800 I=IL1,IL2
@@ -321,7 +324,7 @@ C
      1            TBASFL,RUNOFF,TRUNOF,QFG,WLOST,FI,EVAP,ZERO,ZERO,
      2            TRMDR,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      3            BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,IZERO,
-     4            IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     4            IZERO,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
 C
       RETURN                                                                      
       END       

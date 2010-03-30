@@ -3,7 +3,7 @@
      2                  RUNOFF,TRUNOF,OVRFLW,TOVRFL,ZPLIM,GGEO,
      3                  FI,EVAP,R,TR,GZERO,G12,G23,HCP,QMELT,WSNOW,
      4                  ZMAT,TMOVE,WMOVE,ZRMDR,TADD,ZMOVE,TBOT,DELZ,
-     5                  ISAND,ICONT,IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL )
+     5                  ISAND,ICONT,IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 C
 C     * DEC 27/07 - D.VERSEGHY. ADD GEOTHERMAL HEAT FLUX; ADD ICE MASS
 C     *                         LOSS TO RUNOFF.
@@ -46,7 +46,7 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K
+      INTEGER IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,N
 C
 C     * INPUT/OUTPUT FIELDS.
 C                                                                                 
