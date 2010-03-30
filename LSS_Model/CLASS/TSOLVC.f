@@ -1,7 +1,7 @@
       SUBROUTINE TSOLVC(ISNOW,FI,
      1                 QSWNET,QSWNC,QSWNG,QLWOUT,QLWOC,QLWOG,QTRANS,
      2                 QSENS,QSENSC,QSENSG,QEVAP,QEVAPC,QEVAPG,EVAPC,
-     3                 EVAPG,TCAN,QCAN,TZERO,QZERO,GZERO,QMELTC,
+     3                 EVAPG,EVAP,TCAN,QCAN,TZERO,QZERO,GZERO,QMELTC,
      4                 QMELTG,RAICAN,SNOCAN,CDH,CDM,RIB,TAC,QAC,
      5                 CFLUX,FTEMP,FVAP,ILMO,UE,H,QFCF,QFCL,HTCC,
      6                 QSWINV,QSWINI,QLWIN,TPOTA,QA,VA,VAC,PADRY,RHOAIR,
@@ -10,7 +10,7 @@
      9                 ZOSCLH,ZOSCLM,ZRSLFH,ZRSLFM,ZOH,ZOM,
      A                 FCOR,GCONST,GCOEFF,TGND,TRSNOW,FSNOWC,FRAINC,
      B                 CHCAP,CMASS,PCPR,IWATER,IEVAP,ITERCT,
-     C                 ISLFD,ITC,ITCG,ILG,IL1,IL2,JL,  
+     C                 ISLFD,ITC,ITCG,ILG,IL1,IL2,JL,N,  
      D                 TSTEP,TVIRTC,TVIRTG,EVBETA,XEVAP,EVPWET,Q0SAT,
      E                 RA,RB,RAGINV,RBINV,RBTINV,RBCINV,TVRTAC,
      F                 TPOTG,RESID,
@@ -18,6 +18,15 @@
      H                 IEVAPC,TRTOP,QSTOR,CFSENS,CFEVAP,QSGADD,A,B,
      I                 ZOMS,ZOHS,LZZ0,LZZ0T,FM,FH,ITER,NITER,KF1,KF2 )
 C               
+C     * DEC 07/09 - D.VERSEGHY. RESTORE EVAPOTRANSPIRATION WHEN 
+C     *                         PRECIPITATION IS OCCURRING; ADD EVAPC
+C     *                         TO EVAP WHEN DEPOSITION OF WATER ON
+C     *                         CANOPY IS OCCURRING.
+C     * MAR 13/09 - D.VERSEGHY. REPLACE COMMON BLOCK SURFCON WITH CLASSD2;
+C     *                         REVISED CALL TO FLXSURFZ.
+C     * JAN 20/09 - D.VERSEGHY. CORRECT CALCULATION OF TPOTG.
+C     * JAN 06/09 - E.CHAN/D.VERSEGHY. SET UPPER LIMIT FOR TSTEP IN
+C     *                         N-R ITERATION SCHEME.
 C     * FEB 26/08 - D.VERSEGHY. STREAMLINE SOME CALCULATIONS; REMOVE
 C     *                         "ILW" SWITCH; SUPPRESS WATER VAPOUR FLUX
 C     *                         IF PRECIPITATION IS OCCURRING.
@@ -101,7 +110,7 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ISNOW,ISLFD,ITC,ITCG,ILG,IL1,IL2,JL,I
+      INTEGER ISNOW,ISLFD,ITC,ITCG,ILG,IL1,IL2,JL,I,N
 C
       INTEGER NUMIT,IBAD,NIT,ITERMX
 C
@@ -116,7 +125,7 @@ C
      6     CDH   (ILG),    CDM   (ILG),    RIB   (ILG),    TAC   (ILG),    
      7     QAC   (ILG),    CFLUX (ILG),    FTEMP (ILG),    FVAP  (ILG),    
      8     ILMO  (ILG),    UE    (ILG),    H     (ILG),
-     9     QFCF  (ILG),    QFCL  (ILG),    HTCC  (ILG)
+     9     QFCF  (ILG),    QFCL  (ILG),    HTCC  (ILG),    EVAP  (ILG)
 C
 C     * INPUT ARRAYS.
 C
@@ -163,7 +172,7 @@ C
       REAL DELT,TFREZ,RGAS,RGASV,GRAV,SBC,VKC,CT,VMIN,HCPW,HCPICE,
      1     HCPSOL,HCPOM,HCPSND,HCPCLY,SPHW,SPHICE,SPHVEG,SPHAIR,
      2     RHOW,RHOICE,TCGLAC,CLHMLT,CLHVAP,DELTA,CGRAV,CKARM,CPD,
-     3     AS,ASX,CI,BS,BETA,FACTN,HMIN
+     3     AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
 C
       COMMON /CLASS1/ DELT,TFREZ                                                  
       COMMON /CLASS2/ RGAS,RGASV,GRAV,SBC,VKC,CT,VMIN
@@ -171,7 +180,7 @@ C
      1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
      2                TCGLAC,CLHMLT,CLHVAP
       COMMON /PHYCON/ DELTA,CGRAV,CKARM,CPD
-      COMMON /SURFCON/ AS,ASX,CI,BS,BETA,FACTN,HMIN
+      COMMON /CLASSD2/ AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
 C
 C-----------------------------------------------------------------------
 C     * INITIALIZATION AND PRE-ITERATION SEQUENCE.
@@ -279,7 +288,7 @@ C
                   ENDIF
               ENDIF
 C
-              TPOTG(I)=TZERO(I)-7.0*ZOM(I)*GRAV/CPD
+              TPOTG(I)=TZERO(I)-8.0*ZOM(I)*GRAV/CPD
               TVIRTG(I)=TPOTG(I)*(1.0+0.61*QZERO(I))   
               IF(TVIRTG(I).GT.TVRTAC(I)+1.)                   THEN
                   RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))**0.333333
@@ -296,7 +305,6 @@ C
               QSENSG(I)=RHOAIR(I)*SPHAIR*RAGINV(I)*
      1            (TPOTG(I)-TAC(I))
               EVAPG (I)=RHOAIR(I)*(QZERO(I)-QAC(I))*RAGINV(I)
-              IF(PCPR(I).GT.0.0) EVAPG(I)=0.0
               QEVAPG(I)=CPHCHG(I)*EVAPG(I)    
               GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
               RESID(I)=QSWNG(I)+FSVF(I)*QLWIN(I)+(1.0-FSVF(I))*
@@ -345,7 +353,7 @@ C
      3               CPHCHG(I)*RHOAIR(I)*(DQ0DT*RAGINV(I)
      4              +(QZERO(I)-QAC(I))*DRAGIN(I))
               TSTEP(I)=-RESID(I)/DRDT0
-              IF (ABS(TSTEP(I)).GT.100.) TSTEP(I)=SIGN(20.,TSTEP(I))
+              IF(ABS(TSTEP(I)).GT.20.0) TSTEP(I)=SIGN(10.0,TSTEP(I))
               TZERO(I)=TZERO(I)+TSTEP(I)
               NITER(I)=NITER(I)+1
               NUMIT=NUMIT+1
@@ -386,7 +394,6 @@ C
                 BOWEN=SPHAIR*(TZERO(I)-TAC(I))/
      1             SIGN(MAX(ABS(QEVAPT),1.E-6),QEVAPT)
                 QEVAPG(I)=RESID(I)/SIGN(MAX(ABS(1+BOWEN),0.1),1+BOWEN)
-                IF(PCPR(I).GT.0.0) QEVAPG(I)=0.0
                 QSENSG(I)=RESID(I)-QEVAPG(I)
                 RESID(I)=0.
                 EVAPG(I)=QEVAPG(I)/CPHCHG(I)
@@ -411,8 +418,8 @@ C          ENDIF
  225  CONTINUE
 C
       IF(IBAD.NE.0)                                                 THEN
-          WRITE(6,6370) IBAD,JL,TZERO(IBAD),NITER(IBAD),ISNOW
- 6370     FORMAT('0BAD GROUND ITERATION TEMPERATURE',3X,2I3,F16.2,2I4)
+          WRITE(6,6370) IBAD,N,TZERO(IBAD),NITER(IBAD),ISNOW
+ 6370     FORMAT('0BAD GROUND ITERATION TEMPERATURE',3X,2I8,F16.2,2I4)
           WRITE(6,6380) QSWNG(IBAD),FSVF(IBAD),QLWIN(IBAD),QLWOC(IBAD),
      1        QLWOG(IBAD),QSENSG(IBAD),QEVAPG(IBAD),GZERO(IBAD)
           WRITE(6,6380) TCAN(IBAD)
@@ -428,7 +435,7 @@ C
                   TZERO(I)=TFREZ      
                   WZERO(I)=0.622*611.0/PADRY(I)
                   QZERO(I)=WZERO(I)/(1.0+WZERO(I))
-                  TPOTG(I)=TZERO(I)-7.0*ZOM(I)*GRAV/CPD
+                  TPOTG(I)=TZERO(I)-8.0*ZOM(I)*GRAV/CPD
                   TVIRTG(I)=TPOTG(I)*(1.0+0.61*QZERO(I))   
 C
                   QLWOG(I)=SBC*TZERO(I)*TZERO(I)*TZERO(I)*TZERO(I)
@@ -438,7 +445,6 @@ C
                       QSENSG(I)=RHOAIR(I)*SPHAIR*RAGINV(I)*
      1                          (TPOTG(I)-TAC(I))
                       EVAPG (I)=RHOAIR(I)*(QZERO(I)-QAC(I))*RAGINV(I)
-                      IF(PCPR(I).GT.0.0) EVAPG(I)=0.0
                   ELSE                  
                       RAGINV(I)=0.0
                       QSENSG(I)=0.0    
@@ -531,7 +537,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TAC,QAC,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,ITER,JL )
+     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL )
         ENDIF
 C
 C     * CALCULATE CANOPY AIR TEMPERATURE AND SPECIFIC HUMIDITY OF 
@@ -626,11 +632,6 @@ C
                   EVAPC(I)=RHOAIR(I)*CFEVAP(I)*(QCAN(I)-QAC(I))
                   IEVAPC(I)=1
               ELSE     
-                  EVAPC(I)=0.0   
-                  IEVAPC(I)=0
-                  QCAN(I)=QA(I)
-              ENDIF             
-              IF(PCPR(I).GT.0.0)       THEN
                   EVAPC(I)=0.0   
                   IEVAPC(I)=0
                   QCAN(I)=QA(I)
@@ -762,7 +763,6 @@ C
                ELSE
                    QEVAPC(I)=RESID(I)*0.5
                ENDIF
-               IF(PCPR(I).GT.0.0) QEVAPC(I)=0.0
                QSENSC(I)=RESID(I)-QEVAPC(I)
                RESID(I)=0.
                EVAPC(I)=QEVAPC(I)/CPHCHC(I)
@@ -782,7 +782,7 @@ c
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TCAN,QCAN,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,IEVAPC,JL )
+     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,IEVAPC,JL )
          ENDIF
       ENDIF
 C
@@ -925,7 +925,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TAC,QAC,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,ITER,JL )
+     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL )
         ENDIF
       ENDIF
 C
@@ -1011,7 +1011,6 @@ C
               ELSE                 
                   EVAPC(I)=0.0        
               ENDIF                    
-              IF(PCPR(I).GT.0.0) EVAPC(I)=0.0
               IF(EVAPC(I).LT.0. .AND. TCAN(I).GE.TADP(I)) EVAPC(I)=0.0
               IF(SNOCAN(I).GT.0.)                            THEN
                   EVPWET(I)=(CLHVAP+CLHMLT)*SNOCAN(I)/DELT
@@ -1052,6 +1051,7 @@ C
                       QFCL(I)=QFCL(I)+FI(I)*EVAPC(I)
                       HTCC(I)=HTCC(I)-FI(I)*TCAN(I)*SPHW*EVAPC(I)
                   ENDIF
+                  EVAP(I)=EVAP(I)+FI(I)*EVAPC(I)
                   EVAPC(I)=0.0
                   CHCAP(I)=SPHVEG*CMASS(I)+SPHICE*SNOCAN(I)+
      1                     SPHW*RAICAN(I)

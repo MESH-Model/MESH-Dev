@@ -1,5 +1,7 @@
       BLOCK DATA 
 C
+C     * MAR 13/09 - D.VERSEGHY. REPLACE SURFCON COMMON BLOCK WITH
+C     *                         CLASSD2; NEW VARIABLE ANGMAX
 C     * FEB 06/07 - D.VERSEGHY. NEW VALUE FOR ALVSO AND ALIRI.
 C     * NOV 04/04 - D.VERSEGHY. NEW VALUES FOR ALVSI AND ALIRI.
 C     * DEC 02/03 - D.VERSEGHY. HARMONIZE VALUES OF HCPICE,
@@ -37,7 +39,7 @@ C     * COMMON BLOCKS DEFINED SPECIFICALLY FOR USE IN CLASS.
       COMMON /CLASS7/ CANEXT(4),XLEAF(4)
       COMMON /CLASS8/ ALVSI,ALIRI,ALVSO,ALIRO,ALBRCK
       COMMON /PHYCON/ DELTA,CGRAV,CKARM,CPD
-      COMMON /SURFCON/ AS,ASX,CI,BS,BETA,FACTN,HMIN
+      COMMON /CLASSD2/ AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
 C
       DATA      VKC,        CT,         VMIN
      1       /  0.40,       1.15E-3,    0.1     /
@@ -105,8 +107,8 @@ C     1/         273.16,     5.66796E-8, 900.0   /
 C
 C     * ADDITIONAL VALUES FOR RPN AND GCM COMMON BLOCKS.
 C
-      DATA      DELTA,      AS,         ASX    
-     1       /  0.608,      12.0,       4.7   /
+      DATA      DELTA,      AS,         ASX,        ANGMAX
+     1       /  0.608,      12.0,       4.7,        0.85   /
 
       DATA      CI,         BS,         BETA,       FACTN,      HMIN 
      1       /  40.0,       1.0,        1.0,        1.2,        40.   /

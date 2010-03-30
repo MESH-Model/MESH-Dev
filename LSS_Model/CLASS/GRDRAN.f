@@ -1,9 +1,18 @@
       SUBROUTINE GRDRAN(IVEG,THLIQ,THICE,TBARW,FDT,TFDT,BASFLW,TBASFL,
      1                  RUNOFF,TRUNOF,QFG,WLOST,FI,EVAP,R,ZPOND,DT,
      2                  WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
-     3                  BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,
-     4                  IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL  )
+     3                  BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,LZF,
+     4                  IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 C
+C     * DEC 23/09 - V.FORTIN.   NEW CALCULATION OF BASEFLOW.
+C     * MAR 31/09 - D.VERSEGHY. PASS IN LZF, AND ZERO OUT FLOWS AT
+C     *                         TOP AND BOTTOM OF SOIL LAYERS DOWN
+C     *                         TO LAYER CONTAINING WETTING FRONT 
+C     *                         IN CASES WHERE INFILTRATION IS
+C     *                         OCCURRING.
+C     * JAN 06/09 - D.VERSEGHY. MODIFIED CALCULATION OF GRKSATF;
+C     *                         ADJUSTMENTS TO WATER FLUX 
+C     *                         CORRECTIONS IN 500 LOOP.
 C     * MAR 27/08 - D.VERSEGHY. MOVE VISCOSITY ADJUSTMENT TO WPREP.
 C     * OCT 31/06 - R.SOULIS.   ADJUST GRKSAT FOR VISCOSITY OF
 C     *                         WATER AND PRESENCE OF ICE; ADJUST
@@ -67,7 +76,7 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,IPTBAD 
+      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,IPTBAD,N 
 C
 C     * INPUT/OUTPUT FIELDS.
 C
@@ -82,7 +91,7 @@ C
       REAL FI    (ILG),    EVAP  (ILG),    R     (ILG),    
      1     ZPOND (ILG),    DT    (ILG)
 C
-      INTEGER              IGRN  (ILG)
+      INTEGER              IGRN  (ILG),    LZF   (ILG)
 C
 C     * WORK FIELDS.
 C
@@ -102,7 +111,7 @@ C
 C     * TEMPORARY VARIABLES.
 C
       REAL THPBND,THLBND,DTHLDZ,DTHPDZ,BBND,GRSBND,PSSBND,GRK,PSI,
-     1     WLIMIT,THSUBL,THLTHR
+     1     WLIMIT,THSUBL,THLTHR,CCH,ASAT,ASATC,SATB
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -140,8 +149,8 @@ C
           IF(IGRD(I).GT.0. .AND. ISAND(I,J).GT.-3)             THEN
               THLMAX(I,J)=MAX((THPOR(I,J)-THICE(I,J)-0.00001),
      1            THLIQ(I,J),THLMIN(I,J))                
-              GRKSATF(I,J)=GRKSAT(I,J)*(1.0-MAX(0.0,MIN(1.0,THICE(I,J)/
-     1            THPOR(I,J))))**2
+              GRKSATF(I,J)=GRKSAT(I,J)*(1.0-MAX(0.0,MIN((THPOR(I,J)-
+     1            THLMIN(I,J))/THPOR(I,J),THICE(I,J)/THPOR(I,J))))**2
               THPORF(I,J)=THLMAX(I,J)
           ELSE
               THLMAX(I,J)=0.0
@@ -157,9 +166,13 @@ C     * BETWEEN SOIL LAYERS.
           IF(IGRD(I).GT.0)                                          THEN
              FDT(I,1)=-EVAP(I)*DT(I)                                                           
              IF(DELZW(I,IG).GT.0.0001)                            THEN
-                 IF(THLIQ(I,IG).GT.THLRET(I,IG))              THEN
+                 IF(THLIQ(I,IG).GT.THFC(I,IG))               THEN
+                     CCH=2.0*BI(I,IG)+3.0
+                     ASATC=1.0-(1.0/CCH)
+                     ASAT=THLIQ(I,IG)/THPORF(I,IG)
+                     SATB=MIN(1.0,ASAT/ASATC)
                      FDT(I,IG+1)=GRKSATF(I,IG)*DT(I)*XDRAIN(I)*
-     1                   ((THLIQ(I,IG)/THPORF(I,IG))**(2.*BI(I,IG)+3.))
+     1                   SATB**CCH
                  ELSE                                                                        
                      FDT(I,IG+1)=0.0                                                           
                  ENDIF
@@ -204,6 +217,11 @@ C     2                (DELZW(I,J)+DELZW(I,J+1)))
               ELSE
                   FDT(I,J+1)=0.0
               ENDIF
+              IF(ABS(THLIQ(I,J)-THLIQ(I,J+1)).LT.0.05 .AND. 
+     1            FDT(I,J).LT.0.0) FDT(I,J+1)=0.0
+              IF(LZF(I).GT.0. .AND. J.LT.LZF(I)) FDT(I,J+1)=0.0
+              IF(LZF(I).GT.0. .AND. J.EQ.LZF(I) .AND. FDT(I,J+1)
+     1                 .LT.0.0) FDT(I,J+1)=0.0
           ENDIF
   200 CONTINUE 
 C                               
@@ -245,7 +263,7 @@ C     * ENSURE THAT CALCULATED WATER FLOWS BETWEEN SOIL LAYERS DO NOT
 C     * CAUSE LIQUID MOISTURE CONTENT OF ANY LAYER TO FALL BELOW THE
 C     * RESIDUAL VALUE OR TO EXCEED THE CALCULATED MAXIMUM.
 C
-          IF(IGRD(I).GT.0 .AND. THLIQ(I,J).LE.(THLMIN(I,J)+0.00001)) 
+          IF(IGRD(I).GT.0 .AND. THLIQ(I,J).LE.(THLMIN(I,J)+0.001)) 
      1                                                            THEN 
               IF(FDT(I,J).LE.0. .AND. FDT(I,J+1).GE.0.)      THEN                          
                   FDT(I,J)=0.0    
@@ -271,7 +289,7 @@ C
 C
       DO 300 J=IG,1,-1                                                            
       DO 300 I=IL1,IL2
-          IF(IGRD(I).GT.0 .AND. THLIQ(I,J).GE.(THLMAX(I,J)-0.00001)) 
+          IF(IGRD(I).GT.0 .AND. THLIQ(I,J).GE.(THLMAX(I,J)-0.001)) 
      1                                                            THEN 
               IF(FDT(I,J).GE.0. .AND. FDT(I,J+1).LE.0.)      THEN                          
                   FDT(I,J)=0.0                                                      
@@ -316,22 +334,31 @@ C
           ENDIF
   400 CONTINUE               
 C
-      DO 500 J=IG,1,-1                                                            
+      DO 500 J=IG,1,-1
       DO 500 I=IL1,IL2
           IF(IGRD(I).GT.0 .AND. THTEST(I,J).GT.THLMAX(I,J))         THEN
              WLIMIT=MAX((THLMAX(I,J)-THLIQ(I,J)),0.0)*DELZW(I,J)                      
              WEXCES(I)=(THTEST(I,J)-THLMAX(I,J))*DELZW(I,J)                                
-             IF(FDT(I,J).GE.0. .AND. FDT(I,J+1).LE.0.)        THEN                          
-                IF(FDT(I,J).GE.WLIMIT)             THEN                                       
-                   FDT(I,J)=WLIMIT                                               
-                   FDT(I,J+1)=0.0                                                
-                ELSE                                                            
-                   FDT(I,J+1)=FDT(I,J)-WLIMIT                                      
-                ENDIF                                                           
+             IF(FDT(I,J).GT.0. .AND. FDT(I,J+1).LE.0.)        THEN                          
+                IF(-FDT(I,J+1).GT.WLIMIT)          THEN
+                    FDT(I,J+1)=-WLIMIT
+                    FDT(I,J)=0.0
+                ELSE
+                    FDT(I,J)=FDT(I,J)-WEXCES(I)
+                ENDIF
+C                IF(FDT(I,J).GE.WLIMIT)             THEN                                       
+C                   FDT(I,J)=WLIMIT                                               
+C                   FDT(I,J+1)=0.0                                                
+C                ELSE                                                            
+C                   FDT(I,J+1)=FDT(I,J)-WLIMIT                                      
+C                ENDIF                                                           
              ELSE IF(FDT(I,J).GT.0. .AND. FDT(I,J+1).GE.0.)   THEN                      
                 FDT(I,J)=FDT(I,J)-WEXCES(I)                                            
              ELSE IF(FDT(I,J).LE.0. .AND. FDT(I,J+1).LT.0.)   THEN                      
                 FDT(I,J+1)=FDT(I,J+1)+WEXCES(I)                                        
+                IF(J.LT.IG)                       THEN
+                    IF(FDT(I,J+2).LT.0.) FDT(I,J+2)=0.0
+                ENDIF
              ENDIF                                                               
              DO 450 K=1,IG
                  IF(DELZW(I,K).GT.0.0)                            THEN

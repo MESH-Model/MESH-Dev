@@ -1,8 +1,8 @@
-      SUBROUTINE DIASURF(UZ,VZ,TZ,QZ,NI,U,V,TG,QG,Z0,Z0T,ILMO,ZA,
+      SUBROUTINE DIASURFZ(UZ,VZ,TZ,QZ,NI,U,V,TG,QG,Z0,Z0T,ILMO,ZA,
      1                  H,UE,FTEMP,FVAP,ZU,ZT,LAT,F,IL1,IL2,JL)
 
       IMPLICIT NONE
-      INTEGER NI
+      INTEGER NI,JL
       REAL ZT(NI),ZU(NI)
       REAL UZ(NI),VZ(NI),TZ(NI),QZ(NI),ZA(NI),U(NI),V(NI)
       REAL TG(NI),QG(NI),UE(NI),FTEMP(NI),FVAP(NI)
@@ -23,7 +23,7 @@
 *                              - Introduce log-linear profile for near-
 *                                 neutral cases
 * 008      D. Verseghy (Nov 02) - Remove unused constant CLM 
-*                                 from common block SURFCON
+*                                 from common block CLASSD2
 * 009      M. Mackay (Nov 04) - Change all occurrences of ALOG
 *                               to LOG for greater portability.
 * 010      F. SeglenieKs (Mar 05) - Declare LAT as REAL*8 for
@@ -32,6 +32,7 @@
 * 012      E.Chan (Nov 06) - Bracket entire subroutine loop with 
 *                            IF(F(J).GT.0.)
 * 013      D.Verseghy (Nov 06) - Convert LAT to regular precision
+* 014      B.Dugas (Jan 09) - "Synchronization" with diasurf2
 *
 *Object
 *          to calculate the diagnostic values of U, V, T, Q
@@ -66,72 +67,48 @@
 * F        Fraction of surface type being studied 
 
       REAL ANG,ANGI,VITS,LZZ0,LZZ0T
-      REAL CT,DANG,CM,ANGMAX
-      REAL X,X0,Y,Y0,FH,FM
+      REAL CT,DANG,CM
+      REAL XX,XX0,YY,YY0,fh,fm,hi
       REAL RAC3
-      SAVE ANGMAX
-      INTEGER J,IL1,IL2,JL
+      INTEGER J,IL1,IL2
 *
-
-      REAL AS,ASX,CI,BS,BETA,FACTN,HMIN
-      COMMON / SURFCON / AS,ASX,CI,BS,BETA,FACTN,HMIN
+      REAL AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
+      COMMON / CLASSD2 / AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
       REAL DELTA,GRAV,KARMAN,CPD
       COMMON / PHYCON / DELTA,GRAV,KARMAN,CPD
 
-      real a,b,c,d,psi,z
-      real unsl,hi
-
-
-************************************************************************
-**  fonctions de couche de surface pour le cas stable                 **
-************************************************************************
-*
-      d  (unsl) = 4*AS*BETA*unsl
-      c  (hi)   = d(unsl)*hi - hi**2
-      b  (hi)   = d(unsl) - 2*hi
-      a  (z,hi) = sqrt(1 + b(hi)*z - c(hi)*z**2)
-      psi(z,hi) = 0.5 * (a(z,hi)-z*hi-log(1+b(hi)*z*0.5+a(z,hi))-
-     +            b(hi)/(2*sqrt(c(hi)))*asin((b(hi)-2*c(hi)*z)/d(unsl)))
-*
-*   Limites de validite: unsl >= 0 (cas stable ou neutre)
-*                        c > 0 (hi < d)
-*                        z*hi < 1
-*   Ces 2 dernieres conditions imposees a l'aide du facteur 'factn'
-*
-*   Reference :  Y. Delage, BLM, 82 (p23-48) (Eq.33-37)
-************************************************************************
-
-      DATA ANGMAX /0.85/
       RAC3=SQRT(3.)
 
-      DO 10 J=IL1,IL2
-      IF(F(J).GT.0.0)                                     THEN
+      DO J=IL1,IL2
+      FJ_GT_0 : IF(F(J).GT.0.0)                           THEN
 
       LZZ0T=LOG((ZT(J)+Z0(J))/Z0T(J))
       LZZ0=LOG(ZU(J)/Z0(J)+1)
       IF(ILMO(J).LE.0.) THEN
 *---------------------------------------------------------------------
 *                      UNSTABLE CASE
-           Y=(1-BETA*CI*(ZT(J)+Z0(J))*ILMO(J))**(1./3)
-           Y0=(1-BETA*CI*Z0T(J)*ILMO(J))**(1./3)
-           FH=BETA*(LZZ0T+1.5*LOG((Y0**2+Y0+1)/(Y**2+Y+1))+RAC3*
-     1        ATAN(RAC3*2*(Y-Y0)/((2*Y0+1)*(2*Y+1)+3)))
-           X=(1-BETA*CI*(ZU(J)+Z0(J))*ILMO(J))**(1./6)
-           X0=(1-BETA*CI*Z0(J)*ILMO(J))**(1./6)
-           FM=LZZ0+LOG((X0+1)**2*SQRT(X0**2-X0+1)*(X0**2+X0+1)**1.5
-     1               /((X+1)**2*SQRT(X**2-X+1)*(X**2+X+1)**1.5))
-     2              +RAC3*ATAN(RAC3*((X**2-1)*X0-(X0**2-1)*X)/
-     3              ((X0**2-1)*(X**2-1)+3*X*X0))
-           HI=0.
+*
+           hi=0.
+*CDIR IEXPAND
+           fh=fhi(ZT(J)+Z0(J),Z0T(j),LZZ0T,ILMO(J),YY,YY0)
+*CDIR IEXPAND
+           fm=fmi(ZU(J)+Z0(J),Z0 (J),LZZ0 ,ILMO(J),XX,XX0)
       ELSE
 *---------------------------------------------------------------------
 *                        STABLE CASE
-           unsl=ilmo(j)
-        hi=1/MAX(HMIN,H(J),(ZA(J)+10*Z0(J))*factn,factn/d(ILMO(J)))
-           fh=BETA*(LZZ0T+min(psi(ZT(J)+Z0(J),hi)-psi(Z0T(J),hi),
-     1                        ASX*ILMO(J)*(ZT(J)+Z0(J)-Z0T(J))))
-           fm=LZZ0+min(psi(zu(J)+Z0(J),hi)-psi(Z0(J),hi),
-     1                 ASX*ILMO(J)*ZU(J))
+         hi=1/MAX(HMIN,H(J),(ZA(J)+10*Z0(J))*factn,factn/
+     1        (4*AS*BETA*ilmo(j)))
+*CDIR IEXPAND
+         fh=BETA*(LZZ0T+min( psi(ZT(J)+Z0(J),HI,ILMO(J))
+     1                      -psi(Z0T(J),HI,ILMO(J)),
+     1                       ASX*ILMO(J)*(ZT(J)+Z0(J)-Z0T(J))
+     1                     )
+     1           )
+*CDIR IEXPAND
+         fm=LZZ0+min( psi(zu(J)+Z0(J),HI,ILMO(J))
+     1               -psi(Z0(J),HI,ILMO(J)),
+     1                ASX*ILMO(J)*ZU(J)
+     1              )
       ENDIF
 *---------------------------------------------------------------------
       CT=KARMAN/FH
@@ -152,8 +129,70 @@
       UZ(J)=UZ(J)+F(J)*VITS*COS(ANG)
       VZ(J)=VZ(J)+F(J)*VITS*SIN(ANG)
 
-      ENDIF
-   10 CONTINUE
+      ENDIF FJ_GT_0
+      ENDDO
 
       RETURN
+      CONTAINS
+
+C   The following code is taken from the RPN/CMC physics library file
+C   /usr/local/env/armnlib/modeles/PHY_shared/ops/v_4.5/RCS/stabfunc2.cdk,v
+
+C   Internal function FMI
+C   Stability function for momentum in the unstable regime (ilmo<0)
+c   Reference: Delage Y. and Girard C. BLM 58 (19-31) Eq. 19
+c
+      REAL FUNCTION FMI(Z2,Z02,LZZ02,ILMO2,X,X0)
+      implicit none
+C
+      REAL, INTENT(IN ) :: Z2,Z02,LZZ02,ILMO2
+      REAL, INTENT(OUT) :: X,X0
+c
+      X =(1-CI*Z2 *BETA*ILMO2)**(0.16666666)
+      X0=(1-CI*Z02*BETA*ILMO2)**(0.16666666)
+      FMI=LZZ02+LOG((X0+1)**2*SQRT(X0**2-X0+1)*(X0**2+X0+1)**1.5
+     %               /((X+1)**2*SQRT(X**2-X+1)*(X**2+X+1)**1.5))
+     %              +RAC3*ATAN(RAC3*((X**2-1)*X0-(X0**2-1)*X)/
+     %              ((X0**2-1)*(X**2-1)+3*X*X0))
+c
+      RETURN
+      END FUNCTION FMI
+c
+C   Internal function FHI
+C   Stability function for heat and moisture in the unstable regime (ilmo<0)
+c   Reference: Delage Y. and Girard C. BLM 58 (19-31) Eq. 17
+c
+      REAL FUNCTION FHI(Z2,Z0T2,LZZ0T2,ILMO2,Y,Y0)
+      implicit none
+C
+      REAL, INTENT(IN ) :: Z2,Z0T2,LZZ0T2,ILMO2
+      REAL, INTENT(OUT) :: Y,Y0
+c
+      Y =(1-CI*Z2  *BETA*ILMO2)**(0.33333333)
+      Y0=(1-CI*Z0T2*BETA*ILMO2)**(0.33333333)
+      FHI=BETA*(LZZ0T2+1.5*LOG((Y0**2+Y0+1)/(Y**2+Y+1))+RAC3*
+     %        ATAN(RAC3*2*(Y-Y0)/((2*Y0+1)*(2*Y+1)+3)))
+c
+      RETURN
+      END FUNCTION FHI
+C
+C   Internal function psi
+C   Stability function for momentum in the stable regime (unsl>0)
+c   Reference :  Y. Delage, BLM, 82 (p23-48) (Eqs.33-37)
+c
+      REAL FUNCTION PSI(Z2,HI2,ILMO2)
+      implicit none
+C
+      REAL a,b,c,d
+      REAL, INTENT(IN ) :: ILMO2,Z2,HI2
+c
+      d = 4*AS*BETA*ILMO2
+      c = d*hi2 - hi2**2
+      b = d - 2*hi2
+      a = sqrt(1 + b*z2 - c*z2**2)
+      psi = 0.5 * (a-z2*hi2-log(1+b*z2*0.5+a)-
+     +            b/(2*sqrt(c))*asin((b-2*c*z2)/d))
+c
+      RETURN
+      END FUNCTION PSI
       END

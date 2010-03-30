@@ -9,7 +9,7 @@
      8                  GRKSGAT,THRAGAT,HCPSGAT,TCSGAT,
      9                  THFCGAT,PSIWGAT,DLZWGAT,ZBTWGAT,
      A                  ZSNLGAT,ZPLGGAT,ZPLSGAT,TACGAT, QACGAT,
-     B                  DRNGAT, XSLPGAT,GRKFGAT,WFSFGAT,WFCIGAT,
+     B                  DRNGAT, XSLPGAT,XDGAT,WFSFGAT,KSGAT,
      C                  ALGWGAT,ALGDGAT,ASVDGAT,ASIDGAT,AGVDGAT,
      D                  AGIDGAT,ISNDGAT,RADJGAT,ZBLDGAT,Z0ORGAT,
      E                  ZRFMGAT,ZRFHGAT,ZDMGAT, ZDHGAT, FSVHGAT,
@@ -44,7 +44,7 @@
      +                  GRKSROW,THRAROW,HCPSROW,TCSROW,
      +                  THFCROW,PSIWROW,DLZWROW,ZBTWROW,
      +                  ZSNLROW,ZPLGROW,ZPLSROW,TACROW, QACROW,
-     +                  DRNROW, XSLPROW,GRKFROW,WFSFROW,WFCIROW,
+     +                  DRNROW, XSLPROW,XDROW,WFSFROW,KSROW,
      +                  ALGWROW,ALGDROW,ASVDROW,ASIDROW,AGVDROW,
      +                  AGIDROW,ISNDROW,RADJGRD,ZBLDGRD,Z0ORGRD,
      +                  ZRFMGRD,ZRFHGRD,ZDMGRD, ZDHGRD, FSVHGRD,
@@ -120,8 +120,8 @@ C
      2        THRAROW(NL,NM,IG), HCPSROW(NL,NM,IG), 
      3        TCSROW (NL,NM,IG), THFCROW(NL,NM,IG), PSIWROW(NL,NM,IG),  
      4        DLZWROW(NL,NM,IG), ZBTWROW(NL,NM,IG), 
-     5        DRNROW (NL,NM),    XSLPROW(NL,NM),    GRKFROW(NL,NM),
-     6        WFSFROW(NL,NM),    WFCIROW(NL,NM),    ALGWROW(NL,NM),   
+     5        DRNROW (NL,NM),    XSLPROW(NL,NM),    XDROW(NL,NM),
+     6        WFSFROW(NL,NM),    KSROW(NL,NM),    ALGWROW(NL,NM),   
      7        ALGDROW(NL,NM),    ASVDROW(NL,NM),    ASIDROW(NL,NM),   
      8        AGVDROW(NL,NM),    AGIDROW(NL,NM),    ZSNLROW(NL,NM),
      9        ZPLGROW(NL,NM),    ZPLSROW(NL,NM)
@@ -132,8 +132,8 @@ C
      2        THRAGAT(ILG,IG),   HCPSGAT(ILG,IG), 
      3        TCSGAT (ILG,IG),   THFCGAT(ILG,IG),   PSIWGAT(ILG,IG),  
      4        DLZWGAT(ILG,IG),   ZBTWGAT(ILG,IG),   
-     5        DRNGAT (ILG),      XSLPGAT(ILG),      GRKFGAT(ILG),
-     6        WFSFGAT(ILG),      WFCIGAT(ILG),      ALGWGAT(ILG),     
+     5        DRNGAT (ILG),      XSLPGAT(ILG),      XDGAT(ILG),
+     6        WFSFGAT(ILG),      KSGAT(ILG),      ALGWGAT(ILG),     
      7        ALGDGAT(ILG),      ASVDGAT(ILG),      ASIDGAT(ILG),     
      8        AGVDGAT(ILG),      AGIDGAT(ILG),      ZSNLGAT(ILG),
      9        ZPLGGAT(ILG),      ZPLSGAT(ILG)
@@ -205,9 +205,9 @@ C----------------------------------------------------------------------
           CMAIGAT(K)=CMAIROW(ILMOS(K),JLMOS(K))  
           DRNGAT (K)=DRNROW (ILMOS(K),JLMOS(K))  
           XSLPGAT(K)=XSLPROW(ILMOS(K),JLMOS(K))  
-          GRKFGAT(K)=GRKFROW(ILMOS(K),JLMOS(K))  
+          XDGAT(K)=XDROW(ILMOS(K),JLMOS(K))  
           WFSFGAT(K)=WFSFROW(ILMOS(K),JLMOS(K))  
-          WFCIGAT(K)=WFCIROW(ILMOS(K),JLMOS(K))  
+          KSGAT(K)=KSROW(ILMOS(K),JLMOS(K))  
           ALGWGAT(K)=ALGWROW(ILMOS(K),JLMOS(K))  
           ALGDGAT(K)=ALGDROW(ILMOS(K),JLMOS(K))  
           ASVDGAT(K)=ASVDROW(ILMOS(K),JLMOS(K))  

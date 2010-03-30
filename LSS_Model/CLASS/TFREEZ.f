@@ -2,6 +2,8 @@
      1                  GZERO,HMFG,HTCS,HTC,WTRS,WTRG,FI,QFREZ,
      2                  WSNOW,TA,TBAR,ISAND,IG,ILG,IL1,IL2,JL)
 C
+C     * JAN 06/09 - D.VERSEGHY. SET QFREZ TO ZERO AFTER CALCULATION
+C     *                         OF HADD.
 C     * MAR 24/06 - D.VERSEGHY. ALLOW FOR PRESENCE OF WATER IN SNOW.
 C     * SEP 23/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
 C     * JUN 20/02 - D.VERSEGHY. COSMETIC CHANGES TO SUBROUTINE CALL;
@@ -72,6 +74,7 @@ C-----------------------------------------------------------------------
      1               DELT
              ZFREZ=0.0
              HADD=-QFREZ(I)*DELT                                                            
+             QFREZ(I)=0.0
              IF(TPOND(I).LT.0.)            THEN                                                       
                  HADD=HADD-TPOND(I)*HCPW*ZPOND(I)
                  TPOND(I)=0.0              

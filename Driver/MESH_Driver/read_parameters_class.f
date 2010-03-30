@@ -94,8 +94,8 @@
      1                  (cp%PSGBROW(1,M,J),J=1,ICAN)
         READ(50,'(3F8.3,F8.2)') cp%DRNROW(1,M),cp%SDEPROW(1,M),
      1                  cp%FAREROW(1,M),cp%DDROW(1,M)
-        READ(50,'(4E8.1,I8)') cp%XSLPROW(1,M),cp%GRKFROW(1,M),
-     1                  cp%MANNROW(1,M),cp%WFCIROW(1,M),cp%MIDROW(1,M)
+        READ(50,'(4E8.1,I8)') cp%XSLPROW(1,M),cp%XDROW(1,M),
+     1                  cp%MANNROW(1,M),cp%KSROW(1,M),cp%MIDROW(1,M)
 !        This requires mesh_parameters_class.ini file to include info on layer 4 to ignd
 !        READ(50,'(3F10.1)') (cp%SANDROW(1,M,J),J=1,IGND) !soil layers
 !        READ(50,'(3F10.1)') (cp%CLAYROW(1,M,J),J=1,IGND)
@@ -104,7 +104,7 @@
 !     1                  cp%TCANROW(1,M),cp%TSNOROW(1,M),cp%TPNDROW(1,M)
 !        READ(50,'(7F10.3)') (cp%THLQROW(1,M,J),J=1,IGND),
 !     1                  (cp%THICROW(1,M,J),J=1,IGND),cp%ZPNDROW(1,M)
-!     1                  cp%MANNROW(1,M),cp%WFCIROW(1,M),cp%MIDROW(1,M)
+!     1                  cp%MANNROW(1,M),cp%KSROW(1,M),cp%MIDROW(1,M)
 !        This requires mesh_parameters_class.ini file to include info on 3 layers only
         READ(50,'(3F10.1)') (cp%SANDROW(1,M,J),J=1,3) !soil layers
         READ(50,'(3F10.1)') (cp%CLAYROW(1,M,J),J=1,3)

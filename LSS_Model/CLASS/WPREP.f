@@ -28,9 +28,11 @@
      Q                 ZSNOW,  ALBSNO, WSNOCS, WSNOGS, RHOSCS, RHOSGS,
      R                 THPOR,  HCPS,   GRKSAT, ISAND,  DELZW,  DELZ,
      S                 ILG,    IL1,    IL2,    JL,     IG,     IGP1,
-     T                 NLANDCS,NLANDGS,NLANDC, NLANDG,
+     T                 NLANDCS,NLANDGS,NLANDC, NLANDG, RADD,   SADD,
      U                 BI, PSISAT, DD, XSLOPE, BULK_FC  )
 C
+C     * NOV 24/09 - D.VERSEGHY. RESTORE EVAPOTRANSPIRATION WHEN
+C     *                         PRECIPITATION IS OCCURRING.
 C     * MAR 27/08 - D.VERSEGHY. MOVE MODIFICATION OF GRKSAT IN PRESENCE
 C     *                         OF ICE TO GRINFL AND GRDRAN.
 C     * FEB 19/07 - D.VERSEGHY. MODIFICATIONS TO REFLECT SHIFT OF CANOPY
@@ -158,6 +160,10 @@ C
 C
       INTEGER             ISAND (ILG,IG)
 C
+C     * INTERNAL WORK ARRAYS.
+C
+      REAL RADD  (ILG),   SADD  (ILG)  
+C                                                                                  
 C     * COMMON BLOCK PARAMETERS.
 C
       REAL DELT,TFREZ,TCW,TCICE,TCSAND,TCCLAY,TCOM,TCDRYS,RHOSOL,RHOOM,
@@ -313,8 +319,10 @@ C
   100 CONTINUE
 C
 C     * RAINFALL/SNOWFALL RATES AND OTHER INITIALIZATION PROCEDURES
-C     * OVER GRID CELL SUBAREAS. CORRECT SOIL SATURATED HYDRAULIC 
-C     * CONDUCTIVITY FOR WATER VISCOSITY EFFECTS AND PRESENCE OF ICE. 
+C     * OVER GRID CELL SUBAREAS. DOWNWARD WATER FLUXES ARE LUMPED
+C     * TOGETHER WITH PRECIPITATION, AND UPWARD AND DOWNWARD WATER
+C     * FLUXES CANCEL OUT. CORRECTION MADE TO SOIL SATURATED HYDRAULIC
+C     * CONDUCTIVITY FOR WATER VISCOSITY EFFECTS. 
 C
 C     * CALCULATIONS FOR CANOPY OVER SNOW.
 C
@@ -344,20 +352,68 @@ C
                   ELSE                                                                    
                       SUBLCS(I)=0.0                                                          
                   ENDIF
-                  QFCF(I)=QFCF(I)+FCS(I)*SUBLCS(I)*RHOW
-                  QFCL(I)=QFCL(I)+FCS(I)*EVAPCS(I)*RHOW
+                  IF(SUBLCS(I).GT.0.0) THEN
+                      QFCF(I)=QFCF(I)+FCS(I)*SUBLCS(I)*RHOW
+                  ELSE
+                      QFCF(I)=QFCF(I)+FCS(I)*(1.0-FSVFS(I))*SUBLCS(I)*
+     1                        RHOW
+                      QFN(I)=QFN(I)+FCS(I)*FSVFS(I)*SUBLCS(I)*RHOW
+                  ENDIF
+                  IF(EVAPCS(I).GT.0.0) THEN
+                      QFCL(I)=QFCL(I)+FCS(I)*EVAPCS(I)*RHOW
+                  ELSE
+                      QFCL(I)=QFCL(I)+FCS(I)*(1.0-FSVFS(I))*EVAPCS(I)*
+     1                        RHOW
+                      QFN(I)=QFN(I)+FCS(I)*FSVFS(I)*EVAPCS(I)*RHOW
+                  ENDIF
 C
-                  IF(SPCP(I).GT.0.)                      THEN                                      
-                      SPCCS (I)=SPCP(I)                                                        
-                      TSPCCS(I)=TSPCP(I)+TFREZ                                                   
+                  IF(SPCP(I).GT.0. .OR. SUBLCS(I).LT.0.) THEN                                      
+                      SADD(I)=SPCP(I)-SUBLCS(I)*RHOW/RHOSNI(I)
+                      IF(ABS(SADD(I)).LT.1.0E-12) SADD(I)=0.0
+                      IF(SADD(I).GT.0.0) THEN                                                
+                          IF(SUBLCS(I).GT.0.) THEN
+                              QFCF(I)=QFCF(I)-FCS(I)*FSVFS(I)*
+     1                                SUBLCS(I)*RHOW
+                              QFN(I)=QFN(I)+FCS(I)*FSVFS(I)*
+     1                                SUBLCS(I)*RHOW
+                          ENDIF
+                          SPCCS (I)=SADD(I)                                                        
+                          TSPCCS(I)=TSPCP(I)+TFREZ                                                   
+                          SUBLCS(I)=0.0                                                      
+                      ELSE                                                                
+                          PCPN(I)=PCPN(I)-FCS(I)*FSVFS(I)*SPCP(I)*
+     1                        RHOSNI(I)
+                          PCFC(I)=PCFC(I)+FCS(I)*FSVFS(I)*SPCP(I)*
+     1                        RHOSNI(I)
+                          SUBLCS(I)=-SADD(I)*RHOSNI(I)/RHOW                                        
+                          SPCCS (I)=0.0                                                         
+                          TSPCCS(I)=0.0                                                        
+                      ENDIF                                                               
                   ELSE                                                                    
                       SPCCS(I)=0.0                                                             
                       TSPCCS(I)=0.0                                                            
                   ENDIF
 C
-                  IF(RPCP(I).GT.0.)                      THEN                                      
-                      RPCCS (I)=RPCP(I)                                                        
-                      TRPCCS(I)=TRPCP(I)+TFREZ                                                   
+                  IF(RPCP(I).GT.0. .OR. EVAPCS(I).LT.0.) THEN                                      
+                      RADD(I)=RPCP(I)-EVAPCS(I)                                                       
+                      IF(ABS(RADD(I)).LT.1.0E-12) RADD(I)=0.0
+                      IF(RADD(I).GT.0.)   THEN                                                
+                          IF(EVAPCS(I).GT.0.) THEN
+                              QFCL(I)=QFCL(I)-FCS(I)*FSVFS(I)*
+     1                                EVAPCS(I)*RHOW
+                              QFN(I)=QFN(I)+FCS(I)*FSVFS(I)*
+     1                                EVAPCS(I)*RHOW
+                          ENDIF
+                          RPCCS (I)=RADD(I)                                                        
+                          TRPCCS(I)=TRPCP(I)+TFREZ                                                   
+                          EVAPCS(I)=0.0                                                      
+                      ELSE                                                                
+                          PCPN(I)=PCPN(I)-FCS(I)*FSVFS(I)*RPCP(I)*RHOW
+                          PCLC(I)=PCLC(I)+FCS(I)*FSVFS(I)*RPCP(I)*RHOW
+                          EVAPCS(I)=-RADD(I)                                                    
+                          RPCCS (I)=0.0                                                         
+                          TRPCCS(I)=0.0                                                        
+                      ENDIF                                                               
                   ELSE                                                                    
                       RPCCS(I)=0.0                                                             
                       TRPCCS(I)=0.0                                                            
@@ -395,21 +451,35 @@ C
           DO 350 I=IL1,IL2
               IF(FGS(I).GT.0.)                              THEN 
                   QFN(I)=QFN(I)+FGS(I)*EVAPGS(I)*RHOW
-                  IF(SPCP(I).GT.0.) THEN
-                      SPCGS(I)=SPCP(I)
-                      TSPCGS(I)=TSPCP(I)
-                  ELSEIF(EVAPGS(I).LT.0.) THEN 
-                      SPCGS(I)=-EVAPGS(I)*RHOW/RHOSNI(I)
-                      TSPCGS(I)=TSURX(I,2)-TFREZ
-                      EVAPGS(I)=0.0
-                  ELSE                                                                
+                  IF(SPCP(I).GT.0. .OR. EVAPGS(I).LT.0.) THEN                                      
+                      SADD(I)=SPCP(I)-EVAPGS(I)*RHOW/RHOSNI(I)
+                      IF(ABS(SADD(I)).LT.1.0E-12) SADD(I)=0.0
+                      IF(SADD(I).GT.0.0) THEN                                                
+                          SPCGS (I)=SADD(I)                                                        
+                          TSPCGS(I)=TSPCP(I)
+                          EVAPGS(I)=0.0                                                      
+                      ELSE                                                                
+                          EVAPGS(I)=-SADD(I)*RHOSNI(I)/RHOW                                        
+                          SPCGS (I)=0.0                                                         
+                          TSPCGS(I)=0.0                                                        
+                      ENDIF                                                               
+                  ELSE                                                                    
                       SPCGS (I)=0.0                                                             
                       TSPCGS(I)=0.0                                                            
                   ENDIF
 C
-                  IF(RPCP(I).GT.0.)                     THEN                                      
-                      RPCGS (I)=RPCP(I)                                                        
-                      TRPCGS(I)=TRPCP(I)
+                  IF(RPCP(I).GT.0.)                         THEN                                      
+                      RADD(I)=RPCP(I)-EVAPGS(I)                                                       
+                      IF(ABS(RADD(I)).LT.1.0E-12) RADD(I)=0.0
+                      IF(RADD(I).GT.0.)   THEN                                                
+                          RPCGS (I)=RADD(I)                                                        
+                          TRPCGS(I)=TRPCP(I)
+                          EVAPGS(I)=0.0                                                      
+                      ELSE                                                                
+                          EVAPGS(I)=-RADD(I)                                                    
+                          RPCGS (I)=0.0                                                         
+                          TRPCGS(I)=0.0                                                        
+                      ENDIF                                                               
                   ELSE                                                                    
                       RPCGS (I)=0.0                                                             
                       TRPCGS(I)=0.0                                                            
@@ -451,20 +521,68 @@ C
                   ELSE                                                                    
                       SUBLC(I)=0.0                                                          
                   ENDIF
-                  QFCF(I)=QFCF(I)+FC(I)*SUBLC(I)*RHOW
-                  QFCL(I)=QFCL(I)+FC(I)*EVAPC(I)*RHOW
+                  IF(SUBLC(I).GT.0.0) THEN
+                      QFCF(I)=QFCF(I)+FC(I)*SUBLC(I)*RHOW
+                  ELSE
+                      QFCF(I)=QFCF(I)+FC(I)*(1.0-FSVF(I))*SUBLC(I)*
+     1                        RHOW
+                      QFN(I)=QFN(I)+FC(I)*FSVF(I)*SUBLC(I)*RHOW
+                  ENDIF
+                  IF(EVAPC(I).GT.0.0) THEN
+                      QFCL(I)=QFCL(I)+FC(I)*EVAPC(I)*RHOW
+                  ELSE
+                      QFCL(I)=QFCL(I)+FC(I)*(1.0-FSVF(I))*EVAPC(I)*
+     1                        RHOW
+                      QFG(I)=QFG(I)+FC(I)*FSVF(I)*EVAPC(I)*RHOW
+                  ENDIF
 C
-                  IF(SPCP(I).GT.0.)                      THEN                                      
-                      SPCC  (I)=SPCP(I)                                                        
-                      TSPCC (I)=TSPCP(I)+TFREZ                                                   
+                  IF(SPCP(I).GT.0. .OR. SUBLC(I).LT.0.)  THEN                                      
+                      SADD(I)=SPCP(I)-SUBLC(I)*RHOW/RHOSNI(I)
+                      IF(ABS(SADD(I)).LT.1.0E-12) SADD(I)=0.0
+                      IF(SADD(I).GT.0.0) THEN                                                
+                          IF(SUBLC(I).GT.0.) THEN
+                              QFCF(I)=QFCF(I)-FC(I)*FSVF(I)*SUBLC(I)*
+     1                                RHOW
+                              QFN(I)=QFN(I)+FC(I)*FSVF(I)*SUBLC(I)*
+     1                                RHOW
+                          ENDIF
+                          SPCC  (I)=SADD(I)                                                        
+                          TSPCC (I)=TSPCP(I)+TFREZ                                                   
+                          SUBLC (I)=0.0                                                      
+                      ELSE                                                                
+                          PCPN(I)=PCPN(I)-FC(I)*FSVF(I)*SPCP(I)*
+     1                        RHOSNI(I)
+                          PCFC(I)=PCFC(I)+FC(I)*FSVF(I)*SPCP(I)*
+     1                        RHOSNI(I)
+                          SUBLC (I)=-SADD(I)*RHOSNI(I)/RHOW                                        
+                          SPCC  (I)=0.0                                                         
+                          TSPCC (I)=0.0                                                        
+                      ENDIF                                                               
                   ELSE                                                                    
                       SPCC  (I)=0.0                                                             
                       TSPCC (I)=0.0                                                            
                   ENDIF
 C
-                  IF(RPCP(I).GT.0.)                      THEN                                      
-                      RPCC  (I)=RPCP(I)                                                        
-                      TRPCC (I)=TRPCP(I)+TFREZ  
+                  IF(RPCP(I).GT.0. .OR. EVAPC(I).LT.0.)  THEN                                      
+                      RADD(I)=RPCP(I)-EVAPC(I)                                                       
+                      IF(ABS(RADD(I)).LT.1.0E-12) RADD(I)=0.0
+                      IF(RADD(I).GT.0.)   THEN                                                
+                          IF(EVAPC(I).GT.0.) THEN
+                              QFCL(I)=QFCL(I)-FC(I)*FSVF(I)*EVAPC(I)*
+     1                                RHOW
+                              QFG(I)=QFG(I)+FC(I)*FSVF(I)*EVAPC(I)*
+     1                                RHOW
+                          ENDIF
+                          RPCC  (I)=RADD(I)                                                        
+                          TRPCC (I)=TRPCP(I)+TFREZ  
+                          EVAPC (I)=0.0                                                      
+                      ELSE   
+                          PCPG(I)=PCPG(I)-FC(I)*FSVF(I)*RPCP(I)*RHOW
+                          PCLC(I)=PCLC(I)+FC(I)*FSVF(I)*RPCP(I)*RHOW
+                          EVAPC (I)=-RADD(I)                                                    
+                          RPCC  (I)=0.0                                                         
+                          TRPCC (I)=0.0                                                        
+                      ENDIF                                                               
                   ELSE                                                                    
                       RPCC  (I)=0.0                                                             
                       TRPCC (I)=0.0                                                            
@@ -501,25 +619,43 @@ C
           DO 550 I=IL1,IL2
               IF(FG(I).GT.0.)                              THEN 
                   QFG(I)=QFG(I)+FG(I)*EVAPG(I)*RHOW
-                  IF(RPCP(I).GT.0.)                  THEN
-                      RPCG(I)=RPCP(I)
-                      TRPCG(I)=TRPCP(I)
-                  ELSEIF(EVAPG(I).LT.0.)  THEN  
-                      RPCG(I)=-EVAPG(I)
-                      TRPCG (I)=TSURX(I,4)-TFREZ
-                      EVAPG (I)=0.0
-                  ELSE                                                                    
-                      RPCG (I)=0.0                                                             
-                      TRPCG(I)=0.0                                                            
-                  ENDIF     
-C
                   IF(SPCP(I).GT.0.)                 THEN                                      
-                      SPCG  (I)=SPCP(I)                                                        
-                      TSPCG (I)=TSPCP(I)
+                      SADD(I)=SPCP(I)-EVAPG(I)*RHOW/RHOSNI(I)
+                      IF(ABS(SADD(I)).LT.1.0E-12) SADD(I)=0.0
+                      IF(SADD(I).GT.0.0) THEN                                                
+                          QFN(I)=QFN(I)+FG(I)*EVAPG(I)*RHOW
+                          QFG(I)=QFG(I)-FG(I)*EVAPG(I)*RHOW
+                          SPCG  (I)=SADD(I)                                                        
+                          TSPCG (I)=TSPCP(I)
+                          EVAPG (I)=0.0                                                      
+                      ELSE                                                                
+                          PCPN(I)=PCPN(I)-FG(I)*SPCP(I)*RHOSNI(I)
+                          PCPG(I)=PCPG(I)+FG(I)*SPCP(I)*RHOSNI(I)
+                          EVAPG (I)=-SADD(I)*RHOSNI(I)/RHOW                                        
+                          SPCG  (I)=0.0                                                         
+                          TSPCG (I)=0.0                                                        
+                      ENDIF                                                               
                   ELSE                                                                    
                       SPCG  (I)=0.0                                                             
                       TSPCG (I)=0.0                                                            
                   ENDIF
+C
+                  IF(RPCP(I).GT.0. .OR. EVAPG(I).LT.0.)   THEN                                      
+                      RADD(I)=RPCP(I)-EVAPG(I)                                                       
+                      IF(ABS(RADD(I)).LT.1.0E-12) RADD(I)=0.0
+                      IF(RADD(I).GT.0.)   THEN                                                
+                          RPCG  (I)=RADD(I)                                                        
+                          TRPCG (I)=TRPCP(I)
+                          EVAPG (I)=0.0                                                      
+                      ELSE                                                                
+                          EVAPG (I)=-RADD(I)                                                    
+                          RPCG  (I)=0.0                                                         
+                          TRPCG (I)=0.0                                                        
+                      ENDIF                                                               
+                  ELSE                                                                    
+                      RPCG (I)=0.0                                                             
+                      TRPCG(I)=0.0                                                            
+                  ENDIF     
                   ZPONDG(I)=ZPOND (I)                                                            
                   ZSNOWG(I)=0.
                   RHOSG (I)=0.

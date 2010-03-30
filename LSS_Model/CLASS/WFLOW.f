@@ -2,8 +2,11 @@
      1                 R,TR,EVAP,PSIF,GRKINF,THLINF,THLIQX,TBARWX,
      2                 DELZX,ZBOTX,FMAX,ZF,DZF,DTFLOW,THLNLZ,
      3                 THLQLZ,DZDISP,WDISP,WABS,ITER,NEND,ISIMP,
-     4                 IGRN,IG,IGP1,IGP2,ILG,IL1,IL2,JL   )
+     4                 IGRN,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
                                                                          
+C     * FEB 09/09 - J.P.BLANCHETTE. INCREASE LIMITING VALUE OF NEND.
+C     * JAN 06/09 - D.VERSEGHY. CHECKS ON WETTING FRONT LOCATION
+C     *                         IN 500 LOOP.
 C     * AUG 07/07 - D.VERSEGHY. INCREASE ITERATION COUNTER NEND;
 C     *                         MOVE CALCULATION OF FMAX FROM
 C     *                         GRINFL TO THIS ROUTINE.
@@ -28,7 +31,7 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,NPNTS,NIT
+      INTEGER IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,NPNTS,NIT,N
 C
 C     * INPUT/OUTPUT FIELDS.
 C                      
@@ -74,9 +77,9 @@ C
           IF(IGRN(I).GT.0 .AND. TRMDR(I).GT.0.0)                    THEN
               RESID=MOD(TRMDR(I),120.)                                                      
               IF(RESID.GT.0.)                       THEN  
-                  NEND(I)=NINT(TRMDR(I)/120.+0.5)+10
+                  NEND(I)=NINT(TRMDR(I)/120.+0.5)+100
               ELSE                                                                        
-                  NEND(I)=NINT(TRMDR(I)/120.)+10
+                  NEND(I)=NINT(TRMDR(I)/120.)+100
               ENDIF
               ITER(I)=1
               FMAX(I)=999999. 
@@ -254,7 +257,8 @@ C
           IF(ITER(I).EQ.1 .AND. ISIMP(I).NE.1)                      THEN
               TRMDR(I)=TRMDR(I)-DTFLOW(I)                                                  
               IF(ABS(ZF(I)-ZBOTX(I,LZF(I))).LT.1.0E-6 .AND.
-     1            TRMDR(I).GT.0.)                              THEN                                                        
+     1                TRMDR(I).GT.0. .AND. LZF(I).LT.IGP1 .AND.
+     1                THLQLZ(I).GT.0.0001)                       THEN             
                   FINF=GRKINF(I,LZF(I))*(ZBOTX(I,LZF(I))+ZPOND(I)+
      1                 PSIF(I,LZF(I)))/ZBOTX(I,LZF(I))
                   FMAX(I)=MIN(FMAX(I),FINF)                                              
@@ -274,7 +278,7 @@ C
       DO 600 I=IL1,IL2
           IF(IGRN(I).GT.0)                                          THEN 
               IF(NIT.LE.NEND(I) .AND. ITER(I).EQ.1 .AND.
-     1           (ZPOND(I).GT.0. .OR. R(I).GT.0.)  .AND.
+     1           (ZPOND(I).GT.1.0E-8 .OR. R(I).GT.0.)  .AND.
      2           TRMDR(I).GT.0.)                           THEN
                   NPNTS=NPNTS+1
               ELSE

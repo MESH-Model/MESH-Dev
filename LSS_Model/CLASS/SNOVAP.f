@@ -86,10 +86,12 @@ C-----------------------------------------------------------------------
                       HCPSNO(I)=0.0
                       EVAP(I)=ZREM*(CLHMLT+CLHVAP)/(CLHVAP*DELT)
                       WLOST(I)=WLOST(I)-ZREM*RHOW*CLHMLT/CLHVAP
-                      TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TSNOW(I)+TFREZ)*
+                      IF(RUNOFF(I).GT.0. .AND. WSNOW(I).GT.0.)
+     1                 TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TSNOW(I)+TFREZ)*
      1                      WSNOW(I)/RHOW)/(RUNOFF(I)+WSNOW(I)/RHOW)
                       RUNOFF(I)=RUNOFF(I)+WSNOW(I)/RHOW
-                      TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+(TSNOW(I)+TFREZ)*
+                      IF(OVRFLW(I).GT.0. .AND. WSNOW(I).GT.0.)
+     1                 TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+(TSNOW(I)+TFREZ)*
      1                      FI(I)*WSNOW(I)/RHOW)/(OVRFLW(I)+FI(I)*
      2                      WSNOW(I)/RHOW)
                       OVRFLW(I)=OVRFLW(I)+FI(I)*WSNOW(I)/RHOW

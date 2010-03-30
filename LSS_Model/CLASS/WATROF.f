@@ -1,12 +1,14 @@
-C    Combination of Ric's interflow and Ric/Bruce's overland flow 20070126
-      SUBROUTINE WATROF(IVEG,THLIQ,THICE,ZPOND,TPOND,OVRFLW,TOVRFL,
-     1                  SUBFLW,TSUBFL,BASFLW,TBASFL,RUNOFF,TRUNOF,FI,
-     2                  ZPLIM,XSLOPE,xdrainh,MANNING_N,DD,condAtSat,
-     3                  ZFAV,LZFAV,THLINV,TBARW,DELZW,ZBOTW,THPOR,
-     4                  THLMIN,BI,THFC,DODRN,DOVER,DIDRN,ISAND,IWF,IG,
-     5                  ILG,IL1,IL2,JL,IGP1,BULK_FC)
+      SUBROUTINE WATROF(THLIQ,THICE,ZPOND,TPOND,OVRFLW,TOVRFL,
+     1                  SUBFLW,TSUBFL,RUNOFF,TRUNOF,FI,ZPLIM,
+     2                  XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARW,
+     3                  DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
+     4                  ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
+                      
 
-
+C     * MAR 03/10 - M.A.MEKONNEN/B.DAVISON/M.MACDONALD
+C     *             RE-WRITTEN FOR TWO REASONS:
+C     *             -TO USE VINCENT'S VERSION OF WATDRN; 
+C     *             -TO INCLUDE MORE COMMENTS.
 C     * SEP 16/06 - R.SOULIS/F.SEGLENIEKS/A.PIETRONIRO/B.DAVISON.
 C     *             MODIFICATIONS TO OVERLAND FLOW.
 C     * SEP 15/05 - D.VERSEGHY. REMOVE HARD CODING OF IG=3.
@@ -18,9 +20,57 @@ C     * DEC 10/01 - R.SOULIS/K.SNELGROVE/T.WHIDDEN/D.VERSEGHY
 C     *             WATFLOOD ROUTINE TO CALCULATE OVERLAND FLOW AND
 C     *             INTERFLOW COMPONENTS OF SURFACE RUNOFF.
 C
+
+C------------------ADDITIONAL CLARIFICATION-----------------------------------------------
+C     
+C     FOR A SLOPING ELEMENT, WATROF COMPUTES:
+C         1. OVERLAND FLOW AT THE SURFACE BASED ON THE AVAILABLE PONDING DEPTH;
+C         2. LATERAL FLOW FROM EACH LAYER BASED ON THE AVAILABLE WATER IN EACH SOIL LAYER. 
+C          
+C     THE BASE FLOW FROM EACH LAYER IS ALSO COMPUTED BUT IT IS NOT USED AT PRESENT. SO, 
+C     THE TOTAL BASEFLOW REMAINS THE SAME AS THE ONE CALCULATED IN CLASS.
+C
+C-----------------------------------------------------------------------------------------
+C     DEFINITIONS
+C     IWF         - FLAG GOVERNING OVERLAND AND LATERAL FLOW CALCULATIONS
+C                   0 REPRESENTS FLAT ELEMENT - CLASS CALCULATES OVERLAND AND LATERAL FLOW
+C                   NE 0 REPRESENTS SLOPING ELEMENT - WATROF CALCULATES OVERLAND AND LATERAL FLOW
+C     IG          - TOTAL NUMBER OF SOIL LAYERS
+C     ILG         - TOTAL NUMBER OF ELEMENTS
+C     IL1         - STARTING INDEX OF ACTIVE ELEMENT
+C     IL2         - FINAL INDEX OF ACTIVE ELEMENT
+C     THLIQ       - VOLUMETRIC LIQUID WATER CONTENT OF SOIL LAYERS
+C     THICE       - VOLUMETRIC FROZEN WATER CONTENT OF SOIL LAYERS
+C     FI          - FRACTIONAL COVERAGE OF SUBAREA IN QUESTION ON MODELLED AREA
+C     ZPLIM       - SUBAREA MAXIMUM PONDING DEPTH
+C     XSLOPE      - SURFACE SLOPE
+C     GRKFAC      - WATROF PARAMETER USED WHEN RUNNING MESH CODE ? NEEDS MORE CLARIFICATION
+C     WFCINT      - WATROF PARAMETER USED WHEN RUNNING MESH CODE ? NEEDS MORE CLARIFICATION
+C     TBARW       - TEMPERATURE OF WATER IN SOIL LAYER
+C     ZPOND       - DEPTH OF PONDED WATER ON SURFACE
+C     TPOND       - SUBAREA TEMPERATURE OF SURFACE PONDED WATER
+C     OVRFLW      - OVERLAND FLOW FROM TOP OF SOIL COLUMN
+C     TOVRFL      - TEMPERATURE OF OVERLAND FLOW
+C     SUBFLW      - INTERFLOW FROM SIDES OF SOIL COLUMN
+C     TSUBFL      - TEMPERATURE OF INTERFLOW FROM SIDES OF SOIL COLUMN
+C     RUNOFF      - TOTAL RUNOFF
+C     TRUNOF      - TEMPERATURE OF TOTAL RUNOFF
+C     DELZW       - PERMEABLE THICKNESS OF SOIL LAYER
+C     THPOR       - PORE VOLUME IN SOIL LAYER
+C     THLMIN      - RESIDUAL SOIL LIQUID WATER CONTENT REMAINING AFTER FREEZING OR EVAPORATION
+C     PSISAT      - SOIL MOISTURE SUCTION AT SATURATION
+C     BI          - CLAPP AND HORNBERGER EMPIRICAL “B” PARAMETER
+C     ISAND       - SAND CONTENT FLAG ? NEEDS MORE CLARIFICATION FOR THE VALUES
+C     BULK_FC     - BULK FIELD CAPACITY
+C     DELT        - TIME STEP
+C     TFREZ       - FREEZING POINT OF WATER
+C     MANNING_N   - MANNING'S ROUGHNESS COEFFICIENT
+C     DD          - DRAINAGE DENSITY
+C     ASAT_T0     - BULK SATURATION AT INITIAL TIME
+C     ASAT_T1     - BULK SATURATION AT FINAL TIME
+                              
       IMPLICIT NONE
 C
-      INTEGER IWF,IG,ILG,IL1,IL2,I,J,IGP1
 C
 C     * INPUT/OUTPUT ARRAYS.
 C
@@ -32,21 +82,19 @@ C
 C
 C     * INPUT ARRAYS.
 C
-      REAL  FI    (ILG),     ZPLIM (ILG),     XSLOPE(ILG),
-     1      xdrainh(ILG),     condAtSat(ILG),
-     2      TBARW (ILG,IG)
+      REAL  FI    (ILG),    ZPLIM (ILG),     XSLOPE(ILG),
+     1      xdrainh(ILG),    ksat(ILG),       TBARW (ILG,IG)
 C 
 C     * SOIL INFORMATION ARRAYS.
 C
-      REAL  DELZW (ILG,IG),   
-     1      THPOR (ILG,IG),  THLMIN(ILG,IG),
-     2      BI    (ILG,IG),  THFC  (ILG,IG)
+      REAL  DELZW (ILG,IG), THPOR (ILG,IG),  THLMIN(ILG,IG),   
+     1      BI    (ILG,IG)
 
       INTEGER                ISAND (ILG,IG)
 C
 C     * WORK ARRAYS.
 C
-      REAL  DODRN (ILG),     DOVER (ILG),
+      REAL  DODRN (ILG),    DOVER (ILG),
      1      DIDRN (ILG,IG), BULK_FC(ILG,IG)
 C
 C     * COMMON BLOCK PARAMETERS.
@@ -55,442 +103,215 @@ C
 C
       COMMON /CLASS1/ DELT,TFREZ
       
-C Additions due to AUG 8, 2006 changes to WATROF
-C     * INPUT/OUTPUT ARRAYS.
-C
-      REAL  basflw(ilg), zf(ilg)
-
-C     * SOIL INFORMATION ARRAYS.
-C
-      REAL  thlinf(ilg,igp1), recharge(ilg),
-     1      trecharge(ilg),  delcharge(ilg)
-
-      REAL HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,
-     1     SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
-     2     TCGLAC,CLHMLT,CLHVAP
-
-C      * DECLARATIONS NEEDED BECAUSE OF "IMPLICIT NONE"
-      REAL ZSNOW(ILG),thliqt,dlinf,delzf,
-     1     delzx,satfc,
-     2     thporx,satx,xdrainv,qflow_avg,qsint_layer,depth,
-     3     xdrain_all,xlztop,di_max,davail,dtot,
-     4     TSUBFL(ILG),TBASFL(ILG),ZFAV(ILG),THLINV(ILG),ZBOTW (ILG,IG)
-
-      INTEGER jj,lzf(ILG),lzfx,jwf,IVEG,LZFAV(ILG),JL
-
-      COMMON /CLASS4/ HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,
-     1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
-     2                TCGLAC,CLHMLT,CLHVAP
-
-	INTEGER lzfflg,extflg,iwfice,IMIN,IHOUR,IDAY,IYEAR,errflg
-      REAL viceflg,psi_limit,hiceflg
-
-      COMMON /WATFLGS/ viceflg,psi_limit,hiceflg,lzfflg,extflg,iwfice,
-     +errflg,IMIN,IHOUR,IDAY,IYEAR
-
-C     * DECLARATIONS NEEDED DUE TO REMOVAL OF FVISC AND FICE FUNCTIONS
-c      REAL FICE(ILG,IG),FRAC_ICE(ILG,IG),THPOR_EFF(ILG,IG),
-c     1     FVISC(ILG,IG),visct,viscr
-     
 C     * INTERNAL SCALARS AND VECTORS
-      REAL VEL_T0(ILG),NUC_DOVER(ILG),MANNING_N(ILG),DD(ILG)
+      REAL VEL_T0(ILG),NUC_DOVER(ILG),MANNING_N(ILG),DD(ILG),
+     1     GRKEFF(ILG),ASAT_T0(ILG),ASAT_T1(ILG),DELZWJ(ILG),
+     2     BIJ(ILG),THPORJ(ILG),ASAT0(ILG),ASAT1(ILG),SATFC(ILG),
+     3     DAVAIL,DTOT,SUBFLWJ(ILG),TSUBFL(ILG),THLIQ_AVAIL(ILG),
+     4     THPOR_AVAIL(ilg),BASFLWJ(ILG),XLAMBDA,ktop,kl,h0,c1,c2,
+     +     ztop(ilg,ig)
+      
+      INTEGER IWF,IG,ILG,IL1,IL2,I,J
+      real exav
+      
+C-----------------------------------------------------------------------------------------
+C     coefficients
+      c1 = 2.0/3.0
+      c2 = 1.5 !3.0/2.0
 
-c     Input variables to wat_drain
-      REAL asat_t0,cc,H,H0,ztop,corrFactor
+C-----------------------------------------------------------------------------------------
+C     parameter - will be used to compute xdrainh (the fractional change in horizontal 
+C     conductivity in a depth change h0) in Vincent's new formula.
+      h0 = 1.0
 
-c	Output from wat_drain
-      REAL asat_t1
-
-c     Declarations resulting from trying to deal with the code fork of October 14, 2006
-c     TODO some of these variables are not used, and should probably be removed.
-      REAL thlinf0,thliq_eff,
-     +     thliq_avail,thpor_avail,
-     +     qsatxx_t0,thliqxx_t0,xiceflg,thlret(ILG,IG),
-     +     qsatxx_t1,recharge0,bsat_t0,fvisc,fice,asat_fc
-
-C-----------------------------------------------------------------------
-C
-c     skip if using flat class 
+C-----------------------------------------------------------------------------------------
+C     skip if using flat class 
       if(iwf.eq.0)return
-c-----------------------------------------------------------------------------
-c
-c     save basflw but restore liquid water to third layer to give interflow a chance
-c
-c-----------------------------------------------------------------------------
-c
-      DO 100 I=IL1,IL2
+      
+C-----------------------------------------------------------------------------------------
+C     loop through each element  
+      do i = il1,il2
 
-      IF(FI(I).GT.0.0) THEN
-	  if(runoff(i).lt.1.0E-08)then
-          recharge(i)=0.0
-	    trecharge(i)=0.0
-          runoff(i)=0.0
-          delcharge(i)=0.0
-	  else
-          recharge(i)=runoff(i)
-	    trecharge(i)=trunof(i)
-          runoff(i)=0.0
-          delcharge(i)=0.0
-	    call watmix(thliq(i,ig),tbarw(i,ig),
-     +	  recharge(i)/delzw(i,ig),trecharge(i))
-	  endif
-      endif
+C        ---------------------------------------------------------------------------------
+C        compute overland flow and add to runoff and to the overall overland flow
+C        ---------------------------------------------------------------------------------
+         if(fi(i) .gt. 0.0 .and. zpond(i) .gt. zplim(i))then
 
-C
-C     * PART 1 - OVERLAND FLOW
-C     * (MODELLED USING MANNINGS EQUATION).  
-C     * CALCULATED USING THREE PARAMETERS "XSLOPE, MANNING_N AND DD"
-C     * XSLOPE = AVERAGE SLOPE OF GRU
-C     * MANNING_N = MANNING'S 'N'
-C     * DD = DRAINAGE DENSITY
-C     * TWO OPTIONS ARE AVAILABLE TO CONSTRAIN THE FLOW
+C           ------------------------------------------------------------------------------
+C           calculate the depth of water available for overland flow
+C           ------------------------------------------------------------------------------
+            dover(i) = zpond(i)-zplim(i)
 
-          IF(FI(I).GT.0.0) THEN 
-            IF(ZPOND(I).GT.ZPLIM(I))THEN
-C             Calculate the depth of water available for overland flow. Units: L
-              DOVER(I)=ZPOND(I)-ZPLIM(I)
+C           ------------------------------------------------------------------------------
+C           calculate the flow velocity at the beginning of the timestep 
+C           (based on kinematic wave velocity) - eqn (1) in notes on overland flow
+C           ------------------------------------------------------------------------------
+            vel_t0(i) = dover(i)**c1*sqrt(xslope(i))/(manning_n(i))
 
-C             Calculate the flow velocity at the beginning of the timestep 
-C             (based on kinematic wave velocity) Units: LT-1
-              VEL_T0(I)=DOVER(I)**(2./3.)*SQRT(XSLOPE(I))/(MANNING_N(I))
-C             Eqn (1) in Notes on Overland Flow
+C           ------------------------------------------------------------------------------
+C           calculate a normalized unconstrained overland flow to avoid numerical 
+C           problems with a division of small dover(i) values. 
+c           eqn (29) in notes on overland flow
+C           ------------------------------------------------------------------------------
+            nuc_dover(i) = -2*dd(i)*vel_t0(i)*delt
 
-C             Calculate a normalized unconstrained overland flow to avoid numerical 
-C             problems with a division of small DOVER(I) values. 
-              NUC_DOVER(I) = -2*DD(I)*VEL_T0(I)*DELT
-C             Eqn (29) in Notes on Overland Flow
-C             Constrained Overland Flow - Limited by physically possible flow
-              DODRN(I)=DOVER(I)*(1.0-1./((1.0-(2./3.)*NUC_DOVER(I))
-     +	             **(3./2.)))
-C             Eqn (30) in Notes on Overland Flow
+C           ------------------------------------------------------------------------------
+C           constrained overland flow - limited by physically possible flow.
+C           eqn (30) in notes on overland flow
+C           ------------------------------------------------------------------------------
+            dodrn(i) = dover(i)*(1.0-1./((1.0-c1*nuc_dover(i))**c2))
 
-              IF(RUNOFF(I).GT.1.0E-08) THEN
-                 TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TPOND(I)+TFREZ)*
-     1                     DODRN(I))/(RUNOFF(I)+DODRN(I))
-              ENDIF
-              RUNOFF(I)=RUNOFF(I)+DODRN(I)
-              IF(DODRN(I).GT.0.0) 
-     1            TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+(TPOND(I)+TFREZ)*
-     2                FI(I)*DODRN(I))/(OVRFLW(I)+FI(I)*DODRN(I))
-              OVRFLW(I)=OVRFLW(I)+FI(I)*DODRN(I)
-              ZPOND(I)=ZPOND(I)-DODRN(I)
-            ENDIF
-          ENDIF  
-c-----------------------------------------------------------------------------
-c
-C     * PART 2 - INTERFLOW - MODELLED AS FLOW ALONG A SHALLOW SLOPING AQUIFER
-C     *     CALCULATED FROM THE RELATIVE DEPTH OF THE CONTRIBUTING
-C     *     PORTION OF THE SOIL (HARAT), THE CRITICAL SOIL MOISTURE (THETA_C)
-C     *     IS CONTENT AT WHICH UNSATURATED FLOW BEGINS TO TAKE PLACE.
-C     *     THETA_A IS CONTENT AT WHICH UNSATURATED FLOW ENDS
-C     * 
-C
-c-----------------------------------------------------------------------------
-c
-
-	DO 200 j=1,ig
-          IF(FI(I).GT.0.0 .AND. ISAND(I,J).GE.-2)         THEN 
-c
-c-----------------------------------------------------------------------------
-c
-c         determine geometry of next layer or sub-layer
-c
-c-----------------------------------------------------------------------------
-c
-
-c         find top of current layer
-          ztop = 0.0
-          if(j.ge.2)then
-	      do jj=2,j
-	        ztop = ztop + delzw(i,jj-1)
-            enddo
-          endif
-
-c
-c-----------------------------------------------------------------------------
-c
-c         determine available liquidwater in layer
-c
-c-----------------------------------------------------------------------------
-c
-c
-         thliq_avail = max(0.0,thliq(i,j)-thlmin(i,j))
-         thpor_avail = max(thliq(i,j),thlmin(i,j),thpor(i,j)-thice(i,j))
-         if(thliq_avail.gt.0.0 .and. delzw(i,j).gt.0.0) then
-c
-c           preparation of parameters
-            asat_t0 = thliq_avail/thpor_avail
-            corrFactor = fvisc(tbarw(i,j),iwfice)
-     +        *fice(thliq(i,j),thice(i,j),thpor(i,j),thlmin(i,j),
-     +        iwfice,hiceflg)
-c
-c
-	      cc=2.*BI(I,j)+3
-            H = delzw(i,j)
-	      H0 = 1.0
-c
-c      find average interflow for timestep if liquid water content is
-c      greater than bulk field capacity.
-
-c          If the liquid water content is >= bulk field capacity of a sloping soil horizon
-           IF(THLIQ(I,J).ge.BULK_FC(I,J)) THEN
-c           operational call to wat_drain to calculate interflow
-            call WAT_DRAIN(3,H,H0,ztop,xdrainh(i),cc,
-     +        XSLOPE(i),condAtSat(i),DD(i),thPor_Avail,corrFactor,
-     +        asat_t0,asat_t1)
-
-c           didrn: volume of interflow per land area [m^3/m^2] for
-c           a given soil layer of thickness H = delzw(i,j)
-            didrn(i,j) = (asat_t0-asat_t1)*thpor_avail*H
-           ELSE
-c           no interflow
-            didrn(i,j) = 0.0
-           ENDIF
-
-c           FROM HERE ONWARDS, WATROF IS NOT DOCUMENTED.
-c           THIS IS SOMETHING THAT NEEDS TO BE DONE.    -Robin
-
-c           share bottom layer, below wetting front with drainage
-
-c           davail: volume of available water in a soil layer per land area [m^3/m^2]
-c           dtot: ?
-c           recharge: ?
-c           delcharge: ?
-            if(j.eq.ig)then
-	        davail  = (thliq(i,j)-thlmin(i,j))*delzw(i,j)
-              dtot = didrn(i,j)+recharge(i)	       
-              if(davail.le.0.0)then
-	          didrn(i,j) = 0.0
-                delcharge(i)= recharge(i)
-	          recharge(i)=0.0
-	        elseif(dtot.gt.davail)then
-	          didrn(i,j) = didrn(i,j)*(davail/dtot)
-                recharge0 = recharge(i)
-	          recharge(i) = recharge(i)*(davail/dtot)
-	          delcharge(i) = recharge0-recharge(i)
-              endif
+C           ------------------------------------------------------------------------------
+C           add overland flow to runoff and to the overall overland flow
+C           ------------------------------------------------------------------------------
+            if(runoff(i) .gt. 1.0e-08) then
+               trunof(i) = (trunof(i)*runoff(i)+(tpond(i)+tfrez)*
+     1                      dodrn(i))/(runoff(i)+dodrn(i))
             endif
+            runoff(i)    = runoff(i) + dodrn(i)
+            if(dodrn(i) .gt. 1.0e-08)then
+               tovrfl(i) = (tovrfl(i)*ovrflw(i)+(tpond(i)+tfrez)*
+     1                      fi(i)*dodrn(i))/(ovrflw(i)+fi(i)*dodrn(i))
+               ovrflw(i) = ovrflw(i) + fi(i)*dodrn(i)
+
+C              ---------------------------------------------------------------------------
+C              subtract overland flow depth from the ponding depth
+C              ---------------------------------------------------------------------------
+               zpond(i)  = zpond(i)- dodrn(i)
+            endif
+         endif
+      enddo
+
+C-----------------------------------------------------------------------------------------
+C     compute interflow flow from each layer
+C-----------------------------------------------------------------------------------------
+      thliq_avail = 0.0
+      ztop        = 0.0
+
+C-----------------------------------------------------------------------------------------
+C     loop through each soil layer 
+      do j = 1,ig
+
+C        ---------------------------------------------------------------------------------
+C        form vecotors for the layer - to be compatible with WATDRN arguments 
+         delzwj   = delzw(:,j)
+         bij      = bi(:,j)
+         thporj   = thpor(:,j)
+         
+C        ---------------------------------------------------------------------------------
+C        loop through each element  
+         do i = il1,il2
+
+C        ---------------------------------------------------------------------------------
+C        Find the top of each soil layer for the calculation of grkeff  
+           if(j .lt. ig)ztop(i,j+1) = ztop(i,j) - delzw(i,j) 
+           if(fi(i) .gt. 0.0 .and. isand(i,j) .ge. -2 .and. 
+     1         delzw(i,j) .gt. 0.0)then 
+
+C              ---------------------------------------------------------------------------
+C              determine available liquidwater in layer
+C              ---------------------------------------------------------------------------
+               thliq_avail(i) = max(0.0,thliq(i,j)-thlmin(i,j))
+
+C              ---------------------------------------------------------------------------
+C              determine available porosity
+C              ---------------------------------------------------------------------------
+               thpor_avail(i)    = max(thliq(i,j),thlmin(i,j),
+     1                              thpor(i,j)-thice(i,j))
+ 
+C              ---------------------------------------------------------------------------
+C              saturation defined as liquid water content over available porosity
+C              ---------------------------------------------------------------------------
+               asat_t0(i)     = thliq_avail(i)/thpor_avail(i)
+            endif
+
+C           ------------------------------------------------------------------------------
+C           grkeff - average value of the parameter controlling the time scale of 
+C                    interflow process - kl * (tile slope / tile length) (1/s)
+C           Note: this formula is not the same as the one in Fhydro2_VF_20100226.f
+C                 and needs to be confirmed by Vincent.
+C           ------------------------------------------------------------------------------
+c*       Integration of k across the layer -> kl
+            xlambda   = -log(xdrainh(i))/h0
+            ktop      = ksat(i)*exp(xlambda*ztop(i,j))
+            kl        = ktop * exav(xlambda*delzw(i,j))
+            grkeff(i) = kl*xslope(i)*2.0*dd(i)/(1+xslope(i)**2)
+         enddo
+
+C        ---------------------------------------------------------------------------------
+C        compute interflow from the layer (subflowj). Baseflow from the layer (basflwj) is
+C        also computed but is not used at present.
+C        ---------------------------------------------------------------------------------
+         thpor_avail = max(thlmin(:,j),thpor_avail)
+         call watdrn(delzwj,bij,thpor_avail,ksat,grkeff,asat_t0,asat_t1,
+     1               subflwj,basflwj,satfc,ilg,il1,il2,delt)
+
+C        ---------------------------------------------------------------------------------
+C        loop through each element  
+	   do i = il1,il2
+
+C           -----------------------------------------------------------------------------
+C           allow lateral flow if liquid water content is greater than 
+c           bulk field capacity.
+C           -----------------------------------------------------------------------------
+            if(thliq_avail(i).gt.0.0.and.thliq(i,j).ge.bulk_fc(i,j))then
+               didrn(i,j) = subflwj(i)
+
+C              ---------------------------------------------------------------------------
+C              compute davail: volume of available water in a soil layer per land 
+C                              area [m^3/m^2]
+C              ---------------------------------------------------------------------------
+	         davail = thliq_avail(i)*delzw(i,j)
+
+C              ---------------------------------------------------------------------------
+C              limit the lateral flow not to exceed the available water in the layer
+C              ---------------------------------------------------------------------------
+               didrn(i,j) = max(0.0,min(davail,didrn(i,j)))
+
+C              ---------------------------------------------------------------------------
+C              add the lateral flow to the runoff and to the subflow
+C              ---------------------------------------------------------------------------
+               if(didrn(i,j).gt.1.0e-8)then
+                  trunof(i)  = (trunof(i)*runoff(i)+tbarw(i,j)*
+     1                         didrn(i,j))/(runoff(i)+didrn(i,j))
+                  runoff(i)  = runoff(i)+didrn(i,j)
+                  subflw(i)  = subflw(i)+fi(i)*didrn(i,j)
+
+C                 ------------------------------------------------------------------------
+C                 remove the lateral flow from the layer
+C                 ------------------------------------------------------------------------
+                  thliq(i,j) = thliq(i,j)-didrn(i,j)/delzw(i,j)
+               endif
+            endif
+         enddo
+      enddo
+      
+      return
+      end
+      
+c**********************************************************************
 c
-
-	davail=max(0.0,thliq(i,j)-thlmin(i,j))*delzw(i,j)
-      didrn(i,j)=max(0.0,min(davail,didrn(i,j)))
-
-      if(didrn(i,j).gt.1.0e-8)then
-	  call watmix(runoff(i),trunof(i),didrn(i,j),tbarw(i,j))
-        THLIQ(I,J) = THLIQ(I,J)-didrn(i,j)/delzw(i,j)
-        SUBFLW(I)=SUBFLW(I)+FI(I)*didrn(i,j)
+c     function exav(x)
+c     finds average of an exponential function exp(-x)
+c     over the interval [0,x], which is (1-exp(-x))/x
+c     deals with limit values of 1-x/2 when x->0 and 1/x when x->inf
+c
+c**********************************************************************
+*
+      function exav(x)
+      implicit none
+*
+      real exphuge,expbig,expsmall,x,exav
+      data exphuge/1.0e+9/,expbig/1.0e+8/,expsmall/1.0e-8/
+*
+      if (x .gt. exphuge) then
+         exav = 0.0
+      elseif (x .gt. expbig) then
+         exav = 1.0/x
+      elseif (x .gt. expsmall) then
+         exav = (1.0-exp(-x))/x
+      else
+         exav = 1.0-x/2.0
       endif
-c
-
-      ENDIF !if(thliq_avail.gt.0.0 .and. delzw(i,j).gt.0.0) then
-
-      ENDIF !!IF(FI(I).GT.0.0 .AND. ISAND(I,J).GE.-2)
-
-200   CONTINUE
-
-c
-c     restore base flow if water left after interflow
-        IF(FI(I).GT.0.0) THEN
-          thliq(i,ig)=thliq(i,ig)-recharge(i)/delzw(i,ig)
-	    call watmix(runoff(i),trunof(i),recharge(i),trecharge(i))
-	    basflw(i)=basflw(i)-fi(i)*delcharge(i)
-	  endif
-
- 100  CONTINUE
-
-      RETURN
-
-      END
-
-c******************************************************************************
-c
-	subroutine watmix(quan1,prop1,quan2,prop2)
-
-      prop2t = max(0.0,prop2)
-c
-c	check for temperature mixes
-c      if(abs(prop1-prop2).gt.100.)then
-c	print *, prop1,prop2
-c     continue
-c	endif
-c      if(prop1.lt.-100.0 .or.prop2.lt.0.0)then
-c	print *, prop1,prop2
-c      continue
-c	endif
-c
-c
-c	adds two quantities and blends their intrinsic properties
-c
-c	output overwrites quan1 and prop1
-c
-
-	if(quan2 .le. 0.0)then
-	  return
-	elseif(quan1 .le. 0.0)then
-	  quan1=quan2
-	  prop1=prop2t
-	  return
-	else
-	  quan = quan1 + quan2
-	  prop1 = (quan1*prop1 + quan2*prop2t)/quan
-	  quan1 = quan
-        return
-	endif
-
-	return
-
-      END	
-
-
-c******************************************************************************
-	
-	real function fvisc(tbar,iwfice)
-c
-c     corrects conductivity for temperature effects (ref:Dingman pg 545 B-12)
-
-c     reference tempeature is 0.0C
-
-      real tbar, tbart, visct, viscr
-c
-c	check function turned on
-	if(iwfice.ne.2 .and. iwfice.ne.3)then
-	  fvisc = 1.0
-	  return
-	endif
-
-c     check function receiving celsius temperature
-      tbart=max(0.00001,min(100.,tbar))
-      if(tbar.gt.tbart)then
-	  fvisc = 1.0
-c	  print *,'tbar',tbar,' tbart',tbart
-c	  pause
-	  return
-	endif
-
-      visct=2.0319d-04+1.5883d-03*exp(-((tbart**0.9)/22.))
-      viscr=1.7915d-03
-      fvisc=viscr/visct
-
-	return
-
-	end
-
-******************************************************************************
-
-	real function fice(thliq,thice,thpor,thlmin,iwfice,iceflg)
-c
-c     corrects conductivity for ice content (ref:Gray,Toth,et al)
-
-c
-      REAL thliq,thice,thpor,thlmin,thliq_eff,thpor_eff,frac_ice,iceflg
-
-c	check function turned on
-	if(iwfice.ne.1 .and. iwfice.ne.3)then
-	  fice = 1.0
-	  return
-	endif
-c
-c     allow pore space to expand to allow for "frost heave"
-c      thpor_eff = max(0.0,thice,thpor-thlmin)
-       thpor_eff = thpor
-
-      if(thpor_eff .le. 0.0)then
-        frac_ice = 0.0
-      else 
-        frac_ice=max(0.0,min(0.9999,thice/thpor_eff))
- 	endif
-c 
-c	Gray's impedance proposal
-c
-c     fice=fzero*exp(-beta*frac_ice)
-c
-c     our implementation
-
-      fice=(1.0-frac_ice)**(iceflg)
-
-	return
-
-	end	
-C
-c******************************************************************************
-
-	real function fhsat(thliq,thice,thpor,thlmin,iwfice)
-c
-c     calculates hydraulic curve effective saturation
-c     corrects for ice content (ref:Gray,Toth,et al)
-c     and for minimum water content
-c
-c     iwfice set to 1 to include ice
-
-      integer iwfice
-	real thliq,thice,thpor,thlmin,thliq_eff,thpor_eff,thpor_avail
-
-c      thliq_eff = max(0.0,thliq-thlmin)
-c      thpor_eff = max(0.0,thpor-thlmin)
-
-      thliq_eff = thliq
-      thpor_eff = thpor
-
-
-      if(iwfice.eq.1.or.iwfice.eq.3)then
-	  thpor_eff = max(thliq,thlmin,thpor_eff-thice)
-	else
-	  thpor_eff = max(thliq,thlmin,thpor_eff)
-	endif
-
-      if(thpor_eff .le. 1.0e-4)then
-        if(thliq_eff .le. thpor_eff)then
-	    fhsat = 0.0
-	  else
-	    fhsat = 1.0
-	  endif
-      else 
-        fhsat = thliq_eff/thpor_eff
-	endif
-    
-c     limit smallest value to prevent dispersion
-      if(fhsat .lt. 1.0e-4)fhsat=1.0e-4
-
-	return
-
-	end	
-C
-c******************************************************************************
-
-	real function frsat(thliq,thice,thpor,thlmin,iwfice)
-c
-c     calculates retention curve effective saturation
-      integer iwfice
-      real thliq,thice,thpor,thlmin,thliq_eff,thpor_eff,thpor_avail
-
-c      thliq_eff = max(0.0,thliq-thlmin)
-c      thpor_eff = max(0.0,thpor-thlmin)
-
-      thliq_eff = thliq
-      thpor_eff = thpor
-
-      if(iwfice.eq.1.or.iwfice.eq.3)then
-	  thpor_eff = max(thliq,thlmin,thpor_eff-thice)
-	else
-	  thpor_eff = max(thliq,thlmin,thpor_eff)
-	endif
-
-      if(thpor_eff .le. 1.0e-8)then
-        if(thliq_eff .le. thpor_eff)then
-	    frsat = 0.0
-	  else
-	    frsat = 1.0
-	  endif
-      else 
-        frsat = thliq_eff/thpor_eff
-	endif
-
-c     limit smallest value to prevent dispersion
-      if(frsat .lt. 1.0e-4)frsat=1.0e-4
-	      
-	return
-
-	end	
-c
-c******************************************************************************
-
+      return
+      end

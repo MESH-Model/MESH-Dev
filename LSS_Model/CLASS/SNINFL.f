@@ -1,6 +1,8 @@
       SUBROUTINE SNINFL(R,TR,ZSNOW,TSNOW,RHOSNO,HCPSNO,WSNOW,
      1                  HTCS,HMFN,PCPG,ROFN,FI,ILG,IL1,IL2,JL)                      
 C
+C     * DEC 23/09 - D.VERSEGHY. RESET WSNOW TO ZERO WHEN SNOW
+C     *                         PACK DISAPPEARS.
 C     * SEP 23/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
 C     * JUL 26/02 - D.VERSEGHY. SHORTENED CLASS4 COMMON BLOCK.
 C     * JUN 20/97 - D.VERSEGHY. CLASS - VERSION 2.7.
@@ -72,6 +74,7 @@ C-----------------------------------------------------------------------
                   TSNOW(I)=0.0                                                               
                   RHOSNO(I)=0.0                                                              
                   HCPSNO(I)=0.0                                                              
+                  WSNOW(I)=0.0
               ELSE IF(HRCOOL.GE.HSNWRM .AND. HRCOOL.LT.(HSNWRM+HSNMLT))
      1                                                      THEN
                   HSNMLT=HRCOOL-HSNWRM                                                    

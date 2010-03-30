@@ -5,7 +5,7 @@
      4                 TCANS,  CEVAP,  IEVAP,  TBAR1P, WTABLE, ZERO,
      5                 EVAPC,  EVAPCG, EVAPG,  EVAPCS, EVPCSG, EVAPGS,            
      6                 GSNOWC, GSNOWG, GZEROC, GZEROG, GZROCS, GZROGS,
-     7                 QMELTC, QMELTG, 
+     7                 QMELTC, QMELTG, EVAP,
      8                 TPONDC, TPONDG, TPNDCS, TPNDGS, QSENSC, QSENSG, 
      9                 QEVAPC, QEVAPG, TACCO,  QACCO,  TACCS,  QACCS,  
      A                 ILMOX,  UEX,    HBLX,
@@ -20,8 +20,12 @@
      J                 TA,     RHOSNO, TSNOW,  ZSNOW,  WSNOW,  TCAN,
      K                 FC,     FCS,    DELZ,   DELZW,  ZBOTW,
      L                 ISAND,  ILG,    IL1,    IL2,    JL,     IG,  
-     M                 FVEG,   TCSATU, TCSATF  )           
+     M                 FVEG,   TCSATU, TCSATF, FTEMP,  FTEMPX, FVAP,
+     N                 FVAPX,  RIB,    RIBX  )           
 C                                                                                 
+C     * AUG   /08 - J.P.PAQUIN. ADD CALCULATION FOR FTEMP, FVAP AND
+C     *                         RIB FOR OUTPUT IN GEM (IMPLEMENTED BY
+C     *                         L. DUARTE ON OCT. 28/08).
 C     * MAR 20/08 - D.VERSEGHY. REMOVE TBAR3, TCTOP3, TCBOT3.
 C     * DEC 12/07 - D.VERSEGHY. MAJOR REVISIONS TO CALCULATION OF
 C     *                         SOIL THERMAL CONDUCTIVITY.
@@ -141,7 +145,7 @@ C
       REAL EVAPC (ILG),   EVAPCG(ILG),   EVAPG (ILG),   EVAPCS(ILG),              
      1     EVPCSG(ILG),   EVAPGS(ILG),   GSNOWC(ILG),   GSNOWG(ILG),   
      2     GZEROC(ILG),   GZEROG(ILG),   GZROCS(ILG),   GZROGS(ILG),
-     3     QMELTC(ILG),   QMELTG(ILG),
+     3     QMELTC(ILG),   QMELTG(ILG),   EVAP  (ILG),
      4     QSENSC(ILG),   QSENSG(ILG),   QEVAPC(ILG),   QEVAPG(ILG),  
      5     TACCO (ILG),   QACCO (ILG),   TACCS (ILG),   QACCS (ILG)   
 C
@@ -156,7 +160,8 @@ C
      6     HMFC  (ILG),   HMFN  (ILG),   QFCF  (ILG),   QFCL  (ILG),
      7     EVPPOT(ILG),   ACOND (ILG),   DRAG  (ILG),   ILMO  (ILG),   
      8     UE    (ILG),   HBL   (ILG),   ILMOX (ILG),   UEX   (ILG),
-     9     HBLX  (ILG)
+     9     HBLX  (ILG),   FTEMP (ILG),   FTEMPX(ILG),   FVAP  (ILG),
+     A     FVAPX (ILG),   RIB   (ILG),   RIBX  (ILG)
 C
 C     * INPUT ARRAYS.                                                             
 C                                                                                 
@@ -264,6 +269,7 @@ C
           TSURF (I)=0.
           QSENS (I)=0.
           QEVAP (I)=0.
+          EVAP  (I)=0.
           QLWAVG(I)=0.
           FSGV  (I)=0.
           FSGS  (I)=0.
@@ -291,6 +297,12 @@ C
           UEX   (I)=0.
           HBLX  (I)=0.
           ZERO  (I)=0.
+          FTEMP (I)=0.
+          FVAP  (I)=0.
+          RIB   (I)=0.
+          FTEMPX(I)=0.
+          FVAPX (I)=0.
+          RIBX  (I)=0.
           WTABLE(I)=9999.
   100 CONTINUE                                                                    
 C                                                                                 

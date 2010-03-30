@@ -2,7 +2,7 @@
      1                  RAICNI,SNOCNI,ZPOND,ZPONDI,THLIQ,THICE,
      2                  THLIQI,THICEI,ZSNOW,RHOSNO,XSNOW,SNOWI,
      3                  WSNOW,WSNOWI,FCS,FGS,FI,BAL,THPOR,THLMIN,
-     4                  DELZW,ISAND,IG,ILG,IL1,IL2,JL     )
+     4                  DELZW,ISAND,IG,ILG,IL1,IL2,JL,N   )
 C
 C     * JUN 06/06 - D.VERSEGHY. MODIFY CHECK ON RUNOFF.
 C     * APR 03/06 - D.VERSEGHY. ALLOW FOR PRESENCE OF WATER IN SNOW.
@@ -56,10 +56,10 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ISFC,IG,ILG,IL1,IL2,JL,I,J
+      INTEGER ISFC,IG,ILG,IL1,IL2,JL,I,J,K
 C
       INTEGER IPTBAD,JPTBAD,KPTBAD,IPTBDI,JPTBDI,KPTBDI,LPTBDI,
-     1        IPTBDJ,JPTBDJ,KPTBDJ,LPTBDJ
+     1        IPTBDJ,JPTBDJ,KPTBDJ,LPTBDJ,N
 C
 C     * INPUT FIELDS.
 
@@ -97,7 +97,7 @@ C
      2                TCGLAC,CLHMLT,CLHVAP
 C
 C      ACCLMT=3.0*DELT/3.1536E7
-      ACCLMT=1.0E-3
+      ACCLMT=1.0E-1
 C-----------------------------------------------------------------------
       IF(ISFC.EQ.1 .OR. ISFC.EQ.3)                                  THEN      
           IPTBAD=0
@@ -110,7 +110,7 @@ C-----------------------------------------------------------------------
                   IF(RAICAN(I).LT.(-1.0*ACCLMT)) IPTBAD=I
                   IF(SNOCAN(I).LT.(-1.0*ACCLMT)) JPTBAD=I
               ENDIF
-              IF(RUNOFF(I)*DELT.LT.(-1.0*ACCLMT)) KPTBAD=I
+              IF(RUNOFF(I).LT.(-1.0*ACCLMT)) KPTBAD=I
           ENDIF
   100 CONTINUE
 C
@@ -143,6 +143,15 @@ C
       DO 150 I=IL1,IL2
           IF(FI(I).GT.0. .AND. ISAND(I,1).GT.-4)                   THEN
               IF((THLIQ(I,J)-THPOR(I,J)).GT.ACCLMT)           THEN
+              WRITE(6,6009) I,J,N,THLIQ(I,J),THPOR(I,J),DELZW(I,J),
+     1                      THICE(I,J),THLIQI(I,J),THICEI(I,J),
+     1                      ZPOND(I),ZPONDI(I),ISAND(I,J)
+6009          FORMAT(2X,3I6,8F16.8,I6)
+              DO 145 K=1,IG
+              WRITE(6,6008) K,THLIQ(I,K),THLIQI(I,K),THICE(I,K),
+     1                      THICEI(I,K),DELZW(I,K),THPOR(I,K),ISAND(I,K)
+6008          FORMAT(2X,I6,6F14.8,I6)
+145           CONTINUE
                   IPTBDI=I
                   IPTBDJ=J
               ENDIF
@@ -164,10 +173,10 @@ C
   150 CONTINUE
 C
       IF(IPTBDI.NE.0)                                               THEN
-          WRITE(6,6250) IPTBDI,JL,ISFC,THLIQ(IPTBDI,IPTBDJ),
+          WRITE(6,6250) IPTBDI,JL,ISFC,N,THLIQ(IPTBDI,IPTBDJ),
      1                  THPOR(IPTBDI,IPTBDJ),IPTBDJ
- 6250     FORMAT('0AT (I,JL)=(',I3,',',I3,'), ISFC=',I2,' THLIQ = ',
-     1            E13.5,' THPOR = ',E13.5,' FOR J=',I2)
+ 6250     FORMAT('0AT (I,JL)=(',I6,',',I6,'), ISFC=',I2,' STEP =',I8,
+     1            ' THLIQ = ',E13.5,' THPOR = ',E13.5,' FOR J=',I2)
           CALL XIT('CHKWAT',-4)
       ENDIF
       IF(JPTBDI.NE.0)                                               THEN
@@ -223,7 +232,7 @@ C
   300 CONTINUE
 
       IF(IPTBAD.NE.0)                                            THEN
-          WRITE(6,6450) IPTBAD,JL,ISFC,BAL(IPTBAD)
+          WRITE(6,6450) IPTBAD,JL,N,ISFC,BAL(IPTBAD)
           WRITE(6,6460) PCPR(IPTBAD)*DELT,EVAP(IPTBAD)*RHOW*DELT,
      1        RUNOFF(IPTBAD)*RHOW,WLOST(IPTBAD),
      2        RAICNI(IPTBAD)-RAICAN(IPTBAD),SNOCNI(IPTBAD)-
@@ -235,18 +244,20 @@ C
      1        SNOFAC*SNOWI(IPTBAD),WSNOW(IPTBAD),WSNOWI(IPTBAD),
      2        SNOFAC*SNOWI(IPTBAD)-ZSNOW(IPTBAD)*RHOSNO(IPTBAD),
      3        WSNOWI(IPTBAD)-WSNOW(IPTBAD)
+          WRITE(6,6460) ZSNOW(IPTBAD),RHOSNO(IPTBAD),SNOFAC,
+     1        SNOWI(IPTBAD)
           DO 350 J=1,IG
               WRITE(6,6460) 
      1        THLIQ(IPTBAD,J),THLIQI(IPTBAD,J),
      2        THICE(IPTBAD,J),THICEI(IPTBAD,J),
-     3        DELZW(IPTBAD,J),
+     3        DELZW(IPTBAD,J),THPOR(IPTBAD,J),
      4        (THLIQ(IPTBAD,J)-THLIQI(IPTBAD,J))*RHOW*DELZW(IPTBAD,J),
      5        (THICE(IPTBAD,J)-THICEI(IPTBAD,J))*RHOICE*DELZW(IPTBAD,J)
   350     CONTINUE
           WRITE(6,6470) FCS(IPTBAD),FGS(IPTBAD)
-6450      FORMAT('0AT (I,JL)=(',I3,',',I3,'), ISFC=',I2,' BAL = ',
-     1        E13.5)
-6460      FORMAT(2X,7F15.8)
+6450      FORMAT('0AT (I,JL)=(',I8,',',I8,'),  TIME=',I8,' ISFC=',I2,
+     1        ' BAL = ',E13.5)
+6460      FORMAT(2X,8F15.8)
 6470      FORMAT(2X,4E20.6)
           CALL XIT('CHKWAT',-8)
       ENDIF
