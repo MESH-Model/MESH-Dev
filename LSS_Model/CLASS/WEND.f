@@ -272,7 +272,7 @@ C
      1                THLINF(I,IGP1)*ZMAT(I,K,IGP1))/(RUNOFF(I)+
      2                THLINF(I,IGP1)*ZMAT(I,K,IGP1))
                   RUNOFF(I)=RUNOFF(I)+THLINF(I,IGP1)*ZMAT(I,K,IGP1)
-              ELSE IF(K.EQ.IGP1 .AND. FDT(I,K).GT.1.0E-16)       THEN
+              ELSE IF(K.EQ.IGP1 .AND. FDT(I,K).GT.1.0E-8)       THEN
                   TBASFL(I)=(TBASFL(I)*BASFLW(I)+FI(I)*(TFDT(I,K)+
      1                TFREZ)*FDT(I,K))/(BASFLW(I)+FI(I)*FDT(I,K))
                   BASFLW(I)=BASFLW(I)+FI(I)*FDT(I,K)

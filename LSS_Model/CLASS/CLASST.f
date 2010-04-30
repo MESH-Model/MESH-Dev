@@ -25,6 +25,11 @@
      O   ISAND,  ITC,    ITCG,   ITG,    ILG,    IL1,IL2,JL,N,   IC,     
      P   IG,     IZREF,  ISLFD,  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI) 
 C
+C     * APR 28/10 - D.VERSEGHY. REVISE CALCULATION OF QG.
+C     * APR 28/10 - M.MACDONALD/D.VERSEGHY. CORRECT CALCULATIONS OF
+C     *                         CRIB, DRAG AND VAC FOR ISLFD=1.
+C     * APR 28/10 - E.CHAN/D/VERSEGHY. CORRECT CALCULATIONS OF ST AND
+C     *                         SQ FOR ISLFD=0.
 C     * DEC 21/09 - D.VERSEGHY. CORRECT BUG IN CALL TO TSOLVC IN CS
 C     *                         SUBAREA (CALL WITH FSNOCS AND RAICNS).
 C     * DEC 07/09 - D.VERSEGHY. ADD EVAP TO TSOLVC CALL.
@@ -273,6 +278,7 @@ C
 C     * CHECK DEPTH OF PONDED WATER FOR UNPHYSICAL VALUES.
 C
           IF(ZPOND(I).LT.1.0E-8) ZPOND(I)=0.0
+          QG(I)=0.0
    50 CONTINUE
 C
 C     * CHECK LIQUID AND FROZEN SOIL MOISTURE CONTENTS FOR SMALL
@@ -446,12 +452,12 @@ C
                       RATIO=RATFC1*CDHX(I)/CDMX(I)                   
                       RATIO=MIN(RATIO,(ZSCRN/ZRSLDM(I))**(1./3.))             
                   ENDIF                                                    
-                  ST(I)=ST(I)+FCS(I)*TCANS(I)-(MIN(RATIO,1.))*
-     1                 (TCANS(I)-TA(I))       
+                  ST(I)=ST(I)+FCS(I)*(TCANS(I)-(MIN(RATIO,1.))*
+     1                 (TCANS(I)-TA(I)))       
                   SU(I)=SU(I)+FCS(I)*RATFCA1*UWIND(I)                                     
                   SV(I)=SV(I)+FCS(I)*RATFCA1*VWIND(I)                                     
-                  SQ(I)=SQ(I)+FCS(I)*QA(I)+(QCANX(I)-QA(I))*
-     1                  MIN(RATIO,1.)      
+                  SQ(I)=SQ(I)+FCS(I)*(QA(I)+(QCANX(I)-QA(I))*
+     1                  MIN(RATIO,1.))      
               ENDIF
   150     CONTINUE
 C
@@ -488,6 +494,7 @@ C
                   CDM (I) =CDM(I)+FCS(I)*CDMX(I)
                   TSURF(I)=TSURF(I)+FCS(I)*TSURX(I)
                   TSFSAV(I,1)=TSURX(I)
+                  QG(I)=QG(I)+FCS(I)*QACCS(I)
                   QSENS(I)=QSENS(I)+FCS(I)*QSENSX(I)
                   QEVAP(I)=QEVAP(I)+FCS(I)*QEVAPX(I)
                   QLWAVG(I)=QLWAVG(I)+FCS(I)*QLWX(I)
@@ -604,12 +611,12 @@ C
                       RATIO=RATFC1*CDHX(I)/CDMX(I)                       
                       RATIO=MIN(RATIO,(ZSCRN/ZRSLDM(I))**(1./3.))          
                   ENDIF                                                      
-                  ST(I)=ST(I)+FGS(I)*TSURX(I)-(MIN(RATIO,1.))*
-     1                 (TSURX(I)-TA(I))     
+                  ST(I)=ST(I)+FGS(I)*(TSURX(I)-(MIN(RATIO,1.))*
+     1                 (TSURX(I)-TA(I)))     
                   SU(I)=SU(I)+FGS(I)*RATFCA1*UWIND(I)                                     
                   SV(I)=SV(I)+FGS(I)*RATFCA1*VWIND(I)                                     
-                  SQ(I)=SQ(I)+FGS(I)*QA(I)+(QSURX(I)-QA(I))*
-     1                  MIN(RATIO,1.)      
+                  SQ(I)=SQ(I)+FGS(I)*(QA(I)+(QSURX(I)-QA(I))*
+     1                  MIN(RATIO,1.))      
               ENDIF
   250     CONTINUE
 C
@@ -636,6 +643,7 @@ C
                   CDM (I) =CDM(I)+FGS(I)*CDMX(I)
                   TSURF(I)=TSURF(I)+FGS(I)*TSURX(I)
                   TSFSAV(I,2)=TSURX(I)
+                  QG(I)=QG(I)+FGS(I)*QSURX(I)
                   QSENS(I)=QSENS(I)+FGS(I)*QSENSX(I)
                   QEVAP(I)=QEVAP(I)+FGS(I)*QEVAPX(I)
                   QLWAVG(I)=QLWAVG(I)+FGS(I)*QLWX(I)
@@ -745,12 +753,12 @@ C
                       RATIO=RATFC1*CDHX(I)/CDMX(I)                       
                       RATIO=MIN(RATIO,(ZSCRN/ZRSLDM(I))**(1./3.))           
                   ENDIF                                                     
-                  ST(I)=ST(I)+FC(I)*TCANO(I)-(MIN(RATIO,1.))*
-     1                 (TCANO(I)-TA(I))        
+                  ST(I)=ST(I)+FC(I)*(TCANO(I)-(MIN(RATIO,1.))*
+     1                 (TCANO(I)-TA(I)))        
                   SU(I)=SU(I)+FC(I)*RATFCA1*UWIND(I)                                     
                   SV(I)=SV(I)+FC(I)*RATFCA1*VWIND(I)                                     
-                  SQ(I)=SQ(I)+FC(I)*QA(I)+(QCANX(I)-QA(I))*
-     1                  MIN(RATIO,1.)      
+                  SQ(I)=SQ(I)+FC(I)*(QA(I)+(QCANX(I)-QA(I))*
+     1                  MIN(RATIO,1.))      
               ENDIF
   350     CONTINUE
 C
@@ -787,6 +795,7 @@ C
                   CDM (I) =CDM(I)+FC(I)*CDMX(I)
                   TSURF(I)=TSURF(I)+FC(I)*TSURX(I)
                   TSFSAV(I,3)=TSURX(I)
+                  QG(I)=QG(I)+FC(I)*QACCO(I)
                   QSENS(I)=QSENS(I)+FC(I)*QSENSX(I)
                   QEVAP(I)=QEVAP(I)+FC(I)*QEVAPX(I)
                   QLWAVG(I)=QLWAVG(I)+FC(I)*QLWX(I)
@@ -891,12 +900,12 @@ C
                       RATIO=RATFC1*CDHX(I)/CDMX(I)                       
                       RATIO=MIN(RATIO,(ZSCRN/ZRSLDM(I))**(1./3.))             
                   ENDIF                                                        
-                  ST(I)=ST(I)+FG(I)*TSURX(I)-(MIN(RATIO,1.))*
-     1                 (TSURX(I)-TA(I))    
+                  ST(I)=ST(I)+FG(I)*(TSURX(I)-(MIN(RATIO,1.))*
+     1                 (TSURX(I)-TA(I)))    
                   SU(I)=SU(I)+FG(I)*RATFCA1*UWIND(I)                                     
                   SV(I)=SV(I)+FG(I)*RATFCA1*VWIND(I)                                     
-                  SQ(I)=SQ(I)+FG(I)*QA(I)+(QSURX(I)-QA(I))*
-     1                  MIN(RATIO,1.)      
+                  SQ(I)=SQ(I)+FG(I)*(QA(I)+(QSURX(I)-QA(I))*
+     1                  MIN(RATIO,1.))      
               ENDIF
   450     CONTINUE
 C
@@ -923,6 +932,7 @@ C
                   CDM (I) =CDM(I)+FG(I)*CDMX(I)
                   TSURF(I)=TSURF(I)+FG(I)*TSURX(I)
                   TSFSAV(I,4)=TSURX(I)
+                  QG(I)=QG(I)+FG(I)*QSURX(I)
                   QSENS(I)=QSENS(I)+FG(I)*QSENSX(I)
                   QEVAP(I)=QEVAP(I)+FG(I)*QEVAPX(I)
                   QLWAVG(I)=QLWAVG(I)+FG(I)*QLWX(I)
@@ -953,11 +963,6 @@ C
               EVAPB(I)=EVAP(I)/EVPPOT(I)
           ELSE
               EVAPB(I)=0.0
-          ENDIF
-          IF(CDH(I).GT.0.0) THEN
-              QG(I)=EVAP(I)/(RHOAIR(I)*CDH(I)*VA(I))+QA(I)
-          ELSE
-              QG(I)=0.0
           ENDIF
           IF((FCS(I)+FC(I)).GT.1.0E-5) THEN
               TAC(I)=(FCS(I)*TACCS(I)+FC(I)*TACCO(I))/(FCS(I)+FC(I))
