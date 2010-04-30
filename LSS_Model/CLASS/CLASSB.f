@@ -4,6 +4,10 @@
      3                  SAND,CLAY,ORGM,DELZ,ZBOT,SDEPTH,
      4                  ISAND,IORG,NL,NM,IL,IM,IG)
 C
+C     * DEC 23/09 - V.FORTIN.   REVISE CALCULATION OF THFC FOR
+C     *                         BOTTOM LAYER IN MINERAL SOILS 
+C     *                         ACCORDING TO SOULIS ET AL. (2009).
+C     * JAN 06/09 - D.VERSEGHY. REVERSE ORDER OF 200 AND 300 LOOPS.
 C     * DEC 11/07 - D.VERSEGHY. CHANGE CALCULATION OF TCS FROM
 C     *                         GEOMETRIC MEAN TO LINEAR MEAN.
 C     * FEB 07/07 - D.VERSEGHY. SET THFC TO THLRET FOR ORGANIC SOILS;
@@ -53,7 +57,7 @@ C
 C
 C     * TEMPORARY VARIABLES.
 C
-      REAL VSAND,VORG,VFINE,VTOT
+      REAL VSAND,VORG,VFINE,VTOT,AEXP,ABC,test1,test2
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -74,6 +78,38 @@ C
       DO 100 I=1,IL
           ISAND (I,M,J)=NINT(SAND(I,M,J))                                               
           IORG  (I,M,J)=NINT(ORGM(I,M,J))                                               
+100   CONTINUE
+C
+      DO 200 M=1,IM
+      DO 200 I=1,IL
+          DO 150 J=1,IG
+              IF(ISAND(I,M,1).EQ.-4) THEN
+                  DELZW(I,M,J)=DELZ(J)
+                  ISAND(I,M,J)=-4
+              ELSEIF(ISAND(I,M,J).EQ.-3) THEN
+                  DELZW(I,M,J)=0.0
+              ELSEIF(SDEPTH(I,M).GE.ZBOT(J)) THEN
+                  DELZW(I,M,J)=DELZ(J)
+              ELSEIF(SDEPTH(I,M).LT.(ZBOT(J)-DELZ(J)+0.01)) THEN
+                  DELZW(I,M,J)=0.0
+                  ISAND(I,M,J)=-3
+              ELSE
+                  DELZW(I,M,J)=SDEPTH(I,M)-(ZBOT(J)-DELZ(J))
+              ENDIF
+              ZBOTW(I,M,J)=MAX(0.0,ZBOT(J)-DELZ(J))+DELZW(I,M,J)
+150       CONTINUE
+          IF(SAND(I,M,1).GE.0.0) THEN
+              ALGWET(I,M)=0.08+0.0006*SAND(I,M,1)
+              ALGDRY(I,M)=MIN(0.14+0.0056*SAND(I,M,1),0.45)
+          ELSE
+              ALGWET(I,M)=0.0
+              ALGDRY(I,M)=0.0
+          ENDIF
+200   CONTINUE
+C
+      DO 300 J=1,IG
+      DO 300 M=1,IM
+      DO 300 I=1,IL
           IF(ISAND(I,M,J).EQ.-4) THEN
               THPOR (I,M,J)=0.0
               THLRET(I,M,J)=0.0
@@ -99,12 +135,12 @@ C
               THFC(I,M,J)=0.0
               PSIWLT(I,M,J)=0.0
           ELSEIF(ISAND(I,M,J).EQ.-2) THEN
-              THPOR (I,M,J)=THPORG(IORG(I,M,J))
-              THLRET(I,M,J)=THRORG(IORG(I,M,J))
-              THLMIN(I,M,J)=THMORG(IORG(I,M,J))
-              BI    (I,M,J)=BORG(IORG(I,M,J))
-              PSISAT(I,M,J)=PSISORG(IORG(I,M,J))
-              GRKSAT(I,M,J)=GRKSORG(IORG(I,M,J))
+              THPOR (I,M,J)=THPORG(MIN(J,3))
+              THLRET(I,M,J)=THRORG(MIN(J,3))
+              THLMIN(I,M,J)=THMORG(MIN(J,3))
+              BI    (I,M,J)=BORG(MIN(J,3))
+              PSISAT(I,M,J)=PSISORG(MIN(J,3))
+              GRKSAT(I,M,J)=GRKSORG(MIN(J,3))
               THLRAT(I,M,J)=0.5**(1.0/(2.0*BI(I,M,J)+3.0))
               HCPS(I,M,J)=HCPOM
               TCS(I,M,J)=TCOM
@@ -132,32 +168,16 @@ C
      1            TCFINE*THFINE(I,M,J))/(1.0-THPOR(I,M,J))
               THFC(I,M,J)=THPOR(I,M,J)*(1.157E-9/GRKSAT(I,M,J))**
      1            (1.0/(2.0*BI(I,M,J)+3.0))
+              IF(J.EQ.IG.AND.SDEPTH(I,M).GT.(ZBOTW(I,M,J)-0.01))  THEN
+                  AEXP=(BI(I,M,J)-1.0)/BI(I,M,J)
+                  ABC=(3.0*BI(I,M,J)+2.0)**AEXP-
+     1                (2.0*BI(I,M,J)+2.0)**AEXP
+                  THFC(I,M,J)=(ABC*THPOR(I,M,J)/(BI(I,M,J)-1.0))*
+     1                (PSISAT(I,M,J)*BI(I,M,J)/SDEPTH(I,M))**
+     2                (1.0/BI(I,M,J))
+              ENDIF
               PSIWLT(I,M,J)=PSISAT(I,M,J)*(MAX(0.5*THFC(I,M,J),
      1            THLMIN(I,M,J))/THPOR(I,M,J))**(-BI(I,M,J))
-          ENDIF
-100   CONTINUE
-C
-      DO 300 M=1,IM
-      DO 300 I=1,IL
-          DO 250 J=1,IG
-              IF(ISAND(I,M,1).EQ.-4) THEN
-                  DELZW(I,M,J)=DELZ(J)
-              ELSEIF(SDEPTH(I,M).GE.ZBOT(J)) THEN
-                  DELZW(I,M,J)=DELZ(J)
-              ELSEIF(SDEPTH(I,M).LT.(ZBOT(J)-DELZ(J)+0.01)) THEN
-                  DELZW(I,M,J)=0.0
-                  ISAND(I,M,J)=-3
-              ELSE
-                  DELZW(I,M,J)=SDEPTH(I,M)-(ZBOT(J)-DELZ(J))
-              ENDIF
-              ZBOTW(I,M,J)=MAX(0.0,ZBOT(J)-DELZ(J))+DELZW(I,M,J)
-250       CONTINUE
-          IF(SAND(I,M,1).GE.0.0) THEN
-              ALGWET(I,M)=0.08+0.0006*SAND(I,M,1)
-              ALGDRY(I,M)=MIN(0.14+0.0056*SAND(I,M,1),0.45)
-          ELSE
-              ALGWET(I,M)=0.0
-              ALGDRY(I,M)=0.0
           ENDIF
 300   CONTINUE
 C

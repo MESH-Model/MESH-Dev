@@ -4,6 +4,8 @@
      3                  WSNOW,WSNOWI,FCS,FGS,FI,BAL,THPOR,THLMIN,
      4                  DELZW,ISAND,IG,ILG,IL1,IL2,JL,N   )
 C
+C     * APR 28/10 - B.DUGAS.    INTRODUCE SEPARATE ACCURACY LIMITS
+C     *                         FOR BAL AND FOR THE OTHER CHECKS.
 C     * JUN 06/06 - D.VERSEGHY. MODIFY CHECK ON RUNOFF.
 C     * APR 03/06 - D.VERSEGHY. ALLOW FOR PRESENCE OF WATER IN SNOW.
 C     * SEP 26/05 - D.VERSEGHY. REMOVE HARD CODING OF IG=3 IN 300 LOOP.
@@ -78,7 +80,7 @@ C
 C
 C     * TEMPORARY VARIABLES.
 C
-      REAL ACCLMT,CANFAC,SNOFAC
+      REAL ACCLMT,BALLMT,CANFAC,SNOFAC
 C
 C     * SOIL INFORMATION ARRAYS.
 C
@@ -97,7 +99,8 @@ C
      2                TCGLAC,CLHMLT,CLHVAP
 C
 C      ACCLMT=3.0*DELT/3.1536E7
-      ACCLMT=1.0E-1
+      ACCLMT=1.0E-3
+      BALLMT=1.0E-1
 C-----------------------------------------------------------------------
       IF(ISFC.EQ.1 .OR. ISFC.EQ.3)                                  THEN      
           IPTBAD=0
@@ -225,7 +228,7 @@ C
      1                 (THLIQ(I,J)-THLIQI(I,J))*RHOW*DELZW(I,J)-                       
      2                 (THICE(I,J)-THICEI(I,J))*RHOICE*DELZW(I,J)                     
   275        CONTINUE
-             IF(ABS(BAL(I)).GT.ACCLMT)                           THEN
+             IF(ABS(BAL(I)).GT.BALLMT)                           THEN
                  IPTBAD=I
              ENDIF  
           ENDIF
