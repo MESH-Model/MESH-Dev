@@ -210,8 +210,8 @@ C
           ELSE
               DELZZ (I,J)=DELZ(J)
           ENDIF
-c         calculate BULK_FC, make sure we don't divide by 0 
-          IF(XSLOPE(I).gt.0.0) THEN
+c         calculate BULK_FC, make sure we don't divide by 0 (for slope = 0 or bedrock i.e. %sand = -2)
+          IF(XSLOPE(I).gt.0.0.AND.THPOR(I,J).gt.0.0) THEN
               BULK_FC(I,J)= (THPOR(I,J)/(BI(I,J)-1))*
      +          ((2*DD(I)*PSISAT(I,J)*BI(I,J)/XSLOPE(I))**(1/BI(I,J)))*
      +          ((3*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J))-
