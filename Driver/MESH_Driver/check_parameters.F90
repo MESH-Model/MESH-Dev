@@ -161,28 +161,43 @@ end
 !C     The subroutine checks if the parameter value is within the limits
 !C-----------------------------------------------------------------------------------------
       subroutine checkbound(parv,minlimit,maxlimit,nr,nc)
+      
       implicit none
-      integer i,j,nr,nc
-      real parv(nr,nc),minlimit(nr,nc),maxlimit(nr,nc)
+      
+      integer nr,nc
+      real    parv(nr,nc),minlimit(nr,nc),maxlimit(nr,nc)
+      
+      integer i,j,ncount
+      
+      write(*,*)
+      write(*,*)
+      write(*,*)'Checking if parameter values lie within the specified ranges'
+      write(*,*)
+      write(*,10)"ROW","COLUMN","Specified value","Minimum value","Maximum value"
+      write(*,*)"-----------------------------------------------------------------"
+      
+      ncount = 0
+      
       do i = 1, nr
          do j = 1, nc
             if(parv(i,j) .gt. -990)then
                if(parv(i,j).lt.minlimit(i,j).or.parv(i,j).gt.maxlimit(i,j)) then
-                  print*,'***********'
-                  print*,'Checking if parameter value lies within the specified range.'
-                  print*,'Problem with parameter located at (refer to minmax_parameters.txt file):'
-                  print*,'ROW',i
-                  print*,'COLUMN',j
-                  print*,'Minimum parameter limit',minlimit(i,j)
-                  print*,'Maximum parameter limit',maxlimit(i,j)
-                  print*,'Specified parameter value',parv(i,j)
-                  print*,'adjust the parameter value or modify the parameter limits'
-                  pause
-                  stop
+                  ncount = ncount + 1
+                  write(*,20)i,j,parv(i,j),minlimit(i,j),maxlimit(i,j)
                endif
              endif
-             write(9,"(9F22.15)") parv(i,j)
          enddo
       enddo
-     
+      
+      if(ncount > 0)then
+         write(*,*)
+         write(*,*)ncount, " parameter(s) out of range"
+         write(*,*)'Adjust the parameter value(s) or modify the parameter limits'
+         pause
+         stop
+      endif
+      
+ 10   format(2(a6,2x),3(a15,2x))
+ 20   format(2(i6,2x),3(f15.4,2x))
+      
       end
