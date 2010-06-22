@@ -327,12 +327,12 @@ CDAN	if(IsLatLong(header%r2cp%csp).eq.(.true.))then
           grde=xdelta*60.
           grdn=ydelta*60.  
         else
+          grde=xdelta/1000.
+          grdn=ydelta/1000.           
           jxmin=int(xorigin/1000.)
           jxmax=jxmin+grde*(xcount-1)
           iymin=int(yorigin/1000.)
 	    iymax=iymin+grdn*(ycount-1)
-          grde=xdelta/1000.
-          grdn=ydelta/1000.  
 	    llflg='n'          ! added Mar. 15/06 nk
         endif
 
