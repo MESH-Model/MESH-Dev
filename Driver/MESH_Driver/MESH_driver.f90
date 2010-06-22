@@ -2,6 +2,17 @@ PROGRAM RUNMESH
 
 !>       MESH DRIVER
 !>
+!>       JUN 2010 - M.A.MEKONNEN/B.DAVIDSON/M.MacDONALD. 
+!>                - BUG FIX FOR READING FORCING DATA IN CSV FORMAT 
+!>                  WITH 1 HOUR INTERVAL
+!>                - READING FORCING DATA WITH VARIOUS TIME STEPS
+!>                - FORCING DATA INTERPOLATION TO 30 MINUTE INTERVALS
+!>                  (CLASS MODEL TIME STEP)
+!>                - PRE-EMPTION OPTION FOR AUTOCALIBRATION
+!>                - CHECKING FOR PARAMETER MINIMUM AND MAXIMUM LIMITS
+!>                - PATH SPECIFICATION THAT WORKS FOR BOTH WINDOWS AND 
+!>                  UNIX SYSTEMS
+!>
 !>       AUG 2009 - B.DAVISON. CHANGES TO UPDATE TO SA_MESH 1.3
 !>       APL 2009 - CLEAN COMMENTS AND REFINE STRUCTURE AFTER CODE REVIEW
 !>       FEB 2009 - MESH12-01 BUG FIX AND ADDING NEW FEATURES
@@ -55,6 +66,7 @@ PROGRAM RUNMESH
 USE AREA_WATFLOOD
 USE EF_MODULE
 USE MESH_INPUT_MODULE
+USE FLAGS
 IMPLICIT NONE
 
 !> DAN  USE RTE SUBROUTINES FOR READING EVENT FILE AND SHD FILE, AND
@@ -75,7 +87,7 @@ INTEGER WF_IYMAX,WF_JXMAX
 
 REAL*8 :: LATLENGTH, LONGLENGTH
 REAL*8 WF_AL
-	REAL WF_LAND_MAX, WF_LAND_SUM
+REAL WF_LAND_MAX, WF_LAND_SUM
 INTEGER WF_LAND_COUNT
 
 !> IOSTAT VARIABLE
@@ -85,12 +97,6 @@ INTEGER IOS, IOS_EVT
 CHARACTER*10 GENDIR_OUT
 
 !todo clean up commets and arrange variables a bit better
-!> Flags
-INTEGER BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG, BASINRAINFLAG, &
-        BASINTEMPERATUREFLAG, BASINWINDFLAG, BASINPRESFLAG, &
-        BASINHUMIDITYFLAG
-INTEGER HOURLYFLAG, RESUMEFLAG, SAVERESUMEFLAG
-INTEGER SHDFILEFLAG, SOILINIFLAG, STREAMFLOWFLAG
 
 !> These variables are used to keep track of the number of forcing files
 !> that are in different formats
@@ -112,14 +118,14 @@ REAL basin_SWE
 !* WF_JX: X-DIRECTION GAUGE CO-ORDINATE (UTM OR LATLONG)
 !* WF_S: GAUGE'S PARENT GRID SQUARE
 !* WF_QHYD: STREAMFLOW VALUE (_AVG = DAILY AVERAGE)
-!* WF_QSYN: SIMULATED STREAFLOW VALUE
+!* WF_QSYN: SIMULATED STREAFLOW VALUE (_AVG = DAILY AVERAGE)
 !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
 !* WF_START_DAY OBSERVED STREAMFLOW START DAY
 !* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
 INTEGER WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, &
         WF_START_DAY,WF_START_HOUR
 INTEGER WF_IY(M_S),WF_JX(M_S), WF_S(M_S)
-REAL WF_QHYD(M_S),WF_QHYD_AVG(M_S),WF_QSYN(M_S)
+REAL WF_QHYD(M_S),WF_QHYD_AVG(M_S),WF_QSYN(M_S),WF_QSYN_AVG(M_S)
 CHARACTER WF_GAGE(M_S)*8
 
 !> RESERVOIR VARIABLES
@@ -182,7 +188,7 @@ REAL DEGLAT,DEGLON,FSDOWN1,FSDOWN2,FSDOWN3,RDAY, &
      ALTOT,FSSTAR,FLSTAR,QH,QE,BEG,SNOMLT,ZSN,TCN,TSN,TPN,GTOUT
 INTEGER JLAT
 
-REAL, DIMENSION(:), ALLOCATABLE :: FSDOWN
+REAL, DIMENSION(:), ALLOCATABLE :: FSDOWN,FSDOWNPRE,FSDOWNPST
 
 
 !> *************************************************************
@@ -276,7 +282,8 @@ LOGICAL :: VER_OK
 !*           (COMPARED TO "RELEASE")
 CHARACTER :: FILE_VER*8
 INTEGER ::  N, NCOUNT, NSUM, I, J, K, L, M, &
-  CONFLAGS, OPTFLAGS, INDEPPAR, DEPPAR, PAS
+            INDEPPAR, DEPPAR, PAS
+!  CONFLAGS, OPTFLAGS, INDEPPAR, DEPPAR, PAS
 LOGICAL :: OPN
 !>
 !>*******************************************************************
@@ -329,7 +336,7 @@ REAL*4, DIMENSION(:, :), ALLOCATABLE :: RUNOFF, RECHARGE
 
 !> GRID OUTPUT POINTS
 !* BNAM: TEMPORARY HOLD FOR OUTPUT DIRECTORY (12 CHARACTER STRING)
-	CHARACTER :: BNAM*12
+CHARACTER :: BNAM*12
 !* WF_NUM_POINTS: NUMBER OF GRID OUTPUTS
 !* I_OUT: OUTPUT GRID SQUARE TEMPORARY STORE
 INTEGER :: WF_NUM_POINTS, I_OUT
@@ -339,23 +346,6 @@ INTEGER :: WF_NUM_POINTS, I_OUT
 REAL*4, DIMENSION(:), ALLOCATABLE :: PRE_OUT, EVAP_OUT, ROF_OUT
 !>
 !>*******************************************************************
-!>
-!> MET. FORCING DATA (FORCING.BIN):
-!> THESE HAVE TO BE REAL*4 IN ORDER TO READ IN THE MET DATA
-!> CORRECTLY.
-!* R4SHRTGRID2D: VISIBLE SHORTWAVE RADIATION [W m-2]
-!* R4LONGGRID2D: DOWNWELLING LONGWAVE RADIATION [W m-2]
-!* R4RAINGRID2D: PRECIPITATION [kg m-2 s-1]
-!* R4TEMPGRID2D: AMBIENT AIR TEMPERATURE [dC]
-!* R4WINDGRID2D: WIND SPEED AT REFERENCE HEIGHT [m s-1]
-!* R4PRESGRID2D: AIR PRESSURE AT SURFACE [Pa]
-!* R4HUMDGRID2D: SPECIFIC HUMIDITY AT REFERENCE HEIGHT [kg kg-1]
-REAL*4, DIMENSION(:, :), ALLOCATABLE :: R4SHRTGRID2D, &
-  R4LONGGRID2D, R4RAINGRID2D, R4TEMPGRID2D, R4WINDGRID2D, &
-  R4PRESGRID2D, R4HUMDGRID2D
-REAL*4, DIMENSION(:), ALLOCATABLE :: R4SHRTGRU, &
-  R4LONGGRU, R4RAINGRU, R4TEMPGRU, R4WINDGRU, &
-  R4PRESGRU, R4HUMDGRU
 !>
 !>*******************************************************************
 !>
@@ -465,7 +455,7 @@ INTEGER, DIMENSION(:, :), ALLOCATABLE :: ISNDGAT
 !> WATROF FLAGS AND VARIABLES:
 !* VICEFLG: VERTICAL ICE FLAG OR LIMIT
 !* HICEFLG: HORIZONTAL ICE FLAG OR LIMIT
-	INTEGER :: LZFFLG, EXTFLG, IWFICE, ERRFLG, IWFOFLW
+INTEGER :: LZFFLG, EXTFLG, IWFICE, ERRFLG, IWFOFLW
 REAL :: VICEFLG, PSI_LIMIT, HICEFLG
 !* DD (DDEN): DRAINAGE DENSITY (CLASS.INI)
 !* MANN (WFSF): MANNING'S n (CLASS.INI)
@@ -476,7 +466,7 @@ REAL, DIMENSION(:), ALLOCATABLE :: DDGAT, MANNGAT
 !* ALL: DEFINITIONS ARE WRITTEN JUST BEFORE RUN_OPTIONS.INI IS
 !*      OPENED
 !* RELFLG: RELEASE-MATCH STRICTNESS
-INTEGER :: RELFLG
+!INTEGER :: RELFLG
 !>
 !>*******************************************************************
 !>
@@ -486,7 +476,17 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZDMGRD, &
   ULGRD, VLGRD, TAGRD, QAGRD, PRESGRD, PREGRD, PADRGRD, VPDGRD, &
   TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, RHSIGRD, &
   FCLOGRD, DLONGRD, Z0ORGRD, GGEOGRD, UVGRD, XDIFFUS, &
-  RPREGRD, SPREGRD
+  RPREGRD, SPREGRD, &
+  FSVHGRDPRE,FSIHGRDPRE,FDLGRDPRE,PREGRDPRE,TAGRDPRE, &
+  ULGRDPRE,VLGRDPRE,UVGRDPRE,PRESGRDPRE,QAGRDPRE, &
+  FSVHGRDPST,FSIHGRDPST,FDLGRDPST,PREGRDPST,TAGRDPST, &
+  ULGRDPST,VLGRDPST,UVGRDPST,PRESGRDPST,QAGRDPST
+
+!* TRATIO: TIME RATIO USED TO INTERPOLATE FORCING DATA
+!* ENDDATA: VARIABLE USED TO CONTROL END OF FORCING DATA
+REAL TRATIO
+INTEGER ENDDATA
+
 REAL, DIMENSION(:), ALLOCATABLE :: ZRFMGAT, ZRFHGAT, ZDMGAT, &
   ZDHGAT, ZBLDGAT, FSVHGAT, FSIHGAT, RADJGAT, CSZGAT, FDLGAT, &
   ULGAT, VLGAT, TAGAT, QAGAT, PRESGAT, PREGAT, PADRGAT, VPDGAT, &
@@ -705,7 +705,22 @@ TYPE(ClassParameters) :: cp
 TYPE(SoilValues) :: sv
 TYPE(HydrologyParameters) :: hp
 
-
+!> FOR AUTOCALIBRATION USING PRE-EMPTION - A MAXIMUM OF 1 YEAR (365 DAYS) 
+!> DAILY STREAM FLOW IS SUPPOSED TO BE USED FOR AUTOCALIBRATION PURPOSE.
+!* NCALMAX: MAXIMUM NUMBER OF CALIBRATION DATA
+!* NCAL:    ACTUAL NUMBER OF CALIBRATION DATA
+!* COUNTER: COUNTER FOR THE NUMBER OF PRE-EMPTION STARTS
+!* EXISTS:  LOGICAL TO CHECK IF "pre_emption_value.txt" FILE EXISTS
+!* SAE   :  SUM OF ABSOLUTE VALUE OF ERRORS (DEVIATIONS BETWEEN OBSERVED 
+!*          AND SIMULATED STREAM FLOWS)
+!* SAEPRE:  SAE AT PREVIOUS TIME STEP TRIAL
+!* SAENEW:  SAE AT CURRENT TIME STEP TRIAL
+!* QOBS  :  OBSERVED DAILY STREAM FLOW
+!* QSIM  :  SIMULATED DAILY STREAM FLOW
+INTEGER, PARAMETER :: NCALMAX = 365
+INTEGER NCAL, COUNTER
+LOGICAL EXISTS
+REAL    SAE,SAEPRE,SAENEW,QOBS(NCALMAX),QSIM(NCALMAX)
 !=======================================================================
 !     * SET PHYSICAL CONSTANTS AND COMMON BLOCKS
 
@@ -774,11 +789,7 @@ CALL READ_INITIAL_INPUTS( &
 !>VARIABLES FOR READ_RUN_OPTIONS
   IDISP, IZREF, ISLFD, IPCP, IWF, &
   IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG, &
-  BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG, BASINRAINFLAG, &
-  BASINTEMPERATUREFLAG, BASINWINDFLAG, BASINPRESFLAG, &
-  BASINHUMIDITYFLAG, HOURLYFLAG, RESUMEFLAG, &
-  SHDFILEFLAG, CONFLAGS, RELFLG, SAVERESUMEFLAG, &
-  SOILINIFLAG, STREAMFLOWFLAG, IOS, PAS, N, IROVAL, WF_NUM_POINTS, &
+  IOS, PAS, N, IROVAL, WF_NUM_POINTS, &
   IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, &
   IYEAR_END,IDAY_END, IHOUR_END, IMIN_END, &
   IRONAME, GENDIR_OUT, &
@@ -803,15 +814,33 @@ CALL READ_INITIAL_INPUTS( &
   IHOUR, IMIN, IDAY, IYEAR, &
  !>variables for READ_SOIL_INI
  !>variables for READ_PARAMETERS_HYDROLOGY
-  OPTFLAGS, INDEPPAR, DEPPAR, WF_R2, M_C, &
+  INDEPPAR, DEPPAR, WF_R2, M_C, &
  !>the types that are to be allocated and initialised
   op, sl, cp, sv, hp)! , si, , , , )
 
 !>
-!>*******************************************************************
+!>***********************************************************************
+!> Forcing data time step should not be less than 30 min - there is no 
+!> any increase in accuracy as delt (CLASS model time step) is 30 min.
+!>=======================================================================
+IF(HOURLYFLAG .LT. 30)THEN
+  WRITE(6,*)
+  WRITE(6,*)
+  WRITE(6,*)
+  PRINT*,"FORCING DATA TIME STEP IS LESS THAN 30 MIN"
+  WRITE(6,*)
+  PRINT*,"AGGREGATE THE FORCING DATA TO 30 MIN INTERVAL AND TRY AGAIN"
+  WRITE(6,*)
+  WRITE(6,*)
+  WRITE(6,*)
+  PAUSE
+  STOP
+ENDIF
 
+!>
+!>***********************************************************************
 !> Check for parameter values - all parameters should lie within the 
-!> specified ranges in minmax_parameters.txt file
+!> specified ranges in the "minmax_parameters.txt" file.
 !>=======================================================================
 !>
 call check_parameters(WF_R2,M_C,NMTEST,cp,hp)
@@ -830,7 +859,7 @@ call check_parameters(WF_R2,M_C,NMTEST,cp,hp)
 ALLOCATE (WF_NHYD(NA), WF_QR(NA), &
   WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA), &
   WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA), &
-  FSDOWN(NA))
+  FSDOWN(NA),FSDOWNPRE(NA),FSDOWNPST(NA))
 
 !> ANDY * Zero everything we just allocated
 DO I=1,NA
@@ -876,37 +905,7 @@ IF (PAS .NE. 0) THEN
 END IF
 
 !> MET. FORCING DATA:
-ALLOCATE (R4SHRTGRID2D(YCOUNT, XCOUNT), &
-  R4LONGGRID2D(YCOUNT, XCOUNT), R4RAINGRID2D(YCOUNT, XCOUNT), &
-  R4TEMPGRID2D(YCOUNT, XCOUNT), R4WINDGRID2D(YCOUNT, XCOUNT), &
-  R4PRESGRID2D(YCOUNT, XCOUNT), R4HUMDGRID2D(YCOUNT, XCOUNT), &
-  STAT=PAS)
 
-IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating met. forcing data ", &
-      "variables.  Check that bounds are within an acceptable ", &
-      "range."
-  WRITE (6, *) "Bound 1 (grid square rows): ", YCOUNT
-  WRITE (6, *) "Bound 2 (grid square columns): ", XCOUNT
-  STOP
-END IF
-
-ALLOCATE (R4SHRTGRU(NTYPE), R4LONGGRU(NTYPE), &
-          R4RAINGRU(NTYPE), R4TEMPGRU(NTYPE), &
-          R4WINDGRU(NTYPE), R4PRESGRU(NTYPE), &
-          R4HUMDGRU(NTYPE), STAT=PAS)
-
-IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating met. forcing data ", &
-      "variables.  Check that bounds are within an acceptable ", &
-      "range."
-  WRITE (6, *) "Bound 1 (number of GRUs): ", NTYPE
-  STOP
-END IF
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
 ALLOCATE ( &
@@ -1029,6 +1028,10 @@ ALLOCATE ( ZDMGRD(NA), &
   TADPGRD(NA), RHOAGRD(NA), RPCPGRD(NA), TRPCGRD(NA), &
   SPCPGRD(NA), TSPCGRD(NA), RHSIGRD(NA), &
   FCLOGRD(NA), DLONGRD(NA), Z0ORGRD(NA), GGEOGRD(NA), UVGRD(NA), &
+  FSVHGRDPRE(NA),FSIHGRDPRE(NA),FDLGRDPRE(NA),PREGRDPRE(NA),TAGRDPRE(NA), &
+  ULGRDPRE(NA),VLGRDPRE(NA),UVGRDPRE(NA),PRESGRDPRE(NA),QAGRDPRE(NA), &
+  FSVHGRDPST(NA),FSIHGRDPST(NA),FDLGRDPST(NA),PREGRDPST(NA),TAGRDPST(NA), &
+  ULGRDPST(NA),VLGRDPST(NA),UVGRDPST(NA),PRESGRDPST(NA),QAGRDPST(NA), &
   XDIFFUS(NA), &
   RPREGRD(NA), SPREGRD(NA), &
   ZRFMGAT(ILG), ZRFHGAT(ILG), ZDMGAT(ILG), &
@@ -1240,10 +1243,10 @@ END IF
 !> *********************************************************************
 !>  Open additional output files
 !> *********************************************************************
-OPEN(unit=85,file=".\" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '\basin_SCA_alldays.csv')
-OPEN(unit=86,file=".\" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '\basin_SWE_alldays.csv')
+OPEN(unit=85,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/basin_SCA_alldays.csv')
+OPEN(unit=86,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/basin_SWE_alldays.csv')
 
 !> CLASS requires that each GRU for each grid square has its own parameter value,
 !> for MESH the value read in from the parameter file is assumed to be valid for
@@ -1658,8 +1661,8 @@ NO_FRAMES = FRAME_NO + 1
 !> echo print information to MESH_output_echo_print.txt
 !> ******************************************************
 
-OPEN(UNIT=58,FILE=".\" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '\MESH_output_echo_print.txt')
+OPEN(UNIT=58,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/MESH_output_echo_print.txt')
 
 WRITE(58,"('MESH_input_run_options.ini')")
 WRITE(58,*)
@@ -1852,19 +1855,40 @@ nhy = IHOUR_START - IHOUR !P
 !HOURLYFLAG is 1 if the data is every hour, and 0 if the data is every half-hour
 !ISTEP_START is used to calculate nrs, and doubles the effect of the hours and
 ! minutes if the data is in half-hourly format
-IF (HOURLYFLAG == 1) THEN
-  ISTEP_START = 1
-ELSE
-  ISTEP_START = 2
-ENDIF
+!IF (HOURLYFLAG == 1) THEN
+!  ISTEP_START = 1
+!ELSE
+!  ISTEP_START = 2
+!ENDIF
+!Note added by M. Mekonnen
+!ISTEP_START is used to count the number of records in one hour, 
+!hence a 30 minute interval forcing data will have 2 records per hour (ISTEP_START = 2)
+!and a 1 hour interval forcing data will have 1 record per hour (ISTEP_START = 1). To 
+!accomodate forcing data with time intervals greater than 1 hour, 
+!it is better to count the number of records in a day:
+ISTEP_START = 24*60 / HOURLYFLAG
+if(mod(24*60,HOURLYFLAG) /= 0)then
+   write(*,*)
+   write(*,*)"Forcing data time interval needs to be in either"
+   write(*,*)"of the following values:"
+   write(*,*)"30 or n*60 where n can be either 1,2,3,4,6,8 or 12"
+   write(*,*)
+   pause
+   stop
+endif
+
 if ((jday_ind2 < jday_ind3) .and. (iyear_start /= 0)) then 
-         PRINT *, 'ERROR: Simulation start date too early, check ', &
-          ' THE MET FORCING DATA RANGE.  The start date in ', &
-          ' MESH_input_run_options.ini may be out of range'
-		  stop
-		  endif
-nrs =JDAY_IND_MET*24*istep_START + nhy*istep_START + nmy/30  !aLIU
-    PRINT *,'NRS=',NRS
+   PRINT *, 'ERROR: Simulation start date too early, check ', &
+            ' THE MET FORCING DATA RANGE.  The start date in ', &
+            ' MESH_input_run_options.ini may be out of range'
+   stop
+endif
+!Notes added by M. Mekonnen - To keep nrs calculation as before
+!(and to be compatible with the bove modification) we need to 
+!divide ISTEP_START by 24.
+!nrs =JDAY_IND_MET*ISTEP_START*24 + nhy*ISTEP_START + nmy/30  !aLIU
+nrs =JDAY_IND_MET*ISTEP_START + nhy*ISTEP_START/24 + nmy/30
+PRINT *,'NRS=',NRS
 ! FIX BUG IN JULIANDAY CALCULATION FOR NRS ---ALIU FEB2009
 IF (IYEAR_START == 0 .AND. IDAY_START == 0 .AND. IMIN_START == 0 &
     .AND. IHOUR_START == 0) THEN !P
@@ -1970,33 +1994,33 @@ ENDDO
 !> Open and print header information to the output files
 !> *********************************************************************
 
-OPEN(UNIT=70,FILE=".\" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '\MESH_output_streamflow.csv')
+OPEN(UNIT=70,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/MESH_output_streamflow.csv')
 
-OPEN(UNIT=71,FILE=".\" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '\MESH_output_streamflow_all.csv')
+OPEN(UNIT=71,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/MESH_output_streamflow_all.csv')
 
 !> Set up the CLASSOF* files to print out into the correct directory
 DO I=1, wf_num_points
   BNAM=op%DIR_OUT(i)
-  OPEN(UNIT=150+i*10+1,FILE=".\"//BNAM(1:INDEX(BNAM," ")-1)// &
-   "\CLASSOF1.csv")
-  OPEN(UNIT=150+i*10+2,FILE=".\"//BNAM(1:INDEX(BNAM," ")-1)// &
-   "\CLASSOF2.csv")
-  OPEN(UNIT=150+i*10+3,FILE=".\"//BNAM(1:INDEX(BNAM," ")-1)// &
-   "\CLASSOF3.csv")
-  OPEN(UNIT=150+i*10+4,FILE=".\"//BNAM(1:INDEX(BNAM," ")-1)// &
-   "\CLASSOF4.csv")
-  OPEN(UNIT=150+i*10+5,FILE=".\"//BNAM(1:INDEX(BNAM," ")-1)// &
-   "\CLASSOF5.csv")
-  OPEN(UNIT=150+i*10+6,FILE=".\"//BNAM(1:INDEX(BNAM," ")-1)// &
-   "\CLASSOF6.csv")
-  OPEN(UNIT=150+i*10+7,FILE=".\"//BNAM(1:INDEX(BNAM," ")-1)// &
-   "\CLASSOF7.csv")
-  OPEN(UNIT=150+i*10+8,FILE=".\"//BNAM(1:INDEX(BNAM," ")-1)// &
-   "\CLASSOF8.csv")
-  OPEN(UNIT=150+i*10+9,FILE=".\"//BNAM(1:INDEX(BNAM," ")-1)// &
-   "\CLASSOF9.csv")
+  OPEN(UNIT=150+i*10+1,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+   "/CLASSOF1.csv")
+  OPEN(UNIT=150+i*10+2,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+   "/CLASSOF2.csv")
+  OPEN(UNIT=150+i*10+3,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+   "/CLASSOF3.csv")
+  OPEN(UNIT=150+i*10+4,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+   "/CLASSOF4.csv")
+  OPEN(UNIT=150+i*10+5,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+   "/CLASSOF5.csv")
+  OPEN(UNIT=150+i*10+6,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+   "/CLASSOF6.csv")
+  OPEN(UNIT=150+i*10+7,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+   "/CLASSOF7.csv")
+  OPEN(UNIT=150+i*10+8,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+   "/CLASSOF8.csv")
+  OPEN(UNIT=150+i*10+9,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+   "/CLASSOF9.csv")
 
   DO j=1, 9
     WRITE(150+i*10+j,'("CLASS TEST RUN:     ",6A4)') TITLE1, &
@@ -2147,11 +2171,23 @@ PRINT *, 'Output Directory, grid number, land class number'
 DO I=1, WF_NUM_POINTS
   PRINT *, op%DIR_OUT(I),op%N_OUT(I),op%II_OUT(I)
 ENDDO
+
 PRINT *
-
-
-	PRINT *
-	PRINT *, 'DONE INTITIALIZATION'
+PRINT *
+PRINT *
+IF(PREEMPTIONFLAG == 1)THEN
+  WRITE(6,*)"================================================="
+  WRITE (6,*)
+  PRINT*,"     SA_MESH IS RUNNING IN AUTOCALIBRATION MODE"
+  WRITE (6,*)
+  PRINT*,"                USING PRE-EMPTION"
+  WRITE (6,*)
+  WRITE(6,*)"================================================="
+  WRITE (6,*)
+ENDIF
+PRINT *
+PRINT *
+PRINT *, 'DONE INTITIALIZATION'
 PRINT *
 WRITE (6, *) "STARTING MESH (PRECIP, EVAP, ", &
       "RUNOFF)"
@@ -2316,9 +2352,30 @@ call resume_state( &
   FINAL_STORE, TOTAL_AREA)
 ENDIF
 
+CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,IWAT,IICE, &
+             NML,NMW,NWAT,NICE,cp%GCGRD,cp%FAREROW,cp%MIDROW, &
+             NA,NTYPE,ILG,1,NA,NMTEST)
+
+!>STARTTIME
+CALL READ_FORCING_DATA(IMIN,VMIN,YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
+                       FSDOWNPRE, FSVHGRDPRE, FSIHGRDPRE, FDLGRDPRE, PREGRDPRE, &
+                       TAGRDPRE, ULGRDPRE, VLGRDPRE, UVGRDPRE, PRESGRDPRE, QAGRDPRE)
+
 !> *********************************************************************
 !> Start of main loop that is run each half hour
 !> *********************************************************************
+
+IF(PREEMPTIONFLAG == 1)THEN
+  INQUIRE(FILE="pre_emption_value.txt", EXIST = EXISTS)
+  IF(EXISTS)THEN
+    OPEN(100,FILE="pre_emption_value.txt")
+    READ(100,*)SAEPRE
+    CLOSE(100)
+  ELSE
+    SAEPRE = +1.0e+10
+  ENDIF
+ENDIF
+NCAL = 0
 
 200   CONTINUE
 
@@ -2331,179 +2388,38 @@ N=N+1
 !> *********************************************************************
 !> Read in Meteorological forcing data
 !> *********************************************************************
+CALL READ_FORCING_DATA(IMIN,VMIN,YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
+                       FSDOWNPST, FSVHGRDPST, FSIHGRDPST, FDLGRDPST, PREGRDPST, &
+                       TAGRDPST, ULGRDPST, VLGRDPST, UVGRDPST, PRESGRDPST, QAGRDPST)
 
-!> READ IN METEOROLOGICAL FORCING DATA FOR CURRENT TIME STEP;
-!> CALCULATE SOLAR ZENITH ANGLE AND COMPONENTS OF INCOMING SHORT-
-!> WAVE RADIATION FLUX; ESTIMATE FLUX PARTITIONS IF NECESSARY.
+IF(ENDDATA == 1)GOTO 999
 
-IF( (HOURLYFLAG == 1 .AND. IMIN==0) & !hourly forcing data
-  .OR. &
-     HOURLYFLAG == 0) THEN !half-hourly forcing data
-
-  IF(BASINSHORTWAVEFLAG==0)THEN !use the forcing bin
-    READ(51,END=999) ((R4SHRTGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
-  ENDIF
-  IF(BASINLONGWAVEFLAG==0)THEN !use the forcing bin
-    READ(51,END=999) ((R4LONGGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
-  ENDIF
-  IF(BASINRAINFLAG==0)THEN !use the forcing bin
-    READ(51,END=999) ((R4RAINGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
-  ENDIF
-  IF(BASINTEMPERATUREFLAG==0)THEN !use the forcing bin
-    READ(51,END=999) ((R4TEMPGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
-  ENDIF
-  IF(BASINWINDFLAG==0)THEN !use the forcing bin
-    READ(51,END=999) ((R4WINDGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
-  ENDIF
-  IF(BASINPRESFLAG==0)THEN !use the forcing bin
-    READ(51,END=999) ((R4PRESGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
-  ENDIF
-  IF(BASINHUMIDITYFLAG==0)THEN !use the forcing bin
-    READ(51,END=999) ((R4HUMDGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
-  ENDIF
-  DO I=1,NA
-    IF(BASINSHORTWAVEFLAG==0)THEN !use the forcing bin
-      FSDOWN(I)=R4SHRTGRID2D(YYY(I),XXX(I))
-      FSVHGRD(I)=0.5*R4SHRTGRID2D(YYY(I),XXX(I))
-      FSIHGRD(I)=FSVHGRD(I)
-    ENDIF
-    IF (BASINLONGWAVEFLAG == 0) THEN !use the forcing bin
-      FDLGRD(I)=R4LONGGRID2D(YYY(I),XXX(I))
-    ENDIF
-    IF (BASINRAINFLAG == 0) THEN !use the forcing bin
-      PREGRD(I)=R4RAINGRID2D(YYY(I),XXX(I)) 
-    ENDIF
-    IF (BASINTEMPERATUREFLAG == 0) THEN !use the forcing bin
-      TAGRD(I)=R4TEMPGRID2D(YYY(I),XXX(I))
-    ENDIF
-    IF (BASINWINDFLAG == 0) THEN !use the forcing bin
-      ULGRD(I)=R4WINDGRID2D(YYY(I),XXX(I))
-    ENDIF
-    VLGRD(I)=0.0
-    UVGRD(I)=MAX(VMIN,ULGRD(I))
-    IF (BASINPRESFLAG == 0) THEN !use the forcing bin
-      PRESGRD(I)=R4PRESGRID2D(YYY(I),XXX(I))
-    ENDIF
-    IF (BASINHUMIDITYFLAG == 0) THEN !use the forcing bin
-      QAGRD(I)=R4HUMDGRID2D(YYY(I),XXX(I))
-    ENDIF
-  END DO
+IF(INTERPOLATIONFLAG==0)THEN
+   TRATIO     = 0.0
+ELSEIF(INTERPOLATIONFLAG==1)THEN
+   TRATIO     = MIN(1.0,float(IMIN) / HOURLYFLAG)
+ELSE
+   PRINT *
+   PRINT*,"INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY"
+   PRINT *
+   PRINT*,"0: SETS FORCING DATA AS CONSTANT OVER INTERMEDIATE TIME STEPS"
+   PRINT *
+   PRINT*,"1: LINEARLY INTERPOLATES FORCING DATA FOR INTERMEDIATE TIME STEPS"
+   PAUSE
+   STOP
 ENDIF
 
-
-!> *********************************************************************
-!> *********************************************************************
-!> Read R2C files, assume ASCII format.
-!> *********************************************************************
-IF( (HOURLYFLAG == 1 .AND. IMIN==0) & !hourly forcing data
-  .OR. &
-     HOURLYFLAG == 0) THEN !half-hourly forcing data
-!> *********************************************************************
-!> basin_shortwave.r2c
-!> *********************************************************************
-IF (BASINSHORTWAVEFLAG == 1) THEN
-  READ (90, *, END=999) !:Frame line
-  DO I = 1,YCOUNT
-    READ (90, *, END=999) (R4SHRTGRID2D(I,J),J=1,XCOUNT)
-  END DO
-  READ (90, *, END=999) !:EndFrame line
-ENDIF
-
-!> *********************************************************************
-!> basin_longwave.r2c
-!> *********************************************************************
-IF (BASINLONGWAVEFLAG == 1) THEN
-  READ (91, *, END=999) !:Frame line
-  DO I = 1,YCOUNT
-    READ (91, *, END=999) (R4LONGGRID2D(I,J),J=1,XCOUNT)
-  END DO
-  READ (91, *, END=999) !:EndFrame line
-ENDIF
-
-!> *********************************************************************
-!> basin_rain.r2c
-!> *********************************************************************
-IF (BASINRAINFLAG == 1) THEN
-  READ (92, *, END=999) !:Frame line
-  DO I = 1,YCOUNT
-    READ (92, *, END=999) (R4RAINGRID2D(I,J),J=1,XCOUNT)
-  END DO
-  READ (92, *, END=999) !:EndFrame line
-ENDIF
-
-!> *********************************************************************
-!> basin_temperature.r2c
-!> *********************************************************************
-IF (BASINTEMPERATUREFLAG == 1) THEN
-  READ (93, *, END=999) !:Frame line
-  DO I = 1,YCOUNT
-    READ (93, *, END=999) (R4TEMPGRID2D(I,J),J=1,XCOUNT)
-  END DO
-  READ (93, *, END=999) !:EndFrame line
-ENDIF
-
-!> *********************************************************************
-!> basin_wind.r2c
-!> *********************************************************************
-IF (BASINWINDFLAG == 1) THEN
-  READ (94, *, END=999) !:Frame line
-  DO I = 1,YCOUNT
-    READ (94, *, END=999) (R4WINDGRID2D(I,J),J=1,XCOUNT)
-  END DO
-  READ (94, *, END=999) !:EndFrame line
-ENDIF
-
-!> *********************************************************************
-!> basin_pres.r2c
-!> *********************************************************************
-IF (BASINPRESFLAG == 1) THEN
-  READ (95, *, END=999) !:Frame line
-  DO I =1,YCOUNT
-    READ (95, *, END=999) (R4PRESGRID2D(I,J),J=1,XCOUNT)
-  END DO
-  READ (95, *, END=999) !:EndFrame line
-ENDIF
-
-!> *********************************************************************
-!> basin_humidity.r2c
-!> *********************************************************************
-IF (BASINHUMIDITYFLAG == 1) THEN
-  READ (96, *, END=999) !:Frame line
-  DO I = 1,YCOUNT
-    READ (96, *, END=999) (R4HUMDGRID2D(I,J),J=1,XCOUNT)
-  END DO
-  READ (96, *, END=999) !:EndFrame line
-ENDIF
-
-
-DO I=1,NA
-  IF(BASINSHORTWAVEFLAG==1)THEN
-    FSDOWN(I)=R4SHRTGRID2D(YYY(I),XXX(I))
-    FSVHGRD(I)=0.5*R4SHRTGRID2D(YYY(I),XXX(I))
-    FSIHGRD(I)=FSVHGRD(I)
-  ENDIF
-  IF (BASINLONGWAVEFLAG == 1) THEN
-    FDLGRD(I)=R4LONGGRID2D(YYY(I),XXX(I))
-  ENDIF
-  IF (BASINRAINFLAG == 1) THEN
-    PREGRD(I)=R4RAINGRID2D(YYY(I),XXX(I))
-  ENDIF
-  IF (BASINTEMPERATUREFLAG == 1) THEN
-    TAGRD(I)=R4TEMPGRID2D(YYY(I),XXX(I))
-  ENDIF
-  IF (BASINWINDFLAG == 1) THEN
-    ULGRD(I)=R4WINDGRID2D(YYY(I),XXX(I))
-    UVGRD(I)=MAX(VMIN,ULGRD(I))
-  ENDIF
-  IF (BASINPRESFLAG == 1) THEN
-    PRESGRD(I)=R4PRESGRID2D(YYY(I),XXX(I))
-  ENDIF
-  IF (BASINHUMIDITYFLAG == 1) THEN
-    QAGRD(I)=R4HUMDGRID2D(YYY(I),XXX(I))
-  ENDIF
-END DO
-ENDIF
-
+FSDOWN     = FSDOWNPRE    + TRATIO *(FSDOWNPST    - FSDOWNPRE)
+FSVHGRD    = FSVHGRDPRE   + TRATIO *(FSVHGRDPST   - FSVHGRDPRE)
+FSIHGRD    = FSIHGRDPRE   + TRATIO *(FSIHGRDPST   - FSIHGRDPRE)
+FDLGRD     = FDLGRDPRE    + TRATIO *(FDLGRDPST    - FDLGRDPRE)
+PREGRD     = PREGRDPRE    + TRATIO *(PREGRDPST    - PREGRDPRE)
+TAGRD      = TAGRDPRE     + TRATIO *(TAGRDPST     - TAGRDPRE)
+ULGRD      = ULGRDPRE     + TRATIO *(ULGRDPST     - ULGRDPRE)
+VLGRD      = VLGRDPRE     + TRATIO *(VLGRDPST     - VLGRDPRE)
+UVGRD      = UVGRDPRE     + TRATIO *(UVGRDPST     - UVGRDPRE)
+PRESGRD    = PRESGRDPRE   + TRATIO *(PRESGRDPST   - PRESGRDPRE)
+QAGRD      = QAGRDPRE     + TRATIO *(QAGRDPST     - QAGRDPRE)
 
 
 !> *********************************************************************
@@ -2538,8 +2454,6 @@ IF(WF_NORESV_CTRL>0) THEN
   ENDIF
 ENDIF
 
-
-
 ! *********************************************************************
 !> Read in current streamflow value
 !> *********************************************************************
@@ -2551,18 +2465,18 @@ IF(MOD(IHOUR,WF_KT)==0.AND.IMIN==0) THEN
   READ(22,'(100F10.3)',IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
   IF(IOS/=0) THEN
     PRINT *, 'ran out of streamflow data before met data'
-	    STOP
-		ENDIF
+	STOP
+  ENDIF
 ELSE
-	    IF(JAN==1) THEN
+  IF(JAN==1) THEN
     READ(22,'(100F10.3)',IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
     REWIND 22
     READ(22,*)
     READ(22,*)
-	    DO I=1,WF_NO
+	DO I=1,WF_NO
       READ(22,*)
     ENDDO
-	    ENDIF
+  ENDIF
 ENDIF
 
 !> *********************************************************************
@@ -2598,10 +2512,6 @@ CALL CLASSI(VPDGRD,TADPGRD,PADRGRD,RHOAGRD,RHSIGRD, &
             RPCPGRD,TRPCGRD,SPCPGRD,TSPCGRD,TAGRD,QAGRD, &
             PREGRD,RPREGRD,SPREGRD,PRESGRD, &
             IPCP,NA,1,NA)
-
-CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,IWAT,IICE, &
-             NML,NMW,NWAT,NICE,cp%GCGRD,cp%FAREROW,cp%MIDROW, &
-             NA,NTYPE,ILG,1,NA,NMTEST)
 
 !> Calculate initial storage (after reading in resume.txt file if applicable)
 
@@ -2676,88 +2586,6 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              VPDGRD, TADPGRD,RHOAGRD,RPCPGRD,TRPCGRD, &
              SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD, &
              GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT)
-
-
-!> *********************************************************************
-!> *********************************************************************
-!> Read csv files, assume ASCII format.
-!> *********************************************************************
-
-!> *********************************************************************
-!> basin_shortwave.csv
-!> *********************************************************************
-IF (BASINSHORTWAVEFLAG == 2) THEN
-  READ (90, *, END=999) (R4SHRTGRU(I),I=1,NTYPE)
-ENDIF
-
-!> *********************************************************************
-!> basin_longwave.csv
-!> *********************************************************************
-IF (BASINLONGWAVEFLAG == 2) THEN
-  READ (91, *, END=999) (R4LONGGRU(I),I=1,NTYPE)
-ENDIF
-
-!> *********************************************************************
-!> basin_rain.csv
-!> *********************************************************************
-IF (BASINRAINFLAG == 2) THEN
-  READ (92, *, END=999) (R4RAINGRU(I),I=1,NTYPE)
-ENDIF
-
-!> *********************************************************************
-!>  basin_temperature.csv
-!> *********************************************************************
-IF (BASINTEMPERATUREFLAG == 2) THEN
-  READ (93, *, END=999) (R4TEMPGRU(I),I=1,NTYPE)
-ENDIF
-
-!> *********************************************************************
-!> basin_wind.csv
-!> *********************************************************************
-IF (BASINWINDFLAG == 2) THEN
-  READ (94, *, END=999) (R4WINDGRU(I),I=1,NTYPE)
-ENDIF
-
-!>  *********************************************************************
-!> basin_pres.csv
-!> *********************************************************************
-IF (BASINPRESFLAG == 2) THEN
-  READ (95, *, END=999) (R4PRESGRU(I),I=1,NTYPE)
-ENDIF
-
-!> *********************************************************************
-!> basin_humidity.csv
-!> *********************************************************************
-IF (BASINHUMIDITYFLAG == 2) THEN
-  READ (96, *, END=999) (R4HUMDGRU(I),I=1,NTYPE)
-ENDIF
-
-DO I=1,NML
-  CURGRU = JLMOS(I)
-  IF(BASINSHORTWAVEFLAG==2)THEN
-    FSDOWN(I)=R4SHRTGRU(CURGRU)
-    FSVHGAT(I)=0.5*R4SHRTGRU(CURGRU)
-    FSIHGAT(I)=FSVHGAT(I)
-  ENDIF
-  IF (BASINLONGWAVEFLAG == 2) THEN
-    FDLGAT(I)=R4LONGGRU(CURGRU)
-  ENDIF
-  IF (BASINRAINFLAG == 2) THEN
-    PREGAT(I)=R4RAINGRU(CURGRU)
-  ENDIF
-  IF (BASINTEMPERATUREFLAG == 2) THEN
-    TAGAT(I)=R4TEMPGRU(CURGRU)
-  ENDIF
-  IF (BASINWINDFLAG == 2) THEN
-    ULGAT(I)=R4WINDGRU(CURGRU)
-  ENDIF
-  IF (BASINPRESFLAG == 2) THEN
-    PRESGAT(I)=R4PRESGRU(CURGRU)
-  ENDIF
-  IF (BASINHUMIDITYFLAG == 2) THEN
-    QAGAT(I)=R4HUMDGRU(CURGRU)
-  ENDIF
-ENDDO
 
 !> ========================================================================
 CALL CLASSZ (0,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
@@ -3537,8 +3365,6 @@ ENDIF
 !> *********************************************************************
 !> Call routing routine
 !> *********************************************************************
-
-
 CALL WF_ROUTE(WF_ROUTETIMESTEP,WF_R1,WF_R2, &
      NA,NAA,NTYPE,YCOUNT,XCOUNT,IYMIN, &
      WF_IYMAX,JXMIN,WF_JXMAX,YYY,XXX,WF_IBN,WF_IROUGH, &
@@ -3554,11 +3380,10 @@ CALL WF_ROUTE(WF_ROUTETIMESTEP,WF_R1,WF_R2, &
      WF_S, JAN,IDAY,IHOUR,IMIN)
 
 DO I=1,WF_NO
-  WF_QSYN(I)=WF_QO2(WF_S(I))
-  WF_QHYD_AVG(I)=WF_QHYD(I)
+  WF_QSYN(I)     = WF_QO2(WF_S(I))
+  WF_QSYN_AVG(I) = WF_QSYN_AVG(I) + WF_QO2(WF_S(I)) 
+  WF_QHYD_AVG(I) = WF_QHYD(I) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
 ENDDO
-
-
 
 IF (JAN == 1) THEN
 !>     this is done so that INIT_STORE is not recalculated for
@@ -3577,7 +3402,7 @@ ENDIF
 IF(STREAMFLOWFLAG==1) THEN
 
 !>      write out the MESH_output_streamflow_all.csv file
-  WRITE(71,'(I5,",",I5,",",I5,",",F10.3,100(",",F10.3))') IDAY,IHOUR,IMIN,(WF_QHYD_AVG(I), &
+  WRITE(71,'(I5,",",I5,",",I5,",",F10.3,100(",",F10.3))') IDAY,IHOUR,IMIN,(WF_QHYD(I), &
     WF_QSYN(I),I=1,WF_NO)
 
 ENDIF
@@ -3587,14 +3412,12 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
 !>      write out the spl.csv file
   WRITE(70,'(I5,",",F10.3,100(",",F10.3))') IDAY,(WF_QHYD_AVG(I), &
-    WF_QSYN(I),I=1,WF_NO)
+    WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO)
 
   IF (WF_NUM_POINTS .GT. 1) THEN !FOR MORE THAN ONE OUTPUT
 
     WRITE (6, "(2I5,100F10.3)", ADVANCE="no") IYEAR, IDAY, &
           (WF_QHYD_AVG(I),WF_QSYN(I),I=1,WF_NO)
-
-   
 
     DO I = 1, WF_NUM_POINTS
       WRITE(6, "('  'A, T18, 3F10.3)") op%DIR_OUT(I), &
@@ -3614,13 +3437,12 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     EVAP_OUT = 0.0
     ROF_OUT = 0.0
   END IF
+  NCAL       = NCAL + 1
+  QOBS(NCAL) = WF_QHYD_AVG(1)
+  QSIM(NCAL) = WF_QSYN_AVG(1)/NCOUNT
 
-!> print out spl.csv file to screen
-!        WRITE(6,'(F10.3,100(F10.3))') (WF_QHYD_AVG(I), WF_QSYN(I),
-!     +    I=1,WF_NO)
+  WF_QSYN_AVG = 0.0
 ENDIF
-
-
 
 !> =====================================================================      
 !> During first time through loop, write out the variables:
@@ -3770,11 +3592,15 @@ End If
 ! *********************************************************************
 
 IMIN = IMIN + 30 ! increment the current time by 30 minutes
-IF (IMIN==60) THEN
-  IMIN = 0
+IF (MOD(IMIN,60)==0) THEN
   IHOUR = IHOUR + 1
+  IF(HOURLYFLAG == 30)IMIN=0
   IF (IHOUR==24) THEN
     IHOUR = 0
+    IF(PREEMPTIONFLAG == 1)THEN
+      SAENEW = SAE(QOBS(1:NCAL),QSIM(1:NCAL),NCAL)
+      IF(SAENEW > SAEPRE)GOTO 199
+    ENDIF
     IDAY = IDAY + 1
     IF (IDAY >= 366) THEN
       IF (MOD(IYEAR,400) == 0) THEN !LEAP YEAR
@@ -3797,7 +3623,20 @@ IF (IMIN==60) THEN
     ENDIF
   ENDIF
 ENDIF
-
+IF(IMIN == HOURLYFLAG .AND. HOURLYFLAG > 30)THEN
+   IMIN          = 0
+   FSDOWNPRE     = FSDOWNPST
+   FSVHGRDPRE    = FSVHGRDPST
+   FSIHGRDPRE    = FSIHGRDPST
+   FDLGRDPRE     = FDLGRDPST
+   PREGRDPRE     = PREGRDPST
+   TAGRDPRE      = TAGRDPST
+   ULGRDPRE      = ULGRDPST
+   VLGRDPRE      = VLGRDPST
+   UVGRDPRE      = UVGRDPST
+   PRESGRDPRE    = PRESGRDPST
+   QAGRDPRE      = QAGRDPST
+ENDIF
 !> check if we should terminate the run yet
 IF (IYEAR >= IYEAR_END .AND. IYEAR_END > 0) THEN
   IF(IYEAR > IYEAR_END) THEN
@@ -3823,6 +3662,7 @@ GO TO 200
 !> Run is now over, print final results to the screen and close files
 !> *********************************************************************
 999   CONTINUE
+
 !> Write the resume file
 IF (SAVERESUMEFLAG > 0) THEN !todo: done: use a flag
   PRINT *, 'Saving state variables'
@@ -4013,6 +3853,20 @@ ENDDO
    WRITE(58,*)
    WRITE(58,'(A32)') 'Program has terminated normally.'
    WRITE(58,*)
+
+COUNTER = -1
+199 CONTINUE
+COUNTER = COUNTER + 1
+IF(PREEMPTIONFLAG == 1)THEN
+  OPEN(100,FILE="function_out.txt")
+  WRITE(100,*)SAENEW*NCALMAX/NCAL
+  CLOSE(100)
+  PRINT *
+  PRINT *
+  PRINT*,"NUMBER OF TIMES PRE-EMPTION INVOKED IN RECENT ITERATION = ", COUNTER
+  PRINT *
+  PRINT *
+ENDIF
 
 !> Diane      CLOSE(UNIT=21)
 !>      CLOSE(UNIT=22)
