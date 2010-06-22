@@ -390,7 +390,7 @@
 
       integer resumeIostat
 !open output resume file
-      OPEN (10, FILE=".\class_resume.txt", STATUS="REPLACE", 
+      OPEN (10, FILE="./class_resume.txt", STATUS="REPLACE", 
      +      IOSTAT=resumeIostat)
 ! write the non-array variables
       WRITE(10,*) HOURLYFLAG
