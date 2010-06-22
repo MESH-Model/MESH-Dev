@@ -1,47 +1,83 @@
 subroutine check_parameters(wf_r2,m_c,nmtest,cp,hp)
 !>
-!>*******************************************************************
-!> Check for parameter values to make sure that every parameter value 
-!> lies within the specified limits at minmax_parameters.txt file
+!>       March 23, 2010 - M.A. Mekonnen/B. Davidson/M. MacDonald
+!>=======================================================================
 !>
-!> March 23, 2010 - M.A. Mekonnen/B. Davidson/M. MacDonald
+!>       The subroutine checks for parameter values specified in the 
+!>       "MESH_parameters_hydrology.ini" and "MESH_parameters_CLASS.ini"  
+!>       files to make sure that all the parameter values lie within the  
+!>       specified limits.
+!>
+!>       The minimum and maximum values of each parameter are specified in 
+!>       "minmax_parameters.txt" file. The parameters are stored as two 
+!>       dimensional arrays (nrows x nmtest). nmtest represents the number 
+!>       of GRUs.
+!>
+!>=======================================================================
+!>
+!>       wf_r2      -   River roughness factor 
+!>       m_c        -   number of river classes
+!>       nmtest     -   number of GRUs
+!>       cp         -   CLASS parameters
+!>       hp         -   hydrology parameters
+!>
+!>       parv       -   parameter values (two dimensional array)
+!>       parflag    -   parameter flags (two dimensional array)
 !>=======================================================================
 
 use     mesh_input_module
 
 implicit none     
 
-integer,parameter :: nrow  = 100   ! maximum number of rows	
+integer,parameter :: nrows  = 200   ! maximum number of rows	
 integer,parameter :: nsl   = 3     ! number of soil layers	
 
-integer i,j,ib0,ib1,ib2,ib3,i4,i5,ir,m_c,nmtest
-real wf_r2(m_c),total,percent
-real parv(nrow,nmtest),minlimit(nrow,nmtest),maxlimit(nrow,nmtest)
+integer     i,j,ib0,ib1,ib2,ib3,i4,i5,ir,m_c,nmtest
+integer     parflag(nrows,nmtest)
+
+real        total,percent
+real        wf_r2(m_c)
+real        parv(nrows,nmtest),minlimit(nrows,nmtest),maxlimit(nrows,nmtest)
+
 type(ClassParameters)     :: cp
 type(HydrologyParameters) :: hp
+!>=======================================================================
+
+! Activate the parameters
+parflag = 1
 
 !>
-!>*******************************************************************
+!>***********************************************************************
 !> Hydrology parameters
 !>=======================================================================
 !>
-  parv = -999
+
   ir = 1   
-!  parv(ir,1) = thextra
+  parv(ir,1) = 2             ! The parameter is currently not active
+  parflag(ir,1:nmtest) = 0
+
   ir = ir + 1
-!  parv(ir,1) = ice_index
+  parv(ir,1) = 0             ! The parameter is currently not active
+  parflag(ir,1:nmtest) = 0
+
   ir = ir + 1
-!  parv(ir,1) = gwscale
+  parv(ir,1) = 0             ! The parameter is currently not active
+  parflag(ir,1:nmtest) = 0
+
+! River roughness factor
   do i = 1,m_c
      ir = ir + 1
      parv(ir,1) = wf_r2(i)
+     parflag(ir,2:nmtest) = 0
   enddo
   
   ir = ir + 1
- ! parv(ir,1) = par1
+  parv(ir,1) = 0             ! The parameter is currently not active
+  parflag(ir,1:nmtest) = 0
   
   ir = ir + 1
- ! parv(ir,1) = par2
+  parv(ir,1) = 0             ! The parameter is currently not active
+  parflag(ir,1:nmtest) = 0
 
 !>
 !>*******************************************************************
@@ -61,7 +97,7 @@ type(HydrologyParameters) :: hp
   enddo
 
 !>
-!>*******************************************************************
+!>***********************************************************************
 !> Check the soil fractions
 !>=======================================================================
 !>
@@ -72,7 +108,7 @@ type(HydrologyParameters) :: hp
 !        adjust sand and clay
         total   = cp%sandrow(1,j,i)/(100.0-cp%orgmrow(1,j,i))*100.0
         percent = cp%clayrow(1,j,i)/(100.0-cp%orgmrow(1,j,i)-cp%sandrow(1,j,i))*100.0
-!           check that we didn't calculated any bad numbers during the soil calculation
+!           check that we didn't calculate any bad numbers during the soil calculation
         if(total.gt.100.0.or.percent.gt.100.0) then
            print *, 'one of the soil parameters are greater than'
          print *, '100% in row ',ir,' please adjust'
@@ -86,7 +122,7 @@ type(HydrologyParameters) :: hp
   enddo
 
 !>
-!>*******************************************************************
+!>***********************************************************************
 !> Hydrology parameters
 !>=======================================================================
 !>
@@ -98,7 +134,7 @@ type(HydrologyParameters) :: hp
   enddo
   
 !>
-!>*******************************************************************
+!>***********************************************************************
 !> Class parameters
 !>=======================================================================
 !>
@@ -118,7 +154,7 @@ type(HydrologyParameters) :: hp
   enddo
 
 !>
-!>*******************************************************************
+!>***********************************************************************
 !> Class parameters
 !>=======================================================================
 !>
@@ -135,11 +171,11 @@ type(HydrologyParameters) :: hp
         parv(ir+7,j) = cp%psgbrow(1,j,i4)
      enddo
   enddo
+  
   ir = ir + 7
+  if(ir .lt. nrows)parflag(ir+1:nrows,:)= 0
   
   open(10,file='minmax_parameters.txt',status='old')
-  minlimit=-999
-  maxlimit=-999
   do i=1,ir
      read(10,*)
      if(i .gt. ib0)then
@@ -153,18 +189,18 @@ type(HydrologyParameters) :: hp
   enddo
   close(10)
 
-  call checkbound(parv,minlimit,maxlimit,nrow,nmtest)
+  call checkbound(parflag,parv,minlimit,maxlimit,nrows,nmtest)
 
 end
 
 !C-----------------------------------------------------------------------------------------
 !C     The subroutine checks if the parameter value is within the limits
 !C-----------------------------------------------------------------------------------------
-      subroutine checkbound(parv,minlimit,maxlimit,nr,nc)
+      subroutine checkbound(parflag,parv,minlimit,maxlimit,nr,nc)
       
       implicit none
       
-      integer nr,nc
+      integer nr,nc,parflag(nr,nc)
       real    parv(nr,nc),minlimit(nr,nc),maxlimit(nr,nc)
       
       integer i,j,ncount
@@ -173,16 +209,20 @@ end
       write(*,*)
       write(*,*)'Checking if parameter values lie within the specified ranges'
       write(*,*)
-      write(*,10)"ROW","COLUMN","Specified value","Minimum value","Maximum value"
-      write(*,*)"-----------------------------------------------------------------"
-      
+   
       ncount = 0
       
       do i = 1, nr
          do j = 1, nc
-            if(parv(i,j) .gt. -990)then
+            if(parflag(i,j) .eq. 1)then
                if(parv(i,j).lt.minlimit(i,j).or.parv(i,j).gt.maxlimit(i,j)) then
                   ncount = ncount + 1
+                  if(ncount == 1)then
+                     write(*,*)"The following parameter values are out of range"
+                     write(*,*)
+                     write(*,10)"ROW","COLUMN","Specified value","Minimum value","Maximum value"
+                     write(*,*)"-----------------------------------------------------------------"
+                  endif
                   write(*,20)i,j,parv(i,j),minlimit(i,j),maxlimit(i,j)
                endif
              endif
@@ -192,9 +232,14 @@ end
       if(ncount > 0)then
          write(*,*)
          write(*,*)ncount, " parameter(s) out of range"
+         write(*,*)
          write(*,*)'Adjust the parameter value(s) or modify the parameter limits'
+         write(*,*)
          pause
          stop
+      else
+        write(*,*)'All parameter values lie within the specified ranges'
+        write(*,*)
       endif
       
  10   format(2(a6,2x),3(a15,2x))
