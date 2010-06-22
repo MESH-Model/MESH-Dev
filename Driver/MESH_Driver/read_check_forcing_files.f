@@ -1,13 +1,8 @@
-      SUBROUTINE READ_CHECK_FORCING_FILES(
-     + NUM_CSV, NUM_R2C,
-     + BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG,
-     + BASINTEMPERATUREFLAG, BASINRAINFLAG, BASINWINDFLAG,
-     + BASINPRESFLAG, BASINHUMIDITYFLAG )
+      SUBROUTINE READ_CHECK_FORCING_FILES(NUM_CSV, NUM_R2C)
+      
+      USE FLAGS
 
-      INTEGER NUM_CSV, NUM_R2C,
-     + BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG,
-     + BASINTEMPERATUREFLAG, BASINRAINFLAG, BASINWINDFLAG,
-     + BASINPRESFLAG, BASINHUMIDITYFLAG
+      INTEGER NUM_CSV, NUM_R2C
 !> local variables
       INTEGER :: IOS
 !> This variable is used to ignore the header of r2c forcing files
@@ -41,7 +36,7 @@
           PRINT *, 'basin_shortwave.r2c found'
           end_of_r2c_header = ""
           DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (90, '(A)') end_of_r2c_header
+            READ (90, '(A10)') end_of_r2c_header
           ENDDO
         ENDIF
       ELSEIF (BASINSHORTWAVEFLAG == 2) THEN
@@ -81,7 +76,7 @@
           PRINT *, 'basin_longwave.r2c found'
          end_of_r2c_header = ""
           DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (91, '(A)') end_of_r2c_header
+            READ (91, '(A10)') end_of_r2c_header
           ENDDO
         ENDIF
       ELSEIF (BASINLONGWAVEFLAG == 2) THEN
@@ -121,7 +116,7 @@
           PRINT *, 'basin_rain.r2c found'
          end_of_r2c_header = ""
           DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (92, '(A)') end_of_r2c_header
+            READ (92, '(A10)') end_of_r2c_header
           ENDDO
         ENDIF
       ELSEIF (BASINRAINFLAG == 2) THEN
@@ -161,7 +156,7 @@
           PRINT *, 'basin_temperature.r2c found'
          end_of_r2c_header = ""
           DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (93, '(A)') end_of_r2c_header
+            READ (93, '(A10)') end_of_r2c_header
           ENDDO
         ENDIF
       ELSEIF (BASINTEMPERATUREFLAG == 2) THEN
@@ -201,7 +196,7 @@
           PRINT *, 'basin_wind.r2c found'
          end_of_r2c_header = ""
           DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (94, '(A)') end_of_r2c_header
+            READ (94, '(A10)') end_of_r2c_header
           ENDDO
         ENDIF
       ELSEIF (BASINWINDFLAG == 2) THEN
@@ -241,7 +236,7 @@
           PRINT *, 'basin_pres.r2c found'
          end_of_r2c_header = ""
           DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (95, '(A)') end_of_r2c_header
+            READ (95, '(A10)') end_of_r2c_header
           ENDDO
         ENDIF
       ELSEIF (BASINPRESFLAG == 2) THEN
@@ -281,7 +276,7 @@
           PRINT *, 'basin_humidity.r2c found'
          end_of_r2c_header = ""
           DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (96, '(A)') end_of_r2c_header
+            READ (96, '(A10)') end_of_r2c_header
           ENDDO
         ENDIF
       ELSEIF (BASINHUMIDITYFLAG == 2) THEN
