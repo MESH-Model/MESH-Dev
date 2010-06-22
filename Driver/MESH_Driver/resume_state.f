@@ -394,7 +394,7 @@
       
       integer resumeIostat    
       !open output resume file
-      OPEN (10, FILE=".\class_resume.txt", STATUS="OLD", 
+      OPEN (10, FILE="./class_resume.txt", STATUS="OLD", 
      +      IOSTAT=resumeIostat)
       READ(10,*) HOURLYFLAG
       READ(10,*) IMIN
