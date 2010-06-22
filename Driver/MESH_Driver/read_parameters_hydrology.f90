@@ -2,11 +2,12 @@
 !> Open and read in values from MESH_parameters_hydrology.ini file
 !> *********************************************************************
 
-SUBROUTINE READ_PARAMETERS_HYDROLOGY(RELFLG, OPTFLAGS, INDEPPAR, DEPPAR, RELEASE, WF_R2, hp, M_C, NA, NTYPE)
+SUBROUTINE READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, hp, M_C, NA, NTYPE)
 
 USE MESH_INPUT_MODULE
+USE FLAGS
 
-INTEGER :: RELFLG, OPTFLAGS, M_C, INDEPPAR, DEPPAR
+INTEGER :: M_C, INDEPPAR, DEPPAR
 CHARACTER*8 :: RELEASE(10)
 REAL :: WF_R2(M_C)
 TYPE(HydrologyParameters) :: hp
