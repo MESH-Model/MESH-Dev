@@ -17,8 +17,8 @@ FUNCTION SAE(OBS,SIM,N)
     INTEGER N
     REAL    OBS(N), SIM(N)
 
-    REAL    SSE
+    REAL    SAE
 
-    SSE = SUM(ABS(OBS - SIM))
+    SAE = SUM(ABS(OBS - SIM))
 
 END
