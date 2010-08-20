@@ -316,7 +316,7 @@ C
               PAIS(I,4)=0.0                                                       
           ENDIF                                                                   
           AIL(I,1)=PAI(I,1)*0.90
-          AIL(I,2)=MIN((PAI(I,2)-PAIMIN(I,2)),0.0)
+          AIL(I,2)=MAX((PAI(I,2)-PAIMIN(I,2)),0.0)
           AIL(I,3)=PAI(I,3)
           AIL(I,4)=PAI(I,4)
   150 CONTINUE                                                                    
