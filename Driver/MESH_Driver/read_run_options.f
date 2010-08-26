@@ -113,10 +113,9 @@
       ID = 1
 
 
-!> set HOURLYFLAG to 1 for hourly forcing data
-!> set HOURLYFLAG to 0 for 30 minute forcing data
-!>  30 minute forcing data should be the default
-      HOURLYFLAG = 0
+!> Set HOURLYFLAG to forcing data time step (in minutes).
+!> 30 minute forcing data should be the default
+      HOURLYFLAG = 30
 
 !> set SHDFILEFLAG to 0 to use drainage_database.txt
 !> set SHDFILEFLAG to 1 to use new_shd.r2c

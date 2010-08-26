@@ -484,8 +484,8 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZDMGRD, &
 
 !* TRATIO: TIME RATIO USED TO INTERPOLATE FORCING DATA
 !* ENDDATA: VARIABLE USED TO CONTROL END OF FORCING DATA
-REAL TRATIO
-INTEGER ENDDATA
+REAL    TRATIO
+LOGICAL ENDDATE, ENDDATA
 
 REAL, DIMENSION(:), ALLOCATABLE :: ZRFMGAT, ZRFHGAT, ZDMGAT, &
   ZDHGAT, ZBLDGAT, FSVHGAT, FSIHGAT, RADJGAT, CSZGAT, FDLGAT, &
@@ -2356,10 +2356,20 @@ CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,IWAT,IICE, &
              NML,NMW,NWAT,NICE,cp%GCGRD,cp%FAREROW,cp%MIDROW, &
              NA,NTYPE,ILG,1,NA,NMTEST)
 
-!>STARTTIME
-CALL READ_FORCING_DATA(IMIN,VMIN,YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
-                       FSDOWNPRE, FSVHGRDPRE, FSIHGRDPRE, FDLGRDPRE, PREGRDPRE, &
-                       TAGRDPRE, ULGRDPRE, VLGRDPRE, UVGRDPRE, PRESGRDPRE, QAGRDPRE)
+!> *********************************************************************
+!> Initialize ENDDATE and ENDDATA
+!> *********************************************************************
+
+ENDDATE = .FALSE.
+ENDDATA = .FALSE.
+
+!> *********************************************************************
+!> Read the initial meteorological forcing data
+!> *********************************************************************
+
+CALL READ_FORCING_DATA(VMIN,YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
+                       FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, &
+                       TAGRD, ULGRD, VLGRD, UVGRD, PRESGRD, QAGRD)
 
 !> *********************************************************************
 !> Start of main loop that is run each half hour
@@ -2377,50 +2387,13 @@ IF(PREEMPTIONFLAG == 1)THEN
 ENDIF
 NCAL = 0
 
-200   CONTINUE
+DO WHILE(.NOT.ENDDATE .AND. .NOT.ENDDATA)
 
 !* N: is only used for debugging purposes.
 !> N is incremented at the beginning of each loop. so you can tell which
 !> iteration of the loop you are on by what the value of N is. 
 !> N is printed out with each of the error messages in CLASSZ.
 N=N+1
-
-!> *********************************************************************
-!> Read in Meteorological forcing data
-!> *********************************************************************
-CALL READ_FORCING_DATA(IMIN,VMIN,YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
-                       FSDOWNPST, FSVHGRDPST, FSIHGRDPST, FDLGRDPST, PREGRDPST, &
-                       TAGRDPST, ULGRDPST, VLGRDPST, UVGRDPST, PRESGRDPST, QAGRDPST)
-
-IF(ENDDATA == 1)GOTO 999
-
-IF(INTERPOLATIONFLAG==0)THEN
-   TRATIO     = 0.0
-ELSEIF(INTERPOLATIONFLAG==1)THEN
-   TRATIO     = MIN(1.0,float(IMIN) / HOURLYFLAG)
-ELSE
-   PRINT *
-   PRINT*,"INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY"
-   PRINT *
-   PRINT*,"0: SETS FORCING DATA AS CONSTANT OVER INTERMEDIATE TIME STEPS"
-   PRINT *
-   PRINT*,"1: LINEARLY INTERPOLATES FORCING DATA FOR INTERMEDIATE TIME STEPS"
-   PAUSE
-   STOP
-ENDIF
-
-FSDOWN     = FSDOWNPRE    + TRATIO *(FSDOWNPST    - FSDOWNPRE)
-FSVHGRD    = FSVHGRDPRE   + TRATIO *(FSVHGRDPST   - FSVHGRDPRE)
-FSIHGRD    = FSIHGRDPRE   + TRATIO *(FSIHGRDPST   - FSIHGRDPRE)
-FDLGRD     = FDLGRDPRE    + TRATIO *(FDLGRDPST    - FDLGRDPRE)
-PREGRD     = PREGRDPRE    + TRATIO *(PREGRDPST    - PREGRDPRE)
-TAGRD      = TAGRDPRE     + TRATIO *(TAGRDPST     - TAGRDPRE)
-ULGRD      = ULGRDPRE     + TRATIO *(ULGRDPST     - ULGRDPRE)
-VLGRD      = VLGRDPRE     + TRATIO *(VLGRDPST     - VLGRDPRE)
-UVGRD      = UVGRDPRE     + TRATIO *(UVGRDPST     - UVGRDPRE)
-PRESGRD    = PRESGRDPRE   + TRATIO *(PRESGRDPST   - PRESGRDPRE)
-QAGRD      = QAGRDPRE     + TRATIO *(QAGRDPST     - QAGRDPRE)
-
 
 !> *********************************************************************
 !> Read in current reservoir release value
@@ -3586,7 +3559,6 @@ If (jan == 2) Then
   Close(109)
 End If
 
-
 ! *********************************************************************
 ! Update time counters and return to beginning of main loop
 ! *********************************************************************
@@ -3594,7 +3566,7 @@ End If
 IMIN = IMIN + 30 ! increment the current time by 30 minutes
 IF (MOD(IMIN,60)==0) THEN
   IHOUR = IHOUR + 1
-  IF(HOURLYFLAG == 30)IMIN=0
+  IF(IMIN == HOURLYFLAG .OR. HOURLYFLAG == 30)IMIN=0
   IF (IHOUR==24) THEN
     IHOUR = 0
     IF(PREEMPTIONFLAG == 1)THEN
@@ -3623,45 +3595,87 @@ IF (MOD(IMIN,60)==0) THEN
     ENDIF
   ENDIF
 ENDIF
-IF(IMIN == HOURLYFLAG .AND. HOURLYFLAG > 30)THEN
-   IMIN          = 0
-   FSDOWNPRE     = FSDOWNPST
-   FSVHGRDPRE    = FSVHGRDPST
-   FSIHGRDPRE    = FSIHGRDPST
-   FDLGRDPRE     = FDLGRDPST
-   PREGRDPRE     = PREGRDPST
-   TAGRDPRE      = TAGRDPST
-   ULGRDPRE      = ULGRDPST
-   VLGRDPRE      = VLGRDPST
-   UVGRDPRE      = UVGRDPST
-   PRESGRDPRE    = PRESGRDPST
-   QAGRDPRE      = QAGRDPST
-ENDIF
+
 !> check if we should terminate the run yet
 IF (IYEAR >= IYEAR_END .AND. IYEAR_END > 0) THEN
   IF(IYEAR > IYEAR_END) THEN
-    GOTO 999
+    ENDDATE = .TRUE.
   ELSEIF (IYEAR == IYEAR_END .AND. IDAY >= IDAY_END) THEN
     IF (IDAY > IDAY_END) THEN
-      GOTO 999
+      ENDDATE = .TRUE.
     ELSEIF (IDAY == IDAY_END .AND. IHOUR >= IHOUR_END) THEN
       IF (IHOUR > IHOUR_END) THEN
-        GOTO 999
+        ENDDATE = .TRUE.
       ELSEIF (IHOUR == IHOUR_END .AND. IMIN >= IMIN_END) THEN
-        GOTO 999
+        ENDDATE = .TRUE.
       ENDIF
     ENDIF
   ENDIF
 ENDIF
 
-!> =======================================================================
+!> *********************************************************************
+!> Read in meteorological forcing data
+!> *********************************************************************
 
-GO TO 200
+IF(HOURLYFLAG == 30) THEN !No interpolation for 30 minute forcing data
+    CALL READ_FORCING_DATA(VMIN,YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
+                           FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, &
+                           TAGRD, ULGRD, VLGRD, UVGRD, PRESGRD, QAGRD)
+ELSEIF(IMIN == 0)THEN
+    FSDOWNPRE  = FSDOWN
+    FSVHGRDPRE = FSVHGRD
+    FSIHGRDPRE = FSIHGRD
+    FDLGRDPRE  = FDLGRD
+    PREGRDPRE  = PREGRD
+    TAGRDPRE   = TAGRD
+    ULGRDPRE   = ULGRD
+    VLGRDPRE   = VLGRD
+    UVGRDPRE   = UVGRD
+    PRESGRDPRE = PRESGRD
+    QAGRDPRE   = QAGRD
+    CALL READ_FORCING_DATA(VMIN,YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
+                           FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, &
+                           TAGRD, ULGRD, VLGRD, UVGRD, PRESGRD, QAGRD)
+    FSDOWNPST  = FSDOWN
+    FSVHGRDPST = FSVHGRD
+    FSIHGRDPST = FSIHGRD
+    FDLGRDPST  = FDLGRD
+    PREGRDPST  = PREGRD
+    TAGRDPST   = TAGRD
+    ULGRDPST   = ULGRD
+    VLGRDPST   = VLGRD
+    UVGRDPST   = UVGRD
+    PRESGRDPST = PRESGRD
+    QAGRDPST   = QAGRD
+ELSEIF(INTERPOLATIONFLAG==1)THEN
+    TRATIO     = MIN(1.0, FLOAT(IMIN) / HOURLYFLAG)
+    FSDOWN     = FSDOWNPRE    + TRATIO *(FSDOWNPST    - FSDOWNPRE)
+    FSVHGRD    = FSVHGRDPRE   + TRATIO *(FSVHGRDPST   - FSVHGRDPRE)
+    FSIHGRD    = FSIHGRDPRE   + TRATIO *(FSIHGRDPST   - FSIHGRDPRE)
+    FDLGRD     = FDLGRDPRE    + TRATIO *(FDLGRDPST    - FDLGRDPRE)
+    PREGRD     = PREGRDPRE    + TRATIO *(PREGRDPST    - PREGRDPRE)
+    TAGRD      = TAGRDPRE     + TRATIO *(TAGRDPST     - TAGRDPRE)
+    ULGRD      = ULGRDPRE     + TRATIO *(ULGRDPST     - ULGRDPRE)
+    VLGRD      = VLGRDPRE     + TRATIO *(VLGRDPST     - VLGRDPRE)
+    UVGRD      = UVGRDPRE     + TRATIO *(UVGRDPST     - UVGRDPRE)
+    PRESGRD    = PRESGRDPRE   + TRATIO *(PRESGRDPST   - PRESGRDPRE)
+    QAGRD      = QAGRDPRE     + TRATIO *(QAGRDPST     - QAGRDPRE)
+ELSE
+   PRINT *
+   PRINT*,"INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY"
+   PRINT *
+   PRINT*,"0: SETS FORCING DATA AS CONSTANT OVER INTERMEDIATE TIME STEPS"
+   PRINT *
+   PRINT*,"1: LINEARLY INTERPOLATES FORCING DATA FOR INTERMEDIATE TIME STEPS"
+   PAUSE
+   STOP
+ENDIF
+
+ENDDO
 
 !> *********************************************************************
 !> Run is now over, print final results to the screen and close files
 !> *********************************************************************
-999   CONTINUE
 
 !> Write the resume file
 IF (SAVERESUMEFLAG > 0) THEN !todo: done: use a flag
@@ -3792,8 +3806,9 @@ IF (SAVERESUMEFLAG > 0) THEN !todo: done: use a flag
   FINAL_STORE, TOTAL_AREA)
 ENDIF
 
+IF(ENDDATA)PRINT *, 'Reached end of forcing data'
+IF(ENDDATE)PRINT *, 'Reached end of simulation date'
 
-PRINT *, 'Reached the end of the forcing data'
 !> Calculate final storage
 FINAL_STORE=0.0
 DO I=1,NA
@@ -3868,16 +3883,6 @@ IF(PREEMPTIONFLAG == 1)THEN
   PRINT *
 ENDIF
 
-!> Diane      CLOSE(UNIT=21)
-!>      CLOSE(UNIT=22)
-CLOSE(UNIT=51)
-CLOSE(UNIT=58)
-CLOSE(UNIT=70)
-CLOSE(UNIT=71)
-close(unit=85)
-close(unit=86)
-close(unit=90)
-
 DO I=1, wf_num_points
   CLOSE(UNIT=150+i*10+1)
   CLOSE(UNIT=150+i*10+2)
@@ -3889,6 +3894,18 @@ DO I=1, wf_num_points
   CLOSE(UNIT=150+i*10+8)
   CLOSE(UNIT=150+i*10+9)
 ENDDO
+
+999 CONTINUE
+
+!> Diane      CLOSE(UNIT=21)
+!>      CLOSE(UNIT=22)
+CLOSE(UNIT=51)
+CLOSE(UNIT=58)
+CLOSE(UNIT=70)
+CLOSE(UNIT=71)
+close(unit=85)
+close(unit=86)
+close(unit=90)
 
 STOP
 END
