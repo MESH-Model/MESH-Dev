@@ -2,6 +2,9 @@ PROGRAM RUNMESH
 
 !>       MESH DRIVER
 !>
+!>       JUN 2010 - F. SEGLENIEKS. 
+!>                - ADDED CODE TO HAVE MESH ONLY RUN ON BASINS LISTED IN 
+!>                  THE STREAMFLOW FILE, CALLED THE SUBBASIN FEATURE
 !>       JUN 2010 - M.A.MEKONNEN/B.DAVIDSON/M.MacDONALD. 
 !>                - BUG FIX FOR READING FORCING DATA IN CSV FORMAT 
 !>                  WITH 1 HOUR INTERVAL
@@ -618,6 +621,13 @@ INTEGER found
 CHARACTER(10) :: time
 CHARACTER(8)  :: cday
 
+!> **********************************************************************
+!>  For cacluating the subbasin grids
+!> **********************************************************************
+
+INTEGER SUBBASINCOUNT
+INTEGER, DIMENSION(:), ALLOCATABLE :: SUBBASIN
+
 !>=======================================================================
 !> DAN * GLOBAL SUBROUTINES AND VARIABLES
 
@@ -923,6 +933,14 @@ ALLOCATE ( &
   QACGAT(ILG), WSNOGAT(ILG), &
   TSFSROW(NA, NTYPE, 4), &
   TSFSGAT(ILG, 4), STAT=PAS)
+
+!> **********************************************************************
+!>  For cacluating the subbasin grids
+!> **********************************************************************
+
+ALLOCATE ( SUBBASIN(ILG), STAT=PAS)
+
+
 IF (PAS .NE. 0) THEN
   WRITE (6, *)
   WRITE (6, *)
@@ -1540,6 +1558,61 @@ NAA=NA-NAA
 ! The first period (0:00-0:30) is #1, the last period (23:30-0:00) is #48
 NCOUNT=IHOUR*2+IMIN/30+1
 NSUM=1
+
+!> **********************************************************************
+!>  Start of section to only run on squares that make up the watersheds
+!>  that are listed in the streamflow file (subbasin)
+!> **********************************************************************
+
+IF(SUBBASINFLAG.GT.0) THEN
+
+  DO I=1,NA
+    SUBBASIN(I)=0
+  ENDDO
+
+!> Set values at guages to 1
+
+DO I=1,WF_NO
+  SUBBASIN(WF_S(I)) = 1
+ENDDO
+
+!> Set values of subbasin to 1 for all upstream grids
+
+SUBBASINCOUNT=1
+
+DO WHILE (SUBBASINCOUNT.GT.0) 
+
+SUBBASINCOUNT=0
+
+  DO I=1,NA-1
+    IF(SUBBASIN( WF_NEXT(I) ).EQ.1.AND.SUBBASIN(I).EQ.0) THEN
+      SUBBASIN(I)=1
+      SUBBASINCOUNT=SUBBASINCOUNT+1
+    ENDIF
+  ENDDO
+
+ENDDO  !DO WHILE (SUBBASINCOUNT.GT.0) 
+
+!> Set values of frac to 0 for all grids non-upstream grids
+
+SUBBASINCOUNT=0
+
+  DO I=1,NA
+    IF(SUBBASIN(I).EQ.0) THEN
+      FRAC(I)=0
+    ELSE
+      SUBBASINCOUNT=SUBBASINCOUNT+1
+    ENDIF
+  ENDDO
+
+ENDIF
+
+
+!> **********************************************************************
+!>  End of subbasin section
+!> **********************************************************************
+
+
 
 !> Set value of FAREROW: 
 !todo - flag this as an issue to explore later and hide basin average code
