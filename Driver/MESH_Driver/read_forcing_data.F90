@@ -1,28 +1,11 @@
-SUBROUTINE READ_FORCING_DATA(VMIN,YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
-                             FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, &
-                             TAGRD, ULGRD, VLGRD, UVGRD, PRESGRD, QAGRD)
+SUBROUTINE READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
+                             FSDOWN, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD)
 
 !> *********************************************************************
-!> Read in Meteorological forcing data
+!> MAM - Read in Meteorological forcing data
 !> *********************************************************************
-
-!> READ IN METEOROLOGICAL FORCING DATA FOR CURRENT TIME STEP;
-!> CALCULATE SOLAR ZENITH ANGLE AND COMPONENTS OF INCOMING SHORT-
-!> WAVE RADIATION FLUX; ESTIMATE FLUX PARTITIONS IF NECESSARY.
-!> READ IN METEOROLOGICAL FORCING DATA FOR CURRENT TIME STEP;
-!> CALCULATE SOLAR ZENITH ANGLE AND COMPONENTS OF INCOMING SHORT-
-!> WAVE RADIATION FLUX; ESTIMATE FLUX PARTITIONS IF NECESSARY.
-
-USE FLAGS
-
-IMPLICIT NONE
-
 !>
 !>*******************************************************************
-!>
-!> MET. FORCING DATA (FORCING.BIN):
-!> THESE HAVE TO BE REAL*4 IN ORDER TO READ IN THE MET DATA
-!> CORRECTLY.
 !* R4SHRTGRID2D: VISIBLE SHORTWAVE RADIATION [W m-2]
 !* R4LONGGRID2D: DOWNWELLING LONGWAVE RADIATION [W m-2]
 !* R4RAINGRID2D: PRECIPITATION [kg m-2 s-1]
@@ -30,9 +13,15 @@ IMPLICIT NONE
 !* R4WINDGRID2D: WIND SPEED AT REFERENCE HEIGHT [m s-1]
 !* R4PRESGRID2D: AIR PRESSURE AT SURFACE [Pa]
 !* R4HUMDGRID2D: SPECIFIC HUMIDITY AT REFERENCE HEIGHT [kg kg-1]
+!> THESE HAVE TO BE REAL*4 IN ORDER TO READ IN THE MET DATA
+!> CORRECTLY.
+!>*******************************************************************
+
+USE FLAGS
+
+IMPLICIT NONE
 
 INTEGER YCOUNT,XCOUNT,NTYPE,NA,NML,ILG
-REAL    VMIN
 LOGICAL ENDDATA
 
 REAL*4, DIMENSION(YCOUNT, XCOUNT) :: R4SHRTGRID2D, R4LONGGRID2D, R4RAINGRID2D, R4TEMPGRID2D, &
@@ -41,8 +30,7 @@ REAL*4, DIMENSION(YCOUNT, XCOUNT) :: R4SHRTGRID2D, R4LONGGRID2D, R4RAINGRID2D, R
 REAL*4, DIMENSION(NTYPE)          :: R4SHRTGRU, R4LONGGRU, R4RAINGRU, R4TEMPGRU, R4WINDGRU, &
                                      R4PRESGRU, R4HUMDGRU
 
-REAL*4, DIMENSION(NA)             :: FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD,&
-                                     VLGRD, UVGRD, PRESGRD, QAGRD
+REAL*4, DIMENSION(NA)             :: FSDOWN, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD
 
 INTEGER*4,DIMENSION(NA)           :: YYY,XXX
 
@@ -61,8 +49,6 @@ INTEGER I,J,CURGRU
     READ(51,END=999) ((R4SHRTGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
     DO I=1,NA
       FSDOWN(I)=R4SHRTGRID2D(YYY(I),XXX(I))
-      FSVHGRD(I)=0.5*R4SHRTGRID2D(YYY(I),XXX(I))
-      FSIHGRD(I)=FSVHGRD(I)
     ENDDO
 
 !> *********************************************************************
@@ -76,8 +62,6 @@ INTEGER I,J,CURGRU
     READ (90, *, END=999) !:EndFrame line
     DO I=1,NA
       FSDOWN(I)=R4SHRTGRID2D(YYY(I),XXX(I))
-      FSVHGRD(I)=0.5*R4SHRTGRID2D(YYY(I),XXX(I))
-      FSIHGRD(I)=FSVHGRD(I)
     ENDDO
 
 !> *********************************************************************
@@ -88,8 +72,6 @@ INTEGER I,J,CURGRU
     DO I=1,NML
       CURGRU    = JLMOS(I)
       FSDOWN(I) = R4SHRTGRU(CURGRU)
-      FSVHGRD(I)= 0.5*R4SHRTGRU(CURGRU)
-      FSIHGRD(I)= FSVHGRD(I)
     ENDDO
   ELSE
     PRINT*,'BASINSHORTWAVEFLAG SHOULD BE EITHER 0, 1 0R 2'
@@ -139,7 +121,7 @@ INTEGER I,J,CURGRU
   ENDIF
 
 !> *********************************************************************
-!> Read rain data
+!> Read precipitation data
 !> *********************************************************************
 
 !> *********************************************************************
@@ -231,8 +213,6 @@ INTEGER I,J,CURGRU
     READ(51,END=999) ((R4WINDGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
     DO I=1,NA
       ULGRD(I)=R4WINDGRID2D(YYY(I),XXX(I))
-      VLGRD(I)=0.0
-      UVGRD(I)=MAX(VMIN,ULGRD(I))
     ENDDO
 
 !> *********************************************************************
@@ -246,8 +226,6 @@ INTEGER I,J,CURGRU
     READ (94, *, END=999) !:EndFrame line
     DO I=1,NA
       ULGRD(I)=R4WINDGRID2D(YYY(I),XXX(I))
-      VLGRD(I)=0.0
-      UVGRD(I)=MAX(VMIN,ULGRD(I))
     ENDDO
  
 !> *********************************************************************
@@ -258,8 +236,6 @@ INTEGER I,J,CURGRU
     DO I=1,NML
       CURGRU    = JLMOS(I)
       ULGRD(I)  = R4WINDGRU(CURGRU)
-      VLGRD(I)  = 0.0
-      UVGRD(I)  = MAX(VMIN,ULGRD(I))
     ENDDO
   ELSE
     PRINT*,'BASINWINDFLAG SHOULD BE EITHER 0, 1 0R 2'
@@ -272,7 +248,7 @@ INTEGER I,J,CURGRU
 !> *********************************************************************
 
 !> *********************************************************************
-!> basin_pres.r2c
+!> basin_pres.bin
 !> *********************************************************************
   IF(BASINPRESFLAG==0)THEN
     READ(51,END=999) ((R4PRESGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
