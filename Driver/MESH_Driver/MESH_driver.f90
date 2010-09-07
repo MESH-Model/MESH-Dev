@@ -480,14 +480,14 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZDMGRD, &
   TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, RHSIGRD, &
   FCLOGRD, DLONGRD, Z0ORGRD, GGEOGRD, UVGRD, XDIFFUS, &
   RPREGRD, SPREGRD, &
-  FSVHGRDPRE,FSIHGRDPRE,FDLGRDPRE,PREGRDPRE,TAGRDPRE, &
-  ULGRDPRE,VLGRDPRE,UVGRDPRE,PRESGRDPRE,QAGRDPRE, &
-  FSVHGRDPST,FSIHGRDPST,FDLGRDPST,PREGRDPST,TAGRDPST, &
-  ULGRDPST,VLGRDPST,UVGRDPST,PRESGRDPST,QAGRDPST
 
-!* TRATIO: TIME RATIO USED TO INTERPOLATE FORCING DATA
-!* ENDDATA: VARIABLE USED TO CONTROL END OF FORCING DATA
+!> MAM - variables for forcing data interpolation:
+  FSDOWNGRDPRE,FDLGRDPRE,PREGRDPRE,TAGRDPRE, ULGRDPRE,PRESGRDPRE,QAGRDPRE, &
+  FSDOWNGRDPST,FDLGRDPST,PREGRDPST,TAGRDPST, ULGRDPST,PRESGRDPST,QAGRDPST
+
 REAL    TRATIO
+
+!> MAM - logical variables to control simulation runs:
 LOGICAL ENDDATE, ENDDATA
 
 REAL, DIMENSION(:), ALLOCATABLE :: ZRFMGAT, ZRFHGAT, ZDMGAT, &
@@ -715,7 +715,7 @@ TYPE(ClassParameters) :: cp
 TYPE(SoilValues) :: sv
 TYPE(HydrologyParameters) :: hp
 
-!> FOR AUTOCALIBRATION USING PRE-EMPTION - A MAXIMUM OF 1 YEAR (365 DAYS) 
+!> MAM - FOR AUTOCALIBRATION USING PRE-EMPTION - A MAXIMUM OF 1 YEAR (365 DAYS) 
 !> DAILY STREAM FLOW IS SUPPOSED TO BE USED FOR AUTOCALIBRATION PURPOSE.
 !* NCALMAX: MAXIMUM NUMBER OF CALIBRATION DATA
 !* NCAL:    ACTUAL NUMBER OF CALIBRATION DATA
@@ -731,6 +731,7 @@ INTEGER, PARAMETER :: NCALMAX = 365
 INTEGER NCAL, COUNTER
 LOGICAL EXISTS
 REAL    SAE,SAEPRE,SAENEW,QOBS(NCALMAX),QSIM(NCALMAX)
+
 !=======================================================================
 !     * SET PHYSICAL CONSTANTS AND COMMON BLOCKS
 
@@ -849,7 +850,7 @@ ENDIF
 
 !>
 !>***********************************************************************
-!> Check for parameter values - all parameters should lie within the 
+!> MAM - Check for parameter values - all parameters should lie within the 
 !> specified ranges in the "minmax_parameters.txt" file.
 !>=======================================================================
 !>
@@ -1046,10 +1047,6 @@ ALLOCATE ( ZDMGRD(NA), &
   TADPGRD(NA), RHOAGRD(NA), RPCPGRD(NA), TRPCGRD(NA), &
   SPCPGRD(NA), TSPCGRD(NA), RHSIGRD(NA), &
   FCLOGRD(NA), DLONGRD(NA), Z0ORGRD(NA), GGEOGRD(NA), UVGRD(NA), &
-  FSVHGRDPRE(NA),FSIHGRDPRE(NA),FDLGRDPRE(NA),PREGRDPRE(NA),TAGRDPRE(NA), &
-  ULGRDPRE(NA),VLGRDPRE(NA),UVGRDPRE(NA),PRESGRDPRE(NA),QAGRDPRE(NA), &
-  FSVHGRDPST(NA),FSIHGRDPST(NA),FDLGRDPST(NA),PREGRDPST(NA),TAGRDPST(NA), &
-  ULGRDPST(NA),VLGRDPST(NA),UVGRDPST(NA),PRESGRDPST(NA),QAGRDPST(NA), &
   XDIFFUS(NA), &
   RPREGRD(NA), SPREGRD(NA), &
   ZRFMGAT(ILG), ZRFHGAT(ILG), ZDMGAT(ILG), &
@@ -1074,6 +1071,32 @@ IF (PAS .NE. 0) THEN
   WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
   STOP
 END IF
+
+!> MAM - ALLOCATE AND INITIALIZE INTERPOLATION VARIABLES:
+!> For 30 minute forcing data there is no need for interpolation and 
+!> hence no need to assign PRE and PST variables
+IF(HOURLYFLAG == 30)INTERPOLATIONFLAG = 0
+IF(INTERPOLATIONFLAG == 1)THEN
+    ALLOCATE (FSDOWNPRE(NA),FDLGRDPRE(NA),PREGRDPRE(NA),TAGRDPRE(NA), &
+              ULGRDPRE(NA),PRESGRDPRE(NA),QAGRDPRE(NA), &
+              FSDOWNPST(NA),FDLGRDPST(NA),PREGRDPST(NA),TAGRDPST(NA), &
+              ULGRDPST(NA),PRESGRDPST(NA),QAGRDPST(NA))
+    FSDOWNPRE  = 0.0
+    FDLGRDPRE  = 0.0
+    PREGRDPRE  = 0.0
+    TAGRDPRE   = 0.0
+    ULGRDPRE   = 0.0
+    PRESGRDPRE = 0.0
+    QAGRDPRE   = 0.0  
+    FSDOWNPST  = 0.0
+    FDLGRDPST  = 0.0
+    PREGRDPST  = 0.0
+    TAGRDPST   = 0.0
+    ULGRDPST   = 0.0
+    PRESGRDPST = 0.0
+    QAGRDPST   = 0.0
+ENDIF
+
 !> LAND SURFACE DIAGNOSTIC VARIABLES:
 ALLOCATE (CDHROW(NA, NTYPE), CDMROW(NA, NTYPE), &
   HFSROW(NA, NTYPE), &
@@ -1403,6 +1426,10 @@ DO I=1,WF_NO
   wf_qsyn(I)=0.0
 	  wf_qhyd_avg(I)=0.0
 ENDDO
+
+!>MAM - The first stream flow record is used for flow initialization
+READ(22,'(100F10.3)',IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
+
 	  ! fixed streamflow start time bug. add in function to enable the 
 	  ! correct start time. Feb2009 aliu. 
 	     call Julian_Day_ID(WF_START_YEAR, WF_START_day,&
@@ -1424,7 +1451,7 @@ ENDDO
 		 jday_ind_met=jday_ind2-jday_ind3
 		 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		 !skip the unused streamflow records in streamflow.txt .      !
-		 DO J=1, jday_ind_strm                                             !
+		 DO J=1, jday_ind_strm                                        !
 	      READ(22,*,IOSTAT=IOS)                                       !
 		   IF (IOS < 0) THEN                                          !
 	         PRINT *, 'ERROR: end of file reached when reading ', &   !
@@ -2307,6 +2334,11 @@ call resume_state( &
    VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
    RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, TAGRD, &
    QAGRD, PREGRD, RPREGRD, SPREGRD, PRESGRD, &
+
+!> MAM - FOR FORCING DATA INTERPOLATION
+   FSDOWNPRE, FDLGRDPRE, PREGRDPRE, TAGRDPRE, &
+   ULGRDPRE, PRESGRDPRE, QAGRDPRE, &
+
    IPCP, NA, NA, ILMOS, JLMOS, IWMOS, JWMOS, &
    IWAT, IICE, NML, NMW, NWAT, NICE, &
    cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, ILG, NMTEST, &
@@ -2430,24 +2462,44 @@ CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,IWAT,IICE, &
              NA,NTYPE,ILG,1,NA,NMTEST)
 
 !> *********************************************************************
-!> Initialize ENDDATE and ENDDATA
+!> MAM - Initialize ENDDATE and ENDDATA
 !> *********************************************************************
-
 ENDDATE = .FALSE.
 ENDDATA = .FALSE.
 
 !> *********************************************************************
-!> Read the initial meteorological forcing data
+!> MAM - Read in initial meteorological forcing data
 !> *********************************************************************
-
-CALL READ_FORCING_DATA(VMIN,YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
-                       FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, &
-                       TAGRD, ULGRD, VLGRD, UVGRD, PRESGRD, QAGRD)
+IF(INTERPOLATIONFLAG == 0)THEN
+    CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
+                           FSDOWN, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD)
+ELSEIF(INTERPOLATIONFLAG == 1)THEN
+    IF(RESUMEFLAG == 0)THEN
+        CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
+                               FSDOWNPRE, FDLGRDPRE, PREGRDPRE, TAGRDPRE, ULGRDPRE,  &
+                               PRESGRDPRE, QAGRDPRE)
+        CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
+                               FSDOWNPST, FDLGRDPST, PREGRDPST, TAGRDPST, ULGRDPST,  &
+                               PRESGRDPST, QAGRDPST)
+    ELSE
+        CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
+                               FSDOWNPST, FDLGRDPST, PREGRDPST, TAGRDPST, ULGRDPST,  &
+                               PRESGRDPST, QAGRDPST)
+    ENDIF
+ELSE
+   PRINT *
+   PRINT*,"INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY"
+   PRINT *
+   PRINT*,"0: SETS FORCING DATA AS CONSTANT OVER INTERMEDIATE TIME STEPS"
+   PRINT *
+   PRINT*,"1: LINEARLY INTERPOLATES FORCING DATA FOR INTERMEDIATE TIME STEPS"
+   PAUSE
+   STOP    
+ENDIF
 
 !> *********************************************************************
-!> Start of main loop that is run each half hour
+!> MAM - INITIALIZE OR READ PRE-EMPTION VALUE
 !> *********************************************************************
-
 IF(PREEMPTIONFLAG == 1)THEN
   INQUIRE(FILE="pre_emption_value.txt", EXIST = EXISTS)
   IF(EXISTS)THEN
@@ -2458,8 +2510,12 @@ IF(PREEMPTIONFLAG == 1)THEN
     SAEPRE = +1.0e+10
   ENDIF
 ENDIF
-NCAL = 0
+NCAL  = 0
+VLGRD = 0.0
 
+!> *********************************************************************
+!> Start of main loop that is run each half hour
+!> *********************************************************************
 DO WHILE(.NOT.ENDDATE .AND. .NOT.ENDDATA)
 
 !* N: is only used for debugging purposes.
@@ -2467,6 +2523,24 @@ DO WHILE(.NOT.ENDDATE .AND. .NOT.ENDDATA)
 !> iteration of the loop you are on by what the value of N is. 
 !> N is printed out with each of the error messages in CLASSZ.
 N=N+1
+
+!> MAM - Linearly interpolate forcing data for intermediate time steps
+IF(INTERPOLATIONFLAG == 1)THEN
+    TRATIO     = MIN(1.0, FLOAT(IMIN) / HOURLYFLAG)
+    FSDOWN     = FSDOWNPRE    + TRATIO *(FSDOWNPST    - FSDOWNPRE)
+    FDLGRD     = FDLGRDPRE    + TRATIO *(FDLGRDPST    - FDLGRDPRE)
+    PREGRD     = PREGRDPRE    + TRATIO *(PREGRDPST    - PREGRDPRE)
+    TAGRD      = TAGRDPRE     + TRATIO *(TAGRDPST     - TAGRDPRE)
+    ULGRD      = ULGRDPRE     + TRATIO *(ULGRDPST     - ULGRDPRE)
+    PRESGRD    = PRESGRDPRE   + TRATIO *(PRESGRDPST   - PRESGRDPRE)
+    QAGRD      = QAGRDPRE     + TRATIO *(QAGRDPST     - QAGRDPRE)
+ENDIF
+
+FSVHGRD=0.5*FSDOWN
+FSIHGRD=FSVHGRD
+!VLGRD=0.0
+UVGRD=MAX(VMIN,ULGRD)
+
 
 !> *********************************************************************
 !> Read in current reservoir release value
@@ -2506,22 +2580,12 @@ ENDIF
 
 !> only read in current value if we are on the correct time step
 !> also read in the first value if this is the first time through
-IF(MOD(IHOUR,WF_KT)==0.AND.IMIN==0) THEN
+IF(MOD(IHOUR,WF_KT)==0.AND.IMIN==0 .AND. JAN > 1) THEN
 !>       read in current streamflow value
   READ(22,'(100F10.3)',IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
   IF(IOS/=0) THEN
     PRINT *, 'ran out of streamflow data before met data'
 	STOP
-  ENDIF
-ELSE
-  IF(JAN==1) THEN
-    READ(22,'(100F10.3)',IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
-    REWIND 22
-    READ(22,*)
-    READ(22,*)
-	DO I=1,WF_NO
-      READ(22,*)
-    ENDDO
   ENDIF
 ENDIF
 
@@ -3689,59 +3753,22 @@ ENDIF
 !> *********************************************************************
 !> Read in meteorological forcing data
 !> *********************************************************************
-
-IF(HOURLYFLAG == 30) THEN !No interpolation for 30 minute forcing data
-    CALL READ_FORCING_DATA(VMIN,YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
-                           FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, &
-                           TAGRD, ULGRD, VLGRD, UVGRD, PRESGRD, QAGRD)
-ELSEIF(IMIN == 0)THEN
-    FSDOWNPRE  = FSDOWN
-    FSVHGRDPRE = FSVHGRD
-    FSIHGRDPRE = FSIHGRD
-    FDLGRDPRE  = FDLGRD
-    PREGRDPRE  = PREGRD
-    TAGRDPRE   = TAGRD
-    ULGRDPRE   = ULGRD
-    VLGRDPRE   = VLGRD
-    UVGRDPRE   = UVGRD
-    PRESGRDPRE = PRESGRD
-    QAGRDPRE   = QAGRD
-    CALL READ_FORCING_DATA(VMIN,YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
-                           FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, &
-                           TAGRD, ULGRD, VLGRD, UVGRD, PRESGRD, QAGRD)
-    FSDOWNPST  = FSDOWN
-    FSVHGRDPST = FSVHGRD
-    FSIHGRDPST = FSIHGRD
-    FDLGRDPST  = FDLGRD
-    PREGRDPST  = PREGRD
-    TAGRDPST   = TAGRD
-    ULGRDPST   = ULGRD
-    VLGRDPST   = VLGRD
-    UVGRDPST   = UVGRD
-    PRESGRDPST = PRESGRD
-    QAGRDPST   = QAGRD
-ELSEIF(INTERPOLATIONFLAG==1)THEN
-    TRATIO     = MIN(1.0, FLOAT(IMIN) / HOURLYFLAG)
-    FSDOWN     = FSDOWNPRE    + TRATIO *(FSDOWNPST    - FSDOWNPRE)
-    FSVHGRD    = FSVHGRDPRE   + TRATIO *(FSVHGRDPST   - FSVHGRDPRE)
-    FSIHGRD    = FSIHGRDPRE   + TRATIO *(FSIHGRDPST   - FSIHGRDPRE)
-    FDLGRD     = FDLGRDPRE    + TRATIO *(FDLGRDPST    - FDLGRDPRE)
-    PREGRD     = PREGRDPRE    + TRATIO *(PREGRDPST    - PREGRDPRE)
-    TAGRD      = TAGRDPRE     + TRATIO *(TAGRDPST     - TAGRDPRE)
-    ULGRD      = ULGRDPRE     + TRATIO *(ULGRDPST     - ULGRDPRE)
-    VLGRD      = VLGRDPRE     + TRATIO *(VLGRDPST     - VLGRDPRE)
-    UVGRD      = UVGRDPRE     + TRATIO *(UVGRDPST     - UVGRDPRE)
-    PRESGRD    = PRESGRDPRE   + TRATIO *(PRESGRDPST   - PRESGRDPRE)
-    QAGRD      = QAGRDPRE     + TRATIO *(QAGRDPST     - QAGRDPRE)
-ELSE
-   PRINT *
-   PRINT*,"INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY"
-   PRINT *
-   PRINT*,"0: SETS FORCING DATA AS CONSTANT OVER INTERMEDIATE TIME STEPS"
-   PRINT *
-   PRINT*,"1: LINEARLY INTERPOLATES FORCING DATA FOR INTERMEDIATE TIME STEPS"
-   PAUSE
-   STOP
+IF(HOURLYFLAG == 30 .OR. IMIN == 0) THEN
+    IF(INTERPOLATIONFLAG == 1)THEN
+        FSDOWNPRE  = FSDOWNPST
+        FDLGRDPRE  = FDLGRDPST
+        PREGRDPRE  = PREGRDPST
+        TAGRDPRE   = TAGRDPST
+        ULGRDPRE   = ULGRDPST
+        PRESGRDPRE = PRESGRDPST
+        QAGRDPRE   = QAGRDPST
+        CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
+                               FSDOWNPST, FDLGRDPST, PREGRDPST, TAGRDPST, ULGRDPST,  &
+                               PRESGRDPST, QAGRDPST)
+    ELSE
+        CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
+                               FSDOWN, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD)
+    ENDIF
 ENDIF
 
 ENDDO
@@ -3763,6 +3790,11 @@ IF (SAVERESUMEFLAG > 0) THEN !todo: done: use a flag
    VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
    RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, TAGRD, &
    QAGRD, PREGRD, RPREGRD, SPREGRD, PRESGRD, &
+
+!MAM - FOR FORCING DATA INTERPOLATION
+   FSDOWNPRE, FDLGRDPRE, PREGRDPRE, TAGRDPRE, &
+   ULGRDPRE, PRESGRDPRE, QAGRDPRE, &
+   
    IPCP, NA, NA, ILMOS, JLMOS, IWMOS, JWMOS, &
    IWAT, IICE, NML, NMW, NWAT, NICE, &
    cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, ILG, NMTEST, &
