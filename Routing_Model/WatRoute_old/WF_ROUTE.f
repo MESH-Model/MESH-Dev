@@ -449,8 +449,8 @@ c flow to the big reservoir stoage
                   do while( .not.converged .and. 
      +                 iter.le.WF_MAX_ITERATIONS )
 c                    This iterates to 0.3%
-                     if( (ABS(wf_store2_last-wf_store2(i))/
-     +wf_store2_last).gt.0.003 ) then
+                     if( ABS(wf_store2_last-wf_store2(i))
+     +.gt.0.003*wf_store2_last ) then
 
                         if( wf_store2(i).le.0.0 ) then
 c                          No outflow - channel is empty
