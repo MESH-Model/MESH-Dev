@@ -1490,7 +1490,7 @@ DO I=1, WF_NUM_POINTS
 
   IF(I<WF_NUM_POINTS) THEN
     DO J=I+1,WF_NUM_POINTS
-      IF(op%N_OUT(I)==op%N_OUT(J)) THEN
+      IF(op%N_OUT(I)==op%N_OUT(J) .AND. op%II_OUT(I) == op%II_OUT(J)) THEN
         PRINT *, 'grid number ', op%N_OUT(i)
         PRINT *, 'is repeated in MESH_run_options.ini file'
         PRINT *, 'please adjust MESH_run_options.ini file'
@@ -1984,12 +1984,12 @@ if ((jday_ind2 < jday_ind3) .and. (iyear_start /= 0)) then
    stop
 endif
 !Notes added by M. Mekonnen - To keep nrs calculation as before
-!(and to be compatible with the bove modification) we need to 
+!(and to be compatible with the above modification) we need to 
 !divide ISTEP_START by 24.
 !nrs =JDAY_IND_MET*ISTEP_START*24 + nhy*ISTEP_START + nmy/30  !aLIU
 nrs =JDAY_IND_MET*ISTEP_START + nhy*ISTEP_START/24 + nmy/30
 PRINT *,'NRS=',NRS
-! FIX BUG IN JULIANDAY CALCULATION FOR NRS ---ALIU FEB2009
+! FIX BUG IN JULIAN DAY CALCULATION FOR NRS ---ALIU FEB2009
 IF (IYEAR_START == 0 .AND. IDAY_START == 0 .AND. IMIN_START == 0 &
     .AND. IHOUR_START == 0) THEN !P
   IYEAR_START = IYEAR
@@ -3526,7 +3526,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
   IF (WF_NUM_POINTS .GT. 1) THEN !FOR MORE THAN ONE OUTPUT
 
-    WRITE (6, "(2I5,100F10.3)", ADVANCE="no") IYEAR, IDAY, &
+    WRITE (6, "(2I5,100F10.3)") IYEAR, IDAY, &
           (WF_QHYD_AVG(I),WF_QSYN(I),I=1,WF_NO)
 
     DO I = 1, WF_NUM_POINTS
