@@ -1,5 +1,6 @@
-SUBROUTINE READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,JLMOS,YYY,XXX,ENDDATA, &
-                             FSDOWN, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD)
+SUBROUTINE READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILMOS,JLMOS,YYY,XXX,ENDDATA,FAREA, &
+                             FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
+                             FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT)
 
 !> *********************************************************************
 !> MAM - Read in Meteorological forcing data
@@ -21,20 +22,23 @@ USE FLAGS
 
 IMPLICIT NONE
 
-INTEGER YCOUNT,XCOUNT,NTYPE,NA,NML,ILG
+INTEGER YCOUNT,XCOUNT,NTYPE,NA,NML
 LOGICAL ENDDATA
 
 REAL*4, DIMENSION(YCOUNT, XCOUNT) :: R4SHRTGRID2D, R4LONGGRID2D, R4RAINGRID2D, R4TEMPGRID2D, &
                                      R4WINDGRID2D, R4PRESGRID2D, R4HUMDGRID2D
-
+REAL*4, DIMENSION(NA,NTYPE)       :: FAREA
 REAL*4, DIMENSION(NTYPE)          :: R4SHRTGRU, R4LONGGRU, R4RAINGRU, R4TEMPGRU, R4WINDGRU, &
                                      R4PRESGRU, R4HUMDGRU
 
-REAL*4, DIMENSION(NA)             :: FSDOWN, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD
+REAL*4, DIMENSION(NA)             :: FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, &
+                                     PRESGRD, QAGRD
+REAL*4, DIMENSION(NML)            :: FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, & 
+                                     PRESGAT, QAGAT
 
 INTEGER*4,DIMENSION(NA)           :: YYY,XXX
 
-INTEGER*4,DIMENSION(ILG)           :: JLMOS
+INTEGER*4,DIMENSION(NML)          :: ILMOS,JLMOS
 
 INTEGER I,J,CURGRU
 
@@ -50,6 +54,10 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       FSDOWN(I)=R4SHRTGRID2D(YYY(I),XXX(I))
     ENDDO
+    FSVHGRD=0.5*FSDOWN
+    FSIHGRD=FSVHGRD
+    CALL GATHER(NA,NML,ILMOS,FSVHGRD,FSVHGAT)
+    FSIHGAT=FSVHGAT
 
 !> *********************************************************************
 !> basin_shortwave.r2c
@@ -63,6 +71,10 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       FSDOWN(I)=R4SHRTGRID2D(YYY(I),XXX(I))
     ENDDO
+    FSVHGRD=0.5*FSDOWN
+    FSIHGRD=FSVHGRD
+    CALL GATHER(NA,NML,ILMOS,FSVHGRD,FSVHGAT)
+    FSIHGAT=FSVHGAT
 
 !> *********************************************************************
 !> basin_shortwave.csv
@@ -70,9 +82,14 @@ INTEGER I,J,CURGRU
   ELSEIF (BASINSHORTWAVEFLAG == 2) THEN
     READ (90, *, END=999) (R4SHRTGRU(I),I=1,NTYPE)
     DO I=1,NML
-      CURGRU    = JLMOS(I)
-      FSDOWN(I) = R4SHRTGRU(CURGRU)
+      CURGRU     = JLMOS(I)
+      FSVHGAT(I) = 0.5*R4SHRTGRU(CURGRU)
     ENDDO
+    FSIHGAT=FSVHGAT
+    CALL SCATTER(NTYPE,NA,FAREA,FSVHGRD,R4SHRTGRU)
+    FSDOWN=FSVHGRD
+    FSIHGRD=FSVHGRD
+    
   ELSE
     PRINT*,'BASINSHORTWAVEFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -91,6 +108,7 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       FDLGRD(I)=R4LONGGRID2D(YYY(I),XXX(I))
     ENDDO
+    CALL GATHER(NA,NML,ILMOS,FDLGRD,FDLGAT)
 
 !> *********************************************************************
 !> basin_longwave.r2c
@@ -104,6 +122,7 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       FDLGRD(I)=R4LONGGRID2D(YYY(I),XXX(I))
     ENDDO
+    CALL GATHER(NA,NML,ILMOS,FDLGRD,FDLGAT)
 
 !> *********************************************************************
 !> basin_longwave.csv
@@ -112,8 +131,10 @@ INTEGER I,J,CURGRU
     READ (91, *, END=999) (R4LONGGRU(I),I=1,NTYPE)
     DO I=1,NML
       CURGRU    = JLMOS(I)
-      FDLGRD(I) = R4LONGGRU(CURGRU)
+      FDLGAT(I) = R4LONGGRU(CURGRU)
     ENDDO
+    CALL SCATTER(NTYPE,NA,FAREA,FDLGRD,R4LONGGRU)
+
   ELSE
     PRINT*,'BASINLONGWAVEFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -132,6 +153,7 @@ INTEGER I,J,CURGRU
     DO I=1,NA
 	   PREGRD(I)=R4RAINGRID2D(YYY(I),XXX(I))
     ENDDO	   
+    CALL GATHER(NA,NML,ILMOS,PREGRD,PREGAT)
 
 !> *********************************************************************
 !> basin_rain.r2c
@@ -145,6 +167,7 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       PREGRD(I)=R4RAINGRID2D(YYY(I),XXX(I))
     ENDDO
+    CALL GATHER(NA,NML,ILMOS,PREGRD,PREGAT)
 
 !> *********************************************************************
 !> basin_rain.csv
@@ -153,8 +176,10 @@ INTEGER I,J,CURGRU
     READ (92, *, END=999) (R4RAINGRU(I),I=1,NTYPE)
     DO I=1,NML
       CURGRU    = JLMOS(I)
-      PREGRD(I) = R4RAINGRU(CURGRU)
+      PREGAT(I) = R4RAINGRU(CURGRU)
     ENDDO
+    CALL SCATTER(NTYPE,NA,FAREA,PREGRD,R4RAINGRU)
+
   ELSE
     PRINT*,'BASINRAINFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -173,6 +198,7 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       TAGRD(I)=R4TEMPGRID2D(YYY(I),XXX(I))
     ENDDO
+    CALL GATHER(NA,NML,ILMOS,TAGRD,TAGAT)
 
 !> *********************************************************************
 !> basin_temperature.r2c
@@ -186,6 +212,7 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       TAGRD(I)=R4TEMPGRID2D(YYY(I),XXX(I))
     ENDDO
+    CALL GATHER(NA,NML,ILMOS,TAGRD,TAGAT)
 
 !> *********************************************************************
 !>  basin_temperature.csv
@@ -194,8 +221,10 @@ INTEGER I,J,CURGRU
     READ (93, *, END=999) (R4TEMPGRU(I),I=1,NTYPE)
     DO I=1,NML
       CURGRU    = JLMOS(I)
-      TAGRD(I)  = R4TEMPGRU(CURGRU)
+      TAGAT(I)  = R4TEMPGRU(CURGRU)
     ENDDO
+    CALL SCATTER(NTYPE,NA,FAREA,TAGRD,R4TEMPGRU)
+
   ELSE
     PRINT*,'BASINTEMPERATUREFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -214,6 +243,10 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       ULGRD(I)=R4WINDGRID2D(YYY(I),XXX(I))
     ENDDO
+    !VLGRD=0.0
+    !VLGAT=0.0
+    !UVGRD=MAX(VMIN,ULGRD)
+    CALL GATHER(NA,NML,ILMOS,ULGRD,ULGAT)
 
 !> *********************************************************************
 !> basin_wind.r2c
@@ -227,6 +260,10 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       ULGRD(I)=R4WINDGRID2D(YYY(I),XXX(I))
     ENDDO
+    !VLGRD=0.0
+    !VLGAT=0.0
+    !UVGRD=MAX(VMIN,ULGRD)
+    CALL GATHER(NA,NML,ILMOS,ULGRD,ULGAT)
  
 !> *********************************************************************
 !> basin_wind.csv
@@ -235,8 +272,12 @@ INTEGER I,J,CURGRU
     READ (94, *, END=999) (R4WINDGRU(I),I=1,NTYPE)
     DO I=1,NML
       CURGRU    = JLMOS(I)
-      ULGRD(I)  = R4WINDGRU(CURGRU)
+      ULGAT(I)  = R4WINDGRU(CURGRU)
     ENDDO
+    !VLGRD=0.0
+    !VLGAT=0.0
+    CALL SCATTER(NTYPE,NA,FAREA,ULGRD,R4WINDGRU)
+
   ELSE
     PRINT*,'BASINWINDFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -255,6 +296,7 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       PRESGRD(I)=R4PRESGRID2D(YYY(I),XXX(I))
     ENDDO
+    CALL GATHER(NA,NML,ILMOS,PRESGRD,PRESGAT)
 
 !> *********************************************************************
 !> basin_pres.r2c
@@ -268,6 +310,7 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       PRESGRD(I)=R4PRESGRID2D(YYY(I),XXX(I))
     ENDDO
+    CALL GATHER(NA,NML,ILMOS,PRESGRD,PRESGAT)
 
 !> *********************************************************************
 !> basin_pres.csv
@@ -276,8 +319,10 @@ INTEGER I,J,CURGRU
     READ (95, *, END=999) (R4PRESGRU(I),I=1,NTYPE)
     DO I=1,NML
       CURGRU    = JLMOS(I)
-      PRESGRD(I) = R4PRESGRU(CURGRU)
+      PRESGAT(I) = R4PRESGRU(CURGRU)
     ENDDO
+    CALL SCATTER(NTYPE,NA,FAREA,PRESGRD,R4PRESGRU)
+
   ELSE
     PRINT*,'BASINPRESSUREFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -296,6 +341,7 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       QAGRD(I)=R4HUMDGRID2D(YYY(I),XXX(I))
     ENDDO
+    CALL GATHER(NA,NML,ILMOS,QAGRD,QAGAT)
 
 !> *********************************************************************
 !> basin_humidity.r2c
@@ -309,6 +355,7 @@ INTEGER I,J,CURGRU
     DO I=1,NA
       QAGRD(I)=R4HUMDGRID2D(YYY(I),XXX(I))
     ENDDO
+    CALL GATHER(NA,NML,ILMOS,QAGRD,QAGAT)
 
 !> *********************************************************************
 !> basin_humidity.csv
@@ -317,8 +364,9 @@ INTEGER I,J,CURGRU
     READ (96, *, END=999) (R4HUMDGRU(I),I=1,NTYPE)
     DO I=1,NML
       CURGRU    = JLMOS(I)
-      QAGRD(I) = R4HUMDGRU(CURGRU)
+      QAGAT(I)  = R4HUMDGRU(CURGRU)
     ENDDO
+    CALL SCATTER(NTYPE,NA,FAREA,QAGRD,R4HUMDGRU)
   ELSE
     PRINT*,'BASINHUMIDITYFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -330,3 +378,33 @@ RETURN
 999 ENDDATA = .TRUE.
 
 END
+
+subroutine gather(na,nml,ilmos,grd,gat)
+    
+    integer na, nml
+    integer ilmos(nml)
+    real    grd(na), gat(nml)
+    
+    integer k
+    
+    do k = 1,nml
+       gat(k) = grd(ilmos(k))
+   enddo
+
+end subroutine
+
+subroutine scatter(ntype,na,farea,grd,gru)
+    
+    integer ntype, na
+    real    grd(na), gru(ntype), farea(na,ntype)
+    
+    integer i,j
+    
+    do i = 1, na
+       grd(i) = 0.0
+       do j = 1, ntype
+          grd(i) = grd(i) + farea(i,j)*gru(j)
+       enddo
+   enddo
+
+end subroutine
