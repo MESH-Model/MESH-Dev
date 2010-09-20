@@ -302,10 +302,12 @@ c        Cap is the volume of water in a reach for the mean annual flow
          over=0.0
          wf_store1(n)=0.0
 
-         if( wf_ireach(n).gt.0 .and. wf_b1(wf_ireach(n)).gt.0) then
-c           Natural reservoir element
-            l=wf_ireach(n)
-            wf_store2(n)=(wf_qo2(n)/wf_b1(l))**(1.0/wf_b2(l))
+         if( wf_ireach(n).gt.0)then
+             if(wf_b1(wf_ireach(n)).gt.0) then
+c               Natural reservoir element
+                l=wf_ireach(n)
+                wf_store2(n)=(wf_qo2(n)/wf_b1(l))**(1.0/wf_b2(l))
+            endif
 c         elseif( wf_res(n).gt.0 ) then
 c           Controlled reservoir
 c           WHAT SHOULD THIS BE?  Unclear from rerout, etc.
