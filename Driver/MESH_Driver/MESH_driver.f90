@@ -2624,29 +2624,6 @@ ENDDO
 !> Start of calls to CLASS subroutines
 !> *********************************************************************
 
-CALL CLASSI(VPDGRD,TADPGRD,PADRGRD,RHOAGRD,RHSIGRD, &
-            RPCPGRD,TRPCGRD,SPCPGRD,TSPCGRD,TAGRD,QAGRD, &
-            PREGRD,RPREGRD,SPREGRD,PRESGRD, &
-            IPCP,NA,1,NA)
-
-!> Calculate initial storage (after reading in resume.txt file if applicable)
-
-IF(JAN==1) THEN
-  INIT_STORE=0.0
-  DO I=1,NA
-  DO M=1,NMTEST
-    IF(FRAC(I)>0.0)THEN
-      INIT_STORE=INIT_STORE+(cp%RCANROW(I,M)+cp%SCANROW(I,M) &
-      +cp%SNOROW(I,M)+(cp%THLQROW(I,M,1)*RHOW+cp%THICROW(I,M,1) &
-      *RHOICE)*DLZWROW(I,M,1)+cp%ZPNDROW(I,M)*RHOW &
-      +(cp%THLQROW(I,M,2)*RHOW+cp%THICROW(I,M,2)*RHOICE) &
-      *DLZWROW(I,M,2)+(cp%THLQROW(I,M,3)*RHOW+cp%THICROW(I,M,3) &
-      *RHOICE)*DLZWROW(I,M,3))*cp%FAREROW(I,M)
-	    ENDIF
-  ENDDO
-  ENDDO
-ENDIF
-
 CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT, &
              TCANGAT,RCANGAT,SCANGAT,GROGAT, CMAIGAT, &
@@ -2702,6 +2679,29 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              VPDGRD, TADPGRD,RHOAGRD,RPCPGRD,TRPCGRD, &
              SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD, &
              GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT)
+
+CALL CLASSI(VPDGAT,TADPGAT,PADRGAT,RHOAGAT,RHSIGAT, &
+            RPCPGAT,TRPCGAT,SPCPGAT,TSPCGAT,TAGAT,QAGAT, &
+            PREGAT,PRESGAT, &
+            IPCP,ILG,1,NA)
+
+!> Calculate initial storage (after reading in resume.txt file if applicable)
+
+IF(JAN==1) THEN
+  INIT_STORE=0.0
+  DO I=1,NA
+  DO M=1,NMTEST
+    IF(FRAC(I)>0.0)THEN
+      INIT_STORE=INIT_STORE+(cp%RCANROW(I,M)+cp%SCANROW(I,M) &
+      +cp%SNOROW(I,M)+(cp%THLQROW(I,M,1)*RHOW+cp%THICROW(I,M,1) &
+      *RHOICE)*DLZWROW(I,M,1)+cp%ZPNDROW(I,M)*RHOW &
+      +(cp%THLQROW(I,M,2)*RHOW+cp%THICROW(I,M,2)*RHOICE) &
+      *DLZWROW(I,M,2)+(cp%THLQROW(I,M,3)*RHOW+cp%THICROW(I,M,3) &
+      *RHOICE)*DLZWROW(I,M,3))*cp%FAREROW(I,M)
+	    ENDIF
+  ENDDO
+  ENDDO
+ENDIF
 
 !> ========================================================================
 CALL CLASSZ (0,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
@@ -3553,9 +3553,11 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     EVAP_OUT = 0.0
     ROF_OUT = 0.0
   END IF
-  NCAL       = NCAL + 1
-  QOBS(NCAL) = WF_QHYD_AVG(1)
-  QSIM(NCAL) = WF_QSYN_AVG(1)/NCOUNT
+  IF(PREEMPTIONFLAG==1)THEN
+     NCAL       = NCAL + 1
+     QOBS(NCAL) = WF_QHYD_AVG(1)
+     QSIM(NCAL) = WF_QSYN_AVG(1)/NCOUNT
+  ENDIF
 
   WF_QSYN_AVG = 0.0
 ENDIF

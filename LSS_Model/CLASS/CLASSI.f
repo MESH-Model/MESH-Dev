@@ -1,6 +1,6 @@
       SUBROUTINE CLASSI(VPD,TADP,PADRY,RHOAIR,RHOSNI,
      1                  RPCP,TRPCP,SPCP,TSPCP,
-     2                  TA,QA,PCPR,RRATE,SRATE,PRESSG,
+     2                  TA,QA,PCPR,PRESSG,
      3                  IPCP,NL,IL1,IL2)
 C
 C     * NOV 22/06 - P.BARTLETT. CALCULATE PCPR IF IPCP=4.
@@ -37,7 +37,7 @@ C
 C     * INPUT ARRAYS.
 C
       REAL TA    (NL),  QA    (NL),  PRESSG(NL), 
-     1     PCPR  (NL),  RRATE (NL),  SRATE (NL)
+     1     PCPR  (NL)
 C
 C     * WORK ARRAYS.
 C
@@ -62,7 +62,7 @@ C----------------------------------------------------------------
 C
 C     * CALCULATION OF ATMOSPHERIC INPUT VARIABLES.
 C
-      DO 100 I=IL1,IL2
+      DO 100 I=IL1,NL
           EA=QA(I)*PRESSG(I)/(0.622+0.378*QA(I))                              
           IF(TA(I).GE.TFREZ) THEN                                             
               CA=17.269                                                       
@@ -131,11 +131,13 @@ C
                   SPCP(I)=PHASE(I)*PCPR(I)/RHOSNI(I)
                   IF(SPCP(I).GT.0.0) TSPCP(I)=MIN((TA(I)-TFREZ),0.0)
               ELSEIF(IPCP.EQ.4)                       THEN
-                  RPCP(I)=RRATE(I)/RHOW
-                  IF(RPCP(I).GT.0.0) TRPCP(I)=MAX((TA(I)-TFREZ),0.0) 
-                  SPCP(I)=SRATE(I)/RHOSNI(I)
-                  IF(SPCP(I).GT.0.0) TSPCP(I)=MIN((TA(I)-TFREZ),0.0)
-                  PCPR(I)=RRATE(I)+SRATE(I)
+!                  RPCP(I)=RRATE(I)/RHOW
+!                  IF(RPCP(I).GT.0.0) TRPCP(I)=MAX((TA(I)-TFREZ),0.0) 
+!                  SPCP(I)=SRATE(I)/RHOSNI(I)
+!                  IF(SPCP(I).GT.0.0) TSPCP(I)=MIN((TA(I)-TFREZ),0.0)
+!                  PCPR(I)=RRATE(I)+SRATE(I)
+                   PRINT*,'IPCP OPTION 4 IS NOT YET IMPLEMENTED.'
+                   STOP
               ENDIF
           ENDIF
 100   CONTINUE
