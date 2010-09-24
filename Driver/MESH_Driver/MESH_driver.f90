@@ -380,6 +380,7 @@ INTEGER :: IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
 !* NMTEST: NUMBER OF GRUS (CLASS.INI)
 !* IHOUR: CURRENT HOUR OF MET. FORCING DATA (0 TO 23) (CLASS.INI)
 !* IMIN: CURRENT MINUTE OF MET. FORCING DATA (0 OR 30) (CLASS.INI)
+!* IMIN2: CURRENT MINUTE OF MET. FORCING DATA (RANGES FROM 0  TO HOURLYFLAG)
 !* IDAY: CURRENT DAY OF MET. FORCING DATA (JULIAN FROM YEAR START)
 !*       (CLASS.INI)
 !* IYEAR: CURRENT YEAR OF MET. FORCING DATA (CLASS.INI)
@@ -387,7 +388,7 @@ INTEGER :: IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
 !* NMW: NUMBER OF WATER-ORIENTED GRID SQUARES
 !* NICE: NUMBER OF LARGE ICE-BODIED GRID SQUARES (GLACIERS)
 !* NWAT: NUMBER OF LARGE WATER-BODIED GRID SQUARES
-INTEGER :: ILW, NLTEST, NMTEST, IHOUR, IMIN, IDAY, IYEAR, NML, &
+INTEGER :: ILW, NLTEST, NMTEST, IHOUR, IMIN, IMIN2, IDAY, IYEAR, NML, &
   NMW, NWAT, NICE, NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
@@ -830,6 +831,9 @@ CALL READ_INITIAL_INPUTS( &
   INDEPPAR, DEPPAR, WF_R2, M_C, &
  !>the types that are to be allocated and initialised
   op, sl, cp, sv, hp)! , si, , , , )
+
+!INITIALIZE IMIN2  
+  IMIN2 = IMIN
 
 !>
 !>***********************************************************************
@@ -2291,11 +2295,15 @@ IF(PREEMPTIONFLAG == 1)THEN
   WRITE (6,*)
 ENDIF
 PRINT *
-PRINT *
-PRINT *, 'DONE INTITIALIZATION'
-PRINT *
-WRITE (6, *) "STARTING MESH (PRECIP, EVAP, ", &
-      "RUNOFF)"
+IF(TESTFLAG == 1)THEN
+    PRINT*,"TEST PROPER DISTRIBUTION OF CSV FORCING DATA" 
+ELSE
+    PRINT *
+    PRINT *, 'DONE INTITIALIZATION'
+    PRINT *
+    WRITE (6, *) "STARTING MESH (PRECIP, EVAP, ", &
+          "RUNOFF)"
+ENDIF
 
 !> *********************************************************************
 !> Call CLASSB to set more CLASS variables
@@ -2330,7 +2338,7 @@ ENDIF
 IF (RESUMEFLAG /= 0) THEN
   PRINT *, 'Reading saved state variables'
 call resume_state( &
-   HOURLYFLAG, IMIN, &
+   HOURLYFLAG, IMIN, IMIN2, &
    BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG, &
    BASINRAINFLAG, BASINTEMPERATUREFLAG, &
    BASINWINDFLAG, BASINPRESFLAG, BASINHUMIDITYFLAG, &
@@ -2536,7 +2544,7 @@ N=N+1
 
 !> MAM - Linearly interpolate forcing data for intermediate time steps
 IF(INTERPOLATIONFLAG == 1)THEN
-    TRATIO     = MIN(1.0, FLOAT(IMIN) / HOURLYFLAG)
+    TRATIO     = MIN(1.0, FLOAT(IMIN2) / HOURLYFLAG)
     FSVHGAT    = FSVHGATPRE   + TRATIO *(FSVHGATPST   - FSVHGATPRE)
     FSIHGAT    = FSIHGATPRE   + TRATIO *(FSIHGATPST   - FSIHGATPRE)
     FDLGAT     = FDLGATPRE    + TRATIO *(FDLGATPST    - FDLGATPRE)
@@ -2620,6 +2628,18 @@ DO I=1,NA
   FCLOGRD(I)=XDIFFUS(I)
 ENDDO
 
+CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,IWAT,IICE, &
+             NML,NMW,NWAT,NICE,cp%GCGRD,cp%FAREROW,cp%MIDROW, &
+             NA,NTYPE,ILG,1,NA,NMTEST)
+
+!> *********************************************************************
+!> Test proper distribution of csv forcing data
+!> *********************************************************************
+IF(TESTFLAG==1)THEN
+   IF(HOURLYFLAG == 30 .OR. IMIN2 == 0) &
+   WRITE(*,'(I4,1X,I3,1X,I2,1X,I2)')IYEAR,IDAY,IHOUR,IMIN
+ELSE   
+
 !> *********************************************************************
 !> Start of calls to CLASS subroutines
 !> *********************************************************************
@@ -2686,7 +2706,6 @@ CALL CLASSI(VPDGAT,TADPGAT,PADRGAT,RHOAGAT,RHSIGAT, &
             IPCP,ILG,1,NA)
 
 !> Calculate initial storage (after reading in resume.txt file if applicable)
-
 IF(JAN==1) THEN
   INIT_STORE=0.0
   DO I=1,NA
@@ -3704,14 +3723,15 @@ If (jan == 2) Then
   Close(109)
 End If
 
+ENDIF !TESTFLAG
+
 ! *********************************************************************
 ! Update time counters and return to beginning of main loop
 ! *********************************************************************
-
 IMIN = IMIN + 30 ! increment the current time by 30 minutes
-IF (MOD(IMIN,60)==0) THEN
+IF (IMIN == 60) THEN
+  IMIN = 0
   IHOUR = IHOUR + 1
-  IF(IMIN == HOURLYFLAG .OR. HOURLYFLAG == 30)IMIN=0
   IF (IHOUR==24) THEN
     IHOUR = 0
     IF(PREEMPTIONFLAG == 1)THEN
@@ -3758,10 +3778,13 @@ IF (IYEAR >= IYEAR_END .AND. IYEAR_END > 0) THEN
   ENDIF
 ENDIF
 
+IMIN2 = IMIN2 + 30
+IF(IMIN2 == HOURLYFLAG)IMIN2 = 0
+
 !> *********************************************************************
 !> Read in meteorological forcing data
 !> *********************************************************************
-IF(HOURLYFLAG == 30 .OR. IMIN == 0) THEN
+IF(HOURLYFLAG == 30 .OR. IMIN2 == 0) THEN
     IF(INTERPOLATIONFLAG == 1)THEN
         FSVHGATPRE    = FSVHGATPST
         FSIHGATPRE    = FSIHGATPST
@@ -3793,7 +3816,7 @@ ENDDO
 IF (SAVERESUMEFLAG > 0) THEN !todo: done: use a flag
   PRINT *, 'Saving state variables'
   call SAVE_STATE( &
-   HOURLYFLAG, IMIN, &
+   HOURLYFLAG, IMIN, IMIN2, &
    BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG, &
    BASINRAINFLAG, BASINTEMPERATUREFLAG, &
    BASINWINDFLAG, BASINPRESFLAG, BASINHUMIDITYFLAG, &

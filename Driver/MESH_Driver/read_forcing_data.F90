@@ -30,17 +30,17 @@ REAL*4, DIMENSION(YCOUNT, XCOUNT) :: R4SHRTGRID2D, R4LONGGRID2D, R4RAINGRID2D, R
 REAL*4, DIMENSION(NA,NTYPE)       :: FAREA
 REAL*4, DIMENSION(NTYPE)          :: R4SHRTGRU, R4LONGGRU, R4RAINGRU, R4TEMPGRU, R4WINDGRU, &
                                      R4PRESGRU, R4HUMDGRU
-
 REAL*4, DIMENSION(NA)             :: FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, &
                                      PRESGRD, QAGRD
 REAL*4, DIMENSION(NML)            :: FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, & 
                                      PRESGAT, QAGAT
-
+REAL*4                            :: JUNK
 INTEGER*4,DIMENSION(NA)           :: YYY,XXX
-
 INTEGER*4,DIMENSION(NML)          :: ILMOS,JLMOS
+INTEGER                           :: I,J,K,CURGRU,ICOUNT
 
-INTEGER I,J,CURGRU
+!Initialize counting number of r2c and csv files
+ICOUNT = 0
 
 !> *********************************************************************
 !> Read shortwave radiation data
@@ -58,7 +58,7 @@ INTEGER I,J,CURGRU
     FSIHGRD=FSVHGRD
     CALL GATHER(NA,NML,ILMOS,FSVHGRD,FSVHGAT)
     FSIHGAT=FSVHGAT
-
+   
 !> *********************************************************************
 !> basin_shortwave.r2c
 !> *********************************************************************
@@ -75,7 +75,7 @@ INTEGER I,J,CURGRU
     FSIHGRD=FSVHGRD
     CALL GATHER(NA,NML,ILMOS,FSVHGRD,FSVHGAT)
     FSIHGAT=FSVHGAT
-
+    ICOUNT=ICOUNT+1
 !> *********************************************************************
 !> basin_shortwave.csv
 !> *********************************************************************
@@ -89,7 +89,11 @@ INTEGER I,J,CURGRU
     CALL SCATTER(NTYPE,NA,FAREA,FSVHGRD,R4SHRTGRU)
     FSDOWN=FSVHGRD
     FSIHGRD=FSVHGRD
-    
+    ICOUNT=ICOUNT+1
+    IF(TESTFLAG==1)then
+        print*,"Shortwave radiation"
+        CALL TEST(NTYPE,NML,NA,ILMOS,R4SHRTGRU,FSVHGAT+FSIHGAT)
+    ENDIF
   ELSE
     PRINT*,'BASINSHORTWAVEFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -104,6 +108,10 @@ INTEGER I,J,CURGRU
 !> basin_longwave.bin
 !> *********************************************************************
   IF(BASINLONGWAVEFLAG==0)THEN
+    !Skip the forcing data that is read from r2c and csv files
+    DO K = 1,ICOUNT
+       READ(51,END=999) ((JUNK,J=1,XCOUNT),I=1,YCOUNT)
+    ENDDO
     READ(51,END=999) ((R4LONGGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
     DO I=1,NA
       FDLGRD(I)=R4LONGGRID2D(YYY(I),XXX(I))
@@ -123,7 +131,7 @@ INTEGER I,J,CURGRU
       FDLGRD(I)=R4LONGGRID2D(YYY(I),XXX(I))
     ENDDO
     CALL GATHER(NA,NML,ILMOS,FDLGRD,FDLGAT)
-
+    ICOUNT=ICOUNT+1
 !> *********************************************************************
 !> basin_longwave.csv
 !> *********************************************************************
@@ -134,7 +142,11 @@ INTEGER I,J,CURGRU
       FDLGAT(I) = R4LONGGRU(CURGRU)
     ENDDO
     CALL SCATTER(NTYPE,NA,FAREA,FDLGRD,R4LONGGRU)
-
+    ICOUNT=ICOUNT+1
+    IF(TESTFLAG==1)then
+        print*,"Longwave radiation"
+        CALL TEST(NTYPE,NML,NA,ILMOS,R4LONGGRU,FDLGAT)
+    ENDIF
   ELSE
     PRINT*,'BASINLONGWAVEFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -149,6 +161,10 @@ INTEGER I,J,CURGRU
 !> basin_rain.bin
 !> *********************************************************************
   IF(BASINRAINFLAG==0)THEN
+    !Skip the forcing data that is read from r2c and csv files
+    DO K = 1,ICOUNT
+       READ(51,END=999) ((JUNK,J=1,XCOUNT),I=1,YCOUNT)
+    ENDDO
     READ(51,END=999) ((R4RAINGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
     DO I=1,NA
 	   PREGRD(I)=R4RAINGRID2D(YYY(I),XXX(I))
@@ -168,7 +184,7 @@ INTEGER I,J,CURGRU
       PREGRD(I)=R4RAINGRID2D(YYY(I),XXX(I))
     ENDDO
     CALL GATHER(NA,NML,ILMOS,PREGRD,PREGAT)
-
+    ICOUNT=ICOUNT+1
 !> *********************************************************************
 !> basin_rain.csv
 !> *********************************************************************
@@ -179,7 +195,11 @@ INTEGER I,J,CURGRU
       PREGAT(I) = R4RAINGRU(CURGRU)
     ENDDO
     CALL SCATTER(NTYPE,NA,FAREA,PREGRD,R4RAINGRU)
-
+    ICOUNT=ICOUNT+1
+    IF(TESTFLAG==1)then
+        print*,"Precipitation"
+        CALL TEST(NTYPE,NML,NA,ILMOS,R4RAINGRU,PREGAT)
+    ENDIF
   ELSE
     PRINT*,'BASINRAINFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -194,6 +214,10 @@ INTEGER I,J,CURGRU
 !> basin_temperature.bin
 !> *********************************************************************
   IF(BASINTEMPERATUREFLAG==0)THEN
+    !Skip the forcing data that is read from r2c and csv files
+    DO K = 1,ICOUNT
+       READ(51,END=999) ((JUNK,J=1,XCOUNT),I=1,YCOUNT)
+    ENDDO
     READ(51,END=999) ((R4TEMPGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
     DO I=1,NA
       TAGRD(I)=R4TEMPGRID2D(YYY(I),XXX(I))
@@ -213,7 +237,7 @@ INTEGER I,J,CURGRU
       TAGRD(I)=R4TEMPGRID2D(YYY(I),XXX(I))
     ENDDO
     CALL GATHER(NA,NML,ILMOS,TAGRD,TAGAT)
-
+    ICOUNT=ICOUNT+1
 !> *********************************************************************
 !>  basin_temperature.csv
 !> *********************************************************************
@@ -224,7 +248,11 @@ INTEGER I,J,CURGRU
       TAGAT(I)  = R4TEMPGRU(CURGRU)
     ENDDO
     CALL SCATTER(NTYPE,NA,FAREA,TAGRD,R4TEMPGRU)
-
+    ICOUNT=ICOUNT+1
+    IF(TESTFLAG==1)then
+        print*,"Temperature"
+        CALL TEST(NTYPE,NML,NA,ILMOS,R4TEMPGRU,TAGAT)
+    ENDIF
   ELSE
     PRINT*,'BASINTEMPERATUREFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -239,6 +267,10 @@ INTEGER I,J,CURGRU
 !> basin_wind.bin
 !> *********************************************************************
   IF(BASINWINDFLAG==0)THEN !use the forcing bin
+    !Skip the forcing data that is read from r2c and csv files
+    DO K = 1,ICOUNT
+       READ(51,END=999) ((JUNK,J=1,XCOUNT),I=1,YCOUNT)
+    ENDDO
     READ(51,END=999) ((R4WINDGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
     DO I=1,NA
       ULGRD(I)=R4WINDGRID2D(YYY(I),XXX(I))
@@ -264,7 +296,7 @@ INTEGER I,J,CURGRU
     !VLGAT=0.0
     !UVGRD=MAX(VMIN,ULGRD)
     CALL GATHER(NA,NML,ILMOS,ULGRD,ULGAT)
- 
+    ICOUNT=ICOUNT+1
 !> *********************************************************************
 !> basin_wind.csv
 !> *********************************************************************
@@ -277,7 +309,11 @@ INTEGER I,J,CURGRU
     !VLGRD=0.0
     !VLGAT=0.0
     CALL SCATTER(NTYPE,NA,FAREA,ULGRD,R4WINDGRU)
-
+    ICOUNT=ICOUNT+1
+    IF(TESTFLAG==1)then
+        print*,"Wind"
+        CALL TEST(NTYPE,NML,NA,ILMOS,R4WINDGRU,ULGAT)
+    ENDIF
   ELSE
     PRINT*,'BASINWINDFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -292,6 +328,10 @@ INTEGER I,J,CURGRU
 !> basin_pres.bin
 !> *********************************************************************
   IF(BASINPRESFLAG==0)THEN
+    !Skip the forcing data that is read from r2c and csv files
+    DO K = 1,ICOUNT
+       READ(51,END=999) ((JUNK,J=1,XCOUNT),I=1,YCOUNT)
+    ENDDO
     READ(51,END=999) ((R4PRESGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
     DO I=1,NA
       PRESGRD(I)=R4PRESGRID2D(YYY(I),XXX(I))
@@ -311,7 +351,7 @@ INTEGER I,J,CURGRU
       PRESGRD(I)=R4PRESGRID2D(YYY(I),XXX(I))
     ENDDO
     CALL GATHER(NA,NML,ILMOS,PRESGRD,PRESGAT)
-
+    ICOUNT=ICOUNT+1
 !> *********************************************************************
 !> basin_pres.csv
 !> *********************************************************************
@@ -322,7 +362,11 @@ INTEGER I,J,CURGRU
       PRESGAT(I) = R4PRESGRU(CURGRU)
     ENDDO
     CALL SCATTER(NTYPE,NA,FAREA,PRESGRD,R4PRESGRU)
-
+    ICOUNT=ICOUNT+1
+    IF(TESTFLAG==1)then
+        print*,"Pressure"
+        CALL TEST(NTYPE,NML,NA,ILMOS,R4PRESGRU,PRESGAT)
+    ENDIF
   ELSE
     PRINT*,'BASINPRESSUREFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -337,6 +381,10 @@ INTEGER I,J,CURGRU
 !> basin_humidity.bin
 !> *********************************************************************
   IF(BASINHUMIDITYFLAG==0)THEN
+    !Skip the forcing data that is read from r2c and csv files
+    DO K = 1,ICOUNT
+       READ(51,END=999) ((JUNK,J=1,XCOUNT),I=1,YCOUNT)
+    ENDDO
     READ(51,END=999) ((R4HUMDGRID2D(I,J),J=1,XCOUNT),I=1,YCOUNT)
     DO I=1,NA
       QAGRD(I)=R4HUMDGRID2D(YYY(I),XXX(I))
@@ -356,7 +404,7 @@ INTEGER I,J,CURGRU
       QAGRD(I)=R4HUMDGRID2D(YYY(I),XXX(I))
     ENDDO
     CALL GATHER(NA,NML,ILMOS,QAGRD,QAGAT)
-
+    ICOUNT=ICOUNT+1
 !> *********************************************************************
 !> basin_humidity.csv
 !> *********************************************************************
@@ -367,6 +415,11 @@ INTEGER I,J,CURGRU
       QAGAT(I)  = R4HUMDGRU(CURGRU)
     ENDDO
     CALL SCATTER(NTYPE,NA,FAREA,QAGRD,R4HUMDGRU)
+    ICOUNT=ICOUNT+1
+    IF(TESTFLAG==1)then
+        print*,"Humidity"
+        CALL TEST(NTYPE,NML,NA,ILMOS,R4HUMDGRU,QAGAT)
+    ENDIF
   ELSE
     PRINT*,'BASINHUMIDITYFLAG SHOULD BE EITHER 0, 1 0R 2'
     PAUSE
@@ -406,5 +459,46 @@ subroutine scatter(ntype,na,farea,grd,gru)
           grd(i) = grd(i) + farea(i,j)*gru(j)
        enddo
    enddo
+
+end subroutine
+
+subroutine test(ntype,nml,na,ilmos,gat,gru)
+    
+    integer ntype,nml,na
+    integer ilmos(nml)
+    real    gat(nml),gru(ntype)
+    real    err(ntype)
+    real    errmax, errtol
+ 
+ !Set error tolerance to rounding error   
+    errtol = 1.0e-17
+ 
+ !Check proper distribution of the csv forcing data on each grid   
+    if(na > 1)then
+        do i = 1, nml-ntype
+            if(gat(i) .ne. gat(i+ntype))then
+                print*,"Forcing data redistribution at grid ", ilmos(i), " is wrong."
+                pause
+                stop
+            endif
+        enddo
+    endif
+ 
+ !Compare the first grid gru values with the corresponding values in the csv file.   
+    do j = 1,ntype
+       err(j) = abs(gat(j)-gru(j))
+    enddo
+
+!Compute the max difference - it should not be greater than rounding error
+    errmax = maxval(err)
+    if(errmax < errtol)then
+       print*,"Maximum error: ",errmax," Error tolerance: ", errtol
+       print*,"Test: OK"
+    else
+       print*,"Maximum error: ",errmax," Error tolerance: ", errtol
+       print*,"Test: NOT OK"
+       Pause
+       stop
+    endif
 
 end subroutine
