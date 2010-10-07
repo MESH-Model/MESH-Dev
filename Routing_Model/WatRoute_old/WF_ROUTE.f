@@ -301,8 +301,12 @@ c        Cap is the volume of water in a reach for the mean annual flow
           
          over=0.0
          wf_store1(n)=0.0
-
-         if( wf_ireach(n).gt.0 .and. wf_b1(wf_ireach(n)).gt.0) then
+c this line had to be changed for certain compilers - Frank Seglenieks - Sep, 2010
+c       original statement
+c         if( wf_ireach(n).gt.0 .and. wf_b1(wf_ireach(n)).gt.0) then
+c       modified statements
+         if( wf_ireach(n).gt.0 ) then
+         if( wf_b1(wf_ireach(n)).gt.0 ) then
 c           Natural reservoir element
             l=wf_ireach(n)
             wf_store2(n)=(wf_qo2(n)/wf_b1(l))**(1.0/wf_b2(l))
@@ -324,6 +328,8 @@ c           basin but is in a receiving element
                   wf_store2(n)=cap+rl*over
                endif
             endif
+c also had to add this - Frank Seglenieks - Sep, 2010
+         endif
          endif
       end do                    ! do n=1,wf_naa
 

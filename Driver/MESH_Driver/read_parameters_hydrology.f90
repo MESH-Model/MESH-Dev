@@ -122,9 +122,16 @@ ENDIF
 READ(23,"(I8)") DEPPAR
 READ(23,*)
 IF(DEPPAR>0) THEN
-  READ(23,*) (hp%ZSNLROW(1,M),M=1,NTYPE)
-  READ(23,*) (hp%ZPLSROW(1,M),M=1,NTYPE)
-  READ(23,*) (hp%ZPLGROW(1,M),M=1,NTYPE)
+   READ(23,*) (hp%ZSNLROW(1,M),M=1,NTYPE)
+   READ(23,*) (hp%ZPLSROW(1,M),M=1,NTYPE)
+   READ(23,*) (hp%ZPLGROW(1,M),M=1,NTYPE)
+  IF(PBSMFLAG==1) THEN
+   READ(23,*) (hp%fetchROW(1,M),M=1,NTYPE)
+   READ(23,*) (hp%HtROW(1,M),M=1,NTYPE)
+   READ(23,*) (hp%N_SROW(1,M),M=1,NTYPE)
+   READ(23,*) (hp%A_SROW(1,M),M=1,NTYPE)
+   READ(23,*) (hp%DistribROW(1,M),M=1,NTYPE)
+  ENDIF 
 ENDIF
 
 DO I=2,NA
@@ -132,6 +139,13 @@ DO I=2,NA
     hp%ZSNLROW(I,M)=hp%ZSNLROW(1,M)
     hp%ZPLSROW(I,M)=hp%ZPLSROW(1,M)
     hp%ZPLGROW(I,M)=hp%ZPLGROW(1,M)
+   IF(PBSMFLAG==1) THEN
+    hp%fetchROW(I,M)=hp%fetchROW(1,M)
+    hp%HtROW(I,M)=hp%HtROW(1,M)
+    hp%N_SROW(I,M)=hp%N_SROW(1,M)
+    hp%A_SROW(I,M)=hp%A_SROW(1,M)
+    hp%DistribROW(I,M)=hp%DistribROW(1,M)
+   ENDIF
   ENDDO
 ENDDO
 

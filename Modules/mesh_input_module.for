@@ -70,7 +70,8 @@
 
 !> variables for read_parameters_hydrology
       TYPE HydrologyParameters
-        REAL, DIMENSION(:,:), ALLOCATABLE :: ZSNLROW, ZPLSROW, ZPLGROW
+        REAL, DIMENSION(:,:), ALLOCATABLE :: ZSNLROW, ZPLSROW, ZPLGROW,
+     +    fetchROW, HtROW, N_SROW, A_SROW, DistribROW
       END TYPE
 
       end module MESH_INPUT_MODULE

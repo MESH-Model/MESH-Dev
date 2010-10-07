@@ -26,8 +26,18 @@
      P                  ISAND,  IWF,    ILG,    IL1,    IL2,    N,
      Q                  JL,     IC,     IG,     IGP1,   IGP2,
      R                  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI, 
-     S                  MANNING_N, DD )
+     S                  MANNING_N, DD,
+     T                  ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG,
+     U                  HCPSCS,HCPSGS,HCPSC,HCPSG,
+     V                  TSNOWC,TSNOWG,RHOSC,RHOSG,
+     W                  XSNOWC,XSNOWG,XSNOCS,XSNOGS)
+    !T                  fetch, Ht, N_S, A_S,
+    !U                  ST, SU, SQ, PRES, 
+    !V                  DrySnow, SnowAge, Drift, Subl,
+    !W                  TSNOWds, RHOSNOds)
 C                                                                        
+C     * OCT 01/10 - M.MACDONALD.ONLY PERFORM VANISHINGLY SMALL SNOW
+C                               CALCULATIONS IS PBSM NOT BEING USED (MESH)
 C     * DEC 07/09 - D.VERSEGHY. ADD RADD AND SADD TO WPREP CALL.
 C     * JAN 06/09 - D.VERSEGHY. INCREASE LIMITING SNOW AMOUNT.
 C     * FEB 25/08 - D.VERSEGHY. MODIFICATIONS REFLECTING CHANGES
@@ -101,6 +111,8 @@ C     * AUG 12/91 - D.VERSEGHY. CODE FOR MODEL VERSION GCM7U -
 C                               CLASS VERSION 2.0 (WITH CANOPY).
 C     * APR 11/89 - D.VERSEGHY. LAND SURFACE WATER BUDGET CALCULATIONS.
 C                                                                                 
+      USE FLAGS
+C
       IMPLICIT NONE
 
 C     * INTEGER CONSTANTS.
@@ -243,6 +255,18 @@ C
 C     * INTERNAL WORK ARRAYS FOR CHKWAT.
 C
       REAL BAL   (ILG)
+C
+!C     * PARAMETERS FOR PBSM
+!      REAL    fetch (ILG),  Ht   (ILG),
+!     1        N_S   (ILG),  A_S  (ILG)
+!C     * TEMPORARY VARIABLES FOR BLOWING SNOW
+!      REAL    gru_loss, sub_loss, swe, sub_zloss, mBeta
+!C     * FORCING VARIABLES FOR PBSM
+!      REAL    SU (ILG), SQ(ILG), PRES(ILG), ST(ILG)
+!C     * PBSM VARIABLES
+!      REAL    DrySnow(ILG), SnowAge(ILG),
+!     1        Drift(ILG), Subl(ILG),
+!     2        TSNOWds(ILG), RHOSNOds(ILG), ZSNOWds(ILG)
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -703,6 +727,11 @@ C
               WSNOW(I)=FCS(I)*WSNOCS(I) + FGS(I)*WSNOGS(I) 
               SNO(I)=ZSNOW(I)*RHOSNO(I)                                       
               IF(SNO(I).LT.0.0) SNO(I)=0.0
+********************************************************************************************************************
+*******START of code for GRU-level single column blowing snow transport and sublimation calculations****************
+*******by MK MacDonald (September 2010)*****************************************************************************
+********************************************************************************************************************
+             IF (PBSMFLAG==0) THEN
               IF(SNO(I).LT.1.0E-2 .AND. SNO(I).GT.0.0) THEN
                   TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TSNOW(I)*(SNO(I)+
      1                WSNOW(I))/DELT)/(OVRFLW(I)+(SNO(I)+WSNOW(I))/
@@ -721,13 +750,180 @@ C
                   SNO(I)=0.0                            
                   WSNOW(I)=0.0
               ENDIF
-          ELSE                                                                
-              TSNOW(I)=0.0                                                    
-              RHOSNO(I)=0.0                                                   
-              SNO(I)=0.0                                                      
+             ENDIF !PBSMFLAG=0
+          ELSE
+              TSNOW(I)=0.0
+              RHOSNO(I)=0.0
+              SNO(I)=0.0
               WSNOW(I)=0.0
           ENDIF
-C
+
+!      IF (PBSMFLAG==1) THEN
+!!      !set values for mB for partitioning shear stress over vegetation
+!!      !(different for vegetation categories;
+!!      ! see MacDonald, Pomeroy & Pietroniro (2009, Hydrol. Proc.))
+!!      IF(FCS(1).GE.FGS(I)) THEN
+!!       mBeta=32.0
+!!      ELSE
+!!       mBeta=170.0
+!!      ENDIF
+!       !>GRU-level snow transport & sublimation calculations
+!       CALL PBSMrun(ST(I), SU(I), SQ(I), PRES(I), 
+!     1  Drift(I), Subl(I),TSNOWds(I), RHOSNOds(I), ZSNOWds(I),
+!     2  TSNOW(I), RHOSNO(I), ZSNOW(I), WSNOW(I), SNO(I),
+!     3  SPCCS(I), DrySnow(I), SnowAge(I),
+!     4  ILG,IL1,IL2,JL, fetch(I), N_S(I), A_S(I), Ht(I), N,
+!     5  FC(I), FG(I), FCS(I), FGS(I), HTCS(I),
+!     7  ZSNOWC(I),ZSNOWG(I),ZSNOCS(I),ZSNOGS(I),
+!     8  HCPSC(I),HCPSG(I),HCPSCS(I),HCPSGS(I),
+!     9  TSNOWC(I),TSNOWG(I),TSNOCS(I),TSNOGS(I),
+!     +  RHOSC(I),RHOSG(I),RHOSCS(I),RHOSGS(I),
+!     +  XSNOWC(I),XSNOWG(I),XSNOCS(I),XSNOGS(I),
+!     +  WSNOCS(I),WSNOGS(I))
+!
+!   !> Recalculate subarea snow properties after snow transport for all four subareas
+!         !if blowing snow occured
+!         IF(Drift(I).GT.0. .OR. Subl(I).GT.0.) THEN 
+!                !snow mass loss is sum of transport + sublimation
+!                gru_loss=Drift(I)+Subl(I) 
+!                IF(FC(I).GT.0. .AND. ZSNOWC(I).GT.0.) THEN
+!                  HTCS(I)=HTCS(I)-FC(I)*HCPSC(I)*(TSNOWC(I)+TFREZ)
+!    1                  *ZSNOWC(I)/DELT
+!                  swe=RHOSC(I)*ZSNOWC(I) !pre-BS SWE [kg/m^2]
+!                  !SWE to be removed after blowing snow [kg/m^2]
+!                  sub_loss=gru_loss* 
+!    1                      FC(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
+!    1                      *(FC(I)+FG(I)+FCS(I)+FGS(I))/FC(I)
+!                  !depth to be removed after blowing snow [m]
+!                  sub_zloss=sub_loss/RHOSC(I) 
+!                  !if calculated depth loss exceeds snow available
+!                  IF(sub_zloss.GE.ZSNOWC(I)) THEN 
+!                    !rescale gru-level SWE mass loss
+!                    sub_loss=swe*FC(I)/(FC(I)+FG(I)+FCS(I)+FGS(I)) 
+!                    ZSNOWC(I)=0. !set snow depth to zero
+!                  !snowpack depth is greater than calculated blowing snow loss
+!                  ELSE 
+!                    ZSNOWC(I)=ZSNOWC(I)-sub_zloss 
+!                    sub_loss=sub_loss*FC(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
+!                  ENDIF
+!                  !subtract this subarea's blowing snow mass loss from GRU total
+!                  gru_loss=gru_loss-sub_loss 
+!                  HCPSC(I)=HCPICE*RHOSC(I)/RHOICE
+!                  HTCS(I)=HTCS(I)+FC(I)*HCPSC(I)*(TSNOWC(I)+TFREZ)
+!    1                  *ZSNOWC(I)/DELT
+!                  IF(ZSNOWC(I).GT.0.) THEN
+!                    XSNOWC(I)=1.0
+!                  ELSE
+!                    XSNOWC(I)=0.
+!                  ENDIF
+!                ENDIF
+!                IF(FG(I).GT.0. .AND. ZSNOWG(I).GT.0.) THEN
+!                  HTCS(I)=HTCS(I)-FG(I)*HCPSG(I)*(TSNOWG(I)+TFREZ)
+!    1                  *ZSNOWG(I)/DELT
+!                  swe=RHOSG(I)*ZSNOWG(I)
+!                  sub_loss=gru_loss*
+!    1                      FG(I)/(FG(I)+FCS(I)+FGS(I))
+!    1                      *(FC(I)+FG(I)+FCS(I)+FGS(I))/FG(I)
+!                  sub_zloss=sub_loss/RHOSG(I)
+!                  IF(sub_zloss.GE.ZSNOWG(I)) THEN
+!                    sub_loss=swe*FG(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
+!                    ZSNOWG(I)=0.
+!                  ELSE
+!                    ZSNOWG(I)=ZSNOWG(I)-sub_zloss
+!                    sub_loss=sub_loss*FG(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
+!                  ENDIF
+!                  gru_loss=gru_loss-sub_loss
+!                  HCPSG(I)=HCPICE*RHOSG(I)/RHOICE
+!                  HTCS(I)=HTCS(I)+FG(I)*HCPSG(I)*(TSNOWG(I)+TFREZ)
+!    1                  *ZSNOWG(I)/DELT
+!                  IF(ZSNOWG(I).GT.0.) THEN
+!                    XSNOWG(I)=1.0
+!                  ELSE
+!                    XSNOWG(I)=0.
+!                  ENDIF
+!                ENDIF
+!                IF(FCS(I).GT.0. .AND. ZSNOCS(I).GT.0.) THEN
+!                  HTCS(I)=HTCS(I)-FCS(I)*HCPSCS(I)*(TSNOCS(I)
+!    1                  +TFREZ)*ZSNOCS(I)/DELT
+!                  swe=RHOSCS(I)*ZSNOCS(I)
+!                  sub_loss=gru_loss*
+!    1                      FCS(I)/(FCS(I)+FGS(I))
+!    1                      *(FC(I)+FG(I)+FCS(I)+FGS(I))/FCS(I)
+!                  sub_zloss=sub_loss/RHOSCS(I)
+!                  IF(sub_zloss.GE.ZSNOCS(I)) THEN
+!                    sub_loss=swe*FCS(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
+!                    ZSNOCS(I)=0.
+!                  ELSE
+!                    ZSNOCS(I)=ZSNOCS(I)-sub_zloss
+!                   sub_loss=sub_loss*FCS(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
+!                  ENDIF
+!                  gru_loss=gru_loss-sub_loss
+!                  HCPSCS(I)=HCPICE*RHOSCS(I)/RHOICE+HCPW*WSNOCS(I)/
+!    1                  (RHOW*ZSNOCS(I))
+!                  HTCS(I)=HTCS(I)+FCS(I)*HCPSCS(I)*(TSNOCS(I)
+!    1                  +TFREZ)*ZSNOCS(I)/DELT
+!                  IF(ZSNOCS(I).GT.0.) THEN
+!                    XSNOCS(I)=1.0
+!                  ELSE
+!                    XSNOCS(I)=0.
+!                  ENDIF
+!                ENDIF
+!                IF(FGS(I).GT.0. .AND. ZSNOGS(I).GT.0.) THEN
+!                  HTCS(I)=HTCS(I)-FGS(I)*HCPSGS(I)*(TSNOGS(I)
+!    1                  +TFREZ)*ZSNOGS(I)/DELT
+!                  swe=RHOSGS(I)*ZSNOGS(I)
+!                  sub_loss=gru_loss*
+!    1                      FGS(I)/(FGS(I))
+!    1                      *(FC(I)+FG(I)+FCS(I)+FGS(I))/FGS(I)
+!                  sub_zloss=sub_loss/RHOSGS(I)
+!                  IF(sub_zloss.GE.ZSNOGS(I)) THEN
+!                    sub_loss=swe*FGS(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
+!                    ZSNOGS(I)=0.
+!                  ELSE
+!                    ZSNOGS(I)=ZSNOGS(I)-sub_zloss
+!                   sub_loss=sub_loss*FGS(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
+!                  ENDIF
+!                  gru_loss=gru_loss-sub_loss
+!                  HCPSGS(I)=HCPICE*RHOSGS(I)/RHOICE+HCPW*WSNOGS(I)/
+!    1                  (RHOW*ZSNOGS(I))
+!                  HTCS(I)=HTCS(I)+FGS(I)*HCPSGS(I)*(TSNOGS(I)
+!    1                  +TFREZ)*ZSNOGS(I)/DELT
+!                  IF(ZSNOGS(I).GT.0.) THEN
+!                    XSNOGS(I)=1.0
+!                  ELSE
+!                    XSNOGS(I)=0.
+!                  ENDIF
+!                ENDIF
+!        	     !> Calculate snowpack properties at GRU-level
+!                TSNOW(I)=(FCS(I)*(TSNOCS(I)+TFREZ)*HCPSCS(I)*
+!    1                  ZSNOCS(I)*XSNOCS(I) +
+!    2                  FGS(I)*(TSNOGS(I)+TFREZ)*HCPSGS(I)*
+!    3                  ZSNOGS(I)*XSNOGS(I) +
+!    4                  FC (I)*(TSNOWC(I)+TFREZ)*HCPSC(I)*
+!    5                  ZSNOWC(I)*XSNOWC(I) +
+!    6                  FG (I)*(TSNOWG(I)+TFREZ)*HCPSG(I)*
+!    7                  ZSNOWG(I)*XSNOWG(I))/
+!    8                 (FCS(I)*HCPSCS(I)*ZSNOCS(I)*XSNOCS(I) +
+!    9                  FGS(I)*HCPSGS(I)*ZSNOGS(I)*XSNOGS(I) +
+!    A                  FC (I)*HCPSC(I)*ZSNOWC(I)*XSNOWC(I) +
+!    B                  FG (I)*HCPSG(I)*ZSNOWG(I)*XSNOWG(I))
+!                RHOSNO(I)=(FCS(I)*RHOSCS(I)*ZSNOCS(I)*XSNOCS(I) +   
+!    1                   FGS(I)*RHOSGS(I)*ZSNOGS(I)*XSNOGS(I) +   
+!    2                   FC (I)*RHOSC(I)*ZSNOWC(I)*XSNOWC(I) +   
+!    3                   FG (I)*RHOSG(I)*ZSNOWG(I)*XSNOWG(I))/    
+!    4                  (FCS(I)*ZSNOCS(I)*XSNOCS(I) +
+!    5                   FGS(I)*ZSNOGS(I)*XSNOGS(I) +                 
+!    6                   FC (I)*ZSNOWC(I)*XSNOWC(I) +
+!    7                   FG (I)*ZSNOWG(I)*XSNOWG(I))
+!                ZSNOW(I)=FCS(I)*ZSNOCS(I) + FGS(I)*ZSNOGS(I) +
+!    1                 FC (I)*ZSNOWC(I) + FG (I)*ZSNOWG(I)
+!                SNO(I)=ZSNOW(I)*RHOSNO(I)
+!         ENDIF !Drift(I).GT.0. .OR. Subl(I).GT.0.
+!      ENDIF !PBSMFLAG=1   
+********************************************************************************************************************
+*******END of code for single column blowing snow calculations******************************************************
+********************************************************************************************************************
+
           IF(TSNOW(I).LT.0.0) KPTBAD=I
           IF((TSNOW(I)-TFREZ).GT.1.0E-3) LPTBAD=I
   650 CONTINUE

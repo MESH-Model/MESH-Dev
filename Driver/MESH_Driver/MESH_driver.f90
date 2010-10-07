@@ -2,6 +2,7 @@ PROGRAM RUNMESH
 
 !>       MESH DRIVER
 !>
+!>       SEP 2010 - M.MACDONALD.  INCORPORATED BLOWING SNOW ALGORITHMS
 !>       JUN 2010 - F. SEGLENIEKS. 
 !>                - ADDED CODE TO HAVE MESH ONLY RUN ON BASINS LISTED IN 
 !>                  THE STREAMFLOW FILE, CALLED THE SUBBASIN FEATURE
@@ -78,7 +79,7 @@ IMPLICIT NONE
 !>  INTEGER CONSTANTS.
 INTEGER ILG
 INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
-INTEGER,PARAMETER :: M_S=40, M_R=3, M_C=5
+INTEGER,PARAMETER :: M_S=140, M_R=7, M_C=5
 !todo M_s should be allocatable. it should not be constant
 !todo it should be read in from the shd file
 
@@ -397,7 +398,21 @@ INTEGER :: ILW, NLTEST, NMTEST, IHOUR, IMIN, IDAY, IYEAR, NML, &
 REAL, DIMENSION(:, :), ALLOCATABLE :: TBARGAT, THLQGAT, THICGAT
 REAL, DIMENSION(:, :), ALLOCATABLE ::  TBASROW, &
   CMAIROW, TACROW, QACROW, WSNOROW
-     
+  
+!>PBSM VARIABLES (GRU)
+!* DrySnow: 0=air temperature above 0 degC
+!*          1=air temperature below 0 degC
+!* SnowAge: hours since last snowfall
+!* Drift: blowing snow transport (kg/m^2)
+!* Subl: blowing snow sublimation (kg/m^2)
+REAL, DIMENSION(:), ALLOCATABLE :: DrySnowGAT, SnowAgeGAT, &
+  TSNOdsGAT, RHOSdsGAT, DriftGAT, SublGAT, DepositionGAT
+REAL, DIMENSION(:, :), ALLOCATABLE :: DrySnowROW, SnowAgeROW, &
+  TSNOdsROW, RHOSdsROW, DriftROW, SublROW, DepositionROW
+!>CLASS SUBAREA VARIABLES NEEDED FOR PBSM
+REAL, DIMENSION(:), ALLOCATABLE :: ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG, &
+  HCPSCS,HCPSGS,HCPSC,HCPSG,TSNOWC,TSNOWG, &
+  RHOSC,RHOSG,XSNOWC,XSNOWG,XSNOCS,XSNOGS
 !* TPND: INITIAL PONDING TEMPERATURE (CLASS.INI)
 !* ZPND: INITIAL PONDING DEPTH (CLASS.INI)
 !* ALBS: ALBEDO OF SNOWPACK (CLASS.INI)
@@ -443,6 +458,14 @@ REAL, DIMENSION(:, :), ALLOCATABLE :: &
 REAL, DIMENSION(:), ALLOCATABLE :: DRNGAT, XSLPGAT, XDGAT, &
   WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, ASVDGAT, ASIDGAT, AGVDGAT, &
   AGIDGAT, ZSNLGAT, ZPLGGAT, ZPLSGAT, SDEPGAT, FAREGAT
+!* PBSM parameters
+!  fetch: fetch distance (m)
+!  Ht: vegetation height (m)
+!  N_S:vegetation density (number/m^2)
+!  A_S: vegetation width (m)
+!  Distrib: Inter-GRU snow redistribution factor
+REAL, DIMENSION(:), ALLOCATABLE :: &
+  fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT
 
 !* SAND: PERCENT-CONTENT OF SAND IN SOIL LAYER (CLASS.INI)
 !* CLAY: PERCENT-CONTENT OF CLAY IN SOIL LAYER (CLASS.INI)
@@ -933,6 +956,25 @@ ALLOCATE ( &
   QACGAT(ILG), WSNOGAT(ILG), &
   TSFSROW(NA, NTYPE, 4), &
   TSFSGAT(ILG, 4), STAT=PAS)
+!> PBSM PROGNOSTIC VARIABLES
+ALLOCATE ( &
+  DrySnowROW(NA, NTYPE), SnowAgeROW(NA, NTYPE), &
+  DrySnowGAT(ILG), SnowAgeGAT(ILG), &
+  TSNOdsROW(NA, NTYPE), RHOSdsROW(NA, NTYPE), &
+  TSNOdsGAT(ILG), RHOSdsGAT(ILG), &
+  DriftROW(NA, NTYPE), SublROW(NA, NTYPE), DepositionROW(NA, NTYPE), &
+  DriftGAT(ILG), SublGAT(ILG), DepositionGAT(ILG), &
+  ZSNOCS(ILG),ZSNOGS(ILG), &
+  ZSNOWC(ILG),ZSNOWG(ILG), &
+  HCPSCS(ILG),HCPSGS(ILG), &
+  HCPSC(ILG),HCPSG(ILG), &
+  TSNOWC(ILG),TSNOWG(ILG), &
+  TSNOCS(ILG),TSNOGS(ILG), &
+  RHOSC(ILG),RHOSG(ILG), &
+  RHOSCS(ILG),RHOSGS(ILG),&
+  XSNOWC(ILG),XSNOWG(ILG), &
+  XSNOCS(ILG),XSNOGS(ILG), &
+  WSNOCS(ILG),WSNOGS(ILG), STAT=PAS)
 
 !> **********************************************************************
 !>  For cacluating the subbasin grids
@@ -1010,7 +1052,9 @@ ALLOCATE ( &
   AGIDGAT(ILG), ZSNLGAT(ILG), ZPLGGAT(ILG), &
   ZPLSGAT(ILG), SDEPGAT(ILG), FAREGAT(ILG), &
   ISNDROW(NA, NTYPE, IGND), IORG(NA, NTYPE, IGND), &
-  ISNDGAT(ILG, IGND), STAT=PAS)
+  ISNDGAT(ILG, IGND), &
+  fetchGAT(ILG),HtGAT(ILG),N_SGAT(ILG),A_SGAT(ILG), &
+  DistribGAT(ILG),STAT=PAS)
 
 IF (PAS .NE. 0) THEN
   WRITE (6, *)
@@ -2454,7 +2498,10 @@ call resume_state( &
 
   TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-  FINAL_STORE, TOTAL_AREA)
+  FINAL_STORE, TOTAL_AREA, &
+  
+     hp%fetchROW,hp%HtROW,hp%N_SROW,hp%A_SROW,hp%DistribROW, &
+     fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
 ENDIF
 
 CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,IWAT,IICE, &
@@ -2513,6 +2560,36 @@ ENDIF
 NCAL  = 0
 VLGRD = 0.0
 
+!>**********************************************************************
+!> Set initial SnowAge & DrySnow values for PBSM calculations
+!> (MK MacDonald, Sept 2010)
+!>**********************************************************************
+IF(PBSMFLAG == 1)THEN
+ DO I=1,NA  !I=2,NA
+   DO M=1,NMTEST
+     IF(cp%SNOROW(I,M).LE.0.) THEN
+       DrySnowROW(I,M) = 0. !1=snowpack is dry (i.e. cold)
+       SnowAgeROW(I,M) = 0. !hours since last snowfall
+     ELSEIF(INTERPOLATIONFLAG == 0)THEN
+       IF(TAGRD(I).GE.273.16) THEN
+         DrySnowROW(I,M) = 0.
+         SnowAgeROW(I,M) = 48. !assume 48 hours since last snowfall
+       ELSE
+         DrySnowROW(I,M) = 1.
+         SnowAgeROW(I,M) = 48.
+       ENDIF
+     ELSEIF(INTERPOLATIONFLAG == 1)THEN
+       IF(TAGRDPRE(I).GE.273.16) THEN
+         DrySnowROW(I,M) = 0.
+         SnowAgeROW(I,M) = 48.
+       ELSE
+         DrySnowROW(I,M) = 1.
+         SnowAgeROW(I,M) = 48.
+       ENDIF
+     ENDIF
+   ENDDO
+ ENDDO
+ENDIF !PBSMFLAG == 1
 !> *********************************************************************
 !> Start of main loop that is run each half hour
 !> *********************************************************************
@@ -2695,7 +2772,14 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              TAGRD,  QAGRD,  PRESGRD,PREGRD, PADRGRD, &
              VPDGRD, TADPGRD,RHOAGRD,RPCPGRD,TRPCGRD, &
              SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD, &
-             GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT)
+             GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
+             cp%FAREROW, FAREGAT, &
+             hp%fetchROW,hp%HtROW,hp%N_SROW,hp%A_SROW,hp%DistribROW, &
+             fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT, &
+             DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
+             TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
+             DriftROW, SublROW, DepositionROW, &
+             DriftGAT, SublGAT, DepositionGAT)
 
 !> ========================================================================
 CALL CLASSZ (0,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
@@ -2709,7 +2793,8 @@ CALL CLASSZ (0,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
              TCANGAT,SNOGAT, WSNOGAT,TSNOGAT,THLQGAT,THICGAT, &
              HCPSGAT,THPGAT, DLZWGAT,TBARGAT,ZPNDGAT,TPNDGAT, &
              sl%DELZ,   FCS,    FGS,    FC,     FG, &
-             1,      NML,    ILG,    IGND,   N    )
+             1,      NML,    ILG,    IGND,   N, &
+             DriftGAT, SublGAT    )
 !> ========================================================================
 !> ALBEDO AND TRANSMISSIVITY CALCULATIONS; GENERAL VEGETATION
 !> CHARACTERISTICS.
@@ -2802,8 +2887,35 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
                   ISNDGAT,IWF,    NA*NTYPE,    1,      NML, N, &
                   JLAT,   ICAN,   IGND,   IGND+1, IGND+2, &
                   NLANDCS,NLANDGS,NLANDC, NLANDG,NLANDI, &
-                  MANNGAT,DDGAT)
+                  MANNGAT,DDGAT, &
+                  ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG, &
+                  HCPSCS,HCPSGS,HCPSC,HCPSG, &
+                  TSNOWC,TSNOWG,RHOSC,RHOSG,&
+                  XSNOWC,XSNOWG,XSNOCS,XSNOGS)
+                 !fetchGAT,HtGAT,N_SGAT,A_SGAT, &
+                 !SFCTGAT,SFCUGAT,SFCQGAT,PRESGAT, &
+                 !DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
+                 !TSNOdsGAT, RHOSdsGAT)
+                 
 !
+!========================================================================
+!          * SINGLE COLUMN BLOWING SNOW CALCULATIONS.
+!
+IF(PBSMFLAG==1) THEN
+ CALL PBSMrun(ZSNOW,WSNOGAT,SNOGAT,RHOSGAT,HTCSGAT, &
+              ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG, &
+              HCPSCS,HCPSGS,HCPSC,HCPSG, &
+              TSNOWC,TSNOWG,TSNOCS,TSNOGS, &
+              RHOSC,RHOSG,RHOSCS,RHOSGS,&
+              XSNOWC,XSNOWG,XSNOCS,XSNOGS, &
+              WSNOCS,WSNOGS, &
+              FC, FG, FCS, FGS, &
+              fetchGAT,N_SGAT,A_SGAT,HtGAT, &
+              SFCTGAT,SFCUGAT,SFCQGAT,PRESGAT,PREGAT, &
+              DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
+              TSNOdsGAT, RHOSdsGAT, &
+              NA*NTYPE,1,NML,N)
+ENDIF
 !========================================================================
 !
 CALL CLASSZ (1,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
@@ -2817,10 +2929,22 @@ CALL CLASSZ (1,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
              TCANGAT,SNOGAT, WSNOGAT,TSNOGAT,THLQGAT,THICGAT, &
              HCPSGAT,THPGAT, DLZWGAT,TBARGAT,ZPNDGAT,TPNDGAT, &
              sl%DELZ,   FCS,    FGS,    FC,     FG, &
-             1,      NML,    ILG,    IGND,   N    )
+             1,      NML,    ILG,    IGND,   N, &
+             DriftGAT, SublGAT )
 !
 !=======================================================================
-
+!
+!          *Redistribute blowing snow mass between GRUs
+!
+CALL REDISTRIB_SNOW (ILG,1,NA,NTYPE,NML,TSNOGAT,ZSNOW, &
+          RHOSGAT,SNOGAT,TSNOCS,ZSNOCS,HCPSCS,RHOSCS,TSNOGS, &
+          ZSNOGS,HCPSGS,RHOSGS,TSNOWC,ZSNOWC,HCPSC,RHOSC,TSNOWG, &
+          ZSNOWG,HCPSG,RHOSG,cp%GCGRD,ILMOS,DriftGAT,RHOSdsGAT,FAREGAT, &
+          TSNOdsGAT,DistribGAT,WSNOCS,WSNOGS,FCS,FGS,FC,FG,DepositionGAT, &
+          TROOGAT,ROFOGAT,TROFGAT,ROFGAT,ROFNGAT,PCPGGAT,HTCSGAT,WSNOGAT,N)
+!
+!=======================================================================
+!
 CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,cp%TPNDROW, &
              cp%ZPNDROW,TBASROW,cp%ALBSROW,cp%TSNOROW,cp%RHOSROW, &
              cp%SNOROW,cp%TCANROW,cp%RCANROW,cp%SCANROW,cp%GROROW, &
@@ -2857,8 +2981,12 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,cp%TPNDROW, &
              WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  WTABGAT, &
              ILMOGAT,UEGAT,  HBLGAT, TACGAT, QACGAT, &
              HMFGGAT,HTCGAT, QFCGAT, WSNOGAT,FSNOGAT, &
-             GFLXGAT,ITCTGAT,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT )
-
+             GFLXGAT,ITCTGAT,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
+             DrySnowRow, SnowAgeROW,DrySnowGAT, SnowAgeGAT, &
+             TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
+             DriftROW, SublROW, DepositionROW, &
+             DriftGAT, SublGAT, DepositionGAT)
+             
 ! *********************************************************************
 ! Calculate values for output files and print them out
 ! *********************************************************************
@@ -3908,7 +4036,9 @@ IF (SAVERESUMEFLAG > 0) THEN !todo: done: use a flag
      WF_S, &
   TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-  FINAL_STORE, TOTAL_AREA)
+  FINAL_STORE, TOTAL_AREA, &
+  hp%fetchROW,hp%HtROW,hp%N_SROW,hp%A_SROW,hp%DistribROW, &
+  fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
 ENDIF
 
 IF(ENDDATA)PRINT *, 'Reached end of forcing data'

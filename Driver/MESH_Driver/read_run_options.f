@@ -164,6 +164,10 @@
 !* If SUBBASINFLAG is 0, calculations will be made for all grid squares.
       SUBBASINFLAG = 0
 
+!* set PBSMFLAG = 0 so by default blowing snow calculations are not made
+!* 1 =  blowing snow transport, sublimation & inter-GRU redistribution calculations are made
+      PBSMFLAG = 0
+
 !> SET N = 0 RESETS THE CLASS COUNTER.
 !TODO: N is not a flag, move it somewhere else
       N = 0
@@ -264,6 +268,8 @@
             INTERPOLATIONFLAG = IROVAL
           ELSE IF (IRONAME == "SUBBASINFLAG") THEN
             SUBBASINFLAG = IROVAL
+          ELSE IF (IRONAME == "PBSMFLAG") THEN
+            PBSMFLAG = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",

@@ -516,7 +516,10 @@
 !>
 !> Read the mesh_parameters_hydrology.ini file
       ALLOCATE(hp%ZSNLROW(NA, NTYPE), hp%ZPLGROW(NA, NTYPE),
-     +         hp%ZPLSROW(NA, NTYPE))
+     +         hp%ZPLSROW(NA, NTYPE),
+     +         hp%fetchROW(NA, NTYPE),hp%HtROW(NA, NTYPE),
+     +         hp%N_SROW(NA, NTYPE),hp%A_SROW(NA, NTYPE),
+     +         hp%DistribROW(NA, NTYPE))
 
       CALL READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR,
      +    RELEASE, WF_R2, hp, M_C, NA, NTYPE)

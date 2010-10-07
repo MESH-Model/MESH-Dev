@@ -9,8 +9,10 @@
      8                  TCAN,   SNO,    WSNOW,  TSNOW,  THLIQ,  THICE,  
      9                  HCPS,   THPOR,  DELZW,  TBAR,   ZPOND,  TPOND,  
      A                  DELZ,   FCS,    FGS,    FC,     FG,
-     B                  IL1,    IL2,    ILG,    IG,     N    )
+     B                  IL1,    IL2,    ILG,    IG,     N, 
+     C                  Drift,  Subl    )
 C
+C     * OCT 01/10 - M.MACDONALD.ADDED BLOWING SNOW ARRAYS
 C     * JAN 06/09 - D.VERSEGHY. MORE VARIABLES IN PRINT STATEMENTS;
 C     *                         SLIGHTLY INCREASED ACCURACY LIMITS.
 C     * NOV 10/06 - D.VERSEGHY. CHECK THAT SUMS OF ENERGY AND WATER
@@ -49,7 +51,8 @@ C
      C     THLIQ (ILG,IG),THICE (ILG,IG),HCPS  (ILG,IG),
      D     THPOR (ILG,IG),DELZW (ILG,IG),TBAR  (ILG,IG),
      E     ZPOND (ILG),   TPOND (ILG),   DELZ  (IG),
-     F     FCS   (ILG),   FGS   (ILG),   FC    (ILG),   FG    (ILG)
+     F     FCS   (ILG),   FGS   (ILG),   FC    (ILG),   FG    (ILG),
+     G     Drift (ILG),   Subl  (ILG)
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -142,8 +145,10 @@ C
           WSUMV=(PCFC(I)+PCLC(I)-
      1          QFCF(I)-QFCL(I)-ROFC(I)+
      2              WTRC(I))*DELT
+!> MK MacDonald: added Drift & Subl to WSUMS
           WSUMS=(PCPN(I)-QFN(I)-
      1              ROFN(I)+WTRS(I))*DELT
+     2              -Drift(I)-Subl(I)
           WSUMG=(PCPG(I)-QFG(I)-
      1              ROF(I)+WTRG(I))*DELT
           DO 250 J=1,IG
@@ -217,6 +222,7 @@ C
 6447          FORMAT(2X,'SNOW WATER BALANCE  ',2I8,2F20.8)
               WRITE(6,6450) PCPN(I)*DELT,QFN(I)*DELT,
      1            ROFN(I)*DELT,WTRS(I)*DELT
+              WRITE(6,6450) Drift(I),Subl(I)
               WRITE(6,6450) SNO(I),WSNOW(I),TSNOW(I)-TFREZ
               WRITE(6,6451) FCS(I),FGS(I),FC(I),FG(I)
               STOP

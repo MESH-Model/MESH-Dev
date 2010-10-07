@@ -34,7 +34,11 @@
      X                  WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  WTABGAT,
      Y                  ILMOGAT,UEGAT,  HBLGAT, TACGAT, QACGAT,
      Z                  HMFGGAT,HTCGAT, QFCGAT, WSNOGAT,FSNOGAT,
-     +                  GFLXGAT,ITCTGAT,MANNROW,MANNGAT,DDROW,DDGAT)
+     +                  GFLXGAT,ITCTGAT,MANNROW,MANNGAT,DDROW,DDGAT,
+     +                  DrySnowRow,SnowAgeROW,DrySnowGAT,SnowAgeGAT,
+     +                  TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT,
+     +                  DriftROW, SublROW, DepositionROW,
+     +                  DriftGAT, SublGAT, DepositionGAT)
 C
 C     * MAR 23/06 - D.VERSEGHY. ADD WSNO,FSNO.
 C     * MAR 18/05 - D.VERSEGHY. ADDITIONAL VARIABLES.
@@ -87,7 +91,11 @@ C
      C      TROFROW(NL,NM),TROOROW(NL,NM),TROSROW(NL,NM),TROBROW(NL,NM),
      D      ROFCROW(NL,NM),ROFNROW(NL,NM),ROVGROW(NL,NM),WTRCROW(NL,NM), 
      E      WTRSROW(NL,NM),WTRGROW(NL,NM),DRROW  (NL,NM),WTABROW(NL,NM),
-     F      ILMOROW(NL,NM),UEROW  (NL,NM),HBLROW (NL,NM),FSNOROW(NL,NM)
+     F      ILMOROW(NL,NM),UEROW  (NL,NM),HBLROW (NL,NM),FSNOROW(NL,NM),
+     G      DrySnowRow(NL,NM),SnowAgeROW(NL,NM),
+     H      TSNOdsROW(NL,NM),  RHOSdsROW(NL,NM),
+     i      DriftROW(NL,NM), SublROW(NL,NM), DepositionROW(NL,NM)
+
 C
       REAL  CDHGAT (ILG),  CDMGAT (ILG),  HFSGAT (ILG),  TFXGAT (ILG),
      1      QEVPGAT(ILG),  QFSGAT (ILG),  QFXGAT (ILG),  PETGAT (ILG),
@@ -104,7 +112,11 @@ C
      C      TROFGAT(ILG),  TROOGAT(ILG),  TROSGAT(ILG),  TROBGAT(ILG),
      D      ROFCGAT(ILG),  ROFNGAT(ILG),  ROVGGAT(ILG),  WTRCGAT(ILG), 
      E      WTRSGAT(ILG),  WTRGGAT(ILG),  DRGAT  (ILG),  WTABGAT(ILG),
-     F      ILMOGAT(ILG),  UEGAT  (ILG),  HBLGAT (ILG),  FSNOGAT(ILG)
+     F      ILMOGAT(ILG),  UEGAT  (ILG),  HBLGAT (ILG),  FSNOGAT(ILG),
+     G      DrySnowGAT(ILG), SnowAgeGAT(ILG),
+     H      TSNOdsGAT (ILG), RHOSdsGAT(ILG),
+     I      DriftGAT  (ILG), SublGAT(ILG), DepositionGAT(ILG)
+
 C
       REAL    HMFGROW(NL,NM,IG),HTCROW (NL,NM,IG),QFCROW (NL,NM,IG),
      1        GFLXROW(NL,NM,IG),
@@ -198,6 +210,13 @@ C----------------------------------------------------------------------
           HBLROW (ILMOS(K),JLMOS(K))=HBLGAT(K)  
           DDROW (ILMOS(K),JLMOS(K))=DDGAT(K)  
           MANNROW (ILMOS(K),JLMOS(K))=MANNGAT(K)
+          DrySnowRow(ILMOS(K),JLMOS(K))=DrySnowGAT(K)
+          SnowAgeROW(ILMOS(K),JLMOS(K))=SnowAgeGAT(K)
+          TSNOdsROW(ILMOS(K),JLMOS(K))=TSNOdsGAT(K)
+          RHOSdsROW(ILMOS(K),JLMOS(K))=RHOSdsGAT(K)
+          DriftROW(ILMOS(K),JLMOS(K))=DriftGAT(K)
+          SublROW(ILMOS(K),JLMOS(K))=SublGAT(K)
+          DepositionROW(ILMOS(K),JLMOS(K))=DepositionGAT(K)
 100   CONTINUE
 C
       DO 200 L=1,IG

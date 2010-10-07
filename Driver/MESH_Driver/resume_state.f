@@ -124,7 +124,9 @@
      L     WF_S,
      1  TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC,
      2  TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE,
-     3  FINAL_STORE, TOTAL_AREA)
+     3  FINAL_STORE, TOTAL_AREA,
+     4  fetchROW,HtROW,N_SROW,A_SROW,DistribROW,
+     5  fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
 !> This subroutine is used to resume a mesh run by using the 
 !> variables that were saved from a previous run.
 !> The variables are reinitialized by reading the resume file.
@@ -220,7 +222,8 @@
      + ROFSROW, ROFBROW, ROFCROW, 
      + ROFNROW, ROVGROW, WTRCROW, 
      + WTRSROW, WTRGROW, WTABROW, 
-     + ILMOROW, UEROW, HBLROW, FSNOROW
+     + ILMOROW, UEROW, HBLROW, FSNOROW,
+     + fetchROW,HtROW,N_SROW,A_SROW,DistribROW
       
       INTEGER, DIMENSION(NA, NTYPE) ::
      + MIDROW 
@@ -273,7 +276,8 @@
      +      WSNOGAT
       
       REAL, DIMENSION(ILG) :: ZSNLGAT, ZPLGGAT,
-     +      ZPLSGAT
+     +      ZPLSGAT,
+     +      fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT
 
       REAL, DIMENSION(ILG) :: TACGAT, QACGAT, DRNGAT,
      +  XSLPGAT, XDGAT, WFSFGAT, KSGAT, ALGWGAT,
@@ -993,6 +997,17 @@
       READ(10,*) INIT_STORE
       READ(10,*) FINAL_STORE
       READ(10,*) TOTAL_AREA
+      
+      READ(10,*) fetchROW
+      READ(10,*) HtROW
+      READ(10,*) N_SROW
+      READ(10,*) A_SROW
+      READ(10,*) DistribROW
+      READ(10,*) fetchGAT
+      READ(10,*) HtGAT
+      READ(10,*) N_SGAT
+      READ(10,*) A_SGAT
+      READ(10,*) DistribGAT
       
       CLOSE (10)
       

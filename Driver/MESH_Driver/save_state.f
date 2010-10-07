@@ -124,7 +124,9 @@
      L     WF_S, 
      1  TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC,
      2  TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE,
-     3  FINAL_STORE, TOTAL_AREA)
+     3  FINAL_STORE, TOTAL_AREA,
+     4   fetchROW,HtROW,N_SROW,A_SROW,DistribROW,
+     5   fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
 !> This subroutine is used to write a resume file.
 !> The resume file contains all of the variables used
 !> in the loop for 
@@ -216,7 +218,8 @@
      + ROFSROW, ROFBROW, ROFCROW, 
      + ROFNROW, ROVGROW, WTRCROW, 
      + WTRSROW, WTRGROW, WTABROW, 
-     + ILMOROW, UEROW, HBLROW, FSNOROW
+     + ILMOROW, UEROW, HBLROW, FSNOROW,
+     + fetchROW,HtROW,N_SROW,A_SROW,DistribROW
       
       INTEGER, DIMENSION(NA, NTYPE) ::
      + MIDROW 
@@ -269,7 +272,8 @@
      +      WSNOGAT
       
       REAL, DIMENSION(ILG) :: ZSNLGAT, ZPLGGAT,
-     +      ZPLSGAT
+     +      ZPLSGAT,
+     +      fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT
 
       REAL, DIMENSION(ILG) :: TACGAT, QACGAT, DRNGAT,
      +  XSLPGAT, XDGAT, WFSFGAT, KSGAT, ALGWGAT,
@@ -989,6 +993,16 @@
       WRITE(10,*) INIT_STORE
       WRITE(10,*) FINAL_STORE
       WRITE(10,*) TOTAL_AREA
+      WRITE(10,*) fetchROW
+      WRITE(10,*) HtROW
+      WRITE(10,*) N_SROW
+      WRITE(10,*) A_SROW
+      WRITE(10,*) DistribROW
+      WRITE(10,*) fetchGAT
+      WRITE(10,*) HtGAT
+      WRITE(10,*) N_SGAT
+      WRITE(10,*) A_SGAT
+      WRITE(10,*) DistribGAT
       
       CLOSE (10)
       RETURN
