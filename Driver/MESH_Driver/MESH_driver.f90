@@ -78,7 +78,7 @@ IMPLICIT NONE
 !>  INTEGER CONSTANTS.
 INTEGER ILG
 INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
-INTEGER,PARAMETER :: M_S=40, M_R=3, M_C=5
+INTEGER,PARAMETER :: M_S=140, M_R=7, M_C=5
 !todo M_s should be allocatable. it should not be constant
 !todo it should be read in from the shd file
 
@@ -730,7 +730,7 @@ TYPE(HydrologyParameters) :: hp
 !* SAENEW:  SAE AT CURRENT TIME STEP TRIAL
 !* QOBS  :  OBSERVED DAILY STREAM FLOW
 !* QSIM  :  SIMULATED DAILY STREAM FLOW
-INTEGER, PARAMETER :: NCALMAX = 365
+INTEGER, PARAMETER :: NCALMAX = 730
 INTEGER NCAL, COUNTER
 LOGICAL EXISTS
 REAL    SAE,SAEPRE,SAENEW,QOBS(NCALMAX),QSIM(NCALMAX)
@@ -1499,7 +1499,7 @@ DO I=1, WF_NUM_POINTS
 
   IF(I<WF_NUM_POINTS) THEN
     DO J=I+1,WF_NUM_POINTS
-      IF(op%N_OUT(I)==op%N_OUT(J)) THEN
+      IF(op%N_OUT(I)==op%N_OUT(J) .AND. op%II_OUT(I) == op%II_OUT(J)) THEN
         PRINT *, 'grid number ', op%N_OUT(i)
         PRINT *, 'is repeated in MESH_run_options.ini file'
         PRINT *, 'please adjust MESH_run_options.ini file'
@@ -1848,12 +1848,12 @@ WRITE(58,'(3F8.3,F8.4)') cp%DRNROW(I,M),cp%SDEPROW(I,M), &
                   cp%FAREROW(I,M),cp%DDROW(I,M)
 WRITE(58,'(4E8.1,I8)') cp%XSLPROW(I,M),cp%XDROW(I,M), &
                   cp%MANNROW(I,M),cp%KSROW(I,M),cp%MIDROW(I,M)
-WRITE(58,'(3F10.1)') (cp%SANDROW(I,M,J),J=1,IGND)
-WRITE(58,'(3F10.1)') (cp%CLAYROW(I,M,J),J=1,IGND)
-WRITE(58,'(3F10.1)') (cp%ORGMROW(I,M,J),J=1,IGND)
-WRITE(58,'(6F10.2)') (cp%TBARROW(I,M,J),J=1,IGND),cp%TCANROW(I,M), &
+WRITE(58,'(6F10.1)') (cp%SANDROW(I,M,J),J=1,IGND)
+WRITE(58,'(6F10.1)') (cp%CLAYROW(I,M,J),J=1,IGND)
+WRITE(58,'(6F10.1)') (cp%ORGMROW(I,M,J),J=1,IGND)
+WRITE(58,'(9F10.2)') (cp%TBARROW(I,M,J),J=1,IGND),cp%TCANROW(I,M), &
                   cp%TSNOROW(I,M),cp%TPNDROW(I,M)
-WRITE(58,'(7F10.3)') (cp%THLQROW(I,M,J),J=1,IGND), &
+WRITE(58,'(10F10.3)') (cp%THLQROW(I,M,J),J=1,IGND), &
                   (cp%THICROW(I,M,J),J=1,IGND),cp%ZPNDROW(I,M)
 WRITE(58,'(2F10.4,F10.2,F10.3,F10.4,F10.3)') &
                   cp%RCANROW(I,M),cp%SCANROW(I,M),cp%SNOROW(I,M), &
@@ -1993,12 +1993,12 @@ if ((jday_ind2 < jday_ind3) .and. (iyear_start /= 0)) then
    stop
 endif
 !Notes added by M. Mekonnen - To keep nrs calculation as before
-!(and to be compatible with the bove modification) we need to 
+!(and to be compatible with the above modification) we need to 
 !divide ISTEP_START by 24.
 !nrs =JDAY_IND_MET*ISTEP_START*24 + nhy*ISTEP_START + nmy/30  !aLIU
 nrs =JDAY_IND_MET*ISTEP_START + nhy*ISTEP_START/24 + nmy/30
 PRINT *,'NRS=',NRS
-! FIX BUG IN JULIANDAY CALCULATION FOR NRS ---ALIU FEB2009
+! FIX BUG IN JULIAN DAY CALCULATION FOR NRS ---ALIU FEB2009
 IF (IYEAR_START == 0 .AND. IDAY_START == 0 .AND. IMIN_START == 0 &
     .AND. IHOUR_START == 0) THEN !P
   IYEAR_START = IYEAR
@@ -2703,7 +2703,7 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
 CALL CLASSI(VPDGAT,TADPGAT,PADRGAT,RHOAGAT,RHSIGAT, &
             RPCPGAT,TRPCGAT,SPCPGAT,TSPCGAT,TAGAT,QAGAT, &
             PREGAT,PRESGAT, &
-            IPCP,ILG,1,NA)
+            IPCP,NML,1,NA)
 
 !> Calculate initial storage (after reading in resume.txt file if applicable)
 IF(JAN==1) THEN
@@ -3551,7 +3551,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
   IF (WF_NUM_POINTS .GT. 1) THEN !FOR MORE THAN ONE OUTPUT
 
-    WRITE (6, "(2I5,100F10.3)", ADVANCE="no") IYEAR, IDAY, &
+    WRITE (6, "(2I5,100F10.3)") IYEAR, IDAY, &
           (WF_QHYD_AVG(I),WF_QSYN(I),I=1,WF_NO)
 
     DO I = 1, WF_NUM_POINTS
@@ -3564,7 +3564,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
   ELSE !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
 
     WRITE(6, "(2I5, 100F10.3)") IYEAR, IDAY, &
-      (WF_QHYD_AVG(I),WF_QSYN(I),I=1,WF_NO), PRE_OUT(1), &
+      (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO), PRE_OUT(1), &
       EVAP_OUT(1), ROF_OUT(1)
 
     
