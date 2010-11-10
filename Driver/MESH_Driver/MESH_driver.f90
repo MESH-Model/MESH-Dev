@@ -2295,7 +2295,7 @@ IF(PREEMPTIONFLAG == 1)THEN
   WRITE (6,*)
 ENDIF
 PRINT *
-IF(TESTFLAG == 1)THEN
+IF(TESTCSVFLAG == 1)THEN
     PRINT*,"TEST PROPER DISTRIBUTION OF CSV FORCING DATA" 
 ELSE
     PRINT *
@@ -2635,7 +2635,7 @@ CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,IWAT,IICE, &
 !> *********************************************************************
 !> Test proper distribution of csv forcing data
 !> *********************************************************************
-IF(TESTFLAG==1)THEN
+IF(TESTCSVFLAG==1)THEN
    IF(HOURLYFLAG == 30 .OR. IMIN2 == 0) &
    WRITE(*,'(I4,1X,I3,1X,I2,1X,I2)')IYEAR,IDAY,IHOUR,IMIN
 ELSE   
@@ -3723,7 +3723,7 @@ If (jan == 2) Then
   Close(109)
 End If
 
-ENDIF !TESTFLAG
+ENDIF !TESTCSVFLAG
 
 ! *********************************************************************
 ! Update time counters and return to beginning of main loop

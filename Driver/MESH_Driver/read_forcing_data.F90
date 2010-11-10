@@ -90,9 +90,9 @@ ICOUNT = 0
     FSDOWN=FSVHGRD
     FSIHGRD=FSVHGRD
     ICOUNT=ICOUNT+1
-    IF(TESTFLAG==1)then
+    IF(TESTCSVFLAG==1)then
         print*,"Shortwave radiation"
-        CALL TEST(NTYPE,NML,NA,ILMOS,R4SHRTGRU,FSVHGAT+FSIHGAT)
+        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4SHRTGRU,FSVHGAT+FSIHGAT)
     ENDIF
   ELSE
     PRINT*,'BASINSHORTWAVEFLAG SHOULD BE EITHER 0, 1 0R 2'
@@ -143,9 +143,9 @@ ICOUNT = 0
     ENDDO
     CALL SCATTER(NTYPE,NA,FAREA,FDLGRD,R4LONGGRU)
     ICOUNT=ICOUNT+1
-    IF(TESTFLAG==1)then
+    IF(TESTCSVFLAG==1)then
         print*,"Longwave radiation"
-        CALL TEST(NTYPE,NML,NA,ILMOS,R4LONGGRU,FDLGAT)
+        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4LONGGRU,FDLGAT)
     ENDIF
   ELSE
     PRINT*,'BASINLONGWAVEFLAG SHOULD BE EITHER 0, 1 0R 2'
@@ -196,9 +196,9 @@ ICOUNT = 0
     ENDDO
     CALL SCATTER(NTYPE,NA,FAREA,PREGRD,R4RAINGRU)
     ICOUNT=ICOUNT+1
-    IF(TESTFLAG==1)then
+    IF(TESTCSVFLAG==1)then
         print*,"Precipitation"
-        CALL TEST(NTYPE,NML,NA,ILMOS,R4RAINGRU,PREGAT)
+        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4RAINGRU,PREGAT)
     ENDIF
   ELSE
     PRINT*,'BASINRAINFLAG SHOULD BE EITHER 0, 1 0R 2'
@@ -249,9 +249,9 @@ ICOUNT = 0
     ENDDO
     CALL SCATTER(NTYPE,NA,FAREA,TAGRD,R4TEMPGRU)
     ICOUNT=ICOUNT+1
-    IF(TESTFLAG==1)then
+    IF(TESTCSVFLAG==1)then
         print*,"Temperature"
-        CALL TEST(NTYPE,NML,NA,ILMOS,R4TEMPGRU,TAGAT)
+        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4TEMPGRU,TAGAT)
     ENDIF
   ELSE
     PRINT*,'BASINTEMPERATUREFLAG SHOULD BE EITHER 0, 1 0R 2'
@@ -310,9 +310,9 @@ ICOUNT = 0
     !VLGAT=0.0
     CALL SCATTER(NTYPE,NA,FAREA,ULGRD,R4WINDGRU)
     ICOUNT=ICOUNT+1
-    IF(TESTFLAG==1)then
+    IF(TESTCSVFLAG==1)then
         print*,"Wind"
-        CALL TEST(NTYPE,NML,NA,ILMOS,R4WINDGRU,ULGAT)
+        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4WINDGRU,ULGAT)
     ENDIF
   ELSE
     PRINT*,'BASINWINDFLAG SHOULD BE EITHER 0, 1 0R 2'
@@ -363,9 +363,9 @@ ICOUNT = 0
     ENDDO
     CALL SCATTER(NTYPE,NA,FAREA,PRESGRD,R4PRESGRU)
     ICOUNT=ICOUNT+1
-    IF(TESTFLAG==1)then
+    IF(TESTCSVFLAG==1)then
         print*,"Pressure"
-        CALL TEST(NTYPE,NML,NA,ILMOS,R4PRESGRU,PRESGAT)
+        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4PRESGRU,PRESGAT)
     ENDIF
   ELSE
     PRINT*,'BASINPRESSUREFLAG SHOULD BE EITHER 0, 1 0R 2'
@@ -416,9 +416,9 @@ ICOUNT = 0
     ENDDO
     CALL SCATTER(NTYPE,NA,FAREA,QAGRD,R4HUMDGRU)
     ICOUNT=ICOUNT+1
-    IF(TESTFLAG==1)then
+    IF(TESTCSVFLAG==1)then
         print*,"Humidity"
-        CALL TEST(NTYPE,NML,NA,ILMOS,R4HUMDGRU,QAGAT)
+        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4HUMDGRU,QAGAT)
     ENDIF
   ELSE
     PRINT*,'BASINHUMIDITYFLAG SHOULD BE EITHER 0, 1 0R 2'
@@ -431,74 +431,3 @@ RETURN
 999 ENDDATA = .TRUE.
 
 END
-
-subroutine gather(na,nml,ilmos,grd,gat)
-    
-    integer na, nml
-    integer ilmos(nml)
-    real    grd(na), gat(nml)
-    
-    integer k
-    
-    do k = 1,nml
-       gat(k) = grd(ilmos(k))
-   enddo
-
-end subroutine
-
-subroutine scatter(ntype,na,farea,grd,gru)
-    
-    integer ntype, na
-    real    grd(na), gru(ntype), farea(na,ntype)
-    
-    integer i,j
-    
-    do i = 1, na
-       grd(i) = 0.0
-       do j = 1, ntype
-          grd(i) = grd(i) + farea(i,j)*gru(j)
-       enddo
-   enddo
-
-end subroutine
-
-subroutine test(ntype,nml,na,ilmos,gat,gru)
-    
-    integer ntype,nml,na
-    integer ilmos(nml)
-    real    gat(nml),gru(ntype)
-    real    err(ntype)
-    real    errmax, errtol
- 
- !Set error tolerance to rounding error   
-    errtol = 1.0e-17
- 
- !Check proper distribution of the csv forcing data on each grid   
-    if(na > 1)then
-        do i = 1, nml-ntype
-            if(gat(i) .ne. gat(i+ntype))then
-                print*,"Forcing data redistribution at grid ", ilmos(i), " is wrong."
-                pause
-                stop
-            endif
-        enddo
-    endif
- 
- !Compare the first grid gru values with the corresponding values in the csv file.   
-    do j = 1,ntype
-       err(j) = abs(gat(j)-gru(j))
-    enddo
-
-!Compute the max difference - it should not be greater than rounding error
-    errmax = maxval(err)
-    if(errmax < errtol)then
-       print*,"Maximum error: ",errmax," Error tolerance: ", errtol
-       print*,"Test: OK"
-    else
-       print*,"Maximum error: ",errmax," Error tolerance: ", errtol
-       print*,"Test: NOT OK"
-       Pause
-       stop
-    endif
-
-end subroutine
