@@ -1,6 +1,6 @@
 FUNCTION SAE(OBS,SIM,N)
 !>
-!>       June 17, 2010 - M.A. Mekonnen/B. Davidson/M. MacDonald
+!>       June 17, 2010 - M.A. Mekonnen
 !>=======================================================================
 !>
 !>       The function computes the sum of absolute value of errors.
@@ -12,13 +12,17 @@ FUNCTION SAE(OBS,SIM,N)
 !>       N          -   vector dimension
 !>
 !>       SAE        -   Sum of absolute value of erros
+!>       NMIN       -   Minimum of number of days for model spin-up
 !>=======================================================================
 
     INTEGER N
     REAL    OBS(N), SIM(N)
 
     REAL    SAE
-
-    SAE = SUM(ABS(OBS - SIM))
+    INTEGER NMIN
+    
+    NMIN = 30
+    SAE = 0.0
+    IF(N > NMIN)SAE = SUM(ABS(OBS(NMIN:N) - SIM(NMIN:N)))
 
 END
