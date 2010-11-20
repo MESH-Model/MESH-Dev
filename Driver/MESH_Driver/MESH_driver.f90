@@ -1078,34 +1078,6 @@ IF (PAS .NE. 0) THEN
   STOP
 END IF
 
-!> MAM - ALLOCATE AND INITIALIZE INTERPOLATION VARIABLES:
-!> For 30 minute forcing data there is no need for interpolation and 
-!> hence no need to assign PRE and PST variables
-IF(HOURLYFLAG == 30)INTERPOLATIONFLAG = 0
-IF(INTERPOLATIONFLAG == 1)THEN
-    ALLOCATE (FSVHGATPRE(ILG), FSIHGATPRE(ILG), FDLGATPRE(ILG), PREGATPRE(ILG), &
-               TAGATPRE(ILG), ULGATPRE(ILG), PRESGATPRE(ILG), QAGATPRE(ILG), &
-               FSVHGATPST(ILG), FSIHGATPST(ILG), FDLGATPST(ILG), PREGATPST(ILG), &
-               TAGATPST(ILG), ULGATPST(ILG), PRESGATPST(ILG), QAGATPST(ILG))
-
-    FSVHGATPRE  = 0.0
-    FSIHGATPRE  = 0.0
-    FDLGATPRE   = 0.0
-    PREGATPRE   = 0.0
-    TAGATPRE    = 0.0
-    ULGATPRE    = 0.0
-    PRESGATPRE  = 0.0
-    QAGATPRE    = 0.0  
-    FSVHGATPST  = 0.0
-    FSIHGATPST  = 0.0
-    FDLGATPST   = 0.0
-    PREGATPST   = 0.0
-    TAGATPST    = 0.0
-    ULGATPST    = 0.0
-    PRESGATPST  = 0.0
-    QAGATPST    = 0.0
-ENDIF
-
 !> LAND SURFACE DIAGNOSTIC VARIABLES:
 ALLOCATE (CDHROW(NA, NTYPE), CDMROW(NA, NTYPE), &
   HFSROW(NA, NTYPE), &
@@ -1781,6 +1753,21 @@ IF(CONFLAGS>0) THEN
     WRITE (58,*)
   ENDDO
 ENDIF
+
+!> MAM - ALLOCATE AND INITIALIZE INTERPOLATION VARIABLES:
+!> For 30 minute forcing data there is no need for interpolation and 
+!> hence no need to assign PRE and PST variables
+IF(INTERPOLATIONFLAG > 1 .OR. &
+  (INTERPOLATIONFLAG == 1  .AND. HOURLYFLAG == 30))THEN
+    WRITE(6,*)
+    WRITE(58,*)
+    WRITE(6,9000)
+    WRITE(58,9000)
+    WRITE(6,*)
+    WRITE(58,*)
+    INTERPOLATIONFLAG = 0
+ENDIF
+
 	WRITE(58,"('WF_NUM_POINTS: ',I5)") WF_NUM_POINTS
 WRITE(58,"('Out directory:',5A10)") &
   (op%DIR_OUT(I),I=1,WF_NUM_POINTS)
@@ -1860,6 +1847,31 @@ WRITE(58,'(2F10.4,F10.2,F10.3,F10.4,F10.3)') &
                   cp%ALBSROW(I,M),cp%RHOSROW(I,M),cp%GROROW(I,M)
 WRITE(58,*)
 ENDDO
+
+IF(INTERPOLATIONFLAG == 1)THEN
+    ALLOCATE (FSVHGATPRE(ILG), FSIHGATPRE(ILG), FDLGATPRE(ILG), PREGATPRE(ILG), &
+               TAGATPRE(ILG), ULGATPRE(ILG), PRESGATPRE(ILG), QAGATPRE(ILG), &
+               FSVHGATPST(ILG), FSIHGATPST(ILG), FDLGATPST(ILG), PREGATPST(ILG), &
+               TAGATPST(ILG), ULGATPST(ILG), PRESGATPST(ILG), QAGATPST(ILG))
+
+    FSVHGATPRE  = 0.0
+    FSIHGATPRE  = 0.0
+    FDLGATPRE   = 0.0
+    PREGATPRE   = 0.0
+    TAGATPRE    = 0.0
+    ULGATPRE    = 0.0
+    PRESGATPRE  = 0.0
+    QAGATPRE    = 0.0  
+    FSVHGATPST  = 0.0
+    FSIHGATPST  = 0.0
+    FDLGATPST   = 0.0
+    PREGATPST   = 0.0
+    TAGATPST    = 0.0
+    ULGATPST    = 0.0
+    PRESGATPST  = 0.0
+    QAGATPST    = 0.0
+ENDIF
+
 !>
 !>****************CHECK RESUME FILE***************************************************
 !>
@@ -2503,15 +2515,6 @@ ELSEIF(INTERPOLATIONFLAG == 1)THEN
                                FSVHGATPST,FSIHGATPST,FDLGATPST,PREGATPST,TAGATPST,ULGATPST, &
                                PRESGATPST,QAGATPST)
     ENDIF
-ELSE
-   PRINT *
-   PRINT*,"INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY"
-   PRINT *
-   PRINT*,"0: SETS FORCING DATA AS CONSTANT OVER INTERMEDIATE TIME STEPS"
-   PRINT *
-   PRINT*,"1: LINEARLY INTERPOLATES FORCING DATA FOR INTERMEDIATE TIME STEPS"
-   PAUSE
-   STOP    
 ENDIF
 
 !> *********************************************************************
@@ -4044,5 +4047,9 @@ close(unit=85)
 close(unit=86)
 close(unit=90)
 
+9000 FORMAT('INTERPOLATIONFLAG is not specified correctly and is set to 0 by the model.',/, &
+            '0: No interpolation of forcing data.',/, &
+            '1: linearly interpolates forcing data for intermediate time steps.',/,& 
+            'Note: INTERPOLATIONFLAG should be set to 0 for 30 minute forcing data.')        
 STOP
 END
