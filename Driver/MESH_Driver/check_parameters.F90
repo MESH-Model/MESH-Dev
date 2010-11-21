@@ -29,7 +29,7 @@ use     mesh_input_module
 
 implicit none     
 
-integer,parameter :: nrows  = 200   ! maximum number of rows	
+integer,parameter :: nrows  = 85   ! maximum number of rows	
 integer,parameter :: nsl   = 3     ! number of soil layers	
 
 integer     i,j,ib0,ib1,ib2,ib3,i4,i5,ir,m_c,nmtest

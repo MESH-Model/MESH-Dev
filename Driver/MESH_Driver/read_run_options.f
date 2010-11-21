@@ -164,6 +164,9 @@
 !* If SUBBASINFLAG is 0, calculations will be made for all grid squares.
       SUBBASINFLAG = 0
 
+!* If TESTCSVFLAG is 1, proper distribution of csv forcing data will be checked. 
+      TESTCSVFLAG = 0
+
 !> SET N = 0 RESETS THE CLASS COUNTER.
 !TODO: N is not a flag, move it somewhere else
       N = 0
@@ -264,6 +267,8 @@
             INTERPOLATIONFLAG = IROVAL
           ELSE IF (IRONAME == "SUBBASINFLAG") THEN
             SUBBASINFLAG = IROVAL
+          ELSE IF (IRONAME == "TESTCSVFLAG") THEN
+            TESTCSVFLAG = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",
