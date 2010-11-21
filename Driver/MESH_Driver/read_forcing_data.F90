@@ -1,4 +1,4 @@
-SUBROUTINE READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILMOS,JLMOS,YYY,XXX,ENDDATA,FAREA, &
+SUBROUTINE READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,FAREA, &
                              FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
                              FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT)
 
@@ -22,7 +22,7 @@ USE FLAGS
 
 IMPLICIT NONE
 
-INTEGER YCOUNT,XCOUNT,NTYPE,NA,NML
+INTEGER YCOUNT,XCOUNT,NTYPE,NA,NML,ILG
 LOGICAL ENDDATA
 
 REAL*4, DIMENSION(YCOUNT, XCOUNT) :: R4SHRTGRID2D, R4LONGGRID2D, R4RAINGRID2D, R4TEMPGRID2D, &
@@ -32,11 +32,11 @@ REAL*4, DIMENSION(NTYPE)          :: R4SHRTGRU, R4LONGGRU, R4RAINGRU, R4TEMPGRU,
                                      R4PRESGRU, R4HUMDGRU
 REAL*4, DIMENSION(NA)             :: FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, &
                                      PRESGRD, QAGRD
-REAL*4, DIMENSION(NML)            :: FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, & 
+REAL*4, DIMENSION(ILG)            :: FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, & 
                                      PRESGAT, QAGAT
 REAL*4                            :: JUNK
 INTEGER*4,DIMENSION(NA)           :: YYY,XXX
-INTEGER*4,DIMENSION(NML)          :: ILMOS,JLMOS
+INTEGER*4,DIMENSION(ILG)          :: ILMOS,JLMOS
 INTEGER                           :: I,J,K,CURGRU,ICOUNT
 
 !Initialize counting number of r2c and csv files
@@ -56,7 +56,7 @@ ICOUNT = 0
     ENDDO
     FSVHGRD=0.5*FSDOWN
     FSIHGRD=FSVHGRD
-    CALL GATHER(NA,NML,ILMOS,FSVHGRD,FSVHGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,FSVHGRD,FSVHGAT)
     FSIHGAT=FSVHGAT
    
 !> *********************************************************************
@@ -73,7 +73,7 @@ ICOUNT = 0
     ENDDO
     FSVHGRD=0.5*FSDOWN
     FSIHGRD=FSVHGRD
-    CALL GATHER(NA,NML,ILMOS,FSVHGRD,FSVHGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,FSVHGRD,FSVHGAT)
     FSIHGAT=FSVHGAT
     ICOUNT=ICOUNT+1
 !> *********************************************************************
@@ -116,7 +116,7 @@ ICOUNT = 0
     DO I=1,NA
       FDLGRD(I)=R4LONGGRID2D(YYY(I),XXX(I))
     ENDDO
-    CALL GATHER(NA,NML,ILMOS,FDLGRD,FDLGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,FDLGRD,FDLGAT)
 
 !> *********************************************************************
 !> basin_longwave.r2c
@@ -130,7 +130,7 @@ ICOUNT = 0
     DO I=1,NA
       FDLGRD(I)=R4LONGGRID2D(YYY(I),XXX(I))
     ENDDO
-    CALL GATHER(NA,NML,ILMOS,FDLGRD,FDLGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,FDLGRD,FDLGAT)
     ICOUNT=ICOUNT+1
 !> *********************************************************************
 !> basin_longwave.csv
@@ -169,7 +169,7 @@ ICOUNT = 0
     DO I=1,NA
 	   PREGRD(I)=R4RAINGRID2D(YYY(I),XXX(I))
     ENDDO	   
-    CALL GATHER(NA,NML,ILMOS,PREGRD,PREGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,PREGRD,PREGAT)
 
 !> *********************************************************************
 !> basin_rain.r2c
@@ -183,7 +183,7 @@ ICOUNT = 0
     DO I=1,NA
       PREGRD(I)=R4RAINGRID2D(YYY(I),XXX(I))
     ENDDO
-    CALL GATHER(NA,NML,ILMOS,PREGRD,PREGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,PREGRD,PREGAT)
     ICOUNT=ICOUNT+1
 !> *********************************************************************
 !> basin_rain.csv
@@ -222,7 +222,7 @@ ICOUNT = 0
     DO I=1,NA
       TAGRD(I)=R4TEMPGRID2D(YYY(I),XXX(I))
     ENDDO
-    CALL GATHER(NA,NML,ILMOS,TAGRD,TAGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,TAGRD,TAGAT)
 
 !> *********************************************************************
 !> basin_temperature.r2c
@@ -236,7 +236,7 @@ ICOUNT = 0
     DO I=1,NA
       TAGRD(I)=R4TEMPGRID2D(YYY(I),XXX(I))
     ENDDO
-    CALL GATHER(NA,NML,ILMOS,TAGRD,TAGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,TAGRD,TAGAT)
     ICOUNT=ICOUNT+1
 !> *********************************************************************
 !>  basin_temperature.csv
@@ -278,7 +278,7 @@ ICOUNT = 0
     !VLGRD=0.0
     !VLGAT=0.0
     !UVGRD=MAX(VMIN,ULGRD)
-    CALL GATHER(NA,NML,ILMOS,ULGRD,ULGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,ULGRD,ULGAT)
 
 !> *********************************************************************
 !> basin_wind.r2c
@@ -295,7 +295,7 @@ ICOUNT = 0
     !VLGRD=0.0
     !VLGAT=0.0
     !UVGRD=MAX(VMIN,ULGRD)
-    CALL GATHER(NA,NML,ILMOS,ULGRD,ULGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,ULGRD,ULGAT)
     ICOUNT=ICOUNT+1
 !> *********************************************************************
 !> basin_wind.csv
@@ -336,7 +336,7 @@ ICOUNT = 0
     DO I=1,NA
       PRESGRD(I)=R4PRESGRID2D(YYY(I),XXX(I))
     ENDDO
-    CALL GATHER(NA,NML,ILMOS,PRESGRD,PRESGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,PRESGRD,PRESGAT)
 
 !> *********************************************************************
 !> basin_pres.r2c
@@ -350,7 +350,7 @@ ICOUNT = 0
     DO I=1,NA
       PRESGRD(I)=R4PRESGRID2D(YYY(I),XXX(I))
     ENDDO
-    CALL GATHER(NA,NML,ILMOS,PRESGRD,PRESGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,PRESGRD,PRESGAT)
     ICOUNT=ICOUNT+1
 !> *********************************************************************
 !> basin_pres.csv
@@ -389,7 +389,7 @@ ICOUNT = 0
     DO I=1,NA
       QAGRD(I)=R4HUMDGRID2D(YYY(I),XXX(I))
     ENDDO
-    CALL GATHER(NA,NML,ILMOS,QAGRD,QAGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,QAGRD,QAGAT)
 
 !> *********************************************************************
 !> basin_humidity.r2c
@@ -403,7 +403,7 @@ ICOUNT = 0
     DO I=1,NA
       QAGRD(I)=R4HUMDGRID2D(YYY(I),XXX(I))
     ENDDO
-    CALL GATHER(NA,NML,ILMOS,QAGRD,QAGAT)
+    CALL GATHER(NA,NML,ILG,ILMOS,QAGRD,QAGAT)
     ICOUNT=ICOUNT+1
 !> *********************************************************************
 !> basin_humidity.csv
