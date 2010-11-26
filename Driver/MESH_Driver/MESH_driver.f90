@@ -2308,7 +2308,7 @@ ENDDO
 PRINT *
 PRINT *
 PRINT *
-IF(PREEMPTIONFLAG == 1)THEN
+IF(PREEMPTIONFLAG .GE. 1)THEN
   WRITE(6,*)"================================================="
   WRITE (6,*)
   PRINT*,"     SA_MESH IS RUNNING IN AUTOCALIBRATION MODE"
@@ -2532,7 +2532,7 @@ ENDIF
 !> *********************************************************************
 !> MAM - INITIALIZE OR READ PRE-EMPTION VALUE
 !> *********************************************************************
-IF(PREEMPTIONFLAG == 1)THEN
+IF(PREEMPTIONFLAG .GE. 1)THEN
   INQUIRE(FILE="pre_emption_value.txt", EXIST = EXISTS)
   IF(EXISTS)THEN
     OPEN(100,FILE="pre_emption_value.txt")
@@ -2570,17 +2570,39 @@ IF(INTERPOLATIONFLAG == 1)THEN
     QAGAT      = QAGATPRE     + TRATIO *(QAGATPST     - QAGATPRE)
 
 !> INTERPOLATE GRD VARIABLES
-    DO K = 1, NML
-       FSVHGRD(ILMOS(K)) = FSVHGAT(K)
-       FSIHGRD(ILMOS(K)) = FSIHGAT(K)
-       FDLGRD (ILMOS(K)) = FDLGAT (K)
-       ULGRD  (ILMOS(K)) = ULGAT  (K)
-       TAGRD  (ILMOS(K)) = TAGAT  (K)
-       QAGRD  (ILMOS(K)) = QAGAT  (K)
-       PRESGRD(ILMOS(K)) = PRESGAT(K)
-       PREGRD (ILMOS(K)) = PREGAT (K)
+    FSVHGRD = 0.0
+    FSIHGRD = 0.0
+    FDLGRD  = 0.0
+    ULGRD   = 0.0
+    TAGRD   = 0.0
+    QAGRD   = 0.0
+    PRESGRD = 0.0
+    PREGRD  = 0.0
+    
+    K = 0
+    DO I = 1, NA
+       DO J = 1, NTYPE
+          IF(cp%FAREROW(I,J) .GT. 0.0)THEN
+             K = K + 1
+             FSVHGRD(I) = FSVHGRD(I) + cp%FAREROW(I,J) * FSVHGAT(K)
+             FSIHGRD(I) = FSIHGRD(I) + cp%FAREROW(I,J) * FSIHGAT(K)
+             FDLGRD (I) = FDLGRD (I) + cp%FAREROW(I,J) * FDLGAT (K)
+             ULGRD  (I) = ULGRD  (I) + cp%FAREROW(I,J) * ULGAT  (K)
+             TAGRD  (I) = TAGRD  (I) + cp%FAREROW(I,J) * TAGAT  (K)
+             QAGRD  (I) = QAGRD  (I) + cp%FAREROW(I,J) * QAGAT  (K)
+             PRESGRD(I) = PRESGRD(I) + cp%FAREROW(I,J) * PRESGAT(K)
+             PREGRD (I) = PREGRD (I) + cp%FAREROW(I,J) * PREGAT (K)
+          ENDIF
+       ENDDO
     ENDDO
     FSDOWN = 2.0*FSVHGRD
+
+!> CHECK IF GRD INTERPOLATION IS CONSISTENT WITH GATPREP'S GATHERING SCHEME
+    IF(K .NE. NML)THEN
+       PRINT*,'GRD INTERPOLATION IS WRONG - SET INTERPOLATIONFLAG TO ZERO AND TRY AGAIN'
+       PAUSE
+       STOP
+    ENDIF
     
 ENDIF
 UVGRD=MAX(VMIN,ULGRD)
@@ -3562,7 +3584,7 @@ ENDIF
 IF(STREAMFLOWFLAG==1) THEN
 
 !>      write out the MESH_output_streamflow_all.csv file
-  WRITE(71,'(I5,",",I5,",",I5,",",F10.3,100(",",F10.3))') IDAY,IHOUR,IMIN,(WF_QHYD(I), &
+  WRITE(71,'(I5,",",I5,",",I5,",",F10.3,999(",",F10.3))') IDAY,IHOUR,IMIN,(WF_QHYD(I), &
     WF_QSYN(I),I=1,WF_NO)
 
 ENDIF
@@ -3571,7 +3593,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
 
 !>      write out the spl.csv file
-  WRITE(70,'(I5,",",F10.3,100(",",F10.3))') IDAY,(WF_QHYD_AVG(I), &
+  WRITE(70,'(I5,",",F10.3,999(",",F10.3))') IDAY,(WF_QHYD_AVG(I), &
     WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO)
 
   IF (WF_NUM_POINTS .GT. 1) THEN !FOR MORE THAN ONE OUTPUT
@@ -3588,7 +3610,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     END DO
   ELSE !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
 
-    WRITE(6, "(2I5, 100F10.3)") IYEAR, IDAY, &
+    WRITE(6, "(2I5, 999F10.3)") IYEAR, IDAY, &
       (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO), PRE_OUT(1), &
       EVAP_OUT(1), ROF_OUT(1)
 
@@ -3597,7 +3619,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     EVAP_OUT = 0.0
     ROF_OUT = 0.0
   END IF
-  IF(PREEMPTIONFLAG==1)THEN
+  IF(PREEMPTIONFLAG .GE. 1)THEN
      NCAL       = NCAL + 1
      QOBS(NCAL) = WF_QHYD_AVG(1)
      QSIM(NCAL) = WF_QSYN_AVG(1)/NCOUNT
@@ -3759,8 +3781,8 @@ IF (IMIN == 60) THEN
   IHOUR = IHOUR + 1
   IF (IHOUR==24) THEN
     IHOUR = 0
-    IF(PREEMPTIONFLAG == 1)THEN
-      SAENEW = SAE(QOBS(1:NCAL),QSIM(1:NCAL),NCAL)
+    IF(PREEMPTIONFLAG .GE. 1)THEN
+      SAENEW = SAE(QOBS(1:NCAL),QSIM(1:NCAL),NCAL,PREEMPTIONFLAG)
       IF(SAENEW > SAEPRE)GOTO 199
     ENDIF
     IDAY = IDAY + 1
@@ -4036,7 +4058,7 @@ ENDDO
 
 199 CONTINUE
 
-IF(PREEMPTIONFLAG == 1)THEN
+IF(PREEMPTIONFLAG .GE. 1)THEN
   OPEN(100,FILE="function_out.txt")
   WRITE(100,*)SAENEW*NCALMAX/NCAL
   CLOSE(100)

@@ -1,4 +1,4 @@
-FUNCTION SAE(OBS,SIM,N)
+FUNCTION SAE(OBS,SIM,N,NMIN)
 !>
 !>       June 17, 2010 - M.A. Mekonnen
 !>=======================================================================
@@ -15,13 +15,11 @@ FUNCTION SAE(OBS,SIM,N)
 !>       NMIN       -   Minimum of number of days for model spin-up
 !>=======================================================================
 
-    INTEGER N
+    INTEGER N, NMIN
     REAL    OBS(N), SIM(N)
 
     REAL    SAE
-    INTEGER NMIN
     
-    NMIN = 30
     SAE = 0.0
     IF(N > NMIN)SAE = SUM(ABS(OBS(NMIN:N) - SIM(NMIN:N)))
 
