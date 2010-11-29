@@ -1410,7 +1410,7 @@ DO I=1,WF_NO
 ENDDO
 
 !>MAM - The first stream flow record is used for flow initialization
-READ(22,'(100F10.3)',IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
+READ(22,'(999F10.3)',IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
 
 	  ! fixed streamflow start time bug. add in function to enable the 
 	  ! correct start time. Feb2009 aliu. 
@@ -2647,7 +2647,7 @@ ENDIF
 !> also read in the first value if this is the first time through
 IF(MOD(IHOUR,WF_KT)==0.AND.IMIN==0 .AND. JAN > 1) THEN
 !>       read in current streamflow value
-  READ(22,'(100F10.3)',IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
+  READ(22,'(999F10.3)',IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
   IF(IOS/=0) THEN
     PRINT *, 'ran out of streamflow data before met data'
 	STOP
