@@ -279,11 +279,11 @@ C     &										line
 	naa = header%numGridsInBasin
 	nnprint = header%debugGridNo
 
-d      if(iopt.eq.2)then
-d        print*,'al,cintv,ntype,nrvr,conv',al,cintv,ntype,nrvr,conv
-d        print*,'na,naa,nnprint',na,naa,nnprint
-d        print*
-d      endif
+c      if(iopt.eq.2)then
+c        print*,'al,cintv,ntype,nrvr,conv',al,cintv,ntype,nrvr,conv
+c        print*,'na,naa,nnprint',na,naa,nnprint
+c        print*
+c      endif
 
 	astep=al/1000.
       istep=int(astep)
