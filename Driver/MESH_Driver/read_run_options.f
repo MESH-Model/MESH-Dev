@@ -167,6 +167,13 @@
 !* If TESTCSVFLAG is 1, proper distribution of csv forcing data will be checked. 
       TESTCSVFLAG = 0
 
+!* If R2COUTPUTFLAG is 1, R2C ascii file will be written for user specified 
+!* variables.
+!* If R2COUTPUTFLAG is 2, R2C binary will be written for user specified 
+!* variables (list of variables will be read from r2c_output.txt file).
+ 
+      R2COUTPUTFLAG = 0
+
 !> SET N = 0 RESETS THE CLASS COUNTER.
 !TODO: N is not a flag, move it somewhere else
       N = 0
@@ -269,6 +276,8 @@
             SUBBASINFLAG = IROVAL
           ELSE IF (IRONAME == "TESTCSVFLAG") THEN
             TESTCSVFLAG = IROVAL
+          ELSE IF (IRONAME == "R2COUTPUTFLAG") THEN
+            R2COUTPUTFLAG = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",

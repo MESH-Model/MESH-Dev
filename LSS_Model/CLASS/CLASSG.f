@@ -362,13 +362,13 @@ C
           TSFSGAT(K,L)=TSFSROW(ILMOS(K),JLMOS(K),L)
 400   CONTINUE
 C
-      DO 500 M=1,50
-          DO 475 L=1,6
-              DO 450 K=1,NML
+c      DO 500 M=1,50
+c          DO 475 L=1,6
+c              DO 450 K=1,NML
 C                  ITCTGAT(K,L,M)=0
-450           CONTINUE
-475       CONTINUE
-500   CONTINUE
+c450           CONTINUE
+c475       CONTINUE
+c500   CONTINUE
 C
       RETURN
       END

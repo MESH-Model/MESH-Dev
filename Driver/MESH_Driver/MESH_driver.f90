@@ -331,7 +331,7 @@ INTEGER :: WF_ROUTETIMESTEP, WF_TIMECOUNT, DRIVERTIMESTEP
 !* NO_FRAMES: TOTAL NUMBER OF FRAMES IN R2C-FORMAT FILE (TOTAL
 !*            NUMBER OF FRAMES IS NEVER KNOWN, IS ALWAYS SET TO
 !*            FRAME_NO + 1)
-INTEGER :: FRAME_NO, NO_FRAMES
+INTEGER :: FRAME_NO, NO_FRAMES, FRAME_NO_NEW
 !* RUNOFF: HOURLY SIMULATED RUNOFF
 !* RECHARGE: HOURLY SIMULATED RECHARGE
 REAL*4, DIMENSION(:, :), ALLOCATABLE :: RUNOFF, RECHARGE
@@ -732,9 +732,12 @@ TYPE(HydrologyParameters) :: hp
 !* QSIM  :  SIMULATED DAILY STREAM FLOW
 INTEGER, PARAMETER :: NCALMAX = 730
 INTEGER NCAL
-LOGICAL EXISTS
+LOGICAL EXISTS,R2COUTPUT
 REAL    SAE,SAEPRE,SAENEW,QOBS(NCALMAX),QSIM(NCALMAX)
 
+INTEGER NR2C,DELTR2C,NR2CFILES
+INTEGER, ALLOCATABLE, DIMENSION(:)        :: GRD,GAT,GRDGAT
+CHARACTER*50, ALLOCATABLE, DIMENSION(:,:) :: R2C_ATTRIBUTES
 !=======================================================================
 !     * SET PHYSICAL CONSTANTS AND COMMON BLOCKS
 
@@ -1738,6 +1741,7 @@ END IF
 !>  SET FRAME COUNT FOR WRITE_R2C
 FRAME_NO = 1
 NO_FRAMES = FRAME_NO + 1
+FRAME_NO_NEW = 1
 
 !> ******************************************************
 !> echo print information to MESH_output_echo_print.txt
@@ -2211,58 +2215,68 @@ ENDDO
 !> *********************************************************************
 !> Open and read in values from wfo_spec.txt file
 !> *********************************************************************
-!todo - check documentation of wfo_spec.txt file in our user's guide
-!> ENSIM: Open wfo_spec.txt to read in which parameters to output
-  OPEN(unit=56,file='wfo_spec.txt',status='old',iostat=ensim_ios)
-!> IOSTAT returns 0 on successful file open
-  IF(ensim_ios==0)THEN
-    READ(56,*)
-    READ(56,'(I5)',iostat=ios)nj
-    READ(56,'(I5)',iostat=ios)ireport
-
-!>        Allocate the necessary arrays
-    ALLOCATE (wfo_pick(nj))
-    ALLOCATE (wfo_attributes(nj))
-
-    IF(ios/=0)THEN
-      PRINT*,' Problem reading the first two lines of the'
-      PRINT*,' wfo_spec.txt file'
+NR2CFILES = 0
+IF(R2COUTPUTFLAG .GE. 1)THEN
+   INQUIRE(FILE='r2c_output.txt', EXIST = R2COUTPUT)
+   IF(R2COUTPUT)THEN
+      OPEN(56, FILE = 'r2c_output.txt')
+      READ(56,*,IOSTAT=IOS)NR2C,DELTR2C
+      IF(IOS == 0)THEN
+         ALLOCATE(GRD(NR2C),GAT(NR2C),GRDGAT(NR2C),R2C_ATTRIBUTES(NR2C,3),STAT=PAS)
+         IF(PAS /= 0)THEN
+           PRINT*,'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
+                  'RECORD AT THE FIRST LINE IN THE r2c_output.txt FILE. ', &
+                  'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
+           PAUSE
+           STOP
+         ENDIF 
+      ENDIF
+      IF(IOS /= 0 .OR. MOD(DELTR2C,30) /= 0)THEN
+         WRITE(6,9002)
+         PAUSE
+         STOP
+      ENDIF
+      
       PRINT*
+      PRINT*,'THE FOLLOWING R2C OUTPUT FILES WILL BE WRITTEN:'
+
+      DO I = 1, NR2C
+          READ(56,*,IOSTAT = IOS)GRD(I),GAT(I),GRDGAT(I),(R2C_ATTRIBUTES(I,J),J=1,3)
+          IF(IOS /= 0)THEN
+             PRINT*,'ERROR READING r2c_output.txt FILE AT LINE ', I + 1
+             PAUSE
+             STOP
+         ELSE
+           IF(GRD(I)==1)THEN
+              NR2CFILES = NR2CFILES + 1
+              PRINT*,NR2CFILES,' (GRD)    : ',R2C_ATTRIBUTES(I,3)
+           ENDIF
+           IF(GAT(I)==1)THEN
+              NR2CFILES = NR2CFILES + 1
+              PRINT*,NR2CFILES,' (GAT)    : ',R2C_ATTRIBUTES(I,3)
+           ENDIF
+           IF(GRDGAT(I)==1)THEN
+              NR2CFILES = NR2CFILES + 1
+              PRINT*,NR2CFILES,' (GRDGAT) : ',R2C_ATTRIBUTES(I,3)
+           ENDIF
+             
+         ENDIF
+      ENDDO
+      CLOSE(56)
+   ELSE
+      PRINT*
+      PRINT*,"r2c_output.txt FILE DOESN'T EXIST. ", &
+             "R2COUTPUTFLAG SHOULD BE SET TO ZERO IF R2C OUTPUTS ARE NOT NEEDED."
+      PRINT*
+      PAUSE
       STOP
-    ENDIF
-    PRINT*,' WFO_SPEC.TXT file found,'
-    PRINT*,' The following EnSim output will be written:'
+   ENDIF
+ENDIF
 
-    DO j=1,nj
-      READ(56,'(i1,5x,a50)',iostat=ios)wfo_pick(j), &
-        wfo_attributes(j)
-!>          IOSTAT returns 0 on successful file open
-      IF(ios/=0)THEN
-        PRINT*,'iostat code =',ios
-        PRINT*,' Read to line ',j,' in wfo_spec.txt'
-        PRINT*,' then a problem was found'
-        STOP
-      ENDIF
-      IF(wfo_pick(j)==1)THEN
-        PRINT*,wfo_attributes(j)
-      ENDIF
-    ENDDO
-    CLOSE(unit=56,status='keep')
-  ELSE
-    PRINT*,'WFO_SPEC.TXT file not found, no EnSim output'// &
-           ' will be written'
-  ENDIF
-  PRINT *
+!> WRITE THE HEADER FOR R2C FILES:
 
-
-!>>>>>>>>>>>>>>>>>> AB:  ENSIM HEADERS
-
-!>         WRITE THE HEADER FOR ENSIM FILES:
-
-IF(ensim_ios==0)THEN
- CALL write_both_headers('UTM     ',XCOUNT,YCOUNT,3000.0, &
-         477000.0,6699000.0,NMTEST,jan,wfo_pick,wf_landclassname, &
-         NTYPE,currec)
+IF(NR2CFILES > 0)THEN
+ CALL WRITE_R2C_HEADER(NMTEST,NR2C,NR2CFILES,GRD,GAT,GRDGAT,R2C_ATTRIBUTES)
 ENDIF
 
 !> For the ENSIM timestamp
@@ -3054,22 +3068,51 @@ ENDDO !DO I=1,NA
 !> Write ENSIM output
 !> -----------------------------------------------------c
 !>
-IF(ensim_ios==0)THEN
-  !calculate month/day
+IF(NR2CFILES > 0 .AND. MOD(NCOUNT*30,DELTR2C) == 0)THEN
+
   CALL FIND_MONTH (IDAY, IYEAR, ensim_month)
   CALL FIND_DAY (IDAY, IYEAR, ensim_day)
+  
+  CALL WRITE_R2C_DATA(NML,NLTEST,NMTEST,NCOUNT,IMIN,ACLASS, &
+                      NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG, &
+                      NR2C,NR2CFILES,GRD,GAT,GRDGAT,R2C_ATTRIBUTES, &
+                      FRAME_NO_NEW,IYEAR,ensim_MONTH,ensim_DAY,IHOUR,IMIN,ICAN,ICAN+1,IGND, &
+                       TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
+                       TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT,  &
+                       TCANGAT,RCANGAT,SCANGAT,GROGAT, CMAIGAT, &
+                       FCANGAT,LNZ0GAT,ALVCGAT,ALICGAT,PAMXGAT, &
+                       PAMNGAT,CMASGAT,ROOTGAT,RSMNGAT,QA50GAT, &
+                       VPDAGAT,VPDBGAT,PSGAGAT,PSGBGAT,PAIDGAT, &
+                       HGTDGAT,ACVDGAT,ACIDGAT,TSFSGAT,WSNOGAT, &
+                       THPGAT, THRGAT, THMGAT, BIGAT,  PSISGAT, &
+                       GRKSGAT,THRAGAT,HCPSGAT,TCSGAT,          &
+                       THFCGAT,PSIWGAT,DLZWGAT,ZBTWGAT,         &
+                       ZSNLGAT,ZPLGGAT,ZPLSGAT,TACGAT, QACGAT,  &
+                       DRNGAT, XSLPGAT,XDGAT,WFSFGAT,KSGAT,     &
+                       ALGWGAT,ALGDGAT,ASVDGAT,ASIDGAT,AGVDGAT, &
+                       AGIDGAT,ISNDGAT,RADJGAT,ZBLDGAT,Z0ORGAT, &
+                       ZRFMGAT,ZRFHGAT,ZDMGAT, ZDHGAT, FSVHGAT, &
+                       FSIHGAT,CSZGAT, FDLGAT, ULGAT,  VLGAT,   &
+                       TAGAT,  QAGAT,  PRESGAT,PREGAT, PADRGAT, &
+                       VPDGAT, TADPGAT,RHOAGAT,RPCPGAT,TRPCGAT, &
+                       SPCPGAT,TSPCGAT,RHSIGAT,FCLOGAT,DLONGAT, &
+                       GGEOGAT,                                 &
+                       CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
+                       QFSGAT, QFXGAT, PETGAT, GAGAT,  EFGAT,   &
+                       GTGAT,  QGGAT,  TSFGAT, ALVSGAT,ALIRGAT, &
+                       SFCTGAT,SFCUGAT,SFCVGAT,SFCQGAT,FSNOGAT, &
+                       FSGVGAT,FSGSGAT,FSGGGAT,FLGVGAT,FLGSGAT, &
+                       FLGGGAT,HFSCGAT,HFSSGAT,HFSGGAT,HEVCGAT, &
+                       HEVSGAT,HEVGGAT,HMFCGAT,HMFNGAT,HTCCGAT, &
+                       HTCSGAT,PCFCGAT,PCLCGAT,PCPNGAT,PCPGGAT, &
+                       QFGGAT, QFNGAT, QFCLGAT,QFCFGAT,ROFGAT,  &
+                       ROFOGAT,ROFSGAT,ROFBGAT,TROFGAT,TROOGAT, &
+                       TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
+                       WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  GFLXGAT, &
+                       HMFGGAT,HTCGAT, QFCGAT,                  &
+                       MANNGAT, DDGAT)
 
-  CALL ENSIM(NML, NA, NMTEST, NCOUNT, IMIN, ireport, &
-    wfo_seq, IYEAR, ensim_MONTH, ensim_DAY, IHOUR, IMIN, 0, &
-    0, XXX, YYY, YCOUNT, XCOUNT, wfo_pick, &
-    NA, NTYPE, PREGRD, DELT, TAGRD, TFREZ, FSDOWN, FDLGRD, UVGRD, &
-    PRESGRD, QAGRD, ROFBROW, ROFSROW, ROFOROW, ROFROW, cp%FAREROW, &
-    QFSROW, QEVPROW, HFSROW, SBC, GTROW, ALVSROW, &
-    ALIRROW, FC, FG, FCS, FGS, GZEROC, GZEROG, &
-!TODO: check that fsnorow is correct (bjd - Jan 15/08)
-    GZROCS, GZROGS, cp%SNOROW, ZSNOW, FSNOROW, cp%TSNOROW, &
-    cp%TBARROW, cp%THLQROW, cp%THICROW, RHOW, sl%DELZ,ILMOS,JLMOS, &
-    ILG, CURREC)
+  FRAME_NO_NEW = FRAME_NO_NEW + 1 !UPDATE COUNTERS
 
 ENDIF
 
@@ -4104,5 +4147,14 @@ close(unit=90)
             'RAINFALL AND SNOWFALL IS DONE BETWEEN 0 dC AND 2 dC, ',/, &
             'IPCP = 3, RAINFALL AND SNOWFALL ARE PARTITIONED ACCORDING TO ', &
             'A POLYNOMIAL CURVE BETWEEN 0 dC AND 6 dC.')
+
+9002 FORMAT('ERROR IN READING r2c_output.txt FILE. ',/, &
+            'THE FIRST RECORD AT THE FIRST LINE IS FOR THE NUMBER OF ALL THE ', &
+            'VARIABLES LISTED IN THE r2c_output.txt FILE.',/,&
+            'THE SECOND RECORD AT THE FIRST LINE IS TIME STEP FOR R2C OUTPUT. ', &
+            'IT SHOULD BE AN INTEGER MULTIPLE OF 30. ',/,&
+            'THE REMAINING RECORDS SHOULD CONTAIN 3 COLUMNS FOR EACH VARIABLE WITH INTEGER VALUES OF ', &
+            'EITHER 0 OR 1.')
+
 STOP
 END
