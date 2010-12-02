@@ -69,9 +69,10 @@
 !todo - fix this so that we only use one of the variables (use NA and ignore NLTEST - doc)
       IF (NLTEST /= NA) THEN
         WRITE (6, *)
-        WRITE (6, *) "WARNING: The number of grid squares in the class",
+        WRITE (6, *) "ERROR: The number of grid squares in the class",
      1  " parameters file does not match the number of grid squares ",
      2  "from the shed file."
+        STOP
       END IF
 
       JLAT=NINT(DEGLAT)
