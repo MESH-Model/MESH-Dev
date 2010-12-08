@@ -1,4 +1,4 @@
-FUNCTION SAESRT(OBS,SIM,N,NMIN)
+FUNCTION SAESRT(OBS,SIM,N,NS,NMIN)
 !>
 !>       June 17, 2010 - M.A. Mekonnen
 !>=======================================================================
@@ -7,26 +7,37 @@ FUNCTION SAESRT(OBS,SIM,N,NMIN)
 !>
 !>=======================================================================
 !>
-!>       OBS        -   Observed values (vector) 
-!>       SIM        -   Simulated values (vector) 
-!>       N          -   vector dimension
+!>       OBS        -   Observed values 
+!>       SIM        -   Simulated values 
+!>       N          -   Number of days
+!>       NS         -   Number of stations
 !>
 !>       SAESRT     -   Sum of absolute value of erros (after sorting)
 !>       NMIN       -   Minimum of number of days for model spin-up
 !>=======================================================================
 
-    INTEGER N, NMIN
-    REAL    OBS(N), SIM(N)
+    INTEGER N,NS,NMIN
+    REAL    OBS(N,NS), SIM(N,NS)
 
-    REAL     SAESRT
+    REAL     SAESRT,QO(N-NMIN+1),QS(N-NMIN+1)
     EXTERNAL SLASRT
 
     SAESRT = 0.0
     NN = N - NMIN
     IF(NN > 0)THEN
-       CALL SLASRT('D',NN+1,OBS(NMIN:N),IERR)
-       CALL SLASRT('D',NN+1,SIM(NMIN:N),IERR)
-       SAESRT = SUM(ABS(OBS(NMIN:N) - SIM(NMIN:N)))
+       DO J = 1, NS
+          QO = 0.0
+          QS = 0.0
+          DO I = NMIN, N
+             IF(OBS(I,J) .GE. 0.0)THEN
+                QO(I) = OBS(I,J)
+                QS(I) = SIM(I,J)
+             ENDIF
+          ENDDO
+          CALL SLASRT('D',NN+1,QO,IERR)
+          CALL SLASRT('D',NN+1,QS,IERR)
+          SAESRT = SAESRT + SUM(ABS(QO - QS))
+       ENDDO
     ENDIF
 
 END
