@@ -732,7 +732,7 @@ TYPE(HydrologyParameters) :: hp
 !* FTEST:  SAE AT CURRENT TIME STEP TRIAL
 !* QOBS  :  OBSERVED DAILY STREAM FLOW
 !* QSIM  :  SIMULATED DAILY STREAM FLOW
-INTEGER, PARAMETER :: NCALMAX = 730
+INTEGER, PARAMETER :: NCALMAX = 1500
 INTEGER NCAL
 LOGICAL EXISTS,R2COUTPUT
 REAL    SAE,SAESRT,FBEST,FTEST
@@ -1419,7 +1419,7 @@ ENDDO
 ALLOCATE(QOBS(NCALMAX,WF_NO),QSIM(NCALMAX,WF_NO))
 
 !>MAM - The first stream flow record is used for flow initialization
-READ(22,'(999F10.3)',IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
+READ(22,*,IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
 
 	  ! fixed streamflow start time bug. add in function to enable the 
 	  ! correct start time. Feb2009 aliu. 
@@ -2668,7 +2668,7 @@ ENDIF
 !> also read in the first value if this is the first time through
 IF(MOD(IHOUR,WF_KT)==0.AND.IMIN==0 .AND. JAN > 1) THEN
 !>       read in current streamflow value
-  READ(22,'(999F10.3)',IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
+  READ(22,*,IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
   IF(IOS/=0) THEN
     PRINT *, 'ran out of streamflow data before met data'
 	STOP
@@ -4120,7 +4120,7 @@ IF(PREEMPTIONFLAG .GE. 1)THEN
   WRITE(100,*)FTEST*NCALMAX/NCAL
   CLOSE(100)
   PRINT *
-  PRINT*,"PRE-EMPTION INVOKED"
+  IF(FTEST > FBEST)PRINT*,"PRE-EMPTION INVOKED"
   PRINT *
 ENDIF
 

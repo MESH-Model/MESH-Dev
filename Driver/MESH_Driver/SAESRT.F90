@@ -20,24 +20,30 @@ FUNCTION SAESRT(OBS,SIM,N,NS,NMIN)
     REAL    OBS(N,NS), SIM(N,NS)
 
     REAL     SAESRT,QO(N-NMIN+1),QS(N-NMIN+1)
-    EXTERNAL SLASRT
 
     SAESRT = 0.0
-    NN = N - NMIN
-    IF(NN > 0)THEN
+    NN = N - NMIN + 1
+    IF(NN > 1)THEN
        DO J = 1, NS
           QO = 0.0
           QS = 0.0
           DO I = NMIN, N
-             IF(OBS(I,J) .GE. 0.0)THEN
-                QO(I) = OBS(I,J)
-                QS(I) = SIM(I,J)
+             IF(OBS(I,J) .GE. 0.0)THEN     !> Exclude missing streamflow data
+                II     = I - NMIN + 1
+                QO(II) = OBS(I,J)
+                QS(II) = SIM(I,J)
              ENDIF
           ENDDO
-          CALL SLASRT('D',NN+1,QO,IERR)
-          CALL SLASRT('D',NN+1,QS,IERR)
+
+!> Sort observed streamflow          
+          CALL SORT(QO,NN)
+
+!> Sort simulated streamflow          
+          CALL SORT(QS,NN)
+
+!> Compute the sum of errors after ranking          
           SAESRT = SAESRT + SUM(ABS(QO - QS))
        ENDDO
     ENDIF
-
+RETURN
 END
