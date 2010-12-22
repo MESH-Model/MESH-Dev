@@ -2219,7 +2219,7 @@ ENDDO
 
 
 !> *********************************************************************
-!> Open and read in values from wfo_spec.txt file
+!> Open and read in values from r2c_output.txt file
 !> *********************************************************************
 NR2CFILES = 0
 IF(R2COUTPUTFLAG .GE. 1)THEN
@@ -4168,7 +4168,7 @@ close(unit=90)
             'THE SECOND RECORD AT THE FIRST LINE IS TIME STEP FOR R2C OUTPUT. ', &
             'IT SHOULD BE AN INTEGER MULTIPLE OF 30. ',/,&
             'THE REMAINING RECORDS SHOULD CONTAIN 3 COLUMNS FOR EACH VARIABLE WITH INTEGER VALUES OF ', &
-            'EITHER 0 OR 1.')
+            'EITHER 0 OR 1 AND 3 COLUMNS CONTAINING INFORMATION ABOUT THE VARIABLES')
 
 STOP
 END
