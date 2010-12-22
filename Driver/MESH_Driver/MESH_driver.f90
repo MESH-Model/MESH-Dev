@@ -3649,7 +3649,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
   IF (WF_NUM_POINTS .GT. 1) THEN !FOR MORE THAN ONE OUTPUT
 
-    WRITE (6, "(2I5,100F10.3)") IYEAR, IDAY, &
+    WRITE (6, "(2I5,999F10.3)") IYEAR, IDAY, &
           (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO)
 
     DO I = 1, WF_NUM_POINTS
