@@ -146,7 +146,7 @@ C           --------------------------------------------------------------------
 C           calculate the flow velocity at the beginning of the timestep 
 C           (based on kinematic wave velocity) - eqn (1) in notes on overland flow
 C           ------------------------------------------------------------------------------
-            vel_t0(i) = dover(i)**c1*sqrt(xslope(i))/(manning_n(i))
+            vel_t0(i) = (dover(i)**c1)*sqrt(xslope(i))/(manning_n(i))
 
 C           ------------------------------------------------------------------------------
 C           calculate a normalized unconstrained overland flow to avoid numerical 
