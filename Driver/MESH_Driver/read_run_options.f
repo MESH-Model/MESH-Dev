@@ -177,6 +177,11 @@
  
       R2COUTPUTFLAG = 0
 
+!* If FROZENSOILINFILFLAG is 0, all snow melt infiltrates.
+!* If FROZENSOILINFILFLAG is 1, snow melt is partitioned to frozen soil infiltration 
+!* and direct runoff based on the parameteric equation developed by Gray et al, 2001.
+      FROZENSOILINFILFLAG = 0
+
 !> SET N = 0 RESETS THE CLASS COUNTER.
 !TODO: N is not a flag, move it somewhere else
       N = 0
@@ -283,6 +288,8 @@
             R2COUTPUTFLAG = IROVAL
           ELSE IF (IRONAME == "OBJFNFLAG") THEN
             OBJFNFLAG = IROVAL
+          ELSE IF (IRONAME == "FROZENSOILINFILFLAG") THEN
+            FROZENSOILINFILFLAG = IROVAL                        
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",
