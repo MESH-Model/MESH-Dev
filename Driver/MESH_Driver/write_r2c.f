@@ -125,7 +125,7 @@ c	  print*,'Opened unit=',un,' filename=',fln(fn)
         write(un,3003)':xOrigin            ',xorigin_temp
         write(un,3003)':yOrigin            ',yorigin_temp
         write(un,3005)'#                                       '
-        write(un,3020)':SourceFile         ',source_file_name                                    '
+        write(un,3020)':SourceFile         ',source_file_name  '
         write(un,3005)'#                                       '
         if(no_frames.eq.1.and.no_classes.ge.1)then
           do i=1,no_classes
