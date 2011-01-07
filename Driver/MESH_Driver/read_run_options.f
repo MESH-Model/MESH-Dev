@@ -158,6 +158,11 @@
       WINDOWSIZEFLAG = 1
       WINDOWSPACINGFLAG = 1
 
+!> If FROZENSOILINFILFLAG is 0, all snow melt infiltrates.
+!> If FROZENSOILINFILFLAG is 1, snow melt is partitioned to frozen soil infiltration 
+!> and direct runoff based on the parameteric equation developed by Gray et al, 2001.
+      FROZENSOILINFILFLAG = 0
+
 !> FORCIND DATA INTERPOLATION AT INTERMEDIATE TIME STEPS (WHEN THE TIME 
 !> INTERVAL OF THE FORCING DATA IS GREATER THAN 30 MINUTE) 
 !> DEFAULT = NO INTERPOLATION
@@ -298,7 +303,9 @@
           ELSE IF (IRONAME == "WINDOWSIZEFLAG") THEN
             WINDOWSIZEFLAG = IROVAL                        
           ELSE IF (IRONAME == "WINDOWSPACINGFLAG") THEN
-            WINDOWSPACINGFLAG = IROVAL                        
+            WINDOWSPACINGFLAG = IROVAL
+          ELSE IF (IRONAME == "FROZENSOILINFILFLAG") THEN
+            FROZENSOILINFILFLAG = IROVAL                        
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",
