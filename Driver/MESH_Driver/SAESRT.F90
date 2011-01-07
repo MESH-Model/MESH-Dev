@@ -23,7 +23,7 @@ FUNCTION SAESRT(OBS,SIM,N,NS,NMIN)
 
     SAESRT = 0.0
     NN = N - NMIN + 1
-    IF(NN > 1)THEN
+    IF(NN .GE. 1)THEN
        DO J = 1, NS
           QO = 0.0
           QS = 0.0
