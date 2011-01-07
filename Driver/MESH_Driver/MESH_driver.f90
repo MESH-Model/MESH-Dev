@@ -735,7 +735,7 @@ TYPE(HydrologyParameters) :: hp
 INTEGER, PARAMETER :: NCALMAX = 1500
 INTEGER NCAL
 LOGICAL EXISTS,R2COUTPUT
-REAL    SAE,SAESRT,FBEST,FTEST
+REAL    SAE,SAESRT,SAEMSRT,FBEST,FTEST
 REAL, DIMENSION(:,:), ALLOCATABLE :: QOBS,QSIM
 
 INTEGER, PARAMETER :: R2CFILEUNITSTART = 500
@@ -2348,12 +2348,12 @@ ENDDO
 PRINT *
 PRINT *
 PRINT *
-IF(PREEMPTIONFLAG .GE. 1)THEN
+IF(AUTOCALIBRATIONFLAG .GE. 1)THEN
   WRITE(6,*)"================================================="
   WRITE (6,*)
   PRINT*,"     SA_MESH IS RUNNING IN AUTOCALIBRATION MODE"
   WRITE (6,*)
-  PRINT*,"                USING PRE-EMPTION"
+  IF(PREEMPTIONFLAG == 1)PRINT*,"                USING PRE-EMPTION"
   WRITE (6,*)
   WRITE(6,*)"================================================="
   WRITE (6,*)
@@ -2572,15 +2572,17 @@ ENDIF
 !> *********************************************************************
 !> MAM - INITIALIZE OR READ PRE-EMPTION VALUE
 !> *********************************************************************
-IF(PREEMPTIONFLAG .GE. 1)THEN
-  INQUIRE(FILE="pre_emption_value.txt", EXIST = EXISTS)
-  IF(EXISTS)THEN
-    OPEN(100,FILE="pre_emption_value.txt")
-    READ(100,*)FBEST
-    CLOSE(100)
-  ELSE
-    FBEST = +1.0e+10
-  ENDIF
+IF(AUTOCALIBRATIONFLAG .GE. 1)THEN
+    IF(PREEMPTIONFLAG == 1)THEN
+      INQUIRE(FILE="pre_emption_value.txt", EXIST = EXISTS)
+      IF(EXISTS)THEN
+        OPEN(100,FILE="pre_emption_value.txt")
+        READ(100,*)FBEST
+        CLOSE(100)
+      ELSE
+        FBEST = +1.0e+10
+      ENDIF
+    ENDIF
 ENDIF
 NCAL  = 0
 VLGRD = 0.0
@@ -3691,7 +3693,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     EVAP_OUT = 0.0
     ROF_OUT = 0.0
   END IF
-  IF(PREEMPTIONFLAG .GE. 1)THEN
+  IF(AUTOCALIBRATIONFLAG .GE. 1)THEN
      NCAL       = NCAL + 1
      DO J = 1, WF_NO
         QOBS(NCAL,J) = WF_QHYD_AVG(J)
@@ -3855,11 +3857,16 @@ IF (IMIN == 60) THEN
   IHOUR = IHOUR + 1
   IF (IHOUR==24) THEN
     IHOUR = 0
-    IF(PREEMPTIONFLAG .GE. 1)THEN
+    IF(AUTOCALIBRATIONFLAG .GE. 1 .AND. PREEMPTIONFLAG == 1)THEN
       IF(OBJFNFLAG == 0)THEN
-         FTEST = SAE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO,PREEMPTIONFLAG)
+         FTEST = SAE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
+                     AUTOCALIBRATIONFLAG)
       ELSEIF(OBJFNFLAG == 1)THEN
-         FTEST = SAESRT(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO,PREEMPTIONFLAG)
+         FTEST = SAESRT(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
+                        AUTOCALIBRATIONFLAG)
+      ELSEIF(OBJFNFLAG == 2)THEN
+         PRINT*,"THE SAEMSRT (OBJECTIVE FUNCTION = 2) IS NOT ", &
+                "CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE"
       ENDIF
       IF(FTEST > FBEST)GOTO 199
     ENDIF
@@ -4136,13 +4143,30 @@ ENDDO
 
 199 CONTINUE
 
-IF(PREEMPTIONFLAG .GE. 1)THEN
-  OPEN(100,FILE="function_out.txt")
-  WRITE(100,*)FTEST*NCALMAX/NCAL
-  CLOSE(100)
-  PRINT *
-  IF(FTEST > FBEST)PRINT*,"PRE-EMPTION INVOKED"
-  PRINT *
+IF(AUTOCALIBRATIONFLAG .GE. 1)THEN
+    OPEN(100,FILE="function_out.txt")
+    IF(PREEMPTIONFLAG == 1)THEN
+      FTEST = FTEST*NCALMAX/NCAL
+    ELSE
+      IF(OBJFNFLAG == 0)THEN
+         FTEST = SAE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
+                     AUTOCALIBRATIONFLAG)
+      ELSEIF(OBJFNFLAG == 1)THEN
+         FTEST = SAESRT(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
+                        AUTOCALIBRATIONFLAG)
+      ELSEIF(OBJFNFLAG == 2)THEN
+         FTEST = SAEMSRT(QOBS(1:NCAL,:),      &
+                         QSIM(1:NCAL,:),      &
+                         NCAL,                &
+                         WF_NO,               &
+                         AUTOCALIBRATIONFLAG, &
+                         WINDOWSIZEFLAG,      &
+                         WINDOWSPACINGFLAG)
+      ENDIF
+
+    ENDIF
+      WRITE(100,*)FTEST
+      CLOSE(100)
 ENDIF
 
 DO I=1, wf_num_points
