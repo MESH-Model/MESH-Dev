@@ -742,6 +742,11 @@ INTEGER, PARAMETER :: R2CFILEUNITSTART = 500
 INTEGER NR2C,DELTR2C,NR2CFILES
 INTEGER, ALLOCATABLE, DIMENSION(:)        :: GRD,GAT,GRDGAT
 CHARACTER*50, ALLOCATABLE, DIMENSION(:,:) :: R2C_ATTRIBUTES
+
+INTEGER, ALLOCATABLE, DIMENSION(:):: NMELT,INFILTYPE
+REAL, DIMENSION(:), ALLOCATABLE   :: t0_ACC,SI,TSI,SNOWMELTD,SNOWMELTD_LAST, &
+                                     SNOWINFIL,CUMSNOWINFIL,MELTRUNOFF,CUMMELTRUNOFF
+
 !=======================================================================
 !     * SET PHYSICAL CONSTANTS AND COMMON BLOCKS
 
@@ -1894,6 +1899,20 @@ ENDDO
     PRESGATPST  = 0.0
     QAGATPST    = 0.0
 
+    ALLOCATE(NMELT(ILG),INFILTYPE(ILG),t0_ACC(ILG),SI(ILG),TSI(ILG), &
+             SNOWMELTD(ILG),SNOWMELTD_LAST(ILG),SNOWINFIL(ILG),&
+             CUMSNOWINFIL(ILG),MELTRUNOFF(ILG),CUMMELTRUNOFF(ILG))
+             
+             NMELT         = 0
+             INFILTYPE     = 3     !> INITIALIZED WITH LIMITED INFILTRATION
+             t0_ACC        = 0.0   !> FOR FUTURE USE
+             SNOWMELTD     = 0.0
+             SNOWINFIL     = 0.0
+             CUMSNOWINFIL  = 0.0
+             MELTRUNOFF    = 0.0
+             CUMMELTRUNOFF = 0.0
+             SI            = 0.0
+             TSI           = 0.0
 !>
 !>****************CHECK RESUME FILE***************************************************
 !>
@@ -2897,7 +2916,9 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
                   ISNDGAT,IWF,    NA*NTYPE,    1,      NML, N, &
                   JLAT,   ICAN,   IGND,   IGND+1, IGND+2, &
                   NLANDCS,NLANDGS,NLANDC, NLANDG,NLANDI, &
-                  MANNGAT,DDGAT)
+                  MANNGAT,DDGAT,NCOUNT,NMELT, &
+                  t0_ACC,SI,TSI,INFILTYPE,SNOWMELTD,SNOWMELTD_LAST, &
+                  MELTRUNOFF,CUMMELTRUNOFF,SNOWINFIL,CUMSNOWINFIL)
 !
 !========================================================================
 !

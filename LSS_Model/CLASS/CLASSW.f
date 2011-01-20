@@ -26,7 +26,9 @@
      P                  ISAND,  IWF,    ILG,    IL1,    IL2,    N,
      Q                  JL,     IC,     IG,     IGP1,   IGP2,
      R                  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI, 
-     S                  MANNING_N, DD )
+     S                  MANNING_N, DD,NCOUNT,NMELT,t0_ACC,
+     4                  SI,TSI,INFILTYPE,SNOWMELTD,SNOWMELTD_LAST,
+     5                  MELTRUNOFF,CUMMELTRUNOFF,SNOWINFIL,CUMSNOWINFIL)
 C                                                                        
 C     * DEC 07/09 - D.VERSEGHY. ADD RADD AND SADD TO WPREP CALL.
 C     * JAN 06/09 - D.VERSEGHY. INCREASE LIMITING SNOW AMOUNT.
@@ -101,8 +103,9 @@ C     * AUG 12/91 - D.VERSEGHY. CODE FOR MODEL VERSION GCM7U -
 C                               CLASS VERSION 2.0 (WITH CANOPY).
 C     * APR 11/89 - D.VERSEGHY. LAND SURFACE WATER BUDGET CALCULATIONS.
 C                                                                                 
+      USE FLAGS
       IMPLICIT NONE
-
+      
 C     * INTEGER CONSTANTS.
 C
       INTEGER IWF,ILG,IL1,IL2,JL,IC,IG,IGP1,IGP2,I,J,NLANDCS,NLANDGS,
@@ -256,6 +259,12 @@ C
       COMMON /CLASS4/ HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,
      1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
      2                TCGLAC,CLHMLT,CLHVAP
+      
+      INTEGER NCOUNT,NMELT(ILG),INFILTYPE(ILG)
+      REAL    t0_ACC(ILG),SI(ILG),TSI(ILG),SNOWMELTD(ILG),
+     3        SNOWMELTD_LAST(ILG),SNOWINFIL(ILG),CUMSNOWINFIL(ILG),
+     4        MELTRUNOFF(ILG),CUMMELTRUNOFF(ILG)
+      
 C
 C-----------------------------------------------------------------------
 C     * PREPARATION.
@@ -325,8 +334,18 @@ C
           CALL SNOADD(ALBSCS,TSNOCS,RHOSCS,ZSNOCS,
      1                HCPSCS,HTCS,FCS,SPCCS,TSPCCS,RHOSNI,WSNOCS,
      2                ILG,IL1,IL2,JL)
-          CALL SNINFL(RPCCS,TRPCCS,ZSNOCS,TSNOCS,RHOSCS,HCPSCS,
-     1                WSNOCS,HTCS,HMFN,PCPG,ROFN,FCS,ILG,IL1,IL2,JL)
+          IF(FROZENSOILINFILFLAG >= 1)THEN
+             CALL SNINFLM(RPCCS,TRPCCS,ZSNOCS,TSNOCS,RHOSCS,HCPSCS,
+     1                    WSNOCS,HTCS,HMFN,PCPG,ROFN,FCS,ILG,IL1,IL2,JL,
+     2                    NCOUNT,NMELT,RUNFCS,TRNFCS,OVRFLW,TOVRFL,
+     3                    THPOR(:,1),THLIQ(:,1)+THICE(:,1),TBARCS(:,1),
+     4                    DELZW(:,1),t0_ACC,SI,TSI,INFILTYPE,
+     5                    SNOWMELTD,SNOWMELTD_LAST,MELTRUNOFF,
+     6                    CUMMELTRUNOFF,SNOWINFIL,CUMSNOWINFIL)
+          ELSE
+             CALL SNINFL(RPCCS,TRPCCS,ZSNOCS,TSNOCS,RHOSCS,HCPSCS,
+     1                   WSNOCS,HTCS,HMFN,PCPG,ROFN,FCS,ILG,IL1,IL2,JL)
+          ENDIF
           CALL GRINFL(1,THLQCS,THICCS,TBRWCS,BASFLW,TBASFL,RUNFCS,
      1                TRNFCS,ZFAV,LZFAV,THLINV,QFG,WLSTCS,
      2                FCS,EVPCSG,RPCCS,TRPCCS,TPNDCS,ZPNDCS,
@@ -388,8 +407,19 @@ C
           CALL SNOADD(ALBSGS,TSNOGS,RHOSGS,ZSNOGS,
      1                HCPSGS,HTCS,FGS,SPCGS,TSPCGS,RHOSNI,WSNOGS,
      2                ILG,IL1,IL2,JL)
-          CALL SNINFL(RPCGS,TRPCGS,ZSNOGS,TSNOGS,RHOSGS,HCPSGS,
-     1                WSNOGS,HTCS,HMFN,PCPG,ROFN,FGS,ILG,IL1,IL2,JL)
+          IF(FROZENSOILINFILFLAG >= 1)THEN
+             CALL SNINFLM(RPCGS,TRPCGS,ZSNOGS,TSNOGS,RHOSGS,HCPSGS,
+     1                    WSNOGS,HTCS,HMFN,PCPG,ROFN,FGS,ILG,IL1,IL2,JL,
+     2                    NCOUNT,NMELT,RUNFGS,TRNFGS,OVRFLW,TOVRFL,
+     3                    THPOR(:,1),THLIQ(:,1)+THICE(:,1),TBARGS(:,1),
+     4                    DELZW(:,1),t0_ACC,SI,TSI,INFILTYPE,
+     5                    SNOWMELTD,SNOWMELTD_LAST,MELTRUNOFF,
+     6                    CUMMELTRUNOFF,SNOWINFIL,CUMSNOWINFIL)
+          ELSE
+             CALL SNINFL(RPCGS,TRPCGS,ZSNOGS,TSNOGS,RHOSGS,HCPSGS,
+     1                   WSNOGS,HTCS,HMFN,PCPG,ROFN,FGS,ILG,IL1,IL2,JL)
+          ENDIF
+          
           IF(NLANDI.NE.0)                                       THEN
               CALL ICEBAL(TBARGS,TPNDGS,ZPNDGS,TSNOGS,RHOSGS,ZSNOGS,
      1                    HCPSGS,ALBSGS,HMFG,HTCS,HTC,WTRS,WTRG,GFLXGS,
@@ -590,7 +620,7 @@ C
      2              FC (I)*(TBASC (I)+TFREZ) + 
      3              FG (I)*(TBASG (I)+TFREZ)
           RUNOFF(I)=FCS(I)*RUNFCS(I) + FGS(I)*RUNFGS(I) +
-     1              FC (I)*RUNFC (I) + FG (I)*RUNFG (I) 
+     1              FC (I)*RUNFC (I) + FG (I)*RUNFG (I)
           IF(RUNOFF(I).GT.0.0) 
      1        TRUNOF(I)=(FCS(I)*RUNFCS(I)*TRNFCS(I) + 
      2                   FGS(I)*RUNFGS(I)*TRNFGS(I) +
