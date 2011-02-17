@@ -187,6 +187,7 @@ C * WATROF DECLARATIONS
       REAL  DDROW(NL,NM),MANNROW(NL,NM),DDGAT(ILG),MANNGAT(ILG)
 C
 C----------------------------------------------------------------------
+!$omp parallel do
       DO 100 K=1,NML
           DDGAT(K)=DDROW(ILMOS(K),JLMOS(K))
           MANNGAT(K)=MANNROW(ILMOS(K),JLMOS(K))
@@ -310,6 +311,7 @@ C----------------------------------------------------------------------
 100   CONTINUE
 C
       DO 250 L=1,IG
+      !$omp parallel do
       DO 200 K=1,NML
           TBARGAT(K,L)=TBARROW(ILMOS(K),JLMOS(K),L)
           THLQGAT(K,L)=THLQROW(ILMOS(K),JLMOS(K),L)
@@ -336,6 +338,7 @@ C
 250   CONTINUE
 C
       DO 300 L=1,ICP1
+      !$omp parallel do
       DO 300 K=1,NML
           FCANGAT(K,L)=FCANROW(ILMOS(K),JLMOS(K),L)
           LNZ0GAT(K,L)=LNZ0ROW(ILMOS(K),JLMOS(K),L)
@@ -344,6 +347,7 @@ C
 300   CONTINUE
 C
       DO 400 L=1,IC
+      !$omp parallel do
       DO 400 K=1,NML
           PAMXGAT(K,L)=PAMXROW(ILMOS(K),JLMOS(K),L)
           PAMNGAT(K,L)=PAMNROW(ILMOS(K),JLMOS(K),L)

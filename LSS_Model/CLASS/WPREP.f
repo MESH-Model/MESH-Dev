@@ -180,6 +180,7 @@ C-----------------------------------------------------------------------
 C     * INITIALIZE 2-D ARRAYS.
 C
       DO 50 J=1,IG
+      !$omp parallel do
       DO 50 I=IL1,IL2                                                               
           THLQCO(I,J)=0.0                                                           
           THLQGO(I,J)=0.0                                                           
@@ -224,6 +225,7 @@ c          print *, "I = ", I, "J = ", J, "BULK_FC(I,J) = ", BULK_FC(I,J)
    50 CONTINUE
 C 
       DO 75 J=1,IGP1
+      !$omp parallel do
       DO 75 I=IL1,IL2
           THLIQX(I,J)=0.0
           THICEX(I,J)=0.0
@@ -231,6 +233,7 @@ C
 C
 C     * INITIALIZE OTHER DIAGNOSTIC AND WORK ARRAYS.
 C
+!$omp parallel do
       DO 100 I=IL1,IL2
           EVPICS(I)=EVAPCS(I)+EVPCSG(I)
           EVPIGS(I)=EVAPGS(I)
@@ -329,6 +332,7 @@ C
       IF(NLANDCS.GT.0)                                              THEN
 C
           DO 200 J=1,IG
+          !$omp parallel do
           DO 200 I=IL1,IL2
               IF(FCS(I).GT.0.)                                THEN 
                   THLQCS(I,J)=THLIQC(I,J)                                               
@@ -344,6 +348,7 @@ C
               ENDIF                                                  
   200     CONTINUE
 C
+!$omp parallel do
           DO 250 I=IL1,IL2
               IF(FCS(I).GT.0.)                           THEN  
                   IF(SNOCNS(I).GT.0.)      THEN                                                  
@@ -432,6 +437,7 @@ C     * CALCULATIONS FOR SNOW-COVERED GROUND.
 C
       IF(NLANDGS.GT.0)                                              THEN
 C
+!$omp parallel do
           DO 300 J=1,IG
           DO 300 I=IL1,IL2
               IF(FGS(I).GT.0.)                                 THEN 
@@ -448,6 +454,7 @@ C
               ENDIF                                                  
   300     CONTINUE
 C
+!$omp parallel do
           DO 350 I=IL1,IL2
               IF(FGS(I).GT.0.)                              THEN 
                   QFN(I)=QFN(I)+FGS(I)*EVAPGS(I)*RHOW
@@ -498,6 +505,7 @@ C
       IF(NLANDC.GT.0)                                               THEN
 C
           DO 400 J=1,IG
+          !$omp parallel do
           DO 400 I=IL1,IL2
               IF(FC(I).GT.0.)                                 THEN  
                   THLQCO(I,J)=THLIQC(I,J)                                               
@@ -513,6 +521,7 @@ C
               ENDIF                                                  
   400     CONTINUE
 C
+!$omp parallel do
           DO 450 I=IL1,IL2
               IF(FC(I).GT.0.)                            THEN 
                   IF(SNOCAN(I).GT.0.)      THEN                                                  
@@ -601,6 +610,7 @@ C
       IF(NLANDG.GT.0)                                               THEN
 C
           DO 500 J=1,IG
+          !$omp parallel do
           DO 500 I=IL1,IL2
               IF(FG(I).GT.0.)                                 THEN 
                   THLQGO(I,J)=THLIQG(I,J)                                               
@@ -616,6 +626,7 @@ C
               ENDIF                                                  
   500     CONTINUE
 C
+!$omp parallel do
           DO 550 I=IL1,IL2
               IF(FG(I).GT.0.)                              THEN 
                   QFG(I)=QFG(I)+FG(I)*EVAPG(I)*RHOW

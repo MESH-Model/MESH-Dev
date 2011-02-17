@@ -3154,6 +3154,8 @@ ENDIF
 !> but we want to keep them because they may be useful in the future.
 !> these variables hold the grid cell averages. 
 !> In the future, someone will need to use them.
+
+!$omp parallel do
 DO I=1,NA
     CDHGRD(I)=0.
     CDMGRD(I)=0.
@@ -3226,6 +3228,8 @@ ENDDO !DO I=1,NA
 !>
 !>*******************************************************************
 !>
+
+!$omp parallel do
 DO I=1,NA
   DO M=1,NMTEST
     CDHGRD(I)=CDHGRD(I)+CDHROW(I,M)*cp%FAREROW(I,M)
@@ -3381,6 +3385,7 @@ ENDIF
 !> =======================================================================
 !> ACCUMULATE OUTPUT DATA FOR DIURNALLY AVERAGED FIELDS.
 
+!$omp parallel do
 DO I=1,NA
   DO M=1,NMTEST
     PREACC(I)=PREACC(I)+PREGRD(I)*cp%FAREROW(I,M)*DELT
@@ -3433,7 +3438,7 @@ ENDDO !DO I=1,NA
 !todo: use delta t here
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
-
+  !no omp b/c of file IO
   DO I=1,NA
     PREACC(I)=PREACC(I)
     GTACC(I)=GTACC(I)/REAL(NSUM)
