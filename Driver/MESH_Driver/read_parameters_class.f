@@ -114,7 +114,7 @@
      1                  cp%TCANROW(1,M),cp%TSNOROW(1,M),cp%TPNDROW(1,M)
         READ(50,'(7F10.3)') (cp%THLQROW(1,M,J),J=1,3),
      1                  (cp%THICROW(1,M,J),J=1,3),cp%ZPNDROW(1,M)
-        READ(50,'(2F10.4,F10.2,F10.3,F10.4,F10.3)')
+        READ(50,'(2F10.4,F10.2,F10.3,F10.4,F10.3,F10.3)')
      +                  cp%RCANROW(1,M),cp%SCANROW(1,M),cp%SNOROW(1,M),
      1                  cp%ALBSROW(1,M),cp%RHOSROW(1,M),cp%GROROW(1,M)
       ENDDO

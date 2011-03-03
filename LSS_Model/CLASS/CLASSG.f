@@ -1,6 +1,7 @@
       SUBROUTINE CLASSG(TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT,
      1                  TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT, 
-     2                  TCANGAT,RCANGAT,SCANGAT,GROGAT, CMAIGAT,
+     2                  TCANGAT,RCANGAT,SCANGAT,GROGAT, FRZCGAT,
+     2                  CMAIGAT,
      3                  FCANGAT,LNZ0GAT,ALVCGAT,ALICGAT,PAMXGAT,
      4                  PAMNGAT,CMASGAT,ROOTGAT,RSMNGAT,QA50GAT,
      5                  VPDAGAT,VPDBGAT,PSGAGAT,PSGBGAT,PAIDGAT,
@@ -35,7 +36,7 @@
      Y                  NML,NL,NM,ILG,IG,IC,ICP1,
      Z                  TBARROW,THLQROW,THICROW,TPNDROW,ZPNDROW,
      +                  TBASROW,ALBSROW,TSNOROW,RHOSROW,SNOROW, 
-     +                  TCANROW,RCANROW,SCANROW,GROROW, CMAIROW,
+     +                  TCANROW,RCANROW,SCANROW,GROROW,CMAIROW,
      +                  FCANROW,LNZ0ROW,ALVCROW,ALICROW,PAMXROW,
      +                  PAMNROW,CMASROW,ROOTROW,RSMNROW,QA50ROW,
      +                  VPDAROW,VPDBROW,PSGAROW,PSGBROW,PAIDROW,
@@ -43,7 +44,8 @@
      +                  THPROW, THRROW, THMROW, BIROW,  PSISROW,
      +                  GRKSROW,THRAROW,HCPSROW,TCSROW,
      +                  THFCROW,PSIWROW,DLZWROW,ZBTWROW,
-     +                  ZSNLROW,ZPLGROW,ZPLSROW,TACROW, QACROW,
+     +                  ZSNLROW,ZPLGROW,ZPLSROW,FRZCROW,TACROW,
+     + QACROW,
      +                  DRNROW, XSLPROW,XDROW,WFSFROW,KSROW,
      +                  ALGWROW,ALGDROW,ASVDROW,ASIDROW,AGVDROW,
      +                  AGIDROW,ISNDROW,RADJGRD,ZBLDGRD,Z0ORGRD,
@@ -124,7 +126,7 @@ C
      6        WFSFROW(NL,NM),    KSROW(NL,NM),    ALGWROW(NL,NM),   
      7        ALGDROW(NL,NM),    ASVDROW(NL,NM),    ASIDROW(NL,NM),   
      8        AGVDROW(NL,NM),    AGIDROW(NL,NM),    ZSNLROW(NL,NM),
-     9        ZPLGROW(NL,NM),    ZPLSROW(NL,NM)
+     9        ZPLGROW(NL,NM),    ZPLSROW(NL,NM),    FRZCROW(NL,NM)
 C
 
       REAL    THPGAT (ILG,IG),   THRGAT (ILG,IG),   THMGAT (ILG,IG),
@@ -136,7 +138,7 @@ C
      6        WFSFGAT(ILG),      KSGAT(ILG),      ALGWGAT(ILG),     
      7        ALGDGAT(ILG),      ASVDGAT(ILG),      ASIDGAT(ILG),     
      8        AGVDGAT(ILG),      AGIDGAT(ILG),      ZSNLGAT(ILG),
-     9        ZPLGGAT(ILG),      ZPLSGAT(ILG)
+     9        ZPLGGAT(ILG),      ZPLSGAT(ILG),      FRZCGAT(ILG)
 C
       INTEGER ISNDROW(NL,NM,IG), ISNDGAT(ILG,IG)
 
@@ -217,6 +219,7 @@ C----------------------------------------------------------------------
           ZSNLGAT(K)=ZSNLROW(ILMOS(K),JLMOS(K))  
           ZPLGGAT(K)=ZPLGROW(ILMOS(K),JLMOS(K))  
           ZPLSGAT(K)=ZPLSROW(ILMOS(K),JLMOS(K))  
+          FRZCGAT (K)=FRZCROW (ILMOS(K),JLMOS(K))            
           TACGAT (K)=TACROW (ILMOS(K),JLMOS(K))  
           QACGAT (K)=QACROW (ILMOS(K),JLMOS(K))  
           ZBLDGAT(K)=ZBLDGRD(ILMOS(K))

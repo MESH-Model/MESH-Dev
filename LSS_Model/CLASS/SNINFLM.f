@@ -1,9 +1,11 @@
       SUBROUTINE SNINFLM(R,TR,ZSNOW,TSNOW,RHOSNO,HCPSNO,WSNOW,
      1                  HTCS,HMFN,PCPG,ROFN,FI,ILG,IL1,IL2,JL,
-     2                  NCOUNT,NMELT,RUNOFF,TRUNOF,OVRFLW,TOVRFL,
-     3                  THPOR,THTOT,TBAR1,DELZ1,t0_ACC,
+     2                  NCOUNT,RUNOFF,TRUNOF,OVRFLW,TOVRFL,
+     3                  SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS,
+     3                  THTOT,TBAR1,t0_ACC,
      4                  SI,TSI,INFILTYPE,SNOWMELTD,SNOWMELTD_LAST,
-     5                  MELTRUNOFF,CUMMELTRUNOFF,SNOWINFIL,CUMSNOWINFIL)
+     5                  MELTRUNOFF,SNOWINFIL,CUMSNOWINFIL,
+     6                  FRZC)
 C
 C     * DEC 20/10 - M.A.MEKONNEN/D.BRUCE. MODIFIED FOR FROZEN SOIL INFILTRATION
 C
@@ -38,12 +40,13 @@ C
      1     RHOSNO(ILG),    HCPSNO(ILG),    WSNOW (ILG),    HTCS  (ILG),
      2     HMFN  (ILG),    PCPG  (ILG),    ROFN  (ILG)
       
-      INTEGER NCOUNT,NMELT(ILG),INFILTYPE(ILG)
+      INTEGER NCOUNT,INFILTYPE(ILG)
+      REAL    t0_ACC,SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS
       REAL    RUNOFF(ILG),TRUNOF(ILG),OVRFLW(ILG),TOVRFL(ILG),SWE(ILG),
-     1        THPOR(ILG),THTOT(ILG),TBAR1(ILG),DELZ1(ILG),t0_ACC(ILG),
+     1        THTOT(ILG),TBAR1(ILG),
      2        SI(ILG),TSI(ILG),SNOWMELTD(ILG),
      3        SNOWMELTD_LAST(ILG),SNOWINFIL(ILG),CUMSNOWINFIL(ILG),
-     4        MELTRUNOFF(ILG),CUMMELTRUNOFF(ILG)
+     4        MELTRUNOFF(ILG),FRZC(ILG)
 
 C
 C     * INPUT ARRAYS.
@@ -67,6 +70,9 @@ C
       WSNCAP=0.04
 C      WSNCAP=0.0
 C-----------------------------------------------------------------------
+
+      SWE = ZSNOW*RHOSNO/RHOW*1000.0 ! UNIT -> mm
+      
       DO 100 I=IL1,IL2
           IF(FI(I).GT.0. .AND. R(I).GT.0. .AND. ZSNOW(I).GT.0.)
      1                                                              THEN
@@ -155,17 +161,15 @@ C-----------------------------------------------------------------------
           ENDIF
   100 CONTINUE
 C     
-      !> SNOW WATER EQUIVALENT SPANNING THE CURRENT DELT
-      SWE = (ZSNOW + ZMELT)*RHOSNO/RHOW*1000.0 ! UNIT -> mm
       
-      CALL FROZEN(FI,R,TBAR1,DELZ1,SWE, 
-     1            THPOR,THTOT, 
-     2            DELT,NCOUNT,NMELT,ILG,IL1,IL2,t0_ACC, 
+      CALL FROZEN(FI,R,TBAR1,THTOT,SWE,
+     1            SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS, 
+     2            t0_ACC,FRZC,DELT,NCOUNT,ILG,IL1,IL2,
      3            SI,TSI,INFILTYPE,SNOWMELTD,SNOWMELTD_LAST, 
-     4            MELTRUNOFF,CUMMELTRUNOFF,SNOWINFIL,CUMSNOWINFIL)
-
+     4            MELTRUNOFF,SNOWINFIL,CUMSNOWINFIL)
+      
       DO I = IL1, IL2
-        IF(FI(I) > 0.0 .AND. MELTRUNOFF(I) > 0.0)THEN
+        IF(FI(I) > 0.0 .and. MELTRUNOFF(I) > 0.0 )THEN
              TRUNOF(I)  = (TRUNOF(I)*RUNOFF(I)+TR(I)*MELTRUNOFF(I)*DELT)
      1                    /(RUNOFF(I)+ MELTRUNOFF(I)*DELT)
              RUNOFF(I)  = RUNOFF(I) + MELTRUNOFF(I)*DELT

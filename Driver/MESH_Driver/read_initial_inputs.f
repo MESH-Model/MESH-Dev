@@ -31,7 +31,8 @@
 !> variables for READ_PARAMETERS_HYDROLOGY
      +  INDEPPAR, DEPPAR, WF_R2, M_C,
 !> the types that are to be allocated and initialised
-     +  op, sl, cp, sv, hp)! , si, , , , )
+     +  op, sl, cp, sv, hp,
+     +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS)
 
       USE MESH_INPUT_MODULE
       USE FLAGS
@@ -123,6 +124,7 @@
 !> -----------------------------
 !> Values needed for READ_PARAMETERS_HYDROLOGY :
       INTEGER INDEPPAR, DEPPAR, M_C
+      REAL SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
       REAL WF_R2(M_C)
 !> Values already declared above:
 !>  NTYPE, NA, RELFLG
@@ -516,10 +518,15 @@
 !>
 !> Read the mesh_parameters_hydrology.ini file
       ALLOCATE(hp%ZSNLROW(NA, NTYPE), hp%ZPLGROW(NA, NTYPE),
-     +         hp%ZPLSROW(NA, NTYPE))
+     +         hp%ZPLSROW(NA, NTYPE), hp%FRZCROW(NA,NTYPE))
+      
+      NYEARS = IYEAR_END - IYEAR_START + 1
+      ALLOCATE (t0_ACC(NYEARS))
+      t0_ACC = 0.0
 
       CALL READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR,
-     +    RELEASE, WF_R2, hp, M_C, NA, NTYPE)
+     +    RELEASE, WF_R2, hp, M_C, NA, NTYPE,
+     +    SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS)
 
       RETURN
       END SUBROUTINE READ_INITIAL_INPUTS

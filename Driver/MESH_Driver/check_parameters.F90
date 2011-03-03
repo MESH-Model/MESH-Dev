@@ -1,4 +1,4 @@
-subroutine check_parameters(wf_r2,m_c,nmtest,cp,hp)
+subroutine check_parameters(wf_r2,m_c,nmtest,cp,hp,soil_por_max,soil_depth,s0,t_ice_lens)
 !>
 !>       March 23, 2010 - M.A. Mekonnen/B. Davidson/M. MacDonald
 !>=======================================================================
@@ -26,17 +26,18 @@ subroutine check_parameters(wf_r2,m_c,nmtest,cp,hp)
 !>=======================================================================
 
 use     mesh_input_module
+use     flags
 
 implicit none     
 
-integer,parameter :: nrows  = 85   ! maximum number of rows	
+integer,parameter :: nrows  = 88   ! maximum number of rows	
 integer,parameter :: nsl   = 3     ! number of soil layers	
 
 integer     i,j,ib0,ib1,ib2,ib3,i4,i5,ir,m_c,nmtest
 integer     parflag(nrows,nmtest)
 
 real        total,percent
-real        wf_r2(m_c)
+real        wf_r2(m_c),soil_por_max,soil_depth,s0,t_ice_lens
 real        parv(nrows,nmtest),minlimit(nrows,nmtest),maxlimit(nrows,nmtest)
 
 type(ClassParameters)     :: cp
@@ -52,7 +53,7 @@ parflag = 1
 !>=======================================================================
 !>
 
-  ir = 1   
+  ir = 1
   parv(ir,1) = 2             ! The parameter is currently not active
   parflag(ir,1:nmtest) = 0
 
@@ -68,17 +69,35 @@ parflag = 1
   do i = 1,m_c
      ir = ir + 1
      parv(ir,1) = wf_r2(i)
-     parflag(ir,2:nmtest) = 0
+     parflag(ir,2:nmtest) = 0 ! only wf_r2(1) is currently active
   enddo
   
   ir = ir + 1
-  parv(ir,1) = 0             ! The parameter is currently not active
-  parflag(ir,1:nmtest) = 0
+  parv(ir,1) = soil_por_max
+  parflag(ir,2:nmtest) = 0
+  if(frozensoilinfilflag ==0)parflag(ir,1) = 0
   
   ir = ir + 1
-  parv(ir,1) = 0             ! The parameter is currently not active
-  parflag(ir,1:nmtest) = 0
+  parv(ir,1) = soil_depth
+  parflag(ir,2:nmtest) = 0
+  if(frozensoilinfilflag ==0)parflag(ir,1) = 0
 
+  ir = ir + 1
+  parv(ir,1) = s0
+  parflag(ir,2:nmtest) = 0
+  if(frozensoilinfilflag ==0)parflag(ir,1) = 0
+
+  ir = ir + 1
+  parv(ir,1) = t_ice_lens
+  parflag(ir,2:nmtest) = 0
+  if(frozensoilinfilflag ==0)parflag(ir,1) = 0
+
+!  do i = 5,indeppar
+!     ir = ir + 1
+!     parv(ir,1) = t0_acc(i-4)
+!     parflag(ir,2:nmtest) = 0
+!  enddo
+  
 !>
 !>*******************************************************************
 !> Class parameters
@@ -131,6 +150,8 @@ parflag = 1
      parv(ir+1,j) = hp%zsnlrow(1,j)   
      parv(ir+2,j) = hp%zplsrow(1,j)   
      parv(ir+3,j) = hp%zplgrow(1,j)
+     parv(ir+4,j) = hp%frzcrow(1,j)
+     if(frozensoilinfilflag ==0)parflag(ir+4,j) = 0
   enddo
   
 !>
@@ -138,7 +159,7 @@ parflag = 1
 !> Class parameters
 !>=======================================================================
 !>
-  ib2 = ir+3
+  ib2 = ir+4
   do i5 = 1,5
      ir = ib2 + (i5-1)*6
      do j = 1,nmtest

@@ -1,5 +1,7 @@
       module MESH_INPUT_MODULE
 
+      INTEGER NYEARS
+      REAL, DIMENSION(:), ALLOCATABLE :: t0_ACC
       TYPE OutputPoints
 !* N_OUT: GRID SQUARE TO OUTPUT
 !* II_OUT: GRU TO OUTPUT
@@ -70,7 +72,8 @@
 
 !> variables for read_parameters_hydrology
       TYPE HydrologyParameters
-        REAL, DIMENSION(:,:), ALLOCATABLE :: ZSNLROW, ZPLSROW, ZPLGROW
+        REAL, DIMENSION(:,:), ALLOCATABLE :: ZSNLROW, ZPLSROW, ZPLGROW, 
+     +                                       FRZCROW
       END TYPE
 
       end module MESH_INPUT_MODULE
