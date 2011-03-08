@@ -1,0 +1,50 @@
+Meta data file for Great Lakes forcing data and results
+
+******************************************************************************
+01 WATFLOOD 200406 - 200812 CaPA/GEM
+
+Forcing Data Description -
+
+Model: WATFLOOD
+Source: CaPA/GEM
+Time Period: 200406 - 200812
+Dataset created:
+200406 - 200812 - Created in ???
+
+File locations and contact:
+Erika Klyszejko
+
+
+Results description -
+
+01_01
+
+Person performing runs:  Frank Seglenieks
+If calibrated, describe method and calibration time period: No calibration
+Comments:
+Initial run using parameter set supplied by Erika
+
+******************************************************************************
+02 WATFLOOD 199704 - 200810 CRCM
+
+Forcing Data Description -
+
+Model: WATFLOOD
+Source: CRCM forced with GEM
+Time Period: 199704 - 200810
+Dataset created:
+199704 - 200810 - Created in 200910
+
+File locations and contact:
+Frank Seglenieks
+
+
+Results description -
+
+01_01
+
+Person performing runs:  Frank Seglenieks
+If calibrated, describe method and calibration time period: No calibration
+Comments:
+Initial run using parameter set supplied by Erika
+

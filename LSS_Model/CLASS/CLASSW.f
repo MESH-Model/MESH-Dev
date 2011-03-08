@@ -1,6 +1,7 @@
       SUBROUTINE CLASSW(THLIQ,  THICE,  TBAR,   TCAN,   RCAN,   SNCAN,
      1                  RUNOFF, TRUNOF, SNO,    TSNOW,  RHOSNO, ALBSNO, 
-     2                  WSNOW,  ZPOND,  TPOND,  GROWTH, TBASE,  GFLUX,
+     2                  WSNOW,  ZPOND,  TPOND,  GROWTH, FRZC,   TBASE,
+     +                  GFLUX,
      3                  PCFC,   PCLC,   PCPN,   PCPG,   QFCF,   QFCL,
      4                  QFN,    QFG,    QFC,    HMFC,   HMFG,   HMFN,
      5                  HTCC,   HTCS,   HTC,    ROFC,   ROFN,   ROVG, 
@@ -26,9 +27,11 @@
      P                  ISAND,  IWF,    ILG,    IL1,    IL2,    N,
      Q                  JL,     IC,     IG,     IGP1,   IGP2,
      R                  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI, 
-     S                  MANNING_N, DD,NCOUNT,NMELT,t0_ACC,
+     S                  MANNING_N, DD,NCOUNT,t0_ACC,
      4                  SI,TSI,INFILTYPE,SNOWMELTD,SNOWMELTD_LAST,
-     5                  MELTRUNOFF,CUMMELTRUNOFF,SNOWINFIL,CUMSNOWINFIL)
+     5                  MELTRUNOFF,SNOWINFIL,
+     6                  CUMSNOWINFILCS,CUMSNOWINFILGS,
+     7                  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS)
 C                                                                        
 C     * DEC 07/09 - D.VERSEGHY. ADD RADD AND SADD TO WPREP CALL.
 C     * JAN 06/09 - D.VERSEGHY. INCREASE LIMITING SNOW AMOUNT.
@@ -260,10 +263,12 @@ C
      1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
      2                TCGLAC,CLHMLT,CLHVAP
       
-      INTEGER NCOUNT,NMELT(ILG),INFILTYPE(ILG)
-      REAL    t0_ACC(ILG),SI(ILG),TSI(ILG),SNOWMELTD(ILG),
-     3        SNOWMELTD_LAST(ILG),SNOWINFIL(ILG),CUMSNOWINFIL(ILG),
-     4        MELTRUNOFF(ILG),CUMMELTRUNOFF(ILG)
+      INTEGER NCOUNT,INFILTYPE(ILG)
+      REAL    SI(ILG),TSI(ILG),SNOWMELTD(ILG),
+     3        SNOWMELTD_LAST(ILG),SNOWINFIL(ILG),CUMSNOWINFILCS(ILG),
+     4        MELTRUNOFF(ILG),FRZC(ILG),
+     5        CUMSNOWINFILGS(ILG)
+      REAL    t0_ACC, SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
       
 C
 C-----------------------------------------------------------------------
@@ -334,14 +339,15 @@ C
           CALL SNOADD(ALBSCS,TSNOCS,RHOSCS,ZSNOCS,
      1                HCPSCS,HTCS,FCS,SPCCS,TSPCCS,RHOSNI,WSNOCS,
      2                ILG,IL1,IL2,JL)
-          IF(FROZENSOILINFILFLAG >= 1)THEN
+          IF(FROZENSOILINFILFLAG == 1)THEN
              CALL SNINFLM(RPCCS,TRPCCS,ZSNOCS,TSNOCS,RHOSCS,HCPSCS,
      1                    WSNOCS,HTCS,HMFN,PCPG,ROFN,FCS,ILG,IL1,IL2,JL,
-     2                    NCOUNT,NMELT,RUNFCS,TRNFCS,OVRFLW,TOVRFL,
-     3                    THPOR(:,1),THLIQ(:,1)+THICE(:,1),TBARCS(:,1),
-     4                    DELZW(:,1),t0_ACC,SI,TSI,INFILTYPE,
+     2                    NCOUNT,RUNFCS,TRNFCS,OVRFLW,TOVRFL,
+     3                    SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS,
+     3                    THLIQ(:,1)+THICE(:,1),TBARCS(:,1),
+     4                    t0_ACC,SI,TSI,INFILTYPE,
      5                    SNOWMELTD,SNOWMELTD_LAST,MELTRUNOFF,
-     6                    CUMMELTRUNOFF,SNOWINFIL,CUMSNOWINFIL)
+     6                    SNOWINFIL,CUMSNOWINFILCS,FRZC)
           ELSE
              CALL SNINFL(RPCCS,TRPCCS,ZSNOCS,TSNOCS,RHOSCS,HCPSCS,
      1                   WSNOCS,HTCS,HMFN,PCPG,ROFN,FCS,ILG,IL1,IL2,JL)
@@ -407,14 +413,15 @@ C
           CALL SNOADD(ALBSGS,TSNOGS,RHOSGS,ZSNOGS,
      1                HCPSGS,HTCS,FGS,SPCGS,TSPCGS,RHOSNI,WSNOGS,
      2                ILG,IL1,IL2,JL)
-          IF(FROZENSOILINFILFLAG >= 1)THEN
+          IF(FROZENSOILINFILFLAG == 1)THEN
              CALL SNINFLM(RPCGS,TRPCGS,ZSNOGS,TSNOGS,RHOSGS,HCPSGS,
      1                    WSNOGS,HTCS,HMFN,PCPG,ROFN,FGS,ILG,IL1,IL2,JL,
-     2                    NCOUNT,NMELT,RUNFGS,TRNFGS,OVRFLW,TOVRFL,
-     3                    THPOR(:,1),THLIQ(:,1)+THICE(:,1),TBARGS(:,1),
-     4                    DELZW(:,1),t0_ACC,SI,TSI,INFILTYPE,
+     2                    NCOUNT,RUNFGS,TRNFGS,OVRFLW,TOVRFL,
+     3                    SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS,
+     3                    THLIQ(:,1)+THICE(:,1),TBARGS(:,1),
+     4                    t0_ACC,SI,TSI,INFILTYPE,
      5                    SNOWMELTD,SNOWMELTD_LAST,MELTRUNOFF,
-     6                    CUMMELTRUNOFF,SNOWINFIL,CUMSNOWINFIL)
+     6                    SNOWINFIL,CUMSNOWINFILGS,FRZC)
           ELSE
              CALL SNINFL(RPCGS,TRPCGS,ZSNOGS,TSNOGS,RHOSGS,HCPSGS,
      1                   WSNOGS,HTCS,HMFN,PCPG,ROFN,FGS,ILG,IL1,IL2,JL)
