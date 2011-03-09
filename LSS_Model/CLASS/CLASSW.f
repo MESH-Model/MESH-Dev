@@ -621,6 +621,7 @@ C
       JPTBAD=0
       KPTBAD=0
       LPTBAD=0
+      !$omp parallel do
       DO 600 I=IL1,IL2 
           TBASE (I)=FCS(I)*(TBASCS(I)+TFREZ) + 
      1              FGS(I)*(TBASGS(I)+TFREZ) +
@@ -703,6 +704,7 @@ C
          ENDIF
   600 CONTINUE
 C
+!$omp parallel do
       DO 650 I=IL1,IL2     
           IF(ZSNOCS(I).GT.0. .OR. ZSNOGS(I).GT.0. .OR.
      1       ZSNOWC(I).GT.0. .OR. ZSNOWG(I).GT.0.)              THEN                                             
@@ -788,6 +790,7 @@ C
 C
       IPTBAD=0
       DO 700 J=1,IG
+      !$omp parallel do
       DO 700 I=IL1,IL2
           IF(IG.EQ.3. .AND. J.EQ.IG .AND. ISAND(I,1).GT.-4)    THEN
               TBAR(I,J)=((FCS(I)*(TBARCS(I,J)+TFREZ)*HCPCS(I,J) +
