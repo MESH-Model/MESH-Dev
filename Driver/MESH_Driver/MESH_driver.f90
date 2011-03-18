@@ -77,10 +77,14 @@ IMPLICIT NONE
 
 !>  INTEGER CONSTANTS.
 INTEGER ILG
-INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
+!INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
+INTEGER,PARAMETER :: ICAN=4, ICP1=ICAN+1
 INTEGER,PARAMETER :: M_S=140, M_R=7, M_C=5
 !todo M_s should be allocatable. it should not be constant
 !todo it should be read in from the shd file
+
+INTEGER IGND
+REAL IGND_TEST
 
 !> WATERSHED RELATED VARIABLES
 INTEGER LATDEGMIN,LATMINMIN,LATDEGMAX,LATMINMAX,LONDEGMIN, &
@@ -572,8 +576,6 @@ REAL :: TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
   FINAL_STORE, TOTAL_AREA
 
-REAL :: TOTAL_STORE,TOTAL_THLQ(6),TOTAL_THIC(6),TOTAL_ZPND,TOTAL_RCAN,TOTAL_SCAN,TOTAL_SNO
-REAL :: TOTAL_PRE,TOTAL_EVAP,TOTAL_ROF,TOTAL_ROFO,TOTAL_ROFS,TOTAL_ROFB
 
 !> CROSS-CLASS VARIABLES (CLASS):
 !> ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
@@ -739,9 +741,9 @@ REAL    SAE,SAESRT,SAEMSRT,FBEST,FTEST
 REAL, DIMENSION(:,:), ALLOCATABLE :: QOBS,QSIM
 
 INTEGER, PARAMETER :: R2CFILEUNITSTART = 500
-INTEGER NR2C,DELTR2C,NR2CFILES
-INTEGER, ALLOCATABLE, DIMENSION(:)        :: GRD,GAT,GRDGAT
-CHARACTER*50, ALLOCATABLE, DIMENSION(:,:) :: R2C_ATTRIBUTES
+INTEGER NR2C,DELTR2C,NR2CFILES,NR2CSTATES,NR2C_R,DELTR2C_R,NR2C_S,DELTR2C_S
+INTEGER, ALLOCATABLE, DIMENSION(:)        :: GRD,GAT,GRDGAT,GRD_R,GAT_R,GRDGAT_R,GRD_S,GAT_S,GRDGAT_S
+CHARACTER*50, ALLOCATABLE, DIMENSION(:,:) :: R2C_ATTRIBUTES, R2C_ATTRIBUTES_R, R2C_ATTRIBUTES_S
 
 INTEGER  NMELT
 REAL ::  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
@@ -803,6 +805,27 @@ DATA VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
 !>!TODO: UPDATE THIS (RELEASE(6)) WITH VERSION CHANGE
 WRITE (6, "(' MESH 'A, ' --- ',' ('A,')'/)"), TRIM (RELEASE(6)), &
       TRIM (VERSION) !MESH VERSION
+
+! Find the appropriate value of IGND from MESH_input_soil_levels.txt
+IGND = 0
+OPEN (52, FILE="MESH_input_soil_levels.txt", STATUS="OLD",IOSTAT=IOS)
+IF (IOS .NE. 0)THEN !CHECK FILE FOR IOSTAT ERRORS
+   WRITE (6, *)
+   WRITE (6, *)
+   WRITE (6, *) "MESH_input_soil_levels.txt could not be ", &
+                "opened.  Ensure that the file exists and restart the ", &
+                "program."
+   STOP
+ELSE
+   IGND_TEST = 1.0
+   DO WHILE (IGND_TEST.NE.0.0.AND.IOS.EQ.0)
+     READ(52,'(2X,F8.2)',IOSTAT=IOS) IGND_TEST
+     IGND = IGND + 1
+   ENDDO
+   IGND = IGND - 1 ! because IGND increments the first time that IGND_TEST = 0.0
+   WRITE(6,*) "IGND = ", IGND
+END IF
+CLOSE(52)
 
 !>=======================================================================
 !> INITIALIZE CLASS VARIABLES
@@ -923,18 +946,20 @@ ELSE !FOR GENERAL PURPOSES
   ALLOCATE (PRE_OUT(1), EVAP_OUT(1), ROF_OUT(1))
 END IF !(WF_NUM_POINTS .GT. 0)
 
-!> WATROUTE INPUT FILES:
-ALLOCATE (OUTARRAY(YCOUNT, XCOUNT), RUNOFF(YCOUNT, XCOUNT), &
+!!> WATROUTE INPUT FILES:
+ALLOCATE (RUNOFF(YCOUNT, XCOUNT), &
   RECHARGE(YCOUNT, XCOUNT), STAT=PAS)
-IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating WATROUTE input variables.  ", &
-      "Check that these bounds are within an acceptable range."
-  WRITE (6, *) "Bound 1 (grid square rows): ", YCOUNT
-  WRITE (6, *) "Bound 2 (grid square columns): ", XCOUNT
-  STOP
-END IF
+!ALLOCATE (OUTARRAY(YCOUNT, XCOUNT), RUNOFF(YCOUNT, XCOUNT), &
+!  RECHARGE(YCOUNT, XCOUNT), STAT=PAS)
+!IF (PAS .NE. 0) THEN
+!  WRITE (6, *)
+!  WRITE (6, *)
+!  WRITE (6, *) "Error allocating WATROUTE input variables.  ", &
+!      "Check that these bounds are within an acceptable range."
+!  WRITE (6, *) "Bound 1 (grid square rows): ", YCOUNT
+!  WRITE (6, *) "Bound 2 (grid square columns): ", XCOUNT
+!  STOP
+!END IF
 
 !> MET. FORCING DATA:
 
@@ -1683,12 +1708,6 @@ DO I=1,NA
 ENDDO !DO I=1,NA
 
 !> clear accumulating variables
-TOTAL_ROF=0.0
-TOTAL_ROFO=0.0
-TOTAL_ROFS=0.0
-TOTAL_ROFB=0.0
-TOTAL_EVAP=0.0
-TOTAL_PRE=0.0
 TOTAL_ROFACC=0.0
 TOTAL_ROFOACC=0.0
 TOTAL_ROFSACC=0.0
@@ -1975,60 +1994,60 @@ IF (RESUMEFLAG == 1 ) THEN
   END IF
   CLOSE (UNIT=88)
 END IF
-!>
-!>*******************************************************************
-!>
-!>
-!>***************CHECK MODEL FLAG****************************************************
-!>
-!MODELFLG='r'
-!> R2C-FORMAT OUTPUT FILES (RUNOFF, RECHARGE, AND LEAKAGE VALUES)
-!> CALL WRITE_R2C TO WRITE R2C-FORMAT FILES
-AUTHOR = "MESH_DRIVER"
-IF (MODELFLG .EQ. "i") AUTHOR="MESH_DRIVER (rte -i)"
-IF (MODELFLG .EQ. "r") AUTHOR="MESH_DRIVER (rte -r)"
-IF (MODELFLG .EQ. "l") AUTHOR="MESH_DRIVER (rte -l)"
-COORDSYS_TEMP = COORDSYS1
-ZONE_TEMP = ZONE1
-DATUM_TEMP = DATUM1
-XORIGIN_TEMP = XORIGIN
-YORIGIN_TEMP = YORIGIN
-XCOUNT_TEMP = XCOUNT
-YCOUNT_TEMP = YCOUNT
-XDELTA_TEMP = XDELTA
-YDELTA_TEMP = YDELTA
-SOURCE_FILE_NAME = "CLASS"
-
-!> OPEN RTE.EXE INPUT FILES (UNIT 261, UNIT 262)
-!> DAN * UNIT NUMBERS HAVE BEEN PULLED FROM RTE.EXE SUBROUTINES, THEIR
-!> DAN * FILE NAMES (FLN(31), FLN(32)) ARE READ FROM THE EVENT FILE
-!> DAN * FILES ARE OPENED ACCORDING TO MODELFLG IN THE EVENT FILE
-
-IF (MODELFLG.EQ."i" .OR. MODELFLG.EQ."r" .OR. MODELFLG.EQ."l") &
-  THEN !WRITE RUNOFF HEADER
-  NAME = "Gridded Channel Inflow"
-  ATTRIBUTE_NAME = "channel_inflow"
-  ATTRIBUTE_UNITS = "mm"
-  ATTRIBUTE_TYPE = "flow"
-  CALL WRITE_R2C (261, 31, 0, 1, 0, 1, 1)
-END IF
-
-IF (MODELFLG .EQ. "r") THEN !WRITE RECHARGE HEADER
-  NAME = "Gridded Recharge"
-  ATTRIBUTE_NAME = "recharge"
-  ATTRIBUTE_UNITS = "mm"
-  ATTRIBUTE_TYPE = "flow"
-  CALL WRITE_R2C (262, 32, 0, 1, 0, 1, 1)
-END IF
-
-!+     IF (MODELFLG .EQ. "l") THEN !WRITE RECHARGE HEADER
-!+        NAME = "Gridded Leakage"
-!+        ATTRIBUTE_NAME = "leakage"
-!+        ATTRIBUTE_UNITS = "cms"
-!+        ATTRIBUTE_TYPE = " "
-!+        CALL WRITE_R2C (263, 33, 0, 1, 0, 1, 1)
-!+      END IF
-
+!!>
+!!>*******************************************************************
+!!>
+!!>
+!!>***************CHECK MODEL FLAG****************************************************
+!!>
+!!MODELFLG='r'
+!!> R2C-FORMAT OUTPUT FILES (RUNOFF, RECHARGE, AND LEAKAGE VALUES)
+!!> CALL WRITE_R2C TO WRITE R2C-FORMAT FILES
+!AUTHOR = "MESH_DRIVER"
+!IF (MODELFLG .EQ. "i") AUTHOR="MESH_DRIVER (rte -i)"
+!IF (MODELFLG .EQ. "r") AUTHOR="MESH_DRIVER (rte -r)"
+!IF (MODELFLG .EQ. "l") AUTHOR="MESH_DRIVER (rte -l)"
+!COORDSYS_TEMP = COORDSYS1
+!ZONE_TEMP = ZONE1
+!DATUM_TEMP = DATUM1
+!XORIGIN_TEMP = XORIGIN
+!YORIGIN_TEMP = YORIGIN
+!XCOUNT_TEMP = XCOUNT
+!YCOUNT_TEMP = YCOUNT
+!XDELTA_TEMP = XDELTA
+!YDELTA_TEMP = YDELTA
+!SOURCE_FILE_NAME = "CLASS"
+!
+!!> OPEN RTE.EXE INPUT FILES (UNIT 261, UNIT 262)
+!!> DAN * UNIT NUMBERS HAVE BEEN PULLED FROM RTE.EXE SUBROUTINES, THEIR
+!!> DAN * FILE NAMES (FLN(31), FLN(32)) ARE READ FROM THE EVENT FILE
+!!> DAN * FILES ARE OPENED ACCORDING TO MODELFLG IN THE EVENT FILE
+!
+!IF (MODELFLG.EQ."i" .OR. MODELFLG.EQ."r" .OR. MODELFLG.EQ."l") &
+!  THEN !WRITE RUNOFF HEADER
+!  NAME = "Gridded Channel Inflow"
+!  ATTRIBUTE_NAME = "channel_inflow"
+!  ATTRIBUTE_UNITS = "mm"
+!  ATTRIBUTE_TYPE = "flow"
+!  CALL WRITE_R2C (261, 31, 0, 1, 0, 1, 1)
+!END IF
+!
+!IF (MODELFLG .EQ. "r") THEN !WRITE RECHARGE HEADER
+!  NAME = "Gridded Recharge"
+!  ATTRIBUTE_NAME = "recharge"
+!  ATTRIBUTE_UNITS = "mm"
+!  ATTRIBUTE_TYPE = "flow"
+!  CALL WRITE_R2C (262, 32, 0, 1, 0, 1, 1)
+!END IF
+!
+!!+     IF (MODELFLG .EQ. "l") THEN !WRITE RECHARGE HEADER
+!!+        NAME = "Gridded Leakage"
+!!+        ATTRIBUTE_NAME = "leakage"
+!!+        ATTRIBUTE_UNITS = "cms"
+!!+        ATTRIBUTE_TYPE = " "
+!!+        CALL WRITE_R2C (263, 33, 0, 1, 0, 1, 1)
+!!+      END IF
+!
 !> *********************************************************************
 !> Open the MESH_input_forcing.bin file
 !> *********************************************************************
@@ -2296,13 +2315,11 @@ IF(R2COUTPUTFLAG .GE. 1)THEN
            PRINT*,'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
                   'RECORD AT THE FIRST LINE IN THE r2c_output.txt FILE. ', &
                   'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
-           PAUSE
            STOP
          ENDIF 
       ENDIF
       IF(IOS /= 0 .OR. MOD(DELTR2C,30) /= 0)THEN
          WRITE(6,9002)
-         PAUSE
          STOP
       ENDIF
       
@@ -2313,7 +2330,6 @@ IF(R2COUTPUTFLAG .GE. 1)THEN
           READ(56,*,IOSTAT = IOS)GRD(I),GAT(I),GRDGAT(I),(R2C_ATTRIBUTES(I,J),J=1,3)
           IF(IOS /= 0)THEN
              PRINT*,'ERROR READING r2c_output.txt FILE AT LINE ', I + 1
-             PAUSE
              STOP
          ELSE
            IF(GRD(I)==1)THEN
@@ -2337,7 +2353,6 @@ IF(R2COUTPUTFLAG .GE. 1)THEN
       PRINT*,"r2c_output.txt FILE DOESN'T EXIST. ", &
              "R2COUTPUTFLAG SHOULD BE SET TO ZERO IF R2C OUTPUTS ARE NOT NEEDED."
       PRINT*
-      PAUSE
       STOP
    ENDIF
 ENDIF
@@ -2346,16 +2361,14 @@ ENDIF
 
 IF(NR2CFILES > 0)THEN
  CALL WRITE_R2C_HEADER(NMTEST,NR2C,NR2CFILES,GRD,GAT,GRDGAT,R2C_ATTRIBUTES, &
-                       R2CFILEUNITSTART)
+                       R2CFILEUNITSTART,NR2CSTATES,coordsys1,datum1,zone1,   &
+                       XORIGIN,YORIGIN,XDELTA,YDELTA,XCOUNT,YCOUNT)
 ENDIF
 
 !> For the ENSIM timestamp
 wfo_seq=0
 
 !> End of ENSIM Changes
-
-
-
 
 !> *********************************************************************
 !> Output information to screen
@@ -2443,7 +2456,7 @@ ENDIF
 !>*******************************************************************
 !>
 !> Check if we are reading in a resume file
-IF (RESUMEFLAG /= 0) THEN
+IF (RESUMEFLAG == 1) THEN
   PRINT *, 'Reading saved state variables'
 call resume_state( &
    HOURLYFLAG, IMIN, IMIN2, &
@@ -2579,10 +2592,168 @@ call resume_state( &
   SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,NMELT,t0_ACC)
 ENDIF
 
+
 CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,IWAT,IICE, &
              NML,NMW,NWAT,NICE,cp%GCGRD,cp%FAREROW,cp%MIDROW, &
              NA,NTYPE,ILG,1,NA,NMTEST)
 
+!>
+!>*******************************************************************
+!>
+!> Check if we are reading in a resume_state.r2c file
+IF (RESUMEFLAG == 2) THEN
+  PRINT *, 'Reading saved state variables'
+  
+! Allocate arrays for resume_state_r2c
+      OPEN(54, FILE = 'resume_state_r2c.txt')
+      READ(54,*,IOSTAT=IOS)NR2C_R,DELTR2C_R
+      IF(IOS == 0)THEN
+         ALLOCATE(GRD_R(NR2C_R),GAT_R(NR2C_R),GRDGAT_R(NR2C_R),R2C_ATTRIBUTES_R(NR2C_R,3),STAT=PAS)
+         IF(PAS /= 0)THEN
+           PRINT*,'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
+                  'RECORD AT THE FIRST LINE IN THE resume_state_r2c.txt FILE. ', &
+                  'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
+           STOP
+         ENDIF 
+      ENDIF
+      CLOSE(54)
+
+! start by gathering from ROW to GAT so as not to mess-up with CLASSS after call to save_state_r2c
+CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
+             TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT, &
+             TCANGAT,RCANGAT,SCANGAT,GROGAT, FRZCGAT, CMAIGAT, &
+             FCANGAT,LNZ0GAT,ALVCGAT,ALICGAT,PAMXGAT, &
+             PAMNGAT,CMASGAT,ROOTGAT,RSMNGAT,QA50GAT, &
+             VPDAGAT,VPDBGAT,PSGAGAT,PSGBGAT,PAIDGAT, &
+             HGTDGAT,ACVDGAT,ACIDGAT,TSFSGAT,WSNOGAT, &
+             THPGAT, THRGAT, THMGAT, BIGAT,  PSISGAT, &
+             GRKSGAT,THRAGAT,HCPSGAT,TCSGAT, &
+             THFCGAT,PSIWGAT,DLZWGAT,ZBTWGAT, &
+             ZSNLGAT,ZPLGGAT,ZPLSGAT,TACGAT, QACGAT, &
+             DRNGAT, XSLPGAT,XDGAT,WFSFGAT,KSGAT, &
+             ALGWGAT,ALGDGAT,ASVDGAT,ASIDGAT,AGVDGAT, &
+             AGIDGAT,ISNDGAT,RADJGAT,ZBLDGAT,Z0ORGAT, &
+             ZRFMGAT,ZRFHGAT,ZDMGAT, ZDHGAT, FSVHGAT, &
+             FSIHGAT,CSZGAT, FDLGAT, ULGAT,  VLGAT, &
+             TAGAT,  QAGAT,  PRESGAT,PREGAT, PADRGAT, &
+             VPDGAT, TADPGAT,RHOAGAT,RPCPGAT,TRPCGAT, &
+             SPCPGAT,TSPCGAT,RHSIGAT,FCLOGAT,DLONGAT, &
+             GGEOGAT, &
+             CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
+             QFSGAT, QFXGAT, PETGAT, GAGAT,  EFGAT, &
+             GTGAT,  QGGAT,  TSFGAT, ALVSGAT,ALIRGAT, &
+             SFCTGAT,SFCUGAT,SFCVGAT,SFCQGAT,FSNOGAT, &
+             FSGVGAT,FSGSGAT,FSGGGAT,FLGVGAT,FLGSGAT, &
+             FLGGGAT,HFSCGAT,HFSSGAT,HFSGGAT,HEVCGAT, &
+             HEVSGAT,HEVGGAT,HMFCGAT,HMFNGAT,HTCCGAT, &
+             HTCSGAT,PCFCGAT,PCLCGAT,PCPNGAT,PCPGGAT, &
+             QFGGAT, QFNGAT, QFCLGAT,QFCFGAT,ROFGAT, &
+             ROFOGAT,ROFSGAT,ROFBGAT,TROFGAT,TROOGAT, &
+             TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
+             WTRCGAT,WTRSGAT,WTRGGAT,DRGAT, GFLXGAT, &
+             HMFGGAT,HTCGAT, QFCGAT, ITCTGAT, &
+             ILMOS,JLMOS,IWMOS,JWMOS,NML,NA,NTYPE, &
+             NA*NTYPE,IGND,ICAN,ICP1,cp%TBARROW,cp%THLQROW, &
+             cp%THICROW,cp%TPNDROW,cp%ZPNDROW,TBASROW,cp%ALBSROW, &
+             cp%TSNOROW,cp%RHOSROW,cp%SNOROW,cp%TCANROW, &
+             cp%RCANROW,cp%SCANROW,cp%GROROW, CMAIROW,cp%FCANROW, &
+             cp%LNZ0ROW,cp%ALVCROW,cp%ALICROW,cp%PAMXROW, &
+             cp%PAMNROW,cp%CMASROW,cp%ROOTROW,cp%RSMNROW, &
+             cp%QA50ROW,cp%VPDAROW,cp%VPDBROW,cp%PSGAROW, &
+             cp%PSGBROW,PAIDROW,HGTDROW,ACVDROW,ACIDROW,TSFSROW, &
+             WSNOROW, THPROW, THRROW, THMROW, BIROW,  PSISROW, &
+             GRKSROW,THRAROW,HCPSROW,TCSROW, &
+             THFCROW,PSIWROW,DLZWROW,ZBTWROW, &
+             hp%ZSNLROW,hp%ZPLGROW,hp%ZPLSROW,hp%FRZCROW, TACROW, QACROW, &
+             cp%DRNROW, cp%XSLPROW,cp%XDROW,WFSFROW,cp%KSROW, &
+             ALGWROW,ALGDROW,ASVDROW,ASIDROW,AGVDROW, &
+             AGIDROW,ISNDROW,RADJGRD,cp%ZBLDGRD,Z0ORGRD, &
+             cp%ZRFMGRD,cp%ZRFHGRD,ZDMGRD, ZDHGRD, FSVHGRD, &
+             FSIHGRD,CSZGRD, FDLGRD, ULGRD,  VLGRD, &
+             TAGRD,  QAGRD,  PRESGRD,PREGRD, PADRGRD, &
+             VPDGRD, TADPGRD,RHOAGRD,RPCPGRD,TRPCGRD, &
+             SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD, &
+             GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT)
+
+call resume_state_r2c(NML,NLTEST,NMTEST,NCOUNT, &
+                    IMIN,ACLASS,NR2C,GRD_R,GAT_R,GRDGAT_R,R2C_ATTRIBUTES_R,&
+                    NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,ICAN,ICP1,IGND, &
+                       TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
+                       TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT,  &
+                       TCANGAT,RCANGAT,SCANGAT,GROGAT, CMAIGAT, &
+                       FCANGAT,LNZ0GAT,ALVCGAT,ALICGAT,PAMXGAT, &
+                       PAMNGAT,CMASGAT,ROOTGAT,RSMNGAT,QA50GAT, &
+                       VPDAGAT,VPDBGAT,PSGAGAT,PSGBGAT,PAIDGAT, &
+                       HGTDGAT,ACVDGAT,ACIDGAT,TSFSGAT,WSNOGAT, &
+                       THPGAT, THRGAT, THMGAT, BIGAT,  PSISGAT, &
+                       GRKSGAT,THRAGAT,HCPSGAT,TCSGAT,          &
+                       THFCGAT,PSIWGAT,DLZWGAT,ZBTWGAT,         &
+                       ZSNLGAT,ZPLGGAT,ZPLSGAT,TACGAT, QACGAT,  &
+                       DRNGAT, XSLPGAT,XDGAT,WFSFGAT,KSGAT,     &
+                       ALGWGAT,ALGDGAT,ASVDGAT,ASIDGAT,AGVDGAT, &
+                       AGIDGAT,ISNDGAT,RADJGAT,ZBLDGAT,Z0ORGAT, &
+                       ZRFMGAT,ZRFHGAT,ZDMGAT, ZDHGAT, FSVHGAT, &
+                       FSIHGAT,CSZGAT, FDLGAT, ULGAT,  VLGAT,   &
+                       TAGAT,  QAGAT,  PRESGAT,PREGAT, PADRGAT, &
+                       VPDGAT, TADPGAT,RHOAGAT,RPCPGAT,TRPCGAT, &
+                       SPCPGAT,TSPCGAT,RHSIGAT,FCLOGAT,DLONGAT, &
+                       GGEOGAT,                                 &
+                       CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
+                       QFSGAT, QFXGAT, PETGAT, GAGAT,  EFGAT,   &
+                       GTGAT,  QGGAT,  TSFGAT, ALVSGAT,ALIRGAT, &
+                       SFCTGAT,SFCUGAT,SFCVGAT,SFCQGAT,FSNOGAT, &
+                       FSGVGAT,FSGSGAT,FSGGGAT,FLGVGAT,FLGSGAT, &
+                       FLGGGAT,HFSCGAT,HFSSGAT,HFSGGAT,HEVCGAT, &
+                       HEVSGAT,HEVGGAT,HMFCGAT,HMFNGAT,HTCCGAT, &
+                       HTCSGAT,PCFCGAT,PCLCGAT,PCPNGAT,PCPGGAT, &
+                       QFGGAT, QFNGAT, QFCLGAT,QFCFGAT,ROFGAT,  &
+                       ROFOGAT,ROFSGAT,ROFBGAT,TROFGAT,TROOGAT, &
+                       TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
+                       WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  GFLXGAT, &
+                       HMFGGAT,HTCGAT, QFCGAT,                  &
+                       MANNGAT, DDGAT,coordsys1,datum1,zone1,   &
+                       XORIGIN,YORIGIN,XDELTA,YDELTA)
+                       
+! now scatter the variables so that the GATs don't get overwritten incorrectly                       
+CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,cp%TPNDROW, &
+             cp%ZPNDROW,TBASROW,cp%ALBSROW,cp%TSNOROW,cp%RHOSROW, &
+             cp%SNOROW,cp%TCANROW,cp%RCANROW,cp%SCANROW,cp%GROROW, &
+             TSFSROW,CDHROW, CDMROW, HFSROW, TFXROW, QEVPROW, &
+             QFSROW, QFXROW, PETROW, GAROW,  EFROW, &
+             GTROW,  QGROW,  TSFROW, ALVSROW,ALIRROW, &
+             CMAIROW,SFCTROW,SFCUROW,SFCVROW,SFCQROW, &
+             FSGVROW,FSGSROW,FSGGROW,FLGVROW,FLGSROW, &
+             FLGGROW,HFSCROW,HFSSROW,HFSGROW,HEVCROW, &
+             HEVSROW,HEVGROW,HMFCROW,HMFNROW,HTCCROW, &
+             HTCSROW,PCFCROW,PCLCROW,PCPNROW,PCPGROW, &
+             QFGROW, QFNROW, QFCLROW,QFCFROW,ROFROW, &
+             ROFOROW,ROFSROW,ROFBROW,TROFROW,TROOROW, &
+             TROSROW,TROBROW,ROFCROW,ROFNROW,ROVGROW, &
+             WTRCROW,WTRSROW,WTRGROW,DRROW,  WTABROW, &
+             ILMOROW,UEROW,  HBLROW, TACROW, QACROW, &
+             HMFGROW,HTCROW, QFCROW, WSNOROW,FSNOROW, &
+             GFLXROW,ITCTROW,ILMOS,JLMOS,IWMOS,JWMOS, &
+             NML,NA,NTYPE,ILG,IGND,ICAN,ICAN+1, &
+             TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
+             TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT, &
+             TCANGAT,RCANGAT,SCANGAT,GROGAT,TSFSGAT, &
+             CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
+             QFSGAT, QFXGAT, PETGAT, GAGAT,  EFGAT, &
+             GTGAT,  QGGAT,  TSFGAT, ALVSGAT,ALIRGAT, &
+             CMAIGAT,SFCTGAT,SFCUGAT,SFCVGAT,SFCQGAT, &
+             FSGVGAT,FSGSGAT,FSGGGAT,FLGVGAT,FLGSGAT, &
+             FLGGGAT,HFSCGAT,HFSSGAT,HFSGGAT,HEVCGAT, &
+             HEVSGAT,HEVGGAT,HMFCGAT,HMFNGAT,HTCCGAT, &
+             HTCSGAT,PCFCGAT,PCLCGAT,PCPNGAT,PCPGGAT, &
+             QFGGAT, QFNGAT, QFCLGAT,QFCFGAT,ROFGAT, &
+             ROFOGAT,ROFSGAT,ROFBGAT,TROFGAT,TROOGAT, &
+             TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
+             WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  WTABGAT, &
+             ILMOGAT,UEGAT,  HBLGAT, TACGAT, QACGAT, &
+             HMFGGAT,HTCGAT, QFCGAT, WSNOGAT,FSNOGAT, &
+             GFLXGAT,ITCTGAT,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT )
+
+ENDIF
 !> *********************************************************************
 !> MAM - Initialize ENDDATE and ENDDATA
 !> *********************************************************************
@@ -2633,19 +2804,6 @@ NCAL  = 0
 VLGRD = 0.0
 VLGAT = 0.0
 
-TOTAL_STORE = 0.0
-TOTAL_THLQ  = 0.0
-TOTAL_THIC  = 0.0
-TOTAL_ZPND  = 0.0
-TOTAL_RCAN  = 0.0
-TOTAL_SCAN  = 0.0
-TOTAL_SNO   = 0.0
-OPEN(unit=900,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '/Basin_average_water_balance.csv')
-WRITE(900,"('DAY,YEAR,PREACC,EVAPACC,ROFACC,ROFOACC,ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNO,SCAN,RCAN,ZPND,"// &
-            "THLQ1,THLQ2,THLQ3,THLQ4,THLQ5,THLQ6,THIC1,THIC2,THIC3,THIC4,THIC5,THIC6,"// &
-            "THLQIC1,THLQIC2,THLQIC3,THLQIC4,THLQIC5,THLQIC6,THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE')")
-                                                
 !> *********************************************************************
 !> Start of main loop that is run each half hour
 !> *********************************************************************
@@ -2856,14 +3014,16 @@ CALL CLASSI(VPDGAT,TADPGAT,PADRGAT,RHOAGAT,RHSIGAT, &
 IF(JAN==1) THEN
   INIT_STORE=0.0
   DO I=1,NA
-     IF(FRAC(I)/=0.0)THEN
-        DO M=1,NMTEST
-           INIT_STORE = INIT_STORE + cp%FAREROW(I,M)*(cp%RCANROW(I,M)+cp%SCANROW(I,M)+cp%SNOROW(I,M)+cp%ZPNDROW(I,M)*RHOW)
-           DO J = 1, IGND
-              INIT_STORE = INIT_STORE + cp%FAREROW(I,M)*(cp%THLQROW(I,M,J)*RHOW+cp%THICROW(I,M,J)*RHOICE)*DLZWROW(I,M,J)
-           ENDDO
-        ENDDO
-     ENDIF
+  DO M=1,NMTEST
+    IF(FRAC(I)>0.0)THEN
+      INIT_STORE=INIT_STORE+(cp%RCANROW(I,M)+cp%SCANROW(I,M) &
+      +cp%SNOROW(I,M)+(cp%THLQROW(I,M,1)*RHOW+cp%THICROW(I,M,1) &
+      *RHOICE)*DLZWROW(I,M,1)+cp%ZPNDROW(I,M)*RHOW &
+      +(cp%THLQROW(I,M,2)*RHOW+cp%THICROW(I,M,2)*RHOICE) &
+      *DLZWROW(I,M,2)+(cp%THLQROW(I,M,3)*RHOW+cp%THICROW(I,M,3) &
+      *RHOICE)*DLZWROW(I,M,3))*cp%FAREROW(I,M)
+	    ENDIF
+  ENDDO
   ENDDO
 ENDIF
 
@@ -3165,7 +3325,7 @@ IF(NR2CFILES > 0 .AND. MOD(NCOUNT*30,DELTR2C) == 0)THEN
   CALL WRITE_R2C_DATA(NML,NLTEST,NMTEST,NCOUNT,IMIN,ACLASS,    &
                       NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,&
                       NR2C,NR2CFILES,R2CFILEUNITSTART,GRD,GAT, &
-                      GRDGAT,R2C_ATTRIBUTES,FRAME_NO_NEW,IYEAR,&
+                      GRDGAT,NR2CSTATES,R2C_ATTRIBUTES,FRAME_NO_NEW,IYEAR,&
                       ensim_MONTH,ensim_DAY,IHOUR,IMIN,ICAN,   &
                       ICAN+1,IGND,                             &
                       TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
@@ -3363,31 +3523,31 @@ ENDDO !DO I=1,NA
 
 CALL tile_connector(runoff, recharge, null(), ncount, ROFOGRD, ROFSGRD, ROFBGRD, DELT)
 
-!> =======================================================================
-!> * WRITE WATROUTE INPUT FILES
-!> CDAN * FILES ARE ONLY WRITTEN ON THE HOUR (WATROUTE READS HOURLY DATA).
-!> CDAN * HOURLY TIME STEPS ARE ODD-NUMBERED INTEGERS.
-
-IF (MOD (REAL (NCOUNT), 2.0) .EQ. 0.0) THEN !HOURLY TIME STEP
-  YEAR1 = IYEAR
-  CALL FIND_MONTH (IDAY, IYEAR, MONTH_NOW)
-  CALL FIND_DAY (IDAY, IYEAR, DAY_NOW)
-  HOUR_NOW = IHOUR + 1 !ROUTING USES 1-24 RANGE, MESH USES 0-23
-
-  IF (MODELFLG.EQ."i" .OR. MODELFLG.EQ."r" .OR. MODELFLG.EQ."l") &
-      THEN !WRITE RUNOFF DATA
-      OUTARRAY = RUNOFF !PASS RUNOFF TO OUTARRAY IN WRITE_R2C
-      CALL WRITE_R2C(261, 31, NO_FRAMES, 1, FRAME_NO, 1, 6)
- END IF
+!!> =======================================================================
+!!> * WRITE WATROUTE INPUT FILES
+!!> CDAN * FILES ARE ONLY WRITTEN ON THE HOUR (WATROUTE READS HOURLY DATA).
+!!> CDAN * HOURLY TIME STEPS ARE ODD-NUMBERED INTEGERS.
 !
- IF (MODELFLG .EQ. "r") THEN !WRITE RECHARGE DATA
-      OUTARRAY = RECHARGE !PASS RUNOFF TO OUTARRAY IN WRITE_R2C
-      CALL WRITE_R2C(262, 32, NO_FRAMES, 1, FRAME_NO, 1, 6)
-  END IF
-
-  FRAME_NO = FRAME_NO + 1 !UPDATE COUNTERS
-  NO_FRAMES = FRAME_NO + 1
-END IF !(MOD (REAL (NCOUNT), 2.0) .EQ. 0.0)
+!IF (MOD (REAL (NCOUNT), 2.0) .EQ. 0.0) THEN !HOURLY TIME STEP
+!  YEAR1 = IYEAR
+!  CALL FIND_MONTH (IDAY, IYEAR, MONTH_NOW)
+!  CALL FIND_DAY (IDAY, IYEAR, DAY_NOW)
+!  HOUR_NOW = IHOUR + 1 !ROUTING USES 1-24 RANGE, MESH USES 0-23
+!
+!  IF (MODELFLG.EQ."i" .OR. MODELFLG.EQ."r" .OR. MODELFLG.EQ."l") &
+!      THEN !WRITE RUNOFF DATA
+!      OUTARRAY = RUNOFF !PASS RUNOFF TO OUTARRAY IN WRITE_R2C
+!      CALL WRITE_R2C(261, 31, NO_FRAMES, 1, FRAME_NO, 1, 6)
+! END IF
+!!
+! IF (MODELFLG .EQ. "r") THEN !WRITE RECHARGE DATA
+!      OUTARRAY = RECHARGE !PASS RUNOFF TO OUTARRAY IN WRITE_R2C
+!      CALL WRITE_R2C(262, 32, NO_FRAMES, 1, FRAME_NO, 1, 6)
+!  END IF
+!
+!  FRAME_NO = FRAME_NO + 1 !UPDATE COUNTERS
+!  NO_FRAMES = FRAME_NO + 1
+!END IF !(MOD (REAL (NCOUNT), 2.0) .EQ. 0.0)
 
 
 !> calculate and write the basin avg SCA similar to watclass3.0f5
@@ -3445,58 +3605,50 @@ ENDIF
 !> ACCUMULATE OUTPUT DATA FOR DIURNALLY AVERAGED FIELDS.
 
 !$omp parallel do
-DO I = 1, NA
-   IF(FRAC(I) /= 0.0)THEN
-      DO M = 1,NMTEST
-         PREACC(I)  = PREACC(I) + PREGRD(I)*   cp%FAREROW(I,M)*DELT
-         GTACC(I)   = GTACC(I)  + GTROW(I,M)*  cp%FAREROW(I,M)
-         QEVPACC(I) = QEVPACC(I)+ QEVPROW(I,M)*cp%FAREROW(I,M)
-         EVAPACC(I) = EVAPACC(I)+ QFSROW(I,M)* cp%FAREROW(I,M)*DELT
-         HFSACC(I)  = HFSACC(I) + HFSROW(I,M)* cp%FAREROW(I,M)
-         HMFNACC(I) = HMFNACC(I)+ HMFNROW(I,M)*cp%FAREROW(I,M)
-         ROFACC(I)  = ROFACC(I) + ROFROW(I,M)* cp%FAREROW(I,M)*DELT
-         ROFOACC(I) = ROFOACC(I)+ ROFOROW(I,M)*cp%FAREROW(I,M)*DELT
-         ROFSACC(I) = ROFSACC(I)+ ROFSROW(I,M)*cp%FAREROW(I,M)*DELT
-         ROFBACC(I) = ROFBACC(I)+ ROFBROW(I,M)*cp%FAREROW(I,M)*DELT
-         WTBLACC(I) = WTBLACC(I)+ WTABROW(I,M)*cp%FAREROW(I,M)
-         DO J = 1, IGND
-            TBARACC(I,J) = TBARACC(I,J)+cp%TBARROW(I,M,J)*ACLASS(I,M)
-            THLQACC(I,J) = THLQACC(I,J)+cp%THLQROW(I,M,J)*cp%FAREROW(I,M)
-            THICACC(I,J) = THICACC(I,J)+cp%THICROW(I,M,J)*cp%FAREROW(I,M)
-            THALACC(I,J) = THALACC(I,J)+(cp%THLQROW(I,M,J)+ &
-                                         cp%THICROW(I,M,J))*cp%FAREROW(I,M)
-            TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%THLQROW(I,M,J)*cp%FAREROW(I,M)*DLZWROW(I,M,J)
-            TOTAL_THIC(J) = TOTAL_THIC(J) + cp%THICROW(I,M,J)*cp%FAREROW(I,M)*DLZWROW(I,M,J)
-            
-         ENDDO
-         
-         TOTAL_ZPND = TOTAL_ZPND + cp%ZPNDROW(I,M)*RHOW*cp%FAREROW(I,M)
-         
-         ALVSACC(I) = ALVSACC(I)+ALVSROW(I,M)*cp%FAREROW(I,M)*FSVHGRD(I)
-         ALIRACC(I) = ALIRACC(I)+ALIRROW(I,M)*cp%FAREROW(I,M)*FSIHGRD(I)
-         IF(cp%SNOROW(I,M)>0.0) THEN
-            RHOSACC(I) = RHOSACC(I)+cp%RHOSROW(I,M)*cp%FAREROW(I,M)
-            TSNOACC(I) = TSNOACC(I)+cp%TSNOROW(I,M)*cp%FAREROW(I,M)
-            WSNOACC(I) = WSNOACC(I)+WSNOROW(I,M)*cp%FAREROW(I,M)
-            SNOARE(I)  = SNOARE(I)+cp%FAREROW(I,M)
-         ENDIF
-         IF(cp%TCANROW(I,M) > 0.5) THEN
-            TCANACC(I) = TCANACC(I)+cp%TCANROW(I,M)*cp%FAREROW(I,M)
-            CANARE(I)  = CANARE(I)+cp%FAREROW(I,M)
-         ENDIF
-         SNOACC(I)  = SNOACC(I)+cp%SNOROW(I,M)*cp%FAREROW(I,M)
-         RCANACC(I) = RCANACC(I)+cp%RCANROW(I,M)*cp%FAREROW(I,M)
-         SCANACC(I) = SCANACC(I)+cp%SCANROW(I,M)*cp%FAREROW(I,M)
-         GROACC(I)  = GROACC(I)+cp%GROROW(I,M)*cp%FAREROW(I,M)
-         FSINACC(I) = FSINACC(I)+FSDOWN(I)*cp%FAREROW(I,M)
-         FLINACC(I) = FLINACC(I)+FDLGRD(I)*cp%FAREROW(I,M)
-         FLUTACC(I) = FLUTACC(I)+SBC*GTROW(I,M)**4*cp%FAREROW(I,M)
-         TAACC(I)   = TAACC(I)+TAGRD(I)*cp%FAREROW(I,M)
-         UVACC(I)   = UVACC(I)+UVGRD(I)*cp%FAREROW(I,M)
-         PRESACC(I) = PRESACC(I)+PRESGRD(I)*cp%FAREROW(I,M)
-         QAACC(I)   = QAACC(I)+QAGRD(I)*cp%FAREROW(I,M)
-      ENDDO !DO M=1,NMTEST
-   ENDIF
+DO I=1,NA
+  DO M=1,NMTEST
+    PREACC(I)=PREACC(I)+PREGRD(I)*cp%FAREROW(I,M)*DELT
+    GTACC(I)=GTACC(I)+GTROW(I,M)*cp%FAREROW(I,M)
+    QEVPACC(I)=QEVPACC(I)+QEVPROW(I,M)*cp%FAREROW(I,M)
+    EVAPACC(I)=EVAPACC(I)+QFSROW(I,M)*cp%FAREROW(I,M)*DELT
+    HFSACC(I)=HFSACC(I)+HFSROW(I,M)*cp%FAREROW(I,M)
+    HMFNACC(I)=HMFNACC(I)+HMFNROW(I,M)*cp%FAREROW(I,M)
+    ROFACC(I)=ROFACC(I)+ROFROW(I,M)*cp%FAREROW(I,M)*DELT
+    ROFOACC(I)=ROFOACC(I)+ROFOROW(I,M)*cp%FAREROW(I,M)*DELT
+    ROFSACC(I)=ROFSACC(I)+ROFSROW(I,M)*cp%FAREROW(I,M)*DELT
+    ROFBACC(I)=ROFBACC(I)+ROFBROW(I,M)*cp%FAREROW(I,M)*DELT
+    WTBLACC(I)=WTBLACC(I)+WTABROW(I,M)*cp%FAREROW(I,M)
+    DO J=1,IGND
+      TBARACC(I,J)=TBARACC(I,J)+cp%TBARROW(I,M,J)*ACLASS(I,M)
+      THLQACC(I,J)=THLQACC(I,J)+cp%THLQROW(I,M,J)*cp%FAREROW(I,M)
+      THICACC(I,J)=THICACC(I,J)+cp%THICROW(I,M,J)*cp%FAREROW(I,M)
+      THALACC(I,J)=THALACC(I,J)+(cp%THLQROW(I,M,J)+ &
+                  cp%THICROW(I,M,J))*cp%FAREROW(I,M)
+    ENDDO
+    ALVSACC(I)=ALVSACC(I)+ALVSROW(I,M)*cp%FAREROW(I,M)*FSVHGRD(I)
+    ALIRACC(I)=ALIRACC(I)+ALIRROW(I,M)*cp%FAREROW(I,M)*FSIHGRD(I)
+    IF(cp%SNOROW(I,M)>0.0) THEN
+      RHOSACC(I)=RHOSACC(I)+cp%RHOSROW(I,M)*cp%FAREROW(I,M)
+      TSNOACC(I)=TSNOACC(I)+cp%TSNOROW(I,M)*cp%FAREROW(I,M)
+      WSNOACC(I)=WSNOACC(I)+WSNOROW(I,M)*cp%FAREROW(I,M)
+      SNOARE(I)=SNOARE(I)+cp%FAREROW(I,M)
+    ENDIF
+    IF(cp%TCANROW(I,M)>0.5) THEN
+      TCANACC(I)=TCANACC(I)+cp%TCANROW(I,M)*cp%FAREROW(I,M)
+      CANARE(I)=CANARE(I)+cp%FAREROW(I,M)
+    ENDIF
+    SNOACC(I)=SNOACC(I)+cp%SNOROW(I,M)*cp%FAREROW(I,M)
+    RCANACC(I)=RCANACC(I)+cp%RCANROW(I,M)*cp%FAREROW(I,M)
+    SCANACC(I)=SCANACC(I)+cp%SCANROW(I,M)*cp%FAREROW(I,M)
+    GROACC(I)=GROACC(I)+cp%GROROW(I,M)*cp%FAREROW(I,M)
+    FSINACC(I)=FSINACC(I)+FSDOWN(I)*cp%FAREROW(I,M)
+    FLINACC(I)=FLINACC(I)+FDLGRD(I)*cp%FAREROW(I,M)
+    FLUTACC(I)=FLUTACC(I)+SBC*GTROW(I,M)**4*cp%FAREROW(I,M)
+    TAACC(I)=TAACC(I)+TAGRD(I)*cp%FAREROW(I,M)
+    UVACC(I)=UVACC(I)+UVGRD(I)*cp%FAREROW(I,M)
+    PRESACC(I)=PRESACC(I)+PRESGRD(I)*cp%FAREROW(I,M)
+    QAACC(I)=QAACC(I)+QAGRD(I)*cp%FAREROW(I,M)
+  ENDDO !DO M=1,NMTEST
 ENDDO !DO I=1,NA
 
 !> CALCULATE AND PRINT DAILY AVERAGES.
@@ -3507,7 +3659,6 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
   !no omp b/c of file IO
   DO I=1,NA
-  IF(FRAC(I) /= 0.0)THEN
     PREACC(I)=PREACC(I)
     GTACC(I)=GTACC(I)/REAL(NSUM)
     QEVPACC(I)=QEVPACC(I)/REAL(NSUM)
@@ -3620,21 +3771,12 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     ENDDO  !DO K=1, WF_NUM_POINTS
 
 !> update components for final tally
-    TOTAL_ROF     = TOTAL_ROF     + ROFACC(I)
-    TOTAL_ROFO    = TOTAL_ROFO    + ROFOACC(I)
-    TOTAL_ROFS    = TOTAL_ROFS    + ROFSACC(I)
-    TOTAL_ROFB    = TOTAL_ROFB    + ROFBACC(I)
-    TOTAL_EVAP    = TOTAL_EVAP    + EVAPACC(I)
-    TOTAL_PRE     = TOTAL_PRE     + PREACC(I)
-    TOTAL_ROFACC  = TOTAL_ROFACC  + ROFACC(I)
-    TOTAL_ROFOACC = TOTAL_ROFOACC + ROFOACC(I)
-    TOTAL_ROFSACC = TOTAL_ROFSACC + ROFSACC(I)
-    TOTAL_ROFBACC = TOTAL_ROFBACC + ROFBACC(I)
-    TOTAL_EVAPACC = TOTAL_EVAPACC + EVAPACC(I)
-    TOTAL_PREACC  = TOTAL_PREACC  + PREACC(I)
-    TOTAL_SNO     = TOTAL_SNO     + SNOACC(I)
-    TOTAL_SCAN    = TOTAL_SCAN    + SCANACC(I)
-    TOTAL_RCAN    = TOTAL_RCAN    + RCANACC(I)
+    TOTAL_ROFACC=TOTAL_ROFACC+ROFACC(I)
+    TOTAL_ROFOACC=TOTAL_ROFOACC+ROFOACC(I)
+    TOTAL_ROFSACC=TOTAL_ROFSACC+ROFSACC(I)
+    TOTAL_ROFBACC=TOTAL_ROFBACC+ROFBACC(I)
+    TOTAL_EVAPACC=TOTAL_EVAPACC+EVAPACC(I)
+    TOTAL_PREACC=TOTAL_PREACC+PREACC(I)
 
     IF (WF_NUM_POINTS > 0) THEN !SUMMARY VALUES FOR SCREEN
       DO J = 1, WF_NUM_POINTS !FOR MORE THAN 1 OUTPUT
@@ -3649,8 +3791,6 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
       EVAP_OUT(1) = EVAPACC(I)
       ROF_OUT(1) = ROFACC(I)
     END IF
-
-    TOTAL_STORE = TOTAL_STORE + RCANACC(I)+ SCANACC(I) + SNOACC(I)
 
 !> RESET ACCUMULATOR ARRAYS.
 
@@ -3690,57 +3830,8 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     QAACC(I)=0.
     EVAPACC(I)=0.
     FLUTACC(I)=0.
-  ENDIF
   END DO
-  
-  TOTAL_THLQ = TOTAL_THLQ / REAL(NSUM)
-  TOTAL_THIC = TOTAL_THIC / REAL(NSUM)
-  TOTAL_ZPND = TOTAL_ZPND / REAL(NSUM)
 
-  TOTAL_STORE = TOTAL_STORE + TOTAL_ZPND + SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND))
-  
-  WRITE(900,'((I4,","),(I5,","),100(E12.5,","))')IDAY,IYEAR,    &
-                                                TOTAL_PREACC/TOTAL_AREA,  &
-                                                TOTAL_EVAPACC/TOTAL_AREA, &
-                                                TOTAL_ROFACC/TOTAL_AREA,  &
-                                                TOTAL_ROFOACC/TOTAL_AREA, &
-                                                TOTAL_ROFSACC/TOTAL_AREA, &
-                                                TOTAL_ROFBACC/TOTAL_AREA, &
-                                                TOTAL_PRE/TOTAL_AREA,  &
-                                                TOTAL_EVAP/TOTAL_AREA, &
-                                                TOTAL_ROF/TOTAL_AREA,  &
-                                                TOTAL_ROFO/TOTAL_AREA, &
-                                                TOTAL_ROFS/TOTAL_AREA, &
-                                                TOTAL_ROFB/TOTAL_AREA, &
-                                                TOTAL_SNO/TOTAL_AREA,    &
-                                                TOTAL_SCAN/TOTAL_AREA,    &
-                                                TOTAL_RCAN/TOTAL_AREA,    &
-                                                TOTAL_ZPND/TOTAL_AREA,    &
-                                                (TOTAL_THLQ(J)/TOTAL_AREA, J = 1, IGND), &
-                                                (TOTAL_THIC(J)/TOTAL_AREA, J = 1, IGND), &
-                                                ((TOTAL_THLQ(J) + TOTAL_THIC(J))/TOTAL_AREA, J = 1, IGND), &
-                                                SUM(TOTAL_THLQ(1:IGND))/TOTAL_AREA, &
-                                                SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
-                                                SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
-                                                TOTAL_STORE/TOTAL_AREA, &
-                                                (TOTAL_STORE - INIT_STORE)/TOTAL_AREA
-
-!RESET ACCUMULATION VARIABLES TO ZERO
-
-TOTAL_STORE = 0.0
-TOTAL_THLQ  = 0.0
-TOTAL_THIC  = 0.0
-TOTAL_ZPND  = 0.0
-TOTAL_RCAN  = 0.0
-TOTAL_SCAN  = 0.0
-TOTAL_SNO   = 0.0
-TOTAL_ROF=0.0
-TOTAL_ROFO=0.0
-TOTAL_ROFS=0.0
-TOTAL_ROFB=0.0
-TOTAL_EVAP=0.0
-TOTAL_PRE=0.0
-    
 ENDIF  ! IF(NCOUNT==48) THEN
 
 NCOUNT=NCOUNT+1 !todo: does this work with hourly forcing data?
@@ -3837,147 +3928,147 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
   WF_QSYN_AVG = 0.0
 ENDIF
 
-!> =====================================================================      
-!> During first time through loop, write out the variables:
-!>  - wf_qi1
-!>  - wf_qo1
-!>  - wf_store1
-!>  - wf_over
-!>  - wf_lzs
-!> =====================================================================
-!>    NOTE : FIND REAL NAMES OF YHEIGHT, XWIDTH
-If (jan == 2) Then
-  jan = 3
-  
-  Open(Unit=109, File='flow_init.r2c')
-  write(109,'(a40)')'########################################'
-  write(109,'(a40)')':FileType r2c  ASCII  EnSim 1.0         '
-  write(109,'(a40)')'#                                       '
-  write(109,'(a40)')'# DataType               2D Rect Cell   '
-  write(109,'(a40)')'#                                       '
-  write(109,'(a40)')':Application             EnSimHydrologic'
-  write(109,'(a40)')':Version                 2.1.23         '
-  write(109,'(2a20)')':WrittenBy          ',author
-  call date_and_time(cday,time)
-  write(109,"(a20,a4,'/',a2,'/',a2,2x,a2,':',a2)") &
-       ':CreationDate       ', &
-       cday(1:4),cday(5:6),cday(7:8),time(1:2),time(3:4)
-  write(109,'(a40)')'#                                       '
-  write(109,'(a40)')'#---------------------------------------'
-  write(109,'(a20,a40)')':SourceFileName     ', &
-   '                                        '
-  write(109,'(a40)')'#                                       '
-  write(109,'(a20,a10,2x,a10)')':Projection         ',coordsys1
-	  if(coordsys1.eq.'UTM       ')then
-    write(109,'(a20,a10,2x,a10)')':Zone               ',zone1
-    write(109,'(a20,a10,2x,a10)')':Ellipsoid          ',datum1
-  endif
-  if(coordsys1.eq.'LATLONG   ')then
-    write(109,'(a20,a10,2x,a10)')':Ellipsoid          ',datum1
-  endif
-  write(109,'(a40)')'#                                       '
-  write(109,'(a20,f16.7)')':xOrigin            ',xorigin
-  write(109,'(a20,f16.7)')':yOrigin            ',yorigin
-  write(109,'(a40)')'#                                       '
-  write(109,'(a30)')':AttributeName 1 qi1          ' 
-  write(109,'(a30)')':AttributeName 2 qo1          '  
-  write(109,'(a30)')':AttributeName 3 store1       '
-  write(109,'(a30)')':AttributeName 4 over         ' 
-  write(109,'(a30)')':AttributeName 5 lzs          ' 
-  write(109,'(a40)')'#                                       '
-  write(109,'(a20,i16)')':xCount             ',xcount
-  write(109,'(a20,i16)')':yCount             ',ycount
-  write(109,'(a20,f16.7)')':xDelta             ',xdelta
-  write(109,'(a20,f16.7)')':yDelta             ',ydelta
-  write(109,'(a40)')'#                                       '
-  write(109,'(a40)')':EndHeader                              '
-
-!        Do I = 1, ycount
-!          Write (109, '(99999E10.3)') (WF_QI1(I, J), J = 1, xcount)
-!        End Do'
-  found = 0
-  
-  DO K = 1, ycount
-    DO J = 1, xcount
-      Do I = 1, NA
-        if (xxx(i) == j .AND. yyy(i) == k) then
-          WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0 !wf_qi1(i)
-          found = 1
-        end if
-      end do
-      if (found == 0) then
-        WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0
-      endif
-      found = 0
-    end do
-    WRITE( 109, *)
-  end do
-  
-  DO K = 1, ycount
-    DO J = 1, xcount
-      Do I = 1, NA
-        if (xxx(i) == j .AND. yyy(i) == k) then
-          WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0 !WF_QO1(i)
-          found = 1
-        end if
-      end do
-      if (found == 0) then
-        WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0
-      endif
-      found = 0
-    end do
-    WRITE( 109, *)
-  end do
-  
-  DO K = 1, ycount
-    DO J = 1, xcount
-      Do I = 1, NA
-        if (xxx(i) == j .AND. yyy(i) == k) then
-          WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0 !WF_STORE1(i)
-          found = 1
-        end if
-      end do
-      if (found == 0) then
-        WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0
-      endif
-      found = 0
-    end do
-    WRITE( 109, *)
-  end do
-  
-  DO K = 1, ycount
-    DO J = 1, xcount
-      Do I = 1, NA
-        if (xxx(i) == j .AND. yyy(i) == k) then
-          WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0 !over(i)
-          found = 1
-        end if
-      end do
-      if (found == 0) then
-        WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0
-      endif
-      found = 0
-    end do
-    WRITE( 109, *)
-  end do
-  
-  DO K = 1, ycount
-    DO J = 1, xcount
-      Do I = 1, NA
-        if (xxx(i) == j .AND. yyy(i) == k) then
-          WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0 !lzs(i)
-          found = 1
-        end if
-      end do
-      if (found == 0) then
-        WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0
-      endif
-      found = 0
-    end do
-    WRITE( 109, *)
-  end do
-  Close(109)
-End If
+!!> =====================================================================      
+!!> During first time through loop, write out the variables:
+!!>  - wf_qi1
+!!>  - wf_qo1
+!!>  - wf_store1
+!!>  - wf_over
+!!>  - wf_lzs
+!!> =====================================================================
+!!>    NOTE : FIND REAL NAMES OF YHEIGHT, XWIDTH
+!If (jan == 2) Then
+!  jan = 3
+!  
+!  Open(Unit=109, File='flow_init.r2c')
+!  write(109,'(a40)')'########################################'
+!  write(109,'(a40)')':FileType r2c  ASCII  EnSim 1.0         '
+!  write(109,'(a40)')'#                                       '
+!  write(109,'(a40)')'# DataType               2D Rect Cell   '
+!  write(109,'(a40)')'#                                       '
+!  write(109,'(a40)')':Application             EnSimHydrologic'
+!  write(109,'(a40)')':Version                 2.1.23         '
+!  write(109,'(2a20)')':WrittenBy          ',author
+!  call date_and_time(cday,time)
+!  write(109,"(a20,a4,'/',a2,'/',a2,2x,a2,':',a2)") &
+!       ':CreationDate       ', &
+!       cday(1:4),cday(5:6),cday(7:8),time(1:2),time(3:4)
+!  write(109,'(a40)')'#                                       '
+!  write(109,'(a40)')'#---------------------------------------'
+!  write(109,'(a20,a40)')':SourceFileName     ', &
+!   '                                        '
+!  write(109,'(a40)')'#                                       '
+!  write(109,'(a20,a10,2x,a10)')':Projection         ',coordsys1
+!	  if(coordsys1.eq.'UTM       ')then
+!    write(109,'(a20,a10,2x,a10)')':Zone               ',zone1
+!    write(109,'(a20,a10,2x,a10)')':Ellipsoid          ',datum1
+!  endif
+!  if(coordsys1.eq.'LATLONG   ')then
+!    write(109,'(a20,a10,2x,a10)')':Ellipsoid          ',datum1
+!  endif
+!  write(109,'(a40)')'#                                       '
+!  write(109,'(a20,f16.7)')':xOrigin            ',xorigin
+!  write(109,'(a20,f16.7)')':yOrigin            ',yorigin
+!  write(109,'(a40)')'#                                       '
+!  write(109,'(a30)')':AttributeName 1 qi1          ' 
+!  write(109,'(a30)')':AttributeName 2 qo1          '  
+!  write(109,'(a30)')':AttributeName 3 store1       '
+!  write(109,'(a30)')':AttributeName 4 over         ' 
+!  write(109,'(a30)')':AttributeName 5 lzs          ' 
+!  write(109,'(a40)')'#                                       '
+!  write(109,'(a20,i16)')':xCount             ',xcount
+!  write(109,'(a20,i16)')':yCount             ',ycount
+!  write(109,'(a20,f16.7)')':xDelta             ',xdelta
+!  write(109,'(a20,f16.7)')':yDelta             ',ydelta
+!  write(109,'(a40)')'#                                       '
+!  write(109,'(a40)')':EndHeader                              '
+!
+!!        Do I = 1, ycount
+!!          Write (109, '(99999E10.3)') (WF_QI1(I, J), J = 1, xcount)
+!!        End Do'
+!  found = 0
+!  
+!  DO K = 1, ycount
+!    DO J = 1, xcount
+!      Do I = 1, NA
+!        if (xxx(i) == j .AND. yyy(i) == k) then
+!          WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0 !wf_qi1(i)
+!          found = 1
+!        end if
+!      end do
+!      if (found == 0) then
+!        WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0
+!      endif
+!      found = 0
+!    end do
+!    WRITE( 109, *)
+!  end do
+!  
+!  DO K = 1, ycount
+!    DO J = 1, xcount
+!      Do I = 1, NA
+!        if (xxx(i) == j .AND. yyy(i) == k) then
+!          WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0 !WF_QO1(i)
+!          found = 1
+!        end if
+!      end do
+!      if (found == 0) then
+!        WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0
+!      endif
+!      found = 0
+!    end do
+!    WRITE( 109, *)
+!  end do
+!  
+!  DO K = 1, ycount
+!    DO J = 1, xcount
+!      Do I = 1, NA
+!        if (xxx(i) == j .AND. yyy(i) == k) then
+!          WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0 !WF_STORE1(i)
+!          found = 1
+!        end if
+!      end do
+!      if (found == 0) then
+!        WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0
+!      endif
+!      found = 0
+!    end do
+!    WRITE( 109, *)
+!  end do
+!  
+!  DO K = 1, ycount
+!    DO J = 1, xcount
+!      Do I = 1, NA
+!        if (xxx(i) == j .AND. yyy(i) == k) then
+!          WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0 !over(i)
+!          found = 1
+!        end if
+!      end do
+!      if (found == 0) then
+!        WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0
+!      endif
+!      found = 0
+!    end do
+!    WRITE( 109, *)
+!  end do
+!  
+!  DO K = 1, ycount
+!    DO J = 1, xcount
+!      Do I = 1, NA
+!        if (xxx(i) == j .AND. yyy(i) == k) then
+!          WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0 !lzs(i)
+!          found = 1
+!        end if
+!      end do
+!      if (found == 0) then
+!        WRITE( 109, "(1X, E10.3)" ,ADVANCE="no") 0.0
+!      endif
+!      found = 0
+!    end do
+!    WRITE( 109, *)
+!  end do
+!  Close(109)
+!End If
 
 ENDIF !TESTCSVFLAG
 
@@ -4077,8 +4168,70 @@ ENDDO
 !> Run is now over, print final results to the screen and close files
 !> *********************************************************************
 
+!> *********************************************************************
+!> Save the state of the basin in r2c file format
+!> *********************************************************************
+
 !> Write the resume file
-IF (SAVERESUMEFLAG > 0) THEN !todo: done: use a flag
+IF (SAVERESUMEFLAG == 2) THEN !todo: done: use a flag
+  PRINT *, 'Saving state variables in r2c file format'
+
+! Allocate arrays for save_state_r2c
+      OPEN(55, FILE = 'save_state_r2c.txt')
+      READ(55,*,IOSTAT=IOS)NR2C_S,DELTR2C_S
+      IF(IOS == 0)THEN
+         ALLOCATE(GRD_S(NR2C_S),GAT_S(NR2C_S),GRDGAT_S(NR2C_S),R2C_ATTRIBUTES_S(NR2C_S,3),STAT=PAS)
+         IF(PAS /= 0)THEN
+           PRINT*,'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
+                  'RECORD AT THE FIRST LINE IN THE save_state_r2c.txt FILE. ', &
+                  'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
+           STOP
+         ENDIF 
+      ENDIF
+      CLOSE(55)
+
+  call SAVE_STATE_R2C(NML,NLTEST,NMTEST,NCOUNT, &
+                    IMIN,ACLASS,NR2C_S,GRD_S,GAT_S,GRDGAT_S,R2C_ATTRIBUTES_S,&
+                    NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,ICAN,ICP1,IGND, &
+                       TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
+                       TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT,  &
+                       TCANGAT,RCANGAT,SCANGAT,GROGAT, CMAIGAT, &
+                       FCANGAT,LNZ0GAT,ALVCGAT,ALICGAT,PAMXGAT, &
+                       PAMNGAT,CMASGAT,ROOTGAT,RSMNGAT,QA50GAT, &
+                       VPDAGAT,VPDBGAT,PSGAGAT,PSGBGAT,PAIDGAT, &
+                       HGTDGAT,ACVDGAT,ACIDGAT,TSFSGAT,WSNOGAT, &
+                       THPGAT, THRGAT, THMGAT, BIGAT,  PSISGAT, &
+                       GRKSGAT,THRAGAT,HCPSGAT,TCSGAT,          &
+                       THFCGAT,PSIWGAT,DLZWGAT,ZBTWGAT,         &
+                       ZSNLGAT,ZPLGGAT,ZPLSGAT,TACGAT, QACGAT,  &
+                       DRNGAT, XSLPGAT,XDGAT,WFSFGAT,KSGAT,     &
+                       ALGWGAT,ALGDGAT,ASVDGAT,ASIDGAT,AGVDGAT, &
+                       AGIDGAT,ISNDGAT,RADJGAT,ZBLDGAT,Z0ORGAT, &
+                       ZRFMGAT,ZRFHGAT,ZDMGAT, ZDHGAT, FSVHGAT, &
+                       FSIHGAT,CSZGAT, FDLGAT, ULGAT,  VLGAT,   &
+                       TAGAT,  QAGAT,  PRESGAT,PREGAT, PADRGAT, &
+                       VPDGAT, TADPGAT,RHOAGAT,RPCPGAT,TRPCGAT, &
+                       SPCPGAT,TSPCGAT,RHSIGAT,FCLOGAT,DLONGAT, &
+                       GGEOGAT,                                 &
+                       CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
+                       QFSGAT, QFXGAT, PETGAT, GAGAT,  EFGAT,   &
+                       GTGAT,  QGGAT,  TSFGAT, ALVSGAT,ALIRGAT, &
+                       SFCTGAT,SFCUGAT,SFCVGAT,SFCQGAT,FSNOGAT, &
+                       FSGVGAT,FSGSGAT,FSGGGAT,FLGVGAT,FLGSGAT, &
+                       FLGGGAT,HFSCGAT,HFSSGAT,HFSGGAT,HEVCGAT, &
+                       HEVSGAT,HEVGGAT,HMFCGAT,HMFNGAT,HTCCGAT, &
+                       HTCSGAT,PCFCGAT,PCLCGAT,PCPNGAT,PCPGGAT, &
+                       QFGGAT, QFNGAT, QFCLGAT,QFCFGAT,ROFGAT,  &
+                       ROFOGAT,ROFSGAT,ROFBGAT,TROFGAT,TROOGAT, &
+                       TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
+                       WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  GFLXGAT, &
+                       HMFGGAT,HTCGAT, QFCGAT,                  &
+                       MANNGAT, DDGAT,coordsys1,datum1,zone1,   &
+                       XORIGIN,YORIGIN,XDELTA,YDELTA)
+ENDIF
+
+!> Write the resume file
+IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
   PRINT *, 'Saving state variables'
   call SAVE_STATE( &
    HOURLYFLAG, IMIN, IMIN2, &
@@ -4217,15 +4370,17 @@ IF(ENDDATE)PRINT *, 'Reached end of simulation date'
 
 !> Calculate final storage
 FINAL_STORE=0.0
-DO I = 1, NA
-   IF(FRAC(I) /= 0.0)THEN
-      DO M = 1, NMTEST
-         FINAL_STORE = FINAL_STORE + cp%FAREROW(I,M)*(cp%RCANROW(I,M)+cp%SCANROW(I,M)+cp%SNOROW(I,M)+cp%ZPNDROW(I,M)*RHOW)
-         DO J = 1, IGND
-            FINAL_STORE = FINAL_STORE + cp%FAREROW(I,M)*(cp%THLQROW(I,M,J)*RHOW+cp%THICROW(I,M,J)*RHOICE)*DLZWROW(I,M,J)
-         ENDDO
-      ENDDO
-   ENDIF
+DO I=1,NA
+DO M=1,NMTEST
+		IF(FRAC(I)/=0.0)THEN
+    FINAL_STORE=FINAL_STORE+(cp%RCANROW(I,M)+cp%SCANROW(I,M)+ &
+    cp%SNOROW(I,M)+(cp%THLQROW(I,M,1)*RHOW+cp%THICROW(I,M,1)* &
+    RHOICE)*DLZWROW(I,M,1)+cp%ZPNDROW(I,M)*RHOW+(cp%THLQROW(I,M,2) &
+    *RHOW+cp%THICROW(I,M,2)*RHOICE)*DLZWROW(I,M,2) &
+    +(cp%THLQROW(I,M,3)*RHOW+cp%THICROW(I,M,3)*RHOICE) &
+    *DLZWROW(I,M,3))*cp%FAREROW(I,M)
+		ENDIF
+ENDDO
 ENDDO
 
 !> write out final totals to screen

@@ -1,38 +1,47 @@
 SUBROUTINE WRITE_R2C_HEADER(NMTEST,NR2C,NR2CFILES,GRD,GAT,GRDGAT,R2C_ATTRIBUTES, &
-                            R2CFILEUNITSTART)
+                            R2CFILEUNITSTART,NR2CSTATES,coordsys1,datum1,zone1,   &
+                            XORIGIN,YORIGIN,XDELTA,YDELTA,XCOUNT,YCOUNT)
 
 INTEGER      NMTEST,NR2C,NR2CFILES
 INTEGER      GRD(NR2C),GAT(NR2C),GRDGAT(NR2C)
 CHARACTER(*) R2C_ATTRIBUTES(NR2C,3)
 
-INTEGER FILECOUNT,R2CFILEUNITSTART
+INTEGER R2CFILEUNIT,R2CFILEUNITSTART,NR2CSTATES
 CHARACTER*2 FN
+
+character(10) coordsys1,datum1,zone1
+real xorigin,yorigin,xdelta,ydelta
+INTEGER XCOUNT,YCOUNT
 
 !> CREATE A NEW FOLDER FOR R2C OUTPUT FILES
 CALL SYSTEM('mkdir R2C_OUTPUT')
 
-FILECOUNT = R2CFILEUNITSTART
+NR2CSTATES = 0
+R2CFILEUNIT = R2CFILEUNITSTART
 DO N = 1, NR2C
    IF(GRD(N)==1)THEN
-      FILECOUNT = FILECOUNT + 1
-      OPEN(FILECOUNT,FILE='./R2C_OUTPUT/' // TRIM(R2C_ATTRIBUTES(N,3)) // '_GRD.r2c')
-      CALL WRITE_HEADER(FILECOUNT,R2C_ATTRIBUTES(N,:),0)
+      R2CFILEUNIT = R2CFILEUNIT + 1
+      NR2CSTATES = NR2CSTATES + 1
+      OPEN(R2CFILEUNIT,FILE='./R2C_OUTPUT/' // TRIM(R2C_ATTRIBUTES(N,3)) // '_GRD.r2c')
+      CALL WRITE_HEADER(R2CFILEUNIT,R2C_ATTRIBUTES(N,:),0)
    ENDIF
    IF(GAT(N)==1)THEN
       DO J = 1, NMTEST
-         FILECOUNT = FILECOUNT + 1
+         R2CFILEUNIT = R2CFILEUNIT + 1
+         NR2CSTATES = NR2CSTATES + 1
          WRITE(FN,'(I2)')J
-         OPEN(FILECOUNT,FILE='./R2C_OUTPUT/' // TRIM(R2C_ATTRIBUTES(N,3)) // '_GAT_CLASS_' // TRIM(ADJUSTL(FN)) // '.r2c')
-         CALL WRITE_HEADER(FILECOUNT,R2C_ATTRIBUTES(N,:),J)
+         OPEN(R2CFILEUNIT,FILE='./R2C_OUTPUT/' // TRIM(R2C_ATTRIBUTES(N,3)) // '_GAT_CLASS_' // TRIM(ADJUSTL(FN)) // '.r2c')
+         CALL WRITE_HEADER(R2CFILEUNIT,R2C_ATTRIBUTES(N,:),J)
       ENDDO
       
    ENDIF
    IF(GRDGAT(N)==1)THEN
       DO J = 1, NMTEST
-         FILECOUNT = FILECOUNT + 1
+         R2CFILEUNIT = R2CFILEUNIT + 1
+         NR2CSTATES = NR2CSTATES + 1
          WRITE(FN,'(I2)')J
-         OPEN(FILECOUNT,FILE='./R2C_OUTPUT/' // TRIM(R2C_ATTRIBUTES(N,3)) // '_GRDGAT_CLASS_' // TRIM(ADJUSTL(FN)) // '.r2c')
-         CALL WRITE_HEADER(FILECOUNT,R2C_ATTRIBUTES(N,:),J)
+         OPEN(R2CFILEUNIT,FILE='./R2C_OUTPUT/' // TRIM(R2C_ATTRIBUTES(N,3)) // '_GRDGAT_CLASS_' // TRIM(ADJUSTL(FN)) // '.r2c')
+         CALL WRITE_HEADER(R2CFILEUNIT,R2C_ATTRIBUTES(N,:),J)
       ENDDO
    ENDIF
 ENDDO
@@ -67,19 +76,19 @@ subroutine write_header(un,varattr,nc)
     write(un,3005)'#                                       '
     write(un,3020)':Name               ',varattr(3)
     write(un,3005)'#                                       '
-    write(un,3004)':Projection         ',coordsys_temp
+    write(un,3004)':Projection         ',coordsys1
     if(coordsys_temp.eq.'LATLONG   ')then
-    write(un,3004)':Ellipsoid          ',datum_temp
+    write(un,3004)':Ellipsoid          ',datum1
     endif
     if(coordsys_temp.eq.'UTM       ')then
-    write(un,3004)':Ellipsoid          ',datum_temp
-      write(un,3004)':Zone               ',zone_temp
+    write(un,3004)':Ellipsoid          ',datum1
+      write(un,3004)':Zone               ',zone1
     endif
     write(un,3005)'#                                       '
-    write(un,3003)':xOrigin            ',xorigin_temp
-    write(un,3003)':yOrigin            ',yorigin_temp
+    write(un,3003)':xOrigin            ',xorigin
+    write(un,3003)':yOrigin            ',yorigin
     write(un,3005)'#                                       '
-    write(un,3020)':SourceFile         ',source_file_name                                    
+    write(un,3005)':SourceFile            standalone MESH  '                                    
     write(un,3005)'#                                       '
     if(nc == 0)then
        write(un,3007)':AttributeName',1
@@ -88,10 +97,10 @@ subroutine write_header(un,varattr,nc)
     endif
     write(un,3020)':AttributeUnits     ',varattr(2)  
     write(un,3005)'#                                       '
-    write(un,3001)':xCount             ',xcount_temp
-    write(un,3001)':yCount             ',ycount_temp
-    write(un,3003)':xDelta             ',xdelta_temp
-    write(un,3003)':yDelta             ',ydelta_temp
+    write(un,3001)':xCount             ',xcount
+    write(un,3001)':yCount             ',ycount
+    write(un,3003)':xDelta             ',xdelta
+    write(un,3003)':yDelta             ',ydelta
     write(un,3005)'#                                       '
     if(unit_conversion.ne.0.0)then
       write(un,3003)':UnitConverson      ',unit_conversion
@@ -111,5 +120,5 @@ return
  3007 format(a14,i5,a6,i5)
  3012 format(a9)
  3020 format(a20,a40)
-
+ 
       end
