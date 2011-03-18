@@ -207,7 +207,8 @@ C
 C----------------------------------------------------------------------           
 C     * INITIALIZE 2-D AND 3-D ARRAYS.                                                    
 C                                                                                 
-      DO 50 J=1,IG                                                                
+      DO 50 J=1,IG                
+      !$omp parallel do                                                
       DO 50 I=IL1,IL2                                                             
           THLIQG(I,J)=THLIQ(I,J)                                                  
           THICEG(I,J)=THICE(I,J)                                                  
@@ -224,7 +225,8 @@ C
    50 CONTINUE                                                                    
 C                                                                                 
 C     * INITIALIZE 1-D INTERNAL WORK FIELDS AND DIAGNOSTIC ARRAYS.
-C                                                                                 
+C                                 
+!$omp parallel do                                                
       DO 100 I=IL1,IL2                                                            
           FVEG  (I)=FC(I)+FCS(I)                                                  
           IF(TCAN(I).GT.5.0) THEN
@@ -309,6 +311,7 @@ C
 C     * SURFACE EVAPORATION EFFICIENCY FOR BARE SOIL ENERGY BALANCE
 C     * CALCULATIONS.                                 
 C
+!$omp parallel do
       DO 200 I=IL1,IL2    
           IF(THLIQG(I,1).LT.(THLMIN(I,1)+0.001)) THEN    
               IEVAP(I)=0  
@@ -324,7 +327,8 @@ C
 C                                                                                 
 C     * VOLUMETRIC HEAT CAPACITIES OF SOIL LAYERS.
 C                                                                                 
-      DO 300 J=1,IG                                                               
+      DO 300 J=1,IG       
+      !$omp parallel do                                                       
       DO 300 I=IL1,IL2                                                            
           IF(ISAND(I,1).GT.-4)                                     THEN          
               HCPG(I,J)=HCPW*THLIQG(I,J)+HCPICE*THICEG(I,J)+
@@ -338,7 +342,8 @@ C
   300 CONTINUE                                                                    
 C                                                                                 
 C     * THERMAL PROPERTIES OF SNOW.
-C                                                                                 
+C                      
+!$omp parallel do                                                           
       DO 400 I=IL1,IL2                                                            
           IF(ZSNOW(I).GT.0.)                                        THEN          
               HCPSCS(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
@@ -378,6 +383,7 @@ C     * THERMAL CONDUCTIVITIES OF SOIL LAYERS AND DEPTH OF WATER
 C     * TABLE IN ORGANIC SOILS.                                         
 C                                                                                 
       DO 500 J=IG,1,-1
+      !$omp parallel do
       DO 500 I=IL1,IL2                                                            
           IF    (ISAND(I,1).EQ.-4)                              THEN          
               TCTOPG(I,J)=TCGLAC                                                     
@@ -426,6 +432,7 @@ C
      1                            MIN(ZPOND(I),1.0E-2)*100.0
                       TCTOPG(I,J)=TCTOPC(I,J)
                   ENDIF
+                 
               ELSE
                   SATRAT=MIN((THLIQG(I,J)+THICEG(I,J))/
      1                   THPOR(I,J), 1.0)              
@@ -458,6 +465,7 @@ C
      1                            MIN(ZPOND(I),1.0E-2)*100.0
                       TCTOPG(I,J)=TCTOPC(I,J)
                   ENDIF
+                  
               ENDIF    
           ELSE
               SATRAT=MIN((THLIQG(I,J)+THICEG(I,J))/
@@ -502,6 +510,7 @@ C
 C     * ADD PONDED WATER TEMPERATURE TO FIRST SOIL LAYER FOR USE
 C     * IN GROUND HEAT FLUX CALCULATIONS.
 C
+      !$omp parallel do
       DO 600 I=IL1,IL2
           IF(ZPOND(I).GT.0.)                          THEN 
               TBAR1P(I)=(TPOND(I)*HCPW*ZPOND(I) + 

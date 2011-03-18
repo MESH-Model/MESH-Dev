@@ -130,6 +130,7 @@ C     * NOT GO THROUGH THIS ROUTINE WHEN IT IS CALLED FROM CLASSW.
 C     * THE INPUT ARRAY "IGRN" HANDLES THIS CONDITION (PASSED AS
 C     * "IZERO" ARRAY WHEN CALLED FROM "WEND" OR THE END OF "GRINFL"). 
 C
+!$omp parallel do
       DO 50 I=IL1,IL2
           IF(FI (I).GT.0. .AND. 
      1       ISAND(I,1).GT.-4 .AND.DT(I).GT.0. .AND.IGRN(I).EQ.0 .AND.
@@ -145,6 +146,7 @@ C     * ADJUST GRKSAT FOR VISCOSITY OF WATER AND PRESENCE OF ICE;
 C     * ADJUST THPOR FOR PRESENCE OF ICE.
 C
       DO 100 J=1,IG
+      !$omp parallel do
       DO 100 I=IL1,IL2
           IF(IGRD(I).GT.0. .AND. ISAND(I,J).GT.-3)             THEN
               THLMAX(I,J)=MAX((THPOR(I,J)-THICE(I,J)-0.00001),
@@ -230,7 +232,7 @@ C     * LIQUID WATER SUPPLY IS INSUFFICIENT, TRY TO REMOVE WATER FROM
 C     * FROZEN SOIL MOISTURE.
 C
       IPTBAD=0                                        
-      DO 250 J=1,IG                                                               
+      DO 250 J=1,IG                                                         
       DO 250 I=IL1,IL2
           IF(IGRD(I).GT.0 .AND. J.EQ.1 .AND. FDT(I,J).LT.0. .AND.
      1                          DELZW(I,J).GT.0.0)             THEN 
