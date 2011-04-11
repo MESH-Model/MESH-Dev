@@ -576,6 +576,8 @@ REAL :: TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
   FINAL_STORE, TOTAL_AREA
 
+REAL :: TOTAL_STORE,TOTAL_THLQ(6),TOTAL_THIC(6),TOTAL_ZPND,TOTAL_RCAN,TOTAL_SCAN,TOTAL_SNO
+REAL :: TOTAL_PRE,TOTAL_EVAP,TOTAL_ROF,TOTAL_ROFO,TOTAL_ROFS,TOTAL_ROFB
 
 !> CROSS-CLASS VARIABLES (CLASS):
 !> ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
@@ -1708,6 +1710,12 @@ DO I=1,NA
 ENDDO !DO I=1,NA
 
 !> clear accumulating variables
+TOTAL_ROF=0.0
+TOTAL_ROFO=0.0
+TOTAL_ROFS=0.0
+TOTAL_ROFB=0.0
+TOTAL_EVAP=0.0
+TOTAL_PRE=0.0
 TOTAL_ROFACC=0.0
 TOTAL_ROFOACC=0.0
 TOTAL_ROFSACC=0.0
@@ -2804,6 +2812,19 @@ NCAL  = 0
 VLGRD = 0.0
 VLGAT = 0.0
 
+TOTAL_STORE = 0.0
+TOTAL_THLQ  = 0.0
+TOTAL_THIC  = 0.0
+TOTAL_ZPND  = 0.0
+TOTAL_RCAN  = 0.0
+TOTAL_SCAN  = 0.0
+TOTAL_SNO   = 0.0
+OPEN(unit=900,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/Basin_average_water_balance.csv')
+WRITE(900,"('DAY,YEAR,PREACC,EVAPACC,ROFACC,ROFOACC,ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNO,SCAN,RCAN,ZPND,"// &
+            "THLQ1,THLQ2,THLQ3,THLQ4,THLQ5,THLQ6,THIC1,THIC2,THIC3,THIC4,THIC5,THIC6,"// &
+            "THLQIC1,THLQIC2,THLQIC3,THLQIC4,THLQIC5,THLQIC6,THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE')")
+                                                
 !> *********************************************************************
 !> Start of main loop that is run each half hour
 !> *********************************************************************
@@ -3771,12 +3792,21 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     ENDDO  !DO K=1, WF_NUM_POINTS
 
 !> update components for final tally
-    TOTAL_ROFACC=TOTAL_ROFACC+ROFACC(I)
-    TOTAL_ROFOACC=TOTAL_ROFOACC+ROFOACC(I)
-    TOTAL_ROFSACC=TOTAL_ROFSACC+ROFSACC(I)
-    TOTAL_ROFBACC=TOTAL_ROFBACC+ROFBACC(I)
-    TOTAL_EVAPACC=TOTAL_EVAPACC+EVAPACC(I)
-    TOTAL_PREACC=TOTAL_PREACC+PREACC(I)
+    TOTAL_ROF     = TOTAL_ROF     + ROFACC(I)
+    TOTAL_ROFO    = TOTAL_ROFO    + ROFOACC(I)
+    TOTAL_ROFS    = TOTAL_ROFS    + ROFSACC(I)
+    TOTAL_ROFB    = TOTAL_ROFB    + ROFBACC(I)
+    TOTAL_EVAP    = TOTAL_EVAP    + EVAPACC(I)
+    TOTAL_PRE     = TOTAL_PRE     + PREACC(I)
+    TOTAL_ROFACC  = TOTAL_ROFACC  + ROFACC(I)
+    TOTAL_ROFOACC = TOTAL_ROFOACC + ROFOACC(I)
+    TOTAL_ROFSACC = TOTAL_ROFSACC + ROFSACC(I)
+    TOTAL_ROFBACC = TOTAL_ROFBACC + ROFBACC(I)
+    TOTAL_EVAPACC = TOTAL_EVAPACC + EVAPACC(I)
+    TOTAL_PREACC  = TOTAL_PREACC  + PREACC(I)
+    TOTAL_SNO     = TOTAL_SNO     + SNOACC(I)
+    TOTAL_SCAN    = TOTAL_SCAN    + SCANACC(I)
+    TOTAL_RCAN    = TOTAL_RCAN    + RCANACC(I)
 
     IF (WF_NUM_POINTS > 0) THEN !SUMMARY VALUES FOR SCREEN
       DO J = 1, WF_NUM_POINTS !FOR MORE THAN 1 OUTPUT
@@ -3791,6 +3821,8 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
       EVAP_OUT(1) = EVAPACC(I)
       ROF_OUT(1) = ROFACC(I)
     END IF
+
+    TOTAL_STORE = TOTAL_STORE + RCANACC(I)+ SCANACC(I) + SNOACC(I)
 
 !> RESET ACCUMULATOR ARRAYS.
 
@@ -3831,7 +3863,55 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     EVAPACC(I)=0.
     FLUTACC(I)=0.
   END DO
+  
+  TOTAL_THLQ = TOTAL_THLQ / REAL(NSUM)
+  TOTAL_THIC = TOTAL_THIC / REAL(NSUM)
+  TOTAL_ZPND = TOTAL_ZPND / REAL(NSUM)
 
+  TOTAL_STORE = TOTAL_STORE + TOTAL_ZPND + SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND))
+  
+  WRITE(900,'((I4,","),(I5,","),100(E12.5,","))')IDAY,IYEAR,    &
+                                                TOTAL_PREACC/TOTAL_AREA,  &
+                                                TOTAL_EVAPACC/TOTAL_AREA, &
+                                                TOTAL_ROFACC/TOTAL_AREA,  &
+                                                TOTAL_ROFOACC/TOTAL_AREA, &
+                                                TOTAL_ROFSACC/TOTAL_AREA, &
+                                                TOTAL_ROFBACC/TOTAL_AREA, &
+                                                TOTAL_PRE/TOTAL_AREA,  &
+                                                TOTAL_EVAP/TOTAL_AREA, &
+                                                TOTAL_ROF/TOTAL_AREA,  &
+                                                TOTAL_ROFO/TOTAL_AREA, &
+                                                TOTAL_ROFS/TOTAL_AREA, &
+                                                TOTAL_ROFB/TOTAL_AREA, &
+                                                TOTAL_SNO/TOTAL_AREA,    &
+                                                TOTAL_SCAN/TOTAL_AREA,    &
+                                                TOTAL_RCAN/TOTAL_AREA,    &
+                                                TOTAL_ZPND/TOTAL_AREA,    &
+                                                (TOTAL_THLQ(J)/TOTAL_AREA, J = 1, IGND), &
+                                                (TOTAL_THIC(J)/TOTAL_AREA, J = 1, IGND), &
+                                                ((TOTAL_THLQ(J) + TOTAL_THIC(J))/TOTAL_AREA, J = 1, IGND), &
+                                                SUM(TOTAL_THLQ(1:IGND))/TOTAL_AREA, &
+                                                SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
+                                                SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
+                                                TOTAL_STORE/TOTAL_AREA, &
+                                                (TOTAL_STORE - INIT_STORE)/TOTAL_AREA
+
+!RESET ACCUMULATION VARIABLES TO ZERO
+
+TOTAL_STORE = 0.0
+TOTAL_THLQ  = 0.0
+TOTAL_THIC  = 0.0
+TOTAL_ZPND  = 0.0
+TOTAL_RCAN  = 0.0
+TOTAL_SCAN  = 0.0
+TOTAL_SNO   = 0.0
+TOTAL_ROF=0.0
+TOTAL_ROFO=0.0
+TOTAL_ROFS=0.0
+TOTAL_ROFB=0.0
+TOTAL_EVAP=0.0
+TOTAL_PRE=0.0
+    
 ENDIF  ! IF(NCOUNT==48) THEN
 
 NCOUNT=NCOUNT+1 !todo: does this work with hourly forcing data?
