@@ -331,8 +331,8 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
  3020 format(a20,a40)
  3021 format(a40)
  3022 format(2a15,a5,i5)
- 3023 format(a15,i,1X,a10)
- 3024 format(a15,i,1X,a10,a5)
- 3025 format(a15,i,1X,a10,a5,i)
+ 3023 format(a15,i5,1X,a10)
+ 3024 format(a15,i5,1X,a10,a5)
+ 3025 format(a15,i5,1X,a10,a5,i5)
 
       END
