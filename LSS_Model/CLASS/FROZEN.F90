@@ -231,8 +231,8 @@ DO I = IL1, IL2
       ELSE
  
          !> Snow melting just started.
-          CUMSNOWINFIL(I)  = 0.0
-          INFILTYPE(I)     = UNLIMITED                                         !> INITIALIZED WITH UNLIMITED INFILTRATION
+!          CUMSNOWINFIL(I)  = 0.0
+!          INFILTYPE(I)     = UNLIMITED                                         !> INITIALIZED WITH UNLIMITED INFILTRATION
           SI(I)            = SOIL_MOIST(I)/MAX(SOIL_MOIST(I),SOIL_POR_MAX)
           TSI(I)           = MIN(-0.10,TS(I))                                  !> TO DO #1 - Justify the limit -0.1
 

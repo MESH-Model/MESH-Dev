@@ -3125,7 +3125,13 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
 !-----------------------------------------------------------------------
 !          * WATER BUDGET CALCULATIONS.
 !
-    IF(IDAY == 1 .AND. NCOUNT == 48)NMELT = NMELT + 1
+    IF(IDAY == 1 .AND. NCOUNT == 48)THEN
+       NMELT = NMELT + 1
+       CUMSNOWINFILCS  = 0.0
+       CUMSNOWINFILGS  = 0.0
+       INFILTYPE     = 2
+    ENDIF
+
 
     CALL CLASSW  (THLQGAT,THICGAT,TBARGAT,TCANGAT,RCANGAT,SCANGAT, &
                   ROFGAT, TROFGAT,SNOGAT, TSNOGAT,RHOSGAT,ALBSGAT, &
