@@ -3891,6 +3891,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     QAACC(I)=0.
     EVAPACC(I)=0.
     FLUTACC(I)=0.
+  ENDIF
   END DO
   
   TOTAL_THLQ = TOTAL_THLQ / REAL(NSUM)
