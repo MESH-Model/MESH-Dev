@@ -315,6 +315,8 @@ c           Controlled reservoir
 c           WHAT SHOULD THIS BE?  Unclear from rerout, etc.
 c           Zero should be OK since must have release data for
 c           controlled reservoir, wf_store2(n) just keeps track
+c also had to add this - Frank Seglenieks - Sep, 2010
+         endif
          else
 c           When the wf_channelSlope is <= 0.0 the element is not in the
 c           basin but is in a receiving element
@@ -328,8 +330,6 @@ c           basin but is in a receiving element
                   wf_store2(n)=cap+rl*over
                endif
             endif
-c also had to add this - Frank Seglenieks - Sep, 2010
-         endif
          endif
       end do                    ! do n=1,wf_naa
 
