@@ -3305,6 +3305,10 @@ DO K=1, WF_NUM_POINTS
       DO J=1, NMTEST
         PRINT *, 'land class ',J,' has an area of:',ACLASS(i,J)
       ENDDO
+      PRINT *,'If this is not the problem, you likely have SUBBASIN set to 1 in MESH_input_run_options.ini'
+      PRINT *,'This will set FRAC(I) to zero in the MESH driver for areas of the basin not included in the run.'
+      PRINT *,'To fix this, ensure that the GRU you want to produce output for is within one of your sub-basins'
+      PRINT *,'as defined in your MESH_input_streamflow.txt file. (Or set SUBASIN to 0 and run every grid square.)'
 	      STOP
     ENDIF
 
