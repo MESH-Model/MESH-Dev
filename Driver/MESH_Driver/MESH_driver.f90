@@ -132,7 +132,7 @@ REAL basin_SWE
 INTEGER WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, &
         WF_START_DAY,WF_START_HOUR
 INTEGER WF_IY(M_S),WF_JX(M_S), WF_S(M_S)
-REAL WF_QHYD(M_S),WF_QHYD_AVG(M_S),WF_QSYN(M_S),WF_QSYN_AVG(M_S)
+REAL WF_QHYD(M_S),WF_QHYD_AVG(M_S),WF_QHYD_CUM(M_S),WF_QSYN(M_S),WF_QSYN_AVG(M_S),WF_QSYN_CUM(M_S)
 CHARACTER WF_GAGE(M_S)*8
 
 !> RESERVOIR VARIABLES
@@ -1464,6 +1464,8 @@ DO I=1,WF_NO
 !> ric     initialise smoothed variables
   wf_qsyn(I)=0.0
 	  wf_qhyd_avg(I)=0.0
+	  wf_qsyn_cum(I)=0.0
+	  wf_qhyd_cum(I)=0.0
 ENDDO
 
 ALLOCATE(QOBS(NYEARS*366,WF_NO),QSIM(NYEARS*366,WF_NO))
@@ -1811,6 +1813,9 @@ FRAME_NO_NEW = 1
 
 OPEN(UNIT=58,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/MESH_output_echo_print.txt')
+                  
+WRITE(58,"('Number of Soil Layers (IGND) = ',I5)") IGND
+WRITE(58,*)
 
 WRITE(58,"('MESH_input_run_options.ini')")
 WRITE(58,*)
@@ -2245,6 +2250,9 @@ OPEN(UNIT=70,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
 
 OPEN(UNIT=71,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/MESH_output_streamflow_all.csv')
+
+OPEN(UNIT=72,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/MESH_output_streamflow_cumulative.csv')
 
 !> Set up the CLASSOF* files to print out into the correct directory
 DO I=1, wf_num_points
@@ -3972,7 +3980,8 @@ CALL WF_ROUTE(WF_ROUTETIMESTEP,WF_R1,WF_R2, &
 
 DO I=1,WF_NO
   WF_QSYN(I)     = WF_QO2(WF_S(I))
-  WF_QSYN_AVG(I) = WF_QSYN_AVG(I) + WF_QO2(WF_S(I)) 
+  WF_QSYN_AVG(I) = WF_QSYN_AVG(I) + WF_QO2(WF_S(I))
+  WF_QSYN_CUM(I) = WF_QSYN_CUM(I) + WF_QO2(WF_S(I)) 
   WF_QHYD_AVG(I) = WF_QHYD(I) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
 ENDDO
 
@@ -4001,9 +4010,16 @@ ENDIF
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
 
+  DO I = 1, WF_NO
+    WF_QHYD_CUM(I) = WF_QHYD_CUM(I) + WF_QHYD_AVG(I)
+  ENDDO
+
 !>      write out the spl.csv file
   WRITE(70,'(I5,",",F10.3,999(",",F10.3))') IDAY,(WF_QHYD_AVG(I), &
     WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO)
+
+  WRITE(72,'(I5,",",F10.3,999(",",F10.3))') IDAY,(WF_QHYD_CUM(I), &
+    WF_QSYN_CUM(I)/NCOUNT,I=1,WF_NO)
 
   IF (WF_NUM_POINTS .GT. 1) THEN !FOR MORE THAN ONE OUTPUT
 
@@ -4585,6 +4601,7 @@ CLOSE(UNIT=51)
 CLOSE(UNIT=58)
 CLOSE(UNIT=70)
 CLOSE(UNIT=71)
+CLOSE(UNIT=72)
 close(unit=85)
 close(unit=86)
 close(unit=90)
