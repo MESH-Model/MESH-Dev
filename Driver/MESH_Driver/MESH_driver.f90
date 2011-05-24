@@ -891,7 +891,6 @@ IF(HOURLYFLAG .LT. 30)THEN
   WRITE(6,*)
   WRITE(6,*)
   WRITE(6,*)
-  PAUSE
   STOP
 ENDIF
 
@@ -1870,7 +1869,6 @@ IF(IPCP == 4)THEN
     WRITE(58,9001)
     WRITE(6,*)
     WRITE(58,*)
-    PAUSE
     STOP
 ENDIF
     
@@ -2122,7 +2120,6 @@ if(mod(24*60,HOURLYFLAG) /= 0)then
    write(*,*)"of the following values:"
    write(*,*)"30 or n*60 where n can be either 1,2,3,4,6,8 or 12"
    write(*,*)
-   pause
    stop
 endif
 
@@ -2895,7 +2892,6 @@ IF(INTERPOLATIONFLAG == 1)THEN
 !> CHECK IF GRD INTERPOLATION IS CONSISTENT WITH GATPREP'S GATHERING SCHEME
     IF(K .NE. NML)THEN
        PRINT*,'GRD INTERPOLATION IS WRONG - SET INTERPOLATIONFLAG TO ZERO AND TRY AGAIN'
-       PAUSE
        STOP
     ENDIF
     

@@ -131,7 +131,6 @@ parflag = 1
         if(total.gt.100.0.or.percent.gt.100.0) then
            print *, 'one of the soil parameters are greater than'
          print *, '100% in row ',ir,' please adjust'
-           pause
            stop
         endif
         parv(ir+1,j) = total
@@ -256,7 +255,6 @@ end
          write(*,*)
          write(*,*)'Adjust the parameter value(s) or modify the parameter limits'
          write(*,*)
-         pause
          stop
       else
         write(*,*)'All parameter values lie within the specified ranges'
