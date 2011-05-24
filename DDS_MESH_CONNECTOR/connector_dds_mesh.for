@@ -324,7 +324,7 @@ C-----------PASS OVER TOP 15 LINES--------------------------------------
 C-----------READ NUMBER OF LAND CLASS INDEPENDENT VARIABLES-------------
       read(9,*) invari
       if(invari .ne. 12)then
-        print*,'number of land class independent variables should be 10'
+        print*,'number of land class independent variables should be 12'
         pause
         stop
       endif
@@ -332,7 +332,7 @@ C-----------READ NUMBER OF LAND CLASS INDEPENDENT VARIABLES-------------
 C-----------READ NUMBER OF LAND CLASS DEPENDENT VARIABLES---------------
       read(9,*) invard
       if(invard .ne. 76)then
-        print*,'number of land class independent variables should be 75'
+        print*,'number of land class independent variables should be 76'
         pause
         stop
       endif
