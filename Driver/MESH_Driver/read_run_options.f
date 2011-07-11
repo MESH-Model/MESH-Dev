@@ -158,11 +158,6 @@
       WINDOWSIZEFLAG = 1
       WINDOWSPACINGFLAG = 1
 
-!> If FROZENSOILINFILFLAG is 0, all snow melt infiltrates.
-!> If FROZENSOILINFILFLAG is 1, snow melt is partitioned to frozen soil infiltration 
-!> and direct runoff based on the parameteric equation developed by Gray et al, 2001.
-      FROZENSOILINFILFLAG = 0
-
 !> FORCIND DATA INTERPOLATION AT INTERMEDIATE TIME STEPS (WHEN THE TIME 
 !> INTERVAL OF THE FORCING DATA IS GREATER THAN 30 MINUTE) 
 !> DEFAULT = NO INTERPOLATION
@@ -187,10 +182,19 @@
  
       R2COUTPUTFLAG = 0
 
-!* If FROZENSOILINFILFLAG is 0, all snow melt infiltrates.
-!* If FROZENSOILINFILFLAG is 1, snow melt is partitioned to frozen soil infiltration 
-!* and direct runoff based on the parameteric equation developed by Gray et al, 2001.
-      FROZENSOILINFILFLAG = 0
+
+!* If WD3 is 0, existing WATDRN is used.
+!* If WD3 is 1, WATDRN by Ric (May, 2011) is used.
+      WD3 = 0
+
+!* If WD3NEWFILE is 0, an existing "soil_out.txt" for MAPLE is used.
+!* If WD3NEWFILE is 1, "soil_out.txt" for MAPLE is created or overwritten.
+      WD3NEWFILE = 1
+
+!* If WD3FLOW is 0, SUBFLW=SUBFLW,BASFLW=BASFLW.
+!* If WD3FLOW is 1, SUBFLW=SUBFLW+BASFLW,BASFLW=0.
+!* If WD3FLOW is 2, SUBFLW=SUBFLW,BASFLW=0.
+      WD3FLOW = 0
 
 !> SET N = 0 RESETS THE CLASS COUNTER.
 !TODO: N is not a flag, move it somewhere else
@@ -304,8 +308,12 @@
             WINDOWSIZEFLAG = IROVAL                        
           ELSE IF (IRONAME == "WINDOWSPACINGFLAG") THEN
             WINDOWSPACINGFLAG = IROVAL
-          ELSE IF (IRONAME == "FROZENSOILINFILFLAG") THEN
-            FROZENSOILINFILFLAG = IROVAL                        
+          ELSE IF (IRONAME == "WD3") THEN
+            WD3 = IROVAL
+          ELSE IF (IRONAME == "WD3NEWFILE") THEN
+            WD3NEWFILE = IROVAL
+          ELSE IF (IRONAME == "WD3FLOW") THEN
+            WD3FLOW = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",
