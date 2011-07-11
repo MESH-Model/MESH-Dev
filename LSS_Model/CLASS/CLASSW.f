@@ -31,8 +31,12 @@
      4                  SI,TSI,INFILTYPE,SNOWMELTD,SNOWMELTD_LAST,
      5                  MELTRUNOFF,SNOWINFIL,
      6                  CUMSNOWINFILCS,CUMSNOWINFILGS,
-     7                  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS)
+     7                  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,
+*FOR WATDRN3
+     8                  NA,NTYPE,ILMOS,JLMOS,
+     9                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
 C                                                                        
+C     * JUN 03/11 - D.PRINCZ.   FOR RIC'S WATDRN3.
 C     * DEC 07/09 - D.VERSEGHY. ADD RADD AND SADD TO WPREP CALL.
 C     * JAN 06/09 - D.VERSEGHY. INCREASE LIMITING SNOW AMOUNT.
 C     * FEB 25/08 - D.VERSEGHY. MODIFICATIONS REFLECTING CHANGES
@@ -269,6 +273,14 @@ C
      4        MELTRUNOFF(ILG),FRZC(ILG),
      5        CUMSNOWINFILGS(ILG)
       REAL    t0_ACC, SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
+
+C     * WATDRN3
+      INTEGER :: NA,NTYPE
+C
+      INTEGER, DIMENSION(ILG) :: ILMOS,JLMOS
+C
+      REAL, DIMENSION(NTYPE,IG) :: BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,
+     1  BFMIN,BQMAX
       
 C
 C-----------------------------------------------------------------------
@@ -376,7 +388,9 @@ C
      1                SUBFLW,TSUBFL,RUNFCS,TRNFCS,FCS,ZPLMCS,
      2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBRWCS,
      3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
+     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
+     6                NA,NTYPE,ILMOS,JLMOS,
+     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
           CALL TMCALC(TBARCS,THLQCS,THICCS,HCPCS,TPNDCS,ZPNDCS,
      1                TSNOCS,ZSNOCS,ALBSCS,RHOSCS,HCPSCS,TBASCS,
      2                OVRFLW,TOVRFL,RUNFCS,TRNFCS,HMFG,HTC,HTCS,
@@ -460,8 +474,9 @@ C
      1                SUBFLW,TSUBFL,RUNFGS,TRNFGS,FGS,ZPLMGS,
      2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBRWGS,
      3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
-     
+     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
+     6                NA,NTYPE,ILMOS,JLMOS,
+     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
           CALL TMCALC(TBARGS,THLQGS,THICGS,HCPGS,TPNDGS,ZPNDGS,
      1                TSNOGS,ZSNOGS,ALBSGS,RHOSGS,HCPSGS,TBASGS,
      2                OVRFLW,TOVRFL,RUNFGS,TRNFGS,HMFG,HTC,HTCS,
@@ -532,8 +547,9 @@ C
      1                SUBFLW,TSUBFL,RUNFC,TRUNFC,FC,ZPLIMC,
      2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARWC,
      3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
-     
+     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
+     6                NA,NTYPE,ILMOS,JLMOS,
+     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
           CALL TMCALC(TBARC,THLQCO,THICCO,HCPCO,TPONDC,ZPONDC,
      1                TSNOWC,ZSNOWC,ALBSC,RHOSC,HCPSC,TBASC,
      2                OVRFLW,TOVRFL,RUNFC,TRUNFC,HMFG,HTC,HTCS,
@@ -598,8 +614,9 @@ C
      1                SUBFLW,TSUBFL,RUNFG,TRUNFG,FG,ZPLIMG,
      2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARWG,
      3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
-     
+     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
+     6                NA,NTYPE,ILMOS,JLMOS,
+     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
           CALL TMCALC(TBARG,THLQGO,THICGO,HCPGO,TPONDG,ZPONDG,
      1                TSNOWG,ZSNOWG,ALBSG,RHOSG,HCPSG,TBASG,
      2                OVRFLW,TOVRFL,RUNFG,TRUNFG,HMFG,HTC,HTCS,
@@ -621,7 +638,6 @@ C
       JPTBAD=0
       KPTBAD=0
       LPTBAD=0
-      !$omp parallel do
       DO 600 I=IL1,IL2 
           TBASE (I)=FCS(I)*(TBASCS(I)+TFREZ) + 
      1              FGS(I)*(TBASGS(I)+TFREZ) +
@@ -704,7 +720,6 @@ C
          ENDIF
   600 CONTINUE
 C
-!$omp parallel do
       DO 650 I=IL1,IL2     
           IF(ZSNOCS(I).GT.0. .OR. ZSNOGS(I).GT.0. .OR.
      1       ZSNOWC(I).GT.0. .OR. ZSNOWG(I).GT.0.)              THEN                                             
@@ -790,7 +805,6 @@ C
 C
       IPTBAD=0
       DO 700 J=1,IG
-      !$omp parallel do
       DO 700 I=IL1,IL2
           IF(IG.EQ.3. .AND. J.EQ.IG .AND. ISAND(I,1).GT.-4)    THEN
               TBAR(I,J)=((FCS(I)*(TBARCS(I,J)+TFREZ)*HCPCS(I,J) +
