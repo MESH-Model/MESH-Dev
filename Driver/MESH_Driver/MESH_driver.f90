@@ -468,6 +468,8 @@ REAL :: VICEFLG, PSI_LIMIT, HICEFLG
 !* DD (DDEN): DRAINAGE DENSITY (CLASS.INI)
 !* MANN (WFSF): MANNING'S n (CLASS.INI)
 REAL, DIMENSION(:), ALLOCATABLE :: DDGAT, MANNGAT
+REAL, DIMENSION(:, :), ALLOCATABLE :: BTC, BCAP, DCOEFF, BFCAP, &
+  BFCOEFF, BFMIN, BQMAX
 
 
 !> CONTROL FLAGS
@@ -2783,6 +2785,24 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,cp%TPNDROW, &
              GFLXGAT,ITCTGAT,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT )
 
 ENDIF
+
+!> Allocate variables for WATDRN3
+!> ******************************************************************
+!> DGP - June 3, 2011: Now that variables are shared, moved from WD3
+!> flag to ensure allocation.
+ALLOCATE(BTC(NTYPE,IGND),BCAP(NTYPE,IGND),DCOEFF(NTYPE,IGND), &
+  BFCAP(NTYPE,IGND),BFCOEFF(NTYPE,IGND),BFMIN(NTYPE,IGND), &
+  BQMAX(NTYPE,IGND),STAT=PAS)
+
+!> Call WATDRN3B to set WATDRN (Ric) variables
+!> ******************************************************************
+!> DGP - May 5, 2011: Added.
+IF (PAS /= 0) WRITE(*) "Error allocating on WD3 for new WATDRN."
+CALL WATDRN3B(PSISROW,THPROW,GRKSROW,BIROW,cp%XSLPROW,cp%DDROW, &
+    NA,NTYPE,IGND, &
+    BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX, &
+    cp%SANDROW,cp%CLAYROW)
+
 !> *********************************************************************
 !> MAM - Initialize ENDDATE and ENDDATA
 !> *********************************************************************
@@ -3182,7 +3202,9 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
                   MANNGAT,DDGAT,NCOUNT, &
                   t0_ACC(NMELT),SI,TSI,INFILTYPE,SNOWMELTD,SNOWMELTD_LAST, &
                   MELTRUNOFF,SNOWINFIL,CUMSNOWINFILCS, CUMSNOWINFILGS, &
-                  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS)
+                  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, &
+                  NA,NTYPE,ILMOS,JLMOS, &
+                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
 !
 !========================================================================
 !
