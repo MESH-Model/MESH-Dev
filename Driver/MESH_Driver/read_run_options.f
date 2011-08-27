@@ -79,10 +79,9 @@
 
 !>    * IF IWF = 0, ONLY OVERLAND FLOW AND BASEFLOW ARE MODELLED, AND
 !>    * THE GROUND SURFACE SLOPE IS NOT MODELLED.
-!>    * IF IWF = n (0 < n < 4), THE MODIFIED CALCULATIONS OF OVERLAND
-!>    * FLOW AND INTERFLOW ARE PERFORMED; INTERFLOW IS DRAWN FROM THE
-!>    * TOP n SOIL LAYERS.
-      IWF = 3
+!>    * IF IWF = 1, THE MODIFIED CALCULATIONS OF OVERLAND
+!>    * FLOW AND INTERFLOW ARE PERFORMED.
+      IWF = 1
 
 !>    * IF IPAI, IHGT, IALC, IALS AND IALG ARE ZERO, THE VALUES OF
 !>    * LEAF ARE INDEX, VEGETATION HEIGHT, CANOPY ALBEDO, SNOW ALBEDO
@@ -125,10 +124,12 @@
 !> this will be set later by reading the run_options file
 !* if RESUMEFLAG is 0, the user doesn't want to use the resume file
 !* if RESUMEFLAG is 1, the user wants to run the resume file.
+!* if RESUMEFLAG is 2, the user wants to run the r2c resume file.
       RESUMEFLAG = 0
 
 !* if SAVERESUMEFLAG is 0, the user doesn't want to make the resume file.
 !* if SAVERESUMEFLAG is 1, the user wants to make the resume file.
+!* if SAVERESUMEFLAG is 2, the user wants to make the r2c resume file.
       SAVERESUMEFLAG = 0
       
 !> FORCING DATA FILES:

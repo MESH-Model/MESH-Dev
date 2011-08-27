@@ -33,8 +33,8 @@
                        ROFOGAT,ROFSGAT,ROFBGAT,TROFGAT,TROOGAT, &
                        TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
                        WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  GFLXGAT, &
-                       HMFGGAT,HTCGAT, QFCGAT,                  &
-                       MANNGAT, DDGAT,coordsys1,datum1,zone1,   &
+                       HMFGGAT,HTCGAT, QFCGAT,MANNGAT, DDGAT,   &
+                       SANDGAT,CLAYGAT,coordsys1,datum1,zone1,  &
                        XORIGIN,YORIGIN,XDELTA,YDELTA)
 !> This subroutine is used to write a resume file in r2c format.
 !> The resume file contains all of the GAT_R variables used
@@ -115,6 +115,9 @@ REAL    HMFGGAT(ILG,IG),  HTCGAT (ILG,IG),  QFCGAT (ILG,IG), &
     
 ! * WATROF DECLARATIONS
 REAL    DDGAT(ILG),MANNGAT(ILG)
+
+!     * SAND AND CLAY
+REAL    SANDGAT(ILG,IG),   CLAYGAT(ILG,IG)
 
 !INTEGER NML,NLTEST,NMTEST,NCOUNT,IMIN,NR2C,NLAT,ILG,XCOUNT,YCOUNT,IC,ICP1,IG
 INTEGER NML,NLTEST,NMTEST,NCOUNT,IMIN,NR2C,NLAT,ILG,IC,ICP1,IG
@@ -1338,6 +1341,26 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
             DDGAT = DATAIN
           ENDIF
 
+          !> ATTRIBUTE 160 - 
+          DO J = 1, IG
+          counter = counter + 1
+          ! make sure that we are using the correct DATAIN
+          IF(N.eq.counter) THEN
+            ! set the GAT_R variable from the save_state.r2c
+            SANDGAT(:,J) = DATAIN
+          ENDIF
+          ENDDO
+       
+          !> ATTRIBUTE 161 - 
+          DO J = 1, IG
+          counter = counter + 1
+          ! make sure that we are using the correct DATAIN
+          IF(N.eq.counter) THEN
+            ! set the GAT_R variable from the save_state.r2c
+            CLAYGAT(:,J) = DATAIN
+          ENDIF
+          ENDDO
+       
         ENDIF ! IF(GRD_R(N).EQ.1.OR.GAT_R(N).EQ.1)THEN
       ENDDO ! N = 1, NR2C
 

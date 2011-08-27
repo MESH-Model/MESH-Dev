@@ -33,8 +33,8 @@
                        ROFOGAT,ROFSGAT,ROFBGAT,TROFGAT,TROOGAT, &
                        TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
                        WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  GFLXGAT, &
-                       HMFGGAT,HTCGAT, QFCGAT,                  &
-                       MANNGAT, DDGAT,coordsys1,datum1,zone1,   &
+                       HMFGGAT,HTCGAT, QFCGAT,MANNGAT, DDGAT,   &
+                       SANDGAT,CLAYGAT,coordsys1,datum1,zone1,  &
                        XORIGIN,YORIGIN,XDELTA,YDELTA)
 !> This subroutine is used to write a resume file in r2c format.
 !> The resume file contains all of the GAT variables used
@@ -115,6 +115,9 @@ REAL    HMFGGAT(ILG,IG),  HTCGAT (ILG,IG),  QFCGAT (ILG,IG), &
     
 ! * WATROF DECLARATIONS
 REAL    DDGAT(ILG),MANNGAT(ILG)
+
+!     * SAND AND CLAY
+REAL    SANDGAT(ILG,IG),   CLAYGAT(ILG,IG)
 
 !INTEGER NML,NLTEST,NMTEST,NCOUNT,IMIN,NR2C,NLAT,ILG,XCOUNT,YCOUNT,IC,ICP1,IG
 INTEGER NML,NLTEST,NMTEST,NCOUNT,IMIN,NR2C,NLAT,ILG,IC,ICP1,IG
@@ -291,7 +294,7 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
                        TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
                        WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  GFLXGAT, &
                        HMFGGAT,HTCGAT, QFCGAT,                  &
-                       MANNGAT, DDGAT)
+                       MANNGAT, DDGAT, SANDGAT, CLAYGAT)
  
       COUNT = 0
 

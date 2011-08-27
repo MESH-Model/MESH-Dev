@@ -86,7 +86,8 @@ C
 C     *****************************************************************
 C     CALL "cqm.bat" (MAPLE) EXECUTABLE
 C
-      CALL SYSTEM("cqm.bat",STATUS=IOS)
+C      CALL SYSTEM("cqm.bat",STATUS=IOS)
+      IOS = 1
       IF (IOS .NE. 0) THEN
         WRITE(6,*)
         WRITE(6,*) "MESH could not initialize WD3."

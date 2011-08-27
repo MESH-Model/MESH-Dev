@@ -480,9 +480,9 @@ C
                   GZERO(I)=GZERO(I)+QMELT(I)
                   QMELT(I)=0.0
               ENDIF
-C              QSENS(I)=QSENS(I)+0.5*RESID(I)
-C              GZERO(I)=GZERO(I)+0.5*RESID(I)
-              QSENS(I)=QSENS(I)+RESID(I)
+              QSENS(I)=QSENS(I)+0.5*RESID(I)
+              GZERO(I)=GZERO(I)+0.5*RESID(I)
+c              QSENS(I)=QSENS(I)+RESID(I)
               QSWNET(I)=QSWNET(I)+QTRANS(I)
               EVAP(I)=EVAP(I)/RHOW
               ITERCT(I,KF(I),NITER(I))=ITERCT(I,KF(I),NITER(I))+1
