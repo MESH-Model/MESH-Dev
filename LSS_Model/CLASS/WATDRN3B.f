@@ -16,6 +16,9 @@ C       WITH BTC TO FOLLOW RIC'S CODE
 C     JUL 11/11 - DGP      DEFINITION CHANGED TO PASS RAW VALUES
 C                          TO PREP FOR CODE CONVERSION
 C                          (DDEN CONVERSION REMOVED).
+C     AUG 29/11 - DGP      REPLACED 'CALL SYSTEM' WITH INTEL AND
+C                          GFORTRAN COMPATIBLE SYSTEM CALL.
+C                          ADDED 'STATUS' ON SOIL_OUT FILE (UNIT=402).
 C
       SUBROUTINE WATDRN3B (PSISAT,THPOR,GRKSAT,BI,XSLOPE,DD,
      1  NA,NTYPE,IGND,
@@ -52,7 +55,7 @@ C
 C     *****************************************************************
 C     IF "soil_out.txt" EXISTS AND WD3NEWFILE=0, GOTO 416
 C
-      OPEN(UNIT=402,FILE="soil_out.txt",IOSTAT=IOS)
+      OPEN(UNIT=402,FILE="soil_out.txt",IOSTAT=IOS,STATUS='OLD')
       IF (WD3NEWFILE .EQ. 0 .AND. IOS .EQ. 0) THEN
         GOTO 416
       END IF
@@ -86,8 +89,12 @@ C
 C     *****************************************************************
 C     CALL "cqm.bat" (MAPLE) EXECUTABLE
 C
-C      CALL SYSTEM("cqm.bat",STATUS=IOS)
-      IOS = 1
+CDGP  ORIGINAL CALL
+*      CALL SYSTEM("cqm.bat",STATUS=IOS)
+C     ADDED TEMP FIX FOR INTEL COMPILER
+*      IOS = 1
+CDGP  SHOULD BE INTEL, GFORTRAN COMPATIBLE
+      IOS = SYSTEM("cqm.bat")
       IF (IOS .NE. 0) THEN
         WRITE(6,*)
         WRITE(6,*) "MESH could not initialize WD3."
