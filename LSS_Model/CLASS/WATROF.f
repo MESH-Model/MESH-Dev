@@ -274,6 +274,12 @@ C        loop through each element
 
 	   do i = il1,il2
 
+C           ------------------------------------------------------------------------------
+C           For WATDRN3, reset BULK_FC
+            IF (WD3BKFC == 0) THEN
+            	BULK_FC(I,J)=0.
+            ENDIF
+
 C           -----------------------------------------------------------------------------
 C           allow lateral flow if liquid water content is greater than 
 c           bulk field capacity.

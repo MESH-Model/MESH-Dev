@@ -206,6 +206,10 @@
 !* If WD3FLOW is 2, SUBFLW=SUBFLW,BASFLW=0.
       WD3FLOW = 0
 
+!* If WD3BKFC is 0, BULK_FC (WATROF)=0.
+!* If WD3BKFC is 1, BULK_FC remains unchanged in WATROF.
+      WD3BKFC = 1
+
 !> SET N = 0 RESETS THE CLASS COUNTER.
 !TODO: N is not a flag, move it somewhere else
       N = 0
@@ -326,6 +330,8 @@
             WD3NEWFILE = IROVAL
           ELSE IF (IRONAME == "WD3FLOW") THEN
             WD3FLOW = IROVAL
+          ELSE IF (IRONAME == "WD3BKFC") THEN
+            WD3BKFC = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",
