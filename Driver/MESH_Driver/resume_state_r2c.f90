@@ -1,5 +1,5 @@
       SUBROUTINE RESUME_STATE_R2C(NML,NLTEST,NMTEST,NCOUNT, &
-                    IMIN,ACLASS,NR2C,GRD_R,GAT_R,GRDGAT_R,R2C_ATTRIBUTES_R, &
+                    IMIN,ACLASS,NR2C_R,GRD_R,GAT_R,GRDGAT_R,R2C_ATTRIBUTES_R, &
                     NLAT,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,IC,ICP1,IG, &
                        TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
                        TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT,  &
@@ -120,17 +120,17 @@ REAL    DDGAT(ILG),MANNGAT(ILG)
 REAL    SANDGAT(ILG,IG),   CLAYGAT(ILG,IG)
 
 !INTEGER NML,NLTEST,NMTEST,NCOUNT,IMIN,NR2C,NLAT,ILG,XCOUNT,YCOUNT,IC,ICP1,IG
-INTEGER NML,NLTEST,NMTEST,NCOUNT,IMIN,NR2C,NLAT,ILG,IC,ICP1,IG
+INTEGER NML,NLTEST,NMTEST,NCOUNT,IMIN,NR2C_R,NLAT,ILG,IC,ICP1,IG
 !INTEGER XXX(NLAT),YYY(NLAT)
 INTEGER ILMOS(ILG),JLMOS(ILG)
-INTEGER GRD_R(NR2C),GAT_R(NR2C),GRDGAT_R(NR2C)
+INTEGER GRD_R(NR2C_R),GAT_R(NR2C_R),GRDGAT_R(NR2C_R)
 
 !REAL    ACLASS(NLTEST,NMTEST+1)
    
 INTEGER COUNT,XCOUNT,YCOUNT,counter
 REAL    DATAIN(ILG)
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: DATAOUT
-CHARACTER(*) R2C_ATTRIBUTES_R(NR2C,3)
+CHARACTER(*) R2C_ATTRIBUTES_R(NR2C_R,3)
 
 integer resumeIostat
 character(10) ctime,coordsys1,datum1,zone1
@@ -141,19 +141,19 @@ INTEGER XXX(NLAT),YYY(NLAT)
 
 LOGICAL RESUMESTATER2C
 INTEGER PAS
-INTEGER NR2CSTATES,IOS,DELTR2C,II,JJ
+INTEGER NR2CSTATES,IOS,DELTR2C_R,II,JJ
 character*50 junk
 character*10 attribute_test
 
 !> *********************************************************************
-!> Open and read in values from save_state_r2c.txt file
+!> Open and read in values from resume_state_r2c.txt file (needs fixing, kind of dumb to open the file twice (in the driver and here)
 !> *********************************************************************
 NR2CSTATES = 0
    INQUIRE(FILE='resume_state_r2c.txt', EXIST = RESUMESTATER2C)
    IF(RESUMESTATER2C)THEN
       OPEN(57, FILE = 'resume_state_r2c.txt')
-      READ(57,*,IOSTAT=IOS)NR2C,DELTR2C
-      IF(IOS /= 0 .OR. MOD(DELTR2C,30) /= 0)THEN
+      READ(57,*,IOSTAT=IOS)NR2C_R,DELTR2C_R
+      IF(IOS /= 0 .OR. MOD(DELTR2C_R,30) /= 0)THEN
          WRITE(6,9002)
          STOP
 
@@ -170,7 +170,7 @@ NR2CSTATES = 0
       PRINT*
       PRINT*,'THE FOLLOWING VARIABLES WILL BE READ-IN FROM AN R2C FILE (resume_state.r2c):'
 
-      DO I = 1, NR2C
+      DO I = 1, NR2C_R
           READ(57,*,IOSTAT = IOS)GRD_R(I),GAT_R(I),GRDGAT_R(I),(R2C_ATTRIBUTES_R(I,J),J=1,3)
           IF(IOS /= 0)THEN
              PRINT*,'ERROR READING resume_state_r2c.txt FILE AT LINE ', I + 1
@@ -235,7 +235,7 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
         read(263,*) junk
         read(263,*) junk
         read(263,*) junk
-        do i = 1,NR2C
+        do i = 1,NR2C_R
           if(GRD_R(I).eq.1) then
             read(263,'(28X,a10)') attribute_test
               if(TRIM(attribute_test).ne.TRIM(R2C_ATTRIBUTES_R(I,1))) then
@@ -272,11 +272,12 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
 ! Note: if both GRD_R(N) and GAT_R(N) = 1, then the GAT_R will over-ride the GRD_R by design
       COUNT = 0
 
-      DO N = 1, NR2C
+      DO N = 1, NR2C_R
        IF(GRD_R(N) == 1)THEN
          COUNT = COUNT + 1
          DO J = 1, YCOUNT
-           READ(263,'(999(E10.3))')(DATAOUT(COUNT,I,J),I=1,XCOUNT)
+!           READ(263,'(999(E10.3))')(DATAOUT(COUNT,I,J),I=1,XCOUNT)
+           READ(263,'(999(F5.2))')(DATAOUT(COUNT,I,J),I=1,XCOUNT)
          ENDDO      
          DO I = 1, NML
            II = XXX(ILMOS(I))
@@ -1362,7 +1363,7 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
           ENDDO
        
         ENDIF ! IF(GRD_R(N).EQ.1.OR.GAT_R(N).EQ.1)THEN
-      ENDDO ! N = 1, NR2C
+      ENDDO ! N = 1, NR2C_R
 
 close(263)
 DEALLOCATE(DATAOUT)

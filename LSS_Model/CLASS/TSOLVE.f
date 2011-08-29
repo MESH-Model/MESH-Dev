@@ -482,7 +482,7 @@ C
               ENDIF
               QSENS(I)=QSENS(I)+0.5*RESID(I)
               GZERO(I)=GZERO(I)+0.5*RESID(I)
-c              QSENS(I)=QSENS(I)+RESID(I)
+C              QSENS(I)=QSENS(I)+RESID(I)
               QSWNET(I)=QSWNET(I)+QTRANS(I)
               EVAP(I)=EVAP(I)/RHOW
               ITERCT(I,KF(I),NITER(I))=ITERCT(I,KF(I),NITER(I))+1

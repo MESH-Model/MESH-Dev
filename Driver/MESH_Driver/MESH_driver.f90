@@ -2459,32 +2459,6 @@ ELSE
           "RUNOFF)"
 ENDIF
 
-!> *********************************************************************
-!> Call CLASSB to set more CLASS variables
-!> *********************************************************************
-!> bjd - July 25, 2005: For inputting field measured soil properties.
-
-IF(SOILINIFLAG == 0) THEN
-
-  CALL CLASSB(THPROW,THRROW,THMROW,BIROW,PSISROW,GRKSROW, &
-            THRAROW,HCPSROW,TCSROW,THFCROW,PSIWROW, &
-            DLZWROW,ZBTWROW,ALGWROW,ALGDROW, &
-            cp%SANDROW,cp%CLAYROW,cp%ORGMROW,sl%DELZ,sl%ZBOT, &
-            cp%SDEPROW,ISNDROW, &
-            IORG,NA,NTYPE,NA,NMTEST,IGND)
-
-ELSE
-!todo : change this to use sv instead of a bunch of the parts thereof
-  CALL CLASSBHYD(THPROW,THRROW,THMROW,BIROW,PSISROW,GRKSROW, &
-            THRAROW,HCPSROW,TCSROW,THFCROW,PSIWROW, &
-            DLZWROW,ZBTWROW,ALGWROW,ALGDROW, &
-            cp%SANDROW,cp%CLAYROW,cp%ORGMROW,sl%DELZ,sl%ZBOT, &
-            cp%SDEPROW,ISNDROW, &
-            IORG,NA,NTYPE,NA,NMTEST,IGND,sv%wc_thpor,sv%wc_thlret, &
-            sv%wc_thlmin,sv%wc_bi,sv%wc_psisat,sv%wc_grksat, &
-            sv%wc_hcps,sv%wc_tcs,sv%wc_algwet,sv%wc_algdry)
-
-ENDIF
 !>
 !>*******************************************************************
 !>
@@ -2710,7 +2684,7 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT)
 
 call resume_state_r2c(NML,NLTEST,NMTEST,NCOUNT, &
-                    IMIN,ACLASS,NR2C,GRD_R,GAT_R,GRDGAT_R,R2C_ATTRIBUTES_R,&
+                    IMIN,ACLASS,NR2C_R,GRD_R,GAT_R,GRDGAT_R,R2C_ATTRIBUTES_R,&
                     NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,ICAN,ICP1,IGND, &
                        TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
                        TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT,  &
@@ -2790,6 +2764,33 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,cp%TPNDROW, &
 
 ENDIF
 
+!> *********************************************************************
+!> Call CLASSB to set more CLASS variables
+!> *********************************************************************
+!> bjd - July 25, 2005: For inputting field measured soil properties.
+
+IF(SOILINIFLAG == 0) THEN
+
+  CALL CLASSB(THPROW,THRROW,THMROW,BIROW,PSISROW,GRKSROW, &
+            THRAROW,HCPSROW,TCSROW,THFCROW,PSIWROW, &
+            DLZWROW,ZBTWROW,ALGWROW,ALGDROW, &
+            cp%SANDROW,cp%CLAYROW,cp%ORGMROW,sl%DELZ,sl%ZBOT, &
+            cp%SDEPROW,ISNDROW, &
+            IORG,NA,NTYPE,NA,NMTEST,IGND)
+
+ELSE
+!todo : change this to use sv instead of a bunch of the parts thereof
+  CALL CLASSBHYD(THPROW,THRROW,THMROW,BIROW,PSISROW,GRKSROW, &
+            THRAROW,HCPSROW,TCSROW,THFCROW,PSIWROW, &
+            DLZWROW,ZBTWROW,ALGWROW,ALGDROW, &
+            cp%SANDROW,cp%CLAYROW,cp%ORGMROW,sl%DELZ,sl%ZBOT, &
+            cp%SDEPROW,ISNDROW, &
+            IORG,NA,NTYPE,NA,NMTEST,IGND,sv%wc_thpor,sv%wc_thlret, &
+            sv%wc_thlmin,sv%wc_bi,sv%wc_psisat,sv%wc_grksat, &
+            sv%wc_hcps,sv%wc_tcs,sv%wc_algwet,sv%wc_algdry)
+
+ENDIF
+
 !> Allocate variables for WATDRN3
 !> ******************************************************************
 !> DGP - June 3, 2011: Now that variables are shared, moved from WD3
@@ -2821,7 +2822,7 @@ IF(INTERPOLATIONFLAG == 0)THEN
                            FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
                            FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT)
 ELSEIF(INTERPOLATIONFLAG == 1)THEN
-    IF(RESUMEFLAG == 0)THEN
+    IF(RESUMEFLAG.ne.1)THEN
         CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,cp%FAREROW, &
                            FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
                            FSVHGATPRE,FSIHGATPRE,FDLGATPRE,PREGATPRE,TAGATPRE,ULGATPRE, &

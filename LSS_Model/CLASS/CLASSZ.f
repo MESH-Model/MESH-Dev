@@ -157,7 +157,7 @@ C
               WRITE(6,6450) RCAN(I),SCAN(I),TCAN(I)
               STOP
           ENDIF
-          IF(ABS(CTSSTP(I)-QSUMS).GT.3.0) THEN
+          IF(ABS(CTSSTP(I)-QSUMS).GT.30.0) THEN
               WRITE(6,6442) N,I,CTSSTP(I),QSUMS
 6442          FORMAT(2X,'SNOW ENERGY BALANCE  ',2I8,2F20.8)
               WRITE(6,6450) FSGS(I),FLGS(I),HFSS(I),
@@ -212,7 +212,7 @@ C
 6446          FORMAT(2X,'CANOPY WATER BALANCE  ',I8,2F20.8)
               STOP
           ENDIF
-          IF(ABS(WTSSTP(I)-WSUMS).GT.1.0E-2) THEN
+          IF(ABS(WTSSTP(I)-WSUMS).GT.1.0E-1) THEN
               WRITE(6,6447) N,I,WTSSTP(I),WSUMS
 6447          FORMAT(2X,'SNOW WATER BALANCE  ',2I8,2F20.8)
               WRITE(6,6450) PCPN(I)*DELT,QFN(I)*DELT,
