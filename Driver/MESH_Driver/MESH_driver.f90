@@ -3704,8 +3704,8 @@ DO I = 1, NA
             THICACC(I,J) = THICACC(I,J)+cp%THICROW(I,M,J)*cp%FAREROW(I,M)
             THALACC(I,J) = THALACC(I,J)+(cp%THLQROW(I,M,J)+ &
                                          cp%THICROW(I,M,J))*cp%FAREROW(I,M)
-            TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%THLQROW(I,M,J)*cp%FAREROW(I,M)*DLZWROW(I,M,J)
-            TOTAL_THIC(J) = TOTAL_THIC(J) + cp%THICROW(I,M,J)*cp%FAREROW(I,M)*DLZWROW(I,M,J)
+            TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%THLQROW(I,M,J)*RHOW*cp%FAREROW(I,M)*DLZWROW(I,M,J)
+            TOTAL_THIC(J) = TOTAL_THIC(J) + cp%THICROW(I,M,J)*RHOICE*cp%FAREROW(I,M)*DLZWROW(I,M,J)
             
          ENDDO
          
@@ -3960,7 +3960,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                                                 ((TOTAL_THLQ(J) + TOTAL_THIC(J))/TOTAL_AREA, J = 1, IGND), &
                                                 SUM(TOTAL_THLQ(1:IGND))/TOTAL_AREA, &
                                                 SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
-                                                SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
+                                                (SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND)))/TOTAL_AREA, &
                                                 TOTAL_STORE/TOTAL_AREA, &
                                                 (TOTAL_STORE - INIT_STORE)/TOTAL_AREA
 
