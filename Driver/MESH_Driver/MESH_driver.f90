@@ -757,6 +757,10 @@ INTEGER, ALLOCATABLE, DIMENSION(:):: INFILTYPE
 REAL, DIMENSION(:), ALLOCATABLE   :: SI,TSI,SNOWMELTD,SNOWMELTD_LAST, &
                                      SNOWINFIL,CUMSNOWINFILCS,MELTRUNOFF,CUMSNOWINFILGS
 
+! To use with variable format expressions in writing some output files
+CHARACTER*20 IGND_CHAR
+CHARACTER*2000 FMT
+
 !=======================================================================
 !     * SET PHYSICAL CONSTANTS AND COMMON BLOCKS
 
@@ -2292,13 +2296,17 @@ DO I=1, wf_num_points
   WRITE(150+i*10+1,"('IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,SNOMLT,BEG,"// &
    "GTOUT,SNOACC(I),RHOSACC(I),WSNOACC(I),ALTOT,ROFACC(I),"// &
    "ROFOACC(I),ROFSACC(I),ROFBACC(I)')")
-  WRITE(150+i*10+2,"('IDAY,IYEAR,"// &
-   "TBARACC(I 1)-TFREZ,THLQACC(I 1),THICACC(I 1),"// &
-   "TBARACC(I 2)-TFREZ,THLQACC(I 2),THICACC(I 2),"// &
-   "TBARACC(I 3)-TFREZ,THLQACC(I 3),THICACC(I 3),"// &
-   "TBARACC(I 4)-TFREZ,THLQACC(I 4),THICACC(I 4),"// &
-   "TBARACC(I 5)-TFREZ,THLQACC(I 5),THICACC(I 5),"// &
-   "TBARACC(I 6)-TFREZ,THLQACC(I 6),THICACC(I 6),"// &
+
+! Set the appropriate format statement for writing to the next file
+  WRITE(FMT,*) ""
+  DO J = 1, IGND
+    WRITE(IGND_CHAR,*) J
+    IGND_CHAR = ADJUSTL(IGND_CHAR)
+    FMT=TRIM(ADJUSTL(FMT))//'TBARACC(I '//TRIM(IGND_CHAR)//')-TFREZ,THLQACC(I ' &
+        //TRIM(IGND_CHAR)//'),THICACC(I '//TRIM(IGND_CHAR)//'),'
+  ENDDO
+! write the next file
+  WRITE(150+i*10+2,"('IDAY,IYEAR,"// TRIM(FMT)//&
    "TCN,RCANACC(I),SCANACC(I),TSN,ZSN')")
   WRITE(150+i*10+3,"('IDAY,IYEAR,FSINACC(I),FLINACC(I),"// &
    "TAACC(I)-TFREZ,UVACC(I),PRESACC(I),QAACC(I),PREACC(I),"// &
@@ -2306,28 +2314,58 @@ DO I=1, wf_num_points
   WRITE(150+i*10+4,"('IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,"// &
    "SNOMLT,BEG,GTOUT,SNOROW(I M),RHOSROW(I M),WSNOROW(I M),ALTOT,"// &
    "ROFROW(I M),TPN,ZPNDROW(I M)')")
-  WRITE(150+i*10+5,"('IHOUR,IMIN,IDAY,IYEAR,"// &
-   "TBARROW(I M 1)-TFREZ,THLQROW(I M 1),THICROW(I M 1),"// &
-   "TBARROW(I M 2)-TFREZ,THLQROW(I M 2),THICROW(I M 2),"// &
-   "TBARROW(I M 3)-TFREZ,THLQROW(I M 3),THICROW(I M 3),"// &
-   "TBARROW(I M 4)-TFREZ,THLQROW(I M 4),THICROW(I M 4),"// &
-   "TBARROW(I M 5)-TFREZ,THLQROW(I M 5),THICROW(I M 5),"// &
-   "TBARROW(I M 6)-TFREZ,THLQROW(I M 6),THICROW(I M 6),"// &
+! Set the appropriate format statement for writing to the next file
+  WRITE(FMT,*) ""
+  DO J = 1, IGND
+    WRITE(IGND_CHAR,*) J
+    IGND_CHAR = ADJUSTL(IGND_CHAR)
+    FMT=TRIM(ADJUSTL(FMT))//'TBARROW(I '//TRIM(IGND_CHAR)//')-TFREZ,THLQROW(I ' &
+        //TRIM(IGND_CHAR)//'),THICROW(I '//TRIM(IGND_CHAR)//'),'
+  ENDDO
+! write the next file
+  WRITE(150+i*10+5,"('IHOUR,IMIN,IDAY,IYEAR,"//TRIM(FMT)// &
    "TCN,cp%RCANROW(I M),SCANROW(I M),TSN,ZSN')")
   WRITE(150+i*10+6,"('IHOUR,IMIN,IDAY,FSDOWN(I),FDLGRD(I),"// &
    "PREGRD(I),TAGRD(I)-TFREZ,UVGRD(I),PRESGRD(I),QAGRD(I)')")
   WRITE(150+i*10+7,"('TROFROW(I M),TROOROW(I M),TROSROW(I M),"// &
    "TROBROW(I M),ROFROW(I M),ROFOROW(I M),ROFSROW(I M),"// &
    "ROFBROW(I M),FCS(I),FGS(I),FC(I),FG(I)')")
+! Set the appropriate format statement for writing to the next file
+  WRITE(FMT,*) ""
+  DO J = 1, IGND
+    WRITE(IGND_CHAR,*) J
+    IGND_CHAR = ADJUSTL(IGND_CHAR)
+    FMT=TRIM(ADJUSTL(FMT))//',HMFGROW(I M '//TRIM(IGND_CHAR)//')'
+  ENDDO
+  FMT=TRIM(ADJUSTL(FMT))//',HTCCROW(I M),HTCSROW(I M)'
+  DO J = 1, IGND
+    WRITE(IGND_CHAR,*) J
+    IGND_CHAR = ADJUSTL(IGND_CHAR)
+    FMT=TRIM(ADJUSTL(FMT))//',HTCROW(I M '//TRIM(IGND_CHAR)//')'
+  ENDDO
+! write the next file
   WRITE(150+i*10+8,"('FSGVROW(I M),FSGSROW(I M),FSGGROW(I M),"// &
    "FLGVROW(I M),FLGSROW(I M),FLGGROW(I M),HFSCROW(I M),"// &
    "HFSSROW(I M),HFSGROW(I M),HEVCROW(I M),HEVSROW(I M),"// &
-   "HEVGROW(I M),HMFCROW(I M),HMFNROW(I M),HMFGROW(I M 1),"// &
-   "HMFGROW(I M 2),HMFGROW(I M 3),HTCCROW(I M),HTCSROW(I M),"// &
-   "HTCROW(I M 1),HTCROW(I M 2),HTCROW(I M 3)')")
+   "HEVGROW(I M),HMFCROW(I M),HMFNROW(I M)"// &
+   TRIM(FMT)//"')")
+!  WRITE(150+i*10+8,"('FSGVROW(I M),FSGSROW(I M),FSGGROW(I M),"// &
+!   "FLGVROW(I M),FLGSROW(I M),FLGGROW(I M),HFSCROW(I M),"// &
+!   "HFSSROW(I M),HFSGROW(I M),HEVCROW(I M),HEVSROW(I M),"// &
+!   "HEVGROW(I M),HMFCROW(I M),HMFNROW(I M),HMFGROW(I M 1),"// &
+!   "HMFGROW(I M 2),HMFGROW(I M 3),HTCCROW(I M),HTCSROW(I M),"// &
+!   "HTCROW(I M 1),HTCROW(I M 2),HTCROW(I M 3)')")
+! Set the appropriate format statement for writing to the next file
+  WRITE(FMT,*) ""
+  DO J = 1, IGND
+    WRITE(IGND_CHAR,*) J
+    IGND_CHAR = ADJUSTL(IGND_CHAR)
+    FMT=TRIM(ADJUSTL(FMT))//'QFCROW(I M '//TRIM(IGND_CHAR)//'),'
+  ENDDO
+! write the next file
   WRITE(150+I*10+9,"('PCFCROW(I M),PCLCROW(I M),PCPNROW(I M),"// &
    "PCPGROW(I M),QFCFROW(I M),QFCLROW(I M),QFNROW(I M),QFGROW(I M),"// &
-   "QFCROW(I M 1),QFCROW(I M 2),QFCROW(I M 3),ROFCROW(I M),"// &
+   TRIM(FMT)//"ROFCROW(I M),"// &
    "ROFNROW(I M),ROFOROW(I M),ROFROW(I M),WTRCROW(I M),"// &
    "WTRSROW(I M),WTRGROW(I M)')")
 ENDDO
@@ -3372,7 +3410,8 @@ DO K=1, WF_NUM_POINTS
                    TROBROW(I,M),ROFROW(I,M),ROFOROW(I,M), &
                    ROFSROW(I,M),ROFBROW(I,M), &
                    FCS(I),FGS(I),FC(I),FG(I)
-    WRITE(150+k*10+8,'(22(F10.4,","))') &
+    FMT = '(14(F12.4,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(F12.4,",")2(F12.4,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(F12.4,","))'
+    WRITE(150+k*10+8,TRIM(ADJUSTL(FMT))) &
                    FSGVROW(I,M),FSGSROW(I,M),FSGGROW(I,M), &
                    FLGVROW(I,M),FLGSROW(I,M),FLGGROW(I,M), &
                    HFSCROW(I,M),HFSSROW(I,M),HFSGROW(I,M), &
@@ -3381,7 +3420,7 @@ DO K=1, WF_NUM_POINTS
                    (HMFGROW(I,M,J),J=1,IGND), &
                    HTCCROW(I,M),HTCSROW(I,M), &
                    (HTCROW(I,M,J),J=1,IGND)
-    WRITE(150+k*10+9,'(21(E12.4,","))') &
+    WRITE(150+k*10+9,'(8(E12.4,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(E12.4,",")7(E12.4,","))') &
                    PCFCROW(I,M),PCLCROW(I,M),PCPNROW(I,M), &
                    PCPGROW(I,M),QFCFROW(I,M),QFCLROW(I,M), &
                    QFNROW(I,M),QFGROW(I,M),(QFCROW(I,M,J), &
@@ -3843,7 +3882,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                         BEG,GTOUT,SNOACC(I),RHOSACC(I), &
                         WSNOACC(I),ALTOT,ROFACC(I),ROFOACC(I), &
                         ROFSACC(I),ROFBACC(I)
-        WRITE(150+k*10+2,'((I4,","),(I5,","),6((F8.2,","),'// &
+        WRITE(150+k*10+2,'((I4,","),(I5,","),'//ADJUSTL(IGND_CHAR)//'((F8.2,","),'// &
                         '2(F6.3,",")),(F8.2,","),2(F7.4,","),'// &
                         '2(F8.2,","),(E12.5,","))') &
                         IDAY,IYEAR,(TBARACC(I,J)-TFREZ, &
