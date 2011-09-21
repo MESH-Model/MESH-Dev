@@ -2807,27 +2807,14 @@ ENDIF
 !> *********************************************************************
 !> bjd - July 25, 2005: For inputting field measured soil properties.
 
-IF(SOILINIFLAG == 0) THEN
-
-  CALL CLASSB(THPROW,THRROW,THMROW,BIROW,PSISROW,GRKSROW, &
-            THRAROW,HCPSROW,TCSROW,THFCROW,PSIWROW, &
-            DLZWROW,ZBTWROW,ALGWROW,ALGDROW, &
+  CALL CLASSB(THPROW,THRROW,THMROW,BIROW,PSISROW,GRKSROW,     &
+            THRAROW,HCPSROW,TCSROW,THFCROW,PSIWROW,           &
+            DLZWROW,ZBTWROW,ALGWROW,ALGDROW,                  &
             cp%SANDROW,cp%CLAYROW,cp%ORGMROW,sl%DELZ,sl%ZBOT, &
-            cp%SDEPROW,ISNDROW, &
-            IORG,NA,NTYPE,NA,NMTEST,IGND)
-
-ELSE
-!todo : change this to use sv instead of a bunch of the parts thereof
-  CALL CLASSBHYD(THPROW,THRROW,THMROW,BIROW,PSISROW,GRKSROW, &
-            THRAROW,HCPSROW,TCSROW,THFCROW,PSIWROW, &
-            DLZWROW,ZBTWROW,ALGWROW,ALGDROW, &
-            cp%SANDROW,cp%CLAYROW,cp%ORGMROW,sl%DELZ,sl%ZBOT, &
-            cp%SDEPROW,ISNDROW, &
-            IORG,NA,NTYPE,NA,NMTEST,IGND,sv%wc_thpor,sv%wc_thlret, &
-            sv%wc_thlmin,sv%wc_bi,sv%wc_psisat,sv%wc_grksat, &
-            sv%wc_hcps,sv%wc_tcs,sv%wc_algwet,sv%wc_algdry)
-
-ENDIF
+            cp%SDEPROW,ISNDROW,                               &
+            IORG,NA,NTYPE,NA,NMTEST,IGND,                     &
+	        SV%WC_THPOR,SV%WC_THLRET,SV%WC_THLMIN,SV%WC_BI,   &
+            SV%WC_PSISAT,SV%WC_GRKSAT,SV%WC_HCPS,SV%WC_TCS)
 
 !> Allocate variables for WATDRN3
 !> ******************************************************************

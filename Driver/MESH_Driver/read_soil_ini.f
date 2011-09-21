@@ -1,9 +1,10 @@
-      SUBROUTINE READ_SOIL_INI(NMTEST, IGND, NTYPE, NA, sv, SOILINIFLAG)
+      SUBROUTINE READ_SOIL_INI(NMTEST, IGND, NTYPE, NA, sv)
       USE MESH_INPUT_MODULE
+	  USE FLAGS
 !> local variables
       INTEGER :: SOIL_IOS, M, I, J
 !> read in variables
-      INTEGER :: NMTEST, IGND, SOILINIFLAG
+      INTEGER :: NMTEST, IGND
       INTEGER*4 :: NA, NTYPE
       TYPE(SoilValues) :: sv
 
@@ -84,25 +85,29 @@
         READ (23,*) (sv%wc_tcs   (1,m,2),m=1,NMTEST)
         READ (23,*)
         READ (23,*) (sv%wc_tcs   (1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_algwet(1,m),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_algdry(1,m),m=1,NMTEST)
 
-        DO I=2,NA
+        DO I=1,NA
           DO M=1,NMTEST
             DO J=1,3
-              sv%wc_thpor(I,M,J) = sv%wc_thpor(1,M,J)
+              sv%wc_thpor (I,M,J) = sv%wc_thpor(1,M,J)
               sv%wc_thlret(I,M,J) = sv%wc_thlret(1,M,J)
               sv%wc_thlmin(I,M,J) = sv%wc_thlmin(1,M,J)
-              sv%wc_bi(I,M,J) = sv%wc_bi(1,M,J)
+              sv%wc_bi    (I,M,J) = sv%wc_bi(1,M,J)
               sv%wc_psisat(I,M,J) = sv%wc_psisat(1,M,J)
               sv%wc_grksat(I,M,J) = sv%wc_grksat(1,M,J)
-              sv%wc_hcps(I,M,J) = sv%wc_hcps(1,M,J)
-              sv%wc_tcs(I,M,J) = sv%wc_tcs(1,M,J)
+              sv%wc_hcps  (I,M,J) = sv%wc_hcps(1,M,J)
+              sv%wc_tcs   (I,M,J) = sv%wc_tcs(1,M,J)
             END DO
-            sv%wc_algwet(I,M) = sv%wc_algwet(1,M)
-            sv%wc_algdry(I,M) = sv%wc_algdry(1,M)
+            DO J=4,IGND
+              sv%wc_thpor (I,M,J) = sv%wc_thpor(I,M,3)
+              sv%wc_thlret(I,M,J) = sv%wc_thlret(I,M,3)
+              sv%wc_thlmin(I,M,J) = sv%wc_thlmin(I,M,3)
+              sv%wc_bi    (I,M,J) = sv%wc_bi(I,M,3)
+              sv%wc_psisat(I,M,J) = sv%wc_psisat(I,M,3)
+              sv%wc_grksat(I,M,J) = sv%wc_grksat(I,M,3)
+              sv%wc_hcps  (I,M,J) = sv%wc_hcps(I,M,3) 
+              sv%wc_tcs   (I,M,J) = sv%wc_tcs(I,M,3)
+            END DO
           END DO
         END DO
       ENDIF

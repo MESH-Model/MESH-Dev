@@ -117,25 +117,56 @@ parflag = 1
 
 !>
 !>***********************************************************************
-!> Check the soil fractions
+!> Check the sum of soil percentages and adjust if necessary
 !>=======================================================================
 !>
   ib1 = ir + 8
   do i = 1,nsl
      ir   = ib1 + (i-1)*3
      do j = 1,nmtest
-!        adjust sand and clay
-        total   = cp%sandrow(1,j,i)/(100.0-cp%orgmrow(1,j,i))*100.0
-        percent = cp%clayrow(1,j,i)/(100.0-cp%orgmrow(1,j,i)-cp%sandrow(1,j,i))*100.0
-!           check that we didn't calculate any bad numbers during the soil calculation
-        if(total.gt.100.0.or.percent.gt.100.0) then
-           print *, 'one of the soil parameters are greater than'
-         print *, '100% in row ',ir,' please adjust'
-           stop
-        endif
-        parv(ir+1,j) = total
-        parv(ir+2,j) = percent
-        parv(ir+3,j) = cp%orgmrow(1,j,i)
+	 
+        ! skip checking sum of soil percentages if reading from 'soil.ini' or soil layer is rock, glacier etc.
+	    if(SOILINIFLAG  == 0 .and. cp%sandrow(1,j,i) > 0)then
+		
+		! Compute sum of soil percentages
+	      total = cp%sandrow(1,j,i) + cp%clayrow(1,j,i) + cp%orgmrow(1,j,i)
+		  if(total > 100.0)then
+            print*
+		    if(SOILPERCENTFLAG == 1)then     
+			! MESH will use the specified values
+				print*,"WARNING: Sum of soil percentages greater than 100%: GRU ",j," Soil layer ",i
+		    elseif(SOILPERCENTFLAG == 2)then     
+			! Keep sand percentage as is and adjust clay (and orgm) percentages
+		        print*,"Sum of soil percentages greater than 100% - clay (and orgm) percentages re-adjusted: Soil layer ",i," GRU ",j
+		        cp%clayrow(1,j,i) = max(0.0,100.0-cp%sandrow(1,j,i)-cp%orgmrow(1,j,i))
+		        cp%orgmrow(1,j,i) = min(cp%orgmrow(1,j,i),100.0-cp%sandrow(1,j,i)-cp%clayrow(1,j,i))
+		    elseif(SOILPERCENTFLAG == 3)then     
+			! Keep clay percentage as is and adjust sand (and orgm) percentages
+				print*,"Sum of soil percentages greater than 100% - sand (and orgm) percentages re-adjusted: Soil layer ",i," GRU ",j
+		        cp%sandrow(1,j,i) = max(0.0,100.0-cp%clayrow(1,j,i)-cp%orgmrow(1,j,i))
+		        cp%orgmrow(1,j,i) = min(cp%orgmrow(1,j,i),100.0-cp%sandrow(1,j,i)-cp%clayrow(1,j,i))
+		    elseif(SOILPERCENTFLAG == 4)then     
+			! Re-adjust both sand and clay percentages
+				print*,"Sum of soil percentages greater than 100% - soil percentages re-adjusted: Soil layer ",i," GRU ",j
+                cp%clayrow(1,j,i) = cp%clayrow(1,j,i)*100.0/total
+		        cp%sandrow(1,j,i) = cp%sandrow(1,j,i)*100.0/total
+				cp%orgmrow(1,j,i) = cp%orgmrow(1,j,i)*100.0/total
+		    else
+		        print*,"ERROR: Sum of soil percentages greater than 100%: GRU ",j," Soil layer ",i
+				print*,"Adjust the soil percentages or: "
+				print*,"Set SOILPERCENTFLAG to 1 - MESH will use the values as specified"
+				print*,"Set SOILPERCENTFLAG to 2 - MESH will keep sand percentage and adjust clay and orgm percentages"
+				print*,"Set SOILPERCENTFLAG to 3 - MESH will keep clay percentage and adjust sand and orgm percentages"
+				print*,"Set SOILPERCENTFLAG to 4 - MESH will proportionally adjust sand, clay and orgm percentages"
+				print*,"Set SOILINIFLAG to 1 - MESH will read parameters from 'soil.ini' file"
+				stop
+			endif
+		  endif
+		endif	
+
+        parv(ir+1,j)      = cp%sandrow(1,j,i)
+		parv(ir+2,j)      = cp%clayrow(1,j,i)
+		parv(ir+3,j)      = cp%orgmrow(1,j,i)
      enddo
   enddo
 

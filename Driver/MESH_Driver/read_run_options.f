@@ -164,6 +164,12 @@
 !> and direct runoff based on the parameteric equation developed by Gray et al, 2001.
       FROZENSOILINFILFLAG = 0
 
+!> If SOILPERCENTFLAG is 0, no adjustment to soil percentages even if the sum is greater than 100%.
+!> If SOILPERCENTFLAG is 1, adjust soil percentages to 100% 
+!> If SOILPERCENTFLAG is 2, stop simulation and output unrealistic objective function value if the sum of soil percentages is greater than 100%
+!> and direct runoff based on the parameteric equation developed by Gray et al, 2001.
+      SOILPERCENTFLAG = 0
+	  
 !> FORCIND DATA INTERPOLATION AT INTERMEDIATE TIME STEPS (WHEN THE TIME 
 !> INTERVAL OF THE FORCING DATA IS GREATER THAN 30 MINUTE) 
 !> DEFAULT = NO INTERPOLATION
@@ -332,6 +338,8 @@
             WD3FLOW = IROVAL
           ELSE IF (IRONAME == "WD3BKFC") THEN
             WD3BKFC = IROVAL
+          ELSE IF (IRONAME == "SOILPERCENTFLAG") THEN
+			SOILPERCENTFLAG = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",
