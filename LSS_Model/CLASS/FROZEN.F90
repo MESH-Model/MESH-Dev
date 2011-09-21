@@ -164,10 +164,9 @@ DO I = IL1, IL2
             IF(CAPACITY > 0.0)THEN
                
                !> Frozen soil infiltration parameteric equation (t0 in hr, INF in mm)
-               INF  = C(i)*(S0**2.92)*                                &
-                      ((1.0 - SI(I))**1.64)*                       &
-                      (((0.0 - TSI(I)) / 273.15)**-0.45)*          &
-                      (t0**0.44)                                             
+               INF  = C(I)*(S0**2.92)*((1.0 - SI(I))**1.64)*       &
+                      (((0.0 - TSI(I)) / 273.15)**(-0.45))*(t0**0.44)
+                                                                   
                
                !> convert mm to m
                INF  = INF/1000.0
