@@ -2,7 +2,9 @@
      1                  THLRAT,HCPS,TCS,THFC,PSIWLT,
      2                  DELZW,ZBOTW,ALGWET,ALGDRY,
      3                  SAND,CLAY,ORGM,DELZ,ZBOT,SDEPTH,
-     4                  ISAND,IORG,NL,NM,IL,IM,IG)
+     4                  ISAND,IORG,NL,NM,IL,IM,IG,
+     5                  WC_THPOR,WC_THLRET,WC_THLMIN,WC_BI,
+     6                  WC_PSISAT,WC_GRKSAT,WC_HCPS,WC_TCS)
 C
 C     * DEC 23/09 - V.FORTIN.   REVISE CALCULATION OF THFC FOR
 C     *                         BOTTOM LAYER IN MINERAL SOILS 
@@ -26,6 +28,7 @@ C     *                         THERMAL PROPERTIES BASED ON
 C     *                         SAND, CLAY AND ORGANIC MATTER
 C     *                         CONTENT.
 C
+      USE FLAGS
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
@@ -58,6 +61,12 @@ C
 C     * TEMPORARY VARIABLES.
 C
       REAL VSAND,VORG,VFINE,VTOT,AEXP,ABC,test1,test2
+
+C     * VARIABLES FOR SOIL.INI FILE	  
+      REAL WC_THPOR (NL,NM,IG),WC_THLRET(NL,NM,IG),
+     1     WC_THLMIN(NL,NM,IG),WC_BI    (NL,NM,IG),
+     2     WC_PSISAT(NL,NM,IG),WC_GRKSAT(NL,NM,IG),
+     3     WC_HCPS  (NL,NM,IG),WC_TCS   (NL,NM,IG)	  
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -148,13 +157,13 @@ C
               PSIWLT(I,M,J)=PSISAT(I,M,J)*(THLMIN(I,M,J)/
      1            THPOR(I,M,J))**(-BI(I,M,J))
           ELSEIF(SAND(I,M,J).GT.0) THEN
+		    IF (SOILINIFLAG == 0) THEN
               THPOR (I,M,J)=(-0.126*SAND(I,M,J)+48.9)/100.0
               THLRET(I,M,J)=0.04
               THLMIN(I,M,J)=0.04
               BI    (I,M,J)=0.159*CLAY(I,M,J)+2.91
               PSISAT(I,M,J)=0.01*EXP(-0.0302*SAND(I,M,J)+4.33)
               GRKSAT(I,M,J)=7.0556E-6*(EXP(0.0352*SAND(I,M,J)-2.035))
-              THLRAT(I,M,J)=0.5**(1.0/(2.0*BI(I,M,J)+3.0))
               VSAND=SAND(I,M,J)/(RHOSOL*100.0)
               VORG=ORGM(I,M,J)/(RHOOM*100.0)
               VFINE=(100.0-SAND(I,M,J)-ORGM(I,M,J))/(RHOSOL*100.0)
@@ -166,6 +175,23 @@ C
      1            HCPOM*THORG(I,M,J))/(1.0-THPOR(I,M,J))
               TCS(I,M,J)=(TCSAND*THSAND(I,M,J)+TCOM*THORG(I,M,J)+
      1            TCFINE*THFINE(I,M,J))/(1.0-THPOR(I,M,J))
+	        ELSEIF (SOILINIFLAG == 1) THEN
+			  THPOR (I,M,J) = WC_THPOR (I,M,J)
+              THLRET(I,M,J) = WC_THLRET(I,M,J)
+              THLMIN(I,M,J) = WC_THLMIN(I,M,J)
+              BI    (I,M,J) = WC_BI    (I,M,J)
+              PSISAT(I,M,J) = WC_PSISAT(I,M,J)
+              GRKSAT(I,M,J) = WC_GRKSAT(I,M,J)
+              HCPS  (I,M,J) = WC_HCPS(I,M,J)
+              TCS   (I,M,J) = WC_TCS(I,M,J)
+			ELSE
+			  PRINT*
+			  PRINT*,"SOILINIFLAG IS SET TO INVALID VALUE: ",SOILINIFLAG
+			  PRINT*,"0 - READ PERCENTAGES (MESH_parameters_CLASS.ini)"
+			  PRINT*,"1 - READ PARAMETER VALUES (soil.ini)"
+			  STOP
+			ENDIF
+              THLRAT(I,M,J)=0.5**(1.0/(2.0*BI(I,M,J)+3.0))
               THFC(I,M,J)=THPOR(I,M,J)*(1.157E-9/GRKSAT(I,M,J))**
      1            (1.0/(2.0*BI(I,M,J)+3.0))
               IF(J.EQ.IG.AND.SDEPTH(I,M).GT.(ZBOTW(I,M,J)-0.01))  THEN
