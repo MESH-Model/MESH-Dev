@@ -125,45 +125,57 @@ parflag = 1
      ir   = ib1 + (i-1)*3
      do j = 1,nmtest
 	 
-        ! skip checking sum of soil percentages if reading from 'soil.ini' or soil layer is rock, glacier etc.
-	    if(SOILINIFLAG  == 0 .and. cp%sandrow(1,j,i) > 0)then
+        ! skip checking sum of soil percentages if soil layer is rock, glacier etc.
+	    if(cp%sandrow(1,j,i) >= 0.0)then
 		
 		! Compute sum of soil percentages
 	      total = cp%sandrow(1,j,i) + cp%clayrow(1,j,i) + cp%orgmrow(1,j,i)
 		  if(total > 100.0)then
             print*
-		    if(SOILPERCENTFLAG == 1)then     
+		    if(SOILINIFLAG == 1)then     
 			! MESH will use the specified values
-				print*,"WARNING: Sum of soil percentages greater than 100%: GRU ",j," Soil layer ",i
-		    elseif(SOILPERCENTFLAG == 2)then     
+				print*
+				print*,"WARNING: Sum of soil percentages greater than 100%"
+                print('(A8,I3,/,A8,I3)'),"GRU: ",j,"LAYER: ",i
+		    elseif(SOILINIFLAG == 2)then     
 			! Keep sand percentage as is and adjust clay (and orgm) percentages
-		        print*,"Sum of soil percentages greater than 100% - clay (and orgm) percentages re-adjusted: Soil layer ",i," GRU ",j
+			    print*
+		        print*,"Sum of soil percentages greater than 100% - clay (and orgm) percentages re-adjusted"
+				print('(A8,I3,/,A8,I3)'),"GRU: ",j,"LAYER: ",i
 		        cp%clayrow(1,j,i) = max(0.0,100.0-cp%sandrow(1,j,i)-cp%orgmrow(1,j,i))
 		        cp%orgmrow(1,j,i) = min(cp%orgmrow(1,j,i),100.0-cp%sandrow(1,j,i)-cp%clayrow(1,j,i))
-		    elseif(SOILPERCENTFLAG == 3)then     
+		    elseif(SOILINIFLAG == 3)then     
 			! Keep clay percentage as is and adjust sand (and orgm) percentages
-				print*,"Sum of soil percentages greater than 100% - sand (and orgm) percentages re-adjusted: Soil layer ",i," GRU ",j
+				print*
+				print*,"Sum of soil percentages greater than 100% - sand (and orgm) percentages re-adjusted"
+				print('(A8,I3,/,A8,I3)'),"GRU: ",j,"LAYER: ",i
 		        cp%sandrow(1,j,i) = max(0.0,100.0-cp%clayrow(1,j,i)-cp%orgmrow(1,j,i))
 		        cp%orgmrow(1,j,i) = min(cp%orgmrow(1,j,i),100.0-cp%sandrow(1,j,i)-cp%clayrow(1,j,i))
-		    elseif(SOILPERCENTFLAG == 4)then     
+		    elseif(SOILINIFLAG == 4)then     
 			! Re-adjust both sand and clay percentages
-				print*,"Sum of soil percentages greater than 100% - soil percentages re-adjusted: Soil layer ",i," GRU ",j
-                cp%clayrow(1,j,i) = cp%clayrow(1,j,i)*100.0/total
+				print*
+				print*,"Sum of soil percentages greater than 100% - soil percentages re-adjusted"
+				print('(A8,I3,/,A8,I3)'),"GRU: ",j,"LAYER: ",i
 		        cp%sandrow(1,j,i) = cp%sandrow(1,j,i)*100.0/total
+                cp%clayrow(1,j,i) = cp%clayrow(1,j,i)*100.0/total
 				cp%orgmrow(1,j,i) = cp%orgmrow(1,j,i)*100.0/total
+		    elseif(SOILINIFLAG == 5)then     
+			! Re-adjust both sand and clay percentages
+				print*,"Soil parameter values will be directly read from soil.ini file"
 		    else
-		        print*,"ERROR: Sum of soil percentages greater than 100%: GRU ",j," Soil layer ",i
-				print*,"Adjust the soil percentages or: "
-				print*,"Set SOILPERCENTFLAG to 1 - MESH will use the values as specified"
-				print*,"Set SOILPERCENTFLAG to 2 - MESH will keep sand percentage and adjust clay and orgm percentages"
-				print*,"Set SOILPERCENTFLAG to 3 - MESH will keep clay percentage and adjust sand and orgm percentages"
-				print*,"Set SOILPERCENTFLAG to 4 - MESH will proportionally adjust sand, clay and orgm percentages"
-				print*,"Set SOILINIFLAG to 1 - MESH will read parameters from 'soil.ini' file"
+				print*
+				print*,"ERROR: Sum of soil percentages greater than 100%"
+                print('(A8,I3,/,A8,I3)'),"GRU: ",j,"LAYER: ",i
+				print*,"Adjust the soil percentages or do either of the following: "
+				print*,"Set SOILINIFLAG to 1 - MESH will use the values as specified"
+				print*,"Set SOILINIFLAG to 2 - MESH will keep sand percentage and adjust clay and orgm percentages"
+				print*,"Set SOILINIFLAG to 3 - MESH will keep clay percentage and adjust sand and orgm percentages"
+				print*,"Set SOILINIFLAG to 4 - MESH will proportionally adjust sand, clay and orgm percentages"
+				print*,"Set SOILINIFLAG to 5 - MESH will read parameters from 'soil.ini' file"
 				stop
 			endif
 		  endif
 		endif	
-
         parv(ir+1,j)      = cp%sandrow(1,j,i)
 		parv(ir+2,j)      = cp%clayrow(1,j,i)
 		parv(ir+3,j)      = cp%orgmrow(1,j,i)

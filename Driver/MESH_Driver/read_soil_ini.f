@@ -15,14 +15,7 @@
 !>  Read in the soil parameters that used to be calculated from %sand, %clay
 !> *********************************************************************
 
-      IF (SOILINIFLAG == 0) THEN
-        RETURN
-      ELSE IF (SOILINIFLAG /= 1) THEN
-        PRINT *, "Error: The SOILINIFLAG has been set to an invalid ",
-     *           "value", SOILINIFLAG, ". Correct values are 0 (",
-     *           "do not read in soil.ini) and 1 (read in soil.ini)."
-        STOP
-      END IF
+      IF (SOILINIFLAG /= 5) RETURN
 
       OPEN(UNIT=23,file='soil.ini',status='old',iostat=SOIL_IOS)
 !> CHECK TO SEE IF THERE IS A new_soil.ini FILE
@@ -30,9 +23,21 @@
 !todo - change this so it's an option in one of the ini files
 !> when SOIL_IOS is 0, the file opened successfully.
       IF(soil_ios/=0)THEN 
-        PRINT *, "The soil.ini file was not found when the SOILINIFLAG",
-     *           " has been set to 1. Please either change the ",
-     *           "SOILINIFLAG to be 0 or create the soil.ini file."
+        PRINT*,"ERROR: The soil.ini file was not found."
+        PRINT*,"You can set SOILINIFLAG to ",
+     *   	   "values less than 5 and MESH will use soil percentages ",
+     *	       "from MESH_parameters_CLASS.ini file."
+        PRINT*,"Below is what MESH will do if the sum of soil ",
+     *         "percentages is greater than 100%:"
+		PRINT*,"For SOILINIFLAG set to 1 - ",
+     1  		"MESH will use the soil percentages as specified"
+		PRINT*,"For SOILINIFLAG set to 2 - ",
+     2	        "MESH will adjust soil percentages in favor of sand"
+		PRINT*,"For SOILINIFLAG set to 3 - ",
+     3	        "MESH will adjust soil percentages in favor of clay"
+		PRINT*,"For SOILINIFLAG set to 4 - ",
+     4	        "MESH will proportionally adjust the soil percentages"
+		STOP
       ELSE
         PRINT*,'The soil.ini file was found'
         PRINT*,'CLASSBHYD.f will be used'

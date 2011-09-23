@@ -156,8 +156,17 @@ C
               THFC(I,M,J)=THLRET(I,M,J)
               PSIWLT(I,M,J)=PSISAT(I,M,J)*(THLMIN(I,M,J)/
      1            THPOR(I,M,J))**(-BI(I,M,J))
-          ELSEIF(SAND(I,M,J).GT.0) THEN
-		    IF (SOILINIFLAG == 0) THEN
+          ELSEIF(SAND(I,M,J).GE.0) THEN
+		    IF (SOILINIFLAG == 5) THEN
+			  THPOR (I,M,J) = WC_THPOR (I,M,J)
+              THLRET(I,M,J) = WC_THLRET(I,M,J)
+              THLMIN(I,M,J) = WC_THLMIN(I,M,J)
+              BI    (I,M,J) = WC_BI    (I,M,J)
+              PSISAT(I,M,J) = WC_PSISAT(I,M,J)
+              GRKSAT(I,M,J) = WC_GRKSAT(I,M,J)
+              HCPS  (I,M,J) = WC_HCPS(I,M,J)
+              TCS   (I,M,J) = WC_TCS(I,M,J)
+			ELSE
               THPOR (I,M,J)=(-0.126*SAND(I,M,J)+48.9)/100.0
               THLRET(I,M,J)=0.04
               THLMIN(I,M,J)=0.04
@@ -175,21 +184,6 @@ C
      1            HCPOM*THORG(I,M,J))/(1.0-THPOR(I,M,J))
               TCS(I,M,J)=(TCSAND*THSAND(I,M,J)+TCOM*THORG(I,M,J)+
      1            TCFINE*THFINE(I,M,J))/(1.0-THPOR(I,M,J))
-	        ELSEIF (SOILINIFLAG == 1) THEN
-			  THPOR (I,M,J) = WC_THPOR (I,M,J)
-              THLRET(I,M,J) = WC_THLRET(I,M,J)
-              THLMIN(I,M,J) = WC_THLMIN(I,M,J)
-              BI    (I,M,J) = WC_BI    (I,M,J)
-              PSISAT(I,M,J) = WC_PSISAT(I,M,J)
-              GRKSAT(I,M,J) = WC_GRKSAT(I,M,J)
-              HCPS  (I,M,J) = WC_HCPS(I,M,J)
-              TCS   (I,M,J) = WC_TCS(I,M,J)
-			ELSE
-			  PRINT*
-			  PRINT*,"SOILINIFLAG IS SET TO INVALID VALUE: ",SOILINIFLAG
-			  PRINT*,"0 - READ PERCENTAGES (MESH_parameters_CLASS.ini)"
-			  PRINT*,"1 - READ PARAMETER VALUES (soil.ini)"
-			  STOP
 			ENDIF
               THLRAT(I,M,J)=0.5**(1.0/(2.0*BI(I,M,J)+3.0))
               THFC(I,M,J)=THPOR(I,M,J)*(1.157E-9/GRKSAT(I,M,J))**
@@ -204,6 +198,13 @@ C
               ENDIF
               PSIWLT(I,M,J)=PSISAT(I,M,J)*(MAX(0.5*THFC(I,M,J),
      1            THLMIN(I,M,J))/THPOR(I,M,J))**(-BI(I,M,J))
+	      ELSE
+		    PRINT*
+			PRINT('(A,/,A,F5.2,/,A8,I3,/,A8,I3,/,A8,I3)'),
+     1           "SPECIFIED SAND PERCENTAGE IS NOT VALID",
+     2           "%SAND = ",SAND(I,M,J), "GRID: ",I, 
+     3           "GRU: ", M, "LAYER: ", J
+	        STOP
           ENDIF
 300   CONTINUE
 C

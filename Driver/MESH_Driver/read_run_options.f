@@ -144,8 +144,13 @@
       BASINPRESFLAG = 0
       BASINHUMIDITYFLAG = 0
 
-!* If SOILINIFLAG is 1, the user wants to use the soil.ini file. If SOILINIFLAG
-!*  is 0, the user does not want to use the soil.ini file.
+!> SOIL INITIALIZATION  FLAG - DEFAULT = STOP SIMULATION IF SUM OF SOIL PERCENTAGES EXCEEDS 100%
+!> If SOILINIFLAG is 0, stop simulation if the sum of soil percentages is greater than 100%
+!> If SOILINIFLAG is 1, no adjustment to soil percentages even if the sum is greater than 100%
+!> If SOILINIFLAG is 2, adjust soil percentages in favor of sand
+!> If SOILINIFLAG is 3, adjust soil percentages in favor of clay
+!> If SOILINIFLAG is 4, adjust soil percentages proportionally
+!> If SOILINIFLAG is 5, directly read soil parameter values from soil.ini file.
       SOILINIFLAG = 0
 
 !> PRE-EMPTIONFLAG FLAG - DEFAULT = NO PRE-EMPTION
@@ -164,12 +169,6 @@
 !> and direct runoff based on the parameteric equation developed by Gray et al, 2001.
       FROZENSOILINFILFLAG = 0
 
-!> If SOILPERCENTFLAG is 0, no adjustment to soil percentages even if the sum is greater than 100%.
-!> If SOILPERCENTFLAG is 1, adjust soil percentages to 100% 
-!> If SOILPERCENTFLAG is 2, stop simulation and output unrealistic objective function value if the sum of soil percentages is greater than 100%
-!> and direct runoff based on the parameteric equation developed by Gray et al, 2001.
-      SOILPERCENTFLAG = 0
-	  
 !> FORCIND DATA INTERPOLATION AT INTERMEDIATE TIME STEPS (WHEN THE TIME 
 !> INTERVAL OF THE FORCING DATA IS GREATER THAN 30 MINUTE) 
 !> DEFAULT = NO INTERPOLATION
@@ -338,8 +337,6 @@
             WD3FLOW = IROVAL
           ELSE IF (IRONAME == "WD3BKFC") THEN
             WD3BKFC = IROVAL
-          ELSE IF (IRONAME == "SOILPERCENTFLAG") THEN
-			SOILPERCENTFLAG = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",
