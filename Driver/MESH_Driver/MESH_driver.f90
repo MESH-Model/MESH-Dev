@@ -628,6 +628,11 @@ CHARACTER(8)  :: cday
 INTEGER SUBBASINCOUNT
 INTEGER, DIMENSION(:), ALLOCATABLE :: SUBBASIN
 
+!> **********************************************************************
+!> Matt: for calibration output
+!> **********************************************************************
+ REAL, DIMENSION(:, :), ALLOCATABLE :: EVP, ZSNO
+
 !>=======================================================================
 !> DAN * GLOBAL SUBROUTINES AND VARIABLES
 
@@ -2174,6 +2179,47 @@ DO I=1, wf_num_points
    "WTRSROW(I M),WTRGROW(I M)')")
 ENDDO
 
+!> Matt: 14 May 2011
+OPEN(UNIT=101,FILE="CLASSOFEVAP.csv")
+  WRITE(101,'("CLASS TEST RUN:     ",6A4)') TITLE1, &
+                           TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+  WRITE(101,'("RESEARCHER:         ",6A4)') NAME1, &
+                           NAME2,NAME3,NAME4,NAME5,NAME6
+  WRITE(101,'("INSTITUTION:        ",6A4)') PLACE1, &
+                           PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
+  WRITE(101,"('EVAP(1 1),EVAP(1 2),EVAP(1 3)')")
+OPEN(UNIT=102,FILE="CLASSOFZSN.csv")
+  WRITE(102,'("CLASS TEST RUN:     ",6A4)') TITLE1, &
+                           TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+  WRITE(102,'("RESEARCHER:         ",6A4)') NAME1, &
+                           NAME2,NAME3,NAME4,NAME5,NAME6
+  WRITE(102,'("INSTITUTION:        ",6A4)') PLACE1, &
+                           PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
+  WRITE(102,"('ZSN(1 1),ZSN(1 2),ZSN(1 3)')")
+OPEN(UNIT=103,FILE="CLASSOFTHLQ1.csv")
+  WRITE(103,'("CLASS TEST RUN:     ",6A4)') TITLE1, &
+                           TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+  WRITE(103,'("RESEARCHER:         ",6A4)') NAME1, &
+                           NAME2,NAME3,NAME4,NAME5,NAME6
+  WRITE(103,'("INSTITUTION:        ",6A4)') PLACE1, &
+                           PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
+  WRITE(103,"('THLQROW(1 1 1),THLQROW(1 2 1),THLQROW(1 3 1)')")
+OPEN(UNIT=104,FILE="CLASSOFTHLQ2.csv")
+  WRITE(104,'("CLASS TEST RUN:     ",6A4)') TITLE1, &
+                           TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+  WRITE(104,'("RESEARCHER:         ",6A4)') NAME1, &
+                           NAME2,NAME3,NAME4,NAME5,NAME6
+  WRITE(104,'("INSTITUTION:        ",6A4)') PLACE1, &
+                           PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
+  WRITE(104,"('THLQROW(1 1 2),THLQROW(1 2 2),THLQROW(1 3 2)')")
+OPEN(UNIT=105,FILE="CLASSOFTHLQ3.csv")
+  WRITE(105,'("CLASS TEST RUN:     ",6A4)') TITLE1, &
+                           TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+  WRITE(105,'("RESEARCHER:         ",6A4)') NAME1, &
+                           NAME2,NAME3,NAME4,NAME5,NAME6
+  WRITE(105,'("INSTITUTION:        ",6A4)') PLACE1, &
+                           PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
+  WRITE(105,"('THLQROW(1 1 3),THLQROW(1 2 3),THLQROW(1 3 3)')")
 
 !> *********************************************************************
 !> Open and read in values from wfo_spec.txt file
@@ -2621,7 +2667,7 @@ ENDDO
 CALL CLASSI(VPDGRD,TADPGRD,PADRGRD,RHOAGRD,RHSIGRD, &
             RPCPGRD,TRPCGRD,SPCPGRD,TSPCGRD,TAGRD,QAGRD, &
             PREGRD,RPREGRD,SPREGRD,PRESGRD, &
-            IPCP,NA,1,NA)
+            IPCP,NA,1,NA,cp%ZRFHGRD)
 
 !> Calculate initial storage (after reading in resume.txt file if applicable)
 
@@ -2974,11 +3020,34 @@ DO K=1, WF_NUM_POINTS
                    J=1,IGND),ROFCROW(I,M),ROFNROW(I,M), &
                    ROFOROW(I,M),ROFROW(I,M),WTRCROW(I,M), &
                    WTRSROW(I,M),WTRGROW(I,M)
-
   ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
 ENDDO !DO K=1, WF_NUM_POINTS
 ENDDO !DO M=1,NMTEST
 ENDDO !DO I=1,NA
+
+    !> Matt: output for calibration
+    ALLOCATE (EVP(NA,NMTEST), ZSNO(NA,NMTEST), STAT=PAS)
+    DO I=1,NA
+     DO M=1,NMTEST
+      EVP(I,M)=QEVPROW(I,M)*1800/(2.45*1000000)
+      IF(cp%SNOROW(I,M)>0.0) THEN
+       ZSNO(I,M)=cp%SNOROW(I,M)/cp%RHOSROW(I,M)
+      ELSE
+       ZSNO(I,M)=0.
+      ENDIF
+     ENDDO
+    ENDDO
+    WRITE(101,'(3(F6.3,","))') &
+          (EVP(1,M),M=1,NMTEST)
+    WRITE(102,'(3(F6.3,","))') &
+          (ZSNO(1,M),M=1,NMTEST)
+    WRITE(103,'(3(F6.3,","))') &
+         (cp%THLQROW(1,M,1),M=1,NMTEST)
+    WRITE(104,'(3(F6.3,","))') &
+         (cp%THLQROW(1,M,2),M=1,NMTEST)
+    WRITE(105,'(3(F6.3,","))') &
+         (cp%THLQROW(1,M,3),M=1,NMTEST)
+
 !> Write ENSIM output
 !> -----------------------------------------------------c
 !>
@@ -4011,6 +4080,12 @@ CLOSE(UNIT=71)
 close(unit=85)
 close(unit=86)
 close(unit=90)
+
+close(unit=101)
+close(unit=102)
+close(unit=103)
+close(unit=104)
+close(unit=105)
 
 STOP
 END

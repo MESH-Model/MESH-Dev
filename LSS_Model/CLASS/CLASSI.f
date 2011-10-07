@@ -1,7 +1,7 @@
       SUBROUTINE CLASSI(VPD,TADP,PADRY,RHOAIR,RHOSNI,
      1                  RPCP,TRPCP,SPCP,TSPCP,
      2                  TA,QA,PCPR,RRATE,SRATE,PRESSG,
-     3                  IPCP,NL,IL1,IL2)
+     3                  IPCP,NL,IL1,IL2,ZRFH)
 C
 C     * NOV 22/06 - P.BARTLETT. CALCULATE PCPR IF IPCP=4.
 C     * JUN 06/06 - V.FORTIN.   ADD OPTION FOR PASSING IN
@@ -37,7 +37,8 @@ C
 C     * INPUT ARRAYS.
 C
       REAL TA    (NL),  QA    (NL),  PRESSG(NL), 
-     1     PCPR  (NL),  RRATE (NL),  SRATE (NL)
+     1     PCPR  (NL),  RRATE (NL),  SRATE (NL),
+     2     ZRFH (NL)
 C
 C     * WORK ARRAYS.
 C
@@ -63,6 +64,11 @@ C
 C     * CALCULATION OF ATMOSPHERIC INPUT VARIABLES.
 C
       DO 100 I=IL1,IL2
+          IF(ZRFH(I)>2.) THEN !Matt: use Ta,pot @ ~2m for calculations
+           TA(I)=TA(I)+(ZRFH(I)-2.)*GRAV/1004.64
+          ELSEIF(ZRFH(I)<10.) THEN
+           TA(I)=TA(I)-(2.-ZRFH(I))*GRAV/1004.64
+          ENDIF
           EA=QA(I)*PRESSG(I)/(0.622+0.378*QA(I))                              
           IF(TA(I).GE.TFREZ) THEN                                             
               CA=17.269                                                       

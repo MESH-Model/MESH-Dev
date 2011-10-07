@@ -377,7 +377,7 @@ C
                       ZRSLFH(I)=ZREFH(I)-DISPS(I)
                       ZDSLM(I)=ZDIAGM(I)
                       ZDSLH(I)=ZDIAGH(I)
-                      TPOTA(I)=TA(I)
+                      TPOTA(I)=TA(I)+ZRSLFH(I)*GRAV/CPD !TA(I) Matt: remove Ta,pot assumption for forcing
                   ENDIF    
                   ZOSCLM(I)=ZOM(I)/ZRSLDM(I)
                   ZOSCLH(I)=ZOH(I)/ZRSLDH(I)
@@ -549,7 +549,7 @@ C
                       ZRSLFH(I)=ZREFH(I)
                       ZDSLM(I)=ZDIAGM(I)
                       ZDSLH(I)=ZDIAGH(I)
-                      TPOTA(I)=TA(I)
+                      TPOTA(I)=TA(I)+ZRSLFH(I)*GRAV/CPD !TA(I) Matt: remove Ta,pot assumption for forcing
                   ENDIF    
                   ZOSCLM(I)=ZOM(I)/ZRSLDM(I)
                   ZOSCLH(I)=ZOH(I)/ZRSLDH(I)
@@ -687,7 +687,7 @@ C
                       ZRSLFH(I)=ZREFH(I)-DISP(I)
                       ZDSLM(I)=ZDIAGM(I)
                       ZDSLH(I)=ZDIAGH(I)
-                      TPOTA(I)=TA(I)
+                      TPOTA(I)=TA(I)+ZRSLFH(I)*GRAV/CPD !TA(I) Matt: remove Ta,pot assumption for forcing
                   ENDIF    
                   ZOSCLM(I)=ZOM(I)/ZRSLDM(I)
                   ZOSCLH(I)=ZOH(I)/ZRSLDH(I)
@@ -846,7 +846,7 @@ C
                       ZRSLFH(I)=ZREFH(I)
                       ZDSLM(I)=ZDIAGM(I)
                       ZDSLH(I)=ZDIAGH(I)
-                      TPOTA(I)=TA(I)
+                      TPOTA(I)=TA(I)+ZRSLFH(I)*GRAV/CPD !TA(I) Matt: remove Ta,pot assumption for forcing
                   ENDIF    
                   ZOSCLM(I)=ZOM(I)/ZRSLDM(I)
                   ZOSCLH(I)=ZOH(I)/ZRSLDH(I)
