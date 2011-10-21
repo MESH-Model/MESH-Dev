@@ -2698,7 +2698,7 @@ ENDDO
 CALL CLASSI(VPDGRD,TADPGRD,PADRGRD,RHOAGRD,RHSIGRD, &
             RPCPGRD,TRPCGRD,SPCPGRD,TSPCGRD,TAGRD,QAGRD, &
             PREGRD,RPREGRD,SPREGRD,PRESGRD, &
-            IPCP,NA,1,NA)
+            IPCP,NA,1,NA,cp%ZRFHGRD)
 
 !> Calculate initial storage (after reading in resume.txt file if applicable)
 
