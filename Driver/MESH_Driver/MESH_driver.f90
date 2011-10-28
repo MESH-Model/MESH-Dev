@@ -2664,10 +2664,10 @@ ENDDO
 !> Start of calls to CLASS subroutines
 !> *********************************************************************
 
-CALL CLASSI(VPDGRD,TADPGRD,PADRGRD,RHOAGRD,RHSIGRD, &
-            RPCPGRD,TRPCGRD,SPCPGRD,TSPCGRD,TAGRD,QAGRD, &
-            PREGRD,RPREGRD,SPREGRD,PRESGRD, &
-            IPCP,NA,1,NA,cp%ZRFHGRD)
+!CALL CLASSI(VPDGRD,TADPGRD,PADRGRD,RHOAGRD,RHSIGRD, &
+!            RPCPGRD,TRPCGRD,SPCPGRD,TSPCGRD,TAGRD,QAGRD, &
+!            PREGRD,RPREGRD,SPREGRD,PRESGRD, &
+!            IPCP,NA,1,NA,cp%ZRFHGRD)
 
 !> Calculate initial storage (after reading in resume.txt file if applicable)
 
@@ -2743,6 +2743,11 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD, &
              GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT)
 
+!Matt: CLASSII is CLASSI for GRU-level calculations
+CALL CLASSII(VPDGAT,TADPGAT,PADRGAT,RHOAGAT,RHSIGAT, &
+            RPCPGAT,TRPCGAT,SPCPGAT,TSPCGAT,TAGAT,QAGAT, &
+            PREGAT,RPREGRD,SPREGRD,PRESGAT, &
+            IPCP,ILG,1,ILG,cp%ZRFHGRD,ILMOS,NA)
 !> ========================================================================
 CALL CLASSZ (0,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
              WTVSTP, WTSSTP, WTGSTP, &

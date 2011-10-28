@@ -53,6 +53,8 @@
      +                  VPDGRD, TADPGRD,RHOAGRD,RPCPGRD,TRPCGRD,
      +                  SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD,
      +                  GGEOGRD, MANNROW, MANNGAT, DDROW, DDGAT)
+C     * OCT 27/11 - M.MACDONALD.GRU-LEVEL CHANGE TO TAGAT BASED
+C                               ON ELEVATION AT END OF SUBROUTINE.
 C     * JUN 17/08 - D.HOLMAN. ADD MANNROW, MANNGAT, DDROW, DDGAT.
 C
 C     * MAR 23/06 - D.VERSEGHY. ADD WSNO,FSNO,GGEO.
@@ -362,13 +364,65 @@ C
           TSFSGAT(K,L)=TSFSROW(ILMOS(K),JLMOS(K),L)
 400   CONTINUE
 C
-      DO 500 M=1,50
-          DO 475 L=1,6
-              DO 450 K=1,NML
-C                  ITCTGAT(K,L,M)=0
-450           CONTINUE
-475       CONTINUE
-500   CONTINUE
+!      DO 500 M=1,50
+!          DO 475 L=1,6
+!              DO 450 K=1,NML
+!C                  ITCTGAT(K,L,M)=0
+!450           CONTINUE
+!475       CONTINUE
+!500   CONTINUE
 C
+      DO 600 K=1,NML
+        IF(ILMOS(K)==1) THEN
+          IF(JLMOS(K)==1) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(2088-2494.3)
+          ELSEIF(JLMOS(K)==2) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(2088-2391.3)
+          ELSEIF(JLMOS(K)==3) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(2088-2311.8)
+          ELSEIF(JLMOS(K)==4) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(2088-2141.5)
+          ELSEIF(JLMOS(K)==5) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(2088-2123.5)
+          ENDIF
+        ELSEIF(ILMOS(K)==2) THEN
+          IF(JLMOS(K)==1) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(2061-2510.0)
+          ELSEIF(JLMOS(K)==2) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(2061-2376.1)
+          ELSEIF(JLMOS(K)==3) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(2061-2215.7)
+          ELSEIF(JLMOS(K)==4) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(2061-2075.9)
+          ELSEIF(JLMOS(K)==5) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(2061-2061.0)
+          ENDIF
+        ELSEIF(ILMOS(K)==3) THEN
+          IF(JLMOS(K)==1) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(1714-1714.0)
+          ELSEIF(JLMOS(K)==2) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(1714-1714.0)
+          ELSEIF(JLMOS(K)==3) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(1714-1714.0)
+          ELSEIF(JLMOS(K)==4) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(1714-1882.5)
+          ELSEIF(JLMOS(K)==5) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(1714-1921.8)
+          ENDIF
+        ELSEIF(ILMOS(K)==4) THEN
+          IF(JLMOS(K)==1) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(1691-1691.0)
+          ELSEIF(JLMOS(K)==2) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(1691-1905.2)
+          ELSEIF(JLMOS(K)==3) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(1691-1691.0)
+          ELSEIF(JLMOS(K)==4) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(1691-1733.0)
+          ELSEIF(JLMOS(K)==5) THEN
+            TAGAT(K)=TAGAT(K)+(9.80616/1004.64)*(1691-1691.0)
+          ENDIF
+        ENDIF
+600   CONTINUE
+
       RETURN
       END
