@@ -969,12 +969,12 @@ ALLOCATE ( &
   HCPSCS(ILG),HCPSGS(ILG), &
   HCPSC(ILG),HCPSG(ILG), &
   TSNOWC(ILG),TSNOWG(ILG), &
-  TSNOCS(ILG),TSNOGS(ILG), &
+ !TSNOCS(ILG),TSNOGS(ILG), &
   RHOSC(ILG),RHOSG(ILG), &
-  RHOSCS(ILG),RHOSGS(ILG),&
+ !RHOSCS(ILG),RHOSGS(ILG),&
   XSNOWC(ILG),XSNOWG(ILG), &
-  XSNOCS(ILG),XSNOGS(ILG), &
-  WSNOCS(ILG),WSNOGS(ILG), STAT=PAS)
+  XSNOCS(ILG),XSNOGS(ILG), STAT=PAS)
+ !WSNOCS(ILG),WSNOGS(ILG), STAT=PAS)
 
 !> **********************************************************************
 !>  For cacluating the subbasin grids

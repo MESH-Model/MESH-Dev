@@ -37,7 +37,7 @@
     !W                  TSNOWds, RHOSNOds)
 C                                                                        
 C     * OCT 01/10 - M.MACDONALD.ONLY PERFORM VANISHINGLY SMALL SNOW
-C                               CALCULATIONS IS PBSM NOT BEING USED (MESH)
+C                               CALCULATIONS IF PBSM NOT BEING USED (MESH OPTION)
 C     * DEC 07/09 - D.VERSEGHY. ADD RADD AND SADD TO WPREP CALL.
 C     * JAN 06/09 - D.VERSEGHY. INCREASE LIMITING SNOW AMOUNT.
 C     * FEB 25/08 - D.VERSEGHY. MODIFICATIONS REFLECTING CHANGES

@@ -56,7 +56,7 @@ C
       PrevNumTiles=0
 
       !> Set grid square drift mass, temperature, density
-      !  as weight average of GRus in grid square
+      !  as weighted average of GRus in grid square
       DO 100 I=IL1,IL2 !LOOP GRID SQUARES(IL2=NA)
         IF(GCGRD(I).LE.-0.5) THEN
           TSNOWSumDrift=TFREZ 
@@ -310,7 +310,7 @@ C
   
       DO 600 K=1,NML !LOOP TILES(NML)
         !DEAL WITH VANISHINGLY SMALL SNOWPACK (ANALOGUOUS TO WHAT WAS DONE IN CLASSW)
-         IF(SNO(K).LT.1.0E-3 .AND. SNO(K).GT.0.0) THEN
+         IF(SNO(K).LT.1.0E-2 .AND. SNO(K).GT.0.0) THEN
           TOVRFL(K)=(TOVRFL(K)*OVRFLW(K)+TSNOW(K)*(SNO(K)+
      1        WSNOW(K))/DELT)/(OVRFLW(K)+(SNO(K)+WSNOW(K))/
      2        DELT)

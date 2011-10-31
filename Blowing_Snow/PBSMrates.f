@@ -31,14 +31,34 @@ C
      9  Vsusp,  Z,      Zr,     Zstb,
      A  a0, a1, a2, a3, a4, a5, a6, eT, Xwater, Pwater, rh
 C
-C     * PBSM PARAMETERS
-      REAL rhoo, Qstar, MMM, RR, LATH, DICE, ZD, XD, gg,
-     1     Betaa, C1, C2, C3, M1KAARMAN, M2KAARMAN, M_PI,
-     2     DegToRad
+C!    * PBSM PARAMETERS
+ !    REAL rhoo, Qstar, MMM, RR, LATH, DICE, ZD, XD, gg,
+ !   1     Betaa, C1, C2, C3, M1KAARMAN, M2KAARMAN, M_PI,
+ !   2     DegToRad
 
-      COMMON /PBSM/   rhoo, Qstar, MMM, RR, LATH, DICE, ZD, XD, gg,
-     1                Betaa, C1, C2, C3, M1KAARMAN, M2KAARMAN, M_PI,
-     2                DegToRad
+    ! COMMON /PBSM/   rhoo, Qstar, MMM, RR, LATH, DICE, ZD, XD, gg,
+    !1                Betaa, C1, C2, C3, M1KAARMAN, M2KAARMAN, M_PI,
+    !2                DegToRad
+C     *PBSM CONSTANTS
+      REAL  rhoo, Qstar, MMM, RR, LATH, DICE, ZD, XD, gg, Betaa, 
+     1      C1, C2, C3, M1KAARMAN, M2KAARMAN, M_PI, DegToRad
+          rhoo=1.23
+          Qstar=120.0
+          MMM=18.01
+          RR=8313.
+          LATH=2.838E6
+          DICE=900.
+          ZD=0.3
+          XD=300.
+          gg=9.80
+          Betaa=170.0
+          C1=2.8
+          C2=1.6
+          C3=4.2
+          M1KAARMAN=0.4
+          M2KAARMAN=0.16
+          M_PI=3.1415926535898
+          DegToRad=0.017453292
 C--------------------------------------------------------------
 C
 !>     Modified Calculations for Mean Particle Mass in this 

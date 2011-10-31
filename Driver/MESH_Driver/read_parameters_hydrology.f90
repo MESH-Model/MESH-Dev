@@ -18,6 +18,7 @@ CHARACTER(8) :: FILE_VER
 LOGICAL :: VER_OK
 
 OPEN (23, FILE="MESH_parameters_hydrology.ini", STATUS="OLD",IOSTAT=IOS)
+IF(PBSMFLAG==1) OPEN (24, FILE="MESH_parameters_pbsm.ini", STATUS="OLD",IOSTAT=IOS)
 !> CHECK FILE FOR IOSTAT ERRORS
 !> when IOS equals 0, the file was opened successfully  
 IF (IOS .NE. 0)THEN 
@@ -126,11 +127,11 @@ IF(DEPPAR>0) THEN
    READ(23,*) (hp%ZPLSROW(1,M),M=1,NTYPE)
    READ(23,*) (hp%ZPLGROW(1,M),M=1,NTYPE)
   IF(PBSMFLAG==1) THEN
-   READ(23,*) (hp%fetchROW(1,M),M=1,NTYPE)
-   READ(23,*) (hp%HtROW(1,M),M=1,NTYPE)
-   READ(23,*) (hp%N_SROW(1,M),M=1,NTYPE)
-   READ(23,*) (hp%A_SROW(1,M),M=1,NTYPE)
-   READ(23,*) (hp%DistribROW(1,M),M=1,NTYPE)
+   READ(24,*) (hp%fetchROW(1,M),M=1,NTYPE)
+   READ(24,*) (hp%HtROW(1,M),M=1,NTYPE)
+   READ(24,*) (hp%N_SROW(1,M),M=1,NTYPE)
+   READ(24,*) (hp%A_SROW(1,M),M=1,NTYPE)
+   READ(24,*) (hp%DistribROW(1,M),M=1,NTYPE)
   ENDIF 
 ENDIF
 
@@ -150,6 +151,7 @@ DO I=2,NA
 ENDDO
 
 CLOSE(UNIT=23)
+IF(PBSMFLAG==1) CLOSE(UNIT=24)
 
 RETURN
 END SUBROUTINE
