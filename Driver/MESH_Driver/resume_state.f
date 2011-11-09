@@ -124,7 +124,7 @@
      L     WF_S,
      1  TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC,
      2  TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE,
-     3  FINAL_STORE, TOTAL_AREA,
+     3  FINAL_STORE, TOTAL_AREA, TOTAL_HFSACC, TOTAL_QEVPACC,
      4  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,NMELT,t0_ACC)
 !> This subroutine is used to resume a mesh run by using the 
 !> variables that were saved from a previous run.
@@ -398,7 +398,7 @@
       
       REAL :: TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC,
      1  TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE,
-     2  FINAL_STORE, TOTAL_AREA
+     2  FINAL_STORE, TOTAL_AREA, TOTAL_HFSACC, TOTAL_QEVPACC
       
       integer resumeIostat    
       INTEGER  NMELT
@@ -999,6 +999,8 @@
       READ(10,*) INIT_STORE
       READ(10,*) FINAL_STORE
       READ(10,*) TOTAL_AREA
+      READ(10,*) TOTAL_HFSACC
+      READ(10,*) TOTAL_QEVPACC
       READ(10,*) SOIL_POR_MAX
       READ(10,*) SOIL_DEPTH
       READ(10,*) S0

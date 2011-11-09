@@ -578,6 +578,10 @@ REAL, DIMENSION(:, :), ALLOCATABLE :: TBARACC, THLQACC, THICACC, &
 REAL :: TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
   FINAL_STORE, TOTAL_AREA
+  
+!* TOTAL_HFS = TOTAL SENSIBLE HEAT FLUX
+!* TOTAL_QEVP = TOTAL LATENT HEAT FLUX
+REAL :: TOTAL_HFSACC,TOTAL_QEVPACC
 
 REAL :: TOTAL_STORE,TOTAL_ZPND,TOTAL_RCAN,TOTAL_SCAN,TOTAL_SNO
 REAL :: TOTAL_PRE,TOTAL_EVAP,TOTAL_ROF,TOTAL_ROFO,TOTAL_ROFS,TOTAL_ROFB
@@ -1747,6 +1751,8 @@ TOTAL_ROFSACC=0.0
 TOTAL_ROFBACC=0.0
 TOTAL_EVAPACC=0.0
 TOTAL_PREACC=0.0
+TOTAL_HFSACC=0.0
+TOTAL_QEVPACC=0.0
 
 DO I=1,NA
   PREACC(I)=0.
@@ -2633,7 +2639,7 @@ call resume_state( &
 
   TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-  FINAL_STORE, TOTAL_AREA, &
+  FINAL_STORE, TOTAL_AREA, TOTAL_HFSACC, TOTAL_QEVPACC, &
   SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,NMELT,t0_ACC)
 ENDIF
 
@@ -2896,6 +2902,10 @@ WRITE(900,"('DAY,YEAR,PREACC,EVAPACC,ROFACC,ROFOACC,ROFSACC,ROFBACC,PRE,EVAP,ROF
             "THLQ1,THLQ2,THLQ3,THLQ4,THLQ5,THLQ6,THIC1,THIC2,THIC3,THIC4,THIC5,THIC6,"// &
             "THLQIC1,THLQIC2,THLQIC3,THLQIC4,THLQIC5,THLQIC6,THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE')")
                                                 
+OPEN(unit=901,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/Basin_average_energy_balance.csv')
+WRITE(901,"('DAY,YEAR,HFSACC,QEVPACC')")
+
 !> *********************************************************************
 !> Start of main loop that is run each half hour
 !> *********************************************************************
@@ -3884,7 +3894,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
       ENDIF  !IF(I==op%N_OUT(K)) THEN
     ENDDO  !DO K=1, WF_NUM_POINTS
 
-!> update components for final tally
+!> update components for final water balance tally
     TOTAL_ROF     = TOTAL_ROF     + ROFACC(I)
     TOTAL_ROFO    = TOTAL_ROFO    + ROFOACC(I)
     TOTAL_ROFS    = TOTAL_ROFS    + ROFSACC(I)
@@ -3900,6 +3910,10 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     TOTAL_SNO     = TOTAL_SNO     + SNOACC(I)
     TOTAL_SCAN    = TOTAL_SCAN    + SCANACC(I)
     TOTAL_RCAN    = TOTAL_RCAN    + RCANACC(I)
+
+!> update components for final energy balance tally
+    TOTAL_HFSACC  = TOTAL_HFSACC  + HFSACC(I)
+    TOTAL_QEVPACC = TOTAL_QEVPACC + QEVPACC(I)
 
     IF (WF_NUM_POINTS > 0) THEN !SUMMARY VALUES FOR SCREEN
       DO J = 1, WF_NUM_POINTS !FOR MORE THAN 1 OUTPUT
@@ -3990,6 +4004,10 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                                                 TOTAL_STORE/TOTAL_AREA, &
                                                 (TOTAL_STORE - INIT_STORE)/TOTAL_AREA
 
+  WRITE(901,'((I4,","),(I5,","),2(E12.5,","))')IDAY,IYEAR,    &
+                                                TOTAL_HFSACC/TOTAL_AREA,  &
+                                                TOTAL_QEVPACC/TOTAL_AREA
+
 !RESET ACCUMULATION VARIABLES TO ZERO
 
 TOTAL_STORE = 0.0
@@ -4005,6 +4023,8 @@ TOTAL_ROFS=0.0
 TOTAL_ROFB=0.0
 TOTAL_EVAP=0.0
 TOTAL_PRE=0.0
+TOTAL_HFSACC = 0.0
+TOTAL_QEVPACC = 0.0
     
 ENDIF  ! IF(NCOUNT==48) THEN
 
@@ -4543,7 +4563,7 @@ IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
      WF_S, &
   TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-  FINAL_STORE, TOTAL_AREA, &
+  FINAL_STORE, TOTAL_AREA, TOTAL_HFSACC, TOTAL_QEVPACC, &
   SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,NMELT,t0_ACC)
 ENDIF
 
