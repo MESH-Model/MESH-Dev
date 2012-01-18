@@ -196,6 +196,8 @@
 !* If FROZENSOILINFILFLAG is 0, all snow melt infiltrates.
 !* If FROZENSOILINFILFLAG is 1, snow melt is partitioned to frozen soil infiltration 
 !* and direct runoff based on the parameteric equation developed by Gray et al, 2001.
+!* If FROZENSOILINFILFLAG is 2, snow melt is calculated as per
+!* FROZENSOILINFILFLAG=1, but is partitioned to the depth of ponding water.
       FROZENSOILINFILFLAG = 0
 
 !* If WD3 is 0, existing WATDRN is used.
@@ -328,7 +330,15 @@
           ELSE IF (IRONAME == "WINDOWSPACINGFLAG") THEN
             WINDOWSPACINGFLAG = IROVAL
           ELSE IF (IRONAME == "FROZENSOILINFILFLAG") THEN
-            FROZENSOILINFILFLAG = IROVAL                        
+            !> FROZENSOILINFILFLAG is checked as > 0 to activate the
+            !> frozen infiltration code, but only values of 1 or 2 are
+            !> supported
+            IF (IROVAL > 2) THEN
+              CALL WRITE_BAD_RUN_OPTIONS_FLAG(IRONAME,IROVAL,
+     +             FROZENSOILINFILFLAG)
+            ELSE
+              FROZENSOILINFILFLAG = IROVAL
+            END IF
           ELSE IF (IRONAME == "WD3") THEN
             WD3 = IROVAL
           ELSE IF (IRONAME == "WD3NEWFILE") THEN
@@ -439,4 +449,27 @@
       WRITE (6, FMT=*) " READ: SUCCESSFUL, FILE: CLOSED"
 
       RETURN
+      END
+
+!> Warn the user of an unsupported value for a run option flag.
+      SUBROUTINE WRITE_BAD_RUN_OPTIONS_FLAG(
+     +  IRONAME,         !> Text name of the flag
+     +  IROVAL,          !> Read value
+     +  ACTIVEVALUE)     !> The value that will be passed through the program.
+
+      CHARACTER(20)::IRONAME
+      INTEGER::IROVAL,ACTIVEVALUE
+
+!> The warning includes the name, and read and active values of the flag.
+      WRITE (6,*)
+      WRITE (6,*) "WARNING: This program does not support"
+      WRITE (6,'(2X,A20,"=",I5)') IRONAME,IROVAL
+      WRITE (6,*) "The value has been reset"
+      WRITE (6,'(2X,A20,"=",I5)') IRONAME,ACTIVEVALUE
+      WRITE (6,*)
+
+!+ A stop option may be useful: IF (BOOL==TRUE) STOP
+
+      RETURN
+
       END
