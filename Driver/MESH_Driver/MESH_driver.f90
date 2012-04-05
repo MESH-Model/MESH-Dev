@@ -2008,7 +2008,11 @@ ENDDO
              SNOWMELTD(ILG),SNOWMELTD_LAST(ILG),SNOWINFIL(ILG),&
              CUMSNOWINFILCS(ILG),MELTRUNOFF(ILG), CUMSNOWINFILGS(ILG))
              
-             NMELT         = 1
+             IF(IDAY_START == 1) THEN
+               NMELT       = 0
+             ELSE
+               NMELT       = 1
+             ENDIF
              INFILTYPE     = 2     !> INITIALIZED WITH UNLIMITED INFILTRATION
              SNOWMELTD     = 0.0
              SNOWINFIL     = 0.0
