@@ -273,6 +273,7 @@ LOGICAL :: VER_OK
 !* N: COUNTER USED BY CLASS
 !* NCOUNT: HALF-HOURLY BASED TIME STEP (200 LOOP)
 !* NSUM: NUMBER OF ITERATIONS, TIME STEPS PASSED (200 LOOP)
+!* NSUM_TOTAL: total number of iterations
 !* I: COUNTER
 !* J: COUNTER
 !* K: COUNTER
@@ -289,7 +290,7 @@ LOGICAL :: VER_OK
 !*           (COMPARED TO "RELEASE")
 CHARACTER :: FILE_VER*8
 INTEGER ::  N, NCOUNT, NSUM, I, J, K, L, M, &
-            INDEPPAR, DEPPAR, PAS
+            INDEPPAR, DEPPAR, PAS, NSUM_TOTAL
 !  CONFLAGS, OPTFLAGS, INDEPPAR, DEPPAR, PAS
 LOGICAL :: OPN
 !>
@@ -1613,6 +1614,7 @@ NAA=NA-NAA
 ! The first period (0:00-0:30) is #1, the last period (23:30-0:00) is #48
 NCOUNT=IHOUR*2+IMIN/30+1
 NSUM=1
+NSUM_TOTAL=1
 
 !> **********************************************************************
 !>  Start of section to only run on squares that make up the watersheds
@@ -2008,11 +2010,7 @@ ENDDO
              SNOWMELTD(ILG),SNOWMELTD_LAST(ILG),SNOWINFIL(ILG),&
              CUMSNOWINFILCS(ILG),MELTRUNOFF(ILG), CUMSNOWINFILGS(ILG))
              
-             IF(IDAY_START == 1) THEN
-               NMELT       = 0
-             ELSE
-               NMELT       = 1
-             ENDIF
+             NMELT         = 1
              INFILTYPE     = 2     !> INITIALIZED WITH UNLIMITED INFILTRATION
              SNOWMELTD     = 0.0
              SNOWINFIL     = 0.0
@@ -3228,7 +3226,13 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
 !          * WATER BUDGET CALCULATIONS.
 !
     IF(IDAY == 1 .AND. NCOUNT == 48)THEN
-       NMELT = NMELT + 1
+       ! bruce davison - only increase NMELT if we don't start the run on January 1st, otherwise t0_ACC allocation is too large
+       ! and the model crashes if the compiler is checking for array bounds when t0_ACC is passed into CLASSW with size NMELT
+       IF(IDAY_START .EQ. 1 .AND. NSUM_TOTAL .LT. 49) THEN
+         continue ! NMELT should stay = 1
+       ELSE
+         NMELT = NMELT + 1
+       ENDIF
        CUMSNOWINFILCS  = 0.0
        CUMSNOWINFILGS  = 0.0
        INFILTYPE     = 2
@@ -4060,6 +4064,7 @@ ENDIF  ! IF(NCOUNT==48) THEN
 
 NCOUNT=NCOUNT+1 !todo: does this work with hourly forcing data?
 NSUM=NSUM+1
+NSUM_TOTAL=NSUM_TOTAL+1
 IF(NCOUNT>48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
   NCOUNT=1
