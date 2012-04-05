@@ -2289,6 +2289,8 @@ DO I=1, wf_num_points
    "/CLASSOF8.csv")
   OPEN(UNIT=150+i*10+9,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
    "/CLASSOF9.csv")
+  OPEN(UNIT=150+i*10+10,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+   "/GRU_water_balance.csv")
 
   DO j=1, 9
     WRITE(150+i*10+j,'("CLASS TEST RUN:     ",6A4)') TITLE1, &
@@ -2374,6 +2376,23 @@ DO I=1, wf_num_points
    TRIM(FMT)//"ROFCROW(I M),"// &
    "ROFNROW(I M),ROFOROW(I M),ROFROW(I M),WTRCROW(I M),"// &
    "WTRSROW(I M),WTRGROW(I M)')")
+! Set the appropriate format statement for writing to the next file
+  WRITE(FMT,*) ""
+  DO J = 1, IGND
+    WRITE(IGND_CHAR,*) J
+    IGND_CHAR = ADJUSTL(IGND_CHAR)
+    FMT=TRIM(ADJUSTL(FMT))//'THLQ'//TRIM(IGND_CHAR)//','
+  ENDDO
+  DO J = 1, IGND
+    WRITE(IGND_CHAR,*) J
+    IGND_CHAR = ADJUSTL(IGND_CHAR)
+    FMT=TRIM(ADJUSTL(FMT))//'THIC'//TRIM(IGND_CHAR)//','
+  ENDDO
+! write the next file
+  WRITE(150+I*10+10,"('IHOUR,IMIN,IDAY,IYEAR,"// &
+   "PRE,EVAP,ROF,ROFO,ROFS,ROFB,"// &
+   "SNO,SCAN,RCAN,ZPND,"// &
+   TRIM(FMT)//"')")
 ENDDO
 
 
@@ -3424,6 +3443,13 @@ DO K=1, WF_NUM_POINTS
                    J=1,IGND),ROFCROW(I,M),ROFNROW(I,M), &
                    ROFOROW(I,M),ROFROW(I,M),WTRCROW(I,M), &
                    WTRSROW(I,M),WTRGROW(I,M)
+    WRITE(150+k*10+10,'((I2,","),(I3,","),(I5,","),(I6,","),10(F12.5,",")' &
+                   //TRIM(ADJUSTL(IGND_CHAR))//'(F12.5,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(F12.5,","))') &
+                   IHOUR,IMIN,IDAY,IYEAR,PREGAT(I_OUT)*DELT,QFSROW(I,M)*DELT, &
+                   ROFROW(I,M)*DELT,ROFOROW(I,M)*DELT,ROFSROW(I,M)*DELT,ROFBROW(I,M)*DELT, &
+                   cp%SNOROW(I,M),cp%SCANROW(I,M),cp%RCANROW(I,M), &
+                   cp%ZPNDROW(I,M)*RHOW,(cp%THLQROW(I,M,J)*RHOW*DLZWROW(I,M,J),J=1,IGND),&
+                   (cp%THICROW(I,M,J)*RHOICE*DLZWROW(I,M,J),J=1,IGND)
 
   ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
 ENDDO !DO K=1, WF_NUM_POINTS
@@ -3722,8 +3748,8 @@ ENDIF
 !$omp parallel do
 DO I = 1, NA
    IF(FRAC(I) /= 0.0)THEN
+      PREACC(I)  = PREACC(I) + PREGRD(I)*DELT
       DO M = 1,NMTEST
-         PREACC(I)  = PREACC(I) + PREGRD(I)*   cp%FAREROW(I,M)*DELT
          GTACC(I)   = GTACC(I)  + GTROW(I,M)*  cp%FAREROW(I,M)
          QEVPACC(I) = QEVPACC(I)+ QEVPROW(I,M)*cp%FAREROW(I,M)
          EVAPACC(I) = EVAPACC(I)+ QFSROW(I,M)* cp%FAREROW(I,M)*DELT
