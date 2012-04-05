@@ -74,6 +74,7 @@ c from WATCLASS 2.7 - I'm assuming they are correct still
 
       do i=1,5
       wf_r1(i)=2.0*wf_r2(i)
+c      wf_r1(i)=2.0
       enddo
 
 c if this is the first time through, initialize baseflows
