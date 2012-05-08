@@ -2892,10 +2892,6 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
                   HCPSCS,HCPSGS,HCPSC,HCPSG, &
                   TSNOWC,TSNOWG,RHOSC,RHOSG,&
                   XSNOWC,XSNOWG,XSNOCS,XSNOGS)
-                 !fetchGAT,HtGAT,N_SGAT,A_SGAT, &
-                 !SFCTGAT,SFCUGAT,SFCQGAT,PRESGAT, &
-                 !DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
-                 !TSNOdsGAT, RHOSdsGAT)
                  
 !
 !========================================================================
