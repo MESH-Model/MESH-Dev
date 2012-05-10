@@ -79,7 +79,7 @@ IMPLICIT NONE
 INTEGER ILG
 !INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
 INTEGER,PARAMETER :: ICAN=4, ICP1=ICAN+1
-INTEGER,PARAMETER :: M_S=140, M_R=7, M_C=5
+INTEGER,PARAMETER :: M_S=190, M_R=7, M_C=5
 !todo M_s should be allocatable. it should not be constant
 !todo it should be read in from the shd file
 
