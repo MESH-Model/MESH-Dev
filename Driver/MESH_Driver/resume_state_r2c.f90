@@ -277,7 +277,8 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
          COUNT = COUNT + 1
          DO J = 1, YCOUNT
 !           READ(263,'(999(E10.3))')(DATAOUT(COUNT,I,J),I=1,XCOUNT)
-           READ(263,'(999(F5.2))')(DATAOUT(COUNT,I,J),I=1,XCOUNT)
+!           READ(263,'(999(F5.2))')(DATAOUT(COUNT,I,J),I=1,XCOUNT)
+           READ(263,*)(DATAOUT(COUNT,I,J),I=1,XCOUNT)
          ENDDO      
          DO I = 1, NML
            II = XXX(ILMOS(I))

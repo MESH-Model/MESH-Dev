@@ -35,7 +35,7 @@
      Y                  ILMOGAT,UEGAT,  HBLGAT, TACGAT, QACGAT,
      Z                  HMFGGAT,HTCGAT, QFCGAT, WSNOGAT,FSNOGAT,
      +                  GFLXGAT,ITCTGAT,MANNROW,MANNGAT,DDROW,DDGAT,
-     +                  SANDROW,SANDGAT,CLAYROW,CLAYGAT)
+     +                  SANDROW,SANDGAT,CLAYROW,CLAYGAT,XSLPROW,XSLPGAT)
 C
 C     * MAR 23/06 - D.VERSEGHY. ADD WSNO,FSNO.
 C     * MAR 18/05 - D.VERSEGHY. ADDITIONAL VARIABLES.
@@ -120,6 +120,7 @@ C
 
 C * WATROF DECLARATIONS
       REAL  DDROW(NL,NM),MANNROW(NL,NM),DDGAT(ILG),MANNGAT(ILG)
+      REAL  XSLPROW(NL,NM),XSLPGAT(ILG)
 C
 C----------------------------------------------------------------------
 !$omp parallel do
@@ -204,6 +205,7 @@ C----------------------------------------------------------------------
           HBLROW (ILMOS(K),JLMOS(K))=HBLGAT(K)  
           DDROW (ILMOS(K),JLMOS(K))=DDGAT(K)  
           MANNROW (ILMOS(K),JLMOS(K))=MANNGAT(K)
+          XSLPROW (ILMOS(K),JLMOS(K))=XSLPGAT(K)
 100   CONTINUE
 C
       DO 200 L=1,IG

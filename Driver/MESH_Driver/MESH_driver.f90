@@ -2837,7 +2837,7 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,cp%TPNDROW, &
              ILMOGAT,UEGAT,  HBLGAT, TACGAT, QACGAT, &
              HMFGGAT,HTCGAT, QFCGAT, WSNOGAT,FSNOGAT, &
              GFLXGAT,ITCTGAT,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
-             cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT)
+             cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT,cp%XSLPROW,XSLPGAT)
 
 ENDIF
 
@@ -3340,7 +3340,7 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,cp%TPNDROW, &
              ILMOGAT,UEGAT,  HBLGAT, TACGAT, QACGAT, &
              HMFGGAT,HTCGAT, QFCGAT, WSNOGAT,FSNOGAT, &
              GFLXGAT,ITCTGAT,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
-             cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT )
+             cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT,cp%XSLPROW,XSLPGAT)
 
 ! *********************************************************************
 ! Calculate values for output files and print them out
