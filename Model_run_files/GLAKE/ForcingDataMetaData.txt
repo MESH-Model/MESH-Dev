@@ -48,3 +48,36 @@ If calibrated, describe method and calibration time period: No calibration
 Comments:
 Initial run using parameter set supplied by Erika
 
+******************************************************************************
+03 MESH 199704 - 200810 CRCM
+
+Forcing Data Description -
+
+Model: MESH
+Source: CRCM forced with GEM
+Time Period: 199704 - 200810
+Dataset created:
+199704 - 200810 - Created in 200910
+
+File locations and contact:
+Frank Seglenieks
+On narwhal.sharcnet.ca - CRCM_full
+
+Results description -
+
+03_01
+
+Person performing runs:  Frank Seglenieks
+Date of model run: 20110203
+If calibrated, describe method and calibration time period: No calibration
+Comments:
+Initial run using parameter set of unknown origin and version of MESH that was on the trunk at the time.  Run on sharcnet machine narwhal.
+
+03_02
+
+Person performing runs:  Amin Haghnegahdar
+Date of model run: 20110209
+If calibrated, describe method and calibration time period: No calibration
+Comments:
+Initial run using parameter set of unknown origin and version of MESH that was on the trunk at the time.  Run on PC.
+
