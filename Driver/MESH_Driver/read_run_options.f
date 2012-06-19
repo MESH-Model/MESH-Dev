@@ -217,6 +217,14 @@
 !* If WD3BKFC is 1, BULK_FC remains unchanged in WATROF.
       WD3BKFC = 1
 
+!* If PRINTRUNOFFFILE is 0, do not print out hourly distributed runoff file.
+!* If PRINTRUNOFFFILE is 1, print out hourly distributed runoff file (may get very large).
+      PRINTRUNOFFFILEFLAG = 1
+
+!* If PRINTLEAKAGEFILE is 0, do not print out hourly distributed runoff file.
+!* If PRINTLEAKAGEFILE is 1, print out hourly distributed runoff file (may get very large).
+      PRINTLEAKAGEFILEFLAG = 1
+
 !> SET N = 0 RESETS THE CLASS COUNTER.
 !TODO: N is not a flag, move it somewhere else
       N = 0
@@ -347,6 +355,10 @@
             WD3FLOW = IROVAL
           ELSE IF (IRONAME == "WD3BKFC") THEN
             WD3BKFC = IROVAL
+          ELSE IF (IRONAME == "PRINTRUNOFFFILEFLAG") THEN
+            PRINTRUNOFFFILEFLAG = IROVAL
+          ELSE IF (IRONAME == "PRINTLEAKAGEFILEFLAG") THEN
+            PRINTLEAKAGEFILEFLAG = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",

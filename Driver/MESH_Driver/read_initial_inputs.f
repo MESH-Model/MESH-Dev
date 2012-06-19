@@ -185,8 +185,7 @@
         CLOSE(20)
 
 
-!> these three settings are for producing input files for the new watroute
-      MODELFLG = 'r'
+!> these settings are for producing input files for the new watroute
       FLN(31) = 'WR_runoff.r2c'
       FLN(32) = 'WR_recharge.r2c'
 
