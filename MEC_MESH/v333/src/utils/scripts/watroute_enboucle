@@ -1,0 +1,195 @@
+#!/bin/sh
+
+set -ae
+
+set -x
+
+# DOROTHEE CHARPENTIER - 17 SEPTEMBRE 2008
+#
+# Modified by Daniel Deacu 
+#
+# NOM : watroute_enboucle
+#
+# DESCRIPTION : 
+#
+# Ce script permet d´executer watroute sur une boucle temporelle
+# determinee par firstdate et lastdate. Pour cela, on a besoin de
+# considerer le fichier event.evt de la journee consideree ainsi
+# que les donnees de recharge et de runoff. Le fichier event_${date}.evt
+# a ete cree a partir de prepare_event. Les fichiers des donnees
+# d´entree ont ete prepares a partir de champs_pourwatroute.
+
+#-----------------------------------------------------------
+jobname=`basename $0`
+#-----------------------------------------------------------
+
+firstdate=${first_date}
+lastdate=${last_date}
+
+reprun=${exper_path}/BUDGET/watroute
+repparams=${watroute_event_path}
+represrl=${watroute_resrl_path}
+
+if [ ${watroute_streamflow_insertion}  -eq 1 -o \
+     ${watroute_streamflow_comparison} -eq 1    ] ; then
+    repstr=${watroute_strfw_path}
+fi
+
+repinput=${exper_path}/BUDGET
+repoutput=${exper_path}/BUDGET
+
+
+#set +e
+#eval ` cclargs \
+#       -firstdate ",,,," ",,,,"\
+#        "[date du debut de la simulation]"\
+#       -lastdate ",,,," ",,,,"\
+#        "[date de la fin de la simulation]"\
+#       -reprun ",,,," ",,,,"\
+#       -repparams ",,,," ",,,,"\
+#       -represrl ",,,," ",,,,"\
+#       -repinput ",,,," ",,,,"\
+#       -repoutput ",,,," ",,,,"\
+#       ++ $*`
+#set -e
+
+cd ${reprun}
+
+date=${firstdate}
+
+while [ ${date} -ge ${firstdate} -a ${date} -le ${lastdate} ] ; do
+
+annee=`echo $date | cut -c1-4`
+mois=`echo $date | cut -c5-6`
+
+# Copie des fichiers d´entree
+
+rm -f ${reprun}/event/event.evt
+cp ${repparams}/event_${date}.evt ${reprun}/event/event.evt
+
+rm -f ${reprun}/mec/recharge.r2c
+rm -f ${reprun}/mec/runoff.r2c
+cp ${repinput}/recharge/${annee}/${date}_recharge.r2c ${reprun}/mec/recharge.r2c
+cp ${repinput}/runoff/${annee}/${date}_runoff.r2c ${reprun}/mec/runoff.r2c
+
+rm -f ${reprun}/input/*.tb0
+cp ${represrl}/${annee}${mois}01_REL.tb0 ${reprun}/input/${annee}${mois}01_rel.tb0
+
+rm -f ${reprun}/strfw/*.tb0 
+if [ ${watroute_streamflow_insertion}  -eq 1 -o \
+     ${watroute_streamflow_comparison} -eq 1    ] ; then
+    cp ${repstr}/${annee}${mois}01_str.tb0 ${reprun}/strfw/${annee}${mois}01_str.tb0
+fi
+
+# On execute watroute
+
+if [ ${watroute_streamflow_insertion}  -eq 1 ] ; then
+    ${basedir}/src/watroute/watroute streamflow_insertion
+elif [ ${watroute_streamflow_comparison}  -eq 1 ] ; then
+    ${basedir}/src/watroute/watroute streamflow_comparison
+else
+    ${basedir}/src/watroute/watroute
+fi
+
+
+# On garde le dernier niveau de lac
+
+mv ${reprun}/sup_lvl.txt ${reprun}/file1.txt
+cat ${reprun}/file1.txt | tail -1 >> ${reprun}/sup_lvl.txt
+
+mv ${reprun}/mhu_lvl.txt ${reprun}/file2.txt
+cat ${reprun}/file2.txt | tail -1 >> ${reprun}/mhu_lvl.txt
+
+mv ${reprun}/stc_lvl.txt ${reprun}/file3.txt
+cat ${reprun}/file3.txt | tail -1 >> ${reprun}/stc_lvl.txt
+
+mv ${reprun}/eri_lvl.txt ${reprun}/file4.txt
+cat ${reprun}/file4.txt | tail -1 >> ${reprun}/eri_lvl.txt
+
+mv ${reprun}/ont_lvl.txt ${reprun}/file5.txt
+cat ${reprun}/file5.txt | tail -1 >> ${reprun}/ont_lvl.txt
+
+# Copie des fichiers de sortie
+
+if [ ! -d ${repoutput}/flow_init/${annee} ] ; then
+    mkdir -m 755 -p ${repoutput}/flow_init/${annee}
+fi
+
+#if [ ! -d ${repoutput}/gridded_lkg/${annee} ] ; then
+#    mkdir -m 755 -p ${repoutput}/gridded_lkg/${annee}
+#fi
+
+#if [ ! -d ${repoutput}/gridded_lzs/${annee} ] ; then
+#    mkdir -m 755 -p ${repoutput}/gridded_lzs/${annee}
+#fi
+
+if [ ! -d ${repoutput}/gridflow/${annee} ] ; then
+    mkdir -m 755 -p ${repoutput}/gridflow/${annee}
+fi
+
+if [ ! -d ${repoutput}/lake_sd/${annee} ] ; then
+    mkdir -m 755 -p ${repoutput}/lake_sd/${annee}
+fi
+
+if [ ! -d ${repoutput}/netlakeinflow/${annee} ] ; then
+    mkdir -m 755 -p ${repoutput}/netlakeinflow/${annee}
+fi
+
+# Save the lake-level files. 
+# These can be used along flow_init files to start WATROUTE on other dates.
+
+
+if [ ! -d ${repoutput}/lake_lvl/sup/${annee} ] ; then
+    mkdir -m 755 -p ${repoutput}/lake_lvl/sup/${annee}
+fi
+
+if [ ! -d ${repoutput}/lake_lvl/mhu/${annee} ] ; then
+    mkdir -m 755 -p ${repoutput}/lake_lvl/mhu/${annee}
+fi
+
+if [ ! -d ${repoutput}/lake_lvl/stc/${annee} ] ; then
+    mkdir -m 755 -p ${repoutput}/lake_lvl/stc/${annee}
+fi
+
+if [ ! -d ${repoutput}/lake_lvl/eri/${annee} ] ; then
+    mkdir -m 755 -p ${repoutput}/lake_lvl/eri/${annee}
+fi
+
+if [ ! -d ${repoutput}/lake_lvl/ont/${annee} ] ; then
+    mkdir -m 755 -p ${repoutput}/lake_lvl/ont/${annee}
+fi
+
+cp ${reprun}/sup_lvl.txt ${repoutput}/lake_lvl/sup/${annee}/${date}_sup_lvl.txt
+cp ${reprun}/mhu_lvl.txt ${repoutput}/lake_lvl/mhu/${annee}/${date}_mhu_lvl.txt
+cp ${reprun}/stc_lvl.txt ${repoutput}/lake_lvl/stc/${annee}/${date}_stc_lvl.txt
+cp ${reprun}/eri_lvl.txt ${repoutput}/lake_lvl/eri/${annee}/${date}_eri_lvl.txt
+cp ${reprun}/ont_lvl.txt ${repoutput}/lake_lvl/ont/${annee}/${date}_ont_lvl.txt
+
+
+cp ${reprun}/flow_init.r2c ${repoutput}/flow_init/${annee}/${date}_flow_init.r2c
+#cp ${reprun}/gridded_lkg.r2c ${repoutput}/gridded_lkg/${annee}/${date}_gridded_lkg.r2c
+#cp ${reprun}/gridded_lzs.r2c ${repoutput}/gridded_lzs/${annee}/${date}_gridded_lzs.r2c
+cp ${reprun}/gridflow.r2c ${repoutput}/gridflow/${annee}/${date}_gridflow.r2c
+cp ${reprun}/lake_sd.csv ${repoutput}/lake_sd/${annee}/${date}_lake_sd.csv
+cp ${reprun}/net_lake_inflow.csv ${repoutput}/netlakeinflow/${annee}/${date}_net_lake_inflow.csv
+
+
+
+
+#rm -f ${reprun}/gridded_lkg.r2c
+#rm -f ${reprun}/gridded_lzs.r2c
+rm -f ${reprun}/gridflow.r2c
+rm -f ${reprun}/lake_sd.csv
+rm -f ${reprun}/net_lake_inflow.csv
+rm -f ${reprun}/file*
+
+# On passe a la journee suivante
+
+date=`r.date ${date} +24`
+date=${date:0:10}
+
+done
+
+#-------------------------------------------
+echo " $jobname " ' se termine normalement '
+#-------------------------------------------

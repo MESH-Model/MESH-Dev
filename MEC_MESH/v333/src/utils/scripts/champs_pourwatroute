@@ -1,0 +1,116 @@
+#!/bin/sh
+
+set -ae
+set -x
+
+# DOROTHEE CHARPENTIER - SEPTEMBRE 2008
+#
+# NOM : champs_pourwatroute
+#
+# Modified by
+#   D. Deacu
+#
+# DESCRIPTION : 
+#
+# Ce script permet de preparer les champs runoff et recharge necessaires
+# a watroute. On doit d´abord additionner le ruissellement de surface
+# et l´ecoulement lateral pour avoir le runoff total. Puis, on convertit
+# runoff et recharge en fichiers r2c.
+
+#-----------------------------------------------------------
+jobname=`basename $0`
+#-----------------------------------------------------------
+
+firstdate=${first_date}
+lastdate=${last_date}
+repentree=${exper_path}/BUDGET
+repsortie=${repentree}
+
+#set +e
+#eval ` cclargs \
+#       -firstdate ",,,," ",,,,"\
+#        "[date du debut de la simulation]"\
+#       -lastdate ",,,," ",,,,"\
+#        "[date de la fin de la simulation]"\
+#       -repentree ",,,," ",,,,"\
+#       -repsortie ",,,," ",,,,"\
+#       ++ $*`
+#set -e
+
+ici=`pwd`
+cd ${ici}
+
+date=${firstdate}
+
+while [ ${date} -ge ${firstdate} -a ${date} -le ${lastdate} ] ; do
+
+annee=${date:0:4}
+
+if [ ! -d ${repsortie}/ruissellement_tot/${annee} ] ; then
+    mkdir -m 755 -p ${repsortie}/ruissellement_tot/${annee}
+fi
+
+if [ ! -d ${repsortie}/runoff/${annee} ] ; then
+    mkdir -m 755 -p ${repsortie}/runoff/${annee}
+fi
+
+if [ ! -d ${repsortie}/recharge/${annee} ] ; then
+    mkdir -m 755 -p ${repsortie}/recharge/${annee}
+fi
+ 
+## On additionne les fichiers d'ecoulement lateral et de runoff retarde
+ 
+##r.diag addf ${repentree}/ecoulat_mm/${annee}/${date}_LATF0_mm.fst ${repentree}/ruissellement_ret/${annee}/${date}_TRAF0_ret.fst ${repentree}/ruissellement_tot/${annee}/${date}_runoff.fst -na
+
+# On additionne les fichiers d'ecoulement lateral et de ruissellement
+ 
+r.diag addf ${repentree}/ecoulat_mm/${annee}/${date}_LATF0_mm.fst ${repentree}/ruissellement_mm/${annee}/${date}_TRAF0_mm.fst ${repentree}/ruissellement_tot/${annee}/${date}_runoff.fst -na
+
+# On change les etiquettes - RFF pour runoff et RCH pour recharge
+
+cat > dirfst1 <<EOF
+desire(-1,'ADD',-1,-1,-1,-1,-1)
+zap(-1,'RFF',-1,-1,-1,-1,-1)
+EOF
+editfst -s ${repentree}/ruissellement_tot/${annee}/${date}_runoff.fst -d ${repsortie}/runoff/${annee}/${date}_runoff.fst -i dirfst1
+
+cat > dirfst2 << EOF
+desire(-1,'^^')
+desire(-1,'>>')
+EOF
+editfst -s ${repentree}/ruissellement_tot/${annee}/${date}_runoff.fst -d ${repsortie}/runoff/${annee}/${date}_runoff.fst -i dirfst2
+
+cat > dirfst3 <<EOF
+desire(-1,'O10',-1,-1,-1,-1,-1)
+zap(-1,'RCH',-1,-1,-1,-1,-1)
+EOF
+editfst -s ${repentree}/drainage_mm/${annee}/${date}_O10_mm.fst -d ${repsortie}/recharge/${annee}/${date}_recharge.fst -i dirfst3
+
+cat > dirfst2 << EOF
+desire(-1,'^^')
+desire(-1,'>>')
+EOF
+editfst -s ${repentree}/drainage_mm/${annee}/${date}_O10_mm.fst -d ${repsortie}/recharge/${annee}/${date}_recharge.fst -i dirfst2
+
+# On convertit les fichiers en format r2c
+
+fst_2_r2c=~armnvfo/src/fst_2_r2c/fst_2_r2c
+
+$fst_2_r2c ${repsortie}/runoff/${annee}/${date}_runoff.fst ${repsortie}/runoff/${annee}/${date}_runoff.r2c RFF 0
+
+$fst_2_r2c ${repsortie}/recharge/${annee}/${date}_recharge.fst ${repsortie}/recharge/${annee}/${date}_recharge.r2c RCH 0
+
+# Menage
+
+rm -f dirfst1 dirfst2 dirfst3
+
+# On passe a la journee suivante
+
+date=`r.date ${date} +24`
+date=${date:0:10}
+
+done
+
+#-------------------------------------------
+echo " $jobname " ' se termine normalement '
+#-------------------------------------------

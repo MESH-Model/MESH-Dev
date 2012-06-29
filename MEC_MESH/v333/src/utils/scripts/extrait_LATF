@@ -1,0 +1,124 @@
+#!/bin/sh
+
+set -ae
+set -x
+
+# DOROTHEE CHARPENTIER - 10 SEPTEMBRE 2008
+#
+# NOM : extrait_LATF
+#
+# DESCRIPTION : 
+#
+# Ce script permet d'extraire l'ecoulement lateral accumule LATF, de
+# regrouper toutes les heures d'une meme journee dans un seul fichier,
+# de decumuler le champ en LATF0.
+
+#-----------------------------------------------------------
+jobname=`basename $0`
+#-----------------------------------------------------------
+
+
+firstdate=${first_date}
+lastdate=${last_date}
+repentree=$exper_path
+repsortie=$repentree/BUDGET
+
+#set +e
+#eval ` cclargs \
+#       -firstdate ",,,," ",,,,"\
+#        "[date du debut de la simulation]"\
+#       -lastdate ",,,," ",,,,"\
+#        "[date de la fin de la simulation]"\
+#       -repentree ",,,," ",,,,"\
+#       -repsortie ",,,," ",,,,"\
+#       ++ $*`
+#set -e
+
+
+ici=$repsortie
+cd ${ici}
+
+date=${firstdate}
+
+while [ ${date} -ge ${firstdate} -a ${date} -le ${lastdate} ] ; do
+
+# tic tac dans le fichier ou LATF est rassemble (LATF_cum)
+
+cat > dirfst1 <<EOF
+desire(-1,"^^")
+desire(-1,">>")
+EOF
+editfst -s ${repentree}/output_${date}/pm${date}-00-00_000 -d ${ici}/${date}_LATF_cum.fst -i dirfst1
+
+heure=0
+
+# on rassemble tous les heures de LATF dans un meme fichier
+
+while [ $heure -le 24 ] ; do
+
+heuref=00${heure}
+heuref=${heuref:(-3)}
+
+cat > dirfst2 <<EOF
+desire(-1,'LATF',-1,-1,-1,$heure,-1)
+EOF
+editfst -s ${repentree}/output_${date}/pm${date}-00-00_${heuref} -d ${ici}/${date}_LATF_cum.fst -i dirfst2
+
+heure=`expr $heure + 1`
+
+done
+
+# tic tac dans le fichier ou LATF est decumule en LATF0 (LATF0_mm)
+
+editfst -s ${ici}/${date}_LATF_cum.fst -d ${ici}/${date}_LATF0_mm.fst -i dirfst1
+
+heure=1
+
+# on decumule LATF ; la variable s'appelle LATF0
+# D. Deacu: Only the first 4 characters of LATF0 are actually used!
+
+while [ $heure -le 24 ] ; do
+
+heuref=00${heure}
+heuref=${heuref:(-3)}
+
+cat > dirpgsm <<EOF 
+sortie(std,4000)
+liree(LATF,-1,-1,-1,${heure},-1,-1)
+moinse(LATF,-1,-1,-1,`expr ${heure} - 1`,-1,-1)
+ecrits('LATF0',-32,-1,-1,${heure},-1,-1,-1,-1,IMPRIM)
+EOF
+pgsm -iment ${ici}/${date}_LATF_cum.fst -ozsrt ${ici}/${date}_LATF0_mm.fst -i dirpgsm
+
+heure=`expr $heure + 1`
+
+done
+
+aaaa=`echo $date | cut -c1-4`
+
+if [ ! -d ${repsortie}/ecoulat_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/ecoulat_mm
+fi
+
+if [ ! -d ${repsortie}/ecoulat_mm/${aaaa} ] ; then
+    mkdir -m 755 -p ${repsortie}/ecoulat_mm/${aaaa}
+fi
+
+cp ${ici}/${date}_LATF0_mm.fst ${repsortie}/ecoulat_mm/${aaaa}
+
+rm -f ${ici}/${date}_LATF0_*
+
+rm -f dirfst1 dirfst2 dirpgsm
+
+# on passe a la journee suivante
+
+date=`r.date ${date} +24`
+date=${date:0:10}
+
+done
+
+rm -f *_LATF_cum.fst
+
+#-------------------------------------------
+echo " $jobname " ' se termine normalement '
+#-------------------------------------------

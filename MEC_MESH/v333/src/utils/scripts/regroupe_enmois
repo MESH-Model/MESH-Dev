@@ -1,0 +1,245 @@
+#!/bin/sh
+
+set -ae
+set -x
+
+# DOROTHEE CHARPENTIER - 1 AOUT 2008
+#
+# Modifications:
+#
+# Daniel Deacu 
+#  - added ruissellement, ecoulat and drainage (Sep 2009)
+#  - introduced the yyyymm list (Aug 2010)
+# 
+#
+#
+# NOM : regroupe_enmois
+#
+# DESCRIPTION : 
+#
+# Ce script permet de regrouper dans un meme fichier tous les fichiers
+# d'un meme mois au format fst.
+
+#-----------------------------------------------------------
+jobname=`basename $0`
+#-----------------------------------------------------------
+
+firstdate=${first_date}
+lastdate=${last_date}
+repentree=$exper_path/BUDGET
+repsortie=$repentree/MONTHLY
+
+#set +e
+#eval ` cclargs \
+#       -firstdate ",,,," ",,,,"\
+#        "[date du debut de la simulation]"\
+#       -lastdate ",,,," ",,,,"\
+#        "[date de la fin de la simulation]"\
+#       -repentree ",,,," ",,,,"\
+#       -repsortie ",,,," ",,,,"\
+#       ++ $*`
+#set -e
+
+# creation des repertoires de sortie
+
+if [ ! -d ${repsortie}/evaporation_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/evaporation_mm
+fi
+
+if [ ! -d ${repsortie}/precipitation_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/precipitation_mm
+fi
+
+if [ ! -d ${repsortie}/ruissellement_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/ruissellement_mm
+fi
+
+if [ ! -d ${repsortie}/ecoulat_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/ecoulat_mm
+fi
+
+if [ ! -d ${repsortie}/drainage_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/drainage_mm
+fi
+
+if [ ! -d ${repsortie}/temperature_Celsius ] ; then
+    mkdir -m 755 -p ${repsortie}/temperature_Celsius
+fi
+
+if [ ${rain_snow} -eq 1 ] ; then
+    if [ ! -d ${repsortie}/rain_mm ] ; then
+	mkdir -m 755 -p ${repsortie}/rain_mm
+    fi
+    if [ ! -d ${repsortie}/snow_mm ] ; then
+	mkdir -m 755 -p ${repsortie}/snow_mm
+    fi
+fi
+
+
+annee_prec=0
+
+for yyyymm in $yyyymm_list ; do
+
+annee=${yyyymm:0:4}
+
+if [ ${annee} -gt  ${annee_prec} ] ; then
+
+    if [ ! -d ${repsortie}/evaporation_mm/${annee} ] ; then
+	mkdir -m 755 -p ${repsortie}/evaporation_mm/${annee}
+    fi
+
+    if [ ! -d ${repsortie}/precipitation_mm/${annee} ] ; then
+	mkdir -m 755 -p ${repsortie}/precipitation_mm/${annee}
+    fi
+    
+    if [ ! -d ${repsortie}/ruissellement_mm/${annee} ] ; then
+	mkdir -m 755 -p ${repsortie}/ruissellement_mm/${annee}
+    fi
+
+    if [ ! -d ${repsortie}/ecoulat_mm/${annee} ] ; then
+	mkdir -m 755 -p ${repsortie}/ecoulat_mm/${annee}
+    fi
+
+    if [ ! -d ${repsortie}/drainage_mm/${annee} ] ; then
+	mkdir -m 755 -p ${repsortie}/drainage_mm/${annee}
+    fi
+
+    if [ ! -d ${repsortie}/temperature_Celsius/${annee} ] ; then
+	mkdir -m 755 -p ${repsortie}/temperature_Celsius/${annee}
+    fi
+
+    if [ ${rain_snow} -eq 1 ] ; then
+	if [ ! -d ${repsortie}/rain_mm/${annee}  ] ; then
+	    mkdir -m 755 -p ${repsortie}/rain_mm/${annee}
+	fi
+	if [ ! -d ${repsortie}/snow_mm/${annee} ] ; then
+	    mkdir -m 755 -p ${repsortie}/snow_mm/${annee}
+	fi
+    fi
+fi
+
+annee_prec=$annee
+
+mois=${yyyymm:4:2}
+
+# on prend un seul tic tac par mois pour le mettre dans le fichier ${annee}${mois}
+
+cat > dirfst1 <<EOF
+desire(-1,"^^")
+desire(-1,">>")
+EOF
+
+# pour evaporation_mm
+
+editfst -s ${repentree}/evaporation_mm/${annee}/${annee}${mois}0100_AHFL0_mm.fst -d ${repsortie}/evaporation_mm/${annee}/${annee}${mois}_evap.fst -i dirfst1
+
+# pour precipitation_mm
+
+editfst -s ${repentree}/precipitation_mm/${annee}/${annee}${mois}0100_PR0_mm.fst -d ${repsortie}/precipitation_mm/${annee}/${annee}${mois}_precip.fst -i dirfst1
+
+# pour ruissellement_mm
+
+editfst -s ${repentree}/ruissellement_mm/${annee}/${annee}${mois}0100_TRAF0_mm.fst -d ${repsortie}/ruissellement_mm/${annee}/${annee}${mois}_ruiss.fst -i dirfst1
+
+# pour ecoulat_mm
+
+editfst -s ${repentree}/ecoulat_mm/${annee}/${annee}${mois}0100_LATF0_mm.fst -d ${repsortie}/ecoulat_mm/${annee}/${annee}${mois}_ecoulat.fst -i dirfst1
+
+# pour drainage_mm
+
+editfst -s ${repentree}/drainage_mm/${annee}/${annee}${mois}0100_O10_mm.fst -d ${repsortie}/drainage_mm/${annee}/${annee}${mois}_drain.fst -i dirfst1
+
+
+# pour temperature_Celsius
+
+editfst -s ${repentree}/temperature_Celsius/${annee}/${annee}${mois}0100_TJ_Celsius.fst -d ${repsortie}/temperature_Celsius/${annee}/${annee}${mois}_tair.fst -i dirfst1
+
+# for rainrate and snowrate
+
+if [ ${rain_snow} -eq 1 ] ; then
+    editfst -s ${repentree}/rain_mm/${annee}/${annee}${mois}0100_rain_mm.fst -d ${repsortie}/rain_mm/${annee}/${annee}${mois}_rain.fst -i dirfst1
+    editfst -s ${repentree}/snow_mm/${annee}/${annee}${mois}0100_snow_mm.fst -d ${repsortie}/snow_mm/${annee}/${annee}${mois}_snow.fst -i dirfst1
+fi
+
+done
+
+
+date=${firstdate}
+
+while [ ${date} -ge ${firstdate} -a ${date} -le ${lastdate} ] ; do
+
+aaaa=`echo $date | cut -c1-4`
+mm=`echo $date | cut -c5-6`
+jj=`echo $date | cut -c7-8`
+
+# on rassemble tous les jours dans un meme fichier
+
+# pour evaporation_mm
+
+cat > dirfst2 <<EOF
+desire(-1,'AHFL0',-1,-1,-1,-1,-1)
+EOF
+editfst -s ${repentree}/evaporation_mm/${aaaa}/${aaaa}${mm}${jj}00_AHFL0_mm.fst -d ${repsortie}/evaporation_mm/${aaaa}/${aaaa}${mm}_evap.fst -i dirfst2
+
+# pour precipitation_mm
+
+cat > dirfst3 <<EOF
+desire(-1,'PR0',-1,-1,-1,-1,-1)
+EOF
+editfst -s ${repentree}/precipitation_mm/${aaaa}/${aaaa}${mm}${jj}00_PR0_mm.fst -d ${repsortie}/precipitation_mm/${aaaa}/${aaaa}${mm}_precip.fst -i dirfst3
+
+# pour ruissellement_mm
+
+cat > dirfst4 <<EOF
+desire(-1,'TRAF',-1,-1,-1,-1,-1)
+EOF
+editfst -s ${repentree}/ruissellement_mm/${aaaa}/${aaaa}${mm}${jj}00_TRAF0_mm.fst -d ${repsortie}/ruissellement_mm/${aaaa}/${aaaa}${mm}_ruiss.fst -i dirfst4
+
+# pour ecoulat_mm
+
+cat > dirfst6 <<EOF
+desire(-1,'LATF',-1,-1,-1,-1,-1)
+EOF
+editfst -s ${repentree}/ecoulat_mm/${aaaa}/${aaaa}${mm}${jj}00_LATF0_mm.fst -d ${repsortie}/ecoulat_mm/${aaaa}/${aaaa}${mm}_ecoulat.fst -i dirfst6
+
+# pour drainage_mm
+
+cat > dirfst7 <<EOF
+desire(-1,'O10',-1,-1,-1,-1,-1)
+EOF
+editfst -s ${repentree}/drainage_mm/${aaaa}/${aaaa}${mm}${jj}00_O10_mm.fst -d ${repsortie}/drainage_mm/${aaaa}/${aaaa}${mm}_drain.fst -i dirfst7
+
+# pour temperature_Celsius
+
+cat > dirfst8 <<EOF
+desire(-1,'TJ',-1,-1,-1,-1,-1)
+EOF
+editfst -s ${repentree}/temperature_Celsius/${aaaa}/${aaaa}${mm}${jj}00_TJ_Celsius.fst -d ${repsortie}/temperature_Celsius/${aaaa}/${aaaa}${mm}_tair.fst -i dirfst8
+
+# for rain and snow rate
+
+if [ ${rain_snow} -eq 1 ] ; then
+cat > dirfst9 <<EOF
+desire(-1,'RAIN',-1,-1,-1,-1,-1)
+EOF
+editfst -s ${repentree}/rain_mm/${aaaa}/${aaaa}${mm}${jj}00_rain_mm.fst -d ${repsortie}/rain_mm/${aaaa}/${aaaa}${mm}_rain.fst -i dirfst9
+#
+cat > dirfst10 <<EOF
+desire(-1,'SNOW',-1,-1,-1,-1,-1)
+EOF
+editfst -s ${repentree}/snow_mm/${aaaa}/${aaaa}${mm}${jj}00_snow_mm.fst -d ${repsortie}/snow_mm/${aaaa}/${aaaa}${mm}_snow.fst -i dirfst10
+fi
+
+
+rm -f dirfst*
+
+# on passe a la journee suivante
+
+date=`r.date ${date} +24`
+date=${date:0:10}
+
+done
+
+#-------------------------------------------
+echo " $jobname " ' se termine normalement '
+#-------------------------------------------

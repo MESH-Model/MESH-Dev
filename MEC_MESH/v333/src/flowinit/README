@@ -1,0 +1,63 @@
+
+
+*** FLOWINIT *** FLOWINIT *** FLOWINIT *** FLOWINIT *** FLOWINIT *** FLOWINIT *
+
+
+Compilation
+-----------
+
+Run the 'cmpl' script
+
+
+Notes
+-----
+
+
+1. The original files copied from
+
+     http://hal-depot.wxe.sk.ec.gc.ca/svn/MESH_Code/TRUNK/
+
+   were Windows text files. They were converted to UNIX ascii files (dos2unix).
+   They also had a weird indentation and lines longer than 72 characters. 
+   As a result, compilation with r.compile (using no free format options) 
+   generated errors. The following files have been modified (e.g. reindented) 
+   to fix this problem:
+
+     EF_Module.f
+     EF_ParseUtilities.f
+     area_watflood.f
+     fli.f
+     flowinit.f
+     rdevt.f	
+     read_flow_ef.f
+     read_resv_ef.f
+     read_shed_ef.f
+
+
+
+CODE CHANGES
+------------
+
+Below are the changes made in the Watroute code used in the IUGLS project 
+that were transferred to the FLOWINIT code residing in this directory. Some of
+the changes have been implemented in a slighly modified form.
+
+
+1. The reservoir release values are now read in from the reservoir release 
+   file when 'Coeff1' of at least one of the reservoirs is zero - meaning that 
+   a rating curve is not specified for those reservoirs - in the same 
+   file. (D. Deacu) 
+
+   S/R: read_resv_ef.f  
+
+
+2. Fixed bug in 'read_resv_ef.f'. Line 
+
+       if(qrel(k,ktr).lt.0.0)qrel(k,ktr)=0.001
+
+   was replaced by
+
+       if(qrel(k,1).lt.0.0) qrel(k,1)=0.001
+
+   to avoid starting with a negative release value. (V. Fortin)
+

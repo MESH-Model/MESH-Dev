@@ -1,0 +1,185 @@
+#!/bin/sh
+#
+
+set -ae
+set -x
+
+# DOROTHEE CHARPENTIER - 04 AOUT 2008
+#
+# Modifications:
+#
+# Daniel Deacu 
+#   - added ruissellement, ecoulat and drainage (Sep 2009)
+#   - added calculation of averages over drainage basins and lakes
+#   - introduced the yyyymm list (Aug 2010) 
+#   - removed calculation of lake averages by means of r.diag and individual 
+#     lake masks read from separate files (February 2012)
+#
+#
+# This script calculates various monthly and lake averages of precipitation 
+# evaporation, surface runoff, interflow and drainage.
+#
+#
+#-----------------------------------------------------------
+jobname=`basename $0`
+#-----------------------------------------------------------
+
+
+repentree=${exper_path}/BUDGET/MONTHLY
+repsortie=${exper_path}/BUDGET/MONTHCUM
+
+shedmask_field=BVER
+lakemask_field=REAC
+#
+mask_file=${maskfile}
+
+
+# creation des repertoires de sortie
+
+if [ -d ${repsortie} ] ; then
+    rm -rf  ${repsortie}
+fi
+
+mkdir -m 755 ${repsortie}
+
+if [ ! -d ${repsortie}/evaporation_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/evaporation_mm
+fi
+
+if [ ! -d ${repsortie}/precipitation_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/precipitation_mm
+fi
+
+if [ ! -d ${repsortie}/ruissellement_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/ruissellement_mm
+fi
+
+if [ ! -d ${repsortie}/ecoulat_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/ecoulat_mm
+fi
+
+if [ ! -d ${repsortie}/drainage_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/drainage_mm
+fi
+
+if [ ${rain_snow} -eq 1 ] ; then
+    if [ ! -d ${repsortie}/rain_mm ] ; then
+	mkdir -m 755 -p ${repsortie}/rain_mm
+    fi
+    if [ ! -d ${repsortie}/snow_mm ] ; then
+	mkdir -m 755 -p ${repsortie}/snow_mm
+    fi
+fi
+
+
+annee_prec=0
+
+for yyyymm in $yyyymm_list ; do
+
+annee=${yyyymm:0:4}
+
+if [ ${annee} -gt  ${annee_prec} ] ; then
+
+    if [ ! -d ${repsortie}/evaporation_mm/${annee} ] ; then
+	mkdir -m 755 -p ${repsortie}/evaporation_mm/${annee}
+    fi
+
+    if [ ! -d ${repsortie}/precipitation_mm/${annee} ] ; then
+	mkdir -m 755 -p ${repsortie}/precipitation_mm/${annee}
+    fi
+
+    if [ ! -d ${repsortie}/ruissellement_mm/${annee} ] ; then
+	mkdir -m 755 -p ${repsortie}/ruissellement_mm/${annee}
+    fi
+
+    if [ ! -d ${repsortie}/ecoulat_mm/${annee} ] ; then
+	mkdir -m 755 -p ${repsortie}/ecoulat_mm/${annee}
+    fi
+
+    if [ ! -d ${repsortie}/drainage_mm/${annee} ] ; then
+	mkdir -m 755 -p ${repsortie}/drainage_mm/${annee}
+    fi
+
+    if [ ${rain_snow} -eq 1 ] ; then
+	if [ ! -d ${repsortie}/rain_mm/${annee} ] ; then
+	    mkdir -m 755 -p ${repsortie}/rain_mm/${annee}
+	fi
+	if [ ! -d ${repsortie}/snow_mm/${annee} ] ; then
+	    mkdir -m 755 -p ${repsortie}/snow_mm/${annee}
+	fi
+    fi
+fi
+
+annee_prec=$annee
+
+mois=${yyyymm:4:2}
+
+# Calculate monthly cumulated fields
+
+sum_records  ${repentree}/evaporation_mm/${annee}/${annee}${mois}_evap.fst AHFL ${repsortie}/evaporation_mm/${annee}/${annee}${mois}_evap_mm.fst
+
+sum_records  ${repentree}/precipitation_mm/${annee}/${annee}${mois}_precip.fst PR0 ${repsortie}/precipitation_mm/${annee}/${annee}${mois}_precip_mm.fst
+
+sum_records  ${repentree}/ruissellement_mm/${annee}/${annee}${mois}_ruiss.fst TRAF ${repsortie}/ruissellement_mm/${annee}/${annee}${mois}_ruiss_mm.fst
+
+sum_records  ${repentree}/ecoulat_mm/${annee}/${annee}${mois}_ecoulat.fst  LATF ${repsortie}/ecoulat_mm/${annee}/${annee}${mois}_ecoulat_mm.fst
+
+sum_records  ${repentree}/drainage_mm/${annee}/${annee}${mois}_drain.fst O10 ${repsortie}/drainage_mm/${annee}/${annee}${mois}_drain_mm.fst
+
+if [ ${rain_snow} -eq 1 ] ; then
+    sum_records  ${repentree}/rain_mm/${annee}/${annee}${mois}_rain.fst RAIN ${repsortie}/rain_mm/${annee}/${annee}${mois}_rain_mm.fst
+    sum_records  ${repentree}/snow_mm/${annee}/${annee}${mois}_snow.fst SNOW ${repsortie}/snow_mm/${annee}/${annee}${mois}_snow_mm.fst
+fi
+
+
+
+# Calculate lake averages of overlake precipitation and lake evaporation and 
+# 2 averages of field values over the drainage basins 
+
+
+echo $annee $mois >> ${repsortie}/evaporation_mm/lake_evap.txt
+calcavg_watershed  ${repsortie}/evaporation_mm/${annee}/${annee}${mois}_evap_mm.fst  AHFL  ${mask_file}  ${lakemask_field}  ${lakemask_field}  ${repsortie}/evaporation_mm/lake_evap.txt ${repsortie}/temporary.txt
+#
+echo $annee $mois >> ${repsortie}/precipitation_mm/lake_precip.txt
+calcavg_watershed  ${repsortie}/precipitation_mm/${annee}/${annee}${mois}_precip_mm.fst  PR0  ${mask_file}  ${lakemask_field}  ${lakemask_field}  ${repsortie}/precipitation_mm/lake_precip.txt  ${repsortie}/temporary.txt
+#
+rm -f ${repsortie}/temporary.txt
+#
+echo $annee $mois >> ${repsortie}/evaporation_mm/watershed_byshed_evap.txt
+echo $annee $mois >> ${repsortie}/evaporation_mm/watershed_bylake_evap.txt
+calcavg_watershed  ${repsortie}/evaporation_mm/${annee}/${annee}${mois}_evap_mm.fst  AHFL  ${mask_file}  ${shedmask_field}  ${lakemask_field}  ${repsortie}/evaporation_mm/watershed_byshed_evap.txt ${repsortie}/evaporation_mm/watershed_bylake_evap.txt
+#
+echo $annee $mois >> ${repsortie}/precipitation_mm/watershed_byshed_precip.txt
+echo $annee $mois >> ${repsortie}/precipitation_mm/watershed_bylake_precip.txt
+#calcavg_watershed  ${repsortie}/precipitation_mm/${annee}/${annee}${mois}_precip_mm.fst  PR0  ${mask_file}  ${shedmask_field}  ${lakemask_field}  ${repsortie}/precipitation_mm/watershed_byshed_precip.txt  ${repsortie}/precipitation_mm/watershed_bylake_precip.txt
+#
+# average over the entire watershed (calcavg_watershed_v2)
+echo $annee $mois >>  ${repsortie}/precipitation_mm/LandAndWater.txt
+calcavg_watershed_v2  ${repsortie}/precipitation_mm/${annee}/${annee}${mois}_precip_mm.fst  PR0  ${mask_file}  ${shedmask_field}  ${lakemask_field}  ${repsortie}/precipitation_mm/watershed_byshed_precip.txt  ${repsortie}/precipitation_mm/watershed_bylake_precip.txt  ${repsortie}/precipitation_mm/LandAndWater.txt 
+#
+echo $annee $mois >> ${repsortie}/ruissellement_mm/watershed_byshed_ruiss.txt
+echo $annee $mois >> ${repsortie}/ruissellement_mm/watershed_bylake_ruiss.txt
+calcavg_watershed  ${repsortie}/ruissellement_mm/${annee}/${annee}${mois}_ruiss_mm.fst  TRAF  ${mask_file}  ${shedmask_field}  ${lakemask_field}  ${repsortie}/ruissellement_mm/watershed_byshed_ruiss.txt  ${repsortie}/ruissellement_mm/watershed_bylake_ruiss.txt
+#
+echo $annee $mois >> ${repsortie}/ecoulat_mm/watershed_byshed_ecoulat.txt
+echo $annee $mois >> ${repsortie}/ecoulat_mm/watershed_bylake_ecoulat.txt
+calcavg_watershed  ${repsortie}/ecoulat_mm/${annee}/${annee}${mois}_ecoulat_mm.fst  LATF  ${mask_file}  ${shedmask_field}  ${lakemask_field}  ${repsortie}/ecoulat_mm/watershed_byshed_ecoulat.txt  ${repsortie}/ecoulat_mm/watershed_bylake_ecoulat.txt
+#
+echo $annee $mois >> ${repsortie}/drainage_mm/watershed_byshed_drain.txt
+echo $annee $mois >> ${repsortie}/drainage_mm/watershed_bylake_drain.txt
+calcavg_watershed  ${repsortie}/drainage_mm/${annee}/${annee}${mois}_drain_mm.fst  O10  ${mask_file}  ${shedmask_field}  ${lakemask_field}  ${repsortie}/drainage_mm/watershed_byshed_drain.txt  ${repsortie}/drainage_mm/watershed_bylake_drain.txt
+# average over the entire watershed (calcavg_watershed_v2)
+if [ ${rain_snow} -eq 1 ] ; then
+    echo $annee $mois >>  ${repsortie}/rain_mm/LandAndWater.txt
+    calcavg_watershed_v2  ${repsortie}/rain_mm/${annee}/${annee}${mois}_rain_mm.fst  RAIN  ${mask_file}  ${shedmask_field}  ${lakemask_field}  ${repsortie}/rain_mm/watershed_byshed_rain.txt  ${repsortie}/rain_mm/watershed_bylake_rain.txt  ${repsortie}/rain_mm/LandAndWater.txt 
+#
+    echo $annee $mois >>  ${repsortie}/snow_mm/LandAndWater.txt
+    calcavg_watershed_v2  ${repsortie}/snow_mm/${annee}/${annee}${mois}_snow_mm.fst  SNOW  ${mask_file}  ${shedmask_field}  ${lakemask_field}  ${repsortie}/snow_mm/watershed_byshed_snow.txt  ${repsortie}/snow_mm/watershed_bylake_snow.txt  ${repsortie}/snow_mm/LandAndWater.txt 
+fi
+#
+done
+
+
+#-------------------------------------------
+echo " $jobname " ' se termine normalement '
+#-------------------------------------------
