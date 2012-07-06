@@ -1,8 +1,15 @@
-The program Calcualte_lake_inflow.f90 can take output from both the WATFLOOD and Standalone MESH model and outputs a file you can use to calculate the amount of inflow into a lake.  It uses a file containing grided outflow (which is actually streamflow) created by each model and creates a *.csv file for a series of grids.  If these grids are the ones that inflow into a lake then you can sum the columns together in the *.csv file and that will be the inflow into the lake.  This is the way the program was set up, but of course you can have whichever grids you wanted in the input file.
+How to calculate lake inflow using output from WATFLOOD or standalone MESH
 
-For both models the input file is called "glake_inflow.csv".  This is a three column file with the identifier of the lake in the first column and then the east-west coordinate of the grid in column 2 and the north-south coordinate in column 3.  You can use the program lake_inflow_streamflow_files.f90 to create the glake_inflow.csv file from the basin's *.map file (although this program was obviously designed for the Great Lakes it should work for any watershed).
+Step 1:
+The first step to calculate the lake inflow is to create the input file "glake_inflow.csv".
 
-To use the output from each model you have to change the hardcoded WATFLOOD flag to true or false.
+This is a three column file with the identifier of the lake in the first column and then the east-west coordinate of the grid in column 2 and the north-south coordinate in column 3.  
+
+The program lake_inflow_streamflow_files.f90 will create the glake_inflow.csv file from the basin's *.map file (although this program was obviously designed for the Great Lakes it should work for any watershed).  For each of the values found in the "reach number" section of the *.map file, the program will determine the grids that flow into that reach.
+
+Step 2:
+The second step is to run either WATFLOOD or Standalone MESH to get a file containing gridded outflow (which is actually streamflow) for each day of the run.
+
 
 For WATFLOOD:
 
@@ -14,9 +21,8 @@ For WATFLOOD:
 
 - create a new file called watflood_mod.wfo by deleting the ascii header information (couldn't get the program to skip over it).
 
-- now run "Calcualte_lake_inflow.f90"
+- now proceed to step 3
 
-- 2 files will be created - inflow_daily.csv and inflow_monthly.csv
 
 For Standalone MESH:
 
@@ -53,11 +59,23 @@ CLOSE(UNIT=72)
 
 - run standalone MESH
 
-- get the basin_streamflow_daily.csv file
-
-- now run "Calcualte_lake_inflow.f90"
-
-- 2 files will be created - inflow_daily.csv and inflow_monthly.csv
+- now proceed to step 3
 
 
+Step 3:
+The program Calculate_lake_inflow.f90 will take output from both the WATFLOOD and Standalone MESH model and outputs a file you can use to calculate the amount of inflow into a lake.  
 
+It uses a file containing grided outflow (which is actually streamflow) created by each model and creates a *.csv file for a series of grids.  If these grids are the ones that inflow into a lake then you can sum the columns together in the *.csv file and that will be the inflow into the lake.  This is the way the program was set up, but of course you can have whichever grids you wanted in the input file.
+
+There is a hardcoded WATFLOOD flag in the program, if you are using WATFLOOD output it is true and if you are using standalone MESH it is false.
+
+For WATFLOOD it uses watflood_mod.wfo as the input, for standalone MESH is uses basin_streamflow_daily.csv.
+
+
+After running "Calcualte_lake_inflow.f90", 2 files will be created - inflow_daily.csv and inflow_monthly.csv
+
+This file has a column for each of the inflows, for each column the first row is the number from the the glake_inflow.csv file.  Then the next row is the east-west coordinate of the grid in the third row is the north-south coordinate.  After that are the daily or monthly flow for that grid.
+
+Then you can create a spreadsheet like the example Lake_inflow07.xlsx (should be in this directory) that will sum all the correct columns to get the correct total inflow into each lake.  It is important not to include the inflow into the lake from the one above as we are generally interested only in the inflow into the lake from the land.
+
+The spreadsheet example I have also converts between cms and mm for each of the different lakes.
