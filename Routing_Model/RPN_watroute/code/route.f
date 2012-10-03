@@ -60,7 +60,11 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !     SAVES THE LOCAL VARIABLES FROM ONE RUN TO NEXT
       SAVE
 
-      INTEGER :: istate(400,400),rbin,lsta,nnn1,jz,n,lll,l,iz,jjz,
+! Christopher Subich (9/12): istate was allocated as (400,400),
+! which led to bad array-out-of-bounds errors when the full 2D
+! grid was larger than that
+      INTEGER :: istate(imax,jmax),
+     *           rbin,lsta,nnn1,jz,n,lll,l,iz,jjz,
      *           i,j,ii,ic,jj,ios,itracker,unt,ln,n_dt_min,hour_offset
       REAL    :: old,oldwet,convert
       REAL(4) :: time,newstore,try1,try2,try3,div,thr,at,dtmin,hold,
@@ -71,9 +75,10 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       logical :: exists      
       INTEGER :: spl_csv_flag
 
-!     needs to fixed for dynamic mem
-      DATA istate /160000*0/
       DATA firstpass/'y'/
+
+! csubich -- use array initialization syntax to set istate=0
+      istate = 0
 
       if(firstpass.eq.'y')then   ! changed May 8/06 nk
 
@@ -143,7 +148,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                   print*,'is .le. 0.0 and can not be initialized'
                   print*,'please ensure there is a downstream '
                   print*,'flow station with a flow > 0.0 '
-	          print*,'We are in row',yyy(n),'column',xxx(n)
+                  print*,'We are in row',yyy(n),'column',xxx(n)
                   print*,'grid no',n,'with init flow =',qo1(n) 
                   print*
 !                  stop ' Program aborted in route @ 64'
@@ -245,15 +250,15 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !       check that qdwpr memory has been allocated
         if(ireach(n).gt.0.or.res(n).gt.0)then
           if(.not.allocated(qdwpr))then
-            print*
-	    print*,'Memory not allocated for qdwpr'
-            print*,'No of reservoirs in the .rel file is 0'
-            print*,'but reaches in the map & shed files have been'
-	    print*,'defined. This is a problem.'
-	    print*,'Please either set all reach values = 0'
-	    print*,'or code in the reservoir locations in the rel'
-	    print*,'files'
-	    stop 'Program aborted in route @ 279'
+             print*
+             print*,'Memory not allocated for qdwpr'
+             print*,'No of reservoirs in the .rel file is 0'
+             print*,'but reaches in the map & shed files have been'
+             print*,'defined. This is a problem.'
+             print*,'Please either set all reach values = 0'
+             print*,'or code in the reservoir locations in the rel'
+             print*,'files'
+             stop 'Program aborted in route @ 279'
           endif      
         endif
       endif
@@ -269,7 +274,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
  
       jjz=jz
       if(jjz.lt.1) jjz=1
-	dt_min_n=1.0e32
+      dt_min_n=1.0e32
 
       do rbin=1,noresv
         qdwpr(rbin,jjz)=0.0
@@ -283,20 +288,20 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
        
 !       REV. 8.23 - Mar.  25/96 - FIXED BUG IN ROUTE, KEEP QO2 FOR RES
         store1(n)=store2(n)
-	wstore1(n)=wstore2(n)
-	hwet1(n)=hwet2(n)
-	hcha1(n)=hcha2(n)
+        wstore1(n)=wstore2(n)
+        hwet1(n)=hwet2(n)
+        hcha1(n)=hcha2(n)
         qo1(n)=qo2(n)
         if(res(n).eq.0)qo2(n)=0.0
-	qowet1(n)=qowet2(n)
+        qowet1(n)=qowet2(n)
         qi1(n)=qi2(n)
         qi2(n)=1.0e-10
-	qiwet1(n)=qiwet2(n)
-	qiwet2(n)=1.0e-10
+        qiwet1(n)=qiwet2(n)
+        qiwet2(n)=1.0e-10
       end do
 
-	qi2(na)=0.0
-	wt=0.5
+        qi2(na)=0.0
+        wt=0.5
 
 !     ROUTING LOOP:
 
@@ -371,11 +376,11 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
                   if(jz.ge.1)then      ! added conditional Rev. 9.2.43  nk
                     lake_stor(ln,jz)=store2(n)
-	            lake_outflow(ln,jz)=qo2(n)
+                    lake_outflow(ln,jz)=qo2(n)
                     net_lake_outflow(ln,jz)=qo2(n)
-	            if(ln.gt.1)net_lake_outflow(ln,jz)=
+                    if(ln.gt.1)net_lake_outflow(ln,jz)=
      *                          qo2(n)-lake_outflow(ln-1,jz)
-	            del_stor(ln,jz)=(qi2(n)-qo2(n))*div   
+                    del_stor(ln,jz)=(qi2(n)-qo2(n))*div
                     !div added May 9/06 nk
                   endif
 
@@ -383,7 +388,10 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
 ! * * * * * * * * * *  TS - WETLAND ROUTING  * * * * * * * * * * * * * * * * 
 
-            elseif(aclass(n,ntype-1).gt.0.0
+            ! csubich: This gives an out-of-bounds error if ntype <=1
+            ! so fix by splitting up the statement
+            elseif (ntype .gt. 1
+     *            .and. aclass(n,ntype-1).gt.0.0
      *            .and.wetflg.eq.'y'
      *            .and.theta(ibn(n)).gt.0.00001
      *            .and.glacier_flag(n).ne.'y')then
@@ -421,13 +429,13 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
               ii=ibn(n)
               lll=next(n)
               old=qo1(n)
-	      oldwet=qowet2(n)
+              oldwet=qowet2(n)
               hold=1.0e+25
               do ic=1,20
-	          if(hwet2(n).le.0.0)hwet2(n)=qlz(n)*div*2/
+                  if(hwet2(n).le.0.0)hwet2(n)=qlz(n)*div*2/
      *                                       wetarea(n)/theta(n)
-	          if(hcha2(n).lt.0.0)hcha2(n)=0.001
-	          qi2(n)=qin(n)+qowet2(n)
+                  if(hcha2(n).lt.0.0)hcha2(n)=0.001
+                  qi2(n)=qin(n)+qowet2(n)
 !               UP TO 20 ITERATIONS ARE ALLOWED
                   if(abs(hold-wstore2(n)).gt.0.00001*hold)then
 !               THIS ITERATES TO 3% OR ALLOWS UP TO 20 ITERATIONS
@@ -435,15 +443,15 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !                   NO OUTFLOW - CHANNEL IS EMPTY
                     itracker=0
                     flowxa(n)=0.0
-	            hcha2(n)=0.0
+                    hcha2(n)=0.0
                     qo2(n)=0.001
 !     rev. 9.1.38 Apr. 06/03  - Fixed wetland routing when channel is dry
 !                   Added this section to calculate wetland outflow
 !                   even if the channel is empty.
 !                   Also, made the convergence check to 1 mm in wetheight.
                     over=0.0
-	            hcha2(n)=store2(n)/chaarea(n)
-	            hwet2(n)=wcap(n)/wetarea(n)/theta(n)
+                    hcha2(n)=store2(n)/chaarea(n)
+                    hwet2(n)=wcap(n)/wetarea(n)/theta(n)
      *                      +(wstore2(n)-wcap(n))/wetarea(n)
                     qowet2(n)=kcond(n)*
      *                       (hwet2(n)**2-hcha2(n)**2)*astep
@@ -459,32 +467,32 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !                       WETLAND IS FULL - OVERFLOWS INTO CHANNEL:
 !                        over(n)=(wstore2(n)-wcap(n))/rl(n)   
                         over(n)=0.0       !  bug found 09/03/04 nk
-	                hcha2(n)=store2(n)/chaarea(n)
-	                hwet2(n)=wcap(n)/wetarea(n)/theta(n)
+                        hcha2(n)=store2(n)/chaarea(n)
+                        hwet2(n)=wcap(n)/wetarea(n)/theta(n)
      *                          +(wstore2(n)-wcap(n))/wetarea(n)
                         qowet2(n)=kcond(n)*
      *                            (hwet2(n)**2-hcha2(n)**2)*astep
 !     *                                   /aclass(n,ntype-1)
-	              else
+                      else
                         itracker=2
 !                       WETLAND IS NOT FULL - NOTHING OVERFLOWS:
                         over(n)=0.0         
-	                hwet2(n)=wstore2(n)/
+                        hwet2(n)=wstore2(n)/
      *                               wetarea(n)/theta(n)
-	                hcha2(n)=store2(n)/chaarea(n)
+                        hcha2(n)=store2(n)/chaarea(n)
                         qowet2(n)=kcond(n)*
      *                            (hwet2(n)**2-hcha2(n)**2)*astep
 !     *                                  /aclass(n,ntype-1)
-	              endif
+                      endif
                       flowxa(n)=store2(n)/rl(n)
 !     rev. 9.2.11  Sep.  15/05  - NK: added Manning's n  r1n & r2n
                       if(manningflg.eq.'y')then
                         qo2(n)=flowxa(n)**1.67*slope(n)/
      *                             chawid(n)**0.667/r2n(n)
-	              else
+                      else
                         qo2(n)=flowxa(n)**1.33*slope(n)/r2(n)
-	              endif
-!	                qo2(n)=ice_fctr*qo2(n)
+                      endif
+!                        qo2(n)=ice_fctr*qo2(n)
 !                     ONLY WETLAND FLOW
                     else         ! over > 0.0
 !                     CHANNEL + FLOOD PLAIN FLOW
@@ -494,7 +502,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                         over(n)=(store2(n)-cap(n))/rl(n)
                         hwet2(n)=wcap(n)/wetarea(n)/theta(n)
      *                          +(wstore2(n)-wcap(n))/wetarea(n)
-	                hcha2(n)=cap(n)/chaarea(n)
+                        hcha2(n)=cap(n)/chaarea(n)
      *                              +over(n)/(wetwid(n)+chawid(n))
                       else       !  wstore < wcap
                         itracker=4
@@ -502,7 +510,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                         over(n)=(store2(n)-cap(n))/rl(n)
                         hwet2(n)=
      *                      wstore2(n)/wetarea(n)/theta(n)
-	                hcha2(n)=cap(n)/chaarea(n)
+                        hcha2(n)=cap(n)/chaarea(n)
      *                           +over(n)/(chawid(n)+wetwid(n))
                       endif
                       chaxa(n)=cap(n)/rl(n)
@@ -512,11 +520,11 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                         qo2(n)=
      *                  chaxa(n)**1.67*slope(n)/chawid(n)**0.667/r2n(n)
      *                      + over(n)**1.33*slope(n)*0.17/r1n(n)
-	              else
+                      else
                         qo2(n)=(chaxa(n)**1.33+over(n)**1.33
      *                             /r1(n))*slope(n)/r2(n)
-	              endif
-!	                qo2(n)=ice_fctr*qo2(n)
+                      endif
+!                        qo2(n)=ice_fctr*qo2(n)
 !                     OVERLAND FLOW, WETLAND FLOW NEGLIGABLE!
                       qowet2(n)=20.0*kcond(n)/
      *                           2*(hwet2(n)**2-hcha2(n)**2)
@@ -525,16 +533,16 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                     wt=amax1(.5,float(ic)/21.)
                     qo2(n)=(1.0-wt)*qo2(n)+wt*old
                     old=qo2(n)
-	            qowet2(n)=(1.0-wt)*qowet2(n)+wt*oldwet
-	            oldwet=qowet2(n)
+                    qowet2(n)=(1.0-wt)*qowet2(n)+wt*oldwet
+                    oldwet=qowet2(n)
                   endif
                   hold=wstore2(n)
                   store2(n)=store1(n)+(qi1(n)+qi2(n)
      *                       -qo1(n)-qo2(n))*div
-	          wstore2(n)=wstore1(n)+(qiwet1(n)+qiwet2(n)
+                  wstore2(n)=wstore1(n)+(qiwet1(n)+qiwet2(n)
      *                          -qowet1(n)-qowet2(n))*div
                   if(wstore2(n).lt.0.0)wstore2(n)=0.0
-	          satxa(n)=wstore2(n)/rl(n)/theta(n)
+                  satxa(n)=wstore2(n)/rl(n)/theta(n)
                 else
 !                 CONVERGENCE TO 3%
                   GO TO 26
@@ -550,7 +558,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
               if(qowet2(n).gt.1.0e+10)then
                 print*,'likely fp overflow - reduce kcond(',ibn(n),')=',
      *                     kcond(ibn(n))
-	      endif
+              endif
 
 ! >  >  >     MAYBE NEXT LINE HAS TO BE CHECKED OUT
 !             WHY IS IT 0 ANYWAYS ??????
@@ -566,7 +574,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !             SELECT MIN TRAVEL TIME FOR THE TIME STEP CALC
 
               dtmin=amin1(at,dtmin)
-	      dtmin=amax1(dtmin,a6)   ! dtmin > a6 no matter what
+              dtmin=amax1(dtmin,a6)   ! dtmin > a6 no matter what
 
 !             DTMIN IS THE TIME REQUIRED TO COMPLETELY DRAIN
 !             THE FASTEST EMPTYING ELEMENT
@@ -618,7 +626,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !     rev. 9.2.11  Sep.  15/05  - NK: added Manning's n  r1n & r2n
                       qo2(n)=ax**1.67*slope(n)/
      *                             chawid(n)**0.667/r2n(n)
-!	                qo2(n)=ice_fctr*qo2(n)
+!                        qo2(n)=ice_fctr*qo2(n)
                     else
 !                     CHANNEL + FLOOD PLAIN FLOW
 !     rev. 9.2.43  Jun.  21/06  - NK: fixed spikes in route
@@ -627,7 +635,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !                       0.17 factor is based on 100:1 fp w/d ratio
 !                       flood plain width/depth assumes as 100
 !                       use quadratic equation to solve for fp. depth
-	              hwet2(n)=(-1.0+sqrt(1.+400.0*over(n)))/200.0
+                      hwet2(n)=(-1.0+sqrt(1.+400.0*over(n)))/200.0
 !                       hcha2(n) is the bankfull depth here
                       hcha2(n)=chaxa(n)/chawid(n)
 !                       xa is the total main channel cross section area
@@ -641,14 +649,15 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                       else
                         qo2(n)=
      *                      xa**1.67*slope(n)/chawid(n)**0.667/r2n(n)
-	              endif
-!	                qo2(n)=ice_fctr*qo2(n)
+                      endif
+!                        qo2(n)=ice_fctr*qo2(n)
                     endif
                     wt=amax1(.5,float(ic)/21.)
                     qo2(n)=(1.0-wt)*qo2(n)+wt*old
                     old=qo2(n)
                   endif
                   hold=store2(n)
+
                   store2(n)=store1(n)+(qi1(n)+qi2(n)
      *                        -qo1(n)-qo2(n))*div
                 else
@@ -676,7 +685,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !             SELECT MIN TRAVEL TIME FOR THE TIME STEP CALC
 
               dtmin=amin1(at,dtmin)
-	      dtmin=amax1(dtmin,a6)   ! dtmin > a6 no matter what
+              dtmin=amax1(dtmin,a6)   ! dtmin > a6 no matter what
      
 !             DTMIN IS THE TIME REQUIRED TO COMPLETELY DRAIN
 !             THE FASTEST EMPTYING ELEMENT
@@ -685,6 +694,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
               i=yyy(n)
               j=xxx(n)
+!             csubich -- segfault here when bnkfill is 0,
+!             so cap bnkfll at a tiny value away from 0
+              bnkfll(n) = amax1(bnkfll(n),1e-8)
               atemp=qo2(n)/(0.4*bnkfll(n))+1.0
 
 !             TO PREVENT INTEGER UNDERFLOW OR OVEFLOW:  

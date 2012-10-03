@@ -412,7 +412,10 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
 ! original (it appears to be wrong - D. Deacu) 
 !          if(b1(1).eq.0.0)then
 ! use the line below for now: test b1 of lake Nipigon (D. Deacu)
-         if(b1(6).eq.0.0)then
+! csubich (9/12) -- This block of code seems very specific and
+! probably shouldn't exist; in the meantime, I'm only fixing
+! the read-past-the-end-of-the-array if noresv isn't at least 6.
+         if (noresv.ge.6 .and. b1(6).eq.0.0) then
 !           do j=ktr,nrel,ktr
 !     rev. 9.1.13  Mar.  23/02  - fixed resv. timing, moved to beginning of dt
             do j=1,nrel,ktr

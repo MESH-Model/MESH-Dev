@@ -43,7 +43,7 @@ C/////////////////////////
       CHARACTER(3)  :: eofmark
       CHARACTER(1)  :: lineflg,smok
       CHARACTER(20) :: junk 
-      REAL(4)	    :: optlow,time,tot1,qwert,conv,scale,
+      REAL(4)            :: optlow,time,tot1,qwert,conv,scale,
      *                 smc5,tj1,clock,t,thr,dtmin,dtmax,div,aintvl,
      *                 sintvl,tot2,e1,tdum,qtemp,diff2,sdlz,dlz,
      *                 wfo_spec_version_number,
@@ -119,7 +119,7 @@ C/////////////////////////
       jan=1
       m=1
       tot1=0.0
-      totaltime=0.0		! used for ensim time series
+      totaltime=0.0                ! used for ensim time series
 
 !     These values used to come from read_flow_ef 
       irdt=1     ! initial gues for routing time step in hours 
@@ -170,8 +170,8 @@ C/////////////////////////
         do i=1,ycount
           do j=1,xcount
             outarray(i,j)=0.0
-	  end do
-	end do
+          end do
+        end do
 
       if(iopt.eq.2)print*,'In sub before writing headers'
 
@@ -242,7 +242,7 @@ C/////////////////////////
 
         if(iopt.eq.2)print*,'In sub, passed location 201'
 
-	no_frames=0
+        no_frames=0
 
 !       RESET TO THE ORIGINAL VALUE -  WILL BE CHANGED IF NO DATA
         flgevp2=flgevp22
@@ -270,7 +270,8 @@ C/////////////////////////
 
 !       rev. 9.1.60  Jul.  27/04  - NK: reversed definitions for sl1 & sl2 Int. Slope
         do n=1,naa
-          sl2(n)=sqrt(sl1(n))
+          !sl2(n)=sqrt(sl1(n)) ! csubich -- this is now set in read_shed_ef
+                               ! at the same time as sl1
           if(a4.eq.0)a4=1.0
 ! * * *   TS * * * 
 !         CAP IS THE VOLUME OF WATER IN A REACH FOR THE MEAN ANNUAL FLO
@@ -278,16 +279,34 @@ C/////////////////////////
           if(aa4(n).gt.0.0)then
             chaxa(n)=(aa2(n)+aa3(n)*da(n)**aa4(n))
           else
+!           csubich -- da(n) should never be less than zero, but it can
+!           happen if the rank listing is improperly configured
+            if (da(n) .le. 0) then
+               print *, "WARNING: da(n) is <= 0 at index",n
+               print *, "Grid cell:", xxx(n), yyy(n)
+               chaxa(n) = 0
+               if (xxx(n) .eq. 0 .and. yyy(n) .eq. 0) then
+                  ! If xxx/yyy are both 0 for this cell,
+                  ! then we have a missing index.  In theory,
+                  ! this cell shouldn't affect the rest of the
+                  ! computation, so all we really want is for
+                  ! the remaidner of this procedure to not
+                  ! die with a floating point exception
+                  widep(n) = 1
+                  chadep(n) = 1
+               end if
+            else
 !           rev. 9.2.12  Sep.  15/05  - NK: added EXCEL eqn to flowinit
 !           EXCEL compatible equation. aa4 must be -ve in the par file
-            chaxa(n)=10.0**(aa2(n)*alog10(da(n))+aa3(n))
+               chaxa(n)=10.0**(aa2(n)*alog10(da(n))+aa3(n))
 !           had to put a lower bound on channel area to avoid NaN in resume file
 !           NK  Oct. 5/05
+            end if
             chaxa(n)=amax1(1.0,chaxa(n))
           endif
-	    cap(n)=chaxa(n)*rl(n)
+            cap(n)=chaxa(n)*rl(n)
             chadep(n)=SQRT(chaxa(n)/widep(n))
-	    chawid(n)=chaxa(n)/chadep(n)
+            chawid(n)=chaxa(n)/chadep(n)
             flz2(n)=1.0-(1.0-flz(n))
         end do
 
@@ -299,7 +318,7 @@ C/////////////////////////
 
         if(iopt.eq.2)print*,'In sub, passed location 209'
 
-	if(iopt.eq.2)print*,'In sub, gone to flowinit'
+        if(iopt.eq.2)print*,'In sub, gone to flowinit'
 
 c            call flowinit()
 !            replaced  Oct. 9/06  nk
@@ -309,7 +328,7 @@ c            call flowinit()
              call read_flowinit_ef()
 !            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       
-	if(iopt.eq.2)print*,'In sub, back from read_flowinit_ef()'
+        if(iopt.eq.2)print*,'In sub, back from read_flowinit_ef()'
 
 !     rev. 9.2.07  Jul.  29/05  - NK: soilinit moved from runoff to sub 
 
@@ -333,24 +352,24 @@ c            call flowinit()
 
 !     ***************************************************************
 
-	print*,'*********************************************************'
-	print*,'*                                                       *'
-	print*,'*           RRRRRRR   TTTTTTTT  EEEEEEE                 *'
-	print*,'*           RRRRRRRR  TTTTTTTT  EEEEEEE                 *'
-	print*,'*           RR    RR     TT     EE                      *'
-	print*,'*           RR    RR     TT     EE                      *'
-	print*,'*           RRRRRRRR     TT     EEEE                    *'
-	print*,'*           RRRRRRR      TT     EEEE                    *'
-	print*,'*           RR   RR      TT     EE                      *'
-	print*,'*           RR    RR     TT     EEEEEEE                 *'
-	print*,'*           RR     RR    TT     EEEEEEE                 *'
-	print*,'*                                                       *'
-	print*,'*                  WATFLOOD (TM)                        *'
-	print*,'*           Version BETA    July, 2007                  *'
-	print*,'*           (c) N. Kouwen, 1972-2007                    *'
-	print*,'*                                                       *'
-	print*,'*********************************************************'
-        print*
+      print*,'*********************************************************'
+      print*,'*                                                       *'
+      print*,'*           RRRRRRR   TTTTTTTT  EEEEEEE                 *'
+      print*,'*           RRRRRRRR  TTTTTTTT  EEEEEEE                 *'
+      print*,'*           RR    RR     TT     EE                      *'
+      print*,'*           RR    RR     TT     EE                      *'
+      print*,'*           RRRRRRRR     TT     EEEE                    *'
+      print*,'*           RRRRRRR      TT     EEEE                    *'
+      print*,'*           RR   RR      TT     EE                      *'
+      print*,'*           RR    RR     TT     EEEEEEE                 *'
+      print*,'*           RR     RR    TT     EEEEEEE                 *'
+      print*,'*                                                       *'
+      print*,'*                  WATFLOOD (TM)                        *'
+      print*,'*           Version BETA    July, 2007                  *'
+      print*,'*           (c) N. Kouwen, 1972-2007                    *'
+      print*,'*                                                       *'
+      print*,'*********************************************************'
+      print*
 
         if(iopt.eq.2)print*,'id=',id
 
@@ -415,11 +434,11 @@ c            call flowinit()
          call read_r2c(261,31,'1')
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	  if(xcount.ne.xcount_temp.or.ycount.ne.ycount_temp)then
-	    print*,'runoff grid size does not match the shed grid'
-	    print*
-	    stop 'Program aborted in sub @ 371'
-	  endif
+          if(xcount.ne.xcount_temp.or.ycount.ne.ycount_temp)then
+            print*,'runoff grid size does not match the shed grid'
+            print*
+            stop 'Program aborted in sub @ 371'
+          endif
 
          if(modelflg.eq.'r')then
 
@@ -428,11 +447,11 @@ c            call flowinit()
           call read_r2c(262,32,'1')
 !         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	  if(xcount.ne.xcount_temp.or.ycount.ne.ycount_temp)then
-	    print*,'recharge grid size does not match the shed grid'
-	    print*
-	    stop 'Program aborted in sub @ 379'
-	  endif
+          if(xcount.ne.xcount_temp.or.ycount.ne.ycount_temp)then
+            print*,'recharge grid size does not match the shed grid'
+            print*
+            stop 'Program aborted in sub @ 379'
+          endif
 
          elseif(modelflg.eq.'l')then
 !         read the header in the leakage file:
@@ -441,15 +460,15 @@ c            call flowinit()
           call read_r2c(263,33,'1')
 !         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	  if(xcount.ne.xcount_temp.or.ycount.ne.ycount_temp)then
-	    print*,'leakage grid size does not match the shed grid'
-	    print*
-	    stop 'Program aborted in sub @ 387'
-	  endif
+          if(xcount.ne.xcount_temp.or.ycount.ne.ycount_temp)then
+            print*,'leakage grid size does not match the shed grid'
+            print*
+            stop 'Program aborted in sub @ 387'
+          endif
 
          endif
 
-	endif
+        endif
 
 !       WATROUTE END   WATROUTE END    WATROUTE END    WATROUTE END 
 
@@ -458,7 +477,7 @@ c            call flowinit()
 !           TIMER SETS ALL THE CLOCKS i.e. SUM HOURS, SUM SECONDS, ETC.
 
         time=0.0
-	m=1
+        m=1
 
         if(iopt.eq.99)then
 !         THIS OPTION IS TO CHECK ALL INPUT FILES
@@ -466,7 +485,8 @@ c            call flowinit()
           mhtot=kt*2
         endif
 
-        if(iopt.eq.2)pause 'before time loop'
+!       Commented out by csubich
+        !if(iopt.eq.2)pause 'before time loop'
 
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
@@ -476,8 +496,13 @@ c            call flowinit()
 !           
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-
       a6=900.    ! minimum time step (in par file)
+      ! Christopher Subich (9/12): A minimum time step of 900s
+      ! is too large for some tested grids, so inclulde here a
+      ! sample (smaller) value that happened to work on one
+      ! grid that I used.  This is commented out to preserve
+      ! compatibility with other users.
+      !a6=45.00
       a66=a6
 
 !     so we have to just go to the endof the yyyymmdd_rff.r2c file and quit
@@ -489,7 +514,7 @@ c            call flowinit()
 !         the -1 is because time starts at 0.0
 
           time=time+1.000
-	  totaltime=totaltime+1.0
+          totaltime=totaltime+1.0
 
           if(iopt.eq.2)print*,'Gone to timer'
 
@@ -521,10 +546,10 @@ c            call flowinit()
 !             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !             vectorize & convert mm to flow
               do n=1,naa
-	        i=yyy(n)
-	        j=xxx(n)
+                i=yyy(n)
+                j=xxx(n)
                 qr(n)=inarray(i,j)*tdum*frac(n)
-	      end do
+              end do
 
               if(modelflg.eq.'r')then
 !               read the recharge and route through the lz
@@ -534,28 +559,28 @@ c            call flowinit()
 !               vectorize & convert mm to flow
 !               recharge is added to lzs
                 do n=1,naa
-	          i=yyy(n)
-	          j=xxx(n)
+                  i=yyy(n)
+                  j=xxx(n)
                   lzs(n)=lzs(n)+inarray(i,j)
 !                 route the recharge thru the lz:
 !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	          call baseflow(n,dlz,sdlz,tdum)
+                  call baseflow(n,dlz,sdlz,tdum)
 !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	          qr(n)=qr(n)+qlz(n)
-	        end do
-	      endif
+                  qr(n)=qr(n)+qlz(n)
+                end do
+              endif
 
               if(modelflg.eq.'l')then
-!               read qlz = groundwater flow (leakage/baseflow)	     
+!               read qlz = groundwater flow (leakage/baseflow)
 !               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 call read_r2c(263,33,'0')
 !               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !               vectorize & convert mm to flow
                 do n=1,naa
-	          i=yyy(n)
-	          j=xxx(n)
+                  i=yyy(n)
+                  j=xxx(n)
                   qr(n)=qr(n)+inarray(i,j)*tdum*frac(n)
-	        end do
+                end do
               endif
 
           endif  
@@ -582,13 +607,14 @@ c            call flowinit()
 !     rev. 9.3.12  Feb.  20/07  - NK: changed dtmin & call to route
 
               dtmin=900.0
+              !dtmin=45.00 ! csubich -- set small minimum time step
               no_dt=max(int(3599./dtmin)+1,1)
               route_dt=3600.0/float(no_dt)
               sec_div=route_dt/2.0
-	      hr_div=sec_div/3600.
+              hr_div=sec_div/3600.
 
 !dch
-c              dtmin=3600.0
+!              dtmin=3600.0
 
 !             The value of dtmin has been used to determine how many
 !             times route is called. Route will determine a new dtmin
@@ -751,7 +777,7 @@ c             if(resname(l).eq.'Superior     ')then
         print*,'Closed unit 261 filename=',fln(31)
         if(modelflg.eq.'r')then
           close(unit=262,status='keep')
-	  print*,'Closed unit 262 filename=',fln(32)
+          print*,'Closed unit 262 filename=',fln(32)
         elseif(modelflg.eq.'l')then
           close(unit=263,status='keep')
           print*,'Closed unit 263 filename=',fln(33)

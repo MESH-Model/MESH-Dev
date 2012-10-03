@@ -182,7 +182,7 @@ c	if(iopt.eq.2)print*,'filename =',fln(flnnum)
      *  ' OR: wrong number in line 2 of the event file for '/
      *  '     number of events listed in event file ')
          print*,'iostat code =',ios
-         STOP 'program aborted in read_shed_ef.for @ 130'
+         STOP 'program aborted in read_shed_ef.for @ 185'
       endif
 
 C//////////////////////////////////////////////
@@ -405,10 +405,10 @@ C// Copy attribute data (not classes yet) over to global attributes
             vi = vi+1
             rank = s(yi,xi)
             if(rank.gt.0) then
-!			 do ai=1,attCount-ntype
-c			 do ai=1,attCount-(ntype+1)
                do ai=1,attCount
-			 
+                  ! Read attributes from the r2c file and store them
+                  ! in our internal arrays.  Slope, sl1, and elev get
+                  ! some additional processing
                   attribName = header%r2cp%ep%attList(ai)%name
                   rStat = ToLowerCase(attribName)
                   attLen = LEN_TRIM(attribName)
@@ -420,20 +420,55 @@ c			 do ai=1,attCount-(ntype+1)
                   else if(attribName(1:attLen).eq.'bankfull')then
                      bnkfll(rank) = val
                   else if(attribName(1:attLen).eq.'chnlslope')then
-                     slope(rank) = val
+                     ! Christopher Subich; Sept 12
+                     ! The square root of slope is used in the flow
+                     ! calculations, so take that here (and perform
+                     ! a sanity-check for negative values). Previously,
+                     ! this was done as a post-processing step, leading
+                     ! to a bug reported by Frank Seglenieks that the
+                     ! square-root was being done twice when this
+                     ! procedure was called a second time to read the
+                     ! *_par.r2c file.
+                     if (val .lt. 0.0) then
+                        ! Unfortunately the indentation here is poor
+                        ! because of the 72-column limit for a fixed-
+                        ! format source
+                        print*,
+     *                  'In read_shed_ef reading the file :',fln(flnNum)
+                        print*,
+     *                  'The slope in grid no ',rank,' is ',slope(rank)
+                        print*,
+     *                  'Please check the elevations in the map file '
+                        print*,
+     *                  'or change the slope value in the shd file'
+                        print*,
+     *             'The former is recommended as the permanent solution'
+                        print*
+                        stop 'Program aborted in read_shed_ef @ 447'
+                     endif
+                     slope(rank) = sqrt(val)
                   else if(attribName(1:attLen) .eq. 'elev')then
-                     elev(rank) = val
+                     ! Elevation is re-scaled
+                     elev(rank) = 0.01*val
                   else if(attribName(1:attLen) .eq. 'chnllength')then
                      rl(rank) = val
                   else if(attribName(1:attLen) .eq. 'iak')then
                      ibn(rank) = val
                   else if(attribName(1:attLen) .eq. 'intslope')then 
+                     if (val .lt. 0) then
+                        print *, 'Negative intslope received of', val
+                        print *, 'at grid number ', n, 'in the shd file'
+                        stop 'Program aborted in read_shed_ef @ 461'
+                     end if
+                     ! used for overland flow routing (runof6)
                      sl1(rank) = val
+                     ! set sl2 as square root of sl1
+                     sl2(rank) = sqrt(val)
                   else if(attribName(1:attLen) .eq. 'chnl')then
                      ichnl(rank) = val
                   else if(attribName(1:attLen) .eq. 'reach')then
                      ireach(rank) = val
-	
+
 !      WATROUTE attributes added by nk  Oct. 1/06
 
                   else if(attribName(1:attLen) .eq. 'flz')then
@@ -468,10 +503,10 @@ c			 do ai=1,attCount-(ntype+1)
 !				frac(rank) = val
                      print*
                      print*,'Error: old format shd file found'
-	      print*,'Please create a new bsnm_shd.r2c file using the'
+               print*,'Please create a new bsnm_shd.r2c file using the'
                      print*,'current version of bsn.exe'
                      print*
-                     stop 'Program aborted in read_shed_ef.for @ 447'
+                     stop 'Program aborted in read_shed_ef.for @ 507'
 !      impervious area no longer used  nk
 c   		  	  else if(attribName(1:attLen) .eq. 'imperv')then
 c                              aclass(rank, ntype+1) = val
@@ -481,7 +516,7 @@ c                              aclass(rank, ntype+1) = val
                end do
             endif
          end do
-      end do	
+      end do
 
 
 
@@ -502,7 +537,7 @@ C// Copy class attribute data over to global attributes
                   enddo
                endif
             end do
-         end do	
+         end do
       endif
 
 
@@ -514,6 +549,9 @@ C// Copy class attribute data over to global attributes
         
 C// Copy rows and col over to global attributes
 C// I'm not sure if we need this...check with Nick
+! csubich -- yes, because these arrays are used in sanity-check
+! code later to see if a given rank is actually present on the
+! grid
       vi = 0
       do yi=1,yCount
          do xi=1,xCount
@@ -524,11 +562,11 @@ C// I'm not sure if we need this...check with Nick
                yyy(rank) = yi
             endif
          end do
-      end do	
+      end do
 
       do i=1,ycount
          do j=1,xcount
-	    dummy(i,j)=0.0
+            dummy(i,j)=0.0
          end do
       end do
 
@@ -537,14 +575,14 @@ C// I'm not sure if we need this...check with Nick
       if(iopt.ge.1)then
          write(51,50002)
          do ii=1,ntype+1
-	    write(51,50001)ii
+            write(51,50001)ii
             do i=1,ycount
                do j=1,xcount
                   n=s(i,j)
                   if(n.gt.0)dummy(i,j)=aclass(n,ii) 
                end do
                write(51,50000)(dummy(i,j),j=1,xcount)
-	    end do
+         end do
          end do
       endif
 50000 format(999f6.2)
@@ -674,27 +712,8 @@ c	endif
 
 !     Checking data:
 
-      nrvr1=0
-      do n=1,na   
-!       moved this to flowinit at one point but then it got 
-!       recalculated with each iteration when optimizing.
-!       A serious snafu resulting in the convergence problem on opt.
-
-         if(slope(n).lt.0.0)then	
-            print*,'In read_shed_ef reading the file :',fln(flnNum)
-            print*,'The slope in grid no ',n,' is ',slope(n)
-            print*,'Please check the elevations in the map file '
-            print*,'or change the slope value in the shd file'
-            print*,'The former is recommended as the permanent solution'
-            print*
-            stop 'Program aborted in read_shed_ef @ 756'
-         endif
-         slope(n)=sqrt(slope(n)) ! used in river routing (route)
-         sl2(n)=sqrt(sl1(n))    ! used for overland flow routing (runof6)
-         elev(n)=0.01*elev(n)
-!       check to see how many basins/river classes there are:
-         nrvr1=max(nrvr1,ibn(n))
-      end do
+!    check to see how many basins/river classes there are:
+      nrvr1 = maxval(ibn) ! use array syntax
 
 c      if( nrvr.ne.nrvr1)then
 c!      if(nrvr.lt.nrvr1)then

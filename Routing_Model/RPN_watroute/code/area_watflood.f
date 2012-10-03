@@ -273,7 +273,12 @@ ccccc      MODULE area6
       integer*4,   dimension(:), allocatable :: nxtbasin,jl,jr,
      *                                        iflowgrid,inbsnflg
 
-      integer(kind=2), dimension(:,:), allocatable :: s
+! CSUBICH - SEPT 2012
+! because the variable 's' has been re-purposed from a flow-
+! direction to index number in other sections of this code,
+! keeping kind=2 is no longer appropriate -- it overflows on
+! grids with more than 32,768 elements
+      integer(kind=4), dimension(:,:), allocatable :: s
 
 ccccc      END MODULE area6
 

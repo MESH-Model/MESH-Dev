@@ -59,7 +59,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *             744,672,744,720,744,720,744,744,720,744,720,744/
       DATA ju_mon/1, 32, 60, 91,121,152,182,213,244,274,305,335,
      *          366,397,425,456,486,517,547,578,609,639,670,700/
-c these are the original values I don't know what they are trying to do?? Frank April 2002
+! these are the original values I don't know what they are trying to do?? Frank April 2002
 c    *          366,397,435,456,486,517,565,578,280,639,672,700/
 
 !     DURING PRECIP, EACH EVEN HOUR IS INCREMENTED 
