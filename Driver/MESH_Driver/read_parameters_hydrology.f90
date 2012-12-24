@@ -80,7 +80,7 @@ END IF
 READ(23,*)
 READ(23,*)
 
-READ(23,"(I5)") OPTFLAGS
+READ(23,*) OPTFLAGS
 
 IF(OPTFLAGS>0) THEN
   DO I=1,OPTFLAGS
@@ -91,7 +91,7 @@ ENDIF
 READ(23,*)
 READ(23,*)
 
-READ (23,"(5F6.3)") (WF_R2(i),I=1,5)
+READ (23,*) (WF_R2(i),I=1,5)
   DO I=1,5
    IF (wf_r2(i) <= 0)THEN 
     WRITE (6, *)
@@ -106,7 +106,7 @@ READ (23,"(5F6.3)") (WF_R2(i),I=1,5)
 READ(23,*)
 READ(23,*)
 
-READ(23,"(I8)") INDEPPAR
+READ(23,*) INDEPPAR
 
 ALLOCATE(INDEPPARVAL(INDEPPAR))
 
@@ -144,7 +144,7 @@ ENDIF
 READ(23,*)
 READ(23,*)
 
-READ(23,"(I8)") I
+READ(23,*) I
 IF(I/=NTYPE) THEN
   PRINT *, 'Number of GRUs in hydrology file: ',I
   PRINT *, 'Number of GRUs in drainage database: ',NTYPE
@@ -152,7 +152,7 @@ IF(I/=NTYPE) THEN
   STOP
 ENDIF
 
-READ(23,"(I8)") DEPPAR
+READ(23,*) DEPPAR
 READ(23,*)
 
 ALLOCATE(DEPPARVAL(DEPPAR,NTYPE))
