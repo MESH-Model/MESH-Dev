@@ -3427,7 +3427,7 @@ DO K=1, WF_NUM_POINTS
                    cp%RHOSROW(I,M),WSNOROW(I,M),ALTOT,ROFROW(I,M), &
                    TPN,cp%ZPNDROW(I,M)
     WRITE(150+k*10+5,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-                   '6(F7.2,",",2(F6.3,",")),(F8.2,","),2(F8.4,","),'// &
+                   TRIM(ADJUSTL(IGND_CHAR))//'(F7.2,",",2(F6.3,",")),(F8.2,","),2(F8.4,","),'// &
                    '(F8.2,","),(F8.3,","))') &
                    IHOUR,IMIN,IDAY,IYEAR, &
                    (cp%TBARROW(I,M,J)-TFREZ,cp%THLQROW(I,M,J), &
