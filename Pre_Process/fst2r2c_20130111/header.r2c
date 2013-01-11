@@ -1,0 +1,59 @@
+########################################
+:FileType r2c  ASCII  EnSim 1.0         
+#                                       
+# DataType               2D Rect Cell   
+#                                       
+:Application             EnSimHydrologic
+:Version                 2.1.23         
+:WrittenBy          Muluneh                                 
+:CreationDate       2010-08-06  11:52
+#                                       
+#---------------------------------------
+:SourceFileName               SSRB_Map.map                  
+:NominalGridSize_AL    17173.775
+:ContourInterval           1.000
+:ImperviousArea            0.000
+:ClassCount                   11
+:NumRiverClasses               1
+:ElevConversion            1.000
+:TotalNumOfGrids             635
+:numGridsInBasin             634
+:DebugGridNo                 317
+#                                       
+#                                       
+:Projection         LATLONG   
+:Ellipsoid          GRS80     
+#                                       
+:xOrigin                -116.737999
+:yOrigin                  48.373001
+#                                       
+:AttributeName 1 Rank         
+:AttributeName 2 Next         
+:AttributeName 3 DA           
+:AttributeName 4 Bankfull     
+:AttributeName 5 ChnlSlope    
+:AttributeName 6 Elev         
+:AttributeName 7 ChnlLength   
+:AttributeName 8 IAK          
+:AttributeName 9 IntSlope     
+:AttributeName 10 Chnl        
+:AttributeName 11 Reach       
+:AttributeName 12 GridArea    
+:AttributeName 13 Class  1
+:AttributeName 14 Class  2
+:AttributeName 15 Class  3
+:AttributeName 16 Class  4
+:AttributeName 17 Class  5
+:AttributeName 18 Class  6
+:AttributeName 19 Class  7
+:AttributeName 20 Class  8
+:AttributeName 21 Class  9
+:AttributeName 22 Class 10
+:AttributeName 23 Class 11
+#                                       
+:xCount                        3
+:yCount                        3
+:xDelta                    0.200000
+:yDelta                    0.200000
+#                                       
+:EndHeader                              
