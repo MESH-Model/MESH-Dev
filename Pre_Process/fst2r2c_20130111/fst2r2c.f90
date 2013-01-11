@@ -87,6 +87,7 @@
       character*100 fstName          !FST file name (Input file)
       character*100 r2cName          !R2C file name (Output file)
       character*100 r2cFormat        !Format for the data (body) section of the R2C file
+      integer       Counter          !Time stamp
 
 !     Local variables
       integer       i,j,ier,iunfst,iunr2c,ifh,ni,nj,nk
@@ -98,7 +99,7 @@
       real, dimension(:,:), allocatable ::fldr2c,fldfst
     
 !     get command line arguments
-      if(iargc() .ne. 10)then
+      if(iargc() .ne. 11)then
          print*,'ERROR: 10 arguments needed: '
          print*,'1 - FST file name (Input file)',                      &
                 '2 - FST variable name to be extracted ',              &
@@ -109,7 +110,8 @@
                 '7 - Conversion factor - For addition',                &
                 '8 - Variable attribute name for the R2C header file', &
                 '9 - Variable unit (eg. mm/s) for the R2C header file',&
-                '10 - Format for data (body) section of the R2C file.'
+                '10 - Format for data (body) section of the R2C file.',&
+                '11 - Time stamp for the R2C file.'
          call exit(1)
       else
          call getarg(1, fstName)
@@ -126,6 +128,8 @@
          call getarg(8, attrName)
          call getarg(9, attrUnit)
          call getarg(10, r2cFormat)
+         call getarg(11, arg)
+         read(arg,*) Counter
       endif
 
 !     Screen output - FST file name
@@ -253,7 +257,7 @@
 
 !           Write time stamp to R2C file
             write(iunr2c,'(A,I8,I8,A,A,A,A,A)'), &
-               ':Frame ',ip2,ip2,' "',strymd,' ',strhms,'"'
+               ':Frame ',Counter+ifh-ip2start,Counter+ifh-ip2start,' "',strymd,' ',strhms,'"'
 
 !           Write data to R2C file
             do j = 1, yCount
