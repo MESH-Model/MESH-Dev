@@ -1,0 +1,22 @@
+#                      makefile for FST2R2C
+#                       Compile on Linux
+#
+FC=r.compile
+#LFLAG=-fast
+LFLAG=-src
+RMNLIB=-librmn rmn
+
+OBJECTS=fst2r2cV.o
+SRCFILES=fst2r2cV.f90
+fst2r2cV: ${OBJECTS}
+	$(FC) -src $(SRCFILES) -o fst2r2cV $(RMNLIB)
+	@echo "fst2r2cV is now up to date."
+
+#Compiling rules
+%.o: %.f90
+	$(FC) $(LFLAG) $<
+
+#Cleaning everything
+clean:
+	rm *.mod *.o
+#End of the makefile
