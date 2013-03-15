@@ -517,7 +517,10 @@
 !>
 !> Read the mesh_parameters_hydrology.ini file
       ALLOCATE(hp%ZSNLROW(NA, NTYPE), hp%ZPLGROW(NA, NTYPE),
-     +         hp%ZPLSROW(NA, NTYPE), hp%FRZCROW(NA,NTYPE))
+     +         hp%ZPLSROW(NA, NTYPE), hp%FRZCROW(NA,NTYPE),
+     +         hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE),
+     +         hp%BROW   (NA, NTYPE), hp%K1ROW  (NA, NTYPE),
+     +         hp%K2ROW  (NA, NTYPE))
       
       NYEARS = IYEAR_END - IYEAR_START + 1
       ALLOCATE (t0_ACC(NYEARS))

@@ -34,8 +34,15 @@
      7                  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,
 *FOR WATDRN3
      8                  NA,NTYPE,ILMOS,JLMOS,
-     9                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+     9                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,
+     +                  CMIN,      CMAX,      B,         K1,        K2,
+     1                  ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, 
+     2                  UM1CS,     UM1C,      UM1G,      UM1GS, 
+     3                  QM1CS,     QM1C,      QM1G,      QM1GS, 
+     4                  QM2CS,     QM2C,      QM2G,      QM2GS,  UMQ,
+     5                  FSTRCS,    FSTRC,     FSTRG,    FSTRGS)
 C                                                                        
+C     * DEC 09/11 - M.MEKONNEN. FOR PDMROF.
 C     * JUN 03/11 - D.PRINCZ.   FOR RIC'S WATDRN3.
 C     * DEC 07/09 - D.VERSEGHY. ADD RADD AND SADD TO WPREP CALL.
 C     * JAN 06/09 - D.VERSEGHY. INCREASE LIMITING SNOW AMOUNT.
@@ -282,6 +289,22 @@ C
       REAL, DIMENSION(NTYPE,IG) :: BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,
      1  BFMIN,BQMAX
       
+C     * PDMROF
+      REAL CMIN(ILG), CMAX(ILG), B(ILG), K1(ILG), K2(ILG)
+
+      REAL ZPNDPRECS(ILG),ZPONDPREC(ILG),ZPONDPREG(ILG),ZPNDPREGS(ILG),
+     1     UM1CS    (ILG),UM1C     (ILG),UM1G     (ILG),UM1GS    (ILG), 
+     2     QM1CS    (ILG),QM1C     (ILG),QM1G     (ILG),QM1GS    (ILG), 
+     3     QM2CS    (ILG),QM2C     (ILG),QM2G     (ILG),QM2GS    (ILG),
+     4     UMQCS    (ILG),UMQC     (ILG),UMQG     (ILG),UMQGS    (ILG),
+     5     UMQ      (ILG),
+     6     FSTRCS   (ILG),    FSTRC(ILG),    FSTRG(ILG),   FSTRGS(ILG) 
+      UMQ   = 0.0
+      UMQCS = 0.0
+      UMQC  = 0.0
+      UMQG  = 0.0
+      UMQGS = 0.0
+
 C
 C-----------------------------------------------------------------------
 C     * PREPARATION.
@@ -384,6 +407,14 @@ C
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSCS,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+          IF(IWF == 2)THEN
+             CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FCS,
+     1                   ZPNDPRECS,ZPNDCS, FSTRCS, TPNDCS,
+     2                   OVRFLW,   TOVRFL, RUNFCS, TRNFCS,  TFREZ,
+     3                   CMIN,     CMAX,   B,      K1,      K2,
+     4                   UM1CS,  QM1CS,  QM2CS,   UMQCS,    DELT)
+          ELSE
+
 !Craig Thompson added call to watrof, june 2008.
           CALL WATROF(THLQCS,THICCS,ZPNDCS,TPNDCS,OVRFLW,TOVRFL,
      1                SUBFLW,TSUBFL,RUNFCS,TRNFCS,FCS,ZPLMCS,
@@ -392,6 +423,7 @@ C
      4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
      6                NA,NTYPE,ILMOS,JLMOS,
      7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+          ENDIF
           CALL TMCALC(TBARCS,THLQCS,THICCS,HCPCS,TPNDCS,ZPNDCS,
      1                TSNOCS,ZSNOCS,ALBSCS,RHOSCS,HCPSCS,TBASCS,
      2                OVRFLW,TOVRFL,RUNFCS,TRNFCS,HMFG,HTC,HTCS,
@@ -471,6 +503,14 @@ C
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSGS,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+          IF(IWF == 2)THEN
+             CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FGS,
+     1                   ZPNDPREGS,ZPNDGS, FSTRGS, TPNDGS,
+     2                   OVRFLW,   TOVRFL, RUNFGS, TRNFGS,  TFREZ,
+     3                   CMIN,     CMAX,   B,      K1,      K2,
+     4                   UM1GS,  QM1GS,  QM2GS,   UMQGS,    DELT)
+          ELSE
+
 !Craig Thompson added call to watrof, june 2008.
           CALL WATROF(THLQGS,THICGS,ZPNDGS,TPNDGS,OVRFLW,TOVRFL,
      1                SUBFLW,TSUBFL,RUNFGS,TRNFGS,FGS,ZPLMGS,
@@ -479,6 +519,7 @@ C
      4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
      6                NA,NTYPE,ILMOS,JLMOS,
      7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+          ENDIF
           CALL TMCALC(TBARGS,THLQGS,THICGS,HCPGS,TPNDGS,ZPNDGS,
      1                TSNOGS,ZSNOGS,ALBSGS,RHOSGS,HCPSGS,TBASGS,
      2                OVRFLW,TOVRFL,RUNFGS,TRNFGS,HMFG,HTC,HTCS,
@@ -544,6 +585,14 @@ C
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSC,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+          IF(IWF == 2)THEN
+             CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FC,
+     1                   ZPONDPREC,ZPONDC, FSTRC, TPONDC,
+     2                   OVRFLW,   TOVRFL, RUNFC, TRUNFC,  TFREZ,
+     3                   CMIN,     CMAX,   B,      K1,      K2,
+     4                   UM1C,     QM1C,   QM2C,   UMQC,    DELT)
+          ELSE
+
 !Craig Thompson added call to watrof, june 2008.
           CALL WATROF(THLQCO,THICCO,ZPONDC,TPONDC,OVRFLW,TOVRFL,
      1                SUBFLW,TSUBFL,RUNFC,TRUNFC,FC,ZPLIMC,
@@ -552,6 +601,7 @@ C
      4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
      6                NA,NTYPE,ILMOS,JLMOS,
      7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+          ENDIF
           CALL TMCALC(TBARC,THLQCO,THICCO,HCPCO,TPONDC,ZPONDC,
      1                TSNOWC,ZSNOWC,ALBSC,RHOSC,HCPSC,TBASC,
      2                OVRFLW,TOVRFL,RUNFC,TRUNFC,HMFG,HTC,HTCS,
@@ -611,6 +661,14 @@ C
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSG,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+          IF(IWF == 2)THEN
+             CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FG,
+     1                   ZPONDPREG,ZPONDG, FSTRG, TPONDG,
+     2                   OVRFLW,   TOVRFL, RUNFG, TRUNFG,  TFREZ,
+     3                   CMIN,     CMAX,   B,      K1,      K2,
+     4                   UM1G,     QM1G,   QM2G,   UMQG,    DELT)
+          ELSE
+
 !Craig Thompson added call to watrof, june 2008.
           CALL WATROF(THLQGO,THICGO,ZPONDG,TPONDG,OVRFLW,TOVRFL,
      1                SUBFLW,TSUBFL,RUNFG,TRUNFG,FG,ZPLIMG,
@@ -619,6 +677,7 @@ C
      4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
      6                NA,NTYPE,ILMOS,JLMOS,
      7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+          ENDIF
           CALL TMCALC(TBARG,THLQGO,THICGO,HCPGO,TPONDG,ZPONDG,
      1                TSNOWG,ZSNOWG,ALBSG,RHOSG,HCPSG,TBASG,
      2                OVRFLW,TOVRFL,RUNFG,TRUNFG,HMFG,HTC,HTCS,
@@ -648,12 +707,15 @@ C
      3              FG (I)*(TBASG (I)+TFREZ)
           RUNOFF(I)=FCS(I)*RUNFCS(I) + FGS(I)*RUNFGS(I) +
      1              FC (I)*RUNFC (I) + FG (I)*RUNFG (I)
+          UMQ(I)=FCS(I)*UMQCS(I) + FGS(I)*UMQGS(I) +
+     1              FC (I)*UMQC (I) + FG (I)*UMQG (I)
           IF(RUNOFF(I).GT.0.0) 
      1        TRUNOF(I)=(FCS(I)*RUNFCS(I)*TRNFCS(I) + 
      2                   FGS(I)*RUNFGS(I)*TRNFGS(I) +
      3                   FC (I)*RUNFC (I)*TRUNFC(I) + 
      4                   FG (I)*RUNFG (I)*TRUNFG(I))/RUNOFF(I) 
-          RUNOFF(I)=RUNOFF(I)*RHOW/DELT                                       
+          RUNOFF(I)=RUNOFF(I)*RHOW/DELT
+          UMQ(I)   = UMQ(I)*RHOW/DELT                           
           OVRFLW(I)=OVRFLW(I)*RHOW/DELT
           SUBFLW(I)=SUBFLW(I)*RHOW/DELT
           BASFLW(I)=BASFLW(I)*RHOW/DELT

@@ -32,6 +32,9 @@
      U                  TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT,
      V                  WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  GFLXGAT,
      W                  HMFGGAT,HTCGAT, QFCGAT, ITCTGAT,
+C BEGIN: PDMROF
+     1                  CMINGAT,CMAXGAT,BGAT,   K1GAT,  K2GAT,      
+C END: PDMROF
      X                  ILMOS,JLMOS,IWMOS,JWMOS,
      Y                  NML,NL,NM,ILG,IG,IC,ICP1,
      Z                  TBARROW,THLQROW,THICROW,TPNDROW,ZPNDROW,
@@ -55,7 +58,11 @@
      +                  VPDGRD, TADPGRD,RHOAGRD,RPCPGRD,TRPCGRD,
      +                  SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD,
      +                  GGEOGRD, MANNROW, MANNGAT, DDROW, DDGAT,
-     +                  SANDROW,SANDGAT,CLAYROW,CLAYGAT)
+     +                  SANDROW,SANDGAT,CLAYROW,CLAYGAT,
+C BEGIN: PDMROF
+     1                  CMINROW, CMAXROW, BROW, K1ROW, K2ROW)
+C END: PDMROF
+
 C     * JUN 17/08 - D.HOLMAN. ADD MANNROW, MANNGAT, DDROW, DDGAT.
 C
 C     * MAR 23/06 - D.VERSEGHY. ADD WSNO,FSNO,GGEO.
@@ -192,6 +199,12 @@ C
       
 C * WATROF DECLARATIONS
       REAL  DDROW(NL,NM),MANNROW(NL,NM),DDGAT(ILG),MANNGAT(ILG)
+
+C * PDMROF DECLARATIONS
+      REAL  CMAXROW(NL,NM), CMINROW(NL,NM), BROW(NL,NM),
+     1      K1ROW(NL,NM),   K2ROW(NL,NM)
+      REAL  CMINGAT(ILG),   CMAXGAT(ILG),   BGAT(ILG),
+     1      K1GAT(ILG),     K2GAT(ILG)
 C
 C----------------------------------------------------------------------
 !$omp parallel do
@@ -316,6 +329,11 @@ C----------------------------------------------------------------------
           WTRSGAT(K)=0.0
           WTRGGAT(K)=0.0
           DRGAT  (K)=0.0
+          CMINGAT (K) = CMINROW (ILMOS(K),JLMOS(K))            
+          CMAXGAT (K) = CMAXROW (ILMOS(K),JLMOS(K))            
+          BGAT    (K) = BROW    (ILMOS(K),JLMOS(K))            
+          K1GAT   (K) = K1ROW   (ILMOS(K),JLMOS(K))            
+          K2GAT   (K) = K2ROW   (ILMOS(K),JLMOS(K))            
 100   CONTINUE
 C
       DO 250 L=1,IG

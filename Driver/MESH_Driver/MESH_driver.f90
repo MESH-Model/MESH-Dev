@@ -761,6 +761,14 @@ REAL ::  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
 INTEGER, ALLOCATABLE, DIMENSION(:):: INFILTYPE
 REAL, DIMENSION(:), ALLOCATABLE   :: SI,TSI,SNOWMELTD,SNOWMELTD_LAST, &
                                      SNOWINFIL,CUMSNOWINFILCS,MELTRUNOFF,CUMSNOWINFILGS
+!* PDMROF
+REAL                              :: ZPND, FSTR
+REAL, DIMENSION(:), ALLOCATABLE   :: CMINPDM,   CMAXPDM,   BPDM,      K1PDM,   K2PDM, &
+                                     ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS,      &
+                                     UM1CS,     UM1C,      UM1G,      UM1GS,          &
+                                     QM1CS,     QM1C,      QM1G,      QM1GS,          &
+                                     QM2CS,     QM2C,      QM2G,      QM2GS,   UMQ,   &
+                                     FSTRCS,    FSTRC,     FSTRG,    FSTRGS
 
 ! To use with variable format expressions in writing some output files
 CHARACTER*20 IGND_CHAR
@@ -2031,6 +2039,40 @@ ENDDO
              MELTRUNOFF    = 0.0
              SI            = 0.20
              TSI           = -0.10
+!* PDMROF
+    ALLOCATE(CMINPDM(ILG),   CMAXPDM(ILG),   BPDM(ILG),      K1PDM(ILG),     &
+             K2PDM(ILG),     ZPNDPRECS(ILG), ZPONDPREC(ILG), ZPONDPREG(ILG), &
+             ZPNDPREGS(ILG),                                                 &
+             UM1CS    (ILG), UM1C    (ILG),  UM1G    (ILG),  UM1GS    (ILG), &
+             QM1CS    (ILG), QM1C    (ILG),  QM1G    (ILG),  QM1GS    (ILG), &
+             QM2CS    (ILG), QM2C    (ILG),  QM2G    (ILG),  QM2GS    (ILG), &
+             UMQ      (ILG),                                                 &
+             FSTRCS   (ILG), FSTRC   (ILG),  FSTRG   (ILG),  FSTRGS   (ILG))
+
+!* PDMROF: INITIALIZE VARIABLES
+ZPNDPRECS = 0.0
+ZPONDPREC = 0.0
+ZPONDPREG = 0.0
+ZPNDPREGS = 0.0
+ZPND      = 0.0
+UM1CS     = 0.0
+UM1C      = 0.0
+UM1G      = 0.0
+UM1GS     = 0.0
+QM1CS     = 0.0
+QM1C      = 0.0
+QM1G      = 0.0
+QM1GS     = 0.0
+QM2CS     = 0.0
+QM2C      = 0.0
+QM2G      = 0.0
+QM2GS     = 0.0
+UMQ       = 0.0
+FSTRCS    = 0.0
+FSTRC     = 0.0
+FSTRG     = 0.0
+FSTRGS    = 0.0
+FSTR      = 0.0
 !>
 !>****************CHECK RESUME FILE***************************************************
 !>
@@ -2333,7 +2375,7 @@ DO I=1, wf_num_points
    "EVAPACC(I)')")
   WRITE(150+i*10+4,"('IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,"// &
    "SNOMLT,BEG,GTOUT,SNOROW(I M),RHOSROW(I M),WSNOROW(I M),ALTOT,"// &
-   "ROFROW(I M),TPN,ZPNDROW(I M)')")
+   "ROFROW(I M),TPN,ZPNDROW(I M),ZPND,FSTR')")
 ! Set the appropriate format statement for writing to the next file
   WRITE(FMT,*) ""
   DO J = 1, IGND
@@ -2732,8 +2774,11 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              QFGGAT, QFNGAT, QFCLGAT,QFCFGAT,ROFGAT, &
              ROFOGAT,ROFSGAT,ROFBGAT,TROFGAT,TROOGAT, &
              TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
-             WTRCGAT,WTRSGAT,WTRGGAT,DRGAT, GFLXGAT, &
+             WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  GFLXGAT, &
              HMFGGAT,HTCGAT, QFCGAT, ITCTGAT, &
+!BEGIN: PDMROF
+             CMINPDM,CMAXPDM,BPDM,   K1PDM,  K2PDM,      &
+!END: PDMROF
              ILMOS,JLMOS,IWMOS,JWMOS,NML,NA,NTYPE, &
              NA*NTYPE,IGND,ICAN,ICP1,cp%TBARROW,cp%THLQROW, &
              cp%THICROW,cp%TPNDROW,cp%ZPNDROW,TBASROW,cp%ALBSROW, &
@@ -2756,7 +2801,10 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              VPDGRD, TADPGRD,RHOAGRD,RPCPGRD,TRPCGRD, &
              SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD, &
              GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
-             cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT)
+             cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT,     &
+!BEGIN: PDMROF
+             hp%CMINROW,hp%CMAXROW,hp%BROW,hp%K1ROW,hp%K2ROW)
+!END: PDMROF
 
 call resume_state_r2c(NML,NLTEST,NMTEST,NCOUNT, &
                     IMIN,ACLASS,NR2C_R,GRD_R,GAT_R,GRDGAT_R,R2C_ATTRIBUTES_R,&
@@ -3112,8 +3160,11 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              QFGGAT, QFNGAT, QFCLGAT,QFCFGAT,ROFGAT, &
              ROFOGAT,ROFSGAT,ROFBGAT,TROFGAT,TROOGAT, &
              TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
-             WTRCGAT,WTRSGAT,WTRGGAT,DRGAT, GFLXGAT, &
+             WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  GFLXGAT, &
              HMFGGAT,HTCGAT, QFCGAT, ITCTGAT, &
+!BEGIN: PDMROF
+             CMINPDM,CMAXPDM,BPDM,   K1PDM,   K2PDM,  &
+!END: PDMROF
              ILMOS,JLMOS,IWMOS,JWMOS,NML,NA,NTYPE, &
              NA*NTYPE,IGND,ICAN,ICP1,cp%TBARROW,cp%THLQROW, &
              cp%THICROW,cp%TPNDROW,cp%ZPNDROW,TBASROW,cp%ALBSROW, &
@@ -3136,7 +3187,10 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              VPDGRD, TADPGRD,RHOAGRD,RPCPGRD,TRPCGRD, &
              SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD, &
              GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
-             cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT)
+             cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT,     &
+!BEGIN: PDMROF
+             hp%CMINROW,hp%CMAXROW,hp%BROW,hp%K1ROW,hp%K2ROW)
+!END: PDMROF
 
 CALL CLASSI(VPDGAT,TADPGAT,PADRGAT,RHOAGAT,RHSIGAT, &
             RPCPGAT,TRPCGAT,SPCPGAT,TSPCGAT,TAGAT,QAGAT, &
@@ -3282,7 +3336,14 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
                   MELTRUNOFF,SNOWINFIL,CUMSNOWINFILCS, CUMSNOWINFILGS, &
                   SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, &
                   NA,NTYPE,ILMOS,JLMOS, &
-                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX, &
+!FOR PDMROF
+                  CMINPDM,   CMAXPDM,   BPDM,      K1PDM,    K2PDM,&
+                  ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS,      & 
+                  UM1CS,     UM1C,      UM1G,      UM1GS,          &
+                  QM1CS,     QM1C,      QM1G,      QM1GS,          &
+                  QM2CS,     QM2C,      QM2G,      QM2GS,     UMQ, &
+                  FSTRCS,    FSTRC,     FSTRG,    FSTRGS)
 !
 !========================================================================
 !
@@ -3300,7 +3361,7 @@ CALL CLASSZ (1,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
              1,      NML,    ILG,    IGND,   N    )
 !
 !=======================================================================
-
+ROFGAT = ROFGAT - UMQ
 CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,cp%TPNDROW, &
              cp%ZPNDROW,TBASROW,cp%ALBSROW,cp%TSNOROW,cp%RHOSROW, &
              cp%SNOROW,cp%TCANROW,cp%RCANROW,cp%SCANROW,cp%GROROW, &
@@ -3418,16 +3479,18 @@ DO K=1, WF_NUM_POINTS
 	      STOP
     ENDIF
 
-
+    ZPND = ZPNDPRECS(I_OUT) * FCS(I_OUT) + ZPONDPREC(I_OUT) * FC(I_OUT) + ZPONDPREG(I_OUT) * FG(I_OUT) + ZPNDPREGS(I_OUT) * FGS(I_OUT)
+    FSTR = FSTRCS(I_OUT)    * FCS(I_OUT) + FSTRC    (I_OUT) * FC(I_OUT) + FSTRG    (I_OUT) * FG(I_OUT) + FSTRGS   (I_OUT) * FGS(I_OUT)
+    
     WRITE(150+k*10+4,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
                    '9(F8.2,","),2(F7.3,","),(E11.3,","),(F8.2,","),'// &
-                   '(F12.4,","))') &
+                   '3(F12.4,","))') &
                    IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH, &
                    QE,SNOMLT,BEG,GTOUT,cp%SNOROW(I,M), &
                    cp%RHOSROW(I,M),WSNOROW(I,M),ALTOT,ROFROW(I,M), &
-                   TPN,cp%ZPNDROW(I,M)
+                   TPN,cp%ZPNDROW(I,M),ZPND,FSTR
     WRITE(150+k*10+5,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-                   TRIM(ADJUSTL(IGND_CHAR))//'(F7.2,",",2(F6.3,",")),(F8.2,","),2(F8.4,","),'// &
+                   '6(F7.2,",",2(F6.3,",")),(F8.2,","),2(F8.4,","),'// &
                    '(F8.2,","),(F8.3,","))') &
                    IHOUR,IMIN,IDAY,IYEAR, &
                    (cp%TBARROW(I,M,J)-TFREZ,cp%THLQROW(I,M,J), &

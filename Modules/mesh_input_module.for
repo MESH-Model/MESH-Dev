@@ -73,7 +73,9 @@
 !> variables for read_parameters_hydrology
       TYPE HydrologyParameters
         REAL, DIMENSION(:,:), ALLOCATABLE :: ZSNLROW, ZPLSROW, ZPLGROW, 
-     +                                       FRZCROW
+     +                                       FRZCROW,
+     +                                       CMAXROW, CMINROW, BROW,
+     +                                       K1ROW,   K2ROW
       END TYPE
 
       end module MESH_INPUT_MODULE
