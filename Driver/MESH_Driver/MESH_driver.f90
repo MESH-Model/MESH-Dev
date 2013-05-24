@@ -4209,8 +4209,8 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
           (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO)
 
     DO I = 1, WF_NUM_POINTS
-      WRITE(6, "('  'A, T18, 3F10.3)") op%DIR_OUT(I), &
-        PRE_OUT(I), EVAP_OUT(I), ROF_OUT(I)
+!      WRITE(6, "('  'A, T18, 3F10.3)") op%DIR_OUT(I), &
+!        PRE_OUT(I), EVAP_OUT(I), ROF_OUT(I)
       PRE_OUT(I) = 0.0 !RESET ACCUMULATORS
       EVAP_OUT(I) = 0.0
       ROF_OUT = 0.0
