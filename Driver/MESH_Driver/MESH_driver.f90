@@ -71,7 +71,7 @@ USE EF_MODULE
 USE MESH_INPUT_MODULE
 USE FLAGS
 IMPLICIT NONE
-
+INTRINSIC MAXLOC
 !> DAN  USE RTE SUBROUTINES FOR READING EVENT FILE AND SHD FILE, AND
 !> DAN  WRITING R2C-FORMAT OUTPUT FILES      
 
@@ -749,7 +749,10 @@ TYPE(HydrologyParameters) :: hp
 INTEGER NCAL
 LOGICAL EXISTS,R2COUTPUT
 REAL    SAE,SAESRT,SAEMSRT,FBEST,FTEST
-REAL, DIMENSION(:,:), ALLOCATABLE :: QOBS,QSIM
+REAL, DIMENSION(:,:), ALLOCATABLE :: QOBS ,QSIM
+
+!STATISTICS FOR MONTE CARLO SIMULATION
+REAL MAE,RMSE,BIAS,NSD,NSW,TPD,TPW
 
 INTEGER, PARAMETER :: R2CFILEUNITSTART = 500
 INTEGER NR2C,DELTR2C,NR2CFILES,NR2CSTATES,NR2C_R,DELTR2C_R,NR2C_S,DELTR2C_S
@@ -4764,6 +4767,35 @@ IF(AUTOCALIBRATIONFLAG .GE. 1)THEN
       WRITE(100,*)FTEST
       CLOSE(100)
 ENDIF
+
+!---------------------SIMULATION STATISTICS-------------------------
+CALL SIMSTATS(QOBS(1:NCAL,1),QSIM(1:NCAL,1),NCAL,BIAS,NSD,NSW,TPD)
+!-------------------------------------------------------------------
+
+!---------------------For MonteCarlo Simulations--------------------
+INQUIRE(FILE='MonteCarlo.txt',EXIST=EXISTS)
+IF(EXISTS)THEN
+   OPEN(100,FILE='MonteCarlo.txt',POSITION='APPEND',STATUS='OLD')
+ELSE
+   OPEN(100,FILE='MonteCarlo.txt',STATUS='UNKNOWN')
+   WRITE(100,*)'     BIAS      NSD       NSW        TPD'
+ENDIF
+
+WRITE(100,'(3(2X,F8.5),1(2X,I8))')BIAS,NSD,NSW,int(TPD)
+CLOSE(100)
+!-------------------------------------------------------------------
+
+!---------------------For Nash Sutcliffe coefficient calculation----
+OPEN(100,FILE='NS.txt',STATUS='UNKNOWN')
+WRITE(100,*)NSD
+CLOSE(100)
+!-------------------------------------------------------------------
+
+!---------------------For Nash Sutcliffe coefficient calculation----
+OPEN(100,FILE='NSW.txt',STATUS='UNKNOWN')
+WRITE(100,*)NSW
+CLOSE(100)
+!-------------------------------------------------------------------
 
 DO I=1, wf_num_points
   CLOSE(UNIT=150+i*10+1)
