@@ -3479,8 +3479,10 @@ DO K=1, WF_NUM_POINTS
 	      STOP
     ENDIF
 
-    ZPND = ZPNDPRECS(I_OUT) * FCS(I_OUT) + ZPONDPREC(I_OUT) * FC(I_OUT) + ZPONDPREG(I_OUT) * FG(I_OUT) + ZPNDPREGS(I_OUT) * FGS(I_OUT)
-    FSTR = FSTRCS(I_OUT)    * FCS(I_OUT) + FSTRC    (I_OUT) * FC(I_OUT) + FSTRG    (I_OUT) * FG(I_OUT) + FSTRGS   (I_OUT) * FGS(I_OUT)
+    ZPND = ZPNDPRECS(I_OUT) * FCS(I_OUT) + ZPONDPREC(I_OUT) * FC(I_OUT) + &
+           ZPONDPREG(I_OUT) * FG(I_OUT) + ZPNDPREGS(I_OUT) * FGS(I_OUT)
+    FSTR = FSTRCS(I_OUT)    * FCS(I_OUT) + FSTRC    (I_OUT) * FC(I_OUT) + &
+           FSTRG    (I_OUT) * FG(I_OUT) + FSTRGS   (I_OUT) * FGS(I_OUT)
     
     WRITE(150+k*10+4,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
                    '9(F8.2,","),2(F7.3,","),(E11.3,","),(F8.2,","),'// &
