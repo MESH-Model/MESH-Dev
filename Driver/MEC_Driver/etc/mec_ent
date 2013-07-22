@@ -1,0 +1,85 @@
+set -evx
+#-----------------------------------------------------------
+#                      MEC System
+#       Modeling Environmental Community System
+#Système pour la Modélisation Environnementale Communautaire
+#
+#          BASED ON THE SHELL OF THE GEM MODEL
+#
+#         STEP #1: PREPARE THE SIMULATION (DATA)
+#-----------------------------------------------------------
+#
+  DIR_ICI=`pwd`
+################ Settings ################
+#
+# Data Directory:
+  DATA_DIR=${DIR_ICI}/data
+# Climatological File:
+  CLIMATOLOGY_FILE=${DIR_ICI}/climat/clim.reg.nouv
+# Geophysical File:
+  GEOPHYSICAL_FILE=${DIR_ICI}/geophy/gengeoout.fst_0000001-0000001
+# Based on GEM version:
+  version=3.2.2
+  export version
+#
+# Settings in the gem_settings.nml
+# in gement namelist:
+#	e_schm_offline_L  = .true. : To activate the off-line mode
+#	E_tr3d_list_S     = 'FI',  : Fields used to pilot the surface models
+#                  Available:       
+#			     P0: SURFACE PRESSURE			     
+#			     FI: IR ENERGY FLUX TOWARDS GROUND
+#	                     FB: VIS FLUX TOWARDS GROUND
+#			     N4: ACCUM. OF SOLAR RADATION (during one simul.)
+#			     N40:ACCUM. OF SOLAR RADATION (between 2 
+#                                consecutive boundary condition(BC) time frames)
+#                            AD: ACCUMULATION OF FDSI (during one simul.)
+#                            AD0:ACCUMULATION OF FDSI (between 2 
+#                                consecutive boundary condition(BC) time frames)
+#                            PR: TOTAL ACCUM. OF TOTAL PRECIP. (during one simul.)
+#                            PR0:TOTAL ACCUM. OF TOTAL PRECIP. (between 2 
+#                                consecutive boundary condition(BC) time frames)
+#                            RT: TOTAL PRECIPITATION RATE (instantaneous)
+#       Offline_int_accu_S = Type of interpolation used for accumulators 
+#                            'CONST or LINEAR': default LINEAR
+#	Offline_ip1a       = ip1 value for piloting fields used default 11950
+#       P_pbl_schsl_s      = SCHMSOL: land surface processes ('ISBA or CLASS')
+#	Pil_runstrt_S      = Starting date for LAM run    (yyyymmdd.hhmmss)
+#       Pil_datacvrg       = Data coverage period of pilot files in seconds.
+#                            The entry program will generate/process
+#                            Pil_datacvrg/Pil_nesdt BC  time frames.
+#       Pil_nesdt          = Number of seconds between 2 consecutive 
+#                            boundary condition(BC) time frames    
+# 
+# in namelist gem_cfgs
+#	Step_total         = Total number of timesteps for model run
+#       Step_rsti          = Number of timesteps to save a restart file
+#
+# in grid namelist
+#       Grd_typ_S          ='LU' (MEC works only ine the LAM mode of GEM)
+#
+# in ptopo namelist
+#       Ptopo_npex,y       = Number of PE's used along X,Y axis 
+#			     MEC works only with a maximum of 2 PE along 
+#                            each direction.  
+#
+# in Physics namelist:
+#	P_pbl_zua          = height of wind input for surface flux calculate
+#	P_pbl_zta          = height of temp and humidity input for SFX calc.
+#                            default: calculated automatically with ip1a
+##########################################
+#
+/bin/rm -rf surface_ent_listing
+# Print infos on screen
+  mec_ent_print_1
+#
+# Run GEMNTR
+. r.sm.dot gem $version >> surface_ent_listing
+. r.call.dot Um_runent.sh -inrep $DATA_DIR -climato ${CLIMATOLOGY_FILE} -geophy ${GEOPHYSICAL_FILE}  >> surface_ent_listing
+#
+# Print infos (Off-line mode) on screen (from the listing surface_ent_listing) 
+#
+  mec_ent_print_2
+#
+#                  END EXECUTION
+#-----------------------------------------------------------

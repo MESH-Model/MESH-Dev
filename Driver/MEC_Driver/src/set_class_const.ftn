@@ -1,0 +1,43 @@
+***S/R SET_CLASS_CONST  -  INITIALIZATION OF CONSTANTS
+*                          FOR THE CLASS PACKAGE
+       subroutine set_class_const
+*
+*Author
+*          B. Bilodeau (June 2004)
+*
+*Revisions
+*          001 V. Fortin (April 2006) Adapt to CLASS 3.3
+*
+*Object
+*          To initialize constants from conshy.cdk and surfcon.cdk for
+*          the CLASS package through calls to CLASS communication 
+*          subroutine class_const
+*
+*Arguments
+*
+**
+*
+#include "impnone.cdk"
+#include "consphy.cdk"
+#include "surfcon.cdk"
+*
+       call class_const ('CPRES'  , CPD    , 1, 'SET')
+       call class_const ('DELTA'  , DELTA  , 1, 'SET')
+       call class_const ('G'      , GRAV   , 1, 'SET')
+       call class_const ('VKC'    , KARMAN , 1, 'SET')
+       call class_const ('GAS'    , RGASD  , 1, 'SET')
+       call class_const ('GASV'   , RGASV  , 1, 'SET')
+       call class_const ('SIGMA'  , STEFAN , 1, 'SET')
+       call class_const ('CELZRO' , TCDK   , 1, 'SET')
+*
+       call class_const ('ANGMAX' , ANGMAX , 1, 'SET')
+       call class_const ('AS'     , AS     , 1, 'SET')
+       call class_const ('ASX'    , ASX    , 1, 'SET')
+       call class_const ('BETA'   , BETA   , 1, 'SET')
+       call class_const ('BS'     , BS     , 1, 'SET')
+       call class_const ('CI'     , CI     , 1, 'SET')
+       call class_const ('FACTN'  , FACTN  , 1, 'SET')
+       call class_const ('HMIN'   , HMIN   , 1, 'SET')
+*
+       return
+       end

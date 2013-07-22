@@ -1,0 +1,3 @@
+      integer nmos
+
+      common /mosaic/ nmos

@@ -1,0 +1,307 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+***S/P INICOVER
+**
+*
+#include "phy_macros_f.h"
+      SUBROUTINE INICOVER( F, FSIZ, KOUNT, NI )
+*
+#include "impnone.cdk"
+*
+      INTEGER NI, KOUNT
+      INTEGER FSIZ,n
+      REAL F(FSIZ)
+      integer i,j
+*
+*
+*Author
+*       Bernard Bilodeau and Stephane Belair (May 2000)
+*
+*Revision
+* 001   B. Dugas (June 2000)
+*            Get it to work
+* 002   B. Bilodeau (June 2001)
+*            Automatic arrays
+* 003   Y. Delage (June 2004)
+*            Include recipes for CLASS
+* 004   A. Lemonsu (June 2005)
+*            Replace vegf by covf
+*            Change the name
+* 005   A. Lemonsu (June 2005)
+*            Invert class 25 and class 26 (according to GENGEO classes)
+* 006   R. Larocque (April 2006)
+*            Changed calls from agvgclas to agvgclas2, put tiles declarations in a cdk;
+*            should not affect functionality
+*
+*
+*Object
+*       Initialize vegetation fields for the surface schemes
+*
+*
+*Arguments
+*
+*       - Input/Ouput -
+* F        field for permanent physics variables
+*       - Input -
+* FSIZ     dimension of F
+* KOUNT    current timestep number
+* NI       horizontal slice dimension
+*
+*
+*NOTES       INISURF has been split in two subroutines:
+*            INISURF and INICOVER. The former calls the latter.
+*
+*
+#include "nclassvg.cdk"
+#include "classlvls.cdk"
+*
+**
+*#include "indx_sfc.cdk"
+*#include "consphy.cdk"
+*#include "isbapar.cdk"
+*#include "surfacepar.cdk"
+*
+#include "options.cdk"
+#include "phybus.cdk"
+#include "mosaic.cdk"
+#include "tuiles.cdk"
+*
+*********************************************************************
+*                TABLES DESCRIBING THE ANNUAL EVOLUTION OF VEG FIELDS
+*********************************************************************
+*
+*
+      REAL VEGCROPS(13)
+      DATA VEGCROPS/ 
+     1              0.05   , 0.05   , 0.05   , 0.10   , 0.20   , 
+     1              0.40   , 0.80   , 0.80   , 0.90   , 0.05   , 
+     1              0.05   , 0.05   , 0.05                      /
+      SAVE VEGCROPS 
+*
+*
+      REAL LAI6(13), LAI7(13), LAI11(13), LAI14(13), LAI15(13), 
+     1     LAI16(13), LAI17(13), LAI18(13), LAI19(13), LAI22(13), 
+     1     LAI25(13), LAI26(13)
+*
+      DATA LAI6 / 
+     1              0.1   , 0.1   , 0.5   , 1.0   , 2.0   , 
+     1              4.0   , 5.0   , 5.0   , 4.0   , 2.0   , 
+     1              1.0   , 0.1   , 0.1                      /
+      DATA LAI7 / 
+     1              0.1   , 0.1   , 0.5   , 1.0   , 2.0   , 
+     1              4.0   , 5.0   , 5.0   , 4.0   , 2.0   , 
+     1              1.0   , 0.1   , 0.1                      /
+      DATA LAI11/ 
+     1              0.5   , 0.5   , 1.0   , 1.0   , 1.5   , 
+     1              2.0   , 3.0   , 3.0   , 2.0   , 1.5   , 
+     1              1.0   , 0.5   , 0.5                      /
+      DATA LAI14/   
+     1              0.5   , 0.5   , 0.5   , 0.5   , 0.5   , 
+     1              0.5   , 1.0   , 2.0   , 2.0   , 1.5   , 
+     1              1.0   , 1.0   , 0.5                      /
+      DATA LAI15/ 
+     1              0.1   , 0.1   , 0.1   , 0.5   , 1.0   , 
+     1              2.0   , 3.0   , 3.5   , 4.0   , 0.1   , 
+     1              0.1   , 0.1   , 0.1                      /
+      DATA LAI16/ 
+     1              0.1   , 0.1   , 0.1   , 0.5   , 1.0   , 
+     1              2.5   , 4.0   , 5.0   , 6.0   , 0.1   , 
+     1              0.1   , 0.1   , 0.1                      /
+      DATA LAI17/ 
+     1              0.1   , 0.1   , 0.1   , 0.5   , 1.0   , 
+     1              3.0   , 4.0   , 4.5   , 5.0   , 0.1   , 
+     1              0.1   , 0.1   , 0.1                      /
+      DATA LAI18/ 
+     1              0.1   , 0.1   , 0.1   , 0.5   , 1.0   , 
+     1              2.0   , 3.0   , 3.5   , 4.0   , 0.1   , 
+     1              0.1   , 0.1   , 0.1                      /
+      DATA LAI19/ 
+     1              0.1   , 0.1   , 0.1   , 0.5   , 1.0   , 
+     1              3.0   , 4.0   , 4.5   , 5.0   , 0.1   , 
+     1              0.1   , 0.1   , 0.1                      /
+      DATA LAI22/ 
+     1              1.0   , 1.0   , 0.5   , 0.1   , 0.1   , 
+     1              0.1   , 0.1   , 1.0   , 2.0   , 1.5   , 
+     1              1.5   , 1.0   , 1.0                      /
+      DATA LAI25/ 
+     1              3.0   , 3.0   , 3.0   , 4.0   , 4.5   , 
+     1              5.0   , 5.0   , 5.0   , 4.0   , 3.0   , 
+     1              3.0   , 3.0   , 3.0                      /
+      DATA LAI26/ 
+     1              3.0   , 3.0   , 3.0   , 4.0   , 4.5   , 
+     1              5.0   , 5.0   , 5.0   , 4.0   , 3.0   , 
+     1              3.0   , 3.0   , 3.0                      /
+*
+*
+      SAVE LAI6, LAI7, LAI11, LAI14, LAI15, LAI16, LAI17,
+     1     LAI18, LAI19, LAI22, LAI25, LAI26
+*
+*
+*********************************************************************
+*
+*
+      REAL JULIAND
+      REAL JULIEN, JULIENS
+      REAL INTERPVEG
+*
+      EXTERNAL JULIAND, INTERPVEG, AGGCOVERNAT, INISOILI
+*
+************************************************************************
+*     AUTOMATIC ARRAYS
+************************************************************************
+*
+      AUTOMATIC (ALDATD    , REAL   , (NCLASS) )
+      AUTOMATIC (D2DATD    , REAL   , (NCLASS) )
+      AUTOMATIC (RSMINDATD , REAL   , (NCLASS) )
+      AUTOMATIC (LAIDATDN  , REAL   , (NCLASS) )
+      AUTOMATIC (LAIDATDS  , REAL   , (NCLASS) )
+      AUTOMATIC (VEGDATDN  , REAL   , (NCLASS) )
+      AUTOMATIC (VEGDATDS  , REAL   , (NCLASS) )
+      AUTOMATIC (CVDATD    , REAL   , (NCLASS) )
+      AUTOMATIC (RGLDATD   , REAL   , (NCLASS) )
+      AUTOMATIC (GAMMADATD , REAL   , (NCLASS) )
+*
+************************************************************************
+*
+*
+****
+*
+      if(ischmsol.eq.3) then
+*
+*
+*                     Determine the current julian day
+*
+      julien = JULIAND( delt, kount, date )
+*
+*
+*
+*                     Do the aggregation
+*
+        DO i=1,nclass
+          aldatd(i)    = aldat(i)
+          d2datd(i)    = d2dat(i)
+          rsmindatd(i) = RSMINXDAT(i)
+          laidatdn(i)  = laidat(i)
+          laidatds(i)  = laidat(i)
+          vegdatdn(i)  = vegdat(i)
+          vegdatds(i)  = vegdat(i)
+          cvdatd(i)    = cvdat(i)
+          rgldatd(i)   = rgldat(i)
+          gammadatd(i) = gammadat(i)
+        END DO
+*
+*
+*                     Fill the LAIDATD and VEGDATD fields for 
+*                     land use classes varying with seasons
+*                     (i.e., replace the -99 values in the table
+*                     with temporal interpolations from the
+*                     tables above)
+*
+*       tables for northern hemisphere
+*
+        laidatdn( 6)  = interpveg(julien , lai6 )
+        laidatdn( 7)  = interpveg(julien , lai7 )
+        laidatdn(11)  = interpveg(julien , lai11)
+        laidatdn(14)  = interpveg(julien , lai14)
+        laidatdn(15)  = interpveg(julien , lai15)
+        laidatdn(16)  = interpveg(julien , lai16)
+        laidatdn(17)  = interpveg(julien , lai17)
+        laidatdn(18)  = interpveg(julien , lai18)
+        laidatdn(19)  = interpveg(julien , lai19)
+        laidatdn(22)  = interpveg(julien , lai22)
+        laidatdn(25)  = interpveg(julien , lai25)
+        laidatdn(26)  = interpveg(julien , lai26)
+*
+        vegdatdn(15)  = interpveg(julien , vegcrops)
+        vegdatdn(16)  = interpveg(julien , vegcrops)
+        vegdatdn(17)  = interpveg(julien , vegcrops)
+        vegdatdn(18)  = interpveg(julien , vegcrops)
+        vegdatdn(19)  = interpveg(julien , vegcrops)
+*
+*       tables for southern hermisphere
+        juliens = julien  - 183
+        if (juliens.lt.0)
+     +  juliens = juliens + 366
+*
+        laidatds( 6)  = interpveg(juliens, lai6 )
+        laidatds( 7)  = interpveg(juliens, lai7 )
+        laidatds(11)  = interpveg(juliens, lai11)
+        laidatds(14)  = interpveg(juliens, lai14)
+        laidatds(15)  = interpveg(juliens, lai15)
+        laidatds(16)  = interpveg(juliens, lai16)
+        laidatds(17)  = interpveg(juliens, lai17)
+        laidatds(18)  = interpveg(juliens, lai18)
+        laidatds(19)  = interpveg(juliens, lai19)
+        laidatds(22)  = interpveg(juliens, lai22)
+        laidatds(25)  = interpveg(juliens, lai25)
+        laidatds(26)  = interpveg(juliens, lai26)
+*
+        vegdatds(15)  = interpveg(juliens, vegcrops)
+        vegdatds(16)  = interpveg(juliens, vegcrops)
+        vegdatds(17)  = interpveg(juliens, vegcrops)
+        vegdatds(18)  = interpveg(juliens, vegcrops)
+        vegdatds(19)  = interpveg(juliens, vegcrops)
+*
+*
+*
+        CALL aggcovernat( f(covf), laidatdn  , laidatds  , f(lai)    ,
+     1                    f(dlat), ni, nclass, nclassurb )
+        CALL aggcovernat( f(covf), vegdatdn  , vegdatds  , f(vegfrac),
+     1                    f(dlat), ni, nclass, nclassurb )
+        CALL aggcovernat( f(covf), aldatd    , aldatd    , f(alveg)  ,
+     1                    f(dlat), ni, nclass, nclassurb )
+        CALL aggcovernat( f(covf), d2datd    , d2datd    , f(rootdp) ,
+     1                    f(dlat), ni, nclass, nclassurb )
+        CALL aggcovernat( f(covf), rsmindatd , rsmindatd , f(stomr)  ,
+     1                    f(dlat), ni, nclass, nclassurb )
+        CALL aggcovernat( f(covf), cvdatd    , cvdatd    , f(cveg)   ,
+     1                    f(dlat), ni, nclass, nclassurb )
+        CALL aggcovernat( f(covf), rgldatd   , rgldatd   , f(rgl)    ,
+     1                    f(dlat), ni, nclass, nclassurb )
+        CALL aggcovernat( f(covf), gammadatd , gammadatd , f(gamveg) ,
+     1                    f(dlat), ni, nclass, nclassurb )
+*
+*
+      elseif(ischmsol.eq.2) then
+*
+       call agvgclas2(f(covf),ALVSDAT, VGCLASS,f(ALVSC), NI,class_ic+1,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),ALNIDAT, VGCLASS,f(ALIRC), NI,class_ic+1,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),LAIMXDAT,VGCLASS,f(LAIMAX),NI,class_ic  ,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),LAIMNDAT,VGCLASS,f(LAIMIN),NI,class_ic  ,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),VGMASDAT,VGCLASS,f(VEGMA), NI,class_ic  ,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),ROOTDAT, VGCLASS,f(ROOTDP),NI,class_ic  ,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),Z0MDAT,  VGCLASS,f(ZOLN),  NI,class_ic+1,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),RSMINDAT,VGCLASS,f(STOMR), NI,class_ic  ,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),QA50DAT, VGCLASS,f(QA50),  NI,class_ic  ,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),VPDADAT, VGCLASS,f(VPDA),  NI,class_ic  ,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),VPDBDAT, VGCLASS,f(VPDB),  NI,class_ic  ,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),PSGADAT, VGCLASS,f(PSIGA), NI,class_ic  ,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),PSGBDAT, VGCLASS,f(PSIGB), NI,class_ic  ,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgclas2(f(covf),ROOTDAT, VG000  ,f(SDEPTH),NI,1         ,
+     1               NCLASS+NCLASSURB,nmos,1)
+       call agvgmask2(f(covf),         VGCLASS,f(FCANMX),NI,class_ic+1,
+     1               NCLASS+NCLASSURB,nmos,1)
+
+        DO J=1,4
+        DO i=0,ni-1
+          f(FCANMX  + i +(j-1)*ni) = f(FCANMX  + i +(j-1)*ni)*fveg(j)
+        end do
+        END DO
+*
+      endif
+*
+*
+      RETURN
+      END

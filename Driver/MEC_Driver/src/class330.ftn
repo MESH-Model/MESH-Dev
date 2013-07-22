@@ -1,0 +1,735 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+*** S/P CLASS330
+*
+#include "phy_macros_f.h"
+      SUBROUTINE CLASS330 (BUS, BUSSIZ,
+     $                     PTSURF, PTSURFSIZ,
+     $                     DT, KOUNT, TRNCH,
+     $                     N, M, NK)
+*
+#include "impnone.cdk"
+*
+      INTEGER BUSSIZ, LONCLEF, VSIZ, N, NK, KOUNT, TRNCH,IG,mos,dmos
+      REAL BUS(BUSSIZ), DT
+      INTEGER PTSURFSIZ
+      INTEGER PTSURF(PTSURFSIZ)
+*
+*Author
+*          Y. Delage (November 2002)
+*Revisions
+*001       Y. Delage (July 2004)  Add calculations at kount=0
+*002       Y. Delage (Sept 2004) Replace ZA by ZUSL and ZTSL and
+*                                UE2 by FRV
+*003       V. Fortin (Nov 2006) Use RAINRATE and SNOWRATE estimated
+*                               by SURF_PRECIP (instead of TSS)
+*                               to obtain total precipitation
+*004       R. Larocque (Apr 2006) Mosaic driver
+*005       V. Fortin (Nov 2006) Adapt driver to CLASS 3.2
+*006       V. Fortin (Apr 2007) Adapt driver to CLASS 3.3
+*
+*Object
+*          Driver of the surface scheme CLASS330
+*
+*Arguments
+*
+*               - Input/Output -
+* BUS           bus of surface variables
+*
+*               - Input -
+* BUSSIZ        size of the surface bus
+* PTSURF        surface pointers
+* PTSURFSIZ     dimension of ptsurf
+* KOUNT         number of timestep
+* TRNCH         row number
+* DT            timestep
+* N             running length
+* M             horizontal dimension
+* NK            vertical dimension
+* IG            number of soil layers
+*
+*
+**
+*
+*
+      INTEGER I
+      INTEGER IC,ICP1,ILAI,IHGT,IALC,IALS,IALG,IPCP
+      INTEGER NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI
+      LOGICAL DOTILE, DOPREC
+*
+*
+*
+      integer ptr, x
+*
+      integer k,j,ik,m,iday
+      real juliand
+*
+#include "locbus.cdk"
+      INTEGER INDX_SFC, SURFLEN
+      PARAMETER (INDX_SFC = INDX_SOIL)
+      INTEGER QUELNIVO(MAXVARSURF)
+*
+#include "classlvls.cdk"
+      PARAMETER (IG=CLASS_IG)
+#include "consphy.cdk"
+*
+#include "options.cdk"
+#include "sfcbus.cdk"
+*
+*
+*
+*MODULES
+      EXTERNAL CLASSB
+      EXTERNAL CLASSI
+      EXTERNAL CLASSA
+      EXTERNAL CLASST
+      EXTERNAL CLASSW
+*
+*
+#include "zuzt.cdk"
+#include "nclassvg.cdk"
+#include "mosaic.cdk"
+#include "tuiles_red.cdk"
+*
+
+*******************************************************
+*     AUTOMATIC ARRAYS
+*******************************************************
+*
+      REAL 
+     1     ALVSCN(M),   ALIRCN(M),   ALVSG (M),   ALIRG (M),
+     2     ALVSCS(M),   ALIRCS(M),   ALVSSN(M),   ALIRSN(M),
+     3     TRVSCN(M),   TRIRCN(M),   TRVSCS(M),   TRIRCS(M),
+     4     AILCAN(M),   AILCNS(M),   FSVF  (M),   FSVFS (M),
+     5     RAICAN(M),   RAICNS(M),   SNOCAN(M),   SNOCNS(M),
+     6     FRAINC(M),   FSNOWC(M),   DISP  (M),   DISPS (M),
+     7     ZOMLNC(M),   ZOMLCS(M),   ZOELNC(M),   ZOELCS(M),
+     8     ZOMLNG(M),   ZOMLNS(M),   ZOELNG(M),   ZOELNS(M),
+     9     CHCAP (M),   CHCAPS(M),   CMASSC(M),   CMASCS(M),
+     A     RC    (M),   RCS   (M),
+     B     ZPLIMC(M),   ZPLIMG(M),   ZPLMCS(M),   ZPLMGS(M),
+     C     TRSNOW(M),   ZSNOW (M),   QLWAVG(M),
+     D     ALVS  (M),   ALIR  (M),   QSOL  (M),
+     F     FCLOUD(M),   VPD   (M),
+     G     RHOAIR(M),   TADP  (M),   QSWINV(M),   QSWINI(M),
+     H     PADRY (M),   ZBLEND(M),   ZUN   (M),   ZTN   (M),
+     I     CWLCAP(M),   CWFCAP(M),   CWLCPS(M),   CWFCPS(M),
+     J     RBCOEF(M),   FSNOW (M),
+     K     WSNOCS(M),   WSNOGS(M),   RHOSCS(M),   RHOSGS(M),
+     L     CDRAG (M),   HBL   (M),
+     M     ALVSGC(M),   ALIRGC(M),   ALVSSC(M),   ALIRSC(M),
+     N     Z0ORO (M),   SNOLIM(M),   ZPLMG0(M),   ZPLMS0(M),
+     O     PCPR  (M),   GGEO(M)
+C
+      REAL TBARC (M,IG),TBARG (M,IG),TBARCS(M,IG),TBARGS(M,IG),
+     1     THLIQC(M,IG),THLIQG(M,IG),THICEC(M,IG),THICEG(M,IG),
+     2     HCPC  (M,IG),HCPG  (M,IG),FROOT (M,IG),
+     3     TCTOP (M,IG),TCBOT (M,IG),TBAR3 (M,IG),GFLUX(M,IG)
+
+      REAL ZTHRC (M,IG,2), ZTHRG (M,IG,2),
+     1     ZTHRCS(M,IG,2), ZTHRGS(M,IG,2)
+C
+      REAL GZEROC(M),   GZEROG(M),   GZROCS(M),   GZROGS(M),
+     1     G12C  (M),   G12G  (M),   G12CS (M),   G12GS (M),
+     2     G23C  (M),   G23G  (M),   G23CS (M),   G23GS (M),
+     3     QFREZC(M),   QFREZG(M),   QMELTC(M),   QMELTG(M),
+     4     EVAPC (M),   EVAPCG(M),   EVAPG (M),   EVAPCS(M),
+     5     EVPCSG(M),   EVAPGS(M),   TCANO (M),   TCANS (M),
+     7     TPONDC(M),   TPONDG(M),
+     8     TPNDCS(M),   TPNDGS(M),   TSNOCS(M),   TSNOGS(M),
+     9     CDH   (M),   WTABLE(M),
+     B     EVPPOT(M),   EVAPB (M)
+C
+      REAL RHOSNI(M)
+*
+      REAL RPCP  (M),   TRPCP (M),   SPCP  (M),   TSPCP (M)
+*
+      INTEGER  ILAND (M),ISAND(M,IG),ITER(M),NITER(M)
+      INTEGER  ITERCT(M,6,50)
+      INTEGER  IORG(M,IG)
+
+C Thickness and depth of each soil layer in meters
+      REAL DELZ(IG),ZBOT(IG)
+      DATA  DELZ    /0.10,0.25,3.75/
+      DATA  ZBOT    /0.10,0.35,4.10/
+
+*
+*******************************************************
+*
+*
+      REAL AILDAT, HGTDAT, ACVDAT, ACIDAT
+      REAL ASVDAT, ASIDAT, AGVDAT, AGIDAT
+      REAL SU,SV,ST,SQ,ALVIS_SOL,CMU,CTU,THLIQ,THICE,QSENS,ZH
+      REAL ZILMO,ZFRV,PS,QS,TS,Z0H,Z0M,EVAPO,ZTSURF,ZTSRAD
+      REAL UA,VA,TA,QA,TFLUX,QFLUX,COSZS,FLUSOL,ZFCANMX
+      REAL ZDLAT,ZDLON,ZSAND,ZDELZW,ZZBOTW,ZTHPOR,ZTHLMIN
+      REAL ZTHLRET,ZPSISAT,ZBI,ZPSIWLT,ZHCPS,ZZUSL,ZZTSL,QLWIN
+      REAL ZTCS,ZTSNOW,ZTBASE,ZTPOND,ZZPOND,ZRHOSNO,ZTHFC
+      REAL ZSCAN,ZRUNOFF,XSNO,ZALBSNO,ZGROWTH,ZGRKSAT,ZGRKTLD
+      REAL ZTHLRAT,ZXDRAIN,ZXSLOPE,ZGRKFAC,ZWFSURF,ZWFCINT
+      REAL ZCMAI,ZFSGV,ZFSGS,ZFSGG,ZFLGV,ZFLGS,ZFLGG,ZHFSC
+      REAL ZHFSS,ZHFSG,ZHEVC,ZHEVS,ZHEVG,ZHMFC,ZHTCC,ZHTCS
+      REAL ZHTC,ZPCFC,ZPCLC,ZPCPG,ZQFCF,ZQFCL,ZQFG,ZQFN
+      REAL ZWTRC,ZWTRS,ZWTRG,ZROFC,ZROFN,ZROVG,ZOVRFLW,ZSUBFLW
+      REAL ZBASFLW,QEVAP,ZQSWD,XDIFFUS,ZTCAN,ZRCAN,ZZOLN
+      REAL ZALVSC,ZALIRC,ZAILMIN,ZAILMAX,ZZRTMAX
+      REAL ZCFLUX,ZPCPN,ZQFC,ZHMFG,ZHMFN,ZPSIGA,ZPSIGB
+      REAL ZCWGTMX,ZRSMIN,ZQA50,ZVPDA,ZVPDB,ZFL
+      REAL ZALGWET,ZALGDRY,FFC,FCS,FG,FGS,FSOLUACC,FIRUACC
+      REAL ZCLAY,ZSDEPTH,ZORGM,RRATE,SRATE,TINDX,MOSFRAC
+      REAL ZWSNOW,ZTAIRCAN,ZHUAIRCAN,ZTSFS,ZTRUNOFF
+      REAL ZTOVRFL,ZTSUBFL,ZTBASFL
+*
+      POINTER (IFSOLUACC  , FSOLUACC   (1) )
+      POINTER (IFIRUACC   , FIRUACC    (1) )
+      POINTER (IUDIAG     , SU         (1) )
+      POINTER (IVDIAG     , SV         (1) )
+      POINTER (ITDIAG     , ST         (1) )
+      POINTER (IQDIAG     , SQ         (1) )
+      POINTER (IALVIS_SOL , ALVIS_SOL  (1) )
+      POINTER (ICMU       , CMU        (1) )
+      POINTER (ICTU       , CTU        (1) )
+      POINTER (IWSOIL     , THLIQ    (M,IG))
+      POINTER (IISOIL     , THICE    (M,IG))
+      POINTER (IEVAP      , EVAPO      (1) )
+      POINTER (IFC   _SOL , QSENS      (1) )
+      POINTER (IFV   _SOL , QEVAP      (1) )
+      POINTER (IHST  _SOL , ZH         (1) )
+      POINTER (IILMO _SOL , ZILMO      (1) )
+      POINTER (IFRV       , ZFRV       (1) )
+      POINTER (IPS        , PS         (1) )
+      POINTER (IQS        , QS         (M) )
+      POINTER (ITS        , TS      (M,IG) )
+      POINTER (IZ0H       , Z0H        (1) )
+      POINTER (IZ0M       , Z0M        (1) )
+      POINTER (IZTSURF    , ZTSURF     (M) )
+      POINTER (IZTSRAD    , ZTSRAD     (M) )
+      POINTER (IZUMOINS   , UA         (1) )
+      POINTER (IZVMOINS   , VA         (1) )
+      POINTER (ITA        , TA         (M) )
+      POINTER (IQA        , QA         (M) )
+      POINTER (IALFAT     , TFLUX      (1) )
+      POINTER (IALFAQ     , QFLUX      (1) )
+      POINTER (ICOSZ      , COSZS      (1) )
+      POINTER (IFLUSOL    , FLUSOL     (1) )  
+      POINTER (IZFCANMX   , ZFCANMX    (1) )
+      POINTER (IZHUAIRCAN , ZHUAIRCAN  (M) )
+      POINTER (IZDLAT     , ZDLAT      (1) )
+      POINTER (IZDLON     , ZDLON      (1) )
+      POINTER (IZSAND     , ZSAND    (M,IG))
+      POINTER (IZCLAY     , ZCLAY      (1) )
+      POINTER (IZSDEPTH   , ZSDEPTH    (M) )
+      POINTER (IZORGM     , ZORGM      (1) )
+      POINTER (IZDELZW    , ZDELZW   (M,IG))
+      POINTER (IZZBOTW    , ZZBOTW     (1) )
+      POINTER (IZTHPOR    , ZTHPOR     (1) )
+      POINTER (IZTHLMIN   , ZTHLMIN    (1) )
+      POINTER (IZTHLRET   , ZTHLRET    (1) ) 
+      POINTER (IZPSISAT   , ZPSISAT    (1) )
+      POINTER (IZBI       , ZBI        (1) )
+      POINTER (IZPSIWLT   , ZPSIWLT    (1) )
+      POINTER (IZHCPS     , ZHCPS      (1) )
+      POINTER (IZZTSL     , ZZTSL      (1) )
+      POINTER (IZZUSL     , ZZUSL      (1) )
+      POINTER (IQLWIN     , QLWIN      (1) )
+      POINTER (IZTAIRCAN  , ZTAIRCAN   (M) )
+      POINTER (IZTCS      , ZTCS       (1) )
+      POINTER (IZTSFSAV   , ZTSFS    (M,4) )
+      POINTER (IZTSNOW    , ZTSNOW     (M) )
+      POINTER (IZTBASE    , ZTBASE     (1) )
+      POINTER (IZTPOND    , ZTPOND     (1) )
+      POINTER (IZZPOND    , ZZPOND     (1) )
+      POINTER (IZRHOSNO   , ZRHOSNO    (1) )
+      POINTER (IZTHFC     , ZTHFC      (1) )
+      POINTER (IZSCAN     , ZSCAN      (1) )
+      POINTER (IZRUNOFF   , ZRUNOFF    (1) )
+      POINTER (IXSNO      , XSNO       (1) )
+      POINTER (IZALBSNO   , ZALBSNO    (1) )
+      POINTER (IZGROWTH   , ZGROWTH    (1) )
+      POINTER (IZGRKSAT   , ZGRKSAT    (1) )
+      POINTER (IZGRKTLD   , ZGRKTLD    (1) )
+      POINTER (IZTHLRAT   , ZTHLRAT    (1) )
+      POINTER (IZXDRAIN   , ZXDRAIN    (1) )
+      POINTER (IZXSLOPE   , ZXSLOPE    (1) )
+      POINTER (IZGRKFAC   , ZGRKFAC    (1) )
+      POINTER (IZWFSURF   , ZWFSURF    (1) )
+      POINTER (IZWFCINT   , ZWFCINT    (1) )
+      POINTER (IZCMAI     , ZCMAI      (1) )
+      POINTER (IZFSGV     , ZFSGV      (1) )
+      POINTER (IZFSGS     , ZFSGS      (1) )
+      POINTER (IZFSGG     , ZFSGG      (1) )
+      POINTER (IZFLGV     , ZFLGV      (1) )
+      POINTER (IZFLGS     , ZFLGS      (1) )
+      POINTER (IZFLGG     , ZFLGG      (1) )
+      POINTER (IZHFSC     , ZHFSC      (1) )
+      POINTER (IZHFSS     , ZHFSS      (1) )
+      POINTER (IZHFSG     , ZHFSG      (1) )
+      POINTER (IZHEVC     , ZHEVC      (1) )
+      POINTER (IZHEVS     , ZHEVS      (1) )
+      POINTER (IZHEVG     , ZHEVG      (1) )
+      POINTER (IZHMFC     , ZHMFC      (1) )
+      POINTER (IZHTCC     , ZHTCC      (1) )
+      POINTER (IZHTCS     , ZHTCS      (1) )
+      POINTER (IZHTC      , ZHTC       (1) )
+      POINTER (IZPCFC     , ZPCFC      (1) )
+      POINTER (IZPCLC     , ZPCLC      (1) )
+      POINTER (IZPCPG     , ZPCPG      (1) )
+      POINTER (IZQFCF     , ZQFCF      (1) )
+      POINTER (IZQFCL     , ZQFCL      (1) )
+      POINTER (IZQFG      , ZQFG       (1) )
+      POINTER (IZQFN      , ZQFN       (1) )
+      POINTER (IZTBASFL   , ZTBASFL    (1) )
+      POINTER (IZTOVRFL   , ZTOVRFL    (1) )
+      POINTER (IZTRUNOFF  , ZTRUNOFF   (1) )
+      POINTER (IZTSUBFL   , ZTSUBFL    (1) )
+      POINTER (IZWSNOW    , ZWSNOW     (M) )
+      POINTER (IZWTRC     , ZWTRC      (1) )
+      POINTER (IZWTRS     , ZWTRS      (1) )
+      POINTER (IZWTRG     , ZWTRG      (1) )
+      POINTER (IZROFC     , ZROFC      (1) )
+      POINTER (IZROFN     , ZROFN      (1) )
+      POINTER (IZROVG     , ZROVG      (1) )
+      POINTER (IZOVRFLW   , ZOVRFLW    (1) )
+      POINTER (IZSUBFLW   , ZSUBFLW    (1) )
+      POINTER (IZBASFLW   , ZBASFLW    (1) )
+      POINTER (IZQSWD     , ZQSWD      (1) )
+      POINTER (IZTCAN     , ZTCAN      (1) )
+      POINTER (IZRCAN     , ZRCAN      (1) )
+      POINTER (IZZOLN     , ZZOLN      (1) )
+      POINTER (IZALVSC    , ZALVSC     (1) )
+      POINTER (IZALIRC    , ZALIRC     (1) )
+      POINTER (IZAILMAX   , ZAILMAX    (1) )
+      POINTER (IZAILMIN   , ZAILMIN    (1) )
+      POINTER (IZCWGTMX   , ZCWGTMX    (1) )
+      POINTER (IZZRTMAX   , ZZRTMAX    (1) )
+      POINTER (IZRSMIN    , ZRSMIN     (1) )
+      POINTER (IZQA50     , ZQA50      (1) )
+      POINTER (IZVPDA     , ZVPDA      (1) )
+      POINTER (IZVPDB     , ZVPDB      (1) )
+      POINTER (IZPSIGA    , ZPSIGA     (1) )
+      POINTER (IZPSIGB    , ZPSIGB     (1) )
+      POINTER (IZCFLUX    , ZCFLUX     (1) )
+      POINTER (IZPCPN     , ZPCPN      (1) )
+      POINTER (IZQFC      , ZQFC       (1) )
+      POINTER (IZHMFG     , ZHMFG      (1) )
+      POINTER (IZHMFN     , ZHMFN      (1) )
+      POINTER (IZALGWET   , ZALGWET    (1) )
+      POINTER (IZALGDRY   , ZALGDRY    (1) )
+      POINTER (IFC        , FFC        (1) )
+      POINTER (IFCS       , FCS        (1) )
+      POINTER (IFG        , FG         (1) )
+      POINTER (IFGS       , FGS        (1) )
+      POINTER (IZFL       , ZFL        (1) )
+      POINTER (IRAINRATE  , RRATE      (1) )
+      POINTER (ISNOWRATE  , SRATE      (1) )
+      POINTER (ITINDX     , TINDX      (1) )
+      POINTER (IMOSFRAC   , MOSFRAC    (1) )
+
+*
+*
+      integer sommet
+*
+#include "xptsurf.cdk"
+*
+*
+*
+      SURFLEN = M
+      IDAY = JULIAND( DT , KOUNT, DATE )
+*
+*
+*     EQUIVALENCES
+*
+      INIT_LOCBUS()
+*
+*     Syntax of macro locbus (must be typed in CAPITAL letters):
+*     locbus (pointer, array_name_in_the_bus, level)
+*     If level=0, array chosen automatically as follows:
+*        1) level =  1 if array has  1 level only (e.g. TSURF )
+*        2) level = nk if array has nk levels     (e.g. TMOINS)
+*        3) level = indx_sfc if array has a level for each surface type (e.g. FC)
+*        4) level has to be specified by user if array has more than one level
+*           that all "belong" to the same surface type (e.g. TSOIL)
+*
+      LOCBUS (ICTU       , BT     ,  1 )
+      LOCBUS (IPS        , PMOINS ,  1 )
+      LOCBUS (IZ0H       , Z0T    ,  1 )
+      LOCBUS (IZ0M       , Z0     ,  1 )
+      LOCBUS (IZCLAY     , CLAY   ,  1 )
+      LOCBUS (IZORGM     , ORGM   ,  1 )
+      LOCBUS (ICOSZ      , COSZ   ,  1 )
+      LOCBUS (IZQSWD     , QSWD   ,  1 )
+      LOCBUS (IZSAND     , SAND   ,  1 )
+      LOCBUS (ITA        , TMOINS ,  1 )
+      LOCBUS (IQA        , HUMOINS,  1 )
+      LOCBUS (IZDLAT     , DLAT   ,  1 )
+      LOCBUS (IZDLON     , DLON   ,  1 )
+      LOCBUS (IZUMOINS   , UMOINS ,  1 )
+      LOCBUS (IZVMOINS   , VMOINS ,  1 )
+      LOCBUS (IZZTSL     , ZTSL   ,  1 )
+      LOCBUS (IZZUSL     , ZUSL   ,  1 )
+      LOCBUS (IFLUSOL    , FLUSOLIS, 1 )
+      LOCBUS (IQLWIN     , FDSI   ,  1 )
+      LOCBUS (IZXDRAIN   , XDRAIN ,  1 )
+      LOCBUS (IZGRKFAC   , GRKFAC ,  1 )
+      LOCBUS (IZWFSURF   , WFSURF ,  1 )
+      LOCBUS (IZWFCINT   , WFCINT ,  1 )
+      LOCBUS (IRAINRATE  , RAINRATE ,  1 )
+      LOCBUS (ISNOWRATE  , SNOWRATE ,  1 )
+*
+          DO J=1,IG
+            DO I=1,N
+               ISAND(I,J)=NINT(ZSAND(I,J))
+            ENDDO
+          ENDDO
+          DO I=1,N
+             ZBLEND(I)=ZZUSL(I)
+             ILAND(I)=I
+             ZUN(I) = ZU
+             ZTN(I) = ZT
+             QSWINV(I)=0.5*FLUSOL(I)
+             QSWINI(I)=0.5*FLUSOL(I)
+             RRATE(I)=RRATE(I)*1000.
+             SRATE(I)=SRATE(I)*1000.
+             PCPR(I)=SRATE(I)+RRATE(I)
+*-----------------------------------------------------------------
+*  correctif pour le cas ou COSZS n'est pas disponible
+             if(FLUSOL(I).gt.20. .and. COSZS(I).le.0.)
+     1             COSZS(I)=FLUSOL(I)*.0006
+*----------------------------------------------------------------
+             IF(ABS(COSZS(I)).LT.0.10) COSZS(I)=0.10
+             IF(PCPR(I).GT.0.) THEN
+                  XDIFFUS=1.0
+             ELSE
+                  XDIFFUS=MIN(1.0-0.9*COSZS(I),1.)
+             ENDIF
+             FCLOUD(I)=XDIFFUS
+             QSOL(I)=MAX(QSWINV(I)/COSZS(I),0.)
+             ZQSWD(I)=2*QSOL(I)*XDIFFUS
+             Z0ORO(I)=0
+             SNOLIM(I)=0.10
+             ZPLMG0(I)=0.10
+             ZPLMS0(I)=0.10
+             GGEO(I)=0
+          END DO
+*
+      IF(nmos.EQ.0)THEN
+        dmos=0
+      ELSE
+        dmos=1
+      ENDIF
+      do mos=dmos,nmos
+          LOCBUS_MOS (IALFAQ     , ALFAQ  ,  0 , mos )
+          LOCBUS_MOS (IALFAT     , ALFAT  ,  0 , mos )
+          LOCBUS_MOS (ICMU       , BM     ,  0 , mos )
+          LOCBUS_MOS (IEVAP      , WFLUX  ,  0 , mos )
+          LOCBUS_MOS (IFC        , FCOVC  ,  0 , mos )
+          LOCBUS_MOS (IFC   _SOL , FC     ,  0 , mos )
+          LOCBUS_MOS (IFCS       , FCOVCS ,  0 , mos )
+          LOCBUS_MOS (IFG        , FCOVG  ,  0 , mos )
+          LOCBUS_MOS (IFGS       , FCOVGS ,  0 , mos )
+          LOCBUS_MOS (IFRV       , FRV    ,  0 , mos )
+          LOCBUS_MOS (IFV   _SOL , FV     ,  0 , mos )
+          LOCBUS_MOS (IHST  _SOL , HST    ,  0 , mos )
+          LOCBUS_MOS (IILMO _SOL , ILMO   ,  0 , mos )
+          LOCBUS_MOS (IISOIL     , ISOIL  ,  1 , mos )
+          LOCBUS_MOS (IMOSFRAC   , MOSFRACT ,  0 , mos )
+          LOCBUS_MOS (IQDIAG     , QDIAG  ,  0 , mos )
+          LOCBUS_MOS (IQS        , QSURF  ,  0 , mos )
+          LOCBUS_MOS (ITDIAG     , TDIAG  ,  0 , mos )
+          LOCBUS_MOS (ITINDX     , TINDEX ,  0 , mos )
+          LOCBUS_MOS (ITS        , TSOIL  ,  1 , mos )
+          LOCBUS_MOS (IUDIAG     , UDIAG  ,  0 , mos )
+          LOCBUS_MOS (IVDIAG     , VDIAG  ,  0 , mos )
+          LOCBUS_MOS (IWSOIL     , WSOIL  ,  1 , mos )
+          LOCBUS_MOS (IXSNO      , SNOMA  ,  0 , mos )
+          LOCBUS_MOS (IZALBSNO   , SNOAL  ,  0 , mos )
+          LOCBUS_MOS (IZALGDRY   , ALGDRY ,  0 , mos )
+          LOCBUS_MOS (IZALGWET   , ALGWET ,  0 , mos )
+          LOCBUS_MOS (IZBASFLW   , DRAIN  ,  0 , mos )
+          LOCBUS_MOS (IZBI       , BBI    ,  1 , mos )
+          LOCBUS_MOS (IZCFLUX    , CFLUX  ,  0 , mos )
+          LOCBUS_MOS (IZCMAI     , CMAI   ,  0 , mos )
+          LOCBUS_MOS (IZDELZW    , DELZW  ,  1 , mos )
+          LOCBUS_MOS (IZFLGG     , FLGG   ,  0 , mos )
+          LOCBUS_MOS (IZFLGS     , FLGS   ,  0 , mos )
+          LOCBUS_MOS (IZFLGV     , FLGV   ,  0 , mos )
+          LOCBUS_MOS (IZFSGG     , FSGG   ,  0 , mos )
+          LOCBUS_MOS (IZFSGS     , FSGS   ,  0 , mos )
+          LOCBUS_MOS (IZFSGV     , FSGV   ,  0 , mos )
+          LOCBUS_MOS (IZGRKSAT   , GRKSAT ,  1 , mos )
+          LOCBUS_MOS (IZGRKTLD   , GRKTLD ,  1 , mos )
+          LOCBUS_MOS (IZGROWTH   , VEGGRO ,  0 , mos )
+          LOCBUS_MOS (IZHCPS     , HCPS   ,  1 , mos )
+          LOCBUS_MOS (IZHEVC     , HEVC   ,  0 , mos )
+          LOCBUS_MOS (IZHEVG     , HEVG   ,  0 , mos )
+          LOCBUS_MOS (IZHEVS     , HEVS   ,  0 , mos )
+          LOCBUS_MOS (IZHFSC     , HFSC   ,  0 , mos )
+          LOCBUS_MOS (IZHFSG     , HFSG   ,  0 , mos )
+          LOCBUS_MOS (IZHFSS     , HFSS   ,  0 , mos )
+          LOCBUS_MOS (IZHMFC     , HMFC   ,  0 , mos )
+          LOCBUS_MOS (IZHMFG     , HMFG   ,  1 , mos )
+          LOCBUS_MOS (IZHMFN     , HMFN   ,  0 , mos )
+          LOCBUS_MOS (IZHTC      , HTC    ,  1 , mos )
+          LOCBUS_MOS (IZHTCC     , HTCC   ,  0 , mos )
+          LOCBUS_MOS (IZHTCS     , HTCS   ,  0 , mos )
+          LOCBUS_MOS (IZOVRFLW   , OVERFL ,  0 , mos )
+          LOCBUS_MOS (IZPCFC     , PCFC   ,  0 , mos )
+          LOCBUS_MOS (IZPCLC     , PCLC   ,  0 , mos )
+          LOCBUS_MOS (IZPCPG     , PCPG   ,  0 , mos )
+          LOCBUS_MOS (IZPCPN     , PCFG   ,  0 , mos )
+          LOCBUS_MOS (IZPSISAT   , PSISAT ,  1 , mos )
+          LOCBUS_MOS (IZPSIWLT   , PSIWLT ,  1 , mos )
+          LOCBUS_MOS (IZQFC      , QFC    ,  1 , mos )
+          LOCBUS_MOS (IZQFCF     , QFCF   ,  0 , mos )
+          LOCBUS_MOS (IZQFCL     , QFCL   ,  0 , mos )
+          LOCBUS_MOS (IZQFG      , QFG    ,  0 , mos )
+          LOCBUS_MOS (IZQFN      , QFN    ,  0 , mos )
+          LOCBUS_MOS (IZRCAN     , WVEG   ,  0 , mos )
+          LOCBUS_MOS (IZRHOSNO   , SNODEN ,  0 , mos )
+          LOCBUS_MOS (IZROFC     , ROFC   ,  0 , mos )
+          LOCBUS_MOS (IZROFN     , ROFN   ,  0 , mos )
+          LOCBUS_MOS (IZROVG     , ROVG   ,  0 , mos )
+          LOCBUS_MOS (IZRUNOFF   , RUNOFF ,  0 , mos )
+          LOCBUS_MOS (IZSCAN     , IVEG   ,  0 , mos )
+          LOCBUS_MOS (IZSUBFLW   , SUBFLW ,  0 , mos )
+          LOCBUS_MOS (IZTBASE    , TBASE  ,  0 , mos )
+          LOCBUS_MOS (IZTCAN     , TVEG   ,  0 , mos )
+          LOCBUS_MOS (IZTCS      , TCS    ,  1 , mos )
+          LOCBUS_MOS (IZTHFC     , THFC   ,  1 , mos )
+          LOCBUS_MOS (IZTHLMIN   , THLMIN ,  1 , mos )
+          LOCBUS_MOS (IZTHLRAT   , THLRAT ,  1 , mos )
+          LOCBUS_MOS (IZTHLRET   , THLRET ,  1 , mos )
+          LOCBUS_MOS (IZTHPOR    , THPOR  ,  1 , mos )
+          LOCBUS_MOS (IZTPOND    , TPOND  ,  0 , mos )
+          LOCBUS_MOS (IZTSNOW    , TSNO   ,  0 , mos )
+          LOCBUS_MOS (IZTSRAD    , TSRAD  ,  0 , mos )
+          LOCBUS_MOS (IZTSURF    , TSURF  ,  0 , mos )
+          LOCBUS_MOS (IZWSNOW    , WSNOW  ,  1 , mos )
+          LOCBUS_MOS (IZWTRC     , WTRC   ,  0 , mos )
+          LOCBUS_MOS (IZWTRG     , WTRG   ,  0 , mos )
+          LOCBUS_MOS (IZWTRS     , WTRS   ,  0 , mos )
+          LOCBUS_MOS (IZXSLOPE   , XSLOPE ,  0 , mos )
+          LOCBUS_MOS (IZZBOTW    , ZBOTW  ,  1 , mos )
+          LOCBUS_MOS (IZZPOND    , ZPOND  ,  0 , mos )
+          LOCBUS_MOS (IFSOLUACC  , FSOLUPAF, 0 , mos )
+          LOCBUS_MOS (IFIRUACC   , FIRUPAF,  0 , mos )
+          LOCBUS_MOS (IALVIS_SOL , ALVIS  ,  0 , mos )
+          LOCBUS_MOS (IZFL       , FL     ,  0 , mos )
+*
+          LOCBUS_MOS (IZSDEPTH   , SDEPTH ,  0 , mos )
+          LOCBUS_MOS (IZFCANMX   , FCANMX ,  1 , mos )
+          LOCBUS_MOS (IZZOLN     , ZOLN   ,  1 , mos )
+          LOCBUS_MOS (IZALVSC    , ALVSC  ,  1 , mos )
+          LOCBUS_MOS (IZALIRC    , ALIRC  ,  1 , mos )
+          LOCBUS_MOS (IZAILMAX   , LAIMAX ,  1 , mos )
+          LOCBUS_MOS (IZAILMIN   , LAIMIN ,  1 , mos )
+          LOCBUS_MOS (IZCWGTMX   , VEGMA  ,  1 , mos )
+          LOCBUS_MOS (IZZRTMAX   , ROOTDP ,  1 , mos )
+          LOCBUS_MOS (IZRSMIN    , STOMR  ,  1 , mos )
+          LOCBUS_MOS (IZQA50     , QA50   ,  1 , mos )
+          LOCBUS_MOS (IZVPDA     , VPDA   ,  1 , mos )
+          LOCBUS_MOS (IZVPDB     , VPDB   ,  1 , mos )
+          LOCBUS_MOS (IZPSIGA    , PSIGA  ,  1 , mos )
+          LOCBUS_MOS (IZPSIGB    , PSIGB  ,  1 , mos )
+          LOCBUS_MOS (IZHUAIRCAN , HUAIRCAN, 1 , mos )
+          LOCBUS_MOS (IZTAIRCAN  , TAIRCAN,  1 , mos )
+          LOCBUS_MOS (IZTBASFL   , TBASFL ,  1 , mos )
+          LOCBUS_MOS (IZTOVRFL   , TOVRFL ,  1 , mos )
+          LOCBUS_MOS (IZTSUBFL   , TSUBFL ,  1 , mos )
+          LOCBUS_MOS (IZTRUNOFF  , TRUNOFF,  1 , mos )
+          LOCBUS_MOS (IZTSFSAV   , TSURFSA,  1 , mos )
+*
+          IC  = CLASS_IC
+          ICP1= CLASS_IC+1
+          ILAI=0
+          IHGT=0
+          IALC=0
+          IALS=0
+          IALG=0
+          IPCP=4
+*
+          IF(KOUNT.EQ.0) THEN
+*         
+          IF(nmos.GT.0) THEN 
+            call moscopy(BUS, BUSSIZ, PTSURF, PTSURFSIZ, mosfrac, N, nmos, mos)
+          ENDIF
+          
+c
+c Hack to deal with soil depth of bare soil
+c Vincent Fortin
+c        
+          do i=1,N
+            if (zsdepth(i).lt.zbot(2)+0.1) then
+              zsdepth(i)=zbot(2)+0.1
+            end if
+          enddo
+*
+*           Initialize the soil characteristics
+*           using the soil texture
+*            
+            call classb(ZTHPOR,ZTHLRET,ZTHLMIN,ZBI,ZPSISAT,
+     1              ZGRKSAT,ZTHLRAT,ZHCPS,ZTCS,
+     2              ZTHFC,ZPSIWLT,ZDELZW,ZZBOTW,ZALGWET,
+     3              ZALGDRY,ZSAND,ZCLAY,ZORGM,DELZ,ZBOT,ZSDEPTH,
+     4              ISAND,IORG,N,1,N,1,IG)
+
+	do I=1,N
+              ztsurf(i)=ta(i)
+              qs(i)    =qa(i)
+C Initialize air temperature and specific humidity inside canopy
+C from air temperature and specific humidity over the grid point
+              ztaircan(i)=ta(i)
+              zhuaircan(i)=qa(i)
+C Initialize surface temperature for each subareas
+C Surface temperature over snow-covered subareas set to zero
+              do j=1,2
+                ztsfs(i,j)=TCDK
+              enddo
+C Surface temperature over snow-free areas
+C set to temperature of first soil layer
+              do j=3,4
+                ztsfs(i,j)=TS(i,1)
+              enddo
+	enddo
+*
+          ELSE
+*
+          doprec = .false.
+          do k=1,n+1
+              dotile = (((MOSFRAC(k).gt.0).OR.(nmos.EQ.0)).and.k.ne.n+1)
+              if (dotile.and.doprec) then
+                  j = k
+              elseif (dotile.and..not.doprec) then
+                  j = k
+                  i = k
+              elseif (.not.dotile.and.doprec) then
+      CALL CLASSI(VPD,TADP,PADRY,RHOAIR,RHOSNI,
+     1           RPCP,TRPCP,SPCP,TSPCP,  
+     2           TA,QA,PCPR,RRATE,SRATE,PS,
+     3           IPCP,M,I,J)
+*
+      CALL  CLASSA(FFC,    FG,     FCS,    FGS,    ALVSCN, ALIRCN,
+     1             ALVSG,  ALIRG,  ALVSCS, ALIRCS, ALVSSN, ALIRSN,
+     2             ALVSGC, ALIRGC, ALVSSC, ALIRSC,
+     2             TRVSCN, TRIRCN, TRVSCS, TRIRCS, AILCAN, AILCNS,
+     3             FSVF,   FSVFS,  RAICAN, RAICNS, SNOCAN, SNOCNS,
+     4             FRAINC, FSNOWC, DISP,   DISPS,  ZOMLNC, ZOMLCS,
+     5             ZOELNC, ZOELCS, ZOMLNG, ZOMLNS, ZOELNG, ZOELNS,
+     6             CHCAP,  CHCAPS, CMASSC, CMASCS, CWLCAP, CWFCAP,
+     7             CWLCPS, CWFCPS, RC,     RCS,    RBCOEF, FROOT,
+     8             ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, TRSNOW, ZSNOW,
+     9             ZWSNOW, ALVS,   ALIR,   ZHTCC,  ZHTCS,  ZHTC,
+     A             ZWTRC,  ZWTRS,  ZWTRG,  ZCMAI,  FSNOW,
+     B             ZFCANMX,ZZOLN,  ZALVSC, ZALIRC, ZAILMAX,ZAILMIN,
+     C             ZCWGTMX,ZZRTMAX,ZRSMIN, ZQA50,  ZVPDA,  ZVPDB,
+     D             ZPSIGA, ZPSIGB, AILDAT, HGTDAT, ACVDAT, ACIDAT,
+     E             ASVDAT, ASIDAT, AGVDAT, AGIDAT, ZALGWET,ZALGDRY,
+     F             THLIQ,  THICE,  TS,     ZRCAN,  ZSCAN,  ZTCAN,
+     G             ZGROWTH,XSNO,   ZTSNOW, ZRHOSNO,ZALBSNO,ZBLEND,
+     G             Z0ORO,  SNOLIM, ZPLMG0, ZPLMS0,
+     H             FCLOUD, TA,     VPD,    RHOAIR, COSZS,  QSWINV,
+     I             ZDLAT,  ZDLON,  RHOSNI, DELZ,   ZDELZW, 
+     J             ZZBOTW,	
+     K             ZTHPOR, ZTHLMIN,ZPSISAT,ZBI,    ZPSIWLT,ZHCPS,
+     L             ISAND,  IDAY,   M,      I,      J,      TRNCH,
+     M             IC,     ICP1,   IG,     0,      2,
+     N             IWF,    ILAI,   IHGT,   IALC,   IALS,   IALG)
+*
+      CALL   CLASST (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG,
+     1       THICEC, THICEG, HCPC,   HCPG,   TCTOP,  TCBOT,  GZEROC, GZEROG,
+     2       GZROCS, GZROGS, G12C,   G12G,   G12CS,  G12GS,  G23C,   G23G,
+     3       G23CS,  G23GS,  QFREZC, QFREZG, QMELTC, QMELTG, EVAPC,  EVAPCG,
+     4       EVAPG,  EVAPCS, EVPCSG, EVAPGS, TCANO,  TCANS,
+     5       RAICAN, SNOCAN, RAICNS, SNOCNS, CHCAP,  CHCAPS,
+     6       TPONDC, TPONDG, TPNDCS, TPNDGS, TSNOCS, TSNOGS,
+     7       WSNOCS, WSNOGS, RHOSCS, RHOSGS, ZTHRC,  ZTHRG,  ZTHRCS, ZTHRGS,
+     8       ITERCT, CDH,    CMU,    QSENS,  TFLUX,  QEVAP,  EVAPO,  QFLUX,
+     9       EVPPOT, ZCFLUX, EVAPB,  ZTSRAD, QS,     ZTSURF, ST,     SU,
+     A       SV,     SQ,     ZFSGV,  ZFSGS,  ZFSGG,  ZFLGV,  ZFLGS,  ZFLGG,
+     B       ZHFSC,  ZHFSS,  ZHFSG,  ZHEVC,  ZHEVS,  ZHEVG,  ZHMFC,  ZHMFN,
+     C       ZHTCC,  ZHTCS,  ZHTC,   CDRAG,  WTABLE, ZILMO,  ZFRV,   HBL,
+     D       ZTAIRCAN, ZHUAIRCAN,    ZZUSL,  ZZTSL,  ZUN,    ZTN,    TBAR3,
+     E       VPD,    TADP,   RHOAIR, QSWINV, QSWINI, QLWIN,  UA,     VA,
+     F       TA,     QA,     PADRY,  FFC,    FG,     FCS,    FGS,    RBCOEF,
+     G       AILCAN, AILCNS, FSVF,   FSVFS,  ALVSCN, ALIRCN, ALVSG,  ALIRG,
+     H       ALVSCS, ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, ALVSSC, ALIRSC,
+     I       TRVSCN, TRIRCN, TRVSCS, TRIRCS,
+     J       RC,     RCS,    FRAINC, FSNOWC, CMASSC, CMASCS, DISP,   DISPS,
+     K       ZOMLNC, ZOELNC, ZOMLNG, ZOELNG, ZOMLCS, ZOELCS, ZOMLNS, ZOELNS,
+     L       TS,     THLIQ,  THICE,  ZTPOND, ZZPOND, ZTBASE, ZTCAN,  ZTSNOW,
+     M       ZSNOW,  TRSNOW, ZRHOSNO,ZWSNOW, ZTHPOR, ZTHLRET,ZTHLMIN,ZTHFC,
+     N       ZDLAT,  ZHCPS,  ZTCS,   ZTSFS,  DELZ,   ZDELZW, ZZBOTW, 
+     O       ISAND,  1,      1,      1,      1,      M,      I,      J,      
+     P       TRNCH,  IC,     IG,     2,      2,      
+     Q       NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI )
+C
+C Compute long-wave upward flux from surface temperature
+C using Stefan-Boltzmann law
+C
+      DO IK=I,J
+        QLWAVG(IK)=STEFAN*ZTSRAD(IK)**4
+      ENDDO
+*
+      CALL CLASSW  (    THLIQ,  THICE,  TS,     ZTCAN,  ZRCAN,  ZSCAN,
+     1                  ZRUNOFF,ZTRUNOFF,XSNO,  ZTSNOW, ZRHOSNO,ZALBSNO,
+     2                  ZWSNOW, ZZPOND, ZTPOND, ZGROWTH,ZTBASE, GFLUX,
+     3                  ZPCFC,  ZPCLC,  ZPCPN,  ZPCPG,  ZQFCF,  ZQFCL,
+     4                  ZQFN,   ZQFG,   ZQFC,   ZHMFC,  ZHMFG,  ZHMFN,
+     5                  ZHTCC,  ZHTCS,  ZHTC,   ZROFC,  ZROFN,  ZROVG,
+     6                  ZWTRS,  ZWTRG,  ZOVRFLW,ZSUBFLW,ZBASFLW,
+     6                  ZTOVRFL,ZTSUBFL,ZTBASFL,EVAPO,
+     7                  TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG,
+     8                  THICEC, THICEG, HCPC,   HCPG,   RPCP,   TRPCP,
+     9                  SPCP,   TSPCP,  PCPR,   TA,     RHOSNI, GGEO,
+     A                  FFC,    FG,     FCS,    FGS,    TPONDC, TPONDG,
+     B                  TPNDCS, TPNDGS, EVAPC,  EVAPCG, EVAPG,  EVAPCS,
+     C                  EVPCSG, EVAPGS, QFREZC, QFREZG, QMELTC, QMELTG,
+     D                  RAICAN, SNOCAN, RAICNS, SNOCNS, FROOT,
+     D                  FSVF,   FSVFS,  
+     E	                CWLCAP, CWFCAP, CWLCPS, CWFCPS, 
+     F                  TCANO,
+     G                  TCANS,  CHCAP,  CHCAPS, CMASSC, CMASCS, ZSNOW,
+     H                  GZEROC, GZEROG, GZROCS, GZROGS, G12C,   G12G,
+     I                  G12CS,  G12GS,  G23C,   G23G,   G23CS,  G23GS,
+     J                  TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS,
+     K                  ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, ZTSFS,
+     L                  TCTOP,  TCBOT,  ZTHRC,  ZTHRG,  ZTHRCS, ZTHRGS,
+     M                  ZTHPOR, ZTHLRET,ZTHLMIN,ZBI,    ZPSISAT,ZGRKSAT,
+     N                  ZTHLRAT,ZTHFC,  ZXDRAIN,ZHCPS,  DELZ,
+     O                  ZDELZW, ZZBOTW, ZXSLOPE,ZGRKFAC,ZWFSURF,ZWFCINT,
+     P                  ISAND,  IWF,    M,      I,      J,
+     Q                  TRNCH,  IC,     IG,     IG+1,   IG+2,
+     R                  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI  )
+*VDIR NODEP
+          endif
+          doprec=dotile
+        end do
+          do i=1,n
+            if ((nmos.EQ.0).OR.(mosfrac(i).gt.0)) then
+*
+            ALVIS_SOL(I) = 0.5*(ALVS(I)+ALIR(I))
+            FSOLUACC(I) = FSOLUACC(I)+FLUSOL(I)*ALVIS_SOL(I)*DT
+            FIRUACC(I)  = FIRUACC(I) +QLWAVG(I) * DT
+            ZFL(I)=FFC(I)*GZEROC(I)+FG(I)*GZEROG(I)+FCS(I)*GZROCS(I)+
+     +             FGS(I)*GZROGS(I)
+*
+****calculs valides dans le cas explicite seulement
+            CTU      (I) = 0. 
+****
+*
+            end if
+          end do
+      end if
+*
+*     End of mosaic
+      end do
+*
+      IF(nmos.GT.0) THEN 
+        call mosavg(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N)
+      ENDIF
+*
+*     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
+      CALL FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_SOIL,
+     +               SURFLEN )
+*
+      RETURN
+      END

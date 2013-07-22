@@ -1,0 +1,113 @@
+#!/bin/sh
+
+set -ae
+set -x
+#
+# This script is similar to 'extrait_AHFL' (D. Charpentier), and is used to 
+# extract the rain and snowrates (D. Deacu).
+#   
+#
+#-----------------------------------------------------------
+jobname=`basename $0`
+#-----------------------------------------------------------
+
+firstdate=${first_date}
+lastdate=${last_date}
+repentree=$exper_path
+repsortie=$repentree/BUDGET
+
+
+ici=$repsortie
+cd ${ici}
+
+
+if [ ! -d ${repsortie}/rain_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/rain_mm
+fi
+
+if [ ! -d ${repsortie}/snow_mm ] ; then
+    mkdir -m 755 -p ${repsortie}/snow_mm
+fi
+
+
+date=${firstdate}
+
+
+while [ ${date} -ge ${firstdate} -a ${date} -le ${lastdate} ] ; do
+
+# tic tac dans le fichier ou U1 est rassemble 
+
+cat > dirfst1 <<EOF
+desire(-1,"^^")
+desire(-1,">>")
+EOF
+
+editfst -s ${repentree}/output_${date}/pm${date}-00-00_000 -d ${ici}/${date}_${rainrate_on}.fst -i dirfst1
+
+editfst -s ${repentree}/output_${date}/pm${date}-00-00_000 -d ${ici}/${date}_${snowrate_on}.fst -i dirfst1
+
+
+# on rassemble tous les heures de U1 dans un meme fichier
+
+heure=1
+
+while [ $heure -le 24 ] ; do
+
+heuref=00${heure}
+heuref=${heuref:(-3)}
+
+cat > dirfst2 <<EOF
+desire(-1,'${rainrate_on}',-1,-1,-1,$heure,-1)
+EOF
+editfst -s ${repentree}/output_${date}/pm${date}-00-00_${heuref} -d ${ici}/${date}_${rainrate_on}.fst -i dirfst2
+
+cat > dirfst3 <<EOF
+desire(-1,'${snowrate_on}',-1,-1,-1,$heure,-1)
+EOF
+editfst -s ${repentree}/output_${date}/pm${date}-00-00_${heuref} -d ${ici}/${date}_${snowrate_on}.fst -i dirfst3
+
+heure=`expr $heure + 1`
+done
+
+# convert the rates (in m/s) into amounts of precipitation (in mm/h)	
+
+r.diag xlin ${ici}/${date}_${rainrate_on}.fst ${ici}/${date}_rain_mm.fst -a 3600000 -b 0 -name RAIN
+
+r.diag xlin ${ici}/${date}_${snowrate_on}.fst ${ici}/${date}_snow_mm.fst -a 3600000 -b 0 -name SNOW
+   
+ 
+aaaa=`echo $date | cut -c1-4`
+
+if [ ! -d ${repsortie}/rain_mm/${aaaa} ] ; then
+    mkdir -m 755 -p ${repsortie}/rain_mm/${aaaa}
+fi
+
+if [ ! -d ${repsortie}/snow_mm/${aaaa} ] ; then
+    mkdir -m 755 -p ${repsortie}/snow_mm/${aaaa}
+fi
+
+mv ${ici}/${date}_rain_mm.fst ${repsortie}/rain_mm/${aaaa}
+
+mv ${ici}/${date}_snow_mm.fst ${repsortie}/snow_mm/${aaaa}
+
+rm -f ${ici}/${date}_${rainrate_on}_*
+
+rm -f ${ici}/${date}_${snowrate_on}_*
+
+rm -f dirfst1 dirfst2 dirfst3
+
+# on passe a la journee suivante
+
+date=`r.date ${date} +24`
+date=${date:0:10}
+
+echo $date
+done
+
+rm -f *_${rainrate_on}.fst
+
+rm -f *_${snowrate_on}.fst
+
+#-------------------------------------------
+echo " $jobname " ' se termine normalement '
+#-------------------------------------------

@@ -1,0 +1,809 @@
+copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+*** S/P PHYDEBU4
+      subroutine phydebu4 (n,nk,dimbuse,dimbusd,dimbusp,dimbusv,prout,
+     $                     rdradf_d)
+#include "impnone.cdk"
+      logical prout
+      integer n,nk,dimbuse,dimbusd,dimbusp,dimbusv
+      external rdradf_d 
+*
+*Author
+*          B. Bilodeau (Spring 1994)
+*
+*Revisions
+* 001      M. Gagnon   (Jul 95) - Added validation code for radniv
+* 002      M. Desgagne (Nov 95) - Unified physics interface
+* 003      L. Lefaivre (Nov 95/Feb 96) - Initialize ETRMIN and Z0MIN
+*                                 with values passed from dynamics
+* 004      B. Dugas (Sep 96) - Coherence check between CLIMAT, RADFIX
+* 005      G. Pellerin (Nov 95) - Added switches for deep convection
+*                                 KUOSTD,KUOSYM,KUOSUN with CONSUN
+* 006      G. Pellerin (Nov 96) - Insert common tables for RAS option
+* 007      B. Bilodeau (Apr 97) - Insert comdeck for CLASS
+* 008      M. Desgagne (Spring 97) - Microphysics
+* 009      B. Bilodeau (Jan 98) - Connect FCP and KFC with CONSUN
+* 010      Y. Delage (Feb 98) - Addition of HMIN in "surfcon.cdk"
+* 011      B. Bilodeau (Jun 98) - RADFILES and FOMICHEV
+* 012      M. Desgagne (Oct 98) - call back to rdradf_d (from dynamics)
+* 013      B. Bilodeau (Dec 98) - New "entry" bus
+* 014      M. Desgagne (Dec 98) - Correct bug in calculation of moyhr
+* 015      B. Bilodeau (Oct 99) - CW_RAD
+* 016      B. Bilodeau (Oct 2000) - Move consistency tests at the end 
+*                         of the subroutine to correct FOMIC-REDUC bug
+* 017      B. Bilodeau (Nov 2000) - Replace call to radini, turbini,
+*                                   gwdini and convini by call to phy_ini.
+*                                   Eliminate call to ptcalc.
+* 018      S. Belair and B. Bilodeau (May 2001) 
+*                                 - New density for fresh snow.
+* 019      B. Bilodeau (Mar 2001) - OPTIX
+* 020      B. Dugas (Jan 2002) - FOMIC and REDUC are now compatible
+* 021      B. Bilodeau (Mar 2002) - Correct bug in calculation of nspliti
+*                                   and add dzsedi.cdk
+* 022      A-M. Leduc (Jan 2003)  - SHLCVT becomes SHLCVT(1) or SHLCVT(2)
+* 023      B. Dugas (Feb 2003)    - share small_sedimentation_dt and
+*                                   cldopt_mode comdecks with SAVE_OPTIONS
+* 024      B. Bilodeau (Feb 2003) - AS2, BETA2 and KKL2 parameters
+*                                   Remove ALAT and BLAT
+* 025      B. Dugas (Mar 2003)    - Add STRATOS parametre
+* 026      A. Plante (June 2003)  - Add VARMTN (mountains.cdk)
+* 027      B. Dugas (July 2003)   - Add CRITLAC parametre
+* 028      A. Plante (sep 2003)   - Add key pcptype rule
+* 029      Y. Delage (Apr 2004)   - Reactivate land surface module CLASS 
+*                                 - Default values of parameters in common SURFCON
+*                                    now defined in surfcon_ini.cdk
+* 030      B. Bilodeau (Jul 2004) - Add Z0TLAT
+* 031      L. Spacek (Aug 2004)   - cloud clean-up
+*                                   elimination of ISTCOND=2,6,7,8 ICONVEC=4
+* 032      B. Bilodeau (Oct 2004) - Add protective code for dzsedi
+*
+* 033      S. Valcke (Apr 2005)   - COUPLING and IMPFLX incompatible
+* 034      B. Dugas (Aug 2005)    - Initialize commons in Block DATA PHYDEBU4_DATA
+* 035      B. Bilodeau (Jun 2005) - Add mosaic capability for CLASS
+*
+*Object
+*          initialization of the physics at the beginning
+*          of each execution of the model
+*
+*Arguments
+*          - Input -
+* N        horizontal dimension
+* NK       vertical   dimension
+*
+*          - Output -
+* DIMBUSE  dimension of the entry    memory bus
+* DIMBUSD  dimension of the dynamics memory bus
+* DIMBUSP  dimension of the physics    "     "
+* DIMBUSV  dimension of the volatile   "     "
+*
+*          - Input -
+* prout    logical switch to print on stdout
+* rdradf_d call back routine from the dynamics to manage the file
+*
+*Notes
+*          phydebu4 does the following :
+*          1) it checks the options to make sure they
+*             are valid and compatible.
+*          2) it initializes a few constants necessary
+*             for the execution of the physics package.
+*          3) it reads the radiation files if necessary.
+*          4) it constructs the 3 main buses dictionaries.
+*
+*MODULES
+      EXTERNAL PHYDEBU4_DATA
+*
+**
+#include "surfcon.cdk"
+#include "acmcon.cdk"
+#include "consphy.cdk"
+#include "clefcon.cdk"
+#include "machcon.cdk"
+#include "scfrst.cdk"
+#include "buses.cdk"
+#define OPTIONS_NAMELIST
+#include "options.cdk"
+#include "sedipara.cdk"
+#include "nbvarsurf.cdk"
+#include "dimsurf.cdk"
+#include "workspc.cdk"
+*
+#include "tables.cdk"
+#include "dzsedi.cdk"
+*
+      character varenv*512, fichozo*64, fichrad*64, sousrep*64
+*
+      integer i,k,courant(14),jour,mois,is1,is2
+      integer maxsloflux
+      real*8 heure
+      logical okinit
+*
+      external phydebu4_data
+      external litozon2,litblrad2,incdatr,newdate,qqexit
+      external iniras,ntables,classd
+*
+      integer  qqqr8sz
+      external qqqr8sz
+*
+      integer espir,espredu,espsurf,espvis
+      REAL PTOP,dt0,dti0
+*
+*     - - - - - - - - - - - - - - - - - - - - - - - - -
+      save okinit
+      data okinit/.false./
+      data varenv/'AFSISIO'/, sousrep/'/datafiles/constants/'/
+*
+*     PTOP SERT AU CALCUL DES TABLES POUR LE SCHEMA RAS
+      DATA PTOP/0.0/
+      SAVE PTOP
+*
+*---------------------------------------------------------------------
+*
+*
+*     INITIALISATION DE VARIABLES POUR CLEF
+*     - - - - - - - - - - - - - - - - - - - - - -
+*
+#include "surfcon_ini.cdk"
+      AS     = AS2
+      BETA   = BETA2
+      ETRMIN = ETRMIN2
+      Z0MIN = Z0MIN2
+      EXPLIM = 75.
+      TANLIM = EXP(12. * ALOG(2.))
+*
+*
+*     CONSTANTES NUMERIQUES DANS LA FERMETURE DU MODELE CLEF
+*     - - - - - - - - - - - - - - - - - - - - - - - - - - -
+*
+*     REF : THERRY ET LACARRERE
+*           ANDRE ET AL.
+*           BOUGEAULT
+*           MAILHOT ET BENOIT , JAS 1982
+*           WYNGAARD ET AL.
+*
+      CLEFC1 = 3.75/1.75
+      CLEFC4 = 4.5
+      CLEFC6 = 4.85
+      CLEFC7 = 1.0-0.125*CLEFC6
+      CLEFC8 = 6.5
+      CLEFCB = 0.4
+      CLEFAE = 3.0*CLEFC4/CLEFC8
+*
+      RIMB = 1.0 / RGASD
+*
+*
+*     INITIALISATION DE CONSTANTES POUR LE SCHEME DE MANABE
+*     - - - - - - - - - - - - - - - - - - - - - - - - - - -
+*
+*
+      DEPTH = 1.0/(RAUW * GRAV)
+*
+*     PARAMETRES UTILISES DANS LE SOUS-PROGRAMME MCONADJ
+*
+      HC = HC2
+      HF = HF2
+      HM = HM2
+*
+      IF ( MOIADJ.NE.1 ) MOIADJ = 0
+      ITRMAX = 4*LEVMAX
+      HMHCMIN = MIN( HC , HM )
+      HCMTOL = HC - TOL
+*
+*     PARAMETRE UTILISE DANS L'INSTRUCTION FONCTION CHIC
+*     GAMMA CRITIQUE = CHIC( H ) * GAMMA SATURATION
+*
+*     CHIC( H ) = CVMGT( HCI * ( H - HC ) , 1.0 , H.LT.1.0 )
+*
+      HCI = 1.0
+      IF ( HC.NE.1.0 ) HCI = 1.0/( 1.0 - HC )
+*
+*     PARAMETRE UTILISE DANS L'INSTRUCTION FONCTION CRIRLH
+*     SI ITER = 1 , HS ( HUMIDITE RELATIVE DE CRITIQUE DE SATURATION )
+*                      = CRIRLH( H )
+*
+*     CRIRLH( H ) = MIN( H , 1.0 ) - AA * ( MIN( H , 2.0 - H ) - HM )**3
+*
+      AA = 0.0
+      IF( HM.LT.1.0 )  AA = 1.0/(6.0 * (1.0 - HM) ** 2)
+*
+*
+*     RADIATION
+*     - - - - -
+*
+      IF (RADIA.EQ.'NEWRAD'.AND.KNTRAD.LE.0) THEN
+         WRITE(6,1040) 'KNTRAD',KNTRAD
+         CALL QQEXIT(1)
+      ENDIF
+*
+*     the following comdeck is shared with SAVE_OPTIONS
+*
+#include "cldopt_mode.cdk"
+*
+*     reduction des niveaux pour les calculs radiatifs
+*
+      IF (RADNIVL(1) .EQ. 0 .OR. RADNIVL(1).EQ.NK) THEN
+*
+         REDUC = .FALSE.
+*
+      ELSE
+*
+         REDUC = .TRUE.
+*
+         if( radnivl(1) .lt. 0 ) then
+           write(6,1050) 'PLEASE PROVIDE A LIST OF LEVELS'
+           call qqexit(1)
+         endif
+*
+         if( radnivl(2) .ne. 1 ) then
+           write(6,1050) 'THE LIST MUST BEGIN WITH LEVEL 1'
+           call qqexit(1)
+         endif
+*
+         if( radnivl(radnivl(1)+2) .ne. 0 ) then
+           write(6,1050) 'TOO MANY LEVELS IN THE LIST'
+           call qqexit(1)
+         endif
+*
+         do i=2,radnivl(1)
+           if( radnivl(i) .ge. radnivl(i+1) ) then
+             write(6,1050) 'THE LIST MUST BE SORTED IN ASCENDING ORDER'
+             call qqexit(1)
+           endif
+         enddo
+*
+      ENDIF
+*
+*     lecture des tableaux de radiation
+*
+      if (radia.eq.'NEWRAD') then
+*
+         if      (radfiles.eq.'UNF')   then
+*           fichiers fortran sequentiels sans format
+            fichozo = 'ozoclim_32'
+            fichrad =  'irtab5_32'
+         else if (radfiles.eq.'STD')   then
+*           fichiers standard random
+            fichozo = 'ozoclim'
+            fichrad = 'irtab5_std'
+         endif
+*
+         if (.not. okinit) then
+            if (CLIMAT) then
+*              TROUVER LE JOUR ET LE MOIS CORRESPONDANTS
+*              AU DEBUT DE LA "TRANCHE" D'EXECUTION COURANTE.
+               heure = dble(debut) * (dble(delt)/3600.d0)
+*              call incdat ( courant(14),DATE(14),heure )
+               call incdatr( courant(14),DATE(14),heure )
+*              call datmgp( courant )
+               call newdate(courant(14),is1,is2,-3)
+*              jour = courant(3)
+               jour   = mod(is1,100)
+*              mois = courant(2)
+               mois   = mod(is1/100,100)
+               if (prout) write(6,1120) jour,mois
+            else
+               jour = 15
+               mois = date(2)
+            endif
+            call litozon2 (varenv,sousrep,fichozo,mois,jour,prout,
+     $                                                  rdradf_d)
+            call litblrad2(varenv,sousrep,fichrad,prout,rdradf_d)
+            okinit = .true.
+         endif
+      endif
+*
+*
+*
+*     initialisation des common block de CLASS
+*     - - - - - - -  - - - - - - - - - - - - -
+*
+      if (schmsol.eq.'CLASS') then
+*
+*        pour initialiser dans CLASS les constantes contenues
+*        dans les common CONSPHY et SURFCON
+         call set_class_const()
+*
+*        pour initialiser le pas de temps de CLASS
+         call set_class_dt(delt)
+*
+*        pour initialiser les constantes propres a CLASS
+         call classd()
+*
+      endif
+*
+*     calcul des tableaux de pkappa et qsatvp pour RAS
+*     - - - - - - - - - - - - - - - - - - - - - - - -
+*
+*     pkappa: fonction d'Exner
+*     qsatvp: pression de vapeur saturante (mb)
+*
+      if (CONVEC .eq. 'RAS') then
+        call ntables (pkappa,qsatvp,npkappa,nqsatvp,cappa,max(ptop,.01))
+        call iniras
+      endif
+*
+*
+      if (dzsedi.gt.500.) then
+         write(6,1150)
+         call qqexit(1)
+      endif
+*
+      if (istcond.ge.9) then
+*
+*     the following comdeck is shared with SAVE_OPTIONS
+*
+#include "small_sedimentation_dt.cdk"
+*
+      endif
+*
+*
+*     VERIFICATION DE LA COHERENCE DE CERTAINES CLES
+*     - - - - - - - - - - - - - - - - - - - - - - -
+*
+      IF ( (CONVEC.EQ.'MANABE'.OR.CONVEC.EQ.'SEC')                 .AND.
+     +     (STCOND.NE.'NIL') )                                      THEN
+*
+          WRITE(6,1000)
+          CALL QQEXIT(1)
+*
+      ELSE IF ( (CONVEC.EQ.'NEWKUO'.AND.STCOND.NE.'NEWSUND') )     THEN
+*
+          WRITE(6,1005)
+          CALL QQEXIT(1)
+*
+      ELSE IF ( STCOND.EQ.'CONSUN' .AND.
+     +         (CONVEC.NE.'KUOSTD'.AND.CONVEC.NE.'KUOSYM'.AND.
+     +          CONVEC.NE.'KUOSUN'.AND.CONVEC.NE.'RAS'   .AND.
+     +          CONVEC.NE.'FCP'   .AND.CONVEC.NE.'KFC'   .AND.
+     +          CONVEC.NE.'FCPKUO'.AND.CONVEC.NE.'NIL') )          THEN
+*
+          WRITE(6,1006)
+          CALL QQEXIT(1)
+*
+      ELSE IF ( (CONVEC.EQ.'FCPKUO' .OR. CONVEC.EQ.'KUOSYM'.OR.
+     +           CONVEC.EQ.'KUOSTD' .OR. CONVEC.EQ.'KUOSUN')
+     +           .AND. STCOND.NE.'CONSUN')                         THEN
+*
+          WRITE(6,1007)
+          CALL QQEXIT(1)
+*
+      ENDIF
+*
+      IF (FLUVERT.EQ.'MOISTKE' .AND.
+     +   (CONVEC.NE.'KFC'.AND.CONVEC.NE.'KFCKUO2'.AND.
+     +    CONVEC.NE.'FCP'.AND.CONVEC.NE.'NIL'))                    THEN
+         WRITE(6,1010) CONVEC,FLUVERT
+         CALL QQEXIT(1)
+      ENDIF 
+*
+      IF (FLUVERT.EQ.'MOISTKE' .AND. 
+     +    .NOT.(     STCOND.EQ.'EXC' .OR. STCOND.EQ.'CONSUN' 
+     +          .OR. STCOND.EQ.'NIL' .OR. STCOND.EQ.'EXCRIG' ) )   THEN
+         WRITE(6,1010) STCOND,FLUVERT
+         CALL QQEXIT(1)
+      ENDIF
+*
+      IF (COUPLING .and. IMPFLX) THEN
+         WRITE(6,1010) 'COUPLING', 'IMPFLX'
+         CALL QQEXIT(1)
+      ENDIF
+*
+      IF (COUPLING .and. SCHMURB.NE.'NIL') THEN
+         WRITE(6,1010) 'COUPLING', 'TEB'
+         CALL QQEXIT(1)
+      ENDIF
+*
+      MAXSLOFLUX = 20
+      IF (NSLOFLUX.GT.MAXSLOFLUX) THEN
+          WRITE(6,1008) MAXSLOFLUX
+          CALL QQEXIT(1)
+      ENDIF
+*
+      IF (FLUVERT.EQ.'PHYSIMP'.AND..NOT.DMOM) THEN
+*        MISE A ZERO DES COEFFICIENTS DE DIFFUSION
+         DO K=1,LEVMAX
+            EPONGE(K) = 0.0
+         END DO
+      ENDIF
+*
+*
+      IF ((CLIMAT .OR. STRATOS) .AND. RADFIX) THEN
+*         LES MODES CLIMAT ET STRATOS
+*         DOIVENT UTILISER RADFIX=FAUX
+          RADFIX = .FALSE.
+          WRITE(6,1070)
+      ENDIF
+*
+*
+      IF (SHLCVT(1).EQ.'        '.or.SHLCVT(2).EQ.'        ') THEN
+*        LA CLE SHLCVT DOIT ETRE DEFINIE
+         WRITE(6,1080)
+         CALL QQEXIT(1)
+      ENDIF
+*
+      IF (FOMIC) THEN
+*
+         IF(RADIA.NE.'NEWRAD') THEN
+            WRITE(6,1090)
+            CALL QQEXIT(1)
+         ENDIF
+*
+         IF(RADFIX) THEN
+            WRITE(6,1100)
+            CALL QQEXIT(1)
+         ENDIF
+*
+      ENDIF
+*
+      IF ( PCPTYPE.EQ.'BOURGE')THEN
+         IF (STCOND.EQ.'EXC'    .OR. 
+     $       STCOND.EQ.'EXCR2'  .OR.
+     $       STCOND.EQ.'EXCRI'  .OR.
+     $       STCOND.EQ.'EXCRIG')THEN
+            WRITE(6,1110)
+            CALL QQEXIT(1)
+         ENDIF
+      ENDIF
+*
+      IF ( (MIN(Z0TLAT(1),Z0TLAT(2)).LT. 0.0)    .OR.
+     $     (MAX(Z0TLAT(1),Z0TLAT(2)).GT.90.0)    .OR.
+     $     (Z0TLAT(1).GT.Z0TLAT(2))         )    THEN
+            WRITE(6,1151)
+            CALL QQEXIT(1)
+      ELSE
+*        CONVERSION DE DEGRES A RADIANS
+         Z0TLAT(1) = Z0TLAT(1) * PI/180.
+         Z0TLAT(2) = Z0TLAT(2) * PI/180.
+      ENDIF
+*        
+*
+*     IMPRESSION DE LA CONFIGURATION
+*     - - - - - - - - - - - - - - - -
+*
+      if (prout) then
+*
+*     IMPRESSION DU NUMERO DE LA VERSION DE LA PHYSIQUE
+      WRITE(6,1160) 4.4
+*
+*     IMPRESSION DES CLES CHOISIES PAR L'USAGER
+      WRITE(6,1020)
+#if defined(NEC)
+      WRITE(6,OPTIONP)
+#else
+      WRITE(6,NML=OPTIONP)
+#endif
+      WRITE(6,1030)
+*
+      endif
+*
+*
+*     CONSTRUCTION OF THE 4 MAIN BUSES DICTIONARIES:
+*     - - - - - - - - - - - - - - - - - - - - - - - 
+*     BUSENT, BUSDYN, BUSPER and BUSVOL
+*     - - - - - - - - - - - - - - - - -
+*
+      if (schmurb.eq.'NIL') then
+         nsurf = max (indx_soil,indx_glacier,indx_water,
+     +                indx_ice,indx_agrege) - 1
+      else
+         nsurf = max (indx_soil,indx_glacier,indx_water,
+     +                indx_ice,indx_agrege,indx_urb) - 1
+      endif
+*
+      call phy_ini (n,nk)
+      buslck = .true.
+      dimbuse = enttop
+      dimbusd = dyntop
+      dimbusp = pertop
+      dimbusv = voltop
+*
+*     initialisation des pointeurs pour le "minibus de surface"
+      call iniptsurf(n,nk,prout)
+*
+*
+*     Espace de travail commun de la physique
+*     - - - - - - - - - - - - - - - - - - - -
+*
+*     espace requis pour les processus de surface
+      espsurf = 4*surfesptot*n + 12*n + 4*nvarsurf
+*
+*     espace requis pour l'option de reduction des niveaux
+      if (reduc) then
+         espredu = 7*n*radnivl(1) + 12*n*nk + 3*n
+      else
+         espredu = 12*n*nk + 3*n
+      endif
+*
+*     espace necessaire au scheme de rad. solaire
+      espvis = 47*n*(nk+2) + espredu
+*
+*     espace necessaire au scheme de rad. infrarouge
+      espir  = n*(5+ (nk+1)*(18+ 3*(nk+1))) + espredu
+*     memoire requise pour l'espace de travail total
+      espwork = max(espvis,espir,espsurf)
+*
+*
+*     Calcul de moyhr
+*     - - - - - - - -
+*
+*     moyhr est la periode de moyennage des diagnostics.
+*     conversion : nombre d'heures --> nombre de pas de temps.
+      moyhr = nint (moyhr * 3600./delt)
+*
+*
+*************************************************************
+*
+1000   FORMAT ( ' *****************************************',
+     +        / ' *****************************************',
+     +        / ' *                                       *',
+     +        / ' ***** ABORT ***** ABORT ***** ABORT *****',
+     +        / ' *                                       *',
+     +        / ' *  S/R PHYDEBU4:                        *',
+     +        / ' *                                       *',
+     +        / ' *     IF CONVEC = MANABE                *',
+     +        / ' *                                       *',
+     +        / ' *            OR IF                      *',
+     +        / ' *                                       *',
+     +        / ' *     IF CONVEC = SEC                   *',
+     +        / ' *                                       *',
+     +        / ' *           THEN USE                    *',
+     +        / ' *                                       *',
+     +        / ' *        STCOND = NIL                   *',
+     +        / ' *                                       *',
+     +        / ' *****************************************',
+     +        / ' *****************************************')
+*
+1005   FORMAT ( ' *****************************************',
+     +        / ' *****************************************',
+     +        / ' *                                       *',
+     +        / ' ***** ABORT ***** ABORT ***** ABORT *****',
+     +        / ' *                                       *',
+     +        / ' *  S/R PHYDEBU4:                        *',
+     +        / ' *                                       *',
+     +        / ' *     IF CONVEC = NEWKUO                *',
+     +        / ' *                                       *',
+     +        / ' *                                       *',
+     +        / ' *           THEN USE                    *',
+     +        / ' *                                       *',
+     +        / ' *        STCOND = NEWSUND               *',
+     +        / ' *                                       *',
+     +        / ' *****************************************',
+     +        / ' *****************************************')
+*
+1006   FORMAT ( ' *****************************************',
+     +        / ' *****************************************',
+     +        / ' *                                       *',
+     +        / ' ***** ABORT ***** ABORT ***** ABORT *****',
+     +        / ' *                                       *',
+     +        / ' *  S/R PHYDEBU4:                        *',
+     +        / ' *                                       *',
+     +        / ' *     IF STCOND = CONSUN                *',
+     +        / ' *                                       *',
+     +        / ' *           THEN USE                    *',
+     +        / ' *                                       *',
+     +        / ' *                 KUOSTD                *',
+     +        / ' *        CONVEC = KUOSYM                *',
+     +        / ' *                 KUOSUN                *',
+     +        / ' *                 RAS                   *',
+     +        / ' *                 FCP                   *',
+     +        / ' *                 FCPKUO                *',
+     +        / ' *                 KFC                   *',
+     +        / ' *                                       *',
+     +        / ' *                                       *',
+     +        / ' *****************************************',
+     +        / ' *****************************************')
+*
+1007   FORMAT ( ' *****************************************',
+     +        / ' *****************************************',
+     +        / ' *                                       *',
+     +        / ' ***** ABORT ***** ABORT ***** ABORT *****',
+     +        / ' *                                       *',
+     +        / ' *  S/R PHYDEBU4:                        *',
+     +        / ' *                                       *',
+     +        / ' *     IF CONVEC = FCPKUO, KUOSYM,       *',
+     +        / ' *                 KUOSTD OR KUOSUN,     *',
+     +        / ' *                                       *',
+     +        / ' *           THEN USE                    *',
+     +        / ' *                                       *',
+     +        / ' *        STCOND = CONSUN                *',
+     +        / ' *                                       *',
+     +        / ' *                                       *',
+     +        / ' *****************************************',
+     +        / ' *****************************************')
+*
+1008   FORMAT ( ' *****************************************',
+     +        / ' *****************************************',
+     +        / ' *                                       *',
+     +        / ' ***** ABORT ***** ABORT ***** ABORT *****',
+     +        / ' *                                       *',
+     +        / ' *  S/R PHYDEBU4:                        *',
+     +        / ' *                                       *',
+     +        / ' *     NSLOFLUX CANNOT EXCEED            *',
+     +        / ' *     A VALUE OF',I3, 21X,             '*',
+     +        / ' *                                       *',
+     +        / ' *                                       *',
+     +        / ' *****************************************',
+     +        / ' *****************************************')
+*
+1010   FORMAT ( ' *****************************************',
+     +        / ' *****************************************',
+     +        / ' *                                       *',
+     +        / ' ***** ABORT ***** ABORT ***** ABORT *****',
+     +        / ' *                                       *',
+     +        / ' *  S/R PHYDEBU4: INVALID COMBINATION    *',
+     +        / ' *  OF OPTIONS : ', A8,2x,A8,         '  *',
+     +        / ' *                                       *',
+     +        / ' *****************************************',
+     +        / ' *****************************************')
+*
+1020   FORMAT ( '                                                     ',
+     +        / ' ****************************************************',
+     +        / ' ****************************************************',
+     +        / '                                                     ',
+     +        / '    PHYSICS OPTIONS :                                ',
+     +        / '    ---------------                                  ',
+     +        / '                                                     ')
+*
+1030   FORMAT ( '                                                     ',
+     +        / ' ****************************************************',
+     +        / ' ****************************************************',
+     +        / '                                                     ')
+*
+1040   FORMAT ( ' *****************************************',
+     +        / ' *****************************************',
+     +        / ' *                                       *',
+     +        / ' ***** ABORT ***** ABORT ***** ABORT *****',
+     +        / ' *                                       *',
+     +        / ' *     INVALID VALUE FOR OPTION          *',
+     +        / ' *  ', A8,' : ',I4,                   '  *',
+     +        / ' *                                       *',
+     +        / ' *****************************************',
+     +        / ' *****************************************')
+*
+1050  FORMAT( ' *****************************************************',
+     x      / ' *****************************************************',
+     x      / ' *                                                   *',
+     x      / ' *          S/R PHYDEBU4, OPTION RADNIV:             *',
+     x      / ' *       ',A,
+     x      / ' *                                                   *',
+     x      / ' *****************************************************',
+     x      / ' *****************************************************')
+*
+1060   FORMAT ( ' *   ',A,F4.2,A,'               *')
+1070   FORMAT ( ' RADFIX SET TO .FALSE. FOR CLIMATE OR STRATOS MODE ')
+*
+1080   FORMAT ( ' *****************************************',
+     +        / ' *****************************************',
+     +        / ' *                                       *',
+     +        / ' ***** ABORT ***** ABORT ***** ABORT *****',
+     +        / ' *                                       *',
+     +        / ' * S/R PHYDEBU: OPTION SHLCVT NOT DEFINED*',
+     +        / ' *                                       *',
+     +        / ' *****************************************',
+     +        / ' *****************************************')
+*
+1090   FORMAT ( ' FOMIC MUST BE USED WITH NEWRAD')
+*
+1100   FORMAT ( ' FOMIC AND RADFIX ARE INCOMPATIBLE')
+*
+1110   FORMAT ( ' *****************************************',
+     +        / ' *****************************************',
+     +        / ' *                                       *',
+     +        / ' ***** ABORT ***** ABORT ***** ABORT *****',
+     +        / ' *                                       *',
+     +        / ' *  S/R PHYDEBU4: INVALID COMBINATION    *',
+     +        / ' *                                       *',
+     +        / ' *     IF PCPTYPE = BOURGE               *',
+     +        / ' *                                       *',
+     +        / ' *     THEN YOU CANNOT USE ANY OF STCOND:*',
+     +        / ' *                                       *',
+     +        / ' *         EXC,EXCR2,EXCRI,EXCRIG        *',
+     +        / ' *                                       *',
+     +        / ' *****************************************',
+     +        / ' *****************************************')
+*
+1120   FORMAT ( ' OZONE INTERPOLATED TO DAY ',I2,', MONTH ',I2)
+1150   FORMAT ( ' *****************************************',
+     +        / ' *****************************************',
+     +        / ' *                                       *',
+     +        / ' ***** ABORT ***** ABORT ***** ABORT *****',
+     +        / ' *                                       *',
+     +        / ' *  S/R PHYDEBU4:                        *',
+     +        / ' *                                       *',
+     +        / ' *       DZSEDI IS TOO LARGE             *',
+     +        / ' *                                       *',
+     +        / ' *                                       *',
+     +        / ' *****************************************',
+     +        / ' *****************************************')
+1151   FORMAT ( ' *****************************************',
+     +        / ' *****************************************',
+     +        / ' *                                       *',
+     +        / ' ***** ABORT ***** ABORT ***** ABORT *****',
+     +        / ' *                                       *',
+     +        / ' *  S/R PHYDEBU4:                        *',
+     +        / ' *                                       *',
+     +        / ' *     WRONG SPECIFICATION OF Z0TLAT     *',
+     +        / ' *                                       *',
+     +        / ' *                                       *',
+     +        / ' *****************************************',
+     +        / ' *****************************************')
+*
+1152   FORMAT ( ' *****************************************',
+     +        / ' *****************************************',
+     +        / ' *                                       *',
+     +        / ' ***** ABORT ***** ABORT ***** ABORT *****',
+     +        / ' *                                       *',
+     +        / ' *  S/R PHYDEBU4:                        *',
+     +        / ' *                                       *',
+     +        / ' *     DZSEDI MUST BE DEFINED FOR        *',
+     +        / ' *     KONG-YAU CONDENSATION SCHEME      *',
+     +        / ' *                                       *',
+     +        / ' *                                       *',
+     +        / ' *****************************************',
+     +        / ' *****************************************')
+*
+1160   FORMAT ( ///
+     +        / ' ****************************************************',
+     +        / ' ****************************************************',
+     +        / ' *                                                  *',
+     +        / ' *****',9(' '), 'PHYSICS VERSION',F5.2,13(' '),'*****',
+     +        / ' *                                                  *',
+     +        / ' ****************************************************',
+     +        / ' ****************************************************',
+     +        ///                                                       )
+*----------------------------------------------------------------------
+      return
+      end
+      BLOCK DATA PHYDEBU4_DATA
+*
+#include "acmcon.cdk"
+#include "buses.cdk"
+#include "comphy.cdk"
+#include "isbapar.cdk"
+#include "mountains.cdk"
+#include "surfacepar.cdk"
+#include "surfcon.cdk"
+*
+*     POUR INITIALISER LE COMMON ACMCON
+      data lheat,moiadj,moiflx,itret/1,1,1,1/
+      DATA TOL / 0.01 /
+      DATA TRESHLD / 0.01 /
+*
+      integer maxbus2
+      parameter (maxbus2=2*maxbus)
+*
+*     POUR INITIALISER LES COMMONs de buses.cdk
+      data enttop,dyntop,pertop,voltop /4*0/
+      data entspc,dynspc,perspc,volspc /4*0/
+      data entnm,dynnm,pernm,volnm    /maxbus2*' ',maxbus2*' ',
+     +                                 maxbus2*' ',maxbus2*' '/
+      data entdc,dyndc,perdc,voldc    /maxbus*' ' ,maxbus*' ',
+     +                                 maxbus*' ' ,maxbus*' ' /
+      data entpar,dynpar,perpar,volpar /
+     +                           maxbus*0,maxbus*0,maxbus*0,maxbus*0,
+     +                           maxbus*0,maxbus*0,maxbus*0,maxbus*0,
+     +                           maxbus*0,maxbus*0,maxbus*0,maxbus*0,
+     +                           maxbus*0,maxbus*0,maxbus*0,maxbus*0,
+     +                           maxbus*0,maxbus*0,maxbus*0,maxbus*0,
+     +                           maxbus*0,maxbus*0,maxbus*0,maxbus*0,
+     +                           maxbus*0,maxbus*0,maxbus*0,maxbus*0,
+     +                           maxbus*0,maxbus*0,maxbus*0,maxbus*0
+     +                                 /
+      data buslck /.false./
+*
+*     POUR INITIALISER LE COMMON COMPHY
+      DATA  CEVAP ,CMELT, CCCTIM
+     +     /1.2E-4,2.4E+4, 1800./
+*
+*     POUR INITIALISER LE COMMON ISBAPAR
+      DATA ANSMAX,TODRY,RHOMIN,RHOSDEF,WCRN /0.80, 0.008, 0.05, 0.15, 10.0/
+*
+*     POUR INITIALISER LE COMMON mountains
+      DATA VARMTN/0/
+*
+*     POUR INITIALISER LE COMMON SURFACEPAR
+      DATA CRITMASK,CRITSNOW,CRITWATER,CRITEXTURE,MINICEDP,CRITLAC
+     +    / 0.001  , 0.0001 ,  0.001  ,     0.1  ,   0.05 ,  0.01 /
+*
+*     POUR INITIALISER LE COMMON SURFCON
+      DATA ANGMAX / 0.85 /
+*
+      END BLOCK DATA PHYDEBU4_DATA

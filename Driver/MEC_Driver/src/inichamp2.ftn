@@ -1,0 +1,241 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+***S/P INICHAMP2
+*
+      SUBROUTINE INICHAMP2(E, ESIZ, F, FSIZ, 
+     $                     V, VSIZ, D, DSIZ,
+     $                     QCDIFV,
+     $                     KOUNT, TRNCH,
+     $                     CDT1, NI, NK)
+*
+#include "impnone.cdk"
+*
+      INTEGER I, IK, K, ESIZ, FSIZ, VSIZ, DSIZ, KOUNT, NI, NK, TRNCH
+      REAL E(ESIZ), F(FSIZ), D(DSIZ), V(VSIZ), DT, CDT1
+      REAL SELOC(NI,NK), QCDIFV (NI,NK)
+*
+*Author
+*          B. Bilodeau (July 1997)
+*
+*Revision
+* 001      M. Desgagne (Winter 1998) Add averaged tendencies
+* 002      B. Bilodeau (Nov 1998) Merge phyexe and param4
+* 003      B. Bilodeau (Feb 1999) Entry bus
+* 004      J. Mailhot  (Mar 1999) - Changes for new SURFACE interface
+* 005      S. Belair   (Mar 1999) Entry bus for ISBA
+*                                 New subroutine INISURF
+* 006      A. Methot (May 1999) - Correct bug when FCPFLG < 0
+* 007      B. Bilodeau (Nov 2000) - New comdeck phybus.cdk
+* 008      B.Dugas     (Jul 2001) - Add MOYHR field ccnm
+* 009      B. Bilodeau and A. Zadra (Mar 2003) - Add call to equivmount
+* 010      B. Bilodeau (Jun 2003) - IBM conversion
+*               - Remove initialization of volatile bus to zero 
+*                 since it is already done in the dynamics code
+* 011      B. Bilodeau and L. Spacek (Dec 2003) - Move zeroing of 
+*                                        accumulators to calcdiag
+* 012      B. Bilodeau (Feb 2004) - Change indexing for initialization
+*                                   of HST
+* 013      B. Bilodeau and M. Roch (Jan 2002) - Remove units change for SNODP
+* 014      L. Spacek (Aug 2004) - cloud clean-up fn, ccn
+*                                 change to fbl, ftot respectively
+*          elimination of ISTCOND=2, calls to cldwin and adilwc transferred
+*          to prep_cwa, seloc and dt deleted from argument list
+* 015      B. Bilodeau (May 2005) - remove QC initialization to zero
+* 016      A. Lemonsu (Jun 2005) - Add case of urban surface
+* 017      G. Balsamo (Dec 2005) - Avoid FI FB initialization to zero in
+*                                  off-line mode (MEC)
+*         
+*
+*
+*Object
+*          To initialize arrays.
+*
+* Arguments
+*
+*          - Input -
+* F        field for permanent physics variables
+* FSIZ     dimension of F
+* V        volatile bus
+* VSIZ     dimension of V
+* D        dynamics bus
+* DSIZ     dimension of D
+* QCDIFV   QC tendency due to vertical diffusion
+* SELOC    intermediate (staggered) sigma levels (2D)
+* KOUNT    timestep number
+* TRNCH    row number
+* DT       length of timestep
+* CDT1     =   DT for 2-time level models
+*          = 2*DT for 3-time level models
+* NI       horizontal dimension
+* NK       vertical dimension
+*
+**
+*
+#include "indx_sfc.cdk"
+#include "options.cdk"
+#include "phy_macros_f.h"
+#include "phybus.cdk"
+#include "consphy.cdk"
+      INTEGER NIK
+*
+************************************************************************
+*     AUTOMATIC ARRAYS
+************************************************************************
+*
+      AUTOMATIC ( LAND   , REAL   , (NI   ) )
+      AUTOMATIC ( ENV    , REAL   , (NI   ) )
+      AUTOMATIC ( SXX    , REAL   , (NI   ) )
+      AUTOMATIC ( SYY    , REAL   , (NI   ) )
+      AUTOMATIC ( SXY    , REAL   , (NI   ) )
+      AUTOMATIC ( SLOPE8 , REAL   , (NI   ) )
+      AUTOMATIC ( XCENT8 , REAL   , (NI   ) )
+      AUTOMATIC ( MTDIR8 , REAL   , (NI   ) )
+      AUTOMATIC ( FITMP  , REAL   , (NI   ) )
+      AUTOMATIC ( FBTMP  , REAL   , (NI   ) )
+*
+************************************************************************
+*
+      EXTERNAL INISURF1
+*
+*
+      NIK = NI*NK
+*
+*
+*
+************************************************************************
+*        INITIALISATIONS FAITES A KOUNT = 0 SEULEMENT                  *
+*        --------------------------------------------                  *
+************************************************************************
+*
+      IF (KOUNT.EQ.0) THEN
+*
+         IF (IFLUVERT.EQ.-1) THEN
+*        LES FLUX RADIATIFS (FDSI,FLUSOLIS) SONT PRESERVE EN MODE OFFLINE
+            DO I=1,NI
+               FITMP(I) = F(FDSI     +I-1) 
+               FBTMP(I) = F(FLUSOLIS +I-1) 
+            END DO
+         END IF
+
+         DO I=1,FSIZ
+            F(I) = 0.0
+         END DO
+*
+         IF (IFLUVERT.EQ.-1) THEN
+*        LES FLUX RADIATIFS (FDSI,FLUSOLIS) SONT PRESERVE EN MODE OFFLINE
+            DO I=1,NI
+               F(FDSI     +I-1) = FITMP(I)
+               F(FLUSOLIS +I-1) = FBTMP(I) 
+            END DO
+         END IF
+
+         DO I=1,VSIZ
+            V(I) = 0.0
+         END DO
+*
+         DO I=0,NI-1
+*            F(SNODEN +I) = 100.0
+         END DO
+*
+         CALL INISURF1( E, ESIZ, F, FSIZ, D, DSIZ, NI, NK)
+*
+*VDIR NODEP
+         DO I=0,NI-1
+            F(TSM1+I) = F(TSOIL   +I)
+         END DO
+*
+*
+*VDIR NODEP
+         DO I=0,NI-1
+*
+*           HAUTEUR DE LA COUCHE LIMITE
+            F(HST + (indx_soil    -1)*NI +I) = 300.
+            F(HST + (indx_glacier -1)*NI +I) = 300.
+            F(HST + (indx_water   -1)*NI +I) = 300.
+            F(HST + (indx_ice     -1)*NI +I) = 300.
+            IF (SCHMURB.NE.'NIL') THEN
+               F(HST + (indx_urb     -1)*NI +I) = 300.
+            ENDIF
+            F(H   +I) = 300.
+            V(KCL +I) = NK-3
+            F(SCL +I) = EXP(-GRAV*F(H+I)/(RGASD*D(TMOINS+(NK-1)*NI+I)))
+*
+*           TEMPERATURE A LA SURFACE (POUR LA RADIATION)
+            IF(FLOAT(IFIX(0.1+F(MG+I))).EQ.0.0) F(TSRAD+I)=F(TWATER+I)
+*
+         END DO 
+*
+*        PRECALCULS POUR SCHEMA DE BLOCAGE
+*
+         DO I=1,NI
+            LAND(I)  = - ABS( NINT( F(mg+I-1) ) )
+            ENV(I)   = F(lhtg+I-1)
+            SXX(I)   = F(dhdx+I-1)
+            SYY(I)   = F(dhdy+I-1)
+            SXY(I)   = F(dhdxdy+I-1)
+         ENDDO
+*
+         CALL EQUIVMOUNT (LAND, ENV, SXX, SYY, SXY,
+     +                    NI, 1, NI,
+     +                    SLOPE8, XCENT8, MTDIR8)
+*
+         DO  I=1,NI
+           F(slope+I-1) = SLOPE8(I)
+           F(xcent+I-1) = XCENT8(I)
+           F(mtdir+I-1) = MTDIR8(I)
+         ENDDO
+*
+      ENDIF
+*
+************************************************************************
+*     INITIALISATIONS FAITES A TOUS LES PAS DE TEMPS                   *
+*     ----------------------------------------------                   *
+************************************************************************
+*
+      DO K=1,NK
+         DO I=1,NI
+            QCDIFV(I,K)    = 0.0
+         END DO
+      END DO
+*
+*
+      IF(ICONVEC.EQ.5.OR.ICONVEC.EQ.6) THEN
+*
+*        POUR CONVEC = "FCP" OU "KFC"
+*VDIR NODEP
+         DO I=0,NI-1
+            D(FCPMSK+I) = 2.0
+            D(FCPOID+I) = 1.0
+         END DO
+* 
+      ELSE IF(ICONVEC.NE.11 .AND. ICONVEC.NE.12) THEN
+*
+*        POUR CONVEC DIFFERENT DE "FCP" ET DE "FCPKUO",
+*        FCPMASK EST ZERO.
+*        POUR CONVEC = "FCPKUO" ou "KFCKUO2",  LA DYNAMIQUE
+*        DOIT OBLIGATOIREMENT SPECIFIER FCPMASK ET FCPOIDS.
+*
+*VDIR NODEP
+         DO I=0,NI-1
+            D(FCPMSK+I) = 0.0
+            D(FCPOID+I) = 0.0
+         END DO
+*
+      ENDIF
+*
+*
+************************************************************************
+*     INITIALISATIONS FAITES A KOUNT > 0 SEULEMENT                     *
+*     --------------------------------------------                     *
+************************************************************************
+*
+      IF (KOUNT.GT.0) THEN
+*
+         do i=0,ni-1
+*            f(snoden+i) = 100.0
+         end do
+*
+      ENDIF
+*
+*
+      RETURN
+      END

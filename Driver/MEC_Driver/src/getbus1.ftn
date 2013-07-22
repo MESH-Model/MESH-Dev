@@ -1,0 +1,183 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+***s/p  getbus1
+*
+      subroutine getbus1 (nm,on,desc,para,esp,n,bus,prout)
+#include "impnone.cdk"
+*
+      logical prout
+      integer esp,n
+      character*(*) nm(n),desc(n),on(n)
+      character*1 bus
+      integer para(n,8)
+*
+*Author
+*          M. Desgagne (Oct 1995)
+*
+*Revision
+*
+* 001      B. Bilodeau (Sept 1996) - Add list of 2-letter names
+* 002      B. Bilodeau (Dec  1998) - Add "entry" bus
+* 003      B. Bilodeau (Sept 2000) - Increase dimension of "para"
+*                                    (from 4 to 7) for gem output
+* 004      B. Bilodeau (Feb  2004) - Print 16-letter names
+*                                    and print 16-letter names
+* 005      B. Bilodeau (Jun  2005) - Increase dimension of "para"
+*                                    (from 7 to 8) for gem output
+*                                    
+*
+*Object
+*          to obtain information about the entry (E), dynamics (D),
+*          physics (P) and volatile (V) memory "buses"
+*
+*Arguments
+*
+*          - Output -
+* nm       liste of formal names in bus
+* on       output name
+* desc     liste of formal descriptions in bus
+* para     liste of attributes for each variable in bus
+* esp      length of bus
+*
+*          - Input -
+* n        maximum dimension of for nm, on, desc and para
+* bus      bus identification (D, P or V)
+*
+*Notes
+*
+*Implicites
+*
+#include "buses.cdk"
+*
+*Modules
+*
+**
+*
+      integer i,letop
+      character*3 typebus
+*
+*-------------------------------------------------------------------
+*
+      letop = 0
+      if (bus.eq."E") then
+         typebus='ENT'
+         if (n.lt.enttop) then
+            write (6,900) typebus,n,enttop
+            call qqexit(1)
+         endif
+         do 5 i=1,enttop
+            nm(i) = entnm(i,1)
+            on(i) = entnm(i,2)
+            desc(i) = entdc(i)
+            para(i,1) = entpar(i,1)
+            para(i,2) = entpar(i,2)
+            para(i,3) = entpar(i,3)
+            para(i,4) = entpar(i,4)
+            para(i,5) = entpar(i,5)
+            para(i,6) = entpar(i,6)
+            para(i,7) = entpar(i,7)
+            para(i,8) = entpar(i,8)
+ 5       continue
+         letop = enttop
+      endif
+*
+      if (bus.eq."D") then
+         typebus='DYN'
+         if (n.lt.dyntop) then
+            write (6,900) typebus,n,dyntop
+            call qqexit(1)
+         endif
+         do 10 i=1,dyntop
+            nm(i) = dynnm(i,1)
+            on(i) = dynnm(i,2)
+            desc(i) = dyndc(i)
+            para(i,1) = dynpar(i,1)
+            para(i,2) = dynpar(i,2)
+            para(i,3) = dynpar(i,3)
+            para(i,4) = dynpar(i,4)
+            para(i,5) = dynpar(i,5)
+            para(i,6) = dynpar(i,6)
+            para(i,7) = dynpar(i,7)
+            para(i,8) = dynpar(i,8)
+ 10      continue
+         letop = dyntop
+      endif
+*
+      if (bus.eq."P") then
+         typebus='PER'
+         if (n.lt.pertop) then
+            write (6,900) typebus,n,pertop
+            call qqexit(1)
+         endif
+         do 20 i=1,pertop
+            nm(i) = pernm(i,1)
+            on(i) = pernm(i,2)
+            desc(i) = perdc(i)
+            para(i,1) = perpar(i,1)
+            para(i,2) = perpar(i,2)
+            para(i,3) = perpar(i,3)
+            para(i,4) = perpar(i,4)
+            para(i,5) = perpar(i,5)
+            para(i,6) = perpar(i,6)
+            para(i,7) = perpar(i,7)
+            para(i,8) = perpar(i,8)
+ 20      continue
+         letop = pertop
+      endif
+*
+      if (bus.eq."V") then
+         typebus='VOL'
+         if (n.lt.voltop) then
+            write (6,900) typebus,n,voltop
+            call qqexit(1)
+         endif
+         do 30 i=1,voltop
+            nm(i) = volnm(i,1)
+            on(i) = volnm(i,2)
+            desc(i) = voldc(i)
+            para(i,1) = volpar(i,1)
+            para(i,2) = volpar(i,2)
+            para(i,3) = volpar(i,3)
+            para(i,4) = volpar(i,4)
+            para(i,5) = volpar(i,5)
+            para(i,6) = volpar(i,6)
+            para(i,7) = volpar(i,7)
+            para(i,8) = volpar(i,8)
+ 30      continue
+         letop = voltop
+      endif
+*
+      esp = 0
+      do 40 i=1,letop
+         esp = max(esp,para(i,1)+para(i,2)-1)
+ 40   continue
+*
+      if (prout) then
+      write (6,101) typebus
+      write (6,110)
+      write (6,130)
+      do 60 i=1,letop
+         write (6,120) nm(i),on(i),desc(i),para(i,1),para(i,2),
+     +                 para(i,6),para(i,8)-1,para(i,3),para(i,4)
+ 60   continue
+      write (6,130)
+      print *,' '
+      endif
+*
+ 101  format (/48x,'+',14('-'),'+'/48x,'|  **',a3,'BUS**  |'/
+     +     '+',17('-'),'+',12('-'),'+',16('-'),'+',14('-'),'+',9('-'),
+     +     '+',8('-'),'+',8('-'),'+',5('-'),'+',5('-'),'+',3('-'),'+',4('-'),'+')
+ 110  format ('|',6x,'Name',7x,'|',3x,'Output',3x,'|',
+     +         11x,'Description ',18x,'|  Start | Length | Mul | Mos |Ini|Stag|'/
+     +         '|',17x,'|',4x,'name',4x,'|',41x,'|',8x,'|',8x,'|',5x,'|',
+     +         ' aic |',3x, '|ger |')
+ 120  format ('|',1x,a16,'|',3x,'"',a4,'"',3x,'|',1x,
+     +         a40,'|',2(i7,' |'),2(i4,' |'),i2,' |',i2,'  |')
+ 130  format ('+',17('-'),'+',12('-'),'+',41('-'),'+',8('-'),'+',8('-'),
+     +        '+',5('-'),'+',5('-'),'+',3('-'),'+',4('-'),'+')
+ 900  format (/1x,'************* ABORT IN GETBUS **************'/
+     +         1x,'Insufficient space for ',a3,'BUS descriptors:'/
+     +         1x,'Provided: ',i8,'      Required: ',i8/)
+*
+      return
+      end
+

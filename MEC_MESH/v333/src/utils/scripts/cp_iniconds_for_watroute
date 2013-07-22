@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# This script copies the files generated in a previous WATROUTE run that
+# we want to use to initialize the current run.
+#
+#
+ic_file_date=`r.date ${first_date} -24 | cut -c1-10`
+ic_yyyy=${ic_file_date:0:4}
+#
+#
+cp ${iniconds_dir}/flow_init/${ic_yyyy}/${ic_file_date}_flow_init.r2c \
+   ${watroute_run_dir}/flow_init.r2c
+#
+for clake in sup mhu stc eri ont ; do
+    cp ${iniconds_dir}/lake_lvl/${clake}/${ic_yyyy}/${ic_file_date}_${clake}_lvl.txt  ${watroute_run_dir}/${clake}_lvl.txt
+done
+#
+#end of script

@@ -1,0 +1,42 @@
+1) Avoid division if possible. If a variable is used for dividing in several equations, store the reciprocal in a separate variable and then use multiplication.
+
+Slow example:
+   do i=1,1000
+   a(i)= b(i)/c
+   enddo
+Replace with:
+   d=1/c
+   do i=1,1000
+   a(i)=b(i)*d
+   enddo
+
+2) Avoid using double precision unless it is really needed for accuracy.
+
+4) Functions such as log, exp, sqrt, power, reciprocal,trignometric,
+  are very time consuming. The MASS library provided by IBM
+  improves the performance dramatically (often 10 fold!!)
+
+Slow example:
+   do i=1,1000
+    a(i) = log(b(i))
+   enddo
+
+Replace with if double precision:
+   call vlog(a,b,1000)
+or replace with this for single precision:
+   call vslog(a,b,1000)
+
+What is already used in the dynamics and physics library:
+vexp,vsexp
+vlog,vslog
+vcos,vscos
+vsin,vssin
+vsqrt,vssqrt
+vrec,vsrec
+vspown1
+
+And there are many more so check in the IBM website at:
+
+http://publib.boulder.ibm.com/infocenter/lnxpcomp/v8v101/index.jsp?topic=/com.ibm.xlcpp8l.doc/proguide/ref/vector.htm
+
+5) Producing NAN results will dramatically slow the performance.

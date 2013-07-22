@@ -1,0 +1,152 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+      subroutine copybus(bus_sfc, d   , f   , v   , 
+     $                   sfcsiz , dsiz, fsiz, vsiz,
+     $                   ptsurf, ptsurfsiz,
+     $                   masque, ni_sfc, ni, 
+     $                   indx_sfc, agregat, ramasse)
+#include "impnone.cdk"
+*
+      logical agregat, ramasse
+      integer sfcsiz, dsiz, fsiz, vsiz, indx_sfc, ni, ni_sfc, ptsurfsiz
+      integer masque(ni_sfc), ptsurf(ptsurfsiz)
+      real bus_sfc(sfcsiz), d(dsiz), f(fsiz), v(vsiz)
+      logical init
+*
+*Author
+*             B. Bilodeau Sept 1999
+*
+*Revisions
+* 001         B. Bilodeau (Nov 2000) - New comdeck sfcbus.cdk
+* 002         L. Spacek   (May 2003) - IBM conversion
+*                 - split loop on ik in 2 loops on i and k
+*                 - 1 loop each for ramasse=.t. and ramasse=.f.
+* 003         B. Bilodeau (Jun 2005) - Add mosaic capability for CLASS
+*
+*Object
+*             Performs massive gather-scather for the
+*             surface processes.
+*             Copy the contents of the the 3 main buses 
+*             (dynamics, permanent and volatile) in the
+*             "mini-buses" corresponding to each of the
+*             4 surface modules (sea ice, glaciers, water 
+*             and soil) before the execution of the surface
+*             processes, if switch "ramasse" is true. Copy 
+*             in the opposite direction after the execution 
+*             of the surface processes if switch "ramasse" 
+*             is false.
+*
+*Arguments
+*
+*             - Input/Output -
+* D           dynamics bus (dynamics input field)
+* F           permanent bus (historic variables for the physics)
+* V           volatile bus (physics tendencies and other 
+*             output fields from the physics)
+*
+*             - Input -
+* DSIZ        dimension of d
+* FSIZ        dimension of f
+* VSIZ        dimension of v
+* BUS_SFC     "mini-bus" for one of 4 surface types
+* SFCSIZ      dimension of BUS_SFC
+* PTRSURF     starting location of each variable in the "mini-bus"
+* PTSURFSIZ   number of elements (variables)     in the "mini-bus"
+* NI_SFC      length of the row for BUS_SFC
+* NI          length of the full row
+* MASQUE      index  of each bus element in the "mini-bus"
+* POIDS       weight of each "mini-bus" element in the tile
+* INDX_SFC    integer value (1-4) corresponding to each surface type
+* AGREGAT     .TRUE.  aggregation of surface properties is     performed
+*             .FALSE.      "      "     "        "      "  not     "
+* RAMASSE     .TRUE.  scatter from main buses   to "mini-buses"
+*             .FALSE. gather  from "mini-buses" to main buses
+*
+*
+*IMPLICITES
+*
+#include "phy_macros_f.h"
+#include "sfcbus.cdk"
+*
+#include "nbvarsurf.cdk"
+*
+#include "dimsurf.cdk"
+*
+*
+***
+*
+*
+      integer i, ik, ik_sfc, ik_ori, k, m, var 
+      integer sommet, surflen
+      integer pseudo_m
+*
+      real bus_ori
+*
+      pointer (bus_ori_, bus_ori(1))
+*
+      data init/.true./
+*
+      surflen = ni_sfc
+*
+*     boucle sur les variables du bus de surface
+
+      do var=1,nvarsurf
+*
+          
+         if (niveaux(var).gt.0) then         !  la variable existe
+*
+            if     (quel_bus(var).eq.1) then !  bus dynamique
+               bus_ori_ = loc(d(1))
+            else if(quel_bus(var).eq.2) then !  bus permanent
+               bus_ori_ = loc(f(1))
+            else if(quel_bus(var).eq.3) then !  bus volatil
+               bus_ori_ = loc(v(1))
+            endif
+*     
+*
+*           transvidage
+*
+            do m=1,mul(var)*mosaik(var)
+*
+               pseudo_m = m
+               if (m.gt.mul(var)) pseudo_m = mod(m-1,mul(var))+1
+*     
+               if ( ramasse ) then
+                  do k=1,niveaux(var)
+                     do i=1,ni_sfc
+                        ik_sfc = ptsurf(var)           + ! debut du champ dans bus_sfc
+     +                       (m-1)*ni_sfc +              ! multiplicite et mosaique
+     +                       (k-1)*ni_sfc+i-1            ! element ik courant
+*
+                        ik_ori = ptdebut(var)          + ! debut du champ dans le bus d'origine
+     +                       (m-1)*ni                  + ! multiplicite et mosaique
+     +                       (k-1)*ni                  + ! rangees precedentes
+     +                       masque(i) - 1               ! element i courant
+*
+                        bus_sfc(ik_sfc) = bus_ori(ik_ori)
+                     enddo
+                  enddo
+*
+               else if (.not.agregat.or.statut(var,pseudo_m).eq.indx_sfc) then
+
+*
+                  do k=1,niveaux(var)
+                     do i=1,ni_sfc
+                        ik_sfc = ptsurf(var)           + ! debut du champ dans bus_sfc
+     +                       (m-1)*ni_sfc              + ! multiplicite et mosaique
+     +                       (k-1)*ni_sfc+i-1            ! element ik courant
+*     
+                        ik_ori = ptdebut(var)          + ! debut du champ dans le bus d'origine
+     +                       (m-1)*ni                  + ! multiplicite et mosaique
+     +                       (k-1)*ni                  + ! rangees precedentes
+     +                       masque(i) - 1               ! element i courant
+*
+                        bus_ori(ik_ori) = bus_sfc(ik_sfc)
+                     enddo
+                  enddo
+               endif
+            enddo
+         endif
+      enddo
+*
+      return
+      end

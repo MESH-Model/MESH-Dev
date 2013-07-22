@@ -1,0 +1,124 @@
+      subroutine moscover(tindex, mosfrac,
+     $    ZZOLN, ZALVSC, ZALIRC,
+     $    ZAILMAX, ZAILMIN, ZCWGTMX, ZZRTMAX,
+     $    ZRSMIN, ZQA50, ZVPDA, ZVPDB, ZPSIGA,
+     $    ZPSIGB, ZSDEPTH, ni, k)
+
+#include "impnone.cdk"
+#include "classlvls.cdk"
+
+      integer ni,k
+
+      real tindex(ni), mosfrac(ni) 
+
+      real ZZOLN(ni,class_ic+1), ZALVSC(ni,class_ic+1), 
+     $     ZALIRC(ni,class_ic+1),
+     $     ZAILMAX(ni,class_ic), ZAILMIN(ni,class_ic), 
+     $     ZCWGTMX(ni,class_ic),
+     $     ZZRTMAX(ni,class_ic),ZRSMIN(ni,class_ic),ZQA50(ni,class_ic), 
+     $     ZVPDA(ni,class_ic), ZVPDB(ni,class_ic), ZPSIGA(ni,class_ic),
+     $     ZPSIGB(ni,class_ic), ZSDEPTH(ni,class_ic)
+
+      real MZOLN(ni,class_ic+1), MALVSC(ni,class_ic+1), 
+     $     MALIRC(ni,class_ic+1),
+     $     MAILMAX(ni,class_ic), MAILMIN(ni,class_ic), 
+     $     MCWGTMX(ni,class_ic),
+     $     MZRTMAX(ni,class_ic),MRSMIN(ni,class_ic),MQA50(ni,class_ic), 
+     $     MVPDA(ni,class_ic), MVPDB(ni,class_ic), MPSIGA(ni,class_ic),
+     $     MPSIGB(ni,class_ic), MSDEPTH(ni,class_ic)
+
+      integer i,j,ind
+
+#include "nclassvg.cdk"
+#include "tuiles.cdk"
+
+c*       print*,'moscover',ni,nj,nmos,k
+c      do i=1,ni
+cc          print*,'tindex',i,tindex(i)
+c           if (mosfrac(i).gt.0.and.TINDEX(i).gt.0) then
+cc                  print*,'swapping tiles: tindex(',i,',',k,') = ', tindex(i)
+c                  do j=1,class_ic
+cc Should find a way to signal Class about empties and put it here
+c                      MALVSC(i,j) = 0
+c                      MALIRC(i,j) = 0
+c                      MAILMAX(i,j) = 0
+c                      MAILMIN(i,j) = 0
+c                      MCWGTMX(i,j) = 0
+c                      MZRTMAX(i,j) = 0
+c                      MZOLN(i,j) = 0
+c                      MRSMIN(i,j) = 0
+c                      MQA50(i,j) = 0
+c                      MVPDA(i,j) = 0
+c                      MVPDB(i,j) = 0
+c                      MPSIGA(i,j) = 0
+c                      MPSIGB(i,j) = 0
+c                      MSDEPTH(i,j)= 0
+c                  end do
+c                  ind=int(tindex(i))
+c                  j=vgclass(ind)
+c                  MALVSC(i,j) = ALVSDAT(ind)
+c                  MALIRC(i,j) = ALNIDAT(ind)
+c                  MZOLN(i,j) = Z0MDAT(ind)
+c                  if (j.ne.5) then
+c                      MAILMAX(i,j) = LAIMXDAT(ind)
+c                      MAILMIN(i,j) = LAIMNDAT(ind)
+c                      MCWGTMX(i,j) = VGMASDAT(ind)
+c                      MZRTMAX(i,j) = ROOTDAT(ind)
+c                      MRSMIN(i,j) = RSMINDAT(ind)
+c                      MQA50(i,j) = QA50DAT(ind)
+c                      MVPDA(i,j) = VPDADAT(ind)
+c                      MVPDB(i,j) = VPDBDAT(ind)
+c                      MPSIGA(i,j) = PSGADAT(ind)
+c                      MPSIGB(i,j) = PSGBDAT(ind)
+c                      MSDEPTH(i,j) = ROOTDAT(ind)
+c                  end if
+cc FIXME -- should be .and.
+c          elseif (mosfrac(i).gt.0.or.TINDEX(i).le.0) then
+c                  do j=1,class_ic
+cc                      print*, 'ZALVSC 1',i,j, MALVSC(i,j),   ZALVSC(i,j) 
+c                      MALVSC(i,j) = ZALVSC(i,j) 
+cc                      print*, 'ZALVSC 2',i,j, MALVSC(i,j),   ZALVSC(i,j) 
+c                      MALIRC(i,j) = ZALIRC(i,j) 
+c                      MAILMAX(i,j) = ZAILMAX(i,j)
+c                      MAILMIN(i,j) = ZAILMIN(i,j)
+c                      MCWGTMX(i,j) = ZCWGTMX(i,j)
+c                      MZRTMAX(i,j) = ZZRTMAX(i,j)
+c                      MZOLN(i,j) = ZZOLN(i,j)
+c                      MRSMIN(i,j) = ZRSMIN(i,j) 
+c                      MQA50(i,j) = ZQA50(i,j)
+c                      MVPDA(i,j) = ZVPDA(i,j)
+c                      MVPDB(i,j) = ZVPDB(i,j)
+c                      MPSIGA(i,j) = ZPSIGA(i,j) 
+c                      MPSIGB(i,j) = ZPSIGB(i,j) 
+c                      MSDEPTH(i,j) = ZSDEPTH(i,j)
+c                  end do
+c                  j=5
+c                  MALVSC(i,j) = ZALVSC(i,j) 
+c                  MALIRC(i,j) = ZALIRC(i,j) 
+c                  MZOLN(i,j) = ZZOLN(i,j)
+c           end if
+c      end do
+
+      do i=1,ni
+              print*, 'TINDEX ',i,  TINDEX(i) 
+              print*, 'MOSFRAC ',i,  MOSFRAC(i) 
+          do j=1,class_ic
+              print*, 'ZALVSC ',i,j,  ZALVSC(i,j) 
+              print*, 'ZALIRC ',i,j,  ZALIRC(i,j) 
+              print*, 'ZAILMAX',i,j, ZAILMAX(i,j)
+              print*, 'ZAILMIN',i,j, ZAILMIN(i,j)
+              print*, 'ZCWGTMX',i,j, ZCWGTMX(i,j)
+              print*, 'ZZRTMAX',i,j, ZZRTMAX(i,j)
+              print*, 'ZZOLN  ',i,j,   ZZOLN(i,j)
+              print*, 'ZRSMIN ',i,j,  ZRSMIN(i,j)
+              print*, 'ZQA50  ',i,j,   ZQA50(i,j)
+              print*, 'ZVPDA  ',i,j,   ZVPDA(i,j)
+              print*, 'ZVPDB  ',i,j,   ZVPDB(i,j)
+              print*, 'ZPSIGA ',i,j,  ZPSIGA(i,j)
+              print*, 'ZPSIGB ',i,j,  ZPSIGB(i,j)
+              print*, 'ZSDEPTH',i,j, ZSDEPTH(i,j)
+          end do
+      end do
+ 
+      return
+      end

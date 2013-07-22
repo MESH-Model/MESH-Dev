@@ -1,0 +1,8 @@
+#!/bin/sh
+
+r.compile -src EF_ParseUtilities.f
+
+r.compile -src *.f -o watroute
+
+rm -f *.mod *.o
+

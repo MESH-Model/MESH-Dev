@@ -1,0 +1,483 @@
+***s/r readdyn - read the dynamics fields from entrance programs
+*
+#include "model_macros_f.h"
+*
+      subroutine readdyn
+      implicit none
+*
+*author 
+*     Michel Roch - rpn - jan 1994
+*
+*revision
+* v2_00 - Desgagne M.      - initial MPI version (from readdyn v1_03)
+* V2_20 - Desgagne M.      - longitudes, latitudes and topography now
+* v2_20                      read from gem_osdyn
+* v2_21 - Desgagne M.      - new calling sequence to glbdist and
+* v2_21                      rpn_comm stooge for MPI
+* v2_21 - Lee V.           - modifications for LAM version
+* v2_30 - Corbeil L.       - Added BMF stuff instead of rdfld, added 
+* v2_30                      vertical interpolation
+* v2_31 - Edouard/Lee      - proper treatment of hybrid coordinate 
+* v2_31 - Desgagne         - clean up and introduce tracers
+* v2_31 - Lee V.           - enable case for no interpolation
+* v2_32 - Lee V.           - hybrid coordinate derives from "HY" record
+* v2_32                    - if same grid and levels but the topography is
+* v2_32                      different, vertical interpolation will be done
+* v2_32                    - input winds are always UU,VV
+* v3_00 - Lee V.           - re-arranged sequence to match new LAM entry
+* v3_01 - Corbeil L.       - introduce interface acqui
+* v3_10 - Lee V.           - added deallocate topu_temp,topv_temp,gzu_temp...
+* v3_11 - Gravel S.        - provide for variable topography
+* v3_11 - Lee V.           - correct vertical interp on tracers from pres anal
+* v3_20 - Pellerin P.      - to run in off-line mode
+* v3_20 - Gravel S.        - allow for initialization with ECMWF analyses
+*
+*object
+*	
+*arguments
+*	none
+*
+*interfaces
+      INTERFACE
+         subroutine acqui
+#include "acq_int.cdk"
+         end subroutine acqui
+      END INTERFACE
+*
+*implicits
+#include "glb_ld.cdk"
+#include "dcst.cdk"
+#include "lun.cdk"
+#include "bmf.cdk"
+#include "ptopo.cdk"
+#include "cstv.cdk" 
+#include "geomg.cdk"
+#include "grd.cdk"
+#include "pres.cdk" 
+#include "lctl.cdk"
+#include "schm.cdk"
+#include "out1.cdk"
+#include "ind.cdk"
+#include "acq.cdk"
+#include "vtopo.cdk"
+*
+*modules
+      integer  bmf_gobe,bmf_get
+      external bmf_gobe,bmf_get
+*
+      integer nvar,i,j,k,err, nk_anal
+      real, pointer, dimension(:  ) :: lna,rna,sdd
+      real, pointer, dimension(:,:) :: psu_temp,psv_temp,
+     $        apsu_temp,apsv_temp,topu_temp,topv_temp
+      real, pointer, dimension(:,:,:) ::  u_temp,v_temp,
+     $        hu_temp,tt_temp,gz_temp, 
+     $        ttu_temp,ttv_temp,gzu_temp,gzv_temp
+      real, allocatable, dimension(:  ) :: pia, pibb, hyba,vlapse
+      real, allocatable, dimension(:,:) ::zcol,tcol,vlna
+      real, allocatable, dimension(:,:,:) ::  u_temp2,v_temp2,
+     $     xlnp, dz, dt, work
+      real, dimension(l_ni,l_nj) :: pps, ps , topo_temp,ps_temp
+      real dummy, conv,
+     $     psmin, psmax, psmin_glob, psmax_glob
+      integer errprdf,prdfsum
+      logical NESD
+**
+*     ---------------------------------------------------------------
+*
+      if (Ptopo_myproc.eq.0) write(lun_out,9000) bmf_time1,bmf_time2
+*
+* Lecture des donnees
+*
+      nullify(lna,rna,sdd ,psu_temp,psv_temp,
+     $        apsu_temp,apsv_temp,topu_temp,topv_temp, u_temp,v_temp,
+     $        hu_temp,tt_temp,gz_temp, 
+     $        ttu_temp,ttv_temp,gzu_temp,gzv_temp)
+
+      call acqui ( lna, rna, sdd, psu_temp, psv_temp, apsu_temp,
+     $             apsv_temp, topu_temp,topv_temp, u_temp,v_temp,
+     $             hu_temp,tt_temp, gz_temp, ttu_temp, ttv_temp, 
+     $             gzu_temp, gzv_temp,ps, topo_temp)
+*
+      if (schm_offline_L) Acql_vertint=.false.
+*
+      if (Ptopo_myproc.eq.0) then
+         write(lun_out,*)
+     $      ' Acql_horzint=',Acql_horzint,' Acql_vertint=',Acql_vertint,
+     $      ' Acql_etaanl=',Acql_etaanl
+         write(lun_out,*)
+     $      ' Acql_siganl =',Acql_siganl ,' Acql_hybanl =',Acql_hybanl,
+     $      ' Acql_prsanl=',Acql_prsanl, ' Acql_ecmanl=',Acql_ecmanl
+*
+      if ((schm_offline_L).and.(Acqi_vterplv.eq.1)) then
+         write(lun_out,*) '  '
+         write(lun_out,*) 'MEC: ARCHIVED DATA FOR:',  bmf_time1, bmf_time2
+         write(lun_out,*) 'MEC: ONLY 1 LEVEL FOUND INITIALLY FOR TT HU UU VV P0'
+         write(lun_out,*) 'MEC: THIS LAST WILL BE USED DIRECTLY'
+      endif
+      endif
+*
+      allocate(work(l_ni,l_nj,Acqi_nktmp))
+      if(.not. Acql_vertint) then
+*---------------------------------------------------------------------
+*     INTERPOLATION IS NOT REQUIRED
+*---------------------------------------------------------------------
+       if (.not.schm_offline_L) then
+         do k=1,g_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_t (i,j,k) = tt_temp(i,j,k) 
+            Ind_fi(i,j,k) = gz_temp(i,j,k)
+            work  (i,j,k) = hu_temp(i,j,k)
+         end do
+         end do
+         end do
+       else
+         do k=1,g_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_t (i,j,k) = tt_temp(i,j,1)
+            Ind_fi(i,j,k) = gz_temp(i,j,1)
+            work  (i,j,k) = hu_temp(i,j,1)
+         end do
+         end do
+         end do
+        endif
+*
+      else if(Acql_siganl.or.Acql_etaanl.or.Acql_hybanl.or.Acql_ecmanl) then
+*---------------------------------------------------------------------
+*     INTERPOLATION REQUIRED
+*     ANALYSIS IS ON EITHER SIGMA or ETA, HYBRID or ECMWF COORDINATES
+*---------------------------------------------------------------------
+*
+         nk_anal = Acqi_vterplv
+         if (Acql_ecmanl) nk_anal = Acqi_vterplv + 1
+         
+         allocate( pia(nk_anal),pibb(nk_anal),hyba(nk_anal) )
+
+         if (Acql_siganl) then
+            do k=1,Acqi_vterplv
+               pia(k) = rna(k)
+               pibb(k)= 0.
+               hyba(k)= 0.
+            enddo
+         else if (Acql_ecmanl) then
+
+            call ecmwf_ab( pia, pibb, nk_anal )
+
+         else 
+            if (rna(1).eq.0.0) then
+                do k=1,Acqi_vterplv
+                   hyba(k) = rna(k) + (1.-rna(k))*Acqr_ptopa/Acqr_prefa
+                enddo
+            else
+                do k=1,Acqi_vterplv
+                   hyba(k) = rna(k)
+                enddo
+            endif
+            call genab ( pia, pibb, hyba, Acqr_ptopa, Acqr_rcoefa,
+     $                                               Acqi_vterplv )
+         endif
+*     
+*        Compute hydrostatic GZ on analysis levels
+*
+         call p0vt2gz_hyb ( gz_temp,pia,pibb,ps,tt_temp, Acqi_nbpts, 
+     $                             nk_anal,.false.,Acql_siganl )
+*
+*        Finally, compute pressure on model surface (PS)
+         call getp0 ( pps, topo_temp,pia,pibb, ps, gz_temp, tt_temp, 
+     $                         Acqi_nbpts, nk_anal,Acql_siganl )
+         do j=1,l_nj
+         do i=1,l_ni
+            ps_temp(i,j)=ps(i,j)
+         enddo
+         enddo
+*        Interpolate VT
+         call vte_hyb2hyb (work, Geomg_pia, Geomg_pibb,pps,G_nk,tt_temp,
+     $         pia,pibb, ps, nk_anal, Acqi_nbpts, 'VT',Acql_siganl)
+*
+*        Compute hydrostatic GZ on model's levels
+         do j=1,l_nj
+         do i=1,l_ni
+            gz_temp(i,j,g_nk)=topo_temp(i,j)
+         enddo
+         enddo
+*
+         call p0vt2gz_hyb ( gz_temp,Geomg_pia,Geomg_pibb,pps,
+     $                      work, Acqi_nbpts, g_nk,.false.,.false. )
+*
+         do k=1,g_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_fi(i,j,k) = gz_temp(i,j,k)
+            Ind_t(i,j,k)  = work(i,j,k) 
+         end do
+         end do         
+         end do   
+*
+         if ( Schm_moist_L ) then
+            call vte_hyb2hyb ( work, Geomg_pia, Geomg_pibb,pps,G_nk,
+     $                         hu_temp,pia,pibb, ps, nk_anal, 
+     $                         Acqi_nbpts, 'HU',Acql_siganl )
+         else
+            do k= 1, G_nk
+            do j= 1, l_nj 
+            do i= 1, l_ni 
+               work(i,j,k)  = 0.0
+            end do
+            end do
+            end do
+         endif
+*
+         do j=1,l_nj
+         do i=1,l_ni
+            ps(i,j) = pps(i,j)
+         enddo
+         enddo
+*
+         call p0vt2gz_hyb ( gzu_temp,pia,pibb,apsu_temp,ttu_temp,
+     $             Acqi_niu*Acqi_nju, nk_anal,.false.,Acql_siganl )
+         call getp0 ( psu_temp, topu_temp,pia,pibb, apsu_temp, 
+     $                gzu_temp,ttu_temp, Acqi_niu*Acqi_nju, 
+     $                nk_anal,Acql_siganl)
+         call p0vt2gz_hyb ( gzv_temp,pia,pibb,apsv_temp,ttv_temp,
+     $             Acqi_niv*Acqi_njv, nk_anal,.false.,Acql_siganl )
+         call getp0 ( psv_temp, topv_temp,pia,pibb, apsv_temp, 
+     $                gzv_temp,ttv_temp, Acqi_niv*Acqi_njv, 
+     $                nk_anal,Acql_siganl)
+*
+         allocate ( u_temp2(Acqi_niu,Acqi_nju,Acqi_nktmp), 
+     $              v_temp2(Acqi_niv,Acqi_njv,Acqi_nktmp) )
+*
+         call vte_hyb2hyb ( u_temp2, Geomg_pia, Geomg_pibb, psu_temp,
+     $                  G_nk,u_temp, pia,pibb, apsu_temp, nk_anal, 
+     $                  Acqi_niu*Acqi_nju, 'UU',Acql_siganl )
+         call vte_hyb2hyb ( v_temp2, Geomg_pia, Geomg_pibb, psv_temp,
+     $                  G_nk,v_temp, pia,pibb, apsv_temp, nk_anal, 
+     $                  Acqi_niv*Acqi_njv, 'VV',Acql_siganl )
+*
+         do k=1,g_nk
+            do j=1,Acqi_nju
+            do i=1,Acqi_niu
+               u_temp(i,j,k) = u_temp2(i,j,k)
+            enddo
+            enddo
+            do j=1,Acqi_njv
+            do i=1,Acqi_niv
+               v_temp(i,j,k) = v_temp2(i,j,k)
+            enddo
+            enddo
+         enddo
+*
+         deallocate ( u_temp2,v_temp2,apsu_temp,ttu_temp,ttv_temp,
+     $                                             apsv_temp,hyba )
+*
+      else
+*
+*---------------------------------------------------------------------
+*     INTERPOLATION REQUIRED
+*     ANALYSIS IS ON PRESSURE COORDINATES
+*---------------------------------------------------------------------
+*
+         allocate ( pia(Acqi_vterplv),
+     $    zcol(Acqi_nim*Acqi_njm,Acqi_nktmp),vlapse(Acqi_nim*Acqi_njm),
+     $    tcol(Acqi_nim*Acqi_njm,Acqi_nktmp),xlnp(l_ni,l_nj,Acqi_nktmp),
+     $    vlna(Acqi_nim*Acqi_njm,Acqi_nktmp),  dz(l_ni,l_nj,Acqi_nktmp),
+     $                                         dt(l_ni,l_nj,Acqi_nktmp))
+         do k=1,Acqi_vterplv
+            pia(k) = lna(k)
+         enddo
+*
+*        Compute PS,GZ,VT,ZCOL
+*
+         call gz2p0 ( ps, gz_temp, topo_temp, zcol,tcol, sdd, lna, 
+     $                                   Acqi_nbpts, Acqi_vterplv )
+         do j=1,l_nj
+         do i=1,l_ni
+            ps_temp(i,j)=ps(i,j)
+         enddo
+         enddo
+*
+*        Compute geopotential (GZ) and temperature (TT)
+*
+         do i=1,Acqi_nbpts
+            vlapse(i)= (tcol(i,Acqi_vterplv)-tcol(i,Acqi_vterplv-1))
+     $                    *sdd(Acqi_vterplv-1)
+         enddo
+*
+         conv = alog(100.)
+         do k=1,g_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            xlnp(i,j,k) =  alog( Geomg_pia(k)
+     %                   + Geomg_pibb(k) * exp( ps(i,j) )) - conv
+         enddo
+         enddo
+         enddo
+         do k=1,Acqi_vterplv
+         do i=1,Acqi_nbpts
+            vlna(i,k)=lna(k)                
+         enddo
+         enddo
+*
+         call vterp2 ( dz, dt, xlnp, zcol, tcol, vlna, Acqi_nbpts, 
+     $                     Acqi_nbpts, Acqi_vterplv, g_nk, vlapse )
+*
+         do k=1,g_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               Ind_t (i,j,k) = -dt(i,j,k)/Dcst_rgasd_8
+               Ind_fi(i,j,k) =  dz(i,j,k)
+            enddo
+            enddo
+         enddo
+*
+*        reset GZ(i,1) top and GZ(i,nk) surface geopotential values
+*                to exact values
+*
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_fi(i,j,g_nk) = Ind_topo(i,j)
+         enddo
+         enddo
+*
+         call gz2p0 ( psu_temp,gzu_temp,topu_temp,zcol,tcol,
+     $                          sdd,lna,Acqi_niu*Acqi_nju,Acqi_vterplv )
+         call gz2p0 ( psv_temp,gzv_temp,topv_temp,zcol,tcol,
+     $                          sdd,lna,Acqi_niv*Acqi_njv,Acqi_vterplv )
+         call vte_vrtical ( u_temp, psu_temp, Acqi_niu*Acqi_nju, g_nk, 
+     $                                       lna, Acqi_vterplv, .true. )
+         call vte_vrtical ( v_temp, psv_temp, Acqi_niv*Acqi_njv, g_nk, 
+     $                                       lna, Acqi_vterplv, .true. )
+*
+         if ( Schm_moist_L ) then
+            call vte_vrtical ( hu_temp, ps, Acqi_nbpts, g_nk, lna, 
+     $                                        Acqi_vterplv,.false. )
+            do k= 1, G_nk
+            do j= 1, l_nj 
+            do i= 1, l_ni 
+               work(i,j,k) = hu_temp(i,j,k)
+            end do
+            end do
+            end do
+         else
+            do k= 1, G_nk
+            do j= 1, l_nj 
+            do i= 1, l_ni 
+               work(i,j,k)  = 0.0
+            end do
+            end do
+            end do
+         endif
+*
+         do j=1,l_nj
+         do i=1,l_ni
+            ps(i,j) = exp(ps(i,j))
+         enddo
+         enddo
+*
+         deallocate (zcol,tcol,xlnp,vlna,dz,dt,vlapse)
+*
+      endif
+*
+      NESD = .false.
+      if (Lctl_step.gt.0) NESD = .true.
+      call tr_init ( work,Acqi_datasp,bmf_time1,bmf_time2,Acqi_nktmp,
+     $               pps,pia,pibb,ps_temp,Acqi_vterplv,l_ni,l_nj,NESD )
+*
+      if (Acql_horzint) 
+     $     call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju,
+     $            Acqi_niv, Acqi_njv, g_nk, geomg_y_8(1), geomg_yv_8(1))
+
+*     Convert wind from KNOTS TO M/S
+      if ((.not.schm_offline_L).or.(Acqi_vterplv.gt.1)) then
+      do k=1,g_nk
+         do j=1,Acqi_nju
+         do i=1,Acqi_niu
+            Ind_u(i,j,k) = u_temp(i,j,k)*dcst_knams_8
+         enddo
+         enddo
+         do j=1,Acqi_njv
+         do i=1,Acqi_niv
+            Ind_v(i,j,k) = v_temp(i,j,k)*dcst_knams_8
+         enddo
+         enddo
+      enddo
+      else
+         do k=1,g_nk
+         do j=1,Acqi_nju
+         do i=1,Acqi_niu
+            Ind_u(i,j,k) = u_temp(i,j,1)*dcst_knams_8
+         enddo
+         enddo
+         do j=1,Acqi_njv
+         do i=1,Acqi_niv
+            Ind_v(i,j,k) = v_temp(i,j,1)*dcst_knams_8
+         enddo
+         enddo
+      enddo
+      endif
+
+*     If required, copy difference between initial and target topography 
+*     in Ind_dtopo and move analysis topography into Ind_topo
+      if (Vtopo_L) then
+         do j=1,l_nj
+         do i=1,l_ni
+            Ind_dtopo(i,j) = Ind_topo(i,j) - topo_temp(i,j) 
+            Ind_topo(i,j)  = topo_temp(i,j) 
+         enddo
+         enddo
+      endif
+*
+      deallocate ( u_temp,v_temp,gz_temp,tt_temp,hu_temp,work,lna,rna,
+     $             sdd )
+      if (Acql_vertint.or.schm_offline_L) then
+         deallocate (psu_temp,psv_temp,topu_temp,topv_temp,
+     $               gzu_temp,gzv_temp)
+          IF (Acql_vertint) THEN
+              deallocate ( pia )
+              if (.not.Acql_prsanl) deallocate ( pibb )
+          endif
+      endif
+*
+      psmin = ps(1,1)
+      psmax = ps(1,1)
+      do j=1,l_nj
+      do i=1,l_ni
+         psmin = min( psmin, ps(i,j) )
+         psmax = max( psmax, ps(i,j) )
+         Ind_q(i,j,g_nk) = alog(ps(i,j))
+         Ind_q(i,j,1   ) = alog(Pres_ptop*100.)
+      enddo
+      enddo
+*      
+      call rpn_comm_allreduce(psmin,psmin_glob,1,"MPI_REAL","MPI_MIN",
+     $                                                     "grid",err)
+      call rpn_comm_allreduce(psmax,psmax_glob,1,"MPI_REAL","MPI_MAX",
+     $                                                     "grid",err)
+      psmin=psmin_glob
+      psmax=psmax_glob
+*     
+      if ( Ptopo_myproc.eq.0 .and. .not.NESD ) then
+           write(lun_out,*)'PSMIN = ',PSMIN,' PSMAX = ',PSMAX,
+     $                     ' PSMINMAX = ',0.5*(PSMIN+PSMAX),' (PASCAL)'
+      endif
+*
+      Pres_surf = dble(0.5*(psmin+psmax))
+      Pres_top  = dble(Pres_ptop*100.)
+*     
+      nullify ( lna,rna,sdd,psu_temp,psv_temp,apsu_temp,apsv_temp,
+     $          topu_temp,topv_temp, u_temp,v_temp,hu_temp,tt_temp,
+     $          gz_temp, ttu_temp,ttv_temp,gzu_temp,gzv_temp)
+*
+      call bmf_clear
+*
+      call rpn_comm_xch_halo ( Ind_topo, LDIST_DIM,l_ni,l_nj,1,
+     $              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+*
+ 9000 format(/,' TREATING INPUT DATA VALID AT: ',i8.6,'.',i8.8,
+     +       /,' ===============================================')
+*
+*     ---------------------------------------------------------------
+*
+      return
+      end
