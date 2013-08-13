@@ -66,8 +66,7 @@ C
      1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
      2                TCGLAC,CLHMLT,CLHVAP
 C-----------------------------------------------------------------------
-      DO 100 J=1,IG      
-                                                               
+      DO 100 J=1,IG                                                               
       DO 100 I=IL1,IL2
           IF(FI(I).GT.0. .AND. DELZW(I,J).GT.0. .AND. ISAND(I,1).GT.-4)
      1                                                              THEN

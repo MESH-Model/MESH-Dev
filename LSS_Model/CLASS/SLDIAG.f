@@ -1,6 +1,9 @@
       SUBROUTINE SLDIAG(SU,SV,ST,SQ,CDM,CDH,UA,VA,TA,QA,T0,Q0,
      1                  Z0M,Z0E,F,ZA,ZU,ZT,ILG,IL1,IL2,JL)
 
+C     * OCT 17/11 - D.VERSEGHY. ADD CODE TO CIRCUMVENT SPECIAL
+C     *                         CASE WHERE TA~T0 OR QA~QO, THUS
+C     *                         AVOIDING A DIVIDE BY ZERO.
 C     * NOV 04/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
 C     * JUL 19/96 - Y. DELAGE.  
 
@@ -64,8 +67,18 @@ C     * CALCULATION OF SURFACE FLUXES AND MONIN-OBUKHOV LENGTH
         WSPD=MAX(VMIN,SQRT(UA(I)**2+VA(I)**2))
         CM=SQRT(CDM(I))
         US=CM*WSPD
-        TS=CDH(I)*(TA(I)-T0(I))/CM
-        QS=CDH(I)*(QA(I)-Q0(I))/CM
+
+        IF(ABS(TA(I)-T0(I)).LT.0.01) THEN
+            TS=-0.01*CDH(I)/CM
+        ELSE
+            TS=CDH(I)*(TA(I)-T0(I))/CM
+        ENDIF
+        IF(ABS(QA(I)-Q0(I)).LT.1.0E-7) THEN
+            QS=-1.0E-7*CDH(I)/CM
+        ELSE
+            QS=CDH(I)*(QA(I)-Q0(I))/CM
+        ENDIF
+
         L=TA(I)*US**2/(VKC*GRAV*(TS*(1+.61*QA(I))+.61*TA(I)*QS))
       
 C     * CALCULATE CORRECTION FACTORS TO TAKE INTO ACCOUNT THE APPROXIMATIONS

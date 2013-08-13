@@ -83,11 +83,11 @@ C
       DO 100 I=IL1,IL2
           IF(FI(I).GT.0.)                                          THEN
               GSNOLD=GCOEFFS(I)*TSURF(I)+GCONSTS(I)
-               TSNBOT(I)=(ZSNOW(I)*TSNOW(I)+DELZ(1)*TBAR(I,1))/
+              TSNBOT(I)=(ZSNOW(I)*TSNOW(I)+DELZ(1)*TBAR(I,1))/
      1             (ZSNOW(I)+DELZ(1))
-C               TSNBOT(I)=0.90*TSNOW(I)+0.10*TBAR(I,1)
+C              TSNBOT(I)=0.90*TSNOW(I)+0.10*TBAR(I,1)
 C              TSNBOT(I)=TSURF(I)-GSNOLD*ZSNOW(I)/(2.0*TCSNOW(I))
-C              TSNBOT(I)=MIN(TSNBOT(I),TFREZ)
+              TSNBOT(I)=MIN(TSNBOT(I),TFREZ)
               GZERO(I)=GCOEFF(I)*TSNBOT(I)+GCONST(I)
               IF(QMELTG(I).LT.0.)                               THEN
                   GSNOW(I)=GSNOW(I)+QMELTG(I)                                                      

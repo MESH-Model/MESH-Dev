@@ -11,7 +11,7 @@
      A                 ILMOX,  UEX,    HBLX,
      B                 ILMO,   UE,     HBL,    
      C                 ST,     SU,     SV,     SQ,     CDH,    CDM,              
-     D                 TSURF,  QSENS,  QEVAP,  QLWAVG, 
+     D                 QSENS,  QEVAP,  QLWAVG, 
      E                 FSGV,   FSGS,   FSGG,   FLGV,   FLGS,   FLGG,   
      F                 HFSC,   HFSS,   HFSG,   HEVC,   HEVS,   HEVG,   
      G                 HMFC,   HMFN,   QFCF,   QFCL,   EVPPOT, ACOND,  
@@ -22,7 +22,10 @@
      L                 ISAND,  ILG,    IL1,    IL2,    JL,     IG,  
      M                 FVEG,   TCSATU, TCSATF, FTEMP,  FTEMPX, FVAP,
      N                 FVAPX,  RIB,    RIBX  )           
-C                                                                                 
+C
+C     * NOV 24/11 - R.HARVEY.   NEW SNOW THERMAL CONDUCTIVITY FROM
+C     *                         STURM ET AL. (1997).
+C     * OCT 12/11 - M.LAZARE.   REMOVED TSURF.     
 C     * AUG   /08 - J.P.PAQUIN. ADD CALCULATION FOR FTEMP, FVAP AND
 C     *                         RIB FOR OUTPUT IN GEM (IMPLEMENTED BY
 C     *                         L. DUARTE ON OCT. 28/08).
@@ -152,7 +155,7 @@ C
 C     * DIAGNOSTIC ARRAYS.
 C
       REAL ST    (ILG),   SU    (ILG),   SV    (ILG),   SQ    (ILG),
-     1     CDH   (ILG),   CDM   (ILG),   TSURF (ILG),  
+     1     CDH   (ILG),   CDM   (ILG),  
      2     QSENS (ILG),   QEVAP (ILG),   QLWAVG(ILG), 
      3     FSGV  (ILG),   FSGS  (ILG),   FSGG  (ILG),   FLGV  (ILG),   
      4     FLGS  (ILG),   FLGG  (ILG),   HFSC  (ILG),   HFSS  (ILG),   
@@ -268,7 +271,6 @@ C
           SQ    (I)=0.
           CDH   (I)=0.
           CDM   (I)=0.
-          TSURF (I)=0.
           QSENS (I)=0.
           QEVAP (I)=0.
           EVAP  (I)=0.
@@ -349,7 +351,13 @@ C
               HCPSCS(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
      1            (RHOW*ZSNOW(I)) 
               HCPSGS(I)=HCPSCS(I)
-              TCSNOW(I)=2.576E-6*RHOSNO(I)*RHOSNO(I)+0.074                        
+C             TCSNOW(I)=2.576E-6*RHOSNO(I)*RHOSNO(I)+0.074                        
+              IF(RHOSNO(I).LT.156.0) THEN
+                  TCSNOW(I)=0.234E-3*RHOSNO(I)+0.023
+              ELSE
+                  TCSNOW(I)=3.233E-6*RHOSNO(I)*RHOSNO(I)-1.01E-3*
+     1                RHOSNO(I)+0.138
+              ENDIF
               IF(FVEG(I).LT.1.)                                 THEN              
                   TSNOGS(I)=TSNOW(I)                                              
                   WSNOGS(I)=WSNOW(I)
@@ -432,7 +440,6 @@ C
      1                            MIN(ZPOND(I),1.0E-2)*100.0
                       TCTOPG(I,J)=TCTOPC(I,J)
                   ENDIF
-                 
               ELSE
                   SATRAT=MIN((THLIQG(I,J)+THICEG(I,J))/
      1                   THPOR(I,J), 1.0)              
@@ -465,7 +472,6 @@ C
      1                            MIN(ZPOND(I),1.0E-2)*100.0
                       TCTOPG(I,J)=TCTOPC(I,J)
                   ENDIF
-                  
               ENDIF    
           ELSE
               SATRAT=MIN((THLIQG(I,J)+THICEG(I,J))/

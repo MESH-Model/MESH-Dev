@@ -2,8 +2,18 @@
      1                  RUNOFF,TRUNOF,QFG,WLOST,FI,EVAP,R,ZPOND,DT,
      2                  WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      3                  BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,LZF,
-     4                  IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     4                  IGRN,IGRD,IGDR,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 C
+C     * OCT 18/11 - M.LAZARE.   PASS IN "IGDR" AS AN INPUT FIELD 
+C     *                         (ORIGINATING IN CLASSB) RATHER
+C     *                         THAN REPEATING THE CALCULATION HERE
+C     *                         AS AN INTERNAL WORK FIELD.
+C     * SEP 11/11 - D.VERSEGHY. CHANGE IF CONDITION ON "J.LT.IG"
+C     *                         TO "J.LT.IGDR(I)" IN LOOPS 400
+C     *                         AND 500, TO BE CONSISTENT WITH
+C     *                         OTHERS.
+C     * DEC 10/10 - D.VERSEGHY. ALLOW DRAINAGE AT BEDROCK SURFACE
+C     *                         ANYWHERE IN SOIL PROFILE.
 C     * DEC 23/09 - V.FORTIN.   NEW CALCULATION OF BASEFLOW.
 C     * MAR 31/09 - D.VERSEGHY. PASS IN LZF, AND ZERO OUT FLOWS AT
 C     *                         TOP AND BOTTOM OF SOIL LAYERS DOWN
@@ -91,14 +101,13 @@ C
       REAL FI    (ILG),    EVAP  (ILG),    R     (ILG),    
      1     ZPOND (ILG),    DT    (ILG)
 C
-      INTEGER              IGRN  (ILG),    LZF   (ILG)
+      INTEGER              IGRN  (ILG),    LZF   (ILG),
+     1                     IGRD  (ILG),    IGDR  (ILG)
 C
 C     * WORK FIELDS.
 C
       REAL WEXCES(ILG),    THLMAX(ILG,IG), THTEST(ILG,IG),
      1     GRKSATF(ILG,IG),THPORF(ILG,IG) 
-C
-      INTEGER              IGRD  (ILG)
 C
 C     * SOIL INFORMATION ARRAYS.
 C
@@ -130,11 +139,10 @@ C     * NOT GO THROUGH THIS ROUTINE WHEN IT IS CALLED FROM CLASSW.
 C     * THE INPUT ARRAY "IGRN" HANDLES THIS CONDITION (PASSED AS
 C     * "IZERO" ARRAY WHEN CALLED FROM "WEND" OR THE END OF "GRINFL"). 
 C
-!$omp parallel do
       DO 50 I=IL1,IL2
           IF(FI (I).GT.0. .AND. 
      1       ISAND(I,1).GT.-4 .AND.DT(I).GT.0. .AND.IGRN(I).EQ.0 .AND.
-     2       (R(I).LT.1.0E-12 .AND. ZPOND(I).LT.1.0E-12))           THEN
+     2       (R(I).LT.1.0E-12 .AND. ZPOND(I).LT.1.0E-12))     THEN
               IGRD(I)=1
           ELSE
               IGRD(I)=0
@@ -146,9 +154,9 @@ C     * ADJUST GRKSAT FOR VISCOSITY OF WATER AND PRESENCE OF ICE;
 C     * ADJUST THPOR FOR PRESENCE OF ICE.
 C
       DO 100 J=1,IG
-      !$omp parallel do
       DO 100 I=IL1,IL2
-          IF(IGRD(I).GT.0. .AND. ISAND(I,J).GT.-3)             THEN
+        IF(IGRD(I).GT.0.)                             THEN
+          IF(ISAND(I,J).GT.-3)             THEN
               THLMAX(I,J)=MAX((THPOR(I,J)-THICE(I,J)-0.00001),
      1            THLIQ(I,J),THLMIN(I,J))                
               GRKSATF(I,J)=GRKSAT(I,J)*(1.0-MAX(0.0,MIN((THPOR(I,J)-
@@ -159,34 +167,36 @@ C
               GRKSATF(I,J)=0.0
               THPORF(I,J)=0.0
           ENDIF
+        ENDIF
   100 CONTINUE
 C
-C     * CALCULATE THEORETICAL FLOW RATES AT BOTTOM OF SOIL COLUMN AND
-C     * BETWEEN SOIL LAYERS.
-
+C     * CALCULATE THEORETICAL FLOW RATES AT BOTTOM OF PERMEABLE SOIL
+C     * DEPTH AND BETWEEN SOIL LAYERS.
+C
       DO 150 I=IL1,IL2
           IF(IGRD(I).GT.0)                                          THEN
              FDT(I,1)=-EVAP(I)*DT(I)                                                           
-             IF(DELZW(I,IG).GT.0.0001)                            THEN
-                 IF(THLIQ(I,IG).GT.THFC(I,IG))               THEN
-                     CCH=2.0*BI(I,IG)+3.0
+             IF(DELZW(I,IGDR(I)).GT.0.0001)                      THEN
+                 IF(THLIQ(I,IGDR(I)).GT.THFC(I,IGDR(I)))      THEN
+                     CCH=2.0*BI(I,IGDR(I))+3.0
                      ASATC=1.0-(1.0/CCH)
-                     ASAT=THLIQ(I,IG)/THPORF(I,IG)
+                     ASAT=THLIQ(I,IGDR(I))/THPORF(I,IGDR(I))
                      SATB=MIN(1.0,ASAT/ASATC)
-                     FDT(I,IG+1)=GRKSATF(I,IG)*DT(I)*XDRAIN(I)*
-     1                   SATB**CCH
+                     FDT(I,IGDR(I)+1)=GRKSATF(I,IGDR(I))*DT(I)*
+     1                   XDRAIN(I)*SATB**CCH
                  ELSE                                                                        
-                     FDT(I,IG+1)=0.0                                                           
+                     FDT(I,IGDR(I)+1)=0.0                                                           
                  ENDIF
-             ELSE                                                                        
-                FDT(I,IG+1)=0.0                                                           
-             ENDIF                                                                       
+             ELSE
+                 FDT(I,IGDR(I)+1)=0.0                                                           
+             ENDIF
           ENDIF
   150 CONTINUE
 C
       DO 200 J=1,IG-1                                                             
       DO 200 I=IL1,IL2
-          IF(IGRD(I).GT.0)                                          THEN
+          IF(IGRD(I).GT.0.)                                     THEN
+            IF(J.LT.IGDR(I))                    THEN
               IF(THPOR(I,J).GT.0.0.AND.THPOR(I,J+1).GT.0.0.AND.
      1                  ISAND(I,J+1).GT.-3)            THEN
                   IF(DELZW(I,J+1).GT.DELZW(I,J)) THEN
@@ -224,6 +234,7 @@ C     2                (DELZW(I,J)+DELZW(I,J+1)))
               IF(LZF(I).GT.0. .AND. J.LT.LZF(I)) FDT(I,J+1)=0.0
               IF(LZF(I).GT.0. .AND. J.EQ.LZF(I) .AND. FDT(I,J+1)
      1                 .LT.0.0) FDT(I,J+1)=0.0
+            ENDIF
           ENDIF
   200 CONTINUE 
 C                               
@@ -232,7 +243,7 @@ C     * LIQUID WATER SUPPLY IS INSUFFICIENT, TRY TO REMOVE WATER FROM
 C     * FROZEN SOIL MOISTURE.
 C
       IPTBAD=0                                        
-      DO 250 J=1,IG                                                         
+      DO 250 J=1,IG                                                               
       DO 250 I=IL1,IL2
           IF(IGRD(I).GT.0 .AND. J.EQ.1 .AND. FDT(I,J).LT.0. .AND.
      1                          DELZW(I,J).GT.0.0)             THEN 
@@ -265,15 +276,17 @@ C     * ENSURE THAT CALCULATED WATER FLOWS BETWEEN SOIL LAYERS DO NOT
 C     * CAUSE LIQUID MOISTURE CONTENT OF ANY LAYER TO FALL BELOW THE
 C     * RESIDUAL VALUE OR TO EXCEED THE CALCULATED MAXIMUM.
 C
-          IF(IGRD(I).GT.0 .AND. THLIQ(I,J).LE.(THLMIN(I,J)+0.001)) 
-     1                                                            THEN 
-              IF(FDT(I,J).LE.0. .AND. FDT(I,J+1).GE.0.)      THEN                          
-                  FDT(I,J)=0.0    
-                  FDT(I,J+1)=0.0   
-              ELSE IF(FDT(I,J).GE.0. .AND. FDT(I,J+1).GT.0.) THEN                      
-                  FDT(I,J+1)=0.0 
-              ELSE IF(FDT(I,J).LT.0. .AND. FDT(I,J+1).LE.0.) THEN                      
-                  FDT(I,J)=0.0    
+          IF(IGRD(I).GT.0)                                        THEN
+              IF(THLIQ(I,J).LE.(THLMIN(I,J)+0.001)
+     1            .AND. J.LE.IGDR(I))                            THEN  
+                IF(FDT(I,J).LE.0. .AND. FDT(I,J+1).GE.0.)      THEN                          
+                    FDT(I,J)=0.0    
+                    FDT(I,J+1)=0.0   
+                ELSE IF(FDT(I,J).GE.0. .AND. FDT(I,J+1).GT.0.) THEN                      
+                    FDT(I,J+1)=0.0 
+                ELSE IF(FDT(I,J).LT.0. .AND. FDT(I,J+1).LE.0.) THEN                      
+                    FDT(I,J)=0.0    
+                ENDIF
               ENDIF
           ENDIF   
           IF(IGRD(I).GT.0. .AND. ISAND(I,J).EQ.-2 .AND. 
@@ -291,8 +304,9 @@ C
 C
       DO 300 J=IG,1,-1                                                            
       DO 300 I=IL1,IL2
-          IF(IGRD(I).GT.0 .AND. THLIQ(I,J).GE.(THLMAX(I,J)-0.001)) 
-     1                                                            THEN 
+          IF(IGRD(I).GT.0)                                          THEN
+            IF(THLIQ(I,J).GE.(THLMAX(I,J)-0.001) 
+     1                    .AND. J.LE.IGDR(I))                     THEN  
               IF(FDT(I,J).GE.0. .AND. FDT(I,J+1).LE.0.)      THEN                          
                   FDT(I,J)=0.0                                                      
                   FDT(I,J+1)=0.0                                                    
@@ -301,19 +315,21 @@ C
               ELSE IF(FDT(I,J).LE.0. .AND. FDT(I,J+1).LT.0.) THEN                      
                   IF(FDT(I,J+1).LT.FDT(I,J)) FDT(I,J+1)=FDT(I,J)                          
               ENDIF                                                               
+            ENDIF                                                               
           ENDIF                                                                   
   300 CONTINUE
 C
       DO 400 J=1,IG                                                               
       DO 400 I=IL1,IL2
-          IF(IGRD(I).GT.0.AND.ISAND(I,J).NE.-3)                     THEN
+        IF(IGRD(I).GT.0.)                                           THEN
+          IF(J.LE.IGDR(I) .AND. ISAND(I,J).NE.-3)              THEN
               THTEST(I,J)=THLIQ(I,J)+(FDT(I,J)-FDT(I,J+1))/DELZW(I,J) 
-              IF(ISAND(I,J) .EQ. -2 .AND. J .NE. 1)        THEN
+              IF(ISAND(I,J) .EQ. -2 .AND. J .NE. 1)      THEN
                   THLTHR=MIN(THLRET(I,J),THLIQ(I,J))
               ELSE
                   THLTHR=THLMIN(I,J)
               ENDIF
-              IF(THTEST(I,J).LT.THLTHR)                             THEN
+              IF(THTEST(I,J).LT.THLTHR)                  THEN
                   IF(FDT(I,J+1).GT.0.) THEN                      
                       FDT(I,J+1)=FDT(I,J)+(THLIQ(I,J)-THLTHR)*
      1                    DELZW(I,J)  
@@ -322,7 +338,7 @@ C
      1                    DELZW(I,J)  
                   ENDIF
                   THTEST(I,J)=THLTHR
-                  IF(J.LT.IG) THEN
+                  IF(J.LT.IGDR(I)) THEN
                       IF(DELZW(I,J+1).GT.0.0) THTEST(I,J+1)=THLIQ(I,J+1)
      1                    +(FDT(I,J+1)-FDT(I,J+2))/DELZW(I,J+1)
                   ENDIF
@@ -334,14 +350,16 @@ C
           ELSE
               THTEST(I,J)=0.0
           ENDIF
+        ENDIF
   400 CONTINUE               
 C
       DO 500 J=IG,1,-1
       DO 500 I=IL1,IL2
-          IF(IGRD(I).GT.0 .AND. THTEST(I,J).GT.THLMAX(I,J))         THEN
-             WLIMIT=MAX((THLMAX(I,J)-THLIQ(I,J)),0.0)*DELZW(I,J)                      
-             WEXCES(I)=(THTEST(I,J)-THLMAX(I,J))*DELZW(I,J)                                
-             IF(FDT(I,J).GT.0. .AND. FDT(I,J+1).LE.0.)        THEN                          
+          IF(IGRD(I).GT.0)  THEN
+            IF(THTEST(I,J).GT.THLMAX(I,J) .AND. J.LE.IGDR(I))    THEN
+              WLIMIT=MAX((THLMAX(I,J)-THLIQ(I,J)),0.0)*DELZW(I,J)                      
+              WEXCES(I)=(THTEST(I,J)-THLMAX(I,J))*DELZW(I,J)                                
+              IF(FDT(I,J).GT.0. .AND. FDT(I,J+1).LE.0.)        THEN                          
                 IF(-FDT(I,J+1).GT.WLIMIT)          THEN
                     FDT(I,J+1)=-WLIMIT
                     FDT(I,J)=0.0
@@ -354,29 +372,30 @@ C                   FDT(I,J+1)=0.0
 C                ELSE                                                            
 C                   FDT(I,J+1)=FDT(I,J)-WLIMIT                                      
 C                ENDIF                                                           
-             ELSE IF(FDT(I,J).GT.0. .AND. FDT(I,J+1).GE.0.)   THEN                      
+              ELSE IF(FDT(I,J).GT.0. .AND. FDT(I,J+1).GE.0.)   THEN                      
                 FDT(I,J)=FDT(I,J)-WEXCES(I)                                            
-             ELSE IF(FDT(I,J).LE.0. .AND. FDT(I,J+1).LT.0.)   THEN                      
+              ELSE IF(FDT(I,J).LE.0. .AND. FDT(I,J+1).LT.0.)   THEN                      
                 FDT(I,J+1)=FDT(I,J+1)+WEXCES(I)                                        
-                IF(J.LT.IG)                       THEN
+                IF(J.LT.IGDR(I))                       THEN
                     IF(FDT(I,J+2).LT.0.) FDT(I,J+2)=0.0
                 ENDIF
-             ENDIF                                                               
-             DO 450 K=1,IG
-                 IF(DELZW(I,K).GT.0.0)                            THEN
-                     THTEST(I,K)=THLIQ(I,K)+(FDT(I,K)-FDT(I,K+1))/
-     1                           DELZW(I,K)                    
-                 ENDIF
-  450        CONTINUE
-         ENDIF                                                                   
+              ENDIF                                                               
+              DO 450 K=1,IG
+                  IF(DELZW(I,K).GT.0.0)                            THEN
+                      THTEST(I,K)=THLIQ(I,K)+(FDT(I,K)-FDT(I,K+1))/
+     1                            DELZW(I,K)                    
+                  ENDIF
+  450         CONTINUE
+            ENDIF                                                                   
+          ENDIF                                                                   
   500 CONTINUE
 C
       IPTBAD=0
       DO 600 I=IL1,IL2
           IF(IGRD(I).GT.0)                                        THEN
-              IF(FDT(I,IG+1).LT.0.)                         THEN
-                  WEXCES(I)=-FDT(I,IG+1)
-                  DO 550 J=1,IG+1
+              IF(FDT(I,IGDR(I)+1).LT.0.)                     THEN
+                  WEXCES(I)=-FDT(I,IGDR(I)+1)
+                  DO 550 J=1,IGDR(I)+1
                       FDT(I,J)=FDT(I,J)+WEXCES(I)
   550             CONTINUE
                   THSUBL=WEXCES(I)*RHOW/(RHOICE*DELZW(I,1))                                     
@@ -401,16 +420,18 @@ C     * SOIL LAYER TEMPERATURES AND LIQUID MOISTURE CONTENTS AFTER
 C     * WATER MOVEMENT.
 C
               TFDT(I,1)=TBARW(I,1) 
-              TFDT(I,IG+1)=TBARW(I,IG)
-              IF(FDT(I,IG+1).GT.0.0) THEN
-                  IF((BASFLW(I)+FI(I)*FDT(I,IG+1)).GT.0.0) 
-     1              TBASFL(I)=(TBASFL(I)*BASFLW(I)+(TFDT(I,IG+1)+TFREZ)*
-     2                FI(I)*FDT(I,IG+1))/(BASFLW(I)+FI(I)*FDT(I,IG+1))
-                  BASFLW(I)=BASFLW(I)+FI(I)*FDT(I,IG+1)
-                  IF((RUNOFF(I)+FDT(I,IG+1)).GT.0.0) 
-     1              TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TFDT(I,IG+1)+TFREZ)*
-     2                FDT(I,IG+1))/(RUNOFF(I)+FDT(I,IG+1))
-                  RUNOFF(I)=RUNOFF(I)+FDT(I,IG+1)
+              TFDT(I,IGDR(I)+1)=TBARW(I,IGDR(I))
+              IF(FDT(I,IGDR(I)+1).GT.0.0) THEN
+                  IF((BASFLW(I)+FI(I)*FDT(I,IGDR(I)+1)).GT.0.0) 
+     1              TBASFL(I)=(TBASFL(I)*BASFLW(I)+(TFDT(I,IGDR(I)+1)+
+     2                TFREZ)*FI(I)*FDT(I,IGDR(I)+1))/(BASFLW(I)+FI(I)*
+     3                FDT(I,IGDR(I)+1))
+                  BASFLW(I)=BASFLW(I)+FI(I)*FDT(I,IGDR(I)+1)
+                  IF((RUNOFF(I)+FDT(I,IGDR(I)+1)).GT.0.0) 
+     1              TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TFDT(I,IGDR(I)+1)+
+     2                TFREZ)*FDT(I,IGDR(I)+1))/(RUNOFF(I)+
+     3                FDT(I,IGDR(I)+1))
+                  RUNOFF(I)=RUNOFF(I)+FDT(I,IGDR(I)+1)
               ENDIF
           ENDIF
   600 CONTINUE
@@ -422,20 +443,22 @@ C
 C                                                      
       DO 700 J=1,IG
       DO 700 I=IL1,IL2
-          IF(IGRD(I).GT.0)                                          THEN
-             IF(J.LT.IG)                               THEN
+          IF(IGRD(I).GT.0)                                      THEN
+            IF(J.LE.IGDR(I))                               THEN
+              IF(J.LT.IGDR(I))                       THEN
                 IF(FDT(I,J+1).GT.0.)          THEN                                                
                    TFDT(I,J+1)=TBARW(I,J)                                                  
                 ELSE                                                                    
                    TFDT(I,J+1)=TBARW(I,J+1)                                                
                 ENDIF                                                                   
-             ENDIF
-             IF(THTEST(I,J).GT.0.0 .AND. DELZW(I,J).GT.0.0)    THEN
+              ENDIF
+              IF(THTEST(I,J).GT.0.0 .AND. DELZW(I,J).GT.0.0)    THEN
                  TBARW(I,J)=(THLIQ(I,J)*TBARW(I,J)+(FDT(I,J)*TFDT(I,J)-
      1                      FDT(I,J+1)*TFDT(I,J+1))/DELZW(I,J))/
      2                      THTEST(I,J)                                       
-             ENDIF
-             THLIQ(I,J)=THTEST(I,J)
+              ENDIF
+              THLIQ(I,J)=THTEST(I,J)
+            ENDIF                                                      
           ENDIF                                                      
   700 CONTINUE                                                                    
 C                                                                                  

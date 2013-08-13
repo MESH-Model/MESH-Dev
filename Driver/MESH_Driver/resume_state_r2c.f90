@@ -23,7 +23,7 @@
                        GGEOGAT,                                 &
                        CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
                        QFSGAT, QFXGAT, PETGAT, GAGAT,  EFGAT,   &
-                       GTGAT,  QGGAT,  TSFGAT, ALVSGAT,ALIRGAT, &
+                       GTGAT,  QGGAT,  ALVSGAT,ALIRGAT, &
                        SFCTGAT,SFCUGAT,SFCVGAT,SFCQGAT,FSNOGAT, &
                        FSGVGAT,FSGSGAT,FSGGGAT,FLGVGAT,FLGSGAT, &
                        FLGGGAT,HFSCGAT,HFSSGAT,HFSGGAT,HEVCGAT, &
@@ -34,8 +34,8 @@
                        TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
                        WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  GFLXGAT, &
                        HMFGGAT,HTCGAT, QFCGAT,MANNGAT, DDGAT,   &
-                       SANDGAT,CLAYGAT,coordsys1,datum1,zone1,  &
-                       XORIGIN,YORIGIN,XDELTA,YDELTA)
+                       SANDGAT,CLAYGAT,IGDRGAT,VMODGAT,QLWOGAT, &
+                       coordsys1,datum1, zone1,  XORIGIN,YORIGIN,XDELTA,YDELTA)
 !> This subroutine is used to write a resume file in r2c format.
 !> The resume file contains all of the GAT_R variables used
 !> in the loop for 
@@ -90,14 +90,14 @@ REAL    ZRFMGAT(ILG), ZRFHGAT(ILG), ZDMGAT (ILG), ZDHGAT (ILG), &
         TADPGAT(ILG), RHOAGAT(ILG), ZBLDGAT(ILG), Z0ORGAT(ILG), &
         RPCPGAT(ILG), TRPCGAT(ILG), SPCPGAT(ILG), TSPCGAT(ILG), &
         RHSIGAT(ILG), FCLOGAT(ILG), DLONGAT(ILG), GGEOGAT(ILG), &
-        RADJGAT(ILG)
+        RADJGAT(ILG), VMODGAT(ILG), QLWOGAT(ILG)
 
 !     * LAND SURFACE DIAGNOSTIC VARIABLES.
 
 REAL    CDHGAT (ILG),  CDMGAT (ILG),  HFSGAT (ILG),  TFXGAT (ILG), &
         QEVPGAT(ILG),  QFSGAT (ILG),  QFXGAT (ILG),  PETGAT (ILG), &
         GAGAT  (ILG),  EFGAT  (ILG),  GTGAT  (ILG),  QGGAT  (ILG), &
-        TSFGAT (ILG),  ALVSGAT(ILG),  ALIRGAT(ILG),  FSNOGAT(ILG), &
+        ALVSGAT(ILG),  ALIRGAT(ILG),  FSNOGAT(ILG), &
         SFCTGAT(ILG),  SFCUGAT(ILG),  SFCVGAT(ILG),  SFCQGAT(ILG), &
         FSGVGAT(ILG),  FSGSGAT(ILG),  FSGGGAT(ILG),  FLGVGAT(ILG), &
         FLGSGAT(ILG),  FLGGGAT(ILG),  HFSCGAT(ILG),  HFSSGAT(ILG), &
@@ -122,7 +122,7 @@ REAL    SANDGAT(ILG,IG),   CLAYGAT(ILG,IG)
 !INTEGER NML,NLTEST,NMTEST,NCOUNT,IMIN,NR2C,NLAT,ILG,XCOUNT,YCOUNT,IC,ICP1,IG
 INTEGER NML,NLTEST,NMTEST,NCOUNT,IMIN,NR2C_R,NLAT,ILG,IC,ICP1,IG
 !INTEGER XXX(NLAT),YYY(NLAT)
-INTEGER ILMOS(ILG),JLMOS(ILG)
+INTEGER ILMOS(ILG),JLMOS(ILG),IGDRGAT(ILG)
 INTEGER GRD_R(NR2C_R),GAT_R(NR2C_R),GRDGAT_R(NR2C_R)
 
 !REAL    ACLASS(NLTEST,NMTEST+1)
@@ -1020,286 +1020,280 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
           !> ATTRIBUTE 107 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            TSFGAT = DATAIN
+            ALVSGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 108 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            ALVSGAT = DATAIN
+            ALIRGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 109 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            ALIRGAT = DATAIN
+            SFCTGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 110 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            SFCTGAT = DATAIN
+            SFCUGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 111 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            SFCUGAT = DATAIN
+            SFCVGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 112 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            SFCVGAT = DATAIN
+            SFCQGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 113 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            SFCQGAT = DATAIN
+            FSNOGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 114 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            FSNOGAT = DATAIN
+            FSGVGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 115 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            FSGVGAT = DATAIN
+            FSGSGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 116 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            FSGSGAT = DATAIN
+            FSGGGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 117 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            FSGGGAT = DATAIN
+            FLGVGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 118 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            FLGVGAT = DATAIN
+            FLGSGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 119 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            FLGSGAT = DATAIN
+            FLGGGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 120 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            FLGGGAT = DATAIN
+            HFSCGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 121 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            HFSCGAT = DATAIN
+            HFSSGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 122 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            HFSSGAT = DATAIN
+            HFSGGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 123 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            HFSGGAT = DATAIN
+            HEVCGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 124 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            HEVCGAT = DATAIN
+            HEVSGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 125 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            HEVSGAT = DATAIN
+            HEVGGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 126 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            HEVGGAT = DATAIN
+            HMFCGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 127 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            HMFCGAT = DATAIN
+            HMFNGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 128 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            HMFNGAT = DATAIN
+            HTCCGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 129 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            HTCCGAT = DATAIN
+            HTCSGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 130 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            HTCSGAT = DATAIN
+            PCFCGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 131 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            PCFCGAT = DATAIN
+            PCLCGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 132 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            PCLCGAT = DATAIN
+            PCPNGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 133 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            PCPNGAT = DATAIN
+            PCPGGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 134 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            PCPGGAT = DATAIN
+            QFGGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 135 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            QFGGAT = DATAIN
+            QFNGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 136 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            QFNGAT = DATAIN
+            QFCLGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 137 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            QFCLGAT = DATAIN
+            QFCFGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 138 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            QFCFGAT = DATAIN
+            ROFGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 139 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            ROFGAT = DATAIN
+            ROFOGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 140 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            ROFOGAT = DATAIN
+            ROFSGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 141 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            ROFSGAT = DATAIN
+            ROFBGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 142 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            ROFBGAT = DATAIN
+            TROFGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 143 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            TROFGAT = DATAIN
+            TROOGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 144 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            TROOGAT = DATAIN
+            TROSGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 145 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            TROSGAT = DATAIN
+            TROBGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 146 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            TROBGAT = DATAIN
+            ROFCGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 147 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            ROFCGAT = DATAIN
+            ROFNGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 148 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            ROFNGAT = DATAIN
+            ROVGGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 149 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            ROVGGAT = DATAIN
+            WTRCGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 150 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            WTRCGAT = DATAIN
+            WTRSGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 151 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            WTRSGAT = DATAIN
+            WTRGGAT = DATAIN
           ENDIF
 
           !> ATTRIBUTE 152 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
-            WTRGGAT = DATAIN
-          ENDIF
-
-          !> ATTRIBUTE 153 - 
-          counter = counter + 1
-          IF(N.eq.counter) THEN
             DRGAT = DATAIN
           ENDIF
 
-          !> ATTRIBUTE 154 - 
+          !> ATTRIBUTE 153 - 
           DO J = 1, IG
           counter = counter + 1
           IF(N.eq.counter) THEN
@@ -1307,7 +1301,7 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
           ENDIF
           ENDDO
 
-          !> ATTRIBUTE 155 - 
+          !> ATTRIBUTE 154 - 
           DO J = 1, IG
           counter = counter + 1
           IF(N.eq.counter) THEN
@@ -1315,7 +1309,7 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
           ENDIF
           ENDDO
 
-          !> ATTRIBUTE 156 - 
+          !> ATTRIBUTE 155 - 
           DO J = 1, IG
           counter = counter + 1
           IF(N.eq.counter) THEN
@@ -1323,7 +1317,7 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
           ENDIF
           ENDDO
 
-          !> ATTRIBUTE 157 - 
+          !> ATTRIBUTE 156 - 
           DO J = 1, IG
           counter = counter + 1
           IF(N.eq.counter) THEN
@@ -1331,19 +1325,19 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
           ENDIF
           ENDDO
 
-          !> ATTRIBUTE 158 - 
+          !> ATTRIBUTE 157 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
             MANNGAT = DATAIN
           ENDIF
 
-          !> ATTRIBUTE 159 - 
+          !> ATTRIBUTE 158 - 
           counter = counter + 1
           IF(N.eq.counter) THEN
             DDGAT = DATAIN
           ENDIF
 
-          !> ATTRIBUTE 160 - 
+          !> ATTRIBUTE 159 - 
           DO J = 1, IG
           counter = counter + 1
           ! make sure that we are using the correct DATAIN
@@ -1353,7 +1347,7 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
           ENDIF
           ENDDO
        
-          !> ATTRIBUTE 161 - 
+          !> ATTRIBUTE 160 - 
           DO J = 1, IG
           counter = counter + 1
           ! make sure that we are using the correct DATAIN
@@ -1362,6 +1356,24 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
             CLAYGAT(:,J) = DATAIN
           ENDIF
           ENDDO
+
+          !> ATTRIBUTE 161 - 
+          counter = counter + 1
+          IF(N.eq.counter) THEN
+            IGDRGAT = DATAIN
+          ENDIF
+
+          !> ATTRIBUTE 162 - 
+          counter = counter + 1
+          IF(N.eq.counter) THEN
+            VMODGAT = DATAIN
+          ENDIF
+          
+          !> ATTRIBUTE 163 - 
+          counter = counter + 1
+          IF(N.eq.counter) THEN
+            QLWOGAT = DATAIN
+          ENDIF
        
         ENDIF ! IF(GRD_R(N).EQ.1.OR.GAT_R(N).EQ.1)THEN
       ENDDO ! N = 1, NR2C_R

@@ -23,7 +23,7 @@
                        GGEOGAT,                                 &
                        CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
                        QFSGAT, QFXGAT, PETGAT, GAGAT,  EFGAT,   &
-                       GTGAT,  QGGAT,  TSFGAT, ALVSGAT,ALIRGAT, &
+                       GTGAT,  QGGAT,  ALVSGAT,ALIRGAT, &
                        SFCTGAT,SFCUGAT,SFCVGAT,SFCQGAT,FSNOGAT, &
                        FSGVGAT,FSGSGAT,FSGGGAT,FLGVGAT,FLGSGAT, &
                        FLGGGAT,HFSCGAT,HFSSGAT,HFSGGAT,HEVCGAT, &
@@ -34,8 +34,8 @@
                        TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
                        WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  GFLXGAT, &
                        HMFGGAT,HTCGAT, QFCGAT,MANNGAT, DDGAT,   &
-                       SANDGAT,CLAYGAT,coordsys1,datum1,zone1,  &
-                       XORIGIN,YORIGIN,XDELTA,YDELTA)
+                       SANDGAT,CLAYGAT,IGDRGAT,VMODGAT,QLWOGAT, &
+                       coordsys1,datum1, zone1,  XORIGIN,YORIGIN,XDELTA,YDELTA)
 !> This subroutine is used to write a resume file in r2c format.
 !> The resume file contains all of the GAT variables used
 !> in the loop for 
@@ -90,14 +90,14 @@ REAL    ZRFMGAT(ILG), ZRFHGAT(ILG), ZDMGAT (ILG), ZDHGAT (ILG), &
         TADPGAT(ILG), RHOAGAT(ILG), ZBLDGAT(ILG), Z0ORGAT(ILG), &
         RPCPGAT(ILG), TRPCGAT(ILG), SPCPGAT(ILG), TSPCGAT(ILG), &
         RHSIGAT(ILG), FCLOGAT(ILG), DLONGAT(ILG), GGEOGAT(ILG), &
-        RADJGAT(ILG)
+        RADJGAT(ILG), VMODGAT(ILG), QLWOGAT(ILG)
 
 !     * LAND SURFACE DIAGNOSTIC VARIABLES.
 
 REAL    CDHGAT (ILG),  CDMGAT (ILG),  HFSGAT (ILG),  TFXGAT (ILG), &
         QEVPGAT(ILG),  QFSGAT (ILG),  QFXGAT (ILG),  PETGAT (ILG), &
         GAGAT  (ILG),  EFGAT  (ILG),  GTGAT  (ILG),  QGGAT  (ILG), &
-        TSFGAT (ILG),  ALVSGAT(ILG),  ALIRGAT(ILG),  FSNOGAT(ILG), &
+        ALVSGAT(ILG),  ALIRGAT(ILG),  FSNOGAT(ILG), &
         SFCTGAT(ILG),  SFCUGAT(ILG),  SFCVGAT(ILG),  SFCQGAT(ILG), &
         FSGVGAT(ILG),  FSGSGAT(ILG),  FSGGGAT(ILG),  FLGVGAT(ILG), &
         FLGSGAT(ILG),  FLGGGAT(ILG),  HFSCGAT(ILG),  HFSSGAT(ILG), &
@@ -122,7 +122,7 @@ REAL    SANDGAT(ILG,IG),   CLAYGAT(ILG,IG)
 !INTEGER NML,NLTEST,NMTEST,NCOUNT,IMIN,NR2C,NLAT,ILG,XCOUNT,YCOUNT,IC,ICP1,IG
 INTEGER NML,NLTEST,NMTEST,NCOUNT,IMIN,NR2C,NLAT,ILG,IC,ICP1,IG
 !INTEGER XXX(NLAT),YYY(NLAT)
-INTEGER ILMOS(ILG),JLMOS(ILG)
+INTEGER ILMOS(ILG),JLMOS(ILG),IGDRGAT(ILG)
 INTEGER GRD_S(NR2C),GAT_S(NR2C),GRDGAT_S(NR2C)
 
 !REAL    ACLASS(NLTEST,NMTEST+1)
@@ -283,7 +283,7 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
                        GGEOGAT,                                 &
                        CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
                        QFSGAT, QFXGAT, PETGAT, GAGAT,  EFGAT,   &
-                       GTGAT,  QGGAT,  TSFGAT, ALVSGAT,ALIRGAT, &
+                       GTGAT,  QGGAT,  ALVSGAT,ALIRGAT, &
                        SFCTGAT,SFCUGAT,SFCVGAT,SFCQGAT,FSNOGAT, &
                        FSGVGAT,FSGSGAT,FSGGGAT,FLGVGAT,FLGSGAT, &
                        FLGGGAT,HFSCGAT,HFSSGAT,HFSGGAT,HEVCGAT, &
@@ -294,7 +294,8 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
                        TROSGAT,TROBGAT,ROFCGAT,ROFNGAT,ROVGGAT, &
                        WTRCGAT,WTRSGAT,WTRGGAT,DRGAT,  GFLXGAT, &
                        HMFGGAT,HTCGAT, QFCGAT,                  &
-                       MANNGAT, DDGAT, SANDGAT, CLAYGAT)
+                       MANNGAT,DDGAT,  SANDGAT,CLAYGAT,IGDRGAT, &
+                       VMODGAT,QLWOGAT)
  
       COUNT = 0
 

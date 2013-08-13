@@ -1,6 +1,9 @@
       SUBROUTINE SNOADD(ALBSNO,TSNOW,RHOSNO,ZSNOW,HCPSNO,HTCS,
      1                  FI,S,TS,RHOSNI,WSNOW,ILG,IL1,IL2,JL)
 C
+C     * NOV 17/11 - M.LAZARE.   CHANGE SNOW ALBEDO REFRESHMENT 
+C     *                         THRESHOLD (SNOWFALL IN CURRENT
+C     *                         TIMESTEP) FROM 0.005 TO 1.E-4 M. 
 C     * MAR 24/06 - D.VERSEGHY. ALLOW FOR PRESENCE OF WATER IN SNOW.
 C     * SEP 10/04 - R.HARVEY/D.VERSEGHY. INCREASE SNOW ALBEDO 
 C     *                         REFRESHMENT THRESHOLD; ADD
@@ -57,7 +60,7 @@ C-----------------------------------------------------------------------
               HTCS  (I)=HTCS(I)-FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
      1                  ZSNOW(I)/DELT
               SNOFAL=S(I)*DELT                      
-              IF(SNOFAL.GE.0.005)                              THEN 
+              IF(SNOFAL.GE.1.E-4)                               THEN 
                   ALBSNO(I)=0.84                                                             
               ELSE IF(.NOT.(ZSNOW(I).GT.0.))                THEN
                   ALBSNO(I)=0.50                                                         

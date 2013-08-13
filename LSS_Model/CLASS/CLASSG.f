@@ -7,8 +7,8 @@
      5                  VPDAGAT,VPDBGAT,PSGAGAT,PSGBGAT,PAIDGAT,
      6                  HGTDGAT,ACVDGAT,ACIDGAT,TSFSGAT,WSNOGAT,
      7                  THPGAT, THRGAT, THMGAT, BIGAT,  PSISGAT,
-     8                  GRKSGAT,THRAGAT,HCPSGAT,TCSGAT,
-     9                  THFCGAT,PSIWGAT,DLZWGAT,ZBTWGAT,
+     8                  GRKSGAT,THRAGAT,HCPSGAT,TCSGAT, IGDRGAT,
+     9                  THFCGAT,PSIWGAT,DLZWGAT,ZBTWGAT,VMODGAT,
      A                  ZSNLGAT,ZPLGGAT,ZPLSGAT,TACGAT, QACGAT,
      B                  DRNGAT, XSLPGAT,XDGAT,WFSFGAT,KSGAT,
      C                  ALGWGAT,ALGDGAT,ASVDGAT,ASIDGAT,AGVDGAT,
@@ -21,7 +21,7 @@
      J                  GGEOGAT,
      K                  CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT,
      L                  QFSGAT, QFXGAT, PETGAT, GAGAT,  EFGAT,
-     M                  GTGAT,  QGGAT,  TSFGAT, ALVSGAT,ALIRGAT,
+     M                  GTGAT,  QGGAT,  ALVSGAT,ALIRGAT,
      N                  SFCTGAT,SFCUGAT,SFCVGAT,SFCQGAT,FSNOGAT,
      O                  FSGVGAT,FSGSGAT,FSGGGAT,FLGVGAT,FLGSGAT,
      P                  FLGGGAT,HFSCGAT,HFSSGAT,HFSGGAT,HEVCGAT,
@@ -45,8 +45,8 @@ C END: PDMROF
      +                  VPDAROW,VPDBROW,PSGAROW,PSGBROW,PAIDROW,
      +                  HGTDROW,ACVDROW,ACIDROW,TSFSROW,WSNOROW,
      +                  THPROW, THRROW, THMROW, BIROW,  PSISROW,
-     +                  GRKSROW,THRAROW,HCPSROW,TCSROW,
-     +                  THFCROW,PSIWROW,DLZWROW,ZBTWROW,
+     +                  GRKSROW,THRAROW,HCPSROW,TCSROW, IGDRROW,
+     +                  THFCROW,PSIWROW,DLZWROW,ZBTWROW,VMODL,
      +                  ZSNLROW,ZPLGROW,ZPLSROW,FRZCROW,TACROW,
      + QACROW,
      +                  DRNROW, XSLPROW,XDROW,WFSFROW,KSROW,
@@ -63,8 +63,23 @@ C BEGIN: PDMROF
      1                  CMINROW, CMAXROW, BROW, K1ROW, K2ROW)
 C END: PDMROF
 
-C     * JUN 17/08 - D.HOLMAN. ADD MANNROW, MANNGAT, DDROW, DDGAT.
 C
+C     * OCT 18/11 - M.LAZARE.  ADD IGDR.
+C     * OCT 07/11 - M.LAZARE.  ADD VMODL->VMODGAT.
+C     * OCT 05/11 - M.LAZARE.  PUT BACK IN PRESGROW->PRESGAT
+C     *                        REQUIRED FOR ADDED SURFACE RH 
+C     *                        CALCULATION.
+C     * OCT 03/11 - M.LAZARE.  REMOVE ALL INITIALIZATION TO
+C     *                        ZERO OF GAT ARRAYS (NOW DONE
+C     *                        IN CLASS DRIVER).
+C     * SEP 16/11 - M.LAZARE.  - ROW->ROT AND GRD->ROW.
+C     *                        - REMOVE INITIALIZATION OF
+C     *                          {ALVS,ALIR} TO ZERO.
+C     *                        - REMOVE PRESGROW->PRESGAT 
+C     *                          (OCEAN-ONLY NOW).
+C     *                        - RADJROW (64-BIT) NOW RADJ
+C     *                          (32-BIT).
+C     * JUN 17/08 - D.HOLMAN. ADD MANNROW, MANNGAT, DDROW, DDGAT.
 C     * MAR 23/06 - D.VERSEGHY. ADD WSNO,FSNO,GGEO.
 C     * MAR 18/05 - D.VERSEGHY. ADDITIONAL VARIABLES.
 C     * FEB 18/05 - D.VERSEGHY. ADD "TSFS" VARIABLES.
@@ -153,6 +168,7 @@ C
      9        ZPLGGAT(ILG),      ZPLSGAT(ILG),      FRZCGAT(ILG)
 C
       INTEGER ISNDROW(NL,NM,IG), ISNDGAT(ILG,IG)
+      INTEGER IGDRROW(NL,NM),    IGDRGAT(ILG)
 
 C     * ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES.
 C
@@ -163,7 +179,7 @@ C
      4      TADPGRD( NL), RHOAGRD( NL), ZBLDGRD( NL), Z0ORGRD( NL),
      5      RPCPGRD( NL), TRPCGRD( NL), SPCPGRD( NL), TSPCGRD( NL),
      6      RHSIGRD( NL), FCLOGRD( NL), DLONGRD( NL), GGEOGRD( NL),
-     7      RADJGRD( NL)
+     7      RADJGRD( NL), VMODL  ( NL)
 C
       REAL  ZRFMGAT(ILG), ZRFHGAT(ILG), ZDMGAT (ILG), ZDHGAT (ILG),
      1      FSVHGAT(ILG), FSIHGAT(ILG), CSZGAT (ILG), FDLGAT (ILG), 
@@ -172,14 +188,14 @@ C
      4      TADPGAT(ILG), RHOAGAT(ILG), ZBLDGAT(ILG), Z0ORGAT(ILG),
      5      RPCPGAT(ILG), TRPCGAT(ILG), SPCPGAT(ILG), TSPCGAT(ILG),
      6      RHSIGAT(ILG), FCLOGAT(ILG), DLONGAT(ILG), GGEOGAT(ILG),
-     7      RADJGAT(ILG)
+     7      RADJGAT(ILG), VMODGAT(ILG)
 C
 C     * LAND SURFACE DIAGNOSTIC VARIABLES.
 C
       REAL  CDHGAT (ILG),  CDMGAT (ILG),  HFSGAT (ILG),  TFXGAT (ILG),
      1      QEVPGAT(ILG),  QFSGAT (ILG),  QFXGAT (ILG),  PETGAT (ILG),
      2      GAGAT  (ILG),  EFGAT  (ILG),  GTGAT  (ILG),  QGGAT  (ILG), 
-     3      TSFGAT (ILG),  ALVSGAT(ILG),  ALIRGAT(ILG),  FSNOGAT(ILG),
+     3      ALVSGAT(ILG),  ALIRGAT(ILG),  FSNOGAT(ILG),
      4      SFCTGAT(ILG),  SFCUGAT(ILG),  SFCVGAT(ILG),  SFCQGAT(ILG), 
      5      FSGVGAT(ILG),  FSGSGAT(ILG),  FSGGGAT(ILG),  FLGVGAT(ILG), 
      6      FLGSGAT(ILG),  FLGGGAT(ILG),  HFSCGAT(ILG),  HFSSGAT(ILG),
@@ -227,20 +243,21 @@ C----------------------------------------------------------------------
           DRNGAT (K)=DRNROW (ILMOS(K),JLMOS(K))  
           XSLPGAT(K)=XSLPROW(ILMOS(K),JLMOS(K))  
           XDGAT(K)=XDROW(ILMOS(K),JLMOS(K))  
-          WFSFGAT(K)=WFSFROW(ILMOS(K),JLMOS(K))  
+c         WFSFGAT(K)=WFSFROW(ILMOS(K),JLMOS(K))  
           KSGAT(K)=KSROW(ILMOS(K),JLMOS(K))  
           ALGWGAT(K)=ALGWROW(ILMOS(K),JLMOS(K))  
           ALGDGAT(K)=ALGDROW(ILMOS(K),JLMOS(K))  
-          ASVDGAT(K)=ASVDROW(ILMOS(K),JLMOS(K))  
-          ASIDGAT(K)=ASIDROW(ILMOS(K),JLMOS(K))  
-          AGVDGAT(K)=AGVDROW(ILMOS(K),JLMOS(K))  
-          AGIDGAT(K)=AGIDROW(ILMOS(K),JLMOS(K))  
+c         ASVDGAT(K)=ASVDROW(ILMOS(K),JLMOS(K))  
+c         ASIDGAT(K)=ASIDROW(ILMOS(K),JLMOS(K))  
+c         AGVDGAT(K)=AGVDROW(ILMOS(K),JLMOS(K))  
+c         AGIDGAT(K)=AGIDROW(ILMOS(K),JLMOS(K))  
           ZSNLGAT(K)=ZSNLROW(ILMOS(K),JLMOS(K))  
           ZPLGGAT(K)=ZPLGROW(ILMOS(K),JLMOS(K))  
           ZPLSGAT(K)=ZPLSROW(ILMOS(K),JLMOS(K))  
           FRZCGAT (K)=FRZCROW (ILMOS(K),JLMOS(K))            
           TACGAT (K)=TACROW (ILMOS(K),JLMOS(K))  
           QACGAT (K)=QACROW (ILMOS(K),JLMOS(K))  
+          IGDRGAT(K)=IGDRROW(ILMOS(K),JLMOS(K))
           ZBLDGAT(K)=ZBLDGRD(ILMOS(K))
           Z0ORGAT(K)=Z0ORGRD(ILMOS(K))
           ZRFMGAT(K)=ZRFMGRD(ILMOS(K))
@@ -270,65 +287,7 @@ C----------------------------------------------------------------------
           DLONGAT(K)=DLONGRD(ILMOS(K))
           GGEOGAT(K)=GGEOGRD(ILMOS(K))
           RADJGAT(K)=RADJGRD(ILMOS(K))
-          CDHGAT (K)=0.0
-          CDMGAT (K)=0.0
-          HFSGAT (K)=0.0
-          TFXGAT (K)=0.0
-          QEVPGAT(K)=0.0
-          QFSGAT (K)=0.0
-          QFXGAT (K)=0.0
-          PETGAT (K)=0.0
-          GAGAT  (K)=0.0
-          EFGAT  (K)=0.0
-          GTGAT  (K)=0.0
-          QGGAT  (K)=0.0
-          TSFGAT (K)=0.0
-          ALVSGAT(K)=0.0
-          ALIRGAT(K)=0.0
-          SFCTGAT(K)=0.0
-          SFCUGAT(K)=0.0
-          SFCVGAT(K)=0.0
-          SFCQGAT(K)=0.0
-          FSNOGAT(K)=0.0
-          FSGVGAT(K)=0.0
-          FSGSGAT(K)=0.0
-          FSGGGAT(K)=0.0
-          FLGVGAT(K)=0.0
-          FLGSGAT(K)=0.0
-          FLGGGAT(K)=0.0
-          HFSCGAT(K)=0.0
-          HFSSGAT(K)=0.0
-          HFSGGAT(K)=0.0
-          HEVCGAT(K)=0.0
-          HEVSGAT(K)=0.0
-          HEVGGAT(K)=0.0
-          HMFCGAT(K)=0.0
-          HMFNGAT(K)=0.0
-          HTCCGAT(K)=0.0
-          HTCSGAT(K)=0.0
-          PCFCGAT(K)=0.0
-          PCLCGAT(K)=0.0
-          PCPNGAT(K)=0.0
-          PCPGGAT(K)=0.0
-          QFGGAT (K)=0.0
-          QFNGAT (K)=0.0
-          QFCFGAT(K)=0.0
-          QFCLGAT(K)=0.0
-          ROFGAT (K)=0.0
-          ROFOGAT(K)=0.0
-          ROFSGAT(K)=0.0
-          ROFBGAT(K)=0.0
-          TROFGAT (K)=0.0
-          TROOGAT(K)=0.0
-          TROSGAT(K)=0.0
-          TROBGAT(K)=0.0
-          ROFCGAT(K)=0.0
-          ROFNGAT(K)=0.0
-          ROVGGAT(K)=0.0
-          WTRCGAT(K)=0.0
-          WTRSGAT(K)=0.0
-          WTRGGAT(K)=0.0
-          DRGAT  (K)=0.0
+          VMODGAT(K)=VMODL  (ILMOS(K))
           CMINGAT (K) = CMINROW (ILMOS(K),JLMOS(K))            
           CMAXGAT (K) = CMAXROW (ILMOS(K),JLMOS(K))            
           BGAT    (K) = BROW    (ILMOS(K),JLMOS(K))            
@@ -358,12 +317,8 @@ C
           DLZWGAT(K,L)=DLZWROW(ILMOS(K),JLMOS(K),L)
           ZBTWGAT(K,L)=ZBTWROW(ILMOS(K),JLMOS(K),L)
           ISNDGAT(K,L)=ISNDROW(ILMOS(K),JLMOS(K),L)
-          HMFGGAT(K,L)=0.0
-          HTCGAT (K,L)=0.0
-          QFCGAT (K,L)=0.0
-          GFLXGAT(K,L)=0.0
-200   CONTINUE
-250   CONTINUE
+  200 CONTINUE
+  250 CONTINUE
 C
       DO 300 L=1,ICP1
       !$omp parallel do
@@ -387,20 +342,12 @@ C
           VPDBGAT(K,L)=VPDBROW(ILMOS(K),JLMOS(K),L)
           PSGAGAT(K,L)=PSGAROW(ILMOS(K),JLMOS(K),L)
           PSGBGAT(K,L)=PSGBROW(ILMOS(K),JLMOS(K),L)
-          PAIDGAT(K,L)=PAIDROW(ILMOS(K),JLMOS(K),L)
-          HGTDGAT(K,L)=HGTDROW(ILMOS(K),JLMOS(K),L)
-          ACVDGAT(K,L)=ACVDROW(ILMOS(K),JLMOS(K),L)
-          ACIDGAT(K,L)=ACIDROW(ILMOS(K),JLMOS(K),L)
+c         PAIDGAT(K,L)=PAIDROW(ILMOS(K),JLMOS(K),L)
+c         HGTDGAT(K,L)=HGTDROW(ILMOS(K),JLMOS(K),L)
+c         ACVDGAT(K,L)=ACVDROW(ILMOS(K),JLMOS(K),L)
+c         ACIDGAT(K,L)=ACIDROW(ILMOS(K),JLMOS(K),L)
           TSFSGAT(K,L)=TSFSROW(ILMOS(K),JLMOS(K),L)
 400   CONTINUE
-C
-c      DO 500 M=1,50
-c          DO 475 L=1,6
-c              DO 450 K=1,NML
-C                  ITCTGAT(K,L,M)=0
-c450           CONTINUE
-c475       CONTINUE
-c500   CONTINUE
-C
+
       RETURN
       END

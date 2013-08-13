@@ -2,6 +2,8 @@
      1                  WLOST,TRUNOF,RUNOFF,TOVRFL,OVRFLW,
      2                  FI,R,S,RHOSNI,WSNOW,ILG,IL1,IL2,JL)
 C
+C     * AUG 25/11 - D.VERSEGHY. CORRECT CALCULATION OF TRUNOF
+C     *                         AND TOVRFL.
 C     * FEB 22/07 - D.VERSEGHY. NEW ACCURACY LIMITS FOR R AND S.
 C     * MAR 24/06 - D.VERSEGHY. ALLOW FOR PRESENCE OF WATER IN SNOW.
 C     * SEP 23/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
@@ -86,11 +88,11 @@ C-----------------------------------------------------------------------
                       HCPSNO(I)=0.0
                       EVAP(I)=ZREM*(CLHMLT+CLHVAP)/(CLHVAP*DELT)
                       WLOST(I)=WLOST(I)-ZREM*RHOW*CLHMLT/CLHVAP
-                      IF(RUNOFF(I).GT.0. .AND. WSNOW(I).GT.0.)
+                      IF(RUNOFF(I).GT.0. .OR. WSNOW(I).GT.0.)
      1                 TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TSNOW(I)+TFREZ)*
      1                      WSNOW(I)/RHOW)/(RUNOFF(I)+WSNOW(I)/RHOW)
                       RUNOFF(I)=RUNOFF(I)+WSNOW(I)/RHOW
-                      IF(OVRFLW(I).GT.0. .AND. WSNOW(I).GT.0.)
+                      IF(OVRFLW(I).GT.0. .OR. WSNOW(I).GT.0.)
      1                 TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+(TSNOW(I)+TFREZ)*
      1                      FI(I)*WSNOW(I)/RHOW)/(OVRFLW(I)+FI(I)*
      2                      WSNOW(I)/RHOW)

@@ -3,6 +3,10 @@
      2                  TA,QA,PCPR,RRATE,SRATE,PRESSG,
      3                  IPCP,NL,IL1,IL2)
 C
+C     * NOV 17/11 - M.LAZARE.   REMOVE CALCULATION OF PCPR
+C     *                         FOR IPCP=4 (REDUNDANT SINCE
+C     *                         PCPR MUST BE PASSED IN FOR
+C     *                         IF CONDITION ON LINE 100).
 C     * NOV 22/06 - P.BARTLETT. CALCULATE PCPR IF IPCP=4.
 C     * JUN 06/06 - V.FORTIN.   ADD OPTION FOR PASSING IN
 C     *                         RAINFALL AND SNOWFALL RATES
@@ -135,7 +139,6 @@ C
                   IF(RPCP(I).GT.0.0) TRPCP(I)=MAX((TA(I)-TFREZ),0.0) 
                   SPCP(I)=SRATE(I)/RHOSNI(I)
                   IF(SPCP(I).GT.0.0) TSPCP(I)=MIN((TA(I)-TFREZ),0.0)
-                  PCPR(I)=RRATE(I)+SRATE(I)
               ENDIF
           ENDIF
 100   CONTINUE

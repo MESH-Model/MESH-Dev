@@ -13,8 +13,19 @@
      C            THPOR,THLMIN,PSISAT,BI,PSIWLT,HCPS,ISAND,
      D            ILG,IL1,IL2,JL,IC,ICP1,IG,IDAY,IDISP,IZREF,IWF,
      E            IPAI,IHGT,RMAT,H,HS,CWCPAV,GROWA,GROWN,GROWB,
-     F            RRESID,SRESID,FRTOT )               
+     F            RRESID,SRESID,FRTOT,
+     G            FCANCMX,ICTEM,ICTEMMOD,RMATC,
+     H            AILC,PAIC,AILCG,L2MAX,NOL2PFTS,
+     I            AILCGS,FCANCS,FCANC)
 C
+C     * NOV 15/11 - M.LAZARE.   CTEM ADDED. CALCULATIONS ARE DIFFERENT
+C     *                         IN SEVERAL AREAS, UNDER CONTROL OF
+C     *                         "ICTEMMOD" SWITCH (ICTEMMOD=0 REVERTS
+C     *                         BACK TO APREP4 FORMULATION). THIS 
+C     *                         INCLUDES NEW INPUT "PAIC".
+C     * OCT 07/11 - V.FORTIN/D.VERSEGHY. MAKE THE LIMITING PONDING DEPTH 
+C     *                         CALCULATION OVER ORGANIC SOILS THE SAME 
+C     *                         AS OVER MINERAL SOILS (LOOP 175).
 C     * DEC 23/09 - D.VERSEGHY. IN LIMITING PONDING DEPTH CALCULATIONS,
 C     *                         IDENTIFY PEATLANDS WHERE ISAND(I,2)=-2
 C     * JAN 06/09 - D.VERSEGHY. REINTRODUCE CHECKS ON FRACTIONAL AREAS.
@@ -176,8 +187,21 @@ C
 C
 C     * TEMPORARY VARIABLES.
 C
-      REAL DAY,DEGLON,GROWG,FSUM,SNOI,ZSNADD,THSUM,THICEI,THLIQI,ZROOT,
-     1     ZROOTG,FCOEFF,PSII,LZ0ORO
+      REAL DAY,GROWG,FSUM,SNOI,ZSNADD,THSUM,THICEI,THLIQI,ZROOT,
+     1     ZROOTG,FCOEFF,PSII,LZ0ORO,THR_LAI
+C
+C     * CTEM-RELATED FIELDS.
+C
+      REAL  AILC (ILG,IC),       PAIC   (ILG,IC),
+     1      AILCG(ILG,ICTEM),    AILCGS (ILG,ICTEM),
+     2      RMATC(ILG,IC,IG),    FCANCMX(ILG,ICTEM),  
+     3      FCANC(ILG,ICTEM),    FCANCS (ILG,ICTEM)
+C
+C     * INTERNAL WORK FIELD.
+C
+      REAL  SFCANCMX(ILG,IC)
+C
+      INTEGER ICTEM, M, N, K1, K2, L2MAX, NOL2PFTS(IC), ICTEMMOD
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -229,7 +253,11 @@ C     * MUST USE UN-GATHERED LONGITUDES TO COMPUTE ACTUAL LONGITUDE/
 C     * LATITUDE VALUES.  
 C                                                                                 
       DAY=FLOAT(IDAY)                                                             
-      DO 120 I=IL1,IL2
+C
+C     * FOR CTEM, CROP GROWTH IS BUILT IN, SO GROWA=1.
+C
+      IF (ICTEMMOD.EQ.0) THEN
+        DO 120 I=IL1,IL2
           IN = INT( (RADJ(I)+PI/2.0)*18.0/PI ) + 1
           IF(DLON(I).GT.190. .AND. DLON(I).LT.330.)            THEN           
               NL=2                                                            
@@ -259,7 +287,12 @@ C
               GROWA(I)=MAX(0.0,MIN(GROWA(I),1.0))
               IF(GROWA(I).LT.1.0E-5) GROWA(I)=0.0
           ENDIF                                                               
-  120 CONTINUE                                                                
+  120   CONTINUE                                                                
+      ELSE
+        DO I=IL1,IL2
+          GROWA(I)=1.
+        ENDDO
+      ENDIF
 C                                                                                 
 C     * DETERMINE GROWTH INDICES FOR NEEDLELEAF TREES, BROADLEAF
 C     * TREES AND GRASS (VEGETATION TYPES 1, 2 AND 4); CALCULATE
@@ -291,18 +324,34 @@ C
           HS(I,2)=H(I,2)                                                          
           HS(I,3)=MAX(H(I,3)-ZSNOW(I),1.0E-3)                                       
           HS(I,4)=MAX(H(I,4)-ZSNOW(I),1.0E-3)                                       
-C                                                                                 
-          IF(IPAI.EQ.0) THEN
+C                 
+          IF (ICTEMMOD.EQ.0) THEN                                                                
+            IF(IPAI.EQ.0) THEN
               PAI(I,1)=PAIMIN(I,1)+GROWN(I)*(PAIMAX(I,1)-PAIMIN(I,1))                 
               PAI(I,2)=PAIMIN(I,2)+GROWB(I)*(PAIMAX(I,2)-PAIMIN(I,2))                 
               PAI(I,3)=PAIMIN(I,3)+GROWA(I)*(PAIMAX(I,3)-PAIMIN(I,3))                 
               PAI(I,4)=PAIMIN(I,4)+GROWG   *(PAIMAX(I,4)-PAIMIN(I,4))                 
-          ELSE
+            ELSE
               PAI(I,1)=PAIDAT(I,1)
               PAI(I,2)=PAIDAT(I,2)
               PAI(I,3)=PAIDAT(I,3)
               PAI(I,4)=PAIDAT(I,4)
-          ENDIF
+            ENDIF
+            AIL(I,1)=PAI(I,1)*0.90
+            AIL(I,2)=MAX((PAI(I,2)-PAIMIN(I,2)),0.0)
+            AIL(I,3)=PAI(I,3)
+            AIL(I,4)=PAI(I,4)
+          ELSE
+            AIL(I,1)=AILC(I,1)
+            AIL(I,2)=AILC(I,2)
+            AIL(I,3)=AILC(I,3)
+            AIL(I,4)=AILC(I,4)
+            PAI(I,1)=PAIC(I,1)
+            PAI(I,2)=PAIC(I,2)
+            PAI(I,3)=PAIC(I,3)
+            PAI(I,4)=PAIC(I,4)
+          ENDIF 
+C
           PAIS(I,1)=PAI(I,1)                                                      
           PAIS(I,2)=PAI(I,2)                                                      
           IF(H(I,3).GT.0.0) THEN                                                  
@@ -315,17 +364,14 @@ C
           ELSE                                                                    
               PAIS(I,4)=0.0                                                       
           ENDIF                                                                   
-          AIL(I,1)=PAI(I,1)*0.90
-          AIL(I,2)=MAX((PAI(I,2)-PAIMIN(I,2)),0.0)
-          AIL(I,3)=PAI(I,3)
-          AIL(I,4)=PAI(I,4)
   150 CONTINUE                                                                    
 C
 C     * ADJUST FRACTIONAL COVERAGE OF GRID CELL FOR CROPS AND
-C     * GRASS IF LAI FALLS BELOW 1.0 DUE TO GROWTH STAGE OR
-C     * SNOW COVER; RESET LAI TO 1.0; CALCULATE RESULTANT
-C     * GRID CELL COVERAGE BY CANOPY, BARE GROUND, CANOPY OVER
-C     * SNOW AND SNOW OVER BARE GROUND.
+C     * GRASS IF LAI FALLS BELOW A SET THRESHOLD VALUE DUE TO 
+C     * GROWTH STAGE OR SNOW COVER; RESET LAI TO THE THRESHOLD
+C     * VALUE; CALCULATE RESULTANT GRID CELL COVERAGE BY CANOPY, 
+C     * BARE GROUND, CANOPY OVER SNOW AND SNOW OVER BARE GROUND.
+C     * 
 C     * ALSO CALCULATE SURFACE DETENTION CAPACITY FOR FOUR
 C     * GRID CELL SUBAREAS BASED ON VALUES SUPPLIED BY 
 C     * U. OF WATERLOO:
@@ -333,22 +379,30 @@ C     *        IMPERMEABLE SURFACES: 0.001 M.
 C     *        BARE SOIL:            0.002 M.
 C     *        LOW VEGETATION:       0.003 M.
 C     *        FOREST:               0.01  M.
-C     * FOR NOW, ASSIGN WETLANDS A VALUE OF 0.10 M.
 C                                                                                 
+C     * LAI THRESHOLD VALUE FOR CTEM IS SET TO 0.05; STANDARD
+C     * CLASS VALUE IS SET TO 1.0.  
+C
+      IF (ICTEMMOD.EQ.1) THEN
+         THR_LAI=0.05
+      ELSE
+         THR_LAI=1.0
+      ENDIF
+C
       DO 175 I=IL1,IL2                                                            
           FCAN(I,1)=FCANMX(I,1)*(1.0-FSNOW(I))                                    
           FCAN(I,2)=FCANMX(I,2)*(1.0-FSNOW(I))                                    
           IF(FCAN(I,1).LT.1.0E-5) FCAN(I,1)=0.0
           IF(FCAN(I,2).LT.1.0E-5) FCAN(I,2)=0.0
-          IF(PAI(I,3).LT.1.0) THEN                                                
+          IF(PAI(I,3).LT.THR_LAI) THEN                                                
               FCAN(I,3)=FCANMX(I,3)*(1.0-FSNOW(I))*PAI(I,3)                       
-              PAI (I,3)=1.0                                                       
+              PAI (I,3)=THR_LAI
           ELSE                                                                    
               FCAN(I,3)=FCANMX(I,3)*(1.0-FSNOW(I))                                
           ENDIF                                                                   
-          IF(PAI(I,4).LT.1.0) THEN                                                
+          IF(PAI(I,4).LT.THR_LAI) THEN                                                
               FCAN(I,4)=FCANMX(I,4)*(1.0-FSNOW(I))*PAI(I,4)                       
-              PAI (I,4)=1.0                                                       
+              PAI (I,4)=THR_LAI                                                       
           ELSE                                                                    
               FCAN(I,4)=FCANMX(I,4)*(1.0-FSNOW(I))                                
           ENDIF                                                                   
@@ -359,15 +413,15 @@ C
           FCANS(I,2)=FCANMX(I,2)*FSNOW(I)                                         
           IF(FCANS(I,1).LT.1.0E-5) FCANS(I,1)=0.0
           IF(FCANS(I,2).LT.1.0E-5) FCANS(I,2)=0.0
-          IF(PAIS(I,3).LT.1.0) THEN                                               
+          IF(PAIS(I,3).LT.THR_LAI) THEN                                               
               FCANS(I,3)=FCANMX(I,3)*FSNOW(I)*PAIS(I,3)                           
-              PAIS (I,3)=1.0                                                      
+              PAIS (I,3)=THR_LAI                                                      
           ELSE                                                                    
               FCANS(I,3)=FCANMX(I,3)*FSNOW(I)                                     
           ENDIF                                                                   
-          IF(PAIS(I,4).LT.1.0) THEN                                               
+          IF(PAIS(I,4).LT.THR_LAI) THEN                                               
               FCANS(I,4)=FCANMX(I,4)*FSNOW(I)*PAIS(I,4)                           
-              PAIS (I,4)=1.0                                                      
+              PAIS (I,4)=THR_LAI                                                      
           ELSE                                                                    
               FCANS(I,4)=FCANMX(I,4)*FSNOW(I)                                     
           ENDIF                                                                   
@@ -414,40 +468,33 @@ C
      1                                   CALL XIT('APREP',-1)
 C
           IF(IWF.EQ.0) THEN
-              IF(ISAND(I,2).EQ.-2) THEN
-                  ZPLIMG(I)=0.10
-                  ZPLMGS(I)=0.10
-                  ZPLIMC(I)=0.10
-                  ZPLMCS(I)=0.10
+              IF(ISAND(I,1).EQ.-4) THEN
+                  ZPLIMG(I)=0.001
+              ELSEIF(ISAND(I,1).EQ.-3) THEN
+                  ZPLIMG(I)=0.001
               ELSE
-                  IF(ISAND(I,1).EQ.-4) THEN
-                      ZPLIMG(I)=0.001
-                  ELSEIF(ISAND(I,1).EQ.-3) THEN
-                      ZPLIMG(I)=0.001
-                  ELSE
-                      ZPLIMG(I)=0.002
-                  ENDIF
-                  IF(FGS(I).GT.0.0) THEN
-                      ZPLMGS(I)=(ZPLIMG(I)*FSNOW(I)*(1.0-FCANMX(I,1)-
-     1                          FCANMX(I,2)-FCANMX(I,3)-FCANMX(I,4))+
-     2                          ZPLIMG(I)*(FSNOW(I)*FCANMX(I,3)-
-     3                          FCANS(I,3))+0.003*(FSNOW(I)*FCANMX(I,4)-
-     4                          FCANS(I,4)))/FGS(I)
-                  ELSE
-                      ZPLMGS(I)=0.0
-                  ENDIF
-                  IF(FC(I).GT.0.0) THEN
-                      ZPLIMC(I)=(0.01*(FCAN(I,1)+FCAN(I,2))+0.003*
-     1                          (FCAN(I,3)+FCAN(I,4)))/FC(I)
-                  ELSE
-                      ZPLIMC(I)=0.0
-                  ENDIF
-                  IF(FCS(I).GT.0.0) THEN
-                      ZPLMCS(I)=(0.01*(FCANS(I,1)+FCANS(I,2))+0.003*
-     1                          (FCANS(I,3)+FCANS(I,4)))/FCS(I)
-                  ELSE
-                      ZPLMCS(I)=0.0
-                  ENDIF
+                  ZPLIMG(I)=0.002
+              ENDIF
+              IF(FGS(I).GT.0.0) THEN
+                  ZPLMGS(I)=(ZPLIMG(I)*FSNOW(I)*(1.0-FCANMX(I,1)-
+     1                      FCANMX(I,2)-FCANMX(I,3)-FCANMX(I,4))+
+     2                      ZPLIMG(I)*(FSNOW(I)*FCANMX(I,3)-
+     3                      FCANS(I,3))+0.003*(FSNOW(I)*FCANMX(I,4)-
+     4                      FCANS(I,4)))/FGS(I)
+              ELSE
+                  ZPLMGS(I)=0.0
+              ENDIF
+              IF(FC(I).GT.0.0) THEN
+                  ZPLIMC(I)=(0.01*(FCAN(I,1)+FCAN(I,2))+0.003*
+     1                      (FCAN(I,3)+FCAN(I,4)))/FC(I)
+              ELSE
+                  ZPLIMC(I)=0.0
+              ENDIF
+              IF(FCS(I).GT.0.0) THEN
+                  ZPLMCS(I)=(0.01*(FCANS(I,1)+FCANS(I,2))+0.003*
+     1                      (FCANS(I,3)+FCANS(I,4)))/FCS(I)
+              ELSE
+                  ZPLMCS(I)=0.0
               ENDIF
           ELSE
               ZPLMCS(I)=ZPLMS0(I)
@@ -764,6 +811,11 @@ C     * ALSO CALCULATE LEAF BOUNDARY RESISTANCE PARAMETER RBCOEF.
 C                                                                                 
       DO 450 J=1,IC                                                               
       DO 450 I=IL1,IL2                                                            
+        IF (ICTEMMOD.EQ.1) THEN
+          RMAT(I,J,1)=RMATC(I,J,1)
+          RMAT(I,J,2)=RMATC(I,J,2)
+          RMAT(I,J,3)=RMATC(I,J,3)
+        ELSE
           ZROOT=ZRTMAX(I,J)
           IF(J.EQ.3) ZROOT=ZRTMAX(I,J)*GROWA(I)                                   
           ZROOTG=0.0
@@ -782,15 +834,16 @@ C
      1                EXP(-3.0*ZBOTW(I,K)))/(1.0-EXP(-3.0*ZROOT))
               ENDIF
 400       CONTINUE
+        ENDIF
 C
-          IF((FC(I)+FCS(I)).GT.0.)                               THEN             
-              RBCOEF(I)=RBCOEF(I)+
-     1                  (FCAN(I,J)*XLEAF(J)*(SQRT(PAI(I,J))/0.75)*
-     2                  (1.0-EXP(-0.75*SQRT(PAI(I,J))))+
-     3                  FCANS(I,J)*XLEAF(J)*(SQRT(PAIS(I,J))/0.75)*
-     4                  (1.0-EXP(-0.75*SQRT(PAIS(I,J)))))/
-     5                  (FC(I)+FCS(I))                                          
-          ENDIF                                                                   
+        IF((FC(I)+FCS(I)).GT.0.)                               THEN             
+            RBCOEF(I)=RBCOEF(I)+
+     1                (FCAN(I,J)*XLEAF(J)*(SQRT(PAI(I,J))/0.75)*
+     2                (1.0-EXP(-0.75*SQRT(PAI(I,J))))+
+     3                FCANS(I,J)*XLEAF(J)*(SQRT(PAIS(I,J))/0.75)*
+     4                (1.0-EXP(-0.75*SQRT(PAIS(I,J)))))/
+     5                (FC(I)+FCS(I))                                          
+        ENDIF                                                                   
   450 CONTINUE                                                                    
 C                                                                                 
       DO 500 J=1,IG                                                               
@@ -872,6 +925,51 @@ C
               PAICNS(I)=0.0                                                       
           ENDIF                                                                   
   800 CONTINUE
+C
+      IF (ICTEMMOD.EQ.1) THEN
+C
+C       * ESTIMATE FCANC AND FCANCS FOR USE BY PHTSYN SUBROUTINE BASED ON
+C       * FCAN AND FCANS FOR CTEM PFTS.
+C
+        DO 810 J = 1, IC
+        DO 810 I = IL1, IL2
+          SFCANCMX(I,J)=0.0  ! SUM OF FCANCMXS
+  810   CONTINUE
+C
+        K1=0
+        DO 830 J = 1, IC
+          IF(J.EQ.1) THEN
+            K1 = K1 + 1
+          ELSE
+            K1 = K1 + NOL2PFTS(J-1)
+          ENDIF
+          K2 = K1 + NOL2PFTS(J) - 1
+          DO 820 M = K1, K2
+          DO 820 I = IL1, IL2
+              SFCANCMX(I,J)=SFCANCMX(I,J)+FCANCMX(I,M)
+  820     CONTINUE
+  830   CONTINUE
+C
+        K1=0
+        DO 860 J = 1, IC
+          IF(J.EQ.1) THEN
+            K1 = K1 + 1
+          ELSE
+            K1 = K1 + NOL2PFTS(J-1)
+          ENDIF
+          K2 = K1 + NOL2PFTS(J) - 1
+          DO 850 M = K1, K2
+          DO 850 I = IL1, IL2
+             IF(SFCANCMX(I,J).GT.1E-20) THEN
+               FCANC(I,M)  = FCAN(I,J) * (FCANCMX(I,M)/SFCANCMX(I,J))
+               FCANCS(I,M) = FCANS(I,J)* (FCANCMX(I,M)/SFCANCMX(I,J))
+             ELSE
+               FCANC(I,M)  = 0.0
+               FCANCS(I,M) = 0.0
+             ENDIF
+  850     CONTINUE
+  860   CONTINUE
+      ENDIF
 C                                                                                 
       RETURN                                                                      
       END 

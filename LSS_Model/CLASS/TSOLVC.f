@@ -4,10 +4,10 @@
      3                 EVAPG,EVAP,TCAN,QCAN,TZERO,QZERO,GZERO,QMELTC,
      4                 QMELTG,RAICAN,SNOCAN,CDH,CDM,RIB,TAC,QAC,
      5                 CFLUX,FTEMP,FVAP,ILMO,UE,H,QFCF,QFCL,HTCC,
-     6                 QSWINV,QSWINI,QLWIN,TPOTA,QA,VA,VAC,PADRY,RHOAIR,
-     7                 ALVISC,ALNIRC,ALVISG,ALNIRG,TRVISC,TRNIRC,FSVF,
-     8                 CRIB,CPHCHC,CPHCHG,CEVAP,TADP,TVIRTA,RC,RBCOEF,
-     9                 ZOSCLH,ZOSCLM,ZRSLFH,ZRSLFM,ZOH,ZOM,
+     6                 QSWINV,QSWINI,QLWIN,TPOTA,TA,QA,VA,VAC,PADRY,
+     7                 RHOAIR,ALVISC,ALNIRC,ALVISG,ALNIRG,TRVISC,TRNIRC,
+     7                 FSVF,CRIB,CPHCHC,CPHCHG,CEVAP,TADP,TVIRTA,RC,
+     8                 RBCOEF,ZOSCLH,ZOSCLM,ZRSLFH,ZRSLFM,ZOH,ZOM,
      A                 FCOR,GCONST,GCOEFF,TGND,TRSNOW,FSNOWC,FRAINC,
      B                 CHCAP,CMASS,PCPR,IWATER,IEVAP,ITERCT,
      C                 ISLFD,ITC,ITCG,ILG,IL1,IL2,JL,N,  
@@ -16,8 +16,29 @@
      F                 TPOTG,RESID,
      G                 TCANO,WZERO,XEVAPM,DCFLXM,WC,DRAGIN,CFLUXM,CFLX,
      H                 IEVAPC,TRTOP,QSTOR,CFSENS,CFEVAP,QSGADD,A,B,
-     I                 ZOMS,ZOHS,LZZ0,LZZ0T,FM,FH,ITER,NITER,KF1,KF2 )
-C               
+     I                 LZZ0,LZZ0T,FM,FH,ITER,NITER,KF1,KF2,
+     J                 AILCG,FCANC,CO2CONC,RMATCTEM,
+     K                 THLIQ,FIELDSM,WILTSM,ISAND,IG,COSZS,PRESSG,
+     L                 XDIFFUS,ICTEM,IC,CO2I1,CO2I2,
+     M                 ICTEMMOD,SLAI,FCANCMX,L2MAX,
+     N                 NOL2PFTS,CFLUXV,ANVEG,RMLVEG)
+C
+C     * NOV 11/11 - M.LAZARE. - INCORPORATES CTEM. THIS INVOLVES
+C     *                         SEVERAL CHANGES AND NEW OUTPUT ROUTINES.
+C     *                         QSWNVC IS PROMOTED TO A WORK ARRAY
+C     *                         SINCE PASSED AS INPUT TO THE NEW CALLED
+C     *                         PHOTOSYNTHESIS ROUTINE "PHTSYN3". THE
+C     *                         CTEM CANOPY RESISTANCE COMING OUT OF
+C     *                         THIS ROUTINE, "RCPHTSYN" IS STORED INTO
+C     *                         THE USUAL "RC" ARRAY AS LONG AS THE
+C     *                         BONE-DRY SOIL FLAG IS NOT SET (RC=1.E20).
+C     *                         WE ALSO HAVE TO PASS "TA" THROUGH FROM
+C     *                         CLASST. FINALLY, "ISAND", "FIELDSM" AND
+C     *                         "WILTSM" ARE PASSED THROUGH TO PHTSYN3
+C     *                         FOR CTEM.
+C     * OCT 14/11 - D.VERSEGHY. FOR POST-ITERATION CLEANUP WITH N-R SCHEME,
+C     *                         REMOVE CONDITION INVOLVING LAST ITERATION
+C     *                         TEMPERATURE.
 C     * DEC 07/09 - D.VERSEGHY. RESTORE EVAPOTRANSPIRATION WHEN 
 C     *                         PRECIPITATION IS OCCURRING; ADD EVAPC
 C     *                         TO EVAP WHEN DEPOSITION OF WATER ON
@@ -130,12 +151,12 @@ C
 C     * INPUT ARRAYS.
 C
       REAL FI    (ILG),    QSWINV(ILG),    QSWINI(ILG),    QLWIN (ILG),    
-     1     TPOTA (ILG),    QA    (ILG),    VA    (ILG),    VAC   (ILG),
-     2     PADRY (ILG),    RHOAIR(ILG),    ALVISC(ILG),    ALNIRC(ILG),    
-     3     ALVISG(ILG),    ALNIRG(ILG),    TRVISC(ILG),    TRNIRC(ILG),    
-     4     FSVF  (ILG),    CRIB  (ILG),    CPHCHC(ILG),    CPHCHG(ILG),    
-     5     CEVAP (ILG),    TADP  (ILG),    TVIRTA(ILG),    RC    (ILG),    
-     6     RBCOEF(ILG),    ZOSCLH(ILG),    ZOSCLM(ILG),
+     1     TPOTA (ILG),    TA    (ILG),    QA    (ILG),    VA    (ILG), 
+     2     VAC   (ILG),    PADRY (ILG),    RHOAIR(ILG),    ALVISC(ILG), 
+     3     ALNIRC(ILG),    ALVISG(ILG),    ALNIRG(ILG),    TRVISC(ILG),
+     4     TRNIRC(ILG),    FSVF  (ILG),    CRIB  (ILG),    CPHCHC(ILG), 
+     5     CPHCHG(ILG),    CEVAP (ILG),    TADP  (ILG),    TVIRTA(ILG),
+     6     RC    (ILG),    RBCOEF(ILG),    ZOSCLH(ILG),    ZOSCLM(ILG),
      7     ZRSLFH(ILG),    ZRSLFM(ILG),    ZOH   (ILG),    ZOM   (ILG),
      8     FCOR  (ILG),    GCONST(ILG),    GCOEFF(ILG),    TGND  (ILG),    
      9     TRSNOW(ILG),    FSNOWC(ILG),    FRAINC(ILG),    
@@ -144,7 +165,24 @@ C
       INTEGER              IWATER(ILG),    IEVAP (ILG),    
      1                     ITERCT(ILG,6,50)
 C
-C     * INTERNAL WORK ARRAYS.
+C     * ARRAYS FOR CTEM.
+C
+      REAL AILCG(ILG,ICTEM),     FCANC(ILG,ICTEM),        CO2CONC(ILG),
+     1     CO2I1(ILG,ICTEM),     CO2I2(ILG,ICTEM),          COSZS(ILG),
+     3          PRESSG(ILG),         XDIFFUS(ILG),     SLAI(ILG,ICTEM),
+     4                     RMATCTEM(ILG,ICTEM,IG),  FCANCMX(ILG,ICTEM),
+     5     ANVEG(ILG,ICTEM),    RMLVEG(ILG,ICTEM),       THLIQ(ILG,IG),
+     6      FIELDSM(ILG,IG),       WILTSM(ILG,IG),      CFLUXV(ILG)
+ 
+      INTEGER ISAND(ILG,IG)
+C
+      INTEGER ICTEM, ICTEMMOD, L2MAX, NOL2PFTS(IC), IC, IG
+C
+C     * LOCAL WORK ARRAYS FOR CTEM.
+C
+      REAL RCPHTSYN(ILG), QSWNVC(ILG)  
+C
+C     * GENERAL INTERNAL WORK ARRAYS.
 C
       REAL TSTEP (ILG),    TVIRTC(ILG),    TVIRTG(ILG),
      1     EVBETA(ILG),    XEVAP (ILG),    EVPWET(ILG),    Q0SAT (ILG),
@@ -152,7 +190,7 @@ C
      3     RBTINV(ILG),    RBCINV(ILG),    TVRTAC(ILG),    
      4     TPOTG (ILG),    RESID (ILG),    TCANO (ILG),    
      5     TRTOP (ILG),    QSTOR (ILG),    A     (ILG),    B     (ILG),    
-     6     ZOMS  (ILG),    ZOHS  (ILG),    LZZ0  (ILG),    LZZ0T (ILG),    
+     6     LZZ0  (ILG),    LZZ0T (ILG),    
      7     FM    (ILG),    FH    (ILG),    WZERO (ILG),    XEVAPM(ILG),    
      8     DCFLXM(ILG),    WC    (ILG),    DRAGIN(ILG),    CFLUXM(ILG),
      9     CFSENS(ILG),    CFEVAP(ILG),    QSGADD(ILG),    CFLX  (ILG)
@@ -162,7 +200,7 @@ C
 C
 C     * TEMPORARY VARIABLES.
 C
-      REAL QSWNVG,QSWNIG,QSWNVC,QSWNIC,HFREZ,HCONV,
+      REAL QSWNVG,QSWNIG,QSWNIC,HFREZ,HCONV,
      1     RCONV,HCOOL,HMELT,SCONV,HWARM,WCAN,DQ0DT,
      2     DRDT0,QEVAPT,BOWEN,DCFLUX,DXEVAP,TCANT,QEVAPCT,
      3     TZEROT,YEVAP,RAGCO,EZERO
@@ -210,9 +248,9 @@ C
               QSWNG(I)=QSWNVG+QSWNIG                    
               QTRANS(I)=QSWNG(I)*TRTOP(I)   
               QSWNG(I)=QSWNG(I)-QTRANS(I)  
-              QSWNVC=QSWINV(I)*(1.0-ALVISC(I))-QSWNVG     
+              QSWNVC(I)=QSWINV(I)*(1.0-ALVISC(I))-QSWNVG
               QSWNIC=QSWINI(I)*(1.0-ALNIRC(I))-QSWNIG    
-              QSWNC(I)=QSWNVC+QSWNIC
+              QSWNC(I)=QSWNVC(I)+QSWNIC
               IF(ABS(TCAN(I)).LT.1.0E-3)        TCAN(I)=TPOTA(I)
               QLWOC(I)=SBC*TCAN(I)*TCAN(I)*TCAN(I)*TCAN(I)
 C
@@ -256,6 +294,27 @@ C
               ENDIF
           ENDIF
    50 CONTINUE
+C
+C     * CALL PHOTOSYNTHESIS SUBROUTINE HERE TO GET A NEW ESTIMATE OF
+C     * RC BASED ON PHOTOSYNTHESIS.
+C
+C      IF(ICTEMMOD.EQ.1)                                            THEN
+C        CALL PHTSYN3(  AILCG, FCANC,     TCAN, CO2CONC,  PRESSG,    FI,
+C     1                CFLUXV,    QA,   QSWNVC,      IC,   THLIQ, ISAND,
+C     2                   TAC,        RMATCTEM,   COSZS, XDIFFUS,   ILG,
+C     3                   IL1,   IL2,       IG,   ICTEM,   ISNOW,  SLAI,
+C     4               FIELDSM,WILTSM,  FCANCMX,   L2MAX,NOL2PFTS,
+C     5              RCPHTSYN, CO2I1,    CO2I2,   ANVEG,  RMLVEG)
+C
+C       * KEEP CLASS RC FOR BONEDRY POINTS (DIANA'S FLAG OF 1.E20) SUCH
+C       * THAT WE GET (BALT-BEG) CONSERVATION.
+C
+C        DO 70 I =IL1,IL2
+C          IF(RC(I).LE.10000.) THEN
+C            RC(I)=RCPHTSYN(I)
+C          ENDIF
+C   70   CONTINUE
+C      ENDIF
 C
 C     * ITERATION FOR SURFACE TEMPERATURE OF GROUND UNDER CANOPY.
 C     * LOOP IS REPEATED UNTIL SOLUTIONS HAVE BEEN FOUND FOR ALL POINTS
@@ -346,8 +405,8 @@ C
       DO 175 I=IL1,IL2
           IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN    
               DQ0DT=-WZERO(I)*A(I)*(B(I)-TFREZ)/((TZERO(I)-B(I))*
-     1               (1+WZERO(I)))**2*EVBETA(I)
-              DRDT0=-4*SBC*TZERO(I)**3
+     1               (1.0+WZERO(I)))**2*EVBETA(I)
+              DRDT0=-4.0*SBC*TZERO(I)**3
      1               -GCOEFF(I)-RHOAIR(I)*SPHAIR*
      2              (RAGINV(I)+(TPOTG(I)-TAC(I))*DRAGIN(I))-
      3               CPHCHG(I)*RHOAIR(I)*(DQ0DT*RAGINV(I)
@@ -373,7 +432,7 @@ C
       DO 200 I=IL1,IL2
           IF(ITER(I).EQ.-1)                                  THEN
              TZEROT=TVIRTC(I)/(1.0+0.61*QZERO(I))
-             IF(TZEROT.LT.TZERO(I)+5..AND.ABS(RESID(I)).GT.15.) THEN
+             IF(ABS(RESID(I)).GT.15.) THEN
                 TZERO(I)=TZEROT
                 IF(TZERO(I).GE.TFREZ)                        THEN
                   A(I)=17.269
@@ -385,7 +444,7 @@ C
                 WZERO(I)=0.622*611.0*EXP(A(I)*(TZERO(I)-TFREZ)/
      1              (TZERO(I)-B(I)))/PADRY(I)
                 Q0SAT(I)=WZERO(I)/(1.0+WZERO(I))
-                QZERO(I)=EVBETA(I)*Q0SAT(I)+(1-EVBETA(I))*QAC(I)
+                QZERO(I)=EVBETA(I)*Q0SAT(I)+(1.0-EVBETA(I))*QAC(I)
                 QLWOG(I)=SBC*TZERO(I)*TZERO(I)*TZERO(I)*TZERO(I)
                 GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
                 RESID(I)=QSWNG(I)+FSVF(I)*QLWIN(I)+(1.0-FSVF(I))*
@@ -393,7 +452,7 @@ C
                 QEVAPT=CPHCHG(I)*(QZERO(I)-QAC(I))
                 BOWEN=SPHAIR*(TZERO(I)-TAC(I))/
      1             SIGN(MAX(ABS(QEVAPT),1.E-6),QEVAPT)
-                QEVAPG(I)=RESID(I)/SIGN(MAX(ABS(1+BOWEN),0.1),1+BOWEN)
+                QEVAPG(I)=RESID(I)/SIGN(MAX(ABS(1.+BOWEN),0.1),1.+BOWEN)
                 QSENSG(I)=RESID(I)-QEVAPG(I)
                 RESID(I)=0.
                 EVAPG(I)=QEVAPG(I)/CPHCHG(I)
@@ -531,7 +590,7 @@ C     * ATMOSPHERE.
 C
         IF(ISLFD.LT.2) THEN
             CALL DRCOEF(CDM,CDH,RIB,CFLUX,QAC,QA,ZOSCLM,ZOSCLH,
-     1                  CRIB,TVRTAC,TVIRTA,VA,ZOMS,ZOHS,FI,ITER,
+     1                  CRIB,TVRTAC,TVIRTA,VA,FI,ITER,
      2                  ILG,IL1,IL2)
         ELSE
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
@@ -703,11 +762,11 @@ C
               XEVAPM(I)=XEVAP(I)
               CFLUXM(I)=CFLX(I)
               DCFLXM(I)=DCFLUX
-              DRDT0=-4*SBC*TCAN(I)*TCAN(I)*TCAN(I)*(1.0-FSVF(I))*
+              DRDT0=-4.0*SBC*TCAN(I)*TCAN(I)*TCAN(I)*(1.0-FSVF(I))*
      1              2.0-RHOAIR(I)*SPHAIR*(CFLX(I)+MAX(0.,
      2              TCAN(I)-TPOTA(I))*DCFLUX)+IEVAPC(I)*CPHCHC(I)*
      3              RHOAIR(I)*(XEVAP(I)*WC(I)*A(I)*(B(I)-TFREZ)/
-     4              ((TCAN(I)-B(I))*(1+WC(I)))**2-(QCAN(I)-QA(I))*
+     4              ((TCAN(I)-B(I))*(1.0+WC(I)))**2-(QCAN(I)-QA(I))*
      5              DXEVAP)-CHCAP(I)/DELT
               TSTEP(I)=-RESID(I)/DRDT0
               TSTEP(I)=MAX(-10.,MIN(5.,TSTEP(I)))
@@ -736,7 +795,7 @@ C
           IEVAPC(I)=0
           IF(ITER(I).EQ.-1)                   THEN
             TCANT=TVIRTA(I)/(1.0+0.61*QCAN(I))
-            IF(TCANT.LT.TCAN(I)+5..AND.ABS(RESID(I)).GT.100.)  THEN
+            IF(ABS(RESID(I)).GT.100.)  THEN
                TCAN(I)=TCANT
                IF(TCAN(I).GE.TFREZ)                         THEN
                   A(I)=17.269
@@ -753,7 +812,7 @@ C
                ELSE
                    YEVAP=FRAINC(I)+(1.0-FRAINC(I))*10./(10.+RC(I))
                ENDIF
-               QCAN(I)=YEVAP*QCAN(I)+(1-YEVAP)*QA(I)
+               QCAN(I)=YEVAP*QCAN(I)+(1.0-YEVAP)*QA(I)
                QSTOR(I)=CHCAP(I)*(TCAN(I)-TCANO(I))/DELT
                QLWOC(I)=SBC*TCAN(I)*TCAN(I)*TCAN(I)*TCAN(I)
                RESID(I)=QSWNC(I)+(QLWIN(I)+QLWOG(I)-2.0*QLWOC(I))*
@@ -776,7 +835,7 @@ c
       IF(NUMIT.GT.0) THEN
          IF(ISLFD.LT.2) THEN
             CALL DRCOEF(CDM,CDH,RIB,CFLUX,QA,QA,ZOSCLM,ZOSCLH,
-     1                  CRIB,TVIRTC,TVIRTA,VA,ZOMS,ZOHS,FI,IEVAPC,
+     1                  CRIB,TVIRTC,TVIRTA,VA,FI,IEVAPC,
      2                  ILG,IL1,IL2)
          ELSE
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
@@ -919,7 +978,7 @@ C     * ATMOSPHERE.
 C
         IF(ISLFD.LT.2) THEN
             CALL DRCOEF(CDM,CDH,RIB,CFLUX,QAC,QA,ZOSCLM,ZOSCLH,
-     1                  CRIB,TVRTAC,TVIRTA,VA,ZOMS,ZOHS,FI,ITER,
+     1                  CRIB,TVRTAC,TVIRTA,VA,FI,ITER,
      2                  ILG,IL1,IL2)
         ELSE
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
@@ -1065,6 +1124,19 @@ C
               ITERCT(I,KF1(I),NITER(I))=ITERCT(I,KF1(I),NITER(I))+1
           ENDIF
   850 CONTINUE
+      IF (ICTEMMOD.EQ.1) THEN
+C
+C       * STORE AERODYNAMIC CONDUCTANCE FOR USE IN NEXT TIME STEP
+C
+        DO 900 I = IL1, IL2
+          IF(FI(I).GT.0.)                                          THEN 
+            CFLUXV(I) = CFLUX(I)
+          ELSE
+            CFLUXV(I) = 0.
+          ENDIF
+  900   CONTINUE
+      ENDIF
+C                                                                                  
 C                                           
       RETURN                                                                      
       END

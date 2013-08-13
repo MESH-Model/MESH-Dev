@@ -10,8 +10,11 @@
      9                  ISLFD,ITG,ILG,IG,IL1,IL2,JL,
      A                  TSTEP,TVIRTS,EVBETA,Q0SAT,RESID,
      B                  DCFLXM,CFLUXM,WZERO,TRTOP,A,B,
-     C                  ZOMS,ZOHS,LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF)
+     C                  LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF)
 C
+C     * OCT 14/11 - D.VERSEGHY. FOR POST-ITERATION CLEANUP WITH N-R SCHEME,
+C     *                         REMOVE CONDITION INVOLVING LAST ITERATION
+C     *                         TEMPERATURE.
 C     * DEC 07/09 - D.VERSEGHY. RESTORE EVAPORATION WHEN PRECIPITATION
 C     *                         IS OCCURRING.
 C     * MAR 13/09 - D.VERSEGHY. REPLACE SURFCON COMMON BLOCK WITH CLASSD2;
@@ -116,7 +119,7 @@ C     * INTERNAL WORK ARRAYS.
 C
       REAL TSTEP (ILG),    TVIRTS(ILG),    EVBETA(ILG),    Q0SAT (ILG),
      1     RESID (ILG),    DCFLXM(ILG),    CFLUXM(ILG),    TRTOP (ILG),    
-     2     A     (ILG),    B     (ILG),    ZOMS  (ILG),    ZOHS  (ILG),    
+     2     A     (ILG),    B     (ILG),
      3     LZZ0  (ILG),    LZZ0T (ILG),    FM    (ILG),    FH    (ILG),
      4     WZERO (ILG)
 C
@@ -230,7 +233,7 @@ C     * OTHER RELATED QUANTITIES.
 C
         IF(ISLFD.LT.2) THEN
             CALL DRCOEF (CDM,CDH,RIB,CFLUX,QZERO,QA,ZOSCLM,ZOSCLH,
-     1                   CRIB,TVIRTS,TVIRTA,VA,ZOMS,ZOHS,FI,ITER,
+     1                   CRIB,TVIRTS,TVIRTA,VA,FI,ITER,
      2                   ILG,IL1,IL2)
         ELSE
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
@@ -292,12 +295,12 @@ C
   180   CONTINUE
       ENDIF
 C
-      DO 185 I=IL1,IL2
+c     DO 185 I=IL1,IL2
 C         IF(FI(I).GT.0. .AND. ITER(I).EQ.-1)                      THEN 
 C             WRITE(6,6250) I,JL,RESID(I),TZERO(I),RIB(I)
 C6250         FORMAT('0GROUND ITERATION LIMIT',3X,2I3,3(F8.2,E12.4))            
 C         ENDIF                              
-  185 CONTINUE
+c 185 CONTINUE
 C
       IF(NUMIT.GT.0)                                    GO TO 100
 C
@@ -317,12 +320,12 @@ C
               ELSE
                   DCFLUX=0.
               ENDIF
-              DRDT0= -4*SBC*TZERO(I)**3
+              DRDT0= -4.0*SBC*TZERO(I)**3
      1           -RHOAIR(I)*SPHAIR*(CFLUX(I)+MAX(0.,TZERO(I)-TPOTA(I))
      2           *DCFLUX) -GCOEFF(I)
      3           +CPHCH(I)*RHOAIR(I)*(CFLUX(I)*WZERO(I)*A(I)
      4           *EVBETA(I)*(B(I)-TFREZ)/((TZERO(I)-B(I))*
-     5           (1+WZERO(I)))**2-(QZERO(I)-QA(I))*DCFLUX)
+     5           (1.0+WZERO(I)))**2-(QZERO(I)-QA(I))*DCFLUX)
               TSTEP(I)=-RESID(I)/DRDT0
               TSTEP(I)=MAX(-10.,MIN(5.,TSTEP(I)))
               TZERO(I)=TZERO(I)+TSTEP(I)
@@ -342,7 +345,7 @@ C
           JEVAP(I)=0
           IF(FI(I).GT.0. .AND.ITER(I).EQ.-1)                       THEN
               TZEROT=TVIRTA(I)/(1.0+0.61*QZERO(I))
-              IF(TZEROT.LT.TZERO(I)+5..AND.ABS(RESID(I)).GT.50.) THEN
+              IF(ABS(RESID(I)).GT.50.) THEN
                   TZERO(I)=TZEROT
                   IF(TZERO(I).GE.TFREZ)                        THEN
                       A(I)=17.269
@@ -354,7 +357,7 @@ C
                   WZERO(I)=0.622*611.0*EXP(A(I)*(TZERO(I)-TFREZ)/
      1                (TZERO(I)-B(I)))/PADRY(I)
                   Q0SAT(I)=WZERO(I)/(1.0+WZERO(I))
-                  QZERO(I)=EVBETA(I)*Q0SAT(I)+(1-EVBETA(I))*QA(I)
+                  QZERO(I)=EVBETA(I)*Q0SAT(I)+(1.0-EVBETA(I))*QA(I)
                   QLWOUT(I)=SBC*TZERO(I)*TZERO(I)*TZERO(I)*TZERO(I)
                   GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
                   RESID(I)=QSWNET(I)+QLWIN(I)-QLWOUT(I)-GZERO(I)
@@ -376,7 +379,7 @@ C
       IF(NUMIT.GT.0)                   THEN
         IF(ISLFD.LT.2) THEN
             CALL DRCOEF (CDM,CDH,RIB,CFLUX,QZERO,QA,ZOSCLM,ZOSCLH,
-     1                   CRIB,TVIRTS,TVIRTA,VA,ZOMS,ZOHS,FI,JEVAP,
+     1                   CRIB,TVIRTS,TVIRTA,VA,FI,JEVAP,
      2                   ILG,IL1,IL2)
         ELSE
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
@@ -434,7 +437,7 @@ C       * OTHER RELATED QUANTITIES.
 C
         IF(ISLFD.LT.2) THEN
             CALL DRCOEF (CDM,CDH,RIB,CFLUX,QZERO,QA,ZOSCLM,ZOSCLH,
-     1                   CRIB,TVIRTS,TVIRTA,VA,ZOMS,ZOHS,FI,ITER,
+     1                   CRIB,TVIRTS,TVIRTA,VA,FI,ITER,
      2                   ILG,IL1,IL2)
         ELSE
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
@@ -480,9 +483,9 @@ C
                   GZERO(I)=GZERO(I)+QMELT(I)
                   QMELT(I)=0.0
               ENDIF
-              QSENS(I)=QSENS(I)+0.5*RESID(I)
-              GZERO(I)=GZERO(I)+0.5*RESID(I)
-C              QSENS(I)=QSENS(I)+RESID(I)
+C              QSENS(I)=QSENS(I)+0.5*RESID(I)
+C              GZERO(I)=GZERO(I)+0.5*RESID(I)
+              QSENS(I)=QSENS(I)+RESID(I)
               QSWNET(I)=QSWNET(I)+QTRANS(I)
               EVAP(I)=EVAP(I)/RHOW
               ITERCT(I,KF(I),NITER(I))=ITERCT(I,KF(I),NITER(I))+1

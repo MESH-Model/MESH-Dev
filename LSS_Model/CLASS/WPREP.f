@@ -31,6 +31,8 @@
      T                 NLANDCS,NLANDGS,NLANDC, NLANDG, RADD,   SADD,
      U                 BI, PSISAT, DD, XSLOPE, BULK_FC  )
 C
+C     * AUG 25/11 - D.VERSEGHY. REFINE CALCULATION OF TEMPERATURE OF
+C     *                         LUMPED PRECIPITATION.
 C     * NOV 24/09 - D.VERSEGHY. RESTORE EVAPOTRANSPIRATION WHEN
 C     *                         PRECIPITATION IS OCCURRING.
 C     * MAR 27/08 - D.VERSEGHY. MOVE MODIFICATION OF GRKSAT IN PRESENCE
@@ -383,7 +385,11 @@ C
      1                                SUBLCS(I)*RHOW
                           ENDIF
                           SPCCS (I)=SADD(I)                                                        
-                          TSPCCS(I)=TSPCP(I)+TFREZ                                                   
+                          IF(SPCP(I).GT.0.0) THEN
+                              TSPCCS(I)=TSPCP(I)+TFREZ                                                   
+                          ELSE
+                              TSPCCS(I)=MIN(TSURX(I,1),TFREZ)
+                          ENDIF
                           SUBLCS(I)=0.0                                                      
                       ELSE                                                                
                           PCPN(I)=PCPN(I)-FCS(I)*FSVFS(I)*SPCP(I)*
@@ -410,7 +416,11 @@ C
      1                                EVAPCS(I)*RHOW
                           ENDIF
                           RPCCS (I)=RADD(I)                                                        
-                          TRPCCS(I)=TRPCP(I)+TFREZ                                                   
+                          IF(RPCP(I).GT.0.0) THEN
+                              TRPCCS(I)=TRPCP(I)+TFREZ                                                   
+                          ELSE
+                              TRPCCS(I)=MAX(TSURX(I,1),TFREZ)
+                          ENDIF
                           EVAPCS(I)=0.0                                                      
                       ELSE                                                                
                           PCPN(I)=PCPN(I)-FCS(I)*FSVFS(I)*RPCP(I)*RHOW
@@ -463,7 +473,11 @@ C
                       IF(ABS(SADD(I)).LT.1.0E-12) SADD(I)=0.0
                       IF(SADD(I).GT.0.0) THEN                                                
                           SPCGS (I)=SADD(I)                                                        
-                          TSPCGS(I)=TSPCP(I)
+                          IF(SPCP(I).GT.0.0) THEN
+                              TSPCGS(I)=TSPCP(I)
+                          ELSE
+                              TSPCGS(I)=MIN((TSURX(I,2)-TFREZ),0.0)
+                          ENDIF
                           EVAPGS(I)=0.0                                                      
                       ELSE                                                                
                           EVAPGS(I)=-SADD(I)*RHOSNI(I)/RHOW                                        
@@ -556,7 +570,11 @@ C
      1                                RHOW
                           ENDIF
                           SPCC  (I)=SADD(I)                                                        
-                          TSPCC (I)=TSPCP(I)+TFREZ                                                   
+                          IF(SPCP(I).GT.0.0) THEN
+                             TSPCC (I)=TSPCP(I)+TFREZ                                                   
+                          ELSE
+                             TSPCC(I)=MIN(TSURX(I,3),TFREZ)
+                          ENDIF
                           SUBLC (I)=0.0                                                      
                       ELSE                                                                
                           PCPN(I)=PCPN(I)-FC(I)*FSVF(I)*SPCP(I)*
@@ -583,7 +601,11 @@ C
      1                                RHOW
                           ENDIF
                           RPCC  (I)=RADD(I)                                                        
-                          TRPCC (I)=TRPCP(I)+TFREZ  
+                          IF(RPCP(I).GT.0.0) THEN
+                              TRPCC (I)=TRPCP(I)+TFREZ  
+                          ELSE
+                              TRPCC (I)=MAX(TSURX(I,3),TFREZ)
+                          ENDIF
                           EVAPC (I)=0.0                                                      
                       ELSE   
                           PCPG(I)=PCPG(I)-FC(I)*FSVF(I)*RPCP(I)*RHOW
@@ -656,7 +678,11 @@ C
                       IF(ABS(RADD(I)).LT.1.0E-12) RADD(I)=0.0
                       IF(RADD(I).GT.0.)   THEN                                                
                           RPCG  (I)=RADD(I)                                                        
-                          TRPCG (I)=TRPCP(I)
+                          IF(RPCP(I).GT.0.0) THEN
+                              TRPCG (I)=TRPCP(I)
+                          ELSE
+                              TRPCG (I)=MAX((TSURX(I,4)-TFREZ),0.0)
+                          ENDIF
                           EVAPG (I)=0.0                                                      
                       ELSE                                                                
                           EVAPG (I)=-RADD(I)                                                    

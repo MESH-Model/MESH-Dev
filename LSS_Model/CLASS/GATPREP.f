@@ -1,8 +1,17 @@
-      SUBROUTINE GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,IWAT,IICE,
-     1                   NML,NMW,NWAT,NICE,GCGRD,FAREA,MOSID,
-     2                   NLAT,NMOS,ILG,IL1,IL2,IM)
+      SUBROUTINE GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,
+     1                   NML,NMW,GCROW,FAREA,MOSID,
+     2                   NL,NM,ILG,IL1,IL2,IM)
 C
-C     * JUN 12/06 - E.CHAN.  DIMENSION IWAT AND IICE BY NLAT.
+C     * DEC 28/11 - D.VERSEGHY. CHANGE ILGM BACK TO ILG AND
+C     *                         ILG TO NL FOR CONSISTENCY WITH
+C     *                         BOTH STAND-ALONE AND GCM
+C     *                         CONVENTIONS.
+C     * OCT 22/11 - M.LAZARE. REMOVE OCEAN/ICE CODE (NOW DONE
+C     *                       IN COISS).
+C     * OCT 21/11 - M.LAZARE. COSMETIC: ILG->ILGM AND NLAT->ILG,
+C     *                       TO BE CONSISTENT WITH MODEL
+C     *                       CONVENTION. ALSO GCGRD->GCROW.
+C     * JUN 12/06 - E.CHAN.  DIMENSION IWAT AND IICE BY ILG.
 C     * NOV 03/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
 C     * AUG 09/02 - D.VERSEGHY/M.LAZARE. DETERMINE INDICES FOR
 C     *                        GATHER-SCATTER OPERATIONS ON
@@ -12,30 +21,24 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER   NML,NMW,NWAT,NICE,NLAT,NMOS,ILG,IL1,IL2,IM,I,J
+      INTEGER   NML,NMW,NL,NM,ILG,IL1,IL2,IM,I,J
 C
 C     * OUTPUT FIELDS.
 C
       INTEGER  ILMOS  (ILG),  JLMOS  (ILG),  IWMOS  (ILG),
      1         JWMOS  (ILG)  
 C
-      INTEGER  IWAT  (NLAT),  IICE  (NLAT)
-C
 C     * INPUT FIELDS.
 C 
-      REAL     GCGRD  (NLAT), FAREA (NLAT,NMOS)
+      REAL     GCROW  (NL), FAREA (NL,NM)
 C
-      INTEGER  MOSID  (NLAT,NMOS)
-     1         
-C
+      INTEGER  MOSID  (NL,NM)
 C---------------------------------------------------------------------
       NML=0
       NMW=0
-      NWAT=0
-      NICE=0
 
       DO 200 I=IL1,IL2
-          IF(GCGRD(I).LE.-0.5)                               THEN
+          IF(GCROW(I).LE.-0.5)                               THEN
               DO 100 J=1,IM
                   IF(FAREA(I,J).GT.0.0)              THEN
                       IF(MOSID(I,J).GT.0)    THEN
@@ -49,12 +52,6 @@ C---------------------------------------------------------------------
                       ENDIF
                   ENDIF
   100         CONTINUE
-          ELSEIF(GCGRD(I).GT.0.5)                            THEN
-              NICE=NICE+1
-              IICE(NICE)=I
-          ELSE
-              NWAT=NWAT+1
-              IWAT(NWAT)=I
           ENDIF
   200 CONTINUE
 C

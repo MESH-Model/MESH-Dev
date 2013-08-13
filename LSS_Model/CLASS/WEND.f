@@ -5,9 +5,15 @@
      4                THLMAX,THTEST,THLDUM,THIDUM,TDUMW,
      5                TUSED,RDUMMY,ZERO,WEXCES,XDRAIN,
      6                THPOR,THLRET,THLMIN,BI,PSISAT,GRKSAT,
-     7                THFC,DELZW,ISAND,IGRN,IGRD,IZERO,
+     7                THFC,DELZW,ISAND,IGRN,IGRD,IGDR,IZERO,
      8                IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
 
+C     * OCT 18/11 - M.LAZARE.   PASS IN "IGDR" AS AN INPUT FIELD 
+C     *                         (ORIGINATING IN CLASSB) RATHER
+C     *                         THAN REPEATING THE CALCULATION HERE
+C     *                         AS AN INTERNAL WORK FIELD.
+C     * DEC 15/10 - D.VERSEGHY. ALLOW FOR BASEFLOW WHEN BEDROCK
+C     *                         LIES WITHIN SOIL PROFILE.
 C     * JAN 06/09 - D.VERSEGHY. ADD ZPOND AND TPOND TO SUBROUTINE
 C     *                         CALL; ASSIGN RESIDUAL OF WMOVE TO
 C     *                         PONDED WATER; REVISE LOOP 550;
@@ -83,7 +89,8 @@ C
       REAL TUSED (ILG),    RDUMMY(ILG),    ZERO  (ILG),
      1     WEXCES(ILG)
 C
-      INTEGER              IGRD  (ILG),    IZERO (ILG) 
+      INTEGER              IGRD  (ILG),    IZERO (ILG),
+     1                     IGDR  (ILG) 
 C
 C     * TEMPORARY VARIABLES.
 C
@@ -108,30 +115,30 @@ C
      2                TCGLAC,CLHMLT,CLHVAP
 C-----------------------------------------------------------------------
 C
-C     * INITIALIZATION.
-C
-      DO 100 J=1,IG
-      DO 100 I=IL1,IL2
-          IF(IGRN(I).GT.0)                                          THEN
-              THLDUM(I,J)=THLIQX(I,J)                                                 
-              THIDUM(I,J)=THICEX(I,J)                                                 
-              TDUMW (I,J)=TBARWX(I,J)                  
-          ENDIF
-  100 CONTINUE 
-C
 C     * DETERMINE AMOUNT OF TIME OUT OF CURRENT MODEL STEP DURING WHICH 
 C     * INFILTRATION WAS OCCURRING.
 C     * SET WORK ARRAY "TUSED" TO ZERO FOR POINTS WHERE WETTING FRONT
 C     * IS BELOW BOTTOM OF LOWEST SOIL LAYER TO SUPPRESS CALCULATIONS
 C     * DONE IN "GRDRAN".
 C
-      DO 125 I=IL1,IL2
+      DO 100 I=IL1,IL2
           IF(IGRN(I).GT.0 .AND. LZF(I).LE.IG)                       THEN
               TUSED(I)=DELT-TRMDR(I)
           ELSE
               TUSED(I)=0.
           ENDIF
-  125 CONTINUE
+  100 CONTINUE
+C
+C     * INITIALIZATION.
+C
+      DO 125 J=1,IG
+      DO 125 I=IL1,IL2
+          IF(IGRN(I).GT.0)                                          THEN
+              THLDUM(I,J)=THLIQX(I,J)                                                 
+              THIDUM(I,J)=THICEX(I,J)                                                 
+              TDUMW (I,J)=TBARWX(I,J)                  
+          ENDIF
+  125 CONTINUE 
 C
 C     * CALL "GRDRAN" WITH COPIES OF CURRENT LIQUID AND FROZEN SOIL
 C     * MOISTURE CONTENTS AND LAYER TEMPERATURES TO DETERMINE MOISTURE
@@ -141,7 +148,7 @@ C
      1            RDUMMY,RDUMMY,RDUMMY,RDUMMY,FI,ZERO,ZERO,ZERO,
      2            TUSED,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      3            BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,LZF,
-     4            IZERO,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     4            IZERO,IGRD,IGDR,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 C
 C     * INITIALIZATION OF ARRAYS IN PREPARATION FOR RE-ALLOCATION OF
 C     * MOISTURE STORES WITHIN SOIL LAYERS; SUPPRESS WATER FLOWS 
@@ -272,7 +279,7 @@ C
      1                THLINF(I,IGP1)*ZMAT(I,K,IGP1))/(RUNOFF(I)+
      2                THLINF(I,IGP1)*ZMAT(I,K,IGP1))
                   RUNOFF(I)=RUNOFF(I)+THLINF(I,IGP1)*ZMAT(I,K,IGP1)
-              ELSE IF(K.EQ.IGP1 .AND. FDT(I,K).GT.1.0E-8)       THEN
+              ELSE IF(K.EQ.(IGDR(I)+1) .AND. FDT(I,K).GT.1.0E-8)  THEN
                   TBASFL(I)=(TBASFL(I)*BASFLW(I)+FI(I)*(TFDT(I,K)+
      1                TFREZ)*FDT(I,K))/(BASFLW(I)+FI(I)*FDT(I,K))
                   BASFLW(I)=BASFLW(I)+FI(I)*FDT(I,K)

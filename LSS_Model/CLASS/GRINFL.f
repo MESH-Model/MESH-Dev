@@ -8,10 +8,16 @@
      7                  ZERO,WEXCES,FDTBND,WADD,TADD,WADJ,TIMPND,
      8                  DZF,DTFLOW,THLNLZ,THLQLZ,DZDISP,WDISP,WABS,
      9                  THPOR,THLRET,THLMIN,BI,PSISAT,GRKSAT,
-     A                  THLRAT,THFC,DELZW,ZBOTW,XDRAIN,ISAND,IGRN,
-     B                  IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
-     C                  NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     A                  THLRAT,THFC,DELZW,ZBOTW,XDRAIN,DELZ,ISAND,
+     B                  IGRN,IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
+     C                  NEND,ISIMP,IGDR,
+     D                  IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 C
+C     * OCT 18/11 - M.LAZARE.   PASS IN "IGDR" AS AN INPUT FIELD 
+C     *                         (ORIGINATING IN CLASSB) TO
+C     *                         GRDRAN AND WEND.
+C     * APR 04/11 - D.VERSEGHY. MODIFY TEST IN 150 LOOP TO USE DELZ
+C     *                         INSTEAD OF XDRAIN.
 C     * JAN 06/09 - D.VERSEGHY. MODIFY DELZX AND ZBOTX OF BOTTOM LAYER;
 C     *                         ADDITIONAL THLIQ CHECK IN 350 LOOP;
 C     *                         PASS ADDITIONAL VARIABLES TO WEND.
@@ -101,7 +107,7 @@ C
       REAL THPOR (ILG,IG), THLRET(ILG,IG), THLMIN(ILG,IG),
      1     BI    (ILG,IG), PSISAT(ILG,IG), GRKSAT(ILG,IG), 
      3     THLRAT(ILG,IG), THFC  (ILG,IG),
-     4     DELZW (ILG,IG), ZBOTW (ILG,IG), XDRAIN(ILG)
+     4     DELZW (ILG,IG), ZBOTW (ILG,IG), XDRAIN(ILG),  DELZ(IG)
 C
 C     * TEMPORARY VARIABLES.
 C
@@ -112,7 +118,7 @@ C
       INTEGER              ISAND (ILG,IG), IGRN  (ILG),    IGRD  (ILG),
      1                     IFILL (ILG),    IZERO (ILG),    LZF   (ILG),
      2                     NINF  (ILG),    IFIND (ILG),    ITER  (ILG),
-     3                     NEND  (ILG),    ISIMP (ILG)    
+     3                     NEND  (ILG),    ISIMP (ILG),    IGDR  (ILG)    
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -174,19 +180,24 @@ C
 C
       DO 150 I=IL1,IL2
           IF(IGRN(I).GT.0)                                          THEN
-              THLIQX(I,IG+1)=THLIQX(I,IG)                                                     
-              THICEX(I,IG+1)=THICEX(I,IG)                                                     
-              TBARWX(I,IG+1)=TBARWX(I,IG)                                                     
-              IF(XDRAIN(I).GT.0.0 .AND. DELZW(I,IG).GT.1.0E-5)  THEN
-                  DELZX(I,IG+1)=999999.                                                        
-              ELSE
+              IF(DELZW(I,IG).LT.DELZ(IG))                 THEN
+                  THLIQX(I,IG+1)=0.0
+                  THICEX(I,IG+1)=0.0
+                  TBARWX(I,IG+1)=0.0
                   DELZX(I,IG+1)=0.0
+                  THLINF(I,IG+1)=0.0
+                  GRKINF(I,IG+1)=0.0
+              ELSE
+                  THLIQX(I,IG+1)=THLIQX(I,IG)                                                     
+                  THICEX(I,IG+1)=THICEX(I,IG)                                                     
+                  TBARWX(I,IG+1)=TBARWX(I,IG)                                                     
+                  DELZX(I,IG+1)=999999.                                                        
+                  THLINF(I,IG+1)=THLINF(I,IG)                                                     
+                  GRKINF(I,IG+1)=GRKINF(I,IG)*XDRAIN(I)
               ENDIF
               ZBOTX (I,IG+1)=ZBOTX(I,IG)+DELZX(I,IG+1)
               FDT   (I,IG+1)=0.0
               TFDT  (I,IG+1)=0.0
-              THLINF(I,IG+1)=THLINF(I,IG)                                                     
-              GRKINF(I,IG+1)=GRKINF(I,IG)*XDRAIN(I)
           ENDIF
   150 CONTINUE
 C                                                 
@@ -291,7 +302,7 @@ C
      4          THLMAX,THTEST,THLDUM,THIDUM,TDUMW,
      5          TUSED,RDUMMY,ZERO,WEXCES,XDRAIN,
      6          THPOR,THLRET,THLMIN,BI,PSISAT,GRKSAT,
-     7          THFC,DELZW,ISAND,IGRN,IGRD,IZERO,
+     7          THFC,DELZW,ISAND,IGRN,IGRD,IGDR,IZERO,
      8          IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
 C
       DO 800 J=1,IG
@@ -324,7 +335,8 @@ C
      1            TBASFL,RUNOFF,TRUNOF,QFG,WLOST,FI,EVAP,ZERO,ZERO,
      2            TRMDR,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      3            BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,IZERO,
-     4            IZERO,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
+     4            IZERO,IGRD,IGDR,
+     5            IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
 C
       RETURN                                                                      
       END       

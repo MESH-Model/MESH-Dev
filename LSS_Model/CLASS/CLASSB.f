@@ -2,10 +2,28 @@
      1                  THLRAT,HCPS,TCS,THFC,PSIWLT,
      2                  DELZW,ZBOTW,ALGWET,ALGDRY,
      3                  SAND,CLAY,ORGM,DELZ,ZBOT,SDEPTH,
-     4                  ISAND,IORG,NL,NM,IL,IM,IG,
+     4                  ISAND,IGDR,NL,NM,IL1,IL2,IM,IG,ICTEMMOD,
      5                  WC_THPOR,WC_THLRET,WC_THLMIN,WC_BI,
      6                  WC_PSISAT,WC_GRKSAT,WC_HCPS,WC_TCS)
 C
+C     * NOV 11/11 - M.LAZARE.   - IMPLEMENT CTEM CHOICE OF
+C     *                           ALGDRY DETERMINED BY ADDED
+C     *                           PASSED SWITCH "ICTEMMOD". 
+C     * OCT 18/11 - M.LAZARE.   - REMOVE UNUSED "IORG".
+C     *                         - CHANGE "THSAND", "THORG"
+C     *                           AND "THFINE" FROM ARRAYS
+C     *                           (INTERNAL ONLY) TO SCALAR. 
+C     *                         - IGDR NOW PASSED OUT TO BE
+C     *                           USED IN GRINFL/GRDRAN/WEND.
+C     *                         - PASS IN IL1 AND IL2 TO
+C     *                           DEFINE LOOPS.
+C     * OCT 08/11 - M.LAZARE.   ALGDRY CHANGED BACK TO FORMULA
+C     *                         USED IN GCM15I (.0056->.0046).
+C     * SEP 27/11 - D.VERSEGHY. CONSTRAIN DELZW TO BE >= 5 CMS
+C     *                         TO AVOID PROBLEMATIC UNDERSHOOTS.
+C     * AUG 25/11 - D.VERSEGHY. USE THFC FORMULATION FOR BOTTOM
+C     *                         LAYER AT BOTTOM OF SOIL PERMEABLE
+C     *                         DEPTH.
 C     * DEC 23/09 - V.FORTIN.   REVISE CALCULATION OF THFC FOR
 C     *                         BOTTOM LAYER IN MINERAL SOILS 
 C     *                         ACCORDING TO SOULIS ET AL. (2009).
@@ -33,7 +51,7 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER NL,NM,IL,IM,IG,I,J,M
+      INTEGER NL,NM,IL1,IL2,IM,IG,ICTEMMOD,I,J,M
 C
 C     * OUTPUT ARRAYS.
 C
@@ -44,7 +62,7 @@ C
      4     DELZW (NL,NM,IG),  ZBOTW (NL,NM,IG),
      4     ALGWET(NL,NM),     ALGDRY(NL,NM)
 C
-      INTEGER               ISAND (NL,NM,IG),  IORG  (NL,NM,IG)
+      INTEGER                 ISAND (NL,NM,IG),  IGDR  (NL,NM)
 C
 C     * INPUT ARRAYS.
 C
@@ -54,13 +72,9 @@ C
       REAL THPORG (3),      THRORG (3),      THMORG (3),
      1     BORG   (3),      PSISORG(3),      GRKSORG(3)
 C
-C     * WORK ARRAYS.
-C
-      REAL THSAND(NL,NM,IG),  THFINE(NL,NM,IG),  THORG (NL,NM,IG)
-C
 C     * TEMPORARY VARIABLES.
 C
-      REAL VSAND,VORG,VFINE,VTOT,AEXP,ABC,test1,test2
+      REAL VSAND,VORG,VFINE,VTOT,AEXP,ABC,THSAND,THFINE,THORG
 
 C     * VARIABLES FOR SOIL.INI FILE	  
       REAL WC_THPOR (NL,NM,IG),WC_THLRET(NL,NM,IG),
@@ -82,15 +96,20 @@ C
       COMMON /CLASS5/ THPORG,THRORG,THMORG,BORG,PSISORG,GRKSORG
 C---------------------------------------------------------------------
 C
+      DO 50 M=1,IM
+      DO 50 I=IL1,IL2
+          IGDR(I,M)=1
+50    CONTINUE
+C
       DO 100 J=1,IG
       DO 100 M=1,IM
-      DO 100 I=1,IL
+      DO 100 I=IL1,IL2
           ISAND (I,M,J)=NINT(SAND(I,M,J))                                               
-          IORG  (I,M,J)=NINT(ORGM(I,M,J))                                               
+          IF(ISAND(I,M,J).GT.-3) IGDR(I,M)=J
 100   CONTINUE
 C
       DO 200 M=1,IM
-      DO 200 I=1,IL
+      DO 200 I=IL1,IL2
           DO 150 J=1,IG
               IF(ISAND(I,M,1).EQ.-4) THEN
                   DELZW(I,M,J)=DELZ(J)
@@ -99,17 +118,21 @@ C
                   DELZW(I,M,J)=0.0
               ELSEIF(SDEPTH(I,M).GE.ZBOT(J)) THEN
                   DELZW(I,M,J)=DELZ(J)
-              ELSEIF(SDEPTH(I,M).LT.(ZBOT(J)-DELZ(J)+0.01)) THEN
+              ELSEIF(SDEPTH(I,M).LT.(ZBOT(J)-DELZ(J)+0.025)) THEN
                   DELZW(I,M,J)=0.0
                   ISAND(I,M,J)=-3
               ELSE
-                  DELZW(I,M,J)=SDEPTH(I,M)-(ZBOT(J)-DELZ(J))
+                  DELZW(I,M,J)=MAX(0.05,(SDEPTH(I,M)-(ZBOT(J)-DELZ(J))))
               ENDIF
               ZBOTW(I,M,J)=MAX(0.0,ZBOT(J)-DELZ(J))+DELZW(I,M,J)
 150       CONTINUE
           IF(SAND(I,M,1).GE.0.0) THEN
               ALGWET(I,M)=0.08+0.0006*SAND(I,M,1)
-              ALGDRY(I,M)=MIN(0.14+0.0056*SAND(I,M,1),0.45)
+              IF(ICTEMMOD.EQ.0) THEN
+                  ALGDRY(I,M)=MIN(0.14+0.0046*SAND(I,M,1), 0.45) ! FOR GLC2000
+              ELSE
+                  ALGDRY(I,M)=MIN(0.14+0.0027*SAND(I,M,1), 0.41) ! FOR CTEM   
+              ENDIF
           ELSE
               ALGWET(I,M)=0.0
               ALGDRY(I,M)=0.0
@@ -118,7 +141,7 @@ C
 C
       DO 300 J=1,IG
       DO 300 M=1,IM
-      DO 300 I=1,IL
+      DO 300 I=IL1,IL2
           IF(ISAND(I,M,J).EQ.-4) THEN
               THPOR (I,M,J)=0.0
               THLRET(I,M,J)=0.0
@@ -177,13 +200,13 @@ C
               VORG=ORGM(I,M,J)/(RHOOM*100.0)
               VFINE=(100.0-SAND(I,M,J)-ORGM(I,M,J))/(RHOSOL*100.0)
               VTOT=VSAND+VFINE+VORG
-              THSAND(I,M,J)=(1.0-THPOR(I,M,J))*VSAND/VTOT
-              THORG(I,M,J)=(1.0-THPOR(I,M,J))*VORG/VTOT
-              THFINE(I,M,J)=1.0-THPOR(I,M,J)-THSAND(I,M,J)-THORG(I,M,J)
-              HCPS(I,M,J)=(HCPSND*THSAND(I,M,J)+HCPFIN*THFINE(I,M,J)+
-     1            HCPOM*THORG(I,M,J))/(1.0-THPOR(I,M,J))
-              TCS(I,M,J)=(TCSAND*THSAND(I,M,J)+TCOM*THORG(I,M,J)+
-     1            TCFINE*THFINE(I,M,J))/(1.0-THPOR(I,M,J))
+              THSAND=(1.0-THPOR(I,M,J))*VSAND/VTOT
+              THORG=(1.0-THPOR(I,M,J))*VORG/VTOT
+              THFINE=1.0-THPOR(I,M,J)-THSAND-THORG
+              HCPS(I,M,J)=(HCPSND*THSAND+HCPFIN*THFINE+
+     1            HCPOM*THORG)/(1.0-THPOR(I,M,J))
+              TCS(I,M,J)=(TCSAND*THSAND+TCOM*THORG+
+     1            TCFINE*THFINE)/(1.0-THPOR(I,M,J))
 			ENDIF
               THLRAT(I,M,J)=0.5**(1.0/(2.0*BI(I,M,J)+3.0))
               THFC(I,M,J)=THPOR(I,M,J)*(1.157E-9/GRKSAT(I,M,J))**

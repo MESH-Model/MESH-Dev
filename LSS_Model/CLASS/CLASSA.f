@@ -20,10 +20,18 @@
      J                  FCLOUD, TA,     VPD,    RHOAIR, COSZS,  
      K                  QSWINV, RADJ,   DLON,   RHOSNI, DELZ,   DELZW,  
      L                  ZBOTW,  THPOR,  THLMIN, PSISAT, BI,     PSIWLT, 
-     M                  HCPS,   ISAND,  IDAY,   ILG,    IL1,    IL2,    
-     N                  JL,N,   IC,     ICP1,   IG,     IDISP,  IZREF,
-     O                  IWF,    IPAI,   IHGT,   IALC,   IALS,   IALG)
+     M                  HCPS,   ISAND,  
+     N                  FCANCMX,ICTEM,  ICTEMMOD,       RMATC,
+     O                  AILC,   PAIC,   L2MAX,  NOL2PFTS,
+     P                  AILCG,  AILCGS, FCANC,  FCANCS,
+     Q                  IDAY,   ILG,    IL1,    IL2,    
+     R                  JL,N,   IC,     ICP1,   IG,     IDISP,  IZREF,
+     S                  IWF,    IPAI,   IHGT,   IALC,   IALS,   IALG)
 C
+C     * NOV 14/11 - M.LAZARE.   IMPLEMENT CTEM SUPPORT, PRIMARILY
+C     *                         INVOLVING ADDITIONAL FIELDS TO PASS
+C     *                         IN/OUT OF NEW APREP ROUTINE. THIS 
+C     *                         INCLUDES NEW INPUT ARRAY "PAIC".
 C     * NOV 30/06 - D.VERSEGHY. CONVERT RADJ TO REGULAR PRECISION.
 C     * APR 13/06 - D.VERSEGHY. SEPARATE GROUND AND SNOW ALBEDOS FOR 
 C     *                         OPEN AND CANOPY-COVERED AREAS; KEEP
@@ -152,6 +160,15 @@ C     * OTHER DATA ARRAYS WITH NON-VARYING VALUES.
 C
       REAL GROWYR(18,4,2),  DELZ  (IG),      ZORAT (4),
      1     CANEXT(4),       XLEAF (4)
+C
+C     * CTEM-RELATED FIELDS.
+C
+      REAL FCANCMX(ILG,ICTEM),   RMATC(ILG,IC,IG),
+     1      AILC  (ILG,IC),      PAIC (ILG,IC),
+     2      AILCG (ILG,ICTEM),   AILCGS(ILG,ICTEM),
+     3      FCANC(ILG,ICTEM),    FCANCS(ILG,ICTEM)
+
+      INTEGER ICTEM, ICTEMMOD, L2MAX, NOL2PFTS(IC)
 C                                                                                 
 C     * INTERNAL WORK ARRAYS FOR THIS AND ASSOCIATED SUBROUTINES.
 C
@@ -240,7 +257,10 @@ C
      C            THPOR,THLMIN,PSISAT,BI,PSIWLT,HCPS,ISAND,
      D            ILG,IL1,IL2,JL,IC,ICP1,IG,IDAY,IDISP,IZREF,IWF,
      E            IPAI,IHGT,RMAT,H,HS,CWCPAV,GROWA,GROWN,GROWB,
-     F            RRESID,SRESID,FRTOT )               
+     F            RRESID,SRESID,FRTOT,
+     G            FCANCMX,ICTEM,ICTEMMOD,RMATC,
+     H            AILC,PAIC,AILCG,L2MAX,NOL2PFTS,
+     I            AILCGS,FCANCS,FCANC)
 C
 C     * SNOW ALBEDOS AND TRANSMISSIVITY.
 C 

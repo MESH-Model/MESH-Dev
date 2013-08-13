@@ -24,9 +24,10 @@
      M                  THPOR,  THLRET, THLMIN, BI,     PSISAT, GRKSAT,
      N                  THLRAT, THFC,   XDRAIN, HCPS,   DELZ,   
      O                  DELZW,  ZBOTW,  XSLOPE, XDRAINH, WFSURF, KSAT,
-     P                  ISAND,  IWF,    ILG,    IL1,    IL2,    N,
-     Q                  JL,     IC,     IG,     IGP1,   IGP2,
-     R                  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI, 
+     P                  ISAND,  IGDR,
+     Q                  IWF,    ILG,    IL1,    IL2,    N,
+     R                  JL,     IC,     IG,     IGP1,   IGP2,
+     S                  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI, 
      S                  MANNING_N, DD,NCOUNT,t0_ACC,
      4                  SI,TSI,INFILTYPE,SNOWMELTD,SNOWMELTD_LAST,
      5                  MELTRUNOFF,SNOWINFIL,
@@ -43,7 +44,12 @@
      5                  FSTRCS,    FSTRC,     FSTRG,    FSTRGS)
 C                                                                        
 C     * DEC 09/11 - M.MEKONNEN. FOR PDMROF.
+C     * OCT 18/11 - M.LAZARE.   PASS IN IGDR THROUGH CALLS TO
+C     *                         GRDRAN/GRINFL (ORIGINATES NOW
+C     *                         IN CLASSB - ONE CONSISTENT
+C     *                         CALCULATION).                                                                          
 C     * JUN 03/11 - D.PRINCZ.   FOR RIC'S WATDRN3.
+C     * APR 04/11 - D.VERSEGHY. ADD DELZ TO GRINFL CALL.
 C     * DEC 07/09 - D.VERSEGHY. ADD RADD AND SADD TO WPREP CALL.
 C     * JAN 06/09 - D.VERSEGHY. INCREASE LIMITING SNOW AMOUNT.
 C     * FEB 25/08 - D.VERSEGHY. MODIFICATIONS REFLECTING CHANGES
@@ -119,7 +125,7 @@ C     * APR 11/89 - D.VERSEGHY. LAND SURFACE WATER BUDGET CALCULATIONS.
 C                                                                                 
       USE FLAGS
       IMPLICIT NONE
-      
+
 C     * INTEGER CONSTANTS.
 C
       INTEGER IWF,ILG,IL1,IL2,JL,IC,IG,IGP1,IGP2,I,J,NLANDCS,NLANDGS,
@@ -180,7 +186,7 @@ C
      3     ZBOTW (ILG,IG),XDRAIN(ILG),   XSLOPE(ILG),   XDRAINH(ILG),   
      4     WFSURF(ILG),   KSAT(ILG),   DELZ  (IG), BULK_FC(ILG,IG)
 C
-      INTEGER             ISAND(ILG,IG)
+      INTEGER             ISAND(ILG,IG), IGDR  (ILG)
 C
 C     * INTERNAL WORK ARRAYS USED THROUGHOUT CLASSW.
 C
@@ -398,15 +404,17 @@ C
      7                ZERO,WEXCES,FDTBND,WADD,TADD,WADJ,TIMPND,
      8                DZF,DTFLOW,THLNLZ,THLQLZ,DZDISP,WDISP,WABS,
      9                THPOR,THLRET,THLMIN,BI,PSISAT,GRKSCS,
-     A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,ISAND,IGRN,
-     B                IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
-     C                NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,DELZ,ISAND,
+     B                IGRN,IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
+     C                NEND,ISIMP,IGDR,
+     D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           CALL GRDRAN(1,THLQCS,THICCS,TBRWCS,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFCS,TRNFCS,
      2                QFG,WLSTCS,FCS,EVPCSG,RPCCS,ZPNDCS,
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSCS,THFC,DELZW,XDRAIN,ISAND,
-     5                IZERO,IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     5                IZERO,IGRN,IGRD,IGDR,
+     6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           IF(IWF == 2)THEN
              CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FCS,
      1                   ZPNDPRECS,ZPNDCS, FSTRCS, TPNDCS,
@@ -494,15 +502,17 @@ C
      7                ZERO,WEXCES,FDTBND,WADD,TADD,WADJ,TIMPND,
      8                DZF,DTFLOW,THLNLZ,THLQLZ,DZDISP,WDISP,WABS,
      9                THPOR,THLRET,THLMIN,BI,PSISAT,GRKSGS,
-     A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,ISAND,IGRN,
-     B                IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
-     C                NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,DELZ,ISAND,
+     B                IGRN,IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
+     C                NEND,ISIMP,IGDR,
+     D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           CALL GRDRAN(2,THLQGS,THICGS,TBRWGS,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFGS,TRNFGS,
      2                QFG,WLSTGS,FGS,EVAPGS,RPCGS,ZPNDGS,
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSGS,THFC,DELZW,XDRAIN,ISAND,
-     5                IZERO,IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     5                IZERO,IGRN,IGRD,IGDR,
+     6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           IF(IWF == 2)THEN
              CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FGS,
      1                   ZPNDPREGS,ZPNDGS, FSTRGS, TPNDGS,
@@ -576,15 +586,17 @@ C
      7                ZERO,WEXCES,FDTBND,WADD,TADD,WADJ,TIMPND,
      8                DZF,DTFLOW,THLNLZ,THLQLZ,DZDISP,WDISP,WABS,
      9                THPOR,THLRET,THLMIN,BI,PSISAT,GRKSC,
-     A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,ISAND,IGRN,
-     B                IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
-     C                NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,DELZ,ISAND,
+     B                IGRN,IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
+     C                NEND,ISIMP,IGDR,
+     D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           CALL GRDRAN(3,THLQCO,THICCO,TBARWC,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFC,TRUNFC,
      2                QFG,WLOSTC,FC,EVAPCG,RPCC,ZPONDC,
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSC,THFC,DELZW,XDRAIN,ISAND,
-     5                IZERO,IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     5                IZERO,IGRN,IGRD,IGDR,
+     6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           IF(IWF == 2)THEN
              CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FC,
      1                   ZPONDPREC,ZPONDC, FSTRC, TPONDC,
@@ -652,15 +664,17 @@ C
      7                ZERO,WEXCES,FDTBND,WADD,TADD,WADJ,TIMPND,
      8                DZF,DTFLOW,THLNLZ,THLQLZ,DZDISP,WDISP,WABS,
      9                THPOR,THLRET,THLMIN,BI,PSISAT,GRKSG,
-     A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,ISAND,IGRN,
-     B                IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
-     C                NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,DELZ,ISAND,
+     B                IGRN,IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
+     C                NEND,ISIMP,IGDR,
+     D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           CALL GRDRAN(4,THLQGO,THICGO,TBARWG,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFG,TRUNFG,
      2                QFG,WLOSTG,FG,EVAPG,RPCG,ZPONDG,
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSG,THFC,DELZW,XDRAIN,ISAND,
-     5                IZERO,IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     5                IZERO,IGRN,IGRD,IGDR,
+     6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           IF(IWF == 2)THEN
              CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FG,
      1                   ZPONDPREG,ZPONDG, FSTRG, TPONDG,
@@ -907,6 +921,16 @@ C
      1               FC (I)*THICCO(I,J)+FG (I)*THICGO(I,J)
           GFLUX(I,J)=FCS(I)*GFLXCS(I,J)+FGS(I)*GFLXGS(I,J)+
      1               FC (I)*GFLXC (I,J)+FG (I)*GFLXG (I,J)
+C     ipy test
+C          IF(THLIQ(I,J).GT.THFC(I,J))                               THEN
+C              BASFLW(I)=BASFLW(I)+(THLIQ(I,J)-THFC(I,J))*DELZW(I,J)*
+C     1            RHOW/DELT
+C              RUNOFF(I)=RUNOFF(I)+(THLIQ(I,J)-THFC(I,J))*DELZW(I,J)*
+C     1            RHOW/DELT
+C              HTC(I,J)=HTC(I,J)-TBAR(I,J)*(THLIQ(I,J)-THFC(I,J))*
+C     1            HCPW*DELZW(I,J)/DELT
+C              THLIQ(I,J)=THFC(I,J)
+C          ENDIF
           IF(TBAR(I,1).LT.173.16 .OR. TBAR(I,1).GT.373.16) IPTBAD=I
   700 CONTINUE                                                            
 C

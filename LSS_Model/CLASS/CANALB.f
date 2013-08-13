@@ -7,6 +7,9 @@
      6                  ILG,IL1,IL2,JL,IC,ICP1,IG,IALC,
      7                  CXTEFF,TRVS,TRIR,RCACC,RCG,RCV,RCT,GC) 
 C
+C     * DEC 21/11 - M.LAZARE.   DEFINE CONSTANTS "EXPMAX1", EXPMAX2",
+C     *                         "EXPMAX3" TO AVOID REDUNDANT EXP
+C     *                         CALCULATIONS.
 C     * OCT 16/08 - R.HARVEY.   ADD LARGE LIMIT FOR EFFECTIVE
 C     *                         EXTINCTION COEFFICIENT (CXTEFF) IN
 C     *                         (RARE) CASES WHEN CANOPY TRANSMISSIVITY
@@ -86,7 +89,7 @@ C
 C     * TEMPORARY VARIABLES.
 C
       REAL SVF,ALVSCX,ALIRCX,ALVSN,ALIRN,ALVSS,ALIRS,
-     1     TRTOT,FRMAX
+     1     TRTOT,FRMAX,EXPMAX1,EXPMAX2,EXPMAX3
 C
 C     * COMMON BLOCK AND OTHER PARAMETERS.
 C
@@ -99,6 +102,13 @@ C
       DATA ALVSWC,CXTLRG
      1    /  0.17,1.0E20  /
 C----------------------------------------------------------------------
+C
+C     * ASSIGN CONSTANT EXPONENTIATION TERMS: EXPMAX1=EXP(-0.4/0.9659),
+C     * EXPMAX2=EXP(-0.4/0.7071),EXPMAX3=EXP(-0.4/0.2588)
+C
+      EXPMAX1=0.6609
+      EXPMAX2=0.5680
+      EXPMAX3=0.2132
 C
 C     * INITIALIZE WORK ARRAYS.
 C
@@ -168,13 +178,13 @@ C
       DO 250 I=IL1,IL2                                                                                  
           IF(COSZS(I).GT.0. .AND. FCAN(I,J).GT.0.)                  THEN
               TRCLRV=MIN(EXP(-0.7*PAI(I,J)),EXP(-0.4/COSZS(I)))                   
-              TRCLDV=0.30*MIN(EXP(-0.7*PAI(I,J)),EXP(-0.4/0.9659))             
-     1              +0.50*MIN(EXP(-0.7*PAI(I,J)),EXP(-0.4/0.7071))              
-     2              +0.20*MIN(EXP(-0.7*PAI(I,J)),EXP(-0.4/0.2588))              
+              TRCLDV=0.30*MIN(EXP(-0.7*PAI(I,J)),EXPMAX1)             
+     1              +0.50*MIN(EXP(-0.7*PAI(I,J)),EXPMAX2)              
+     2              +0.20*MIN(EXP(-0.7*PAI(I,J)),EXPMAX3)              
               TRCLRT=MIN(EXP(-0.4*PAI(I,J)),EXP(-0.4/COSZS(I)))                   
-              TRCLDT=0.30*MIN(EXP(-0.4*PAI(I,J)),EXP(-0.4/0.9659))+            
-     1               0.50*MIN(EXP(-0.4*PAI(I,J)),EXP(-0.4/0.7071))+              
-     2               0.20*MIN(EXP(-0.4*PAI(I,J)),EXP(-0.4/0.2588))               
+              TRCLDT=0.30*MIN(EXP(-0.4*PAI(I,J)),EXPMAX1)+            
+     1               0.50*MIN(EXP(-0.4*PAI(I,J)),EXPMAX2)+              
+     2               0.20*MIN(EXP(-0.4*PAI(I,J)),EXPMAX3)               
               TRVS(I)=FCLOUD(I)*TRCLDV+(1.0-FCLOUD(I))*TRCLRV
               IF(TRVS(I).GT.0.0001)                           THEN
                   CXTEFF(I,J)=-LOG(TRVS(I))/MAX(PAI(I,J),1.0E-5)
@@ -337,13 +347,13 @@ C
       DO 600 I=IL1,IL2                                                                                  
           IF(COSZS(I).GT.0. .AND. FCANS(I,J).GT.0.)               THEN
               TRCLRV=MIN(EXP(-0.7*PAIS(I,J)),EXP(-0.4/COSZS(I)))                   
-              TRCLDV=0.30*MIN(EXP(-0.7*PAIS(I,J)),EXP(-0.4/0.9659))             
-     1              +0.50*MIN(EXP(-0.7*PAIS(I,J)),EXP(-0.4/0.7071))              
-     2              +0.20*MIN(EXP(-0.7*PAIS(I,J)),EXP(-0.4/0.2588))              
+              TRCLDV=0.30*MIN(EXP(-0.7*PAIS(I,J)),EXPMAX1)             
+     1              +0.50*MIN(EXP(-0.7*PAIS(I,J)),EXPMAX2)              
+     2              +0.20*MIN(EXP(-0.7*PAIS(I,J)),EXPMAX3)              
               TRCLRT=MIN(EXP(-0.4*PAIS(I,J)),EXP(-0.4/COSZS(I)))                   
-              TRCLDT=0.30*MIN(EXP(-0.4*PAIS(I,J)),EXP(-0.4/0.9659))+            
-     1               0.50*MIN(EXP(-0.4*PAIS(I,J)),EXP(-0.4/0.7071))+              
-     2               0.20*MIN(EXP(-0.4*PAIS(I,J)),EXP(-0.4/0.2588))               
+              TRCLDT=0.30*MIN(EXP(-0.4*PAIS(I,J)),EXPMAX1)+            
+     1               0.50*MIN(EXP(-0.4*PAIS(I,J)),EXPMAX2)+              
+     2               0.20*MIN(EXP(-0.4*PAIS(I,J)),EXPMAX3)               
               TRVS(I)=FCLOUD(I)*TRCLDV+(1.0-FCLOUD(I))*TRCLRV
               TRTOT =FCLOUD(I)*TRCLDT+(1.0-FCLOUD(I))*TRCLRT
               TRIR(I)= 2.*TRTOT-TRVS(I)
