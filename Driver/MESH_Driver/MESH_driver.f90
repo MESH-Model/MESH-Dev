@@ -2855,7 +2855,89 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
 !BEGIN: PDMROF
              hp%CMINROW,hp%CMAXROW,hp%BROW,hp%K1ROW,hp%K2ROW)
 !END: PDMROF
+!>
+!>   * INITIALIZATION OF DIAGNOSTIC VARIABLES SPLIT OUT OF CLASSG
+!>   * FOR CONSISTENCY WITH GCM APPLICATIONS.
+!>
 
+      DO 120 K=1,NA*NTYPE
+          CDHGAT (K)=0.0
+          CDMGAT (K)=0.0
+          HFSGAT (K)=0.0
+          TFXGAT (K)=0.0
+          QEVPGAT(K)=0.0
+          QFSGAT (K)=0.0
+          QFXGAT (K)=0.0
+          PETGAT (K)=0.0
+          GAGAT  (K)=0.0
+          EFGAT  (K)=0.0
+          GTGAT  (K)=0.0
+          QGGAT  (K)=0.0
+          ALVSGAT(K)=0.0
+          ALIRGAT(K)=0.0
+          SFCTGAT(K)=0.0
+          SFCUGAT(K)=0.0
+          SFCVGAT(K)=0.0
+          SFCQGAT(K)=0.0
+          FSNOGAT(K)=0.0
+          FSGVGAT(K)=0.0
+          FSGSGAT(K)=0.0
+          FSGGGAT(K)=0.0
+          FLGVGAT(K)=0.0
+          FLGSGAT(K)=0.0
+          FLGGGAT(K)=0.0
+          HFSCGAT(K)=0.0
+          HFSSGAT(K)=0.0
+          HFSGGAT(K)=0.0
+          HEVCGAT(K)=0.0
+          HEVSGAT(K)=0.0
+          HEVGGAT(K)=0.0
+          HMFCGAT(K)=0.0
+          HMFNGAT(K)=0.0
+          HTCCGAT(K)=0.0
+          HTCSGAT(K)=0.0
+          PCFCGAT(K)=0.0
+          PCLCGAT(K)=0.0
+          PCPNGAT(K)=0.0
+          PCPGGAT(K)=0.0
+          QFGGAT (K)=0.0
+          QFNGAT (K)=0.0
+          QFCFGAT(K)=0.0
+          QFCLGAT(K)=0.0
+          ROFGAT (K)=0.0
+          ROFOGAT(K)=0.0
+          ROFSGAT(K)=0.0
+          ROFBGAT(K)=0.0
+          TROFGAT (K)=0.0
+          TROOGAT(K)=0.0
+          TROSGAT(K)=0.0
+          TROBGAT(K)=0.0
+          ROFCGAT(K)=0.0
+          ROFNGAT(K)=0.0
+          ROVGGAT(K)=0.0
+          WTRCGAT(K)=0.0
+          WTRSGAT(K)=0.0
+          WTRGGAT(K)=0.0
+          DRGAT  (K)=0.0
+120   CONTINUE
+!>
+      DO 140 L=1,IGND
+      DO 130 K=1,NA*NTYPE
+          HMFGGAT(K,L)=0.0
+          HTCGAT (K,L)=0.0
+          QFCGAT (K,L)=0.0
+          GFLXGAT(K,L)=0.0
+130   CONTINUE
+140   CONTINUE
+!>
+      DO 170 M=1,50
+          DO 160 L=1,6
+              DO 150 K=1,NML
+                  ITCTGAT(K,L,M)=0
+150           CONTINUE
+160       CONTINUE
+170   CONTINUE
+!>         
 call resume_state_r2c(NML,NLTEST,NMTEST,NCOUNT, &
                     IMIN,ACLASS,NR2C_R,GRD_R,GAT_R,GRDGAT_R,R2C_ATTRIBUTES_R,&
                     NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,ICAN,ICP1,IGND, &
@@ -2894,7 +2976,7 @@ call resume_state_r2c(NML,NLTEST,NMTEST,NCOUNT, &
                        HMFGGAT,HTCGAT, QFCGAT,MANNGAT, DDGAT,   &
                        SANDGAT,CLAYGAT,IGDRGAT,VMODGAT,QLWOGAT, &
                        coordsys1,datum1, zone1,  XORIGIN,YORIGIN,XDELTA,YDELTA)
-                       
+!>            
 ! now scatter the variables so that the GATs don't get overwritten incorrectly                       
 CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
              cp%TPNDROW,cp%ZPNDROW,TBASROW,cp%ALBSROW,cp%TSNOROW, &
@@ -2910,6 +2992,89 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
              cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT,cp%XSLPROW,XSLPGAT)
 
 ENDIF
+!>
+!>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF 
+!>   * CLASSS FOR CONSISTENCY WITH GCM APPLICATIONS.
+!>
+      DO 180 K=1,NML
+          CDHROW (ILMOS(K),JLMOS(K))=CDHGAT (K)  
+          CDMROW (ILMOS(K),JLMOS(K))=CDMGAT (K)  
+          HFSROW (ILMOS(K),JLMOS(K))=HFSGAT (K)  
+          TFXROW (ILMOS(K),JLMOS(K))=TFXGAT (K)  
+          QEVPROW(ILMOS(K),JLMOS(K))=QEVPGAT(K)  
+          QFSROW (ILMOS(K),JLMOS(K))=QFSGAT (K)  
+          QFXROW (ILMOS(K),JLMOS(K))=QFXGAT (K)  
+          PETROW (ILMOS(K),JLMOS(K))=PETGAT (K)  
+          GAROW  (ILMOS(K),JLMOS(K))=GAGAT  (K)  
+          EFROW  (ILMOS(K),JLMOS(K))=EFGAT  (K)  
+          GTROW  (ILMOS(K),JLMOS(K))=GTGAT  (K)  
+          QGROW  (ILMOS(K),JLMOS(K))=QGGAT  (K)  
+          ALVSROW(ILMOS(K),JLMOS(K))=ALVSGAT(K)  
+          ALIRROW(ILMOS(K),JLMOS(K))=ALIRGAT(K)  
+          SFCTROW(ILMOS(K),JLMOS(K))=SFCTGAT(K)  
+          SFCUROW(ILMOS(K),JLMOS(K))=SFCUGAT(K)  
+          SFCVROW(ILMOS(K),JLMOS(K))=SFCVGAT(K)  
+          SFCQROW(ILMOS(K),JLMOS(K))=SFCQGAT(K)  
+          FSNOROW(ILMOS(K),JLMOS(K))=FSNOGAT(K)  
+          FSGVROW(ILMOS(K),JLMOS(K))=FSGVGAT(K)  
+          FSGSROW(ILMOS(K),JLMOS(K))=FSGSGAT(K)  
+          FSGGROW(ILMOS(K),JLMOS(K))=FSGGGAT(K)  
+          FLGVROW(ILMOS(K),JLMOS(K))=FLGVGAT(K)  
+          FLGSROW(ILMOS(K),JLMOS(K))=FLGSGAT(K)  
+          FLGGROW(ILMOS(K),JLMOS(K))=FLGGGAT(K)  
+          HFSCROW(ILMOS(K),JLMOS(K))=HFSCGAT(K)  
+          HFSSROW(ILMOS(K),JLMOS(K))=HFSSGAT(K)  
+          HFSGROW(ILMOS(K),JLMOS(K))=HFSGGAT(K)  
+          HEVCROW(ILMOS(K),JLMOS(K))=HEVCGAT(K)  
+          HEVSROW(ILMOS(K),JLMOS(K))=HEVSGAT(K)  
+          HEVGROW(ILMOS(K),JLMOS(K))=HEVGGAT(K)  
+          HMFCROW(ILMOS(K),JLMOS(K))=HMFCGAT(K)  
+          HMFNROW(ILMOS(K),JLMOS(K))=HMFNGAT(K)  
+          HTCCROW(ILMOS(K),JLMOS(K))=HTCCGAT(K)  
+          HTCSROW(ILMOS(K),JLMOS(K))=HTCSGAT(K)  
+          PCFCROW(ILMOS(K),JLMOS(K))=PCFCGAT(K)  
+          PCLCROW(ILMOS(K),JLMOS(K))=PCLCGAT(K)  
+          PCPNROW(ILMOS(K),JLMOS(K))=PCPNGAT(K)  
+          PCPGROW(ILMOS(K),JLMOS(K))=PCPGGAT(K)  
+          QFGROW (ILMOS(K),JLMOS(K))=QFGGAT (K)  
+          QFNROW (ILMOS(K),JLMOS(K))=QFNGAT (K)  
+          QFCLROW(ILMOS(K),JLMOS(K))=QFCLGAT(K)  
+          QFCFROW(ILMOS(K),JLMOS(K))=QFCFGAT(K)  
+          ROFROW (ILMOS(K),JLMOS(K))=ROFGAT (K)  
+          ROFOROW(ILMOS(K),JLMOS(K))=ROFOGAT(K)  
+          ROFSROW(ILMOS(K),JLMOS(K))=ROFSGAT(K)  
+          ROFBROW(ILMOS(K),JLMOS(K))=ROFBGAT(K)  
+          TROFROW(ILMOS(K),JLMOS(K))=TROFGAT(K)  
+          TROOROW(ILMOS(K),JLMOS(K))=TROOGAT(K)  
+          TROSROW(ILMOS(K),JLMOS(K))=TROSGAT(K)  
+          TROBROW(ILMOS(K),JLMOS(K))=TROBGAT(K)  
+          ROFCROW(ILMOS(K),JLMOS(K))=ROFCGAT(K)  
+          ROFNROW(ILMOS(K),JLMOS(K))=ROFNGAT(K)  
+          ROVGROW(ILMOS(K),JLMOS(K))=ROVGGAT(K)  
+          WTRCROW(ILMOS(K),JLMOS(K))=WTRCGAT(K)  
+          WTRSROW(ILMOS(K),JLMOS(K))=WTRSGAT(K)  
+          WTRGROW(ILMOS(K),JLMOS(K))=WTRGGAT(K)  
+          DRROW  (ILMOS(K),JLMOS(K))=DRGAT  (K)  
+          WTABROW(ILMOS(K),JLMOS(K))=WTABGAT(K)  
+          ILMOROW(ILMOS(K),JLMOS(K))=ILMOGAT(K)  
+          UEROW  (ILMOS(K),JLMOS(K))=UEGAT(K)  
+          HBLROW (ILMOS(K),JLMOS(K))=HBLGAT(K)  
+180   CONTINUE
+!>
+      DO 190 L=1,IGND
+      DO 190 K=1,NML
+          HMFGROW(ILMOS(K),JLMOS(K),L)=HMFGGAT(K,L)
+          HTCROW (ILMOS(K),JLMOS(K),L)=HTCGAT (K,L)
+          QFCROW (ILMOS(K),JLMOS(K),L)=QFCGAT (K,L)
+190   CONTINUE
+!>
+      DO 230 M=1,50
+          DO 220 L=1,6
+              DO 210 K=1,NML
+                  ITCTROW(ILMOS(K),JLMOS(K),L,M)=ITCTGAT(K,L,M)
+210           CONTINUE
+220       CONTINUE
+230   CONTINUE
 
 !> *********************************************************************
 !> Call CLASSB to set more CLASS variables
