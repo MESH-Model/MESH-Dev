@@ -175,7 +175,7 @@
 !> If FROZENSOILINFILFLAG is 0, all snow melt infiltrates.
 !> If FROZENSOILINFILFLAG is 1, snow melt is partitioned to frozen soil infiltration 
 !> and direct runoff based on the parameteric equation developed by Gray et al, 2001.
-      FROZENSOILINFILFLAG = 0
+      FROZENSOILINFILFLAG = 1
 
 !> FORCIND DATA INTERPOLATION AT INTERMEDIATE TIME STEPS (WHEN THE TIME 
 !> INTERVAL OF THE FORCING DATA IS GREATER THAN 30 MINUTE) 
@@ -194,6 +194,10 @@
 !* If TESTCSVFLAG is 1, proper distribution of csv forcing data will be checked. 
       TESTCSVFLAG = 0
 
+!* set PBSMFLAG = 0 so by default blowing snow calculations are not made
+!* 1 =  blowing snow transport, sublimation & inter-GRU redistribution calculations are made
+      PBSMFLAG = 1
+
 !* If R2COUTPUTFLAG is 1, R2C ascii file will be written for user specified 
 !* variables.
 !* If R2COUTPUTFLAG is 2, R2C binary will be written for user specified 
@@ -204,7 +208,7 @@
 !* If FROZENSOILINFILFLAG is 0, all snow melt infiltrates.
 !* If FROZENSOILINFILFLAG is 1, snow melt is partitioned to frozen soil infiltration 
 !* and direct runoff based on the parameteric equation developed by Gray et al, 2001.
-      FROZENSOILINFILFLAG = 0
+      FROZENSOILINFILFLAG = 1
 
 !* If WD3 is 0, existing WATDRN is used.
 !* If WD3 is 1, WATDRN by Ric (May, 2011) is used.
@@ -323,6 +327,8 @@
             INTERPOLATIONFLAG = IROVAL
           ELSE IF (IRONAME == "SUBBASINFLAG") THEN
             SUBBASINFLAG = IROVAL
+          ELSE IF (IRONAME == "PBSMFLAG") THEN
+            PBSMFLAG = IROVAL
           ELSE IF (IRONAME == "TESTCSVFLAG") THEN
             TESTCSVFLAG = IROVAL
           ELSE IF (IRONAME == "R2COUTPUTFLAG") THEN

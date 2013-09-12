@@ -75,7 +75,8 @@
         REAL, DIMENSION(:,:), ALLOCATABLE :: ZSNLROW, ZPLSROW, ZPLGROW, 
      +                                       FRZCROW,
      +                                       CMAXROW, CMINROW, BROW,
-     +                                       K1ROW,   K2ROW
+     +                                       K1ROW,   K2ROW,
+     +                     fetchROW, HtROW, N_SROW, A_SROW, DistribROW
       END TYPE
 
       end module MESH_INPUT_MODULE

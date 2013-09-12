@@ -10,6 +10,7 @@
       REAL Z0T(N),LZZ0(N),LZZ0T(N)
       REAL fm(N),fh(N)
       REAL FI(N)
+      real Cmn,Chn,Am,Ah,fmom,ftq
 c
 cAuthor
 c          Y.Delage (Jul 1990)
@@ -62,6 +63,7 @@ cArguments
 c
 c          - Output -
 c CDM      transfer coefficient of momentum squared
+c CDH      transer coefficient of temperature
 c CTU      transfer coefficient of temperature times UE
 c RIB      bulk Richardson number
 c FTEMP    temperature flux
@@ -140,9 +142,11 @@ c  CALCULATE THE RICHARDSON NUMBER
         if (rib(j).ge.0.0) rib(j) = max(rib(j), EPSLN)
         if (rib(j).lt.0.0) rib(j) = min(rib(j),-EPSLN)
 c
-c  FIRST APPROXIMATION TO ILMO
         LZZ0(J)=LOG(Z0(J)+ZU(J))-LOG(Z0(J))
         LZZ0T(J)=LOG(ZT(J)+Z0(J))-LOG(Z0T(J))
+!      select case(tem(q))
+!       case(0) ! CLASS Monin-Obukhov (Delage & Girard, 1991)
+c  FIRST APPROXIMATION TO ILMO
         IF(RIB(J).GT.0.)  THEN
            FM(J)=LZZ0(J)+CS*RIB(J)/max(2*z0(j),1.0)
            FH(J)=BETA*(LZZ0T(J)+CS*RIB(J))/
@@ -155,9 +159,17 @@ c  FIRST APPROXIMATION TO ILMO
            FH(J)=BETA*(LZZ0T(J)-min(0.7+log(1-rib(j)),LZZ0T(J)-1))
         ENDIF
         ILMO(J)=RIB(J)*FM(J)*FM(J)/(ZP*FH(J))
+!       case(1) ! second gen CCMA; RiB
+        Cmn(J) = KARMAN**2/LZZ0(J)**2
+        Chn(J) = KARMAN**2/(LZZ0(J)*LZZ0T(J))
+        Am(J) = ((Z0(J)+ZU(J))/Z0(J))**(1/2)*KARMAN**2/Cmn(J)
+        Ah(J) = ((ZT(J)+Z0(J))/Z0T(J))**(1/2)*KARMAN**2/Chn(J)
+!      end select
       ENDIF
-      ENDDO
+ENDDO
 c - - - - - - - - -  BEGINNING OF ITERATION LOOP - - - - - - - - - - - 
+!      select case(tem(q))
+!      case(0) ! Monin-Obukhov
       DO 35 IT=1,ITMAX
       DO 35 J=IL1,IL2
       IF(FI(J).GT.0. .AND. ITER(J).EQ.1) THEN
@@ -180,6 +192,8 @@ cCDIR IEXPAND
      1                      -psi(Z0T(J)     ,hi,unsl))
         DG=-ZP*FH(J)/(FM(J)*FM(J))*(1+beta*(DF(ZT(J)+Z0(J))-DF(Z0T(J)))/
      1          (2*FH(J))-(DF(ZU(J)+Z0(J))-DF(Z0(J)))/FM(J))
+        fmom(J)=1/(1+10*RIB(J))
+        ftq(J)=fm(J)
 c----------------------------------------------------------------------
 c  UNSTABLE CASE
       ELSE
@@ -190,6 +204,8 @@ cCDIR IEXPAND
          FH(J)=fhi(zt(j)+z0(j),z0t(j),lzz0t(j),ilmo(j),yy,yy0)
          DG=-ZP*FH(J)/(FM(J)*FM(J))*(1+beta/FH(J)*(1/YY-1/YY0)-2/FM(J)*
      %                (1/XX-1/XX0))
+         fmom(J)=1-10*RIB(J)/(1+10*(-1*RIB(J)/(87*Am(J)**2))**(1/2))
+         ftq(J)=1-10*RIB(J)/(1+10*(-1*RIB(J)/(87*Ah(J)**2))**(1/2))
       ENDIF
 c----------------------------------------------------------------------
       IF(IT.LT.ITMAX) THEN
@@ -224,30 +240,37 @@ c  SOLUTION
                  ilmox=2*cc/(zu(j)*(-bb+sqrt(dd)))
               endif
               if(ilmox.lt.ilmo(j)) then
-                 ilmo(j)=ilmox
-                 fm(j)=lzz0(j)+asx*zu(j)*ilmox
-                 fh(j)=beta*lzz0t(j)+asx*(zt(j)+z0(j)-z0t(j))*ilmox
+                 ilmo(j)=ilmox !output
+                 fm(j)=lzz0(j)+asx*zu(j)*ilmox !output
+                 fh(j)=beta*lzz0t(j)+asx*(zt(j)+z0(j)-z0t(j))*ilmox !output
               endif
            endif
-        endif
+           endif
 c----------------------------------------------------------------------
-        CM=KARMAN/FM(J)
-        CT=KARMAN/FH(J)
-        UE(J)=u*CM
-        CDM(J)=CM**2
-        CTU(J)=CT*UE(J)
-        CDH(J)=CM*CT
+          UE(J)=u*CM !output DIASURFZ
+        select case(tem(q))
+        case(0) ! CLASS: M-O
+          CM=KARMAN/FM(J)
+          CT=KARMAN/FH(J)
+          CDM(J)=CM**2 !output
+          CTU(J)=CT*UE(J) !output
+          CDH(J)=CM*CT !output
+        case(1) ! CCMA 2nd Gen: RiB
+          CDM(J)= fmom(J)*Cmn(J) !output
+          CDH(J)= ftq(J)*Chn(J)*1.25 !output
+          CTU(J)= Chn(J)*ftq(J)*1.25*u !output
+        end select
         if (rib(j).gt.0.0) then
 c             cas stable
-              H(J)=MIN(H(J),hmax)
+              H(J)=MIN(H(J),hmax) !output DIASURFZ
         else
 c             cas instable
               F=MAX(ABS(FCOR(J)),CORMIN)
               he=max(HMIN,0.3*UE(J)/F)
-              H(J)=MIN(he,hmax)
+              H(J)=MIN(he,hmax) !output DIASURFZ
         endif
-        FTEMP(J)=-CTU(J)*(TA(J)-TG(J))
-        FVAP(J)=-CTU(J)*(QA(J)-QG(J))
+        FTEMP(J)=-CTU(J)*(TA(J)-TG(J)) !output DIASURFZ
+        FVAP(J)=-CTU(J)*(QA(J)-QG(J)) !output DIASURFZ
       ENDIF
    80 CONTINUE
       RETURN

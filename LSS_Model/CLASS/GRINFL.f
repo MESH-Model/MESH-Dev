@@ -160,8 +160,18 @@ C
               FDT (I,J)=0.0
               TFDT(I,J)=0.0
               IF(ISAND(I,J).GT.-3)                             THEN
+                select case(siim(q))
+                 case (0) ! CLASS: Soulis and Seglenieks (2008)
                   GRKSATF(I,J)=GRKSAT(I,J)*(1.0-MAX(0.0,MIN(1.0,
      1                THICE(I,J)/THPOR(I,J))))**2
+                 case (1) ! linear (SHAW; Bloomsburg & Wang, 1969; Flerchinger & Saxton, 1989)
+                  if ((THPOR(I,J)-THICE(I,J)).gt.0.13) then
+                    GRKSATF(I,J)=GRKSAT(I,J)*
+     1                            (THPOR(I,J)-THICE(I,J)-0.13)/
+     2                            (THPOR(I,J)-0.13)
+                  else
+                    GRKSATF(I,J)=0.0
+                end select
                   THPORF(I,J)=MAX((THPOR(I,J)-THICE(I,J)-0.00001),
      1                THLIQ(I,J),THLMIN(I,J))                
                   THLINF(I,J)=MAX(THLIQ(I,J),THLMIN(I,J),

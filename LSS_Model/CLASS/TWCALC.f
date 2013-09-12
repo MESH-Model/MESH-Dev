@@ -76,6 +76,7 @@ C-----------------------------------------------------------------------
      1                   HCPSND*(DELZZ(I,J)-DELZW(I,J)))*
      2                   (TBAR(I,J)+TFREZ)/DELT
               IF(TBAR(I,J).LT.0. .AND. THLIQ(I,J).GT.THLMIN(I,J)) THEN                        
+                  HCP  (I,J)=HCP(I,J)+CLHMLT*(______)/DELT
                   THFREZ=-(HCP(I,J)*DELZW(I,J)+HCPSND*(DELZZ(I,J)-
      1                    DELZW(I,J)))*TBAR(I,J)/(CLHMLT*RHOW*
      2                    DELZW(I,J))                              

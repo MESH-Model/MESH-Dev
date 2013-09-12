@@ -71,7 +71,6 @@ C
      1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
      2                TCGLAC,CLHMLT,CLHVAP
 C
-      WSNCAP=0.04
 C      WSNCAP=0.0
 C-----------------------------------------------------------------------
 
@@ -107,6 +106,12 @@ C-----------------------------------------------------------------------
                   HTCS(I)=HTCS(I)+FI(I)*CLHMLT*ZMELT*RHOSNO(I)/DELT
                   ZSNOW(I)=ZSNOW(I)-ZMELT                               
                   WAVAIL=ZMELT*RHOSNO(I)+WSNOW(I)
+                  select case(slwm(q))
+                   case(0) ! CLASS: max liquid water content by mass = 4%
+                    WSNCAP=0.04
+                   case(1) ! Anderson (1976); ISBA-ES, HTESSEL, SAST, VISA
+                    WSNCAP=0.03+(0.1-0.03)*MAX(1-RHOSNO(I)/200,0.)
+                  end select
                   IF(WAVAIL.GT.(WSNCAP*ZSNOW(I)*RHOSNO(I))) THEN
                       WSNOW(I)=WSNCAP*ZSNOW(I)*RHOSNO(I)
                       ZMELT=(WAVAIL-WSNOW(I))/RHOW
@@ -143,7 +148,13 @@ C-----------------------------------------------------------------------
                   IF(RHOSNO(I).GT.RHOICE)      THEN                     
                       ZSNOW(I)=RHOSNO(I)*ZSNOW(I)/RHOICE                
                       RHOSNO(I)=RHOICE                                  
-                  ENDIF                                                 
+                  ENDIF
+                  select case(slwm(q))
+                   case(0) ! CLASS: max liquid water content by mass = 4%
+                    WSNCAP=0.04
+                   case(1) ! Anderson (1976); ISBA-ES, HTESSEL, SAST, VISA
+                    WSNCAP=0.03+(0.1-0.03)*MAX(1-RHOSNO(I)/200,0.)
+                  end select
                   WAVAIL=(RAIN-ZFREZ)*RHOW+WSNOW(I)
                   IF(WAVAIL.GT.(WSNCAP*ZSNOW(I)*RHOSNO(I))) THEN
                       WSNOW(I)=WSNCAP*ZSNOW(I)*RHOSNO(I)

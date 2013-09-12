@@ -6,7 +6,7 @@
      5                TUSED,RDUMMY,ZERO,WEXCES,XDRAIN,
      6                THPOR,THLRET,THLMIN,BI,PSISAT,GRKSAT,
      7                THFC,DELZW,ISAND,IGRN,IGRD,IGDR,IZERO,
-     8                IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
+     8                IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 
 C     * OCT 18/11 - M.LAZARE.   PASS IN "IGDR" AS AN INPUT FIELD 
 C     *                         (ORIGINATING IN CLASSB) RATHER

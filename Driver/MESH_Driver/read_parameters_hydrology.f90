@@ -26,6 +26,7 @@ CHARACTER(8) :: FILE_VER
 LOGICAL :: VER_OK
 
 OPEN (23, FILE="MESH_parameters_hydrology.ini", STATUS="OLD",IOSTAT=IOS)
+IF(PBSMFLAG==1) OPEN (24, FILE="MESH_parameters_pbsm.ini", STATUS="OLD",IOSTAT=IOS)
 !> CHECK FILE FOR IOSTAT ERRORS
 !> when IOS equals 0, the file was opened successfully  
 IF (IOS .NE. 0)THEN 
@@ -157,6 +158,31 @@ ENDIF
 
 READ(23,*) DEPPAR
 READ(23,*)
+IF(DEPPAR>0) THEN
+   READ(23,*) (hp%ZSNLROW(1,M),M=1,NTYPE)
+   READ(23,*) (hp%ZPLSROW(1,M),M=1,NTYPE)
+   READ(23,*) (hp%ZPLGROW(1,M),M=1,NTYPE)
+  IF(PBSMFLAG==1) THEN
+   READ(24,*) (hp%fetchROW(1,M),M=1,NTYPE)
+   READ(24,*) (hp%HtROW(1,M),M=1,NTYPE)
+   READ(24,*) (hp%N_SROW(1,M),M=1,NTYPE)
+   READ(24,*) (hp%A_SROW(1,M),M=1,NTYPE)
+   READ(24,*) (hp%DistribROW(1,M),M=1,NTYPE)
+  ENDIF 
+ENDIF
+
+DO I=2,NA
+  DO M=1,NTYPE
+    hp%ZSNLROW(I,M)=hp%ZSNLROW(1,M)
+    hp%ZPLSROW(I,M)=hp%ZPLSROW(1,M)
+    hp%ZPLGROW(I,M)=hp%ZPLGROW(1,M)
+   IF(PBSMFLAG==1) THEN
+    hp%fetchROW(I,M)=hp%fetchROW(1,M)
+    hp%HtROW(I,M)=hp%HtROW(1,M)
+    hp%N_SROW(I,M)=hp%N_SROW(1,M)
+    hp%A_SROW(I,M)=hp%A_SROW(1,M)
+    hp%DistribROW(I,M)=hp%DistribROW(1,M)
+   ENDIF
 
 IF(DEPPAR < 9)THEN
    PRINT *
@@ -187,6 +213,7 @@ DO I=1,NA
 ENDDO
 
 CLOSE(UNIT=23)
+IF(PBSMFLAG==1) CLOSE(UNIT=24)
 
 RETURN
 

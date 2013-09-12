@@ -1,7 +1,7 @@
       SUBROUTINE CLASSI(VPD,TADP,PADRY,RHOAIR,RHOSNI,
      1                  RPCP,TRPCP,SPCP,TSPCP,
      2                  TA,QA,PCPR,RRATE,SRATE,PRESSG,
-     3                  IPCP,NL,IL1,IL2)
+     3                  IPCP,NL,IL1,IL2,VMOD)
 C
 C     * NOV 17/11 - M.LAZARE.   REMOVE CALCULATION OF PCPR
 C     *                         FOR IPCP=4 (REDUNDANT SINCE
@@ -41,7 +41,8 @@ C
 C     * INPUT ARRAYS.
 C
       REAL TA    (NL),  QA    (NL),  PRESSG(NL), 
-     1     PCPR  (NL),  RRATE (NL),  SRATE (NL)
+     1     PCPR  (NL),  RRATE (NL),  SRATE (NL),
+     2     VMOD  (NL)
 C
 C     * WORK ARRAYS.
 C
@@ -84,11 +85,16 @@ C
 C
 C     * DENSITY OF FRESH SNOW.
 C
+        select case(fsdm(q))
+         case(0) ! CLASS: Hedstrom & Pomeroy (1998); Pomeroy and Gray (1995)
           IF(TA(I).LE.TFREZ) THEN
               RHOSNI(I)=67.92+51.25*EXP((TA(I)-TFREZ)/2.59)
           ELSE
               RHOSNI(I)=MIN((119.17+20.0*(TA(I)-TFREZ)),200.0)
           ENDIF
+         case(1) ! Boone (2002); Crocus,HTESSEL,ISBA-ES]
+              RHOSNI(I)=MAX(109+6*(TA(I)-TFREZ)+26*VMOD(I)**(1/2),50.0)
+         end select
 C
 C     * PRECIPITATION PARTITIONING BETWEEN RAIN AND SNOW.
 C

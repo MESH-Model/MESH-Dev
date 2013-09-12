@@ -131,7 +131,8 @@
      6  AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, 
      7  CO2I2CS, SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG,
      8  AILC, PAIC, FIELDSM,  WILTSM, RMATCTEM, RMATC, NOL2PFTS,
-     9  ICTEMMOD, L2MAX, ICTEM)
+     9  ICTEMMOD, L2MAX, ICTEM,fetchROW,HtROW,N_SROW,A_SROW,DistribROW,
+     0  fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
 !> This subroutine is used to resume a mesh run by using the 
 !> variables that were saved from a previous run.
 !> The variables are reinitialized by reading the resume file.
@@ -226,7 +227,8 @@
      + ROFSROW, ROFBROW, ROFCROW, 
      + ROFNROW, ROVGROW, WTRCROW, 
      + WTRSROW, WTRGROW, WTABROW, 
-     + ILMOROW, UEROW, HBLROW, FSNOROW
+     + ILMOROW, UEROW, HBLROW, FSNOROW,
+     + fetchROW,HtROW,N_SROW,A_SROW,DistribROW
       
       INTEGER, DIMENSION(NA, NTYPE) ::
      + MIDROW, IGDRROW 
@@ -279,7 +281,8 @@
      +      WSNOGAT
       
       REAL, DIMENSION(ILG) :: ZSNLGAT, ZPLGGAT,
-     +      ZPLSGAT
+     +      ZPLSGAT,
+     +      fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT
 
       REAL, DIMENSION(ILG) :: TACGAT, QACGAT, DRNGAT,
      +  XSLPGAT, XDGAT, WFSFGAT, KSGAT, ALGWGAT,
@@ -1024,6 +1027,16 @@
       READ(10,*) T_ICE_LENS
       READ(10,*) NMELT
       READ(10,*) t0_ACC
+      READ(10,*) fetchROW
+      READ(10,*) HtROW
+      READ(10,*) N_SROW
+      READ(10,*) A_SROW
+      READ(10,*) DistribROW
+      READ(10,*) fetchGAT
+      READ(10,*) HtGAT
+      READ(10,*) N_SGAT
+      READ(10,*) A_SGAT
+      READ(10,*) DistribGAT
       IF (ICTEMMOD.EQ.1) THEN
           READ(10,*) AILCG
           READ(10,*) AILCGS

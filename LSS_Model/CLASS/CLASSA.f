@@ -26,7 +26,8 @@
      P                  AILCG,  AILCGS, FCANC,  FCANCS,
      Q                  IDAY,   ILG,    IL1,    IL2,    
      R                  JL,N,   IC,     ICP1,   IG,     IDISP,  IZREF,
-     S                  IWF,    IPAI,   IHGT,   IALC,   IALS,   IALG)
+     S                  IWF,    IPAI,   IHGT,   IALC,   IALS,   IALG,
+     T                  SPCPGAT,Sage)
 C
 C     * NOV 14/11 - M.LAZARE.   IMPLEMENT CTEM SUPPORT, PRIMARILY
 C     *                         INVOLVING ADDITIONAL FIELDS TO PASS
@@ -125,7 +126,7 @@ C
      D     RBCOEF(ILG),   TRSNOW(ILG),   ZSNOW (ILG),   WSNOW (ILG),
      E     ALVS  (ILG),   ALIR  (ILG),   HTCC  (ILG),   HTCS  (ILG),   
      F     WTRC  (ILG),   WTRS  (ILG),   WTRG  (ILG),   CMAI  (ILG),
-     G     FSNOW (ILG)
+     G     FSNOW (ILG),   Sage  (ILG)
 C
       REAL FROOT (ILG,IG),  HTC   (ILG,IG)
 C
@@ -146,7 +147,8 @@ C
      3     SNO   (ILG),   TSNOW (ILG),   RHOSNO(ILG),   ALBSNO(ILG),
      4     FCLOUD(ILG),   TA    (ILG),   VPD   (ILG),   RHOAIR(ILG),
      5     COSZS (ILG),   QSWINV(ILG),   DLON  (ILG),   ZBLEND(ILG),
-     6     SNOLIM(ILG),   ZPLMG0(ILG),   ZPLMS0(ILG),   RADJ  (ILG)
+     6     SNOLIM(ILG),   ZPLMG0(ILG),   ZPLMS0(ILG),   RADJ  (ILG),
+     1     SPCP(ILG)
 C
 C    * SOIL PROPERTY ARRAYS.
 C
@@ -208,11 +210,16 @@ C     * FSNOW; INITIALIZATION OF COMPUTATIONAL ARRAYS.
 C                                                                                  
       DO 100 I=IL1,IL2                                                            
           IF(SNO(I).GT.0.0) THEN                                              
-              ZSNOW(I)=SNO(I)/RHOSNO(I)                                       
+              ZSNOW(I)=SNO(I)/RHOSNO(I)              
               IF(ZSNOW(I).GE.(SNOLIM(I)-0.00001)) THEN                                     
                   FSNOW(I)=1.0                                                   
               ELSE                                                            
+               select case(scfm(q))
+                case(0) ! CLASS: linear
                   FSNOW(I)=ZSNOW(I)/SNOLIM(I)
+                case(1) ! tanh: Yang et al. (1997) in BATS; ECHAM4
+                  FSNOW(I)=MIN(tanh(ZSNOW(I)/SNOLIM(I)),1.)
+               end select
                   ZSNOW(I)=SNOLIM(I)
                   WSNOW(I)=WSNOW(I)/FSNOW(I)
               ENDIF                                                           
@@ -266,7 +273,8 @@ C     * SNOW ALBEDOS AND TRANSMISSIVITY.
 C 
       CALL SNOALBA(ALVSSN,ALIRSN,ALVSSC,ALIRSC,ALBSNO,TRSNOW,
      1             ZSNOW,FSNOW,ASVDAT,ASIDAT,
-     2             ILG,IG,IL1,IL2,JL,IALS)
+     2             ILG,IG,IL1,IL2,JL,IALS,COSZS,
+     3             RHOSNI,SPCP,TSNOW,Sage)
 C
 C     * BARE SOIL ALBEDOS.
 C

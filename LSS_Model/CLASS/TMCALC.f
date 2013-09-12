@@ -3,7 +3,8 @@
      2                  RUNOFF,TRUNOF,HMFG,HTC,HTCS,WTRS,WTRG,
      3                  FI,TBARW,GZERO,G12,G23,GGEO,TA,WSNOW,
      4                  TCTOP,TCBOT,GFLUX,ZPLIM,THPOR,THLMIN,HCPS,
-     5                  DELZW,DELZZ,DELZ,ISAND,IWF,IG,ILG,IL1,IL2,JL,N)
+     5                  DELZW,DELZZ,DELZ,ISAND,IWF,IG,ILG,IL1,IL2,JL,N,
+     6                  BI,PSISAT)
 C
 C     * FEB 22/08 - D.VERSEGHY. STREAMLINE SOME CALCULATIONS.
 C     * NOV 20/06 - D.VERSEGHY. ADD GEOTHERMAL HEAT FLUX.
@@ -88,7 +89,8 @@ C
 C     * SOIL INFORMATION ARRAYS.
 C
       REAL THPOR (ILG,IG),   THLMIN(ILG,IG),   HCPS  (ILG,IG),   
-     1     DELZW (ILG,IG),   DELZZ (ILG,IG),   DELZ  (IG)
+     1     DELZW (ILG,IG),   DELZZ (ILG,IG),   DELZ  (IG),
+     2     BI    (ILG,IG),   PSISAT(ILG,IG)
 C
       INTEGER                ISAND (ILG,IG)   
 C
@@ -96,7 +98,8 @@ C     * TEMPORARY VARIABLES.
 C
       REAL GFLUX (ILG,IG)
 C
-      REAL GP1,ZFREZ,HADD,HCONV,TTEST,TLIM,HEXCES,THFREZ,THMELT,G3B
+      REAL GP1,ZFREZ,HADD,HCONV,TTEST,TLIM,HEXCES,THFREZ,THMELT,G3B,
+     1     thliqmax
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -343,6 +346,23 @@ C
                       TBAR (I,J)=-HADD/(HCP(I,J)*DELZW(I,J)+HCPSND*
      1                           (DELZZ(I,J)-DELZW(I,J)))
                   ENDIF                                                               
+C
+              select case(ufcm(q))
+              case(1) ! freezing point depression
+                  thliqmax=THPOR(I,J)*(-114.3*TBAR(I,J)
+     1                          /PSISAT(I,J))**(-1/BI(I,J))
+                  if(THLIQ(I,J).gt.thliqmax) then
+                      HMFG(I,J)=HMFG(I,J)-FI(I)*(THLIQ(I,J)-thliqmax)*
+     1                          CLHMLT*RHOW*DELZW(I,J)/DELT
+                      HTC(I,J)=HTC(I,J)-FI(I)*(THLIQ(I,J)-thliqmax)*
+     1                          CLHMLT*RHOW*DELZW(I,J)/DELT
+                      THLIQ(I,J)=thliqmax
+                      THICE(I,J)=THICE(I,J)+(thliqmax-THLIQ(I,J))*
+     1                                       RHOW/RHOICE
+                      HCP(I,J)=HCPW*THLIQ(I,J)+HCPICE*THICE(I,J)+
+     1                           HCPS(I,J)*(1.-THPOR(I,J))
+                  endif
+              end select
               ENDIF
 C                                                                   
               IF(TBAR(I,J).GT.0. .AND. THICE(I,J).GT.0.)        THEN                           

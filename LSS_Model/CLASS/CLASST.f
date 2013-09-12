@@ -998,7 +998,7 @@ C
      1                    CDMX,CDHX,UWIND,VWIND,TPOTA,QA,
      2                    TSURX,QSURX,ZOM,ZOH,FG,ZRSLDM,
      3                    ZDSLM,ZDSLH,ILG,IL1,IL2,JL)
-          ELSEIF(ISLFD.EQ.2)                                        THEN      
+          ELSEIF(ISLFD.EQ.2)                                        THEN  ! from FLXSURFZ: ILMOX,HBLX,UEX,FTEMPX,FVAPX
               CALL DIASURFZ(SU,SV,ST,SQ,ILG,UWIND,VWIND,TSURX,QSURX,
      1                    ZOM,ZOH,ILMOX,ZRSLFM,HBLX,UEX,FTEMPX,FVAPX,
      2                    ZDSLM,ZDSLH,RADJ,FG,IL1,IL2,JL)

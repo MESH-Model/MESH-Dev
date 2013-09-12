@@ -41,8 +41,14 @@
      2                  UM1CS,     UM1C,      UM1G,      UM1GS, 
      3                  QM1CS,     QM1C,      QM1G,      QM1GS, 
      4                  QM2CS,     QM2C,      QM2G,      QM2GS,  UMQ,
-     5                  FSTRCS,    FSTRC,     FSTRG,    FSTRGS)
+     5                  FSTRCS,    FSTRC,     FSTRG,    FSTRGS,
+     6                  ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG,
+     7                  HCPSCS,HCPSGS,HCPSC,HCPSG,
+     8                  TSNOWC,TSNOWG,RHOSC,RHOSG,
+     9                  XSNOWC,XSNOWG,XSNOCS,XSNOGS))
 C                                                                        
+C     * SEP 04/13 - M.MACDONALD.ONLY PERFORM VANISHINGLY SMALL SNOW
+C                               CALCULATIONS IF PBSM NOT BEING USED (MESH OPTION)
 C     * DEC 09/11 - M.MEKONNEN. FOR PDMROF.
 C     * OCT 18/11 - M.LAZARE.   PASS IN IGDR THROUGH CALLS TO
 C     *                         GRDRAN/GRINFL (ORIGINATES NOW
@@ -380,7 +386,8 @@ C
           CALL SNOADD(ALBSCS,TSNOCS,RHOSCS,ZSNOCS,
      1                HCPSCS,HTCS,FCS,SPCCS,TSPCCS,RHOSNI,WSNOCS,
      2                ILG,IL1,IL2,JL)
-          IF(FROZENSOILINFILFLAG.GE.1)THEN
+          select case(im(q))
+          case(1) ! Gray & Zhao
              CALL SNINFLM(RPCCS,TRPCCS,ZSNOCS,TSNOCS,RHOSCS,HCPSCS,
      1                    WSNOCS,HTCS,HMFN,PCPG,ROFN,FCS,ILG,IL1,IL2,JL,
      2                    NCOUNT,RUNFCS,TRNFCS,OVRFLW,TOVRFL,
@@ -390,10 +397,10 @@ C
      5                    SNOWMELTD,SNOWMELTD_LAST,MELTRUNOFF,
      6                    SNOWINFIL,CUMSNOWINFILCS,FRZC,
      7                    FROZENSOILINFILFLAG,ZPNDCS,TPNDCS)
-          ELSE
+          case(0) ! CLASS: none
              CALL SNINFL(RPCCS,TRPCCS,ZSNOCS,TSNOCS,RHOSCS,HCPSCS,
      1                   WSNOCS,HTCS,HMFN,PCPG,ROFN,FCS,ILG,IL1,IL2,JL)
-          ENDIF
+          end select
           CALL GRINFL(1,THLQCS,THICCS,TBRWCS,BASFLW,TBASFL,RUNFCS,
      1                TRNFCS,ZFAV,LZFAV,THLINV,QFG,WLSTCS,
      2                FCS,EVPCSG,RPCCS,TRPCCS,TPNDCS,ZPNDCS,
@@ -438,7 +445,7 @@ C
      3                WTRS,WTRG,FCS,TBRWCS,GZROCS,G12CS,
      4                G23CS,GGEO,TA,WSNOCS,TCTOPC,TCBOTC,GFLXCS,
      5                ZPLMCS,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
-     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N)
+     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N,BI,PSISAT)
           CALL CHKWAT(1,PCPR,EVPICS,RUNFCS,WLSTCS,RAICNS,SNOCNS,
      1                RACS,SNCS,ZPNDCS,ZPOND,THLQCS,THICCS,
      2                THLIQC,THICEC,ZSNOCS,RHOSCS,XSNOCS,SNO,
@@ -468,7 +475,8 @@ C
           CALL SNOADD(ALBSGS,TSNOGS,RHOSGS,ZSNOGS,
      1                HCPSGS,HTCS,FGS,SPCGS,TSPCGS,RHOSNI,WSNOGS,
      2                ILG,IL1,IL2,JL)
-          IF(FROZENSOILINFILFLAG.GE.1)THEN
+          select case(im(q))
+          case(1) ! Gray & Zhao
              CALL SNINFLM(RPCGS,TRPCGS,ZSNOGS,TSNOGS,RHOSGS,HCPSGS,
      1                    WSNOGS,HTCS,HMFN,PCPG,ROFN,FGS,ILG,IL1,IL2,JL,
      2                    NCOUNT,RUNFGS,TRNFGS,OVRFLW,TOVRFL,
@@ -478,10 +486,10 @@ C
      5                    SNOWMELTD,SNOWMELTD_LAST,MELTRUNOFF,
      6                    SNOWINFIL,CUMSNOWINFILGS,FRZC,
      7                    FROZENSOILINFILFLAG,ZPNDGS,TPNDGS)
-          ELSE
+          case(0) ! CLASS: none
              CALL SNINFL(RPCGS,TRPCGS,ZSNOGS,TSNOGS,RHOSGS,HCPSGS,
      1                   WSNOGS,HTCS,HMFN,PCPG,ROFN,FGS,ILG,IL1,IL2,JL)
-          ENDIF
+          end select
           
           IF(NLANDI.NE.0)                                       THEN
               CALL ICEBAL(TBARGS,TPNDGS,ZPNDGS,TSNOGS,RHOSGS,ZSNOGS,
@@ -536,7 +544,7 @@ C
      3                WTRS,WTRG,FGS,TBRWGS,GZROGS,G12GS,
      4                G23GS,GGEO,TA,WSNOGS,TCTOPG,TCBOTG,GFLXGS,
      5                ZPLMGS,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
-     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N)
+     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N,BI,PSISAT)
           CALL CHKWAT(2,PCPR,EVPIGS,RUNFGS,WLSTGS,RAICNS,SNOCNS,
      1                RACS,SNCS,ZPNDGS,ZPOND,THLQGS,THICGS,
      2                THLIQG,THICEG,ZSNOGS,RHOSGS,XSNOGS,SNO,
@@ -620,7 +628,7 @@ C
      3                WTRS,WTRG,FC,TBARWC,GZEROC,G12C,
      4                G23C,GGEO,TA,ZERO,TCTOPC,TCBOTC,GFLXC,
      5                ZPLIMC,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
-     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N)
+     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N,BI,PSISAT)
           CALL CHKWAT(3,PCPR,EVPIC,RUNFC,WLOSTC,RAICAN,SNOCAN,
      1                RAC,SNC,ZPONDC,ZPOND,THLQCO,THICCO,
      2                THLIQC,THICEC,ZSNOWC,RHOSC,XSNOWC,SNO,
@@ -698,7 +706,7 @@ C
      3                WTRS,WTRG,FG,TBARWG,GZEROG,G12G,
      4                G23G,GGEO,TA,ZERO,TCTOPG,TCBOTG,GFLXG,
      5                ZPLIMG,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
-     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N)
+     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N,BI,PSISAT)
           CALL CHKWAT(4,PCPR,EVPIG,RUNFG,WLOSTG,RAICAN,SNOCAN,
      1                RAC,SNC,ZPONDG,ZPOND,THLQGO,THICGO,
      2                THLIQG,THICEG,ZSNOWG,RHOSG,XSNOWG,SNO,
@@ -837,6 +845,8 @@ C
               WSNOW(I)=FCS(I)*WSNOCS(I) + FGS(I)*WSNOGS(I) 
               SNO(I)=ZSNOW(I)*RHOSNO(I)                                       
               IF(SNO(I).LT.0.0) SNO(I)=0.0
+
+             IF (PBSMFLAG==0) THEN
               IF(SNO(I).LT.1.0E-2 .AND. SNO(I).GT.0.0) THEN
                   TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TSNOW(I)*(SNO(I)+
      1                WSNOW(I))/DELT)/(OVRFLW(I)+(SNO(I)+WSNOW(I))/
@@ -855,6 +865,7 @@ C
                   SNO(I)=0.0                            
                   WSNOW(I)=0.0
               ENDIF
+             ENDIF !PBSMFLAG=0
           ELSE                                                                
               TSNOW(I)=0.0                                                    
               RHOSNO(I)=0.0                                                   

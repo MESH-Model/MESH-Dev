@@ -159,8 +159,18 @@ C
           IF(ISAND(I,J).GT.-3)             THEN
               THLMAX(I,J)=MAX((THPOR(I,J)-THICE(I,J)-0.00001),
      1            THLIQ(I,J),THLMIN(I,J))                
+            select case(siim(q))
+             case(0) ! CLASS: Soulis and Seglenieks (2008)
               GRKSATF(I,J)=GRKSAT(I,J)*(1.0-MAX(0.0,MIN((THPOR(I,J)-
      1            THLMIN(I,J))/THPOR(I,J),THICE(I,J)/THPOR(I,J))))**2
+             case (1) ! linear (SHAW; Bloomsburg & Wang, 1969; Flerchinger & Saxton, 1989)
+              if ((THPOR(I,J)-THICE(I,J)).gt.0.13) then
+                    GRKSATF(I,J)=GRKSAT(I,J)*
+     1                            (THPOR(I,J)-THICE(I,J)-0.13)/
+     2                            (THPOR(I,J)-0.13)
+              else
+                    GRKSATF(I,J)=0.0
+             end select
               THPORF(I,J)=THLMAX(I,J)
           ELSE
               THLMAX(I,J)=0.0

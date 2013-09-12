@@ -1,6 +1,7 @@
       SUBROUTINE SNOALBA(ALVSSN,ALIRSN,ALVSSC,ALIRSC,ALBSNO,
      1                   TRSNOW,ZSNOW,FSNOW,ASVDAT,ASIDAT,
-     2                   ILG,IG,IL1,IL2,JL,IALS)
+     2                   ILG,IG,IL1,IL2,JL,IALS,COSZS,
+     3                   RHOSNI,SPCP,TSNOW,Sage)
 C
 C     * FEB 05/07 - D.VERSEGHY. STREAMLINE CALCULATIONS OF
 C     *                         ALVSSN AND ALIRSN.
@@ -42,11 +43,25 @@ C
 C     * INPUT ARRAYS.
 C
       REAL   ALBSNO(ILG),  ZSNOW (ILG),  FSNOW (ILG),
-     1       ASVDAT(ILG),  ASIDAT(ILG)
+     1       ASVDAT(ILG),  ASIDAT(ILG),  COSZS (ILG),
+     2       RHOSNI(ILG),  SPCP  (ILG),  TSNOW (ILG)
+C
+C     * TEMPORARY VARIABLES.
+C
+      REAL r1,fage,fcosz,xdiffus
+C
+C     * COMMON BLOCK PARAMETERS.
+C
+      REAL DELT,TFREZ,HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,SPHW,
+     1     SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,TCGLAC,CLHMLT,CLHVAP
+C                                                                                 
+      COMMON /CLASS1/ DELT,TFREZ
 C
 C------------------------------------------------------------------
       IPTBAD=0
       DO 100 I=IL1,IL2                                           
+       select case(sam(q))
+        case(0) ! CLASS: fresh, old & melting snow (Aguado, 1985; Robinson & Kuka, 1984; Dirmhirn & Eaton, 1975)
          IF(ALBSNO(I).LT.0.50.AND.ALBSNO(I).GT.0.499) ALBSNO(I)=0.50                      
          IF(FSNOW(I).GT.0.0 .AND. IALS.EQ.0)              THEN  
              IF(ALBSNO(I).GT.0.70)                    THEN
@@ -62,6 +77,30 @@ C------------------------------------------------------------------
              ALVSSN(I)=ASVDAT(I)
              ALIRSN(I)=ASIDAT(I)
          ENDIF                                                                   
+        case(1) ! efficient spectral (BATS [Dickinson et al., 1993]; CLM3,IAP94,Noah-MP,Jin et al. 1999)
+         IF(FSNOW(I).GT.0.0 .AND. IALS.EQ.0)              THEN
+          r1=min(exp(5000*(1/TFREZ - 1/TSNOW(I))), 1.)
+          Sage(I)=max((Sage(I) + 1e-6*(r1 + r1**10 + 0.3)*DELT)*
+     1               (1 - 0.1*RHOSNI(I)*SPCP(I)*DELT), 0.)
+          if (ZSNOW(I) == 0) Sage(I)=0.
+          fage = 1 - 1 / (1 + Sage(I))
+          fcosz = max((1-2*COSZS(I))/(1+2*COSZS(I)), 0.)
+          if(SPCP(I)>0.) then
+            xdiffus=1.0
+          else
+            xdiffus=max(0.0,min(1.0-0.9*COSZS(I),1.0))
+          endif
+          ALVSSN(I)= xdiffus*(1-0.2*fage)*0.95 + 
+     1             (1-xdiffus)*((1-0.2*fage)*0.95 +
+     2             0.4*fcosz*(1-(1-0.2*fage)*0.95))
+          ALIRSN(I)= xdiffus*(1-0.5*fage)*0.65 + 
+     1             (1-xdiffus)*((1-0.5*fage)*0.65 +
+     2             0.4*fcosz*(1-(1-0.5*fage)*0.65))
+          ELSE IF(FSNOW(I).GT.0.0 .AND. IALS.EQ.1)         THEN  
+             ALVSSN(I)=ASVDAT(I)
+             ALIRSN(I)=ASIDAT(I)
+         ENDIF
+        end select
          ALVSSC(I)=ALVSSN(I)
          ALIRSC(I)=ALIRSN(I)
          TRSNOW(I)=EXP(-25.0*ZSNOW(I))                                                 

@@ -241,6 +241,8 @@ C
      2                    TZERO,QZERO,H,ZOM,ZOH,
      3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL )
         ENDIF
+! MM: output from FLXSURFZ: CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,UE,H,LZZ0,LZZ0T,FM,FH (all back out to CLASST)
+! MM: used subsequently in TSOLVE: CFLUX (CTU in FLXSURFZ)
 C
 C     * REMAINING CALCULATIONS.
 C
