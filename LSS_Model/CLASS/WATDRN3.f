@@ -47,6 +47,8 @@ C
         ELSE IF (ASAT0(K) .GE. (BTC(JLMOS(K),M)-TOL)) THEN
             QHAT(M)=1.
         ELSE
+c  09/10/2013 R.Soulis simplifying coefficient for WATDRN3
+            DCOEFF(JLMOS(K),M)=6.0
             QHAT(M)=
      1  (ASAT0(K)-BCAP(JLMOS(K),M))
      2    /(BTC(JLMOS(K),M)-BCAP(JLMOS(K),M))
@@ -59,6 +61,9 @@ C
         ELSE IF (ASAT0(K) .GE. (1.-TOL)) THEN
             BFHAT(M)=1.
         ELSE
+c 09/10/2013 R.Soulis simplifying coefficient for WATDRN3
+c 6.2 is a place holder for C-H B 
+            BFCOEFF(JLMOS(K),M)=6.2+5.3
             BFHAT(M)=
      1  (ASAT0(K)-BFCAP(JLMOS(K),M))
      2    /(1.-BFCAP(JLMOS(K),M))
