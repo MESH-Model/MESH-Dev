@@ -1,5 +1,5 @@
       SUBROUTINE CWCALC(TCAN,RAICAN,SNOCAN,FRAINC,FSNOWC,CHCAP,
-     1                  HMFC,HTCC,FI,CMASS,ILG,IL1,IL2,JL) 
+     1                  HMFC,HTCC,FI,CMASS,ILG,IL1,IL2,JL,q) 
 C                                                                 
 C     * MAR 25/08 - D.VERSEGHY. UPDATE FRAINC AND FSNOWC.
 C     * SEP 24/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
@@ -21,21 +21,22 @@ C     *                         INTERCEPTED LIQUID/FROZEN
 C     *                         MOISTURE STORES FOR FREEZING/
 C     *                         THAWING.
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C                                       
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ILG,IL1,IL2,JL,I
+      INTEGER ILG,IL1,IL2,JL,I,q
 C
 C     * I/O ARRAYS.
 C
-      REAL TCAN  (ILG),    RAICAN(ILG),    SNOCAN(ILG),
+      REAL TCAN  (ILG),    RAICAN(ILG),    SNOCAN(ILG,Nmod),
      1     FRAINC(ILG),    FSNOWC(ILG),    CHCAP (ILG),    
      2     HMFC  (ILG),    HTCC  (ILG)
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG),    CMASS (ILG)
+      REAL FI    (ILG,Nmod),    CMASS (ILG)
 C
 C     * TEMPORARY VARIABLES.
 C
@@ -52,8 +53,8 @@ C
      2                TCGLAC,CLHMLT,CLHVAP
 C---------------------------------------------------------------------
       DO 100 I=IL1,IL2
-          IF(FI(I).GT.0.)                                        THEN
-              HTCC  (I)=HTCC(I)-FI(I)*TCAN(I)*CHCAP(I)/DELT
+          IF(FI(I,q).GT.0.)                                        THEN
+              HTCC  (I)=HTCC(I)-FI(I,q)*TCAN(I)*CHCAP(I)/DELT
               IF(RAICAN(I).GT.0. .AND. TCAN(I).LT.TFREZ)      THEN                                    
                   HFREZ=CHCAP(I)*(TFREZ-TCAN(I))                                                
                   HCONV=RAICAN(I)*CLHMLT                                                     
@@ -61,49 +62,49 @@ C---------------------------------------------------------------------
                      RCONV=HFREZ/CLHMLT                                                  
                      FSNOWC(I)=FSNOWC(I)+FRAINC(I)*RCONV/RAICAN(I)
                      FRAINC(I)=FRAINC(I)-FRAINC(I)*RCONV/RAICAN(I)
-                     SNOCAN(I)=SNOCAN(I)+RCONV                                                 
+                     SNOCAN(I,q)=SNOCAN(I,q)+RCONV                                                 
                      RAICAN(I)=RAICAN(I)-RCONV                                                 
                      TCAN  (I)=TFREZ                                                          
-                     HMFC  (I)=HMFC(I)-FI(I)*CLHMLT*RCONV/DELT
-                     HTCC  (I)=HTCC(I)-FI(I)*CLHMLT*RCONV/DELT
+                     HMFC  (I)=HMFC(I)-FI(I,q)*CLHMLT*RCONV/DELT
+                     HTCC  (I)=HTCC(I)-FI(I,q)*CLHMLT*RCONV/DELT
                   ELSE                                                                    
                      HCOOL=HFREZ-HCONV                                                   
-                     SNOCAN(I)=SNOCAN(I)+RAICAN(I)                                                
+                     SNOCAN(I,q)=SNOCAN(I,q)+RAICAN(I)                                                
                      FSNOWC(I)=FSNOWC(I)+FRAINC(I)
                      FRAINC(I)=0.0
                      TCAN  (I)=-HCOOL/(SPHVEG*CMASS(I)+SPHICE*
-     1                         SNOCAN(I))+TFREZ  
-                     HMFC  (I)=HMFC(I)-FI(I)*CLHMLT*RAICAN(I)/DELT
-                     HTCC  (I)=HTCC(I)-FI(I)*CLHMLT*RAICAN(I)/DELT
+     1                         SNOCAN(I,q))+TFREZ  
+                     HMFC  (I)=HMFC(I)-FI(I,q)*CLHMLT*RAICAN(I)/DELT
+                     HTCC  (I)=HTCC(I)-FI(I,q)*CLHMLT*RAICAN(I)/DELT
                      RAICAN(I)=0.0                                                          
                   ENDIF                                                                   
               ENDIF                                                                       
-              IF(SNOCAN(I).GT.0. .AND. TCAN(I).GT.TFREZ)        THEN 
+              IF(SNOCAN(I,q).GT.0. .AND. TCAN(I).GT.TFREZ)        THEN 
                   HMELT=CHCAP(I)*(TCAN(I)-TFREZ)                                                
-                  HCONV=SNOCAN(I)*CLHMLT                                                     
+                  HCONV=SNOCAN(I,q)*CLHMLT                                                     
                   IF(HMELT.LE.HCONV)                       THEN 
                      SCONV=HMELT/CLHMLT                                                  
-                     FRAINC(I)=FRAINC(I)+FSNOWC(I)*SCONV/SNOCAN(I)
-                     FSNOWC(I)=FSNOWC(I)-FSNOWC(I)*SCONV/SNOCAN(I)
-                     SNOCAN(I)=SNOCAN(I)-SCONV                                                 
+                     FRAINC(I)=FRAINC(I)+FSNOWC(I)*SCONV/SNOCAN(I,q)
+                     FSNOWC(I)=FSNOWC(I)-FSNOWC(I)*SCONV/SNOCAN(I,q)
+                     SNOCAN(I,q)=SNOCAN(I,q)-SCONV                                                 
                      RAICAN(I)=RAICAN(I)+SCONV                                                 
                      TCAN(I)=TFREZ                                                          
-                     HMFC  (I)=HMFC(I)+FI(I)*CLHMLT*SCONV/DELT
-                     HTCC  (I)=HTCC(I)+FI(I)*CLHMLT*SCONV/DELT
+                     HMFC  (I)=HMFC(I)+FI(I,q)*CLHMLT*SCONV/DELT
+                     HTCC  (I)=HTCC(I)+FI(I,q)*CLHMLT*SCONV/DELT
                   ELSE                                                                    
                      HWARM=HMELT-HCONV                                                   
-                     RAICAN(I)=RAICAN(I)+SNOCAN(I)                                                
+                     RAICAN(I)=RAICAN(I)+SNOCAN(I,q)                                                
                      FRAINC(I)=FRAINC(I)+FSNOWC(I)
                      FSNOWC(I)=0.0
                      TCAN(I)=HWARM/(SPHVEG*CMASS(I)+SPHW*RAICAN(I))+
      1                       TFREZ                         
-                     HMFC  (I)=HMFC(I)+FI(I)*CLHMLT*SNOCAN(I)/DELT
-                     HTCC  (I)=HTCC(I)+FI(I)*CLHMLT*SNOCAN(I)/DELT
-                     SNOCAN(I)=0.0                                                          
+                     HMFC  (I)=HMFC(I)+FI(I,q)*CLHMLT*SNOCAN(I,q)/DELT
+                     HTCC  (I)=HTCC(I)+FI(I,q)*CLHMLT*SNOCAN(I,q)/DELT
+                     SNOCAN(I,q)=0.0                                                          
                   ENDIF                                                                   
               ENDIF             
-              CHCAP(I)=SPHVEG*CMASS(I)+SPHW*RAICAN(I)+SPHICE*SNOCAN(I)
-              HTCC (I)=HTCC(I)+FI(I)*TCAN(I)*CHCAP(I)/DELT
+              CHCAP(I)=SPHVEG*CMASS(I)+SPHW*RAICAN(I)+SPHICE*SNOCAN(I,q)
+              HTCC (I)=HTCC(I)+FI(I,q)*TCAN(I)*CHCAP(I)/DELT
           ENDIF                                
   100 CONTINUE
 C                                                                                  

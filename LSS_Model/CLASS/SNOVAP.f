@@ -1,6 +1,6 @@
       SUBROUTINE SNOVAP(RHOSNO,ZSNOW,HCPSNO,TSNOW,EVAP,QFN,QFG,HTCS,
      1                  WLOST,TRUNOF,RUNOFF,TOVRFL,OVRFLW,
-     2                  FI,R,S,RHOSNI,WSNOW,ILG,IL1,IL2,JL)
+     2                  FI,R,S,RHOSNI,WSNOW,ILG,IL1,IL2,JL,q)
 C
 C     * AUG 25/11 - D.VERSEGHY. CORRECT CALCULATION OF TRUNOF
 C     *                         AND TOVRFL.
@@ -30,22 +30,23 @@ C     * AUG 12/91 - D.VERSEGHY. CODE FOR MODEL VERSION GCM7U -
 C     *                         CLASS VERSION 2.0 (WITH CANOPY).
 C     * APR 11/89 - D.VERSEGHY. SUBLIMATION FROM SNOWPACK.
 C                                          
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ILG,IL1,IL2,JL,I
+      INTEGER ILG,IL1,IL2,JL,I,q
 C
 C     * INPUT/OUTPUT ARRAYS.
 C
       REAL RHOSNO(ILG),   ZSNOW (ILG),   HCPSNO(ILG),   TSNOW (ILG), 
-     1     EVAP  (ILG),   QFN   (ILG),   QFG   (ILG),   HTCS  (ILG),
+     1     EVAP  (ILG),   QFN(ILG),   QFG(ILG),   HTCS(ILG),
      2     WLOST (ILG),   TRUNOF(ILG),   RUNOFF(ILG),   TOVRFL(ILG),
      3     OVRFLW(ILG)
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG),   R     (ILG),   S     (ILG),   RHOSNI(ILG),
+      REAL FI (ILG,Nmod),   R(ILG),   S (ILG),   RHOSNI(ILG,Nmod),
      1     WSNOW (ILG)   
 C
 C     * TEMPORARY VARIABLES.
@@ -63,13 +64,13 @@ C
      2                TCGLAC,CLHMLT,CLHVAP
 C-----------------------------------------------------------------------
       DO 100 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. (S(I).LT.1.0E-11 .OR. R(I).LT.1.0E-11)
+          IF(FI(I,q).GT.0. .AND. (S(I).LT.1.0E-11 .OR. R(I).LT.1.0E-11)
      1                .AND. ZSNOW(I).GT.0.)                       THEN
-              HTCS(I)=HTCS(I)-FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
+              HTCS(I)=HTCS(I)-FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
      1                ZSNOW(I)/DELT
               IF(EVAP(I).LT.0.)                             THEN 
-                  ZADD=-EVAP(I)*DELT*RHOW/RHOSNI(I)
-                  RHOSNO(I)=(ZSNOW(I)*RHOSNO(I)+ZADD*RHOSNI(I))/
+                  ZADD=-EVAP(I)*DELT*RHOW/RHOSNI(I,q)
+                  RHOSNO(I)=(ZSNOW(I)*RHOSNO(I)+ZADD*RHOSNI(I,q))/
      1                      (ZSNOW(I)+ZADD)                          
                   ZSNOW (I)=ZSNOW(I)+ZADD                                                        
                   HCPSNO(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
@@ -94,16 +95,16 @@ C-----------------------------------------------------------------------
                       RUNOFF(I)=RUNOFF(I)+WSNOW(I)/RHOW
                       IF(OVRFLW(I).GT.0. .OR. WSNOW(I).GT.0.)
      1                 TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+(TSNOW(I)+TFREZ)*
-     1                      FI(I)*WSNOW(I)/RHOW)/(OVRFLW(I)+FI(I)*
+     1                      FI(I,q)*WSNOW(I)/RHOW)/(OVRFLW(I)+FI(I,q)*
      2                      WSNOW(I)/RHOW)
-                      OVRFLW(I)=OVRFLW(I)+FI(I)*WSNOW(I)/RHOW
+                      OVRFLW(I)=OVRFLW(I)+FI(I,q)*WSNOW(I)/RHOW
                       TSNOW(I)=0.0 
                       WSNOW(I)=0.0
-                      QFN(I)=QFN(I)-FI(I)*ZREM*RHOW/DELT
-                      QFG(I)=QFG(I)+FI(I)*EVAP(I)*RHOW
+                      QFN(I)=QFN(I)-FI(I,q)*ZREM*RHOW/DELT
+                      QFG(I)=QFG(I)+FI(I,q)*EVAP(I)*RHOW
                   ENDIF                                                                   
               ENDIF 
-              HTCS(I)=HTCS(I)+FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
+              HTCS(I)=HTCS(I)+FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
      1                ZSNOW(I)/DELT
           ENDIF                                                                      
   100 CONTINUE

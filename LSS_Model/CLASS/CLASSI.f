@@ -1,7 +1,7 @@
       SUBROUTINE CLASSI(VPD,TADP,PADRY,RHOAIR,RHOSNI,
      1                  RPCP,TRPCP,SPCP,TSPCP,
      2                  TA,QA,PCPR,RRATE,SRATE,PRESSG,
-     3                  IPCP,NL,IL1,IL2,VMOD)
+     3                  IPCP,NL,IL1,IL2,VMOD,q)
 C
 C     * NOV 17/11 - M.LAZARE.   REMOVE CALCULATION OF PCPR
 C     *                         FOR IPCP=4 (REDUNDANT SINCE
@@ -26,16 +26,18 @@ C     * JUN 27/02 - D.VERSEGHY. ESTIMATE FRACTIONAL CLOUD COVER
 C     *                         AND RAINFALL/SNOWFALL RATES
 C     *                         IF NECESSARY.
 C
+      use MODELS, only : fsdm,Nmod
+C
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IPCP,NL,IL1,IL2,I
+      INTEGER IPCP,NL,IL1,IL2,I,q
 C
 C     * OUTPUT ARRAYS.
 C
       REAL VPD   (NL),  TADP  (NL),  PADRY (NL),  RHOAIR(NL),
-     1     RHOSNI(NL),  RPCP  (NL),  TRPCP (NL),  
+     1     RHOSNI(NL,Nmod),  RPCP  (NL),  TRPCP (NL),  
      2     SPCP  (NL),  TSPCP (NL)  
 C
 C     * INPUT ARRAYS.
@@ -88,12 +90,12 @@ C
         select case(fsdm(q))
          case(0) ! CLASS: Hedstrom & Pomeroy (1998); Pomeroy and Gray (1995)
           IF(TA(I).LE.TFREZ) THEN
-              RHOSNI(I)=67.92+51.25*EXP((TA(I)-TFREZ)/2.59)
+             RHOSNI(I,q)=67.92+51.25*EXP((TA(I)-TFREZ)/2.59)
           ELSE
-              RHOSNI(I)=MIN((119.17+20.0*(TA(I)-TFREZ)),200.0)
+             RHOSNI(I,q)=MIN((119.17+20.0*(TA(I)-TFREZ)),200.0)
           ENDIF
          case(1) ! Boone (2002); Crocus,HTESSEL,ISBA-ES]
-              RHOSNI(I)=MAX(109+6*(TA(I)-TFREZ)+26*VMOD(I)**(1/2),50.0)
+             RHOSNI(I,q)=MAX(109+6*(TA(I)-TFREZ)+26*VMOD(I)**(1/2),50.0)
          end select
 C
 C     * PRECIPITATION PARTITIONING BETWEEN RAIN AND SNOW.
@@ -108,7 +110,7 @@ C
                       RPCP (I)=PCPR(I)/RHOW                   
                       TRPCP(I)=MAX((TA(I)-TFREZ),0.0)                   
                   ELSE
-                      SPCP (I)=PCPR(I)/RHOSNI(I)
+                      SPCP (I)=PCPR(I)/RHOSNI(I,q)
                       TSPCP(I)=MIN((TA(I)-TFREZ),0.0)               
                   ENDIF
               ELSEIF(IPCP.EQ.2)                       THEN
@@ -121,7 +123,7 @@ C
                   ENDIF
                   RPCP(I)=(1.0-PHASE(I))*PCPR(I)/RHOW
                   IF(RPCP(I).GT.0.0) TRPCP(I)=MAX((TA(I)-TFREZ),0.0) 
-                  SPCP(I)=PHASE(I)*PCPR(I)/RHOSNI(I)
+                  SPCP(I)=PHASE(I)*PCPR(I)/RHOSNI(I,q)
                   IF(SPCP(I).GT.0.0) TSPCP(I)=MIN((TA(I)-TFREZ),0.0)
               ELSEIF(IPCP.EQ.3)                       THEN
                   IF(TA(I).LE.TFREZ) THEN
@@ -138,12 +140,12 @@ C
                   ENDIF
                   RPCP(I)=(1.0-PHASE(I))*PCPR(I)/RHOW
                   IF(RPCP(I).GT.0.0) TRPCP(I)=MAX((TA(I)-TFREZ),0.0) 
-                  SPCP(I)=PHASE(I)*PCPR(I)/RHOSNI(I)
+                  SPCP(I)=PHASE(I)*PCPR(I)/RHOSNI(I,q)
                   IF(SPCP(I).GT.0.0) TSPCP(I)=MIN((TA(I)-TFREZ),0.0)
               ELSEIF(IPCP.EQ.4)                       THEN
                   RPCP(I)=RRATE(I)/RHOW
                   IF(RPCP(I).GT.0.0) TRPCP(I)=MAX((TA(I)-TFREZ),0.0) 
-                  SPCP(I)=SRATE(I)/RHOSNI(I)
+                  SPCP(I)=SRATE(I)/RHOSNI(I,q)
                   IF(SPCP(I).GT.0.0) TSPCP(I)=MIN((TA(I)-TFREZ),0.0)
               ENDIF
           ENDIF

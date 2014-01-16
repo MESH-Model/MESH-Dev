@@ -69,7 +69,7 @@ C
 C
 C     * TEMPORARY VARIABLES.
 C
-      REAL GSNOLD,HADD,HCONV,WFREZ,DTS,TCZERO
+      REAL GSNOLD,HADD,HCONV,WFREZ,DT,TCZERO
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -84,13 +84,20 @@ C-----------------------------------------------------------------------
 C
       DO 100 I=IL1,IL2
           IF(FI(I,q).GT.0.)                                         THEN
-              GSNOLD=GCOEFFS(I)*TSURF(I)+GCONSTS(I)
-              TSNBOT(I)=(ZSNOW(I,q)*TSNOW(I)+DELZ(1)*TBAR(I,1,q))/
-     1             (ZSNOW(I,q)+DELZ(1))
-C              TSNBOT(I)=0.90*TSNOW(I)+0.10*TBAR(I,1)
-C              TSNBOT(I)=TSURF(I)-GSNOLD*ZSNOW(I)/(2.0*TCSNOW(I))
-              TSNBOT(I)=MIN(TSNBOT(I),TFREZ)
-              GZERO(I)=GCOEFF(I)*TSNBOT(I)+GCONST(I)
+              !MM GZERO(I)=GCOEFF(I)*TSNBOT(I)+GCONST(I)
+              IF(ZSNOW(I,q).GT.0.0) THEN !matt_new
+                  !TCZERO=2.0/(ZSNOW(I,q)/TCSNOW(I)+DELZ(1)/TCTOP(I,1)) !NEW JAN 14
+                  TCZERO=1.0/(0.5/TCSNOW(I)+0.5/TCTOP(I,1)) !matt_new
+              ELSE !matt_new
+                  TCZERO=TCTOP(I,1) !matt_new
+              ENDIF !matt_new
+              TCZERO=2/(ZSNOW(I,q)/TCSNOW(I)+DELZ(1)/TCTOP(I,1))
+              DT=(GSNOW(I)+TCZERO*(TBAR(I,1,q) - TSNOW(I)))*DELT/ !matt_new SHOULD THIS BE TBAR1P??
+     1            (HCPSNO(I)*ZSNOW(I,q) + 1*TCZERO*DELT) !matt_new
+              GZERO(I)=TCZERO*(TSNOW(I)+0.5*DT-TBAR(I,1,q)) !matt_new CHECK THIS MULTIPLY BY -1
+              !GZERO(I)=2*TCSNOW(I)*TCTOP(I,1)*(TBAR(I,1,q) - TSNOW(I))/
+!     1                 (TCTOP(I,1)*ZSNOW(I,q)+TCSNOW(I)*DELZ(1))  !SNOBAL CRASHES QUICKLY
+              !TSNOW(I)=TSNOW(I)+DTS !NEW JAN 13
               IF(QMELTG(I).LT.0.)                               THEN
                   GSNOW(I)=GSNOW(I)+QMELTG(I)                                                      
                   QMELTG(I)=0.                                                              
@@ -102,7 +109,7 @@ C              TSNBOT(I)=TSURF(I)-GSNOLD*ZSNOW(I)/(2.0*TCSNOW(I))
                   GSNOW(I)=GSNOW(I)-TSNOW(I)*HCPSNO(I)*ZSNOW(I,q)/DELT
                   TSNOW(I)=0.                                                               
               ENDIF                                                                       
-              GZERO(I)=GZERO(I)+QTRANS(I)
+              GZERO(I)=GZERO(I)+QTRANS(I) !-QTRANS(I) new 16 Jan/14
           ENDIF
   100 CONTINUE
 C 

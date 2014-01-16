@@ -6,7 +6,7 @@
      5                TUSED,RDUMMY,ZERO,WEXCES,XDRAIN,
      6                THPOR,THLRET,THLMIN,BI,PSISAT,GRKSAT,
      7                THFC,DELZW,ISAND,IGRN,IGRD,IGDR,IZERO,
-     8                IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     8                IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
 
 C     * OCT 18/11 - M.LAZARE.   PASS IN "IGDR" AS AN INPUT FIELD 
 C     *                         (ORIGINATING IN CLASSB) RATHER
@@ -53,11 +53,12 @@ C     *                         OF SOIL LAYERS AFTER INFILTRATION
 C     *                         AND EVALUATE FLOW ("RUNOFF") FROM
 C     *                         BOTTOM OF SOIL COLUMN.
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,N
+      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,N,q
 C
 C     * OUTPUT FIELDS.
 C
@@ -68,7 +69,7 @@ C
 C     * INPUT FIELDS.
 C
       REAL WMOVE (ILG,IGP2), TMOVE (ILG,IGP2), THLINF(ILG,IGP1),
-     1     FI    (ILG),      TRMDR (ILG),      DELZX (ILG,IGP1)
+     1     FI    (ILG,Nmod),      TRMDR (ILG),      DELZX (ILG,IGP1)
 C
       INTEGER                LZF   (ILG),      NINF  (ILG), 
      1                       IGRN  (ILG)    
@@ -148,7 +149,7 @@ C
      1            RDUMMY,RDUMMY,RDUMMY,RDUMMY,FI,ZERO,ZERO,ZERO,
      2            TUSED,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      3            BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,LZF,
-     4            IZERO,IGRD,IGDR,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     4            IZERO,IGRD,IGDR,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
 C
 C     * INITIALIZATION OF ARRAYS IN PREPARATION FOR RE-ALLOCATION OF
 C     * MOISTURE STORES WITHIN SOIL LAYERS; SUPPRESS WATER FLOWS 
@@ -270,19 +271,19 @@ C
           IF(IGRN(I).GT.0)                                        THEN
               IF(LZF(I).EQ.IGP1 .AND. K.LE.NINF(I) .AND. 
      1                THLINF(I,IGP1)*ZMAT(I,K,IGP1).GT.0.0)   THEN 
-                  TBASFL(I)=(TBASFL(I)*BASFLW(I)+FI(I)*(TMOVE(I,K)+
+                  TBASFL(I)=(TBASFL(I)*BASFLW(I)+FI(I,q)*(TMOVE(I,K)+
      1                TFREZ)*THLINF(I,IGP1)*ZMAT(I,K,IGP1))/(BASFLW(I)+
-     2                FI(I)*THLINF(I,IGP1)*ZMAT(I,K,IGP1))                
-                  BASFLW(I)=BASFLW(I)+FI(I)*THLINF(I,IGP1)*
+     2                FI(I,q)*THLINF(I,IGP1)*ZMAT(I,K,IGP1))                
+                  BASFLW(I)=BASFLW(I)+FI(I,q)*THLINF(I,IGP1)*
      1                      ZMAT(I,K,IGP1)
                   TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TMOVE(I,K)+TFREZ)*
      1                THLINF(I,IGP1)*ZMAT(I,K,IGP1))/(RUNOFF(I)+
      2                THLINF(I,IGP1)*ZMAT(I,K,IGP1))
                   RUNOFF(I)=RUNOFF(I)+THLINF(I,IGP1)*ZMAT(I,K,IGP1)
               ELSE IF(K.EQ.(IGDR(I)+1) .AND. FDT(I,K).GT.1.0E-8)  THEN
-                  TBASFL(I)=(TBASFL(I)*BASFLW(I)+FI(I)*(TFDT(I,K)+
-     1                TFREZ)*FDT(I,K))/(BASFLW(I)+FI(I)*FDT(I,K))
-                  BASFLW(I)=BASFLW(I)+FI(I)*FDT(I,K)
+                  TBASFL(I)=(TBASFL(I)*BASFLW(I)+FI(I,q)*(TFDT(I,K)+
+     1                TFREZ)*FDT(I,K))/(BASFLW(I)+FI(I,q)*FDT(I,K))
+                  BASFLW(I)=BASFLW(I)+FI(I,q)*FDT(I,K)
                   TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TFDT(I,K)+TFREZ)*
      1                FDT(I,K))/(RUNOFF(I)+FDT(I,K))
                   RUNOFF(I)=RUNOFF(I)+FDT(I,K)

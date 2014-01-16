@@ -79,10 +79,14 @@ C-----------------------------------------------------------------------
 C
       DO 100 I=IL1,IL2
           IF(FI(I,q).GT.0.)                                        THEN
-              GZROLD=GCOEFF(I)*TSURF(I)+GCONST(I)
-              G12(I)=(TSURF(I)-TBAR1P(I)-A1(I)*GZROLD)/B1(I)
-              G23(I)=(TSURF(I)-TBAR(I,2,q)-A2(I)*GZROLD-B2(I)*G12(I))/
-     1               C2(I)                                    
+              GZROLD=GZERO(I)!GCOEFF(I)*TSURF(I)+GCONST(I) MM: for linear e-bal soln
+              !G12(I)=(TSURF(I)-TBAR1P(I)-A1(I)*GZROLD)/B1(I)
+              !G23(I)=(TSURF(I)-TBAR(I,2,q)-A2(I)*GZROLD-B2(I)*G12(I))/
+!     1               C2(I)                                    
+              G12(I)=2/(DELZ(1)/TCBOT(I,1)+DELZ(2)/TCTOP(I,2))*
+     1               (TBAR(I,1,q)-TBAR(I,2,q))
+              G23(I)=2/(DELZ(2)/TCBOT(I,2)+DELZ(3)/TCTOP(I,3))*
+     1               (TBAR(I,2,q)-TBAR(I,3,q))
               IF(ZPOND(I,q).GT.0.)                                THEN 
                   DELZ1=DELZ(1)+ZPOND(I,q)
                   TPOND(I)=(GZROLD/TCTOP(I,1)-G12(I)/TCBOT(I,1))*

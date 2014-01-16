@@ -110,13 +110,13 @@
         READ(50,*) (cp%SANDROW(1,M,J),J=1,3) !soil layers
         READ(50,*) (cp%CLAYROW(1,M,J),J=1,3)
         READ(50,*) (cp%ORGMROW(1,M,J),J=1,3)
-        READ(50,*) (cp%TBARROW(1,M,J),J=1,3),
-     1                  cp%TCANROW(1,M),cp%TSNOROW(1,M),cp%TPNDROW(1,M)
-        READ(50,*) (cp%THLQROW(1,M,J),J=1,3),
-     1                  (cp%THICROW(1,M,J),J=1,3),cp%ZPNDROW(1,M)
+        READ(50,*) (cp%TBARROW(1,M,J,1),J=1,3),
+     1        cp%TCANROW(1,M,1),cp%TSNOROW(1,M,1),cp%TPNDROW(1,M,1)
+        READ(50,*) (cp%THLQROW(1,M,J,1),J=1,3),
+     1                  (cp%THICROW(1,M,J,1),J=1,3),cp%ZPNDROW(1,M,1)
         READ(50,*)
-     +                  cp%RCANROW(1,M),cp%SCANROW(1,M),cp%SNOROW(1,M),
-     1                  cp%ALBSROW(1,M),cp%RHOSROW(1,M),cp%GROROW(1,M)
+     +            cp%RCANROW(1,M,1),cp%SCANROW(1,M,1),cp%SNOROW(1,M,1),
+     1            cp%ALBSROW(1,M,1),cp%RHOSROW(1,M,1),cp%GROROW(1,M,1)
       ENDDO
 
 !todo - Document the !P variables better. Ignore for now.

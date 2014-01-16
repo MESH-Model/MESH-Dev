@@ -1,6 +1,6 @@
       SUBROUTINE SNOALBW(ALBSNO,RHOSNO,ZSNOW,HCPSNO,TSNOW,
      1                   FI,S,RMELT,WSNOW,RHOMAX,ISAND,
-     2                   ILG,IG,IL1,IL2,JL)       
+     2                   ILG,IG,IL1,IL2,JL,q)       
 C
 C     * MAR 07/07 - D.VERSEGHY. STREAMLINE SOME CALCULATIONS.
 C     * MAR 24/06 - D.VERSEGHY. ALLOW FOR PRESENCE OF WATER IN SNOW.
@@ -37,11 +37,13 @@ C     *                         AGING. (ASSIGN DIFFERENT LOWER
 C     *                         SNOW ALBEDO LIMITS FOR DRY AND
 C     *                         MELTING SNOW.)
 C                                                                                 
+      use MODELS, only : scm,Nmod
+C
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ILG,IG,IL1,IL2,JL,I,IPTBAD
+      INTEGER ILG,IG,IL1,IL2,JL,I,IPTBAD,q
 C                                                                                 
 C     * OUTPUT ARRAYS.                                                            
 C                                                                                 
@@ -49,7 +51,7 @@ C
 C                                                                                 
 C     * INPUT ARRAYS.                                                             
 C                                                                                 
-      REAL TSNOW (ILG),   FI    (ILG),   S     (ILG),   RMELT (ILG),
+      REAL TSNOW (ILG),   FI    (ILG,Nmod),   S     (ILG),  RMELT (ILG),
      1     WSNOW (ILG)
 C 
       INTEGER             ISAND (ILG,IG)
@@ -75,7 +77,7 @@ C----------------------------------------------------------------------
       IPTBAD=0                                                                    
       DO 100 I=IL1,IL2  
           IF(ZSNOW(I).GT.0. .AND. 
-     1            FI  (I).GT.0. .AND. S(I).LT.1.0E-6)             THEN
+     1            FI  (I,q).GT.0. .AND. S(I).LT.1.0E-6)             THEN
               IF(ALBSNO(I).GT.0.5001 .AND. (RMELT(I).GT.1.0E-7 .OR.
      1                TSNOW(I).GE.-0.01)) THEN
                   ALBSNO(I)=(ALBSNO(I)-0.50)*EXP(-0.01*DELT/3600.0)+
@@ -87,7 +89,7 @@ C----------------------------------------------------------------------
               ENDIF                                                           
           ENDIF
 C                                                       
-          IF(FI(I).GT.0. .AND. ZSNOW(I).GT.0.0001)                THEN
+          IF(FI(I,q).GT.0. .AND. ZSNOW(I).GT.0.0001)                THEN
               IF(TSNOW(I).LT.-0.01)                   THEN
                   RHOMAX(I)=450.0-(204.7/ZSNOW(I))*
      1                (1.0-EXP(-ZSNOW(I)/0.673))
@@ -97,7 +99,7 @@ C
               ENDIF
           ENDIF
 C
-          IF(FI(I).GT.0. .AND. ZSNOW(I).GT.0.0001 .AND. 
+          IF(FI(I,q).GT.0. .AND. ZSNOW(I).GT.0.0001 .AND. 
      1       RHOSNO(I).LT.(RHOMAX(I)-0.01))                       THEN
               RHOOLD=RHOSNO(I)                                                       
             select case(scm(q))
@@ -115,7 +117,7 @@ C
      1            (RHOW*ZSNOW(I))
           ENDIF
           IF((ALBSNO(I).LT.0.49 .OR. ALBSNO(I).GT.1.0) .AND. 
-     1       ZSNOW (I).GT.0. .AND. FI(I).GT.0.)               IPTBAD=I
+     1       ZSNOW (I).GT.0. .AND. FI(I,q).GT.0.)               IPTBAD=I
   100 CONTINUE                                                                    
 C
       IF(IPTBAD.NE.0) THEN                                                        

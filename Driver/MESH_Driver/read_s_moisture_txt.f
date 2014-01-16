@@ -1,6 +1,7 @@
       SUBROUTINE READ_S_MOISTURE_TXT(
      + IGND, YCOUNT, XCOUNT, na, NTYPE,
      + YYY, XXX, THLQROW )
+      use MODELS, only : Nmod
 !> local variables
       INTEGER :: i,j,k,M,s_ios
       REAL*4, ALLOCATABLE, DIMENSION(:,:,:) :: valuem
@@ -8,7 +9,7 @@
       INTEGER :: IGND,YCOUNT,XCOUNT
       integer*4 :: na,NTYPE
       integer*4 :: YYY(NA),XXX(NA)
-      REAL :: THLQROW(NA, NTYPE, IGND)
+      REAL :: THLQROW(NA, NTYPE, IGND,Nmod)
 
 !> SOIL MOISTURE
 
@@ -30,7 +31,7 @@
         DO I=1,NA     !> number of cells
           DO M=1,NMTEST   !> number of classes
             DO J=1,IGND   !> soil layers
-              THLQROW(I,M,J)= valuem(YYY(I),XXX(I),J)
+              THLQROW(I,M,J,1)= valuem(YYY(I),XXX(I),J)
             ENDDO
           ENDDO
         ENDDO

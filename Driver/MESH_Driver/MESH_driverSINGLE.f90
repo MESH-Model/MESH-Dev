@@ -204,7 +204,7 @@ REAL DEGLAT,DEGLON,FSDOWN1,FSDOWN2,FSDOWN3,RDAY, &
      ALTOT,FSSTAR,FLSTAR,SNOMLT,TCN,TSN,TPN,GTOUT
 INTEGER JLAT
 !> MM: for ensemble output
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: QH,QE,BEG,ZSN,ROF,QSTR,SCF,SW,SNOWPACK
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: QH,QE,BEG,ZSN,ROF,QSTR,SCF,SW
 real shart
 
 REAL, DIMENSION(:), ALLOCATABLE :: FSDOWN,FSDOWNPRE,FSDOWNPST
@@ -1002,7 +1002,7 @@ ALLOCATE (WF_NHYD(NA), WF_QR(NA), &
 !> MM: allocate variables for ensemble output
 ALLOCATE (QH(NA,NTYPE,Nmod),QE(NA,NTYPE,Nmod),BEG(NA,NTYPE,Nmod), &
   ZSN(NA,NTYPE,Nmod),ROF(NA,NTYPE,Nmod),QSTR(NA,NTYPE,Nmod), &
-  SCF(NA,NTYPE,Nmod),SW(NA,NTYPE,Nmod),SNOWPACK(NA,NTYPE,Nmod))
+  SCF(NA,NTYPE,Nmod),SW(NA,NTYPE,Nmod))
 
 !> ANDY * Zero everything we just allocated
 DO I=1,NA
@@ -3205,6 +3205,7 @@ IF(INTERPOLATIONFLAG == 1)THEN
     ULGAT      = ULGATPRE     + TRATIO *(ULGATPST     - ULGATPRE)
     PRESGAT    = PRESGATPRE   + TRATIO *(PRESGATPST   - PRESGATPRE)
     QAGAT      = QAGATPRE     + TRATIO *(QAGATPST     - QAGATPRE)
+ENDIF
 
 !> INTERPOLATE GRD VARIABLES
     FSVHGRD = 0.0
@@ -3215,7 +3216,7 @@ IF(INTERPOLATIONFLAG == 1)THEN
     QAGRD   = 0.0
     PRESGRD = 0.0
     PREGRD  = 0.0
-    
+
     K = 0
     DO I = 1, NA
        DO J = 1, NTYPE
@@ -3326,7 +3327,7 @@ ELSE
 !> *********************************************************************
 !> Start of calls to CLASS subroutines
 !> *********************************************************************
-do q = 1,Nmod
+do q = 1,1 !1,Nmod
 CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT, &
              TCANGAT,RCANGAT,SCANGAT,GROGAT, FRZCGAT, CMAIGAT, &
@@ -3823,7 +3824,6 @@ DO I=1,NA
     SNOMLT=HMFNROW(I,M)
     SW(I,M,q)=1000*(0.1*cp%THLQROW(I,M,1,q)+0.25*cp%THLQROW(I,M,2,q)) &
              + 917*(0.1*cp%THICROW(I,M,1,q)+0.25*cp%THICROW(I,M,2,q))
-    SNOWPACK(I,M,q)=cp%SNOROW(I,M,q)+WSNOROW(I,M,q)
 
     IF(cp%RHOSROW(I,M,q)>0.0) THEN
       ZSN(I,M,q)=cp%SNOROW(I,M,q)/cp%RHOSROW(I,M,q)
@@ -4803,7 +4803,7 @@ DO I=1,NA
   DO K=1, WF_NUM_POINTS
    IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
     write(250+k*10+1,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-                   '4096(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(SNOWPACK(I,M,q),q=1,Nmod)
+                   '8192(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(cp%SNOROW(I,M,q),q=1,Nmod)
 !mm    write(250+k*10+2,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
 !mm                   '8192(F8.3,","))') (ZSN(q),q=1,Nmod)
 !mm    write(250+k*10+3,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
@@ -4817,7 +4817,7 @@ DO I=1,NA
 !mm    write(250+k*10+7,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
 !mm                   '8192(F8.2,","))') (QH(q),q=1,Nmod)
     write(250+k*10+2,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-                   '4096(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(QE(I,M,q),q=1,Nmod)
+                   '8192(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(QE(I,M,q),q=1,Nmod)
 !mm    write(250+k*10+9,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
 !mm                   '8192(F15.9,","))') (DriftROW(I,M,q),q=1,Nmod)
 !mm    write(250+k*10+10,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
@@ -4835,7 +4835,7 @@ DO I=1,NA
 !mm    write(250+k*10+16,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
 !mm                   '8192(F6.3,","))') (cp%THLQROW(I,M,3,q),q=1,Nmod)
     write(250+k*10+3,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-                   '4096(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(SW(I,M,q),q=1,Nmod)
+                   '8192(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(SW(I,M,q),q=1,Nmod)
     
    ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
   ENDDO !DO K=1, WF_NUM_POINTS

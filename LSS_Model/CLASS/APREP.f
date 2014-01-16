@@ -16,7 +16,7 @@
      F            RRESID,SRESID,FRTOT,
      G            FCANCMX,ICTEM,ICTEMMOD,RMATC,
      H            AILC,PAIC,AILCG,L2MAX,NOL2PFTS,
-     I            AILCGS,FCANCS,FCANC)
+     I            AILCGS,FCANCS,FCANC,q)
 C
 C     * NOV 15/11 - M.LAZARE.   CTEM ADDED. CALCULATIONS ARE DIFFERENT
 C     *                         IN SEVERAL AREAS, UNDER CONTROL OF
@@ -122,27 +122,32 @@ C     *                                  FOR MODEL VERSION GCM7.
 C     * AUG 12/91 - D.VERSEGHY. CALCULATION OF LAND SURFACE CANOPY 
 C     *                         PARAMETERS.
 C
+      use MODELS, only : zmsm,Nmod
+C
       IMPLICIT NONE
 C                                                                                 
 C     * INTEGER CONSTANTS.
 C
       INTEGER ILG,IL1,IL2,JL,IC,ICP1,IG,IDAY,IDISP,IZREF,IWF,
-     1        IPAI,IHGT,I,J,K,IN,NL
+     1        IPAI,IHGT,I,J,K,IN,NL,q
 C                                                                                 
 C     * OUTPUT ARRAYS USED ELSEWHERE IN CLASS.                                    
 C                                                                                 
-      REAL FC    (ILG),   FG    (ILG),   FCS   (ILG),   FGS   (ILG),          
-     1     PAICAN(ILG),   PAICNS(ILG),   FSVF  (ILG),   FSVFS (ILG),   
-     2     FRAINC(ILG),   FSNOWC(ILG),   FRAICS(ILG),   FSNOCS(ILG),
-     3     RAICAN(ILG),   RAICNS(ILG),   SNOCAN(ILG),   SNOCNS(ILG),   
-     4     DISP  (ILG),   DISPS (ILG),  
-     5     ZOMLNC(ILG),   ZOMLCS(ILG),   ZOELNC(ILG),   ZOELCS(ILG),          
-     6     ZOMLNG(ILG),   ZOMLNS(ILG),   ZOELNG(ILG),   ZOELNS(ILG),          
-     7     RBCOEF(ILG),   CHCAP (ILG),   CHCAPS(ILG),   
-     8     CMASSC(ILG),   CMASCS(ILG),   CWLCAP(ILG),   CWFCAP(ILG),   
-     9     CWLCPS(ILG),   CWFCPS(ILG),   ZPLIMC(ILG),   ZPLIMG(ILG),   
-     A     ZPLMCS(ILG),   ZPLMGS(ILG),   HTCC  (ILG),   HTCS  (ILG),   
-     B     WTRC  (ILG),   WTRS  (ILG),   WTRG  (ILG),   CMAI  (ILG)  
+      REAL FC    (ILG,Nmod),   FG    (ILG,Nmod),   FCS   (ILG,Nmod),   
+     +     FGS   (ILG,Nmod),   PAICAN(ILG),   PAICNS(ILG),   
+     +     FSVF  (ILG),   FSVFS (ILG),   FRAINC(ILG),   
+     +     FSNOWC(ILG),   FRAICS(ILG),   FSNOCS(ILG),
+     3     RAICAN(ILG),   RAICNS(ILG),   SNOCAN(ILG,Nmod),
+     4     SNOCNS(ILG,Nmod),   DISP  (ILG),   DISPS (ILG),  
+     5     ZOMLNC(ILG),   ZOMLCS(ILG),   ZOELNC(ILG),   
+     +     ZOELCS(ILG),   ZOMLNG(ILG),   ZOMLNS(ILG),   
+     +     ZOELNG(ILG),   ZOELNS(ILG),   RBCOEF(ILG),
+     7     CHCAP (ILG),   CHCAPS(ILG),   CMASSC(ILG),   
+     +     CMASCS(ILG),   CWLCAP(ILG),   CWFCAP(ILG),   
+     9     CWLCPS(ILG),   CWFCPS(ILG),   ZPLIMC(ILG),   
+     +     ZPLIMG(ILG),   ZPLMCS(ILG),   ZPLMGS(ILG),   
+     +     HTCC  (ILG),   HTCS  (ILG),   WTRC  (ILG),   
+     +     WTRS  (ILG),   WTRG  (ILG),   CMAI  (ILG)  
 C                                                                                 
       REAL FROOT (ILG,IG),  HTC   (ILG,IG)
 C                                                                                 
@@ -156,13 +161,13 @@ C
       REAL FCANMX(ILG,ICP1),                 ZOLN  (ILG,ICP1),                    
      1     PAIMAX(ILG,IC),  PAIMIN(ILG,IC),  CWGTMX(ILG,IC),                      
      2     ZRTMAX(ILG,IC),  PAIDAT(ILG,IC),  HGTDAT(ILG,IC),
-     3     THLIQ (ILG,IG),  THICE (ILG,IG),  TBAR  (ILG,IG) 
+     3     THLIQ (ILG,IG,Nmod),  THICE (ILG,IG,Nmod),  TBAR(ILG,IG,Nmod) 
 C                                                                                 
-      REAL RCAN  (ILG),     SNCAN (ILG),     TCAN  (ILG),     
-     1     GROWTH(ILG),     ZSNOW (ILG),     TSNOW (ILG),          
-     2     FSNOW (ILG),     RHOSNO(ILG),     SNO   (ILG),     
+      REAL RCAN  (ILG,Nmod),     SNCAN (ILG,Nmod),     TCAN  (ILG,Nmod),     
+     1     GROWTH(ILG,Nmod),     ZSNOW (ILG,Nmod),     TSNOW (ILG,Nmod),          
+     2     FSNOW (ILG),     RHOSNO(ILG,Nmod),     SNO   (ILG,Nmod),     
      3     TA    (ILG),     RHOAIR(ILG),     DLON  (ILG),
-     4     Z0ORO (ILG),     ZBLEND(ILG),     RHOSNI(ILG),
+     4     Z0ORO (ILG),     ZBLEND(ILG),     RHOSNI(ILG,Nmod),
      5     ZPLMG0(ILG),     ZPLMS0(ILG),     RADJ  (ILG)
 C
 C     * SOIL PROPERTY ARRAYS.                                     
@@ -301,11 +306,11 @@ C     * AND FOR SNOW COVER FOR CROPS AND GRASS; CALCULATE CURRENT
 C     * LEAF AREA INDEX FOR FOUR VEGETATION TYPES.
 C
       DO 150 I=IL1,IL2                                                            
-          GROWN(I)=ABS(GROWTH(I))                                                 
-          IF(GROWTH(I).GT.0.0)                      THEN                          
-              GROWB(I)=MIN(1.0,GROWTH(I)*2.0)                                   
+          GROWN(I)=ABS(GROWTH(I,q))                                                 
+          IF(GROWTH(I,q).GT.0.0)                      THEN                          
+              GROWB(I)=MIN(1.0,GROWTH(I,q)*2.0)                                   
           ELSE                                                                    
-              GROWB(I)=MAX(0.0,(ABS(GROWTH(I))*2.0-1.0))                        
+              GROWB(I)=MAX(0.0,(ABS(GROWTH(I,q))*2.0-1.0))                        
           ENDIF                                                                   
           GROWG=1.0                                                               
 C                                                                                 
@@ -322,8 +327,8 @@ C
           ENDIF
           HS(I,1)=H(I,1)                                                          
           HS(I,2)=H(I,2)                                                          
-          HS(I,3)=MAX(H(I,3)-ZSNOW(I),1.0E-3)                                       
-          HS(I,4)=MAX(H(I,4)-ZSNOW(I),1.0E-3)                                       
+          HS(I,3)=MAX(H(I,3)-ZSNOW(I,q),1.0E-3)                                       
+          HS(I,4)=MAX(H(I,4)-ZSNOW(I,q),1.0E-3)                                       
 C                 
           IF (ICTEMMOD.EQ.0) THEN                                                                
             IF(IPAI.EQ.0) THEN
@@ -428,43 +433,43 @@ C
           IF(FCANS(I,3).LT.1.0E-5) FCANS(I,3)=0.0
           IF(FCANS(I,4).LT.1.0E-5) FCANS(I,4)=0.0
 C                                                                                 
-          FC (I)=FCAN(I,1)+FCAN(I,2)+FCAN(I,3)+FCAN(I,4)                
-          FG (I)=1.0-FSNOW(I)-FC(I)                                     
-          FCS(I)=FCANS(I,1)+FCANS(I,2)+FCANS(I,3)+FCANS(I,4)            
-          FGS(I)=FSNOW(I)-FCS(I)                                        
-          IF(ABS(1.0-FCS(I)-FC(I)).LT.8.0E-5) THEN
-              IF(FCS(I).LT.1.0E-5) THEN
+          FC (I,q)=FCAN(I,1)+FCAN(I,2)+FCAN(I,3)+FCAN(I,4)                
+          FG (I,q)=1.0-FSNOW(I)-FC(I,q)                                     
+          FCS(I,q)=FCANS(I,1)+FCANS(I,2)+FCANS(I,3)+FCANS(I,4)            
+          FGS(I,q)=FSNOW(I)-FCS(I,q)                                        
+          IF(ABS(1.0-FCS(I,q)-FC(I,q)).LT.8.0E-5) THEN
+              IF(FCS(I,q).LT.1.0E-5) THEN
                 FSNOW (I)=0.0 
-              ELSE IF (FC(I).LT.1.0E-5) THEN
+              ELSE IF (FC(I,q).LT.1.0E-5) THEN
                 FSNOW(I)= 1.0  
               ENDIF
-              IF(FCS(I).GT.0.) THEN
-                FCANS(I,1)=FCANS(I,1)*FSNOW(I)/FCS(I)
-                FCANS(I,2)=FCANS(I,2)*FSNOW(I)/FCS(I)
-                FCANS(I,3)=FCANS(I,3)*FSNOW(I)/FCS(I)
-                FCANS(I,4)=FCANS(I,4)*FSNOW(I)/FCS(I)
+              IF(FCS(I,q).GT.0.) THEN
+                FCANS(I,1)=FCANS(I,1)*FSNOW(I)/FCS(I,q)
+                FCANS(I,2)=FCANS(I,2)*FSNOW(I)/FCS(I,q)
+                FCANS(I,3)=FCANS(I,3)*FSNOW(I)/FCS(I,q)
+                FCANS(I,4)=FCANS(I,4)*FSNOW(I)/FCS(I,q)
               ENDIF
-              IF(FC(I).GT.0.) THEN
-                FCAN(I,1)=FCAN(I,1)*(1.0-FSNOW(I))/FC(I)
-                FCAN(I,2)=FCAN(I,2)*(1.0-FSNOW(I))/FC(I)
-                FCAN(I,3)=FCAN(I,3)*(1.0-FSNOW(I))/FC(I)
-                FCAN(I,4)=FCAN(I,4)*(1.0-FSNOW(I))/FC(I)
+              IF(FC(I,q).GT.0.) THEN
+                FCAN(I,1)=FCAN(I,1)*(1.0-FSNOW(I))/FC(I,q)
+                FCAN(I,2)=FCAN(I,2)*(1.0-FSNOW(I))/FC(I,q)
+                FCAN(I,3)=FCAN(I,3)*(1.0-FSNOW(I))/FC(I,q)
+                FCAN(I,4)=FCAN(I,4)*(1.0-FSNOW(I))/FC(I,q)
               ENDIF
-              FCS(I)=MIN(FSNOW(I),1.0)
-              FC(I)=1.0-FCS(I)
-              FGS(I)=0.0
-              FG(I)=0.0
+              FCS(I,q)=MIN(FSNOW(I),1.0)
+              FC(I,q)=1.0-FCS(I,q)
+              FGS(I,q)=0.0
+              FG(I,q)=0.0
           ENDIF
-          FC (I)=MAX(FC (I),0.0)
-          FG (I)=MAX(FG (I),0.0)
-          FCS(I)=MAX(FCS(I),0.0)
-          FGS(I)=MAX(FGS(I),0.0)
-          FSUM=(FCS(I)+FGS(I)+FC(I)+FG(I))
-          FC (I)=FC (I)/FSUM
-          FG (I)=FG (I)/FSUM
-          FCS(I)=FCS(I)/FSUM
-          FGS(I)=FGS(I)/FSUM
-          IF(ABS(1.0-FCS(I)-FGS(I)-FC(I)-FG(I)).GT.1.0E-5) 
+          FC (I,q)=MAX(FC (I,q),0.0)
+          FG (I,q)=MAX(FG (I,q),0.0)
+          FCS(I,q)=MAX(FCS(I,q),0.0)
+          FGS(I,q)=MAX(FGS(I,q),0.0)
+          FSUM=(FCS(I,q)+FGS(I,q)+FC(I,q)+FG(I,q))
+          FC (I,q)=FC (I,q)/FSUM
+          FG (I,q)=FG (I,q)/FSUM
+          FCS(I,q)=FCS(I,q)/FSUM
+          FGS(I,q)=FGS(I,q)/FSUM
+          IF(ABS(1.0-FCS(I,q)-FGS(I,q)-FC(I,q)-FG(I,q)).GT.1.0E-5) 
      1                                   CALL XIT('APREP',-1)
 C
           IF(IWF.EQ.0) THEN
@@ -475,24 +480,24 @@ C
               ELSE
                   ZPLIMG(I)=0.002
               ENDIF
-              IF(FGS(I).GT.0.0) THEN
+              IF(FGS(I,q).GT.0.0) THEN
                   ZPLMGS(I)=(ZPLIMG(I)*FSNOW(I)*(1.0-FCANMX(I,1)-
      1                      FCANMX(I,2)-FCANMX(I,3)-FCANMX(I,4))+
      2                      ZPLIMG(I)*(FSNOW(I)*FCANMX(I,3)-
      3                      FCANS(I,3))+0.003*(FSNOW(I)*FCANMX(I,4)-
-     4                      FCANS(I,4)))/FGS(I)
+     4                      FCANS(I,4)))/FGS(I,q)
               ELSE
                   ZPLMGS(I)=0.0
               ENDIF
-              IF(FC(I).GT.0.0) THEN
+              IF(FC(I,q).GT.0.0) THEN
                   ZPLIMC(I)=(0.01*(FCAN(I,1)+FCAN(I,2))+0.003*
-     1                      (FCAN(I,3)+FCAN(I,4)))/FC(I)
+     1                      (FCAN(I,3)+FCAN(I,4)))/FC(I,q)
               ELSE
                   ZPLIMC(I)=0.0
               ENDIF
-              IF(FCS(I).GT.0.0) THEN
+              IF(FCS(I,q).GT.0.0) THEN
                   ZPLMCS(I)=(0.01*(FCANS(I,1)+FCANS(I,2))+0.003*
-     1                      (FCANS(I,3)+FCANS(I,4)))/FCS(I)
+     1                      (FCANS(I,3)+FCANS(I,4)))/FCS(I,q)
               ELSE
                   ZPLMCS(I)=0.0
               ENDIF
@@ -512,16 +517,16 @@ C     * RELATIVE FRACTIONS OF LIQUID AND FROZEN INTERCEPTED
 C     * MOISTURE ON CANOPY.
 C                                                                                 
       DO 200 I=IL1,IL2                                                            
-          IF(FC(I).GT.0.)                                     THEN                
+          IF(FC(I,q).GT.0.)                                     THEN                
               PAICAN(I)=(FCAN(I,1)*PAI(I,1)+FCAN(I,2)*PAI(I,2)+                   
-     1                   FCAN(I,3)*PAI(I,3)+FCAN(I,4)*PAI(I,4))/FC(I)             
+     1                FCAN(I,3)*PAI(I,3)+FCAN(I,4)*PAI(I,4))/FC(I,q)             
           ELSE                                                                    
               PAICAN(I)=0.0                                                       
           ENDIF                                                                   
-          IF(FCS(I).GT.0.)                                    THEN                
-              PAICNS(I)=(FCANS(I,1)*PAIS(I,1)+FCANS(I,2)*PAIS(I,2)+               
-     1                   FCANS(I,3)*PAIS(I,3)+FCANS(I,4)*PAIS(I,4))/              
-     2                   FCS(I)                                                   
+          IF(FCS(I,q).GT.0.)                                    THEN                
+              PAICNS(I)=(FCANS(I,1)*PAIS(I,1)+FCANS(I,2)*               
+     1                   PAIS(I,2)+FCANS(I,3)*PAIS(I,3)+              
+     2                   FCANS(I,4)*PAIS(I,4))/FCS(I,q)                                                   
           ELSE                                                                    
               PAICNS(I)=0.0                                                       
           ENDIF                                                                   
@@ -530,22 +535,22 @@ C
           CWLCPS(I)=0.20*PAICNS(I)                                                
 C
           RRESID(I)=0.0
-          IF(RCAN(I).LT.1.0E-5 .OR. (FC(I)+FCS(I)).LT.1.0E-5) THEN
-              RRESID(I)=RRESID(I)+RCAN(I)
-              RCAN(I)=0.0
+          IF(RCAN(I,q).LT.1.0E-5 .OR. (FC(I,q)+FCS(I,q)).LT.1.0E-5) THEN
+              RRESID(I)=RRESID(I)+RCAN(I,q)
+              RCAN(I,q)=0.0
           ENDIF
 C
-          IF(RCAN(I).GT.0. .AND. (FC(I)+FCS(I)).GT.0.)        THEN                
-              RCAN(I)=RCAN(I)/(FC(I)+FCS(I))                                      
+          IF(RCAN(I,q).GT.0. .AND. (FC(I,q)+FCS(I,q)).GT.0.)        THEN                
+              RCAN(I,q)=RCAN(I,q)/(FC(I,q)+FCS(I,q))                                      
               IF(PAICAN(I).GT.0.0)                 THEN                           
-                  RAICAN(I)=RCAN(I)*(FC(I)+FCS(I))/(FC(I)+FCS(I)*                 
-     1                      PAICNS(I)/PAICAN(I))                                  
+                  RAICAN(I)=RCAN(I,q)*(FC(I,q)+FCS(I,q))/(FC(I,q)+                 
+     1                      FCS(I,q)*PAICNS(I)/PAICAN(I))                                  
               ELSE                                                                
                   RAICAN(I)=0.0                                                   
               ENDIF                                                               
               IF(PAICNS(I).GT.0.0)                 THEN                           
-                  RAICNS(I)=RCAN(I)*(FC(I)+FCS(I))/(FCS(I)+FC(I)*                 
-     1                      PAICAN(I)/PAICNS(I))                                  
+                  RAICNS(I)=RCAN(I,q)*(FC(I,q)+FCS(I,q))/(FCS(I,q)+                 
+     1                      FC(I,q)*PAICAN(I)/PAICNS(I))                                  
               ELSE                                                               
                   RAICNS(I)=0.0                                                   
               ENDIF                                                               
@@ -554,55 +559,55 @@ C
               RAICNS(I)=0.0                                                       
           ENDIF                                                                   
 C                                                                                 
-          IF(FC(I).GT.0.)                                     THEN                
-              PAICAN(I)=(0.7*FCAN(I,1)*PAI(I,1)+FCAN(I,2)*PAI(I,2)+                   
-     1                   FCAN(I,3)*PAI(I,3)+FCAN(I,4)*PAI(I,4))/FC(I)             
+          IF(FC(I,q).GT.0.)                                     THEN                
+              PAICAN(I)=(0.7*FCAN(I,1)*PAI(I,1)+FCAN(I,2)*PAI(I,2)                   
+     1               +FCAN(I,3)*PAI(I,3)+FCAN(I,4)*PAI(I,4))/FC(I,q)             
           ELSE                                                                    
               PAICAN(I)=0.0                                                       
           ENDIF                                                                   
-          IF(FCS(I).GT.0.)                                    THEN                
-              PAICNS(I)=(0.7*FCANS(I,1)*PAIS(I,1)+FCANS(I,2)*PAIS(I,2)+               
-     1                   FCANS(I,3)*PAIS(I,3)+FCANS(I,4)*PAIS(I,4))/              
-     2                   FCS(I)                                                   
+          IF(FCS(I,q).GT.0.)                                    THEN                
+              PAICNS(I)=(0.7*FCANS(I,1)*PAIS(I,1)+FCANS(I,2)*               
+     1                PAIS(I,2)+FCANS(I,3)*PAIS(I,3)+FCANS(I,4)*              
+     2                   PAIS(I,4))/FCS(I,q)                                                   
           ELSE                                                                    
               PAICNS(I)=0.0                                                       
           ENDIF                                                                   
 C
-          CWFCAP(I)=6.0*PAICAN(I)*(0.27+46.0/RHOSNI(I))
-          CWFCPS(I)=6.0*PAICNS(I)*(0.27+46.0/RHOSNI(I))
+          CWFCAP(I)=6.0*PAICAN(I)*(0.27+46.0/RHOSNI(I,q))
+          CWFCPS(I)=6.0*PAICNS(I)*(0.27+46.0/RHOSNI(I,q))
 C
           SRESID(I)=0.0
-          IF(SNCAN(I).LT.1.0E-5 .OR. (FC(I)+FCS(I)).LT.1.0E-5) THEN
-              SRESID(I)=SRESID(I)+SNCAN(I)
-              SNCAN(I)=0.0
+          IF(SNCAN(I,q).LT.1.0E-5 .OR. (FC(I,q)+FCS(I,q)).LT.1.0E-5)THEN
+              SRESID(I)=SRESID(I)+SNCAN(I,q)
+              SNCAN(I,q)=0.0
           ENDIF
 C
-          IF(SNCAN(I).GT.0. .AND. (FC(I)+FCS(I)).GT.0.)        THEN                
-              SNCAN(I)=SNCAN(I)/(FC(I)+FCS(I))                                      
+          IF(SNCAN(I,q).GT.0. .AND. (FC(I,q)+FCS(I,q)).GT.0.)       THEN                
+              SNCAN(I,q)=SNCAN(I,q)/(FC(I,q)+FCS(I,q))                                      
               IF(PAICAN(I).GT.0.0)                 THEN                           
-                  SNOCAN(I)=SNCAN(I)*(FC(I)+FCS(I))/(FC(I)+FCS(I)*                 
-     1                      PAICNS(I)/PAICAN(I))                                  
+                  SNOCAN(I,q)=SNCAN(I,q)*(FC(I,q)+FCS(I,q))/(FC(I,q)+                 
+     1                      FCS(I,q)*PAICNS(I)/PAICAN(I))                                  
               ELSE                                                                
-                  SNOCAN(I)=0.0                                                   
+                  SNOCAN(I,q)=0.0                                                   
               ENDIF                                                               
               IF(PAICNS(I).GT.0.0)                 THEN                           
-                  SNOCNS(I)=SNCAN(I)*(FC(I)+FCS(I))/(FCS(I)+FC(I)*                 
-     1                      PAICAN(I)/PAICNS(I))                                  
+                  SNOCNS(I,q)=SNCAN(I,q)*(FC(I,q)+FCS(I,q))/(FCS(I,q)+                 
+     1                      FC(I,q)*PAICAN(I)/PAICNS(I))                                  
               ELSE                                                                
-                  SNOCNS(I)=0.0                                                   
+                  SNOCNS(I,q)=0.0                                                   
               ENDIF                                                               
           ELSE                                                                    
-              SNOCAN(I)=0.0                                                       
-              SNOCNS(I)=0.0                                                       
+              SNOCAN(I,q)=0.0                                                       
+              SNOCNS(I,q)=0.0                                                       
           ENDIF                                                                   
 C                                                                                 
           IF(CWFCAP(I).GT.0.0)                                  THEN
-              FSNOWC(I)=MIN(SNOCAN(I)/CWFCAP(I),1.0)
+              FSNOWC(I)=MIN(SNOCAN(I,q)/CWFCAP(I),1.0)
           ELSE
               FSNOWC(I)=0.0
           ENDIF
           IF(CWFCPS(I).GT.0.0)                                  THEN
-              FSNOCS(I)=MIN(SNOCNS(I)/CWFCPS(I),1.0)
+              FSNOCS(I)=MIN(SNOCNS(I,q)/CWFCPS(I),1.0)
           ELSE
               FSNOCS(I)=0.0
           ENDIF
@@ -621,34 +626,34 @@ C
           FRAICS(I)=MAX(0.0,MIN(FRAICS(I)-FSNOCS(I),1.0))
 C                                                                                 
           IF(RAICAN(I).GT.CWLCAP(I))                            THEN
-              RRESID(I)=RRESID(I)+FC(I)*(RAICAN(I)-CWLCAP(I))
+              RRESID(I)=RRESID(I)+FC(I,q)*(RAICAN(I)-CWLCAP(I))
               RAICAN(I)=CWLCAP(I)
           ENDIF
-          IF(SNOCAN(I).GT.CWFCAP(I))                            THEN
-              SRESID(I)=SRESID(I)+FC(I)*(SNOCAN(I)-CWFCAP(I))
-              SNOCAN(I)=CWFCAP(I)
+          IF(SNOCAN(I,q).GT.CWFCAP(I))                            THEN
+              SRESID(I)=SRESID(I)+FC(I,q)*(SNOCAN(I,q)-CWFCAP(I))
+              SNOCAN(I,q)=CWFCAP(I)
           ENDIF
 C
           IF(RAICNS(I).GT.CWLCPS(I))                            THEN
-              RRESID(I)=RRESID(I)+FCS(I)*(RAICNS(I)-CWLCPS(I))
+              RRESID(I)=RRESID(I)+FCS(I,q)*(RAICNS(I)-CWLCPS(I))
               RAICNS(I)=CWLCPS(I)
           ENDIF
-          IF(SNOCNS(I).GT.CWFCPS(I))                            THEN
-              SRESID(I)=SRESID(I)+FCS(I)*(SNOCNS(I)-CWFCPS(I))
-              SNOCNS(I)=CWFCPS(I)
+          IF(SNOCNS(I,q).GT.CWFCPS(I))                            THEN
+              SRESID(I)=SRESID(I)+FCS(I,q)*(SNOCNS(I,q)-CWFCPS(I))
+              SNOCNS(I,q)=CWFCPS(I)
           ENDIF
 C
           WTRC (I)=WTRC(I)-(RRESID(I)+SRESID(I))/DELT
-          HTCC (I)=HTCC(I)-TCAN(I)*(SPHW*RRESID(I)+SPHICE*SRESID(I))/
-     1             DELT
+          HTCC (I)=HTCC(I)-TCAN(I,q)*(SPHW*RRESID(I)+SPHICE*
+     1             SRESID(I))/DELT
           IF(FSNOW(I).GT.0.0)                      THEN                           
-              SNOI=SNO(I)
-              ZSNADD=SRESID(I)/(RHOSNO(I)*FSNOW(I))                               
-              ZSNOW(I)=ZSNOW(I)+ZSNADD
-              SNO(I)=ZSNOW(I)*FSNOW(I)*RHOSNO(I)                                  
-              TSNOW(I)=(TCAN(I)*SPHICE*SRESID(I)+TSNOW(I)*HCPICE*
-     1                 SNOI/RHOICE)/(HCPICE*SNO(I)/RHOICE)
-              HTCS (I)=HTCS(I)+TCAN(I)*SPHICE*SRESID(I)/DELT
+              SNOI=SNO(I,q)
+              ZSNADD=SRESID(I)/(RHOSNO(I,q)*FSNOW(I))                               
+              ZSNOW(I,q)=ZSNOW(I,q)+ZSNADD
+              SNO(I,q)=ZSNOW(I,q)*FSNOW(I)*RHOSNO(I,q)                                  
+              TSNOW(I,q)=(TCAN(I,q)*SPHICE*SRESID(I)+TSNOW(I,q)*HCPICE
+     1                 *SNOI/RHOICE)/(HCPICE*SNO(I,q)/RHOICE)
+              HTCS (I)=HTCS(I)+TCAN(I,q)*SPHICE*SRESID(I)/DELT
               WTRS (I)=WTRS(I)+SRESID(I)/DELT
               SRESID(I)=0.0
           ENDIF                                                                   
@@ -656,25 +661,25 @@ C
           DO 190 J=1,IG
               IF(DELZW(I,J).GT.0.0 .AND. (RRESID(I).GT.0.0
      1                  .OR. SRESID(I).GT.0.0))                THEN
-                  THSUM=THLIQ(I,J)+THICE(I,J)+
+                  THSUM=THLIQ(I,J,q)+THICE(I,J,q)+
      1                (RRESID(I)+SRESID(I))/(RHOW*DELZW(I,J))
                   IF(THSUM.LT.THPOR(I,J)) THEN
-                      THICEI=THICE(I,J) 
-                      THLIQI=THLIQ(I,J)
-                      THICE(I,J)=THICE(I,J)+SRESID(I)/
+                      THICEI=THICE(I,J,q) 
+                      THLIQI=THLIQ(I,J,q)
+                      THICE(I,J,q)=THICE(I,J,q)+SRESID(I)/
      1                    (RHOICE*DELZW(I,J))                        
-                      THLIQ(I,J)=THLIQ(I,J)+RRESID(I)/
+                      THLIQ(I,J,q)=THLIQ(I,J,q)+RRESID(I)/
      1                    (RHOW*DELZW(I,J))                             
-                      TBAR(I,J)=(TBAR(I,J)*((DELZ(J)-DELZW(I,J))*
-     1                    HCPSND+DELZW(I,J)*(THLIQI*HCPW+THICEI*
-     2                    HCPICE+(1.0-THPOR(I,J))*HCPS(I,J)))+TCAN(I)*
-     3                    (RRESID(I)*HCPW/RHOW+SRESID(I)*HCPICE/RHOICE))
-     4                    /((DELZ(J)-DELZW(I,J))*HCPSND+DELZW(I,J)*
-     5                    (HCPW*THLIQ(I,J)+HCPICE*THICE(I,J)+HCPS(I,J)*
-     6                    (1.0-THPOR(I,J))))
-                      HTC(I,J)=HTC(I,J)+TCAN(I)*(RRESID(I)*HCPW/RHOW+
-     1                    SRESID(I)*HCPICE/RHOICE)/DELT
-                      WTRG (I)=WTRG(I)+(RRESID(I)+SRESID(I))/DELT
+                      TBAR(I,J,q)=(TBAR(I,J,q)*((DELZ(J)-DELZW(I,J))*
+     1                 HCPSND+DELZW(I,J)*(THLIQI*HCPW+THICEI*
+     2                 HCPICE+(1.0-THPOR(I,J))*HCPS(I,J)))+TCAN(I,q)*
+     3                 (RRESID(I)*HCPW/RHOW+SRESID(I)*HCPICE/RHOICE)
+     4                 )/((DELZ(J)-DELZW(I,J))*HCPSND+DELZW(I,J)*
+     5                 (HCPW*THLIQ(I,J,q)+HCPICE*THICE(I,J,q)+HCPS(I,J)*
+     6                  (1.0-THPOR(I,J))))
+                      HTC(I,J)=HTC(I,J)+TCAN(I,q)*(RRESID(I)*HCPW/
+     1                    RHOW+SRESID(I)*HCPICE/RHOICE)/DELT
+                      WTRG(I)=WTRG(I)+(RRESID(I)+SRESID(I))/DELT
                       RRESID(I)=0.0
                       SRESID(I)=0.0
                   ENDIF
@@ -689,7 +694,7 @@ C     * CANOPY OVERLYING SNOW.
 C                                                                                 
       DO 250 J=1,IC                                                               
       DO 250 I=IL1,IL2                                                            
-          IF(FC(I).GT.0. .AND. H(I,J).GT.0.)                     THEN             
+          IF(FC(I,q).GT.0. .AND. H(I,J).GT.0.)                     THEN             
               IF(IDISP.EQ.1)   DISP(I)=DISP(I)+FCAN (I,J)*
      1                                 LOG(0.7*H(I,J))                     
               ZOMLNC(I)=ZOMLNC(I)+FCAN (I,J)/
@@ -697,27 +702,28 @@ C
               ZOELNC(I)=ZOELNC(I)*
      1                  (0.01*H(I,J)*H(I,J)/ZORAT(IC))**FCAN(I,J)
           ENDIF                                                                   
-          IF(FCS(I).GT.0. .AND. HS(I,J).GT.0.)                   THEN             
+          IF(FCS(I,q).GT.0. .AND. HS(I,J).GT.0.)                  THEN             
               IF(IDISP.EQ.1)   DISPS(I)=DISPS (I)+FCANS(I,J)*
      1                         LOG(0.7*HS(I,J))                    
               ZOMLCS(I)=ZOMLCS(I)+FCANS(I,J)/
      1                  ((LOG(ZBLEND(I)/(0.1*HS(I,J))))**2)
               ZOELCS(I)=ZOELCS(I)*
-     1                  (0.01*HS(I,J)*HS(I,J)/ZORAT(IC))**FCANS(I,J)
+     1                (0.01*HS(I,J)*HS(I,J)/ZORAT(IC))**FCANS(I,J)
           ENDIF                                                                   
   250 CONTINUE                                                                    
 C                                                                                 
       DO 275 I=IL1,IL2                                                            
-          IF(FC(I).GT.0.)                                        THEN             
-              IF(IDISP.EQ.1)   DISP(I)=EXP(DISP(I)/FC(I))                                        
-              ZOMLNC(I)=ZBLEND(I)/EXP(SQRT(1.0/(ZOMLNC(I)/FC(I)))) 
-              ZOELNC(I)=LOG(ZOELNC(I)**(1.0/FC(I))/ZOMLNC(I))
+          IF(FC(I,q).GT.0.)                                        THEN             
+              IF(IDISP.EQ.1)   DISP(I)=EXP(DISP(I)/FC(I,q))                                        
+              ZOMLNC(I)=ZBLEND(I)/EXP(SQRT(1.0/(ZOMLNC(I)/FC(I,q)))) 
+              ZOELNC(I)=LOG(ZOELNC(I)**(1.0/FC(I,q))/ZOMLNC(I))
               ZOMLNC(I)=LOG(ZOMLNC(I))
           ENDIF                                                                   
-          IF(FCS(I).GT.0.)                                       THEN             
-              IF(IDISP.EQ.1)   DISPS(I)=EXP(DISPS(I)/FCS(I))                                      
-              ZOMLCS(I)=ZBLEND(I)/EXP(SQRT(1.0/(ZOMLCS(I)/FCS(I)))) 
-              ZOELCS(I)=LOG(ZOELCS(I)**(1.0/FCS(I))/ZOMLCS(I))
+          IF(FCS(I,q).GT.0.)                                       THEN             
+              IF(IDISP.EQ.1)   DISPS(I)=EXP(DISPS(I)/FCS(I,q))                                      
+              ZOMLCS(I)=ZBLEND(I)/EXP(SQRT(1.0/(ZOMLCS(I)/FCS(I,q)))
+     +                                                                 ) 
+              ZOELCS(I)=LOG(ZOELCS(I)**(1.0/FCS(I,q))/ZOMLCS(I))
               ZOMLCS(I)=LOG(ZOMLCS(I))
           ENDIF                                                                   
   275 CONTINUE                                                                    
@@ -728,35 +734,36 @@ C
       DO 300 I=IL1,IL2                                                            
        select case(zmsm(q))
          case(0) ! CLASS: ZORATG = 3.0
-          IF(FG(I).GT.0.)                                        THEN             
+          IF(FG(I,q).GT.0.)                                        THEN             
               IF(ISAND(I,1).NE.-4)                   THEN                         
-                  ZOMLNG(I)=((FG(I)-FCANMX(I,5)*(1.0-FSNOW(I)))*ZOLNG+            
-     1                      FCANMX(I,5)*(1.0-FSNOW(I))*ZOLN(I,5))/FG(I)           
+                  ZOMLNG(I)=((FG(I,q)-FCANMX(I,5)*(1.0-FSNOW(I)))*            
+     1             ZOLNG+FCANMX(I,5)*(1.0-FSNOW(I))*ZOLN(I,5))/FG(I,q)           
               ELSE                                                                
                   ZOMLNG(I)=ZOLNI                                                 
               ENDIF                                                               
               ZOELNG(I)=ZOMLNG(I)-LOG(3.)                                    
           ENDIF                                                                   
-          IF(FGS(I).GT.0.)                                       THEN             
-              ZOMLNS(I)=((FGS(I)-FCANMX(I,5)*FSNOW(I))*ZOLNS+                     
-     1                  FCANMX(I,5)*FSNOW(I)*ZOLN(I,5))/FGS(I)                    
+          IF(FGS(I,q).GT.0.)                                       THEN             
+              ZOMLNS(I)=((FGS(I,q)-FCANMX(I,5)*FSNOW(I))*ZOLNS+                     
+     1                  FCANMX(I,5)*FSNOW(I)*ZOLN(I,5))/FGS(I,q)                    
               ZOELNS(I)=ZOMLNS(I)-LOG(3.)                                    
           ENDIF                                                                   
          case(1) ! JULES: ZORATG = 10.0
-          IF(FG(I).GT.0.)                                        THEN             
+          IF(FG(I,q).GT.0.)                                        THEN             
               IF(ISAND(I,1).NE.-4)                   THEN                         
-                  ZOMLNG(I)=((FG(I)-FCANMX(I,5)*(1.0-FSNOW(I)))*ZOLNG+            
-     1                      FCANMX(I,5)*(1.0-FSNOW(I))*ZOLN(I,5))/FG(I)           
+                  ZOMLNG(I)=((FG(I,q)-FCANMX(I,5)*(1.0-FSNOW(I)))*            
+     1             ZOLNG+FCANMX(I,5)*(1.0-FSNOW(I))*ZOLN(I,5))/FG(I,q)           
               ELSE                                                                
                   ZOMLNG(I)=ZOLNI                                                 
               ENDIF                                                               
               ZOELNG(I)=ZOMLNG(I)-LOG(10.)                                    
           ENDIF                                                                   
-          IF(FGS(I).GT.0.)                                       THEN             
-              ZOMLNS(I)=((FGS(I)-FCANMX(I,5)*FSNOW(I))*ZOLNS+                     
-     1                  FCANMX(I,5)*FSNOW(I)*ZOLN(I,5))/FGS(I)                    
+          IF(FGS(I,q).GT.0.)                                       THEN             
+              ZOMLNS(I)=((FGS(I,q)-FCANMX(I,5)*FSNOW(I))*ZOLNS+                     
+     1                  FCANMX(I,5)*FSNOW(I)*ZOLN(I,5))/FGS(I,q)                    
               ZOELNS(I)=ZOMLNS(I)-LOG(10.)                                    
           ENDIF                                                                   
+       end select
   300 CONTINUE                                                                    
 C                                                                                 
 C     * ADD CONTRIBUTION OF OROGRAPHY TO MOMENTUM ROUGNESS LENGTH
@@ -778,47 +785,49 @@ C     * CANOPY OVERLYING SNOW.
 C     * ALSO CALCULATE INSTANTANEOUS GRID-CELL AVERAGED CANOPY MASS.
 C                                                                                 
       DO 350 I=IL1,IL2                                                            
-          IF(FC(I).GT.0.)                                       THEN                     
-              CMASSC(I)=(FCAN(I,1)*CWGTMX(I,1)+FCAN (I,2)*CWGTMX(I,2)+                   
-     1                   FCAN(I,3)*CWGTMX(I,3)*GROWA(I)+
-     2                   FCAN(I,4)*CWGTMX(I,4))/FC (I)           
+          IF(FC(I,q).GT.0.)                                       THEN                     
+              CMASSC(I)=(FCAN(I,1)*CWGTMX(I,1)+FCAN (I,2)*                   
+     1                   CWGTMX(I,2)+FCAN(I,3)*CWGTMX(I,3)*GROWA(I)+
+     2                   FCAN(I,4)*CWGTMX(I,4))/FC (I,q)           
               IF(IDISP.EQ.0) THEN
                   CMASSC(I)=CMASSC(I)+RHOAIR(I)*(SPHAIR/SPHVEG)*0.7*
-     1                     (FCAN(I,1)*H(I,1)+FCAN(I,2)*H(I,2)+
-     2                      FCAN(I,3)*H(I,3)+FCAN(I,4)*H(I,4))/FC(I)
+     1                    (FCAN(I,1)*H(I,1)+FCAN(I,2)*H(I,2)+
+     2                    FCAN(I,3)*H(I,3)+FCAN(I,4)*H(I,4))/FC(I,q)
               ENDIF
               IF(IZREF.EQ.2) THEN
                   CMASSC(I)=CMASSC(I)+RHOAIR(I)*(SPHAIR/SPHVEG)*0.1*
-     1                     (FCAN(I,1)*H(I,1)+FCAN(I,2)*H(I,2)+
-     2                      FCAN(I,3)*H(I,3)+FCAN(I,4)*H(I,4))/FC(I)
+     1                    (FCAN(I,1)*H(I,1)+FCAN(I,2)*H(I,2)+
+     2                    FCAN(I,3)*H(I,3)+FCAN(I,4)*H(I,4))/FC(I,q)
               ENDIF
           ENDIF                                                                          
-          IF(FCS(I).GT.0.)                                      THEN                     
-              CMASCS(I)=(FCANS(I,1)*CWGTMX(I,1)+FCANS(I,2)*CWGTMX(I,2)+                  
-     1                   FCANS(I,3)*CWGTMX(I,3)*GROWA(I)
+          IF(FCS(I,q).GT.0.)                                      THEN                     
+              CMASCS(I)=(FCANS(I,1)*CWGTMX(I,1)+FCANS(I,2)*                  
+     1                   CWGTMX(I,2)+FCANS(I,3)*CWGTMX(I,3)*GROWA(I)
      2                  *HS(I,3)/MAX(H(I,3),HS(I,3))+                            
      3                   FCANS(I,4)*CWGTMX(I,4)                         
-     4                  *HS(I,4)/MAX(H(I,4),HS(I,4)))/FCS(I)                     
+     4                  *HS(I,4)/MAX(H(I,4),HS(I,4)))/FCS(I,q)                     
               IF(IDISP.EQ.0) THEN
                   CMASCS(I)=CMASCS(I)+RHOAIR(I)*(SPHAIR/SPHVEG)*0.7*
-     1                      (FCANS(I,1)*HS(I,1)+FCANS(I,2)*HS(I,2)+
-     2                       FCANS(I,3)*HS(I,3)+FCANS(I,4)*HS(I,4))/
-     3                       FCS(I)
+     1                 (FCANS(I,1)*HS(I,1)+FCANS(I,2)*HS(I,2)+
+     2                 FCANS(I,3)*HS(I,3)+FCANS(I,4)*HS(I,4))/
+     3                       FCS(I,q)
               ENDIF
               IF(IZREF.EQ.2) THEN
                   CMASCS(I)=CMASCS(I)+RHOAIR(I)*(SPHAIR/SPHVEG)*0.1*
-     1                      (FCANS(I,1)*HS(I,1)+FCANS(I,2)*HS(I,2)+
-     2                       FCANS(I,3)*HS(I,3)+FCANS(I,4)*HS(I,4))/
-     3                       FCS(I)
+     1                   (FCANS(I,1)*HS(I,1)+FCANS(I,2)*HS(I,2)+
+     2                   FCANS(I,3)*HS(I,3)+FCANS(I,4)*HS(I,4))/
+     3                       FCS(I,q)
               ENDIF
           ENDIF                                                                   
-          CHCAP (I)=SPHVEG*CMASSC(I)+SPHW*RAICAN(I)+SPHICE*SNOCAN(I)              
-          CHCAPS(I)=SPHVEG*CMASCS(I)+SPHW*RAICNS(I)+SPHICE*SNOCNS(I)              
-          HTCC  (I)=HTCC(I)-SPHVEG*CMAI(I)*TCAN(I)/DELT
-          IF(CMAI(I).LT.1.0E-5 .AND. (CMASSC(I).GT.0.0 .OR.
-     1              CMASCS(I).GT.0.0)) TCAN(I)=TA(I)
-          CMAI  (I)=FC(I)*CMASSC(I)+FCS(I)*CMASCS(I)
-          HTCC  (I)=HTCC(I)+SPHVEG*CMAI(I)*TCAN(I)/DELT
+          CHCAP (I)=SPHVEG*CMASSC(I)+SPHW*RAICAN(I)+SPHICE*
+     +                SNOCAN(I,q)              
+          CHCAPS(I)=SPHVEG*CMASCS(I)+SPHW*RAICNS(I)+SPHICE*
+     +                SNOCNS(I,q)              
+          HTCC  (I)=HTCC(I)-SPHVEG*CMAI(I)*TCAN(I,q)/DELT
+!MM          IF(CMAI(I).LT.1.0E-5 .AND. (CMASSC(I).GT.0.0 .OR.
+!MM     1              CMASCS(I).GT.0.0)) TCAN(I,q)=TA(I)
+          CMAI  (I)=FC(I,q)*CMASSC(I)+FCS(I,q)*CMASCS(I)
+          HTCC  (I)=HTCC(I)+SPHVEG*CMAI(I)*TCAN(I,q)/DELT
           RBCOEF(I)=0.0
   350 CONTINUE                                                                    
 C                                                                                 
@@ -853,24 +862,24 @@ C
 400       CONTINUE
         ENDIF
 C
-        IF((FC(I)+FCS(I)).GT.0.)                               THEN             
+        IF((FC(I,q)+FCS(I,q)).GT.0.)                               THEN             
             RBCOEF(I)=RBCOEF(I)+
      1                (FCAN(I,J)*XLEAF(J)*(SQRT(PAI(I,J))/0.75)*
      2                (1.0-EXP(-0.75*SQRT(PAI(I,J))))+
      3                FCANS(I,J)*XLEAF(J)*(SQRT(PAIS(I,J))/0.75)*
      4                (1.0-EXP(-0.75*SQRT(PAIS(I,J)))))/
-     5                (FC(I)+FCS(I))                                          
+     5                (FC(I,q)+FCS(I,q))                                          
         ENDIF                                                                   
   450 CONTINUE                                                                    
 C                                                                                 
       DO 500 J=1,IG                                                               
       DO 500 I=IL1,IL2                                                            
-          IF((FC(I)+FCS(I)).GT.0.)                               THEN             
+          IF((FC(I,q)+FCS(I,q)).GT.0.)                              THEN             
               FROOT(I,J)=((FCAN(I,1)+FCANS(I,1))*RMAT(I,1,J) +                    
      1                    (FCAN(I,2)+FCANS(I,2))*RMAT(I,2,J) +                    
      2                    (FCAN(I,3)+FCANS(I,3))*RMAT(I,3,J) +                    
      3                    (FCAN(I,4)+FCANS(I,4))*RMAT(I,4,J))/                    
-     4                    (FC(I)+FCS(I))                                          
+     4                    (FC(I,q)+FCS(I,q))                                          
           ELSE                                                                    
               FROOT(I,J)=0.0                                                      
           ENDIF                                                                   
@@ -880,19 +889,19 @@ C     * CALCULATE SKY-VIEW FACTORS FOR BARE GROUND AND SNOW
 C     * UNDERLYING CANOPY.                                                         
 C                                                                                 
       DO 600 I=IL1,IL2                                                            
-          IF(FC(I).GT.0.)                                        THEN             
+          IF(FC(I,q).GT.0.)                                        THEN             
               FSVF (I)=(FCAN (I,1)*EXP(CANEXT(1)*PAI (I,1)) +                          
      1                  FCAN (I,2)*EXP(CANEXT(2)*PAI (I,2)) +                          
      2                  FCAN (I,3)*EXP(CANEXT(3)*PAI (I,3)) +                          
-     3                  FCAN (I,4)*EXP(CANEXT(4)*PAI (I,4)))/FC (I)                    
+     3                  FCAN (I,4)*EXP(CANEXT(4)*PAI (I,4)))/FC (I,q)                    
           ELSE                                                                    
               FSVF (I)=0.                                                         
           ENDIF                                                                   
-          IF(FCS(I).GT.0.)                                       THEN             
+          IF(FCS(I,q).GT.0.)                                       THEN             
               FSVFS(I)=(FCANS(I,1)*EXP(CANEXT(1)*PAIS(I,1)) +                          
      1                  FCANS(I,2)*EXP(CANEXT(2)*PAIS(I,2)) +                          
      2                  FCANS(I,3)*EXP(CANEXT(3)*PAIS(I,3)) +                          
-     3                  FCANS(I,4)*EXP(CANEXT(4)*PAIS(I,4)))/FCS(I)                    
+     3                  FCANS(I,4)*EXP(CANEXT(4)*PAIS(I,4)))/FCS(I,q)                    
           ELSE                                                                    
               FSVFS(I)=0.                                                         
           ENDIF                                                                   
@@ -903,10 +912,10 @@ C     * CALCULATE FRACTIONAL TRANSPIRATION EXTRACTED FROM SOIL LAYERS.
 C
       DO 650 J=1,IG                                                               
       DO 650 I=IL1,IL2                                                            
-          IF(FCS(I).GT.0.0 .OR. FC(I).GT.0.0)                      THEN          
-              IF(THLIQ(I,J).GT.(THLMIN(I,J)+0.01) .AND. 
+          IF(FCS(I,q).GT.0.0 .OR. FC(I,q).GT.0.0)                   THEN          
+              IF(THLIQ(I,J,q).GT.(THLMIN(I,J)+0.01) .AND. 
      1                           FROOT(I,J).GT.0.)             THEN               
-                  PSII=PSISAT(I,J)*(THLIQ(I,J)/THPOR(I,J))**(-BI(I,J))
+                  PSII=PSISAT(I,J)*(THLIQ(I,J,q)/THPOR(I,J))**(-BI(I,J))
                   PSII=MIN(PSII,PSIWLT(I,J))
                   PSIGND(I)=MIN(PSIGND(I),PSII)                                 
                   FROOT(I,J)=FROOT(I,J)*(PSIWLT(I,J)-PSII)/
@@ -928,16 +937,16 @@ C
 C     * CALCULATE EFFECTIVE LEAF AREA INDICES FOR TRANSPIRATION.
 C
       DO 800 I=IL1,IL2                                                            
-          IF(FC(I).GT.0.)                                     THEN                
+          IF(FC(I,q).GT.0.)                                     THEN                
               PAICAN(I)=(FCAN(I,1)*PAI(I,1)+FCAN(I,2)*PAI(I,2)+                   
-     1                   FCAN(I,3)*PAI(I,3)+FCAN(I,4)*PAI(I,4))/FC(I)             
+     1                FCAN(I,3)*PAI(I,3)+FCAN(I,4)*PAI(I,4))/FC(I,q)             
           ELSE                                                                    
               PAICAN(I)=0.0                                                       
           ENDIF                                                                   
-          IF(FCS(I).GT.0.)                                    THEN                
-              PAICNS(I)=(FCANS(I,1)*PAIS(I,1)+FCANS(I,2)*PAIS(I,2)+               
-     1                   FCANS(I,3)*PAIS(I,3)+FCANS(I,4)*PAIS(I,4))/              
-     2                   FCS(I)                                                   
+          IF(FCS(I,q).GT.0.)                                    THEN                
+              PAICNS(I)=(FCANS(I,1)*PAIS(I,1)+FCANS(I,2)*               
+     1          PAIS(I,2)+FCANS(I,3)*PAIS(I,3)+FCANS(I,4)*              
+     2                   PAIS(I,4))/FCS(I,q)                                                   
           ELSE                                                                    
               PAICNS(I)=0.0                                                       
           ENDIF                                                                   

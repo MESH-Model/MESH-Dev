@@ -4,7 +4,7 @@
      3                  FI,TBARW,GZERO,G12,G23,GGEO,TA,WSNOW,
      4                  TCTOP,TCBOT,GFLUX,ZPLIM,THPOR,THLMIN,HCPS,
      5                  DELZW,DELZZ,DELZ,ISAND,IWF,IG,ILG,IL1,IL2,JL,N,
-     6                  BI,PSISAT)
+     6                  BI,PSISAT,q)
 C
 C     * FEB 22/08 - D.VERSEGHY. STREAMLINE SOME CALCULATIONS.
 C     * NOV 20/06 - D.VERSEGHY. ADD GEOTHERMAL HEAT FLUX.
@@ -62,11 +62,13 @@ C     *                         USING CONDUCTION HEAT FLUX
 C     *                         CALCULATED AT TOP AND BOTTOM
 C     *                         OF EACH LAYER.
 C
+      use MODELS, only : ufcm,Nmod
+C
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IWF,IG,ILG,IL1,IL2,JL,I,J,N
+      INTEGER IWF,IG,ILG,IL1,IL2,JL,I,J,N,q
 C
 C     * INPUT/OUTPUT ARRAYS.
 C
@@ -81,7 +83,7 @@ C
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG),      TBARW (ILG,IG),   GZERO (ILG),      
+      REAL FI    (ILG,Nmod),      TBARW (ILG,IG),   GZERO (ILG),      
      1     G12   (ILG),      G23   (ILG),      GGEO  (ILG),
      2     TA    (ILG),      WSNOW (ILG), 
      3     TCTOP (ILG,IG),   TCBOT (ILG,IG),   ZPLIM (ILG)
@@ -116,16 +118,16 @@ C     * CALCULATE SUBSURFACE AND OVERLAND RUNOFF TERMS; ADJUST
 C     * SURFACE PONDING DEPTH.
 C
       DO 100 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).GT.-4 .AND. IWF.EQ.0 .AND.
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).GT.-4 .AND. IWF.EQ.0 .AND.
      1                         (ZPOND(I)-ZPLIM(I)).GT.1.0E-8)     THEN
               TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TPOND(I)+TFREZ)*
      1                  (ZPOND(I)-ZPLIM(I)))/(RUNOFF(I)+
      2                  (ZPOND(I)-ZPLIM(I)))
               RUNOFF(I)=RUNOFF(I)+(ZPOND(I)-ZPLIM(I))
               TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+(TPOND(I)+TFREZ)*
-     1                  FI(I)*(ZPOND(I)-ZPLIM(I)))/(OVRFLW(I)+
-     2                  FI(I)*(ZPOND(I)-ZPLIM(I)))
-              OVRFLW(I)=OVRFLW(I)+FI(I)*(ZPOND(I)-ZPLIM(I))
+     1                  FI(I,q)*(ZPOND(I)-ZPLIM(I)))/(OVRFLW(I)+
+     2                  FI(I,q)*(ZPOND(I)-ZPLIM(I)))
+              OVRFLW(I)=OVRFLW(I)+FI(I,q)*(ZPOND(I)-ZPLIM(I))
               ZPOND(I)=MIN(ZPOND(I),ZPLIM(I))
           ENDIF
   100 CONTINUE
@@ -134,9 +136,9 @@ C     * UPDATE SOIL TEMPERATURES AFTER GROUND WATER MOVEMENT.
 C
       DO 200 J=1,IG
       DO 200 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. DELZW(I,J).GT.0. .AND. ISAND(I,1).GT.-4)
+          IF(FI(I,q).GT.0. .AND. DELZW(I,J).GT.0. .AND.ISAND(I,1).GT.-4)
      1                                                            THEN
-              HTC(I,J)=HTC(I,J)+FI(I)*((TBARW(I,J)+TFREZ)*
+              HTC(I,J)=HTC(I,J)+FI(I,q)*((TBARW(I,J)+TFREZ)*
      1                 HCPW*THLIQ(I,J)+(TBAR(I,J)+TFREZ)*
      2                 HCPICE*THICE(I,J))*DELZW(I,J)/DELT
               HCP(I,J)=HCPW*THLIQ(I,J)+HCPICE*THICE(I,J)+
@@ -154,9 +156,9 @@ C     * STEP AHEAD POND TEMPERATURE; CHECK FOR FREEZING, AND ADD
 C     * FROZEN WATER TO SNOW PACK.
 C
       DO 300 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).GT.-4 .AND. ZPOND(I).GT.0.0)
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).GT.-4 .AND. ZPOND(I).GT.0.0)
      1                                                             THEN
-              HTC(I,1)=HTC(I,1)+FI(I)*HCPW*(TPOND(I)+TFREZ)*
+              HTC(I,1)=HTC(I,1)+FI(I,q)*HCPW*(TPOND(I)+TFREZ)*
      1            ZPOND(I)/DELT
               GP1=ZPOND(I)*(G12(I)-GZERO(I))/(ZPOND(I)+DELZZ(I,1))+
      1            GZERO(I)
@@ -166,16 +168,16 @@ C
   300 CONTINUE
 C
       DO 400 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).GT.-4 .AND. ZPOND(I).GT.0. 
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).GT.-4 .AND. ZPOND(I).GT.0. 
      1                   .AND. TPOND(I).LT.0.)
      1                                                              THEN
-             HTCS(I)=HTCS(I)-FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
+             HTCS(I)=HTCS(I)-FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
      1               ZSNOW(I)/DELT
              ZFREZ=0.0
              HADD=-TPOND(I)*HCPW*ZPOND(I)                                              
              TPOND(I)=0.0                                                               
              HCONV=CLHMLT*RHOW*ZPOND(I)                                               
-             HTC(I,1)=HTC(I,1)-FI(I)*HCPW*TFREZ*ZPOND(I)/DELT
+             HTC(I,1)=HTC(I,1)-FI(I,q)*HCPW*TFREZ*ZPOND(I)/DELT
              IF(HADD.LE.HCONV)             THEN                                                      
                 ZFREZ=HADD/(CLHMLT*RHOW)                                                
                 ZPOND(I)=ZPOND(I)-ZFREZ                                                       
@@ -204,14 +206,14 @@ C
                 IF(TTEST.LT.TLIM)       THEN                                    
                    HEXCES=HADD+TLIM*HCPICE*ZFREZ                         
                    GZERO(I)=GZERO(I)-HEXCES/DELT                                             
-                   HTC(I,1)=HTC(I,1)+FI(I)*(HADD-HEXCES)/DELT
+                   HTC(I,1)=HTC(I,1)+FI(I,q)*(HADD-HEXCES)/DELT
                    TSNOW(I)=(TSNOW(I)*HCPSNO(I)*ZSNOW(I)+
      1                      TLIM*HCPICE*ZFREZ)          
      2                      /(HCPSNO(I)*ZSNOW(I)+HCPICE*ZFREZ)                                    
                 ELSE                                                                    
                    TSNOW(I)=(TSNOW(I)*HCPSNO(I)*ZSNOW(I)+TTEST*HCPICE*
      1                       ZFREZ)/(HCPSNO(I)*ZSNOW(I)+HCPICE*ZFREZ)                                    
-                   HTC(I,1)=HTC(I,1)+FI(I)*HADD/DELT
+                   HTC(I,1)=HTC(I,1)+FI(I,q)*HADD/DELT
                 ENDIF                                                                   
                 IF(.NOT.(ZSNOW(I).GT.0.0)) ALBSNO(I)=0.50                                     
                 RHOSNO(I)=(RHOSNO(I)*ZSNOW(I)+RHOICE*ZFREZ)/(ZSNOW(I)+
@@ -225,12 +227,12 @@ C
                 ZSNOW(I)=ZSNOW(I)+ZFREZ                                                       
                 ZPOND(I)=0.0                                                               
              ENDIF                                                                       
-             HTC (I,1)=HTC (I,1)+FI(I)*HCPW*TFREZ*ZPOND(I)/DELT
-             HMFG(I,1)=HMFG(I,1)-FI(I)*CLHMLT*RHOICE*ZFREZ/DELT
-             WTRS(I)=WTRS(I)+FI(I)*ZFREZ*RHOICE/DELT
-             WTRG(I)=WTRG(I)-FI(I)*ZFREZ*RHOICE/DELT
-             HTCS(I)=HTCS(I)+FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*ZSNOW(I)/
-     1               DELT
+             HTC (I,1)=HTC (I,1)+FI(I,q)*HCPW*TFREZ*ZPOND(I)/DELT
+             HMFG(I,1)=HMFG(I,1)-FI(I,q)*CLHMLT*RHOICE*ZFREZ/DELT
+             WTRS(I)=WTRS(I)+FI(I,q)*ZFREZ*RHOICE/DELT
+             WTRG(I)=WTRG(I)-FI(I,q)*ZFREZ*RHOICE/DELT
+             HTCS(I)=HTCS(I)+FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*ZSNOW(I)
+     1               /DELT
           ENDIF
   400 CONTINUE
 C
@@ -240,7 +242,7 @@ C
       IF(IG.GT.3) THEN
       DO 500 J=4,IG
           DO 500 I=IL1,IL2
-              IF(FI(I).GT.0. .AND. ISAND(I,1).GT.-4)            THEN
+              IF(FI(I,q).GT.0. .AND. ISAND(I,1).GT.-4)            THEN
                   GFLUX(I,J)=(TCBOT(I,J-1)+TCTOP(I,J))*(TBAR(I,J-1)-
      1                       TBAR(I,J))/(DELZ(J-1)+DELZ(J))
               ENDIF
@@ -248,7 +250,7 @@ C
       ENDIF
 C     
       DO 550 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).GT.-4)               THEN
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).GT.-4)               THEN
               TBAR(I,1)=TBAR(I,1)+(GZERO(I)-G12(I))*DELT/
      1                  (HCP(I,1)*DELZW(I,1)+HCPSND*(DELZZ(I,1)-
      2                  DELZW(I,1)))
@@ -272,7 +274,7 @@ C
                       TBASE(I)=TBASE(I)+(G23(I)-GGEO(I))*DELT/
      1                    (HCPSND*DELZ(3))
                   ENDIF
-                  HTC(I,3)=HTC(I,3)-FI(I)*GGEO(I)
+                  HTC(I,3)=HTC(I,3)-FI(I,q)*GGEO(I)
               ELSE
                   TBAR(I,3)=TBAR(I,3)+G23(I)*DELT/
      1                      (HCP(I,3)*DELZW(I,3)+HCPSND*(DELZ(3)-
@@ -286,8 +288,8 @@ C
 C
       DO 600 J=3,IG                                                               
       DO 600 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).GT.-4 .AND. IG.GT.3)   THEN
-              HTC(I,J)=HTC(I,J)-FI(I)*(TBAR(I,J)+TFREZ)*(HCP(I,J)*
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).GT.-4 .AND. IG.GT.3)   THEN
+              HTC(I,J)=HTC(I,J)-FI(I,q)*(TBAR(I,J)+TFREZ)*(HCP(I,J)*
      1                    DELZW(I,J)+HCPSND*(DELZZ(I,J)-
      2                    DELZW(I,J)))/DELT
               IF(J.EQ.3)                                THEN
@@ -303,7 +305,7 @@ C
      1                  (HCP(I,J)*DELZW(I,J)+HCPSND*(DELZZ(I,J)-
      2                  DELZW(I,J)))                         
               ENDIF
-              HTC(I,J)=HTC(I,J)+FI(I)*(TBAR(I,J)+TFREZ)*(HCP(I,J)*
+              HTC(I,J)=HTC(I,J)+FI(I,q)*(TBAR(I,J)+TFREZ)*(HCP(I,J)*
      1                    DELZW(I,J)+HCPSND*(DELZZ(I,J)-
      2                    DELZW(I,J)))/DELT
           ENDIF
@@ -311,9 +313,9 @@ C
 C     
       DO 700 J=1,IG                                                               
       DO 700 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. DELZW(I,J).GT.0. .AND. ISAND(I,1).GT.-4)
+          IF(FI(I,q).GT.0. .AND. DELZW(I,J).GT.0. .AND.ISAND(I,1).GT.-4)
      1                                                            THEN
-              HTC(I,J)=HTC(I,J)-FI(I)*(TBAR(I,J)+TFREZ)*(HCP(I,J)*
+              HTC(I,J)=HTC(I,J)-FI(I,q)*(TBAR(I,J)+TFREZ)*(HCP(I,J)*
      1                    DELZW(I,J)+HCPSND*(DELZZ(I,J)-
      2                    DELZW(I,J)))/DELT
               IF(TBAR(I,J).LT.0. .AND. THLIQ(I,J).GT.THLMIN(I,J))
@@ -322,9 +324,9 @@ C
      1                    DELZW(I,J)))*TBAR(I,J)/(CLHMLT*RHOW*
      2                    DELZW(I,J))                              
                   IF(THFREZ.LE.(THLIQ(I,J)-THLMIN(I,J))) THEN                         
-                      HMFG(I,J)=HMFG(I,J)-FI(I)*THFREZ*CLHMLT*
+                      HMFG(I,J)=HMFG(I,J)-FI(I,q)*THFREZ*CLHMLT*
      1                          RHOW*DELZW(I,J)/DELT
-                      HTC(I,J)=HTC(I,J)-FI(I)*THFREZ*CLHMLT*
+                      HTC(I,J)=HTC(I,J)-FI(I,q)*THFREZ*CLHMLT*
      1                          RHOW*DELZW(I,J)/DELT
                       THLIQ(I,J)=THLIQ(I,J)-THFREZ                                        
                       THICE(I,J)=THICE(I,J)+THFREZ*RHOW/RHOICE                            
@@ -332,9 +334,9 @@ C
      1                           HCPS(I,J)*(1.-THPOR(I,J))
                       TBAR (I,J)=0.0                                                   
                   ELSE                                                                
-                      HMFG(I,J)=HMFG(I,J)-FI(I)*(THLIQ(I,J)-
+                      HMFG(I,J)=HMFG(I,J)-FI(I,q)*(THLIQ(I,J)-
      1                    THLMIN(I,J))*CLHMLT*RHOW*DELZW(I,J)/DELT
-                      HTC(I,J)=HTC(I,J)-FI(I)*(THLIQ(I,J)-
+                      HTC(I,J)=HTC(I,J)-FI(I,q)*(THLIQ(I,J)-
      1                    THLMIN(I,J))*CLHMLT*RHOW*DELZW(I,J)/DELT
                       HADD=(THFREZ-(THLIQ(I,J)-THLMIN(I,J)))*CLHMLT*
      1                     RHOW*DELZW(I,J)
@@ -349,12 +351,13 @@ C
 C
               select case(ufcm(q))
               case(1) ! freezing point depression
+                if (TBAR(I,J).lt.0.) then
                   thliqmax=THPOR(I,J)*(-114.3*TBAR(I,J)
      1                          /PSISAT(I,J))**(-1/BI(I,J))
                   if(THLIQ(I,J).gt.thliqmax) then
-                      HMFG(I,J)=HMFG(I,J)-FI(I)*(THLIQ(I,J)-thliqmax)*
-     1                          CLHMLT*RHOW*DELZW(I,J)/DELT
-                      HTC(I,J)=HTC(I,J)-FI(I)*(THLIQ(I,J)-thliqmax)*
+                      HMFG(I,J)=HMFG(I,J)-FI(I,q)*(THLIQ(I,J)-
+     1                          thliqmax)*CLHMLT*RHOW*DELZW(I,J)/DELT
+                      HTC(I,J)=HTC(I,J)-FI(I,q)*(THLIQ(I,J)-thliqmax)*
      1                          CLHMLT*RHOW*DELZW(I,J)/DELT
                       THLIQ(I,J)=thliqmax
                       THICE(I,J)=THICE(I,J)+(thliqmax-THLIQ(I,J))*
@@ -362,6 +365,7 @@ C
                       HCP(I,J)=HCPW*THLIQ(I,J)+HCPICE*THICE(I,J)+
      1                           HCPS(I,J)*(1.-THPOR(I,J))
                   endif
+                endif
               end select
               ENDIF
 C                                                                   
@@ -370,9 +374,9 @@ C
      1                    DELZW(I,J)))*TBAR(I,J)/(CLHMLT*RHOICE*
      2                    DELZW(I,J))                             
                   IF(THMELT.LE.THICE(I,J))                 THEN 
-                      HMFG(I,J)=HMFG(I,J)+FI(I)*THMELT*CLHMLT*
+                      HMFG(I,J)=HMFG(I,J)+FI(I,q)*THMELT*CLHMLT*
      1                          RHOICE*DELZW(I,J)/DELT
-                      HTC(I,J)=HTC(I,J)+FI(I)*THMELT*CLHMLT*
+                      HTC(I,J)=HTC(I,J)+FI(I,q)*THMELT*CLHMLT*
      1                          RHOICE*DELZW(I,J)/DELT
                       THICE(I,J)=THICE(I,J)-THMELT                                        
                       THLIQ(I,J)=THLIQ(I,J)+THMELT*RHOICE/RHOW                            
@@ -380,9 +384,9 @@ C
      1                           HCPS(I,J)*(1.-THPOR(I,J))
                       TBAR (I,J)=0.0                                                   
                   ELSE                                                                
-                      HMFG(I,J)=HMFG(I,J)+FI(I)*THICE(I,J)*CLHMLT*
+                      HMFG(I,J)=HMFG(I,J)+FI(I,q)*THICE(I,J)*CLHMLT*
      1                          RHOICE*DELZW(I,J)/DELT
-                      HTC(I,J)=HTC(I,J)+FI(I)*THICE(I,J)*CLHMLT*
+                      HTC(I,J)=HTC(I,J)+FI(I,q)*THICE(I,J)*CLHMLT*
      1                          RHOICE*DELZW(I,J)/DELT
                       HADD=(THMELT-THICE(I,J))*CLHMLT*RHOICE*
      1                          DELZW(I,J)
@@ -394,7 +398,7 @@ C
      1                           (DELZZ(I,J)-DELZW(I,J)))
                   ENDIF                                                               
               ENDIF
-              HTC(I,J)=HTC(I,J)+FI(I)*(TBAR(I,J)+TFREZ)*(HCP(I,J)*
+              HTC(I,J)=HTC(I,J)+FI(I,q)*(TBAR(I,J)+TFREZ)*(HCP(I,J)*
      1                    DELZW(I,J)+HCPSND*(DELZZ(I,J)-
      2                    DELZW(I,J)))/DELT
           ENDIF

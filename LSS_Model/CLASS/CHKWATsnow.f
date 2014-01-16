@@ -1,4 +1,4 @@
-      SUBROUTINE CHKWAT(ISFC,PCPR,EVAP,RUNOFF,WLOST,RAICAN,SNOCAN,
+      SUBROUTINE CHKWATsnow(ISFC,PCPR,EVAP,RUNOFF,WLOST,RAICAN,SNOCAN,
      1                  RAICNI,SNOCNI,ZPOND,ZPONDI,THLIQ,THICE,
      2                  THLIQI,THICEI,ZSNOW,RHOSNO,XSNOW,SNOWI,
      3                  WSNOW,WSNOWI,FCS,FGS,FI,BAL,THPOR,THLMIN,
@@ -67,9 +67,9 @@ C
 C     * INPUT FIELDS.
 
       REAL PCPR  (ILG),    EVAP  (ILG),    RUNOFF(ILG),    WLOST (ILG),    
-     1     RAICAN(ILG),   SNOCAN(ILG,q),    RAICNI(ILG),    SNOCNI(ILG),    
+     1     RAICAN(ILG), SNOCAN(ILG,Nmod),   RAICNI(ILG),    SNOCNI(ILG),    
      2     ZPOND (ILG),    ZPONDI(ILG,Nmod),    ZSNOW (ILG),RHOSNO(ILG),    
-     3     XSNOW (ILG),   SNOWI (ILG,Nmod),WSNOW (ILG),WSNOWI(ILG),
+     3     XSNOW (ILG),   SNOWI (ILG,Nmod),WSNOW (ILG),WSNOWI(ILG,Nmod),
      4     FCS   (ILG,Nmod),    FGS   (ILG,Nmod),    FI    (ILG,Nmod)
 C
       REAL THLIQ (ILG,IG), THICE (ILG,IG), 
@@ -224,7 +224,7 @@ C
      2                 CANFAC*(RAICAN(I)-RAICNI(I)+SNOCAN(I,q)-
      3                 SNOCNI(I))-(ZPOND(I)-ZPONDI(I,q))*RHOW-                   
      4                 ZSNOW(I)*RHOSNO(I)+SNOFAC*SNOWI(I,q)-
-     5                 WSNOW(I)+WSNOWI(I)
+     5                 WSNOW(I)+WSNOWI(I,q)
              DO 275 J=1,IG
                  BAL(I)=BAL(I)-
      1                 (THLIQ(I,J)-THLIQI(I,J))*RHOW*DELZW(I,J)-                       
@@ -246,9 +246,9 @@ C
      1         SNOCAN(IPTBAD,q),SNOCNI(IPTBAD),ZPOND(IPTBAD),
      2         ZPONDI(IPTBAD,q)
           WRITE(6,6460) ZSNOW(IPTBAD)*RHOSNO(IPTBAD),
-     1        SNOFAC*SNOWI(IPTBAD,q),WSNOW(IPTBAD),WSNOWI(IPTBAD),
+     1        SNOFAC*SNOWI(IPTBAD,q),WSNOW(IPTBAD),WSNOWI(IPTBAD,q),
      2        SNOFAC*SNOWI(IPTBAD,q)-ZSNOW(IPTBAD)*RHOSNO(IPTBAD),
-     3        WSNOWI(IPTBAD)-WSNOW(IPTBAD)
+     3        WSNOWI(IPTBAD,q)-WSNOW(IPTBAD)
           WRITE(6,6460) ZSNOW(IPTBAD),RHOSNO(IPTBAD),SNOFAC,
      1        SNOWI(IPTBAD,q)
           DO 350 J=1,IG

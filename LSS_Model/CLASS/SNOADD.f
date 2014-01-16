@@ -1,5 +1,5 @@
       SUBROUTINE SNOADD(ALBSNO,TSNOW,RHOSNO,ZSNOW,HCPSNO,HTCS,
-     1                  FI,S,TS,RHOSNI,WSNOW,ILG,IL1,IL2,JL)
+     1                  FI,S,TS,RHOSNI,WSNOW,ILG,IL1,IL2,JL,q)
 C
 C     * NOV 17/11 - M.LAZARE.   CHANGE SNOW ALBEDO REFRESHMENT 
 C     *                         THRESHOLD (SNOWFALL IN CURRENT
@@ -24,11 +24,12 @@ C     * AUG 12/91 - D.VERSEGHY. CODE FOR MODEL VERSION GCM7U -
 C     *                         CLASS VERSION 2.0 (WITH CANOPY).
 C     * APR 11/89 - D.VERSEGHY. ACCUMULATION OF SNOW ON GROUND.
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ILG,IL1,IL2,JL,I
+      INTEGER ILG,IL1,IL2,JL,I,q
 C
 C     * INPUT/OUTPUT ARRAYS.
 C
@@ -37,7 +38,7 @@ C
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG),   S     (ILG),   TS    (ILG),   RHOSNI(ILG),
+      REAL FI    (ILG,Nmod),   S  (ILG),   TS (ILG),   RHOSNI(ILG,Nmod),
      1     WSNOW (ILG)
 
 C     * TEMPORARY VARIABLES.
@@ -56,8 +57,8 @@ C
      2                TCGLAC,CLHMLT,CLHVAP
 C-----------------------------------------------------------------------
       DO 100 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. S(I).GT.0.)                         THEN
-              HTCS  (I)=HTCS(I)-FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
+          IF(FI(I,q).GT.0. .AND. S(I).GT.0.)                       THEN
+              HTCS  (I)=HTCS(I)-FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
      1                  ZSNOW(I)/DELT
               SNOFAL=S(I)*DELT                      
               IF(SNOFAL.GE.1.E-4)                               THEN 
@@ -65,17 +66,17 @@ C-----------------------------------------------------------------------
               ELSE IF(.NOT.(ZSNOW(I).GT.0.))                THEN
                   ALBSNO(I)=0.50                                                         
               ENDIF                                                                   
-              HCPSNP=HCPICE*RHOSNI(I)/RHOICE
+              HCPSNP=HCPICE*RHOSNI(I,q)/RHOICE
               TSNOW (I)=((TSNOW(I)+TFREZ)*ZSNOW(I)*HCPSNO(I) +
      1                   (TS   (I)+TFREZ)*SNOFAL  *HCPSNP)/
      2                  (ZSNOW(I)*HCPSNO(I) + SNOFAL*HCPSNP) -
      3                   TFREZ
-              RHOSNO(I)=(ZSNOW(I)*RHOSNO(I) + SNOFAL*RHOSNI(I))/
+              RHOSNO(I)=(ZSNOW(I)*RHOSNO(I) + SNOFAL*RHOSNI(I,q))/
      1                  (ZSNOW(I)+SNOFAL)                          
               ZSNOW (I)=ZSNOW(I)+SNOFAL                                                          
               HCPSNO(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
      1                  (RHOW*ZSNOW(I))
-              HTCS  (I)=HTCS(I)+FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
+              HTCS  (I)=HTCS(I)+FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
      1                  ZSNOW(I)/DELT
           ENDIF                                                 
   100 CONTINUE

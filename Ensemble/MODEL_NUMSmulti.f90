@@ -16,7 +16,7 @@ use MODELS, only : &
   im,       &! infiltration model
   sotcm,    &! soil thermal conductivity model
   ufcm,     &! soil unfrozen water content model
-  siim,     &! soil ice impedance model
+!  siim,     &! soil ice impedance model
   Nmod       ! Number of models model
 
 implicit none
@@ -35,7 +35,7 @@ integer :: &
   qim,      &! infiltration model number
   qsotcm,   &! soil thermal conductivity model number
   qufcm,    &! soil unfrozen water content model number
-  qsiim,    &! soil ice impedance model number
+!  qsiim,    &! soil ice impedance model number
   i          ! counter
 
 q = 1
@@ -51,8 +51,8 @@ do qtem = 0, 1
          do qim = 0, 1
           do qsotcm = 0, 1
            do qufcm = 0, 1
-            do qsiim = 0, 1
-                tem(q)  = 1!qtem
+!            do qsiim = 0, 1
+                tem(q)  = qtem
                 zmsm(q) = qzmsm
                 bsm(q)  = qbsm
                 scfm(q) = qscfm
@@ -64,9 +64,9 @@ do qtem = 0, 1
                 im(q)   = qim
                 sotcm(q)= qsotcm
                 ufcm(q) = qufcm
-                siim(q) = qsiim
+!                siim(q) = qsiim
                 q = q + 1
-            end do
+!            end do
            end do
           end do
          end do
@@ -81,10 +81,10 @@ do qtem = 0, 1
 end do
 
 !open(unit=907,file="model_nums.csv",status="new")
-! write(907,'("tem,zmsm,bsm,scfm,fsdm,scm,sam,sntcm,slwm,im,sotcm,ufcm,siim")')
+! write(907,'("tem,zmsm,bsm,scfm,fsdm,scm,sam,sntcm,slwm,im,sotcm,ufcm")')
 ! do i=1,Nmod
-!  write(907, '(13(I1,","))') tem(i),zmsm(i),bsm(i),scfm(i),fsdm(i),scm(i),&
-!                      sam(i),sntcm(i),slwm(i),im(i),sotcm(i),ufcm(i),siim(i)
+!  write(907, '(12(I1,","))') tem(i),zmsm(i),bsm(i),scfm(i),fsdm(i),scm(i),&
+!                      sam(i),sntcm(i),slwm(i),im(i),sotcm(i),ufcm(i)
 ! enddo
 !close(unit=907)
 

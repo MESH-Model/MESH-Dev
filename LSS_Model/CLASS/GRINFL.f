@@ -11,7 +11,7 @@
      A                  THLRAT,THFC,DELZW,ZBOTW,XDRAIN,DELZ,ISAND,
      B                  IGRN,IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
      C                  NEND,ISIMP,IGDR,
-     D                  IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     D                  IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
 C
 C     * OCT 18/11 - M.LAZARE.   PASS IN "IGDR" AS AN INPUT FIELD 
 C     *                         (ORIGINATING IN CLASSB) TO
@@ -62,11 +62,13 @@ C     *                         INFILTRATING CONDITIONS (I.E.
 C     *                         PONDED WATER OR RAINFALL OCCURRING
 C     *                         WITHIN CURRENT TIMESTEP).
 C
+      use MODELS, only : siim,Nmod
+C
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,N
+      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,N,q
 C  
 C     * INPUT/OUTPUT FIELDS.
 C
@@ -79,7 +81,7 @@ C
 C
 C     * INPUT FIELDS.
 C
-      REAL FI    (ILG),    EVAP  (ILG),    R     (ILG),    TR    (ILG), 
+      REAL FI (ILG,Nmod),    EVAP  (ILG),    R    (ILG),   TR  (ILG), 
      1     TPOND (ILG),    ZPOND (ILG),    DT    (ILG)    
 C
 C     * WORK FIELDS (FOR ALL CALLED ROUTINES AS WELL).
@@ -134,7 +136,7 @@ C     * DETERMINE POINTS WHICH SATISFY CONDITIONS FOR THESE CALCULATIONS
 C     * AND STORE THEM AS HAVING NON-ZERO VALUES FOR WORK ARRAY "IGRN".
 C
       DO 50 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. 
+          IF(FI(I,q).GT.0. .AND. 
      1       ISAND(I,1).GT.-4 .AND. DT(I).GT.0. .AND.
      2       (R(I).GT.0. .OR. ZPOND(I).GT.0.))                     THEN
               IGRN(I)=1
@@ -160,18 +162,19 @@ C
               FDT (I,J)=0.0
               TFDT(I,J)=0.0
               IF(ISAND(I,J).GT.-3)                             THEN
-                select case(siim(q))
-                 case (0) ! CLASS: Soulis and Seglenieks (2008)
+!mm                select case(siim(q))
+!mm                 case (0) ! CLASS: Soulis and Seglenieks (2008)
                   GRKSATF(I,J)=GRKSAT(I,J)*(1.0-MAX(0.0,MIN(1.0,
      1                THICE(I,J)/THPOR(I,J))))**2
-                 case (1) ! linear (SHAW; Bloomsburg & Wang, 1969; Flerchinger & Saxton, 1989)
-                  if ((THPOR(I,J)-THICE(I,J)).gt.0.13) then
-                    GRKSATF(I,J)=GRKSAT(I,J)*
-     1                            (THPOR(I,J)-THICE(I,J)-0.13)/
-     2                            (THPOR(I,J)-0.13)
-                  else
-                    GRKSATF(I,J)=0.0
-                end select
+!mm                 case (1) ! linear (SHAW; Bloomsburg & Wang, 1969; Flerchinger & Saxton, 1989)
+!mm                  if ((THPOR(I,J)-THICE(I,J)).gt.0.13) then
+!mm                    GRKSATF(I,J)=GRKSAT(I,J)*
+!mm     1                            (THPOR(I,J)-THICE(I,J)-0.13)/
+!mm     2                            (THPOR(I,J)-0.13)
+!mm                  else
+!mm                    GRKSATF(I,J)=0.0
+!mm                  endif
+!mm                end select
                   THPORF(I,J)=MAX((THPOR(I,J)-THICE(I,J)-0.00001),
      1                THLIQ(I,J),THLMIN(I,J))                
                   THLINF(I,J)=MAX(THLIQ(I,J),THLMIN(I,J),
@@ -226,7 +229,7 @@ C
                  GRK=GRKSATF(I,J)
                  PSI=PSISAT(I,J)
              ENDIF
-             IF(THLINF(I,J).GT.THLIQ(I,J))                  THEN 
+             IF(THLINF(I,J).GT.THLIQ(I,J)) THEN !.and. GRKINF(I,J).ne.0.)  THEN 
                 PSIF(I,J)=MAX(BI(I,J)*(GRKINF(I,J)*PSIINF-GRK*PSI)/
      1                    (GRKINF(I,J)*(BI(I,J)+3.)), 0.0) 
              ELSE                                                                    
@@ -313,7 +316,7 @@ C
      5          TUSED,RDUMMY,ZERO,WEXCES,XDRAIN,
      6          THPOR,THLRET,THLMIN,BI,PSISAT,GRKSAT,
      7          THFC,DELZW,ISAND,IGRN,IGRD,IGDR,IZERO,
-     8          IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
+     8          IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
 C
       DO 800 J=1,IG
       DO 800 I=IL1,IL2
@@ -346,7 +349,7 @@ C
      2            TRMDR,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      3            BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,IZERO,
      4            IZERO,IGRD,IGDR,
-     5            IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
+     5            IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
 C
       RETURN                                                                      
       END       

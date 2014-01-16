@@ -26,7 +26,7 @@ CHARACTER(8) :: FILE_VER
 LOGICAL :: VER_OK
 
 OPEN (23, FILE="MESH_parameters_hydrology.ini", STATUS="OLD",IOSTAT=IOS)
-IF(PBSMFLAG==1) OPEN (24, FILE="MESH_parameters_pbsm.ini", STATUS="OLD",IOSTAT=IOS)
+!IF(PBSMFLAG==1) OPEN (24, FILE="MESH_parameters_pbsm.ini", STATUS="OLD",IOSTAT=IOS)
 !> CHECK FILE FOR IOSTAT ERRORS
 !> when IOS equals 0, the file was opened successfully  
 IF (IOS .NE. 0)THEN 
@@ -127,7 +127,7 @@ IF(FROZENSOILINFILFLAG == 1)THEN
        S0           = INDEPPARVAL(3)
        T_ICE_LENS   = INDEPPARVAL(4)
        DO I = 5,INDEPPAR
-          t0_ACC(I-4) = INDEPPARVAL(I)
+          t0_ACC(I-4,1) = INDEPPARVAL(I)
        ENDDO
     ELSE   
        PRINT *
@@ -158,31 +158,21 @@ ENDIF
 
 READ(23,*) DEPPAR
 READ(23,*)
-IF(DEPPAR>0) THEN
-   READ(23,*) (hp%ZSNLROW(1,M),M=1,NTYPE)
-   READ(23,*) (hp%ZPLSROW(1,M),M=1,NTYPE)
-   READ(23,*) (hp%ZPLGROW(1,M),M=1,NTYPE)
-  IF(PBSMFLAG==1) THEN
-   READ(24,*) (hp%fetchROW(1,M),M=1,NTYPE)
-   READ(24,*) (hp%HtROW(1,M),M=1,NTYPE)
-   READ(24,*) (hp%N_SROW(1,M),M=1,NTYPE)
-   READ(24,*) (hp%A_SROW(1,M),M=1,NTYPE)
-   READ(24,*) (hp%DistribROW(1,M),M=1,NTYPE)
-  ENDIF 
-ENDIF
-
-DO I=2,NA
-  DO M=1,NTYPE
-    hp%ZSNLROW(I,M)=hp%ZSNLROW(1,M)
-    hp%ZPLSROW(I,M)=hp%ZPLSROW(1,M)
-    hp%ZPLGROW(I,M)=hp%ZPLGROW(1,M)
-   IF(PBSMFLAG==1) THEN
-    hp%fetchROW(I,M)=hp%fetchROW(1,M)
-    hp%HtROW(I,M)=hp%HtROW(1,M)
-    hp%N_SROW(I,M)=hp%N_SROW(1,M)
-    hp%A_SROW(I,M)=hp%A_SROW(1,M)
-    hp%DistribROW(I,M)=hp%DistribROW(1,M)
-   ENDIF
+!IF(DEPPAR>0) THEN
+!   READ(23,*) (hp%ZSNLROW(1,M),M=1,NTYPE)
+!   READ(23,*) (hp%ZPLSROW(1,M),M=1,NTYPE)
+!   READ(23,*) (hp%ZPLGROW(1,M),M=1,NTYPE)
+!  IF(FROZENSOILINFILFLAG == 1)THEN
+!   READ(23,*) (,M=1,NTYPE)
+!  ENDIF
+!  IF(PBSMFLAG==1) THEN
+!   READ(23,*) (hp%fetchROW(1,M),M=1,NTYPE)
+!   READ(23,*) (hp%HtROW(1,M),M=1,NTYPE)
+!   READ(23,*) (hp%N_SROW(1,M),M=1,NTYPE)
+!   READ(23,*) (hp%A_SROW(1,M),M=1,NTYPE)
+!   READ(23,*) (hp%DistribROW(1,M),M=1,NTYPE)
+!  ENDIF 
+!ENDIF
 
 IF(DEPPAR < 9)THEN
    PRINT *
@@ -191,6 +181,22 @@ IF(DEPPAR < 9)THEN
    PRINT *
    STOP
 ENDIF
+!
+!DO I=1,NA
+!  DO M=1,NTYPE
+!    hp%ZSNLROW(I,M)=hp%ZSNLROW(1,M)
+!    hp%ZPLSROW(I,M)=hp%ZPLSROW(1,M)
+!    hp%ZPLGROW(I,M)=hp%ZPLGROW(1,M)
+!   IF(PBSMFLAG==1) THEN
+!    hp%fetchROW(I,M)=hp%fetchROW(1,M)
+!    hp%HtROW(I,M)=hp%HtROW(1,M)
+!    hp%N_SROW(I,M)=hp%N_SROW(1,M)
+!    hp%A_SROW(I,M)=hp%A_SROW(1,M)
+!    hp%DistribROW(I,M)=hp%DistribROW(1,M)
+!   ENDIF
+!  ENDDO
+!ENDDO
+!
 
 ALLOCATE(DEPPARVAL(DEPPAR,NTYPE))
 
@@ -209,11 +215,16 @@ DO I=1,NA
     hp%BROW   (I,M)=DEPPARVAL(7,M)
     hp%K1ROW  (I,M)=DEPPARVAL(8,M)
     hp%K2ROW  (I,M)=DEPPARVAL(9,M)
+    hp%fetchROW(I,M)=DEPPARVAL(10,M)
+    hp%HtROW(I,M)=DEPPARVAL(11,M)
+    hp%N_SROW(I,M)=DEPPARVAL(12,M)
+    hp%A_SROW(I,M)=DEPPARVAL(13,M)
+    hp%DistribROW(I,M)=DEPPARVAL(14,M)
   ENDDO
 ENDDO
 
 CLOSE(UNIT=23)
-IF(PBSMFLAG==1) CLOSE(UNIT=24)
+!IF(PBSMFLAG==1) CLOSE(UNIT=24)
 
 RETURN
 

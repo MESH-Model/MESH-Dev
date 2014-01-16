@@ -2,7 +2,8 @@
      1                  RUNOFF,TRUNOF,QFG,WLOST,FI,EVAP,R,ZPOND,DT,
      2                  WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      3                  BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,LZF,
-     4                  IGRN,IGRD,IGDR,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     4                  IGRN,IGRD,IGDR,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,
+     +                  q)
 C
 C     * OCT 18/11 - M.LAZARE.   PASS IN "IGDR" AS AN INPUT FIELD 
 C     *                         (ORIGINATING IN CLASSB) RATHER
@@ -82,11 +83,13 @@ C     *                         NON-INFILTRATING CONDITIONS (I.E.
 C     *                         NO PONDED WATER AND NO RAINFALL 
 C     *                         OCCURRING WITHIN CURRENT TIMESTEP).
 C
+      use MODELS, only : siim,Nmod 
+C
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,IPTBAD,N 
+      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,IPTBAD,N,q
 C
 C     * INPUT/OUTPUT FIELDS.
 C
@@ -98,7 +101,7 @@ C
 C
 C     * INPUT FIELDS.
 C
-      REAL FI    (ILG),    EVAP  (ILG),    R     (ILG),    
+      REAL FI    (ILG,Nmod),    EVAP  (ILG),    R     (ILG),    
      1     ZPOND (ILG),    DT    (ILG)
 C
       INTEGER              IGRN  (ILG),    LZF   (ILG),
@@ -140,7 +143,7 @@ C     * THE INPUT ARRAY "IGRN" HANDLES THIS CONDITION (PASSED AS
 C     * "IZERO" ARRAY WHEN CALLED FROM "WEND" OR THE END OF "GRINFL"). 
 C
       DO 50 I=IL1,IL2
-          IF(FI (I).GT.0. .AND. 
+          IF(FI (I,q).GT.0. .AND. 
      1       ISAND(I,1).GT.-4 .AND.DT(I).GT.0. .AND.IGRN(I).EQ.0 .AND.
      2       (R(I).LT.1.0E-12 .AND. ZPOND(I).LT.1.0E-12))     THEN
               IGRD(I)=1
@@ -159,18 +162,19 @@ C
           IF(ISAND(I,J).GT.-3)             THEN
               THLMAX(I,J)=MAX((THPOR(I,J)-THICE(I,J)-0.00001),
      1            THLIQ(I,J),THLMIN(I,J))                
-            select case(siim(q))
-             case(0) ! CLASS: Soulis and Seglenieks (2008)
+!mm            select case(siim(q))
+!mm             case(0) ! CLASS: Soulis and Seglenieks (2008)
               GRKSATF(I,J)=GRKSAT(I,J)*(1.0-MAX(0.0,MIN((THPOR(I,J)-
      1            THLMIN(I,J))/THPOR(I,J),THICE(I,J)/THPOR(I,J))))**2
-             case (1) ! linear (SHAW; Bloomsburg & Wang, 1969; Flerchinger & Saxton, 1989)
-              if ((THPOR(I,J)-THICE(I,J)).gt.0.13) then
-                    GRKSATF(I,J)=GRKSAT(I,J)*
-     1                            (THPOR(I,J)-THICE(I,J)-0.13)/
-     2                            (THPOR(I,J)-0.13)
-              else
-                    GRKSATF(I,J)=0.0
-             end select
+!mm             case (1) ! linear (SHAW; Bloomsburg & Wang, 1969; Flerchinger & Saxton, 1989)
+!mm              if ((THPOR(I,J)-THICE(I,J)).gt.0.13) then
+!mm                    GRKSATF(I,J)=GRKSAT(I,J)*
+!mm     1                            (THPOR(I,J)-THICE(I,J)-0.13)/
+!mm     2                            (THPOR(I,J)-0.13)
+!mm              else
+!mm                    GRKSATF(I,J)=0.0
+!mm              endif
+!mm             end select
               THPORF(I,J)=THLMAX(I,J)
           ELSE
               THLMAX(I,J)=0.0
@@ -226,9 +230,13 @@ C
 C                  GRSBND=GRKSAT(I,J)**(DELZW(I,J)/(DELZW(I,J)+
 C     1                DELZW(I,J+1)))*GRKSAT(I,J+1)**(DELZW(I,J+1)/
 C     2                (DELZW(I,J)+DELZW(I,J+1)))
+!mm                  if(GRKSATF(I,J).eq.0. .and. GRKSATF(I,J+1).eq.0.)then
+!mm                  GRSBND=0.
+!mm                  else
                   GRSBND=GRKSATF(I,J)*GRKSATF(I,J+1)*(DELZW(I,J)+
      1                DELZW(I,J+1))/(GRKSATF(I,J)*DELZW(I,J+1)+
      2                GRKSATF(I,J+1)*DELZW(I,J))
+!mm                  endif
                   PSSBND=PSISAT(I,J)**(DELZW(I,J)/(DELZW(I,J)+
      1                DELZW(I,J+1)))*PSISAT(I,J+1)**(DELZW(I,J+1)/
      2                (DELZW(I,J)+DELZW(I,J+1)))
@@ -274,7 +282,7 @@ C
                   ELSE
                       THSUBL=THSUBL-THICE(I,J)
                       THICE(I,J)=0.0
-                      QFG(I)=QFG(I)-FI(I)*THSUBL*RHOICE*DELZW(I,J)/
+                      QFG(I)=QFG(I)-FI(I,q)*THSUBL*RHOICE*DELZW(I,J)/
      1                       DELT
                       WLOST(I)=WLOST(I)+THSUBL*RHOICE*DELZW(I,J)
                   ENDIF
@@ -418,8 +426,8 @@ C
                   ELSE
                       THSUBL=THSUBL-THICE(I,1)
                       THICE(I,1)=0.0
-                      QFG(I)=QFG(I)-FI(I)*THSUBL*RHOICE*DELZW(I,1)/
-     1                       DELT
+                      QFG(I)=QFG(I)-FI(I,q)*THSUBL*RHOICE*DELZW(I,1)
+     1                       /DELT
                       WLOST(I)=WLOST(I)+THSUBL*RHOICE*DELZW(I,1)
                   ENDIF
                   IF(THICE(I,1).LT.0.0) IPTBAD=I
@@ -432,11 +440,11 @@ C
               TFDT(I,1)=TBARW(I,1) 
               TFDT(I,IGDR(I)+1)=TBARW(I,IGDR(I))
               IF(FDT(I,IGDR(I)+1).GT.0.0) THEN
-                  IF((BASFLW(I)+FI(I)*FDT(I,IGDR(I)+1)).GT.0.0) 
+                  IF((BASFLW(I)+FI(I,q)*FDT(I,IGDR(I)+1)).GT.0.0) 
      1              TBASFL(I)=(TBASFL(I)*BASFLW(I)+(TFDT(I,IGDR(I)+1)+
-     2                TFREZ)*FI(I)*FDT(I,IGDR(I)+1))/(BASFLW(I)+FI(I)*
-     3                FDT(I,IGDR(I)+1))
-                  BASFLW(I)=BASFLW(I)+FI(I)*FDT(I,IGDR(I)+1)
+     2                TFREZ)*FI(I,q)*FDT(I,IGDR(I)+1))/(BASFLW(I)+
+     3                FI(I,q)*FDT(I,IGDR(I)+1))
+                  BASFLW(I)=BASFLW(I)+FI(I,q)*FDT(I,IGDR(I)+1)
                   IF((RUNOFF(I)+FDT(I,IGDR(I)+1)).GT.0.0) 
      1              TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TFDT(I,IGDR(I)+1)+
      2                TFREZ)*FDT(I,IGDR(I)+1))/(RUNOFF(I)+

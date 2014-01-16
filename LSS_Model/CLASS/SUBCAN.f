@@ -1,5 +1,5 @@
       SUBROUTINE SUBCAN(IWATER,R,TR,S,TS,RHOSNI,EVAPG,QFN,QFG,
-     1                  PCPN,PCPG,FI,ILG,IL1,IL2,JL)
+     1                  PCPN,PCPG,FI,ILG,IL1,IL2,JL,q)
 C
 C     * SEP 23/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
 C     * JUL 21/04 - D.VERSEGHY. NEW LOWER LIMITS ON RADD AND SADD,
@@ -24,21 +24,23 @@ C     *                         CANOPY: LUMP DOWNWARD WATER VAPOUR
 C     *                         FLUXES TOGETHER WITH PRECIPITATION 
 C     *                         REACHING GROUND.
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IWATER,ILG,IL1,IL2,JL,I
+      INTEGER IWATER,ILG,IL1,IL2,JL,I,q
 C
 C     * INPUT/OUTPUT ARRAYS.
 C
       REAL R     (ILG),    TR    (ILG),    S     (ILG),    TS    (ILG),
-     1     RHOSNI(ILG),    EVAPG (ILG),    QFN   (ILG),    QFG   (ILG),
-     2     PCPN  (ILG),    PCPG  (ILG)
+     1     RHOSNI(ILG,Nmod),   EVAPG(ILG), QFN(ILG), QFG(ILG),
+     2     PCPG  (ILG)
+      real PCPN  (ILG)
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG)
+      REAL FI    (ILG,Nmod)
 C
 C     * TEMPORARY VARIABLES.
 C
@@ -55,15 +57,15 @@ C
      2                TCGLAC,CLHMLT,CLHVAP
 C-----------------------------------------------------------------------
       DO 100 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. IWATER.EQ.2)                        THEN
+          IF(FI(I,q).GT.0. .AND. IWATER.EQ.2)                     THEN
               IF(S(I).GT.0. .OR. EVAPG(I).LT.0.)             THEN  
-                  SADD=S(I)-EVAPG(I)*RHOW/RHOSNI(I)
+                  SADD=S(I)-EVAPG(I)*RHOW/RHOSNI(I,q)
                   IF(ABS(SADD).LT.1.0E-12) SADD=0.0
                   IF(SADD.GT.0.)                        THEN
                       S(I)=SADD                                                              
                       EVAPG(I)=0.0                                                           
                   ELSE                                                                    
-                      EVAPG(I)=-SADD*RHOSNI(I)/RHOW                                             
+                      EVAPG(I)=-SADD*RHOSNI(I,q)/RHOW                                             
                       S(I)=0.0                                                               
                       TS(I)=0.0                                                              
                   ENDIF                                                                   
@@ -91,7 +93,7 @@ C
   100 CONTINUE
 C                                                                                  
       DO 200 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. IWATER.EQ.1)                        THEN
+          IF(FI(I,q).GT.0. .AND. IWATER.EQ.1)                      THEN
               IF(R(I).GT.0. .OR. EVAPG(I).LT.0.)            THEN  
                   RADD=R(I)-EVAPG(I)                                                            
                   IF(ABS(RADD).LT.1.0E-12) RADD=0.0
@@ -109,17 +111,17 @@ C
               ENDIF                                                               
 C
               IF(S(I).GT.0. .OR. EVAPG(I).LT.0.)             THEN  
-                  SADD=S(I)-EVAPG(I)*RHOW/RHOSNI(I)
+                  SADD=S(I)-EVAPG(I)*RHOW/RHOSNI(I,q)
                   IF(ABS(SADD).LT.1.0E-12) SADD=0.0
                   IF(SADD.GT.0.)                        THEN
                       S(I)=SADD                                                              
-                      QFN(I)=QFN(I)+FI(I)*EVAPG(I)*RHOW
-                      QFG(I)=QFG(I)-FI(I)*EVAPG(I)*RHOW
+                      QFN(I)=QFN(I)+FI(I,q)*EVAPG(I)*RHOW
+                      QFG(I)=QFG(I)-FI(I,q)*EVAPG(I)*RHOW
                       EVAPG(I)=0.0                                                           
                   ELSE                                                                    
-                      EVAPG(I)=-SADD*RHOSNI(I)/RHOW                                             
-                      PCPN(I)=PCPN(I)-FI(I)*S(I)*RHOSNI(I)
-                      PCPG(I)=PCPG(I)+FI(I)*S(I)*RHOSNI(I)
+                      EVAPG(I)=-SADD*RHOSNI(I,q)/RHOW                                             
+                      PCPN(I)=PCPN(I)-FI(I,q)*S(I)*RHOSNI(I,q)
+                      PCPG(I)=PCPG(I)+FI(I,q)*S(I)*RHOSNI(I,q)
                       S(I)=0.0                                                               
                       TS(I)=0.0                                                              
                   ENDIF                                                                   

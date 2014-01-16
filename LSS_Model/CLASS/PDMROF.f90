@@ -2,7 +2,7 @@ SUBROUTINE PDMROF (IWF,    ILG,    IL1,    IL2,    FI,       &
                    SPRE,   S,      FSTR,   TPOND,            &
                    OVRFLW, TOVRFL, RUNOFF, TRUNOF, TFREZ,    &
                    CMIN,   CMAX,   B,      K1,     K2,       &
-                   UM1,    QM1,    QM2,    UMQ,    DELT)
+                   UM1,    QM1,    QM2,    UMQ,    DELT,q)
 
 !----------------------------------------------------------------------
 !
@@ -117,13 +117,14 @@ SUBROUTINE PDMROF (IWF,    ILG,    IL1,    IL2,    FI,       &
 
 !----------------------------------------------------------------------
 
+use MODELS, only : Nmod
 IMPLICIT NONE
 
 !     * INPUT SCALARS
-INTEGER IWF, ILG, IL1, IL2
+INTEGER IWF, ILG, IL1, IL2,q
 
 !     * INPUT ARRAYS
-REAL  FI(ILG), CMIN(ILG), CMAX(ILG), B(ILG), K1(ILG), K2(ILG)
+REAL  FI(ILG,Nmod), CMIN(ILG), CMAX(ILG), B(ILG), K1(ILG), K2(ILG)
 REAL  TFREZ,   DELT,      DELTHR,    KMIN,   K1M,     K2M
 
 !     * INPUT/OUTPUT ARRAYS
@@ -143,7 +144,7 @@ REAL  U(ILG)
 !     * WORKING ARRAYS - ROUTING
 REAL  K2MK1,     DELTK1,  DELTK2,  DEL1STR, DEL2STR, DEL1STRM1,        &  
       DEL2STRM1, DELTA1,  DELTA2,  OMEGA0,  OMEGA1
-REAL  Q(ILG)
+REAL  Q_(ILG)
 
 !----------------------------------------------------------------------
       UMQ       = 0.0
@@ -166,7 +167,7 @@ REAL  Q(ILG)
 
 !     INITIALIZE WORKING VARIABLES - RUNOFF GENERATION
 !     CURRENTLY TURNED OFF
-      Q         = 0.0
+      Q_         = 0.0
       K2MK1     = 0.0
       DELTK1    = 0.0
       DELTK2    = 0.0
@@ -182,7 +183,7 @@ REAL  Q(ILG)
 !        --------------------------------------------------------------
 !        DO THE COMPUTATION IF VEGETATION CATEGORY EXISTS IN THE TILE
 !        --------------------------------------------------------------
-         IF(FI(I) .GT. 0.0)THEN
+         IF(FI(I,q) .GT. 0.0)THEN
 
 !              --------------------------------------------------------
 !                           PART I - RUNOFF GENERATION
@@ -308,7 +309,7 @@ REAL  Q(ILG)
 !              CALCULATE OVERLAND FLOW AS DIRECT RUNOFF ROUTED TO THE
 !              END OF THE TILE
 !              --------------------------------------------------------
-               Q(I) = Max(0.0, -DELTA1 * QM1(I) - DELTA2 * QM2(I) +    &
+               Q_(I) = Max(0.0, -DELTA1 * QM1(I) - DELTA2 * QM2(I) +    &
                                 OMEGA0 * U(I) + OMEGA1 * UM1(I))
 
 
@@ -325,10 +326,10 @@ REAL  Q(ILG)
 
                IF(U(I) .GT. 1.0E-08)                                   &
                   TOVRFL(I) = (TOVRFL(I) * OVRFLW(I) +                 &
-                              (TPOND(I) + TFREZ) * FI(I) * U(I)) /     &
-                              (OVRFLW(I) + FI(I) * U(I))
+                              (TPOND(I) + TFREZ) * FI(I,q) * U(I)) /     &
+                              (OVRFLW(I) + FI(I,q) * U(I))
 
-               OVRFLW(I) = OVRFLW(I) + FI(I) * U(I)
+               OVRFLW(I) = OVRFLW(I) + FI(I,q) * U(I)
 
          ENDIF
 
@@ -341,13 +342,13 @@ REAL  Q(ILG)
 !        BOOKKEEPING FOR NEXT TIME STEP -  FOR ROUTING
 !        --------------------------------------------------------------
          QM2(I) = QM1(I)
-         QM1(I) = Q(I)
+         QM1(I) = Q_(I)
          UM1(I) = U(I)
 
 !        --------------------------------------------------------------
 !        BOOKKEEPING FOR ACTUAL RUNOFF CALCULATION
 !        --------------------------------------------------------------
-         UMQ(I) = U(I) - Q(I)
+         UMQ(I) = U(I) - Q_(I)
 
       ENDDO
 

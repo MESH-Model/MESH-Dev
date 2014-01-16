@@ -21,7 +21,7 @@
      K                 FC,     FCS,    DELZ,   DELZW,  ZBOTW,
      L                 ISAND,  ILG,    IL1,    IL2,    JL,     IG,  
      M                 FVEG,   TCSATU, TCSATF, FTEMP,  FTEMPX, FVAP,
-     N                 FVAPX,  RIB,    RIBX  )           
+     N                 FVAPX,  RIB,    RIBX  ,q)           
 C
 C     * NOV 24/11 - R.HARVEY.   NEW SNOW THERMAL CONDUCTIVITY FROM
 C     *                         STURM ET AL. (1997).
@@ -121,11 +121,13 @@ C     * APR 11/89 - D.VERSEGHY. PREPARATION AND INITIALIZATION FOR
 C     *                         LAND SURFACE ENERGY BUDGET 
 C     *                         CALCULATIONS.
 C
+      use MODELS, only : sntcm, sotcm,Nmod
+C
       IMPLICIT NONE
 C                                                                                 
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ILG,IL1,IL2,JL,IG,I,J  
+      INTEGER ILG,IL1,IL2,JL,IG,I,J,q  
 C                                                                                 
 C     * OUTPUT ARRAYS.                                                            
 C                                                                                 
@@ -168,11 +170,11 @@ C
 C
 C     * INPUT ARRAYS.                                                             
 C                                                                                 
-      REAL THLIQ (ILG,IG),THICE (ILG,IG),TBAR  (ILG,IG),
-     1     ZPOND (ILG),   TPOND (ILG)
+      REAL THLIQ (ILG,IG,Nmod),THICE (ILG,IG,Nmod),TBAR  (ILG,IG,Nmod),
+     1     ZPOND (ILG,Nmod),   TPOND (ILG,Nmod)
 C                                                                                 
-      REAL TA    (ILG),   RHOSNO(ILG),   TSNOW (ILG),   ZSNOW (ILG),   
-     1     WSNOW (ILG),   TCAN  (ILG),   FC    (ILG),   FCS   (ILG) 
+      REAL TA (ILG),RHOSNO(ILG,Nmod),TSNOW (ILG,Nmod),ZSNOW (ILG,Nmod),   
+     1     WSNOW (ILG,Nmod),TCAN(ILG,Nmod),FC(ILG,Nmod),FCS (ILG,Nmod) 
 C
 C     * SOIL PROPERTY ARRAYS.                                     
 C                                                                                 
@@ -214,10 +216,10 @@ C
       DO 50 J=1,IG                
       !$omp parallel do                                                
       DO 50 I=IL1,IL2                                                             
-          THLIQG(I,J)=THLIQ(I,J)                                                  
-          THICEG(I,J)=THICE(I,J)                                                  
-          THLIQC(I,J)=THLIQ(I,J)                                                  
-          THICEC(I,J)=THICE(I,J)                                                  
+          THLIQG(I,J)=THLIQ(I,J,q)                                                  
+          THICEG(I,J)=THICE(I,J,q)                                                  
+          THLIQC(I,J)=THLIQ(I,J,q)                                                  
+          THICEC(I,J)=THICE(I,J,q)                                                  
           TBARCS(I,J)=0.0                                                         
           TBARGS(I,J)=0.0                                                         
           TBARC (I,J)=0.0                                                         
@@ -232,10 +234,10 @@ C     * INITIALIZE 1-D INTERNAL WORK FIELDS AND DIAGNOSTIC ARRAYS.
 C                                 
 !$omp parallel do                                                
       DO 100 I=IL1,IL2                                                            
-          FVEG  (I)=FC(I)+FCS(I)                                                  
-          IF(TCAN(I).GT.5.0) THEN
-              TCANS (I)=TCAN(I)  
-              TCANO (I)=TCAN(I) 
+          FVEG  (I)=FC(I,q)+FCS(I,q)                                                  
+          IF(TCAN(I,q).GT.5.0) THEN
+              TCANS (I)=TCAN(I,q)  
+              TCANO (I)=TCAN(I,q) 
           ELSE
               TCANS (I)=TA(I)  
               TCANO (I)=TA(I) 
@@ -348,35 +350,35 @@ C     * THERMAL PROPERTIES OF SNOW.
 C                      
 !$omp parallel do                                                           
       DO 400 I=IL1,IL2                                                            
-          IF(ZSNOW(I).GT.0.)                                        THEN          
-              HCPSCS(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
-     1            (RHOW*ZSNOW(I)) 
+          IF(ZSNOW(I,q).GT.0.)                                     THEN          
+              HCPSCS(I)=HCPICE*RHOSNO(I,q)/RHOICE+HCPW*WSNOW(I,q)/
+     1            (RHOW*ZSNOW(I,q)) 
               HCPSGS(I)=HCPSCS(I)
 C             TCSNOW(I)=2.576E-6*RHOSNO(I)*RHOSNO(I)+0.074                        
             select case(sntcm(q))
              case(0) ! Sturm et al. (1997)
-              IF(RHOSNO(I).LT.156.0) THEN
-                  TCSNOW(I)=0.234E-3*RHOSNO(I)+0.023
+              IF(RHOSNO(I,q).LT.156.0) THEN
+                  TCSNOW(I)=0.234E-3*RHOSNO(I,q)+0.023
               ELSE ! Yen (1981) [Crocus,HTESSEL,ISBA,JULES], parameter values from Douville et al. (1995)
-                  TCSNOW(I)=3.233E-6*RHOSNO(I)*RHOSNO(I)-1.01E-3*
-     1                RHOSNO(I)+0.138
+                  TCSNOW(I)=3.233E-6*RHOSNO(I,q)*RHOSNO(I,q)-1.01E-3*
+     1                RHOSNO(I,q)+0.138
               ENDIF
              case(1)
-                  TCSNOW(I)=2.22*(RHOSNO(I)/RHOW)**1.88
+                  TCSNOW(I)=2.22*(RHOSNO(I,q)/RHOW)**1.88
             end select
               IF(FVEG(I).LT.1.)                                 THEN              
-                  TSNOGS(I)=TSNOW(I)                                              
-                  WSNOGS(I)=WSNOW(I)
-                  RHOSGS(I)=RHOSNO(I)
+                  TSNOGS(I)=TSNOW(I,q)                                              
+                  WSNOGS(I)=WSNOW(I,q)
+                  RHOSGS(I)=RHOSNO(I,q)
               ELSE                                                                
                   TSNOGS(I)=0.0                                                   
                   WSNOGS(I)=0.0
                   RHOSGS(I)=0.0
               ENDIF                                                               
               IF(FVEG(I).GT.0.)                                 THEN              
-                  TSNOCS(I)=TSNOW(I)                                              
-                  WSNOCS(I)=WSNOW(I)
-                  RHOSCS(I)=RHOSNO(I)
+                  TSNOCS(I)=TSNOW(I,q)                                              
+                  WSNOCS(I)=WSNOW(I,q)
+                  RHOSCS(I)=RHOSNO(I,q)
               ELSE                                                                
                   TSNOCS(I)=0.0                                                   
                   WSNOCS(I)=0.0
@@ -466,7 +468,7 @@ C
                   ENDIF
                   IF(J.EQ.1) THEN
                       TCTOPC(I,J)=TCTOPC(I,J)+(TCW-TCTOPC(I,J))*
-     1                            MIN(ZPOND(I),1.0E-2)*100.0
+     1                            MIN(ZPOND(I,q),1.0E-2)*100.0
                       TCTOPG(I,J)=TCTOPC(I,J)
                   ENDIF
               ELSE
@@ -521,7 +523,7 @@ C
                   ENDIF
                   IF(J.EQ.1) THEN
                       TCTOPC(I,J)=TCTOPC(I,J)+(TCW-TCTOPC(I,J))*
-     1                            MIN(ZPOND(I),1.0E-2)*100.0
+     1                            MIN(ZPOND(I,q),1.0E-2)*100.0
                       TCTOPG(I,J)=TCTOPC(I,J)
                   ENDIF
               ENDIF    
@@ -582,7 +584,7 @@ C                  IF(J.EQ.1) TCTOPC(I,J)=TCTOPC(I,J)*0.1
               ENDIF
               IF(J.EQ.1) THEN
                   TCTOPC(I,J)=TCTOPC(I,J)+(TCW-TCTOPC(I,J))*
-     1                        MIN(ZPOND(I),1.0E-2)*100.0
+     1                        MIN(ZPOND(I,q),1.0E-2)*100.0
                   TCTOPG(I,J)=TCTOPC(I,J)
               ENDIF
           ENDIF                                                                   
@@ -593,14 +595,14 @@ C     * IN GROUND HEAT FLUX CALCULATIONS.
 C
       !$omp parallel do
       DO 600 I=IL1,IL2
-          IF(ZPOND(I).GT.0.)                          THEN 
-              TBAR1P(I)=(TPOND(I)*HCPW*ZPOND(I) + 
-     1                  TBAR(I,1)*(HCPG(I,1)*DELZW(I,1)+
+          IF(ZPOND(I,q).GT.0.)                          THEN 
+              TBAR1P(I)=(TPOND(I,q)*HCPW*ZPOND(I,q) + 
+     1                  TBAR(I,1,q)*(HCPG(I,1)*DELZW(I,1)+
      2                  HCPSND*(DELZ(1)-DELZW(I,1))))/
-     3                  (HCPW*ZPOND(I)+HCPG(I,1)*DELZW(I,1)+
+     3                  (HCPW*ZPOND(I,q)+HCPG(I,1)*DELZW(I,1)+
      4                  HCPSND*(DELZ(1)-DELZW(I,1)))
           ELSE
-              TBAR1P(I)=TBAR(I,1)
+              TBAR1P(I)=TBAR(I,1,q)
           ENDIF
   600 CONTINUE
 C

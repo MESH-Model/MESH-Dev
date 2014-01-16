@@ -2,7 +2,7 @@ SUBROUTINE FROZEN(FI,SNOWMELT,TS,SOIL_MOIST,SWE, &
                   SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS, &
                   t0_ACC,C,DELT,NCOUNT,ILG,IL1,IL2, &
                   SI,TSI,INFILTYPE,SNOWMELTD,SNOWMELTD_LAST, &
-                  MELTRUNOFF,SNOWINFIL,CUMSNOWINFIL)
+                  MELTRUNOFF,SNOWINFIL,CUMSNOWINFIL,N,q,NYEARS,NMELT)
 
 !>=============================================================================
 !>
@@ -77,13 +77,14 @@ SUBROUTINE FROZEN(FI,SNOWMELT,TS,SOIL_MOIST,SWE, &
 !> INF0               -  Frozen soil infiltration rate (mm/sec)
 !> CAPACITY           -  Maximum top frozen soil water holding capacity (mm/sec)
 
+use MODELS, only : Nmod
 USE FLAGS
 IMPLICIT NONE
 
 !> INCOMING
-INTEGER NCOUNT,ILG,IL1,IL2
-REAL    DELT,t0_ACC,SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS
-REAL    FI(ILG),SWE(ILG),SNOWMELT(ILG),TS(ILG), &
+INTEGER NCOUNT,ILG,IL1,IL2,q,N,NMELT,NYEARS
+REAL    DELT,t0_ACC(NYEARS,Nmod),SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS
+REAL    FI(ILG,Nmod),SWE(ILG),SNOWMELT(ILG),TS(ILG), &
         SOIL_MOIST(ILG),C(ILG)
 
 !> OUTGOING
@@ -109,7 +110,7 @@ MELTRUNOFF = 0.0
 DO I = IL1, IL2
     
     !> GRU exists and frozen module is active.
-    IF(FI(I) > 0.01 .and. C(I) > 0.0)THEN
+    IF(FI(I,q) > 0.01 .and. C(I) > 0.0)THEN
    
          !> Beginning of day (just after mid night)
 !         IF(NCOUNT == 1)THEN
@@ -146,14 +147,14 @@ DO I = IL1, IL2
             CASE(LIMITED)
             
             !> Opportunity time (user specified or computed).
-            IF(t0_ACC == 0.0)THEN
+            IF(t0_ACC(NMELT,q) == 0.0)THEN
 
                !> Compute opportunity time [hours] based on Zhao and Gray, 1997.
                t0 = MAX(DELT/3600.0, 0.65 * SWE(I) - 5) !>DELT is model time step
             ELSE
 
                !> User provided opportunity time.
-               t0 = t0_ACC
+               t0 = t0_ACC(NMELT,q)
             ENDIF
 
             !> Maximum water holding capacity of the frozen soil (m/sec).
@@ -165,7 +166,7 @@ DO I = IL1, IL2
                
                !> Frozen soil infiltration parameteric equation (t0 in hr, INF in mm)
                INF  = C(I)*(S0**2.92)*((1.0 - SI(I))**1.64)*       &
-                      (((0.0 - TSI(I)) / 273.15)**(-0.45))*(t0**0.44)
+                      (((0.0 - TSI(I)) / 273.16)**(-0.45))*(t0**0.44)
                                                                    
                
                !> convert mm to m

@@ -1,7 +1,7 @@
       SUBROUTINE CANADD(IWATER,R,TR,S,TS,RAICAN,SNOCAN,TCAN,CHCAP,
      1                  HTCC,ROFC,ROVG,PCPN,PCPG,FI,FSVF,
      2                  CWLCAP,CWFCAP,CMASS,RHOSNI,TSURX,RDRIP,SDRIP,
-     3                  ILG,IL1,IL2,JL)
+     3                  ILG,IL1,IL2,JL,q)
 C                                                                                 
 C     * NOV 22/06 - E.CHAN/D.VERSEGHY. UNCONDITIONALLY SET TR AND TS.
 C     * JAN 05/05 - P.BARTLETT. CORRECT/REFINE SNOW INTERCEPTION
@@ -26,23 +26,25 @@ C     *                         PRECIPITATION REACHING GROUND.
 C     *                         ADJUST CANOPY TEMPERATURE AND HEAT
 C     *                         CAPACITY.
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C                                                                
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IWATER,ILG,IL1,IL2,JL,I
+      INTEGER IWATER,ILG,IL1,IL2,JL,I,q
 C 
 C     * INPUT/OUTPUT ARRAYS.
 C
       REAL R     (ILG),    TR    (ILG),    S     (ILG),    TS    (ILG),
-     1     RAICAN(ILG),    SNOCAN(ILG),    TCAN  (ILG),    CHCAP (ILG),
-     2     HTCC  (ILG),    ROFC  (ILG),    ROVG  (ILG),    PCPN  (ILG),
+     1     RAICAN(ILG),    SNOCAN(ILG,Nmod),  TCAN  (ILG),  CHCAP (ILG),
+     2     HTCC (ILG), ROFC(ILG),ROVG  (ILG), !PCPN  (ILG),
      3     PCPG  (ILG)
+      real PCPN  (ILG)
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG),    FSVF  (ILG),    CWLCAP(ILG),    CWFCAP(ILG),    
-     1     CMASS (ILG),    RHOSNI(ILG),    TSURX (ILG)
+      REAL FI    (ILG,Nmod),   FSVF  (ILG), CWLCAP(ILG),   CWFCAP(ILG),    
+     1     CMASS (ILG),    RHOSNI(ILG,Nmod),    TSURX (ILG)
 C
 C     * INTERNAL WORK ARRAYS.
 C
@@ -51,7 +53,8 @@ C
 C     * TEMPORARY VARIABLES.
 C
       REAL RTHRU,RINT,STHRU,SINT,TRCAN,TSCAN,RWXCES,SLOAD,SWXCES,
-     1     SNUNLD,CHCAPI,TCANI
+     1     CHCAPI,TCANI
+      double precision SNUNLD
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -66,19 +69,20 @@ C-----------------------------------------------------------------------
       DO 100 I=IL1,IL2
           RDRIP(I)=0.0
           SDRIP(I)=0.0
-          IF(FI(I).GT.0. .AND. (R(I).GT.0. .OR. S(I).GT.0. .OR.
-     1            RAICAN(I).GT.0. .OR. SNOCAN(I).GT.0.))           THEN
+          IF(FI(I,q).GT.0. .AND. (R(I).GT.0. .OR. S(I).GT.0. .OR.
+     1            RAICAN(I).GT.0. .OR. SNOCAN(I,q).GT.0.))          THEN
               RTHRU=R(I)*FSVF(I)                                                                
               RINT=(R(I)-RTHRU)*DELT*RHOW                                                    
               STHRU=S(I)*FSVF(I)                                                                
-              SINT=(S(I)-STHRU)*DELT*RHOSNI(I)
+              SINT=(S(I)-STHRU)*DELT*RHOSNI(I,q)
               IF((RAICAN(I)+RINT).GT.0.)                 THEN
                   TRCAN=(RAICAN(I)*TCAN(I)+RINT*TR(I))/(RAICAN(I)+RINT)                               
               ELSE                                                                        
                   TRCAN=0.0                                                               
               ENDIF                                                                       
-              IF((SNOCAN(I)+SINT).GT.0.)                 THEN 
-                  TSCAN=(SNOCAN(I)*TCAN(I)+SINT*TS(I))/(SNOCAN(I)+SINT)                               
+              IF((SNOCAN(I,q)+SINT).GT.0.)                 THEN 
+                  TSCAN=(SNOCAN(I,q)*TCAN(I)+SINT*TS(I))/
+     +                  (SNOCAN(I,q)+SINT)                               
               ELSE                                                                        
                   TSCAN=0.0                                                               
               ENDIF                                                                       
@@ -99,11 +103,11 @@ C
                   RAICAN(I)=RAICAN(I)+RINT                                                      
               ENDIF
 C
-              SLOAD=(CWFCAP(I)-SNOCAN(I))*(1.0-EXP(-SINT/CWFCAP(I)))
+              SLOAD=(CWFCAP(I)-SNOCAN(I,q))*(1.0-EXP(-SINT/CWFCAP(I)))
               SWXCES=SINT-SLOAD
-              SNUNLD=(SLOAD+SNOCAN(I))*(1.0-EXP(-1.157E-6*DELT))
+              SNUNLD=(SLOAD+SNOCAN(I,q))*(1.0-EXP(-1.157E-6*DELT))
               IF(SWXCES.GT.0. .OR. SNUNLD.GT.0.)                 THEN 
-                  SDRIP(I)=(MAX(SWXCES,0.0)+SNUNLD)/(DELT*RHOSNI(I))
+                  SDRIP(I)=(MAX(SWXCES,0.0)+SNUNLD)/(DELT*RHOSNI(I,q))
                   IF((SDRIP(I)+STHRU).GT.0.)       THEN                                           
                       TS(I)=(SDRIP(I)*TSCAN+STHRU*TS(I))/
      1                      (SDRIP(I)+STHRU)                             
@@ -111,18 +115,18 @@ C
                       TS(I)=0.0                                                              
                   ENDIF                                                                   
                   S(I)=SDRIP(I)+STHRU                                                           
-                  SNOCAN(I)=SNOCAN(I)+SINT-MAX(SWXCES,0.0)-SNUNLD
+                  SNOCAN(I,q)=SNOCAN(I,q)+SINT-MAX(SWXCES,0.0)-SNUNLD
               ELSE                                                                        
                   S(I)=STHRU                                                                 
-                  SNOCAN(I)=SNOCAN(I)+SINT                                                      
+                  SNOCAN(I,q)=SNOCAN(I,q)+SINT                                                      
               ENDIF
 C
               CHCAPI  =CHCAP(I)
               TCANI   =TCAN(I)
-              CHCAP(I)=RAICAN(I)*SPHW+SNOCAN(I)*SPHICE+CMASS(I)*SPHVEG                                
-              TCAN (I)=(RAICAN(I)*SPHW*TRCAN+SNOCAN(I)*SPHICE*TSCAN+
+              CHCAP(I)=RAICAN(I)*SPHW+SNOCAN(I,q)*SPHICE+CMASS(I)*SPHVEG                                
+              TCAN (I)=(RAICAN(I)*SPHW*TRCAN+SNOCAN(I,q)*SPHICE*TSCAN+
      1                 CMASS(I)*SPHVEG*TCAN(I))/CHCAP(I)
-              HTCC (I)=HTCC(I)+FI(I)*(CHCAP(I)*TCAN(I)-CHCAPI*TCANI)/
+              HTCC (I)=HTCC(I)+FI(I,q)*(CHCAP(I)*TCAN(I)-CHCAPI*TCANI)/
      1                 DELT
               IF(R(I).GT.0.0)                      THEN
                   TR(I)=TR(I)-TFREZ                                                                 
@@ -135,18 +139,18 @@ C
                   TS(I)=MIN(TSURX(I)-TFREZ,0.0)
               ENDIF
               IF(IWATER.EQ.2) THEN
-                  ROFC(I)=ROFC(I)+FI(I)*(RDRIP(I)*RHOW+SDRIP(I)*
-     1                RHOSNI(I))
-                  PCPN(I)=PCPN(I)+FI(I)*(RDRIP(I)*RHOW+SDRIP(I)*
-     1                RHOSNI(I))
+                  ROFC(I)=ROFC(I)+FI(I,q)*(RDRIP(I)*RHOW+SDRIP(I)*
+     1                RHOSNI(I,q))
+                  PCPN(I)=PCPN(I)+FI(I,q)*(RDRIP(I)*RHOW+SDRIP(I)*
+     1                RHOSNI(I,q))
               ENDIF
               IF(IWATER.EQ.1) THEN
-                  ROFC(I)=ROFC(I)+FI(I)*(RDRIP(I)*RHOW+SDRIP(I)*
-     1                RHOSNI(I))
-                  ROVG(I)=ROVG(I)+FI(I)*(RDRIP(I)*RHOW+SDRIP(I)*
-     1                RHOSNI(I))
-                  PCPN(I)=PCPN(I)+FI(I)*SDRIP(I)*RHOSNI(I)
-                  PCPG(I)=PCPG(I)+FI(I)*RDRIP(I)*RHOW
+                  ROFC(I)=ROFC(I)+FI(I,q)*(RDRIP(I)*RHOW+SDRIP(I)*
+     1                RHOSNI(I,q))
+                  ROVG(I)=ROVG(I)+FI(I,q)*(RDRIP(I)*RHOW+SDRIP(I)*
+     1                RHOSNI(I,q))
+                  PCPN(I)=PCPN(I)+FI(I,q)*SDRIP(I)*RHOSNI(I,q)
+                  PCPG(I)=PCPG(I)+FI(I,q)*RDRIP(I)*RHOW
               ENDIF
           ENDIF
   100 CONTINUE                                                                        

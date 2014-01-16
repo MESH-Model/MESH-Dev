@@ -1,6 +1,6 @@
       SUBROUTINE TFREEZ(ZPOND,TPOND,ZSNOW,TSNOW,ALBSNO,RHOSNO,HCPSNO,
      1                  GZERO,HMFG,HTCS,HTC,WTRS,WTRG,FI,QFREZ,
-     2                  WSNOW,TA,TBAR,ISAND,IG,ILG,IL1,IL2,JL)
+     2                  WSNOW,TA,TBAR,ISAND,IG,ILG,IL1,IL2,JL,q)
 C
 C     * JAN 06/09 - D.VERSEGHY. SET QFREZ TO ZERO AFTER CALCULATION
 C     *                         OF HADD.
@@ -32,11 +32,12 @@ C     * AUG 12/91 - D.VERSEGHY. CODE FOR MODEL VERSION GCM7U -
 C     *                         CLASS VERSION 2.0 (WITH CANOPY).
 C     * APR 11/89 - D.VERSEGHY. FREEZING OF PONDED WATER.
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IG,ILG,IL1,IL2,JL,I
+      INTEGER IG,ILG,IL1,IL2,JL,I,q
 C
 C     * INPUT/OUTPUT ARRAYS.
 C
@@ -48,7 +49,7 @@ C
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG),    QFREZ (ILG),    WSNOW (ILG),    TA    (ILG),    
+      REAL FI    (ILG,Nmod),    QFREZ (ILG),    WSNOW (ILG),    TA(ILG),    
      1     TBAR  (ILG,IG)
 C
       INTEGER              ISAND (ILG,IG)
@@ -68,10 +69,10 @@ C
      2                TCGLAC,CLHMLT,CLHVAP
 C-----------------------------------------------------------------------
       DO 100 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ZPOND(I).GT.0. .AND. (TPOND(I).LT.0. 
+          IF(FI(I,q).GT.0. .AND. ZPOND(I).GT.0. .AND. (TPOND(I).LT.0. 
      1                     .OR. QFREZ(I).LT.0.))           THEN
-             HTCS(I)=HTCS(I)-FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*ZSNOW(I)/
-     1               DELT
+             HTCS(I)=HTCS(I)-FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*ZSNOW(I)
+     1               /DELT
              ZFREZ=0.0
              HADD=-QFREZ(I)*DELT                                                            
              QFREZ(I)=0.0
@@ -81,16 +82,16 @@ C-----------------------------------------------------------------------
              ENDIF                                                                       
              HCOOL=TPOND(I)*HCPW*ZPOND(I)                                                      
              HCONV=HCOOL+CLHMLT*RHOW*ZPOND(I)                                               
-             HTC (I,1)=HTC (I,1)-FI(I)*HCPW*(TPOND(I)+TFREZ)*
+             HTC (I,1)=HTC (I,1)-FI(I,q)*HCPW*(TPOND(I)+TFREZ)*
      1                 ZPOND(I)/DELT
              IF(HADD.LE.HCOOL)             THEN                                                      
                 TPOND(I)=TPOND(I)-HADD/(HCPW*ZPOND(I))                                           
-                HTC(I,1)=HTC(I,1)+FI(I)*HADD/DELT
+                HTC(I,1)=HTC(I,1)+FI(I,q)*HADD/DELT
              ELSE IF(HADD.LE.HCONV)        THEN                                                  
                 HADD=HADD-HCOOL                                                         
                 ZFREZ=HADD/(CLHMLT*RHOW)                                                
                 ZPOND(I)=ZPOND(I)-ZFREZ                                                       
-                HTC(I,1)=HTC(I,1)+FI(I)*HCOOL/DELT
+                HTC(I,1)=HTC(I,1)+FI(I,q)*HCOOL/DELT
                 ZFREZ=ZFREZ*RHOW/RHOICE                                                 
                 IF(.NOT.(ZSNOW(I).GT.0.0)) ALBSNO(I)=0.50                                     
                 TSNOW(I)=TSNOW(I)*HCPSNO(I)*ZSNOW(I)/(HCPSNO(I)*ZSNOW(I)
@@ -104,7 +105,7 @@ C-----------------------------------------------------------------------
              ELSE                                                                        
                 HADD=HADD-HCONV                                                         
                 ZFREZ=ZPOND(I)*RHOW/RHOICE                                                 
-                HTC(I,1)=HTC(I,1)+FI(I)*HCOOL/DELT
+                HTC(I,1)=HTC(I,1)+FI(I,q)*HCOOL/DELT
                 TTEST=-HADD/(HCPICE*ZFREZ)                                              
                 IF(ZSNOW(I).GT.0.0) THEN
                     TLIM=MIN(TSNOW(I),TBAR(I,1))
@@ -115,14 +116,14 @@ C-----------------------------------------------------------------------
                 IF(TTEST.LT.TLIM)       THEN                                    
                    HEXCES=HADD+TLIM*HCPICE*ZFREZ                         
                    GZERO(I)=GZERO(I)-HEXCES/DELT                                             
-                   HTC(I,1)=HTC(I,1)+FI(I)*(HADD-HEXCES)/DELT
+                   HTC(I,1)=HTC(I,1)+FI(I,q)*(HADD-HEXCES)/DELT
                    TSNOW(I)=(TSNOW(I)*HCPSNO(I)*ZSNOW(I)+
      1                      TLIM*HCPICE*ZFREZ)          
      2                      /(HCPSNO(I)*ZSNOW(I)+HCPICE*ZFREZ)                                    
                 ELSE                                                                    
                    TSNOW(I)=(TSNOW(I)*HCPSNO(I)*ZSNOW(I)+TTEST*HCPICE*
      1                       ZFREZ)/(HCPSNO(I)*ZSNOW(I)+HCPICE*ZFREZ)                                    
-                   HTC(I,1)=HTC(I,1)+FI(I)*HADD/DELT
+                   HTC(I,1)=HTC(I,1)+FI(I,q)*HADD/DELT
                 ENDIF                                                                   
                 IF(.NOT.(ZSNOW(I).GT.0.0)) ALBSNO(I)=0.50                                     
                 RHOSNO(I)=(RHOSNO(I)*ZSNOW(I)+RHOICE*ZFREZ)/(ZSNOW(I)+
@@ -133,16 +134,16 @@ C-----------------------------------------------------------------------
                 ZPOND(I)=0.0                                                               
                 TPOND(I)=0.0                                                               
              ENDIF                                                                       
-             HTC (I,1)=HTC (I,1)+FI(I)*HCPW*(TPOND(I)+TFREZ)*
+             HTC (I,1)=HTC (I,1)+FI(I,q)*HCPW*(TPOND(I)+TFREZ)*
      1                 ZPOND(I)/DELT
-             HMFG(I,1)=HMFG(I,1)-FI(I)*CLHMLT*RHOICE*ZFREZ/DELT
-             WTRS(I)=WTRS(I)+FI(I)*ZFREZ*RHOICE/DELT
-             WTRG(I)=WTRG(I)-FI(I)*ZFREZ*RHOICE/DELT
-             HTCS(I)=HTCS(I)+FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*ZSNOW(I)/
-     1               DELT
+             HMFG(I,1)=HMFG(I,1)-FI(I,q)*CLHMLT*RHOICE*ZFREZ/DELT
+             WTRS(I)=WTRS(I)+FI(I,q)*ZFREZ*RHOICE/DELT
+             WTRG(I)=WTRG(I)-FI(I,q)*ZFREZ*RHOICE/DELT
+             HTCS(I)=HTCS(I)+FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*ZSNOW(I)
+     1               /DELT
           ENDIF
-          IF(FI(I).GT.0. .AND.ISAND(I,1).GT.-4)                    THEN
-             HTC (I,1)=HTC (I,1)-FI(I)*HCPW*(TPOND(I)+TFREZ)*
+          IF(FI(I,q).GT.0. .AND.ISAND(I,1).GT.-4)                 THEN
+             HTC (I,1)=HTC (I,1)-FI(I,q)*HCPW*(TPOND(I)+TFREZ)*
      1                 ZPOND(I)/DELT
           ENDIF
   100 CONTINUE

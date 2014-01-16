@@ -5,7 +5,8 @@
      4                  ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
 *ADDED FOR WATDRN3
      6                  NA,NTYPE,ILMOS,JLMOS,
-     7                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+     7                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,
+     +                  q)
                       
 
 C     * JUN 03/11 - D.PRINCZ. FOR RIC'S WATDRN3. ADDED USE FLAGS.
@@ -73,6 +74,7 @@ C     DD          - DRAINAGE DENSITY
 C     ASAT_T0     - BULK SATURATION AT INITIAL TIME
 C     ASAT_T1     - BULK SATURATION AT FINAL TIME
 
+      use MODELS, only : Nmod
       USE FLAGS
 C                              
       IMPLICIT NONE
@@ -88,7 +90,7 @@ C
 C
 C     * INPUT ARRAYS.
 C
-      REAL  FI    (ILG),    ZPLIM (ILG),     XSLOPE(ILG),
+      REAL  FI    (ILG,Nmod),    ZPLIM (ILG),     XSLOPE(ILG),
      1      xdrainh(ILG),    ksat(ILG),       TBARW (ILG,IG)
 C 
 C     * SOIL INFORMATION ARRAYS.
@@ -117,7 +119,7 @@ C     * INTERNAL SCALARS AND VECTORS
      4     THPOR_AVAIL(ilg),BASFLWJ(ILG),XLAMBDA,ktop,kl,h0,c1,c2,
      +     ztop(ilg,ig)
       
-      INTEGER IWF,IG,ILG,IL1,IL2,I,J
+      INTEGER IWF,IG,ILG,IL1,IL2,I,J,q
       real exav
 
 C     * WATDRN3
@@ -150,7 +152,7 @@ C     loop through each element
 C        ---------------------------------------------------------------------------------
 C        compute overland flow and add to runoff and to the overall overland flow
 C        ---------------------------------------------------------------------------------
-         if(fi(i) .gt. 0.0 .and. zpond(i) .gt. zplim(i))then
+         if(fi(i,q) .gt. 0.0 .and. zpond(i) .gt. zplim(i))then
 
 C           ------------------------------------------------------------------------------
 C           calculate the depth of water available for overland flow
@@ -186,8 +188,8 @@ C           --------------------------------------------------------------------
             runoff(i)    = runoff(i) + dodrn(i)
             if(dodrn(i) .gt. 1.0e-08)then
                tovrfl(i) = (tovrfl(i)*ovrflw(i)+(tpond(i)+tfrez)*
-     1                      fi(i)*dodrn(i))/(ovrflw(i)+fi(i)*dodrn(i))
-               ovrflw(i) = ovrflw(i) + fi(i)*dodrn(i)
+     1                    fi(i,q)*dodrn(i))/(ovrflw(i)+fi(i,q)*dodrn(i))
+               ovrflw(i) = ovrflw(i) + fi(i,q)*dodrn(i)
 
 C              ---------------------------------------------------------------------------
 C              subtract overland flow depth from the ponding depth
@@ -220,7 +222,7 @@ C        loop through each element
 C        ---------------------------------------------------------------------------------
 C        Find the top of each soil layer for the calculation of grkeff  
            if(j .lt. ig)ztop(i,j+1) = ztop(i,j) - delzw(i,j) 
-           if(fi(i) .gt. 0.0 .and. isand(i,j) .ge. -2 .and. 
+           if(fi(i,q) .gt. 0.0 .and. isand(i,j) .ge. -2 .and. 
      1         delzw(i,j) .gt. 0.0)then 
 
 C              ---------------------------------------------------------------------------
@@ -257,7 +259,7 @@ C        -----------------------------------------------------------------------
 C        compute interflow from the layer (subflowj). Baseflow from the layer (basflwj) is
 C        also computed but is not used at present.
 C        ---------------------------------------------------------------------------------
-         thpor_avail = max(thlmin(:,j),thpor_avail)
+         !>MM remove to work? thpor_avail = max(thlmin(:,j),thpor_avail)
          IF (WD3 == 1) THEN
              CALL WATDRN3 (ASAT_T0,ASAT_T1,KSAT,GRKEFF,DELT,
      1            SUBFLWJ,BASFLWJ,
@@ -305,7 +307,7 @@ C              -----------------------------------------------------------------
                   trunof(i)  = (trunof(i)*runoff(i)+tbarw(i,j)*
      1                         didrn(i,j))/(runoff(i)+didrn(i,j))
                   runoff(i)  = runoff(i)+didrn(i,j)
-                  subflw(i)  = subflw(i)+fi(i)*didrn(i,j)
+                  subflw(i)  = subflw(i)+fi(i,q)*didrn(i,j)
 
 C                 ------------------------------------------------------------------------
 C                 remove the lateral flow from the layer

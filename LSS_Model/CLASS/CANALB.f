@@ -5,7 +5,7 @@
      4                  AIL,PSIGND,FROOT,FCLOUD,COSZS,QSWINV,VPD,TA,
      5                  ACVDAT,ACIDAT,ALVSGC,ALIRGC,ALVSSC,ALIRSC,
      6                  ILG,IL1,IL2,JL,IC,ICP1,IG,IALC,
-     7                  CXTEFF,TRVS,TRIR,RCACC,RCG,RCV,RCT,GC) 
+     7                  CXTEFF,TRVS,TRIR,RCACC,RCG,RCV,RCT,GC,q) 
 C
 C     * DEC 21/11 - M.LAZARE.   DEFINE CONSTANTS "EXPMAX1", EXPMAX2",
 C     *                         "EXPMAX3" TO AVOID REDUNDANT EXP
@@ -45,16 +45,19 @@ C     * MAR 03/92 - D.VERSEGHY/M.LAZARE. REVISED AND VECTORIZED CODE
 C     *                                  FOR MODEL VERSION GCM7.
 C     * AUG 12/91 - D.VERSEGHY. CANOPY ALBEDOS AND TRANSMISSIVITIES.
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
       INTEGER ILG,IL1,IL2,JL,IC,ICP1,IG,IALC,I,J,IPTBAD,JPTBAD,JPTBDI
+      INTEGER q
 C
 C     * OUTPUT ARRAYS.
 C
-      REAL ALVSCN(ILG),   ALIRCN(ILG),   ALVSCS(ILG),   ALIRCS(ILG),
-     1     TRVSCN(ILG),   TRIRCN(ILG),   TRVSCS(ILG),   TRIRCS(ILG),
+      REAL ALVSCN(ILG),   ALIRCN(ILG),   ALVSCS(ILG),  
+     +     ALIRCS(ILG),    TRVSCN(ILG),   TRIRCN(ILG),   
+     +     TRVSCS(ILG),   TRIRCS(ILG),
      2     RC    (ILG),   RCS   (ILG)
 C
 C     * 2-D INPUT ARRAYS.                                                   
@@ -70,9 +73,10 @@ C
 C
 C     * 1-D INPUT ARRAYS.
 C
-      REAL FC    (ILG),   FCS   (ILG),   FSNOW (ILG),   FSNOWC(ILG),
-     1     FSNOCS(ILG),   PSIGND(ILG),   FCLOUD(ILG),   COSZS (ILG),   
-     2     QSWINV(ILG),   VPD   (ILG),   TA    (ILG),   ALVSGC(ILG),   
+      REAL FC    (ILG,Nmod),   FCS   (ILG,Nmod),   FSNOW (ILG),   
+     +     FSNOWC(ILG),   FSNOCS(ILG),   PSIGND(ILG),  
+     +     FCLOUD(ILG),   COSZS (ILG),  QSWINV(ILG),   VPD   (ILG),   
+     +     TA    (ILG),   ALVSGC(ILG),   
      3     ALIRGC(ILG),   ALVSSC(ILG),   ALIRSC(ILG)
 C
 C     * OTHER DATA ARRAYS.
@@ -132,7 +136,7 @@ C     * NEEDLELEAF TREES.
 C
       J=1
       DO 150 I=IL1,IL2                                                                                  
-          IF(COSZS(I).GT.0. .AND. FCAN(I,J).GT.0.)                  THEN 
+          IF(COSZS(I).GT.0. .AND. FCAN(I,J).GT.0.)            THEN 
               TRCLRV=EXP(-0.4*PAI(I,J)/COSZS(I))                                    
               TRCLDV=0.30*EXP(-0.4*PAI(I,J)/0.9659)+0.50*EXP(-0.4*               
      1               PAI(I,J)/0.7071)+0.20*EXP(-0.4*PAI(I,J)/0.2588)   
@@ -157,15 +161,15 @@ C
               SVF=EXP(CANEXT(J)*PAI(I,J))
               ALIRWC=ALIRC(I,J)+0.04
               IF(IALC.EQ.0) THEN
-                  ALVSCX=FSNOWC(I)*ALVSWC+(1.0-FSNOWC(I))*ALVSC(I,J)
-                  ALIRCX=FSNOWC(I)*ALIRWC+(1.0-FSNOWC(I))*ALIRC(I,J)
-                  ALVSN=(1.0-SVF)*ALVSCX+SVF*TRVS(I)*ALVSGC(I)
-                  ALIRN=(1.0-SVF)*ALIRCX+SVF*TRIR(I)*ALIRGC(I)
+                 ALVSCX=FSNOWC(I)*ALVSWC+(1.0-FSNOWC(I))*ALVSC(I,J)
+                 ALIRCX=FSNOWC(I)*ALIRWC+(1.0-FSNOWC(I))*ALIRC(I,J)
+                 ALVSN=(1.0-SVF)*ALVSCX+SVF*TRVS(I)*ALVSGC(I)
+                 ALIRN=(1.0-SVF)*ALIRCX+SVF*TRIR(I)*ALIRGC(I)
               ELSE
-                  ALVSCX=FSNOWC(I)*ALVSWC+(1.0-FSNOWC(I))*ACVDAT(I,J)
-                  ALIRCX=FSNOWC(I)*ALIRWC+(1.0-FSNOWC(I))*ACIDAT(I,J)
-                  ALVSN=(1.0-SVF)*ALVSCX+SVF*ACVDAT(I,J)
-                  ALIRN=(1.0-SVF)*ALIRCX+SVF*ACIDAT(I,J)
+                 ALVSCX=FSNOWC(I)*ALVSWC+(1.0-FSNOWC(I))*ACVDAT(I,J)
+                 ALIRCX=FSNOWC(I)*ALIRWC+(1.0-FSNOWC(I))*ACIDAT(I,J)
+                 ALVSN=(1.0-SVF)*ALVSCX+SVF*ACVDAT(I,J)
+                 ALIRN=(1.0-SVF)*ALIRCX+SVF*ACIDAT(I,J)
               ENDIF
               ALVSCN(I)=ALVSCN(I)+FCAN(I,J)*ALVSN
               ALIRCN(I)=ALIRCN(I)+FCAN(I,J)*ALIRN
@@ -176,7 +180,7 @@ C     * BROADLEAF TREES.
 C
       J=2
       DO 250 I=IL1,IL2                                                                                  
-          IF(COSZS(I).GT.0. .AND. FCAN(I,J).GT.0.)                  THEN
+          IF(COSZS(I).GT.0. .AND. FCAN(I,J).GT.0.)                THEN
               TRCLRV=MIN(EXP(-0.7*PAI(I,J)),EXP(-0.4/COSZS(I)))                   
               TRCLDV=0.30*MIN(EXP(-0.7*PAI(I,J)),EXPMAX1)             
      1              +0.50*MIN(EXP(-0.7*PAI(I,J)),EXPMAX2)              
@@ -203,15 +207,15 @@ C
               SVF=EXP(CANEXT(J)*PAI(I,J))
               ALIRWC=ALIRC(I,J)+0.04
               IF(IALC.EQ.0) THEN
-                  ALVSCX=FSNOWC(I)*ALVSWC+(1.0-FSNOWC(I))*ALVSC(I,J)
-                  ALIRCX=FSNOWC(I)*ALIRWC+(1.0-FSNOWC(I))*ALIRC(I,J)
-                  ALVSN=(1.0-SVF)*ALVSCX+SVF*TRVS(I)*ALVSGC(I)
-                  ALIRN=(1.0-SVF)*ALIRCX+SVF*TRIR(I)*ALIRGC(I)
+                 ALVSCX=FSNOWC(I)*ALVSWC+(1.0-FSNOWC(I))*ALVSC(I,J)
+                 ALIRCX=FSNOWC(I)*ALIRWC+(1.0-FSNOWC(I))*ALIRC(I,J)
+                 ALVSN=(1.0-SVF)*ALVSCX+SVF*TRVS(I)*ALVSGC(I)
+                 ALIRN=(1.0-SVF)*ALIRCX+SVF*TRIR(I)*ALIRGC(I)
               ELSE
-                  ALVSCX=FSNOWC(I)*ALVSWC+(1.0-FSNOWC(I))*ACVDAT(I,J)
-                  ALIRCX=FSNOWC(I)*ALIRWC+(1.0-FSNOWC(I))*ACIDAT(I,J)
-                  ALVSN=(1.0-SVF)*ALVSCX+SVF*ACVDAT(I,J)
-                  ALIRN=(1.0-SVF)*ALIRCX+SVF*ACIDAT(I,J)
+                 ALVSCX=FSNOWC(I)*ALVSWC+(1.0-FSNOWC(I))*ACVDAT(I,J)
+                 ALIRCX=FSNOWC(I)*ALIRWC+(1.0-FSNOWC(I))*ACIDAT(I,J)
+                 ALVSN=(1.0-SVF)*ALVSCX+SVF*ACVDAT(I,J)
+                 ALIRN=(1.0-SVF)*ALIRCX+SVF*ACIDAT(I,J)
               ENDIF
               ALVSCN(I)=ALVSCN(I)+FCAN(I,J)*ALVSN
               ALIRCN(I)=ALIRCN(I)+FCAN(I,J)*ALIRN
@@ -222,7 +226,7 @@ C     * CROPS AND GRASS.
 C
       DO 350 J=3,IC
       DO 350 I=IL1,IL2                                                                                  
-          IF(COSZS(I).GT.0. .AND. FCAN(I,J).GT.0.)                  THEN
+          IF(COSZS(I).GT.0. .AND. FCAN(I,J).GT.0.)                THEN
               TRCLRV=EXP(-0.5*PAI(I,J)/COSZS(I))                                    
               TRCLDV=0.30*EXP(-0.5*PAI(I,J)/0.9659)+0.50*EXP(-0.5*               
      1               PAI(I,J)/0.7071)+0.20*EXP(-0.5*PAI(I,J)/0.2588)
@@ -248,15 +252,15 @@ C
               SVF=EXP(CANEXT(J)*PAI(I,J))
               ALIRWC=ALIRC(I,J)+0.04
               IF(IALC.EQ.0) THEN
-                  ALVSCX=FSNOWC(I)*ALVSWC+(1.0-FSNOWC(I))*ALVSC(I,J)
-                  ALIRCX=FSNOWC(I)*ALIRWC+(1.0-FSNOWC(I))*ALIRC(I,J)
-                  ALVSN=(1.0-SVF)*ALVSCX+SVF*TRVS(I)*ALVSGC(I)
-                  ALIRN=(1.0-SVF)*ALIRCX+SVF*TRIR(I)*ALIRGC(I)
+                 ALVSCX=FSNOWC(I)*ALVSWC+(1.0-FSNOWC(I))*ALVSC(I,J)
+                 ALIRCX=FSNOWC(I)*ALIRWC+(1.0-FSNOWC(I))*ALIRC(I,J)
+                 ALVSN=(1.0-SVF)*ALVSCX+SVF*TRVS(I)*ALVSGC(I)
+                 ALIRN=(1.0-SVF)*ALIRCX+SVF*TRIR(I)*ALIRGC(I)
               ELSE
-                  ALVSCX=FSNOWC(I)*ALVSWC+(1.0-FSNOWC(I))*ACVDAT(I,J)
-                  ALIRCX=FSNOWC(I)*ALIRWC+(1.0-FSNOWC(I))*ACIDAT(I,J)
-                  ALVSN=(1.0-SVF)*ALVSCX+SVF*ACVDAT(I,J)
-                  ALIRN=(1.0-SVF)*ALIRCX+SVF*ACIDAT(I,J)
+                 ALVSCX=FSNOWC(I)*ALVSWC+(1.0-FSNOWC(I))*ACVDAT(I,J)
+                 ALIRCX=FSNOWC(I)*ALIRWC+(1.0-FSNOWC(I))*ACIDAT(I,J)
+                 ALVSN=(1.0-SVF)*ALVSCX+SVF*ACVDAT(I,J)
+                 ALIRN=(1.0-SVF)*ALIRCX+SVF*ACIDAT(I,J)
               ENDIF
               ALVSCN(I)=ALVSCN(I)+FCAN(I,J)*ALVSN
               ALIRCN(I)=ALIRCN(I)+FCAN(I,J)*ALIRN
@@ -267,9 +271,9 @@ C     * TOTAL ALBEDOS.
 C
       IPTBAD=0                           
       DO 450 I=IL1,IL2
-          IF(FC(I).GT.0. .AND. COSZS(I).GT.0.)                      THEN
-              ALVSCN(I)=ALVSCN(I)/FC(I)                                                        
-               ALIRCN(I)=ALIRCN(I)/FC(I)
+          IF(FC(I,q).GT.0. .AND. COSZS(I).GT.0.)                    THEN
+              ALVSCN(I)=ALVSCN(I)/FC(I,q)                                                        
+              ALIRCN(I)=ALIRCN(I)/FC(I,q)
           ENDIF
           IF(ALVSCN(I).GT.1. .OR. ALVSCN(I).LT.0.) IPTBAD=I
           IF(ALIRCN(I).GT.1. .OR. ALIRCN(I).LT.0.) IPTBAD=I
@@ -285,9 +289,9 @@ C     * TOTAL TRANSMISSIVITIES.
 C
       IPTBAD=0
       DO 475 I=IL1,IL2
-          IF(FC(I).GT.0. .AND. COSZS(I).GT.0.)                     THEN
-              TRVSCN(I)=TRVSCN(I)/FC(I)
-              TRIRCN(I)=TRIRCN(I)/FC(I)
+          IF(FC(I,q).GT.0. .AND. COSZS(I).GT.0.)                    THEN
+              TRVSCN(I)=TRVSCN(I)/FC(I,q)
+              TRIRCN(I)=TRIRCN(I)/FC(I,q)
               TRVSCN(I)=MIN( TRVSCN(I), 0.90*(1.0-ALVSCN(I)) )
               TRIRCN(I)=MIN( TRIRCN(I), 0.90*(1.0-ALIRCN(I)) )
           ENDIF
@@ -311,10 +315,10 @@ C
           IF(COSZS(I).GT.0. .AND. FCANS(I,J).GT.0.)               THEN
               TRCLRV=EXP(-0.4*PAIS(I,J)/COSZS(I))                                    
               TRCLDV=0.30*EXP(-0.4*PAIS(I,J)/0.9659)+0.50*EXP(-0.4*               
-     1               PAIS(I,J)/0.7071)+0.20*EXP(-0.4*PAIS(I,J)/0.2588)   
+     1             PAIS(I,J)/0.7071)+0.20*EXP(-0.4*PAIS(I,J)/0.2588)   
               TRCLRT=EXP(-0.3*PAIS(I,J)/COSZS(I))                                    
               TRCLDT=0.30*EXP(-0.3*PAIS(I,J)/0.9659)+0.50*EXP(-0.3*              
-     1               PAIS(I,J)/0.7071)+0.20*EXP(-0.3*PAIS(I,J)/0.2588)   
+     1             PAIS(I,J)/0.7071)+0.20*EXP(-0.3*PAIS(I,J)/0.2588)   
               TRVS(I)=FCLOUD(I)*TRCLDV+(1.0-FCLOUD(I))*TRCLRV
               TRTOT =FCLOUD(I)*TRCLDT+(1.0-FCLOUD(I))*TRCLRT
               TRIR(I)= 2.*TRTOT-TRVS(I)
@@ -327,11 +331,11 @@ C
           IF(COSZS(I).GT.0. .AND. FCANS(I,J).GT.0.)             THEN
               ALIRWC=ALIRC(I,J)+0.04
               IF(IALC.EQ.0) THEN
-                  ALVSCX=FSNOCS(I)*ALVSWC+(1.0-FSNOCS(I))*ALVSC(I,J)
-                  ALIRCX=FSNOCS(I)*ALIRWC+(1.0-FSNOCS(I))*ALIRC(I,J)
+                 ALVSCX=FSNOCS(I)*ALVSWC+(1.0-FSNOCS(I))*ALVSC(I,J)
+                 ALIRCX=FSNOCS(I)*ALIRWC+(1.0-FSNOCS(I))*ALIRC(I,J)
               ELSE
-                  ALVSCX=FSNOCS(I)*ALVSWC+(1.0-FSNOCS(I))*ACVDAT(I,J)
-                  ALIRCX=FSNOCS(I)*ALIRWC+(1.0-FSNOCS(I))*ACIDAT(I,J)
+                 ALVSCX=FSNOCS(I)*ALVSWC+(1.0-FSNOCS(I))*ACVDAT(I,J)
+                 ALIRCX=FSNOCS(I)*ALIRWC+(1.0-FSNOCS(I))*ACIDAT(I,J)
               ENDIF
               SVF=EXP(CANEXT(J)*PAIS(I,J))
               ALVSS=(1.0-SVF)*ALVSCX+SVF*TRVS(I)*ALVSSC(I)
@@ -366,11 +370,11 @@ C
           IF(COSZS(I).GT.0. .AND. FCANS(I,J).GT.0.)             THEN
               ALIRWC=ALIRC(I,J)+0.04
               IF(IALC.EQ.0) THEN
-                  ALVSCX=FSNOCS(I)*ALVSWC+(1.0-FSNOCS(I))*ALVSC(I,J)
-                  ALIRCX=FSNOCS(I)*ALIRWC+(1.0-FSNOCS(I))*ALIRC(I,J)
+                 ALVSCX=FSNOCS(I)*ALVSWC+(1.0-FSNOCS(I))*ALVSC(I,J)
+                 ALIRCX=FSNOCS(I)*ALIRWC+(1.0-FSNOCS(I))*ALIRC(I,J)
               ELSE
-                  ALVSCX=FSNOCS(I)*ALVSWC+(1.0-FSNOCS(I))*ACVDAT(I,J)
-                  ALIRCX=FSNOCS(I)*ALIRWC+(1.0-FSNOCS(I))*ACIDAT(I,J)
+                 ALVSCX=FSNOCS(I)*ALVSWC+(1.0-FSNOCS(I))*ACVDAT(I,J)
+                 ALIRCX=FSNOCS(I)*ALIRWC+(1.0-FSNOCS(I))*ACIDAT(I,J)
               ENDIF
               SVF=EXP(CANEXT(J)*PAIS(I,J))
               ALVSS=(1.0-SVF)*ALVSCX+SVF*TRVS(I)*ALVSSC(I)
@@ -387,10 +391,10 @@ C
           IF(COSZS(I).GT.0. .AND. FCANS(I,J).GT.0.)               THEN
               TRCLRV=EXP(-0.5*PAIS(I,J)/COSZS(I))                                    
               TRCLDV=0.30*EXP(-0.5*PAIS(I,J)/0.9659)+0.50*EXP(-0.5*               
-     1               PAIS(I,J)/0.7071)+0.20*EXP(-0.5*PAIS(I,J)/0.2588)
+     1             PAIS(I,J)/0.7071)+0.20*EXP(-0.5*PAIS(I,J)/0.2588)
               TRCLRT=EXP(-0.4*PAIS(I,J)/COSZS(I))                                    
               TRCLDT=0.30*EXP(-0.4*PAIS(I,J)/0.9659)+0.50*EXP(-0.4*              
-     1               PAIS(I,J)/0.7071)+0.20*EXP(-0.4*PAIS(I,J)/0.2588)                
+     1             PAIS(I,J)/0.7071)+0.20*EXP(-0.4*PAIS(I,J)/0.2588)                
               TRVS(I)=FCLOUD(I)*TRCLDV+(1.0-FCLOUD(I))*TRCLRV
               TRTOT =FCLOUD(I)*TRCLDT+(1.0-FCLOUD(I))*TRCLRT
               TRIR(I)= 2.*TRTOT-TRVS(I)
@@ -404,11 +408,11 @@ C
           IF(COSZS(I).GT.0. .AND. FCANS(I,J).GT.0.)             THEN
               ALIRWC=ALIRC(I,J)+0.04
               IF(IALC.EQ.0) THEN
-                  ALVSCX=FSNOCS(I)*ALVSWC+(1.0-FSNOCS(I))*ALVSC(I,J)
-                  ALIRCX=FSNOCS(I)*ALIRWC+(1.0-FSNOCS(I))*ALIRC(I,J)
+                 ALVSCX=FSNOCS(I)*ALVSWC+(1.0-FSNOCS(I))*ALVSC(I,J)
+                 ALIRCX=FSNOCS(I)*ALIRWC+(1.0-FSNOCS(I))*ALIRC(I,J)
               ELSE
-                  ALVSCX=FSNOCS(I)*ALVSWC+(1.0-FSNOCS(I))*ACVDAT(I,J)
-                  ALIRCX=FSNOCS(I)*ALIRWC+(1.0-FSNOCS(I))*ACIDAT(I,J)
+                 ALVSCX=FSNOCS(I)*ALVSWC+(1.0-FSNOCS(I))*ACVDAT(I,J)
+                 ALIRCX=FSNOCS(I)*ALIRWC+(1.0-FSNOCS(I))*ACIDAT(I,J)
               ENDIF
               SVF=EXP(CANEXT(J)*PAIS(I,J))
               ALVSS=(1.0-SVF)*ALVSCX+SVF*TRVS(I)*ALVSSC(I)
@@ -422,9 +426,9 @@ C     * TOTAL ALBEDOS AND CONSISTENCY CHECKS.
 C
       IPTBAD=0                           
       DO 775 I=IL1,IL2
-          IF(FCS(I).GT.0. .AND. COSZS(I).GT.0.)                 THEN
-              ALVSCS(I)=ALVSCS(I)/FCS(I)                                                        
-              ALIRCS(I)=ALIRCS(I)/FCS(I)
+          IF(FCS(I,q).GT.0. .AND. COSZS(I).GT.0.)                 THEN
+              ALVSCS(I)=ALVSCS(I)/FCS(I,q)                                                        
+              ALIRCS(I)=ALIRCS(I)/FCS(I,q)
           ENDIF
           IF(ALVSCS(I).GT.1. .OR. ALVSCS(I).LT.0.) IPTBAD=I
           IF(ALIRCS(I).GT.1. .OR. ALIRCS(I).LT.0.) IPTBAD=I
@@ -435,9 +439,9 @@ C
       IPTBAD=0
       JPTBAD=0
       DO 800 I=IL1,IL2
-          IF(FCS(I).GT.0. .AND. COSZS(I).GT.0.)                   THEN
-              TRVSCS(I)=TRVSCS(I)/FCS(I)
-              TRIRCS(I)=TRIRCS(I)/FCS(I)
+          IF(FCS(I,q).GT.0. .AND. COSZS(I).GT.0.)                   THEN
+              TRVSCS(I)=TRVSCS(I)/FCS(I,q)
+              TRIRCS(I)=TRIRCS(I)/FCS(I,q)
               TRVSCS(I)=MIN( TRVSCS(I), 0.90*(1.0-ALVSCS(I)) )
               TRIRCS(I)=MIN( TRIRCS(I), 0.90*(1.0-ALIRCS(I)) )
           ENDIF
@@ -484,7 +488,7 @@ C     * BULK STOMATAL RESISTANCES FOR CANOPY OVERLYING SNOW AND CANOPY
 C     * OVERLYING BARE SOIL.
 C
       DO 850 I=IL1,IL2
-          IF((FCS(I)+FC(I)).GT.0.0)                               THEN
+          IF((FCS(I,q)+FC(I,q)).GT.0.0)                             THEN
               IF(TA(I).LE.268.15)                          THEN
                   RCT(I)=250.
               ELSEIF(TA(I).LT.278.15)                      THEN
@@ -534,7 +538,7 @@ C
 900   CONTINUE
 C
       DO 950 I=IL1,IL2   
-          IF((FCS(I)+FC(I)).GT.0.)                                THEN
+          IF((FCS(I,q)+FC(I,q)).GT.0.)                              THEN
               FRMAX=0.0
               DO 925 J=1,IG
                   FRMAX=MAX(FRMAX,FROOT(I,J))
@@ -548,7 +552,7 @@ C
               ELSE                                                                
                   RCS(I)=5000.0
                   IF(RC(I).GT.0) THEN
-                      RC(I)=FC(I)/RC(I)
+                      RC(I)=FC(I,q)/RC(I)
                   ELSE
                       RC(I)=5000.0
                   ENDIF

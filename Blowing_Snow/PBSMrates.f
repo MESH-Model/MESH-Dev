@@ -1,6 +1,6 @@
       SUBROUTINE PBSMrates(E_StubHt, Uthr, DriftH, SublH,
      1                  t, u, sh, Fetch,
-     2                  N_S, A_S, mBeta,RH,I,N)
+     2                  N_S, A_S, mBeta, p,I,N)
 C
 C     * SEP 2010 - M.MACDONALD. Single column calculations for blowing snow
 C     *                         transport and sublimation. Equation
@@ -15,7 +15,7 @@ C
 C
 C     * INPUT VARIABLES.
 C
-      REAL E_StubHt, Uthr, t, u, N_S, A_S, mBeta, Fetch, RH
+      REAL E_StubHt, Uthr, t, u, sh, N_S, A_S, p, mBeta, Fetch
 C
 C     * TEMPORARY VARIABLES.
 C
@@ -28,8 +28,8 @@ C
      6  Reyn,   SBsalt, Sbz,    SBsum,
      7  SigmaZ, Sigma2, SvDens, Usthr,  Ustar,
      8  UstarZ, Uz,     Vs,     Vsalt,  Sigma,
-     9  Vsusp,  Z,      Zr,     Zstb
-!     A  a0, a1, a2, a3, a4, a5, a6, eT, Xwater, Pwater, rh
+     9  Vsusp,  Z,      Zr,     Zstb,
+     A  a0, a1, a2, a3, a4, a5, a6, eT, Xwater, Pwater, rh
 C
 C!    * PBSM PARAMETERS
  !    REAL rhoo, Qstar, MMM, RR, LATH, DICE, ZD, XD, gg,
@@ -77,7 +77,7 @@ C
 !>     of blowing snow lost over a square meter of snow surface
 !>     per half hour.
 C
-!>Compute stubble coefficients
+      !>Compute stubble coefficients
 C
       !> Lettau, used for susp Z0
       !Zstb=0.0048*E_StubHt*100.0
@@ -88,7 +88,7 @@ C
       !> Raupach Eq. 4
       Sigma=(M_PI*A_S)/(4.0*E_StubHt)
 C
-!> Calculate the flux for interval
+      !> Calculate the flux for interval
       !> Total saltation flux
       TQsalt=0.0
       !> Total Suspension
@@ -98,31 +98,31 @@ C
       DriftH=0.0
       SublH=0.0
 C
-!!> convert specific (kg/kg) to relative humidity (0.xx)
-!      IF (t.GT.273.16)  THEN
-!       !> coefficients with respect to watewr
-!        a0=6.107799961
-!        a1=4.436518521E-1
-!        a2=1.428945805E-2
-!        a3=2.650648471E-4
-!        a4=3.031240396E-6
-!        a5=2.034080948E-8
-!        a6=6.136820929E-11
-!      ELSE
-!       !>coefficients with respect to ice
-!        a0=6.109177956
-!        a1=5.034698970E-1
-!        a2=1.886013408E-2
-!        a3=4.176223716E-4
-!        a4=5.824720280E-6
-!        a5=4.838803174E-8
-!        a6=1.838826904E-10
-!      ENDIF
-!      eT=a0+(t-273.16)*(a1+(t-273.16)*(a2+(t-273.16)*(a3+(t-273.16)
-!     1   *(a4+(t-273.16)*(a5+(t-273.16)*a6)))))
-!      Xwater=28.9644/(18.01534/sh+28.9644-18.01534)
-!      Pwater=Xwater*p/100   ! *10
-!      rh=Pwater/eT
+!> convert specific (kg/kg) to relative humidity (0.xx)
+      IF (t.GT.273.16)  THEN
+       !> coefficients with respect to watewr
+        a0=6.107799961
+        a1=4.436518521E-1
+        a2=1.428945805E-2
+        a3=2.650648471E-4
+        a4=3.031240396E-6
+        a5=2.034080948E-8
+        a6=6.136820929E-11
+      ELSE
+       !>coefficients with respect to ice
+        a0=6.109177956
+        a1=5.034698970E-1
+        a2=1.886013408E-2
+        a3=4.176223716E-4
+        a4=5.824720280E-6
+        a5=4.838803174E-8
+        a6=1.838826904E-10
+      ENDIF
+      eT=a0+(t-273.16)*(a1+(t-273.16)*(a2+(t-273.16)*(a3+(t-273.16)
+     1   *(a4+(t-273.16)*(a5+(t-273.16)*a6)))))
+      Xwater=28.9644/(18.01534/sh+28.9644-18.01534)
+      Pwater=Xwater*p/100   ! *10
+      rh=Pwater/eT
 C
       !> therm. cond. of atm. (J/(msK))
       Lamb=0.00063*t+0.0673
@@ -130,19 +130,19 @@ C
       Diff=2.06E-5*(t/273.0)**1.75
       B=LATH*MMM/(RR*t)-1.0
 C
-   !> find undersaturation of w. vapour at 2 metres
+      !> find undersaturation of w. vapour at 2 metres
       !> {sat pressure}
       Es=611.15*EXP(22.452*(t-273.0)/t)
       !> {sat density}
       SvDens=(Es*MMM)/(RR*t)
 C
       !> {undersaturation at 2 m}
-      Sigma2=RH/100-1.0
+      Sigma2=rh-1.0
 C
       IF(u.GT.Uthr) THEN
 C
-!> define saltation parameters and calculate saltation
-!>    rate using 10/1987 MODEL OF BLOWING SNOW EQUATIONS
+      !> define saltation parameters and calculate saltation
+      !>    rate using 10/1987 MODEL OF BLOWING SNOW EQUATIONS
 C
          !>{Eq. 6.3}
          Usthr=0.03697*Uthr
@@ -167,7 +167,7 @@ C
          !> Eq. 4.20
          TQsalt=C1*rhoo*Usthr/(gg*C3*Ustar)*(Ustar**2*RauTerm-Usthr**2)
 C
-!> calculate sublimation rate in the saltation layer
+      !> calculate sublimation rate in the saltation layer
 C
          Mpr=0.0001
          Htran=0.9*M_PI*(Mpr**2)*Qstar
@@ -195,18 +195,18 @@ C
          !> Eq. 6.11
          SBsalt=Vs*Nsalt*Hsalt
 C
-!> calculate mass flux in the suspended layers and the sublimation
-!>     rate for layers of height Inc from height r to b
+      !> calculate mass flux in the suspended layers and the sublimation
+      !>     rate for layers of height Inc from height r to b
 C
          !> Eq. 5.27
          Zr=0.05628*Ustar
          Alpha=15.0
          Inc=0.0001
 C
-!> Loop to find the first suspended drift density level, r
-!>     from the reference level Zr
-!>     To preserve continuity with saltation the first suspended
-!>     level drift density is less than or equal to Nsalt.
+      !> Loop to find the first suspended drift density level, r
+      !>     from the reference level Zr
+      !>     To preserve continuity with saltation the first suspended
+      !>     level drift density is less than or equal to Nsalt.
 C
          TQsum=0.0
          SBsum=0.0
@@ -225,9 +225,9 @@ C
          Z=Lb
          Inc=0.001
 C
-!> find height of fully-developed boundary layer for turbulent
-!>     diffusion using a form of Pasquills plume dispersion eq.
-!>     iterate towards Bound
+      !> find height of fully-developed boundary layer for turbulent
+      !>     diffusion using a form of Pasquills plume dispersion eq.
+      !>     iterate towards Bound
 C
          Bd=1.0
          !> Eq. 6.6
@@ -241,9 +241,9 @@ C
   200    CONTINUE
 C
 C
-!> Loop to calculate the suspended mass flux up to 5 metres
-!>     and the total sublimation rate to the top of the boundary layer
-!>   at increments of 1 mm to 50cm & increments of 10 cm to b
+      !> Loop to calculate the suspended mass flux up to 5 metres
+      !>     and the total sublimation rate to the top of the boundary layer
+      !>   at increments of 1 mm to 50cm & increments of 10 cm to b
 C
  2000    H=Z+Inc;
          DO 300 WHILE (H.LE.Bound)

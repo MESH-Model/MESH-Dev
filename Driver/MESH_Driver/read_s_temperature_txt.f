@@ -1,6 +1,7 @@
       SUBROUTINE READ_S_TEMPERATURE_TXT(
      + IGND, YCOUNT, XCOUNT, na, NTYPE,
      + YYY, XXX, TBARROW )
+      use MODELS, only : Nmod
 !> local variables
       INTEGER :: i,j,k,M,s_ios
       REAL*4, DIMENSION(:, :, :), ALLOCATABLE :: valuet
@@ -8,7 +9,7 @@
       INTEGER :: IGND,YCOUNT,XCOUNT
       integer*4 :: na,NTYPE
       integer*4 :: YYY(NA),XXX(NA)
-      REAL :: TBARROW(NA, NTYPE, IGND)
+      REAL :: TBARROW(NA, NTYPE, IGND,Nmod)
 !> SOIL TEMPERATURE
 !ANDY - This function is for future development. Currently doesn't work.
       RETURN
@@ -28,7 +29,7 @@
         DO I=1,NA     !> number of cells
           DO M=1,NMTEST   !> number of classes
             DO J=1,IGND   !> soil layers
-              TBARROW(I,M,J)=   valuet(YYY(I),XXX(I),J)
+              TBARROW(I,M,J,1)=   valuet(YYY(I),XXX(I),J)
             ENDDO
           ENDDO
         ENDDO

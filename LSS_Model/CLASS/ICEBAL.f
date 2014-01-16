@@ -3,7 +3,8 @@
      2                  RUNOFF,TRUNOF,OVRFLW,TOVRFL,ZPLIM,GGEO,
      3                  FI,EVAP,R,TR,GZERO,G12,G23,HCP,QMELT,WSNOW,
      4                  ZMAT,TMOVE,WMOVE,ZRMDR,TADD,ZMOVE,TBOT,DELZ,
-     5                  ISAND,ICONT,IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     5                  ISAND,ICONT,IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,
+     +                  q)
 C
 C     * DEC 27/07 - D.VERSEGHY. ADD GEOTHERMAL HEAT FLUX; ADD ICE MASS
 C     *                         LOSS TO RUNOFF.
@@ -42,11 +43,12 @@ C     *                         OVER CONTINENTAL ICE SHEETS; ASSIGN
 C     *                         PONDED WATER TO RUNOFF; ADJUST LAYER
 C     *                         DEPTHS FOR ACCUMULATION/ABLATION.
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,N
+      INTEGER IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,N,q
 C
 C     * INPUT/OUTPUT FIELDS.
 C                                                                                 
@@ -60,7 +62,7 @@ C
 C
 C     * INPUT FIELDS.
 C
-      REAL FI    (ILG),    EVAP  (ILG),    R     (ILG),    TR    (ILG), 
+      REAL FI    (ILG,Nmod),    EVAP(ILG),    R   (ILG),    TR  (ILG), 
      1     GZERO (ILG),    G12   (ILG),    G23   (ILG),    QMELT (ILG),
      2     WSNOW (ILG),    ZPLIM (ILG),    GGEO  (ILG)
 C
@@ -98,13 +100,13 @@ C     * ADD RAINFALL OR SNOWMELT TO PONDED WATER AND ASSIGN EXCESS
 C     * TO RUNOFF.  CHECK FOR POND FREEZING.
 C
       DO 100 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                THEN
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4)                THEN
               IF(R(I).GT.0.)                                THEN 
                  RADD=R(I)*DELT                                                             
                  TPOND(I)=((TPOND(I)+TFREZ)*ZPOND(I)+(TR(I)+TFREZ)*
      1               RADD)/(ZPOND(I)+RADD)-TFREZ
                  ZPOND(I)=ZPOND(I)+RADD                                                        
-                 HTC (I,1)=HTC(I,1)+FI(I)*(TR(I)+TFREZ)*HCPW*
+                 HTC (I,1)=HTC(I,1)+FI(I,q)*(TR(I)+TFREZ)*HCPW*
      1                     RADD/DELT
               ENDIF                                                                       
               IF(IWF.EQ.0 .AND. (ZPOND(I)-ZPLIM(I)).GT.1.0E-8) THEN
@@ -113,10 +115,10 @@ C
      2                   ZPLIM(I))
                   RUNOFF(I)=RUNOFF(I)+ZPOND(I)-ZPLIM(I)
                   TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+(TPOND(I)+TFREZ)*
-     1                   FI(I)*(ZPOND(I)-ZPLIM(I)))/(OVRFLW(I)+
-     2                   FI(I)*(ZPOND(I)-ZPLIM(I)))
-                  OVRFLW(I)=OVRFLW(I)+FI(I)*(ZPOND(I)-ZPLIM(I)) 
-                  HTC(I,1)=HTC(I,1)-FI(I)*(TPOND(I)+TFREZ)*HCPW*
+     1                   FI(I,q)*(ZPOND(I)-ZPLIM(I)))/(OVRFLW(I)+
+     2                   FI(I,q)*(ZPOND(I)-ZPLIM(I)))
+                  OVRFLW(I)=OVRFLW(I)+FI(I,q)*(ZPOND(I)-ZPLIM(I)) 
+                  HTC(I,1)=HTC(I,1)-FI(I,q)*(TPOND(I)+TFREZ)*HCPW*
      1                   (ZPOND(I)-ZPLIM(I))/DELT
                   ZPOND(I)=MIN(ZPOND(I),ZPLIM(I))
               ENDIF
@@ -136,18 +138,18 @@ C
   100 CONTINUE
 C
       DO 125 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                THEN
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4)                THEN
               IF(TBAR(I,1).LT.-2.0 .AND. ZPOND(I).GT.1.0E-8) THEN
                   HFREZ=ZPOND(I)*RHOW*CLHMLT
                   HWARM=-TBAR(I,1)*HCPICE*DELZ(1)
                   IF(HWARM.GE.HFREZ) THEN
                       TBAR(I,1)=TBAR(I,1)+HFREZ/(HCPICE*DELZ(1))
-                      HMFG(I,1)=HMFG(I,1)-FI(I)*HFREZ/DELT
-                      HTC(I,1)=HTC(I,1)-FI(I)*HCPW*TFREZ*ZPOND(I)/DELT
+                      HMFG(I,1)=HMFG(I,1)-FI(I,q)*HFREZ/DELT
+                      HTC(I,1)=HTC(I,1)-FI(I,q)*HCPW*TFREZ*ZPOND(I)/DELT
                       ZFREZ=ZPOND(I)*RHOW/RHOICE                                                 
                       ZPOND(I)=0.0
                       TPOND(I)=0.0
-                      HTCS(I)=HTCS(I)+FI(I)*HCPICE*TFREZ*ZFREZ/DELT
+                      HTCS(I)=HTCS(I)+FI(I,q)*HCPICE*TFREZ*ZFREZ/DELT
                       IF(.NOT.(ZSNOW(I).GT.0.0)) ALBSNO(I)=0.50                                     
                       TSNOW(I)=((TSNOW(I)+TFREZ)*HCPSNO(I)*ZSNOW(I)+
      1                     TFREZ*HCPICE*ZFREZ)          
@@ -157,8 +159,8 @@ C
                       ZSNOW(I)=ZSNOW(I)+ZFREZ                                                       
                       HCPSNO(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
      1                    (RHOW*ZSNOW(I))
-                      WTRS(I)=WTRS(I)+FI(I)*ZFREZ*RHOICE/DELT
-                      WTRG(I)=WTRG(I)-FI(I)*ZFREZ*RHOICE/DELT
+                      WTRS(I)=WTRS(I)+FI(I,q)*ZFREZ*RHOICE/DELT
+                      WTRG(I)=WTRG(I)-FI(I,q)*ZFREZ*RHOICE/DELT
                   ENDIF                                                                       
               ENDIF
           ENDIF
@@ -169,7 +171,7 @@ C
       IF(IG.GT.3) THEN
       DO 150 J=4,IG
           DO 150 I=IL1,IL2
-              IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)            THEN
+              IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4)            THEN
                   GFLUX(I,J)=2.0*TCGLAC*(TBAR(I,J-1)-TBAR(I,J))/
      1                       (DELZ(J-1)+DELZ(J))
               ENDIF
@@ -177,7 +179,7 @@ C
       ENDIF
 C     
       DO 200 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                   THEN
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4)                  THEN
               IF(IG.EQ.3) THEN
                   TZERO=TBAR(I,1)+DELZ(1)*(GZERO(I)+0.5*G12(I))/
      1                (3.0*TCGLAC)                        
@@ -204,8 +206,8 @@ C
       IF(IG.GT.3)                                                  THEN
       DO 250 J=3,IG                                                               
       DO 250 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                 THEN
-              HTC (I,J)=HTC(I,J)-FI(I)*(TBAR(I,J)+TFREZ)*HCPICE*
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4)                 THEN
+              HTC (I,J)=HTC(I,J)-FI(I,q)*(TBAR(I,J)+TFREZ)*HCPICE*
      1                  DELZ(J)/DELT
               IF(J.EQ.3)                                THEN
                   TBAR(I,J)=TBAR(I,J)-GFLUX(I,J+1)*DELT/
@@ -217,7 +219,7 @@ C
                   TBAR(I,J)=TBAR(I,J)+(GFLUX(I,J)-GFLUX(I,J+1))*DELT/
      1                      (HCP(I,J)*DELZ(J))
               ENDIF
-              HTC (I,J)=HTC(I,J)+FI(I)*(TBAR(I,J)+TFREZ)*HCPICE*
+              HTC (I,J)=HTC(I,J)+FI(I,q)*(TBAR(I,J)+TFREZ)*HCPICE*
      1                  DELZ(J)/DELT
           ENDIF
   250 CONTINUE
@@ -228,15 +230,15 @@ C     * HEAT OF MELTING.
 C
       DO 300 J=1,IG
       DO 300 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                   THEN
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4)                  THEN
               IF(TBAR(I,J).GT.0.)                            THEN  
                   QADD=TBAR(I,J)*HCPICE*DELZ(J)/DELT  
                   QMELT(I)=QMELT(I)+QADD
-                  HTC(I,J)=HTC(I,J)-FI(I)*QADD
-                  HTC(I,1)=HTC(I,1)+FI(I)*QADD
+                  HTC(I,J)=HTC(I,J)-FI(I,q)*QADD
+                  HTC(I,1)=HTC(I,1)+FI(I,q)*QADD
                   TBAR(I,J)=0.0                                                       
               ENDIF
-              HTC(I,J)=HTC(I,J)-FI(I)*(TBAR(I,J)+TFREZ)*HCPICE*
+              HTC(I,J)=HTC(I,J)-FI(I,q)*(TBAR(I,J)+TFREZ)*HCPICE*
      1                 DELZ(J)/DELT
           ENDIF
   300 CONTINUE
@@ -247,13 +249,13 @@ C     * AND SUBLIMATION; RECALCULATE ICE LAYER TEMPERATURES.
 C     
       DO 325 J=1,IG-1
       DO 325 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                   THEN
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4)                  THEN
               TMOVE(I,J)=TBAR(I,J+1)
           ENDIF
   325 CONTINUE                                                                
 C
       DO 350 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                   THEN                         
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4)                  THEN                         
               IF(QMELT(I).GT.0. .OR. EVAP(I).GT.0.)           THEN                                        
                   TMOVE(I,IG)=TBOT(I)                                                           
                   ZMELT=QMELT(I)*DELT/((0.0-TBAR(I,1))*HCPICE+
@@ -261,24 +263,25 @@ C
                   IF(ZMELT.GT.0.)                   THEN
                       TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+TFREZ*ZMELT*
      1                   RHOICE/RHOW)/(RUNOFF(I)+ZMELT*RHOICE/RHOW)
-                      TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TFREZ*FI(I)*ZMELT*
-     1                   RHOICE/RHOW)/(OVRFLW(I)+FI(I)*ZMELT*RHOICE/
+                      TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TFREZ*FI(I,q)*ZMELT
+     1                   *RHOICE/RHOW)/(OVRFLW(I)+FI(I,q)*ZMELT*RHOICE/
      1                   RHOW)
                   ENDIF
                   RUNOFF(I)=RUNOFF(I)+ZMELT*RHOICE/RHOW                                         
-                  OVRFLW(I)=OVRFLW(I)+FI(I)*ZMELT*RHOICE/RHOW                                         
-                  HMFG(I,1)=HMFG(I,1)+FI(I)*CLHMLT*RHOICE*ZMELT/DELT
-                  HTC (I,1)=HTC(I,1)-FI(I)*(QMELT(I)-CLHMLT*RHOICE*
+                  OVRFLW(I)=OVRFLW(I)+FI(I,q)*ZMELT*RHOICE/RHOW                                         
+                  HMFG(I,1)=HMFG(I,1)+FI(I,q)*CLHMLT*RHOICE*ZMELT
+     +                        /DELT
+                  HTC (I,1)=HTC(I,1)-FI(I,q)*(QMELT(I)-CLHMLT*RHOICE*
      1                     ZMELT/DELT)
                   ZMOVE (I)=ZMELT+EVAP(I)*DELT*RHOW/RHOICE
-                  WTRG  (I)=WTRG(I)+FI(I)*ZMOVE(I)*RHOICE/DELT
+                  WTRG  (I)=WTRG(I)+FI(I,q)*ZMOVE(I)*RHOICE/DELT
               ENDIF
           ENDIF                                                                       
   350 CONTINUE                                       
 C
       DO 400 J=1,IG
       DO 400 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4 .AND.
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4 .AND.
      1       (QMELT(I).GT.0. .OR. EVAP(I).GT.0.))                   THEN 
               TBAR(I,J)=(TBAR(I,J)*(DELZ(J)-ZMOVE(I))+TMOVE(I,J)*
      1                   ZMOVE(I))/DELZ(J)
@@ -290,17 +293,17 @@ C     * 900 KG M-3, CONVERT EXCESS TO ICE AND MOVE THE LOCATIONS
 C     * OF THE ICE LAYERS ACCORDINGLY.
 C
       DO 500 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                   THEN
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4)                  THEN
               ICONT(I)=0
               SNOCONV=0.
-              HTCS(I)=HTCS(I)-FI(I)*(TSNOW(I)+TFREZ)*HCPSNO(I)*
+              HTCS(I)=HTCS(I)-FI(I,q)*(TSNOW(I)+TFREZ)*HCPSNO(I)*
      1                ZSNOW(I)/DELT
               IF((RHOSNO(I)*ZSNOW(I)).GT.100.)                THEN                                        
                   SNOCONV=RHOSNO(I)*ZSNOW(I)-100.
                   WMOVE(I,1)=SNOCONV/RHOICE                                
                   TMOVE(I,1)=TSNOW(I)                                                      
-                  WTRS(I)=WTRS(I)-FI(I)*WMOVE(I,1)*RHOICE/DELT
-                  WTRG(I)=WTRG(I)+FI(I)*WMOVE(I,1)*RHOICE/DELT
+                  WTRS(I)=WTRS(I)-FI(I,q)*WMOVE(I,1)*RHOICE/DELT
+                  WTRG(I)=WTRG(I)+FI(I,q)*WMOVE(I,1)*RHOICE/DELT
                   ZSNOW(I)=ZSNOW(I)-WMOVE(I,1)                                                
                   RHOSNO(I)=100.0/ZSNOW(I)
                   HCPSNO(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
@@ -310,8 +313,8 @@ C
                   SNOCONV=ZSNOW(I)*RHOSNO(I)
                   WMOVE(I,1)=SNOCONV/RHOICE                                        
                   TMOVE(I,1)=TSNOW(I)                                                      
-                  WTRS(I)=WTRS(I)-FI(I)*(SNOCONV+WSNOW(I))/DELT
-                  WTRG(I)=WTRG(I)+FI(I)*(SNOCONV+WSNOW(I))/DELT
+                  WTRS(I)=WTRS(I)-FI(I,q)*(SNOCONV+WSNOW(I))/DELT
+                  WTRG(I)=WTRG(I)+FI(I,q)*(SNOCONV+WSNOW(I))/DELT
                   ZSNOW(I)=0.0                                                           
                   RHOSNO(I)=0.0                                                          
                   HCPSNO(I)=0.0                                                          
@@ -320,15 +323,15 @@ C
      1                      WSNOW(I)/RHOW)/(RUNOFF(I)+WSNOW(I)/RHOW)
                       RUNOFF(I)=RUNOFF(I)+WSNOW(I)/RHOW
                       TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+(TSNOW(I)+TFREZ)*
-     1                      FI(I)*WSNOW(I)/RHOW)/(OVRFLW(I)+FI(I)*
+     1                      FI(I,q)*WSNOW(I)/RHOW)/(OVRFLW(I)+FI(I,q)*
      2                      WSNOW(I)/RHOW)
-                      OVRFLW(I)=OVRFLW(I)+FI(I)*WSNOW(I)/RHOW
+                      OVRFLW(I)=OVRFLW(I)+FI(I,q)*WSNOW(I)/RHOW
                   ENDIF
                   TSNOW(I)=0.0
                   WSNOW(I)=0.0
                   ICONT(I)=1
               ENDIF                     
-              HTCS(I)=HTCS(I)+FI(I)*(TSNOW(I)+TFREZ)*HCPSNO(I)*
+              HTCS(I)=HTCS(I)+FI(I,q)*(TSNOW(I)+TFREZ)*HCPSNO(I)*
      1                ZSNOW(I)/DELT
               IF(SNOCONV.GT.0.) TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+
      1                TBAR(I,IG)*SNOCONV/RHOW)/(RUNOFF(I)+SNOCONV/RHOW)
@@ -338,7 +341,7 @@ C
 C               
       DO 550 J=1,IG
       DO 550 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                   THEN
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4)                  THEN
               ZRMDR(I,J)=DELZ(J)                                                    
           ENDIF                                                  
   550 CONTINUE                                                            
@@ -346,7 +349,7 @@ C
       DO 600 J=1,IG
       DO 600 K=1,IG+1
       DO 600 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4 .AND.
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4 .AND.
      1       ICONT(I).EQ.1)                                         THEN
               ZMAT(I,K,J)=0.0 
           ENDIF
@@ -354,7 +357,7 @@ C
 C
       DO 650 J=2,IG+1
       DO 650 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4 .AND.
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4 .AND.
      1       ICONT(I).EQ.1)                                         THEN
               WMOVE(I,J)=DELZ(J-1)                                                  
               TMOVE(I,J)=TBAR(I,J-1)                                                
@@ -364,7 +367,7 @@ C
       DO 700 K=1,IG+1
       DO 700 J=1,IG
       DO 700 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4 .AND.
+          IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4 .AND.
      1       ICONT(I).EQ.1)                                         THEN
               IF(ZRMDR(I,J).GT.0. .AND. WMOVE(I,K).GT.0.)      THEN                    
                   ZMAT(I,K,J)=WMOVE(I,K)                                          
@@ -382,24 +385,24 @@ C
 C
       DO 900 J=1,IG
           DO 750 I=IL1,IL2
-              IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)               THEN
+              IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4)              THEN
                   TADD(I)=0.
               ENDIF
   750     CONTINUE
 C
           DO 800 K=1,IG+1
           DO 800 I=IL1,IL2
-              IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4 .AND.
+              IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4 .AND.
      1           ICONT(I).EQ.1)                                     THEN
                   TADD(I)=TADD(I)+TMOVE(I,K)*ZMAT(I,K,J)
               ENDIF                                    
   800     CONTINUE                                                            
 C
           DO 850 I=IL1,IL2
-              IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)               THEN
+              IF(FI(I,q).GT.0. .AND. ISAND(I,1).EQ.-4)              THEN
                   TADD(I)=TADD(I)+TBAR(I,J)*ZRMDR(I,J)                                        
                   TBAR(I,J)=TADD(I)/DELZ(J)
-                  HTC(I,J)=HTC(I,J)+FI(I)*(TBAR(I,J)+TFREZ)*HCPICE*
+                  HTC(I,J)=HTC(I,J)+FI(I,q)*(TBAR(I,J)+TFREZ)*HCPICE*
      1                     DELZ(J)/DELT
               ENDIF                                              
   850     CONTINUE

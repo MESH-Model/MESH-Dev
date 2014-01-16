@@ -1,6 +1,6 @@
       SUBROUTINE TMELT(ZSNOW,TSNOW,QMELT,R,TR,GZERO,RALB,
      1                 HMFN,HTCS,HTC,FI,HCPSNO,RHOSNO,WSNOW,
-     2                 ISAND,IG,ILG,IL1,IL2,JL)
+     2                 ISAND,IG,ILG,IL1,IL2,JL,q)
 C                                                                                  
 C     * JAN 06/09 - D.VERSEGHY/M.LAZARE. SPLIT 100 LOOP INTO TWO.
 C     * MAR 24/06 - D.VERSEGHY. ALLOW FOR PRESENCE OF WATER IN SNOW.
@@ -24,23 +24,24 @@ C     * AUG 12/91 - D.VERSEGHY. CODE FOR MODEL VERSION GCM7U -
 C     *                         CLASS VERSION 2.0 (WITH CANOPY).
 C     * APR 11/89 - D.VERSEGHY. MELTING OF SNOWPACK.
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IG,ILG,IL1,IL2,JL,I
+      INTEGER IG,ILG,IL1,IL2,JL,I,q
 C
 C     * INPUT/OUTPUT ARRAYS.
 C
       REAL HTC   (ILG,IG)
 
       REAL ZSNOW (ILG),   TSNOW (ILG),   QMELT (ILG),   R     (ILG),
-     1     TR    (ILG),   GZERO (ILG),   RALB  (ILG),   HMFN  (ILG),
+     1     TR    (ILG),   GZERO (ILG),   RALB  (ILG),   HMFN(ILG),
      2     HTCS  (ILG)
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG),   HCPSNO(ILG),   RHOSNO(ILG),   WSNOW (ILG)
+      REAL FI    (ILG,Nmod),   HCPSNO(ILG),   RHOSNO(ILG),   WSNOW (ILG)
 C
       INTEGER             ISAND (ILG,IG)
 C                                                                                 
@@ -59,9 +60,9 @@ C
      2                TCGLAC,CLHMLT,CLHVAP
 C-----------------------------------------------------------------------
       DO 100 I=IL1,IL2
-          IF(FI(I).GT.0.)                                          THEN
+          IF(FI(I,q).GT.0.)                                         THEN
               IF(QMELT(I).GT.0. .AND. ZSNOW(I).GT.0.)           THEN
-                  HTCS(I)=HTCS(I)-FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
+                  HTCS(I)=HTCS(I)-FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
      1                    ZSNOW(I)/DELT
                   HADD =QMELT(I)*DELT                                                             
                   HCONV=(0.0-TSNOW(I))*HCPSNO(I)*ZSNOW(I) + 
@@ -75,7 +76,7 @@ C-----------------------------------------------------------------------
                       ZSNOW(I)=ZSNOW(I)-ZMELT                                                       
                       HCPSNO(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
      1                    (RHOW*ZSNOW(I))
-                      HTCS (I)=HTCS(I)-FI(I)*(QMELT(I)-CLHMLT*RMELT*
+                      HTCS (I)=HTCS(I)-FI(I,q)*(QMELT(I)-CLHMLT*RMELT*
      1                         RHOW)
                   ELSE                                                                        
                       RMELTS=ZSNOW(I)*RHOSNO(I)/RHOW                                                 
@@ -88,14 +89,14 @@ C-----------------------------------------------------------------------
                       HCPSNO(I)=0.0
                       TSNOW (I)=0.0                                                               
                       WSNOW (I)=0.0
-                      HTCS (I)=HTCS(I)-FI(I)*(QMELT(I)-CLHMLT*RMELTS*
+                      HTCS (I)=HTCS(I)-FI(I,q)*(QMELT(I)-CLHMLT*RMELTS*
      1                         RHOW-HADD/DELT)
                   ENDIF                                                                       
-                  HMFN (I)=HMFN(I)+FI(I)*CLHMLT*RMELTS*RHOW
+                  HMFN (I)=HMFN(I)+FI(I,q)*CLHMLT*RMELTS*RHOW
                   TR   (I)=(R(I)*TR(I)+RMELT*TRMELT)/(R(I)+RMELT)
                   R    (I)=R(I)+RMELT
                   QMELT(I)=0.0
-                  HTCS(I)=HTCS(I)+FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
+                  HTCS(I)=HTCS(I)+FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
      1                    ZSNOW(I)/DELT
               ENDIF
               RALB(I)=R(I)
@@ -103,11 +104,11 @@ C-----------------------------------------------------------------------
   100 CONTINUE                                                                   
 C
       DO 200 I=IL1,IL2
-          IF(FI(I).GT.0.)                                          THEN
+          IF(FI(I,q).GT.0.)                                         THEN
               IF(QMELT(I).GT.0. AND. ISAND(I,1).GT.-4)      THEN
                   GZERO(I)=GZERO(I)+QMELT(I)
-                  HTCS (I)=HTCS(I)-FI(I)*QMELT(I)
-                  HTC(I,1)=HTC(I,1)+FI(I)*QMELT(I)
+                  HTCS (I)=HTCS(I)-FI(I,q)*QMELT(I)
+                  HTC(I,1)=HTC(I,1)+FI(I,q)*QMELT(I)
               ENDIF
               RALB(I)=R(I)
           ENDIF

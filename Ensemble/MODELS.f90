@@ -4,7 +4,7 @@
 module MODELS
 
 integer, parameter :: &
- Nmod = 8192      ! Number of models
+ Nmod = 4096      ! Number of models
 
 integer :: &
   tem(Nmod),      &! turbulent exchange model
@@ -19,6 +19,6 @@ integer :: &
   im(Nmod),       &! infiltration model
   sotcm(Nmod),    &! soil thermal conductivity model
   ufcm(Nmod),     &! soil unfrozen water content model
-  siim(Nmod)        ! soil ice impedance model
+  siim(Nmod)       ! soil ice impedance model
 
 end module MODELS

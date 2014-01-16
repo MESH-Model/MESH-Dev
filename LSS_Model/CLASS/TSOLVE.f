@@ -10,7 +10,7 @@
      9                  ISLFD,ITG,ILG,IG,IL1,IL2,JL,
      A                  TSTEP,TVIRTS,EVBETA,Q0SAT,RESID,
      B                  DCFLXM,CFLUXM,WZERO,TRTOP,A,B,
-     C                  LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF)
+     C                  LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF,q)
 C
 C     * OCT 14/11 - D.VERSEGHY. FOR POST-ITERATION CLEANUP WITH N-R SCHEME,
 C     *                         REMOVE CONDITION INVOLVING LAST ITERATION
@@ -85,11 +85,12 @@ C     *                         CLASS VERSION 2.0 (WITH CANOPY).
 C     * APR 11/89 - D.VERSEGHY. ITERATIVE SURFACE TEMPERATURE 
 C     *                         CALCULATIONS FOR SNOW/SOIL.
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ISNOW,ISLFD,ITG,ILG,IG,IL1,IL2,JL,I
+      INTEGER ISNOW,ISLFD,ITG,ILG,IG,IL1,IL2,JL,I,q
 C
       INTEGER NUMIT,NIT,IBAD,ITERMX
 C
@@ -103,7 +104,7 @@ C
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG),    QSWINV(ILG),    QSWINI(ILG),    QLWIN (ILG),   
+      REAL FI    (ILG,Nmod),    QSWINV(ILG),    QSWINI(ILG),QLWIN (ILG),   
      1     TPOTA (ILG),    QA    (ILG),    VA    (ILG),    PADRY (ILG),    
      2     RHOAIR(ILG),    ALVISG(ILG),    ALNIRG(ILG),    CRIB  (ILG),    
      3     CPHCH (ILG),    CEVAP (ILG),    TVIRTA(ILG),    
@@ -161,7 +162,7 @@ C      ENDIF
        EZERO=0.0
 C
       DO 50 I=IL1,IL2
-          IF(FI(I).GT.0.)                                          THEN
+          IF(FI(I,q).GT.0.)                                         THEN
               IF(ISNOW.EQ.0)                      THEN
                   TRTOP(I)=0.
               ELSE
@@ -198,7 +199,7 @@ C
       NUMIT=0
       NIT=0
       DO 150 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN    
+          IF(FI(I,q).GT.0. .AND. ITER(I).EQ.1)                      THEN    
               NIT=NIT+1
               CFLUXM(I)=CFLUX(I)
               IF(TZERO(I).GE.TFREZ)                        THEN
@@ -234,12 +235,12 @@ C
         IF(ISLFD.LT.2) THEN
             CALL DRCOEF (CDM,CDH,RIB,CFLUX,QZERO,QA,ZOSCLM,ZOSCLH,
      1                   CRIB,TVIRTS,TVIRTA,VA,FI,ITER,
-     2                   ILG,IL1,IL2)
+     2                   ILG,IL1,IL2,q)
         ELSE
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL )
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q)
         ENDIF
 ! MM: output from FLXSURFZ: CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,UE,H,LZZ0,LZZ0T,FM,FH (all back out to CLASST)
 ! MM: used subsequently in TSOLVE: CFLUX (CTU in FLXSURFZ)
@@ -247,7 +248,7 @@ C
 C     * REMAINING CALCULATIONS.
 C
         DO 175 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN    
+          IF(FI(I,q).GT.0. .AND. ITER(I).EQ.1)                     THEN    
               QLWOUT(I)=SBC*TZERO(I)*TZERO(I)*TZERO(I)*TZERO(I)
               IF(TZERO(I).LT.TPOTA(I))                        THEN
                   QSENS(I)=(RHOAIR(I)*SPHAIR*CFLUX(I)+EZERO)*(TZERO(I)-
@@ -274,7 +275,7 @@ C     * OPTION #1: BISECTION ITERATION METHOD.
 C
       IF(NIT.GT.0)                                                  THEN
         DO 180 I=IL1,IL2      
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN    
+          IF(FI(I,q).GT.0. .AND. ITER(I).EQ.1)                      THEN    
               IF(NITER(I).EQ.1) THEN
                   IF(RESID(I).GT.0.0) THEN
                       TZERO(I)=TZERO(I)+1.0
@@ -290,7 +291,7 @@ C
               ENDIF
           ENDIF
 C
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN
+          IF(FI(I,q).GT.0. .AND. ITER(I).EQ.1)                    THEN
               NITER(I)=NITER(I)+1
               NUMIT=NUMIT+1
           ENDIF
@@ -312,7 +313,7 @@ C     * OPTION #2: NEWTON-RAPHSON ITERATION METHOD.
 C
       IF(NIT.GT.0)                                                  THEN
         DO 190 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                      THEN
+          IF(FI(I,q).GT.0. .AND. ITER(I).EQ.1)                      THEN
               IF(NITER(I).GT.1)                                 THEN
                   DCFLUX=(CFLUX(I)-CFLUXM(I))/
      1                SIGN(MAX(.001,ABS(TSTEP(I))),TSTEP(I))
@@ -345,7 +346,7 @@ C
       DO 195 I=IL1,IL2
           NUMIT=0
           JEVAP(I)=0
-          IF(FI(I).GT.0. .AND.ITER(I).EQ.-1)                       THEN
+          IF(FI(I,q).GT.0. .AND.ITER(I).EQ.-1)                    THEN
               TZEROT=TVIRTA(I)/(1.0+0.61*QZERO(I))
               IF(ABS(RESID(I)).GT.50.) THEN
                   TZERO(I)=TZEROT
@@ -382,12 +383,12 @@ C
         IF(ISLFD.LT.2) THEN
             CALL DRCOEF (CDM,CDH,RIB,CFLUX,QZERO,QA,ZOSCLM,ZOSCLH,
      1                   CRIB,TVIRTS,TVIRTA,VA,FI,JEVAP,
-     2                   ILG,IL1,IL2)
+     2                   ILG,IL1,IL2,q)
         ELSE
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,JEVAP,JL )
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,JEVAP,JL,q)
         ENDIF
       ENDIF
 C
@@ -397,7 +398,7 @@ C     * CHECK FOR BAD ITERATION TEMPERATURES.
 C
       IBAD=0
       DO 200 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. (TZERO(I).LT.173.16 .OR. 
+          IF(FI(I,q).GT.0. .AND. (TZERO(I).LT.173.16 .OR. 
      1                           TZERO(I).GT.373.16))               THEN 
               IBAD=I
           ENDIF  
@@ -416,7 +417,7 @@ C     * POST-ITERATION CLEAN-UP.
 C
       NIT=0
       DO 300 I=IL1,IL2
-          IF(FI(I).GT.0.)                                          THEN
+          IF(FI(I,q).GT.0.)                                        THEN
               IF(((IWATER(I).EQ.1 .AND. TZERO(I).LT.TFREZ) .OR. 
      1            (IWATER(I).EQ.2 .AND. TZERO(I).GT.TFREZ)) .OR.
      2            (ISAND(I,1).EQ.-4 .AND. TZERO(I).GT.TFREZ))   THEN 
@@ -440,19 +441,19 @@ C
         IF(ISLFD.LT.2) THEN
             CALL DRCOEF (CDM,CDH,RIB,CFLUX,QZERO,QA,ZOSCLM,ZOSCLH,
      1                   CRIB,TVIRTS,TVIRTA,VA,FI,ITER,
-     2                   ILG,IL1,IL2)
+     2                   ILG,IL1,IL2,q)
         ELSE
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL )
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q)
         ENDIF
       ENDIF
 C
 C     * REMAINING CALCULATIONS.
 C
       DO 350 I=IL1,IL2 
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN
+          IF(FI(I,q).GT.0. .AND. ITER(I).EQ.1)                     THEN
               QLWOUT(I)=SBC*TZERO(I)*TZERO(I)*TZERO(I)*TZERO(I)
               IF(TZERO(I).LT.TPOTA(I))                        THEN
                   QSENS(I)=(RHOAIR(I)*SPHAIR*CFLUX(I)+EZERO)*(TZERO(I)-
@@ -474,7 +475,7 @@ C
               ENDIF
           ENDIF                              
 C
-          IF(FI(I).GT.0.)                                 THEN
+          IF(FI(I,q).GT.0.)                                 THEN
               IF(ABS(EVAP(I)).LT.1.0E-8) THEN
                   RESID(I)=RESID(I)+QEVAP(I)
                   EVAP(I)=0.0

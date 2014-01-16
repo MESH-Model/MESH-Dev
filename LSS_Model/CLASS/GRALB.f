@@ -1,7 +1,7 @@
       SUBROUTINE GRALB(ALVSG,ALIRG,ALVSGC,ALIRGC,
      1                 ALGWET,ALGDRY,THLIQ,FSNOW,ALVSU,ALIRU,FCMXU,
      2                 AGVDAT,AGIDAT,ISAND,
-     3                 ILG,IG,IL1,IL2,JL,IALG)
+     3                 ILG,IG,IL1,IL2,JL,IALG,q)
 C
 C     * APR 13/06 - D.VERSEGHY. SEPARATE ALBEDOS FOR OPEN AND
 C     *                         CANOPY-COVERED GROUND.
@@ -38,20 +38,22 @@ C     *                         ALBEDOS BASED ON TEXTURE AND SURFACE
 C     *                         WETNESS. (SET TO ICE ALBEDOS OVER
 C     *                         CONTINENTAL ICE SHEETS.)
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C                
 C     * INTEGER CONSTANTS.
 C
-      INTEGER  ILG,IG,IL1,IL2,JL,IALG,IPTBAD,I
+      INTEGER  ILG,IG,IL1,IL2,JL,IALG,IPTBAD,I,q
 C
 C     * OUTPUT ARRAYS.
 C
-      REAL ALVSG (ILG),   ALIRG (ILG),  ALVSGC (ILG),  ALIRGC (ILG)
+      REAL ALVSG (ILG),   ALIRG (ILG),  ALVSGC (ILG),  
+     +     ALIRGC (ILG)
 C
 C     * INPUT ARRAYS.
 C
-      REAL ALGWET(ILG),   ALGDRY(ILG),   THLIQ (ILG,IG),
-     2     FSNOW (ILG),   ALVSU (ILG),   ALIRU (ILG),   FCMXU (ILG),
+      REAL ALGWET(ILG),   ALGDRY(ILG),   THLIQ (ILG,IG,Nmod),
+     2     FSNOW (ILG),   ALVSU (ILG),   ALIRU (ILG),  FCMXU (ILG),
      1     AGVDAT(ILG),   AGIDAT(ILG)
 C
       INTEGER    ISAND  (ILG,IG)
@@ -71,12 +73,12 @@ C---------------------------------------------------------------------
          IF(IALG.EQ.0)                                          THEN
             IF(ISAND(I,1).GE.0)                          THEN
                 FURB=MAX(FCMXU(I),1.0E-5)                                    
-                IF(THLIQ(I,1).GE.0.26) THEN  
+                IF(THLIQ(I,1,q).GE.0.26) THEN  
                    ALBSOL=ALGWET(I)            
-                ELSEIF(THLIQ(I,1).LE.0.22) THEN 
+                ELSEIF(THLIQ(I,1,q).LE.0.22) THEN 
                    ALBSOL=ALGDRY(I)              
                 ELSE                         
-                   ALBSOL=THLIQ(I,1)*(ALGWET(I)-ALGDRY(I))/0.04+
+                   ALBSOL=THLIQ(I,1,q)*(ALGWET(I)-ALGDRY(I))/0.04+
      1                    ALGDRY(I)-5.50*(ALGWET(I)-ALGDRY(I)) 
                 ENDIF                         
 C

@@ -6,7 +6,8 @@
      4                  SI,TSI,INFILTYPE,SNOWMELTD,SNOWMELTD_LAST,
      5                  MELTRUNOFF,SNOWINFIL,CUMSNOWINFIL,
      6                  FRZC,
-     7                  FROZENSOILINFILFLAG,ZPOND,TPOND)
+     7                  FROZENSOILINFILFLAG,ZPOND,TPOND,N,q,NYEARS,
+     8                  NMELT)
 C
 C     * JAN 06/12 - D.PRINCZ/B.DAVISON. UPDATED DISTRIBUTION OF
 C                                       MELTWATER
@@ -31,23 +32,26 @@ C     * AUG 12/91 - D.VERSEGHY. CODE FOR MODEL VERSION GCM7U -
 C     *                         CLASS VERSION 2.0 (WITH CANOPY).
 C     * APR 11/89 - D.VERSEGHY. RAIN INFILTRATION INTO SNOWPACK.
 C
+      use MODELS, only : slwm,Nmod
+C
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ILG,IL1,IL2,JL,I
+      INTEGER ILG,IL1,IL2,JL,I,N,q,NYEARS,NMELT
 C
 C     * INPUT/OUTPUT ARRAYS.
 C
       REAL R     (ILG),    TR    (ILG),    ZSNOW (ILG),    TSNOW (ILG),
      1     RHOSNO(ILG),    HCPSNO(ILG),    WSNOW (ILG),    HTCS  (ILG),
-     2     HMFN  (ILG),    PCPG  (ILG),    ROFN  (ILG)
+     2     HMFN  (ILG),    PCPG  (ILG)!,    ROFN  (ILG)
+      real ROFN  (ILG)
 C
       INTEGER NCOUNT,INFILTYPE(ILG),
      1        FROZENSOILINFILFLAG
-      REAL    t0_ACC,SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS
+      REAL    t0_ACC(NYEARS,Nmod),SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS
       REAL    RUNOFF(ILG),TRUNOF(ILG),OVRFLW(ILG),TOVRFL(ILG),SWE(ILG),
-     1        THTOT(ILG),TBAR1(ILG),
+     1        THTOT(ILG),TBAR1(ILG), !check THTOT
      2        SI(ILG),TSI(ILG),SNOWMELTD(ILG),
      3        SNOWMELTD_LAST(ILG),SNOWINFIL(ILG),CUMSNOWINFIL(ILG),
      4        MELTRUNOFF(ILG),FRZC(ILG),
@@ -55,7 +59,7 @@ C
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG)
+      REAL FI    (ILG,Nmod)
 C
 C     * TEMPORARY VARIABLES.
 C
@@ -77,9 +81,9 @@ C-----------------------------------------------------------------------
       SWE = ZSNOW*RHOSNO/RHOW*1000.0 ! UNIT -> mm
       
       DO 100 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. R(I).GT.0. .AND. ZSNOW(I).GT.0.)
+          IF(FI(I,q).GT.0. .AND. R(I).GT.0. .AND. ZSNOW(I).GT.0.)
      1                                                              THEN
-              HTCS(I)=HTCS(I)-FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
+              HTCS(I)=HTCS(I)-FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
      1                ZSNOW(I)/DELT
               RAIN=R(I)*DELT                                            
               HRCOOL=TR(I)*HCPW*RAIN                                    
@@ -89,8 +93,8 @@ C-----------------------------------------------------------------------
               IF(HRCOOL.GE.(HSNWRM+HSNMLT))                 THEN        
                   HRCOOL=HRCOOL-(HSNWRM+HSNMLT)                         
                   ZMELT=ZSNOW(I)*RHOSNO(I)/RHOW                         
-                  HMFN(I)=HMFN(I)+FI(I)*CLHMLT*ZMELT*RHOW/DELT
-                  HTCS(I)=HTCS(I)+FI(I)*CLHMLT*ZMELT*RHOW/DELT
+                  HMFN(I)=HMFN(I)+FI(I,q)*CLHMLT*ZMELT*RHOW/DELT
+                  HTCS(I)=HTCS(I)+FI(I,q)*CLHMLT*ZMELT*RHOW/DELT
                   TR(I)=HRCOOL/(HCPW*(ZMELT+RAIN+WSNOW(I)/RHOW))        
                   R(I)=R(I)+(ZMELT+WSNOW(I)/RHOW)/DELT
                   ZSNOW(I)=0.0                                          
@@ -102,8 +106,9 @@ C-----------------------------------------------------------------------
      1                                                      THEN
                   HSNMLT=HRCOOL-HSNWRM                                  
                   ZMELT=HSNMLT/(CLHMLT*RHOSNO(I))                       
-                  HMFN(I)=HMFN(I)+FI(I)*CLHMLT*ZMELT*RHOSNO(I)/DELT
-                  HTCS(I)=HTCS(I)+FI(I)*CLHMLT*ZMELT*RHOSNO(I)/DELT
+                  HMFN(I)=HMFN(I)+FI(I,q)*CLHMLT*ZMELT*RHOSNO(I)
+     +                      /DELT
+                  HTCS(I)=HTCS(I)+FI(I,q)*CLHMLT*ZMELT*RHOSNO(I)/DELT
                   ZSNOW(I)=ZSNOW(I)-ZMELT                               
                   WAVAIL=ZMELT*RHOSNO(I)+WSNOW(I)
                   select case(slwm(q))
@@ -126,8 +131,8 @@ C-----------------------------------------------------------------------
                   R(I)=R(I)+ZMELT/DELT                                  
               ELSE IF(HSNWRM.GE.(HRCOOL+HRFREZ))            THEN        
                   HSNWRM=(HRCOOL+HRFREZ)-HSNWRM                         
-                  HMFN(I)=HMFN(I)-FI(I)*HRFREZ/DELT
-                  HTCS(I)=HTCS(I)-FI(I)*HRFREZ/DELT
+                  HMFN(I)=HMFN(I)-FI(I,q)*HRFREZ/DELT
+                  HTCS(I)=HTCS(I)-FI(I,q)*HRFREZ/DELT
                   RHOSNO(I)=(RHOSNO(I)*ZSNOW(I)+RHOW*RAIN)/ZSNOW(I)     
                   IF(RHOSNO(I).GT.RHOICE)      THEN                     
                       ZSNOW(I)=RHOSNO(I)*ZSNOW(I)/RHOICE                
@@ -142,8 +147,8 @@ C-----------------------------------------------------------------------
      1                                                      THEN
                   HRFREZ=HSNWRM-HRCOOL                                  
                   ZFREZ=HRFREZ/(CLHMLT*RHOW)                            
-                  HMFN(I)=HMFN(I)-FI(I)*CLHMLT*ZFREZ*RHOW/DELT
-                  HTCS(I)=HTCS(I)-FI(I)*CLHMLT*ZFREZ*RHOW/DELT
+                  HMFN(I)=HMFN(I)-FI(I,q)*CLHMLT*ZFREZ*RHOW/DELT
+                  HTCS(I)=HTCS(I)-FI(I,q)*CLHMLT*ZFREZ*RHOW/DELT
                   RHOSNO(I)=(RHOSNO(I)*ZSNOW(I)+RHOW*ZFREZ)/ZSNOW(I)    
                   IF(RHOSNO(I).GT.RHOICE)      THEN                     
                       ZSNOW(I)=RHOSNO(I)*ZSNOW(I)/RHOICE                
@@ -169,10 +174,10 @@ C-----------------------------------------------------------------------
                   TR(I)=0.0                                             
                   TSNOW(I)=0.0                                          
               ENDIF                                                     
-              HTCS(I)=HTCS(I)+FI(I)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
+              HTCS(I)=HTCS(I)+FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
      1                ZSNOW(I)/DELT
-              PCPG(I)=PCPG(I)+FI(I)*R(I)*RHOW
-              ROFN(I)=ROFN(I)+FI(I)*R(I)*RHOW
+              PCPG(I)=PCPG(I)+FI(I,q)*R(I)*RHOW
+              ROFN(I)=ROFN(I)+FI(I,q)*R(I)*RHOW
           ENDIF
   100 CONTINUE
 C     
@@ -182,13 +187,13 @@ C
      1            SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS, 
      2            t0_ACC,FRZC,DELT,NCOUNT,ILG,IL1,IL2,
      3            SI,TSI,INFILTYPE,SNOWMELTD,SNOWMELTD_LAST, 
-     4            MELTRUNOFF,SNOWINFIL,CUMSNOWINFIL)
+     4            MELTRUNOFF,SNOWINFIL,CUMSNOWINFIL,N,q,NYEARS,NMELT)
 C
 C     RE-DISTRIBUTION OF MELTWATER
 C
       DO I=IL1,IL2
 C
-      IF(FI(I).GT.0.0 .AND. MELTRUNOFF(I).GT.0.0)THEN
+      IF(FI(I,q).GT.0.0 .AND. MELTRUNOFF(I).GT.0.0)THEN
 C
 C     FROZENSOILINFILFLAG = 1;
 C     MELTWATER IS MOVED TO RUNOFF AND DECLASSIFIED AS
@@ -198,9 +203,9 @@ C
         TRUNOF(I)  = (TRUNOF(I)*RUNOFF(I)+TR(I)*MELTRUNOFF(I)*DELT)
      1               /(RUNOFF(I)+MELTRUNOFF(I)*DELT)
         RUNOFF(I)  = RUNOFF(I)+MELTRUNOFF(I)*DELT
-        TOVRFL(I)  = (TOVRFL(I)*OVRFLW(I)+TR(I)*FI(I)*MELTRUNOFF(I)
-     1               *DELT)/(OVRFLW(I)+FI(I)*MELTRUNOFF(I)*DELT)
-        OVRFLW(I)  = OVRFLW(I)+FI(I)*MELTRUNOFF(I)*DELT
+        TOVRFL(I)  = (TOVRFL(I)*OVRFLW(I)+TR(I)*FI(I,q)*MELTRUNOFF(I)
+     1               *DELT)/(OVRFLW(I)+FI(I,q)*MELTRUNOFF(I)*DELT)
+        OVRFLW(I)  = OVRFLW(I)+FI(I,q)*MELTRUNOFF(I)*DELT
         R(I)       = MAX(0.0,R(I)-MELTRUNOFF(I))
 C
 C     FROZENSOILINFILFLAG = 2;
@@ -208,10 +213,10 @@ C     MELTWATER IS MOVED TO THE PONDING DEPTH AND DECLASSIFIED AS
 C     RAINFALL. THE TEMPERATURE OF THE PONDING DEPTH IS UPDATED.
 C
       ELSE IF(FROZENSOILINFILFLAG.EQ.2)THEN
-        TPOND(I)  = (TPOND(I)*ZPOND(I)+TR(I)*FI(I)*MELTRUNOFF(I)*DELT)
-     1              /(ZPOND(I)+FI(I)*MELTRUNOFF(I)*DELT)
-        ZPOND(I)  = ZPOND(I)+FI(I)*MELTRUNOFF(I)*DELT
-        R(I)      = MAX(0.0,R(I)-FI(I)*MELTRUNOFF(I))
+        TPOND(I)  = (TPOND(I)*ZPOND(I)+TR(I)*FI(I,q)*MELTRUNOFF(I)*DELT)
+     1              /(ZPOND(I)+FI(I,q)*MELTRUNOFF(I)*DELT)
+        ZPOND(I)  = ZPOND(I)+FI(I,q)*MELTRUNOFF(I)*DELT
+        R(I)      = MAX(0.0,R(I)-FI(I,q)*MELTRUNOFF(I))
 C
       ENDIF !>FROZENSOILINFILFLAG.EQ.N
 C

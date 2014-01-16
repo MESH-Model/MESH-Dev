@@ -45,7 +45,7 @@
      6                  ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG,
      7                  HCPSCS,HCPSGS,HCPSC,HCPSG,
      8                  TSNOWC,TSNOWG,RHOSC,RHOSG,
-     9                  XSNOWC,XSNOWG,XSNOCS,XSNOGS))
+     9                  XSNOWC,XSNOWG,XSNOCS,XSNOGS,q,NYEARS,NMELT)
 C                                                                        
 C     * SEP 04/13 - M.MACDONALD.ONLY PERFORM VANISHINGLY SMALL SNOW
 C                               CALCULATIONS IF PBSM NOT BEING USED (MESH OPTION)
@@ -130,31 +130,37 @@ C                               CLASS VERSION 2.0 (WITH CANOPY).
 C     * APR 11/89 - D.VERSEGHY. LAND SURFACE WATER BUDGET CALCULATIONS.
 C                                                                                 
       USE FLAGS
+      use MODELS, only : im,Nmod,bsm
+C
       IMPLICIT NONE
 
 C     * INTEGER CONSTANTS.
 C
       INTEGER IWF,ILG,IL1,IL2,JL,IC,IG,IGP1,IGP2,I,J,NLANDCS,NLANDGS,
-     1        NLANDC,NLANDG,NLANDI,IPTBAD,JPTBAD,KPTBAD,LPTBAD,N
+     1       NLANDC,NLANDG,NLANDI,IPTBAD,JPTBAD,KPTBAD,LPTBAD,N,q,
+     +       NYEARS,NMELT
 C
 C     * MAIN OUTPUT FIELDS.
 C                                                                                  
-      REAL THLIQ (ILG,IG), THICE (ILG,IG), TBAR  (ILG,IG), 
+      REAL THLIQ (ILG,IG,Nmod), THICE (ILG,IG,Nmod), TBAR (ILG,IG,Nmod), 
      1     GFLUX (ILG,IG)
 C
-      REAL TCAN  (ILG),    RCAN  (ILG),    SNCAN (ILG),    RUNOFF(ILG),
-     1     SNO   (ILG),    TSNOW (ILG),    RHOSNO(ILG),    ALBSNO(ILG),
-     2     ZPOND (ILG),    TPOND (ILG),    GROWTH(ILG),    TBASE (ILG),
-     3     TRUNOF(ILG),    WSNOW (ILG)
+      REAL TCAN  (ILG,Nmod),    RCAN  (ILG,Nmod),    SNCAN (ILG,Nmod),
+     +     RUNOFF(ILG),         SNO   (ILG,Nmod),    TSNOW (ILG,Nmod),    
+     +     RHOSNO(ILG,Nmod),    ALBSNO(ILG,Nmod),    ZPOND (ILG,Nmod),    
+     +     TPOND (ILG,Nmod),    GROWTH(ILG,Nmod),    TBASE (ILG,Nmod),
+     3     TRUNOF(ILG),    WSNOW (ILG,Nmod)
 C
 C     * DIAGNOSTIC ARRAYS.
 C
-      REAL PCFC  (ILG),    PCLC  (ILG),    PCPN  (ILG),    PCPG  (ILG),    
-     1     QFCF  (ILG),    QFCL  (ILG),    QFN   (ILG),    QFG   (ILG),    
-     2     HMFC  (ILG),    HMFN  (ILG),    HTCC  (ILG),    HTCS  (ILG),    
-     3     ROFC  (ILG),    ROFN  (ILG),    ROVG  (ILG),    WTRS  (ILG),    
-     4     WTRG  (ILG),    OVRFLW(ILG),    SUBFLW(ILG),    BASFLW(ILG),
-     5     TOVRFL(ILG),    TSUBFL(ILG),    TBASFL(ILG),    EVAP  (ILG)
+      REAL PCFC  (ILG),    PCLC  (ILG),    PCPN  (ILG),    
+     +      PCPG  (ILG),    QFCF  (ILG),    QFCL  (ILG),    
+     +     QFN   (ILG),    QFG   (ILG),     HMFC  (ILG),    
+     +     HMFN  (ILG),    HTCC  (ILG),    HTCS  (ILG),    
+     3     ROFC  (ILG),    ROVG  (ILG),    ROFN  (ILG),        
+     +     WTRS  (ILG),   WTRG  (ILG),    OVRFLW(ILG),    SUBFLW(ILG),  
+     +    BASFLW(ILG),    TOVRFL(ILG),    TSUBFL(ILG),    TBASFL(ILG),  
+     +    EVAP  (ILG)
 C
       REAL QFC   (ILG,IG), HMFG  (ILG,IG), HTC   (ILG,IG)
 C
@@ -166,17 +172,17 @@ C
       REAL TBARC(ILG,IG), TBARG(ILG,IG), TBARCS(ILG,IG),TBARGS(ILG,IG),                      
      1     THLIQC(ILG,IG),THLIQG(ILG,IG),THICEC(ILG,IG),THICEG(ILG,IG),           
      2     HCPC  (ILG,IG),HCPG  (ILG,IG),TCTOPC(ILG,IG),TCBOTC(ILG,IG),
-     3     TCTOPG(ILG,IG),TCBOTG(ILG,IG),FROOT (ILG,IG),TSFSAV(ILG,4)
+     3    TCTOPG(ILG,IG),TCBOTG(ILG,IG),FROOT(ILG,IG),TSFSAV(ILG,4,Nmod)
 C
-      REAL FC    (ILG),   FG    (ILG),   FCS   (ILG),   FGS   (ILG),
+      REAL FC(ILG,Nmod),  FG(ILG,Nmod), FCS(ILG,Nmod),  FGS(ILG,Nmod),
      1     TPONDC(ILG),   TPONDG(ILG),   TPNDCS(ILG),   TPNDGS(ILG),              
      2     EVAPC (ILG),   EVAPCG(ILG),   EVAPG (ILG),   EVAPCS(ILG),               
      3     EVPCSG(ILG),   EVAPGS(ILG),   QFREZC(ILG),   QFREZG(ILG),           
-     4     QMELTC(ILG),   QMELTG(ILG),   RAICAN(ILG),   SNOCAN(ILG),   
-     5     RAICNS(ILG),   SNOCNS(ILG),   FSVF  (ILG),   FSVFS (ILG),   
+     4     QMELTC(ILG),   QMELTG(ILG),   RAICAN(ILG),  SNOCAN(ILG,Nmod),   
+     5     RAICNS(ILG),   SNOCNS(ILG,Nmod),  FSVF  (ILG),   FSVFS (ILG),   
      6     CWLCAP(ILG),   CWFCAP(ILG),   CWLCPS(ILG),   CWFCPS(ILG),   
      7     TCANO (ILG),   TCANS (ILG),   CHCAP (ILG),   CHCAPS(ILG),   
-     8     CMASSC(ILG),   CMASCS(ILG),   ZSNOW (ILG),   RHOSNI(ILG),            
+     8     CMASSC(ILG),CMASCS(ILG),ZSNOW(ILG,Nmod),RHOSNI(ILG,Nmod),            
      9     GZEROC(ILG),   GZEROG(ILG),   GZROCS(ILG),   GZROGS(ILG),              
      A     G12C  (ILG),   G12G  (ILG),   G12CS (ILG),   G12GS (ILG),               
      B     G23C  (ILG),   G23G  (ILG),   G23CS (ILG),   G23GS (ILG),
@@ -199,7 +205,8 @@ C
       REAL TBARWC(ILG,IG),TBARWG(ILG,IG),TBRWCS(ILG,IG),TBRWGS(ILG,IG),
      1     THLQCO(ILG,IG),THLQGO(ILG,IG),THLQCS(ILG,IG),THLQGS(ILG,IG),        
      2     THICCO(ILG,IG),THICGO(ILG,IG),THICCS(ILG,IG),THICGS(ILG,IG),        
-     3     HCPCO (ILG,IG),HCPGO (ILG,IG),HCPCS (ILG,IG),HCPGS (ILG,IG),
+     3     HCPCO (ILG,IG),HCPGO (ILG,IG),HCPCS (ILG,IG),
+     +     HCPGS (ILG,IG),
      4     GRKSC (ILG,IG),GRKSG (ILG,IG),GRKSCS(ILG,IG),GRKSGS(ILG,IG),
      5     GFLXC (ILG,IG),GFLXG (ILG,IG),GFLXCS(ILG,IG),GFLXGS(ILG,IG)
 C
@@ -291,7 +298,7 @@ C
      3        SNOWMELTD_LAST(ILG),SNOWINFIL(ILG),CUMSNOWINFILCS(ILG),
      4        MELTRUNOFF(ILG),FRZC(ILG),
      5        CUMSNOWINFILGS(ILG)
-      REAL    t0_ACC, SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
+      REAL    t0_ACC(NYEARS,Nmod),SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS
 
 C     * WATDRN3
       INTEGER :: NA,NTYPE
@@ -352,7 +359,7 @@ C
      S           THPOR,  HCPS,   GRKSAT, ISAND,  DELZW,  DELZ,
      T           ILG,    IL1,    IL2,    JL,     IG,     IGP1,
      U           NLANDCS,NLANDGS,NLANDC, NLANDG, RADD,   SADD,
-     V           BI, PSISAT, DD, XSLOPE, BULK_FC  )
+     V           BI, PSISAT, DD, XSLOPE, BULK_FC  ,q)
 C
 C     * CALCULATIONS FOR CANOPY OVER SNOW.
 C
@@ -361,45 +368,48 @@ C
      1                TBARCS,ZSNOCS,WLSTCS,CHCAPS,QFCF,QFCL,QFN,QFC,
      2                HTCC,HTCS,HTC,FCS,CMASCS,TSNOCS,HCPSCS,RHOSCS,
      3                FROOT,THPOR,THLMIN,DELZW,EVLOST,RLOST,IROOT,
-     4                IG,ILG,IL1,IL2,JL,N  )
+     4                IG,ILG,IL1,IL2,JL,N  ,q)
           CALL CANADD(2,RPCCS,TRPCCS,SPCCS,TSPCCS,RAICNS,SNOCNS,
      1                TCANS,CHCAPS,HTCC,ROFC,ROVG,PCPN,PCPG,
      2                FCS,FSVFS,CWLCPS,CWFCPS,CMASCS,RHOSNI,
-     3                TSFSAV(1,1),RADD,SADD,ILG,IL1,IL2,JL)
+     3                TSFSAV(1,1,q),RADD,SADD,ILG,IL1,IL2,JL,q)
           CALL CWCALC(TCANS,RAICNS,SNOCNS,RDUMMY,RDUMMY,CHCAPS,
-     1                HMFC,HTCC,FCS,CMASCS,ILG,IL1,IL2,JL)
+     1                HMFC,HTCC,FCS,CMASCS,ILG,IL1,IL2,JL,q)
           CALL SUBCAN(2,RPCCS,TRPCCS,SPCCS,TSPCCS,RHOSNI,EVPCSG,
-     1                QFN,QFG,PCPN,PCPG,FCS,ILG,IL1,IL2,JL)
+     1                QFN,QFG,PCPN,PCPG,FCS,ILG,IL1,IL2,JL,q)
           CALL TWCALC(TBARCS,THLQCS,THICCS,HCPCS,TBRWCS,HMFG,HTC,
      1                FCS,ZERO,THPOR,THLMIN,HCPS,DELZW,DELZZ,ISAND,
-     2                IG,ILG,IL1,IL2,JL)
+     2                IG,ILG,IL1,IL2,JL,q)
           CALL SNOVAP(RHOSCS,ZSNOCS,HCPSCS,TSNOCS,EVPCSG,QFN,QFG,
      1                HTCS,WLSTCS,TRNFCS,RUNFCS,TOVRFL,OVRFLW,
-     2                FCS,RPCCS,SPCCS,RHOSNI,WSNOCS,ILG,IL1,IL2,JL)
+     2                FCS,RPCCS,SPCCS,RHOSNI,WSNOCS,ILG,IL1,IL2,JL,
+     +                q)
           CALL TFREEZ(ZPNDCS,TPNDCS,ZSNOCS,TSNOCS,ALBSCS,
      1                RHOSCS,HCPSCS,GZROCS,HMFG,HTCS,HTC,
      2                WTRS,WTRG,FCS,ZERO,WSNOCS,TA,TBARCS,
-     3                ISAND,IG,ILG,IL1,IL2,JL) 
+     3                ISAND,IG,ILG,IL1,IL2,JL,q) 
           CALL TMELT(ZSNOCS,TSNOCS,QMELTC,RPCCS,TRPCCS,
      1               GZROCS,RALB,HMFN,HTCS,HTC,FCS,HCPSCS,
-     2               RHOSCS,WSNOCS,ISAND,IG,ILG,IL1,IL2,JL)
+     2               RHOSCS,WSNOCS,ISAND,IG,ILG,IL1,IL2,JL,q)
           CALL SNOADD(ALBSCS,TSNOCS,RHOSCS,ZSNOCS,
      1                HCPSCS,HTCS,FCS,SPCCS,TSPCCS,RHOSNI,WSNOCS,
-     2                ILG,IL1,IL2,JL)
+     2                ILG,IL1,IL2,JL,q)
           select case(im(q))
           case(1) ! Gray & Zhao
              CALL SNINFLM(RPCCS,TRPCCS,ZSNOCS,TSNOCS,RHOSCS,HCPSCS,
      1                    WSNOCS,HTCS,HMFN,PCPG,ROFN,FCS,ILG,IL1,IL2,JL,
      2                    NCOUNT,RUNFCS,TRNFCS,OVRFLW,TOVRFL,
      3                    SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS,
-     3                    THLIQ(:,1)+THICE(:,1),TBARCS(:,1),
+     3                    THLIQ(:,1,q)+THICE(:,1,q),TBARCS(:,1),
      4                    t0_ACC,SI,TSI,INFILTYPE,
      5                    SNOWMELTD,SNOWMELTD_LAST,MELTRUNOFF,
      6                    SNOWINFIL,CUMSNOWINFILCS,FRZC,
-     7                    FROZENSOILINFILFLAG,ZPNDCS,TPNDCS)
+     7                    FROZENSOILINFILFLAG,ZPNDCS,TPNDCS,N,q,NYEARS,
+     8                    NMELT)
           case(0) ! CLASS: none
              CALL SNINFL(RPCCS,TRPCCS,ZSNOCS,TSNOCS,RHOSCS,HCPSCS,
-     1                   WSNOCS,HTCS,HMFN,PCPG,ROFN,FCS,ILG,IL1,IL2,JL)
+     1                   WSNOCS,HTCS,HMFN,PCPG,ROFN,FCS,ILG,IL1,IL2,JL,
+     2                   q)
           end select
           CALL GRINFL(1,THLQCS,THICCS,TBRWCS,BASFLW,TBASFL,RUNFCS,
      1                TRNFCS,ZFAV,LZFAV,THLINV,QFG,WLSTCS,
@@ -414,20 +424,20 @@ C
      A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,DELZ,ISAND,
      B                IGRN,IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
      C                NEND,ISIMP,IGDR,
-     D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
           CALL GRDRAN(1,THLQCS,THICCS,TBRWCS,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFCS,TRNFCS,
      2                QFG,WLSTCS,FCS,EVPCSG,RPCCS,ZPNDCS,
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSCS,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IGDR,
-     6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
           IF(IWF == 2)THEN
              CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FCS,
      1                   ZPNDPRECS,ZPNDCS, FSTRCS, TPNDCS,
      2                   OVRFLW,   TOVRFL, RUNFCS, TRNFCS,  TFREZ,
      3                   CMIN,     CMAX,   B,      K1,      K2,
-     4                   UM1CS,  QM1CS,  QM2CS,   UMQCS,    DELT)
+     4                   UM1CS,  QM1CS,  QM2CS,   UMQCS,    DELT,q)
           ELSE
 
 !Craig Thompson added call to watrof, june 2008.
@@ -437,7 +447,7 @@ C
      3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
      4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
      6                NA,NTYPE,ILMOS,JLMOS,
-     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,q)
           ENDIF
           CALL TMCALC(TBARCS,THLQCS,THICCS,HCPCS,TPNDCS,ZPNDCS,
      1                TSNOCS,ZSNOCS,ALBSCS,RHOSCS,HCPSCS,TBASCS,
@@ -445,15 +455,15 @@ C
      3                WTRS,WTRG,FCS,TBRWCS,GZROCS,G12CS,
      4                G23CS,GGEO,TA,WSNOCS,TCTOPC,TCBOTC,GFLXCS,
      5                ZPLMCS,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
-     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N,BI,PSISAT)
-          CALL CHKWAT(1,PCPR,EVPICS,RUNFCS,WLSTCS,RAICNS,SNOCNS,
+     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N,BI,PSISAT,q)
+          CALL CHKWATsnow(1,PCPR,EVPICS,RUNFCS,WLSTCS,RAICNS,SNOCNS,
      1                RACS,SNCS,ZPNDCS,ZPOND,THLQCS,THICCS,
      2                THLIQC,THICEC,ZSNOCS,RHOSCS,XSNOCS,SNO,
      3                WSNOCS,WSNOW,FCS,FGS,FCS,BAL,THPOR,THLMIN,
-     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL,N   ) 
+     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL,N,q) 
           CALL SNOALBW(ALBSCS,RHOSCS,ZSNOCS,HCPSCS,
      1                 TSNOCS,FCS,SPCCS,RALB,WSNOCS,RHOMAX,
-     2                 ISAND,ILG,IG,IL1,IL2,JL)       
+     2                 ISAND,ILG,IG,IL1,IL2,JL,q)       
       ENDIF                                                               
 C
 C     * CALCULATIONS FOR SNOW-COVERED GROUND.
@@ -461,34 +471,37 @@ C
       IF(NLANDGS.GT.0)                                              THEN
           CALL TWCALC(TBARGS,THLQGS,THICGS,HCPGS,TBRWGS,HMFG,HTC,
      1                FGS,ZERO,THPOR,THLMIN,HCPS,DELZW,DELZZ,ISAND,
-     2                IG,ILG,IL1,IL2,JL)
+     2                IG,ILG,IL1,IL2,JL,q)
           CALL SNOVAP(RHOSGS,ZSNOGS,HCPSGS,TSNOGS,EVAPGS,QFN,QFG,
      1                HTCS,WLSTGS,TRNFGS,RUNFGS,TOVRFL,OVRFLW,
-     2                FGS,RPCGS,SPCGS,RHOSNI,WSNOGS,ILG,IL1,IL2,JL)  
+     2                FGS,RPCGS,SPCGS,RHOSNI,WSNOGS,ILG,IL1,IL2,JL,
+     +                q)  
           CALL TFREEZ(ZPNDGS,TPNDGS,ZSNOGS,TSNOGS,ALBSGS,
      1                RHOSGS,HCPSGS,GZROGS,HMFG,HTCS,HTC,
      2                WTRS,WTRG,FGS,ZERO,WSNOGS,TA,TBARGS,
-     3                ISAND,IG,ILG,IL1,IL2,JL) 
+     3                ISAND,IG,ILG,IL1,IL2,JL,q) 
           CALL TMELT(ZSNOGS,TSNOGS,QMELTG,RPCGS,TRPCGS,
      1               GZROGS,RALB,HMFN,HTCS,HTC,FGS,HCPSGS,
-     2               RHOSGS,WSNOGS,ISAND,IG,ILG,IL1,IL2,JL)
+     2               RHOSGS,WSNOGS,ISAND,IG,ILG,IL1,IL2,JL,q)
           CALL SNOADD(ALBSGS,TSNOGS,RHOSGS,ZSNOGS,
      1                HCPSGS,HTCS,FGS,SPCGS,TSPCGS,RHOSNI,WSNOGS,
-     2                ILG,IL1,IL2,JL)
+     2                ILG,IL1,IL2,JL,q)
           select case(im(q))
           case(1) ! Gray & Zhao
              CALL SNINFLM(RPCGS,TRPCGS,ZSNOGS,TSNOGS,RHOSGS,HCPSGS,
      1                    WSNOGS,HTCS,HMFN,PCPG,ROFN,FGS,ILG,IL1,IL2,JL,
      2                    NCOUNT,RUNFGS,TRNFGS,OVRFLW,TOVRFL,
      3                    SOIL_POR_MAX,SOIL_DEPTH,S0,T_ICE_LENS,
-     3                    THLIQ(:,1)+THICE(:,1),TBARGS(:,1),
+     3                    THLIQ(:,1,q)+THICE(:,1,q),TBARGS(:,1),
      4                    t0_ACC,SI,TSI,INFILTYPE,
      5                    SNOWMELTD,SNOWMELTD_LAST,MELTRUNOFF,
      6                    SNOWINFIL,CUMSNOWINFILGS,FRZC,
-     7                    FROZENSOILINFILFLAG,ZPNDGS,TPNDGS)
+     7                    FROZENSOILINFILFLAG,ZPNDGS,TPNDGS,N,q,NYEARS,
+     8                    NMELT)
           case(0) ! CLASS: none
              CALL SNINFL(RPCGS,TRPCGS,ZSNOGS,TSNOGS,RHOSGS,HCPSGS,
-     1                   WSNOGS,HTCS,HMFN,PCPG,ROFN,FGS,ILG,IL1,IL2,JL)
+     1                   WSNOGS,HTCS,HMFN,PCPG,ROFN,FGS,ILG,IL1,IL2,JL,
+     +                   q)
           end select
           
           IF(NLANDI.NE.0)                                       THEN
@@ -498,7 +511,7 @@ C
      3                    FGS,EVAPGS,RPCGS,TRPCGS,GZROGS,G12GS,G23GS,
      4                    HCPGS,QMELTG,WSNOGS,ZMAT,TMOVE,WMOVE,ZRMDR,
      5                    TADD,ZMOVE,TBOT,DELZ,ISAND,ICONT,
-     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
+     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N ,q)
           ENDIF
           CALL GRINFL(2,THLQGS,THICGS,TBRWGS,BASFLW,TBASFL,RUNFGS,
      1                TRNFGS,ZFAV,LZFAV,THLINV,QFG,WLSTGS,
@@ -513,20 +526,20 @@ C
      A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,DELZ,ISAND,
      B                IGRN,IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
      C                NEND,ISIMP,IGDR,
-     D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
           CALL GRDRAN(2,THLQGS,THICGS,TBRWGS,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFGS,TRNFGS,
      2                QFG,WLSTGS,FGS,EVAPGS,RPCGS,ZPNDGS,
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSGS,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IGDR,
-     6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
           IF(IWF == 2)THEN
              CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FGS,
      1                   ZPNDPREGS,ZPNDGS, FSTRGS, TPNDGS,
      2                   OVRFLW,   TOVRFL, RUNFGS, TRNFGS,  TFREZ,
      3                   CMIN,     CMAX,   B,      K1,      K2,
-     4                   UM1GS,  QM1GS,  QM2GS,   UMQGS,    DELT)
+     4                   UM1GS,  QM1GS,  QM2GS,   UMQGS,    DELT,q)
           ELSE
 
 !Craig Thompson added call to watrof, june 2008.
@@ -536,7 +549,7 @@ C
      3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
      4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
      6                NA,NTYPE,ILMOS,JLMOS,
-     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,q)
           ENDIF
           CALL TMCALC(TBARGS,THLQGS,THICGS,HCPGS,TPNDGS,ZPNDGS,
      1                TSNOGS,ZSNOGS,ALBSGS,RHOSGS,HCPSGS,TBASGS,
@@ -544,15 +557,15 @@ C
      3                WTRS,WTRG,FGS,TBRWGS,GZROGS,G12GS,
      4                G23GS,GGEO,TA,WSNOGS,TCTOPG,TCBOTG,GFLXGS,
      5                ZPLMGS,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
-     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N,BI,PSISAT)
-          CALL CHKWAT(2,PCPR,EVPIGS,RUNFGS,WLSTGS,RAICNS,SNOCNS,
+     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N,BI,PSISAT,q)
+          CALL CHKWATsnow(2,PCPR,EVPIGS,RUNFGS,WLSTGS,RAICNS,SNOCNS,
      1                RACS,SNCS,ZPNDGS,ZPOND,THLQGS,THICGS,
      2                THLIQG,THICEG,ZSNOGS,RHOSGS,XSNOGS,SNO,
      3                WSNOGS,WSNOW,FCS,FGS,FGS,BAL,THPOR,THLMIN,
-     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL,N   ) 
+     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL,N   ,q) 
           CALL SNOALBW(ALBSGS,RHOSGS,ZSNOGS,HCPSGS,
      1                 TSNOGS,FGS,SPCGS,RALB,WSNOGS,RHOMAX,
-     2                 ISAND,ILG,IG,IL1,IL2,JL)       
+     2                 ISAND,ILG,IG,IL1,IL2,JL,q)       
       ENDIF                                                               
 C
 C     * CALCULATIONS FOR CANOPY OVER BARE GROUND.
@@ -562,28 +575,28 @@ C
      1                TBARC,ZSNOWC,WLOSTC,CHCAP,QFCF,QFCL,QFN,QFC,
      2                HTCC,HTCS,HTC,FC,CMASSC,TSNOWC,HCPSC,RHOSC,
      3                FROOT,THPOR,THLMIN,DELZW,EVLOST,RLOST,IROOT,
-     4                IG,ILG,IL1,IL2,JL,N  )
+     4                IG,ILG,IL1,IL2,JL,N ,q )
           CALL CANADD(1,RPCC,TRPCC,SPCC,TSPCC,RAICAN,SNOCAN,
      1                TCANO,CHCAP,HTCC,ROFC,ROVG,PCPN,PCPG,
      2                FC,FSVF,CWLCAP,CWFCAP,CMASSC,RHOSNI,
-     3                TSFSAV(1,3),RADD,SADD,ILG,IL1,IL2,JL)     
+     3                TSFSAV(1,3,q),RADD,SADD,ILG,IL1,IL2,JL,q)     
           CALL CWCALC(TCANO,RAICAN,SNOCAN,RDUMMY,RDUMMY,CHCAP,
-     1                HMFC,HTCC,FC,CMASSC,ILG,IL1,IL2,JL)
+     1                HMFC,HTCC,FC,CMASSC,ILG,IL1,IL2,JL,q)
           CALL SUBCAN(1,RPCC,TRPCC,SPCC,TSPCC,RHOSNI,EVAPCG,
-     1                QFN,QFG,PCPN,PCPG,FC,ILG,IL1,IL2,JL)
+     1                QFN,QFG,PCPN,PCPG,FC,ILG,IL1,IL2,JL,q)
           CALL TWCALC(TBARC,THLQCO,THICCO,HCPCO,TBARWC,HMFG,HTC,
      1                FC,EVAPCG,THPOR,THLMIN,HCPS,DELZW,DELZZ,
-     2                ISAND,IG,ILG,IL1,IL2,JL)
+     2                ISAND,IG,ILG,IL1,IL2,JL,q)
           CALL SNOVAP(RHOSC,ZSNOWC,HCPSC,TSNOWC,EVAPCG,QFN,QFG,
      1                HTCS,WLOSTC,TRUNFC,RUNFC,TOVRFL,OVRFLW,
-     2                FC,RPCC,SPCC,RHOSNI,ZERO,ILG,IL1,IL2,JL)
+     2                FC,RPCC,SPCC,RHOSNI,ZERO,ILG,IL1,IL2,JL,q)
           CALL TFREEZ(ZPONDC,TPONDC,ZSNOWC,TSNOWC,ALBSC,
      1                RHOSC,HCPSC,GZEROC,HMFG,HTCS,HTC,
      2                WTRS,WTRG,FC,QFREZC,ZERO,TA,TBARC,
-     3                ISAND,IG,ILG,IL1,IL2,JL) 
+     3                ISAND,IG,ILG,IL1,IL2,JL,q) 
           CALL SNOADD(ALBSC,TSNOWC,RHOSC,ZSNOWC,
      1                HCPSC,HTCS,FC,SPCC,TSPCC,RHOSNI,ZERO,
-     2                ILG,IL1,IL2,JL)
+     2                ILG,IL1,IL2,JL,q)
           CALL GRINFL(3,THLQCO,THICCO,TBARWC,BASFLW,TBASFL,RUNFC,
      1                TRUNFC,ZFAV,LZFAV,THLINV,QFG,WLOSTC,
      2                FC,EVAPCG,RPCC,TRPCC,TPONDC,ZPONDC,
@@ -597,20 +610,20 @@ C
      A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,DELZ,ISAND,
      B                IGRN,IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
      C                NEND,ISIMP,IGDR,
-     D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
           CALL GRDRAN(3,THLQCO,THICCO,TBARWC,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFC,TRUNFC,
      2                QFG,WLOSTC,FC,EVAPCG,RPCC,ZPONDC,
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSC,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IGDR,
-     6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
           IF(IWF == 2)THEN
              CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FC,
      1                   ZPONDPREC,ZPONDC, FSTRC, TPONDC,
      2                   OVRFLW,   TOVRFL, RUNFC, TRUNFC,  TFREZ,
      3                   CMIN,     CMAX,   B,      K1,      K2,
-     4                   UM1C,     QM1C,   QM2C,   UMQC,    DELT)
+     4                   UM1C,     QM1C,   QM2C,   UMQC,    DELT,q)
           ELSE
 
 !Craig Thompson added call to watrof, june 2008.
@@ -620,7 +633,7 @@ C
      3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
      4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
      6                NA,NTYPE,ILMOS,JLMOS,
-     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,q)
           ENDIF
           CALL TMCALC(TBARC,THLQCO,THICCO,HCPCO,TPONDC,ZPONDC,
      1                TSNOWC,ZSNOWC,ALBSC,RHOSC,HCPSC,TBASC,
@@ -628,12 +641,12 @@ C
      3                WTRS,WTRG,FC,TBARWC,GZEROC,G12C,
      4                G23C,GGEO,TA,ZERO,TCTOPC,TCBOTC,GFLXC,
      5                ZPLIMC,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
-     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N,BI,PSISAT)
+     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N,BI,PSISAT,q)
           CALL CHKWAT(3,PCPR,EVPIC,RUNFC,WLOSTC,RAICAN,SNOCAN,
      1                RAC,SNC,ZPONDC,ZPOND,THLQCO,THICCO,
      2                THLIQC,THICEC,ZSNOWC,RHOSC,XSNOWC,SNO,
      3                ZERO,ZERO,FCS,FGS,FC,BAL,THPOR,THLMIN,
-     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL,N    ) 
+     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL,N ,q) 
 C
       ENDIF                                                               
 C
@@ -642,17 +655,17 @@ C
       IF(NLANDG.GT.0)                                               THEN
           CALL TWCALC(TBARG,THLQGO,THICGO,HCPGO,TBARWG,HMFG,HTC,
      1                FG,EVAPG,THPOR,THLMIN,HCPS,DELZW,DELZZ,
-     2                ISAND,IG,ILG,IL1,IL2,JL)             
+     2                ISAND,IG,ILG,IL1,IL2,JL,q)             
           CALL SNOVAP(RHOSG,ZSNOWG,HCPSG,TSNOWG,EVAPG,QFN,QFG,
      1                HTCS,WLOSTG,TRUNFG,RUNFG,TOVRFL,OVRFLW,
-     2                FG,RPCG,SPCG,RHOSNI,ZERO,ILG,IL1,IL2,JL)
+     2                FG,RPCG,SPCG,RHOSNI,ZERO,ILG,IL1,IL2,JL,q)
           CALL TFREEZ(ZPONDG,TPONDG,ZSNOWG,TSNOWG,ALBSG,
      1                RHOSG,HCPSG,GZEROG,HMFG,HTCS,HTC,
      2                WTRS,WTRG,FG,QFREZG,ZERO,TA,TBARG,
-     3                ISAND,IG,ILG,IL1,IL2,JL) 
+     3                ISAND,IG,ILG,IL1,IL2,JL,q) 
           CALL SNOADD(ALBSG,TSNOWG,RHOSG,ZSNOWG,
      1                HCPSG,HTCS,FG,SPCG,TSPCG,RHOSNI,ZERO,
-     2                ILG,IL1,IL2,JL)
+     2                ILG,IL1,IL2,JL,q)
           IF(NLANDI.NE.0)                                       THEN
               CALL ICEBAL(TBARG,TPONDG,ZPONDG,TSNOWG,RHOSG,ZSNOWG,
      1                    HCPSG,ALBSG,HMFG,HTCS,HTC,WTRS,WTRG,GFLXG,
@@ -660,7 +673,7 @@ C
      3                    FG,EVAPG,RPCG,TRPCG,GZEROG,G12G,G23G,
      4                    HCPGO,QFREZG,ZERO,ZMAT,TMOVE,WMOVE,ZRMDR,
      5                    TADD,ZMOVE,TBOT,DELZ,ISAND,ICONT,
-     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
+     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
           ENDIF
           CALL GRINFL(4,THLQGO,THICGO,TBARWG,BASFLW,TBASFL,RUNFG,
      1                TRUNFG,ZFAV,LZFAV,THLINV,QFG,WLOSTG,
@@ -675,20 +688,20 @@ C
      A                THLRAT,THFC,DELZW,ZBOTW,XDRAIN,DELZ,ISAND,
      B                IGRN,IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
      C                NEND,ISIMP,IGDR,
-     D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
           CALL GRDRAN(4,THLQGO,THICGO,TBARWG,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFG,TRUNFG,
      2                QFG,WLOSTG,FG,EVAPG,RPCG,ZPONDG,
      3                DT,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      4                BI,PSISAT,GRKSG,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IGDR,
-     6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
           IF(IWF == 2)THEN
              CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FG,
      1                   ZPONDPREG,ZPONDG, FSTRG, TPONDG,
      2                   OVRFLW,   TOVRFL, RUNFG, TRUNFG,  TFREZ,
      3                   CMIN,     CMAX,   B,      K1,      K2,
-     4                   UM1G,     QM1G,   QM2G,   UMQG,    DELT)
+     4                   UM1G,     QM1G,   QM2G,   UMQG,    DELT,q)
           ELSE
 
 !Craig Thompson added call to watrof, june 2008.
@@ -698,7 +711,7 @@ C
      3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
      4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
      6                NA,NTYPE,ILMOS,JLMOS,
-     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,q)
           ENDIF
           CALL TMCALC(TBARG,THLQGO,THICGO,HCPGO,TPONDG,ZPONDG,
      1                TSNOWG,ZSNOWG,ALBSG,RHOSG,HCPSG,TBASG,
@@ -706,12 +719,12 @@ C
      3                WTRS,WTRG,FG,TBARWG,GZEROG,G12G,
      4                G23G,GGEO,TA,ZERO,TCTOPG,TCBOTG,GFLXG,
      5                ZPLIMG,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
-     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N,BI,PSISAT)
+     6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N,BI,PSISAT,q)
           CALL CHKWAT(4,PCPR,EVPIG,RUNFG,WLOSTG,RAICAN,SNOCAN,
      1                RAC,SNC,ZPONDG,ZPOND,THLQGO,THICGO,
      2                THLIQG,THICEG,ZSNOWG,RHOSG,XSNOWG,SNO,
      3                ZERO,ZERO,FCS,FGS,FG,BAL,THPOR,THLMIN,
-     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL,N   ) 
+     4                DELZW,ISAND,IG,ILG,IL1,IL2,JL,N ,q) 
 C
       ENDIF
 C
@@ -723,87 +736,87 @@ C
       LPTBAD=0
       !$omp parallel do
       DO 600 I=IL1,IL2 
-          TBASE (I)=FCS(I)*(TBASCS(I)+TFREZ) + 
-     1              FGS(I)*(TBASGS(I)+TFREZ) +
-     2              FC (I)*(TBASC (I)+TFREZ) + 
-     3              FG (I)*(TBASG (I)+TFREZ)
-          RUNOFF(I)=FCS(I)*RUNFCS(I) + FGS(I)*RUNFGS(I) +
-     1              FC (I)*RUNFC (I) + FG (I)*RUNFG (I)
-          UMQ(I)=FCS(I)*UMQCS(I) + FGS(I)*UMQGS(I) +
-     1              FC (I)*UMQC (I) + FG (I)*UMQG (I)
+          TBASE (I,q)=FCS(I,q)*(TBASCS(I)+TFREZ) + 
+     1              FGS(I,q)*(TBASGS(I)+TFREZ) +
+     2              FC (I,q)*(TBASC (I)+TFREZ) + 
+     3              FG (I,q)*(TBASG (I)+TFREZ)
+          RUNOFF(I)=FCS(I,q)*RUNFCS(I) + FGS(I,q)*RUNFGS(I) +
+     1              FC (I,q)*RUNFC (I) + FG (I,q)*RUNFG (I)
+          UMQ(I)=FCS(I,q)*UMQCS(I) + FGS(I,q)*UMQGS(I) +
+     1              FC (I,q)*UMQC (I) + FG (I,q)*UMQG (I)
           IF(RUNOFF(I).GT.0.0) 
-     1        TRUNOF(I)=(FCS(I)*RUNFCS(I)*TRNFCS(I) + 
-     2                   FGS(I)*RUNFGS(I)*TRNFGS(I) +
-     3                   FC (I)*RUNFC (I)*TRUNFC(I) + 
-     4                   FG (I)*RUNFG (I)*TRUNFG(I))/RUNOFF(I) 
+     1        TRUNOF(I)=(FCS(I,q)*RUNFCS(I)*TRNFCS(I) + 
+     2                   FGS(I,q)*RUNFGS(I)*TRNFGS(I) +
+     3                   FC (I,q)*RUNFC (I)*TRUNFC(I) + 
+     4                   FG (I,q)*RUNFG (I)*TRUNFG(I))/RUNOFF(I) 
           RUNOFF(I)=RUNOFF(I)*RHOW/DELT
           UMQ(I)   = UMQ(I)*RHOW/DELT                           
           OVRFLW(I)=OVRFLW(I)*RHOW/DELT
           SUBFLW(I)=SUBFLW(I)*RHOW/DELT
           BASFLW(I)=BASFLW(I)*RHOW/DELT
-          EVAP  (I)=EVAP(I)-(FCS(I)*WLSTCS(I)+FGS(I)*WLSTGS(I)+
-     1              FC(I)*WLOSTC(I)+FG(I)*WLOSTG(I))/DELT
-          IF((FC(I)+FCS(I)).GT.0.)                                  THEN
-              TCAN(I)=(FCS(I)*TCANS(I)*CHCAPS(I)+FC(I)*TCANO(I)*              
-     1                CHCAP(I))/(FCS(I)*CHCAPS(I)+FC(I)*CHCAP(I))                 
-              RCAN(I)= FCS(I)*RAICNS(I) + FC (I)*RAICAN(I)                            
-              IF(TCAN(I).LT.173.16 .OR. TCAN(I).GT.373.16) JPTBAD=I
-              IF(RCAN(I).LT.0.0) RCAN(I)=0.0
-              IF(RCAN(I).LT.1.0E-5 .AND. RCAN(I).GT.0.0) THEN
-                  TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TCAN(I)*RCAN(I)/
-     1                DELT)/(OVRFLW(I)+RCAN(I)/DELT)
-                  OVRFLW(I)=OVRFLW(I)+RCAN(I)/DELT
-                  TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+TCAN(I)*RCAN(I)/
-     1                DELT)/(RUNOFF(I)+RCAN(I)/DELT)
-                  RUNOFF(I)=RUNOFF(I)+RCAN(I)/DELT
-                  ROFC(I)=ROFC(I)+RCAN(I)/DELT
-                  ROVG(I)=ROVG(I)+RCAN(I)/DELT
-                  PCPG(I)=PCPG(I)+RCAN(I)/DELT
-                  HTCC(I)=HTCC(I)-TCAN(I)*SPHW*RCAN(I)/DELT
-                  RCAN(I)=0.0
+          EVAP  (I)=EVAP(I)-(FCS(I,q)*WLSTCS(I)+FGS(I,q)*WLSTGS(I)+
+     1              FC(I,q)*WLOSTC(I)+FG(I,q)*WLOSTG(I))/DELT
+          IF((FC(I,q)+FCS(I,q)).GT.0.)                        THEN
+              TCAN(I,q)=(FCS(I,q)*TCANS(I)*CHCAPS(I)+FC(I,q)*TCANO(I)*              
+     1                CHCAP(I))/(FCS(I,q)*CHCAPS(I)+FC(I,q)*CHCAP(I))                 
+              RCAN(I,q)= FCS(I,q)*RAICNS(I) + FC (I,q)*RAICAN(I)                            
+              IF(TCAN(I,q).LT.173.16 .OR. TCAN(I,q).GT.373.16) JPTBAD=I
+              IF(RCAN(I,q).LT.0.0) RCAN(I,q)=0.0
+              IF(RCAN(I,q).LT.1.0E-5 .AND. RCAN(I,q).GT.0.0) THEN
+                  TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TCAN(I,q)*RCAN(I,q)/
+     1                DELT)/(OVRFLW(I)+RCAN(I,q)/DELT)
+                  OVRFLW(I)=OVRFLW(I)+RCAN(I,q)/DELT
+                  TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+TCAN(I,q)*RCAN(I,q)/
+     1                DELT)/(RUNOFF(I)+RCAN(I,q)/DELT)
+                  RUNOFF(I)=RUNOFF(I)+RCAN(I,q)/DELT
+                  ROFC(I)=ROFC(I)+RCAN(I,q)/DELT
+                  ROVG(I)=ROVG(I)+RCAN(I,q)/DELT
+                  PCPG(I)=PCPG(I)+RCAN(I,q)/DELT
+                  HTCC(I)=HTCC(I)-TCAN(I,q)*SPHW*RCAN(I,q)/DELT
+                  RCAN(I,q)=0.0
               ENDIF
-              SNCAN  (I)=FCS(I)*SNOCNS(I) + FC (I)*SNOCAN(I)                            
-              IF(SNCAN(I).LT.0.0) SNCAN(I)=0.0
-              IF(SNCAN(I).LT.1.0E-5 .AND. SNCAN(I).GT.0.0) THEN
-                  TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TCAN(I)*SNCAN(I)/
-     1                DELT)/(OVRFLW(I)+SNCAN(I)/DELT)
-                  OVRFLW(I)=OVRFLW(I)+SNCAN(I)/DELT
-                  TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+TCAN(I)*SNCAN(I)/
-     1                DELT)/(RUNOFF(I)+SNCAN(I)/DELT)
-                  RUNOFF(I)=RUNOFF(I)+SNCAN(I)/DELT
-                  ROFC(I)=ROFC(I)+SNCAN(I)/DELT
-                  ROVG(I)=ROVG(I)+SNCAN(I)/DELT
-                  PCPG(I)=PCPG(I)+SNCAN(I)/DELT
-                  HTCC(I)=HTCC(I)-TCAN(I)*SPHICE*SNCAN(I)/DELT
-                  SNCAN(I)=0.0
+              SNCAN  (I,q)=FCS(I,q)*SNOCNS(I,q) + FC (I,q)*SNOCAN(I,q)                            
+              IF(SNCAN(I,q).LT.0.0) SNCAN(I,q)=0.0
+              IF(SNCAN(I,q).LT.1.0E-5 .AND. SNCAN(I,q).GT.0.0) THEN
+                  TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TCAN(I,q)*SNCAN(I,q)/
+     1                DELT)/(OVRFLW(I)+SNCAN(I,q)/DELT)
+                  OVRFLW(I)=OVRFLW(I)+SNCAN(I,q)/DELT
+                  TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+TCAN(I,q)*SNCAN(I,q)/
+     1                DELT)/(RUNOFF(I)+SNCAN(I,q)/DELT)
+                  RUNOFF(I)=RUNOFF(I)+SNCAN(I,q)/DELT
+                  ROFC(I)=ROFC(I)+SNCAN(I,q)/DELT
+                  ROVG(I)=ROVG(I)+SNCAN(I,q)/DELT
+                  PCPG(I)=PCPG(I)+SNCAN(I,q)/DELT
+                  HTCC(I)=HTCC(I)-TCAN(I,q)*SPHICE*SNCAN(I,q)/DELT
+                  SNCAN(I,q)=0.0
               ENDIF
           ELSE                                                                
-              TCAN(I)=0.0
+              TCAN(I,q)=273.16!0.0
           ENDIF                                                               
           IF(ZPNDCS(I).GT.0. .OR. ZPNDGS(I).GT.0. .OR.
      1                ZPONDC(I).GT.0. .OR. ZPONDG(I).GT.0.)    THEN 
-              ZPOND(I)=(FCS(I)*ZPNDCS(I)+FGS(I)*ZPNDGS(I)+
-     1                  FC (I)*ZPONDC(I)+FG (I)*ZPONDG(I))
-              TPOND(I)=(FCS(I)*(TPNDCS(I)+TFREZ)*ZPNDCS(I)+
-     1                  FGS(I)*(TPNDGS(I)+TFREZ)*ZPNDGS(I)+
-     2                  FC (I)*(TPONDC(I)+TFREZ)*ZPONDC(I)+
-     3                  FG (I)*(TPONDG(I)+TFREZ)*ZPONDG(I))/
-     4                  ZPOND(I)
-              IF(ZPOND(I).LT.0.0) ZPOND(I)=0.0
-              IF(ZPOND(I).LT.1.0E-8 .AND. ZPOND(I).GT.0.0) THEN
-                  TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TPOND(I)*RHOW*
-     1                ZPOND(I)/DELT)/(OVRFLW(I)+RHOW*ZPOND(I)/DELT)
-                  OVRFLW(I)=OVRFLW(I)+RHOW*ZPOND(I)/DELT
-                  TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+TPOND(I)*RHOW*
-     1                ZPOND(I)/DELT)/(RUNOFF(I)+RHOW*ZPOND(I)/DELT)
-                  RUNOFF(I)=RUNOFF(I)+RHOW*ZPOND(I)/DELT
-                  HTC(I,1)=HTC(I,1)-TPOND(I)*HCPW*ZPOND(I)/DELT
-                  TPOND(I)=0.0
-                  ZPOND(I)=0.0                            
+              ZPOND(I,q)=(FCS(I,q)*ZPNDCS(I)+FGS(I,q)*ZPNDGS(I)+
+     1                  FC (I,q)*ZPONDC(I)+FG (I,q)*ZPONDG(I))
+              TPOND(I,q)=(FCS(I,q)*(TPNDCS(I)+TFREZ)*ZPNDCS(I)+
+     1                  FGS(I,q)*(TPNDGS(I)+TFREZ)*ZPNDGS(I)+
+     2                  FC (I,q)*(TPONDC(I)+TFREZ)*ZPONDC(I)+
+     3                  FG (I,q)*(TPONDG(I)+TFREZ)*ZPONDG(I))/
+     4                  ZPOND(I,q)
+              IF(ZPOND(I,q).LT.0.0) ZPOND(I,q)=0.0
+              IF(ZPOND(I,q).LT.1.0E-8 .AND. ZPOND(I,q).GT.0.0) THEN
+                  TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TPOND(I,q)*RHOW*
+     1                ZPOND(I,q)/DELT)/(OVRFLW(I)+RHOW*ZPOND(I,q)/DELT)
+                  OVRFLW(I)=OVRFLW(I)+RHOW*ZPOND(I,q)/DELT
+                  TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+TPOND(I,q)*RHOW*
+     1                ZPOND(I,q)/DELT)/(RUNOFF(I)+RHOW*ZPOND(I,q)/DELT)
+                  RUNOFF(I)=RUNOFF(I)+RHOW*ZPOND(I,q)/DELT
+                  HTC(I,1)=HTC(I,1)-TPOND(I,q)*HCPW*ZPOND(I,q)/DELT
+                  TPOND(I,q)=0.0
+                  ZPOND(I,q)=0.0                            
               ENDIF
          ELSE
-              ZPOND(I)=0.0
-              TPOND(I)=0.0
+              ZPOND(I,q)=0.0
+              TPOND(I,q)=0.0
          ENDIF
   600 CONTINUE
 C
@@ -812,85 +825,85 @@ C
           IF(ZSNOCS(I).GT.0. .OR. ZSNOGS(I).GT.0. .OR.
      1       ZSNOWC(I).GT.0. .OR. ZSNOWG(I).GT.0.)              THEN                                             
               IF(ZSNOCS(I).GT.0. .OR. ZSNOGS(I).GT.0.)    THEN                         
-                  ALBSNO(I)=(FCS(I)*ALBSCS(I)*XSNOCS(I)+
-     1                       FGS(I)*ALBSGS(I)*XSNOGS(I))/
-     2                      (FCS(I)*XSNOCS(I)+FGS(I)*XSNOGS(I))                   
+                  ALBSNO(I,q)=(FCS(I,q)*ALBSCS(I)*XSNOCS(I)+
+     1                       FGS(I,q)*ALBSGS(I)*XSNOGS(I))/
+     2                      (FCS(I,q)*XSNOCS(I)+FGS(I,q)*XSNOGS(I))                   
               ELSE                                                            
-                  ALBSNO(I)=(FC (I)*ALBSC(I)*XSNOWC(I) +
-     1                       FG (I)*ALBSG(I)*XSNOWG(I))/
-     2                      (FC (I)*XSNOWC(I)+FG (I)*XSNOWG(I))                     
+                  ALBSNO(I,q)=(FC (I,q)*ALBSC(I)*XSNOWC(I) +
+     1                       FG (I,q)*ALBSG(I)*XSNOWG(I))/
+     2                      (FC (I,q)*XSNOWC(I)+FG (I,q)*XSNOWG(I))                     
               ENDIF                                                           
-              TSNOW(I)=(FCS(I)*(TSNOCS(I)+TFREZ)*HCPSCS(I)*
+              TSNOW(I,q)=(FCS(I,q)*(TSNOCS(I)+TFREZ)*HCPSCS(I)*
      1                  ZSNOCS(I)*XSNOCS(I) +                
-     2                  FGS(I)*(TSNOGS(I)+TFREZ)*HCPSGS(I)*
+     2                  FGS(I,q)*(TSNOGS(I)+TFREZ)*HCPSGS(I)*
      3                  ZSNOGS(I)*XSNOGS(I) +                      
-     4                  FC (I)*(TSNOWC(I)+TFREZ)*HCPSC(I)*
+     4                  FC (I,q)*(TSNOWC(I)+TFREZ)*HCPSC(I)*
      5                  ZSNOWC(I)*XSNOWC(I) +                          
-     6                  FG (I)*(TSNOWG(I)+TFREZ)*HCPSG(I)*
+     6                  FG (I,q)*(TSNOWG(I)+TFREZ)*HCPSG(I)*
      7                  ZSNOWG(I)*XSNOWG(I))/                         
-     8                 (FCS(I)*HCPSCS(I)*ZSNOCS(I)*XSNOCS(I) +                               
-     9                  FGS(I)*HCPSGS(I)*ZSNOGS(I)*XSNOGS(I) +                                
-     A                  FC (I)*HCPSC(I)*ZSNOWC(I)*XSNOWC(I) +                                 
-     B                  FG (I)*HCPSG(I)*ZSNOWG(I)*XSNOWG(I))
-              RHOSNO(I)=(FCS(I)*RHOSCS(I)*ZSNOCS(I)*XSNOCS(I) +                         
-     1                   FGS(I)*RHOSGS(I)*ZSNOGS(I)*XSNOGS(I) +                                
-     2                   FC (I)*RHOSC(I)*ZSNOWC(I)*XSNOWC(I) +                                 
-     3                   FG (I)*RHOSG(I)*ZSNOWG(I)*XSNOWG(I))/                                
-     4                  (FCS(I)*ZSNOCS(I)*XSNOCS(I) +
-     5                   FGS(I)*ZSNOGS(I)*XSNOGS(I) +                 
-     6                   FC (I)*ZSNOWC(I)*XSNOWC(I) +
-     7                   FG (I)*ZSNOWG(I)*XSNOWG(I))                    
-              ZSNOW(I)=FCS(I)*ZSNOCS(I) + FGS(I)*ZSNOGS(I) +
-     1                 FC (I)*ZSNOWC(I) + FG (I)*ZSNOWG(I)
-              WSNOW(I)=FCS(I)*WSNOCS(I) + FGS(I)*WSNOGS(I) 
-              SNO(I)=ZSNOW(I)*RHOSNO(I)                                       
-              IF(SNO(I).LT.0.0) SNO(I)=0.0
+     8                 (FCS(I,q)*HCPSCS(I)*ZSNOCS(I)*XSNOCS(I) +                               
+     9                  FGS(I,q)*HCPSGS(I)*ZSNOGS(I)*XSNOGS(I) +                                
+     A                  FC (I,q)*HCPSC(I)*ZSNOWC(I)*XSNOWC(I) +                                 
+     B                  FG (I,q)*HCPSG(I)*ZSNOWG(I)*XSNOWG(I))
+              RHOSNO(I,q)=(FCS(I,q)*RHOSCS(I)*ZSNOCS(I)*XSNOCS(I) +                         
+     1                   FGS(I,q)*RHOSGS(I)*ZSNOGS(I)*XSNOGS(I) +                                
+     2                   FC (I,q)*RHOSC(I)*ZSNOWC(I)*XSNOWC(I) +                                 
+     3                   FG (I,q)*RHOSG(I)*ZSNOWG(I)*XSNOWG(I))/                                
+     4                  (FCS(I,q)*ZSNOCS(I)*XSNOCS(I) +
+     5                   FGS(I,q)*ZSNOGS(I)*XSNOGS(I) +                 
+     6                   FC (I,q)*ZSNOWC(I)*XSNOWC(I) +
+     7                   FG (I,q)*ZSNOWG(I)*XSNOWG(I))                    
+              ZSNOW(I,q)=FCS(I,q)*ZSNOCS(I) + FGS(I,q)*ZSNOGS(I) +
+     1                 FC (I,q)*ZSNOWC(I) + FG (I,q)*ZSNOWG(I)
+              WSNOW(I,q)=FCS(I,q)*WSNOCS(I) + FGS(I,q)*WSNOGS(I) 
+              SNO(I,q)=ZSNOW(I,q)*RHOSNO(I,q)                                       
+              IF(SNO(I,q).LT.0.0) SNO(I,q)=0.0
 
-             IF (PBSMFLAG==0) THEN
-              IF(SNO(I).LT.1.0E-2 .AND. SNO(I).GT.0.0) THEN
-                  TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TSNOW(I)*(SNO(I)+
-     1                WSNOW(I))/DELT)/(OVRFLW(I)+(SNO(I)+WSNOW(I))/
+             IF(bsm(q)==0) THEN
+              IF(SNO(I,q).LT.1.0E-2 .AND. SNO(I,q).GT.0.0) THEN
+                  TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TSNOW(I,q)*(SNO(I,q)+
+     1               WSNOW(I,q))/DELT)/(OVRFLW(I)+(SNO(I,q)+WSNOW(I,q))/
      2                DELT)
-                  OVRFLW(I)=OVRFLW(I)+(SNO(I)+WSNOW(I))/DELT
-                  TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+TSNOW(I)*(SNO(I)+
-     1                WSNOW(I))/DELT)/(RUNOFF(I)+(SNO(I)+WSNOW(I))/
+                  OVRFLW(I)=OVRFLW(I)+(SNO(I,q)+WSNOW(I,q))/DELT
+                  TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+TSNOW(I,q)*(SNO(I,q)+
+     1               WSNOW(I,q))/DELT)/(RUNOFF(I)+(SNO(I,q)+WSNOW(I,q))/
      2                DELT)
-                  RUNOFF(I)=RUNOFF(I)+(SNO(I)+WSNOW(I))/DELT
-                  ROFN(I)=ROFN(I)+(SNO(I)+WSNOW(I))/DELT
-                  PCPG(I)=PCPG(I)+(SNO(I)+WSNOW(I))/DELT
-                  HTCS(I)=HTCS(I)-TSNOW(I)*(SPHICE*SNO(I)+SPHW*
-     1                WSNOW(I))/DELT
-                  TSNOW(I)=0.0
-                  RHOSNO(I)=0.0
-                  SNO(I)=0.0                            
-                  WSNOW(I)=0.0
+                  RUNOFF(I)=RUNOFF(I)+(SNO(I,q)+WSNOW(I,q))/DELT
+                  ROFN(I)=ROFN(I)+(SNO(I,q)+WSNOW(I,q))/DELT
+                  PCPG(I)=PCPG(I)+(SNO(I,q)+WSNOW(I,q))/DELT
+                  HTCS(I)=HTCS(I)-TSNOW(I,q)*(SPHICE*SNO(I,q)+SPHW*
+     1                WSNOW(I,q))/DELT
+                  TSNOW(I,q)=0.0
+                  RHOSNO(I,q)=0.0
+                  SNO(I,q)=0.0                            
+                  WSNOW(I,q)=0.0
               ENDIF
-             ENDIF !PBSMFLAG=0
+             ENDIF !bsm(q)==0
           ELSE                                                                
-              TSNOW(I)=0.0                                                    
-              RHOSNO(I)=0.0                                                   
-              SNO(I)=0.0                                                      
-              WSNOW(I)=0.0
+              TSNOW(I,q)=0.0                                                    
+              RHOSNO(I,q)=0.0                                                   
+              SNO(I,q)=0.0                                                      
+              WSNOW(I,q)=0.0
           ENDIF
 C
-          IF(TSNOW(I).LT.0.0) KPTBAD=I
-          IF((TSNOW(I)-TFREZ).GT.1.0E-3) LPTBAD=I
+          IF(TSNOW(I,q).LT.0.0) KPTBAD=I
+          IF((TSNOW(I,q)-TFREZ).GT.1.0E-3) LPTBAD=I
   650 CONTINUE
 C
       IF(JPTBAD.NE.0)                                               THEN
-          WRITE(6,6625) JPTBAD,JL,TCAN(JPTBAD)
+          WRITE(6,6625) JPTBAD,JL,TCAN(JPTBAD,q)
  6625     FORMAT('0AT (I,J)= (',I3,',',I3,'), TCAN = ',F10.5)
           CALL XIT('CLASSW2',-2)
       ENDIF
 C
       IF(KPTBAD.NE.0)                                               THEN
-          WRITE(6,6626) KPTBAD,JL,TSNOW(KPTBAD)
+          WRITE(6,6626) KPTBAD,JL,TSNOW(KPTBAD,q)
  6626     FORMAT('0AT (I,J)= (',I3,',',I3,'), TSNOW = ',F10.5)
           CALL XIT('CLASSW2',-3)
       ENDIF
 C
       IF(LPTBAD.NE.0)                                               THEN
-          WRITE(6,6626) LPTBAD,JL,TSNOW(LPTBAD)
+          WRITE(6,6626) LPTBAD,JL,TSNOW(LPTBAD,q)
           CALL XIT('CLASSW2',-4)
       ENDIF
 C
@@ -899,39 +912,39 @@ C
       !$omp parallel do
       DO 700 I=IL1,IL2
           IF(IG.EQ.3. .AND. J.EQ.IG .AND. ISAND(I,1).GT.-4)    THEN
-              TBAR(I,J)=((FCS(I)*(TBARCS(I,J)+TFREZ)*HCPCS(I,J) +
-     1                   FGS(I)*(TBARGS(I,J)+TFREZ)*HCPGS(I,J) +
-     2                   FC (I)*(TBARC (I,J)+TFREZ)*HCPCO(I,J) +             
-     3                   FG (I)*(TBARG (I,J)+TFREZ)*HCPGO(I,J))*
-     4                   DELZW(I,J)+TBASE(I)*HCPSND*
+              TBAR(I,J,q)=((FCS(I,q)*(TBARCS(I,J)+TFREZ)*HCPCS(I,J) +
+     1                   FGS(I,q)*(TBARGS(I,J)+TFREZ)*HCPGS(I,J) +
+     2                   FC (I,q)*(TBARC (I,J)+TFREZ)*HCPCO(I,J) +             
+     3                   FG (I,q)*(TBARG (I,J)+TFREZ)*HCPGO(I,J))*
+     4                   DELZW(I,J)+TBASE(I,q)*HCPSND*
      5                   (DELZ(J)-DELZW(I,J)))/
-     4                  ((FCS(I)*HCPCS(I,J) + FGS(I)*HCPGS(I,J) +
-     5                   FC (I)*HCPCO(I,J) + FG (I)*HCPGO(I,J))*
+     4                  ((FCS(I,q)*HCPCS(I,J) + FGS(I,q)*HCPGS(I,J) +
+     5                   FC (I,q)*HCPCO(I,J) + FG (I,q)*HCPGO(I,J))*
      8                   DELZW(I,J)+HCPSND*(DELZ(J)-DELZW(I,J)))             
           ELSE
-              TBAR(I,J)=(FCS(I)*(TBARCS(I,J)+TFREZ)*(DELZW(I,J)*
+              TBAR(I,J,q)=(FCS(I,q)*(TBARCS(I,J)+TFREZ)*(DELZW(I,J)*
      1                   HCPCS(I,J)+(DELZ(J)-DELZW(I,J))*HCPSND)+
-     2                   FGS(I)*(TBARGS(I,J)+TFREZ)*(DELZW(I,J)*
+     2                   FGS(I,q)*(TBARGS(I,J)+TFREZ)*(DELZW(I,J)*
      3                   HCPGS(I,J)+(DELZ(J)-DELZW(I,J))*HCPSND)+
-     4                   FC (I)*(TBARC (I,J)+TFREZ)*(DELZW(I,J)*
+     4                   FC (I,q)*(TBARC (I,J)+TFREZ)*(DELZW(I,J)*
      5                   HCPCO(I,J)+(DELZ(J)-DELZW(I,J))*HCPSND)+             
-     6                   FG (I)*(TBARG (I,J)+TFREZ)*(DELZW(I,J)*
+     6                   FG (I,q)*(TBARG (I,J)+TFREZ)*(DELZW(I,J)*
      7                   HCPGO(I,J)+(DELZ(J)-DELZW(I,J))*HCPSND))/
-     8                  (FCS(I)*(DELZW(I,J)*HCPCS(I,J)+
+     8                  (FCS(I,q)*(DELZW(I,J)*HCPCS(I,J)+
      9                   (DELZ(J)-DELZW(I,J))*HCPSND) + 
-     A                   FGS(I)*(DELZW(I,J)*HCPGS(I,J)+
+     A                   FGS(I,q)*(DELZW(I,J)*HCPGS(I,J)+
      B                   (DELZ(J)-DELZW(I,J))*HCPSND) +
-     C                   FC (I)*(DELZW(I,J)*HCPCO(I,J)+
+     C                   FC (I,q)*(DELZW(I,J)*HCPCO(I,J)+
      D                   (DELZ(J)-DELZW(I,J))*HCPSND) + 
-     E                   FG (I)*(DELZW(I,J)*HCPGO(I,J)+
+     E                   FG (I,q)*(DELZW(I,J)*HCPGO(I,J)+
      F                   (DELZ(J)-DELZW(I,J))*HCPSND))              
           ENDIF
-          THLIQ(I,J)=FCS(I)*THLQCS(I,J)+FGS(I)*THLQGS(I,J)+
-     1               FC (I)*THLQCO(I,J)+FG (I)*THLQGO(I,J)                                   
-          THICE(I,J)=FCS(I)*THICCS(I,J)+FGS(I)*THICGS(I,J)+
-     1               FC (I)*THICCO(I,J)+FG (I)*THICGO(I,J)
-          GFLUX(I,J)=FCS(I)*GFLXCS(I,J)+FGS(I)*GFLXGS(I,J)+
-     1               FC (I)*GFLXC (I,J)+FG (I)*GFLXG (I,J)
+          THLIQ(I,J,q)=FCS(I,q)*THLQCS(I,J)+FGS(I,q)*THLQGS(I,J)+
+     1               FC (I,q)*THLQCO(I,J)+FG (I,q)*THLQGO(I,J)                                   
+          THICE(I,J,q)=FCS(I,q)*THICCS(I,J)+FGS(I,q)*THICGS(I,J)+
+     1               FC (I,q)*THICCO(I,J)+FG (I,q)*THICGO(I,J)
+          GFLUX(I,J)=FCS(I,q)*GFLXCS(I,J)+FGS(I,q)*GFLXGS(I,J)+
+     1               FC (I,q)*GFLXC (I,J)+FG (I,q)*GFLXG (I,J)
 C     ipy test
 C          IF(THLIQ(I,J).GT.THFC(I,J))                               THEN
 C              BASFLW(I)=BASFLW(I)+(THLIQ(I,J)-THFC(I,J))*DELZW(I,J)*
@@ -942,16 +955,16 @@ C              HTC(I,J)=HTC(I,J)-TBAR(I,J)*(THLIQ(I,J)-THFC(I,J))*
 C     1            HCPW*DELZW(I,J)/DELT
 C              THLIQ(I,J)=THFC(I,J)
 C          ENDIF
-          IF(TBAR(I,1).LT.173.16 .OR. TBAR(I,1).GT.373.16) IPTBAD=I
+          IF(TBAR(I,1,q).LT.173.16 .OR. TBAR(I,1,q).GT.373.16) IPTBAD=I
   700 CONTINUE                                                            
 C
       IF(IPTBAD.NE.0)                                               THEN
-          WRITE(6,6600) IPTBAD,JL,TBAR(IPTBAD,1)
+          WRITE(6,6600) IPTBAD,JL,TBAR(IPTBAD,1,q)
  6600     FORMAT('0AT (I,J)= (',I3,',',I3,'), TBAR(1) = ',F10.5)
           CALL XIT('CLASSW2',-1)
       ENDIF
 C
-      CALL CGROW(GROWTH,TBAR,TA,FC,FCS,ILG,IG,IL1,IL2,JL)
+      CALL CGROW(GROWTH,TBAR,TA,FC,FCS,ILG,IG,IL1,IL2,JL,q)
 C                                                                                  
       RETURN                                                                      
       END        

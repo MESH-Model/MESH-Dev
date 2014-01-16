@@ -1,12 +1,13 @@
       SUBROUTINE DIASURFZ(UZ,VZ,TZ,QZ,NI,U,V,TG,QG,Z0,Z0T,ILMO,ZA,
-     1                  H,UE,FTEMP,FVAP,ZU,ZT,LAT,F,IL1,IL2,JL)
+     1                  H,UE,FTEMP,FVAP,ZU,ZT,LAT,F,IL1,IL2,JL,q)
 
+      use MODELS, only : Nmod
       IMPLICIT NONE
-      INTEGER NI,JL
+      INTEGER NI,JL,q
       REAL ZT(NI),ZU(NI)
       REAL UZ(NI),VZ(NI),TZ(NI),QZ(NI),ZA(NI),U(NI),V(NI)
       REAL TG(NI),QG(NI),UE(NI),FTEMP(NI),FVAP(NI)
-      REAL ILMO(NI),Z0T(NI),Z0(NI),H(NI),F(NI)
+      REAL ILMO(NI),Z0T(NI),Z0(NI),H(NI),F(NI,Nmod)
       REAL LAT(NI)
 *Author
 *          Yves Delage  (Aug1990)
@@ -80,7 +81,7 @@
       RAC3=SQRT(3.)
 
       DO J=IL1,IL2
-      FJ_GT_0 : IF(F(J).GT.0.0)                           THEN
+      FJ_GT_0 : IF(F(J,q).GT.0.0)                           THEN
 
       LZZ0T=LOG((ZT(J)+Z0(J))/Z0T(J))
       LZZ0=LOG(ZU(J)/Z0(J)+1)
@@ -113,8 +114,8 @@
 *---------------------------------------------------------------------
       CT=KARMAN/FH
       CM=KARMAN/FM
-      TZ(J)=TZ(J)+F(J)*(TG(J)-FTEMP(J)/(CT*UE(J))-GRAV/CPD*ZT(J))
-      QZ(J)=QZ(J)+F(J)*(QG(J)-FVAP(J)/(CT*UE(J)))
+      TZ(J)=TZ(J)+F(J,q)*(TG(J)-FTEMP(J)/(CT*UE(J))-GRAV/CPD*ZT(J))
+      QZ(J)=QZ(J)+F(J,q)*(QG(J)-FVAP(J)/(CT*UE(J)))
       VITS=UE(J)/CM
 
 * CALCULATE WIND DIRECTION CHANGE FROM TOP OF SURFACE LAYER
@@ -126,8 +127,8 @@
          ANG=ANGI
       ENDIF
 
-      UZ(J)=UZ(J)+F(J)*VITS*COS(ANG)
-      VZ(J)=VZ(J)+F(J)*VITS*SIN(ANG)
+      UZ(J)=UZ(J)+F(J,q)*VITS*COS(ANG)
+      VZ(J)=VZ(J)+F(J,q)*VITS*SIN(ANG)
 
       ENDIF FJ_GT_0
       ENDDO

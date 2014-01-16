@@ -1,6 +1,6 @@
       SUBROUTINE TWCALC(TBAR,THLIQ,THICE,HCP,TBARW,HMFG,HTC,
      1                  FI,EVAP,THPOR,THLMIN,HCPS,DELZW,
-     2                  DELZZ,ISAND,IG,ILG,IL1,IL2,JL)
+     2                  DELZZ,ISAND,IG,ILG,IL1,IL2,JL,q)
 C
 C     * SEP 23/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
 C     * MAY 16/03 - Y.DELAGE/D.VERSEGHY. BUGFIX IN FREEZING/
@@ -31,11 +31,12 @@ C     * APR 11/89 - D.VERSEGHY. ADJUST SOIL LAYER TEMPERATURES
 C     *                         AND LIQUID/FROZEN MOISTURE CONTENTS
 C     *                         FOR FREEZING/THAWING.
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IG,ILG,IL1,IL2,JL,I,J
+      INTEGER IG,ILG,IL1,IL2,JL,I,J,q
 C
 C     * INPUT/OUTPUT ARRAYS.
 C
@@ -45,7 +46,7 @@ C
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG),    EVAP  (ILG)
+      REAL FI    (ILG,Nmod),    EVAP  (ILG)
 C
       REAL THPOR (ILG,IG), THLMIN(ILG,IG), HCPS  (ILG,IG), 
      1     DELZW (ILG,IG), DELZZ (ILG,IG)
@@ -68,15 +69,14 @@ C
 C-----------------------------------------------------------------------
       DO 100 J=1,IG                                                               
       DO 100 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. DELZW(I,J).GT.0. .AND. ISAND(I,1).GT.-4)
+          IF(FI(I,q).GT.0. .AND. DELZW(I,J).GT.0. .AND.ISAND(I,1).GT.-4)
      1                                                              THEN
               HCP  (I,J)=HCPW*THLIQ(I,J)+HCPICE*THICE(I,J)+
      1                   HCPS(I,J)*(1.-THPOR(I,J))                                                   
-              HTC  (I,J)=HTC(I,J)-FI(I)*(HCP(I,J)*DELZW(I,J)+
+              HTC  (I,J)=HTC(I,J)-FI(I,q)*(HCP(I,J)*DELZW(I,J)+
      1                   HCPSND*(DELZZ(I,J)-DELZW(I,J)))*
      2                   (TBAR(I,J)+TFREZ)/DELT
               IF(TBAR(I,J).LT.0. .AND. THLIQ(I,J).GT.THLMIN(I,J)) THEN                        
-                  HCP  (I,J)=HCP(I,J)+CLHMLT*(______)/DELT
                   THFREZ=-(HCP(I,J)*DELZW(I,J)+HCPSND*(DELZZ(I,J)-
      1                    DELZW(I,J)))*TBAR(I,J)/(CLHMLT*RHOW*
      2                    DELZW(I,J))                              
@@ -86,10 +86,10 @@ C-----------------------------------------------------------------------
                       THEVAP=0.0                                                      
                   ENDIF                                                               
                   IF((THLIQ(I,J)-THLMIN(I,J)-THEVAP).GT.0.0)      THEN 
-                    IF(THFREZ.LE.(THLIQ(I,J)-THLMIN(I,J)-THEVAP)) THEN                         
-                      HMFG(I,J)=HMFG(I,J)-FI(I)*THFREZ*CLHMLT*
+                    IF(THFREZ.LE.(TH LIQ(I,J)-THLMIN(I,J)-THEVAP)) THEN                         
+                      HMFG(I,J)=HMFG(I,J)-FI(I,q)*THFREZ*CLHMLT*
      1                          RHOW*DELZW(I,J)/DELT
-                      HTC(I,J)=HTC(I,J)-FI(I)*THFREZ*CLHMLT*
+                      HTC(I,J)=HTC(I,J)-FI(I,q)*THFREZ*CLHMLT*
      1                          RHOW*DELZW(I,J)/DELT
                       THLIQ(I,J)=THLIQ(I,J)-THFREZ                                        
                       THICE(I,J)=THICE(I,J)+THFREZ*RHOW/RHOICE                            
@@ -97,10 +97,10 @@ C-----------------------------------------------------------------------
      1                           HCPS(I,J)*(1.-THPOR(I,J))
                       TBAR (I,J)=0.0                                                   
                     ELSE                                                                
-                      HMFG(I,J)=HMFG(I,J)-FI(I)*(THLIQ(I,J)-
+                      HMFG(I,J)=HMFG(I,J)-FI(I,q)*(THLIQ(I,J)-
      1                    THLMIN(I,J)-THEVAP)*CLHMLT*RHOW*DELZW(I,J)/
      2                    DELT
-                      HTC(I,J)=HTC(I,J)-FI(I)*(THLIQ(I,J)-THLMIN(I,J)-
+                      HTC(I,J)=HTC(I,J)-FI(I,q)*(THLIQ(I,J)-THLMIN(I,J)-
      1                          THEVAP)*CLHMLT*RHOW*DELZW(I,J)/DELT
                       HADD=(THFREZ-(THLIQ(I,J)-THLMIN(I,J)-THEVAP))*
      1                     CLHMLT*RHOW*DELZW(I,J)
@@ -120,9 +120,9 @@ C
      1                   DELZW(I,J)))*TBAR(I,J)/(CLHMLT*RHOICE*
      2                   DELZW(I,J))                             
                   IF(THMELT.LE.THICE(I,J))                 THEN 
-                      HMFG(I,J)=HMFG(I,J)+FI(I)*THMELT*CLHMLT*
+                      HMFG(I,J)=HMFG(I,J)+FI(I,q)*THMELT*CLHMLT*
      1                          RHOICE*DELZW(I,J)/DELT
-                      HTC(I,J)=HTC(I,J)+FI(I)*THMELT*CLHMLT*
+                      HTC(I,J)=HTC(I,J)+FI(I,q)*THMELT*CLHMLT*
      1                          RHOICE*DELZW(I,J)/DELT
                       THICE(I,J)=THICE(I,J)-THMELT                                        
                       THLIQ(I,J)=THLIQ(I,J)+THMELT*RHOICE/RHOW                            
@@ -130,9 +130,9 @@ C
      1                           HCPS(I,J)*(1.-THPOR(I,J)) 
                       TBAR (I,J)=0.0                                                   
                   ELSE                                                                
-                      HMFG(I,J)=HMFG(I,J)+FI(I)*THICE(I,J)*CLHMLT*
+                      HMFG(I,J)=HMFG(I,J)+FI(I,q)*THICE(I,J)*CLHMLT*
      1                          RHOICE*DELZW(I,J)/DELT
-                      HTC(I,J)=HTC(I,J)+FI(I)*THICE(I,J)*CLHMLT*
+                      HTC(I,J)=HTC(I,J)+FI(I,q)*THICE(I,J)*CLHMLT*
      1                          RHOICE*DELZW(I,J)/DELT
                       HADD=(THMELT-THICE(I,J))*CLHMLT*RHOICE*
      1                     DELZW(I,J)
@@ -144,10 +144,10 @@ C
      1                           (DELZZ(I,J)-DELZW(I,J)))
                   ENDIF                                                               
               ENDIF
-              HTC  (I,J)=HTC(I,J)+FI(I)*(HCP(I,J)*DELZW(I,J)+
+              HTC  (I,J)=HTC(I,J)+FI(I,q)*(HCP(I,J)*DELZW(I,J)+
      1                   HCPSND*(DELZZ(I,J)-DELZW(I,J)))*
      2                   (TBAR(I,J)+TFREZ)/DELT
-              HTC(I,J)=HTC(I,J)-FI(I)*(TBAR(I,J)+TFREZ)*
+              HTC(I,J)=HTC(I,J)-FI(I,q)*(TBAR(I,J)+TFREZ)*
      1                 (HCPW*THLIQ(I,J)+HCPICE*THICE(I,J))*
      2                 DELZW(I,J)/DELT
           ENDIF                                                      

@@ -1,6 +1,6 @@
       SUBROUTINE TSPREP(GCOEFFS,GCONSTS,CPHCHG,IWATER,
      1                  FI,ZSNOW,TSNOW,TCSNOW,
-     2                  ILG,IL1,IL2,JL      )
+     2                  ILG,IL1,IL2,JL,q   )
 C
 C     * AUG 16/06 - D.VERSEGHY. MAJOR REVISION TO IMPLEMENT THERMAL
 C     *                         SEPARATION OF SNOW AND SOIL.
@@ -37,11 +37,12 @@ C     *                         LATENT HEAT OF VAPORIZATION OF WATER
 C     *                         AND THE STARTING TEMPERATURE FOR THE
 C     *                         ITERATION IN "TSOLVC"/"TSOLVE".
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C                                                                                 
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ILG,IL1,IL2,JL,I,J
+      INTEGER ILG,IL1,IL2,JL,I,J,q
 C
 C     * OUTPUT ARRAYS.
 C
@@ -51,7 +52,7 @@ C
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG),    ZSNOW (ILG),    TSNOW (ILG),    TCSNOW(ILG)
+      REAL FI (ILG,Nmod),ZSNOW (ILG,Nmod),TSNOW (ILG,Nmod),TCSNOW(ILG)
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -68,9 +69,9 @@ C-----------------------------------------------------------------------
 C     * CALCULATE COEFFICIENTS.
 C
       DO 100 I=IL1,IL2
-          IF(FI(I).GT.0.)                                          THEN
-              GCOEFFS(I)=3.0*TCSNOW(I)/ZSNOW(I)
-              GCONSTS(I)=-3.0*TCSNOW(I)*TSNOW(I)/ZSNOW(I)
+          IF(FI(I,q).GT.0.)                                       THEN
+              GCOEFFS(I)=3.0*TCSNOW(I)/ZSNOW(I,q)
+              GCONSTS(I)=-3.0*TCSNOW(I)*TSNOW(I,q)/ZSNOW(I,q)
               IWATER(I)=2                                                                    
               CPHCHG(I)=CLHVAP+CLHMLT
           ENDIF

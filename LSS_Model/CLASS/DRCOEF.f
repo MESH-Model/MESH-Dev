@@ -1,6 +1,7 @@
       SUBROUTINE DRCOEF(CDM,CDH,RIB,CFLUX,QG,QA,ZOMIN,ZOHIN,
      1                  CRIB,TVIRTG,TVIRTA,VA,FI,ITER,
-     2                  ILG,IL1,IL2)
+     2                  ILG,IL1,IL2,q)
+      use MODELS, only : Nmod
 C
 C     * NOV 04/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
 C     * SEP 10/02 - K.ABDELLA.  BUGFIX IN CALCULATION OF "OLS" (2 PLACES).
@@ -66,7 +67,7 @@ C     *    ZOH     ON STABLE SIDE, AS PART OF CALCULATION.
 
 C     * INTEGER CONSTANTS.
 
-      INTEGER ILG,IL1,IL2,JL,I
+      INTEGER ILG,IL1,IL2,JL,I,q
 
 C     * OUTPUT ARRAYS.
 
@@ -75,7 +76,7 @@ C     * OUTPUT ARRAYS.
 C     * INPUT ARRAYS.
 
       REAL ZOMIN  (ILG),   ZOHIN  (ILG),   CRIB   (ILG),   TVIRTG (ILG)
-      REAL TVIRTA (ILG),   VA     (ILG),   FI     (ILG)
+      REAL TVIRTA (ILG),   VA     (ILG),   FI     (ILG,Nmod)
       REAL QG     (ILG),   QA     (ILG)
 
       INTEGER ITER(ILG)
@@ -104,7 +105,7 @@ C-------------------------------------------------------------
       PR = 1.
 C      
       DO 100 I=IL1,IL2
-        IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                         THEN
+        IF(FI(I,q).GT.0. .AND. ITER(I).EQ.1)                        THEN
           RIB(I)=CRIB(I)*(TVIRTG(I)-TVIRTA(I))
           IF(RIB(I).GE.0.0) THEN
             ZLEV=-CRIB(I)*TVIRTA(I)*(VA(I)**2)/GRAV  

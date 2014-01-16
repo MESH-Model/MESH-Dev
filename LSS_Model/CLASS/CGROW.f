@@ -1,4 +1,4 @@
-      SUBROUTINE CGROW(GROWTH,TBAR,TA,FC,FCS,ILG,IG,IL1,IL2,JL)
+      SUBROUTINE CGROW(GROWTH,TBAR,TA,FC,FCS,ILG,IG,IL1,IL2,JL,q)
 
 C     * MAR 09/07 - D.VERSEGHY. CHANGE SENESCENCE THRESHOLD FROM
 C     *                         0.10 TO 0.90.
@@ -14,21 +14,22 @@ C     * APR 11/89 - D.VERSEGHY. INCREMENT/DECREMENT GROWTH INDEX FOR
 C     *                         VEGETATION TYPES 1 AND 2 (NEEDLELEAF
 C     *                         AND BROADLEAF TREES).
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 C                                      
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ILG,IG,IL1,IL2,JL,I
+      INTEGER ILG,IG,IL1,IL2,JL,I,q
 C
 C     * OUTPUT ARRAY.
 C
-      REAL GROWTH(ILG)
+      REAL GROWTH(ILG,Nmod)
 C
 C     * INPUT ARRAYS.
 C                                           
-      REAL TBAR  (ILG,IG)
+      REAL TBAR  (ILG,IG,Nmod)
 C
-      REAL TA(ILG),  FC(ILG),   FCS(ILG)
+      REAL TA(ILG),  FC(ILG,Nmod),   FCS(ILG,Nmod)
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -37,18 +38,18 @@ C
       COMMON /CLASS1/ DELT,TFREZ                                                  
 C-----------------------------------------------------------------------
       DO 100 I=IL1,IL2
-          IF((FC(I)+FCS(I)).GT.0.0)                                 THEN
-              IF(GROWTH(I).LT.0.0)                                THEN
-                  GROWTH(I)=MIN(0.0,(GROWTH(I)+DELT/5.184E6)) 
+          IF((FC(I,q)+FCS(I,q)).GT.0.0)                            THEN
+              IF(GROWTH(I,q).LT.0.0)                                THEN
+                  GROWTH(I,q)=MIN(0.0,(GROWTH(I,q)+DELT/5.184E6)) 
               ELSE                   
-                  IF(TA(I).GT.(TFREZ+2.0).AND.TBAR(I,1).GT.(TFREZ+2.0))  
+                  IF(TA(I).GT.(TFREZ+2.0).AND.TBAR(I,1,q).GT.(TFREZ+2.))  
      1                                                          THEN 
-                      GROWTH(I)=MIN(1.0,(GROWTH(I)+DELT/5.184E6))
+                      GROWTH(I,q)=MIN(1.0,(GROWTH(I,q)+DELT/5.184E6))
                   ELSE 
-                      IF(GROWTH(I).GT.0.90)     THEN     
-                          GROWTH(I)=-GROWTH(I)  
+                      IF(GROWTH(I,q).GT.0.90)     THEN     
+                          GROWTH(I,q)=-GROWTH(I,q)  
                       ELSE              
-                          GROWTH(I)=0.0  
+                          GROWTH(I,q)=0.0  
                       ENDIF             
                   ENDIF
               ENDIF

@@ -1,5 +1,5 @@
       SUBROUTINE SLDIAG(SU,SV,ST,SQ,CDM,CDH,UA,VA,TA,QA,T0,Q0,
-     1                  Z0M,Z0E,F,ZA,ZU,ZT,ILG,IL1,IL2,JL)
+     1                  Z0M,Z0E,F,ZA,ZU,ZT,ILG,IL1,IL2,JL,q)
 
 C     * OCT 17/11 - D.VERSEGHY. ADD CODE TO CIRCUMVENT SPECIAL
 C     *                         CASE WHERE TA~T0 OR QA~QO, THUS
@@ -31,13 +31,14 @@ C     *   ZU  : HEIGHT OF OUTPUT WIND
 C     *   ZT  : HEIGHT OF OUTPUT TEMPERATURE AND HUMIDITY
 C     *   ILG : NUMBER OF POINTS TO BE TREATED
 C
+      use MODELS, only : Nmod
       IMPLICIT NONE
 c
-      INTEGER ILG,IL1,IL2,JL,I
+      INTEGER ILG,IL1,IL2,JL,I,q
 c
       REAL   SU(ILG),  SV(ILG),  ST(ILG),  SQ(ILG), CDM(ILG), CDH(ILG),
      1       UA(ILG),  VA(ILG),  TA(ILG),  QA(ILG), Z0M(ILG), Z0E(ILG),
-     2       F(ILG),   T0(ILG),  Q0(ILG),  ZA(ILG), ZU(ILG),  ZT(ILG)
+     2       F(ILG,Nmod), T0(ILG),  Q0(ILG),  ZA(ILG), ZU(ILG), ZT(ILG)
 c 
       REAL PR,WSPD,CM,US,TS,QS,L,UVA,RATIO,UVU,TTA,CE
 c
@@ -60,7 +61,7 @@ c     * STABILITY FUNCTIONS FOR THE UNSTABLE CASE
 
       PR=1.0
       DO 100 I=IL1,IL2
-      IF(F(I).GT.0.)                                                THEN
+      IF(F(I,q).GT.0.)                                              THEN
 
 C     * CALCULATION OF SURFACE FLUXES AND MONIN-OBUKHOV LENGTH
 
@@ -92,15 +93,15 @@ C     * STABLE CASE
          RATIO=WSPD/UVA
          UVU=US/VKC*(LOG((ZU(I)+Z0M(I))/Z0M(I))-PSM((ZU(I)+Z0M(I))/L)
      1       +PSM(Z0M(I)/L))*RATIO
-         SU(I)=SU(I)+F(I)*UVU*UA(I)/WSPD
-         SV(I)=SV(I)+F(I)*UVU*VA(I)/WSPD
+         SU(I)=SU(I)+F(I,q)*UVU*UA(I)/WSPD
+         SV(I)=SV(I)+F(I,q)*UVU*VA(I)/WSPD
 
       TTA=T0(I)+TS/VKC*PR*(LOG(ZA(I)/Z0E(I))-PSE(ZA(I)/L)+PSE(Z0E(I)/L))
          RATIO=(TA(I)-T0(I))/SIGN(MAX(ABS(TTA-T0(I)),1.E-4),TTA-T0(I))
          CE=(LOG((ZT(I)+Z0M(I))/Z0E(I))-PSE((ZT(I)+Z0M(I))/L)
      1      +PSE(Z0E(I)/L))*RATIO*PR/VKC
-         ST(I)=ST(I)+F(I)*T0(I)+TS*CE
-         SQ(I)=SQ(I)+F(I)*Q0(I)+QS*CE
+         ST(I)=ST(I)+F(I,q)*T0(I)+TS*CE
+         SQ(I)=SQ(I)+F(I,q)*Q0(I)+QS*CE
         ELSE
 
 C     * UNSTABLE CASE
@@ -109,15 +110,15 @@ C     * UNSTABLE CASE
          RATIO=WSPD/UVA
          UVU=US/VKC*(LOG((ZU(I)+Z0M(I))/Z0M(I))-PIM(Y((ZU(I)+Z0M(I))/L))
      1        +PIM(Y(Z0M(I)/L)))*RATIO
-         SU(I)=SU(I)+F(I)*UVU*UA(I)/WSPD
-         SV(I)=SV(I)+F(I)*UVU*VA(I)/WSPD
+         SU(I)=SU(I)+F(I,q)*UVU*UA(I)/WSPD
+         SV(I)=SV(I)+F(I,q)*UVU*VA(I)/WSPD
          TTA=T0(I)+TS/VKC*PR*(LOG(ZA(I)/Z0E(I))-PIE(Y(ZA(I)/L))+
      1          PIE(Y(Z0E(I)/L)))
          RATIO=(TA(I)-T0(I))/SIGN(MAX(ABS(TTA-T0(I)),1.E-4),TTA-T0(I))
          CE=(LOG((ZT(I)+Z0M(I))/Z0E(I))-PIE(Y((ZT(I)+Z0M(I))/L))
      1      +PIE(Y(Z0E(I)/L)))*RATIO*PR/VKC
-         ST(I)=ST(I)+F(I)*T0(I)+TS*CE
-         SQ(I)=SQ(I)+F(I)*Q0(I)+QS*CE
+         ST(I)=ST(I)+F(I,q)*T0(I)+TS*CE
+         SQ(I)=SQ(I)+F(I,q)*Q0(I)+QS*CE
         ENDIF
       ENDIF
   100 CONTINUE

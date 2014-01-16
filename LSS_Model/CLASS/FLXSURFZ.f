@@ -1,16 +1,19 @@
       SUBROUTINE FLXSURFZ(CDM, CDH, CTU, RIB, FTEMP, FVAP, ILMO,
      X                    UE, FCOR, TA , QA , ZU, ZT, VA,
      Y                    TG , QG , H , Z0 , Z0T,
-     %                    LZZ0, LZZ0T, FM, FH,N,IL1,IL2,FI,ITER,JL )
+     %                LZZ0, LZZ0T, FM, FH,N,IL1,IL2,FI,ITER,JL,q,NN)
+C
+      use MODELS, only : tem,Nmod
+C
       IMPLICIT NONE
-      INTEGER N,IL1,IL2,ITER(N),JL
+      INTEGER N,IL1,IL2,ITER(N),JL,q,NN
       REAL CDM(N),CDH(N),CTU(N),RIB(N),FCOR(N),ILMO(N)
       REAL FTEMP(N),FVAP(N),TA(N),QA(N),ZU(N),VA(N)
       REAL TG(N),QG(N),H(N),Z0(N),UE(N),ZT(N)
       REAL Z0T(N),LZZ0(N),LZZ0T(N)
       REAL fm(N),fh(N)
-      REAL FI(N)
-      real Cmn,Chn,Am,Ah,fmom,ftq
+      REAL FI(N,Nmod)
+      real Cmn(N),Chn(N),Am(N),Ah(N),fmom(N),ftq(N)
 c
 cAuthor
 c          Y.Delage (Jul 1990)
@@ -98,7 +101,7 @@ c
       REAL DELTA,GRAV,KARMAN,CPD
       COMMON / PHYCON / DELTA,GRAV,KARMAN,CPD
       COMMON / CLASSD2 / AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
-      INTEGER J
+      INTEGER J,i
       INTEGER IT,ITMAX
       REAL HMAX,CORMIN,EPSLN
       REAL RAC3,CM,CT,ZP
@@ -113,6 +116,8 @@ c
       SAVE HMAX,CORMIN,EPSLN
       SAVE ITMAX
       REAL,SAVE::VMODMIN=-1.0
+c
+      REAL B,L,zeta_T,zeta_U,psi_h,psi_m,xxx
 c
       REAL            VAMIN
 c     COMMON /CLASSD3/VAMIN
@@ -130,7 +135,7 @@ c
       betsasx=1./asx
 c
       DO J=IL1,IL2
-      IF(FI(J).GT.0. .AND. ITER(J).EQ.1) THEN
+      IF(FI(J,q).GT.0. .AND. ITER(J).EQ.1) THEN
 c
 c  CALCULATE THE RICHARDSON NUMBER
         ZP=ZU(J)**2/(ZT(J)+Z0(J)-Z0T(J))
@@ -142,11 +147,9 @@ c  CALCULATE THE RICHARDSON NUMBER
         if (rib(j).ge.0.0) rib(j) = max(rib(j), EPSLN)
         if (rib(j).lt.0.0) rib(j) = min(rib(j),-EPSLN)
 c
+c  FIRST APPROXIMATION TO ILMO
         LZZ0(J)=LOG(Z0(J)+ZU(J))-LOG(Z0(J))
         LZZ0T(J)=LOG(ZT(J)+Z0(J))-LOG(Z0T(J))
-!      select case(tem(q))
-!       case(0) ! CLASS Monin-Obukhov (Delage & Girard, 1991)
-c  FIRST APPROXIMATION TO ILMO
         IF(RIB(J).GT.0.)  THEN
            FM(J)=LZZ0(J)+CS*RIB(J)/max(2*z0(j),1.0)
            FH(J)=BETA*(LZZ0T(J)+CS*RIB(J))/
@@ -159,20 +162,17 @@ c  FIRST APPROXIMATION TO ILMO
            FH(J)=BETA*(LZZ0T(J)-min(0.7+log(1-rib(j)),LZZ0T(J)-1))
         ENDIF
         ILMO(J)=RIB(J)*FM(J)*FM(J)/(ZP*FH(J))
-!       case(1) ! second gen CCMA; RiB
         Cmn(J) = KARMAN**2/LZZ0(J)**2
         Chn(J) = KARMAN**2/(LZZ0(J)*LZZ0T(J))
         Am(J) = ((Z0(J)+ZU(J))/Z0(J))**(1/2)*KARMAN**2/Cmn(J)
         Ah(J) = ((ZT(J)+Z0(J))/Z0T(J))**(1/2)*KARMAN**2/Chn(J)
 !      end select
       ENDIF
-ENDDO
+      ENDDO
 c - - - - - - - - -  BEGINNING OF ITERATION LOOP - - - - - - - - - - - 
-!      select case(tem(q))
-!      case(0) ! Monin-Obukhov
       DO 35 IT=1,ITMAX
       DO 35 J=IL1,IL2
-      IF(FI(J).GT.0. .AND. ITER(J).EQ.1) THEN
+      IF(FI(J,q).GT.0. .AND. ITER(J).EQ.1) THEN
         u=max(vmodmin,va(j))
         ZP=ZU(J)**2/(ZT(J)+Z0(J)-Z0T(J))
         IF(RIB(J).GT.0.)  THEN
@@ -193,7 +193,7 @@ cCDIR IEXPAND
         DG=-ZP*FH(J)/(FM(J)*FM(J))*(1+beta*(DF(ZT(J)+Z0(J))-DF(Z0T(J)))/
      1          (2*FH(J))-(DF(ZU(J)+Z0(J))-DF(Z0(J)))/FM(J))
         fmom(J)=1/(1+10*RIB(J))
-        ftq(J)=fm(J)
+        ftq(J)=fmom(J)
 c----------------------------------------------------------------------
 c  UNSTABLE CASE
       ELSE
@@ -204,8 +204,10 @@ cCDIR IEXPAND
          FH(J)=fhi(zt(j)+z0(j),z0t(j),lzz0t(j),ilmo(j),yy,yy0)
          DG=-ZP*FH(J)/(FM(J)*FM(J))*(1+beta/FH(J)*(1/YY-1/YY0)-2/FM(J)*
      %                (1/XX-1/XX0))
-         fmom(J)=1-10*RIB(J)/(1+10*(-1*RIB(J)/(87*Am(J)**2))**(1/2))
-         ftq(J)=1-10*RIB(J)/(1+10*(-1*RIB(J)/(87*Ah(J)**2))**(1/2))
+         fmom(J)=1+10*ABS(RIB(J))/
+     !              (1+10*ABS(RIB(J)/(87*Am(J)**2))**(1/2))
+         ftq(J)= 1+10*ABS(RIB(J))/
+     !              (1+10*ABS(RIB(J)/(87*Ah(J)**2))**(1/2))
       ENDIF
 c----------------------------------------------------------------------
       IF(IT.LT.ITMAX) THEN
@@ -216,7 +218,7 @@ c----------------------------------------------------------------------
    35 CONTINUE
 c - - - - - -  - - - END OF ITERATION LOOP - - - - - - - - - - - - - -
       DO 80 J=IL1,IL2
-      IF(FI(J).GT.0. .AND. ITER(J).EQ.1) THEN
+      IF(FI(J,q).GT.0. .AND. ITER(J).EQ.1) THEN
         u=max(vmodmin,va(j))
         if(asx.lt.as) then
 c----------------------------------------------------------------------
@@ -247,19 +249,63 @@ c  SOLUTION
            endif
            endif
 c----------------------------------------------------------------------
-          UE(J)=u*CM !output DIASURFZ
+          
+        CM=KARMAN/FM(J)
+        UE(J)=u*CM !output DIASURFZ
+        CT=KARMAN/FH(J)
+        !-CDM(J)=CM**2 !output
+        !-CDH(J)=CM*CT !output
+        !!!ORIGINAL CASES
         select case(tem(q))
         case(0) ! CLASS: M-O
-          CM=KARMAN/FM(J)
-          CT=KARMAN/FH(J)
           CDM(J)=CM**2 !output
           CTU(J)=CT*UE(J) !output
           CDH(J)=CM*CT !output
         case(1) ! CCMA 2nd Gen: RiB
-          CDM(J)= fmom(J)*Cmn(J) !output
-          CDH(J)= ftq(J)*Chn(J)*1.25 !output
-          CTU(J)= Chn(J)*ftq(J)*1.25*u !output
+          !-CDM(J)= fmom(J)*Cmn(J) !output
+          !-CDH(J)= ftq(J)*Chn(J)*1.25 !output
+          CTU(J)= Chn(J)*ftq(J)*1.25*u!u !output
         end select
+        !!!NEW CASES AS PER R.ESSERY IUGG
+!        select case(tem(q))
+!        case(0) ! CH(z/L)
+!          CM = KARMAN**2 / (log(ZU(J)/Z0(J))*log(ZU(J)/Z0(J)))
+!          CDH(J) = KARMAN**2 / (log(ZU(J)/Z0(J))*log(ZT(J)/Z0T(J)))
+!          do i = 1, 10
+!            B = CDH(J) *VA(J)*GRAV*(TG(J) - TA(J))/TA(J) 
+!            L = -UE(J)**3 / (KARMAN*B)
+!            zeta_T = ZT(J) / L
+!            zeta_U = ZU(J) / L
+!            if (L.gt.0) then
+!              psi_h = -5*zeta_T
+!              psi_m = -5*zeta_U
+!              if (zeta_T > 1) psi_h = -4*(1 + log(zeta_T)) - zeta_T
+!              if (zeta_U > 1) psi_m = -4*(1 + log(zeta_U)) - zeta_U
+!            else
+!              xxx = (1 - 16*zeta_U)**0.25
+!              psi_m = 2*log((1 + xxx)/2) + log((1 + xxx**2)/2) - 
+!     1                  2*atan(xxx) + 3.1415926535898/2
+!              xxx = (1 - 16*zeta_T)**0.25
+!              psi_h = 2*log((1 + xxx**2)/2)
+!            end if
+!            CM = KARMAN**2 / ((log(ZU(J)/Z0(J)) - psi_m)*
+!     1                        (log(ZU(J)/Z0(J)) - psi_m))
+!            CDH(J) = KARMAN**2 / ((log(ZU(J)/Z0(J)) - psi_m)*
+!     1                            (log(ZT(J)/Z0T(J)) - psi_h))
+!            CTU(J) = CDH(J)*UE(J)
+!         end do
+!        case(1) ! CH(RiB)
+!          CDH(J)= KARMAN**2 / (log(ZU(J)/Z0(J))*log(ZT(J)/Z0T(J)))
+!          RIB(J) = GRAV*ZU(J)*(TA(J) - TG(J)) / (TA(J)*VA(J)**2)
+!          FH(J) = 1
+!          if (RIB(J).gt.0) then 
+!            FH(J) = 1/(1 + 10*RIB(J)/sqrt(1 + RIB(J)))
+!          else
+!            FH(J) = 1-15*RIB(J)/(1+75*CDH(J)*sqrt(-RIB(J)*ZU(J)/Z0(J)))
+!          end if
+!          CDH(J) = FH(J)*CDH(J)
+!          CTU(J) = CDH(J)*UE(J)
+!        end select
         if (rib(j).gt.0.0) then
 c             cas stable
               H(J)=MIN(H(J),hmax) !output DIASURFZ

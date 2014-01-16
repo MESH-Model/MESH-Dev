@@ -37,7 +37,9 @@
       USE MESH_INPUT_MODULE
       USE FLAGS
       USE AREA_WATFLOOD
+      use MODELS, only : Nmod
       IMPLICIT NONE
+
       
 !> DECLARE THE READ IN VARIABLES.
 !> ----------------------------
@@ -459,18 +461,19 @@
      + cp%FAREROW(NA,NTYPE), cp%DDROW(NA,NTYPE),
      + cp%XSLPROW(NA,NTYPE), cp%XDROW(NA,NTYPE),
      + cp%MANNROW(NA,NTYPE), cp%KSROW(NA,NTYPE),
-     + cp%TCANROW(NA,NTYPE), cp%TSNOROW(NA,NTYPE),
-     + cp%TPNDROW(NA,NTYPE), cp%ZPNDROW(NA,NTYPE),
-     + cp%RCANROW(NA,NTYPE), cp%SCANROW(NA,NTYPE),
-     + cp%SNOROW(NA,NTYPE),  cp%ALBSROW(NA,NTYPE),
-     + cp%RHOSROW(NA,NTYPE), cp%GROROW(NA,NTYPE))
+     + cp%TCANROW(NA,NTYPE,Nmod), cp%TSNOROW(NA,NTYPE,Nmod),
+     + cp%TPNDROW(NA,NTYPE,Nmod), cp%ZPNDROW(NA,NTYPE,Nmod),
+     + cp%RCANROW(NA,NTYPE,Nmod), cp%SCANROW(NA,NTYPE,Nmod),
+     + cp%SNOROW(NA,NTYPE,Nmod),  cp%ALBSROW(NA,NTYPE,Nmod),
+     + cp%RHOSROW(NA,NTYPE,Nmod), cp%GROROW(NA,NTYPE,Nmod))
 
       ALLOCATE (cp%MIDROW(NA,NTYPE))
 
       ALLOCATE (
      + cp%SANDROW(NA, NTYPE, IGND), cp%CLAYROW(NA, NTYPE, IGND),
-     + cp%ORGMROW(NA, NTYPE, IGND), cp%TBARROW(NA, NTYPE, IGND),
-     + cp%THLQROW(NA, NTYPE, IGND), cp%THICROW(NA, NTYPE, IGND))
+     + cp%ORGMROW(NA, NTYPE, IGND), cp%TBARROW(NA, NTYPE, IGND,Nmod),
+     + cp%THLQROW(NA, NTYPE, IGND,Nmod), 
+     + cp%THICROW(NA, NTYPE, IGND,Nmod))
 !>
 !>*******************************************************************
 !>
@@ -522,10 +525,10 @@
      +         hp%BROW   (NA, NTYPE), hp%K1ROW  (NA, NTYPE),
      +         hp%K2ROW  (NA, NTYPE),hp%fetchROW(NA, NTYPE),
      +         hp%HtROW(NA, NTYPE),  hp%N_SROW(NA, NTYPE),
-+              hp%A_SROW(NA, NTYPE), hp%DistribROW(NA, NTYPE))
+     +         hp%A_SROW(NA, NTYPE), hp%DistribROW(NA, NTYPE))
       
       NYEARS = IYEAR_END - IYEAR_START + 1
-      ALLOCATE (t0_ACC(NYEARS))
+      ALLOCATE (t0_ACC(NYEARS,Nmod))
       t0_ACC = 0.0
 
       CALL READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR,
