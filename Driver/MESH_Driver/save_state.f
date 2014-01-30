@@ -131,7 +131,9 @@
      6  AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, 
      7  CO2I2CS, SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG,
      8  AILC, PAIC, FIELDSM,  WILTSM, RMATCTEM, RMATC, NOL2PFTS,
-     9  ICTEMMOD, L2MAX, ICTEM)
+     9  ICTEMMOD, L2MAX, ICTEM,
+     4   fetchROW,HtROW,N_SROW,A_SROW,DistribROW,
+     5   fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
 !> This subroutine is used to write a resume file.
 !> The resume file contains all of the variables used
 !> in the loop for 
@@ -222,7 +224,8 @@
      + ROFSROW, ROFBROW, ROFCROW, 
      + ROFNROW, ROVGROW, WTRCROW, 
      + WTRSROW, WTRGROW, WTABROW, 
-     + ILMOROW, UEROW, HBLROW, FSNOROW
+     + ILMOROW, UEROW, HBLROW, FSNOROW,
+     + fetchROW,HtROW,N_SROW,A_SROW,DistribROW
       
       INTEGER, DIMENSION(NA, NTYPE) ::
      + MIDROW, IGDRROW
@@ -275,7 +278,8 @@
      +      WSNOGAT
       
       REAL, DIMENSION(ILG) :: ZSNLGAT, ZPLGGAT,
-     +      ZPLSGAT
+     +      ZPLSGAT,
+     +      fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT
 
       REAL, DIMENSION(ILG) :: TACGAT, QACGAT, DRNGAT,
      +  XSLPGAT, XDGAT, WFSFGAT, KSGAT, ALGWGAT,
@@ -1021,6 +1025,16 @@
       WRITE(10,*) T_ICE_LENS
       WRITE(10,*) NMELT
       WRITE(10,*) t0_ACC
+      WRITE(10,*) fetchROW
+      WRITE(10,*) HtROW
+      WRITE(10,*) N_SROW
+      WRITE(10,*) A_SROW
+      WRITE(10,*) DistribROW
+      WRITE(10,*) fetchGAT
+      WRITE(10,*) HtGAT
+      WRITE(10,*) N_SGAT
+      WRITE(10,*) A_SGAT
+      WRITE(10,*) DistribGAT
       IF (ICTEMMOD.EQ.1) THEN
           WRITE(10,*) AILCG
           WRITE(10,*) AILCGS

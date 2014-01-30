@@ -2,7 +2,8 @@ PROGRAM RUNMESH
 
 !>       MESH DRIVER
 !>
-!>       AUG 2013 - M. MacDONALD
+!>       JAN 2014 - M. MACDONALD.  INCORPORATED BLOWING SNOW ALGORITHMS
+!>       AUG 2013 - M. MACDONALD
 !>                - INCORPORATE OPTIONAL COUPLING OF CLASS WITH CTEM
 !>                - MOVE SOME INITIALIZATION AND SCATTER OF CLASS
 !>                  DIAGNOSTIC VARIABLES IN TO MESH_DRIVER
@@ -411,6 +412,20 @@ REAL, DIMENSION(:, :), ALLOCATABLE :: TBARGAT, THLQGAT, THICGAT, &
 REAL, DIMENSION(:, :), ALLOCATABLE ::  TBASROW, &
   CMAIROW, TACROW, QACROW, WSNOROW
      
+!>PBSM VARIABLES (GRU)
+!* DrySnow: 0=air temperature above 0 degC
+!*          1=air temperature below 0 degC
+!* SnowAge: hours since last snowfall
+!* Drift: blowing snow transport (kg/m^2)
+!* Subl: blowing snow sublimation (kg/m^2)
+REAL, DIMENSION(:), ALLOCATABLE :: DrySnowGAT, SnowAgeGAT, &
+  TSNOdsGAT, RHOSdsGAT, DriftGAT, SublGAT, DepositionGAT
+REAL, DIMENSION(:, :), ALLOCATABLE :: DrySnowROW, SnowAgeROW, &
+  TSNOdsROW, RHOSdsROW, DriftROW, SublROW, DepositionROW
+!>CLASS SUBAREA VARIABLES NEEDED FOR PBSM
+REAL, DIMENSION(:), ALLOCATABLE :: ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG, &
+  HCPSCS,HCPSGS,HCPSC,HCPSG,TSNOWC,TSNOWG, &
+  RHOSC,RHOSG,XSNOWC,XSNOWG,XSNOCS,XSNOGS
 !* TPND: INITIAL PONDING TEMPERATURE (CLASS.INI)
 !* ZPND: INITIAL PONDING DEPTH (CLASS.INI)
 !* ALBS: ALBEDO OF SNOWPACK (CLASS.INI)
@@ -455,6 +470,14 @@ REAL, DIMENSION(:, :), ALLOCATABLE :: &
 REAL, DIMENSION(:), ALLOCATABLE :: DRNGAT, XSLPGAT, XDGAT, &
   WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, ASVDGAT, ASIDGAT, AGVDGAT, &
   AGIDGAT, ZSNLGAT, ZPLGGAT, ZPLSGAT, SDEPGAT, FAREGAT
+!* PBSM parameters
+!  fetch: fetch distance (m)
+!  Ht: vegetation height (m)
+!  N_S:vegetation density (number/m^2)
+!  A_S: vegetation width (m)
+!  Distrib: Inter-GRU snow redistribution factor
+REAL, DIMENSION(:), ALLOCATABLE :: &
+  fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT
 
 !* SAND: PERCENT-CONTENT OF SAND IN SOIL LAYER (CLASS.INI)
 !* CLAY: PERCENT-CONTENT OF CLAY IN SOIL LAYER (CLASS.INI)
@@ -1025,6 +1048,22 @@ ALLOCATE ( &
   QACGAT(ILG), WSNOGAT(ILG), &
   TSFSROW(NA, NTYPE, 4), &
   TSFSGAT(ILG, 4), STAT=PAS)
+!> PBSM PROGNOSTIC VARIABLES
+ALLOCATE ( &
+  DrySnowROW(NA, NTYPE), SnowAgeROW(NA, NTYPE), &
+  DrySnowGAT(ILG), SnowAgeGAT(ILG), &
+  TSNOdsROW(NA, NTYPE), RHOSdsROW(NA, NTYPE), &
+  TSNOdsGAT(ILG), RHOSdsGAT(ILG), &
+  DriftROW(NA, NTYPE), SublROW(NA, NTYPE), DepositionROW(NA, NTYPE), &
+  DriftGAT(ILG), SublGAT(ILG), DepositionGAT(ILG), &
+  ZSNOCS(ILG),ZSNOGS(ILG), &
+  ZSNOWC(ILG),ZSNOWG(ILG), &
+  HCPSCS(ILG),HCPSGS(ILG), &
+  HCPSC(ILG),HCPSG(ILG), &
+  TSNOWC(ILG),TSNOWG(ILG), &
+  RHOSC(ILG),RHOSG(ILG), &
+  XSNOWC(ILG),XSNOWG(ILG), &
+  XSNOCS(ILG),XSNOGS(ILG), STAT=PAS)
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (for Basin_average_water_balance.csv):
 ALLOCATE ( TOTAL_THLQ(IGND), TOTAL_THIC(IGND), STAT=PAS)
@@ -1117,7 +1156,9 @@ ALLOCATE ( &
   ZPLSGAT(ILG), SDEPGAT(ILG), FAREGAT(ILG), &
   ISNDROW(NA, NTYPE, IGND), IORG(NA, NTYPE, IGND), &
   ISNDGAT(ILG, IGND), IGDRROW(NA,NTYPE), &
-  IGDRGAT(ILG), STAT=PAS)
+  IGDRGAT(ILG), &
+  fetchGAT(ILG),HtGAT(ILG),N_SGAT(ILG),A_SGAT(ILG), &
+  DistribGAT(ILG),STAT=PAS)
 
 IF (PAS .NE. 0) THEN
   WRITE (6, *)
@@ -2763,7 +2804,9 @@ call resume_state( &
   AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
   SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
   AILC, PAIC, FIELDSM,  WILTSM, &
-  RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM)
+  RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM, &
+  hp%fetchROW,hp%HtROW,hp%N_SROW,hp%A_SROW,hp%DistribROW, &
+  fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
 ENDIF
 
 
@@ -2853,8 +2896,15 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
              cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT,     &
 !BEGIN: PDMROF
-             hp%CMINROW,hp%CMAXROW,hp%BROW,hp%K1ROW,hp%K2ROW)
+             hp%CMINROW,hp%CMAXROW,hp%BROW,hp%K1ROW,hp%K2ROW, &
 !END: PDMROF
+             cp%FAREROW, FAREGAT, &
+             hp%fetchROW,hp%HtROW,hp%N_SROW,hp%A_SROW,hp%DistribROW, &
+             fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT, &
+             DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
+             TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
+             DriftROW, SublROW, DepositionROW, &
+             DriftGAT, SublGAT, DepositionGAT)
 !>
 !>   * INITIALIZATION OF DIAGNOSTIC VARIABLES SPLIT OUT OF CLASSG
 !>   * FOR CONSISTENCY WITH GCM APPLICATIONS.
@@ -2989,7 +3039,11 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
              RHOSGAT,SNOGAT,TCANGAT,RCANGAT,SCANGAT, &
              GROGAT,CMAIGAT,TACGAT,QACGAT,WSNOGAT, &
              cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
-             cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT,cp%XSLPROW,XSLPGAT)
+             cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT,cp%XSLPROW,XSLPGAT, &
+             DrySnowRow, SnowAgeROW,DrySnowGAT, SnowAgeGAT, &
+             TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
+             DriftROW, SublROW, DepositionROW, &
+             DriftGAT, SublGAT, DepositionGAT)
 !>
 !>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF 
 !>   * CLASSS FOR CONSISTENCY WITH GCM APPLICATIONS.
@@ -3174,6 +3228,27 @@ OPEN(unit=901,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/Basin_average_energy_balance.csv')
 WRITE(901,"('DAY,YEAR,HFSACC,QEVPACC')")
 
+!>**********************************************************************
+!> Set initial SnowAge & DrySnow values for PBSM calculations
+!> (MK MacDonald, Sept 2010)
+!>**********************************************************************
+IF(PBSMFLAG == 1)THEN
+ DO I=1,NA  !I=2,NA
+   DO M=1,NMTEST
+     IF(cp%SNOROW(I,M).LE.0.) THEN
+       DrySnowROW(I,M) = 0. !1=snowpack is dry (i.e. cold)
+       SnowAgeROW(I,M) = 0. !hours since last snowfall
+       IF(TAGRD(I).GE.273.16) THEN
+         DrySnowROW(I,M) = 0.
+         SnowAgeROW(I,M) = 48. !assume 48 hours since last snowfall
+       ELSE
+         DrySnowROW(I,M) = 1.
+         SnowAgeROW(I,M) = 48.
+       ENDIF
+     ENDIF
+   ENDDO
+ ENDDO
+ENDIF !PBSMFLAG == 1
 !> *********************************************************************
 !> Start of main loop that is run each half hour
 !> *********************************************************************
@@ -3379,8 +3454,15 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
              cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT,     &
 !BEGIN: PDMROF
-             hp%CMINROW,hp%CMAXROW,hp%BROW,hp%K1ROW,hp%K2ROW)
+             hp%CMINROW,hp%CMAXROW,hp%BROW,hp%K1ROW,hp%K2ROW, &
 !END: PDMROF
+             cp%FAREROW, FAREGAT, &
+             hp%fetchROW,hp%HtROW,hp%N_SROW,hp%A_SROW,hp%DistribROW, &
+             fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT, &
+             DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
+             TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
+             DriftROW, SublROW, DepositionROW, &
+             DriftGAT, SublGAT, DepositionGAT)
 !>
 !>   * INITIALIZATION OF DIAGNOSTIC VARIABLES SPLIT OUT OF CLASSG
 !>   * FOR CONSISTENCY WITH GCM APPLICATIONS.
@@ -3497,7 +3579,8 @@ CALL CLASSZ (0,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
              TCANGAT,SNOGAT, WSNOGAT,TSNOGAT,THLQGAT,THICGAT, &
              HCPSGAT,THPGAT, DLZWGAT,TBARGAT,ZPNDGAT,TPNDGAT, &
              sl%DELZ,   FCS,    FGS,    FC,     FG, &
-             1,      NML,    ILG,    IGND,   N    )
+             1,      NML,    ILG,    IGND,   N, &
+             DriftGAT, SublGAT    )
 !> ========================================================================
 !> ALBEDO AND TRANSMISSIVITY CALCULATIONS; GENERAL VEGETATION
 !> CHARACTERISTICS.
@@ -3624,8 +3707,31 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
                   UM1CS,     UM1C,      UM1G,      UM1GS,          &
                   QM1CS,     QM1C,      QM1G,      QM1GS,          &
                   QM2CS,     QM2C,      QM2G,      QM2GS,     UMQ, &
-                  FSTRCS,    FSTRC,     FSTRG,    FSTRGS)
+                  FSTRCS,    FSTRC,     FSTRG,    FSTRGS, &
+                  ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG, &
+                  HCPSCS,HCPSGS,HCPSC,HCPSG, &
+                  TSNOWC,TSNOWG,RHOSC,RHOSG,&
+                  XSNOWC,XSNOWG,XSNOCS,XSNOGS)
+                 
 !
+!========================================================================
+!          * SINGLE COLUMN BLOWING SNOW CALCULATIONS.
+!
+IF(PBSMFLAG==1) THEN
+ CALL PBSMrun(ZSNOW,WSNOGAT,SNOGAT,RHOSGAT,HTCSGAT, &
+              ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG, &
+              HCPSCS,HCPSGS,HCPSC,HCPSG, &
+              TSNOWC,TSNOWG,TSNOCS,TSNOGS, &
+              RHOSC,RHOSG,RHOSCS,RHOSGS,&
+              XSNOWC,XSNOWG,XSNOCS,XSNOGS, &
+              WSNOCS,WSNOGS, &
+              FC, FG, FCS, FGS, &
+              fetchGAT,N_SGAT,A_SGAT,HtGAT, &
+              SFCTGAT,SFCUGAT,SFCQGAT,PRESGAT,PREGAT, &
+              DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
+              TSNOdsGAT, RHOSdsGAT, &
+              NA*NTYPE,1,NML,N,ZRFMGAT,ZOMLCS,ZOMLNS)
+ENDIF
 !========================================================================
 !
 CALL CLASSZ (1,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
@@ -3639,7 +3745,19 @@ CALL CLASSZ (1,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
              TCANGAT,SNOGAT, WSNOGAT,TSNOGAT,THLQGAT,THICGAT, &
              HCPSGAT,THPGAT, DLZWGAT,TBARGAT,ZPNDGAT,TPNDGAT, &
              sl%DELZ,   FCS,    FGS,    FC,     FG, &
-             1,      NML,    ILG,    IGND,   N    )
+             1,      NML,    ILG,    IGND,   N, &
+             DriftGAT, SublGAT )
+!
+!=======================================================================
+!
+!          *Redistribute blowing snow mass between GRUs
+!
+CALL REDISTRIB_SNOW (ILG,1,NA,NTYPE,NML,TSNOGAT,ZSNOW, &
+          RHOSGAT,SNOGAT,TSNOCS,ZSNOCS,HCPSCS,RHOSCS,TSNOGS, &
+          ZSNOGS,HCPSGS,RHOSGS,TSNOWC,ZSNOWC,HCPSC,RHOSC,TSNOWG, &
+          ZSNOWG,HCPSG,RHOSG,cp%GCGRD,ILMOS,DriftGAT,RHOSdsGAT,FAREGAT, &
+          TSNOdsGAT,DistribGAT,WSNOCS,WSNOGS,FCS,FGS,FC,FG,DepositionGAT, &
+          TROOGAT,ROFOGAT,TROFGAT,ROFGAT,ROFNGAT,PCPGGAT,HTCSGAT,WSNOGAT,N)
 !
 !=======================================================================
 ROFGAT = ROFGAT - UMQ
@@ -3654,7 +3772,11 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
              RHOSGAT,SNOGAT,TCANGAT,RCANGAT,SCANGAT, &
              GROGAT,CMAIGAT,TACGAT,QACGAT,WSNOGAT, &
              cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
-             cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT,cp%XSLPROW,XSLPGAT)
+             cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT,cp%XSLPROW,XSLPGAT, &
+             DrySnowRow, SnowAgeROW,DrySnowGAT, SnowAgeGAT, &
+             TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
+             DriftROW, SublROW, DepositionROW, &
+             DriftGAT, SublGAT, DepositionGAT)
 !>
 !>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF 
 !>   * CLASSS FOR CONSISTENCY WITH GCM APPLICATIONS.
@@ -5018,7 +5140,9 @@ IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
   AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
   SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
   AILC, PAIC, FIELDSM,  WILTSM, &
-  RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM)
+  RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM, &
+  hp%fetchROW,hp%HtROW,hp%N_SROW,hp%A_SROW,hp%DistribROW, &
+  fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
 ENDIF
 
 IF(ENDDATA)PRINT *, 'Reached end of forcing data'

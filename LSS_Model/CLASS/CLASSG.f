@@ -60,8 +60,15 @@ C END: PDMROF
      +                  GGEOGRD, MANNROW, MANNGAT, DDROW, DDGAT,
      +                  SANDROW,SANDGAT,CLAYROW,CLAYGAT,
 C BEGIN: PDMROF
-     1                  CMINROW, CMAXROW, BROW, K1ROW, K2ROW)
+     1                  CMINROW, CMAXROW, BROW, K1ROW, K2ROW,
 C END: PDMROF
+     2                  FAREROW,FAREGAT,
+     +                  fetchROW,HtROW,N_SROW,A_SROW,DistribROW,
+     +                  fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT,
+     +                  DrySnowRow,SnowAgeROW,DrySnowGAT,SnowAgeGAT,
+     +                  TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT,
+     +                  DriftROW, SublROW, DepositionROW,
+     +                  DriftGAT, SublGAT,DepositionGAT)
 
 C
 C     * OCT 18/11 - M.LAZARE.  ADD IGDR.
@@ -153,7 +160,13 @@ C
      6        WFSFROW(NL,NM),    KSROW(NL,NM),    ALGWROW(NL,NM),   
      7        ALGDROW(NL,NM),    ASVDROW(NL,NM),    ASIDROW(NL,NM),   
      8        AGVDROW(NL,NM),    AGIDROW(NL,NM),    ZSNLROW(NL,NM),
-     9        ZPLGROW(NL,NM),    ZPLSROW(NL,NM),    FRZCROW(NL,NM)
+     9        ZPLGROW(NL,NM),    ZPLSROW(NL,NM),    FRZCROW(NL,NM),
+     +        fetchROW(NL,NM),   HtROW(NL,NM),     N_SROW(NL,NM),
+     +        A_SROW(NL,NM),     DistribROW(NL,NM),
+     +        DrySnowRow(NL,NM), SnowAgeROW(NL,NM),
+     +        TSNOdsROW(NL,NM),  RHOSdsROW(NL,NM),
+     +        DriftROW(NL,NM),   SublROW(NL,NM), DepositionROW(NL,NM),
+     +        FAREROW(NL,NM)
 C
 
       REAL    THPGAT (ILG,IG),   THRGAT (ILG,IG),   THMGAT (ILG,IG),
@@ -165,7 +178,13 @@ C
      6        WFSFGAT(ILG),      KSGAT(ILG),      ALGWGAT(ILG),     
      7        ALGDGAT(ILG),      ASVDGAT(ILG),      ASIDGAT(ILG),     
      8        AGVDGAT(ILG),      AGIDGAT(ILG),      ZSNLGAT(ILG),
-     9        ZPLGGAT(ILG),      ZPLSGAT(ILG),      FRZCGAT(ILG)
+     9        ZPLGGAT(ILG),      ZPLSGAT(ILG),      FRZCGAT(ILG),
+     +        fetchGAT(ILG),     HtGAT(ILG),        N_SGAT(ILG),
+     +        A_SGAT(ILG),       DistribGAT(ILG),
+     +        DrySnowGAT(ILG),   SnowAgeGAT(ILG),
+     +        TSNOdsGAT (ILG),   RHOSdsGAT(ILG),
+     +        DriftGAT(ILG),     SublGAT(ILG), DepositionGAT(ILG),
+     +        FAREGAT(ILG)
 C
       INTEGER ISNDROW(NL,NM,IG), ISNDGAT(ILG,IG)
       INTEGER IGDRROW(NL,NM),    IGDRGAT(ILG)
@@ -292,7 +311,20 @@ c         AGIDGAT(K)=AGIDROW(ILMOS(K),JLMOS(K))
           CMAXGAT (K) = CMAXROW (ILMOS(K),JLMOS(K))            
           BGAT    (K) = BROW    (ILMOS(K),JLMOS(K))            
           K1GAT   (K) = K1ROW   (ILMOS(K),JLMOS(K))            
-          K2GAT   (K) = K2ROW   (ILMOS(K),JLMOS(K))            
+          K2GAT   (K) = K2ROW   (ILMOS(K),JLMOS(K))   
+          FAREGAT(K)   =FAREROW(ILMOS(K),JLMOS(K))         
+          fetchGAT  (K)=fetchROW  (ILMOS(K),JLMOS(K))
+          HtGAT     (K)=HtROW     (ILMOS(K),JLMOS(K))
+          N_SGAT    (K)=N_SROW    (ILMOS(K),JLMOS(K))
+          A_SGAT    (K)=A_SROW    (ILMOS(K),JLMOS(K))
+          DistribGAT(K)=DistribROW(ILMOS(K),JLMOS(K))
+          DrySnowGAT(K)=DrySnowRow(ILMOS(K),JLMOS(K))
+          SnowAgeGAT(K)=SnowAgeROW(ILMOS(K),JLMOS(K))
+          TSNOdsGAT (K)=TSNOdsROW (ILMOS(K),JLMOS(K))
+          RHOSdsGAT (K)=RHOSdsROW (ILMOS(K),JLMOS(K))
+          DriftGAT (K)=0.0 !DriftROW (ILMOS(K),JLMOS(K))
+          SublGAT (K)=0.0 !SublROW (ILMOS(K),JLMOS(K))
+          DepositionGAT(K)=0.0
 100   CONTINUE
 C
       DO 250 L=1,IG

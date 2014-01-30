@@ -520,7 +520,10 @@
      +         hp%ZPLSROW(NA, NTYPE), hp%FRZCROW(NA,NTYPE),
      +         hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE),
      +         hp%BROW   (NA, NTYPE), hp%K1ROW  (NA, NTYPE),
-     +         hp%K2ROW  (NA, NTYPE))
+     +         hp%K2ROW  (NA, NTYPE),
+     +         hp%fetchROW(NA, NTYPE),hp%HtROW(NA, NTYPE),
+     +         hp%N_SROW(NA, NTYPE),hp%A_SROW(NA, NTYPE),
+     +         hp%DistribROW(NA, NTYPE))
       
       NYEARS = IYEAR_END - IYEAR_START + 1
       ALLOCATE (t0_ACC(NYEARS))

@@ -9,7 +9,11 @@
      8                  RHOSGAT,SNOGAT, TCANGAT,RCANGAT,SCANGAT,
      9                  GROGAT, CMAIGAT,TACGAT, QACGAT, WSNOGAT,
      A                  MANNROW,MANNGAT,DDROW,DDGAT,
-     B                  SANDROW,SANDGAT,CLAYROW,CLAYGAT,XSLPROW,XSLPGAT)
+     B                  SANDROW,SANDGAT,CLAYROW,CLAYGAT,XSLPROW,XSLPGAT,
+     C                  DrySnowRow,SnowAgeROW,DrySnowGAT,SnowAgeGAT,
+     D                  TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT,
+     E                  DriftROW, SublROW, DepositionROW,
+     F                  DriftGAT, SublGAT, DepositionGAT)
 C
 C     * OCT 25/11 - M.LAZARE.   REMOVE OPERATIONS ON INTERNAL
 C     *                         ROT ARRAYS (NOW DONE DIRECTLY
@@ -62,6 +66,15 @@ C
 C     * GATHER-SCATTER INDEX ARRAYS.
 C
       INTEGER  ILMOS (ILG),  JLMOS  (ILG),  IWMOS  (ILG),  JWMOS (ILG)
+C
+C     * LAND SURFACE DIAGNOSTIC VARIABLES.
+C
+      REAL  DrySnowRow(NL,NM),SnowAgeROW(NL,NM),
+     1      TSNOdsROW(NL,NM),  RHOSdsROW(NL,NM),
+     2     DriftROW(NL,NM), SublROW(NL,NM), DepositionROW(NL,NM),
+     3      DrySnowGAT(ILG), SnowAgeGAT(ILG),
+     4      TSNOdsGAT (ILG), RHOSdsGAT(ILG),
+     5      DriftGAT  (ILG), SublGAT(ILG), DepositionGAT(ILG)
 
 C * WATROF DECLARATIONS
       REAL  DDROW(NL,NM),MANNROW(NL,NM),DDGAT(ILG),MANNGAT(ILG)
@@ -88,6 +101,13 @@ C----------------------------------------------------------------------
           DDROW (ILMOS(K),JLMOS(K))=DDGAT(K)  
           MANNROW (ILMOS(K),JLMOS(K))=MANNGAT(K)
           XSLPROW (ILMOS(K),JLMOS(K))=XSLPGAT(K)
+          DrySnowRow(ILMOS(K),JLMOS(K))=DrySnowGAT(K)
+          SnowAgeROW(ILMOS(K),JLMOS(K))=SnowAgeGAT(K)
+          TSNOdsROW(ILMOS(K),JLMOS(K))=TSNOdsGAT(K)
+          RHOSdsROW(ILMOS(K),JLMOS(K))=RHOSdsGAT(K)
+          DriftROW(ILMOS(K),JLMOS(K))=DriftGAT(K)
+          SublROW(ILMOS(K),JLMOS(K))=SublGAT(K)
+          DepositionROW(ILMOS(K),JLMOS(K))=DepositionGAT(K)
   100 CONTINUE
 C
       DO 200 L=1,IG

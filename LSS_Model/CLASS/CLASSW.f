@@ -41,7 +41,11 @@
      2                  UM1CS,     UM1C,      UM1G,      UM1GS, 
      3                  QM1CS,     QM1C,      QM1G,      QM1GS, 
      4                  QM2CS,     QM2C,      QM2G,      QM2GS,  UMQ,
-     5                  FSTRCS,    FSTRC,     FSTRG,    FSTRGS)
+     5                  FSTRCS,    FSTRC,     FSTRG,    FSTRGS,
+     6                  ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG,
+     7                  HCPSCS,HCPSGS,HCPSC,HCPSG,
+     8                  TSNOWC,TSNOWG,RHOSC,RHOSG,
+     9                  XSNOWC,XSNOWG,XSNOCS,XSNOGS)
 C                                                                        
 C     * DEC 09/11 - M.MEKONNEN. FOR PDMROF.
 C     * OCT 18/11 - M.LAZARE.   PASS IN IGDR THROUGH CALLS TO
@@ -837,6 +841,8 @@ C
               WSNOW(I)=FCS(I)*WSNOCS(I) + FGS(I)*WSNOGS(I) 
               SNO(I)=ZSNOW(I)*RHOSNO(I)                                       
               IF(SNO(I).LT.0.0) SNO(I)=0.0
+
+             IF (PBSMFLAG==0) THEN
               IF(SNO(I).LT.1.0E-2 .AND. SNO(I).GT.0.0) THEN
                   TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TSNOW(I)*(SNO(I)+
      1                WSNOW(I))/DELT)/(OVRFLW(I)+(SNO(I)+WSNOW(I))/
@@ -855,6 +861,7 @@ C
                   SNO(I)=0.0                            
                   WSNOW(I)=0.0
               ENDIF
+             ENDIF !PBSMFLAG=0
           ELSE                                                                
               TSNOW(I)=0.0                                                    
               RHOSNO(I)=0.0                                                   
