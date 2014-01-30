@@ -164,7 +164,11 @@
 !> PRE-EMPTIONFLAG FLAG - DEFAULT = NO PRE-EMPTION
       PREEMPTIONFLAG = 0
 
-!> OBJECTIVE FUNCTION FLAG - DEFAULT = SAE - SUM OF ABSOLUTE VALUE OF ERRORS
+!> If OBJFNFLAG is 0 {DEFAULT} = SAE - SUM OF ABSOLUTE VALUE OF ERRORS
+!> If OBJFNFLAG is 1, SAESRT - SUM OF ABSOLUTE VALUE OF ERRORS AFTER SORTING
+!> If OBJFNFLAG is 2, SAEMSRT - SUM OF ABSOLUTE VALUE OF MOVING ERRORS AFTER SORTING 
+!> If OBJFNFLAG is 3, NSE - MEAN NASH-SUTCLIFFE MODEL EFFICIENCY INDEX (+ve FOR MAXIMIZATION)
+!> IF OBJFNFLAG is 4, NSE - MEAN NASH-SUTFLIFFE MODEL EFFICIENCY INDEX (-ve FOR MINIMIZATION)
       OBJFNFLAG = 0
 
 !> AUTOCALIBRATION FLAG - DEFAULT = NO AUTOCALIBRATION
@@ -226,6 +230,11 @@
 !* set PBSMFLAG = 0 so by default blowing snow calculations are not made
 !* 1 =  blowing snow transport, sublimation & inter-GRU redistribution calculations are made
       PBSMFLAG = 0
+
+!* If LOCATIONFLAG is 0, gauge coordinates are read using 2I5 (Minutes) {Default}
+!* If LOCATIONFLAG is 1, gauge coordinates for BOTH MESH_input_streamflow.txt AND
+!*                       MESH_input_reservoir.txt are read using 2F7.1 (Minutes with 1 decimal)
+      LOCATIONFLAG = 0
 
 !> SET N = 0 RESETS THE CLASS COUNTER.
 !TODO: N is not a flag, move it somewhere else
@@ -353,6 +362,8 @@
             ICTEMMOD = IROVAL
           ELSE IF (IRONAME == "PBSMFLAG") THEN
             PBSMFLAG = IROVAL
+	    ELSE IF (IRONAME == "LOCATIONFLAG") THEN
+	      LOCATIONFLAG = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",
