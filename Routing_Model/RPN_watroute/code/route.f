@@ -736,6 +736,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                     flowsta='y'
                     lsta=l
                  endif
+                 qold2(n) = qo2(n)
               endif
            end do
 
@@ -743,7 +744,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *         trim(strfw_option)=='streamflow_insertion') then  
 !             we are in a grid cell with an observed flow 
 !             used instead of the computed flow 
-              qo2(n) = qhyd(lsta,hour_offset+jz)           
+              ! csubich -- preserve old qo2 for output as 
+              ! an "everything but this station" comparison
+              qo2(n) = qhyd(lsta,hour_offset+jz)
            endif
 !
 ! 
@@ -789,7 +792,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       end do
 
 
-      if ((trim(strfw_option)=='streamflow_comparison') 
+      if (((trim(strfw_option)=='streamflow_comparison') .or.
+     *     (trim(strfw_option)=='streamflow_insertion'))
      *    .and. iz .eq. no_dt) then
 
          spl_csv_flag = 1 ! bjd - set to 1 for a csv spl file
@@ -815,9 +819,17 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                first_run = .false.
             end if
 
-            write(unit=60,fmt=7000) 
-     *        year1, month_now, day_now, hour_now,
-     *        (qhyd(l,hour_offset+jz),qo2(iflowgrid(l)),l=1,no)
+            ! csubich -- we need to write from qo2 if using comparison
+            if (trim(strfw_option)=='streamflow_comparison') then
+               write(unit=60,fmt=7000) 
+     *           year1, month_now, day_now, hour_now,
+     *           (qhyd(l,hour_offset+jz),qo2(iflowgrid(l)),l=1,no)
+            else ! Otherwise write from qold2
+               write(unit=60,fmt=7000) 
+     *           year1, month_now, day_now, hour_now,
+     *           (qhyd(l,hour_offset+jz),qold2(iflowgrid(l)),l=1,no)
+            end if
+
          else !spl_csv_flag
             if (first_run) then
                write(unit=60,fmt='(A)') 

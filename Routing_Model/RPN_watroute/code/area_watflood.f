@@ -40,7 +40,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *                    fake,fakefs,frac,
      *                    grid_area,lake_area,channel_area,
      *                    lzs,netflow,over,pot,potfs,psmear,punused,
-     *                    qi1,qi2,qo1,qo2,qda,qr,qlz,qbase,qmax,
+     *                    qi1,qi2,qo1,qo2,qold2,qda,qr,qlz,qbase,qmax,
      *                    qstream,qstrm,qdrng,qdrngfs,
      *                    qdrng2,qdrngfs2,
      *                    rechrg,rl,
@@ -114,11 +114,12 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *                  ensimflg,leapflg,llflg,picflg,wetflg,
      *                  modelflg,shdflg,wfo_open_flg,trcflg,frcflg,
      *                  newevtflg,manningflg,translateflg,flowfillflg,
-     *                  outfileflg,initflg
+     *                  outfileflg,initflg,
+     *                  fstflg !csubich
         character(1) :: ssmc_firstpass
 !        character(1), dimension(:), allocatable :: glacier_flag
 !       these things taken out of some argument lists  nk 05/10/04
-        integer      :: year1,mo1,day1,hour1
+        integer      :: yr1,year1,mo1,day1,hour1
 	  integer      :: year_now,month_now,day_now,hour_now,no_dt
 	  character(2) :: yy2,mm2,dd2,hh2
         character(4) :: yyyy4, nostr

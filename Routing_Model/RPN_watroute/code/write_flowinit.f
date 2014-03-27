@@ -1,17 +1,17 @@
-C    This file is part of WATROUTE.
-C
-C    WATROUTE is free software: you can redistribute it and/or modify
-C    it under the terms of the GNU Lesser General Public License as published by
-C    the Free Software Foundation, either version 3 of the License, or
-C    (at your option) any later version.
-C
-C    WATROUTE is distributed in the hope that it will be useful,
-C    but WITHOUT ANY WARRANTY; without even the implied warranty of
-C    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-C    GNU Lesser General Public License for more details.
-C
-C    You should have received a copy of the GNU Lesser General Public License
-C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
+!    This file is part of WATROUTE.
+!
+!    WATROUTE is free software: you can redistribute it and/or modify
+!    it under the terms of the GNU Lesser General Public License as published by
+!    the Free Software Foundation, either version 3 of the License, or
+!    (at your option) any later version.
+!
+!    WATROUTE is distributed in the hope that it will be useful,
+!    but WITHOUT ANY WARRANTY; without even the implied warranty of
+!    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!    GNU Lesser General Public License for more details.
+!
+!    You should have received a copy of the GNU Lesser General Public License
+!    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
       SUBROUTINE write_flowinit()
 
@@ -40,38 +40,38 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
       inquire(FILE='flow_init.r2c',EXIST=exists)
 
-c      if(exists)then
-c        print*
-c	  print*,'The file flow_init.r2c already exists'
-c	  print*,'Do you want to overwrite it?  y/n'
-c	  print*
-c	  print*,'If you answer n, a new file flow_init_new.r2c'
-c	  print*,'will be written'
-c	  read*,answer
-c	else
-c	  answer='y'
-c	endif
-c
-c      if(answer.eq.'y')then
-c        if you actually want a new flow_init.r2c, delete the
-c        existing on on the calling program
+!      if(exists)then
+!        print*
+!	  print*,'The file flow_init.r2c already exists'
+!	  print*,'Do you want to overwrite it?  y/n'
+!	  print*
+!	  print*,'If you answer n, a new file flow_init_new.r2c'
+!	  print*,'will be written'
+!	  read*,answer
+!	else
+!	  answer='y'
+!	endif
+!
+!      if(answer.eq.'y')then
+!        if you actually want a new flow_init.r2c, delete the
+!        existing on on the calling program
 
-	fln(99)='flow_init.r2c'
+        fln(99)='flow_init.r2c'
         open(99,file='flow_init.r2c',status='unknown',iostat=ios)
         if(ios.ne.0)then
           print*,' Problems opening the flow_init.r2c file '
           print*
           STOP ' Program write_flowinit aborted @ 52'
         endif
-c      else  
-c	 fln(99)='flow_init_new.r2c'
-c        open(99,file='flow_init_new.r2c',status='unknown',iostat=ios)
-c        if(ios.ne.0)then
-c          print*,' Problems opening the flow_init_new.r2c file '
-c          print*
-c          STOP ' Program write_flowinit aborted @ 60'
-c        endif
-c      endif
+!      else  
+!	 fln(99)='flow_init_new.r2c'
+!        open(99,file='flow_init_new.r2c',status='unknown',iostat=ios)
+!        if(ios.ne.0)then
+!          print*,' Problems opening the flow_init_new.r2c file '
+!          print*
+!          STOP ' Program write_flowinit aborted @ 60'
+!        endif
+!      endif
 
       write(99,3005)'########################################'
       write(99,3005)':FileType r2c  ASCII  EnSim 1.0         '
@@ -90,12 +90,12 @@ c      endif
       write(99,3020)':SourceFileName     ',fln(6)
       write(99,3005)'#                                       '
       write(99,3004)':Projection         ',coordsys1
-	if(coordsys1.eq.'UTM       ')then
+        if(coordsys1.eq.'UTM       ')then
           write(99,3004)':Zone               ',zone1
-	  write(99,3004)':Ellipsoid          ',datum1
-	endif
-	if(coordsys1.eq.'LATLONG   ')then
-	  write(99,3004)':Ellipsoid          ',datum1
+          write(99,3004)':Ellipsoid          ',datum1
+        endif
+        if(coordsys1.eq.'LATLONG   ')then
+          write(99,3004)':Ellipsoid          ',datum1
         endif
       write(99,3005)'#                                       '
       write(99,3003)':xOrigin            ',xorigin
@@ -123,18 +123,18 @@ c      endif
  3006 format(a3,a10)
  3007 format(a14,i5,a6,i5)
  3008 format(a30)
-c 3012 format(a9)
+! 3012 format(a9)
  3020 format(a20,a40)
 
- 	if(iopt.eq.2)print*, 'in write_flowinit at 1302'
+      if(iopt.eq.2)print*, 'in write_flowinit at 1302'
 
 !     initialize p() to make sure there is no junk in the unused grids
       do i=1,ycount
-	  do j=1,xcount
-	    p(i,j)=0.0
-	  end do
+          do j=1,xcount
+            p(i,j)=0.0
+          end do
       end do
-	
+        
       k=0
 
 !     Initial grid inflow

@@ -525,6 +525,8 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
             i=ires(k)
             j=jres(k)
             n=s(i,j)
+            ! csubich -- this appears to be a dead block of code,
+            ! since inbsnflg is allocated above but never assigned.
             if(inbsnflg(no+k).eq.1)then
 !     v. 8.99n  Dec. 31/2001-     fixed nat. res initial flow (JW)
 !           this was fixed in spl8 on dec. 31/01

@@ -33,6 +33,11 @@ C// Added by Dave
 C// End Dave addition
 C/////////////////////////
 
+      ! The fst-based IO is included in a module; this allows
+      ! for token stubs to be included if building on a system
+      ! without the appropriate libraries
+      use fst_io
+
       implicit none
 
 !     SAVES THE LOCAL VARIABLES FROM ONE RUN TO NEXT
@@ -43,6 +48,7 @@ C/////////////////////////
       CHARACTER(3)  :: eofmark
       CHARACTER(1)  :: lineflg,smok
       CHARACTER(20) :: junk 
+      character*99 flnname
       REAL(4)            :: optlow,time,tot1,qwert,conv,scale,
      *                 smc5,tj1,clock,t,thr,dtmin,dtmax,div,aintvl,
      *                 sintvl,tot2,e1,tdum,qtemp,diff2,sdlz,dlz,
@@ -174,71 +180,74 @@ C/////////////////////////
         end do
 
       if(iopt.eq.2)print*,'In sub before writing headers'
+      ! only write out these header/r2c files if fstflag isn't 'y'
+      if (fstflg /= 'y') then
 
-      author='watroute (rte)'    
-      if(modelflg.eq.'i')author='watroute (rte -i)'
-      if(modelflg.eq.'r')author='watroute (rte -r)'
-      if(modelflg.eq.'l')author='watroute (rte -l)'
+         author='watroute (rte)'    
+         if(modelflg.eq.'i')author='watroute (rte -i)'
+         if(modelflg.eq.'r')author='watroute (rte -r)'
+         if(modelflg.eq.'l')author='watroute (rte -l)'
 
-      name='Gridded Channel Flow'
-      coordsys_temp=coordsys1
-      zone_temp=zone1
-      datum_temp=datum1
-      xorigin_temp=xorigin
-      yorigin_temp=yorigin
-      xcount_temp=xcount
-      ycount_temp=ycount
-      xdelta_temp=xdelta
-      ydelta_temp=ydelta
-      attribute_name='discharge'
-      attribute_units='mm' 
-      attribute_type='flow'  
-      if(modelflg.eq.'i')source_file_name='rff files'
-      if(modelflg.eq.'r')source_file_name='rff,rch files'
-      if(modelflg.eq.'l')source_file_name='rff,lkg files'
-      no_frames=0
-      frame_no=0
+         name='Gridded Channel Flow'
+         coordsys_temp=coordsys1
+         zone_temp=zone1
+         datum_temp=datum1
+         xorigin_temp=xorigin
+         yorigin_temp=yorigin
+         xcount_temp=xcount
+         ycount_temp=ycount
+         xdelta_temp=xdelta
+         ydelta_temp=ydelta
+         attribute_name='discharge'
+         attribute_units='mm' 
+         attribute_type='flow'  
+         if(modelflg.eq.'i')source_file_name='rff files'
+         if(modelflg.eq.'r')source_file_name='rff,rch files'
+         if(modelflg.eq.'l')source_file_name='rff,lkg files'
+         no_frames=0
+         frame_no=0
 
-!     write the header          
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      call write_r2c(72,72,0,1,0,1,1)   
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!        write the header          
+!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         call write_r2c(72,72,0,1,0,1,1)   
+!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!     This file is for debugging - so leakage can be compared
-!     to qlz from watflood as given in the lkage\yyyymmdd_lkg.r2c file
-!     tracer 100 set 
+!        This file is for debugging - so leakage can be compared
+!        to qlz from watflood as given in the lkage\yyyymmdd_lkg.r2c file
+!        tracer 100 set 
 
-      name='Gridded Leakage'
-      attribute_name='Leakage'
-      attribute_units='cms' 
-      attribute_type='discharge'  
-      if(modelflg.eq.'i')source_file_name='rff files'
-      if(modelflg.eq.'r')source_file_name='rff,rch files'
-      if(modelflg.eq.'l')source_file_name='rff,lkg files'
-      no_frames=0
-      frame_no=0
-      fln(811)='gridded_lkg.r2c'
+         name='Gridded Leakage'
+         attribute_name='Leakage'
+         attribute_units='cms' 
+         attribute_type='discharge'  
+         if(modelflg.eq.'i')source_file_name='rff files'
+         if(modelflg.eq.'r')source_file_name='rff,rch files'
+         if(modelflg.eq.'l')source_file_name='rff,lkg files'
+         no_frames=0
+         frame_no=0
+         fln(811)='gridded_lkg.r2c'
 
-!     write the header          
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      call write_r2c(811,811,0,1,0,1,1)   
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!        write the header          
+!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         !call write_r2c(811,811,0,1,0,1,1)   
+!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-      name='Gridded LZS'
-      attribute_name='lzs'
-      attribute_units='cm' 
-      attribute_type='storage'  
-      if(modelflg.eq.'i')source_file_name='rff files'
-      if(modelflg.eq.'r')source_file_name='rff,rch files'
-      if(modelflg.eq.'l')source_file_name='rff,lkg files'
-      no_frames=0
-      frame_no=0
-      fln(812)='gridded_lzs.r2c'
+         name='Gridded LZS'
+         attribute_name='lzs'
+         attribute_units='cm' 
+         attribute_type='storage'  
+         if(modelflg.eq.'i')source_file_name='rff files'
+         if(modelflg.eq.'r')source_file_name='rff,rch files'
+         if(modelflg.eq.'l')source_file_name='rff,lkg files'
+         no_frames=0
+         frame_no=0
+         fln(812)='gridded_lzs.r2c'
 
-!     write the header          
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      call write_r2c(812,812,0,1,0,1,1)   
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!        write the header          
+!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         !call write_r2c(812,812,0,1,0,1,1)   
+!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      endif
 
         if(iopt.eq.2)print*,'In sub, passed location 201'
 
@@ -276,6 +285,8 @@ C/////////////////////////
 ! * * *   TS * * * 
 !         CAP IS THE VOLUME OF WATER IN A REACH FOR THE MEAN ANNUAL FLO
 !         widep=a11
+          ! Compute the channel cross-sectional area based on a rather
+          ! complicated fitting formula.  aa2/3/4 are tunable parameters.
           if(aa4(n).gt.0.0)then
             chaxa(n)=(aa2(n)+aa3(n)*da(n)**aa4(n))
           else
@@ -304,10 +315,41 @@ C/////////////////////////
             end if
             chaxa(n)=amax1(1.0,chaxa(n))
           endif
+            ! Channel capacity is the cross-sectional area times channel length
             cap(n)=chaxa(n)*rl(n)
+
+            ! Since a channel has a deep part plus a shallow, sloping bank,
+            ! compute an effective channel depth
             chadep(n)=SQRT(chaxa(n)/widep(n))
             chawid(n)=chaxa(n)/chadep(n)
             flz2(n)=1.0-(1.0-flz(n))
+
+            ! Fix suggested by Frank Saglenkis, based on changes made
+            ! to WATFLOOD ca. 2007: if we keep track of biome types
+            ! and a grid cell has more water fraction than channel
+            ! area, then the channel area calculation must have been
+            ! incorrect -- replace the computed channel area with
+            ! water_fracion * grid size, and then from that recompute
+            ! capacity.
+
+            chaarea(n) = chawid(n)*rl(n) ! Define channel area
+
+            ! Now, check to see if that's sensible, based on land-use
+
+            ! aclass(:,ntype) is the fraction of the grid cell that is water;
+            ! this is only enforced at read-in of the shed/par files, and
+            ! needs to be properly maintained.
+            if (ntype .ge. 1 .and. aclass(n,ntype) 
+     *          .gt. chaarea(n)/grid_area(n)) then 
+               ! Replace the areas with ones based on the land-use data
+               chaarea(n) = grid_area(n)*aclass(n,ntype)
+               chawid(n) = chaarea(n)/rl(n) ! New width using the same effective depth
+               cap(n) = chaarea(n)*chadep(n)
+               ! Leave chaxa untouched for now, this may be a mistake.
+               ! csubich -- experimental: update chaxa appropriately also
+               chaxa(n) = cap(n)/rl(n) ! Capacity divided by length
+            endif
+
         end do
 
         if(iopt.eq.2)print*,'In sub, passed location 207'
@@ -323,9 +365,16 @@ C/////////////////////////
 c            call flowinit()
 !            replaced  Oct. 9/06  nk
 !            initialize channel flows & storages
-             fln(99)='flow_init.r2c'
 !            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-             call read_flowinit_ef()
+        fln(99)='flow_init.r2c'
+        if (fstflg .eq. 'y') then
+           ! Read flow_init from the .fst file, using today
+           !flnname(1:13)='flow_init.fst'
+           call read_flowinit_fst(511,'flow_init.fst',!flnname,
+     *                            year1,month1,day1,hour1)
+        else
+           call read_flowinit_ef()
+        endif
 !            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       
         if(iopt.eq.2)print*,'In sub, back from read_flowinit_ef()'
@@ -431,29 +480,35 @@ c            call flowinit()
 
 !        read the header in the runoff file:
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         call read_r2c(261,31,'1')
-!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-          if(xcount.ne.xcount_temp.or.ycount.ne.ycount_temp)then
+         if (fstflg .eq. 'y') then
+            call read_fst(261,fln(31),'1','RFF ',
+     *                    year1,month_now,day_now,-1)
+         else 
+            call read_r2c(261,31,'1')
+         endif
+         if(xcount.ne.xcount_temp.or.ycount.ne.ycount_temp)then
             print*,'runoff grid size does not match the shed grid'
             print*
             stop 'Program aborted in sub @ 371'
-          endif
+         endif
 
-         if(modelflg.eq.'r')then
+        if(modelflg.eq.'r')then
 
 !         read the header in the baseflow file:
 !         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          call read_r2c(262,32,'1')
-!         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-          if(xcount.ne.xcount_temp.or.ycount.ne.ycount_temp)then
+         if (fstflg .eq. 'y') then
+            call read_fst(262,fln(32),'1','RCH ',
+     *                    year1,month_now,day_now,-1)
+         else 
+            call read_r2c(262,32,'1')
+         endif
+         if(xcount.ne.xcount_temp.or.ycount.ne.ycount_temp)then
             print*,'recharge grid size does not match the shed grid'
             print*
             stop 'Program aborted in sub @ 379'
-          endif
+         endif
 
-         elseif(modelflg.eq.'l')then
+        elseif(modelflg.eq.'l')then
 !         read the header in the leakage file:
 
 !         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -542,26 +597,52 @@ c            call flowinit()
 !             the headers have been read above.
 !             surface flow is always routed
 !             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-              call read_r2c(261,31,'0')
+               if (fstflg .eq. 'y') then
+                  call read_fst(261,fln(31),'0','RFF ',
+     *                 year1,month_now,day_now,hour_now)
+                  if (found_data_end) then
+                     exit
+                  endif
+               else 
+                  call read_r2c(261,31,'0')
+               endif
 !             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !             vectorize & convert mm to flow
               do n=1,naa
                 i=yyy(n)
                 j=xxx(n)
-                qr(n)=inarray(i,j)*tdum*frac(n)
+                ! read_fst uses the transpose of the array, from
+                ! the point of view of code built for read_r2c
+                if (fstflg .eq. 'y') then
+                  qr(n)=inarray(j,i)*tdum*frac(n)
+                else 
+                  qr(n)=inarray(i,j)*tdum*frac(n)
+               endif
               end do
 
               if(modelflg.eq.'r')then
 !               read the recharge and route through the lz
 !               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                call read_r2c(262,32,'0')
+               if (fstflg .eq. 'y') then
+                  call read_fst(262,fln(32),'0','RCH ',
+     *                 year1, month_now, day_now, hour_now)
+                  if (found_data_end) then
+                     exit
+                  endif
+               else
+                  call read_r2c(262,32,'0')
+               endif
 !               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !               vectorize & convert mm to flow
 !               recharge is added to lzs
                 do n=1,naa
                   i=yyy(n)
                   j=xxx(n)
-                  lzs(n)=lzs(n)+inarray(i,j)
+                  if (fstflg .eq. 'y') then
+                     lzs(n)=lzs(n)+inarray(j,i)
+                  else
+                     lzs(n)=lzs(n)+inarray(i,j)
+                  endif
 !                 route the recharge thru the lz:
 !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                   call baseflow(n,dlz,sdlz,tdum)
@@ -718,32 +799,46 @@ c            call flowinit()
              no_frames=frame_no+1
             
 !            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-             call write_r2c(72,72,no_frames,1,frame_no,1,8) 
+             if (fstflg .eq. 'y') then
+                call write_fst(99,'gridflow.fst',
+     *                         'DISC',year1,month_now,day_now,hour_now)
+             else
+                call write_r2c(72,72,no_frames,1,frame_no,1,8) 
+             endif
               
 !            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 c             if(resname(l).eq.'Superior     ')then
 !            for the great lakes only:
 
-            do n=1,naa
-               i=yyy(n)
-               j=xxx(n)
-               outarray(i,j)=qlz(n)
-            end do     
+!           do n=1,naa
+!              i=yyy(n)
+!              j=xxx(n)
+!              outarray(i,j)=qlz(n)
+!           end do     
+!           if (fstflg .eq. 'y') then
+!              call write_fst(99,'gridflow.fst',
+!    *                        'GLKG',year1,month_now,day_now,hour_now)
+!           else
+!            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!             call write_r2c(811,811,no_frames,1,frame_no,1,8)  
+!            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!           endif
 
-!            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-             call write_r2c(811,811,no_frames,1,frame_no,1,8)  
-!            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!           do n=1,naa
+!              i=yyy(n)
+!              j=xxx(n)
+!              outarray(i,j)=lzs(n)
+!           end do     
 
-            do n=1,naa
-               i=yyy(n)
-               j=xxx(n)
-               outarray(i,j)=lzs(n)
-            end do     
-
+!           if (fstflg .eq. 'y') then
+!              call write_fst(99,'gridflow.fst',
+!    *                        'GLZS',year1,month_now,day_now,hour_now)
+!           else
 !            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-             call write_r2c(812,812,no_frames,1,frame_no,1,8)  
+!             call write_r2c(812,812,no_frames,1,frame_no,1,8)  
 !            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!           endif
 
           endif
 
@@ -805,7 +900,15 @@ c             if(resname(l).eq.'Superior     ')then
       author='rte.exe'
 
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      call write_flowinit()
+      if (fstflg .eq. 'y') then
+         ! Write out flowinit with hour_now-1, because the hour
+         ! was incremented by the timer routine -before- we saw
+         ! that the run was complete/no more recharge/runoff.
+         call write_flowinit_fst(511,'flow_init.fst',
+     *                  year1,month_now,day_now,hour_now-1)
+      else
+         call write_flowinit()
+      endif
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
       RETURN

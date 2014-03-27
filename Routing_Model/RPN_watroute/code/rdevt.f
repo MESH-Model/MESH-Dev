@@ -36,6 +36,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !     rev. 9.1.78  Mar.  15/05  - NK: added WQD file to event file
 !     rev. 9.3.11  Feb.  28/07  - NK: ch_par added / event file ver = 9.5
 !     rev mar05/07
+!                  Oct.  19/12 - csubich: adding flags for fst runoff/recharge (9.8)
 
 ! - LIST OF ARGUMENTS:
  
@@ -125,6 +126,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 ! 15 shdflg   - replace the watershed file basin\bsnm.shd for next event
 ! 16 trcflg   - use the tracer module
 ! 17 frcflg   - use isotope fractionation
+! 18 fstflg   - use fst-based runoff/recharge (csubich)
 !
 !***********************************************************************
 
@@ -173,7 +175,7 @@ c      write(98,1300)fln(99)
       else
         print*,'Attempting to open the file ',fln(99)
         print*,'but it is not found (in this location)'
-	  print*,'Possibel cause: Not in proper working directory'
+          print*,'Possibel cause: Not in proper working directory'
         print*
         stop 'Program aborted in rdevt @ 159'
       endif
@@ -189,10 +191,11 @@ c      write(98,1300)fln(99)
         read(99,*,iostat=ios)junk,filetype
         write(51,*)junk,filetype
         if(iopt.eq.2.or.ios.ne.0)print*,junk,filetype
-	  read(99,*,iostat=ios)junk,evt_version
-	  write(51,*)junk,evt_version
+        read(99,*,iostat=ios)junk,evt_version
+        write(51,*)junk,evt_version
         if(iopt.eq.2.or.ios.ne.0)print*,junk,evt_version
         read(99,*,iostat=ios)junk,year1         
+        yr1=year1 ! Preserve a copy of the read-in year
         write(51,*)junk,year1         
         if(iopt.eq.2.or.ios.ne.0)print*,junk,year1
         read(99,*,iostat=ios)junk,mo1         
@@ -259,22 +262,29 @@ c        read(99,*,iostat=ios)junk,trcid1flg
 c          read(99,*,iostat=ios)junk,frcid1flg         
           read(99,*,iostat=ios)junk,frcflg         
           if(iopt.eq.2.or.ios.ne.0)print*,junk,frcflg
-	  else
-	    frcflg='n'
+          else
+            frcflg='n'
         endif
         if(evt_version.ge.9.6)then
 ! NK: ADDED init FLAG (05/03/07)
           read(99,*,iostat=ios)junk,initflg 
           if(iopt.eq.2.or.ios.ne.0)print*,junk,initflg
-	  else
-	    initflg='n'
+          else
+            initflg='n'
+        endif
+! csubich: added fstflag for .fst-style recharge/runoff inputs
+        if(evt_version .ge. 9.8) then
+           read(99,*,iostat=ios)junk,fstflg
+           if(iopt .eq. 2 .or. ios .ne. 0) print *, junk, fstflg
+        else
+           fstflg='n'
         endif
 
 !       turn these off for opt
         if(numa.ne.0)then
-	    trcflg='n'
-	    frcflg='n'
-	  endif
+            trcflg='n'
+            frcflg='n'
+          endif
 
         read(99,*,iostat=ios)junk                 ! #         
         if(iopt.eq.2.or.ios.ne.0)print*,junk
@@ -301,14 +311,14 @@ c          read(99,*,iostat=ios)junk,frcid1flg
         if(iopt.eq.2.or.ios.ne.0)print*,junk,nhg 
         read(99,*,iostat=ios)junk,nhf         
         if(iopt.eq.2.or.ios.ne.0)print*,junk,nhf
-	  if(id.eq.1)then
-	    deltat_report=1    ! default
-	    if(evt_version.ge.9.7)then
+          if(id.eq.1)then
+            deltat_report=1    ! default
+            if(evt_version.ge.9.7)then
 !           can't be the same as ireport used for write_wfo
-	      read(99,*,iostat=ios)junk,deltat_report 
+              read(99,*,iostat=ios)junk,deltat_report 
             if(iopt.eq.2.or.ios.ne.0)print*,junk,deltat_report
-	    endif
-	  endif
+            endif
+          endif
         read(99,*,iostat=ios)junk               ! #
         if(iopt.eq.2.or.ios.ne.0)print*,junk
 
@@ -395,11 +405,11 @@ c        end do
 !     ch_par.r2c  
 !     rev. 9.3.11  Feb.  28/07  - NK: ch_par added / event file ver = 9.5
         if(evt_version.ge.9.5)then
-	    i=41
+            i=41
           read(99,99005,iostat=ios)junk,fln(i)
           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
           write(51,1030)i+230,i,fln(i)
-	  endif
+          endif
 !     .pdl   
         i=3
         read(99,99005,iostat=ios)junk,fln(i)
@@ -470,7 +480,7 @@ c        end do
         else
           i=8             ! .snw   old format .snw file
           read(99,99005,iostat=ios)junk,fln(i)
-	  endif                              !     nk 05/11/16
+          endif                              !     nk 05/11/16
 
         if(evt_version.ge.9.2)then
           i=35          ! .crs      
@@ -528,7 +538,7 @@ c        end do
           write(51,1030)i+250,i,fln(i)
         end do
 
-	  read(99,*,iostat=ios)junk                 ! #
+          read(99,*,iostat=ios)junk                 ! #
         if(iopt.eq.2.or.ios.ne.0)print*,junk
 
 !       read the addtional event files
@@ -539,7 +549,7 @@ c        end do
 
         read(99,*,iostat=ios)junk,nch         
         if(iopt.eq.2.or.ios.ne.0)print*,junk,nch
-	  read(99,*,iostat=ios)junk                 ! #
+          read(99,*,iostat=ios)junk                 ! #
         if(iopt.eq.2.or.ios.ne.0)print*,junk
         if(nch.ge.1)then
 !         READ SUBSEQUENT EVENT NAMES TO MODELLED:
@@ -565,13 +575,13 @@ c        end do
           end do
         endif
 
-	    if(iopt.ge.1)print*,'Reached end of ',fln(99)
+            if(iopt.ge.1)print*,'Reached end of ',fln(99)
 
 !        if(iopt.eq.2.or.ios.ne.0)print*,junk
 
 !        if(ios.ne.0)then
 !          print*,'Problems reading the event.evt file'
-!          print*,'It is important that all required values are there'	
+!          print*,'It is important that all required values are there'        
 !          print*,'Please set iopt=2 in the .par file and restart'
 !          print*,'This will show where program dies'
 !          print*
@@ -603,17 +613,17 @@ c        end do
       if(id.eq.1)then
         snwid1flg=snwflg
         wetid1flg=wetflg    
-	  trcid1flg=trcflg
+          trcid1flg=trcflg
         sedid1flg=sedflg
-	  frcid1flg=frcflg
+          frcid1flg=frcflg
         routeid1flg=routeflg
         modelid1flg=modelflg
       else
-	  snwflg=snwid1flg
+          snwflg=snwid1flg
         wetflg=wetid1flg    
-	  trcflg=trcid1flg
+          trcflg=trcid1flg
         sedflg=sedid1flg
-	  frcflg=frcid1flg
+          frcflg=frcid1flg
         routeflg=routeid1flg
         modelflg=modelid1flg
       endif
@@ -642,15 +652,15 @@ c        end do
       if(contflg.eq.'Y')contflg='y'
       if(routeid1flg.eq.'Y')routeid1flg='y'
       if(crseflg.eq.'Y')crseflg='y'  
-	if(ensimflg.eq.'Y')ensimflg='y'
-	if(picflg.eq.'Y')picflg='y'
+        if(ensimflg.eq.'Y')ensimflg='y'
+        if(picflg.eq.'Y')picflg='y'
       if(wetid1flg.eq.'Y')wetid1flg='y'
       if(modelid1flg.eq.'R')modelid1flg='r'
       if(modelid1flg.eq.'I')modelid1flg='i'
       if(modelid1flg.eq.'D')modelid1flg='d'
       if(shdflg.eq.'Y')shdflg='y'
-	if(trcid1flg.eq.'Y')trcid1flg='y'
-	if(frcid1flg.eq.'Y')frcid1flg='y'
+        if(trcid1flg.eq.'Y')trcid1flg='y'
+        if(frcid1flg.eq.'Y')frcid1flg='y'
 
       if(snwflg.eq.'N')snwflg='n'
       if(snwid1flg.eq.'N')snwid1flg='n'
@@ -663,13 +673,13 @@ c        end do
       if(contflg.eq.'N')contflg='n'
       if(routeid1flg.eq.'N')routeid1flg='n'
       if(crseflg.eq.'N')crseflg='n'  
-	if(ensimflg.eq.'N')ensimflg='n'
-	if(picflg.eq.'N')picflg='n'
+        if(ensimflg.eq.'N')ensimflg='n'
+        if(picflg.eq.'N')picflg='n'
       if(wetid1flg.eq.'N')wetid1flg='n'
       if(modelid1flg.eq.'N')modelid1flg='n'
       if(shdflg.eq.'N')shdflg='n'
-	if(trcid1flg.eq.'N')trcid1flg='n'
-	if(frcid1flg.eq.'N')frcid1flg='n'
+        if(trcid1flg.eq.'N')trcid1flg='n'
+        if(frcid1flg.eq.'N')frcid1flg='n'
 
       if(snwflg.eq.' ')snwflg='n'
       if(snwid1flg.eq.' ')snwid1flg='n'
@@ -682,13 +692,13 @@ c        end do
       if(contflg.eq.' ')contflg='n'
       if(routeid1flg.eq.' ')routeid1flg='n'
       if(crseflg.eq.' ')crseflg='n'  
-	if(ensimflg.eq.' ')ensimflg='n'
-	if(picflg.eq.' ')picflg='n'
+        if(ensimflg.eq.' ')ensimflg='n'
+        if(picflg.eq.' ')picflg='n'
       if(wetid1flg.eq.' ')wetid1flg='n'
       if(modelid1flg.eq.' ')modelid1flg='n'
       if(shdflg.eq.' ')shdflg='n'
-	if(trcid1flg.eq.' ')trcid1flg='n'
-	if(frcid1flg.eq.' ')frcid1flg='n'
+        if(trcid1flg.eq.' ')trcid1flg='n'
+        if(frcid1flg.eq.' ')frcid1flg='n'
 
       if(modelid1flg.ne.'n')then
         if(initflg.eq.'y')then
@@ -707,17 +717,17 @@ c        firstpass='n'
 c      endif
 c      if(snwflg.ne.lastsnwflg)then
 c        if(firstpass.eq.'n')then
-c	    print*
+c            print*
 c          print*,'The snwflg can NOT be changed partway through a run.'
-c	    print*,'If it is changed in the next event file,'
+c            print*,'If it is changed in the next event file,'
 c          print*,'it is set to the previous event value'
-c	    print*,'I.e. whatever is in the first event holds throughout'
+c            print*,'I.e. whatever is in the first event holds throughout'
 c        endif
-c	    print*
+c            print*
 c          print*,'snwflg changed from ',snwflg,' to ',lastsnwflg
-c	    print*
+c            print*
 c          snwflg=lastsnwflg
-c	endif
+c        endif
 
 
       if(id.eq.1)then
@@ -725,9 +735,9 @@ c	endif
 c        wetflg=wetid1flg    
 c        routeflg=routeid1flg
 c        modelflg=modelid1flg
-c	  trcflg=trcid1flg
+c          trcflg=trcid1flg
 c        sedflg=sedid1flg
-c	  frcflg=frcid1flg
+c          frcflg=frcid1flg
 
 !       rev. 9.1.45  Jun.  11/03  - runoff, recharge and leakage files added 
         if(routeflg.eq.'y'.and.modelflg.ne.'n')then
@@ -780,15 +790,15 @@ c	  frcflg=frcid1flg
       endif
 !     Note:
 !     This is done in rdtem.for  
-!	if(scalealltemp.ne.0.0)then    
-!	  scaletem=scalealltem
-!	endif
+!        if(scalealltemp.ne.0.0)then    
+!          scaletem=scalealltem
+!        endif
 
       if(iopt.eq.2)print*,' In rdevt, passed location 870'
 
-	print*
-	print*,'finished reading ',fln(99)
-	print*
+        print*
+        print*,'finished reading ',fln(99)
+        print*
 
       RETURN
 

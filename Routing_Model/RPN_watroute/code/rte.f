@@ -39,6 +39,11 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
       USE EF_Module
 
+      ! The fst-based IO is included in a module; this allows
+      ! for token stubs to be included if building on a system
+      ! without the appropriate libraries
+      use fst_io
+
       implicit none
 
 !     SAVES THE LOCAL VARIABLES FROM ONE RUN TO NEXT
@@ -537,15 +542,12 @@ c     call date_time(cday,time)
  
       if(iopt.eq.2)print*, ' In spl - before call shed'
 
-!     read the shed file: bsnm_shd.r2c
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	call read_shed_ef(31,1)	
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-!     read the parameter file:  bsnm_ch_par.r2c
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	call read_shed_ef(271,41)	
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      if (fstflg .eq. 'y') then
+         call read_shed_fst(31,fln(1))
+      else
+         call read_shed_ef(31,1)
+         call read_shed_ef(271,41)
+      endif
 
       if(iopt.eq.2)print*, ' In spl - before allocate'
 

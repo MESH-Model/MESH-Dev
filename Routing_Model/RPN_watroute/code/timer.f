@@ -57,8 +57,19 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       DATA ntest/64161/qstr/'timer'/nchr/5/
       DATA mohours/744,672,744,720,744,720,744,744,720,744,720,744,
      *             744,672,744,720,744,720,744,744,720,744,720,744/
+
+      ! csubich -- not properly handling leap years has caused problems
+      ! with current runs, so this needs to be fixed here in timer.f.
+      ! While a grand rewrite would be nice, the simplest thing to do
+      ! would be to rewrite the array of start-days-of-months based on
+      ! whether this is a leap year.
+      if (mod(year,4) .eq. 0) then ! Leap year
+      DATA ju_mon/1, 32, 61, 92,122,153,183,214,245,275,306,336,
+     *          367,398,426,457,487,518,548,579,610,640,671,701/
+      else 
       DATA ju_mon/1, 32, 60, 91,121,152,182,213,244,274,305,335,
      *          366,397,425,456,486,517,547,578,609,639,670,700/
+      end if
 ! these are the original values I don't know what they are trying to do?? Frank April 2002
 c    *          366,397,435,456,486,517,565,578,280,639,672,700/
 
@@ -87,7 +98,10 @@ c    *          366,397,435,456,486,517,565,578,280,639,672,700/
 !     rev. 9.2.43  Jun.  21/06  - NK: fixed spikes in route
 c         if(id.eq.1)t=3600.0
          t=3600.0
-	 time=1.0
+         ! csubich -- for non-midnight starts, we need to set time
+         ! in medias res, as if watroute had been running for a
+         ! while already.
+         time=1.0*(1+hour1)
          itogo=1
          div=t/2.0
          thr=t/3600.
@@ -124,8 +138,8 @@ c         ju=ju_mon(mo1)+jz/24
          day_now=ju-ju_mon(mo1)+1
          hour_now=mod(jz,24)
 
-c      print*,ju,mo,ju_mon(mo1),mo1,day_now,hour_now,'start'
-c      pause
+!      print*,ju,mo,ju_mon(mo1),mo1,day_now,hour_now,'start'
+!      pause
 
          if(iopt.ge.3)then
             write(55,6003)
@@ -165,14 +179,35 @@ c      pause
          mz=jz+1
 
 !     rev. 9.4.05  May.  04/07  - NK: revised timer for julian day calc.
+
+! csubich -- this code has issues for year roll-over, because the Julian
+! day is reset but not the month.  This creates problems in the following
+! block, leading to a wildly inappropriate month.  The simplest solution
+! is to also reset the 'mo1' variable, as if we'd simply read-in an event
+! file that begins with the new year.
+
+! Additionally, the 'year1' variable needs properly reset, including a
+! check for whether the now-current year is a leap year.  This has an
+! impact on any very long-duration runs, where a single set of initial
+! conditions is run for many months.
          if(mod(jz-1,24).eq.0)then
-	     ju=ju+1
+             ju=ju+1
 !          reset the julian day on Jan 1 each year
-	     if(leapflg.eq.'0')then
-	       if(ju.gt.365)ju=1
-	     else
-	       if(ju.gt.366)ju=1
-	     endif
+             if(leapflg.eq.'0')then
+               if(ju.gt.365) then
+                  ju=1
+                  mo1=1
+                  year1=year1+1
+                  if (mod(year1,4) .eq. 0) leapflg='1'
+               endif
+             else
+               if(ju.gt.366) then
+                  ju=1
+                  mo1=1
+                  year1=year1+1
+                  if (mod(year1,4) .eq. 0) leapflg='1'
+               endif
+             endif
          endif
 
 !        FIND OUT WHAT MONTH WE ARE IN:
@@ -190,10 +225,10 @@ c      pause
           hour_now=mod(jz,24)
 
           if(hour_now.eq.0)then
-	      hour_now=24
-	  endif
+              hour_now=24
+          endif
 
-c      print*,ju,mo,ju_mon(mo1),mo1,day_now,hour_now
+!      print*,ju,mo,ju_mon(mo1),mo1,day_now,hour_now
 
 !         now done in sub
 

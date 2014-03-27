@@ -424,10 +424,13 @@ c		do j=1,nl,kt
       do l=1,no
          qbar(l)=0.
 !	QBAR(I,D,L)=MEAN FLOW DURING STORM PERIOD AT STA.=L,STORM=I
-         do j=kt,mhtot,kt
+! csubich -- changed to nl from nhtot
+         do j=kt,nl,kt
             qbar(l)=qbar(l)+qhyd(l,j)
          end do
-         qbar(l)=qbar(l)/float(mhtot/kt)
+         ! csubich -- rearranged equation to make sure there's no
+         ! truncation on integer division
+         qbar(l)=qbar(l)*kt/float(nl)
       end do
 
 !     rev. 9.1.10  Jan.  29/02  - flow nudging added for nopt(l)=2

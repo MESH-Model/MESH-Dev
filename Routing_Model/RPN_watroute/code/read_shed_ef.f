@@ -882,7 +882,7 @@ c      endif
 !     *aclass(na,ntype+1),ch_length(na),sl1(na),rl(na),
 !     *pot(ntype+1),potfs(ntype+1),qlz(na),psmear(na),punused(na),
       if(.NOT.allocated(qi1))then
-        allocate(qi1(na),qi2(na),qo1(na),qo2(na),qr(na),
+        allocate(qi1(na),qi2(na),qo1(na),qo2(na),qr(na),qold2(na),
      *  d2(na),qda(na),cap(na),over(na),
      *  qmax(na),res(na),
      *  sump(na),store1(na),store2(na),att(na),
