@@ -43,8 +43,8 @@ C
      3     FSGG  (ILG),   FLGG  (ILG),   HFSG  (ILG),   HEVG  (ILG),
      4     HMFG  (ILG,IG),HTC   (ILG,IG),
      5     PCFC  (ILG),   PCLC  (ILG),   QFCF  (ILG),   QFCL  (ILG),
-     6     ROFC  (ILG),   WTRC  (ILG),      QFN   (ILG),!PCPN  (ILG),
-!     7     ROFN  (ILG),   
+     6     ROFC  (ILG),   WTRC  (ILG),   QFN   (ILG),   PCPN  (ILG),
+     7     ROFN  (ILG),   
      +     WTRS  (ILG),   PCPG  (ILG),   QFG   (ILG),
      8     QFC   (ILG,IG),
      9     ROF   (ILG),   WTRG  (ILG),   CMAI  (ILG),  
@@ -55,7 +55,6 @@ C
      E     ZPOND (ILG,Nmod),   TPOND (ILG,Nmod),   DELZ  (IG),
      F     FCS   (ILG,Nmod),   FGS   (ILG,Nmod),   FC    (ILG,Nmod),  
      +     FG    (ILG,Nmod),   Drift (ILG,Nmod),   Subl  (ILG,Nmod)
-      real PCPN  (ILG),ROFN  (ILG)
 C
 C     * COMMON BLOCK PARAMETERS.
 C

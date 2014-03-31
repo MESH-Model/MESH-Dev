@@ -10,7 +10,7 @@
      9       ST, SU, SQ, PRES, PRE,
      +       DrySnow, SnowAge, Drift, Subl,
      +       TSNOWds,RHOSNOds,
-     +       ILG,IL1,IL2,N,q)
+     +       ILG,IL1,IL2,N,q,ZREFM,ZOMLCS,ZOMLNS)
 !    +                 ST, SU, SQ, PRES, 
 !    1                Drift, Subl, TSNOWds, RHOSNOds, ZSNOWds,
 !    2                TSNOW, RHOSNO, ZSNOW, WSNOW, SNO,
@@ -56,7 +56,8 @@ C
       REAL ST(ILG), SU(ILG), SQ(ILG),
      1     S(ILG), PRES(ILG), PRE(ILG),
      2     N_S(ILG), A_S(ILG), Ht(ILG),fetch(ILG),
-     3     FC(ILG,Nmod), FG(ILG,Nmod), FCS(ILG,Nmod), FGS(ILG,Nmod)
+     3     FC(ILG,Nmod), FG(ILG,Nmod), FCS(ILG,Nmod), FGS(ILG,Nmod),
+     4     ZREFM(ILG),ZOMLCS(ILG),ZOMLNS(ILG)
 C
 C     * OUTPUT ARRAYS.
 C
@@ -68,7 +69,7 @@ C
       REAL Znod, Ustar, Ustn, E_StubHt, Lambda, Ut,
      1     Uten_Prob, DriftH, SublH, Prob, mBeta,
      2     gru_loss, sub_loss, swe, sub_zloss,
-     3     ZSNOWds
+     3     ZSNOWds,u10,z0
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -134,8 +135,16 @@ C         !> depths(m), SWE(mm; kg/m^2)
            E_StubHt=0.0001
          ENDIF !IF(E_StubHt.LT.0.0001) THEN
 C
+         if((FCS(I,q)+FGS(I,q)).gt.0.)then
+           z0=(FCS(I,q)*exp(ZOMLCS(I))+FGS(I,q)*exp(ZOMLNS(I)))
+     1         /(FCS(I,q)+FGS(I,q))
+         else
+           z0=E_StubHt*2/3
+         endif
+           u10=SU(I)*log(10./z0)/log(ZREFM(I)/z0)
+         
            !> Eq. 6.2 rev. Pomeroy thesis, Ustar over fallow
-           Ustar=0.02264*SU(I)**1.295 !friction velocity
+           Ustar=0.02264*u10**1.295 !friction velocity
 C
          IF(E_StubHt.GT.0.01) THEN
            !> Eq. 29, Snowcover Accumulation, Relocation & Management book (1995)
@@ -145,7 +154,7 @@ C
            Ustn=Ustar*SQRT((mBeta*Lambda)/(1.0+mBeta*Lambda))
            Uten_Prob=(LOG(10.0/Znod))/M1KAARMAN*SQRT(Ustar-Ustn)
          ELSE
-           Uten_Prob=SU(I)
+           Uten_Prob=u10
          ENDIF !IF(E_StubHt.GT.0.01) THEN
 C
          !>Calculate probability of blowing snow occurence
@@ -157,7 +166,7 @@ C
 C
 	   !>Single column calculations of blowing snow transport & sublimation
 	   CALL PBSMrates(E_StubHt,Ut,DriftH,SublH,
-     1               ST(I),SU(I),SQ(I),fetch(I),N_S(I),A_S(I),
+     1               ST(I),u10,SQ(I),fetch(I),N_S(I),A_S(I),
      2               mBeta,PRES(I),I,N)
 C
            Drift(I,q)=DriftH*Prob/fetch(I)

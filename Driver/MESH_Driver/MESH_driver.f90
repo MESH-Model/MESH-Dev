@@ -554,7 +554,7 @@ REAL, DIMENSION(:, :), ALLOCATABLE :: CDHROW, CDMROW, HFSROW, &
   TFXROW, QEVPROW, QFSROW, QFXROW, PETROW, GAROW, EFROW, GTROW, &
   QGROW, TSFROW, ALVSROW, ALIRROW, FSNOROW, SFCTROW, SFCUROW, &
   SFCVROW, SFCQROW, FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
-  FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, HEVSROW, HEVGROW, &
+  FLGGROW, HFSSROW, HFSCROW, HFSGROW, HEVCROW, HEVSROW, HEVGROW, &
   HMFCROW, HMFNROW, HTCCROW, HTCSROW, PCFCROW, PCLCROW, PCPNROW, &
   PCPGROW, QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, ROFOROW, &
   ROFSROW, ROFBROW, ROFCROW, ROFNROW, ROVGROW, WTRCROW, WTRSROW, &
@@ -564,14 +564,13 @@ REAL, DIMENSION(:), ALLOCATABLE :: CDHGAT, CDMGAT, HFSGAT, &
   TFXGAT, QEVPGAT, QFSGAT, QFXGAT, PETGAT, GAGAT, EFGAT, GTGAT, &
   QGGAT, ALVSGAT, ALIRGAT, FSNOGAT, SFRHGAT,SFCTGAT, SFCUGAT, &
   SFCVGAT, SFCQGAT, FSGVGAT, FSGSGAT, FSGGGAT, FLGVGAT, FLGSGAT, &
-  FLGGGAT, HFSCGAT, HFSSGAT, HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, &
-  HMFCGAT, HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, &!PCPNGAT, &
+  FLGGGAT, HFSSGAT, HFSCGAT, HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, &
+  HMFCGAT, HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, PCPNGAT, &
   PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, QFCFGAT, ROFGAT, ROFOGAT, &
-  ROFSGAT, ROFBGAT, ROFCGAT, &!ROFNGAT, 
+  ROFSGAT, ROFBGAT, ROFCGAT, ROFNGAT, &
   ROVGGAT, WTRCGAT, WTRSGAT, &
   WTRGGAT, DRGAT, WTABGAT, ILMOGAT, UEGAT, HBLGAT,QLWOGAT,FTEMP, &
   FVAP,RIB,TROFGAT,TROOGAT, TROSGAT, TROBGAT
-real, dimension(:), allocatable :: PCPNGAT,ROFNGAT
 REAL, DIMENSION(:), ALLOCATABLE :: CDHGRD, CDMGRD, HFSGRD, &
   TFXGRD, QEVPGRD, QFSGRD, QFXGRD, PETGRD, GAGRD, EFGRD, GTGRD, &
   QGGRD, TSFGRD, ALVSGRD, ALIRGRD, FSNOGRD, SFCTGRD, SFCUGRD, &
@@ -626,9 +625,9 @@ REAL :: TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
 !* TOTAL_QEVP = TOTAL LATENT HEAT FLUX
 REAL :: TOTAL_HFSACC,TOTAL_QEVPACC
 
-REAL :: TOTAL_STORE,TOTAL_ZPND,TOTAL_RCAN,TOTAL_SCAN,TOTAL_SNO
-REAL :: TOTAL_PRE,TOTAL_EVAP,TOTAL_ROF,TOTAL_ROFO,TOTAL_ROFS,TOTAL_ROFB
-REAL, DIMENSION(:), ALLOCATABLE :: TOTAL_THLQ, TOTAL_THIC
+REAL, DIMENSION(:), ALLOCATABLE :: TOTAL_STORE,TOTAL_ZPND,TOTAL_RCAN,TOTAL_SCAN,TOTAL_SNO
+REAL, DIMENSION(:), ALLOCATABLE :: TOTAL_PRE,TOTAL_EVAP,TOTAL_ROF,TOTAL_ROFO,TOTAL_ROFS,TOTAL_ROFB
+REAL, DIMENSION(:,:), ALLOCATABLE :: TOTAL_THLQ, TOTAL_THIC
 
 !> CROSS-CLASS VARIABLES (CLASS):
 !> ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
@@ -1070,7 +1069,9 @@ ALLOCATE ( &
   TSFSGAT(ILG, 4,Nmod), STAT=PAS)
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (for Basin_average_water_balance.csv):
-ALLOCATE ( TOTAL_THLQ(IGND), TOTAL_THIC(IGND), STAT=PAS)
+ALLOCATE ( TOTAL_THLQ(IGND,Nmod), TOTAL_THIC(IGND,Nmod), STAT=PAS)
+ALLOCATE (TOTAL_STORE(Nmod),TOTAL_ZPND(Nmod),TOTAL_RCAN(Nmod),TOTAL_SCAN(Nmod),TOTAL_SNO(Nmod), &
+ TOTAL_PRE(Nmod),TOTAL_EVAP(Nmod),TOTAL_ROF(Nmod),TOTAL_ROFO(Nmod),TOTAL_ROFS(Nmod),TOTAL_ROFB(Nmod), STAT=PAS)
 
 IF (PAS .NE. 0) THEN
   WRITE (6, *)
@@ -1901,12 +1902,14 @@ DO I=1,NA
 ENDDO !DO I=1,NA
 
 !> clear accumulating variables
-TOTAL_ROF=0.0
-TOTAL_ROFO=0.0
-TOTAL_ROFS=0.0
-TOTAL_ROFB=0.0
-TOTAL_EVAP=0.0
-TOTAL_PRE=0.0
+do q=1,Nmod
+    TOTAL_ROF(q)=0.0
+    TOTAL_ROFO(q)=0.0
+    TOTAL_ROFS(q)=0.0
+    TOTAL_ROFB(q)=0.0
+    TOTAL_EVAP(q)=0.0
+    TOTAL_PRE(q)=0.0
+enddo
 TOTAL_ROFACC=0.0
 TOTAL_ROFOACC=0.0
 TOTAL_ROFSACC=0.0
@@ -2523,7 +2526,7 @@ DO I=1, wf_num_points
   enddo
   
   !do j=1,3
-  !    write(250+i*10+j,'("IHOUR,IMIN,IDAY,IYEAR,",8192i4)') &
+  !    write(250+i*10+j,'("IHOUR,IMIN,IDAY,IYEAR,",____i4)') &
   !    (shit(k),k=1,Nmod)
   !enddo
 
@@ -3134,13 +3137,15 @@ NCAL  = 0
 VLGRD = 0.0
 VLGAT = 0.0
 
-TOTAL_STORE = 0.0
-TOTAL_THLQ  = 0.0
-TOTAL_THIC  = 0.0
-TOTAL_ZPND  = 0.0
-TOTAL_RCAN  = 0.0
-TOTAL_SCAN  = 0.0
-TOTAL_SNO   = 0.0
+do q=1,Nmod
+    TOTAL_STORE(q) = 0.0
+    TOTAL_THLQ(:,q)= 0.0
+    TOTAL_THIC(:,q)= 0.0
+    TOTAL_ZPND(q)  = 0.0
+    TOTAL_RCAN(q)  = 0.0
+    TOTAL_SCAN(q)  = 0.0
+    TOTAL_SNO(q)   = 0.0
+enddo
 OPEN(unit=900,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/Basin_average_water_balance.csv')
 WRITE(900,"('DAY,YEAR,PREACC,EVAPACC,ROFACC,ROFOACC,ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNO,SCAN,RCAN,ZPND,"// &
@@ -3150,6 +3155,9 @@ WRITE(900,"('DAY,YEAR,PREACC,EVAPACC,ROFACC,ROFOACC,ROFSACC,ROFBACC,PRE,EVAP,ROF
 OPEN(unit=901,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/Basin_average_energy_balance.csv')
 WRITE(901,"('DAY,YEAR,HFSACC,QEVPACC')")
+
+OPEN(unit=902,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/ensemble_basin_avg_storage.csv')
 
 !>**********************************************************************
 !> Set initial SnowAge & DrySnow values for PBSM calculations
@@ -3205,6 +3213,7 @@ IF(INTERPOLATIONFLAG == 1)THEN
     ULGAT      = ULGATPRE     + TRATIO *(ULGATPST     - ULGATPRE)
     PRESGAT    = PRESGATPRE   + TRATIO *(PRESGATPST   - PRESGATPRE)
     QAGAT      = QAGATPRE     + TRATIO *(QAGATPST     - QAGATPRE)
+ENDIF
 
 !> INTERPOLATE GRD VARIABLES
     FSVHGRD = 0.0
@@ -3221,14 +3230,14 @@ IF(INTERPOLATIONFLAG == 1)THEN
        DO J = 1, NTYPE
           IF(cp%FAREROW(I,J) .GT. 0.0)THEN
              K = K + 1
-             FSVHGRD(I) = FSVHGRD(I) + cp%FAREROW(I,J) * FSVHGAT(K)
-             FSIHGRD(I) = FSIHGRD(I) + cp%FAREROW(I,J) * FSIHGAT(K)
-             FDLGRD (I) = FDLGRD (I) + cp%FAREROW(I,J) * FDLGAT (K)
-             ULGRD  (I) = ULGRD  (I) + cp%FAREROW(I,J) * ULGAT  (K)
-             TAGRD  (I) = TAGRD  (I) + cp%FAREROW(I,J) * TAGAT  (K)
-             QAGRD  (I) = QAGRD  (I) + cp%FAREROW(I,J) * QAGAT  (K)
-             PRESGRD(I) = PRESGRD(I) + cp%FAREROW(I,J) * PRESGAT(K)
-             PREGRD (I) = PREGRD (I) + cp%FAREROW(I,J) * PREGAT (K)
+             FSVHGRD(I) = FSVHGRD(I) + ACLASS(I,J) * FSVHGAT(K)
+             FSIHGRD(I) = FSIHGRD(I) + ACLASS(I,J) * FSIHGAT(K)
+             FDLGRD (I) = FDLGRD (I) + ACLASS(I,J) * FDLGAT (K)
+             ULGRD  (I) = ULGRD  (I) + ACLASS(I,J) * ULGAT  (K)
+             TAGRD  (I) = TAGRD  (I) + ACLASS(I,J) * TAGAT  (K)
+             QAGRD  (I) = QAGRD  (I) + ACLASS(I,J) * QAGAT  (K)
+             PRESGRD(I) = PRESGRD(I) + ACLASS(I,J) * PRESGAT(K)
+             PREGRD (I) = PREGRD (I) + ACLASS(I,J) * PREGAT (K)
           ENDIF
        ENDDO
     ENDDO
@@ -3582,7 +3591,8 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
   FCANCMX,L2MAX,  NOL2PFTS,       CFLUXCG,CFLUXCS,ANCSVEG,ANCGVEG, &
   RMLCSVEG,   RMLCGVEG,   FIELDSM,WILTSM, &
   ITC,    ITCG,   ITG,   ILG,    1,NML,  JLAT,N, ICAN, &
-  IGND,   IZREF,  ISLFD,  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI,q)
+  IGND,   IZREF,  ISLFD,  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI,q, &
+  FCANGAT,ICAN+1,GROGAT)
 !
 !-----------------------------------------------------------------------
 !          * WATER BUDGET CALCULATIONS.
@@ -3664,7 +3674,7 @@ IF(bsm(q)==1) THEN
               SFCTGAT,ULGAT,SFCQGAT,PRESGAT,PREGAT, &
               DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
               TSNOdsGAT, RHOSdsGAT, &
-              NA*NTYPE,1,NML,N,q)
+              NA*NTYPE,1,NML,N,q,ZRFMGAT,ZOMLCS,ZOMLNS)
 ENDIF
 !========================================================================
 !
@@ -4260,12 +4270,12 @@ DO I = 1, NA
             THICACC(I,J,q) = THICACC(I,J,q)+cp%THICROW(I,M,J,q)*cp%FAREROW(I,M)
             THALACC(I,J,q) = THALACC(I,J,q)+(cp%THLQROW(I,M,J,q)+ &
                                          cp%THICROW(I,M,J,q))*cp%FAREROW(I,M)
-            TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%THLQROW(I,M,J,q)*RHOW*cp%FAREROW(I,M)*DLZWROW(I,M,J)
-            TOTAL_THIC(J) = TOTAL_THIC(J) + cp%THICROW(I,M,J,q)*RHOICE*cp%FAREROW(I,M)*DLZWROW(I,M,J)
+            TOTAL_THLQ(J,q) = TOTAL_THLQ(J,q) + cp%THLQROW(I,M,J,q)*RHOW*cp%FAREROW(I,M)*DLZWROW(I,M,J)
+            TOTAL_THIC(J,q) = TOTAL_THIC(J,q) + cp%THICROW(I,M,J,q)*RHOICE*cp%FAREROW(I,M)*DLZWROW(I,M,J)
             
          ENDDO
          
-         TOTAL_ZPND = TOTAL_ZPND + cp%ZPNDROW(I,M,q)*RHOW*cp%FAREROW(I,M)
+         TOTAL_ZPND(q) = TOTAL_ZPND(q) + cp%ZPNDROW(I,M,q)*RHOW*cp%FAREROW(I,M)
          
          ALVSACC(I,q) = ALVSACC(I,q)+ALVSROW(I,M)*cp%FAREROW(I,M)*FSVHGRD(I)
          ALIRACC(I,q) = ALIRACC(I,q)+ALIRROW(I,M)*cp%FAREROW(I,M)*FSIHGRD(I)
@@ -4415,21 +4425,21 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     ENDDO  !DO K=1, WF_NUM_POINTS
 
 !> update components for final water balance tally
-!-mm    TOTAL_ROF     = TOTAL_ROF     + ROFACC(I,q)
-!-mm    TOTAL_ROFO    = TOTAL_ROFO    + ROFOACC(I,q)
-!-mm    TOTAL_ROFS    = TOTAL_ROFS    + ROFSACC(I,q)
-!-mm    TOTAL_ROFB    = TOTAL_ROFB    + ROFBACC(I,q)
-!-mm    TOTAL_EVAP    = TOTAL_EVAP    + EVAPACC(I,q)
-!-mm    TOTAL_PRE     = TOTAL_PRE     + PREACC(I,q)
+    TOTAL_ROF(q)     = TOTAL_ROF(q)     + ROFACC(I,q)
+    TOTAL_ROFO(q)    = TOTAL_ROFO(q)    + ROFOACC(I,q)
+    TOTAL_ROFS(q)    = TOTAL_ROFS(q)    + ROFSACC(I,q)
+    TOTAL_ROFB(q)    = TOTAL_ROFB(q)    + ROFBACC(I,q)
+    TOTAL_EVAP(q)    = TOTAL_EVAP(q)    + EVAPACC(I,q)
+    TOTAL_PRE(q)     = TOTAL_PRE(q)     + PREACC(I,q)
 !-mm    TOTAL_ROFACC  = TOTAL_ROFACC  + ROFACC(I,q)
 !-mm    TOTAL_ROFOACC = TOTAL_ROFOACC + ROFOACC(I,q)
 !-mm    TOTAL_ROFSACC = TOTAL_ROFSACC + ROFSACC(I,q)
 !-mm    TOTAL_ROFBACC = TOTAL_ROFBACC + ROFBACC(I,q)
 !-mm    TOTAL_EVAPACC = TOTAL_EVAPACC + EVAPACC(I,q)
 !-mm    TOTAL_PREACC  = TOTAL_PREACC  + PREACC(I,q)
-!-mm    TOTAL_SNO     = TOTAL_SNO     + SNOACC(I,q)
-!-mm    TOTAL_SCAN    = TOTAL_SCAN    + SCANACC(I,q)
-!-mm    TOTAL_RCAN    = TOTAL_RCAN    + RCANACC(I,q)
+    TOTAL_SNO(q)     = TOTAL_SNO(q)     + SNOACC(I,q)
+    TOTAL_SCAN(q)    = TOTAL_SCAN(q)    + SCANACC(I,q)
+    TOTAL_RCAN(q)    = TOTAL_RCAN(q)    + RCANACC(I,q)
 !-mm
 !> update components for final energy balance tally
 !-mm    TOTAL_HFSACC  = TOTAL_HFSACC  + HFSACC(I,q)
@@ -4449,7 +4459,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 !-mm      ROF_OUT(1) = ROFACC(I,q)
 !-mm    END IF
 !-mm
-!-mm    TOTAL_STORE = TOTAL_STORE + RCANACC(I,q)+ SCANACC(I,q) + SNOACC(I,q)
+    TOTAL_STORE(q) = TOTAL_STORE(q) + RCANACC(I,q)+ SCANACC(I,q) + SNOACC(I,q)
 
 !> RESET ACCUMULATOR ARRAYS.
 
@@ -4492,11 +4502,11 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
   ENDIF
   END DO
   
-  TOTAL_THLQ = TOTAL_THLQ / REAL(NSUM)
-  TOTAL_THIC = TOTAL_THIC / REAL(NSUM)
-  TOTAL_ZPND = TOTAL_ZPND / REAL(NSUM)
+  TOTAL_THLQ(:,q) = TOTAL_THLQ(:,q) / REAL(NSUM)
+  TOTAL_THIC(:,q) = TOTAL_THIC(:,q) / REAL(NSUM)
+  TOTAL_ZPND(q) = TOTAL_ZPND(q) / REAL(NSUM)
 
-  TOTAL_STORE = TOTAL_STORE + TOTAL_ZPND + SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND))
+  TOTAL_STORE(q) = TOTAL_STORE(q) + TOTAL_ZPND(q) + SUM(TOTAL_THLQ(1:IGND,q)) + SUM(TOTAL_THIC(1:IGND,q))
   
 !-mm  WRITE(900,'((I4,","),(I5,","),100(E12.5,","))')IDAY,IYEAR,    &
 !-mm                                                TOTAL_PREACC/TOTAL_AREA,  &
@@ -4524,32 +4534,37 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 !-mm                                                TOTAL_STORE/TOTAL_AREA, &
 !-mm                                                (TOTAL_STORE - INIT_STORE)/TOTAL_AREA
 
-  WRITE(901,'((I4,","),(I5,","),2(E12.5,","))')IDAY,IYEAR,    &
-                                                TOTAL_HFSACC/TOTAL_AREA,  &
-                                                TOTAL_QEVPACC/TOTAL_AREA
-
-!RESET ACCUMULATION VARIABLES TO ZERO
-
-TOTAL_STORE = 0.0
-TOTAL_THLQ  = 0.0
-TOTAL_THIC  = 0.0
-TOTAL_ZPND  = 0.0
-TOTAL_RCAN  = 0.0
-TOTAL_SCAN  = 0.0
-TOTAL_SNO   = 0.0
-TOTAL_ROF=0.0
-TOTAL_ROFO=0.0
-TOTAL_ROFS=0.0
-TOTAL_ROFB=0.0
-TOTAL_EVAP=0.0
-TOTAL_PRE=0.0
-TOTAL_HFSACC = 0.0
-TOTAL_QEVPACC = 0.0
+  
     
 ENDIF  ! IF(NCOUNT==48) THEN
 
-enddo ! q = 1, Nmod
+enddo ! q = 1, Nmod this is where end of the ensemble within a time step
 
+IF(NCOUNT==48) THEN
+  WRITE(901,'((I4,","),(I5,","),2(E12.5,","))')IDAY,IYEAR,    &
+                                                TOTAL_HFSACC/TOTAL_AREA,  &
+                                                TOTAL_QEVPACC/TOTAL_AREA
+  WRITE(902,'((I4,","),(I5,","),16384(F6.2,","))')IDAY,IYEAR,(TOTAL_STORE(q)/TOTAL_AREA,q=1,Nmod)
+  !RESET ACCUMULATION VARIABLES TO ZERO
+  do q=1,Nmod
+  TOTAL_STORE(q) = 0.0
+  TOTAL_THLQ(:,q)= 0.0
+  TOTAL_THIC(:,q)= 0.0
+  TOTAL_ZPND(q)  = 0.0
+  TOTAL_RCAN(q)  = 0.0
+  TOTAL_SCAN(q)  = 0.0
+  TOTAL_SNO(q)   = 0.0
+  TOTAL_ROF(q)=0.0
+  TOTAL_ROFO(q)=0.0
+  TOTAL_ROFS(q)=0.0
+  TOTAL_ROFB(q)=0.0
+  TOTAL_EVAP(q)=0.0
+  TOTAL_PRE(q)=0.0
+  TOTAL_HFSACC = 0.0
+  TOTAL_QEVPACC = 0.0
+  enddo
+ENDIF
+  
 NCOUNT=NCOUNT+1 !todo: does this work with hourly forcing data?
 NSUM=NSUM+1
 NSUM_TOTAL=NSUM_TOTAL+1
@@ -4797,50 +4812,50 @@ ENDIF
 
 !=======================================================================
 !     * WRITE ENSEMBLE OUTPUT FILES
-DO I=1,NA
- DO M=1,NMTEST
-  I_OUT=0
-  DO K=1, WF_NUM_POINTS
-   IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
-    write(250+k*10+1,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-                   '4096(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(SNOWPACK(I,M,q),q=1,Nmod)
+!mmDO I=1,NA
+!mm DO M=1,NMTEST
+!mm  I_OUT=0
+!mm  DO K=1, WF_NUM_POINTS
+!mm   IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
+!mm    write(250+k*10+1,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!mm                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(SNOWPACK(I,M,q),q=1,Nmod)!(TSFSROW(I,M,1,1),q=1,1)
+!-mm    write(250+k*10+2,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F8.3,","))') (ZSN(q),q=1,Nmod)
+!-mm    write(250+k*10+3,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F4.2,","))') (SCF(q),q=1,Nmod)
+!-mm    write(250+k*10+4,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(E11.3,","))') (ROF(q),q=1,Nmod)
+!-mm    write(250+k*10+5,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F8.2,","))') (QSTR(q),q=1,Nmod)
+!-mm    write(250+k*10+6,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F8.2,","))') (BEG(q),q=1,Nmod)
+!-mm    write(250+k*10+7,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F8.2,","))') (QH(q),q=1,Nmod)
 !mm    write(250+k*10+2,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F8.3,","))') (ZSN(q),q=1,Nmod)
+!mm                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(QE(I,M,q),q=1,Nmod)
+!-mm    write(250+k*10+9,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F15.9,","))') (DriftROW(I,M,q),q=1,Nmod)
+!-mm    write(250+k*10+10,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F15.9,","))') (SublROW(I,M,q),q=1,Nmod)
+!-mm    write(250+k*10+11,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F6.3,","))') (cp%THICROW(I,M,1,q),q=1,Nmod)
+!-mm    write(250+k*10+12,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F6.3,","))') (cp%THICROW(I,M,2,q),q=1,Nmod)
+!-mm    write(250+k*10+13,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F6.3,","))') (cp%THICROW(I,M,3,q),q=1,Nmod)
+!-mm    write(250+k*10+14,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F6.3,","))') (cp%THLQROW(I,M,1,q),q=1,Nmod)
+!-mm    write(250+k*10+15,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F6.3,","))') (cp%THLQROW(I,M,2,q),q=1,Nmod)
+!-mm    write(250+k*10+16,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
+!-mm                   '____(F6.3,","))') (cp%THLQROW(I,M,3,q),q=1,Nmod)
 !mm    write(250+k*10+3,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F4.2,","))') (SCF(q),q=1,Nmod)
-!mm    write(250+k*10+4,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(E11.3,","))') (ROF(q),q=1,Nmod)
-!mm    write(250+k*10+5,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F8.2,","))') (QSTR(q),q=1,Nmod)
-!mm    write(250+k*10+6,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F8.2,","))') (BEG(q),q=1,Nmod)
-!mm    write(250+k*10+7,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F8.2,","))') (QH(q),q=1,Nmod)
-    write(250+k*10+2,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-                   '4096(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(QE(I,M,q),q=1,Nmod)
-!mm    write(250+k*10+9,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F15.9,","))') (DriftROW(I,M,q),q=1,Nmod)
-!mm    write(250+k*10+10,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F15.9,","))') (SublROW(I,M,q),q=1,Nmod)
-!mm    write(250+k*10+11,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F6.3,","))') (cp%THICROW(I,M,1,q),q=1,Nmod)
-!mm    write(250+k*10+12,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F6.3,","))') (cp%THICROW(I,M,2,q),q=1,Nmod)
-!mm    write(250+k*10+13,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F6.3,","))') (cp%THICROW(I,M,3,q),q=1,Nmod)
-!mm    write(250+k*10+14,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F6.3,","))') (cp%THLQROW(I,M,1,q),q=1,Nmod)
-!mm    write(250+k*10+15,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F6.3,","))') (cp%THLQROW(I,M,2,q),q=1,Nmod)
-!mm    write(250+k*10+16,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '8192(F6.3,","))') (cp%THLQROW(I,M,3,q),q=1,Nmod)
-    write(250+k*10+3,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-                   '4096(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(SW(I,M,q),q=1,Nmod)
-    
-   ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
-  ENDDO !DO K=1, WF_NUM_POINTS
- ENDDO !DO M=1,NMTEST
-ENDDO !DO I=1,NA
+!mm                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(SW(I,M,q),q=1,Nmod)!(TSFSROW(I,M,3,1),q=1,1)
+!mm    
+!mm   ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
+!mm  ENDDO !DO K=1, WF_NUM_POINTS
+!mm ENDDO !DO M=1,NMTEST
+!mmENDDO !DO I=1,NA
     
 ENDIF !TESTCSVFLAG
 

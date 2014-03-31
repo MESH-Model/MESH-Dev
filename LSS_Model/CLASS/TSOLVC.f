@@ -21,7 +21,8 @@
      K                 THLIQ,FIELDSM,WILTSM,ISAND,IG,COSZS,PRESSG,
      L                 XDIFFUS,ICTEM,IC,CO2I1,CO2I2,
      M                 ICTEMMOD,SLAI,FCANCMX,L2MAX,
-     N                 NOL2PFTS,CFLUXV,ANVEG,RMLVEG,q)
+     N                 NOL2PFTS,CFLUXV,ANVEG,RMLVEG,FCANMX,ICP1,q,
+     O                 GROWTH)
 C
 C     * NOV 11/11 - M.LAZARE. - INCORPORATES CTEM. THIS INVOLVES
 C     *                         SEVERAL CHANGES AND NEW OUTPUT ROUTINES.
@@ -132,7 +133,7 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ISNOW,ISLFD,ITC,ITCG,ILG,IL1,IL2,JL,I,N,q
+      INTEGER ISNOW,ISLFD,ITC,ITCG,ILG,IL1,IL2,JL,I,N,q,ICP1
 C
       INTEGER NUMIT,IBAD,NIT,ITERMX
 C
@@ -161,7 +162,8 @@ C
      7     ZRSLFH(ILG),    ZRSLFM(ILG),    ZOH   (ILG),    ZOM   (ILG),
      8     FCOR  (ILG),    GCONST(ILG),    GCOEFF(ILG),    TGND  (ILG),    
      9     TRSNOW(ILG),    FSNOWC(ILG),    FRAINC(ILG),    
-     A     CHCAP (ILG),    CMASS (ILG),    PCPR  (ILG)
+     A     CHCAP (ILG),    CMASS (ILG),    PCPR  (ILG),FCANMX(ILG,ICP1),
+     B     GROWTH(ILG,Nmod)
 C
       INTEGER              IWATER(ILG),    IEVAP (ILG),    
      1                     ITERCT(ILG,6,50)
@@ -267,7 +269,11 @@ C
               QCAN(I)=WCAN/(1.0+WCAN)   
               TVIRTC(I)=TCAN(I)*(1.0+0.61*QCAN(I))
               IF(ITC.EQ.2) THEN
+                IF(FCANMX(I,4).GT.0. .and. GROWTH(I,q).ne.0) THEN
+                  TAC(I)=TA(I)
+                ELSE
                   TAC(I)=TCAN(I)
+                ENDIF
                   QAC(I)=QA(I)
               ENDIF
               TVRTAC(I)=TAC(I)*(1.0+0.61*QAC(I))   
@@ -286,6 +292,8 @@ C
               NITER(I)=1
               QMELTC(I)=0.0    
               QMELTG(I)=0.0   
+              DCFLXM(I)=0.0
+              CFLUX(I)=0.0
               IF(ISNOW.EQ.1)                               THEN
                   KF1(I)=1
                   KF2(I)=2
@@ -295,37 +303,15 @@ C
               ENDIF
           ENDIF
    50 CONTINUE
-C
-C     * CALL PHOTOSYNTHESIS SUBROUTINE HERE TO GET A NEW ESTIMATE OF
-C     * RC BASED ON PHOTOSYNTHESIS.
-C
-C      IF(ICTEMMOD.EQ.1)                                            THEN
-C        CALL PHTSYN3(  AILCG, FCANC,     TCAN, CO2CONC,  PRESSG,    FI,
-C     1                CFLUXV,    QA,   QSWNVC,      IC,   THLIQ, ISAND,
-C     2                   TAC,        RMATCTEM,   COSZS, XDIFFUS,   ILG,
-C     3                   IL1,   IL2,       IG,   ICTEM,   ISNOW,  SLAI,
-C     4               FIELDSM,WILTSM,  FCANCMX,   L2MAX,NOL2PFTS,
-C     5              RCPHTSYN, CO2I1,    CO2I2,   ANVEG,  RMLVEG)
-C
-C       * KEEP CLASS RC FOR BONEDRY POINTS (DIANA'S FLAG OF 1.E20) SUCH
-C       * THAT WE GET (BALT-BEG) CONSERVATION.
-C
-C        DO 70 I =IL1,IL2
-C          IF(RC(I).LE.10000.) THEN
-C            RC(I)=RCPHTSYN(I)
-C          ENDIF
-C   70   CONTINUE
-C      ENDIF
-C
-C     * ITERATION FOR SURFACE TEMPERATURE OF GROUND UNDER CANOPY.
-C     * LOOP IS REPEATED UNTIL SOLUTIONS HAVE BEEN FOUND FOR ALL POINTS
-C     * ON THE CURRENT LATITUDE CIRCLE(S).
 C  
   100 CONTINUE
 C
       NUMIT=0
+      NIT=0
       DO 125 I=IL1,IL2
           IF(FI(I,q).GT.0. .AND. ITER(I).EQ.1)                    THEN    
+              NIT=NIT+1
+              CFLUXM(I)=CFLUX(I)
               IF(TZERO(I).GE.TFREZ)                           THEN
                   A(I)=17.269     
                   B(I)=35.86     
@@ -350,22 +336,55 @@ C
 C
               TPOTG(I)=TZERO(I)-8.0*ZOM(I)*GRAV/CPD
               TVIRTG(I)=TPOTG(I)*(1.0+0.61*QZERO(I))   
-              IF(TVIRTG(I).GT.TVRTAC(I)+1.)                   THEN
-                  RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))**0.333333
-                  DRAGIN(I)=0.333*RAGCO*(TVIRTG(I)-TVRTAC(I))**(-.667)
-              ELSEIF(TVIRTG(I).GT.(TVRTAC(I)+0.001))          THEN 
-                  RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))
-                  DRAGIN(I)=RAGCO
-              ELSE
-                  RAGINV(I)=0.0
-                  DRAGIN(I)=0.0
+      IF(NIT.GT.0)                                                  THEN
+              IF(FCANMX(I,4).GT.0. .and. GROWTH(I,q).ne.0) THEN
+C             * CALCULATE GROUND SURFACE DRAG COEFFICIENTS (STABILITY-DEPENDENT) AND
+C             * OTHER RELATED QUANTITIES.
+               IF(ISLFD.LT.2) THEN
+                  !***MM: I did not bother changing inputs into these because I'm not using this subroutine!!
+                  CALL DRCOEF (CDM,CDH,RIB,CFLUX,QZERO,QA,ZOSCLM,ZOSCLH,
+     1                   CRIB,TVIRTG,TVIRTA,VA,FI,ITER, !change VA & QA?
+     2                    ILG,IL1,IL2,q)
+               ELSE
+                  CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
+     1                     UE,FCOR,TAC,QAC,ZRSLFM,ZRSLFH,VA, !change TPOTA, VA & QA? MM: changed TPOTA to TAC and QA to QAC, left VA
+     2                     TZERO,QZERO,H,ZOM,ZOH,
+     3                 LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q,N,0)
+               ENDIF
+              ! CHECK ALL THESE BELOW
+              ! MM: into FLXSURFZ: FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,TZERO,QZERO,ZOM,ZOH,ILG,IL1,IL2,FI,ITER,JL
+              ! MM: output from FLXSURFZ: CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,UE,H,LZZ0,LZZ0T,FM,FH (all back out to CLASST)
+              ! MM: used subsequently in TSOLVE: CFLUX (CTU in FLXSURFZ)
+              ELSE !not grass or not dormant season
+               IF(TVIRTG(I).GT.TVRTAC(I)+1.)                   THEN
+                   RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))**0.333333
+                   DRAGIN(I)=0.333*RAGCO*(TVIRTG(I)-TVRTAC(I))**(-.667)
+               ELSEIF(TVIRTG(I).GT.(TVRTAC(I)+0.001))          THEN 
+                   RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))
+                   DRAGIN(I)=RAGCO
+               ELSE
+                   RAGINV(I)=0.0
+                   DRAGIN(I)=0.0
+               ENDIF
               ENDIF
 C
               QLWOG(I)=SBC*TZERO(I)*TZERO(I)*TZERO(I)*TZERO(I)
-              QSENSG(I)=RHOAIR(I)*SPHAIR*RAGINV(I)*
-     1            (TPOTG(I)-TAC(I))
-              EVAPG (I)=RHOAIR(I)*(QZERO(I)-QAC(I))*RAGINV(I)
-              QEVAPG(I)=CPHCHG(I)*EVAPG(I)    
+              IF(FCANMX(I,4).GT.0. .and. GROWTH(I,q).ne.0) THEN
+               IF(TZERO(I).LT.TAC(I))                        THEN
+                  QSENSG(I)=(RHOAIR(I)*SPHAIR*CFLUX(I)+EZERO)*(TZERO(I)-
+     1                 TAC(I))
+                ELSE
+                   QSENSG(I)=RHOAIR(I)*SPHAIR*CFLUX(I)*(TZERO(I)-
+     1                 TAC(I))
+                ENDIF
+                EVAPG(I)=RHOAIR(I)*CFLUX(I)*(QZERO(I)-QAC(I))
+                QEVAPG(I)=CPHCHG(I)*EVAPG(I)
+              ELSE !not grass & not dormant
+               QSENSG(I)=RHOAIR(I)*SPHAIR*RAGINV(I)*
+     1             (TPOTG(I)-TAC(I))
+               EVAPG (I)=RHOAIR(I)*(QZERO(I)-QAC(I))*RAGINV(I)
+               QEVAPG(I)=CPHCHG(I)*EVAPG(I)    
+              ENDIF
               GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
               RESID(I)=QSWNG(I)+FSVF(I)*QLWIN(I)+(1.0-FSVF(I))*
      1            QLWOC(I)-QLWOG(I)-QSENSG(I)-QEVAPG(I)-GZERO(I)
@@ -373,6 +392,7 @@ C
               IF(ABS(TSTEP(I)).LT.1.0E-2)                  ITER(I)=0
               IF(NITER(I).EQ.ITERMX .AND. ITER(I).EQ.1)    ITER(I)=-1
           ENDIF
+      ENDIF
 125   CONTINUE
 C
       IF(ITCG.LT.2) THEN
@@ -405,6 +425,25 @@ C     * OPTION #2: NEWTON-RAPHSON ITERATION METHOD.
 C
       DO 175 I=IL1,IL2
           IF(FI(I,q).GT.0. .AND. ITER(I).EQ.1)                     THEN    
+           IF(FCANMX(I,4).GT.0. .and. GROWTH(I,q).ne.0) THEN
+              IF(NITER(I).GT.1)                                 THEN
+                  DCFLUX=(CFLUX(I)-CFLUXM(I))/
+     1                SIGN(MAX(.001,ABS(TSTEP(I))),TSTEP(I))
+                  IF(ABS(TVIRTA(I)-TVIRTG(I)).LT.0.4)
+     1                DCFLUX=MAX(DCFLUX,0.8*DCFLXM(I))
+                  DCFLXM(I)=DCFLUX
+              ELSE
+                  DCFLUX=0.
+              ENDIF
+              DRDT0= -4.0*SBC*TZERO(I)**3
+     1           -RHOAIR(I)*SPHAIR*(CFLUX(I)+MAX(0.,TZERO(I)-TAC(I)) !MM: changed TPOTA to TAC 
+     2           *DCFLUX) -GCOEFF(I)
+     3           +CPHCHG(I)*RHOAIR(I)*(CFLUX(I)*WZERO(I)*A(I)
+     4           *EVBETA(I)*(B(I)-TFREZ)/((TZERO(I)-B(I))*
+     5           (1.0+WZERO(I)))**2-(QZERO(I)-QAC(I))*DCFLUX) !MM: changed QA to QAC
+              TSTEP(I)=-RESID(I)/DRDT0
+              TSTEP(I)=MAX(-10.,MIN(5.,TSTEP(I)))
+           ELSE
               DQ0DT=-WZERO(I)*A(I)*(B(I)-TFREZ)/((TZERO(I)-B(I))*
      1               (1.0+WZERO(I)))**2*EVBETA(I)
               DRDT0=-4.0*SBC*TZERO(I)**3
@@ -414,6 +453,7 @@ C
      4              +(QZERO(I)-QAC(I))*DRAGIN(I))
               TSTEP(I)=-RESID(I)/DRDT0
               IF(ABS(TSTEP(I)).GT.20.0) TSTEP(I)=SIGN(10.0,TSTEP(I))
+           ENDIF
               TZERO(I)=TZERO(I)+TSTEP(I)
               NITER(I)=NITER(I)+1
               NUMIT=NUMIT+1
@@ -597,7 +637,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TAC,QAC,H,ZOM,ZOH,
-     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q,N)
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q,N,1)
         ENDIF
 C
 C     * CALCULATE CANOPY AIR TEMPERATURE AND SPECIFIC HUMIDITY OF 
@@ -842,7 +882,7 @@ c
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TCAN,QCAN,H,ZOM,ZOH,
-     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,IEVAPC,JL,q,N)
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,IEVAPC,JL,q,N,1)
          ENDIF
       ENDIF
 C
@@ -985,7 +1025,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TAC,QAC,H,ZOM,ZOH,
-     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q,N)
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q,N,1)
         ENDIF
       ENDIF
 C

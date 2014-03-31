@@ -1,12 +1,12 @@
       SUBROUTINE FLXSURFZ(CDM, CDH, CTU, RIB, FTEMP, FVAP, ILMO,
      X                    UE, FCOR, TA , QA , ZU, ZT, VA,
      Y                    TG , QG , H , Z0 , Z0T,
-     %                LZZ0, LZZ0T, FM, FH,N,IL1,IL2,FI,ITER,JL,q,NN)
+     %                LZZ0, LZZ0T, FM, FH,N,IL1,IL2,FI,ITER,JL,q,NN,can)
 C
       use MODELS, only : tem,Nmod
 C
       IMPLICIT NONE
-      INTEGER N,IL1,IL2,ITER(N),JL,q,NN
+      INTEGER N,IL1,IL2,ITER(N),JL,q,NN,can
       REAL CDM(N),CDH(N),CTU(N),RIB(N),FCOR(N),ILMO(N)
       REAL FTEMP(N),FVAP(N),TA(N),QA(N),ZU(N),VA(N)
       REAL TG(N),QG(N),H(N),Z0(N),UE(N),ZT(N)
@@ -256,56 +256,68 @@ c----------------------------------------------------------------------
         !-CDM(J)=CM**2 !output
         !-CDH(J)=CM*CT !output
         !!!ORIGINAL CASES
-        select case(tem(q))
-        case(0) ! CLASS: M-O
-          CDM(J)=CM**2 !output
-          CTU(J)=CT*UE(J) !output
-          CDH(J)=CM*CT !output
-        case(1) ! CCMA 2nd Gen: RiB
-          !-CDM(J)= fmom(J)*Cmn(J) !output
-          !-CDH(J)= ftq(J)*Chn(J)*1.25 !output
-          CTU(J)= Chn(J)*ftq(J)*1.25*u!u !output
-        end select
-        !!!NEW CASES AS PER R.ESSERY IUGG
 !        select case(tem(q))
-!        case(0) ! CH(z/L)
-!          CM = KARMAN**2 / (log(ZU(J)/Z0(J))*log(ZU(J)/Z0(J)))
-!          CDH(J) = KARMAN**2 / (log(ZU(J)/Z0(J))*log(ZT(J)/Z0T(J)))
-!          do i = 1, 10
-!            B = CDH(J) *VA(J)*GRAV*(TG(J) - TA(J))/TA(J) 
-!            L = -UE(J)**3 / (KARMAN*B)
-!            zeta_T = ZT(J) / L
-!            zeta_U = ZU(J) / L
-!            if (L.gt.0) then
-!              psi_h = -5*zeta_T
-!              psi_m = -5*zeta_U
-!              if (zeta_T > 1) psi_h = -4*(1 + log(zeta_T)) - zeta_T
-!              if (zeta_U > 1) psi_m = -4*(1 + log(zeta_U)) - zeta_U
-!            else
-!              xxx = (1 - 16*zeta_U)**0.25
-!              psi_m = 2*log((1 + xxx)/2) + log((1 + xxx**2)/2) - 
-!     1                  2*atan(xxx) + 3.1415926535898/2
-!              xxx = (1 - 16*zeta_T)**0.25
-!              psi_h = 2*log((1 + xxx**2)/2)
-!            end if
-!            CM = KARMAN**2 / ((log(ZU(J)/Z0(J)) - psi_m)*
-!     1                        (log(ZU(J)/Z0(J)) - psi_m))
-!            CDH(J) = KARMAN**2 / ((log(ZU(J)/Z0(J)) - psi_m)*
-!     1                            (log(ZT(J)/Z0T(J)) - psi_h))
-!            CTU(J) = CDH(J)*UE(J)
-!         end do
-!        case(1) ! CH(RiB)
-!          CDH(J)= KARMAN**2 / (log(ZU(J)/Z0(J))*log(ZT(J)/Z0T(J)))
-!          RIB(J) = GRAV*ZU(J)*(TA(J) - TG(J)) / (TA(J)*VA(J)**2)
-!          FH(J) = 1
-!          if (RIB(J).gt.0) then 
-!            FH(J) = 1/(1 + 10*RIB(J)/sqrt(1 + RIB(J)))
-!          else
-!            FH(J) = 1-15*RIB(J)/(1+75*CDH(J)*sqrt(-RIB(J)*ZU(J)/Z0(J)))
-!          end if
-!          CDH(J) = FH(J)*CDH(J)
-!          CTU(J) = CDH(J)*UE(J)
+!        case(0) ! CLASS: M-O
+!          CDM(J)=CM**2 !output
+!          CTU(J)=CT*UE(J) !output
+!          CDH(J)=CM*CT !output
+!        case(1) ! CCMA 2nd Gen: RiB
+!          !-CDM(J)= fmom(J)*Cmn(J) !output
+!          !-CDH(J)= ftq(J)*Chn(J)*1.25 !output
+!          CTU(J)= Chn(J)*ftq(J)*1.25*u!u !output
 !        end select
+        !!!NEW CASES AS PER R.ESSERY IUGG
+        select case(tem(q))
+        case(0)
+         !-if(can.eq.0)then ! CH(z/L) JULES
+          CM = KARMAN**2 / (log(ZU(J)/Z0(J))*log(ZU(J)/Z0(J)))
+          CDH(J) = KARMAN**2 / (log(ZU(J)/Z0(J))*log(ZT(J)/Z0T(J)))
+          do i = 1, 10
+            !temp B = CDH(J) *VA(J)*GRAV*(TG(J) - TA(J))/TA(J) 
+            !temp L = -UE(J)**3 / (KARMAN*B)
+            zeta_T = ZT(J)*ILMO(J) !temp / L
+            zeta_U = ZU(J)*ILMO(J) !temp / L
+            if((1/ILMO(J)).gt.0) then!temp if (L.gt.0) then
+              psi_h = -5*zeta_T
+              psi_m = -5*zeta_U
+              if (zeta_T > 1) psi_h = -4*(1 + log(zeta_T)) - zeta_T
+              if (zeta_U > 1) psi_m = -4*(1 + log(zeta_U)) - zeta_U
+            else
+              xxx = (1 - 16*zeta_U)**0.25
+              psi_m = 2*log((1 + xxx)/2) + log((1 + xxx**2)/2) - 
+     1                  2*atan(xxx) + 3.1415926535898/2
+              xxx = (1 - 16*zeta_T)**0.25
+              psi_h = 2*log((1 + xxx**2)/2)
+            end if
+            CM = KARMAN**2 / ((log(ZU(J)/Z0(J)) - psi_m)*
+     1                        (log(ZU(J)/Z0(J)) - psi_m))
+            CDH(J) = KARMAN**2 / ((log(ZU(J)/Z0(J)) - psi_m)*
+     1                            (log(ZT(J)/Z0T(J)) - psi_h))
+            CTU(J) = CDH(J)*UE(J)
+          end do
+         !-else ! CLASS: M-O
+            !-CDM(J)=CM**2 !output
+            !-CTU(J)=CT*UE(J) !output
+            !-CDH(J)=CM*CT !output
+         !-endif
+        case(1) 
+         !-if(can.eq.0)then ! CH(RiB) JULES
+          CDH(J)= KARMAN**2 / (log(ZU(J)/Z0(J))*log(ZT(J)/Z0T(J)))
+          RIB(J) = GRAV*ZU(J)*(TA(J) - TG(J)) / (TA(J)*VA(J)**2)
+          FH(J) = 1
+          if (RIB(J).gt.0) then 
+            FH(J) = 1/(1 + 10*RIB(J)/sqrt(1 + RIB(J)))
+          else
+            FH(J) = 1-15*RIB(J)/(1+75*CDH(J)*sqrt(-RIB(J)*ZU(J)/Z0(J)))
+          end if
+          CDH(J) = FH(J)*CDH(J)
+          CTU(J) = CDH(J)*UE(J)
+         !-else ! CCMA 2nd Gen: RiB
+          !-!-CDM(J)= fmom(J)*Cmn(J) !output
+          !-!-CDH(J)= ftq(J)*Chn(J)*1.25 !output
+          !-CTU(J)= Chn(J)*ftq(J)*1.25*u!u !output
+         !-endif
+        end select
         if (rib(j).gt.0.0) then
 c             cas stable
               H(J)=MIN(H(J),hmax) !output DIASURFZ

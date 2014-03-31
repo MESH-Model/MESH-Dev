@@ -884,6 +884,7 @@ C
               RHOSNO(I,q)=0.0                                                   
               SNO(I,q)=0.0                                                      
               WSNOW(I,q)=0.0
+              ZSNOW(I,q)=0.0
           ENDIF
 C
           IF(TSNOW(I,q).LT.0.0) KPTBAD=I

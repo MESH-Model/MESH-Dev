@@ -10,7 +10,7 @@
      9                  ISLFD,ITG,ILG,IG,IL1,IL2,JL,
      A                  TSTEP,TVIRTS,EVBETA,Q0SAT,RESID,
      B                  DCFLXM,CFLUXM,WZERO,TRTOP,A,B,
-     C                  LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF,q)
+     C                  LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF,q,N)
 C
 C     * OCT 14/11 - D.VERSEGHY. FOR POST-ITERATION CLEANUP WITH N-R SCHEME,
 C     *                         REMOVE CONDITION INVOLVING LAST ITERATION
@@ -90,7 +90,7 @@ C
 
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ISNOW,ISLFD,ITG,ILG,IG,IL1,IL2,JL,I,q
+      INTEGER ISNOW,ISLFD,ITG,ILG,IG,IL1,IL2,JL,I,q,N
 C
       INTEGER NUMIT,NIT,IBAD,ITERMX
 C
@@ -240,7 +240,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q)
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q,N,0)
         ENDIF
 ! MM: output from FLXSURFZ: CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,UE,H,LZZ0,LZZ0T,FM,FH (all back out to CLASST)
 ! MM: used subsequently in TSOLVE: CFLUX (CTU in FLXSURFZ)
@@ -388,7 +388,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,JEVAP,JL,q)
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,JEVAP,JL,q,N,0)
         ENDIF
       ENDIF
 C
@@ -446,7 +446,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q)
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q,N,0)
         ENDIF
       ENDIF
 C

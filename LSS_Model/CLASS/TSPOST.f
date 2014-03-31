@@ -2,7 +2,7 @@
      1                  GZERO,TSNBOT,HTCS,HMFN,
      2                  GCONSTS,GCOEFFS,GCONST,GCOEFF,TBAR,
      3                  TSURF,ZSNOW,TCSNOW,HCPSNO,QTRANS,
-     4                  FI,DELZ,ILG,IL1,IL2,JL,IG,q,TCTOP    )
+     4                  FI,DELZ,ILG,IL1,IL2,JL,IG,q    )
 C
 C     * AUG 16/06 - D.VERSEGHY. MAJOR REVISION TO IMPLEMENT THERMAL
 C     *                         SEPARATION OF SNOW AND SOIL.
@@ -64,8 +64,7 @@ C     * INPUT ARRAYS.
 C
       REAL TSURF (ILG),    ZSNOW (ILG,Nmod),    TCSNOW(ILG),HCPSNO(ILG),    
      1     QTRANS(ILG),    GCONST(ILG),    GCOEFF(ILG),    FI(ILG,Nmod),
-     2     GCONSTS(ILG),   GCOEFFS(ILG),   TBAR(ILG,IG,Nmod),  DELZ(IG),
-     +     TCTOP (ILG,IG)
+     2     GCONSTS(ILG),   GCOEFFS(ILG),   TBAR(ILG,IG,Nmod),  DELZ(IG)
 C
 C     * TEMPORARY VARIABLES.
 C

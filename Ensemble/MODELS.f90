@@ -3,10 +3,11 @@
 !-------------------------------------------------------------------------------
 module MODELS
 
-integer, parameter :: &
- Nmod = 4096      ! Number of models
+integer*8, parameter :: &
+ Nmod = 16384      ! Number of models
 
 integer :: &
+  ebalm(Nmod),    &! energy balance solution model
   tem(Nmod),      &! turbulent exchange model
   zmsm(Nmod),     &! momentum-scalar ratio model
   bsm(Nmod),      &! blowing snow model
@@ -19,6 +20,7 @@ integer :: &
   im(Nmod),       &! infiltration model
   sotcm(Nmod),    &! soil thermal conductivity model
   ufcm(Nmod),     &! soil unfrozen water content model
-  siim(Nmod)       ! soil ice impedance model
+  siim(Nmod),     &! soil ice impedance model
+  lam(Nmod)        ! local advection model
 
 end module MODELS

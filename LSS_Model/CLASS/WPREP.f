@@ -110,8 +110,7 @@ C
      2     HCPCO (ILG,IG),HCPGO (ILG,IG),HCPCS (ILG,IG),HCPGS (ILG,IG), 
      3     GRKSC (ILG,IG),GRKSG (ILG,IG),GRKSCS(ILG,IG),GRKSGS(ILG,IG),
      4     GFLXC (ILG,IG),GFLXG (ILG,IG),GFLXCS(ILG,IG),GFLXGS(ILG,IG),
-     5     THLDUM(ILG,IG),THIDUM(ILG,IG),QFC(ILG,IG),
-     +     HMFG(ILG,IG)
+     5     THLDUM(ILG,IG),THIDUM(ILG,IG),QFC   (ILG,IG),HMFG  (ILG,IG)
 C
       REAL THLIQX(ILG,IGP1),THICEX(ILG,IGP1)
 C
@@ -135,12 +134,10 @@ C
      2     SNC   (ILG),   SNCS  (ILG),   TSNOWC(ILG),   TSNOWG(ILG),
      3     OVRFLW(ILG),   SUBFLW(ILG),   BASFLW(ILG),   
      4     TOVRFL(ILG),   TSUBFL(ILG),   TBASFL(ILG),
-     5     PCFC  (ILG),   PCLC  (ILG),   !PCPN  (ILG),   
-     +     PCPG  (ILG),  QFCF  (ILG),   QFCL  (ILG),  
-     +     QFN   (ILG),   QFG   (ILG),
-     7     ROVG  (ILG),   ROFC  (ILG),   !ROFN  (ILG),   
+     5     PCFC  (ILG),   PCLC  (ILG),   PCPN  (ILG),   PCPG  (ILG),
+     6     QFCF  (ILG),   QFCL  (ILG),   QFN   (ILG),   QFG   (ILG),
+     7     ROVG  (ILG),   ROFC  (ILG),   ROFN  (ILG),   
      8     TRUNOF(ILG),   DT    (ILG),   RDUMMY(ILG),   ZERO  (ILG)
-      real PCPN  (ILG),ROFN  (ILG)
 C 
       INTEGER             IZERO (ILG)
 C

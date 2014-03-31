@@ -132,7 +132,7 @@
      7  CO2I2CS, SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG,
      8  AILC, PAIC, FIELDSM,  WILTSM, RMATCTEM, RMATC, NOL2PFTS,
      9  ICTEMMOD, L2MAX, ICTEM,fetchROW,HtROW,N_SROW,A_SROW,DistribROW,
-     0   fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
+     +   fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
 !> This subroutine is used to write a resume file.
 !> The resume file contains all of the variables used
 !> in the loop for 

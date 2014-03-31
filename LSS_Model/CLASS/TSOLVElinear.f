@@ -1,4 +1,4 @@
-      SUBROUTINE TSOLVE(ISNOW,FI,
+      SUBROUTINE TSOLVElinear(ISNOW,FI,
      1                  QSWNET,QLWOUT,QTRANS,QSENS,QEVAP,EVAP,
      2                  TZERO,QZERO,GZERO,QMELT,CDH,CDM,RIB,CFLUX,
      3                  FTEMP,FVAP,ILMO,UE,H,
@@ -13,7 +13,7 @@
      C                  LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF,
      D                  ZSNOW,TSNOW,TCSNOW,ZPOND,TCTOP,DELZ,TBAR1P,q,N)
 C
-C     * JAN 09/14 - M.MACDONALD.ALGEBRAIC SOLUTION OF LINEARIZED ENERGY
+C     * JAN 16/14 - M.MACDONALD.ALGEBRAIC SOLUTION OF LINEARIZED ENERGY
 C     *                         BALANCE EQUATION FOR ENSEMBLE MODEL.
 C     * OCT 14/11 - D.VERSEGHY. FOR POST-ITERATION CLEANUP WITH N-R SCHEME,
 C     *                         REMOVE CONDITION INVOLVING LAST ITERATION
@@ -114,7 +114,7 @@ C
      4     ZOSCLH(ILG),    ZOSCLM(ILG),    ZRSLFH(ILG),    ZRSLFM(ILG),
      5     ZOH   (ILG),    ZOM   (ILG),    GCONST(ILG),    GCOEFF(ILG),
      6     TSTART(ILG),    TRSNOW(ILG),    FCOR  (ILG),    PCPR  (ILG),
-     +     ZSNOW(ILG,Nmod),TSNOW(ILG,Nmod),TCSNOW(ILG),ZPOND (ILG,Nmod),
+     +     ZSNOW(ILG,Nmod),TSNOW(ILG),TCSNOW(ILG),ZPOND (ILG,Nmod),
      +     TCTOP (ILG,IG), DELZ  (IG),     TBAR1P(ILG)
 
 C
@@ -201,7 +201,7 @@ C             * OTHER RELATED QUANTITIES.
                   CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q,0)
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,q,N,0)
               ENDIF
               ! MM: into FLXSURFZ: FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,TZERO,QZERO,ZOM,ZOH,ILG,IL1,IL2,FI,ITER,JL
               ! MM: output from FLXSURFZ: CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,UE,H,LZZ0,LZZ0T,FM,FH (all back out to CLASST)
@@ -228,7 +228,7 @@ C             * OTHER RELATED QUANTITIES.
               ENDIF
               EVAP(I)=RHOAIR(I)*CFLUX(I)*(QZERO(I)-QA(I)) 
               QEVAP(I)=CPHCH(I)*EVAP(I)      
-              IF(ISNOW.EQ.0.) THEN  !(ISNOW.EQ.0)THEN
+              IF(ISNOW.EQ.0.) THEN
                IF(ZSNOW(I,q).LE.0.0) THEN
                 TCZERO=TCTOP(I,1)
                 GZERO(I)=2*TCZERO*(TZERO(I)-TBAR1P(I))/
@@ -239,14 +239,14 @@ C             * OTHER RELATED QUANTITIES.
      3              4*SBC*TZERO(I)**3)
                ELSE
                 TCZERO=1.0/(0.5/TCSNOW(I)+0.5/TCTOP(I,1))
-                GZERO(I)=2*TCZERO*(TZERO(I)-TSNOW(I,q))/ZSNOW(I,q)
+                GZERO(I)=2*TCZERO*(TZERO(I)-TSNOW(I))/ZSNOW(I,q)
                 DTS=(QSWNET(I)+QLWIN(I)-QLWOUT(I)-QSENS(I)-QEVAP(I)-
      1              GZERO(I)) / ((SPHAIR + CPHCH(I)*D)*RHOAIR(I)
      2              *CFLUX(I) + 2*TCZERO/ZSNOW(I,q) + 4*SBC*TZERO(I)**3)
                ENDIF
               ELSE
                 TCZERO=TCSNOW(I)
-                GZERO(I)=2*TCZERO*(TZERO(I)-TSNOW(I,q))/ZSNOW(I,q)
+                GZERO(I)=2*TCZERO*(TZERO(I)-TSNOW(I))/ZSNOW(I,q)
                 DTS=(QSWNET(I)+QLWIN(I)-QLWOUT(I)-QSENS(I)-QEVAP(I)-
      1              GZERO(I)) / ((SPHAIR + CPHCH(I)*D)*RHOAIR(I)
      2              *CFLUX(I) + 2*TCZERO/ZSNOW(I,q) + 4*SBC*TZERO(I)**3)
@@ -279,9 +279,9 @@ C             * OTHER RELATED QUANTITIES.
                     QSENS(I)=RHOAIR(I)*SPHAIR*CFLUX(I)*(TZERO(I)
      1                  -TPOTA(I))
                   ENDIF
-                  GZERO(I)=2*TCSNOW(I)*(TZERO(I)-TSNOW(I,q))/ZSNOW(I,q)
-                  QMELT(I)=QSWNET(I)+QLWIN(I)-QLWOUT(I)!-SBC*TZERO(I)**4
-     1                 -QSENS(I)-QEVAP(I)-GZERO(I)!/CLHMLT
+                  GZERO(I)=2*TCSNOW(I)*(TZERO(I)-TSNOW(I))/ZSNOW(I,q)
+                  QMELT(I)=QSWNET(I)+QLWIN(I)-QLWOUT(I)
+     1                 -QSENS(I)-QEVAP(I)-GZERO(I)
                   !IF(QMELT(I).LT.0.) THEN
                   !  GZERO(I)=GZERO(I)+QMELT(I)
                   !  QMELT(I)=0.
