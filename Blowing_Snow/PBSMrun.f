@@ -1,4 +1,4 @@
-      SUBROUTINE PBSMrun(ZSNOW,WSNOW,SNO,RHOSNO,HTCS,
+      SUBROUTINE PBSMrun(ZSNOW,WSNOW,SNO,RHOSNO,TSNOW,HTCS,
      1       ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG,
      2       HCPSCS,HCPSGS,HCPSC,HCPSG,
      3       TSNOWC,TSNOWG,TSNOCS,TSNOGS,
@@ -10,7 +10,7 @@
      9       ST, SU, SQ, PRES, PRE,
      +       DrySnow, SnowAge, Drift, Subl,
      +       TSNOWds,RHOSNOds,
-     +       ILG,IL1,IL2,N)
+     +       ILG,IL1,IL2,N,ZREFM,ZOMLCS,ZOMLNS)
 !    +                 ST, SU, SQ, PRES, 
 !    1                Drift, Subl, TSNOWds, RHOSNOds, ZSNOWds,
 !    2                TSNOW, RHOSNO, ZSNOW, WSNOW, SNO,
@@ -39,7 +39,7 @@ C
 C
 C     * INPUT/OUTPUT ARRAYS.
 C
-      REAL ZSNOW(ILG), WSNOW(ILG), SNO(ILG),RHOSNO(ILG),TSNOW(ILG),
+      REAL ZSNOW(ILG), WSNOW(ILG), SNO(ILG),TSNOW(ILG),RHOSNO(ILG),
      1     DrySnow(ILG), SnowAge(ILG),HTCS(ILG),
      2     ZSNOWC(ILG),ZSNOWG(ILG),ZSNOCS(ILG),ZSNOGS(ILG),
      3     HCPSC(ILG),HCPSG(ILG),HCPSCS(ILG),HCPSGS(ILG),
@@ -53,19 +53,19 @@ C
       REAL ST(ILG), SU(ILG), SQ(ILG),
      1     S(ILG), PRES(ILG), PRE(ILG),
      2     N_S(ILG), A_S(ILG), Ht(ILG),fetch(ILG),
-     3     FC(ILG), FG(ILG), FCS(ILG), FGS(ILG)
+     3     FC(ILG), FG(ILG), FCS(ILG), FGS(ILG),
+     4     ZREFM(ILG),ZOMLCS(ILG),ZOMLNS(ILG)
 C
 C     * OUTPUT ARRAYS.
 C
-      REAL Subl(ILG),Drift(ILG),
-     1     RHOSNOds(ILG),TSNOWds(ILG)
+      REAL Subl(ILG),Drift(ILG),RHOSNOds(ILG),TSNOWds(ILG)
 C
 C     * TEMPORARY VARIABLES.
 C
       REAL Znod, Ustar, Ustn, E_StubHt, Lambda, Ut,
      1     Uten_Prob, DriftH, SublH, Prob, mBeta,
      2     gru_loss, sub_loss, swe, sub_zloss,
-     3     ZSNOWds
+     3     ZSNOWds,u10,z0
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -131,8 +131,12 @@ C         !> depths(m), SWE(mm; kg/m^2)
            E_StubHt=0.0001
          ENDIF !IF(E_StubHt.LT.0.0001) THEN
 C
+         z0=(FCS(I)*exp(ZOMLCS(I))+FGS(I)*exp(ZOMLNS(I)))
+     1       /(FCS(I)+FGS(I))
+         u10=SU(I)*log(10./z0)/log(ZREFM(I)/z0)
+         
            !> Eq. 6.2 rev. Pomeroy thesis, Ustar over fallow
-           Ustar=0.02264*SU(I)**1.295 !friction velocity
+           Ustar=0.02264*u10**1.295 !friction velocity
 C
          IF(E_StubHt.GT.0.01) THEN
            !> Eq. 29, Snowcover Accumulation, Relocation & Management book (1995)
@@ -142,7 +146,7 @@ C
            Ustn=Ustar*SQRT((mBeta*Lambda)/(1.0+mBeta*Lambda))
            Uten_Prob=(LOG(10.0/Znod))/M1KAARMAN*SQRT(Ustar-Ustn)
          ELSE
-           Uten_Prob=SU(I)
+           Uten_Prob=u10
          ENDIF !IF(E_StubHt.GT.0.01) THEN
 C
          !>Calculate probability of blowing snow occurence
@@ -170,10 +174,13 @@ C
            RHOSNOds(I)=RHOSNO(I)
            ZSNOWds=(Drift(I)+Subl(I))/RHOSNOds(I)
            ZSNOW(I)=ZSNOW(I)-ZSNOWds
-           IF(ZSNOW(I).EQ.0.) THEN
+           IF(ZSNOW(I).LE.0.) THEN
+             ZSNOW(I)=0.
              IF(WSNOW(I).GT.0.) THEN
                Subl(I)=Subl(I)+WSNOW(I)
                WSNOW(I)=0.
+               WSNOCS(I)=0.
+               WSNOGS(I)=0.
              ENDIF
            ENDIF
            TSNOWds(I)=TSNOW(I)
@@ -221,7 +228,11 @@ C
                    ENDIF
                    !subtract this subarea's blowing snow mass loss from GRU total
                    gru_loss=gru_loss-sub_loss 
+                   if(ZSNOWC(I).gt.0.)then
                    HCPSC(I)=HCPICE*RHOSC(I)/RHOICE
+                   else
+                   HCPSC(I)=0.
+                   endif
                    HTCS(I)=HTCS(I)+FC(I)*HCPSC(I)*(TSNOWC(I)+TFREZ)
      1                  *ZSNOWC(I)/DELT
                    IF(ZSNOWC(I).GT.0.) THEN
@@ -246,7 +257,11 @@ C
                      sub_loss=sub_loss*FG(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
                    ENDIF
                    gru_loss=gru_loss-sub_loss
+                   if(ZSNOWG(I).gt.0.)then
                    HCPSG(I)=HCPICE*RHOSG(I)/RHOICE
+                   else
+                   HCPSG(I)=0.
+                   endif
                    HTCS(I)=HTCS(I)+FG(I)*HCPSG(I)*(TSNOWG(I)+TFREZ)
      1                  *ZSNOWG(I)/DELT
                    IF(ZSNOWG(I).GT.0.) THEN
@@ -266,13 +281,19 @@ C
                    IF(sub_zloss.GE.ZSNOCS(I)) THEN
                      sub_loss=swe*FCS(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
                      ZSNOCS(I)=0.
+                     WSNOCS(I)=0.
                    ELSE
                      ZSNOCS(I)=ZSNOCS(I)-sub_zloss
                     sub_loss=sub_loss*FCS(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
                    ENDIF
                    gru_loss=gru_loss-sub_loss
+                   if(ZSNOCS(I).gt.0.)then
                    HCPSCS(I)=HCPICE*RHOSCS(I)/RHOICE+HCPW*WSNOCS(I)/
-     1                  (RHOW*ZSNOCS(I))
+     1                  (RHOW*ZSNOCS(I)))
+                   else
+                   HCPSCS(I)=0.
+                   WSNOCS(I)=0.
+                   endif
                    HTCS(I)=HTCS(I)+FCS(I)*HCPSCS(I)*(TSNOCS(I)
      1                  +TFREZ)*ZSNOCS(I)/DELT
                    IF(ZSNOCS(I).GT.0.) THEN
@@ -292,13 +313,19 @@ C
                    IF(sub_zloss.GE.ZSNOGS(I)) THEN
                      sub_loss=swe*FGS(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
                      ZSNOGS(I)=0.
+                     WSNOGS(I)=0.
                    ELSE
                      ZSNOGS(I)=ZSNOGS(I)-sub_zloss
                     sub_loss=sub_loss*FGS(I)/(FC(I)+FG(I)+FCS(I)+FGS(I))
                    ENDIF
                    gru_loss=gru_loss-sub_loss
+                   if(ZSNOGS(I).gt.0.)then
                    HCPSGS(I)=HCPICE*RHOSGS(I)/RHOICE+HCPW*WSNOGS(I)/
      1                  (RHOW*ZSNOGS(I))
+                   else
+                     HCPSGS(I)=0.
+                     WSNOGS(I)=0.
+                   endif
                    HTCS(I)=HTCS(I)+FGS(I)*HCPSGS(I)*(TSNOGS(I)
      1                  +TFREZ)*ZSNOGS(I)/DELT
                    IF(ZSNOGS(I).GT.0.) THEN
@@ -308,6 +335,8 @@ C
                    ENDIF
                  ENDIF
 	    	     !> Calculate snowpack properties at GRU-level
+                 if(XSNOCS(I).gt.0.or.XSNOGS(I).gt.0.or. 
+     +                XSNOWC(I).gt.0.or.XSNOWG(I).gt.0.)then
                  TSNOW(I)=(FCS(I)*(TSNOCS(I)+TFREZ)*HCPSCS(I)*
      1                  ZSNOCS(I)*XSNOCS(I) +
      2                  FGS(I)*(TSNOGS(I)+TFREZ)*HCPSGS(I)*
@@ -331,6 +360,14 @@ C
                  ZSNOW(I)=FCS(I)*ZSNOCS(I) + FGS(I)*ZSNOGS(I) +
      1                 FC(I)*ZSNOWC(I) + FG(I)*ZSNOWG(I)
                  SNO(I)=ZSNOW(I)*RHOSNO(I)
+                 WSNOW(I)=FCS(I)*WSNOCS(I) + FGS(I)*WSNOGS(I)
+                 else
+                 TSNOW(I)=TFREZ
+                 RHOSNO(I)=0.
+                 ZSNOW(I)=0.
+                 SNO(I)=0.
+                 WSNOW(I)=0.
+                 endif
           ENDIF !Drift(I).GT.0. .OR. Subl(I).GT.0.
   100 CONTINUE
       RETURN

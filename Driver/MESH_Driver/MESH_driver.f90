@@ -2910,7 +2910,7 @@ IF(PBSMFLAG==1) THEN
               SFCTGAT,SFCUGAT,SFCQGAT,PRESGAT,PREGAT, &
               DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
               TSNOdsGAT, RHOSdsGAT, &
-              NA*NTYPE,1,NML,N)
+              NA*NTYPE,1,NML,N,ZRFMGAT,ZOMLCS,ZOMLNS)
 ENDIF
 !========================================================================
 !
