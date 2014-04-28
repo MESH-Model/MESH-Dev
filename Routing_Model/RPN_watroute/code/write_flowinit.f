@@ -124,7 +124,7 @@
  3007 format(a14,i5,a6,i5)
  3008 format(a30)
 ! 3012 format(a9)
- 3020 format(a20,a40)
+ 3020 format(a20,a999)
 
       if(iopt.eq.2)print*, 'in write_flowinit at 1302'
 

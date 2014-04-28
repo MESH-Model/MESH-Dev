@@ -35,10 +35,10 @@ C TB0 data module
       TYPE(ResvParam) :: header
       TYPE(ResvColumnMetaData) :: colHeader
 
-      Integer  :: ios,j,k,i,n,l,jz,jj
+      Integer  :: ios,j,k,i,n,l,jz,ii,jj
       integer  :: nnch,noresv_firstpass,nrel_max,
      *            iAllocate,iDeallocate
-      real*4   :: factor
+      real*4   :: factor,xrespos
 
 !     rev. 9.1.55  Jun.  12/04  - NK: write new str files to strfw\newfmt folder.
       LOGICAL exists
@@ -165,6 +165,15 @@ C Assign the variables from the types
          ktr =  header%tb0p%deltaT !data time step in hours
          factor = header%tb0p%unitConv ! conversion to cms
          noresv = colHeader%tb0cmd%colCount !no of reservoirs
+         if (noresv .ne. Nreaches) then
+           write(*,*) ' '
+           write(*,*) 
+     *    'no of reaches calculated from the reservoir release file:',noresv
+           write(*,*) 
+     *    'no of reaches calculated from infiles_rte.txt:',Nreaches
+           write(*,*) 'Resolve this conflict!'
+           stop
+         end if
 
 !     nrel    =     no of hours of data
 C Scan lines of data
@@ -216,10 +225,10 @@ c End of the loop if noresv.ge.1
      *        qdwpr(noresv,nrel_max),lake_elv(noresv,nrel_max),
      *        lake_stor(noresv,nrel_max),lake_outflow(noresv,nrel_max), 
      *        del_stor(noresv,nrel_max),lake_inflow(noresv,nrel_max),
-     *        net_lake_inflow(noresv,nrel_max),
-     *        net_lake_outflow(noresv,nrel_max),
      *        qstream_sum(noresv,nrel_max),strloss_sum(noresv,nrel_max),
      *        stat=iAllocate)
+!     *        net_lake_inflow(noresv,nrel_max),
+!     *        net_lake_outflow(noresv,nrel_max),
             if(iAllocate.ne.0) STOP
      *       'Error with allocation in read_resv_ef @172'
          else
@@ -300,8 +309,10 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
 
 !           DEALLOCATION OF ARRAYS FROM AREA5A:
             deallocate(qrel,qdwpr,lake_elv,
-     *      lake_stor,lake_inflow,lake_outflow,del_stor,net_lake_inflow,
-     *      net_lake_outflow,stat=iDeallocate)     
+     *      lake_stor,lake_inflow,lake_outflow,del_stor,
+     *      stat=iDeallocate)     
+!     *      lake_stor,lake_inflow,lake_outflow,del_stor,net_lake_inflow,
+!     *      net_lake_outflow,stat=iDeallocate)     
             if (iDeallocate.ne.0) print*,    
      *           'Error with deallocation of area5a arrays'
 
@@ -309,10 +320,11 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
             allocate(qrel(noresv,nrel), 
      *      qdwpr(noresv,nrel_max),lake_elv(noresv,nrel_max),
      *      lake_stor(noresv,nrel_max),lake_outflow(noresv,nrel_max),
-     *      del_stor(noresv,nrel_max),net_lake_inflow(noresv,nrel_max),
-     *      net_lake_outflow(noresv,nrel_max),
+     *      del_stor(noresv,nrel_max),
      *      lake_inflow(noresv,nrel_max),stat=iAllocate)
             if(iAllocate.ne.0) STOP
+!     *      del_stor(noresv,nrel_max),net_lake_inflow(noresv,nrel_max),
+!     *      net_lake_outflow(noresv,nrel_max),
      *           'Error with allocation of area10a arrays in sub'
          endif
 
@@ -376,7 +388,6 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
 
       if(iopt.eq.2)print*,'in read_resv_ef passed 274'
 
-
       if(noresv.gt.0)then
 !         FIND THE LOCAL COORDINATES FOR THE RESERVOIRS
 !         THE VALUES FOR IRES AND JRES ARE CHANGED
@@ -384,12 +395,32 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
          do i=1,noresv
 !           convert to local coordinate unit system for new .res file
 !     rev. 9.2.26  Dec.  23/05  - NK: Fixed reservoir outlet location bug 
-            jres(i)=int((xres(i)-xorigin)/xdelta)+1
-            ires(i)=int((yres(i)-yorigin)/xdelta)+1
+           if (fstflg .eq. 'y') then                                     ! fst files
+!           if (longrid(1).gt.0.0 .and. latgrid(1).gt.0.0) then
+             xrespos = xres(i)
+             if (xrespos .lt. 0.0) xrespos = 360.00 + xrespos
+             do ii=1,size(longrid)-1
+               if   (xrespos.ge.longrid(ii)
+     *         .and. xrespos.le.longrid(ii+1)) then
+                 jres(i) = ii
+                 exit
+               end if
+             end do
+             do jj=1,size(latgrid)-1
+               if   (yres(i).ge.latgrid(jj)
+     *         .and. yres(i).le.latgrid(jj+1)) then
+                 ires(i) = jj
+                 exit
+               end if
+             end do
+           else                                                          ! r2c files
+             jres(i)=int((xres(i)-xorigin)/xdelta)+1
+             ires(i)=int((yres(i)-yorigin)/xdelta)+1
+           end if
          end do
          if(iopt.ge.1)then
-            write(53,1011)
-            write(53,1013)(i,ires(i),jres(i),
+            write(52,1011)
+            write(52,1013)(i,ires(i),jres(i),
      *           b1(i),b2(i),b3(i),b4(i),b5(i),resname(i),i=1,noresv)
          endif
 
@@ -441,7 +472,7 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
       endif                     !  if(b1(1).eq.0.0)
       if(iopt.ge.1)then
          j=ktr
-         write(53,*)(qrel(k,j),k=1,noresv)
+         write(52,*)(qrel(k,j),k=1,noresv)
       endif
       endif                     !  if(noresv.gt.0)
 
@@ -458,11 +489,11 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
 !       THE VALUES FOR IRES AND JRES ARE CHANGED
 
          if(iopt.ge.1)then
-            write(53,1011)
-            write(53,1013)(i,ires(i),jres(i),
+            write(52,1011)
+            write(52,1013)(i,ires(i),jres(i),
      *           b1(i),b2(i),b3(i),b4(i),b5(i),resname(i),i=1,noresv)
-            write(53,1011)
-            write(53,1013)(i,ires(i),jres(i),
+            write(52,1011)
+            write(52,1013)(i,ires(i),jres(i),
      *           b1(i),b2(i),b3(i),b4(i),b5(i),resname(i),i=1,noresv)
          endif
 
@@ -510,8 +541,8 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
 
       if(iopt.ge.2)then
          do k=1,noresv
-            write(53,6801)k,nrel
-            write(53,6802)(qrel(k,j),j=1,nrel)
+            write(52,6801)k,nrel
+            write(52,6802)(qrel(k,j),j=1,nrel)
          end do	
       endif
       if(iopt.eq.2)print*,'in read_resv_ef passed 678'

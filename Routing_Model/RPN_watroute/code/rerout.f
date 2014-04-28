@@ -44,17 +44,22 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       integer  :: newrel,newrin, hour_offset
       integer  :: dayrad(12)
       real*4   :: old,hold,wt,dtmin,at,div,thr
-      real*4   :: sup,mhu,stc,eri,ont,mean_elv,delta_elv
+      real*4   :: sup,mhu,stc,eri,ont,cha,mean_elv,delta_elv
       real*4   :: sup_init,mhu_init,stc_init,eri_init,ont_init
-      real*4   :: retard_factor(12,5)  ! for great lakes ice-weed retardation
-      real*4   :: monthly_evap(12,5),hourly_evap(12,5)    ! for great lakes evap
+      real*4   :: cha_init
+      real*4   :: zflow,reacharea,sfactor
+      real*4   :: retard_factor(12,6)  ! ice-weed retardation for reaches where lake elevation is calculated
+      real*4   :: monthly_evap(12,6),hourly_evap(12,6)    ! evap for reaches where lake elevation is calculated
 !     rev. 9.1.55  Jun.  12/04  - NK: write new str files to strfw\newfmt folder.
       LOGICAL exists
       character(20) :: junk
-      character(30) :: newfilename
+      character(999) :: newfilename
       character(10) :: fileformat
       character(14) :: date
       character*1 :: firstpass
+
+      integer  :: iAllocate
+      real*4, dimension(:), allocatable :: reach_init
 
 !     SAVES THE LOCAL VARIABLES FROM ONE RUN TO NEXT
       SAVE
@@ -64,11 +69,15 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      * 590.,480.,110.,110.,0.,0.,0.,0.,0.,0.,0.,110.,
      * 650.,510.,110.,0.,0.,0.,0.,0.,0.,0.,0.,140.,
      * 110.,140.,80.,140.,0.,60.,230.,140.,80.,60.,0.,0.,
-     * 170.,300.,150.,0.,0.,0.,0.,0.,0.,0.,0.,10./
+     * 170.,300.,150.,0.,0.,0.,0.,0.,0.,0.,0.,10.,
+     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0./
 
 !     Initial water elevations
 c      data sup_init,mhu_init,stc_init,eri_init,ont_init/
 c     *      183.2,175.98,174.8,174.01,74.61/
+
+      allocate(reach_init(Nreaches),stat=iAllocate)
+      if (iAllocate.ne.0) STOP 
 
 !     see s/r lake_evap.f for lake evaporation model
 
@@ -91,22 +100,33 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 ! dch - conditions pour les niveaux d eau initiaux
 !       seulement valables pour la 1ere journee d execution de watroute
 
-      if (year1.eq.2004 .and. month_now.eq.6 
-     *    .and. day_now.eq.1 .and. hour_now.eq.1) then
-        sup_init=183.36
-        mhu_init=176.31
-        stc_init=175.121
-        eri_init=174.37
-c        ont_init=74.1408
-c corrected value (D.Deacu)
-        ont_init=75.14
-      else
-        sup_init=sup_last
-        mhu_init=mhu_last
-        stc_init=stc_last
-        eri_init=eri_last
-        ont_init=ont_last
-      endif
+      do i=1,Nreaches
+        reach_init(i)=reach_last(i)
+! The reach names are read from the reservoir release file
+! Lake levels are calculated for these named reaches only
+! The lake level calculation requires:
+! 1) the lake level at which outflow is zero (the offset in the calculations below): zflow, m
+! 2) the lake's surface area (the multiplicative factor in the calculations below): reacharea, m2
+! 3) the scaling factor (not the exponent) from the stage-discharge curve (used in qo2): sfactor, m2/s
+! 4) Coeff2 in ..._REL.tb0, which is the exponent from the stage-discharge curve: b2(l)
+        if(resname(i).eq.'Superior     ') sup_init = reach_init(i)
+        if(resname(i).eq.'Huron        ') mhu_init = reach_init(i)
+        if(resname(i).eq.'StClair      ') stc_init = reach_init(i)
+        if(resname(i).eq.'Erie         ') eri_init = reach_init(i)
+        if(resname(i).eq.'Ontario      ') ont_init = reach_init(i)
+        if(resname(i).eq.'Champlain    ') cha_init = reach_init(i)
+      end do
+
+!      if (year1.eq.2004 .and. month_now.eq.6 
+!     *    .and. day_now.eq.1 .and. hour_now.eq.1) then
+!        sup_init=183.36
+!        mhu_init=176.31
+!        stc_init=175.121
+!        eri_init=174.37
+!c        ont_init=74.1408
+!c corrected value (D.Deacu)
+!        ont_init=75.14
+!      endif
 
       nnu=0
 
@@ -136,11 +156,11 @@ c corrected value (D.Deacu)
 
         qo2(n)=824.7*(sup-181.43)**1.5-retard_factor(mo1,1)    
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-c     *        -hourly_evap(mo1,1)*thr*82.1e+09
+c     *          -hourly_evap(mo1,1)*thr*82.1e+09
         sup=store2(n)/82.1e+09+181.43
         lake_elv(l,jz)=sup
         lake_inflow(l,jz)=qi2(n)
-        net_lake_inflow(l,jz)=qi2(n)
+!        net_lake_inflow(l,jz)=qi2(n)
 
       elseif(resname(l).eq.'Huron        ')then
 !       Lake Michigan-Huron
@@ -157,18 +177,19 @@ c     *        -hourly_evap(mo1,1)*thr*82.1e+09
 !     rev. 9.4.11  Jun.  22/07  - NK: reordered rerout for glake 
 	  delta_elv=mhu-stc
 	  mean_elv=amax1(166.98+0.1,mean_elv)   ! prevent div by 0
-	  delta_elv=amax1(0.001,delta_elv)      ! prevent div by 0
+!	  delta_elv=amax1(0.001,delta_elv)      ! prevent div by 0; DAD: moved it below the endif
 	endif
+        delta_elv=amax1(0.001,delta_elv)      ! prevent div by 0; DAD: it's safer here
 !     use stc from the previous time step. Slow change anyway.
 
         qo2(n)=82.2*(mean_elv-166.98)**1.87*(delta_elv)**0.36
-     *           -retard_factor(mo1,2)        
+     *        -retard_factor(mo1,2)        
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-c     *            -hourly_evap(mo1,2)*thr*117.4e+09
+c     *          -hourly_evap(mo1,2)*thr*117.4e+09
         mhu=store1(n)/117.4e+09+166.98
         lake_elv(l,jz)=mhu
         lake_inflow(l,jz)=qi2(n)
-        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
+!        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
 
       elseif(resname(l).eq.'StClair      ')then
 !       Lake St. Clair
@@ -183,19 +204,20 @@ c     *            -hourly_evap(mo1,2)*thr*117.4e+09
 	else
 !     rev. 9.4.11  Jun.  22/07  - NK: reordered rerout for glake 
           delta_elv=stc-eri
-	  delta_elv=amax1(0.001,delta_elv)    ! prevent div by 0
+!	  delta_elv=amax1(0.001,delta_elv)    ! prevent div by 0; DAD: moved it below the endif
 	endif
-          stc=amax1(0.1,stc)                    ! prevent div by 0
+        stc=amax1(0.1,stc)                    ! prevent div by 0
+        delta_elv=amax1(0.001,delta_elv)    ! prevent div by 0; DAD: it's safer here
 !     use eri from the previous time step. Slow change anyway.
 
         qo2(n)=28.8*(stc-164.91)**2.28*(delta_elv)**0.305        
-     *           -retard_factor(mo1,3)        
+     *        -retard_factor(mo1,3)        
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-c     *            -hourly_evap(mo1,3)*thr*1.11e+09
+c     *          -hourly_evap(mo1,3)*thr*1.11e+09
         stc=store1(n)/1.11e+09+164.91
         lake_elv(l,jz)=stc
         lake_inflow(l,jz)=qi2(n)
-        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
+!        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
 
       elseif(resname(l).eq.'Erie         ')then
 !       Lake Erie
@@ -210,11 +232,11 @@ c     *            -hourly_evap(mo1,3)*thr*1.11e+09
 
         qo2(n)=558.3*(eri-169.86)**1.60-retard_factor(mo1,4)        
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-c     *            -hourly_evap(mo1,4)*thr*25.7e+09
+c     *          -hourly_evap(mo1,4)*thr*25.7e+09
         eri=store1(n)/25.7e+09+169.86  
         lake_elv(l,jz)=eri
         lake_inflow(l,jz)=qi2(n)
-        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
+!        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
 
       elseif(resname(l).eq.'Ontario      ')then
 !       Lake Ontario
@@ -228,18 +250,40 @@ c     *            -hourly_evap(mo1,4)*thr*25.7e+09
 	endif
 
         qo2(n)=555.823*(ont-0.0014*real(2000-1985)-69.474)**1.5
-     *           -retard_factor(mo1,5)        
+     *        -retard_factor(mo1,5)        
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-c     *            -hourly_evap(mo1,5)*thr*18.96e+09
+c     *          -hourly_evap(mo1,5)*thr*18.96e+09
         ont=store1(n)/18.96e+09+69.474         
         lake_elv(l,jz)=ont
 	lake_inflow(l,jz)=qi2(n)
-        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
+!        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
+
+      elseif(resname(l).eq.'Champlain    ')then
+!       Lake Champlain
+        zflow=28.0           !m
+        reacharea=1.181e+09  !m2
+        sfactor=240          !m2/s
+
+        if(firstpass.eq.'y')then
+!         initialize storage	   
+!         storage = live storage 
+          cha=cha_init
+          store1(n)=(cha-zflow)*reacharea
+          store2(n)=store1(n)
+        endif
+
+        qo2(n)=sfactor*(cha-zflow)**b2(l)-retard_factor(mo1,6)    
+        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
+c     *          -hourly_evap(mo1,6)*thr*reacharea
+        cha=store1(n)/reacharea+zflow
+        lake_elv(l,jz)=cha
+        lake_inflow(l,jz)=qi2(n)
+!        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
 
       elseif(b1(l).ne.0.0)then
-  
 !       natural lake or uncontrolled reservoir routing:
-
+! NOTE:  the lake level is not calculated for reaches other than the Great Lakes;
+!        the lake level will be written in output files as zero-valued
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
         if(store2(n).le.0.0)then
           write(98,9801)l,n,store2(n)
@@ -274,10 +318,12 @@ c     *            -hourly_evap(mo1,5)*thr*18.96e+09
           qo2=0.0
           store2(n)=1.0
 c          dtmin=a6
-          write(53,6804)n,l
+          write(52,6804)n,l
         endif
+	lake_inflow(l,jz)=qi2(n)
+!        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
         if(iopt.ge.2)then
-          write(53,6004)
+          write(52,6004)
      *           qi1(n),qi2(n),store1(n),store2(n),qo1(n),qo2(n)
         endif
         
@@ -285,7 +331,7 @@ c          dtmin=a6
 !        if(qo1(n).gt.0.001) at=store2(n)/qo1(n)
 !         yeah.... fix this:
         if(qo1(n).gt.0.001) at=store2(n)/qo2(n)
-
+  
 !       SELECT MINIMUM TRAVEL TIME FOR THE TIME STEP CALCULATION
 c        dtmin=amin1(at,dtmin)
 	
@@ -307,11 +353,11 @@ c        dtmin=amin1(at,dtmin)
 !
           hour_offset = 24*(day1-1)
 	  if(jm.lt.1)then
-!          qo2(n)=qrel(l,1)
-             qo2(n)=qrel(l, hour_offset + 1)
+!            qo2(n)=qrel(l,1)
+            qo2(n)=qrel(l, hour_offset + 1)
 	  else
-!          qo2(n)=qrel(l, jm)
-             qo2(n)=qrel(l, hour_offset + jm)
+!            qo2(n)=qrel(l, jm)
+            qo2(n)=qrel(l, hour_offset + jm)
 	  endif
 
         if(qo2(n).lt.0.0)qo2(n)=0.0
@@ -321,11 +367,10 @@ c        dtmin=amin1(at,dtmin)
 
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
 
-        if(iopt.ge.2)write(53,6803)l,jm,n,ireach(n),qo2(n)
+        if(iopt.ge.2)write(52,6803)l,jm,n,ireach(n),qo2(n)
       endif   !        if(b1(l).ne.0.0)
 
       if(iopt.eq.2)print*,'in rerout passed 698'
-
 
   999 RETURN
 
@@ -357,7 +402,7 @@ c        dtmin=amin1(at,dtmin)
 
  5301 format(' ','Reservoir inflow data echoed:')
  5303 format(6(' ',a12))
- 5304 format(' ','Error on unit=99,fln=',a30,'(',i2,')'//)
+ 5304 format(' ','Error on unit=99,fln=',a999,'(',i2,')'//)
  5310 format(' -ve flow for reservoir #',i3,'zero flow assumed',i3)
  6004 format(' qi,store,qo/',2f10.3,2f12.0,2f10.3)
  6801 format('   rerout: reservoir no =',i3,' mhtot =',i5)
@@ -366,7 +411,7 @@ c        dtmin=amin1(at,dtmin)
  6804 format(' warning: store2(',i5,') set = 0.0 for resv no.',i5) 
  9005 format(' iymin,iymax,jxmin,jxmax/',4i5)
 9801  format(' resv',i3,' grid',i6,' store2=',g12.3,' < 0  1.0 assumed')
-99182 format(' Warning: Error opening or reading fln:',a30/
+99182 format(' Warning: Error opening or reading fln:',a999/
      *  ' Probable cause: missing strfw/yymmdd.str input file'/
      *  ' OR: in config.sys have you set files=100 & buffers=50?'/)
  9983 format(256(f12.0,x))

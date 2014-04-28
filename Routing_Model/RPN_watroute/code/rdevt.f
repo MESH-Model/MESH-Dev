@@ -97,7 +97,12 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 ! unit=276  fln(46)- 
 ! filenames 100-199 reserved for event file names
 
-
+! unit=501  infln(3 )- reach1_lvl.txt
+! unit=502  infln(4 )- reach2_lvl.txt
+! unit=503  infln(5 )- reach3_lvl.txt
+! unit=504  infln(6 )- reach4_lvl.txt
+! unit=505  infln(7 )- reach5_lvl.txt
+! unit=506  infln(8 )- reach6_lvl.txt ! TO MAXIMUM OF 15 REACHES: DYNAMICALLY PROCESSED
 
 !   o - nhg     int      number of hours of rain gauge data
 !   o - nhf     int      number of hours of flow data
@@ -167,7 +172,7 @@ c      write(98,1300)fln(99)
         if(ios.ne.0)then
           write(*,99921)fln(99)
           write(98,99921)fln(99)
-99921     format(' error opening unit 99, file name= ',a30)
+99921     format(' error opening unit 99, file name= ',a999)
           print*, 'iostat= ',ios
           print*  
           STOP ' program terminated in rdevt'
@@ -326,23 +331,30 @@ c          read(99,*,iostat=ios)junk,frcid1flg
 !       write this stuffto spl.txt for the record
         write(51,*)'#                             '        
         write(51,*)':snwflg                       ',snwflg         
-        write(51,*)':sedflg                       ',sedid1flg         
+        write(51,*)':sedflg                       ',sedflg         
+!        write(51,*)':sedflg                       ',sedid1flg         
         write(51,*)':vapflg                       ',vapflg         
         write(51,*)':smrflg                       ',smrflg         
         write(51,*)':esimflg                      ',resinflg   
         write(51,*)':tbcflg                       ',tbcflg         
         write(51,*)':esumflg                      ',resumflg         
         write(51,*)':contflg                      ',contflg         
-        write(51,*)':routeflg                     ',routeid1flg         
+        write(51,*)':routeflg                     ',routeflg         
+!        write(51,*)':routeflg                     ',routeid1flg         
         write(51,*)':crseflg                      ',crseflg         
         write(51,*)':ensimflg                     ',ensimflg         
         write(51,*)':picflg                       ',picflg         
-        write(51,*)':wetflg                       ',wetid1flg         
-        write(51,*)':modelflg                     ',modelid1flg         
+        write(51,*)':wetflg                       ',wetflg         
+!        write(51,*)':wetflg                       ',wetid1flg         
+        write(51,*)':modelflg                     ',modelflg         
+!        write(51,*)':modelflg                     ',modelid1flg         
         write(51,*)':shdflg                       ',shdflg         
-        write(51,*)':trcflg                       ',trcid1flg  
-        write(51,*)':frcflg                       ',frcid1flg  
+        write(51,*)':trcflg                       ',trcflg  
+!        write(51,*)':trcflg                       ',trcid1flg  
+        write(51,*)':frcflg                       ',frcflg  
+!        write(51,*)':frcflg                       ',frcid1flg  
         write(51,*)':initflg                      ',initflg    
+        write(51,*)':fstflg                       ',fstflg
         write(51,*)'#                             '        
         write(51,*)':intSoilMoisture              ',(smc5(i),i=1,5)         
         write(51,*)':rainConvFactor               ',conv         
@@ -389,44 +401,44 @@ c          read(99,*,iostat=ios)junk,frcid1flg
 c        do i=1,3      ! .shd .par .pdl   
 c           read(99,99005,iostat=ios)junk,fln(i)
 c           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-c           write(51,1030)i+30,i,fln(i)
+c           write(51,1030)i+30,i,trim(fln(i))
 c        end do
 
 !     _shd.r2c    
         i=1
         read(99,99005,iostat=ios)junk,fln(i)
         if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-        write(51,1030)i+30,i,fln(i)
+        write(51,1030)i+30,i,trim(fln(i))
 !     .par    
         i=2
         read(99,99005,iostat=ios)junk,fln(i)
         if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-        write(51,1030)i+30,i,fln(i)
+        write(51,1030)i+30,i,trim(fln(i))
 !     ch_par.r2c  
 !     rev. 9.3.11  Feb.  28/07  - NK: ch_par added / event file ver = 9.5
         if(evt_version.ge.9.5)then
             i=41
           read(99,99005,iostat=ios)junk,fln(i)
           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-          write(51,1030)i+230,i,fln(i)
+          write(51,1030)i+230,i,trim(fln(i))
           endif
 !     .pdl   
         i=3
         read(99,99005,iostat=ios)junk,fln(i)
         if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-        write(51,1030)i+30,i,fln(i)
+        write(51,1030)i+30,i,trim(fln(i))
 
 
         i=13          ! .sdc
         read(99,99005,iostat=ios)junk,fln(i)
         if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-        write(51,1030)i+30,i,fln(i)
+        write(51,1030)i+30,i,trim(fln(i))
 !     rev. 9.1.78  Mar.  15/05  - NK: added WQD file to event file
         if(evt_version.ge.9.3)then
           i=40          ! .wqd      
           read(99,99005,iostat=ios)junk,fln(i)
           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-          write(51,1030)i+250,i,fln(i)
+          write(51,1030)i+250,i,trim(fln(i))
         endif
 
         read(99,99005,iostat=ios)junk                 ! #         
@@ -439,26 +451,26 @@ c        end do
           i=39          ! .psm      
           read(99,99005,iostat=ios)junk,fln(i)
           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-          write(51,1030)i+250,i,fln(i)
+          write(51,1030)i+250,i,trim(fln(i))
         endif
 
         i=5          ! .rag                  
         read(99,99005,iostat=ios)junk,fln(i)
         if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-        write(51,1030)i+30,i,fln(i)
+        write(51,1030)i+30,i,trim(fln(i))
         i=14          ! .tag        
         read(99,99005,iostat=ios)junk,fln(i)
         if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-        write(51,1030)i+30,i,fln(i)
+        write(51,1030)i+30,i,trim(fln(i))
         i=20          ! .pnr        
         read(99,99005,iostat=ios)junk,fln(i)
         if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-        write(51,1030)i+30,i,fln(i)
+        write(51,1030)i+30,i,trim(fln(i))
 
         do i=26,30    ! .prh .pws .plw .psw .ppr        
           read(99,99005,iostat=ios)junk,fln(i)
           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-          write(51,1030)i+250,i,fln(i)
+          write(51,1030)i+250,i,trim(fln(i))
         end do
 
         read(99,99005,iostat=ios)junk                 ! #         
@@ -466,9 +478,9 @@ c        end do
 
         do i=6,7          ! .str .rel           nk 05/11/16
           read(99,99005,iostat=ios)junk,fln(i)
-          print*, junk,i,'   ',fln(i)
+          write(*,'(a31,i4,a)') junk,i,trim(fln(i))
           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-          write(51,1030)i+30,i,fln(i)
+          write(51,1030)i+30,i,trim(fln(i))
         end do
 
 !       next we have either the .rin or the .snw file:
@@ -476,7 +488,7 @@ c        end do
           i=8             ! .rin          
           read(99,99005,iostat=ios)junk,fln(i)
           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-          write(51,1030)i+30,i,fln(i)
+          write(51,1030)i+30,i,trim(fln(i))
         else
           i=8             ! .snw   old format .snw file
           read(99,99005,iostat=ios)junk,fln(i)
@@ -486,7 +498,7 @@ c        end do
           i=35          ! .crs      
           read(99,99005,iostat=ios)junk,fln(i)
           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-          write(51,1030)i+250,i,fln(i)
+          write(51,1030)i+250,i,trim(fln(i))
         endif
 
         read(99,99005,iostat=ios)junk                 ! #         
@@ -494,48 +506,48 @@ c        end do
           i=9          !  .rad       
           read(99,99005,iostat=ios)junk,fln(i)
           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-          write(51,1030)i+30,i,fln(i)
+          write(51,1030)i+30,i,trim(fln(i))
 
         do i=11,12      ! .scn .clt   
           read(99,99005,iostat=ios)junk,fln(i)
           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-          write(51,1030)i+30,i,fln(i)
+          write(51,1030)i+30,i,trim(fln(i))
         end do
 
         if(evt_version.ge.9.2)then 
           do i=36,38    ! .swe .gsm .lzs     
             read(99,99005,iostat=ios)junk,fln(i)
             if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-            write(51,1030)i+250,i,fln(i)
+            write(51,1030)i+250,i,trim(fln(i))
           end do
         endif
         i=10          ! .met        
         read(99,99005,iostat=ios)junk,fln(i)
         if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-        write(51,1030)i+30,i,fln(i)
+        write(51,1030)i+30,i,trim(fln(i))
         i=34          ! .snw        
         read(99,99005,iostat=ios)junk,fln(i)
         if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-        write(51,1030)i+250,i,fln(i)
+        write(51,1030)i+250,i,trim(fln(i))
         i=15          ! .tem        
         read(99,99005,iostat=ios)junk,fln(i)
         if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-        write(51,1030)i+30,i,fln(i)
+        write(51,1030)i+30,i,trim(fln(i))
         i=19          ! .gnr        
         read(99,99005,iostat=ios)junk,fln(i)
         if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-        write(51,1030)i+30,i,fln(i)
+        write(51,1030)i+30,i,trim(fln(i))
 
         do i=21,25         ! .grh .gws .glw .gsw .gpr
           read(99,99005,iostat=ios)junk,fln(i)
           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-          write(51,1030)i+250,i,fln(i)
+          write(51,1030)i+250,i,trim(fln(i))
         end do
 
         do i=31,33          ! .rff .rch .lkg        
           read(99,99005,iostat=ios)junk,fln(i)
           if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
-          write(51,1030)i+250,i,fln(i)
+          write(51,1030)i+250,i,trim(fln(i))
         end do
 
           read(99,*,iostat=ios)junk                 ! #
@@ -562,7 +574,7 @@ c        end do
           do n=2,ni
             nkeep=n
             read(99,1300,iostat=ios)fln(100+n)
-            write(51,1300)fln(100+n)
+            write(51,1300)trim(fln(100+n))
             if(ios.ne.0)then
               print*,'Error reading file no ',nkeep,' in rdevt'
               print*,'possible cause: number of files listed '
@@ -796,8 +808,7 @@ c          frcflg=frcid1flg
 
       if(iopt.eq.2)print*,' In rdevt, passed location 870'
 
-        print*
-        print*,'finished reading ',fln(99)
+        write(*,'(a18,a)') 'finished reading ',trim(fln(99))
         print*
 
       RETURN
@@ -825,14 +836,14 @@ c          frcflg=frcid1flg
  1020 format(' ', /'you are trying to link too many events'/
      *'      the maximum is 500, you entered,',i5,/
      *'      program aborted. fix the event file and try again')
- 1030 format(' ','Unit no. =',i3,' file no',i3,' = ',a35)
+ 1030 format(' ','Unit no. =',i3,' file no',i3,' = ',a)
  1031 format(' Input files from event.evt')
  1040 format(' Event no. ',i5)
  1050 format(' ')
  1100 format(26x,6f5.2)
  1110 format(26x,6f5.2)
  1200 format(26x,3i5)
- 1300 format(a30)
+ 1300 format(a999)
  6080 format(a14)
  6081 format(i4)
 
@@ -840,7 +851,7 @@ c          frcflg=frcid1flg
 99002 format(a30,a1)
 99003 format(a30,f12.2)
 99004 format(a30,i10)
-99005 format(a30,a31)
+99005 format(a30,a999)
 
       END SUBROUTINE rdevt
 

@@ -238,11 +238,12 @@ ccccc      MODULE area5
 
         real*4,  dimension(:,:), allocatable :: qrel,qinfl,qdwpr,
      *                     lake_stor,lake_outflow,lake_inflow,lake_elv,
-     *                     del_stor,net_lake_inflow,net_lake_outflow
+     *                     del_stor
+!     *                     del_stor,net_lake_inflow,net_lake_outflow
      *                     ,qstream_sum,strloss_sum
 
 ! dch
-        real*4 :: sup_last,mhu_last,stc_last,eri_last,ont_last
+        real*4, DIMENSION(:), ALLOCATABLE :: reach_last
 
         real*4,    dimension(:), allocatable :: b1,b2,b3,b4,b5,ppsum,
      *                                          yres,xres
@@ -381,15 +382,16 @@ ccccc      END MODULE area11
 
 ccccc      MODULE area12
 
-c        character(31), dimension(:), allocatable :: fln
-c        character(30), dimension(:), allocatable :: filename
-c        character(30), dimension(:), allocatable :: outfln
-        character(60), dimension(:), allocatable :: fln
-        character(60), dimension(:), allocatable :: filename
-        character(60), dimension(:), allocatable :: outfln
-        character(3)                             :: filetype
-        character(1)                             :: chars(99) 
-        integer(4)                               :: filename_length
+        character(999), dimension(:), allocatable :: fln
+        character(999), dimension(:), allocatable :: filename
+        character(999), dimension(:), allocatable :: outfln
+        character(999), dimension(:), allocatable :: infln
+        character(3) :: filetype
+        character(1) :: chars(99) 
+        integer(4)   :: filename_length
+        integer      :: Nreaches,Nreachesmax=15
+
+!        DATA Nreachesmax/15/
 
 ccccc      END MODULE area12
 
@@ -680,6 +682,7 @@ ccccc      MODULE areawfo
 
 
       real         :: xorigin,yorigin,xdelta,ydelta,angle
+      real, dimension(:),   allocatable::latgrid,longrid
       integer      :: xcount,ycount,deltat
       character(10) ::  starttime,startdate
 

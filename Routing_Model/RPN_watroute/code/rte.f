@@ -34,6 +34,10 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !           run into something at the outlet.
 
 !     rev. 9.4.01  Apr.  17/07  - NK: added deltat_report for gridflow.r2c
+!     D. Durnford Dec 2013
+!     -- concentrated the output file units to make space for up to 15 reaches
+!     -- eliminated the writing of outfiles_rte.new containing the default input file names
+!     -- added the reading in of the input file names
 
       use area_watflood
 
@@ -79,6 +83,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !vfo
       integer iargc
 !      EXTERNAL iargc
+
+      integer   :: ios2,iswitch
+      character :: my_fmt5001*30,fend*3
 
       DATA ntest/43814/qstr/'optionsss'/nchr/9/
       DATA iallcnt/0/
@@ -129,12 +136,13 @@ c     call date_time(cday,time)
       ensimopenflg='n'
 
 !     TS - ALLOCATION FOR AREA12A ARRAYS
-      allocate(fln(999),filename(999),outfln(999),stat=iAllocate)
+      allocate(fln(999),filename(999),outfln(999),infln(999),
+     *         stat=iAllocate)
       if (iAllocate.ne.0) STOP 
      *    'Warning: error with allocation of area12a arrays in spl9' 
 
 ! SET DEFAULT FILENAMES FOR OUTPUT FILES:
-!     these names may be replaced with the outfiles.txt file in the working
+!     these names may be replaced with the outfiles_rte.txt file in the working
 !     directory to send the files to a designated place for output.
 !     A default outfiles.new file is created in the working directory each 
 !     time this program is run.
@@ -144,52 +152,71 @@ c     call date_time(cday,time)
       end do
 
 !vfo
-!       filename(51)='../simout/rte.txt'      !program information
        filename(51)='rte.txt'      !program information
-!       filename(53)='../simout/res.txt'      !reservoir data
-       filename(53)='res.txt'      !reservoir data
-!       filename(55)='../simout/route.txt'      !routing data
-       filename(55)='route.txt'      !routing data
-!       filename(60)='../simout/spl.csv'      !paired observed/computed
-       filename(60)='spl_rpn.csv'      !paired observed/computed 
-!       filename(68)='../simout/wetland.csv'  !wetland info
-       filename(68)='wetland.csv'  !wetland info
-!       filename(72)='../simout/gridflow.r2c' 
-       filename(72)='gridflow.r2c' 
-       fln(72)=filename(72)                  ! write_r2c used fln()
-!       filename(73)='../simout/resin.txt'    !lake inflow obs/computed
-       filename(73)='resin.txt'    !lake inflow obs/computed
-!       filename(80)='../simout/lake_sd.csv'  !  reservoir storage output
-       filename(80)='lake_sd.csv'  !  reservoir storage output
+       filename(52)='res.txt'      !reservoir data
+       filename(53)='route.txt'      !routing data
+       filename(54)='spl_rpn.csv'      !paired observed/computed 
+       filename(55)='wetland.csv'  !wetland info
+       filename(56)='gridflow.r2c' 
+       fln(56)=filename(56)                  ! write_r2c used fln()
+       filename(57)='resin.txt'    !lake inflow obs/computed
+       filename(58)='lake_sd.csv'  !  reservoir storage output
 !dch
-       filename(81)='net_lake_inflow.csv'
-       filename(82)='qi_sup.txt'
-       filename(83)='qi_mhg.txt'
-       filename(84)='qi_stc.txt'
-       filename(85)='qi_eri.txt'
-       filename(86)='qi_ont.txt'
-       filename(87)='moy_qi.txt'
-       filename(92)='qr_sup.txt'
-       filename(93)='qr_mhg.txt'
-       filename(94)='qr_stc.txt'
-       filename(95)='qr_eri.txt'
-       filename(96)='qr_ont.txt'
-       filename(97)='moy_qr.txt'
+!       filename(59)='net_lake_inflow.csv' !removed: net_lake values assume that reaches are in a chain
+       filename(59)='gridflow.fst'
+!       filename(60)= ! unused
+!       filename(61)= ! unused
+!       filename(62)= ! unused
+!       filename(63)= ! unused
+       filename(64)='qi_reach1.txt'
+       filename(65)='qi_reach2.txt'
+       filename(66)='qi_reach3.txt'
+       filename(67)='qi_reach4.txt'
+       filename(68)='qi_reach5.txt'
+       filename(69)='qi_reach6.txt'
+       filename(70)='qi_reach7.txt'
+       filename(71)='qi_reach8.txt'
+       filename(72)='qi_reach9.txt'
+       filename(73)='qi_reach10.txt'
+       filename(74)='qi_reach11.txt'
+       filename(75)='qi_reach12.txt'
+       filename(76)='qi_reach13.txt'
+       filename(77)='qi_reach14.txt'
+       filename(78)='qi_reach15.txt'
+       filename(79)='moy_qi.txt'
+!       filename(80)= ! unused
+       filename(81)='qr_reach1.txt'
+       filename(82)='qr_reach2.txt'
+       filename(83)='qr_reach3.txt'
+       filename(84)='qr_reach4.txt'
+       filename(85)='qr_reach5.txt'
+       filename(86)='qr_reach6.txt'
+       filename(87)='qr_reach7.txt'
+       filename(88)='qr_reach8.txt'
+       filename(89)='qr_reach9.txt'
+       filename(90)='qr_reach10.txt'
+       filename(91)='qr_reach11.txt'
+       filename(92)='qr_reach12.txt'
+       filename(93)='qr_reach13.txt'
+       filename(94)='qr_reach14.txt'
+       filename(95)='qr_reach15.txt'
+       filename(96)='moy_qr.txt'
+!       filename(97)= ! unused
        filename(98)='rte_info.txt'
        filename(99)='scratch5'                       ! reserved as scratch file
        filename(100)='scratch6'                      ! not used
 
  ! WRITE A NEW OUTFILES.TXT FILE THAT CAN BE MODIFIED BY THE USER:
-      open(unit=99,file='outfiles_rte.new',form='formatted',
-     *     status='unknown',iostat=ios)
-      if(ios.eq.0)then
-        write(99,99002)(filename(i),i=51,100)
-        close(unit=99,status='keep')
-      else
-	print*,' error opening outfiles.new'
-	print*,' new file not written'
-	print*
-      endif
+c      open(unit=99,file='outfiles_rte.new',form='formatted',
+c     *     status='unknown',iostat=ios)
+c      if(ios.eq.0)then
+c        write(99,99002)(filename(i),i=51,100)
+c        close(unit=99,status='keep')
+c      else
+c	print*,' error opening outfiles.new'
+c	print*,' new file not written'
+c	print*
+c      endif
 
 ! THIS INCLUDE OPENS THE SIMOUT FILES AND WILL BE DIFFERENT FOR UNIX 
 ! OR DOS\WINDOWS
@@ -199,6 +226,50 @@ c     call date_time(cday,time)
 !     id is used as a flag. when id=0 openfiles:
       id=1              !not used like this now  nk Apr. 8/03
       ni=1
+
+! THE OUTFILES.TXT FILE READS THE NAMES OF ALL THE OUTPUT FILES
+      ioflg=0 ! # of output files listed in outfiles_rte.txt
+      INQUIRE(FILE='outfiles_rte.txt',EXIST=exists)
+      if(exists)then
+        open(unit=99,file='outfiles_rte.txt',
+     *               status='old',iostat=ios)
+        if(ios.eq.0)then
+!         AN OUTFILES.TXT FILE EXISTS AND WE'LL READ IT:
+          print*,'reading outfile names from outfiles_rte.txt'
+          write(my_fmt5001, '( "(a", i3, ")" )' )  len(outfln)
+          do i=51,100
+            read(99,my_fmt5001,iostat=ios)outfln(i)
+            if ( i .eq. 51) then
+!              if(ioflg.gt.1)then
+              filename(i)=outfln(i)
+!              endif
+              open(unit=51,file=filename(51),status='unknown',
+     *             iostat=ios)
+              write(51,*)'Outfile names from fln: outfiles_rte.txt' 
+            end if
+            write(51,'(a)') trim(outfln(i))
+!            write(51,my_fmt5001) outfln(i)
+            if(ios.ne.0)then 
+              print*,'Problems on unit 99'
+              print*,'Warning: error reading file name outfiles.txt'
+              print*,'possible cause: existing file is read-only'
+              print*,'or end of file is reached - need 50 lines'
+              print*,'iostat code =',ios
+              print*,'Got as far as line ',i-50
+              STOP 'program aborted in spl.for @ 345'
+            endif
+            ioflg=i
+          end do
+          close(unit=99)
+          fln(56)=outfln(56)               ! gridflow.r2c:  write_r2c used fln()
+        else
+          print*,'Error opening outfiles.txt'
+          print*,'Continuing using default output files'
+        endif 
+      else
+       print*,'outfiles.txt file not found, defaults used'
+       print*
+      endif
 
 ! DURING EXECUTION, THE 'STOP' COMMAND CAN BE MADE FROM ANOTHER DOS
 ! WINDOW. IT WILL CHECK AT THE END OF EACH EVENT. THIS WILL CLOSE
@@ -214,9 +285,6 @@ c     call date_time(cday,time)
 	print*
       endif
 
-      ioflg=0
-! ioflg IS THE NUMBER OF OUTPUT FILES LISTED IN OUTFILES.TXT
-! so it's value will be changed then
 
 ! OPEN FILE FOR ALL SPL ERROR MESSAGES:
       if(ioflg.gt.1)then
@@ -232,52 +300,63 @@ c     call date_time(cday,time)
       write(98,6017)cday(1:4),cday(5:6),cday(7:8)
       write(98,5005)
 
-! THE OUTFILES.TXT FILE READS THE NAMES OF ALL THE OUTPUT FILES
 
-      INQUIRE(FILE='outfiles_rte.txt',EXIST=exists)
+! Read in the names of input files
+!       filename(1)='event.evt'
+!       filename(2)= ! unused IMPORTANT: LEAVE IT UNUSED
+!       filename(3)='reach1_lvl.txt'
+!       filename(4)='reach2_lvl.txt'
+!       filename(5)='reach3_lvl.txt'
+!       filename(6)='reach4_lvl.txt'
+!       filename(7)='reach5_lvl.txt'
+!       filename(8)='reach6_lvl.txt'
+!       filename(9)='reach7_lvl.txt'
+!       filename(10)='reach8_lvl.txt'
+!       filename(11)='reach9_lvl.txt'  ! MAX 15 REACHES PERMITTED
+!       filename(Nreaches+3)= ! unused IMPORTANT: LEAVE IT UNUSED
+!       filename(Nreaches+4) 'flow_init.fst' ! The filename index of flow_init_fst is estabished in rte_sub.f as a function of Nreaches
+!       filename(Nreaches+5 to 50)= ! unused: can be used
+
+      INQUIRE(FILE='infiles_rte.txt',EXIST=exists)
       if(exists)then
-        open(unit=99,file='outfiles_rte.txt',
+        open(unit=99,file='infiles_rte.txt',
      *               status='old',iostat=ios)
         if(ios.eq.0)then
-          print*
-!         AN OUTFILES.TXT FILE EXISTS AND WE'LL READ IT:
-          print*,'reading outfile names'
-          print*
-          write(51,*)
-          write(51,*)'Outfile names from fln: outfiles_rte.txt' 
-          do i=51,100
-            read(99,5001,iostat=ios)outfln(i)
-            write(51,5001)outfln(i)
-            if(ios.ne.0)then 
+!         AN INFILES.TXT FILE EXISTS AND WE'LL READ IT:
+          print*,'reading infile names from infiles_rte.txt'
+          iswitch = 0
+          do i=1,50
+            read(99,my_fmt5001,iostat=ios)infln(i)
+            if(ios.eq.0)then 
+              if (iswitch.eq.0 .and. len(trim(infln(i))).le.2) then
+                Nreaches = 0
+                iswitch = 1
+              else if (iswitch.eq.1 .and. len(trim(infln(i))).gt.2) then
+                Nreaches = Nreaches + 1
+              else if (iswitch.eq.1 .and. len(trim(infln(i))).le.2) then
+                iswitch = 2
+              end if 
+            else
               print*,'Problems on unit 99'
-              print*,'Warning: error reading file name outfiles.txt'
-              print*,'possible cause: existing file is read-only'
-              print*,'or end of file is reached - need 50 lines'
+              print*,'Warning: error reading file name infiles.txt'
+              print*,'possible cause: end of file is reached'
+              print*,' - need 50 lines'
               print*,'iostat code =',ios
-              print*,'Got as far as line ',i-50
-              STOP 'program aborted in spl.for @ 345'
+              print*,'Got as far as line ',i-100
+              STOP 'program aborted in spl.for @ 345b'
             endif
             ioflg=i
           end do
+          if (Nreaches .gt. Nreachesmax) then
+            write(*,*) 'The current setup can have no more than ',
+     *                  Nreachesmax,' reaches'
+            write(*,*) 'The calculated # reaches is: ',Nreaches
+          end if
           close(unit=99)
-!vfo we define fln(72) here
-          fln(72)=outfln(72)               ! write_r2c used fln()
-        else
-          print*,'Error opening outfiles.txt'
-          print*,'Continuing using default output files'
-        endif 
-      else
-       print*,'outfiles.txt file not found, defaults used'
-       print*
-      endif
-      
-!vfo fln(72)=outfln(72)                  ! write_r2c used fln()
+        end if
+      end if
 
       i=51
-      if(ioflg.gt.1)then
-        filename(i)=outfln(i)
-      endif
-
       open(unit=i,file=filename(i),access='sequential',
      *    recl=2096,status='unknown',iostat=ios)
 !       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -285,15 +364,20 @@ c     call date_time(cday,time)
 !       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
       call date_and_time(cday,time)
+      write(51,*)
       write(51,6016)time(1:2),time(3:4),time(5:6)
       write(51,6017)cday(1:4),cday(5:6),cday(7:8)
       write(51,*)
       write(51,5003)i,filename(i)
 
-      write(51,5002)
-      write(51,1030)(i,i,filename(i),i=51,100)
+!      write(51,5002)
+!      write(51,1030)(i,i,filename(i),i=51,100)
 
-      fln(99)='event/event.evt'
+      if (len(infln(1)) .gt. 2) then
+        fln(99)=infln(1)
+      else
+        fln(99)='event/event.evt'
+      end if
 
       if(iopt.eq.2)print*, 'In spl: 1 - before rdevt call'
 
@@ -314,227 +398,40 @@ c     call date_time(cday,time)
 !   THE LOCATIONS OF THE OUTPUT FILES.  IF FILE DOES NOT EXIST, DEFAULT
 !   NAMES WILL BE USED.
 
-      i=53
-        if(ioflg.gt.1)then
+      write(51,5002)
+      do i=52,100
+        if(ioflg.gt.1 .and. len(trim(outfln(i))).gt.2)then
           filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
+          fend = outfln(i)(len(trim(outfln(i)))-2:len(trim(outfln(i))))
+          if (fend /= 'fst') then
+            if (i .eq. 54) then
+              inquire(file=filename(i),exist=exists)
+              if (.not. exists) then
+                 open(unit=i,file=filename(i),status='new',iostat=ios)
+                 first_run = .true.
+              else
+                 open(unit=i,file=filename(i),position='append',
+     *                status='old',iostat=ios)
+              end if
+            else
+              open(unit=i,file=filename(i),access='sequential',
      *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=55
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
+            end if
+!         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if(ios.ne.0)call io_warning(i,filename(i),ios)
+!         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          endif
+          write(51,5003)i, trim(filename(i))
         endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=60
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        inquire(file=filename(i),exist=exists)
-        if (.not. exists) then
-           open(unit=i,file=filename(i),status='new',iostat=ios)
-           first_run = .true.
-        else
-           open(unit=i,file=filename(i),position='append',
-     *          status='old',iostat=ios)
-        end if
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-!     File 65 (i=65) 'watflood.wfo' is opened in wfocode.for
-!     File 66 (i=65) 'error.xyz' is opened in lst.for at end of run
-!     File 67 (i=65) 'error.r2s' is opened in lst.for at end of run
-      if(ioflg.gt.1)then
-        i=65
-        filename(i)=outfln(i)
-      endif
-
-!     TS: CHANGED MAX LIMIT TO INCLUDE TRACER FILES + EVAPSEP FILE (APR 5/06)
-
-      i=73
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=80
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=81
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=82
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=83
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=84
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=85
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=86
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=87
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=92
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=93
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=94
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=95
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=96
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
-
-      i=97
-        if(ioflg.gt.1)then
-          filename(i)=outfln(i)
-        endif
-        open(unit=i,file=filename(i),access='sequential',
-     *             status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        write(51,5003)i,filename(i)
+      end do
 
       if(iopt.eq.2)print*, ' In spl -1001'
 
       write(51,6015)
      *  time(1:2),time(3:4),time(5:6),cday(1:4),cday(5:6),cday(7:8)
 
-99905 write(51,1000)fln(10),fln(1)
-      write(53,1000)fln(10),fln(1)
+99905 write(51,1000)trim(fln(10)),trim(fln(1))
+      write(52,1000)trim(fln(10)),trim(fln(1))
 
       if(iopt.eq.2)print*, ' In spl - 1183'
  
@@ -588,21 +485,21 @@ c     call date_time(cday,time)
 
       if(iopt.eq.2)print*,'in spl9 @1'
 
-      stop ' normal ending'
+      stop 'watroute: normal ending'
 
 ! FORMATS
 
- 1000 format(' ',2(' ',a30))
- 1030 format(' ','Unit no. =',i3,' file no',i3,' = ',a30)
- 5001 format(a30)
+ 1000 format(' ',2(' ',a))
+ 1030 format(' ','Unit no. =',i3,' file no',i3,' = ',a999)
+ 5001 format(a999)
  5002 format(/' output files')
- 5003 format(' opened unit'i5,' file name ',a30)
+ 5003 format(' opened unit'i5,' file name ',a)
  5005 format(' Files opened:')
  6015 format(' runtime  ',a2,':',a2,':',a2,2x,a4,'-',a2,'-',a2)
  6016 format('  runtime    ',2(a2,':'),a2)
  6017 format('  rundate  ',a4,'-',a2,'-',a2)
 99001 format('  0.0')
-99002 format(a30)
+99002 format(a999)
 
       END PROGRAM rte     
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

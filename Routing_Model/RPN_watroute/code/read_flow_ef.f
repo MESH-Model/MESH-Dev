@@ -58,7 +58,8 @@ C Parameter type definitions
 C Local variables
       character*128 keyword, value
       character*4096 line, subString, tmpString
-      integer lineLen, keyLen, wordCount
+      integer lineLen, keyLen, wordCount, ii, jj
+      real    xstrpos
       logical rStat, lineType, foundEndHeader, insideColMetaData
 
 C Set unit and fln number
@@ -297,20 +298,37 @@ c      endif
          do l=1,no
 !     convert iy and jx to local coordinates
 !     Jul. 21/04  nk
+           if (fstflg .eq. 'y') then                                    ! fst files
+!           if (longrid(1).gt.0.0 .and. latgrid(1).gt.0.0) then
+             xstrpos = xstr(l)
+             if (xstrpos .lt. 0.0) xstrpos = 360.00 + xstrpos
+             do ii=1,size(longrid)-1
+               if   (xstrpos.ge.longrid(ii)
+     *         .and. xstrpos.le.longrid(ii+1)) then
+                 jx(l) = ii
+                 exit
+               end if
+             end do
+             do jj=1,size(latgrid)-1
+               if   (ystr(l).ge.latgrid(jj)
+     *         .and. ystr(l).le.latgrid(jj+1)) then
+                 iy(l) = jj
+                 exit
+               end if
+             end do
+           else                                                         ! r2c files
             iy(l)=int((ystr(l)-yorigin)/ydelta)+1
             jx(l)=int((xstr(l)-xorigin)/xdelta)+1
+           end if
          end do
-         write(55,*)
-         write(55,*)'Just after converting streamflow stations to '
-         write(55,*)'grid coordinates'
+         write(53,*)
+         write(53,*)'Just after converting streamflow stations to '
+         write(53,*)'grid coordinates'
          do l=1,no
-            write(55,1778)id,l,iy(l),jx(l)
+            write(53,1778)id,l,iy(l),jx(l)
          end do
-         write(55,*)
+         write(53,*)
       endif
-
-
-
 
 !       WATFLOOD COLUMN FORMAT
 c		do j=1,nl,kt
@@ -414,9 +432,9 @@ c		do j=1,nl,kt
 
 !     write the converted hydrographs (stage to flow):
       if(iopt.gt.0.and.frc(1,1).ne.0)then
-         write(55,5001)
+         write(53,5001)
          do j=kt,nl,kt
-            write(55,202)(qhyd(l,j),l=1,no)
+            write(53,202)(qhyd(l,j),l=1,no)
          end do
       endif
 
@@ -481,7 +499,7 @@ c		do j=1,nl,kt
  5001 format(/' echo converted hydrographs:')
  5004 format(a20,a10)
  5005 format(a20,i5)
- 6226 format(' error encountered opening unit=37 fln=',a31/)
+ 6226 format(' error encountered opening unit=37 fln=',a999/)
 
       END SUBROUTINE read_flow_ef
 

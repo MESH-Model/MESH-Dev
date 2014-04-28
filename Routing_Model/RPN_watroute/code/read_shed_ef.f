@@ -176,7 +176,7 @@ c	if(iopt.eq.2)print*,'filename =',fln(flnnum)
          print*,'Problems in file', fln(flnNum)
          write(*,99162)fln(flnNum)
          write(98,99162)fln(flnNum)
-99162    format(' Warning: Error opening or reading fln:',a30/
+99162    format(' Warning: Error opening or reading fln:',a999/
      *  ' Probable cause: missing basin/bsnm_???_par.r2c input file'/
      *  ' OR: in config.sys have you set files=100 & buffers=50?'/
      *  ' OR: wrong number in line 2 of the event file for '/
@@ -663,7 +663,7 @@ c	endif
 !     rev. 9.1.46  Jul.  17/03  - WATFLOOD LITE incorporated 
 !     WATFLOOD LT
 !     WATFLOOD LT
-      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.2000.0)then
+      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.1000.0)then
 !       when ever these conditions are met, the program will run
 !       Since the gr10k files exceed these bounds, the messages will
 !       appropriate.
@@ -1083,7 +1083,7 @@ c            jxs(l)=(jxs(l)-jxmin)/istep+1
 c
 c!           DAMAGE LOCATIONS ARE NOW CONVERTED TO COMPUTATION
 c!           GRID COORDINATES
-c            write(55,1102)iys(l),jxs(l),damage(l),(frcs(l,i),i=1,4),
+c            write(53,1102)iys(l),jxs(l),damage(l),(frcs(l,i),i=1,4),
 c     *                 datum(l)
 c          end do
 c
@@ -1096,7 +1096,7 @@ c          end do
 c  480     CONTINUE
 c!         redefine the size of the array for later printing:
 c          nnnote=i-1
-c          write(55,1098)(note(i),i=1,nnnote)
+c          write(53,1098)(note(i),i=1,nnnote)
 c          close(unit=33)
 c        endif      ! if fln(3) exists
 c!       fix fix section above for new coordinate formats utm & ll
@@ -1165,7 +1165,7 @@ c           jxs(l)=(jxs(l)-jxmin)/istep+1
 c
 c           DAMAGE LOCATIONS ARE NOW CONVERTED TO COMPUTATION
 c           GRID COORDINATES
-c           write(55,1102)iys(l),jxs(l),damage(l),(frcs(l,i),i=1,4),
+c           write(53,1102)iys(l),jxs(l),damage(l),(frcs(l,i),i=1,4),
 c    *                 datum(l)
 c         end do
 c 
@@ -1176,7 +1176,7 @@ c         end do
 c 490     CONTINUE
 c         redefine the size of the array for later printing:
 c         nnnote=i-1
-c         write(55,1098)(note(i),i=1,nnnote)
+c         write(53,1098)(note(i),i=1,nnnote)
 c         close(unit=34)
 c       endif    !  if fln(4) exists
 c     endif
@@ -1197,11 +1197,11 @@ c     endif
       RETURN
 
 99901 write(*,99902)fln(4)
-99902 format(' file',a30,' not found for unit 34 - check event file')
+99902 format(' file',a999,' not found for unit 34 - check event file')
       STOP 'program stopped in shed.for at 99902'
 
 99910 write(*,99911)fln(4)
-99911 format(' no data found or problems with data in ',a30)
+99911 format(' no data found or problems with data in ',a999)
       STOP 'program stopped in shed at 99911'
 
 ! FORMATS
@@ -1210,10 +1210,10 @@ c     endif
  1002 format(' ',i5,'stream gage locations have been passed over')
  1003 format(' ',i5,'reservoir locations have been passed over')
  1004 format(' ',i5,'damage sites:')
- 1098 format(a80)
+ 1098 format(a999)
  1099 format(2i5,1x,a12,7x,4e10.3,f10.3)
  1100 format(' ',2i5,1x,a12,7x,4e10.3,f10.3)
- 1101 format(' reading the stream gauge location file: ',a30)
+ 1101 format(' reading the stream gauge location file: ',a999)
  1102 format(' ',2i5,1x,a12,7x,4e10.3,f10.3/)
  1776 format(' ','l,iys(l),jxs(l)',5i5)
         write(51,*)

@@ -84,8 +84,8 @@ c    *          366,397,435,456,486,517,565,578,280,639,672,700/
 !      a66=900.0
 
       if(iopt.gt.1)then
-         write(55,6006)
-         write(55,6005)
+         write(53,6006)
+         write(53,6005)
      *         iz,jz,mz,itogo,t1,dtmin,dtmax,clock,time,t,thr
       endif
 
@@ -142,8 +142,8 @@ c         ju=ju_mon(mo1)+jz/24
 !      pause
 
          if(iopt.ge.3)then
-            write(55,6003)
-            write(55,6005)
+            write(53,6003)
+            write(53,6005)
      *            iz,jz,mz,itogo,t1,dtmin,dtmax,clock,time,t,thr
          endif
  
@@ -235,9 +235,9 @@ c         ju=ju_mon(mo1)+jz/24
       endif
 
       if(iopt.ge.3)then
-!         if(mz-mz/12*12.eq.0)write(55,6003)
-         if(jz-mz/12*12.eq.0)write(55,6003)
-         write(55,6005)
+!         if(mz-mz/12*12.eq.0)write(53,6003)
+         if(jz-mz/12*12.eq.0)write(53,6003)
+         write(53,6005)
      *         iz,jz,mz,itogo,t1,dtmin,dtmax,clock,time,t,thr
       endif
 

@@ -187,9 +187,9 @@
            p(yi,xi) = header%r2cp%ep%attList(ai)%val(vi)
 !   print*,yi,xi,header%r2cp%ep%attList(ai)%val(vi)
              end do
-             write(55,55555)(p(yi,xi),xi=1,xCountLoc)
+             write(53,55555)(p(yi,xi),xi=1,xCountLoc)
            end do
-           write(55,*)
+           write(53,*)
 55555      format(999e10.3)
            do n=1,naa
                 i=yyy(n)

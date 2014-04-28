@@ -180,7 +180,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                       store1(n)=100.
                       try1=0.0
 !                     use 2-5 coefficients
-                      write(53,*)'         n           l          try1',    
+                      write(52,*)'         n           l          try1',    
      *                     '         qo1        store1'
                       do while(try1.lt.qo1(lll))
 !                       keep doubling the res. storage until the corresponding
@@ -191,7 +191,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *                       b3(l)*store1(n)**3+
      *                       b4(l)*store1(n)**4+
      *                       b5(l)*store1(n)**5
-                        write(53,*)n,l,try1,qo1(n),store1(n),'poli'
+                        write(52,*)n,l,try1,qo1(n),store1(n),'poli'
                         if(try1.lt.0.0)then
                           print*,'trial value for flow =',try1
                           print*,'trial reservoir outflow < 0.0'
@@ -209,9 +209,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
                     endif
                   endif
-
-                write(53,*)n,l,try1,qo1(n),store1(n),'done'
-                write(53,*)
+                write(52,*)n,l,try1,qo1(n),store1(n),'done'
+                write(52,*)
 
                 endif
 
@@ -221,8 +220,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                     if(iopt.ge.1)then
                       write(51,8492)
                       write(51,8493)n,l,b1(l),b2(l),qda(n),store1(n)
-                      write(55,8492)
-                      write(55,8493)n,l,b1(l),b2(l),qda(n),store1(n)
+                      write(53,8492)
+                      write(53,8493)n,l,b1(l),b2(l),qda(n),store1(n)
                     endif
                   endif
 
@@ -238,8 +237,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
        if(iopt.eq.-9)write(98,9801)junk
 
         if(iopt.ge.2)then
-          write(55,6007)
-          write(55,6000)(res(n),n=1,naa)
+          write(53,6007)
+!          write(53,6000)(res(n),n=1,naa)  ! Generates a huge output file if the domain is large
         endif
 
       endif           ! firstpass
@@ -267,9 +266,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !     AND PROCEED TO THE LOWEST.
 
       if(iopt.ge.2)then
-        write(55,6002)jz,jz
         write(53,6002)jz,jz
-        write(55,6003)
+        write(52,6002)jz,jz
+        write(53,6003)
       endif
  
       jjz=jz
@@ -342,7 +341,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
                 else
 
-                  if(iopt.ge.3)write(55,6004)n,res(n),index
+                  if(iopt.ge.3)write(53,6004)n,res(n),index
 
 !                 THERE IS A DAM IN THIS SQUARE AND THE 
 !                 RESERVOIR ROUTING SUBROUTINE REROUT IS CALLED.
@@ -377,9 +376,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                   if(jz.ge.1)then      ! added conditional Rev. 9.2.43  nk
                     lake_stor(ln,jz)=store2(n)
                     lake_outflow(ln,jz)=qo2(n)
-                    net_lake_outflow(ln,jz)=qo2(n)
-                    if(ln.gt.1)net_lake_outflow(ln,jz)=
-     *                          qo2(n)-lake_outflow(ln-1,jz)
+!                    net_lake_outflow(ln,jz)=qo2(n)
+!                    if(ln.gt.1)net_lake_outflow(ln,jz)=
+!     *                          qo2(n)-lake_outflow(ln-1,jz)
                     del_stor(ln,jz)=(qi2(n)-qo2(n))*div
                     !div added May 9/06 nk
                   endif
@@ -590,7 +589,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
               atemp=amin1(atemp,99.0)
               istate(i,j)=int(atemp)
 
-              if(iopt.ge.4) write(55,1002)
+              if(iopt.ge.4) write(53,1002)
      *                       i,j,n,istate(i,j),bnkfll(n),qo2(n)
 
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -705,7 +704,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
               atemp=amin1(atemp,99.0)
               istate(i,j)=int(atemp)
 
-              if(iopt.ge.4)write(55,1002)
+              if(iopt.ge.4)write(53,1002)
      *                          i,j,n,istate(i,j),bnkfll(n),qo2(n)
 
             endif                         ! END OF CHANNEL ROUTING
@@ -756,14 +755,14 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
           qi2(lll)=qi2(lll)+qo2(n)
 
       if(n.eq.naa.and.iopt.eq.3)
-     *              write(55,6037)
+     *              write(53,6037)
      *             n,yyy(n),xxx(n),ic,at1,qr(n),qi1(n),qi2(n),
      *        qo1(n),qo2(n),qi2(lll),store1(n),store2(n),cap(n),lll
 
 
             if(iopt.ge.3)then
               at1=at/3600.0
-              write(55,6037,iostat=ios)
+              write(53,6037,iostat=ios)
      *             n,yyy(n),xxx(n),ic,at1,qr(n),qi1(n),qi2(n),
      *        qo1(n),qo2(n),qi2(lll),store1(n),store2(n),cap(n),lll
 !              if(ios.ne.0)then
@@ -781,8 +780,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !             added Dec. 12/00 nk.
 
               if(iopt.ge.1.and.n.eq.nnprint)then
-                if(jz.le.1)write(55,5551)
-                write(55,5550)id,time,at/3600,qi1(n),qi2(n),
+                if(jz.le.1)write(53,5551)
+                write(53,5550)id,time,at/3600,qi1(n),qi2(n),
      *                   qo1(n),qo2(n),store1(n),store2(n)
 5550            format(i5,f8.2,5f8.1,2e12.3)
 5551            format('   id   time         at     qi1     qi2'
@@ -800,56 +799,56 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
          if(spl_csv_flag == 1) then
             if (first_run) then
-               write(unit=60,fmt='(A)') 
+               write(unit=54,fmt='(A)') 
      *           'Observed and simulated streamflows (m^3/s)'
-               write(unit=60,fmt='(A10,'//trim(nostr)//'(",",A8,","))')
+               write(unit=54,fmt='(A10,'//trim(nostr)//'(",",A8,","))')
      *           'Station,,,', (gage(l),l=1,no)
-               write(unit=60,fmt='(A12,'//trim(nostr)
+               write(unit=54,fmt='(A12,'//trim(nostr)
      *           //'(",",F8.3,","))') 
      *           'Longitude,,,',(xstr(l),l=1,no)
-               write(unit=60,fmt='(A11,'//trim(nostr)
+               write(unit=54,fmt='(A11,'//trim(nostr)
      *           //'(",",F8.3,","))')
      *           'Latitude,,,',(ystr(l),l=1,no)
-               write(unit=60,fmt='(A14,'//trim(nostr)//'(",",I8,","))')
+               write(unit=54,fmt='(A14,'//trim(nostr)//'(",",I8,","))')
      *           'Xcoord_grid,,,',(jx(l),l=1,no)
-               write(unit=60,fmt='(A14,'//trim(nostr)//'(",",I8,","))')
+               write(unit=54,fmt='(A14,'//trim(nostr)//'(",",I8,","))')
      *           'Ycoord_grid,,,',(iy(l),l=1,no)
-               write(unit=60,fmt='(A)') 
+               write(unit=54,fmt='(A)') 
      *           'YEAR,MONTH,DAY,HOUR'//repeat(',OBS,SIM',no)
                first_run = .false.
             end if
 
             ! csubich -- we need to write from qo2 if using comparison
             if (trim(strfw_option)=='streamflow_comparison') then
-               write(unit=60,fmt=7000) 
+               write(unit=54,fmt=7000) 
      *           year1, month_now, day_now, hour_now,
      *           (qhyd(l,hour_offset+jz),qo2(iflowgrid(l)),l=1,no)
             else ! Otherwise write from qold2
-               write(unit=60,fmt=7000) 
+               write(unit=54,fmt=7000) 
      *           year1, month_now, day_now, hour_now,
      *           (qhyd(l,hour_offset+jz),qold2(iflowgrid(l)),l=1,no)
             end if
 
          else !spl_csv_flag
             if (first_run) then
-               write(unit=60,fmt='(A)') 
+               write(unit=54,fmt='(A)') 
      *           'Observed and simulated streamflows (m^3/s)'
-               write(unit=60,fmt='A7,18X,'//trim(nostr)//'(A16)')
+               write(unit=54,fmt='A7,18X,'//trim(nostr)//'(A16)')
      *           'Station', (gage(l),l=1,no)
-               write(unit=60,fmt='A9,11X,'//trim(nostr)//'(8X,F8.3)')
+               write(unit=54,fmt='A9,11X,'//trim(nostr)//'(8X,F8.3)')
      *           'Longitude',(xstr(l),l=1,no)
-               write(unit=60,fmt='A11,'//trim(nostr)//'(8X,F8.3)')
+               write(unit=54,fmt='A11,'//trim(nostr)//'(8X,F8.3)')
      *           'Latitude',(ystr(l),l=1,no)
-               write(unit=60,fmt='A11,9X,'//trim(nostr)//'(8XI8)')
+               write(unit=54,fmt='A11,9X,'//trim(nostr)//'(8XI8)')
      *           'Xcoord_grid',(jx(l),l=1,no)
-               write(unit=60,fmt='A11,9X,'//trim(nostr)//'(8X,I8)')
+               write(unit=54,fmt='A11,9X,'//trim(nostr)//'(8X,I8)')
      *           'Ycoord_grid',(iy(l),l=1,no)
-               write(unit=60,fmt='(A)') 
+               write(unit=54,fmt='(A)') 
      *           'YEAR MONTH  DAY HOUR'//repeat(',OBS,SIM',no)
                first_run = .false.
             end if
 
-            write(unit=60,fmt='I4,I6,2(I5),'//trim(nostr)//'(3F8.1)') 
+            write(unit=54,fmt='I4,I6,2(I5),'//trim(nostr)//'(3F8.1)') 
      *        year1, month_now, day_now, hour_now,
      *        (qhyd(l,hour_offset+jz),qo2(iflowgrid(l)),l=1,no)
          endif
@@ -859,8 +858,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-      if(iopt.ge.2) write(55,6006)dtmin
-      if(iopt.ge.3) write(53,1001)jz
+      if(iopt.ge.2) write(53,6006)dtmin
+      if(iopt.ge.3) write(52,1001)jz
 
       if(iopt.eq.2)print*, ' finished writing istate'
 
@@ -892,7 +891,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
  7000 format(4(i5,','),F10.3,999(',',F10.3))
  8492 format(' ','initialize resvr flow & storage - in route'/
      *            'n,l,b1,b2,qda,store1')
- 8493 format(' in route/res init:',2i5,4e12.3)
+ 8493 format(' in route/res init:',2i8,4e12.3)
+! 8493 format(' in route/res init:',2i5,4e12.3)
  9801 format(a80)
  9802 format(i5,10g12.3)
       END SUBROUTINE route

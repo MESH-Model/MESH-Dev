@@ -83,7 +83,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
 !       FILE NAMES AND UNIT NUMBERS DIFFER BY 30
 !        write(*,1400)fn,fln(fn)
-! 1400   format(' opening fln(',i3,'):',a30,'---')
+! 1400   format(' opening fln(',i3,'):',a999,'---')
 !        write(*,*)
 
         open(unit=un,file=fln(fn),status='unknown',iostat=ios)
