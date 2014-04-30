@@ -89,13 +89,13 @@
         if(exists) then
           open(unit=unitNum,file=trim(adjustl(fln(flnNum))),
      *              status='old',iostat=ios)
-      print*,'Opened unit',unitNum,' filename  ',fln(flnNum)
+      print*,'Opened unit',unitNum,' filename  ',trim(fln(flnNum))
           if(ios.ne.0)then
-            print*, 'Problems opening the tem file',fln(flnNum)
+            print*, 'Problems opening the tem file',trim(fln(flnNum))
             STOP ' Stopped in read_r2c'
           endif
         else
-          print*, 'Attempting to open the met file ',fln(flnNum)
+          print*, 'Attempting to open the met file ',trim(fln(flnNum))
           print*, 'but it is not found (in this location)'
           STOP 'Program aborted in read_r2c @89'
         endif
@@ -134,7 +134,7 @@
               iStat = ParseTempParam(header,keyword,keyLen,
      &                          subString)
               if(iStat .lt. 0) then
-                write(*,'(2(A))') 'ERROR parsing ', fln(flnNum)
+                write(*,'(2(A))') 'ERROR parsing ', trim(fln(flnNum))
                 write(*,'(2(A))') '   in line: ',line          
                 STOP ' Stopped in read_r2c'
                 return
@@ -175,7 +175,7 @@
      &  header%r2cp%xCount.ne.xcount.or.
      &  header%r2cp%yCount.ne.ycount) then
             print*
-            print*,'Mismatch between ',fln(flnNum)
+            print*,'Mismatch between ',trim(fln(flnNum))
             print*,'    and SHD files'
             print*,'Check files for origins, deltas and counts'
             print*,'Could be due to # significant digits in header' 
@@ -210,7 +210,7 @@
               
 !  Identify the first and last frame's timestamp 
               if(iStat .lt. 0) then
-                 write(*,'(2(A))') 'ERROR parsing ', fln(flnNum)
+                 write(*,'(2(A))') 'ERROR parsing ', trim(fln(flnNum))
                  write(*,'(2(A))') '   in line: ',line          
                  STOP ' Stopped in read_r2c'
                  return
@@ -362,7 +362,7 @@
           if(ios.ne.0)then
             write(*,9993)modelHour,i
                   print*,' unit number =',unitNum
-                  print*,' filename =',fln(flnNum)
+                  print*,' filename =',trim(fln(flnNum))
             print*,' last data read:'
             print*,' ycount_local = ',i
             print*,' xcount_local = ',j
@@ -392,7 +392,7 @@
 
            close(unit=unitNum,status='keep',iostat=ios)
 
-           write(51,*)'Closed unit ',unitNum,' Filename=  ',fln(flnNum)
+      write(51,*)'Closed unit ',unitNum,' Filename=  ',trim(fln(flnNum))
 !     write(*,*) 'Closed unit ',unitNum,' Filename=  ',fln(flnNum)
 
          RETURN

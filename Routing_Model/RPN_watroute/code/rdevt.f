@@ -172,7 +172,7 @@ c      write(98,1300)fln(99)
         if(ios.ne.0)then
           write(*,99921)fln(99)
           write(98,99921)fln(99)
-99921     format(' error opening unit 99, file name= ',a999)
+99921     format(' error opening unit 99, file name= ',a)
           print*, 'iostat= ',ios
           print*  
           STOP ' program terminated in rdevt'
@@ -180,7 +180,7 @@ c      write(98,1300)fln(99)
       else
         print*,'Attempting to open the file ',fln(99)
         print*,'but it is not found (in this location)'
-          print*,'Possibel cause: Not in proper working directory'
+          print*,'Possible cause: Not in proper working directory'
         print*
         stop 'Program aborted in rdevt @ 159'
       endif
@@ -843,7 +843,7 @@ c          frcflg=frcid1flg
  1100 format(26x,6f5.2)
  1110 format(26x,6f5.2)
  1200 format(26x,3i5)
- 1300 format(a999)
+ 1300 format(a)
  6080 format(a14)
  6081 format(i4)
 
@@ -851,7 +851,7 @@ c          frcflg=frcid1flg
 99002 format(a30,a1)
 99003 format(a30,f12.2)
 99004 format(a30,i10)
-99005 format(a30,a999)
+99005 format(a30,a)
 
       END SUBROUTINE rdevt
 

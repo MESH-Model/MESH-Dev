@@ -85,7 +85,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !      EXTERNAL iargc
 
       integer   :: ios2,iswitch
-      character :: my_fmt5001*30,fend*3
+!      character :: my_fmt5001*30
+      character :: fend*3
 
       DATA ntest/43814/qstr/'optionsss'/nchr/9/
       DATA iallcnt/0/
@@ -227,6 +228,23 @@ c      endif
       id=1              !not used like this now  nk Apr. 8/03
       ni=1
 
+      i=51
+      open(unit=i,file=filename(i),access='sequential',
+     *    recl=2096,status='unknown',iostat=ios)
+!       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      if(ios.ne.0)call io_warning(i,filename(i),ios)
+!       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      call date_and_time(cday,time)
+      write(51,*)
+      write(51,6016)time(1:2),time(3:4),time(5:6)
+      write(51,6017)cday(1:4),cday(5:6),cday(7:8)
+      write(51,*)
+      write(51,5003)i,filename(i)
+
+!      write(51,5002)
+!      write(51,1030)(i,i,filename(i),i=51,100)
+
 ! THE OUTFILES.TXT FILE READS THE NAMES OF ALL THE OUTPUT FILES
       ioflg=0 ! # of output files listed in outfiles_rte.txt
       INQUIRE(FILE='outfiles_rte.txt',EXIST=exists)
@@ -236,22 +254,14 @@ c      endif
         if(ios.eq.0)then
 !         AN OUTFILES.TXT FILE EXISTS AND WE'LL READ IT:
           print*,'reading outfile names from outfiles_rte.txt'
-          write(my_fmt5001, '( "(a", i3, ")" )' )  len(outfln)
+!          write(51, '( "(a", i3, ")" )' )  len(outfln)
           do i=51,100
-            read(99,my_fmt5001,iostat=ios)outfln(i)
-            if ( i .eq. 51) then
-!              if(ioflg.gt.1)then
-              filename(i)=outfln(i)
-!              endif
-              open(unit=51,file=filename(51),status='unknown',
-     *             iostat=ios)
-              write(51,*)'Outfile names from fln: outfiles_rte.txt' 
-            end if
+            read(99,5001,iostat=ios)outfln(i)
             write(51,'(a)') trim(outfln(i))
 !            write(51,my_fmt5001) outfln(i)
             if(ios.ne.0)then 
               print*,'Problems on unit 99'
-              print*,'Warning: error reading file name outfiles.txt'
+              print*,'Warning: error reading file name outfiles_rte.txt'
               print*,'possible cause: existing file is read-only'
               print*,'or end of file is reached - need 50 lines'
               print*,'iostat code =',ios
@@ -263,11 +273,11 @@ c      endif
           close(unit=99)
           fln(56)=outfln(56)               ! gridflow.r2c:  write_r2c used fln()
         else
-          print*,'Error opening outfiles.txt'
+          print*,'Error opening outfiles_rte.txt'
           print*,'Continuing using default output files'
         endif 
       else
-       print*,'outfiles.txt file not found, defaults used'
+       print*,'outfiles_rte.txt file not found, defaults used'
        print*
       endif
 
@@ -326,19 +336,19 @@ c      endif
           print*,'reading infile names from infiles_rte.txt'
           iswitch = 0
           do i=1,50
-            read(99,my_fmt5001,iostat=ios)infln(i)
+            read(99,5001,iostat=ios)infln(i)
             if(ios.eq.0)then 
-              if (iswitch.eq.0 .and. len(trim(infln(i))).le.2) then
+              if (iswitch.eq.0 .and. len_trim(infln(i)).le.2) then
                 Nreaches = 0
                 iswitch = 1
-              else if (iswitch.eq.1 .and. len(trim(infln(i))).gt.2) then
+              else if (iswitch.eq.1 .and. len_trim(infln(i)).gt.2) then
                 Nreaches = Nreaches + 1
-              else if (iswitch.eq.1 .and. len(trim(infln(i))).le.2) then
+              else if (iswitch.eq.1 .and. len_trim(infln(i)).le.2) then
                 iswitch = 2
               end if 
             else
               print*,'Problems on unit 99'
-              print*,'Warning: error reading file name infiles.txt'
+              print*,'Warning: error reading file name infiles_rte.txt'
               print*,'possible cause: end of file is reached'
               print*,' - need 50 lines'
               print*,'iostat code =',ios
@@ -353,27 +363,16 @@ c      endif
             write(*,*) 'The calculated # reaches is: ',Nreaches
           end if
           close(unit=99)
-        end if
+        else
+          print*,'Error opening infiles_rte.txt'
+          print*,'Continuing using default input files'
+        endif
+      else
+       print*,'infiles_rte.txt file not found, defaults used'
+       print*
       end if
 
-      i=51
-      open(unit=i,file=filename(i),access='sequential',
-     *    recl=2096,status='unknown',iostat=ios)
-!       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if(ios.ne.0)call io_warning(i,filename(i),ios)
-!       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-      call date_and_time(cday,time)
-      write(51,*)
-      write(51,6016)time(1:2),time(3:4),time(5:6)
-      write(51,6017)cday(1:4),cday(5:6),cday(7:8)
-      write(51,*)
-      write(51,5003)i,filename(i)
-
-!      write(51,5002)
-!      write(51,1030)(i,i,filename(i),i=51,100)
-
-      if (len(infln(1)) .gt. 2) then
+      if (len_trim(infln(1)) .gt. 2) then
         fln(99)=infln(1)
       else
         fln(99)='event/event.evt'
@@ -400,9 +399,9 @@ c      endif
 
       write(51,5002)
       do i=52,100
-        if(ioflg.gt.1 .and. len(trim(outfln(i))).gt.2)then
+        if(ioflg.gt.1 .and. len_trim(outfln(i)).gt.2)then
           filename(i)=outfln(i)
-          fend = outfln(i)(len(trim(outfln(i)))-2:len(trim(outfln(i))))
+          fend = outfln(i)(len_trim(outfln(i))-2:len_trim(outfln(i)))
           if (fend /= 'fst') then
             if (i .eq. 54) then
               inquire(file=filename(i),exist=exists)
@@ -490,8 +489,8 @@ c      endif
 ! FORMATS
 
  1000 format(' ',2(' ',a))
- 1030 format(' ','Unit no. =',i3,' file no',i3,' = ',a999)
- 5001 format(a999)
+ 1030 format(' ','Unit no. =',i3,' file no',i3,' = ',a)
+ 5001 format(a)
  5002 format(/' output files')
  5003 format(' opened unit'i5,' file name ',a)
  5005 format(' Files opened:')
@@ -499,7 +498,7 @@ c      endif
  6016 format('  runtime    ',2(a2,':'),a2)
  6017 format('  rundate  ',a4,'-',a2,'-',a2)
 99001 format('  0.0')
-99002 format(a999)
+99002 format(a)
 
       END PROGRAM rte     
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

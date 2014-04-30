@@ -68,7 +68,7 @@ C Open the file
          open(unit=unitNum,file=trim(adjustl(fln(flnNum))),
      *     status='old',iostat=ios)
          if(ios.ne.0)then
-            print*,'Problems opening ',fln(flnNum)
+            print*,'Problems opening ',trim(fln(flnNum))
             print*
             STOP ' Stopped in read_resv_ef'
          endif
@@ -135,7 +135,7 @@ C Search for and read tb0 file header
                   iStat = ParseResvColumnMetaData(colHeader,keyword,
      &                 keyLen,subString)
                   if(iStat .lt. 0) then
-                     write(*,'(2(A))') 'ERROR parsing ', fln(flnNum)
+                    write(*,'(2(A))') 'ERROR parsing ',trim(fln(flnNum))
                      write(*,'(2(A))') '   in line: ',line		
                      STOP ' Stopped in read_resv_ef'
                      return
@@ -143,7 +143,7 @@ C Search for and read tb0 file header
                else
                 iStat = ParseResvParam(header,keyword,keyLen,subString)
                   if(iStat .lt. 0) then
-                     write(*,'(2(A))') 'ERROR parsing ', fln(flnNum)
+                    write(*,'(2(A))') 'ERROR parsing ',trim(fln(flnNum))
                      write(*,'(2(A))') '   in line: ',line		
                      STOP ' Stopped in read_resv_ef'
                      return
@@ -293,7 +293,7 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
          if(iopt.eq.2)print*,'In read_resv_ef @ 258'
          if(noresv.ne.noresv_firstpass)then
             print*,'No of reservoirs has been changed in'
-            print*,'in file ',fln(7)
+            print*,'in file ',trim(fln(7))
             print*,'This is not permitted'
             print*
             stop 'Program aborted in rdresvo @ 264'
@@ -452,15 +452,15 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
             do j=1,nrel,ktr
                read(unitNum,*,iostat=ios)(qrel(k,j),k=1,noresv)
                if(ios.ne.0)then
-                  write(98,*)' Error on unit=37,fln=',fln(7)
+                  write(98,*)' Error on unit=37,fln=',trim(fln(7))
                   write(98,*)' Trying to read releases hour =',j
-                  print*,' Error on unit=37,fln=',fln(7)
+                  print*,' Error on unit=37,fln=',trim(fln(7))
                   print*,' Trying to read releases'
                   print*,' ios= ',ios
                   if(ios.eq.-1)then
-                write(98,*)'End of file in fln= ',fln(7)
+                write(98,*)'End of file in fln= ',trim(fln(7))
                 write(98,*)'Possibly last line does not have a return'
-                  print*,'End of file in fln= ',fln(7)
+                  print*,'End of file in fln= ',trim(fln(7))
                   print*,'Possibly last line does not have a return'
                   print*
                else

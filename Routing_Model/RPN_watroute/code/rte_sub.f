@@ -366,7 +366,7 @@ c          call flowinit()
 !          replaced  Oct. 9/06  nk
 !          initialize channel flows & storages
 !       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if (len(infln(4+Nreaches)) .gt. 2) then
+      if (len_trim(infln(4+Nreaches)) .gt. 2) then
         fln(99)=infln(4+Nreaches)  ! The filename index of flow_init.fst varies with the number of reaches processed
       else
         fln(99)='flow_init.r2c'

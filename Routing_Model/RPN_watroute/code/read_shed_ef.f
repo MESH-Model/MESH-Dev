@@ -166,7 +166,7 @@ C//////////////////////////////////////////////
 c      if(iopt.eq.2)print*,'opening unitnum',unitnum
 c	if(iopt.eq.2)print*,'filename =',fln(flnnum)
       print*,'opening unitnum',unitnum
-      print*,'filename =',fln(flnnum)
+      print*,'filename =',trim(fln(flnnum))
 
 !     basin/bsnm_shd.r2c
       open(unit=unitNum ,file=trim(adjustl(fln(flnNum))) ,
@@ -176,7 +176,7 @@ c	if(iopt.eq.2)print*,'filename =',fln(flnnum)
          print*,'Problems in file', fln(flnNum)
          write(*,99162)fln(flnNum)
          write(98,99162)fln(flnNum)
-99162    format(' Warning: Error opening or reading fln:',a999/
+99162    format(' Warning: Error opening or reading fln:',a/
      *  ' Probable cause: missing basin/bsnm_???_par.r2c input file'/
      *  ' OR: in config.sys have you set files=100 & buffers=50?'/
      *  ' OR: wrong number in line 2 of the event file for '/
@@ -1197,11 +1197,11 @@ c     endif
       RETURN
 
 99901 write(*,99902)fln(4)
-99902 format(' file',a999,' not found for unit 34 - check event file')
+99902 format(' file',a,' not found for unit 34 - check event file')
       STOP 'program stopped in shed.for at 99902'
 
 99910 write(*,99911)fln(4)
-99911 format(' no data found or problems with data in ',a999)
+99911 format(' no data found or problems with data in ',a)
       STOP 'program stopped in shed at 99911'
 
 ! FORMATS
@@ -1210,10 +1210,10 @@ c     endif
  1002 format(' ',i5,'stream gage locations have been passed over')
  1003 format(' ',i5,'reservoir locations have been passed over')
  1004 format(' ',i5,'damage sites:')
- 1098 format(a999)
+ 1098 format(a)
  1099 format(2i5,1x,a12,7x,4e10.3,f10.3)
  1100 format(' ',2i5,1x,a12,7x,4e10.3,f10.3)
- 1101 format(' reading the stream gauge location file: ',a999)
+ 1101 format(' reading the stream gauge location file: ',a)
  1102 format(' ',2i5,1x,a12,7x,4e10.3,f10.3/)
  1776 format(' ','l,iys(l),jxs(l)',5i5)
         write(51,*)

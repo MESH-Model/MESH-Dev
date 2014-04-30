@@ -86,11 +86,12 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 ! 1400   format(' opening fln(',i3,'):',a999,'---')
 !        write(*,*)
 
-        open(unit=un,file=fln(fn),status='unknown',iostat=ios)
-	  print*,' un fn et fln(fn) ',un,fn,fln(fn) !ido
-	  print*,'Opened unit=',un,'filename',fln(fn)
+        open(unit=un,file=trim(adjustl(fln(fn))),status='unknown',
+     *  iostat=ios)
+	  print*,' un fn et fln(fn) ',un,fn,trim(fln(fn)) !ido
+	  print*,'Opened unit=',un,'filename',trim(fln(fn))
 	  if(ios.ne.0)then
-	    print*,'Error opening ',fln(fn),' on unit=',un
+	    print*,'Error opening ',trim(fln(fn)),' on unit=',un
 	    print*,'ios = ',ios
 	    print*
 	    stop 'in write_r2c @ 83'
@@ -255,8 +256,8 @@ c	  endif
 
       if(frame_no.eq.no_frames.and.class_no.eq.no_classes)then
         close(unit=un,status='keep')
-        write(51,*)'Closed unit ',un,' Filename=  ',fln(fn)
-        write(*,*)'Closed unit ',un,' Filename=  ',fln(fn)
+        write(51,*)'Closed unit ',un,' Filename=  ',trim(fln(fn))
+        write(*,*)'Closed unit ',un,' Filename=  ',trim(fln(fn))
 	endif
 
       return
