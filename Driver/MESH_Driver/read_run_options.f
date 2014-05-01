@@ -240,6 +240,14 @@
 !TODO: N is not a flag, move it somewhere else
       N = 0
 
+!> FLAGS FOR WATROUTE (MODIFIED RPN CODE)
+!> Format is PRINT(VARIABLE_TERM)R2CFILEFLAG:
+!> If PRINT(VARIABLE_TERM)R2CFILEFLAG is 0, no file is saved.
+!> If PRINT(VARIABLE_TERM)R2CFILEFLAG is 1, the file is saved.
+      PRINTRFFR2CFILEFLAG = 0
+      PRINTRCHR2CFILEFLAG = 0
+!      PRINTLKGR2CFILEFLAG = 0
+
 !> The above parameter values are defaults, to change to a different
 !> value, use the MESH_input_run_options.ini file
 
@@ -349,7 +357,13 @@
           ELSE IF (IRONAME == "WINDOWSPACINGFLAG") THEN
             WINDOWSPACINGFLAG = IROVAL
           ELSE IF (IRONAME == "FROZENSOILINFILFLAG") THEN
-            FROZENSOILINFILFLAG = IROVAL                        
+            FROZENSOILINFILFLAG = IROVAL
+          ELSE IF (IRONAME == "PRINTRFFR2CFILEFLAG") THEN
+            PRINTRFFR2CFILEFLAG = IROVAL
+          ELSE IF (IRONAME == "PRINTRCHR2CFILEFLAG") THEN
+            PRINTRCHR2CFILEFLAG = IROVAL
+!          ELSE IF (IRONAME == "PRINTLKGR2CFILEFLAG") THEN
+!            PRINTLKGR2CFILEFLAG = IROVAL
           ELSE IF (IRONAME == "WD3") THEN
             WD3 = IROVAL
           ELSE IF (IRONAME == "WD3NEWFILE") THEN
