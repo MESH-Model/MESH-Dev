@@ -40,7 +40,7 @@
 #
 :basinFileName                 MESH_drainage_database.r2c
 :parFileName
-:channelparfile                basin/new_ch_par.r2c
+:channelparfile                new_ch_par.r2c
 :pointDataLocations
 :snowCoverDepletionCurve
 :waterqualitydatafile
@@ -55,8 +55,8 @@
 :pointShortwave
 :pointAtmPressure
 #
-:streamflowDataFile            input/20040601_str.tb0
-:reservoirReleaseFile          input/20040601_REL.tb0
+:streamflowDataFile            20040601_str.tb0
+:reservoirReleaseFile
 :reservoirInflowFile
 :snowCourseFile
 #

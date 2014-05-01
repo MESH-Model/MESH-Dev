@@ -1,0 +1,158 @@
+
+  runtime    19:44:32
+  rundate  2014-04-30
+
+ opened unit   51 file name rte.txt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+rte.txt
+res.txt
+route.txt
+spl_rpn.csv
+wetland.csv
+gridflow.r2c
+resin.txt
+lake_sd.csv
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+moy_qi.txt
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+..
+moy_qr.txt
+..
+rte_info.txt
+..
+..
+ :fileType                     .ev
+ :FileVersionNo                   9.69999981    
+ :year                                 2004
+ :month                                   6
+ :day                                     1
+ #                             
+ #                             
+ :snwflg                       n
+ :sedflg                       n
+ :vapflg                       n
+ :smrflg                       n
+ :esimflg                      n
+ :tbcflg                       n
+ :esumflg                      n
+ :contflg                      n
+ :routeflg                     n
+ :crseflg                      n
+ :ensimflg                     n
+ :picflg                       n
+ :wetflg                       n
+ :modelflg                     r
+ :shdflg                       n
+ :trcflg                       n
+ :frcflg                       n
+ :initflg                      n
+ :fstflg                       n
+ #                             
+ :intSoilMoisture                0.250000000      0.250000000      0.250000000      0.250000000      0.250000000    
+ :rainConvFactor                  1.00000000    
+ :eventPrecipScaleFactor          1.00000000    
+ :precipScaleFactor               0.00000000    
+ :eventSnowScaleFactor            0.00000000    
+ :snowScaleFactor                 0.00000000    
+ :eventTempScaleFactor            0.00000000    
+ :tempScaleFactor                 0.00000000    
+ #                             
+ :hoursRainData                         168
+ :hoursFlowData                         168
+ #                             
+ Input files from event.evt
+ Unit no. = 31 file no  1 =  MESH_drainage_database.r2c
+ Unit no. = 32 file no  2 = 
+ Unit no. =271 file no 41 =  new_ch_par.r2c
+ Unit no. = 33 file no  3 = 
+ Unit no. = 43 file no 13 = 
+ Unit no. =290 file no 40 = 
+ Unit no. =289 file no 39 = 
+ Unit no. = 35 file no  5 = 
+ Unit no. = 44 file no 14 = 
+ Unit no. = 50 file no 20 = 
+ Unit no. =276 file no 26 = 
+ Unit no. =277 file no 27 = 
+ Unit no. =278 file no 28 = 
+ Unit no. =279 file no 29 = 
+ Unit no. =280 file no 30 = 
+ Unit no. = 36 file no  6 =  20040601_str.tb0
+ Unit no. = 37 file no  7 = 
+ Unit no. = 38 file no  8 = 
+ Unit no. =285 file no 35 = 
+ Unit no. = 39 file no  9 = 
+ Unit no. = 41 file no 11 = 
+ Unit no. = 42 file no 12 = 
+ Unit no. =286 file no 36 = 
+ Unit no. =287 file no 37 = 
+ Unit no. =288 file no 38 = 
+ Unit no. = 40 file no 10 = 
+ Unit no. =284 file no 34 = 
+ Unit no. = 45 file no 15 = 
+ Unit no. = 49 file no 19 = 
+ Unit no. =271 file no 21 = 
+ Unit no. =272 file no 22 = 
+ Unit no. =273 file no 23 = 
+ Unit no. =274 file no 24 = 
+ Unit no. =275 file no 25 = 
+ Unit no. =281 file no 31 =  WR_runoff.r2c
+ Unit no. =282 file no 32 =  WR_recharge.r2c
+ Unit no. =283 file no 33 = 
+
+ output files
+ opened unit   52 file name res.txt
+ opened unit   53 file name route.txt
+ opened unit   54 file name spl_rpn.csv
+ opened unit   55 file name wetland.csv
+ opened unit   56 file name gridflow.r2c
+ opened unit   57 file name resin.txt
+ opened unit   58 file name lake_sd.csv
+ opened unit   79 file name moy_qi.txt
+ opened unit   96 file name moy_qr.txt
+ opened unit   98 file name rte_info.txt
+ runtime  19:44:32  2014-04-30
+    MESH_drainage_database.r2c
+
+ Debug grid reset to grid number n,row col      4      3      4
+  basin file:
+    n   yy   xx      da       cap       slope    elv     ibn   sl2    ich  next reach frac  imp area & fractions
+  Note: order not the same as the .shd file YET
+
+ Debug grid reset to grid number n,row col      4      3      4
+  basin file:
+    n   yy   xx      da       cap       slope    elv     ibn   sl2    ich  next reach frac  imp area & fractions
+  Note: order not the same as the .shd file YET
+ Closed unit          261  Filename=   WR_runoff.r2c
+ Closed unit          262  Filename=   WR_recharge.r2c
