@@ -140,8 +140,8 @@ cc        use areamelt
          if(nclass(ii).eq.'water     ') ii_water=ii
       end do
 
-      write(55,*)'In flowinit.for'
-      write(55,*)'~~~~~~~~~~~~~~~'
+      write(53,*)'In flowinit.for'
+      write(53,*)'~~~~~~~~~~~~~~~'
 
       convert=al*al*1000.0      ! converts vol in m^3 to mm on the unit grid
       flow_max=0.0
@@ -164,7 +164,7 @@ cc        use areamelt
          stop 'Program aborted in flowinit @ 141'
       endif
 
-      write(55,*)
+      write(53,*)
      * '    grid no       reach #      ireach       nreach       maxr'
       do n=1,naa
 !       CONVERSIONS &
@@ -172,12 +172,12 @@ cc        use areamelt
          if(ireach(n).ne.0)then
 	    l=ireach(n)
             nreach(l)=n
-            write(55,*)n,l,ireach(n),nreach(l),maxr
+            write(53,*)n,l,ireach(n),nreach(l),maxr
          endif
       end do
 
 !     calculate the lake areas:
-c      write(55,*)
+c      write(53,*)
 c     * '    grid no  frac water     grid area       lake_area'
 
       do n=1,naa
@@ -187,17 +187,17 @@ c     * '    grid no  frac water     grid area       lake_area'
             l=ireach(n)
 c	      lake_area(l)=lake_area(l)+frac(ii_water)*grid_area(n)
             lake_area(l)=lake_area(l)+frac(ntype)*grid_area(n)
-c            write(55,*)n,frac(ii_water),grid_area(n),lake_area(l)
+c            write(53,*)n,frac(ii_water),grid_area(n),lake_area(l)
          endif
       end do
 
-      write(55,*)
+      write(53,*)
      * '    lake no  lake_area'
       do l=1,noresv
-         write(55,*)l,lake_area(l)
+         write(53,*)l,lake_area(l)
       end do
 
-      write(55,*)'    grid no  ch width     rch lngth    chaarea'
+      write(53,*)'    grid no  ch width     rch lngth    chaarea'
       do n=1,naa
 !     rev. 9.2.15  Sep.  30/05  - NK: Fixed bug for opt in flowinit
 !       removed slope(n)=..... and elev(n)=.....  already done in rdshed
@@ -242,7 +242,7 @@ c        channel_area(n)=chawid(n)*rl(n)
             chaarea(n)=aclass(n,ntype)*grid_area(n)
          endif
          if(ireach(n).gt.0)chaarea(n)=0.0
-         write(55,*)n,chawid(n),rl(n),chaarea(n)
+         write(53,*)n,chawid(n),rl(n),chaarea(n)
          class_sum=0.0
          do ii=1,ntype+1
             if(ii.ne.ntype)class_sum=class_sum+aclass(n,ii)
@@ -337,7 +337,7 @@ c          wetxa(n)=wcap(n)/rl(n)/abs(theta(ii))
 !      iopt1=iopt
 !      iopt=max(1,iopt)
 
-c      if(iopt.ge.1) write(55,5008)
+c      if(iopt.ge.1) write(53,5008)
 
       if(iopt.eq.2)print*,'In flowinit @ 221'
 
@@ -363,7 +363,7 @@ c      if(iopt.ge.1) write(55,5008)
        else
           n=s(i,j)
           nhyd(i,j)=l
-          if(iopt.ge.1) write(55,1777)l,i,j,s(i,j),nhyd(i,j)
+          if(iopt.ge.1) write(53,1777)l,i,j,s(i,j),nhyd(i,j)
        endif
        if(n.eq.0)then
 !         station is not in a grid
@@ -389,7 +389,7 @@ cccccc      if(errflag.eq.'y')STOP ' program terminated in flowinit'
       if(iopt.eq.2)print*, 'in flowinit at 100'
 
 !     SET UP THE INITIAL CHANNEL CONDITION FOR THE FIRST HYDROGRAPH:
-      write(55,*)'  id    l    i    j    n   ',
+      write(53,*)'  id    l    i    j    n   ',
      *         'nlow(l) qda(n) area(l)'
       do l=1,no
          if(inbsnflg(l).eq.1)then	  
@@ -404,7 +404,7 @@ cccccc      if(errflag.eq.'y')STOP ' program terminated in flowinit'
 !         for watroute use the flag to set this up
 
 
-            write(55,*)nr,nl,mhtot
+            write(53,*)nr,nl,mhtot
 
 c          ktt=min(nr,nl,mhtot)
             ktt=nl              ! no of hours of data in the _str.r2c file
@@ -418,7 +418,7 @@ c          ktt=min(nr,nl,mhtot)
             flowflag=.true.
 
 
-            write(55,*)flowflag,kt,ktt,l,n,i,j
+            write(53,*)flowflag,kt,ktt,l,n,i,j
 
             do k=kt,ktt,kt
                if(qhyd(l,k).ge.0.0)then
@@ -464,7 +464,7 @@ c      stop 'program aborted in flowinit @ 164'
 
 !          ASSIGN QDA AT EACH STREAMFLOW STATION
 
-            write(55,5009)id,l,i,j,n,nlow(l),qda(n),area(l)
+            write(53,5009)id,l,i,j,n,nlow(l),qda(n),area(l)
            
 
 !          FIND LOWEST PRE-RISE FLOW:
@@ -489,7 +489,7 @@ c      stop 'program aborted in flowinit @ 164'
                endif
             end do
  10         if(iopt.ge.1)then
-               write(55,5009)id,l,i,j,n,nlow(l),qda(n),area(l)
+               write(53,5009)id,l,i,j,n,nlow(l),qda(n),area(l)
             endif
          endif                  ! inbsnflg.eq.?
       end do
@@ -533,7 +533,7 @@ c      stop 'program aborted in flowinit @ 164'
       if(iopt.ge.1)then
          iasdf=1
          msg=' init flow at gauges'
-         write(55,5551)iasdf,msg
+         write(53,5551)iasdf,msg
          do n=1,naa
             i=yyy(n)
             j=xxx(n)
@@ -542,11 +542,11 @@ c      stop 'program aborted in flowinit @ 164'
          end do
          if(flow_max.gt.99.9)then
             do i=imax,1,-1
-               write(55,5554)(qdagrd(i,j),j=1,jmax)
+               write(53,5554)(qdagrd(i,j),j=1,jmax)
             end do
          else
             do i=imax,1,-1
-               write(55,5555)(qdagrd(i,j),j=1,jmax)
+               write(53,5555)(qdagrd(i,j),j=1,jmax)
             end do
          endif
       endif
@@ -643,17 +643,17 @@ c      stop 'program aborted in flowinit @ 164'
 
 
       if(iopt.ge.1)then
-         write(55,6105)
-         write(55,6100)
-         write(55,6102)
+         write(53,6105)
+         write(53,6100)
+         write(53,6102)
      *        (n,yyy(n),xxx(n),iset(n),da(n),qda(n),qbase(n),n=1,naa)
-         write(55,6110)
+         write(53,6110)
          do i=imax,1,-1
-            write(55,6104)(nhyd(i,j),j=1,jmax)
+            write(53,6104)(nhyd(i,j),j=1,jmax)
          end do
          iasdf=3
          msg=' gauge flows - reservoir flows'
-         write(55,5551)iasdf,msg
+         write(53,5551)iasdf,msg
 
          do n=1,naa
             i=yyy(n)
@@ -663,11 +663,11 @@ c      stop 'program aborted in flowinit @ 164'
          end do
          if(flow_max.gt.99.9)then
             do i=imax,1,-1
-               write(55,5554)(qdagrd(i,j),j=1,jmax)
+               write(53,5554)(qdagrd(i,j),j=1,jmax)
             end do
          else
             do i=imax,1,-1
-               write(55,5555)(qdagrd(i,j),j=1,jmax)
+               write(53,5555)(qdagrd(i,j),j=1,jmax)
             end do
          endif
       endif
@@ -716,7 +716,7 @@ c      stop 'program aborted in flowinit @ 164'
 
       if(iopt.eq.2)print*, 'in flowinit at 600'
 
-      write(55,6044)
+      write(53,6044)
       do n=1,naa
 !        CURRENT LOCATION:
          i=yyy(n)
@@ -741,12 +741,12 @@ c      stop 'program aborted in flowinit @ 164'
 !!1111111111111                     STOP 'program stopped in flowinit @65'
                   endif
                   nxtbasin(nhyd(i,j))=nhyd(inx,jnx)
-                  write(55,6043)n,i,j,nhyd(i,j),nxtbasin(nhyd(i,j))
+                  write(53,6043)n,i,j,nhyd(i,j),nxtbasin(nhyd(i,j))
                endif
             endif
          endif
       end do
-      write(55,6045)(l,nxtbasin(l),l=1,no)
+      write(53,6045)(l,nxtbasin(l),l=1,no)
 
       if(iopt.eq.2)print*, 'in flowinit at 700'
 
@@ -759,9 +759,9 @@ c      stop 'program aborted in flowinit @ 164'
       end do
 
       if(iopt.ge.1)then
-         write(55,*)' basin number allocations after working upstream'
+         write(53,*)' basin number allocations after working upstream'
          do i=imax,1,-1
-            write(55,6104)(nhyd(i,j),j=1,jmax)
+            write(53,6104)(nhyd(i,j),j=1,jmax)
          end do
       endif
 
@@ -815,15 +815,15 @@ c      stop 'program aborted in flowinit @ 164'
          endif
       end do
       if(iopt.ge.2)then
-         write(55,6108)
-         write(55,6100)
-         write(55,6102)
+         write(53,6108)
+         write(53,6100)
+         write(53,6102)
      *        (n,yyy(n),xxx(n),iset(n),da(n),qda(n),qbase(n),n=1,naa)
       endif
       if(iopt.ge.1)then
          iasdf=4
          msg=' distributed base flows'
-         write(55,5551)iasdf,msg
+         write(53,5551)iasdf,msg
          do n=1,naa
             i=yyy(n)
             j=xxx(n)
@@ -832,11 +832,11 @@ c      stop 'program aborted in flowinit @ 164'
          end do
          if(flow_max.gt.99.9)then
             do i=imax,1,-1
-               write(55,5554)(qdagrd(i,j),j=1,jmax)
+               write(53,5554)(qdagrd(i,j),j=1,jmax)
             end do
          else
             do i=imax,1,-1
-               write(55,5555)(qdagrd(i,j),j=1,jmax)
+               write(53,5555)(qdagrd(i,j),j=1,jmax)
             end do
          endif
       endif
@@ -875,10 +875,10 @@ c      stop 'program aborted in flowinit @ 164'
 
             msg1='a'
             if(iopt.ge.2)then
-               write(55,*)
+               write(53,*)
      *              '      l    i    j    n next(n) iset(n) datemp',
      *              '         qda      datemp        qda'
-               write(55,5556)msg1,l,i,j,n,next(n),iset(n),datemp(n),
+               write(53,5556)msg1,l,i,j,n,next(n),iset(n),datemp(n),
      *              qda(n),datemp(nnx),qda(nnx)
             endif
 !     this loop revised Dec. 22/05  nk
@@ -907,7 +907,7 @@ c      stop 'program aborted in flowinit @ 164'
                   iset(nnx)=2
                endif
                if(iopt.ge.1)then
-                 write(55,5556)msg1,l,xxx(n),yyy(n),n,next(n),iset(n),
+                 write(53,5556)msg1,l,xxx(n),yyy(n),n,next(n),iset(n),
      *                 datemp(n),qda(n),datemp(nnx),qda(nnx)
                endif
                n=next(n)
@@ -927,19 +927,19 @@ c      stop 'program aborted in flowinit @ 164'
       if(iopt.ge.1)then
          iasdf=5
          msg=' base flows have been routed downstream'
-         write(55,5551)iasdf,msg
+         write(53,5551)iasdf,msg
       endif
 !     FIXED A BUG HERE ON APRIL 16/96
 !     THIS DO EXECTUED ONLY FOR IOPT.GE.1  -  NO GOOD I THINK
 
-      write(55,5557)
+      write(53,5557)
       do n=1,naa
          i=yyy(n)
          j=xxx(n)
          qdagrd(i,j)=qda(n)
          qbase(n)=qda(n)
          if(iopt.ge.1)then
-            write(55,5556)msg1,l,xxx(n),yyy(n),n,next(n),iset(n),
+            write(53,5556)msg1,l,xxx(n),yyy(n),n,next(n),iset(n),
      *           da(n),qda(n),datemp(n)
          endif
       end do
@@ -947,14 +947,14 @@ c      stop 'program aborted in flowinit @ 164'
       if(iopt.ge.1)then
          iasdf=5
          msg=' base flows have been routed downstream'
-         write(55,5551)iasdf,msg
+         write(53,5551)iasdf,msg
          if(flow_max.gt.99.9)then
             do i=imax,1,-1
-               write(55,5554)(qdagrd(i,j),j=1,jmax)
+               write(53,5554)(qdagrd(i,j),j=1,jmax)
             end do
          else
             do i=imax,1,-1
-               write(55,5555)(qdagrd(i,j),j=1,jmax)
+               write(53,5555)(qdagrd(i,j),j=1,jmax)
             end do
          endif
       endif
@@ -989,13 +989,13 @@ c      stop 'program aborted in flowinit @ 164'
       if(iopt.ge.1)then
          iasdf=6
          msg=' distributed base flows'
-         write(55,5551)iasdf,msg
+         write(53,5551)iasdf,msg
          msg1='f'
-         write(55,5557) 
+         write(53,5557)
          do n=1,naa
             i=yyy(n)
             j=xxx(n)
-            write(55,5556)msg1,l,xxx(n),yyy(n),n,next(n),iset(n),
+            write(53,5556)msg1,l,xxx(n),yyy(n),n,next(n),iset(n),
      *           da(n),qda(n),datemp(n)
          end do
       endif
@@ -1012,11 +1012,11 @@ c      stop 'program aborted in flowinit @ 164'
       if(iopt.ge.1)then 
          if(flow_max.gt.99.9)then
             do i=imax,1,-1
-               write(55,5554)(qdagrd(i,j),j=1,jmax)
+               write(53,5554)(qdagrd(i,j),j=1,jmax)
             end do
          else
             do i=imax,1,-1
-               write(55,5555)(qdagrd(i,j),j=1,jmax)
+               write(53,5555)(qdagrd(i,j),j=1,jmax)
             end do
          endif
       endif
@@ -1053,18 +1053,18 @@ c      stop 'program aborted in flowinit @ 164'
          endif                  ! inbsnflg	 
       end do
 
-      if(iopt.ge.1) write(55,6109)
+      if(iopt.ge.1) write(53,6109)
 
       if(iopt.ge.2)then
-         write(55,6100)
-         write(55,6102)
+         write(53,6100)
+         write(53,6102)
      *        (n,yyy(n),xxx(n),iset(n),da(n),qda(n),qbase(n),n=1,naa)
       endif
       if(iopt.eq.2)print*, 'in flowinit at 805'
       if(iopt.ge.1)then
          iasdf=7
          msg=' reservoir flows added back in'
-         write(55,5551)iasdf,msg
+         write(53,5551)iasdf,msg
          do n=1,naa
             i=yyy(n)
             j=xxx(n)
@@ -1072,11 +1072,11 @@ c      stop 'program aborted in flowinit @ 164'
          end do
          if(flow_max.gt.99.9)then
             do i=imax,1,-1
-               write(55,5554)(qdagrd(i,j),j=1,jmax)
+               write(53,5554)(qdagrd(i,j),j=1,jmax)
             end do
          else
             do i=imax,1,-1
-               write(55,5555)(qdagrd(i,j),j=1,jmax)
+               write(53,5555)(qdagrd(i,j),j=1,jmax)
             end do
          endif
       endif
@@ -1088,8 +1088,8 @@ c      stop 'program aborted in flowinit @ 164'
       end do
 
       if(iopt.ge.1)then
-         write(55,6100)
-         write(55,6102)
+         write(53,6100)
+         write(53,6102)
      *        (n,yyy(n),xxx(n),iset(n),da(n),qda(n),qbase(n),n=1,naa)
       endif
 
@@ -1104,14 +1104,14 @@ c      stop 'program aborted in flowinit @ 164'
       if(iopt.ge.1)then 
          iasdf=8
          msg=' final init flows'
-         write(55,5551)iasdf,msg
+         write(53,5551)iasdf,msg
          if(flow_max.gt.99.9)then
             do i=imax,1,-1
-               write(55,5554)(qdagrd(i,j),j=1,jmax)
+               write(53,5554)(qdagrd(i,j),j=1,jmax)
             end do
          else
             do i=imax,1,-1
-               write(55,5555)(qdagrd(i,j),j=1,jmax)
+               write(53,5555)(qdagrd(i,j),j=1,jmax)
             end do
          endif
       endif
@@ -1119,10 +1119,10 @@ c      stop 'program aborted in flowinit @ 164'
       if(iopt.ge.1)then 
          iasdf=9
          msg=' write nhyd(i,j) '
-         write(55,6110)
-         write(55,5551)iasdf,msg
+         write(53,6110)
+         write(53,5551)iasdf,msg
          do i=imax,1,-1
-            write(55,5553)(nhyd(i,j),j=1,jmax)
+            write(53,5553)(nhyd(i,j),j=1,jmax)
          end do
       endif
       if(iopt.eq.2)print*, 'in flowinit at 808'
@@ -1348,7 +1348,7 @@ c         Copied over from runof6.for (thr=1):  AKB July 11, 2002
             lzs(n)=1.0
 !         DEFAULT VALUE
          endif
-         write(55,*)n,flz(n),flz2(n),pwr(n),pwr2(n)
+         write(53,*)n,flz(n),flz2(n),pwr(n),pwr2(n)
       end do
       if(iopt.eq.2)print*, 'in flowinit at 1173'
 
@@ -1360,21 +1360,21 @@ c         Copied over from runof6.for (thr=1):  AKB July 11, 2002
       qi2(n)=0.0
 
       if(iopt.ge.2)then
-         write(55,6010)
-         write(55,6011)(n,i,j,qda(n),qi1(n),qi2(n),qo1(n),qo2(n),
+         write(53,6010)
+         write(53,6011)(n,i,j,qda(n),qi1(n),qi2(n),qo1(n),qo2(n),
      *        store1(n),store2(n),cap(n),over(n),n=1,na)
       endif
 
 
 !     initialize reservoir storage
 
-      write(53,*)'Initial reservoir storage & outflow:'
-!     unit 53 is simout/res.txt
+      write(52,*)'Initial reservoir storage & outflow:'
+!     unit 52 is simout/res.txt
       do k=1,noread
          i=ires(k)
          j=jres(k)		    
          n=s(i,j)
-         write(53,*)n,k,i,j,store1(n),qo1(n)
+         write(52,*)n,k,i,j,store1(n),qo1(n)
 
 !        if(b3(l).eq.0.0)then
 !         tried to put this in the iteration loop but got spikes
@@ -1402,7 +1402,7 @@ c         Copied over from runof6.for (thr=1):  AKB July 11, 2002
 
 !        endif      
 !        store2(n)=store1(n)
-         write(53,*)n,k,i,j,store1(n),qo1(n)
+         write(52,*)n,k,i,j,store1(n),qo1(n)
       end do
 
       if(numa.eq.0)write(51,*)'Flow initializing completed'

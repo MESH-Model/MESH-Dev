@@ -127,7 +127,8 @@ c      ensimopenflg='n'
 
 c!     TS - ALLOCATION FOR AREA12A ARRAYS
 c      allocate(fln(601),filename(200),outfln(100),stat=iAllocate)
-      allocate(fln(601),filename(200),stat=iAllocate)
+      allocate(fln(100),filename(100),outfln(100),infln(100),
+     *         stat=iAllocate)
       if (iAllocate.ne.0) STOP 
      *     'Warning: error with allocation of area12a arrays In fli9' 
 
@@ -137,14 +138,21 @@ c      allocate(fln(601),filename(200),outfln(100),stat=iAllocate)
 !     A default outfiles.new file is created in the working directory each 
 !     time this program is run.
 
-      filename(51)='fli_info.txt' !program information
-c     filename(52)='../simout/rte.r2c'      !output
-      filename(52)='fli.r2c'    !output  assigned in fli
-      filename(53)='../simout/res_fli.txt' !reservoir data
-      filename(55)='../simout/rte_fli.txt' !routing data
-      filename(60)='../simout/spl.csv' !paired observed/computed
-      filename(73)='../simout/resin.txt' !lake inflow obs/computed
-      filename(98)='fli_info_2.txt'
+      do i=51,100
+      filename(i)='..'
+      end do
+
+      filename(51)='fli.txt' !program information
+c     filename(52)='rte.r2c'      !output
+!      filename(52)='fli.r2c'    !output  assigned in fli
+      filename(52)='res_fli.txt' !reservoir data
+      filename(53)='route_fli.txt' !routing data
+      filename(54)='spl_fli.csv' !paired observed/computed
+      filename(57)='resin_fli.txt' !lake inflow obs/computed
+!dgp  units 60,61 because they're not used in rte
+      filename(60)='flow_init.r2c'
+      filename(61)='lzs_init.r2c'
+      filename(98)='fli_info.txt'
       filename(99)='scratch5'   ! reserved as scratch file
       filename(100)='scratch6'  ! not used
 
@@ -188,16 +196,120 @@ c      ni=1         !not used like this now  nk Apr. 8/03
       write(51,*)
       write(51,5003)i,filename(i)
 
+!dgp  from rte.f
+! THE OUTFILES.TXT FILE READS THE NAMES OF ALL THE OUTPUT FILES
+      ioflg=0 ! # of output files listed in outfiles_fli.txt
+      INQUIRE(FILE='outfiles_fli.txt',EXIST=exists)
+      if(exists)then
+!         AN OUTFILES.TXT FILE EXISTS AND WE'LL READ IT:
+        open(unit=99,file='outfiles_fli.txt',
+     *               status='old',iostat=ios)
+        if(ios.eq.0)then
+          print*,'reading outfile names from outfiles_fli.txt'
+          do i=51,100
+            read(99,5001,iostat=ios)outfln(i)
+            write(51,'(a)') trim(outfln(i))
+            if(ios.ne.0)then
+              print*,'Problems on unit 99'
+              print*,'Warning: error reading file name outfiles_fli.txt'
+              print*,'possible cause: existing file is read-only'
+              print*,'or end of file is reached - need 50 lines'
+              print*,'iostat code =',ios
+              print*,'Got as far as line ',i-50
+              STOP 'program aborted in spl.for @ 345'
+            endif
+            ioflg=i
+          end do
+          close(unit=99)
+        else
+          print*,'Error opening outfiles_fli.txt'
+          print*,'Continuing using default output files'
+        endif
+      else
+        print*,'outfiles_fli.txt file not found, defaults used'
+        print*
+      endif
+
+!dgp  from rte.f
+! ORIGINAL FILEIO.FI SECTION - STARTS HERE:
+
+!   LEAVE FILEIO HERE BECAUSE rdevtA READS FILE NAMES THAT HAVE TO BE OPENED
+
+!   Rev. 7.78 modified for error checking - Sept.29/96  AC flight
+!   Rev  7.9  modified to open files for evaporation output
+!   Rev. 8.3  - May.  22/97 -     added the simout/outfiles capability
+
+!   THIS IS TO OPEN AND READ THE OPTIONAL OUTFILES.TXT FILE THAT SETS
+!   THE LOCATIONS OF THE OUTPUT FILES.  IF FILE DOES NOT EXIST, DEFAULT
+!   NAMES WILL BE USED.
+
+      write(51,5002)
+      do i=52,100
+        if(ioflg.gt.1 .and. len_trim(outfln(i)).gt.2)then
+          filename(i)=outfln(i)
+        endif
+      end do
+
+      if(iopt.eq.2)print*, ' In spl -1001'
+
       write(51,5002)
       write(51,1030)(i,i,filename(i),i=51,100)
 
-      fln(99)='event/event.evt'
+      INQUIRE(FILE='infiles_fli.txt',EXIST=exists)
+      if(exists)then
+        open(unit=99,file='infiles_fli.txt',
+     *               status='old',iostat=ios)
+        if(ios.eq.0)then
+!         AN INFILES.TXT FILE EXISTS AND WE'LL READ IT:
+          print*,'reading infile names from infiles_fli.txt'
+          do i=1,50
+            read(99,5001,iostat=ios)infln(i)
+            if(ios.ne.0)then
+              print*,'Problems on unit 99'
+              print*,'Warning: error reading file name infiles_fli.txt'
+              print*,'possible cause: end of file is reached'
+              print*,' - need 50 lines'
+              print*,'iostat code =',ios
+              print*,'Got as far as line ',i-100
+              STOP 'program aborted in spl.for @ 345b'
+            endif
+            ioflg=i
+          end do
+          close(unit=99)
+        else
+          print*,'Error opening infiles_fli.txt'
+          print*,'Continuing using default input files'
+        endif
+      else
+        print*,'infiles_fli.txt file not found, defaults used'
+        print*
+      end if
+
+!dgp  from rte.f
+!      fln(99)='event/event.evt'
+      if (len_trim(infln(1)) .gt. 2) then
+        fln(99)=infln(1)
+      else
+        fln(99)='event/event.evt'
+      end if
 
       if(iopt.eq.2)print*, 'In fli: 1 - before rdevt call'
 
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       call rdevt(date,conv,scale,smc5,nhr,nhf)
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      i=52
+c        if(ioflg.gt.1)then
+c          filename(i)=outfln(i)
+c        endif
+      open(unit=i,file=filename(i),access='sequential',
+     *     status='unknown',iostat=ios)
+!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      if(ios.ne.0)call io_warning(i,filename(i),ios)
+!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      write(51,5003)i,filename(i)
+
 
       i=53
 c        if(ioflg.gt.1)then
@@ -210,19 +322,7 @@ c        endif
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       write(51,5003)i,filename(i)
 
-
-      i=55
-c        if(ioflg.gt.1)then
-c          filename(i)=outfln(i)
-c        endif
-      open(unit=i,file=filename(i),access='sequential',
-     *     status='unknown',iostat=ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if(ios.ne.0)call io_warning(i,filename(i),ios)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      write(51,5003)i,filename(i)
-
-      i=73
+      i=57
       if(ioflg.gt.1)then
          filename(i)=outfln(i)
       endif
@@ -241,7 +341,7 @@ c        endif
 !      write(51,6015) hrs,mins,secs,day,month,year
 
 99905 write(51,1000)fln(10),fln(1)
-      write(53,1000)fln(10),fln(1)
+      write(52,1000)fln(10),fln(1)
 
       if(iopt.eq.2)print*, ' In fli - 1183'
 
@@ -295,20 +395,20 @@ c        endif
       mo=mo1
  
 !     basin/bsnm.par
-      open(unit=32 ,file=fln(2) ,status='old',iostat=ios)
-      if(ios.ne.0)then
-         print*,'Problems on unit 32'
-         write(*,99172)fln(2)
-         write(51,99172)fln(2)
-99172    format(' Warning: Error opening or reading fln:',a30/
-     *    ' Probable cause: missing basin/bsnm.par input file'/
-     *    ' OR: in config.sys have you set files=100 & buffers=50?'/)
-         print*,'iostat code =',ios
-         STOP 'program aborted In fli.for @ 372'
-      endif
+!      open(unit=32 ,file=fln(2) ,status='old',iostat=ios) !ch_par is already read above
+!      if(ios.ne.0)then
+!         print*,'Problems on unit 32'
+!         write(*,99172)fln(2)
+!         write(51,99172)fln(2)
+!99172    format(' Warning: Error opening or reading fln:',a30/
+!     *    ' Probable cause: missing basin/bsnm.par input file'/
+!     *    ' OR: in config.sys have you set files=100 & buffers=50?'/)
+!         print*,'iostat code =',ios
+!         STOP 'program aborted In fli.for @ 372'
+!      endif
 
 	
-      if(iopt.eq.2)print*, ' In fli - before call rdpar'
+!      if(iopt.eq.2)print*, ' In fli - before call rdpar'
 
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 C      call rdpar(1,ix,e1)
@@ -326,15 +426,15 @@ c      if(igrdshft.le.0)then
 !     only one line of data needed
 
      
-      if(IsFileTypeTB0(fln(6))) then
+!      if(IsFileTypeTB0(fln(6))) then
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          call read_flow_ef('0',date) !EnSim compatible tb0 file
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      else
-         print*,'Old format str files not accepted'
-         print*,'Please create EF yyyymmdd_str.tb0 files & rerun'
-         stop 'Program aborted in fli @ 142'
-      endif
+!      else
+!         print*,'Old format str files not accepted'
+!         print*,'Please create EF yyyymmdd_str.tb0 files & rerun'
+!         stop 'Program aborted in fli @ 142'
+!      endif
 
       allocate(outarray(ycount,xcount),stat=iAllocate)
       if(iAllocate.ne.0) STOP
@@ -351,15 +451,15 @@ c
 !     read the reservoir release file for the initial releases
 !     only one line of data needed
 
-      if(IsFileTypeTB0(fln(7)))then
+!      if(IsFileTypeTB0(fln(7)))then
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          call read_resv_ef()    !EnSim compatible tb0 file
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      else
-         print*,'Old format rel files not accepted'
-         print*,'Please create EF yyyymmdd_rel.tb0 files & rerun'
-         stop 'Program aborted in fli @ 142'
-      endif
+!      else
+!         print*,'Old format rel files not accepted'
+!         print*,'Please create EF yyyymmdd_rel.tb0 files & rerun'
+!         stop 'Program aborted in fli @ 142'
+!      endif
 
       if(iopt.eq.2)print*,' In fli - back from read_resv_ef'
       write(51,*)'releases read'
@@ -372,9 +472,23 @@ c
 
       author='fli.exe (flowinit)  '
 
+!      fln(99)='flow_init.r2c'
+      if (len_trim(outfln(60)) .gt. 2) then
+        fln(99)=outfln(60)
+      else
+        fln(99)=filename(60)
+      end if
+
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       call write_flowinit()
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!      fln(99)='lzs_init.r2c'
+      if (len_trim(outfln(61)) .gt. 2) then
+        fln(99)=outfln(61)
+      else
+        fln(99)=filename(61)
+      end if
 
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       call write_lzsinit()
@@ -387,6 +501,7 @@ c
 
  1000 format(' ',2(' ',a30))
  1030 format(' ','Unit no. =',i3,' file no',i3,' = ',a30)
+ 5001 format(a)
  5002 format(/' output files')
  5003 format(' opened unit'i5,' file neame ',a30)
  5005 format(' Files opened:')

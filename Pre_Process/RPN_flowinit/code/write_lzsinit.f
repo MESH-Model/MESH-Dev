@@ -85,14 +85,14 @@ c      init_heat_deficit=deffactor
 99006 format(2a10)
       close(unit=99,status='delete')
 
-      fln(99)='lzs_init.r2c'     
+!      fln(99)='lzs_init.r2c'
 
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       call write_r2c(99,99,0,1,0,1,1)   
       call write_r2c(99,99,0,0,1,1,1)   
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       print*
-      print*,fln(99),' written in working directory'
+      print*,trim(fln(99)),' written in working directory'
 	print*
 
 c      SUBROUTINE write_r2c(un,fn,
