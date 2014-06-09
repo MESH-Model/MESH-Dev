@@ -1,24 +1,24 @@
 # ======================================================================
-#           Makefile for SA_MESH
-# ======================================================================
+#						Makefile for SA_MESH 
+#           Compile on Windows using MinGW's gfortran compiler
 #
+#                           mingw32-make
+# ======================================================================
+
 # ======================================================================
 # Include definition file
 # ======================================================================
 include makefile.def
-
 
 # ======================================================================
 # Declaring variables
 # ======================================================================
 
 # The Compiler
-#FC=gfortran
-FC=gfortran #s.compile #pgf90
+FC=gfortran
 
 # Flag for compiling and debugging - comment as necessary
-#LFLAG=-fast
-LFLAG=-c -O3
+LFLAG=-c -O2
 
 # Flag for debugging
 #LFLAG=-g
@@ -26,17 +26,15 @@ LFLAG=-c -O3
 # ======================================================================
 # Build SA_MESH executable and print message
 # ======================================================================
-SA_MESH_RELEASE: ${OBJECTS}
-	$(FC) -o SA_MESH_RELEASE  $(OBJECTS)
+all: ${OBJECTS}
+#	$(FC) -o sa_mesh  $(OBJECTS)
+# JUL 11/11 - DGP: -static to remove gcc, gfortran dependency;
+	$(FC) -static -o sa_mesh  $(OBJECTS)
 	@echo ---*---
 	@echo ---*---
 	@echo sa_mesh is now up to date...
 	@echo ---*---
 	@echo ---*---
-	@echo Cleaning object files...
-	@echo ---*---
-	@echo ---*---
-	@rm *.mod *.o
 
 # ======================================================================
 # General rules
@@ -47,7 +45,7 @@ SA_MESH_RELEASE: ${OBJECTS}
 	$(FC) $(LFLAG) $<
 %.o: %.f90
 	$(FC) $(LFLAG) $<
-%.o: %.for
+%.o: %.for	
 	$(FC) $(LFLAG) $<
 
 # ======================================================================
@@ -56,8 +54,13 @@ SA_MESH_RELEASE: ${OBJECTS}
 EF_Module.o : EF_ParseUtilities.o
 
 # ======================================================================
-# Cleaning everything including the previously built executable
+# Cleaning object files
 # ======================================================================
 clean:
-	rm *.mod *.o *.exe
+	del *.mod *.o
 
+# ======================================================================
+# Cleaning everything including the previously built executable
+# ======================================================================
+veryclean:
+	del *.mod *.o *.exe
