@@ -203,6 +203,19 @@ WRITE(iunit,3005) '#---------------------------------------'
 WRITE(iunit,3005) '#                                       '
 WRITE(iunit,3020) ':SourceFile         ',TRIM(filename(52))
 
+!> Write basin parameters
+WRITE(iunit,3005) '#                                       '
+WRITE(iunit,3003) ':NominalGridSize_AL ',al
+WRITE(iunit,3003) ':ContourInterval    ',cintv
+!todo:WRITE(iunit,3003) ':ImperviousArea     ',unknown_var
+WRITE(iunit,3001) ':ClassCount         ',(ntype+1)
+WRITE(iunit,3001) ':NumRiverClasses    ',nrvr
+WRITE(iunit,3003) ':ElevConversion     ',conv
+WRITE(iunit,3001) ':TotalNumOfGrids    ',na
+WRITE(iunit,3001) ':NumGridsInBasin    ',naa
+IF(nnprint.GT.0) WRITE(iunit,3001) ':DebugGridNo        ',nnprint
+!todo:WRITE(iunit,3003) ':MinimumSlope       ',unknown_var
+
 !> Write projection (LatLong or UTM seem to be allowed in read_shed_ef.f)
 WRITE(iunit,3005) '#                                       '
 WRITE(iunit,3004) ':Projection         ',coordsys1
