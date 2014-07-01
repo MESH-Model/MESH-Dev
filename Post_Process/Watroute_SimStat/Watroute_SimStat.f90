@@ -25,6 +25,7 @@ LOGICAL :: EXISTS
 REAL :: SAE,SAESRT,SAEMSRT,FBEST,FTEST,NSE
 REAL,DIMENSION(:),ALLOCATABLE :: QHYDIN,QOIN
 REAL,DIMENSION(:,:),ALLOCATABLE :: QOBS,QSIM
+REAL :: MAXNAN
 
 !> Variables for SIMSTATS.F90
 !* NSD:   NASH-SUTCLIFFE COEFFICIENT (DAILY)
@@ -66,6 +67,9 @@ IENDARG=0
 !> These constants are required to read the event file
 ID=1              !not used like this now  nk Apr. 8/03
 NI=1
+
+!> Max NaN is a number to replace NaN values
+MAXNAN=1.E+15
 
 !> This block of code is taken from rte.f to read in the name of the event file
 INQUIRE(FILE='infiles_rte.txt',EXIST=exists)
@@ -175,6 +179,10 @@ NCALCOUNT=1
 !> The format of the read statement is adopted from route.f from Watroute
 DO
 
+!> Stop the loop if the expected number of records is exceeded
+IF(NCALCOUNT.GT.NCAL) &
+    GOTO 20
+
 READ(UNIT=54,FMT=7010,IOSTAT=IOS) YEAR1,MONTH_NOW,DAY_NOW,HOUR_NOW,(QHYDIN(L),QOIN(L),L=1,NO)
 
 !> Exit the loop if end-of-file (or on error)
@@ -204,7 +212,7 @@ END DO
 20 CONTINUE
 
 !> Stop the program if the expected and actual number of records do not match
-IF(NCAL.NE.NCALCOUNT) &
+IF(NCALCOUNT.LT.NCAL) &
     STOP 'ERROR: Unexpected end of file in spl_rpn.csv'
 CLOSE(54)
 !d close(55)
@@ -215,10 +223,16 @@ CLOSE(54)
 !> Calculate simulation statistics (SIMSTATS.F90 from standalone MESH)
 CALL SIMSTATS(QOBS(1:NCAL,1),QSIM(1:NCAL,1),NCAL,BIAS,NSD,NSW,TPD)
 
+!> Check for NaN value
+IF(isnan(NSD)) NSD=(-1)*MAXNAN
+
 !> Print Nash-Sutcliffe coefficient (Daily)
 OPEN(100,FILE='NS.txt',STATUS='UNKNOWN')
 WRITE(100,*)NSD
 CLOSE(100)
+
+!> Check for NaN value
+IF(isnan(NSW)) NSW=(-1)*MAXNAN
 
 !> Print Nash-Sutcliffe coefficient (Weekly)
 OPEN(100,FILE='NSW.txt',STATUS='UNKNOWN')
