@@ -1,0 +1,17 @@
+72                        !nfiles  :Number of source netcdf files
+netcdf                    !frmtIn  :Input format of the files (netcdf or r2c)
+seq                       !frmtOut :Ouput format of the files (seq,ascii)
+SWdown                    !varName :Name of the climate variable in the netcdf file
+50. 71. -145. -100.       !lat0,lat1,lon0,lon1 :These are the lat long corner to window to mask the netcdf file
+51.0 -140.5 0.125 0.125   !lat0m,lon0m,dx,dy : The first two are the origin of your watflood map, the dx and dy are your discretization in the watflood map
+F                         !snow_add :In case that you have separated files for rainfall and snow and you want to added, put T (true) in this condition. You Will need to add a new line with the names of the snow variable
+Rank.txt                  !rnkfile  :Name of the rank file. This file have to content in the first line the number of rows and columns of this matrix and the the matrix. It has to be in integer. You can copy from your drainage database but be sure that you remove the zeros after comma.
+C:\Output\basin_shortwave.seq !flOut : Name of the output file 
+C:\IputNETCDF\SWdown_WFDEI_1.nc    !infile The list of your netcdf files in dates order
+C:\IputNETCDF\SWdown_WFDEI_2.nc
+C:\IputNETCDF\SWdown_WFDEI_3.nc
+.
+.
+.
+C:\IputNETCDF\SWdown_WFDEI_72.nc   !last
+

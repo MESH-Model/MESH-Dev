@@ -1,0 +1,22 @@
+OBJECTS = ntcdf2BinMesh.o \
+          Main_netcdf2MeshBin.o \
+
+
+MODULES = ntcdf2binmesh.mod
+HOME =  /home/gos730
+.PHONY: clean
+
+#output.txt: Main_netcdf2MeshBin.exe
+#	./Main_netcdf2MeshBin.exe > output.txt
+
+Main_netcdf2MeshBin.exe: $(MODULES) $(OBJECTS)
+	gfortran  -O3  -I$(HOME)/netcdf-4.2/include $(OBJECTS) -o Main_netcdf2MeshBin.exe -L$(HOME)/netcdf-4.2/lib -lnetcdff -lnetcdf
+
+%.o: %.f90
+	gfortran  -O3  -I$(HOME)/netcdf-4.2/include -c $<  -L$(HOME)/netcdf-4.2/lib -lnetcdff -lnetcdf   
+
+%.mod: %.f90
+	gfortran  -O3  -I$(HOME)/netcdf-4.2/include -c $< -L$(HOME)/netcdf-4.2/lib -lnetcdff -lnetcdf     
+
+clean:
+	rm -f $(OBJECTS) $(MODULES) Main_netcdf2MeshBin.exe
