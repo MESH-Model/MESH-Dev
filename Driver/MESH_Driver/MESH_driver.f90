@@ -81,11 +81,11 @@ USE MESH_INPUT_MODULE
 USE FLAGS
 
 
+
 IMPLICIT NONE
 INTRINSIC MAXLOC
 !> DAN  USE RTE SUBROUTINES FOR READING EVENT FILE AND SHD FILE, AND
 !> DAN  WRITING R2C-FORMAT OUTPUT FILES      
-
 !>  INTEGER CONSTANTS.
 INTEGER ILG
 !INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
@@ -790,6 +790,7 @@ TYPE(HydrologyParameters) :: hp
 
 
 
+
 !> MAM - FOR AUTOCALIBRATION USING PRE-EMPTION - A MAXIMUM OF 1 YEAR (365 DAYS) 
 !> DAILY STREAM FLOW IS SUPPOSED TO BE USED FOR AUTOCALIBRATION PURPOSE.
 !* NCAL:    ACTUAL NUMBER OF CALIBRATION DATA
@@ -1339,7 +1340,7 @@ ALLOCATE (PREACC(NA), GTACC(NA), QEVPACC(NA), &
   TCANACC(NA), RCANACC(NA), SCANACC(NA), GROACC(NA), CANARE(NA), &
   SNOARE(NA), &
   TBARACC(NA, IGND), THLQACC(NA, IGND), THICACC(NA, IGND), &
-  THALACC(NA, IGND),  STAT=PAS)
+  THALACC(NA, IGND), STAT=PAS)
 IF (PAS .NE. 0) THEN
   WRITE (6, *)
   WRITE (6, *)
@@ -1946,8 +1947,6 @@ DO I=1,NA
   ENDDO
 ENDDO
 
-
-
 !> SET GRID-FORMAT WATROUTE OUTPUT           !
 DO I = 1, YCOUNT                            !    
   DO J = 1, XCOUNT                          !
@@ -2375,7 +2374,7 @@ DO i=1,nrs
     READ(51,END=999) !Skip the bin's information
   ENDDO
   IF(BASINSHORTWAVEFLAG==1)THEN !Skip the r2c file's information
-      READ (90, *, END=999) !:Frame line
+      READ (90, *, END=999)
      DO m = 1,YCOUNT
        READ (90,* , END=999)
      END DO
@@ -3184,6 +3183,19 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
 ENDIF !IF (RESUMEFLAG == 2) THEN
 
 
+!> *********************************************************************
+!> Call read_init_prog_variables.f90 for initi prognostic variables by
+!> by fields needd by classas as initial conditions
+!> *********************************************************************
+!> bjd - July 14, 2014: Gonzalo Sapriza
+IF (RESUMEFLAG == 3) THEN
+
+    CALL read_init_prog_variables_class( CMAIROW  , QACROW  , TACROW   , &
+                                         TBASROW  , TSFSROW , WSNOROW  , &
+                                         cp       , NA      , NTYPE    , &
+                                         IGND                          )
+
+END IF !IF (RESUMEFLAG == 3) THEN
 
 !> *********************************************************************
 !> Call CLASSB to set more CLASS variables
@@ -3618,6 +3630,7 @@ IF(JAN==1) THEN
      IF(FRAC(I)/=0.0)THEN
         DO M=1,NMTEST
            INIT_STORE = INIT_STORE + cp%FAREROW(I,M)*(cp%RCANROW(I,M)+cp%SCANROW(I,M)+cp%SNOROW(I,M)+cp%ZPNDROW(I,M)*RHOW)
+
            DO J = 1, IGND
               INIT_STORE = INIT_STORE + cp%FAREROW(I,M)*(cp%THLQROW(I,M,J)*RHOW+cp%THICROW(I,M,J)*RHOICE)*DLZWROW(I,M,J)
            ENDDO
@@ -3625,7 +3638,6 @@ IF(JAN==1) THEN
      ENDIF
   ENDDO
 ENDIF
-
 
 
 !> ========================================================================
@@ -4379,11 +4391,11 @@ DO I = 1, NA
                                          cp%THICROW(I,M,J))*cp%FAREROW(I,M)
 
 
-
             TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%THLQROW(I,M,J)*RHOW*cp%FAREROW(I,M)*DLZWROW(I,M,J)
             TOTAL_THIC(J) = TOTAL_THIC(J) + cp%THICROW(I,M,J)*RHOICE*cp%FAREROW(I,M)*DLZWROW(I,M,J)
             
          ENDDO
+         
          
 
          TOTAL_ZPND = TOTAL_ZPND + cp%ZPNDROW(I,M)*RHOW*cp%FAREROW(I,M)
@@ -4421,6 +4433,7 @@ ENDDO !DO I=1,NA
 !todo: use delta t here
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
+
 
 
   !no omp b/c of file IO
@@ -4669,7 +4682,7 @@ TOTAL_PRE=0.0
 TOTAL_HFSACC = 0.0
 TOTAL_QEVPACC = 0.0
 
-    
+
 ENDIF  ! IF(NCOUNT==48) THEN
 
 NCOUNT=NCOUNT+1 !todo: does this work with hourly forcing data?
@@ -5227,6 +5240,25 @@ IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
   hp%fetchROW,hp%HtROW,hp%N_SROW,hp%A_SROW,hp%DistribROW, &
   fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
 ENDIF !IF (SAVERESUMEFLAG == 1) THEN
+
+!> *********************************************************************
+!> Call save_init_prog_variables_class.f90 to save initi prognostic variables by
+!> by fields needd by classas as initial conditions
+!> *********************************************************************
+!> bjd - July 14, 2014: Gonzalo Sapriza
+IF (SAVERESUMEFLAG == 3) THEN
+
+!> Save the last time step
+    CALL save_init_prog_variables_class( CMAIROW     , QACROW     , TACROW      , &
+                                         TBASROW     , TSFSROW    , WSNOROW     , &
+                                         cp%ALBSROW  , cp%GROROW  , cp%RCANROW  , &
+                                         cp%RHOSROW  , cp%SCANROW , cp%SNOROW   , &
+                                         cp%TBARROW  , cp%TCANROW , cp%THICROW  , &
+                                         cp%THLQROW  , cp%TPNDROW , cp%TSNOROW  , &
+                                         cp%ZPNDROW                             , &
+                                         NA          , NTYPE      , IGND        )
+
+ENDIF !IF (SAVERESUMEFLAG == 3) THEN
 
 
 
