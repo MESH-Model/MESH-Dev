@@ -2375,7 +2375,7 @@ DO i=1,nrs
     READ(51,END=999) !Skip the bin's information
   ENDDO
   IF(BASINSHORTWAVEFLAG==1)THEN !Skip the r2c file's information
-      READ (90, *, END=999)
+      READ (90, *, END=999) !:Frame line
      DO m = 1,YCOUNT
        READ (90,* , END=999)
      END DO
