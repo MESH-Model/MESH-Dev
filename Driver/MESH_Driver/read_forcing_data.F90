@@ -39,6 +39,8 @@ INTEGER*4,DIMENSION(NA)           :: YYY,XXX
 INTEGER*4,DIMENSION(ILG)          :: ILMOS,JLMOS
 INTEGER                           :: I,J,K,CURGRU,ICOUNT
 
+INTEGER                           :: NTIME  ! time in read sequential
+
 !Initialize counting number of r2c and csv files
 ICOUNT = 0
 
@@ -94,9 +96,41 @@ ICOUNT = 0
         print*,"Shortwave radiation"
         CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4SHRTGRU,FSVHGAT+FSIHGAT)
     ENDIF
+
+!> *********************************************************************
+!> basin_shortwave.seq
+!> *********************************************************************
+  ELSEIF (BASINSHORTWAVEFLAG == 3) THEN
+
+    READ(unit=90) NTIME
+
+    READ(unit=90,END=999) FSDOWN
+
+    FSVHGRD=0.5*FSDOWN
+    FSIHGRD=FSVHGRD
+
+    CALL GATHER(NA,NML,ILG,ILMOS,FSVHGRD,FSVHGAT)
+
+    FSIHGAT=FSVHGAT
+    ICOUNT=ICOUNT+1
+
+  ELSEIF (BASINSHORTWAVEFLAG == 4) THEN
+
+    READ(90,*,END=999) (FSDOWN(i),i=1,na)
+
+    FSVHGRD=0.5*FSDOWN
+    FSIHGRD=FSVHGRD
+
+    CALL GATHER(NA,NML,ILG,ILMOS,FSVHGRD,FSVHGAT)
+
+    FSIHGAT=FSVHGAT
+    ICOUNT=ICOUNT+1
+
   ELSE
     PRINT*,'BASINSHORTWAVEFLAG SHOULD BE EITHER 0, 1 0R 2'
     STOP
+
+
   ENDIF
 
 !> *********************************************************************
@@ -146,6 +180,28 @@ ICOUNT = 0
         print*,"Longwave radiation"
         CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4LONGGRU,FDLGAT)
     ENDIF
+
+!> *********************************************************************
+!> basin_longwave.seq
+!> *********************************************************************
+  ELSEIF (BASINLONGWAVEFLAG == 3) THEN
+
+    READ(unit=91,END=999) NTIME
+
+    READ(unit=91,END=999) FDLGRD
+
+    CALL GATHER(NA,NML,ILG,ILMOS,FDLGRD,FDLGAT)
+
+    ICOUNT=ICOUNT+1
+
+  ELSEIF (BASINLONGWAVEFLAG == 4) THEN
+
+    READ(91,*,END=999) (FDLGRD(i),i=1,NA)
+
+    CALL GATHER(NA,NML,ILG,ILMOS,FDLGRD,FDLGAT)
+
+    ICOUNT=ICOUNT+1
+
   ELSE
     PRINT*,'BASINLONGWAVEFLAG SHOULD BE EITHER 0, 1 0R 2'
     STOP
@@ -198,6 +254,28 @@ ICOUNT = 0
         print*,"Precipitation"
         CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4RAINGRU,PREGAT)
     ENDIF
+
+!> *********************************************************************
+!> basin_rain.seq
+!> *********************************************************************
+  ELSEIF (BASINRAINFLAG == 3) THEN
+
+    READ(unit=92,END=999) NTIME
+
+    READ(unit=92,END=999) PREGRD
+
+    CALL GATHER(NA,NML,ILG,ILMOS,PREGRD,PREGAT)
+
+    ICOUNT=ICOUNT+1
+
+  ELSEIF (BASINRAINFLAG == 4) THEN
+
+    READ(92,*,END=999) (PREGRD(i),i=1,NA)
+
+    CALL GATHER(NA,NML,ILG,ILMOS,PREGRD,PREGAT)
+
+    ICOUNT=ICOUNT+1
+
   ELSE
     PRINT*,'BASINRAINFLAG SHOULD BE EITHER 0, 1 0R 2'
     STOP
@@ -250,6 +328,28 @@ ICOUNT = 0
         print*,"Temperature"
         CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4TEMPGRU,TAGAT)
     ENDIF
+
+!> *********************************************************************
+!> basin_temperature.seq
+!> *********************************************************************
+  ELSEIF (BASINTEMPERATUREFLAG == 3) THEN
+
+    READ(unit=93,END=999) NTIME
+
+    READ(unit=93,END=999) TAGRD
+
+    CALL GATHER(NA,NML,ILG,ILMOS,TAGRD,TAGAT)
+
+    ICOUNT=ICOUNT+1
+
+   ELSEIF (BASINTEMPERATUREFLAG == 4) THEN
+
+    READ(93,*,END=999) (TAGRD(i),i=1,na)
+
+    CALL GATHER(NA,NML,ILG,ILMOS,TAGRD,TAGAT)
+
+    ICOUNT=ICOUNT+1
+
   ELSE
     PRINT*,'BASINTEMPERATUREFLAG SHOULD BE EITHER 0, 1 0R 2'
     STOP
@@ -310,6 +410,30 @@ ICOUNT = 0
         print*,"Wind"
         CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4WINDGRU,ULGAT)
     ENDIF
+
+!> *********************************************************************
+!> basin_wind.seq
+!> *********************************************************************
+  ELSEIF (BASINWINDFLAG == 3) THEN
+
+    READ(unit=94) NTIME
+
+    READ(unit=94,END=999) ULGRD
+
+    CALL GATHER(NA,NML,ILG,ILMOS,ULGRD,ULGAT)
+
+    ICOUNT=ICOUNT+1
+
+  ELSEIF (BASINWINDFLAG == 4) THEN
+
+    READ(94,*,END=999) (ULGRD(i),i=1,NA)
+
+
+    CALL GATHER(NA,NML,ILG,ILMOS,ULGRD,ULGAT)
+
+
+    ICOUNT=ICOUNT+1
+
   ELSE
     PRINT*,'BASINWINDFLAG SHOULD BE EITHER 0, 1 0R 2'
     STOP
@@ -362,6 +486,33 @@ ICOUNT = 0
         print*,"Pressure"
         CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4PRESGRU,PRESGAT)
     ENDIF
+
+!> *********************************************************************
+!> basin_pres.seq
+!> *********************************************************************
+  ELSEIF (BASINPRESFLAG == 3) THEN
+
+    READ(unit=95) NTIME
+
+    READ(unit=95, END=999) PRESGRD
+
+
+    CALL GATHER(NA,NML,ILG,ILMOS,PRESGRD,PRESGAT)
+
+
+    ICOUNT=ICOUNT+1
+
+  ELSEIF (BASINPRESFLAG == 4) THEN
+
+
+
+    READ(95,*) (PRESGRD(i),i=1,na)
+
+
+    CALL GATHER(NA,NML,ILG,ILMOS,PRESGRD,PRESGAT)
+
+
+    ICOUNT=ICOUNT+1
   ELSE
     PRINT*,'BASINPRESSUREFLAG SHOULD BE EITHER 0, 1 0R 2'
     STOP
@@ -414,10 +565,35 @@ ICOUNT = 0
         print*,"Humidity"
         CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4HUMDGRU,QAGAT)
     ENDIF
+!> *********************************************************************
+!> basin_humidity.seq
+!> *********************************************************************
+  ELSEIF (BASINHUMIDITYFLAG == 3) THEN
+
+    READ(unit=96) NTIME
+
+    READ(96,END=999) QAGRD
+
+    CALL GATHER(NA,NML,ILG,ILMOS,QAGRD,QAGAT)
+
+    ICOUNT=ICOUNT+1
+!> *********************************************************************
+!> basin_humidity.asc
+!> *********************************************************************
+  ELSEIF (BASINHUMIDITYFLAG == 4) THEN
+
+    READ(96,*, END=999) (QAGRD(i),i=1,NA)
+
+    CALL GATHER(NA,NML,ILG,ILMOS,QAGRD,QAGAT)
+
+    ICOUNT=ICOUNT+1
+
   ELSE
     PRINT*,'BASINHUMIDITYFLAG SHOULD BE EITHER 0, 1 0R 2'
     STOP
   ENDIF
+
+
 
 RETURN
 
