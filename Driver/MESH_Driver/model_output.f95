@@ -1213,7 +1213,7 @@
 
                 do j = 1, ycount
 
-                    WRITE(un,'(999(E12.6))') (data_aux(j,i),i=1,xcount)
+                    WRITE(un,'(999(E12.6,2x))') (data_aux(j,i),i=1,xcount)
 
                 enddo
 
