@@ -80,7 +80,7 @@ USE EF_MODULE
 USE MESH_INPUT_MODULE
 USE FLAGS
 
-
+USE MODEL_OUTPUT
 
 IMPLICIT NONE
 INTRINSIC MAXLOC
@@ -607,10 +607,11 @@ REAL, DIMENSION(:), ALLOCATABLE :: PREACC, GTACC, QEVPACC, &
   ROFSACC, ROFBACC, HMFNACC, WTBLACC, WSNOACC, RHOSACC, TSNOACC, &
   TCANACC, RCANACC, SCANACC, GROACC, CANARE, SNOARE, ZPNDACC
 
-
+!> FIELD OF DELTA STORAGE AND INITIAL STORAGE
+REAL, DIMENSION(:), ALLOCATABLE :: DSTG, STG_I
 
 REAL, DIMENSION(:, :), ALLOCATABLE :: TBARACC, THLQACC, THICACC, &
-  THALACC 
+  THALACC , THLQ_FLD, THIC_FLD
 
 !* TOTAL_ROFACC: TOTAL RUNOFF
 !* TOTAL_EVAPACC: TOTAL EVAPORATION
@@ -620,7 +621,7 @@ REAL, DIMENSION(:, :), ALLOCATABLE :: TBARACC, THLQACC, THICACC, &
 !* TOTAL_AREA: TOTAL FRACTIONED DRAINAGE AREA
 REAL :: TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-  FINAL_STORE, TOTAL_AREA
+  FINAL_STORE, TOTAL_AREA, SOILSTORE
   
 !* TOTAL_HFS = TOTAL SENSIBLE HEAT FLUX
 !* TOTAL_QEVP = TOTAL LATENT HEAT FLUX
@@ -788,7 +789,11 @@ TYPE(ClassParameters) :: cp
 TYPE(SoilValues) :: sv
 TYPE(HydrologyParameters) :: hp
 
-
+!>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
+!> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
+TYPE(OUT_VAR)     :: VR
+TYPE(DATES_MODEL) :: TS
+TYPE(INFO_OUT)    :: IOF
 
 
 !> MAM - FOR AUTOCALIBRATION USING PRE-EMPTION - A MAXIMUM OF 1 YEAR (365 DAYS) 
@@ -1340,7 +1345,9 @@ ALLOCATE (PREACC(NA), GTACC(NA), QEVPACC(NA), &
   TCANACC(NA), RCANACC(NA), SCANACC(NA), GROACC(NA), CANARE(NA), &
   SNOARE(NA), &
   TBARACC(NA, IGND), THLQACC(NA, IGND), THICACC(NA, IGND), &
-  THALACC(NA, IGND), STAT=PAS)
+  THALACC(NA, IGND), &
+  STG_I(NA), DSTG(NA),THLQ_FLD(NA,IGND),THIC_FLD(NA,IGND), &
+  STAT=PAS)
 IF (PAS .NE. 0) THEN
   WRITE (6, *)
   WRITE (6, *)
@@ -1946,6 +1953,11 @@ DO I=1,NA
     THALACC(I,J)=0.
   ENDDO
 ENDDO
+
+STG_I    = 0.
+DSTG     = 0.
+THLQ_FLD = 0.
+THIC_FLD = 0.
 
 !> SET GRID-FORMAT WATROUTE OUTPUT           !
 DO I = 1, YCOUNT                            !    
@@ -3317,6 +3329,17 @@ IF(PBSMFLAG == 1)THEN
  ENDDO
 ENDIF !PBSMFLAG == 1
 
+!> *********************************************************************
+!> Resume flag to initialize the waterbalances fields outputs
+!> *********************************************************************
+IF (OUTFIELDSFLAG .EQ. 1)THEN
+
+    CALL GET_DATES(ts,(/IYEAR_START , IDAY_START/) , &
+                      (/IYEAR_END   , IDAY_END  /) )
+
+    CALL INIT_OUT(vr,ts,iOF,NA,IGND)
+
+ENDIF
 
 !> *********************************************************************
 !> Start of main loop that is run each half hour
@@ -3630,15 +3653,35 @@ IF(JAN==1) THEN
      IF(FRAC(I)/=0.0)THEN
         DO M=1,NMTEST
            INIT_STORE = INIT_STORE + cp%FAREROW(I,M)*(cp%RCANROW(I,M)+cp%SCANROW(I,M)+cp%SNOROW(I,M)+cp%ZPNDROW(I,M)*RHOW)
-
+           SOILSTORE = 0.
            DO J = 1, IGND
-              INIT_STORE = INIT_STORE + cp%FAREROW(I,M)*(cp%THLQROW(I,M,J)*RHOW+cp%THICROW(I,M,J)*RHOICE)*DLZWROW(I,M,J)
+              SOILSTORE = SOILSTORE + cp%FAREROW(I,M)*(cp%THLQROW(I,M,J)*RHOW+cp%THICROW(I,M,J)*RHOICE)*DLZWROW(I,M,J)
            ENDDO
+           INIT_STORE = INIT_STORE + SOILSTORE
         ENDDO
      ENDIF
   ENDDO
 ENDIF
 
+
+!>=========================================================================
+!> Initialization of the Storage field
+ IF(JAN==1) THEN
+    DO M = 1, NMTEST
+
+        STG_I(:) =  STG_I(:) + cp%FAREROW(:,M)*(cp%RCANROW(:,M) + &
+                                                cp%SCANROW(:,M) + &
+                                                cp%SNOROW(:,M)  + &
+                                                cp%ZPNDROW(:,M)*RHOW)
+        DO J = 1, IGND
+
+            STG_I(:) = STG_I(:) + cp%FAREROW(:,M)*(cp%THLQROW(:,M,J)*RHOW + &
+                                                   cp%THICROW(:,M,J)*RHOICE)*DLZWROW(:,M,J)
+
+        ENDDO
+
+    ENDDO
+  ENDIF
 
 !> ========================================================================
 CALL CLASSZ (0       , CTVSTP  , CTSSTP  , CT1STP, CT2STP, CT3STP  , &
@@ -4390,13 +4433,16 @@ DO I = 1, NA
             THALACC(I,J) = THALACC(I,J)+(cp%THLQROW(I,M,J)+ &
                                          cp%THICROW(I,M,J))*cp%FAREROW(I,M)
 
+            !(I) = THALACC_STG(I) + THALACC(I,J)
+            THLQ_FLD(I,J) =  THLQ_FLD(I,J) + cp%THLQROW(I,M,J)*RHOW*cp%FAREROW(I,M)*DLZWROW(I,M,J)
+        THIC_FLD(I,J) =  THIC_FLD(I,J) + cp%THICROW(I,M,J)*RHOICE*cp%FAREROW(I,M)*DLZWROW(I,M,J)
 
             TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%THLQROW(I,M,J)*RHOW*cp%FAREROW(I,M)*DLZWROW(I,M,J)
             TOTAL_THIC(J) = TOTAL_THIC(J) + cp%THICROW(I,M,J)*RHOICE*cp%FAREROW(I,M)*DLZWROW(I,M,J)
             
          ENDDO
          
-         
+         !THALACC_STG(I) = THALACC_STG(I) + cp%ZPNDROW(I,M)*RHOW*cp%FAREROW(I,M)
 
          TOTAL_ZPND = TOTAL_ZPND + cp%ZPNDROW(I,M)*RHOW*cp%FAREROW(I,M)
          
@@ -4434,7 +4480,24 @@ ENDDO !DO I=1,NA
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
 
+!>  Added by Gonzalo Sapriza
+    !DELTA STORAGE
+    DO I = 1, IGND
 
+        DSTG = DSTG + THLQ_FLD(:,I) + THIC_FLD(:,I)
+
+    ENDDO
+
+    DSTG = DSTG + RCANACC + SCANACC + SNOACC - STG_I
+
+   IF (OUTFIELDSFLAG .eq. 1) THEN
+    CALL UPDATEFIELDSOUT(vr     ,  ts                 , iof                 , &
+                         PREACC ,  EVAPACC            , ROFACC              , &
+                         DSTG   ,  TBARACC/REAL(NSUM) , THLQ_FLD/REAL(NSUM) , &
+                         THIC_FLD/REAL(NSUM)          , NA          ,  IGND , &
+                         IDAY   ,        IYEAR                              )
+   ENDIF
+   STG_I = DSTG + STG_I
 
   !no omp b/c of file IO
   DO I=1,NA
@@ -4682,7 +4745,10 @@ TOTAL_PRE=0.0
 TOTAL_HFSACC = 0.0
 TOTAL_QEVPACC = 0.0
 
-
+THIC_FLD = 0.
+THLQ_FLD = 0.
+DSTG     = 0.
+    
 ENDIF  ! IF(NCOUNT==48) THEN
 
 NCOUNT=NCOUNT+1 !todo: does this work with hourly forcing data?
@@ -5260,7 +5326,12 @@ IF (SAVERESUMEFLAG == 3) THEN
 
 ENDIF !IF (SAVERESUMEFLAG == 3) THEN
 
+IF (OUTFIELDSFLAG .eq. 1) THEN
 
+    call Write_Outputs(vr,ts,iof)
+    !call Destroy
+
+ENDIF
 
 
 IF(ENDDATA)PRINT *, 'Reached end of forcing data'
