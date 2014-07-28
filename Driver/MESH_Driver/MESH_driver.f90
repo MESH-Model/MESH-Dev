@@ -3,7 +3,7 @@ PROGRAM RUNMESH
 !>       MESH DRIVER
 !>
 !>       JAN 2013 - K.C.KORNELSEN
-!>				  - INCORPORATED LOCATION FLAG FOR INCREASING PRECISION
+!>                - INCORPORATED LOCATION FLAG FOR INCREASING PRECISION
 !>                - OF STREAMFLOW AND RESERVOIR INPUTS
 !>                - INCLUDED NSE AND NEGATIVE NSE AS OBJFN'S
 !>       JAN 2014 - M. MACDONALD.  INCORPORATED BLOWING SNOW ALGORITHMS
@@ -79,6 +79,8 @@ USE AREA_WATFLOOD
 USE EF_MODULE
 USE MESH_INPUT_MODULE
 USE FLAGS
+
+
 IMPLICIT NONE
 INTRINSIC MAXLOC
 !> DAN  USE RTE SUBROUTINES FOR READING EVENT FILE AND SHD FILE, AND
@@ -113,13 +115,13 @@ INTEGER WF_LAND_COUNT
 INTEGER IOS, IOS_EVT
 
 !> FOR OUTPUT
-CHARACTER*10 GENDIR_OUT
+CHARACTER*450 GENDIR_OUT
 
 !todo clean up commets and arrange variables a bit better
 
 !> These variables are used to keep track of the number of forcing files
 !> that are in different formats
-INTEGER NUM_CSV, NUM_R2C, CURGRU
+INTEGER NUM_CSV, NUM_R2C, CURGRU, NUM_SEQ
 
 !> SCA variables
 
@@ -149,9 +151,9 @@ REAL, ALLOCATABLE :: WF_QSYN(:),WF_QSYN_AVG(:),WF_QSYN_CUM(:)
 CHARACTER, ALLOCATABLE :: WF_GAGE(:)*8
 
 !> RESERVOIR VARIABLES
-	INTEGER, ALLOCATABLE ::  WF_IRES(:), WF_JRES(:), WF_RES(:), WF_R(:)
-	REAL, ALLOCATABLE ::  WF_B1(:),WF_B2(:),WF_QREL(:), WF_RESSTORE(:)
-	CHARACTER, ALLOCATABLE ::  WF_RESNAME(:)*8
+    INTEGER, ALLOCATABLE ::  WF_IRES(:), WF_JRES(:), WF_RES(:), WF_R(:)
+    REAL, ALLOCATABLE ::  WF_B1(:),WF_B2(:),WF_QREL(:), WF_RESSTORE(:)
+    CHARACTER, ALLOCATABLE ::  WF_RESNAME(:)*8
 
 !> FOR BASEFLOW INITIALIZATION
 INTEGER JAN
@@ -183,7 +185,7 @@ INTEGER HOURLY_START_DAY, HOURLY_STOP_DAY, DAILY_START_DAY, &
            DAILY_STOP_DAY
 INTEGER HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
            DAILY_STOP_YEAR
-INTEGER JDAY_IND_STRM,JDAY_IND1,JDAY_IND2,JDAY_IND3,JDAY_IND_MET		   
+INTEGER JDAY_IND_STRM,JDAY_IND1,JDAY_IND2,JDAY_IND3,JDAY_IND_MET
 !*******************************************************************************
 
 
@@ -605,8 +607,10 @@ REAL, DIMENSION(:), ALLOCATABLE :: PREACC, GTACC, QEVPACC, &
   ROFSACC, ROFBACC, HMFNACC, WTBLACC, WSNOACC, RHOSACC, TSNOACC, &
   TCANACC, RCANACC, SCANACC, GROACC, CANARE, SNOARE, ZPNDACC
 
+
+
 REAL, DIMENSION(:, :), ALLOCATABLE :: TBARACC, THLQACC, THICACC, &
-  THALACC
+  THALACC 
 
 !* TOTAL_ROFACC: TOTAL RUNOFF
 !* TOTAL_EVAPACC: TOTAL EVAPORATION
@@ -669,13 +673,13 @@ INTEGER ICTEMMOD, L2MAX
 !> COMMON BLOCK PARAMETERS (CLASS):
 INTEGER :: K1, K2, K3, K4, K5, K6, K7, K8, K9, K10, K11
 REAL :: X1, X2, X3, X4, G, GAS, X5, X6, CPRES, GASV, X7, CPI, X8, &
-  CELZRO, X9, X10, X11, X12, X13, X14, X15, SIGMA, X16, DELTIM, &
-  DELT, TFREZ, RGAS, RGASV, GRAV, SBC, VKC, CT, VMIN, TCW, TCICE, &
-  TCSAND, TCCLAY, TCOM, TCDRYS, RHOSOL, RHOOM, HCPW, HCPICE, &
-  HCPSOL, HCPOM, HCPSND, HCPCLY, SPHW, SPHICE, SPHVEG, SPHAIR, &
-  RHOW, RHOICE, TCGLAC, CLHMLT, CLHVAP, PI, ZOLNG, ZOLNS, ZOLNI, &
-  ZORATG, ALVSI, ALIRI, ALVSO, ALIRO, ALBRCK, DELTA, CGRAV, &
-  CKARM, CPD, AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
+        CELZRO, X9, X10, X11, X12, X13, X14, X15, SIGMA, X16, DELTIM, &
+        DELT, TFREZ, RGAS, RGASV, GRAV, SBC, VKC, CT, VMIN, TCW, TCICE, &
+        TCSAND, TCCLAY, TCOM, TCDRYS, RHOSOL, RHOOM, HCPW, HCPICE, &
+        HCPSOL, HCPOM, HCPSND, HCPCLY, SPHW, SPHICE, SPHVEG, SPHAIR, &
+        RHOW, RHOICE, TCGLAC, CLHMLT, CLHVAP, PI, ZOLNG, ZOLNS, ZOLNI, &
+        ZORATG, ALVSI, ALIRI, ALVSO, ALIRO, ALBRCK, DELTA, CGRAV, &
+        CKARM, CPD, AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
 
 
 !> DAN * CONFLICTS WITH COMMON BLOCK DEFINITIONS (APR 20/08)
@@ -784,6 +788,8 @@ TYPE(ClassParameters) :: cp
 TYPE(SoilValues) :: sv
 TYPE(HydrologyParameters) :: hp
 
+
+
 !> MAM - FOR AUTOCALIBRATION USING PRE-EMPTION - A MAXIMUM OF 1 YEAR (365 DAYS) 
 !> DAILY STREAM FLOW IS SUPPOSED TO BE USED FOR AUTOCALIBRATION PURPOSE.
 !* NCAL:    ACTUAL NUMBER OF CALIBRATION DATA
@@ -865,6 +871,8 @@ COMMON    /WATFLGS/   VICEFLG, PSI_LIMIT, HICEFLG, LZFFLG, &
 DATA VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
   EXTFLG/0/, IWFICE/3/, ERRFLG/1/
 
+
+
 !> ((((((((((((((((((((((((((((((((((
 !> Set the acceptable version numbers
 !> ))))))))))))))))))))))))))))))))))
@@ -875,8 +883,8 @@ DATA VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
       RELEASE(2) = "1.1.a02"
       RELEASE(3) = "1.1.a04"
       RELEASE(4) = "1.2.000"
-	  RELEASE(5) = "1.2.a01"
-	  RELEASE(6) = "1.3.000"
+      RELEASE(5) = "1.2.a01"
+      RELEASE(6) = "1.3.000"
 
 !>=======================================================================
 !>      PROGRAM START
@@ -929,7 +937,7 @@ CALL READ_INITIAL_INPUTS( &
  LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX, &
  WF_LAND_MAX, WF_LAND_SUM, &
 !>variables for READ_CHECK_FORCING_FILES
- NUM_CSV, NUM_R2C, &
+ NUM_CSV, NUM_R2C, NUM_SEQ, &
 !>variables for READ_PARAMETERS_CLASS
   TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6, &
   NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
@@ -1331,7 +1339,7 @@ ALLOCATE (PREACC(NA), GTACC(NA), QEVPACC(NA), &
   TCANACC(NA), RCANACC(NA), SCANACC(NA), GROACC(NA), CANARE(NA), &
   SNOARE(NA), &
   TBARACC(NA, IGND), THLQACC(NA, IGND), THICACC(NA, IGND), &
-  THALACC(NA, IGND), STAT=PAS)
+  THALACC(NA, IGND),  STAT=PAS)
 IF (PAS .NE. 0) THEN
   WRITE (6, *)
   WRITE (6, *)
@@ -1482,26 +1490,26 @@ DO I=2,NA
       cp%THICROW(I,M,J)=   cp%THICROW(1,M,J)
     ENDDO
 
-    cp%TCANROW(I,M)=     cp%TCANROW(1,M)
-    cp%TSNOROW(I,M)=     cp%TSNOROW(1,M)
-    cp%DRNROW(I,M)=      cp%DRNROW(1,M)
-    cp%SDEPROW(I,M)=     cp%SDEPROW(1,M)
-    cp%FAREROW(I,M)=     cp%FAREROW(1,M)
-    cp%MANNROW(I,M)=     cp%MANNROW(1,M)
-    cp%XSLPROW(I,M)=     cp%XSLPROW(1,M)
-    cp%XDROW(I,M)=     cp%XDROW(1,M)
-    cp%DDROW(I,M)=       cp%DDROW(1,M)
-    WFSFROW(I,M)=     WFSFROW(1,M)
-    cp%KSROW(I,M)=     cp%KSROW(1,M)
-    cp%MIDROW(I,M)=      cp%MIDROW(1,M)
-    cp%TPNDROW(I,M)=     cp%TPNDROW(1,M)
-    cp%ZPNDROW(I,M)=     cp%ZPNDROW(1,M)
-    cp%RCANROW(I,M)=     cp%RCANROW(1,M)
-    cp%SCANROW(I,M)=     cp%SCANROW(1,M)
-    cp%SNOROW(I,M)=      cp%SNOROW(1,M)
-    cp%ALBSROW(I,M)=     cp%ALBSROW(1,M)
-    cp%RHOSROW(I,M)=     cp%RHOSROW(1,M)
-    cp%GROROW(I,M)=      cp%GROROW(1,M)
+    cp%TCANROW(I,M) =  cp%TCANROW(1,M)
+    cp%TSNOROW(I,M) =  cp%TSNOROW(1,M)
+    cp%DRNROW(I,M)  =  cp%DRNROW(1,M)
+    cp%SDEPROW(I,M) =  cp%SDEPROW(1,M)
+    cp%FAREROW(I,M) =  cp%FAREROW(1,M)
+    cp%MANNROW(I,M) =  cp%MANNROW(1,M)
+    cp%XSLPROW(I,M) =  cp%XSLPROW(1,M)
+    cp%XDROW(I,M)   =  cp%XDROW(1,M)
+    cp%DDROW(I,M)   =  cp%DDROW(1,M)
+    WFSFROW(I,M)    =  WFSFROW(1,M)
+    cp%KSROW(I,M)   =  cp%KSROW(1,M)
+    cp%MIDROW(I,M)  =  cp%MIDROW(1,M)
+    cp%TPNDROW(I,M) =  cp%TPNDROW(1,M)
+    cp%ZPNDROW(I,M) =  cp%ZPNDROW(1,M)
+    cp%RCANROW(I,M) =  cp%RCANROW(1,M)
+    cp%SCANROW(I,M) =  cp%SCANROW(1,M)
+    cp%SNOROW(I,M)  =  cp%SNOROW(1,M)
+    cp%ALBSROW(I,M) =  cp%ALBSROW(1,M)
+    cp%RHOSROW(I,M) =  cp%RHOSROW(1,M)
+    cp%GROROW(I,M)  =  cp%GROROW(1,M)
   ENDDO  !DO M=1,NMTEST
 ENDDO  !DO I=2,NA
 
@@ -1510,7 +1518,7 @@ ENDDO  !DO I=2,NA
 !> *********************************************************************
 
 OPEN(UNIT=21,FILE='MESH_input_reservoir.txt',STATUS='OLD')
-	READ(21,'(3I5)') WF_NORESV,WF_NREL,WF_KTR
+    READ(21,'(3I5)') WF_NORESV,WF_NREL,WF_KTR
 WF_NORESV_CTRL=0
 
 ! allocate reservoir arrays
@@ -1522,18 +1530,18 @@ ALLOCATE (WF_IRES(M_R), WF_JRES(M_R), WF_RES(M_R), WF_R(M_R),WF_B1(M_R),WF_B2(M_
 IF( WF_NORESV>0 ) THEN
   DO I=1,WF_NORESV
 ! KCK Added to allow higher precision gauge sites    
-	IF (LOCATIONFLAG == 1) THEN
+    IF (LOCATIONFLAG == 1) THEN
       READ(21,'(2F7.1,2G10.3,25X,A12,I2)') I_G,J_G, &
-	    WF_B1(I),WF_B2(I),WF_RESNAME(I),WF_RES(I)
-		WF_IRES(I) = NINT((I_G-YORIGIN*60.0)/GRDN)
-		WF_JRES(I) = NINT((J_G-XORIGIN*60.0)/GRDN)
-	ELSE
+        WF_B1(I),WF_B2(I),WF_RESNAME(I),WF_RES(I)
+        WF_IRES(I) = NINT((I_G-YORIGIN*60.0)/GRDN)
+        WF_JRES(I) = NINT((J_G-XORIGIN*60.0)/GRDN)
+    ELSE
 
       READ(21,'(2I5,2G10.3,25X,A12,I2)') WF_IRES(I),WF_JRES(I), & 
         WF_B1(I),WF_B2(I),WF_RESNAME(I), WF_RES(I)
         WF_IRES(I)=INT((REAL(WF_IRES(I))-REAL(IYMIN))/GRDN+1.0) 
         WF_JRES(I)=INT((REAL(WF_JRES(I))-REAL(JXMIN))/GRDE+1.0)
-	ENDIF
+    ENDIF
 !> check if point is in watershed and in river reaches
     WF_R(I)=0
     DO J=1,NA
@@ -1543,18 +1551,18 @@ IF( WF_NORESV>0 ) THEN
     ENDDO
     IF(WF_R(I)==0) THEN
       PRINT *, 'Reservoir Station: ',I,' is not in the basin'
-	      PRINT *, 'Up/Down Coordinate: ', wf_ires(I), Iymin
-	      PRINT *, 'Left/Right Coordinate: ', wf_jres(I),jxmin
+          PRINT *, 'Up/Down Coordinate: ', wf_ires(I), Iymin
+          PRINT *, 'Left/Right Coordinate: ', wf_jres(I),jxmin
       STOP
     ENDIF
     IF(WF_IREACH(WF_R(I))/=I) THEN
       PRINT *, 'Reservoir Station: ',I, &
         ' is not in the correct reach'
-	      PRINT *, 'Up/Down Coordinate: ', wf_ires(I)
-	      PRINT *, 'Left/Right Coordinate: ', wf_jres(I)
-	      PRINT *, 'ireach value at station: ', wf_iy(I)
+          PRINT *, 'Up/Down Coordinate: ', wf_ires(I)
+          PRINT *, 'Left/Right Coordinate: ', wf_jres(I)
+          PRINT *, 'ireach value at station: ', wf_iy(I)
       STOP
-	    ENDIF
+        ENDIF
     IF( WF_B1(I)==0.0 ) THEN
       WF_NORESV_CTRL=WF_NORESV_CTRL+1
     ENDIF
@@ -1569,8 +1577,9 @@ ENDIF
 !> *********************************************************************
 OPEN(UNIT=22,FILE='MESH_input_streamflow.txt',STATUS='OLD')
 READ(22,*)
-READ(22,'(7I5)') WF_NO,WF_NL,WF_MHRD,WF_KT, WF_START_YEAR,&
+READ(22,*) WF_NO,WF_NL,WF_MHRD,WF_KT, WF_START_YEAR,&
         WF_START_DAY,WF_START_HOUR
+
 
 ! Allocate variable based on value from streamflow file
 M_S=WF_NO !todo M_S is same as WF_NO and could be removed.
@@ -1580,11 +1589,11 @@ Allocate (WF_IY(M_S),WF_JX(M_S), WF_S(M_S),WF_QHYD(M_S),WF_QHYD_AVG(M_S),WF_QHYD
 
 DO I=1,WF_NO 
   IF (LOCATIONFLAG == 1) THEN
-    READ(22,'(2F7.1,1X,A12)') I_G, J_G, WF_GAGE(I)
-	WF_IY(I) = NINT((I_G-YORIGIN*60.0)/GRDN)
-	WF_JX(I) = NINT((J_G-XORIGIN*60.0)/GRDE)
+    READ(22,*) I_G, J_G, WF_GAGE(I)    !
+    WF_IY(I) = NINT((I_G-YORIGIN*60.0)/GRDN)
+    WF_JX(I) = NINT((J_G-XORIGIN*60.0)/GRDE)
   ELSE
-    READ(22,'(2I5,1X,A12)')WF_IY(I),WF_JX(I),WF_GAGE(I)
+    READ(22,*)WF_IY(I),WF_JX(I),WF_GAGE(I)
     WF_IY(I)=INT((REAL(WF_IY(I))-REAL(IYMIN))/GRDN+1.0)
     WF_JX(I)=INT((REAL(WF_JX(I))-REAL(JXMIN))/GRDE+1.0)
   ENDIF
@@ -1599,15 +1608,15 @@ DO I=1,WF_NO
   ENDDO
   IF(WF_S(I)==0) THEN
     PRINT *, 'STREAMFLOW GAUGE: ',I,' IS NOT IN THE BASIN'
-	    PRINT *, 'UP/DOWN', WF_IY(I),iymin,yyy(189),ycount
-	    PRINT *, 'LEFT/RIGHT', WF_JX(I),jxmin,xxx(189),xcount
+        PRINT *, 'UP/DOWN', WF_IY(I),iymin,yyy(J),ycount
+        PRINT *, 'LEFT/RIGHT', WF_JX(I),jxmin,xxx(J),xcount
     STOP
-	  ENDIF
+      ENDIF
 !> ric     initialise smoothed variables
   wf_qsyn(I)=0.0
-	  wf_qhyd_avg(I)=0.0
-	  wf_qsyn_cum(I)=0.0
-	  wf_qhyd_cum(I)=0.0
+      wf_qhyd_avg(I)=0.0
+      wf_qsyn_cum(I)=0.0
+      wf_qhyd_cum(I)=0.0
 ENDDO
 
 ALLOCATE(QOBS(NYEARS*366,WF_NO),QSIM(NYEARS*366,WF_NO))
@@ -1615,38 +1624,39 @@ ALLOCATE(QOBS(NYEARS*366,WF_NO),QSIM(NYEARS*366,WF_NO))
 !>MAM - The first stream flow record is used for flow initialization
 READ(22,*,IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
 
-	  ! fixed streamflow start time bug. add in function to enable the 
-	  ! correct start time. Feb2009 aliu. 
-	     call Julian_Day_ID(WF_START_YEAR, WF_START_day,&
-		 Jday_IND1)
-		 call Julian_Day_ID(IYEAR_START, IDAY_START,&
-		 Jday_IND2)
-		 call Julian_Day_ID(IYEAR,IDAY,Jday_IND3)
+      ! fixed streamflow start time bug. add in function to enable the
+      ! correct start time. Feb2009 aliu.
+         call Julian_Day_ID(WF_START_YEAR, WF_START_day,&
+         Jday_IND1)
+         call Julian_Day_ID(IYEAR_START, IDAY_START,&
+         Jday_IND2)
+         call Julian_Day_ID(IYEAR,IDAY,Jday_IND3)
 !          write (*,*) WF_START_YEAR, WF_START_day, Jday_IND1
-		     if (iyear_start ==0) then 
-		       jday_ind2=jday_ind1
-			 endif
-		 if (jday_ind2 < jday_ind1) then 
-		 PRINT *, 'ERROR: Simulation start date too early, check ', &
+             if (iyear_start ==0) then
+               jday_ind2=jday_ind1
+             endif
+         if (jday_ind2 < jday_ind1) then
+         PRINT *, 'ERROR: Simulation start date too early, check ', &
           ' MESH_input_streamflow.txt, The start date in ', &
           ' MESH_input_run_options.ini may be out of range'
-		  stop
-		  endif
-		 jday_ind_strm=(jday_ind2-jday_ind1)*24/WF_KT
-		 jday_ind_met=jday_ind2-jday_ind3
-		 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		 !skip the unused streamflow records in streamflow.txt .      !
-		 DO J=1, jday_ind_strm                                        !
-	      READ(22,*,IOSTAT=IOS)                                       !
-		   IF (IOS < 0) THEN                                          !
-	         PRINT *, 'ERROR: end of file reached when reading ', &   !
+          stop
+          endif
+         jday_ind_strm=(jday_ind2-jday_ind1)*24/WF_KT
+         jday_ind_met=jday_ind2-jday_ind3
+         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         !skip the unused streamflow records in streamflow.txt .
+
+         DO J=1, jday_ind_strm                                        !
+          READ(22,*,IOSTAT=IOS)                                       !
+           IF (IOS < 0) THEN                                          !
+             PRINT *, 'ERROR: end of file reached when reading ', &   !
              ' MESH_input_streamflow.txt, The start date in ', &      !
              ' MESH_input_run_options.ini may be out of range'        !
              STOP                                                     !
-	       ENDIF                                                      !
-		 enddo                                                        !
-		  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		  PRINT *, 'Skipping',jday_ind_strm,'Registers in streamflow file'
+           ENDIF                                                      !
+         enddo                                                        !
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          PRINT *, 'Skipping',jday_ind_strm,'Registers in streamflow file'
 !> leave unit open and read new streamflow each hour
 
 
@@ -1660,8 +1670,8 @@ IF(NTYPE/=NMTEST.AND.NTYPE>0) THEN
   PRINT *, 'land classes from MESH_drainage_database.txt:', &
             NTYPE
   PRINT *, 'Please adjust these values.'
-	  STOP
-	ENDIF
+      STOP
+    ENDIF
 
 !> check that run points are in the basin and that there are no repeats
 
@@ -1834,7 +1844,7 @@ WF_TIMECOUNT=0
 DRIVERTIMESTEP=DELT    ! Be sure it's REAL*8
 
 !* JAN: The first time throught he loop, jan=1. Jan will equal 2 after that.
-	JAN=1 
+    JAN=1
 
 !todo - check that this is compatible with Saul's pre-distributed soil moisture and soil temp.
 DO I=1,NA
@@ -1935,6 +1945,8 @@ DO I=1,NA
     THALACC(I,J)=0.
   ENDDO
 ENDDO
+
+
 
 !> SET GRID-FORMAT WATROUTE OUTPUT           !
 DO I = 1, YCOUNT                            !    
@@ -2084,7 +2096,7 @@ WRITE(58,'(5F10.2,F7.1,3I5)') DEGLAT,DEGLON,cp%ZRFMGRD(1), &
 I=1
 DO M=1,NMTEST
 WRITE(58,'(9F8.3)') (cp%FCANROW(I,M,J),J=1,ICAN+1), &
-	(cp%PAMXROW(I,M,J),J=1,ICAN)
+    (cp%PAMXROW(I,M,J),J=1,ICAN)
 WRITE(58,'(9F8.3)') (cp%LNZ0ROW(I,M,J),J=1,ICAN+1), &
                   (cp%PAMNROW(I,M,J),J=1,ICAN)
 WRITE(58,'(9F8.3)') (cp%ALVCROW(I,M,J),J=1,ICAN+1), &
@@ -2274,7 +2286,7 @@ END IF
 !todo - if we have time (or later), change the binary forcing files to 
 !       one for each forcing variable
 !> Only open if there are not enough separate forcing files
-IF (NUM_R2C + NUM_CSV < 7) THEN
+IF (NUM_R2C + NUM_CSV + NUM_SEQ< 7) THEN
   OPEN(UNIT=51,FILE='MESH_input_forcing.bin',STATUS='OLD', &
            FORM='UNFORMATTED')
 ENDIF
@@ -2356,15 +2368,16 @@ IDAY = IDAY_START
 !+      IMIN = IMIN_START
 
 !> skip the values in the forcing files
-toskip = 7 - NUM_R2C - NUM_CSV
+toskip = 7 - NUM_R2C - NUM_CSV - NUM_SEQ
+
 DO i=1,nrs
   DO J=1,toskip
     READ(51,END=999) !Skip the bin's information
   ENDDO
   IF(BASINSHORTWAVEFLAG==1)THEN !Skip the r2c file's information
-      READ (90, *, END=999) !:Frame line
+      READ (90, *, END=999)
      DO m = 1,YCOUNT
-       READ (90, *, END=999) 
+       READ (90,* , END=999)
      END DO
       READ (90, *, END=999) !:EndFrame line
   ENDIF
@@ -2406,9 +2419,10 @@ DO i=1,nrs
   IF(BASINHUMIDITYFLAG==1)THEN
     READ (96, *, END=999) !:Frame line
      DO m = 1,YCOUNT
-       READ (96, *, END=999) 
+       READ (96,*, END=999)
      END DO
-      READ (96, *, END=999) !:EndFrame line
+      READ (96, *, END=999)
+
   ENDIF
   IF(BASINSHORTWAVEFLAG==2)THEN !Skip the csv file's information
     READ(90,*,END=999)
@@ -2431,8 +2445,8 @@ DO i=1,nrs
   IF(BASINHUMIDITYFLAG==2)THEN
     READ(96,*,END=999)
   ENDIF
+
 ENDDO
-      
 
 !> *********************************************************************
 !> Open and print header information to the output files
@@ -2650,15 +2664,15 @@ wfo_seq=0
 !> *********************************************************************
 
 PRINT *, 'NUMBER OF GRID SQUARES: ',NA
-	PRINT *, 'NUMBER OF LAND CLASSES (WITH IMPERVIOUS): ', NMTEST
-	PRINT *, 'NUMBER OF RIVER CLASSES: ', NRVR
-	PRINT *, 'MINIMUM NUMBER FOR ILG: ',NA*NMTEST
+    PRINT *, 'NUMBER OF LAND CLASSES (WITH IMPERVIOUS): ', NMTEST
+    PRINT *, 'NUMBER OF RIVER CLASSES: ', NRVR
+    PRINT *, 'MINIMUM NUMBER FOR ILG: ',NA*NMTEST
 PRINT *, 'NUMBER OF GRID SQUARES IN West-East DIRECTION: ', XCOUNT
 PRINT *, 'NUMBER OF GRID SQUARES IN South-North DIRECTION: ', YCOUNT
 PRINT *, 'LENGTH OF SIDE OF GRID SQUARE IN M: ', AL
-	PRINT *, 'NUMBER OF DRAINAGE OUTLETS: ', NAA
+    PRINT *, 'NUMBER OF DRAINAGE OUTLETS: ', NAA
 
-	PRINT *, 'NUMBER OF STREAMFLOW GUAGES: ', WF_NO
+    PRINT *, 'NUMBER OF STREAMFLOW GUAGES: ', WF_NO
 DO I=1,WF_NO
   PRINT *,'STREAMFLOW STATION: ',I,'I: ',WF_IY(I),'J: ',WF_JX(I)
 ENDDO
@@ -2846,7 +2860,7 @@ call resume_state( &
   RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM, &
   hp%fetchROW,hp%HtROW,hp%N_SROW,hp%A_SROW,hp%DistribROW, &
   fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
-ENDIF
+ENDIF! IF (RESUMEFLAG == 1) THEN
 
 
 CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS, &
@@ -3167,29 +3181,31 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
 220       CONTINUE
 230   CONTINUE
 
-ENDIF
+ENDIF !IF (RESUMEFLAG == 2) THEN
+
+
 
 !> *********************************************************************
 !> Call CLASSB to set more CLASS variables
 !> *********************************************************************
 !> bjd - July 25, 2005: For inputting field measured soil properties.
 
-  CALL CLASSB(THPROW,THRROW,THMROW,BIROW,PSISROW,GRKSROW,     &
-            THRAROW,HCPSROW,TCSROW,THFCROW,PSIWROW,           &
-            DLZWROW,ZBTWROW,ALGWROW,ALGDROW,                  &
-            cp%SANDROW,cp%CLAYROW,cp%ORGMROW,sl%DELZ,sl%ZBOT, &
-            cp%SDEPROW,ISNDROW,                               &
-            IGDRROW,NA,NTYPE,1,NA,NMTEST,IGND,ICTEMMOD,              &
-	        SV%WC_THPOR,SV%WC_THLRET,SV%WC_THLMIN,SV%WC_BI,   &
-            SV%WC_PSISAT,SV%WC_GRKSAT,SV%WC_HCPS,SV%WC_TCS)
+  CALL CLASSB(THPROW       , THRROW       , THMROW       , BIROW    , PSISROW      , &
+              GRKSROW      , THRAROW      , HCPSROW      , TCSROW   , THFCROW      , &
+              PSIWROW      , DLZWROW      , ZBTWROW      , ALGWROW  , ALGDROW      , &
+              cp%SANDROW   , cp%CLAYROW   , cp%ORGMROW   , sl%DELZ  , sl%ZBOT      , &
+              cp%SDEPROW   , ISNDROW      , IGDRROW      , NA       , NTYPE        , &
+              1            , NA           , NMTEST       , IGND     , ICTEMMOD     , &
+              SV%WC_THPOR  , SV%WC_THLRET , SV%WC_THLMIN , SV%WC_BI , SV%WC_PSISAT , &
+              SV%WC_GRKSAT , SV%WC_HCPS   , SV%WC_TCS                                )
 
 !> Allocate variables for WATDRN3
 !> ******************************************************************
 !> DGP - June 3, 2011: Now that variables are shared, moved from WD3
 !> flag to ensure allocation.
 ALLOCATE(BTC(NTYPE,IGND),BCAP(NTYPE,IGND),DCOEFF(NTYPE,IGND), &
-  BFCAP(NTYPE,IGND),BFCOEFF(NTYPE,IGND),BFMIN(NTYPE,IGND), &
-  BQMAX(NTYPE,IGND),STAT=PAS)
+        BFCAP(NTYPE,IGND),BFCOEFF(NTYPE,IGND),BFMIN(NTYPE,IGND), &
+        BQMAX(NTYPE,IGND),STAT=PAS)
 
 !> Call WATDRN3B to set WATDRN (Ric) variables
 !> ******************************************************************
@@ -3288,6 +3304,8 @@ IF(PBSMFLAG == 1)THEN
    ENDDO
  ENDDO
 ENDIF !PBSMFLAG == 1
+
+
 !> *********************************************************************
 !> Start of main loop that is run each half hour
 !> *********************************************************************
@@ -3302,6 +3320,7 @@ N=N+1
 !> MAM - Linearly interpolate forcing data for intermediate time steps
 IF(INTERPOLATIONFLAG == 1)THEN
     TRATIO     = MIN(1.0, FLOAT(IMIN2) / HOURLYFLAG)
+
     FSVHGAT    = FSVHGATPRE   + TRATIO *(FSVHGATPST   - FSVHGATPRE)
     FSIHGAT    = FSIHGATPRE   + TRATIO *(FSIHGATPST   - FSIHGATPRE)
     FDLGAT     = FDLGATPRE    + TRATIO *(FDLGATPST    - FDLGATPRE)
@@ -3310,6 +3329,7 @@ IF(INTERPOLATIONFLAG == 1)THEN
     ULGAT      = ULGATPRE     + TRATIO *(ULGATPST     - ULGATPRE)
     PRESGAT    = PRESGATPRE   + TRATIO *(PRESGATPST   - PRESGATPRE)
     QAGAT      = QAGATPRE     + TRATIO *(QAGATPST     - QAGATPRE)
+
 
 !> INTERPOLATE GRD VARIABLES
     FSVHGRD = 0.0
@@ -3363,20 +3383,20 @@ IF(WF_NORESV_CTRL>0) THEN
   IF(MOD(IHOUR,WF_KTR)==0.AND.IMIN==0) THEN
 !>        READ in current reservoir value
     READ(21,'(100F10.3)',IOSTAT=IOS)(WF_QREL(I), &
-		I=1,WF_NORESV_CTRL)
+        I=1,WF_NORESV_CTRL)
     IF(IOS/=0) THEN
       PRINT *, 'ran out of reservoir data before met data'
       STOP
-	    ENDIF
+        ENDIF
   ELSE
     IF (JAN==1.AND.WF_NORESV_CTRL>0) THEN
       READ(21,'(100F10.3)',IOSTAT=IOS)(WF_QREL(I), &
-	      I=1,WF_NORESV_CTRL)
+          I=1,WF_NORESV_CTRL)
       REWIND 21
       READ(21,*)
       DO I=1,WF_NORESV
         READ(21,*)
-   	      ENDDO
+          ENDDO
     ENDIF
   ENDIF
 ENDIF
@@ -3392,7 +3412,7 @@ IF(MOD(IHOUR,WF_KT)==0.AND.IMIN==0 .AND. JAN > 1) THEN
   READ(22,*,IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
   IF(IOS/=0) THEN
     PRINT *, 'ran out of streamflow data before met data'
-	STOP
+    STOP
   ENDIF
 ENDIF
 
@@ -3606,20 +3626,22 @@ IF(JAN==1) THEN
   ENDDO
 ENDIF
 
+
+
 !> ========================================================================
-CALL CLASSZ (0,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
-             WTVSTP, WTSSTP, WTGSTP, &
-             FSGVGAT,FLGVGAT,HFSCGAT,HEVCGAT,HMFCGAT,HTCCGAT, &
-             FSGSGAT,FLGSGAT,HFSSGAT,HEVSGAT,HMFNGAT,HTCSGAT, &
-             FSGGGAT,FLGGGAT,HFSGGAT,HEVGGAT,HMFGGAT,HTCGAT, &
-             PCFCGAT,PCLCGAT,QFCFGAT,QFCLGAT,ROFCGAT,WTRCGAT, &
-             PCPNGAT,QFNGAT, ROFNGAT,WTRSGAT,PCPGGAT,QFGGAT, &
-             QFCGAT, ROFGAT, WTRGGAT,CMAIGAT,RCANGAT,SCANGAT, &
-             TCANGAT,SNOGAT, WSNOGAT,TSNOGAT,THLQGAT,THICGAT, &
-             HCPSGAT,THPGAT, DLZWGAT,TBARGAT,ZPNDGAT,TPNDGAT, &
-             sl%DELZ,   FCS,    FGS,    FC,     FG, &
-             1,      NML,    ILG,    IGND,   N, &
-             DriftGAT, SublGAT    )
+CALL CLASSZ (0       , CTVSTP  , CTSSTP  , CT1STP, CT2STP, CT3STP  , &
+             WTVSTP  , WTSSTP  , WTGSTP                            , &
+             FSGVGAT , FLGVGAT , HFSCGAT , HEVCGAT,HMFCGAT,HTCCGAT , &
+             FSGSGAT , FLGSGAT , HFSSGAT , HEVSGAT,HMFNGAT,HTCSGAT , &
+             FSGGGAT , FLGGGAT , HFSGGAT , HEVGGAT,HMFGGAT,HTCGAT  , &
+             PCFCGAT , PCLCGAT , QFCFGAT , QFCLGAT,ROFCGAT,WTRCGAT , &
+             PCPNGAT , QFNGAT  , ROFNGAT , WTRSGAT,PCPGGAT,QFGGAT  , &
+             QFCGAT  , ROFGAT  , WTRGGAT , CMAIGAT,RCANGAT,SCANGAT , &
+             TCANGAT , SNOGAT  , WSNOGAT , TSNOGAT,THLQGAT,THICGAT , &
+             HCPSGAT , THPGAT  , DLZWGAT , TBARGAT,ZPNDGAT,TPNDGAT , &
+             sl%DELZ , FCS     , FGS     ,    FC,     FG           , &
+             1       , NML     ,    ILG  ,    IGND,   N            , &
+             DriftGAT, SublGAT                                     )
 !> ========================================================================
 !> ALBEDO AND TRANSMISSIVITY CALCULATIONS; GENERAL VEGETATION
 !> CHARACTERISTICS.
@@ -3960,7 +3982,7 @@ DO K=1, WF_NUM_POINTS
       IF(ILMOS(J)==op%N_OUT(K).AND.JLMOS(J)==op%II_OUT(K)) THEN
         I_OUT=J
       ENDIF
-	    ENDDO
+        ENDDO
 
     IF(I_OUT==0) THEN
       PRINT *,'In the input file there the following'
@@ -3975,7 +3997,7 @@ DO K=1, WF_NUM_POINTS
       PRINT *,'This will set FRAC(I) to zero in the MESH driver for areas of the basin not included in the run.'
       PRINT *,'To fix the problem, ensure that the GRU you want to produce output for is within one of your sub-basins'
       PRINT *,'as defined in your MESH_input_streamflow.txt file. (Or set SUBASIN to 0 and run every grid square.)'
-	      STOP
+          STOP
     ENDIF
 
     ZPND = ZPNDPRECS(I_OUT) * FCS(I_OUT) + ZPONDPREC(I_OUT) * FC(I_OUT) + &
@@ -4270,7 +4292,7 @@ IF (MOD(REAL(NCOUNT),2.0) .EQ. 0.0) THEN !HOURLY TIME STEP
 !> WRITE OUTPUT FOR RTE.EXE (RECHARGE)
 !>
   IF (PRINTRCHR2CFILEFLAG == 1) THEN !WRITE RECHARGE DATA
-    OUTARRAY = RECHARGE !PASS RECHARGE TO OUTARRAY IN WRITE_R2C
+    OUTARRAY = RECHARGE !PASS RUNOFF TO OUTARRAY IN WRITE_R2C
     CALL WRITE_R2C(262,32,NO_FRAMES,1,FRAME_NO,1,6)
   END IF
 !>
@@ -4355,11 +4377,15 @@ DO I = 1, NA
             THICACC(I,J) = THICACC(I,J)+cp%THICROW(I,M,J)*cp%FAREROW(I,M)
             THALACC(I,J) = THALACC(I,J)+(cp%THLQROW(I,M,J)+ &
                                          cp%THICROW(I,M,J))*cp%FAREROW(I,M)
+
+
+
             TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%THLQROW(I,M,J)*RHOW*cp%FAREROW(I,M)*DLZWROW(I,M,J)
             TOTAL_THIC(J) = TOTAL_THIC(J) + cp%THICROW(I,M,J)*RHOICE*cp%FAREROW(I,M)*DLZWROW(I,M,J)
             
          ENDDO
          
+
          TOTAL_ZPND = TOTAL_ZPND + cp%ZPNDROW(I,M)*RHOW*cp%FAREROW(I,M)
          
          ALVSACC(I) = ALVSACC(I)+ALVSROW(I,M)*cp%FAREROW(I,M)*FSVHGRD(I)
@@ -4395,26 +4421,28 @@ ENDDO !DO I=1,NA
 !todo: use delta t here
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
+
+
   !no omp b/c of file IO
   DO I=1,NA
   IF(FRAC(I) /= 0.0)THEN
-    PREACC(I)=PREACC(I)
-    GTACC(I)=GTACC(I)/REAL(NSUM)
-    QEVPACC(I)=QEVPACC(I)/REAL(NSUM)
-    EVAPACC(I)=EVAPACC(I)
-    HFSACC(I)=HFSACC(I)/REAL(NSUM)
-    HMFNACC(I)=HMFNACC(I)/REAL(NSUM)
-    ROFACC(I)=ROFACC(I)
-    ROFOACC(I)=ROFOACC(I)
-    ROFSACC(I)=ROFSACC(I)
-    ROFBACC(I)=ROFBACC(I)
-    WTBLACC(I)=WTBLACC(I)/REAL(NSUM)
+    PREACC(I)  = PREACC(I)
+    GTACC(I)   = GTACC(I)/REAL(NSUM)
+    QEVPACC(I) = QEVPACC(I)/REAL(NSUM)
+    EVAPACC(I) = EVAPACC(I)
+    HFSACC(I)  = HFSACC(I)/REAL(NSUM)
+    HMFNACC(I) = HMFNACC(I)/REAL(NSUM)
+    ROFACC(I)  = ROFACC(I)
+    ROFOACC(I) = ROFOACC(I)
+    ROFSACC(I) = ROFSACC(I)
+    ROFBACC(I) = ROFBACC(I)
+    WTBLACC(I) = WTBLACC(I)/REAL(NSUM)
 
     DO J=1,IGND
-      TBARACC(I,J)=TBARACC(I,J)/REAL(NSUM)
-      THLQACC(I,J)=THLQACC(I,J)/REAL(NSUM)
-      THICACC(I,J)=THICACC(I,J)/REAL(NSUM)
-      THALACC(I,J)=THALACC(I,J)/REAL(NSUM)
+      TBARACC(I,J) = TBARACC(I,J)/REAL(NSUM)
+      THLQACC(I,J) = THLQACC(I,J)/REAL(NSUM)
+      THICACC(I,J) = THICACC(I,J)/REAL(NSUM)
+      THALACC(I,J) = THALACC(I,J)/REAL(NSUM)
     ENDDO
 
     IF(FSINACC(I)>0.0) THEN
@@ -4548,15 +4576,15 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
 !> RESET ACCUMULATOR ARRAYS.
 
-    PREACC(I)=0.
-    GTACC(I)=0.
+    PREACC(I) =0.
+    GTACC(I)  =0.
     QEVPACC(I)=0.
-    HFSACC(I)=0.
+    HFSACC(I) =0.
     HMFNACC(I)=0.
-    ROFACC(I)=0.
-    SNOACC(I)=0.
-    CANARE(I)=0.
-    SNOARE(I)=0.
+    ROFACC(I) =0.
+    SNOACC(I) =0.
+    CANARE(I) =0.
+    SNOARE(I) =0.
     ROFOACC(I)=0.
     ROFSACC(I)=0.
     ROFBACC(I)=0.
@@ -4575,13 +4603,13 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     TCANACC(I)=0.
     RCANACC(I)=0.
     SCANACC(I)=0.
-    GROACC(I)=0.
+    GROACC(I) =0.
     FSINACC(I)=0.
     FLINACC(I)=0.
-    TAACC(I)=0.
-    UVACC(I)=0.
+    TAACC(I)  =0.
+    UVACC(I)  =0.
     PRESACC(I)=0.
-    QAACC(I)=0.
+    QAACC(I)  =0.
     EVAPACC(I)=0.
     FLUTACC(I)=0.
   ENDIF
@@ -4593,31 +4621,31 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
   TOTAL_STORE = TOTAL_STORE + TOTAL_ZPND + SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND))
   
-  WRITE(900,'((I4,","),(I5,","),100(E12.5,","))')IDAY,IYEAR,    &
-                                                TOTAL_PREACC/TOTAL_AREA,  &
-                                                TOTAL_EVAPACC/TOTAL_AREA, &
-                                                TOTAL_ROFACC/TOTAL_AREA,  &
-                                                TOTAL_ROFOACC/TOTAL_AREA, &
-                                                TOTAL_ROFSACC/TOTAL_AREA, &
-                                                TOTAL_ROFBACC/TOTAL_AREA, &
-                                                TOTAL_PRE/TOTAL_AREA,  &
-                                                TOTAL_EVAP/TOTAL_AREA, &
-                                                TOTAL_ROF/TOTAL_AREA,  &
-                                                TOTAL_ROFO/TOTAL_AREA, &
-                                                TOTAL_ROFS/TOTAL_AREA, &
-                                                TOTAL_ROFB/TOTAL_AREA, &
-                                                TOTAL_SNO/TOTAL_AREA,    &
-                                                TOTAL_SCAN/TOTAL_AREA,    &
-                                                TOTAL_RCAN/TOTAL_AREA,    &
-                                                TOTAL_ZPND/TOTAL_AREA,    &
-                                                (TOTAL_THLQ(J)/TOTAL_AREA, J = 1, IGND), &
-                                                (TOTAL_THIC(J)/TOTAL_AREA, J = 1, IGND), &
-                                                ((TOTAL_THLQ(J) + TOTAL_THIC(J))/TOTAL_AREA, J = 1, IGND), &
-                                                SUM(TOTAL_THLQ(1:IGND))/TOTAL_AREA, &
-                                                SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
-                                                (SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND)))/TOTAL_AREA, &
-                                                TOTAL_STORE/TOTAL_AREA, &
-                                                (TOTAL_STORE - INIT_STORE)/TOTAL_AREA
+  WRITE(900,'((I4,","),(I5,","),100(E12.5,","))')IDAY,IYEAR                                            ,  &
+                                                 TOTAL_PREACC/TOTAL_AREA,  &
+                                                 TOTAL_EVAPACC/TOTAL_AREA, &
+                                                 TOTAL_ROFACC/TOTAL_AREA,  &
+                                                 TOTAL_ROFOACC/TOTAL_AREA, &
+                                                 TOTAL_ROFSACC/TOTAL_AREA, &
+                                                 TOTAL_ROFBACC/TOTAL_AREA, &
+                                                 TOTAL_PRE/TOTAL_AREA,  &
+                                                 TOTAL_EVAP/TOTAL_AREA, &
+                                                 TOTAL_ROF/TOTAL_AREA,  &
+                                                 TOTAL_ROFO/TOTAL_AREA, &
+                                                 TOTAL_ROFS/TOTAL_AREA, &
+                                                 TOTAL_ROFB/TOTAL_AREA, &
+                                                 TOTAL_SNO/TOTAL_AREA,    &
+                                                 TOTAL_SCAN/TOTAL_AREA,    &
+                                                 TOTAL_RCAN/TOTAL_AREA,    &
+                                                 TOTAL_ZPND/TOTAL_AREA,    &
+                                                 (TOTAL_THLQ(J)/TOTAL_AREA, J = 1, IGND), &
+                                                 (TOTAL_THIC(J)/TOTAL_AREA, J = 1, IGND), &
+                                                 ((TOTAL_THLQ(J) + TOTAL_THIC(J))/TOTAL_AREA, J = 1, IGND), &
+                                                 SUM(TOTAL_THLQ(1:IGND))/TOTAL_AREA, &
+                                                 SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
+                                                 (SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND)))/TOTAL_AREA, &
+                                                 TOTAL_STORE/TOTAL_AREA, &
+                                                 (TOTAL_STORE - INIT_STORE)/TOTAL_AREA
 
   WRITE(901,'((I4,","),(I5,","),2(E12.5,","))')IDAY,IYEAR,    &
                                                 TOTAL_HFSACC/TOTAL_AREA,  &
@@ -4640,6 +4668,7 @@ TOTAL_EVAP=0.0
 TOTAL_PRE=0.0
 TOTAL_HFSACC = 0.0
 TOTAL_QEVPACC = 0.0
+
     
 ENDIF  ! IF(NCOUNT==48) THEN
 
@@ -4777,7 +4806,7 @@ ENDIF
 !   '                                        '
 !  write(109,'(a40)')'#                                       '
 !  write(109,'(a20,a10,2x,a10)')':Projection         ',coordsys1
-!	  if(coordsys1.eq.'UTM       ')then
+!     if(coordsys1.eq.'UTM       ')then
 !    write(109,'(a20,a10,2x,a10)')':Zone               ',zone1
 !    write(109,'(a20,a10,2x,a10)')':Ellipsoid          ',datum1
 !  endif
@@ -4909,14 +4938,14 @@ IF (IMIN == 60) THEN
       ELSEIF(OBJFNFLAG == 2)THEN
          PRINT*,"THE SAEMSRT (OBJECTIVE FUNCTION = 2) IS NOT ", &
                 "CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE"
-	  ELSEIF(OBJFNFLAG == 3)THEN
-	     PRINT*,"THE NSE (OBJECTIVE FUNCTION = 3) IS NOT ", &
-		        "CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE" , &
-				"TRY NEGNSE (OBJECTIVE FUNCTION = 4)"
-	  ELSEIF(OBJFNFLAG == 4)THEN
-	     FTEST = NSE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
-		               AUTOCALIBRATIONFLAG)
-		 FTEST = -1.0 * FTEST
+      ELSEIF(OBJFNFLAG == 3)THEN
+         PRINT*,"THE NSE (OBJECTIVE FUNCTION = 3) IS NOT ", &
+                "CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE" , &
+                "TRY NEGNSE (OBJECTIVE FUNCTION = 4)"
+      ELSEIF(OBJFNFLAG == 4)THEN
+         FTEST = NSE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
+                       AUTOCALIBRATIONFLAG)
+         FTEST = -1.0 * FTEST
       ENDIF
       IF(FTEST > FBEST)GOTO 199
     ENDIF
@@ -5017,12 +5046,12 @@ IF (SAVERESUMEFLAG == 2) THEN !todo: done: use a flag
       CLOSE(55)
 
   call SAVE_STATE_R2C(NML,NLTEST,NMTEST,NCOUNT, &
-                    IMIN,ACLASS,NR2C_S,GRD_S,GAT_S,GRDGAT_S,R2C_ATTRIBUTES_S,&
-                    NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,ICAN,ICP1,IGND, &
-                       TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
-                       TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT,  &
-                       TCANGAT,RCANGAT,SCANGAT,GROGAT, CMAIGAT, &
-                       FCANGAT,LNZ0GAT,ALVCGAT,ALICGAT,PAMXGAT, &
+                      IMIN,ACLASS,NR2C_S,GRD_S,GAT_S,GRDGAT_S,R2C_ATTRIBUTES_S,&
+                      NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,ICAN,ICP1,IGND, &
+                      TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
+                      TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT,  &
+                      TCANGAT,RCANGAT,SCANGAT,GROGAT, CMAIGAT, &
+                      FCANGAT,LNZ0GAT,ALVCGAT,ALICGAT,PAMXGAT, &
                        PAMNGAT,CMASGAT,ROOTGAT,RSMNGAT,QA50GAT, &
                        VPDAGAT,VPDBGAT,PSGAGAT,PSGBGAT,PAIDGAT, &
                        HGTDGAT,ACVDGAT,ACIDGAT,TSFSGAT,WSNOGAT, &
@@ -5054,7 +5083,7 @@ IF (SAVERESUMEFLAG == 2) THEN !todo: done: use a flag
                        HMFGGAT,HTCGAT, QFCGAT,MANNGAT, DDGAT,   &
                        SANDGAT,CLAYGAT,IGDRGAT,VMODGAT,QLWOGAT, &
                        coordsys1,datum1, zone1,  XORIGIN,YORIGIN,XDELTA,YDELTA)
-ENDIF
+ENDIF !IF (SAVERESUMEFLAG == 2) THEN
 
 !> Write the resume file
 IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
@@ -5197,7 +5226,10 @@ IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
   RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM, &
   hp%fetchROW,hp%HtROW,hp%N_SROW,hp%A_SROW,hp%DistribROW, &
   fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
-ENDIF
+ENDIF !IF (SAVERESUMEFLAG == 1) THEN
+
+
+
 
 IF(ENDDATA)PRINT *, 'Reached end of forcing data'
 IF(ENDDATE)PRINT *, 'Reached end of simulation date'
@@ -5281,13 +5313,13 @@ IF(AUTOCALIBRATIONFLAG .GE. 1)THEN
                          AUTOCALIBRATIONFLAG, &
                          WINDOWSIZEFLAG,      &
                          WINDOWSPACINGFLAG)
-	  ELSEIF(OBJFNFLAG == 3)THEN
-	     FTEST = NSE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
-		                 AUTOCALIBRATIONFLAG)
-	  ELSEIF(OBJFNFLAG == 4)THEN
-	     FTEST = NSE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
-		                 AUTOCALIBRATIONFLAG)
-		 FTEST = -1.0 * FTEST
+      ELSEIF(OBJFNFLAG == 3)THEN
+         FTEST = NSE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
+                         AUTOCALIBRATIONFLAG)
+      ELSEIF(OBJFNFLAG == 4)THEN
+         FTEST = NSE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
+                         AUTOCALIBRATIONFLAG)
+         FTEST = -1.0 * FTEST
       ENDIF
 
     ENDIF
@@ -5337,7 +5369,6 @@ DO I=1, wf_num_points
 ENDDO
 
 999 CONTINUE
-
 !> Diane      CLOSE(UNIT=21)
 !>      CLOSE(UNIT=22)
 CLOSE(UNIT=51)
@@ -5364,3 +5395,5 @@ close(unit=90)
 
 STOP
 END
+
+
