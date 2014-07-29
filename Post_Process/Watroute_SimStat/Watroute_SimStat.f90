@@ -35,7 +35,7 @@ REAL :: MAE,RMSE,BIAS,NSD,NSW,TPD,TPW
 !> Variables for Watroute
 !* DATE:          DATE
 !* IALLOCATE:     DIAGNOSTIC VARIABLE USED WHEN ALLOCATING VARIABLES
-!* NHR:           NUMBER OF HOURS OF RECORD
+!* NHF:           NUMBER OF HOURS OF FLOW RECORD
 !* LINECOUNT:     NUMBER OF LINES
 !* IDEALLOCATE:   DIAGNOSTIC VARIABLE USED WHEN DE-ALLOCATING VARIABLES
 !* I,J,II,L:      COUNT VARIABLES
@@ -150,7 +150,7 @@ READ(UNIT=54,FMT='(A14,'//TRIM(NOSTR)//'(",",I8,","))') !'Ycoord_grid,,,',(IY(L)
 READ(UNIT=54,FMT='(A)') !'YEAR,MONTH,DAY,HOUR'//REPEAT(',OBS,SIM',NO)
 
 !d print*, year1,month1,day1,hour1
-!d print*, nhr
+!d print*, nhf
 
 ALLOCATE(QHYDIN(NO),QOIN(NO),STAT=IALLOCATE)
 IF(IALLOCATE.NE.0) &
@@ -160,8 +160,8 @@ IF(IALLOCATE.NE.0) &
 DAYCOUNT=DAY1
 
 !> Calculate the number of daily records from the number of hours from the event file
-NCAL=CEILING(NHR/24.0)
-!d print*,nhr,ncal
+NCAL=CEILING(NHF/24.0)
+!d print*,nhf,ncal
 ALLOCATE(QOBS(NCAL,NO),QSIM(NCAL,NO),STAT=IALLOCATE)
 IF(IALLOCATE.NE.0) &
     STOP 'ERROR: On allocation of QOBS,QSIM on NCAL,NO'
