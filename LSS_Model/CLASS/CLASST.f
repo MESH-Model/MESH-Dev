@@ -1220,7 +1220,7 @@ C
               FSC(I)=10**(3*PSC(I)-1.8)
           ELSEIF(PSC(I).GT.0.2)THEN
               FSC(I)=10**(5.667*PSC(I)-3.133)
-          ELSEIF(PSC(I).GT.0.001)THEN
+          ELSEIF(PSC(I).GT.0.010)THEN
               FSC(I)=0.01
           ENDIF
           IF(PSG(I).GT.0.6)THEN
@@ -1229,23 +1229,23 @@ C
               FSG(I)=10**(3*PSG(I)-1.8)
           ELSEIF(PSG(I).GT.0.2)THEN
               FSG(I)=10**(5.667*PSG(I)-3.133)
-          ELSEIF(PSG(I).GT.0.001)THEN
+          ELSEIF(PSG(I).GT.0.010)THEN
               FSG(I)=0.01
           ENDIF
-          IF(HBC(I).GT.1000.) FSC(I)=0.
-          IF(HBG(I).GT.1000.) FSG(I)=0.
+          IF(HBC(I).GT.999.) FSC(I)=0.
+          IF(HBG(I).GT.999.) FSG(I)=0.
   600 CONTINUE
       
       DO 601 I=IL1,IL2
           IF(FCS(I,q).GT.0.)THEN
               CALL LOCALADVECTION(TSNOCS,WSNOCS,RHOSCS,QMELTC,
      1                HTCS,HMFN,ZSNOW,TCSNOW,HCPSCS,PSC,FSC,HBC,
-     2                HFSS,FCS,ILG,IL1,IL2,JL,q   )
+     2                HFSS,HEVS,FCS,ILG,IL1,IL2,JL,q   )
           ENDIF
           IF(FGS(I,q).GT.0.)THEN
               CALL LOCALADVECTION(TSNOGS,WSNOGS,RHOSGS,QMELTG,
      1                HTCS,HMFN,ZSNOW,TCSNOW,HCPSGS,PSG,FSG,HBG,
-     2                HFSS,FGS,ILG,IL1,IL2,JL,q   )
+     2                HFSS,HEVS,FGS,ILG,IL1,IL2,JL,q   )
           ENDIF
   601 CONTINUE
       end select

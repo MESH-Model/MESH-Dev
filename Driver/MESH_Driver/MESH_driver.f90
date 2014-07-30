@@ -1454,10 +1454,10 @@ END IF
 !> *********************************************************************
 !>  Open additional output files
 !> *********************************************************************
-OPEN(unit=85,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '/basin_SCA_alldays.csv')
-OPEN(unit=86,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '/basin_SWE_alldays.csv')
+!mm OPEN(unit=85,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+!mm                  '/basin_SCA_alldays.csv')
+!mm OPEN(unit=86,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+!mm                  '/basin_SWE_alldays.csv')
 
 !> CLASS requires that each GRU for each grid square has its own parameter value,
 !> for MESH the value read in from the parameter file is assumed to be valid for
@@ -3335,9 +3335,10 @@ ELSE
 !> *********************************************************************
 !> Start of calls to CLASS subroutines
 !> *********************************************************************
+!c$OMP PARALLEL DO
 do q = 1,Nmod
 CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
-             TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT, &
+              TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT, &
              TCANGAT,RCANGAT,SCANGAT,GROGAT, FRZCGAT, CMAIGAT, &
              FCANGAT,LNZ0GAT,ALVCGAT,ALICGAT,PAMXGAT, &
              PAMNGAT,CMASGAT,ROOTGAT,RSMNGAT,QA50GAT, &
@@ -4538,13 +4539,14 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     
 ENDIF  ! IF(NCOUNT==48) THEN
 
-enddo ! q = 1, Nmod this is where end of the ensemble within a time step
+end do ! q = 1, Nmod this is where end of the ensemble within a time step
+!c$OMP END PARALLEL DO
 
 IF(NCOUNT==48) THEN
   WRITE(901,'((I4,","),(I5,","),2(E12.5,","))')IDAY,IYEAR,    &
                                                 TOTAL_HFSACC/TOTAL_AREA,  &
                                                 TOTAL_QEVPACC/TOTAL_AREA
-  WRITE(902,'((I4,","),(I5,","),16384(F6.2,","))')IDAY,IYEAR,(TOTAL_STORE(q)/TOTAL_AREA,q=1,Nmod)
+  WRITE(902,'((I4,","),(I5,","),16384(F7.2,","))')IDAY,IYEAR,(TOTAL_STORE(q)/TOTAL_AREA,q=1,Nmod)
   !RESET ACCUMULATION VARIABLES TO ZERO
   do q=1,Nmod
   TOTAL_STORE(q) = 0.0

@@ -108,8 +108,8 @@ C
      1            RHOMAX(I)
              case(1) ! compactive viscosity: Anderson (1976); CLM,COUP,HTESSEL,IAP94,ISBA-ES,SAST,SNTHERM,VIC,VISA
               RHOSNO(I)=RHOOLD+(RHOOLD*9.80616*RHOOLD*ZSNOW(I)
-     1            *DELT/3.7e7)*exp(-0.081*(TFREZ-TSNOW(I))-0.018*RHOOLD)
-     2            +DELT*RHOOLD*2.8e-6*exp(-0.042*(TFREZ-TSNOW(I))
+     1            *DELT/3.7e7)*exp(-0.081*(0.-TSNOW(I))-0.018*RHOOLD)
+     2            +DELT*RHOOLD*2.8e-6*exp(-0.042*(0.-TSNOW(I))
      3            -0.046*max(RHOOLD-150,0.))
             end select
               ZSNOW(I)=ZSNOW(I)*RHOOLD/RHOSNO(I) 

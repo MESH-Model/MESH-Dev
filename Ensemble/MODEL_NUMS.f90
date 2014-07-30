@@ -17,7 +17,6 @@ use MODELS, only : &
   im,       &! infiltration model
   sotcm,    &! soil thermal conductivity model
   ufcm,     &! soil unfrozen water content model
-  !siim,     &! soil ice impedance model
   lam,      &! local advection model
   Nmod       ! Number of models model
 
@@ -44,7 +43,7 @@ integer :: &
   
 q = 1
 do qebalm = 0, 1
- do qtem = 0, 1
+do qtem = 0, 1
   do qzmsm = 0, 1
    do qbsm = 0, 1
     do qscfm = 0, 1
@@ -56,26 +55,23 @@ do qebalm = 0, 1
           do qim = 0, 1
            do qsotcm = 0, 1
             do qufcm = 0, 1
-            !do qsiim = 0, 1
               do qlam = 0, 1
-                 ebalm(q)= qebalm
+                 ebalm(q)= qebalm!HOLD TO 1
                  tem(q)  = qtem
                  zmsm(q) = qzmsm
                  bsm(q)  = qbsm
-                 scfm(q) = qscfm
+                 scfm(q) = qscfm !does not fix KEN
                  fsdm(q) = qfsdm
                  scm(q)  = qscm
                  sam(q)  = qsam
-                 sntcm(q)= qsntcm
+                 sntcm(q)= qsntcm!HOLD TO 1
                  slwm(q) = qslwm
-                 im(q)   = qim
+                 im(q)   = qim !***PROBLEM IS im(q)=1?
                  sotcm(q)= qsotcm
                  ufcm(q) = qufcm
-                 !siim(q) = qsiim
                  lam(q)  = qlam
                  q = q + 1
               end do
-            !end do
             end do
            end do
           end do
@@ -92,9 +88,9 @@ end do
 
 
 open(unit=907,file="model_nums.csv")
- write(907,'("ebalm,tem,zmsm,scfm,fsdm,scm,sam,sntcm,slwm,im,sotcm,ufcm,lam")')
+ write(907,'("tem,zmsm,bsm,scfm,fsdm,scm,sam,slwm,im,sotcm,ufcm,lam")')
  do i=1,Nmod
-  write(907, '(13(I1,","))') ebalm(i),tem(i),zmsm(i),scfm(i),fsdm(i),scm(i),&
+  write(907, '(14(I1,","))') ebalm(i),tem(i),zmsm(i),bsm(i),scfm(i),fsdm(i),scm(i),&
                       sam(i),sntcm(i),slwm(i),im(i),sotcm(i),ufcm(i),lam(i)
  enddo
 close(unit=907)

@@ -359,12 +359,23 @@ C             TCSNOW(I)=2.576E-6*RHOSNO(I)*RHOSNO(I)+0.074
              case(0) ! Sturm et al. (1997)
               IF(RHOSNO(I,q).LT.156.0) THEN
                   TCSNOW(I)=0.234E-3*RHOSNO(I,q)+0.023
-              ELSE ! Yen (1981) [Crocus,HTESSEL,ISBA,JULES], parameter values from Douville et al. (1995)
+              ELSE ! 
                   TCSNOW(I)=3.233E-6*RHOSNO(I,q)*RHOSNO(I,q)-1.01E-3*
      1                RHOSNO(I,q)+0.138
               ENDIF
-             case(1)
+             case(1)  ! Yen (1981) [Crocus,HTESSEL,ISBA,JULES], parameter values from Douville et al. (1995)
+!                  IF(RHOSNO(I,q).LT.156.0) THEN
+!                   TCSNOW(I)=0.234E-3*RHOSNO(I,q)+0.023
+!                  ELSE ! Yen (1981) [Crocus,HTESSEL,ISBA,JULES], parameter values from Douville et al. (1995)
+!                   TCSNOW(I)=3.233E-6*RHOSNO(I,q)*RHOSNO(I,q)-1.01E-3*
+!     1                RHOSNO(I,q)+0.138
+!                  ENDIF
+c                  TCSNOW(I) = 0.025 + (7.75e-5*RHOSNO(I,q) 
+c     1                         + 1.105e-6*RHOSNO(I,q)**2)*(2.24 - 0.025)
+!                  IF(RHOSNO(I,q).LT.156.0) THEN
                   TCSNOW(I)=2.22*(RHOSNO(I,q)/RHOW)**1.88
+!                  ENDIF
+c                  TCSNOW(I)=2.576E-6*RHOSNO(I,q)*RHOSNO(I,q)+0.074
             end select
               IF(FVEG(I).LT.1.)                                 THEN              
                   TSNOGS(I)=TSNOW(I,q)                                              

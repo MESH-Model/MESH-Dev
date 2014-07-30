@@ -960,8 +960,8 @@ C          ENDIF
   700 CONTINUE                                                            
 C
       IF(IPTBAD.NE.0)                                               THEN
-          WRITE(6,6600) IPTBAD,JL,TBAR(IPTBAD,1,q)
- 6600     FORMAT('0AT (I,J)= (',I3,',',I3,'), TBAR(1) = ',F10.5)
+          WRITE(6,6600) IPTBAD,JL,TBAR(IPTBAD,1,q),q
+ 6600     FORMAT('0AT (I,J)= (',I3,',',I3,'), TBAR(1) = ',F10.5,' q='I5)
           CALL XIT('CLASSW2',-1)
       ENDIF
 C

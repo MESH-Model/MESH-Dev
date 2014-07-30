@@ -61,6 +61,7 @@ C
 C-----------------------------------------------------------------------
       DO 100 I=IL1,IL2
           IF(FI(I,q).GT.0.)                                         THEN
+              if(QMELT(I).lt.0.000000001) QMELT(I)=0.0
               IF(QMELT(I).GT.0. .AND. ZSNOW(I).GT.0.)           THEN
                   HTCS(I)=HTCS(I)-FI(I,q)*HCPSNO(I)*(TSNOW(I)+TFREZ)*
      1                    ZSNOW(I)/DELT

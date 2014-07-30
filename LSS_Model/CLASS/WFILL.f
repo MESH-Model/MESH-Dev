@@ -1,7 +1,7 @@
       SUBROUTINE WFILL(WMOVE,TMOVE,LZF,NINF,ZF,TRMDR,R,TR,
      1                 PSIF,GRKINF,THLINF,THLIQX,TBARWX,
      2                 DELZX,ZBOTX,DZF,TIMPND,WADJ,WADD,
-     3                 IFILL,IFIND,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
+     3                 IFILL,IFIND,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,q)
 
 C     * JAN 06/09 - D.VERSEGHY. CORRECT LZF AND ZF ASSIGNMENTS IN LOOP 
 C     *                         100; ADDITIONAL DZF CHECK IN LOOP 400.
@@ -28,7 +28,7 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,N
+      INTEGER IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,N,q
 C
 C     * OUTPUT FIELDS.
 C                      
@@ -116,7 +116,7 @@ C     * CALCULATE THE TIME TO PONDING, GIVEN THE DEPTH REACHED BY THE
 C     * WETTING FRONT AT THAT TIME.
 
       DO 250 I=IL1,IL2
-          IF(IFILL(I).GT.0)                                         THEN
+          IF(IFILL(I).GT.0)                           THEN
               TIMPND(I)=(ZF(I)*(THLINF(I,LZF(I))-THLIQX(I,LZF(I)))+
      1                 WADJ(I))/R(I)                                 
               TIMPND(I)=MAX(TIMPND(I),0.0)

@@ -230,15 +230,12 @@ C
               ENDIF
              case(1) ! tanh: Yang et al. (1997) in BATS; ECHAM4
               FSNOW(I)=min(tanh(ZSNOW(I,q)/SNOLIM(I)),1.)
-              !IF(FSNOW(I).lt.0.99) THEN                                     
-                  !FSNOW(I)=tanh(ZSNOW(I,q)/SNOLIM(I))                                                   
+              IF(FSNOW(I).lt.0.987) THEN                                  
                   ZSNOW(I,q)=ZSNOW(I,q)/FSNOW(I)
                   WSNOW(I,q)=WSNOW(I,q)/FSNOW(I)
-              !ELSE
-              !    FSNOW(I)=1.!tanh(ZSNOW(I,q)/SNOLIM(I))
-                  !ZSNOW(I,q)=SNOLIM(I)
-                  !WSNOW(I,q)=WSNOW(I,q)/FSNOW(I)
-              !ENDIF
+              ELSE
+                  FSNOW(I)=1.!tanh(ZSNOW(I,q)/SNOLIM(I))
+              ENDIF
             end select
           ELSE                                                                
               ZSNOW(I,q)=0.0                                                    
