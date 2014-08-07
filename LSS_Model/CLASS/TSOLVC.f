@@ -358,7 +358,7 @@ C             * OTHER RELATED QUANTITIES.
               ! MM: output from FLXSURFZ: CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,UE,H,LZZ0,LZZ0T,FM,FH (all back out to CLASST)
               ! MM: used subsequently in TSOLVE: CFLUX (CTU in FLXSURFZ)
               endif!ELSE !not grass or not dormant season
-               IF(TVIRTG(I).GT.TVRTAC(I)+0.4)                   THEN
+               IF(TVIRTG(I).GT.TVRTAC(I)+0.2)                   THEN
                    RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))**0.333333
                    DRAGIN(I)=0.333*RAGCO*(TVIRTG(I)-TVRTAC(I))**(-.667)
                ELSEIF(TVIRTG(I).GT.(TVRTAC(I)+0.001))          THEN 
@@ -455,7 +455,7 @@ C
      2              (RAGINV(I)+(TPOTG(I)-TAC(I))*DRAGIN(I))-
      3               CPHCHG(I)*RHOAIR(I)*(DQ0DT*RAGINV(I)
      4              +(QZERO(I)-QAC(I))*DRAGIN(I))
-              TSTEP(I)=-RESID(I)/DRDT0
+              TSTEP(I)=-RESID(I)/DRDT0  !divide by zero problem here
               IF(ABS(TSTEP(I)).GT.20.0) TSTEP(I)=SIGN(10.0,TSTEP(I))
            ENDIF
               TZERO(I)=TZERO(I)+TSTEP(I)
@@ -546,9 +546,17 @@ C
                   GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
                   IF(TVIRTG(I).GT.(TVRTAC(I)+0.001))         THEN 
                       RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))**0.333333
+                    IF((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.)
+     +                               .and. GROWTH(I,q).eq.0) THEN
+                      QSENSG(I)=RHOAIR(I)*SPHAIR*CFLUX(I)*
+     1                          (TZERO(I)-TAC(I))
+                      EVAPG (I)=RHOAIR(I)*(QZERO(I)-QAC(I))*CFLUX(I)
+                        
+                    ELSE !not grass
                       QSENSG(I)=RHOAIR(I)*SPHAIR*RAGINV(I)*
      1                          (TPOTG(I)-TAC(I))
                       EVAPG (I)=RHOAIR(I)*(QZERO(I)-QAC(I))*RAGINV(I)
+                    ENDIF
                   ELSE                  
                       RAGINV(I)=0.0
                       QSENSG(I)=0.0    

@@ -88,7 +88,7 @@ end do
 
 
 open(unit=907,file="model_nums.csv")
- write(907,'("tem,zmsm,bsm,scfm,fsdm,scm,sam,slwm,im,sotcm,ufcm,lam")')
+ write(907,'("ebalm,tem,zmsm,bsm,scfm,fsdm,scm,sam,sntcm,slwm,im,sotcm,ufcm,lam")')
  do i=1,Nmod
   write(907, '(14(I1,","))') ebalm(i),tem(i),zmsm(i),bsm(i),scfm(i),fsdm(i),scm(i),&
                       sam(i),sntcm(i),slwm(i),im(i),sotcm(i),ufcm(i),lam(i)

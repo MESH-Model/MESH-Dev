@@ -1220,7 +1220,7 @@ C
               FSC(I)=10**(3*PSC(I)-1.8)
           ELSEIF(PSC(I).GT.0.2)THEN
               FSC(I)=10**(5.667*PSC(I)-3.133)
-          ELSEIF(PSC(I).GT.0.010)THEN
+          ELSEIF(PSC(I).GT.0.013)THEN
               FSC(I)=0.01
           ENDIF
           IF(PSG(I).GT.0.6)THEN
@@ -1229,7 +1229,7 @@ C
               FSG(I)=10**(3*PSG(I)-1.8)
           ELSEIF(PSG(I).GT.0.2)THEN
               FSG(I)=10**(5.667*PSG(I)-3.133)
-          ELSEIF(PSG(I).GT.0.010)THEN
+          ELSEIF(PSG(I).GT.0.013)THEN
               FSG(I)=0.01
           ENDIF
           IF(HBC(I).GT.999.) FSC(I)=0.
