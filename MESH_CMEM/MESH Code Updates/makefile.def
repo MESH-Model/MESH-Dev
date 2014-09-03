@@ -1,0 +1,77 @@
+# ======================================================================
+#				Include or header file for SA_MESH makefile
+#               Compile on Windows using MinGW's gfortran compiler
+#
+#               mingw32-make
+# ======================================================================
+
+# ======================================================================
+# Directory of source code
+# ======================================================================
+#DIR_REPO=L:\Codespace\res\MESH_code\TRUNK
+DIR_REPO=C:\MESH\Program_Files\MESH_CMEM
+
+# ======================================================================
+# Include the following directories in the source file searching path
+# ======================================================================
+VPATH=	$(DIR_REPO)\Modules: \
+		$(DIR_REPO)\Driver\MESH_Driver: \
+		$(DIR_REPO)\LSS_Model\CLASS: \
+		$(DIR_REPO)\Routing_Model\WatRoute_old: \
+		$(DIR_REPO)\Blowing_Snow: \
+		$(DIR_REPO)\Tile_Connector\Basic: \
+                $(DIR_REPO)\cmem_4.1_mesh: \
+
+
+# ======================================================================
+# Object files needed to build SA_MESH
+# ======================================================================
+
+#Modules
+OBJECTS=	area_watflood.o EF_Module.o EF_ParseUtilities.o FLAGS.o mesh_input_module.o \
+		parkind1.o yomlun_ifsaux.o yomlun.o yomcmempar.o yomcmemsoil.o yomcmemveg.o \
+		yomcmematm.o yomcmemfields.o MESH_CMEM_MODULE.o \
+		
+
+#MESH Driver
+OBJECTS+=	GATHER.o MESH_driver.o read_check_forcing_files.o  read_initial_inputs.o \
+			read_parameters_class.o read_parameters_hydrology.o read_forcing_data.o \
+			read_run_options.o read_s_moisture_txt.o read_s_temperature_txt.o \
+			read_shed_ef.o read_soil_ini.o read_soil_levels.o \
+			resume_state.o resume_state_r2c.o R2C_DATA.o \
+			SAE.o SAESRT.o SAEMSRT.o save_state.o save_state_r2c.o \
+			SCATTER.o WRITE_R2C_HEADER.o TEST_CSV.o write_r2c.o WRITE_R2C_DATA.o \
+			SIMSTATS.o NSE.o SORT.o
+ 
+#CLASS
+OBJECTS+=	APREP.o CANADD.o CANALB.o CANVAP.o  check_parameters.o \
+			CGROW.o CHKWAT.o CLASSA.o  CLASSB.o CLASSBD.o CLASSBHYD.o \
+			CLASSD.o CLASSG.o CLASSI.o CLASSS.o CLASST.o CLASSW.o \
+			CLASSZ.o CWCALC.o DIASURFZ.o DRCOEF.o FLXSURFZ.o FROZEN.o \
+			GATPREP.o GRALB.o GRDRAN.o GRINFL.o ICEBAL.o Julian_Day_ID.o \
+			SLDIAG.o SNINFL.o SNINFLM.o SNOADD.o SNOALBA.o SNOALBW.o SNOVAP.o \
+			SUBCAN.o TFREEZ.o TMCALC.o TMELT.o TNPOST.o TNPREP.o TPREP.o \
+			TSOLVC.o TSOLVE.o TSPOST.o TSPREP.o TWCALC.o WATDRN.o WATROF.o \
+			WEND.o WFILL.o WFLOW.o WPREP.o XIT.o \
+			SCREENRH.o PDMROF.o
+
+#WATDRN3
+OBJECTS+=	WATDRN3.o WATDRN3B.o
+
+#Route
+OBJECTS+=	WF_ROUTE.o
+
+#Blowing snow
+OBJECTS+=   PBSMrates.o PBSMrun.o ProbabilityThreshold.o \
+            REDISTRIB_SNOW.o SUM.o
+
+#Tile connector
+OBJECTS+=	tile_connector.o 
+
+#CMEM
+OBJECTS+=	abor1.o atm_sub.o avepro_sub.o cmem_atm.o cmem_init.o cmem_rtm.o cmem_setup.o \
+		cmem_snow.o cmem_soil.o cmem_veg.o dielice_sub.o dielwat_sub.o dielsoil_sub.o \
+		INIT_MESH_CMEM.o liebe89_sub.o teff_sub.o fresnel_sub.o wilheit_sub.o rghref_sub.o \
+		R2C_DATA_CMEM.o RUN_MESHCMEM.o vegtable.o WRITE_CMEM_R2C_DATA.o WRITE_CMEM_R2C_HEADER.o \
+		rdcmemmeshstatic.o veg_sub.o
+		
