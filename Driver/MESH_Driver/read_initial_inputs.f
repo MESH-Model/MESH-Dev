@@ -31,12 +31,16 @@
 !> variables for READ_PARAMETERS_HYDROLOGY
      +  INDEPPAR, DEPPAR, WF_R2, M_C,
 !> the types that are to be allocated and initialised
-     +  op, sl, cp, sv, hp,
+     +  op, sl, cp, sv, hp,ts,cm,
      +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS)
 
       USE MESH_INPUT_MODULE
       USE FLAGS
       USE AREA_WATFLOOD
+
+      USE climate_forcing
+      USE model_dates
+
       IMPLICIT NONE
       
 !> DECLARE THE READ IN VARIABLES.
@@ -141,6 +145,9 @@
       TYPE(SoilValues)          :: sv
       TYPE(HydrologyParameters) :: hp
 
+      TYPE(CLIM_INFO) :: cm
+      TYPE(dates_model) :: ts
+
 
 
 	  
@@ -157,7 +164,7 @@
      +  IROVAL, WF_NUM_POINTS,
      +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
      +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
-     +  ID, IRONAME, GENDIR_OUT, op )
+     +  ID, IRONAME, GENDIR_OUT, op, ts, cm )
 
 !> =====================================
 !> DAN  * READ EVENT FILE
@@ -437,7 +444,7 @@
       ALLOCATE (sl%DELZ(IGND), sl%ZBOT(IGND))
       CALL READ_SOIL_LEVELS(IGND, sl)
 
-      CALL READ_CHECK_FORCING_FILES(NUM_CSV, NUM_R2C,NUM_SEQ)
+      CALL READ_CHECK_FORCING_FILES(NUM_CSV, NUM_R2C,NUM_SEQ,NA,cm,ts)
 
       ALLOCATE(
      + cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA), cp%GCGRD(NA))
