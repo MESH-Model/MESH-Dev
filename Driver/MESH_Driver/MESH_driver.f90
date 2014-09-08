@@ -81,6 +81,9 @@ USE MESH_INPUT_MODULE
 USE FLAGS
 
 USE MODEL_OUTPUT
+USE climate_forcing
+USE model_dates
+
 
 IMPLICIT NONE
 INTRINSIC MAXLOC
@@ -157,6 +160,8 @@ CHARACTER, ALLOCATABLE :: WF_GAGE(:)*8
 
 !> FOR BASEFLOW INITIALIZATION
 INTEGER JAN
+!> For count times in reading climate forcing data
+INTEGER ITIME
 
 !>     FOR ROUTING
 !* WF_R1: MANNING'S N FOR RIVER CHANNEL
@@ -791,9 +796,12 @@ TYPE(HydrologyParameters) :: hp
 
 !>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
 !> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
-TYPE(OUT_VAR)     :: VR
+TYPE(OUT_FLDS)     :: VR
 TYPE(DATES_MODEL) :: TS
 TYPE(INFO_OUT)    :: IOF
+
+TYPE(CLIM_INFO) :: cm
+
 
 
 !> MAM - FOR AUTOCALIBRATION USING PRE-EMPTION - A MAXIMUM OF 1 YEAR (365 DAYS) 
@@ -841,6 +849,9 @@ REAL, DIMENSION(:), ALLOCATABLE   :: CMINPDM,   CMAXPDM,   BPDM,      K1PDM,   K
 CHARACTER*20 IGND_CHAR
 CHARACTER*2000 FMT
 
+CHARACTER*500 WRT_900_1,WRT_900_2,WRT_900_3,WRT_900_4,WRT_900_f
+CHARACTER*500 fmt_1,fmt_2,fmt_out
+CHARACTER*5  strInt
 !=======================================================================
 !     * SET PHYSICAL CONSTANTS AND COMMON BLOCKS
 
@@ -877,6 +888,7 @@ COMMON    /WATFLGS/   VICEFLG, PSI_LIMIT, HICEFLG, LZFFLG, &
 DATA VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
   EXTFLG/0/, IWFICE/3/, ERRFLG/1/
 
+real :: startprog,endprog
 
 
 !> ((((((((((((((((((((((((((((((((((
@@ -892,6 +904,7 @@ DATA VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
       RELEASE(5) = "1.2.a01"
       RELEASE(6) = "1.3.000"
 
+call cpu_time(startprog)
 !>=======================================================================
 !>      PROGRAM START
 !>!TODO: UPDATE THIS (RELEASE(6)) WITH VERSION CHANGE
@@ -959,7 +972,7 @@ CALL READ_INITIAL_INPUTS( &
  !>variables for READ_PARAMETERS_HYDROLOGY
   INDEPPAR, DEPPAR, WF_R2, M_C, &
  !>the types that are to be allocated and initialised
-  op, sl, cp, sv, hp, &
+  op, sl, cp, sv, hp,ts,cm, &
   SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS)
 
 !INITIALIZE IMIN2  
@@ -1731,14 +1744,18 @@ ENDDO
 !> after DEGLAT is used to calculate RADJGRD is it no longer used.  This 
 !> is how it was in the original CLASS code.
 DO I=1, NA
-  LATLENGTH=AL/1000./(111.136-0.5623*COS(2*(DEGLAT*PI/180.0))+ &
-  0.0011*COS(4*(DEGLAT*PI/180.0)))
-  LONGLENGTH=AL/1000./(111.4172*COS((DEGLAT*PI/180.0))- &
-  0.094*COS(3*(DEGLAT*PI/180.0))+0.0002*COS(5*(DEGLAT*PI/180.0)))
-  RADJGRD(I)=( (DEGLAT-(REAL(YCOUNT)/2.0)*LATLENGTH) &
-  +(YYY(I)-0.5)*LATLENGTH)*PI/180.
-  DLONGRD(I)=(DEGLON-(REAL(XCOUNT)/2.0)*LONGLENGTH) &
-  +(XXX(I)-0.5)*LONGLENGTH
+  
+  !LATLENGTH=AL/1000./(111.136-0.5623*COS(2*(DEGLAT*PI/180.0))+ &
+  !0.0011*COS(4*(DEGLAT*PI/180.0)))
+  !LONGLENGTH=AL/1000./(111.4172*COS((DEGLAT*PI/180.0))- &
+  !0.094*COS(3*(DEGLAT*PI/180.0))+0.0002*COS(5*(DEGLAT*PI/180.0)))
+  
+  RADJGRD(I)=((YORIGIN + YDELTA*YYY(I))-YDELTA/2.0)*PI/180.  
+  DLONGRD(I)=(XORIGIN + XDELTA*XXX(I))-XDELTA/2.0
+ ! RADJGRD(I)=( (DEGLAT-(REAL(YCOUNT)/2.0)*LATLENGTH) &
+ ! +(YYY(I)-0.5)*LATLENGTH)*PI/180.
+ ! DLONGRD(I)=(DEGLON-(REAL(XCOUNT)/2.0)*LONGLENGTH) &
+ ! +(XXX(I)-0.5)*LONGLENGTH
   cp%ZRFMGRD(I)=cp%ZRFMGRD(1)
   cp%ZRFHGRD(I)=cp%ZRFHGRD(1)
   cp%ZBLDGRD(I)=cp%ZBLDGRD(1)
@@ -3253,22 +3270,27 @@ ENDDATA = .FALSE.
 IF(INTERPOLATIONFLAG == 0)THEN
     CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,cp%FAREROW, &
                            FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
-                           FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT)
+                           FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT,1,cm)
+    itime = 2
 ELSEIF(INTERPOLATIONFLAG == 1)THEN
     IF(RESUMEFLAG.ne.1)THEN
         CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,cp%FAREROW, &
                            FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
                            FSVHGATPRE,FSIHGATPRE,FDLGATPRE,PREGATPRE,TAGATPRE,ULGATPRE, &
-                           PRESGATPRE,QAGATPRE)
+                           PRESGATPRE,QAGATPRE,1,cm)
         CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,cp%FAREROW, &
                                FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
                                FSVHGATPST,FSIHGATPST,FDLGATPST,PREGATPST,TAGATPST,ULGATPST, &
-                               PRESGATPST,QAGATPST)
+                               PRESGATPST,QAGATPST,2,cm)
+        itime = 3
     ELSE
         CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,cp%FAREROW, &
                                FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
                                FSVHGATPST,FSIHGATPST,FDLGATPST,PREGATPST,TAGATPST,ULGATPST, &
-                               PRESGATPST,QAGATPST)
+                               PRESGATPST,QAGATPST,1,cm)
+
+        itime = 2
+
     ENDIF
 ENDIF
 
@@ -3300,10 +3322,41 @@ TOTAL_SCAN  = 0.0
 TOTAL_SNO   = 0.0
 OPEN(unit=900,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/Basin_average_water_balance.csv')
-WRITE(900,"('DAY,YEAR,PREACC,EVAPACC,ROFACC,ROFOACC,ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNO,SCAN,RCAN,ZPND,"// &
-            "THLQ1,THLQ2,THLQ3,THLQ4,THLQ5,THLQ6,THIC1,THIC2,THIC3,THIC4,THIC5,THIC6,"// &
-            "THLQIC1,THLQIC2,THLQIC3,THLQIC4,THLQIC5,THLQIC6,THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE')")
-                                                
+
+
+wrt_900_1 = 'DAY,YEAR,PREACC'//',EVAPACC,ROFACC,ROFOACC,'// &
+           'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNO,SCAN,RCAN,ZPND,'              
+
+wrt_900_2 = "THLQ"
+wrt_900_3 = "THIC"
+wrt_900_4 = "THLQIC"
+
+do i = 1, IGND
+    write(strInt,'(I1)') i
+    if (i.lt.ignd)then
+        wrt_900_2 = trim(adjustl(wrt_900_2))//trim(adjustl(strInt))//',THLQ'
+        wrt_900_3 = trim(adjustl(wrt_900_3))//trim(adjustl(strInt))//',THIC'
+        wrt_900_4 = trim(adjustl(wrt_900_4))//trim(adjustl(strInt))//',THLQIC'    
+    else
+        wrt_900_2 = trim(adjustl(wrt_900_2))//trim(adjustl(strInt))//','
+        wrt_900_3 = trim(adjustl(wrt_900_3))//trim(adjustl(strInt))//','
+        wrt_900_4 = trim(adjustl(wrt_900_4))//trim(adjustl(strInt))//','  
+    endif
+enddo  
+
+wrt_900_f = trim(adjustl(wrt_900_1)) // &
+            trim(adjustl(wrt_900_2)) // &
+            trim(adjustl(wrt_900_3)) // &
+            trim(adjustl(wrt_900_4)) // &
+            "THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE"
+            
+write(900,'(A)') trim(adjustl(wrt_900_f))
+
+!WRITE(900,"('DAY,YEAR,PREACC,EVAPACC,ROFACC,ROFOACC,ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNO,SCAN,RCAN,ZPND,"// &
+!            "THLQ1,THLQ2,THLQ3,THLQ4,THLQ5,THLQ6,THIC1,THIC2,THIC3,THIC4,THIC5,THIC6,"// &
+!            "THLQIC1,THLQIC2,THLQIC3,THLQIC4,THLQIC5,THLQIC6,THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE')")
+
+
 OPEN(unit=901,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/Basin_average_energy_balance.csv')
 WRITE(901,"('DAY,YEAR,HFSACC,QEVPACC')")
@@ -3334,9 +3387,6 @@ ENDIF !PBSMFLAG == 1
 !> Resume flag to initialize the waterbalances fields outputs
 !> *********************************************************************
 IF (OUTFIELDSFLAG .EQ. 1)THEN
-
-    CALL GET_DATES(ts,(/IYEAR_START , IDAY_START/) , &
-                      (/IYEAR_END   , IDAY_END  /) )
 
     CALL INIT_OUT(vr,ts,iOF,NA,IGND)
 
@@ -4698,23 +4748,29 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
   TOTAL_STORE = TOTAL_STORE + TOTAL_ZPND + SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND))
   
-  WRITE(900,'((I4,","),(I5,","),100(E12.5,","))')IDAY,IYEAR                                            ,  &
-                                                 TOTAL_PREACC/TOTAL_AREA,  &
-                                                 TOTAL_EVAPACC/TOTAL_AREA, &
-                                                 TOTAL_ROFACC/TOTAL_AREA,  &
-                                                 TOTAL_ROFOACC/TOTAL_AREA, &
-                                                 TOTAL_ROFSACC/TOTAL_AREA, &
-                                                 TOTAL_ROFBACC/TOTAL_AREA, &
-                                                 TOTAL_PRE/TOTAL_AREA,  &
-                                                 TOTAL_EVAP/TOTAL_AREA, &
-                                                 TOTAL_ROF/TOTAL_AREA,  &
-                                                 TOTAL_ROFO/TOTAL_AREA, &
-                                                 TOTAL_ROFS/TOTAL_AREA, &
-                                                 TOTAL_ROFB/TOTAL_AREA, &
-                                                 TOTAL_SNO/TOTAL_AREA,    &
-                                                 TOTAL_SCAN/TOTAL_AREA,    &
-                                                 TOTAL_RCAN/TOTAL_AREA,    &
-                                                 TOTAL_ZPND/TOTAL_AREA,    &
+  fmt_1 = '(I4,","),(I5,","),'
+  write(strInt,'(I2)')20+ignd*3
+  fmt_2 = trim(adjustl(strInt))//'(E12.5,",")'
+  fmt_out = trim(adjustl(fmt_1))//  &
+            trim(adjustl(fmt_2))//',(E12.5)'
+  !(I4,","),(I5,","),100(E12.5,",")
+  WRITE(900,'('//trim(adjustl(fmt_out))//')')IDAY,IYEAR               , &   !1
+                                                 TOTAL_PREACC/TOTAL_AREA  , &   !2
+                                                 TOTAL_EVAPACC/TOTAL_AREA , &   !3
+                                                 TOTAL_ROFACC/TOTAL_AREA  , &   !4
+                                                 TOTAL_ROFOACC/TOTAL_AREA , &   !5
+                                                 TOTAL_ROFSACC/TOTAL_AREA , &   !6
+                                                 TOTAL_ROFBACC/TOTAL_AREA , &   !7
+                                                 TOTAL_PRE/TOTAL_AREA     , &   !8  
+                                                 TOTAL_EVAP/TOTAL_AREA    , &   !9
+                                                 TOTAL_ROF/TOTAL_AREA     , &   !10
+                                                 TOTAL_ROFO/TOTAL_AREA    , &   !11
+                                                 TOTAL_ROFS/TOTAL_AREA    , &   !12
+                                                 TOTAL_ROFB/TOTAL_AREA    , &   !13
+                                                 TOTAL_SNO/TOTAL_AREA     , &   !14
+                                                 TOTAL_SCAN/TOTAL_AREA    , &   !15
+                                                 TOTAL_RCAN/TOTAL_AREA    , &   !16
+                                                 TOTAL_ZPND/TOTAL_AREA    , &   !17
                                                  (TOTAL_THLQ(J)/TOTAL_AREA, J = 1, IGND), &
                                                  (TOTAL_THIC(J)/TOTAL_AREA, J = 1, IGND), &
                                                  ((TOTAL_THLQ(J) + TOTAL_THIC(J))/TOTAL_AREA, J = 1, IGND), &
@@ -5088,13 +5144,14 @@ IF(HOURLYFLAG == 30 .OR. IMIN2 == 0) THEN
         CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,cp%FAREROW, &
                            FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
                            FSVHGATPST,FSIHGATPST,FDLGATPST,PREGATPST,TAGATPST,ULGATPST, &
-                           PRESGATPST,QAGATPST)
+                           PRESGATPST,QAGATPST,itime,cm)
 
     ELSE
         CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,cp%FAREROW, &
                                FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
-                               FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT)
+                               FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT,itime,cm)
     ENDIF
+    itime = itime + 1
 ENDIF
 
 ENDDO
@@ -5395,6 +5452,9 @@ ENDDO
    WRITE(58,*)
    WRITE(58,'(A32)') 'Program has terminated normally.'
    WRITE(58,*)
+
+   call cpu_time(endprog)
+   WRITE(58, '("Time = ",e14.6," seconds.")') endprog-startprog
 
 199 CONTINUE
 
