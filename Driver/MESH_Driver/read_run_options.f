@@ -5,10 +5,13 @@
      +  IROVAL, WF_NUM_POINTS,
      +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
      +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
-     +  ID, IRONAME, GENDIR_OUT, op )
+     +  ID, IRONAME, GENDIR_OUT, op,ts,cm )
 
       USE MESH_INPUT_MODULE
       USE FLAGS
+      USE climate_forcing
+      USE model_dates
+
       IMPLICIT NONE
 
 !> the following variables were passed in from the subroutine call
@@ -26,11 +29,15 @@
       
       TYPE(OutputPoints) :: op
 
+      TYPE(CLIM_INFO) :: cm
+      type(dates_model) :: ts
+
+
 
 
 !> The following variables are all local to this subroutine
       INTEGER :: J,I
-
+      INTEGER :: START_DATE(4),END_DATE(4)
 
 !>=======================================================================
 !>    * SET RUN OPTIONS
@@ -280,6 +287,7 @@
 
       READ(53,"(I5)") CONFLAGS
 
+
 !> Set flag values based on given input
       IF(CONFLAGS>0) THEN
         DO I=1,CONFLAGS
@@ -376,8 +384,10 @@
             ICTEMMOD = IROVAL
           ELSE IF (IRONAME == "PBSMFLAG") THEN
             PBSMFLAG = IROVAL
-	    ELSE IF (IRONAME == "LOCATIONFLAG") THEN
-	      LOCATIONFLAG = IROVAL
+	      ELSE IF (IRONAME == "LOCATIONFLAG") THEN
+	        LOCATIONFLAG = IROVAL
+          ELSE IF (IRONAME == "OUTFIELDSFLAG") THEN
+            OUTFIELDSFLAG = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",
@@ -400,6 +410,7 @@
      +     "greater than ten. This may cause performance or ",
      +     "stability issues."
       END IF
+
 
       READ (53, *) !BLANK LINES: FIELD HEADER
 
@@ -475,6 +486,110 @@
      +  IHOUR_START, IMIN_START !P
       READ(53,'(I4, I4, I4, I4)') IYEAR_END, IDAY_END, !P
      +  IHOUR_END, IMIN_END !P
+
+!> Initialization of model  dates
+        start_date(1) = IYEAR_START
+        start_date(2) = IDAY_START
+        start_date(3) = IHOUR_START
+        start_date(4) = IMIN_START
+
+        end_date(1) = IYEAR_END
+        end_date(2) = IDAY_END
+        end_date(3) = IHOUR_END
+        end_date(4) = IMIN_END
+
+        CALL GET_DATES(ts,start_date,end_date,HOURLYFLAG)
+
+
+!> rewind file to get extra information in the climate forcing data
+!> in case that we load a part of the file in memory
+      IF ((BASINSHORTWAVEFLAG   .EQ. 5) .OR.
+     +    (BASINLONGWAVEFLAG    .EQ. 5) .OR.
+     +    (BASINRAINFLAG        .EQ. 5) .OR.
+     +    (BASINTEMPERATUREFLAG .EQ. 5) .OR.
+     +    (BASINWINDFLAG        .EQ. 5) .OR.
+     +    (BASINPRESFLAG        .EQ. 5) .OR.
+     +    (BASINHUMIDITYFLAG    .EQ. 5))THEN
+
+        REWIND(UNIT=53)
+
+        DO I=1,4
+            READ(53,*)
+        ENDDO
+
+
+        DO I=1,CONFLAGS
+          READ(53,"(A20, I4)") IRONAME, IROVAL
+
+          IF (IRONAME .EQ. "BASINSHORTWAVEFLAG") THEN
+              IF (IROVAL .EQ. 5) THEN
+                  BACKSPACE(53)
+                  READ(53,*)IRONAME,cm%clin(1)%flagId,
+     +                     cm%clin(1)%flagRead, cm%clin(1)%timeSize
+                  cm%clin(1)%id_var = 'SHORTWAVE'
+              ENDIF
+          ENDIF
+
+          IF (IRONAME .EQ. "BASINLONGWAVEFLAG") THEN
+              IF (IROVAL .EQ. 5)THEN
+                  BACKSPACE(53)
+                  READ(53,*)IRONAME,cm%clin(2)%flagId,
+     +                      cm%clin(2)%flagRead,cm%clin(2)%timeSize
+                  cm%clin(2)%id_var = 'LONGWAVE'
+              ENDIF
+          ENDIF
+
+          IF (IRONAME .EQ. "BASINRAINFLAG") THEN
+              IF (IROVAL .EQ. 5)THEN
+                  BACKSPACE(53)
+                  READ(53,*)IRONAME, cm%clin(3)%flagId,
+     +                      cm%clin(3)%flagRead, cm%clin(3)%timeSize
+                  cm%clin(3)%id_var = 'RAIN'
+
+
+
+              ENDIF
+          ENDIF
+
+          IF (IRONAME .EQ. "BASINTEMPERATUREFLAG") THEN
+              IF (IROVAL .EQ. 5)THEN
+                  BACKSPACE(53)
+                  READ(53,*)IRONAME,cm%clin(4)%flagId,
+     +                      cm%clin(4)%flagRead,cm%clin(4)%timeSize
+                  cm%clin(4)%id_var = 'TEMPERATURE'
+              ENDIF
+          ENDIF
+
+          IF (IRONAME .EQ. "BASINWINDFLAG") THEN
+              IF (IROVAL .EQ. 5)THEN
+                  BACKSPACE(53)
+                  READ(53,*)IRONAME,cm%clin(5)%flagId,
+     +                      cm%clin(5)%flagRead, cm%clin(5)%timeSize
+                  cm%clin(5)%id_var = 'WIND'
+              ENDIF
+          ENDIF
+
+          IF (IRONAME .EQ. "BASINPRESFLAG") THEN
+              IF (IROVAL .EQ. 5)THEN
+                  BACKSPACE(53)
+                  READ(53,*)IRONAME,cm%clin(6)%flagId,
+     +                      cm%clin(6)%flagRead, cm%clin(6)%timeSize
+                  cm%clin(6)%id_var = 'PRESSURE'
+              ENDIF
+          ENDIF
+
+          IF (IRONAME .EQ. "BASINHUMIDITYFLAG") THEN
+              IF (IROVAL .EQ. 5)THEN
+                  BACKSPACE(53)
+                  READ(53,*)IRONAME,cm%clin(7)%flagId,
+     +                      cm%clin(7)%flagRead,cm%clin(7)%timeSize
+                  cm%clin(7)%id_var = 'HUMIDITY'
+              ENDIF
+          ENDIF
+
+        ENDDO
+
+      END IF
 
       CLOSE(UNIT=53)
       WRITE (6, FMT=*) " READ: SUCCESSFUL, FILE: CLOSED"
