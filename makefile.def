@@ -25,8 +25,9 @@ VPATH=  $(DIR_REPO)/Modules: \
 # ======================================================================
 
 #Modules
-OBJECTS= 	 area_watflood.o EF_Module.o EF_ParseUtilities.o FLAGS.o mesh_input_module.o \
-                 model_output.o
+OBJECTS= area_watflood.o EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o mesh_input_module.o \
+           climate_forcing_module.o model_output.o
+         
 #MESH Driver
 OBJECTS+=	GATHER.o MESH_driver.o NSE.o read_check_forcing_files.o read_initial_inputs.o \
 		read_parameters_class.o read_parameters_hydrology.o read_forcing_data.o \
