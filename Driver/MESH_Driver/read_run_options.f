@@ -469,10 +469,10 @@
           ELSE
             CLOSE (17, STATUS="DELETE") !DELETE DUMMY FILE
           END IF
-	  END IF
-	END DO
+        END IF
+      END DO
 
-!> This is the directory to output the mesh_output* files and the basin_swe/sca files
+	  !> This is the directory to output the mesh_output* files and the basin_swe/sca files
       READ(53,*)
       READ(53,*)
       READ(53,'(A10)') GENDIR_OUT
