@@ -1,6 +1,6 @@
-SUBROUTINE READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,FAREA, &
-                             FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
-                             FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT)
+SUBROUTINE READ_FORCING_DATA(YCOUNT , XCOUNT  ,NTYPE  ,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,FAREA, &
+                             FSDOWN , FSVHGRD ,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
+                             FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, itime,cm)
 
 !> *********************************************************************
 !> MAM - Read in Meteorological forcing data
@@ -19,6 +19,7 @@ SUBROUTINE READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,
 !>*******************************************************************
 
 USE FLAGS
+USE CLIMATE_FORCING
 
 IMPLICIT NONE
 
@@ -39,6 +40,10 @@ INTEGER*4,DIMENSION(NA)           :: YYY,XXX
 INTEGER*4,DIMENSION(ILG)          :: ILMOS,JLMOS
 INTEGER                           :: I,J,K,CURGRU,ICOUNT
 
+type(clim_info) :: cm
+
+INTEGER                           :: itime
+
 INTEGER                           :: NTIME  ! time in read sequential
 
 !Initialize counting number of r2c and csv files
@@ -56,6 +61,7 @@ ICOUNT = 0
     DO I=1,NA
       FSDOWN(I)=R4SHRTGRID2D(YYY(I),XXX(I))
     ENDDO
+
     FSVHGRD=0.5*FSDOWN
     FSIHGRD=FSVHGRD
     CALL GATHER(NA,NML,ILG,ILMOS,FSVHGRD,FSVHGAT)
@@ -78,6 +84,8 @@ ICOUNT = 0
     CALL GATHER(NA,NML,ILG,ILMOS,FSVHGRD,FSVHGAT)
     FSIHGAT=FSVHGAT
     ICOUNT=ICOUNT+1
+
+
 !> *********************************************************************
 !> basin_shortwave.csv
 !> *********************************************************************
@@ -102,7 +110,7 @@ ICOUNT = 0
 !> *********************************************************************
   ELSEIF (BASINSHORTWAVEFLAG == 3) THEN
 
-    READ(unit=90) NTIME
+    READ(unit=90,END=999) NTIME
 
     READ(unit=90,END=999) FSDOWN
 
@@ -125,6 +133,22 @@ ICOUNT = 0
 
     FSIHGAT=FSVHGAT
     ICOUNT=ICOUNT+1
+
+  ELSEIF (BASINSHORTWAVEFLAG == 5) THEN
+
+    call NeedUpdate_clim_data(cm,1,itime,xcount,ycount,xxx,yyy,na,enddata)
+
+    FSDOWN = cm%clin(1)%climv(:,cm%clin(1)%itime )
+
+
+    FSVHGRD=0.5*FSDOWN
+    FSIHGRD=FSVHGRD
+
+    CALL GATHER(NA,NML,ILG,ILMOS,FSVHGRD,FSVHGAT)
+
+    FSIHGAT=FSVHGAT
+    ICOUNT=ICOUNT+1
+
 
   ELSE
     PRINT*,'BASINSHORTWAVEFLAG SHOULD BE EITHER 0, 1 0R 2'
@@ -149,6 +173,7 @@ ICOUNT = 0
     DO I=1,NA
       FDLGRD(I)=R4LONGGRID2D(YYY(I),XXX(I))
     ENDDO
+
     CALL GATHER(NA,NML,ILG,ILMOS,FDLGRD,FDLGAT)
 
 !> *********************************************************************
@@ -165,6 +190,8 @@ ICOUNT = 0
     ENDDO
     CALL GATHER(NA,NML,ILG,ILMOS,FDLGRD,FDLGAT)
     ICOUNT=ICOUNT+1
+
+
 !> *********************************************************************
 !> basin_longwave.csv
 !> *********************************************************************
@@ -197,6 +224,17 @@ ICOUNT = 0
   ELSEIF (BASINLONGWAVEFLAG == 4) THEN
 
     READ(91,*,END=999) (FDLGRD(i),i=1,NA)
+
+    CALL GATHER(NA,NML,ILG,ILMOS,FDLGRD,FDLGAT)
+
+    ICOUNT=ICOUNT+1
+
+   ELSEIF (BASINLONGWAVEFLAG == 5) THEN
+
+    call NeedUpdate_clim_data(cm,2,itime,xcount,ycount,xxx,yyy,na,enddata)
+
+    FDLGRD = cm%clin(2)%climv(:,cm%clin(2)%itime )
+
 
     CALL GATHER(NA,NML,ILG,ILMOS,FDLGRD,FDLGAT)
 
@@ -239,6 +277,7 @@ ICOUNT = 0
     ENDDO
     CALL GATHER(NA,NML,ILG,ILMOS,PREGRD,PREGAT)
     ICOUNT=ICOUNT+1
+
 !> *********************************************************************
 !> basin_rain.csv
 !> *********************************************************************
@@ -276,6 +315,15 @@ ICOUNT = 0
 
     ICOUNT=ICOUNT+1
 
+  ELSEIF (BASINRAINFLAG == 5) THEN
+
+    call NeedUpdate_clim_data(cm,3,itime,xcount,ycount,xxx,yyy,na,enddata)
+
+    PREGRD = cm%clin(3)%climv(:,cm%clin(3)%itime )
+
+    CALL GATHER(NA,NML,ILG,ILMOS,PREGRD,PREGAT)
+
+    ICOUNT=ICOUNT+1
   ELSE
     PRINT*,'BASINRAINFLAG SHOULD BE EITHER 0, 1 0R 2'
     STOP
@@ -350,6 +398,16 @@ ICOUNT = 0
 
     ICOUNT=ICOUNT+1
 
+   ELSEIF (BASINTEMPERATUREFLAG == 5) THEN
+
+    call NeedUpdate_clim_data(cm,4,itime,xcount,ycount,xxx,yyy,na,enddata)
+
+    TAGRD = cm%clin(4)%climv(:,cm%clin(4)%itime )
+
+    CALL GATHER(NA,NML,ILG,ILMOS,TAGRD,TAGAT)
+
+    ICOUNT=ICOUNT+1
+
   ELSE
     PRINT*,'BASINTEMPERATUREFLAG SHOULD BE EITHER 0, 1 0R 2'
     STOP
@@ -416,7 +474,7 @@ ICOUNT = 0
 !> *********************************************************************
   ELSEIF (BASINWINDFLAG == 3) THEN
 
-    READ(unit=94) NTIME
+    READ(unit=94,END=999) NTIME
 
     READ(unit=94,END=999) ULGRD
 
@@ -428,9 +486,17 @@ ICOUNT = 0
 
     READ(94,*,END=999) (ULGRD(i),i=1,NA)
 
-
     CALL GATHER(NA,NML,ILG,ILMOS,ULGRD,ULGAT)
 
+    ICOUNT=ICOUNT+1
+
+  ELSEIF (BASINWINDFLAG == 5) THEN
+
+    call NeedUpdate_clim_data(cm,5,itime,xcount,ycount,xxx,yyy,na,enddata)
+
+    ULGRD = cm%clin(5)%climv(:,cm%clin(5)%itime )
+
+    CALL GATHER(NA,NML,ILG,ILMOS,ULGRD,ULGAT)
 
     ICOUNT=ICOUNT+1
 
@@ -492,27 +558,32 @@ ICOUNT = 0
 !> *********************************************************************
   ELSEIF (BASINPRESFLAG == 3) THEN
 
-    READ(unit=95) NTIME
+    READ(unit=95,END=999) NTIME
 
     READ(unit=95, END=999) PRESGRD
 
-
     CALL GATHER(NA,NML,ILG,ILMOS,PRESGRD,PRESGAT)
-
 
     ICOUNT=ICOUNT+1
 
   ELSEIF (BASINPRESFLAG == 4) THEN
 
-
-
     READ(95,*) (PRESGRD(i),i=1,na)
-
 
     CALL GATHER(NA,NML,ILG,ILMOS,PRESGRD,PRESGAT)
 
+    ICOUNT=ICOUNT+1
+
+  ELSEIF (BASINPRESFLAG == 5) THEN
+
+    call NeedUpdate_clim_data(cm,6,itime,xcount,ycount,xxx,yyy,na,enddata)
+
+    PRESGRD = cm%clin(6)%climv(:,cm%clin(6)%itime )
+
+    CALL GATHER(NA,NML,ILG,ILMOS,PRESGRD,PRESGAT)
 
     ICOUNT=ICOUNT+1
+
   ELSE
     PRINT*,'BASINPRESSUREFLAG SHOULD BE EITHER 0, 1 0R 2'
     STOP
@@ -570,7 +641,7 @@ ICOUNT = 0
 !> *********************************************************************
   ELSEIF (BASINHUMIDITYFLAG == 3) THEN
 
-    READ(unit=96) NTIME
+    READ(unit=96,END=999) NTIME
 
     READ(96,END=999) QAGRD
 
@@ -583,6 +654,16 @@ ICOUNT = 0
   ELSEIF (BASINHUMIDITYFLAG == 4) THEN
 
     READ(96,*, END=999) (QAGRD(i),i=1,NA)
+
+    CALL GATHER(NA,NML,ILG,ILMOS,QAGRD,QAGAT)
+
+    ICOUNT=ICOUNT+1
+
+  ELSEIF (BASINHUMIDITYFLAG == 5) THEN
+
+    call NeedUpdate_clim_data(cm,7,itime,xcount,ycount,xxx,yyy,na,enddata)
+
+    QAGRD = cm%clin(7)%climv(:,cm%clin(7)%itime )
 
     CALL GATHER(NA,NML,ILG,ILMOS,QAGRD,QAGAT)
 
