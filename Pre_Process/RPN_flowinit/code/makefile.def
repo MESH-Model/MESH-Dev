@@ -6,13 +6,13 @@
 # ======================================================================
 # Directory of source code
 # ======================================================================
-DIR_REPO=C:\SA_MESH\TRUNK
+DIR_REPO=/home/gonzalo/MESH_Code/TRUNK
 
 # ======================================================================
 # Include the following directories in the source file searching path
 # ======================================================================
-VPATH=	$(DIR_REPO)\Pre_Process\RPN_flowinit\code; \
-		$(DIR_REPO)\Routing_Model\RPN_watroute\code; \
+VPATH=	$(DIR_REPO)/Pre_Process/RPN_flowinit/code: \
+		$(DIR_REPO)/Routing_Model/RPN_watroute/code: \
 
 # ======================================================================
 # Object files needed to build

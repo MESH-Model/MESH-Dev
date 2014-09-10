@@ -55,13 +55,13 @@ ef_module.mod : EF_Module.mod
 # ======================================================================
 clean:
 # 'rm' for Cygwin, 'del' for MinGW - comment as necessary
-#	rm *.mod *.o
-	del *.mod *.o
+	rm *.mod *.o
+#	del *.mod *.o
 
 # ======================================================================
 # Cleaning everything including the previously built executable
 # ======================================================================
 veryclean:
 # 'rm' for Cygwin, 'del' for MinGW - comment as necessary
-#	rm *.mod *.o watroute
-	del *.mod *.o *.exe
+	rm *.mod *.o watroute
+#	del *.mod *.o *.exe
