@@ -229,7 +229,7 @@ C
       IF(ITCG.LT.2) THEN
           ITERMX=12
       ELSE
-          ITERMX=10
+          ITERMX=12!5
       ENDIF
 C      IF(ISNOW.EQ.0) THEN
 C          EZERO=0.0
@@ -358,7 +358,7 @@ C             * OTHER RELATED QUANTITIES.
               ! MM: output from FLXSURFZ: CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,UE,H,LZZ0,LZZ0T,FM,FH (all back out to CLASST)
               ! MM: used subsequently in TSOLVE: CFLUX (CTU in FLXSURFZ)
               endif!ELSE !not grass or not dormant season
-               IF(TVIRTG(I).GT.TVRTAC(I)+0.2)                   THEN
+               IF(TVIRTG(I).GT.TVRTAC(I)+0.5)                   THEN
                    RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))**0.333333
                    DRAGIN(I)=0.333*RAGCO*(TVIRTG(I)-TVRTAC(I))**(-.667)
                ELSEIF(TVIRTG(I).GT.(TVRTAC(I)+0.001))          THEN 
@@ -515,7 +515,7 @@ C              WRITE(6,6250) I,JL,NITER(I),RESID(I),TZERO(I),RIB(I)
 C6250          FORMAT('0SUBCAN ITERATION LIMIT',3X,3I3,3(F8.2,E12.4))
 C          ENDIF                                            
           IF(FI(I,q).GT.0.)                                       THEN
-              IF(TZERO(I).LT.173.16 .OR. TZERO(I).GT.373.16)    THEN
+              IF(TZERO(I).LT.173.16 .OR. TZERO(I).GT.573.16)    THEN
                   IBAD=I
               ENDIF
           ENDIF
@@ -908,7 +908,7 @@ C             WRITE(6,6350) I,JL,NITER(I),RESID(I),TCAN(I),RIB(I)
 C6350         FORMAT('0CANOPY ITERATION LIMIT',3X,3I3,3(F8.2,E12.4))            
 C         ENDIF                                            
           IF(FI(I,q).GT.0. .AND. (TCAN(I).LT.173.16 .OR.
-     1                           TCAN(I).GT.373.16))                THEN
+     1                           TCAN(I).GT.573.16))                THEN
               IBAD=I
           ENDIF  
   625 CONTINUE

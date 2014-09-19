@@ -203,11 +203,13 @@ REAL DEGLAT,DEGLON,FSDOWN1,FSDOWN2,FSDOWN3,RDAY, &
      DECL,HOUR,COSZ, &
      ALTOT,FSSTAR,FLSTAR,SNOMLT,TCN,TSN,TPN,GTOUT
 INTEGER JLAT
-!> MM: for ensemble output
+!> MM: for ensemble
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: QH,QE,BEG,ZSN,ROF,QSTR,SCF,SW,SNOWPACK
 real shart
+integer n_sum,ndaily_sum
 
 REAL, DIMENSION(:), ALLOCATABLE :: FSDOWN,FSDOWNPRE,FSDOWNPST
+INTEGER, DIMENSION(:), ALLOCATABLE :: NN,NNdaily
 
 
 !> *************************************************************
@@ -999,9 +1001,14 @@ ALLOCATE (WF_NHYD(NA), WF_QR(NA), &
   WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA), &
   FSDOWN(NA),FSDOWNPRE(NA),FSDOWNPST(NA))
 !> MM: allocate variables for ensemble output
+OPEN(UNIT=852, FILE='N_to_output.csv', STATUS='OLD')
+READ(852,'(I4)') n_sum
+OPEN(UNIT=853, FILE='Ndaily_to_output.csv', STATUS='OLD')
+READ(853,'(I5)') ndaily_sum
 ALLOCATE (QH(NA,NTYPE,Nmod),QE(NA,NTYPE,Nmod),BEG(NA,NTYPE,Nmod), &
   ZSN(NA,NTYPE,Nmod),ROF(NA,NTYPE,Nmod),QSTR(NA,NTYPE,Nmod), &
-  SCF(NA,NTYPE,Nmod),SW(NA,NTYPE,Nmod),SNOWPACK(NA,NTYPE,Nmod))
+  SCF(NA,NTYPE,Nmod),SW(NA,NTYPE,Nmod),SNOWPACK(NA,NTYPE,Nmod), &
+  NNdaily(ndaily_sum),NN(n_sum))
 
 !> ANDY * Zero everything we just allocated
 DO I=1,NA
@@ -2499,8 +2506,8 @@ DO I=1, wf_num_points
 !   "/g.csv")
 !  open(unit=250+i*10+7,file="./"//bnam(1:index(bnam," ")-1)// &
 !   "/h.csv")
-  open(unit=250+i*10+2,file="./"//bnam(1:index(bnam," ")-1)// &
-   "/le.csv")
+!  open(unit=250+i*10+2,file="./"//bnam(1:index(bnam," ")-1)// &
+!   "/le.csv")
 !  open(unit=250+i*10+9,file="./"//bnam(1:index(bnam," ")-1)// &
 !   "/drift.csv")
 !  open(unit=250+i*10+10,file="./"//bnam(1:index(bnam," ")-1)// &
@@ -2517,8 +2524,10 @@ DO I=1, wf_num_points
 !   "/uwc2.csv")
 !  open(unit=250+i*10+16,file="./"//bnam(1:index(bnam," ")-1)// &
 !   "/uwc3.csv")
-  open(unit=250+i*10+3,file="./"//bnam(1:index(bnam," ")-1)// &
+  open(unit=250+i*10+2,file="./"//bnam(1:index(bnam," ")-1)// &
    "/sw.csv")
+  open(unit=399+i*10+1,file="./"//bnam(1:index(bnam," ")-1)// &
+   "/le.csv")
   
   
   do j=1,Nmod
@@ -3191,6 +3200,18 @@ IF(PBSMFLAG == 1)THEN
    ENDDO
  ENDDO
 ENDIF !PBSMFLAG == 1
+
+!>**********************************************************************
+!> Open 'N_to_output.csv' and 'Ndaily_to_output.csv'file to read timesteps for ensemble output
+!>**********************************************************************
+DO i=1,n_sum
+    READ (852, '(I6)') NN(i)
+ENDDO
+CLOSE(UNIT=852)
+DO i=1,ndaily_sum
+    READ (853, '(I6)') NNdaily(i)
+ENDDO
+CLOSE(UNIT=853)
 !> *********************************************************************
 !> Start of main loop that is run each half hour
 !> *********************************************************************
@@ -4546,7 +4567,7 @@ IF(NCOUNT==48) THEN
   WRITE(901,'((I4,","),(I5,","),2(E12.5,","))')IDAY,IYEAR,    &
                                                 TOTAL_HFSACC/TOTAL_AREA,  &
                                                 TOTAL_QEVPACC/TOTAL_AREA
-  WRITE(902,'((I4,","),(I5,","),16384(F7.2,","))')IDAY,IYEAR,(TOTAL_STORE(q)/TOTAL_AREA,q=1,Nmod)
+  !mm temp WRITE(902,'((I4,","),(I5,","),16384(F7.2,","))')IDAY,IYEAR,(TOTAL_STORE(q)/TOTAL_AREA,q=1,Nmod)
   !RESET ACCUMULATION VARIABLES TO ZERO
   do q=1,Nmod
   TOTAL_STORE(q) = 0.0
@@ -4814,15 +4835,17 @@ ENDIF
 
 !=======================================================================
 !     * WRITE ENSEMBLE OUTPUT FILES
-!mmDO I=1,NA
-!mm DO M=1,NMTEST
-!mm  I_OUT=0
-!mm  DO K=1, WF_NUM_POINTS
-!mm   IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
-!mm    write(250+k*10+1,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(SNOWPACK(I,M,q),q=1,Nmod)!(TSFSROW(I,M,1,1),q=1,1)
+do j=1,n_sum
+if(N.eq.NN(J))then
+DO I=1,NA
+ DO M=1,NMTEST
+  I_OUT=0
+  DO K=1, WF_NUM_POINTS
+   IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
+       write(250+k*10+1,'((I2,","),(I3,","),(I5,","),(I6,","),(I6,","),'// &
+                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,N,(SNOWPACK(I,M,q),q=1,Nmod)!(TSFSROW(I,M,1,1),q=1,Nmod)
 !-mm    write(250+k*10+2,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F8.3,","))') (ZSN(q),q=1,Nmod)
+!-mm                   '16384(F8.3,","))') (ZSN(q),q=1,Nmod)
 !-mm    write(250+k*10+3,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
 !-mm                   '____(F4.2,","))') (SCF(q),q=1,Nmod)
 !-mm    write(250+k*10+4,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
@@ -4854,11 +4877,31 @@ ENDIF
 !mm    write(250+k*10+3,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
 !mm                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(SW(I,M,q),q=1,Nmod)!(TSFSROW(I,M,3,1),q=1,1)
 !mm    
+   ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
+  ENDDO !DO K=1, WF_NUM_POINTS
+ ENDDO !DO M=1,NMTEST
+ENDDO !DO I=1,NA
+ exit
+endif
+enddo !j
+    
+!mmdo j=1,ndaily_sum
+!mmif(N.eq.NNdaily(J))then
+!mmDO I=1,NA
+!mm DO M=1,NMTEST
+!mm  I_OUT=0
+!mm  DO K=1, WF_NUM_POINTS
+!mm   IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
+!mm       write(399+k*10+1,'((I2,","),(I3,","),(I5,","),(I6,","),(I6,","),'// &
+!mm                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,N,(QE(I,M,q),q=1,Nmod)
 !mm   ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
 !mm  ENDDO !DO K=1, WF_NUM_POINTS
 !mm ENDDO !DO M=1,NMTEST
 !mmENDDO !DO I=1,NA
-    
+!mm exit
+!mmendif
+!mmenddo !j
+
 ENDIF !TESTCSVFLAG
 
 ! *********************************************************************
@@ -5119,7 +5162,7 @@ DO I=1, wf_num_points
   CLOSE(UNIT=150+i*10+10)
   close(unit=250+i*10+1)
   close(unit=250+i*10+2)
-  close(unit=250+i*10+3)
+  close(unit=399+i*10+1)
 !  close(unit=250+i*10+4)
 !  close(unit=250+i*10+5)
 !  close(unit=250+i*10+6)

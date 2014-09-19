@@ -151,7 +151,7 @@ C
       IF(ITG.LT.2) THEN
           ITERMX=12
       ELSE
-          ITERMX=5
+          ITERMX=12!5
       ENDIF
 C
 C      IF(ISNOW.EQ.0) THEN

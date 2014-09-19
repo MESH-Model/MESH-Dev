@@ -159,7 +159,7 @@ C
           DO 250 J=1,IG
               WSUMG=WSUMG-QFC(I,J)*DELT
 250       CONTINUE
-          IF(ABS(CTVSTP(I)-QSUMV).GT.1.0) THEN
+          IF(ABS(CTVSTP(I)-QSUMV).GT.2.0) THEN
               WRITE(6,6441) q,N,CTVSTP(I),QSUMV
 6441          FORMAT(2X,'CANOPY ENERGY BALANCE  ',2I8,2F20.8)
               WRITE(6,6450) FSGV(I),FLGV(I),HFSC(I),
@@ -167,7 +167,7 @@ C
               WRITE(6,6450) RCAN(I,q),SNCAN(I,q),TCAN(I,q)
               STOP
           ENDIF
-          IF(ABS(CTSSTP(I)-QSUMS).GT.3.0) THEN
+          IF(ABS(CTSSTP(I)-QSUMS).GT.4.0) THEN
               WRITE(6,6442) q,N,I,CTSSTP(I),QSUMS
 6442          FORMAT(2X,'SNOW ENERGY BALANCE  ',3I8,2F20.8)
               WRITE(6,6450) FSGS(I),FLGS(I),HFSS(I),

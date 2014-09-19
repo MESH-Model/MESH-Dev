@@ -365,7 +365,7 @@ C             * OTHER RELATED QUANTITIES.
               ! MM: output from FLXSURFZ: CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,UE,H,LZZ0,LZZ0T,FM,FH (all back out to CLASST)
               ! MM: used subsequently in TSOLVE: CFLUX (CTU in FLXSURFZ)
               ENDIF!ELSE !not grass
-              IF(TVIRTG(I).GT.TVRTAC(I)+1.)THEN!0.4)                   THEN
+              IF(TVIRTG(I).GT.TVRTAC(I)+0.5)THEN!1.0)                   THEN
                   RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))**0.333333
                   DRAGIN(I)=0.333*RAGCO*(TVIRTG(I)-TVRTAC(I))**(-.667)
               ELSEIF(TVIRTG(I).GT.(TVRTAC(I)+0.001))          THEN 
@@ -626,7 +626,7 @@ C              WRITE(6,6250) I,JL,NITER(I),RESID(I),TZERO(I),RIB(I)
 C6250          FORMAT('0SUBCAN ITERATION LIMIT',3X,3I3,3(F8.2,E12.4))
 C          ENDIF                                            
           IF(FI(I,q).GT.0.)                                       THEN
-              IF(TZERO(I).LT.173.16 .OR. TZERO(I).GT.373.16)    THEN
+              IF(TZERO(I).LT.173.16 .OR. TZERO(I).GT.573.16)    THEN
                   IBAD=I
               ENDIF
           ENDIF
@@ -643,50 +643,50 @@ C
 C
 C     * POST-ITERATION CLEAN-UP. MM: figure out what to do with this shit!
 C
-!      DO 250 I=IL1,IL2
-!          IF(FI(I,q).GT.0.)                                        THEN
-!              IF((IWATER(I).EQ.1 .AND. TZERO(I).LT.TFREZ) .OR. 
-!     1              (IWATER(I).EQ.2 .AND. TZERO(I).GT.TFREZ))  THEN
-!                  TZERO(I)=TFREZ      
-!                  WZERO(I)=0.622*611.0/PADRY(I)
-!                  QZERO(I)=WZERO(I)/(1.0+WZERO(I))
-!                  TPOTG(I)=TZERO(I)-8.0*ZOM(I)*GRAV/CPD
-!                  TVIRTG(I)=TPOTG(I)*(1.0+0.61*QZERO(I))   
-!C
-!                  QLWOG(I)=SBC*TZERO(I)*TZERO(I)*TZERO(I)*TZERO(I)
-!                  IF(ZSNOW(I,q).LE.0.0) THEN
-!                      GZERO(I)=2*TCZERO*(TZERO(I)-TBAR1P(I))/
-!     1                   (DELZ(1)+ZPOND(I,q))
-!                  ELSE
-!                      GZERO(I)=2*TCZERO*(TZERO(I)-TSNOW(I,q))/ZSNOW(I,q)
-!                  ENDIF
-!                  IF(TVIRTG(I).GT.(TVRTAC(I)+0.001))         THEN 
-!                      RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))**0.333333
-!                    IF((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.)
-!     +                               .and. GROWTH(I,q).eq.0) THEN
-!                      QSENSG(I)=RHOAIR(I)*SPHAIR*CFLUX(I)*
-!     1                          (TZERO(I)-TAC(I))
-!                      EVAPG (I)=RHOAIR(I)*(QZERO(I)-QAC(I))*CFLUX(I)
-!                        
-!                    ELSE !not grass
-!                      QSENSG(I)=RHOAIR(I)*SPHAIR*RAGINV(I)*
-!     1                          (TPOTG(I)-TAC(I))
-!                      EVAPG (I)=RHOAIR(I)*(QZERO(I)-QAC(I))*RAGINV(I)
-!                    ENDIF
-!                  ELSE                  
-!                      RAGINV(I)=0.0
-!                      QSENSG(I)=0.0    
-!                      EVAPG (I)=0.0   
-!                  ENDIF              
-!                  QEVAPG(I)=CPHCHG(I)*EVAPG(I)   
-!                  QMELTG(I)=QSWNG(I)+FSVF(I)*QLWIN(I)+(1.0-FSVF(I))*
-!     1                 QLWOC(I)-QLWOG(I)-QSENSG(I)-QEVAPG(I)-GZERO(I)
-!                  RESID(I)=0.0
-!              ENDIF                                                                   
-!C
-!              ITERCT(I,KF2(I),NITER(I))=ITERCT(I,KF2(I),NITER(I))+1
-!          ENDIF                                                                   
-!  250 CONTINUE
+      DO 250 I=IL1,IL2
+          IF(FI(I,q).GT.0.)                                        THEN
+              IF((IWATER(I).EQ.1 .AND. TZERO(I).LT.TFREZ) .OR. 
+     1              (IWATER(I).EQ.2 .AND. TZERO(I).GT.TFREZ))  THEN
+                  TZERO(I)=TFREZ      
+                  WZERO(I)=0.622*611.0/PADRY(I)
+                  QZERO(I)=WZERO(I)/(1.0+WZERO(I))
+                  TPOTG(I)=TZERO(I)-8.0*ZOM(I)*GRAV/CPD
+                  TVIRTG(I)=TPOTG(I)*(1.0+0.61*QZERO(I))   
+C
+                  QLWOG(I)=SBC*TZERO(I)*TZERO(I)*TZERO(I)*TZERO(I)
+                  IF(ZSNOW(I,q).LE.0.0) THEN
+                      GZERO(I)=2*TCZERO*(TZERO(I)-TBAR1P(I))/
+     1                   (DELZ(1)+ZPOND(I,q))
+                  ELSE
+                      GZERO(I)=2*TCZERO*(TZERO(I)-TSNOW(I,q))/ZSNOW(I,q)
+                  ENDIF
+                  IF(TVIRTG(I).GT.(TVRTAC(I)+0.001))         THEN 
+                      RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))**0.333333
+                    IF((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.)
+     +                               .and. GROWTH(I,q).eq.0) THEN
+                      QSENSG(I)=RHOAIR(I)*SPHAIR*CFLUX(I)*
+     1                          (TZERO(I)-TAC(I))
+                      EVAPG (I)=RHOAIR(I)*(QZERO(I)-QAC(I))*CFLUX(I)
+                        
+                    ELSE !not grass
+                      QSENSG(I)=RHOAIR(I)*SPHAIR*RAGINV(I)*
+     1                          (TPOTG(I)-TAC(I))
+                      EVAPG (I)=RHOAIR(I)*(QZERO(I)-QAC(I))*RAGINV(I)
+                    ENDIF
+                  ELSE                  
+                      RAGINV(I)=0.0
+                      QSENSG(I)=0.0    
+                      EVAPG (I)=0.0   
+                  ENDIF              
+                  QEVAPG(I)=CPHCHG(I)*EVAPG(I)   
+                  QMELTG(I)=QSWNG(I)+FSVF(I)*QLWIN(I)+(1.0-FSVF(I))*
+     1                 QLWOC(I)-QLWOG(I)-QSENSG(I)-QEVAPG(I)-GZERO(I)
+                  RESID(I)=0.0
+              ENDIF                                                                   
+C
+              ITERCT(I,KF2(I),NITER(I))=ITERCT(I,KF2(I),NITER(I))+1
+          ENDIF                                                                   
+  250 CONTINUE
 C
 C     * PRE-ITERATION SEQUENCE FOR VEGETATION CANOPY.
 C

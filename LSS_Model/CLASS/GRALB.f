@@ -73,6 +73,7 @@ C---------------------------------------------------------------------
          IF(IALG.EQ.0)                                          THEN
             IF(ISAND(I,1).GE.0)                          THEN
                 FURB=MAX(FCMXU(I),1.0E-5)                                    
+                select case(albsl(q))
                 IF(THLIQ(I,1,q).GE.0.26) THEN  
                    ALBSOL=ALGWET(I)            
                 ELSEIF(THLIQ(I,1,q).LE.0.22) THEN 

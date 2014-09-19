@@ -760,7 +760,7 @@ C
               TCAN(I,q)=(FCS(I,q)*TCANS(I)*CHCAPS(I)+FC(I,q)*TCANO(I)*              
      1                CHCAP(I))/(FCS(I,q)*CHCAPS(I)+FC(I,q)*CHCAP(I))                 
               RCAN(I,q)= FCS(I,q)*RAICNS(I) + FC (I,q)*RAICAN(I)                            
-              IF(TCAN(I,q).LT.173.16 .OR. TCAN(I,q).GT.373.16) JPTBAD=I
+              IF(TCAN(I,q).LT.173.16 .OR. TCAN(I,q).GT.573.16) JPTBAD=I
               IF(RCAN(I,q).LT.0.0) RCAN(I,q)=0.0
               IF(RCAN(I,q).LT.1.0E-5 .AND. RCAN(I,q).GT.0.0) THEN
                   TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TCAN(I,q)*RCAN(I,q)/
@@ -956,7 +956,7 @@ C              HTC(I,J)=HTC(I,J)-TBAR(I,J)*(THLIQ(I,J)-THFC(I,J))*
 C     1            HCPW*DELZW(I,J)/DELT
 C              THLIQ(I,J)=THFC(I,J)
 C          ENDIF
-          IF(TBAR(I,1,q).LT.173.16 .OR. TBAR(I,1,q).GT.373.16) IPTBAD=I
+          IF(TBAR(I,1,q).LT.173.16 .OR. TBAR(I,1,q).GT.573.16) IPTBAD=I
   700 CONTINUE                                                            
 C
       IF(IPTBAD.NE.0)                                               THEN
