@@ -824,7 +824,7 @@ REAL    SAE,SAESRT,SAEMSRT,FBEST,FTEST, NSE
 REAL, DIMENSION(:,:), ALLOCATABLE :: QOBS ,QSIM
 
 !STATISTICS FOR MONTE CARLO SIMULATION
-REAL MAE,RMSE,BIAS,NSD,NSW,TPD,TPW
+REAL, DIMENSION(:), ALLOCATABLE :: MAE,RMSE,BIAS,NSD,NSW,TPD,TPW
 
 INTEGER, PARAMETER :: R2CFILEUNITSTART = 500
 INTEGER NR2C,DELTR2C,NR2CFILES,NR2CSTATES,NR2C_R,DELTR2C_R,NR2C_S,DELTR2C_S
@@ -1641,6 +1641,7 @@ DO I=1,WF_NO
 ENDDO
 
 ALLOCATE(QOBS(NYEARS*366,WF_NO),QSIM(NYEARS*366,WF_NO))
+ALLOCATE(MAE(WF_NO),RMSE(WF_NO),BIAS(WF_NO),NSD(WF_NO),NSW(WF_NO),TPD(WF_NO),TPW(WF_NO))
 
 !>MAM - The first stream flow record is used for flow initialization
 READ(22,*,IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
@@ -5491,8 +5492,12 @@ IF(AUTOCALIBRATIONFLAG .GE. 1)THEN
       CLOSE(100)
 ENDIF
 
+IF(AUTOCALIBRATIONFLAG .GE. 1) THEN
+
 !---------------------SIMULATION STATISTICS-------------------------
-CALL SIMSTATS(QOBS(1:NCAL,1),QSIM(1:NCAL,1),NCAL,BIAS,NSD,NSW,TPD)
+DO J=1,WF_NO
+  CALL SIMSTATS(QOBS(1:NCAL,J),QSIM(1:NCAL,J),NCAL,BIAS(J),NSD(J),NSW(J),TPD(J))
+END DO
 !-------------------------------------------------------------------
 
 !---------------------For MonteCarlo Simulations--------------------
@@ -5504,21 +5509,25 @@ ELSE
    WRITE(100,*)'     BIAS      NSD       NSW        TPD'
 ENDIF
 
-WRITE(100,'(3(2X,F8.5),1(2X,I8))')BIAS,NSD,NSW,int(TPD)
+DO J=1,WF_NO
+  WRITE(100,'(3(2X,F8.5),1(2X,I8))') BIAS(J),NSD(J),NSW(J),int(TPD(J))
+END DO
 CLOSE(100)
 !-------------------------------------------------------------------
 
 !---------------------For Nash Sutcliffe coefficient calculation----
 OPEN(100,FILE='NS.txt',STATUS='UNKNOWN')
-WRITE(100,*)NSD
+WRITE(100,*) (NSD(J),J=1,WF_NO)
 CLOSE(100)
 !-------------------------------------------------------------------
 
 !---------------------For Nash Sutcliffe coefficient calculation----
 OPEN(100,FILE='NSW.txt',STATUS='UNKNOWN')
-WRITE(100,*)NSW
+WRITE(100,*) (NSW(J),J=1,WF_NO)
 CLOSE(100)
 !-------------------------------------------------------------------
+
+END IF !> (AUTOCALIBRATIONFLAG .GE. 1)
 
 DO I=1, wf_num_points
   CLOSE(UNIT=150+i*10+1)
