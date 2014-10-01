@@ -3430,16 +3430,16 @@ IF(INTERPOLATIONFLAG == 1)THEN
     K = 0
     DO I = 1, NA
        DO J = 1, NTYPE
-          IF(cp%FAREROW(I,J) .GT. 0.0)THEN
+          IF(ACLASS(I,J) .GT. 0.0)THEN
              K = K + 1
-             FSVHGRD(I) = FSVHGRD(I) + cp%FAREROW(I,J) * FSVHGAT(K)
-             FSIHGRD(I) = FSIHGRD(I) + cp%FAREROW(I,J) * FSIHGAT(K)
-             FDLGRD (I) = FDLGRD (I) + cp%FAREROW(I,J) * FDLGAT (K)
-             ULGRD  (I) = ULGRD  (I) + cp%FAREROW(I,J) * ULGAT  (K)
-             TAGRD  (I) = TAGRD  (I) + cp%FAREROW(I,J) * TAGAT  (K)
-             QAGRD  (I) = QAGRD  (I) + cp%FAREROW(I,J) * QAGAT  (K)
-             PRESGRD(I) = PRESGRD(I) + cp%FAREROW(I,J) * PRESGAT(K)
-             PREGRD (I) = PREGRD (I) + cp%FAREROW(I,J) * PREGAT (K)
+             FSVHGRD(I) = FSVHGRD(I) + ACLASS(I,J) * FSVHGAT(K)
+             FSIHGRD(I) = FSIHGRD(I) + ACLASS(I,J) * FSIHGAT(K)
+             FDLGRD (I) = FDLGRD (I) + ACLASS(I,J) * FDLGAT (K)
+             ULGRD  (I) = ULGRD  (I) + ACLASS(I,J) * ULGAT  (K)
+             TAGRD  (I) = TAGRD  (I) + ACLASS(I,J) * TAGAT  (K)
+             QAGRD  (I) = QAGRD  (I) + ACLASS(I,J) * QAGAT  (K)
+             PRESGRD(I) = PRESGRD(I) + ACLASS(I,J) * PRESGAT(K)
+             PREGRD (I) = PREGRD (I) + ACLASS(I,J) * PREGAT (K)
           ENDIF
        ENDDO
     ENDDO
