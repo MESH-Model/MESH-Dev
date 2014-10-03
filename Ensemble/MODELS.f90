@@ -16,10 +16,10 @@ integer :: &
   scm(Nmod),      &! snow compaction model
   sam(Nmod),      &! snow albedo decay model
   sntcm(Nmod),    &! snow thermal conductivity model
-  slwm(Nmod),     &! snow liquid water content model
+  betam(Nmod),    &! soil moisture beta model
   im(Nmod),       &! infiltration model
   sotcm(Nmod),    &! soil thermal conductivity model
-  ufcm(Nmod),     &! soil unfrozen water content model
+  albslm(Nmod),   &! soil unfrozen water content model
   siim(Nmod),     &! soil ice impedance model
   lam(Nmod)        ! local advection model
 

@@ -62,7 +62,7 @@ C     *                         USING CONDUCTION HEAT FLUX
 C     *                         CALCULATED AT TOP AND BOTTOM
 C     *                         OF EACH LAYER.
 C
-      use MODELS, only : ufcm,Nmod
+      use MODELS, only : Nmod
 C
       IMPLICIT NONE
 C
@@ -349,24 +349,24 @@ C
      1                           (DELZZ(I,J)-DELZW(I,J)))
                   ENDIF                                                               
 C
-              select case(ufcm(q))
-              case(1) ! freezing point depression
-                if (TBAR(I,J).lt.0.) then
-                  thliqmax=THPOR(I,J)*(-114.3*TBAR(I,J)
-     1                          /PSISAT(I,J))**(-1/BI(I,J))
-                  if(THLIQ(I,J).gt.thliqmax) then
-                      HMFG(I,J)=HMFG(I,J)-FI(I,q)*(THLIQ(I,J)-
-     1                          thliqmax)*CLHMLT*RHOW*DELZW(I,J)/DELT
-                      HTC(I,J)=HTC(I,J)-FI(I,q)*(THLIQ(I,J)-thliqmax)*
-     1                          CLHMLT*RHOW*DELZW(I,J)/DELT
-                      THLIQ(I,J)=thliqmax
-                      THICE(I,J)=THICE(I,J)+(thliqmax-THLIQ(I,J))*
-     1                                       RHOW/RHOICE
-                      HCP(I,J)=HCPW*THLIQ(I,J)+HCPICE*THICE(I,J)+
-     1                           HCPS(I,J)*(1.-THPOR(I,J))
-                  endif
-                endif
-              end select
+!mm              select case(ufcm(q))
+!mm              case(1) ! freezing point depression
+!mm                if (TBAR(I,J).lt.0.) then
+!mm                  thliqmax=THPOR(I,J)*(-114.3*TBAR(I,J)
+!mm     1                          /PSISAT(I,J))**(-1/BI(I,J))
+!mm                  if(THLIQ(I,J).gt.thliqmax) then
+!mm                      HMFG(I,J)=HMFG(I,J)-FI(I,q)*(THLIQ(I,J)-
+!mm     1                          thliqmax)*CLHMLT*RHOW*DELZW(I,J)/DELT
+!mm                      HTC(I,J)=HTC(I,J)-FI(I,q)*(THLIQ(I,J)-thliqmax)*
+!mm     1                          CLHMLT*RHOW*DELZW(I,J)/DELT
+!mm                      THLIQ(I,J)=thliqmax
+!mm                      THICE(I,J)=THICE(I,J)+(thliqmax-THLIQ(I,J))*
+!mm     1                                       RHOW/RHOICE
+!mm                      HCP(I,J)=HCPW*THLIQ(I,J)+HCPICE*THICE(I,J)+
+!mm     1                           HCPS(I,J)*(1.-THPOR(I,J))
+!mm                  endif
+!mm                endif
+!mm              end select
               ENDIF
 C                                                                   
               IF(TBAR(I,J).GT.0. .AND. THICE(I,J).GT.0.)        THEN                           

@@ -21,7 +21,7 @@
      K                 FC,     FCS,    DELZ,   DELZW,  ZBOTW,
      L                 ISAND,  ILG,    IL1,    IL2,    JL,     IG,  
      M                 FVEG,   TCSATU, TCSATF, FTEMP,  FTEMPX, FVAP,
-     N                 FVAPX,  RIB,    RIBX  ,q)           
+     N                 FVAPX,  RIB,    RIBX  ,q,SANDGAT,CLAYGAT)           
 C
 C     * NOV 24/11 - R.HARVEY.   NEW SNOW THERMAL CONDUCTIVITY FROM
 C     *                         STURM ET AL. (1997).
@@ -121,7 +121,7 @@ C     * APR 11/89 - D.VERSEGHY. PREPARATION AND INITIALIZATION FOR
 C     *                         LAND SURFACE ENERGY BUDGET 
 C     *                         CALCULATIONS.
 C
-      use MODELS, only : sntcm, sotcm,Nmod
+      use MODELS, only : sntcm, sotcm,betam,Nmod
 C
       IMPLICIT NONE
 C                                                                                 
@@ -179,7 +179,8 @@ C
 C     * SOIL PROPERTY ARRAYS.                                     
 C                                                                                 
       REAL THPOR(ILG,IG), THLMIN(ILG,IG),THLRET(ILG,IG),
-     1     THFC  (ILG,IG),HCPS  (ILG,IG),TCS   (ILG,IG)
+     1     THFC  (ILG,IG),HCPS  (ILG,IG),TCS   (ILG,IG),
+     1     SANDGAT(ILG,IG),   CLAYGAT(ILG,IG)
 
       REAL DELZW(ILG,IG), ZBOTW(ILG,IG), DELZ(IG)
 C                                                                                 
@@ -318,6 +319,8 @@ C     * CALCULATIONS.
 C
 !$omp parallel do
       DO 200 I=IL1,IL2    
+        select case(betam(q))
+         case(0) ! Lee and Pielke (1992) 
           IF(THLIQG(I,1).LT.(THLMIN(I,1)+0.001)) THEN    
               IEVAP(I)=0  
               CEVAP(I)=0.0
@@ -328,6 +331,43 @@ C
               IEVAP(I)=1
               CEVAP(I)=0.25*(1.0-COS(3.14159*THLIQG(I,1)/THFC(I,1)))**2
           ENDIF
+         case(1) ! MOSES (Cox et al. 1999), JULES (Best et al. 2011), Noah-MP (Niu et al. 2011)
+          IF(SANDGAT(I,1).GE.65 .AND. CLAYGAT(I,1).LE.18) THEN !COARSE
+            IF(THLIQG(I,1).LE.0.064) THEN    
+                IEVAP(I)=0  
+                CEVAP(I)=0.0
+            ELSEIF(THLIQG(I,1).GT.0.150) THEN
+                IEVAP(I)=1   
+                CEVAP(I)=1.0
+            ELSE
+                IEVAP(I)=1
+                CEVAP(I)=(THLIQG(I,1)-0.064)/(0.150-0.064)
+            ENDIF
+          ELSEIF(CLAYGAT(I,1).GE.35) THEN !FINE
+            IF(THLIQG(I,1).LE.0.221) THEN    
+                IEVAP(I)=0  
+                CEVAP(I)=0.0
+            ELSEIF(THLIQG(I,1).GT.0.310) THEN
+                IEVAP(I)=1   
+                CEVAP(I)=1.0
+            ELSE
+                IEVAP(I)=1
+                CEVAP(I)=(THLIQG(I,1)-0.221)/(0.310-0.221)
+            ENDIF
+          ELSE !MEDIUM
+            IF(THLIQG(I,1).LE.0.136) THEN    
+                IEVAP(I)=0  
+                CEVAP(I)=0.0
+            ELSEIF(THLIQG(I,1).GT.0.242) THEN
+                IEVAP(I)=1   
+                CEVAP(I)=1.0
+            ELSE
+                IEVAP(I)=1
+                CEVAP(I)=(THLIQG(I,1)-0.136)/(0.242-0.136)
+            ENDIF
+              
+          ENDIF
+         end select
   200 CONTINUE  
 C                                                                                 
 C     * VOLUMETRIC HEAT CAPACITIES OF SOIL LAYERS.

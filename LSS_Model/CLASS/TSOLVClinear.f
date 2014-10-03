@@ -365,7 +365,7 @@ C             * OTHER RELATED QUANTITIES.
               ! MM: output from FLXSURFZ: CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,UE,H,LZZ0,LZZ0T,FM,FH (all back out to CLASST)
               ! MM: used subsequently in TSOLVE: CFLUX (CTU in FLXSURFZ)
               ENDIF!ELSE !not grass
-              IF(TVIRTG(I).GT.TVRTAC(I)+0.5)THEN!1.0)                   THEN
+              IF(TVIRTG(I).GT.TVRTAC(I)+0.8)THEN!1.0)                   THEN
                   RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))**0.333333
                   DRAGIN(I)=0.333*RAGCO*(TVIRTG(I)-TVRTAC(I))**(-.667)
               ELSEIF(TVIRTG(I).GT.(TVRTAC(I)+0.001))          THEN 

@@ -2494,36 +2494,6 @@ DO I=1, wf_num_points
    "/GRU_water_balance.csv")
   open(unit=250+i*10+1,file="./"//bnam(1:index(bnam," ")-1)// &
    "/swe.csv")
-!  open(unit=250+i*10+2,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/depth.csv")
-!  open(unit=250+i*10+3,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/sca.csv")
-!  open(unit=250+i*10+4,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/runoff.csv")
-!  open(unit=250+i*10+5,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/qstar.csv")
-!  open(unit=250+i*10+6,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/g.csv")
-!  open(unit=250+i*10+7,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/h.csv")
-!  open(unit=250+i*10+2,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/le.csv")
-!  open(unit=250+i*10+9,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/drift.csv")
-!  open(unit=250+i*10+10,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/subl.csv")
-!  open(unit=250+i*10+11,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/fwc1.csv")
-!  open(unit=250+i*10+12,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/fwc2.csv")
-!  open(unit=250+i*10+13,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/fwc3.csv")
-!  open(unit=250+i*10+14,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/uwc1.csv")
-!  open(unit=250+i*10+15,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/uwc2.csv")
-!  open(unit=250+i*10+16,file="./"//bnam(1:index(bnam," ")-1)// &
-!   "/uwc3.csv")
   open(unit=250+i*10+2,file="./"//bnam(1:index(bnam," ")-1)// &
    "/sw.csv")
   open(unit=399+i*10+1,file="./"//bnam(1:index(bnam," ")-1)// &
@@ -3614,7 +3584,7 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
   RMLCSVEG,   RMLCGVEG,   FIELDSM,WILTSM, &
   ITC,    ITCG,   ITG,   ILG,    1,NML,  JLAT,N, ICAN, &
   IGND,   IZREF,  ISLFD,  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI,q, &
-  FCANGAT,ICAN+1,GROGAT)
+  FCANGAT,ICAN+1,GROGAT,SANDGAT,CLAYGAT)
 !
 !-----------------------------------------------------------------------
 !          * WATER BUDGET CALCULATIONS.
@@ -3853,8 +3823,8 @@ DO I=1,NA
     shart=QE(1,M,q)
     BEG(I,M,q)=FSSTAR+FLSTAR-QH(I,M,q)-QE(I,M,q)
     SNOMLT=HMFNROW(I,M)
-    SW(I,M,q)=1000*(0.1*cp%THLQROW(I,M,1,q)+0.25*cp%THLQROW(I,M,2,q)) &
-             + 917*(0.1*cp%THICROW(I,M,1,q)+0.25*cp%THICROW(I,M,2,q))
+    SW(I,M,q)=1000*(0.1*cp%THLQROW(I,M,1,q)+0.25*cp%THLQROW(I,M,2,q)+0.75*cp%THLQROW(I,M,3,q)) &
+             + 917*(0.1*cp%THICROW(I,M,1,q)+0.25*cp%THICROW(I,M,2,q)+0.75*cp%THICROW(I,M,3,q))
     SNOWPACK(I,M,q)=cp%SNOROW(I,M,q)+WSNOROW(I,M,q)
 
     IF(cp%RHOSROW(I,M,q)>0.0) THEN
@@ -4567,7 +4537,7 @@ IF(NCOUNT==48) THEN
   WRITE(901,'((I4,","),(I5,","),2(E12.5,","))')IDAY,IYEAR,    &
                                                 TOTAL_HFSACC/TOTAL_AREA,  &
                                                 TOTAL_QEVPACC/TOTAL_AREA
-  !mm temp WRITE(902,'((I4,","),(I5,","),16384(F7.2,","))')IDAY,IYEAR,(TOTAL_STORE(q)/TOTAL_AREA,q=1,Nmod)
+  WRITE(902,'((I4,","),(I5,","),16384(F7.2,","))')IDAY,IYEAR,(TOTAL_STORE(q)/TOTAL_AREA,q=1,Nmod)
   !RESET ACCUMULATION VARIABLES TO ZERO
   do q=1,Nmod
   TOTAL_STORE(q) = 0.0
@@ -4844,39 +4814,9 @@ DO I=1,NA
    IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
        write(250+k*10+1,'((I2,","),(I3,","),(I5,","),(I6,","),(I6,","),'// &
                    '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,N,(SNOWPACK(I,M,q),q=1,Nmod)!(TSFSROW(I,M,1,1),q=1,Nmod)
-!-mm    write(250+k*10+2,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '16384(F8.3,","))') (ZSN(q),q=1,Nmod)
-!-mm    write(250+k*10+3,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F4.2,","))') (SCF(q),q=1,Nmod)
-!-mm    write(250+k*10+4,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(E11.3,","))') (ROF(q),q=1,Nmod)
-!-mm    write(250+k*10+5,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F8.2,","))') (QSTR(q),q=1,Nmod)
-!-mm    write(250+k*10+6,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F8.2,","))') (BEG(q),q=1,Nmod)
-!-mm    write(250+k*10+7,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F8.2,","))') (QH(q),q=1,Nmod)
-!mm    write(250+k*10+2,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(QE(I,M,q),q=1,Nmod)
-!-mm    write(250+k*10+9,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F15.9,","))') (DriftROW(I,M,q),q=1,Nmod)
-!-mm    write(250+k*10+10,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F15.9,","))') (SublROW(I,M,q),q=1,Nmod)
-!-mm    write(250+k*10+11,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F6.3,","))') (cp%THICROW(I,M,1,q),q=1,Nmod)
-!-mm    write(250+k*10+12,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F6.3,","))') (cp%THICROW(I,M,2,q),q=1,Nmod)
-!-mm    write(250+k*10+13,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F6.3,","))') (cp%THICROW(I,M,3,q),q=1,Nmod)
-!-mm    write(250+k*10+14,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F6.3,","))') (cp%THLQROW(I,M,1,q),q=1,Nmod)
-!-mm    write(250+k*10+15,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F6.3,","))') (cp%THLQROW(I,M,2,q),q=1,Nmod)
-!-mm    write(250+k*10+16,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!-mm                   '____(F6.3,","))') (cp%THLQROW(I,M,3,q),q=1,Nmod)
-!mm    write(250+k*10+3,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-!mm                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,(SW(I,M,q),q=1,Nmod)!(TSFSROW(I,M,3,1),q=1,1)
-!mm    
+!MM    write(250+k*10+2,'((I2,","),(I3,","),(I5,","),(I6,","),(I6,","),'// &
+!MM                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,N,(SW(I,M,q),q=1,Nmod)!(TSFSROW(I,M,3,1),q=1,1)
+    
    ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
   ENDDO !DO K=1, WF_NUM_POINTS
  ENDDO !DO M=1,NMTEST
@@ -4885,22 +4825,22 @@ ENDDO !DO I=1,NA
 endif
 enddo !j
     
-!mmdo j=1,ndaily_sum
-!mmif(N.eq.NNdaily(J))then
-!mmDO I=1,NA
-!mm DO M=1,NMTEST
-!mm  I_OUT=0
-!mm  DO K=1, WF_NUM_POINTS
-!mm   IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
-!mm       write(399+k*10+1,'((I2,","),(I3,","),(I5,","),(I6,","),(I6,","),'// &
-!mm                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,N,(QE(I,M,q),q=1,Nmod)
-!mm   ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
-!mm  ENDDO !DO K=1, WF_NUM_POINTS
-!mm ENDDO !DO M=1,NMTEST
-!mmENDDO !DO I=1,NA
-!mm exit
-!mmendif
-!mmenddo !j
+!MMdo j=1,ndaily_sum
+!MMif(N.eq.NNdaily(J))then
+!MMDO I=1,NA
+!MM DO M=1,NMTEST
+!MM  I_OUT=0
+!MM  DO K=1, WF_NUM_POINTS
+!MM   IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
+!MM       write(399+k*10+1,'((I2,","),(I3,","),(I5,","),(I6,","),(I6,","),'// &
+!MM                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,N,(QE(I,M,q),q=1,Nmod)
+!MM   ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
+!MM  ENDDO !DO K=1, WF_NUM_POINTS
+!MM ENDDO !DO M=1,NMTEST
+!MMENDDO !DO I=1,NA
+!MM exit
+!MMendif
+!MMenddo !j
 
 ENDIF !TESTCSVFLAG
 
@@ -5187,6 +5127,7 @@ CLOSE(UNIT=72)
 close(unit=85)
 close(unit=86)
 close(unit=90)
+close(unit=902)
 
 9000 FORMAT('INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY AND IS SET TO 0 BY THE MODEL.',/, &
             '0: NO INTERPOLATION OF FORCING DATA.',/, &

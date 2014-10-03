@@ -38,7 +38,7 @@ C     *                         ALBEDOS BASED ON TEXTURE AND SURFACE
 C     *                         WETNESS. (SET TO ICE ALBEDOS OVER
 C     *                         CONTINENTAL ICE SHEETS.)
 C
-      use MODELS, only : Nmod
+      use MODELS, only : Nmod, albslm
       IMPLICIT NONE
 C                
 C     * INTEGER CONSTANTS.
@@ -73,7 +73,8 @@ C---------------------------------------------------------------------
          IF(IALG.EQ.0)                                          THEN
             IF(ISAND(I,1).GE.0)                          THEN
                 FURB=MAX(FCMXU(I),1.0E-5)                                    
-                select case(albsl(q))
+                select case(albslm(q))
+                case(0) ! Idso et al. (1975)
                 IF(THLIQ(I,1,q).GE.0.26) THEN  
                    ALBSOL=ALGWET(I)            
                 ELSEIF(THLIQ(I,1,q).LE.0.22) THEN 
@@ -81,7 +82,10 @@ C---------------------------------------------------------------------
                 ELSE                         
                    ALBSOL=THLIQ(I,1,q)*(ALGWET(I)-ALGDRY(I))/0.04+
      1                    ALGDRY(I)-5.50*(ALGWET(I)-ALGDRY(I)) 
-                ENDIF                         
+                ENDIF
+                case(1) !CLM [Oleson et al. 2010], NCAR LSM (Bonan 1996)
+                ALBSOL=MIN(ALGWET(I)+0.11-0.40*THLIQ(I,1,q),ALGDRY(I))
+                end select
 C
                 ALVSG(I)=2.0*ALBSOL/3.0    
                 ALIRG(I)=2.0*ALVSG(I)     

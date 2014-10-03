@@ -20,7 +20,7 @@ C     * AUG 12/91 - D.VERSEGHY. CODE FOR MODEL VERSION GCM7U -
 C     *                         CLASS VERSION 2.0 (WITH CANOPY).
 C     * APR 11/89 - D.VERSEGHY. RAIN INFILTRATION INTO SNOWPACK.
 C
-      use MODELS, only : slwm,Nmod
+      use MODELS, only : Nmod
 C
       IMPLICIT NONE
 C
@@ -86,12 +86,7 @@ C-----------------------------------------------------------------------
                   HTCS(I)=HTCS(I)+FI(I,q)*CLHMLT*ZMELT*RHOSNO(I)/DELT
                   ZSNOW(I)=ZSNOW(I)-ZMELT                                                       
                   WAVAIL=ZMELT*RHOSNO(I)+WSNOW(I)
-                  select case(slwm(q))
-                   case(0) ! CLASS: max liquid water content by mass = 4%
-                    WSNCAP=0.04
-                   case(1) ! Anderson (1976); ISBA-ES, HTESSEL, SAST, VISA
-                    WSNCAP=0.03+(0.1-0.03)*MAX(1-RHOSNO(I)/200,0.)
-                  end select
+                  WSNCAP=0.04
                   IF(WAVAIL.GT.(WSNCAP*ZSNOW(I)*RHOSNO(I))) THEN
                       WSNOW(I)=WSNCAP*ZSNOW(I)*RHOSNO(I)
                       ZMELT=(WAVAIL-WSNOW(I))/RHOW
@@ -128,13 +123,8 @@ C-----------------------------------------------------------------------
                   IF(RHOSNO(I).GT.RHOICE)      THEN                                               
                       ZSNOW(I)=RHOSNO(I)*ZSNOW(I)/RHOICE                                           
                       RHOSNO(I)=RHOICE                                                       
-                  ENDIF                                                                   
-                  select case(slwm(q))
-                   case(0) ! CLASS: max liquid water content by mass = 4%
-                    WSNCAP=0.04
-                   case(1) ! Anderson (1976); ISBA-ES, HTESSEL, SAST, VISA
-                    WSNCAP=0.03+(0.1-0.03)*MAX(1-RHOSNO(I)/200,0.)
-                  end select                  
+                  ENDIF
+                  WSNCAP=0.04
                   WAVAIL=(RAIN-ZFREZ)*RHOW+WSNOW(I)
                   IF(WAVAIL.GT.(WSNCAP*ZSNOW(I)*RHOSNO(I))) THEN
                       WSNOW(I)=WSNCAP*ZSNOW(I)*RHOSNO(I)

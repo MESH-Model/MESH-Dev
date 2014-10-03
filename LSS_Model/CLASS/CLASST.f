@@ -33,7 +33,7 @@
      W   FIELDSM,        WILTSM,
      X   ITC,    ITCG,   ITG,    ILG,    IL1,IL2,JL,N,   IC,     
      Y   IG,     IZREF,  ISLFD,  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI,
-     Z   q,FCANMX,ICP1,GROWTH) 
+     Z   q,FCANMX,ICP1,GROWTH,SANDGAT,CLAYGAT) 
 C
 C     * NOV 11/11 - M.LAZARE.   IMPLEMENT CTEM (INITIALIZATION OF FIELDS
 C     *                         NEAR BEGINNING AND TWO REVISED CALLS TO 
@@ -222,7 +222,8 @@ C     * SOIL PROPERTY ARRAYS.
 C
       REAL THPOR (ILG,IG),THLRET(ILG,IG),THLMIN(ILG,IG),
      1     THFC  (ILG,IG),HCPS  (ILG,IG),TCS   (ILG,IG),
-     1     DELZ  (IG),    DELZW (ILG,IG),ZBOTW (ILG,IG)
+     1     DELZ  (IG),    DELZW (ILG,IG),ZBOTW (ILG,IG),
+     1     SANDGAT(ILG,IG),   CLAYGAT(ILG,IG)
 C
       INTEGER  ISAND (ILG,IG)
 C
@@ -402,7 +403,7 @@ C
      K                 FC,     FCS,    DELZ,   DELZW,  ZBOTW,
      L                 ISAND,  ILG,    IL1,    IL2,    JL,     IG,  
      M                 FVEG,   TCSATU, TCSATF, FTEMP,  FTEMPX, FVAP,
-     N                 FVAPX,  RIB,    RIBX  ,q)           
+     N                 FVAPX,  RIB,    RIBX  ,q,SANDGAT,CLAYGAT)           
 C
 C     * DEFINE NUMBER OF PIXELS OF EACH LAND SURFACE SUBAREA 
 C     * (CANOPY-COVERED, CANOPY-AND-SNOW-COVERED, BARE SOIL, AND 

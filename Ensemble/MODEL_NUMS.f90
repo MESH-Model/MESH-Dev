@@ -13,10 +13,10 @@ use MODELS, only : &
   scm,      &! snow compaction model
   sam,      &! snow albedo decay model
   sntcm,    &! snow thermal conductivity model
-  slwm,     &! snow liquid water content model
+  betam,     &! soil moisture beta model
   im,       &! infiltration model
   sotcm,    &! soil thermal conductivity model
-  ufcm,     &! soil unfrozen water content model
+  albslm,     &! soil albedo model
   lam,      &! local advection model
   Nmod       ! Number of models model
 
@@ -33,10 +33,10 @@ integer :: &
   qscm,     &! snow compaction model number
   qsam,     &! snow albedo decay model number
   qsntcm,   &! snow thermal conductivity model number
-  qslwm,    &! snow liquid water content model number
+  qbetam,    &! soil moisture beta model number
   qim,      &! infiltration model number
   qsotcm,   &! soil thermal conductivity model number
-  qufcm,    &! soil unfrozen water content model number
+  qalbslm,    &! soil albedo model number
   !qsiim,    &! soil ice impedance model number
   qlam,     &! local advection model number
   i          ! counter
@@ -51,25 +51,25 @@ do qtem = 0, 1
       do qscm = 0, 1
        do qsam = 0, 1
         do qsntcm = 0, 1
-         do qslwm = 0, 1
+         do qbetam = 0, 1
           do qim = 0, 1
            do qsotcm = 0, 1
-            do qufcm = 0, 1
+            do qalbslm = 0, 1
               do qlam = 0, 1
-                 ebalm(q)= qebalm!HOLD TO 1
-                 tem(q)  = qtem
-                 zmsm(q) = qzmsm
-                 bsm(q)  = qbsm
-                 scfm(q) = qscfm !does not fix KEN
-                 fsdm(q) = qfsdm
-                 scm(q)  = qscm
-                 sam(q)  = qsam
-                 sntcm(q)= qsntcm!HOLD TO 1
-                 slwm(q) = qslwm
-                 im(q)   = qim !***PROBLEM IS im(q)=1?
-                 sotcm(q)= qsotcm
-                 ufcm(q) = qufcm
-                 lam(q)  = qlam
+                 ebalm(q)=   qebalm
+                 tem(q)  =   qtem
+                 zmsm(q) =   qzmsm
+                 bsm(q)  =   qbsm
+                 scfm(q) =   qscfm
+                 fsdm(q) =   qfsdm
+                 scm(q)  =   qscm
+                 sam(q)  =   qsam
+                 sntcm(q)=   qsntcm
+                 betam(q) =  qbetam
+                 im(q)   =   qim
+                 sotcm(q)=   qsotcm
+                 albslm(q) = qalbslm
+                 lam(q)  =   qlam
                  q = q + 1
               end do
             end do
@@ -88,10 +88,10 @@ end do
 
 
 open(unit=907,file="model_nums.csv")
- write(907,'("ebalm,tem,zmsm,bsm,scfm,fsdm,scm,sam,sntcm,slwm,im,sotcm,ufcm,lam")')
+ write(907,'("ebalm,tem,zmsm,bsm,scfm,fsdm,scm,sam,sntcm,betam,im,sotcm,albslm,lam")')
  do i=1,Nmod
   write(907, '(14(I1,","))') ebalm(i),tem(i),zmsm(i),bsm(i),scfm(i),fsdm(i),scm(i),&
-                      sam(i),sntcm(i),slwm(i),im(i),sotcm(i),ufcm(i),lam(i)
+                      sam(i),sntcm(i),betam(i),im(i),sotcm(i),albslm(i),lam(i)
  enddo
 close(unit=907)
 
