@@ -2,6 +2,9 @@ PROGRAM Watroute_SimStat
 
 !> area_watflood contains a number of variables required for Watroute
 USE area_watflood
+use mesh_input_module
+use flags
+use simstats, only: stats_init, stats_update_daily, stats_write
 
 !> ADAPTED FROM MESH ROUTINE FOR AUTOCALIBRATION USING PRE-EMPTION - A MAXIMUM OF 1 YEAR (365 DAYS)
 !> DAILY STREAM FLOW IS SUPPOSED TO BE USED FOR AUTOCALIBRATION PURPOSE.
@@ -22,15 +25,15 @@ USE area_watflood
 !* QSIM:        DAILY INPUT DATA USED BY SIMSTAT.F90 (DAILY MODELLED/SIMULATED)
 INTEGER :: NCAL,DAYCOUNT,NCALCOUNT
 LOGICAL :: EXISTS
-REAL :: SAE,SAESRT,SAEMSRT,FBEST,FTEST,NSE
+!REAL :: SAE,SAESRT,SAEMSRT,FBEST,FTEST,NSE
 REAL,DIMENSION(:),ALLOCATABLE :: QHYDIN,QOIN
-REAL,DIMENSION(:,:),ALLOCATABLE :: QOBS,QSIM
+REAL,DIMENSION(:),ALLOCATABLE :: QOBS_daily,QSIM_daily
 REAL :: MAXNAN
 
 !> Variables for SIMSTATS.F90
 !* NSD:   NASH-SUTCLIFFE COEFFICIENT (DAILY)
 !* NSW:   NASH-SUTCLIFFE COEFFICIENT (WEEKLY)
-REAL :: MAE,RMSE,BIAS,NSD,NSW,TPD,TPW
+!REAL :: MAE,RMSE,BIAS,NSD,NSW,TPD,TPW
 
 !> Variables for Watroute
 !* DATE:          DATE
@@ -161,16 +164,19 @@ DAYCOUNT=DAY1
 
 !> Calculate the number of daily records from the number of hours from the event file
 NCAL=CEILING(NHF/24.0)
-!d print*,nhf,ncal
-ALLOCATE(QOBS(NCAL,NO),QSIM(NCAL,NO),STAT=IALLOCATE)
+nyears=ceiling(NCAL/366.0)
+!d print*,nhf,ncal,nyears
+ALLOCATE(QOBS_daily(NO),QSIM_daily(NO),STAT=IALLOCATE)
 IF(IALLOCATE.NE.0) &
-    STOP 'ERROR: On allocation of QOBS,QSIM on NCAL,NO'
-
-!> Pre-set the record
-QOBS(:,:)=0.
-QSIM(:,:)=0.
+    STOP 'ERROR: On allocation of QOBS_daily,QSIM_daily on NO'
+AUTOCALIBRATIONFLAG=1
+call stats_init(nyears, NO)
 
 !d open(unit=55,file='spl_csv_daily.csv',status='unknown')
+
+!> Pre-set the record
+QOBS_daily=0.
+QSIM_daily=0.
 
 NCALCOUNT=1
 !linecount=8
@@ -180,8 +186,8 @@ NCALCOUNT=1
 DO
 
 !> Stop the loop if the expected number of records is exceeded
-IF(NCALCOUNT.GT.NCAL) &
-    GOTO 20
+!IF(NCALCOUNT.GT.NCAL) &
+!    GOTO 20
 
 READ(UNIT=54,FMT=7010,IOSTAT=IOS) YEAR1,MONTH_NOW,DAY_NOW,HOUR_NOW,(QHYDIN(L),QOIN(L),L=1,NO)
 
@@ -197,11 +203,18 @@ IF(DAY_NOW.NE.DAYCOUNT) THEN
 !d     write(unit=55,fmt=7000) year1,month_now,day_now,hour_now,(qobs(ncalcount,l),qsim(ncalcount,l),l=1,no)
     DAYCOUNT=DAY_NOW
     NCALCOUNT=NCALCOUNT+1
+
+    !> Calculate flow statistics
+    call stats_update_daily(QOBS_daily, QSIM_daily, 1)
+
+    !> Reset the record (daily)
+    QOBS_daily=0.
+    QSIM_daily=0.
 END IF !> (DAY_NOW.NE.DAYCOUNT)
 
 !> Update daily totals (Daily totals are used by SIMSTATS.F90)
-QOBS(NCALCOUNT,:)=QOBS(NCALCOUNT,:)+QHYDIN(:)
-QSIM(NCALCOUNT,:)=QSIM(NCALCOUNT,:)+QOIN(:)
+QOBS_daily=QOBS_daily+QHYDIN
+QSIM_daily=QSIM_daily+QOIN
 
 END DO
 
@@ -212,32 +225,34 @@ END DO
 20 CONTINUE
 
 !> Stop the program if the expected and actual number of records do not match
-IF(NCALCOUNT.LT.NCAL) &
-    STOP 'ERROR: Unexpected end of file in spl_rpn.csv'
-CLOSE(54)
+!IF(NCALCOUNT.LT.NCAL) &
+!    STOP 'ERROR: Unexpected end of file in spl_rpn.csv'
+!CLOSE(54)
 !d close(55)
 
 !d print*,'finished reading file'
 !d print*,'ncal',ncal,'ncalcount',ncalcount
 
 !> Calculate simulation statistics (SIMSTATS.F90 from standalone MESH)
-CALL SIMSTATS(QOBS(1:NCAL,1),QSIM(1:NCAL,1),NCAL,BIAS,NSD,NSW,TPD)
+!CALL SIMSTATS(QOBS(1:NCAL,1),QSIM(1:NCAL,1),NCAL,BIAS,NSD,NSW,TPD)
+call stats_write()
+print*, "Total days processed: ", NCALCOUNT
 
 !> Check for NaN value
-IF(isnan(NSD)) NSD=(-1)*MAXNAN
+!IF(isnan(NSD)) NSD=(-1)*MAXNAN
 
 !> Print Nash-Sutcliffe coefficient (Daily)
-OPEN(100,FILE='NS.txt',STATUS='UNKNOWN')
-WRITE(100,*)NSD
-CLOSE(100)
+!OPEN(100,FILE='NS.txt',STATUS='UNKNOWN')
+!WRITE(100,*)NSD
+!CLOSE(100)
 
 !> Check for NaN value
-IF(isnan(NSW)) NSW=(-1)*MAXNAN
+!IF(isnan(NSW)) NSW=(-1)*MAXNAN
 
 !> Print Nash-Sutcliffe coefficient (Weekly)
-OPEN(100,FILE='NSW.txt',STATUS='UNKNOWN')
-WRITE(100,*)NSW
-CLOSE(100)
+!OPEN(100,FILE='NSW.txt',STATUS='UNKNOWN')
+!WRITE(100,*)NSW
+!CLOSE(100)
 
 !d print*,'nsd',nsd
 

@@ -1,8 +1,8 @@
 # ======================================================================
 #						Makefile for SA_MESH 
-#           Compile on Windows using MinGW's gfortran compiler
+#           Compile on Windows using Cygwin's gfortran compiler
 #
-#                           mingw32-make
+#                           make (cygwin)
 # ======================================================================
 
 # ======================================================================
@@ -27,14 +27,11 @@ LFLAG=-c -O2
 # Build SA_MESH executable and print message
 # ======================================================================
 all: ${OBJECTS}
-#	$(FC) -o sa_mesh  $(OBJECTS)
-# JUL 11/11 - DGP: -static to remove gcc, gfortran dependency;
-	$(FC) -static -o sa_mesh  $(OBJECTS)
-	@echo ---*---
-	@echo ---*---
-	@echo sa_mesh is now up to date...
-	@echo ---*---
-	@echo ---*---
+	$(FC) -o sa_mesh  $(OBJECTS)
+
+#static: ${OBJECTS}
+# For MinGW only (the Cygwin library cannot be statically linked to the binary):
+#	$(FC) -o sa_mesh_static -static-libgcc -static-libgfortran  $(OBJECTS)
 
 # ======================================================================
 # General rules
@@ -45,7 +42,7 @@ all: ${OBJECTS}
 	$(FC) $(LFLAG) $<
 %.o: %.f90
 	$(FC) $(LFLAG) $<
-%.o: %.for	
+%.o: %.for
 	$(FC) $(LFLAG) $<
 
 # ======================================================================
@@ -57,10 +54,14 @@ EF_Module.o : EF_ParseUtilities.o
 # Cleaning object files
 # ======================================================================
 clean:
-	del *.mod *.o
+# 'rm' for Cygwin, 'del' for MinGW - comment as necessary
+	rm *.mod *.o
+#	del *.mod *.o
 
 # ======================================================================
 # Cleaning everything including the previously built executable
 # ======================================================================
 veryclean:
-	del *.mod *.o *.exe
+# 'rm' for Cygwin, 'del' for MinGW - comment as necessary
+	rm *.mod *.o *.exe
+#	del *.mod *.o *.exe

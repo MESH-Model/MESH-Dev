@@ -1,77 +1,74 @@
-FUNCTION NSE(OBS,SIM,N,NS,NMIN)
+module simstats_nse
+
+implicit none
+
+private
+public nse_calc
+
+!todo add flag for nmin; was originally the purpose of autocalibrationflag, but that flag has been re-purposed
+
+contains
+
+!> The function computes the Nash-Sutcliffe efficiency index.
 !>
-!>        December 18, 2013 - K. C. Kornelsen
-!>==============================================================================================
+!> December 18, 2013 - K.C. Kornelsen
 !>
-!>		The function computes the Nash-Sutcliffe efficiency index
-!>
-!>==============================================================================================
-!>
-!>		OBS		- Observed values
-!>		SIM		- Simulated values
-!>		N		- Number of days
-!>		NS		- Number of stations
-!>		NMIN	- Minimum number of days for model spin up
-!>		NSE		- Nash-Sutcliffe Efficiency Index 
-!>
-!>===============================================================================================
+function nse_calc(qobs, qsim, n, ns, nmin)
 
-! FUNCTION IN/OUT
-INTEGER N, NS, NMIN
-REAL	OBS(N,NS), SIM(N,NS)
-REAL	NSE
+! FUNCTION I/O
+!* n: Number of days of observed/simulated values
+!* ns: Number of streamflow gauges
+!* nmin: Minimum number of days required for spin-up before calculating the statistic
+!* calc_nse: Nash-Sutcliffe efficiency (NSE) index (returned by the function)
+!* qobs: Observed values (1: daily flow value; 2: streamflow gauge)
+!* qsim: Simulated values (1: daily flow value; 2: streamflow gauge)
+integer :: n, ns, nmin
+real :: nse_calc
+real, intent(in), dimension(:, :) :: qobs, qsim
 
-! OTHER ALLOCATIONS
-INTEGER I, J ! Counters
-REAL	QBAR(NS), NUM(NS), DENOM(NS)
-REAL	WGT
+! LOCAL VARIABLES
+!* j: Counter (streamflow gauge)
+!* i: Counter (day)
+!* qbar: Average of the observed streamflow values (1: daily flow value)
+!* num: Numerator of the NSE summation (1: daily flow value)
+!* denom: Denominator of the NSE summation (1: daily flow value)
+!* wgt: Weight to calculate the average NSE for all streamflow gauges
+integer :: i, j
+real, dimension(ns) :: qbar, num, denom
+real :: wgt
 
-
-
-
+nse_calc = 0.0
 
 ! Mean flow
-QBAR = 0.0
+qbar = 0.0
 
-IF(N > NMIN) THEN
-	! Get Sum
-	DO J = 1,NS
-		DO I= NMIN,N
-			QBAR(J) = QBAR(J) + OBS(I,J)
-		ENDDO
-	ENDDO
+if (n > nmin) then
 
-	! Get Average
-	DO J = 1, NS
-		QBAR(J) = QBAR(J)/(N-NMIN)
-	ENDDO
+    ! Get Sum
+    do j = 1, ns
+        do i = nmin, n
+            qbar(j) = qbar(j) + qobs(i, j)
+        end do
+    end do
 
-	
+    ! Get Average
+    do j = 1, ns
+        qbar(j) = qbar(j) / (n - nmin)
+    end do
+    num = 0.0
+    denom = 0.0
+    do j = 1, ns
+        do i = nmin, n
+            num(j) = num(j) + (qobs(i, j) - qsim(i, j))**2.0
+            denom(j) = denom(j) + (qobs(i, j) - qbar(j))**2.0
+        end do
+    end do
+    wgt = 1.0 / ns ! Weight based on NS
+    do j = 1, ns
+        nse_calc = nse_calc + (wgt*(1.0 - (num(j)/denom(j))))
+    end do
+end if
 
-NUM = 0.0
-DENOM = 0.0
+end function
 
-	DO J = 1, NS
-		DO I = NMIN,N
-			NUM(J) = NUM(J) + (OBS(I,J)-SIM(I,J))**2.0
-			DENOM(J) = DENOM(J) + (OBS(I,J) - QBAR(J))**2.0
-		ENDDO
-	ENDDO
-
-
-NSE = 0.0
-
-WGT  = 1.0/REAL(NS) ! Weight based on NS
-
-	DO J = 1,NS
-		NSE = NSE + (WGT*(1.0 - (NUM(J)/DENOM(J))))
-	ENDDO
-
-
-
-
-
-ENDIF
-
-END FUNCTION
-
+end module

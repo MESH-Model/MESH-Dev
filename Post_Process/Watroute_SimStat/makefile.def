@@ -10,23 +10,25 @@
 # ======================================================================
 # Directory of source code
 # ======================================================================
-DIR_REPO=C:\sa_MESH\TRUNK
+DIR_REPO=/cygdrive/c/Data/MESH_code
 
 # ======================================================================
 # Include the following directories in the source file searching path
 # ======================================================================
-VPATH=	$(DIR_REPO)\Post_Process\Watroute_SimStat; \
-		$(DIR_REPO)\Driver\MESH_Driver; \
-		$(DIR_REPO)\Routing_Model\RPN_watroute\code; \
+VPATH=	$(DIR_REPO)/TRUNK/Post_Process/Watroute_SimStat: \
+		$(DIR_REPO)/TRUNK/Driver/MESH_Driver: \
+		$(DIR_REPO)/TRUNK/Modules: \
+		$(DIR_REPO)/TRUNK/Routing_Model/RPN_watroute/code:
 
 #Modules
-MODULES=	area_watflood.mod ef_module.mod ef_parseutilities.mod 
-OBJECTS=	area_watflood.o EF_Module.o EF_ParseUtilities.o 
+OBJECTS=	area_watflood.o EF_ParseUtilities.o EF_Module.o \
+			mesh_input_module.o FLAGS.o
 
 #Watroute
 OBJECTS+=	rdevt.o read_flow_ef.o 
 
-#MESH_driver
-OBJECTS+=	Julian_Day_ID.o NSE.o SAE.o SAEMSRT.o SAESRT.o \
-		SIMSTATS.o SORT.o TEST_CSV.o
+#SIMSTATS
+OBJECTS+=	NSE.o SAE.o SORT.o SAESRT.o SIMSTATS.o
+
+#Program 
 OBJECTS+=	Watroute_SimStat.o

@@ -11,36 +11,31 @@ include makefile.def
 FC=gfortran
 
 # Flag for compiling and debugging (-g) - comment as necessary
-#LFLAG = -O3 -g -ffixed-line-length-none -fd-lines-as-comments -fno-range-check
-LFLAG = -O3 -static -ffixed-line-length-none -fd-lines-as-comments -fno-range-check
+LFLAG=-c -O2
 
-.SECONDARY:
+# Flag for debugging
+#LFLAG=-g
 
 # ======================================================================
 # Build Watroute_SimStat executable and print message
 # ======================================================================
-all: ${MODULES} ${OBJECTS}
+all: ${OBJECTS}
 	$(FC) -o Watroute_SimStat $(OBJECTS)
-	@echo ---*---
-	@echo ---*---
-	@echo Watroute_SimStat is now up to date...
-	@echo ---*---
-	@echo ---*---
+
+# For MinGW only (the Cygwin library cannot be statically linked to the binary):
+#	$(FC) -o Watroute_SimStat_static -static-libgcc -static-libgfortran  $(OBJECTS)
 
 # ======================================================================
 # General rules
 # ======================================================================
-
-.PHONY: EF_ParseUtilities.o area_watflood.o EF_Module.o
-%.mod : %.f 
-	$(FC) $(LFLAG) -c $< 
-
-%.o : %.f $(MODULES) 
-	$(FC) $(LFLAG) -c $<
-%.o : %.F90 
-	$(FC) $(LFLAG) -c $<
-%.o : %.f90 
-	$(FC) $(LFLAG) -c $<
+%.o: %.f
+	$(FC) $(LFLAG) $<
+%.o: %.F90
+	$(FC) $(LFLAG) $<
+%.o: %.f90
+	$(FC) $(LFLAG) $<
+%.o: %.for
+	$(FC) $(LFLAG) $<
 
 # ======================================================================
 # Dependencies that can't be captured by the above general rules
@@ -56,13 +51,13 @@ ef_module.mod : EF_Module.mod
 # ======================================================================
 clean:
 # 'rm' for Cygwin, 'del' for MinGW - comment as necessary
-#	rm *.mod *.o
-	del *.mod *.o
+	rm *.mod *.o
+#	del *.mod *.o
 
 # ======================================================================
 # Cleaning everything including the previously built executable
 # ======================================================================
 veryclean:
 # 'rm' for Cygwin, 'del' for MinGW - comment as necessary
-#	rm *.mod *.o watroute
-	del *.mod *.o *.exe
+	rm *.mod *.o *.exe
+#	del *.mod *.o *.exe

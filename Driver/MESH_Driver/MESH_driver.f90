@@ -83,7 +83,7 @@ USE FLAGS
 USE MODEL_OUTPUT
 USE climate_forcing
 USE model_dates
-
+use simstats
 
 IMPLICIT NONE
 INTRINSIC MAXLOC
@@ -803,29 +803,7 @@ TYPE(INFO_OUT)    :: IOF
 TYPE(CLIM_INFO) :: cm
 
 
-
-!> MAM - FOR AUTOCALIBRATION USING PRE-EMPTION - A MAXIMUM OF 1 YEAR (365 DAYS) 
-!> DAILY STREAM FLOW IS SUPPOSED TO BE USED FOR AUTOCALIBRATION PURPOSE.
-!* NCAL:    ACTUAL NUMBER OF CALIBRATION DATA
-!* COUNTER: COUNTER FOR THE NUMBER OF PRE-EMPTION STARTS
-!* EXISTS:  LOGICAL TO CHECK IF "pre_emption_value.txt" FILE EXISTS
-!* SAE   :  SUM OF ABSOLUTE VALUE OF ERRORS (DEVIATIONS BETWEEN OBSERVED 
-!*          AND SIMULATED STREAM FLOWS)
-!* SAESRT:  SUM OF ABSOLUTE VALUE OF ERRORS (DEVIATIONS BETWEEN SORTED OBSERVED 
-!*          AND SORTED SIMULATED STREAM FLOWS)
-!* NSE   : MEAN NASH-SUTCLIFFE EFFIECIENCY INDEX OF DAILY FLOWS
-!* FBEST:  SAE AT PREVIOUS TIME STEP TRIAL
-!* FTEST:  SAE AT CURRENT TIME STEP TRIAL
-!* QOBS  :  OBSERVED DAILY STREAM FLOW
-!* QSIM  :  SIMULATED DAILY STREAM FLOW
-INTEGER NCAL
-LOGICAL EXISTS,R2COUTPUT
-REAL    SAE,SAESRT,SAEMSRT,FBEST,FTEST, NSE
-REAL, DIMENSION(:,:), ALLOCATABLE :: QOBS ,QSIM
-
-!STATISTICS FOR MONTE CARLO SIMULATION
-REAL, DIMENSION(:), ALLOCATABLE :: MAE,RMSE,BIAS,NSD,NSW,TPD,TPW
-
+LOGICAL :: R2COUTPUT,EXISTS
 INTEGER, PARAMETER :: R2CFILEUNITSTART = 500
 INTEGER NR2C,DELTR2C,NR2CFILES,NR2CSTATES,NR2C_R,DELTR2C_R,NR2C_S,DELTR2C_S
 INTEGER, ALLOCATABLE, DIMENSION(:)        :: GRD,GAT,GRDGAT,GRD_R,GAT_R,GRDGAT_R,GRD_S,GAT_S,GRDGAT_S
@@ -1639,9 +1617,6 @@ DO I=1,WF_NO
       wf_qsyn_cum(I)=0.0
       wf_qhyd_cum(I)=0.0
 ENDDO
-
-ALLOCATE(QOBS(NYEARS*366,WF_NO),QSIM(NYEARS*366,WF_NO))
-ALLOCATE(MAE(WF_NO),RMSE(WF_NO),BIAS(WF_NO),NSD(WF_NO),NSW(WF_NO),TPD(WF_NO),TPW(WF_NO))
 
 !>MAM - The first stream flow record is used for flow initialization
 READ(22,*,IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
@@ -2724,16 +2699,7 @@ ENDDO
 PRINT *
 PRINT *
 PRINT *
-IF(AUTOCALIBRATIONFLAG .GE. 1)THEN
-  WRITE(6,*)"================================================="
-  WRITE (6,*)
-  PRINT*,"     SA_MESH IS RUNNING IN AUTOCALIBRATION MODE"
-  WRITE (6,*)
-  IF(PREEMPTIONFLAG == 1)PRINT*,"                USING PRE-EMPTION"
-  WRITE (6,*)
-  WRITE(6,*)"================================================="
-  WRITE (6,*)
-ENDIF
+call stats_init(nyears, wf_no)
 PRINT *
 IF(TESTCSVFLAG == 1)THEN
     PRINT*,"TEST PROPER DISTRIBUTION OF CSV FORCING DATA" 
@@ -3295,22 +3261,6 @@ ELSEIF(INTERPOLATIONFLAG == 1)THEN
     ENDIF
 ENDIF
 
-!> *********************************************************************
-!> MAM - INITIALIZE OR READ PRE-EMPTION VALUE
-!> *********************************************************************
-IF(AUTOCALIBRATIONFLAG .GE. 1)THEN
-    IF(PREEMPTIONFLAG == 1)THEN
-      INQUIRE(FILE="pre_emption_value.txt", EXIST = EXISTS)
-      IF(EXISTS)THEN
-        OPEN(100,FILE="pre_emption_value.txt")
-        READ(100,*)FBEST
-        CLOSE(100)
-      ELSE
-        FBEST = +1.0e+10
-      ENDIF
-    ENDIF
-ENDIF
-NCAL  = 0
 VLGRD = 0.0
 VLGAT = 0.0
 
@@ -4901,13 +4851,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     EVAP_OUT = 0.0
     ROF_OUT = 0.0
   END IF
-  IF(AUTOCALIBRATIONFLAG .GE. 1)THEN 
-     NCAL       = NCAL + 1
-     DO J = 1, WF_NO
-        QOBS(NCAL,J) = WF_QHYD_AVG(J)
-        QSIM(NCAL,J) = WF_QSYN_AVG(J)/NCOUNT
-     ENDDO
-  ENDIF
+  call stats_update_daily(WF_QHYD_AVG, WF_QSYN_AVG, NCOUNT)
 
   WF_QSYN_AVG = 0.0
 ENDIF
@@ -5066,25 +5010,7 @@ IF (IMIN == 60) THEN
   IF (IHOUR==24) THEN
     IHOUR = 0
     IF(AUTOCALIBRATIONFLAG .GE. 1 .AND. PREEMPTIONFLAG == 1)THEN   
-      IF(OBJFNFLAG == 0)THEN
-         FTEST = SAE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
-                     AUTOCALIBRATIONFLAG)
-      ELSEIF(OBJFNFLAG == 1)THEN
-         FTEST = SAESRT(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
-                        AUTOCALIBRATIONFLAG)
-      ELSEIF(OBJFNFLAG == 2)THEN
-         PRINT*,"THE SAEMSRT (OBJECTIVE FUNCTION = 2) IS NOT ", &
-                "CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE"
-      ELSEIF(OBJFNFLAG == 3)THEN
-         PRINT*,"THE NSE (OBJECTIVE FUNCTION = 3) IS NOT ", &
-                "CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE" , &
-                "TRY NEGNSE (OBJECTIVE FUNCTION = 4)"
-      ELSEIF(OBJFNFLAG == 4)THEN
-         FTEST = NSE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
-                       AUTOCALIBRATIONFLAG)
-         FTEST = -1.0 * FTEST
-      ENDIF
-      IF(FTEST > FBEST)GOTO 199
+      IF(FTEST > FBEST) GOTO 199
     ENDIF
     IDAY = IDAY + 1
     IF (IDAY >= 366) THEN
@@ -5459,75 +5385,7 @@ ENDDO
 
 199 CONTINUE
 
-IF(AUTOCALIBRATIONFLAG .GE. 1)THEN 
-    OPEN(100,FILE="function_out.txt")
-    IF(PREEMPTIONFLAG == 1)THEN
-      FTEST = FTEST*NYEARS*366/NCAL
-    ELSE
-      IF(OBJFNFLAG == 0)THEN
-         FTEST = SAE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
-                     AUTOCALIBRATIONFLAG)
-      ELSEIF(OBJFNFLAG == 1)THEN
-         FTEST = SAESRT(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
-                        AUTOCALIBRATIONFLAG)
-      ELSEIF(OBJFNFLAG == 2)THEN
-         FTEST = SAEMSRT(QOBS(1:NCAL,:),      &
-                         QSIM(1:NCAL,:),      &
-                         NCAL,                &
-                         WF_NO,               &
-                         AUTOCALIBRATIONFLAG, &
-                         WINDOWSIZEFLAG,      &
-                         WINDOWSPACINGFLAG)
-      ELSEIF(OBJFNFLAG == 3)THEN
-         FTEST = NSE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
-                         AUTOCALIBRATIONFLAG)
-      ELSEIF(OBJFNFLAG == 4)THEN
-         FTEST = NSE(QOBS(1:NCAL,:),QSIM(1:NCAL,:),NCAL,WF_NO, &
-                         AUTOCALIBRATIONFLAG)
-         FTEST = -1.0 * FTEST
-      ENDIF
-
-    ENDIF
-      WRITE(100,*)FTEST
-      CLOSE(100)
-ENDIF
-
-IF(AUTOCALIBRATIONFLAG .GE. 1) THEN
-
-!---------------------SIMULATION STATISTICS-------------------------
-DO J=1,WF_NO
-  CALL SIMSTATS(QOBS(1:NCAL,J),QSIM(1:NCAL,J),NCAL,BIAS(J),NSD(J),NSW(J),TPD(J))
-END DO
-!-------------------------------------------------------------------
-
-!---------------------For MonteCarlo Simulations--------------------
-INQUIRE(FILE='MonteCarlo.txt',EXIST=EXISTS)
-IF(EXISTS)THEN
-   OPEN(100,FILE='MonteCarlo.txt',POSITION='APPEND',STATUS='OLD')
-ELSE
-   OPEN(100,FILE='MonteCarlo.txt',STATUS='UNKNOWN')
-   WRITE(100,*)'     BIAS      NSD       NSW        TPD'
-ENDIF
-
-DO J=1,WF_NO
-  WRITE(100,'(3(2X,F8.5),1(2X,I8))') BIAS(J),NSD(J),NSW(J),int(TPD(J))
-END DO
-CLOSE(100)
-!-------------------------------------------------------------------
-
-!---------------------For Nash Sutcliffe coefficient calculation----
-OPEN(100,FILE='NS.txt',STATUS='UNKNOWN')
-WRITE(100,*) (NSD(J),J=1,WF_NO)
-CLOSE(100)
-!-------------------------------------------------------------------
-
-!---------------------For Nash Sutcliffe coefficient calculation----
-OPEN(100,FILE='NSW.txt',STATUS='UNKNOWN')
-WRITE(100,*) (NSW(J),J=1,WF_NO)
-CLOSE(100)
-!-------------------------------------------------------------------
-
-END IF !> (AUTOCALIBRATIONFLAG .GE. 1)
+call stats_write()
 
 DO I=1, wf_num_points
   CLOSE(UNIT=150+i*10+1)
