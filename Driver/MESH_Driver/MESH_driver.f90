@@ -3381,7 +3381,7 @@ IF(INTERPOLATIONFLAG == 1)THEN
     K = 0
     DO I = 1, NA
        DO J = 1, NTYPE
-          IF(ACLASS(I,J) .GT. 0.0)THEN
+          IF(cp%FAREROW(I,J) .GT. 0.0)THEN
              K = K + 1
              FSVHGRD(I) = FSVHGRD(I) + ACLASS(I,J) * FSVHGAT(K)
              FSIHGRD(I) = FSIHGRD(I) + ACLASS(I,J) * FSIHGAT(K)
