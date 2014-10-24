@@ -4814,8 +4814,8 @@ DO I=1,NA
    IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
        write(250+k*10+1,'((I2,","),(I3,","),(I5,","),(I6,","),(I6,","),'// &
                    '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,N,(SNOWPACK(I,M,q),q=1,Nmod)!(TSFSROW(I,M,1,1),q=1,Nmod)
-!MM    write(250+k*10+2,'((I2,","),(I3,","),(I5,","),(I6,","),(I6,","),'// &
-!MM                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,N,(SW(I,M,q),q=1,Nmod)!(TSFSROW(I,M,3,1),q=1,1)
+    write(250+k*10+2,'((I2,","),(I3,","),(I5,","),(I6,","),(I6,","),'// &
+                   '16384(F8.2,","))') IHOUR,IMIN,IDAY,IYEAR,N,(SW(I,M,q),q=1,Nmod)
     
    ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
   ENDDO !DO K=1, WF_NUM_POINTS
