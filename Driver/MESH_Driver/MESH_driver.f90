@@ -1821,23 +1821,20 @@ ENDIF
 !>  End of subbasin section
 !> **********************************************************************
 
-
-
 !> Set value of FAREROW: 
 !todo - flag this as an issue to explore later and hide basin average code
 !todo - document the problem
-TOTAL_AREA=0.0
-DO I=1,NA
-  DO M=1,NMTEST
-    cp%FAREROW(I, M) = ACLASS(I, M)*FRAC(I)
-    TOTAL_AREA=TOTAL_AREA+cp%FAREROW(I,M)
+TOTAL_AREA = 0.0
+DO I = 1, NA
+    DO M = 1, NMTEST
+        cp%FAREROW(I, M) = ACLASS(I, M)*FRAC(I)
+        TOTAL_AREA = TOTAL_AREA + cp%FAREROW(I, M)
     !FUTUREDO: Bruce, FRAC is calculated by EnSim
     ! using Dan Princz's instructions for EnSim
     ! FRAC can be greater than 1.00
     ! So, we cannot use FAREROW in place of BASIN_FRACTION
-  ENDDO
-ENDDO
-
+    END DO
+END DO
 
 !> routing parameters
 WF_ROUTETIMESTEP=900
@@ -3649,22 +3646,21 @@ CALL CLASSI(VPDGAT,TADPGAT,PADRGAT,RHOAGAT,RHSIGAT, &
             IPCP,ILG,1,NML)
 
 !> Calculate initial storage (after reading in resume.txt file if applicable)
-IF(JAN==1) THEN
-  INIT_STORE=0.0
-  DO I=1,NA
-     IF(FRAC(I)/=0.0)THEN
-        DO M=1,NMTEST
-           INIT_STORE = INIT_STORE + cp%FAREROW(I,M)*(cp%RCANROW(I,M)+cp%SCANROW(I,M)+cp%SNOROW(I,M)+cp%ZPNDROW(I,M)*RHOW)
-           SOILSTORE = 0.
-           DO J = 1, IGND
-              SOILSTORE = SOILSTORE + cp%FAREROW(I,M)*(cp%THLQROW(I,M,J)*RHOW+cp%THICROW(I,M,J)*RHOICE)*DLZWROW(I,M,J)
-           ENDDO
-           INIT_STORE = INIT_STORE + SOILSTORE
-        ENDDO
-     ENDIF
-  ENDDO
-ENDIF
-
+IF (JAN == 1) THEN
+    INIT_STORE = 0.0
+    DO I = 1, NA
+        IF (FRAC(I) >= 0.0) THEN
+            DO M = 1, NMTEST
+                INIT_STORE = INIT_STORE + cp%FAREROW(I, M)* &
+                    (cp%RCANROW(I, M) + cp%SCANROW(I, M) + cp%SNOROW(I, M) + WSNOROW(I, M) + cp%ZPNDROW(I, M)*RHOW)
+                DO J = 1, IGND
+                    INIT_STORE = INIT_STORE + cp%FAREROW(I, M)* &
+                        (cp%THLQROW(I, M, J)*RHOW + cp%THICROW(I, M, J)*RHOICE)*DLZWROW(I, M, J)
+                END DO
+            END DO
+        END IF
+    END DO
+END IF
 
 !>=========================================================================
 !> Initialization of the Storage field
@@ -4416,8 +4412,8 @@ ENDIF
 !$omp parallel do
 DO I = 1, NA
    IF(FRAC(I) /= 0.0)THEN
-      PREACC(I)  = PREACC(I) + PREGRD(I)*DELT
       DO M = 1,NMTEST
+         PREACC(I)  = PREACC(I) + cp%FAREROW(I,M)*PREGRD(I)*DELT
          GTACC(I)   = GTACC(I)  + GTROW(I,M)*  cp%FAREROW(I,M)
          QEVPACC(I) = QEVPACC(I)+ QEVPROW(I,M)*cp%FAREROW(I,M)
          EVAPACC(I) = EVAPACC(I)+ QFSROW(I,M)* cp%FAREROW(I,M)*DELT
@@ -5323,17 +5319,19 @@ IF(ENDDATA)PRINT *, 'Reached end of forcing data'
 IF(ENDDATE)PRINT *, 'Reached end of simulation date'
 
 !> Calculate final storage
-FINAL_STORE=0.0
+FINAL_STORE = 0.0
 DO I = 1, NA
-   IF(FRAC(I) /= 0.0)THEN
-      DO M = 1, NMTEST
-         FINAL_STORE = FINAL_STORE + cp%FAREROW(I,M)*(cp%RCANROW(I,M)+cp%SCANROW(I,M)+cp%SNOROW(I,M)+cp%ZPNDROW(I,M)*RHOW)
-         DO J = 1, IGND
-            FINAL_STORE = FINAL_STORE + cp%FAREROW(I,M)*(cp%THLQROW(I,M,J)*RHOW+cp%THICROW(I,M,J)*RHOICE)*DLZWROW(I,M,J)
-         ENDDO
-      ENDDO
-   ENDIF
-ENDDO
+    IF (FRAC(I) >= 0.0) THEN
+        DO M = 1, NMTEST
+            FINAL_STORE = FINAL_STORE + cp%FAREROW(I, M)* &
+                (cp%RCANROW(I, M) + cp%SCANROW(I, M) + cp%SNOROW(I, M) + WSNOROW(I, M) + cp%ZPNDROW(I, M)*RHOW)
+            DO J = 1, IGND
+                FINAL_STORE = FINAL_STORE + cp%FAREROW(I, M)* &
+                    (cp%THLQROW(I, M, J)*RHOW + cp%THICROW(I, M, J)*RHOICE)*DLZWROW(I, M, J)
+            END DO
+        END DO
+   END IF
+END DO
 
 !> write out final totals to screen
    WRITE(6,*)
