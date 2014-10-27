@@ -626,14 +626,14 @@ REAL, DIMENSION(:, :), ALLOCATABLE :: TBARACC, THLQACC, THICACC, &
 !* TOTAL_AREA: TOTAL FRACTIONED DRAINAGE AREA
 REAL :: TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-  FINAL_STORE, TOTAL_AREA, SOILSTORE
+  FINAL_STORE, TOTAL_AREA
   
 !* TOTAL_HFS = TOTAL SENSIBLE HEAT FLUX
 !* TOTAL_QEVP = TOTAL LATENT HEAT FLUX
-REAL :: TOTAL_HFSACC,TOTAL_QEVPACC
+REAL :: TOTAL_HFSACC, TOTAL_QEVPACC
 
-REAL :: TOTAL_STORE,TOTAL_ZPND,TOTAL_RCAN,TOTAL_SCAN,TOTAL_SNO
-REAL :: TOTAL_PRE,TOTAL_EVAP,TOTAL_ROF,TOTAL_ROFO,TOTAL_ROFS,TOTAL_ROFB
+REAL :: TOTAL_STORE, TOTAL_STORE_2, TOTAL_RCAN, TOTAL_SCAN, TOTAL_SNO, TOTAL_WSNO, TOTAL_ZPND
+REAL :: TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
 REAL, DIMENSION(:), ALLOCATABLE :: TOTAL_THLQ, TOTAL_THIC
 
 !> CROSS-CLASS VARIABLES (CLASS):
@@ -1080,7 +1080,7 @@ ALLOCATE ( &
   XSNOCS(ILG),XSNOGS(ILG), STAT=PAS)
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (for Basin_average_water_balance.csv):
-ALLOCATE ( TOTAL_THLQ(IGND), TOTAL_THIC(IGND), STAT=PAS)
+ALLOCATE (TOTAL_THLQ(IGND), TOTAL_THIC(IGND), STAT=PAS)
 
 IF (PAS .NE. 0) THEN
   WRITE (6, *)
@@ -2586,7 +2586,7 @@ DO I=1, wf_num_points
 ! write the next file
   WRITE(150+I*10+10,"('IHOUR,IMIN,IDAY,IYEAR,"// &
    "PRE,EVAP,ROF,ROFO,ROFS,ROFB,"// &
-   "SNO,SCAN,RCAN,ZPND,"// &
+   "SCAN,RCAN,SNO,WSNO,ZPND,"// &
    TRIM(FMT)//"')")
 ENDDO
 
@@ -3262,18 +3262,21 @@ VLGRD = 0.0
 VLGAT = 0.0
 
 TOTAL_STORE = 0.0
-TOTAL_THLQ  = 0.0
-TOTAL_THIC  = 0.0
-TOTAL_ZPND  = 0.0
-TOTAL_RCAN  = 0.0
-TOTAL_SCAN  = 0.0
-TOTAL_SNO   = 0.0
+TOTAL_STORE_2 = 0.0
+TOTAL_RCAN = 0.0
+TOTAL_SCAN = 0.0
+TOTAL_SNO = 0.0
+TOTAL_WSNO = 0.0
+TOTAL_ZPND = 0.0
+TOTAL_THLQ = 0.0
+TOTAL_THIC = 0.0
+
 OPEN(unit=900,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/Basin_average_water_balance.csv')
 
 
 wrt_900_1 = 'DAY,YEAR,PREACC'//',EVAPACC,ROFACC,ROFOACC,'// &
-           'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNO,SCAN,RCAN,ZPND,'              
+           'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,'
 
 wrt_900_2 = "THLQ"
 wrt_900_3 = "THIC"
@@ -3660,6 +3663,7 @@ IF (JAN == 1) THEN
             END DO
         END IF
     END DO
+    TOTAL_STORE_2 = INIT_STORE
 END IF
 
 !>=========================================================================
@@ -4100,11 +4104,11 @@ DO K=1, WF_NUM_POINTS
                    J=1,IGND),ROFCROW(I,M),ROFNROW(I,M), &
                    ROFOROW(I,M),ROFROW(I,M),WTRCROW(I,M), &
                    WTRSROW(I,M),WTRGROW(I,M)
-    WRITE(150+k*10+10,'((I2,","),(I3,","),(I5,","),(I6,","),10(F12.5,",")' &
-                   //TRIM(ADJUSTL(IGND_CHAR))//'(F12.5,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(F12.5,","))') &
+    WRITE(150+k*10+10,'((I2,","),(I3,","),(I5,","),(I6,","),11(F14.6,",")' &
+                   //TRIM(ADJUSTL(IGND_CHAR))//'(F14.6,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(F14.6,","))') &
                    IHOUR,IMIN,IDAY,IYEAR,PREGAT(I_OUT)*DELT,QFSROW(I,M)*DELT, &
                    ROFROW(I,M)*DELT,ROFOROW(I,M)*DELT,ROFSROW(I,M)*DELT,ROFBROW(I,M)*DELT, &
-                   cp%SNOROW(I,M),cp%SCANROW(I,M),cp%RCANROW(I,M), &
+                   cp%SCANROW(I,M),cp%RCANROW(I,M),cp%SNOROW(I,M),WSNOROW(I,M), &
                    cp%ZPNDROW(I,M)*RHOW,(cp%THLQROW(I,M,J)*RHOW*DLZWROW(I,M,J),J=1,IGND),&
                    (cp%THICROW(I,M,J)*RHOICE*DLZWROW(I,M,J),J=1,IGND)
 
@@ -4424,7 +4428,7 @@ DO I = 1, NA
          ROFSACC(I) = ROFSACC(I)+ ROFSROW(I,M)*cp%FAREROW(I,M)*DELT
          ROFBACC(I) = ROFBACC(I)+ ROFBROW(I,M)*cp%FAREROW(I,M)*DELT
          WTBLACC(I) = WTBLACC(I)+ WTABROW(I,M)*cp%FAREROW(I,M)
-         DO J = 1, IGND
+            DO J = 1, IGND
             TBARACC(I,J) = TBARACC(I,J)+cp%TBARROW(I,M,J)*ACLASS(I,M)
             THLQACC(I,J) = THLQACC(I,J)+cp%THLQROW(I,M,J)*cp%FAREROW(I,M)
             THICACC(I,J) = THICACC(I,J)+cp%THICROW(I,M,J)*cp%FAREROW(I,M)
@@ -4432,18 +4436,9 @@ DO I = 1, NA
                                          cp%THICROW(I,M,J))*cp%FAREROW(I,M)
 
             !(I) = THALACC_STG(I) + THALACC(I,J)
-            THLQ_FLD(I,J) =  THLQ_FLD(I,J) + cp%THLQROW(I,M,J)*RHOW*cp%FAREROW(I,M)*DLZWROW(I,M,J)
-        THIC_FLD(I,J) =  THIC_FLD(I,J) + cp%THICROW(I,M,J)*RHOICE*cp%FAREROW(I,M)*DLZWROW(I,M,J)
-
-            TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%THLQROW(I,M,J)*RHOW*cp%FAREROW(I,M)*DLZWROW(I,M,J)
-            TOTAL_THIC(J) = TOTAL_THIC(J) + cp%THICROW(I,M,J)*RHOICE*cp%FAREROW(I,M)*DLZWROW(I,M,J)
-            
+                THLQ_FLD(I,J) =  THLQ_FLD(I,J) + cp%THLQROW(I,M,J)*RHOW*cp%FAREROW(I,M)*DLZWROW(I,M,J)
+                THIC_FLD(I,J) =  THIC_FLD(I,J) + cp%THICROW(I,M,J)*RHOICE*cp%FAREROW(I,M)*DLZWROW(I,M,J)
          ENDDO
-         
-         !THALACC_STG(I) = THALACC_STG(I) + cp%ZPNDROW(I,M)*RHOW*cp%FAREROW(I,M)
-
-         TOTAL_ZPND = TOTAL_ZPND + cp%ZPNDROW(I,M)*RHOW*cp%FAREROW(I,M)
-         
          ALVSACC(I) = ALVSACC(I)+ALVSROW(I,M)*cp%FAREROW(I,M)*FSVHGRD(I)
          ALIRACC(I) = ALIRACC(I)+ALIRROW(I,M)*cp%FAREROW(I,M)*FSIHGRD(I)
          IF(cp%SNOROW(I,M)>0.0) THEN
@@ -4473,7 +4468,6 @@ ENDDO !DO I=1,NA
 
 !> CALCULATE AND PRINT DAILY AVERAGES.
 
-
 !todo: use delta t here
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
@@ -4497,32 +4491,32 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
    ENDIF
    STG_I = DSTG + STG_I
 
-  !no omp b/c of file IO
+    !no omp b/c of file IO
   DO I=1,NA
   IF(FRAC(I) /= 0.0)THEN
-    PREACC(I)  = PREACC(I)
-    GTACC(I)   = GTACC(I)/REAL(NSUM)
-    QEVPACC(I) = QEVPACC(I)/REAL(NSUM)
-    EVAPACC(I) = EVAPACC(I)
-    HFSACC(I)  = HFSACC(I)/REAL(NSUM)
-    HMFNACC(I) = HMFNACC(I)/REAL(NSUM)
-    ROFACC(I)  = ROFACC(I)
-    ROFOACC(I) = ROFOACC(I)
-    ROFSACC(I) = ROFSACC(I)
-    ROFBACC(I) = ROFBACC(I)
-    WTBLACC(I) = WTBLACC(I)/REAL(NSUM)
+            PREACC(I) = PREACC(I)
+            GTACC(I) = GTACC(I)/REAL(NSUM)
+            QEVPACC(I) = QEVPACC(I)/REAL(NSUM)
+            EVAPACC(I) = EVAPACC(I)
+            HFSACC(I) = HFSACC(I)/REAL(NSUM)
+            HMFNACC(I) = HMFNACC(I)/REAL(NSUM)
+            ROFACC(I) = ROFACC(I)
+            ROFOACC(I) = ROFOACC(I)
+            ROFSACC(I) = ROFSACC(I)
+            ROFBACC(I) = ROFBACC(I)
+            WTBLACC(I) = WTBLACC(I)/REAL(NSUM)
 
     DO J=1,IGND
-      TBARACC(I,J) = TBARACC(I,J)/REAL(NSUM)
-      THLQACC(I,J) = THLQACC(I,J)/REAL(NSUM)
-      THICACC(I,J) = THICACC(I,J)/REAL(NSUM)
-      THALACC(I,J) = THALACC(I,J)/REAL(NSUM)
+                TBARACC(I,J) = TBARACC(I,J)/REAL(NSUM)
+                THLQACC(I,J) = THLQACC(I,J)/REAL(NSUM)
+                THICACC(I,J) = THICACC(I,J)/REAL(NSUM)
+                THALACC(I,J) = THALACC(I,J)/REAL(NSUM)
     ENDDO
 
     IF(FSINACC(I)>0.0) THEN
       ALVSACC(I)=ALVSACC(I)/(FSINACC(I)*0.5)
       ALIRACC(I)=ALIRACC(I)/(FSINACC(I)*0.5)
-    ELSE
+            ELSE
       ALVSACC(I)=0.0
       ALIRACC(I)=0.0
     ENDIF
@@ -4558,25 +4552,25 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     SNOMLT=HMFNACC(I)
     IF(RHOSACC(I)>0.0) THEN
       ZSN=SNOACC(I)/RHOSACC(I)
-    ELSE
+            ELSE
       ZSN=0.0
     ENDIF
 
     IF(TCANACC(I)>0.01) THEN 
       TCN=TCANACC(I)-TFREZ
-    ELSE
+            ELSE
       TCN=0.0
     ENDIF
 
     IF(TSNOACC(I)>0.01) THEN 
       TSN=TSNOACC(I)-TFREZ
-    ELSE
+            ELSE
       TSN=0.0
     ENDIF
 
     IF(ILW==1) THEN
       GTOUT=GTACC(I)-TFREZ
-    ELSE
+            ELSE
       GTOUT=0.0
     ENDIF
 
@@ -4590,19 +4584,19 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
           ENDIF
         ENDDO
 
-        WRITE(150+k*10+1,'((I4,","),(I5,","),9(F8.2,","),2(F8.3,","),'// &
+                    WRITE(150+k*10+1,'((I4,","),(I5,","),9(F8.2,","),2(F8.3,","),'// &
                         '(F12.4,","),4(F12.4,","))') &
                         IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,SNOMLT, &
                         BEG,GTOUT,SNOACC(I),RHOSACC(I), &
                         WSNOACC(I),ALTOT,ROFACC(I),ROFOACC(I), &
                         ROFSACC(I),ROFBACC(I)
-        WRITE(150+k*10+2,'((I4,","),(I5,","),'//ADJUSTL(IGND_CHAR)//'((F8.2,","),'// &
+                    WRITE(150+k*10+2,'((I4,","),(I5,","),'//ADJUSTL(IGND_CHAR)//'((F8.2,","),'// &
                         '2(F6.3,",")),(F8.2,","),2(F7.4,","),'// &
                         '2(F8.2,","),(E12.5,","))') &
                         IDAY,IYEAR,(TBARACC(I,J)-TFREZ, &
                         THLQACC(I,J),THICACC(I,J),J=1,IGND), &
                         TCN,RCANACC(I),SCANACC(I),TSN,ZSN
-        WRITE(150+k*10+3,'((I4,","),(I5,","),3(F9.2,","),(F8.2,","),'// &
+                    WRITE(150+k*10+3,'((I4,","),(I5,","),3(F9.2,","),(F8.2,","),'// &
                         '(F10.2,","),(E12.3,","),2(F12.3,","),'// &
                         '(F8.3,","))') &
                         IDAY,IYEAR,FSINACC(I),FLINACC(I), &
@@ -4612,41 +4606,36 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     ENDDO  !DO K=1, WF_NUM_POINTS
 
 !> update components for final water balance tally
+    TOTAL_PRE     = TOTAL_PRE     + PREACC(I)
+    TOTAL_EVAP    = TOTAL_EVAP    + EVAPACC(I)
     TOTAL_ROF     = TOTAL_ROF     + ROFACC(I)
     TOTAL_ROFO    = TOTAL_ROFO    + ROFOACC(I)
     TOTAL_ROFS    = TOTAL_ROFS    + ROFSACC(I)
     TOTAL_ROFB    = TOTAL_ROFB    + ROFBACC(I)
-    TOTAL_EVAP    = TOTAL_EVAP    + EVAPACC(I)
-    TOTAL_PRE     = TOTAL_PRE     + PREACC(I)
+    TOTAL_PREACC  = TOTAL_PREACC  + PREACC(I)
+    TOTAL_EVAPACC = TOTAL_EVAPACC + EVAPACC(I)
     TOTAL_ROFACC  = TOTAL_ROFACC  + ROFACC(I)
     TOTAL_ROFOACC = TOTAL_ROFOACC + ROFOACC(I)
     TOTAL_ROFSACC = TOTAL_ROFSACC + ROFSACC(I)
     TOTAL_ROFBACC = TOTAL_ROFBACC + ROFBACC(I)
-    TOTAL_EVAPACC = TOTAL_EVAPACC + EVAPACC(I)
-    TOTAL_PREACC  = TOTAL_PREACC  + PREACC(I)
-    TOTAL_SNO     = TOTAL_SNO     + SNOACC(I)
-    TOTAL_SCAN    = TOTAL_SCAN    + SCANACC(I)
-    TOTAL_RCAN    = TOTAL_RCAN    + RCANACC(I)
 
 !> update components for final energy balance tally
     TOTAL_HFSACC  = TOTAL_HFSACC  + HFSACC(I)
     TOTAL_QEVPACC = TOTAL_QEVPACC + QEVPACC(I)
 
-    IF (WF_NUM_POINTS > 0) THEN !SUMMARY VALUES FOR SCREEN
-      DO J = 1, WF_NUM_POINTS !FOR MORE THAN 1 OUTPUT
-        IF (I == op%N_OUT(J)) THEN
-          PRE_OUT(J) = PREACC(I)
-          EVAP_OUT(J) = EVAPACC(I)
-          ROF_OUT(J) = ROFACC(I)
-        END IF
-      END DO
+            IF (WF_NUM_POINTS > 0) THEN !SUMMARY VALUES FOR SCREEN
+                DO J = 1, WF_NUM_POINTS !FOR MORE THAN 1 OUTPUT
+                    IF (I == op%N_OUT(J)) THEN
+                        PRE_OUT(J) = PREACC(I)
+                        EVAP_OUT(J) = EVAPACC(I)
+                        ROF_OUT(J) = ROFACC(I)
+                    END IF
+                END DO
     ELSEIF (I == CEILING(REAL(NA) / 2)) THEN !GENERAL CASE
-      PRE_OUT(1) = PREACC(I)
-      EVAP_OUT(1) = EVAPACC(I)
-      ROF_OUT(1) = ROFACC(I)
-    END IF
-
-    TOTAL_STORE = TOTAL_STORE + RCANACC(I)+ SCANACC(I) + SNOACC(I)
+                PRE_OUT(1) = PREACC(I)
+                EVAP_OUT(1) = EVAPACC(I)
+                ROF_OUT(1) = ROFACC(I)
+            END IF
 
 !> RESET ACCUMULATOR ARRAYS.
 
@@ -4687,19 +4676,33 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     EVAPACC(I)=0.
     FLUTACC(I)=0.
   ENDIF
-  END DO
-  
-  TOTAL_THLQ = TOTAL_THLQ / REAL(NSUM)
-  TOTAL_THIC = TOTAL_THIC / REAL(NSUM)
-  TOTAL_ZPND = TOTAL_ZPND / REAL(NSUM)
+            END DO
 
-  TOTAL_STORE = TOTAL_STORE + TOTAL_ZPND + SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND))
-  
+    !> update components for final water balance tally
+    DO I = 1, NA
+        IF (FRAC(I) >= 0.0) THEN
+            DO M = 1, NMTEST
+                TOTAL_SCAN = TOTAL_SCAN + cp%FAREROW(I, M)*cp%SCANROW(I, M)
+                TOTAL_RCAN = TOTAL_RCAN + cp%FAREROW(I, M)*cp%RCANROW(I, M)
+                TOTAL_SNO = TOTAL_SNO + cp%FAREROW(I, M)*cp%SNOROW(I, M)
+                TOTAL_WSNO = TOTAL_WSNO + cp%FAREROW(I, M)*WSNOROW(I, M)
+                TOTAL_ZPND = TOTAL_ZPND + cp%FAREROW(I, M)*cp%ZPNDROW(I, M)*RHOW
+                DO J = 1, IGND
+                    TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%FAREROW(I, M)*cp%THLQROW(I, M, J)*RHOW*DLZWROW(I, M, J)
+                    TOTAL_THIC(J) = TOTAL_THIC(J) + cp%FAREROW(I, M)*cp%THICROW(I, M, J)*RHOICE*DLZWROW(I, M, J)
+                END DO
+            END DO
+        END IF !IF (FRAC(I) >= 0.0) THEN
+    END DO !DO I = 1, NA
+
+    TOTAL_STORE = TOTAL_SCAN + TOTAL_RCAN + TOTAL_SNO + TOTAL_WSNO + TOTAL_ZPND + &
+        sum(TOTAL_THLQ) + sum(TOTAL_THIC)
+
   fmt_1 = '(I4,","),(I5,","),'
-  write(strInt,'(I2)')20+ignd*3
-  fmt_2 = trim(adjustl(strInt))//'(E12.5,",")'
+  write(strInt,'(I2)') 21 + ignd*3
+  fmt_2 = trim(adjustl(strInt))//'(E14.6,",")'
   fmt_out = trim(adjustl(fmt_1))//  &
-            trim(adjustl(fmt_2))//',(E12.5)'
+            trim(adjustl(fmt_2))//',(E14.6)'
   !(I4,","),(I5,","),100(E12.5,",")
   WRITE(900,'('//trim(adjustl(fmt_out))//')')IDAY,IYEAR               , &   !1
                                                  TOTAL_PREACC/TOTAL_AREA  , &   !2
@@ -4714,9 +4717,10 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                                                  TOTAL_ROFO/TOTAL_AREA    , &   !11
                                                  TOTAL_ROFS/TOTAL_AREA    , &   !12
                                                  TOTAL_ROFB/TOTAL_AREA    , &   !13
-                                                 TOTAL_SNO/TOTAL_AREA     , &   !14
                                                  TOTAL_SCAN/TOTAL_AREA    , &   !15
                                                  TOTAL_RCAN/TOTAL_AREA    , &   !16
+                                                 TOTAL_SNO/TOTAL_AREA     , &   !14
+                                                 TOTAL_WSNO/TOTAL_AREA, &
                                                  TOTAL_ZPND/TOTAL_AREA    , &   !17
                                                  (TOTAL_THLQ(J)/TOTAL_AREA, J = 1, IGND), &
                                                  (TOTAL_THIC(J)/TOTAL_AREA, J = 1, IGND), &
@@ -4725,7 +4729,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                                                  SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
                                                  (SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND)))/TOTAL_AREA, &
                                                  TOTAL_STORE/TOTAL_AREA, &
-                                                 (TOTAL_STORE - INIT_STORE)/TOTAL_AREA
+                                                 (TOTAL_STORE - TOTAL_STORE_2)/TOTAL_AREA
 
   WRITE(901,'((I4,","),(I5,","),2(E12.5,","))')IDAY,IYEAR,    &
                                                 TOTAL_HFSACC/TOTAL_AREA,  &
@@ -4733,19 +4737,21 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
 !RESET ACCUMULATION VARIABLES TO ZERO
 
+TOTAL_STORE_2 = TOTAL_STORE
 TOTAL_STORE = 0.0
-TOTAL_THLQ  = 0.0
-TOTAL_THIC  = 0.0
-TOTAL_ZPND  = 0.0
-TOTAL_RCAN  = 0.0
-TOTAL_SCAN  = 0.0
-TOTAL_SNO   = 0.0
+TOTAL_RCAN = 0.0
+TOTAL_SCAN = 0.0
+TOTAL_SNO = 0.0
+TOTAL_WSNO = 0.0
+TOTAL_ZPND = 0.0
+TOTAL_THLQ = 0.0
+TOTAL_THIC = 0.0
+TOTAL_PRE=0.0
+TOTAL_EVAP=0.0
 TOTAL_ROF=0.0
 TOTAL_ROFO=0.0
 TOTAL_ROFS=0.0
 TOTAL_ROFB=0.0
-TOTAL_EVAP=0.0
-TOTAL_PRE=0.0
 TOTAL_HFSACC = 0.0
 TOTAL_QEVPACC = 0.0
 
