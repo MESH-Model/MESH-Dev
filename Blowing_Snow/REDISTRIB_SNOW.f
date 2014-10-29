@@ -1,7 +1,7 @@
       SUBROUTINE REDISTRIB_SNOW(ILG,IL1,IL2,NMOS,NML,TSNOW,ZSNOW,
      1     RHOSNO,SNO,TSNOCS,ZSNOCS,HCPSCS,RHOSCS,TSNOGS,
      2     ZSNOGS,HCPSGS,RHOSGS,TSNOWC,ZSNOWC,HCPSC,RHOSC,TSNOWG,
-     3     ZSNOWG,HCPSG,RHOSG,GCGRD,GRID_SQUARE,Drift,RHOSNOds,FARE,
+     3     ZSNOWG,HCPSG,RHOSG,GCGRD,GRID_SQUARE,Drift,FARE,
      4     TSNOWds,distrib,WSNOCS,WSNOGS,FCS,FGS,FC,FG,Deposition,
      5     TOVRFL,OVRFLW,TRUNOF,RUNOFF,ROFN,PCPG,HTCS,WSNOW,N)
 C
@@ -23,7 +23,7 @@ C
 C
 C     * INPUT ARRAYS.
 C
-      REAL GCGRD(ILG),Drift(ILG),RHOSNOds(ILG),
+      REAL GCGRD(ILG),Drift(ILG)
      1     FARE(ILG),TSNOWds(ILG),distrib(ILG),WSNOCS(ILG),
      2     WSNOGS(ILG),FCS(ILG),FGS(ILG),FC(ILG),FG(ILG),
      3     DistribLoss(ILG)
@@ -60,12 +60,9 @@ C
       DO 100 I=IL1,IL2 !LOOP GRID SQUARES(IL2=NA)
         IF(GCGRD(I).LE.-0.5) THEN
           TSNOWSumDrift=TFREZ 
-          RHOSNOSumDrift=0.0
-          RHOSNOSumDriftPREV=0.0
-          HCPSNOSumDriftPREV=0.0
+          RHOSNOSumDrift=300.!mm 0.0
+          HCPSNOSumDrift=HCPICE*RHOSNOSumDrift/RHOICE
           TSNOWSumDriftPREV=TFREZ
-          RHOSNOSumDrift=0.0
-          HCPSNOSumDrift=0.0
           SumDrift=0.0
           GRUsInGS=0
           XSNOCS=0.0
@@ -76,33 +73,20 @@ C
             IF(GRID_SQUARE(K).EQ.I) THEN
              HTCS(K)=0.
              IF(Drift(K).GT.0.) THEN
-              RHOSNOSumDriftPREV=RHOSNOSumDrift
-              HCPSNOSumDriftPREV=HCPSNOSumDrift
               TSNOWSumDriftPREV=TSNOWSumDrift
-              ! set density of drifting snow in grid square
-              RHOSNOSumDrift=(RHOSNOds(K)*Drift(K)*FARE(K)
-     1                     +RHOSNOSumDrift*SumDrift)/(Drift(K)+SumDrift)
-              HCPSNOds=HCPICE*RHOSNOds(K)/RHOICE
-              HCPSNOSumDrift=HCPICE*RHOSNOSumDrift/RHOICE
               ! TSNOWSumDrift: Kelvin following below calculation
-              IF(RHOSNOSumDriftPREV.GT.0.) THEN
                 ! set temperature of drifting snow in grid square
                 TSNOWSumDrift=(TSNOWSumDriftPREV*(SumDrift
-     1                     /RHOSNOSumDriftPREV)*HCPSNOSumDriftPREV 
-     2                  + TSNOWds(K)*(Drift(K)*FARE(K)/RHOSNOds(K))*
-     3                    HCPSNOds)/((SumDrift/RHOSNOSumDriftPREV) 
-     4                    *HCPSNOSumDriftPREV +
-     5                 (Drift(K)*FARE(K)/RHOSNOds(K))*HCPSNOds)
-              ELSE ! RHOSNOSumDriftPREV = 0.
-                TSNOWSumDrift=(TSNOWds(K)*(Drift(K)*FARE(K)/
-     1                    RHOSNOds(K))*HCPSNOds)/
-     2                    ((Drift(K)*FARE(K)/RHOSNOds(K))*HCPSNOds)
-              ENDIF
+     1                     /RHOSNOSumDrift)*HCPSNOSumDrift 
+     2                +TSNOWds(K)*(Drift(K)*FARE(K)/RHOSNOSumDrift)*
+     3                    HCPSNOSumDrift)/((SumDrift/RHOSNOSumDrift) 
+     4                    *HCPSNOSumDrift +
+     5               (Drift(K)*FARE(K)/RHOSNOSumDrift)*HCPSNOSumDrift)
               ! total snow drift in grid square
               SumDrift=SumDrift+Drift(K)*FARE(K)
-             ENDIF
+             ENDIF !(Drift(K).GT.0.)
             GRUsInGS=GRUsInGS+1 !number of GRUs in grid square
-            ENDIF
+            ENDIF !(GRID_SQUARE(K).EQ.I)
   200     CONTINUE  
         ENDIF
 
@@ -118,7 +102,7 @@ C
                  IF(FCS(nn).GT.0.) THEN
                    HTCS(nn)=HTCS(nn)-FCS(nn)*HCPSCS(nn)*(TSNOCS(nn)
      1                  +TFREZ)*ZSNOCS(nn)/DELT
-                   ZSNOCS(nn)=ZSNOCS(nn)+transport/200.
+                   ZSNOCS(nn)=ZSNOCS(nn)+transport/RHOSNOSumDrift
                    HCPSCS(nn)=HCPICE*RHOSCS(nn)/RHOICE+HCPW*WSNOCS(nn)/
      1                  (RHOW*ZSNOCS(nn))
                    HTCS(nn)=HTCS(nn)+FCS(nn)*HCPSCS(nn)*(TSNOCS(nn)
@@ -128,7 +112,7 @@ C
                  IF(FGS(nn).GT.0.) THEN
                    HTCS(nn)=HTCS(nn)-FGS(nn)*HCPSGS(nn)*(TSNOGS(nn)
      1                  +TFREZ)*ZSNOGS(nn)/DELT
-                   ZSNOGS(nn)=ZSNOGS(nn)+transport/200.
+                   ZSNOGS(nn)=ZSNOGS(nn)+transport/RHOSNOSumDrift
                    HCPSGS(nn)=HCPICE*RHOSGS(nn)/RHOICE+HCPW*WSNOGS(nn)/
      1                  (RHOW*ZSNOGS(nn))
                    HTCS(nn)=HTCS(nn)+FGS(nn)*HCPSGS(nn)*(TSNOGS(nn)
@@ -138,7 +122,7 @@ C
                  IF(FC(nn).GT.0.) THEN
                    HTCS(nn)=HTCS(nn)-FC(nn)*HCPSC(nn)*(TSNOWC(nn)+TFREZ)
      1                  *ZSNOWC(nn)/DELT
-                   ZSNOWC(nn)=ZSNOWC(nn)+transport/200.
+                   ZSNOWC(nn)=ZSNOWC(nn)+transport/RHOSNOSumDrift
                    HCPSC(nn)=HCPICE*RHOSC(nn)/RHOICE
                    HTCS(nn)=HTCS(nn)+FC(nn)*HCPSC(nn)*(TSNOWC(nn)+TFREZ)
      1                  *ZSNOWC(nn)/DELT
@@ -147,7 +131,7 @@ C
                  IF(FG(nn).GT.0.) THEN
                    HTCS(nn)=HTCS(nn)-FG(nn)*HCPSG(nn)*(TSNOWG(nn)+TFREZ)
      1                  *ZSNOWG(nn)/DELT
-                   ZSNOWG(nn)=ZSNOWG(nn)+transport/200.
+                   ZSNOWG(nn)=ZSNOWG(nn)+transport/RHOSNOSumDrift
                    HCPSG(nn)=HCPICE*RHOSG(nn)/RHOICE
                    HTCS(nn)=HTCS(nn)+FG(nn)*HCPSG(nn)*(TSNOWG(nn)+TFREZ)
      1                  *ZSNOWG(nn)/DELT

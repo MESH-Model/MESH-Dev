@@ -9,7 +9,7 @@
      9       fetch, N_S, A_S, Ht,
      9       ST, SU, SQ, PRES, PRE,
      +       DrySnow, SnowAge, Drift, Subl,
-     +       TSNOWds,RHOSNOds,
+     +       TSNOWds,
      +       ILG,IL1,IL2,N,ZREFM,ZOMLCS,ZOMLNS)
 !    +                 ST, SU, SQ, PRES, 
 !    1                Drift, Subl, TSNOWds, RHOSNOds, ZSNOWds,
@@ -58,14 +58,14 @@ C
 C
 C     * OUTPUT ARRAYS.
 C
-      REAL Subl(ILG),Drift(ILG),RHOSNOds(ILG),TSNOWds(ILG)
+      REAL Subl(ILG),Drift(ILG),TSNOWds(ILG)
 C
 C     * TEMPORARY VARIABLES.
 C
       REAL Znod, Ustar, Ustn, E_StubHt, Lambda, Ut,
      1     Uten_Prob, DriftH, SublH, Prob, mBeta,
      2     gru_loss, sub_loss, swe, sub_zloss,
-     3     ZSNOWds,u10,z0
+     3     RHOSNOds,ZSNOWds,u10,z0
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -131,8 +131,12 @@ C         !> depths(m), SWE(mm; kg/m^2)
            E_StubHt=0.0001
          ENDIF !IF(E_StubHt.LT.0.0001) THEN
 C
-         z0=(FCS(I)*exp(ZOMLCS(I))+FGS(I)*exp(ZOMLNS(I)))
-     1       /(FCS(I)+FGS(I))
+         if((FCS(I)+FGS(I)).gt.0.)then
+           z0=(FCS(I)*exp(ZOMLCS(I))+FGS(I)*exp(ZOMLNS(I)))
+     1         /(FCS(I)+FGS(I))
+         else
+           z0=E_StubHt*2/3
+         endif
          u10=SU(I)*log(10./z0)/log(ZREFM(I)/z0)
          
            !> Eq. 6.2 rev. Pomeroy thesis, Ustar over fallow
@@ -171,8 +175,8 @@ C
              Drift(I)=SNO(I)-Subl(I)
            ENDIF
 C
-           RHOSNOds(I)=RHOSNO(I)
-           ZSNOWds=(Drift(I)+Subl(I))/RHOSNOds(I)
+           RHOSNOds=RHOSNO(I)
+           ZSNOWds=(Drift(I)+Subl(I))/RHOSNOds
            ZSNOW(I)=ZSNOW(I)-ZSNOWds
            IF(ZSNOW(I).LE.0.) THEN
              ZSNOW(I)=0.
@@ -189,7 +193,6 @@ C
            Subl(I)=0.0
            Drift(I)=0.0
            ZSNOWds=0.0
-           RHOSNOds(I)=0.0
            TSNOWds(I)=TSNOW(I)
          ENDIF !IF(Prob.GT.0.001)  THEN
        ELSE
@@ -197,7 +200,6 @@ C
          Subl(I)=0.0
          Drift(I)=0.0
          ZSNOWds=0.0
-         RHOSNOds(I)=0.0
          TSNOWds(I)=TSNOW(I)
        ENDIF !IF(ZSNOW(I).GT.1.0E-3) THEN
 C
