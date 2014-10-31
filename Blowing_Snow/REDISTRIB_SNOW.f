@@ -23,7 +23,7 @@ C
 C
 C     * INPUT ARRAYS.
 C
-      REAL GCGRD(ILG),Drift(ILG)
+      REAL GCGRD(ILG),Drift(ILG),
      1     FARE(ILG),TSNOWds(ILG),distrib(ILG),WSNOCS(ILG),
      2     WSNOGS(ILG),FCS(ILG),FGS(ILG),FC(ILG),FG(ILG),
      3     DistribLoss(ILG)
