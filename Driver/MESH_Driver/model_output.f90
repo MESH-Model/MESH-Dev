@@ -12,7 +12,7 @@
                 real, dimension(:)  ,allocatable :: TOTAL_ZPND  , TOTAL_RCAN , TOTAL_SCAN
                 real, dimension(:)  ,allocatable :: TOTAL_SNO   , TOTAL_STORE , DSTG
                 real, dimension(:)  ,allocatable :: TOTAL_ROFO  , TOTAL_ROFS , TOTAL_ROFB
-                real, dimension(:,:),allocatable :: TOTAL_THLQ  , TOTAL_THIC
+                real, dimension(:,:),allocatable :: TOTAL_liqws , TOTAL_frzws
 
                 !Energy Balance
                 real, dimension(:)  ,allocatable :: TOTAL_HFSACC   , TOTAL_QEVPACC
@@ -31,10 +31,45 @@
 
                 ! State Variables soil
                 real, dimension(:,:,:), allocatable :: tbar_y, tbar_m, tbar_s !Temperature in the soil layers
-                real, dimension(:,:,:), allocatable :: thlq_y, thlq_m, thlq_s !Liquid content in the soil layer
-                real, dimension(:,:,:), allocatable :: thic_y, thic_m, thic_s !Ice content in the soil layer
+                real, dimension(:,:,:), allocatable :: liqws_y, liqws_m, liqws_s !Liquid content in the soil layer
+                real, dimension(:,:,:), allocatable :: frzws_y, frzws_m, frzws_s !Ice content in the soil layer
+                real, dimension(:,:), allocatable :: rcan_y, rcan_m, rcan_s ! Rainfall intercepted by the canopy
+                real, dimension(:,:), allocatable :: scan_y, scan_m, scan_s ! Snowfall intercepted by the canopy
+                real, dimension(:,:), allocatable :: pndw_y, pndw_m, pndw_s ! Water ponded at the surface of the soil
+                real, dimension(:,:), allocatable :: sno_y, sno_m, sno_s ! Snow stored at the surface of the soil (snowpack)
+                real, dimension(:,:), allocatable :: wsno_y, wsno_m, wsno_s ! Water stored in the snowpack
 
             END TYPE
+
+            !> Data type to store components of the water balance
+            !* pre(:): Precipitation [kg m-2] (1: grid)
+            !* evap(:): Evaporation (water lost by evapotranspiration and sublimation, both rain and snow components) [kg m-2] (1: grid)
+            !* rof(:): Runoff (combination of overland-, subsurface-, and base-flows) [kg m-2] (1: grid)
+            !* rofo(:): Overland flow component of runoff [kg m-2] (1: grid)
+            !* rofs(:): Subsurface flow component of runoff [kg m-2] (1: grid)
+            !* rofb(:): Baseflow component of runoff [kg m-2] (1: grid)
+            !* rcan(:): Rainfall intercepted by the canopy [kg m-2] (1: grid)
+            !* sncan(:): Snowfall intercepted by the canopy [kg m-2] (1: grid)
+            !* pndw(:): Water ponded at the surface of the soil [kg m-2] (1: grid)
+            !* sno(:): Snowpack at the surface of the soil [kg m-2] (1: grid)
+            !* wsno(:): Water stored in the snowpack [kg m-2] (1: grid)
+            !* stg(:): Water stored in the system [kg m-2] (1: grid)
+            !* dstg(:): Difference of water stored in the system compared to the previous time-step of the element [kg m-2] (1: grid)
+            !* grid_area(:): Fractional area of the grid-square [m2 m-2] (1: grid)
+            !* liqws(:, :): Water stored in the soil matrix [kg m-2] (1: grid, 2: soil layer)
+            !* frzws(:, :): Frozen water (ice) stored in the soil matrix [kg m-2] (1: grid, 2: soil layer)
+            !* basin_area: Total fractional area of the basin [m2 m-2] (1: grid)
+            type water_balance
+                real, dimension(:), allocatable :: &
+                    pre, evap, rof, &
+                    rofo, rofs, rofb, &
+                    rcan, sncan, pndw, sno, wsno, &
+                    stg, dstg, &
+                    grid_area
+                real, dimension(:, :), allocatable :: &
+                    liqws, frzws
+                real :: basin_area
+            end type water_balance
 
         !>******************************************************************************
             TYPE info_out
@@ -75,7 +110,7 @@
                      bal%TOTAL_ROFS(ts%nr_days)  , bal%TOTAL_ROFB(ts%nr_days)  , &
                      bal%TOTAL_STORE(ts%nr_days) , bal%DSTG(ts%nr_days)        )
 
-            allocate(bal%TOTAL_THIC(ts%nr_days,ignd)  , bal%TOTAL_THLQ(ts%nr_days,ignd))
+            allocate(bal%TOTAL_frzws(ts%nr_days,ignd)  , bal%TOTAL_liqws(ts%nr_days,ignd))
 
             allocate(bal%TOTAL_HFSACC(ts%nr_days) , bal%TOTAL_QEVPACC(ts%nr_days))
 
@@ -91,7 +126,7 @@
                                           zpnd    , rcan  , scann  , &
                                           sno     , rofo  , rofs   , &
                                           rofb    , stg   , dstg   , &
-                                          thic    , thlq  , hfsacc , &
+                                          frzws   , liqws , hfsacc , &
                                           qevpacc ,                  &
                                           idate   , isavg , nhours   )
         !>------------------------------------------------------------------------------
@@ -109,7 +144,7 @@
 
             real, intent(in) ::  pre , evp , rof, zpnd , rcan, scann
             real, intent(in) ::  sno , rofo, rofs,rofb , stg , dstg
-            real, intent(in) ::  thic(ignd),thlq(ignd)
+            real, intent(in) ::  frzws(ignd),liqws(ignd)
             real, intent(in) ::  hfsacc, qevpacc
 
             !Output
@@ -193,12 +228,12 @@
 
             do i = 1, ignd
 
-                bal%TOTAL_THIC(idate,i) = bal%TOTAL_THIC(idate,i) + thic(i)
-                bal%TOTAL_THLQ(idate,i) = bal%TOTAL_THLQ(idate,i) + thlq(i)
+                bal%TOTAL_frzws(idate,i) = bal%TOTAL_frzws(idate,i) + frzws(i)
+                bal%TOTAL_liqws(idate,i) = bal%TOTAL_liqws(idate,i) + liqws(i)
 
                 if (isavg) then
-                    bal%TOTAL_THIC(idate,i) = bal%TOTAL_THIC(idate,i)/real(nhours)
-                    bal%TOTAL_THLQ(idate,i) = bal%TOTAL_THLQ(idate,i)/real(nhours)
+                    bal%TOTAL_frzws(idate,i) = bal%TOTAL_frzws(idate,i)/real(nhours)
+                    bal%TOTAL_liqws(idate,i) = bal%TOTAL_liqws(idate,i)/real(nhours)
                 endif
 
             enddo
@@ -214,7 +249,7 @@
 
             end subroutine Update_OutBal_Intg
         !>******************************************************************************
-            subroutine Init_out(vr,ts,ifo,na,ignd)
+            subroutine Init_out(vr, wb, ts, ifo, na, ignd)
         !>------------------------------------------------------------------------------
         !>  Description: Init Fields
         !>
@@ -223,10 +258,11 @@
             implicit none
 
             !Inputs
-            integer :: na,ignd
+            integer :: na, ignd
 
             !Inputs-Output
             type(OUT_FLDS)     :: vr
+            type(water_balance) :: wb
             type(dates_model) :: ts
             type(info_out)    :: ifo
 
@@ -373,49 +409,164 @@
 
                         endif
 
-                    case ('THLQ','LiquidContent_soil_layers')
+                    case ('THLQ','LiquidContent_soil_layers', 'LIQW', 'LIQWS')
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            allocate(vr%thlq_y(na,ignd,ts%nyears))
-                            vr%thlq_y = 0.0e0
+                            allocate(vr%LIQWS_y(na,ignd,ts%nyears))
+                            vr%LIQWS_y = 0.0e0
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            allocate(vr%thlq_m(na,ignd,ts%nmonths))
-                            vr%thlq_m = 0.0e0
+                            allocate(vr%LIQWS_m(na,ignd,ts%nmonths))
+                            vr%LIQWS_m = 0.0e0
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            allocate(vr%thlq_s(na,ignd,ts%nseason))
-                            vr%thlq_s = 0.0d0
+                            allocate(vr%LIQWS_s(na,ignd,ts%nseason))
+                            vr%LIQWS_s = 0.0d0
 
                         endif
 
-                    case ('THIC','ICEContent_soil_layers')
+                    case ('THIC','ICEContent_soil_layers', 'FRZW', 'FRZWS')
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            allocate(vr%thic_y(na,ignd,ts%nyears))
-                            vr%thic_y = 0.0e0
+                            allocate(vr%FRZWS_y(na,ignd,ts%nyears))
+                            vr%FRZWS_y = 0.0e0
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            allocate(vr%thic_m(na,ignd,ts%nmonths))
-                            vr%thic_m = 0.0e0
+                            allocate(vr%FRZWS_m(na,ignd,ts%nmonths))
+                            vr%FRZWS_m = 0.0e0
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            allocate(vr%thic_s(na,ignd,ts%nseason))
-                            vr%thic_s = 0.0e0
+                            allocate(vr%FRZWS_s(na,ignd,ts%nseason))
+                            vr%FRZWS_s = 0.0e0
+
+                        endif
+
+                    case ('RCAN')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            allocate(vr%RCAN_y(na,ts%nyears))
+                            vr%RCAN_y = 0.0e0
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            allocate(vr%RCAN_m(na,ts%nmonths))
+                            vr%RCAN_m = 0.0e0
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            allocate(vr%RCAN_s(na,ts%nseason))
+                            vr%RCAN_s = 0.0e0
+
+                        endif
+
+                    case ('SCAN', 'SNCAN', 'SCANN')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            allocate(vr%SCAN_y(na,ts%nyears))
+                            vr%SCAN_y = 0.0e0
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            allocate(vr%SCAN_m(na,ts%nmonths))
+                            vr%SCAN_m = 0.0e0
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            allocate(vr%SCAN_s(na,ts%nseason))
+                            vr%SCAN_s = 0.0e0
+
+                        endif
+
+                    case ('ZPND', 'PNDW')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            allocate(vr%PNDW_y(na,ts%nyears))
+                            vr%PNDW_y = 0.0e0
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            allocate(vr%PNDW_m(na,ts%nmonths))
+                            vr%PNDW_m = 0.0e0
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            allocate(vr%PNDW_s(na,ts%nseason))
+                            vr%PNDW_s = 0.0e0
+
+                        endif
+
+                    case ('SNO')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            allocate(vr%SNO_y(na,ts%nyears))
+                            vr%SNO_y = 0.0e0
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            allocate(vr%SNO_m(na,ts%nmonths))
+                            vr%SNO_m = 0.0e0
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            allocate(vr%SNO_s(na,ts%nseason))
+                            vr%SNO_s = 0.0e0
+
+                        endif
+
+                    case ('WSNO')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            allocate(vr%WSNO_y(na,ts%nyears))
+                            vr%WSNO_y = 0.0e0
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            allocate(vr%WSNO_m(na,ts%nmonths))
+                            vr%WSNO_m = 0.0e0
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            allocate(vr%WSNO_s(na,ts%nseason))
+                            vr%WSNO_s = 0.0e0
 
                         endif
 
@@ -428,10 +579,38 @@
 
             close(909)
 
+            !> Allocate and initialize water balance variable
+            allocate( &
+                    wb%pre(na), wb%evap(na), wb%rof(na), &
+                    wb%rofo(na), wb%rofs(na), wb%rofb(na), &
+                    wb%rcan(na), wb%sncan(na), wb%pndw(na), wb%sno(na), wb%wsno(na), &
+                    wb%stg(na), wb%dstg(na), &
+                    wb%grid_area(na), &
+                    wb%liqws(na, ignd), wb%frzws(na, ignd))
+            wb%pre(na) = 0.0
+            wb%evap(na) = 0.0
+            wb%rof(na) = 0.0
+            wb%rofo(na) = 0.0
+            wb%rofs(na) = 0.0
+            wb%rofb(na) = 0.0
+            wb%rcan(na) = 0.0
+            wb%sncan(na) = 0.0
+            wb%pndw(na) = 0.0
+            wb%sno(na) = 0.0
+            wb%wsno(na) = 0.0
+            wb%stg(na) = 0.0
+            wb%dstg(na) = 0.0
+            wb%grid_area(na) = 0.0
+            wb%liqws(na, ignd) = 0.0
+            wb%frzws(na, ignd) = 0.0
+            wb%basin_area = 0.0
+
             end subroutine Init_out
             subroutine UpdateFIELDSOUT(vr    ,  ts   , ifo           , &
                                        precp ,  evap , roff , dstg   , &
-                                       tbar  ,  thlq , thic          , &
+                                       tbar  ,  liqws, frzws         , &
+                                       rcan  ,  scann                , &
+                                       pndw  ,  sno  , wsno          , &
                                        na    ,  ignd                 , &
                                        IDAY  ,  IYEAR                )
         !>------------------------------------------------------------------------------
@@ -446,8 +625,10 @@
             type(dates_model)       :: ts
             type(info_out)          :: ifo
 
-            real,dimension(na)      :: precp , evap , roff , dstg
-            real,dimension(na,ignd) :: tbar  , thlq , thic
+            real,dimension(na)      :: precp , evap , roff , dstg , &
+                                       rcan  , scann              , &
+                                       pndw  , sno  , wsno
+            real,dimension(na,ignd) :: tbar  , liqws, frzws
 
             !Inputs-Output
             type(OUT_FLDS)      :: vr
@@ -564,43 +745,143 @@
 
                         endif
 
-                    case ('THLQ','LiquidContent_soil_layers')
+                    case ('THLQ','LiquidContent_soil_layers', 'LIQW', 'LIQWS')
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            vr%thlq_y(:,:,iy) = vr%thlq_y(:,:,iy) + thlq
+                            vr%LIQWS_y(:,:,iy) = vr%LIQWS_y(:,:,iy) + liqws
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            vr%thlq_m(:,:,im) = vr%thlq_m(:,:,im) + thlq
+                            vr%LIQWS_m(:,:,im) = vr%LIQWS_m(:,:,im) + liqws
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            vr%thlq_s(:,:,iss) = vr%thlq_s(:,:,iss) + thlq
+                            vr%LIQWS_s(:,:,iss) = vr%LIQWS_s(:,:,iss) + liqws
 
                         endif
 
-                    case ('THIC','ICEContent_soil_layers')
+                    case ('THIC','ICEContent_soil_layers', 'FRZW', 'FRZWS')
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            vr%thic_y(:,:,iy) = vr%thic_y(:,:,iy) + thic
+                            vr%FRZWS_y(:,:,iy) = vr%FRZWS_y(:,:,iy) + frzws
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            vr%thic_m(:,:,im) = vr%thic_m(:,:,im) + thic
+                            vr%FRZWS_m(:,:,im) = vr%FRZWS_m(:,:,im) + frzws
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            vr%thic_s(:,:,iss) = vr%thic_s(:,:,iss) + thic
+                            vr%FRZWS_s(:,:,iss) = vr%FRZWS_s(:,:,iss) + frzws
+
+                        endif
+
+                    case ('RCAN')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            vr%RCAN_y(:,iy) = vr%RCAN_y(:,iy) + RCAN
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            vr%RCAN_m(:,im) = vr%RCAN_m(:,im) + RCAN
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            vr%RCAN_s(:,iss) = vr%RCAN_s(:,iss) + RCAN
+
+                        endif
+
+                    case ('SCAN', 'SNCAN', 'SCANN')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            vr%SCAN_y(:,iy) = vr%SCAN_y(:,iy) + SCANN
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            vr%SCAN_m(:,im) = vr%SCAN_m(:,im) + SCANN
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            vr%SCAN_s(:,iss) = vr%SCAN_s(:,iss) + SCANN
+
+                        endif
+
+                    case ('ZPND', 'PNDW')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            vr%PNDW_y(:,iy) = vr%PNDW_y(:,iy) + PNDW
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            vr%PNDW_m(:,im) = vr%PNDW_m(:,im) + PNDW
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            vr%PNDW_s(:,iss) = vr%PNDW_s(:,iss) + PNDW
+
+                        endif
+
+                    case ('SNO')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            vr%SNO_y(:,iy) = vr%SNO_y(:,iy) + SNO
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            vr%SNO_m(:,im) = vr%SNO_m(:,im) + SNO
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            vr%SNO_s(:,iss) = vr%SNO_s(:,iss) + SNO
+
+                        endif
+
+                    case ('WSNO')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            vr%WSNO_y(:,iy) = vr%WSNO_y(:,iy) + WSNO
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            vr%WSNO_m(:,im) = vr%WSNO_m(:,im) + WSNO
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            vr%WSNO_s(:,iss) = vr%WSNO_s(:,iss) + WSNO
 
                         endif
 
@@ -744,12 +1025,12 @@
                             enddo
                         endif
 
-                    case ('THLQ','LiquidContent_soil_layers')
+                    case ('THLQ','LiquidContent_soil_layers', 'LIQW', 'LIQWS')
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
                             do j = 1, nai(2)
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%thlq_y(:,j,:), ts, ifo, i, 'Y',na, ts%nyears,st)
+                                call WriteFields_i(vr%LIQWS_y(:,j,:), ts, ifo, i, 'Y',na, ts%nyears,st)
                             enddo
 
                         endif
@@ -757,30 +1038,30 @@
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
                             do j = 1, nai(2)
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%thlq_m(:,j,:), ts, ifo, i,  'M', na, ts%nmonths,st)
+                                call WriteFields_i(vr%LIQWS_m(:,j,:), ts, ifo, i,  'M', na, ts%nmonths,st)
                             enddo
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
                             do j = 1, nai(2)
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%thlq_s(:,j,:), ts, ifo, i,  'S', na, ts%nseason,st)
+                                call WriteFields_i(vr%LIQWS_s(:,j,:), ts, ifo, i,  'S', na, ts%nseason,st)
                             enddo
                         endif
 
-                    case ('THIC','ICEContent_soil_layers')
+                    case ('THIC','ICEContent_soil_layers', 'FRZW', 'FRZWS')
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
                             do j = 1, nai(2)
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%thic_y(:,j,:), ts, ifo, i, 'Y',na, ts%nyears,st)
+                                call WriteFields_i(vr%FRZWS_y(:,j,:), ts, ifo, i, 'Y',na, ts%nyears,st)
                             enddo
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
                             do j = 1, nai(2)
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%thic_m(:,j,:), ts, ifo, i,  'M' , NA, ts%nmonths,st)
+                                call WriteFields_i(vr%FRZWS_m(:,j,:), ts, ifo, i,  'M' , NA, ts%nmonths,st)
                             enddo
                         endif
 
@@ -788,8 +1069,108 @@
 
                             do j = 1, nai(2)
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%thic_s(:,j,:), ts, ifo, i,  'S' , NA, ts%nseason,st)
+                                call WriteFields_i(vr%FRZWS_s(:,j,:), ts, ifo, i,  'S' , NA, ts%nseason,st)
                             enddo
+                        endif
+
+                    case ('RCAN')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            call WriteFields_i(vr%RCAN_y, ts, ifo, i, 'Y', na, ts%nyears)
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            call WriteFields_i(vr%RCAN_m, ts, ifo, i,  'M', na, ts%nmonths)
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            call WriteFields_i(vr%RCAN_s, ts, ifo, i,  'S',na, ts%nseason)
+
+                        endif
+
+                    case ('SCAN', 'SNCAN', 'SCANN')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            call WriteFields_i(vr%SCAN_y, ts, ifo, i, 'Y', na, ts%nyears)
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            call WriteFields_i(vr%SCAN_m, ts, ifo, i,  'M', na, ts%nmonths)
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            call WriteFields_i(vr%SCAN_s, ts, ifo, i,  'S',na, ts%nseason)
+
+                        endif
+
+                    case ('ZPND', 'PNDW')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            call WriteFields_i(vr%PNDW_y, ts, ifo, i, 'Y', na, ts%nyears)
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            call WriteFields_i(vr%PNDW_m, ts, ifo, i,  'M', na, ts%nmonths)
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            call WriteFields_i(vr%PNDW_s, ts, ifo, i,  'S',na, ts%nseason)
+
+                        endif
+
+                    case ('SNO')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            call WriteFields_i(vr%SNO_y, ts, ifo, i, 'Y', na, ts%nyears)
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            call WriteFields_i(vr%SNO_m, ts, ifo, i,  'M', na, ts%nmonths)
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            call WriteFields_i(vr%SNO_s, ts, ifo, i,  'S',na, ts%nseason)
+
+                        endif
+
+                    case ('WSNO')
+
+                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
+
+                            call WriteFields_i(vr%WSNO_y, ts, ifo, i, 'Y', na, ts%nyears)
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
+
+                            call WriteFields_i(vr%WSNO_m, ts, ifo, i,  'M', na, ts%nmonths)
+
+                        endif
+
+                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
+
+                            call WriteFields_i(vr%WSNO_s, ts, ifo, i,  'S',na, ts%nseason)
+
                         endif
 
                     case default

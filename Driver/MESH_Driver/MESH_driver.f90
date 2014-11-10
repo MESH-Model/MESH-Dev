@@ -797,6 +797,7 @@ TYPE(HydrologyParameters) :: hp
 !>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
 !> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
 TYPE(OUT_FLDS)     :: VR
+type(water_balance) :: wb
 TYPE(DATES_MODEL) :: TS
 TYPE(INFO_OUT)    :: IOF
 
@@ -1821,6 +1822,12 @@ ENDIF
 !>  End of subbasin section
 !> **********************************************************************
 
+!> *********************************************************************
+!> Initialize water balance output fields
+!> *********************************************************************
+if (outfieldsflag == 1) &
+    call init_out(vr, wb, ts, iof, na, ignd)
+
 !> Set value of FAREROW: 
 !todo - flag this as an issue to explore later and hide basin average code
 !todo - document the problem
@@ -1833,7 +1840,9 @@ DO I = 1, NA
     ! using Dan Princz's instructions for EnSim
     ! FRAC can be greater than 1.00
     ! So, we cannot use FAREROW in place of BASIN_FRACTION
+        wb%grid_area(i) = wb%grid_area(i) + cp%farerow(i, m)
     END DO
+    wb%basin_area = wb%basin_area + wb%grid_area(i)
 END DO
 
 !> routing parameters
@@ -3335,15 +3344,6 @@ IF(PBSMFLAG == 1)THEN
 ENDIF !PBSMFLAG == 1
 
 !> *********************************************************************
-!> Resume flag to initialize the waterbalances fields outputs
-!> *********************************************************************
-IF (OUTFIELDSFLAG .EQ. 1)THEN
-
-    CALL INIT_OUT(vr,ts,iOF,NA,IGND)
-
-ENDIF
-
-!> *********************************************************************
 !> Start of main loop that is run each half hour
 !> *********************************************************************
 DO WHILE(.NOT.ENDDATE .AND. .NOT.ENDDATA)
@@ -3656,11 +3656,16 @@ IF (JAN == 1) THEN
             DO M = 1, NMTEST
                 INIT_STORE = INIT_STORE + cp%FAREROW(I, M)* &
                     (cp%RCANROW(I, M) + cp%SCANROW(I, M) + cp%SNOROW(I, M) + WSNOROW(I, M) + cp%ZPNDROW(I, M)*RHOW)
+                wb%stg(i) = cp%farerow(i, m)* &
+                    (cp%rcanrow(i, m) + cp%scanrow(i, m) + cp%snorow(i, m) + wsnorow(i, m) + cp%zpndrow(i, m)*rhow)
                 DO J = 1, IGND
                     INIT_STORE = INIT_STORE + cp%FAREROW(I, M)* &
                         (cp%THLQROW(I, M, J)*RHOW + cp%THICROW(I, M, J)*RHOICE)*DLZWROW(I, M, J)
+                    wb%stg(i) = cp%farerow(i, m)* &
+                        (cp%thlqrow(i, m, j)*rhow + cp%thicrow(i, m, j)*rhoice)*dlzwrow(i, m, j)
                 END DO
             END DO
+            wb%dstg(i) = wb%stg(i)
         END IF
     END DO
     TOTAL_STORE_2 = INIT_STORE
@@ -4472,25 +4477,6 @@ ENDDO !DO I=1,NA
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
 
-!>  Added by Gonzalo Sapriza
-    !DELTA STORAGE
-    DO I = 1, IGND
-
-        DSTG = DSTG + THLQ_FLD(:,I) + THIC_FLD(:,I)
-
-    ENDDO
-
-    DSTG = DSTG + RCANACC + SCANACC + SNOACC - STG_I
-
-   IF (OUTFIELDSFLAG .eq. 1) THEN
-    CALL UPDATEFIELDSOUT(vr     ,  ts                 , iof                 , &
-                         PREACC ,  EVAPACC            , ROFACC              , &
-                         DSTG   ,  TBARACC/REAL(NSUM) , THLQ_FLD/REAL(NSUM) , &
-                         THIC_FLD/REAL(NSUM)          , NA          ,  IGND , &
-                         IDAY   ,        IYEAR                              )
-   ENDIF
-   STG_I = DSTG + STG_I
-
     !no omp b/c of file IO
   DO I=1,NA
   IF(FRAC(I) /= 0.0)THEN
@@ -4618,6 +4604,12 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     TOTAL_ROFOACC = TOTAL_ROFOACC + ROFOACC(I)
     TOTAL_ROFSACC = TOTAL_ROFSACC + ROFSACC(I)
     TOTAL_ROFBACC = TOTAL_ROFBACC + ROFBACC(I)
+    wb%pre(i) = wb%pre(i) + preacc(i)
+    wb%evap(i) = wb%evap(i) + evapacc(i)
+    wb%rof(i) = wb%rof(i) + rofacc(i)
+    wb%rofo(i) = wb%rofo(i) + rofoacc(i)
+    wb%rofs(i) =  wb%rofs(i) + rofsacc(i)
+    wb%rofb(i) = wb%rofb(i) + rofbacc(i)
 
 !> update components for final energy balance tally
     TOTAL_HFSACC  = TOTAL_HFSACC  + HFSACC(I)
@@ -4687,11 +4679,21 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                 TOTAL_SNO = TOTAL_SNO + cp%FAREROW(I, M)*cp%SNOROW(I, M)
                 TOTAL_WSNO = TOTAL_WSNO + cp%FAREROW(I, M)*WSNOROW(I, M)
                 TOTAL_ZPND = TOTAL_ZPND + cp%FAREROW(I, M)*cp%ZPNDROW(I, M)*RHOW
+                wb%rcan(i) = cp%farerow(i, m)*cp%scanrow(i, m)
+                wb%sncan(i) = cp%farerow(i, m)*cp%rcanrow(i, m)
+                wb%pndw(i) = cp%farerow(i, m)*cp%zpndrow(i, m)*rhow
+                wb%sno(i) = cp%farerow(i, m)*cp%snorow(i, m)
+                wb%wsno(i) = cp%farerow(i, m)*wsnorow(i, m)
                 DO J = 1, IGND
                     TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%FAREROW(I, M)*cp%THLQROW(I, M, J)*RHOW*DLZWROW(I, M, J)
                     TOTAL_THIC(J) = TOTAL_THIC(J) + cp%FAREROW(I, M)*cp%THICROW(I, M, J)*RHOICE*DLZWROW(I, M, J)
+                    wb%liqws(i, j) = cp%farerow(i, m)*cp%thlqrow(i, m, j)*rhow*dlzwrow(i, m, j)
+                    wb%frzws(i, j) = cp%farerow(i, m)*cp%thicrow(i, m, j)*rhoice*dlzwrow(i, m, j)
                 END DO
             END DO
+            wb%stg(i) = wb%rcan(i) + wb%sncan(i) + wb%pndw(i) + wb%sno(i) + wb%wsno(i) + &
+                sum(wb%liqws(i, :)) + sum(wb%frzws(i, :))
+            wb%dstg(i) = wb%stg(i) - wb%dstg(i)
         END IF !IF (FRAC(I) >= 0.0) THEN
     END DO !DO I = 1, NA
 
@@ -4734,6 +4736,24 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
   WRITE(901,'((I4,","),(I5,","),2(E12.5,","))')IDAY,IYEAR,    &
                                                 TOTAL_HFSACC/TOTAL_AREA,  &
                                                 TOTAL_QEVPACC/TOTAL_AREA
+
+!>  Added by Gonzalo Sapriza
+    !DELTA STORAGE
+    DO I = 1, IGND
+        DSTG = DSTG + THLQ_FLD(:,I) + THIC_FLD(:,I)
+    ENDDO
+    DSTG = DSTG + RCANACC + SCANACC + SNOACC - STG_I
+
+   IF (OUTFIELDSFLAG .eq. 1) THEN
+    CALL UPDATEFIELDSOUT(vr, ts, iof, &
+                         wb%pre, wb%evap, wb%rof, wb%dstg, &
+                         TBARACC, wb%liqws, wb%frzws, &
+                         wb%rcan, wb%sncan, &
+                         wb%pndw, wb%sno, wb%wsno, &
+                         NA, IGND, &
+                         IDAY, IYEAR)
+   ENDIF
+   STG_I = DSTG + STG_I
 
 !RESET ACCUMULATION VARIABLES TO ZERO
 
