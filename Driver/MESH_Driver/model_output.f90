@@ -20,9 +20,27 @@
                 real :: TOTAL_AREA
 
             END TYPE
+            
+            TYPE OUT_INTER_RESP
+                !Contains the internal output response for a specific rank id
+                !This type is mainly used to look at the model response in the 
+                !Permafrost, daily time step
+                
+                !Rank id
+                integer :: na_id
+                
+                !Runoff
+                real, dimension(:)  , allocatable :: rofo,rofs,rofb !overland,subsurface, baseflow runoff
+                
+                !State variable and flux in soil layers
+                real, dimension(:,:), allocatable :: gflx !Heat conduction 
+                real, dimension(:,:), allocatable :: thlq,thic,tbar !liquid, ice and temp
+                
+            END TYPE
 
+        !>******************************************************************************
             TYPE OUT_FLDS
-
+                ! This type contains the fields outputs
                 ! Component of the water balance
                 real, dimension(:,:), allocatable :: prec_y, prec_m, prec_s !Precipitation
                 real, dimension(:,:), allocatable :: evap_y, evap_m, evap_s !Evaporation
@@ -92,7 +110,160 @@
 
 
             contains
-        !>******************************************************************************
+            
+!>******************************************************************************
+            subroutine Init_Internal_resp(pmf_r,ts,ignd,naid)
+        !>----------------------------------------------------------------------
+        !>  Description: Init output of internal response
+        !>  Allocatation
+        !>----------------------------------------------------------------------
+
+            implicit none
+
+            !Inputs
+            real, intent(in)              :: naid
+            integer, intent(in)           :: ignd
+            type(dates_model), intent(in) :: ts
+
+            !Output
+            type(OUT_INTER_RESP),intent(inout) :: pmf_r
+
+        !>--------------Main Subtrouine start-----------------------------------
+
+            allocate(pmf_r%rofo(ts%nr_days) , &
+                     pmf_r%rofs(ts%nr_days) , &
+                     pmf_r%rofb(ts%nr_days) )
+
+            allocate(pmf_r%gflx(ts%nr_days,ignd)  , &
+                     pmf_r%thlq(ts%nr_days,ignd)  , &
+                     pmf_r%thic(ts%nr_days,ignd)  , &
+                     pmf_r%tbar(ts%nr_days,ignd)  )
+
+            pmf_r%na_id = naid
+
+
+            end subroutine Init_Internal_resp            
+            
+!!>******************************************************************************
+!!            subroutine Update_Internal_resp(pmf_r   , ts    , ignd   , &
+!!                                            rofo    , rofs  , rofb   , &!
+!!                                            glf
+!!                                            sno     , rofo  , rofs   , &
+!!                                            rofb    , stg   , dstg   , &
+!!                                            thic    , thlq  , hfsacc , &
+!!                                            qevpacc ,                  &
+!!                                            idate   , isavg , nhours   )
+!        !>------------------------------------------------------------------------------
+!        !>  Description: Update values and compute daily averages for output responses
+!        !>  
+!        !>------------------------------------------------------------------------------
+!
+!!            implicit none
+!            !Input
+!!            logical, intent(in) :: isavg
+!!            integer, intent(in) :: idate,ignd
+!!            integer,optional    :: nhours
+!
+!!            type(dates_model), intent(in) :: ts
+!
+!!            real, intent(in) ::  pre , evp , rof, zpnd , rcan, scann
+!!            real, intent(in) ::  sno , rofo, rofs,rofb , stg , dstg
+!!            real, intent(in) ::  thic(ignd),thlq(ignd)
+!!            real, intent(in) ::  hfsacc, qevpacc
+!!
+!            !Output
+!!            type(out_bal_intg),intent(inout) :: bal
+!
+!            !Internal
+!!            integer :: i
+!
+!        !>--------------Main Subtrouine start-----------------------------------------------
+!
+!
+!            !Runoff
+!            bal%TOTAL_ROF(idate)   = bal%TOTAL_ROF(idate) + rof
+!            if (isavg) then
+!                bal%TOTAL_ROF(idate)  = bal%TOTAL_ROF(idate)/real(nhours)
+!            endif
+!
+!            !Ponded water
+!            bal%TOTAL_ZPND(idate)  =  bal%TOTAL_ZPND(idate) + zpnd
+!            if (isavg) then
+!                bal%TOTAL_ZPND(idate)  = bal%TOTAL_ZPND(idate)/real(nhours)
+!            endif
+!
+!            !Water intercepted in the canopy
+!            bal%TOTAL_RCAN(idate)  = bal%TOTAL_RCAN(idate) + rcan
+!            if (isavg) then
+!                bal%TOTAL_RCAN(idate)  = bal%TOTAL_RCAN(idate)/real(nhours)
+!            endif
+!
+!            !Snow in the canopy
+!            bal%TOTAL_SCAN(idate)  =  bal%TOTAL_SCAN(idate) + scann
+!            if (isavg) then
+!                bal%TOTAL_SCAN(idate)  = bal%TOTAL_SCAN(idate)/real(nhours)
+!            endif
+!
+!            !Snow
+!            bal%TOTAL_SNO(idate)   = bal%TOTAL_SNO(idate) + sno
+!            if (isavg) then
+!                bal%TOTAL_SNO(idate)  = bal%TOTAL_SNO(idate)/real(nhours)
+!            endif
+!
+!            !overland runoff
+!            bal%TOTAL_ROFO(idate)  = bal%TOTAL_ROFO(idate) + rofo
+!            if (isavg) then
+!                bal%TOTAL_ROFO(idate)  = bal%TOTAL_ROFO(idate)/real(nhours)
+!            endif
+!
+!            !subsurface runoff
+!            bal%TOTAL_ROFS(idate)  =  bal%TOTAL_ROFS(idate) + rofs
+!            if (isavg) then
+!                bal%TOTAL_ROFS(idate)  = bal%TOTAL_ROFS(idate)/real(nhours)
+!            endif
+!
+!            !baseflow
+!            bal%TOTAL_ROFB(idate)  = bal%TOTAL_ROFB(idate) + rofb
+!            if (isavg) then
+!                bal%TOTAL_ROFB(idate)  = bal%TOTAL_ROFB(idate)/real(nhours)
+!            endif
+!
+!            !Total Storage
+!            bal%TOTAL_STORE(idate) = bal%TOTAL_STORE(idate) + stg
+!            if (isavg) then
+!                bal%TOTAL_STORE(idate)  = bal%TOTAL_STORE(idate)/real(nhours)
+!            endif
+!
+!            !Delta Storage
+!            bal%DSTG(idate)   = bal%DSTG(idate) + dstg
+!            if (isavg) then
+!                bal%DSTG(idate)  = bal%DSTG(idate)/real(nhours)
+!            endif
+!
+!            do i = 1, ignd
+!
+!                bal%TOTAL_THIC(idate,i) = bal%TOTAL_THIC(idate,i) + thic(i)
+!                bal%TOTAL_THLQ(idate,i) = bal%TOTAL_THLQ(idate,i) + thlq(i)
+!
+!                if (isavg) then
+!                    bal%TOTAL_THIC(idate,i) = bal%TOTAL_THIC(idate,i)/real(nhours)
+!                    bal%TOTAL_THLQ(idate,i) = bal%TOTAL_THLQ(idate,i)/real(nhours)
+!                endif
+!
+!            enddo
+!
+!            bal%TOTAL_HFSACC(idate)  = bal%TOTAL_HFSACC(idate)   + hfsacc
+!            bal%TOTAL_QEVPACC(idate) = bal%TOTAL_QEVPACC(idate)  + qevpacc
+!
+!            if (isavg) then
+!                bal%TOTAL_HFSACC(idate)  = bal%TOTAL_HFSACC(idate)/real(nhours)
+!                bal%TOTAL_QEVPACC(idate) = bal%TOTAL_QEVPACC(idate)/real(nhours)
+!            endif
+!
+!
+!            end subroutine Update_Internal_resp           
+            
+        !>**********************************************************************
             subroutine Init_OutBal_Intg(bal,ts,ignd,area)
         !>------------------------------------------------------------------------------
         !>  Description: Init output water and energy balances
