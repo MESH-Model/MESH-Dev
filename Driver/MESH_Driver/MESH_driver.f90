@@ -2507,25 +2507,25 @@ OPEN(UNIT=72,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
 !> Set up the CLASSOF* files to print out into the correct directory
 DO I=1, wf_num_points
   BNAM=op%DIR_OUT(i)
-  OPEN(UNIT=150+i*10+1,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+  OPEN(UNIT=150+i*10+1,  FILE = "./"//trim(adjustl(BNAM))// &
    "/CLASSOF1.csv")
-  OPEN(UNIT=150+i*10+2,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+  OPEN(UNIT=150+i*10+2,  FILE = "./"//trim(adjustl(BNAM))// &
    "/CLASSOF2.csv")
-  OPEN(UNIT=150+i*10+3,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+  OPEN(UNIT=150+i*10+3,  FILE = "./"//trim(adjustl(BNAM))// &
    "/CLASSOF3.csv")
-  OPEN(UNIT=150+i*10+4,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+  OPEN(UNIT=150+i*10+4,  FILE = "./"//trim(adjustl(BNAM))// &
    "/CLASSOF4.csv")
-  OPEN(UNIT=150+i*10+5,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+  OPEN(UNIT=150+i*10+5,  FILE = "./"//trim(adjustl(BNAM))// &
    "/CLASSOF5.csv")
-  OPEN(UNIT=150+i*10+6,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+  OPEN(UNIT=150+i*10+6,  FILE = "./"//trim(adjustl(BNAM))// &
    "/CLASSOF6.csv")
-  OPEN(UNIT=150+i*10+7,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+  OPEN(UNIT=150+i*10+7,  FILE = "./"//trim(adjustl(BNAM))// &
    "/CLASSOF7.csv")
-  OPEN(UNIT=150+i*10+8,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+  OPEN(UNIT=150+i*10+8,  FILE = "./"//trim(adjustl(BNAM))// &
    "/CLASSOF8.csv")
-  OPEN(UNIT=150+i*10+9,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+  OPEN(UNIT=150+i*10+9,  FILE = "./"//trim(adjustl(BNAM))// &
    "/CLASSOF9.csv")
-  OPEN(UNIT=150+i*10+10,FILE="./"//BNAM(1:INDEX(BNAM," ")-1)// &
+  OPEN(UNIT=150+i*10+10, FILE = "./"//trim(adjustl(BNAM))// &
    "/GRU_water_balance.csv")
 
   DO j=1, 9
