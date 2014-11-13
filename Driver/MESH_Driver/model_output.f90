@@ -11,16 +11,15 @@
                 ! WATER BALANCE
                 real, dimension(:)  ,allocatable :: TOTAL_PRE   , TOTAL_EVAP , TOTAL_ROF
                 real, dimension(:)  ,allocatable :: TOTAL_ZPND  , TOTAL_RCAN , TOTAL_SCAN
-                real, dimension(:)  ,allocatable :: TOTAL_SNO   , TOTAL_STORE , DSTG
+                real, dimension(:)  ,allocatable :: TOTAL_SNO   , TOTAL_STORE, DSTG
                 real, dimension(:)  ,allocatable :: TOTAL_ROFO  , TOTAL_ROFS , TOTAL_ROFB
-                real, dimension(:,:),allocatable :: TOTAL_lqws , TOTAL_frws
+                real, dimension(:,:),allocatable :: TOTAL_lqws  , TOTAL_frws
 
                 !Energy Balance
-                real, dimension(:)  ,allocatable :: TOTAL_HFSACC   , TOTAL_QEVPACC
+                real, dimension(:)  ,allocatable :: TOTAL_HFSACC, TOTAL_QEVPACC
                 real :: TOTAL_AREA
 
             END TYPE
-
 
             TYPE OUT_FLDS
 
@@ -71,6 +70,14 @@
                     lqws, frws
                 real :: basin_area
             end type water_balance
+
+            !> Data type to store basin information
+            !* na: Number of grid cells [-]
+            !* nm: Number of GRUs [-]
+            !* ignd: Number of soil layers per grid [-]
+            type basin_info
+                integer :: na, nm, ignd
+            end type basin_info
 
         !>******************************************************************************
             TYPE info_out
@@ -250,7 +257,8 @@
 
             end subroutine Update_OutBal_Intg
         !>******************************************************************************
-            subroutine Init_out(vr, wb, ts, ifo, na, ignd)
+
+            subroutine init_out(vr, ts, ifo, bi)
         !>------------------------------------------------------------------------------
         !>  Description: Init Fields
         !>
@@ -259,316 +267,243 @@
             implicit none
 
             !Inputs
-            integer :: na, ignd
+            type(basin_info) :: bi
 
             !Inputs-Output
-            type(OUT_FLDS)     :: vr
-            type(water_balance) :: wb
+            type(out_flds) :: vr
             type(dates_model) :: ts
-            type(info_out)    :: ifo
+            type(info_out) :: ifo
 
             !Internals
-            integer   :: IOS,i,j
+            integer :: ios, i, j
             character*50 :: vId
 
 
         !>--------------Main Subtrouine start-----------------------------------------------
 
-            OPEN(UNIT   = 909                   , &
+            open(UNIT   = 909                   , &
                  FILE   = 'outputs_balance.txt' , &
                  STATUS = 'old'                 , &
                  ACTION = 'read'                , &
-                 IOSTAT = IOS                     )
+                 IOSTAT = ios                     )
 
             ifo%flIn = 'outputs_balance.txt'
 
-            read(909,*) ifo%pthOut
-            read(909,*) ifo%nr_out
+            read(909, *) ifo%pthOut
+            read(909, *) ifo%nr_out
 
-            allocate(ifo%ids_var_out(ifo%nr_out,6))
+            allocate(ifo%ids_var_out(ifo%nr_out, 6))
 
             do i = 1, ifo%nr_out
 
-                read(909,*)(ifo%ids_var_out(i,j),j=1,6)
+                read(909, *)(ifo%ids_var_out(i, j), j = 1, 6)
 
-                vId = trim(adjustl(ifo%ids_var_out(i,1)))
+                vId = trim(adjustl(ifo%ids_var_out(i, 1)))
 
                 select case (vId)
 
-                    case ('PREC','Rainfall','Rain','Precipitation')
+                    case ('PREC', 'Rainfall', 'Rain', 'Precipitation')
 
-                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-
-                            allocate(vr%prec_y(na,ts%nyears))
+                        if (trim(adjustl(ifo%ids_var_out(i, 2))) .eq. 'Y') then
+                            allocate(vr%prec_y(bi%na, ts%nyears))
                             vr%prec_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-
-                            allocate(vr%prec_m(na,ts%nmonths))
+                        if (trim(adjustl(ifo%ids_var_out(i, 3))) .eq. 'M') then
+                            allocate(vr%prec_m(bi%na, ts%nmonths))
                             vr%prec_m = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-
-                            allocate(vr%prec_s(na,ts%nseason))
+                        if (trim(adjustl(ifo%ids_var_out(i, 4))) .eq. 'S') then
+                            allocate(vr%prec_s(bi%na, ts%nseason))
                             vr%prec_s = 0.0
-
                         endif
 
-                    case ('EVAP','Evapotranspiration')
+                    case ('EVAP', 'Evapotranspiration')
 
-                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-
-                            allocate(vr%evap_y(na,ts%nyears))
+                        if (trim(adjustl(ifo%ids_var_out(i, 2))) .eq. 'Y') then
+                            allocate(vr%evap_y(bi%na, ts%nyears))
                             vr%evap_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-
-                            allocate(vr%evap_m(na,ts%nmonths))
+                        if (trim(adjustl(ifo%ids_var_out(i, 3))) .eq. 'M') then
+                            allocate(vr%evap_m(bi%na, ts%nmonths))
                             vr%evap_m = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-
-                            allocate(vr%evap_s(na,ts%nseason))
+                        if (trim(adjustl(ifo%ids_var_out(i, 4))) .eq. 'S') then
+                            allocate(vr%evap_s(bi%na, ts%nseason))
                             vr%evap_s = 0.0
-
                         endif
 
-                    case ('ROFF','Runoff')
+                    case ('ROFF', 'Runoff', 'ROF')
 
-                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-
-                            allocate(vr%roff_y(na,ts%nyears))
+                        if (trim(adjustl(ifo%ids_var_out(i, 2))) .eq. 'Y') then
+                            allocate(vr%roff_y(bi%na, ts%nyears))
                             vr%roff_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-
-                            allocate(vr%roff_m(na,ts%nmonths))
+                        if (trim(adjustl(ifo%ids_var_out(i, 3))) .eq. 'M') then
+                            allocate(vr%roff_m(bi%na, ts%nmonths))
                             vr%roff_m = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-
-                            allocate(vr%roff_s(na,ts%nseason))
+                        if (trim(adjustl(ifo%ids_var_out(i, 4))) .eq. 'S') then
+                            allocate(vr%roff_s(bi%na, ts%nseason))
                             vr%roff_s = 0.0
-
                         endif
 
-                    case ('DeltaStorage','DSTG')
+                    case ('DeltaStorage', 'DSTG')
 
-                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-
-                            allocate(vr%dstg_y(na,ts%nyears))
+                        if (trim(adjustl(ifo%ids_var_out(i, 2))) .eq. 'Y') then
+                            allocate(vr%dstg_y(bi%na, ts%nyears))
                             vr%dstg_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-
-                            allocate(vr%dstg_m(na,ts%nmonths))
+                        if (trim(adjustl(ifo%ids_var_out(i, 3))) .eq. 'M') then
+                            allocate(vr%dstg_m(bi%na, ts%nmonths))
                             vr%dstg_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-
-                            allocate(vr%dstg_s(na,ts%nseason))
+                        if (trim(adjustl(ifo%ids_var_out(i, 4))) .eq. 'S') then
+                            allocate(vr%dstg_s(bi%na, ts%nseason))
                             vr%dstg_s = 0.0
-
                         endif
 
-                    case ('TempSoil','Temperature_soil_layers','TBAR')
+                    case ('TempSoil', 'Temperature_soil_layers', 'TBAR')
 
-                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-
-                            allocate(vr%tbar_y(na,ignd,ts%nyears))
+                        if (trim(adjustl(ifo%ids_var_out(i, 2))) .eq. 'Y') then
+                            allocate(vr%tbar_y(bi%na, bi%ignd, ts%nyears))
                             vr%tbar_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-
-                            allocate(vr%tbar_m(na,ignd,ts%nmonths))
+                        if (trim(adjustl(ifo%ids_var_out(i, 3))) .eq. 'M') then
+                            allocate(vr%tbar_m(bi%na, bi%ignd, ts%nmonths))
                             vr%tbar_m = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-
-                            allocate(vr%tbar_s(na,ignd,ts%nseason))
+                        if (trim(adjustl(ifo%ids_var_out(i, 4))) .eq. 'S') then
+                            allocate(vr%tbar_s(bi%na, bi%ignd, ts%nseason))
                             vr%tbar_s = 0.0
-
                         endif
 
-                    case ('THLQ','LiquidContent_soil_layers', 'LIQW', 'LQWS')
+                    case ('THLQ', 'LiquidContent_soil_layers', 'LIQW', 'LQWS')
 
-                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-
-                            allocate(vr%lqws_y(na,ignd,ts%nyears))
+                        if (trim(adjustl(ifo%ids_var_out(i, 2))) .eq. 'Y') then
+                            allocate(vr%lqws_y(bi%na, bi%ignd, ts%nyears))
                             vr%lqws_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-
-                            allocate(vr%lqws_m(na,ignd,ts%nmonths))
+                        if (trim(adjustl(ifo%ids_var_out(i, 3))) .eq. 'M') then
+                            allocate(vr%lqws_m(bi%na, bi%ignd, ts%nmonths))
                             vr%lqws_m = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-
-                            allocate(vr%lqws_s(na,ignd,ts%nseason))
+                        if (trim(adjustl(ifo%ids_var_out(i, 4))) .eq. 'S') then
+                            allocate(vr%lqws_s(bi%na, bi%ignd, ts%nseason))
                             vr%lqws_s = 0.0
-
                         endif
 
-                    case ('THIC','ICEContent_soil_layers', 'FRZW', 'FRWS')
+                    case ('THIC', 'ICEContent_soil_layers', 'FRZW', 'FRWS')
 
-                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-
-                            allocate(vr%frws_y(na,ignd,ts%nyears))
+                        if (trim(adjustl(ifo%ids_var_out(i, 2))) .eq. 'Y') then
+                            allocate(vr%frws_y(bi%na, bi%ignd, ts%nyears))
                             vr%frws_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-
-                            allocate(vr%frws_m(na,ignd,ts%nmonths))
+                        if (trim(adjustl(ifo%ids_var_out(i, 3))) .eq. 'M') then
+                            allocate(vr%frws_m(bi%na, bi%ignd, ts%nmonths))
                             vr%frws_m = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-
-                            allocate(vr%frws_s(na,ignd,ts%nseason))
+                        if (trim(adjustl(ifo%ids_var_out(i, 4))) .eq. 'S') then
+                            allocate(vr%frws_s(bi%na, bi%ignd, ts%nseason))
                             vr%frws_s = 0.0
-
                         endif
 
                     case ('RCAN')
 
-                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-
-                            allocate(vr%RCAN_y(na,ts%nyears))
+                        if (trim(adjustl(ifo%ids_var_out(i, 2))) .eq. 'Y') then
+                            allocate(vr%RCAN_y(bi%na, ts%nyears))
                             vr%RCAN_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-
-                            allocate(vr%RCAN_m(na,ts%nmonths))
+                        if (trim(adjustl(ifo%ids_var_out(i, 3))) .eq. 'M') then
+                            allocate(vr%RCAN_m(bi%na, ts%nmonths))
                             vr%RCAN_m = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-
-                            allocate(vr%RCAN_s(na,ts%nseason))
+                        if (trim(adjustl(ifo%ids_var_out(i, 4))) .eq. 'S') then
+                            allocate(vr%RCAN_s(bi%na, ts%nseason))
                             vr%RCAN_s = 0.0
-
                         endif
 
                     case ('SCAN', 'SNCAN', 'SCANN')
 
-                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-
-                            allocate(vr%SCAN_y(na,ts%nyears))
+                        if (trim(adjustl(ifo%ids_var_out(i, 2))) .eq. 'Y') then
+                            allocate(vr%SCAN_y(bi%na, ts%nyears))
                             vr%SCAN_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-
-                            allocate(vr%SCAN_m(na,ts%nmonths))
+                        if (trim(adjustl(ifo%ids_var_out(i, 3))) .eq. 'M') then
+                            allocate(vr%SCAN_m(bi%na, ts%nmonths))
                             vr%SCAN_m = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-
-                            allocate(vr%SCAN_s(na,ts%nseason))
+                        if (trim(adjustl(ifo%ids_var_out(i, 4))) .eq. 'S') then
+                            allocate(vr%SCAN_s(bi%na, ts%nseason))
                             vr%SCAN_s = 0.0
-
                         endif
 
                     case ('ZPND', 'PNDW')
 
-                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-
-                            allocate(vr%PNDW_y(na,ts%nyears))
+                        if (trim(adjustl(ifo%ids_var_out(i, 2))) .eq. 'Y') then
+                            allocate(vr%PNDW_y(bi%na, ts%nyears))
                             vr%PNDW_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-
-                            allocate(vr%PNDW_m(na,ts%nmonths))
+                        if (trim(adjustl(ifo%ids_var_out(i, 3))) .eq. 'M') then
+                            allocate(vr%PNDW_m(bi%na, ts%nmonths))
                             vr%PNDW_m = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-
-                            allocate(vr%PNDW_s(na,ts%nseason))
+                        if (trim(adjustl(ifo%ids_var_out(i, 4))) .eq. 'S') then
+                            allocate(vr%PNDW_s(bi%na, ts%nseason))
                             vr%PNDW_s = 0.0
-
                         endif
 
                     case ('SNO')
 
-                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-
-                            allocate(vr%SNO_y(na,ts%nyears))
+                        if (trim(adjustl(ifo%ids_var_out(i, 2))) .eq. 'Y') then
+                            allocate(vr%SNO_y(bi%na, ts%nyears))
                             vr%SNO_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-
-                            allocate(vr%SNO_m(na,ts%nmonths))
+                        if (trim(adjustl(ifo%ids_var_out(i, 3))) .eq. 'M') then
+                            allocate(vr%SNO_m(bi%na, ts%nmonths))
                             vr%SNO_m = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-
-                            allocate(vr%SNO_s(na,ts%nseason))
+                        if (trim(adjustl(ifo%ids_var_out(i, 4))) .eq. 'S') then
+                            allocate(vr%SNO_s(bi%na, ts%nseason))
                             vr%SNO_s = 0.0
-
                         endif
 
                     case ('WSNO')
 
-                        if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-
-                            allocate(vr%WSNO_y(na,ts%nyears))
+                        if (trim(adjustl(ifo%ids_var_out(i, 2))) .eq. 'Y') then
+                            allocate(vr%WSNO_y(bi%na, ts%nyears))
                             vr%WSNO_y = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-
-                            allocate(vr%WSNO_m(na,ts%nmonths))
+                        if (trim(adjustl(ifo%ids_var_out(i, 3))) .eq. 'M') then
+                            allocate(vr%WSNO_m(bi%na, ts%nmonths))
                             vr%WSNO_m = 0.0
-
                         endif
 
-                        if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-
-                            allocate(vr%WSNO_s(na,ts%nseason))
+                        if (trim(adjustl(ifo%ids_var_out(i, 4))) .eq. 'S') then
+                            allocate(vr%WSNO_s(bi%na, ts%nseason))
                             vr%WSNO_s = 0.0
-
                         endif
 
                     case default
@@ -580,33 +515,8 @@
 
             close(909)
 
-            !> Allocate and initialize water balance variable
-            allocate( &
-                    wb%pre(na), wb%evap(na), wb%rof(na), &
-                    wb%rofo(na), wb%rofs(na), wb%rofb(na), &
-                    wb%rcan(na), wb%sncan(na), wb%pndw(na), wb%sno(na), wb%wsno(na), &
-                    wb%stg(na), wb%dstg(na), &
-                    wb%grid_area(na), &
-                    wb%lqws(na, ignd), wb%frws(na, ignd))
-            wb%pre(na) = 0.0
-            wb%evap(na) = 0.0
-            wb%rof(na) = 0.0
-            wb%rofo(na) = 0.0
-            wb%rofs(na) = 0.0
-            wb%rofb(na) = 0.0
-            wb%rcan(na) = 0.0
-            wb%sncan(na) = 0.0
-            wb%pndw(na) = 0.0
-            wb%sno(na) = 0.0
-            wb%wsno(na) = 0.0
-            wb%stg(na) = 0.0
-            wb%dstg(na) = 0.0
-            wb%grid_area(na) = 0.0
-            wb%lqws(na, ignd) = 0.0
-            wb%frws(na, ignd) = 0.0
-            wb%basin_area = 0.0
-
             end subroutine Init_out
+
             subroutine UpdateFIELDSOUT(vr    ,  ts   , ifo           , &
                                        precp ,  evap , roff , dstg   , &
                                        tbar  ,  lqws , frws          , &
@@ -686,7 +596,7 @@
 
                         endif
 
-                    case ('ROFF','Runoff')
+                    case ('ROFF', 'Runoff', 'ROF')
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
@@ -895,7 +805,7 @@
 
             end subroutine UpdateFIELDSOUT
 
-            subroutine Write_Outputs(vr, ts, ifo)
+            subroutine Write_Outputs(vr, ts, ifo, bi)
         !>------------------------------------------------------------------------------
         !>  Description: Loop over the variablaes to write
         !>  output balance's fields in selected format
@@ -905,17 +815,15 @@
             type(OUT_FLDS)     :: vr
             type(info_out)     :: ifo
             type(dates_model)  :: ts
+            type(basin_info)   :: bi
 
             !Outputs
             !Files
 
             !Internals
-            integer       :: i,nai(3),na,j
+            integer       :: i, j
             character*50  :: vId
             character*1   :: st
-
-            nai = shape(vr%tbar_y)
-            na = nai(1)
 
             do i = 1, ifo%nr_out
 
@@ -927,19 +835,19 @@
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            call WriteFields_i(vr%prec_y, ts, ifo, i, 'Y', NA, ts%nyears)
+                            call WriteFields_i(vr%prec_y, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            call WriteFields_i(vr%prec_m, ts, ifo, i,  'M', NA, ts%nmonths)
+                            call WriteFields_i(vr%prec_m, ts, ifo, i,  'M', bi%na, ts%nmonths)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            call WriteFields_i(vr%prec_s, ts, ifo, i,  'S', NA, ts%nseason)
+                            call WriteFields_i(vr%prec_s, ts, ifo, i,  'S', bi%na, ts%nseason)
 
                         endif
 
@@ -947,39 +855,39 @@
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            call WriteFields_i(vr%evap_y, ts, ifo, i, 'Y', na, ts%nyears)
+                            call WriteFields_i(vr%evap_y, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            call WriteFields_i(vr%evap_m, ts, ifo, i,  'M',na, ts%nmonths)
+                            call WriteFields_i(vr%evap_m, ts, ifo, i,  'M',bi%na, ts%nmonths)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            call WriteFields_i(vr%evap_s, ts, ifo, i,  'S', na, ts%nseason)
+                            call WriteFields_i(vr%evap_s, ts, ifo, i,  'S', bi%na, ts%nseason)
 
                         endif
 
-                    case ('ROFF','Runoff')
+                    case ('ROFF', 'Runoff', 'ROF')
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            call WriteFields_i(vr%roff_y, ts, ifo, i, 'Y', na, ts%nyears)
+                            call WriteFields_i(vr%roff_y, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            call WriteFields_i(vr%roff_m, ts, ifo, i,  'M', na, ts%nmonths)
+                            call WriteFields_i(vr%roff_m, ts, ifo, i,  'M', bi%na, ts%nmonths)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            call WriteFields_i(vr%roff_s, ts, ifo, i,  'S',na, ts%nseason)
+                            call WriteFields_i(vr%roff_s, ts, ifo, i,  'S',bi%na, ts%nseason)
 
                         endif
 
@@ -987,90 +895,90 @@
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            call WriteFields_i(vr%dstg_y, ts, ifo, i, 'Y', na, ts%nyears)
+                            call WriteFields_i(vr%dstg_y, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            call WriteFields_i(vr%dstg_m, ts, ifo, i,  'M', na, ts%nmonths)
+                            call WriteFields_i(vr%dstg_m, ts, ifo, i,  'M', bi%na, ts%nmonths)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            call WriteFields_i(vr%dstg_s, ts, ifo, i,  'S',na, ts%nseason)
+                            call WriteFields_i(vr%dstg_s, ts, ifo, i,  'S',bi%na, ts%nseason)
 
                         endif
 
                     case ('TempSoil','Temperature_soil_layers','TBAR')
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-                            do j = 1, nai(2)
+                            do j = 1, bi%ignd
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%tbar_y(:,j,:), ts, ifo, i, 'Y',na, ts%nyears,st)
+                                call WriteFields_i(vr%tbar_y(:,j,:), ts, ifo, i, 'Y',bi%na, ts%nyears,st)
                             enddo
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-                            do j = 1, nai(2)
+                            do j = 1, bi%ignd
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%tbar_m(:,j,:), ts, ifo, i,  'M', na, ts%nmonths,st)
+                                call WriteFields_i(vr%tbar_m(:,j,:), ts, ifo, i,  'M', bi%na, ts%nmonths,st)
                             enddo
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-                            do j = 1, nai(2)
+                            do j = 1, bi%ignd
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%tbar_s(:,j,:), ts, ifo, i,  'S', na, ts%nseason, st)
+                                call WriteFields_i(vr%tbar_s(:,j,:), ts, ifo, i,  'S', bi%na, ts%nseason, st)
                             enddo
                         endif
 
                     case ('THLQ','LiquidContent_soil_layers', 'LIQW', 'LQWS')
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-                            do j = 1, nai(2)
+                            do j = 1, bi%ignd
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%lqws_y(:,j,:), ts, ifo, i, 'Y',na, ts%nyears,st)
+                                call WriteFields_i(vr%lqws_y(:,j,:), ts, ifo, i, 'Y',bi%na, ts%nyears,st)
                             enddo
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-                            do j = 1, nai(2)
+                            do j = 1, bi%ignd
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%lqws_m(:,j,:), ts, ifo, i,  'M', na, ts%nmonths,st)
+                                call WriteFields_i(vr%lqws_m(:,j,:), ts, ifo, i,  'M', bi%na, ts%nmonths,st)
                             enddo
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
-                            do j = 1, nai(2)
+                            do j = 1, bi%ignd
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%lqws_s(:,j,:), ts, ifo, i,  'S', na, ts%nseason,st)
+                                call WriteFields_i(vr%lqws_s(:,j,:), ts, ifo, i,  'S', bi%na, ts%nseason,st)
                             enddo
                         endif
 
                     case ('THIC','ICEContent_soil_layers', 'FRZW', 'FRWS')
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
-                            do j = 1, nai(2)
+                            do j = 1, bi%ignd
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%frws_y(:,j,:), ts, ifo, i, 'Y',na, ts%nyears,st)
+                                call WriteFields_i(vr%frws_y(:,j,:), ts, ifo, i, 'Y',bi%na, ts%nyears,st)
                             enddo
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
-                            do j = 1, nai(2)
+                            do j = 1, bi%ignd
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%frws_m(:,j,:), ts, ifo, i,  'M' , NA, ts%nmonths,st)
+                                call WriteFields_i(vr%frws_m(:,j,:), ts, ifo, i,  'M', bi%na, ts%nmonths,st)
                             enddo
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            do j = 1, nai(2)
+                            do j = 1, bi%ignd
                                 write(unit=st, fmt='(I1)') j
-                                call WriteFields_i(vr%frws_s(:,j,:), ts, ifo, i,  'S' , NA, ts%nseason,st)
+                                call WriteFields_i(vr%frws_s(:,j,:), ts, ifo, i,  'S', bi%na, ts%nseason,st)
                             enddo
                         endif
 
@@ -1078,19 +986,19 @@
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            call WriteFields_i(vr%RCAN_y, ts, ifo, i, 'Y', na, ts%nyears)
+                            call WriteFields_i(vr%RCAN_y, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            call WriteFields_i(vr%RCAN_m, ts, ifo, i,  'M', na, ts%nmonths)
+                            call WriteFields_i(vr%RCAN_m, ts, ifo, i,  'M', bi%na, ts%nmonths)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            call WriteFields_i(vr%RCAN_s, ts, ifo, i,  'S',na, ts%nseason)
+                            call WriteFields_i(vr%RCAN_s, ts, ifo, i,  'S',bi%na, ts%nseason)
 
                         endif
 
@@ -1098,19 +1006,19 @@
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            call WriteFields_i(vr%SCAN_y, ts, ifo, i, 'Y', na, ts%nyears)
+                            call WriteFields_i(vr%SCAN_y, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            call WriteFields_i(vr%SCAN_m, ts, ifo, i,  'M', na, ts%nmonths)
+                            call WriteFields_i(vr%SCAN_m, ts, ifo, i,  'M', bi%na, ts%nmonths)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            call WriteFields_i(vr%SCAN_s, ts, ifo, i,  'S',na, ts%nseason)
+                            call WriteFields_i(vr%SCAN_s, ts, ifo, i,  'S',bi%na, ts%nseason)
 
                         endif
 
@@ -1118,19 +1026,19 @@
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            call WriteFields_i(vr%PNDW_y, ts, ifo, i, 'Y', na, ts%nyears)
+                            call WriteFields_i(vr%PNDW_y, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            call WriteFields_i(vr%PNDW_m, ts, ifo, i,  'M', na, ts%nmonths)
+                            call WriteFields_i(vr%PNDW_m, ts, ifo, i,  'M', bi%na, ts%nmonths)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            call WriteFields_i(vr%PNDW_s, ts, ifo, i,  'S',na, ts%nseason)
+                            call WriteFields_i(vr%PNDW_s, ts, ifo, i,  'S',bi%na, ts%nseason)
 
                         endif
 
@@ -1138,19 +1046,19 @@
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            call WriteFields_i(vr%SNO_y, ts, ifo, i, 'Y', na, ts%nyears)
+                            call WriteFields_i(vr%SNO_y, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            call WriteFields_i(vr%SNO_m, ts, ifo, i,  'M', na, ts%nmonths)
+                            call WriteFields_i(vr%SNO_m, ts, ifo, i,  'M', bi%na, ts%nmonths)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            call WriteFields_i(vr%SNO_s, ts, ifo, i,  'S',na, ts%nseason)
+                            call WriteFields_i(vr%SNO_s, ts, ifo, i,  'S',bi%na, ts%nseason)
 
                         endif
 
@@ -1158,19 +1066,19 @@
 
                         if (trim(adjustl(ifo%ids_var_out(i,2))).eq.'Y')then
 
-                            call WriteFields_i(vr%WSNO_y, ts, ifo, i, 'Y', na, ts%nyears)
+                            call WriteFields_i(vr%WSNO_y, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,3))).eq.'M')then
 
-                            call WriteFields_i(vr%WSNO_m, ts, ifo, i,  'M', na, ts%nmonths)
+                            call WriteFields_i(vr%WSNO_m, ts, ifo, i,  'M', bi%na, ts%nmonths)
 
                         endif
 
                         if (trim(adjustl(ifo%ids_var_out(i,4))).eq.'S')then
 
-                            call WriteFields_i(vr%WSNO_s, ts, ifo, i,  'S',na, ts%nseason)
+                            call WriteFields_i(vr%WSNO_s, ts, ifo, i,  'S',bi%na, ts%nseason)
 
                         endif
 
@@ -1290,7 +1198,7 @@
         !>******************************************************************************
 
         !>******************************************************************************
-            subroutine WriteSeq(fld , indx,info, freq,dates)
+            subroutine WriteSeq(fld, indx, info, freq, dates)
         !>------------------------------------------------------------------------------
         !>  Description: Write bin sequential file
         !>

@@ -798,6 +798,7 @@ TYPE(HydrologyParameters) :: hp
 !> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
 TYPE(OUT_FLDS)     :: VR
 type(water_balance) :: wb
+type(basin_info) :: bi
 TYPE(DATES_MODEL) :: TS
 TYPE(INFO_OUT)    :: IOF
 
@@ -1822,11 +1823,42 @@ ENDIF
 !>  End of subbasin section
 !> **********************************************************************
 
+!> Initialize basin information variable
+bi%na = na
+bi%ignd = ignd
+
+!> Allocate and initialize water balance variable
+allocate( &
+    wb%pre(na), wb%evap(na), wb%rof(na), &
+    wb%rofo(na), wb%rofs(na), wb%rofb(na), &
+    wb%rcan(na), wb%sncan(na), wb%pndw(na), wb%sno(na), wb%wsno(na), &
+    wb%stg(na), wb%dstg(na), &
+    wb%grid_area(na), &
+    wb%lqws(na, ignd), wb%frws(na, ignd))
+wb%pre(na) = 0.0
+wb%evap(na) = 0.0
+wb%rof(na) = 0.0
+wb%rofo(na) = 0.0
+wb%rofs(na) = 0.0
+wb%rofb(na) = 0.0
+wb%rcan(na) = 0.0
+wb%sncan(na) = 0.0
+wb%pndw(na) = 0.0
+wb%sno(na) = 0.0
+wb%wsno(na) = 0.0
+wb%stg(na) = 0.0
+wb%dstg(na) = 0.0
+wb%grid_area(na) = 0.0
+wb%lqws(na, ignd) = 0.0
+wb%frws(na, ignd) = 0.0
+wb%basin_area = 0.0
+
 !> *********************************************************************
 !> Initialize water balance output fields
 !> *********************************************************************
+
 if (outfieldsflag == 1) &
-    call init_out(vr, wb, ts, iof, na, ignd)
+    call init_out(vr, ts, iof, bi)
 
 !> Set value of FAREROW: 
 !todo - flag this as an issue to explore later and hide basin average code
@@ -5333,13 +5365,8 @@ IF (SAVERESUMEFLAG == 3) THEN
 
 ENDIF !IF (SAVERESUMEFLAG == 3) THEN
 
-IF (OUTFIELDSFLAG .eq. 1) THEN
-
-    call Write_Outputs(vr,ts,iof)
-    !call Destroy
-
-ENDIF
-
+if (outfieldsflag .eq. 1) &
+    call write_outputs(vr, ts, iof, bi)
 
 IF(ENDDATA)PRINT *, 'Reached end of forcing data'
 IF(ENDDATE)PRINT *, 'Reached end of simulation date'
