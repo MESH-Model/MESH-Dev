@@ -4687,12 +4687,12 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                 DO J = 1, IGND
                     TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%FAREROW(I, M)*cp%THLQROW(I, M, J)*RHOW*DLZWROW(I, M, J)
                     TOTAL_THIC(J) = TOTAL_THIC(J) + cp%FAREROW(I, M)*cp%THICROW(I, M, J)*RHOICE*DLZWROW(I, M, J)
-                    wb%liqws(i, j) = cp%farerow(i, m)*cp%thlqrow(i, m, j)*rhow*dlzwrow(i, m, j)
-                    wb%frzws(i, j) = cp%farerow(i, m)*cp%thicrow(i, m, j)*rhoice*dlzwrow(i, m, j)
+                    wb%lqws(i, j) = cp%farerow(i, m)*cp%thlqrow(i, m, j)*rhow*dlzwrow(i, m, j)
+                    wb%frws(i, j) = cp%farerow(i, m)*cp%thicrow(i, m, j)*rhoice*dlzwrow(i, m, j)
                 END DO
             END DO
             wb%stg(i) = wb%rcan(i) + wb%sncan(i) + wb%pndw(i) + wb%sno(i) + wb%wsno(i) + &
-                sum(wb%liqws(i, :)) + sum(wb%frzws(i, :))
+                sum(wb%lqws(i, :)) + sum(wb%frws(i, :))
             wb%dstg(i) = wb%stg(i) - wb%dstg(i)
         END IF !IF (FRAC(I) >= 0.0) THEN
     END DO !DO I = 1, NA
@@ -4747,7 +4747,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
    IF (OUTFIELDSFLAG .eq. 1) THEN
     CALL UPDATEFIELDSOUT(vr, ts, iof, &
                          wb%pre, wb%evap, wb%rof, wb%dstg, &
-                         TBARACC, wb%liqws, wb%frzws, &
+                         TBARACC, wb%lqws, wb%frws, &
                          wb%rcan, wb%sncan, &
                          wb%pndw, wb%sno, wb%wsno, &
                          NA, IGND, &
