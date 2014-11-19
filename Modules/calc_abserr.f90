@@ -1,11 +1,11 @@
 !>
-!> Module for calculating Daily Root Mean Squared Error (DRMS)
+!> Module for calculating Mean Absolute Error (ABSERR)
 !>
-!> Contains the model_output_drms variable type which stores
+!> Contains the model_output_abserr variable type which stores
 !> the value at each streamflow gauge, as well as an average value
 !> representative of all gauges.
 !>
-!> Contains the calc_drms_value subroutine to calculate DRMS
+!> Contains the calc_abserr_value subroutine to calculate ABSERR
 !> given observed and simulated daily streamflow.
 !>
 !> References:
@@ -17,22 +17,22 @@
 !>
 !> D. G. Princz - 2014-11-19.
 !>
-module calc_drms
+module calc_abserr
 
     implicit none
 
     private
 
-    !> The model_output_drms type and calc_drms_value function are accessible outside the module.
-    public :: model_output_drms, calc_drms_value
+    !> The model_output_abserr type and calc_abserr_value function are accessible outside the module.
+    public :: model_output_abserr, calc_abserr_value
 
-    !> type: model_output_drms
-    !* value_gauge: DRMS for the streamflow gauge (1: streamflow gauge)
-    !* value_gauge_avg: Average DRMS of all gauges
-    type model_output_drms
+    !> Type: model_output_abserr
+    !* value_gauge: ABSERR for the streamflow gauge (1: streamflow gauge)
+    !* value_gauge_avg: Average ABSERR of all gauges
+    type model_output_abserr
         real, dimension(:), pointer :: value_gauge
         real :: value_gauge_avg
-    end type model_output_drms
+    end type
 
     !>
     !> Begin module.
@@ -40,11 +40,11 @@ module calc_drms
 
     contains
 
-    type(model_output_drms) function calc_drms_value(ncal_day_min, ncal_day, qobs, qsim)
+    type(model_output_abserr) function calc_abserr_Value(ncal_day_min, ncal_day, qobs, qsim)
 
         !> Variable declarations
         !* ncal_day_min: Minimum number of days for spin-up
-        !* ncal_Day: Number of days of daily streamflow values
+        !* ncal_day: Number of days of daily streamflow values
         !* qobs: Observed values (1: daily flow value; 2: streamflow gauge)
         !* qsim: Simulated values (1: daily flow value; 2: streamflow gauge)
         integer, intent(in) :: ncal_day_min, ncal_day
@@ -55,24 +55,23 @@ module calc_drms
         integer :: j
 
         !> Allocate the function variable.
-        allocate(calc_drms_value%value_gauge(size(qsim, 2)))
-        calc_drms_value%value_gauge = 0.0
-        calc_drms_value%value_gauge_avg = 0.0
+        allocate(calc_abserr_value%value_gauge(size(qsim, 2)))
+        calc_abserr_value%value_gauge = 0.0
+        calc_abserr_value%value_gauge_avg = 0.0
 
         !> Only calculate if the current day is greater than the spin-up period.
-        !todo: This is only useful in the case of pre-emption.
         if (ncal_day > ncal_day_min) then
 
             !> Calculate the per gauge value.
             do j = 1, size(qsim, 2)
-                calc_drms_value%value_gauge(j) = sqrt(sum((qobs(1:ncal_day, j) - qsim(1:ncal_day, j))**2)/ncal_day)
-            end do !j = 1, size(qsim, 2)
+                calc_abserr_value%value_gauge(j) = sum(abs(qobs(1:ncal_day, j) - qsim(1:ncal_day, j)))/ncal_day
+            end do
 
             !> Calculate the average value.
-            calc_drms_value%value_gauge_avg = sum(calc_drms_value%value_gauge)/size(calc_drms_value%value_gauge)
+            calc_abserr_value%value_gauge_avg = sum(calc_abserr_value%value_gauge)/size(calc_abserr_value%value_gauge)
 
         end if !(ncal_day > ncal_day_min)
 
-    end function calc_drms_value
+    end function
 
-end module calc_drms
+end module calc_abserr

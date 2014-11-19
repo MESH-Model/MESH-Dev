@@ -27,7 +27,7 @@ VPATH=	$(DIR_REPO)/TRUNK/Modules: \
 #Modules
 OBJECTS=	area_watflood.o EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o mesh_input_module.o \
 			climate_forcing_module.o model_output.o \
-			calc_drms.o
+			calc_drms.o calc_abserr.o
 
 #SIMSTATS
 OBJECTS+=	NSE.o SAE.o SAESRT.o SIMSTATS.o

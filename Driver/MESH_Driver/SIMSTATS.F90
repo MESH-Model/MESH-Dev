@@ -7,6 +7,7 @@ use simstats_nse, only: nse_calc
 use simstats_sae, only: sae_calc
 use simstats_saesrt, only: saesrt_calc
 use calc_drms
+use calc_abserr
 
 implicit none
 
@@ -40,6 +41,7 @@ real, dimension(:, :), allocatable :: qobs, qsim
 real, dimension(:), allocatable :: mae, rmse, bias, nsd, nsw, tpd, tpw
 
 type(model_output_drms) :: st_drms
+type(model_output_abserr) :: st_abserr
 
 contains
 
@@ -283,6 +285,12 @@ close(100)
 st_drms = calc_drms_value(0, ncal, qobs, qsim)
 open(100, file="drms.txt", status="unknown")
 write(100, *) st_drms%value_gauge, st_drms%value_gauge_avg
+close(100)
+
+!> Write mean absolute error
+st_abserr = calc_abserr_value(0, ncal, qobs, qsim)
+open(100, file="abserr.txt", status="unknown")
+write(100, *) st_abserr%value_gauge, st_abserr%value_gauge_avg
 close(100)
 
 end subroutine
