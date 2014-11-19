@@ -6,6 +6,7 @@ use flags
 use simstats_nse, only: nse_calc
 use simstats_sae, only: sae_calc
 use simstats_saesrt, only: saesrt_calc
+use calc_drms
 
 implicit none
 
@@ -37,6 +38,8 @@ real, dimension(:, :), allocatable :: qobs, qsim
 
 !STATISTICS FOR MONTE CARLO SIMULATION
 real, dimension(:), allocatable :: mae, rmse, bias, nsd, nsw, tpd, tpw
+
+type(model_output_drms) :: st_drms
 
 contains
 
@@ -265,12 +268,21 @@ end if
 write(100, *) (bias(j), nsd(j), nsw(j), int(tpd(j)), j = 1, size(qobs, 2))
 close(100)
 
+!> Write Nash-Sutcliffe coefficient.
+!todo: there's probably a better way to store a set of multiple statistics in one file.
 open(100, file="NS.txt", status="unknown")
 write(100, *) (nsd(j), j = 1, size(qobs, 2))
 close(100)
 
+!> Write weekly Nash-Sutcliffe coefficient.
 open(100, file="NSW.txt", status="unknown")
 write(100, *) (nsw(j), j = 1, size(qobs, 2))
+close(100)
+
+!> Write daily root mean squared error
+st_drms = calc_drms_value(0, ncal, qobs, qsim)
+open(100, file="drms.txt", status="unknown")
+write(100, *) st_drms%value_gauge, st_drms%value_gauge_avg
 close(100)
 
 end subroutine
