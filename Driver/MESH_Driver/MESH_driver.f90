@@ -84,6 +84,7 @@ USE MODEL_OUTPUT
 USE climate_forcing
 USE model_dates
 use simstats
+use model_files
 
 IMPLICIT NONE
 INTRINSIC MAXLOC
@@ -794,15 +795,16 @@ TYPE(ClassParameters) :: cp
 TYPE(SoilValues) :: sv
 TYPE(HydrologyParameters) :: hp
 
+type(fl_ids):: fls 
+
 !>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
 !> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
-TYPE(OUT_FLDS)     :: VR
+TYPE(OUT_FLDS)      :: VR
 type(water_balance) :: wb
-type(basin_info) :: bi
-TYPE(DATES_MODEL) :: TS
-TYPE(INFO_OUT)    :: IOF
-
-TYPE(CLIM_INFO) :: cm
+type(basin_info)    :: bi
+TYPE(DATES_MODEL)   :: TS
+TYPE(INFO_OUT)      :: IOF
+TYPE(CLIM_INFO)     :: cm
 
 
 LOGICAL :: R2COUTPUT,EXISTS
@@ -831,6 +833,7 @@ CHARACTER*2000 FMT
 
 CHARACTER*500 WRT_900_1,WRT_900_2,WRT_900_3,WRT_900_4,WRT_900_f
 CHARACTER*500 fmt_1,fmt_2,fmt_out
+CHARACTER*500 fl_listMesh
 CHARACTER*5  strInt
 !=======================================================================
 !     * SET PHYSICAL CONSTANTS AND COMMON BLOCKS
@@ -869,7 +872,7 @@ DATA VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
   EXTFLG/0/, IWFICE/3/, ERRFLG/1/
 
 real :: startprog,endprog
-
+integer :: narg
 
 !> ((((((((((((((((((((((((((((((((((
 !> Set the acceptable version numbers
@@ -891,6 +894,18 @@ call cpu_time(startprog)
 WRITE (6, "(' MESH 'A, ' --- ',' ('A,')'/)"), TRIM (RELEASE(6)), &
       TRIM (VERSION) !MESH VERSION
 
+!File handled for variable in/out names
+!At the moment only class,hydro parameters and some outputs
+      
+!Check if any arguments are found
+narg = command_argument_count()   
+if (narg .gt. 0)then
+    VARIABLEFILESFLAG = 1
+    call get_command_argument(narg,fl_listMesh)
+    call Init_fls(fls,trim(adjustl(fl_listMesh)))
+    print*,fl_listMesh,fls%pmclass,fls%pmhydro,fls%flOut1
+endif      
+
 ! Find the appropriate value of IGND from MESH_input_soil_levels.txt
 IGND = 0
 OPEN (52, FILE="MESH_input_soil_levels.txt", STATUS="OLD",IOSTAT=IOS)
@@ -911,6 +926,8 @@ ELSE
    WRITE(6,*) "IGND = ", IGND
 END IF
 CLOSE(52)
+
+
 
 !>=======================================================================
 !> INITIALIZE CLASS VARIABLES
@@ -953,7 +970,7 @@ CALL READ_INITIAL_INPUTS( &
   INDEPPAR, DEPPAR, WF_R2, M_C, &
  !>the types that are to be allocated and initialised
   op, sl, cp, sv, hp,ts,cm, &
-  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS)
+  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
 !INITIALIZE IMIN2  
   IMIN2 = IMIN
@@ -5436,7 +5453,7 @@ END DO
 
 199 CONTINUE
 
-call stats_write()
+call stats_write(fls)
 
 DO I=1, wf_num_points
   CLOSE(UNIT=150+i*10+1)
