@@ -84,7 +84,7 @@ subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
     integer :: i, j, iw, n, nw
     real, intent(in), dimension(:) :: obs, sim
     real, allocatable ::  obsw(:), simw(:), errw(:), errwm(:)
-    integer :: ilf !number of day left out in the calculation of metrics
+    integer :: ilf = 1 !number of day left out in the calculation of metrics
     !OUTGOING VARIABLES
     real :: bias, nsd, nsw, tpd, tp
 
@@ -125,7 +125,7 @@ subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
 
     !WEEKLY OBSERVED AND SIMULATED VALUES
     iw = 0
-    do i = ilf, n, 7
+    do i = 1, n, 7
         iw = iw + 1
         j = min(i + 6, n)
         obsw(iw) = sum(obs(i:j))
@@ -133,17 +133,17 @@ subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
     end do
 
     !MEAN OF OBSERVED RUNOFF
-    nad = count(obs(ilf:n) >= 0.0)
-    obsdm = sum(obs(ilf:n), mask = obs(ilf:n) >= 0.0) / nad
+    nad = count(obs(1:n) >= 0.0)
+    obsdm = sum(obs(1:n), mask = obs(1:n) >= 0.0) / nad
 
     !MEAN OF WEEKLY RUNOFF
     naw = count(obsw(1:nw) >= 0.0)
     obswm = sum(obsw(1:nw), mask = obsw(1:nw) >= 0.0) / naw
 
     !CALCULATE ERRORS FOR RUNOFF GREATER THAN ZERO - DAILY
-    where(obs(ilf:n) >= 0.0)
-        errd(ilf:n) = obs(ilf:n) - sim(ilf:n)
-        errdm(ilf:n) = obs(ilf:n) - obsdm
+    where(obs(1:n) >= 0.0)
+        errd(1:n) = obs(1:n) - sim(1:n)
+        errdm(1:n) = obs(1:n) - obsdm
     end where
 
     !CALCULATE ERRORS FOR RUNOFF GREATER THAN ZERO - WEEKLY
@@ -153,13 +153,13 @@ subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
     end where
 
     !CALCULATE THE STATISTICAL COEFFICIENTS
-    bias = sum(errd(ilf:n)) / (obsdm * nad)
+    bias = sum(errd(1:n)) / (obsdm * nad)
     nsd = 1.0 - sum(errd*errd) / sum(errdm*errdm)
     nsw = 1.0 - sum(errw*errw) / sum(errwm*errwm)
 
     !TIME TO PEAK - DAILY BASIS
     errtp = 0.0
-    do i = ilf, n, 365
+    do i = 1, n, 365
         j = min(i+364, n)
         if(obs(max(i, j-182)) > 0.0) then
             ipo = maxloc(obs(i:j))
@@ -227,6 +227,9 @@ subroutine stats_init(nyears, ns)
 
     allocate(qobs(nyears*366, ns), qsim(nyears*366, ns))
     allocate(mae(ns), rmse(ns), bias(ns), nsd(ns), nsw(ns), tpd(ns), tpw(ns))
+
+    qobs = 0.0
+    qsim = 0.0
 
 end subroutine
 
