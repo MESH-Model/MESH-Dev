@@ -302,7 +302,7 @@ subroutine stats_write(fls)
     !> Write Nash-Sutcliffe coefficient.
     !todo: there's probably a better way to store a set of multiple statistics in one file.
     open(100, file="NS.txt", status="unknown")
-    write(100, *) (nsd(j), j = 1, size(qobs, 2))
+    write(100, *) (nsd(j), j = 1, size(qobs, 2)), sum(nsd)/size(qobs, 2)
     close(100)
 
     !> Write weekly Nash-Sutcliffe coefficient.
