@@ -16,24 +16,97 @@ module model_output
         integer :: na, nm, ignd
     end type basin_info
 
-    !> Data type to store components of the water balance
-    !* pre(:): Precipitation [kg m-2] (1: grid)
-    !* evap(:): Evaporation (water lost by evapotranspiration and sublimation, both rain and snow components) [kg m-2] (1: grid)
-    !* rof(:): Runoff (combination of overland-, subsurface-, and base-flows) [kg m-2] (1: grid)
-    !* rofo(:): Overland flow component of runoff [kg m-2] (1: grid)
-    !* rofs(:): Subsurface flow component of runoff [kg m-2] (1: grid)
-    !* rofb(:): Baseflow component of runoff [kg m-2] (1: grid)
-    !* rcan(:): Rainfall intercepted by the canopy [kg m-2] (1: grid)
-    !* sncan(:): Snowfall intercepted by the canopy [kg m-2] (1: grid)
-    !* pndw(:): Water ponded at the surface of the soil [kg m-2] (1: grid)
-    !* sno(:): Snowpack at the surface of the soil [kg m-2] (1: grid)
-    !* wsno(:): Water stored in the snowpack [kg m-2] (1: grid)
-    !* stg(:): Water stored in the system [kg m-2] (1: grid)
-    !* dstg(:): Difference of water stored in the system compared to the previous time-step of the element [kg m-2] (1: grid)
-    !* grid_area(:): Fractional area of the grid-square [m2 m-2] (1: grid)
-    !* lqws(:, :): Water stored in the soil matrix [kg m-2] (1: grid, 2: soil layer)
-    !* frws(:, :): Frozen water (ice) stored in the soil matrix [kg m-2] (1: grid, 2: soil layer)
-    !* basin_area: Total fractional area of the basin [m2 m-2] (1: grid)
+    !>
+    !> *****************************************************************************
+    !> Although it may seen redundant, data types for groups are created
+    !> to include the time-series dim, if applicable, because of the way
+    !> arrays are stored in Fortran. Storing group(t)%vars(i) can have significant
+    !> overhead when compared to group_vars(t, i).
+    !> *****************************************************************************
+    !>
+
+    !>
+    !> *****************************************************************************
+    !> Meteorological output data
+    !> *****************************************************************************
+    !>
+
+    !> Data type for storing meteorlogical data in time and space.
+    !* (1: time, 2: space)
+    type met_data_series
+
+        real, dimension(:, :), allocatable :: &
+            fsdown, fsvh, fsih, fdl, ul, &
+            ta, qa, pres, pre
+
+        contains
+
+        !> Procedure to initialize the variables and allocate the arrays.
+        procedure :: init => init_met_data_series
+
+    end type !met_data_series
+
+    !> Data type for storing meteorological data in time or space.
+    !* (1: time or space)
+    type met_data
+
+        real, dimension(:), allocatable :: &
+            fsdown, fsvh, fsih, fdl, ul, &
+            ta, qa, pres, pre
+
+        contains
+
+        !> Procedure to initialize the variables and allocate the arrays.
+        procedure :: init => init_met_data
+
+    end type !met_data
+
+    !>
+    !> *****************************************************************************
+    !> Water balance output data
+    !> *****************************************************************************
+    !* pre: Precipitation [kg m-2]
+    !* evap: Evaporation (water lost by evapotranspiration and sublimation, both rain and snow components) [kg m-2]
+    !* rof: Runoff (combination of overland-, subsurface-, and base-flows) [kg m-2]
+    !* rofo: Overland flow component of runoff [kg m-2]
+    !* rofs: Subsurface flow component of runoff [kg m-2]
+    !* rofb: Baseflow component of runoff [kg m-2]
+    !* rcan: Rainfall intercepted by the canopy [kg m-2]
+    !* sncan: Snowfall intercepted by the canopy [kg m-2]
+    !* pndw: Water ponded at the surface of the soil [kg m-2]
+    !* sno: Snowpack at the surface of the soil [kg m-2]
+    !* wsno: Water stored in the snowpack [kg m-2]
+    !* stg: Water stored in the system [kg m-2]
+    !* dstg: Difference of water stored in the system compared to the previous time-step of the element [kg m-2]
+    !* grid_area: Fractional area of the grid-square [m2 m-2]
+    !* lqws: Water stored in the soil matrix [kg m-2]
+    !* frws: Frozen water (ice) stored in the soil matrix [kg m-2]
+    !* basin_area: Total fractional area of the basin [m2 m-2]
+    !> *****************************************************************************
+    !>
+
+    !> Data type to store components of the water balance in time and space.
+    !* (1: time, 2: space) or (1: time, 2: space, 3: soil layer)
+    type water_balance_series
+
+        real, dimension(:, :), allocatable :: &
+            pre, evap, rof, &
+            rofo, rofs, rofb, &
+            rcan, sncan, pndw, sno, wsno, &
+            stg, dstg, &
+            grid_area
+        real, dimension(:, :, :), allocatable :: &
+            lqws, frws
+        real :: basin_area
+
+        contains
+
+        procedure :: init => init_water_balance_series
+
+    end type !water_balance_series
+
+    !> Data type to store components of the water balance in time or space.
+    !* (1: time or space) or (1: time or space, 2: soil layer)
     type water_balance
 
         real, dimension(:), allocatable :: &
@@ -49,18 +122,25 @@ module model_output
         contains
 
         procedure :: init => init_water_balance
+!        procedure :: deallocate => deallocate_water_balance
 
-    end type water_balance
+    end type !water_balance
 
-    !> Data type to store components of the energy balance
-    !* hfs: (1: grid)
-    !* qevp: (1: grid)
+    !> Data type to store components of the energy balance in time and space.
+    type energy_balance_series
+
+        real, dimension(:, :), allocatable :: &
+            hfs, qevp
+
+    end type !energy_balance_series
+
+    !> Data type to store components of the energy balance in time or space.
     type energy_balance
 
         real, dimension(:), allocatable :: &
             hfs, qevp
 
-    end type
+    end type !energy_balance
 
     !> Data type to store soil parameters.
     !* tbar: Temperature of the soil layer (1: grid, 2: soil layer).
@@ -68,12 +148,33 @@ module model_output
     !* thlq: Fractional water-content stored in the soil layer (1: grid, 2: soil layer).
     type soil_parameters
 
-        real, dimension(:, :), allocatable :: &
+        real, dimension(:, :, :), allocatable :: &
             tbar, thic, thlq
 
         contains
 
         procedure :: init => init_soil_parameters
+
+    end type
+
+    !> Data type to store the output format and data handling for an output variable.
+    !* name: Name of the variable.
+    !* nargs: Number of arguments in the argument array.
+    !* args: Argument array containing flags for handling the output of the variable (1: Arguments)
+    !* out_*: Output is written if .TRUE.; *: time interval (e.g., 'Y', 'M', etc.).
+    !* out_fmt: Format of the output (e.g., 'R2C', 'SEQ', etc.).
+    !* out_acc: Method of accumulation (e.g., if accumulated, averaged, etc., over the time period).
+    type data_var_out
+
+        character*20 :: name
+        integer :: nargs
+        character*20, dimension(:), allocatable :: args
+        logical :: out_y, out_m, out_s, out_d, out_h
+        character*20 :: out_fmt, out_acc
+
+        contains
+
+        procedure :: allocate_args => data_var_out_allocate_args
 
     end type
 
@@ -111,11 +212,11 @@ module model_output
         integer :: na_id
 
         !Runoff
-        real, dimension(:)  , allocatable :: rofo, rofs, rofb
+        real, dimension(:)   , allocatable :: rofo, rofs, rofb
 
         !State variable and flux in soil layers
-        real, dimension(:,:), allocatable :: gflx
-        real, dimension(:,:), allocatable :: thlq, thic, tbar
+        real, dimension(:, :), allocatable :: gflx
+        real, dimension(:, :), allocatable :: thlq, thic, tbar
 
     end type
 
@@ -144,10 +245,17 @@ module model_output
         !real, dimension(:,:), allocatable :: pndw_y, pndw_m, pndw_s ! Water ponded at the surface of the soil
         !real, dimension(:,:), allocatable :: sno_y, sno_m, sno_s ! Snow stored at the surface of the soil (snowpack)
         !real, dimension(:,:), allocatable :: wsno_y, wsno_m, wsno_s ! Water stored in the snowpack
-        type(water_balance), dimension(:), allocatable :: &
-            wb_y, wb_m, wb_s, wb_d
-        type(soil_parameters), dimension(:), allocatable :: &
-            sp_y, sp_m, sp_s, sp_d
+        type(water_balance_series) :: wbt_y, wbt_m, wbt_s, wbt_d, wbt_h
+        type(water_balance) :: wd_ts
+
+        type(soil_parameters) :: spt_y, spt_m, spt_s, spt_d, spt_h
+        type(soil_parameters) :: sp_ts
+        !type(soil_parameters_series) :: spt_y, spt_m, spt_s, spt_d, spt_h
+        !type(soil_parameters) :: sp_ts
+
+        !* mdt_h: Meteological data (hourly time-step).
+        type(met_data_series) :: mdt_h
+        type(met_data) :: md_ts
 
         contains
 
@@ -164,13 +272,158 @@ module model_output
 
         character*450 :: flIn
         character*450 :: pthOut
-        character*20, dimension(:,:), allocatable :: ids_var_out
+!        character*20, dimension(:,:), allocatable :: ids_var_out
         integer :: nr_out
+        type(data_var_out), dimension(:), allocatable :: var_out
 
     END TYPE
     !>******************************************************************************
 
+    !todo: Move this to somewhere more appropriate, perhaps as model_info.
+    type(iter_counter), public :: public_ic
+
     contains
+
+    subroutine init_met_data_series(mdt, bi, nts)
+
+        !> Derived-type variable.
+        class(met_data_series) :: mdt
+
+        !> Input variables.
+        !* nts: Number of time-steps in the series.
+        type(basin_info), intent(in) :: bi
+        integer, intent(in) :: nts
+
+        !> Allocate the arrays.
+        allocate( &
+            mdt%fsdown(nts, bi%na), mdt%fsvh(nts, bi%na), mdt%fsih(nts, bi%na), mdt%fdl(nts, bi%na), mdt%ul(nts, bi%na), &
+            mdt%ta(nts, bi%na), mdt%qa(nts, bi%na), mdt%pres(nts, bi%na), mdt%pre(nts, bi%na))
+
+        !> Explicitly set all variables to 0.0.
+        mdt%fsdown = 0.0
+        mdt%fsvh = 0.0
+        mdt%fsih = 0.0
+        mdt%fdl = 0.0
+        mdt%ul = 0.0
+        mdt%ta = 0.0
+        mdt%qa = 0.0
+        mdt%pres = 0.0
+        mdt%pre = 0.0
+
+    end subroutine !init_met_data_series
+
+    subroutine init_met_data(md, bi)
+
+        !> Derived-type variable.
+        class(met_data) :: md
+
+        !> Input variables.
+        type(basin_info), intent(in) :: bi
+
+        !> Allocate the arrays.
+        allocate( &
+            md%fsdown(bi%na), md%fsvh(bi%na), md%fsih(bi%na), md%fdl(bi%na), md%ul(bi%na), &
+            md%ta(bi%na), md%qa(bi%na), md%pres(bi%na), md%pre(bi%na))
+
+        !> Explicitly set all variables to 0.0.
+        md%fsdown = 0.0
+        md%fsvh = 0.0
+        md%fsih = 0.0
+        md%fdl = 0.0
+        md%ul = 0.0
+        md%ta = 0.0
+        md%qa = 0.0
+        md%pres = 0.0
+        md%pre = 0.0
+
+    end subroutine !init_met_data
+
+    subroutine data_var_out_allocate_args(vo, args)
+
+        !> Type variable.
+        class(data_var_out) :: vo
+
+        !> Input variables.
+        character*20, dimension(:), intent(in) :: args
+
+        !> Local variables.
+        integer :: i
+
+        !> De-allocate the args if they have already been allocated.
+        if (allocated(vo%args)) &
+            deallocate(vo%args)
+
+        !> Set nargs to the size of the array.
+        vo%nargs = size(args)
+
+        !> Allocate args and copy the input args to the array.
+        allocate(vo%args(vo%nargs))
+        vo%args = args
+
+        !> Reset variables.
+        vo%out_y = .false.
+        vo%out_m = .false.
+        vo%out_s = .false.
+        vo%out_d = .false.
+        vo%out_h = .false.
+        vo%out_fmt = "unknown"
+
+        !> Assign variables according to the args.
+        do i = 1, vo%nargs
+
+            !todo: A better means for comparison would be a string utility to convert all chars to lower-case, say, and then run the comparison.
+            select case (trim(adjustl(vo%args(i))))
+
+                !> Yearly output.
+                case ("Y", "y")
+                    vo%out_y = .true.
+
+                !> Monthly output.
+                case ("M", "m")
+                    vo%out_m = .true.
+
+                !> Seasonal output.
+                case ("S", "s")
+                    vo%out_s = .true.
+
+                !> Daily output.
+                case ("D", "d")
+                    vo%out_d = .true.
+
+                !> Hourly:
+                case ("H", "h")
+                    vo%out_h = .true.
+
+                !> Output format.
+                case ("R2C", "r2c", &
+                      "SEQ", "seq", "BINSEQ", "binseq")
+                    vo%out_fmt = vo%args(i)
+
+                !> Method of accumulation.
+                case ("CUM", "cum", &
+                      "AVG", "avg", &
+                      "MAX", "max", &
+                      "MIN", "min")
+                    vo%out_acc = vo%args(i)
+
+                case default
+                    print *, trim(vo%args(i)) // " (Line ", i, ") is an unrecognized argument for output."
+
+            end select !case (vo%args(i))
+
+        end do !i = 1, vo%nargs
+
+    end subroutine !data_var_out_allocate_args
+
+!    subroutine info_out_allocate_var_out(ifo, nvo)
+!
+!        class(info_out) :: ifo
+!        integer :: nvo
+!
+!        if (allocated(ifo%var_out)) deallocate(ifo%var_out)
+!        allocate(ifo%var_out(nvo))
+!
+!    end subroutine !info_out_allocate_var_out
 
     subroutine init_out_flds(vr, bi, ts)
 
@@ -185,25 +438,71 @@ module model_output
         integer :: i
 
         !> Allocate arrays using basin info.
-        allocate( &
-            vr%wb_y(ts%nyears), vr%wb_m(ts%nmonths), vr%wb_s(ts%nseason), &
-            vr%sp_y(ts%nyears), vr%sp_m(ts%nmonths), vr%sp_s(ts%nseason))
 
-        !> Initialize sub-variables.
-        do i = 1, ts%nyears
-            call vr%wb_y(i)%init(bi)
-            call vr%sp_y(i)%init(bi)
-        end do
-        do i = 1, ts%nmonths
-            call vr%wb_m(i)%init(bi)
-            call vr%sp_m(i)%init(bi)
-        end do
-        do i = 1, ts%nseason
-            call vr%wb_s(i)%init(bi)
-            call vr%sp_s(i)%init(bi)
-        end do
+        !> Yearly:
+        call vr%wbt_y%init(bi, ts%nyears)
+        call vr%spt_y%init(bi, ts%nyears)
+
+        !> Monthly:
+        call vr%wbt_m%init(bi, ts%nmonths)
+        call vr%spt_m%init(bi, ts%nmonths)
+
+        !> Seasonally:
+        call vr%wbt_s%init(bi, ts%nseason)
+        call vr%spt_s%init(bi, ts%nseason)
+
+        !> Daily:
+        call vr%wbt_d%init(bi, ts%nr_days)
+        call vr%spt_d%init(bi, ts%nr_days)
+
+        !> Hourly:
+        call vr%wbt_h%init(bi, max(1, 3600/public_ic%timestep))
+        call vr%mdt_h%init(bi, max(1, 3600/public_ic%timestep))
+
+        !> Per time-step:
+        call vr%md_ts%init(bi)
 
     end subroutine !init_out_flds
+
+    subroutine init_water_balance_series(wbt, bi, nts)
+
+        !> Type variable.
+        class(water_balance_series) :: wbt
+
+        !> Input variables.
+        type(basin_info), intent(in) :: bi
+        integer, intent(in) :: nts
+
+        !> Allocate arrays using basin info.
+        allocate( &
+            wbt%pre(nts, bi%na), wbt%evap(nts, bi%na), wbt%rof(nts, bi%na), &
+            wbt%rofo(nts, bi%na), wbt%rofs(nts, bi%na), wbt%rofb(nts, bi%na), &
+            wbt%rcan(nts, bi%na), wbt%sncan(nts, bi%na), &
+            wbt%pndw(nts, bi%na), wbt%sno(nts, bi%na), wbt%wsno(nts, bi%na), &
+            wbt%stg(nts, bi%na), wbt%dstg(nts, bi%na), &
+            wbt%grid_area(nts, bi%na), &
+            wbt%lqws(nts, bi%na, bi%ignd), wbt%frws(nts, bi%na, bi%ignd))
+
+        !> Explicitly set all variables to 0.0.
+        wbt%pre = 0.0
+        wbt%evap = 0.0
+        wbt%rof = 0.0
+        wbt%rofo = 0.0
+        wbt%rofs = 0.0
+        wbt%rofb = 0.0
+        wbt%rcan = 0.0
+        wbt%sncan = 0.0
+        wbt%pndw = 0.0
+        wbt%sno = 0.0
+        wbt%wsno = 0.0
+        wbt%stg = 0.0
+        wbt%dstg = 0.0
+        wbt%grid_area = 0.0
+        wbt%lqws = 0.0
+        wbt%frws = 0.0
+        wbt%basin_area = 0.0
+
+    end subroutine !init_water_balance_series
 
     subroutine init_water_balance(wb, bi)
 
@@ -244,18 +543,44 @@ module model_output
 
     end subroutine !init_water_balance
 
-    subroutine init_soil_parameters(sp, bi)
+!    subroutine deallocate_water_balance(wb)
+
+        !> Type variable.
+!        class(water_balance) :: wb
+
+        !> De-allocate arrays.
+!        if (allocated(wb%pre)) deallocate(wb%pre)
+!        if (allocated(wb%evap)) deallocate(wb%evap)
+!        if (allocated(wb%rof)) deallocate(wb%rof)
+!        if (allocated(wb%rofo)) deallocate(wb%rofo)
+!        if (allocated(wb%rofs)) deallocate(wb%rofs)
+!        if (allocated(wb%rofb)) deallocate(wb%rofb)
+!        if (allocated(wb%rcan)) deallocate(wb%rcan)
+!        if (allocated(wb%sncan)) deallocate(wb%sncan)
+!        if (allocated(wb%pndw)) deallocate(wb%pndw)
+!        if (allocated(wb%sno)) deallocate(wb%sno)
+!        if (allocated(wb%wsno)) deallocate(wb%wsno)
+!        if (allocated(wb%stg)) deallocate(wb%stg)
+!        if (allocated(wb%dstg)) deallocate(wb%dstg)
+!        if (allocated(wb%grid_area)) deallocate(wb%grid_area)
+!        if (allocated(wb%lqws)) deallocate(wb%lqws)
+!        if (allocated(wb%frws)) deallocate(wb%frws)
+
+!    end subroutine !deallocate_water_balance
+
+    subroutine init_soil_parameters(sp, bi, nts)
 
         !> Type variable.
         class(soil_parameters) :: sp
 
         !> Input variables.
         type(basin_info), intent(in) :: bi
+        integer, intent(in) :: nts
 
         !> Allocate arrays using basin info.
         allocate( &
-            sp%tbar(bi%na, bi%ignd), &
-            sp%thic(bi%na, bi%ignd), sp%thlq(bi%na, bi%ignd))
+            sp%tbar(nts, bi%na, bi%ignd), &
+            sp%thic(nts, bi%na, bi%ignd), sp%thlq(nts, bi%na, bi%ignd))
 
         !> Explicitly set all variables to 0.0.
         sp%tbar = 0.0
@@ -426,11 +751,11 @@ module model_output
 
         !> Frozen and liquid water stored in the soil
         do i = 1, ignd
-            bal%wb%frws(idate,i) = bal%wb%frws(idate,i) + frws(i)
-            bal%wb%lqws(idate,i) = bal%wb%lqws(idate,i) + lqws(i)
+            bal%wb%frws(idate, i) = bal%wb%frws(idate, i) + frws(i)
+            bal%wb%lqws(idate, i) = bal%wb%lqws(idate, i) + lqws(i)
             if (isavg) then
-                bal%wb%frws(idate,i) = bal%wb%frws(idate,i)/real(nhours)
-                bal%wb%lqws(idate,i) = bal%wb%lqws(idate,i)/real(nhours)
+                bal%wb%frws(idate, i) = bal%wb%frws(idate, i)/real(nhours)
+                bal%wb%lqws(idate, i) = bal%wb%lqws(idate, i)/real(nhours)
             end if
         end do
 
@@ -462,8 +787,11 @@ module model_output
         type(info_out) :: ifo
 
         !Internals
-        integer :: ios, i, j, k
+        integer :: ios, i, j, k, istat, nargs
         character*50 :: vId
+        character*20, dimension(:), allocatable :: args
+
+        call public_ic%init(ts%start_date(1), ts%start_date(2), ts%start_date(3), ts%start_date(4))
 
         !>--------------Main Subtrouine start-----------------------------------------------
 
@@ -478,7 +806,11 @@ module model_output
         read(909, *) ifo%pthOut
         read(909, *) ifo%nr_out
 
-        allocate(ifo%ids_var_out(ifo%nr_out, 6))
+!        allocate(ifo%ids_var_out(ifo%nr_out, 6))
+!        call ifo%allocate_var_out(ifo%nr_out)
+        allocate(ifo%var_out(ifo%nr_out), stat = istat)
+        if (istat /= 0) &
+            print *, "Error allocating output variable array from file."
 
         !> Initialize variable.
         call vr%init(bi, ts)
@@ -486,299 +818,36 @@ module model_output
         do i = 1, ifo%nr_out
 
             !> Read configuration information from file.
-            read(909, *) (ifo%ids_var_out(i, j), j = 1, 6)
+            !read(909, *) (ifo%ids_var_out(i, j), j = 1, 6)
+            read(909, *) ifo%var_out(i)%name, nargs
+            if (allocated(args)) deallocate(args)
+            allocate(args(nargs))
+            backspace(909)
+            read(909, *) ifo%var_out(i)%name, nargs, (args(j), j = 1, nargs)
+            call ifo%var_out(i)%allocate_args(args)
 
-            !> Yearly:
-            if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') &
-                allocate(vr%sp_y(ts%nyears), vr%wb_y(ts%nyears))
+            !temp: Copy to old array
+!            ifo%ids_var_out(i, 1) = ifo%var_out(i)%name
+!            do j = 2, nargs + 1
+!                ifo%ids_var_out(i, j) = ifo%var_out(i)%args(j - 1)
+!            end do
 
-            !> Monthly:
-            if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') &
-                allocate(vr%sp_m(ts%nmonths), vr%wb_m(ts%nmonths))
+!            !> Yearly:
+!            if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') &
+!                allocate(vr%sp_y(ts%nyears), vr%wb_y(ts%nyears))
 
-            !> Seasonally:
-            if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') &
-                allocate(vr%sp_s(ts%nseason), vr%wb_s(ts%nseason))
+!            !> Monthly:
+!            if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') &
+!                allocate(vr%sp_m(ts%nmonths), vr%wb_m(ts%nmonths))
+
+!            !> Seasonally:
+!            if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') &
+!                allocate(vr%sp_s(ts%nseason), vr%wb_s(ts%nseason))
 
             !> Extract variable ID.
-            vId = trim(adjustl(ifo%ids_var_out(i, 1)))
+!            vId = trim(adjustl(ifo%ids_var_out(i, 1)))
+            vId = trim(adjustl(ifo%var_out(i)%name))
             select case (vId)
-
-                case ('PREC', 'Rainfall', 'Rain', 'Precipitation')
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') then
-                        do k = 1, ts%nyears
-                            allocate(vr%wb_y(k)%pre(bi%na))
-                            vr%wb_y(k)%pre = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') then
-                        do k = 1, ts%nmonths
-                            allocate(vr%wb_m(k)%pre(bi%na))
-                            vr%wb_m(k)%pre = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') then
-                        do k = 1, ts%nseason
-                            allocate(vr%wb_s(k)%pre(bi%na))
-                            vr%wb_s(k)%pre = 0.0
-                        end do
-                    end if
-
-                case ('EVAP', 'Evapotranspiration')
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') then
-                        do k = 1, ts%nyears
-                            allocate(vr%wb_y(k)%evap(bi%na))
-                            vr%wb_y(k)%evap = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') then
-                        do k = 1, ts%nmonths
-                            allocate(vr%wb_m(k)%evap(bi%na))
-                            vr%wb_m(k)%evap = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') then
-                        do k = 1, ts%nseason
-                            allocate(vr%wb_s(k)%evap(bi%na))
-                            vr%wb_s(k)%evap = 0.0
-                        end do
-                    end if
-
-                case ('Runoff', 'ROF')
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') then
-                        do k = 1, ts%nyears
-                            allocate(vr%wb_y(k)%rof(bi%na))
-                            vr%wb_y(k)%rof = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') then
-                        do k = 1, ts%nmonths
-                            allocate(vr%wb_m(k)%rof(bi%na))
-                            vr%wb_m(k)%rof = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') then
-                        do k = 1, ts%nseason
-                            allocate(vr%wb_s(k)%rof(bi%na))
-                            vr%wb_s(k)%rof = 0.0
-                        end do
-                    end if
-
-                case ('DeltaStorage', 'DSTG')
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') then
-                        do k = 1, ts%nyears
-                            allocate(vr%wb_y(k)%dstg(bi%na))
-                            vr%wb_y(k)%dstg = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') then
-                        do k = 1, ts%nmonths
-                            allocate(vr%wb_m(k)%dstg(bi%na))
-                            vr%wb_m(k)%dstg = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') then
-                        do k = 1, ts%nseason
-                            allocate(vr%wb_s(k)%dstg(bi%na))
-                            vr%wb_s(k)%dstg = 0.0
-                        end do
-                    end if
-
-                case ('TempSoil', 'Temperature_soil_layers', 'TBAR')
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') then
-                        do k = 1, ts%nyears
-                            allocate(vr%sp_y(k)%tbar(bi%na, bi%ignd))
-                            vr%sp_y(k)%tbar = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') then
-                        do k = 1, ts%nmonths
-                            allocate(vr%sp_m(k)%tbar(bi%na, bi%ignd))
-                            vr%sp_m(k)%tbar = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') then
-                        do k = 1, ts%nseason
-                            allocate(vr%sp_s(k)%tbar(bi%na, bi%ignd))
-                            vr%sp_s(k)%tbar = 0.0
-                        end do
-                    end if
-
-                case ('LQWS')
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') then
-                        do k = 1, ts%nyears
-                            allocate(vr%wb_y(k)%lqws(bi%na, bi%ignd))
-                            vr%wb_y(k)%lqws = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') then
-                        do k = 1, ts%nmonths
-                            allocate(vr%wb_m(k)%lqws(bi%na, bi%ignd))
-                            vr%wb_m(k)%lqws = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') then
-                        do k = 1, ts%nseason
-                            allocate(vr%wb_s(k)%lqws(bi%na, bi%ignd))
-                            vr%wb_s(k)%lqws = 0.0
-                        end do
-                    end if
-
-                case ('FRWS')
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') then
-                        do k = 1, ts%nyears
-                            allocate(vr%wb_y(k)%frws(bi%na, bi%ignd))
-                            vr%wb_y(k)%frws = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') then
-                        do k = 1, ts%nmonths
-                            allocate(vr%wb_m(k)%frws(bi%na, bi%ignd))
-                            vr%wb_m(k)%frws = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') then
-                        do k = 1, ts%nseason
-                            allocate(vr%wb_s(k)%frws(bi%na, bi%ignd))
-                            vr%wb_s(k)%frws = 0.0
-                        end do
-                    end if
-
-                case ('RCAN')
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') then
-                        do k = 1, ts%nyears
-                            allocate(vr%wb_y(k)%rcan(bi%na))
-                            vr%wb_y(k)%rcan = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') then
-                        do k = 1, ts%nmonths
-                            allocate(vr%wb_m(k)%rcan(bi%na))
-                            vr%wb_m(k)%rcan = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') then
-                        do k = 1, ts%nseason
-                            allocate(vr%wb_s(k)%rcan(bi%na))
-                            vr%wb_s(k)%rcan = 0.0
-                        end do
-                    end if
-
-                case ('SCAN', 'SNCAN')
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') then
-                        do k = 1, ts%nyears
-                            allocate(vr%wb_y(k)%sncan(bi%na))
-                            vr%wb_y(k)%sncan = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') then
-                        do k = 1, ts%nmonths
-                            allocate(vr%wb_m(k)%sncan(bi%na))
-                            vr%wb_m(k)%sncan = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') then
-                        do k = 1, ts%nseason
-                            allocate(vr%wb_s(k)%sncan(bi%na))
-                            vr%wb_s(k)%sncan = 0.0
-                        end do
-                    end if
-
-                case ('PNDW')
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') then
-                        do k = 1, ts%nyears
-                            allocate(vr%wb_y(k)%pndw(bi%na))
-                            vr%wb_y(k)%pndw = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') then
-                        do k = 1, ts%nmonths
-                            allocate(vr%wb_m(k)%pndw(bi%na))
-                            vr%wb_m(k)%pndw = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') then
-                        do k = 1, ts%nseason
-                            allocate(vr%wb_s(k)%pndw(bi%na))
-                            vr%wb_s(k)%pndw = 0.0
-                        end do
-                    end if
-
-                case ('SNO')
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') then
-                        do k = 1, ts%nyears
-                            allocate(vr%wb_y(k)%sno(bi%na))
-                            vr%wb_y(k)%sno = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') then
-                        do k = 1, ts%nmonths
-                            allocate(vr%wb_m(k)%sno(bi%na))
-                            vr%wb_m(k)%sno = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') then
-                        do k = 1, ts%nseason
-                            allocate(vr%wb_s(k)%sno(bi%na))
-                            vr%wb_s(k)%sno = 0.0
-                        end do
-                    end if
-
-                case ('WSNO')
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'zY') then
-                        do k = 1, ts%nyears
-                            allocate(vr%wb_y(k)%wsno(bi%na))
-                            vr%wb_y(k)%wsno = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'zM') then
-                        do k = 1, ts%nmonths
-                            allocate(vr%wb_m(k)%wsno(bi%na))
-                            vr%wb_m(k)%wsno = 0.0
-                        end do
-                    end if
-
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'zS') then
-                        do k = 1, ts%nseason
-                            allocate(vr%wb_s(k)%wsno(bi%na))
-                            vr%wb_s(k)%wsno = 0.0
-                        end do
-                    end if
 
                 case ('ZPND')
                     print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."
@@ -796,8 +865,8 @@ module model_output
                     print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."
                     print *, "Use FRWS for frozen water stored in the soil [mm]."
 
-                case default
-                    print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."
+!                case default
+!                    print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."
 
             end select
         end do ! i = 1, ifo%nr_out
@@ -805,6 +874,164 @@ module model_output
         close(unit = 909)
 
     end subroutine Init_out
+
+    subroutine updatefieldsout_temp(vr, ts, ifo, &
+                                    md, &
+                                    now_year, now_day_julian, now_hour, now_timestep)
+
+        !> Input variables.
+        type(dates_model), intent(in) :: ts
+        type(info_out), intent(in) :: ifo
+        type(met_data) :: md
+        integer, intent(in) :: now_year, now_day_julian, now_hour, now_timestep
+
+        !> Input-output variables.
+        type(out_flds) :: vr
+
+        !> Local variables.
+        integer :: i
+        character*3 :: freq
+
+        !> Update output fields.
+        do i = 1, ifo%nr_out
+            select case (trim(adjustl(ifo%var_out(i)%name)))
+
+                case ("FSDOWN")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%fsdown, freq, public_ic%now_hour, now_hour, 882101, .true.)
+                        vr%mdt_h%fsdown((now_timestep/public_ic%timestep + 1), :) = md%fsdown
+                    end if
+
+                case ("FSVH")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%fsvh, freq, public_ic%now_hour, now_hour, 882102, .true.)
+                        vr%mdt_h%fsvh((now_timestep/public_ic%timestep + 1), :) = md%fsvh
+                    end if
+
+                case ("FSIH")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%fsih, freq, public_ic%now_hour, now_hour, 882103, .true.)
+                        vr%mdt_h%fsih((now_timestep/public_ic%timestep + 1), :) = md%fsih
+                    end if
+
+                case ("FDL")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%fdl, freq, public_ic%now_hour, now_hour, 882104, .true.)
+                        vr%mdt_h%fdl((now_timestep/public_ic%timestep + 1), :) = md%fdl
+                    end if
+
+                case ("UL")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%ul, freq, public_ic%now_hour, now_hour, 882105, .true.)
+                        vr%mdt_h%ul((now_timestep/public_ic%timestep + 1), :) = md%ul
+                    end if
+
+                case ("TA")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%ta, freq, public_ic%now_hour, now_hour, 882106, .true.)
+                        vr%mdt_h%ta((now_timestep/public_ic%timestep + 1), :) = md%ta
+                    end if
+
+                case ("QA")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%qa, freq, public_ic%now_hour, now_hour, 882107, .true.)
+                        vr%mdt_h%qa((now_timestep/public_ic%timestep + 1), :) = md%qa
+                    end if
+
+                case ("PRES")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%pres, freq, public_ic%now_hour, now_hour, 882108, .true.)
+                        vr%mdt_h%pres((now_timestep/public_ic%timestep + 1), :) = md%pres
+                    end if
+
+                case ("PRE")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%pre, freq, public_ic%now_hour, now_hour, 882109, .true.)
+                        vr%mdt_h%pre((now_timestep/public_ic%timestep + 1), :) = md%pre
+                    end if
+
+            end select !case (trim(adjustl(ifo%var_out(i)%name)))
+        end do !i = 1, ifo%nr_out
+
+        !> Update index-array counter.
+        call public_ic%update_now(now_year, now_day_julian, now_hour, now_timestep)
+
+    end subroutine !updatefieldsout_temp
+
+    subroutine check_write_var_out(ifo, var_id, fld_in, freq, old_time, now_time, file_unit, keep_file_open)
+
+        !> Input variables.
+        type(info_out), intent(in) :: ifo
+        integer, intent(in) :: var_id
+        real, dimension(:, :) :: fld_in
+        character*3, intent(in) :: freq
+        integer, intent(in) :: old_time, now_time, file_unit
+        logical :: keep_file_open
+
+        !> Local variables.
+        integer, dimension(:, :), allocatable :: dates
+        real, dimension(:, :), allocatable :: fld_out
+
+        !> Write output if at end of time-step.
+        if (now_time /= old_time) then
+
+            !> Write output.
+            select case (trim(adjustl(freq)))
+
+                case ("H")
+                    allocate(fld_out(size(fld_in, 2), 1))
+                    select case (trim(adjustl(ifo%var_out(var_id)%out_acc)))
+
+                        case ("AVG")
+                            fld_out(:, 1) = sum(fld_in, 1) / size(fld_in, 1)
+
+                        case ("MAX")
+                            fld_out(:, 1) = maxval(fld_in, 1)
+
+                        case ("MIN")
+                            fld_out(:, 1) = minval(fld_in, 1)
+
+                        case default
+                            fld_out(:, 1) = sum(fld_in, 1)
+
+                    end select !case (trim(adjustl(ifo%var_out(i)%out_acc)))
+
+            end select !case (trim(adjustl(freq)))
+
+            !> Reset array.
+            fld_in = 0.0
+
+            !> fld will have been allocated if a supported frequency was selected.
+            if (allocated(fld_out)) then
+
+                !> Set dates to contain the current time-step.
+                allocate(dates(1, 5))
+                dates(1, 1) = public_ic%now_year
+                dates(1, 2) = public_ic%now_month
+                dates(1, 3) = public_ic%now_day
+                dates(1, 4) = public_ic%now_day_julian
+                dates(1, 5) = public_ic%now_hour
+
+                !> Print the output.
+                call WriteR2C(fld_out, var_id, ifo, freq, dates, file_unit, keep_file_open, public_ic%count_hour)
+
+                !> De-allocate the temporary fld and dates variables.
+                deallocate(fld_out, dates)
+
+            end if !(allocated(fld)) then
+
+        end if !(now_time /= old_time) then
+
+    end subroutine !check_write_var_out
 
     subroutine UpdateFIELDSOUT(vr, ts, ifo, &
                                pre, evap, rof, dstg, &
@@ -833,148 +1060,161 @@ module model_output
         type(out_flds) :: vr
 
         !Internals
-        integer :: i, iy, im, iss
+        integer :: i, iy, im, iss, id
         character*50 :: vId
 
-        call GetIndicesDATES(iday, iyear, iy, im, iss, ts)
+        call GetIndicesDATES(iday, iyear, iy, im, iss, id, ts)
 
         do i = 1, ifo%nr_out
 
-            vId = trim(adjustl(ifo%ids_var_out(i, 1)))
+!            vId = trim(adjustl(ifo%ids_var_out(i, 1)))
+            vId = trim(adjustl(ifo%var_out(i)%name))
 
             select case (vId)
 
                 case ('PREC', 'Rainfall', 'Rain', 'Precipitation')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        vr%wb_y(iy)%pre = vr%wb_y(iy)%pre + pre
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        vr%wbt_y%pre(iy, :) = vr%wbt_y%pre(iy, :) + pre
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        vr%wb_m(im)%pre = vr%wb_m(im)%pre + pre
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        vr%wbt_m%pre(im, :) = vr%wbt_m%pre(im, :) + pre
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%wb_s(iss)%pre = vr%wb_s(iss)%pre  + pre
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        vr%wbt_s%pre(iss, :) = vr%wbt_s%pre(iss, :) + pre
+
+                    if (ifo%var_out(i)%out_d) &
+                        vr%wbt_d%pre(id, :) = vr%wbt_d%pre(id, :) + pre
 
                 case ('EVAP', 'Evapotranspiration')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        vr%wb_y(iy)%evap = vr%wb_y(iy)%evap + evap
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        vr%wbt_y%evap(iy, :) = vr%wbt_y%evap(iy, :) + evap
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        vr%wb_m(im)%evap = vr%wb_m(im)%evap + evap
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        vr%wbt_m%evap(im, :) = vr%wbt_m%evap(im, :) + evap
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%wb_s(iss)%evap = vr%wb_s(iss)%evap + evap
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        vr%wbt_s%evap(iss, :) = vr%wbt_s%evap(iss, :) + evap
+
+                    if (ifo%var_out(i)%out_d) &
+                        vr%wbt_d%evap(id, :) = vr%wbt_d%evap(id, :) + evap
 
                 case ('Runoff', 'ROF')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        vr%wb_y(iy)%rof = vr%wb_y(iy)%rof  + rof
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        vr%wbt_y%rof(iy, :) = vr%wbt_y%rof(iy, :)  + rof
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        vr%wb_m(im)%rof = vr%wb_m(im)%rof + rof
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        vr%wbt_m%rof(im, :) = vr%wbt_m%rof(im, :) + rof
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%wb_s(iss)%rof = vr%wb_s(iss)%rof + rof
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        vr%wbt_s%rof(iss, :) = vr%wbt_s%rof(iss, :) + rof
+
+                    if (ifo%var_out(i)%out_d) &
+                        vr%wbt_d%rof(id, :) = vr%wbt_d%rof(id, :) + rof
 
                 case ('DeltaStorage', 'DSTG')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        vr%wb_y(iy)%dstg = vr%wb_y(iy)%dstg + dstg
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        vr%wbt_y%dstg(iy, :) = vr%wbt_y%dstg(iy, :) + dstg
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        vr%wb_m(im)%dstg =  vr%wb_m(im)%dstg + dstg
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        vr%wbt_m%dstg(im, :) =  vr%wbt_m%dstg(im, :) + dstg
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%wb_s(iss)%dstg = vr%wb_s(iss)%dstg + dstg
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        vr%wbt_s%dstg(iss, :) = vr%wbt_s%dstg(iss, :) + dstg
+
+                    if (ifo%var_out(i)%out_d) &
+                        vr%wbt_d%dstg(id, :) = vr%wbt_d%dstg(id, :) + dstg
 
                 case ('TempSoil', 'Temperature_soil_layers', 'TBAR')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        vr%sp_y(iy)%tbar = vr%sp_y(iy)%tbar + tbar
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        vr%spt_y%tbar(iy, :, :) = vr%spt_y%tbar(iy, :, :) + tbar
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        vr%sp_m(im)%tbar = vr%sp_m(im)%tbar + tbar
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        vr%spt_m%tbar(im, :, :) = vr%spt_m%tbar(im, :, :) + tbar
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%sp_s(iss)%tbar = vr%sp_s(iss)%tbar + tbar
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        vr%spt_s%tbar(iss, :, :) = vr%spt_s%tbar(iss, :, :) + tbar
 
                 case ('LQWS')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        vr%wb_y(iy)%lqws = vr%wb_y(iy)%lqws + lqws
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        vr%wbt_y%lqws(iy, :, :) = vr%wbt_y%lqws(iy, :, :) + lqws
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        vr%wb_m(im)%lqws = vr%wb_m(im)%lqws + lqws
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        vr%wbt_m%lqws(im, :, :) = vr%wbt_m%lqws(im, :, :) + lqws
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%wb_s(iss)%lqws = vr%wb_s(iss)%lqws + lqws
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        vr%wbt_s%lqws(iss, :, :) = vr%wbt_s%lqws(iss, :, :) + lqws
 
                 case ('FRWS')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        vr%wb_y(iy)%frws = vr%wb_y(iy)%frws + frws
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        vr%wbt_y%frws(iy, :, :) = vr%wbt_y%frws(iy, :, :) + frws
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        vr%wb_m(im)%frws = vr%wb_m(im)%frws + frws
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        vr%wbt_m%frws(im, :, :) = vr%wbt_m%frws(im, :, :) + frws
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%wb_s(iss)%frws = vr%wb_s(iss)%frws + frws
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        vr%wbt_s%frws(iss, :, :) = vr%wbt_s%frws(iss, :, :) + frws
 
                 case ('RCAN')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        vr%wb_y(iy)%rcan = vr%wb_y(iy)%rcan + rcan
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        vr%wbt_y%rcan(iy, :) = vr%wbt_y%rcan(iy, :) + rcan
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        vr%wb_m(im)%rcan = vr%wb_m(im)%rcan + rcan
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        vr%wbt_m%rcan(im, :) = vr%wbt_m%rcan(im, :) + rcan
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%wb_s(iss)%rcan = vr%wb_s(iss)%rcan + rcan
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        vr%wbt_s%rcan(iss, :) = vr%wbt_s%rcan(iss, :) + rcan
 
                 case ('SCAN', 'SNCAN')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        vr%wb_y(iy)%sncan = vr%wb_y(iy)%sncan + sncan
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        vr%wbt_y%sncan(iy, :) = vr%wbt_y%sncan(iy, :) + sncan
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        vr%wb_m(im)%sncan = vr%wb_m(im)%sncan + sncan
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        vr%wbt_m%sncan(im, :) = vr%wbt_m%sncan(im, :) + sncan
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%wb_s(iss)%sncan = vr%wb_s(iss)%sncan + sncan
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        vr%wbt_s%sncan(iss, :) = vr%wbt_s%sncan(iss, :) + sncan
 
                 case ('PNDW')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        vr%wb_y(iy)%pndw = vr%wb_y(iy)%pndw + pndw
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        vr%wbt_y%pndw(iy, :) = vr%wbt_y%pndw(iy, :) + pndw
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        vr%wb_m(im)%pndw = vr%wb_m(im)%pndw + pndw
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        vr%wbt_m%pndw(im, :) = vr%wbt_m%pndw(im, :) + pndw
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%wb_s(iss)%pndw = vr%wb_s(iss)%pndw + pndw
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        vr%wbt_s%pndw(iss, :) = vr%wbt_s%pndw(iss, :) + pndw
 
                 case ('SNO')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        vr%wb_y(iy)%sno = vr%wb_y(iy)%sno + sno
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        vr%wbt_y%sno(iy, :) = vr%wbt_y%sno(iy, :) + sno
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        vr%wb_m(im)%sno = vr%wb_m(im)%sno + sno
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        vr%wbt_m%sno(im, :) = vr%wbt_m%sno(im, :) + sno
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%wb_s(iss)%sno = vr%wb_s(iss)%sno + sno
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        vr%wbt_s%sno(iss, :) = vr%wbt_s%sno(iss, :) + sno
 
                 case ('WSNO')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        vr%wb_y(iy)%wsno = vr%wb_y(iy)%wsno + wsno
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        vr%wbt_y%wsno(iy, :) = vr%wbt_y%wsno(iy, :) + wsno
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        vr%wb_m(im)%wsno = vr%wb_m(im)%wsno + wsno
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        vr%wbt_m%wsno(im, :) = vr%wbt_m%wsno(im, :) + wsno
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%wb_s(iss)%wsno = vr%wb_s(iss)%wsno + wsno
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        vr%wbt_s%wsno(iss, :) = vr%wbt_s%wsno(iss, :) + wsno
 
 !                case default
 !                    print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."
@@ -1003,181 +1243,248 @@ module model_output
         !Internals
         integer :: i, j
         character*50 :: vId
-        character*1 :: st
+        character*3 :: freq
 
         do i = 1, ifo%nr_out
 
-            vId = trim(adjustl(ifo%ids_var_out(i, 1)))
+!            vId = trim(adjustl(ifo%ids_var_out(i, 1)))
+            vId = trim(adjustl(ifo%var_out(i)%name))
 
             select case (vId)
 
+                case ("FSDOWN")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%fsdown, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882101, .false.)
+                    end if
+
+                case ("FSVH")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%fsvh, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882102, .false.)
+                    end if
+
+                case ("FSIH")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%fsih, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882103, .false.)
+                    end if
+
+                case ("FDL")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%fdl, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882104, .false.)
+                    end if
+
+                case ("UL")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%ul, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882105, .false.)
+                    end if
+
+                case ("TA")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%ta, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882106, .false.)
+                    end if
+
+                case ("QA")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%qa, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882107, .false.)
+                    end if
+
+                case ("PRES")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%pres, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882108, .false.)
+                    end if
+
+                case ("PRE")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%mdt_h%pre, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882109, .false.)
+                    end if
+
                 case ('PREC', 'Rainfall', 'Rain', 'Precipitation')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'S', bi%na, ts%nseason)
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+
+                    if (ifo%var_out(i)%out_d) &
+                        call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days)
 
                 case ('EVAP', 'Evapotranspiration')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'S', bi%na, ts%nseason)
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+
+                    if (ifo%var_out(i)%out_d) &
+                        call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days)
 
                 case ('Runoff', 'ROF')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'S', bi%na, ts%nseason)
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+
+                    if (ifo%var_out(i)%out_d) &
+                        call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days)
 
                 case ('DeltaStorage', 'DSTG')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'S', bi%na, ts%nseason)
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+
+                    if (ifo%var_out(i)%out_d) &
+                        call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days)
 
                 case ('TempSoil', 'Temperature_soil_layers', 'TBAR')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
+                    if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
                         do j = 1, bi%ignd
-                            write(unit = st, fmt = '(I1)') j
-                            call WriteFields_i(vr, vId, ts, ifo, i, 'Y', bi%na, ts%nyears, st, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, j)
                         end do
                     end if
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
+                    if (ifo%var_out(i)%out_m) then!trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
                         do j = 1, bi%ignd
-                            write(unit = st, fmt = '(I1)') j
-                            call WriteFields_i(vr, vId, ts, ifo, i, 'M', bi%na, ts%nmonths, st, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, j)
                         end do
                     end if
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
+                    if (ifo%var_out(i)%out_s) then!trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
                         do j = 1, bi%ignd
-                            write(unit = st, fmt = '(I1)') j
-                            call WriteFields_i(vr, vId, ts, ifo, i, 'S', bi%na, ts%nseason, st, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, j)
                         end do
                     end if
 
                 case ('LQWS')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
+                    if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
                         do j = 1, bi%ignd
-                            write(unit = st, fmt = '(I1)') j
-                            call WriteFields_i(vr, vId, ts, ifo, i, 'Y', bi%na, ts%nyears, st, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, j)
                         end do
                     end if
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
+                    if (ifo%var_out(i)%out_m) then!trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
                         do j = 1, bi%ignd
-                            write(unit = st, fmt = '(I1)') j
-                            call WriteFields_i(vr, vId, ts, ifo, i, 'M', bi%na, ts%nmonths, st, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, j)
                         end do
                     end if
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
+                    if (ifo%var_out(i)%out_s) then!trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
                         do j = 1, bi%ignd
-                            write(unit = st, fmt = '(I1)') j
-                            call WriteFields_i(vr, vId, ts, ifo, i, 'S', bi%na, ts%nseason, st, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, j)
                         end do
                     end if
 
                 case ('FRWS')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
+                    if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
                         do j = 1, bi%ignd
-                            write(unit = st, fmt = '(I1)') j
-                            call WriteFields_i(vr, vId, ts, ifo, i, 'Y',bi%na, ts%nyears, st, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'Y',bi%na, ts%nyears, j)
                         end do
                     end if
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
+                    if (ifo%var_out(i)%out_m) then!trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
                         do j = 1, bi%ignd
-                            write(unit = st, fmt = '(I1)') j
-                            call WriteFields_i(vr, vId, ts, ifo, i, 'M', bi%na, ts%nmonths, st, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, j)
                         end do
                     end if
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
+                    if (ifo%var_out(i)%out_s) then!trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
                         do j = 1, bi%ignd
-                            write(unit = st, fmt = '(I1)') j
-                            call WriteFields_i(vr, vId, ts, ifo, i, 'S', bi%na, ts%nseason, st, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, j)
                         end do
                     end if
 
                 case ('RCAN')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'S', bi%na, ts%nseason)
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
 
                 case ('SCAN', 'SNCAN')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'S', bi%na, ts%nseason)
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
 
                 case ('PNDW')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'S', bi%na, ts%nseason)
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
 
                 case ('SNO')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'S', bi%na, ts%nseason)
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
 
                 case ('WSNO')
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                    if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                    if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
 
-                    if (trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, vId, ts, ifo, i, 'S', bi%na, ts%nseason)
+                    if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
 
 !                case default
 !                    print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."
@@ -1189,7 +1496,7 @@ module model_output
 
     !>******************************************************************************
 
-    subroutine WriteFields_i(vr, vars, ts, ifo, indx, freq, na, nt, st, igndx)
+    subroutine WriteFields_i(vr, ts, ifo, indx, freq, na, nt, igndx)
 
         !>------------------------------------------------------------------------------
         !>  Description: Loop over the variables to write
@@ -1198,13 +1505,11 @@ module model_output
 
         !Inputs
         type(out_flds), intent(in) :: vr
-        character*20, intent(in) :: vars
         type(dates_model), intent(in) :: ts
         type(info_out), intent(in) :: ifo
         integer, intent(in) :: indx
         character*1, intent(in) :: freq
         integer, intent(in) :: na, nt
-        character*1, intent(in), optional :: st
         integer, intent(in), optional :: igndx
 
         !Internals
@@ -1212,32 +1517,41 @@ module model_output
         character*50 :: vId, tfunc
         integer, dimension(:), allocatable :: days
         character*3 :: freq2
+        character*1 :: st
         real :: fld(na, nt)
 
         integer, dimension(:, :), allocatable :: dates
 
-        vId = trim(adjustl(ifo%ids_var_out(indx, 6)))
-        tfunc = trim(adjustl(ifo%ids_var_out(indx, 5)))
+!        vId = trim(adjustl(ifo%ids_var_out(indx, 6)))
+        vId = trim(adjustl(ifo%var_out(indx)%out_fmt))
+!        tfunc = trim(adjustl(ifo%ids_var_out(indx, 5)))
+        tfunc = trim(adjustl(ifo%var_out(indx)%out_acc))
 
-        select case (trim(adjustl(vars)))
+        select case (trim(adjustl(ifo%var_out(indx)%name)))
 
             case ('PREC', 'Rainfall', 'Rain', 'Precipitation')
 
                 if (trim(adjustl(freq)) == 'Y') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_y(i)%pre
+                        fld(:, i) = vr%wbt_y%pre(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'M') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_m(i)%pre
+                        fld(:, i) = vr%wbt_m%pre(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_s(i)%pre
+                        fld(:, i) = vr%wbt_s%pre(i, :)
+                    end do
+                end if
+
+                if (trim(adjustl(freq)) == 'D') then
+                    do i = 1, nt
+                        fld(:, i) = vr%wbt_d%pre(i, :)
                     end do
                 end if
 
@@ -1245,19 +1559,25 @@ module model_output
 
                 if (trim(adjustl(freq)) == 'Y') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_y(i)%evap
+                        fld(:, i) = vr%wbt_y%evap(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'M') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_m(i)%evap
+                        fld(:, i) = vr%wbt_m%evap(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_s(i)%evap
+                        fld(:, i) = vr%wbt_s%evap(i, :)
+                    end do
+                end if
+
+                if (trim(adjustl(freq)) == 'D') then
+                    do i = 1, nt
+                        fld(:, i) = vr%wbt_d%evap(i, :)
                     end do
                 end if
 
@@ -1265,19 +1585,25 @@ module model_output
 
                 if (trim(adjustl(freq)) == 'Y') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_y(i)%rof
+                        fld(:, i) = vr%wbt_y%rof(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'M') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_m(i)%rof
+                        fld(:, i) = vr%wbt_m%rof(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_s(i)%rof
+                        fld(:, i) = vr%wbt_s%rof(i, :)
+                    end do
+                end if
+
+                if (trim(adjustl(freq)) == 'D') then
+                    do i = 1, nt
+                        fld(:, i) = vr%wbt_d%rof(i, :)
                     end do
                 end if
 
@@ -1285,19 +1611,25 @@ module model_output
 
                 if (trim(adjustl(freq)) == 'Y') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_y(i)%dstg
+                        fld(:, i) = vr%wbt_y%dstg(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'M') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_m(i)%dstg
+                        fld(:, i) = vr%wbt_m%dstg(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_s(i)%dstg
+                        fld(:, i) = vr%wbt_s%dstg(i, :)
+                    end do
+                end if
+
+                if (trim(adjustl(freq)) == 'D') then
+                    do i = 1, nt
+                        fld(:, i) = vr%wbt_d%dstg(i, :)
                     end do
                 end if
 
@@ -1305,19 +1637,19 @@ module model_output
 
                 if (trim(adjustl(freq)) == 'Y') then
                     do i = 1, nt
-                        fld(:, i) = vr%sp_y(i)%tbar(:, igndx)
+                        fld(:, i) = vr%spt_y%tbar(i, :, igndx)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'M') then
                     do i = 1, nt
-                        fld(:, i) = vr%sp_m(i)%tbar(:, igndx)
+                        fld(:, i) = vr%spt_m%tbar(i, :, igndx)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
-                        fld(:, i) = vr%sp_s(i)%tbar(:, igndx)
+                        fld(:, i) = vr%spt_s%tbar(i, :, igndx)
                     end do
                 end if
 
@@ -1325,19 +1657,19 @@ module model_output
 
                 if (trim(adjustl(freq)) == 'Y') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_y(i)%lqws(:, igndx)
+                        fld(:, i) = vr%wbt_y%lqws(i, :, igndx)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'M') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_m(i)%lqws(:, igndx)
+                        fld(:, i) = vr%wbt_m%lqws(i, :, igndx)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_s(i)%lqws(:, igndx)
+                        fld(:, i) = vr%wbt_s%lqws(i, :, igndx)
                     end do
                 end if
 
@@ -1345,19 +1677,19 @@ module model_output
 
                 if (trim(adjustl(freq)) == 'Y') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_y(i)%frws(:, igndx)
+                        fld(:, i) = vr%wbt_y%frws(i, :, igndx)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'M') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_m(i)%frws(:, igndx)
+                        fld(:, i) = vr%wbt_m%frws(i, :, igndx)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_s(i)%frws(:, igndx)
+                        fld(:, i) = vr%wbt_s%frws(i, :, igndx)
                     end do
                 end if
 
@@ -1365,19 +1697,19 @@ module model_output
 
                 if (trim(adjustl(freq)) == 'Y') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_y(i)%rcan
+                        fld(:, i) = vr%wbt_y%rcan(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'M') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_m(i)%rcan
+                        fld(:, i) = vr%wbt_m%rcan(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_s(i)%rcan
+                        fld(:, i) = vr%wbt_s%rcan(i, :)
                     end do
                 end if
 
@@ -1385,19 +1717,19 @@ module model_output
 
                 if (trim(adjustl(freq)) == 'Y') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_y(i)%sncan
+                        fld(:, i) = vr%wbt_y%sncan(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'M') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_m(i)%sncan
+                        fld(:, i) = vr%wbt_m%sncan(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_s(i)%sncan
+                        fld(:, i) = vr%wbt_s%sncan(i, :)
                     end do
                 end if
 
@@ -1405,19 +1737,19 @@ module model_output
 
                 if (trim(adjustl(freq)) == 'Y') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_y(i)%pndw
+                        fld(:, i) = vr%wbt_y%pndw(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'M') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_m(i)%pndw
+                        fld(:, i) = vr%wbt_m%pndw(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_s(i)%pndw
+                        fld(:, i) = vr%wbt_s%pndw(i, :)
                     end do
                 end if
 
@@ -1425,19 +1757,19 @@ module model_output
 
                 if (trim(adjustl(freq)) == 'Y') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_y(i)%sno
+                        fld(:, i) = vr%wbt_y%sno(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'M') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_m(i)%sno
+                        fld(:, i) = vr%wbt_m%sno(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_s(i)%sno
+                        fld(:, i) = vr%wbt_s%sno(i, :)
                     end do
                 end if
 
@@ -1445,40 +1777,45 @@ module model_output
 
                 if (trim(adjustl(freq)) == 'Y') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_y(i)%wsno
+                        fld(:, i) = vr%wbt_y%wsno(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'M') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_m(i)%wsno
+                        fld(:, i) = vr%wbt_m%wsno(i, :)
                     end do
                 end if
 
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
-                        fld(:, i) = vr%wb_s(i)%wsno
+                        fld(:, i) = vr%wbt_s%wsno(i, :)
                     end do
                 end if
 
             case ('ZPND')
-                print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."
+                print *, "Output of variable '" // trim(adjustl(ifo%var_out(indx)%name)) // &
+                    "' is not Implemented yet."
                 print *, "Use PNDW for ponded water at the surface [mm]."
 
             case ('ROFF')
-                print *, "Output of variable 'ROF' using keyword '" // trim(adjustl(vId)) // "' is not supported."
+                print *, "Output of variable 'ROF' using keyword '" // &
+                    trim(adjustl(ifo%var_out(indx)%name)) // "' is not supported."
                 print *, "Use ROF for total runoff."
 
             case ('THIC', 'ICEContent_soil_layers')
-                print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."
+                print *, "Output of variable '" // trim(adjustl(ifo%var_out(indx)%name)) // &
+                    "' is not Implemented yet."
                 print *, "Use LQWS for liquid water stored in the soil [mm]."
 
             case ('THLQ', 'LiquidContent_soil_layers')
-                print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."
+                print *, "Output of variable '" // trim(adjustl(ifo%var_out(indx)%name)) // &
+                    "' is not Implemented yet."
                 print *, "Use FRWS for frozen water stored in the soil [mm]."
 
             case default
-                print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."
+                print *, "Output of variable '" // trim(adjustl(ifo%var_out(indx)%name)) // &
+                    "' is not Implemented yet."
 
         end select !case (trim(adjustl(vars)))
 
@@ -1496,6 +1833,9 @@ module model_output
 
                 case ('S')
                     days = ts%daysINseasons
+
+                case default
+                    days = 1
 
             end select !freq
 
@@ -1515,7 +1855,7 @@ module model_output
                 dates(:, 2) = 1
 
             case ('M')
-                allocate(dates(ts%NMONTHS, 2))
+                allocate(dates(ts%nmonths, 2))
                 dates = ts%mnthyears
 
             case ('S')
@@ -1525,9 +1865,26 @@ module model_output
                     dates(i, 2) = i
                 end do
 
+            case ("D")
+!                allocate(dates(ts%nr_days, 3))
+!                do i = 1, ts%nr_days*24, 24
+!                    dates(i/24, 1) = ts%dates(i, 1)
+!                    dates(i/24, 2) = ts%dates(i, 2)
+!                    dates(i/24, 3) = ts%dates(i, 3)
+!                end do
+
+            case ("H")
+!                allocate(dates(1, 5))
+!                dates(1, 1) = public_ic%now_year
+!                dates(1, 2) = public_ic%now_month
+!                dates(1, 3) = public_ic%now_day
+!                dates(1, 4) = public_ic%now_day_julian
+!                dates(1, 5) = public_ic%now_hour
+
         end select !freq
 
-        if (present(st)) then
+        if (present(igndx)) then
+            write(unit = st, fmt = '(I1)') igndx
             freq2 = freq // '_' // st
         else
             freq2 = freq
@@ -1545,6 +1902,9 @@ module model_output
                 print *, "Output as file format '" // trim(adjustl(vId)) // "' is not implemented yet."
 
         end select
+
+if (allocated(dates)) &
+        deallocate(dates)
 
     end subroutine WriteFields_i
 
@@ -1572,7 +1932,8 @@ module model_output
         integer :: na, nt
 
         flOut = trim(adjustl(info%pthOut)) // &
-                trim(adjustl(info%ids_var_out(indx, 1))) // &
+!                trim(adjustl(info%ids_var_out(indx, 1))) // &
+                trim(adjustl(info%var_out(indx)%name)) // &
                 '_' // trim(adjustl(freq)) // '.seq'
 
         open(unit = 882, &
@@ -1596,7 +1957,7 @@ module model_output
 
     !>******************************************************************************
 
-    subroutine WriteR2C(fld, indx, info, freq, dates)
+    subroutine WriteR2C(fld, indx, info, freq, dates, file_unit, keep_file_open, frame_no)
 
         !>------------------------------------------------------------------------------
         !>  Description: Write r2c file
@@ -1610,21 +1971,33 @@ module model_output
         integer :: indx
         type(info_out) :: info
         character*3 :: freq
-        integer :: dates(:, :)
+        integer, allocatable :: dates(:, :)
+        integer, optional :: file_unit
+        logical, optional :: keep_file_open
+        integer, optional :: frame_no
 
         !Internal
         character*450 :: flOut
-        integer :: ios, i, un
+        integer :: ios, i, un, nfr
         integer :: na1, nt, j, t, k
         real, dimension(:, :), allocatable :: data_aux
         character(10) :: ctime
         character(8) :: cday
+        logical :: opened_status, close_file
 
         flOut = trim(adjustl(info%pthOut)) // &
-                trim(adjustl(info%ids_var_out(indx, 1))) // &
+!                trim(adjustl(info%ids_var_out(indx, 1))) // &
+                trim(adjustl(info%var_out(indx)%name)) // &
                 '_' // trim(adjustl(freq)) // '.r2c'
 
-        un = 882
+        if (present(file_unit)) then
+            un = file_unit
+        else
+            un = 882
+        end if
+
+        inquire(unit = un, opened = opened_status)
+        if (.not. opened_status) then
 
         open(unit = un, &
              file = trim(adjustl(flOut)), &
@@ -1650,7 +2023,7 @@ module model_output
         write(un, 3005) '#                                       '
         write(un, 3005) '#---------------------------------------'
         write(un, 3005) '#                                       '
-        write(un, 3020) ':Name               ', info%ids_var_out(indx, 1)
+        write(un, 3020) ':Name               ', info%var_out(indx)%name !info%ids_var_out(indx, 1)
         write(un, 3005) '#                                       '
         write(un, 3004) ':Projection         ', coordsys1
 
@@ -1669,9 +2042,9 @@ module model_output
         write(un, 3005) ':SourceFile            MESH_DRIVER      '
         write(un, 3005) '#                                       '
 
-        write(un, *) ':AttributeName', info%ids_var_out(indx, 1)
+        write(un, 3020) ':AttributeName      ', info%var_out(indx)%name !info%ids_var_out(indx, 1)
 
-        write(un, 3020) ':AttributeUnits     ', info%ids_var_out(indx, 2)
+        write(un, 3020) ':AttributeUnits     ', '' !info%ids_var_out(indx, 2)
         write(un, 3005) '#                                       '
         write(un, 3001) ':xCount             ', xCount
         write(un, 3001) ':yCount             ', ycount
@@ -1681,11 +2054,27 @@ module model_output
         write(un, 3005) '#                                       '
         write(un, 3005) ':endHeader                              '
 
+        end if !(.not. opened_status) then
+
+        if (allocated(dates)) then
+
         nt = size(dates(:, 1))
 
         do t = 1, nt
 
-            write(un, 9000) ':Frame', t, t, dates(t, 1), dates(t, 2), 1, 0, 0
+            if (present(frame_no)) then
+                nfr = frame_no
+            else
+                nfr = t
+            end if
+
+            if (size(dates, 2) == 5) then
+                write(un, 9000) ':Frame', nfr, nfr, dates(t, 1), dates(t, 2), dates(t, 3), dates(t, 5), 0
+            elseif (size(dates, 2) == 3) then
+                write(un, 9000) ':Frame', nfr, nfr, dates(t, 1), dates(t, 2), dates(t, 3), 0, 0
+            else
+                write(un, 9000) ':Frame', nfr, nfr, dates(t, 1), dates(t, 2), 1, 0, 0
+            end if
 
             allocate(data_aux(ycount, xcount))
             data_aux = 0.0
@@ -1704,7 +2093,16 @@ module model_output
 
         end do
 
-        close(882)
+        end if !(allocated(dates)) then
+
+        if (present(keep_file_open)) then
+            close_file = .not. keep_file_open
+        else
+            close_file = .true.
+        end if
+
+        if (close_file) &
+            close(unit = un)
 
         3000 format(a10, i5)
         3001 format(a20, i16)

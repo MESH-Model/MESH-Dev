@@ -800,12 +800,12 @@ type(fl_ids):: fls
 !>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
 !> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
 TYPE(OUT_FLDS)      :: VR
-type(water_balance) :: wb
 type(basin_info)    :: bi
 TYPE(DATES_MODEL)   :: TS
 TYPE(INFO_OUT)      :: IOF
 TYPE(CLIM_INFO)     :: cm
-
+type(met_data) :: md
+type(water_balance) :: wb
 
 LOGICAL :: R2COUTPUT,EXISTS
 INTEGER, PARAMETER :: R2CFILEUNITSTART = 500
@@ -1840,35 +1840,13 @@ ENDIF
 !>  End of subbasin section
 !> **********************************************************************
 
-!> Initialize basin information variable
+!> Initialize basin information variable.
 bi%na = na
 bi%ignd = ignd
 
-!> Allocate and initialize water balance variable
-allocate( &
-    wb%pre(na), wb%evap(na), wb%rof(na), &
-    wb%rofo(na), wb%rofs(na), wb%rofb(na), &
-    wb%rcan(na), wb%sncan(na), wb%pndw(na), wb%sno(na), wb%wsno(na), &
-    wb%stg(na), wb%dstg(na), &
-    wb%grid_area(na), &
-    wb%lqws(na, ignd), wb%frws(na, ignd))
-wb%pre = 0.0
-wb%evap = 0.0
-wb%rof = 0.0
-wb%rofo = 0.0
-wb%rofs = 0.0
-wb%rofb = 0.0
-wb%rcan = 0.0
-wb%sncan = 0.0
-wb%pndw = 0.0
-wb%sno = 0.0
-wb%wsno = 0.0
-wb%stg = 0.0
-wb%dstg = 0.0
-wb%grid_area = 0.0
-wb%lqws = 0.0
-wb%frws = 0.0
-wb%basin_area = 0.0
+!> Initialize output variables.
+call wb%init(bi)
+call md%init(bi)
 
 !> *********************************************************************
 !> Initialize water balance output fields
@@ -4519,6 +4497,22 @@ DO I = 1, NA
       ENDDO !DO M=1,NMTEST
    ENDIF
 ENDDO !DO I=1,NA
+
+    !> Update met. data output variable on the hour assuming half-hour timestep.
+!    if (mod(ncount, 2) == 0) then
+        md%fsdown = fsdown
+        md%fsvh = fsvhgrd
+        md%fsih = fsihgrd
+        md%fdl = fdlgrd
+        md%ul = ulgrd
+        md%ta = tagrd
+        md%qa = qagrd
+        md%pres = presgrd
+        md%pre = pregrd
+        call updatefieldsout_temp(vr, ts, iof, &
+                                  md, &
+                                  iyear, iday, ceiling(ncount/2.0), public_ic%timestep - mod(ncount, 2)*public_ic%timestep)
+!    end if !(mod(ncount, 2) == 1)
 
 !> CALCULATE AND PRINT DAILY AVERAGES.
 

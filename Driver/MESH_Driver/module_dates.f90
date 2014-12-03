@@ -22,9 +22,118 @@
                 integer   :: nr_timeStepClimF                        !total number of climate forcing time steps
 
             END TYPE
-            
+
+    type iter_counter
+
+        integer :: &
+            now_year, now_day_julian, now_month, now_day, &
+            now_hour, now_min, &
+            timestep = 1800, &
+            count_year, count_day_julian, count_month, count_day, &
+            count_hour, count_min, &
+            count_timestep
+
+        contains
+
+        procedure :: init => init_iter_counter
+        procedure :: update_now => update_now_iter_counter
+
+    end type
 
             contains
+
+    subroutine init_iter_counter(ic, start_year, start_day_julian, start_hour, start_min, timestep)
+
+        !> Derived-type variable.
+        class(iter_counter) :: ic
+
+        !> Input variables.
+        !* timestep: Time-step of the model iteration [s].
+        integer, intent(in) :: start_year, start_day_julian, start_hour, start_min
+        integer, intent(in), optional :: timestep
+
+        !> Update now counters.
+        ic%now_year = start_year
+        ic%now_day_julian = start_day_julian
+        ic%now_hour = start_hour + 1
+        ic%now_min = start_min
+        call julian2monthday(start_day_julian, start_year, ic%now_month, ic%now_day)
+
+        !> Override pre-set time-step (if provided).
+        if (present(timestep)) &
+            ic%timestep = timestep
+
+        !> Initialize counters.
+        ic%count_year = 1
+        ic%count_day_julian = 1
+        ic%count_month = 1
+        ic%count_day = 1
+        ic%count_hour = 1
+        ic%count_timestep = 1
+
+    end subroutine
+
+    subroutine update_now_iter_counter(ic, now_year, now_day_julian, now_hour, now_timestep)
+
+        !> Derived-type variable.
+        class(iter_counter) :: ic
+
+        !> Input variables.
+        integer, intent(in) :: now_year, now_day_julian, now_hour
+        integer, intent(in), optional :: now_timestep
+
+        !> Local variables.
+        integer :: month, day
+
+        !> Year:
+        if (now_year /= ic%now_year) then
+            ic%count_year = ic%count_year + 1
+            ic%now_year = now_year
+        end if
+
+        !> Julian day:
+        if (now_day_julian /= ic%now_day_julian) then
+            ic%count_day_julian = ic%count_day_julian + 1
+            ic%now_day_julian = now_day_julian
+        end if
+
+        !> Determine the current month and day.
+        call julian2monthday(now_day_julian, now_year, month, day)
+
+        !> Month:
+        if (month /= ic%now_month) then
+            ic%count_month = ic%count_month + 1
+            ic%now_month = month
+        end if
+
+        !> Day:
+        if (day /= ic%now_day) then
+            ic%count_day = ic%count_day + 1
+            ic%now_day = day
+        end if
+
+        !> Hourly:
+        if (now_hour /= ic%now_hour) then
+            ic%count_hour = ic%count_hour + 1
+            ic%now_hour = now_hour
+        end if
+
+        !debug: Print the now.
+        !print *, "now: Y JD M D HR"
+        !print *, ic%now_year, ic%now_day_julian, ic%now_month, &
+        !    ic%now_day, ic%now_hour
+
+        !debug: Print count.
+        !print *, "count: Y JD M D HR"
+        !print *, ic%count_year, ic%count_day_julian, ic%count_month, &
+        !    ic%count_day, ic%count_hour
+
+        !> Update time-step.
+        if (present(now_timestep)) &
+            ic%count_timestep = ic%count_timestep + 1
+
+    end subroutine
+
         !>******************************************************************************
             subroutine get_dates(ts,start_date,end_date, stepclim)
 
@@ -92,25 +201,25 @@
                 ts%dates(i,1) = year
                 ts%dates(i,4) = jday
 
-                call Julian2MonthDay(jday, year,ts%dates(i,2), ts%dates(i,3))
+                call Julian2MonthDay(jday, year, ts%dates(i, 2), ts%dates(i, 3))
 
-               if ((leap_year(year) .eq. 365)  .and. &
-                   (jday .eq. 365)) then
+                if ((leap_year(year) .eq. 365) .and. &
+                    (jday .eq. 365)) then
 
-                   year = year + 1
-                   jday = 0
+                    year = year + 1
+                    jday = 0
 
-               elseif ((leap_year(year) .eq. 366)  .and. &
-                       (jday   .eq. 366)) then
+                elseif ((leap_year(year) .eq. 366) .and. &
+                        (jday   .eq. 366)) then
 
-                   year = year + 1
-                   jday = 0
+                    year = year + 1
+                    jday = 0
 
-               endif
+                end if
 
-               jday = jday + 1
+                jday = jday + 1
 
-            enddo
+            end do
 
             call get_nr_months(ts)
             call get_nrDaysInUpFreq(ts)
@@ -316,7 +425,7 @@
 
         !>******************************************************************************
         !>******************************************************************************
-            subroutine GetIndicesDATES(iday,iyear,iy,im,iss,ts)
+            subroutine GetIndicesDATES(iday,iyear,iy,im,iss, id,ts)
         !>------------------------------------------------------------------------------
         !>  Description: Get the year,month and season indices from julian day and year
         !>------------------------------------------------------------------------------
@@ -325,16 +434,20 @@
             type(dates_model)    :: ts
             integer,intent(in)   :: iday,iyear
             !Outputs
-            integer,intent(out)  :: iy,im,iss
+            integer,intent(out)  :: iy,im,iss, id
             !Internals
             integer :: day,i
 
             iy = 0
+            id = iday
+            if (iyear == ts%start_date(1)) &
+                id = iday - ts%start_date(2) + 1
             do i = ts%start_date(1), ts%end_date(1)
                 iy = iy + 1
                 if (i.eq.iyear)then
                     exit
                 endif
+                id = id + ts%daysinyears(i - ts%start_date(1) + 1)
             end do
 
             call Julian2MonthDay(iday,iyear,iss,day)
