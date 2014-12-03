@@ -1852,22 +1852,22 @@ allocate( &
     wb%stg(na), wb%dstg(na), &
     wb%grid_area(na), &
     wb%lqws(na, ignd), wb%frws(na, ignd))
-wb%pre(na) = 0.0
-wb%evap(na) = 0.0
-wb%rof(na) = 0.0
-wb%rofo(na) = 0.0
-wb%rofs(na) = 0.0
-wb%rofb(na) = 0.0
-wb%rcan(na) = 0.0
-wb%sncan(na) = 0.0
-wb%pndw(na) = 0.0
-wb%sno(na) = 0.0
-wb%wsno(na) = 0.0
-wb%stg(na) = 0.0
-wb%dstg(na) = 0.0
-wb%grid_area(na) = 0.0
-wb%lqws(na, ignd) = 0.0
-wb%frws(na, ignd) = 0.0
+wb%pre = 0.0
+wb%evap = 0.0
+wb%rof = 0.0
+wb%rofo = 0.0
+wb%rofs = 0.0
+wb%rofb = 0.0
+wb%rcan = 0.0
+wb%sncan = 0.0
+wb%pndw = 0.0
+wb%sno = 0.0
+wb%wsno = 0.0
+wb%stg = 0.0
+wb%dstg = 0.0
+wb%grid_area = 0.0
+wb%lqws = 0.0
+wb%frws = 0.0
 wb%basin_area = 0.0
 
 !> *********************************************************************
@@ -4823,6 +4823,12 @@ TOTAL_ROFS=0.0
 TOTAL_ROFB=0.0
 TOTAL_HFSACC = 0.0
 TOTAL_QEVPACC = 0.0
+wb%pre = 0.0
+wb%evap = 0.0
+wb%rof = 0.0
+wb%rofo = 0.0
+wb%rofs =  0.0
+wb%rofb = 0.0
 
 THIC_FLD = 0.
 THLQ_FLD = 0.
