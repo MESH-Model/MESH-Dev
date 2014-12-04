@@ -157,6 +157,17 @@ module model_output
 
     end type
 
+    type wr_output_series
+
+        real, dimension(:, :), allocatable :: &
+            rof, rchg
+
+        contains
+
+        procedure :: init => init_wr_output_series
+
+    end type !wr_output_series
+
     !> Data type to store the output format and data handling for an output variable.
     !* name: Name of the variable.
     !* nargs: Number of arguments in the argument array.
@@ -256,6 +267,8 @@ module model_output
         !* mdt_h: Meteological data (hourly time-step).
         type(met_data_series) :: mdt_h
         type(met_data) :: md_ts
+
+        type(wr_output_series) :: wroutt_h
 
         contains
 
@@ -458,6 +471,7 @@ module model_output
         !> Hourly:
         call vr%wbt_h%init(bi, max(1, 3600/public_ic%timestep))
         call vr%mdt_h%init(bi, max(1, 3600/public_ic%timestep))
+        call vr%wroutt_h%init(bi, max(1, 3600/public_ic%timestep))
 
         !> Per time-step:
         call vr%md_ts%init(bi)
@@ -588,6 +602,25 @@ module model_output
         sp%thlq = 0.0
 
     end subroutine !init_soil_parameters
+
+    subroutine init_wr_output_series(wroutt, bi, nts)
+
+        !> Type variable.
+        class(wr_output_series) :: wroutt
+
+        !> Input variables.
+        type(basin_info), intent(in) :: bi
+        integer, intent(in) :: nts
+
+        !> Allocate arrays using basin info.
+        allocate( &
+            wroutt%rof(nts, bi%na), wroutt%rchg(nts, bi%na))
+
+        !> Explicitly set all variables to zero.
+        wroutt%rof = 0.0
+        wroutt%rchg = 0.0
+
+    end subroutine !init_wr_output_series
 
     !>******************************************************************************
     subroutine Init_Internal_resp(pmf_r, ts, ignd, naid)
@@ -875,21 +908,23 @@ module model_output
 
     end subroutine Init_out
 
-    subroutine updatefieldsout_temp(vr, ts, ifo, &
-                                    md, &
+    subroutine updatefieldsout_temp(vr, ts, ifo, bi, &
+                                    md, wb, &
                                     now_year, now_day_julian, now_hour, now_timestep)
 
         !> Input variables.
         type(dates_model), intent(in) :: ts
         type(info_out), intent(in) :: ifo
+        type(basin_info), intent(in) :: bi
         type(met_data) :: md
+        type(water_balance) :: wb
         integer, intent(in) :: now_year, now_day_julian, now_hour, now_timestep
 
         !> Input-output variables.
         type(out_flds) :: vr
 
         !> Local variables.
-        integer :: i
+        integer :: i, j
         character*3 :: freq
 
         !> Update output fields.
@@ -959,6 +994,96 @@ module model_output
                         vr%mdt_h%pre((now_timestep/public_ic%timestep + 1), :) = md%pre
                     end if
 
+                case ("EVAP")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%evap, freq, public_ic%now_hour, now_hour, 882110, .true.)
+                        vr%wbt_h%evap((now_timestep/public_ic%timestep + 1), :) = wb%evap
+                    end if
+
+                case ("ROF")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%rof, freq, public_ic%now_hour, now_hour, 882111, .true.)
+                        vr%wbt_h%rof((now_timestep/public_ic%timestep + 1), :) = wb%rof
+                    end if
+
+                case ("LQWS")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        do j = 1, bi%ignd
+                            call check_write_var_out(ifo, i, vr%wbt_h%lqws(:, :, j), freq, public_ic%now_hour, now_hour, &
+                                (882112 + (100000000*j)), .true., j)
+                            vr%wbt_h%lqws((now_timestep/public_ic%timestep + 1), :, j) = wb%lqws(:, j)
+                        end do
+                    end if
+
+                case ("FRWS")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        do j = 1, bi%ignd
+                            call check_write_var_out(ifo, i, vr%wbt_h%frws(:, :, j), freq, public_ic%now_hour, now_hour, &
+                                (882113 + (100000000*j)), .true., j)
+                            vr%wbt_h%frws((now_timestep/public_ic%timestep + 1), :, j) = wb%frws(:, j)
+                        end do
+                    end if
+
+                case ("RCAN")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%rcan, freq, public_ic%now_hour, now_hour, 882114, .true.)
+                        vr%wbt_h%rcan((now_timestep/public_ic%timestep + 1), :) = wb%rcan
+                    end if
+
+                case ("SNCAN")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%sncan, freq, public_ic%now_hour, now_hour, 882115, .true.)
+                        vr%wbt_h%sncan((now_timestep/public_ic%timestep + 1), :) = wb%sncan
+                    end if
+
+                case ("PNDW")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%pndw, freq, public_ic%now_hour, now_hour, 882116, .true.)
+                        vr%wbt_h%pndw((now_timestep/public_ic%timestep + 1), :) = wb%pndw
+                    end if
+
+                case ("SNO")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%sno, freq, public_ic%now_hour, now_hour, 882117, .true.)
+                        vr%wbt_h%sno((now_timestep/public_ic%timestep + 1), :) = wb%sno
+                    end if
+
+                case ("WSNO")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%wsno, freq, public_ic%now_hour, now_hour, 882118, .true.)
+                        vr%wbt_h%wsno((now_timestep/public_ic%timestep + 1), :) = wb%wsno
+                    end if
+
+                case ("STG")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%stg, freq, public_ic%now_hour, now_hour, 882119, .true.)
+                        vr%wbt_h%stg((now_timestep/public_ic%timestep + 1), :) = wb%stg
+                    end if
+
+                case ("WR_RUNOFF")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wroutt_h%rof, freq, public_ic%now_hour, now_hour, 882120, .true.)
+                        vr%wroutt_h%rof((now_timestep/public_ic%timestep + 1), :) = wb%rofo + wb%rofs
+                    end if
+
+                case ("WR_RECHARGE")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wroutt_h%rchg, freq, public_ic%now_hour, now_hour, 882121, .true.)
+                        vr%wroutt_h%rchg((now_timestep/public_ic%timestep + 1), :) = wb%rofb
+                    end if
+
             end select !case (trim(adjustl(ifo%var_out(i)%name)))
         end do !i = 1, ifo%nr_out
 
@@ -967,7 +1092,7 @@ module model_output
 
     end subroutine !updatefieldsout_temp
 
-    subroutine check_write_var_out(ifo, var_id, fld_in, freq, old_time, now_time, file_unit, keep_file_open)
+    subroutine check_write_var_out(ifo, var_id, fld_in, freq, old_time, now_time, file_unit, keep_file_open, igndx)
 
         !> Input variables.
         type(info_out), intent(in) :: ifo
@@ -976,10 +1101,13 @@ module model_output
         character*3, intent(in) :: freq
         integer, intent(in) :: old_time, now_time, file_unit
         logical :: keep_file_open
+        integer, intent(in), optional :: igndx
 
         !> Local variables.
         integer, dimension(:, :), allocatable :: dates
         real, dimension(:, :), allocatable :: fld_out
+        character*3 :: freq2
+        character*1 :: st
 
         !> Write output if at end of time-step.
         if (now_time /= old_time) then
@@ -1021,8 +1149,21 @@ module model_output
                 dates(1, 4) = public_ic%now_day_julian
                 dates(1, 5) = public_ic%now_hour
 
+                !> Update freq to include soil layer (if applicable).
+                if (present(igndx)) then
+                    write(unit = st, fmt = "(I1)") igndx
+                    freq2 = trim(freq) // "_" // st
+                else
+                    freq2 = freq
+                end if
+
                 !> Print the output.
-                call WriteR2C(fld_out, var_id, ifo, freq, dates, file_unit, keep_file_open, public_ic%count_hour)
+                select case (trim(adjustl(ifo%var_out(var_id)%out_fmt)))
+
+                    case ("r2c")
+                        call WriteR2C(fld_out, var_id, ifo, freq2, dates, file_unit, keep_file_open, public_ic%count_hour)
+
+                end select !case (trim(adjustl(ifo%var_out(var_id)%out_fmt)))
 
                 !> De-allocate the temporary fld and dates variables.
                 deallocate(fld_out, dates)
@@ -1343,6 +1484,12 @@ module model_output
                     if (ifo%var_out(i)%out_d) &
                         call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days)
 
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%evap, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882110, .false.)
+                    end if
+
                 case ('Runoff', 'ROF')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
@@ -1356,6 +1503,12 @@ module model_output
 
                     if (ifo%var_out(i)%out_d) &
                         call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days)
+
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%rof, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882111, .false.)
+                    end if
 
                 case ('DeltaStorage', 'DSTG')
 
@@ -1411,6 +1564,14 @@ module model_output
                         end do
                     end if
 
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        do j = 1, bi%ignd
+                            call check_write_var_out(ifo, i, vr%wbt_h%lqws(:, :, j), freq, public_ic%now_hour - 1, &
+                                public_ic%now_hour, (882112 + (100000000*j)), .false., j)
+                        end do
+                    end if
+
                 case ('FRWS')
 
                     if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
@@ -1431,6 +1592,14 @@ module model_output
                         end do
                     end if
 
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        do j = 1, bi%ignd
+                            call check_write_var_out(ifo, i, vr%wbt_h%frws(:, :, j), freq, public_ic%now_hour - 1, &
+                                public_ic%now_hour, (882113 + (100000000*j)), .false., j)
+                        end do
+                    end if
+
                 case ('RCAN')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
@@ -1441,6 +1610,12 @@ module model_output
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
                         call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%rcan, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882114, .false.)
+                    end if
 
                 case ('SCAN', 'SNCAN')
 
@@ -1453,6 +1628,12 @@ module model_output
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
                         call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
 
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%sncan, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882115, .false.)
+                    end if
+
                 case ('PNDW')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
@@ -1463,6 +1644,12 @@ module model_output
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
                         call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%pndw, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882116, .false.)
+                    end if
 
                 case ('SNO')
 
@@ -1475,6 +1662,12 @@ module model_output
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
                         call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
 
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%sno, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882117, .false.)
+                    end if
+
                 case ('WSNO')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
@@ -1485,6 +1678,36 @@ module model_output
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
                         call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%wsno, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882118, .false.)
+                    end if
+
+                case ('STG')
+
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%stg, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882119, .false.)
+                    end if
+
+                case ('WR_RUNOFF')
+
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wroutt_h%rof, freq, public_ic%now_hour - 1, &
+                            public_ic%now_hour, 882120, .false.)
+                    end if
+
+                case ('WR_RECHARGE')
+
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wroutt_h%rchg, freq, public_ic%now_hour - 1, &
+                            public_ic%now_hour, 882121, .false.)
+                    end if
 
 !                case default
 !                    print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."

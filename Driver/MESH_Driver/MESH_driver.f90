@@ -805,7 +805,7 @@ TYPE(DATES_MODEL)   :: TS
 TYPE(INFO_OUT)      :: IOF
 TYPE(CLIM_INFO)     :: cm
 type(met_data) :: md
-type(water_balance) :: wb
+type(water_balance) :: wb, wb_h
 
 LOGICAL :: R2COUTPUT,EXISTS
 INTEGER, PARAMETER :: R2CFILEUNITSTART = 500
@@ -1847,6 +1847,7 @@ bi%ignd = ignd
 !> Initialize output variables.
 call wb%init(bi)
 call md%init(bi)
+call wb_h%init(bi)
 
 !> *********************************************************************
 !> Initialize water balance output fields
@@ -4283,6 +4284,31 @@ ENDDO !DO I=1,NA
 !>*******************************************************************
 !>
 
+    !> Grid data for output.
+    md%fsdown = fsdown
+    md%fsvh = fsvhgrd
+    md%fsih = fsihgrd
+    md%fdl = fdlgrd
+    md%ul = ulgrd
+    md%ta = tagrd
+    md%qa = qagrd
+    md%pres = presgrd
+    md%pre = pregrd
+
+!> GRU-distributed data for output.
+wb_h%pre = 0.0
+wb_h%evap = 0.0
+wb_h%rof = 0.0
+wb_h%rofo = 0.0
+wb_h%rofs = 0.0
+wb_h%rofb = 0.0
+wb_h%rcan = 0.0
+wb_h%sncan = 0.0
+wb_h%pndw = 0.0
+wb_h%sno = 0.0
+wb_h%wsno = 0.0
+wb_h%lqws = 0.0
+wb_h%frws = 0.0
 !$omp parallel do
 DO I=1,NA
   DO M=1,NMTEST
@@ -4346,14 +4372,29 @@ DO I=1,NA
     ILMOGRD(I)=ILMOGRD(I)+ILMOROW(I,M)*cp%FAREROW(I,M)
     UEGRD(I)=UEGRD(I)+UEROW(I,M)*cp%FAREROW(I,M)
     HBLGRD(I)=HBLGRD(I)+HBLROW(I,M)*cp%FAREROW(I,M)
+    wb_h%pre(i) = wb_h%pre(i) + cp%farerow(i, m)*pregrd(i)*delt
+    wb_h%evap(i) = wb_h%evap(i) + cp%farerow(i, m)*qfsrow(i, m)*delt
+    wb_h%rof(i) = wb_h%rof(i) + cp%farerow(i, m)*rofrow(i, m)*delt
+    wb_h%rofo(i) = wb_h%rofo(i) + cp%farerow(i, m)*roforow(i, m)*delt
+    wb_h%rofs(i) = wb_h%rofs(i) + cp%farerow(i, m)*rofsrow(i, m)*delt
+    wb_h%rofb(i) = wb_h%rofb(i) + cp%farerow(i, m)*rofbrow(i, m)*delt
+    wb_h%rcan(i) = wb_h%rcan(i) + cp%farerow(i, m)*cp%rcanrow(i, m)
+    wb_h%sncan(i) = wb_h%sncan(i) + cp%farerow(i, m)*cp%scanrow(i, m)
+    wb_h%pndw(i) = wb_h%pndw(i) + cp%farerow(i, m)*cp%zpndrow(i, m)*rhow
+    wb_h%sno(i) = wb_h%sno(i) + cp%farerow(i, m)*cp%snorow(i, m)
+    wb_h%wsno(i) = wb_h%wsno(i) + cp%farerow(i, m)*wsnorow(i, m)
     DO J=1,IGND
         HMFGGRD(I,J)=HMFGGRD(I,J)+HMFGROW(I,M,J)*cp%FAREROW(I,M)
         HTCGRD(I,J)=HTCGRD(I,J)+HTCROW(I,M,J)*cp%FAREROW(I,M)
         QFCGRD(I,J)=QFCGRD(I,J)+QFCROW(I,M,J)*cp%FAREROW(I,M)
 !- Diane added GFLXGRD june 17/08
 !-              GFLXGRD(I,J)=GFLXGRD(I,J)+GFLXROW(I,M,J)*FAREROW(I,M)
+        wb_h%lqws(i, j) = wb_h%lqws(i, j) + cp%farerow(i, m)*cp%thlqrow(i, m, j)*dlzwrow(i, m, j)*rhow
+        wb_h%frws(i, j) = wb_h%frws(i, j) + cp%farerow(i, m)*cp%thicrow(i, m, j)*dlzwrow(i, m, j)*rhoice
     ENDDO
   ENDDO !DO M=1,NMTEST
+    wb_h%stg(i) = wb%rcan(i) + wb%sncan(i) + wb%pndw(i) + wb%sno(i) + wb%wsno(i) + &
+        sum(wb%lqws(i, :)) + sum(wb%frws(i, :))
 ENDDO !DO I=1,NA
 
     CALL tile_connector(runoff, recharge, leakages, ncount, ROFOGRD, ROFSGRD, ROFBGRD, DELT)
@@ -4498,21 +4539,10 @@ DO I = 1, NA
    ENDIF
 ENDDO !DO I=1,NA
 
-    !> Update met. data output variable on the hour assuming half-hour timestep.
-!    if (mod(ncount, 2) == 0) then
-        md%fsdown = fsdown
-        md%fsvh = fsvhgrd
-        md%fsih = fsihgrd
-        md%fdl = fdlgrd
-        md%ul = ulgrd
-        md%ta = tagrd
-        md%qa = qagrd
-        md%pres = presgrd
-        md%pre = pregrd
-        call updatefieldsout_temp(vr, ts, iof, &
-                                  md, &
-                                  iyear, iday, ceiling(ncount/2.0), public_ic%timestep - mod(ncount, 2)*public_ic%timestep)
-!    end if !(mod(ncount, 2) == 1)
+    !> Update output data.
+    call updatefieldsout_temp(vr, ts, iof, bi, &
+                              md, wb_h, &
+                              iyear, iday, ceiling(ncount/2.0), public_ic%timestep - mod(ncount, 2)*public_ic%timestep)
 
 !> CALCULATE AND PRINT DAILY AVERAGES.
 
