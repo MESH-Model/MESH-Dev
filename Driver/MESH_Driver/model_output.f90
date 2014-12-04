@@ -994,6 +994,14 @@ module model_output
                         vr%mdt_h%pre((now_timestep/public_ic%timestep + 1), :) = md%pre
                     end if
 
+                !*todo: Better way of storing variables in different formats (e.g., PRE [mm s-1] vs PREC [mm]).
+                case ("PREC")
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%pre, freq, public_ic%now_hour, now_hour, 882122, .true.)
+                        vr%wbt_h%pre((now_timestep/public_ic%timestep + 1), :) = wb%pre
+                    end if
+
                 case ("EVAP")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -1469,6 +1477,12 @@ module model_output
 
                     if (ifo%var_out(i)%out_d) &
                         call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days)
+
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        call check_write_var_out(ifo, i, vr%wbt_h%pre, freq, public_ic%now_hour - 1, public_ic%now_hour, &
+                            882122, .false.)
+                    end if
 
                 case ('EVAP', 'Evapotranspiration')
 
