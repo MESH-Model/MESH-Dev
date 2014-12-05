@@ -1209,7 +1209,7 @@ module model_output
         type(out_flds) :: vr
 
         !Internals
-        integer :: i, iy, im, iss, id
+        integer :: i, j, iy, im, iss, id
         character*50 :: vId
 
         call GetIndicesDATES(iday, iyear, iy, im, iss, id, ts)
@@ -1364,6 +1364,32 @@ module model_output
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
                         vr%wbt_s%wsno(iss, :) = vr%wbt_s%wsno(iss, :) + wsno
+
+                case ("STG")
+
+                    if (ifo%var_out(i)%out_y) then
+                        vr%wbt_y%stg(iy, :) = vr%wbt_y%stg(iy, :) + &
+                            rcan + sncan + pndw + sno + wsno
+                        do j = 1, ignd
+                            vr%wbt_y%stg(iy, :) = vr%wbt_y%stg(iy, :) + lqws(:, j) + frws(:, j)
+                        end do
+                    end if
+
+                    if (ifo%var_out(i)%out_m) then
+                        vr%wbt_m%stg(im, :) = vr%wbt_m%stg(im, :) + &
+                            rcan + sncan + pndw + sno + wsno
+                        do j = 1, ignd
+                            vr%wbt_m%stg(im, :) = vr%wbt_m%stg(im, :) + lqws(:, j) + frws(:, j)
+                        end do
+                    end if
+
+                    if (ifo%var_out(i)%out_s) then
+                        vr%wbt_s%stg(iss, :) = vr%wbt_s%stg(iss, :) + &
+                            rcan + sncan + pndw + sno + wsno
+                        do j = 1, ignd
+                            vr%wbt_s%stg(iss, :) = vr%wbt_s%stg(iss, :) + lqws(:, j) + frws(:, j)
+                        end do
+                    end if
 
 !                case default
 !                    print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."
@@ -1699,7 +1725,16 @@ module model_output
                             882118, .false.)
                     end if
 
-                case ('STG')
+                case ("STG")
+
+                    if (ifo%var_out(i)%out_y) &
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
+
+                    if (ifo%var_out(i)%out_m) &
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
+
+                    if (ifo%var_out(i)%out_s) &
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -1707,7 +1742,7 @@ module model_output
                             882119, .false.)
                     end if
 
-                case ('WR_RUNOFF')
+                case ("WR_RUNOFF")
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -1715,7 +1750,7 @@ module model_output
                             public_ic%now_hour, 882120, .false.)
                     end if
 
-                case ('WR_RECHARGE')
+                case ("WR_RECHARGE")
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -2027,6 +2062,26 @@ module model_output
                 if (trim(adjustl(freq)) == 'S') then
                     do i = 1, nt
                         fld(:, i) = vr%wbt_s%wsno(i, :)
+                    end do
+                end if
+
+            case ("STG")
+
+                if (trim(adjustl(freq)) == 'Y') then
+                    do i = 1, nt
+                        fld(:, i) = vr%wbt_y%stg(i, :)
+                    end do
+                end if
+
+                if (trim(adjustl(freq)) == 'M') then
+                    do i = 1, nt
+                        fld(:, i) = vr%wbt_m%stg(i, :)
+                    end do
+                end if
+
+                if (trim(adjustl(freq)) == 'S') then
+                    do i = 1, nt
+                        fld(:, i) = vr%wbt_s%stg(i, :)
                     end do
                 end if
 
