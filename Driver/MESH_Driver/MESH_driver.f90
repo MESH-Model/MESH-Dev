@@ -4744,6 +4744,13 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
             END DO
 
     !> update components for final water balance tally
+    wb%rcan = 0.0
+    wb%sncan = 0.0
+    wb%pndw = 0.0
+    wb%sno = 0.0
+    wb%wsno = 0.0
+    wb%lqws = 0.0
+    wb%frws = 0.0
     DO I = 1, NA
         IF (FRAC(I) >= 0.0) THEN
             DO M = 1, NMTEST
@@ -4752,16 +4759,16 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                 TOTAL_SNO = TOTAL_SNO + cp%FAREROW(I, M)*cp%SNOROW(I, M)
                 TOTAL_WSNO = TOTAL_WSNO + cp%FAREROW(I, M)*WSNOROW(I, M)
                 TOTAL_ZPND = TOTAL_ZPND + cp%FAREROW(I, M)*cp%ZPNDROW(I, M)*RHOW
-                wb%rcan(i) = cp%farerow(i, m)*cp%scanrow(i, m)
-                wb%sncan(i) = cp%farerow(i, m)*cp%rcanrow(i, m)
-                wb%pndw(i) = cp%farerow(i, m)*cp%zpndrow(i, m)*rhow
-                wb%sno(i) = cp%farerow(i, m)*cp%snorow(i, m)
-                wb%wsno(i) = cp%farerow(i, m)*wsnorow(i, m)
+                wb%rcan(i) = wb%rcan(i) + cp%farerow(i, m)*cp%scanrow(i, m)
+                wb%sncan(i) = wb%sncan(i) + cp%farerow(i, m)*cp%rcanrow(i, m)
+                wb%pndw(i) = wb%pndw(i) + cp%farerow(i, m)*cp%zpndrow(i, m)*rhow
+                wb%sno(i) = wb%sno(i) + cp%farerow(i, m)*cp%snorow(i, m)
+                wb%wsno(i) = wb%wsno(i) + cp%farerow(i, m)*wsnorow(i, m)
                 DO J = 1, IGND
                     TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%FAREROW(I, M)*cp%THLQROW(I, M, J)*RHOW*DLZWROW(I, M, J)
                     TOTAL_THIC(J) = TOTAL_THIC(J) + cp%FAREROW(I, M)*cp%THICROW(I, M, J)*RHOICE*DLZWROW(I, M, J)
-                    wb%lqws(i, j) = cp%farerow(i, m)*cp%thlqrow(i, m, j)*rhow*dlzwrow(i, m, j)
-                    wb%frws(i, j) = cp%farerow(i, m)*cp%thicrow(i, m, j)*rhoice*dlzwrow(i, m, j)
+                    wb%lqws(i, j) = wb%lqws(i, j) + cp%farerow(i, m)*cp%thlqrow(i, m, j)*rhow*dlzwrow(i, m, j)
+                    wb%frws(i, j) = wb%frws(i, j) + cp%farerow(i, m)*cp%thicrow(i, m, j)*rhoice*dlzwrow(i, m, j)
                 END DO
             END DO
             wb%stg(i) = wb%rcan(i) + wb%sncan(i) + wb%pndw(i) + wb%sno(i) + wb%wsno(i) + &
