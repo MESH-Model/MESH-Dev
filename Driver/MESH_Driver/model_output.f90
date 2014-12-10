@@ -1299,6 +1299,9 @@ module model_output
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
                         vr%wbt_s%lqws(iss, :, :) = vr%wbt_s%lqws(iss, :, :) + lqws
 
+                    if (ifo%var_out(i)%out_d) &
+                        vr%wbt_d%lqws(id, :, :) = vr%wbt_d%lqws(id, :, :) + lqws
+
                 case ('FRWS')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
@@ -1601,6 +1604,12 @@ module model_output
                     if (ifo%var_out(i)%out_s) then!trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
                         do j = 1, bi%ignd
                             call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, j)
+                        end do
+                    end if
+
+                    if (ifo%var_out(i)%out_d) then
+                        do j = 1, bi%ignd
+                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nseason, j)
                         end do
                     end if
 
@@ -1945,6 +1954,12 @@ module model_output
                     end do
                 end if
 
+                if (trim(adjustl(freq)) == "D") then
+                    do i = 1, nt
+                        fld(:, i) = vr%wbt_d%lqws(i, :, igndx)
+                    end do
+                end if
+
             case ('FRWS')
 
                 if (trim(adjustl(freq)) == 'Y') then
@@ -2158,12 +2173,12 @@ module model_output
                 end do
 
             case ("D")
-!                allocate(dates(ts%nr_days, 3))
-!                do i = 1, ts%nr_days*24, 24
-!                    dates(i/24, 1) = ts%dates(i, 1)
-!                    dates(i/24, 2) = ts%dates(i, 2)
-!                    dates(i/24, 3) = ts%dates(i, 3)
-!                end do
+                allocate(dates(ts%nr_days, 3))
+                do i = 1, ts%nr_days
+                    dates(i, 1) = ts%dates(i, 1)
+                    dates(i, 2) = ts%dates(i, 2)
+                    dates(i, 3) = ts%dates(i, 3)
+                end do
 
             case ("H")
 !                allocate(dates(1, 5))
