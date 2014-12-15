@@ -3,9 +3,63 @@
      2                  ZPLIM,XSLOPE,XDRAIN,MANNING_N,DDEN,GRKSAT,TBARW,
      3                  DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
      4                  ISAND,IWF,IG,ILG,IL1,IL2,BULKFC,
-     5                  NA,NTYPE,ILMOS,JLMOS,SOIL_DEPTH,RATIO)
+     5                  NA,NTYPE,ILMOS,JLMOS,SDEPTH,RATIO)
       USE FLAGS
       IMPLICIT NONE                         
+      
+c     Summary:
+c
+c     This routine calculates the outflow from a tilted landscape
+c     element (tile). Rather than using average saturation for the 
+c     element(asat0), it finds flow using the saturation at the
+c     seepage face (for interflow) at at the bottom of the layer
+c     (for baseflow). The routine returns:
+c     1) the saturation at the end of the time step (asat1)
+c     2) the interflow (subflw) and baseflow (basflw) integrated 
+c        over the duration of the time step (in m)
+c     3) the fraction of the surface which is saturated at the
+c        surface according to the model (satsfc)
+c
+c     Interflow amount during the time step in m is determined from:
+c     subflw = (asat0 - asat1) * thpor * delzw
+c     (implicit estimation)
+c
+c     Baseflow amount during the time step in m is determined from:
+c     basflw = grksat * asatb0**(2*bcoef+3) * delt
+c     where asatb0 is the average saturation across the bottom of the
+c     element at initial time (explicit estimation, 1st order)
+c
+c     The fraction of the surface that is saturated at the initial
+c     time (satsfc) is estimated as MIN(1-t0/tc,0) where t0 is the 
+c     (theoretical) time elapsed since saturation and tc is the
+c     critical time at which the saturation front reaches the
+c     seepage face.
+      
+c     |                                                           |
+c     |********                                                   | - asat saturation 1.0
+c     |+       ********                                           | - asat saturation sta, s saturation 1.0
+c     |+               *                                          |
+c     |+               *                                          |
+c  S  | +               *                                         |
+c  A  | +               *                                         |
+c  T  |  +               *                                        |
+c  U  |  +               *                                        |
+c  R  |   +               *                                       |
+c  A  |    +               *                                      |
+c  T  |     +               *                                     |
+c  I  |      +               *                                    |
+c  O  |       +               **                                  |
+c  N  |        ++               **                                |
+c     |          ++               **                              |
+c     |            +++              ***                           |
+c     |               +++++            ****                       |
+c     |                    ++++++          *******                |
+c     |                          +++++++++++      *************   | - asat saturation sfc, s saturatoin 0.0
+c     |                                                           |
+c     |__________________________________________________________ |
+c      |               |                                           
+c      time 0.0        time ta                                           
+c                                TIME
       
 ***** COMMON BLOCK PARAMETERS ******************************************************************************
       
@@ -17,7 +71,7 @@
       REAL*8  qflowij , bflowij            !interflow and base flow accumulator
       REAL*8  asat1ij , asat2ij , asat3ij  !initial, and final interflow and baseflow soil saturation
       REAL*8  stc     , sta                !soil saturation at end of pure and apparent saturated flow
-      REAL*8  sfc     , bfc                !lowes soil saturation possible
+      REAL*8  sfc                          !lowes soil saturation possible
       REAL*8  satmin  , satice             !minimal soil saturation and soil saturation with ice
       REAL*8  t1      , t2      , t3       !initial, and final interflow and baseflow time
       REAL*8  tc      , ta                 !time at end of pure saturated and apparent saturated flow
@@ -35,10 +89,6 @@
       INTEGER ISAND  (ILG, IG), isandij    !SAND PERCENT 0-100
       INTEGER CLAY   (ILG, IG), clayij     !CLAY PERCENT 0-100
       INTEGER i, j, isfc
-      
-***** INPUT SCALARS ****************************************************************************************
-      REAL    SOIL_DEPTH
-      REAL    RATIO
       
 ***** INPUT ARRAS AND VECTORS ******************************************************************************
       REAL    BI     (ILG, IG), biij
@@ -61,6 +111,8 @@
       REAL    XSLOPE     (ILG), xslopei    !valley slope
       REAL    ZPLIM      (ILG), zplimi
       REAL    ZPOND      (ILG), zpondi
+      REAL    RATIO      (ILG), ratioi
+      REAL    SDEPTH (NTYPE, IG)
       
 ***** OUTPUT ARRAYS ****************************************************************************************
       REAL    OVRFLW (ILG), ovrflwi        !overland flow
@@ -111,7 +163,7 @@ C----------------------------------------------------------------------C
        
 ************************************************************************************************************
         do j = 1,IG
-      
+            
 C----------------------------------------------------------------------C
 C     CLEAR ACCUMULATORS                                               C
 C----------------------------------------------------------------------C
@@ -132,6 +184,7 @@ C----------------------------------------------------------------------C
         thporij    = THPOR(i,j)
         thiceij    = THICE(i,j)
         isandij    = isand(i,j)
+        ratioi     = 100*RATIO(i)
       
         if(xslopei>0.0.and.isand(i,j)>=0.and.biij>0.0)then
 
@@ -149,8 +202,8 @@ C----------------------------------------------------------------------C
 C----------------------------------------------------------------------------------------------------------C
 C     FIND POTENTIAL LATERAL FLOW                                                                          C
 C----------------------------------------------------------------------------------------------------------C
-      if (bulkfcij.lt.1.0.and.thliqij.gt.bulkfcij.and.biij.gt.1.0) then
-                
+      if (thliqij.gt.bulkfcij.and.biij.gt.1.0) then
+
 c         RUNOFF    is outflow volume of water per unit area (I.e. depth of lost water)
 c                   of grid square per timestep ((m^3/s)/m^2)
 c         GRKSAT    is mean cross-sectional velocity (m/s) 
@@ -181,7 +234,7 @@ c         satice    is the saturation with ice
 c         satmin    is the minimum saturation
  
 c         SECONDARY TILE PREPERTIES
-          qmax    = RATIO*grksatij*xslopei/xlengthi
+          qmax    = ratioi*grksatij*xslopei/xlengthi
           qcof    = (biij+2.0)/2.0
           stc     = (1.0 - 1.0/(2.0*biij+3.0))
           tc      = (1.0 - stc)/qmax
@@ -231,7 +284,7 @@ C----------------------------------------------------------------------C
           endif
           
           asat2ij  = min(asat1ij, max(asat2ij, satmin))
-
+          
           
 C----------------------------------------------------------------------C
 C     FIND POTENTIAL BASEFLOW (draw from bottom layer only)            C
@@ -246,6 +299,7 @@ C----------------------------------------------------------------------C
          else 
             bmax    = grksatij
             bcof    = (biij+2.0)
+            bcof = 6.0 !TESTING
             s3      = ((bcof-1.0)*bmax*t2+1.0)**(1.0/(1.0-bcof))
             asat3ij = s3*(1.0-sfc)+sfc
             asat3ij  = min(asat1ij, max(asat3ij, satmin))
@@ -275,7 +329,7 @@ C----------------------------------------------------------------------C
          elseif (avlflw .le.  potflw) then
            actadj  = avlflw/potflw 
            qflowij = actadj*qflowij
-           bflowij = actadj*bflowij
+           bflowij = actadj*bflowij*(1.0-xdraini)
            asat2ij = asat1ij - qflowij - bflowij  
          else
            asat2ij = asat1ij - qflowij - bflowij  
@@ -293,7 +347,7 @@ C----------------------------------------------------------------------C
 ************************************************************************************************************
       enddo
 ************************************************************************************************************
-
+      
 C----------------------------------------------------------------------C
 C     calculate the depth of overland flow                             C
 C----------------------------------------------------------------------C
