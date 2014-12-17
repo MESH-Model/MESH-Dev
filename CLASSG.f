@@ -55,7 +55,8 @@
      +                  VPDGRD, TADPGRD,RHOAGRD,RPCPGRD,TRPCGRD,
      +                  SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD,
      +                  GGEOGRD, MANNROW, MANNGAT, DDROW, DDGAT,
-     +                  SANDROW,SANDGAT,CLAYROW,CLAYGAT)
+     +                  SANDROW,SANDGAT,CLAYROW,CLAYGAT,
+     +                  RATIOQM,RATIOQ)         !Ric Soulis added RATIOQM, RATIOQ
 C     * JUN 17/08 - D.HOLMAN. ADD MANNROW, MANNGAT, DDROW, DDGAT.
 C
 C     * MAR 23/06 - D.VERSEGHY. ADD WSNO,FSNO,GGEO.
@@ -92,7 +93,7 @@ C
 C     * SAND AND CLAY
       REAL    SANDROW(NL,NM,IG), CLAYROW(NL,NM,IG)
       REAL    SANDGAT(ILG,IG),   CLAYGAT(ILG,IG)
-C
+      
 C     * GATHER-SCATTER INDEX ARRAYS.
 C
       INTEGER  ILMOS (ILG),  JLMOS  (ILG),  IWMOS  (ILG),  JWMOS (ILG)
@@ -124,7 +125,7 @@ C
 C
       REAL    THPROW (NL,NM,IG), THRROW (NL,NM,IG), THMROW (NL,NM,IG),
      1        BIROW  (NL,NM,IG), PSISROW(NL,NM,IG), GRKSROW(NL,NM,IG),   
-     2        THRAROW(NL,NM,IG), HCPSROW(NL,NM,IG), 
+     2        THRAROW(NL,NM,IG), HCPSROW(NL,NM,IG), RATIOQM(NL, NM),
      3        TCSROW (NL,NM,IG), THFCROW(NL,NM,IG), PSIWROW(NL,NM,IG),  
      4        DLZWROW(NL,NM,IG), ZBTWROW(NL,NM,IG), 
      5        DRNROW (NL,NM),    XSLPROW(NL,NM),    XDROW(NL,NM),
@@ -136,7 +137,7 @@ C
 
       REAL    THPGAT (ILG,IG),   THRGAT (ILG,IG),   THMGAT (ILG,IG),
      1        BIGAT  (ILG,IG),   PSISGAT(ILG,IG),   GRKSGAT(ILG,IG),   
-     2        THRAGAT(ILG,IG),   HCPSGAT(ILG,IG), 
+     2        THRAGAT(ILG,IG),   HCPSGAT(ILG,IG),   RATIOQ(ILG),        !Ric Soulis added RATIOQ
      3        TCSGAT (ILG,IG),   THFCGAT(ILG,IG),   PSIWGAT(ILG,IG),  
      4        DLZWGAT(ILG,IG),   ZBTWGAT(ILG,IG),   
      5        DRNGAT (ILG),      XSLPGAT(ILG),      XDGAT(ILG),
@@ -228,6 +229,7 @@ C----------------------------------------------------------------------
           FRZCGAT (K)=FRZCROW (ILMOS(K),JLMOS(K))            
           TACGAT (K)=TACROW (ILMOS(K),JLMOS(K))  
           QACGAT (K)=QACROW (ILMOS(K),JLMOS(K))  
+          RATIOQ (K)=RATIOQM(ILMOS(K),JLMOS(K)) !Ric Soulis added 
           ZBLDGAT(K)=ZBLDGRD(ILMOS(K))
           Z0ORGAT(K)=Z0ORGRD(ILMOS(K))
           ZRFMGAT(K)=ZRFMGRD(ILMOS(K))

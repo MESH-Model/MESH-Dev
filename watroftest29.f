@@ -7,59 +7,59 @@
       USE FLAGS
       IMPLICIT NONE                         
       
-c     Summary:
+************************************************************************************************************
+*     WATROFTEST *** DRAFT VERSION 1.0 *** DECEMBER 16, 2014 *** Ric Soulis *** Mateusz Tinel              *
+************************************************************************************************************
 c
-c     This routine calculates the outflow from a tilted landscape
-c     element (tile). Rather than using average saturation for the 
-c     element(asat0), it finds flow using the saturation at the
-c     seepage face (for interflow) at at the bottom of the layer
-c     (for baseflow). The routine returns:
-c     1) the saturation at the end of the time step (asat1)
-c     2) the interflow (subflw) and baseflow (basflw) integrated 
-c        over the duration of the time step (in m)
-c     3) the fraction of the surface which is saturated at the
-c        surface according to the model (satsfc)
-c
-c     Interflow amount during the time step in m is determined from:
-c     subflw = (asat0 - asat1) * thpor * delzw
-c     (implicit estimation)
-c
-c     Baseflow amount during the time step in m is determined from:
-c     basflw = grksat * asatb0**(2*bcoef+3) * delt
-c     where asatb0 is the average saturation across the bottom of the
-c     element at initial time (explicit estimation, 1st order)
-c
-c     The fraction of the surface that is saturated at the initial
-c     time (satsfc) is estimated as MIN(1-t0/tc,0) where t0 is the 
-c     (theoretical) time elapsed since saturation and tc is the
-c     critical time at which the saturation front reaches the
-c     seepage face.
+c     This routine calculates the outflow from a tilted landscape element (tile). This code is a replacement
+c     for WATDRN and WATROF, in contrast the recession curve is a consequence of pore sized distribution, 
+c     rather than continuity with depth. Starting from saturation the flow continues at maximum value Qmax 
+c     untill the largest pores stop flowing due to suction. Flow continues at near saturation rate, while 
+c     the saturation curvature changes from negative curvature to positive. This produces a recession curve 
+c     pattern shown below. The curve cab be conveniently represented by Q = min(Qmax, Seffective^Qcof). 
+c     Basflow is based on the average saturation of the element, represented by Seffective^Bcof. 
+
+c                    SATURATION A FUNCTION OF TIME
       
-c     |                                                           |
-c     |********                                                   | - asat saturation 1.0
-c     |+       ********                                           | - asat saturation sta, s saturation 1.0
-c     |+               *                                          |
-c     |+               *                                          |
-c  S  | +               *                                         |
-c  A  | +               *                                         |
-c  T  |  +               *                                        |
-c  U  |  +               *                                        |
-c  R  |   +               *                                       |
-c  A  |    +               *                                      |
-c  T  |     +               *                                     |
-c  I  |      +               *                                    |
-c  O  |       +               **                                  |
-c  N  |        ++               **                                |
-c     |          ++               **                              |
-c     |            +++              ***                           |
-c     |               +++++            ****                       |
-c     |                    ++++++          *******                |
-c     |                          +++++++++++      *************   | - asat saturation sfc, s saturatoin 0.0
+c     |*                                                          | - asat saturation 1.0
+c     |+*                                                         |
+c     |+ *                                                        |
+c     |+  *                                                       |
+c     | +  *                                                      |
+c  S  | +   *                                                     |
+c  A  | +    *                                                    |
+c  T  |  +    *                                                   |
+c  U  |  +     *                                                  | - asat saturation sta, s saturation 1.0
+c  R  |   +     **                                                |
+c  A  |    +      **                                              |
+c  T  |     +       **                                            |
+c  I  |      +        **                                          |
+c  O  |       +         **                                        |
+c  N  |        ++         ***                                     |
+c     |          ++          ***                                  |
+c     |            +++          ***                               |
+c     |               +++++        *****                          |
+c     |                    ++++++       *****                     |
+c     |                          +++++++++++ *******              | - asat saturation sfc, s saturatoin 0.0
 c     |                                                           |
 c     |__________________________________________________________ |
 c      |               |                                           
-c      time 0.0        time ta                                           
-c                                TIME
+c      time 0.0        time ta, s curve time 0.0                                           
+c                                TIME 
+      
+c     Saturated flow is calculated using by a straight line: 
+c         asat(t) = 1 - ((1 - sta)/ta)*t 
+c     Time t1 at begining of time step can be calculated using this equation. When saturated flow ends at 
+c     time = ta, unsaturated flow begins, that is calculated using by: 
+c         s(t) = ((B - 1) * (Bmax * t + (1/(B - 1))))**(1/(1 - B))
+c     For the curve, at time t = 0 saturation s = 1 everywhere, therefore the time must be corrected for 
+c     the time spent on saturated flow which lasted for length of time = ta (so t = t2 - ta), if initial 
+c     saturation asat1 happens during saturated flow. If asat1 happens during unsaturated flow then t1 can 
+c     be determined using the initial saturation s1. asat can be connected to s using:
+c         s = (asat - sfc)/(sta - sfc) since; 
+c     if time = ta then asat = sta and the equation gives s = 1, when flow ends then asat = sfc and the 
+c     equation gives s = 0. 
+      
       
 ***** COMMON BLOCK PARAMETERS ******************************************************************************
       
@@ -95,7 +95,7 @@ c                                TIME
       REAL    BULKFC (ILG, IG), bulkfcij
       REAL    DELZW  (ILG, IG), delzwij
       REAL    DIDRN  (ILG, IG)
-      REAL    GRKSAT (ILG, IG), grksatij   !Vertical hydraulic conductivity at saturation
+      REAL    GRKSAT (ILG, IG), grksatij   !is mean cross-sectional velocity (m/s) 
       REAL    PSISAT (ILG, IG), psisatij   !soil section TODO - NEED UNITS
       REAL    THICE  (ILG, IG), thiceij
       REAL    THLIQ  (ILG, IG), thliqij
@@ -157,6 +157,11 @@ C----------------------------------------------------------------------C
       xheighti = xlengthi * sin(sslopei)
       xdraini  = xdrain(i)
       
+C----------------------------------------------------------------------C
+C     RATIO FOR Q MAX                                                  C
+C----------------------------------------------------------------------C
+      ratioi   = RATIO(i)
+      
       zpondi     = ZPOND(i)      
       zplimi     = ZPLIM(i)
       manning_ni = MANNING_N(i)
@@ -184,7 +189,6 @@ C----------------------------------------------------------------------C
         thporij    = THPOR(i,j)
         thiceij    = THICE(i,j)
         isandij    = isand(i,j)
-        ratioi     = 100*RATIO(i)
       
         if(xslopei>0.0.and.isand(i,j)>=0.and.biij>0.0)then
 
@@ -203,21 +207,8 @@ C-------------------------------------------------------------------------------
 C     FIND POTENTIAL LATERAL FLOW                                                                          C
 C----------------------------------------------------------------------------------------------------------C
       if (thliqij.gt.bulkfcij.and.biij.gt.1.0) then
-
-c         RUNOFF    is outflow volume of water per unit area (I.e. depth of lost water)
-c                   of grid square per timestep ((m^3/s)/m^2)
-c         GRKSAT    is mean cross-sectional velocity (m/s) 
-c         DDEN      is drainage density,expected value of streamlength per unit area (m/m^2)
-        
-c         Saturated flow is modeled by a straIGht line: asat = 1 - ((1 - sta)/ta)*t. Time t1 at begining of 
-c         time step can be calculated using this equation. When saturated flow ends at time = ta, 
-c         unsaturated flow begins, that is modeled by: s = ((B - 1) * (Bmax * t + (1/(B - 1))))**(1/(1 - B))
-c         For the curve, at time t = 0 saturation s = 1, therefore the time must be corrected for the time 
-c         spent on saturated flow which lasted for length of time = ta (so t = t2 - ta), if initial 
-c         saturation asat1 happens during saturated flow. If asat1 happens during unsaturated flow then t1 
-c         can be determined using the initial saturation s1. asat can be connected to s using 
-c         s = (asat - sfc)/(sta - sfc) since; if time = ta then asat = sta and the equation gives s = 1, 
-c         when flow ends then asat = sfc and the equation gives s = 0. 
+         
+c         SECONDARY TILE PREPERTIES
          
 c         qcof/bcof exponent for recession curve (B), (dimensionless, 4 for 0% clay, 6 for 30% clay)
 c         qmax/bmax maximum flux (Bmax)
@@ -233,7 +224,6 @@ c         sfc/bfc   is the lowest possible bulk saturation, as time goes to infi
 c         satice    is the saturation with ice
 c         satmin    is the minimum saturation
  
-c         SECONDARY TILE PREPERTIES
           qmax    = ratioi*grksatij*xslopei/xlengthi
           qcof    = (biij+2.0)/2.0
           stc     = (1.0 - 1.0/(2.0*biij+3.0))

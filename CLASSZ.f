@@ -5,7 +5,7 @@
      4                  FSGG,   FLGG,   HFSG,   HEVG,   HMFG,   HTC,
      5                  PCFC,   PCLC,   QFCF,   QFCL,   ROFC,   WTRC,
      6                  PCPN,   QFN,    ROFN,   WTRS,   PCPG,   QFG,
-     7                  QFC,    ROF,    WTRG,   CMAI,   RCAN,   SCAN,   
+     7                  QFC,    ROF,    WTRG,   CMAI,   RCAN,   SNCAN,   
      8                  TCAN,   SNO,    WSNOW,  TSNOW,  THLIQ,  THICE,  
      9                  HCPS,   THPOR,  DELZW,  TBAR,   ZPOND,  TPOND,  
      A                  DELZ,   FCS,    FGS,    FC,     FG,
@@ -44,7 +44,7 @@ C
      7     ROFN  (ILG),   WTRS  (ILG),   PCPG  (ILG),   QFG   (ILG),
      8     QFC   (ILG,IG),
      9     ROF   (ILG),   WTRG  (ILG),   CMAI  (ILG),  
-     A     RCAN  (ILG),   SCAN  (ILG),   TCAN  (ILG),   SNO   (ILG),
+     A     RCAN  (ILG),   SNCAN  (ILG),   TCAN  (ILG),   SNO   (ILG),
      B     WSNOW (ILG),   TSNOW (ILG),   
      C     THLIQ (ILG,IG),THICE (ILG,IG),HCPS  (ILG,IG),
      D     THPOR (ILG,IG),DELZW (ILG,IG),TBAR  (ILG,IG),
@@ -71,7 +71,7 @@ C
       DO 100 I=IL1,IL2
           WTGSTP(I)=0.0
           CTVSTP(I)=-(CMAI(I)*SPHVEG+RCAN(I)*SPHW+
-     1             SCAN(I)*SPHICE)*TCAN(I)
+     1             SNCAN(I)*SPHICE)*TCAN(I)
           CTSSTP(I)=-TSNOW(I)*(HCPICE*SNO(I)/RHOICE+
      1             HCPW*WSNOW(I)/RHOW)
           CT1STP(I)=-((HCPW*THLIQ(I,1)+HCPICE*THICE(I,1)
@@ -84,7 +84,7 @@ C
           CT3STP(I)=-((HCPW*THLIQ(I,3)+HCPICE*THICE(I,3)
      1             +HCPS(I,3)*(1.0-THPOR(I,3)))*DELZW(I,3)+
      2             HCPSND*(DELZ(3)-DELZW(I,3)))*TBAR(I,3)
-          WTVSTP(I)=-(RCAN(I)+SCAN(I))
+          WTVSTP(I)=-(RCAN(I)+SNCAN(I))
           WTSSTP(I)=-SNO(I)-WSNOW(I)
           DO 50 J=1,IG
               WTGSTP(I)=WTGSTP(I)-
@@ -102,7 +102,7 @@ C     * CHECK ENERGY AND WATER BALANCES OVER THE CURRENT TIME STEP.
 C
       DO 200 I=IL1,IL2
           CTVSTP(I)=CTVSTP(I)+(CMAI(I)*SPHVEG+RCAN(I)*SPHW+
-     1             SCAN(I)*SPHICE)*TCAN(I)
+     1             SNCAN(I)*SPHICE)*TCAN(I)
           CTSSTP(I)=CTSSTP(I)+TSNOW(I)*(HCPICE*SNO(I)/RHOICE+
      1             HCPW*WSNOW(I)/RHOW)
           CT1STP(I)=CT1STP(I)+((HCPW*THLIQ(I,1)+HCPICE*THICE(I,1)
@@ -120,7 +120,7 @@ C
           CT1STP(I)=CT1STP(I)/DELT
           CT2STP(I)=CT2STP(I)/DELT
           CT3STP(I)=CT3STP(I)/DELT
-          WTVSTP(I)=WTVSTP(I)+RCAN(I)+SCAN(I)
+          WTVSTP(I)=WTVSTP(I)+RCAN(I)+SNCAN(I)
           WTSSTP(I)=WTSSTP(I)+SNO(I)+WSNOW(I)
           DO 150 J=1,IG
               WTGSTP(I)=WTGSTP(I)+
@@ -154,7 +154,7 @@ C
 6441          FORMAT(2X,'CANOPY ENERGY BALANCE  ',I8,2F20.8)
               WRITE(6,6450) FSGV(I),FLGV(I),HFSC(I),
      1             HEVC(I),HMFC(I),HTCC(I)
-              WRITE(6,6450) RCAN(I),SCAN(I),TCAN(I)
+              WRITE(6,6450) RCAN(I),SNCAN(I),TCAN(I)
               STOP
           ENDIF
           IF(ABS(CTSSTP(I)-QSUMS).GT.30.0) THEN

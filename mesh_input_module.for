@@ -73,7 +73,7 @@
 !> variables for read_parameters_hydrology
       TYPE HydrologyParameters
         REAL, DIMENSION(:,:), ALLOCATABLE :: ZSNLROW, ZPLSROW, ZPLGROW, 
-     +                                       FRZCROW
+     +                                       FRZCROW, RATIOQM           !Ric Soulis added RATIOQM
       END TYPE
 
       end module MESH_INPUT_MODULE

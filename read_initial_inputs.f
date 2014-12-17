@@ -518,6 +518,7 @@
 !> Read the mesh_parameters_hydrology.ini file
       ALLOCATE(hp%ZSNLROW(NA, NTYPE), hp%ZPLGROW(NA, NTYPE),
      +         hp%ZPLSROW(NA, NTYPE), hp%FRZCROW(NA,NTYPE))
+      ALLOCATE(hp%RATIOQM(NA, NTYPE))                                   !Ric Soulis added RATIOQM
       
       NYEARS = IYEAR_END - IYEAR_START + 1
       ALLOCATE (t0_ACC(NYEARS))
