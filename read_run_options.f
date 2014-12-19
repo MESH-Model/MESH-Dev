@@ -1,5 +1,5 @@
        SUBROUTINE READ_RUN_OPTIONS(
-     +  IDISP, IZREF, ISLFD, IPCP, IWF,
+     +  IDISP, IZREF, ISLFD, IPCP, IWF, IWD,
      +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
      +  IOS, PAS, N,
      +  IROVAL, WF_NUM_POINTS,
@@ -12,7 +12,7 @@
       IMPLICIT NONE
 
 !> the following variables were passed in from the subroutine call
-      INTEGER :: IDISP, IZREF, ISLFD, IPCP, IWF,
+      INTEGER :: IDISP, IZREF, ISLFD, IPCP, IWF, IWD,
      +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
      +  IOS, PAS, N,
      +  IROVAL, WF_NUM_POINTS,
@@ -81,8 +81,13 @@
 !>    * THE GROUND SURFACE SLOPE IS NOT MODELLED.
 !>    * IF IWF = 1, THE MODIFIED CALCULATIONS OF OVERLAND
 !>    * FLOW AND INTERFLOW ARE PERFORMED.
-      IWF = 1
-
+!>    * IF IWF = 2, USE WATROF2                                         !Ric Soulis added
+      IWF = 2                                                           !Ric Soulis added
+      
+!>    * IF IWD = 0, WATROF2 SPLITS basflwi USING XDRAIN                 !Ric Soulis added
+!>    * IF IWD = 1, WATROF2 DOESN'T SPLIT basflwi OUTPUT                !Ric Soulis added
+      IWD = 0                                                           !Ric Soulis added
+      
 !>    * IF IPAI, IHGT, IALC, IALS AND IALG ARE ZERO, THE VALUES OF
 !>    * LEAF ARE INDEX, VEGETATION HEIGHT, CANOPY ALBEDO, SNOW ALBEDO
 !>    * AND SOIL ALBEDO RESPECTIVELY CALCULATED BY CLASS ARE USED.
@@ -281,6 +286,8 @@
             ITG = IROVAL
           ELSE IF (IRONAME == "IWF") THEN
             IWF = IROVAL
+          ELSE IF (IRONAME == "IWD") THEN                               !Ric Soulis added
+            IWD = IROVAL                                                !Ric Soulis added
           ELSE IF (IRONAME == "IPAI") THEN
             IPAI = IROVAL
           ELSE IF (IRONAME == "IHGT") THEN

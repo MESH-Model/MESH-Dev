@@ -2,13 +2,13 @@
      1                  SUBFLW,TSUBFL,BASFLW,TBASFL,RUNOFF,TRUNOF,FI,
      2                  ZPLIM,XSLOPE,XDRAIN,MANNING_N,DDEN,GRKSAT,TBARW,
      3                  DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                  ISAND,IWF,IG,ILG,IL1,IL2,BULKFC,
+     4                  ISAND,IWF,IWD,IG,ILG,IL1,IL2,BULKFC,
      5                  NA,NTYPE,ILMOS,JLMOS,SDEPTH,RATIO)
       USE FLAGS
       IMPLICIT NONE                         
       
 ************************************************************************************************************
-*     WATROFTEST *** DRAFT VERSION 1.0 *** DECEMBER 16, 2014 *** Ric Soulis *** Mateusz Tinel              *
+*     WATROF2 *** DRAFT VERSION 1.0 *** DECEMBER 16, 2014 *** Ric Soulis *** Mateusz Tinel                 *
 ************************************************************************************************************
 c
 c     This routine calculates the outflow from a tilted landscape element (tile). This code is a replacement
@@ -84,11 +84,11 @@ c     equation gives s = 0.
       REAL*8  dover1  , dover2             !initial and final overlanf flow level
       
 ***** INTERNAL AND INPUT INTEGERS **************************************************************************
-      INTEGER IWF, IG, ILG, IL1, IL2, NA, NTYPE 
+      INTEGER IWF, IWD, IG, ILG, IL1, IL2, NA, NTYPE 
       INTEGER ILMOS (ILG), JLMOS (ILG)
       INTEGER ISAND  (ILG, IG), isandij    !SAND PERCENT 0-100
       INTEGER CLAY   (ILG, IG), clayij     !CLAY PERCENT 0-100
-      INTEGER i, j, isfc
+      INTEGER i, j, isfc, os
       
 ***** INPUT ARRAS AND VECTORS ******************************************************************************
       REAL    BI     (ILG, IG), biij
@@ -128,9 +128,25 @@ c     equation gives s = 0.
       REAL    TRUNOF    (ILG)
       
 C----------------------------------------------------------------------C
-C     SKIP IF USING CLASS ONLY                                         C
+C     USE FLAGS IWF AND IWD                                            C
 C----------------------------------------------------------------------C
-      if (IWF.eq.0) return
+      if (IWF.eq.0) then
+          return !Skip for flat class
+      elseif (IWF.eq.1) then
+         print*,""
+         print*,"ERROR: WATROF and WATDRN expected, not in this version"
+         pause ""
+         call abort
+      elseif (IWF.ne.2) then
+         print*,"FLAG 'IWF' NEEDS TO BE SET"
+         pause ""
+         call abort
+      endif
+      if (IWD.eq.0) then
+          os = 1.0
+      else
+          os = 0.0
+      endif
       
 ************************************************************************************************************
       do i = il1,il2
@@ -158,10 +174,13 @@ C----------------------------------------------------------------------C
       xdraini  = xdrain(i)
       
 C----------------------------------------------------------------------C
-C     RATIO FOR Q MAX                                                  C
+C     RATIO Q                                                          C
 C----------------------------------------------------------------------C
       ratioi   = RATIO(i)
       
+C----------------------------------------------------------------------C
+C     OVERLAND FLOW PARAMETERS                                         C
+C----------------------------------------------------------------------C
       zpondi     = ZPOND(i)      
       zplimi     = ZPLIM(i)
       manning_ni = MANNING_N(i)
@@ -225,7 +244,8 @@ c         satice    is the saturation with ice
 c         satmin    is the minimum saturation
  
           qmax    = ratioi*grksatij*xslopei/xlengthi
-          qcof    = (biij+2.0)/2.0
+          !qcof    = (biij+2.0)/2.0
+          qcof    = 6.0
           stc     = (1.0 - 1.0/(2.0*biij+3.0))
           tc      = (1.0 - stc)/qmax
           ta      = 2.0*tc
@@ -288,8 +308,8 @@ C     only case is: (u-u) - unsaturated at start and end of time step  C
 C----------------------------------------------------------------------C
          else 
             bmax    = grksatij
-            bcof    = (biij+2.0)
-            bcof = 6.0 !TESTING
+            !bcof    = (biij+2.0)
+            bcof    = 4.0
             s3      = ((bcof-1.0)*bmax*t2+1.0)**(1.0/(1.0-bcof))
             asat3ij = s3*(1.0-sfc)+sfc
             asat3ij  = min(asat1ij, max(asat3ij, satmin))
@@ -341,23 +361,28 @@ C----------------------------------------------------------------------C
 C----------------------------------------------------------------------C
 C     calculate the depth of overland flow                             C
 C----------------------------------------------------------------------C
-
       if(zpondi.gt.zplimi .and. zplimi.ge. 0.0  
      1    .and. manning_ni .gt. 0.0) then
         dover1    = zpondi-zplimi
-        scof      = -2.0/3.0     
-        smax      = (1.0/manning_ni)*(xslopei**0.5)
-        dover2    = (dover1**scof+ smax*delt)**(1.0/scof)
+        scof      = -2.0/3.0
+        smax      = (2.0*ddeni/manning_ni)*(xslopei**0.5)
+        dover2    = (dover1**scof - scof*smax*delt)**(1.0/scof)
         dover2    = max(0.0, min(dover1, dover2))
 
         zpond(i)  = dover2 + zplimi
         ovrflwi   = dover1 - dover2
       endif
-
+      
       endif
+      
+C----------------------------------------------------------------------C
+C     ADD TOTAL AT THE END, USE FLAGS                                  C
+C----------------------------------------------------------------------C
+      
+      
       OVRFLW(i) = OVRFLW(i) + fii*ovrflwi
-      SUBFLW(i) = SUBFLW(i) + fii*subflwi
-      BASFLW(i) = BASFLW(i) + fii*basflwi
+      SUBFLW(i) = SUBFLW(i) + fii*subflwi + fii*basflwi*(1.0-xdraini)*os
+      BASFLW(i) = BASFLW(i) + fii*basflwi - fii*basflwi*(1.0-xdraini)*os
       RUNOFF(i) = RUNOFF(i) + ovrflwi + subflwi + basflwi
 
       enddo
