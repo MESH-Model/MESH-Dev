@@ -92,12 +92,12 @@
             cm%clin(i)%readIndx = 1
          endif
 
-        write(400+indx,*)'flagId',cm%clin(i)%flagId
-        write(400+indx,*)'ntimes',cm%clin(i)%ntimes
-        write(400+indx,*)'timeSize',cm%clin(i)%timeSize
-        write(400+indx,*)'id_var',cm%clin(i)%id_var
-        write(400+indx,*)'flagRead',cm%clin(i)%flagRead
-        close(400+indx)
+!        write(400+indx,*)'flagId',cm%clin(i)%flagId
+!        write(400+indx,*)'ntimes',cm%clin(i)%ntimes
+!        write(400+indx,*)'timeSize',cm%clin(i)%timeSize
+!        write(400+indx,*)'id_var',cm%clin(i)%id_var
+!        write(400+indx,*)'flagRead',cm%clin(i)%flagRead
+!        close(400+indx)
          end subroutine Init_clim_info
 
         !>******************************************************************************

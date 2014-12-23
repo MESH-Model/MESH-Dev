@@ -5,12 +5,13 @@
      +  IROVAL, WF_NUM_POINTS,
      +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
      +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
-     +  ID, IRONAME, GENDIR_OUT, op,ts,cm )
+     +  ID, IRONAME, GENDIR_OUT, op, ts, cm, fls)
 
       USE MESH_INPUT_MODULE
       USE FLAGS
       USE climate_forcing
       USE model_dates
+      use model_files
 
       IMPLICIT NONE
 
@@ -32,8 +33,8 @@
       TYPE(CLIM_INFO) :: cm
       type(dates_model) :: ts
 
-
-
+      !file handled
+      type(fl_ids)              :: fls
 
 !> The following variables are all local to this subroutine
       INTEGER :: J,I
@@ -145,12 +146,16 @@
 !* if SAVERESUMEFLAG is 0, the user doesn't want to make the resume file.
 !* if SAVERESUMEFLAG is 1, the user wants to make the resume file.
 !* if SAVERESUMEFLAG is 2, the user wants to make the r2c resume file.
+!* if SAVERESUMEFLAG is 3, the user wants to make the only class prognostic variables resume file.
       SAVERESUMEFLAG = 0
       
 !> FORCING DATA FILES:
 !>  0 = read forcing data from .bin file
 !>  1 = read forcing data from .r2c
 !>  2 = read forcing data from .csv
+!>  3 = read forcing data from .seq binary sequential files      
+!>  3 = read forcing data from .seq ascii sequential files
+!>  5 = read forcing data from load buffer in memory
       BASINSHORTWAVEFLAG = 0
       BASINLONGWAVEFLAG = 0
       BASINRAINFLAG = 0
@@ -260,9 +265,12 @@
       PRINTRCHR2CFILEFLAG = 0
 !      PRINTLKGR2CFILEFLAG = 0
 
+!> FLAGS FOR GEOTHERMAL FLUX FOR THE BOTTOM OF THE LAST SOIL LAYER 
+!* If GGEOFLAG is GT 0,  READ UNIQUE VALUE FROM MESH_ggeo.INI FILE
+      GGEOFLAG = 0
+
 !> The above parameter values are defaults, to change to a different
 !> value, use the MESH_input_run_options.ini file
-
 
 !todo make this more clear for the user
 !todo at the top, make a brief discription about the changes between
@@ -272,8 +280,13 @@
 !> Open and read in values from MESH_input_run_options.ini file
 !> *********************************************************************
 
-      OPEN (53, FILE="MESH_input_run_options.ini", STATUS="OLD",
+      if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(1)%isInit)) then
+        open(fls%fl(1)%unit, file=trim(adjustl(fls%fl(1)%name)),
+     1  STATUS="OLD", IOSTAT=IOS) 
+      else
+        OPEN (53, FILE="MESH_input_run_options.ini", STATUS="OLD",
      1  IOSTAT=IOS)
+      end if
       IF (IOS .NE. 0) THEN !CHECK FILE FOR IOSTAT ERRORS
         WRITE (6, *)
         WRITE (6, *)
@@ -393,6 +406,8 @@
 	        LOCATIONFLAG = IROVAL
           ELSE IF (IRONAME == "OUTFIELDSFLAG") THEN
             OUTFIELDSFLAG = IROVAL
+          ELSE IF (IRONAME == "GGEOFLAG") THEN
+            GGEOFLAG = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",

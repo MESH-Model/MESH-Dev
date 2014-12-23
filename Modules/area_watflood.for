@@ -49,6 +49,7 @@ ccccc      MODULE area1
      *                        sump,sumrff,sumqint,sumqintfs,
      *                        sumq1,sumq1fs,sumrechrg,
      *                        totd1,totuzs,totsnw,totchnl,totgrid,
+     *                        drdn,demslp,
 !     *                        x4,x5
 !Dan Princz changed these two variables, as they conflict with mesh/class
      *                        x4_R,x5_R

@@ -903,7 +903,6 @@ if (narg .gt. 0)then
     VARIABLEFILESFLAG = 1
     call get_command_argument(narg,fl_listMesh)
     call Init_fls(fls,trim(adjustl(fl_listMesh)))
-    print*,fl_listMesh,fls%pmclass,fls%pmhydro,fls%flOut1
 endif      
 
 ! Find the appropriate value of IGND from MESH_input_soil_levels.txt
@@ -1514,9 +1513,27 @@ DO I=2,NA
     cp%SDEPROW(I,M) =  cp%SDEPROW(1,M)
     cp%FAREROW(I,M) =  cp%FAREROW(1,M)
     cp%MANNROW(I,M) =  cp%MANNROW(1,M)
-    cp%XSLPROW(I,M) =  cp%XSLPROW(1,M)
+!> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
+!> we give the same value for all the GRU that are in one cell    
+    if (allocated(demslp) .eqv. .true.) then
+		cp%XSLPROW(I,M) = demslp(I)
+		if (i == 2) then
+            cp%XSLPROW(I-1,M) = demslp(I-1)
+        end if
+    else
+        cp%XSLPROW(I,M) = cp%XSLPROW(1,M)
+    end if
     cp%XDROW(I,M)   =  cp%XDROW(1,M)
-    cp%DDROW(I,M)   =  cp%DDROW(1,M)
+!> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
+!> we give the same value for all the GRU that are in one cell
+    if (allocated(drdn) .eqv. .true.) then
+        if (i == 2) then
+            cp%DDROW(I-1,M) = drdn(I-1)
+        end if
+        cp%DDROW(I,M) = drdn(I)
+    else
+        cp%DDROW(I,M) = cp%DDROW(1,M)
+    end if
     WFSFROW(I,M)    =  WFSFROW(1,M)
     cp%KSROW(I,M)   =  cp%KSROW(1,M)
     cp%MIDROW(I,M)  =  cp%MIDROW(1,M)
@@ -1756,7 +1773,14 @@ DO I=1, NA
   cp%ZBLDGRD(I)=cp%ZBLDGRD(1)
   cp%GCGRD(i)=cp%GCGRD(1)
   Z0ORGRD(I)=0.0
-  GGEOGRD(I)=0.0
+  
+  if (GGEOFLAG == 1) then
+      open(18, file='MESH_ggeo.ini', status='old')
+      read(18, *) GGEOGRD(I)
+      close(18)
+  else
+    GGEOGRD(I) = 0.0
+  end if
   ZDMGRD(I)=10.0
   ZDHGRD(I)=2.0
 ENDDO
@@ -2490,9 +2514,12 @@ ENDDO
 !> *********************************************************************
 !> Open and print header information to the output files
 !> *********************************************************************
-
-OPEN(UNIT=70,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(6)%isInit)) then
+       open(fls%fl(6)%unit, file=trim(adjustl(fls%fl(6)%name)))
+else
+       OPEN(UNIT=70,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/MESH_output_streamflow.csv')
+end if                  
 
 OPEN(UNIT=71,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/MESH_output_streamflow_all.csv')
@@ -2733,7 +2760,7 @@ ENDDO
 PRINT *
 PRINT *
 PRINT *
-call stats_init(nyears, wf_no)
+call stats_init(ts, wf_no)
 PRINT *
 IF(TESTCSVFLAG == 1)THEN
     PRINT*,"TEST PROPER DISTRIBUTION OF CSV FORCING DATA" 
@@ -3307,9 +3334,13 @@ TOTAL_WSNO = 0.0
 TOTAL_ZPND = 0.0
 TOTAL_THLQ = 0.0
 TOTAL_THIC = 0.0
-
-OPEN(unit=900,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+    if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(4)%isInit)) then
+       open(fls%fl(4)%unit, file=trim(adjustl(fls%fl(4)%name)))
+    else   
+       OPEN(unit=900,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/Basin_average_water_balance.csv')
+    end if
+
 
 
 wrt_900_1 = 'DAY,YEAR,PREACC'//',EVAPACC,ROFACC,ROFOACC,'// &

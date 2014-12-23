@@ -27,7 +27,7 @@
 !todo change documentation to reflect that we read in delz only (and not zbot)
 !todo check other variables read-in from other files
 !todo put in a warning that at least 3 layers are needed.
-        READ(52,'(2X,F8.2)') sl%DELZ(I)
+        READ(52, *) sl%DELZ(I)
       ENDDO
 
       sl%ZBOT(1) = sl%DELZ(1)

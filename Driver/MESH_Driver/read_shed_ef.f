@@ -367,15 +367,73 @@ CDAN      it=imax-1
 
       if(iallcnt5.eq.1)then
 !Dan Princz changed this
-CDAN       allocate(s(imax,jmax),dummy(imax,jmax),rl(na),
-       allocate(s(IMAXI,JMAXI),dummy(IMAXI,JMAXI),rl(na),
-     *    xxx(na),yyy(na),da(na),bnkfll(na),slope(na),elev(na),
-     *    ibn(na),sl1(na),sl2(na),irough(na),ichnl(na),next(na),
-     *    ireach(na),frac(na),aclass(na,ntype+1),glacier_flag(na),
-     *    flz(na),pwr(na),r1n(na),r2n(na),mndr(na),aa2(na),aa3(na),
-     *    aa4(na),widep(na),theta(na),kcond(na),
-     *    flz2(na),pwr2(na),grid_area(na),
-     *    stat=iAllocate)
+!DAN       allocate(s(imax,jmax),dummy(imax,jmax),rl(na),
+
+       allocate(s(IMAXI,JMAXI), dummy(IMAXI,JMAXI) , 
+     *          xxx(na)       , yyy(na)            , 
+     *          flz2(na)      , pwr2(na)           , 
+     *          sl2(na)       , irough(na)         , 
+     *          aclass(na,ntype+1),glacier_flag(na), 
+     *          stat=iAllocate)
+
+       do ai=1,attCount
+
+	   attribName = header%r2cp%ep%attList(ai)%name(:)         
+	   rStat = ToLowerCase(attribName)
+	   attLen = LEN_TRIM(attribName)
+           if     (attribName(1:attLen) .eq. 'next')      then
+               allocate(next(na),stat=iAllocate)
+           elseif (attribName(1:attLen) .eq. 'da'  )      then
+               allocate(da(na),stat=iAllocate)
+           elseif (attribName(1:attLen) .eq. 'bankfull')  then
+               allocate(bnkfll(na),stat=iAllocate)
+           elseif (attribName(1:attLen) .eq. 'chnlslope') then
+               allocate(slope(na),stat=iAllocate)               
+           elseif (attribName(1:attLen) .eq. 'elev')      then
+               allocate(elev(na),stat=iAllocate)              
+           elseif (attribName(1:attLen) .eq. 'chnllength')then
+               allocate(rl(na),stat=iAllocate)              
+           elseif (attribName(1:attLen) .eq. 'iak')       then
+               allocate(ibn(na),stat=iAllocate)              
+           elseif (attribName(1:attLen) .eq. 'intslope')  then
+               allocate(sl1(na),stat=iAllocate)    
+           elseif (attribName(1:attLen) .eq. 'chnl')      then
+               allocate(ichnl(na),stat=iAllocate)              
+           elseif (attribName(1:attLen) .eq. 'reach')     then
+               allocate(ireach(na),stat=iAllocate)      
+           elseif (attribName(1:attLen) .eq. 'demslope')  then
+               allocate(demslp(na),stat=iAllocate)                        
+           elseif (attribName(1:attLen) .eq. 'drdn')      then
+               allocate(drdn(na),stat=iAllocate)  
+
+          elseif (attribName(1:attLen) .eq. 'flz')  then
+               allocate(flz(na),stat=iAllocate)                 
+           elseif (attribName(1:attLen) .eq. 'pwr')  then
+               allocate(pwr(na),stat=iAllocate)                                
+           elseif (attribName(1:attLen) .eq. 'r1n')  then
+               allocate(r1n(na),stat=iAllocate)        
+           elseif (attribName(1:attLen) .eq. 'r2n')  then
+               allocate(r2n(na),stat=iAllocate)                                   
+           elseif (attribName(1:attLen) .eq. 'mndr') then
+               allocate(mndr(na),stat=iAllocate)                   
+           elseif (attribName(1:attLen) .eq. 'aa2')  then
+               allocate(aa2(na),stat=iAllocate)                    
+           elseif (attribName(1:attLen) .eq. 'aa3')  then
+               allocate(aa3(na),stat=iAllocate)                    
+           elseif (attribName(1:attLen) .eq. 'aa4')  then
+               allocate(aa4(na),stat=iAllocate)                                   
+           elseif (attribName(1:attLen) .eq. 'theta'   )then
+               allocate(theta(na),stat=iAllocate) 
+           elseif (attribName(1:attLen) .eq. 'widep'   ) then
+               allocate(widep(na),stat=iAllocate) 
+           elseif (attribName(1:attLen) .eq. 'kcond'   ) then
+               allocate(kcond(na),stat=iAllocate)                
+           elseif (attribName(1:attLen) .eq. 'gridarea') then
+               allocate(grid_area(na),stat=iAllocate) 
+               allocate(frac(na),stat=iAllocate)               
+           endif
+
+       enddo
         if(iAllocate.ne.0) STOP
      *     'Error with allocation of area16a arrays in sheda'
 !              glacier_flag(na)      added Mar, 28/06  nk
@@ -428,77 +486,80 @@ C		do yi=yCount,1,-1
 	  end do
 	endif
 
-C// Copy attribute data (not classes yet) over to global attributes
+!C// Copy attribute data (not classes yet) over to global attributes
 	vi = 0
-c reverse the direction of the yi loop
-c	do yi=1,yCount
+!c reverse the direction of the yi loop
+!c	do yi=1,yCount
 	do yi=1,yCount
-		do xi=1,xCount
-			vi = vi+1
-			rank = s(yi,xi)
-			if(rank.gt.0) then
-!			 do ai=1,attCount-ntype
-c			 do ai=1,attCount-(ntype+1)
-			 do ai=1,attCount
-			 
-			  attribName = header%r2cp%ep%attList(ai)%name
-			  rStat = ToLowerCase(attribName)
-			  attLen = LEN_TRIM(attribName)
-			  val = header%r2cp%ep%attList(ai)%val(vi)
-			  if(attribName(1:attLen) .eq. 'next')then
-				next(rank) = int(val)
-			  else if(attribName(1:attLen) .eq. 'da')then
-				da(rank) = val
-			  else if(attribName(1:attLen).eq.'bankfull')then
-				bnkfll(rank) = val
-			  else if(attribName(1:attLen).eq.'chnlslope')then
-				slope(rank) = val
-			  else if(attribName(1:attLen) .eq. 'elev')then
-				elev(rank) = val
-			  else if(attribName(1:attLen) .eq. 'chnllength')then
-				rl(rank) = val
-			  else if(attribName(1:attLen) .eq. 'iak')then
-				ibn(rank) = val
-			  else if(attribName(1:attLen) .eq. 'intslope')then 
-				sl1(rank) = val
-			  else if(attribName(1:attLen) .eq. 'chnl')then
-				ichnl(rank) = val
-			  else if(attribName(1:attLen) .eq. 'reach')then
-				ireach(rank) = val
-	
+            do xi=1,xCount
+                vi = vi+1
+                rank = s(yi,xi)
+                if(rank.gt.0) then
+    !			 do ai=1,attCount-ntype
+    !c			 do ai=1,attCount-(ntype+1)
+                 do ai=1,attCount
 
+                  attribName = header%r2cp%ep%attList(ai)%name
+                  rStat = ToLowerCase(attribName)
+                  attLen = LEN_TRIM(attribName)
+                  val = header%r2cp%ep%attList(ai)%val(vi)
+                  if(attribName(1:attLen) .eq. 'next')then
+                        next(rank) = int(val)
+                  else if(attribName(1:attLen) .eq. 'da')then
+                        da(rank) = val
+                  else if(attribName(1:attLen).eq.'bankfull')then
+                        bnkfll(rank) = val
+                  else if(attribName(1:attLen).eq.'chnlslope')then
+                        slope(rank) = val
+                  else if(attribName(1:attLen) .eq. 'elev')then
+                        elev(rank) = val
+                  else if(attribName(1:attLen) .eq. 'chnllength')then
+                        rl(rank) = val
+                  else if(attribName(1:attLen) .eq. 'iak')then
+                        ibn(rank) = val
+                  else if(attribName(1:attLen) .eq. 'intslope')then 
+                        sl1(rank) = val
+                  else if(attribName(1:attLen) .eq. 'chnl')then
+                        ichnl(rank) = val
+                  else if(attribName(1:attLen) .eq. 'reach')then
+                        ireach(rank) = val
+    ! Slope dem and drainage density  extracted from dem used in WARTROF.f G.sapriza 11/14
+                  else if(attribName(1:attLen) .eq. 'drdn')then
+                        drdn(rank) = val
+                  elseif (attribName(1:attLen) .eq. 'demslope')then
+                      demslp(rank) = val
 
-!      WATROUTE attributes added by nk  Oct. 1/06
-			  else if(attribName(1:attLen) .eq. 'flz')then
-				flz(rank) = val
-			  else if(attribName(1:attLen) .eq. 'pwr')then
-				pwr(rank) = val
-			  else if(attribName(1:attLen) .eq. 'r1n')then
-				r1n(rank) = val
-			  else if(attribName(1:attLen) .eq. 'r2n')then
-				r2n(rank) = val
-			  else if(attribName(1:attLen) .eq. 'mndr')then
-				mndr(rank) = val
-			  else if(attribName(1:attLen) .eq. 'aa2')then
-				aa2(rank) = val
-			  else if(attribName(1:attLen) .eq. 'aa3')then
-				aa3(rank) = val
-			  else if(attribName(1:attLen) .eq. 'aa4')then
-				aa4(rank) = val
-			  else if(attribName(1:attLen) .eq. 'theta')then
-				theta(rank) = val
-			  else if(attribName(1:attLen) .eq. 'widep')then
-				widep(rank) = val
-			  else if(attribName(1:attLen) .eq. 'kcond')then
-				kcond(rank) = val
-!      end attributed added by nk
+    !      WATROUTE attributes added by nk  Oct. 1/06
+                  else if(attribName(1:attLen) .eq. 'flz')then
+                        flz(rank) = val
+                  else if(attribName(1:attLen) .eq. 'pwr')then
+                        pwr(rank) = val
+                  else if(attribName(1:attLen) .eq. 'r1n')then
+                        r1n(rank) = val
+                  else if(attribName(1:attLen) .eq. 'r2n')then
+                        r2n(rank) = val
+                  else if(attribName(1:attLen) .eq. 'mndr')then
+                        mndr(rank) = val
+                  else if(attribName(1:attLen) .eq. 'aa2')then
+                        aa2(rank) = val
+                  else if(attribName(1:attLen) .eq. 'aa3')then
+                        aa3(rank) = val
+                  else if(attribName(1:attLen) .eq. 'aa4')then
+                        aa4(rank) = val
+                  else if(attribName(1:attLen) .eq. 'theta')then
+                        theta(rank) = val
+                  else if(attribName(1:attLen) .eq. 'widep')then
+                        widep(rank) = val
+                  else if(attribName(1:attLen) .eq. 'kcond')then
+                        kcond(rank) = val
+    !      end attributed added by nk
 
-			  else if(attribName(1:attLen) .eq. 'gridarea')then
-				grid_area(rank) = val
-	                  frac(rank)=grid_area(rank)/al/al
-!       frac is still used in the code but no longer in the shed file   
-			  else if(attribName(1:attLen) .eq. 'frac')then
-!				frac(rank) = val
+                  else if(attribName(1:attLen) .eq. 'gridarea')then
+                        grid_area(rank) = val
+                  frac(rank)=grid_area(rank)/al/al
+    !       frac is still used in the code but no longer in the shed file   
+                  else if(attribName(1:attLen) .eq. 'frac')then
+    !				frac(rank) = val
       print*
 	print*,'Error: old format shd file found'
 	print*,'Please create a new bsnm_shd.r2c file using the'

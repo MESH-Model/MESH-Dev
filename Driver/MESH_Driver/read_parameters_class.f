@@ -9,9 +9,11 @@
      +  DAILY_START_DAY,   DAILY_STOP_DAY,
      +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
      +  DAILY_START_YEAR,  DAILY_STOP_YEAR,
-     +  IHOUR, IMIN, IDAY, IYEAR, cp )
+     +  IHOUR, IMIN, IDAY, IYEAR, cp, fls)
 
       USE MESH_INPUT_MODULE
+      use model_files
+      USE FLAGS
 
       CHARACTER*4 ::
      +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
@@ -29,12 +31,20 @@
       integer*4 :: NTYPE
       REAL :: DEGLAT, DEGLON
       TYPE(ClassParameters) :: cp
+      
+      !file handled
+      type(fl_ids)              :: fls 
 
 !> local variables
       integer IOS,I,M,J
 
-      OPEN (50, FILE="MESH_parameters_CLASS.ini", STATUS="OLD",
+      if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(2)%isInit)) then
+        OPEN(fls%fl(2)%unit,FILE=trim(adjustl(fls%fl(2)%name)),
+     1  STATUS="OLD", IOSTAT=IOS)
+      else   
+        OPEN (50, FILE="MESH_parameters_CLASS.ini", STATUS="OLD",
      1  IOSTAT=IOS)
+      endif
 !> CHECK FILE FOR IOSTAT ERRORS
 !> if IOS is set to zero, then the file was opened successfully.
       IF (IOS .NE. 0)THEN 

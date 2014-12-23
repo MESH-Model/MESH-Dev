@@ -30,7 +30,7 @@ module calc_abserr
     !* value_gauge: ABSERR for the streamflow gauge (1: streamflow gauge)
     !* value_gauge_avg: Average ABSERR of all gauges
     type model_output_abserr
-        real, dimension(:), pointer :: value_gauge
+        real, dimension(:), allocatable :: value_gauge
         real :: value_gauge_avg
     end type
 
@@ -64,11 +64,13 @@ module calc_abserr
 
             !> Calculate the per gauge value.
             do j = 1, size(qsim, 2)
-                calc_abserr_value%value_gauge(j) = sum(abs(qobs(1:ncal_day, j) - qsim(1:ncal_day, j)))/ncal_day
+                calc_abserr_value%value_gauge(j) = sum(abs(qobs(ncal_day_min:ncal_day, j) - &
+                									   qsim(ncal_day_min:ncal_day, j)))/ncal_day
             end do
 
             !> Calculate the average value.
-            calc_abserr_value%value_gauge_avg = sum(calc_abserr_value%value_gauge)/size(calc_abserr_value%value_gauge)
+            calc_abserr_value%value_gauge_avg = sum(calc_abserr_value%value_gauge)/ &
+            									    size(calc_abserr_value%value_gauge)
 
         end if !(ncal_day > ncal_day_min)
 

@@ -7,6 +7,7 @@ module simstats
 use mesh_input_module
 use flags
 use model_files
+use model_dates
 
 use simstats_nse, only: nse_calc
 use simstats_sae, only: sae_calc
@@ -43,7 +44,7 @@ real :: fbest, ftest
 real, dimension(:, :), allocatable :: qobs, qsim
 
 !STATISTICS FOR MONTE CARLO SIMULATION
-real, dimension(:), allocatable :: mae, rmse, bias, nsd, nsw, tpd, tpw
+real, dimension(:), allocatable :: bias, nsd, lnsd, nsw, tpd, tpw
 
 type(model_output_drms) :: st_drms
 type(model_output_abserr) :: st_abserr
@@ -55,7 +56,7 @@ contains
 !include "SAEMSRT.F90"
 !include "NSE.F90"
 
-subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
+subroutine calc_stats(obs, sim, n, bias, nsd, lnsd, nsw, tpd)
     !>
     !>       January 25, 2012 - M.A. Mekonnen
     !>=======================================================================
@@ -74,8 +75,8 @@ subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
     !>       MAE        -   Mean absolute value error
     !>       RMSE       -   Root mean squared error
     !>       BIAS       -   
-    !>       NS         -   Nash-Sutcliffe coefficient
-    !>       NSLN       -   Nash-Sutcliffe coefficient 
+    !>       NSD        -   Nash-Sutcliffe coefficient
+    !>       LNSD       -   Nash-Sutcliffe coefficient 
     !                       (with the natural logarithm of runoff)
     !>=======================================================================
 
@@ -84,14 +85,15 @@ subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
     integer :: i, j, iw, n, nw
     real, intent(in), dimension(:) :: obs, sim
     real, allocatable ::  obsw(:), simw(:), errw(:), errwm(:)
-    integer :: ilf = 1 !number of day left out in the calculation of metrics
+    integer :: ilf !number of day left out in the calculation of metrics
     !OUTGOING VARIABLES
-    real :: bias, nsd, nsw, tpd, tp
+    real :: bias, nsd, lnsd, nsw, tpd, tp
 
     !LOCAL VARIABLES
     integer :: nad, naw, ipo(1), ips(1)
-    real :: obsdm, obswm
+    real :: obsdm, obswm, lobsdm
     real :: errd(n), errdm(n), errtp
+    real :: lerrd(n), lerrdm(n)
 
     !> Intrinsic Function
     intrinsic maxloc
@@ -99,7 +101,8 @@ subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
     !FOR WEEKLY CALCULATIONS
     nw = ceiling(n / 7.0)
     allocate(obsw(nw), simw(nw), errw(nw), errwm(nw))
-
+    
+    ilf = 30
     !Day left out in the calculation
     if (n.le.ilf)then
         ilf = 1
@@ -110,6 +113,7 @@ subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
     !INITIALIZE OUTPUT AND LOCAL VARIABLES
     bias = 0.0
     nsd = 0.0
+    lnsd = 0.0
     nsw = 0.0
     tpd = 0.0
     tpw  = 0.0
@@ -125,7 +129,7 @@ subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
 
     !WEEKLY OBSERVED AND SIMULATED VALUES
     iw = 0
-    do i = 1, n, 7
+    do i = ilf, ncal, 7
         iw = iw + 1
         j = min(i + 6, n)
         obsw(iw) = sum(obs(i:j))
@@ -133,17 +137,19 @@ subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
     end do
 
     !MEAN OF OBSERVED RUNOFF
-    nad = count(obs(1:n) >= 0.0)
-    obsdm = sum(obs(1:n), mask = obs(1:n) >= 0.0) / nad
-
+    nad    = count(obs(ilf:ncal) >= 0.0)
+    obsdm  = sum(obs(ilf:ncal), mask = obs(ilf:ncal) >= 0.0) / nad
+    lobsdm = sum(log(obs(ilf:ncal)), mask = obs(ilf:ncal) >= 0.0) / nad
     !MEAN OF WEEKLY RUNOFF
     naw = count(obsw(1:nw) >= 0.0)
-    obswm = sum(obsw(1:nw), mask = obsw(1:nw) >= 0.0) / naw
-
+    obswm  = sum(obsw(1:nw), mask = obsw(1:nw) >= 0.0) / naw
+    
     !CALCULATE ERRORS FOR RUNOFF GREATER THAN ZERO - DAILY
-    where(obs(1:n) >= 0.0)
-        errd(1:n) = obs(1:n) - sim(1:n)
-        errdm(1:n) = obs(1:n) - obsdm
+    where(obs(ilf:ncal) >= 0.0)
+        errd(ilf:ncal)   = obs(ilf:ncal) - sim(ilf:ncal)
+        errdm(ilf:ncal)  = obs(ilf:ncal) - obsdm
+        lerrd(ilf:ncal)  = log(obs(ilf:ncal)) - log(sim(ilf:ncal))
+        lerrdm(ilf:ncal) = log(obs(ilf:ncal)) - lobsdm        
     end where
 
     !CALCULATE ERRORS FOR RUNOFF GREATER THAN ZERO - WEEKLY
@@ -153,13 +159,14 @@ subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
     end where
 
     !CALCULATE THE STATISTICAL COEFFICIENTS
-    bias = sum(errd(1:n)) / (obsdm * nad)
-    nsd = 1.0 - sum(errd*errd) / sum(errdm*errdm)
-    nsw = 1.0 - sum(errw*errw) / sum(errwm*errwm)
+    bias = sum(errd(ilf:ncal)) / (obsdm * nad)
+    nsd  = 1.0 - sum(errd*errd) / sum(errdm*errdm)
+    lnsd = 1.0 - sum(lerrd*lerrd) / sum(lerrdm*lerrdm)
+    nsw  = 1.0 - sum(errw*errw) / sum(errwm*errwm)
 
     !TIME TO PEAK - DAILY BASIS
     errtp = 0.0
-    do i = 1, n, 365
+    do i = ilf, ncal, 365
         j = min(i+364, n)
         if(obs(max(i, j-182)) > 0.0) then
             ipo = maxloc(obs(i:j))
@@ -187,7 +194,7 @@ subroutine calc_stats(obs, sim, n, bias, nsd, nsw, tpd)
 
 end subroutine
 
-subroutine stats_init(nyears, ns)
+subroutine stats_init(ts, ns)
 !>******************************************************************************
 !> Description:     
 !>    
@@ -195,7 +202,8 @@ subroutine stats_init(nyears, ns)
 
     !* nyears: Number of simulation years
     !* ns: Number of streamflow gauges
-    integer :: nyears, ns
+    integer          , intent(in) :: ns
+    type(dates_model), intent(in) :: ts
 
     if (autocalibrationflag == 0) return
 
@@ -225,9 +233,9 @@ subroutine stats_init(nyears, ns)
 
     ncal = 0
 
-    allocate(qobs(nyears*366, ns), qsim(nyears*366, ns))
-    allocate(mae(ns), rmse(ns), bias(ns), nsd(ns), nsw(ns), tpd(ns), tpw(ns))
-
+    allocate(qobs(ts%nr_days, ns), qsim(ts%nr_days, ns))
+    allocate(bias(ns), nsd(ns), lnsd(ns), nsw(ns), tpd(ns), tpw(ns))
+    
     qobs = 0.0
     qsim = 0.0
 
@@ -265,7 +273,7 @@ subroutine stats_update_daily(qhyd_avg, qsyn_avg, ncount)
         ftest = nse_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), autocalibrationflag)
         ftest = -1.0 * ftest
     end if
-
+    
 end subroutine
 
 subroutine stats_write(fls)
@@ -275,7 +283,7 @@ subroutine stats_write(fls)
 !>******************************************************************************
    
     type(fl_ids)::fls
-    
+
     if (autocalibrationflag == 0) return
 
     open(100, file="function_out.txt")
@@ -285,7 +293,14 @@ subroutine stats_write(fls)
     close(100)
 
     do j = 1, size(qobs, 2)
-        call calc_stats(qobs(1:ncal, j), qsim(1:ncal, j), ncal, bias(j), nsd(j), nsw(j), tpd(j))
+        call calc_stats(qobs(1:ncal, j) , &
+                        qsim(1:ncal, j) , &
+                        ncal            , &
+                        bias(j)         , &
+                        nsd(j)          , &
+                        lnsd(j)         , &
+                        nsw(j)          , &
+                        tpd(j)          )
     end do
 
     inquire(file="MonteCarlo.txt", exist=exists)
@@ -322,16 +337,16 @@ subroutine stats_write(fls)
     write(100, *) st_abserr%value_gauge, st_abserr%value_gauge_avg
     close(100)
 
-    if (VARIABLEFILESFLAG .eq.1) then
-       open(100, file=trim(adjustl(fls%flOut1)))
+    if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(5)%isInit)) then
+       open(fls%fl(5)%unit, file=trim(adjustl(fls%fl(5)%name)))
     else   
        open(100, file='Metrics_Out.txt')
     endif
 
-    write(100, *) "MAE ","RMSE ","BIAS ", "NSD ", "lnNSD ", "NSW ", "TPD "
-    write(100, *) (mae(j), rmse(j), bias(j), nsd(j),log(nsd(j)), nsw(j), int(tpd(j)), j = 1, size(qobs, 2))
+    write(100, *) "MAE ", "RMSE ", "BIAS ", "NSD ", "lnNSD ", "TPD "
+    write(100, *) (st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), &
+                   nsd(j), lnsd(j), int(tpd(j)), j = 1, size(qobs, 2))
     close(100)
-
 
 end subroutine
 

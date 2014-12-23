@@ -3,10 +3,11 @@
 !> *********************************************************************
 
 SUBROUTINE READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, hp, M_C, NA, NTYPE, &
-                                     SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS)
+                                     SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
 USE MESH_INPUT_MODULE
 USE FLAGS
+use model_files
 
 INTEGER :: M_C, INDEPPAR, DEPPAR
 CHARACTER*8 :: RELEASE(10)
@@ -17,6 +18,9 @@ REAL :: SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
 REAL :: WF_R2(M_C)
 TYPE(HydrologyParameters) :: hp
 
+!file handled
+type(fl_ids):: fls 
+
 REAL, DIMENSION (:), ALLOCATABLE :: INDEPPARVAL
 REAL, DIMENSION (:,:), ALLOCATABLE :: DEPPARVAL
 
@@ -25,7 +29,13 @@ INTEGER :: IOS, I, M
 CHARACTER(8) :: FILE_VER
 LOGICAL :: VER_OK
 
-OPEN (23, FILE="MESH_parameters_hydrology.ini", STATUS="OLD",IOSTAT=IOS)
+if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(3)%isInit)) then
+    OPEN (fls%fl(3)%unit, FILE=trim(adjustl(fls%fl(3)%name)), &
+          STATUS="OLD", IOSTAT=IOS)
+else    
+    OPEN (23, FILE="MESH_parameters_hydrology.ini", STATUS="OLD",IOSTAT=IOS)
+end if
+
 !> CHECK FILE FOR IOSTAT ERRORS
 !> when IOS equals 0, the file was opened successfully  
 IF (IOS .NE. 0)THEN 

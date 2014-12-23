@@ -32,7 +32,7 @@
      +  INDEPPAR, DEPPAR, WF_R2, M_C,
 !> the types that are to be allocated and initialised
      +  op, sl, cp, sv, hp,ts,cm,
-     +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS)
+     +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
       USE MESH_INPUT_MODULE
       USE FLAGS
@@ -40,6 +40,7 @@
 
       USE climate_forcing
       USE model_dates
+      USE model_files
 
       IMPLICIT NONE
       
@@ -66,6 +67,7 @@
      + LATDEGMIN,LATMINMIN,LATDEGMAX,LATMINMAX,
      + LONDEGMIN,LONMINMIN,LONDEGMAX,LONMINMAX
       REAL :: WF_LAND_MAX, WF_LAND_SUM
+      CHARACTER*500 fl_listMesh
 !> already declared:
 !>  SHDFILEFLAG, IOS, WF_NUM_POINTS,
 
@@ -147,10 +149,8 @@
 
       TYPE(CLIM_INFO) :: cm
       TYPE(dates_model) :: ts
+      type(fl_ids):: fls
 
-
-
-	  
 !> DECLARE THE LOCAL VARIABLES
 
 !> ====================================
@@ -164,7 +164,7 @@
      +  IROVAL, WF_NUM_POINTS,
      +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
      +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
-     +  ID, IRONAME, GENDIR_OUT, op, ts, cm )
+     +  ID, IRONAME, GENDIR_OUT, op, ts, cm, fls )
 
 !> =====================================
 !> DAN  * READ EVENT FILE
@@ -492,7 +492,7 @@
      +  DAILY_START_DAY,   DAILY_STOP_DAY,
      +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
      +  DAILY_START_YEAR,  DAILY_STOP_YEAR,
-     +  IHOUR, IMIN, IDAY, IYEAR, cp )
+     +  IHOUR, IMIN, IDAY, IYEAR, cp, fls)
 !>
 !>*******************************************************************
 !>
@@ -538,7 +538,7 @@
 
       CALL READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR,
      +    RELEASE, WF_R2, hp, M_C, NA, NTYPE,
-     +    SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS)
+     +    SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
       RETURN
       END SUBROUTINE READ_INITIAL_INPUTS
