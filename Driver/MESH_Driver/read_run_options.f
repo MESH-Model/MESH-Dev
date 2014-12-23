@@ -183,6 +183,11 @@
       WINDOWSIZEFLAG = 1
       WINDOWSPACINGFLAG = 1
 
+      METRICSSTATSOUTFLAG = 1
+      METRICSFILTEROBSFLAG = 1
+      METRICSSPINUP = 0
+      METRICSINCLUDESPINUP = 1
+
 !> If FROZENSOILINFILFLAG is 0, all snow melt infiltrates.
 !> If FROZENSOILINFILFLAG is 1, snow melt is partitioned to frozen soil infiltration 
 !> and direct runoff based on the parameteric equation developed by Gray et al, 2001.
