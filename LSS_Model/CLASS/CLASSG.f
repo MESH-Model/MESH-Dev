@@ -322,9 +322,9 @@ c         AGIDGAT(K)=AGIDROW(ILMOS(K),JLMOS(K))
           SnowAgeGAT(K)=SnowAgeROW(ILMOS(K),JLMOS(K))
           TSNOdsGAT (K)=TSNOdsROW (ILMOS(K),JLMOS(K))
           RHOSdsGAT (K)=RHOSdsROW (ILMOS(K),JLMOS(K))
-          DriftGAT (K)=0.0 !DriftROW (ILMOS(K),JLMOS(K))
-          SublGAT (K)=0.0 !SublROW (ILMOS(K),JLMOS(K))
-          DepositionGAT(K)=0.0
+!          DriftGAT (K)=0.0 !DriftROW (ILMOS(K),JLMOS(K))
+!          SublGAT (K)=0.0 !SublROW (ILMOS(K),JLMOS(K))
+!          DepositionGAT(K)=0.0
 100   CONTINUE
 C
       DO 250 L=1,IG

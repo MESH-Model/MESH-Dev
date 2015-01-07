@@ -1521,7 +1521,7 @@ DO I=2,NA
             cp%XSLPROW(I-1,M) = demslp(I-1)
         end if
     else
-        cp%XSLPROW(I,M) = cp%XSLPROW(1,M)
+    cp%XSLPROW(I,M) =  cp%XSLPROW(1,M)
     end if
     cp%XDROW(I,M)   =  cp%XDROW(1,M)
 !> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
@@ -1532,7 +1532,7 @@ DO I=2,NA
         end if
         cp%DDROW(I,M) = drdn(I)
     else
-        cp%DDROW(I,M) = cp%DDROW(1,M)
+    cp%DDROW(I,M)   =  cp%DDROW(1,M)
     end if
     WFSFROW(I,M)    =  WFSFROW(1,M)
     cp%KSROW(I,M)   =  cp%KSROW(1,M)
@@ -1779,7 +1779,7 @@ DO I=1, NA
       read(18, *) GGEOGRD(I)
       close(18)
   else
-    GGEOGRD(I) = 0.0
+  GGEOGRD(I)=0.0
   end if
   ZDMGRD(I)=10.0
   ZDHGRD(I)=2.0
@@ -2517,7 +2517,7 @@ ENDDO
 if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(6)%isInit)) then
        open(fls%fl(6)%unit, file=trim(adjustl(fls%fl(6)%name)))
 else
-       OPEN(UNIT=70,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+OPEN(UNIT=70,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/MESH_output_streamflow.csv')
 end if                  
 
@@ -3337,7 +3337,7 @@ TOTAL_THIC = 0.0
     if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(4)%isInit)) then
        open(fls%fl(4)%unit, file=trim(adjustl(fls%fl(4)%name)))
     else   
-       OPEN(unit=900,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+OPEN(unit=900,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/Basin_average_water_balance.csv')
     end if
 
@@ -3409,7 +3409,7 @@ DO WHILE(.NOT.ENDDATE .AND. .NOT.ENDDATA)
 
 !* N: is only used for debugging purposes.
 !> N is incremented at the beginning of each loop. so you can tell which
-!> iteration of the loop you are on by what the value of N is. 
+!> iteration of the loop you are on by what the value of N is.
 !> N is printed out with each of the error messages in CLASSZ.
 N=N+1
 
@@ -3436,7 +3436,7 @@ IF(INTERPOLATIONFLAG == 1)THEN
     QAGRD   = 0.0
     PRESGRD = 0.0
     PREGRD  = 0.0
-    
+
     K = 0
     DO I = 1, NA
        DO J = 1, NTYPE
@@ -3460,7 +3460,7 @@ IF(INTERPOLATIONFLAG == 1)THEN
        PRINT*,'GRD INTERPOLATION IS WRONG - SET INTERPOLATIONFLAG TO ZERO AND TRY AGAIN'
        STOP
     ENDIF
-    
+
 ENDIF
 UVGRD=MAX(VMIN,ULGRD)
 VMODGRD=UVGRD
@@ -3618,6 +3618,11 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
              DriftROW, SublROW, DepositionROW, &
              DriftGAT, SublGAT, DepositionGAT)
+
+        !> Were initialized in CLASSG and so have been extracted.
+          DriftGAT=0.0 !DriftROW (ILMOS(K),JLMOS(K))
+          SublGAT=0.0 !SublROW (ILMOS(K),JLMOS(K))
+          DepositionGAT=0.0
 !>
 !>   * INITIALIZATION OF DIAGNOSTIC VARIABLES SPLIT OUT OF CLASSG
 !>   * FOR CONSISTENCY WITH GCM APPLICATIONS.
@@ -3948,7 +3953,7 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
              cp%RHOSROW,cp%SNOROW,cp%TCANROW,cp%RCANROW,cp%SCANROW, &
              cp%GROROW, CMAIROW, TACROW, QACROW, WSNOROW, &
              ILMOS,JLMOS,IWMOS,JWMOS, &
-             NML,NA,NTYPE,ILG,IGND,ICAN,ICAN+1, &             
+             NML,NA,NTYPE,ILG,IGND,ICAN,ICAN+1, &
              TBARGAT,THLQGAT,THICGAT,GFLXGAT,TSFSGAT, &
              TPNDGAT,ZPNDGAT,TBASGAT,ALBSGAT,TSNOGAT, &
              RHOSGAT,SNOGAT,TCANGAT,RCANGAT,SCANGAT, &
@@ -3960,72 +3965,72 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
              DriftROW, SublROW, DepositionROW, &
              DriftGAT, SublGAT, DepositionGAT)
 !>
-!>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF 
+!>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF
 !>   * CLASSS FOR CONSISTENCY WITH GCM APPLICATIONS.
 !>
       DO 380 K=1,NML
-          CDHROW (ILMOS(K),JLMOS(K))=CDHGAT (K)  
-          CDMROW (ILMOS(K),JLMOS(K))=CDMGAT (K)  
-          HFSROW (ILMOS(K),JLMOS(K))=HFSGAT (K)  
-          TFXROW (ILMOS(K),JLMOS(K))=TFXGAT (K)  
-          QEVPROW(ILMOS(K),JLMOS(K))=QEVPGAT(K)  
-          QFSROW (ILMOS(K),JLMOS(K))=QFSGAT (K)  
-          QFXROW (ILMOS(K),JLMOS(K))=QFXGAT (K)  
-          PETROW (ILMOS(K),JLMOS(K))=PETGAT (K)  
-          GAROW  (ILMOS(K),JLMOS(K))=GAGAT  (K)  
-          EFROW  (ILMOS(K),JLMOS(K))=EFGAT  (K)  
-          GTROW  (ILMOS(K),JLMOS(K))=GTGAT  (K)  
-          QGROW  (ILMOS(K),JLMOS(K))=QGGAT  (K)  
-          ALVSROW(ILMOS(K),JLMOS(K))=ALVSGAT(K)  
-          ALIRROW(ILMOS(K),JLMOS(K))=ALIRGAT(K)  
-          SFCTROW(ILMOS(K),JLMOS(K))=SFCTGAT(K)  
-          SFCUROW(ILMOS(K),JLMOS(K))=SFCUGAT(K)  
-          SFCVROW(ILMOS(K),JLMOS(K))=SFCVGAT(K)  
-          SFCQROW(ILMOS(K),JLMOS(K))=SFCQGAT(K)  
-          FSNOROW(ILMOS(K),JLMOS(K))=FSNOGAT(K)  
-          FSGVROW(ILMOS(K),JLMOS(K))=FSGVGAT(K)  
-          FSGSROW(ILMOS(K),JLMOS(K))=FSGSGAT(K)  
-          FSGGROW(ILMOS(K),JLMOS(K))=FSGGGAT(K)  
-          FLGVROW(ILMOS(K),JLMOS(K))=FLGVGAT(K)  
-          FLGSROW(ILMOS(K),JLMOS(K))=FLGSGAT(K)  
-          FLGGROW(ILMOS(K),JLMOS(K))=FLGGGAT(K)  
-          HFSCROW(ILMOS(K),JLMOS(K))=HFSCGAT(K)  
-          HFSSROW(ILMOS(K),JLMOS(K))=HFSSGAT(K)  
-          HFSGROW(ILMOS(K),JLMOS(K))=HFSGGAT(K)  
-          HEVCROW(ILMOS(K),JLMOS(K))=HEVCGAT(K)  
-          HEVSROW(ILMOS(K),JLMOS(K))=HEVSGAT(K)  
-          HEVGROW(ILMOS(K),JLMOS(K))=HEVGGAT(K)  
-          HMFCROW(ILMOS(K),JLMOS(K))=HMFCGAT(K)  
-          HMFNROW(ILMOS(K),JLMOS(K))=HMFNGAT(K)  
-          HTCCROW(ILMOS(K),JLMOS(K))=HTCCGAT(K)  
-          HTCSROW(ILMOS(K),JLMOS(K))=HTCSGAT(K)  
-          PCFCROW(ILMOS(K),JLMOS(K))=PCFCGAT(K)  
-          PCLCROW(ILMOS(K),JLMOS(K))=PCLCGAT(K)  
-          PCPNROW(ILMOS(K),JLMOS(K))=PCPNGAT(K)  
-          PCPGROW(ILMOS(K),JLMOS(K))=PCPGGAT(K)  
-          QFGROW (ILMOS(K),JLMOS(K))=QFGGAT (K)  
-          QFNROW (ILMOS(K),JLMOS(K))=QFNGAT (K)  
-          QFCLROW(ILMOS(K),JLMOS(K))=QFCLGAT(K)  
-          QFCFROW(ILMOS(K),JLMOS(K))=QFCFGAT(K)  
-          ROFROW (ILMOS(K),JLMOS(K))=ROFGAT (K)  
-          ROFOROW(ILMOS(K),JLMOS(K))=ROFOGAT(K)  
-          ROFSROW(ILMOS(K),JLMOS(K))=ROFSGAT(K)  
-          ROFBROW(ILMOS(K),JLMOS(K))=ROFBGAT(K)  
-          TROFROW(ILMOS(K),JLMOS(K))=TROFGAT(K)  
-          TROOROW(ILMOS(K),JLMOS(K))=TROOGAT(K)  
-          TROSROW(ILMOS(K),JLMOS(K))=TROSGAT(K)  
-          TROBROW(ILMOS(K),JLMOS(K))=TROBGAT(K)  
-          ROFCROW(ILMOS(K),JLMOS(K))=ROFCGAT(K)  
-          ROFNROW(ILMOS(K),JLMOS(K))=ROFNGAT(K)  
-          ROVGROW(ILMOS(K),JLMOS(K))=ROVGGAT(K)  
-          WTRCROW(ILMOS(K),JLMOS(K))=WTRCGAT(K)  
-          WTRSROW(ILMOS(K),JLMOS(K))=WTRSGAT(K)  
-          WTRGROW(ILMOS(K),JLMOS(K))=WTRGGAT(K)  
-          DRROW  (ILMOS(K),JLMOS(K))=DRGAT  (K)  
-          WTABROW(ILMOS(K),JLMOS(K))=WTABGAT(K)  
-          ILMOROW(ILMOS(K),JLMOS(K))=ILMOGAT(K)  
-          UEROW  (ILMOS(K),JLMOS(K))=UEGAT(K)  
-          HBLROW (ILMOS(K),JLMOS(K))=HBLGAT(K)  
+          CDHROW (ILMOS(K),JLMOS(K))=CDHGAT (K)
+          CDMROW (ILMOS(K),JLMOS(K))=CDMGAT (K)
+          HFSROW (ILMOS(K),JLMOS(K))=HFSGAT (K)
+          TFXROW (ILMOS(K),JLMOS(K))=TFXGAT (K)
+          QEVPROW(ILMOS(K),JLMOS(K))=QEVPGAT(K)
+          QFSROW (ILMOS(K),JLMOS(K))=QFSGAT (K)
+          QFXROW (ILMOS(K),JLMOS(K))=QFXGAT (K)
+          PETROW (ILMOS(K),JLMOS(K))=PETGAT (K)
+          GAROW  (ILMOS(K),JLMOS(K))=GAGAT  (K)
+          EFROW  (ILMOS(K),JLMOS(K))=EFGAT  (K)
+          GTROW  (ILMOS(K),JLMOS(K))=GTGAT  (K)
+          QGROW  (ILMOS(K),JLMOS(K))=QGGAT  (K)
+          ALVSROW(ILMOS(K),JLMOS(K))=ALVSGAT(K)
+          ALIRROW(ILMOS(K),JLMOS(K))=ALIRGAT(K)
+          SFCTROW(ILMOS(K),JLMOS(K))=SFCTGAT(K)
+          SFCUROW(ILMOS(K),JLMOS(K))=SFCUGAT(K)
+          SFCVROW(ILMOS(K),JLMOS(K))=SFCVGAT(K)
+          SFCQROW(ILMOS(K),JLMOS(K))=SFCQGAT(K)
+          FSNOROW(ILMOS(K),JLMOS(K))=FSNOGAT(K)
+          FSGVROW(ILMOS(K),JLMOS(K))=FSGVGAT(K)
+          FSGSROW(ILMOS(K),JLMOS(K))=FSGSGAT(K)
+          FSGGROW(ILMOS(K),JLMOS(K))=FSGGGAT(K)
+          FLGVROW(ILMOS(K),JLMOS(K))=FLGVGAT(K)
+          FLGSROW(ILMOS(K),JLMOS(K))=FLGSGAT(K)
+          FLGGROW(ILMOS(K),JLMOS(K))=FLGGGAT(K)
+          HFSCROW(ILMOS(K),JLMOS(K))=HFSCGAT(K)
+          HFSSROW(ILMOS(K),JLMOS(K))=HFSSGAT(K)
+          HFSGROW(ILMOS(K),JLMOS(K))=HFSGGAT(K)
+          HEVCROW(ILMOS(K),JLMOS(K))=HEVCGAT(K)
+          HEVSROW(ILMOS(K),JLMOS(K))=HEVSGAT(K)
+          HEVGROW(ILMOS(K),JLMOS(K))=HEVGGAT(K)
+          HMFCROW(ILMOS(K),JLMOS(K))=HMFCGAT(K)
+          HMFNROW(ILMOS(K),JLMOS(K))=HMFNGAT(K)
+          HTCCROW(ILMOS(K),JLMOS(K))=HTCCGAT(K)
+          HTCSROW(ILMOS(K),JLMOS(K))=HTCSGAT(K)
+          PCFCROW(ILMOS(K),JLMOS(K))=PCFCGAT(K)
+          PCLCROW(ILMOS(K),JLMOS(K))=PCLCGAT(K)
+          PCPNROW(ILMOS(K),JLMOS(K))=PCPNGAT(K)
+          PCPGROW(ILMOS(K),JLMOS(K))=PCPGGAT(K)
+          QFGROW (ILMOS(K),JLMOS(K))=QFGGAT (K)
+          QFNROW (ILMOS(K),JLMOS(K))=QFNGAT (K)
+          QFCLROW(ILMOS(K),JLMOS(K))=QFCLGAT(K)
+          QFCFROW(ILMOS(K),JLMOS(K))=QFCFGAT(K)
+          ROFROW (ILMOS(K),JLMOS(K))=ROFGAT (K)
+          ROFOROW(ILMOS(K),JLMOS(K))=ROFOGAT(K)
+          ROFSROW(ILMOS(K),JLMOS(K))=ROFSGAT(K)
+          ROFBROW(ILMOS(K),JLMOS(K))=ROFBGAT(K)
+          TROFROW(ILMOS(K),JLMOS(K))=TROFGAT(K)
+          TROOROW(ILMOS(K),JLMOS(K))=TROOGAT(K)
+          TROSROW(ILMOS(K),JLMOS(K))=TROSGAT(K)
+          TROBROW(ILMOS(K),JLMOS(K))=TROBGAT(K)
+          ROFCROW(ILMOS(K),JLMOS(K))=ROFCGAT(K)
+          ROFNROW(ILMOS(K),JLMOS(K))=ROFNGAT(K)
+          ROVGROW(ILMOS(K),JLMOS(K))=ROVGGAT(K)
+          WTRCROW(ILMOS(K),JLMOS(K))=WTRCGAT(K)
+          WTRSROW(ILMOS(K),JLMOS(K))=WTRSGAT(K)
+          WTRGROW(ILMOS(K),JLMOS(K))=WTRGGAT(K)
+          DRROW  (ILMOS(K),JLMOS(K))=DRGAT  (K)
+          WTABROW(ILMOS(K),JLMOS(K))=WTABGAT(K)
+          ILMOROW(ILMOS(K),JLMOS(K))=ILMOGAT(K)
+          UEROW  (ILMOS(K),JLMOS(K))=UEGAT(K)
+          HBLROW (ILMOS(K),JLMOS(K))=HBLGAT(K)
 380   CONTINUE
 !>
       DO 390 L=1,IGND
@@ -4801,7 +4806,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                     wb%lqws(i, j) = wb%lqws(i, j) + cp%farerow(i, m)*cp%thlqrow(i, m, j)*rhow*dlzwrow(i, m, j)
                     wb%frws(i, j) = wb%frws(i, j) + cp%farerow(i, m)*cp%thicrow(i, m, j)*rhoice*dlzwrow(i, m, j)
                 END DO
-            END DO
+                END DO
             wb%stg(i) = wb%rcan(i) + wb%sncan(i) + wb%pndw(i) + wb%sno(i) + wb%wsno(i) + &
                 sum(wb%lqws(i, :)) + sum(wb%frws(i, :))
             wb%dstg(i) = wb%stg(i) - wb%dstg(i)
@@ -5467,7 +5472,7 @@ DO I = 1, NA
                 FINAL_STORE = FINAL_STORE + cp%FAREROW(I, M)* &
                     (cp%THLQROW(I, M, J)*RHOW + cp%THICROW(I, M, J)*RHOICE)*DLZWROW(I, M, J)
             END DO
-        END DO
+            END DO
    END IF
 END DO
 
