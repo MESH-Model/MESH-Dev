@@ -3437,29 +3437,30 @@ IF(INTERPOLATIONFLAG == 1)THEN
     PRESGRD = 0.0
     PREGRD  = 0.0
 
-    K = 0
-    DO I = 1, NA
-       DO J = 1, NTYPE
-          IF(cp%FAREROW(I,J) .GT. 0.0)THEN
-             K = K + 1
-             FSVHGRD(I) = FSVHGRD(I) + ACLASS(I,J) * FSVHGAT(K)
-             FSIHGRD(I) = FSIHGRD(I) + ACLASS(I,J) * FSIHGAT(K)
-             FDLGRD (I) = FDLGRD (I) + ACLASS(I,J) * FDLGAT (K)
-             ULGRD  (I) = ULGRD  (I) + ACLASS(I,J) * ULGAT  (K)
-             TAGRD  (I) = TAGRD  (I) + ACLASS(I,J) * TAGAT  (K)
-             QAGRD  (I) = QAGRD  (I) + ACLASS(I,J) * QAGAT  (K)
-             PRESGRD(I) = PRESGRD(I) + ACLASS(I,J) * PRESGAT(K)
-             PREGRD (I) = PREGRD (I) + ACLASS(I,J) * PREGAT (K)
+!    K = 0
+    DO k = 1, nml
+!       DO J = 1, NTYPE
+          IF(cp%FAREROW(ilmos(k),jlmos(k)) .GT. 0.0)THEN
+             !todo: this isn't how nml is accumulated; mid must also be taken into account (dgp 2015-01-06)
+!             K = K + 1
+             FSVHGRD(ilmos(k)) = FSVHGRD(ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * FSVHGAT(K)
+             FSIHGRD(ilmos(k)) = FSIHGRD(ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * FSIHGAT(K)
+             FDLGRD (ilmos(k)) = FDLGRD (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * FDLGAT (K)
+             ULGRD  (ilmos(k)) = ULGRD  (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * ULGAT  (K)
+             TAGRD  (ilmos(k)) = TAGRD  (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * TAGAT  (K)
+             QAGRD  (ilmos(k)) = QAGRD  (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * QAGAT  (K)
+             PRESGRD(ilmos(k)) = PRESGRD(ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * PRESGAT(K)
+             PREGRD (ilmos(k)) = PREGRD (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * PREGAT (K)
           ENDIF
-       ENDDO
+!       ENDDO
     ENDDO
     FSDOWN = 2.0*FSVHGRD
 
 !> CHECK IF GRD INTERPOLATION IS CONSISTENT WITH GATPREP'S GATHERING SCHEME
-    IF(K .NE. NML)THEN
-       PRINT*,'GRD INTERPOLATION IS WRONG - SET INTERPOLATIONFLAG TO ZERO AND TRY AGAIN'
-       STOP
-    ENDIF
+!    IF(K .NE. NML)THEN
+!       PRINT*,'GRD INTERPOLATION IS WRONG - SET INTERPOLATIONFLAG TO ZERO AND TRY AGAIN'
+!       STOP
+!    ENDIF
 
 ENDIF
 UVGRD=MAX(VMIN,ULGRD)
@@ -4055,76 +4056,76 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
 !
 !=======================================================================
 !     * WRITE FIELDS FROM CURRENT TIME STEP TO OUTPUT FILES.
-DO I=1,NA
-  DO M=1,NMTEST
-    IF(FSDOWN(I)>0.0) THEN
-      ALTOT=(ALVSROW(I,M)+ALIRROW(I,M))/2.0
+DO I=1,nml
+!  DO M=1,NMTEST
+    IF(FSDOWN(ilmos(I))>0.0) THEN
+      ALTOT=(ALVSgat(I)+ALIRgat(I))/2.0
     ELSE
       ALTOT=0.0
     ENDIF
 
-    FSSTAR=FSDOWN(I)*(1.0-ALTOT)
-    FLSTAR=FDLGRD(I)-SBC*GTROW(I,M)**4
-    QH=HFSROW(I,M)
-    QE=QEVPROW(I,M)
+    FSSTAR=FSDOWN(ilmos(I))*(1.0-ALTOT)
+    FLSTAR=FDLGRD(ilmos(I))-SBC*GTgat(I)**4
+    QH=HFSgat(I)
+    QE=QEVPgat(I)
     BEG=FSSTAR+FLSTAR-QH-QE
-    SNOMLT=HMFNROW(I,M)
+    SNOMLT=HMFNgat(I)
 
-    IF(cp%RHOSROW(I,M)>0.0) THEN
-      ZSN=cp%SNOROW(I,M)/cp%RHOSROW(I,M)
+    IF(RHOSgat(I)>0.0) THEN
+      ZSN=SNOgat(I)/RHOSgat(I)
     ELSE
       ZSN=0.0
     ENDIF
 
-    IF(cp%TCANROW(I,M)>0.01) THEN
-      TCN=cp%TCANROW(I,M)-TFREZ
+    IF(TCANgat(I)>0.01) THEN
+      TCN=TCANgat(I)-TFREZ
     ELSE
       TCN=0.0
     ENDIF
 
-    IF(cp%TSNOROW(I,M)>0.01) THEN
-      TSN=cp%TSNOROW(I,M)-TFREZ
+    IF(TSNOgat(I)>0.01) THEN
+      TSN=TSNOgat(I)-TFREZ
     ELSE
       TSN=0.0
     ENDIF
 
-    IF(cp%TPNDROW(I,M)>0.01) THEN
-      TPN=cp%TPNDROW(I,M)-TFREZ
+    IF(TPNDgat(I)>0.01) THEN
+      TPN=TPNDgat(I)-TFREZ
     ELSE
       TPN=0.0
     ENDIF
 
     IF(ILW==1) THEN
-      GTOUT=GTROW(I,M)-TFREZ
+      GTOUT=GTgat(I)-TFREZ
     ELSE
       GTOUT=0.0
     ENDIF
 
-I_OUT=0
+!I_OUT=0
 DO K=1, WF_NUM_POINTS
-  IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
+  IF(ilmos(I)==op%N_OUT(K).AND.jlmos(i)==op%II_OUT(k)) THEN
 !>        figure out ilmos and jlmos of grid square I
-    DO J=1, NML
-      IF(ILMOS(J)==op%N_OUT(K).AND.JLMOS(J)==op%II_OUT(K)) THEN
-        I_OUT=J
-      ENDIF
-        ENDDO
+!    DO J=1, NML
+!      IF(ILMOS(J)==op%N_OUT(K).AND.JLMOS(J)==op%II_OUT(K)) THEN
+        I_OUT=i
+!      ENDIF
+!        ENDDO
 
-    IF(I_OUT==0) THEN
-      PRINT *,'In the input file there the following'
-      PRINT *, 'grid square', i, ' has no area in land class', m
-      PRINT *,'Please adjust the MESH_input_run_options file, as a guide here'
-      PRINT *,'are the land class fractions for that square:'
-      DO J=1, NMTEST
-        PRINT *, 'land class ',J,' has an area of:',ACLASS(i,J)
-      ENDDO
-      PRINT *,'If grid square', i, 'does have area in land class', m
-      PRINT *,'you likely have SUBBASIN set to 1 in MESH_input_run_options.ini'
-      PRINT *,'This will set FRAC(I) to zero in the MESH driver for areas of the basin not included in the run.'
-      PRINT *,'To fix the problem, ensure that the GRU you want to produce output for is within one of your sub-basins'
-      PRINT *,'as defined in your MESH_input_streamflow.txt file. (Or set SUBASIN to 0 and run every grid square.)'
-          STOP
-    ENDIF
+!    IF(I_OUT==0) THEN
+!      PRINT *,'In the input file there the following'
+!      PRINT *, 'grid square', i, ' has no area in land class', m
+!      PRINT *,'Please adjust the MESH_input_run_options file, as a guide here'
+!      PRINT *,'are the land class fractions for that square:'
+!      DO J=1, NMTEST
+!        PRINT *, 'land class ',J,' has an area of:',ACLASS(i,J)
+!      ENDDO
+!      PRINT *,'If grid square', i, 'does have area in land class', m
+!      PRINT *,'you likely have SUBBASIN set to 1 in MESH_input_run_options.ini'
+!      PRINT *,'This will set FRAC(I) to zero in the MESH driver for areas of the basin not included in the run.'
+!      PRINT *,'To fix the problem, ensure that the GRU you want to produce output for is within one of your sub-basins'
+!      PRINT *,'as defined in your MESH_input_streamflow.txt file. (Or set SUBASIN to 0 and run every grid square.)'
+!          STOP
+!    ENDIF
 
     ZPND = ZPNDPRECS(I_OUT) * FCS(I_OUT) + ZPONDPREC(I_OUT) * FC(I_OUT) + &
            ZPONDPREG(I_OUT) * FG(I_OUT) + ZPNDPREGS(I_OUT) * FGS(I_OUT)
@@ -4135,56 +4136,56 @@ DO K=1, WF_NUM_POINTS
                    '9(F8.2,","),2(F7.3,","),(E11.3,","),(F8.2,","),'// &
                    '3(F12.4,","))') &
                    IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH, &
-                   QE,SNOMLT,BEG,GTOUT,cp%SNOROW(I,M), &
-                   cp%RHOSROW(I,M),WSNOROW(I,M),ALTOT,ROFROW(I,M), &
-                   TPN,cp%ZPNDROW(I,M),ZPND,FSTR
+                   QE,SNOMLT,BEG,GTOUT,SNOgat(I), &
+                   RHOSgat(I),WSNOgat(I),ALTOT,ROFgat(I), &
+                   TPN,ZPNDgat(I),ZPND,FSTR
     WRITE(150+k*10+5,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
                    '6(F7.2,",",2(F6.3,",")),(F8.2,","),2(F8.4,","),'// &
                    '(F8.2,","),(F8.3,","))') &
                    IHOUR,IMIN,IDAY,IYEAR, &
-                   (cp%TBARROW(I,M,J)-TFREZ,cp%THLQROW(I,M,J), &
-                   cp%THICROW(I,M,J),J=1,IGND),TCN, &
-                   cp%RCANROW(I,M),cp%SCANROW(I,M),TSN,ZSN
+                   (TBARgat(I,J)-TFREZ,THLQgat(I,J), &
+                   THICgat(I,J),J=1,IGND),TCN, &
+                   RCANgat(I),SCANgat(I),TSN,ZSN
     WRITE(150+k*10+6,'((I2,",")(I3,",")(I5,",")2(F10.2,",")'// &
                    '(F12.6,",")(F10.2,",")(F8.2,",")(F10.2,",")'// &
                    '(F15.9,","))') &
-                   IHOUR,IMIN,IDAY,FSDOWN(I),FDLGRD(I), &
-                   PREGRD(I),TAGRD(I)-TFREZ,UVGRD(I),PRESGRD(I), &
-                   QAGRD(I)
+                   IHOUR,IMIN,IDAY,FSDOWN(ilmos(I)),FDLGRD(ilmos(I)), &
+                   PREGRD(ilmos(I)),TAGRD(ilmos(I))-TFREZ,UVGRD(ilmos(I)),PRESGRD(ilmos(I)), &
+                   QAGRD(ilmos(I))
     WRITE(150+k*10+7,'(12(E11.4,","))') &
-                   TROFROW(I,M),TROOROW(I,M),TROSROW(I,M), &
-                   TROBROW(I,M),ROFROW(I,M),ROFOROW(I,M), &
-                   ROFSROW(I,M),ROFBROW(I,M), &
-                   FCS(I),FGS(I),FC(I),FG(I)
+                   TROFgat(I),TROOgat(I),TROSgat(I), &
+                   TROBgat(I),ROFgat(I),ROFOgat(I), &
+                   ROFSgat(I),ROFBgat(I), &
+                   FCS(ilmos(I)),FGS(ilmos(I)),FC(ilmos(I)),FG(ilmos(I))
     FMT = '(14(F12.4,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(F12.4,",")2(F12.4,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(F12.4,","))'
     WRITE(150+k*10+8,TRIM(ADJUSTL(FMT))) &
-                   FSGVROW(I,M),FSGSROW(I,M),FSGGROW(I,M), &
-                   FLGVROW(I,M),FLGSROW(I,M),FLGGROW(I,M), &
-                   HFSCROW(I,M),HFSSROW(I,M),HFSGROW(I,M), &
-                   HEVCROW(I,M),HEVSROW(I,M),HEVGROW(I,M), &
-                   HMFCROW(I,M),HMFNROW(I,M), &
-                   (HMFGROW(I,M,J),J=1,IGND), &
-                   HTCCROW(I,M),HTCSROW(I,M), &
-                   (HTCROW(I,M,J),J=1,IGND)
+                   FSGVgat(I),FSGSgat(I),FSGGgat(I), &
+                   FLGVgat(I),FLGSgat(I),FLGGgat(I), &
+                   HFSCgat(I),HFSSgat(I),HFSGgat(I), &
+                   HEVCgat(I),HEVSgat(I),HEVGgat(I), &
+                   HMFCgat(I),HMFNgat(I), &
+                   (HMFGgat(I,J),J=1,IGND), &
+                   HTCCgat(I),HTCSgat(I), &
+                   (HTCgat(I,J),J=1,IGND)
     WRITE(150+k*10+9,'(8(E12.4,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(E12.4,",")7(E12.4,","))') &
-                   PCFCROW(I,M),PCLCROW(I,M),PCPNROW(I,M), &
-                   PCPGROW(I,M),QFCFROW(I,M),QFCLROW(I,M), &
-                   QFNROW(I,M),QFGROW(I,M),(QFCROW(I,M,J), &
-                   J=1,IGND),ROFCROW(I,M),ROFNROW(I,M), &
-                   ROFOROW(I,M),ROFROW(I,M),WTRCROW(I,M), &
-                   WTRSROW(I,M),WTRGROW(I,M)
+                   PCFCgat(I),PCLCgat(I),PCPNgat(I), &
+                   PCPGgat(I),QFCFgat(I),QFCLgat(I), &
+                   QFNgat(I),QFGgat(I),(QFCgat(I,J), &
+                   J=1,IGND),ROFCgat(I),ROFNgat(I), &
+                   ROFOgat(I),ROFgat(I),WTRCgat(I), &
+                   WTRSgat(I),WTRGgat(I)
     WRITE(150+k*10+10,'((I2,","),(I3,","),(I5,","),(I6,","),11(F14.6,",")' &
                    //TRIM(ADJUSTL(IGND_CHAR))//'(F14.6,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(F14.6,","))') &
-                   IHOUR,IMIN,IDAY,IYEAR,PREGAT(I_OUT)*DELT,QFSROW(I,M)*DELT, &
-                   ROFROW(I,M)*DELT,ROFOROW(I,M)*DELT,ROFSROW(I,M)*DELT,ROFBROW(I,M)*DELT, &
-                   cp%SCANROW(I,M),cp%RCANROW(I,M),cp%SNOROW(I,M),WSNOROW(I,M), &
-                   cp%ZPNDROW(I,M)*RHOW,(cp%THLQROW(I,M,J)*RHOW*DLZWROW(I,M,J),J=1,IGND),&
-                   (cp%THICROW(I,M,J)*RHOICE*DLZWROW(I,M,J),J=1,IGND)
+                   IHOUR,IMIN,IDAY,IYEAR,PREGAT(I_OUT)*DELT,QFSgat(I)*DELT, &
+                   ROFgat(I)*DELT,ROFOgat(I)*DELT,ROFSgat(I)*DELT,ROFBgat(I)*DELT, &
+                   SCANgat(I),RCANgat(I),SNOgat(I),WSNOgat(I), &
+                   ZPNDgat(I)*RHOW,(THLQgat(I,J)*RHOW*DLZWgat(I,J),J=1,IGND),&
+                   (THICgat(I,J)*RHOICE*DLZWgat(I,J),J=1,IGND)
 
   ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
 ENDDO !DO K=1, WF_NUM_POINTS
-ENDDO !DO M=1,NMTEST
-ENDDO !DO I=1,NA
+!ENDDO !DO M=1,NMTEST
+ENDDO !DO I=1,nml
 !> Write ENSIM output
 !> -----------------------------------------------------c
 !>
@@ -4346,92 +4347,94 @@ wb_h%wsno = 0.0
 wb_h%lqws = 0.0
 wb_h%frws = 0.0
 !$omp parallel do
-DO I=1,NA
-  DO M=1,NMTEST
-    CDHGRD(I)=CDHGRD(I)+CDHROW(I,M)*cp%FAREROW(I,M)
-    CDMGRD(I)=CDMGRD(I)+CDMROW(I,M)*cp%FAREROW(I,M)
-    HFSGRD(I)=HFSGRD(I)+HFSROW(I,M)*cp%FAREROW(I,M)
-    TFXGRD(I)=TFXGRD(I)+TFXROW(I,M)*cp%FAREROW(I,M)
-    QEVPGRD(I)=QEVPGRD(I)+QEVPROW(I,M)*cp%FAREROW(I,M)
-    QFSGRD(I)=QFSGRD(I)+QFSROW(I,M)*cp%FAREROW(I,M)
-    QFXGRD(I)=QFXGRD(I)+QFXROW(I,M)*cp%FAREROW(I,M)
-    PETGRD(I)=PETGRD(I)+PETROW(I,M)*cp%FAREROW(I,M)
-    GAGRD(I)=GAGRD(I)+GAROW(I,M)*cp%FAREROW(I,M)
-    EFGRD(I)=EFGRD(I)+EFROW(I,M)*cp%FAREROW(I,M)
-    GTGRD(I)=GTGRD(I)+GTROW(I,M)*cp%FAREROW(I,M)
-    QGGRD(I)=QGGRD(I)+QGROW(I,M)*cp%FAREROW(I,M)
-    TSFGRD(I)=TSFGRD(I)+TSFROW(I,M)*cp%FAREROW(I,M)
-    ALVSGRD(I)=ALVSGRD(I)+ALVSROW(I,M)*cp%FAREROW(I,M)
-    ALIRGRD(I)=ALIRGRD(I)+ALIRROW(I,M)*cp%FAREROW(I,M)
-    SFCTGRD(I)=SFCTGRD(I)+SFCTROW(I,M)*cp%FAREROW(I,M)
-    SFCUGRD(I)=SFCUGRD(I)+SFCUROW(I,M)*cp%FAREROW(I,M)
-    SFCVGRD(I)=SFCVGRD(I)+SFCVROW(I,M)*cp%FAREROW(I,M)
-    SFCQGRD(I)=SFCQGRD(I)+SFCQROW(I,M)*cp%FAREROW(I,M)
-    FSNOGRD(I)=FSNOGRD(I)+FSNOROW(I,M)*cp%FAREROW(I,M)
-    FSGVGRD(I)=FSGVGRD(I)+FSGVROW(I,M)*cp%FAREROW(I,M)
-    FSGSGRD(I)=FSGSGRD(I)+FSGSROW(I,M)*cp%FAREROW(I,M)
-    FSGGGRD(I)=FSGGGRD(I)+FSGGROW(I,M)*cp%FAREROW(I,M)
-    SNOGRD(I)=SNOGRD(I)+cp%SNOROW(I,M)*cp%FAREROW(I,M)
-    FLGVGRD(I)=FLGVGRD(I)+FLGVROW(I,M)*cp%FAREROW(I,M)
-    FLGSGRD(I)=FLGSGRD(I)+FLGSROW(I,M)*cp%FAREROW(I,M)
-    FLGGGRD(I)=FLGGGRD(I)+FLGGROW(I,M)*cp%FAREROW(I,M)
-    HFSCGRD(I)=HFSCGRD(I)+HFSCROW(I,M)*cp%FAREROW(I,M)
-    HFSSGRD(I)=HFSSGRD(I)+HFSSROW(I,M)*cp%FAREROW(I,M)
-    HFSGGRD(I)=HFSGGRD(I)+HFSGROW(I,M)*cp%FAREROW(I,M)
-    HEVCGRD(I)=HEVCGRD(I)+HEVCROW(I,M)*cp%FAREROW(I,M)
-    HEVSGRD(I)=HEVSGRD(I)+HEVSROW(I,M)*cp%FAREROW(I,M)
-    HEVGGRD(I)=HEVGGRD(I)+HEVGROW(I,M)*cp%FAREROW(I,M)
-    HMFCGRD(I)=HMFCGRD(I)+HMFCROW(I,M)*cp%FAREROW(I,M)
-    HMFNGRD(I)=HMFNGRD(I)+HMFNROW(I,M)*cp%FAREROW(I,M)
-    HTCCGRD(I)=HTCCGRD(I)+HTCCROW(I,M)*cp%FAREROW(I,M)
-    HTCSGRD(I)=HTCSGRD(I)+HTCSROW(I,M)*cp%FAREROW(I,M)
-    PCFCGRD(I)=PCFCGRD(I)+PCFCROW(I,M)*cp%FAREROW(I,M)
-    PCLCGRD(I)=PCLCGRD(I)+PCLCROW(I,M)*cp%FAREROW(I,M)
-    PCPNGRD(I)=PCPNGRD(I)+PCPNROW(I,M)*cp%FAREROW(I,M)
-    PCPGGRD(I)=PCPGGRD(I)+PCPGROW(I,M)*cp%FAREROW(I,M)
-    QFGGRD(I)=QFGGRD(I)+QFGROW(I,M)*cp%FAREROW(I,M)
-    QFNGRD(I)=QFNGRD(I)+QFNROW(I,M)*cp%FAREROW(I,M)
-    QFCLGRD(I)=QFCLGRD(I)+QFCLROW(I,M)*cp%FAREROW(I,M)
-    QFCFGRD(I)=QFCFGRD(I)+QFCFROW(I,M)*cp%FAREROW(I,M)
-    ROFGRD(I)=ROFGRD(I)+ROFROW(I,M)*cp%FAREROW(I,M)
-    ROFOGRD(I)=ROFOGRD(I)+ROFOROW(I,M)*cp%FAREROW(I,M)
-    ROFSGRD(I)=ROFSGRD(I)+ROFSROW(I,M)*cp%FAREROW(I,M)
-    ROFBGRD(I)=ROFBGRD(I)+ROFBROW(I,M)*cp%FAREROW(I,M)
-    ROFCGRD(I)=ROFCGRD(I)+ROFCROW(I,M)*cp%FAREROW(I,M)
-    ROFNGRD(I)=ROFNGRD(I)+ROFNROW(I,M)*cp%FAREROW(I,M)
-    ROVGGRD(I)=ROVGGRD(I)+ROVGROW(I,M)*cp%FAREROW(I,M)
-    WTRCGRD(I)=WTRCGRD(I)+WTRCROW(I,M)*cp%FAREROW(I,M)
-    WTRSGRD(I)=WTRSGRD(I)+WTRSROW(I,M)*cp%FAREROW(I,M)
-    WTRGGRD(I)=WTRGGRD(I)+WTRGROW(I,M)*cp%FAREROW(I,M)
-    DRGRD(I)=DRGRD(I)+DRROW(I,M)*cp%FAREROW(I,M)
-    WTABGRD(I)=WTABGRD(I)+WTABROW(I,M)*cp%FAREROW(I,M)
-    ILMOGRD(I)=ILMOGRD(I)+ILMOROW(I,M)*cp%FAREROW(I,M)
-    UEGRD(I)=UEGRD(I)+UEROW(I,M)*cp%FAREROW(I,M)
-    HBLGRD(I)=HBLGRD(I)+HBLROW(I,M)*cp%FAREROW(I,M)
-    wb_h%pre(i) = wb_h%pre(i) + cp%farerow(i, m)*pregrd(i)*delt
-    wb_h%evap(i) = wb_h%evap(i) + cp%farerow(i, m)*qfsrow(i, m)*delt
-    wb_h%rof(i) = wb_h%rof(i) + cp%farerow(i, m)*rofrow(i, m)*delt
-    wb_h%rofo(i) = wb_h%rofo(i) + cp%farerow(i, m)*roforow(i, m)*delt
-    wb_h%rofs(i) = wb_h%rofs(i) + cp%farerow(i, m)*rofsrow(i, m)*delt
-    wb_h%rofb(i) = wb_h%rofb(i) + cp%farerow(i, m)*rofbrow(i, m)*delt
-    wb_h%rcan(i) = wb_h%rcan(i) + cp%farerow(i, m)*cp%rcanrow(i, m)
-    wb_h%sncan(i) = wb_h%sncan(i) + cp%farerow(i, m)*cp%scanrow(i, m)
-    wb_h%pndw(i) = wb_h%pndw(i) + cp%farerow(i, m)*cp%zpndrow(i, m)*rhow
-    wb_h%sno(i) = wb_h%sno(i) + cp%farerow(i, m)*cp%snorow(i, m)
-    wb_h%wsno(i) = wb_h%wsno(i) + cp%farerow(i, m)*wsnorow(i, m)
+DO I=1,nml
+!  DO M=1,NMTEST
+    CDHGRD(ilmos(I))=CDHGRD(ilmos(I))+CDHgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    CDMGRD(ilmos(I))=CDMGRD(ilmos(I))+CDMgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    HFSGRD(ilmos(I))=HFSGRD(ilmos(I))+HFSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    TFXGRD(ilmos(I))=TFXGRD(ilmos(I))+TFXgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    QEVPGRD(ilmos(I))=QEVPGRD(ilmos(I))+QEVPgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    QFSGRD(ilmos(I))=QFSGRD(ilmos(I))+QFSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    QFXGRD(ilmos(I))=QFXGRD(ilmos(I))+QFXgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    PETGRD(ilmos(I))=PETGRD(ilmos(I))+PETgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    GAGRD(ilmos(I))=GAGRD(ilmos(I))+GAgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    EFGRD(ilmos(I))=EFGRD(ilmos(I))+EFgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    GTGRD(ilmos(I))=GTGRD(ilmos(I))+GTgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    QGGRD(ilmos(I))=QGGRD(ilmos(I))+QGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+!    TSFGRD(ilmos(I))=TSFGRD(ilmos(I))+TSFgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    ALVSGRD(ilmos(I))=ALVSGRD(ilmos(I))+ALVSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    ALIRGRD(ilmos(I))=ALIRGRD(ilmos(I))+ALIRgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    SFCTGRD(ilmos(I))=SFCTGRD(ilmos(I))+SFCTgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    SFCUGRD(ilmos(I))=SFCUGRD(ilmos(I))+SFCUgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    SFCVGRD(ilmos(I))=SFCVGRD(ilmos(I))+SFCVgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    SFCQGRD(ilmos(I))=SFCQGRD(ilmos(I))+SFCQgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    FSNOGRD(ilmos(I))=FSNOGRD(ilmos(I))+FSNOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    FSGVGRD(ilmos(I))=FSGVGRD(ilmos(I))+FSGVgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    FSGSGRD(ilmos(I))=FSGSGRD(ilmos(I))+FSGSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    FSGGGRD(ilmos(I))=FSGGGRD(ilmos(I))+FSGGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    SNOGRD(ilmos(I))=SNOGRD(ilmos(I))+SNOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    FLGVGRD(ilmos(I))=FLGVGRD(ilmos(I))+FLGVgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    FLGSGRD(ilmos(I))=FLGSGRD(ilmos(I))+FLGSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    FLGGGRD(ilmos(I))=FLGGGRD(ilmos(I))+FLGGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    HFSCGRD(ilmos(I))=HFSCGRD(ilmos(I))+HFSCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    HFSSGRD(ilmos(I))=HFSSGRD(ilmos(I))+HFSSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    HFSGGRD(ilmos(I))=HFSGGRD(ilmos(I))+HFSGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    HEVCGRD(ilmos(I))=HEVCGRD(ilmos(I))+HEVCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    HEVSGRD(ilmos(I))=HEVSGRD(ilmos(I))+HEVSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    HEVGGRD(ilmos(I))=HEVGGRD(ilmos(I))+HEVGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    HMFCGRD(ilmos(I))=HMFCGRD(ilmos(I))+HMFCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    HMFNGRD(ilmos(I))=HMFNGRD(ilmos(I))+HMFNgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    HTCCGRD(ilmos(I))=HTCCGRD(ilmos(I))+HTCCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    HTCSGRD(ilmos(I))=HTCSGRD(ilmos(I))+HTCSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    PCFCGRD(ilmos(I))=PCFCGRD(ilmos(I))+PCFCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    PCLCGRD(ilmos(I))=PCLCGRD(ilmos(I))+PCLCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    PCPNGRD(ilmos(I))=PCPNGRD(ilmos(I))+PCPNgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    PCPGGRD(ilmos(I))=PCPGGRD(ilmos(I))+PCPGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    QFGGRD(ilmos(I))=QFGGRD(ilmos(I))+QFGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    QFNGRD(ilmos(I))=QFNGRD(ilmos(I))+QFNgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    QFCLGRD(ilmos(I))=QFCLGRD(ilmos(I))+QFCLgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    QFCFGRD(ilmos(I))=QFCFGRD(ilmos(I))+QFCFgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    ROFGRD(ilmos(I))=ROFGRD(ilmos(I))+ROFgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    ROFOGRD(ilmos(I))=ROFOGRD(ilmos(I))+ROFOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    ROFSGRD(ilmos(I))=ROFSGRD(ilmos(I))+ROFSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    ROFBGRD(ilmos(I))=ROFBGRD(ilmos(I))+ROFBgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    ROFCGRD(ilmos(I))=ROFCGRD(ilmos(I))+ROFCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    ROFNGRD(ilmos(I))=ROFNGRD(ilmos(I))+ROFNgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    ROVGGRD(ilmos(I))=ROVGGRD(ilmos(I))+ROVGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    WTRCGRD(ilmos(I))=WTRCGRD(ilmos(I))+WTRCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    WTRSGRD(ilmos(I))=WTRSGRD(ilmos(I))+WTRSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    WTRGGRD(ilmos(I))=WTRGGRD(ilmos(I))+WTRGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    DRGRD(ilmos(I))=DRGRD(ilmos(I))+DRgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    WTABGRD(ilmos(I))=WTABGRD(ilmos(I))+WTABgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    ILMOGRD(ilmos(I))=ILMOGRD(ilmos(I))+ILMOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    UEGRD(ilmos(I))=UEGRD(ilmos(I))+UEgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    HBLGRD(ilmos(I))=HBLGRD(ilmos(I))+HBLgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+    wb_h%pre(ilmos(I)) = wb_h%pre(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*pregrd(ilmos(i))*delt
+    wb_h%evap(ilmos(I)) = wb_h%evap(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*qfsgat(i)*delt
+    wb_h%rof(ilmos(I)) = wb_h%rof(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*rofgat(i)*delt
+    wb_h%rofo(ilmos(I)) = wb_h%rofo(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*rofogat(i)*delt
+    wb_h%rofs(ilmos(I)) = wb_h%rofs(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*rofsgat(i)*delt
+    wb_h%rofb(ilmos(I)) = wb_h%rofb(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*rofbgat(i)*delt
+    wb_h%rcan(ilmos(I)) = wb_h%rcan(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*rcangat(i)
+    wb_h%sncan(ilmos(I)) = wb_h%sncan(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*scangat(i)
+    wb_h%pndw(ilmos(I)) = wb_h%pndw(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*zpndgat(i)*rhow
+    wb_h%sno(ilmos(I)) = wb_h%sno(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*snogat(i)
+    wb_h%wsno(ilmos(I)) = wb_h%wsno(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*wsnogat(i)
     DO J=1,IGND
-        HMFGGRD(I,J)=HMFGGRD(I,J)+HMFGROW(I,M,J)*cp%FAREROW(I,M)
-        HTCGRD(I,J)=HTCGRD(I,J)+HTCROW(I,M,J)*cp%FAREROW(I,M)
-        QFCGRD(I,J)=QFCGRD(I,J)+QFCROW(I,M,J)*cp%FAREROW(I,M)
+        HMFGGRD(ilmos(I),J)=HMFGGRD(ilmos(I),J)+HMFGgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
+        HTCGRD(ilmos(I),J)=HTCGRD(ilmos(I),J)+HTCgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
+        QFCGRD(ilmos(I),J)=QFCGRD(ilmos(I),J)+QFCgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
 !- Diane added GFLXGRD june 17/08
 !-              GFLXGRD(I,J)=GFLXGRD(I,J)+GFLXROW(I,M,J)*FAREROW(I,M)
-        wb_h%lqws(i, j) = wb_h%lqws(i, j) + cp%farerow(i, m)*cp%thlqrow(i, m, j)*dlzwrow(i, m, j)*rhow
-        wb_h%frws(i, j) = wb_h%frws(i, j) + cp%farerow(i, m)*cp%thicrow(i, m, j)*dlzwrow(i, m, j)*rhoice
+        wb_h%lqws(ilmos(I), j) = wb_h%lqws(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i)) &
+                                     *thlqgat(i, j)*dlzwgat(i, j)*rhow
+        wb_h%frws(ilmos(I), j) = wb_h%frws(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i)) &
+                                     *thicgat(i, j)*dlzwgat(i, j)*rhoice
     ENDDO
-  ENDDO !DO M=1,NMTEST
-    wb_h%stg(i) = wb%rcan(i) + wb%sncan(i) + wb%pndw(i) + wb%sno(i) + wb%wsno(i) + &
-        sum(wb%lqws(i, :)) + sum(wb%frws(i, :))
-ENDDO !DO I=1,NA
+!  ENDDO !DO M=1,NMTEST
+    wb_h%stg(ilmos(I)) = wb%rcan(ilmos(I)) + wb%sncan(ilmos(I)) + wb%pndw(ilmos(I)) + wb%sno(ilmos(I)) + wb%wsno(ilmos(I)) + &
+        sum(wb%lqws(ilmos(I), :)) + sum(wb%frws(ilmos(I), :))
+ENDDO !DO I=1,nml
 
     CALL tile_connector(runoff, recharge, leakages, ncount, ROFOGRD, ROFSGRD, ROFBGRD, DELT)
 !>
@@ -4523,57 +4526,57 @@ ENDIF
 !> ACCUMULATE OUTPUT DATA FOR DIURNALLY AVERAGED FIELDS.
 
 !$omp parallel do
-DO I = 1, NA
-   IF(FRAC(I) /= 0.0)THEN
-      DO M = 1,NMTEST
-         PREACC(I)  = PREACC(I) + cp%FAREROW(I,M)*PREGRD(I)*DELT
-         GTACC(I)   = GTACC(I)  + GTROW(I,M)*  cp%FAREROW(I,M)
-         QEVPACC(I) = QEVPACC(I)+ QEVPROW(I,M)*cp%FAREROW(I,M)
-         EVAPACC(I) = EVAPACC(I)+ QFSROW(I,M)* cp%FAREROW(I,M)*DELT
-         HFSACC(I)  = HFSACC(I) + HFSROW(I,M)* cp%FAREROW(I,M)
-         HMFNACC(I) = HMFNACC(I)+ HMFNROW(I,M)*cp%FAREROW(I,M)
-         ROFACC(I)  = ROFACC(I) + ROFROW(I,M)* cp%FAREROW(I,M)*DELT
-         ROFOACC(I) = ROFOACC(I)+ ROFOROW(I,M)*cp%FAREROW(I,M)*DELT
-         ROFSACC(I) = ROFSACC(I)+ ROFSROW(I,M)*cp%FAREROW(I,M)*DELT
-         ROFBACC(I) = ROFBACC(I)+ ROFBROW(I,M)*cp%FAREROW(I,M)*DELT
-         WTBLACC(I) = WTBLACC(I)+ WTABROW(I,M)*cp%FAREROW(I,M)
+DO I = 1, nml
+   IF(FRAC(ilmos(I)) /= 0.0)THEN
+!      DO M = 1,NMTEST
+         PREACC(ilmos(I))  = PREACC(ilmos(I)) + cp%FAREROW(ilmos(I),jlmos(i))*PREGRD(ilmos(I))*DELT
+         GTACC(ilmos(I))   = GTACC(ilmos(I))  + GTgat(I)*  cp%FAREROW(ilmos(I),jlmos(i))
+         QEVPACC(ilmos(I)) = QEVPACC(ilmos(I))+ QEVPgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+         EVAPACC(ilmos(I)) = EVAPACC(ilmos(I))+ QFSgat(I)* cp%FAREROW(ilmos(I),jlmos(i))*DELT
+         HFSACC(ilmos(I))  = HFSACC(ilmos(I)) + HFSgat(I)* cp%FAREROW(ilmos(I),jlmos(i))
+         HMFNACC(ilmos(I)) = HMFNACC(ilmos(I))+ HMFNgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+         ROFACC(ilmos(I))  = ROFACC(ilmos(I)) + ROFgat(I)* cp%FAREROW(ilmos(I),jlmos(i))*DELT
+         ROFOACC(ilmos(I)) = ROFOACC(ilmos(I))+ ROFOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))*DELT
+         ROFSACC(ilmos(I)) = ROFSACC(ilmos(I))+ ROFSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))*DELT
+         ROFBACC(ilmos(I)) = ROFBACC(ilmos(I))+ ROFBgat(I)*cp%FAREROW(ilmos(I),jlmos(i))*DELT
+         WTBLACC(ilmos(I)) = WTBLACC(ilmos(I))+ WTABgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
             DO J = 1, IGND
-            TBARACC(I,J) = TBARACC(I,J)+cp%TBARROW(I,M,J)*ACLASS(I,M)
-            THLQACC(I,J) = THLQACC(I,J)+cp%THLQROW(I,M,J)*cp%FAREROW(I,M)
-            THICACC(I,J) = THICACC(I,J)+cp%THICROW(I,M,J)*cp%FAREROW(I,M)
-            THALACC(I,J) = THALACC(I,J)+(cp%THLQROW(I,M,J)+ &
-                                         cp%THICROW(I,M,J))*cp%FAREROW(I,M)
+            TBARACC(ilmos(I),J) = TBARACC(ilmos(I),J)+TBARgat(I,J)*ACLASS(ilmos(I),jlmos(i))
+            THLQACC(ilmos(I),J) = THLQACC(ilmos(I),J)+THLQgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
+            THICACC(ilmos(I),J) = THICACC(ilmos(I),J)+THICgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
+            THALACC(ilmos(I),J) = THALACC(ilmos(I),J)+(THLQgat(I,J)+ &
+                                         THICgat(I,J))*cp%FAREROW(ilmos(I),jlmos(i))
 
             !(I) = THALACC_STG(I) + THALACC(I,J)
-                THLQ_FLD(I,J) =  THLQ_FLD(I,J) + cp%THLQROW(I,M,J)*RHOW*cp%FAREROW(I,M)*DLZWROW(I,M,J)
-                THIC_FLD(I,J) =  THIC_FLD(I,J) + cp%THICROW(I,M,J)*RHOICE*cp%FAREROW(I,M)*DLZWROW(I,M,J)
+                THLQ_FLD(ilmos(I),J) =  THLQ_FLD(ilmos(I),J) + THLQgat(I,J)*RHOW*cp%FAREROW(ilmos(I),jlmos(i))*DLZWgat(I,J)
+                THIC_FLD(ilmos(I),J) =  THIC_FLD(ilmos(I),J) + THICgat(I,J)*RHOICE*cp%FAREROW(ilmos(I),jlmos(i))*DLZWgat(I,J)
          ENDDO
-         ALVSACC(I) = ALVSACC(I)+ALVSROW(I,M)*cp%FAREROW(I,M)*FSVHGRD(I)
-         ALIRACC(I) = ALIRACC(I)+ALIRROW(I,M)*cp%FAREROW(I,M)*FSIHGRD(I)
-         IF(cp%SNOROW(I,M)>0.0) THEN
-            RHOSACC(I) = RHOSACC(I)+cp%RHOSROW(I,M)*cp%FAREROW(I,M)
-            TSNOACC(I) = TSNOACC(I)+cp%TSNOROW(I,M)*cp%FAREROW(I,M)
-            WSNOACC(I) = WSNOACC(I)+WSNOROW(I,M)*cp%FAREROW(I,M)
-            SNOARE(I)  = SNOARE(I)+cp%FAREROW(I,M)
+         ALVSACC(ilmos(I)) = ALVSACC(ilmos(I))+ALVSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))*FSVHGRD(ilmos(I))
+         ALIRACC(ilmos(I)) = ALIRACC(ilmos(I))+ALIRgat(I)*cp%FAREROW(ilmos(I),jlmos(i))*FSIHGRD(ilmos(I))
+         IF(SNOgat(I)>0.0) THEN
+            RHOSACC(ilmos(I)) = RHOSACC(ilmos(I))+RHOSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+            TSNOACC(ilmos(I)) = TSNOACC(ilmos(I))+TSNOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+            WSNOACC(ilmos(I)) = WSNOACC(ilmos(I))+WSNOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+            SNOARE(ilmos(I))  = SNOARE(ilmos(I))+cp%FAREROW(ilmos(I),jlmos(i))
          ENDIF
-         IF(cp%TCANROW(I,M) > 0.5) THEN
-            TCANACC(I) = TCANACC(I)+cp%TCANROW(I,M)*cp%FAREROW(I,M)
-            CANARE(I)  = CANARE(I)+cp%FAREROW(I,M)
+         IF(TCANgat(I) > 0.5) THEN
+            TCANACC(ilmos(I)) = TCANACC(ilmos(I))+TCANgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+            CANARE(ilmos(I))  = CANARE(ilmos(I))+cp%FAREROW(ilmos(I),jlmos(i))
          ENDIF
-         SNOACC(I)  = SNOACC(I)+cp%SNOROW(I,M)*cp%FAREROW(I,M)
-         RCANACC(I) = RCANACC(I)+cp%RCANROW(I,M)*cp%FAREROW(I,M)
-         SCANACC(I) = SCANACC(I)+cp%SCANROW(I,M)*cp%FAREROW(I,M)
-         GROACC(I)  = GROACC(I)+cp%GROROW(I,M)*cp%FAREROW(I,M)
-         FSINACC(I) = FSINACC(I)+FSDOWN(I)*cp%FAREROW(I,M)
-         FLINACC(I) = FLINACC(I)+FDLGRD(I)*cp%FAREROW(I,M)
-         FLUTACC(I) = FLUTACC(I)+SBC*GTROW(I,M)**4*cp%FAREROW(I,M)
-         TAACC(I)   = TAACC(I)+TAGRD(I)*cp%FAREROW(I,M)
-         UVACC(I)   = UVACC(I)+UVGRD(I)*cp%FAREROW(I,M)
-         PRESACC(I) = PRESACC(I)+PRESGRD(I)*cp%FAREROW(I,M)
-         QAACC(I)   = QAACC(I)+QAGRD(I)*cp%FAREROW(I,M)
-      ENDDO !DO M=1,NMTEST
+         SNOACC(ilmos(I))  = SNOACC(ilmos(I))+SNOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+         RCANACC(ilmos(I)) = RCANACC(ilmos(I))+RCANgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+         SCANACC(ilmos(I)) = SCANACC(ilmos(I))+SCANgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+         GROACC(ilmos(I))  = GROACC(ilmos(I))+GROgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+         FSINACC(ilmos(I)) = FSINACC(ilmos(I))+FSDOWN(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
+         FLINACC(ilmos(I)) = FLINACC(ilmos(I))+FDLGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
+         FLUTACC(ilmos(I)) = FLUTACC(ilmos(I))+SBC*GTgat(I)**4*cp%FAREROW(ilmos(I),jlmos(i))
+         TAACC(ilmos(I))   = TAACC(ilmos(I))+TAGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
+         UVACC(ilmos(I))   = UVACC(ilmos(I))+UVGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
+         PRESACC(ilmos(I)) = PRESACC(ilmos(I))+PRESGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
+         QAACC(ilmos(I))   = QAACC(ilmos(I))+QAGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
+!      ENDDO !DO M=1,NMTEST
    ENDIF
-ENDDO !DO I=1,NA
+ENDDO !DO I=1,nml
 
     !> Update output data.
     call updatefieldsout_temp(vr, ts, iof, bi, &
@@ -4787,31 +4790,33 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     wb%wsno = 0.0
     wb%lqws = 0.0
     wb%frws = 0.0
-    DO I = 1, NA
-        IF (FRAC(I) >= 0.0) THEN
-            DO M = 1, NMTEST
-                TOTAL_SCAN = TOTAL_SCAN + cp%FAREROW(I, M)*cp%SCANROW(I, M)
-                TOTAL_RCAN = TOTAL_RCAN + cp%FAREROW(I, M)*cp%RCANROW(I, M)
-                TOTAL_SNO = TOTAL_SNO + cp%FAREROW(I, M)*cp%SNOROW(I, M)
-                TOTAL_WSNO = TOTAL_WSNO + cp%FAREROW(I, M)*WSNOROW(I, M)
-                TOTAL_ZPND = TOTAL_ZPND + cp%FAREROW(I, M)*cp%ZPNDROW(I, M)*RHOW
-                wb%rcan(i) = wb%rcan(i) + cp%farerow(i, m)*cp%scanrow(i, m)
-                wb%sncan(i) = wb%sncan(i) + cp%farerow(i, m)*cp%rcanrow(i, m)
-                wb%pndw(i) = wb%pndw(i) + cp%farerow(i, m)*cp%zpndrow(i, m)*rhow
-                wb%sno(i) = wb%sno(i) + cp%farerow(i, m)*cp%snorow(i, m)
-                wb%wsno(i) = wb%wsno(i) + cp%farerow(i, m)*wsnorow(i, m)
+    DO I = 1, nml
+        IF (FRAC(ilmos(I)) >= 0.0) THEN
+!            DO M = 1, NMTEST
+                TOTAL_SCAN = TOTAL_SCAN + cp%FAREROW(ilmos(I), jlmos(i))*SCANgat(I)
+                TOTAL_RCAN = TOTAL_RCAN + cp%FAREROW(ilmos(I), jlmos(i))*RCANgat(I)
+                TOTAL_SNO = TOTAL_SNO + cp%FAREROW(ilmos(I), jlmos(i))*SNOgat(I)
+                TOTAL_WSNO = TOTAL_WSNO + cp%FAREROW(ilmos(I), jlmos(i))*WSNOgat(I)
+                TOTAL_ZPND = TOTAL_ZPND + cp%FAREROW(ilmos(I), jlmos(i))*ZPNDgat(I)*RHOW
+                wb%rcan(ilmos(I)) = wb%rcan(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*scangat(i)
+                wb%sncan(ilmos(I)) = wb%sncan(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*rcangat(i)
+                wb%pndw(ilmos(I)) = wb%pndw(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*zpndgat(i)*rhow
+                wb%sno(ilmos(I)) = wb%sno(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*snogat(i)
+                wb%wsno(ilmos(I)) = wb%wsno(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*wsnogat(i)
                 DO J = 1, IGND
-                    TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%FAREROW(I, M)*cp%THLQROW(I, M, J)*RHOW*DLZWROW(I, M, J)
-                    TOTAL_THIC(J) = TOTAL_THIC(J) + cp%FAREROW(I, M)*cp%THICROW(I, M, J)*RHOICE*DLZWROW(I, M, J)
-                    wb%lqws(i, j) = wb%lqws(i, j) + cp%farerow(i, m)*cp%thlqrow(i, m, j)*rhow*dlzwrow(i, m, j)
-                    wb%frws(i, j) = wb%frws(i, j) + cp%farerow(i, m)*cp%thicrow(i, m, j)*rhoice*dlzwrow(i, m, j)
+                    TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%FAREROW(ilmos(I), jlmos(i))*THLQgat(I, J)*RHOW*DLZWgat(I, J)
+                    TOTAL_THIC(J) = TOTAL_THIC(J) + cp%FAREROW(ilmos(I), jlmos(i))*THICgat(I, J)*RHOICE*DLZWgat(I, J)
+                    wb%lqws(ilmos(I), j) = wb%lqws(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i)) &
+                                               *thlqgat(i, j)*rhow*dlzwgat(i, j)
+                    wb%frws(ilmos(I), j) = wb%frws(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i)) &
+                                               *thicgat(i, j)*rhoice*dlzwgat(i, j)
                 END DO
-                END DO
-            wb%stg(i) = wb%rcan(i) + wb%sncan(i) + wb%pndw(i) + wb%sno(i) + wb%wsno(i) + &
-                sum(wb%lqws(i, :)) + sum(wb%frws(i, :))
-            wb%dstg(i) = wb%stg(i) - wb%dstg(i)
+!            END DO
+            wb%stg(ilmos(I)) = wb%rcan(ilmos(I)) + wb%sncan(ilmos(I)) + wb%pndw(ilmos(I)) + wb%sno(ilmos(I)) + wb%wsno(ilmos(I)) + &
+                sum(wb%lqws(ilmos(I), :)) + sum(wb%frws(ilmos(I), :))
+            wb%dstg(ilmos(I)) = wb%stg(ilmos(I)) - wb%dstg(ilmos(I))
         END IF !IF (FRAC(I) >= 0.0) THEN
-    END DO !DO I = 1, NA
+    END DO !DO I = 1, nml
 
     TOTAL_STORE = TOTAL_SCAN + TOTAL_RCAN + TOTAL_SNO + TOTAL_WSNO + TOTAL_ZPND + &
         sum(TOTAL_THLQ) + sum(TOTAL_THIC)
@@ -5225,7 +5230,7 @@ IF(HOURLYFLAG == 30 .OR. IMIN2 == 0) THEN
     itime = itime + 1
 ENDIF
 
-ENDDO
+END DO !WHILE(.NOT.ENDDATE .AND. .NOT.ENDDATA)
 
 !> *********************************************************************
 !> Run is now over, print final results to the screen and close files
@@ -5463,16 +5468,16 @@ IF(ENDDATE)PRINT *, 'Reached end of simulation date'
 
 !> Calculate final storage
 FINAL_STORE = 0.0
-DO I = 1, NA
-    IF (FRAC(I) >= 0.0) THEN
-        DO M = 1, NMTEST
-            FINAL_STORE = FINAL_STORE + cp%FAREROW(I, M)* &
-                (cp%RCANROW(I, M) + cp%SCANROW(I, M) + cp%SNOROW(I, M) + WSNOROW(I, M) + cp%ZPNDROW(I, M)*RHOW)
+DO I = 1, nml
+    IF (FRAC(ilmos(I)) >= 0.0) THEN
+!        DO M = 1, NMTEST
+            FINAL_STORE = FINAL_STORE + cp%FAREROW(ilmos(i), jlmos(i))* &
+                (RCANgat(I) + SCANgat(I) + SNOgat(I) + WSNOgat(I) + ZPNDgat(I)*RHOW)
             DO J = 1, IGND
-                FINAL_STORE = FINAL_STORE + cp%FAREROW(I, M)* &
-                    (cp%THLQROW(I, M, J)*RHOW + cp%THICROW(I, M, J)*RHOICE)*DLZWROW(I, M, J)
+                FINAL_STORE = FINAL_STORE + cp%FAREROW(ilmos(I), jlmos(i))* &
+                    (THLQgat(I, J)*RHOW + THICgat(I, J)*RHOICE)*DLZWgat(I, J)
             END DO
-            END DO
+!        END DO
    END IF
 END DO
 
