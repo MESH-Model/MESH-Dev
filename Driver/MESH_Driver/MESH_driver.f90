@@ -3465,6 +3465,7 @@ IF(INTERPOLATIONFLAG == 1)THEN
 ENDIF
 UVGRD=MAX(VMIN,ULGRD)
 VMODGRD=UVGRD
+vmodgat = max(vmin, ulgat)
 
 !> *********************************************************************
 !> Read in current reservoir release value
@@ -3527,15 +3528,18 @@ RDAY=REAL(IDAY)+(REAL(IHOUR)+REAL(IMIN)/60.)/24.
 DECL=SIN(2.*PI*(284.+RDAY)/365.)*23.45*PI/180.
 HOUR=(REAL(IHOUR)+REAL(IMIN)/60.)*PI/12.-PI
 
-DO I=1,NA
-  COSZ=SIN(RADJGRD(I))*SIN(DECL)+COS(RADJGRD(I))*COS(DECL)*COS(HOUR)
-  CSZGRD(I)=SIGN(MAX(ABS(COSZ),1.0E-3),COSZ)
-  IF(PREGRD(I)>0.) THEN
-    XDIFFUS(I)=1.0
+DO I=1,nml
+  COSZ=SIN(RADJgat(I))*SIN(DECL)+COS(RADJgat(I))*COS(DECL)*COS(HOUR)
+  CSZgat(I)=SIGN(MAX(ABS(COSZ),1.0E-3),COSZ)
+  cszgrd(ilmos(i)) = cszgat(i)
+  IF(PREgat(I)>0.) THEN
+    !todo: there isn't a GAT variable for this (although, there might be for the canopy)?
+    XDIFFUS(ilmos(I))=1.0
   ELSE
-    XDIFFUS(I)=MAX(0.0,MIN(1.0-0.9*COSZ,1.0))
+    XDIFFUS(ilmos(I))=MAX(0.0,MIN(1.0-0.9*COSZ,1.0))
   ENDIF
-  FCLOGRD(I)=XDIFFUS(I)
+  FCLOgat(I)=XDIFFUS(ilmos(I))
+  fclogrd(ilmos(i)) = fclogat(i)
 ENDDO
 
 !> *********************************************************************
@@ -4812,11 +4816,13 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                                                *thicgat(i, j)*rhoice*dlzwgat(i, j)
                 END DO
 !            END DO
-            wb%stg(ilmos(I)) = wb%rcan(ilmos(I)) + wb%sncan(ilmos(I)) + wb%pndw(ilmos(I)) + wb%sno(ilmos(I)) + wb%wsno(ilmos(I)) + &
-                sum(wb%lqws(ilmos(I), :)) + sum(wb%frws(ilmos(I), :))
-            wb%dstg(ilmos(I)) = wb%stg(ilmos(I)) - wb%dstg(ilmos(I))
         END IF !IF (FRAC(I) >= 0.0) THEN
     END DO !DO I = 1, nml
+
+    !> Calculate storage
+    wb%stg = wb%rcan + wb%sncan + wb%pndw + wb%sno + wb%wsno + &
+                sum(wb%lqws, 2) + sum(wb%frws, 2)
+    wb%dstg = wb%stg - wb%dstg
 
     TOTAL_STORE = TOTAL_SCAN + TOTAL_RCAN + TOTAL_SNO + TOTAL_WSNO + TOTAL_ZPND + &
         sum(TOTAL_THLQ) + sum(TOTAL_THIC)
