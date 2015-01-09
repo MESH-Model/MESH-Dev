@@ -157,18 +157,18 @@ C
               PSIWLT(I,M,J)=PSISAT(I,M,J)*(THLMIN(I,M,J)/
      1            THPOR(I,M,J))**(-BI(I,M,J))
           ELSEIF(SAND(I,M,J).GE.0) THEN
-		    IF (SOILINIFLAG == 5) THEN
-			  THPOR (I,M,J) = WC_THPOR (I,M,J)
-              THLRET(I,M,J) = WC_THLRET(I,M,J)
-              THLMIN(I,M,J) = WC_THLMIN(I,M,J)
-              BI    (I,M,J) = WC_BI    (I,M,J)
-              PSISAT(I,M,J) = WC_PSISAT(I,M,J)
-              GRKSAT(I,M,J) = WC_GRKSAT(I,M,J)
-              HCPS  (I,M,J) = WC_HCPS(I,M,J)
-              TCS   (I,M,J) = WC_TCS(I,M,J)
-			ELSE
+c		    IF (SOILINIFLAG == 5) THEN                                      !RIC SOULIS REMOVED
+c			  THPOR (I,M,J) = WC_THPOR (I,M,J)                              !RIC SOULIS REMOVED
+c              THLRET(I,M,J) = WC_THLRET(I,M,J)                               !RIC SOULIS REMOVED
+c              THLMIN(I,M,J) = WC_THLMIN(I,M,J)                               !RIC SOULIS REMOVED
+c              BI    (I,M,J) = WC_BI    (I,M,J)                               !RIC SOULIS REMOVED
+c              PSISAT(I,M,J) = WC_PSISAT(I,M,J)                               !RIC SOULIS REMOVED
+c              GRKSAT(I,M,J) = WC_GRKSAT(I,M,J)                               !RIC SOULIS REMOVED
+c              HCPS  (I,M,J) = WC_HCPS(I,M,J)                                 !RIC SOULIS REMOVED
+c              TCS   (I,M,J) = WC_TCS(I,M,J)                                  !RIC SOULIS REMOVED
+c			ELSE                                                            !RIC SOULIS REMOVED
               THPOR (I,M,J)=(-0.126*SAND(I,M,J)+48.9)/100.0
-              THLRET(I,M,J)=0.04
+c              THLRET(I,M,J)=0.04                                             !RIC SOULIS REMOVED
               THLMIN(I,M,J)=0.04
               BI    (I,M,J)=0.159*CLAY(I,M,J)+2.91
               PSISAT(I,M,J)=0.01*EXP(-0.0302*SAND(I,M,J)+4.33)
@@ -184,27 +184,29 @@ C
      1            HCPOM*THORG(I,M,J))/(1.0-THPOR(I,M,J))
               TCS(I,M,J)=(TCSAND*THSAND(I,M,J)+TCOM*THORG(I,M,J)+
      1            TCFINE*THFINE(I,M,J))/(1.0-THPOR(I,M,J))
-			ENDIF
+c			ENDIF                                                           !RIC SOULIS REMOVED
               THLRAT(I,M,J)=0.5**(1.0/(2.0*BI(I,M,J)+3.0))
-c              THFC(I,M,J)=THPOR(I,M,J)*(1.157E-9/GRKSAT(I,M,J))**
-c     1            (1.0/(2.0*BI(I,M,J)+3.0))
-      THFC(I,M,J)=(THPOR(I,M,J)/(BI(I,M,J)-1))*                          !Ric Soulis added this
-     1            (PSISAT(I,M,J)*BI(I,M,J)/DELZW(I,M,J))**(1/BI(I,M,J))* !Ric Soulis added this
-     2            ((3*BI(I,M,J)+2)**((BI(I,M,J)-1)/BI(I,M,J))-           !Ric Soulis added this
-     3            (2*BI(I,M,J)+2)**((BI(I,M,J)-1)/BI(I,M,J)))            !Ric Soulis added this
-              IF(J.EQ.IG.AND.SDEPTH(I,M).GT.(ZBOTW(I,M,J)-0.01))  THEN
-                  AEXP=(BI(I,M,J)-1.0)/BI(I,M,J)
-                  ABC=(3.0*BI(I,M,J)+2.0)**AEXP-
-     1                (2.0*BI(I,M,J)+2.0)**AEXP
-c                  THFC(I,M,J)=(ABC*THPOR(I,M,J)/(BI(I,M,J)-1.0))*
-c     1                (PSISAT(I,M,J)*BI(I,M,J)/SDEPTH(I,M))**
-c     2                (1.0/BI(I,M,J))
-      THFC(I,M,J)=(THPOR(I,M,J)/(BI(I,M,J)-1))*                          !Ric Soulis added this
-     1            (PSISAT(I,M,J)*BI(I,M,J)/DELZW(I,M,J))**(1/BI(I,M,J))* !Ric Soulis added this
-     2            ((3*BI(I,M,J)+2)**((BI(I,M,J)-1)/BI(I,M,J))-           !Ric Soulis added this
-     3            (2*BI(I,M,J)+2)**((BI(I,M,J)-1)/BI(I,M,J)))            !Ric Soulis added this
-                  
-              ENDIF
+c              THFC(I,M,J)=THPOR(I,M,J)*(1.157E-9/GRKSAT(I,M,J))**            !RIC SOULIS REMOVED
+c     1            (1.0/(2.0*BI(I,M,J)+3.0))                                  !RIC SOULIS REMOVED
+      THFC(I,M,J)=(THPOR(I,M,J)/(BI(I,M,J)-1))*                           !Ric Soulis added this
+     1            (PSISAT(I,M,J)*BI(I,M,J)/DELZW(I,M,J))**(1/BI(I,M,J))*  !Ric Soulis added this
+     2            ((3*BI(I,M,J)+2)**((BI(I,M,J)-1)/BI(I,M,J))-            !Ric Soulis added this
+     3            (2*BI(I,M,J)+2)**((BI(I,M,J)-1)/BI(I,M,J)))             !Ric Soulis added this
+      THFC(I,M,J)=MIN(MAX(THLMIN(I,M,J),THFC(I,M,J)),1.0)                 !RIC SOULIS ADDED THIS
+      THLRET(I,M,J)=THFC(I,M,J)                                           !RIC SOULIS ADDED THIS
+c              IF(J.EQ.IG.AND.SDEPTH(I,M).GT.(ZBOTW(I,M,J)-0.01))  THEN       !RIC SOULIS REMOVED
+c                  AEXP=(BI(I,M,J)-1.0)/BI(I,M,J)                             !RIC SOULIS REMOVED
+c                  ABC=(3.0*BI(I,M,J)+2.0)**AEXP-                             !RIC SOULIS REMOVED
+c     1                (2.0*BI(I,M,J)+2.0)**AEXP                              !RIC SOULIS REMOVED
+cc                  THFC(I,M,J)=(ABC*THPOR(I,M,J)/(BI(I,M,J)-1.0))*           !RIC SOULIS REMOVED
+cc     1                (PSISAT(I,M,J)*BI(I,M,J)/SDEPTH(I,M))**               !RIC SOULIS REMOVED
+cc     2                (1.0/BI(I,M,J))                                       !RIC SOULIS REMOVED
+c      THFC(I,M,J)=(THPOR(I,M,J)/(BI(I,M,J)-1))*                              !RIC SOULIS REMOVED
+c     1            (PSISAT(I,M,J)*BI(I,M,J)/DELZW(I,M,J))**(1/BI(I,M,J))*     !RIC SOULIS REMOVED
+c     2            ((3*BI(I,M,J)+2)**((BI(I,M,J)-1)/BI(I,M,J))-               !RIC SOULIS REMOVED
+c     3            (2*BI(I,M,J)+2)**((BI(I,M,J)-1)/BI(I,M,J)))                !RIC SOULIS REMOVED
+c                                                                             !RIC SOULIS REMOVED
+c              ENDIF                                                          !RIC SOULIS REMOVED
               PSIWLT(I,M,J)=PSISAT(I,M,J)*(MAX(0.5*THFC(I,M,J),
      1            THLMIN(I,M,J))/THPOR(I,M,J))**(-BI(I,M,J))
 	      ELSE

@@ -98,6 +98,7 @@ C
 C     * INTEGER CONSTANTS.
 C
       INTEGER ILG,IL1,IL2,JL,IG,IGP1,I,J,NLANDCS,NLANDGS,NLANDC,NLANDG
+      real*8 thporeff                                                     !RIC SOULIS ADDED THIS
 C
 C     * OUTPUT ARRAYS.
 C
@@ -176,6 +177,8 @@ C
       COMMON /CLASS4/ HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,
      1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
      2                TCGLAC,CLHMLT,CLHVAP
+      
+      REAL xbasei, xanglei, xreliefi, xlengthi, qmax, stc, sta, tc, ta    !RIC SOULIS ADDED THIS
 C-----------------------------------------------------------------------
 C     * INITIALIZE 2-D ARRAYS.
 C
@@ -212,19 +215,29 @@ C
               DELZZ (I,J)=DELZ(J)
           ENDIF
 c         calculate BULKFC, make sure we don't divide by 0 (for slope = 0 or bedrock i.e. %sand = -2)
-          IF(XSLOPE(I).gt.0.0.AND.THPOR(I,J).gt.0.0) THEN
-              BULKFC(I,J)= (THPOR(I,J)/(BI(I,J)-1))*
+                !FROM WATROF2
+                xbasei   = 1.0/2.0/dden(i)                                !RIC SOULIS ADDED THIS  
+                xanglei  = atan(xslope(i))                                !RIC SOULIS ADDED THIS
+                xreliefi = xbasei*(tan(xanglei))                          !RIC SOULIS ADDED THIS
+                xlengthi = (xbasei**2+xreliefi**2)**0.5                   !RIC SOULIS ADDED THIS
+                qmax     = grksat(i,j)*xslope(i)/xlengthi                 !RIC SOULIS ADDED THIS
+                stc      = (1.0 - 1.0/(2.0*bi(i,j)+3.0))                  !RIC SOULIS ADDED THIS
+                tc       = (1.0 - stc)/qmax                               !RIC SOULIS ADDED THIS
+                ta       = 2.0*tc                                         !RIC SOULIS ADDED THIS
+                sta      = 2.0*stc - 1.0                                  !RIC SOULIS ADDED THIS
+          IF (XSLOPE(I).GT.0.0) THEN                                      !RIC SOULIS ADDED THIS
+              BULKFC(I,J)=(thpor(i,j)/(BI(I,J)-1))*                        !RIC SOULIS ADDED THIS
+     1                   (PSISAT(I,J)*BI(I,J)/xreliefi)**(1/BI(I,J))*     !RIC SOULIS ADDED THIS
      +         ((2*DDEN(I)*PSISAT(I,J)*BI(I,J)/XSLOPE(I))**(1/BI(I,J)))*
      +          ((3*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J))-
      +           (2*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J)))
           ELSE
-c         make sure that BULKFC is high to shut off interflow
-              BULKFC(I,J) = 2.0                                 !Ric Soulis added
-              BULKFC(I,J)= (THPOR(I,J)/(BI(I,J)-1))*            !Ric Soulis added
-     +         ((PSISAT(I,J)*BI(I,J)/DELZW(I,J))**(1/BI(I,J)))* !Ric Soulis added
-     +          ((3*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J))-          !Ric Soulis added
-     +           (2*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J)))          !Ric Soulis added
+             BULKFC(I,J)=(thpor(i,j)/(BI(I,J)-1))*                        !RIC SOULIS ADDED THIS
+     1                   (PSISAT(I,J)*BI(I,J)/DELZW(I,J))**(1/BI(I,J))*   !RIC SOULIS ADDED THIS
+     +                   ((3*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J))-           !RIC SOULIS ADDED THIS
+     +                   (2*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J)))            !RIC SOULIS ADDED THIS
           ENDIF
+             BULKFC(I,J)=MAX(0.04,MIN(1.0,BULKFC(I,J)))                   !RIC SOULIS ADDED THIS
 c          print *, "I = ", I, "J = ", J, "BULKFC(I,J) = ", BULKFC(I,J)
    50 CONTINUE
 C 

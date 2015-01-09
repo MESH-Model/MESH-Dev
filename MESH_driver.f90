@@ -2865,10 +2865,10 @@ ALLOCATE(BTC(NTYPE,IGND),BCAP(NTYPE,IGND),DCOEFF(NTYPE,IGND), &
 !> ******************************************************************
 !> DGP - May 5, 2011: Added.
 IF (PAS /= 0) WRITE(*) "Error allocating on WD3 for new WATDRN."
-CALL WATDRN3B(PSISROW,THPROW,GRKSROW,BIROW,cp%XSLPROW,cp%DDROW, &
-    NA,NTYPE,IGND, &
-    BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX, &
-    cp%SANDROW,cp%CLAYROW)
+!CALL WATDRN3B(PSISROW,THPROW,GRKSROW,BIROW,cp%XSLPROW,cp%DDROW, &          !RIC SOULIS REMOVED THIS
+!    NA,NTYPE,IGND, &                                                       !RIC SOULIS REMOVED THIS
+!    BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX, &                           !RIC SOULIS REMOVED THIS
+!    cp%SANDROW,cp%CLAYROW)                                                 !RIC SOULIS REMOVED THIS
 
 !> *********************************************************************
 !> MAM - Initialize ENDDATE and ENDDATA

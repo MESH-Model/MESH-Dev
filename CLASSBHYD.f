@@ -70,6 +70,10 @@ C
       COMMON /CLASS5/ THPORG,THRORG,THMORG,BORG,PSISORG,GRKSORG
 C---------------------------------------------------------------------
 C
+      PRINT*, "WARNING, ROUTINE CLASSBHYD.f IS NO LONGER USED"            !RIC SOULIS ADDED THIS
+      PAUSE                                                               !RIC SOULIS ADDED THIS
+      RETURN                                                              !RIC SOULIS ADDED THIS
+      
       DO 100 J=1,IG
       DO 100 M=1,IM
       DO 100 I=1,IL
@@ -114,7 +118,7 @@ C
      1            THPOR(I,M,J))**(-BI(I,M,J))
           ELSEIF(SAND(I,M,J).GE.0) THEN                                 !Ric Soulis changed gt to ge
               THPOR (I,M,J)=wc_thpor (i,m,j)
-              THLRET(I,M,J)=wc_thlret(i,m,j)
+c              THLRET(I,M,J)=wc_thlret(i,m,j)                             !RIC SOULIS REMOVED
               THLMIN(I,M,J)=wc_thlmin(i,m,j)
               BI    (I,M,J)=wc_bi    (i,m,j)
               PSISAT(I,M,J)=wc_psisat(i,m,j)
@@ -128,31 +132,34 @@ C
      3            (2*BI(I,M,J)+2)**((BI(I,M,J)-1)/BI(I,M,J)))            !Ric Soulis added this
               PSIWLT(I,M,J)=PSISAT(I,M,J)*(MAX(0.5*THFC(I,M,J),
      1            THLMIN(I,M,J))/THPOR(I,M,J))**(-BI(I,M,J))
+      THLRET(I,M,J)=THFC(I,M,J)                                           !RIC SOULIS ADDED THIS
           ENDIF
-100   CONTINUE
-C
-      DO 300 M=1,IM
-      DO 300 I=1,IL
-          DO 250 J=1,IG
-              IF(ISAND(I,M,1).EQ.-4) THEN
-                  DELZW(I,M,J)=DELZ(J)
-              ELSEIF(SDEPTH(I,M).GE.ZBOT(J)) THEN
-                  DELZW(I,M,J)=DELZ(J)
-              ELSEIF(SDEPTH(I,M).LT.(ZBOT(J)-DELZ(J)+0.01)) THEN
-                  DELZW(I,M,J)=0.0
-                  ISAND(I,M,J)=-3
-              ELSE
-                  DELZW(I,M,J)=SDEPTH(I,M)-(ZBOT(J)-DELZ(J))
-              ENDIF
-              ZBOTW(I,M,J)=MAX(0.0,ZBOT(J)-DELZ(J))+DELZW(I,M,J)
-250       CONTINUE
-          IF(SAND(I,M,1).GE.0.0) THEN
-              ALGWET(I,M)=wc_algwet(i,m)
-              ALGDRY(I,M)=wc_algdry(i,m)
-          ELSE
-              ALGWET(I,M)=0.0
-              ALGDRY(I,M)=0.0
-          ENDIF
+100   CONTINUE                                                          
+C                                                                        
+      DO 300 M=1,IM                                                     
+      DO 300 I=1,IL                                                     
+          DO 250 J=1,IG                                                 
+              IF(ISAND(I,M,1).EQ.-4) THEN                               
+                  DELZW(I,M,J)=DELZ(J)                                  
+                  !CHANGED THIS TO BE CONSISTENT WITH CLASSB.f            !RIC SOULIS ADDED THIS
+                  ISAND(I,M,J)=-4                                         !RIC SOULIS ADDED THIS
+              ELSEIF(SDEPTH(I,M).GE.ZBOT(J)) THEN                       
+                  DELZW(I,M,J)=DELZ(J)                                  
+              ELSEIF(SDEPTH(I,M).LT.(ZBOT(J)-DELZ(J)+0.01)) THEN        
+                 DELZW(I,M,J)=0.0                                       
+                  ISAND(I,M,J)=-3                                       
+              ELSE                                                      
+                  DELZW(I,M,J)=SDEPTH(I,M)-(ZBOT(J)-DELZ(J))            
+              ENDIF                                                     
+              ZBOTW(I,M,J)=MAX(0.0,ZBOT(J)-DELZ(J))+DELZW(I,M,J)        
+250       CONTINUE                                                      
+          IF(SAND(I,M,1).GE.0.0) THEN                                   
+              ALGWET(I,M)=wc_algwet(i,m)                                
+              ALGDRY(I,M)=wc_algdry(i,m)                                
+          ELSE                                                          
+              ALGWET(I,M)=0.0                                           
+              ALGDRY(I,M)=0.0                                           
+          ENDIF                                                         
 300   CONTINUE
 C
       RETURN
