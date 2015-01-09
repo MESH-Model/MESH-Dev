@@ -1966,44 +1966,47 @@ TOTAL_PREACC=0.0
 TOTAL_HFSACC=0.0
 TOTAL_QEVPACC=0.0
 
-DO I=1,NA
-  PREACC(I)=0.
-  GTACC(I)=0.
-  QEVPACC(I)=0.
-  EVAPACC(I)=0.
-  HFSACC(I)=0.
-  HMFNACC(I)=0.
-  ROFACC(I)=0.
-  ROFOACC(I)=0.
-  ROFSACC(I)=0.
-  ROFBACC(I)=0.
-  WTBLACC(I)=0.
-  ALVSACC(I)=0.
-  ALIRACC(I)=0.
-  RHOSACC(I)=0.
-  SNOACC(I)=0.
-  WSNOACC(I)=0.
-  CANARE(I)=0.
-  SNOARE(I)=0.
-  TSNOACC(I)=0.
-  TCANACC(I)=0.
-  RCANACC(I)=0.
-  SCANACC(I)=0.
-  GROACC(I)=0.
-  FSINACC(I)=0.
-  FLINACC(I)=0.
-  FLUTACC(I)=0.
-  TAACC(I)=0.
-  UVACC(I)=0.
-  PRESACC(I)=0.
-  QAACC(I)=0.
-  DO J=1,IGND
-    TBARACC(I,J)=0.
-    THLQACC(I,J)=0.
-    THICACC(I,J)=0.
-    THALACC(I,J)=0.
-  ENDDO
-ENDDO
+!> *********************************************************************
+!> Set accumulation variables to zero.
+!> *********************************************************************
+
+  !> Grid Variables
+  PREACC = 0.
+  GTACC = 0.
+  QEVPACC = 0.
+  EVAPACC = 0.
+  HFSACC = 0.
+  HMFNACC = 0.
+  ROFACC = 0.
+  ROFOACC = 0.
+  ROFSACC = 0.
+  ROFBACC = 0.
+  WTBLACC = 0.
+  ALVSACC = 0.
+  ALIRACC = 0.
+  RHOSACC = 0.
+  SNOACC = 0.
+  WSNOACC = 0.
+  CANARE = 0.
+  SNOARE = 0.
+  TSNOACC = 0.
+  TCANACC = 0.
+  RCANACC = 0.
+  SCANACC = 0.
+  GROACC = 0.
+  FSINACC = 0.
+  FLINACC = 0.
+  FLUTACC = 0.
+  TAACC = 0.
+  UVACC = 0.
+  PRESACC = 0.
+  QAACC = 0.
+
+    !> Soil variables
+    TBARACC = 0.
+    THLQACC = 0.
+    THICACC = 0.
+    THALACC = 0.
 
 STG_I    = 0.
 DSTG     = 0.
@@ -2011,14 +2014,14 @@ THLQ_FLD = 0.
 THIC_FLD = 0.
 
 !> SET GRID-FORMAT WATROUTE OUTPUT           !
-DO I = 1, YCOUNT                            !    
+DO I = 1, YCOUNT                            !
   DO J = 1, XCOUNT                          !
-      RUNOFF(I, J) = 0.0                    !    
+      RUNOFF(I, J) = 0.0                    !
       RECHARGE(I, J) = 0.0                  !
       LEAKAGES(I, J) = 0.0
-!> CDAN            LEAKAGE(I, J) = 0.0       ! 
-   END DO                                   !  
-END DO                                      !  
+!> CDAN            LEAKAGE(I, J) = 0.0       !
+   END DO                                   !
+END DO                                      !
 
 
 !> SET GRID OUPUT SUMMARY
@@ -3020,80 +3023,78 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
 !>   * FOR CONSISTENCY WITH GCM APPLICATIONS.
 !>
 
-      DO 120 K=1,NA*NTYPE
-          CDHGAT (K)=0.0
-          CDMGAT (K)=0.0
-          HFSGAT (K)=0.0
-          TFXGAT (K)=0.0
-          QEVPGAT(K)=0.0
-          QFSGAT (K)=0.0
-          QFXGAT (K)=0.0
-          PETGAT (K)=0.0
-          GAGAT  (K)=0.0
-          EFGAT  (K)=0.0
-          GTGAT  (K)=0.0
-          QGGAT  (K)=0.0
-          ALVSGAT(K)=0.0
-          ALIRGAT(K)=0.0
-          SFCTGAT(K)=0.0
-          SFCUGAT(K)=0.0
-          SFCVGAT(K)=0.0
-          SFCQGAT(K)=0.0
-          FSNOGAT(K)=0.0
-          FSGVGAT(K)=0.0
-          FSGSGAT(K)=0.0
-          FSGGGAT(K)=0.0
-          FLGVGAT(K)=0.0
-          FLGSGAT(K)=0.0
-          FLGGGAT(K)=0.0
-          HFSCGAT(K)=0.0
-          HFSSGAT(K)=0.0
-          HFSGGAT(K)=0.0
-          HEVCGAT(K)=0.0
-          HEVSGAT(K)=0.0
-          HEVGGAT(K)=0.0
-          HMFCGAT(K)=0.0
-          HMFNGAT(K)=0.0
-          HTCCGAT(K)=0.0
-          HTCSGAT(K)=0.0
-          PCFCGAT(K)=0.0
-          PCLCGAT(K)=0.0
-          PCPNGAT(K)=0.0
-          PCPGGAT(K)=0.0
-          QFGGAT (K)=0.0
-          QFNGAT (K)=0.0
-          QFCFGAT(K)=0.0
-          QFCLGAT(K)=0.0
-          ROFGAT (K)=0.0
-          ROFOGAT(K)=0.0
-          ROFSGAT(K)=0.0
-          ROFBGAT(K)=0.0
-          TROFGAT (K)=0.0
-          TROOGAT(K)=0.0
-          TROSGAT(K)=0.0
-          TROBGAT(K)=0.0
-          ROFCGAT(K)=0.0
-          ROFNGAT(K)=0.0
-          ROVGGAT(K)=0.0
-          WTRCGAT(K)=0.0
-          WTRSGAT(K)=0.0
-          WTRGGAT(K)=0.0
-          DRGAT  (K)=0.0
+!> *********************************************************************
+!> Set variables arrays to zero.
+!> *********************************************************************
+
+          CDHGAT  = 0.0
+          CDMGAT  = 0.0
+          HFSGAT  = 0.0
+          TFXGAT  = 0.0
+          QEVPGAT = 0.0
+          QFSGAT  = 0.0
+          QFXGAT  = 0.0
+          PETGAT  = 0.0
+          GAGAT   = 0.0
+          EFGAT   = 0.0
+          GTGAT   = 0.0
+          QGGAT   = 0.0
+          ALVSGAT = 0.0
+          ALIRGAT = 0.0
+          SFCTGAT = 0.0
+          SFCUGAT = 0.0
+          SFCVGAT = 0.0
+          SFCQGAT = 0.0
+          FSNOGAT = 0.0
+          FSGVGAT = 0.0
+          FSGSGAT = 0.0
+          FSGGGAT = 0.0
+          FLGVGAT = 0.0
+          FLGSGAT = 0.0
+          FLGGGAT = 0.0
+          HFSCGAT = 0.0
+          HFSSGAT = 0.0
+          HFSGGAT = 0.0
+          HEVCGAT = 0.0
+          HEVSGAT = 0.0
+          HEVGGAT = 0.0
+          HMFCGAT = 0.0
+          HMFNGAT = 0.0
+          HTCCGAT = 0.0
+          HTCSGAT = 0.0
+          PCFCGAT = 0.0
+          PCLCGAT = 0.0
+          PCPNGAT = 0.0
+          PCPGGAT = 0.0
+          QFGGAT  = 0.0
+          QFNGAT  = 0.0
+          QFCFGAT = 0.0
+          QFCLGAT = 0.0
+          ROFGAT  = 0.0
+          ROFOGAT = 0.0
+          ROFSGAT = 0.0
+          ROFBGAT = 0.0
+          TROFGAT = 0.0
+          TROOGAT = 0.0
+          TROSGAT = 0.0
+          TROBGAT = 0.0
+          ROFCGAT = 0.0
+          ROFNGAT = 0.0
+          ROVGGAT = 0.0
+          WTRCGAT = 0.0
+          WTRSGAT = 0.0
+          WTRGGAT = 0.0
+          DRGAT   = 0.0
 120   CONTINUE
 !>
-      DO 140 L=1,IGND
-      DO 130 K=1,NA*NTYPE
-          HMFGGAT(K,L)=0.0
-          HTCGAT (K,L)=0.0
-          QFCGAT (K,L)=0.0
-          GFLXGAT(K,L)=0.0
+          HMFGGAT = 0.0
+          HTCGAT  = 0.0
+          QFCGAT  = 0.0
+          GFLXGAT = 0.0
 130   CONTINUE
 140   CONTINUE
 !>
-      DO 170 M=1,50
-          DO 160 L=1,6
-              DO 150 K=1,NML
-                  ITCTGAT(K,L,M)=0
+                  ITCTGAT = 0
 150           CONTINUE
 160       CONTINUE
 170   CONTINUE
@@ -3390,6 +3391,7 @@ IF(PBSMFLAG == 1)THEN
      IF(cp%SNOROW(I,M).LE.0.) THEN
        DrySnowROW(I,M) = 0. !1=snowpack is dry (i.e. cold)
        SnowAgeROW(I,M) = 0. !hours since last snowfall
+       !todo: this can use the TFREZ parameter instead of a hard-coded value. (dgp: 2015-01-09)
        IF(TAGRD(I).GE.273.16) THEN
          DrySnowROW(I,M) = 0.
          SnowAgeROW(I,M) = 48. !assume 48 hours since last snowfall
@@ -3507,12 +3509,8 @@ IF(INTERPOLATIONFLAG == 1)THEN
     PRESGRD = 0.0
     PREGRD  = 0.0
 
-!    K = 0
     DO k = 1, nml
-!       DO J = 1, NTYPE
           IF(cp%FAREROW(ilmos(k),jlmos(k)) .GT. 0.0)THEN
-             !todo: this isn't how nml is accumulated; mid must also be taken into account (dgp 2015-01-06)
-!             K = K + 1
              FSVHGRD(ilmos(k)) = FSVHGRD(ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * FSVHGAT(K)
              FSIHGRD(ilmos(k)) = FSIHGRD(ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * FSIHGAT(K)
              FDLGRD (ilmos(k)) = FDLGRD (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * FDLGAT (K)
@@ -3522,7 +3520,6 @@ IF(INTERPOLATIONFLAG == 1)THEN
              PRESGRD(ilmos(k)) = PRESGRD(ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * PRESGAT(K)
              PREGRD (ilmos(k)) = PREGRD (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * PREGAT (K)
           ENDIF
-!       ENDDO
     ENDDO
     FSDOWN = 2.0*FSVHGRD
 
@@ -3634,80 +3631,74 @@ ELSE
 !>   * FOR CONSISTENCY WITH GCM APPLICATIONS.
 !>
 
-      DO 320 K=1,NA*NTYPE
-          CDHGAT (K)=0.0
-          CDMGAT (K)=0.0
-          HFSGAT (K)=0.0
-          TFXGAT (K)=0.0
-          QEVPGAT(K)=0.0
-          QFSGAT (K)=0.0
-          QFXGAT (K)=0.0
-          PETGAT (K)=0.0
-          GAGAT  (K)=0.0
-          EFGAT  (K)=0.0
-          GTGAT  (K)=0.0
-          QGGAT  (K)=0.0
-          ALVSGAT(K)=0.0
-          ALIRGAT(K)=0.0
-          SFCTGAT(K)=0.0
-          SFCUGAT(K)=0.0
-          SFCVGAT(K)=0.0
-          SFCQGAT(K)=0.0
-          FSNOGAT(K)=0.0
-          FSGVGAT(K)=0.0
-          FSGSGAT(K)=0.0
-          FSGGGAT(K)=0.0
-          FLGVGAT(K)=0.0
-          FLGSGAT(K)=0.0
-          FLGGGAT(K)=0.0
-          HFSCGAT(K)=0.0
-          HFSSGAT(K)=0.0
-          HFSGGAT(K)=0.0
-          HEVCGAT(K)=0.0
-          HEVSGAT(K)=0.0
-          HEVGGAT(K)=0.0
-          HMFCGAT(K)=0.0
-          HMFNGAT(K)=0.0
-          HTCCGAT(K)=0.0
-          HTCSGAT(K)=0.0
-          PCFCGAT(K)=0.0
-          PCLCGAT(K)=0.0
-          PCPNGAT(K)=0.0
-          PCPGGAT(K)=0.0
-          QFGGAT (K)=0.0
-          QFNGAT (K)=0.0
-          QFCFGAT(K)=0.0
-          QFCLGAT(K)=0.0
-          ROFGAT (K)=0.0
-          ROFOGAT(K)=0.0
-          ROFSGAT(K)=0.0
-          ROFBGAT(K)=0.0
-          TROFGAT (K)=0.0
-          TROOGAT(K)=0.0
-          TROSGAT(K)=0.0
-          TROBGAT(K)=0.0
-          ROFCGAT(K)=0.0
-          ROFNGAT(K)=0.0
-          ROVGGAT(K)=0.0
-          WTRCGAT(K)=0.0
-          WTRSGAT(K)=0.0
-          WTRGGAT(K)=0.0
-          DRGAT  (K)=0.0
+          CDHGAT  = 0.0
+          CDMGAT  = 0.0
+          HFSGAT  = 0.0
+          TFXGAT  = 0.0
+          QEVPGAT = 0.0
+          QFSGAT  = 0.0
+          QFXGAT  = 0.0
+          PETGAT  = 0.0
+          GAGAT   = 0.0
+          EFGAT   = 0.0
+          GTGAT   = 0.0
+          QGGAT   = 0.0
+          ALVSGAT = 0.0
+          ALIRGAT = 0.0
+          SFCTGAT = 0.0
+          SFCUGAT = 0.0
+          SFCVGAT = 0.0
+          SFCQGAT = 0.0
+          FSNOGAT = 0.0
+          FSGVGAT = 0.0
+          FSGSGAT = 0.0
+          FSGGGAT = 0.0
+          FLGVGAT = 0.0
+          FLGSGAT = 0.0
+          FLGGGAT = 0.0
+          HFSCGAT = 0.0
+          HFSSGAT = 0.0
+          HFSGGAT = 0.0
+          HEVCGAT = 0.0
+          HEVSGAT = 0.0
+          HEVGGAT = 0.0
+          HMFCGAT = 0.0
+          HMFNGAT = 0.0
+          HTCCGAT = 0.0
+          HTCSGAT = 0.0
+          PCFCGAT = 0.0
+          PCLCGAT = 0.0
+          PCPNGAT = 0.0
+          PCPGGAT = 0.0
+          QFGGAT  = 0.0
+          QFNGAT  = 0.0
+          QFCFGAT = 0.0
+          QFCLGAT = 0.0
+          ROFGAT  = 0.0
+          ROFOGAT = 0.0
+          ROFSGAT = 0.0
+          ROFBGAT = 0.0
+          TROFGAT = 0.0
+          TROOGAT = 0.0
+          TROSGAT = 0.0
+          TROBGAT = 0.0
+          ROFCGAT = 0.0
+          ROFNGAT = 0.0
+          ROVGGAT = 0.0
+          WTRCGAT = 0.0
+          WTRSGAT = 0.0
+          WTRGGAT = 0.0
+          DRGAT   = 0.0
 320   CONTINUE
 !>
-      DO 340 L=1,IGND
-      DO 330 K=1,NA*NTYPE
-          HMFGGAT(K,L)=0.0
-          HTCGAT (K,L)=0.0
-          QFCGAT (K,L)=0.0
-          GFLXGAT(K,L)=0.0
+          HMFGGAT = 0.0
+          HTCGAT  = 0.0
+          QFCGAT  = 0.0
+          GFLXGAT = 0.0
 330   CONTINUE
 340   CONTINUE
 !>
-      DO 370 M=1,50
-          DO 360 L=1,6
-              DO 350 K=1,NML
-                  ITCTGAT(K,L,M)=0
+                  ITCTGAT = 0
 350           CONTINUE
 360       CONTINUE
 370   CONTINUE
@@ -3963,7 +3954,6 @@ ROFGAT = ROFGAT - UMQ
 !=======================================================================
 !     * WRITE FIELDS FROM CURRENT TIME STEP TO OUTPUT FILES.
 DO I=1,nml
-!  DO M=1,NMTEST
     IF(FSDOWN(ilmos(I))>0.0) THEN
       ALTOT=(ALVSgat(I)+ALIRgat(I))/2.0
     ELSE
@@ -4007,31 +3997,9 @@ DO I=1,nml
       GTOUT=0.0
     ENDIF
 
-!I_OUT=0
 DO K=1, WF_NUM_POINTS
   IF(ilmos(I)==op%N_OUT(K).AND.jlmos(i)==op%II_OUT(k)) THEN
-!>        figure out ilmos and jlmos of grid square I
-!    DO J=1, NML
-!      IF(ILMOS(J)==op%N_OUT(K).AND.JLMOS(J)==op%II_OUT(K)) THEN
         I_OUT=i
-!      ENDIF
-!        ENDDO
-
-!    IF(I_OUT==0) THEN
-!      PRINT *,'In the input file there the following'
-!      PRINT *, 'grid square', i, ' has no area in land class', m
-!      PRINT *,'Please adjust the MESH_input_run_options file, as a guide here'
-!      PRINT *,'are the land class fractions for that square:'
-!      DO J=1, NMTEST
-!        PRINT *, 'land class ',J,' has an area of:',ACLASS(i,J)
-!      ENDDO
-!      PRINT *,'If grid square', i, 'does have area in land class', m
-!      PRINT *,'you likely have SUBBASIN set to 1 in MESH_input_run_options.ini'
-!      PRINT *,'This will set FRAC(I) to zero in the MESH driver for areas of the basin not included in the run.'
-!      PRINT *,'To fix the problem, ensure that the GRU you want to produce output for is within one of your sub-basins'
-!      PRINT *,'as defined in your MESH_input_streamflow.txt file. (Or set SUBASIN to 0 and run every grid square.)'
-!          STOP
-!    ENDIF
 
     ZPND = ZPNDPRECS(I_OUT) * FCS(I_OUT) + ZPONDPREC(I_OUT) * FC(I_OUT) + &
            ZPONDPREG(I_OUT) * FG(I_OUT) + ZPNDPREGS(I_OUT) * FGS(I_OUT)
@@ -4090,7 +4058,6 @@ DO K=1, WF_NUM_POINTS
 
   ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
 ENDDO !DO K=1, WF_NUM_POINTS
-!ENDDO !DO M=1,NMTEST
 ENDDO !DO I=1,nml
 !> Write ENSIM output
 !> -----------------------------------------------------c
@@ -4153,76 +4120,71 @@ ENDIF
 !> these variables hold the grid cell averages. 
 !> In the future, someone will need to use them.
 
-!$omp parallel do
-DO I=1,NA
-    CDHGRD(I)=0.
-    CDMGRD(I)=0.
-    HFSGRD(I)=0.
-    TFXGRD(I)=0.
-    QEVPGRD(I)=0.
-    QFSGRD(I)=0.
-    QFXGRD(I)=0.
-    PETGRD(I)=0.
-    GAGRD(I)=0.
-    EFGRD(I)=0.
-    GTGRD(I)=0.
-    QGGRD(I)=0.
-    TSFGRD(I)=0.
-    ALVSGRD(I)=0.
-    ALIRGRD(I)=0.
-    SFCTGRD(I)=0.
-    SFCUGRD(I)=0.
-    SFCVGRD(I)=0.
-    SFCQGRD(I)=0.
-    FSNOGRD(I)=0.
-    FSGVGRD(I)=0.
-    FSGSGRD(I)=0.
-    FSGGGRD(I)=0.
-    SNOGRD(I)=0.
-    FLGVGRD(I)=0.
-    FLGSGRD(I)=0.
-    FLGGGRD(I)=0.
-    HFSCGRD(I)=0.
-    HFSSGRD(I)=0.
-    HFSGGRD(I)=0.
-    HEVCGRD(I)=0.
-    HEVSGRD(I)=0.
-    HEVGGRD(I)=0.
-    HMFCGRD(I)=0.
-    HMFNGRD(I)=0.
-    HTCCGRD(I)=0.
-    HTCSGRD(I)=0.
-    PCFCGRD(I)=0.
-    PCLCGRD(I)=0.
-    PCPNGRD(I)=0.
-    PCPGGRD(I)=0.
-    QFGGRD(I)=0.
-    QFNGRD(I)=0.
-    QFCLGRD(I)=0.
-    QFCFGRD(I)=0.
-    ROFGRD(I)=0.
-    ROFOGRD(I)=0.
-    ROFSGRD(I)=0.
-    ROFBGRD(I)=0.
-    ROFCGRD(I)=0.
-    ROFNGRD(I)=0.
-    ROVGGRD(I)=0.
-    WTRCGRD(I)=0.
-    WTRSGRD(I)=0.
-    WTRGGRD(I)=0.
-    DRGRD(I)=0.
-    WTABGRD(I)=0.
-    ILMOGRD(I)=0.
-    UEGRD(I)=0.
-    HBLGRD(I)=0.
-    DO J=1,IGND
-      HMFGGRD(I,J)=0.
-      HTCGRD(I,J)=0.
-      QFCGRD(I,J)=0.
-!- Diane added GFLXGRD       
-!-            GFLXGRD(I,J)=0.
-    ENDDO
-ENDDO !DO I=1,NA
+    CDHGRD = 0.
+    CDMGRD = 0.
+    HFSGRD = 0.
+    TFXGRD = 0.
+    QEVPGRD = 0.
+    QFSGRD = 0.
+    QFXGRD = 0.
+    PETGRD = 0.
+    GAGRD = 0.
+    EFGRD = 0.
+    GTGRD = 0.
+    QGGRD = 0.
+    TSFGRD = 0.
+    ALVSGRD = 0.
+    ALIRGRD = 0.
+    SFCTGRD = 0.
+    SFCUGRD = 0.
+    SFCVGRD = 0.
+    SFCQGRD = 0.
+    FSNOGRD = 0.
+    FSGVGRD = 0.
+    FSGSGRD = 0.
+    FSGGGRD = 0.
+    SNOGRD = 0.
+    FLGVGRD = 0.
+    FLGSGRD = 0.
+    FLGGGRD = 0.
+    HFSCGRD = 0.
+    HFSSGRD = 0.
+    HFSGGRD = 0.
+    HEVCGRD = 0.
+    HEVSGRD = 0.
+    HEVGGRD = 0.
+    HMFCGRD = 0.
+    HMFNGRD = 0.
+    HTCCGRD = 0.
+    HTCSGRD = 0.
+    PCFCGRD = 0.
+    PCLCGRD = 0.
+    PCPNGRD = 0.
+    PCPGGRD = 0.
+    QFGGRD = 0.
+    QFNGRD = 0.
+    QFCLGRD = 0.
+    QFCFGRD = 0.
+    ROFGRD = 0.
+    ROFOGRD = 0.
+    ROFSGRD = 0.
+    ROFBGRD = 0.
+    ROFCGRD = 0.
+    ROFNGRD = 0.
+    ROVGGRD = 0.
+    WTRCGRD = 0.
+    WTRSGRD = 0.
+    WTRGGRD = 0.
+    DRGRD = 0.
+    WTABGRD = 0.
+    ILMOGRD = 0.
+    UEGRD = 0.
+    HBLGRD = 0.
+
+      HMFGGRD = 0.
+      HTCGRD = 0.
+      QFCGRD = 0.
+
 !>
 !>*******************************************************************
 !>
@@ -4252,9 +4214,9 @@ wb_h%sno = 0.0
 wb_h%wsno = 0.0
 wb_h%lqws = 0.0
 wb_h%frws = 0.0
+
 !$omp parallel do
 DO I=1,nml
-!  DO M=1,NMTEST
     CDHGRD(ilmos(I))=CDHGRD(ilmos(I))+CDHgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
     CDMGRD(ilmos(I))=CDMGRD(ilmos(I))+CDMgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
     HFSGRD(ilmos(I))=HFSGRD(ilmos(I))+HFSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
@@ -4337,7 +4299,6 @@ DO I=1,nml
         wb_h%frws(ilmos(I), j) = wb_h%frws(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i)) &
                                      *thicgat(i, j)*dlzwgat(i, j)*rhoice
     ENDDO
-!  ENDDO !DO M=1,NMTEST
     wb_h%stg(ilmos(I)) = wb%rcan(ilmos(I)) + wb%sncan(ilmos(I)) + wb%pndw(ilmos(I)) + wb%sno(ilmos(I)) + wb%wsno(ilmos(I)) + &
         sum(wb%lqws(ilmos(I), :)) + sum(wb%frws(ilmos(I), :))
 ENDDO !DO I=1,nml
@@ -4434,7 +4395,6 @@ ENDIF
 !$omp parallel do
 DO I = 1, nml
    IF(FRAC(ilmos(I)) /= 0.0)THEN
-!      DO M = 1,NMTEST
          PREACC(ilmos(I))  = PREACC(ilmos(I)) + cp%FAREROW(ilmos(I),jlmos(i))*PREGRD(ilmos(I))*DELT
          GTACC(ilmos(I))   = GTACC(ilmos(I))  + GTgat(I)*  cp%FAREROW(ilmos(I),jlmos(i))
          QEVPACC(ilmos(I)) = QEVPACC(ilmos(I))+ QEVPgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
@@ -4480,7 +4440,6 @@ DO I = 1, nml
          UVACC(ilmos(I))   = UVACC(ilmos(I))+UVGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
          PRESACC(ilmos(I)) = PRESACC(ilmos(I))+PRESGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
          QAACC(ilmos(I))   = QAACC(ilmos(I))+QAGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
-!      ENDDO !DO M=1,NMTEST
    ENDIF
 ENDDO !DO I=1,nml
 
@@ -4646,45 +4605,6 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                 EVAP_OUT(1) = EVAPACC(I)
                 ROF_OUT(1) = ROFACC(I)
             END IF
-
-!> RESET ACCUMULATOR ARRAYS.
-
-    PREACC(I) =0.
-    GTACC(I)  =0.
-    QEVPACC(I)=0.
-    HFSACC(I) =0.
-    HMFNACC(I)=0.
-    ROFACC(I) =0.
-    SNOACC(I) =0.
-    CANARE(I) =0.
-    SNOARE(I) =0.
-    ROFOACC(I)=0.
-    ROFSACC(I)=0.
-    ROFBACC(I)=0.
-    WTBLACC(I)=0.
-    DO J=1,IGND
-      TBARACC(I,J)=0.
-      THLQACC(I,J)=0.
-      THICACC(I,J)=0.
-      THALACC(I,J)=0.
-    ENDDO
-    ALVSACC(I)=0.
-    ALIRACC(I)=0.
-    RHOSACC(I)=0.
-    TSNOACC(I)=0.
-    WSNOACC(I)=0.
-    TCANACC(I)=0.
-    RCANACC(I)=0.
-    SCANACC(I)=0.
-    GROACC(I) =0.
-    FSINACC(I)=0.
-    FLINACC(I)=0.
-    TAACC(I)  =0.
-    UVACC(I)  =0.
-    PRESACC(I)=0.
-    QAACC(I)  =0.
-    EVAPACC(I)=0.
-    FLUTACC(I)=0.
   ENDIF
             END DO
 
@@ -4785,6 +4705,43 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
    STG_I = DSTG + STG_I
 
 !RESET ACCUMULATION VARIABLES TO ZERO
+
+!> RESET ACCUMULATOR ARRAYS.
+
+    PREACC  = 0.
+    GTACC   = 0.
+    QEVPACC = 0.
+    HFSACC  = 0.
+    HMFNACC = 0.
+    ROFACC  = 0.
+    SNOACC  = 0.
+    CANARE  = 0.
+    SNOARE  = 0.
+    ROFOACC = 0.
+    ROFSACC = 0.
+    ROFBACC = 0.
+    WTBLACC = 0.
+      TBARACC = 0.
+      THLQACC = 0.
+      THICACC = 0.
+      THALACC = 0.
+    ALVSACC = 0.
+    ALIRACC = 0.
+    RHOSACC = 0.
+    TSNOACC = 0.
+    WSNOACC = 0.
+    TCANACC = 0.
+    RCANACC = 0.
+    SCANACC = 0.
+    GROACC  = 0.
+    FSINACC = 0.
+    FLINACC = 0.
+    TAACC   = 0.
+    UVACC   = 0.
+    PRESACC = 0.
+    QAACC   = 0.
+    EVAPACC = 0.
+    FLUTACC = 0.
 
 TOTAL_STORE_2 = TOTAL_STORE
 TOTAL_STORE = 0.0
