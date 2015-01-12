@@ -1463,10 +1463,10 @@ END IF
 !> *********************************************************************
 !>  Open additional output files
 !> *********************************************************************
-OPEN(unit=85,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '/basin_SCA_alldays.csv')
-OPEN(unit=86,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '/basin_SWE_alldays.csv')
+    if (BASINSWEOUTFLAG > 0) then
+        open(85, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/basin_SCA_alldays.csv")
+        open(86, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/basin_SWE_alldays.csv")
+    end if !(BASINSWEOUTFLAG > 0) then
 
 !> CLASS requires that each GRU for each grid square has its own parameter value,
 !> for MESH the value read in from the parameter file is assumed to be valid for
@@ -2046,151 +2046,135 @@ FRAME_NO_NEW = 1
 !> echo print information to MESH_output_echo_print.txt
 !> ******************************************************
 
-OPEN(UNIT=58,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '/MESH_output_echo_print.txt')
-                  
-WRITE(58,"('Number of Soil Layers (IGND) = ',I5)") IGND
-WRITE(58,*)
+    if (MODELINFOOUTFLAG > 0) then
 
-WRITE(58,"('MESH_input_run_options.ini')")
-WRITE(58,*)
-WRITE(58,"('Configuration flags - specified by user or default values')")
-!IF(CONFLAGS>0) THEN
-!  DO I=1,CONFLAGS
-  WRITE (58,*) 'BASINSHORTWAVEFLAG   = ', BASINSHORTWAVEFLAG
-  WRITE (58,*) 'BASINLONGWAVEFLAG    = ', BASINLONGWAVEFLAG
-  WRITE (58,*) 'BASINRAINFLAG        = ', BASINRAINFLAG 
-  WRITE (58,*) 'BASINTEMPERATUREFLAG = ', BASINTEMPERATUREFLAG
-  WRITE (58,*) 'BASINWINDFLAG        = ', BASINWINDFLAG
-  WRITE (58,*) 'BASINPRESFLAG        = ', BASINPRESFLAG 
-  WRITE (58,*) 'BASINHUMIDITYFLAG    = ', BASINHUMIDITYFLAG
-  WRITE (58,*) 'HOURLYFLAG           = ', HOURLYFLAG
-  WRITE (58,*) 'RESUMEFLAG           = ', RESUMEFLAG
-  WRITE (58,*) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG 
-  WRITE (58,*) 'SHDFILEFLAG          = ', SHDFILEFLAG
-  WRITE (58,*) 'SOILINIFLAG          = ', SOILINIFLAG
-  WRITE (58,*) 'STREAMFLOWFLAG       = ', STREAMFLOWFLAG
-  WRITE (58,*) 'CONFLAGS             = ', CONFLAGS
-  WRITE (58,*) 'RELFLG               = ', RELFLG
-  WRITE (58,*) 'OPTFLAGS             = ', OPTFLAGS
-  WRITE (58,*) 'PREEMPTIONFLAG       = ', PREEMPTIONFLAG
-  WRITE (58,*) 'INTERPOLATIONFLAG    = ', INTERPOLATIONFLAG
-  WRITE (58,*) 'SUBBASINFLAG         = ', SUBBASINFLAG
-  WRITE (58,*) 'TESTCSVFLAG          = ', TESTCSVFLAG
-  WRITE (58,*) 'R2COUTPUTFLAG        = ', R2COUTPUTFLAG
-  WRITE (58,*) 'OBJFNFLAG            = ', OBJFNFLAG
-  WRITE (58,*) 'AUTOCALIBRATIONFLAG  = ', AUTOCALIBRATIONFLAG
-  WRITE (58,*) 'WINDOWSIZEFLAG       = ', WINDOWSIZEFLAG
-  WRITE (58,*) 'WINDOWSPACINGFLAG    = ', WINDOWSPACINGFLAG
-  WRITE (58,*) 'FROZENSOILINFILFLAG  = ', FROZENSOILINFILFLAG
-  WRITE (58,*) 'LOCATIONFLAG         = ', LOCATIONFLAG
-!  ENDDO
-!ENDIF
+        open(58, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // &
+            "/MESH_output_echo_print.txt")
 
-!> MAM - ALLOCATE AND INITIALIZE INTERPOLATION VARIABLES:
-!> For 30 minute forcing data there is no need for interpolation and 
-!> hence no need to assign PRE and PST variables
-IF(INTERPOLATIONFLAG > 1 .OR. &
-  (INTERPOLATIONFLAG == 1  .AND. HOURLYFLAG == 30))THEN
-    WRITE(6,*)
-    WRITE(58,*)
-    WRITE(6,9000)
-    WRITE(58,9000)
-    WRITE(6,*)
-    WRITE(58,*)
-    INTERPOLATIONFLAG = 0
-ENDIF
+        write(58, "('Number of Soil Layers (IGND) = ',I5)") ignd
+        write(58, *)
 
-WRITE(58,"('WF_NUM_POINTS: ',I5)") WF_NUM_POINTS
-WRITE(58,"('Out directory:',5A10)") &
-  (op%DIR_OUT(I),I=1,WF_NUM_POINTS)
-WRITE(58,"('Grid number:  ',5I10)") &
-  (op%N_OUT(I),I=1,WF_NUM_POINTS)
-WRITE(58,"('Land class:   ',5I10)") &
-  (op%II_OUT(I),I=1,WF_NUM_POINTS)
-WRITE (58,*)
+        write(58, "('MESH_input_run_options.ini')")
+        write(58, *)
+        write(58, "('Configuration flags - specified by user or default values')")
 
-WRITE(58,"('MESH_parameters_hydrology.ini')")
-WRITE(58,*)
-WRITE(58,"('Option flags:')")
-IF(OPTFLAGS>0) THEN
-  DO I=1,OPTFLAGS
-    WRITE (58,'(a11,i2,a19)')'PARAMETER ', I, ' NOT CURRENTLY USED'
-  ENDDO
-ENDIF
+        !todo: this list should be updated (dgp: 2015-01-09)
+        write(58, *) "BASINSHORTWAVEFLAG   = ", BASINSHORTWAVEFLAG
+        write(58, *) "BASINLONGWAVEFLAG    = ", BASINLONGWAVEFLAG
+        write(58, *) "BASINRAINFLAG        = ", BASINRAINFLAG
+        write(58, *) "BASINTEMPERATUREFLAG = ", BASINTEMPERATUREFLAG
+        write(58, *) "BASINWINDFLAG        = ", BASINWINDFLAG
+        write(58, *) "BASINPRESFLAG        = ", BASINPRESFLAG
+        write(58, *) "BASINHUMIDITYFLAG    = ", BASINHUMIDITYFLAG
+        write(58, *) "HOURLYFLAG           = ", HOURLYFLAG
+        write(58, *) "RESUMEFLAG           = ", RESUMEFLAG
+        write(58, *) "SAVERESUMEFLAG       = ", SAVERESUMEFLAG
+        write(58, *) "SHDFILEFLAG          = ", SHDFILEFLAG
+        write(58, *) "SOILINIFLAG          = ", SOILINIFLAG
+        write(58, *) "STREAMFLOWFLAG       = ", STREAMFLOWFLAG
+        write(58, *) "CONFLAGS             = ", CONFLAGS
+        write(58, *) "RELFLG               = ", RELFLG
+        write(58, *) "OPTFLAGS             = ", OPTFLAGS
+        write(58, *) "PREEMPTIONFLAG       = ", PREEMPTIONFLAG
+        write(58, *) "INTERPOLATIONFLAG    = ", INTERPOLATIONFLAG
+        write(58, *) "SUBBASINFLAG         = ", SUBBASINFLAG
+        write(58, *) "TESTCSVFLAG          = ", TESTCSVFLAG
+        write(58, *) "R2COUTPUTFLAG        = ", R2COUTPUTFLAG
+        write(58, *) "OBJFNFLAG            = ", OBJFNFLAG
+        write(58, *) "AUTOCALIBRATIONFLAG  = ", AUTOCALIBRATIONFLAG
+        write(58, *) "WINDOWSIZEFLAG       = ", WINDOWSIZEFLAG
+        write(58, *) "WINDOWSPACINGFLAG    = ", WINDOWSPACINGFLAG
+        write(58, *) "FROZENSOILINFILFLAG  = ", FROZENSOILINFILFLAG
+        write(58, *) "LOCATIONFLAG         = ", LOCATIONFLAG
 
-WRITE(58,"('River roughnesses:')")
-WRITE(58,"(5F6.3)") (WF_R2(I),I=1,5)
+        !> MAM - ALLOCATE AND INITIALIZE INTERPOLATION VARIABLES:
+        !> For 30 minute forcing data there is no need for interpolation and
+        !> hence no need to assign PRE and PST variables
+        if (INTERPOLATIONFLAG > 1 .OR. (INTERPOLATIONFLAG == 1 .AND. HOURLYFLAG == 30)) then
+            write(6, *)
+            write(58, *)
+            write(6, 9000)
+            write(58, 9000)
+            write(6, *)
+            write(58, *)
+            INTERPOLATIONFLAG = 0
+        end if !(INTERPOLATIONFLAG > 1 .OR. (INTERPOLATIONFLAG == 1 .AND. HOURLYFLAG == 30)) then
 
-WRITE(58,"('Land class independent hydrologic parameters:')")
-IF(FROZENSOILINFILFLAG == 1)THEN
-   WRITE(58,*)'SOIL_POR_MAX = ', SOIL_POR_MAX
-   WRITE(58,*)'SOIL_DEPTH   = ', SOIL_DEPTH
-   WRITE(58,*)'S0           = ', S0
-   WRITE(58,*)'T_ICE_LENS   = ', T_ICE_LENS
-   DO I = 5,INDEPPAR
-      J = I - 4
-      WRITE(58,'(a38,i2,a3,f6.2)')'OPPORTUNITY TIME FOR SIMULATION YEAR ', J, ' = ', t0_ACC(J)
-  ENDDO
-ELSE
-  DO I=1,INDEPPAR
-    WRITE (58,'(a36,i2,a19)')'FROZEN SOIL INFILTRATION PARAMETER ', I, ' READ BUT NOT USED'
-  ENDDO
-ENDIF
-WRITE(58,"('Land class dependent hydrologic parameters:')")
-WRITE(NMTESTFORMAT, "(A10,I3,'F10.2)')") "('ZSNLROW'", NMTEST
-WRITE(58,NMTESTFORMAT) (hp%ZSNLROW(1,M),M=1,NMTEST)
-WRITE(NMTESTFORMAT, "(A10,I3,'F10.2)')") "('ZPLSROW'", NMTEST
-WRITE(58,NMTESTFORMAT) (hp%ZPLSROW(1,M),M=1,NMTEST)
-WRITE(NMTESTFORMAT, "(A10,I3,'F10.2)')") "('ZPLGROW'", NMTEST
-WRITE(58,NMTESTFORMAT) (hp%ZPLGROW(1,M),M=1,NMTEST)
-IF(DEPPAR>=4) THEN
-   WRITE(NMTESTFORMAT, "(A10,I3,'F10.2)')") "('FRZCROW'", NMTEST
-   WRITE(58,NMTESTFORMAT) (hp%FRZCROW(1,M),M=1,NMTEST)
-ENDIF
+        write(58, "('WF_NUM_POINTS: ',I5)") WF_NUM_POINTS
+        write(58, "('Out directory:',5A10)") (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
+        write(58, "('Grid number:  ',5I10)") (op%N_OUT(i), i = 1, WF_NUM_POINTS)
+        write(58, "('Land class:   ',5I10)") (op%II_OUT(i), i = 1, WF_NUM_POINTS)
+        write(58, *)
 
-WRITE (58,*)
+        write(58, "('MESH_parameters_hydrology.ini')")
+        write(58, *)
+        write(58, "('Option flags:')")
+        if (OPTFLAGS > 0) then
+            do i = 1, OPTFLAGS
+                write(58, '(a11,i2,a19)') "PARAMETER ", i, " NOT CURRENTLY USED"
+            end do
+        end if
 
+        write(58, "('River roughnesses:')")
+        write(58, "(5F6.3)") (WF_R2(i), i = 1, 5)
 
-WRITE(58,"('MESH_parameters_CLASS.ini')")
-WRITE(58,*)
-WRITE(58,'(2X,6A4)') TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-WRITE(58,'(2X,6A4)') NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-WRITE(58,'(2X,6A4)') PLACE1,PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
-WRITE(58,'(5F10.2,F7.1,3I5)') DEGLAT,DEGLON,cp%ZRFMGRD(1), &
-  cp%ZRFHGRD(1), cp%ZBLDGRD(1), cp%GCGRD(1),ILW,NA,NMTEST
-I=1
-DO M=1,NMTEST
-WRITE(58,'(9F8.3)') (cp%FCANROW(I,M,J),J=1,ICAN+1), &
-    (cp%PAMXROW(I,M,J),J=1,ICAN)
-WRITE(58,'(9F8.3)') (cp%LNZ0ROW(I,M,J),J=1,ICAN+1), &
-                  (cp%PAMNROW(I,M,J),J=1,ICAN)
-WRITE(58,'(9F8.3)') (cp%ALVCROW(I,M,J),J=1,ICAN+1), &
-                  (cp%CMASROW(I,M,J),J=1,ICAN)
-WRITE(58,'(9F8.3)') (cp%ALICROW(I,M,J),J=1,ICAN+1), &
-                  (cp%ROOTROW(I,M,J),J=1,ICAN)
-WRITE(58,'(4F8.3,8X,4F8.3)') (cp%RSMNROW(I,M,J),J=1,ICAN), &
-                  (cp%QA50ROW(I,M,J),J=1,ICAN)
-WRITE(58,'(4F8.3,8X,4F8.3)') (cp%VPDAROW(I,M,J),J=1,ICAN), &
-                  (cp%VPDBROW(I,M,J),J=1,ICAN)
-WRITE(58,'(4F8.3,8X,4F8.3)') (cp%PSGAROW(I,M,J),J=1,ICAN), &
-                  (cp%PSGBROW(I,M,J),J=1,ICAN)
-WRITE(58,'(3F8.3,F8.4)') cp%DRNROW(I,M),cp%SDEPROW(I,M), &
-                  cp%FAREROW(I,M),cp%DDROW(I,M)
-WRITE(58,'(4E8.1,I8)') cp%XSLPROW(I,M),cp%XDROW(I,M), &
-                  cp%MANNROW(I,M),cp%KSROW(I,M),cp%MIDROW(I,M)
-WRITE(58,'(6F10.1)') (cp%SANDROW(I,M,J),J=1,IGND)
-WRITE(58,'(6F10.1)') (cp%CLAYROW(I,M,J),J=1,IGND)
-WRITE(58,'(6F10.1)') (cp%ORGMROW(I,M,J),J=1,IGND)
-WRITE(58,'(9F10.2)') (cp%TBARROW(I,M,J),J=1,IGND),cp%TCANROW(I,M), &
-                  cp%TSNOROW(I,M),cp%TPNDROW(I,M)
-WRITE(58,'(10F10.3)') (cp%THLQROW(I,M,J),J=1,IGND), &
-                  (cp%THICROW(I,M,J),J=1,IGND),cp%ZPNDROW(I,M)
-WRITE(58,'(2F10.4,F10.2,F10.3,F10.4,F10.3,F10.3)') &
-                  cp%RCANROW(I,M),cp%SCANROW(I,M),cp%SNOROW(I,M), &
-                  cp%ALBSROW(I,M),cp%RHOSROW(I,M),cp%GROROW(I,M)
-WRITE(58,*)
-ENDDO
+        write(58, "('Land class independent hydrologic parameters:')")
+        if (FROZENSOILINFILFLAG == 1) then
+            write(58, *) "SOIL_POR_MAX = ", SOIL_POR_MAX
+            write(58, *) "SOIL_DEPTH   = ", SOIL_DEPTH
+            write(58, *) "S0           = ", S0
+            write(58, *) "T_ICE_LENS   = ", T_ICE_LENS
+            do i = 5, INDEPPAR
+                j = i - 4
+                write(58, '(a38,i2,a3,f6.2)') "OPPORTUNITY TIME FOR SIMULATION YEAR ", j, " = ", t0_ACC(j)
+            end do
+        else
+            do i = 1, INDEPPAR
+                write(58, '(a36,i2,a19)') "FROZEN SOIL INFILTRATION PARAMETER ", i, " READ BUT NOT USED"
+            end do
+        end if !(FROZENSOILINFILFLAG == 1) then
+
+        write(58, "('Land class dependent hydrologic parameters:')")
+        write(NMTESTFORMAT, "(A10,I3,'F10.2)')") "('ZSNLROW'", NMTEST
+        write(58, NMTESTFORMAT) (hp%ZSNLROW(1, m), m = 1, NMTEST)
+        write(NMTESTFORMAT, "(A10,I3,'F10.2)')") "('ZPLSROW'", NMTEST
+        write(58, NMTESTFORMAT) (hp%ZPLSROW(1, m), m = 1, NMTEST)
+        write(NMTESTFORMAT, "(A10,I3,'F10.2)')") "('ZPLGROW'", NMTEST
+        write(58, NMTESTFORMAT) (hp%ZPLGROW(1, m), m = 1, NMTEST)
+        if (DEPPAR >= 4) then
+            write(NMTESTFORMAT, "(A10,I3,'F10.2)')") "('FRZCROW'", NMTEST
+            write(58, NMTESTFORMAT) (hp%FRZCROW(1, m), m = 1, NMTEST)
+        end if
+        write(58, *)
+
+        write(58, "('MESH_parameters_CLASS.ini')")
+        write(58, *)
+        write(58, '(2X,6A4)') TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6
+        write(58, '(2X,6A4)') NAME1, NAME2, NAME3, NAME4, NAME5, NAME6
+        write(58, '(2X,6A4)') PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
+        i=1
+        write(58, '(5F10.2,F7.1,3I5)') &
+            DEGLAT, DEGLON, cp%ZRFMGRD(i), cp%ZRFHGRD(i), cp%ZBLDGRD(i), cp%GCGRD(i), ILW, NA, NMTEST
+        do m = 1, NMTEST
+            write(58, '(9F8.3)') (cp%FCANROW(i, m, j), j = 1, ICAN + 1), (cp%PAMXROW(i, m, j), j = 1, ICAN)
+            write(58, '(9F8.3)') (cp%LNZ0ROW(i, m, j), j = 1, ICAN + 1), (cp%PAMNROW(i, m, j), j = 1, ICAN)
+            write(58, '(9F8.3)') (cp%ALVCROW(i, m, j), j = 1, ICAN + 1), (cp%CMASROW(i, m, j), j = 1, ICAN)
+            write(58, '(9F8.3)') (cp%ALICROW(i, m, j), j = 1, ICAN + 1), (cp%ROOTROW(i, m, j), j = 1, ICAN)
+            write(58, '(4F8.3,8X,4F8.3)') (cp%RSMNROW(i, m, j), j = 1, ICAN), (cp%QA50ROW(i, m, j), j = 1, ICAN)
+            write(58, '(4F8.3,8X,4F8.3)') (cp%VPDAROW(i, m, j), j = 1, ICAN), (cp%VPDBROW(i, m, j), j = 1, ICAN)
+            write(58, '(4F8.3,8X,4F8.3)') (cp%PSGAROW(i, m, j), j = 1, ICAN), (cp%PSGBROW(i, m, j), j = 1, ICAN)
+            write(58, '(3F8.3,F8.4)') cp%DRNROW(i, m), cp%SDEPROW(i, m), cp%FAREROW(i, m), cp%DDROW(i, m)
+            write(58, '(4E8.1,I8)') cp%XSLPROW(i, m), cp%XDROW(i, m), cp%MANNROW(i, m), cp%KSROW(i, m), cp%MIDROW(i, m)
+            write(58, '(6F10.1)') (cp%SANDROW(i, m, j), j = 1, IGND)
+            write(58, '(6F10.1)') (cp%CLAYROW(i, m, j), j = 1, IGND)
+            write(58, '(6F10.1)') (cp%ORGMROW(i, m, j), j = 1, IGND)
+            write(58, '(9F10.2)') (cp%TBARROW(i, m, j), j = 1, IGND), cp%TCANROW(i, m), cp%TSNOROW(i, m), cp%TPNDROW(i, m)
+            write(58, '(10F10.3)') (cp%THLQROW(i, m, j), j = 1, IGND), (cp%THICROW(i, m, j), j = 1, IGND), cp%ZPNDROW(i, m)
+            write(58, '(2F10.4,F10.2,F10.3,F10.4,F10.3,F10.3)') &
+                cp%RCANROW(i, m), cp%SCANROW(i, m), cp%SNOROW(i, m), cp%ALBSROW(i, m), cp%RHOSROW(i, m), cp%GROROW(i, m)
+            write(58, *)
+        end do !m = 1, NMTEST
+    end if !(MODELINFOOUTFLAG > 0) then
 
     ALLOCATE (FSVHGATPRE(ILG), FSIHGATPRE(ILG), FDLGATPRE(ILG), PREGATPRE(ILG), &
                TAGATPRE(ILG), ULGATPRE(ILG), PRESGATPRE(ILG), QAGATPRE(ILG), &
@@ -2267,8 +2251,10 @@ FSTR      = 0.0
 IF (RESUMEFLAG == 1 ) THEN
   OPEN(88,FILE="class_resume.txt", STATUS="UNKNOWN", IOSTAT=IOS)
   IF (IOS /= 0) THEN
-    WRITE (58, *),"WARNING: You've specified a start time", &
-     " without having a resume file. Now ending run."
+    if (MODELINFOOUTFLAG > 0) then
+        write(58, *), "WARNING: You've specified a start time", &
+            " without having a resume file. Now ending run."
+    end if
 
     PRINT*, "No class_resume.txt found."
     PRINT*, "The RESUMEFLAG in MESH_input_run_options.ini is", &
@@ -2517,18 +2503,22 @@ ENDDO
 !> *********************************************************************
 !> Open and print header information to the output files
 !> *********************************************************************
-if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(6)%isInit)) then
-       open(fls%fl(6)%unit, file=trim(adjustl(fls%fl(6)%name)))
-else
-OPEN(UNIT=70,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '/MESH_output_streamflow.csv')
-end if                  
 
-OPEN(UNIT=71,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '/MESH_output_streamflow_all.csv')
+    !> Streamflow comparison file.
+    if (STREAMFLOWOUTFLAG > 0) then
+        if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(6)%isInit)) then
+            open(fls%fl(6)%unit, file = trim(adjustl(fls%fl(6)%name)))
+        else
+            open(70, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/MESH_output_streamflow.csv")
+        end if
+    end if
 
-OPEN(UNIT=72,FILE="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '/MESH_output_streamflow_cumulative.csv')
+    !> Other streamflow files.
+    if (STREAMFLOWOUTFLAG >= 2) then
+        open(71, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/MESH_output_streamflow_all.csv")
+
+        open(72, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/MESH_output_streamflow_cumulative.csv")
+    end if
 
 !> Set up the CLASSOF* files to print out into the correct directory
 DO I=1, wf_num_points
@@ -3335,51 +3325,51 @@ TOTAL_WSNO = 0.0
 TOTAL_ZPND = 0.0
 TOTAL_THLQ = 0.0
 TOTAL_THIC = 0.0
-    if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(4)%isInit)) then
-       open(fls%fl(4)%unit, file=trim(adjustl(fls%fl(4)%name)))
-    else   
-OPEN(unit=900,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '/Basin_average_water_balance.csv')
-    end if
 
+    !> Open CSV output files.
+    if (BASINBALANCEOUTFLAG > 0) then
 
+        !> Water balance.
+        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(4)%isInit)) then
+            open(fls%fl(4)%unit, file = trim(adjustl(fls%fl(4)%name)))
+        else
+            open(900, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/Basin_average_water_balance.csv")
+        end if
 
-wrt_900_1 = 'DAY,YEAR,PREACC'//',EVAPACC,ROFACC,ROFOACC,'// &
-           'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,'
+        wrt_900_1 = "DAY,YEAR,PREACC" // ",EVAPACC,ROFACC,ROFOACC," // &
+            "ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,"
 
-wrt_900_2 = "THLQ"
-wrt_900_3 = "THIC"
-wrt_900_4 = "THLQIC"
+        wrt_900_2 = "THLQ"
+        wrt_900_3 = "THIC"
+        wrt_900_4 = "THLQIC"
 
-do i = 1, IGND
-    write(strInt,'(I1)') i
-    if (i.lt.ignd)then
-        wrt_900_2 = trim(adjustl(wrt_900_2))//trim(adjustl(strInt))//',THLQ'
-        wrt_900_3 = trim(adjustl(wrt_900_3))//trim(adjustl(strInt))//',THIC'
-        wrt_900_4 = trim(adjustl(wrt_900_4))//trim(adjustl(strInt))//',THLQIC'    
-    else
-        wrt_900_2 = trim(adjustl(wrt_900_2))//trim(adjustl(strInt))//','
-        wrt_900_3 = trim(adjustl(wrt_900_3))//trim(adjustl(strInt))//','
-        wrt_900_4 = trim(adjustl(wrt_900_4))//trim(adjustl(strInt))//','  
-    endif
-enddo  
+        do i = 1, ignd
+            write(strInt, "(i1)") i
+            if (i < ignd) then
+                wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(strInt)) // ",THLQ"
+                wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(strInt)) // ",THIC"
+                wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(strInt)) // ",THLQIC"
+            else
+                wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(strInt)) // ","
+                wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(strInt)) // ","
+                wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(strInt)) // ","
+            end if
+        end do !> i = 1, ignd
 
-wrt_900_f = trim(adjustl(wrt_900_1)) // &
+        wrt_900_f = trim(adjustl(wrt_900_1)) // &
             trim(adjustl(wrt_900_2)) // &
             trim(adjustl(wrt_900_3)) // &
             trim(adjustl(wrt_900_4)) // &
             "THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE"
-            
-write(900,'(A)') trim(adjustl(wrt_900_f))
 
-!WRITE(900,"('DAY,YEAR,PREACC,EVAPACC,ROFACC,ROFOACC,ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNO,SCAN,RCAN,ZPND,"// &
-!            "THLQ1,THLQ2,THLQ3,THLQ4,THLQ5,THLQ6,THIC1,THIC2,THIC3,THIC4,THIC5,THIC6,"// &
-!            "THLQIC1,THLQIC2,THLQIC3,THLQIC4,THLQIC5,THLQIC6,THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE')")
+        write(900, "(a)") trim(adjustl(wrt_900_f))
 
+        !> Energy balance.
+        open(901, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/Basin_average_energy_balance.csv")
 
-OPEN(unit=901,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
-                  '/Basin_average_energy_balance.csv')
-WRITE(901,"('DAY,YEAR,HFSACC,QEVPACC')")
+        write(901, "(a)") "DAY,YEAR,HFSACC,QEVPACC"
+
+    end if !(BASINBALANCEOUTFLAG > 0) then
 
 !>**********************************************************************
 !> Set initial SnowAge & DrySnow values for PBSM calculations
@@ -4381,12 +4371,11 @@ IF((IHOUR==12).AND.(IMIN==0))  THEN
    basin_SCA = basin_SCA/TOTAL_AREA
    basin_SWE = basin_SWE/TOTAL_AREA
 
-ENDIF
+    if (BASINSWEOUTFLAG > 0) then
+        write(85, "(i5, ',', f10.3)") IDAY, basin_SCA
+        write(86, "(i5, ',', f10.3)") IDAY, basin_SWE
+    end if
 
-
-IF ((IHOUR==12).AND.(IMIN==0))  THEN
-  WRITE(85,'(I5, ",", F10.3)') IDAY, basin_SCA
-  WRITE(86,'(I5, ",", F10.3)') IDAY, basin_SWE
 ENDIF
 
 !> =======================================================================
@@ -4649,42 +4638,50 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     TOTAL_STORE = TOTAL_SCAN + TOTAL_RCAN + TOTAL_SNO + TOTAL_WSNO + TOTAL_ZPND + &
         sum(TOTAL_THLQ) + sum(TOTAL_THIC)
 
-  fmt_1 = '(I4,","),(I5,","),'
-  write(strInt,'(I2)') 21 + ignd*3
-  fmt_2 = trim(adjustl(strInt))//'(E14.6,",")'
-  fmt_out = trim(adjustl(fmt_1))//  &
-            trim(adjustl(fmt_2))//',(E14.6)'
-  !(I4,","),(I5,","),100(E12.5,",")
-  WRITE(900,'('//trim(adjustl(fmt_out))//')')IDAY,IYEAR               , &   !1
-                                                 TOTAL_PREACC/TOTAL_AREA  , &   !2
-                                                 TOTAL_EVAPACC/TOTAL_AREA , &   !3
-                                                 TOTAL_ROFACC/TOTAL_AREA  , &   !4
-                                                 TOTAL_ROFOACC/TOTAL_AREA , &   !5
-                                                 TOTAL_ROFSACC/TOTAL_AREA , &   !6
-                                                 TOTAL_ROFBACC/TOTAL_AREA , &   !7
-                                                 TOTAL_PRE/TOTAL_AREA     , &   !8  
-                                                 TOTAL_EVAP/TOTAL_AREA    , &   !9
-                                                 TOTAL_ROF/TOTAL_AREA     , &   !10
-                                                 TOTAL_ROFO/TOTAL_AREA    , &   !11
-                                                 TOTAL_ROFS/TOTAL_AREA    , &   !12
-                                                 TOTAL_ROFB/TOTAL_AREA    , &   !13
-                                                 TOTAL_SCAN/TOTAL_AREA    , &   !15
-                                                 TOTAL_RCAN/TOTAL_AREA    , &   !16
-                                                 TOTAL_SNO/TOTAL_AREA     , &   !14
-                                                 TOTAL_WSNO/TOTAL_AREA, &
-                                                 TOTAL_ZPND/TOTAL_AREA    , &   !17
-                                                 (TOTAL_THLQ(J)/TOTAL_AREA, J = 1, IGND), &
-                                                 (TOTAL_THIC(J)/TOTAL_AREA, J = 1, IGND), &
-                                                 ((TOTAL_THLQ(J) + TOTAL_THIC(J))/TOTAL_AREA, J = 1, IGND), &
-                                                 SUM(TOTAL_THLQ(1:IGND))/TOTAL_AREA, &
-                                                 SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
-                                                 (SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND)))/TOTAL_AREA, &
-                                                 TOTAL_STORE/TOTAL_AREA, &
-                                                 (TOTAL_STORE - TOTAL_STORE_2)/TOTAL_AREA
+  fmt_1 = "(i4, ','), (i5, ','),"
+  write(strInt, '(i2)') 21 + IGND*3
+  fmt_2 = trim(adjustl(strInt)) // "(e14.6, ',')"
+  fmt_out = trim(adjustl(fmt_1)) // trim(adjustl(fmt_2)) // ", (e14.6)"
 
-  WRITE(901,'((I4,","),(I5,","),2(E12.5,","))')IDAY,IYEAR,    &
-                                                TOTAL_HFSACC/TOTAL_AREA,  &
-                                                TOTAL_QEVPACC/TOTAL_AREA
+    !> Write output CSV files.
+    if (BASINBALANCEOUTFLAG > 0) then
+
+        !> Water balance.
+        write(900, '('//trim(adjustl(fmt_out))//')') &
+            IDAY, IYEAR              , &   !1
+            TOTAL_PREACC/TOTAL_AREA  , &   !2
+            TOTAL_EVAPACC/TOTAL_AREA , &   !3
+            TOTAL_ROFACC/TOTAL_AREA  , &   !4
+            TOTAL_ROFOACC/TOTAL_AREA , &   !5
+            TOTAL_ROFSACC/TOTAL_AREA , &   !6
+            TOTAL_ROFBACC/TOTAL_AREA , &   !7
+            TOTAL_PRE/TOTAL_AREA     , &   !8
+            TOTAL_EVAP/TOTAL_AREA    , &   !9
+            TOTAL_ROF/TOTAL_AREA     , &   !10
+            TOTAL_ROFO/TOTAL_AREA    , &   !11
+            TOTAL_ROFS/TOTAL_AREA    , &   !12
+            TOTAL_ROFB/TOTAL_AREA    , &   !13
+            TOTAL_SCAN/TOTAL_AREA    , &   !15
+            TOTAL_RCAN/TOTAL_AREA    , &   !16
+            TOTAL_SNO/TOTAL_AREA     , &   !14
+            TOTAL_WSNO/TOTAL_AREA, &
+            TOTAL_ZPND/TOTAL_AREA    , &   !17
+            (TOTAL_THLQ(J)/TOTAL_AREA, j = 1, ignd), &
+            (TOTAL_THIC(J)/TOTAL_AREA, j = 1, ignd), &
+            ((TOTAL_THLQ(J) + TOTAL_THIC(J))/TOTAL_AREA, j = 1, ignd), &
+            SUM(TOTAL_THLQ(1:ignd))/TOTAL_AREA, &
+            SUM(TOTAL_THIC(1:ignd))/TOTAL_AREA, &
+            (SUM(TOTAL_THLQ(1:ignd)) + SUM(TOTAL_THIC(1:ignd)))/TOTAL_AREA, &
+            TOTAL_STORE/TOTAL_AREA, &
+            (TOTAL_STORE - TOTAL_STORE_2)/TOTAL_AREA
+
+        !> Energy balance.
+        write(901, "((i4, ','), (i5, ','), *(e12.5, ','))") &
+            IDAY, IYEAR,    &
+            TOTAL_HFSACC/TOTAL_AREA,  &
+            TOTAL_QEVPACC/TOTAL_AREA
+
+    end if !(BASINBALANCEOUTFLAG > 0) then
 
 !>  Added by Gonzalo Sapriza
     !DELTA STORAGE
@@ -4819,14 +4816,14 @@ ENDIF
 !> Also write daily summary (pre, evap, rof)
 !> *********************************************************************
 
-! write streamflow each timestep if asked for in mesh_input_run_options.ini file
-IF(STREAMFLOWFLAG==1) THEN
+    !> write streamflow each timestep if asked for in mesh_input_run_options.ini file
+    if (STREAMFLOWFLAG == 1 .and. STREAMFLOWOUTFLAG >= 2) then
 
-!>      write out the MESH_output_streamflow_all.csv file
-  WRITE(71,'(I5,",",I5,",",I5,",",F10.3,999(",",F10.3))') IDAY,IHOUR,IMIN,(WF_QHYD(I), &
-    WF_QSYN(I),I=1,WF_NO)
+        !> write out the MESH_output_streamflow_all.csv file
+        write(71, "(i5, ',', i5, ',', i5, ',', f10.3, *(',', f10.3))") &
+            IDAY, IHOUR, IMIN, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
 
-ENDIF
+    end if !(STREAMFLOWFLAG == 1 .and. STREAMFLOWOUTFLAG >= 2) then
 
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
@@ -4836,11 +4833,13 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
   ENDDO
 
 !>      write out the spl.csv file
-  WRITE(70,'(I5,",",F10.3,999(",",F10.3))') IDAY,(WF_QHYD_AVG(I), &
-    WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO)
+    if (STREAMFLOWOUTFLAG > 0) then
+        write(70, "(i5, ',', f10.3, *(',', f10.3))") IDAY, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
+    end if
 
-  WRITE(72,'(I5,",",F10.3,999(",",F10.3))') IDAY,(WF_QHYD_CUM(I), &
-    WF_QSYN_CUM(I)/NCOUNT,I=1,WF_NO)
+    if (STREAMFLOWOUTFLAG >= 2) then
+        write(72, "(i5, ',', f10.3, *(',', f10.3))") IDAY, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
+    end if
 
   IF (WF_NUM_POINTS .GT. 1) THEN !FOR MORE THAN ONE OUTPUT
 
@@ -5326,31 +5325,30 @@ END DO
    WRITE(6,*)
    WRITE(6,'(A32)') 'Program has terminated normally.'
    WRITE(6,*)
-!> write out final totals to file
-   WRITE(58,*)
-   WRITE(58,'(A,F11.3)') '  Total Precipitation         (mm) = ', &
-        TOTAL_PREACC/TOTAL_AREA
-   WRITE(58,'(A,F11.3)') '  Total Evaporation           (mm) = ', &
-        TOTAL_EVAPACC/TOTAL_AREA
-   WRITE(58,'(A,F11.3)') '  Total Runoff                (mm) = ', &
-        TOTAL_ROFACC/TOTAL_AREA
-   WRITE(58,'(A,3F11.3)')'  Storage(Change/Init/Final)  (mm) = ', &
-        (FINAL_STORE-INIT_STORE)/TOTAL_AREA, &
-        INIT_STORE/TOTAL_AREA, &
-        FINAL_STORE/TOTAL_AREA
-   WRITE(58,'(A,F11.3)') '  Total Overland flow         (mm) = ', &
-        TOTAL_ROFOACC/TOTAL_AREA
-   WRITE(58,'(A,F11.3)') '  Total Interflow             (mm) = ', &
-        TOTAL_ROFSACC/TOTAL_AREA
-   WRITE(58,'(A,F11.3)') '  Total Baseflow              (mm) = ', &
-        TOTAL_ROFBACC/TOTAL_AREA
-   WRITE(58,*)
-   WRITE(58,*)
-   WRITE(58,'(A32)') 'Program has terminated normally.'
-   WRITE(58,*)
 
-   call cpu_time(endprog)
-   WRITE(58, '("Time = ",e14.6," seconds.")') endprog-startprog
+    !> Write final totals to output file.
+    if (MODELINFOOUTFLAG > 0) then
+
+        write(58, *)
+        write(58, "(a, f11.3)") "  Total Precipitation         (mm) = ", TOTAL_PREACC/TOTAL_AREA
+        write(58, "(a, f11.3)") "  Total Evaporation           (mm) = ", TOTAL_EVAPACC/TOTAL_AREA
+        write(58, "(a, f11.3)") "  Total Runoff                (mm) = ", TOTAL_ROFACC/TOTAL_AREA
+        write(58, "(a, 3f11.3)") "  Storage(Change/Init/Final)  (mm) = ", &
+            (FINAL_STORE - INIT_STORE)/TOTAL_AREA, &
+            INIT_STORE/TOTAL_AREA, &
+            FINAL_STORE/TOTAL_AREA
+        write(58, "(a, f11.3)") "  Total Overland flow         (mm) = ", TOTAL_ROFOACC/TOTAL_AREA
+        write(58, "(a, f11.3)") "  Total Interflow             (mm) = ", TOTAL_ROFSACC/TOTAL_AREA
+        write(58, "(a, f11.3)") "  Total Baseflow              (mm) = ", TOTAL_ROFBACC/TOTAL_AREA
+        write(58, *)
+        write(58, *)
+        write(58, "(a)") "Program has terminated normally."
+        write(58, *)
+
+        call cpu_time(endprog)
+        write(58, "('Time = ', e14.6, ' seconds.')") (endprog - startprog)
+
+    end if !(MODELINFOOUTFLAG > 0) then
 
 199 CONTINUE
 
@@ -5372,13 +5370,31 @@ ENDDO
 !> Diane      CLOSE(UNIT=21)
 !>      CLOSE(UNIT=22)
 CLOSE(UNIT=51)
-CLOSE(UNIT=58)
-CLOSE(UNIT=70)
-CLOSE(UNIT=71)
-CLOSE(UNIT=72)
-close(unit=85)
-close(unit=86)
-close(unit=90)
+
+    !> Close model output file.
+    close(58)
+
+    !> Close CSV streamflow files.
+    close(70)
+    close(71)
+    close(72)
+
+    !> Close the SWE CSV files.
+    close(85)
+    close(86)
+
+    !> Close the legacy binary format forcing files.
+    close(90)
+    close(91)
+    close(92)
+    close(93)
+    close(94)
+    close(95)
+    close(96)
+
+    !> Close the CSV energy and water balance output files.
+    close(900)
+    close(901)
 
 9000 FORMAT('INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY AND IS SET TO 0 BY THE MODEL.',/, &
             '0: NO INTERPOLATION OF FORCING DATA.',/, &

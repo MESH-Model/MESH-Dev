@@ -269,6 +269,36 @@
 !* If GGEOFLAG is GT 0,  READ UNIQUE VALUE FROM MESH_ggeo.INI FILE
       GGEOFLAG = 0
 
+!> BASIN WATER AND ENERGY BALANCES OUTPUT FLAG
+!> If enabled, saves the water and energy balance output files.
+!>     0 = Create no output.
+!>     1 = Save the basin water and energy balance CSV files.
+      BASINBALANCEOUTFLAG = 1
+
+!> BASIN CSV-FORMAT STREAMFLOW OUTPUT FLAG
+!> If enabled, saves the observed versus simulated streamflow output
+!> file. The flag can also enable the cumulative and every time-step
+!> streamflow files written by past model configurations.
+!>     0 = Create no output.
+!>     1 = Save the observed versus simulated streamflow output file.
+!>     2 = Save the observed versus simulated, as well as the
+!>         cumulative and every time-step streamflow files.
+      STREAMFLOWOUTFLAG = 2
+
+!> BASIN SWE OUTPUT FLAG
+!> If enabled, saves the SCA and SWE output files.
+!>     0 = Create no output.
+!>     1 = Save the SCA and SWE output files.
+      BASINSWEOUTFLAG = 1
+
+!> MODEL INFO OUTPUT FLAG
+!> If enabled, saves model configuration and run information to the
+!> echo_print.txt file.
+!>     0 = Create no output.
+!>     1 = Save the model configuration and run information to the
+!>         echo_print.txt file.
+      MODELINFOOUTFLAG = 1
+
 !> The above parameter values are defaults, to change to a different
 !> value, use the MESH_input_run_options.ini file
 
@@ -408,6 +438,14 @@
             OUTFIELDSFLAG = IROVAL
           ELSE IF (IRONAME == "GGEOFLAG") THEN
             GGEOFLAG = IROVAL
+          ELSE IF (IRONAME == "BASINBALANCEOUTFLAG") THEN
+            BASINBALANCEOUTFLAG = IROVAL
+          ELSE IF (IRONAME == "MODELINFOOUTFLAG") THEN
+            MODELINFOOUTFLAG = IROVAL
+          ELSE IF (IRONAME == "STREAMFLOWOUTFLAG") THEN
+            STREAMFLOWOUTFLAG = IROVAL
+          ELSE IF (IRONAME == "BASINSWEOUTFLAG") THEN
+            BASINSWEOUTFLAG = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",
