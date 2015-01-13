@@ -278,7 +278,7 @@ CHARACTER(30) :: NMTESTFORMAT
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-CHARACTER :: VERSION*24 = "driver_04-20-2009"
+CHARACTER :: VERSION*24 = "driver_01-13-2015"
 CHARACTER*8 :: RELEASE(10)
 LOGICAL :: VER_OK
 !>
@@ -891,12 +891,13 @@ character*50 :: alphCh
       RELEASE(4) = "1.2.000"
       RELEASE(5) = "1.2.a01"
       RELEASE(6) = "1.3.000"
+      RELEASE(7) = "1.3.1"
 
 call cpu_time(startprog)
 !>=======================================================================
 !>      PROGRAM START
-!>!TODO: UPDATE THIS (RELEASE(6)) WITH VERSION CHANGE
-WRITE (6, "(' MESH 'A, ' --- ',' ('A,')'/)"), TRIM (RELEASE(6)), &
+!>!TODO: UPDATE THIS (RELEASE(*)) WITH VERSION CHANGE
+WRITE (6, "(' MESH 'A, ' --- ',' ('A,')'/)"), TRIM (RELEASE(7)), &
       TRIM (VERSION) !MESH VERSION
 
 !File handled for variable in/out names
