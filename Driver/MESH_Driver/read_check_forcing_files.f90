@@ -268,6 +268,16 @@
         CALL INIT_CLIM_INFO(cm,ts,3,NA)
         CALL INIT_CLIM_DATA(cm,'rain',92)
 
+      ELSEIF (BASINRAINFLAG == 6) THEN
+
+        NUM_SEQ = NUM_SEQ + 1
+        
+        CALL INIT_CLIM_INFO(cm,ts,3,NA)
+        CALL INIT_CLIM_DATA(cm,'rain' ,921)
+
+        CALL INIT_CLIM_INFO(cm,ts,8,NA)
+        CALL INIT_CLIM_DATA(cm,'rain_2',922)        
+        
       ENDIF
 
 !> *********************************************************************

@@ -23,13 +23,15 @@
             integer :: timeSize  !minimum size of block read DEFINED IN THE INPUT FILE
             integer,dimension(:),allocatable :: ntimes ! number of time in each block of readed data
             character(15) :: id_var !climate variable name
-            integer      :: flagID !Basic climage flag id
-            integer      :: flagRead !type of format file
-            integer      :: unitR !Number unit
-            logical      :: openFl !true if file is open
-            integer      :: readIndx !index in the block of time that we are reading
-            integer      :: itime    !time index
+            integer       :: flagID !Basic climage flag id
+            integer       :: flagRead !type of format file
+            integer       :: unitR !Number unit
+            logical       :: openFl !true if file is open
+            integer       :: readIndx !index in the block of time that we are reading
+            integer       :: itime    !time index
+            character     :: freq !time freq of data
             real,dimension(:,:) ,allocatable :: climv !Climate variable
+            real :: alpharain !used only for rainfall
 
          END TYPE
 
@@ -37,7 +39,8 @@
 
             integer :: na !number of cell inside the basin
             integer :: nclim !number of climate variables
-            type(clim_info_read) :: clin(7)
+            type(clim_info_read) :: clin(8) !load extra rainfall
+            !type(clim_info_read) :: clin(7)
 
          END TYPE
         !>******************************************************************************
@@ -61,7 +64,8 @@
          !Internals
          integer  :: i,nts,rts
 
-         cm%nclim = 7
+         !cm%nclim = 7
+         cm%nclim = 8
          cm%na = nna
          i = indx
 
@@ -140,6 +144,14 @@
             call OpenData(cm,'basin_rain',3)
 
          endif
+         
+         if (idvar .eq. 'rain_2')then
+
+            allocate(cm%clin(3)%climv(cm%na,cm%clin(3)%ntimes(1)))
+            cm%clin(3)%unitR = unitR
+            call OpenData(cm,'basin_rain_2',8)
+
+         endif         
 
          if (idvar .eq. 'temp')then
 

@@ -65,8 +65,8 @@ module calc_drms
 
             !> Calculate the per gauge value.
             do j = 1, size(qsim, 2)
-    			calc_drms_value%value_gauge(j) = sqrt(sum((qobs(ncal_day_min:ncal_day, j) - &
-                	                                 qsim(ncal_day_min:ncal_day, j))**2)/ncal_day)
+                calc_drms_value%value_gauge(j) = &
+                    sqrt(sum((qobs(ncal_day_min:ncal_day, j) - qsim(ncal_day_min:ncal_day, j))**2)/ncal_day)
             end do !j = 1, size(qsim, 2)
 
             !> Calculate the average value.

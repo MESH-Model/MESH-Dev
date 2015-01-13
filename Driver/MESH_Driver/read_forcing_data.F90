@@ -323,6 +323,21 @@ ICOUNT = 0
     CALL GATHER(NA,NML,ILG,ILMOS,PREGRD,PREGAT)
 
     ICOUNT=ICOUNT+1
+  
+    ! Read from two source of rainfall input  
+  ELSEIF (BASINRAINFLAG == 6) THEN
+
+    call NeedUpdate_clim_data(cm,3,itime,xcount,ycount,xxx,yyy,na,enddata)        
+    
+    call NeedUpdate_clim_data(cm,8,itime,xcount,ycount,xxx,yyy,na,enddata)        
+    
+    PREGRD = cm%clin(8)%alpharain*cm%clin(3)%climv(:,cm%clin(3)%itime) +  &
+             (1.0-cm%clin(8)%alpharain)*cm%clin(8)%climv(:,cm%clin(8)%itime)
+
+    CALL GATHER(NA,NML,ILG,ILMOS,PREGRD,PREGAT)
+
+    ICOUNT=ICOUNT+1
+    
   ELSE
     PRINT*,'BASINRAINFLAG SHOULD BE EITHER 0, 1 0R 2'
     STOP

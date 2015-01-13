@@ -64,13 +64,13 @@ module calc_abserr
 
             !> Calculate the per gauge value.
             do j = 1, size(qsim, 2)
-                calc_abserr_value%value_gauge(j) = sum(abs(qobs(ncal_day_min:ncal_day, j) - &
-                									   qsim(ncal_day_min:ncal_day, j)))/ncal_day
+                calc_abserr_value%value_gauge(j) = &
+                    sum(abs(qobs(ncal_day_min:ncal_day, j) - qsim(ncal_day_min:ncal_day, j)))/ncal_day
             end do
 
             !> Calculate the average value.
-            calc_abserr_value%value_gauge_avg = sum(calc_abserr_value%value_gauge)/ &
-            									    size(calc_abserr_value%value_gauge)
+            calc_abserr_value%value_gauge_avg = &
+                sum(calc_abserr_value%value_gauge)/size(calc_abserr_value%value_gauge)
 
         end if !(ncal_day > ncal_day_min)
 

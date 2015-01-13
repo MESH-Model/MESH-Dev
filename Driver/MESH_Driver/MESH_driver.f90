@@ -85,6 +85,7 @@ USE climate_forcing
 USE model_dates
 use simstats
 use model_files
+use strings
 
 IMPLICIT NONE
 INTRINSIC MAXLOC
@@ -589,7 +590,7 @@ REAL, DIMENSION(:), ALLOCATABLE :: CDHGRD, CDMGRD, HFSGRD, &
 REAL, DIMENSION(:, :, :), ALLOCATABLE :: HMFGROW, HTCROW, QFCROW, &
   GFLXROW 
 REAL, DIMENSION(:, :), ALLOCATABLE :: HMFGGAT, HTCGAT, QFCGAT
-REAL, DIMENSION(:, :), ALLOCATABLE :: HMFGGRD, HTCGRD, QFCGRD
+REAL, DIMENSION(:, :), ALLOCATABLE :: HMFGGRD, HTCGRD, QFCGRD, GFLXGRD
 INTEGER, DIMENSION(:, :, :, :), ALLOCATABLE :: ITCTROW
 INTEGER, DIMENSION(:, :, :), ALLOCATABLE :: ITCTGAT
 
@@ -617,7 +618,7 @@ REAL, DIMENSION(:), ALLOCATABLE :: PREACC, GTACC, QEVPACC, &
 REAL, DIMENSION(:), ALLOCATABLE :: DSTG, STG_I
 
 REAL, DIMENSION(:, :), ALLOCATABLE :: TBARACC, THLQACC, THICACC, &
-  THALACC , THLQ_FLD, THIC_FLD
+  THALACC , THLQ_FLD, THIC_FLD, GFLXACC
 
 !* TOTAL_ROFACC: TOTAL RUNOFF
 !* TOTAL_EVAPACC: TOTAL EVAPORATION
@@ -806,6 +807,8 @@ TYPE(INFO_OUT)      :: IOF
 TYPE(CLIM_INFO)     :: cm
 type(met_data) :: md
 type(water_balance) :: wb, wb_h
+type(energy_balance) :: eng
+type(soil_statevars) :: sov
 
 LOGICAL :: R2COUTPUT,EXISTS
 INTEGER, PARAMETER :: R2CFILEUNITSTART = 500
@@ -871,8 +874,10 @@ COMMON    /WATFLGS/   VICEFLG, PSI_LIMIT, HICEFLG, LZFFLG, &
 DATA VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
   EXTFLG/0/, IWFICE/3/, ERRFLG/1/
 
-real :: startprog,endprog
+real :: startprog, endprog
 integer :: narg
+real :: alpharain
+character*50 :: alphCh
 
 !> ((((((((((((((((((((((((((((((((((
 !> Set the acceptable version numbers
@@ -899,11 +904,17 @@ WRITE (6, "(' MESH 'A, ' --- ',' ('A,')'/)"), TRIM (RELEASE(6)), &
       
 !Check if any arguments are found
 narg = command_argument_count()   
-if (narg .gt. 0)then
+if (narg .gt. 0) then
     VARIABLEFILESFLAG = 1
-    call get_command_argument(narg,fl_listMesh)
-    call Init_fls(fls,trim(adjustl(fl_listMesh)))
-endif      
+    if (narg .eq. 1) then
+        call get_command_argument(1, fl_listMesh)
+    elseif (narg .eq. 2) then
+        call get_command_argument(2, alphCh)
+        call value(alphCh, alpharain, ios)
+        cm%clin(8)%alpharain = alpharain
+        call Init_fls(fls, trim(adjustl(fl_listMesh)))
+    end if
+end if !(narg .gt. 0) then
 
 ! Find the appropriate value of IGND from MESH_input_soil_levels.txt
 IGND = 0
@@ -1329,6 +1340,7 @@ ALLOCATE (CDHROW(NA, NTYPE), CDMROW(NA, NTYPE), &
   HMFGGAT(ILG, IGND), HTCGAT(ILG, IGND), &
   QFCGAT(ILG, IGND), &
   HMFGGRD(NA, IGND), HTCGRD(NA, IGND), QFCGRD(NA, IGND), &
+  GFLXGRD(NA, IGND), &
   ITCTROW(NA, NTYPE, 6, 50), &
   ITCTGAT(ILG, 6, 50), STAT=PAS)
 IF (PAS .NE. 0) THEN
@@ -1354,7 +1366,7 @@ ALLOCATE (PREACC(NA), GTACC(NA), QEVPACC(NA), &
   TCANACC(NA), RCANACC(NA), SCANACC(NA), GROACC(NA), CANARE(NA), &
   SNOARE(NA), &
   TBARACC(NA, IGND), THLQACC(NA, IGND), THICACC(NA, IGND), &
-  THALACC(NA, IGND), &
+  THALACC(NA, IGND), GFLXACC(NA, IGND), &
   STG_I(NA), DSTG(NA),THLQ_FLD(NA,IGND),THIC_FLD(NA,IGND), &
   STAT=PAS)
 IF (PAS .NE. 0) THEN
@@ -1521,7 +1533,7 @@ DO I=2,NA
             cp%XSLPROW(I-1,M) = demslp(I-1)
         end if
     else
-    cp%XSLPROW(I,M) =  cp%XSLPROW(1,M)
+        cp%XSLPROW(I,M) = cp%XSLPROW(1,M)
     end if
     cp%XDROW(I,M)   =  cp%XDROW(1,M)
 !> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
@@ -1532,7 +1544,7 @@ DO I=2,NA
         end if
         cp%DDROW(I,M) = drdn(I)
     else
-    cp%DDROW(I,M)   =  cp%DDROW(1,M)
+        cp%DDROW(I,M) = cp%DDROW(1,M)
     end if
     WFSFROW(I,M)    =  WFSFROW(1,M)
     cp%KSROW(I,M)   =  cp%KSROW(1,M)
@@ -1779,7 +1791,7 @@ DO I=1, NA
       read(18, *) GGEOGRD(I)
       close(18)
   else
-  GGEOGRD(I)=0.0
+      GGEOGRD(I) = 0.0
   end if
   ZDMGRD(I)=10.0
   ZDHGRD(I)=2.0
@@ -1870,6 +1882,8 @@ bi%ignd = ignd
 
 !> Initialize output variables.
 call wb%init(bi)
+call eng%init(bi)
+call sov%init(bi)
 call md%init(bi)
 call wb_h%init(bi)
 
@@ -2007,6 +2021,7 @@ TOTAL_QEVPACC=0.0
     THLQACC = 0.
     THICACC = 0.
     THALACC = 0.
+    GFLXACC = 0.
 
 STG_I    = 0.
 DSTG     = 0.
@@ -4174,6 +4189,7 @@ ENDIF
       HMFGGRD = 0.
       HTCGRD = 0.
       QFCGRD = 0.
+      GFLXGRD = 0.
 
 !>
 !>*******************************************************************
@@ -4282,8 +4298,7 @@ DO I=1,nml
         HMFGGRD(ilmos(I),J)=HMFGGRD(ilmos(I),J)+HMFGgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
         HTCGRD(ilmos(I),J)=HTCGRD(ilmos(I),J)+HTCgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
         QFCGRD(ilmos(I),J)=QFCGRD(ilmos(I),J)+QFCgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
-!- Diane added GFLXGRD june 17/08
-!-              GFLXGRD(I,J)=GFLXGRD(I,J)+GFLXROW(I,M,J)*FAREROW(I,M)
+        GFLXGRD(ilmos(I),J)=GFLXGRD(ilmos(I),J)+GFLXgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
         wb_h%lqws(ilmos(I), j) = wb_h%lqws(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i)) &
                                      *thlqgat(i, j)*dlzwgat(i, j)*rhow
         wb_h%frws(ilmos(I), j) = wb_h%frws(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i)) &
@@ -4401,6 +4416,9 @@ DO I = 1, nml
             THICACC(ilmos(I),J) = THICACC(ilmos(I),J)+THICgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
             THALACC(ilmos(I),J) = THALACC(ilmos(I),J)+(THLQgat(I,J)+ &
                                          THICgat(I,J))*cp%FAREROW(ilmos(I),jlmos(i))
+
+            !Added by GSA compute daily heat conduction flux between layers
+            GFLXACC(ilmos(I),J) = GFLXACC(ilmos(I),J)+GFLXgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
 
             !(I) = THALACC_STG(I) + THALACC(I,J)
                 THLQ_FLD(ilmos(I),J) =  THLQ_FLD(ilmos(I),J) + THLQgat(I,J)*RHOW*cp%FAREROW(ilmos(I),jlmos(i))*DLZWgat(I,J)
@@ -4580,6 +4598,11 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 !> update components for final energy balance tally
     TOTAL_HFSACC  = TOTAL_HFSACC  + HFSACC(I)
     TOTAL_QEVPACC = TOTAL_QEVPACC + QEVPACC(I)
+    eng%hfs(i) = eng%hfs(i) + HFSACC(I)
+    eng%qevp(i) = eng%qevp(i) + QEVPACC(I)
+    DO J=1,IGND
+      eng%gflx(i,j) = eng%gflx(i,j) + GFLXACC(I,J)
+    ENDDO
 
             IF (WF_NUM_POINTS > 0) THEN !SUMMARY VALUES FOR SCREEN
                 DO J = 1, WF_NUM_POINTS !FOR MORE THAN 1 OUTPUT
@@ -4605,6 +4628,10 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     wb%wsno = 0.0
     wb%lqws = 0.0
     wb%frws = 0.0
+    sov%tbar = 0.0
+    sov%thic = 0.0
+    sov%thic = 0.0
+
     DO I = 1, nml
         IF (FRAC(ilmos(I)) >= 0.0) THEN
 !            DO M = 1, NMTEST
@@ -4625,6 +4652,9 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                                                *thlqgat(i, j)*rhow*dlzwgat(i, j)
                     wb%frws(ilmos(I), j) = wb%frws(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i)) &
                                                *thicgat(i, j)*rhoice*dlzwgat(i, j)
+                    sov%tbar(ilmos(I),j) = sov%tbar(ilmos(I), j) + TBARgat(I,J)*ACLASS(ilmos(I),jlmos(i))                    
+                    sov%thic(ilmos(I),j) = sov%thic(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i))*thicgat(i, j)
+                    sov%thlq(ilmos(I),j) = sov%thlq(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i))*thlqgat(i, j)
                 END DO
 !            END DO
         END IF !IF (FRAC(I) >= 0.0) THEN
@@ -4693,9 +4723,11 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
    IF (OUTFIELDSFLAG .eq. 1) THEN
     CALL UPDATEFIELDSOUT(vr, ts, iof, &
                          wb%pre, wb%evap, wb%rof, wb%dstg, &
-                         TBARACC, wb%lqws, wb%frws, &
+                         sov%tbar, wb%lqws, wb%frws, &
                          wb%rcan, wb%sncan, &
                          wb%pndw, wb%sno, wb%wsno, &
+                         eng%gflx, eng%hfs, eng%qevp, &
+                         sov%thlq, sov%thic ,&
                          NA, IGND, &
                          IDAY, IYEAR)
    ENDIF
@@ -4722,6 +4754,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
       THLQACC = 0.
       THICACC = 0.
       THALACC = 0.
+      GFLXACC = 0.
     ALVSACC = 0.
     ALIRACC = 0.
     RHOSACC = 0.
@@ -4763,6 +4796,14 @@ wb%rof = 0.0
 wb%rofo = 0.0
 wb%rofs =  0.0
 wb%rofb = 0.0
+
+eng%gflx = 0.0
+eng%hfs  = 0.0
+eng%qevp = 0.0
+
+sov%tbar = 0.0
+sov%thic = 0.0
+sov%thlq = 0.0
 
 THIC_FLD = 0.
 THLQ_FLD = 0.
