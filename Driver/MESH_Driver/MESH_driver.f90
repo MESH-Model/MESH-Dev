@@ -904,17 +904,22 @@ WRITE (6, "(' MESH 'A, ' --- ',' ('A,')'/)"), TRIM (RELEASE(7)), &
 !At the moment only class,hydro parameters and some outputs
       
 !Check if any arguments are found
-narg = command_argument_count()   
+narg = command_argument_count()
+!write(6, *) narg
 if (narg .gt. 0) then
     VARIABLEFILESFLAG = 1
     if (narg .eq. 1) then
         call get_command_argument(1, fl_listMesh)
+!        write(6, *) fl_listMesh
     elseif (narg .eq. 2) then
+        call get_command_argument(1, fl_listMesh)
+!        write(6, *) fl_listMesh
         call get_command_argument(2, alphCh)
         call value(alphCh, alpharain, ios)
         cm%clin(8)%alpharain = alpharain
-        call Init_fls(fls, trim(adjustl(fl_listMesh)))
+!        write(6, *) cm%clin(8)%alpharain
     end if
+    call Init_fls(fls, trim(adjustl(fl_listMesh)))
 end if !(narg .gt. 0) then
 
 ! Find the appropriate value of IGND from MESH_input_soil_levels.txt
