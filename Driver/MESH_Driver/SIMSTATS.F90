@@ -91,6 +91,7 @@ subroutine calc_stats(obs, sim, n, bias, nsd, lnsd, nsw, tpd)
 
     !LOCAL VARIABLES
     integer :: nad, naw, ipo(1), ips(1)
+    real :: ltol
     real :: obsdm, obswm, lobsdm
     real :: errd(n), errdm(n), errtp
     real :: lerrd(n), lerrdm(n)
@@ -101,7 +102,10 @@ subroutine calc_stats(obs, sim, n, bias, nsd, lnsd, nsw, tpd)
     !FOR WEEKLY CALCULATIONS
     nw = ceiling(n / 7.0)
     allocate(obsw(nw), simw(nw), errw(nw), errwm(nw))
-    
+
+    !> Tolerance for low-flow values.
+    ltol = 0.0001
+
     ilf = 30
     !Day left out in the calculation
     if (n.le.ilf)then
@@ -126,6 +130,8 @@ subroutine calc_stats(obs, sim, n, bias, nsd, lnsd, nsw, tpd)
     errw  = 0.0
     errwm = 0.0
     errtp = 0
+    lerrd = 0.0
+    lerrdm = 0.0
 
     !WEEKLY OBSERVED AND SIMULATED VALUES
     iw = 0
@@ -139,17 +145,18 @@ subroutine calc_stats(obs, sim, n, bias, nsd, lnsd, nsw, tpd)
     !MEAN OF OBSERVED RUNOFF
     nad    = count(obs(ilf:ncal) >= 0.0)
     obsdm  = sum(obs(ilf:ncal), mask = obs(ilf:ncal) >= 0.0) / nad
-    lobsdm = sum(log(obs(ilf:ncal)), mask = obs(ilf:ncal) >= 0.0) / nad
+    lobsdm = sum(log(obs(ilf:ncal) + ltol), mask = obs(ilf:ncal) >= 0.0) / nad
+
     !MEAN OF WEEKLY RUNOFF
     naw = count(obsw(1:nw) >= 0.0)
     obswm  = sum(obsw(1:nw), mask = obsw(1:nw) >= 0.0) / naw
-    
+
     !CALCULATE ERRORS FOR RUNOFF GREATER THAN ZERO - DAILY
     where(obs(ilf:ncal) >= 0.0)
         errd(ilf:ncal)   = obs(ilf:ncal) - sim(ilf:ncal)
         errdm(ilf:ncal)  = obs(ilf:ncal) - obsdm
-        lerrd(ilf:ncal)  = log(obs(ilf:ncal)) - log(sim(ilf:ncal))
-        lerrdm(ilf:ncal) = log(obs(ilf:ncal)) - lobsdm        
+        lerrd(ilf:ncal)  = log(obs(ilf:ncal) + ltol) - log(sim(ilf:ncal) + ltol)
+        lerrdm(ilf:ncal) = log(obs(ilf:ncal) + ltol) - lobsdm
     end where
 
     !CALCULATE ERRORS FOR RUNOFF GREATER THAN ZERO - WEEKLY
@@ -160,9 +167,9 @@ subroutine calc_stats(obs, sim, n, bias, nsd, lnsd, nsw, tpd)
 
     !CALCULATE THE STATISTICAL COEFFICIENTS
     bias = sum(errd(ilf:ncal)) / (obsdm * nad)
-    nsd  = 1.0 - sum(errd*errd) / sum(errdm*errdm)
-    lnsd = 1.0 - sum(lerrd*lerrd) / sum(lerrdm*lerrdm)
-    nsw  = 1.0 - sum(errw*errw) / sum(errwm*errwm)
+    nsd  = 1.0 - sum(errd**2) / sum(errdm**2)
+    lnsd = 1.0 - sum(lerrd**2) / sum(lerrdm**2)
+    nsw  = 1.0 - sum(errw**2) / sum(errwm**2)
 
     !TIME TO PEAK - DAILY BASIS
     errtp = 0.0
