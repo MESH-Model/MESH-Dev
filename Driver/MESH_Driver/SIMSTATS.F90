@@ -86,6 +86,7 @@ subroutine calc_stats(obs, sim, n, bias, nsd, lnsd, nsw, tpd)
     real, intent(in), dimension(:) :: obs, sim
     real, allocatable ::  obsw(:), simw(:), errw(:), errwm(:)
     integer :: ilf !number of day left out in the calculation of metrics
+
     !OUTGOING VARIABLES
     real :: bias, nsd, lnsd, nsw, tpd, tp
 
@@ -106,13 +107,12 @@ subroutine calc_stats(obs, sim, n, bias, nsd, lnsd, nsw, tpd)
     !> Tolerance for low-flow values.
     ltol = 0.0001
 
-    ilf = 30
     !Day left out in the calculation
-    if (n.le.ilf)then
-        ilf = 1
+    if (METRICSINCLUDESPINUP /= 0) then
+        ilf = METRICSSPINUP
     else
-        ilf = 30 ! this number have to be passed as an input in some place
-    endif
+        ilf = 1
+    end if
 
     !INITIALIZE OUTPUT AND LOCAL VARIABLES
     bias = 0.0
