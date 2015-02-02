@@ -108,10 +108,10 @@ subroutine calc_stats(obs, sim, n, bias, nsd, lnsd, nsw, tpd)
     ltol = 0.0001
 
     !Day left out in the calculation
-    if (METRICSINCLUDESPINUP /= 0) then
-        ilf = METRICSSPINUP
-    else
+    if (METRICSINCLUDESPINUP == 1) then
         ilf = 1
+    else
+        ilf = METRICSSPINUP
     end if
 
     !INITIALIZE OUTPUT AND LOCAL VARIABLES
