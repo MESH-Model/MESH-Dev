@@ -190,7 +190,17 @@
 
       METRICSSTATSOUTFLAG = 1
       METRICSFILTEROBSFLAG = 1
+
+!> METRICSSPINUP specifies the starting day from which to calculate metrics.
+!> The starting day is relative to the beginning of the simulation; Day 1 is
+!> the first day of the simulation, regardless of the date or its Julian date
+!> in the year. If METRICSINCLUDESPINUP is set to 1, METRICSSPINUP is not used.
       METRICSSPINUP = 30
+
+!> If METRICSINCLUDESPINUP is set to 1 then metrics are calculated from the
+!> first day of the simulation (1:ndsim).
+!> If METRICSINCLUDESPINUP is set to 0 then metrics are calculated from
+!> METRICSSPINUP (METRICSSPINUP:ndsim).
       METRICSINCLUDESPINUP = 1
 
 !> If FROZENSOILINFILFLAG is 0, all snow melt infiltrates.
