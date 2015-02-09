@@ -3521,7 +3521,7 @@ IF(INTERPOLATIONFLAG == 1)THEN
     PREGRD  = 0.0
 
     DO k = 1, nml
-          IF(cp%FAREROW(ilmos(k),jlmos(k)) .GT. 0.0)THEN
+          IF(FAREGAT(k) .GT. 0.0)THEN
              FSVHGRD(ilmos(k)) = FSVHGRD(ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * FSVHGAT(K)
              FSIHGRD(ilmos(k)) = FSIHGRD(ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * FSIHGAT(K)
              FDLGRD (ilmos(k)) = FDLGRD (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * FDLGAT (K)
@@ -4229,85 +4229,85 @@ wb_h%frws = 0.0
 
 !$omp parallel do
 DO I=1,nml
-    CDHGRD(ilmos(I))=CDHGRD(ilmos(I))+CDHgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    CDMGRD(ilmos(I))=CDMGRD(ilmos(I))+CDMgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    HFSGRD(ilmos(I))=HFSGRD(ilmos(I))+HFSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    TFXGRD(ilmos(I))=TFXGRD(ilmos(I))+TFXgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    QEVPGRD(ilmos(I))=QEVPGRD(ilmos(I))+QEVPgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    QFSGRD(ilmos(I))=QFSGRD(ilmos(I))+QFSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    QFXGRD(ilmos(I))=QFXGRD(ilmos(I))+QFXgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    PETGRD(ilmos(I))=PETGRD(ilmos(I))+PETgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    GAGRD(ilmos(I))=GAGRD(ilmos(I))+GAgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    EFGRD(ilmos(I))=EFGRD(ilmos(I))+EFgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    GTGRD(ilmos(I))=GTGRD(ilmos(I))+GTgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    QGGRD(ilmos(I))=QGGRD(ilmos(I))+QGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-!    TSFGRD(ilmos(I))=TSFGRD(ilmos(I))+TSFgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    ALVSGRD(ilmos(I))=ALVSGRD(ilmos(I))+ALVSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    ALIRGRD(ilmos(I))=ALIRGRD(ilmos(I))+ALIRgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    SFCTGRD(ilmos(I))=SFCTGRD(ilmos(I))+SFCTgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    SFCUGRD(ilmos(I))=SFCUGRD(ilmos(I))+SFCUgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    SFCVGRD(ilmos(I))=SFCVGRD(ilmos(I))+SFCVgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    SFCQGRD(ilmos(I))=SFCQGRD(ilmos(I))+SFCQgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    FSNOGRD(ilmos(I))=FSNOGRD(ilmos(I))+FSNOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    FSGVGRD(ilmos(I))=FSGVGRD(ilmos(I))+FSGVgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    FSGSGRD(ilmos(I))=FSGSGRD(ilmos(I))+FSGSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    FSGGGRD(ilmos(I))=FSGGGRD(ilmos(I))+FSGGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    SNOGRD(ilmos(I))=SNOGRD(ilmos(I))+SNOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    FLGVGRD(ilmos(I))=FLGVGRD(ilmos(I))+FLGVgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    FLGSGRD(ilmos(I))=FLGSGRD(ilmos(I))+FLGSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    FLGGGRD(ilmos(I))=FLGGGRD(ilmos(I))+FLGGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    HFSCGRD(ilmos(I))=HFSCGRD(ilmos(I))+HFSCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    HFSSGRD(ilmos(I))=HFSSGRD(ilmos(I))+HFSSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    HFSGGRD(ilmos(I))=HFSGGRD(ilmos(I))+HFSGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    HEVCGRD(ilmos(I))=HEVCGRD(ilmos(I))+HEVCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    HEVSGRD(ilmos(I))=HEVSGRD(ilmos(I))+HEVSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    HEVGGRD(ilmos(I))=HEVGGRD(ilmos(I))+HEVGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    HMFCGRD(ilmos(I))=HMFCGRD(ilmos(I))+HMFCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    HMFNGRD(ilmos(I))=HMFNGRD(ilmos(I))+HMFNgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    HTCCGRD(ilmos(I))=HTCCGRD(ilmos(I))+HTCCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    HTCSGRD(ilmos(I))=HTCSGRD(ilmos(I))+HTCSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    PCFCGRD(ilmos(I))=PCFCGRD(ilmos(I))+PCFCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    PCLCGRD(ilmos(I))=PCLCGRD(ilmos(I))+PCLCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    PCPNGRD(ilmos(I))=PCPNGRD(ilmos(I))+PCPNgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    PCPGGRD(ilmos(I))=PCPGGRD(ilmos(I))+PCPGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    QFGGRD(ilmos(I))=QFGGRD(ilmos(I))+QFGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    QFNGRD(ilmos(I))=QFNGRD(ilmos(I))+QFNgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    QFCLGRD(ilmos(I))=QFCLGRD(ilmos(I))+QFCLgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    QFCFGRD(ilmos(I))=QFCFGRD(ilmos(I))+QFCFgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    ROFGRD(ilmos(I))=ROFGRD(ilmos(I))+ROFgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    ROFOGRD(ilmos(I))=ROFOGRD(ilmos(I))+ROFOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    ROFSGRD(ilmos(I))=ROFSGRD(ilmos(I))+ROFSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    ROFBGRD(ilmos(I))=ROFBGRD(ilmos(I))+ROFBgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    ROFCGRD(ilmos(I))=ROFCGRD(ilmos(I))+ROFCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    ROFNGRD(ilmos(I))=ROFNGRD(ilmos(I))+ROFNgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    ROVGGRD(ilmos(I))=ROVGGRD(ilmos(I))+ROVGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    WTRCGRD(ilmos(I))=WTRCGRD(ilmos(I))+WTRCgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    WTRSGRD(ilmos(I))=WTRSGRD(ilmos(I))+WTRSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    WTRGGRD(ilmos(I))=WTRGGRD(ilmos(I))+WTRGgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    DRGRD(ilmos(I))=DRGRD(ilmos(I))+DRgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    WTABGRD(ilmos(I))=WTABGRD(ilmos(I))+WTABgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    ILMOGRD(ilmos(I))=ILMOGRD(ilmos(I))+ILMOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    UEGRD(ilmos(I))=UEGRD(ilmos(I))+UEgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    HBLGRD(ilmos(I))=HBLGRD(ilmos(I))+HBLgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-    wb_h%pre(ilmos(I)) = wb_h%pre(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*pregrd(ilmos(i))*delt
-    wb_h%evap(ilmos(I)) = wb_h%evap(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*qfsgat(i)*delt
-    wb_h%rof(ilmos(I)) = wb_h%rof(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*rofgat(i)*delt
-    wb_h%rofo(ilmos(I)) = wb_h%rofo(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*rofogat(i)*delt
-    wb_h%rofs(ilmos(I)) = wb_h%rofs(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*rofsgat(i)*delt
-    wb_h%rofb(ilmos(I)) = wb_h%rofb(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*rofbgat(i)*delt
-    wb_h%rcan(ilmos(I)) = wb_h%rcan(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*rcangat(i)
-    wb_h%sncan(ilmos(I)) = wb_h%sncan(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*scangat(i)
-    wb_h%pndw(ilmos(I)) = wb_h%pndw(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*zpndgat(i)*rhow
-    wb_h%sno(ilmos(I)) = wb_h%sno(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*snogat(i)
-    wb_h%wsno(ilmos(I)) = wb_h%wsno(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*wsnogat(i)
+    CDHGRD(ilmos(I))=CDHGRD(ilmos(I))+CDHgat(I)*FAREGAT(i)
+    CDMGRD(ilmos(I))=CDMGRD(ilmos(I))+CDMgat(I)*FAREGAT(i)
+    HFSGRD(ilmos(I))=HFSGRD(ilmos(I))+HFSgat(I)*FAREGAT(i)
+    TFXGRD(ilmos(I))=TFXGRD(ilmos(I))+TFXgat(I)*FAREGAT(i)
+    QEVPGRD(ilmos(I))=QEVPGRD(ilmos(I))+QEVPgat(I)*FAREGAT(i)
+    QFSGRD(ilmos(I))=QFSGRD(ilmos(I))+QFSgat(I)*FAREGAT(i)
+    QFXGRD(ilmos(I))=QFXGRD(ilmos(I))+QFXgat(I)*FAREGAT(i)
+    PETGRD(ilmos(I))=PETGRD(ilmos(I))+PETgat(I)*FAREGAT(i)
+    GAGRD(ilmos(I))=GAGRD(ilmos(I))+GAgat(I)*FAREGAT(i)
+    EFGRD(ilmos(I))=EFGRD(ilmos(I))+EFgat(I)*FAREGAT(i)
+    GTGRD(ilmos(I))=GTGRD(ilmos(I))+GTgat(I)*FAREGAT(i)
+    QGGRD(ilmos(I))=QGGRD(ilmos(I))+QGgat(I)*FAREGAT(i)
+!    TSFGRD(ilmos(I))=TSFGRD(ilmos(I))+TSFgat(I)*FAREGAT(i)
+    ALVSGRD(ilmos(I))=ALVSGRD(ilmos(I))+ALVSgat(I)*FAREGAT(i)
+    ALIRGRD(ilmos(I))=ALIRGRD(ilmos(I))+ALIRgat(I)*FAREGAT(i)
+    SFCTGRD(ilmos(I))=SFCTGRD(ilmos(I))+SFCTgat(I)*FAREGAT(i)
+    SFCUGRD(ilmos(I))=SFCUGRD(ilmos(I))+SFCUgat(I)*FAREGAT(i)
+    SFCVGRD(ilmos(I))=SFCVGRD(ilmos(I))+SFCVgat(I)*FAREGAT(i)
+    SFCQGRD(ilmos(I))=SFCQGRD(ilmos(I))+SFCQgat(I)*FAREGAT(i)
+    FSNOGRD(ilmos(I))=FSNOGRD(ilmos(I))+FSNOgat(I)*FAREGAT(i)
+    FSGVGRD(ilmos(I))=FSGVGRD(ilmos(I))+FSGVgat(I)*FAREGAT(i)
+    FSGSGRD(ilmos(I))=FSGSGRD(ilmos(I))+FSGSgat(I)*FAREGAT(i)
+    FSGGGRD(ilmos(I))=FSGGGRD(ilmos(I))+FSGGgat(I)*FAREGAT(i)
+    SNOGRD(ilmos(I))=SNOGRD(ilmos(I))+SNOgat(I)*FAREGAT(i)
+    FLGVGRD(ilmos(I))=FLGVGRD(ilmos(I))+FLGVgat(I)*FAREGAT(i)
+    FLGSGRD(ilmos(I))=FLGSGRD(ilmos(I))+FLGSgat(I)*FAREGAT(i)
+    FLGGGRD(ilmos(I))=FLGGGRD(ilmos(I))+FLGGgat(I)*FAREGAT(i)
+    HFSCGRD(ilmos(I))=HFSCGRD(ilmos(I))+HFSCgat(I)*FAREGAT(i)
+    HFSSGRD(ilmos(I))=HFSSGRD(ilmos(I))+HFSSgat(I)*FAREGAT(i)
+    HFSGGRD(ilmos(I))=HFSGGRD(ilmos(I))+HFSGgat(I)*FAREGAT(i)
+    HEVCGRD(ilmos(I))=HEVCGRD(ilmos(I))+HEVCgat(I)*FAREGAT(i)
+    HEVSGRD(ilmos(I))=HEVSGRD(ilmos(I))+HEVSgat(I)*FAREGAT(i)
+    HEVGGRD(ilmos(I))=HEVGGRD(ilmos(I))+HEVGgat(I)*FAREGAT(i)
+    HMFCGRD(ilmos(I))=HMFCGRD(ilmos(I))+HMFCgat(I)*FAREGAT(i)
+    HMFNGRD(ilmos(I))=HMFNGRD(ilmos(I))+HMFNgat(I)*FAREGAT(i)
+    HTCCGRD(ilmos(I))=HTCCGRD(ilmos(I))+HTCCgat(I)*FAREGAT(i)
+    HTCSGRD(ilmos(I))=HTCSGRD(ilmos(I))+HTCSgat(I)*FAREGAT(i)
+    PCFCGRD(ilmos(I))=PCFCGRD(ilmos(I))+PCFCgat(I)*FAREGAT(i)
+    PCLCGRD(ilmos(I))=PCLCGRD(ilmos(I))+PCLCgat(I)*FAREGAT(i)
+    PCPNGRD(ilmos(I))=PCPNGRD(ilmos(I))+PCPNgat(I)*FAREGAT(i)
+    PCPGGRD(ilmos(I))=PCPGGRD(ilmos(I))+PCPGgat(I)*FAREGAT(i)
+    QFGGRD(ilmos(I))=QFGGRD(ilmos(I))+QFGgat(I)*FAREGAT(i)
+    QFNGRD(ilmos(I))=QFNGRD(ilmos(I))+QFNgat(I)*FAREGAT(i)
+    QFCLGRD(ilmos(I))=QFCLGRD(ilmos(I))+QFCLgat(I)*FAREGAT(i)
+    QFCFGRD(ilmos(I))=QFCFGRD(ilmos(I))+QFCFgat(I)*FAREGAT(i)
+    ROFGRD(ilmos(I))=ROFGRD(ilmos(I))+ROFgat(I)*FAREGAT(i)
+    ROFOGRD(ilmos(I))=ROFOGRD(ilmos(I))+ROFOgat(I)*FAREGAT(i)
+    ROFSGRD(ilmos(I))=ROFSGRD(ilmos(I))+ROFSgat(I)*FAREGAT(i)
+    ROFBGRD(ilmos(I))=ROFBGRD(ilmos(I))+ROFBgat(I)*FAREGAT(i)
+    ROFCGRD(ilmos(I))=ROFCGRD(ilmos(I))+ROFCgat(I)*FAREGAT(i)
+    ROFNGRD(ilmos(I))=ROFNGRD(ilmos(I))+ROFNgat(I)*FAREGAT(i)
+    ROVGGRD(ilmos(I))=ROVGGRD(ilmos(I))+ROVGgat(I)*FAREGAT(i)
+    WTRCGRD(ilmos(I))=WTRCGRD(ilmos(I))+WTRCgat(I)*FAREGAT(i)
+    WTRSGRD(ilmos(I))=WTRSGRD(ilmos(I))+WTRSgat(I)*FAREGAT(i)
+    WTRGGRD(ilmos(I))=WTRGGRD(ilmos(I))+WTRGgat(I)*FAREGAT(i)
+    DRGRD(ilmos(I))=DRGRD(ilmos(I))+DRgat(I)*FAREGAT(i)
+    WTABGRD(ilmos(I))=WTABGRD(ilmos(I))+WTABgat(I)*FAREGAT(i)
+    ILMOGRD(ilmos(I))=ILMOGRD(ilmos(I))+ILMOgat(I)*FAREGAT(i)
+    UEGRD(ilmos(I))=UEGRD(ilmos(I))+UEgat(I)*FAREGAT(i)
+    HBLGRD(ilmos(I))=HBLGRD(ilmos(I))+HBLgat(I)*FAREGAT(i)
+    wb_h%pre(ilmos(I)) = wb_h%pre(ilmos(I)) + FAREGAT(i)*pregrd(ilmos(i))*delt
+    wb_h%evap(ilmos(I)) = wb_h%evap(ilmos(I)) + FAREGAT(i)*qfsgat(i)*delt
+    wb_h%rof(ilmos(I)) = wb_h%rof(ilmos(I)) + FAREGAT(i)*rofgat(i)*delt
+    wb_h%rofo(ilmos(I)) = wb_h%rofo(ilmos(I)) + FAREGAT(i)*rofogat(i)*delt
+    wb_h%rofs(ilmos(I)) = wb_h%rofs(ilmos(I)) + FAREGAT(i)*rofsgat(i)*delt
+    wb_h%rofb(ilmos(I)) = wb_h%rofb(ilmos(I)) + FAREGAT(i)*rofbgat(i)*delt
+    wb_h%rcan(ilmos(I)) = wb_h%rcan(ilmos(I)) + FAREGAT(i)*rcangat(i)
+    wb_h%sncan(ilmos(I)) = wb_h%sncan(ilmos(I)) + FAREGAT(i)*scangat(i)
+    wb_h%pndw(ilmos(I)) = wb_h%pndw(ilmos(I)) + FAREGAT(i)*zpndgat(i)*rhow
+    wb_h%sno(ilmos(I)) = wb_h%sno(ilmos(I)) + FAREGAT(i)*snogat(i)
+    wb_h%wsno(ilmos(I)) = wb_h%wsno(ilmos(I)) + FAREGAT(i)*wsnogat(i)
     DO J=1,IGND
-        HMFGGRD(ilmos(I),J)=HMFGGRD(ilmos(I),J)+HMFGgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
-        HTCGRD(ilmos(I),J)=HTCGRD(ilmos(I),J)+HTCgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
-        QFCGRD(ilmos(I),J)=QFCGRD(ilmos(I),J)+QFCgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
-        GFLXGRD(ilmos(I),J)=GFLXGRD(ilmos(I),J)+GFLXgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
-        wb_h%lqws(ilmos(I), j) = wb_h%lqws(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i)) &
+        HMFGGRD(ilmos(I),J)=HMFGGRD(ilmos(I),J)+HMFGgat(I,J)*FAREGAT(i)
+        HTCGRD(ilmos(I),J)=HTCGRD(ilmos(I),J)+HTCgat(I,J)*FAREGAT(i)
+        QFCGRD(ilmos(I),J)=QFCGRD(ilmos(I),J)+QFCgat(I,J)*FAREGAT(i)
+        GFLXGRD(ilmos(I),J)=GFLXGRD(ilmos(I),J)+GFLXgat(I,J)*FAREGAT(i)
+        wb_h%lqws(ilmos(I), j) = wb_h%lqws(ilmos(I), j) + FAREGAT(i) &
                                      *thlqgat(i, j)*dlzwgat(i, j)*rhow
-        wb_h%frws(ilmos(I), j) = wb_h%frws(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i)) &
+        wb_h%frws(ilmos(I), j) = wb_h%frws(ilmos(I), j) + FAREGAT(i) &
                                      *thicgat(i, j)*dlzwgat(i, j)*rhoice
     ENDDO
     wb_h%stg(ilmos(I)) = wb%rcan(ilmos(I)) + wb%sncan(ilmos(I)) + wb%pndw(ilmos(I)) + wb%sno(ilmos(I)) + wb%wsno(ilmos(I)) + &
@@ -4385,8 +4385,8 @@ IF((IHOUR==12).AND.(IMIN==0))  THEN
 ! BRUCE DAVISON - AUG 17, 2009 (see notes in my notebook for this day)
 ! Fixed calculation of basin averages. Needs documenting and testing.
     do I=1,NML
-       basin_SCA = basin_SCA + FSNOGAT(I)*cp%FAREROW(ilmos(I),jlmos(I))
-       basin_SWE = basin_SWE + SNOGAT(I)*cp%FAREROW(ilmos(I),jlmos(I))
+       basin_SCA = basin_SCA + FSNOGAT(I)*FAREGAT(i)
+       basin_SWE = basin_SWE + SNOGAT(I)*FAREGAT(i)
     enddo
 
    basin_SCA = basin_SCA/TOTAL_AREA
@@ -4405,54 +4405,54 @@ ENDIF
 !$omp parallel do
 DO I = 1, nml
    IF(FRAC(ilmos(I)) /= 0.0)THEN
-         PREACC(ilmos(I))  = PREACC(ilmos(I)) + cp%FAREROW(ilmos(I),jlmos(i))*PREGRD(ilmos(I))*DELT
-         GTACC(ilmos(I))   = GTACC(ilmos(I))  + GTgat(I)*  cp%FAREROW(ilmos(I),jlmos(i))
-         QEVPACC(ilmos(I)) = QEVPACC(ilmos(I))+ QEVPgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-         EVAPACC(ilmos(I)) = EVAPACC(ilmos(I))+ QFSgat(I)* cp%FAREROW(ilmos(I),jlmos(i))*DELT
-         HFSACC(ilmos(I))  = HFSACC(ilmos(I)) + HFSgat(I)* cp%FAREROW(ilmos(I),jlmos(i))
-         HMFNACC(ilmos(I)) = HMFNACC(ilmos(I))+ HMFNgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-         ROFACC(ilmos(I))  = ROFACC(ilmos(I)) + ROFgat(I)* cp%FAREROW(ilmos(I),jlmos(i))*DELT
-         ROFOACC(ilmos(I)) = ROFOACC(ilmos(I))+ ROFOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))*DELT
-         ROFSACC(ilmos(I)) = ROFSACC(ilmos(I))+ ROFSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))*DELT
-         ROFBACC(ilmos(I)) = ROFBACC(ilmos(I))+ ROFBgat(I)*cp%FAREROW(ilmos(I),jlmos(i))*DELT
-         WTBLACC(ilmos(I)) = WTBLACC(ilmos(I))+ WTABgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
+         PREACC(ilmos(I))  = PREACC(ilmos(I)) + FAREGAT(i)*PREGRD(ilmos(I))*DELT
+         GTACC(ilmos(I))   = GTACC(ilmos(I))  + GTgat(I)*  FAREGAT(i)
+         QEVPACC(ilmos(I)) = QEVPACC(ilmos(I))+ QEVPgat(I)*FAREGAT(i)
+         EVAPACC(ilmos(I)) = EVAPACC(ilmos(I))+ QFSgat(I)* FAREGAT(i)*DELT
+         HFSACC(ilmos(I))  = HFSACC(ilmos(I)) + HFSgat(I)* FAREGAT(i)
+         HMFNACC(ilmos(I)) = HMFNACC(ilmos(I))+ HMFNgat(I)*FAREGAT(i)
+         ROFACC(ilmos(I))  = ROFACC(ilmos(I)) + ROFgat(I)* FAREGAT(i)*DELT
+         ROFOACC(ilmos(I)) = ROFOACC(ilmos(I))+ ROFOgat(I)*FAREGAT(i)*DELT
+         ROFSACC(ilmos(I)) = ROFSACC(ilmos(I))+ ROFSgat(I)*FAREGAT(i)*DELT
+         ROFBACC(ilmos(I)) = ROFBACC(ilmos(I))+ ROFBgat(I)*FAREGAT(i)*DELT
+         WTBLACC(ilmos(I)) = WTBLACC(ilmos(I))+ WTABgat(I)*FAREGAT(i)
             DO J = 1, IGND
             TBARACC(ilmos(I),J) = TBARACC(ilmos(I),J)+TBARgat(I,J)*ACLASS(ilmos(I),jlmos(i))
-            THLQACC(ilmos(I),J) = THLQACC(ilmos(I),J)+THLQgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
-            THICACC(ilmos(I),J) = THICACC(ilmos(I),J)+THICgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
+            THLQACC(ilmos(I),J) = THLQACC(ilmos(I),J)+THLQgat(I,J)*FAREGAT(i)
+            THICACC(ilmos(I),J) = THICACC(ilmos(I),J)+THICgat(I,J)*FAREGAT(i)
             THALACC(ilmos(I),J) = THALACC(ilmos(I),J)+(THLQgat(I,J)+ &
-                                         THICgat(I,J))*cp%FAREROW(ilmos(I),jlmos(i))
+                                         THICgat(I,J))*FAREGAT(i)
 
             !Added by GSA compute daily heat conduction flux between layers
-            GFLXACC(ilmos(I),J) = GFLXACC(ilmos(I),J)+GFLXgat(I,J)*cp%FAREROW(ilmos(I),jlmos(i))
+            GFLXACC(ilmos(I),J) = GFLXACC(ilmos(I),J)+GFLXgat(I,J)*FAREGAT(i)
 
             !(I) = THALACC_STG(I) + THALACC(I,J)
-                THLQ_FLD(ilmos(I),J) =  THLQ_FLD(ilmos(I),J) + THLQgat(I,J)*RHOW*cp%FAREROW(ilmos(I),jlmos(i))*DLZWgat(I,J)
-                THIC_FLD(ilmos(I),J) =  THIC_FLD(ilmos(I),J) + THICgat(I,J)*RHOICE*cp%FAREROW(ilmos(I),jlmos(i))*DLZWgat(I,J)
+                THLQ_FLD(ilmos(I),J) =  THLQ_FLD(ilmos(I),J) + THLQgat(I,J)*RHOW*FAREGAT(i)*DLZWgat(I,J)
+                THIC_FLD(ilmos(I),J) =  THIC_FLD(ilmos(I),J) + THICgat(I,J)*RHOICE*FAREGAT(i)*DLZWgat(I,J)
          ENDDO
-         ALVSACC(ilmos(I)) = ALVSACC(ilmos(I))+ALVSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))*FSVHGRD(ilmos(I))
-         ALIRACC(ilmos(I)) = ALIRACC(ilmos(I))+ALIRgat(I)*cp%FAREROW(ilmos(I),jlmos(i))*FSIHGRD(ilmos(I))
+         ALVSACC(ilmos(I)) = ALVSACC(ilmos(I))+ALVSgat(I)*FAREGAT(i)*FSVHGRD(ilmos(I))
+         ALIRACC(ilmos(I)) = ALIRACC(ilmos(I))+ALIRgat(I)*FAREGAT(i)*FSIHGRD(ilmos(I))
          IF(SNOgat(I)>0.0) THEN
-            RHOSACC(ilmos(I)) = RHOSACC(ilmos(I))+RHOSgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-            TSNOACC(ilmos(I)) = TSNOACC(ilmos(I))+TSNOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-            WSNOACC(ilmos(I)) = WSNOACC(ilmos(I))+WSNOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-            SNOARE(ilmos(I))  = SNOARE(ilmos(I))+cp%FAREROW(ilmos(I),jlmos(i))
+            RHOSACC(ilmos(I)) = RHOSACC(ilmos(I))+RHOSgat(I)*FAREGAT(i)
+            TSNOACC(ilmos(I)) = TSNOACC(ilmos(I))+TSNOgat(I)*FAREGAT(i)
+            WSNOACC(ilmos(I)) = WSNOACC(ilmos(I))+WSNOgat(I)*FAREGAT(i)
+            SNOARE(ilmos(I))  = SNOARE(ilmos(I))+FAREGAT(i)
          ENDIF
          IF(TCANgat(I) > 0.5) THEN
-            TCANACC(ilmos(I)) = TCANACC(ilmos(I))+TCANgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-            CANARE(ilmos(I))  = CANARE(ilmos(I))+cp%FAREROW(ilmos(I),jlmos(i))
+            TCANACC(ilmos(I)) = TCANACC(ilmos(I))+TCANgat(I)*FAREGAT(i)
+            CANARE(ilmos(I))  = CANARE(ilmos(I))+FAREGAT(i)
          ENDIF
-         SNOACC(ilmos(I))  = SNOACC(ilmos(I))+SNOgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-         RCANACC(ilmos(I)) = RCANACC(ilmos(I))+RCANgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-         SCANACC(ilmos(I)) = SCANACC(ilmos(I))+SCANgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-         GROACC(ilmos(I))  = GROACC(ilmos(I))+GROgat(I)*cp%FAREROW(ilmos(I),jlmos(i))
-         FSINACC(ilmos(I)) = FSINACC(ilmos(I))+FSDOWN(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
-         FLINACC(ilmos(I)) = FLINACC(ilmos(I))+FDLGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
-         FLUTACC(ilmos(I)) = FLUTACC(ilmos(I))+SBC*GTgat(I)**4*cp%FAREROW(ilmos(I),jlmos(i))
-         TAACC(ilmos(I))   = TAACC(ilmos(I))+TAGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
-         UVACC(ilmos(I))   = UVACC(ilmos(I))+UVGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
-         PRESACC(ilmos(I)) = PRESACC(ilmos(I))+PRESGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
-         QAACC(ilmos(I))   = QAACC(ilmos(I))+QAGRD(ilmos(I))*cp%FAREROW(ilmos(I),jlmos(i))
+         SNOACC(ilmos(I))  = SNOACC(ilmos(I))+SNOgat(I)*FAREGAT(i)
+         RCANACC(ilmos(I)) = RCANACC(ilmos(I))+RCANgat(I)*FAREGAT(i)
+         SCANACC(ilmos(I)) = SCANACC(ilmos(I))+SCANgat(I)*FAREGAT(i)
+         GROACC(ilmos(I))  = GROACC(ilmos(I))+GROgat(I)*FAREGAT(i)
+         FSINACC(ilmos(I)) = FSINACC(ilmos(I))+FSDOWN(ilmos(I))*FAREGAT(i)
+         FLINACC(ilmos(I)) = FLINACC(ilmos(I))+FDLGRD(ilmos(I))*FAREGAT(i)
+         FLUTACC(ilmos(I)) = FLUTACC(ilmos(I))+SBC*GTgat(I)**4*FAREGAT(i)
+         TAACC(ilmos(I))   = TAACC(ilmos(I))+TAGRD(ilmos(I))*FAREGAT(i)
+         UVACC(ilmos(I))   = UVACC(ilmos(I))+UVGRD(ilmos(I))*FAREGAT(i)
+         PRESACC(ilmos(I)) = PRESACC(ilmos(I))+PRESGRD(ilmos(I))*FAREGAT(i)
+         QAACC(ilmos(I))   = QAACC(ilmos(I))+QAGRD(ilmos(I))*FAREGAT(i)
    ENDIF
 ENDDO !DO I=1,nml
 
@@ -4641,26 +4641,26 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     DO I = 1, nml
         IF (FRAC(ilmos(I)) >= 0.0) THEN
 !            DO M = 1, NMTEST
-                TOTAL_SCAN = TOTAL_SCAN + cp%FAREROW(ilmos(I), jlmos(i))*SCANgat(I)
-                TOTAL_RCAN = TOTAL_RCAN + cp%FAREROW(ilmos(I), jlmos(i))*RCANgat(I)
-                TOTAL_SNO = TOTAL_SNO + cp%FAREROW(ilmos(I), jlmos(i))*SNOgat(I)
-                TOTAL_WSNO = TOTAL_WSNO + cp%FAREROW(ilmos(I), jlmos(i))*WSNOgat(I)
-                TOTAL_ZPND = TOTAL_ZPND + cp%FAREROW(ilmos(I), jlmos(i))*ZPNDgat(I)*RHOW
-                wb%rcan(ilmos(I)) = wb%rcan(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*scangat(i)
-                wb%sncan(ilmos(I)) = wb%sncan(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*rcangat(i)
-                wb%pndw(ilmos(I)) = wb%pndw(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*zpndgat(i)*rhow
-                wb%sno(ilmos(I)) = wb%sno(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*snogat(i)
-                wb%wsno(ilmos(I)) = wb%wsno(ilmos(I)) + cp%farerow(ilmos(I), jlmos(i))*wsnogat(i)
+                TOTAL_SCAN = TOTAL_SCAN + FAREGAT(i)*SCANgat(I)
+                TOTAL_RCAN = TOTAL_RCAN + FAREGAT(i)*RCANgat(I)
+                TOTAL_SNO = TOTAL_SNO + FAREGAT(i)*SNOgat(I)
+                TOTAL_WSNO = TOTAL_WSNO + FAREGAT(i)*WSNOgat(I)
+                TOTAL_ZPND = TOTAL_ZPND + FAREGAT(i)*ZPNDgat(I)*RHOW
+                wb%rcan(ilmos(I)) = wb%rcan(ilmos(I)) + FAREGAT(i)*scangat(i)
+                wb%sncan(ilmos(I)) = wb%sncan(ilmos(I)) + FAREGAT(i)*rcangat(i)
+                wb%pndw(ilmos(I)) = wb%pndw(ilmos(I)) + FAREGAT(i)*zpndgat(i)*rhow
+                wb%sno(ilmos(I)) = wb%sno(ilmos(I)) + FAREGAT(i)*snogat(i)
+                wb%wsno(ilmos(I)) = wb%wsno(ilmos(I)) + FAREGAT(i)*wsnogat(i)
                 DO J = 1, IGND
-                    TOTAL_THLQ(J) = TOTAL_THLQ(J) + cp%FAREROW(ilmos(I), jlmos(i))*THLQgat(I, J)*RHOW*DLZWgat(I, J)
-                    TOTAL_THIC(J) = TOTAL_THIC(J) + cp%FAREROW(ilmos(I), jlmos(i))*THICgat(I, J)*RHOICE*DLZWgat(I, J)
-                    wb%lqws(ilmos(I), j) = wb%lqws(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i)) &
+                    TOTAL_THLQ(J) = TOTAL_THLQ(J) + FAREGAT(i)*THLQgat(I, J)*RHOW*DLZWgat(I, J)
+                    TOTAL_THIC(J) = TOTAL_THIC(J) + FAREGAT(i)*THICgat(I, J)*RHOICE*DLZWgat(I, J)
+                    wb%lqws(ilmos(I), j) = wb%lqws(ilmos(I), j) + FAREGAT(i) &
                                                *thlqgat(i, j)*rhow*dlzwgat(i, j)
-                    wb%frws(ilmos(I), j) = wb%frws(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i)) &
+                    wb%frws(ilmos(I), j) = wb%frws(ilmos(I), j) + FAREGAT(i) &
                                                *thicgat(i, j)*rhoice*dlzwgat(i, j)
                     sov%tbar(ilmos(I),j) = sov%tbar(ilmos(I), j) + TBARgat(I,J)*ACLASS(ilmos(I),jlmos(i))                    
-                    sov%thic(ilmos(I),j) = sov%thic(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i))*thicgat(i, j)
-                    sov%thlq(ilmos(I),j) = sov%thlq(ilmos(I), j) + cp%farerow(ilmos(I), jlmos(i))*thlqgat(i, j)
+                    sov%thic(ilmos(I),j) = sov%thic(ilmos(I), j) + FAREGAT(i)*thicgat(i, j)
+                    sov%thlq(ilmos(I),j) = sov%thlq(ilmos(I), j) + FAREGAT(i)*thlqgat(i, j)
                 END DO
 !            END DO
         END IF !IF (FRAC(I) >= 0.0) THEN
@@ -5340,10 +5340,10 @@ FINAL_STORE = 0.0
 DO I = 1, nml
     IF (FRAC(ilmos(I)) >= 0.0) THEN
 !        DO M = 1, NMTEST
-            FINAL_STORE = FINAL_STORE + cp%FAREROW(ilmos(i), jlmos(i))* &
+            FINAL_STORE = FINAL_STORE + FAREGAT(i)* &
                 (RCANgat(I) + SCANgat(I) + SNOgat(I) + WSNOgat(I) + ZPNDgat(I)*RHOW)
             DO J = 1, IGND
-                FINAL_STORE = FINAL_STORE + cp%FAREROW(ilmos(I), jlmos(i))* &
+                FINAL_STORE = FINAL_STORE + FAREGAT(i)* &
                     (THLQgat(I, J)*RHOW + THICgat(I, J)*RHOICE)*DLZWgat(I, J)
             END DO
 !        END DO
