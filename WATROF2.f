@@ -2,13 +2,13 @@
      1                  SUBFLW,TSUBFL,BASFLW,TBASFL,RUNOFF,TRUNOF,FI,
      2                  ZPLIM,XSLOPE,XDRAIN,MANNING_N,DDEN,GRKSAT,TBARW,
      3                  DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                  ISAND,IWF,IWD,IG,ILG,IL1,IL2,BULKFC,
+     4                  ISAND,ICLAY,IWF,IWD,IG,ILG,IL1,IL2,BULKFC,
      5                  NA,NTYPE,ILMOS,JLMOS,RATIO)
       USE FLAGS
       IMPLICIT NONE                         
       
 ************************************************************************************************************
-*     WATROF2 *** DRAFT VERSION 1.02 *** JANUARY 9, 2014 *** Ric Soulis *** Mateusz Tinel                  *
+*     WATROF2 *** VERSION 1.2 *** FEBRUARY 13, 2015 *** Ric Soulis *** Mateusz Tinel                       *
 ************************************************************************************************************
 c
 c     This routine calculates the outflow from a tilted landscape element (tile). This code is a replacement
@@ -62,36 +62,46 @@ c     equation gives s = 0.
       
       
 ***** COMMON BLOCK PARAMETERS ******************************************************************************
-      
-      REAL DELT,TFREZ
-      
-      COMMON /CLASS1/ DELT,TFREZ 
-      
+*
+      REAL DELT,TFREZ,HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,SPHW,
+     1     SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,TCGLAC,CLHMLT,CLHVAP
+*
+      COMMON /CLASS1/ DELT,TFREZ
+      COMMON /CLASS4/ HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,
+     1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
+     2                TCGLAC,CLHMLT,CLHVAP
+*
 ***** INTERNAL SCALARS AND VECTORS *************************************************************************
       REAL*8  qflowij , bflowij            !interflow and base flow accumulator
-      REAL*8  asat1ij , asat2ij , asat3ij  !initial, and final interflow and baseflow soil saturation
+      REAL*8  asat1ij , asat2ij            !initial, and final interflow soil saturation
+      REAL*8  asat3ij , asat4ij            !initial, and final baseflow soil saturation
       REAL*8  stc                          !soil saturation at end of pure and apparent saturated flow
       REAL*8  sfc                          !lowes soil saturation possible
       REAL*8  satmin  , satice             !minimal soil saturation and soil saturation with ice
-      REAL*8  t1      , t2      , t3       !initial, and final interflow and baseflow time
+      REAL*8  t1      , t2      , t3  ,t4  !initial, and final interflow and baseflow time
       REAL*8  tc                           !time at end of pure saturated and apparent saturated flow
-      REAL*8  s1      , s2      , s3       !initial, and final interflow and baseflow soil saturation
+      REAL*8  s1      , s2      , s3  , s4 !initial, and final interflow and baseflow soil saturation
       REAL*8  qmax    , bmax    , smax     !max flow for interflow, baseflow and overland flow
       REAL*8  qcof    , bcof    , scof     !coefficient for interflow, base flow and overland flow
       REAL*8  xlengthi, xbasei  , xheighti !geometric properties of the tile
       REAL*8  xanglei , xreliefi           !more geometric preperties of tile
       REAL*8  h       , sslopei            !soil depth and slope
-      REAL*8  avlflw  , potflw  , actadj   !available and potential flow, and actual flow correction
+      REAL*8  avlspc  , avlflw
+      REAL*8  potflw  , actadj             !available and potential flow, and actual flow correction
+      real*8  xsatice , vsatice            !mass and volmetric degree of saruationc fo ice
       REAL*8  dover1  , dover2             !initial and final overland flow level
-      REAL*8  ydraini                      !fraction of basflwi divertd to ruonff
-      
+      real*8  dexcess , asatexcess
+      REAL*8  asat_extra, avail_depth, basflw_now
+*
 ***** INTERNAL AND INPUT INTEGERS **************************************************************************
-      INTEGER IWF, IWD, IG, ILG, IL1, IL2, NA, NTYPE
+      INTEGER IWF, IWD, IG, ILG, IL1, IL2, NA, NTYPE,jj
       INTEGER ILMOS (ILG), JLMOS (ILG)
-      INTEGER ISAND (ILG, IG), isandij    !SAND PERCENT 0-100
+      INTEGER ISAND (ILG, IG), isandij     !SAND PERCENT 0-100
       integer ICLAY (ILG, IG), iclayij     !CLAY PERCENT 0-100
-      INTEGER i, j, isfc !, os
-      
+      INTEGER i                            !counters: i = 1,ilg number of gru elemennts; 
+      INTEGER j                            !          j = 1,ig  number of soil layers, 
+      integer isfc, iwfstep/0/             !isfc - canopy state,  iwfstep - internal watrof counter  
+*
 ***** INPUT ARRAS AND VECTORS ******************************************************************************
       REAL    BI     (ILG, IG), biij
       REAL    BULKFC (ILG, IG), bulkfcij
@@ -105,15 +115,15 @@ c     equation gives s = 0.
       REAL    THPOR  (ILG, IG), thporij    !porosity
       REAL    DDEN       (ILG), ddeni      !drainage density (m/m^2)
       REAL    DODRN      (ILG)
-      REAL    DOVER      (ILG)
-      REAL    FI         (ILG), fii
+      REAL    DOVER      (ILG)  
+      REAL    FI         (ILG), fii  
       REAL    MANNING_N  (ILG), manning_ni
       REAL    TPOND      (ILG), tpondi
       REAL    XDRAIN     (ILG), xdraini    !vertical lateral flow ratio
       REAL    XSLOPE     (ILG), xslopei    !valley slope
       REAL    ZPLIM      (ILG), zplimi
       REAL    ZPOND      (ILG), zpondi
-      REAL    RATIO      (ILG), ratioi
+      REAL    RATIO      (ILG), ratioij    
       
 ***** OUTPUT ARRAYS ****************************************************************************************
       REAL    OVRFLW (ILG), ovrflwi        !overland flow
@@ -122,45 +132,29 @@ c     equation gives s = 0.
       REAL    RUNOFF (ILG)                 !runoff
       
 ***** UNUSED VARIABLES *************************************************************************************
-      REAL    SDEPTH (NTYPE, IG)
       REAL    TBARW    (ILG, IG)
       REAL    TOVRFL       (ILG)
       REAL    TSUBFL       (ILG)
       REAL    TBASFL       (ILG)
       REAL    TRUNOF       (ILG)
-      
+
 C----------------------------------------------------------------------C
 C     USE FLAGS IWF AND IWD                                            C
 C----------------------------------------------------------------------C
-      if (IWF.eq.0) then
-          return !Skip for flat class
-      elseif (IWF.eq.1) then
-         print*,""
-         print*,"ERROR: WATROF and WATDRN expected, not in this version"
-         pause ""
-         call abort
-      elseif (IWF.ne.2) then
-         print*,"FLAG 'IWF' NEEDS TO BE SET"
-         pause ""
-         call abort
-      endif
-!      REMOVE IWD flag as it only affects the totals and not the actual flow!!!
-c      if (IWD.eq.0) then
-c          os = 1.0
-c      else
-c          os = 0.0
-c      endif
-      
-************************************************************************************************************
-      do i = il1,il2
+      if (IWF.ne.2) then
+        print *, "warning: iwf has changed from" , iwf, "to 2"
+        iwf = 2
+      endif  
+
+c************************************************************************************************************
+      do i = 1,ilg
       
 C----------------------------------------------------------------------C
 C     RESETING THE FLOWS FROM PREVIOUS CALCULATION                     C
 C----------------------------------------------------------------------C
       ovrflwi = 0.0
       subflwi = 0.0
-      basflwi = 0.0
-      
+      basflwi = 0.0  
       fii = FI(i)
       
       if (fii .gt. 0.0) then
@@ -169,7 +163,7 @@ C----------------------------------------------------------------------C
 C     GEOMETRY OF TILE                                                 C
 C----------------------------------------------------------------------C
       ddeni    = DDEN(i)
-      xslopei  = xslope(i)
+      xslopei  = xslope(i)    
       sslopei  = atan(xslopei)
       xbasei   = 1.0/2.0/dden(i)
       xanglei  = atan(xslope(i))
@@ -179,45 +173,49 @@ C----------------------------------------------------------------------C
 C----------------------------------------------------------------------C
 C     HYDRAULICS OF TILE                                               C
 C----------------------------------------------------------------------C
-      ratioi   = 10.0
-c      ratioi   = RATIO(I) !TEMPORARY CONTROL OF RATIO FROM WATROF2
-      xdraini  = XDRAIN(I)
-      qcof = 7.0
-      bcof = 7.0
-      
+      xdraini = XDRAIN(I)
+      qcof    = 5.0
+      bcof    = 5.0
+
 C----------------------------------------------------------------------C
 C     OVERLAND FLOW PARAMETERS                                         C
 C----------------------------------------------------------------------C
       zpondi     = ZPOND(i)      
       zplimi     = ZPLIM(i)
       manning_ni = MANNING_N(i)
+      tpondi     = tpond(i)
       
 ************************************************************************************************************
-          do j = 1,IG
-            
+      do j = 1,IG
+        
 C----------------------------------------------------------------------C
-C     CLEAR ACCUMULATORS                                               C
+C     RATIO FOR QMAX                                                   C
 C----------------------------------------------------------------------C
-        qflowij = 0.0
-        bflowij = 0.0
-
-C----------------------------------------------------------------------C
-C     GET LAYER THICKNESS                                              C
-C-------------------- --------------------------------------------------C
-        h = DELZW(i,j)
-        biij = bi(i,j)
+c     Ratio is split into the three layers, however the average tile  
+c     ratio remains the same.
+        if     (J.eq.1) then
+        ratioij = RATIO(i)
+        elseif (J.eq.2) then
+        ratioij = RATIO(i)
+        else  !(J.eq.3)
+        ratioij = RATIO(i)
+        endif
 
 C----------------------------------------------------------------------C
 C     STATE VARIABLES - VALUSE AT BEGINNING OF TIME STEP               C
 C----------------------------------------------------------------------C
-        thlminij   = THLMIN(i,j)
-        thliqij    = THLIQ(i,j)
         thporij    = THPOR(i,j)
+        thliqij    = thliq(i,j)
         thiceij    = THICE(i,j)
-        isandij    = isand(i,j)
-      
-        if(xslopei>0.0.and.isand(i,j)>=0)then
-
+        thlminij   = THLMIN(i,j)
+        isandij    = isand(i,j)  
+            
+C----------------------------------------------------------------------C
+C     GET NEW LAYER THICKNESS                                          C
+C----------------------------------------------------------------------C
+        h = DELZW(i,j)
+        biij = bi(i,j)
+            
 C----------------------------------------------------------------------C
 C     soil texture and pedotransfer functions                          C
 C----------------------------------------------------------------------C
@@ -225,13 +223,20 @@ C----------------------------------------------------------------------C
       bulkfcij = bulkfc(i,j)
       psisatij = 0.01*(10.0**(-0.0131*isandij+1.88))
       grksatij = (1/3600./39.37)*(10.0**(0.0153*isandij-0.884))
-              
 ************************************************************************************************************
+      
+C----------------------------------------------------------------------C
+C     CLEAR ACCUMULATORS                                               C
+C----------------------------------------------------------------------C
+        qflowij = 0.0
+        bflowij = 0.0
+        
 C----------------------------------------------------------------------------------------------------------C
 C     FIND POTENTIAL LATERAL FLOW                                                                          C
 C----------------------------------------------------------------------------------------------------------C
-      if (thliqij.gt.bulkfcij.and.biij.ge.0.0) then
-         
+      if(xslopei>0.0.and.isand(i,j)>=0)then
+      if (thliqij.gt.bulkfcij .and. biij.gt.1.0) then
+          
 c         SECONDARY TILE PREPERTIES
          
 c         qcof/bcof exponent for recession curve (B), (dimensionless, 4 for 0% clay, 6 for 30% clay)
@@ -245,33 +250,37 @@ c         stc       is bulk saturation when pure saturation flow ceases
 c         sfc/bfc   is the lowest possible bulk saturation, as time goes to infinity
 c         satice    is the saturation with ice
 c         satmin    is the minimum saturation
- 
-          qmax    = ratioi*grksatij*xslopei/xlengthi*
-     3              (thporij-thiceij)/thporij
-          stc     = (1.0 - 1.0/(2.0*biij+3.0))
-          tc      = (1.0 - stc)/qmax
-          sfc     = bulkfcij/thporij
-          asat1ij = thliqij/thporij
-          satice  = thiceij/thporij
+
+          xsatice = (rhoice/thiceij)/(rhow*thporij)
+          vsatice = thiceij/thporij
+          satice  = xsatice
           satmin  = thlminij/thporij
-          s1 = (asat1ij - sfc)/(stc-sfc)
+ 
+          qmax = ratioij*grksatij*xslopei*h/xbasei
+c     1           *max(0.0,min(1.0,(1.0-max(vsatice,satmin))))
+          stc  = (1.0 - 1.0/(2.0*biij+3.0))
+          tc   = (1.0 - stc)/(qmax)
+c     1           *(1.0-max(xsatice,satmin))
+          sfc  = bulkfcij/thporij
 
 C----------------------------------------------------------------------C
 C     beginning of step - find starting storage
 C     determine how much flux can exit this time step- units (kg/m**2/s)==mm/s
 C----------------------------------------------------------------------C
+          asat1ij = max(0.0,min(1.0,thliqij/thporij))
+          s1 = (asat1ij - sfc)/(stc-sfc)
+
 C----------------------------------------------------------------------C
 C     CASE (SAT - *) - PRIMARY SATURATED FLOW AT THE END OF TIME STEP  C
 C----------------------------------------------------------------------C
-          if (asat1ij .ge. stc) then
+          if (asat1ij .gt. stc) then
             t1 = tc*(1.0-asat1ij)/(1.0-stc)
             t2 = t1 + delt
-            t3 = t2
             
 C----------------------------------------------------------------------C
 C     case (sat-sat) - saturated flow at start and end of time step    C
 C----------------------------------------------------------------------C
-            if (t2 .le. tc) then
+            if (t2 .lt. tc) then
               asat2ij = 1.0-((1.0-stc)/tc)*t2
               
 C----------------------------------------------------------------------C
@@ -286,74 +295,120 @@ C----------------------------------------------------------------------C
 C    case (unsat-unsat) - unsaturated flow at both ends of the timestep
 C----------------------------------------------------------------------C
           else 
-            t1 = (s1**(1.0-qcof)-1.0)/((qcof-1.0)*(qmax))
+            t1 = (s1**(1.0-qcof)-1.0)/((qcof-1.0)*(qmax)) + tc
             t2 = t1 + delt
-            t3 = t2 + tc
-            s2 = ((qcof-1.0)*qmax*t2+1.0)**(1.0/(1.0-qcof))
+            s2 = ((qcof-1.0)*qmax*(t2-tc)+1.0)**(1.0/(1.0-qcof))
             asat2ij = s2*(stc-sfc)+sfc
           endif
           
-          asat2ij  = min(asat1ij, max(asat2ij, satmin))
-          
-          
+          asat2ij  = min(asat1ij, asat2ij)
+      
 C----------------------------------------------------------------------C
 C     FIND POTENTIAL BASEFLOW (draw from bottom layer only)            C
-C----------------------------------------------------------------------C
-         if (j.lt.ig) then
-             
-            asat3ij = asat2ij
-            
-C----------------------------------------------------------------------C
+C                                                                      C
 C     only case is: (u-u) - unsaturated at start and end of time step  C
 C----------------------------------------------------------------------C
-         else 
-            bmax    = grksatij*xlengthi/xbasei*
-     3                (thporij-thiceij)/thporij
-            s3      = ((bcof-1.0)*bmax*t2+1.0)**(1.0/(1.0-bcof))
-            asat3ij = s3*(1.0-sfc)+sfc
-            asat3ij = min(asat1ij, max(asat3ij, satmin))
-         endif
-         
+              
+          bmax = grksatij*xlengthi/xbasei
+          s3 = s1
+          t3 = (s3**(1.0-bcof)-1.0)/((bcof-1.0)*(bmax))
+          s3 = ((bcof-1.0)*bmax*t3+1.0)**(1.0/(1.0-bcof))
+          asat3ij = s3*(1.0-sfc)+sfc
+          t4 = t3 + delt
+          s4 = ((bcof-1.0)*bmax*t4+1.0)**(1.0/(1.0-bcof))
+          asat4ij = s4*(1.0-sfc)+sfc
+          asat4ij = min(asat3ij,asat4ij)
+
 C----------------------------------------------------------------------C
-C     determine how much flux can exit this time step                  C
+C     determine how much flux can enter this time step                 C
 C     - units (kg/m**2/s)==mm/s                                        C
 C----------------------------------------------------------------------C
 C----------------------------------------------------------------------C
-C         available liquid water                                       C
+C         available liquid in current layer                            C
 C----------------------------------------------------------------------C
-          avlflw = asat1ij -satice-satmin
-          avlflw = max(0.0,min(1.0,avlflw))
-      
+          avlflw = asat1ij-max(sfc,satice+satmin)
+          avlflw = max(0.0,avlflw)
+              
 C----------------------------------------------------------------------C
 C         max possible outflow given physics of viscous flow           C
 C----------------------------------------------------------------------C
-          qflowij = (asat1ij-asat2ij) 
-          bflowij = (asat1ij-asat3ij)
+          qflowij = (asat1ij-asat2ij)
+          bflowij = (asat3ij-asat4ij)        
           potflw  = qflowij + bflowij
-      
-         if (avlflw .le. 0.0) then
+          
+         if (avlflw .le. 0.0 .or. potflw .le. 0.0) then
            qflowij = 0.0
            bflowij = 0.0
            asat2ij = asat1ij
-           asat3ij = asat1ij
-         elseif (avlflw .le.  potflw) then
-           actadj  = avlflw/potflw 
+           asat4ij = asat3ij
+         elseif (avlflw .lt.  potflw) then
+           actadj  = avlflw/potflw
            qflowij = actadj*qflowij
            bflowij = actadj*bflowij
-           asat2ij = asat1ij - qflowij - bflowij  
+           asat2ij = asat1ij - qflowij - bflowij
+           asat4ij = asat2ij
          else
-           asat2ij = asat1ij - qflowij - bflowij  
+           asat2ij = asat1ij - qflowij - bflowij
+           asat4ij = asat2ij
          endif
          
-C----------------------------------------------------------------------C
-C        collect and add totals to master silos                        C
-C----------------------------------------------------------------------C
-         subflwi = subflwi + qflowij * thporij * h
-         basflwi = basflwi + bflowij * thporij * h
-         thliq(i,j) = asat2ij * thporij           
+************************************************************************
+C         BASEFLOW FILLING UP NEXT LAYER                                
+c         This function takes the available space in the next layer and
+c         fills it with baseflow from the first layer. It is limited by
+c         the amount of unoccupied space in the soil layer. 
 
-         endif
-       endif
+          if ( j.lt.ig ) then
+c             This only happens if current layer is not the bottom:
+              
+              !available sapce for water to flow into in mm
+              avail_depth =
+     1            max(0.0,thpor(i,j+1)-thice(i,j+1)-thlmin(i,j+1)
+     1           -thliq(i,j+1))*delzw(i,j+1)
+              !available baseflow in current layer in mm
+              basflw_now = (bflowij)*thporij*h
+      
+              if (basflw_now.gt.avail_depth) then
+c                 If the amount of baseflow in the current layer is geater
+c                 than the amount of depth available in the next layer:
+                  
+                  !liquid for the next layer is filled up completly
+                  thliq(i,j+1) = thliq(i,j+1) + avail_depth/delzw(i,j+1)
+                  
+                  !baseflow for current layer is NOT drained completly:
+                      basflw_now = basflw_now - avail_depth
+                      bflowij    = basflw_now/thporij/h
+                      !the rest of baseflow stays in bflowij layer
+                      asat4ij = asat3ij - bflowij
+              
+              else !(basflw_now.le.avail_depth)
+c                 If the amount of baseflow in the current layer is less
+c                 than or equal to the amaount of depth available in the
+c                 next layer:
+                  
+                  !all current baseflow fills up next layer
+                  thliq(i,j+1) = thliq(i,j+1) + basflw_now/delzw(i,j+1)
+                  !all baseflow for current layer drained down
+                  basflw_now = 0.0
+                  bflowij    = 0.0
+              
+              endif
+          endif
+      
+************************************************************************
+         
+C----------------------------------------------------------------------C
+C        COLLECT TOTALS TO MASTER SOILS                                C
+C        all outflow is transferred to baseflow
+C----------------------------------------------------------------------C
+         
+          subflwi = subflwi + qflowij * thporij *h
+          basflwi = basflwi + bflowij * thporij *h
+          thliq(i,j) = asat2ij * thporij
+          
+      endif
+      endif
+      
 ************************************************************************************************************
       enddo
 ************************************************************************************************************
@@ -363,31 +418,34 @@ C     calculate the depth of overland flow                             C
 C----------------------------------------------------------------------C
       if (zpondi.gt.zplimi .and. zplimi.ge. 0.0  
      1    .and. manning_ni .gt. 0.0) then
-        scof      = -2.0/3.0
-        smax      = (2*ddeni/manning_ni)*(xslopei**0.5)
-        
+          
         dover1    = zpondi-zplimi
-        dover2    = (dover1**scof + scof*smax*delt)
-        zpondi    = dover2 + zplimi
+        scof      = -2.0/3.0
+        smax      = (2.0*ddeni/manning_ni)*(xslopei**0.5)
+        dover2    = (dover1**scof - scof*smax*delt)**(1.0/scof)
+        dover2    = max(0.0, min(dover1, dover2))
 
-        ovrflwi   = (dover1 - dover2)
+        zpond(i)  = dover2 + zplimi
+        ovrflwi   = dover1 - dover2
         
-        zpond(i) = zpondi   
-      else
-        ovrflwi = 0.0
       endif
       
 C----------------------------------------------------------------------C
-C     ADD TOTAL AT THE END, USE FLAGS                                  C
+C     ADD TOTAL AT THE END                                             C
 C----------------------------------------------------------------------C
       
-      OVRFLW(i) = OVRFLW(i)+fii*ovrflwi
-      SUBFLW(i) = SUBFLW(i)+fii*subflwi 
-      BASFLW(i) = BASFLW(i)+fii*basflwi 
+      OVRFLW(i) = OVRFLW(i) + fii * ovrflwi
+      SUBFLW(i) = SUBFLW(i) + fii * subflwi
+      BASFLW(i) = BASFLW(i) + fii * basflwi
       RUNOFF(i) = RUNOFF(i) + ovrflwi + subflwi + basflwi
+      
+      trunof(i) = RUNOFF(i)*trunof(i) + ovrflwi*tpondi 
+     1            + subflwi*tsubfl(i) + basflwi*tbasfl(i)
+      trunof(i) = trunof(i)/runoff(i)
+      
       endif
       enddo
 ************************************************************************************************************
-      
       RETURN
       end
+      

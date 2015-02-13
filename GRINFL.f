@@ -10,7 +10,7 @@
      9                  THPOR,THLRET,THLMIN,BI,PSISAT,GRKSAT,
      A                  THLRAT,THFC,DELZW,ZBOTW,XDRAIN,ISAND,IGRN,
      B                  IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
-     C                  NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     C                  NEND,ISIMP,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,bulkfc)
 C
 C     * JAN 06/09 - D.VERSEGHY. MODIFY DELZX AND ZBOTX OF BOTTOM LAYER;
 C     *                         ADDITIONAL THLIQ CHECK IN 350 LOOP;
@@ -81,7 +81,7 @@ C
       REAL ZMAT  (ILG,IGP2,IGP1)
 C
       REAL WMOVE (ILG,IGP2),   TMOVE (ILG,IGP2),
-     1     GRKSATF(ILG,IG),    THPORF(ILG,IG)
+     1     GRKSATF(ILG,IG),    THPORF(ILG,IG),   bulkfc(ilg,ig)
 C
       REAL THLIQX(ILG,IGP1),   THICEX(ILG,IGP1),   TBARWX(ILG,IGP1),
      1     DELZX (ILG,IGP1),   ZBOTX (ILG,IGP1),   FDT   (ILG,IGP1),
@@ -292,7 +292,7 @@ C
      5          TUSED,RDUMMY,ZERO,WEXCES,XDRAIN,
      6          THPOR,THLRET,THLMIN,BI,PSISAT,GRKSAT,
      7          THFC,DELZW,ISAND,IGRN,IGRD,IZERO,
-     8          IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
+     8          IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,BULKFC )
 C
       DO 800 J=1,IG
       DO 800 I=IL1,IL2
@@ -324,7 +324,7 @@ C
      1            TBASFL,RUNOFF,TRUNOF,QFG,WLOST,FI,EVAP,ZERO,ZERO,
      2            TRMDR,WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      3            BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,IZERO,
-     4            IZERO,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
+     4            IZERO,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,bulkfc )
 C
       RETURN                                                                      
       END       

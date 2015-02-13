@@ -29,7 +29,7 @@
      R                 THPOR,  HCPS,   GRKSAT, ISAND,  DELZW,  DELZ,
      S                 ILG,    IL1,    IL2,    JL,     IG,     IGP1,
      T                 NLANDCS,NLANDGS,NLANDC, NLANDG, RADD,   SADD,
-     U                 BI, PSISAT, DDEN, XSLOPE, BULKFC  )
+     U                 BI, PSISAT, DDEN, XSLOPE, BULKFC,iclay  )
 C
 C     * NOV 24/09 - D.VERSEGHY. RESTORE EVAPOTRANSPIRATION WHEN
 C     *                         PRECIPITATION IS OCCURRING.
@@ -156,10 +156,10 @@ C
 C     * SOIL INFORMATION ARRAYS.
 C
       REAL THPOR (ILG,IG),HCPS  (ILG,IG),GRKSAT(ILG,IG),
-     1     DELZZ (ILG,IG),DELZW (ILG,IG),DELZ  (IG), 
-     2    BI(ILG,IG),PSISAT(ILG,IG),DDEN(ILG),XSLOPE(ILG),BULKFC(ILG,IG)
+     1   DELZZ (ILG,IG),DELZW (ILG,IG),DELZ  (IG), 
+     2   BI(ILG,IG),PSISAT(ILG,IG),DDEN(ILG),XSLOPE(ILG),BULKFC(ILG,IG)
 C
-      INTEGER             ISAND (ILG,IG)
+      INTEGER             ISAND (ILG,IG),iclay(ilg,ig)
 C
 C     * INTERNAL WORK ARRAYS.
 C
@@ -178,7 +178,7 @@ C
      1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
      2                TCGLAC,CLHMLT,CLHVAP
       
-      REAL xbasei, xanglei, xreliefi, xlengthi, qmax, stc, sta, tc, ta    !RIC SOULIS ADDED THIS
+      REAL xbasei, xanglei, xreliefi, xlengthi,satfc    !RIC SOULIS ADDED THIS
 C-----------------------------------------------------------------------
 C     * INITIALIZE 2-D ARRAYS.
 C
@@ -220,26 +220,29 @@ c         calculate BULKFC, make sure we don't divide by 0 (for slope = 0 or bed
                 xanglei  = atan(xslope(i))                                !RIC SOULIS ADDED THIS
                 xreliefi = xbasei*(tan(xanglei))                          !RIC SOULIS ADDED THIS
                 xlengthi = (xbasei**2+xreliefi**2)**0.5                   !RIC SOULIS ADDED THIS
-                qmax     = grksat(i,j)*xslope(i)/xlengthi                 !RIC SOULIS ADDED THIS
-                stc      = (1.0 - 1.0/(2.0*bi(i,j)+3.0))                  !RIC SOULIS ADDED THIS
-                tc       = (1.0 - stc)/qmax                               !RIC SOULIS ADDED THIS
-                ta       = 2.0*tc                                         !RIC SOULIS ADDED THIS
-                sta      = 2.0*stc - 1.0                                  !RIC SOULIS ADDED THIS
-          IF (XSLOPE(I).GT.0.0) THEN                                      !RIC SOULIS ADDED THIS
-              BULKFC(I,J)=(thpor(i,j)/(BI(I,J)-1))*                        !RIC SOULIS ADDED THIS
+                if(bi(i,j).gt.1.0) then
+                IF (XSLOPE(I).GT.0.0) THEN                                      !RIC SOULIS ADDED THIS
+
+                BULKFC(I,J)=(thpor(i,j)/(BI(I,J)-1))*                        !RIC SOULIS ADDED THIS
      1                   (PSISAT(I,J)*BI(I,J)/xreliefi)**(1/BI(I,J))*     !RIC SOULIS ADDED THIS
      +         ((2*DDEN(I)*PSISAT(I,J)*BI(I,J)/XSLOPE(I))**(1/BI(I,J)))*
      +          ((3*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J))-
      +           (2*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J)))
-          ELSE
-             BULKFC(I,J)=(thpor(i,j)/(BI(I,J)-1))*                        !RIC SOULIS ADDED THIS
+                ELSE
+                BULKFC(I,J)=(thpor(i,j)/(BI(I,J)-1))*                        !RIC SOULIS ADDED THIS
      1                   (PSISAT(I,J)*BI(I,J)/DELZW(I,J))**(1/BI(I,J))*   !RIC SOULIS ADDED THIS
      +                   ((3*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J))-           !RIC SOULIS ADDED THIS
-     +                   (2*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J)))            !RIC SOULIS ADDED THIS
-          ENDIF
-             BULKFC(I,J)=MAX(0.04,MIN(1.0,BULKFC(I,J)))                   !RIC SOULIS ADDED THIS
-c          print *, "I = ", I, "J = ", J, "BULKFC(I,J) = ", BULKFC(I,J)
-   50 CONTINUE
+     +                   (2*BI(I,J)+2)**((BI(I,J)-1)/BI(I,J)))
+                endif
+                else
+                  bulkfc(i,j) = 0.10  !RIC SOULIS ADDED THIS
+              ENDIF
+             BULKFC(I,J)=MAX(0.10,MIN(1.0,BULKFC(I,J)))                   !RIC SOULIS ADDED THIS
+             satfc=bulkfc(i,j)/thpor(i,j)
+c      print *, "I = ", I, "J = ", J, "BULKFC(I,J) = ", BULKFC(I,J)
+c      print *,iclay(i,j),bi(i,j),psisat(i,j)
+c      print *,xslope(i),xreliefi,xbasei,xlengthi,dden(i);pause
+  50  CONTINUE
 C 
       DO 75 J=1,IGP1
       !$omp parallel do

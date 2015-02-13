@@ -2,7 +2,7 @@
      1                  THLRAT,HCPS,TCS,THFC,PSIWLT,
      2                  DELZW,ZBOTW,ALGWET,ALGDRY,
      3                  SAND,CLAY,ORGM,DELZ,ZBOT,SDEPTH,
-     4                  ISAND,IORG,NL,NM,IL,IM,IG,
+     4                  ISAND,ICLAY,IORG,NL,NM,IL,IM,IG,              !RIC ADDED ICALY
      5                  WC_THPOR,WC_THLRET,WC_THLMIN,WC_BI,
      6                  WC_PSISAT,WC_GRKSAT,WC_HCPS,WC_TCS)
 C
@@ -44,7 +44,7 @@ C
      4     DELZW (NL,NM,IG),  ZBOTW (NL,NM,IG),
      4     ALGWET(NL,NM),     ALGDRY(NL,NM)
 C
-      INTEGER               ISAND (NL,NM,IG),  IORG  (NL,NM,IG)
+      INTEGER       ISAND (NL,NM,IG), ICLAY(NL,NM,IG),  IORG  (NL,NM,IG) !RIC SOULIS  ADDED ICALY
 C
 C     * INPUT ARRAYS.
 C
@@ -86,6 +86,7 @@ C
       DO 100 M=1,IM
       DO 100 I=1,IL
           ISAND (I,M,J)=NINT(SAND(I,M,J))                                               
+          ICLAY (I,M,J)=NINT(CLAY(I,M,J))                                         !RIC ADDED THIS
           IORG  (I,M,J)=NINT(ORGM(I,M,J))                                               
 100   CONTINUE
 C
@@ -169,7 +170,7 @@ c              TCS   (I,M,J) = WC_TCS(I,M,J)                                  !R
 c			ELSE                                                            !RIC SOULIS REMOVED
               THPOR (I,M,J)=(-0.126*SAND(I,M,J)+48.9)/100.0
 c              THLRET(I,M,J)=0.04                                             !RIC SOULIS REMOVED
-              THLMIN(I,M,J)=0.04
+              THLMIN(I,M,J)=0.10
               BI    (I,M,J)=0.159*CLAY(I,M,J)+2.91
               PSISAT(I,M,J)=0.01*EXP(-0.0302*SAND(I,M,J)+4.33)
               GRKSAT(I,M,J)=7.0556E-6*(EXP(0.0352*SAND(I,M,J)-2.035))

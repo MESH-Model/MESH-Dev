@@ -504,7 +504,7 @@ c			 do ai=1,attCount-(ntype+1)
 	print*,'Please create a new bsnm_shd.r2c file using the'
 	print*,'current version of bsn.exe'
 	print*
-	stop 'Program aborted in read_shed_ef.for @ 447'
+	pause;stop 'Program aborted in read_shed_ef.for @ 447'
 !      impervious area no longer used  nk
 c   		  	  else if(attribName(1:attLen) .eq. 'imperv')then
 c					aclass(rank, ntype+1) = val
@@ -730,7 +730,7 @@ CDAN      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.2000.0)then
           print*,'or change the slope value in the shd file'
           print*,'The former is recommended as the permanent solution'
           print*
-          stop 'Program aborted in read_shed_ef @ 756'
+          pause;stop 'Program aborted in read_shed_ef @ 756'
         endif
 !CRAIG THOMPSON ADDED THIS
         sl2(n)=sqrt(sl1(n))     ! used for overland flow routing (runof6)

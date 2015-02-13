@@ -172,7 +172,7 @@ parflag = 1
 				print*,"Set SOILINIFLAG to 3 - MESH will keep clay percentage and adjust sand and orgm percentages"
 				print*,"Set SOILINIFLAG to 4 - MESH will proportionally adjust sand, clay and orgm percentages"
 				print*,"Set SOILINIFLAG to 5 - MESH will read parameters from 'soil.ini' file"
-				stop
+				pause;stop
 			endif
 		  endif
 		endif	
@@ -298,7 +298,7 @@ end
          write(*,*)
          write(*,*)'Adjust the parameter value(s) or modify the parameter limits'
          write(*,*)
-         stop
+         pause;stop
       else
         write(*,*)'All parameter values lie within the specified ranges'
         write(*,*)

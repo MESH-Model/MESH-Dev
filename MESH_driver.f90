@@ -449,7 +449,7 @@ REAL, DIMENSION(:, :), ALLOCATABLE :: &
   AGIDROW
 REAL, DIMENSION(:), ALLOCATABLE :: DRNGAT, XSLPGAT, XDGAT, &
   WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, ASVDGAT, ASIDGAT, AGVDGAT, &
-  AGIDGAT, ZSNLGAT, ZPLGGAT, ZPLSGAT, SDEPGAT, FAREGAT, RATIOQ      !Ric Soulis added
+  AGIDGAT, ZSNLGAT, ZPLGGAT, ZPLSGAT, SDEPGAT, FAREGAT, RATIOQ      !Ric Soulis added RATIOQ
 
 !* SAND: PERCENT-CONTENT OF SAND IN SOIL LAYER (CLASS.INI)
 !* CLAY: PERCENT-CONTENT OF CLAY IN SOIL LAYER (CLASS.INI)
@@ -457,8 +457,8 @@ REAL, DIMENSION(:), ALLOCATABLE :: DRNGAT, XSLPGAT, XDGAT, &
 
 !* MIDROW: DEFINITION IN CLASS DOCUMENTATION (CLASS.INI)
 
-INTEGER, DIMENSION(:, :, :), ALLOCATABLE :: ISNDROW, IORG
-INTEGER, DIMENSION(:, :), ALLOCATABLE :: ISNDGAT
+INTEGER, DIMENSION(:, :, :), ALLOCATABLE :: ISNDROW, ICLYROW, IORG      !RIC SOULIS ADDED ICLYROW
+INTEGER, DIMENSION(:, :), ALLOCATABLE :: ISNDGAT, ICLYGAT               !RIC SOULIS ADDED ICLYGAT
 !>
 !>*******************************************************************
 !>
@@ -1085,8 +1085,8 @@ ALLOCATE ( &
   AGVDGAT(ILG), RATIOQ(ILG), &                                        !Ric Soulis added RATIOQ
   AGIDGAT(ILG), ZSNLGAT(ILG), ZPLGGAT(ILG), &
   ZPLSGAT(ILG), SDEPGAT(ILG), FAREGAT(ILG), &
-  ISNDROW(NA, NTYPE, IGND), IORG(NA, NTYPE, IGND), &
-  ISNDGAT(ILG, IGND), STAT=PAS)
+  ISNDROW(NA, NTYPE, IGND), ICLYROW(NA, NTYPE, IGND), IORG(NA, NTYPE, IGND), &  !RIC SOULIS ADDED ICLYROW
+  ISNDGAT(ILG, IGND), ICLYGAT(ILG, IGND), STAT=PAS)                              !RIC SOULIS ADDED ICLYGAT
 
 IF (PAS .NE. 0) THEN
   WRITE (6, *)
@@ -1111,7 +1111,7 @@ IF (PAS .NE. 0) THEN
       "that bounds are within an acceptable range."
   WRITE (6, *) "Bound 1 (grid squares): ", NA
   WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
-  STOP
+  pause;stop
 END IF
 
 !> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
@@ -1146,7 +1146,7 @@ IF (PAS .NE. 0) THEN
       "range."
   WRITE (6, *) "Bound 1 (grid squares): ", NA
   WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
-  STOP
+  pause;stop
 END IF
 
 !> LAND SURFACE DIAGNOSTIC VARIABLES:
@@ -1236,7 +1236,7 @@ IF (PAS .NE. 0) THEN
   WRITE (6, *) "Bound 1 (grid squares): ", NA
   WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
   WRITE (6, *) "Bound 3 (soil layers): ", IGND
-  STOP
+  pause;stop
 END IF
 
 !> OUTPUT VARIABLES:
@@ -1258,7 +1258,7 @@ IF (PAS .NE. 0) THEN
       "Check that bounds are within an acceptable range."
   WRITE (6, *) "Bound 1 (grid squares): ", NA
   WRITE (6, *) "Bound 2 (soil layers): ", IGND
-  STOP
+  pause;stop
 END IF
 
 !> CROSS-CLASS VARIABLES (CLASS):
@@ -1313,7 +1313,7 @@ IF (PAS .NE. 0) THEN
   WRITE (6, *) "Bound 1 (grid squares): ", NA
   WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
   WRITE (6, *) "Bound 3 (soil layers): ", IGND
-  STOP
+  pause;stop
 END IF
 
 !> BALANCE ERRORS (CLASS):
@@ -1428,7 +1428,7 @@ IF( WF_NORESV>0 ) THEN
       PRINT *, 'Reservoir Station: ',I,' is not in the basin'
 	      PRINT *, 'Up/Down Coordinate: ', wf_ires(I), Iymin
 	      PRINT *, 'Left/Right Coordinate: ', wf_jres(I),jxmin
-      STOP
+      pause;stop
     ENDIF
     IF(WF_IREACH(WF_R(I))/=I) THEN
       PRINT *, 'Reservoir Station: ',I, &
@@ -1501,7 +1501,7 @@ READ(22,*,IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
 		 PRINT *, 'ERROR: Simulation start date too early, check ', &
           ' MESH_input_streamflow.txt, The start date in ', &
           ' MESH_input_run_options.ini may be out of range'
-		  stop
+		  pause;stop
 		  endif
 		 jday_ind_strm=(jday_ind2-jday_ind1)*24/WF_KT
 		 jday_ind_met=jday_ind2-jday_ind3
@@ -2151,14 +2151,14 @@ if(mod(24*60,HOURLYFLAG) /= 0)then
    write(*,*)"of the following values:"
    write(*,*)"30 or n*60 where n can be either 1,2,3,4,6,8 or 12"
    write(*,*)
-   stop
+   pause;stop
 endif
 
 if ((jday_ind2 < jday_ind3) .and. (iyear_start /= 0)) then 
    PRINT *, 'ERROR: Simulation start date too early, check ', &
             ' THE MET FORCING DATA RANGE.  The start date in ', &
             ' MESH_input_run_options.ini may be out of range'
-   stop
+   pause;stop
 endif
 !Notes added by M. Mekonnen - To keep nrs calculation as before
 !(and to be compatible with the above modification) we need to 
@@ -2757,7 +2757,7 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD, &
              GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
              cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT, &
-             hp%RATIOQM,RATIOQ)                                                       !Ric Soulis added RATIOQ, hp%RATIOQM
+             hp%RATIOQM,RATIOQ,ICLYGAT,ICLYROW)    !Ric Soulis added RATIOQ, hp%RATIOQM, ICLYGAT, ICLYROW
 call resume_state_r2c(NML,NLTEST,NMTEST,NCOUNT, &
                     IMIN,ACLASS,NR2C_R,GRD_R,GAT_R,GRDGAT_R,R2C_ATTRIBUTES_R,&
                     NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,ICAN,ICP1,IGND, &
@@ -2848,7 +2848,7 @@ ENDIF
             THRAROW,HCPSROW,TCSROW,THFCROW,PSIWROW,           &
             DLZWROW,ZBTWROW,ALGWROW,ALGDROW,                  &
             cp%SANDROW,cp%CLAYROW,cp%ORGMROW,sl%DELZ,sl%ZBOT, &
-            cp%SDEPROW,ISNDROW,                               &
+            cp%SDEPROW,ISNDROW,ICLYROW,                       &         !RIC SOULIS ADDED ICLYROW
             IORG,NA,NTYPE,NA,NMTEST,IGND,                     &
 	        SV%WC_THPOR,SV%WC_THLRET,SV%WC_THLMIN,SV%WC_BI,   &
             SV%WC_PSISAT,SV%WC_GRKSAT,SV%WC_HCPS,SV%WC_TCS)
@@ -3137,7 +3137,7 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD, &
              GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
              cp%SANDROW,SANDGAT,cp%CLAYROW,CLAYGAT, &
-             hp%RATIOQM,RATIOQ)                                                         !Ric Soulis added RATIOQ, hp%RATIOQM
+             hp%RATIOQM,RATIOQ,ICLYGAT,ICLYROW)       !Ric Soulis added RATIOQ, hp%RATIOQM, ICLYGAT, ICLYROW
 CALL CLASSI(VPDGAT,TADPGAT,PADRGAT,RHOAGAT,RHSIGAT, &
             RPCPGAT,TRPCGAT,SPCPGAT,TSPCGAT,TAGAT,QAGAT, &
             PREGAT,RPREGAT,SPREGAT,PRESGAT, &
@@ -3282,7 +3282,7 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
                   MELTRUNOFF,SNOWINFIL,CUMSNOWINFILCS, CUMSNOWINFILGS, &
                   SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, &
                   NA,NTYPE,ILMOS,JLMOS,RATIOQ, &                        !Ric Soulis added RATIOQ
-                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,cp%SDEPROW) !Ric Soulis added cp%SDEPROW
+                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,ICLYGAT) !Ric Soulis added ICLYGAT
 !
 !========================================================================
 !
@@ -4134,7 +4134,8 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
   ENDDO
 
 !>      write out the spl.csv file
-  WRITE(70,'(I5,",",F10.3,999(",",F10.3))') IDAY,(WF_QHYD_AVG(I), &
+
+5WRITE(70,'(I5,",",F10.3,999(",",F10.3))') IDAY,(WF_QHYD_AVG(I), &
     WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO)
 
   WRITE(72,'(I5,",",F10.3,999(",",F10.3))') IDAY,(WF_QHYD_CUM(I), &
@@ -4739,7 +4740,7 @@ close(unit=90)
             'IPCP = 3, RAINFALL AND SNOWFALL ARE PARTITIONED ACCORDING TO ', &
             'A POLYNOMIAL CURVE BETWEEN 0 dC AND 6 dC.')
 
-9002 FORMAT('ERROR IN READING r2c_output.txt FILE. ',/, &
+9002        FORMAT('ERROR IN READING r2c_output.txt FILE. ',/, &
             'THE FIRST RECORD AT THE FIRST LINE IS FOR THE NUMBER OF ALL THE ', &
             'VARIABLES LISTED IN THE r2c_output.txt FILE.',/,&
             'THE SECOND RECORD AT THE FIRST LINE IS TIME STEP FOR R2C OUTPUT. ', &
@@ -4747,5 +4748,5 @@ close(unit=90)
             'THE REMAINING RECORDS SHOULD CONTAIN 3 COLUMNS FOR EACH VARIABLE WITH INTEGER VALUES OF ', &
             'EITHER 0 OR 1 AND 3 COLUMNS CONTAINING INFORMATION ABOUT THE VARIABLES')
 
-STOP
-END
+            STOP
+            END

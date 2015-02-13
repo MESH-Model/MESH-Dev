@@ -99,8 +99,12 @@ C
      2                TCGLAC,CLHMLT,CLHVAP
 C
 C      ACCLMT=3.0*DELT/3.1536E7
-      ACCLMT=1.0E-3
-      BALLMT=1.0E-1
+c
+c      ACCLMT=1.0E-3
+c      BALLMT=1.00E-1
+C
+      ACCLMT=10.0E-3
+      BALLMT=10.0E-1
 C-----------------------------------------------------------------------
       IF(ISFC.EQ.1 .OR. ISFC.EQ.3)                                  THEN      
           IPTBAD=0

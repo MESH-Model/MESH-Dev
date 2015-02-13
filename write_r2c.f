@@ -70,7 +70,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
         print*,'no_frames > 1  and  no_classes > 1'
         print*,'This is not allowed'
         print*
-        stop 'Program aborted due to programming error'
+        pause;stop 'Program aborted due to programming error'
 !       This can only be cause by misuse of this s/r 
 !         in the calling program
       endif
@@ -93,7 +93,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 	    print*,'Error opening ',fln(fn),' on unit=',un
 	    print*,'ios = ',ios
 	    print*
-	    stop 'in write_r2c @ 83'
+	    pause;stop 'in write_r2c @ 83'
 	  endif 
 c	  print*,'Opened unit=',un,' filename=',fln(fn)
         write(un,3005)'########################################'

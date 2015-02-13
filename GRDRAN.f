@@ -2,7 +2,7 @@
      1                  RUNOFF,TRUNOF,QFG,WLOST,FI,EVAP,R,ZPOND,DT,
      2                  WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      3                  BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,LZF,
-     4                  IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+     4                  IGRN,IGRD,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N,bulkfc)
 C
 C     * DEC 23/09 - V.FORTIN.   NEW CALCULATION OF BASEFLOW.
 C     * MAR 31/09 - D.VERSEGHY. PASS IN LZF, AND ZERO OUT FLOWS AT
@@ -81,7 +81,7 @@ C
 C     * INPUT/OUTPUT FIELDS.
 C
       REAL THLIQ (ILG,IG),  THICE (ILG,IG),  TBARW (ILG,IG),  
-     1     FDT  (ILG,IGP1), TFDT  (ILG,IGP1)
+     1     FDT  (ILG,IGP1), TFDT  (ILG,IGP1), bulkfc(ilg,ig) !RIC SOULIS ADDED THIS
 C                        
       REAL BASFLW(ILG),    TBASFL (ILG),     RUNOFF(ILG),    
      1     TRUNOF (ILG),   QFG    (ILG),     WLOST (ILG)
@@ -167,7 +167,8 @@ C     * BETWEEN SOIL LAYERS.
       DO 150 I=IL1,IL2
           IF(IGRD(I).GT.0)                                          THEN
              FDT(I,1)=-EVAP(I)*DT(I)                                                           
-             IF(DELZW(I,IG).GT.0.0001)                            THEN
+c             IF(DELZW(I,IG).LT.-0.0001)                             THEN  !RIC SOULIS ADDED THIS
+c             IF(DELZW(I,IG).GT.0.0001)                            THEN   !RIC SOULIS REMOVED THIS
                  IF(THLIQ(I,IG).GT.THFC(I,IG))               THEN
                      CCH=2.0*BI(I,IG)+3.0
                      ASATC=1.0-(1.0/CCH)
@@ -181,7 +182,7 @@ C     * BETWEEN SOIL LAYERS.
              ELSE                                                                        
                 FDT(I,IG+1)=0.0                                                           
              ENDIF                                                                       
-          ENDIF
+c          ENDIF
   150 CONTINUE
 C
       DO 200 J=1,IG-1                                                             
@@ -204,23 +205,23 @@ C
                   ENDIF
                   BBND=(BI(I,J)+BI(I,J+1))/2.0
                   
-cric11jun revised(hopefully corrected algebra                           !Ric Soulis added this
-C                  GRSBND=grksat(I,J)**(DELZW(I,J)/(DELZW(I,J)+
-C     1                DELZW(I,J+1)))*grksat(I,J+1)**(DELZW(I,J+1)/
-C     2                (DELZW(I,J)+DELZW(I,J+1)))
+cric11jun revised                                                         !Ric Soulis added this
+                  GRSBND=grksat(I,J)**(DELZW(I,J)/(DELZW(I,J)+
+     1                DELZW(I,J+1)))*grksat(I,J+1)**(DELZW(I,J+1)/
+     2                (DELZW(I,J)+DELZW(I,J+1)))
 c                  GRSBND=ksatF(I,J)*grksat(I,J+1)*(DELZW(I,J)+
 c     1                DELZW(I,J+1))/(grksat(I,J)*DELZW(I,J+1)+
 c     2                grksat(I,J+1)*DELZW(I,J))
-                GRSBND                                                  !Ric Soulis added this
-     1            =GRKSAT(I,J)*DELZW(I,J)/(DELZW(I,J)+DELZW(I,J+1))     !Ric Soulis added this
-     2            +GRKSAT(i,j+1)*DELZW(I,J+1)/(DELZW(I,J)+DELZW(I,J+1)) !Ric Soulis added this
+c                GRSBND                                                    !Ric Soulis added this
+c     1            =GRKSAT(I,J)*DELZW(I,J)/(DELZW(I,J)+DELZW(I,J+1))       !Ric Soulis added this
+cc    2            +GRKSAT(i,j+1)*DELZW(I,J+1)/(DELZW(I,J)+DELZW(I,J+1))   !Ric Soulis added this
 
 c                  PSSBND=PSISAT(I,J)**(DELZW(I,J)/(DELZW(I,J)+
-c     1                DELZW(I,J+1)))* (I,J+1)**(DELZW(I,J+1)/
-c     2                ((DELZW(I,J)+DELZW(I,J+1)))
-                PSSBND                                                  !Ric Soulis added this
-     1            =PSISAT(I,J)*DELZW(I,J)/(DELZW(I,J)+DELZW(I,J+1))     !Ric Soulis added this
-     2            +psisat(i,j+1)*DELZW(I,J+1)/(DELZW(I,J)+DELZW(I,J+1)) !Ric Soulis added this
+c     1                DELZW(I,J+1)))/delzw(I,J+1)**(DELZW(I,J+1)/
+c     2                ((DELZW(I,J)+DELZW(I,J+1))))
+               PSSBND                                                    !Ric Soulis added this
+     1            =PSISAT(I,J)*DELZW(I,J)/(DELZW(I,J)+DELZW(I,J+1))       !Ric Soulis added this
+     2            +psisat(i,j+1)*DELZW(I,J+1)/(DELZW(I,J)+DELZW(I,J+1))   !Ric Soulis added this
 
                   GRK=MIN(GRSBND*(THLBND/THPBND)**(2.*BBND+3.),
      1                   GRSBND)                     

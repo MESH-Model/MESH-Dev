@@ -56,7 +56,7 @@
      +                  SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD,
      +                  GGEOGRD, MANNROW, MANNGAT, DDROW, DDGAT,
      +                  SANDROW,SANDGAT,CLAYROW,CLAYGAT,
-     +                  RATIOQM,RATIOQ)         !Ric Soulis added RATIOQM, RATIOQ
+     +                  RATIOQM,RATIOQ, ICLYGAT,ICLYROW)         !Ric Soulis added RATIOQM, RATIOQ, ICLYGAT,ICLYROW
 C     * JUN 17/08 - D.HOLMAN. ADD MANNROW, MANNGAT, DDROW, DDGAT.
 C
 C     * MAR 23/06 - D.VERSEGHY. ADD WSNO,FSNO,GGEO.
@@ -147,7 +147,7 @@ C
      9        ZPLGGAT(ILG),      ZPLSGAT(ILG),      FRZCGAT(ILG)
 C
       INTEGER ISNDROW(NL,NM,IG), ISNDGAT(ILG,IG)
-
+      INTEGER ICLYROW(NL,NM,IG), ICLYGAT(ILG,IG)                          !RIC SOULIS ADDED CLAY
 C     * ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES.
 C
       REAL  ZRFMGRD( NL), ZRFHGRD( NL), ZDMGRD ( NL), ZDHGRD ( NL),
@@ -342,6 +342,7 @@ C
           DLZWGAT(K,L)=DLZWROW(ILMOS(K),JLMOS(K),L)
           ZBTWGAT(K,L)=ZBTWROW(ILMOS(K),JLMOS(K),L)
           ISNDGAT(K,L)=ISNDROW(ILMOS(K),JLMOS(K),L)
+          ICLYGAT(K,L)=ICLYROW(ILMOS(k),JLMOS(k),L) !Ric soulis added!!!
           HMFGGAT(K,L)=0.0
           HTCGAT (K,L)=0.0
           QFCGAT (K,L)=0.0

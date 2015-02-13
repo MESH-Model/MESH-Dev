@@ -204,7 +204,7 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
            IOSTAT=resumeIostat)
         if(resumeIostat.ne.0) then
           print*,'There is a problem reading resume_state.r2c. IOSTAT = ',resumeIostat
-          stop
+          pause;stop
         endif
 !	  read the header
         read(263,*) junk
@@ -242,7 +242,7 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
                 print*,'resume_state_r2c.txt is incompatible with resume_state.r2c'
                 print*,'please fix MESH_input_run_options.ini, resume_state_r2c.txt or resume_state.r2c'
                 print*,'standalone MESH will terminate now'
-                stop
+                pause;stop
               endif
             read(263,*) junk
           endif
@@ -253,7 +253,7 @@ ALLOCATE (DATAOUT(NR2CSTATES,XCOUNT,YCOUNT))
                 print*,'resume_state_r2c.txt is incompatible with resume_state.r2c'
                 print*,'please fix MESH_input_run_options.ini, resume_state_r2c.txt or resume_state.r2c'
                 print*,'standalone MESH will terminate now'
-                stop
+                pause;stop
               endif
             read(263,*) junk
           enddo
