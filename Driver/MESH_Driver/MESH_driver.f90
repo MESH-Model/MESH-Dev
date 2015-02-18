@@ -1033,18 +1033,16 @@ ALLOCATE (WF_NHYD(NA), WF_QR(NA), &
   WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA), &
   FSDOWN(NA),FSDOWNPRE(NA),FSDOWNPST(NA))
 
-!> ANDY * Zero everything we just allocated
-DO I=1,NA
-  WF_NHYD(I) = 0
-  WF_QBASE(I) = 0
-  WF_QI2(I) = 0
-  WF_QO1(I) = 0
-  WF_QO2(I) = 0
-  WF_QR(I) = 0
-  WF_STORE1(I) = 0
-  WF_STORE2(I) = 0
-  WF_QI1(I) = 0
-ENDDO
+    !> ANDY * Zero everything we just allocated
+    WF_NHYD = 0.0
+    WF_QBASE = 0.0
+    WF_QI2 = 0.0
+    WF_QO1 = 0.0
+    WF_QO2 = 0.0
+    WF_QR = 0.0
+    WF_STORE1 = 0.0
+    WF_STORE2 = 0.0
+    WF_QI1 = 0.0
 
 !> GRID OUTPUT SUMMARY VARIABLES:
 IF (WF_NUM_POINTS .GT. 0) THEN
