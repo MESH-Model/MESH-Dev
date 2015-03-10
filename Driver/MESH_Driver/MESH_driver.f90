@@ -164,6 +164,7 @@ CHARACTER, ALLOCATABLE :: WF_GAGE(:)*8
 INTEGER JAN
 !> For count times in reading climate forcing data
 INTEGER ITIME
+    integer imonth_now, imonth_old
 
 !>     FOR ROUTING
 !* WF_R1: MANNING'S N FOR RIVER CHANNEL
@@ -628,7 +629,16 @@ REAL, DIMENSION(:, :), ALLOCATABLE :: TBARACC, THLQACC, THICACC, &
 !* TOTAL_AREA: TOTAL FRACTIONED DRAINAGE AREA
 REAL :: TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-  FINAL_STORE, TOTAL_AREA
+  FINAL_STORE, TOTAL_AREA, &
+    TOTAL_PRE_ACC_M, TOTAL_EVAP_ACC_M, TOTAL_ROF_ACC_M, &
+    TOTAL_ROFO_ACC_M, TOTAL_ROFS_ACC_M, TOTAL_ROFB_ACC_M, &
+    TOTAL_PRE_M, TOTAL_EVAP_M, TOTAL_ROF_M, &
+    TOTAL_ROFO_M, TOTAL_ROFS_M, TOTAL_ROFB_M, &
+    TOTAL_SCAN_M, TOTAL_RCAN_M, &
+    TOTAL_SNO_M, TOTAL_WSNO_M, &
+    TOTAL_ZPND_M, &
+    TOTAL_STORE_M, TOTAL_STORE_2_M, &
+    TOTAL_STORE_ACC_M
   
 !* TOTAL_HFS = TOTAL SENSIBLE HEAT FLUX
 !* TOTAL_QEVP = TOTAL LATENT HEAT FLUX
@@ -636,7 +646,8 @@ REAL :: TOTAL_HFSACC, TOTAL_QEVPACC
 
 REAL :: TOTAL_STORE, TOTAL_STORE_2, TOTAL_RCAN, TOTAL_SCAN, TOTAL_SNO, TOTAL_WSNO, TOTAL_ZPND
 REAL :: TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
-REAL, DIMENSION(:), ALLOCATABLE :: TOTAL_THLQ, TOTAL_THIC
+REAL, DIMENSION(:), ALLOCATABLE :: TOTAL_THLQ, TOTAL_THIC, &
+    TOTAL_THLQ_M, TOTAL_THIC_M
 
 !> CROSS-CLASS VARIABLES (CLASS):
 !> ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
@@ -835,7 +846,6 @@ CHARACTER*20 IGND_CHAR
 CHARACTER*2000 FMT
 
 CHARACTER*500 WRT_900_1,WRT_900_2,WRT_900_3,WRT_900_4,WRT_900_f
-CHARACTER*500 fmt_1,fmt_2,fmt_out
 CHARACTER*500 fl_listMesh
 CHARACTER*5  strInt
 !=======================================================================
@@ -1113,7 +1123,8 @@ ALLOCATE ( &
   XSNOCS(ILG),XSNOGS(ILG), STAT=PAS)
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (for Basin_average_water_balance.csv):
-ALLOCATE (TOTAL_THLQ(IGND), TOTAL_THIC(IGND), STAT=PAS)
+ALLOCATE (TOTAL_THLQ(IGND), TOTAL_THIC(IGND), &
+    TOTAL_THLQ_M(IGND), TOTAL_THIC_M(IGND), STAT=PAS)
 
 IF (PAS .NE. 0) THEN
   WRITE (6, *)
@@ -1983,6 +1994,20 @@ TOTAL_EVAPACC=0.0
 TOTAL_PREACC=0.0
 TOTAL_HFSACC=0.0
 TOTAL_QEVPACC=0.0
+
+    ! For monthly totals.
+    TOTAL_ROF_M = 0.0
+    TOTAL_ROFO_M = 0.0
+    TOTAL_ROFS_M = 0.0
+    TOTAL_ROFB_M = 0.0
+    TOTAL_EVAP_M = 0.0
+    TOTAL_PRE_M = 0.0
+    TOTAL_ROF_ACC_M = 0.0
+    TOTAL_ROFO_ACC_M = 0.0
+    TOTAL_ROFS_ACC_M = 0.0
+    TOTAL_ROFB_ACC_M = 0.0
+    TOTAL_EVAP_ACC_M = 0.0
+    TOTAL_PRE_ACC_M = 0.0
 
 !> *********************************************************************
 !> Set accumulation variables to zero.
@@ -3345,6 +3370,17 @@ TOTAL_ZPND = 0.0
 TOTAL_THLQ = 0.0
 TOTAL_THIC = 0.0
 
+    TOTAL_STORE_M = 0.0
+    TOTAL_STORE_2_M = 0.0
+    TOTAL_STORE_ACC_M = 0.0
+    TOTAL_RCAN_M = 0.0
+    TOTAL_SCAN_M = 0.0
+    TOTAL_SNO_M = 0.0
+    TOTAL_WSNO_M = 0.0
+    TOTAL_ZPND_M = 0.0
+    TOTAL_THLQ_M = 0.0
+    TOTAL_THIC_M = 0.0
+
     !> Open CSV output files.
     if (BASINBALANCEOUTFLAG > 0) then
 
@@ -3353,6 +3389,7 @@ TOTAL_THIC = 0.0
             open(fls%fl(4)%unit, file = trim(adjustl(fls%fl(4)%name)))
         else
             open(900, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/Basin_average_water_balance.csv")
+            open(902, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/Basin_average_water_balance_Monthly.csv")
         end if
 
         wrt_900_1 = "DAY,YEAR,PREACC" // ",EVAPACC,ROFACC,ROFOACC," // &
@@ -3379,9 +3416,10 @@ TOTAL_THIC = 0.0
             trim(adjustl(wrt_900_2)) // &
             trim(adjustl(wrt_900_3)) // &
             trim(adjustl(wrt_900_4)) // &
-            "THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE"
+            "THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE,DSTOR_ACC"
 
         write(900, "(a)") trim(adjustl(wrt_900_f))
+        write(902, '(a)') trim(adjustl(wrt_900_f))
 
         !> Energy balance.
         open(901, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/Basin_average_energy_balance.csv")
@@ -3739,6 +3777,11 @@ IF (JAN == 1) THEN
         END IF
     END DO
     TOTAL_STORE_2 = INIT_STORE
+
+    ! For monthly totals.
+    call FIND_MONTH(IDAY, IYEAR, imonth_old)
+    TOTAL_STORE_2_M = INIT_STORE
+
 END IF
 
 !>=========================================================================
@@ -4672,16 +4715,11 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     TOTAL_STORE = TOTAL_SCAN + TOTAL_RCAN + TOTAL_SNO + TOTAL_WSNO + TOTAL_ZPND + &
         sum(TOTAL_THLQ) + sum(TOTAL_THIC)
 
-  fmt_1 = "(i4, ','), (i5, ','),"
-  write(strInt, '(i2)') 21 + IGND*3
-  fmt_2 = trim(adjustl(strInt)) // "(e14.6, ',')"
-  fmt_out = trim(adjustl(fmt_1)) // trim(adjustl(fmt_2)) // ", (e14.6)"
-
     !> Write output CSV files.
     if (BASINBALANCEOUTFLAG > 0) then
 
         !> Water balance.
-        write(900, '('//trim(adjustl(fmt_out))//')') &
+        write(900, "((i4, ','), (i5, ','), *(e14.6, ','))") &
             IDAY, IYEAR              , &   !1
             TOTAL_PREACC/TOTAL_AREA  , &   !2
             TOTAL_EVAPACC/TOTAL_AREA , &   !3
@@ -4707,13 +4745,90 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
             SUM(TOTAL_THIC(1:ignd))/TOTAL_AREA, &
             (SUM(TOTAL_THLQ(1:ignd)) + SUM(TOTAL_THIC(1:ignd)))/TOTAL_AREA, &
             TOTAL_STORE/TOTAL_AREA, &
-            (TOTAL_STORE - TOTAL_STORE_2)/TOTAL_AREA
+            (TOTAL_STORE - TOTAL_STORE_2)/TOTAL_AREA, &
+            (TOTAL_STORE - INIT_STORE)/TOTAL_AREA
 
         !> Energy balance.
         write(901, "((i4, ','), (i5, ','), *(e12.5, ','))") &
             IDAY, IYEAR,    &
             TOTAL_HFSACC/TOTAL_AREA,  &
             TOTAL_QEVPACC/TOTAL_AREA
+
+        ! Monthly totals.
+        TOTAL_PRE_ACC_M = TOTAL_PRE_ACC_M + TOTAL_PRE
+        TOTAL_EVAP_ACC_M = TOTAL_EVAP_ACC_M + TOTAL_EVAP
+        TOTAL_ROF_ACC_M = TOTAL_ROF_ACC_M + TOTAL_ROF
+        TOTAL_ROFO_ACC_M = TOTAL_ROFO_ACC_M + TOTAL_ROFO
+        TOTAL_ROFS_ACC_M = TOTAL_ROFS_ACC_M + TOTAL_ROFS
+        TOTAL_ROFB_ACC_M = TOTAL_ROFB_ACC_M + TOTAL_ROFB
+        TOTAL_PRE_M = TOTAL_PRE_M + TOTAL_PRE
+        TOTAL_EVAP_M = TOTAL_EVAP_M + TOTAL_EVAP
+        TOTAL_ROF_M = TOTAL_ROF_M + TOTAL_ROF
+        TOTAL_ROFO_M = TOTAL_ROFO_M + TOTAL_ROFO
+        TOTAL_ROFS_M = TOTAL_ROFS_M + TOTAL_ROFS
+        TOTAL_ROFB_M = TOTAL_ROFB_M + TOTAL_ROFB
+        TOTAL_SCAN_M = TOTAL_SCAN_M + TOTAL_SCAN
+        TOTAL_RCAN_M = TOTAL_RCAN_M + TOTAL_RCAN
+        TOTAL_SNO_M = TOTAL_SNO_M + TOTAL_SNO
+        TOTAL_WSNO_M = TOTAL_WSNO_M + TOTAL_WSNO
+        TOTAL_ZPND_M = TOTAL_ZPND_M + TOTAL_ZPND
+        TOTAL_THLQ_M = TOTAL_THLQ_M + TOTAL_THLQ
+        TOTAL_THIC_M = TOTAL_THIC_M + TOTAL_THIC
+        TOTAL_STORE_M = TOTAL_STORE
+        TOTAL_STORE_ACC_M = TOTAL_STORE
+
+        ! Write out monthly totals.
+        call FIND_MONTH(IDAY, IYEAR, imonth_now)
+        if (imonth_now /= imonth_old) then
+
+            write(902, "((i4, ','), (i5, ','), *(e14.6, ','))") &
+                IDAY, IYEAR, &
+                TOTAL_PRE_ACC_M/TOTAL_AREA, &
+                TOTAL_EVAP_ACC_M/TOTAL_AREA, &
+                TOTAL_ROF_ACC_M/TOTAL_AREA, &
+                TOTAL_ROFO_ACC_M/TOTAL_AREA, &
+                TOTAL_ROFS_ACC_M/TOTAL_AREA, &
+                TOTAL_ROFB_ACC_M/TOTAL_AREA, &
+                TOTAL_PRE_M/TOTAL_AREA, &
+                TOTAL_EVAP_M/TOTAL_AREA, &
+                TOTAL_ROF_M/TOTAL_AREA, &
+                TOTAL_ROFO_M/TOTAL_AREA, &
+                TOTAL_ROFS_M/TOTAL_AREA, &
+                TOTAL_ROFB_M/TOTAL_AREA, &
+                TOTAL_SCAN_M/TOTAL_AREA, &
+                TOTAL_RCAN_M/TOTAL_AREA, &
+                TOTAL_SNO_M/TOTAL_AREA, &
+                TOTAL_WSNO_M/TOTAL_AREA, &
+                TOTAL_ZPND_M/TOTAL_AREA, &
+                (TOTAL_THLQ_M(j)/TOTAL_AREA, j = 1, IGND), &
+                (TOTAL_THIC_M(j)/TOTAL_AREA, j = 1, IGND), &
+                ((TOTAL_THLQ_M(j) + TOTAL_THIC_M(j))/TOTAL_AREA, j = 1, IGND), &
+                sum(TOTAL_THLQ_M(1:IGND))/TOTAL_AREA, &
+                sum(TOTAL_THIC_M(1:IGND))/TOTAL_AREA, &
+                (sum(TOTAL_THLQ_M(1:IGND)) + sum(TOTAL_THIC_M(1:IGND)))/TOTAL_AREA, &
+                TOTAL_STORE_M/TOTAL_AREA, &
+                (TOTAL_STORE_M - TOTAL_STORE_2_M)/TOTAL_AREA, &
+                (TOTAL_STORE_ACC_M - INIT_STORE)/TOTAL_AREA
+
+                TOTAL_PRE_M = 0.0
+                TOTAL_EVAP_M = 0.0
+                TOTAL_ROF_M = 0.0
+                TOTAL_ROFO_M = 0.0
+                TOTAL_ROFS_M = 0.0
+                TOTAL_ROFB_M = 0.0
+                TOTAL_SCAN_M = 0.0
+                TOTAL_RCAN_M = 0.0
+                TOTAL_SNO_M = 0.0
+                TOTAL_WSNO_M = 0.0
+                TOTAL_ZPND_M = 0.0
+                TOTAL_THLQ_M = 0.0
+                TOTAL_THIC_M = 0.0
+                TOTAL_STORE_2_M = TOTAL_STORE_M
+                TOTAL_STORE_M = 0.0
+
+                imonth_old = imonth_now
+
+        end if
 
     end if !(BASINBALANCEOUTFLAG > 0) then
 
@@ -5440,6 +5555,7 @@ CLOSE(UNIT=51)
     !> Close the CSV energy and water balance output files.
     close(900)
     close(901)
+    close(902)
 
 9000 FORMAT('INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY AND IS SET TO 0 BY THE MODEL.',/, &
             '0: NO INTERPOLATION OF FORCING DATA.',/, &
