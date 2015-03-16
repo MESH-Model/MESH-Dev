@@ -526,6 +526,11 @@ C		do yi=yCount,1,-1
     ! Slope dem and drainage density  extracted from dem used in WARTROF.f G.sapriza 11/14
                   else if(attribName(1:attLen) .eq. 'drdn')then
                         drdn(rank) = val
+
+!                       Convert DD from km/km^2 to m/m^2
+!                       The formulae in WATROF.f expect m/m^2
+                        drdn(rank) = drdn(rank)/1000.0
+
                   elseif (attribName(1:attLen) .eq. 'demslope')then
                       demslp(rank) = val
 
