@@ -199,11 +199,9 @@
 
       PRINT*,"Reading Drainage Database from MESH_drainage_database.r2c"
 
-        OPEN(UNIT=51,FILE='nul')
         OPEN(UNIT=98,FILE='1234500124572321.1265489')
         CALL READ_SHED_EF (31, 1)
         CLOSE(98,STATUS='delete')
-        CLOSE(51)
         WRITE (6, *) " READ: SUCCESSFUL, FILE: CLOSED"
 !+        ALLOCATE (FRAC(NA),
 !>
@@ -442,7 +440,7 @@
 !> Open and read in values from MESH_input_soil_levels.txt file
 !> *********************************************************************
       ALLOCATE (sl%DELZ(IGND), sl%ZBOT(IGND))
-      CALL READ_SOIL_LEVELS(IGND, sl)
+      CALL READ_SOIL_LEVELS(IGND, sl, fls)
 
       CALL READ_CHECK_FORCING_FILES(NUM_CSV, NUM_R2C,NUM_SEQ,NA,cm,ts)
 

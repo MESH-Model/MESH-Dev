@@ -70,7 +70,7 @@
          i = indx
 
 
-         if (cm%clin(i)%flagId .eq. 5)then
+         if (cm%clin(i)%flagId .ge. 5)then
 
             if(ts%nr_timeStepClimF.le.cm%clin(i)%timeSize)then
 
@@ -147,8 +147,8 @@
          
          if (idvar .eq. 'rain_2')then
 
-            allocate(cm%clin(3)%climv(cm%na,cm%clin(3)%ntimes(1)))
-            cm%clin(3)%unitR = unitR
+            allocate(cm%clin(8)%climv(cm%na,cm%clin(8)%ntimes(1)))
+            cm%clin(8)%unitR = unitR
             call OpenData(cm,'basin_rain_2',8)
 
          endif         
@@ -336,7 +336,7 @@
 
          i = indx
 
-            if (cm%clin(i)%flagId .eq. 5)then
+            if (cm%clin(i)%flagId .ge. 5)then
 
                 tm  = shape(cm%clin(i)%climv)
                 !> r2c file format
@@ -404,7 +404,7 @@
 
          i = indx
 
-         if (cm%clin(i)%flagId .eq. 5)then
+         if (cm%clin(i)%flagId .ge. 5)then
 
             tm  = shape(cm%clin(i)%climv)
 

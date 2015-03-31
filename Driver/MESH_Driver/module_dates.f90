@@ -171,22 +171,27 @@
             allocate(ts%daysINyears(ts%nyears))
             allocate(ts%daysINseasons(12))
 
+            nr_days = 0
+
             do i = 1, ts%nyears
 
                 ts%years(i) = year
                 days_inyear(i) = leap_year(year)
                 year = year + 1
 
+                if (i == 1) then
+                    nr_days = days_inyear(i) - start_date(2) + 1 
+                else if (i == ts%nyears) then
+                    nr_days = nr_days + (days_inyear(i) - (days_inyear(i) - end_date(2)))
+                else
+                    nr_days = nr_days + days_inyear(i)
+                end if
+
             enddo
-
-
-            nr_days = days_inyear(1) - start_date(2)   + &
-                      sum(days_inyear(2:ts%nyears-1)) + &
-                      end_date(2) + 1
 
             ts%nr_days = nr_days
 
-            allocate(ts%dates(nr_days,4))
+            allocate(ts%dates(nr_days, 4))
 
             ts%nr_timeStep = ts%nr_days*48
 
@@ -203,18 +208,12 @@
 
                 call Julian2MonthDay(jday, year, ts%dates(i, 2), ts%dates(i, 3))
 
-                if ((leap_year(year) .eq. 365) .and. &
-                    (jday .eq. 365)) then
-
+                if ((leap_year(year) == 365) .and. (jday == 365)) then
                     year = year + 1
                     jday = 0
-
-                elseif ((leap_year(year) .eq. 366) .and. &
-                        (jday   .eq. 366)) then
-
+                else if ((leap_year(year) == 366) .and. (jday == 366)) then
                     year = year + 1
                     jday = 0
-
                 end if
 
                 jday = jday + 1

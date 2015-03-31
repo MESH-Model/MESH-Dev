@@ -103,7 +103,7 @@ INTEGER,PARAMETER :: M_C=5
 !todo M_S could be removed as it is now just a surrogate of WF_NO (KCK)
 
 INTEGER IGND
-REAL IGND_TEST
+REAL IGND_TEST, IGND_DEEP
 
 !> WATERSHED RELATED VARIABLES
 INTEGER LATDEGMIN,LATMINMIN,LATDEGMAX,LATMINMAX,LONDEGMIN, &
@@ -934,7 +934,13 @@ end if !(narg .gt. 0) then
 
 ! Find the appropriate value of IGND from MESH_input_soil_levels.txt
 IGND = 0
-OPEN (52, FILE="MESH_input_soil_levels.txt", STATUS="OLD",IOSTAT=IOS)
+
+    if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(10)%isInit)) then
+        open(fls%fl(10)%unit, file = trim(adjustl(fls%fl(10)%name)), iostat = IOS)
+    else
+        open(52, file = 'MESH_input_soil_levels.txt', status = 'old', iostat = IOS)
+    end if
+
 IF (IOS .NE. 0)THEN !CHECK FILE FOR IOSTAT ERRORS
    WRITE (6, *)
    WRITE (6, *)
@@ -945,7 +951,7 @@ IF (IOS .NE. 0)THEN !CHECK FILE FOR IOSTAT ERRORS
 ELSE
    IGND_TEST = 1.0
    DO WHILE (IGND_TEST.NE.0.0.AND.IOS.EQ.0)
-     READ(52,'(2X,F8.2)',IOSTAT=IOS) IGND_TEST
+     read(52, * , iostat = IOS) IGND_TEST, IGND_DEEP
      IGND = IGND + 1
    ENDDO
    IGND = IGND - 1 ! because IGND increments the first time that IGND_TEST = 0.0
@@ -1782,35 +1788,37 @@ ENDDO
 !> after that Diana uses RADJGRD (the value of latitude in radians) so 
 !> after DEGLAT is used to calculate RADJGRD is it no longer used.  This 
 !> is how it was in the original CLASS code.
-DO I=1, NA
-  
-  !LATLENGTH=AL/1000./(111.136-0.5623*COS(2*(DEGLAT*PI/180.0))+ &
-  !0.0011*COS(4*(DEGLAT*PI/180.0)))
-  !LONGLENGTH=AL/1000./(111.4172*COS((DEGLAT*PI/180.0))- &
-  !0.094*COS(3*(DEGLAT*PI/180.0))+0.0002*COS(5*(DEGLAT*PI/180.0)))
-  
-  RADJGRD(I)=((YORIGIN + YDELTA*YYY(I))-YDELTA/2.0)*PI/180.  
-  DLONGRD(I)=(XORIGIN + XDELTA*XXX(I))-XDELTA/2.0
- ! RADJGRD(I)=( (DEGLAT-(REAL(YCOUNT)/2.0)*LATLENGTH) &
- ! +(YYY(I)-0.5)*LATLENGTH)*PI/180.
- ! DLONGRD(I)=(DEGLON-(REAL(XCOUNT)/2.0)*LONGLENGTH) &
- ! +(XXX(I)-0.5)*LONGLENGTH
-  cp%ZRFMGRD(I)=cp%ZRFMGRD(1)
-  cp%ZRFHGRD(I)=cp%ZRFHGRD(1)
-  cp%ZBLDGRD(I)=cp%ZBLDGRD(1)
-  cp%GCGRD(i)=cp%GCGRD(1)
-  Z0ORGRD(I)=0.0
-  
-  if (GGEOFLAG == 1) then
-      open(18, file='MESH_ggeo.ini', status='old')
-      read(18, *) GGEOGRD(I)
-      close(18)
-  else
-      GGEOGRD(I) = 0.0
-  end if
-  ZDMGRD(I)=10.0
-  ZDHGRD(I)=2.0
-ENDDO
+
+    if (GGEOFLAG == 1) then
+
+        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(7)%isInit)) then
+            open(fls%fl(7)%unit, file = trim(adjustl(fls%fl(7)%name)))
+        else
+            open(18, file = 'MESH_ggeo.ini', status = 'old')
+        end if
+
+        read(18, *) GGEOGRD(1)
+        close(18)
+    else
+        GGEOGRD(1) = 0.0
+    end if
+
+	do i = 1, NA
+
+        !LATLENGTH = AL/1000.0/(111.136 - 0.5623*COS(2*(DEGLAT*PI/180.0)) + 0.0011*COS(4*(DEGLAT*PI/180.0)))
+        !LONGLENGTH = AL/1000.0/(111.4172*COS((DEGLAT*PI/180.0)) - 0.094*COS(3*(DEGLAT*PI/180.0)) + 0.0002*COS(5*(DEGLAT*PI/180.0)))
+        RADJGRD(I) = ((YORIGIN + YDELTA*YYY(I)) - YDELTA/2.0)*PI/180.0
+        DLONGRD(I) = (XORIGIN + XDELTA*XXX(I)) - XDELTA/2.0
+        cp%ZRFMGRD(I) = cp%ZRFMGRD(1)
+        cp%ZRFHGRD(I) = cp%ZRFHGRD(1)
+        cp%ZBLDGRD(I) = cp%ZBLDGRD(1)
+        cp%GCGRD(i) = cp%GCGRD(1)
+        Z0ORGRD(I) = 0.0
+        GGEOGRD(I) = GGEOGRD(1)
+        ZDMGRD(I) = 10.0
+        ZDHGRD(I) = 2.0
+
+	end do
 
 !> adjust NAA to the be number of outlet squares, as currently it is the
 !> number of squares with outlets into other squares in the basin, and
@@ -1935,49 +1943,66 @@ DRIVERTIMESTEP=DELT    ! Be sure it's REAL*8
     JAN=1
 
 !todo - check that this is compatible with Saul's pre-distributed soil moisture and soil temp.
-DO I=1,NA
-  DO M=1,NMTEST
-    DO J=1,IGND
-      cp%TBARROW(I,M,J)=cp%TBARROW(I,M,J)+TFREZ
-    END DO
-    cp%TSNOROW(I,M)=cp%TSNOROW(I,M)+TFREZ
-    cp%TCANROW(I,M)=cp%TCANROW(I,M)+TFREZ
-    cp%TPNDROW(I,M)=cp%TPNDROW(I,M)+TFREZ
-    TBASROW(I,M)=cp%TBARROW(I,M,3)
-    CMAIROW(I,M)=0.
-    WSNOROW(I,M)=0.
-    TSFSROW(I,M,1)=TFREZ
-    TSFSROW(I,M,2)=TFREZ
-    TSFSROW(I,M,3)=cp%TBARROW(I,M,1)
-    TSFSROW(I,M,4)=cp%TBARROW(I,M,1)
-    TACROW (I,M)=cp%TCANROW(I,M)
-    QACROW (I,M)=0.5E-2
-    IF(IGND>3)THEN ! should stay this way to work with class
-    !todo - if we have time, change this so that soil.ini can take more than 3 layers.
-      DO J=4,IGND
-        cp%THLQROW(I,M,J)=cp%THLQROW(I,M,3)
-        cp%THICROW(I,M,J)=cp%THICROW(I,M,3)
-        cp%TBARROW(I,M,J)=cp%TBARROW(I,M,3)
-        IF(cp%SDEPROW(I,M)<(sl%ZBOT(J-1)+0.001) .AND. &
-          cp%SANDROW(I,M,3)>-2.5)THEN
-          cp%SANDROW(I,M,J)=-3.0
-          cp%CLAYROW(I,M,J)=-3.0
-          cp%ORGMROW(I,M,J)=-3.0
-        ELSE
-          cp%SANDROW(I,M,J)=cp%SANDROW(I,M,3)
-          cp%CLAYROW(I,M,J)=cp%CLAYROW(I,M,3)
-          cp%ORGMROW(I,M,J)=cp%ORGMROW(I,M,3)
-        ENDIF
-      ENDDO
-    ENDIF
-    DO K=1,6
-      DO L=1,50
-        ITCTROW(I,M,K,L)=0
-      ENDDO
-    ENDDO
+    do I = 1, NA
+        do M = 1, NMTEST
 
-  ENDDO !DO M=1,NMTEST
-ENDDO !DO I=1,NA
+            do J = 1, IGND
+                cp%TBARROW(I,M,J) = cp%TBARROW(I,M,J) + TFREZ
+            end do
+
+            cp%TSNOROW(I,M) = cp%TSNOROW(I,M) + TFREZ
+            cp%TCANROW(I,M) = cp%TCANROW(I,M) + TFREZ
+            cp%TPNDROW(I,M) = cp%TPNDROW(I,M) + TFREZ
+            TBASROW(I,M) = cp%TBARROW(I,M,IGND)
+            CMAIROW(I,M) = 0.0
+            WSNOROW(I,M) = 0.0
+            TSFSROW(I,M,1) = TFREZ
+            TSFSROW(I,M,2) = TFREZ
+            TSFSROW(I,M,3) = cp%TBARROW(I,M,1)
+            TSFSROW(I,M,4) = cp%TBARROW(I,M,1)
+            TACROW(I,M) = cp%TCANROW(I,M)
+            QACROW(I,M) = 0.5E-2
+
+            if (IGND > 3) then ! should stay this way to work with class
+
+                !todo - if we have time, change this so that soil.ini can take more than 3 layers.
+                if (NRSOILAYEREADFLAG == 0) then
+
+                    do J = 4, IGND
+                        cp%THLQROW(I,M,J) = cp%THLQROW(I,M,3)
+                        cp%THICROW(I,M,J) = cp%THICROW(I,M,3)
+                        cp%TBARROW(I,M,J) = cp%TBARROW(I,M,3)
+                        if (cp%SDEPROW(I,M) < (sl%ZBOT(J - 1) + 0.001) .and. cp%SANDROW(I,M,3) > -2.5) then
+                            cp%SANDROW(I,M,J) = -3.0
+                            cp%CLAYROW(I,M,J) = -3.0
+                            cp%ORGMROW(I,M,J) = -3.0
+                        else
+                            cp%SANDROW(I,M,J) = cp%SANDROW(I,M,3)
+                            cp%CLAYROW(I,M,J) = cp%CLAYROW(I,M,3)
+                            cp%ORGMROW(I,M,J) = cp%ORGMROW(I,M,3)
+                        end if
+                    end do
+
+                else
+                    do J = 4, IGND
+                        if (cp%SDEPROW(I,M) < (sl%ZBOT(J - 1) + 0.001) .and. cp%SANDROW(I,M,3) > -2.5) then
+                            cp%SANDROW(I,M,J) = -3.0
+                            cp%CLAYROW(I,M,J) = -3.0
+                            cp%ORGMROW(I,M,J) = -3.0
+                        end if
+                    end do
+
+                end if !if (NRSOILAYEREADFLAG == 0) then
+            end if !(IGND > 3) then
+
+            do K = 1, 6
+                do L = 1, 50
+                    ITCTROW(I,M,K,L) = 0
+                end do
+            end do
+
+        end do !M = 1, NMTEST
+    end do !I = 1, NA
 
 !> clear accumulating variables
 TOTAL_ROF=0.0
@@ -3286,7 +3311,7 @@ IF (RESUMEFLAG == 3) THEN
     CALL read_init_prog_variables_class( CMAIROW  , QACROW  , TACROW   , &
                                          TBASROW  , TSFSROW , WSNOROW  , &
                                          cp       , NA      , NTYPE    , &
-                                         IGND                          )
+                                         IGND     , fls                )
 
 END IF !IF (RESUMEFLAG == 3) THEN
 
@@ -3902,18 +3927,17 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
        INFILTYPE     = 2
     ENDIF
 
-
-    CALL CLASSW  (THLQGAT,THICGAT,TBARGAT,TCANGAT,RCANGAT,SCANGAT, &
-                  ROFGAT, TROFGAT,SNOGAT, TSNOGAT,RHOSGAT,ALBSGAT, &
-                  WSNOGAT,ZPNDGAT,TPNDGAT,GROGAT, FRZCGAT, TBASGAT,GFLXGAT, &
-                  PCFCGAT,PCLCGAT,PCPNGAT,PCPGGAT,QFCFGAT,QFCLGAT, &
-                  QFNGAT, QFGGAT, QFCGAT, HMFCGAT,HMFGGAT,HMFNGAT, &
-                  HTCCGAT,HTCSGAT,HTCGAT, ROFCGAT,ROFNGAT,ROVGGAT, &
-                  WTRSGAT,WTRGGAT,ROFOGAT,ROFSGAT,ROFBGAT, &
-                  TROOGAT,TROSGAT,TROBGAT,QFSGAT, &
-                  TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
-                  THICEC, THICEG, HCPC,   HCPG,   RPCPGAT,TRPCGAT, &
-                  SPCPGAT,TSPCGAT,PREGAT, TAGAT,  RHSIGAT,GGEOGAT, &
+    CALL CLASSW  (THLQGAT, THICGAT, TBARGAT, TCANGAT, RCANGAT, SCANGAT, &
+                  ROFGAT, TROFGAT, SNOGAT, TSNOGAT, RHOSGAT, ALBSGAT, &
+                  WSNOGAT, ZPNDGAT, TPNDGAT, GROGAT, FRZCGAT, TBASGAT, GFLXGAT, &
+                  PCFCGAT, PCLCGAT, PCPNGAT, PCPGGAT, QFCFGAT, QFCLGAT, &
+                  QFNGAT, QFGGAT, QFCGAT, HMFCGAT, HMFGGAT, HMFNGAT, &
+                  HTCCGAT, HTCSGAT, HTCGAT, ROFCGAT, ROFNGAT, ROVGGAT, &
+                  WTRSGAT, WTRGGAT, ROFOGAT, ROFSGAT, ROFBGAT, &
+                  TROOGAT, TROSGAT, TROBGAT, QFSGAT, &
+                  TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
+                  THICEC, THICEG, HCPC, HCPG, RPCPGAT, TRPCGAT, &
+                  SPCPGAT, TSPCGAT, PREGAT, TAGAT, RHSIGAT, GGEOGAT, &
                   FC,     FG,     FCS,    FGS,    TPONDC, TPONDG, &
                   TPNDCS, TPNDGS, EVAPC,  EVAPCG, EVAPG,  EVAPCS, &
                   EVPCSG, EVAPGS, QFREZC, QFREZG, QMELTC, QMELTG, &
@@ -5438,12 +5462,13 @@ IF (SAVERESUMEFLAG == 3) THEN
                                          cp%TBARROW  , cp%TCANROW , cp%THICROW  , &
                                          cp%THLQROW  , cp%TPNDROW , cp%TSNOROW  , &
                                          cp%ZPNDROW                             , &
-                                         NA          , NTYPE      , IGND        )
+                                         NA          , NTYPE      , IGND        , &
+                                         fls )
 
 ENDIF !IF (SAVERESUMEFLAG == 3) THEN
 
 if (outfieldsflag .eq. 1) &
-    call write_outputs(vr, ts, iof, bi)
+    call write_outputs(vr, ts, iof, bi, fls)
 
 IF(ENDDATA)PRINT *, 'Reached end of forcing data'
 IF(ENDDATE)PRINT *, 'Reached end of simulation date'

@@ -1,7 +1,7 @@
 subroutine read_init_prog_variables_class( CMAIROW  , QACROW  , TACROW   , &
                                            TBASROW  , TSFSROW , WSNOROW  , &
                                            cp       , NA      , NTYPE    , &
-                                           IGND                          )
+                                           IGND     , fls                 )
 !>***************************************************************************************
 !>***************************************************************************************
 !> AUTHOR : GONZALO SAPRIZA
@@ -33,11 +33,14 @@ subroutine read_init_prog_variables_class( CMAIROW  , QACROW  , TACROW   , &
 !>***************************************************************************************
 
     use MESH_INPUT_MODULE
+    use flags
+    use model_files
 
     implicit none
 
     !Inputs
-    integer :: NA, NTYPE, IGND
+    integer NA, NTYPE, IGND
+    type(fl_ids) :: fls
 
     !Outputs
     real,dimension(NA,NTYPE)  :: CMAIROW , QACROW  , TACROW , &
@@ -48,39 +51,50 @@ subroutine read_init_prog_variables_class( CMAIROW  , QACROW  , TACROW   , &
     TYPE(ClassParameters) :: cp
 
     !Internals
-    integer :: IOS
-
+    integer IOS, unitfl
 
 !--------------Main Subtrouine start-----------------------------------------------
+    if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(9)%isInit)) then
+        open(unit   = fls%fl(9)%unit                , &
+             file   = trim(adjustl(fls%fl(9)%name)) , &
+             status = 'old'                   , &
+             form   = 'unformatted'           , &
+             action = 'read'                  , &
+             access = 'sequential'            , &
+             iostat = IOS                     )
+        unitfl = fls%fl(9)%unit
+    else
+        open(unit   = 883                     , &
+             file   = 'int_statVariables.seq' , &
+             status = 'old'                   , &
+             form   = 'unformatted'           , &
+             action = 'read'                  , &
+             access = 'sequential'            , &
+             iostat = IOS                     )
 
-    OPEN(UNIT   = 883                     , &
-         FILE   = 'int_statVariables.seq' , &
-         STATUS = 'OLD'                   , &
-         FORM   = 'unformatted'           , &
-         ACTION = 'read'                  , &
-         ACCESS = 'sequential'            , &
-         IOSTAT = IOS                     )
+        unitfl = 883
+    end if
 
-    read(883) cp%albsrow   !1
-    read(883) cmairow      !2
-    read(883) cp%grorow    !3
-    read(883) qacrow       !4
-    read(883) cp%rcanrow   !5
-    read(883) cp%rhosrow   !6
-    read(883) cp%scanrow   !7
-    read(883) cp%snorow    !8
-    read(883) tacrow       !9
-    read(883) cp%tbarrow   !10
-    read(883) tbasrow      !11
-    read(883) cp%tcanrow   !12
-    read(883) cp%thicrow   !13
-    read(883) cp%thlqrow   !14
-    read(883) cp%tpndrow   !15
-    read(883) tsfsrow      !16
-    read(883) cp%tsnorow   !17
-    read(883) wsnorow      !18
-    read(883) cp%zpndrow   !19
+    read(unitfl) cp%albsrow   !1
+    read(unitfl) cmairow      !2
+    read(unitfl) cp%grorow    !3
+    read(unitfl) qacrow       !4
+    read(unitfl) cp%rcanrow   !5
+    read(unitfl) cp%rhosrow   !6
+    read(unitfl) cp%scanrow   !7
+    read(unitfl) cp%snorow    !8
+    read(unitfl) tacrow       !9
+    read(unitfl) cp%tbarrow   !10
+    read(unitfl) tbasrow      !11
+    read(unitfl) cp%tcanrow   !12
+    read(unitfl) cp%thicrow   !13
+    read(unitfl) cp%thlqrow   !14
+    read(unitfl) cp%tpndrow   !15
+    read(unitfl) tsfsrow      !16
+    read(unitfl) cp%tsnorow   !17
+    read(unitfl) wsnorow      !18
+    read(unitfl) cp%zpndrow   !19
 
-    close(883)
+    close(unitfl)
 
 end subroutine read_init_prog_variables_class

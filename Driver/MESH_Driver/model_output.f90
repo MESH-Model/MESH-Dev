@@ -6,7 +6,9 @@ module model_output
 
     use model_dates
     use strings
-
+    use model_files
+    use flags
+    
     implicit none
 
     !> Data type to store basin information
@@ -522,7 +524,7 @@ module model_output
         !> Daily:
         call vr%wbt_d%init(bi, ts%nr_days)
         call vr%spt_d%init(bi, ts%nr_days)
-        call vr%engt_d%init(bi, ts%nseason)
+        call vr%engt_d%init(bi, ts%nr_days)
         !> Hourly:
         call vr%wbt_h%init(bi, max(1, 3600/public_ic%timestep))
         call vr%mdt_h%init(bi, max(1, 3600/public_ic%timestep))
@@ -1069,7 +1071,7 @@ module model_output
 
         !> Local variables.
         integer :: i, j
-        character*3 :: freq
+        character*5 :: freq
 
         !> Update output fields.
         do i = 1, ifo%nr_out
@@ -1250,7 +1252,7 @@ module model_output
         type(info_out), intent(in) :: ifo
         integer, intent(in) :: var_id
         real, dimension(:, :) :: fld_in
-        character*3, intent(in) :: freq
+        character*5, intent(in) :: freq
         integer, intent(in) :: old_time, now_time, file_unit
         logical :: keep_file_open
         integer, intent(in), optional :: igndx
@@ -1258,7 +1260,7 @@ module model_output
         !> Local variables.
         integer, dimension(:, :), allocatable :: dates
         real, dimension(:, :), allocatable :: fld_out
-        character*3 :: freq2
+        character*5 :: freq2
         character*1 :: st
 
         !> Write output if at end of time-step.
@@ -1628,7 +1630,7 @@ module model_output
 
     end subroutine UpdateFIELDSOUT
 
-    subroutine Write_Outputs(vr, ts, ifo, bi)
+    subroutine Write_Outputs(vr, ts, ifo, bi, fls)
 
         !>------------------------------------------------------------------------------
         !>  Description: Loop over the variablaes to write
@@ -1640,14 +1642,15 @@ module model_output
         type(info_out) :: ifo
         type(dates_model) :: ts
         type(basin_info) :: bi
+        type(fl_ids) :: fls
 
         !Outputs
         !Files
 
         !Internals
-        integer :: i, j
-        character*50 :: vId
-        character*3 :: freq
+        integer i, j
+        character*50 vId
+        character*5 freq
 
         do i = 1, ifo%nr_out
 
@@ -1722,16 +1725,16 @@ module model_output
                 case ('PREC', 'Rainfall', 'Rain', 'Precipitation')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls)
 
                     if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls)
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls)
 
                     if (ifo%var_out(i)%out_d) &
-                        call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days)
+                        call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days, fls)
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -1742,16 +1745,16 @@ module model_output
                 case ('EVAP', 'Evapotranspiration')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls)
 
                     if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls)
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls)
 
                     if (ifo%var_out(i)%out_d) &
-                        call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days)
+                        call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days, fls)
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -1762,16 +1765,16 @@ module model_output
                 case ('Runoff', 'ROF')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls)
 
                     if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls)
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls)
 
                     if (ifo%var_out(i)%out_d) &
-                        call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days)
+                        call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days, fls)
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -1782,40 +1785,40 @@ module model_output
                 case ('DeltaStorage', 'DSTG')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls)
 
                     if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls)
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls)
 
                     if (ifo%var_out(i)%out_d) &
-                        call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days)
+                        call WriteFields_i(vr, ts, ifo, i, 'D', bi%na, ts%nr_days, fls)
 
                 case ('TempSoil', 'Temperature_soil_layers', 'TBAR')
 
                     if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_m) then!trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_s) then!trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls, j)
                         end do
                     end if
                    
                     if (ifo%var_out(i)%out_d) then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, j)
+                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, fls, j)
                         end do
                     end if     
                     
@@ -1823,25 +1826,25 @@ module model_output
 
                     if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_m) then!trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_s) then!trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls, j)
                         end do
                     end if
                    
                     if (ifo%var_out(i)%out_d) then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, j)
+                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, fls, j)
                         end do
                     end if         
 
@@ -1849,25 +1852,25 @@ module model_output
 
                     if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_m) then!trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_s) then!trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls, j)
                         end do
                     end if
                    
                     if (ifo%var_out(i)%out_d) then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, j)
+                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, fls, j)
                         end do
                     end if                      
                     
@@ -1875,25 +1878,25 @@ module model_output
 
                     if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_m) then!trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_s) then!trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls, j)
                         end do
                     end if
                    
                     if (ifo%var_out(i)%out_d) then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, j)
+                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, fls, j)
                         end do
                     end if                         
                     
@@ -1902,25 +1905,25 @@ module model_output
 
                     if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_m) then!trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_s) then!trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_d) then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, j)
+                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, fls, j)
                         end do
                     end if
                     
@@ -1928,25 +1931,25 @@ module model_output
 
                     if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_m) then!trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_s) then!trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_d) then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, j)
+                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, fls, j)
                         end do
                     end if                    
 
@@ -1955,25 +1958,25 @@ module model_output
 
                     if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'Y',bi%na, ts%nyears, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'Y',bi%na, ts%nyears, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_m) then!trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls, j)
                         end do
                     end if
 
                     if (ifo%var_out(i)%out_s) then!trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls, j)
                         end do
                     end if
                     
                     if (ifo%var_out(i)%out_d) then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, j)
+                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, fls, j)
                         end do
                     end if                    
 
@@ -1988,13 +1991,13 @@ module model_output
                 case ('RCAN')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls)
 
                     if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls)
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls)
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -2005,13 +2008,13 @@ module model_output
                 case ('SCAN', 'SNCAN')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls)
 
                     if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls)
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls)
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -2022,13 +2025,13 @@ module model_output
                 case ('PNDW')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls)
 
                     if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls)
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls)
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -2039,13 +2042,13 @@ module model_output
                 case ('SNO')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls)
 
                     if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls)
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls)
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -2056,13 +2059,13 @@ module model_output
                 case ('WSNO')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls)
 
                     if (ifo%var_out(i)%out_m) & !trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') &
-                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls)
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls)
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -2073,13 +2076,13 @@ module model_output
                 case ("STG")
 
                     if (ifo%var_out(i)%out_y) &
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears)
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls)
 
                     if (ifo%var_out(i)%out_m) &
-                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths)
+                        call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls)
 
                     if (ifo%var_out(i)%out_s) &
-                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason)
+                        call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls)
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -2113,7 +2116,7 @@ module model_output
 
     !>******************************************************************************
 
-    subroutine WriteFields_i(vr, ts, ifo, indx, freq, na, nt, igndx)
+    subroutine WriteFields_i(vr, ts, ifo, indx, freq, na, nt, fls, igndx)
 
         !>------------------------------------------------------------------------------
         !>  Description: Loop over the variables to write
@@ -2124,24 +2127,25 @@ module model_output
         type(out_flds), intent(in) :: vr
         type(dates_model), intent(in) :: ts
         type(info_out), intent(in) :: ifo
+        type (fl_ids), intent(in) :: fls
+        
         integer, intent(in) :: indx
-        character*1, intent(in) :: freq
         integer, intent(in) :: na, nt
+        character*1, intent(in) :: freq
+
         integer, intent(in), optional :: igndx
 
         !Internals
-        integer :: i, nr
-        character*50 :: vId, tfunc
+        integer i, nr
+        character*50 vId, tfunc
         integer, dimension(:), allocatable :: days
-        character*3 :: freq2
-        character*1 :: st
+        character*5 freq2
+        character*5 st
         real :: fld(na, nt)
 
         integer, dimension(:, :), allocatable :: dates
 
-!        vId = trim(adjustl(ifo%ids_var_out(indx, 6)))
         vId = trim(adjustl(ifo%var_out(indx)%out_fmt))
-!        tfunc = trim(adjustl(ifo%ids_var_out(indx, 5)))
         tfunc = trim(adjustl(ifo%var_out(indx)%out_acc))
 
         select case (trim(adjustl(ifo%var_out(indx)%name)))
@@ -2663,8 +2667,8 @@ module model_output
         end select !freq
 
         if (present(igndx)) then
-            write(unit = st, fmt = '(I1)') igndx
-            freq2 = freq // '_' // st
+            write(st, '(i5)') igndx
+            freq2 = freq // '_' // trim(adjustl(st))
         else
             freq2 = freq
         end if
@@ -2678,7 +2682,7 @@ module model_output
                 call WriteR2C(fld, indx, ifo, freq2, dates)
                 
             case('tsi')
-                call WriteTsi(fld, indx, ifo, freq2, dates)
+                call WriteTsi(fld, indx, ifo, freq2, dates, fls)
             case default
                 print *, "Output as file format '" // trim(adjustl(vId)) // "' is not implemented yet."
 
@@ -2688,45 +2692,51 @@ if (allocated(dates)) &
         deallocate(dates)
 
     end subroutine WriteFields_i
-    
-    subroutine WriteTsi(fld,indx,info,freq,dates)
+
+!>******************************************************************************    
+    subroutine WriteTsi(fld, indx, info, freq, dates, fls)
         
         !Inputs
-        real :: fld(:, :)
-        integer :: indx
-        character*3 :: freq
-        integer :: dates(:, :)
+        real fld(:, :)
+        integer indx
+        character*5 freq
+        integer dates(:, :)
         type(info_out) :: info
+        type(fl_ids) :: fls
 
         !Internal
-        character*450 :: flOut
-        integer :: ios, i,j
-        integer :: na, nt
+        character*450 flOut
+        integer ios, i, j
+        integer na, nt, unitfl
 
-        flOut = trim(adjustl(info%pthOut)) // &
-!                trim(adjustl(info%ids_var_out(indx, 1))) // &
-                trim(adjustl(info%var_out(indx)%name)) // &
-                '_' // trim(adjustl(freq)) // '.ts'        
+        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(8)%isInit)) then
+            flOut = trim(adjustl(fls%pthOut)) // &
+                    trim(adjustl(info%var_out(indx)%name)) // &
+                    '_' // trim(adjustl(freq)) // '_' // &
+                    trim(adjustl(fls%fl(8)%name)) // '.ts'
+            unitfl = fls%fl(8)%unit
+        else
+            flOut = trim(adjustl(info%pthOut)) // &
+                    trim(adjustl(info%var_out(indx)%name)) // &
+                    '_' // trim(adjustl(freq)) // '.ts'
+            unitfl = 444
+        end if
 
-        open(unit = 444, &
-             file = trim(adjustl(flOut)), &
-             status = 'replace', &
-             form = 'formatted', &
-             action = 'write', &
-             iostat = ios)     
-        
+        open(unit = unitfl               , &
+             file = trim(adjustl(flOut)) , &
+             status = 'replace'          , &
+             form = 'formatted'          , &
+             action = 'write'            , &
+             iostat = ios                )
+
         nt = size(dates(:, 1))
-             
+
         do i = 1, nt
-            
-            write(444,*) (fld(info%var_out(indx)%i_grds(j), i), &
-                         j=1,size(info%var_out(indx)%i_grds))
-            
+            write(unitfl, *) (fld(info%var_out(indx)%i_grds(j), i), j = 1, size(info%var_out(indx)%i_grds))
         end do
-             
-        close(444)
-                    
-        
+
+        close(unitfl)
+
     end subroutine WriteTsi
 
     !>******************************************************************************
@@ -2741,29 +2751,28 @@ if (allocated(dates)) &
         !>------------------------------------------------------------------------------
 
         !Inputs
-        real :: fld(:, :)
-        integer :: indx
-        character*3 :: freq
-        integer :: dates(:, :)
+        real fld(:, :)
+        integer indx
+        character*5 freq
+        integer dates(:, :)
         type(info_out) :: info
 
         !Internal
-        character*450 :: flOut
-        integer :: ios, i
-        integer :: na, nt
+        character*450 flOut
+        integer ios, i
+        integer na, nt
 
         flOut = trim(adjustl(info%pthOut)) // &
-!                trim(adjustl(info%ids_var_out(indx, 1))) // &
                 trim(adjustl(info%var_out(indx)%name)) // &
                 '_' // trim(adjustl(freq)) // '.seq'
 
-        open(unit = 882, &
-             file = trim(adjustl(flOut)), &
-             status = 'replace', &
-             form = 'unformatted', &
-             action = 'write', &
-             access = 'sequential', &
-             iostat = ios)
+        open(unit   = 882                  , &
+             file   = trim(adjustl(flOut)) , &
+             status = 'replace'            , &
+             form   = 'unformatted'        , &
+             action = 'write'              , &
+             access = 'sequential'         , &
+             iostat = ios                  )
 
         nt = size(dates(:, 1))
 
@@ -2788,26 +2797,25 @@ if (allocated(dates)) &
         use area_watflood
 
         !Inputs
-        real :: fld(:, :)
-        integer :: indx
+        real fld(:, :)
+        integer indx
         type(info_out) :: info
-        character*3 :: freq
+        character*5 freq
         integer, allocatable :: dates(:, :)
         integer, optional :: file_unit
         logical, optional :: keep_file_open
         integer, optional :: frame_no
 
         !Internal
-        character*450 :: flOut
-        integer :: ios, i, un, nfr
-        integer :: na1, nt, j, t, k
+        character*450 flOut
+        integer ios, i, un, nfr
+        integer na1, nt, j, t, k
         real, dimension(:, :), allocatable :: data_aux
         character(10) :: ctime
         character(8) :: cday
         logical :: opened_status, close_file
 
         flOut = trim(adjustl(info%pthOut)) // &
-!                trim(adjustl(info%ids_var_out(indx, 1))) // &
                 trim(adjustl(info%var_out(indx)%name)) // &
                 '_' // trim(adjustl(freq)) // '.r2c'
 
@@ -2820,12 +2828,12 @@ if (allocated(dates)) &
         inquire(unit = un, opened = opened_status)
         if (.not. opened_status) then
 
-        open(unit = un, &
-             file = trim(adjustl(flOut)), &
-             status = 'replace', &
-             form = 'formatted', &
-             action = 'write', &
-             iostat = ios)
+        open(unit   = un                   , &
+             file   = trim(adjustl(flOut)) , &
+             status = 'replace'            , &
+             form   = 'formatted'          , &
+             action = 'write'              , &
+             iostat = ios                  )
 
         write(un, 3005) '########################################'
         write(un, 3005) ':FileType r2c  ASCII  EnSim 1.0         '

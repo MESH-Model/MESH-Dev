@@ -1,6 +1,8 @@
-      SUBROUTINE READ_SOIL_LEVELS(IGND, sl)
+      SUBROUTINE READ_SOIL_LEVELS(IGND, sl, fls)
 
       USE MESH_INPUT_MODULE
+      USE  FLAGS
+      USE model_files
 
 !> passed in variables
       INTEGER :: IGND
@@ -8,9 +10,17 @@
 !> local variables
       INTEGER :: IOS
 
+!> file handled
+      type(fl_ids):: fls
 
-      OPEN (52, FILE="MESH_input_soil_levels.txt", STATUS="OLD",
-     1  IOSTAT=IOS)
+      IF ((VARIABLEFILESFLAG==1) .AND. (fls%fl(10)%isInit)) THEN
+        OPEN(fls%fl(10)%unit, FILE=trim(adjustl(fls%fl(10)%name)),
+     1       IOSTAT=IOS)
+      ELSE
+        OPEN(52, FILE='MESH_input_soil_levels.txt', STATUS='OLD',
+     1       IOSTAT=IOS)
+      END IF
+
       IF (IOS .NE. 0)THEN !CHECK FILE FOR IOSTAT ERRORS
         WRITE (6, *)
         WRITE (6, *)
@@ -27,7 +37,7 @@
 !todo change documentation to reflect that we read in delz only (and not zbot)
 !todo check other variables read-in from other files
 !todo put in a warning that at least 3 layers are needed.
-        READ(52, *) sl%DELZ(I)
+        READ(52,*) sl%DELZ(I), deep
       ENDDO
 
       sl%ZBOT(1) = sl%DELZ(1)

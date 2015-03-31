@@ -636,15 +636,15 @@ C// I'm not sure if we need this...check with Nick
 
 !     Write the land cover class fractions to spl.txt
       if(iopt.ge.1)then
-        write(51,50002)
+!        write(51,50002)
         do ii=1,ntype+1
-	    write(51,50001)ii
+!	    write(51,50001)ii
           do i=1,ycount
 	      do j=1,xcount
               n=s(i,j)
               if(n.gt.0)dummy(i,j)=aclass(n,ii) 
             end do
-            write(51,50000)(dummy(i,j),j=1,xcount)
+!            write(51,50000)(dummy(i,j),j=1,xcount)
 	    end do
 	  end do
 	endif
@@ -753,8 +753,8 @@ CDAN      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.2000.0)then
         ipr=yyy(nnprint)   ! probably not needed anywhere
         jpr=xxx(nnprint)
       endif
-      write(51,*)
-      write(51,5000)nnprint,ipr,jpr
+!      write(51,*)
+!      write(51,5000)nnprint,ipr,jpr
 
 
 !     REV. 8.92 - Dec.  24/89 -  CHECK FOR 100% ACLASS COVERAGE
@@ -858,10 +858,10 @@ c      endif
       close(unit=unitNum)
 !     WE WILL USE THIS UNIT NUMBER AGAIN FOR THE DAMAGE SITE FILE
 
-         write(51,6006)
-         write(51,6007)
-
-	   write(51,*)' Note: order not the same as the .shd file YET'
+!         write(51,6006)
+!         write(51,6007)
+!
+!	   write(51,*)' Note: order not the same as the .shd file YET'
 
 c         if(ntype.le.0)then
 c            do n=1,naa
@@ -1310,7 +1310,7 @@ c     endif
  1101 format(' reading the stream gauge location file: ',a30)
  1102 format(' ',2i5,1x,a12,7x,4e10.3,f10.3/)
  1776 format(' ','l,iys(l),jxs(l)',5i5)
-        write(51,*)
+!        write(51,*)
 
  5000 format(' Debug grid reset to grid number n,row col',3i7)
   
