@@ -5,7 +5,7 @@
      +  IROVAL, WF_NUM_POINTS,
      +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
      +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
-     +  ID, IRONAME, GENDIR_OUT, op, ts, cm, fls)
+     +  IRONAME, GENDIR_OUT, op, ts, cm, fls)
 
       USE MESH_INPUT_MODULE
       USE FLAGS
@@ -23,7 +23,6 @@
      +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, !P
      +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END !P
 
-      INTEGER :: ID !didn't find the declaration in the driver
       INTEGER:: M_G  ! PARAMETER :: M_G = 5
       CHARACTER(20) :: IRONAME
       CHARACTER*10 GENDIR_OUT
@@ -121,12 +120,6 @@
 !> DAN * THIS FLAG IS NOT APPLICABLE TO RUN_OPTIONS.INI, WHERE THIS FLAG
 !> DAN * MAY BE RESET).
       RELFLG = 1
-
-!> DAN * IF ID = 1, RDEVT WILL READ THE NEW FORMAT EVENT FILE (VERSION
-!> DAN * 9.7 OF THE EVENT FILE WAS USED IN TESTING).
-! TODO: is ID really a flag? should not be set here.
-      ID = 1
-
 
 !> Set HOURLYFLAG to forcing data time step (in minutes).
 !> 30 minute forcing data should be the default

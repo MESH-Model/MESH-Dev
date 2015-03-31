@@ -54,8 +54,6 @@
      +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END
       CHARACTER(20) :: IRONAME
       CHARACTER*10 GENDIR_OUT
-!> declared in area_watflood:
-!>    ID
 !> declared MESH_INPUT_MODULE:
 !>     op%N_OUT, op%II_OUT, op%DIR_OUT
 
@@ -164,7 +162,7 @@
      +  IROVAL, WF_NUM_POINTS,
      +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
      +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
-     +  ID, IRONAME, GENDIR_OUT, op, ts, cm, fls )
+     +  IRONAME, GENDIR_OUT, op, ts, cm, fls )
 
 !> =====================================
 !> DAN  * READ EVENT FILE
