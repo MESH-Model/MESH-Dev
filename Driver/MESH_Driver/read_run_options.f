@@ -8,6 +8,7 @@
      +  IRONAME, GENDIR_OUT, op, ts, cm, fls)
 
       USE MESH_INPUT_MODULE
+      USE strings
       USE FLAGS
       USE climate_forcing
       USE model_dates
@@ -22,6 +23,11 @@
      +  IROVAL, WF_NUM_POINTS,
      +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, !P
      +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END !P
+
+      INTEGER, PARAMETER :: MaxLenField=20, MaxArgs=20, MaxLenLine=100
+      CHARACTER delim*1, in_line*(MaxLenLine)
+      INTEGER nargs
+      CHARACTER(MaxLenField), DIMENSION(MaxArgs) :: out_args
 
       INTEGER:: M_G  ! PARAMETER :: M_G = 5
       CHARACTER(20) :: IRONAME
@@ -338,137 +344,174 @@
 
       READ(53,"(I5)") CONFLAGS
 
+      !> Read and parse the control flags.
+      IF (CONFLAGS > 0) THEN
 
-!> Set flag values based on given input
-      IF(CONFLAGS>0) THEN
+        !> Control flags are parsed by space.
+        delim = ' '
         DO I=1,CONFLAGS
-          READ(53,"(A20, I4)") IRONAME, IROVAL
-          IF (IRONAME == "IDISP") THEN
-            IDISP = IROVAL
-          ELSE IF (IRONAME == "IZREF") THEN
-            IZREF = IROVAL
-          ELSE IF (IRONAME == "ISLFD") THEN
-            ISLFD = IROVAL
-          ELSE IF (IRONAME == "IPCP") THEN
-            IPCP = IROVAL
-          ELSE IF (IRONAME == "ITC") THEN
-            ITC = IROVAL
-          ELSE IF (IRONAME == "ITCG") THEN
-            ITCG = IROVAL
-          ELSE IF (IRONAME == "ITG") THEN
-            ITG = IROVAL
-          ELSE IF (IRONAME == "IWF") THEN
-            IWF = IROVAL
-          ELSE IF (IRONAME == "IPAI") THEN
-            IPAI = IROVAL
-          ELSE IF (IRONAME == "IHGT") THEN
-            IHGT = IROVAL
-          ELSE IF (IRONAME == "IALC") THEN
-            IALC = IROVAL
-          ELSE IF (IRONAME == "IALS") THEN
-            IALS = IROVAL
-          ELSE IF (IRONAME == "IALG") THEN
-            IALG = IROVAL
-          ELSE IF (IRONAME == "RESUMEFLAG") THEN
-            RESUMEFLAG = IROVAL
-          ELSE IF (IRONAME == "SAVERESUMEFLAG") THEN
-            SAVERESUMEFLAG = IROVAL
-          ELSE IF (IRONAME == "HOURLYFLAG") THEN
-            HOURLYFLAG = IROVAL
-          ELSE IF (IRONAME == "RELFLG") THEN
-            RELFLG = IROVAL
-          ELSE IF (IRONAME == "BASINSHORTWAVEFLAG") THEN
-            BASINSHORTWAVEFLAG = IROVAL
-          ELSE IF (IRONAME == "BASINLONGWAVEFLAG") THEN
-            BASINLONGWAVEFLAG = IROVAL
-          ELSE IF (IRONAME == "BASINRAINFLAG") THEN
-            BASINRAINFLAG = IROVAL
-          ELSE IF (IRONAME == "BASINTEMPERATUREFLAG") THEN
-            BASINTEMPERATUREFLAG = IROVAL
-          ELSE IF (IRONAME == "BASINWINDFLAG") THEN
-            BASINWINDFLAG = IROVAL
-          ELSE IF (IRONAME == "BASINPRESFLAG") THEN
-            BASINPRESFLAG = IROVAL
-          ELSE IF (IRONAME == "BASINHUMIDITYFLAG") THEN
-            BASINHUMIDITYFLAG = IROVAL
-          ELSE IF (IRONAME == "SHDFILEFLAG") THEN
-            SHDFILEFLAG = IROVAL
-          ELSE IF (IRONAME == "SOILINIFLAG") THEN
-            SOILINIFLAG = IROVAL
-          ELSE IF (IRONAME == 'NRSOILAYEREADFLAG') THEN
-            NRSOILAYEREADFLAG = IROVAL
-          ELSE IF (IRONAME == "STREAMFLOWFLAG") THEN
-            STREAMFLOWFLAG = IROVAL
-          ELSE IF (IRONAME == "PREEMPTIONFLAG") THEN
-            PREEMPTIONFLAG = IROVAL
-          ELSE IF (IRONAME == "INTERPOLATIONFLAG") THEN
-            INTERPOLATIONFLAG = IROVAL
-          ELSE IF (IRONAME == "SUBBASINFLAG") THEN
-            SUBBASINFLAG = IROVAL
-          ELSE IF (IRONAME == "TESTCSVFLAG") THEN
-            TESTCSVFLAG = IROVAL
-          ELSE IF (IRONAME == "R2COUTPUTFLAG") THEN
-            R2COUTPUTFLAG = IROVAL
-          ELSE IF (IRONAME == "OBJFNFLAG") THEN
-            OBJFNFLAG = IROVAL
-          ELSE IF (IRONAME == "AUTOCALIBRATIONFLAG") THEN
-            AUTOCALIBRATIONFLAG = IROVAL                        
-          ELSE IF (IRONAME == "WINDOWSIZEFLAG") THEN
-            WINDOWSIZEFLAG = IROVAL                        
-          ELSE IF (IRONAME == "WINDOWSPACINGFLAG") THEN
-            WINDOWSPACINGFLAG = IROVAL
-          ELSE IF (IRONAME == "METRICSSTATSOUTFLAG") THEN
-            METRICSSTATSOUTFLAG = IROVAL
-          ELSE IF (IRONAME == "METRICSFILTEROBSFLAG") THEN
-            METRICSFILTEROBSFLAG = IROVAL
-          ELSE IF (IRONAME == "METRICSSPINUP") THEN
-            METRICSSPINUP = IROVAL
-          ELSE IF (IRONAME == "METRICSINCLUDESPINUP") THEN
-            METRICSINCLUDESPINUP = IROVAL
-          ELSE IF (IRONAME == "FROZENSOILINFILFLAG") THEN
-            FROZENSOILINFILFLAG = IROVAL
-          ELSE IF (IRONAME == "PRINTRFFR2CFILEFLAG") THEN
-            PRINTRFFR2CFILEFLAG = IROVAL
-          ELSE IF (IRONAME == "PRINTRCHR2CFILEFLAG") THEN
-            PRINTRCHR2CFILEFLAG = IROVAL
-!          ELSE IF (IRONAME == "PRINTLKGR2CFILEFLAG") THEN
-!            PRINTLKGR2CFILEFLAG = IROVAL
-          ELSE IF (IRONAME == "WD3") THEN
-            WD3 = IROVAL
-          ELSE IF (IRONAME == "WD3NEWFILE") THEN
-            WD3NEWFILE = IROVAL
-          ELSE IF (IRONAME == "WD3FLOW") THEN
-            WD3FLOW = IROVAL
-          ELSE IF (IRONAME == "WD3BKFC") THEN
-            WD3BKFC = IROVAL
-          ELSE IF (IRONAME == "ICTEMMOD") THEN
-            ICTEMMOD = IROVAL
-          ELSE IF (IRONAME == "PBSMFLAG") THEN
-            PBSMFLAG = IROVAL
-	      ELSE IF (IRONAME == "LOCATIONFLAG") THEN
-	        LOCATIONFLAG = IROVAL
-          ELSE IF (IRONAME == "OUTFIELDSFLAG") THEN
-            OUTFIELDSFLAG = IROVAL
-          ELSE IF (IRONAME == "GGEOFLAG") THEN
-            GGEOFLAG = IROVAL
-          ELSE IF (IRONAME == "BASINBALANCEOUTFLAG") THEN
-            BASINBALANCEOUTFLAG = IROVAL
-          ELSE IF (IRONAME == "MODELINFOOUTFLAG") THEN
-            MODELINFOOUTFLAG = IROVAL
-          ELSE IF (IRONAME == "STREAMFLOWOUTFLAG") THEN
-            STREAMFLOWOUTFLAG = IROVAL
-          ELSE IF (IRONAME == "BASINSWEOUTFLAG") THEN
-            BASINSWEOUTFLAG = IROVAL
-          ELSE
-            !> Error when reading the input file
-            WRITE(6, *) "The flag '", IRONAME, "' was found in the",
-     +          " run options file. This program does not recognise",
-     +          " that flag. Please make sure you have the correct",
-     +          " flag name."
+
+          !> Read and parse the entire line.
+          READ(53,'(A)') in_line
+          CALL parse(in_line, delim, out_args, nargs)
+          IF (.NOT. nargs > 0) THEN
+            PRINT 9358, I
             STOP
           END IF
-        ENDDO
-      ENDIF
+
+          !> Determine the control flag and parse additional arguments.
+          SELECT CASE (trim(adjustl(out_args(1))))
+
+!>    ******************************************************************
+!>     PARSE CONTROL FLAG BEGINS
+!>    ******************************************************************
+
+            CASE ('IDISP')
+              CALL value(out_args(2), IDISP, IOS)
+            CASE ('IZREF')
+              CALL value(out_args(2), IZREF, IOS)
+            CASE ('ISLFD')
+              CALL value(out_args(2), ISLFD, IOS)
+            CASE ('IPCP')
+              CALL value(out_args(2), IPCP, IOS)
+            CASE ('ITC')
+              CALL value(out_args(2), ITC, IOS)
+            CASE ('ITCG')
+              CALL value(out_args(2), ITCG, IOS)
+            CASE ('ITG')
+              CALL value(out_args(2), ITG, IOS)
+            CASE ('IWF')
+              CALL value(out_args(2), IWF, IOS)
+            CASE ('IPAI')
+              CALL value(out_args(2), IPAI, IOS)
+            CASE ('IHGT')
+              CALL value(out_args(2), IHGT, IOS)
+            CASE ('IALC')
+              CALL value(out_args(2), IALC, IOS)
+            CASE ('IALS')
+              CALL value(out_args(2), IALS, IOS)
+            CASE ('IALG')
+              CALL value(out_args(2), IALG, IOS)
+            CASE ('RESUMEFLAG')
+              CALL value(out_args(2), RESUMEFLAG, IOS)
+            CASE ('SAVERESUMEFLAG')
+              CALL value(out_args(2), SAVERESUMEFLAG, IOS)
+            CASE ('HOURLYFLAG')
+              CALL value(out_args(2), HOURLYFLAG, IOS)
+            CASE ('RELFLG')
+              CALL value(out_args(2), RELFLG, IOS)
+            CASE ('BASINSHORTWAVEFLAG')
+              CALL value(out_args(2), BASINSHORTWAVEFLAG, IOS)
+            CASE ('BASINLONGWAVEFLAG')
+              CALL value(out_args(2), BASINLONGWAVEFLAG, IOS)
+            CASE ('BASINRAINFLAG')
+              CALL value(out_args(2), BASINRAINFLAG, IOS)
+            CASE ('BASINTEMPERATUREFLAG')
+              CALL value(out_args(2), BASINTEMPERATUREFLAG, IOS)
+            CASE ('BASINWINDFLAG')
+              CALL value(out_args(2), BASINWINDFLAG, IOS)
+            CASE ('BASINPRESFLAG')
+              CALL value(out_args(2), BASINPRESFLAG, IOS)
+            CASE ('BASINHUMIDITYFLAG')
+              CALL value(out_args(2), BASINHUMIDITYFLAG, IOS)
+            CASE ('SHDFILEFLAG')
+              CALL value(out_args(2), SHDFILEFLAG, IOS)
+            CASE ('SOILINIFLAG')
+              CALL value(out_args(2), SOILINIFLAG, IOS)
+            CASE ( 'NRSOILAYEREADFLAG')
+              CALL value(out_args(2), NRSOILAYEREADFLAG, IOS)
+            CASE ('STREAMFLOWFLAG')
+              CALL value(out_args(2), STREAMFLOWFLAG, IOS)
+            CASE ('PREEMPTIONFLAG')
+              CALL value(out_args(2), PREEMPTIONFLAG, IOS)
+            CASE ('INTERPOLATIONFLAG')
+              CALL value(out_args(2), INTERPOLATIONFLAG, IOS)
+            CASE ('SUBBASINFLAG')
+              CALL value(out_args(2), SUBBASINFLAG, IOS)
+            CASE ('TESTCSVFLAG')
+              CALL value(out_args(2), TESTCSVFLAG, IOS)
+            CASE ('R2COUTPUTFLAG')
+              CALL value(out_args(2), R2COUTPUTFLAG, IOS)
+            CASE ('OBJFNFLAG')
+              CALL value(out_args(2), OBJFNFLAG, IOS)
+            CASE ('AUTOCALIBRATIONFLAG')
+              CALL value(out_args(2), AUTOCALIBRATIONFLAG, IOS)
+            CASE ('WINDOWSIZEFLAG')
+              CALL value(out_args(2), WINDOWSIZEFLAG, IOS)
+            CASE ('WINDOWSPACINGFLAG')
+              CALL value(out_args(2), WINDOWSPACINGFLAG, IOS)
+            CASE ('METRICSSTATSOUTFLAG')
+              CALL value(out_args(2), METRICSSTATSOUTFLAG, IOS)
+            CASE ('METRICSFILTEROBSFLAG')
+              CALL value(out_args(2), METRICSFILTEROBSFLAG, IOS)
+            CASE ('METRICSSPINUP')
+              CALL value(out_args(2), METRICSSPINUP, IOS)
+            CASE ('METRICSINCLUDESPINUP')
+              CALL value(out_args(2), METRICSINCLUDESPINUP, IOS)
+            CASE ('FROZENSOILINFILFLAG')
+              CALL value(out_args(2), FROZENSOILINFILFLAG, IOS)
+            CASE ('PRINTRFFR2CFILEFLAG')
+              CALL value(out_args(2), PRINTRFFR2CFILEFLAG, IOS)
+            CASE ('PRINTRCHR2CFILEFLAG')
+              CALL value(out_args(2), PRINTRCHR2CFILEFLAG, IOS)
+!            CASE ('PRINTLKGR2CFILEFLAG')
+!              CALL value(out_args(2), PRINTLKGR2CFILEFLAG, IOS)
+            CASE ('WD3')
+              CALL value(out_args(2), WD3, IOS)
+            CASE ('WD3NEWFILE')
+              CALL value(out_args(2), WD3NEWFILE, IOS)
+            CASE ('WD3FLOW')
+              CALL value(out_args(2), WD3FLOW, IOS)
+            CASE ('WD3BKFC')
+              CALL value(out_args(2), WD3BKFC, IOS)
+            CASE ('ICTEMMOD')
+              CALL value(out_args(2), ICTEMMOD, IOS)
+            CASE ('PBSMFLAG')
+              CALL value(out_args(2), PBSMFLAG, IOS)
+            CASE ('LOCATIONFLAG')
+              CALL value(out_args(2), LOCATIONFLAG, IOS)
+            CASE ('OUTFIELDSFLAG')
+              CALL value(out_args(2), OUTFIELDSFLAG, IOS)
+            CASE ('GGEOFLAG')
+              CALL value(out_args(2), GGEOFLAG, IOS)
+            CASE ('BASINBALANCEOUTFLAG')
+              CALL value(out_args(2), BASINBALANCEOUTFLAG, IOS)
+            CASE ('MODELINFOOUTFLAG')
+              CALL value(out_args(2), MODELINFOOUTFLAG, IOS)
+            CASE ('STREAMFLOWOUTFLAG')
+              CALL value(out_args(2), STREAMFLOWOUTFLAG, IOS)
+            CASE ('BASINSWEOUTFLAG')
+              CALL value(out_args(2), BASINSWEOUTFLAG, IOS)
+
+!>    ******************************************************************
+!>     PARSE CONTROL FLAG ENDS
+!>    ******************************************************************
+
+            !> Unrecognized flag.
+            CASE DEFAULT
+              PRINT 9373, trim(out_args(1))
+              STOP
+
+          END SELECT !CASE (trim(adjustl(out_args(1))))
+
+          !> Error check.
+          IF (IOS /= 0) THEN
+            PRINT 9484, trim(out_args(1)), I, trim(in_line)
+            STOP
+          END IF
+
+        END DO !I=1,CONFLAGS
+      END IF !(CONFLAGS > 0) THEN
+
+9373  FORMAT(/1X "WARNING: An unrecognized flag '" (A)
+     +  "' was found in the run options file."
+     +  /1X
+     +  'The flag may not be supported by this version of the model.'
+     +  /1X 'Please ensure that the flag is properly named.')
+9358  FORMAT(/1X 'WARNING: An error occurred parsing Control Flag #' I5
+     +  /1X 'The flag or its arguments could not be parsed.')
+9484  FORMAT(/1X "WARNING: An error occurred parsing '" (A) "'."
+     +  /1X 'Flag #' I5 ': ' (A))
 
       DO I=1,2
         READ(53,*)
