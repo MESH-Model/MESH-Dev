@@ -206,16 +206,16 @@ C-------------------------------------------------------------------------------
 C-----------------------------------------------------------------------------------------
 C     loop through each soil layer 
       do j = 1,ig
-
-C        ---------------------------------------------------------------------------------
-C        form vecotors for the layer - to be compatible with WATDRN arguments 
-         delzwj   = delzw(:,j)
-         bij      = bi(:,j)
-         thporj   = thpor(:,j)
          
 C        ---------------------------------------------------------------------------------
 C        loop through each element  
          do i = il1,il2
+
+C        ---------------------------------------------------------------------------------
+C        form vecotors for the layer - to be compatible with WATDRN arguments 
+           delzwj(i)   = delzw(i,j)
+           bij(i)      = bi(i,j)
+           thporj(i)   = thpor(i,j)
 
 C        ---------------------------------------------------------------------------------
 C        Find the top of each soil layer for the calculation of grkeff  
