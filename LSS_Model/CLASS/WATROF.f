@@ -251,13 +251,13 @@ c*       Integration of k across the layer -> kl
             ktop      = ksat(i)*exp(xlambda*ztop(i,j))
             kl        = ktop * exav(xlambda*delzw(i,j))
             grkeff(i) = kl*xslope(i)*2.0*dd(i)/(1+xslope(i)**2)
+            thpor_avail(i) = max(thlmin(i,j),thpor_avail(i))
          enddo
 
 C        ---------------------------------------------------------------------------------
 C        compute interflow from the layer (subflowj). Baseflow from the layer (basflwj) is
 C        also computed but is not used at present.
 C        ---------------------------------------------------------------------------------
-         thpor_avail = max(thlmin(:,j),thpor_avail)
          IF (WD3 == 1) THEN
              CALL WATDRN3 (ASAT_T0,ASAT_T1,KSAT,GRKEFF,DELT,
      1            SUBFLWJ,BASFLWJ,
