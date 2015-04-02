@@ -1012,18 +1012,16 @@ CALL READ_INITIAL_INPUTS( &
 !> Forcing data time step should not be less than 30 min - there is no 
 !> any increase in accuracy as delt (CLASS model time step) is 30 min.
 !>=======================================================================
-IF(HOURLYFLAG .LT. 30)THEN
-  WRITE(6,*)
-  WRITE(6,*)
-  WRITE(6,*)
-  PRINT*,"FORCING DATA TIME STEP IS LESS THAN 30 MIN"
-  WRITE(6,*)
-  PRINT*,"AGGREGATE THE FORCING DATA TO 30 MIN INTERVAL AND TRY AGAIN"
-  WRITE(6,*)
-  WRITE(6,*)
-  WRITE(6,*)
-  STOP
-ENDIF
+
+    !> If ts%timestep hasn't been set, set it equal to HOURLYFLAG to force
+    !> compatibility with older versions of the model.
+    if (ts%timestep == 0) ts%timestep = HOURLYFLAG
+    if (ts%timestep < 30) then
+        print 1028
+        stop
+    end if
+
+1028 format(// 'FORCING DATA TIME STEP IS LESS THAN 30 MIN' // 'AGGREGATE THE FORCING DATA TO 30 MIN INTERVAL AND TRY AGAIN' /)
 
 !>
 !>***********************************************************************
@@ -2135,7 +2133,7 @@ FRAME_NO_NEW = 1
         write(58, *) "BASINWINDFLAG        = ", BASINWINDFLAG
         write(58, *) "BASINPRESFLAG        = ", BASINPRESFLAG
         write(58, *) "BASINHUMIDITYFLAG    = ", BASINHUMIDITYFLAG
-        write(58, *) "HOURLYFLAG           = ", HOURLYFLAG
+        write(58, *) "HOURLYFLAG           = ", ts%timestep
         write(58, *) "RESUMEFLAG           = ", RESUMEFLAG
         write(58, *) "SAVERESUMEFLAG       = ", SAVERESUMEFLAG
         write(58, *) "SHDFILEFLAG          = ", SHDFILEFLAG
@@ -2159,7 +2157,7 @@ FRAME_NO_NEW = 1
         !> MAM - ALLOCATE AND INITIALIZE INTERPOLATION VARIABLES:
         !> For 30 minute forcing data there is no need for interpolation and
         !> hence no need to assign PRE and PST variables
-        if (INTERPOLATIONFLAG > 1 .OR. (INTERPOLATIONFLAG == 1 .AND. HOURLYFLAG == 30)) then
+        if (INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%clin(:)%hf) == 210)) then
             write(6, *)
             write(58, *)
             write(6, 9000)
@@ -2167,7 +2165,7 @@ FRAME_NO_NEW = 1
             write(6, *)
             write(58, *)
             INTERPOLATIONFLAG = 0
-        end if !(INTERPOLATIONFLAG > 1 .OR. (INTERPOLATIONFLAG == 1 .AND. HOURLYFLAG == 30)) then
+        end if !(INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%clin(:)%hf) == 210)) then
 
         write(58, "('WF_NUM_POINTS: ',I5)") WF_NUM_POINTS
         write(58, "('Out directory:',5A10)") (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
@@ -2433,7 +2431,7 @@ nhy = IHOUR_START - IHOUR !P
 !HOURLYFLAG is 1 if the data is every hour, and 0 if the data is every half-hour
 !ISTEP_START is used to calculate nrs, and doubles the effect of the hours and
 ! minutes if the data is in half-hourly format
-!IF (HOURLYFLAG == 1) THEN
+!IF (ts%timestep == 1) THEN
 !  ISTEP_START = 1
 !ELSE
 !  ISTEP_START = 2
@@ -2444,8 +2442,8 @@ nhy = IHOUR_START - IHOUR !P
 !and a 1 hour interval forcing data will have 1 record per hour (ISTEP_START = 1). To 
 !accomodate forcing data with time intervals greater than 1 hour, 
 !it is better to count the number of records in a day:
-ISTEP_START = 24*60 / HOURLYFLAG
-if(mod(24*60,HOURLYFLAG) /= 0)then
+ISTEP_START = 24*60 / ts%timestep
+if(mod(24*60,ts%timestep) /= 0)then
    write(*,*)
    write(*,*)"Forcing data time interval needs to be in either"
    write(*,*)"of the following values:"
@@ -2841,7 +2839,7 @@ ENDIF
 IF (RESUMEFLAG == 1) THEN
   PRINT *, 'Reading saved state variables'
 call resume_state( &
-   HOURLYFLAG, IMIN, IMIN2, &
+   ts%timestep, IMIN, IMIN2, &
    BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG, &
    BASINRAINFLAG, BASINTEMPERATUREFLAG, &
    BASINWINDFLAG, BASINPRESFLAG, BASINHUMIDITYFLAG, &
@@ -3558,20 +3556,20 @@ DO WHILE(.NOT.ENDDATE .AND. .NOT.ENDDATA)
 N=N+1
 
 !> MAM - Linearly interpolate forcing data for intermediate time steps
-IF(INTERPOLATIONFLAG == 1)THEN
-    TRATIO     = MIN(1.0, FLOAT(IMIN2) / HOURLYFLAG)
+IF (INTERPOLATIONFLAG == 1) THEN
 
-    FSVHGAT    = FSVHGATPRE   + TRATIO *(FSVHGATPST   - FSVHGATPRE)
-    FSIHGAT    = FSIHGATPRE   + TRATIO *(FSIHGATPST   - FSIHGATPRE)
-    FDLGAT     = FDLGATPRE    + TRATIO *(FDLGATPST    - FDLGATPRE)
-    PREGAT     = PREGATPRE    + TRATIO *(PREGATPST    - PREGATPRE)
-    TAGAT      = TAGATPRE     + TRATIO *(TAGATPST     - TAGATPRE)
-    ULGAT      = ULGATPRE     + TRATIO *(ULGATPST     - ULGATPRE)
-    PRESGAT    = PRESGATPRE   + TRATIO *(PRESGATPST   - PRESGATPRE)
-    QAGAT      = QAGATPRE     + TRATIO *(QAGATPST     - QAGATPRE)
+!    TRATIO     = MIN(1.0, FLOAT(IMIN2) / ts%timestep)
 
+    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(1)%hf); FSVHGAT = FSVHGATPRE + TRATIO*(FSVHGATPST - FSVHGATPRE)
+    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(1)%hf); FSIHGAT = FSIHGATPRE + TRATIO*(FSIHGATPST - FSIHGATPRE)
+    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(2)%hf); FDLGAT  = FDLGATPRE  + TRATIO*(FDLGATPST  - FDLGATPRE)
+    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(3)%hf); PREGAT  = PREGATPRE  + TRATIO*(PREGATPST  - PREGATPRE)
+    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(4)%hf); TAGAT   = TAGATPRE   + TRATIO*(TAGATPST   - TAGATPRE)
+    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(5)%hf); ULGAT   = ULGATPRE   + TRATIO*(ULGATPST   - ULGATPRE)
+    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(6)%hf); PRESGAT = PRESGATPRE + TRATIO*(PRESGATPST - PRESGATPRE)
+    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(7)%hf); QAGAT   = QAGATPRE   + TRATIO*(QAGATPST   - QAGATPRE)
 
-!> INTERPOLATE GRD VARIABLES
+    !> INTERPOLATE GRD VARIABLES
     FSVHGRD = 0.0
     FSIHGRD = 0.0
     FDLGRD  = 0.0
@@ -3581,27 +3579,21 @@ IF(INTERPOLATIONFLAG == 1)THEN
     PRESGRD = 0.0
     PREGRD  = 0.0
 
-    DO k = 1, nml
-          IF(FAREGAT(k) .GT. 0.0)THEN
-             FSVHGRD(ilmos(k)) = FSVHGRD(ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * FSVHGAT(K)
-             FSIHGRD(ilmos(k)) = FSIHGRD(ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * FSIHGAT(K)
-             FDLGRD (ilmos(k)) = FDLGRD (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * FDLGAT (K)
-             ULGRD  (ilmos(k)) = ULGRD  (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * ULGAT  (K)
-             TAGRD  (ilmos(k)) = TAGRD  (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * TAGAT  (K)
-             QAGRD  (ilmos(k)) = QAGRD  (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * QAGAT  (K)
-             PRESGRD(ilmos(k)) = PRESGRD(ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * PRESGAT(K)
-             PREGRD (ilmos(k)) = PREGRD (ilmos(k)) + ACLASS(ilmos(k),jlmos(k)) * PREGAT (K)
-          ENDIF
-    ENDDO
+    DO k = 1, NML
+        IF(FAREGAT(k) .GT. 0.0)THEN
+            FSVHGRD(ilmos(k)) = FSVHGRD(ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*FSVHGAT(k)
+            FSIHGRD(ilmos(k)) = FSIHGRD(ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*FSIHGAT(k)
+            FDLGRD (ilmos(k)) = FDLGRD (ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*FDLGAT (k)
+            ULGRD  (ilmos(k)) = ULGRD  (ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*ULGAT  (k)
+            TAGRD  (ilmos(k)) = TAGRD  (ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*TAGAT  (k)
+            QAGRD  (ilmos(k)) = QAGRD  (ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*QAGAT  (k)
+            PRESGRD(ilmos(k)) = PRESGRD(ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*PRESGAT(k)
+            PREGRD (ilmos(k)) = PREGRD (ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*PREGAT (k)
+        END IF
+    END DO
     FSDOWN = 2.0*FSVHGRD
 
-!> CHECK IF GRD INTERPOLATION IS CONSISTENT WITH GATPREP'S GATHERING SCHEME
-!    IF(K .NE. NML)THEN
-!       PRINT*,'GRD INTERPOLATION IS WRONG - SET INTERPOLATIONFLAG TO ZERO AND TRY AGAIN'
-!       STOP
-!    ENDIF
-
-ENDIF
+END IF
 UVGRD=MAX(VMIN,ULGRD)
 VMODGRD=UVGRD
 vmodgat = max(vmin, ulgat)
@@ -3685,7 +3677,7 @@ ENDDO
 !> Test proper distribution of csv forcing data
 !> *********************************************************************
 IF(TESTCSVFLAG==1)THEN
-   IF(HOURLYFLAG == 30 .OR. IMIN2 == 0) &
+   IF(ts%timestep == 30 .OR. IMIN2 == 0) &
    WRITE(*,'(I4,1X,I3,1X,I2,1X,I2)')IYEAR,IDAY,IHOUR,IMIN
 ELSE   
 
@@ -5108,12 +5100,12 @@ IF (IYEAR >= IYEAR_END .AND. IYEAR_END > 0) THEN
 ENDIF
 
 IMIN2 = IMIN2 + 30
-IF(IMIN2 == HOURLYFLAG)IMIN2 = 0
+IF(IMIN2 == ts%timestep)IMIN2 = 0
 
 !> *********************************************************************
 !> Read in meteorological forcing data
 !> *********************************************************************
-IF(HOURLYFLAG == 30 .OR. IMIN2 == 0) THEN
+IF(ts%timestep == 30 .OR. IMIN2 == 0) THEN
     IF(INTERPOLATIONFLAG == 1)THEN
         FSVHGATPRE    = FSVHGATPST
         FSIHGATPRE    = FSIHGATPST
@@ -5308,7 +5300,7 @@ ENDIF !IF (SAVERESUMEFLAG == 2) THEN
 IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
   PRINT *, 'Saving state variables'
   call SAVE_STATE( &
-   HOURLYFLAG, IMIN, IMIN2, &
+   ts%timestep, IMIN, IMIN2, &
    BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG, &
    BASINRAINFLAG, BASINTEMPERATUREFLAG, &
    BASINWINDFLAG, BASINPRESFLAG, BASINHUMIDITYFLAG, &

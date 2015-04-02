@@ -396,24 +396,88 @@
               CALL value(out_args(2), RESUMEFLAG, IOS)
             CASE ('SAVERESUMEFLAG')
               CALL value(out_args(2), SAVERESUMEFLAG, IOS)
+
+            !> Basin forcing time-step flag.
             CASE ('HOURLYFLAG')
               CALL value(out_args(2), HOURLYFLAG, IOS)
+              IF (IOS == 0) THEN
+                DO j = 1,size(cm%clin)
+                  cm%clin(j)%hf = HOURLYFLAG
+                END DO
+              END IF
+
+            !> Model time-step.
+            CASE ('TIMESTEPFLAG')
+              CALL value(out_args(2), ts%timestep, IOS)
+
             CASE ('RELFLG')
               CALL value(out_args(2), RELFLG, IOS)
+
+            !> Basin forcing data.
             CASE ('BASINSHORTWAVEFLAG')
               CALL value(out_args(2), BASINSHORTWAVEFLAG, IOS)
+              DO j = 3,nargs
+                IF (len_trim(out_args(j)) > 3) THEN
+                  IF (out_args(j)(1:3) == 'hf=') THEN
+                    CALL value(out_args(j)(4:), cm%clin(1)%hf, IOS)
+                  END IF
+                END IF
+              END DO
             CASE ('BASINLONGWAVEFLAG')
               CALL value(out_args(2), BASINLONGWAVEFLAG, IOS)
+              DO j = 3,nargs
+                IF (len_trim(out_args(j)) > 3) THEN
+                  IF (out_args(j)(1:3) == 'hf=') THEN
+                    CALL value(out_args(j)(4:), cm%clin(2)%hf, IOS)
+                  END IF
+                END IF
+              END DO
             CASE ('BASINRAINFLAG')
               CALL value(out_args(2), BASINRAINFLAG, IOS)
+              DO j = 3,nargs
+                IF (len_trim(out_args(j)) > 3) THEN
+                  IF (out_args(j)(1:3) == 'hf=') THEN
+                    CALL value(out_args(j)(4:), cm%clin(3)%hf, IOS)
+                  END IF
+                END IF
+              END DO
             CASE ('BASINTEMPERATUREFLAG')
               CALL value(out_args(2), BASINTEMPERATUREFLAG, IOS)
+              DO j = 3,nargs
+                IF (len_trim(out_args(j)) > 3) THEN
+                  IF (out_args(j)(1:3) == 'hf=') THEN
+                    CALL value(out_args(j)(4:), cm%clin(4)%hf, IOS)
+                  END IF
+                END IF
+              END DO
             CASE ('BASINWINDFLAG')
               CALL value(out_args(2), BASINWINDFLAG, IOS)
+              DO j = 3,nargs
+                IF (len_trim(out_args(j)) > 3) THEN
+                  IF (out_args(j)(1:3) == 'hf=') THEN
+                    CALL value(out_args(j)(4:), cm%clin(5)%hf, IOS)
+                  END IF
+                END IF
+              END DO
             CASE ('BASINPRESFLAG')
               CALL value(out_args(2), BASINPRESFLAG, IOS)
+              DO j = 3,nargs
+                IF (len_trim(out_args(j)) > 3) THEN
+                  IF (out_args(j)(1:3) == 'hf=') THEN
+                    CALL value(out_args(j)(4:), cm%clin(6)%hf, IOS)
+                  END IF
+                END IF
+              END DO
             CASE ('BASINHUMIDITYFLAG')
               CALL value(out_args(2), BASINHUMIDITYFLAG, IOS)
+              DO j = 3,nargs
+                IF (len_trim(out_args(j)) > 3) THEN
+                  IF (out_args(j)(1:3) == 'hf=') THEN
+                    CALL value(out_args(j)(4:), cm%clin(7)%hf, IOS)
+                  END IF
+                END IF
+              END DO
+
             CASE ('SHDFILEFLAG')
               CALL value(out_args(2), SHDFILEFLAG, IOS)
             CASE ('SOILINIFLAG')
@@ -612,7 +676,7 @@
         end_date(3) = IHOUR_END
         end_date(4) = IMIN_END
 
-        CALL GET_DATES(ts,start_date,end_date,HOURLYFLAG)
+        CALL GET_DATES(ts,start_date,end_date)
 
 
 !> rewind file to get extra information in the climate forcing data

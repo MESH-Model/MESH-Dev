@@ -30,6 +30,7 @@
             integer       :: readIndx !index in the block of time that we are reading
             integer       :: itime    !time index
             character     :: freq !time freq of data
+            integer       :: hf !hourly flag
             real,dimension(:,:) ,allocatable :: climv !Climate variable
             real :: alpharain !used only for rainfall
 
@@ -62,25 +63,26 @@
          !Input Output
           type(clim_info),intent(inout) :: cm
          !Internals
-         integer  :: i,nts,rts
+         integer  :: i,nts,rts,timeStepClimF
 
          !cm%nclim = 7
          cm%nclim = 8
          cm%na = nna
          i = indx
 
+         timeStepClimF = ts%nr_days*48/real(cm%clin(i)%hf)*30
 
          if (cm%clin(i)%flagId .ge. 5)then
 
-            if(ts%nr_timeStepClimF.le.cm%clin(i)%timeSize)then
+            if(timeStepClimF.le.cm%clin(i)%timeSize)then
 
                 allocate(cm%clin(i)%ntimes(1))
-                cm%clin(i)%ntimes(1) = ts%nr_timeStepClimF
+                cm%clin(i)%ntimes(1) = timeStepClimF
 
             else
 
-                nts = ts%nr_timeStepClimF/cm%clin(i)%timeSize
-                rts = ts%nr_timeStepClimF - cm%clin(i)%timeSize*nts
+                nts = timeStepClimF/cm%clin(i)%timeSize
+                rts = timeStepClimF - cm%clin(i)%timeSize*nts
 
                 if (rts.eq.0)then
 

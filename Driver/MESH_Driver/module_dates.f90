@@ -14,12 +14,13 @@
                 integer,dimension(:)  , allocatable :: daysINseasons !nr days in Seasons
                 integer   :: start_date(4), end_date(4)              !start_date,end_date
                 character :: freq                                    !frequency
+                integer   :: timestep                                !model time-step
                 integer   :: nyears                                  !number oof years
                 integer   :: nseason                                 !12 months
                 integer   :: nmonths                                 !number of months
                 integer   :: nr_days                                 !number of days
                 integer   :: nr_timeStep                             !total number of time steps
-                integer   :: nr_timeStepClimF                        !total number of climate forcing time steps
+!                integer   :: nr_timeStepClimF                        !total number of climate forcing time steps
 
             END TYPE
 
@@ -135,7 +136,7 @@
     end subroutine
 
         !>******************************************************************************
-            subroutine get_dates(ts,start_date,end_date, stepclim)
+            subroutine get_dates(ts,start_date,end_date)
 
         !>------------------------------------------------------------------------------
         !>  Description: Handled dates in the model
@@ -145,14 +146,14 @@
             implicit none
             !Input
             integer,intent(in) :: start_date(4),end_date(4) !Year,julianday,hour,min
-            integer,intent(in) :: stepclim                  !HOURLYFLAG
+!            integer,intent(in) :: stepclim                  !HOURLYFLAG
             !Input-Output
             type(dates_model),intent(inout) :: ts
             !Internal variables
             integer :: nr_years
             integer,allocatable :: days_inyear(:)
             integer :: jday,year,i,iyear,fyear
-            integer :: nr_days, hours
+            integer :: nr_days!, hours
 
             ts%freq = 'D'
             ts%nyears = end_date(1) - start_date(1) + 1
@@ -195,8 +196,8 @@
 
             ts%nr_timeStep = ts%nr_days*48
 
-            hours= stepclim/30
-            ts%nr_timeStepClimF = ts%nr_days*48/hours
+!            hours= stepclim/30
+!            ts%nr_timeStepClimF = ts%nr_days*48/hours
 
             year = start_date(1)
             jday = start_date(2)
