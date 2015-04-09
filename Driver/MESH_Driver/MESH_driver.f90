@@ -80,6 +80,8 @@ USE EF_MODULE
 USE MESH_INPUT_MODULE
 USE FLAGS
 
+    use module_mpi
+
 USE MODEL_OUTPUT
 USE climate_forcing
 USE model_dates
@@ -89,6 +91,25 @@ use strings
 
 IMPLICIT NONE
 INTRINSIC MAXLOC
+
+    !> ierr: For status return from MPI
+    !> istop: To stop all MPI process
+    !* inp: Number of active tasks.
+    !* ipid: Current process ID.
+    integer :: ierr = 0, inp = 1, ipid = 0
+    integer ipid_recv, itag, izero, ierrcode, istop
+    logical lstat
+
+    integer u, invars
+
+    !+ For split-vector approach
+    integer il1, il2, ilen
+
+    integer, dimension(:), allocatable :: irqst
+    integer, dimension(:, :), allocatable :: imstat
+
+    integer :: verbosemode = 1
+
 !> DAN  USE RTE SUBROUTINES FOR READING EVENT FILE AND SHD FILE, AND
 !> DAN  WRITING R2C-FORMAT OUTPUT FILES      
 !>  INTEGER CONSTANTS.
@@ -906,8 +927,32 @@ character*50 :: alphCh
 call cpu_time(startprog)
 !>=======================================================================
 !>      PROGRAM START
+
+    !> Initialize MPI.
+    call mpi_init(ierr)
+    if (ierr /= mpi_success) then
+        print *, "Failed to initialize MPI."
+        call mpi_abort(mpi_comm_world, ierrcode, ierr)
+        print *, "ierrcode ", ierrcode, "ierr ", ierr
+    end if
+
+    !> Grab number of total processes and current process ID.
+    call mpi_comm_size(mpi_comm_world, inp, ierr)
+    call mpi_comm_rank(mpi_comm_world, ipid, ierr)
+
+    !> izero is active if the head node is used for booking and lateral flow
+    !> processes.
+    if (inp > 1) then
+        izero = 1
+    else
+        izero = 0
+    end if
+
+    !> Reset verbose flag for worker nodes.
+    if (ipid > 0) verbosemode = 0
+
 !>!TODO: UPDATE THIS (RELEASE(*)) WITH VERSION CHANGE
-WRITE (6, "(' MESH 'A, ' --- ',' ('A,')'/)"), TRIM (RELEASE(7)), &
+    if (verbosemode > 0) WRITE (6, "(' MESH 'A, ' --- ',' ('A,')'/)"), TRIM (RELEASE(7)), &
       TRIM (VERSION) !MESH VERSION
 
 !File handled for variable in/out names
@@ -1494,7 +1539,7 @@ END IF
 !> *********************************************************************
 !>  Open additional output files
 !> *********************************************************************
-    if (BASINSWEOUTFLAG > 0) then
+    if (ipid == 0 .and. BASINSWEOUTFLAG > 0) then
         open(85, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/basin_SCA_alldays.csv")
         open(86, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/basin_SWE_alldays.csv")
     end if !(BASINSWEOUTFLAG > 0) then
@@ -1583,7 +1628,7 @@ ENDDO  !DO I=2,NA
 !>  Open and read in values from MESH_input_reservoir.txt file
 !> *********************************************************************
 
-OPEN(UNIT=21,FILE='MESH_input_reservoir.txt',STATUS='OLD')
+OPEN(UNIT=21,FILE='MESH_input_reservoir.txt',STATUS='OLD', action = 'read')
     READ(21,'(3I5)') WF_NORESV,WF_NREL,WF_KTR
 WF_NORESV_CTRL=0
 
@@ -1641,7 +1686,7 @@ ENDIF
 !> *********************************************************************
 !> Open and read in values from MESH_input_streamflow.txt file
 !> *********************************************************************
-OPEN(UNIT=22,FILE='MESH_input_streamflow.txt',STATUS='OLD')
+OPEN(UNIT=22,FILE='MESH_input_streamflow.txt',STATUS='OLD', action = 'read')
 READ(22,*)
 READ(22,*) WF_NO,WF_NL,WF_MHRD,WF_KT, WF_START_YEAR,&
         WF_START_DAY,WF_START_HOUR
@@ -1880,7 +1925,7 @@ SUBBASINCOUNT=0
   
   !> MAM - Write grid number, grid fractional area and percentage of GRUs in each grid
   
-  OPEN(10,FILE='SUBBASIN_INFO.TXT',STATUS='UNKNOWN')
+  OPEN(10,FILE='SUBBASIN_INFO.TXT',STATUS='UNKNOWN', action = 'read')
   WRITE(10,'(A7,3X,A18,3X,A58)')'GRID NO', 'GRID AREA FRACTION', 'GRU FRACTIONS, GRU 1, GRU 2, GRU 3,... IN INCREASING ORDER'
   DO I=1,NA
     IF(SUBBASIN(I).EQ.0) THEN
@@ -2113,7 +2158,7 @@ FRAME_NO_NEW = 1
 !> echo print information to MESH_output_echo_print.txt
 !> ******************************************************
 
-    if (MODELINFOOUTFLAG > 0) then
+    if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
 
         open(58, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // &
             "/MESH_output_echo_print.txt")
@@ -2316,9 +2361,9 @@ FSTR      = 0.0
 !>****************CHECK RESUME FILE***************************************************
 !>
 IF (RESUMEFLAG == 1 ) THEN
-  OPEN(88,FILE="class_resume.txt", STATUS="UNKNOWN", IOSTAT=IOS)
+  OPEN(88,FILE="class_resume.txt", STATUS="UNKNOWN", IOSTAT=IOS, action = 'read')
   IF (IOS /= 0) THEN
-    if (MODELINFOOUTFLAG > 0) then
+    if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
         write(58, *), "WARNING: You've specified a start time", &
             " without having a resume file. Now ending run."
     end if
@@ -2337,6 +2382,9 @@ END IF
 !> FOR SPL WATROUTE (MODIFIED RPN CODE)
 !> *******************************************************************
 !>
+
+if (ipid == 0) then
+
 !> R2C-FORMAT OUTPUT FILES (RUNOFF, RECHARGE, AND LEAKAGES VALUES)
 !> CALL WRITE_R2C TO WRITE R2C-FORMAT FILES
 !>
@@ -2398,6 +2446,9 @@ END IF
 !!+  ATTRIBUTE_TYPE = " "
 !!+  CALL WRITE_R2C(263,33,0,1,0,1,1)
 !!+END IF
+
+end if !(ipid == 0) then
+
 !
 !> *********************************************************************
 !> Open the MESH_input_forcing.bin file
@@ -2407,7 +2458,7 @@ END IF
 !> Only open if there are not enough separate forcing files
 IF (NUM_R2C + NUM_CSV + NUM_SEQ< 7) THEN
   OPEN(UNIT=51,FILE='MESH_input_forcing.bin',STATUS='OLD', &
-           FORM='UNFORMATTED')
+           FORM='UNFORMATTED', action = 'read')
 ENDIF
 
 !todo - leave these in for event based runs
@@ -2571,7 +2622,9 @@ ENDDO
 !> Open and print header information to the output files
 !> *********************************************************************
 
-    !> Streamflow comparison file.
+if (ipid == 0) then
+
+    !> Streamflow comparison files.
     if (STREAMFLOWOUTFLAG > 0) then
         if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(6)%isInit)) then
             open(fls%fl(6)%unit, file = trim(adjustl(fls%fl(6)%name)))
@@ -2587,6 +2640,9 @@ ENDDO
         open(72, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/MESH_output_streamflow_cumulative.csv")
     end if
 
+!todo++:
+!todo++: CUT OUT CLASS ACCUMULATION AND OUTPUT FILES TO APPROPRIATE NODE
+!todo++:
 !> Set up the CLASSOF* files to print out into the correct directory
 DO I=1, wf_num_points
   BNAM=op%DIR_OUT(i)
@@ -2722,7 +2778,7 @@ NR2CFILES = 0
 IF(R2COUTPUTFLAG .GE. 1)THEN
    INQUIRE(FILE='r2c_output.txt', EXIST = R2COUTPUT)
    IF(R2COUTPUT)THEN
-      OPEN(56, FILE = 'r2c_output.txt')
+      OPEN(56, FILE = 'r2c_output.txt', action = 'read')
       READ(56,*,IOSTAT=IOS)NR2C,DELTR2C
       IF(IOS == 0)THEN
          ALLOCATE(GRD(NR2C),GAT(NR2C),GRDGAT(NR2C),R2C_ATTRIBUTES(NR2C,3),STAT=PAS)
@@ -2783,11 +2839,15 @@ ENDIF
 !> For the ENSIM timestamp
 wfo_seq=0
 
+end if !(ipid == 0) then
+
 !> End of ENSIM Changes
 
 !> *********************************************************************
 !> Output information to screen
 !> *********************************************************************
+
+if (verbosemode > 0) then
 
 PRINT *, 'NUMBER OF GRID SQUARES: ',NA
     PRINT *, 'NUMBER OF LAND CLASSES (WITH IMPERVIOUS): ', NMTEST
@@ -2820,7 +2880,15 @@ ENDDO
 PRINT *
 PRINT *
 PRINT *
+
+end if !(verbosemode > 0) then
+
+if (ipid == 0) then
+
 call stats_init(ts, wf_no)
+
+if (verbosemode > 0) then
+
 PRINT *
 IF(TESTCSVFLAG == 1)THEN
     PRINT*,"TEST PROPER DISTRIBUTION OF CSV FORCING DATA" 
@@ -2831,6 +2899,10 @@ ELSE
     WRITE (6, *) "STARTING MESH (PRECIP, EVAP, ", &
           "RUNOFF)"
 ENDIF
+
+end if !(verbosemode > 0) then
+
+end if !(ipid == 0) then
 
 !>
 !>*******************************************************************
@@ -2992,7 +3064,7 @@ IF (RESUMEFLAG == 2) THEN
   PRINT *, 'Reading saved state variables'
   
 ! Allocate arrays for resume_state_r2c
-      OPEN(54, FILE = 'resume_state_r2c.txt')
+      OPEN(54, FILE = 'resume_state_r2c.txt', action = 'read')
       READ(54,*,IOSTAT=IOS)NR2C_R,DELTR2C_R
       IF(IOS == 0)THEN
          ALLOCATE(GRD_R(NR2C_R),GAT_R(NR2C_R),GRDGAT_R(NR2C_R),R2C_ATTRIBUTES_R(NR2C_R,3),STAT=PAS)
@@ -3383,6 +3455,8 @@ ENDIF
 VLGRD = 0.0
 VLGAT = 0.0
 
+if (ipid == 0) then
+
 TOTAL_STORE = 0.0
 TOTAL_STORE_2 = 0.0
 TOTAL_RCAN = 0.0
@@ -3474,6 +3548,8 @@ IF(PBSMFLAG == 1)THEN
  ENDDO
 ENDIF !PBSMFLAG == 1
 
+end if !(ipid == 0) then
+
 CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT, &
              TCANGAT,RCANGAT,SCANGAT,GROGAT, FRZCGAT, CMAIGAT, &
@@ -3543,6 +3619,20 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
              DriftROW, SublROW, DepositionROW, &
              DriftGAT, SublGAT, DepositionGAT)
+
+    !> Calculate indices.
+    il1 = max(min(ceiling(nml/real(inp - izero))*(ipid - izero) + 1, nml), 0)
+    il2 = max(min(ceiling(nml/real(inp - izero))*((ipid - izero) + 1), nml), 0)
+    ilen = il2 - il1 + 1
+
+!    if (ipid == 0) then
+!        print 3167, 'nml', nml
+!    else
+!        print 3166, ipid, il1, il2
+!    end if
+
+!3166 format(1x, 'Node ', i4, ' is reporting for ', i7, ' to ', i7)
+!3167 format(/, 1x, a20, ':', i7)
 
 !> *********************************************************************
 !> Start of main loop that is run each half hour
@@ -3659,7 +3749,7 @@ RDAY=REAL(IDAY)+(REAL(IHOUR)+REAL(IMIN)/60.)/24.
 DECL=SIN(2.*PI*(284.+RDAY)/365.)*23.45*PI/180.
 HOUR=(REAL(IHOUR)+REAL(IMIN)/60.)*PI/12.-PI
 
-DO I=1,nml
+DO I=il1,il2
   COSZ=SIN(RADJgat(I))*SIN(DECL)+COS(RADJgat(I))*COS(DECL)*COS(HOUR)
   CSZgat(I)=SIGN(MAX(ABS(COSZ),1.0E-3),COSZ)
   cszgrd(ilmos(i)) = cszgat(i)
@@ -3771,7 +3861,9 @@ ELSE
 CALL CLASSI(VPDGAT,TADPGAT,PADRGAT,RHOAGAT,RHSIGAT, &
             RPCPGAT,TRPCGAT,SPCPGAT,TSPCGAT,TAGAT,QAGAT, &
             PREGAT,RPREGAT,SPREGAT,PRESGAT, &
-            IPCP,ILG,1,NML)
+            IPCP,ILG,il1,il2)
+
+if (ipid == 0) then
 
 !> Calculate initial storage (after reading in resume.txt file if applicable)
 IF (JAN == 1) THEN
@@ -3820,7 +3912,15 @@ END IF
     ENDDO
   ENDIF
 
+end if !(ipid == 0) then
+
+!> *********************************************************************
+!> Start of the NML-based LSS loop.
+!> *********************************************************************
+
 !> ========================================================================
+if (ipid /= 0 .or. izero == 0) then
+
 CALL CLASSZ (0       , CTVSTP  , CTSSTP  , CT1STP, CT2STP, CT3STP  , &
              WTVSTP  , WTSSTP  , WTGSTP                            , &
              FSGVGAT , FLGVGAT , HFSCGAT , HEVCGAT,HMFCGAT,HTCCGAT , &
@@ -3832,7 +3932,7 @@ CALL CLASSZ (0       , CTVSTP  , CTSSTP  , CT1STP, CT2STP, CT3STP  , &
              TCANGAT , SNOGAT  , WSNOGAT , TSNOGAT,THLQGAT,THICGAT , &
              HCPSGAT , THPGAT  , DLZWGAT , TBARGAT,ZPNDGAT,TPNDGAT , &
              sl%DELZ , FCS     , FGS     ,    FC,     FG           , &
-             1       , NML     ,    ILG  ,    IGND,   N            , &
+             il1     , il2     ,    ILG  ,    IGND,   N            , &
              DriftGAT, SublGAT                                     )
 !> ========================================================================
 !> ALBEDO AND TRANSMISSIVITY CALCULATIONS; GENERAL VEGETATION
@@ -3865,7 +3965,7 @@ CALL CLASSA    (FC,     FG,     FCS,    FGS,    ALVSCN, ALIRCN, &
                 FCANCMX,ICTEM,  ICTEMMOD,       RMATC, &
                 AILC,   PAIC,   L2MAX,  NOL2PFTS, &
                 AILCG,  AILCGS, FCANC,  FCANCS, &
-                IDAY,   ILG,    1,      NML, &
+                IDAY,   ILG,    il1,    il2, &
                 JLAT,N, ICAN,   ICAN+1, IGND,   IDISP,  IZREF, &
                 IWF,    IPAI,   IHGT,   IALC,   IALS,   IALG  )
 !
@@ -3900,7 +4000,7 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
   CO2I2CS,COSZS,  XDIFFUSC,SLAI,  ICTEM,  ICTEMMOD,RMATCTEM, &
   FCANCMX,L2MAX,  NOL2PFTS,       CFLUXCG,CFLUXCS,ANCSVEG,ANCGVEG, &
   RMLCSVEG,   RMLCGVEG,   FIELDSM,WILTSM, &
-  ITC,    ITCG,   ITG,   ILG,    1,NML,  JLAT,N, ICAN, &
+  ITC,    ITCG,   ITG,   ILG,  il1,il2,  JLAT,N, ICAN, &
   IGND,   IZREF,  ISLFD,  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI)
 !
 !-----------------------------------------------------------------------
@@ -3944,7 +4044,7 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
                   THPGAT, THRGAT, THMGAT, BIGAT,  PSISGAT,GRKSGAT, &
                   THRAGAT,THFCGAT,DRNGAT, HCPSGAT,sl%DELZ, &
                   DLZWGAT,ZBTWGAT,XSLPGAT,XDGAT,WFSFGAT,KSGAT, &
-                  ISNDGAT, IGDRGAT, IWF, NA*NTYPE, 1, NML, N, &
+                  ISNDGAT, IGDRGAT, IWF, NA*NTYPE, il1, il2, N, &
                   JLAT,   ICAN,   IGND,   IGND+1, IGND+2, &
                   NLANDCS,NLANDGS,NLANDC, NLANDG,NLANDI, &
                   MANNGAT,DDGAT,NCOUNT, &
@@ -3982,7 +4082,7 @@ IF(PBSMFLAG==1) THEN
               SFCTGAT,SFCUGAT,SFCQGAT,PRESGAT,PREGAT, &
               DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
               TSNOdsGAT, &
-              NA*NTYPE,1,NML,N,ZRFMGAT,ZOMLCS,ZOMLNS)
+              NA*NTYPE,il1,il2,N,ZRFMGAT,ZOMLCS,ZOMLNS)
 ENDIF
 !========================================================================
 !
@@ -3997,7 +4097,7 @@ CALL CLASSZ (1,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
              TCANGAT,SNOGAT, WSNOGAT,TSNOGAT,THLQGAT,THICGAT, &
              HCPSGAT,THPGAT, DLZWGAT,TBARGAT,ZPNDGAT,TPNDGAT, &
              sl%DELZ,   FCS,    FGS,    FC,     FG, &
-             1,      NML,    ILG,    IGND,   N, &
+             il1,    il2,    ILG,    IGND,   N, &
              DriftGAT, SublGAT )
 !
 !=======================================================================
@@ -4014,9 +4114,117 @@ CALL REDISTRIB_SNOW (ILG,1,NA,NTYPE,NML,TSNOGAT,ZSNOW, &
 !=======================================================================
 ROFGAT = ROFGAT - UMQ
 
+end if !(ipid /= 0 .or. izero == 0) then
+
+!> *********************************************************************
+!> End of the NML-based LSS loop.
+!> *********************************************************************
+
 ! *********************************************************************
 ! Calculate values for output files and print them out
 ! *********************************************************************
+
+    !> Send/receive process.
+    itag = NSUM_TOTAL*1000
+    invars = 14 + 4*IGND
+
+    if (inp > 1 .and. ipid /= 0) then
+
+        !> Send data back to head-node.
+
+        if (allocated(irqst)) deallocate(irqst)
+        if (allocated(imstat)) deallocate(imstat)
+        allocate(irqst(invars), imstat(mpi_status_size, invars))
+        irqst = mpi_request_null
+
+        i = 1
+        call mpi_isend(PREGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(QFSGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(ROFGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(ROFOGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(ROFSGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(ROFBGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(SCANGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(RCANGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(ZPNDGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(SNOGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(FSNOGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(WSNOGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(HFSGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        call mpi_isend(QEVPGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        do j = 1, ignd
+            call mpi_isend(THLQGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(THICGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(GFLXGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(TBARGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+        end do
+
+        lstat = .false.
+        do while (.not. lstat)
+            call mpi_testall(invars, irqst, lstat, imstat, ierr)
+        end do
+
+!        print *, ipid, ' done sending'
+
+    else if (inp > 1) then
+
+        !> Receive data from worker nodes.
+        if (allocated(irqst)) deallocate(irqst)
+        if (allocated(imstat)) deallocate(imstat)
+        allocate(irqst(invars), imstat(mpi_status_size, invars))
+
+        !> Receive and assign variables.
+        do u = 1, (inp - 1)
+
+!            print *, 'initiating irecv for:', u, ' with ', itag
+
+            irqst = mpi_request_null
+            imstat = 0
+
+            il1 = max(min(ceiling(nml/real(inp - izero))*(u - izero) + 1, nml), 0)
+            il2 = max(min(ceiling(nml/real(inp - izero))*((u - izero) + 1), nml), 0)
+            ilen = il2 - il1 + 1
+
+            i = 1
+            call mpi_irecv(PREGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(QFSGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(ROFGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(ROFOGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(ROFSGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(ROFBGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(SCANGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(RCANGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(ZPNDGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(SNOGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(FSNOGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(WSNOGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(HFSGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_irecv(QEVPGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            do j = 1, ignd
+                call mpi_irecv(THLQGAT(il1:il2, j), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(THICGAT(il1:il2, j), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(GFLXGAT(il1:il2, j), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(TBARGAT(il1:il2, j), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            end do
+
+            lstat = .false.
+            do while (.not. lstat)
+                call mpi_testall(invars, irqst, lstat, imstat, ierr)
+            end do
+
+        end do !u = 1, (inp - 1)
+!        print *, 'done receiving'
+
+    end if !(inp > 1 .and. ipid /= 0) then
+
+!> *********************************************************************
+!> Start of book-keeping and grid accumulation.
+!> *********************************************************************
+
+!todo++:
+!todo++: CUT OUT CLASS ACCUMULATION AND OUTPUT FILES TO APPROPRIATE NODE
+!todo++:
+if (ipid == 0) then
 
 !
 !=======================================================================
@@ -4946,6 +5154,8 @@ DSTG     = 0.
     
 ENDIF  ! IF(NCOUNT==48) THEN
 
+end if !(ipid == 0)
+
 NCOUNT=NCOUNT+1 !todo: does this work with hourly forcing data?
 NSUM=NSUM+1
 NSUM_TOTAL=NSUM_TOTAL+1
@@ -4958,6 +5168,8 @@ ENDIF
 !> *********************************************************************
 !> Call routing routine
 !> *********************************************************************
+if (ipid == 0) then
+
 CALL WF_ROUTE(WF_ROUTETIMESTEP,WF_R1,WF_R2, &
      NA,NAA,NTYPE,YCOUNT,XCOUNT,IYMIN, &
      WF_IYMAX,JXMIN,WF_JXMAX,YYY,XXX,WF_IBN,WF_IROUGH, &
@@ -5019,7 +5231,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
   IF (WF_NUM_POINTS .GT. 1) THEN !FOR MORE THAN ONE OUTPUT
 
-    WRITE (6, "(2I5,999F10.3)") IYEAR, IDAY, &
+    if (verbosemode > 0) WRITE (6, "(2I5,999F10.3)") IYEAR, IDAY, &
           (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO)
 
     DO I = 1, WF_NUM_POINTS
@@ -5031,7 +5243,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     END DO
   ELSE !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
 
-    WRITE(6, "(2I5, 999F10.3)") IYEAR, IDAY, &
+    if (verbosemode > 0) WRITE(6, "(2I5, 999F10.3)") IYEAR, IDAY, &
       (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO), PRE_OUT(1), &
       EVAP_OUT(1), ROF_OUT(1)
 
@@ -5044,6 +5256,8 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
   WF_QSYN_AVG = 0.0
 ENDIF
+
+end if !(ipid == 0) then
 
 ENDIF !TESTCSVFLAG
 
@@ -5129,6 +5343,15 @@ IF(ts%timestep == 30 .OR. IMIN2 == 0) THEN
 ENDIF
 
 END DO !WHILE(.NOT.ENDDATE .AND. .NOT.ENDDATA)
+
+    !> End program if not the head node.
+    if (ipid /= 0) then
+!        print 4696, ipid
+        goto 999
+
+!4696 format (1x, 'Node ', i4, ' is exiting...')
+
+    end if !(ipid /= 0) then
 
 CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
              cp%TPNDROW,cp%ZPNDROW,TBASROW,cp%ALBSROW,cp%TSNOROW, &
@@ -5243,7 +5466,7 @@ IF (SAVERESUMEFLAG == 2) THEN !todo: done: use a flag
   PRINT *, 'Saving state variables in r2c file format'
 
 ! Allocate arrays for save_state_r2c
-      OPEN(55, FILE = 'save_state_r2c.txt')
+      OPEN(55, FILE = 'save_state_r2c.txt', action = 'read')
       READ(55,*,IOSTAT=IOS)NR2C_S,DELTR2C_S
       IF(IOS == 0)THEN
          ALLOCATE(GRD_S(NR2C_S),GAT_S(NR2C_S),GRDGAT_S(NR2C_S),R2C_ATTRIBUTES_S(NR2C_S,3),STAT=PAS)
@@ -5481,6 +5704,9 @@ DO I = 1, nml
 END DO
 
 !> write out final totals to screen
+
+if (verbosemode > 0) then
+
    WRITE(6,*)
    WRITE(6,'(A,F11.3)') '  Total Precipitation         (mm) = ', &
         TOTAL_PREACC/TOTAL_AREA
@@ -5500,8 +5726,11 @@ END DO
    WRITE(6,'(A,F11.3)') '  Total Baseflow              (mm) = ', &
         TOTAL_ROFBACC/TOTAL_AREA
    WRITE(6,*)
+
+end if !(verbosemode > 0) then
+
    WRITE(6,'(A32)') 'Program has terminated normally.'
-   WRITE(6,*)
+   if (verbosemode > 0) WRITE(6,*)
 
     !> Write final totals to output file.
     if (MODELINFOOUTFLAG > 0) then
@@ -5531,6 +5760,9 @@ END DO
 
 call stats_write(fls)
 
+!todo++:
+!todo++: CUT OUT CLASS ACCUMULATION AND OUTPUT FILES TO APPROPRIATE NODE
+!todo++:
 DO I=1, wf_num_points
   CLOSE(UNIT=150+i*10+1)
   CLOSE(UNIT=150+i*10+2)
@@ -5586,6 +5818,8 @@ CLOSE(UNIT=51)
             'IT SHOULD BE AN INTEGER MULTIPLE OF 30. ',/,&
             'THE REMAINING RECORDS SHOULD CONTAIN 3 COLUMNS FOR EACH VARIABLE WITH INTEGER VALUES OF ', &
             'EITHER 0 OR 1 AND 3 COLUMNS CONTAINING INFORMATION ABOUT THE VARIABLES')
+
+    call mpi_finalize(ierr)
 
 STOP
 END
