@@ -394,10 +394,6 @@ CHARACTER :: BNAM*12
 !* WF_NUM_POINTS: NUMBER OF GRID OUTPUTS
 !* I_OUT: OUTPUT GRID SQUARE TEMPORARY STORE
 INTEGER :: WF_NUM_POINTS, I_OUT
-!* PRE_OUT: DAILY ACCUMULATIVE PRECIPITATION FOR OUTPUT
-!* EVAP_OUT: DAILY ACCUMULATIVE EVAPORATION FOR OUTPUT
-!* ROF_OUT: DAILY ACCUMULATIVE RUNOFF FOR OUTPUT
-REAL*4, DIMENSION(:), ALLOCATABLE :: PRE_OUT, EVAP_OUT, ROF_OUT
 !>
 !>*******************************************************************
 !>
@@ -1100,23 +1096,6 @@ ALLOCATE (WF_NHYD(NA), WF_QR(NA), &
     WF_STORE1 = 0.0
     WF_STORE2 = 0.0
     WF_QI1 = 0.0
-
-!> GRID OUTPUT SUMMARY VARIABLES:
-IF (WF_NUM_POINTS .GT. 0) THEN
-  ALLOCATE (PRE_OUT(WF_NUM_POINTS), EVAP_OUT(WF_NUM_POINTS), &
-      ROF_OUT(WF_NUM_POINTS), STAT=PAS)
-  IF (PAS .NE. 0) THEN
-      WRITE (6, *)
-      WRITE (6, *)
-      WRITE (6, *) "Error allocating grid output summary ", &
-          "variables.  Check that these bounds are within an ", &
-          "acceptable range."
-      WRITE (6, *) "Bound 1 (grid output points): ", WF_NUM_POINTS
-      STOP
-  END IF
-ELSE !FOR GENERAL PURPOSES
-  ALLOCATE (PRE_OUT(1), EVAP_OUT(1), ROF_OUT(1))
-END IF !(WF_NUM_POINTS .GT. 0)
 
 !!> WATROUTE INPUT FILES:
 !ALLOCATE (RUNOFF(YCOUNT, XCOUNT), &
@@ -2132,20 +2111,6 @@ DO I = 1, YCOUNT                            !
 !> CDAN            LEAKAGE(I, J) = 0.0       !
    END DO                                   !
 END DO                                      !
-
-
-!> SET GRID OUPUT SUMMARY
-IF (WF_NUM_POINTS .GT. 1) THEN
-  DO I = 1, WF_NUM_POINTS
-      PRE_OUT(I) = 0.0
-      EVAP_OUT(I) = 0.0
-      ROF_OUT(I) = 0.0
-  END DO
-ELSE
-  PRE_OUT(1) = 0.0
-  EVAP_OUT(1) = 0.0
-  ROF_OUT(1) = 0.0
-END IF
 
 !>  SET FRAME COUNT FOR WRITE_R2C
 FRAME_NO = 1
@@ -4874,20 +4839,6 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     DO J=1,IGND
       eng%gflx(i,j) = eng%gflx(i,j) + GFLXACC(I,J)
     ENDDO
-
-            IF (WF_NUM_POINTS > 0) THEN !SUMMARY VALUES FOR SCREEN
-                DO J = 1, WF_NUM_POINTS !FOR MORE THAN 1 OUTPUT
-                    IF (I == op%N_OUT(J)) THEN
-                        PRE_OUT(J) = PREACC(I)
-                        EVAP_OUT(J) = EVAPACC(I)
-                        ROF_OUT(J) = ROFACC(I)
-                    END IF
-                END DO
-    ELSEIF (I == CEILING(REAL(NA) / 2)) THEN !GENERAL CASE
-                PRE_OUT(1) = PREACC(I)
-                EVAP_OUT(1) = EVAPACC(I)
-                ROF_OUT(1) = ROFACC(I)
-            END IF
   ENDIF
             END DO
 
@@ -5133,12 +5084,6 @@ TOTAL_ROFS=0.0
 TOTAL_ROFB=0.0
 TOTAL_HFSACC = 0.0
 TOTAL_QEVPACC = 0.0
-wb%pre = 0.0
-wb%evap = 0.0
-wb%rof = 0.0
-wb%rofo = 0.0
-wb%rofs =  0.0
-wb%rofb = 0.0
 
 eng%gflx = 0.0
 eng%hfs  = 0.0
@@ -5231,30 +5176,28 @@ if (VERBOSEMODE > 0) then
     WRITE (6, "(2I5,999F10.3)") IYEAR, IDAY, &
           (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO)
 
-    DO I = 1, WF_NUM_POINTS
-!      WRITE(6, "('  'A, T18, 3F10.3)") op%DIR_OUT(I), &
-!        PRE_OUT(I), EVAP_OUT(I), ROF_OUT(I)
-      PRE_OUT(I) = 0.0 !RESET ACCUMULATORS
-      EVAP_OUT(I) = 0.0
-      ROF_OUT = 0.0
-    END DO
   ELSE !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
 
+    j = ceiling(real(NA)/2)
     WRITE(6, "(2I5, 999F10.3)") IYEAR, IDAY, &
-      (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO), PRE_OUT(1), &
-      EVAP_OUT(1), ROF_OUT(1)
+      (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO), wb%pre(j), &
+      wb%evap(j), wb%rof(j)
 
-    
-    PRE_OUT(1) = 0.0
-    EVAP_OUT = 0.0
-    ROF_OUT = 0.0
   END IF
   call stats_update_daily(WF_QHYD_AVG, WF_QSYN_AVG, NCOUNT)
 
   WF_QSYN_AVG = 0.0
-ENDIF
 
 end if !(VERBOSEMODE > 0) then
+
+wb%pre = 0.0
+wb%evap = 0.0
+wb%rof = 0.0
+wb%rofo = 0.0
+wb%rofs =  0.0
+wb%rofb = 0.0
+
+ENDIF !(NCOUNT==48) THEN
 
 end if !(ipid == 0) then
 
