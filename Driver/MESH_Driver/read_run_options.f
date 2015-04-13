@@ -127,6 +127,9 @@
 !> DAN * MAY BE RESET).
       RELFLG = 1
 
+!>    VERBOSEMODE = 0 to disable certain output to the console.
+      VERBOSEMODE = 1
+
 !> Set HOURLYFLAG to forcing data time step (in minutes).
 !> 30 minute forcing data should be the default
       HOURLYFLAG = 30
@@ -412,6 +415,8 @@
 
             CASE ('RELFLG')
               CALL value(out_args(2), RELFLG, IOS)
+            CASE ('VERBOSEMODE')
+              CALL value(out_args(2), VERBOSEMODE, IOS)
 
             !> Basin forcing data.
             CASE ('BASINSHORTWAVEFLAG')
@@ -482,7 +487,7 @@
               CALL value(out_args(2), SHDFILEFLAG, IOS)
             CASE ('SOILINIFLAG')
               CALL value(out_args(2), SOILINIFLAG, IOS)
-            CASE ( 'NRSOILAYEREADFLAG')
+            CASE ('NRSOILAYEREADFLAG')
               CALL value(out_args(2), NRSOILAYEREADFLAG, IOS)
             CASE ('STREAMFLOWFLAG')
               CALL value(out_args(2), STREAMFLOWFLAG, IOS)

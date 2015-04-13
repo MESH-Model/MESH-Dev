@@ -108,8 +108,6 @@ INTRINSIC MAXLOC
     integer, dimension(:), allocatable :: irqst
     integer, dimension(:, :), allocatable :: imstat
 
-    integer :: verbosemode = 1
-
 !> DAN  USE RTE SUBROUTINES FOR READING EVENT FILE AND SHD FILE, AND
 !> DAN  WRITING R2C-FORMAT OUTPUT FILES      
 !>  INTEGER CONSTANTS.
@@ -300,7 +298,7 @@ CHARACTER(30) :: NMTESTFORMAT
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-CHARACTER :: VERSION*24 = "driver_01-13-2015"
+CHARACTER :: VERSION*24 = "driver_04-09-2015"
 CHARACTER*8 :: RELEASE(10)
 LOGICAL :: VER_OK
 !>
@@ -949,10 +947,10 @@ call cpu_time(startprog)
     end if
 
     !> Reset verbose flag for worker nodes.
-    if (ipid > 0) verbosemode = 0
+    if (ipid > 0) VERBOSEMODE = 0
 
 !>!TODO: UPDATE THIS (RELEASE(*)) WITH VERSION CHANGE
-    if (verbosemode > 0) WRITE (6, "(' MESH 'A, ' --- ',' ('A,')'/)"), TRIM (RELEASE(7)), &
+    if (VERBOSEMODE > 0) WRITE (6, "(' MESH 'A, ' --- ',' ('A,')'/)"), TRIM (RELEASE(7)), &
       TRIM (VERSION) !MESH VERSION
 
 !File handled for variable in/out names
@@ -2624,21 +2622,23 @@ ENDDO
 
 if (ipid == 0) then
 
-    !> Streamflow comparison files.
+    !> Streamflow output files.
     if (STREAMFLOWOUTFLAG > 0) then
+
+        !> Daily streamflow file.
         if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(6)%isInit)) then
             open(fls%fl(6)%unit, file = trim(adjustl(fls%fl(6)%name)))
         else
             open(70, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/MESH_output_streamflow.csv")
         end if
-    end if
 
-    !> Other streamflow files.
-    if (STREAMFLOWOUTFLAG >= 2) then
-        open(71, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/MESH_output_streamflow_all.csv")
+        !> Hourly and cumulative daily streamflow files.
+        if (STREAMFLOWOUTFLAG >= 2) then
+            open(71, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/MESH_output_streamflow_all.csv")
+            open(72, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/MESH_output_streamflow_cumulative.csv")
+        end if
 
-        open(72, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/MESH_output_streamflow_cumulative.csv")
-    end if
+    end if !(STREAMFLOWOUTFLAG > 0) then
 
 !todo++:
 !todo++: CUT OUT CLASS ACCUMULATION AND OUTPUT FILES TO APPROPRIATE NODE
@@ -2847,7 +2847,7 @@ end if !(ipid == 0) then
 !> Output information to screen
 !> *********************************************************************
 
-if (verbosemode > 0) then
+if (VERBOSEMODE > 0) then
 
 PRINT *, 'NUMBER OF GRID SQUARES: ',NA
     PRINT *, 'NUMBER OF LAND CLASSES (WITH IMPERVIOUS): ', NMTEST
@@ -2881,13 +2881,13 @@ PRINT *
 PRINT *
 PRINT *
 
-end if !(verbosemode > 0) then
+end if !(VERBOSEMODE > 0) then
 
 if (ipid == 0) then
 
 call stats_init(ts, wf_no)
 
-if (verbosemode > 0) then
+if (VERBOSEMODE > 0) then
 
 PRINT *
 IF(TESTCSVFLAG == 1)THEN
@@ -2900,7 +2900,7 @@ ELSE
           "RUNOFF)"
 ENDIF
 
-end if !(verbosemode > 0) then
+end if !(VERBOSEMODE > 0) then
 
 end if !(ipid == 0) then
 
@@ -5204,14 +5204,10 @@ ENDIF
 !> Also write daily summary (pre, evap, rof)
 !> *********************************************************************
 
-    !> write streamflow each timestep if asked for in mesh_input_run_options.ini file
+    !> Write output for hourly streamflow.
     if (STREAMFLOWFLAG == 1 .and. STREAMFLOWOUTFLAG >= 2) then
-
-        !> write out the MESH_output_streamflow_all.csv file
-        write(71, "(i5, ',', i5, ',', i5, ',', f10.3, *(',', f10.3))") &
-            IDAY, IHOUR, IMIN, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
-
-    end if !(STREAMFLOWFLAG == 1 .and. STREAMFLOWOUTFLAG >= 2) then
+        write(71, "(i5, ',', i5, ',', i5, ',', f10.3, *(',', f10.3))") IDAY, IHOUR, IMIN, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
+    end if
 
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
@@ -5220,18 +5216,19 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     WF_QHYD_CUM(I) = WF_QHYD_CUM(I) + WF_QHYD_AVG(I)
   ENDDO
 
-!>      write out the spl.csv file
+    !> Write output for daily and cumulative daily streamflow.
     if (STREAMFLOWOUTFLAG > 0) then
         write(70, "(i5, ',', f10.3, *(',', f10.3))") IDAY, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
+        if (STREAMFLOWOUTFLAG >= 2) then
+            write(72, "(i5, ',', f10.3, *(',', f10.3))") IDAY, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
+        end if
     end if
 
-    if (STREAMFLOWOUTFLAG >= 2) then
-        write(72, "(i5, ',', f10.3, *(',', f10.3))") IDAY, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
-    end if
+if (VERBOSEMODE > 0) then
 
   IF (WF_NUM_POINTS .GT. 1) THEN !FOR MORE THAN ONE OUTPUT
 
-    if (verbosemode > 0) WRITE (6, "(2I5,999F10.3)") IYEAR, IDAY, &
+    WRITE (6, "(2I5,999F10.3)") IYEAR, IDAY, &
           (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO)
 
     DO I = 1, WF_NUM_POINTS
@@ -5243,7 +5240,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     END DO
   ELSE !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
 
-    if (verbosemode > 0) WRITE(6, "(2I5, 999F10.3)") IYEAR, IDAY, &
+    WRITE(6, "(2I5, 999F10.3)") IYEAR, IDAY, &
       (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO), PRE_OUT(1), &
       EVAP_OUT(1), ROF_OUT(1)
 
@@ -5256,6 +5253,8 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
   WF_QSYN_AVG = 0.0
 ENDIF
+
+end if !(VERBOSEMODE > 0) then
 
 end if !(ipid == 0) then
 
@@ -5705,7 +5704,7 @@ END DO
 
 !> write out final totals to screen
 
-if (verbosemode > 0) then
+if (VERBOSEMODE > 0) then
 
    WRITE(6,*)
    WRITE(6,'(A,F11.3)') '  Total Precipitation         (mm) = ', &
@@ -5727,10 +5726,10 @@ if (verbosemode > 0) then
         TOTAL_ROFBACC/TOTAL_AREA
    WRITE(6,*)
 
-end if !(verbosemode > 0) then
+end if !(VERBOSEMODE > 0) then
 
    WRITE(6,'(A32)') 'Program has terminated normally.'
-   if (verbosemode > 0) WRITE(6,*)
+   if (VERBOSEMODE > 0) WRITE(6,*)
 
     !> Write final totals to output file.
     if (MODELINFOOUTFLAG > 0) then
