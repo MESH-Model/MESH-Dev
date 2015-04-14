@@ -3539,19 +3539,15 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              DriftROW, SublROW, DepositionROW, &
              DriftGAT, SublGAT, DepositionGAT)
 
-    !> Calculate indices.
-    il1 = max(min(ceiling(nml/real(inp - izero))*(ipid - izero) + 1, nml), 0)
-    il2 = max(min(ceiling(nml/real(inp - izero))*((ipid - izero) + 1), nml), 0)
-    ilen = il2 - il1 + 1
+!todo+++: Perhaps land-unit indexing can be done prior in the sequence
+!todo+++: of initialization, after reading the drainage database.
+!todo+++: Then, variables could be allocated (il1:il2) instead of
+!todo+++: (1:ILG) to reduce the memory footprint of the model per node.
+!> *********************************************************************
+!> Calculate Indices
+!> *********************************************************************
 
-!    if (ipid == 0) then
-!        print 3167, 'nml', nml
-!    else
-!        print 3166, ipid, il1, il2
-!    end if
-
-!3166 format(1x, 'Node ', i4, ' is reporting for ', i7, ' to ', i7)
-!3167 format(/, 1x, a20, ':', i7)
+    call GetIndices(inp, izero, ipid, NML, ILMOS, il1, il2, ilen)
 
 !> *********************************************************************
 !> End of Initialization
@@ -4117,9 +4113,7 @@ end if !(ipid /= 0 .or. izero == 0) then
             irqst = mpi_request_null
             imstat = 0
 
-            il1 = max(min(ceiling(nml/real(inp - izero))*(u - izero) + 1, nml), 0)
-            il2 = max(min(ceiling(nml/real(inp - izero))*((u - izero) + 1), nml), 0)
-            ilen = il2 - il1 + 1
+            call GetIndices(inp, izero, u, NML, ILMOS, il1, il2, ilen)
 
             i = 1
             call mpi_irecv(PREGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
