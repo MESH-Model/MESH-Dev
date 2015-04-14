@@ -127,9 +127,6 @@
 !> DAN * MAY BE RESET).
       RELFLG = 1
 
-!>    VERBOSEMODE = 0 to disable certain output to the console.
-      VERBOSEMODE = 1
-
 !> Set HOURLYFLAG to forcing data time step (in minutes).
 !> 30 minute forcing data should be the default
       HOURLYFLAG = 30

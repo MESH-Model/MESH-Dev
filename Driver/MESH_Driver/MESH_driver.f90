@@ -946,27 +946,28 @@ call cpu_time(startprog)
     if (ipid > 0) VERBOSEMODE = 0
 
 !>!TODO: UPDATE THIS (RELEASE(*)) WITH VERSION CHANGE
-    if (VERBOSEMODE > 0) WRITE (6, "(' MESH 'A, ' --- ',' ('A,')'/)"), TRIM (RELEASE(7)), &
-      TRIM (VERSION) !MESH VERSION
+    if (VERBOSEMODE > 0) print 951, trim(RELEASE(7)), trim(VERSION)
+
+951 format(1x, 'MESH 'a, ' ---  ('a, ')'/)
 
 !File handled for variable in/out names
 !At the moment only class,hydro parameters and some outputs
       
 !Check if any arguments are found
 narg = command_argument_count()
-!write(6, *) narg
+!print *, narg
 if (narg .gt. 0) then
     VARIABLEFILESFLAG = 1
     if (narg .eq. 1) then
         call get_command_argument(1, fl_listMesh)
-!        write(6, *) fl_listMesh
+!        print *, fl_listMesh
     elseif (narg .eq. 2) then
         call get_command_argument(1, fl_listMesh)
-!        write(6, *) fl_listMesh
+!        print *, fl_listMesh
         call get_command_argument(2, alphCh)
         call value(alphCh, alpharain, ios)
         cm%clin(8)%alpharain = alpharain
-!        write(6, *) cm%clin(8)%alpharain
+!        print *, cm%clin(8)%alpharain
     end if
     call Init_fls(fls, trim(adjustl(fl_listMesh)))
 end if !(narg .gt. 0) then
@@ -981,12 +982,8 @@ IGND = 0
     end if
 
 IF (IOS .NE. 0)THEN !CHECK FILE FOR IOSTAT ERRORS
-   WRITE (6, *)
-   WRITE (6, *)
-   WRITE (6, *) "MESH_input_soil_levels.txt could not be ", &
-                "opened.  Ensure that the file exists and restart the ", &
-                "program."
-   STOP
+    print 1002
+    stop
 ELSE
    IGND_TEST = 1.0
    DO WHILE (IGND_TEST.NE.0.0.AND.IOS.EQ.0)
@@ -994,11 +991,13 @@ ELSE
      IGND = IGND + 1
    ENDDO
    IGND = IGND - 1 ! because IGND increments the first time that IGND_TEST = 0.0
-   WRITE(6,*) "IGND = ", IGND
+   print *, "IGND = ", IGND
 END IF
 CLOSE(52)
 
-
+1002 format( &
+    //1x'MESH_input_soil_levels.txt could not be opened.', &
+    /1x'Ensure that the file exists and restart the program.')
 
 !>=======================================================================
 !> INITIALIZE CLASS VARIABLES
@@ -1060,7 +1059,9 @@ CALL READ_INITIAL_INPUTS( &
         stop
     end if
 
-1028 format(// 'FORCING DATA TIME STEP IS LESS THAN 30 MIN' // 'AGGREGATE THE FORCING DATA TO 30 MIN INTERVAL AND TRY AGAIN' /)
+1028 format( &
+    //1x'FORCING DATA TIME STEP IS LESS THAN 30 MIN', &
+    /1x'AGGREGATE THE FORCING DATA TO 30 MIN INTERVAL AND TRY AGAIN'/)
 
 !>
 !>***********************************************************************
@@ -1103,14 +1104,16 @@ ALLOCATE (WF_NHYD(NA), WF_QR(NA), &
 ALLOCATE (OUTARRAY(YCOUNT, XCOUNT), RUNOFF(YCOUNT, XCOUNT), &
   RECHARGE(YCOUNT, XCOUNT), LEAKAGES(YCOUNT, XCOUNT), STAT=PAS)
 IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating WATROUTE input variables.  ", &
-      "Check that these bounds are within an acceptable range."
-  WRITE (6, *) "Bound 1 (grid square rows): ", YCOUNT
-  WRITE (6, *) "Bound 2 (grid square columns): ", XCOUNT
-  STOP
+    print 1114, 'WATROUTE input'
+    print 1118, 'Grid square rows', YCOUNT
+    print 1118, 'Grid square columns', XCOUNT
+    stop
 END IF
+
+1114 format( &
+    //1x, 'Error allocating 'a, ' variables.', &
+    /1x'Check that these bounds are within an acceptable range.')
+1118 format(3x, a, ': ', i6)
 
 !> MET. FORCING DATA:
 
@@ -1153,15 +1156,11 @@ ALLOCATE (TOTAL_THLQ(IGND), TOTAL_THIC(IGND), &
     TOTAL_THLQ_M(IGND), TOTAL_THIC_M(IGND), STAT=PAS)
 
 IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating land surface prognostic ", &
-      "variables.  Check that bounds are within an acceptable ", &
-      "range."
-  WRITE (6, *) "Bound 1 (grid squares): ", NA
-  WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
-  WRITE (6, *) "Bound 3 (soil layers): ", IGND
-  STOP
+    print 1114, 'land surface prognostic'
+    print 1118, 'Grid squares', NA
+    print 1118, 'GRUs', NTYPE
+    print 1118, 'Soil layers', IGND
+    stop
 END IF
 
 !> **********************************************************************
@@ -1172,29 +1171,22 @@ ALLOCATE ( SUBBASIN(ILG), STAT=PAS)
 
 
 IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating land surface prognostic ", &
-      "variables.  Check that bounds are within an acceptable ", &
-      "range."
-  WRITE (6, *) "Bound 1 (grid squares): ", NA
-  WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
-  WRITE (6, *) "Bound 3 (soil layers): ", IGND
-  STOP
+    print 1114, 'subbasin grid'
+    print 1118, 'Grid squares', NA
+    print 1118, 'GRUs', NTYPE
+    print 1118, 'Total tile elements', ILG
+    stop
 END IF
 
 !     * GATHER-SCATTER COUNTS:
 ALLOCATE (ILMOS(ILG), JLMOS(ILG), IWMOS(ILG), &
   JWMOS(ILG), STAT=PAS)
 IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating gather-scatter count ", &
-      "variables.  Check that bounds are within an acceptable ", &
-      "range."
-  WRITE (6, *) "Bound 1 (grid squares): ", NA
-  WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
-  STOP
+    print 1114, 'gather-scatter count'
+    print 1118, 'Grid squares', NA
+    print 1118, 'GRUs', NTYPE
+    print 1118, 'Total tile elements', ILG
+    stop
 END IF
 
 
@@ -1245,29 +1237,24 @@ ALLOCATE ( &
   DistribGAT(ILG),STAT=PAS)
 
 IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating canopy and soil info. ", &
-      "variables.  Check that bounds are within an acceptable ", &
-      "range."
-  WRITE (6, *) "Bound 1 (grid squares): ", NA
-  WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
-  WRITE (6, *) "Bound 3 (canopy types with urban areas): ", ICP1
-  WRITE (6, *) "Bound 4 (canopy types): ", ICAN
-  WRITE (6, *) "Bound 5 (soil layers): ", IGND
-  STOP
+    print 1114, 'canopy and soil info.'
+    print 1118, 'Grid squares', NA
+    print 1118, 'GRUs', NTYPE
+    print 1118, 'Total tile elements', ILG
+    print 1118, 'Canopy types with urban areas', ICP1
+    print 1118, 'Canopy types', ICAN
+    print 1118, 'Soil layers', IGND
+    stop
 END IF
 
 !> WATROF FLAGS AND VARIABLES:
 ALLOCATE (DDGAT(ILG), MANNGAT(ILG), STAT=PAS)
 IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating WATROF variables.  Check ", &
-      "that bounds are within an acceptable range."
-  WRITE (6, *) "Bound 1 (grid squares): ", NA
-  WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
-  STOP
+    print 1114, 'WATROF'
+    print 1118, 'Grid squares', NA
+    print 1118, 'GRUs', NTYPE
+    print 1118, 'Total tile elements', ILG
+    stop
 END IF
 
 !> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
@@ -1295,14 +1282,11 @@ ALLOCATE ( ZDMGRD(NA), &
   FCLOGAT(ILG), DLONGAT(ILG), Z0ORGAT(ILG), &
   GGEOGAT(ILG), VMODGAT(ILG), STAT=PAS)
 IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating atmospheric and grid-cst. ", &
-      "variables.  Check that bounds are within an acceptable ", &
-      "range."
-  WRITE (6, *) "Bound 1 (grid squares): ", NA
-  WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
-  STOP
+    print 1114, 'atmospheric and grid-cst.'
+    print 1118, 'Grid squares', NA
+    print 1118, 'GRUs', NTYPE
+    print 1118, 'Total tile elements', ILG
+    stop
 END IF
 
 !> LAND SURFACE DIAGNOSTIC VARIABLES:
@@ -1385,15 +1369,12 @@ ALLOCATE (CDHROW(NA, NTYPE), CDMROW(NA, NTYPE), &
   ITCTROW(NA, NTYPE, 6, 50), &
   ITCTGAT(ILG, 6, 50), STAT=PAS)
 IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating land surface diagnostic ", &
-      "variables.  Check that bounds are within an acceptable ", &
-      "range."
-  WRITE (6, *) "Bound 1 (grid squares): ", NA
-  WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
-  WRITE (6, *) "Bound 3 (soil layers): ", IGND
-  STOP
+    print 1114, 'land surface diagnostic'
+    print 1118, 'Grid squares', NA
+    print 1118, 'GRUs', NTYPE
+    print 1118, 'Total tile elements', ILG
+    print 1118, 'Soil layers', IGND
+    stop
 END IF
 
 !> OUTPUT VARIABLES:
@@ -1411,13 +1392,10 @@ ALLOCATE (PREACC(NA), GTACC(NA), QEVPACC(NA), &
   STG_I(NA), DSTG(NA),THLQ_FLD(NA,IGND),THIC_FLD(NA,IGND), &
   STAT=PAS)
 IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating accumulator variables.  ", &
-      "Check that bounds are within an acceptable range."
-  WRITE (6, *) "Bound 1 (grid squares): ", NA
-  WRITE (6, *) "Bound 2 (soil layers): ", IGND
-  STOP
+    print 1114, 'accumulator'
+    print 1118, 'Grid squares', NA
+    print 1118, 'Soil layers', IGND
+    stop
 END IF
 
 !> CROSS-CLASS VARIABLES (CLASS):
@@ -1465,14 +1443,12 @@ ALLOCATE (TBARC(ILG, IGND), TBARG(ILG, IGND), &
   TPNDGS(ILG), ZPLMCS(ILG), ZPLMGS(ILG), &
   ZPLIMC(ILG), ZPLIMG(ILG), STAT=PAS)
 IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating cross-CLASS variables.  ", &
-      "Check that bounds are within an acceptable range."
-  WRITE (6, *) "Bound 1 (grid squares): ", NA
-  WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
-  WRITE (6, *) "Bound 3 (soil layers): ", IGND
-  STOP
+    print 1114, 'cross-CLASS'
+    print 1118, 'Grid squares', NA
+    print 1118, 'GRUs', NTYPE
+    print 1118, 'Total tile elements', ILG
+    print 1118, 'Soil layers', IGND
+    stop
 END IF
 
 !> BALANCE ERRORS (CLASS):
@@ -1481,13 +1457,11 @@ ALLOCATE (CTVSTP(ILG), CTSSTP(ILG), &
   CT2STP(ILG), CT3STP(ILG), WTVSTP(ILG), &
   WTSSTP(ILG), WTGSTP(ILG), STAT=PAS)
 IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating balance error variables.  ", &
-      "Check that bounds are within an acceptable range."
-  WRITE (6, *) "Bound 1 (grid squares): ", NA
-  WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
-  STOP
+    print 1114, 'balance error diagnostic'
+    print 1118, 'Grid squares', NA
+    print 1118, 'GRUs', NTYPE
+    print 1118, 'Total tile elements', ILG
+    stop
 END IF
 
 !> CTEM ERRORS (CLASS):
@@ -1498,17 +1472,15 @@ ALLOCATE (CO2CONC(ILG), COSZS(ILG), XDIFFUSC(ILG), CFLUXCG(ILG), CFLUXCS(ILG), &
  RMLCSVEG(ILG,ICTEM), RMLCGVEG(ILG,ICTEM), &
  AILC(ILG,ICAN), PAIC(ILG,ICAN), FIELDSM(ILG,IGND), WILTSM(ILG,IGND), &
  RMATCTEM(ILG,ICTEM,IGND), RMATC(ILG,ICAN,IGND), NOL2PFTS(ICAN), STAT=PAS)
- IF (PAS .NE. 0) THEN
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "Error allocating CTEM variables.  ", &
-      "Check that bounds are within an acceptable range."
-  WRITE (6, *) "Bound 1 (grid squares): ", NA
-  WRITE (6, *) "Bound 2 (GRUs): ", NTYPE
-  WRITE (6, *) "Bound 4 (canopy types): ", ICAN
-  WRITE (6, *) "Bound 5 (soil layers): ", IGND
-  WRITE (6, *) "Bound 6 (CTEM flag): ", ICTEM
-  STOP
+IF (PAS .NE. 0) THEN
+    print 1114, 'CTEM'
+    print 1118, 'Grid squares', NA
+    print 1118, 'GRUs', NTYPE
+    print 1118, 'Total tile elements', ILG
+    print 1118, 'Canopy types', ICAN
+    print 1118, 'Soil layers', IGND
+    print 1118, 'CTEM flag', ICTEM
+    stop
 END IF
 !>
 !>*******************************************************************
@@ -2166,12 +2138,8 @@ FRAME_NO_NEW = 1
         !> For 30 minute forcing data there is no need for interpolation and
         !> hence no need to assign PRE and PST variables
         if (INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%clin(:)%hf) == 210)) then
-            write(6, *)
-            write(58, *)
-            write(6, 9000)
+            print 9000
             write(58, 9000)
-            write(6, *)
-            write(58, *)
             INTERPOLATIONFLAG = 0
         end if !(INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%clin(:)%hf) == 210)) then
 
@@ -2456,22 +2424,27 @@ nhy = IHOUR_START - IHOUR !P
 !and a 1 hour interval forcing data will have 1 record per hour (ISTEP_START = 1). To 
 !accomodate forcing data with time intervals greater than 1 hour, 
 !it is better to count the number of records in a day:
-ISTEP_START = 24*60 / ts%timestep
-if(mod(24*60,ts%timestep) /= 0)then
-   write(*,*)
-   write(*,*)"Forcing data time interval needs to be in either"
-   write(*,*)"of the following values:"
-   write(*,*)"30 or n*60 where n can be either 1,2,3,4,6,8 or 12"
-   write(*,*)
-   stop
-endif
+ISTEP_START = 24*60/ts%timestep
+if (mod(24*60,ts%timestep) /= 0) then
+    print 2334
+    stop
+end if
 
-if ((jday_ind2 < jday_ind3) .and. (iyear_start /= 0)) then 
-   PRINT *, 'ERROR: Simulation start date too early, check ', &
-            ' THE MET FORCING DATA RANGE.  The start date in ', &
-            ' MESH_input_run_options.ini may be out of range'
-   stop
-endif
+2334 format( &
+    //1x'Forcing data time interval needs to be in either', &
+    /1x'of the following values:', &
+    /1x'30 or n*60 where n can be either 1, 2, 3, 4, 6, 8 or 12.'/)
+
+if ((jday_ind2 < jday_ind3) .and. (iyear_start /= 0)) then
+    print 2442
+    stop
+end if
+
+2442 format( &
+    //1x'ERROR: Simulation start date too early. The start date in the', &
+    /3x'run options file may occur before the start date of the met.', &
+    /3x'forcing input data in the CLASS parameter file.'/)
+
 !Notes added by M. Mekonnen - To keep nrs calculation as before
 !(and to be compatible with the above modification) we need to 
 !divide ISTEP_START by 24.
@@ -2755,8 +2728,8 @@ IF(R2COUTPUTFLAG .GE. 1)THEN
          ENDIF 
       ENDIF
       IF(IOS /= 0 .OR. MOD(DELTR2C,30) /= 0)THEN
-         WRITE(6,9002)
-         STOP
+            print 9002
+            stop
       ENDIF
       
       PRINT*
@@ -2858,12 +2831,12 @@ PRINT *
 IF(TESTCSVFLAG == 1)THEN
     PRINT*,"TEST PROPER DISTRIBUTION OF CSV FORCING DATA" 
 ELSE
-    PRINT *
-    PRINT *, 'DONE INTITIALIZATION'
-    PRINT *
-    WRITE (6, *) "STARTING MESH (PRECIP, EVAP, ", &
-          "RUNOFF)"
+    print 2836
+    print 2835
 ENDIF
+
+2836 format(/1x'DONE INTITIALIZATION')
+2835 format(/1x'STARTING MESH')
 
 end if !(VERBOSEMODE > 0) then
 
@@ -5173,15 +5146,15 @@ if (VERBOSEMODE > 0) then
 
   IF (WF_NUM_POINTS .GT. 1) THEN !FOR MORE THAN ONE OUTPUT
 
-    WRITE (6, "(2I5,999F10.3)") IYEAR, IDAY, &
-          (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO)
+    print 5176, IYEAR, IDAY, (WF_QHYD_AVG(I), WF_QSYN_AVG(I)/NCOUNT, I = 1, WF_NO)
 
   ELSE !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
 
-    j = ceiling(real(NA)/2)
-    WRITE(6, "(2I5, 999F10.3)") IYEAR, IDAY, &
-      (WF_QHYD_AVG(I),WF_QSYN_AVG(I)/NCOUNT,I=1,WF_NO), wb%pre(j), &
-      wb%evap(j), wb%rof(j)
+    !todo: Update or remove this altogether. If to update, take NA-1 or something more akin
+    !to an outlet, than the average middle-elevation grid (as it's coded now).
+    !Should there be a choice to print point-process (pre, evap, rof) vs flow-process (wf_qo2)?
+    j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
+    print 5176, IYEAR, IDAY, (WF_QHYD_AVG(I), WF_QSYN_AVG(I)/NCOUNT, I = 1, WF_NO), wb%pre(j), wb%evap(j), wb%rof(j)
 
   END IF
   call stats_update_daily(WF_QHYD_AVG, WF_QSYN_AVG, NCOUNT)
@@ -5202,6 +5175,8 @@ ENDIF !(NCOUNT==48) THEN
 end if !(ipid == 0) then
 
 ENDIF !TESTCSVFLAG
+
+5176 format(2i5, *(f10.3))
 
 ! *********************************************************************
 ! Update time counters and return to beginning of main loop
@@ -5649,30 +5624,24 @@ END DO
 
 if (VERBOSEMODE > 0) then
 
-   WRITE(6,*)
-   WRITE(6,'(A,F11.3)') '  Total Precipitation         (mm) = ', &
-        TOTAL_PREACC/TOTAL_AREA
-   WRITE(6,'(A,F11.3)') '  Total Evaporation           (mm) = ', &
-        TOTAL_EVAPACC/TOTAL_AREA
-   WRITE(6,'(A,F11.3)') '  Total Runoff                (mm) = ', &
-        TOTAL_ROFACC/TOTAL_AREA
-   WRITE(6,'(A,3F11.3)') '  Storage(Change/Init/Final)  (mm) = ', &
-        (FINAL_STORE-INIT_STORE)/TOTAL_AREA, &
-        INIT_STORE/TOTAL_AREA, &
+    print *
+    print 5641, 'Total Precipitation         (mm) =', TOTAL_PREACC/TOTAL_AREA
+    print 5641, 'Total Evaporation           (mm) =', TOTAL_EVAPACC/TOTAL_AREA
+    print 5641, 'Total Runoff                (mm) =', TOTAL_ROFACC/TOTAL_AREA
+    print 5641, 'Storage (Change/Init/Final) (mm) =', (FINAL_STORE - INIT_STORE)/TOTAL_AREA, INIT_STORE/TOTAL_AREA, &
         FINAL_STORE/TOTAL_AREA
-   WRITE(6,*)
-   WRITE(6,'(A,F11.3)') '  Total Overland flow         (mm) = ', &
-        TOTAL_ROFOACC/TOTAL_AREA
-   WRITE(6,'(A,F11.3)') '  Total Interflow             (mm) = ', &
-        TOTAL_ROFSACC/TOTAL_AREA
-   WRITE(6,'(A,F11.3)') '  Total Baseflow              (mm) = ', &
-        TOTAL_ROFBACC/TOTAL_AREA
-   WRITE(6,*)
+    print *
+    print 5641, 'Total Overland flow         (mm) =', TOTAL_ROFOACC/TOTAL_AREA
+    print 5641, 'Total Interflow             (mm) =', TOTAL_ROFSACC/TOTAL_AREA
+    print 5641, 'Total Baseflow              (mm) =', TOTAL_ROFBACC/TOTAL_AREA
+    print *
+
+5641 format(3x, a34, *(f11.3))
+5635 format(1x'Program has terminated normally.'/)
 
 end if !(VERBOSEMODE > 0) then
 
-   WRITE(6,'(A32)') 'Program has terminated normally.'
-   if (VERBOSEMODE > 0) WRITE(6,*)
+    print 5635
 
     !> Write final totals to output file.
     if (MODELINFOOUTFLAG > 0) then
@@ -5748,18 +5717,21 @@ CLOSE(UNIT=51)
     close(901)
     close(902)
 
-9000 FORMAT('INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY AND IS SET TO 0 BY THE MODEL.',/, &
-            '0: NO INTERPOLATION OF FORCING DATA.',/, &
-            '1: LINEARLY INTERPOLATES FORCING DATA FOR INTERMEDIATE TIME STEPS.',/,& 
-            'NOTE: INTERPOLATIONFLAG SHOULD BE SET TO 0 FOR 30 MINUTE FORCING DATA.')        
+9000 format( &
+    /1x'INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY AND IS SET TO 0 BY THE MODEL.', &
+    /1x'0: NO INTERPOLATION OF FORCING DATA.', &
+    /1x'1: LINEARLY INTERPOLATES FORCING DATA FOR INTERMEDIATE TIME STEPS.', &
+    /1x'NOTE: INTERPOLATIONFLAG SHOULD BE SET TO 0 FOR 30 MINUTE FORCING DATA.'/)
 
-9002 FORMAT('ERROR IN READING r2c_output.txt FILE. ',/, &
-            'THE FIRST RECORD AT THE FIRST LINE IS FOR THE NUMBER OF ALL THE ', &
-            'VARIABLES LISTED IN THE r2c_output.txt FILE.',/,&
-            'THE SECOND RECORD AT THE FIRST LINE IS TIME STEP FOR R2C OUTPUT. ', &
-            'IT SHOULD BE AN INTEGER MULTIPLE OF 30. ',/,&
-            'THE REMAINING RECORDS SHOULD CONTAIN 3 COLUMNS FOR EACH VARIABLE WITH INTEGER VALUES OF ', &
-            'EITHER 0 OR 1 AND 3 COLUMNS CONTAINING INFORMATION ABOUT THE VARIABLES')
+9002 format( &
+    /1x'ERROR IN READING r2c_output.txt FILE.', &
+    /1x'THE FIRST RECORD AT THE FIRST LINE IS FOR THE NUMBER OF ALL THE', &
+    /1x'VARIABLES LISTED IN THE r2c_output.txt FILE.',&
+    /1x'THE SECOND RECORD AT THE FIRST LINE IS TIME STEP FOR R2C OUTPUT.', &
+    /1x'IT SHOULD BE AN INTEGER MULTIPLE OF 30.',&
+    /1x'THE REMAINING RECORDS SHOULD CONTAIN 3 COLUMNS FOR EACH VARIABLE WITH', &
+    /1x'INTEGER VALUES OF EITHER 0 OR 1,', &
+    /1x'AND 3 COLUMNS CONTAINING INFORMATION ABOUT THE VARIABLES.'/)
 
     call mpi_finalize(ierr)
 
