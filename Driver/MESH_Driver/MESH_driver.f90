@@ -2725,13 +2725,13 @@ IF(R2COUTPUTFLAG .GE. 1)THEN
                   'RECORD AT THE FIRST LINE IN THE r2c_output.txt FILE. ', &
                   'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
            STOP
-         ENDIF 
+         ENDIF
       ENDIF
       IF(IOS /= 0 .OR. MOD(DELTR2C,30) /= 0)THEN
             print 9002
             stop
       ENDIF
-      
+
       PRINT*
       PRINT*,'THE FOLLOWING R2C OUTPUT FILES WILL BE WRITTEN:'
 
@@ -2753,7 +2753,7 @@ IF(R2COUTPUTFLAG .GE. 1)THEN
               NR2CFILES = NR2CFILES + 1
               PRINT*,NR2CFILES,' (GRDGAT) : ',R2C_ATTRIBUTES(I,3)
            ENDIF
-             
+
          ENDIF
       ENDDO
       CLOSE(56)
@@ -2821,26 +2821,7 @@ PRINT *
 
 end if !(VERBOSEMODE > 0) then
 
-if (ipid == 0) then
-
-call stats_init(ts, wf_no)
-
-if (VERBOSEMODE > 0) then
-
-PRINT *
-IF(TESTCSVFLAG == 1)THEN
-    PRINT*,"TEST PROPER DISTRIBUTION OF CSV FORCING DATA" 
-ELSE
-    print 2836
-    print 2835
-ENDIF
-
-2836 format(/1x'DONE INTITIALIZATION')
-2835 format(/1x'STARTING MESH')
-
-end if !(VERBOSEMODE > 0) then
-
-end if !(ipid == 0) then
+if (ipid == 0) call stats_init(ts, wf_no)
 
 !>
 !>*******************************************************************
@@ -3000,7 +2981,7 @@ CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS, &
 !> Check if we are reading in a resume_state.r2c file
 IF (RESUMEFLAG == 2) THEN
   PRINT *, 'Reading saved state variables'
-  
+
 ! Allocate arrays for resume_state_r2c
       OPEN(54, FILE = 'resume_state_r2c.txt', action = 'read')
       READ(54,*,IOSTAT=IOS)NR2C_R,DELTR2C_R
@@ -3011,7 +2992,7 @@ IF (RESUMEFLAG == 2) THEN
                   'RECORD AT THE FIRST LINE IN THE resume_state_r2c.txt FILE. ', &
                   'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
            STOP
-         ENDIF 
+         ENDIF
       ENDIF
       CLOSE(54)
 
@@ -3165,7 +3146,7 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
 150           CONTINUE
 160       CONTINUE
 170   CONTINUE
-!>         
+!>
 call resume_state_r2c(NML,NLTEST,NMTEST,NCOUNT, &
                     IMIN,ACLASS,NR2C_R,GRD_R,GAT_R,GRDGAT_R,R2C_ATTRIBUTES_R,&
                     NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,ICAN,ICP1,IGND, &
@@ -3204,8 +3185,8 @@ call resume_state_r2c(NML,NLTEST,NMTEST,NCOUNT, &
                        HMFGGAT,HTCGAT, QFCGAT,MANNGAT, DDGAT,   &
                        SANDGAT,CLAYGAT,IGDRGAT,VMODGAT,QLWOGAT, &
                        coordsys1,datum1, zone1,  XORIGIN,YORIGIN,XDELTA,YDELTA)
-!>            
-! now scatter the variables so that the GATs don't get overwritten incorrectly                       
+!>
+! now scatter the variables so that the GATs don't get overwritten incorrectly
 CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
              cp%TPNDROW,cp%ZPNDROW,TBASROW,cp%ALBSROW,cp%TSNOROW, &
              cp%RHOSROW,cp%SNOROW,cp%TCANROW,cp%RCANROW,cp%SCANROW, &
@@ -3223,72 +3204,72 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
              DriftROW, SublROW, DepositionROW, &
              DriftGAT, SublGAT, DepositionGAT)
 !>
-!>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF 
+!>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF
 !>   * CLASSS FOR CONSISTENCY WITH GCM APPLICATIONS.
 !>
       DO 180 K=1,NML
-          CDHROW (ILMOS(K),JLMOS(K))=CDHGAT (K)  
-          CDMROW (ILMOS(K),JLMOS(K))=CDMGAT (K)  
-          HFSROW (ILMOS(K),JLMOS(K))=HFSGAT (K)  
-          TFXROW (ILMOS(K),JLMOS(K))=TFXGAT (K)  
-          QEVPROW(ILMOS(K),JLMOS(K))=QEVPGAT(K)  
-          QFSROW (ILMOS(K),JLMOS(K))=QFSGAT (K)  
-          QFXROW (ILMOS(K),JLMOS(K))=QFXGAT (K)  
-          PETROW (ILMOS(K),JLMOS(K))=PETGAT (K)  
-          GAROW  (ILMOS(K),JLMOS(K))=GAGAT  (K)  
-          EFROW  (ILMOS(K),JLMOS(K))=EFGAT  (K)  
-          GTROW  (ILMOS(K),JLMOS(K))=GTGAT  (K)  
-          QGROW  (ILMOS(K),JLMOS(K))=QGGAT  (K)  
-          ALVSROW(ILMOS(K),JLMOS(K))=ALVSGAT(K)  
-          ALIRROW(ILMOS(K),JLMOS(K))=ALIRGAT(K)  
-          SFCTROW(ILMOS(K),JLMOS(K))=SFCTGAT(K)  
-          SFCUROW(ILMOS(K),JLMOS(K))=SFCUGAT(K)  
-          SFCVROW(ILMOS(K),JLMOS(K))=SFCVGAT(K)  
-          SFCQROW(ILMOS(K),JLMOS(K))=SFCQGAT(K)  
-          FSNOROW(ILMOS(K),JLMOS(K))=FSNOGAT(K)  
-          FSGVROW(ILMOS(K),JLMOS(K))=FSGVGAT(K)  
-          FSGSROW(ILMOS(K),JLMOS(K))=FSGSGAT(K)  
-          FSGGROW(ILMOS(K),JLMOS(K))=FSGGGAT(K)  
-          FLGVROW(ILMOS(K),JLMOS(K))=FLGVGAT(K)  
-          FLGSROW(ILMOS(K),JLMOS(K))=FLGSGAT(K)  
-          FLGGROW(ILMOS(K),JLMOS(K))=FLGGGAT(K)  
-          HFSCROW(ILMOS(K),JLMOS(K))=HFSCGAT(K)  
-          HFSSROW(ILMOS(K),JLMOS(K))=HFSSGAT(K)  
-          HFSGROW(ILMOS(K),JLMOS(K))=HFSGGAT(K)  
-          HEVCROW(ILMOS(K),JLMOS(K))=HEVCGAT(K)  
-          HEVSROW(ILMOS(K),JLMOS(K))=HEVSGAT(K)  
-          HEVGROW(ILMOS(K),JLMOS(K))=HEVGGAT(K)  
-          HMFCROW(ILMOS(K),JLMOS(K))=HMFCGAT(K)  
-          HMFNROW(ILMOS(K),JLMOS(K))=HMFNGAT(K)  
-          HTCCROW(ILMOS(K),JLMOS(K))=HTCCGAT(K)  
-          HTCSROW(ILMOS(K),JLMOS(K))=HTCSGAT(K)  
-          PCFCROW(ILMOS(K),JLMOS(K))=PCFCGAT(K)  
-          PCLCROW(ILMOS(K),JLMOS(K))=PCLCGAT(K)  
-          PCPNROW(ILMOS(K),JLMOS(K))=PCPNGAT(K)  
-          PCPGROW(ILMOS(K),JLMOS(K))=PCPGGAT(K)  
-          QFGROW (ILMOS(K),JLMOS(K))=QFGGAT (K)  
-          QFNROW (ILMOS(K),JLMOS(K))=QFNGAT (K)  
-          QFCLROW(ILMOS(K),JLMOS(K))=QFCLGAT(K)  
-          QFCFROW(ILMOS(K),JLMOS(K))=QFCFGAT(K)  
-          ROFROW (ILMOS(K),JLMOS(K))=ROFGAT (K)  
-          ROFOROW(ILMOS(K),JLMOS(K))=ROFOGAT(K)  
-          ROFSROW(ILMOS(K),JLMOS(K))=ROFSGAT(K)  
-          ROFBROW(ILMOS(K),JLMOS(K))=ROFBGAT(K)  
-          TROFROW(ILMOS(K),JLMOS(K))=TROFGAT(K)  
-          TROOROW(ILMOS(K),JLMOS(K))=TROOGAT(K)  
-          TROSROW(ILMOS(K),JLMOS(K))=TROSGAT(K)  
-          TROBROW(ILMOS(K),JLMOS(K))=TROBGAT(K)  
-          ROFCROW(ILMOS(K),JLMOS(K))=ROFCGAT(K)  
-          ROFNROW(ILMOS(K),JLMOS(K))=ROFNGAT(K)  
-          ROVGROW(ILMOS(K),JLMOS(K))=ROVGGAT(K)  
-          WTRCROW(ILMOS(K),JLMOS(K))=WTRCGAT(K)  
-          WTRSROW(ILMOS(K),JLMOS(K))=WTRSGAT(K)  
-          WTRGROW(ILMOS(K),JLMOS(K))=WTRGGAT(K)  
-          DRROW  (ILMOS(K),JLMOS(K))=DRGAT  (K)  
-          WTABROW(ILMOS(K),JLMOS(K))=WTABGAT(K)  
-          ILMOROW(ILMOS(K),JLMOS(K))=ILMOGAT(K)  
-          UEROW  (ILMOS(K),JLMOS(K))=UEGAT(K)  
-          HBLROW (ILMOS(K),JLMOS(K))=HBLGAT(K)  
+          CDHROW (ILMOS(K),JLMOS(K))=CDHGAT (K)
+          CDMROW (ILMOS(K),JLMOS(K))=CDMGAT (K)
+          HFSROW (ILMOS(K),JLMOS(K))=HFSGAT (K)
+          TFXROW (ILMOS(K),JLMOS(K))=TFXGAT (K)
+          QEVPROW(ILMOS(K),JLMOS(K))=QEVPGAT(K)
+          QFSROW (ILMOS(K),JLMOS(K))=QFSGAT (K)
+          QFXROW (ILMOS(K),JLMOS(K))=QFXGAT (K)
+          PETROW (ILMOS(K),JLMOS(K))=PETGAT (K)
+          GAROW  (ILMOS(K),JLMOS(K))=GAGAT  (K)
+          EFROW  (ILMOS(K),JLMOS(K))=EFGAT  (K)
+          GTROW  (ILMOS(K),JLMOS(K))=GTGAT  (K)
+          QGROW  (ILMOS(K),JLMOS(K))=QGGAT  (K)
+          ALVSROW(ILMOS(K),JLMOS(K))=ALVSGAT(K)
+          ALIRROW(ILMOS(K),JLMOS(K))=ALIRGAT(K)
+          SFCTROW(ILMOS(K),JLMOS(K))=SFCTGAT(K)
+          SFCUROW(ILMOS(K),JLMOS(K))=SFCUGAT(K)
+          SFCVROW(ILMOS(K),JLMOS(K))=SFCVGAT(K)
+          SFCQROW(ILMOS(K),JLMOS(K))=SFCQGAT(K)
+          FSNOROW(ILMOS(K),JLMOS(K))=FSNOGAT(K)
+          FSGVROW(ILMOS(K),JLMOS(K))=FSGVGAT(K)
+          FSGSROW(ILMOS(K),JLMOS(K))=FSGSGAT(K)
+          FSGGROW(ILMOS(K),JLMOS(K))=FSGGGAT(K)
+          FLGVROW(ILMOS(K),JLMOS(K))=FLGVGAT(K)
+          FLGSROW(ILMOS(K),JLMOS(K))=FLGSGAT(K)
+          FLGGROW(ILMOS(K),JLMOS(K))=FLGGGAT(K)
+          HFSCROW(ILMOS(K),JLMOS(K))=HFSCGAT(K)
+          HFSSROW(ILMOS(K),JLMOS(K))=HFSSGAT(K)
+          HFSGROW(ILMOS(K),JLMOS(K))=HFSGGAT(K)
+          HEVCROW(ILMOS(K),JLMOS(K))=HEVCGAT(K)
+          HEVSROW(ILMOS(K),JLMOS(K))=HEVSGAT(K)
+          HEVGROW(ILMOS(K),JLMOS(K))=HEVGGAT(K)
+          HMFCROW(ILMOS(K),JLMOS(K))=HMFCGAT(K)
+          HMFNROW(ILMOS(K),JLMOS(K))=HMFNGAT(K)
+          HTCCROW(ILMOS(K),JLMOS(K))=HTCCGAT(K)
+          HTCSROW(ILMOS(K),JLMOS(K))=HTCSGAT(K)
+          PCFCROW(ILMOS(K),JLMOS(K))=PCFCGAT(K)
+          PCLCROW(ILMOS(K),JLMOS(K))=PCLCGAT(K)
+          PCPNROW(ILMOS(K),JLMOS(K))=PCPNGAT(K)
+          PCPGROW(ILMOS(K),JLMOS(K))=PCPGGAT(K)
+          QFGROW (ILMOS(K),JLMOS(K))=QFGGAT (K)
+          QFNROW (ILMOS(K),JLMOS(K))=QFNGAT (K)
+          QFCLROW(ILMOS(K),JLMOS(K))=QFCLGAT(K)
+          QFCFROW(ILMOS(K),JLMOS(K))=QFCFGAT(K)
+          ROFROW (ILMOS(K),JLMOS(K))=ROFGAT (K)
+          ROFOROW(ILMOS(K),JLMOS(K))=ROFOGAT(K)
+          ROFSROW(ILMOS(K),JLMOS(K))=ROFSGAT(K)
+          ROFBROW(ILMOS(K),JLMOS(K))=ROFBGAT(K)
+          TROFROW(ILMOS(K),JLMOS(K))=TROFGAT(K)
+          TROOROW(ILMOS(K),JLMOS(K))=TROOGAT(K)
+          TROSROW(ILMOS(K),JLMOS(K))=TROSGAT(K)
+          TROBROW(ILMOS(K),JLMOS(K))=TROBGAT(K)
+          ROFCROW(ILMOS(K),JLMOS(K))=ROFCGAT(K)
+          ROFNROW(ILMOS(K),JLMOS(K))=ROFNGAT(K)
+          ROVGROW(ILMOS(K),JLMOS(K))=ROVGGAT(K)
+          WTRCROW(ILMOS(K),JLMOS(K))=WTRCGAT(K)
+          WTRSROW(ILMOS(K),JLMOS(K))=WTRSGAT(K)
+          WTRGROW(ILMOS(K),JLMOS(K))=WTRGGAT(K)
+          DRROW  (ILMOS(K),JLMOS(K))=DRGAT  (K)
+          WTABROW(ILMOS(K),JLMOS(K))=WTABGAT(K)
+          ILMOROW(ILMOS(K),JLMOS(K))=ILMOGAT(K)
+          UEROW  (ILMOS(K),JLMOS(K))=UEGAT(K)
+          HBLROW (ILMOS(K),JLMOS(K))=HBLGAT(K)
 180   CONTINUE
 !>
       DO 190 L=1,IGND
@@ -3571,6 +3552,23 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
 
 !3166 format(1x, 'Node ', i4, ' is reporting for ', i7, ' to ', i7)
 !3167 format(/, 1x, a20, ':', i7)
+
+!> *********************************************************************
+!> End of Initialization
+!> *********************************************************************
+
+    if (VERBOSEMODE > 0) then
+        print *
+        if (TESTCSVFLAG == 1) then
+            print *, 'TEST PROPER DISTRIBUTION OF CSV FORCING DATA'
+        else
+            print 2836
+            print 2835
+        end if
+    end if !(VERBOSEMODE > 0) then
+
+2836 format(/1x'DONE INTITIALIZATION')
+2835 format(/1x'STARTING MESH')
 
 !> *********************************************************************
 !> Start of main loop that is run each half hour
