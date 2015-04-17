@@ -8,17 +8,17 @@
 # ======================================================================
 # Directory of source code
 # ======================================================================
-DIR_REPO=/cygdrive/c/Data/MESH_code
+DIR_REPO=.
 
 # ======================================================================
 # Include the following directories in the source file searching path
 # ======================================================================
-VPATH=	$(DIR_REPO)/TRUNK/Modules: \
-		$(DIR_REPO)/TRUNK/Driver/MESH_Driver: \
-		$(DIR_REPO)/TRUNK/LSS_Model/CLASS: \
-		$(DIR_REPO)/TRUNK/Routing_Model/WatRoute_old: \
-		$(DIR_REPO)/TRUNK/Blowing_Snow: \
-		$(DIR_REPO)/TRUNK/Tile_Connector/Basic:
+VPATH=	$(DIR_REPO)/Modules: \
+		$(DIR_REPO)/Driver/MESH_Driver: \
+		$(DIR_REPO)/LSS_Model/CLASS: \
+		$(DIR_REPO)/Routing_Model/WatRoute_old: \
+		$(DIR_REPO)/Blowing_Snow: \
+		$(DIR_REPO)/Tile_Connector/Basic:
 
 # ======================================================================
 # Object files needed to build SA_MESH
