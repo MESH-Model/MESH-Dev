@@ -63,5 +63,5 @@ clean:
 # ======================================================================
 veryclean:
 # 'rm' for Cygwin, 'del' for MinGW - comment as necessary
-	rm *.mod *.o *.exe
-#	del *.mod *.o *.exe
+	rm *.mod *.o sa_mesh
+#	del *.mod *.o sa_mesh.exe
