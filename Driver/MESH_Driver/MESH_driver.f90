@@ -1897,17 +1897,21 @@ bi%ignd = ignd
 
 !> Initialize output variables.
 call wb%init(bi)
-call eng%init(bi)
-call sov%init(bi)
-call md%init(bi)
-call wb_h%init(bi)
 
 !> *********************************************************************
 !> Initialize water balance output fields
 !> *********************************************************************
 
-if (outfieldsflag == 1) &
-    call init_out(vr, ts, iof, bi)
+if (ipid == 0) then
+
+    call eng%init(bi)
+    call sov%init(bi)
+    call md%init(bi)
+    call wb_h%init(bi)
+
+    if (OUTFIELDSFLAG == 1) call init_out(vr, ts, iof, bi)
+
+end if !(ipid == 0) then
 
 !> Set value of FAREROW: 
 !todo - flag this as an issue to explore later and hide basin average code
@@ -4979,17 +4983,17 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     ENDDO
     DSTG = DSTG + RCANACC + SCANACC + SNOACC - STG_I
 
-   IF (OUTFIELDSFLAG .eq. 1) THEN
-    CALL UPDATEFIELDSOUT(vr, ts, iof, &
-                         wb%pre, wb%evap, wb%rof, wb%dstg, &
-                         sov%tbar, wb%lqws, wb%frws, &
-                         wb%rcan, wb%sncan, &
-                         wb%pndw, wb%sno, wb%wsno, &
-                         eng%gflx, eng%hfs, eng%qevp, &
-                         sov%thlq, sov%thic ,&
-                         NA, IGND, &
-                         IDAY, IYEAR)
-   ENDIF
+    if (OUTFIELDSFLAG == 1) then
+        call UpdateFIELDSOUT(vr, ts, iof, &
+                             wb%pre, wb%evap, wb%rof, wb%dstg, &
+                             sov%tbar, wb%lqws, wb%frws, &
+                             wb%rcan, wb%sncan, &
+                             wb%pndw, wb%sno, wb%wsno, &
+                             eng%gflx, eng%hfs, eng%qevp, &
+                             sov%thlq, sov%thic ,&
+                             NA, IGND, &
+                             IDAY, IYEAR)
+    end if
    STG_I = DSTG + STG_I
 
 !RESET ACCUMULATION VARIABLES TO ZERO
@@ -5591,8 +5595,7 @@ IF (SAVERESUMEFLAG == 3) THEN
 
 ENDIF !IF (SAVERESUMEFLAG == 3) THEN
 
-if (outfieldsflag .eq. 1) &
-    call write_outputs(vr, ts, iof, bi, fls)
+if (OUTFIELDSFLAG == 1) call write_outputs(vr, ts, iof, bi, fls)
 
 IF(ENDDATA)PRINT *, 'Reached end of forcing data'
 IF(ENDDATE)PRINT *, 'Reached end of simulation date'
