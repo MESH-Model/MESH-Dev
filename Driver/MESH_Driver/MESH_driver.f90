@@ -4064,6 +4064,9 @@ end if !(ipid /= 0 .or. izero == 0) then
     itag = NSUM_TOTAL*1000
     invars = 14 + 4*IGND
 
+    !> Update the variable count per the active control flags.
+    if (SAVERESUMEFLAG == 3) invars = invars + 10 + 4
+
     if (inp > 1 .and. ipid /= 0) then
 
         !> Send data back to head-node.
@@ -4094,6 +4097,23 @@ end if !(ipid /= 0 .or. izero == 0) then
             call mpi_isend(GFLXGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(TBARGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
         end do
+
+        !> Send optional variables per the active control flags.
+        if (SAVERESUMEFLAG == 3) then
+            call mpi_isend(ALBSGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(CMAIGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(GROGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(QACGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(RHOSGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(TACGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(TBASGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(TCANGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(TPNDGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(TSNOGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            do j = 1, 4
+                call mpi_isend(TSFSGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            end do
+        end if !(SAVERESUMEFLAG == 3) then
 
         lstat = .false.
         do while (.not. lstat)
@@ -4140,6 +4160,23 @@ end if !(ipid /= 0 .or. izero == 0) then
                 call mpi_irecv(GFLXGAT(il1:il2, j), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(TBARGAT(il1:il2, j), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             end do
+
+            !> Send optional variables per the active control flags.
+            if (SAVERESUMEFLAG == 3) then
+                call mpi_irecv(ALBSGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(CMAIGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(GROGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(QACGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(RHOSGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(TACGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(TBASGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(TCANGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(TPNDGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(TSNOGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                do j = 1, 4
+                    call mpi_irecv(TSFSGAT(il1:il2, j), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                end do
+            end if !(SAVERESUMEFLAG == 3) then
 
             lstat = .false.
             do while (.not. lstat)
