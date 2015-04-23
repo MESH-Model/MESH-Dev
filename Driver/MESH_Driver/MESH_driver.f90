@@ -603,6 +603,20 @@ CHARACTER :: TITLE1*4, TITLE2*4, TITLE3*4, TITLE4*4, TITLE5*4, &
 !>*******************************************************************
 !>*******************************************************************
 !>
+!> ECOZONES VARIABLES
+REAL, DIMENSION(:), ALLOCATABLE :: TOTAL_AREA_eco,TOTAL_PRE_eco, &
+ TOTAL_EVAP_eco,TOTAL_DRIFT_eco,TOTAL_SUBL_eco,TOTAL_ROF_eco, &
+ TOTAL_ROFO_eco,TOTAL_ROFS_eco,TOTAL_ROFB_eco,TOTAL_PREACC_eco, &
+ TOTAL_EVAPACC_eco,TOTAL_ROFACC_eco,TOTAL_ROFOACC_eco, &
+ TOTAL_ROFSACC_eco,TOTAL_ROFBACC_eco,TOTAL_HFSACC_eco, &
+ TOTAL_QEVPACC_eco,TOTAL_SNOMLT_eco,TOTAL_SCAN_eco,TOTAL_RCAN_eco,&
+ TOTAL_SNO_eco,TOTAL_WSNO_eco,TOTAL_ZPND_eco,TOTAL_STORE_eco,TOTAL_STORE_2_eco
+REAL, DIMENSION(:,:), ALLOCATABLE :: TOTAL_THLQ_eco, TOTAL_THIC_eco
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: eco
+
+!>*******************************************************************
+!>*******************************************************************
+!>
 !> OUTPUT VARIABLES:
 !> THE SUFFIX "ACC" REFERS TO THE ACCUMULATOR ARRAYS USED IN
 !> CALCULATING TIME AVERAGES.
@@ -611,7 +625,8 @@ REAL, DIMENSION(:), ALLOCATABLE :: PREACC, GTACC, QEVPACC, &
   HFSACC, ROFACC, SNOACC, ALVSACC, ALIRACC, FSINACC, FLINACC, &
   TAACC, UVACC, PRESACC, QAACC, EVAPACC, FLUTACC, ROFOACC, &
   ROFSACC, ROFBACC, HMFNACC, WTBLACC, WSNOACC, RHOSACC, TSNOACC, &
-  TCANACC, RCANACC, SCANACC, GROACC, CANARE, SNOARE, ZPNDACC
+  TCANACC, RCANACC, SCANACC, GROACC, CANARE, SNOARE, ZPNDACC, &
+  DriftACC, SublACC
 
 !> FIELD OF DELTA STORAGE AND INITIAL STORAGE
 REAL, DIMENSION(:), ALLOCATABLE :: DSTG, STG_I
@@ -631,10 +646,10 @@ REAL :: TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
   
 !* TOTAL_HFS = TOTAL SENSIBLE HEAT FLUX
 !* TOTAL_QEVP = TOTAL LATENT HEAT FLUX
-REAL :: TOTAL_HFSACC, TOTAL_QEVPACC
+REAL :: TOTAL_HFSACC, TOTAL_QEVPACC, TOTAL_SNOMLT
 
 REAL :: TOTAL_STORE, TOTAL_STORE_2, TOTAL_RCAN, TOTAL_SCAN, TOTAL_SNO, TOTAL_WSNO, TOTAL_ZPND
-REAL :: TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
+REAL :: TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB, TOTAL_DRIFT, TOTAL_SUBL
 REAL, DIMENSION(:), ALLOCATABLE :: TOTAL_THLQ, TOTAL_THIC
 
 !> CROSS-CLASS VARIABLES (CLASS):
@@ -644,7 +659,7 @@ REAL, DIMENSION(:, :), ALLOCATABLE :: TBARC, TBARG, TBARCS, &
   TBARGS, THLIQC, THLIQG, THICEC, THICEG, FROOT, HCPC, HCPG, &
   TCTOPC, TCBOTC, TCTOPG, TCBOTG
 
-REAL, DIMENSION(:), ALLOCATABLE :: FC, FG, FCS, FGS, RBCOEF, &
+REAL, DIMENSION(:), ALLOCATABLE :: FC, FG, FCS, FGS, RBCOEF, Sage, &
   ZSNOW, FSVF, FSVFS, ALVSCN, ALIRCN, ALVSG, &
   ALIRG, ALVSCS, ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, ALVSSC, &
   ALIRSC, TRVSCN, TRIRCN, TRVSCS, TRIRCS, RC, RCS, FRAINC, &
@@ -970,7 +985,7 @@ CALL READ_INITIAL_INPUTS( &
   INDEPPAR, DEPPAR, WF_R2, M_C, &
  !>the types that are to be allocated and initialised
   op, sl, cp, sv, hp,ts,cm, &
-  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
+  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS)!, fls)
 
 !INITIALIZE IMIN2  
   IMIN2 = IMIN
@@ -1357,7 +1372,7 @@ ALLOCATE (PREACC(NA), GTACC(NA), QEVPACC(NA), &
   TBARACC(NA, IGND), THLQACC(NA, IGND), THICACC(NA, IGND), &
   THALACC(NA, IGND), &
   STG_I(NA), DSTG(NA),THLQ_FLD(NA,IGND),THIC_FLD(NA,IGND), &
-  STAT=PAS)
+  DriftACC(NA), SublACC(NA),STAT=PAS)
 IF (PAS .NE. 0) THEN
   WRITE (6, *)
   WRITE (6, *)
@@ -1411,7 +1426,7 @@ ALLOCATE (TBARC(ILG, IGND), TBARG(ILG, IGND), &
   WSNOCS(ILG), WSNOGS(ILG), TPONDC(ILG), &
   TPONDG(ILG), TPNDCS(ILG), &
   TPNDGS(ILG), ZPLMCS(ILG), ZPLMGS(ILG), &
-  ZPLIMC(ILG), ZPLIMG(ILG), STAT=PAS)
+  ZPLIMC(ILG), ZPLIMG(ILG), Sage(ILG), STAT=PAS)
 IF (PAS .NE. 0) THEN
   WRITE (6, *)
   WRITE (6, *)
@@ -1457,7 +1472,23 @@ ALLOCATE (CO2CONC(ILG), COSZS(ILG), XDIFFUSC(ILG), CFLUXCG(ILG), CFLUXCS(ILG), &
   WRITE (6, *) "Bound 5 (soil layers): ", IGND
   WRITE (6, *) "Bound 6 (CTEM flag): ", ICTEM
   STOP
-END IF
+ END IF
+ 
+!> ECOZONES VARIABLES:
+ALLOCATE (TOTAL_AREA_eco(3),TOTAL_PRE_eco(3), &
+ TOTAL_EVAP_eco(3),TOTAL_DRIFT_eco(3),TOTAL_SUBL_eco(3),TOTAL_ROF_eco(3), &
+ TOTAL_ROFO_eco(3),TOTAL_ROFS_eco(3),TOTAL_ROFB_eco(3),TOTAL_PREACC_eco(3), &
+ TOTAL_EVAPACC_eco(3),TOTAL_ROFACC_eco(3),TOTAL_ROFOACC_eco(3), &
+ TOTAL_ROFSACC_eco(3),TOTAL_ROFBACC_eco(3),TOTAL_HFSACC_eco(3), &
+ TOTAL_QEVPACC_eco(3),TOTAL_SNOMLT_eco(3),TOTAL_SCAN_eco(3),TOTAL_RCAN_eco(3),&
+ TOTAL_SNO_eco(3),TOTAL_WSNO_eco(3),TOTAL_ZPND_eco(3),TOTAL_STORE_eco(3),TOTAL_STORE_2_eco(3), &
+ TOTAL_THLQ_eco(IGND,3), TOTAL_THIC_eco(IGND,3), eco(634,3), STAT=PAS)
+
+OPEN(UNIT=876,FILE='eco_grids.csv',STATUS='OLD')
+  do I=1,NA
+    READ(876,*,END=999) eco(I,1),eco(I,2),eco(I,3) !READ(876,'(3I1)',END=999)
+  enddo
+CLOSE(UNIT=876)
 !>
 !>*******************************************************************
 !>
@@ -1595,7 +1626,7 @@ ENDIF
 !> *********************************************************************
 OPEN(UNIT=22,FILE='MESH_input_streamflow.txt',STATUS='OLD')
 READ(22,*)
-READ(22,*) WF_NO,WF_NL,WF_MHRD,WF_KT, WF_START_YEAR,&
+READ(22,'(7I5)') WF_NO,WF_NL,WF_MHRD,WF_KT, WF_START_YEAR,&
         WF_START_DAY,WF_START_HOUR
 
 
@@ -1611,7 +1642,7 @@ DO I=1,WF_NO
     WF_IY(I) = NINT((I_G-YORIGIN*60.0)/GRDN)
     WF_JX(I) = NINT((J_G-XORIGIN*60.0)/GRDE)
   ELSE
-    READ(22,*)WF_IY(I),WF_JX(I),WF_GAGE(I)
+    READ(22,'(2I5,1X,A12)')WF_IY(I),WF_JX(I),WF_GAGE(I)
     WF_IY(I)=INT((REAL(WF_IY(I))-REAL(IYMIN))/GRDN+1.0)
     WF_JX(I)=INT((REAL(WF_JX(I))-REAL(JXMIN))/GRDE+1.0)
   ENDIF
@@ -1881,6 +1912,10 @@ if (outfieldsflag == 1) &
 !todo - flag this as an issue to explore later and hide basin average code
 !todo - document the problem
 TOTAL_AREA = 0.0
+do j=1,3
+ TOTAL_AREA_eco(j)=0.0
+enddo
+
 DO I = 1, NA
     DO M = 1, NMTEST
         cp%FAREROW(I, M) = ACLASS(I, M)*FRAC(I)
@@ -1889,6 +1924,11 @@ DO I = 1, NA
     ! using Dan Princz's instructions for EnSim
     ! FRAC can be greater than 1.00
     ! So, we cannot use FAREROW in place of BASIN_FRACTION
+        do J = 1,3 !ecozones
+            if (eco(I,J)==1) then
+                TOTAL_AREA_eco(J)=TOTAL_AREA_eco(J)+cp%FAREROW(I, M)
+            endif
+        end do
         wb%grid_area(i) = wb%grid_area(i) + cp%farerow(i, m)
     END DO
     wb%basin_area = wb%basin_area + wb%grid_area(i)
@@ -1962,6 +2002,29 @@ TOTAL_EVAPACC=0.0
 TOTAL_PREACC=0.0
 TOTAL_HFSACC=0.0
 TOTAL_QEVPACC=0.0
+TOTAL_SNOMLT =0.0
+TOTAL_DRIFT=0.0
+TOTAL_SUBL=0.0
+! & for ecozones
+do j=1,3
+ TOTAL_ROF_eco(j)=0.0
+ TOTAL_ROFO_eco(j)=0.0
+ TOTAL_ROFS_eco(j)=0.0
+ TOTAL_ROFB_eco(j)=0.0
+ TOTAL_EVAP_eco(j)=0.0
+ TOTAL_PRE_eco(j)=0.0
+ TOTAL_ROFACC_eco(j)=0.0
+ TOTAL_ROFOACC_eco(j)=0.0
+ TOTAL_ROFSACC_eco(j)=0.0
+ TOTAL_ROFBACC_eco(j)=0.0
+ TOTAL_EVAPACC_eco(j)=0.0
+ TOTAL_PREACC_eco(j)=0.0
+ TOTAL_HFSACC_eco(j)=0.0
+ TOTAL_QEVPACC_eco(j)=0.0
+ TOTAL_SNOMLT_eco(j) =0.0
+ TOTAL_DRIFT_eco(j)=0.0
+ TOTAL_SUBL_eco(j)=0.0
+enddo
 
 DO I=1,NA
   PREACC(I)=0.
@@ -1994,6 +2057,8 @@ DO I=1,NA
   UVACC(I)=0.
   PRESACC(I)=0.
   QAACC(I)=0.
+  DriftACC(I)=0.
+  SublACC(I)=0.
   DO J=1,IGND
     TBARACC(I,J)=0.
     THLQACC(I,J)=0.
@@ -3329,6 +3394,20 @@ TOTAL_ZPND = 0.0
 TOTAL_THLQ = 0.0
 TOTAL_THIC = 0.0
 
+do j=1,3
+ TOTAL_STORE_eco(j) = 0.0
+ TOTAL_STORE_2_eco(j) = 0.0
+ TOTAL_RCAN_eco(j) = 0.0
+ TOTAL_SCAN_eco(j) = 0.0
+ TOTAL_SNO_eco(j) = 0.0
+ TOTAL_WSNO_eco(j) = 0.0
+ TOTAL_ZPND_eco(j) = 0.0
+ DO K = 1, IGND
+ TOTAL_THLQ_eco(K,j) = 0.0
+ TOTAL_THIC_eco(K,j) = 0.0
+ ENDDO
+enddo
+
 OPEN(unit=900,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/Basin_average_water_balance.csv')
 
@@ -3357,9 +3436,105 @@ wrt_900_f = trim(adjustl(wrt_900_1)) // &
             trim(adjustl(wrt_900_2)) // &
             trim(adjustl(wrt_900_3)) // &
             trim(adjustl(wrt_900_4)) // &
-            "THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE"
+            "THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE,BSDRIFT,BSSUBL"
             
 write(900,'(A)') trim(adjustl(wrt_900_f))
+
+OPEN(unit=902,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/MTN_Basin_average_water_balance.csv')
+
+
+wrt_900_1 = 'DAY,YEAR,PREACC'//',EVAPACC,ROFACC,ROFOACC,'// &
+           'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,'
+
+wrt_900_2 = "THLQ"
+wrt_900_3 = "THIC"
+wrt_900_4 = "THLQIC"
+
+do i = 1, IGND
+    write(strInt,'(I1)') i
+    if (i.lt.ignd)then
+        wrt_900_2 = trim(adjustl(wrt_900_2))//trim(adjustl(strInt))//',THLQ'
+        wrt_900_3 = trim(adjustl(wrt_900_3))//trim(adjustl(strInt))//',THIC'
+        wrt_900_4 = trim(adjustl(wrt_900_4))//trim(adjustl(strInt))//',THLQIC'    
+    else
+        wrt_900_2 = trim(adjustl(wrt_900_2))//trim(adjustl(strInt))//','
+        wrt_900_3 = trim(adjustl(wrt_900_3))//trim(adjustl(strInt))//','
+        wrt_900_4 = trim(adjustl(wrt_900_4))//trim(adjustl(strInt))//','  
+    endif
+enddo  
+
+wrt_900_f = trim(adjustl(wrt_900_1)) // &
+            trim(adjustl(wrt_900_2)) // &
+            trim(adjustl(wrt_900_3)) // &
+            trim(adjustl(wrt_900_4)) // &
+            "THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE,BSDRIFT,BSSUBL"
+            
+write(902,'(A)') trim(adjustl(wrt_900_f))
+
+OPEN(unit=903,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/BOR_Basin_average_water_balance.csv')
+
+
+wrt_900_1 = 'DAY,YEAR,PREACC'//',EVAPACC,ROFACC,ROFOACC,'// &
+           'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,'
+
+wrt_900_2 = "THLQ"
+wrt_900_3 = "THIC"
+wrt_900_4 = "THLQIC"
+
+do i = 1, IGND
+    write(strInt,'(I1)') i
+    if (i.lt.ignd)then
+        wrt_900_2 = trim(adjustl(wrt_900_2))//trim(adjustl(strInt))//',THLQ'
+        wrt_900_3 = trim(adjustl(wrt_900_3))//trim(adjustl(strInt))//',THIC'
+        wrt_900_4 = trim(adjustl(wrt_900_4))//trim(adjustl(strInt))//',THLQIC'    
+    else
+        wrt_900_2 = trim(adjustl(wrt_900_2))//trim(adjustl(strInt))//','
+        wrt_900_3 = trim(adjustl(wrt_900_3))//trim(adjustl(strInt))//','
+        wrt_900_4 = trim(adjustl(wrt_900_4))//trim(adjustl(strInt))//','  
+    endif
+enddo  
+
+wrt_900_f = trim(adjustl(wrt_900_1)) // &
+            trim(adjustl(wrt_900_2)) // &
+            trim(adjustl(wrt_900_3)) // &
+            trim(adjustl(wrt_900_4)) // &
+            "THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE,BSDRIFT,BSSUBL"
+            
+write(903,'(A)') trim(adjustl(wrt_900_f))
+
+OPEN(unit=904,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/PRA_Basin_average_water_balance.csv')
+
+
+wrt_900_1 = 'DAY,YEAR,PREACC'//',EVAPACC,ROFACC,ROFOACC,'// &
+           'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,'
+
+wrt_900_2 = "THLQ"
+wrt_900_3 = "THIC"
+wrt_900_4 = "THLQIC"
+
+do i = 1, IGND
+    write(strInt,'(I1)') i
+    if (i.lt.ignd)then
+        wrt_900_2 = trim(adjustl(wrt_900_2))//trim(adjustl(strInt))//',THLQ'
+        wrt_900_3 = trim(adjustl(wrt_900_3))//trim(adjustl(strInt))//',THIC'
+        wrt_900_4 = trim(adjustl(wrt_900_4))//trim(adjustl(strInt))//',THLQIC'    
+    else
+        wrt_900_2 = trim(adjustl(wrt_900_2))//trim(adjustl(strInt))//','
+        wrt_900_3 = trim(adjustl(wrt_900_3))//trim(adjustl(strInt))//','
+        wrt_900_4 = trim(adjustl(wrt_900_4))//trim(adjustl(strInt))//','  
+    endif
+enddo  
+
+wrt_900_f = trim(adjustl(wrt_900_1)) // &
+            trim(adjustl(wrt_900_2)) // &
+            trim(adjustl(wrt_900_3)) // &
+            trim(adjustl(wrt_900_4)) // &
+            "THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE,BSDRIFT,BSSUBL"
+            
+write(904,'(A)') trim(adjustl(wrt_900_f))
 
 !WRITE(900,"('DAY,YEAR,PREACC,EVAPACC,ROFACC,ROFOACC,ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNO,SCAN,RCAN,ZPND,"// &
 !            "THLQ1,THLQ2,THLQ3,THLQ4,THLQ5,THLQ6,THIC1,THIC2,THIC3,THIC4,THIC5,THIC6,"// &
@@ -3368,8 +3543,19 @@ write(900,'(A)') trim(adjustl(wrt_900_f))
 
 OPEN(unit=901,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
                   '/Basin_average_energy_balance.csv')
-WRITE(901,"('DAY,YEAR,HFSACC,QEVPACC')")
+WRITE(901,"('DAY,YEAR,HFSACC,QEVPACC,SNOMLT')")
 
+OPEN(unit=905,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/MTN_Basin_average_energy_balance.csv')
+WRITE(905,"('DAY,YEAR,HFSACC,QEVPACC,SNOMLT')")
+
+OPEN(unit=906,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/BOR_Basin_average_energy_balance.csv')
+WRITE(906,"('DAY,YEAR,HFSACC,QEVPACC,SNOMLT')")
+
+OPEN(unit=907,file="./" // GENDIR_OUT(1:INDEX(GENDIR_OUT," ")-1) // &
+                  '/PRA_Basin_average_energy_balance.csv')
+WRITE(907,"('DAY,YEAR,HFSACC,QEVPACC,SNOMLT')")
 !>**********************************************************************
 !> Set initial SnowAge & DrySnow values for PBSM calculations
 !> (MK MacDonald, Sept 2010)
@@ -3786,7 +3972,8 @@ CALL CLASSA    (FC,     FG,     FCS,    FGS,    ALVSCN, ALIRCN, &
                 AILCG,  AILCGS, FCANC,  FCANCS, &
                 IDAY,   ILG,    1,      NML, &
                 JLAT,N, ICAN,   ICAN+1, IGND,   IDISP,  IZREF, &
-                IWF,    IPAI,   IHGT,   IALC,   IALS,   IALG  )
+                IWF,    IPAI,   IHGT,   IALC,   IALS,   IALG,  &
+                SPCPGAT,Sage)
 !
 !-----------------------------------------------------------------------
 !          * SURFACE TEMPERATURE AND FLUX CALCULATIONS.
@@ -3820,7 +4007,8 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
   FCANCMX,L2MAX,  NOL2PFTS,       CFLUXCG,CFLUXCS,ANCSVEG,ANCGVEG, &
   RMLCSVEG,   RMLCGVEG,   FIELDSM,WILTSM, &
   ITC,    ITCG,   ITG,   ILG,    1,NML,  JLAT,N, ICAN, &
-  IGND,   IZREF,  ISLFD,  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI)
+  IGND,   IZREF,  ISLFD,  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI, &
+  FCANGAT,ICAN+1,GROGAT,SANDGAT,CLAYGAT)
 !
 !-----------------------------------------------------------------------
 !          * WATER BUDGET CALCULATIONS.
@@ -3899,7 +4087,7 @@ IF(PBSMFLAG==1) THEN
               WSNOCS,WSNOGS, &
               FC, FG, FCS, FGS, &
               fetchGAT,N_SGAT,A_SGAT,HtGAT, &
-              SFCTGAT,SFCUGAT,SFCQGAT,PRESGAT,PREGAT, &
+              SFCTGAT,ULGAT,SFCQGAT,PRESGAT,PREGAT, &
               DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
               TSNOdsGAT, &
               NA*NTYPE,1,NML,N,ZRFMGAT,ZOMLCS,ZOMLNS)
@@ -4475,6 +4663,8 @@ DO I = 1, NA
          GTACC(I)   = GTACC(I)  + GTROW(I,M)*  cp%FAREROW(I,M)
          QEVPACC(I) = QEVPACC(I)+ QEVPROW(I,M)*cp%FAREROW(I,M)
          EVAPACC(I) = EVAPACC(I)+ QFSROW(I,M)* cp%FAREROW(I,M)*DELT
+         DriftACC(I)= DriftACC(I)+DriftROW(I,M)*cp%FAREROW(I,M)
+         SublACC(I) = SublACC(I)+SublROW(I,M)*cp%FAREROW(I,M)
          HFSACC(I)  = HFSACC(I) + HFSROW(I,M)* cp%FAREROW(I,M)
          HMFNACC(I) = HMFNACC(I)+ HMFNROW(I,M)*cp%FAREROW(I,M)
          ROFACC(I)  = ROFACC(I) + ROFROW(I,M)* cp%FAREROW(I,M)*DELT
@@ -4540,6 +4730,8 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
             ROFSACC(I) = ROFSACC(I)
             ROFBACC(I) = ROFBACC(I)
             WTBLACC(I) = WTBLACC(I)/REAL(NSUM)
+            DriftACC(I)= DriftACC(I)
+            SublACC(I) = SublACC(I)
 
     DO J=1,IGND
                 TBARACC(I,J) = TBARACC(I,J)/REAL(NSUM)
@@ -4551,7 +4743,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     IF(FSINACC(I)>0.0) THEN
       ALVSACC(I)=ALVSACC(I)/(FSINACC(I)*0.5)
       ALIRACC(I)=ALIRACC(I)/(FSINACC(I)*0.5)
-            ELSE
+    ELSE
       ALVSACC(I)=0.0
       ALIRACC(I)=0.0
     ENDIF
@@ -4643,6 +4835,8 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 !> update components for final water balance tally
     TOTAL_PRE     = TOTAL_PRE     + PREACC(I)
     TOTAL_EVAP    = TOTAL_EVAP    + EVAPACC(I)
+    TOTAL_DRIFT   = TOTAL_DRIFT   + DriftACC(I)
+    TOTAL_SUBL    = TOTAL_SUBL    + SublACC(I)
     TOTAL_ROF     = TOTAL_ROF     + ROFACC(I)
     TOTAL_ROFO    = TOTAL_ROFO    + ROFOACC(I)
     TOTAL_ROFS    = TOTAL_ROFS    + ROFSACC(I)
@@ -4663,6 +4857,31 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 !> update components for final energy balance tally
     TOTAL_HFSACC  = TOTAL_HFSACC  + HFSACC(I)
     TOTAL_QEVPACC = TOTAL_QEVPACC + QEVPACC(I)
+    TOTAL_SNOMLT = TOTAL_SNOMLT + HMFNACC(I)
+    
+    
+!> for ecozones
+    do j = 1,3
+    if (eco(I,j)==1) then
+     TOTAL_PRE_eco(j)     = TOTAL_PRE_eco(j)     + PREACC(I)
+     TOTAL_EVAP_eco(j)    = TOTAL_EVAP_eco(j)    + EVAPACC(I)
+     TOTAL_DRIFT_eco(j)   = TOTAL_DRIFT_eco(j)   + DriftACC(I)
+     TOTAL_SUBL_eco(j)    = TOTAL_SUBL_eco(j)    + SublACC(I)
+     TOTAL_ROF_eco(j)     = TOTAL_ROF_eco(j)     + ROFACC(I)
+     TOTAL_ROFO_eco(j)    = TOTAL_ROFO_eco(j)    + ROFOACC(I)
+     TOTAL_ROFS_eco(j)    = TOTAL_ROFS_eco(j)    + ROFSACC(I)
+     TOTAL_ROFB_eco(j)    = TOTAL_ROFB_eco(j)    + ROFBACC(I)
+     TOTAL_PREACC_eco(j)  = TOTAL_PREACC_eco(j)  + PREACC(I)
+     TOTAL_EVAPACC_eco(j) = TOTAL_EVAPACC_eco(j) + EVAPACC(I)
+     TOTAL_ROFACC_eco(j)  = TOTAL_ROFACC_eco(j)  + ROFACC(I)
+     TOTAL_ROFOACC_eco(j) = TOTAL_ROFOACC_eco(j) + ROFOACC(I)
+     TOTAL_ROFSACC_eco(j) = TOTAL_ROFSACC_eco(j) + ROFSACC(I)
+     TOTAL_ROFBACC_eco(j) = TOTAL_ROFBACC_eco(j) + ROFBACC(I)
+     TOTAL_HFSACC_eco(j)  = TOTAL_HFSACC_eco(j)  + HFSACC(I)
+     TOTAL_QEVPACC_eco(j) = TOTAL_QEVPACC_eco(j) + QEVPACC(I)
+     TOTAL_SNOMLT_eco(j)  = TOTAL_SNOMLT_eco(j)  + HMFNACC(I)
+    end if
+    end do
 
             IF (WF_NUM_POINTS > 0) THEN !SUMMARY VALUES FOR SCREEN
                 DO J = 1, WF_NUM_POINTS !FOR MORE THAN 1 OUTPUT
@@ -4716,8 +4935,10 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     QAACC(I)  =0.
     EVAPACC(I)=0.
     FLUTACC(I)=0.
+    DriftACC(I)=0.
+    SublACC(i)=0.
   ENDIF
-            END DO
+  END DO
 
     !> update components for final water balance tally
     DO I = 1, NA
@@ -4748,9 +4969,33 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
     TOTAL_STORE = TOTAL_SCAN + TOTAL_RCAN + TOTAL_SNO + TOTAL_WSNO + TOTAL_ZPND + &
         sum(TOTAL_THLQ) + sum(TOTAL_THIC)
+    
+    !> for ecozones
+    do j = 1,3 ! 1=mtn, 2=bor, 3=pra
+    DO I = 1, NA
+        IF (FRAC(I) >= 0.0) THEN
+            DO M = 1, NMTEST
+                TOTAL_SCAN_eco(j) = TOTAL_SCAN_eco(j) + cp%FAREROW(I, M)*cp%SCANROW(I, M)
+                TOTAL_RCAN_eco(j) = TOTAL_RCAN_eco(j) + cp%FAREROW(I, M)*cp%RCANROW(I, M)
+                TOTAL_SNO_eco(j)  = TOTAL_SNO_eco(j) + cp%FAREROW(I, M)*cp%SNOROW(I, M)
+                TOTAL_WSNO_eco(j) = TOTAL_WSNO_eco(j) + cp%FAREROW(I, M)*WSNOROW(I, M)
+                TOTAL_ZPND_eco(j) = TOTAL_ZPND_eco(j) + cp%FAREROW(I, M)*cp%ZPNDROW(I, M)*RHOW
+                DO K = 1, IGND
+                    TOTAL_THLQ_eco(K,j) = TOTAL_THLQ_eco(K,j) + cp%FAREROW(I, M)*cp%THLQROW(I, M, K)*RHOW*DLZWROW(I, M, K)
+                    TOTAL_THIC_eco(K,j) = TOTAL_THIC_eco(K,j) + cp%FAREROW(I, M)*cp%THICROW(I, M, K)*RHOICE*DLZWROW(I, M, K)
+                END DO
+            END DO
+        END IF !IF (FRAC(I) >= 0.0) THEN
+    END DO !DO I = 1, NA
+    end do !do j = 1,3
+
+    do j=1,3
+    TOTAL_STORE_eco(j) = TOTAL_SCAN_eco(j) + TOTAL_RCAN_eco(j) + TOTAL_SNO_eco(j) + TOTAL_WSNO_eco(j) + TOTAL_ZPND_eco(j) + &
+        sum(TOTAL_THLQ_eco(1:IGND,j)) + sum(TOTAL_THIC_eco(1:IGND,j))
+    enddo
 
   fmt_1 = '(I4,","),(I5,","),'
-  write(strInt,'(I2)') 21 + ignd*3
+  write(strInt,'(I2)') 21 + ignd*3 + 2
   fmt_2 = trim(adjustl(strInt))//'(E14.6,",")'
   fmt_out = trim(adjustl(fmt_1))//  &
             trim(adjustl(fmt_2))//',(E14.6)'
@@ -4780,11 +5025,56 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                                                  SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
                                                  (SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND)))/TOTAL_AREA, &
                                                  TOTAL_STORE/TOTAL_AREA, &
-                                                 (TOTAL_STORE - TOTAL_STORE_2)/TOTAL_AREA
+                                                 (TOTAL_STORE - TOTAL_STORE_2)/TOTAL_AREA, &
+                                                 TOTAL_DRIFT/TOTAL_AREA, &
+                                                 TOTAL_SUBL/TOTAL_AREA
 
-  WRITE(901,'((I4,","),(I5,","),2(E12.5,","))')IDAY,IYEAR,    &
+  WRITE(901,'((I4,","),(I5,","),3(E12.5,","))')IDAY,IYEAR,    &
                                                 TOTAL_HFSACC/TOTAL_AREA,  &
-                                                TOTAL_QEVPACC/TOTAL_AREA
+                                                TOTAL_QEVPACC/TOTAL_AREA, &
+                                                TOTAL_SNOMLT/TOTAL_AREA
+  
+  do j=1,3 !ecozones
+    if(TOTAL_AREA_eco(j) > 0.00) then
+      WRITE(901+j,'('//trim(adjustl(fmt_out))//')')IDAY,IYEAR               , &   !1
+                                                 TOTAL_PREACC_eco(j)/TOTAL_AREA_eco(j)  , &   !2
+                                                 TOTAL_EVAPACC_eco(j)/TOTAL_AREA_eco(j) , &   !3
+                                                 TOTAL_ROFACC_eco(j)/TOTAL_AREA_eco(j)  , &   !4
+                                                 TOTAL_ROFOACC_eco(j)/TOTAL_AREA_eco(j) , &   !5
+                                                 TOTAL_ROFSACC_eco(j)/TOTAL_AREA_eco(j) , &   !6
+                                                 TOTAL_ROFBACC_eco(j)/TOTAL_AREA_eco(j) , &   !7
+                                                 TOTAL_PRE_eco(j)/TOTAL_AREA_eco(j)     , &   !8  
+                                                 TOTAL_EVAP_eco(j)/TOTAL_AREA_eco(j)    , &   !9
+                                                 TOTAL_ROF_eco(j)/TOTAL_AREA_eco(j)     , &   !10
+                                                 TOTAL_ROFO_eco(j)/TOTAL_AREA_eco(j)    , &   !11
+                                                 TOTAL_ROFS_eco(j)/TOTAL_AREA_eco(j)    , &   !12
+                                                 TOTAL_ROFB_eco(j)/TOTAL_AREA_eco(j)    , &   !13
+                                                 TOTAL_SCAN_eco(j)/TOTAL_AREA_eco(j)    , &   !15
+                                                 TOTAL_RCAN_eco(j)/TOTAL_AREA_eco(j)    , &   !16
+                                                 TOTAL_SNO_eco(j)/TOTAL_AREA_eco(j)     , &   !14
+                                                 TOTAL_WSNO_eco(j)/TOTAL_AREA_eco(j), &
+                                                 TOTAL_ZPND_eco(j)/TOTAL_AREA_eco(j)    , &   !17
+                                                 (TOTAL_THLQ_eco(i,j)/TOTAL_AREA_eco(j), i = 1, IGND), &
+                                                 (TOTAL_THIC_eco(i,j)/TOTAL_AREA_eco(j), i = 1, IGND), &
+                                                 ((TOTAL_THLQ_eco(i,j) + TOTAL_THIC_eco(i,j))/TOTAL_AREA_eco(j), i = 1, IGND), &
+                                                 SUM(TOTAL_THLQ_eco(1:IGND,j))/TOTAL_AREA_eco(j), &
+                                                 SUM(TOTAL_THIC_eco(1:IGND,j))/TOTAL_AREA_eco(j), &
+                                                 (SUM(TOTAL_THLQ_eco(1:IGND,j)) + SUM(TOTAL_THIC_eco(1:IGND,j)))/TOTAL_AREA_eco(j), &
+                                                 TOTAL_STORE_eco(j)/TOTAL_AREA_eco(j), &
+                                                 (TOTAL_STORE_eco(j) - TOTAL_STORE_2_eco(j))/TOTAL_AREA_eco(j), &
+                                                 TOTAL_DRIFT_eco(j)/TOTAL_AREA_eco(j), &
+                                                 TOTAL_SUBL_eco(j)/TOTAL_AREA_eco(j)
+
+      WRITE(904+j,'((I4,","),(I5,","),3(E12.5,","))')IDAY,IYEAR,    &
+                                                TOTAL_HFSACC_eco(j)/TOTAL_AREA_eco(j),  &
+                                                TOTAL_QEVPACC_eco(j)/TOTAL_AREA_eco(j), &
+                                                TOTAL_SNOMLT_eco(j)/TOTAL_AREA_eco(j)
+    else
+      WRITE(901+j,'((I4,","),(I5,","))')IDAY,IYEAR
+
+      WRITE(904+j,'((I4,","),(I5,","))')IDAY,IYEAR
+    endif
+  end do !j=1,3 !ecozones
 
 !>  Added by Gonzalo Sapriza
     !DELTA STORAGE
@@ -4823,10 +5113,34 @@ TOTAL_ROFS=0.0
 TOTAL_ROFB=0.0
 TOTAL_HFSACC = 0.0
 TOTAL_QEVPACC = 0.0
+TOTAL_SNOMLT = 0.0
+TOTAL_DRIFT=0.0
+TOTAL_SUBL=0.0
 
 THIC_FLD = 0.
 THLQ_FLD = 0.
 DSTG     = 0.
+
+TOTAL_STORE_2_eco = TOTAL_STORE_eco
+TOTAL_STORE_eco = 0.0
+TOTAL_RCAN_eco = 0.0
+TOTAL_SCAN_eco = 0.0
+TOTAL_SNO_eco = 0.0
+TOTAL_WSNO_eco = 0.0
+TOTAL_ZPND_eco = 0.0
+TOTAL_THLQ_eco = 0.0
+TOTAL_THIC_eco = 0.0
+TOTAL_PRE_eco=0.0
+TOTAL_EVAP_eco=0.0
+TOTAL_ROF_eco=0.0
+TOTAL_ROFO_eco=0.0
+TOTAL_ROFS_eco=0.0
+TOTAL_ROFB_eco=0.0
+TOTAL_HFSACC_eco=0.0
+TOTAL_QEVPACC_eco=0.0
+TOTAL_SNOMLT_eco=0.0
+TOTAL_DRIFT_eco=0.0
+TOTAL_SUBL_eco=0.0
     
 ENDIF  ! IF(NCOUNT==48) THEN
 

@@ -798,8 +798,8 @@ C
           CHCAP (I)=SPHVEG*CMASSC(I)+SPHW*RAICAN(I)+SPHICE*SNOCAN(I)              
           CHCAPS(I)=SPHVEG*CMASCS(I)+SPHW*RAICNS(I)+SPHICE*SNOCNS(I)              
           HTCC  (I)=HTCC(I)-SPHVEG*CMAI(I)*TCAN(I)/DELT
-          IF(CMAI(I).LT.1.0E-5 .AND. (CMASSC(I).GT.0.0 .OR.
-     1              CMASCS(I).GT.0.0)) TCAN(I)=TA(I)
+!MM          IF(CMAI(I).LT.1.0E-5 .AND. (CMASSC(I).GT.0.0 .OR.
+!MM     1              CMASCS(I).GT.0.0)) TCAN(I)=TA(I)
           CMAI  (I)=FC(I)*CMASSC(I)+FCS(I)*CMASCS(I)
           HTCC  (I)=HTCC(I)+SPHVEG*CMAI(I)*TCAN(I)/DELT
           RBCOEF(I)=0.0

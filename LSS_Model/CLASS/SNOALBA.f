@@ -1,6 +1,7 @@
       SUBROUTINE SNOALBA(ALVSSN,ALIRSN,ALVSSC,ALIRSC,ALBSNO,
      1                   TRSNOW,ZSNOW,FSNOW,ASVDAT,ASIDAT,
-     2                   ILG,IG,IL1,IL2,JL,IALS)
+     2                   ILG,IG,IL1,IL2,JL,IALS,COSZS,
+     3                   RHOSNI,SPCP,TSNOW,Sage)
 C
 C     * FEB 05/07 - D.VERSEGHY. STREAMLINE CALCULATIONS OF
 C     *                         ALVSSN AND ALIRSN.
@@ -37,28 +38,47 @@ C
 C     * OUTPUT ARRAYS.
 C
       REAL   ALVSSN(ILG),  ALIRSN(ILG),  ALVSSC(ILG),  ALIRSC(ILG),
-     1       TRSNOW(ILG)
+     1       TRSNOW(ILG), Sage(ILG)
 C
 C     * INPUT ARRAYS.
 C
       REAL   ALBSNO(ILG),  ZSNOW (ILG),  FSNOW (ILG),
-     1       ASVDAT(ILG),  ASIDAT(ILG)
+     1       ASVDAT(ILG),  ASIDAT(ILG),  COSZS (ILG),
+     2       RHOSNI(ILG),  SPCP  (ILG),  TSNOW (ILG)
+C
+C     * TEMPORARY VARIABLES.
+C
+      REAL r1,fage,fcosz,xdiffus
+C
+C     * COMMON BLOCK PARAMETERS.
+C
+      REAL DELT,TFREZ,HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,SPHW,
+     1     SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,TCGLAC,CLHMLT,CLHVAP
+C                                                                                 
+      COMMON /CLASS1/ DELT,TFREZ
 C
 C------------------------------------------------------------------
       IPTBAD=0
       DO 100 I=IL1,IL2                                           
-         IF(ALBSNO(I).LT.0.50.AND.ALBSNO(I).GT.0.499) ALBSNO(I)=0.50                      
-         IF(FSNOW(I).GT.0.0 .AND. IALS.EQ.0)              THEN  
-             IF(ALBSNO(I).GT.0.70)                    THEN
-                 ALVSSN(I)=0.79*(ALBSNO(I)-0.70)+0.84                                         
-                 ALIRSN(I)=1.21*(ALBSNO(I)-0.70)+0.56                                         
-             ELSE
-                 ALVSSN(I)=0.97*(ALBSNO(I)-0.50)+0.62                                         
-                 ALIRSN(I)=1.03*(ALBSNO(I)-0.50)+0.38                                         
-             ENDIF
-             IF(ALVSSN(I).GT.0.999.OR.ALVSSN(I).LT.0.001) IPTBAD=I
-             IF(ALIRSN(I).GT.0.999.OR.ALIRSN(I).LT.0.001) IPTBAD=I
-         ELSE IF(FSNOW(I).GT.0.0 .AND. IALS.EQ.1)         THEN  
+         IF(FSNOW(I).GT.0.0 .AND. IALS.EQ.0)              THEN
+          r1=min(exp(5000*(1/TFREZ - 1/TSNOW(I))), 1.)
+          Sage(I)=max((Sage(I) + 1e-6*(r1 + r1**10 + 0.3)*DELT)*
+     1               (1 - 0.1*RHOSNI(I)*SPCP(I)*DELT), 0.)
+          if (ZSNOW(I) == 0) Sage(I)=0.
+          fage = 1 - 1 / (1 + Sage(I))
+          fcosz = max((1-2*COSZS(I))/(1+2*COSZS(I)), 0.)
+          if(SPCP(I)>0.) then
+            xdiffus=1.0
+          else
+            xdiffus=max(0.0,min(1.0-0.9*COSZS(I),1.0))
+          endif
+          ALVSSN(I)= xdiffus*(1-0.2*fage)*0.95 + 
+     1             (1-xdiffus)*((1-0.2*fage)*0.95 +
+     2             0.4*fcosz*(1-(1-0.2*fage)*0.95))
+          ALIRSN(I)= xdiffus*(1-0.5*fage)*0.65 + 
+     1             (1-xdiffus)*((1-0.5*fage)*0.65 +
+     2             0.4*fcosz*(1-(1-0.5*fage)*0.65))
+          ELSE IF(FSNOW(I).GT.0.0 .AND. IALS.EQ.1)         THEN  
              ALVSSN(I)=ASVDAT(I)
              ALIRSN(I)=ASIDAT(I)
          ENDIF                                                                   

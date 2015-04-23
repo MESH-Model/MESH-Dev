@@ -1,4 +1,4 @@
-      SUBROUTINE TSOLVC(ISNOW,FI,
+      SUBROUTINE TSOLVClinear(ISNOW,FI,
      1                 QSWNET,QSWNC,QSWNG,QLWOUT,QLWOC,QLWOG,QTRANS,
      2                 QSENS,QSENSC,QSENSG,QEVAP,QEVAPC,QEVAPG,EVAPC,
      3                 EVAPG,EVAP,TCAN,QCAN,TZERO,QZERO,GZERO,QMELTC,
@@ -22,8 +22,11 @@
      L                 XDIFFUS,ICTEM,IC,CO2I1,CO2I2,
      M                 ICTEMMOD,SLAI,FCANCMX,L2MAX,
      N                 NOL2PFTS,CFLUXV,ANVEG,RMLVEG,FCANMX,ICP1,
-     O                 GROWTH)
+     +                 ZSNOW,TSNOW,TCSNOW,ZPOND,TCTOP,DELZ,TBAR1P,
+     +                 GROWTH)
 C
+C     * JAN 17/14 - M.MACDONALD.ALGEBRAIC SOLUTION OF LINEARIZED ENERGY
+C     *                         BALANCE EQUATION FOR ENSEMBLE MODEL.
 C     * NOV 11/11 - M.LAZARE. - INCORPORATES CTEM. THIS INVOLVES
 C     *                         SEVERAL CHANGES AND NEW OUTPUT ROUTINES.
 C     *                         QSWNVC IS PROMOTED TO A WORK ARRAY
@@ -151,7 +154,7 @@ C
 C
 C     * INPUT ARRAYS.
 C
-      REAL FI    (ILG),    QSWINV(ILG),    QSWINI(ILG),    QLWIN (ILG),    
+      REAL FI    (ILG),    QSWINV(ILG),    QSWINI(ILG),QLWIN(ILG),    
      1     TPOTA (ILG),    TA    (ILG),    QA    (ILG),    VA    (ILG), 
      2     VAC   (ILG),    PADRY (ILG),    RHOAIR(ILG),    ALVISC(ILG), 
      3     ALNIRC(ILG),    ALVISG(ILG),    ALNIRG(ILG),    TRVISC(ILG),
@@ -161,8 +164,9 @@ C
      7     ZRSLFH(ILG),    ZRSLFM(ILG),    ZOH   (ILG),    ZOM   (ILG),
      8     FCOR  (ILG),    GCONST(ILG),    GCOEFF(ILG),    TGND  (ILG),    
      9     TRSNOW(ILG),    FSNOWC(ILG),    FRAINC(ILG),    
-     A     CHCAP (ILG),    CMASS (ILG),    PCPR  (ILG),FCANMX(ILG,ICP1),
-     B     GROWTH(ILG)
+     A     CHCAP (ILG),    CMASS (ILG),    PCPR  (ILG),FCANMX(ILG,ICP1), 
+     +     ZSNOW(ILG),TSNOW(ILG),TCSNOW(ILG),ZPOND (ILG),
+     +     TCTOP (ILG,IG), DELZ  (IG),     TBAR1P(ILG),GROWTH(ILG)
 C
       INTEGER              IWATER(ILG),    IEVAP (ILG),    
      1                     ITERCT(ILG,6,50)
@@ -205,14 +209,15 @@ C
       REAL QSWNVG,QSWNIG,QSWNIC,HFREZ,HCONV,
      1     RCONV,HCOOL,HMELT,SCONV,HWARM,WCAN,DQ0DT,
      2     DRDT0,QEVAPT,BOWEN,DCFLUX,DXEVAP,TCANT,QEVAPCT,
-     3     TZEROT,YEVAP,RAGCO,EZERO
+     3     TZEROT,YEVAP,RAGCO,EZERO,D,DTS,TCZERO
 C
 C     * COMMON BLOCK PARAMETERS.
 C
       REAL DELT,TFREZ,RGAS,RGASV,GRAV,SBC,VKC,CT,VMIN,HCPW,HCPICE,
      1     HCPSOL,HCPOM,HCPSND,HCPCLY,SPHW,SPHICE,SPHVEG,SPHAIR,
      2     RHOW,RHOICE,TCGLAC,CLHMLT,CLHVAP,DELTA,CGRAV,CKARM,CPD,
-     3     AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
+     3     AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX,X1,X2,X3,X4,G,GAS,X5,
+     1     X6,CPRES,GASV,X7
 C
       COMMON /CLASS1/ DELT,TFREZ                                                  
       COMMON /CLASS2/ RGAS,RGASV,GRAV,SBC,VKC,CT,VMIN
@@ -221,6 +226,8 @@ C
      2                TCGLAC,CLHMLT,CLHVAP
       COMMON /PHYCON/ DELTA,CGRAV,CKARM,CPD
       COMMON /CLASSD2/ AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
+      COMMON /PARAMS/ X1,    X2,    X3,    X4,   G,GAS,   X5,
+     1                X6,    CPRES, GASV,  X7
 C
 C-----------------------------------------------------------------------
 C     * INITIALIZATION AND PRE-ITERATION SEQUENCE.
@@ -239,7 +246,7 @@ C      ENDIF
       RAGCO=1.9E-3
 C
       DO 50 I=IL1,IL2
-          IF(FI(I).GT.0.)                                          THEN
+          IF(FI(I).GT.0.)                                         THEN
               IF(ISNOW.EQ.0)                      THEN
                   TRTOP(I)=0.
               ELSE
@@ -270,7 +277,7 @@ C
               IF(ITC.EQ.2) THEN
                 IF((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.)
      +               .and. GROWTH(I).eq.0) THEN
-                  TAC(I)=TA(I)
+                  TAC(I)=TA(I) ! are there any unanticipated consequences?
                 ELSE
                   TAC(I)=TCAN(I)
                 ENDIF
@@ -291,8 +298,8 @@ C
               ITER(I)=1
               NITER(I)=1
               QMELTC(I)=0.0    
-              QMELTG(I)=0.0   
-              DCFLXM(I)=0.0
+              QMELTG(I)=0.0
+              !DCFLXM(I)=0.0
               CFLUX(I)=0.0
               IF(ISNOW.EQ.1)                               THEN
                   KF1(I)=1
@@ -304,39 +311,15 @@ C
           ENDIF
    50 CONTINUE
 C
-C     * CALL PHOTOSYNTHESIS SUBROUTINE HERE TO GET A NEW ESTIMATE OF
-C     * RC BASED ON PHOTOSYNTHESIS.
-C
-C      IF(ICTEMMOD.EQ.1)                                            THEN
-C        CALL PHTSYN3(  AILCG, FCANC,     TCAN, CO2CONC,  PRESSG,    FI,
-C     1                CFLUXV,    QA,   QSWNVC,      IC,   THLIQ, ISAND,
-C     2                   TAC,        RMATCTEM,   COSZS, XDIFFUS,   ILG,
-C     3                   IL1,   IL2,       IG,   ICTEM,   ISNOW,  SLAI,
-C     4               FIELDSM,WILTSM,  FCANCMX,   L2MAX,NOL2PFTS,
-C     5              RCPHTSYN, CO2I1,    CO2I2,   ANVEG,  RMLVEG)
-C
-C       * KEEP CLASS RC FOR BONEDRY POINTS (DIANA'S FLAG OF 1.E20) SUCH
-C       * THAT WE GET (BALT-BEG) CONSERVATION.
-C
-C        DO 70 I =IL1,IL2
-C          IF(RC(I).LE.10000.) THEN
-C            RC(I)=RCPHTSYN(I)
-C          ENDIF
-C   70   CONTINUE
-C      ENDIF
-C
 C     * ITERATION FOR SURFACE TEMPERATURE OF GROUND UNDER CANOPY.
 C     * LOOP IS REPEATED UNTIL SOLUTIONS HAVE BEEN FOUND FOR ALL POINTS
 C     * ON THE CURRENT LATITUDE CIRCLE(S).
 C  
-  100 CONTINUE
+!  100 CONTINUE
 C
       NUMIT=0
-      NIT=0
       DO 125 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN    
-              NIT=NIT+1
-              CFLUXM(I)=CFLUX(I)
+          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                    THEN    
               IF(TZERO(I).GE.TFREZ)                           THEN
                   A(I)=17.269     
                   B(I)=35.86     
@@ -361,28 +344,27 @@ C
 C
               TPOTG(I)=TZERO(I)-8.0*ZOM(I)*GRAV/CPD
               TVIRTG(I)=TPOTG(I)*(1.0+0.61*QZERO(I))   
-      IF(NIT.GT.0)                                                  THEN
               IF((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.)
      +               .and. GROWTH(I).eq.0) THEN
 C             * CALCULATE GROUND SURFACE DRAG COEFFICIENTS (STABILITY-DEPENDENT) AND
 C             * OTHER RELATED QUANTITIES.
-               IF(ISLFD.LT.2) THEN
+              IF(ISLFD.LT.2) THEN
                   !***MM: I did not bother changing inputs into these because I'm not using this subroutine!!
                   CALL DRCOEF (CDM,CDH,RIB,CFLUX,QZERO,QA,ZOSCLM,ZOSCLH,
      1                   CRIB,TVIRTG,TVIRTA,VA,FI,ITER, !change VA & QA?
-     2                    ILG,IL1,IL2)
-               ELSE
+     2                   ILG,IL1,IL2)
+              ELSE
                   CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
-     1                     UE,FCOR,TAC,QAC,ZRSLFM,ZRSLFH,VA, !change TPOTA, VA & QA? MM: changed TPOTA to TAC and QA to QAC, left VA
-     2                     TZERO,QZERO,H,ZOM,ZOH,
-     3                 LZZ0,LZZ0T,FM,FH,ILG,I,I,FI,ITER,JL,N,0) !IL1,IL2,FI,ITER,JL,q,N,0)
-               ENDIF
+     1                    UE,FCOR,TAC,QAC,ZRSLFM,ZRSLFH,VA, !change TPOTA, VA & QA? MM: changed TPOTA to TAC and QA to QAC, left VA
+     2                    TZERO,QZERO,H,ZOM,ZOH, !should I use TPOTG/TVIRTG rather than TZERO?
+     3                LZZ0,LZZ0T,FM,FH,ILG,I,I,FI,ITER,JL,N,0) !IL1,IL2,FI,ITER,JL,q,N,0)
+              ENDIF
               ! CHECK ALL THESE BELOW
               ! MM: into FLXSURFZ: FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,TZERO,QZERO,ZOM,ZOH,ILG,IL1,IL2,FI,ITER,JL
               ! MM: output from FLXSURFZ: CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,UE,H,LZZ0,LZZ0T,FM,FH (all back out to CLASST)
               ! MM: used subsequently in TSOLVE: CFLUX (CTU in FLXSURFZ)
-              endif!ELSE !not grass or not dormant season
-               IF(TVIRTG(I).GT.TVRTAC(I)+1.0)                   THEN
+              ENDIF!ELSE !not grass
+              IF(TVIRTG(I).GT.TVRTAC(I)+0.9)THEN!1.0)                   THEN
                   RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))**0.333333
                   DRAGIN(I)=0.333*RAGCO*(TVIRTG(I)-TVRTAC(I))**(-.667)
               ELSEIF(TVIRTG(I).GT.(TVRTAC(I)+0.001))          THEN 
@@ -392,143 +374,248 @@ C             * OTHER RELATED QUANTITIES.
                   RAGINV(I)=0.0
                   DRAGIN(I)=0.0
               ENDIF
+              !ENDIF
 C
+              D=0.622*CPHCHG(I)*QZERO(I)/(GAS*TZERO(I)**2)
               QLWOG(I)=SBC*TZERO(I)*TZERO(I)*TZERO(I)*TZERO(I)
               IF((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.)
      +               .and. GROWTH(I).eq.0) THEN
-                IF(TZERO(I).LT.TAC(I))                        THEN
+               IF(TZERO(I).LT.TAC(I))                        THEN
                   QSENSG(I)=(RHOAIR(I)*SPHAIR*CFLUX(I)+EZERO)*(TZERO(I)-
-     1                 TAC(I))
-                ELSE
-                   QSENSG(I)=RHOAIR(I)*SPHAIR*CFLUX(I)*(TZERO(I)-
-     1                 TAC(I))
-                ENDIF
-                EVAPG(I)=RHOAIR(I)*CFLUX(I)*(QZERO(I)-QAC(I))
-                QEVAPG(I)=CPHCHG(I)*EVAPG(I)
-              ELSE !not grass & not dormant
+     1                TAC(I))
+               ELSE
+                  QSENSG(I)=RHOAIR(I)*SPHAIR*CFLUX(I)*(TZERO(I)-
+     1                TAC(I))
+               ENDIF
+               EVAPG(I)=RHOAIR(I)*CFLUX(I)*(QZERO(I)-QAC(I))
+               QEVAPG(I)=CPHCHG(I)*EVAPG(I)
+              ELSE !not grass
               QSENSG(I)=RHOAIR(I)*SPHAIR*RAGINV(I)*
      1            (TPOTG(I)-TAC(I))
               EVAPG (I)=RHOAIR(I)*(QZERO(I)-QAC(I))*RAGINV(I)
-              QEVAPG(I)=CPHCHG(I)*EVAPG(I)    
+              QEVAPG(I)=CPHCHG(I)*EVAPG(I)
               ENDIF
-              GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
-              RESID(I)=QSWNG(I)+FSVF(I)*QLWIN(I)+(1.0-FSVF(I))*
-     1            QLWOC(I)-QLWOG(I)-QSENSG(I)-QEVAPG(I)-GZERO(I)
+              RESID(I)=0.
+              !calculate GZERO, DTS followed by changed to EVAPG, QEVAPG, QSENSG, GZERO, QLWOG, TZERO & then melt conditions
+              
+              IF((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.)
+     +               .and. GROWTH(I).eq.0) THEN
+              
+              
+              IF(ISNOW.EQ.0.) THEN
+               IF(ZSNOW(I).LE.0.0) THEN
+                TCZERO=TCTOP(I,1)
+                GZERO(I)=2*TCZERO*(TZERO(I)-TBAR1P(I))/
+     1                   (DELZ(1)+ZPOND(I))
+                DTS=(QSWNG(I)+QLWIN(I)*FSVF(I)+(1.-FSVF(I))*QLWOC(I)-
+     +              QLWOG(I)-QSENSG(I)-QEVAPG(I)-
+     1              GZERO(I)) / ((SPHAIR+EZERO + CPHCHG(I)*D)*RHOAIR(I)*
+     2              CFLUX(I) + 2*TCZERO/(DELZ(1)+ZPOND(I)) +
+     3              4*SBC*TZERO(I)**3)
+               ELSE
+                TCZERO=1.0/(0.5/TCSNOW(I)+0.5/TCTOP(I,1))
+                GZERO(I)=2*TCZERO*(TZERO(I)-TSNOW(I))/ZSNOW(I)
+                DTS=(QSWNG(I)+QLWIN(I)*FSVF(I)+(1.-FSVF(I))*QLWOC(I)
+     +              -QLWOG(I)-QSENSG(I)-QEVAPG(I)-
+     1              GZERO(I)) / ((SPHAIR + CPHCHG(I)*D)*RHOAIR(I)
+     2              *CFLUX(I) + 2*TCZERO/ZSNOW(I) + 4*SBC*TZERO(I)**3)
+               ENDIF
+              ELSE
+                TCZERO=TCSNOW(I)
+                GZERO(I)=2*TCZERO*(TZERO(I)-TSNOW(I))/ZSNOW(I)
+                DTS=(QSWNG(I)+QLWIN(I)*FSVF(I)+(1.-FSVF(I))*QLWOC(I)
+     +              -QLWOG(I)-QSENSG(I)-QEVAPG(I)-
+     1              GZERO(I)) / ((SPHAIR + CPHCHG(I)*D)*RHOAIR(I)
+     2              *CFLUX(I) + 2*TCZERO/ZSNOW(I) + 4*SBC*TZERO(I)**3)
+              ENDIF
+
+              ELSE !not grass
+
+              IF(ISNOW.EQ.0.) THEN
+               IF(ZSNOW(I).LE.0.0) THEN
+                TCZERO=TCTOP(I,1)
+                GZERO(I)=2*TCZERO*(TZERO(I)-TBAR1P(I))/
+     1                   (DELZ(1)+ZPOND(I))
+                DTS=(QSWNG(I)+QLWIN(I)*FSVF(I)+(1.-FSVF(I))*QLWOC(I)-
+     +              QLWOG(I)-QSENSG(I)-QEVAPG(I)-
+     1              GZERO(I)) / ((SPHAIR+EZERO + CPHCHG(I)*D)*RHOAIR(I)*
+     2              RAGINV(I) + 2*TCZERO/(DELZ(1)+ZPOND(I)) +
+     3              4*SBC*TZERO(I)**3)
+               ELSE
+                TCZERO=1.0/(0.5/TCSNOW(I)+0.5/TCTOP(I,1))
+                GZERO(I)=2*TCZERO*(TZERO(I)-TSNOW(I))/ZSNOW(I)
+                DTS=(QSWNG(I)+QLWIN(I)*FSVF(I)+(1.-FSVF(I))*QLWOC(I)
+     +              -QLWOG(I)-QSENSG(I)-QEVAPG(I)-
+     1              GZERO(I)) / ((SPHAIR + CPHCHG(I)*D)*RHOAIR(I)
+     2             *RAGINV(I) + 2*TCZERO/ZSNOW(I) + 4*SBC*TZERO(I)**3)
+               ENDIF
+              ELSE
+                TCZERO=TCSNOW(I)
+                GZERO(I)=2*TCZERO*(TZERO(I)-TSNOW(I))/ZSNOW(I)
+                DTS=(QSWNG(I)+QLWIN(I)*FSVF(I)+(1.-FSVF(I))*QLWOC(I)
+     +              -QLWOG(I)-QSENSG(I)-QEVAPG(I)-
+     1              GZERO(I)) / ((SPHAIR + CPHCHG(I)*D)*RHOAIR(I)
+     2             *RAGINV(I) + 2*TCZERO/ZSNOW(I) + 4*SBC*TZERO(I)**3)
+              ENDIF
+
+      
+              ENDIF
+              IF((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.)
+     +               .and. GROWTH(I).eq.0) THEN
+                EVAPG(I)=EVAPG(I) + RHOAIR(I)*CFLUX(I)*D*DTS
+                QEVAPG(I)=CPHCHG(I)*EVAPG(I)
+                QSENSG(I)=QSENSG(I) + RHOAIR(I)*SPHAIR*CFLUX(I)*DTS
+              ELSE !not grass
+                EVAPG (I)=EVAPG(I) + RHOAIR(I)*RAGINV(I)*D*DTS
+                QSENSG(I)=QSENSG(I) + RHOAIR(I)*SPHAIR*RAGINV(I)*DTS
+                QEVAPG(I)=CPHCHG(I)*EVAPG(I)
+              ENDIF
+              GZERO(I)= QSWNG(I)+QLWIN(I)*FSVF(I)+(1.-FSVF(I))*QLWOC(I)-
+     1               QLWOG(I)-4*SBC*TZERO(I)**3*DTS-QEVAPG(I) -QSENSG(I)
+              QLWOG(I)=QLWOG(I)+4*SBC*TZERO(I)**3*DTS
+              TZERO(I)=TZERO(I)+DTS
+              IF(ISNOW.EQ.1)    THEN  !! 16 May/15....DO I NEED THIS CRAP?????
+                IF(TZERO(I).GT.TFREZ) THEN
+                  DTS=TFREZ-TZERO(I)
+                  TZERO(I)=TFREZ
+                  A(I)=17.269       
+                  B(I)=35.86                    
+                  WZERO(I)=0.622*611.0*EXP(A(I)*(TZERO(I)-TFREZ)/
+     1              (TZERO(I)-B(I)))/PADRY(I)           
+                  Q0SAT(I)=WZERO(I)/(1.0+WZERO(I))
+                  EVBETA(I)=1.0
+                  QZERO(I)=Q0SAT(I)
+                  QLWOG(I)=SBC*TZERO(I)**4
+                  IF((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.)
+     +               .and. GROWTH(I).eq.0) THEN
+                    EVAPG(I)=RHOAIR(I)*CFLUX(I)*(QZERO(I)-QA(I)) !should this be QAC(I)? probably?
+                    QEVAPG(I)=CPHCHG(I)*EVAPG(I)
+                    IF(TZERO(I).LT.TAC(I))                        THEN
+                      QSENSG(I)=(RHOAIR(I)*SPHAIR*CFLUX(I)+EZERO)*
+     1                    (TZERO(I)-TAC(I))
+                    ELSE
+                      QSENSG(I)=RHOAIR(I)*SPHAIR*CFLUX(I)*
+     1                    (TZERO(I)-TAC(I))
+                    ENDIF
+                  ELSE !not grass
+                    EVAPG(I)=RHOAIR(I)*RAGINV(I)*(QZERO(I)-QA(I))  !should this be QAC(I)? probably?
+                    QEVAPG(I)=CPHCHG(I)*EVAPG(I)
+                    IF(TZERO(I).LT.TAC(I))                        THEN
+                      QSENSG(I)=(RHOAIR(I)*SPHAIR*RAGINV(I)+EZERO)*
+     1                    (TZERO(I)-TAC(I))
+                    ELSE
+                      QSENSG(I)=RHOAIR(I)*SPHAIR*RAGINV(I)*
+     1                    (TZERO(I)-TAC(I))
+                    ENDIF
+                  ENDIF
+                  GZERO(I)=2*TCSNOW(I)*(TZERO(I)-TSNOW(I))/ZSNOW(I)
+                  QMELTG(I)=QSWNG(I)+QLWIN(I)*FSVF(I)+(1.-FSVF(I))*
+     1                 QLWOC(I)-QLWOG(I)-QSENSG(I)-QEVAPG(I)-GZERO(I)
+                  IF(QMELTG(I).LT.0.0) THEN
+                    QMELTG(I)=QMELTG(I)+QEVAPG(I)
+                    QEVAPG(I)=0.0
+                    EVAPG(I) =0.0
+                  ENDIF
+                ENDIF
+              ENDIF
+!              IF((ISNOW.EQ.1 .AND. QMELTG(I).LT.0.0) .OR.
+!     1            (ISNOW.EQ.0 .AND. QMELTG(I).GT.0.0))     THEN
+!                  GZERO(I)=GZERO(I)+QMELTG(I)
+!                  QMELTG(I)=0.0
+!              ENDIF
               IF(ABS(RESID(I)).LT.5.0)                     ITER(I)=0
-              IF(ABS(TSTEP(I)).LT.1.0E-2)                  ITER(I)=0
-              IF(NITER(I).EQ.ITERMX .AND. ITER(I).EQ.1)    ITER(I)=-1
+              !IF(ABS(TSTEP(I)).LT.1.0E-2)                  ITER(I)=0
+              !IF(NITER(I).EQ.ITERMX .AND. ITER(I).EQ.1)    ITER(I)=-1
           ENDIF
-      ENDIF
 125   CONTINUE
 C
-      IF(ITCG.LT.2) THEN
-C
-C     * OPTION #1: BISECTION ITERATION METHOD.
-C
-      DO 150 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN    
-              IF(NITER(I).EQ.1) THEN
-                  IF(RESID(I).GT.0.0) THEN
-                      TZERO(I)=TZERO(I)+TSTEP(I)
-                  ELSE
-                      TZERO(I)=TZERO(I)-TSTEP(I)
-                  ENDIF
-              ELSE
-                  IF((RESID(I).GT.0. .AND. TSTEP(I).LT.0.) .OR.
-     1                (RESID(I).LT.0. .AND. TSTEP(I).GT.0.))   THEN 
-                      TSTEP(I)=-TSTEP(I)/2.0   
-                  ENDIF
-                  TZERO(I)=TZERO(I)+TSTEP(I)
-              ENDIF
-              NITER(I)=NITER(I)+1
-              NUMIT=NUMIT+1
-          ENDIF
-  150 CONTINUE
-C
-      ELSE
-C
-C     * OPTION #2: NEWTON-RAPHSON ITERATION METHOD.
-C
-      DO 175 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN    
-           IF((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.)
-     +               .and. GROWTH(I).eq.0) THEN
-              IF(NITER(I).GT.1)                                 THEN
-                  DCFLUX=(CFLUX(I)-CFLUXM(I))/
-     1                SIGN(MAX(.001,ABS(TSTEP(I))),TSTEP(I))
-                  IF(ABS(TVIRTA(I)-TVIRTG(I)).LT.0.4)
-     1                DCFLUX=MAX(DCFLUX,0.8*DCFLXM(I))
-                  DCFLXM(I)=DCFLUX
-              ELSE
-                  DCFLUX=0.
-              ENDIF
-              DRDT0= -4.0*SBC*TZERO(I)**3
-     1           -RHOAIR(I)*SPHAIR*(CFLUX(I)+MAX(0.,TZERO(I)-TAC(I)) !MM: changed TPOTA to TAC 
-     2           *DCFLUX) -GCOEFF(I)
-     3           +CPHCHG(I)*RHOAIR(I)*(CFLUX(I)*WZERO(I)*A(I)
-     4           *EVBETA(I)*(B(I)-TFREZ)/((TZERO(I)-B(I))*
-     5           (1.0+WZERO(I)))**2-(QZERO(I)-QAC(I))*DCFLUX) !MM: changed QA to QAC
-              TSTEP(I)=-RESID(I)/DRDT0
-              TSTEP(I)=MAX(-10.,MIN(5.,TSTEP(I)))
-           ELSE
-              DQ0DT=-WZERO(I)*A(I)*(B(I)-TFREZ)/((TZERO(I)-B(I))*
-     1               (1.0+WZERO(I)))**2*EVBETA(I)
-              DRDT0=-4.0*SBC*TZERO(I)**3
-     1               -GCOEFF(I)-RHOAIR(I)*SPHAIR*
-     2              (RAGINV(I)+(TPOTG(I)-TAC(I))*DRAGIN(I))-
-     3               CPHCHG(I)*RHOAIR(I)*(DQ0DT*RAGINV(I)
-     4              +(QZERO(I)-QAC(I))*DRAGIN(I))
-              TSTEP(I)=-RESID(I)/DRDT0
-              IF(ABS(TSTEP(I)).GT.20.0) TSTEP(I)=SIGN(10.0,TSTEP(I))
-           ENDIF
-              TZERO(I)=TZERO(I)+TSTEP(I)
-              NITER(I)=NITER(I)+1
-              NUMIT=NUMIT+1
-           ENDIF
-  175 CONTINUE
-C
-      ENDIF
-C
-      IF(NUMIT.GT.0)                                    GO TO 100
-C
-C     * IF CONVERGENCE HAS NOT BEEN REACHED FOR ITERATION METHOD #2, 
-C     * CALCULATE TEMPERATURE AND FLUXES ASSUMING NEUTRAL STABILITY 
-C     * AND USING BOWEN RATIO APPROACH.
-C
-      IF(ITCG.EQ.2)                                                 THEN
-C
-      DO 200 I=IL1,IL2
-          IF(ITER(I).EQ.-1)                                  THEN
-             TZEROT=TVIRTC(I)/(1.0+0.61*QZERO(I))
-             IF(ABS(RESID(I)).GT.15.) THEN
-                TZERO(I)=TZEROT
-                IF(TZERO(I).GE.TFREZ)                        THEN
-                  A(I)=17.269
-                  B(I)=35.86
-                ELSE
-                  A(I)=21.874
-                  B(I)=7.66
-                ENDIF
-                WZERO(I)=0.622*611.0*EXP(A(I)*(TZERO(I)-TFREZ)/
-     1              (TZERO(I)-B(I)))/PADRY(I)
-                Q0SAT(I)=WZERO(I)/(1.0+WZERO(I))
-                QZERO(I)=EVBETA(I)*Q0SAT(I)+(1.0-EVBETA(I))*QAC(I)
-                QLWOG(I)=SBC*TZERO(I)*TZERO(I)*TZERO(I)*TZERO(I)
-                GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
-                RESID(I)=QSWNG(I)+FSVF(I)*QLWIN(I)+(1.0-FSVF(I))*
-     1              QLWOC(I)-QLWOG(I)-GZERO(I)
-                QEVAPT=CPHCHG(I)*(QZERO(I)-QAC(I))
-                BOWEN=SPHAIR*(TZERO(I)-TAC(I))/
-     1             SIGN(MAX(ABS(QEVAPT),1.E-6),QEVAPT)
-                QEVAPG(I)=RESID(I)/SIGN(MAX(ABS(1.+BOWEN),0.1),1.+BOWEN)
-                QSENSG(I)=RESID(I)-QEVAPG(I)
-                RESID(I)=0.
-                EVAPG(I)=QEVAPG(I)/CPHCHG(I)
-             ENDIF
-          ENDIF
-  200 CONTINUE
-C
-      ENDIF
+!      IF(ITCG.LT.2) THEN
+!C
+!C     * OPTION #1: BISECTION ITERATION METHOD.
+!C
+!      DO 150 I=IL1,IL2
+!          IF(FI(I,q).GT.0. .AND. ITER(I).EQ.1)                     THEN    
+!              IF(NITER(I).EQ.1) THEN
+!                  IF(RESID(I).GT.0.0) THEN
+!                      TZERO(I)=TZERO(I)+TSTEP(I)
+!                  ELSE
+!                      TZERO(I)=TZERO(I)-TSTEP(I)
+!                  ENDIF
+!              ELSE
+!                  IF((RESID(I).GT.0. .AND. TSTEP(I).LT.0.) .OR.
+!     1                (RESID(I).LT.0. .AND. TSTEP(I).GT.0.))   THEN 
+!                      TSTEP(I)=-TSTEP(I)/2.0   
+!                  ENDIF
+!                  TZERO(I)=TZERO(I)+TSTEP(I)
+!              ENDIF
+!              NITER(I)=NITER(I)+1
+!              NUMIT=NUMIT+1
+!          ENDIF
+!  150 CONTINUE
+!C
+!      ELSE
+!C
+!C     * OPTION #2: NEWTON-RAPHSON ITERATION METHOD.
+!C
+!      DO 175 I=IL1,IL2
+!          IF(FI(I,q).GT.0. .AND. ITER(I).EQ.1)                     THEN    
+!              DQ0DT=-WZERO(I)*A(I)*(B(I)-TFREZ)/((TZERO(I)-B(I))*
+!     1               (1.0+WZERO(I)))**2*EVBETA(I)
+!              DRDT0=-4.0*SBC*TZERO(I)**3
+!     1               -GCOEFF(I)-RHOAIR(I)*SPHAIR*
+!     2              (RAGINV(I)+(TPOTG(I)-TAC(I))*DRAGIN(I))-
+!     3               CPHCHG(I)*RHOAIR(I)*(DQ0DT*RAGINV(I)
+!     4              +(QZERO(I)-QAC(I))*DRAGIN(I))
+!              TSTEP(I)=-RESID(I)/DRDT0
+!              IF(ABS(TSTEP(I)).GT.20.0) TSTEP(I)=SIGN(10.0,TSTEP(I))
+!              TZERO(I)=TZERO(I)+TSTEP(I)
+!              NITER(I)=NITER(I)+1
+!              NUMIT=NUMIT+1
+!          ENDIF
+!  175 CONTINUE
+!C
+!      ENDIF
+!C
+!      IF(NUMIT.GT.0)                                    GO TO 100
+!C
+!C     * IF CONVERGENCE HAS NOT BEEN REACHED FOR ITERATION METHOD #2, 
+!C     * CALCULATE TEMPERATURE AND FLUXES ASSUMING NEUTRAL STABILITY 
+!C     * AND USING BOWEN RATIO APPROACH.
+!C
+!      IF(ITCG.EQ.2)                                                 THEN
+!C
+!      DO 200 I=IL1,IL2
+!          IF(ITER(I).EQ.-1)                                  THEN
+!             TZEROT=TVIRTC(I)/(1.0+0.61*QZERO(I))
+!             IF(ABS(RESID(I)).GT.15.) THEN
+!                TZERO(I)=TZEROT
+!                IF(TZERO(I).GE.TFREZ)                        THEN
+!                  A(I)=17.269
+!                  B(I)=35.86
+!                ELSE
+!                  A(I)=21.874
+!                  B(I)=7.66
+!                ENDIF
+!                WZERO(I)=0.622*611.0*EXP(A(I)*(TZERO(I)-TFREZ)/
+!     1              (TZERO(I)-B(I)))/PADRY(I)
+!                Q0SAT(I)=WZERO(I)/(1.0+WZERO(I))
+!                QZERO(I)=EVBETA(I)*Q0SAT(I)+(1.0-EVBETA(I))*QAC(I)
+!                QLWOG(I)=SBC*TZERO(I)*TZERO(I)*TZERO(I)*TZERO(I)
+!                GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
+!                RESID(I)=QSWNG(I)+FSVF(I)*QLWIN(I)+(1.0-FSVF(I))*
+!     1              QLWOC(I)-QLWOG(I)-GZERO(I)
+!                QEVAPT=CPHCHG(I)*(QZERO(I)-QAC(I))
+!                BOWEN=SPHAIR*(TZERO(I)-TAC(I))/
+!     1             SIGN(MAX(ABS(QEVAPT),1.E-6),QEVAPT)
+!                QEVAPG(I)=RESID(I)/SIGN(MAX(ABS(1.+BOWEN),0.1),1.+BOWEN)
+!                QSENSG(I)=RESID(I)-QEVAPG(I)
+!                RESID(I)=0.
+!                EVAPG(I)=QEVAPG(I)/CPHCHG(I)
+!             ENDIF
+!          ENDIF
+!  200 CONTINUE
+!C
+!      ENDIF
 C
       IBAD=0
 C
@@ -537,7 +624,7 @@ C          IF(FI(I).GT.0. .AND. ITER(I).EQ.-1)                     THEN
 C              WRITE(6,6250) I,JL,NITER(I),RESID(I),TZERO(I),RIB(I)
 C6250          FORMAT('0SUBCAN ITERATION LIMIT',3X,3I3,3(F8.2,E12.4))
 C          ENDIF                                            
-          IF(FI(I).GT.0.)                                           THEN
+          IF(FI(I).GT.0.)                                       THEN
               IF(TZERO(I).LT.173.16 .OR. TZERO(I).GT.573.16)    THEN
                   IBAD=I
               ENDIF
@@ -546,14 +633,14 @@ C          ENDIF
 C
       IF(IBAD.NE.0)                                                 THEN
           WRITE(6,6370) IBAD,N,TZERO(IBAD),NITER(IBAD),ISNOW
- 6370     FORMAT('0BAD GROUND ITERATION TEMPERATURE',3X,2I8,F16.2,2I4)
+ 6370     FORMAT('0BAD GROUND ITERATION TEMPERATURE',3X,3I8,F16.2,2I4)
           WRITE(6,6380) QSWNG(IBAD),FSVF(IBAD),QLWIN(IBAD),QLWOC(IBAD),
      1        QLWOG(IBAD),QSENSG(IBAD),QEVAPG(IBAD),GZERO(IBAD)
           WRITE(6,6380) TCAN(IBAD)
-          CALL XIT('TSOLVC',-1)
+          CALL XIT('TSOLVClinear',-1)
       ENDIF
 C
-C     * POST-ITERATION CLEAN-UP.
+C     * POST-ITERATION CLEAN-UP. MM: figure out what to do with this shit!
 C
       DO 250 I=IL1,IL2
           IF(FI(I).GT.0.)                                        THEN
@@ -566,7 +653,12 @@ C
                   TVIRTG(I)=TPOTG(I)*(1.0+0.61*QZERO(I))   
 C
                   QLWOG(I)=SBC*TZERO(I)*TZERO(I)*TZERO(I)*TZERO(I)
-                  GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
+                  IF(ZSNOW(I).LE.0.0) THEN
+                      GZERO(I)=2*TCZERO*(TZERO(I)-TBAR1P(I))/
+     1                   (DELZ(1)+ZPOND(I))
+                  ELSE
+                      GZERO(I)=2*TCZERO*(TZERO(I)-TSNOW(I))/ZSNOW(I)
+                  ENDIF
                   IF(TVIRTG(I).GT.(TVRTAC(I)+0.001))         THEN 
                       RAGINV(I)=RAGCO*(TVIRTG(I)-TVRTAC(I))**0.333333
                     IF((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.)
@@ -591,17 +683,6 @@ C
                   RESID(I)=0.0
               ENDIF                                                                   
 C
-              IF(ABS(EVAPG(I)).LT.1.0E-8) THEN
-                  RESID(I)=RESID(I)+QEVAPG(I)
-                  EVAPG(I)=0.0
-                  QEVAPG(I)=0.0
-              ENDIF
-              IF(RESID(I).GT.15. .AND. QEVAPG(I).GT.10. .AND. PCPR(I)
-     1                   .LT.1.0E-8)                 THEN
-                  QEVAPG(I)=QEVAPG(I)+RESID(I)
-              ELSE
-                  QSENSG(I)=QSENSG(I)+RESID(I)
-              ENDIF
               ITERCT(I,KF2(I),NITER(I))=ITERCT(I,KF2(I),NITER(I))+1
           ENDIF                                                                   
   250 CONTINUE
@@ -609,10 +690,10 @@ C
 C     * PRE-ITERATION SEQUENCE FOR VEGETATION CANOPY.
 C
       DO 300 I=IL1,IL2
-          IF(FI(I).GT.0.)                                          THEN
+          IF(FI(I).GT.0.)                                        THEN
               QSGADD(I)=0.0
               IF(ITC.EQ.2) THEN
-                  QSGADD(I)=QSENSG(I)
+                  QSGADD(I)=QSENSG(I) !mm: check this
                   TAC(I)=TCAN(I)
                   QAC(I)=QCAN(I)
                   TVRTAC(I)=TVIRTC(I)
@@ -672,7 +753,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TAC,QAC,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,N,1)
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,N,1)
         ENDIF
 C
 C     * CALCULATE CANOPY AIR TEMPERATURE AND SPECIFIC HUMIDITY OF 
@@ -759,7 +840,7 @@ C
 C     * CALCULATE THE TERMS IN THE ENERGY BALANCE AND SOLVE.
 C
         DO 525 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN    
+          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                    THEN    
               QLWOC(I)=SBC*TCAN(I)*TCAN(I)*TCAN(I)*TCAN(I)
               QSENSC(I)=RHOAIR(I)*SPHAIR*CFSENS(I)*(TCAN(I)-TAC(I))
               IF(FRAINC(I).GT.0. .OR. FSNOWC(I).GT.0. .OR. 
@@ -798,7 +879,7 @@ C
 C     * OPTION #1: SECANT/BISECTION ITERATION METHOD.
 C
         DO 550 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN    
+          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                    THEN    
               IF(NITER(I).EQ.1) THEN
                   IF(RESID(I).GT.0.0) THEN
                       TCAN(I)=TCAN(I)+TSTEP(I)
@@ -823,7 +904,7 @@ C
 C     * OPTION #2: NEWTON-RAPHSON ITERATION METHOD.
 C
         DO 575 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN
+          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                    THEN
               IF(NITER(I).GT.1)                              THEN
                   DCFLUX=(CFLX(I)-CFLUXM(I))/
      1               SIGN(MAX(.001,ABS(TSTEP(I))),TSTEP(I))
@@ -917,7 +998,7 @@ c
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TCAN,QCAN,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,IEVAPC,JL,N,1)
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,IEVAPC,JL,N,1)
          ENDIF
       ENDIF
 C
@@ -938,13 +1019,13 @@ C         ENDIF
 C  
       IF(IBAD.NE.0)                                                 THEN
           WRITE(6,6375) IBAD,JL,TCAN(IBAD),NITER(IBAD),ISNOW
- 6375     FORMAT('0BAD CANOPY ITERATION TEMPERATURE',3X,2I3,F16.2,2I4)
+ 6375     FORMAT('0BAD CANOPY ITERATION TEMPERATURE',3X,3I3,F16.2,2I4)
           WRITE(6,6380) QSWNC(IBAD),QLWIN(IBAD),QLWOG(IBAD),
      1                  QLWOC(IBAD),QSENSG(IBAD),QSENSC(IBAD),
      2                  QEVAPC(IBAD),QSTOR(IBAD),QMELTC(IBAD)
           WRITE(6,6380) TCAN(IBAD),TPOTA(IBAD),TZERO(IBAD)
  6380     FORMAT(2X,9F10.2)
-          CALL XIT('TSOLVC',-2)
+          CALL XIT('TSOLVClinear',-2)
       ENDIF
 C
 C     * POST-ITERATION CLEAN-UP.
@@ -1060,7 +1141,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TAC,QAC,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,N,1)
+     3                LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,N,1)
         ENDIF
       ENDIF
 C
@@ -1101,7 +1182,7 @@ C
       ELSE
 C
       DO 750 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN    
+          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                     THEN    
               CFLX(I)=RBINV(I)*CFLUX(I)/(RBINV(I)+CFLUX(I))
               CFLX(I)=CFLUX(I)+(CFLX(I)-CFLUX(I))*
      1            MIN(1.0,QSWINV(I)*0.04)
@@ -1132,7 +1213,7 @@ C
       ENDIF
 C
       DO 800 I=IL1,IL2
-          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                       THEN    
+          IF(FI(I).GT.0. .AND. ITER(I).EQ.1)                     THEN    
               IF(SNOCAN(I).GT.0.)             THEN
                   CPHCHC(I)=CLHVAP+CLHMLT
               ELSE                                                                        
@@ -1162,7 +1243,7 @@ C
   800 CONTINUE
 C
       DO 850 I=IL1,IL2
-          IF(FI(I).GT.0.)                                          THEN 
+          IF(FI(I).GT.0.)                                         THEN 
               IF(ABS(EVAPC(I)).LT.1.0E-8) THEN
                   RESID(I)=RESID(I)+QEVAPC(I)
                   EVAPC(I)=0.0
@@ -1193,7 +1274,7 @@ C
               ENDIF
               QSWNET(I)=QSWNG(I)+QSWNC(I)+QTRANS(I)
               QLWOUT(I)=FSVF(I)*QLWOG(I)+(1.0-FSVF(I))*QLWOC(I)
-              QSENS(I)=QSENSC(I)+QSENSG(I)-QSGADD(I)
+              QSENS(I)=QSENSC(I)+QSENSG(I)-QSGADD(I) !mm: appears to copasetic but check
               QEVAP(I)=QEVAPC(I)+QEVAPG(I)    
               EVAPC(I)=EVAPC(I)/RHOW         
               EVAPG(I)=EVAPG(I)/RHOW
@@ -1205,7 +1286,7 @@ C
 C       * STORE AERODYNAMIC CONDUCTANCE FOR USE IN NEXT TIME STEP
 C
         DO 900 I = IL1, IL2
-          IF(FI(I).GT.0.)                                          THEN 
+          IF(FI(I).GT.0.)                                        THEN 
             CFLUXV(I) = CFLUX(I)
           ELSE
             CFLUXV(I) = 0.

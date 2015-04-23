@@ -10,7 +10,7 @@
      9                  ISLFD,ITG,ILG,IG,IL1,IL2,JL,
      A                  TSTEP,TVIRTS,EVBETA,Q0SAT,RESID,
      B                  DCFLXM,CFLUXM,WZERO,TRTOP,A,B,
-     C                  LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF)
+     C                  LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF,N)
 C
 C     * OCT 14/11 - D.VERSEGHY. FOR POST-ITERATION CLEANUP WITH N-R SCHEME,
 C     *                         REMOVE CONDITION INVOLVING LAST ITERATION
@@ -89,7 +89,7 @@ C
 
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ISNOW,ISLFD,ITG,ILG,IG,IL1,IL2,JL,I
+      INTEGER ISNOW,ISLFD,ITG,ILG,IG,IL1,IL2,JL,I,N
 C
       INTEGER NUMIT,NIT,IBAD,ITERMX
 C
@@ -150,7 +150,7 @@ C
       IF(ITG.LT.2) THEN
           ITERMX=12
       ELSE
-          ITERMX=5
+          ITERMX=12!5
       ENDIF
 C
 C      IF(ISNOW.EQ.0) THEN
@@ -239,7 +239,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL )
+     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,N,0)
         ENDIF
 C
 C     * REMAINING CALCULATIONS.
@@ -385,7 +385,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,JEVAP,JL )
+     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,JEVAP,JL,N,0)
         ENDIF
       ENDIF
 C
@@ -443,7 +443,7 @@ C
             CALL FLXSURFZ(CDM,CDH,CFLUX,RIB,FTEMP,FVAP,ILMO,
      1                    UE,FCOR,TPOTA,QA,ZRSLFM,ZRSLFH,VA,
      2                    TZERO,QZERO,H,ZOM,ZOH,
-     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL )
+     3                    LZZ0,LZZ0T,FM,FH,ILG,IL1,IL2,FI,ITER,JL,N,0)
         ENDIF
       ENDIF
 C

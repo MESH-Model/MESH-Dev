@@ -68,7 +68,7 @@ FUNCTION SAEMSRT(OBS,SIM,N,NS,NMIN,IW1,IW2)
            
            !> Compute the objective function value of the 
            !> current window and accumulate.
-           SAEMSRT = SAEMSRT + SAESRT(QO,QS,IW1,NS,1)
+           !mm to_get_this_to_work SAEMSRT = SAEMSRT + SAESRT(QO,QS,IW1,NS,1)
            
 	    ENDDO
 	ELSE

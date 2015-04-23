@@ -1,15 +1,16 @@
       SUBROUTINE FLXSURFZ(CDM, CDH, CTU, RIB, FTEMP, FVAP, ILMO,
      X                    UE, FCOR, TA , QA , ZU, ZT, VA,
      Y                    TG , QG , H , Z0 , Z0T,
-     %                    LZZ0, LZZ0T, FM, FH,N,IL1,IL2,FI,ITER,JL )
+     %                  LZZ0, LZZ0T, FM, FH,N,IL1,IL2,FI,ITER,JL,NN,can)
       IMPLICIT NONE
-      INTEGER N,IL1,IL2,ITER(N),JL
+      INTEGER N,IL1,IL2,ITER(N),JL,NN,can
       REAL CDM(N),CDH(N),CTU(N),RIB(N),FCOR(N),ILMO(N)
       REAL FTEMP(N),FVAP(N),TA(N),QA(N),ZU(N),VA(N)
       REAL TG(N),QG(N),H(N),Z0(N),UE(N),ZT(N)
       REAL Z0T(N),LZZ0(N),LZZ0T(N)
       REAL fm(N),fh(N)
       REAL FI(N)
+      real Cmn(N),Chn(N),Am(N),Ah(N),fmom(N),ftq(N)
 c
 cAuthor
 c          Y.Delage (Jul 1990)
@@ -62,6 +63,7 @@ cArguments
 c
 c          - Output -
 c CDM      transfer coefficient of momentum squared
+c CDH      transer coefficient of temperature
 c CTU      transfer coefficient of temperature times UE
 c RIB      bulk Richardson number
 c FTEMP    temperature flux
@@ -96,7 +98,7 @@ c
       REAL DELTA,GRAV,KARMAN,CPD
       COMMON / PHYCON / DELTA,GRAV,KARMAN,CPD
       COMMON / CLASSD2 / AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
-      INTEGER J
+      INTEGER J,i
       INTEGER IT,ITMAX
       REAL HMAX,CORMIN,EPSLN
       REAL RAC3,CM,CT,ZP
@@ -111,6 +113,8 @@ c
       SAVE HMAX,CORMIN,EPSLN
       SAVE ITMAX
       REAL,SAVE::VMODMIN=-1.0
+c
+      REAL B,L,zeta_T,zeta_U,psi_h,psi_m,xxx,temp_CDM,temp_CDH,pos_UE
 c
       REAL            VAMIN
 c     COMMON /CLASSD3/VAMIN
@@ -155,6 +159,11 @@ c  FIRST APPROXIMATION TO ILMO
            FH(J)=BETA*(LZZ0T(J)-min(0.7+log(1-rib(j)),LZZ0T(J)-1))
         ENDIF
         ILMO(J)=RIB(J)*FM(J)*FM(J)/(ZP*FH(J))
+        Cmn(J) = KARMAN**2/LZZ0(J)**2
+        Chn(J) = KARMAN**2/(LZZ0(J)*LZZ0T(J))
+        Am(J) = ((Z0(J)+ZU(J))/Z0(J))**(1/2)*KARMAN**2/Cmn(J)
+        Ah(J) = ((ZT(J)+Z0(J))/Z0T(J))**(1/2)*KARMAN**2/Chn(J)
+!      end select
       ENDIF
       ENDDO
 c - - - - - - - - -  BEGINNING OF ITERATION LOOP - - - - - - - - - - - 
@@ -180,6 +189,8 @@ cCDIR IEXPAND
      1                      -psi(Z0T(J)     ,hi,unsl))
         DG=-ZP*FH(J)/(FM(J)*FM(J))*(1+beta*(DF(ZT(J)+Z0(J))-DF(Z0T(J)))/
      1          (2*FH(J))-(DF(ZU(J)+Z0(J))-DF(Z0(J)))/FM(J))
+        fmom(J)=1/(1+10*RIB(J))
+        ftq(J)=fmom(J)
 c----------------------------------------------------------------------
 c  UNSTABLE CASE
       ELSE
@@ -190,6 +201,10 @@ cCDIR IEXPAND
          FH(J)=fhi(zt(j)+z0(j),z0t(j),lzz0t(j),ilmo(j),yy,yy0)
          DG=-ZP*FH(J)/(FM(J)*FM(J))*(1+beta/FH(J)*(1/YY-1/YY0)-2/FM(J)*
      %                (1/XX-1/XX0))
+         fmom(J)=1+10*ABS(RIB(J))/
+     !              (1+10*ABS(RIB(J)/(87*Am(J)**2))**(1/2))
+         ftq(J)= 1+10*ABS(RIB(J))/
+     !              (1+10*ABS(RIB(J)/(87*Ah(J)**2))**(1/2))
       ENDIF
 c----------------------------------------------------------------------
       IF(IT.LT.ITMAX) THEN
@@ -224,30 +239,102 @@ c  SOLUTION
                  ilmox=2*cc/(zu(j)*(-bb+sqrt(dd)))
               endif
               if(ilmox.lt.ilmo(j)) then
-                 ilmo(j)=ilmox
-                 fm(j)=lzz0(j)+asx*zu(j)*ilmox
-                 fh(j)=beta*lzz0t(j)+asx*(zt(j)+z0(j)-z0t(j))*ilmox
+                 ilmo(j)=ilmox !output
+                 fm(j)=lzz0(j)+asx*zu(j)*ilmox !output
+                 fh(j)=beta*lzz0t(j)+asx*(zt(j)+z0(j)-z0t(j))*ilmox !output
               endif
            endif
         endif
 c----------------------------------------------------------------------
+          
         CM=KARMAN/FM(J)
+        UE(J)=u*CM !output DIASURFZ
         CT=KARMAN/FH(J)
-        UE(J)=u*CM
-        CDM(J)=CM**2
-        CTU(J)=CT*UE(J)
-        CDH(J)=CM*CT
+        CDM(J)=CM**2 !output
+        !-CDH(J)=CM*CT !output
+        !!!ORIGINAL CASES
+!        select case(tem(q))
+!        case(0) ! CLASS: M-O
+!          CDM(J)=CM**2 !output
+!          CTU(J)=CT*UE(J) !output
+!          CDH(J)=CM*CT !output
+!        case(1) ! CCMA 2nd Gen: RiB
+!          !-CDM(J)= fmom(J)*Cmn(J) !output
+!          !-CDH(J)= ftq(J)*Chn(J)*1.25 !output
+!          CTU(J)= Chn(J)*ftq(J)*1.25*u!u !output
+!        end select
+        !!!NEW CASES AS PER R.ESSERY IUGG
+         if(can.eq.0)then ! CH(z/L) JULES
+          CDM(J) = 0.41**2 / (log(ZU(J)/Z0(J))*log(ZU(J)/Z0(J))) !I think this is CDM(J), and that I don't care about CM
+          CDH(J) = 0.41**2 / (log(ZU(J)/Z0(J))*log(ZT(J)/Z0T(J))) 
+       !666 continue
+          do i = 1, 11
+            if(TG(J).eq.TA(J))then
+              if(ILMO(J).le.0.)then !unstable; to deal with TA(J)=TG(J)
+                B = CDH(J) *VA(J)*GRAV*(TG(J) - TA(J)-0.01)/TA(J)
+              else !stable
+                B = CDH(J) *VA(J)*GRAV*(TG(J) - TA(J)+0.01)/TA(J)
+              endif
+            else
+              B = CDH(J) *VA(J)*GRAV*(TG(J) - TA(J))/TA(J)
+            endif
+            if(CDH(J).le.0.) pos_UE=UE(J)
+            UE(J)=sqrt(CDM(J))*VA(J)
+            L = -UE(J)**3 / (0.41*B)
+            if (L.gt.0 .and. L.lt. 1e-2) L =  1e-2
+            if (L.lt.0 .and. L.gt.-1e-2) L = -1e-2
+            zeta_T = ZT(J)/ L
+            zeta_U = ZU(J)/ L
+             if(zeta_T.lt.-1 .or. zeta_U.lt.-1)then
+              L=-ZU(J)/1
+              zeta_T = ZT(J)/ L
+              zeta_U = ZU(J)/ L
+              B=-UE(J)**3/L/0.41
+             endif
+            if(L.gt.0) then
+              psi_h = -(1+2/3*zeta_T)**(3/2)
+     1                -2/3*(zeta_T-5/.35)*exp(-.35*zeta_T)-2/3*5/.35+1
+              psi_m = -zeta_U-2/3*(zeta_U-5/0.35)*exp(-0.35*zeta_U)
+     1                -2/3*5/0.35
+              !psi_h = -5*zeta_T
+              !psi_m = -5*zeta_U
+              !!if (zeta_T > 1) psi_h = -4*(1 + log(zeta_T)) - zeta_T
+              !!if (zeta_U > 1) psi_m = -4*(1 + log(zeta_U)) - zeta_U
+            else
+              xxx = (1 - 16*zeta_U)**0.25
+              psi_m = 2*log((1 + xxx)/2) + log((1 + xxx**2)/2) - 
+     1                  2*atan(xxx) + 3.1415926535898/2
+              xxx = (1 - 16*zeta_T)**0.25
+              psi_h = 2*log((1 + xxx**2)/2)
+            end if
+            temp_CDM = 0.41**2 / ((log(ZU(J)/Z0(J)) - psi_m)* !I think this is CDM(J), and that I don't care about CM
+     1                        (log(ZU(J)/Z0(J)) - psi_m))
+            temp_CDH = 0.41**2 / ((log(ZU(J)/Z0(J)) - psi_m)*
+     1                            (log(ZT(J)/Z0T(J)) - psi_h))
+            if(temp_CDH.gt.0.)then
+             CDM(J) = temp_CDM
+             CDH(J) = temp_CDH
+             CTU(J) = CDH(J)*UE(J)
+             UE(J)=pos_UE
+            endif
+          end do !i=1,10
+          !if(CTU(J).lt.0.)  go to 666
+         else ! can=1; CLASS: M-O
+            CDM(J)=CM**2 !output
+            CTU(J)=CT*UE(J) !output
+            CDH(J)=CM*CT !output
+         endif
         if (rib(j).gt.0.0) then
 c             cas stable
-              H(J)=MIN(H(J),hmax)
+              H(J)=MIN(H(J),hmax) !output DIASURFZ
         else
 c             cas instable
               F=MAX(ABS(FCOR(J)),CORMIN)
               he=max(HMIN,0.3*UE(J)/F)
-              H(J)=MIN(he,hmax)
+              H(J)=MIN(he,hmax) !output DIASURFZ
         endif
-        FTEMP(J)=-CTU(J)*(TA(J)-TG(J))
-        FVAP(J)=-CTU(J)*(QA(J)-QG(J))
+        FTEMP(J)=-CTU(J)*(TA(J)-TG(J)) !output DIASURFZ
+        FVAP(J)=-CTU(J)*(QA(J)-QG(J)) !output DIASURFZ
       ENDIF
    80 CONTINUE
       RETURN

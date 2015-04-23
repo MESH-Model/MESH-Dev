@@ -26,7 +26,8 @@
      P                  AILCG,  AILCGS, FCANC,  FCANCS,
      Q                  IDAY,   ILG,    IL1,    IL2,    
      R                  JL,N,   IC,     ICP1,   IG,     IDISP,  IZREF,
-     S                  IWF,    IPAI,   IHGT,   IALC,   IALS,   IALG)
+     S                  IWF,    IPAI,   IHGT,   IALC,   IALS,   IALG,
+     T                  SPCP,Sage)
 C
 C     * NOV 14/11 - M.LAZARE.   IMPLEMENT CTEM SUPPORT, PRIMARILY
 C     *                         INVOLVING ADDITIONAL FIELDS TO PASS
@@ -108,24 +109,29 @@ C
 C
 C     * OUTPUT ARRAYS.
 C
-      REAL FC    (ILG),   FG    (ILG),   FCS   (ILG),   FGS   (ILG),    
-     1     ALVSCN(ILG),   ALIRCN(ILG),   ALVSG (ILG),   ALIRG (ILG),     
-     2     ALVSCS(ILG),   ALIRCS(ILG),   ALVSSN(ILG),   ALIRSN(ILG),   
-     3     ALVSGC(ILG),   ALIRGC(ILG),   ALVSSC(ILG),   ALIRSC(ILG),
-     3     TRVSCN(ILG),   TRIRCN(ILG),   TRVSCS(ILG),   TRIRCS(ILG),  
-     4     FSVF  (ILG),   FSVFS (ILG),   
-     5     RAICAN(ILG),   RAICNS(ILG),   SNOCAN(ILG),   SNOCNS(ILG),   
-     6     FRAINC(ILG),   FSNOWC(ILG),   FRAICS(ILG),   FSNOCS(ILG),
-     7     DISP  (ILG),   DISPS (ILG),   ZOMLNC(ILG),   ZOMLCS(ILG),   
-     8     ZOELNC(ILG),   ZOELCS(ILG),   ZOMLNG(ILG),   ZOMLNS(ILG),   
-     9     ZOELNG(ILG),   ZOELNS(ILG),   CHCAP (ILG),   CHCAPS(ILG),   
-     A     CMASSC(ILG),   CMASCS(ILG),   CWLCAP(ILG),   CWFCAP(ILG),   
-     B     CWLCPS(ILG),   CWFCPS(ILG),   RC    (ILG),   RCS   (ILG),   
-     C     ZPLIMC(ILG),   ZPLIMG(ILG),   ZPLMCS(ILG),   ZPLMGS(ILG),   
-     D     RBCOEF(ILG),   TRSNOW(ILG),   ZSNOW (ILG),   WSNOW (ILG),
-     E     ALVS  (ILG),   ALIR  (ILG),   HTCC  (ILG),   HTCS  (ILG),   
-     F     WTRC  (ILG),   WTRS  (ILG),   WTRG  (ILG),   CMAI  (ILG),
-     G     FSNOW (ILG)
+      REAL FC    (ILG),   FG    (ILG),   FCS   (ILG),   
+     +     FGS   (ILG),   ALVSCN(ILG),   ALIRCN(ILG),   
+     +     ALVSG (ILG),   ALIRG (ILG),   ALVSCS(ILG),   
+     +     ALIRCS(ILG),   ALVSSN(ILG),   ALIRSN(ILG),   
+     3     ALVSGC(ILG),   ALIRGC(ILG),   ALVSSC(ILG),   
+     +     ALIRSC(ILG),   RVSCN(ILG),    TRIRCN(ILG),  TRVSCN(ILG), 
+     +     TRVSCS(ILG),   TRIRCS(ILG),   FSVF  (ILG),  FSVFS  (ILG), 
+     +     RAICAN(ILG),   RAICNS(ILG),   SNOCAN(ILG),   
+     +     SNOCNS(ILG),   FRAINC(ILG),   FSNOWC(ILG),   
+     +     FRAICS(ILG),   FSNOCS(ILG),   DISP  (ILG),   
+     +     DISPS (ILG),   ZOMLNC(ILG),   ZOMLCS(ILG),   
+     8     ZOELNC(ILG),   ZOELCS(ILG),   ZOMLNG(ILG),   
+     +     ZOMLNS(ILG),   ZOELNG(ILG),   ZOELNS(ILG),   
+     +     CHCAP (ILG),   CHCAPS(ILG),   CMASSC(ILG),   
+     +     CMASCS(ILG),   CWLCAP(ILG),   CWFCAP(ILG),   
+     B     CWLCPS(ILG),   CWFCPS(ILG),   RC    (ILG),   
+     +     RCS   (ILG),   ZPLIMC(ILG),   ZPLIMG(ILG),   
+     +     ZPLMCS(ILG),   ZPLMGS(ILG),   RBCOEF(ILG),   
+     +     TRSNOW(ILG),   ZSNOW (ILG),   WSNOW (ILG),
+     E     ALVS  (ILG),   ALIR  (ILG),   HTCC  (ILG),   
+     +     HTCS  (ILG),   WTRC  (ILG),   WTRS  (ILG),   
+     +     WTRG  (ILG),   CMAI  (ILG),
+     G     FSNOW (ILG),   Sage  (ILG)
 C
       REAL FROOT (ILG,IG),  HTC   (ILG,IG)
 C
@@ -146,7 +152,8 @@ C
      3     SNO   (ILG),   TSNOW (ILG),   RHOSNO(ILG),   ALBSNO(ILG),
      4     FCLOUD(ILG),   TA    (ILG),   VPD   (ILG),   RHOAIR(ILG),
      5     COSZS (ILG),   QSWINV(ILG),   DLON  (ILG),   ZBLEND(ILG),
-     6     SNOLIM(ILG),   ZPLMG0(ILG),   ZPLMS0(ILG),   RADJ  (ILG)
+     6     SNOLIM(ILG),   ZPLMG0(ILG),   ZPLMS0(ILG),   RADJ  (ILG),
+     1     SPCP(ILG)
 C
 C    * SOIL PROPERTY ARRAYS.
 C
@@ -208,13 +215,13 @@ C     * FSNOW; INITIALIZATION OF COMPUTATIONAL ARRAYS.
 C                                                                                  
       DO 100 I=IL1,IL2                                                            
           IF(SNO(I).GT.0.0) THEN                                              
-              ZSNOW(I)=SNO(I)/RHOSNO(I)                                       
-              IF(ZSNOW(I).GE.(SNOLIM(I)-0.00001)) THEN                                     
-                  FSNOW(I)=1.0                                                   
-              ELSE                                                            
-                  FSNOW(I)=ZSNOW(I)/SNOLIM(I)
-                  ZSNOW(I)=SNOLIM(I)
+              ZSNOW(I)=SNO(I)/RHOSNO(I) 
+              FSNOW(I)=min(tanh(ZSNOW(I)/SNOLIM(I)),1.)
+              IF(FSNOW(I).lt.0.999) THEN                                  
+                  ZSNOW(I)=ZSNOW(I)/FSNOW(I)
                   WSNOW(I)=WSNOW(I)/FSNOW(I)
+              ELSE
+                  FSNOW(I)=1.!tanh(ZSNOW(I,q)/SNOLIM(I))
               ENDIF                                                           
           ELSE                                                                
               ZSNOW(I)=0.0                                                    
@@ -266,7 +273,8 @@ C     * SNOW ALBEDOS AND TRANSMISSIVITY.
 C 
       CALL SNOALBA(ALVSSN,ALIRSN,ALVSSC,ALIRSC,ALBSNO,TRSNOW,
      1             ZSNOW,FSNOW,ASVDAT,ASIDAT,
-     2             ILG,IG,IL1,IL2,JL,IALS)
+     2             ILG,IG,IL1,IL2,JL,IALS,COSZS,
+     3             RHOSNI,SPCP,TSNOW,Sage)
 C
 C     * BARE SOIL ALBEDOS.
 C

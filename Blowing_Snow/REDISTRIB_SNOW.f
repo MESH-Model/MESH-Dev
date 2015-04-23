@@ -102,7 +102,7 @@ C
                  IF(FCS(nn).GT.0.) THEN
                    HTCS(nn)=HTCS(nn)-FCS(nn)*HCPSCS(nn)*(TSNOCS(nn)
      1                  +TFREZ)*ZSNOCS(nn)/DELT
-                   ZSNOCS(nn)=ZSNOCS(nn)+transport/RHOSNOSumDrift
+                   ZSNOCS(nn)=ZSNOCS(nn)+transport/300.
                    HCPSCS(nn)=HCPICE*RHOSCS(nn)/RHOICE+HCPW*WSNOCS(nn)/
      1                  (RHOW*ZSNOCS(nn))
                    HTCS(nn)=HTCS(nn)+FCS(nn)*HCPSCS(nn)*(TSNOCS(nn)
@@ -112,7 +112,7 @@ C
                  IF(FGS(nn).GT.0.) THEN
                    HTCS(nn)=HTCS(nn)-FGS(nn)*HCPSGS(nn)*(TSNOGS(nn)
      1                  +TFREZ)*ZSNOGS(nn)/DELT
-                   ZSNOGS(nn)=ZSNOGS(nn)+transport/RHOSNOSumDrift
+                   ZSNOGS(nn)=ZSNOGS(nn)+transport/300.
                    HCPSGS(nn)=HCPICE*RHOSGS(nn)/RHOICE+HCPW*WSNOGS(nn)/
      1                  (RHOW*ZSNOGS(nn))
                    HTCS(nn)=HTCS(nn)+FGS(nn)*HCPSGS(nn)*(TSNOGS(nn)
@@ -122,7 +122,7 @@ C
                  IF(FC(nn).GT.0.) THEN
                    HTCS(nn)=HTCS(nn)-FC(nn)*HCPSC(nn)*(TSNOWC(nn)+TFREZ)
      1                  *ZSNOWC(nn)/DELT
-                   ZSNOWC(nn)=ZSNOWC(nn)+transport/RHOSNOSumDrift
+                   ZSNOWC(nn)=ZSNOWC(nn)+transport/300.
                    HCPSC(nn)=HCPICE*RHOSC(nn)/RHOICE
                    HTCS(nn)=HTCS(nn)+FC(nn)*HCPSC(nn)*(TSNOWC(nn)+TFREZ)
      1                  *ZSNOWC(nn)/DELT
@@ -131,7 +131,7 @@ C
                  IF(FG(nn).GT.0.) THEN
                    HTCS(nn)=HTCS(nn)-FG(nn)*HCPSG(nn)*(TSNOWG(nn)+TFREZ)
      1                  *ZSNOWG(nn)/DELT
-                   ZSNOWG(nn)=ZSNOWG(nn)+transport/RHOSNOSumDrift
+                   ZSNOWG(nn)=ZSNOWG(nn)+transport/300.
                    HCPSG(nn)=HCPICE*RHOSG(nn)/RHOICE
                    HTCS(nn)=HTCS(nn)+FG(nn)*HCPSG(nn)*(TSNOWG(nn)+TFREZ)
      1                  *ZSNOWG(nn)/DELT

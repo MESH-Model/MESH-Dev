@@ -71,14 +71,7 @@ C---------------------------------------------------------------------
          IF(IALG.EQ.0)                                          THEN
             IF(ISAND(I,1).GE.0)                          THEN
                 FURB=MAX(FCMXU(I),1.0E-5)                                    
-                IF(THLIQ(I,1).GE.0.26) THEN  
-                   ALBSOL=ALGWET(I)            
-                ELSEIF(THLIQ(I,1).LE.0.22) THEN 
-                   ALBSOL=ALGDRY(I)              
-                ELSE                         
-                   ALBSOL=THLIQ(I,1)*(ALGWET(I)-ALGDRY(I))/0.04+
-     1                    ALGDRY(I)-5.50*(ALGWET(I)-ALGDRY(I)) 
-                ENDIF                         
+                ALBSOL=MIN(ALGWET(I)+0.11-0.40*THLIQ(I,1),ALGDRY(I))
 C
                 ALVSG(I)=2.0*ALBSOL/3.0    
                 ALIRG(I)=2.0*ALVSG(I)     
