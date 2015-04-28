@@ -1484,11 +1484,11 @@ ALLOCATE (TOTAL_AREA_eco(3),TOTAL_PRE_eco(3), &
  TOTAL_SNO_eco(3),TOTAL_WSNO_eco(3),TOTAL_ZPND_eco(3),TOTAL_STORE_eco(3),TOTAL_STORE_2_eco(3), &
  TOTAL_THLQ_eco(IGND,3), TOTAL_THIC_eco(IGND,3), eco(634,3), STAT=PAS)
 
-OPEN(UNIT=876,FILE='eco_grids.csv',STATUS='OLD')
-  do I=1,NA
-    READ(876,*,END=999) eco(I,1),eco(I,2),eco(I,3) !READ(876,'(3I1)',END=999)
-  enddo
-CLOSE(UNIT=876)
+!+ecogrid___ OPEN(UNIT=876,FILE='eco_grids.csv',STATUS='OLD')
+!+ecogrid___   do I=1,NA
+!+ecogrid___     READ(876,*,END=999) eco(I,1),eco(I,2),eco(I,3) !READ(876,'(3I1)',END=999)
+!+ecogrid___   enddo
+!+ecogrid___ CLOSE(UNIT=876)
 !>
 !>*******************************************************************
 !>
@@ -1924,11 +1924,11 @@ DO I = 1, NA
     ! using Dan Princz's instructions for EnSim
     ! FRAC can be greater than 1.00
     ! So, we cannot use FAREROW in place of BASIN_FRACTION
-        do J = 1,3 !ecozones
-            if (eco(I,J)==1) then
-                TOTAL_AREA_eco(J)=TOTAL_AREA_eco(J)+cp%FAREROW(I, M)
-            endif
-        end do
+!+ecogrid___         do J = 1,3 !ecozones
+!+ecogrid___             if (eco(I,J)==1) then
+!+ecogrid___                 TOTAL_AREA_eco(J)=TOTAL_AREA_eco(J)+cp%FAREROW(I, M)
+!+ecogrid___             endif
+!+ecogrid___         end do
         wb%grid_area(i) = wb%grid_area(i) + cp%farerow(i, m)
     END DO
     wb%basin_area = wb%basin_area + wb%grid_area(i)
@@ -5034,47 +5034,47 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                                                 TOTAL_QEVPACC/TOTAL_AREA, &
                                                 TOTAL_SNOMLT/TOTAL_AREA
   
-  do j=1,3 !ecozones
-    if(TOTAL_AREA_eco(j) > 0.00) then
-      WRITE(901+j,'('//trim(adjustl(fmt_out))//')')IDAY,IYEAR               , &   !1
-                                                 TOTAL_PREACC_eco(j)/TOTAL_AREA_eco(j)  , &   !2
-                                                 TOTAL_EVAPACC_eco(j)/TOTAL_AREA_eco(j) , &   !3
-                                                 TOTAL_ROFACC_eco(j)/TOTAL_AREA_eco(j)  , &   !4
-                                                 TOTAL_ROFOACC_eco(j)/TOTAL_AREA_eco(j) , &   !5
-                                                 TOTAL_ROFSACC_eco(j)/TOTAL_AREA_eco(j) , &   !6
-                                                 TOTAL_ROFBACC_eco(j)/TOTAL_AREA_eco(j) , &   !7
-                                                 TOTAL_PRE_eco(j)/TOTAL_AREA_eco(j)     , &   !8  
-                                                 TOTAL_EVAP_eco(j)/TOTAL_AREA_eco(j)    , &   !9
-                                                 TOTAL_ROF_eco(j)/TOTAL_AREA_eco(j)     , &   !10
-                                                 TOTAL_ROFO_eco(j)/TOTAL_AREA_eco(j)    , &   !11
-                                                 TOTAL_ROFS_eco(j)/TOTAL_AREA_eco(j)    , &   !12
-                                                 TOTAL_ROFB_eco(j)/TOTAL_AREA_eco(j)    , &   !13
-                                                 TOTAL_SCAN_eco(j)/TOTAL_AREA_eco(j)    , &   !15
-                                                 TOTAL_RCAN_eco(j)/TOTAL_AREA_eco(j)    , &   !16
-                                                 TOTAL_SNO_eco(j)/TOTAL_AREA_eco(j)     , &   !14
-                                                 TOTAL_WSNO_eco(j)/TOTAL_AREA_eco(j), &
-                                                 TOTAL_ZPND_eco(j)/TOTAL_AREA_eco(j)    , &   !17
-                                                 (TOTAL_THLQ_eco(i,j)/TOTAL_AREA_eco(j), i = 1, IGND), &
-                                                 (TOTAL_THIC_eco(i,j)/TOTAL_AREA_eco(j), i = 1, IGND), &
-                                                 ((TOTAL_THLQ_eco(i,j) + TOTAL_THIC_eco(i,j))/TOTAL_AREA_eco(j), i = 1, IGND), &
-                                                 SUM(TOTAL_THLQ_eco(1:IGND,j))/TOTAL_AREA_eco(j), &
-                                                 SUM(TOTAL_THIC_eco(1:IGND,j))/TOTAL_AREA_eco(j), &
-                                                 (SUM(TOTAL_THLQ_eco(1:IGND,j)) + SUM(TOTAL_THIC_eco(1:IGND,j)))/TOTAL_AREA_eco(j), &
-                                                 TOTAL_STORE_eco(j)/TOTAL_AREA_eco(j), &
-                                                 (TOTAL_STORE_eco(j) - TOTAL_STORE_2_eco(j))/TOTAL_AREA_eco(j), &
-                                                 TOTAL_DRIFT_eco(j)/TOTAL_AREA_eco(j), &
-                                                 TOTAL_SUBL_eco(j)/TOTAL_AREA_eco(j)
-
-      WRITE(904+j,'((I4,","),(I5,","),3(E12.5,","))')IDAY,IYEAR,    &
-                                                TOTAL_HFSACC_eco(j)/TOTAL_AREA_eco(j),  &
-                                                TOTAL_QEVPACC_eco(j)/TOTAL_AREA_eco(j), &
-                                                TOTAL_SNOMLT_eco(j)/TOTAL_AREA_eco(j)
-    else
-      WRITE(901+j,'((I4,","),(I5,","))')IDAY,IYEAR
-
-      WRITE(904+j,'((I4,","),(I5,","))')IDAY,IYEAR
-    endif
-  end do !j=1,3 !ecozones
+!+ecogrid___   do j=1,3 !ecozones
+!+ecogrid___     if(TOTAL_AREA_eco(j) > 0.00) then
+!+ecogrid___       WRITE(901+j,'('//trim(adjustl(fmt_out))//')')IDAY,IYEAR               , &   !1
+!+ecogrid___                                                  TOTAL_PREACC_eco(j)/TOTAL_AREA_eco(j)  , &   !2
+!+ecogrid___                                                  TOTAL_EVAPACC_eco(j)/TOTAL_AREA_eco(j) , &   !3
+!+ecogrid___                                                  TOTAL_ROFACC_eco(j)/TOTAL_AREA_eco(j)  , &   !4
+!+ecogrid___                                                  TOTAL_ROFOACC_eco(j)/TOTAL_AREA_eco(j) , &   !5
+!+ecogrid___                                                  TOTAL_ROFSACC_eco(j)/TOTAL_AREA_eco(j) , &   !6
+!+ecogrid___                                                  TOTAL_ROFBACC_eco(j)/TOTAL_AREA_eco(j) , &   !7
+!+ecogrid___                                                  TOTAL_PRE_eco(j)/TOTAL_AREA_eco(j)     , &   !8  
+!+ecogrid___                                                  TOTAL_EVAP_eco(j)/TOTAL_AREA_eco(j)    , &   !9
+!+ecogrid___                                                  TOTAL_ROF_eco(j)/TOTAL_AREA_eco(j)     , &   !10
+!+ecogrid___                                                  TOTAL_ROFO_eco(j)/TOTAL_AREA_eco(j)    , &   !11
+!+ecogrid___                                                  TOTAL_ROFS_eco(j)/TOTAL_AREA_eco(j)    , &   !12
+!+ecogrid___                                                  TOTAL_ROFB_eco(j)/TOTAL_AREA_eco(j)    , &   !13
+!+ecogrid___                                                  TOTAL_SCAN_eco(j)/TOTAL_AREA_eco(j)    , &   !15
+!+ecogrid___                                                  TOTAL_RCAN_eco(j)/TOTAL_AREA_eco(j)    , &   !16
+!+ecogrid___                                                  TOTAL_SNO_eco(j)/TOTAL_AREA_eco(j)     , &   !14
+!+ecogrid___                                                  TOTAL_WSNO_eco(j)/TOTAL_AREA_eco(j), &
+!+ecogrid___                                                  TOTAL_ZPND_eco(j)/TOTAL_AREA_eco(j)    , &   !17
+!+ecogrid___                                                  (TOTAL_THLQ_eco(i,j)/TOTAL_AREA_eco(j), i = 1, IGND), &
+!+ecogrid___                                                  (TOTAL_THIC_eco(i,j)/TOTAL_AREA_eco(j), i = 1, IGND), &
+!+ecogrid___                                                  ((TOTAL_THLQ_eco(i,j) + TOTAL_THIC_eco(i,j))/TOTAL_AREA_eco(j), i = 1, IGND), &
+!+ecogrid___                                                  SUM(TOTAL_THLQ_eco(1:IGND,j))/TOTAL_AREA_eco(j), &
+!+ecogrid___                                                  SUM(TOTAL_THIC_eco(1:IGND,j))/TOTAL_AREA_eco(j), &
+!+ecogrid___                                                  (SUM(TOTAL_THLQ_eco(1:IGND,j)) + SUM(TOTAL_THIC_eco(1:IGND,j)))/TOTAL_AREA_eco(j), &
+!+ecogrid___                                                  TOTAL_STORE_eco(j)/TOTAL_AREA_eco(j), &
+!+ecogrid___                                                  (TOTAL_STORE_eco(j) - TOTAL_STORE_2_eco(j))/TOTAL_AREA_eco(j), &
+!+ecogrid___                                                  TOTAL_DRIFT_eco(j)/TOTAL_AREA_eco(j), &
+!+ecogrid___                                                  TOTAL_SUBL_eco(j)/TOTAL_AREA_eco(j)
+!+ecogrid___ 
+!+ecogrid___       WRITE(904+j,'((I4,","),(I5,","),3(E12.5,","))')IDAY,IYEAR,    &
+!+ecogrid___                                                 TOTAL_HFSACC_eco(j)/TOTAL_AREA_eco(j),  &
+!+ecogrid___                                                 TOTAL_QEVPACC_eco(j)/TOTAL_AREA_eco(j), &
+!+ecogrid___                                                 TOTAL_SNOMLT_eco(j)/TOTAL_AREA_eco(j)
+!+ecogrid___     else
+!+ecogrid___       WRITE(901+j,'((I4,","),(I5,","))')IDAY,IYEAR
+!+ecogrid___ 
+!+ecogrid___       WRITE(904+j,'((I4,","),(I5,","))')IDAY,IYEAR
+!+ecogrid___     endif
+!+ecogrid___   end do !j=1,3 !ecozones
 
 !>  Added by Gonzalo Sapriza
     !DELTA STORAGE
@@ -5121,7 +5121,7 @@ THIC_FLD = 0.
 THLQ_FLD = 0.
 DSTG     = 0.
 
-TOTAL_STORE_2_eco = TOTAL_STORE_eco
+!+ecogrid___ TOTAL_STORE_2_eco = TOTAL_STORE_eco
 TOTAL_STORE_eco = 0.0
 TOTAL_RCAN_eco = 0.0
 TOTAL_SCAN_eco = 0.0

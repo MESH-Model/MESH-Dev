@@ -317,15 +317,40 @@ C     * CALCULATIONS.
 C
 !$omp parallel do
       DO 200 I=IL1,IL2    
-          IF(THLIQG(I,1).LT.(THLMIN(I,1)+0.001)) THEN    
-              IEVAP(I)=0  
-              CEVAP(I)=0.0
-          ELSEIF(THLIQG(I,1).GT.THFC(I,1)) THEN
-              IEVAP(I)=1   
-              CEVAP(I)=1.0
-          ELSE
-              IEVAP(I)=1
-              CEVAP(I)=0.25*(1.0-COS(3.14159*THLIQG(I,1)/THFC(I,1)))**2
+          IF(SANDGAT(I,1).GE.65 .AND. CLAYGAT(I,1).LE.18) THEN !COARSE
+            IF(THLIQG(I,1).LE.0.064) THEN    
+                IEVAP(I)=0  
+                CEVAP(I)=0.0
+            ELSEIF(THLIQG(I,1).GT.0.150) THEN
+                IEVAP(I)=1   
+                CEVAP(I)=1.0
+            ELSE
+                IEVAP(I)=1
+                CEVAP(I)=(THLIQG(I,1)-0.064)/(0.150-0.064)
+            ENDIF
+          ELSEIF(CLAYGAT(I,1).GE.35) THEN !FINE
+            IF(THLIQG(I,1).LE.0.221) THEN    
+                IEVAP(I)=0  
+                CEVAP(I)=0.0
+            ELSEIF(THLIQG(I,1).GT.0.310) THEN
+                IEVAP(I)=1   
+                CEVAP(I)=1.0
+            ELSE
+                IEVAP(I)=1
+                CEVAP(I)=(THLIQG(I,1)-0.221)/(0.310-0.221)
+            ENDIF
+          ELSE !MEDIUM
+            IF(THLIQG(I,1).LE.0.136) THEN    
+                IEVAP(I)=0  
+                CEVAP(I)=0.0
+            ELSEIF(THLIQG(I,1).GT.0.242) THEN
+                IEVAP(I)=1   
+                CEVAP(I)=1.0
+            ELSE
+                IEVAP(I)=1
+                CEVAP(I)=(THLIQG(I,1)-0.136)/(0.242-0.136)
+            ENDIF
+              
           ENDIF
   200 CONTINUE  
 C                                                                                 
@@ -354,12 +379,7 @@ C
      1            (RHOW*ZSNOW(I)) 
               HCPSGS(I)=HCPSCS(I)
 C             TCSNOW(I)=2.576E-6*RHOSNO(I)*RHOSNO(I)+0.074                        
-              IF(RHOSNO(I).LT.156.0) THEN
-                  TCSNOW(I)=0.234E-3*RHOSNO(I)+0.023
-              ELSE
-                  TCSNOW(I)=3.233E-6*RHOSNO(I)*RHOSNO(I)-1.01E-3*
-     1                RHOSNO(I)+0.138
-              ENDIF
+              TCSNOW(I)=2.22*(RHOSNO(I)/RHOW)**1.88
               IF(FVEG(I).LT.1.)                                 THEN              
                   TSNOGS(I)=TSNOW(I)                                              
                   WSNOGS(I)=WSNOW(I)

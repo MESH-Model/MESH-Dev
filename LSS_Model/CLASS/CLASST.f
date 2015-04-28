@@ -259,6 +259,8 @@ C
      G     TACCS (ILG),   QACCS (ILG),   TACCO (ILG),   QACCO (ILG),
      H     ILMOX (ILG),   UEX   (ILG),   HBLX  (ILG),   ZERO  (ILG),
      I     STT   (ILG),   SQT   (ILG),   SHT   (ILG)
+      DOUBLE PRECISION    PSC   (ILG),   PSG   (ILG),   FSC   (ILG),   
+     +     FSG   (ILG),   HBG   (ILG),   HBC   (ILG)
 C
       INTEGER             IEVAP (ILG),   IWATER(ILG)
 C
@@ -321,6 +323,14 @@ C     * CHECK DEPTH OF PONDED WATER FOR UNPHYSICAL VALUES.
 C
           IF(ZPOND(I).LT.1.0E-8) ZPOND(I)=0.0
           QG(I)=0.0
+          
+          !LOCAL ADVECTION INITIALIZATION
+          PSC(I)=0.
+          PSG(I)=0.
+          FSC(I)=0.
+          FSG(I)=0.
+          HBC(I)=0.
+          HBG(I)=0.
    50 CONTINUE
 C
 C     * CHECK LIQUID AND FROZEN SOIL MOISTURE CONTENTS FOR SMALL
@@ -460,44 +470,6 @@ C
      1                FCS,ZSNOW,TSNOW,TCSNOW,
      2                ILG,IL1,IL2,JL      )
           ISNOW=1
-          do i=IL1,IL2
-          if((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.))then
-          CALL TSOLVClinear(ISNOW,FCS,
-     1                QSWX,QSWNC,QSWNG,QLWX,QLWOC,QLWOG,QTRANS,
-     2                QSENSX,QSENSC,QSENSG,QEVAPX,QEVAPC,QEVAPG,EVAPCS,
-     3                EVPCSG,EVAP,TCANS,QCANX,TSURX,QSURX,GSNOWC,QPHCHC,
-     4                QMELTC,RAICNS,SNOCNS,CDHX,CDMX,RIBX,TACCS,QACCS,
-     5                CFLUX,FTEMPX,FVAPX,ILMOX,UEX,HBLX,QFCF,QFCL,HTCC,
-     6                QSWINV,QSWINI,QLWIN,TPOTA,TA,QA,VA,VAC,PADRY,
-     7                RHOAIR,ALVSCS,ALIRCS,ALVSSC,ALIRSC,TRVSCS,TRIRCS,
-     8                FSVFS,CRIB,CPHCHC,CPHCHG,CEVAP,TADP,TVIRTA,RCS,
-     9                RBCOEF,ZOSCLH,ZOSCLM,ZRSLFH,ZRSLFM,ZOH,ZOM,
-     A                FCOR,GCONSTS,GCOEFFS,TSFSAV(1,1),TRSNOW,FSNOCS,
-     B                FRAICS,CHCAPS,CMASCS,PCPR,IWATER,IEVAP,ITERCT,
-     C                ISLFD,ITC,ITCG,ILG,i,i,JL,N,  
-     D                TSTEP,TVIRTC,TVIRTG,EVBETA,XEVAP,EVPWET,Q0SAT,
-     E                RA,RB,RAGINV,RBINV,RBTINV,RBCINV,TVRTAC,TPOTG,
-     F                RESID,TCANP,
-     G                WZERO,XEVAPM,DCFLXM,WC,DRAGIN,CFLUXM,CFLX,IEVAPC,
-     H                TRTOP,QSTOR,CFSENS,CFEVAP,QSGADD,AC,BC,
-     I                LZZ0,LZZ0T,FM,FH,ITER,NITER,KF1,KF2,
-     J                AILCGS,FCANCS,CO2CONC,RMATCTEM,
-     K                THLIQC,FIELDSM,WILTSM,ISAND,IG,COSZS,PRESSG,
-     L                XDIFFUS,ICTEM,IC,CO2I1CS,CO2I2CS,
-     M                ICTEMMOD,SLAI,FCANCMX,L2MAX,
-     N                NOL2PFTS,CFLUXCS,ANCSVEG,RMLCSVEG,FCANMX,ICP1,
-     O                ZSNOW,TSNOW,TCSNOW,ZPOND,TCTOPC,DELZ,TBAR1P,
-     P                GROWTH)
-          CALL TSPOSTlinear(GSNOWC,TSNOCS,WSNOCS,RHOSCS,QMELTC,
-     1                GZROCS,TSNBOT,HTCS,HMFN,
-     2                GCONSTS,GCOEFFS,GCONST,GCOEFF,TBAR,
-     3                TSURX,ZSNOW,TCSNOW,HCPSCS,QTRANS,
-     4                FCS,DELZ,ILG,i,i,JL,IG,TCTOPC   )
-          CALL TNPOSTlinear(TBARCS,G12CS,G23CS,TPNDCS,GZROCS,ZERO,GCONST
-     1                ,GCOEFF,TBAR,TCTOPC,TCBOTC,HCPC,ZPOND,TSNBOT,
-     2                TBASE,TBAR1P,A1,A2,B1,B2,C2,FCS,IWATER,
-     3                ISAND,DELZ,DELZW,ILG,i,i,JL,IG)
-          else
           CALL TSOLVC(ISNOW,FCS,
      1                QSWX,QSWNC,QSWNG,QLWX,QLWOC,QLWOG,QTRANS,
      2                QSENSX,QSENSC,QSENSG,QEVAPX,QEVAPC,QEVAPG,EVAPCS,
@@ -510,7 +482,7 @@ C
      9                RBCOEF,ZOSCLH,ZOSCLM,ZRSLFH,ZRSLFM,ZOH,ZOM,
      A                FCOR,GCONSTS,GCOEFFS,TSFSAV(1,1),TRSNOW,FSNOCS,
      B                FRAICS,CHCAPS,CMASCS,PCPR,IWATER,IEVAP,ITERCT,
-     C                ISLFD,ITC,ITCG,ILG,i,i,JL,N,  
+     C                ISLFD,ITC,ITCG,ILG,IL1,IL2,JL,N,  
      D                TSTEP,TVIRTC,TVIRTG,EVBETA,XEVAP,EVPWET,Q0SAT,
      E                RA,RB,RAGINV,RBINV,RBTINV,RBCINV,TVRTAC,TPOTG,
      F                RESID,TCANP,
@@ -527,13 +499,11 @@ C
      1                GZROCS,TSNBOT,HTCS,HMFN,
      2                GCONSTS,GCOEFFS,GCONST,GCOEFF,TBAR,
      3                TSURX,ZSNOW,TCSNOW,HCPSCS,QTRANS,
-     4                FCS,DELZ,ILG,i,i,JL,IG   )
+     4                FCS,DELZ,ILG,IL1,IL2,JL,IG   )
           CALL TNPOST(TBARCS,G12CS,G23CS,TPNDCS,GZROCS,ZERO,GCONST,
      1                GCOEFF,TBAR,TCTOPC,TCBOTC,HCPC,ZPOND,TSNBOT,
      2                TBASE,TBAR1P,A1,A2,B1,B2,C2,FCS,IWATER,
-     3                ISAND,DELZ,DELZW,ILG,i,i,JL,IG)
-          endif
-          enddo
+     3                ISAND,DELZ,DELZW,ILG,IL1,IL2,JL,IG)
 C
 C     * DIAGNOSTICS.
 C
@@ -676,7 +646,7 @@ C
      1                FGS,ZSNOW,TSNOW,TCSNOW,
      2                ILG,IL1,IL2,JL      )
           ISNOW=1 
-          CALL TSOLVElinear(ISNOW,FGS,
+          CALL TSOLVE(ISNOW,FGS,
      1                QSWX,QLWX,QTRANS,QSENSX,QEVAPX,EVAPGS,
      2                TSURX,QSURX,GSNOWG,QMELTG,CDHX,CDMX,RIBX,CFLUX,
      3                FTEMPX,FVAPX,ILMOX,UEX,HBLX, 
@@ -688,15 +658,14 @@ C
      9                ISLFD,ITG,ILG,IG,IL1,IL2,JL,  
      A                TSTEP,TVIRTS,EVBETA,Q0SAT,RESID,
      B                DCFLXM,CFLUXM,WZERO,TRTOP,AC,BC,
-     C                LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF,
-     D                ZSNOW,TSNOW,TCSNOW,ZPOND,TCTOPG,DELZ,TBAR1P,N)
-          CALL TSPOSTlinear(GSNOWG,TSNOGS,WSNOGS,RHOSGS,QMELTG,
+     C                LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF,N)
+          CALL TSPOST(GSNOWG,TSNOGS,WSNOGS,RHOSGS,QMELTG,
      1                GZROGS,TSNBOT,HTCS,HMFN,
      2                GCONSTS,GCOEFFS,GCONST,GCOEFF,TBAR,
      3                TSURX,ZSNOW,TCSNOW,HCPSGS,QTRANS,
-     4                FGS,DELZ,ILG,IL1,IL2,JL,IG,TCTOPG     )
-          CALL TNPOSTlinear(TBARGS,G12GS,G23GS,TPNDGS,GZROGS,ZERO,GCONST
-     1                ,GCOEFF,TBAR,TCTOPG,TCBOTG,HCPG,ZPOND,TSNBOT,
+     4                FGS,DELZ,ILG,IL1,IL2,JL,IG     )
+          CALL TNPOST(TBARGS,G12GS,G23GS,TPNDGS,GZROGS,ZERO,GCONST,
+     1                GCOEFF,TBAR,TCTOPG,TCBOTG,HCPG,ZPOND,TSNBOT,
      2                TBASE,TBAR1P,A1,A2,B1,B2,C2,FGS,IWATER,
      3                ISAND,DELZ,DELZW,ILG,IL1,IL2,JL,IG  )
 C
@@ -823,39 +792,6 @@ C
      +                FC,ZPOND,TBAR1P,DELZ,TCSNOW,ZSNOW,
      3                ISAND,ILG,IL1,IL2,JL,IG                      )
           ISNOW=0
-          do i=IL1,IL2
-          if((FCANMX(I,4).GT.0. .or. FCANMX(I,3).GT.0.))then
-          CALL TSOLVClinear(ISNOW,FC,
-     1                QSWX,QSWNC,QSWNG,QLWX,QLWOC,QLWOG,QTRANS,
-     2                QSENSX,QSENSC,QSENSG,QEVAPX,QEVAPC,QEVAPG,EVAPC,
-     3                EVAPCG,EVAP,TCANO,QCANX,TSURX,QSURX,GZEROC,QPHCHC,
-     4                QFREZC,RAICAN,SNOCAN,CDHX,CDMX,RIBX,TACCO,QACCO,
-     5                CFLUX,FTEMPX,FVAPX,ILMOX,UEX,HBLX,QFCF,QFCL,HTCC, 
-     6                QSWINV,QSWINI,QLWIN,TPOTA,TA,QA,VA,VAC,PADRY,
-     7                RHOAIR,ALVSCN,ALIRCN,ALVSGC,ALIRGC,TRVSCN,TRIRCN,
-     8                FSVF,CRIB,CPHCHC,CPHCHG,CEVAP,TADP,TVIRTA,RC,
-     9                RBCOEF,ZOSCLH,ZOSCLM,ZRSLFH,ZRSLFM,ZOH,ZOM,
-     A                FCOR,GCONST,GCOEFF,TSFSAV(1,3),TRSNOW,FSNOWC,
-     B                FRAINC,CHCAP,CMASSC,PCPR,IWATER,IEVAP,ITERCT,
-     C                ISLFD,ITC,ITCG,ILG,i,i,JL,N,  
-     D                TSTEP,TVIRTC,TVIRTG,EVBETA,XEVAP,EVPWET,Q0SAT,
-     E                RA,RB,RAGINV,RBINV,RBTINV,RBCINV,TVRTAC,TPOTG,
-     F                RESID,TCANP,
-     G                WZERO,XEVAPM,DCFLXM,WC,DRAGIN,CFLUXM,CFLX,IEVAPC,
-     H                TRTOP,QSTOR,CFSENS,CFEVAP,QSGADD,AC,BC,
-     I                LZZ0,LZZ0T,FM,FH,ITER,NITER,KF1,KF2,
-     J                AILCG,FCANC,CO2CONC,RMATCTEM,
-     K                THLIQC,FIELDSM,WILTSM,ISAND,IG,COSZS,PRESSG,
-     L                XDIFFUS,ICTEM,IC,CO2I1CG,CO2I2CG,
-     M                ICTEMMOD,SLAI,FCANCMX,L2MAX,
-     N                NOL2PFTS,CFLUXCG,ANCGVEG,RMLCGVEG,FCANMX,ICP1,
-     O                ZSNOW,TSNOW,TCSNOW,ZPOND,TCTOPC,DELZ,TBAR1P,
-     P                GROWTH)
-          CALL TNPOSTlinear(TBARC,G12C,G23C,TPONDC,GZEROC,QFREZC,GCONST,
-     1                GCOEFF,TBAR,TCTOPC,TCBOTC,HCPC,ZPOND,TSURX,
-     2                TBASE,TBAR1P,A1,A2,B1,B2,C2,FC,IWATER,
-     3                ISAND,DELZ,DELZW,ILG,i,i,JL,IG)
-          else
           CALL TSOLVC(ISNOW,FC,
      1                QSWX,QSWNC,QSWNG,QLWX,QLWOC,QLWOG,QTRANS,
      2                QSENSX,QSENSC,QSENSG,QEVAPX,QEVAPC,QEVAPG,EVAPC,
@@ -868,7 +804,7 @@ C
      9                RBCOEF,ZOSCLH,ZOSCLM,ZRSLFH,ZRSLFM,ZOH,ZOM,
      A                FCOR,GCONST,GCOEFF,TSFSAV(1,3),TRSNOW,FSNOWC,
      B                FRAINC,CHCAP,CMASSC,PCPR,IWATER,IEVAP,ITERCT,
-     C                ISLFD,ITC,ITCG,ILG,i,i,JL,N,  
+     C                ISLFD,ITC,ITCG,ILG,IL1,IL2,JL,N,  
      D                TSTEP,TVIRTC,TVIRTG,EVBETA,XEVAP,EVPWET,Q0SAT,
      E                RA,RB,RAGINV,RBINV,RBTINV,RBCINV,TVRTAC,TPOTG,
      F                RESID,TCANP,
@@ -884,9 +820,7 @@ C
           CALL TNPOST(TBARC,G12C,G23C,TPONDC,GZEROC,QFREZC,GCONST,
      1                GCOEFF,TBAR,TCTOPC,TCBOTC,HCPC,ZPOND,TSURX,
      2                TBASE,TBAR1P,A1,A2,B1,B2,C2,FC,IWATER,
-     3                ISAND,DELZ,DELZW,ILG,i,i,JL,IG)
-          endif
-          enddo
+     3                ISAND,DELZ,DELZW,ILG,IL1,IL2,JL,IG)
 C
 C     * DIAGNOSTICS.
 C
@@ -1022,7 +956,7 @@ C
      +                FG,ZPOND,TBAR1P,DELZ,TCSNOW,ZSNOW,
      3                ISAND,ILG,IL1,IL2,JL,IG                      )
           ISNOW=0
-          CALL TSOLVElinear(ISNOW,FG, ! MM: output from FLXSURFZ: CDHX,CDMX,RIBX,CFLUX,FTEMPX,FVAPX,ILMOX,UEX,HBLX,LZZ0,LZZ0T,FM,FH
+          CALL TSOLVE(ISNOW,FG, ! MM: output from FLXSURFZ: CDHX,CDMX,RIBX,CFLUX,FTEMPX,FVAPX,ILMOX,UEX,HBLX,LZZ0,LZZ0T,FM,FH
      1                QSWX,QLWX,QTRANS,QSENSX,QEVAPX,EVAPG,
      2                TSURX,QSURX,GZEROG,QFREZG,CDHX,CDMX,RIBX,CFLUX,
      3                FTEMPX,FVAPX,ILMOX,UEX,HBLX, 
@@ -1034,9 +968,8 @@ C
      9                ISLFD,ITG,ILG,IG,IL1,IL2,JL,  
      A                TSTEP,TVIRTS,EVBETA,Q0SAT,RESID,
      B                DCFLXM,CFLUXM,WZERO,TRTOP,AC,BC,
-     C                LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF,
-     D                ZSNOW,TSNOW,TCSNOW,ZPOND,TCTOPG,DELZ,TBAR1P,N)
-          CALL TNPOSTlinear(TBARG,G12G,G23G,TPONDG,GZEROG,QFREZG,GCONST,
+     C                LZZ0,LZZ0T,FM,FH,ITER,NITER,JEVAP,KF,N)
+          CALL TNPOST(TBARG,G12G,G23G,TPONDG,GZEROG,QFREZG,GCONST,
      1                GCOEFF,TBAR,TCTOPG,TCBOTG,HCPG,ZPOND,TSURX,
      2                TBASE,TBAR1P,A1,A2,B1,B2,C2,FG,IWATER,
      3                ISAND,DELZ,DELZW,ILG,IL1,IL2,JL,IG )
@@ -1114,6 +1047,60 @@ C
               ENDIF
   475     CONTINUE
       ENDIF                                                               
+C
+C******LOCAL ADVECTION CALCULATIONS (Matt MacDonald)******
+C
+       DO 600 I=IL1,IL2
+           PSC(I)=0.
+           PSG(I)=0.
+           FSC(I)=0.
+           FSG(I)=0.
+          IF(FCS(I).GT.0)THEN
+            PSC(I)=FCS(I)/(FC(I)+FCS(I))
+          ELSE
+            PSC(I)=0.
+          ENDIF
+          IF(FGS(I).GT.0)THEN
+            PSG(I)=FGS(I)/(FG(I)+FGS(I))
+          ELSE
+            PSG(I)=0.
+          ENDIF
+          IF(PSC(I).GT.0.6)THEN
+              FSC(I)=1.0
+          ELSEIF(PSC(I).GT.0.5)THEN
+              FSC(I)=10**(3*PSC(I)-1.8)
+          ELSEIF(PSC(I).GT.0.2)THEN
+              FSC(I)=10**(5.667*PSC(I)-3.133)
+          ELSEIF(PSC(I).GT.0.013)THEN
+              FSC(I)=0.01
+          ENDIF
+          IF(PSG(I).GT.0.6)THEN
+              FSG(I)=1.0
+          ELSEIF(PSG(I).GT.0.5)THEN
+              FSG(I)=10**(3*PSG(I)-1.8)
+          ELSEIF(PSG(I).GT.0.2)THEN
+              FSG(I)=10**(5.667*PSG(I)-3.133)
+          ELSEIF(PSG(I).GT.0.013)THEN
+              FSG(I)=0.01
+          ENDIF
+          IF(HBC(I).GT.999.) FSC(I)=0.
+          IF(HBG(I).GT.999.) FSG(I)=0.
+  600 CONTINUE
+      
+      DO 601 I=IL1,IL2
+          IF(FCS(I).GT.0.)THEN
+              CALL LOCALADVECTION(TSNOCS,WSNOCS,RHOSCS,QMELTC,
+     1                HTCS,HMFN,ZSNOW,TCSNOW,HCPSCS,PSC,FSC,HBC,
+     2                HFSS,HEVS,FCS,ILG,IL1,IL2,JL   )
+          ENDIF
+          IF(FGS(I).GT.0.)THEN
+              CALL LOCALADVECTION(TSNOGS,WSNOGS,RHOSGS,QMELTG,
+     1                HTCS,HMFN,ZSNOW,TCSNOW,HCPSGS,PSG,FSG,HBG,
+     2                HFSS,HEVS,FGS,ILG,IL1,IL2,JL   )
+          ENDIF
+  601 CONTINUE
+C
+C*********************************************************
 C
 C     * ADDITIONAL DIAGNOSTIC VARIABLES. 
 C

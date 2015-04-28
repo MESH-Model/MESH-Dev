@@ -728,17 +728,17 @@ C
       DO 300 I=IL1,IL2                                                            
           IF(FG(I).GT.0.)                                        THEN             
               IF(ISAND(I,1).NE.-4)                   THEN                         
-                  ZOMLNG(I)=((FG(I)-FCANMX(I,5)*(1.0-FSNOW(I)))*ZOLNG+            
-     1                      FCANMX(I,5)*(1.0-FSNOW(I))*ZOLN(I,5))/FG(I)           
+                  ZOMLNG(I)=((FG(I)-FCANMX(I,5)*(1.0-FSNOW(I)))*            
+     1             ZOLNG+FCANMX(I,5)*(1.0-FSNOW(I))*ZOLN(I,5))/FG(I)           
               ELSE                                                                
                   ZOMLNG(I)=ZOLNI                                                 
               ENDIF                                                               
-              ZOELNG(I)=ZOMLNG(I)-LOG(ZORATG)                                    
+              ZOELNG(I)=ZOMLNG(I)-LOG(10.)                                    
           ENDIF                                                                   
           IF(FGS(I).GT.0.)                                       THEN             
               ZOMLNS(I)=((FGS(I)-FCANMX(I,5)*FSNOW(I))*ZOLNS+                     
      1                  FCANMX(I,5)*FSNOW(I)*ZOLN(I,5))/FGS(I)                    
-              ZOELNS(I)=ZOMLNS(I)-LOG(ZORATG)                                    
+              ZOELNS(I)=ZOMLNS(I)-LOG(10.)                                    
           ENDIF                                                                   
   300 CONTINUE                                                                    
 C                                                                                 
