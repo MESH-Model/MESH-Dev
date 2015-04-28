@@ -317,40 +317,15 @@ C     * CALCULATIONS.
 C
 !$omp parallel do
       DO 200 I=IL1,IL2    
-          IF(SANDGAT(I,1).GE.65 .AND. CLAYGAT(I,1).LE.18) THEN !COARSE
-            IF(THLIQG(I,1).LE.0.064) THEN    
-                IEVAP(I)=0  
-                CEVAP(I)=0.0
-            ELSEIF(THLIQG(I,1).GT.0.150) THEN
-                IEVAP(I)=1   
-                CEVAP(I)=1.0
-            ELSE
-                IEVAP(I)=1
-                CEVAP(I)=(THLIQG(I,1)-0.064)/(0.150-0.064)
-            ENDIF
-          ELSEIF(CLAYGAT(I,1).GE.35) THEN !FINE
-            IF(THLIQG(I,1).LE.0.221) THEN    
-                IEVAP(I)=0  
-                CEVAP(I)=0.0
-            ELSEIF(THLIQG(I,1).GT.0.310) THEN
-                IEVAP(I)=1   
-                CEVAP(I)=1.0
-            ELSE
-                IEVAP(I)=1
-                CEVAP(I)=(THLIQG(I,1)-0.221)/(0.310-0.221)
-            ENDIF
-          ELSE !MEDIUM
-            IF(THLIQG(I,1).LE.0.136) THEN    
-                IEVAP(I)=0  
-                CEVAP(I)=0.0
-            ELSEIF(THLIQG(I,1).GT.0.242) THEN
-                IEVAP(I)=1   
-                CEVAP(I)=1.0
-            ELSE
-                IEVAP(I)=1
-                CEVAP(I)=(THLIQG(I,1)-0.136)/(0.242-0.136)
-            ENDIF
-              
+          IF(THLIQG(I,1).LT.(THLMIN(I,1)+0.001)) THEN    
+              IEVAP(I)=0  
+              CEVAP(I)=0.0
+          ELSEIF(THLIQG(I,1).GT.THFC(I,1)) THEN
+              IEVAP(I)=1   
+              CEVAP(I)=1.0
+          ELSE
+              IEVAP(I)=1
+              CEVAP(I)=0.25*(1.0-COS(3.14159*THLIQG(I,1)/THFC(I,1)))**2
           ENDIF
   200 CONTINUE  
 C                                                                                 
@@ -378,13 +353,8 @@ C
               HCPSCS(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
      1            (RHOW*ZSNOW(I)) 
               HCPSGS(I)=HCPSCS(I)
-C             TCSNOW(I)=2.576E-6*RHOSNO(I)*RHOSNO(I)+0.074                             
-              IF(RHOSNO(I).LT.156.0) THEN
-                  TCSNOW(I)=0.234E-3*RHOSNO(I)+0.023
-              ELSE
-                  TCSNOW(I)=3.233E-6*RHOSNO(I)*RHOSNO(I)-1.01E-3*
-     1                RHOSNO(I)+0.138
-              ENDIF
+C             TCSNOW(I)=2.576E-6*RHOSNO(I)*RHOSNO(I)+0.074                        
+              TCSNOW(I)=2.22*(RHOSNO(I)/RHOW)**1.88
               IF(FVEG(I).LT.1.)                                 THEN              
                   TSNOGS(I)=TSNOW(I)                                              
                   WSNOGS(I)=WSNOW(I)
@@ -439,15 +409,26 @@ C
                   SATRAT=MIN((THLRET(I,J)+THICEG(I,J))/
      1                   THPOR(I,J), 1.0)              
                   THLSAT=THLIQG(I,J)/(THLIQG(I,J)+THICEG(I,J))          
-                  THISAT=THICEG(I,J)/(THLIQG(I,J)+THICEG(I,J))  
-                    TCDRY=0.30*EXP(-2.0*THPOR(I,J))
-                    TCSATU(I)=TCW*THPOR(I,J)+TCS(I,J)*(1.0-THPOR(I,J))
-                    TCSATF(I)=TCICE*THPOR(I,J)+TCS(I,J)*(1.0-THPOR(I,J))
-                    TCRATU=0.6*SATRAT/(1.0-0.4*SATRAT)
-                    TCRATF=0.25*SATRAT/(1.0-0.75*SATRAT)
-                    TCSOLU=(TCSATU(I)-TCDRY)*TCRATU+TCDRY                              
-                    TCSOLF=(TCSATF(I)-TCDRY)*TCRATF+TCDRY
-                    TCSOIL=TCSOLU*THLSAT+TCSOLF*THISAT
+                  THISAT=THICEG(I,J)/(THLIQG(I,J)+THICEG(I,J))          
+                  if ( (THLIQG(I,J)+THICEG(I,J)).gt.0.09 ) then
+                   ga = 0.333-(0.333-0.035)*(THPOR(I,J)-
+     1                  THLIQG(I,J)-THICEG(I,J))/THPOR(I,J)
+                  else
+                   ga = 0.013+0.944*(THLIQG(I,J)+THICEG(I,J))
+                  endif
+                  gc = 1 - 2*ga
+                  tcwater = (TCW*THLIQG(I,J) + TCICE*THICEG(I,J))/
+     1                      (THLIQG(I,J) + THICEG(I,J))
+                  fs = (2/(1+(TCOM/tcwater-1)*0.125) 
+     1                 + 1/(1+(TCOM/tcwater-1)*0.75))/3
+                  fa = (2/(1+(0.0245/tcwater-1)*ga) 
+     1                 + 1/(1+(0.0245/tcwater-1)*gc))/3
+                  TCSOIL = ((THLIQG(I,J)+THICEG(I,J))*tcwater + 
+     1                     fa*(THPOR(I,J)-THLIQG(I,J)-
+     2                     THICEG(I,J))*0.0245 + fs*(1-THPOR(I,J))*
+     3                     TCOM)/((THLIQG(I,J)+THICEG(I,J))+fa*
+     4                     (THPOR(I,J)-THLIQG(I,J)-THICEG(I,J))+
+     5                     fs*(1-THPOR(I,J)))
                   IF(DELZW(I,J).GT.0.0) THEN
                       TCTOPC(I,J)=TCSOIL
                       TCTOPG(I,J)=TCSOIL
@@ -471,15 +452,27 @@ C
                   SATRAT=MIN((THLIQG(I,J)+THICEG(I,J))/
      1                   THPOR(I,J), 1.0)              
                   THLSAT=THLIQG(I,J)/(THLIQG(I,J)+THICEG(I,J))          
-                  THISAT=THICEG(I,J)/(THLIQG(I,J)+THICEG(I,J))    
-                    TCDRY=0.30*EXP(-2.0*THPOR(I,J))
-                    TCSATU(I)=TCW*THPOR(I,J)+TCS(I,J)*(1.0-THPOR(I,J))
-                    TCSATF(I)=TCICE*THPOR(I,J)+TCS(I,J)*(1.0-THPOR(I,J))
-                    TCRATU=0.6*SATRAT/(1.0-0.4*SATRAT)
-                    TCRATF=0.25*SATRAT/(1.0-0.75*SATRAT)
-                    TCSOLU=(TCSATU(I)-TCDRY)*TCRATU+TCDRY                              
-                    TCSOLF=(TCSATF(I)-TCDRY)*TCRATF+TCDRY
-                    TCSOIL=TCSOLU*THLSAT+TCSOLF*THISAT
+                  THISAT=THICEG(I,J)/(THLIQG(I,J)+THICEG(I,J))          
+                  
+                  if ( (THLIQG(I,J)+THICEG(I,J)).gt.0.09 ) then
+                   ga = 0.333-(0.333-0.035)*(THPOR(I,J)-
+     1                  THLIQG(I,J)-THICEG(I,J))/THPOR(I,J)
+                  else
+                   ga = 0.013+0.944*(THLIQG(I,J)+THICEG(I,J))
+                  endif
+                  gc = 1 - 2*ga
+                  tcwater = (TCW*THLIQG(I,J) + TCICE*THICEG(I,J))/
+     1                      (THLIQG(I,J) + THICEG(I,J))
+                  fs = (2/(1+(TCOM/tcwater-1)*0.125) 
+     1                 + 1/(1+(TCOM/tcwater-1)*0.75))/3
+                  fa = (2/(1+(0.0245/tcwater-1)*ga) 
+     1                 + 1/(1+(0.0245/tcwater-1)*gc))/3
+                  TCSOIL = ((THLIQG(I,J)+THICEG(I,J))*tcwater + 
+     1                     fa*(THPOR(I,J)-THLIQG(I,J)-
+     2                     THICEG(I,J))*0.0245 + fs*(1-THPOR(I,J))*
+     3                     TCOM)/((THLIQG(I,J)+THICEG(I,J))+fa*
+     4                     (THPOR(I,J)-THLIQG(I,J)-THICEG(I,J))+
+     5                     fs*(1-THPOR(I,J)))
                   IF(DELZW(I,J).GT.0.0) THEN
                       TCTOPC(I,J)=TCSOIL
                       TCTOPG(I,J)=TCSOIL
@@ -504,19 +497,27 @@ C
               SATRAT=MIN((THLIQG(I,J)+THICEG(I,J))/
      1               THPOR(I,J), 1.0)              
               THLSAT=THLIQG(I,J)/(THLIQG(I,J)+THICEG(I,J))          
-              THISAT=THICEG(I,J)/(THLIQG(I,J)+THICEG(I,J))   
-                TCDRY=0.75*EXP(-2.76*THPOR(I,J))
-                TCSATU(I)=TCW*THPOR(I,J)+TCS(I,J)*(1.0-THPOR(I,J))
-                TCSATF(I)=TCICE*THPOR(I,J)+TCS(I,J)*(1.0-THPOR(I,J))
-                TCKAPU=(4.0*REAL(ISAND(I,J))+1.9*REAL(100-ISAND(I,J)))/
-     1                 100.0
-                TCKAPF=(1.2*REAL(ISAND(I,J))+0.85*REAL(100-ISAND(I,J)))/
-     1                 100.0
-                TCRATU=TCKAPU*SATRAT/(1.0+(TCKAPU-1.0)*SATRAT)
-                TCRATF=TCKAPF*SATRAT/(1.0+(TCKAPF-1.0)*SATRAT)
-                TCSOLU=(TCSATU(I)-TCDRY)*TCRATU+TCDRY                              
-                TCSOLF=(TCSATF(I)-TCDRY)*TCRATF+TCDRY
-                TCSOIL=TCSOLU*THLSAT+TCSOLF*THISAT
+              THISAT=THICEG(I,J)/(THLIQG(I,J)+THICEG(I,J))          
+              
+              if ( (THLIQG(I,J)+THICEG(I,J)).gt.0.09 ) then
+               ga = 0.333-(0.333-0.035)*(THPOR(I,J)-
+     1              THLIQG(I,J)-THICEG(I,J))/THPOR(I,J)
+              else
+               ga = 0.013+0.944*(THLIQG(I,J)+THICEG(I,J))
+              endif
+              gc = 1 - 2*ga
+              tcwater = (TCW*THLIQG(I,J) + TCICE*THICEG(I,J))/
+     1                  (THLIQG(I,J) + THICEG(I,J))
+              fs = (2/(1+(TCDRYS/tcwater-1)*0.125) 
+     1             + 1/(1+(TCDRYS/tcwater-1)*0.75))/3
+              fa = (2/(1+(0.0245/tcwater-1)*ga) 
+     1             + 1/(1+(0.0245/tcwater-1)*gc))/3
+              TCSOIL = ((THLIQG(I,J)+THICEG(I,J))*tcwater + 
+     1                 fa*(THPOR(I,J)-THLIQG(I,J)-
+     2                 THICEG(I,J))*0.0245 + fs*(1-THPOR(I,J))*
+     3                 TCDRYS)/((THLIQG(I,J)+THICEG(I,J))+fa*
+     4                 (THPOR(I,J)-THLIQG(I,J)-THICEG(I,J))+
+     5                 fs*(1-THPOR(I,J)))
               IF(DELZW(I,J).GT.0.0) THEN
                   TCTOPC(I,J)=TCSOIL
                   TCTOPG(I,J)=TCSOIL
