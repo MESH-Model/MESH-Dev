@@ -264,65 +264,21 @@ c----------------------------------------------------------------------
 !          CTU(J)= Chn(J)*ftq(J)*1.25*u!u !output
 !        end select
         !!!NEW CASES AS PER R.ESSERY IUGG
-         if(can.eq.0)then ! CH(z/L) JULES
-          CDM(J) = 0.41**2 / (log(ZU(J)/Z0(J))*log(ZU(J)/Z0(J))) !I think this is CDM(J), and that I don't care about CM
-          CDH(J) = 0.41**2 / (log(ZU(J)/Z0(J))*log(ZT(J)/Z0T(J))) 
-       !666 continue
-          do i = 1, 11
-            if(TG(J).eq.TA(J))then
-              if(ILMO(J).le.0.)then !unstable; to deal with TA(J)=TG(J)
-                B = CDH(J) *VA(J)*GRAV*(TG(J) - TA(J)-0.01)/TA(J)
-              else !stable
-                B = CDH(J) *VA(J)*GRAV*(TG(J) - TA(J)+0.01)/TA(J)
-              endif
-            else
-              B = CDH(J) *VA(J)*GRAV*(TG(J) - TA(J))/TA(J)
-            endif
-            if(CDH(J).le.0.) pos_UE=UE(J)
-            UE(J)=sqrt(CDM(J))*VA(J)
-            L = -UE(J)**3 / (0.41*B)
-            if (L.gt.0 .and. L.lt. 1e-2) L =  1e-2
-            if (L.lt.0 .and. L.gt.-1e-2) L = -1e-2
-            zeta_T = ZT(J)/ L
-            zeta_U = ZU(J)/ L
-             if(zeta_T.lt.-1 .or. zeta_U.lt.-1)then
-              L=-ZU(J)/1
-              zeta_T = ZT(J)/ L
-              zeta_U = ZU(J)/ L
-              B=-UE(J)**3/L/0.41
-             endif
-            if(L.gt.0) then
-              psi_h = -(1+2/3*zeta_T)**(3/2)
-     1                -2/3*(zeta_T-5/.35)*exp(-.35*zeta_T)-2/3*5/.35+1
-              psi_m = -zeta_U-2/3*(zeta_U-5/0.35)*exp(-0.35*zeta_U)
-     1                -2/3*5/0.35
-              !psi_h = -5*zeta_T
-              !psi_m = -5*zeta_U
-              !!if (zeta_T > 1) psi_h = -4*(1 + log(zeta_T)) - zeta_T
-              !!if (zeta_U > 1) psi_m = -4*(1 + log(zeta_U)) - zeta_U
-            else
-              xxx = (1 - 16*zeta_U)**0.25
-              psi_m = 2*log((1 + xxx)/2) + log((1 + xxx**2)/2) - 
-     1                  2*atan(xxx) + 3.1415926535898/2
-              xxx = (1 - 16*zeta_T)**0.25
-              psi_h = 2*log((1 + xxx**2)/2)
-            end if
-            temp_CDM = 0.41**2 / ((log(ZU(J)/Z0(J)) - psi_m)* !I think this is CDM(J), and that I don't care about CM
-     1                        (log(ZU(J)/Z0(J)) - psi_m))
-            temp_CDH = 0.41**2 / ((log(ZU(J)/Z0(J)) - psi_m)*
-     1                            (log(ZT(J)/Z0T(J)) - psi_h))
-            if(temp_CDH.gt.0.)then
-             CDM(J) = temp_CDM
-             CDH(J) = temp_CDH
-             CTU(J) = CDH(J)*UE(J)
-             UE(J)=pos_UE
-            endif
-          end do !i=1,10
-          !if(CTU(J).lt.0.)  go to 666
-         else ! can=1; CLASS: M-O
-            CDM(J)=CM**2 !output
-            CTU(J)=CT*UE(J) !output
-            CDH(J)=CM*CT !output
+         if(can.eq.0)then ! CH(RiB) JULES
+          CDH(J)= KARMAN**2 / (log(ZU(J)/Z0(J))*log(ZT(J)/Z0T(J)))
+          RIB(J) = GRAV*ZU(J)*(TA(J) - TG(J)) / (TA(J)*VA(J)**2)
+          FH(J) = 1
+          if (RIB(J).gt.0) then 
+            FH(J) = 1/(1 + 15*RIB(J)/sqrt(1 + 5*RIB(J)))
+          else
+            FH(J) = 1-15*RIB(J)/(1+75*CDH(J)*sqrt(-RIB(J)*ZU(J)/Z0(J)))
+          end if
+          CDH(J) = FH(J)*CDH(J)
+          CTU(J) = CDH(J)*UE(J)
+         else ! CCMA 2nd Gen: RiB
+          CDM(J)= fmom(J)*Cmn(J) !output ; DO I WANT THIS??
+          CDH(J)= ftq(J)*Chn(J)*1.25 !output ; DO I WANT THIS??
+          CTU(J)= Chn(J)*ftq(J)*1.25*u!u !output
          endif
         if (rib(j).gt.0.0) then
 c             cas stable
