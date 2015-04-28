@@ -733,12 +733,12 @@ C
               ELSE                                                                
                   ZOMLNG(I)=ZOLNI                                                 
               ENDIF                                                               
-              ZOELNG(I)=ZOMLNG(I)-LOG(3.)                                    
+              ZOELNG(I)=ZOMLNG(I)-LOG(10.)                                    
           ENDIF                                                                   
           IF(FGS(I).GT.0.)                                       THEN             
               ZOMLNS(I)=((FGS(I)-FCANMX(I,5)*FSNOW(I))*ZOLNS+                     
      1                  FCANMX(I,5)*FSNOW(I)*ZOLN(I,5))/FGS(I)                    
-              ZOELNS(I)=ZOMLNS(I)-LOG(3.)                                    
+              ZOELNS(I)=ZOMLNS(I)-LOG(10.)                                    
           ENDIF                                                                   
   300 CONTINUE                                                                    
 C                                                                                 
