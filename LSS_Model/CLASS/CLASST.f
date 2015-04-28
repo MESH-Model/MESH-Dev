@@ -1049,55 +1049,7 @@ C
       ENDIF                                                               
 C
 C******LOCAL ADVECTION CALCULATIONS (Matt Ma
-       DO 600 I=IL1,IL2
-           PSC(I)=0.
-           PSG(I)=0.
-           FSC(I)=0.
-           FSG(I)=0.
-          IF(FCS(I).GT.0)THEN
-            PSC(I)=FCS(I)/(FC(I)+FCS(I))
-          ELSE
-            PSC(I)=0.
-          ENDIF
-          IF(FGS(I).GT.0)THEN
-            PSG(I)=FGS(I)/(FG(I)+FGS(I))
-          ELSE
-            PSG(I)=0.
-          ENDIF
-          IF(PSC(I).GT.0.6)THEN
-              FSC(I)=1.0
-          ELSEIF(PSC(I).GT.0.5)THEN
-              FSC(I)=10**(3*PSC(I)-1.8)
-          ELSEIF(PSC(I).GT.0.2)THEN
-              FSC(I)=10**(5.667*PSC(I)-3.133)
-          ELSEIF(PSC(I).GT.0.013)THEN
-              FSC(I)=0.01
-          ENDIF
-          IF(PSG(I).GT.0.6)THEN
-              FSG(I)=1.0
-          ELSEIF(PSG(I).GT.0.5)THEN
-              FSG(I)=10**(3*PSG(I)-1.8)
-          ELSEIF(PSG(I).GT.0.2)THEN
-              FSG(I)=10**(5.667*PSG(I)-3.133)
-          ELSEIF(PSG(I).GT.0.013)THEN
-              FSG(I)=0.01
-          ENDIF
-          IF(HBC(I).GT.999.) FSC(I)=0.
-          IF(HBG(I).GT.999.) FSG(I)=0.
-  600 CONTINUE
-      
-      DO 601 I=IL1,IL2
-          IF(FCS(I).GT.0.)THEN
-              CALL LOCALADVECTION(TSNOCS,WSNOCS,RHOSCS,QMELTC,
-     1                HTCS,HMFN,ZSNOW,TCSNOW,HCPSCS,PSC,FSC,HBC,
-     2                HFSS,HEVS,FCS,ILG,IL1,IL2,JL   )
-          ENDIF
-          IF(FGS(I).GT.0.)THEN
-              CALL LOCALADVECTION(TSNOGS,WSNOGS,RHOSGS,QMELTG,
-     1                HTCS,HMFN,ZSNOW,TCSNOW,HCPSGS,PSG,FSG,HBG,
-     2                HFSS,HEVS,FGS,ILG,IL1,IL2,JL  )
-          ENDIF
-  601 CONTINUE
+
 C
 C*********************************************************
 C
