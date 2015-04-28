@@ -216,13 +216,13 @@ C
       DO 100 I=IL1,IL2                                                            
           IF(SNO(I).GT.0.0) THEN                                              
               ZSNOW(I)=SNO(I)/RHOSNO(I) 
-              IF(ZSNOW(I).GE.(SNOLIM(I)-0.00001)) THEN                                     
-                  FSNOW(I)=1.0                                                   
-              ELSE
-                  FSNOW(I)=ZSNOW(I)/SNOLIM(I)
-                  ZSNOW(I)=SNOLIM(I)
+              FSNOW(I)=min(tanh(ZSNOW(I)/SNOLIM(I)),1.)
+              IF(FSNOW(I).lt.0.999) THEN                                  
+                  ZSNOW(I)=ZSNOW(I)/FSNOW(I)
                   WSNOW(I)=WSNOW(I)/FSNOW(I)
-              ENDIF
+              ELSE
+                  FSNOW(I)=1.!tanh(ZSNOW(I,q)/SNOLIM(I))
+              ENDIF                   
           ELSE                                                                
               ZSNOW(I)=0.0                                                    
               FSNOW(I)=0.0                                                       
