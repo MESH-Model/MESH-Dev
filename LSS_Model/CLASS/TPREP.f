@@ -353,8 +353,13 @@ C
               HCPSCS(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
      1            (RHOW*ZSNOW(I)) 
               HCPSGS(I)=HCPSCS(I)
-C             TCSNOW(I)=2.576E-6*RHOSNO(I)*RHOSNO(I)+0.074                        
-              TCSNOW(I)=2.22*(RHOSNO(I)/RHOW)**1.88
+C             TCSNOW(I)=2.576E-6*RHOSNO(I)*RHOSNO(I)+0.074                              
+              IF(RHOSNO(I).LT.156.0) THEN
+                  TCSNOW(I)=0.234E-3*RHOSNO(I)+0.023
+              ELSE
+                  TCSNOW(I)=3.233E-6*RHOSNO(I)*RHOSNO(I)-1.01E-3*
+     1                RHOSNO(I)+0.138
+              ENDIF
               IF(FVEG(I).LT.1.)                                 THEN              
                   TSNOGS(I)=TSNOW(I)                                              
                   WSNOGS(I)=WSNOW(I)
