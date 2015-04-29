@@ -100,10 +100,8 @@ C
           IF(FI(I).GT.0. .AND. ZSNOW(I).GT.0.0001 .AND. 
      1       RHOSNO(I).LT.(RHOMAX(I)-0.01))                       THEN
               RHOOLD=RHOSNO(I)                                                       
-              RHOSNO(I)=RHOOLD+(RHOOLD*9.80616*RHOOLD*ZSNOW(I)
-     1           *DELT/3.7e7)*exp(-0.081*(0.-TSNOW(I))-0.018*RHOOLD)
-     2           +DELT*RHOOLD*2.8e-6*exp(-0.042*(0.-TSNOW(I))
-     3           -0.046*max(RHOOLD-150,0.))
+              RHOSNO(I)=(RHOSNO(I)-RHOMAX(I))*EXP(-0.01*DELT/3600.0)+
+     1            RHOMAX(I)
               ZSNOW(I)=ZSNOW(I)*RHOOLD/RHOSNO(I) 
               HCPSNO(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
      1            (RHOW*ZSNOW(I))
