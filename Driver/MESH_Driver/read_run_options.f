@@ -597,7 +597,7 @@
 !> DIMENSION GRID OUTPUT POINT VARIABLES
       IF (WF_NUM_POINTS .GT. 0) THEN
         ALLOCATE (op%DIR_OUT(WF_NUM_POINTS), op%N_OUT(WF_NUM_POINTS),
-     1      op%II_OUT(WF_NUM_POINTS), STAT=PAS)
+     1      op%II_OUT(WF_NUM_POINTS), op%K_OUT(WF_NUM_POINTS), STAT=PAS)
         IF (PAS. NE. 0) THEN
             WRITE (6, *)
             WRITE (6, *)
@@ -615,7 +615,7 @@
         READ(53,*)
         READ(53,*)
         READ(53,*)
-        ALLOCATE (op%DIR_OUT(1), op%N_OUT(1), op%II_OUT(1))
+        ALLOCATE (op%DIR_OUT(1), op%N_OUT(1), op%II_OUT(1), op%K_OUT(1))
       END IF !(WF_NUM_POINTS .GT. 0)
 
       DO I = 1, WF_NUM_POINTS

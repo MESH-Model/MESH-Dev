@@ -104,9 +104,21 @@ INTRINSIC MAXLOC
 
     !+ For split-vector approach
     integer il1, il2, ilen
+    integer i1, i2
 
     integer, dimension(:), allocatable :: irqst
     integer, dimension(:, :), allocatable :: imstat
+
+    type CLASSOUT_VARS
+        real, dimension(:), allocatable :: &
+            PREACC, GTACC, QEVPACC, EVAPACC, HFSACC, HMFNACC, &
+            ROFACC, ROFOACC, ROFSACC, ROFBACC, WTBLACC, ALVSACC, ALIRACC, &
+            RHOSACC, TSNOACC, WSNOACC, SNOARE, TCANACC, CANARE, SNOACC, &
+            RCANACC, SCANACC, GROACC, FSINACC, FLINACC, FLUTACC, &
+            TAACC, UVACC, PRESACC, QAACC
+        real, dimension(:, :), allocatable :: &
+            TBARACC, THLQACC, THICACC, THALACC, GFLXACC
+    end type !CLASSOUT_VARS
 
 !> DAN  USE RTE SUBROUTINES FOR READING EVENT FILE AND SHD FILE, AND
 !> DAN  WRITING R2C-FORMAT OUTPUT FILES      
@@ -832,6 +844,7 @@ TYPE(DATES_MODEL)   :: TS
 TYPE(INFO_OUT)      :: IOF
 TYPE(CLIM_INFO)     :: cm
 type(met_data) :: md
+type(CLASSOUT_VARS) :: co
 type(water_balance) :: wb, wb_h
 type(energy_balance) :: eng
 type(soil_statevars) :: sov
@@ -2582,136 +2595,6 @@ if (ipid == 0) then
 
     end if !(STREAMFLOWOUTFLAG > 0) then
 
-!todo++:
-!todo++: CUT OUT CLASS ACCUMULATION AND OUTPUT FILES TO APPROPRIATE NODE
-!todo++:
-!> Set up the CLASSOF* files to print out into the correct directory
-DO I=1, wf_num_points
-  BNAM=op%DIR_OUT(i)
-  OPEN(UNIT=150+i*10+1,  FILE = "./"//trim(adjustl(BNAM))// &
-   "/CLASSOF1.csv")
-  OPEN(UNIT=150+i*10+2,  FILE = "./"//trim(adjustl(BNAM))// &
-   "/CLASSOF2.csv")
-  OPEN(UNIT=150+i*10+3,  FILE = "./"//trim(adjustl(BNAM))// &
-   "/CLASSOF3.csv")
-  OPEN(UNIT=150+i*10+4,  FILE = "./"//trim(adjustl(BNAM))// &
-   "/CLASSOF4.csv")
-  OPEN(UNIT=150+i*10+5,  FILE = "./"//trim(adjustl(BNAM))// &
-   "/CLASSOF5.csv")
-  OPEN(UNIT=150+i*10+6,  FILE = "./"//trim(adjustl(BNAM))// &
-   "/CLASSOF6.csv")
-  OPEN(UNIT=150+i*10+7,  FILE = "./"//trim(adjustl(BNAM))// &
-   "/CLASSOF7.csv")
-  OPEN(UNIT=150+i*10+8,  FILE = "./"//trim(adjustl(BNAM))// &
-   "/CLASSOF8.csv")
-  OPEN(UNIT=150+i*10+9,  FILE = "./"//trim(adjustl(BNAM))// &
-   "/CLASSOF9.csv")
-  OPEN(UNIT=150+i*10+10, FILE = "./"//trim(adjustl(BNAM))// &
-   "/GRU_water_balance.csv")
-
-  DO j=1, 9
-    WRITE(150+i*10+j,'("CLASS TEST RUN:     ",6A4)') TITLE1, &
-                           TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-    WRITE(150+i*10+j,'("RESEARCHER:         ",6A4)') NAME1, &
-                           NAME2,NAME3,NAME4,NAME5,NAME6
-    WRITE(150+i*10+j,'("INSTITUTION:        ",6A4)') PLACE1, &
-                           PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
-  ENDDO
-
-  WRITE(150+i*10+1,"('IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,SNOMLT,BEG,"// &
-   "GTOUT,SNOACC(I),RHOSACC(I),WSNOACC(I),ALTOT,ROFACC(I),"// &
-   "ROFOACC(I),ROFSACC(I),ROFBACC(I)')")
-
-! Set the appropriate format statement for writing to the next file
-  WRITE(FMT,*) ""
-  DO J = 1, IGND
-    WRITE(IGND_CHAR,*) J
-    IGND_CHAR = ADJUSTL(IGND_CHAR)
-    FMT=TRIM(ADJUSTL(FMT))//'TBARACC(I '//TRIM(IGND_CHAR)//')-TFREZ,THLQACC(I ' &
-        //TRIM(IGND_CHAR)//'),THICACC(I '//TRIM(IGND_CHAR)//'),'
-  ENDDO
-! write the next file
-  WRITE(150+i*10+2,"('IDAY,IYEAR,"// TRIM(FMT)//&
-   "TCN,RCANACC(I),SCANACC(I),TSN,ZSN')")
-  WRITE(150+i*10+3,"('IDAY,IYEAR,FSINACC(I),FLINACC(I),"// &
-   "TAACC(I)-TFREZ,UVACC(I),PRESACC(I),QAACC(I),PREACC(I),"// &
-   "EVAPACC(I)')")
-  WRITE(150+i*10+4,"('IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,"// &
-   "SNOMLT,BEG,GTOUT,SNOROW(I M),RHOSROW(I M),WSNOROW(I M),ALTOT,"// &
-   "ROFROW(I M),TPN,ZPNDROW(I M),ZPND,FSTR')")
-! Set the appropriate format statement for writing to the next file
-  WRITE(FMT,*) ""
-  DO J = 1, IGND
-    WRITE(IGND_CHAR,*) J
-    IGND_CHAR = ADJUSTL(IGND_CHAR)
-    FMT=TRIM(ADJUSTL(FMT))//'TBARROW(I '//TRIM(IGND_CHAR)//')-TFREZ,THLQROW(I ' &
-        //TRIM(IGND_CHAR)//'),THICROW(I '//TRIM(IGND_CHAR)//'),'
-  ENDDO
-! write the next file
-  WRITE(150+i*10+5,"('IHOUR,IMIN,IDAY,IYEAR,"//TRIM(FMT)// &
-   "TCN,cp%RCANROW(I M),SCANROW(I M),TSN,ZSN')")
-  WRITE(150+i*10+6,"('IHOUR,IMIN,IDAY,FSDOWN(I),FDLGRD(I),"// &
-   "PREGRD(I),TAGRD(I)-TFREZ,UVGRD(I),PRESGRD(I),QAGRD(I)')")
-  WRITE(150+i*10+7,"('TROFROW(I M),TROOROW(I M),TROSROW(I M),"// &
-   "TROBROW(I M),ROFROW(I M),ROFOROW(I M),ROFSROW(I M),"// &
-   "ROFBROW(I M),FCS(I),FGS(I),FC(I),FG(I)')")
-! Set the appropriate format statement for writing to the next file
-  WRITE(FMT,*) ""
-  DO J = 1, IGND
-    WRITE(IGND_CHAR,*) J
-    IGND_CHAR = ADJUSTL(IGND_CHAR)
-    FMT=TRIM(ADJUSTL(FMT))//',HMFGROW(I M '//TRIM(IGND_CHAR)//')'
-  ENDDO
-  FMT=TRIM(ADJUSTL(FMT))//',HTCCROW(I M),HTCSROW(I M)'
-  DO J = 1, IGND
-    WRITE(IGND_CHAR,*) J
-    IGND_CHAR = ADJUSTL(IGND_CHAR)
-    FMT=TRIM(ADJUSTL(FMT))//',HTCROW(I M '//TRIM(IGND_CHAR)//')'
-  ENDDO
-! write the next file
-  WRITE(150+i*10+8,"('FSGVROW(I M),FSGSROW(I M),FSGGROW(I M),"// &
-   "FLGVROW(I M),FLGSROW(I M),FLGGROW(I M),HFSCROW(I M),"// &
-   "HFSSROW(I M),HFSGROW(I M),HEVCROW(I M),HEVSROW(I M),"// &
-   "HEVGROW(I M),HMFCROW(I M),HMFNROW(I M)"// &
-   TRIM(FMT)//"')")
-!  WRITE(150+i*10+8,"('FSGVROW(I M),FSGSROW(I M),FSGGROW(I M),"// &
-!   "FLGVROW(I M),FLGSROW(I M),FLGGROW(I M),HFSCROW(I M),"// &
-!   "HFSSROW(I M),HFSGROW(I M),HEVCROW(I M),HEVSROW(I M),"// &
-!   "HEVGROW(I M),HMFCROW(I M),HMFNROW(I M),HMFGROW(I M 1),"// &
-!   "HMFGROW(I M 2),HMFGROW(I M 3),HTCCROW(I M),HTCSROW(I M),"// &
-!   "HTCROW(I M 1),HTCROW(I M 2),HTCROW(I M 3)')")
-! Set the appropriate format statement for writing to the next file
-  WRITE(FMT,*) ""
-  DO J = 1, IGND
-    WRITE(IGND_CHAR,*) J
-    IGND_CHAR = ADJUSTL(IGND_CHAR)
-    FMT=TRIM(ADJUSTL(FMT))//'QFCROW(I M '//TRIM(IGND_CHAR)//'),'
-  ENDDO
-! write the next file
-  WRITE(150+I*10+9,"('PCFCROW(I M),PCLCROW(I M),PCPNROW(I M),"// &
-   "PCPGROW(I M),QFCFROW(I M),QFCLROW(I M),QFNROW(I M),QFGROW(I M),"// &
-   TRIM(FMT)//"ROFCROW(I M),"// &
-   "ROFNROW(I M),ROFOROW(I M),ROFROW(I M),WTRCROW(I M),"// &
-   "WTRSROW(I M),WTRGROW(I M)')")
-! Set the appropriate format statement for writing to the next file
-  WRITE(FMT,*) ""
-  DO J = 1, IGND
-    WRITE(IGND_CHAR,*) J
-    IGND_CHAR = ADJUSTL(IGND_CHAR)
-    FMT=TRIM(ADJUSTL(FMT))//'THLQ'//TRIM(IGND_CHAR)//','
-  ENDDO
-  DO J = 1, IGND
-    WRITE(IGND_CHAR,*) J
-    IGND_CHAR = ADJUSTL(IGND_CHAR)
-    FMT=TRIM(ADJUSTL(FMT))//'THIC'//TRIM(IGND_CHAR)//','
-  ENDDO
-! write the next file
-  WRITE(150+I*10+10,"('IHOUR,IMIN,IDAY,IYEAR,"// &
-   "PRE,EVAP,ROF,ROFO,ROFS,ROFB,"// &
-   "SCAN,RCAN,SNO,WSNO,ZPND,"// &
-   TRIM(FMT)//"')")
-ENDDO
-
 
 !> *********************************************************************
 !> Open and read in values from r2c_output.txt file
@@ -3553,6 +3436,187 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
 
     call GetIndices(inp, izero, ipid, NML, ILMOS, il1, il2, ilen)
 
+    !> Initialize and open files for CLASS output.
+    if (WF_NUM_POINTS > 0) then
+
+        !> After GATPREP. Determine the GAT-index of the output point.
+        do k = il1, il2
+            do i = 1, WF_NUM_POINTS
+                if (op%N_OUT(i) == ilmos(k) .and. op%II_OUT(i) == jlmos(k)) op%K_OUT(i) = k
+            end do
+        end do
+
+        !> Allocate the CLASS output variables.
+        allocate( &
+            co%PREACC(WF_NUM_POINTS), co%GTACC(WF_NUM_POINTS), co%QEVPACC(WF_NUM_POINTS), co%EVAPACC(WF_NUM_POINTS), &
+            co%HFSACC(WF_NUM_POINTS), co%HMFNACC(WF_NUM_POINTS), &
+            co%ROFACC(WF_NUM_POINTS), co%ROFOACC(WF_NUM_POINTS), co%ROFSACC(WF_NUM_POINTS), co%ROFBACC(WF_NUM_POINTS), &
+            co%WTBLACC(WF_NUM_POINTS), co%ALVSACC(WF_NUM_POINTS), co%ALIRACC(WF_NUM_POINTS), &
+            co%RHOSACC(WF_NUM_POINTS), co%TSNOACC(WF_NUM_POINTS), co%WSNOACC(WF_NUM_POINTS), co%SNOARE(WF_NUM_POINTS), &
+            co%TCANACC(WF_NUM_POINTS), co%CANARE(WF_NUM_POINTS), co%SNOACC(WF_NUM_POINTS), &
+            co%RCANACC(WF_NUM_POINTS), co%SCANACC(WF_NUM_POINTS), co%GROACC(WF_NUM_POINTS), co%FSINACC(WF_NUM_POINTS), &
+            co%FLINACC(WF_NUM_POINTS), co%FLUTACC(WF_NUM_POINTS), &
+            co%TAACC(WF_NUM_POINTS), co%UVACC(WF_NUM_POINTS), co%PRESACC(WF_NUM_POINTS), co%QAACC(WF_NUM_POINTS))
+        allocate( &
+            co%TBARACC(WF_NUM_POINTS, IGND), co%THLQACC(WF_NUM_POINTS, IGND), co%THICACC(WF_NUM_POINTS, IGND), &
+            co%THALACC(WF_NUM_POINTS, IGND), co%GFLXACC(WF_NUM_POINTS, IGND))
+
+        !> Initialize the CLASS output variables.
+        co%PREACC = 0.0
+        co%GTACC = 0.0
+        co%QEVPACC = 0.0
+        co%EVAPACC = 0.0
+        co%HFSACC = 0.0
+        co%HMFNACC = 0.0
+        co%ROFACC = 0.0
+        co%ROFOACC = 0.0
+        co%ROFSACC = 0.0
+        co%ROFBACC = 0.0
+        co%WTBLACC = 0.0
+        co%TBARACC = 0.0
+        co%THLQACC = 0.0
+        co%THICACC = 0.0
+        co%THALACC = 0.0
+        co%GFLXACC = 0.0
+        co%ALVSACC = 0.0
+        co%ALIRACC = 0.0
+        co%RHOSACC = 0.0
+        co%TSNOACC = 0.0
+        co%WSNOACC = 0.0
+        co%SNOARE = 0.0
+        co%TCANACC = 0.0
+        co%CANARE = 0.0
+        co%SNOACC = 0.0
+        co%RCANACC = 0.0
+        co%SCANACC = 0.0
+        co%GROACC = 0.0
+        co%FSINACC = 0.0
+        co%FLINACC = 0.0
+        co%FLUTACC = 0.0
+        co%TAACC = 0.0
+        co%UVACC = 0.0
+        co%PRESACC = 0.0
+        co%QAACC = 0.0
+
+        !> Open the files if the GAT-index of the output point resides on this node.
+        do i = 1, WF_NUM_POINTS
+            if (op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
+
+                !> Open the files in the appropriate directory.
+                BNAM = op%DIR_OUT(i)
+                j = 1
+                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF1.csv'); j = j + 1
+                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF2.csv'); j = j + 1
+                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF3.csv'); j = j + 1
+                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF4.csv'); j = j + 1
+                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF5.csv'); j = j + 1
+                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF6.csv'); j = j + 1
+                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF7.csv'); j = j + 1
+                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF8.csv'); j = j + 1
+                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF9.csv'); j = j + 1
+                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/GRU_water_balance.csv')
+
+                !> Write project header information.
+                do j = 1, 9
+                    write(150 + i*10 + j, "('CLASS TEST RUN:     ', 6a4)") TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6
+                    write(150 + i*10 + j, "('RESEARCHER:         ', 6a4)") NAME1, NAME2, NAME3, NAME4, NAME5, NAME6
+                    write(150 + i*10 + j, "('INSTITUTION:        ', 6a4)") PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
+                end do
+
+                !> CLASSOF1.
+                write(150 + i*10 + 1, "('IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,SNOMLT,BEG," // &
+                    "GTOUT,SNOACC(I),RHOSACC(I),WSNOACC(I),ALTOT,ROFACC(I)," // &
+                    "ROFOACC(I),ROFSACC(I),ROFBACC(I)')")
+
+                !> CLASSOF2.
+                write(FMT, *) ''
+                do j = 1, IGND
+                    write(IGND_CHAR, *) j
+                    IGND_CHAR = adjustl(IGND_CHAR)
+                    FMT = trim(adjustl(FMT)) // 'TBARACC(I ' // trim(IGND_CHAR) // ')-TFREZ,THLQACC(I ' // &
+                        trim(IGND_CHAR) // '),THICACC(I ' // trim(IGND_CHAR) // '),'
+                end do
+                write(150 + i*10 + 2, "('IDAY,IYEAR," // trim(FMT) // "TCN,RCANACC(I),SCANACC(I),TSN,ZSN')")
+
+                !> CLASSOF3.
+                write(150 + i*10 + 3, "('IDAY,IYEAR,FSINACC(I),FLINACC(I)," // &
+                    "TAACC(I)-TFREZ,UVACC(I),PRESACC(I),QAACC(I),PREACC(I)," // &
+                    "EVAPACC(I)')")
+
+                !> CLASSOF4.
+                write(150 + i*10 + 4, "('IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE," // &
+                    "SNOMLT,BEG,GTOUT,SNOROW(I M),RHOSROW(I M),WSNOROW(I M),ALTOT," // &
+                    "ROFROW(I M),TPN,ZPNDROW(I M),ZPND,FSTR')")
+
+                !> CLASSOF5.
+                write(FMT, *) ''
+                do j = 1, IGND
+                    write(IGND_CHAR, *) j
+                    IGND_CHAR = adjustl(IGND_CHAR)
+                    FMT = trim(adjustl(FMT)) // 'TBARROW(I ' // trim(IGND_CHAR) // ')-TFREZ,THLQROW(I ' // &
+                        trim(IGND_CHAR) // '),THICROW(I ' // trim(IGND_CHAR) // '),'
+                end do
+                write(150 + i*10 + 5, "('IHOUR,IMIN,IDAY,IYEAR," // trim(FMT) // "TCN,RCANROW(I M),SCANROW(I M),TSN,ZSN')")
+
+                !> CLASSOF6.
+                write(150 + i*10 + 6, "('IHOUR,IMIN,IDAY,FSDOWN(I),FDLGRD(I)," // &
+                    "PREGRD(I),TAGRD(I)-TFREZ,UVGRD(I),PRESGRD(I),QAGRD(I)')")
+
+                !> CLASSOF7.
+                write(150 + i*10 + 7,"('TROFROW(I M),TROOROW(I M),TROSROW(I M)," // &
+                    "TROBROW(I M),ROFROW(I M),ROFOROW(I M),ROFSROW(I M)," // &
+                    "ROFBROW(I M),FCS(I),FGS(I),FC(I),FG(I)')")
+
+                !> CLASSOF8.
+                write(FMT, *) ''
+                do j = 1, IGND
+                    write(IGND_CHAR, *) j
+                    IGND_CHAR = adjustl(IGND_CHAR)
+                    FMT = trim(adjustl(FMT)) // ',HMFGROW(I M ' // trim(IGND_CHAR) // ')'
+                end do
+                FMT = trim(adjustl(FMT)) // ',HTCCROW(I M),HTCSROW(I M)'
+                do j = 1, IGND
+                    write(IGND_CHAR, *) j
+                    IGND_CHAR = adjustl(IGND_CHAR)
+                    FMT = trim(adjustl(FMT)) // ',HTCROW(I M ' // trim(IGND_CHAR) // ')'
+                end do
+                write(150 + i*10 + 8, "('FSGVROW(I M),FSGSROW(I M),FSGGROW(I M)," // &
+                    "FLGVROW(I M),FLGSROW(I M),FLGGROW(I M),HFSCROW(I M)," // &
+                    "HFSSROW(I M),HFSGROW(I M),HEVCROW(I M),HEVSROW(I M)," // &
+                    "HEVGROW(I M),HMFCROW(I M),HMFNROW(I M)" // trim(FMT) // "')")
+
+                !> CLASSOF9.
+                write(FMT, *) ''
+                do j = 1, IGND
+                    write(IGND_CHAR, *) j
+                    IGND_CHAR = adjustl(IGND_CHAR)
+                    FMT = trim(adjustl(FMT)) // 'QFCROW(I M ' // trim(IGND_CHAR) // '),'
+                end do
+                write(150 + i*10 + 9, "('PCFCROW(I M),PCLCROW(I M),PCPNROW(I M)," // &
+                    "PCPGROW(I M),QFCFROW(I M),QFCLROW(I M),QFNROW(I M),QFGROW(I M)," // trim(FMT) // "ROFCROW(I M)," // &
+                    "ROFNROW(I M),ROFOROW(I M),ROFROW(I M),WTRCROW(I M)," // &
+                    "WTRSROW(I M),WTRGROW(I M)')")
+
+                !> GRU water balance file.
+                write(FMT, *) ''
+                do j = 1, IGND
+                    write(IGND_CHAR, *) j
+                    IGND_CHAR = adjustl(IGND_CHAR)
+                    FMT = trim(adjustl(FMT)) // 'THLQ' // trim(IGND_CHAR) // ','
+                end do
+                do j = 1, IGND
+                    write(IGND_CHAR, *) j
+                    IGND_CHAR = adjustl(IGND_CHAR)
+                    FMT = trim(adjustl(FMT)) // 'THIC' // trim(IGND_CHAR) // ','
+                end do
+                write(150 + i*10 + 10, "('IHOUR,IMIN,IDAY,IYEAR," // &
+                    "PRE,EVAP,ROF,ROFO,ROFS,ROFB," // &
+                    "SCAN,RCAN,SNO,WSNO,ZPND," // trim(FMT) // "')")
+
+            end if !(op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
+        end do !i = 1, wf_num_points
+    end if !(WF_NUM_POINTS > 0) then
+
 !> *********************************************************************
 !> End of Initialization
 !> *********************************************************************
@@ -4192,120 +4256,275 @@ end if !(ipid /= 0 .or. izero == 0) then
 !> Start of book-keeping and grid accumulation.
 !> *********************************************************************
 
-!todo++:
-!todo++: CUT OUT CLASS ACCUMULATION AND OUTPUT FILES TO APPROPRIATE NODE
-!todo++:
-if (ipid == 0) then
-
 !
 !=======================================================================
 !     * WRITE FIELDS FROM CURRENT TIME STEP TO OUTPUT FILES.
-DO I=1,nml
-    IF(FSDOWN(ilmos(I))>0.0) THEN
-      ALTOT=(ALVSgat(I)+ALIRgat(I))/2.0
-    ELSE
-      ALTOT=0.0
-    ENDIF
 
-    FSSTAR=FSDOWN(ilmos(I))*(1.0-ALTOT)
-    FLSTAR=FDLGRD(ilmos(I))-SBC*GTgat(I)**4
-    QH=HFSgat(I)
-    QE=QEVPgat(I)
-    BEG=FSSTAR+FLSTAR-QH-QE
-    SNOMLT=HMFNgat(I)
+    !> Write to CLASSOF* output files.
+    do k = 1, WF_NUM_POINTS
+        if (op%K_OUT(k) >= il1 .and. op%K_OUT(k) <= il2) then
 
-    IF(RHOSgat(I)>0.0) THEN
-      ZSN=SNOgat(I)/RHOSgat(I)
-    ELSE
-      ZSN=0.0
-    ENDIF
+            !> Update variables.
+            i = op%K_OUT(k)
+            if (2.0*FSVHGAT(i) > 0.0) then
+                ALTOT = (ALVSGAT(i) + ALIRGAT(i))/2.0
+            else
+                ALTOT = 0.0
+            end if
+            FSSTAR = 2.0*FSVHGAT(i)*(1.0 - ALTOT)
+            FLSTAR = FDLGAT(i) - SBC*GTGAT(i)**4
+            QH = HFSGAT(i)
+            QE = QEVPGAT(i)
+            BEG = FSSTAR + FLSTAR - QH - QE
+            SNOMLT = HMFNGAT(i)
+            if (RHOSGAT(i) > 0.0) then
+                ZSN = SNOGAT(i)/RHOSGAT(i)
+            else
+                ZSN = 0.0
+            end if
+            if (TCANGAT(i) > 0.01) then
+                TCN = TCANGAT(i) - TFREZ
+            else
+                TCN = 0.0
+            end if
+            if (TSNOGAT(i) > 0.01) then
+                TSN = TSNOGAT(i) - TFREZ
+            else
+                TSN = 0.0
+            end if
+            if (TPNDGAT(i) > 0.01) then
+                TPN = TPNDGAT(i) - TFREZ
+            else
+                TPN = 0.0
+            end if
+            if (ILW == 1) then
+                GTOUT = GTGAT(i) - TFREZ
+            else
+                GTOUT = 0.0
+            end if
+            ZPND = ZPNDPRECS(i)*FCS(i) + ZPONDPREC(i)*FC(i) + ZPONDPREG(i)*FG(i) + &
+                ZPNDPREGS(i)*FGS(i)
+            FSTR = FSTRCS(i)*FCS(i) + FSTRC(i)*FC(i) + FSTRG(i)*FG(i) + FSTRGS(i)*FGS(i)
 
-    IF(TCANgat(I)>0.01) THEN
-      TCN=TCANgat(I)-TFREZ
-    ELSE
-      TCN=0.0
-    ENDIF
+            !> Write to the CLASSOF* output files for sub-hourly output.
+            write(150 + k*10 + 4, "(I2,',', I3,',', I5,',', I6,',', 9(F8.2,','), 2(F7.3,','), E11.3,',', F8.2,',', 3(F12.4,','))") &
+                IHOUR, IMIN, IDAY, IYEAR, FSSTAR, FLSTAR, QH, &
+                QE, SNOMLT, BEG, GTOUT, SNOGAT(i), &
+                RHOSGAT(i), WSNOGAT(i), ALTOT, ROFGAT(i), &
+                TPN, ZPNDGAT(i), ZPND, FSTR
+            write(150 + k*10 + 5, "(I2,',', I3,',', I5,',', I6,',', " // trim(adjustl(IGND_CHAR)) // &
+                "(F7.2,',', 2(F6.3,',')), F8.2,',', 2(F8.4,','), F8.2,',', F8.3,',')") &
+                IHOUR, IMIN, IDAY, IYEAR, &
+                (TBARGAT(i, j) - TFREZ, THLQGAT(i, j), &
+                THICGAT(i, j), j = 1, IGND), TCN, &
+                RCANGAT(i), SCANGAT(i), TSN, ZSN
+            write(150 + k*10 + 6, "(I2,',', I3,',', I5,',', 2(F10.2,','), F12.6,',', F10.2,',', F8.2,',', F10.2,',', F15.9,',')") &
+                IHOUR, IMIN, IDAY, 2.0*FSVHGAT(i), FDLGAT(i), &
+                PREGAT(i), TAGAT(i) - TFREZ, VMODGAT(i), PRESGAT(i), &
+                QAGAT(i)
+            write(150 + k*10 + 7, "(*(E11.4,','))") &
+                TROFGAT(i), TROOGAT(i), TROSGAT(i), &
+                TROBGAT(i), ROFGAT(i), ROFOGAT(i), &
+                ROFSGAT(i), ROFBGAT(i), &
+                FCS(i), FGS(i), FC(i), FG(i)
+            write(150 + k*10 + 8, "(*(F12.4,','))") &
+                FSGVGAT(i), FSGSGAT(i), FSGGGAT(i), &
+                FLGVGAT(i), FLGSGAT(i), FLGGGAT(i), &
+                HFSCGAT(i), HFSSGAT(i), HFSGGAT(i), &
+                HEVCGAT(i), HEVSGAT(i), HEVGGAT(i), &
+                HMFCGAT(i), HMFNGAT(i), &
+                (HMFGGAT(i, j), j = 1, IGND), &
+                HTCCGAT(i), HTCSGAT(i), &
+                (HTCGAT(i, j), j = 1, IGND)
+            write(150 + k*10 + 9, "(*(E12.4,','))") &
+                PCFCGAT(i), PCLCGAT(i), PCPNGAT(i), &
+                PCPGGAT(i), QFCFGAT(i), QFCLGAT(i), &
+                QFNGAT(i), QFGGAT(i), (QFCGAT(i, j), j = 1, IGND), &
+                ROFCGAT(i), ROFNGAT(i), &
+                ROFOGAT(i), ROFGAT(i), WTRCGAT(i), &
+                WTRSGAT(i), WTRGGAT(i)
+            write(150 + k*10 + 10, "(I2,',', I3,',', I5,',', I6,',', *(F14.6,','))") &
+                IHOUR, IMIN, IDAY, IYEAR, PREGAT(i)*DELT, QFSGAT(i)*DELT, &
+                ROFGAT(i)*DELT, ROFOGAT(i)*DELT, ROFSGAT(i)*DELT, ROFBGAT(i)*DELT, &
+                SCANGAT(i), RCANGAT(i), SNOGAT(i), WSNOGAT(i), &
+                ZPNDGAT(i)*RHOW, (THLQGAT(i, j)*RHOW*DLZWGAT(i, j), j = 1, IGND), &
+                (THICGAT(i, j)*RHOICE*DLZWGAT(i, j), j = 1, IGND)
 
-    IF(TSNOgat(I)>0.01) THEN
-      TSN=TSNOgat(I)-TFREZ
-    ELSE
-      TSN=0.0
-    ENDIF
+            !> Calculate accumulated grid variables.
+            do i = il1, il2
+                if (ILMOS(i) == op%N_OUT(k)) then
+                    co%PREACC(k) = co%PREACC(k) + PREGAT(i)*FAREGAT(i)*DELT
+                    co%GTACC(k) = co%GTACC(k) + GTGAT(i)*FAREGAT(i)
+                    co%QEVPACC(k) = co%QEVPACC(k) + QEVPGAT(i)*FAREGAT(i)
+                    co%EVAPACC(k) = co%EVAPACC(k) + QFSGAT(i)*FAREGAT(i)*DELT
+                    co%HFSACC(k) = co%HFSACC(k) + HFSGAT(i)*FAREGAT(i)
+                    co%HMFNACC(k) = co%HMFNACC(k)+ HMFNGAT(i)*FAREGAT(i)
+                    co%ROFACC(k) = co%ROFACC(k) + ROFGAT(i)*FAREGAT(i)*DELT
+                    co%ROFOACC(k) = co%ROFOACC(k) + ROFOGAT(i)*FAREGAT(i)*DELT
+                    co%ROFSACC(k) = co%ROFSACC(k) + ROFSGAT(i)*FAREGAT(i)*DELT
+                    co%ROFBACC(k) = co%ROFBACC(k) + ROFBGAT(i)*FAREGAT(i)*DELT
+                    co%WTBLACC(k) = co%WTBLACC(k) + WTABGAT(i)*FAREGAT(i)
+                    do j = 1, IGND
+                        co%TBARACC(k, j) = co%TBARACC(k, j) + TBARGAT(i, j)*ACLASS(ILMOS(i), JLMOS(i))
+                        co%THLQACC(k, j) = co%THLQACC(k, j) + THLQGAT(i, j)*FAREGAT(i)
+                        co%THICACC(k, j) = co%THICACC(k, j) + THICGAT(i, j)*FAREGAT(i)
+                        co%THALACC(k, j) = co%THALACC(k, j) + (THLQGAT(i, j) + THICGAT(i, j))*FAREGAT(i)
+                        co%GFLXACC(k, j) = co%GFLXACC(k, j) + GFLXGAT(i, j)*FAREGAT(i)
+                    end do
+                    co%ALVSACC(k) = co%ALVSACC(k) + ALVSGAT(i)*FSVHGAT(i)*FAREGAT(i)
+                    co%ALIRACC(k) = co%ALIRACC(k) + ALIRGAT(i)*FSIHGAT(i)*FAREGAT(i)
+                    if (SNOGAT(i) > 0.0) then
+                        co%RHOSACC(k) = co%RHOSACC(k) + RHOSGAT(i)*FAREGAT(i)
+                        co%TSNOACC(k) = co%TSNOACC(k) + TSNOGAT(i)*FAREGAT(i)
+                        co%WSNOACC(k) = co%WSNOACC(k) + WSNOGAT(i)*FAREGAT(i)
+                        co%SNOARE(k) = co%SNOARE(k) + FAREGAT(i)
+                    end if
+                    if (TCANGAT(i) > 0.5) then
+                        co%TCANACC(k) = co%TCANACC(k) + TCANGAT(i)*FAREGAT(i)
+                        co%CANARE(k) = co%CANARE(k) + FAREGAT(i)
+                    end if
+                    co%SNOACC(k) = co%SNOACC(k) + SNOGAT(i)*FAREGAT(i)
+                    co%RCANACC(k) = co%RCANACC(k) + RCANGAT(i)*FAREGAT(i)
+                    co%SCANACC(k) = co%SCANACC(k) + SCANGAT(i)*FAREGAT(i)
+                    co%GROACC(k) = co%GROACC(k) + GROGAT(i)*FAREGAT(i)
+                    co%FSINACC(k) = co%FSINACC(k) + 2.0*FSVHGAT(i)*FAREGAT(i)
+                    co%FLINACC(k) = co%FLINACC(k) + FDLGAT(i)*FAREGAT(i)
+                    co%FLUTACC(k) = co%FLUTACC(k) + SBC*GTGAT(i)**4*FAREGAT(i)
+                    co%TAACC(k) = co%TAACC(k) + TAGAT(i)*FAREGAT(i)
+                    co%UVACC(k) = co%UVACC(k) + VMODGAT(i)*FAREGAT(i)
+                    co%PRESACC(k) = co%PRESACC(k) + PRESGAT(i)*FAREGAT(i)
+                    co%QAACC(k) = co%QAACC(k) + QAGAT(i)*FAREGAT(i)
+                end if
+            end do
 
-    IF(TPNDgat(I)>0.01) THEN
-      TPN=TPNDgat(I)-TFREZ
-    ELSE
-      TPN=0.0
-    ENDIF
+            !> Write to the CLASSOF* output files for daily output.
+            if (NCOUNT == 48) then
 
-    IF(ILW==1) THEN
-      GTOUT=GTgat(I)-TFREZ
-    ELSE
-      GTOUT=0.0
-    ENDIF
+                !> Calculate grid averages.
+                co%GTACC(k) = co%GTACC(k)/real(NSUM)
+                co%QEVPACC(k) = co%QEVPACC(k)/real(NSUM)
+                co%HFSACC(k) = co%HFSACC(k)/real(NSUM)
+                co%HMFNACC(k) = co%HMFNACC(k)/real(NSUM)
+                co%WTBLACC(k) = co%WTBLACC(k)/real(NSUM)
+                co%TBARACC(k, :) = co%TBARACC(k, :)/real(NSUM)
+                co%THLQACC(k, :) = co%THLQACC(k, :)/real(NSUM)
+                co%THICACC(k, :) = co%THICACC(k, :)/real(NSUM)
+                co%THALACC(k, :) = co%THALACC(k, :)/real(NSUM)
+                if (co%FSINACC(k) > 0.0) then
+                    co%ALVSACC(k) = co%ALVSACC(k)/(co%FSINACC(k)*0.5)
+                    co%ALIRACC(k) = co%ALIRACC(k)/(co%FSINACC(k)*0.5)
+                else
+                    co%ALVSACC(k) = 0.0
+                    co%ALIRACC(k) = 0.0
+                end if
+                if (co%SNOARE(k) > 0.0) then
+                    co%RHOSACC(k) = co%RHOSACC(k)/co%SNOARE(k)
+                    co%TSNOACC(k) = co%TSNOACC(k)/co%SNOARE(k)
+                    co%WSNOACC(k) = co%WSNOACC(k)/co%SNOARE(k)
+                end if
+                if (co%CANARE(k) > 0.0) then
+                    co%TCANACC(k) = co%TCANACC(k)/co%CANARE(k)
+                end if
+                co%SNOACC(k) = co%SNOACC(k)/real(NSUM)
+                co%RCANACC(k) = co%RCANACC(k)/real(NSUM)
+                co%SCANACC(k) = co%SCANACC(k)/real(NSUM)
+                co%GROACC(k) = co%GROACC(k)/real(NSUM)
+                co%FSINACC(k) = co%FSINACC(k)/real(NSUM)
+                co%FLINACC(k) = co%FLINACC(k)/real(NSUM)
+                co%FLUTACC(k) = co%FLUTACC(k)/real(NSUM)
+                co%TAACC(k) = co%TAACC(k)/real(NSUM)
+                co%UVACC(k) = co%UVACC(k)/real(NSUM)
+                co%PRESACC(k) = co%PRESACC(k)/real(NSUM)
+                co%QAACC(k) = co%QAACC(k)/real(NSUM)
+                ALTOT = (co%ALVSACC(k) + co%ALIRACC(k))/2.0
+                FSSTAR = co%FSINACC(k)*(1.0 - ALTOT)
+                FLSTAR = co%FLINACC(k) - co%FLUTACC(k)
+                QH = co%HFSACC(k)
+                QE = co%QEVPACC(k)
+                BEG = FSSTAR + FLSTAR - QH - QE
+                SNOMLT = co%HMFNACC(k)
+                if (co%RHOSACC(k) > 0.0) then
+                    ZSN = co%SNOACC(k)/co%RHOSACC(k)
+                else
+                    ZSN = 0.0
+                end if
+                if (co%TCANACC(k) > 0.01) then
+                    TCN = co%TCANACC(k) - TFREZ
+                else
+                    TCN = 0.0
+                end if
+                if (co%TSNOACC(k) > 0.01) then
+                    TSN = co%TSNOACC(k) - TFREZ
+                else
+                    TSN = 0.0
+                end if
+                if (ILW == 1) then
+                    GTOUT = co%GTACC(k) - TFREZ
+                else
+                    GTOUT = 0.0
+                end if
 
-DO K=1, WF_NUM_POINTS
-  IF(ilmos(I)==op%N_OUT(K).AND.jlmos(i)==op%II_OUT(k)) THEN
-        I_OUT=i
+                !> Write to the CLASSOF* output files for daily accumulated output.
+                write(150 + k*10 + 1, "(I4,',', I5,',', 9(F8.2,','), 2(F8.3,','), *(F12.4,','))") &
+                    IDAY, IYEAR, FSSTAR, FLSTAR, QH, QE, SNOMLT, &
+                    BEG, GTOUT, co%SNOACC(k), co%RHOSACC(k), &
+                    co%WSNOACC(k), ALTOT, co%ROFACC(k), co%ROFOACC(k), &
+                    co%ROFSACC(k), co%ROFBACC(k)
+                write(150 + k*10 + 2, "(I4,',', I5,',', " // adjustl(IGND_CHAR) // "((F8.2,','), " // &
+                    "2(F6.3,',')), F8.2,',', 2(F7.4,','), 2(F8.2,','))") &
+                    IDAY, IYEAR, (co%TBARACC(k, j) - TFREZ, &
+                    co%THLQACC(k, j), co%THICACC(k, j), j = 1, IGND), &
+                    TCN, co%RCANACC(k), co%SCANACC(k), TSN, ZSN
+                write(150 + k*10 + 3, "(I4,',', I5,',', 3(F9.2,','), F8.2,',', " // &
+                    "F10.2,',', E12.3,',', 2(F12.3,','))") &
+                    IDAY, IYEAR, co%FSINACC(k), co%FLINACC(k), &
+                    co%TAACC(k) - TFREZ, co%UVACC(k), co%PRESACC(k), &
+                    co%QAACC(k), co%PREACC(k), co%EVAPACC(k)
 
-    ZPND = ZPNDPRECS(I_OUT) * FCS(I_OUT) + ZPONDPREC(I_OUT) * FC(I_OUT) + &
-           ZPONDPREG(I_OUT) * FG(I_OUT) + ZPNDPREGS(I_OUT) * FGS(I_OUT)
-    FSTR = FSTRCS(I_OUT)    * FCS(I_OUT) + FSTRC    (I_OUT) * FC(I_OUT) + &
-           FSTRG    (I_OUT) * FG(I_OUT) + FSTRGS   (I_OUT) * FGS(I_OUT)
-    
-    WRITE(150+k*10+4,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-                   '9(F8.2,","),2(F7.3,","),(E11.3,","),(F8.2,","),'// &
-                   '3(F12.4,","))') &
-                   IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH, &
-                   QE,SNOMLT,BEG,GTOUT,SNOgat(I), &
-                   RHOSgat(I),WSNOgat(I),ALTOT,ROFgat(I), &
-                   TPN,ZPNDgat(I),ZPND,FSTR
-    WRITE(150+k*10+5,'((I2,","),(I3,","),(I5,","),(I6,","),'// &
-                   '6(F7.2,",",2(F6.3,",")),(F8.2,","),2(F8.4,","),'// &
-                   '(F8.2,","),(F8.3,","))') &
-                   IHOUR,IMIN,IDAY,IYEAR, &
-                   (TBARgat(I,J)-TFREZ,THLQgat(I,J), &
-                   THICgat(I,J),J=1,IGND),TCN, &
-                   RCANgat(I),SCANgat(I),TSN,ZSN
-    WRITE(150+k*10+6,'((I2,",")(I3,",")(I5,",")2(F10.2,",")'// &
-                   '(F12.6,",")(F10.2,",")(F8.2,",")(F10.2,",")'// &
-                   '(F15.9,","))') &
-                   IHOUR,IMIN,IDAY,FSDOWN(ilmos(I)),FDLGRD(ilmos(I)), &
-                   PREGRD(ilmos(I)),TAGRD(ilmos(I))-TFREZ,UVGRD(ilmos(I)),PRESGRD(ilmos(I)), &
-                   QAGRD(ilmos(I))
-    WRITE(150+k*10+7,'(12(E11.4,","))') &
-                   TROFgat(I),TROOgat(I),TROSgat(I), &
-                   TROBgat(I),ROFgat(I),ROFOgat(I), &
-                   ROFSgat(I),ROFBgat(I), &
-                   FCS(ilmos(I)),FGS(ilmos(I)),FC(ilmos(I)),FG(ilmos(I))
-    FMT = '(14(F12.4,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(F12.4,",")2(F12.4,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(F12.4,","))'
-    WRITE(150+k*10+8,TRIM(ADJUSTL(FMT))) &
-                   FSGVgat(I),FSGSgat(I),FSGGgat(I), &
-                   FLGVgat(I),FLGSgat(I),FLGGgat(I), &
-                   HFSCgat(I),HFSSgat(I),HFSGgat(I), &
-                   HEVCgat(I),HEVSgat(I),HEVGgat(I), &
-                   HMFCgat(I),HMFNgat(I), &
-                   (HMFGgat(I,J),J=1,IGND), &
-                   HTCCgat(I),HTCSgat(I), &
-                   (HTCgat(I,J),J=1,IGND)
-    WRITE(150+k*10+9,'(8(E12.4,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(E12.4,",")7(E12.4,","))') &
-                   PCFCgat(I),PCLCgat(I),PCPNgat(I), &
-                   PCPGgat(I),QFCFgat(I),QFCLgat(I), &
-                   QFNgat(I),QFGgat(I),(QFCgat(I,J), &
-                   J=1,IGND),ROFCgat(I),ROFNgat(I), &
-                   ROFOgat(I),ROFgat(I),WTRCgat(I), &
-                   WTRSgat(I),WTRGgat(I)
-    WRITE(150+k*10+10,'((I2,","),(I3,","),(I5,","),(I6,","),11(F14.6,",")' &
-                   //TRIM(ADJUSTL(IGND_CHAR))//'(F14.6,",")'//TRIM(ADJUSTL(IGND_CHAR))//'(F14.6,","))') &
-                   IHOUR,IMIN,IDAY,IYEAR,PREGAT(I_OUT)*DELT,QFSgat(I)*DELT, &
-                   ROFgat(I)*DELT,ROFOgat(I)*DELT,ROFSgat(I)*DELT,ROFBgat(I)*DELT, &
-                   SCANgat(I),RCANgat(I),SNOgat(I),WSNOgat(I), &
-                   ZPNDgat(I)*RHOW,(THLQgat(I,J)*RHOW*DLZWgat(I,J),J=1,IGND),&
-                   (THICgat(I,J)*RHOICE*DLZWgat(I,J),J=1,IGND)
+                !> Reset the CLASS output variables.
+                co%PREACC = 0.0
+                co%GTACC = 0.0
+                co%QEVPACC = 0.0
+                co%EVAPACC = 0.0
+                co%HFSACC = 0.0
+                co%HMFNACC = 0.0
+                co%ROFACC = 0.0
+                co%ROFOACC = 0.0
+                co%ROFSACC = 0.0
+                co%ROFBACC = 0.0
+                co%WTBLACC = 0.0
+                co%TBARACC = 0.0
+                co%THLQACC = 0.0
+                co%THICACC = 0.0
+                co%THALACC = 0.0
+                co%GFLXACC = 0.0
+                co%ALVSACC = 0.0
+                co%ALIRACC = 0.0
+                co%RHOSACC = 0.0
+                co%TSNOACC = 0.0
+                co%WSNOACC = 0.0
+                co%SNOARE = 0.0
+                co%TCANACC = 0.0
+                co%CANARE = 0.0
+                co%SNOACC = 0.0
+                co%RCANACC = 0.0
+                co%SCANACC = 0.0
+                co%GROACC = 0.0
+                co%FSINACC = 0.0
+                co%FLINACC = 0.0
+                co%FLUTACC = 0.0
+                co%TAACC = 0.0
+                co%UVACC = 0.0
+                co%PRESACC = 0.0
+                co%QAACC = 0.0
 
-  ENDIF !IF(I==op%N_OUT(K).AND.M==op%II_OUT(k)) THEN
-ENDDO !DO K=1, WF_NUM_POINTS
-ENDDO !DO I=1,nml
+            end if !(NCOUNT == 48) then
+
+        end if !(op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
+    end do !i = 1, WF_NUM_POINTS
+
+if (ipid == 0) then
+
 !> Write ENSIM output
 !> -----------------------------------------------------c
 !>
@@ -4785,37 +5004,6 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
             ELSE
       GTOUT=0.0
     ENDIF
-
-!> see if we are at one of the output points
-    DO K=1, WF_NUM_POINTS
-      IF(I==op%N_OUT(K)) THEN
-!> figure out nlmos and mlmos of grid square I
-        DO J=1, NML
-          IF(ILMOS(J)==op%N_OUT(K)) THEN
-            I_OUT=J
-          ENDIF
-        ENDDO
-
-                    WRITE(150+k*10+1,'((I4,","),(I5,","),9(F8.2,","),2(F8.3,","),'// &
-                        '(F12.4,","),4(F12.4,","))') &
-                        IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,SNOMLT, &
-                        BEG,GTOUT,SNOACC(I),RHOSACC(I), &
-                        WSNOACC(I),ALTOT,ROFACC(I),ROFOACC(I), &
-                        ROFSACC(I),ROFBACC(I)
-                    WRITE(150+k*10+2,'((I4,","),(I5,","),'//ADJUSTL(IGND_CHAR)//'((F8.2,","),'// &
-                        '2(F6.3,",")),(F8.2,","),2(F7.4,","),'// &
-                        '2(F8.2,","),(E12.5,","))') &
-                        IDAY,IYEAR,(TBARACC(I,J)-TFREZ, &
-                        THLQACC(I,J),THICACC(I,J),J=1,IGND), &
-                        TCN,RCANACC(I),SCANACC(I),TSN,ZSN
-                    WRITE(150+k*10+3,'((I4,","),(I5,","),3(F9.2,","),(F8.2,","),'// &
-                        '(F10.2,","),(E12.3,","),2(F12.3,","),'// &
-                        '(F8.3,","))') &
-                        IDAY,IYEAR,FSINACC(I),FLINACC(I), &
-                        TAACC(I)-TFREZ,UVACC(I),PRESACC(I), &
-                        QAACC(I),PREACC(I),EVAPACC(I)
-      ENDIF  !IF(I==op%N_OUT(K)) THEN
-    ENDDO  !DO K=1, WF_NUM_POINTS
 
 !> update components for final water balance tally
     TOTAL_PRE     = TOTAL_PRE     + PREACC(I)
@@ -5703,25 +5891,29 @@ end if !(VERBOSEMODE > 0) then
 
 call stats_write(fls)
 
-!todo++:
-!todo++: CUT OUT CLASS ACCUMULATION AND OUTPUT FILES TO APPROPRIATE NODE
-!todo++:
-DO I=1, wf_num_points
-  CLOSE(UNIT=150+i*10+1)
-  CLOSE(UNIT=150+i*10+2)
-  CLOSE(UNIT=150+i*10+3)
-  CLOSE(UNIT=150+i*10+4)
-  CLOSE(UNIT=150+i*10+5)
-  CLOSE(UNIT=150+i*10+6)
-  CLOSE(UNIT=150+i*10+7)
-  CLOSE(UNIT=150+i*10+8)
-  CLOSE(UNIT=150+i*10+9)
-ENDDO
-
 999 CONTINUE
 !> Diane      CLOSE(UNIT=21)
 !>      CLOSE(UNIT=22)
 CLOSE(UNIT=51)
+
+    !todo++:
+    !todo++: CUT OUT CLASS ACCUMULATION AND OUTPUT FILES TO APPROPRIATE NODE
+    !todo++:
+    !> Close the CLASS output files if the GAT-index of the output point resides on this node.
+    do i = 1, WF_NUM_POINTS
+        if (op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
+            close(150 + i*10 + 1)
+            close(150 + i*10 + 2)
+            close(150 + i*10 + 3)
+            close(150 + i*10 + 4)
+            close(150 + i*10 + 5)
+            close(150 + i*10 + 6)
+            close(150 + i*10 + 7)
+            close(150 + i*10 + 8)
+            close(150 + i*10 + 9)
+            close(150 + i*10 + 10)
+        end if
+    end do
 
     !> Close model output file.
     close(58)
