@@ -3,6 +3,8 @@
 !>
 module module_mpi
 
+    use module_mpi_flags
+
     implicit none
 
     integer :: &
@@ -30,6 +32,11 @@ module module_mpi
 
     subroutine MPI_Finalize(ierr)
         integer ierr
+        ierr = MPI_SUCCESS
+    end subroutine
+
+    subroutine MPI_Barrier(comm, ierr)
+        integer comm, ierr
         ierr = MPI_SUCCESS
     end subroutine
 

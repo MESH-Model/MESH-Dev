@@ -9,6 +9,7 @@
 
       USE MESH_INPUT_MODULE
       USE strings
+      use module_mpi_flags
       USE FLAGS
       USE climate_forcing
       USE model_dates
@@ -414,6 +415,8 @@
               CALL value(out_args(2), RELFLG, IOS)
             CASE ('VERBOSEMODE')
               CALL value(out_args(2), VERBOSEMODE, IOS)
+            CASE ('MPIUSEBARRIER')
+              CALL value(out_args(2), MPIUSEBARRIER, IOS)
 
             !> Basin forcing data.
             CASE ('BASINSHORTWAVEFLAG')

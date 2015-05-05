@@ -4252,6 +4252,8 @@ end if !(ipid /= 0 .or. izero == 0) then
 
     end if !(inp > 1 .and. ipid /= 0) then
 
+    if (inp > 1 .and. NCOUNT == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
+
 !> *********************************************************************
 !> Start of book-keeping and grid accumulation.
 !> *********************************************************************
