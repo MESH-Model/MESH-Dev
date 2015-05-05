@@ -195,13 +195,13 @@
 !> The starting day is relative to the beginning of the simulation; Day 1 is
 !> the first day of the simulation, regardless of the date or its Julian date
 !> in the year. If METRICSINCLUDESPINUP is set to 1, METRICSSPINUP is not used.
-      METRICSSPINUP = 30
+      METRICSSPINUP = 1
 
 !> If METRICSINCLUDESPINUP is set to 1 then metrics are calculated from the
 !> first day of the simulation (1:ndsim).
 !> If METRICSINCLUDESPINUP is set to 0 then metrics are calculated from
 !> METRICSSPINUP (METRICSSPINUP:ndsim).
-      METRICSINCLUDESPINUP = 1
+      METRICSINCLUDESPINUP = 0
 
 !> If FROZENSOILINFILFLAG is 0, all snow melt infiltrates.
 !> If FROZENSOILINFILFLAG is 1, snow melt is partitioned to frozen soil infiltration 
