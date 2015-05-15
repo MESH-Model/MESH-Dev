@@ -1542,7 +1542,6 @@ module model_output
                         end do
                     end if
 
-                    
                 case ('GFLX', 'HeatConduction')
 
                     if (ifo%var_out(i)%out_y) & 
@@ -1569,10 +1568,8 @@ module model_output
                         vr%engt_s%hfs(iss, :) = vr%engt_s%hfs(iss, :) + hfs                         
 
                     if (ifo%var_out(i)%out_d)& 
-                        vr%engt_d%hfs(id, :) = vr%engt_d%hfs(id, :) + hfs   
-                        
-                        
-                        
+                        vr%engt_d%hfs(id, :) = vr%engt_d%hfs(id, :) + hfs
+
                case ('QEVP', 'LatentHeat')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
@@ -1613,7 +1610,8 @@ module model_output
                         vr%spt_s%thic(iss, :, :) = vr%spt_s%thic(iss, :, :) + thic
                         
                     if (ifo%var_out(i)%out_d) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%spt_d%thic(id, :, :) = vr%spt_d%thic(id, :, :) + thic                          
+                        vr%spt_d%thic(id, :, :) = vr%spt_d%thic(id, :, :) + thic
+
 !                case default
 !                    print *, "Output of variable '" // trim(adjustl(vId)) // "' is not Implemented yet."
 
@@ -1943,14 +1941,47 @@ module model_output
                         do j = 1, bi%ignd
                             call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, fls, j)
                         end do
+                    end if
+
+                case ('LQWS')
+
+                    if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
+                        do j = 1, bi%ignd
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls, j)
+                        end do
+                    end if
+
+                    if (ifo%var_out(i)%out_m) then!trim(adjustl(ifo%ids_var_out(i, 3))) == 'M') then
+                        do j = 1, bi%ignd
+                            call WriteFields_i(vr, ts, ifo, i, 'M', bi%na, ts%nmonths, fls, j)
+                        end do
+                    end if
+
+                    if (ifo%var_out(i)%out_s) then!trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') then
+                        do j = 1, bi%ignd
+                            call WriteFields_i(vr, ts, ifo, i, 'S', bi%na, ts%nseason, fls, j)
+                        end do
+                    end if
+
+                    if (ifo%var_out(i)%out_d) then
+                        do j = 1, bi%ignd
+                            call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, fls, j)
+                        end do
                     end if                    
 
+                    if (ifo%var_out(i)%out_h) then
+                        freq = "H"
+                        do j = 1, bi%ignd
+                            call check_write_var_out(ifo, i, vr%wbt_h%lqws(:, :, j), freq, public_ic%now_hour - 1, &
+                                public_ic%now_hour, (882112 + (100000000*j)), .false., j)
+                        end do
+                    end if
 
                 case ('FRWS')
 
                     if (ifo%var_out(i)%out_y) then!trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') then
                         do j = 1, bi%ignd
-                            call WriteFields_i(vr, ts, ifo, i, 'Y',bi%na, ts%nyears, fls, j)
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', bi%na, ts%nyears, fls, j)
                         end do
                     end if
 
