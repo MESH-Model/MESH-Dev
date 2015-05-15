@@ -9,11 +9,15 @@
      +  DAILY_START_DAY,   DAILY_STOP_DAY,
      +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
      +  DAILY_START_YEAR,  DAILY_STOP_YEAR,
-     +  IHOUR, IMIN, IDAY, IYEAR, cp, fls)
+!     +  IHOUR, IMIN, IDAY, IYEAR,
+     +  cp, fls)
 
       USE MESH_INPUT_MODULE
+      use climate_forcing
       use model_files
       USE FLAGS
+
+      implicit none
 
       CHARACTER*4 ::
      +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
@@ -25,8 +29,8 @@
      +        HOURLY_START_DAY,  HOURLY_STOP_DAY,
      +        DAILY_START_DAY,   DAILY_STOP_DAY,
      +        HOURLY_START_YEAR, HOURLY_STOP_YEAR,
-     +        DAILY_START_YEAR,  DAILY_STOP_YEAR,
-     +        IHOUR, IMIN, IDAY, IYEAR
+     +        DAILY_START_YEAR,  DAILY_STOP_YEAR
+!     +        IHOUR, IMIN, IDAY, IYEAR
 
       integer*4 :: NTYPE
       REAL :: DEGLAT, DEGLON
@@ -144,7 +148,8 @@
      1           DAILY_STOP_YEAR !P, IYEAR_START, IYEAR_END
 !> Read in hour, minute, day and year from class.ini file as it is
 !> not present in the forcing files
-      READ(50,*) IHOUR,IMIN,IDAY,IYEAR
+      READ(50, *) HOUR_START_CLIM, MINS_START_CLIM, JDAY_START_CLIM,
+     +  YEAR_START_CLIM
 
 !> Close unit 50 as we don't need anything else from the class.ini file
       CLOSE(UNIT=50)

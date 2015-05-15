@@ -5,8 +5,8 @@
      +  IDISP, IZREF, ISLFD, IPCP, IWF,
      +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
      +  ICTEMMOD, IOS, PAS, N, IROVAL, WF_NUM_POINTS,
-     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
-     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
+!     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
+!     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
      +  IRONAME, GENDIR_OUT,
 !> variables for drainage database or new_shd
      + IGND, ILG, WF_IYMAX, WF_JXMAX,
@@ -15,7 +15,7 @@
      + LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX,
      + WF_LAND_MAX, WF_LAND_SUM,
 !> variables for READ_CHECK_FORCING_FILES
-     + NUM_CSV, NUM_R2C, NUM_SEQ,
+!     + NUM_CSV, NUM_R2C, NUM_SEQ,
 !> variables for READ_PARAMETERS_CLASS
      +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
      +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
@@ -26,7 +26,7 @@
      +  DAILY_START_DAY,   DAILY_STOP_DAY,
      +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
      +  DAILY_START_YEAR,  DAILY_STOP_YEAR,
-     +  IHOUR, IMIN, IDAY, IYEAR,
+!     +  IHOUR, IMIN, IDAY, IYEAR,
 !> variables for READ_SOIL_INI
 !> variables for READ_PARAMETERS_HYDROLOGY
      +  INDEPPAR, DEPPAR, WF_R2, M_C,
@@ -49,9 +49,9 @@
 !> VALUES NEEDED FOR READ_RUN_OPTIONS
       INTEGER :: IDISP, IZREF, ISLFD, IPCP, IWF,
      +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
-     +  ICTEMMOD, IOS, PAS, N, IROVAL, WF_NUM_POINTS,
-     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
-     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END
+     +  ICTEMMOD, IOS, PAS, N, IROVAL, WF_NUM_POINTS
+!     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
+!     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END
       CHARACTER(20) :: IRONAME
       CHARACTER*10 GENDIR_OUT
 !> declared MESH_INPUT_MODULE:
@@ -88,7 +88,7 @@
 !> END OF VALUES NEEDED for drainagedatabase of new_shd.r2c
 !> -----------------------------
 !> values needed for READ_CHECK_FORCING_FILES
-      INTEGER :: NUM_CSV, NUM_R2C,NUM_SEQ
+!      INTEGER :: NUM_CSV, NUM_R2C,NUM_SEQ
 !> values that were declared earlier:
 !>  BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG,
 !>  BASINTEMPERATUREFLAG, BASINRAINFLAG, BASINWINDFLAG,
@@ -104,8 +104,8 @@
      +        HOURLY_START_DAY,  HOURLY_STOP_DAY,
      +        DAILY_START_DAY,   DAILY_STOP_DAY,
      +        HOURLY_START_YEAR, HOURLY_STOP_YEAR,
-     +        DAILY_START_YEAR,  DAILY_STOP_YEAR,
-     +        IHOUR, IMIN, IDAY, IYEAR
+     +        DAILY_START_YEAR,  DAILY_STOP_YEAR
+!     +        IHOUR, IMIN, IDAY, IYEAR
       REAL :: DEGLAT, DEGLON
 !> values declared in area watflood:
 !>  NA, NTYPE
@@ -160,8 +160,8 @@
      +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
      +  ICTEMMOD, IOS, PAS, N,
      +  IROVAL, WF_NUM_POINTS,
-     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
-     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
+!     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
+!     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
      +  IRONAME, GENDIR_OUT, op, ts, cm, fls )
 
 !> =====================================
@@ -440,7 +440,7 @@
       ALLOCATE (sl%DELZ(IGND), sl%ZBOT(IGND))
       CALL READ_SOIL_LEVELS(IGND, sl, fls)
 
-      CALL READ_CHECK_FORCING_FILES(NUM_CSV, NUM_R2C,NUM_SEQ,NA,cm,ts)
+      CALL READ_CHECK_FORCING_FILES(NA, cm, ts)
 
       ALLOCATE(
      + cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA), cp%GCGRD(NA))
@@ -488,7 +488,24 @@
      +  DAILY_START_DAY,   DAILY_STOP_DAY,
      +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
      +  DAILY_START_YEAR,  DAILY_STOP_YEAR,
-     +  IHOUR, IMIN, IDAY, IYEAR, cp, fls)
+!     +  IHOUR, IMIN, IDAY, IYEAR,
+     +  cp, fls)
+
+!>    Set the starting date to that of the forcing data if none is
+!>    provided and intialize the current time-step.
+      if (YEAR_START == 0 .and. JDAY_START == 0 .and.
+     +    MINS_START == 0 .and. HOUR_START == 0) then
+        YEAR_START = YEAR_START_CLIM
+        JDAY_START = JDAY_START_CLIM
+        HOUR_START = HOUR_START_CLIM
+        MINS_START = MINS_START_CLIM
+      end if
+      YEAR_NOW = YEAR_START
+      JDAY_NOW = JDAY_START
+      HOUR_NOW = HOUR_START
+      MINS_NOW = MINS_START
+      TIME_STEP_NOW = MINS_START
+
 !>
 !>*******************************************************************
 !>
@@ -528,7 +545,7 @@
      +         hp%N_SROW(NA, NTYPE),hp%A_SROW(NA, NTYPE),
      +         hp%DistribROW(NA, NTYPE))
       
-      NYEARS = IYEAR_END - IYEAR_START + 1
+      NYEARS = YEAR_STOP - YEAR_START + 1
       ALLOCATE (t0_ACC(NYEARS))
       t0_ACC = 0.0
 

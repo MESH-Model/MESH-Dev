@@ -4,7 +4,13 @@
          !>  Description:
          !> Handled climate forcing data to be loaded in memory
          !>******************************************************************************
-         use model_dates
+
+    use sa_mesh_shared_variabletypes
+    use sa_mesh_shared_variables
+    use model_dates
+
+    implicit none
+
          !>******************************************************************************
 !         TYPE clim_data
 !
@@ -45,6 +51,32 @@
 
          END TYPE
         !>******************************************************************************
+
+    !> These variables are used to keep track of the number of forcing files
+    !> that are in different formats
+    integer NUM_CSV, NUM_R2C, NUM_SEQ
+
+    !> For count times in reading climate forcing data
+    integer ITIME
+
+    !* YEAR_START_CLIM: Year at the start of the simulation.
+    !* JDAY_START_CLIM: Julian day at the start of the simulation.
+    !* HOUR_START_CLIM: Hour at the start of the simulation.
+    !* MINS_START_CLIM: Minute (in 30-min. increment; either 0 or 30) at the start of the simulation.
+    integer YEAR_START_CLIM, JDAY_START_CLIM, HOUR_START_CLIM, MINS_START_CLIM
+    integer JDAY_IND_MET
+
+    real, dimension(:), allocatable :: &
+        FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, VLGRD, FSDOWN, &
+        FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, VLGAT
+
+    !> MAM - variables for forcing data interpolation:
+    real, dimension(:), allocatable :: &
+        FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
+        TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
+        FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, &
+        TAGATPST, ULGATPST, PRESGATPST, QAGATPST
+    real TRATIO
 
          contains
         !>******************************************************************************
@@ -105,6 +137,321 @@
 !        write(400+indx,*)'flagRead',cm%clin(i)%flagRead
 !        close(400+indx)
          end subroutine Init_clim_info
+
+    !> *****************************************************************
+    !> Open the MESH_input_forcing.bin file
+    !> *****************************************************************
+    subroutine climate_module_init(ts, bi, ENDDATA, &
+!todo: These variables can be stored elsewhere instead of passed.
+        YCOUNT)
+
+        use FLAGS
+
+        !> Input variables.
+        type(DATES_MODEL) :: ts
+        type(basin_info) :: bi
+        logical ENDDATA
+        integer YCOUNT
+
+        !> Local variables.
+        !* toskip   : The number of variables in the file per timestep
+!        integer nyy, ndy,
+        integer ISTEP_START, nmy, nhy, nrs, Jday_IND2, Jday_IND3, toskip
+        integer i, j, m
+
+        integer ilg
+
+        !todo - if we have time (or later), change the binary forcing files to
+        !       one for each forcing variable
+        !> Only open if there are not enough separate forcing files
+        if (NUM_R2C + NUM_CSV + NUM_SEQ < 7) then
+            open(51, file = 'MESH_input_forcing.bin', status = 'old', form = 'unformatted', action = 'read')
+        end if
+
+        !todo - leave these in for event based runs
+        !> IYEAR is set in the MESH_parameters_CLASS.ini file
+        !> YEAR_START is set in the MESH_input_run_options.ini file
+!        nyy = YEAR_START - YEAR_START_CLIM
+!        ndy = JDAY_START - JDAY_START_CLIM
+        nmy = MINS_START - MINS_START_CLIM
+        nhy = HOUR_START - HOUR_START_CLIM
+
+        ! set ISTEP_START based on HOURLYFLAG
+        !  (could be optimised as ISTEP_START = 2 - HOURLYFLAG)
+        !HOURLYFLAG is 1 if the data is every hour, and 0 if the data is every half-hour
+        !ISTEP_START is used to calculate nrs, and doubles the effect of the hours and
+        ! minutes if the data is in half-hourly format
+!        if (HOURLYFLAG == 1) then
+!            ISTEP_START = 1
+!        else
+!            ISTEP_START = 2
+!        end if
+        !Note added by M. Mekonnen
+        !ISTEP_START is used to count the number of records in one hour,
+        !hence a 30 minute interval forcing data will have 2 records per hour (ISTEP_START = 2)
+        !and a 1 hour interval forcing data will have 1 record per hour (ISTEP_START = 1). To
+        !accomodate forcing data with time intervals greater than 1 hour,
+        !it is better to count the number of records in a day:
+        ISTEP_START = 24*60/HOURLYFLAG
+        if (mod(24*60, HOURLYFLAG) /= 0) then
+            print 2334
+            stop
+        end if
+
+2334 format( &
+    //1x'Forcing data time interval needs to be in either', &
+    /1x'of the following values:', &
+    /1x'30 or n*60 where n can be either 1, 2, 3, 4, 6, 8 or 12.'/)
+
+        call Julian_Day_ID(YEAR_START, JDAY_START, Jday_IND2)
+        call Julian_Day_ID(YEAR_START_CLIM, JDAY_START_CLIM, Jday_IND3)
+        if ((Jday_IND2 < Jday_IND3) .and. (YEAR_START /= 0)) then
+            print 2442
+            stop
+        end if
+
+2442 format( &
+    //1x'ERROR: Simulation start date too early. The start date in the', &
+    /3x'run options file may occur before the start date of the met.', &
+    /3x'forcing input data in the CLASS parameter file.'/)
+
+        !Notes added by M. Mekonnen - To keep nrs calculation as before
+        !(and to be compatible with the above modification) we need to
+        !divide ISTEP_START by 24.
+        !nrs = JDAY_IND_MET*ISTEP_START*24 + nhy*ISTEP_START + nmy/30  !aLIU
+        JDAY_IND_MET = Jday_IND2 - Jday_IND3
+        nrs = JDAY_IND_MET*ISTEP_START + nhy*ISTEP_START/24 + nmy/30
+        if (ro%VERBOSEMODE > 0) print *, 'NRS=', nrs
+        ! FIX BUG IN JULIAN DAY CALCULATION FOR NRS ---ALIU FEB2009
+        if (YEAR_START == 0 .and. JDAY_START == 0 .and. MINS_START == 0 .and. HOUR_START == 0) then
+            nrs = 0
+        elseif (nrs < 0) then
+            print *, 'Desired start date is before the start of the ', &
+                'data in MESH_input_forcing.bin'
+            print *, 'Please adjust the start date in ', &
+                'MESH_input_run_options.ini'
+            stop
+        end if
+
+        !> the following code is used to skip entries at the start
+        !> of the bin file
+        if (ro%VERBOSEMODE > 0) print *, 'Skipping', nrs, 'Registers in bin file'
+
+        !> skip the values in the forcing files
+        toskip = 7 - NUM_R2C - NUM_CSV - NUM_SEQ
+
+        do i = 1, nrs
+
+            !> Legacy BIN-format.
+            do j = 1, toskip
+                read(51, end = 999) !Skip the bin's information
+            end do
+
+            !> R2C-format (ASCII).
+            if (BASINSHORTWAVEFLAG == 1) then !Skip the r2c file's information
+                read(90, *, end = 999)
+                do m = 1, YCOUNT
+                    Read (90, *, end = 999)
+                end do
+                read (90, *, end = 999) !:EndFrame line
+            end if
+            if (BASINLONGWAVEFLAG == 1) then
+                read(91, *, end = 999) !:Frame line
+                do m = 1, YCOUNT
+                    read(91, *, end = 999)
+                end do
+                read(91, *, end = 999) !:EndFrame line
+            end if
+            if (BASINRAINFLAG == 1) then
+                read(92, *, end = 999) !:Frame line
+                do m = 1, YCOUNT
+                    read(92, *, end = 999)
+                end do
+                read(92, *, end = 999) !:EndFrame line
+            end if
+            if (BASINTEMPERATUREFLAG == 1) then
+                read(93, *, END=999) !:Frame line
+                do m = 1, YCOUNT
+                    read(93, *, end = 999)
+                end do
+                read(93, *, end = 999) !:EndFrame line
+            end if
+            if (BASINWINDFLAG == 1) then
+                read(94, *, end = 999) !:Frame line
+                do m = 1, YCOUNT
+                    read(94, *, end = 999)
+                end do
+                read(94, *, end = 999) !:EndFrame line
+            end if
+            if (BASINPRESFLAG == 1) then
+                read(95, *, end = 999) !:Frame line
+                do m = 1, YCOUNT
+                    read(95, *, end = 999)
+                end do
+                read(95, *, end = 999) !:EndFrame line
+            end if
+            if (BASINHUMIDITYFLAG == 1) then
+                read(96, *, end = 999) !:Frame line
+                do m = 1, YCOUNT
+                    read(96, *, end = 999)
+                end do
+                read(96, *, end = 999)
+            end if
+
+            !> CSV-format.
+            if (BASINSHORTWAVEFLAG == 2) then !Skip the csv file's information
+                read(90, * , end = 999)
+            end if
+            if (BASINLONGWAVEFLAG == 2) then
+                read(91, *, end = 999)
+            end if
+            if (BASINRAINFLAG == 2) then
+                read(92, *, end = 999)
+            end if
+            if (BASINTEMPERATUREFLAG == 2) then
+                read(93, *, end = 999)
+            end if
+            if (BASINWINDFLAG == 2) then
+                read(94, *, end = 999)
+            end if
+            if (BASINPRESFLAG == 2) then
+                read(95, *, end = 999)
+            end if
+            if (BASINHUMIDITYFLAG == 2) then
+                read(96, *, end = 999)
+            end if
+
+        end do !i = 1, nrs
+
+        !> Allocate and initialize GRD variables.
+        allocate( &
+            FSVHGRD(bi%na), FSIHGRD(bi%na), FDLGRD(bi%na), PREGRD(bi%na), TAGRD(bi%na), ULGRD(bi%na), PRESGRD(bi%na), &
+            QAGRD(bi%na), VLGRD(bi%na), FSDOWN(bi%na))
+        FSVHGRD = 0.0
+        FSIHGRD = 0.0
+        FDLGRD = 0.0
+        PREGRD = 0.0
+        TAGRD = 0.0
+        ULGRD = 0.0
+        PRESGRD = 0.0
+        QAGRD = 0.0
+        VLGRD = 0.0
+        FSDOWN = 0.0
+
+        !> Allocate and initialize GAT variables.
+        ilg = bi%na*bi%nm
+        allocate( &
+            FSVHGAT(ilg), FSIHGAT(ilg), FDLGAT(ilg), PREGAT(ilg), TAGAT(ilg), ULGAT(ilg), PRESGAT(ilg), QAGAT(ilg), VLGAT(ilg))
+        FSVHGAT = 0.0
+        FSIHGAT = 0.0
+        FDLGAT = 0.0
+        PREGAT = 0.0
+        TAGAT = 0.0
+        ULGAT = 0.0
+        PRESGAT = 0.0
+        QAGAT = 0.0
+        VLGAT = 0.0
+
+        !> Allocate and initialize GAT variables for climate interpolation.
+        allocate( &
+            FSVHGATPRE(ilg), FSIHGATPRE(ilg), FDLGATPRE(ilg), PREGATPRE(ilg), &
+            TAGATPRE(ilg), ULGATPRE(ilg), PRESGATPRE(ilg), QAGATPRE(ilg), &
+            FSVHGATPST(ilg), FSIHGATPST(ilg), FDLGATPST(ilg), PREGATPST(ilg), &
+            TAGATPST(ilg), ULGATPST(ilg), PRESGATPST(ilg), QAGATPST(ilg))
+        FSVHGATPRE = 0.0
+        FSIHGATPRE = 0.0
+        FDLGATPRE = 0.0
+        PREGATPRE = 0.0
+        TAGATPRE = 0.0
+        ULGATPRE = 0.0
+        PRESGATPRE = 0.0
+        QAGATPRE = 0.0
+        FSVHGATPST = 0.0
+        FSIHGATPST = 0.0
+        FDLGATPST = 0.0
+        PREGATPST = 0.0
+        TAGATPST = 0.0
+        ULGATPST = 0.0
+        PRESGATPST = 0.0
+        QAGATPST = 0.0
+
+        return
+
+999 ENDDATA = .true.
+
+    end subroutine !climate_module_init
+
+    !> *****************************************************************
+    !> MAM - Read in initial meteorological forcing data
+    !> *****************************************************************
+    subroutine climate_module_loaddata(bi, cm, firststep, ENDDATA, &
+!todo: These variables can be stored elsewhere instead of passed.
+        YCOUNT, XCOUNT, NML, ILMOS, JLMOS, YYY, XXX, ACLASS)
+
+        use FLAGS
+
+        !> Input variables.
+        type(basin_info) :: bi
+        type(CLIM_INFO) :: cm
+        logical firststep, ENDDATA
+        integer YCOUNT, XCOUNT, NML, ILMOS(:), JLMOS(:), &
+            YYY(:), XXX(:)
+        real ACLASS(:, :)
+
+        !> Local variables.
+        integer ilg
+
+        ilg = bi%NA*bi%NM
+        if (firststep) then
+            if (INTERPOLATIONFLAG == 0) then
+                call READ_FORCING_DATA(YCOUNT, XCOUNT, bi%NM, bi%NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+                                       FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+                                       FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, 1, cm)
+                ITIME = 2
+            elseif (INTERPOLATIONFLAG == 1) then
+                if (RESUMEFLAG /= 1) then
+                    call READ_FORCING_DATA(YCOUNT, XCOUNT, bi%NM, bi%NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+                                           FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+                                           FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, TAGATPRE, ULGATPRE, &
+                                           PRESGATPRE, QAGATPRE, 1, cm)
+                    call READ_FORCING_DATA(YCOUNT, XCOUNT, bi%NM, bi%NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+                                           FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+                                           FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, TAGATPST, ULGATPST, &
+                                           PRESGATPST, QAGATPST, 2, cm)
+                    ITIME = 3
+                else
+                    call READ_FORCING_DATA(YCOUNT, XCOUNT, bi%NM, bi%NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+                                           FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+                                           FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, TAGATPST, ULGATPST, &
+                                           PRESGATPST, QAGATPST, 1, cm)
+                    ITIME = 2
+                end if
+            end if
+            VLGRD = 0.0
+            VLGAT = 0.0
+        else
+            if (INTERPOLATIONFLAG == 1) then
+                FSVHGATPRE = FSVHGATPST
+                FSIHGATPRE = FSIHGATPST
+                FDLGATPRE = FDLGATPST
+                PREGATPRE = PREGATPST
+                TAGATPRE = TAGATPST
+                ULGATPRE = ULGATPST
+                PRESGATPRE = PRESGATPST
+                QAGATPRE = QAGATPST
+                call READ_FORCING_DATA(YCOUNT, XCOUNT, bi%NM, bi%NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+                                       FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+                                       FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, TAGATPST, ULGATPST, &
+                                       PRESGATPST, QAGATPST, ITIME, cm)
+            else
+                call READ_FORCING_DATA(YCOUNT, XCOUNT, bi%NM, bi%NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+                                       FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+                                       FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, ITIME, cm)
+            end if
+            ITIME = ITIME + 1
+        end if !(firststep) then
+
+    end subroutine !climate_module_loaddata
 
         !>******************************************************************************
          subroutine Init_clim_data(cm,idvar,unitR)
@@ -383,6 +730,55 @@
 999 ENDDATA = .TRUE.
          end subroutine LoadData
 
+    subroutine climate_module_interpolatedata(bi, cm, &
+!todo: These variables can be stored elsewhere instead of passed.
+        ACLASS, FAREGAT, NML, ILMOS, JLMOS)
+
+        !> Input variables.
+        type(basin_info) :: bi
+        type(CLIM_INFO) :: cm
+        real ACLASS(:, :), FAREGAT(:)
+        integer NML, ILMOS(:), JLMOS(:)
+
+        !> Local variables.
+        integer k
+
+!        TRATIO = min(1.0, real(TIME_STEP_NOW)/HOURLYFLAG)
+
+        TRATIO = min(1.0, real(TIME_STEP_NOW)/cm%clin(1)%hf); FSVHGAT = FSVHGATPRE + TRATIO*(FSVHGATPST - FSVHGATPRE)
+        TRATIO = min(1.0, real(TIME_STEP_NOW)/cm%clin(1)%hf); FSIHGAT = FSIHGATPRE + TRATIO*(FSIHGATPST - FSIHGATPRE)
+        TRATIO = min(1.0, real(TIME_STEP_NOW)/cm%clin(2)%hf); FDLGAT = FDLGATPRE + TRATIO*(FDLGATPST - FDLGATPRE)
+        TRATIO = min(1.0, real(TIME_STEP_NOW)/cm%clin(3)%hf); PREGAT = PREGATPRE + TRATIO*(PREGATPST - PREGATPRE)
+        TRATIO = min(1.0, real(TIME_STEP_NOW)/cm%clin(4)%hf); TAGAT = TAGATPRE + TRATIO*(TAGATPST - TAGATPRE)
+        TRATIO = min(1.0, real(TIME_STEP_NOW)/cm%clin(5)%hf); ULGAT = ULGATPRE + TRATIO*(ULGATPST - ULGATPRE)
+        TRATIO = min(1.0, real(TIME_STEP_NOW)/cm%clin(6)%hf); PRESGAT = PRESGATPRE + TRATIO*(PRESGATPST - PRESGATPRE)
+        TRATIO = min(1.0, real(TIME_STEP_NOW)/cm%clin(7)%hf); QAGAT = QAGATPRE + TRATIO*(QAGATPST - QAGATPRE)
+
+        !> INTERPOLATE GRD VARIABLES
+        FSVHGRD = 0.0
+        FSIHGRD = 0.0
+        FDLGRD = 0.0
+        ULGRD = 0.0
+        TAGRD = 0.0
+        QAGRD = 0.0
+        PRESGRD = 0.0
+        PREGRD = 0.0
+
+        do k = 1, NML
+            if (FAREGAT(k) > 0.0) then
+                FSVHGRD(ILMOS(k)) = FSVHGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*FSVHGAT(k)
+                FSIHGRD(ILMOS(k)) = FSIHGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*FSIHGAT(k)
+                FDLGRD(ILMOS(k)) = FDLGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*FDLGAT(k)
+                ULGRD(ILMOS(k)) = ULGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*ULGAT(k)
+                TAGRD(ILMOS(k)) = TAGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*TAGAT(k)
+                QAGRD(ILMOS(k)) = QAGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*QAGAT(k)
+                PRESGRD(ILMOS(k)) = PRESGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*PRESGAT(k)
+                PREGRD(ILMOS(k)) = PREGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*PREGAT(k)
+            end if
+        end do !k = 1, NML
+        FSDOWN = 2.0*FSVHGRD
+
+    end subroutine !climate_module_interpolatedata
 
         !>******************************************************************************
          subroutine NeedUpdate_clim_data(cm,indx,timeC,xcount,ycount,xxx,yyy,na,enddata)

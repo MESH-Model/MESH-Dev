@@ -76,10 +76,15 @@ PROGRAM RUNMESH
 !>  would like to work on with a low priority.
 
 USE AREA_WATFLOOD
+
+    use sa_mesh_shared_variabletypes
+    use sa_mesh_shared_variables
+
 USE EF_MODULE
 USE MESH_INPUT_MODULE
 USE FLAGS
 
+    use module_mpi_flags
     use module_mpi
 
 USE MODEL_OUTPUT
@@ -153,11 +158,10 @@ INTEGER IOS, IOS_EVT
 !> FOR OUTPUT
 CHARACTER*450 GENDIR_OUT
 
-!todo clean up commets and arrange variables a bit better
+    !> For R2C-format out
+    integer EF_YEAR_NOW, EF_MONTH_NOW, EF_DAY_NOW, EF_HOUR_NOW
 
-!> These variables are used to keep track of the number of forcing files
-!> that are in different formats
-INTEGER NUM_CSV, NUM_R2C, CURGRU, NUM_SEQ
+!todo clean up commets and arrange variables a bit better
 
 !> SCA variables
 
@@ -193,8 +197,6 @@ CHARACTER, ALLOCATABLE :: WF_GAGE(:)*8
 
 !> FOR BASEFLOW INITIALIZATION
 INTEGER JAN
-!> For count times in reading climate forcing data
-INTEGER ITIME
     integer imonth_now, imonth_old
 
 !>     FOR ROUTING
@@ -206,25 +208,15 @@ REAL, DIMENSION(:), ALLOCATABLE :: WF_NHYD, WF_QBASE, WF_QI2, &
   WF_QO1, WF_QO2, WF_QR, WF_STORE1, WF_STORE2, WF_QI1
 
 ! Saul=======
-!* IYEAR_START: Initial year for data at the bin file
-!* IDAY_START : Initial day for data at the bin file
-!* IHOUR_START: Initial hour for data at the bin file
-!* IMIN_START : Initial minute for data at the bin file
-!* ISTEP_START: Time step; 1:hour, 2:half of hour
-!* toskip   : The number of variables in the file per timestep
 !* HOURLY_START_*: Start day/year for recording hourly averaged data
 !* HOURLY_STOP_*: Stop day/year for recording hourly averaged data
 !* DAILY_START_*: Start day/year for recording daily averaged data
 !* DAILY_STOP_*: Stop day/year for recording daily averaged data
-INTEGER IHOUR_START,IMIN_START,IDAY_START,IMON_START,IYEAR_START,&
-               ISTEP_START
-INTEGER IHOUR_END,IMIN_END,IDAY_END,IYEAR_END
-INTEGER nyy,ndy,nmy,nhy,nrs,toskip
 INTEGER HOURLY_START_DAY, HOURLY_STOP_DAY, DAILY_START_DAY, &
            DAILY_STOP_DAY
 INTEGER HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
            DAILY_STOP_YEAR
-INTEGER JDAY_IND_STRM,JDAY_IND1,JDAY_IND2,JDAY_IND3,JDAY_IND_MET
+INTEGER JDAY_IND_STRM,JDAY_IND1,JDAY_IND2,JDAY_IND3
 !*******************************************************************************
 
 
@@ -248,9 +240,6 @@ REAL DEGLAT,DEGLON,FSDOWN1,FSDOWN2,FSDOWN3,RDAY, &
      DECL,HOUR,COSZ, &
      ALTOT,FSSTAR,FLSTAR,QH,QE,BEG,SNOMLT,ZSN,TCN,TSN,TPN,GTOUT
 INTEGER JLAT
-
-REAL, DIMENSION(:), ALLOCATABLE :: FSDOWN,FSDOWNPRE,FSDOWNPST
-
 
 !> *************************************************************
 !> For reading in options information from MESH_run_options.ini
@@ -433,19 +422,17 @@ INTEGER :: JOUT1, JOUT2, JAV1, JAV2, KOUT1, KOUT2, KAV1, KAV2
 INTEGER :: IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
   IALS, IALG, ITG, ITC, ITCG
 
-
 !> GRID SQUARE COUNTS:
 !* NLTEST: NUMBER OF GRID SQUARES (CLASS.INI)
 !* NMTEST: NUMBER OF GRUS (CLASS.INI)
 !* IHOUR: CURRENT HOUR OF MET. FORCING DATA (0 TO 23) (CLASS.INI)
 !* IMIN: CURRENT MINUTE OF MET. FORCING DATA (0 OR 30) (CLASS.INI)
-!* IMIN2: CURRENT MINUTE OF MET. FORCING DATA (RANGES FROM 0  TO HOURLYFLAG)
 !* IDAY: CURRENT DAY OF MET. FORCING DATA (JULIAN FROM YEAR START)
 !*       (CLASS.INI)
 !* IYEAR: CURRENT YEAR OF MET. FORCING DATA (CLASS.INI)
 !* NML: NUMBER OF LAND-ORIENTED GRID SQUARES
 !* NMW: NUMBER OF WATER-ORIENTED GRID SQUARES
-INTEGER :: ILW, NLTEST, NMTEST, IHOUR, IMIN, IMIN2, IDAY, IYEAR, NML, &
+INTEGER :: ILW, NLTEST, NMTEST, NML, &
   NMW, NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
@@ -559,26 +546,18 @@ REAL, DIMENSION(:, :), ALLOCATABLE :: BTC, BCAP, DCOEFF, BFCAP, &
 !>
 !> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
 REAL, DIMENSION(:), ALLOCATABLE :: ZDMGRD, &
-  ZDHGRD, FSVHGRD, FSIHGRD, RADJGRD, CSZGRD, FDLGRD, &
-  ULGRD, VLGRD, TAGRD, QAGRD, PRESGRD, PREGRD, PADRGRD, VPDGRD, &
+  ZDHGRD, RADJGRD, CSZGRD, &
+  PADRGRD, VPDGRD, &
   TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, RHSIGRD, &
   FCLOGRD, DLONGRD, Z0ORGRD, GGEOGRD, UVGRD, XDIFFUS, &
-  RPREGRD, SPREGRD, VMODGRD, &
-
-!> MAM - variables for forcing data interpolation:
-   FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
-   TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
-   FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, &
-   TAGATPST, ULGATPST, PRESGATPST, QAGATPST
-
-REAL    TRATIO
+  RPREGRD, SPREGRD, VMODGRD
 
 !> MAM - logical variables to control simulation runs:
 LOGICAL ENDDATE, ENDDATA
 
 REAL, DIMENSION(:), ALLOCATABLE :: ZRFMGAT, ZRFHGAT, ZDMGAT, &
-  ZDHGAT, ZBLDGAT, FSVHGAT, FSIHGAT, RADJGAT, CSZGAT, FDLGAT, &
-  ULGAT, VLGAT, TAGAT, QAGAT, PRESGAT, PREGAT, RPREGAT, SPREGAT, &
+  ZDHGAT, ZBLDGAT, RADJGAT, CSZGAT, &
+  RPREGAT, SPREGAT, &
   PADRGAT, VPDGAT, TADPGAT, RHOAGAT, RPCPGAT, TRPCGAT, SPCPGAT, &
   TSPCGAT, RHSIGAT, FCLOGAT, DLONGAT, Z0ORGAT, GGEOGAT, VMODGAT
 !>
@@ -814,13 +793,6 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: SUBBASIN
 !* ATTRIBUTE_NAME: R2C-FORMAT DATA IDENTIFER (PASSED TO WRITE_R2C)
 !* ATTRIBUTE_UNITS: R2C-FORMAT DATA UNITS (PASSED TO WRITE_R2C)
 !* ATTRIBUTE_TYPE: R2C-FORMAT DATA TYPE (PASSED TO WRITE_R2C)
-!* YEAR1: YEAR OF CURRENT TIME STEP (IYEAR) (PASSED TO WRITE_R2C)
-!* MONTH_NOW: MONTH OF CURRENT TIME STEP (1 TO 12) (PASSED TO
-!*            WRITE_R2C)
-!* DAY_NOW: DAY OF CURRENT TIME STEP (1 TO 31) (PASSED TO
-!*          WRITE_R2C)
-!* HOUR_NOW: HOUR OF CURRENT TIME STEP (IHOUR + 1) (1 TO 24)
-!*           (PASSED TO WRITE_R2C)
 !* YYY: Y-DIRECTION GRID SQUARE CO-ORDINATE (YYY), aka column coordinate
 !* XXX: X-DIRECTION GRID SQUARE CO-ORDIANTE (XXX), aka row coordinate
 
@@ -905,9 +877,9 @@ COMMON    /PHYCON/    DELTA, CGRAV, CKARM, CPD
 COMMON /CLASSD2/ AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX
 
 !> THE FOLLOWING COMMON BLOCKS ARE DEFINED FOR WATROF
-COMMON    /WATFLGS/   VICEFLG, PSI_LIMIT, HICEFLG, LZFFLG, &
-                      EXTFLG, IWFICE, ERRFLG, IMIN, IHOUR, IDAY, &
-                      IYEAR
+!COMMON    /WATFLGS/   VICEFLG, PSI_LIMIT, HICEFLG, LZFFLG, &
+!                      EXTFLG, IWFICE, ERRFLG, IMIN, IHOUR, IDAY, &
+!                      IYEAR
 
 DATA VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
   EXTFLG/0/, IWFICE/3/, ERRFLG/1/
@@ -956,10 +928,10 @@ call cpu_time(startprog)
     end if
 
     !> Reset verbose flag for worker nodes.
-    if (ipid > 0) VERBOSEMODE = 0
+    if (ipid > 0) ro%VERBOSEMODE = 0
 
 !>!TODO: UPDATE THIS (RELEASE(*)) WITH VERSION CHANGE
-    if (VERBOSEMODE > 0) print 951, trim(RELEASE(7)), trim(VERSION)
+    if (ro%VERBOSEMODE > 0) print 951, trim(RELEASE(7)), trim(VERSION)
 
 951 format(1x, 'MESH 'a, ' ---  ('a, ')'/)
 
@@ -1026,8 +998,8 @@ CALL READ_INITIAL_INPUTS( &
   IDISP, IZREF, ISLFD, IPCP, IWF, &
   IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG, &
   ICTEMMOD, IOS, PAS, N, IROVAL, WF_NUM_POINTS, &
-  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, &
-  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END, &
+!  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, &
+!  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END, &
   IRONAME, GENDIR_OUT, &
 !>variables for drainage database or new_shd
  IGND, ILG, WF_IYMAX, WF_JXMAX, &
@@ -1036,7 +1008,7 @@ CALL READ_INITIAL_INPUTS( &
  LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX, &
  WF_LAND_MAX, WF_LAND_SUM, &
 !>variables for READ_CHECK_FORCING_FILES
- NUM_CSV, NUM_R2C, NUM_SEQ, &
+! NUM_CSV, NUM_R2C, NUM_SEQ, &
 !>variables for READ_PARAMETERS_CLASS
   TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6, &
   NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
@@ -1047,7 +1019,7 @@ CALL READ_INITIAL_INPUTS( &
   DAILY_START_DAY,   DAILY_STOP_DAY, &
   HOURLY_START_YEAR, HOURLY_STOP_YEAR, &
   DAILY_START_YEAR,  DAILY_STOP_YEAR, &
-  IHOUR, IMIN, IDAY, IYEAR, &
+!  IHOUR, IMIN, IDAY, IYEAR, &
  !>variables for READ_SOIL_INI
  !>variables for READ_PARAMETERS_HYDROLOGY
   INDEPPAR, DEPPAR, WF_R2, M_C, &
@@ -1055,19 +1027,13 @@ CALL READ_INITIAL_INPUTS( &
   op, sl, cp, sv, hp,ts,cm, &
   SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
-!INITIALIZE IMIN2  
-  IMIN2 = IMIN
-
 !>
 !>***********************************************************************
 !> Forcing data time step should not be less than 30 min - there is no 
 !> any increase in accuracy as delt (CLASS model time step) is 30 min.
 !>=======================================================================
 
-    !> If ts%timestep hasn't been set, set it equal to HOURLYFLAG to force
-    !> compatibility with older versions of the model.
-    if (ts%timestep == 0) ts%timestep = HOURLYFLAG
-    if (ts%timestep < 30) then
+    if (HOURLYFLAG < 30) then
         print 1028
         stop
     end if
@@ -1097,8 +1063,7 @@ call check_parameters(WF_R2,M_C,NMTEST,cp,hp,soil_por_max,soil_depth,s0,t_ice_le
 !> ANDY * Allocate some variables
 ALLOCATE (WF_NHYD(NA), WF_QR(NA), &
   WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA), &
-  WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA), &
-  FSDOWN(NA),FSDOWNPRE(NA),FSDOWNPST(NA))
+  WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA))
 
     !> ANDY * Zero everything we just allocated
     WF_NHYD = 0.0
@@ -1272,21 +1237,17 @@ END IF
 
 !> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
 ALLOCATE ( ZDMGRD(NA), &
-  ZDHGRD(NA), FSVHGRD(NA), FSIHGRD(NA), RADJGRD(NA), &
-  CSZGRD(NA), FDLGRD(NA), &
-  ULGRD(NA), VLGRD(NA), TAGRD(NA), QAGRD(NA), PRESGRD(NA), &
-  PREGRD(NA), PADRGRD(NA), VPDGRD(NA), &
+  ZDHGRD(NA), RADJGRD(NA), &
+  CSZGRD(NA), &
+  PADRGRD(NA), VPDGRD(NA), &
   TADPGRD(NA), RHOAGRD(NA), RPCPGRD(NA), TRPCGRD(NA), &
   SPCPGRD(NA), TSPCGRD(NA), RHSIGRD(NA), &
   FCLOGRD(NA), DLONGRD(NA), Z0ORGRD(NA), GGEOGRD(NA), UVGRD(NA), &
   XDIFFUS(NA), &
   RPREGRD(NA), SPREGRD(NA), VMODGRD(NA), &
   ZRFMGAT(ILG), ZRFHGAT(ILG), ZDMGAT(ILG), &
-  ZDHGAT(ILG), ZBLDGAT(ILG), FSVHGAT(ILG), &
-  FSIHGAT(ILG), RADJGAT(ILG), CSZGAT(ILG), &
-  FDLGAT(ILG), &
-  ULGAT(ILG), VLGAT(ILG), TAGAT(ILG), &
-  QAGAT(ILG), PRESGAT(ILG), PREGAT(ILG), &
+  ZDHGAT(ILG), ZBLDGAT(ILG), &
+  RADJGAT(ILG), CSZGAT(ILG), &
   RPREGAT(ILG), SPREGAT(ILG), &
   PADRGAT(ILG), VPDGAT(ILG), &
   TADPGAT(ILG), RHOAGAT(ILG), RPCPGAT(ILG), &
@@ -1697,13 +1658,10 @@ READ(22,*,IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
 
       ! fixed streamflow start time bug. add in function to enable the
       ! correct start time. Feb2009 aliu.
-         call Julian_Day_ID(WF_START_YEAR, WF_START_day,&
-         Jday_IND1)
-         call Julian_Day_ID(IYEAR_START, IDAY_START,&
-         Jday_IND2)
-         call Julian_Day_ID(IYEAR,IDAY,Jday_IND3)
+         call Julian_Day_ID(WF_START_YEAR, WF_START_day, Jday_IND1)
+         call Julian_Day_ID(YEAR_START, JDAY_START, Jday_IND2)
 !          write (*,*) WF_START_YEAR, WF_START_day, Jday_IND1
-             if (iyear_start ==0) then
+             if (YEAR_START ==0) then
                jday_ind2=jday_ind1
              endif
          if (jday_ind2 < jday_ind1) then
@@ -1713,7 +1671,6 @@ READ(22,*,IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
           stop
           endif
          jday_ind_strm=(jday_ind2-jday_ind1)*24/WF_KT
-         jday_ind_met=jday_ind2-jday_ind3
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          !skip the unused streamflow records in streamflow.txt .
 
@@ -1835,7 +1792,7 @@ NAA=NA-NAA
 !> set initial values of ncount and nsum
 ! NCOUNT = which half-hour period the current time is:
 ! The first period (0:00-0:30) is #1, the last period (23:30-0:00) is #48
-NCOUNT=IHOUR*2+IMIN/30+1
+NCOUNT=HOUR_NOW*2+MINS_NOW/TIME_STEP_MINS+1
 NSUM=1
 NSUM_TOTAL=1
 
@@ -1905,11 +1862,16 @@ ENDIF
 !> **********************************************************************
 
 !> Initialize basin information variable.
-bi%na = na
-bi%ignd = ignd
+bi%na = NA
+bi%nm = NTYPE
+bi%ignd = IGND
 
 !> Initialize output variables.
 call wb%init(bi)
+
+    call climate_module_init(ts, bi, ENDDATA, &
+        YCOUNT)
+    if (ENDDATA) goto 999
 
 !> *********************************************************************
 !> Initialize water balance output fields
@@ -2130,7 +2092,7 @@ FRAME_NO_NEW = 1
         write(58, *) "BASINWINDFLAG        = ", BASINWINDFLAG
         write(58, *) "BASINPRESFLAG        = ", BASINPRESFLAG
         write(58, *) "BASINHUMIDITYFLAG    = ", BASINHUMIDITYFLAG
-        write(58, *) "HOURLYFLAG           = ", ts%timestep
+        write(58, *) "HOURLYFLAG           = ", HOURLYFLAG
         write(58, *) "RESUMEFLAG           = ", RESUMEFLAG
         write(58, *) "SAVERESUMEFLAG       = ", SAVERESUMEFLAG
         write(58, *) "SHDFILEFLAG          = ", SHDFILEFLAG
@@ -2235,28 +2197,6 @@ FRAME_NO_NEW = 1
             write(58, *)
         end do !m = 1, NMTEST
     end if !(MODELINFOOUTFLAG > 0) then
-
-    ALLOCATE (FSVHGATPRE(ILG), FSIHGATPRE(ILG), FDLGATPRE(ILG), PREGATPRE(ILG), &
-               TAGATPRE(ILG), ULGATPRE(ILG), PRESGATPRE(ILG), QAGATPRE(ILG), &
-               FSVHGATPST(ILG), FSIHGATPST(ILG), FDLGATPST(ILG), PREGATPST(ILG), &
-               TAGATPST(ILG), ULGATPST(ILG), PRESGATPST(ILG), QAGATPST(ILG))
-
-    FSVHGATPRE  = 0.0
-    FSIHGATPRE  = 0.0
-    FDLGATPRE   = 0.0
-    PREGATPRE   = 0.0
-    TAGATPRE    = 0.0
-    ULGATPRE    = 0.0
-    PRESGATPRE  = 0.0
-    QAGATPRE    = 0.0  
-    FSVHGATPST  = 0.0
-    FSIHGATPST  = 0.0
-    FDLGATPST   = 0.0
-    PREGATPST   = 0.0
-    TAGATPST    = 0.0
-    ULGATPST    = 0.0
-    PRESGATPST  = 0.0
-    QAGATPST    = 0.0
 
     ALLOCATE(INFILTYPE(ILG),SI(ILG),TSI(ILG), &
              SNOWMELTD(ILG),SNOWMELTD_LAST(ILG),SNOWINFIL(ILG),&
@@ -2372,7 +2312,8 @@ IF (PRINTRFFR2CFILEFLAG == 1) THEN
   ATTRIBUTE_NAME = "channel_inflow"
   ATTRIBUTE_UNITS = "mm"
   ATTRIBUTE_TYPE = "flow"
-  CALL WRITE_R2C(261,31,0,1,0,1,1)
+  CALL WRITE_R2C(261,31,0,1,0,1,1, &
+                 EF_YEAR_NOW, EF_MONTH_NOW, EF_DAY_NOW, EF_HOUR_NOW)
 END IF
 !>
 !> RECHARGE (MODELFLG .EQ. 'r')
@@ -2382,7 +2323,8 @@ IF (PRINTRCHR2CFILEFLAG == 1) THEN
   ATTRIBUTE_NAME = "recharge"
   ATTRIBUTE_UNITS = "mm"
   ATTRIBUTE_TYPE = "flow"
-  CALL WRITE_R2C(262,32,0,1,0,1,1)
+  CALL WRITE_R2C(262,32,0,1,0,1,1, &
+                 EF_YEAR_NOW, EF_MONTH_NOW, EF_DAY_NOW, EF_HOUR_NOW)
 END IF
 !>
 !> LEAKAGE (MODELFLG .EQ. 'l' (NOT SUPPORTED))
@@ -2396,180 +2338,6 @@ END IF
 !!+END IF
 
 end if !(ipid == 0) then
-
-!
-!> *********************************************************************
-!> Open the MESH_input_forcing.bin file
-!> *********************************************************************
-!todo - if we have time (or later), change the binary forcing files to 
-!       one for each forcing variable
-!> Only open if there are not enough separate forcing files
-IF (NUM_R2C + NUM_CSV + NUM_SEQ< 7) THEN
-  OPEN(UNIT=51,FILE='MESH_input_forcing.bin',STATUS='OLD', &
-           FORM='UNFORMATTED', action = 'read')
-ENDIF
-
-!todo - leave these in for event based runs
-!> IYEAR is set in the MESH_parameters_CLASS.ini file
-!> IYEAR_START is set in the MESH_input_run_options.ini file
-!> !P : IYEAR_START is set in the MESH_parameters_class.ini file
-
-!> the following code is used to skip entries at the start
-!> of the bin file
-
-!PARAMESH
-
-nyy = IYEAR_START - IYEAR
-ndy = IDAY_START  - IDAY
-nmy = IMIN_START  - IMIN !P
-nhy = IHOUR_START - IHOUR !P
-!P      nmy = IMIN
-!P      nhy = 24 - IHOUR
-! set ISTEP_START based on HOURLYFLAG
-!  (could be optimised as ISTEP_START = 2 - HOURLYFLAG)
-!HOURLYFLAG is 1 if the data is every hour, and 0 if the data is every half-hour
-!ISTEP_START is used to calculate nrs, and doubles the effect of the hours and
-! minutes if the data is in half-hourly format
-!IF (ts%timestep == 1) THEN
-!  ISTEP_START = 1
-!ELSE
-!  ISTEP_START = 2
-!ENDIF
-!Note added by M. Mekonnen
-!ISTEP_START is used to count the number of records in one hour, 
-!hence a 30 minute interval forcing data will have 2 records per hour (ISTEP_START = 2)
-!and a 1 hour interval forcing data will have 1 record per hour (ISTEP_START = 1). To 
-!accomodate forcing data with time intervals greater than 1 hour, 
-!it is better to count the number of records in a day:
-ISTEP_START = 24*60/ts%timestep
-if (mod(24*60,ts%timestep) /= 0) then
-    print 2334
-    stop
-end if
-
-2334 format( &
-    //1x'Forcing data time interval needs to be in either', &
-    /1x'of the following values:', &
-    /1x'30 or n*60 where n can be either 1, 2, 3, 4, 6, 8 or 12.'/)
-
-if ((jday_ind2 < jday_ind3) .and. (iyear_start /= 0)) then
-    print 2442
-    stop
-end if
-
-2442 format( &
-    //1x'ERROR: Simulation start date too early. The start date in the', &
-    /3x'run options file may occur before the start date of the met.', &
-    /3x'forcing input data in the CLASS parameter file.'/)
-
-!Notes added by M. Mekonnen - To keep nrs calculation as before
-!(and to be compatible with the above modification) we need to 
-!divide ISTEP_START by 24.
-!nrs =JDAY_IND_MET*ISTEP_START*24 + nhy*ISTEP_START + nmy/30  !aLIU
-nrs =JDAY_IND_MET*ISTEP_START + nhy*ISTEP_START/24 + nmy/30
-PRINT *,'NRS=',NRS
-! FIX BUG IN JULIAN DAY CALCULATION FOR NRS ---ALIU FEB2009
-IF (IYEAR_START == 0 .AND. IDAY_START == 0 .AND. IMIN_START == 0 &
-    .AND. IHOUR_START == 0) THEN !P
-  IYEAR_START = IYEAR
-  IDAY_START = IDAY
-  IHOUR_START = IHOUR !P
-  IMIN_START = IMIN !P
-  nrs = 0
-ELSEIF (nrs<0) THEN
-  PRINT*,'Desired start date is before the start of the ', &
-    'data in MESH_input_forcing.bin'
-  PRINT *, 'Please adjust the start date in ', &
-    'MESH_input_run_options.ini'
-  STOP
-ENDIF
-
-PRINT *, 'Skipping',NRS,'Registers in bin file'
-IYEAR = IYEAR_START
-IDAY = IDAY_START
-!+      IHOUR = IHOUR_START
-!+      IMIN = IMIN_START
-
-!> skip the values in the forcing files
-toskip = 7 - NUM_R2C - NUM_CSV - NUM_SEQ
-
-DO i=1,nrs
-  DO J=1,toskip
-    READ(51,END=999) !Skip the bin's information
-  ENDDO
-  IF(BASINSHORTWAVEFLAG==1)THEN !Skip the r2c file's information
-      READ (90, *, END=999)
-     DO m = 1,YCOUNT
-       READ (90,* , END=999)
-     END DO
-      READ (90, *, END=999) !:EndFrame line
-  ENDIF
-  IF(BASINLONGWAVEFLAG==1)THEN
-    READ (91, *, END=999) !:Frame line
-     DO m = 1,YCOUNT
-       READ (91, *, END=999) 
-     END DO
-      READ (91, *, END=999) !:EndFrame line
-  ENDIF
-  IF(BASINRAINFLAG==1)THEN
-    READ (92, *, END=999) !:Frame line
-     DO m = 1,YCOUNT
-       READ (92, *, END=999) 
-     END DO
-      READ (92, *, END=999) !:EndFrame line
-  ENDIF
-  IF(BASINTEMPERATUREFLAG==1)THEN
-    READ (93, *, END=999) !:Frame line
-     DO m = 1,YCOUNT
-       READ (93, *, END=999) 
-     END DO
-      READ (93, *, END=999) !:EndFrame line
-  ENDIF
-  IF(BASINWINDFLAG==1)THEN
-    READ (94, *, END=999) !:Frame line
-     DO m = 1,YCOUNT
-       READ (94, *, END=999) 
-     END DO
-      READ (94, *, END=999) !:EndFrame line
-  ENDIF
-  IF(BASINPRESFLAG==1)THEN
-    READ (95, *, END=999) !:Frame line
-     DO m = 1,YCOUNT
-       READ (95, *, END=999) 
-     END DO
-      READ (95, *, END=999) !:EndFrame line
-  ENDIF
-  IF(BASINHUMIDITYFLAG==1)THEN
-    READ (96, *, END=999) !:Frame line
-     DO m = 1,YCOUNT
-       READ (96,*, END=999)
-     END DO
-      READ (96, *, END=999)
-
-  ENDIF
-  IF(BASINSHORTWAVEFLAG==2)THEN !Skip the csv file's information
-    READ(90,*,END=999)
-  ENDIF
-  IF(BASINLONGWAVEFLAG==2)THEN
-    READ(91,*,END=999)
-  ENDIF
-  IF(BASINRAINFLAG==2)THEN
-    READ(92,*,END=999)
-  ENDIF
-  IF(BASINTEMPERATUREFLAG==2)THEN
-    READ(93,*,END=999)
-  ENDIF
-  IF(BASINWINDFLAG==2)THEN
-    READ(94,*,END=999)
-  ENDIF
-  IF(BASINPRESFLAG==2)THEN
-    READ(95,*,END=999)
-  ENDIF
-  IF(BASINHUMIDITYFLAG==2)THEN
-    READ(96,*,END=999)
-  ENDIF
-
-ENDDO
 
 !> *********************************************************************
 !> Open and print header information to the output files
@@ -2594,7 +2362,6 @@ if (ipid == 0) then
         end if
 
     end if !(STREAMFLOWOUTFLAG > 0) then
-
 
 !> *********************************************************************
 !> Open and read in values from r2c_output.txt file
@@ -2672,7 +2439,7 @@ end if !(ipid == 0) then
 !> Output information to screen
 !> *********************************************************************
 
-if (VERBOSEMODE > 0) then
+if (ro%VERBOSEMODE > 0) then
 
 PRINT *, 'NUMBER OF GRID SQUARES: ',NA
     PRINT *, 'NUMBER OF LAND CLASSES (WITH IMPERVIOUS): ', NMTEST
@@ -2706,7 +2473,7 @@ PRINT *
 PRINT *
 PRINT *
 
-end if !(VERBOSEMODE > 0) then
+end if !(ro%VERBOSEMODE > 0) then
 
 if (ipid == 0) call stats_init(ts, wf_no)
 
@@ -2717,7 +2484,7 @@ if (ipid == 0) call stats_init(ts, wf_no)
 IF (RESUMEFLAG == 1) THEN
   PRINT *, 'Reading saved state variables'
 call resume_state( &
-   ts%timestep, IMIN, IMIN2, &
+   HOURLYFLAG, MINS_NOW, TIME_STEP_NOW, &
    BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG, &
    BASINRAINFLAG, BASINTEMPERATUREFLAG, &
    BASINWINDFLAG, BASINPRESFLAG, BASINHUMIDITYFLAG, &
@@ -2797,7 +2564,7 @@ call resume_state( &
    CHCAP, CHCAPS, CMASSC, CMASCS, CWLCAP, &
    CWFCAP, CWLCPS, CWFCPS, RC, RCS, RBCOEF, &
    FROOT, ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, &
-   TRSNOW, ZSNOW, IDAY, JLAT, IDISP, &
+   TRSNOW, ZSNOW, JDAY_NOW, JLAT, IDISP, &
    IZREF, IWF, IPAI, IHGT, IALC, IALS, IALG, &
    TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
    THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, &
@@ -2826,8 +2593,8 @@ call resume_state( &
    WTRCROW, WTRSROW, WTRGROW, DRROW, WTABROW, &
    ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
    QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
-   wfo_seq, IYEAR, ensim_MONTH, ensim_DAY, &
-   IHOUR, XXX, YYY, NA, &
+   wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
+   HOUR_NOW, XXX, YYY, NA, &
    NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
    M_C, M_S, M_R, &
 
@@ -3035,7 +2802,7 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
 170   CONTINUE
 !>
 call resume_state_r2c(NML,NLTEST,NMTEST,NCOUNT, &
-                    IMIN,ACLASS,NR2C_R,GRD_R,GAT_R,GRDGAT_R,R2C_ATTRIBUTES_R,&
+                    MINS_NOW,ACLASS,NR2C_R,GRD_R,GAT_R,GRDGAT_R,R2C_ATTRIBUTES_R,&
                     NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,ICAN,ICP1,IGND, &
                        TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
                        TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT,  &
@@ -3176,7 +2943,6 @@ CALL CLASSS (cp%TBARROW,cp%THLQROW,cp%THICROW,GFLXROW,TSFSROW, &
 
 ENDIF !IF (RESUMEFLAG == 2) THEN
 
-
 !> *********************************************************************
 !> Call read_init_prog_variables.f90 for initi prognostic variables by
 !> by fields needd by classas as initial conditions
@@ -3228,38 +2994,8 @@ CALL WATDRN3B(PSISROW,THPROW,GRKSROW,BIROW,cp%XSLPROW,cp%DDROW, &
 ENDDATE = .FALSE.
 ENDDATA = .FALSE.
 
-!> *********************************************************************
-!> MAM - Read in initial meteorological forcing data
-!> *********************************************************************
-IF(INTERPOLATIONFLAG == 0)THEN
-    CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,ACLASS, &
-                           FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
-                           FSVHGAT,FSIHGAT,FDLGAT,PREGAT,TAGAT,ULGAT,PRESGAT,QAGAT,1,cm)
-    itime = 2
-ELSEIF(INTERPOLATIONFLAG == 1)THEN
-    IF(RESUMEFLAG.ne.1)THEN
-        CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,ACLASS, &
-                           FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
-                           FSVHGATPRE,FSIHGATPRE,FDLGATPRE,PREGATPRE,TAGATPRE,ULGATPRE, &
-                           PRESGATPRE,QAGATPRE,1,cm)
-        CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,ACLASS, &
-                               FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
-                               FSVHGATPST,FSIHGATPST,FDLGATPST,PREGATPST,TAGATPST,ULGATPST, &
-                               PRESGATPST,QAGATPST,2,cm)
-        itime = 3
-    ELSE
-        CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,ACLASS, &
-                               FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
-                               FSVHGATPST,FSIHGATPST,FDLGATPST,PREGATPST,TAGATPST,ULGATPST, &
-                               PRESGATPST,QAGATPST,1,cm)
-
-        itime = 2
-
-    ENDIF
-ENDIF
-
-VLGRD = 0.0
-VLGAT = 0.0
+    call climate_module_loaddata(bi, cm, .true., ENDDATA, &
+        YCOUNT, XCOUNT, NML, ILMOS, JLMOS, YYY, XXX, ACLASS)
 
 if (ipid == 0) then
 
@@ -3621,7 +3357,7 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
 !> End of Initialization
 !> *********************************************************************
 
-    if (VERBOSEMODE > 0) then
+    if (ro%VERBOSEMODE > 0) then
         print *
         if (TESTCSVFLAG == 1) then
             print *, 'TEST PROPER DISTRIBUTION OF CSV FORCING DATA'
@@ -3629,7 +3365,7 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
             print 2836
             print 2835
         end if
-    end if !(VERBOSEMODE > 0) then
+    end if !(ro%VERBOSEMODE > 0) then
 
 2836 format(/1x'DONE INTITIALIZATION')
 2835 format(/1x'STARTING MESH')
@@ -3645,48 +3381,14 @@ DO WHILE(.NOT.ENDDATE .AND. .NOT.ENDDATA)
 !> N is printed out with each of the error messages in CLASSZ.
 N=N+1
 
-!> MAM - Linearly interpolate forcing data for intermediate time steps
-IF (INTERPOLATIONFLAG == 1) THEN
-
-!    TRATIO     = MIN(1.0, FLOAT(IMIN2) / ts%timestep)
-
-    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(1)%hf); FSVHGAT = FSVHGATPRE + TRATIO*(FSVHGATPST - FSVHGATPRE)
-    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(1)%hf); FSIHGAT = FSIHGATPRE + TRATIO*(FSIHGATPST - FSIHGATPRE)
-    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(2)%hf); FDLGAT  = FDLGATPRE  + TRATIO*(FDLGATPST  - FDLGATPRE)
-    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(3)%hf); PREGAT  = PREGATPRE  + TRATIO*(PREGATPST  - PREGATPRE)
-    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(4)%hf); TAGAT   = TAGATPRE   + TRATIO*(TAGATPST   - TAGATPRE)
-    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(5)%hf); ULGAT   = ULGATPRE   + TRATIO*(ULGATPST   - ULGATPRE)
-    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(6)%hf); PRESGAT = PRESGATPRE + TRATIO*(PRESGATPST - PRESGATPRE)
-    TRATIO = MIN(1.0, FLOAT(IMIN2)/cm%clin(7)%hf); QAGAT   = QAGATPRE   + TRATIO*(QAGATPST   - QAGATPRE)
-
-    !> INTERPOLATE GRD VARIABLES
-    FSVHGRD = 0.0
-    FSIHGRD = 0.0
-    FDLGRD  = 0.0
-    ULGRD   = 0.0
-    TAGRD   = 0.0
-    QAGRD   = 0.0
-    PRESGRD = 0.0
-    PREGRD  = 0.0
-
-    DO k = 1, NML
-        IF(FAREGAT(k) .GT. 0.0)THEN
-            FSVHGRD(ilmos(k)) = FSVHGRD(ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*FSVHGAT(k)
-            FSIHGRD(ilmos(k)) = FSIHGRD(ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*FSIHGAT(k)
-            FDLGRD (ilmos(k)) = FDLGRD (ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*FDLGAT (k)
-            ULGRD  (ilmos(k)) = ULGRD  (ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*ULGAT  (k)
-            TAGRD  (ilmos(k)) = TAGRD  (ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*TAGAT  (k)
-            QAGRD  (ilmos(k)) = QAGRD  (ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*QAGAT  (k)
-            PRESGRD(ilmos(k)) = PRESGRD(ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*PRESGAT(k)
-            PREGRD (ilmos(k)) = PREGRD (ilmos(k)) + ACLASS(ilmos(k), jlmos(k))*PREGAT (k)
-        END IF
-    END DO
-    FSDOWN = 2.0*FSVHGRD
-
-END IF
-UVGRD=MAX(VMIN,ULGRD)
-VMODGRD=UVGRD
-vmodgat = max(vmin, ulgat)
+    !> MAM - Linearly interpolate forcing data for intermediate time steps
+    if (INTERPOLATIONFLAG == 1) then
+        call climate_module_interpolatedata(bi, cm, &
+            ACLASS, FAREGAT, NML, ILMOS, JLMOS)
+    end if
+    UVGRD = max(VMIN, ULGRD)
+    VMODGRD = UVGRD
+    VMODGAT = max(VMIN, ULGAT)
 
 !> *********************************************************************
 !> Read in current reservoir release value
@@ -3696,10 +3398,10 @@ vmodgat = max(vmin, ulgat)
 !> however put in an exception if this is the first time through (ie. jan=1),
 !> otherwise depending on the hour of the first time step
 !> there might not be any data in wf_qrel, wf_qhyd
-!> make sure we have a controlled reservoir (if not the mod(IHOUR,wf_ktr)
+!> make sure we have a controlled reservoir (if not the mod(HOUR_NOW,wf_ktr)
 !> may give an error. Frank S Jun 2007
 IF(WF_NORESV_CTRL>0) THEN
-  IF(MOD(IHOUR,WF_KTR)==0.AND.IMIN==0) THEN
+  IF(MOD(HOUR_NOW,WF_KTR)==0.AND.MINS_NOW==0) THEN
 !>        READ in current reservoir value
     READ(21,'(100F10.3)',IOSTAT=IOS)(WF_QREL(I), &
         I=1,WF_NORESV_CTRL)
@@ -3726,7 +3428,7 @@ ENDIF
 
 !> only read in current value if we are on the correct time step
 !> also read in the first value if this is the first time through
-IF(MOD(IHOUR,WF_KT)==0.AND.IMIN==0 .AND. JAN > 1) THEN
+IF(MOD(HOUR_NOW,WF_KT)==0.AND.MINS_NOW==0 .AND. JAN > 1) THEN
 !>       read in current streamflow value
   READ(22,*,IOSTAT=IOS) (WF_QHYD(I),I=1,WF_NO)
   IF(IOS/=0) THEN
@@ -3745,9 +3447,9 @@ ENDIF
 !>  in the range of [0.1,1] based on the location of the sun in the
 !>  sky when precipitation is not occuring. (0.1 when the sun is at
 !>  the zenith, 1 when the sun is at the horizon).
-RDAY=REAL(IDAY)+(REAL(IHOUR)+REAL(IMIN)/60.)/24.
+RDAY=REAL(JDAY_NOW)+(REAL(HOUR_NOW)+REAL(MINS_NOW)/60.)/24.
 DECL=SIN(2.*PI*(284.+RDAY)/365.)*23.45*PI/180.
-HOUR=(REAL(IHOUR)+REAL(IMIN)/60.)*PI/12.-PI
+HOUR=(REAL(HOUR_NOW)+REAL(MINS_NOW)/60.)*PI/12.-PI
 
 DO I=il1,il2
   COSZ=SIN(RADJgat(I))*SIN(DECL)+COS(RADJgat(I))*COS(DECL)*COS(HOUR)
@@ -3767,8 +3469,8 @@ ENDDO
 !> Test proper distribution of csv forcing data
 !> *********************************************************************
 IF(TESTCSVFLAG==1)THEN
-   IF(ts%timestep == 30 .OR. IMIN2 == 0) &
-   WRITE(*,'(I4,1X,I3,1X,I2,1X,I2)')IYEAR,IDAY,IHOUR,IMIN
+   IF(HOURLYFLAG == TIME_STEP_MINS .OR. TIME_STEP_NOW == 0) &
+   WRITE(*,'(I4,1X,I3,1X,I2,1X,I2)')YEAR_NOW,JDAY_NOW,HOUR_NOW,MINS_NOW
 ELSE   
 
 !> *********************************************************************
@@ -3888,7 +3590,7 @@ IF (JAN == 1) THEN
     TOTAL_STORE_2 = INIT_STORE
 
     ! For monthly totals.
-    call FIND_MONTH(IDAY, IYEAR, imonth_old)
+    call FIND_MONTH(JDAY_NOW, YEAR_NOW, imonth_old)
     TOTAL_STORE_2_M = INIT_STORE
 
 END IF
@@ -3965,7 +3667,7 @@ CALL CLASSA    (FC,     FG,     FCS,    FGS,    ALVSCN, ALIRCN, &
                 FCANCMX,ICTEM,  ICTEMMOD,       RMATC, &
                 AILC,   PAIC,   L2MAX,  NOL2PFTS, &
                 AILCG,  AILCGS, FCANC,  FCANCS, &
-                IDAY,   ILG,    il1,    il2, &
+                JDAY_NOW,   ILG,    il1,    il2, &
                 JLAT,N, ICAN,   ICAN+1, IGND,   IDISP,  IZREF, &
                 IWF,    IPAI,   IHGT,   IALC,   IALS,   IALG  )
 !
@@ -4006,10 +3708,10 @@ CALL  CLASST     (TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, &
 !-----------------------------------------------------------------------
 !          * WATER BUDGET CALCULATIONS.
 !
-    IF(IDAY == 1 .AND. NCOUNT == 48)THEN
+    IF(JDAY_NOW == 1 .AND. NCOUNT == 48)THEN
        ! bruce davison - only increase NMELT if we don't start the run on January 1st, otherwise t0_ACC allocation is too large
        ! and the model crashes if the compiler is checking for array bounds when t0_ACC is passed into CLASSW with size NMELT
-       IF(IDAY_START .EQ. 1 .AND. NSUM_TOTAL .LT. 49) THEN
+       IF(JDAY_START .EQ. 1 .AND. NSUM_TOTAL .LT. 49) THEN
          continue ! NMELT should stay = 1
        ELSE
          NMELT = NMELT + 1
@@ -4310,18 +4012,18 @@ end if !(ipid /= 0 .or. izero == 0) then
 
             !> Write to the CLASSOF* output files for sub-hourly output.
             write(150 + k*10 + 4, "(I2,',', I3,',', I5,',', I6,',', 9(F8.2,','), 2(F7.3,','), E11.3,',', F8.2,',', 3(F12.4,','))") &
-                IHOUR, IMIN, IDAY, IYEAR, FSSTAR, FLSTAR, QH, &
+                HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, FSSTAR, FLSTAR, QH, &
                 QE, SNOMLT, BEG, GTOUT, SNOGAT(i), &
                 RHOSGAT(i), WSNOGAT(i), ALTOT, ROFGAT(i), &
                 TPN, ZPNDGAT(i), ZPND, FSTR
             write(150 + k*10 + 5, "(I2,',', I3,',', I5,',', I6,',', " // trim(adjustl(IGND_CHAR)) // &
                 "(F7.2,',', 2(F6.3,',')), F8.2,',', 2(F8.4,','), F8.2,',', F8.3,',')") &
-                IHOUR, IMIN, IDAY, IYEAR, &
+                HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, &
                 (TBARGAT(i, j) - TFREZ, THLQGAT(i, j), &
                 THICGAT(i, j), j = 1, IGND), TCN, &
                 RCANGAT(i), SCANGAT(i), TSN, ZSN
             write(150 + k*10 + 6, "(I2,',', I3,',', I5,',', 2(F10.2,','), F12.6,',', F10.2,',', F8.2,',', F10.2,',', F15.9,',')") &
-                IHOUR, IMIN, IDAY, 2.0*FSVHGAT(i), FDLGAT(i), &
+                HOUR_NOW, MINS_NOW, JDAY_NOW, 2.0*FSVHGAT(i), FDLGAT(i), &
                 PREGAT(i), TAGAT(i) - TFREZ, VMODGAT(i), PRESGAT(i), &
                 QAGAT(i)
             write(150 + k*10 + 7, "(*(E11.4,','))") &
@@ -4346,7 +4048,7 @@ end if !(ipid /= 0 .or. izero == 0) then
                 ROFOGAT(i), ROFGAT(i), WTRCGAT(i), &
                 WTRSGAT(i), WTRGGAT(i)
             write(150 + k*10 + 10, "(I2,',', I3,',', I5,',', I6,',', *(F14.6,','))") &
-                IHOUR, IMIN, IDAY, IYEAR, PREGAT(i)*DELT, QFSGAT(i)*DELT, &
+                HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, PREGAT(i)*DELT, QFSGAT(i)*DELT, &
                 ROFGAT(i)*DELT, ROFOGAT(i)*DELT, ROFSGAT(i)*DELT, ROFBGAT(i)*DELT, &
                 SCANGAT(i), RCANGAT(i), SNOGAT(i), WSNOGAT(i), &
                 ZPNDGAT(i)*RHOW, (THLQGAT(i, j)*RHOW*DLZWGAT(i, j), j = 1, IGND), &
@@ -4468,18 +4170,18 @@ end if !(ipid /= 0 .or. izero == 0) then
 
                 !> Write to the CLASSOF* output files for daily accumulated output.
                 write(150 + k*10 + 1, "(I4,',', I5,',', 9(F8.2,','), 2(F8.3,','), *(F12.4,','))") &
-                    IDAY, IYEAR, FSSTAR, FLSTAR, QH, QE, SNOMLT, &
+                    JDAY_NOW, YEAR_NOW, FSSTAR, FLSTAR, QH, QE, SNOMLT, &
                     BEG, GTOUT, co%SNOACC(k), co%RHOSACC(k), &
                     co%WSNOACC(k), ALTOT, co%ROFACC(k), co%ROFOACC(k), &
                     co%ROFSACC(k), co%ROFBACC(k)
                 write(150 + k*10 + 2, "(I4,',', I5,',', " // adjustl(IGND_CHAR) // "((F8.2,','), " // &
                     "2(F6.3,',')), F8.2,',', 2(F7.4,','), 2(F8.2,','))") &
-                    IDAY, IYEAR, (co%TBARACC(k, j) - TFREZ, &
+                    JDAY_NOW, YEAR_NOW, (co%TBARACC(k, j) - TFREZ, &
                     co%THLQACC(k, j), co%THICACC(k, j), j = 1, IGND), &
                     TCN, co%RCANACC(k), co%SCANACC(k), TSN, ZSN
                 write(150 + k*10 + 3, "(I4,',', I5,',', 3(F9.2,','), F8.2,',', " // &
                     "F10.2,',', E12.3,',', 2(F12.3,','))") &
-                    IDAY, IYEAR, co%FSINACC(k), co%FLINACC(k), &
+                    JDAY_NOW, YEAR_NOW, co%FSINACC(k), co%FLINACC(k), &
                     co%TAACC(k) - TFREZ, co%UVACC(k), co%PRESACC(k), &
                     co%QAACC(k), co%PREACC(k), co%EVAPACC(k)
 
@@ -4532,14 +4234,14 @@ if (ipid == 0) then
 !>
 IF(NR2CFILES > 0 .AND. MOD(NCOUNT*30,DELTR2C) == 0)THEN
 
-  CALL FIND_MONTH (IDAY, IYEAR, ensim_month)
-  CALL FIND_DAY (IDAY, IYEAR, ensim_day)
+  CALL FIND_MONTH (JDAY_NOW, YEAR_NOW, ensim_month)
+  CALL FIND_DAY (JDAY_NOW, YEAR_NOW, ensim_day)
   
-  CALL WRITE_R2C_DATA(NML,NLTEST,NMTEST,NCOUNT,IMIN,ACLASS,    &
+  CALL WRITE_R2C_DATA(NML,NLTEST,NMTEST,NCOUNT,MINS_NOW,ACLASS,    &
                       NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,&
                       NR2C,NR2CFILES,R2CFILEUNITSTART,GRD,GAT, &
-                      GRDGAT,NR2CSTATES,R2C_ATTRIBUTES,FRAME_NO_NEW,IYEAR,&
-                      ensim_MONTH,ensim_DAY,IHOUR,IMIN,ICAN,   &
+                      GRDGAT,NR2CSTATES,R2C_ATTRIBUTES,FRAME_NO_NEW,YEAR_NOW,&
+                      ensim_MONTH,ensim_DAY,HOUR_NOW,MINS_NOW,ICAN,   &
                       ICAN+1,IGND,                             &
                       TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
                       TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT,  &
@@ -4780,31 +4482,35 @@ ENDDO !DO I=1,nml
 !> FILES ARE ONLY WRITTEN ON THE HOUR (WATROUTE READS HOURLY DATA).
 !> HOURLY TIME STEPS ARE ODD-NUMBERED INTEGERS.
 !>
-IF (MOD(REAL(NCOUNT),2.0) .EQ. 0.0) THEN !HOURLY TIME STEP
-  YEAR1 = IYEAR
-  CALL FIND_MONTH(IDAY,IYEAR,MONTH_NOW)
-  CALL FIND_DAY(IDAY,IYEAR,DAY_NOW)
-  HOUR_NOW = IHOUR + 1 !ROUTING USES 1-24 RANGE, MESH USES 0-23
+!todo: these can be removed at some point, as they've been added
+!todo: as flags as a part of the model_output module.
+    if (mod(real(NCOUNT), 2.0) == 0.0) then !HOURLY TIME STEP
+        EF_YEAR_NOW = YEAR_NOW
+        call FIND_MONTH(JDAY_NOW, YEAR_NOW, EF_MONTH_NOW)
+        call FIND_DAY(JDAY_NOW, YEAR_NOW, EF_DAY_NOW)
+        EF_HOUR_NOW = HOUR_NOW + 1 !ROUTING USES 1-24 RANGE, MESH USES 0-23
 !>
 !> WRITE OUTPUT FOR RTE.EXE (RUNOFF)
 !>
-  IF (PRINTRFFR2CFILEFLAG == 1) THEN
-    OUTARRAY = RUNOFF !PASS RUNOFF TO OUTARRAY IN WRITE_R2C
-    CALL WRITE_R2C(261,31,NO_FRAMES,1,FRAME_NO,1,6)
-  END IF
+        if (PRINTRFFR2CFILEFLAG == 1) then
+            OUTARRAY = RUNOFF !PASS RUNOFF TO OUTARRAY IN WRITE_R2C
+            call WRITE_R2C(261, 31, NO_FRAMES, 1, FRAME_NO, 1, 6, &
+                           EF_YEAR_NOW, EF_MONTH_NOW, EF_DAY_NOW, EF_HOUR_NOW)
+        end if
 !>
 !> WRITE OUTPUT FOR RTE.EXE (RECHARGE)
 !>
-  IF (PRINTRCHR2CFILEFLAG == 1) THEN !WRITE RECHARGE DATA
-    OUTARRAY = RECHARGE !PASS RUNOFF TO OUTARRAY IN WRITE_R2C
-    CALL WRITE_R2C(262,32,NO_FRAMES,1,FRAME_NO,1,6)
-  END IF
+        if (PRINTRCHR2CFILEFLAG == 1) THEN !WRITE RECHARGE DATA
+            OUTARRAY = RECHARGE !PASS RUNOFF TO OUTARRAY IN WRITE_R2C
+            call WRITE_R2C(262, 32, NO_FRAMES, 1, FRAME_NO, 1, 6, &
+                           EF_YEAR_NOW, EF_MONTH_NOW, EF_DAY_NOW, EF_HOUR_NOW)
+        end if
 !>
 !> UPDATE COUNTERS
 !>
-  FRAME_NO = FRAME_NO + 1
-  NO_FRAMES = FRAME_NO + 1
-END IF !(MOD(REAL(NCOUNT),2.0) .EQ. 0.0)
+        FRAME_NO = FRAME_NO + 1
+        NO_FRAMES = FRAME_NO + 1
+    end if !(mod(real(NCOUNT), 2.0) == 0.0) then
 
 !> calculate and write the basin avg SCA similar to watclass3.0f5
 !> Same code than in wf_ensim.f subrutine of watclass3.0f8
@@ -4815,7 +4521,7 @@ IF (BASIN_FRACTION(1) == -1) THEN
   DO I = 1, NA ! NA = number of grid squares
 !>         BASIN_FRACTION is the basin snow cover
 !>         (portions of the grids outside the basin are not included)
-!>         for a given day - IDAY in the if statement
+!>         for a given day - JDAY_NOW in the if statement
     BASIN_FRACTION(I) = FRAC(I)
     !TODO: FRAC is not actually the fraction of the grid square
     !within the basin, we should be using some other value, but I'm
@@ -4824,7 +4530,7 @@ IF (BASIN_FRACTION(1) == -1) THEN
   ENDDO
 ENDIF
 
-IF((IHOUR==12).AND.(IMIN==0))  THEN
+IF((HOUR_NOW==12).AND.(MINS_NOW==0))  THEN
 
     basin_SCA = 0.0
     basin_SWE = 0.0
@@ -4850,8 +4556,8 @@ IF((IHOUR==12).AND.(IMIN==0))  THEN
    basin_SWE = basin_SWE/TOTAL_AREA
 
     if (BASINSWEOUTFLAG > 0) then
-        write(85, "(i5, ',', f10.3)") IDAY, basin_SCA
-        write(86, "(i5, ',', f10.3)") IDAY, basin_SWE
+        write(85, "(i5, ',', f10.3)") JDAY_NOW, basin_SCA
+        write(86, "(i5, ',', f10.3)") JDAY_NOW, basin_SWE
     end if
 
 ENDIF
@@ -4916,7 +4622,7 @@ ENDDO !DO I=1,nml
     !> Update output data.
     call updatefieldsout_temp(vr, ts, iof, bi, &
                               md, wb_h, &
-                              iyear, iday, ceiling(ncount/2.0), public_ic%timestep - mod(ncount, 2)*public_ic%timestep)
+                              YEAR_NOW, JDAY_NOW, ceiling(NCOUNT/2.0), TIME_STEP_DELT - mod(NCOUNT, 2)*TIME_STEP_DELT)
 
 !> CALCULATE AND PRINT DAILY AVERAGES.
 
@@ -5091,7 +4797,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
         !> Water balance.
         write(900, "((i4, ','), (i5, ','), *(e14.6, ','))") &
-            IDAY, IYEAR              , &   !1
+            JDAY_NOW, YEAR_NOW              , &   !1
             TOTAL_PREACC/TOTAL_AREA  , &   !2
             TOTAL_EVAPACC/TOTAL_AREA , &   !3
             TOTAL_ROFACC/TOTAL_AREA  , &   !4
@@ -5121,7 +4827,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
         !> Energy balance.
         write(901, "((i4, ','), (i5, ','), *(e12.5, ','))") &
-            IDAY, IYEAR,    &
+            JDAY_NOW, YEAR_NOW,    &
             TOTAL_HFSACC/TOTAL_AREA,  &
             TOTAL_QEVPACC/TOTAL_AREA
 
@@ -5149,11 +4855,11 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
         TOTAL_STORE_ACC_M = TOTAL_STORE
 
         ! Write out monthly totals.
-        call FIND_MONTH(IDAY, IYEAR, imonth_now)
+        call FIND_MONTH(JDAY_NOW, YEAR_NOW, imonth_now)
         if (imonth_now /= imonth_old) then
 
             write(902, "((i4, ','), (i5, ','), *(e14.6, ','))") &
-                IDAY, IYEAR, &
+                JDAY_NOW, YEAR_NOW, &
                 TOTAL_PRE_ACC_M/TOTAL_AREA, &
                 TOTAL_EVAP_ACC_M/TOTAL_AREA, &
                 TOTAL_ROF_ACC_M/TOTAL_AREA, &
@@ -5219,7 +4925,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                              eng%gflx, eng%hfs, eng%qevp, &
                              sov%thlq, sov%thic ,&
                              NA, IGND, &
-                             IDAY, IYEAR)
+                             JDAY_NOW, YEAR_NOW)
     end if
    STG_I = DSTG + STG_I
 
@@ -5323,7 +5029,7 @@ CALL WF_ROUTE(WF_ROUTETIMESTEP,WF_R1,WF_R2, &
      WF_TIMECOUNT,WF_NHYD,WF_QBASE,WF_QI1,WF_QI2,WF_QO1,WF_QO2, &
      WF_STORE1,WF_STORE2, &
      DRIVERTIMESTEP,ROFGRD, NA, M_C,M_R,M_S, NA, &
-     WF_S, JAN,IDAY,IHOUR,IMIN)
+     WF_S, JAN,JDAY_NOW,HOUR_NOW,MINS_NOW)
 
 DO I=1,WF_NO
   WF_QSYN(I)     = WF_QO2(WF_S(I))
@@ -5347,7 +5053,7 @@ ENDIF
 
     !> Write output for hourly streamflow.
     if (STREAMFLOWFLAG == 1 .and. STREAMFLOWOUTFLAG >= 2) then
-        write(71, "(i5, ',', i5, ',', i5, ',', f10.3, *(',', f10.3))") IDAY, IHOUR, IMIN, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
+        write(71, "(3(i5,','), f10.3, *(',', f10.3))") JDAY_NOW, HOUR_NOW, MINS_NOW, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
     end if
 
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
@@ -5359,17 +5065,17 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
     !> Write output for daily and cumulative daily streamflow.
     if (STREAMFLOWOUTFLAG > 0) then
-        write(70, "(i5, ',', f10.3, *(',', f10.3))") IDAY, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
+        write(70, "(i5, ',', f10.3, *(',', f10.3))") JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
         if (STREAMFLOWOUTFLAG >= 2) then
-            write(72, "(i5, ',', f10.3, *(',', f10.3))") IDAY, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
+            write(72, "(i5, ',', f10.3, *(',', f10.3))") JDAY_NOW, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
         end if
     end if
 
-if (VERBOSEMODE > 0) then
+if (ro%VERBOSEMODE > 0) then
 
   IF (WF_NUM_POINTS .GT. 1) THEN !FOR MORE THAN ONE OUTPUT
 
-    print 5176, IYEAR, IDAY, (WF_QHYD_AVG(I), WF_QSYN_AVG(I)/NCOUNT, I = 1, WF_NO)
+    print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(I), WF_QSYN_AVG(I)/NCOUNT, I = 1, WF_NO)
 
   ELSE !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
 
@@ -5377,14 +5083,14 @@ if (VERBOSEMODE > 0) then
     !to an outlet, than the average middle-elevation grid (as it's coded now).
     !Should there be a choice to print point-process (pre, evap, rof) vs flow-process (wf_qo2)?
     j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
-    print 5176, IYEAR, IDAY, (WF_QHYD_AVG(I), WF_QSYN_AVG(I)/NCOUNT, I = 1, WF_NO), wb%pre(j), wb%evap(j), wb%rof(j)
+    print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(I), WF_QSYN_AVG(I)/NCOUNT, I = 1, WF_NO), wb%pre(j), wb%evap(j), wb%rof(j)
 
   END IF
   call stats_update_daily(WF_QHYD_AVG, WF_QSYN_AVG, NCOUNT)
 
   WF_QSYN_AVG = 0.0
 
-end if !(VERBOSEMODE > 0) then
+end if !(ro%VERBOSEMODE > 0) then
 
 wb%pre = 0.0
 wb%evap = 0.0
@@ -5404,83 +5110,65 @@ ENDIF !TESTCSVFLAG
 ! *********************************************************************
 ! Update time counters and return to beginning of main loop
 ! *********************************************************************
-IMIN = IMIN + 30 ! increment the current time by 30 minutes
-IF (IMIN == 60) THEN
-  IMIN = 0
-  IHOUR = IHOUR + 1
-  IF (IHOUR==24) THEN
-    IHOUR = 0
+MINS_NOW = MINS_NOW + TIME_STEP_MINS ! increment the current time by 30 minutes
+IF (MINS_NOW == 60) THEN
+  MINS_NOW = 0
+  HOUR_NOW = HOUR_NOW + 1
+  IF (HOUR_NOW==24) THEN
+    HOUR_NOW = 0
     IF(AUTOCALIBRATIONFLAG .GE. 1 .AND. PREEMPTIONFLAG == 1)THEN   
       IF(FTEST > FBEST) GOTO 199
     ENDIF
-    IDAY = IDAY + 1
-    IF (IDAY >= 366) THEN
-      IF (MOD(IYEAR,400) == 0) THEN !LEAP YEAR
-        IF (IDAY == 367) THEN
-          IDAY = 1
-          IYEAR = IYEAR + 1
+    JDAY_NOW = JDAY_NOW + 1
+    IF (JDAY_NOW >= 366) THEN
+      IF (MOD(YEAR_NOW,400) == 0) THEN !LEAP YEAR
+        IF (JDAY_NOW == 367) THEN
+          JDAY_NOW = 1
+          YEAR_NOW = YEAR_NOW + 1
         ENDIF
-      ELSE IF (MOD(IYEAR,100) == 0) THEN !NOT A LEAP YEAR
-        IDAY = 1
-        IYEAR = IYEAR + 1
-      ELSE IF (MOD(IYEAR,4) == 0) THEN !LEAP YEAR
-        IF (IDAY == 367) THEN
-          IDAY = 1
-          IYEAR = IYEAR + 1
+      ELSE IF (MOD(YEAR_NOW,100) == 0) THEN !NOT A LEAP YEAR
+        JDAY_NOW = 1
+        YEAR_NOW = YEAR_NOW + 1
+      ELSE IF (MOD(YEAR_NOW,4) == 0) THEN !LEAP YEAR
+        IF (JDAY_NOW == 367) THEN
+          JDAY_NOW = 1
+          YEAR_NOW = YEAR_NOW + 1
         ENDIF
       ELSE !NOT A LEAP YEAR
-        IDAY = 1
-        IYEAR = IYEAR + 1
+        JDAY_NOW = 1
+        YEAR_NOW = YEAR_NOW + 1
       ENDIF
     ENDIF
   ENDIF
 ENDIF
 
 !> check if we should terminate the run yet
-IF (IYEAR >= IYEAR_END .AND. IYEAR_END > 0) THEN
-  IF(IYEAR > IYEAR_END) THEN
+IF (YEAR_NOW >= YEAR_STOP .AND. YEAR_STOP > 0) THEN
+  IF(YEAR_NOW > YEAR_STOP) THEN
     ENDDATE = .TRUE.
-  ELSEIF (IYEAR == IYEAR_END .AND. IDAY >= IDAY_END) THEN
-    IF (IDAY > IDAY_END) THEN
+  ELSEIF (YEAR_NOW == YEAR_STOP .AND. JDAY_NOW >= JDAY_STOP) THEN
+    IF (JDAY_NOW > JDAY_STOP) THEN
       ENDDATE = .TRUE.
-    ELSEIF (IDAY == IDAY_END .AND. IHOUR >= IHOUR_END) THEN
-      IF (IHOUR > IHOUR_END) THEN
+    ELSEIF (JDAY_NOW == JDAY_STOP .AND. HOUR_NOW >= HOUR_STOP) THEN
+      IF (HOUR_NOW > HOUR_STOP) THEN
         ENDDATE = .TRUE.
-      ELSEIF (IHOUR == IHOUR_END .AND. IMIN >= IMIN_END) THEN
+      ELSEIF (HOUR_NOW == HOUR_STOP .AND. MINS_NOW >= MINS_STOP) THEN
         ENDDATE = .TRUE.
       ENDIF
     ENDIF
   ENDIF
 ENDIF
 
-IMIN2 = IMIN2 + 30
-IF(IMIN2 == ts%timestep)IMIN2 = 0
+    TIME_STEP_NOW = TIME_STEP_NOW + TIME_STEP_MINS
+    if (TIME_STEP_NOW == HOURLYFLAG) TIME_STEP_NOW = 0
 
-!> *********************************************************************
-!> Read in meteorological forcing data
-!> *********************************************************************
-IF(ts%timestep == 30 .OR. IMIN2 == 0) THEN
-    IF(INTERPOLATIONFLAG == 1)THEN
-        FSVHGATPRE    = FSVHGATPST
-        FSIHGATPRE    = FSIHGATPST
-        FDLGATPRE     = FDLGATPST
-        PREGATPRE     = PREGATPST
-        TAGATPRE      = TAGATPST
-        ULGATPRE      = ULGATPST
-        PRESGATPRE    = PRESGATPST
-        QAGATPRE      = QAGATPST
-        CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,ACLASS, &
-                           FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
-                           FSVHGATPST,FSIHGATPST,FDLGATPST,PREGATPST,TAGATPST,ULGATPST, &
-                           PRESGATPST,QAGATPST,itime,cm)
-
-    ELSE
-        CALL READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,ENDDATA,ACLASS, &
-                               FSDOWN,FSVHGRD,FSIHGRD,FDLGRD,PREGRD,TAGRD,ULGRD,PRESGRD,QAGRD, &
-                               FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT,itime,cm)
-    ENDIF
-    itime = itime + 1
-ENDIF
+    !> *********************************************************************
+    !> Read in meteorological forcing data
+    !> *********************************************************************
+    if (HOURLYFLAG == TIME_STEP_MINS .or. TIME_STEP_NOW == 0) then
+        call climate_module_loaddata(bi, cm, .false., ENDDATA, &
+            YCOUNT, XCOUNT, NML, ILMOS, JLMOS, YYY, XXX, ACLASS)
+    end if
 
 END DO !WHILE(.NOT.ENDDATE .AND. .NOT.ENDDATA)
 
@@ -5620,7 +5308,7 @@ IF (SAVERESUMEFLAG == 2) THEN !todo: done: use a flag
       CLOSE(55)
 
   call SAVE_STATE_R2C(NML,NLTEST,NMTEST,NCOUNT, &
-                      IMIN,ACLASS,NR2C_S,GRD_S,GAT_S,GRDGAT_S,R2C_ATTRIBUTES_S,&
+                      MINS_NOW,ACLASS,NR2C_S,GRD_S,GAT_S,GRDGAT_S,R2C_ATTRIBUTES_S,&
                       NA,XXX,YYY,XCOUNT,YCOUNT,ILMOS,JLMOS,ILG,ICAN,ICP1,IGND, &
                       TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
                       TBASGAT,ALBSGAT,TSNOGAT,RHOSGAT,SNOGAT,  &
@@ -5663,7 +5351,7 @@ ENDIF !IF (SAVERESUMEFLAG == 2) THEN
 IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
   PRINT *, 'Saving state variables'
   call SAVE_STATE( &
-   ts%timestep, IMIN, IMIN2, &
+   HOURLYFLAG, MINS_NOW, TIME_STEP_NOW, &
    BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG, &
    BASINRAINFLAG, BASINTEMPERATUREFLAG, &
    BASINWINDFLAG, BASINPRESFLAG, BASINHUMIDITYFLAG, &
@@ -5744,7 +5432,7 @@ IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
    CHCAP, CHCAPS, CMASSC, CMASCS, CWLCAP, &
    CWFCAP, CWLCPS, CWFCPS, RC, RCS, RBCOEF, &
    FROOT, ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, &
-   TRSNOW, ZSNOW, IDAY, JLAT, IDISP, &
+   TRSNOW, ZSNOW, JDAY_NOW, JLAT, IDISP, &
    IZREF, IWF, IPAI, IHGT, IALC, IALS, IALG, &
    TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
    THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, &
@@ -5773,8 +5461,8 @@ IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
    WTRCROW, WTRSROW, WTRGROW, DRROW, WTABROW, &
    ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
    QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
-   wfo_seq, IYEAR, ensim_MONTH, ensim_DAY, &
-   IHOUR, XXX, YYY, NA, &
+   wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
+   HOUR_NOW, XXX, YYY, NA, &
    NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
    M_C, M_S, M_R, &
      WF_ROUTETIMESTEP,WF_R1,WF_R2,NAA,IYMIN, &
@@ -5844,7 +5532,7 @@ END DO
 
 !> write out final totals to screen
 
-if (VERBOSEMODE > 0) then
+if (ro%VERBOSEMODE > 0) then
 
     print *
     print 5641, 'Total Precipitation         (mm) =', TOTAL_PREACC/TOTAL_AREA
@@ -5861,7 +5549,7 @@ if (VERBOSEMODE > 0) then
 5641 format(3x, a34, *(f11.3))
 5635 format(1x'Program has terminated normally.'/)
 
-end if !(VERBOSEMODE > 0) then
+end if !(ro%VERBOSEMODE > 0) then
 
     print 5635
 

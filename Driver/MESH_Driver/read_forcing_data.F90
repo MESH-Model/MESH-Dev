@@ -19,7 +19,7 @@ SUBROUTINE READ_FORCING_DATA(YCOUNT,XCOUNT,NTYPE,NA,NML,ILG,ILMOS,JLMOS,YYY,XXX,
 !>*******************************************************************
 
 USE FLAGS
-USE CLIMATE_FORCING
+use CLIMATE_FORCING, only: clim_info, NeedUpdate_clim_data
 
 IMPLICIT NONE
 
@@ -33,7 +33,7 @@ REAL*4, DIMENSION(NTYPE)          :: R4SHRTGRU, R4LONGGRU, R4RAINGRU, R4TEMPGRU,
                                      R4PRESGRU, R4HUMDGRU
 REAL*4, DIMENSION(NA)             :: FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, &
                                      PRESGRD, QAGRD
-REAL*4, DIMENSION(ILG)            :: FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, & 
+REAL*4, DIMENSION(ILG)            :: FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, &
                                      PRESGAT, QAGAT
 REAL*4                            :: JUNK
 INTEGER*4,DIMENSION(NA)           :: YYY,XXX

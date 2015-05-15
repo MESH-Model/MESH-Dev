@@ -4,20 +4,13 @@ module model_output
     !>  Athor: Gonzalo Sapriza Azuri
     !>******************************************************************************
 
+    use sa_mesh_shared_variabletypes
     use model_dates
     use strings
     use model_files
     use flags
     
     implicit none
-
-    !> Data type to store basin information
-    !* na: Number of grid cells [-]
-    !* nm: Number of GRUs [-]
-    !* ignd: Number of soil layers per grid [-]
-    type basin_info
-        integer :: na, nm, ignd
-    end type basin_info
 
     !>
     !> *****************************************************************************
@@ -526,10 +519,10 @@ module model_output
         call vr%spt_d%init(bi, ts%nr_days)
         call vr%engt_d%init(bi, ts%nr_days)
         !> Hourly:
-        call vr%wbt_h%init(bi, max(1, 3600/public_ic%timestep))
-        call vr%mdt_h%init(bi, max(1, 3600/public_ic%timestep))
-        call vr%engt_h%init(bi, max(1, 3600/public_ic%timestep))        
-        call vr%wroutt_h%init(bi, max(1, 3600/public_ic%timestep))
+        call vr%wbt_h%init(bi, max(1, 3600/TIME_STEP_DELT))
+        call vr%mdt_h%init(bi, max(1, 3600/TIME_STEP_DELT))
+        call vr%engt_h%init(bi, max(1, 3600/TIME_STEP_DELT))
+        call vr%wroutt_h%init(bi, max(1, 3600/TIME_STEP_DELT))
         
         
 
@@ -959,11 +952,10 @@ module model_output
         integer, parameter :: StrMax=20, Nmax = 100
         character(len=StrMax), dimension(Nmax) :: argsLine
 
-
-        call public_ic%init(ts%start_date(1) , &
-                            ts%start_date(2) , &
-                            ts%start_date(3) , &
-                            ts%start_date(4) )
+        call public_ic%init(YEAR_NOW, &
+                            JDAY_NOW, &
+                            HOUR_NOW, &
+                            MINS_NOW)
 
         !>--------------Main Subtrouine start-----------------------------------------------
 
@@ -1081,63 +1073,63 @@ module model_output
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%mdt_h%fsdown, freq, public_ic%now_hour, now_hour, 882101, .true.)
-                        vr%mdt_h%fsdown((now_timestep/public_ic%timestep + 1), :) = md%fsdown
+                        vr%mdt_h%fsdown((now_timestep/TIME_STEP_DELT + 1), :) = md%fsdown
                     end if
 
                 case ("FSVH")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%mdt_h%fsvh, freq, public_ic%now_hour, now_hour, 882102, .true.)
-                        vr%mdt_h%fsvh((now_timestep/public_ic%timestep + 1), :) = md%fsvh
+                        vr%mdt_h%fsvh((now_timestep/TIME_STEP_DELT + 1), :) = md%fsvh
                     end if
 
                 case ("FSIH")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%mdt_h%fsih, freq, public_ic%now_hour, now_hour, 882103, .true.)
-                        vr%mdt_h%fsih((now_timestep/public_ic%timestep + 1), :) = md%fsih
+                        vr%mdt_h%fsih((now_timestep/TIME_STEP_DELT + 1), :) = md%fsih
                     end if
 
                 case ("FDL")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%mdt_h%fdl, freq, public_ic%now_hour, now_hour, 882104, .true.)
-                        vr%mdt_h%fdl((now_timestep/public_ic%timestep + 1), :) = md%fdl
+                        vr%mdt_h%fdl((now_timestep/TIME_STEP_DELT + 1), :) = md%fdl
                     end if
 
                 case ("UL")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%mdt_h%ul, freq, public_ic%now_hour, now_hour, 882105, .true.)
-                        vr%mdt_h%ul((now_timestep/public_ic%timestep + 1), :) = md%ul
+                        vr%mdt_h%ul((now_timestep/TIME_STEP_DELT + 1), :) = md%ul
                     end if
 
                 case ("TA")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%mdt_h%ta, freq, public_ic%now_hour, now_hour, 882106, .true.)
-                        vr%mdt_h%ta((now_timestep/public_ic%timestep + 1), :) = md%ta
+                        vr%mdt_h%ta((now_timestep/TIME_STEP_DELT + 1), :) = md%ta
                     end if
 
                 case ("QA")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%mdt_h%qa, freq, public_ic%now_hour, now_hour, 882107, .true.)
-                        vr%mdt_h%qa((now_timestep/public_ic%timestep + 1), :) = md%qa
+                        vr%mdt_h%qa((now_timestep/TIME_STEP_DELT + 1), :) = md%qa
                     end if
 
                 case ("PRES")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%mdt_h%pres, freq, public_ic%now_hour, now_hour, 882108, .true.)
-                        vr%mdt_h%pres((now_timestep/public_ic%timestep + 1), :) = md%pres
+                        vr%mdt_h%pres((now_timestep/TIME_STEP_DELT + 1), :) = md%pres
                     end if
 
                 case ("PRE")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%mdt_h%pre, freq, public_ic%now_hour, now_hour, 882109, .true.)
-                        vr%mdt_h%pre((now_timestep/public_ic%timestep + 1), :) = md%pre
+                        vr%mdt_h%pre((now_timestep/TIME_STEP_DELT + 1), :) = md%pre
                     end if
 
                 !*todo: Better way of storing variables in different formats (e.g., PRE [mm s-1] vs PREC [mm]).
@@ -1145,21 +1137,21 @@ module model_output
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%wbt_h%pre, freq, public_ic%now_hour, now_hour, 882122, .true.)
-                        vr%wbt_h%pre((now_timestep/public_ic%timestep + 1), :) = wb%pre
+                        vr%wbt_h%pre((now_timestep/TIME_STEP_DELT + 1), :) = wb%pre
                     end if
 
                 case ("EVAP")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%wbt_h%evap, freq, public_ic%now_hour, now_hour, 882110, .true.)
-                        vr%wbt_h%evap((now_timestep/public_ic%timestep + 1), :) = wb%evap
+                        vr%wbt_h%evap((now_timestep/TIME_STEP_DELT + 1), :) = wb%evap
                     end if
 
                 case ("ROF")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%wbt_h%rof, freq, public_ic%now_hour, now_hour, 882111, .true.)
-                        vr%wbt_h%rof((now_timestep/public_ic%timestep + 1), :) = wb%rof
+                        vr%wbt_h%rof((now_timestep/TIME_STEP_DELT + 1), :) = wb%rof
                     end if
 
                 case ("LQWS")
@@ -1168,7 +1160,7 @@ module model_output
                         do j = 1, bi%ignd
                             call check_write_var_out(ifo, i, vr%wbt_h%lqws(:, :, j), freq, public_ic%now_hour, now_hour, &
                                 (882112 + (100000000*j)), .true., j)
-                            vr%wbt_h%lqws((now_timestep/public_ic%timestep + 1), :, j) = wb%lqws(:, j)
+                            vr%wbt_h%lqws((now_timestep/TIME_STEP_DELT + 1), :, j) = wb%lqws(:, j)
                         end do
                     end if
 
@@ -1178,7 +1170,7 @@ module model_output
                         do j = 1, bi%ignd
                             call check_write_var_out(ifo, i, vr%wbt_h%frws(:, :, j), freq, public_ic%now_hour, now_hour, &
                                 (882113 + (100000000*j)), .true., j)
-                            vr%wbt_h%frws((now_timestep/public_ic%timestep + 1), :, j) = wb%frws(:, j)
+                            vr%wbt_h%frws((now_timestep/TIME_STEP_DELT + 1), :, j) = wb%frws(:, j)
                         end do
                     end if
 
@@ -1186,56 +1178,56 @@ module model_output
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%wbt_h%rcan, freq, public_ic%now_hour, now_hour, 882114, .true.)
-                        vr%wbt_h%rcan((now_timestep/public_ic%timestep + 1), :) = wb%rcan
+                        vr%wbt_h%rcan((now_timestep/TIME_STEP_DELT + 1), :) = wb%rcan
                     end if
 
                 case ("SNCAN")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%wbt_h%sncan, freq, public_ic%now_hour, now_hour, 882115, .true.)
-                        vr%wbt_h%sncan((now_timestep/public_ic%timestep + 1), :) = wb%sncan
+                        vr%wbt_h%sncan((now_timestep/TIME_STEP_DELT + 1), :) = wb%sncan
                     end if
 
                 case ("PNDW")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%wbt_h%pndw, freq, public_ic%now_hour, now_hour, 882116, .true.)
-                        vr%wbt_h%pndw((now_timestep/public_ic%timestep + 1), :) = wb%pndw
+                        vr%wbt_h%pndw((now_timestep/TIME_STEP_DELT + 1), :) = wb%pndw
                     end if
 
                 case ("SNO")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%wbt_h%sno, freq, public_ic%now_hour, now_hour, 882117, .true.)
-                        vr%wbt_h%sno((now_timestep/public_ic%timestep + 1), :) = wb%sno
+                        vr%wbt_h%sno((now_timestep/TIME_STEP_DELT + 1), :) = wb%sno
                     end if
 
                 case ("WSNO")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%wbt_h%wsno, freq, public_ic%now_hour, now_hour, 882118, .true.)
-                        vr%wbt_h%wsno((now_timestep/public_ic%timestep + 1), :) = wb%wsno
+                        vr%wbt_h%wsno((now_timestep/TIME_STEP_DELT + 1), :) = wb%wsno
                     end if
 
                 case ("STG")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%wbt_h%stg, freq, public_ic%now_hour, now_hour, 882119, .true.)
-                        vr%wbt_h%stg((now_timestep/public_ic%timestep + 1), :) = wb%stg
+                        vr%wbt_h%stg((now_timestep/TIME_STEP_DELT + 1), :) = wb%stg
                     end if
 
                 case ("WR_RUNOFF")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%wroutt_h%rof, freq, public_ic%now_hour, now_hour, 882120, .true.)
-                        vr%wroutt_h%rof((now_timestep/public_ic%timestep + 1), :) = wb%rofo + wb%rofs
+                        vr%wroutt_h%rof((now_timestep/TIME_STEP_DELT + 1), :) = wb%rofo + wb%rofs
                     end if
 
                 case ("WR_RECHARGE")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         call check_write_var_out(ifo, i, vr%wroutt_h%rchg, freq, public_ic%now_hour, now_hour, 882121, .true.)
-                        vr%wroutt_h%rchg((now_timestep/public_ic%timestep + 1), :) = wb%rofb
+                        vr%wroutt_h%rchg((now_timestep/TIME_STEP_DELT + 1), :) = wb%rofb
                     end if
 
             end select !case (trim(adjustl(ifo%var_out(i)%name)))

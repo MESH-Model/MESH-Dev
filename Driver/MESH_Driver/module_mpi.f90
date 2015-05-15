@@ -5,6 +5,5 @@
 module module_mpi
 
     use mpi
-    use module_mpi_flags
 
 end module !module_mpi

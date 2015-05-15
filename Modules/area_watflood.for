@@ -130,10 +130,10 @@ ccccc      MODULE area2
         character(1) :: ssmc_firstpass
 !        character(1), dimension(:), allocatable :: glacier_flag
 !       these things taken out of some argument lists  nk 05/10/04
-        integer      :: year1,mo1,day1,hour1
-	  integer      :: year_now,month_now,day_now,hour_now
-	  character(2) :: yy2,mm2,dd2,hh2
-        character(4) :: yyyy4
+!        integer      :: year1,mo1,day1,hour1
+!	  integer      :: year_now,month_now,day_now,hour_now
+!	  character(2) :: yy2,mm2,dd2,hh2
+!        character(4) :: yyyy4
 
         character(5) :: source,rdr,data_source
         character(80):: querystring
@@ -714,7 +714,7 @@ ccccc      module areawq
 c      real*4 :: gamma,ro,viskin,grav,a,b
 !Dan Princz removed variable grav
 !      real*4 :: gamma,ro,viskin,grav,a_wq,b_wq
-      REAL*4 :: GAMMA, RO, VISKIN, A_WQ, B_WQ
+!      REAL*4 :: GAMMA, RO, VISKIN, A_WQ, B_WQ
 !       changed a & b to a_wq and b_wq
 
 !     rev. 9.4.02  Apr.  18/07  - NK: moved rf, rffs from areawq to area1

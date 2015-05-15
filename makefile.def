@@ -37,9 +37,11 @@ VPATH=	$(DIR_REPO)/Modules: \
 
 #Modules
 OBJECTS=	module_mpi_flags.o module_mpi.o \
+			sa_mesh_shared_variabletypes.o sa_mesh_shared_variables.o \
+			sa_mesh_shared_flags.o \
 			area_watflood.o EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o mesh_input_module.o \
 			precmod.o stringmod.o \
-			climate_forcing_module.o module_files.o model_output.o module_variables_shared.o \
+			climate_forcing_module.o module_files.o model_output.o \
 			calc_drms.o calc_abserr.o
 
 #IO

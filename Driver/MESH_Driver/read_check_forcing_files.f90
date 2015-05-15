@@ -1,12 +1,10 @@
-      SUBROUTINE READ_CHECK_FORCING_FILES(NUM_CSV, NUM_R2C, NUM_SEQ,NA,cm,ts)
-      
+      SUBROUTINE READ_CHECK_FORCING_FILES(NA, cm, ts)
+
       USE FLAGS
       USE CLIMATE_FORCING
       USE model_dates
 
-
       INTEGER NA
-      INTEGER NUM_CSV, NUM_R2C, NUM_SEQ
 !> local variables
       INTEGER :: IOS
 !> This variable is used to ignore the header of r2c forcing files
@@ -14,7 +12,6 @@
 
       type(clim_info)   :: cm
       type(dates_model) :: ts
-
 
 !> Reset the number of forcing variables not in the forcing binary file
       NUM_R2C = 0

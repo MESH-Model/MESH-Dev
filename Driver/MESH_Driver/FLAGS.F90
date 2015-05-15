@@ -58,9 +58,4 @@
       INTEGER STREAMFLOWOUTFLAG
       INTEGER BASINSWEOUTFLAG
 
-    integer :: &
-
-!>      VERBOSEMODE = 0 to disable certain output to the console.
-        VERBOSEMODE = 1
-
       END

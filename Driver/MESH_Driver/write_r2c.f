@@ -15,7 +15,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
       SUBROUTINE write_r2c(un,fn,
      *            no_frames,no_classes,frame_no,class_no,
-     *            no_signf)
+     *            no_signf,
+     *            EF_YEAR_NOW,EF_MONTH_NOW,EF_DAY_NOW,EF_HOUR_NOW)
 
 !***********************************************************************
 !       copyright (c) by Nick Kouwen 1987-2007
@@ -46,8 +47,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
       INTEGER       :: un,fn,ii,no_signf,hour_no,hours_togo,
      *                 no_frames,no_classes,frame_no,class_no,
-     *                 i,j,ios
-	character(20) :: junk
+     *                 i,j,ios,
+     *                 EF_YEAR_NOW,EF_MONTH_NOW,EF_DAY_NOW,EF_HOUR_NOW
+	  character(20) :: junk
       CHARACTER(10) :: time
       CHARACTER(8)  :: cday
 
@@ -186,30 +188,34 @@ c	  endif
 !       if(mo1.le.9.and.day_now.le.9)then
 ! Craig Thompson changed mo1 to month_now so that the
 ! output is correctly formatted
-        if(month_now.le.9.and.day_now.le.9)then
+        if(EF_MONTH_NOW.le.9.and.EF_DAY_NOW.le.9)then
           if(no_frames.gt.1)write(un,3021)':Frame',
-     *     abs(frame_no),abs(frame_no),year1,month_now,day_now,hour_now
+     *     abs(frame_no),abs(frame_no),EF_YEAR_NOW,EF_MONTH_NOW,
+     *     EF_DAY_NOW,EF_HOUR_NOW
  3021      format(a6,2i10,3x,'"',i4,'/',i1,'/',i1,1x,i2,
      *                   ':00:00.000"',2x,a5,2i5,2x,a5)
 
-        elseif(month_now.le.9.and.day_now.gt.9)then
+        elseif(EF_MONTH_NOW.le.9.and.EF_DAY_NOW.gt.9)then
 ! Craig Thompson changed mo1 to month_now so that the
 ! output is correctly formatted
           if(no_frames.gt.1)write(un,3022)':Frame',
-     *     abs(frame_no),abs(frame_no),year1,month_now,day_now,hour_now
+     *     abs(frame_no),abs(frame_no),EF_YEAR_NOW,EF_MONTH_NOW,
+     *     EF_DAY_NOW,EF_HOUR_NOW
  3022      format(a6,2i10,3x,'"',i4,'/',i1,'/',i2,1x,i2,
      *                   ':00:00.000"',2x,a5,2i5,2x,a5)
 
-        elseif(month_now.gt.9.and.day_now.le.9)then
+        elseif(EF_MONTH_NOW.gt.9.and.EF_DAY_NOW.le.9)then
 ! Craig Thompson changed mo1 to month_now so that the
 ! output is correctly formatted
           if(no_frames.gt.1)write(un,3023)':Frame',
-     *     abs(frame_no),abs(frame_no),year1,month_now,day_now,hour_now
+     *     abs(frame_no),abs(frame_no),EF_YEAR_NOW,EF_MONTH_NOW,
+     *     EF_DAY_NOW,EF_HOUR_NOW
  3023      format(a6,2i10,3x,'"',i4,'/',i2,'/',i1,1x,i2,
      *                   ':00:00.000"',2x,a5,2i5,2x,a5)
         else
           if(no_frames.gt.1)write(un,3024)':Frame',
-     *     abs(frame_no),abs(frame_no),year1,month_now,day_now,hour_now
+     *     abs(frame_no),abs(frame_no),EF_YEAR_NOW,EF_MONTH_NOW,
+     *     EF_DAY_NOW,EF_HOUR_NOW
  3024      format(a6,2i10,3x,'"',i4,'/',i2,'/',i2,1x,i2,
      *                   ':00:00.000"',2x,a5,2i5,2x,a5)
         endif

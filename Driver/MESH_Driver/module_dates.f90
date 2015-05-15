@@ -1,5 +1,7 @@
          module model_dates
 
+    implicit none
+
         !>******************************************************************************
         !>  Athor: Gonzalo Sapriza Azuri
         !>  Description: handled time steps and dates in mesh
@@ -12,9 +14,9 @@
                 integer,dimension(:)  , allocatable :: daysINyears   !nr days in years
                 integer,dimension(:)  , allocatable :: daysINmonths  !nr days in months
                 integer,dimension(:)  , allocatable :: daysINseasons !nr days in Seasons
-                integer   :: start_date(4), end_date(4)              !start_date,end_date
+!                integer   :: start_date(4), end_date(4)              !start_date,end_date
                 character :: freq                                    !frequency
-                integer   :: timestep                                !model time-step
+!                integer   :: timestep                                !model time-step
                 integer   :: nyears                                  !number oof years
                 integer   :: nseason                                 !12 months
                 integer   :: nmonths                                 !number of months
@@ -29,7 +31,7 @@
         integer :: &
             now_year, now_day_julian, now_month, now_day, &
             now_hour, now_min, &
-            timestep = 1800, &
+!            timestep = 1800, &
             count_year, count_day_julian, count_month, count_day, &
             count_hour, count_min, &
             count_timestep
@@ -40,6 +42,19 @@
         procedure :: update_now => update_now_iter_counter
 
     end type
+
+    !* TIME_STEP_NOW: Current time-step in minutes.
+    !* TIME_STEP_MINS: Time-step of the model in minutes.
+    !* TIME_STEP_DELT: Time-step of the model in seconds.
+    integer YEAR_NOW, JDAY_NOW, HOUR_NOW, TIME_STEP_NOW, MINS_NOW
+    integer :: TIME_STEP_MINS = 30, TIME_STEP_DELT = 1800
+
+    !* YEAR_START: Year at the start of the simulation.
+    !* JDAY_START: Julian day at the start of the simulation.
+    !* HOUR_START: Hour at the start of the simulation.
+    !* MINS_START: Minute (in 30-min. increment; either 0 or 30) at the start of the simulation.
+    integer YEAR_START, JDAY_START, HOUR_START, MINS_START
+    integer YEAR_STOP, JDAY_STOP, HOUR_STOP, MINS_STOP
 
             contains
 
@@ -62,7 +77,8 @@
 
         !> Override pre-set time-step (if provided).
         if (present(timestep)) &
-            ic%timestep = timestep
+!            ic%timestep = timestep
+            TIME_STEP_DELT = timestep
 
         !> Initialize counters.
         ic%count_year = 1
@@ -136,7 +152,7 @@
     end subroutine
 
         !>******************************************************************************
-            subroutine get_dates(ts,start_date,end_date)
+            subroutine get_dates(ts)
 
         !>------------------------------------------------------------------------------
         !>  Description: Handled dates in the model
@@ -145,7 +161,7 @@
 
             implicit none
             !Input
-            integer,intent(in) :: start_date(4),end_date(4) !Year,julianday,hour,min
+!            integer,intent(in) :: start_date(4),end_date(4) !Year,julianday,hour,min
 !            integer,intent(in) :: stepclim                  !HOURLYFLAG
             !Input-Output
             type(dates_model),intent(inout) :: ts
@@ -156,16 +172,16 @@
             integer :: nr_days!, hours
 
             ts%freq = 'D'
-            ts%nyears = end_date(1) - start_date(1) + 1
+            ts%nyears = YEAR_STOP - YEAR_START + 1
             ts%nseason = 12
 
-            ts%start_date = start_date
-            ts%end_date = end_date
+!            ts%start_date = start_date
+!            ts%end_date = end_date
 
-            iyear = start_date(1)
-            fyear = end_date(1)
+            iyear = YEAR_START
+            fyear = YEAR_STOP
 
-            year = start_date(1)
+            year = YEAR_START
 
             allocate(days_inyear(ts%nyears))
             allocate(ts%years(ts%nyears))
@@ -181,9 +197,9 @@
                 year = year + 1
 
                 if (i == 1) then
-                    nr_days = days_inyear(i) - start_date(2) + 1 
+                    nr_days = days_inyear(i) - JDAY_START + 1
                 else if (i == ts%nyears) then
-                    nr_days = nr_days + (days_inyear(i) - (days_inyear(i) - end_date(2)))
+                    nr_days = nr_days + (days_inyear(i) - (days_inyear(i) - JDAY_STOP))
                 else
                     nr_days = nr_days + days_inyear(i)
                 end if
@@ -199,8 +215,8 @@
 !            hours= stepclim/30
 !            ts%nr_timeStepClimF = ts%nr_days*48/hours
 
-            year = start_date(1)
-            jday = start_date(2)
+            year = YEAR_START
+            jday = JDAY_START
 
             do i = 1, nr_days
 
@@ -259,7 +275,7 @@
 
             !Year
             j = 1
-            do i = ts%start_date(1), ts%end_date(1)
+            do i = YEAR_START, YEAR_STOP
 
                 where(ts%dates(:,1).eq.i) days = 1
                 ts%daysINyears(j) = sum(days)
@@ -440,14 +456,14 @@
 
             iy = 0
             id = iday
-            if (iyear == ts%start_date(1)) &
-                id = iday - ts%start_date(2) + 1
-            do i = ts%start_date(1), ts%end_date(1)
+            if (iyear == YEAR_START) &
+                id = iday - JDAY_START + 1
+            do i = YEAR_START, YEAR_STOP
                 iy = iy + 1
                 if (i.eq.iyear)then
                     exit
                 endif
-                id = id + ts%daysinyears(i - ts%start_date(1) + 1)
+                id = id + ts%daysinyears(i - YEAR_START + 1)
             end do
 
             call Julian2MonthDay(iday,iyear,iss,day)

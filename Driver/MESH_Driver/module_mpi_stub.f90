@@ -3,8 +3,6 @@
 !>
 module module_mpi
 
-    use module_mpi_flags
-
     implicit none
 
     integer :: &

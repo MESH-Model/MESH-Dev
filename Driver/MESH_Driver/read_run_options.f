@@ -3,8 +3,8 @@
      +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
      +  ICTEMMOD, IOS, PAS, N,
      +  IROVAL, WF_NUM_POINTS,
-     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
-     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
+!     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
+!     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
      +  IRONAME, GENDIR_OUT, op, ts, cm, fls)
 
       USE MESH_INPUT_MODULE
@@ -44,7 +44,7 @@
 
 !> The following variables are all local to this subroutine
       INTEGER :: J,I
-      INTEGER :: START_DATE(4),END_DATE(4)
+!      INTEGER :: START_DATE(4),END_DATE(4)
 
 !>=======================================================================
 !>    * SET RUN OPTIONS
@@ -409,12 +409,12 @@
 
             !> Model time-step.
             CASE ('TIMESTEPFLAG')
-              CALL value(out_args(2), ts%timestep, IOS)
+              CALL value(out_args(2), TIME_STEP_MINS, IOS)
 
             CASE ('RELFLG')
               CALL value(out_args(2), RELFLG, IOS)
             CASE ('VERBOSEMODE')
-              CALL value(out_args(2), VERBOSEMODE, IOS)
+              CALL value(out_args(2), ro%VERBOSEMODE, IOS)
             CASE ('MPIUSEBARRIER')
               CALL value(out_args(2), MPIUSEBARRIER, IOS)
 
@@ -665,24 +665,21 @@
       !This section is used to start part way through the bin file
       READ(53,*) !P
       READ(53,*) !P
-      READ(53,'(I4, I4, I4, I4)') IYEAR_START, IDAY_START, !P
-     +  IHOUR_START, IMIN_START !P
-      READ(53,'(I4, I4, I4, I4)') IYEAR_END, IDAY_END, !P
-     +  IHOUR_END, IMIN_END !P
+      READ(53, '(4I4)') YEAR_START, JDAY_START, HOUR_START, MINS_START
+      READ(53, '(4I4)') YEAR_STOP, JDAY_STOP, HOUR_STOP, MINS_STOP
 
 !> Initialization of model  dates
-        start_date(1) = IYEAR_START
-        start_date(2) = IDAY_START
-        start_date(3) = IHOUR_START
-        start_date(4) = IMIN_START
+!        start_date(1) = IYEAR_START
+!        start_date(2) = IDAY_START
+!        start_date(3) = IHOUR_START
+!        start_date(4) = IMIN_START
 
-        end_date(1) = IYEAR_END
-        end_date(2) = IDAY_END
-        end_date(3) = IHOUR_END
-        end_date(4) = IMIN_END
+!        end_date(1) = IYEAR_END
+!        end_date(2) = IDAY_END
+!        end_date(3) = IHOUR_END
+!        end_date(4) = IMIN_END
 
-        CALL GET_DATES(ts,start_date,end_date)
-
+        CALL GET_DATES(ts)
 
 !> rewind file to get extra information in the climate forcing data
 !> in case that we load a part of the file in memory
