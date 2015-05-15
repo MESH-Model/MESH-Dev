@@ -1579,11 +1579,11 @@ module model_output
                         vr%engt_m%qevp(im, :) = vr%engt_m%qevp(im, :) + qevp
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%engt_s%qevp(iss, :) = vr%engt_s%qevp(iss, :) + qevp   
-                                                
-                    if (ifo%var_out(i)%out_d) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%engt_d%qevp(id, :) = vr%engt_d%qevp(iss, :) + qevp        
-                        
+                        vr%engt_s%qevp(iss, :) = vr%engt_s%qevp(iss, :) + qevp
+
+                    if (ifo%var_out(i)%out_d) &
+                        vr%engt_d%qevp(id, :) = vr%engt_d%qevp(id, :) + qevp
+
                 case ('THLQ')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
@@ -1888,8 +1888,7 @@ module model_output
                         do j = 1, bi%ignd
                             call WriteFields_i(vr, ts, ifo, i, "D", bi%na, ts%nr_days, fls, j)
                         end do
-                    end if                         
-                    
+                    end if
 
                 case ('HFS','SensibleHeat')
 
