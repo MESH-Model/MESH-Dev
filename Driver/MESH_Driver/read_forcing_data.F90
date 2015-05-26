@@ -99,10 +99,6 @@ ICOUNT = 0
     FSDOWN=2.*FSVHGRD
     FSIHGRD=FSVHGRD
     ICOUNT=ICOUNT+1
-    IF(TESTCSVFLAG==1)then
-        print*,"Shortwave radiation"
-        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4SHRTGRU,FSVHGAT+FSIHGAT)
-    ENDIF
 
 !> *********************************************************************
 !> basin_shortwave.seq
@@ -202,10 +198,6 @@ ICOUNT = 0
     ENDDO
     CALL SCATTER(NTYPE,NA,NML,ILMOS,JLMOS,ACLASS,FDLGRD,FDLGAT)
     ICOUNT=ICOUNT+1
-    IF(TESTCSVFLAG==1)then
-        print*,"Longwave radiation"
-        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4LONGGRU,FDLGAT)
-    ENDIF
 
 !> *********************************************************************
 !> basin_longwave.seq
@@ -288,10 +280,6 @@ ICOUNT = 0
     ENDDO
     CALL SCATTER(NTYPE,NA,NML,ILMOS,JLMOS,ACLASS,PREGRD,PREGAT)
     ICOUNT=ICOUNT+1
-    IF(TESTCSVFLAG==1)then
-        print*,"Precipitation"
-        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4RAINGRU,PREGAT)
-    ENDIF
 
 !> *********************************************************************
 !> basin_rain.seq
@@ -386,10 +374,6 @@ ICOUNT = 0
     ENDDO
     CALL SCATTER(NTYPE,NA,NML,ILMOS,JLMOS,ACLASS,TAGRD,TAGAT)
     ICOUNT=ICOUNT+1
-    IF(TESTCSVFLAG==1)then
-        print*,"Temperature"
-        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4TEMPGRU,TAGAT)
-    ENDIF
 
 !> *********************************************************************
 !> basin_temperature.seq
@@ -478,10 +462,6 @@ ICOUNT = 0
     !VLGAT=0.0
     CALL SCATTER(NTYPE,NA,NML,ILMOS,JLMOS,ACLASS,ULGRD,ULGAT)
     ICOUNT=ICOUNT+1
-    IF(TESTCSVFLAG==1)then
-        print*,"Wind"
-        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4WINDGRU,ULGAT)
-    ENDIF
 
 !> *********************************************************************
 !> basin_wind.seq
@@ -562,10 +542,6 @@ ICOUNT = 0
     ENDDO
     CALL SCATTER(NTYPE,NA,NML,ILMOS,JLMOS,ACLASS,PRESGRD,PRESGAT)
     ICOUNT=ICOUNT+1
-    IF(TESTCSVFLAG==1)then
-        print*,"Pressure"
-        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4PRESGRU,PRESGAT)
-    ENDIF
 
 !> *********************************************************************
 !> basin_pres.seq
@@ -646,10 +622,7 @@ ICOUNT = 0
     ENDDO
     CALL SCATTER(NTYPE,NA,NML,ILMOS,JLMOS,ACLASS,QAGRD,QAGAT)
     ICOUNT=ICOUNT+1
-    IF(TESTCSVFLAG==1)then
-        print*,"Humidity"
-        CALL TEST_CSV(NTYPE,NML,NA,ILMOS,R4HUMDGRU,QAGAT)
-    ENDIF
+
 !> *********************************************************************
 !> basin_humidity.seq
 !> *********************************************************************

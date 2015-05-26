@@ -2104,7 +2104,7 @@ FRAME_NO_NEW = 1
         write(58, *) "PREEMPTIONFLAG       = ", PREEMPTIONFLAG
         write(58, *) "INTERPOLATIONFLAG    = ", INTERPOLATIONFLAG
         write(58, *) "SUBBASINFLAG         = ", SUBBASINFLAG
-        write(58, *) "TESTCSVFLAG          = ", TESTCSVFLAG
+        write(58, *) "TESTCSVFLAG          = ", 'NOTSUPPORTED'
         write(58, *) "R2COUTPUTFLAG        = ", R2COUTPUTFLAG
         write(58, *) "OBJFNFLAG            = ", OBJFNFLAG
         write(58, *) "AUTOCALIBRATIONFLAG  = ", AUTOCALIBRATIONFLAG
@@ -3359,12 +3359,8 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
 
     if (ro%VERBOSEMODE > 0) then
         print *
-        if (TESTCSVFLAG == 1) then
-            print *, 'TEST PROPER DISTRIBUTION OF CSV FORCING DATA'
-        else
-            print 2836
-            print 2835
-        end if
+        print 2836
+        print 2835
     end if !(ro%VERBOSEMODE > 0) then
 
 2836 format(/1x'DONE INTITIALIZATION')
@@ -3464,14 +3460,6 @@ DO I=il1,il2
   FCLOgat(I)=XDIFFUS(ilmos(I))
   fclogrd(ilmos(i)) = fclogat(i)
 ENDDO
-
-!> *********************************************************************
-!> Test proper distribution of csv forcing data
-!> *********************************************************************
-IF(TESTCSVFLAG==1)THEN
-   IF(HOURLYFLAG == TIME_STEP_MINS .OR. TIME_STEP_NOW == 0) &
-   WRITE(*,'(I4,1X,I3,1X,I2,1X,I2)')YEAR_NOW,JDAY_NOW,HOUR_NOW,MINS_NOW
-ELSE   
 
 !> *********************************************************************
 !> Start of calls to CLASS subroutines
@@ -5102,8 +5090,6 @@ wb%rofb = 0.0
 ENDIF !(NCOUNT==48) THEN
 
 end if !(ipid == 0) then
-
-ENDIF !TESTCSVFLAG
 
 5176 format(2i5, *(f10.3))
 

@@ -222,9 +222,6 @@
 !* If SUBBASINFLAG is 0, calculations will be made for all grid squares.
       SUBBASINFLAG = 0
 
-!* If TESTCSVFLAG is 1, proper distribution of csv forcing data will be checked. 
-      TESTCSVFLAG = 0
-
 !* If R2COUTPUTFLAG is 1, R2C ascii file will be written for user specified 
 !* variables.
 !* If R2COUTPUTFLAG is 2, R2C binary will be written for user specified 
@@ -497,8 +494,6 @@
               CALL value(out_args(2), INTERPOLATIONFLAG, IOS)
             CASE ('SUBBASINFLAG')
               CALL value(out_args(2), SUBBASINFLAG, IOS)
-            CASE ('TESTCSVFLAG')
-              CALL value(out_args(2), TESTCSVFLAG, IOS)
             CASE ('R2COUTPUTFLAG')
               CALL value(out_args(2), R2COUTPUTFLAG, IOS)
             CASE ('OBJFNFLAG')
