@@ -1869,7 +1869,7 @@ bi%ignd = IGND
 !> Initialize output variables.
 call wb%init(bi)
 
-    call climate_module_init(ts, bi, ENDDATA, &
+    call climate_module_init(ts, bi, cm, ENDDATA, &
         YCOUNT)
     if (ENDDATA) goto 999
 
@@ -2085,13 +2085,13 @@ FRAME_NO_NEW = 1
         write(58, "('Configuration flags - specified by user or default values')")
 
         !todo: this list should be updated (dgp: 2015-01-09)
-        write(58, *) "BASINSHORTWAVEFLAG   = ", BASINSHORTWAVEFLAG
-        write(58, *) "BASINLONGWAVEFLAG    = ", BASINLONGWAVEFLAG
-        write(58, *) "BASINRAINFLAG        = ", BASINRAINFLAG
-        write(58, *) "BASINTEMPERATUREFLAG = ", BASINTEMPERATUREFLAG
-        write(58, *) "BASINWINDFLAG        = ", BASINWINDFLAG
-        write(58, *) "BASINPRESFLAG        = ", BASINPRESFLAG
-        write(58, *) "BASINHUMIDITYFLAG    = ", BASINHUMIDITYFLAG
+        write(58, *) "BASINSHORTWAVEFLAG   = ", cm%clin(cfk%FS)%filefmt
+        write(58, *) "BASINLONGWAVEFLAG    = ", cm%clin(cfk%FDL)%filefmt
+        write(58, *) "BASINRAINFLAG        = ", cm%clin(cfk%PRE)%filefmt
+        write(58, *) "BASINTEMPERATUREFLAG = ", cm%clin(cfk%TA)%filefmt
+        write(58, *) "BASINWINDFLAG        = ", cm%clin(cfk%UL)%filefmt
+        write(58, *) "BASINPRESFLAG        = ", cm%clin(cfk%PRES)%filefmt
+        write(58, *) "BASINHUMIDITYFLAG    = ", cm%clin(cfk%QA)%filefmt
         write(58, *) "HOURLYFLAG           = ", HOURLYFLAG
         write(58, *) "RESUMEFLAG           = ", RESUMEFLAG
         write(58, *) "SAVERESUMEFLAG       = ", SAVERESUMEFLAG
@@ -2485,9 +2485,9 @@ IF (RESUMEFLAG == 1) THEN
   PRINT *, 'Reading saved state variables'
 call resume_state( &
    HOURLYFLAG, MINS_NOW, TIME_STEP_NOW, &
-   BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG, &
-   BASINRAINFLAG, BASINTEMPERATUREFLAG, &
-   BASINWINDFLAG, BASINPRESFLAG, BASINHUMIDITYFLAG, &
+   cm%clin(cfk%FS)%filefmt, cm%clin(cfk%FDL)%filefmt, &
+   cm%clin(cfk%PRE)%filefmt, cm%clin(cfk%TA)%filefmt, &
+   cm%clin(cfk%UL)%filefmt, cm%clin(cfk%PRES)%filefmt, cm%clin(cfk%QA)%filefmt, &
    FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, &
    I, J, XCOUNT, YCOUNT, jan, &
    VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
@@ -5338,9 +5338,9 @@ IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
   PRINT *, 'Saving state variables'
   call SAVE_STATE( &
    HOURLYFLAG, MINS_NOW, TIME_STEP_NOW, &
-   BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG, &
-   BASINRAINFLAG, BASINTEMPERATUREFLAG, &
-   BASINWINDFLAG, BASINPRESFLAG, BASINHUMIDITYFLAG, &
+   cm%clin(cfk%FS)%filefmt, cm%clin(cfk%FDL)%filefmt, &
+   cm%clin(cfk%PRE)%filefmt, cm%clin(cfk%TA)%filefmt, &
+   cm%clin(cfk%UL)%filefmt, cm%clin(cfk%PRES)%filefmt, cm%clin(cfk%QA)%filefmt, &
    FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, &
    I, J, XCOUNT, YCOUNT, jan, &
    VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &

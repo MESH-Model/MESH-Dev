@@ -156,13 +156,13 @@
 !>  3 = read forcing data from .seq binary sequential files      
 !>  3 = read forcing data from .seq ascii sequential files
 !>  5 = read forcing data from load buffer in memory
-      BASINSHORTWAVEFLAG = 0
-      BASINLONGWAVEFLAG = 0
-      BASINRAINFLAG = 0
-      BASINTEMPERATUREFLAG = 0
-      BASINWINDFLAG = 0
-      BASINPRESFLAG = 0
-      BASINHUMIDITYFLAG = 0
+!      BASINSHORTWAVEFLAG = 0
+!      BASINLONGWAVEFLAG = 0
+!      BASINRAINFLAG = 0
+!      BASINTEMPERATUREFLAG = 0
+!      BASINWINDFLAG = 0
+!      BASINPRESFLAG = 0
+!      BASINHUMIDITYFLAG = 0
 
 !> SOIL INITIALIZATION  FLAG - DEFAULT = STOP SIMULATION IF SUM OF SOIL PERCENTAGES EXCEEDS 100%
 !> If SOILINIFLAG is 0, stop simulation if the sum of soil percentages is greater than 100%
@@ -417,7 +417,7 @@
 
             !> Basin forcing data.
             CASE ('BASINSHORTWAVEFLAG')
-              CALL value(out_args(2), BASINSHORTWAVEFLAG, IOS)
+              CALL value(out_args(2), cm%clin(cfk%FS)%filefmt, IOS)
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
@@ -426,7 +426,7 @@
                 END IF
               END DO
             CASE ('BASINLONGWAVEFLAG')
-              CALL value(out_args(2), BASINLONGWAVEFLAG, IOS)
+              CALL value(out_args(2), cm%clin(cfk%FDL)%filefmt, IOS)
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
@@ -435,7 +435,7 @@
                 END IF
               END DO
             CASE ('BASINRAINFLAG')
-              CALL value(out_args(2), BASINRAINFLAG, IOS)
+              CALL value(out_args(2), cm%clin(cfk%PRE)%filefmt, IOS)
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
@@ -444,7 +444,7 @@
                 END IF
               END DO
             CASE ('BASINTEMPERATUREFLAG')
-              CALL value(out_args(2), BASINTEMPERATUREFLAG, IOS)
+              CALL value(out_args(2), cm%clin(cfk%TA)%filefmt, IOS)
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
@@ -453,7 +453,7 @@
                 END IF
               END DO
             CASE ('BASINWINDFLAG')
-              CALL value(out_args(2), BASINWINDFLAG, IOS)
+              CALL value(out_args(2), cm%clin(cfk%UL)%filefmt, IOS)
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
@@ -462,7 +462,7 @@
                 END IF
               END DO
             CASE ('BASINPRESFLAG')
-              CALL value(out_args(2), BASINPRESFLAG, IOS)
+              CALL value(out_args(2), cm%clin(cfk%PRES)%filefmt, IOS)
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
@@ -471,7 +471,7 @@
                 END IF
               END DO
             CASE ('BASINHUMIDITYFLAG')
-              CALL value(out_args(2), BASINHUMIDITYFLAG, IOS)
+              CALL value(out_args(2), cm%clin(cfk%QA)%filefmt, IOS)
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
@@ -678,13 +678,13 @@
 
 !> rewind file to get extra information in the climate forcing data
 !> in case that we load a part of the file in memory
-      IF ((BASINSHORTWAVEFLAG   .EQ. 5) .OR.
-     +    (BASINLONGWAVEFLAG    .EQ. 5) .OR.
-     +    (BASINRAINFLAG        .EQ. 5) .OR.
-     +    (BASINTEMPERATUREFLAG .EQ. 5) .OR.
-     +    (BASINWINDFLAG        .EQ. 5) .OR.
-     +    (BASINPRESFLAG        .EQ. 5) .OR.
-     +    (BASINHUMIDITYFLAG    .EQ. 5))THEN
+      IF ((cm%clin(cfk%FS)%filefmt   == 5) .OR.
+     +    (cm%clin(cfk%FDL)%filefmt  == 5) .OR.
+     +    (cm%clin(cfk%PRE)%filefmt  == 5) .OR.
+     +    (cm%clin(cfk%TA)%filefmt   == 5) .OR.
+     +    (cm%clin(cfk%UL)%filefmt   == 5) .OR.
+     +    (cm%clin(cfk%PRES)%filefmt == 5) .OR.
+     +    (cm%clin(cfk%QA)%filefmt   == 5)) THEN
 
         REWIND(UNIT=53)
 

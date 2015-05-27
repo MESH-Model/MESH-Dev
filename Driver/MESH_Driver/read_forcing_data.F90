@@ -20,7 +20,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
 
     use FLAGS
-    use climate_forcing, only: clim_info, NeedUpdate_clim_data
+    use climate_forcing, only: clim_info, cfk, NeedUpdate_clim_data
 
     implicit none
 
@@ -52,7 +52,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_shortwave.bin
     !> *****************************************************************
-    if (BASINSHORTWAVEFLAG == 0) then
+    if (cm%clin(cfk%FS)%filefmt == 0) then
         read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
         do i = 1, NA
             FSDOWN(i) = INARRAY(YYY(i), XXX(i))
@@ -65,12 +65,12 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_shortwave.r2c
     !> *****************************************************************
-    elseif (BASINSHORTWAVEFLAG == 1) then
-        read(90, *, end = 999) !:Frame line
+    elseif (cm%clin(cfk%FS)%filefmt == 1) then
+        read(cm%basefileunit + cfk%FS, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read(90, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+            read(cm%basefileunit + cfk%FS, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read(90, *, end = 999) !:EndFrame line
+        read(cm%basefileunit + cfk%FS, *, end = 999) !:EndFrame line
         do i = 1, NA
             FSDOWN(i) = INARRAY(YYY(i), XXX(i))
         end do
@@ -83,8 +83,8 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_shortwave.csv
     !> *****************************************************************
-    elseif (BASINSHORTWAVEFLAG == 2) then
-        read(90, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
+    elseif (cm%clin(cfk%FS)%filefmt == 2) then
+        read(cm%basefileunit + cfk%FS, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i = 1, NML
             CURGRU = JLMOS(i)
             FSVHGAT(i) = 0.5*INVECTOR(CURGRU)
@@ -98,26 +98,26 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_shortwave.seq
     !> *****************************************************************
-    elseif (BASINSHORTWAVEFLAG == 3) then
-        read(90, end = 999) NTIME
-        read(90, end = 999) FSDOWN
+    elseif (cm%clin(cfk%FS)%filefmt == 3) then
+        read(cm%basefileunit + cfk%FS, end = 999) NTIME
+        read(cm%basefileunit + cfk%FS, end = 999) FSDOWN
         FSVHGRD = 0.5*FSDOWN
         FSIHGRD = FSVHGRD
         call GATHER(NA, NML, ILG, ILMOS, FSVHGRD, FSVHGAT)
         FSIHGAT = FSVHGAT
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINSHORTWAVEFLAG == 4) then
-        read(90, *, end = 999) (FSDOWN(i), i = 1, NA)
+    elseif (cm%clin(cfk%FS)%filefmt == 4) then
+        read(cm%basefileunit + cfk%FS, *, end = 999) (FSDOWN(i), i = 1, NA)
         FSVHGRD = 0.5*FSDOWN
         FSIHGRD = FSVHGRD
         call GATHER(NA, NML, ILG, ILMOS, FSVHGRD, FSVHGAT)
         FSIHGAT = FSVHGAT
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINSHORTWAVEFLAG == 5) then
-        call NeedUpdate_clim_data(cm, 1, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
-        FSDOWN = cm%clin(1)%climv(:, cm%clin(1)%itime)
+    elseif (cm%clin(cfk%FS)%filefmt == 5) then
+        call NeedUpdate_clim_data(cm, cfk%FS, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+        FSDOWN = cm%clin(cfk%FS)%climv(:, cm%clin(cfk%FS)%itime)
         FSVHGRD = 0.5*FSDOWN
         FSIHGRD = FSVHGRD
         call GATHER(NA, NML, ILG, ILMOS, FSVHGRD, FSVHGAT)
@@ -125,7 +125,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         ICOUNT = ICOUNT + 1
 
     else
-        print *, 'BASINSHORTWAVEFLAG SHOULD BE EITHER 0, 1 0R 2'
+        print *, cm%clin(cfk%FS)%filefmt, ' SHOULD BE EITHER 0, 1 0R 2'
         stop
     end if
 
@@ -136,7 +136,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_longwave.bin
     !> *****************************************************************
-    if (BASINLONGWAVEFLAG == 0) then
+    if (cm%clin(cfk%FDL)%filefmt == 0) then
         !> Skip the forcing data that is read from r2c and csv files.
         do k = 1, ICOUNT
             read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
@@ -150,12 +150,12 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_longwave.r2c
     !> *****************************************************************
-    elseif (BASINLONGWAVEFLAG == 1) then
-        read(91, *, end = 999) !:Frame line
+    elseif (cm%clin(cfk%FDL)%filefmt == 1) then
+        read(cm%basefileunit + cfk%FDL, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read(91, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+            read(cm%basefileunit + cfk%FDL, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read(91, *, end = 999) !:EndFrame line
+        read(cm%basefileunit + cfk%FDL, *, end = 999) !:EndFrame line
         do i = 1, NA
             FDLGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
@@ -165,8 +165,8 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_longwave.csv
     !> *****************************************************************
-    elseif (BASINLONGWAVEFLAG == 2) then
-        read(91, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
+    elseif (cm%clin(cfk%FDL)%filefmt == 2) then
+        read(cm%basefileunit + cfk%FDL, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i = 1, NML
             CURGRU = JLMOS(i)
             FDLGAT(i) = INVECTOR(CURGRU)
@@ -177,25 +177,25 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_longwave.seq
     !> *****************************************************************
-    elseif (BASINLONGWAVEFLAG == 3) then
-        read(91, end = 999) NTIME
-        read(91, end = 999) FDLGRD
+    elseif (cm%clin(cfk%FDL)%filefmt == 3) then
+        read(cm%basefileunit + cfk%FDL, end = 999) NTIME
+        read(cm%basefileunit + cfk%FDL, end = 999) FDLGRD
         call GATHER(NA, NML, ILG, ILMOS, FDLGRD, FDLGAT)
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINLONGWAVEFLAG == 4) then
-        read(91, *, end = 999) (FDLGRD(i), i = 1, NA)
+    elseif (cm%clin(cfk%FDL)%filefmt == 4) then
+        read(cm%basefileunit + cfk%FDL, *, end = 999) (FDLGRD(i), i = 1, NA)
         call GATHER(NA, NML, ILG, ILMOS, FDLGRD, FDLGAT)
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINLONGWAVEFLAG == 5) then
-        call NeedUpdate_clim_data(cm, 2, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
-        FDLGRD = cm%clin(2)%climv(:, cm%clin(2)%itime)
+    elseif (cm%clin(cfk%FDL)%filefmt == 5) then
+        call NeedUpdate_clim_data(cm, cfk%FDL, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+        FDLGRD = cm%clin(cfk%FDL)%climv(:, cm%clin(cfk%FDL)%itime)
         call GATHER(NA, NML, ILG, ILMOS, FDLGRD, FDLGAT)
         ICOUNT = ICOUNT + 1
 
     else
-        print *, 'BASINLONGWAVEFLAG SHOULD BE EITHER 0, 1 0R 2'
+        print *, cm%clin(cfk%FDL)%filefmt, ' SHOULD BE EITHER 0, 1 0R 2'
         stop
     end if
 
@@ -206,7 +206,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_rain.bin
     !> *****************************************************************
-    if (BASINRAINFLAG == 0) then
+    if (cm%clin(cfk%PRE)%filefmt == 0) then
         !> Skip the forcing data that is read from r2c and csv files.
         do k = 1, ICOUNT
             read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
@@ -220,12 +220,12 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_rain.r2c
     !> *****************************************************************
-    elseif (BASINRAINFLAG == 1) then
-        read(92, *, end = 999) !:Frame line
+    elseif (cm%clin(cfk%PRE)%filefmt == 1) then
+        read(cm%basefileunit + cfk%PRE, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read (92, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+            read (cm%basefileunit + cfk%PRE, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read(92, *, end = 999) !:EndFrame line
+        read(cm%basefileunit + cfk%PRE, *, end = 999) !:EndFrame line
         do i = 1, NA
             PREGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
@@ -235,8 +235,8 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_rain.csv
     !> *****************************************************************
-    elseif (BASINRAINFLAG == 2) then
-        read(92, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
+    elseif (cm%clin(cfk%PRE)%filefmt == 2) then
+        read(cm%basefileunit + cfk%PRE, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i = 1,NML
             CURGRU = JLMOS(i)
             PREGAT(i) = INVECTOR(CURGRU)
@@ -247,34 +247,34 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_rain.seq
     !> *****************************************************************
-    elseif (BASINRAINFLAG == 3) then
-        read(92, end = 999) NTIME
-        read(92, end = 999) PREGRD
+    elseif (cm%clin(cfk%PRE)%filefmt == 3) then
+        read(cm%basefileunit + cfk%PRE, end = 999) NTIME
+        read(cm%basefileunit + cfk%PRE, end = 999) PREGRD
         call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINRAINFLAG == 4) then
-        read(92, *, end = 999) (PREGRD(i), i = 1, NA)
+    elseif (cm%clin(cfk%PRE)%filefmt == 4) then
+        read(cm%basefileunit + cfk%PRE, *, end = 999) (PREGRD(i), i = 1, NA)
         call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINRAINFLAG == 5) then
-        call NeedUpdate_clim_data(cm, 3, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
-        PREGRD = cm%clin(3)%climv(:, cm%clin(3)%itime)
+    elseif (cm%clin(cfk%PRE)%filefmt == 5) then
+        call NeedUpdate_clim_data(cm, cfk%PRE, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+        PREGRD = cm%clin(cfk%PRE)%climv(:, cm%clin(cfk%PRE)%itime)
         call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
         ICOUNT = ICOUNT + 1
 
       !> Read from two sources of rainfall input.
-    elseif (BASINRAINFLAG == 6) then
-        call NeedUpdate_clim_data(cm, 3, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+    elseif (cm%clin(cfk%PRE)%filefmt == 6) then
+        call NeedUpdate_clim_data(cm, cfk%PRE, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
         call NeedUpdate_clim_data(cm, 8, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
-        PREGRD = cm%clin(8)%alpharain*cm%clin(3)%climv(:, cm%clin(3)%itime) + &
+        PREGRD = cm%clin(8)%alpharain*cm%clin(cfk%PRE)%climv(:, cm%clin(cfk%PRE)%itime) + &
                  (1.0 - cm%clin(8)%alpharain)*cm%clin(8)%climv(:, cm%clin(8)%itime)
         call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
         ICOUNT = ICOUNT + 1
 
     else
-        print *, 'BASINRAINFLAG SHOULD BE EITHER 0, 1 0R 2'
+        print *, cm%clin(cfk%PRE)%filefmt, ' SHOULD BE EITHER 0, 1 0R 2'
         stop
     end if
 
@@ -285,7 +285,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_temperature.bin
     !> *****************************************************************
-    if (BASINTEMPERATUREFLAG == 0) then
+    if (cm%clin(cfk%TA)%filefmt == 0) then
         !> Skip the forcing data that is read from r2c and csv files.
         do k = 1, ICOUNT
             read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
@@ -299,12 +299,12 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_temperature.r2c
     !> *****************************************************************
-    elseif (BASINTEMPERATUREFLAG == 1) then
-        read(93, *, end = 999) !:Frame line
+    elseif (cm%clin(cfk%TA)%filefmt == 1) then
+        read(cm%basefileunit + cfk%TA, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read(93, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+            read(cm%basefileunit + cfk%TA, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read(93, *, end = 999) !:EndFrame line
+        read(cm%basefileunit + cfk%TA, *, end = 999) !:EndFrame line
         do i = 1, NA
             TAGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
@@ -314,8 +314,8 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !>  basin_temperature.csv
     !> *****************************************************************
-    elseif (BASINTEMPERATUREFLAG == 2) then
-        read(93, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
+    elseif (cm%clin(cfk%TA)%filefmt == 2) then
+        read(cm%basefileunit + cfk%TA, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i = 1, NML
             CURGRU = JLMOS(i)
             TAGAT(i) = INVECTOR(CURGRU)
@@ -326,25 +326,25 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_temperature.seq
     !> *****************************************************************
-    elseif (BASINTEMPERATUREFLAG == 3) then
-        read(93, end = 999) NTIME
-        read(93, end = 999) TAGRD
+    elseif (cm%clin(cfk%TA)%filefmt == 3) then
+        read(cm%basefileunit + cfk%TA, end = 999) NTIME
+        read(cm%basefileunit + cfk%TA, end = 999) TAGRD
         call GATHER(NA, NML, ILG, ILMOS, TAGRD, TAGAT)
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINTEMPERATUREFLAG == 4) then
-        read(93, *, end = 999) (TAGRD(i), i = 1, NA)
+    elseif (cm%clin(cfk%TA)%filefmt == 4) then
+        read(cm%basefileunit + cfk%TA, *, end = 999) (TAGRD(i), i = 1, NA)
         call GATHER(NA, NML, ILG, ILMOS, TAGRD, TAGAT)
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINTEMPERATUREFLAG == 5) then
-        call NeedUpdate_clim_data(cm, 4, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
-        TAGRD = cm%clin(4)%climv(:, cm%clin(4)%itime)
+    elseif (cm%clin(cfk%TA)%filefmt == 5) then
+        call NeedUpdate_clim_data(cm, cfk%TA, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+        TAGRD = cm%clin(cfk%TA)%climv(:, cm%clin(cfk%TA)%itime)
         call GATHER(NA, NML, ILG, ILMOS, TAGRD, TAGAT)
         ICOUNT = ICOUNT + 1
 
     else
-        print *, 'BASINTEMPERATUREFLAG SHOULD BE EITHER 0, 1 0R 2'
+        print *, cm%clin(cfk%TA)%filefmt, ' SHOULD BE EITHER 0, 1 0R 2'
         stop
     end if
 
@@ -355,7 +355,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_wind.bin
     !> *****************************************************************
-    if (BASINWINDFLAG == 0) then !use the forcing bin
+    if (cm%clin(cfk%UL)%filefmt == 0) then !use the forcing bin
         !> Skip the forcing data that is read from r2c and csv files.
         do k = 1, ICOUNT
             read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
@@ -372,12 +372,12 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_wind.r2c
     !> *****************************************************************
-    elseif (BASINWINDFLAG == 1) then
-        read(94, *, end = 999) !:Frame line
+    elseif (cm%clin(cfk%UL)%filefmt == 1) then
+        read(cm%basefileunit + cfk%UL, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read(94, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+            read(cm%basefileunit + cfk%UL, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read(94, *, end = 999) !:EndFrame line
+        read(cm%basefileunit + cfk%UL, *, end = 999) !:EndFrame line
         do i = 1, NA
             ULGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
@@ -390,8 +390,8 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_wind.csv
     !> *****************************************************************
-    elseif (BASINWINDFLAG == 2) then
-        read(94, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
+    elseif (cm%clin(cfk%UL)%filefmt == 2) then
+        read(cm%basefileunit + cfk%UL, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i=1, NML
             CURGRU = JLMOS(i)
             ULGAT(i) = INVECTOR(CURGRU)
@@ -404,25 +404,25 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_wind.seq
     !> *****************************************************************
-    elseif (BASINWINDFLAG == 3) then
-        read(94, end = 999) NTIME
-        read(94, end = 999) ULGRD
+    elseif (cm%clin(cfk%UL)%filefmt == 3) then
+        read(cm%basefileunit + cfk%UL, end = 999) NTIME
+        read(cm%basefileunit + cfk%UL, end = 999) ULGRD
         call GATHER(NA, NML, ILG, ILMOS, ULGRD, ULGAT)
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINWINDFLAG == 4) then
-        read(94, *, end = 999) (ULGRD(i), i = 1, NA)
+    elseif (cm%clin(cfk%UL)%filefmt == 4) then
+        read(cm%basefileunit + cfk%UL, *, end = 999) (ULGRD(i), i = 1, NA)
         call GATHER(NA, NML, ILG, ILMOS, ULGRD, ULGAT)
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINWINDFLAG == 5) then
-        call NeedUpdate_clim_data(cm, 5, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
-        ULGRD = cm%clin(5)%climv(:, cm%clin(5)%itime)
+    elseif (cm%clin(cfk%UL)%filefmt == 5) then
+        call NeedUpdate_clim_data(cm, cfk%UL, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+        ULGRD = cm%clin(cfk%UL)%climv(:, cm%clin(cfk%UL)%itime)
         call GATHER(NA, NML, ILG, ILMOS, ULGRD, ULGAT)
         ICOUNT = ICOUNT + 1
 
     else
-        print *, 'BASINWINDFLAG SHOULD BE EITHER 0, 1 0R 2'
+        print *, cm%clin(cfk%UL)%filefmt, ' SHOULD BE EITHER 0, 1 0R 2'
         stop
     end if
 
@@ -433,7 +433,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_pres.bin
     !> *****************************************************************
-    if (BASINPRESFLAG == 0) then
+    if (cm%clin(cfk%PRES)%filefmt == 0) then
         !> Skip the forcing data that is read from r2c and csv files.
         do k = 1, ICOUNT
             read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
@@ -447,12 +447,12 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_pres.r2c
     !> *****************************************************************
-    elseif (BASINPRESFLAG == 1) then
-        read(95, *, end = 999) !:Frame line
+    elseif (cm%clin(cfk%PRES)%filefmt == 1) then
+        read(cm%basefileunit + cfk%PRES, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read(95, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+            read(cm%basefileunit + cfk%PRES, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read(95, *, end = 999) !:EndFrame line
+        read(cm%basefileunit + cfk%PRES, *, end = 999) !:EndFrame line
         do i = 1, NA
             PRESGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
@@ -462,8 +462,8 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_pres.csv
     !> *****************************************************************
-    elseif (BASINPRESFLAG == 2) then
-        read(95, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
+    elseif (cm%clin(cfk%PRES)%filefmt == 2) then
+        read(cm%basefileunit + cfk%PRES, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i = 1, NML
             CURGRU = JLMOS(i)
             PRESGAT(i) = INVECTOR(CURGRU)
@@ -474,25 +474,25 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_pres.seq
     !> *****************************************************************
-    elseif (BASINPRESFLAG == 3) then
-        read(95, end = 999) NTIME
-        read(95, end = 999) PRESGRD
+    elseif (cm%clin(cfk%PRES)%filefmt == 3) then
+        read(cm%basefileunit + cfk%PRES, end = 999) NTIME
+        read(cm%basefileunit + cfk%PRES, end = 999) PRESGRD
         call GATHER(NA, NML, ILG, ILMOS, PRESGRD, PRESGAT)
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINPRESFLAG == 4) then
-        read(95, *, end = 999) (PRESGRD(i), i = 1, NA)
+    elseif (cm%clin(cfk%PRES)%filefmt == 4) then
+        read(cm%basefileunit + cfk%PRES, *, end = 999) (PRESGRD(i), i = 1, NA)
         call GATHER(NA, NML, ILG, ILMOS, PRESGRD, PRESGAT)
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINPRESFLAG == 5) then
-        call NeedUpdate_clim_data(cm, 6, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
-        PRESGRD = cm%clin(6)%climv(:, cm%clin(6)%itime)
+    elseif (cm%clin(cfk%PRES)%filefmt == 5) then
+        call NeedUpdate_clim_data(cm, cfk%PRES, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+        PRESGRD = cm%clin(cfk%PRES)%climv(:, cm%clin(cfk%PRES)%itime)
         call GATHER(NA, NML, ILG, ILMOS, PRESGRD, PRESGAT)
         ICOUNT = ICOUNT + 1
 
     else
-        print *, 'BASINPRESSUREFLAG SHOULD BE EITHER 0, 1 0R 2'
+        print *, cm%clin(cfk%PRES)%filefmt, ' SHOULD BE EITHER 0, 1 0R 2'
         stop
     end if
 
@@ -503,7 +503,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_humidity.bin
     !> *****************************************************************
-    if (BASINHUMIDITYFLAG == 0) then
+    if (cm%clin(cfk%QA)%filefmt == 0) then
         !> Skip the forcing data that is read from r2c and csv files.
         do k = 1, ICOUNT
             read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
@@ -517,12 +517,12 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_humidity.r2c
     !> *****************************************************************
-    elseif (BASINHUMIDITYFLAG == 1) then
-        read(96, *, end = 999) !:Frame line
+    elseif (cm%clin(cfk%QA)%filefmt == 1) then
+        read(cm%basefileunit + cfk%QA, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read(96, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+            read(cm%basefileunit + cfk%QA, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read (96, *, end = 999) !:EndFrame line
+        read (cm%basefileunit + cfk%QA, *, end = 999) !:EndFrame line
         do i = 1, NA
             QAGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
@@ -532,8 +532,8 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_humidity.csv
     !> *****************************************************************
-    elseif (BASINHUMIDITYFLAG == 2) then
-        read(96, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
+    elseif (cm%clin(cfk%QA)%filefmt == 2) then
+        read(cm%basefileunit + cfk%QA, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i = 1, NML
             CURGRU = JLMOS(i)
             QAGAT(i) = INVECTOR(CURGRU)
@@ -544,28 +544,28 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> *****************************************************************
     !> basin_humidity.seq
     !> *****************************************************************
-    elseif (BASINHUMIDITYFLAG == 3) then
-        read(96, end = 999) NTIME
-        read(96, end = 999) QAGRD
+    elseif (cm%clin(cfk%QA)%filefmt == 3) then
+        read(cm%basefileunit + cfk%QA, end = 999) NTIME
+        read(cm%basefileunit + cfk%QA, end = 999) QAGRD
         call GATHER(NA, NML, ILG, ILMOS, QAGRD, QAGAT)
         ICOUNT = ICOUNT + 1
 
     !> *****************************************************************
     !> basin_humidity.asc
     !> *****************************************************************
-    elseif (BASINHUMIDITYFLAG == 4) then
-        read(96, *, end = 999) (QAGRD(i), i = 1, NA)
+    elseif (cm%clin(cfk%QA)%filefmt == 4) then
+        read(cm%basefileunit + cfk%QA, *, end = 999) (QAGRD(i), i = 1, NA)
         call GATHER(NA, NML, ILG, ILMOS, QAGRD, QAGAT)
         ICOUNT = ICOUNT + 1
 
-    elseif (BASINHUMIDITYFLAG == 5) then
-        call NeedUpdate_clim_data(cm, 7, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
-        QAGRD = cm%clin(7)%climv(:, cm%clin(7)%itime)
+    elseif (cm%clin(cfk%QA)%filefmt == 5) then
+        call NeedUpdate_clim_data(cm, cfk%QA, itime, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+        QAGRD = cm%clin(cfk%QA)%climv(:, cm%clin(cfk%QA)%itime)
         call GATHER(NA, NML, ILG, ILMOS, QAGRD, QAGAT)
         ICOUNT = ICOUNT + 1
 
     else
-        print *, 'BASINHUMIDITYFLAG SHOULD BE EITHER 0, 1 0R 2'
+        print *, cm%clin(cfk%QA)%filefmt, ' SHOULD BE EITHER 0, 1 0R 2'
         stop
     end if
 

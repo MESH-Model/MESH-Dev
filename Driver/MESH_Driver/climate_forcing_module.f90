@@ -31,6 +31,7 @@
             character(15) :: id_var !climate variable name
             integer       :: flagID !Basic climage flag id
             integer       :: flagRead !type of format file
+            integer :: filefmt = 0
             integer       :: unitR !Number unit
             logical       :: openFl !true if file is open
             integer       :: readIndx !index in the block of time that we are reading
@@ -46,10 +47,62 @@
 
             integer :: na !number of cell inside the basin
             integer :: nclim !number of climate variables
+            integer :: basefileunit = 89
             type(clim_info_read) :: clin(8) !load extra rainfall
             !type(clim_info_read) :: clin(7)
 
          END TYPE
+
+    !> *****************************************************************
+    !> These are relative indices of the forcing files used throughout
+    !> the I/O code for climate forcing.
+    !> *****************************************************************
+    type climate_forcing_file_keys
+
+        !* FCLO: Fractional cloud cover [-]
+        !integer :: FCLO = -9999
+
+        !* FDL: Downwelling longwave sky radiation [W m-2]
+        integer :: FDL = 2
+
+        !* FS: Incoming solar radiation [W m-2]
+        !>       CLASS ordinarily requires that the forcing incoming
+        !>       shortwave radiation be partitioned into
+        !>       the visible and near-infrared components. If these
+        !>       are not available, however, they can each
+        !>       be roughly estimated as approximately half of the
+        !>       total incoming solar radiation.
+        !* FSIH: Near infrared shortwave radiation incident on a
+        !*       horizontal surface [W m-2]
+        !* FSVH: Visible shortwave radiation incident on a horizontal
+        !*       surface [W m-2]
+        integer :: FS = 1
+        !integer :: FSIH = -9999
+        !integer :: FSVH = -9999
+
+        !* PRE: Surface precipitation rate [kg m-2 s-1]
+        integer :: PRE = 3
+
+        !* PRES: Surface air pressure [Pa]
+        integer :: PRES = 6
+
+        !* QA: Specific humidity at reference height [kg kg-1]
+        integer :: QA = 7
+
+        !* TA: Air temperature at reference height [K]
+        integer :: TA = 4
+
+        !* UL: Zonal component of wind velocity [m s-1]
+        !>       CLASS does not actually require information on wind
+        !>       direction. Thus, if only the scalar wind
+        !>       speed is available, either ULGRD or VLGRD can be set
+        !>       to it, and the other to zero.
+        !* VL: Meridional component of wind velocity [m s-1]
+        integer :: UL = 5
+        !integer :: VL = -9999
+
+    end type
+
         !>******************************************************************************
 
     !> These variables are used to keep track of the number of forcing files
@@ -77,6 +130,8 @@
         FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, &
         TAGATPST, ULGATPST, PRESGATPST, QAGATPST
     real TRATIO
+
+    type(climate_forcing_file_keys) :: cfk
 
          contains
         !>******************************************************************************
@@ -141,7 +196,7 @@
     !> *****************************************************************
     !> Open the MESH_input_forcing.bin file
     !> *****************************************************************
-    subroutine climate_module_init(ts, bi, ENDDATA, &
+    subroutine climate_module_init(ts, bi, cm, ENDDATA, &
 !todo: These variables can be stored elsewhere instead of passed.
         YCOUNT)
 
@@ -150,6 +205,7 @@
         !> Input variables.
         type(DATES_MODEL) :: ts
         type(basin_info) :: bi
+        type(clim_info) :: cm
         logical ENDDATA
         integer YCOUNT
 
@@ -248,49 +304,49 @@
             end do
 
             !> R2C-format (ASCII).
-            if (BASINSHORTWAVEFLAG == 1) then !Skip the r2c file's information
+            if (cm%clin(cfk%FS)%filefmt == 1) then !Skip the r2c file's information
                 read(90, *, end = 999)
                 do m = 1, YCOUNT
                     Read (90, *, end = 999)
                 end do
                 read (90, *, end = 999) !:EndFrame line
             end if
-            if (BASINLONGWAVEFLAG == 1) then
+            if (cm%clin(cfk%FDL)%filefmt == 1) then
                 read(91, *, end = 999) !:Frame line
                 do m = 1, YCOUNT
                     read(91, *, end = 999)
                 end do
                 read(91, *, end = 999) !:EndFrame line
             end if
-            if (BASINRAINFLAG == 1) then
+            if (cm%clin(cfk%PRE)%filefmt == 1) then
                 read(92, *, end = 999) !:Frame line
                 do m = 1, YCOUNT
                     read(92, *, end = 999)
                 end do
                 read(92, *, end = 999) !:EndFrame line
             end if
-            if (BASINTEMPERATUREFLAG == 1) then
+            if (cm%clin(cfk%TA)%filefmt == 1) then
                 read(93, *, END=999) !:Frame line
                 do m = 1, YCOUNT
                     read(93, *, end = 999)
                 end do
                 read(93, *, end = 999) !:EndFrame line
             end if
-            if (BASINWINDFLAG == 1) then
+            if (cm%clin(cfk%UL)%filefmt == 1) then
                 read(94, *, end = 999) !:Frame line
                 do m = 1, YCOUNT
                     read(94, *, end = 999)
                 end do
                 read(94, *, end = 999) !:EndFrame line
             end if
-            if (BASINPRESFLAG == 1) then
+            if (cm%clin(cfk%PRES)%filefmt == 1) then
                 read(95, *, end = 999) !:Frame line
                 do m = 1, YCOUNT
                     read(95, *, end = 999)
                 end do
                 read(95, *, end = 999) !:EndFrame line
             end if
-            if (BASINHUMIDITYFLAG == 1) then
+            if (cm%clin(cfk%QA)%filefmt == 1) then
                 read(96, *, end = 999) !:Frame line
                 do m = 1, YCOUNT
                     read(96, *, end = 999)
@@ -299,25 +355,25 @@
             end if
 
             !> CSV-format.
-            if (BASINSHORTWAVEFLAG == 2) then !Skip the csv file's information
+            if (cm%clin(cfk%FS)%filefmt == 2) then !Skip the csv file's information
                 read(90, * , end = 999)
             end if
-            if (BASINLONGWAVEFLAG == 2) then
+            if (cm%clin(cfk%FDL)%filefmt == 2) then
                 read(91, *, end = 999)
             end if
-            if (BASINRAINFLAG == 2) then
+            if (cm%clin(cfk%PRE)%filefmt == 2) then
                 read(92, *, end = 999)
             end if
-            if (BASINTEMPERATUREFLAG == 2) then
+            if (cm%clin(cfk%TA)%filefmt == 2) then
                 read(93, *, end = 999)
             end if
-            if (BASINWINDFLAG == 2) then
+            if (cm%clin(cfk%UL)%filefmt == 2) then
                 read(94, *, end = 999)
             end if
-            if (BASINPRESFLAG == 2) then
+            if (cm%clin(cfk%PRES)%filefmt == 2) then
                 read(95, *, end = 999)
             end if
-            if (BASINHUMIDITYFLAG == 2) then
+            if (cm%clin(cfk%QA)%filefmt == 2) then
                 read(96, *, end = 999)
             end if
 
