@@ -1,613 +1,437 @@
-      SUBROUTINE READ_CHECK_FORCING_FILES(NA, cm, ts)
+subroutine READ_CHECK_FORCING_FILES(NA, cm, ts)
 
-      USE FLAGS
-      USE CLIMATE_FORCING
-      USE model_dates
+    use FLAGS
+    use climate_forcing
+    use model_dates
 
-      INTEGER NA
-!> local variables
-      INTEGER :: IOS
-!> This variable is used to ignore the header of r2c forcing files
-      CHARACTER(80) end_of_r2c_header
+    implicit none
 
-      type(clim_info)   :: cm
-      type(dates_model) :: ts
+    integer NA
 
-!> Reset the number of forcing variables not in the forcing binary file
-      NUM_R2C = 0
-      NUM_CSV = 0
-      NUM_SEQ = 0
+    !> IOS is passed when the file is opened. The program will stop if IOS /= 0.
+    integer IOS
+
+    !> This variable is used to skip the header of r2c files.
+    character(80) end_of_r2c_header
+
+    type(clim_info) :: cm
+    type(dates_model) :: ts
+
+    !> Reset the number of forcing variables not in the forcing binary
+    !> file.
+    NUM_R2C = 0
+    NUM_CSV = 0
+    NUM_SEQ = 0
+
 !todo change documentation to reflect that all 3 types of forcing files can be used
 
-!> *********************************************************************
-!> Open basin_shortwave.r2c or basin_shortwave.csv or basin_shortwave.seq
-!> *********************************************************************
+    !> *****************************************************************
+    !> Open shortwave radiation data.
+    !> *****************************************************************
 
-      IF (BASINSHORTWAVEFLAG == 1) THEN
+    if (BASINSHORTWAVEFLAG == 1) then
+        open(90, file = 'basin_shortwave.r2c', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_shortwave.r2c not found'
+            print *, 'please adjust the mesh_input_run_options.ini file'
+            print *, 'or put the r2c file in the correct location.'
+            close(90)
+            stop
+        else
+            NUM_R2C = NUM_R2C + 1
+            print *, 'basin_shortwave.r2c found'
+            end_of_r2c_header = ''
+            do while (end_of_r2c_header /= ":endHeader")
+                read(90, '(A10)') end_of_r2c_header
+            end do
+        end if
 
-        OPEN(unit=90,file='basin_shortwave.r2c', &
-             STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin shortwave file exists
-          PRINT *, 'basin_shortwave.r2c not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file'
-          PRINT *, 'or put the r2c file in the correct location.'
-          CLOSE(90)
-          STOP
-        ELSE
-          !> basin shortwave files does exist, 
-          !> use Pablo's code related to shortwave
-          NUM_R2C = NUM_R2C + 1
-          PRINT *, 'basin_shortwave.r2c found'
-          end_of_r2c_header = ""
-          DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (90, '(A10)') end_of_r2c_header
-          ENDDO
-        ENDIF
-      ELSEIF (BASINSHORTWAVEFLAG == 2) THEN
-        OPEN(unit=90,file='basin_shortwave.csv',&
-             STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin shortwave file exists
-          PRINT *, 'basin_shortwave.csv not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file'
-          PRINT *, 'or put the csv file in the correct location.'
-          CLOSE(90)
-          STOP
-        ELSE
-          NUM_CSV = NUM_CSV + 1
-          PRINT *, 'basin_shortwave.csv found'
-        ENDIF
+    elseif (BASINSHORTWAVEFLAG == 2) then
+        open(90, file = 'basin_shortwave.csv', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_shortwave.csv not found'
+            print *, 'please adjust the mesh_input_run_options.ini file'
+            print *, 'or put the csv file in the correct location.'
+            close(90)
+            stop
+        else
+            NUM_CSV = NUM_CSV + 1
+            print *, 'basin_shortwave.csv found'
+        end if
 
-      ELSEIF (BASINSHORTWAVEFLAG == 3) THEN
+    elseif (BASINSHORTWAVEFLAG == 3) then
+        open(90, file = 'basin_shortwave.seq', action = 'read', status = 'old', form = 'unformatted', &
+             access = 'sequential', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_shortwave.seq not found'
+            print *, 'please adjust the mesh_input_run_options.ini file'
+            print *, 'or put the seq file in the correct location.'
+            close(90)
+            stop
+        else
+            NUM_SEQ = NUM_SEQ + 1
+            print *, 'basin_shortwave.seq found'
+        end if
 
-        OPEN(UNIT   = 90                    , &
-             FILE   = 'basin_shortwave.seq' , &
-             STATUS = 'OLD'                 , &
-             FORM   = 'unformatted'         , &
-             ACTION = 'read'                , &
-             ACCESS = 'sequential'          , &
-             IOSTAT = IOS                   )
+    elseif (BASINSHORTWAVEFLAG == 4) then
+        open(90, file = 'basin_shortwave.asc', action = 'read', status = 'old', form = 'formatted', iostat = IOS)
 
-!> IOS would be 0 if the file opened successfully.
-
-        IF(IOS/=0)THEN
-          !> no basin shortwave file exists
-          PRINT *, 'basin_shortwave.seq not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file'
-          PRINT *, 'or put the seq file in the correct location.'
-          CLOSE(90)
-          STOP
-        ELSE
-          NUM_SEQ = NUM_SEQ + 1
-          PRINT *, 'basin_shortwave.seq found'
-        ENDIF
-
-      ELSEIF (BASINSHORTWAVEFLAG == 4) THEN
-
-        OPEN(UNIT   =  90               , &
-             FILE   = 'basin_shortwave.asc'  , &
-             STATUS = 'OLD'             , &
-             FORM   = 'formatted'       , &
-             ACTION = 'read'            , &
-             IOSTAT =  IOS              )
-
-      ELSEIF (BASINSHORTWAVEFLAG == 5) THEN
-
+    elseif (BASINSHORTWAVEFLAG == 5) then
         NUM_SEQ = NUM_SEQ + 1
+        call INIT_CLIM_INFO(cm, ts, 1, NA)
+        call INIT_CLIM_DATA(cm, 'shortwave', 90)
 
-        CALL INIT_CLIM_INFO(cm,ts,1,NA)
-        CALL INIT_CLIM_DATA(cm,'shortwave',90)
+    end if
 
-      ENDIF
+    !> *****************************************************************
+    !> Open longwave radiation data.
+    !> *****************************************************************
+    if (BASINLONGWAVEFLAG == 1) then
+        open(91, file = 'basin_longwave.r2c', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_longwave.r2c not found'
+            print *, 'please adjust the mesh_input_run_options.ini file,'
+            print *, 'or put the r2c file in the correct location.'
+            close(91)
+            stop
+        else
+            NUM_R2C = NUM_R2C + 1
+            print *, 'basin_longwave.r2c found'
+            end_of_r2c_header = ''
+            do while (end_of_r2c_header /= ":endHeader")
+                read(90, '(A10)') end_of_r2c_header
+            end do
+        end if
 
+    elseif (BASINLONGWAVEFLAG == 2) then
+        open(91, file = 'basin_longwave.csv', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_longwave.csv not found'
+            print *, 'please adjust the mesh_input_run_options.ini file,'
+            print *, 'or put the csv file in the correct location.'
+            close(91)
+            stop
+        else
+            NUM_CSV = NUM_CSV + 1
+            print *, 'basin_longwave.csv found'
+        end if
 
-!> *********************************************************************
-!> Open basin_longwave.r2c or basin_longwave.csv
-!> *********************************************************************
-      IF (BASINLONGWAVEFLAG == 1) THEN
-        OPEN(unit=91,file='basin_longwave.r2c', &
-             STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !>no basin longwave file exists
-          PRINT *, 'basin_longwave.r2c not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file,'
-          PRINT *, 'or put the r2c file in the correct location.'
-          CLOSE(91)
-          STOP
-        ELSE
-          !basin longwave files does exist, use 'default' c05 behaviour
-          NUM_R2C = NUM_R2C + 1
-          PRINT *, 'basin_longwave.r2c found'
-         end_of_r2c_header = ""
-          DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (91, '(A10)') end_of_r2c_header
-          ENDDO
-        ENDIF
-      ELSEIF (BASINLONGWAVEFLAG == 2) THEN
-        OPEN(unit=91,file='basin_longwave.csv', &
-            STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin longwave file exists
-          PRINT *, 'basin_longwave.csv not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file,'
-          PRINT *, 'or put the csv file in the correct location.'
-          CLOSE(91)
-          STOP
-        ELSE
-          NUM_CSV = NUM_CSV + 1
-          PRINT *, 'basin_longwave.csv found'
-        ENDIF
+    elseif (BASINLONGWAVEFLAG == 3) then
+        open(91, file = 'basin_longwave.seq', action = 'read', status = 'old', form = 'unformatted', &
+             access = 'sequential', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_longwave.seq not found'
+            print *, 'please adjust the mesh_input_run_options.ini file'
+            print *, 'or put the seq file in the correct location.'
+            close(91)
+            stop
+        else
+            NUM_SEQ = NUM_SEQ + 1
+            print *, 'basin_longwave.seq found'
+        end if
 
-      ELSEIF (BASINLONGWAVEFLAG == 3) THEN
+    elseif (BASINLONGWAVEFLAG == 4) then
+        open(91, file = 'basin_longwave.asc', action = 'read', status = 'old', form = 'formatted', iostat = IOS)
 
-        OPEN(UNIT   = 91                    , &
-             FILE   = 'basin_longwave.seq'  , &
-             STATUS = 'OLD'                 , &
-             FORM   = 'unformatted'         , &
-             ACTION = 'read'                , &
-             ACCESS = 'sequential'          , &
-             IOSTAT = IOS                   )
-
-!> IOS would be 0 if the file opened successfully.
-
-        IF(IOS/=0)THEN
-          !> no basin longwave file exists
-          PRINT *, 'basin_longwave.seq not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file'
-          PRINT *, 'or put the seq file in the correct location.'
-          CLOSE(91)
-          STOP
-         ELSE
-          NUM_SEQ = NUM_SEQ + 1
-          PRINT *, 'basin_longwave.seq found'
-        ENDIF
-
-      ELSEIF (BASINLONGWAVEFLAG == 4) THEN
-
-        OPEN(UNIT   =  91               , &
-             FILE   = 'basin_longwave.asc'  , &
-             STATUS = 'OLD'             , &
-             FORM   = 'formatted'       , &
-             ACTION = 'read'            , &
-             IOSTAT =  IOS              )
-
-      ELSEIF (BASINLONGWAVEFLAG == 5) THEN
-
+    elseif (BASINLONGWAVEFLAG == 5) then
         NUM_SEQ = NUM_SEQ + 1
+        call INIT_CLIM_INFO(cm, ts, 2, NA)
+        call INIT_CLIM_DATA(cm, 'longwave', 91)
 
-        CALL INIT_CLIM_INFO(cm,ts,2,NA)
-        CALL INIT_CLIM_DATA(cm,'longwave',91)
+    end if
 
-      ENDIF
+    !> *****************************************************************
+    !> Open precipitation data.
+    !> *****************************************************************
+    if (BASINRAINFLAG == 1) then
+        open(92, file = 'basin_rain.r2c', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_rain.r2c not found'
+            print *, 'please adjust the mesh_input_run_options.ini file'
+            print *, 'or put the r2c file in the correct location.'
+            close(92)
+            stop
+        else
+            NUM_R2C = NUM_R2C + 1
+            print *, 'basin_rain.r2c found'
+            end_of_r2c_header = ''
+            do while (end_of_r2c_header /= ":endHeader")
+                read(90, '(A10)') end_of_r2c_header
+            end do
+        end if
 
-!> *********************************************************************
-!> Open basin_rain.r2c or basin_rain.csv
-!> *********************************************************************
-      IF (BASINRAINFLAG == 1) THEN
-        OPEN(unit=92,file='basin_rain.r2c', &
-             STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin rain file exists
-          PRINT *, 'basin_rain.r2c not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file'
-          PRINT *, 'or put the r2c file in the correct location.'
-          CLOSE(92)
-          STOP
-        ELSE
-          !basin rain files does exist, use 'default' c05 behaviour
-          NUM_R2C = NUM_R2C + 1
-          PRINT *, 'basin_rain.r2c found'
-         end_of_r2c_header = ""
-          DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (92, '(A10)') end_of_r2c_header
-          ENDDO
-        ENDIF
-      ELSEIF (BASINRAINFLAG == 2) THEN
-        OPEN(unit=92,file='basin_rain.csv', &
-            STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin rain file exists
-          PRINT *, 'basin_rain.csv not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file'
-          PRINT *, 'or put the csv file in the correct location.'
-          CLOSE(92)
-          STOP
-        ELSE
-          NUM_CSV = NUM_CSV + 1
-          PRINT *, 'basin_rain.csv found'
-        ENDIF
+    elseif (BASINRAINFLAG == 2) then
+        open(92, file = 'basin_rain.csv', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_rain.csv not found'
+            print *, 'please adjust the mesh_input_run_options.ini file'
+            print *, 'or put the csv file in the correct location.'
+            close(92)
+            stop
+        else
+            NUM_CSV = NUM_CSV + 1
+            print *, 'basin_rain.csv found'
+        end if
 
-      ELSEIF (BASINRAINFLAG == 3) THEN
+    elseif (BASINRAINFLAG == 3) then
+        open(92, file = 'basin_rain.seq', action = 'read', status = 'old', form = 'unformatted', &
+             access = 'sequential', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_rain.seq not found'
+            print *, 'please adjust the mesh_input_run_options.ini file'
+            print *, 'or put the seq file in the correct location.'
+            close(92)
+            stop
+        else
+            NUM_SEQ = NUM_SEQ + 1
+            print *, 'basin_rain.seq found'
+        end if
 
-        OPEN(UNIT   = 92                , &
-             FILE   = 'basin_rain.seq'  , &
-             STATUS = 'OLD'             , &
-             FORM   = 'unformatted'     , &
-             ACTION = 'read'            , &
-             ACCESS = 'sequential'      , &
-             IOSTAT = IOS               )
+    elseif (BASINRAINFLAG == 4) then
+        open(92, file = 'basin_rain.asc', action = 'read', status = 'old', form = 'formatted', iostat = IOS)
 
-!> IOS would be 0 if the file opened successfully.
-
-        IF(IOS/=0)THEN
-          !> no basin rain file exists
-          PRINT *, 'basin_rain.seq not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file'
-          PRINT *, 'or put the seq file in the correct location.'
-          CLOSE(92)
-          STOP
-                  ELSE
-          NUM_SEQ = NUM_SEQ + 1
-          PRINT *, 'basin_rain.seq found'
-        ENDIF
-      ELSEIF (BASINRAINFLAG == 4) THEN
-
-        OPEN(UNIT   =  92               , &
-             FILE   = 'basin_rain.asc'  , &
-             STATUS = 'OLD'             , &
-             FORM   = 'formatted'       , &
-             ACTION = 'read'            , &
-             IOSTAT =  IOS              )
-
-
-
-      ELSEIF (BASINRAINFLAG == 5) THEN
-
+    elseif (BASINRAINFLAG == 5) then
         NUM_SEQ = NUM_SEQ + 1
+        call INIT_CLIM_INFO(cm, ts, 3, NA)
+        call INIT_CLIM_DATA(cm, 'rain', 92)
 
-        CALL INIT_CLIM_INFO(cm,ts,3,NA)
-        CALL INIT_CLIM_DATA(cm,'rain',92)
-
-      ELSEIF (BASINRAINFLAG == 6) THEN
-
+    elseif (BASINRAINFLAG == 6) then
         NUM_SEQ = NUM_SEQ + 1
-        
-        CALL INIT_CLIM_INFO(cm,ts,3,NA)
-        CALL INIT_CLIM_DATA(cm,'rain' ,921)
+        call INIT_CLIM_INFO(cm, ts, 3, NA)
+        call INIT_CLIM_DATA(cm, 'rain', 921)
+        call INIT_CLIM_INFO(cm, ts, 8, NA)
+        call INIT_CLIM_DATA(cm, 'rain_2', 922)
 
-        CALL INIT_CLIM_INFO(cm,ts,8,NA)
-        CALL INIT_CLIM_DATA(cm,'rain_2',922)        
-        
-      ENDIF
+    end if
 
-!> *********************************************************************
-!> Open basin_temperature.r2c or basin_temperature.csv
-!> *********************************************************************
-      IF (BASINTEMPERATUREFLAG == 1) THEN
-        OPEN(unit=93,file='basin_temperature.r2c', &
-            STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin temperature file exists
-          PRINT *, 'basin_temperature.r2c not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file,'
-          PRINT *, 'or put the r2c file in the correct location.'
-          CLOSE(93)
-          STOP
-        ELSE
-          !> basin temperature files does exist, use 'default' c05 behaviour
-          NUM_R2C = NUM_R2C + 1
-          PRINT *, 'basin_temperature.r2c found'
-         end_of_r2c_header = ""
-          DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (93, '(A10)') end_of_r2c_header
-          ENDDO
-        ENDIF
+    !> *****************************************************************
+    !> Open temperature data.
+    !> *****************************************************************
+    if (BASINTEMPERATUREFLAG == 1) then
+        open(93, file = 'basin_temperature.r2c', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_temperature.r2c not found'
+            print *, 'please adjust the mesh_input_run_options.ini file,'
+            print *, 'or put the r2c file in the correct location.'
+            close(93)
+            stop
+        else
+            NUM_R2C = NUM_R2C + 1
+            print *, 'basin_temperature.r2c found'
+            end_of_r2c_header = ''
+            do while (end_of_r2c_header /= ":endHeader")
+                read(90, '(A10)') end_of_r2c_header
+            end do
+        end if
 
-      ELSEIF (BASINTEMPERATUREFLAG == 2) THEN
-        OPEN(unit=93,file='basin_temperature.csv', &
-            STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin temperature file exists
-          PRINT *, 'basin_temperature.csv not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file,'
-          PRINT *, 'or put the csv file in the correct location.'
-          CLOSE(93)
-          STOP
-        ELSE
-          NUM_CSV = NUM_CSV + 1
-          PRINT *, 'basin_temperature.csv found'
-        ENDIF
+    elseif (BASINTEMPERATUREFLAG == 2) then
+        open(93, file = 'basin_temperature.csv', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_temperature.csv not found'
+            print *, 'please adjust the mesh_input_run_options.ini file,'
+            print *, 'or put the csv file in the correct location.'
+            close(93)
+            stop
+        else
+            NUM_CSV = NUM_CSV + 1
+            print *, 'basin_temperature.csv found'
+        end if
 
-      ELSEIF (BASINTEMPERATUREFLAG == 3) THEN
+    elseif (BASINTEMPERATUREFLAG == 3) then
+        open(93, file = 'basin_temperature.seq', action = 'read', status = 'old', form = 'unformatted', &
+             access = 'sequential', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_temperature.seq not found'
+            print *, 'please adjust the mesh_input_run_options.ini file'
+            print *, 'or put the seq file in the correct location.'
+            close(93)
+            stop
+        else
+            NUM_SEQ = NUM_SEQ + 1
+            print *, 'basin_temperature.seq found'
+        end if
 
-        OPEN(UNIT   =  93                      , &
-             FILE   = 'basin_temperature.seq'  , &
-             STATUS = 'OLD'                    , &
-             FORM   = 'unformatted'            , &
-             ACTION = 'read'                   , &
-             ACCESS = 'sequential'             , &
-             IOSTAT =  IOS                     )
+    elseif (BASINTEMPERATUREFLAG == 4) then
+        open(93, file = 'basin_temperature.asc', action = 'read', status = 'old', form = 'formatted', iostat = IOS)
 
-!> IOS would be 0 if the file opened successfully.
-
-        IF(IOS/=0)THEN
-          !> no basin temp file exists
-          PRINT *, 'basin_temperature.seq not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file'
-          PRINT *, 'or put the seq file in the correct location.'
-          CLOSE(93)
-          STOP
-
-                  ELSE
-          NUM_SEQ = NUM_SEQ + 1
-          PRINT *, 'basin_temperature.seq found'
-        ENDIF
-
-      ELSEIF (BASINTEMPERATUREFLAG == 4) THEN
-
-        OPEN(UNIT   =  93               , &
-             FILE   = 'basin_temperature.asc'  , &
-             STATUS = 'OLD'             , &
-             FORM   = 'formatted'       , &
-             ACTION = 'read'            , &
-             IOSTAT =  IOS              )
-
-
-      ELSEIF (BASINTEMPERATUREFLAG == 5) THEN
-
+    elseif (BASINTEMPERATUREFLAG == 5) then
         NUM_SEQ = NUM_SEQ + 1
+        call INIT_CLIM_INFO(cm, ts, 4, NA)
+        call INIT_CLIM_DATA(cm, 'temp', 93)
 
-        CALL INIT_CLIM_INFO(cm,ts,4,NA)
-        CALL INIT_CLIM_DATA(cm,'temp',93)
+    end if
 
-      ENDIF
+    !> *****************************************************************
+    !> Open wind data.
+    !> *****************************************************************
+    if (BASINWINDFLAG == 1) then
+        open(94, file = 'basin_wind.r2c', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_wind.r2c not found'
+            print *, 'please adjust the mesh_input_run_options.ini file,'
+            print *, 'or put the r2c file in the correct location.'
+            close(94)
+            stop
+        else
+            NUM_R2C = NUM_R2C + 1
+            print *, 'basin_wind.r2c found'
+            end_of_r2c_header = ''
+            do while (end_of_r2c_header /= ":endHeader")
+                read(90, '(A10)') end_of_r2c_header
+            end do
+        end if
 
-!> *********************************************************************
-!> Open basin_wind.r2c or basin_wind.csv
-!> *********************************************************************
-      IF (BASINWINDFLAG == 1) THEN
-        OPEN(unit=94,file='basin_wind.r2c', &
-            STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin wind file exists
-          PRINT *, 'basin_wind.r2c not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file,'
-          PRINT *, 'or put the r2c file in the correct location.'
-          CLOSE(94)
-          STOP
-        ELSE
-          !> basin wind files does exist, use 'default' c05 behaviour
-          NUM_R2C = NUM_R2C + 1
-          PRINT *, 'basin_wind.r2c found'
-         end_of_r2c_header = ""
-          DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (94, '(A10)') end_of_r2c_header
-          ENDDO
-        ENDIF
-      ELSEIF (BASINWINDFLAG == 2) THEN
-        OPEN(unit=94,file='basin_wind.csv', &
-            STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin wind file exists
-          PRINT *, 'basin_wind.csv not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file,'
-          PRINT *, 'or put the csv file in the correct location.'
-          CLOSE(94)
-          STOP
-        ELSE
-          NUM_CSV = NUM_CSV + 1
-          PRINT *, 'basin_wind.csv found'
-        ENDIF
+    elseif (BASINWINDFLAG == 2) then
+        open(94, file = 'basin_wind.csv', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_wind.csv not found'
+            print *, 'please adjust the mesh_input_run_options.ini file,'
+            print *, 'or put the csv file in the correct location.'
+            close(94)
+            stop
+        else
+            NUM_CSV = NUM_CSV + 1
+            print *, 'basin_wind.csv found'
+        end if
 
-      ELSEIF (BASINWINDFLAG == 3) THEN
+      elseif (BASINWINDFLAG == 3) then
+        open(94, file = 'basin_wind.seq', action = 'read', status = 'old', form = 'unformatted', &
+             access = 'sequential', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_wind.seq not found'
+            print *, 'please adjust the mesh_input_run_options.ini file'
+            print *, 'or put the seq file in the correct location.'
+            close(94)
+            stop
+        else
+            NUM_SEQ = NUM_SEQ + 1
+            print *, 'basin_wind.seq found'
+        end if
 
-        OPEN(UNIT   =  94               , &
-             FILE   = 'basin_wind.seq'  , &
-             STATUS = 'OLD'             , &
-             FORM   = 'unformatted'     , &
-             ACTION = 'read'            , &
-             ACCESS = 'sequential'      , &
-             IOSTAT =  IOS              )
+    elseif (BASINWINDFLAG == 4) then
+        open(94, file = 'basin_wind.asc', action = 'read', status = 'old', form = 'formatted', iostat = IOS)
 
-!> IOS would be 0 if the file opened successfully.
-
-        IF(IOS/=0)THEN
-          !> no basin wind file exists
-          PRINT *, 'basin_wind.seq not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file'
-          PRINT *, 'or put the seq file in the correct location.'
-          CLOSE(94)
-          STOP
-        ELSE
-          NUM_SEQ = NUM_SEQ + 1
-          PRINT *, 'basin_wind.seq found'
-        ENDIF
-      ELSEIF (BASINWINDFLAG == 4) THEN
-
-        OPEN(UNIT   =  94               , &
-             FILE   = 'basin_wind.asc'  , &
-             STATUS = 'OLD'             , &
-             FORM   = 'formatted'       , &
-             ACTION = 'read'            , &
-             IOSTAT =  IOS              )
-
-
-      ELSEIF (BASINWINDFLAG == 5) THEN
-
+    elseif (BASINWINDFLAG == 5) then
         NUM_SEQ = NUM_SEQ + 1
+        call INIT_CLIM_INFO(cm, ts, 5, NA)
+        call INIT_CLIM_DATA(cm, 'wind', 94)
 
-        CALL INIT_CLIM_INFO(cm,ts,5,NA)
-        CALL INIT_CLIM_DATA(cm,'wind',94)
+    end if
 
-      ENDIF
+    !> *****************************************************************
+    !> Open pressure data.
+    !> *****************************************************************
+    if (BASINPRESFLAG == 1) then
+        open(95, file = 'basin_pres.r2c', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_pres.r2c not found'
+            print *, 'please adjust the mesh_input_run_options.ini file,'
+            print *, 'or put the r2cfile in the correct location.'
+            close(95)
+            stop
+        else
+            NUM_R2C = NUM_R2C + 1
+            print *, 'basin_pres.r2c found'
+            end_of_r2c_header = ''
+            do while (end_of_r2c_header /= ":endHeader")
+                read(90, '(A10)') end_of_r2c_header
+            end do
+        end if
 
-!> *********************************************************************
-!> Open basin_pres.r2c or basin_pres.csv
-!> *********************************************************************
-      IF (BASINPRESFLAG == 1) THEN
-        OPEN(unit=95,file='basin_pres.r2c', &
-            STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin pres file exists
-          PRINT *, 'basin_pres.r2c not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file,'
-          PRINT *, 'or put the r2cfile in the correct location.'
-          CLOSE(95)
-          STOP
-        ELSE
-          !> basin pres files does exist, use 'default' c05 behaviour
-          NUM_R2C = NUM_R2C + 1
-          PRINT *, 'basin_pres.r2c found'
-         end_of_r2c_header = ""
-          DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (95, '(A10)') end_of_r2c_header
-          ENDDO
-        ENDIF
-      ELSEIF (BASINPRESFLAG == 2) THEN
-        OPEN(unit=95,file='basin_pres.csv', &
-            STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin pres file exists
-          PRINT *, 'basin_pres.csv not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file,'
-          PRINT *, 'or put the csv file in the correct location.'
-          CLOSE(95)
-          STOP
-        ELSE
-          NUM_CSV = NUM_CSV + 1
-          PRINT *, 'basin_pres.csv found'
-        ENDIF
+    elseif (BASINPRESFLAG == 2) then
+        open(95, file = 'basin_pres.csv', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_pres.csv not found'
+            print *, 'please adjust the mesh_input_run_options.ini file,'
+            print *, 'or put the csv file in the correct location.'
+            close(95)
+            stop
+        else
+            NUM_CSV = NUM_CSV + 1
+            print *, 'basin_pres.csv found'
+        end if
 
-      ELSEIF (BASINPRESFLAG == 3) THEN
+    elseif (BASINPRESFLAG == 3) then
+        open(95, file = 'basin_pres.seq', action = 'read', status = 'old', form = 'unformatted', &
+             access = 'sequential', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_pres.seq not found'
+            print *, 'please adjust the mesh_input_run_options.ini file'
+            print *, 'or put the seq file in the correct location.'
+            close(95)
+            stop
+        else
+            NUM_SEQ = NUM_SEQ + 1
+            print *, 'basin_pres.seq found'
+        end if
 
-        OPEN(UNIT   =  95               , &
-             FILE   = 'basin_pres.seq'  , &
-             STATUS = 'OLD'             , &
-             FORM   = 'unformatted'     , &
-             ACTION = 'read'            , &
-             ACCESS = 'sequential'      , &
-             IOSTAT =  IOS              )
+    elseif (BASINPRESFLAG == 4) then
+        open(95, file = 'basin_pres.asc', action = 'read', status = 'old', form = 'formatted', iostat = IOS)
 
-!> IOS would be 0 if the file opened successfully.
-
-        IF(IOS/=0)THEN
-          !> no basin pressure file exists
-          PRINT *, 'basin_pres.seq not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file'
-          PRINT *, 'or put the seq file in the correct location.'
-          CLOSE(95)
-          STOP
-        ELSE
-          NUM_SEQ = NUM_SEQ + 1
-          PRINT *, 'basin_pres.seq found'
-        ENDIF
-
-
-
-      ELSEIF (BASINPRESFLAG == 4) THEN
-
-        OPEN(UNIT   =  95               , &
-             FILE   = 'basin_pres.asc'  , &
-             STATUS = 'OLD'             , &
-             FORM   = 'formatted'       , &
-             ACTION = 'read'            , &
-             IOSTAT =  IOS              )
-
-      ELSEIF (BASINPRESFLAG == 5) THEN
-
+    elseif (BASINPRESFLAG == 5) then
         NUM_SEQ = NUM_SEQ + 1
+        call INIT_CLIM_INFO(cm, ts, 6, NA)
+        call INIT_CLIM_DATA(cm, 'pressure', 95)
 
-        CALL INIT_CLIM_INFO(cm,ts,6,NA)
-        CALL INIT_CLIM_DATA(cm,'pressure',95)
+    end if
 
+    !> *****************************************************************
+    !> Open humidity data.
+    !> *****************************************************************
+    if (BASINHUMIDITYFLAG == 1) then
+        open(96, file = 'basin_humidity.r2c', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_humidity.r2c not found'
+            print *, 'please adjust the mesh_input_run_options.ini file,'
+            print *, 'or put the r2c file in the correct location.'
+            close(96)
+            stop
+        else
+            NUM_R2C = NUM_R2C + 1
+            print *, 'basin_humidity.r2c found'
+            end_of_r2c_header = ''
+            do while (end_of_r2c_header /= ":endHeader")
+                read(90, '(A10)') end_of_r2c_header
+            end do
+        end if
 
-      ENDIF
+    elseif (BASINHUMIDITYFLAG == 2) then
+        open(96, file = 'basin_humidity.csv', action = 'read', status = 'old', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_humidity.csv not found'
+            print *, 'please adjust the mesh_input_run_options.ini file,'
+            print *, 'or put the csv file in the correct location.'
+            close(96)
+            stop
+        else
+            NUM_CSV = NUM_CSV + 1
+            print *, 'basin_humidity.csv found'
+        end if
 
-!>  *********************************************************************
-!> Open basin_humidity.r2c or basin_humidity.csv
-!> *********************************************************************
-      IF (BASINHUMIDITYFLAG == 1) THEN
-        OPEN(unit=96,file='basin_humidity.r2c', &
-             STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin humidity file exists
-          PRINT *, 'basin_humidity.r2c not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file,'
-          PRINT *, 'or put the r2c file in the correct location.'
-          CLOSE(96)
-          STOP
-        ELSE
-          !> basin humidity files does exist, use 'default' c05 behaviour
-          NUM_R2C = NUM_R2C + 1
-          PRINT *, 'basin_humidity.r2c found'
-         end_of_r2c_header = ""
-          DO WHILE (end_of_r2c_header /= ":endHeader")
-            READ (96, '(A10)') end_of_r2c_header
-          ENDDO
-        ENDIF
-      ELSEIF (BASINHUMIDITYFLAG == 2) THEN
-        OPEN(unit=96,file='basin_humidity.csv', &
-             STATUS='OLD',IOSTAT=IOS)
-!> IOS would be 0 if the file opened successfully.
-        IF(IOS/=0)THEN
-          !> no basin humidity file exists
-          PRINT *, 'basin_humidity.csv not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file,'
-          PRINT *, 'or put the csv file in the correct location.'
-          CLOSE(96)
-          STOP
-        ELSE
-          NUM_CSV = NUM_CSV + 1
-          PRINT *, 'basin_humidity.csv found'
-        ENDIF
+    elseif (BASINHUMIDITYFLAG == 3) then
+        open(96, file = 'basin_humidity.seq', action = 'read', status = 'old', form = 'unformatted', &
+             access = 'sequential', iostat = IOS)
+        if (IOS /= 0) then
+            print *, 'basin_humidity.seq not found'
+            print *, 'please adjust the mesh_input_run_options.ini file'
+            print *, 'or put the seq file in the correct location.'
+            close(96)
+            stop
+        else
+            NUM_SEQ = NUM_SEQ + 1
+            print *, 'basin_humidity.seq found'
+        end if
 
-      ELSEIF (BASINHUMIDITYFLAG == 3) THEN
+    elseif (BASINHUMIDITYFLAG == 4) then
+        open(96, file = 'basin_humidity.asc', action = 'read', status = 'old', form = 'formatted', iostat = IOS)
 
-        OPEN(UNIT   =  96                  , &
-             FILE   = 'basin_humidity.seq' , &
-             STATUS = 'OLD'                , &
-             FORM   = 'unformatted'        , &
-             ACTION = 'read'               , &
-             ACCESS = 'sequential'         , &
-             IOSTAT =  IOS                 )
-
-!> IOS would be 0 if the file opened successfully.
-
-        IF(IOS/=0)THEN
-          !> no basin humidity file exists
-          PRINT *, 'basin_humidity.seq not found'
-          PRINT *, 'please adjust the mesh_input_run_options.ini file'
-          PRINT *, 'or put the seq file in the correct location.'
-          CLOSE(96)
-          STOP
-        ELSE
-          NUM_SEQ = NUM_SEQ + 1
-          PRINT *, 'basin_humidity.seq found'
-        ENDIF
-
-      ELSEIF (BASINHUMIDITYFLAG == 4) THEN
-
-        OPEN(UNIT   =  96                  , &
-             FILE   = 'basin_humidity.asc' , &
-             STATUS = 'OLD'                , &
-             FORM   = 'FORMATTED'          , &
-             ACTION = 'read'               , &
-             IOSTAT =  IOS                 )
-
-      ELSEIF (BASINHUMIDITYFLAG == 5) THEN
-
+    elseif (BASINHUMIDITYFLAG == 5) then
         NUM_SEQ = NUM_SEQ + 1
+        call INIT_CLIM_INFO(cm, ts, 7, NA)
+        call INIT_CLIM_DATA(cm, 'humidity', 96)
 
-        CALL INIT_CLIM_INFO(cm,ts,7,NA)
-        CALL INIT_CLIM_DATA(cm,'humidity',96)
+    end if
 
-      ENDIF
+    return
 
-      RETURN
-
-      END SUBROUTINE READ_CHECK_FORCING_FILES
-
+end subroutine !READ_CHECK_FORCING_FILES
