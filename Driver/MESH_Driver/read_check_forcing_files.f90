@@ -99,7 +99,7 @@ subroutine READ_CHECK_FORCING_FILES(NA, cm, ts)
             print *, 'basin_longwave.r2c found'
             end_of_r2c_header = ''
             do while (end_of_r2c_header /= ":endHeader")
-                read(90, '(A10)') end_of_r2c_header
+                read(91, '(A10)') end_of_r2c_header
             end do
         end if
 
@@ -156,7 +156,7 @@ subroutine READ_CHECK_FORCING_FILES(NA, cm, ts)
             print *, 'basin_rain.r2c found'
             end_of_r2c_header = ''
             do while (end_of_r2c_header /= ":endHeader")
-                read(90, '(A10)') end_of_r2c_header
+                read(92, '(A10)') end_of_r2c_header
             end do
         end if
 
@@ -220,7 +220,7 @@ subroutine READ_CHECK_FORCING_FILES(NA, cm, ts)
             print *, 'basin_temperature.r2c found'
             end_of_r2c_header = ''
             do while (end_of_r2c_header /= ":endHeader")
-                read(90, '(A10)') end_of_r2c_header
+                read(93, '(A10)') end_of_r2c_header
             end do
         end if
 
@@ -277,7 +277,7 @@ subroutine READ_CHECK_FORCING_FILES(NA, cm, ts)
             print *, 'basin_wind.r2c found'
             end_of_r2c_header = ''
             do while (end_of_r2c_header /= ":endHeader")
-                read(90, '(A10)') end_of_r2c_header
+                read(94, '(A10)') end_of_r2c_header
             end do
         end if
 
@@ -334,7 +334,7 @@ subroutine READ_CHECK_FORCING_FILES(NA, cm, ts)
             print *, 'basin_pres.r2c found'
             end_of_r2c_header = ''
             do while (end_of_r2c_header /= ":endHeader")
-                read(90, '(A10)') end_of_r2c_header
+                read(95, '(A10)') end_of_r2c_header
             end do
         end if
 
@@ -391,7 +391,7 @@ subroutine READ_CHECK_FORCING_FILES(NA, cm, ts)
             print *, 'basin_humidity.r2c found'
             end_of_r2c_header = ''
             do while (end_of_r2c_header /= ":endHeader")
-                read(90, '(A10)') end_of_r2c_header
+                read(96, '(A10)') end_of_r2c_header
             end do
         end if
 
