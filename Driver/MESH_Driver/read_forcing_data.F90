@@ -27,10 +27,9 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     integer YCOUNT, XCOUNT, NTYPE, NA, NML, ILG
     logical ENDDATA
 
-    real*4, dimension(YCOUNT, XCOUNT) :: R4SHRTGRID2D, R4LONGGRID2D, R4RAINGRID2D, R4TEMPGRID2D, &
-                                         R4WINDGRID2D, R4PRESGRID2D, R4HUMDGRID2D
+    real*4, dimension(YCOUNT, XCOUNT) :: INARRAY
+    real*4, dimension(NTYPE) :: INVECTOR
     real*4, dimension(NA, NTYPE) :: ACLASS
-    real*4, dimension(NTYPE) :: R4SHRTGRU, R4LONGGRU, R4RAINGRU, R4TEMPGRU, R4WINDGRU, R4PRESGRU, R4HUMDGRU
     real*4, dimension(NA) :: FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD
     real*4, dimension(ILG) :: FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT
     real*4 JUNK
@@ -54,9 +53,9 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_shortwave.bin
     !> *****************************************************************
     if (BASINSHORTWAVEFLAG == 0) then
-        read(51, end = 999) ((R4SHRTGRID2D(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
+        read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
         do i = 1, NA
-            FSDOWN(i) = R4SHRTGRID2D(YYY(i), XXX(i))
+            FSDOWN(i) = INARRAY(YYY(i), XXX(i))
         end do
         FSVHGRD = 0.5*FSDOWN
         FSIHGRD = FSVHGRD
@@ -67,13 +66,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_shortwave.r2c
     !> *****************************************************************
     elseif (BASINSHORTWAVEFLAG == 1) then
-        read(90, end = 999) !:Frame line
+        read(90, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read(90, end = 999) (R4SHRTGRID2D(i, j), j = 1, XCOUNT)
+            read(90, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read(90, end = 999) !:EndFrame line
+        read(90, *, end = 999) !:EndFrame line
         do i = 1, NA
-            FSDOWN(i) = R4SHRTGRID2D(YYY(i), XXX(i))
+            FSDOWN(i) = INARRAY(YYY(i), XXX(i))
         end do
         FSVHGRD = 0.5*FSDOWN
         FSIHGRD = FSVHGRD
@@ -85,10 +84,10 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_shortwave.csv
     !> *****************************************************************
     elseif (BASINSHORTWAVEFLAG == 2) then
-        read(90, end = 999) (R4SHRTGRU(i), i = 1, NTYPE)
+        read(90, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i = 1, NML
             CURGRU = JLMOS(i)
-            FSVHGAT(i) = 0.5*R4SHRTGRU(CURGRU)
+            FSVHGAT(i) = 0.5*INVECTOR(CURGRU)
         end do
         FSIHGAT = FSVHGAT
         call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, FSVHGRD, FSVHGAT)
@@ -109,7 +108,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         ICOUNT = ICOUNT + 1
 
     elseif (BASINSHORTWAVEFLAG == 4) then
-        read(90, end = 999) (FSDOWN(i), i = 1, NA)
+        read(90, *, end = 999) (FSDOWN(i), i = 1, NA)
         FSVHGRD = 0.5*FSDOWN
         FSIHGRD = FSVHGRD
         call GATHER(NA, NML, ILG, ILMOS, FSVHGRD, FSVHGAT)
@@ -142,9 +141,9 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         do k = 1, ICOUNT
             read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
         end do
-        read(51, end = 999) ((R4LONGGRID2D(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
+        read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
         do i = 1, NA
-            FDLGRD(i) = R4LONGGRID2D(YYY(i), XXX(i))
+            FDLGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
         call GATHER(NA, NML, ILG, ILMOS, FDLGRD, FDLGAT)
 
@@ -152,13 +151,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_longwave.r2c
     !> *****************************************************************
     elseif (BASINLONGWAVEFLAG == 1) then
-        read(91, end = 999) !:Frame line
+        read(91, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read(91, end = 999) (R4LONGGRID2D(i, j), j = 1, XCOUNT)
+            read(91, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read(91, end = 999) !:EndFrame line
+        read(91, *, end = 999) !:EndFrame line
         do i = 1, NA
-            FDLGRD(i) = R4LONGGRID2D(YYY(i), XXX(i))
+            FDLGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
         call GATHER(NA, NML, ILG, ILMOS, FDLGRD, FDLGAT)
         ICOUNT = ICOUNT + 1
@@ -167,10 +166,10 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_longwave.csv
     !> *****************************************************************
     elseif (BASINLONGWAVEFLAG == 2) then
-        read(91, end = 999) (R4LONGGRU(i), i = 1, NTYPE)
+        read(91, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i = 1, NML
             CURGRU = JLMOS(i)
-            FDLGAT(i) = R4LONGGRU(CURGRU)
+            FDLGAT(i) = INVECTOR(CURGRU)
         end do
         call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, FDLGRD, FDLGAT)
         ICOUNT = ICOUNT + 1
@@ -185,7 +184,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         ICOUNT = ICOUNT + 1
 
     elseif (BASINLONGWAVEFLAG == 4) then
-        read(91, end = 999) (FDLGRD(i), i = 1, NA)
+        read(91, *, end = 999) (FDLGRD(i), i = 1, NA)
         call GATHER(NA, NML, ILG, ILMOS, FDLGRD, FDLGAT)
         ICOUNT = ICOUNT + 1
 
@@ -212,9 +211,9 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         do k = 1, ICOUNT
             read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
         end do
-        read(51, end = 999) ((R4RAINGRID2D(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
+        read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
         do i = 1, NA
-            PREGRD(i) = R4RAINGRID2D(YYY(i), XXX(i))
+            PREGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
         call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
 
@@ -222,13 +221,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_rain.r2c
     !> *****************************************************************
     elseif (BASINRAINFLAG == 1) then
-        read(92, end = 999) !:Frame line
+        read(92, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read (92, end = 999) (R4RAINGRID2D(i, j), j = 1, XCOUNT)
+            read (92, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read(92, end = 999) !:EndFrame line
+        read(92, *, end = 999) !:EndFrame line
         do i = 1, NA
-            PREGRD(i) = R4RAINGRID2D(YYY(i), XXX(i))
+            PREGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
         call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
         ICOUNT = ICOUNT + 1
@@ -237,10 +236,10 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_rain.csv
     !> *****************************************************************
     elseif (BASINRAINFLAG == 2) then
-        read(92, end = 999) (R4RAINGRU(i), i = 1, NTYPE)
+        read(92, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i = 1,NML
             CURGRU = JLMOS(i)
-            PREGAT(i) = R4RAINGRU(CURGRU)
+            PREGAT(i) = INVECTOR(CURGRU)
         end do
         call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, PREGRD, PREGAT)
         ICOUNT = ICOUNT + 1
@@ -255,7 +254,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         ICOUNT = ICOUNT + 1
 
     elseif (BASINRAINFLAG == 4) then
-        read(92, end = 999) (PREGRD(i), i = 1, NA)
+        read(92, *, end = 999) (PREGRD(i), i = 1, NA)
         call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
         ICOUNT = ICOUNT + 1
 
@@ -291,9 +290,9 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         do k = 1, ICOUNT
             read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
         end do
-        read(51, end = 999) ((R4TEMPGRID2D(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
+        read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
         do i = 1, NA
-            TAGRD(i) = R4TEMPGRID2D(YYY(i), XXX(i))
+            TAGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
         call GATHER(NA, NML, ILG, ILMOS, TAGRD, TAGAT)
 
@@ -301,13 +300,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_temperature.r2c
     !> *****************************************************************
     elseif (BASINTEMPERATUREFLAG == 1) then
-        read(93, end = 999) !:Frame line
+        read(93, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read(93, end = 999) (R4TEMPGRID2D(i, j), j = 1, XCOUNT)
+            read(93, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read(93, end = 999) !:EndFrame line
+        read(93, *, end = 999) !:EndFrame line
         do i = 1, NA
-            TAGRD(i) = R4TEMPGRID2D(YYY(i), XXX(i))
+            TAGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
         call GATHER(NA, NML, ILG, ILMOS, TAGRD, TAGAT)
         ICOUNT = ICOUNT + 1
@@ -316,10 +315,10 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !>  basin_temperature.csv
     !> *****************************************************************
     elseif (BASINTEMPERATUREFLAG == 2) then
-        read(93, end = 999) (R4TEMPGRU(i), i = 1, NTYPE)
+        read(93, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i = 1, NML
             CURGRU = JLMOS(i)
-            TAGAT(i) = R4TEMPGRU(CURGRU)
+            TAGAT(i) = INVECTOR(CURGRU)
         end do
         call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, TAGRD, TAGAT)
         ICOUNT = ICOUNT + 1
@@ -334,7 +333,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         ICOUNT = ICOUNT + 1
 
     elseif (BASINTEMPERATUREFLAG == 4) then
-        read(93, end = 999) (TAGRD(i), i = 1, NA)
+        read(93, *, end = 999) (TAGRD(i), i = 1, NA)
         call GATHER(NA, NML, ILG, ILMOS, TAGRD, TAGAT)
         ICOUNT = ICOUNT + 1
 
@@ -361,9 +360,9 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         do k = 1, ICOUNT
             read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
         end do
-        read(51, end = 999) ((R4WINDGRID2D(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
+        read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
         do i = 1, NA
-            ULGRD(i) = R4WINDGRID2D(YYY(i), XXX(i))
+            ULGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
         !VLGRD = 0.0
         !VLGAT = 0.0
@@ -374,13 +373,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_wind.r2c
     !> *****************************************************************
     elseif (BASINWINDFLAG == 1) then
-        read(94, end = 999) !:Frame line
+        read(94, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read(94, end = 999) (R4WINDGRID2D(i, j), j = 1, XCOUNT)
+            read(94, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read(94, end = 999) !:EndFrame line
+        read(94, *, end = 999) !:EndFrame line
         do i = 1, NA
-            ULGRD(i) = R4WINDGRID2D(YYY(i), XXX(i))
+            ULGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
         !VLGRD = 0.0
         !VLGAT = 0.0
@@ -392,10 +391,10 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_wind.csv
     !> *****************************************************************
     elseif (BASINWINDFLAG == 2) then
-        read(94, end = 999) (R4WINDGRU(i), i = 1, NTYPE)
+        read(94, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i=1, NML
             CURGRU = JLMOS(i)
-            ULGAT(i) = R4WINDGRU(CURGRU)
+            ULGAT(i) = INVECTOR(CURGRU)
         end do
         !VLGRD = 0.0
         !VLGAT = 0.0
@@ -412,7 +411,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         ICOUNT = ICOUNT + 1
 
     elseif (BASINWINDFLAG == 4) then
-        read(94, end = 999) (ULGRD(i), i = 1, NA)
+        read(94, *, end = 999) (ULGRD(i), i = 1, NA)
         call GATHER(NA, NML, ILG, ILMOS, ULGRD, ULGAT)
         ICOUNT = ICOUNT + 1
 
@@ -439,9 +438,9 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         do k = 1, ICOUNT
             read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
         end do
-        read(51, end = 999) ((R4PRESGRID2D(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
+        read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
         do i = 1, NA
-            PRESGRD(i) = R4PRESGRID2D(YYY(i), XXX(i))
+            PRESGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
         call GATHER(NA, NML, ILG, ILMOS, PRESGRD, PRESGAT)
 
@@ -449,13 +448,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_pres.r2c
     !> *****************************************************************
     elseif (BASINPRESFLAG == 1) then
-        read(95, end = 999) !:Frame line
+        read(95, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read(95, end = 999) (R4PRESGRID2D(i, j), j = 1, XCOUNT)
+            read(95, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read(95, end = 999) !:EndFrame line
+        read(95, *, end = 999) !:EndFrame line
         do i = 1, NA
-            PRESGRD(i) = R4PRESGRID2D(YYY(i), XXX(i))
+            PRESGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
         call GATHER(NA, NML, ILG, ILMOS, PRESGRD, PRESGAT)
         ICOUNT = ICOUNT + 1
@@ -464,10 +463,10 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_pres.csv
     !> *****************************************************************
     elseif (BASINPRESFLAG == 2) then
-        read(95, end = 999) (R4PRESGRU(i), i = 1, NTYPE)
+        read(95, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i = 1, NML
             CURGRU = JLMOS(i)
-            PRESGAT(i) = R4PRESGRU(CURGRU)
+            PRESGAT(i) = INVECTOR(CURGRU)
         end do
         call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, PRESGRD, PRESGAT)
         ICOUNT = ICOUNT + 1
@@ -482,7 +481,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         ICOUNT = ICOUNT + 1
 
     elseif (BASINPRESFLAG == 4) then
-        read(95, end = 999) (PRESGRD(i), i = 1, NA)
+        read(95, *, end = 999) (PRESGRD(i), i = 1, NA)
         call GATHER(NA, NML, ILG, ILMOS, PRESGRD, PRESGAT)
         ICOUNT = ICOUNT + 1
 
@@ -509,9 +508,9 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
         do k = 1, ICOUNT
             read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
         end do
-        read(51, end = 999) ((R4HUMDGRID2D(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
+        read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
         do i = 1, NA
-            QAGRD(i) = R4HUMDGRID2D(YYY(i), XXX(i))
+            QAGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
         call GATHER(NA, NML, ILG, ILMOS, QAGRD, QAGAT)
 
@@ -519,13 +518,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_humidity.r2c
     !> *****************************************************************
     elseif (BASINHUMIDITYFLAG == 1) then
-        read(96, end = 999) !:Frame line
+        read(96, *, end = 999) !:Frame line
         do i = 1, YCOUNT
-            read(96, end = 999) (R4HUMDGRID2D(i, j), j = 1, XCOUNT)
+            read(96, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
         end do
-        read (96, end = 999) !:EndFrame line
+        read (96, *, end = 999) !:EndFrame line
         do i = 1, NA
-            QAGRD(i) = R4HUMDGRID2D(YYY(i), XXX(i))
+            QAGRD(i) = INARRAY(YYY(i), XXX(i))
         end do
         call GATHER(NA, NML, ILG, ILMOS, QAGRD, QAGAT)
         ICOUNT = ICOUNT + 1
@@ -534,10 +533,10 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_humidity.csv
     !> *****************************************************************
     elseif (BASINHUMIDITYFLAG == 2) then
-        read(96, end = 999) (R4HUMDGRU(i), i = 1, NTYPE)
+        read(96, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
         do i = 1, NML
             CURGRU = JLMOS(i)
-            QAGAT(i) = R4HUMDGRU(CURGRU)
+            QAGAT(i) = INVECTOR(CURGRU)
         end do
         call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, QAGRD, QAGAT)
         ICOUNT = ICOUNT + 1
@@ -555,7 +554,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !> basin_humidity.asc
     !> *****************************************************************
     elseif (BASINHUMIDITYFLAG == 4) then
-        read(96, end = 999) (QAGRD(i), i = 1, NA)
+        read(96, *, end = 999) (QAGRD(i), i = 1, NA)
         call GATHER(NA, NML, ILG, ILMOS, QAGRD, QAGAT)
         ICOUNT = ICOUNT + 1
 
