@@ -5151,10 +5151,10 @@ ENDIF
     !> *********************************************************************
     !> Read in meteorological forcing data
     !> *********************************************************************
-    if (HOURLYFLAG == TIME_STEP_MINS .or. TIME_STEP_NOW == 0) then
+!    if (HOURLYFLAG == TIME_STEP_MINS .or. TIME_STEP_NOW == 0) then
         call climate_module_loaddata(bi, cm, .false., ENDDATA, &
             YCOUNT, XCOUNT, NML, ILMOS, JLMOS, YYY, XXX, ACLASS)
-    end if
+!    end if
 
 END DO !WHILE(.NOT.ENDDATE .AND. .NOT.ENDDATA)
 

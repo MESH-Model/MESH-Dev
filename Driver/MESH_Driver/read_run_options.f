@@ -421,7 +421,7 @@
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(1)%hf, IOS)
+                    CALL value(out_args(j)(4:), cm%clin(cfk%FS)%hf, IOS)
                   END IF
                 END IF
               END DO
@@ -430,7 +430,8 @@
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(2)%hf, IOS)
+                    CALL value(out_args(j)(4:), cm%clin(cfk%FDL)%hf,
+     +                  IOS)
                   END IF
                 END IF
               END DO
@@ -439,7 +440,8 @@
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(3)%hf, IOS)
+                    CALL value(out_args(j)(4:), cm%clin(cfk%PRE)%hf,
+     +                  IOS)
                   END IF
                 END IF
               END DO
@@ -448,7 +450,7 @@
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(4)%hf, IOS)
+                    CALL value(out_args(j)(4:), cm%clin(cfk%TA)%hf, IOS)
                   END IF
                 END IF
               END DO
@@ -457,7 +459,7 @@
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(5)%hf, IOS)
+                    CALL value(out_args(j)(4:), cm%clin(cfk%UL)%hf, IOS)
                   END IF
                 END IF
               END DO
@@ -466,7 +468,8 @@
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(6)%hf, IOS)
+                    CALL value(out_args(j)(4:), cm%clin(cfk%PRES)%hf,
+     +                  IOS)
                   END IF
                 END IF
               END DO
@@ -475,7 +478,7 @@
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(7)%hf, IOS)
+                    CALL value(out_args(j)(4:), cm%clin(cfk%QA)%hf, IOS)
                   END IF
                 END IF
               END DO
