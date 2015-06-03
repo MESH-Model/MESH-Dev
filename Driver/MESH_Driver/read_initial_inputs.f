@@ -31,9 +31,10 @@
 !> variables for READ_PARAMETERS_HYDROLOGY
      +  INDEPPAR, DEPPAR, WF_R2, M_C,
 !> the types that are to be allocated and initialised
-     +  op, sl, cp, sv, hp,ts,cm,
+     +  bi, op, sl, cp, sv, hp, ts, cm,
      +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
+      use sa_mesh_shared_variabletypes
       USE MESH_INPUT_MODULE
       USE FLAGS
       USE AREA_WATFLOOD
@@ -145,6 +146,7 @@
       TYPE(SoilValues)          :: sv
       TYPE(HydrologyParameters) :: hp
 
+      type(basin_info) :: bi
       TYPE(CLIM_INFO) :: cm
       TYPE(dates_model) :: ts
       type(fl_ids):: fls
@@ -202,6 +204,11 @@
         CLOSE(98,STATUS='delete')
         WRITE (6, *) " READ: SUCCESSFUL, FILE: CLOSED"
 !+        ALLOCATE (FRAC(NA),
+
+      !> Initialize basin information variable.
+      bi%na = NA
+      bi%nm = NTYPE
+
 !>
 !>*******************************************************************
 !>
@@ -440,7 +447,7 @@
       ALLOCATE (sl%DELZ(IGND), sl%ZBOT(IGND))
       CALL READ_SOIL_LEVELS(IGND, sl, fls)
 
-      CALL READ_CHECK_FORCING_FILES(NA, cm, ts)
+      bi%ignd = IGND
 
       ALLOCATE(
      + cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA), cp%GCGRD(NA))

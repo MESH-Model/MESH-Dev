@@ -1024,7 +1024,7 @@ CALL READ_INITIAL_INPUTS( &
  !>variables for READ_PARAMETERS_HYDROLOGY
   INDEPPAR, DEPPAR, WF_R2, M_C, &
  !>the types that are to be allocated and initialised
-  op, sl, cp, sv, hp,ts,cm, &
+  bi, op, sl, cp, sv, hp, ts, cm, &
   SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
 !>
@@ -1860,11 +1860,6 @@ ENDIF
 !> **********************************************************************
 !>  End of subbasin section
 !> **********************************************************************
-
-!> Initialize basin information variable.
-bi%na = NA
-bi%nm = NTYPE
-bi%ignd = IGND
 
 !> Initialize output variables.
 call wb%init(bi)

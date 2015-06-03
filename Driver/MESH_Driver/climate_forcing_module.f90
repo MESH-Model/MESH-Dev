@@ -18,6 +18,7 @@ module climate_forcing
         integer flagID !Basic climage flag id
         integer flagRead !type of format file
         integer :: filefmt = 0
+        character fln*200
         integer unitR !Number unit
         logical openFl !true if file is open
         integer :: readIndx = 1 !index in the block of time that we are reading
@@ -122,11 +123,12 @@ module climate_forcing
     !> -----------------------------------------------------------------
     !> Description: Initialization of clim_info
     !> -----------------------------------------------------------------
-    subroutine Init_clim_info(cm, ts, indx, nna)
+    subroutine Init_clim_info(cm, ts, indx, bi)
 
         !> Input
-        integer, intent(in) :: nna, indx
         type(dates_model), intent(in) :: ts
+        integer, intent(in) :: indx
+        type(basin_info), intent(in) :: bi
 
         !> Input Output
         type(clim_info), intent(inout) :: cm
@@ -136,7 +138,7 @@ module climate_forcing
 
         !cm%nclim = 7
         cm%nclim = 8
-        cm%NA = nna
+        cm%NA = bi%NA
 
         timeStepClimF = ts%nr_days*24*(60/TIME_STEP_MINS)/real(cm%clin(indx)%hf)*TIME_STEP_MINS
         if (cm%clin(indx)%flagId >= 5) then
@@ -203,6 +205,12 @@ module climate_forcing
             cm%clin(cfk%QA)%filefmt == 0) then
             open(51, file = 'MESH_input_forcing.bin', status = 'old', form = 'unformatted', action = 'read')
         end if
+
+        !> Open the rest of the forcing files.
+        !todo yeah.
+        do i = 1, 8
+            call READ_CHECK_FORCING_FILES(cm, i, ts, bi)
+        end do
 
         !todo - leave these in for event based runs
         !> IYEAR is set in the MESH_parameters_CLASS.ini file
@@ -536,54 +544,38 @@ module climate_forcing
     !> Description: Initialization of climate data
     !>
     !> -----------------------------------------------------------------
-    subroutine Init_clim_data(cm, idvar, unitR)
+    subroutine Init_clim_data(cm, indx, unitR)
 
         !> Inputs
-        integer, intent(in) :: unitR
-        character(len=*), intent(in) :: idvar
+        integer, intent(in) :: indx, unitR
 
         !> Inputs Output
         type(clim_info), intent(inout) :: cm
 
-        if (idvar == 'shortwave') then
-            cm%clin(cfk%FS)%unitR = unitR
-            call OpenData(cm, 'basin_shortwave', cfk%FS)
+        !> Set the unit number.
+        cm%clin(indx)%unitR = unitR
+
+        !> Set the file name.
+        if (indx == cfk%FS) then
+            cm%clin(indx)%fln = 'basin_shortwave'
+        elseif (indx == cfk%FDL) then
+            cm%clin(indx)%fln = 'basin_longwave'
+        elseif (indx == cfk%PRE) then
+            cm%clin(indx)%fln = 'basin_rain'
+        elseif (indx == 8) then
+            cm%clin(indx)%fln = 'basin_rain_2'
+        elseif (indx == cfk%TA) then
+            cm%clin(indx)%fln = 'basin_temperature'
+        elseif (indx == cfk%UL) then
+            cm%clin(indx)%fln = 'basin_wind'
+        elseif (indx == cfk%PRES) then
+            cm%clin(indx)%fln = 'basin_pres'
+        elseif (indx == cfk%QA) then
+            cm%clin(indx)%fln = 'basin_humidity'
         end if
 
-        if (idvar == 'longwave') then
-            cm%clin(cfk%FDL)%unitR = unitR
-            call OpenData(cm, 'basin_longwave', cfk%FDL)
-        end if
-
-        if (idvar == 'rain') then
-            cm%clin(cfk%PRE)%unitR = unitR
-            call OpenData(cm, 'basin_rain', cfk%PRE)
-        end if
-         
-        if (idvar == 'rain_2') then
-            cm%clin(8)%unitR = unitR
-            call OpenData(cm, 'basin_rain_2', 8)
-        end if
-
-        if (idvar == 'temp') then
-            cm%clin(cfk%TA)%unitR = unitR
-            call OpenData(cm, 'basin_temperature', cfk%TA)
-        end if
-
-        if (idvar == 'wind') then
-            cm%clin(cfk%UL)%unitR = unitR
-            call OpenData(cm, 'basin_wind', cfk%UL)
-        end if
-
-        if (idvar == 'pressure') then
-            cm%clin(cfk%PRES)%unitR = unitR
-            call OpenData(cm, 'basin_pres', cfk%PRES)
-        end if
-
-        if (idvar == 'humidity') then
-            cm%clin(cfk%QA)%unitR = unitR
-            call OpenData(cm, 'basin_humidity', cfk%QA)
-        end if
+        !> Call the subroutine to open the data.
+        call OpenData(cm, indx)
 
     end subroutine Init_clim_data
 
@@ -591,11 +583,10 @@ module climate_forcing
     !> Description: Open Units and Load the first block of climate data
     !>
     !> -----------------------------------------------------------------
-    subroutine OpenData(cm, flname, indx)
+    subroutine OpenData(cm, indx)
 
         !> Input
         integer, intent(in) :: indx
-        character(len=*), intent(in) :: flname
 
         type(clim_info) :: cm
         integer ios
@@ -604,20 +595,20 @@ module climate_forcing
         !> Open file depending on the format type of the climate data.
         !> ASCII R2C format.
         if (cm%clin(indx)%flagRead == 1) then
-            print *, cm%clin(indx)%unitR, trim(adjustl(flname)) // '.r2c'
+            print *, cm%clin(indx)%unitR, trim(adjustl(cm%clin(indx)%fln)) // '.r2c'
             open(unit = cm%clin(indx)%unitR, &
-                 file = trim(adjustl(flname)) // '.r2c', &
-                 STATUS = 'OLD', &
-                 IOSTAT = IOS)
-            if (IOS /= 0) then
-                print *, trim(adjustl(flname)) // '.r2c' // 'not found'
-                print *, 'please adjust the mesh_input_run_options.ini file,'
-                print *, 'or put the r2c file in the correct location.'
+                 file = trim(adjustl(cm%clin(indx)%fln)) // '.r2c', &
+                 action = 'read', &
+                 status = 'old', &
+                 form = 'formatted', &
+                 iostat = ios)
+            if (ios /= 0) then
+                print 670, trim(adjustl(cm%clin(indx)%fln)) // '.r2c'
                 cm%clin(indx)%openFl = .false.
                 stop
             else
-                print *, trim(adjustl(flname)) // '.r2c' // ' found'
-                end_of_r2c_header = ""
+                print 676, trim(adjustl(cm%clin(indx)%fln)) // '.r2c'
+                end_of_r2c_header = ''
                 do while (end_of_r2c_header /= ":endHeader")
                     read(cm%clin(indx)%unitR, '(A10)') end_of_r2c_header
                 end do
@@ -627,59 +618,62 @@ module climate_forcing
         !> CSV format.
         elseif (cm%clin(indx)%flagRead == 2) then
             open(unit = cm%clin(indx)%unitR, &
-                 file = trim(adjustl(flname)) // '.csv', &
-                 STATUS = 'OLD', &
-                 IOSTAT = IOS)
-            if (IOS /=0 ) then
-                print *, trim(adjustl(flname)) // '.csv' // 'not found'
-                print *, 'please adjust the mesh_input_run_options.ini file,'
-                print *, 'or put the csv file in the correct location.'
+                 file = trim(adjustl(cm%clin(indx)%fln)) // '.csv', &
+                 action = 'read', &
+                 status = 'old', &
+                 form = 'formatted', &
+                 iostat = ios)
+            if (ios /=0 ) then
+                print 670, trim(adjustl(cm%clin(indx)%fln)) // '.csv'
                 cm%clin(indx)%openFl = .false.
                 stop
-             else
-                print *, trim(adjustl(flname)) // '.csv' // ' found'
+            else
+                print 676, trim(adjustl(cm%clin(indx)%fln)) // '.csv'
                 cm%clin(indx)%openFl = .true.
-             end if
+            end if
 
         !> Sequential binary format.
         elseif (cm%clin(indx)%flagRead == 3) then
             open(UNIT = cm%clin(indx)%unitR, &
-                 FILE = trim(adjustl(flname)) // '.seq', &
-                 STATUS = 'OLD', &
-                 FORM = 'unformatted', &
-                 ACTION = 'read', &
-                 ACCESS = 'sequential', &
-                 IOSTAT = IOS)
-            if (IOS /= 0) then
-                print *, trim(adjustl(flname)) // '.seq' // 'not found'
-                print *, 'please adjust the mesh_input_run_options.ini file'
-                print *, 'or put the seq file in the correct location.'
+                 FILE = trim(adjustl(cm%clin(indx)%fln)) // '.seq', &
+                 action = 'read', &
+                 status = 'old', &
+                 form = 'unformatted', &
+                 access = 'sequential', &
+                 iostat = ios)
+            if (ios /= 0) then
+                print 670, trim(adjustl(cm%clin(indx)%fln)) // '.seq'
                 cm%clin(indx)%openFl = .false.
                 stop
             else
-                print *, trim(adjustl(flname)) // '.seq' // ' found'
+                print 676, trim(adjustl(cm%clin(indx)%fln)) // '.seq'
                 cm%clin(indx)%openFl = .true.
             end if
 
         !> ASCII format.
         elseif (cm%clin(indx)%flagRead == 4) then
-            open(UNIT = cm%clin(indx)%unitR, &
-                 FILE = trim(adjustl(flname)) // '.asc', &
-                 STATUS = 'OLD', &
-                 FORM = 'formatted', &
-                 ACTION = 'read', &
-                 IOSTAT = IOS)
-            if (IOS /= 0) then
-                print *, trim(adjustl(flname)) // '.asc' // 'not found'
-                print *, 'please adjust the mesh_input_run_options.ini file'
-                print *, 'or put the seq file in the correct location.'
+            open(cm%clin(indx)%unitR, &
+                 file = trim(adjustl(cm%clin(indx)%fln)) // '.asc', &
+                 action = 'read', &
+                 status = 'old', &
+                 form = 'formatted', &
+                 iostat = ios)
+            if (ios /= 0) then
+                print 670, trim(adjustl(cm%clin(indx)%fln)) // '.asc'
                 cm%clin(indx)%openFl = .false.
                 stop
             else
-                print *, trim(adjustl(flname)) // '.asc' // ' found'
+                print 676, trim(adjustl(cm%clin(indx)%fln)) // '.asc'
                 cm%clin(indx)%openFl = .true.
             end if
         end if
+
+670 format(/ &
+        1x, a20' not found.'/, &
+        1x'Please adjust the MESH_input_run_options.ini file'/, &
+        1x'or put the file in the correct location.'//)
+
+676 format(1x, a20' found.')
 
     end subroutine OpenData
 
