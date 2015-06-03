@@ -193,6 +193,11 @@ module climate_forcing
 
         integer ilg
 
+        !> Reset the number of forcing variables not in the forcing binary file.
+        NUM_R2C = 0
+        NUM_CSV = 0
+        NUM_SEQ = 0
+
         !todo - if we have time (or later), change the binary forcing files to
         !       one for each forcing variable
         !> Only open if there are not enough separate forcing files
@@ -207,9 +212,18 @@ module climate_forcing
         end if
 
         !> Open the rest of the forcing files.
-        !todo yeah.
-        do i = 1, 8
+        do i = 1, 7
             call READ_CHECK_FORCING_FILES(cm, i, ts, bi)
+
+            !> Update the file format counters for the legacy binary format.
+            select case (cm%clin(i)%filefmt)
+                case (1, 4)
+                    NUM_R2C = NUM_R2C + 1
+                case (2)
+                    NUM_CSV = NUM_CSV + 1
+                case (3, 5)
+                    NUM_SEQ = NUM_SEQ + 1
+            end select
         end do
 
         !todo - leave these in for event based runs
