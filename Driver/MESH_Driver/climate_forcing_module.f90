@@ -12,11 +12,9 @@ module climate_forcing
 
     TYPE clim_info_read
 
-        integer timeSize  !minimum size of block read DEFINED IN THE INPUT FILE
+        integer :: timeSize = 0  !minimum size of block read DEFINED IN THE INPUT FILE
         integer, dimension(:), allocatable :: ntimes ! number of time in each block of readed data
         character(15) :: id_var !climate variable name
-        integer flagID !Basic climage flag id
-        integer flagRead !type of format file
         integer :: filefmt = 0
         character fln*200
         integer unitR !Number unit
@@ -141,31 +139,22 @@ module climate_forcing
         cm%NA = bi%NA
 
         timeStepClimF = ts%nr_days*24*(60/TIME_STEP_MINS)/real(cm%clin(indx)%hf)*TIME_STEP_MINS
-        if (cm%clin(indx)%flagId >= 5) then
-            if (timeStepClimF <= cm%clin(indx)%timeSize) then
-                allocate(cm%clin(indx)%ntimes(1))
-                cm%clin(indx)%ntimes(1) = timeStepClimF
-            else
-                nts = timeStepClimF/cm%clin(indx)%timeSize
-                rts = timeStepClimF - cm%clin(indx)%timeSize*nts
-                if (rts == 0) then
-                    allocate(cm%clin(indx)%ntimes(nts))
-                    cm%clin(indx)%ntimes = cm%clin(indx)%timeSize
+        if (timeStepClimF <= cm%clin(indx)%timeSize) then
+            allocate(cm%clin(indx)%ntimes(1))
+            cm%clin(indx)%ntimes(1) = timeStepClimF
+        else
+            nts = timeStepClimF/cm%clin(indx)%timeSize
+            rts = timeStepClimF - cm%clin(indx)%timeSize*nts
+            if (rts == 0) then
+                allocate(cm%clin(indx)%ntimes(nts))
+                cm%clin(indx)%ntimes = cm%clin(indx)%timeSize
 
-                else
-                    allocate(cm%clin(indx)%ntimes(nts + 1))
-                    cm%clin(indx)%ntimes = cm%clin(indx)%timeSize
-                    cm%clin(indx)%ntimes(nts + 1) = rts
-                end if
+            else
+                allocate(cm%clin(indx)%ntimes(nts + 1))
+                cm%clin(indx)%ntimes = cm%clin(indx)%timeSize
+                cm%clin(indx)%ntimes(nts + 1) = rts
             end if
         end if
-
-!        write(400 + indx, *) 'flagId', cm%clin(indx)%flagId
-!        write(400 + indx, *) 'ntimes', cm%clin(indx)%ntimes
-!        write(400 + indx, *) 'timeSize', cm%clin(indx)%timeSize
-!        write(400 + indx, *) 'id_var', cm%clin(indx)%id_var
-!        write(400 + indx, *) 'flagRead', cm%clin(indx)%flagRead
-!        close(400 + indx)
 
     end subroutine Init_clim_info
 
@@ -607,80 +596,86 @@ module climate_forcing
         character*80 end_of_r2c_header
 
         !> Open file depending on the format type of the climate data.
-        !> ASCII R2C format.
-        if (cm%clin(indx)%flagRead == 1) then
-            print *, cm%clin(indx)%unitR, trim(adjustl(cm%clin(indx)%fln)) // '.r2c'
-            open(unit = cm%clin(indx)%unitR, &
-                 file = trim(adjustl(cm%clin(indx)%fln)) // '.r2c', &
-                 action = 'read', &
-                 status = 'old', &
-                 form = 'formatted', &
-                 iostat = ios)
-            if (ios /= 0) then
-                print 670, trim(adjustl(cm%clin(indx)%fln)) // '.r2c'
-                cm%clin(indx)%openFl = .false.
-                stop
-            else
-                print 676, trim(adjustl(cm%clin(indx)%fln)) // '.r2c'
-                end_of_r2c_header = ''
-                do while (end_of_r2c_header /= ":endHeader")
-                    read(cm%clin(indx)%unitR, '(A10)') end_of_r2c_header
-                end do
-                cm%clin(indx)%openFl = .true.
-            end if
+        select case (cm%clin(indx)%filefmt)
 
-        !> CSV format.
-        elseif (cm%clin(indx)%flagRead == 2) then
-            open(unit = cm%clin(indx)%unitR, &
-                 file = trim(adjustl(cm%clin(indx)%fln)) // '.csv', &
-                 action = 'read', &
-                 status = 'old', &
-                 form = 'formatted', &
-                 iostat = ios)
-            if (ios /=0 ) then
-                print 670, trim(adjustl(cm%clin(indx)%fln)) // '.csv'
-                cm%clin(indx)%openFl = .false.
-                stop
-            else
-                print 676, trim(adjustl(cm%clin(indx)%fln)) // '.csv'
-                cm%clin(indx)%openFl = .true.
-            end if
+            !> ASCII R2C format.
+            case (1)
+                print *, cm%clin(indx)%unitR, trim(adjustl(cm%clin(indx)%fln)) // '.r2c'
+                open(unit = cm%clin(indx)%unitR, &
+                     file = trim(adjustl(cm%clin(indx)%fln)) // '.r2c', &
+                     action = 'read', &
+                     status = 'old', &
+                     form = 'formatted', &
+                     iostat = ios)
+                if (ios /= 0) then
+                    print 670, trim(adjustl(cm%clin(indx)%fln)) // '.r2c'
+                    cm%clin(indx)%openFl = .false.
+                    stop
+                else
+                    print 676, trim(adjustl(cm%clin(indx)%fln)) // '.r2c'
+                    end_of_r2c_header = ''
+                    do while (end_of_r2c_header /= ":endHeader")
+                        read(cm%clin(indx)%unitR, '(A10)') end_of_r2c_header
+                    end do
+                    cm%clin(indx)%openFl = .true.
+                end if
 
-        !> Sequential binary format.
-        elseif (cm%clin(indx)%flagRead == 3) then
-            open(UNIT = cm%clin(indx)%unitR, &
-                 FILE = trim(adjustl(cm%clin(indx)%fln)) // '.seq', &
-                 action = 'read', &
-                 status = 'old', &
-                 form = 'unformatted', &
-                 access = 'sequential', &
-                 iostat = ios)
-            if (ios /= 0) then
-                print 670, trim(adjustl(cm%clin(indx)%fln)) // '.seq'
-                cm%clin(indx)%openFl = .false.
-                stop
-            else
-                print 676, trim(adjustl(cm%clin(indx)%fln)) // '.seq'
-                cm%clin(indx)%openFl = .true.
-            end if
+            !> CSV format.
+            case (2)
+                open(unit = cm%clin(indx)%unitR, &
+                     file = trim(adjustl(cm%clin(indx)%fln)) // '.csv', &
+                     action = 'read', &
+                     status = 'old', &
+                     form = 'formatted', &
+                     iostat = ios)
+                if (ios /=0 ) then
+                    print 670, trim(adjustl(cm%clin(indx)%fln)) // '.csv'
+                    cm%clin(indx)%openFl = .false.
+                    stop
+                else
+                    print 676, trim(adjustl(cm%clin(indx)%fln)) // '.csv'
+                    cm%clin(indx)%openFl = .true.
+                end if
 
-        !> ASCII format.
-        elseif (cm%clin(indx)%flagRead == 4) then
-            open(cm%clin(indx)%unitR, &
-                 file = trim(adjustl(cm%clin(indx)%fln)) // '.asc', &
-                 action = 'read', &
-                 status = 'old', &
-                 form = 'formatted', &
-                 iostat = ios)
-            if (ios /= 0) then
-                print 670, trim(adjustl(cm%clin(indx)%fln)) // '.asc'
-                cm%clin(indx)%openFl = .false.
+            !> Binary sequential format.
+            case (3)
+                open(UNIT = cm%clin(indx)%unitR, &
+                     FILE = trim(adjustl(cm%clin(indx)%fln)) // '.seq', &
+                     action = 'read', &
+                     status = 'old', &
+                     form = 'unformatted', &
+                     access = 'sequential', &
+                     iostat = ios)
+                if (ios /= 0) then
+                    print 670, trim(adjustl(cm%clin(indx)%fln)) // '.seq'
+                    cm%clin(indx)%openFl = .false.
+                    stop
+                else
+                    print 676, trim(adjustl(cm%clin(indx)%fln)) // '.seq'
+                    cm%clin(indx)%openFl = .true.
+                end if
+
+            !> ASCII format.
+            case (4)
+                open(cm%clin(indx)%unitR, &
+                     file = trim(adjustl(cm%clin(indx)%fln)) // '.asc', &
+                     action = 'read', &
+                     status = 'old', &
+                     form = 'formatted', &
+                     iostat = ios)
+                if (ios /= 0) then
+                    print 670, trim(adjustl(cm%clin(indx)%fln)) // '.asc'
+                    cm%clin(indx)%openFl = .false.
+                    stop
+                else
+                    print 676, trim(adjustl(cm%clin(indx)%fln)) // '.asc'
+                    cm%clin(indx)%openFl = .true.
+                end if
+
+            case default
+                print 644, cm%clin(indx)%id_var, cm%clin(indx)%filefmt
                 stop
-            else
-                print 676, trim(adjustl(cm%clin(indx)%fln)) // '.asc'
-                cm%clin(indx)%openFl = .true.
-            end if
-        end if
+        end select
 
 670 format(/ &
         1x, a20' not found.'/, &
@@ -688,6 +683,9 @@ module climate_forcing
         1x'or put the file in the correct location.'//)
 
 676 format(1x, a20' found.')
+
+644 format(/1x'The input forcing file format is not supported', &
+        /2x, A15, I4/)
 
     end subroutine OpenData
 
@@ -711,7 +709,7 @@ module climate_forcing
         integer i, j, ii, jj
         real INARRAY(YCOUNT, XCOUNT)
 
-        select case (cm%clin(indx)%flagRead)
+        select case (cm%clin(indx)%filefmt)
 
             !> ASCII R2C format.
             case (1)

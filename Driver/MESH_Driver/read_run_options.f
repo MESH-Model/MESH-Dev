@@ -1,4 +1,4 @@
-       SUBROUTINE READ_RUN_OPTIONS(
+      SUBROUTINE READ_RUN_OPTIONS(
      +  IDISP, IZREF, ISLFD, IPCP, IWF,
      +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
      +  ICTEMMOD, IOS, PAS, N,
@@ -418,15 +418,31 @@
             !> Basin forcing data.
             CASE ('BASINSHORTWAVEFLAG')
               CALL value(out_args(2), cm%clin(cfk%FS)%filefmt, IOS)
+              cm%clin(cfk%FS)%id_var = 'SHORTWAVE'
+              IF (cm%clin(cfk%FS)%filefmt == 5) THEN
+                CALL value(out_args(3), cm%clin(cfk%FS)%filefmt, IOS)
+                CALL value(out_args(4), cm%clin(cfk%FS)%timeSize, IOS)
+              END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
                     CALL value(out_args(j)(4:), cm%clin(cfk%FS)%hf, IOS)
                   END IF
                 END IF
+                IF (len_trim(out_args(j)) > 4) THEN
+                  IF (out_args(j)(1:4) == 'nts=') THEN
+                    CALL value(out_args(j)(5:),
+     +                         cm%clin(cfk%FS)%timeSize, IOS)
+                  END IF
+                END IF
               END DO
             CASE ('BASINLONGWAVEFLAG')
               CALL value(out_args(2), cm%clin(cfk%FDL)%filefmt, IOS)
+              cm%clin(cfk%FDL)%id_var = 'LONGWAVE'
+              IF (cm%clin(cfk%FDL)%filefmt == 5) THEN
+                CALL value(out_args(3), cm%clin(cfk%FDL)%filefmt, IOS)
+                CALL value(out_args(4), cm%clin(cfk%FDL)%timeSize, IOS)
+              END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
@@ -434,9 +450,20 @@
      +                  IOS)
                   END IF
                 END IF
+                IF (len_trim(out_args(j)) > 4) THEN
+                  IF (out_args(j)(1:4) == 'nts=') THEN
+                    CALL value(out_args(j)(5:),
+     +                         cm%clin(cfk%FDL)%timeSize, IOS)
+                  END IF
+                END IF
               END DO
             CASE ('BASINRAINFLAG')
               CALL value(out_args(2), cm%clin(cfk%PRE)%filefmt, IOS)
+              cm%clin(cfk%PRE)%id_var = 'RAIN'
+              IF (cm%clin(cfk%PRE)%filefmt == 5) THEN
+                CALL value(out_args(3), cm%clin(cfk%PRE)%filefmt, IOS)
+                CALL value(out_args(4), cm%clin(cfk%PRE)%timeSize, IOS)
+              END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
@@ -444,27 +471,60 @@
      +                  IOS)
                   END IF
                 END IF
+                IF (len_trim(out_args(j)) > 4) THEN
+                  IF (out_args(j)(1:4) == 'nts=') THEN
+                    CALL value(out_args(j)(5:),
+     +                         cm%clin(cfk%PRE)%timeSize, IOS)
+                  END IF
+                END IF
               END DO
             CASE ('BASINTEMPERATUREFLAG')
               CALL value(out_args(2), cm%clin(cfk%TA)%filefmt, IOS)
+              cm%clin(cfk%TA)%id_var = 'TEMPERATURE'
+              IF (cm%clin(cfk%TA)%filefmt == 5) THEN
+                CALL value(out_args(3), cm%clin(cfk%TA)%filefmt, IOS)
+                CALL value(out_args(4), cm%clin(cfk%TA)%timeSize, IOS)
+              END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
                     CALL value(out_args(j)(4:), cm%clin(cfk%TA)%hf, IOS)
                   END IF
                 END IF
+                IF (len_trim(out_args(j)) > 4) THEN
+                  IF (out_args(j)(1:4) == 'nts=') THEN
+                    CALL value(out_args(j)(5:),
+     +                         cm%clin(cfk%TA)%timeSize, IOS)
+                  END IF
+                END IF
               END DO
             CASE ('BASINWINDFLAG')
               CALL value(out_args(2), cm%clin(cfk%UL)%filefmt, IOS)
+              cm%clin(cfk%UL)%id_var = 'WIND'
+              IF (cm%clin(cfk%UL)%filefmt == 5) THEN
+                CALL value(out_args(3), cm%clin(cfk%UL)%filefmt, IOS)
+                CALL value(out_args(4), cm%clin(cfk%UL)%timeSize, IOS)
+              END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
                     CALL value(out_args(j)(4:), cm%clin(cfk%UL)%hf, IOS)
                   END IF
                 END IF
+                IF (len_trim(out_args(j)) > 4) THEN
+                  IF (out_args(j)(1:4) == 'nts=') THEN
+                    CALL value(out_args(j)(5:),
+     +                         cm%clin(cfk%UL)%timeSize, IOS)
+                  END IF
+                END IF
               END DO
             CASE ('BASINPRESFLAG')
               CALL value(out_args(2), cm%clin(cfk%PRES)%filefmt, IOS)
+              cm%clin(cfk%PRES)%id_var = 'PRESSURE'
+              IF (cm%clin(cfk%PRES)%filefmt == 5) THEN
+                CALL value(out_args(3), cm%clin(cfk%PRES)%filefmt, IOS)
+                CALL value(out_args(4), cm%clin(cfk%PRES)%timeSize, IOS)
+              END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
@@ -472,13 +532,30 @@
      +                  IOS)
                   END IF
                 END IF
+                IF (len_trim(out_args(j)) > 4) THEN
+                  IF (out_args(j)(1:4) == 'nts=') THEN
+                    CALL value(out_args(j)(5:),
+     +                         cm%clin(cfk%PRES)%timeSize, IOS)
+                  END IF
+                END IF
               END DO
             CASE ('BASINHUMIDITYFLAG')
               CALL value(out_args(2), cm%clin(cfk%QA)%filefmt, IOS)
+              cm%clin(cfk%QA)%id_var = 'HUMIDITY'
+              IF (cm%clin(cfk%QA)%filefmt == 5) THEN
+                CALL value(out_args(3), cm%clin(cfk%QA)%filefmt, IOS)
+                CALL value(out_args(4), cm%clin(cfk%QA)%timeSize, IOS)
+              END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
                     CALL value(out_args(j)(4:), cm%clin(cfk%QA)%hf, IOS)
+                  END IF
+                END IF
+                IF (len_trim(out_args(j)) > 4) THEN
+                  IF (out_args(j)(1:4) == 'nts=') THEN
+                    CALL value(out_args(j)(5:),
+     +                         cm%clin(cfk%QA)%timeSize, IOS)
                   END IF
                 END IF
               END DO
@@ -677,97 +754,7 @@
 !        end_date(3) = IHOUR_END
 !        end_date(4) = IMIN_END
 
-        CALL GET_DATES(ts)
-
-!> rewind file to get extra information in the climate forcing data
-!> in case that we load a part of the file in memory
-      IF ((cm%clin(cfk%FS)%filefmt   == 5) .OR.
-     +    (cm%clin(cfk%FDL)%filefmt  == 5) .OR.
-     +    (cm%clin(cfk%PRE)%filefmt  == 5) .OR.
-     +    (cm%clin(cfk%TA)%filefmt   == 5) .OR.
-     +    (cm%clin(cfk%UL)%filefmt   == 5) .OR.
-     +    (cm%clin(cfk%PRES)%filefmt == 5) .OR.
-     +    (cm%clin(cfk%QA)%filefmt   == 5)) THEN
-
-        REWIND(UNIT=53)
-
-        DO I=1,4
-            READ(53,*)
-        ENDDO
-
-
-        DO I=1,CONFLAGS
-          READ(53,"(A20, I4)") IRONAME, IROVAL
-
-          IF (IRONAME .EQ. "BASINSHORTWAVEFLAG") THEN
-              IF (IROVAL .EQ. 5) THEN
-                  BACKSPACE(53)
-                  READ(53,*)IRONAME,cm%clin(1)%flagId,
-     +                     cm%clin(1)%flagRead, cm%clin(1)%timeSize
-                  cm%clin(1)%id_var = 'SHORTWAVE'
-              ENDIF
-          ENDIF
-
-          IF (IRONAME .EQ. "BASINLONGWAVEFLAG") THEN
-              IF (IROVAL .EQ. 5)THEN
-                  BACKSPACE(53)
-                  READ(53,*)IRONAME,cm%clin(2)%flagId,
-     +                      cm%clin(2)%flagRead,cm%clin(2)%timeSize
-                  cm%clin(2)%id_var = 'LONGWAVE'
-              ENDIF
-          ENDIF
-
-          IF (IRONAME .EQ. "BASINRAINFLAG") THEN
-              IF (IROVAL .EQ. 5)THEN
-                  BACKSPACE(53)
-                  READ(53,*)IRONAME, cm%clin(3)%flagId,
-     +                      cm%clin(3)%flagRead, cm%clin(3)%timeSize
-                  cm%clin(3)%id_var = 'RAIN'
-
-
-
-              ENDIF
-          ENDIF
-
-          IF (IRONAME .EQ. "BASINTEMPERATUREFLAG") THEN
-              IF (IROVAL .EQ. 5)THEN
-                  BACKSPACE(53)
-                  READ(53,*)IRONAME,cm%clin(4)%flagId,
-     +                      cm%clin(4)%flagRead,cm%clin(4)%timeSize
-                  cm%clin(4)%id_var = 'TEMPERATURE'
-              ENDIF
-          ENDIF
-
-          IF (IRONAME .EQ. "BASINWINDFLAG") THEN
-              IF (IROVAL .EQ. 5)THEN
-                  BACKSPACE(53)
-                  READ(53,*)IRONAME,cm%clin(5)%flagId,
-     +                      cm%clin(5)%flagRead, cm%clin(5)%timeSize
-                  cm%clin(5)%id_var = 'WIND'
-              ENDIF
-          ENDIF
-
-          IF (IRONAME .EQ. "BASINPRESFLAG") THEN
-              IF (IROVAL .EQ. 5)THEN
-                  BACKSPACE(53)
-                  READ(53,*)IRONAME,cm%clin(6)%flagId,
-     +                      cm%clin(6)%flagRead, cm%clin(6)%timeSize
-                  cm%clin(6)%id_var = 'PRESSURE'
-              ENDIF
-          ENDIF
-
-          IF (IRONAME .EQ. "BASINHUMIDITYFLAG") THEN
-              IF (IROVAL .EQ. 5)THEN
-                  BACKSPACE(53)
-                  READ(53,*)IRONAME,cm%clin(7)%flagId,
-     +                      cm%clin(7)%flagRead,cm%clin(7)%timeSize
-                  cm%clin(7)%id_var = 'HUMIDITY'
-              ENDIF
-          ENDIF
-
-        ENDDO
-
-      END IF
+      CALL GET_DATES(ts)
 
       CLOSE(UNIT=53)
       WRITE (6, FMT=*) " READ: SUCCESSFUL, FILE: CLOSED"

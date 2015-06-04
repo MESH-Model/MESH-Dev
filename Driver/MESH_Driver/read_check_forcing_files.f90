@@ -31,24 +31,21 @@ subroutine READ_CHECK_FORCING_FILES(cm, indx, ts, bi)
 
 !todo change documentation to reflect that all 3 types of forcing files can be used
 
+    !> Initialize the climate variable to read data into memory.
+    if (cm%clin(indx)%timeSize > 0) then
+        call Init_clim_info(cm, ts, indx, bi)
+        if (indx == cfk%PRE .and. cm%clin(cfk%PRE)%filefmt == 6) call Init_clim_info(cm, ts, 8, bi)
+    end if
+
     !> Special case two sources of precipitation with alpha constant.
 !todo generalize this
     if (indx == cfk%PRE .and. cm%clin(cfk%PRE)%filefmt == 6) then
-        call Init_clim_info(cm, ts, cfk%PRE, bi)
         call Init_clim_data(cm, cfk%PRE, 921)
-        call Init_clim_info(cm, ts, 8, bi)
         call Init_clim_data(cm, 8, 922)
-        NUM_SEQ = NUM_SEQ + 1
         return
-
-    !> Initialize the climate variable for the case when data are to be read into memory.
-    elseif (cm%clin(indx)%filefmt < 5) then
-        cm%clin(indx)%flagRead = cm%clin(indx)%filefmt
-    elseif (cm%clin(indx)%filefmt == 5) then
-        call Init_clim_info(cm, ts, indx, bi)
     end if
 
-    !> Set the filename and open the file.
+    !> Call to open the forcing file.
     call Init_clim_data(cm, indx, cm%basefileunit + indx)
 
 end subroutine !READ_CHECK_FORCING_FILES
