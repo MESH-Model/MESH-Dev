@@ -202,8 +202,9 @@ module model_output
         integer :: nargs
         character*20, dimension(:), allocatable :: args
         logical :: out_y, out_m, out_s, out_d, out_h
-        character*20 :: out_fmt, out_acc
-        
+        character*20 :: out_fmt, out_seq, out_acc
+        logical :: opt_printdate = .false.
+
         ! Grid cells where data is request       
         integer, dimension(:), allocatable :: i_grds
 
@@ -416,6 +417,7 @@ module model_output
         vo%out_d   = .false.
         vo%out_h   = .false.
         vo%out_fmt = "unknown"
+        vo%out_seq = "gridorder"
         vo%out_acc = "unknown"
 
         !> Assign variables according to the args.
@@ -446,9 +448,16 @@ module model_output
                         vo%out_h = .true.
 
                     !> Output format.
-                    case ("r2c", "seq","binseq" )
-
+                    case ("r2c", "seq", "binseq", "txt", "csv")
                         vo%out_fmt = vo%args(i)
+
+                    !> Order of the selection being saved.
+                    case ("gridorder", "shedorder")
+                        vo%out_seq = lowercase(trim(adjustl(vo%args(i))))
+
+                    !> Print date-stamp prior to the record.
+                    case ("printdate")
+                        vo%opt_printdate = .true.
 
                     !> Output format. Time series in grids
                     case("tsi")
@@ -461,11 +470,9 @@ module model_output
                         
                     !> Method of accumulation.
                     case ("cum", "avg", "max", "min")
-
                           vo%out_acc = vo%args(i)
 
                     case default
-
                         print *, trim(vo%args(i)) // " (Line ", i, ") is an unrecognized argument for output."
 
                 end select !case (vo%args(i))
@@ -1308,6 +1315,12 @@ module model_output
 
                     case ("r2c")
                         call WriteR2C(fld_out, var_id, ifo, freq2, dates, file_unit, keep_file_open, public_ic%count_hour)
+
+                    case ("txt")
+                        call WriteTxt(fld_out, var_id, ifo, freq2, dates, file_unit, keep_file_open, public_ic%count_hour)
+
+                    case ("csv")
+                        call WriteCSV(fld_out, var_id, ifo, freq2, dates, file_unit, keep_file_open, public_ic%count_hour)
 
                 end select !case (trim(adjustl(ifo%var_out(var_id)%out_fmt)))
 
@@ -2705,6 +2718,13 @@ module model_output
                 
             case('tsi')
                 call WriteTsi(fld, indx, ifo, freq2, dates, fls)
+
+            case ('txt')
+                call WriteTxt(fld, indx, ifo, freq2, dates)
+
+            case ('csv')
+                call WriteCSV(fld, indx, ifo, freq2, dates)
+
             case default
                 print *, "Output as file format '" // trim(adjustl(vId)) // "' is not implemented yet."
 
@@ -2969,5 +2989,189 @@ if (allocated(dates)) &
         9000 format(a6, 2i10, 3x, '"', i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':00.000"')
 
     end subroutine WriteR2C
+
+    !> Subroute: WriteTxt
+    !> Write the output to file in text format.
+    subroutine WriteTxt(fld, indx, info, freq, dates, file_unit, keep_file_open, frame_no)
+
+        use area_watflood
+
+        !Inputs
+        real fld(:, :)
+        integer indx
+        type(info_out) :: info
+        character*5 freq
+        integer, allocatable :: dates(:, :)
+        integer, optional :: file_unit
+        logical, optional :: keep_file_open
+        integer, optional :: frame_no
+
+        !Internal
+        character*450 flOut
+        integer ios, i, un, nfr
+        integer na1, nt, j, t, k
+        real, dimension(:, :), allocatable :: data_aux
+        character(10) :: ctime
+        character(8) :: cday
+        logical :: opened_status, close_file
+
+        flOut = trim(adjustl(info%pthOut)) // trim(adjustl(info%var_out(indx)%name)) // '_' // trim(adjustl(freq)) // '.txt'
+
+        if (present(file_unit)) then
+            un = file_unit
+        else
+            un = 882
+        end if
+
+        inquire(unit = un, opened = opened_status)
+        if (.not. opened_status) then
+            open(unit   = un                   , &
+                 file   = trim(adjustl(flOut)) , &
+                 status = 'replace'            , &
+                 form   = 'formatted'          , &
+                 action = 'write'              )
+        end if !(.not. opened_status) then
+
+        if (allocated(dates)) then
+
+            do t = 1, size(dates(:, 1))
+
+                if (info%var_out(indx)%opt_printdate) then
+                    if (size(dates, 2) == 5) then
+                        write(un, 9000, advance = 'no') dates(t, 1), dates(t, 2), dates(t, 3), dates(t, 5), 0
+                    elseif (size(dates, 2) == 3) then
+                        write(un, 9000, advance = 'no') dates(t, 1), dates(t, 2), dates(t, 3), 0, 0
+                    else
+                        write(un, 9000, advance = 'no') dates(t, 1), dates(t, 2), 1, 0, 0
+                    end if
+                end if
+
+                select case (info%var_out(indx)%out_seq)
+
+                    case ('gridorder')
+                        write(un, 9001) fld(:, t)
+
+                    case ('shedorder')
+                        allocate(data_aux(ycount, xcount))
+                        data_aux = 0.0
+                        do k = 1, na
+                            data_aux(yyy(k), xxx(k)) = fld(k, t)
+                        end do
+                        do j = 1, (ycount - 1)
+                            write(un, 9001, advance = 'no') (data_aux(j, i), i = 1, xcount)
+                        end do
+                        write(un, 9001) (data_aux(ycount, i), i = 1, xcount)
+                        deallocate(data_aux)
+
+                end select
+
+            end do
+
+        end if !(allocated(dates)) then
+
+        if (present(keep_file_open)) then
+            close_file = .not. keep_file_open
+        else
+            close_file = .true.
+        end if
+
+        if (close_file) close(unit = un)
+
+        9000 format('"', i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':00.000"', 2x)
+        9001 format(*(e12.6, 2x))
+
+    end subroutine !WriteTxt
+
+    !> Subroute: WriteCSV
+    !> Write the output to file in CSV format.
+    subroutine WriteCSV(fld, indx, info, freq, dates, file_unit, keep_file_open, frame_no)
+
+        use area_watflood
+
+        !Inputs
+        real fld(:, :)
+        integer indx
+        type(info_out) :: info
+        character*5 freq
+        integer, allocatable :: dates(:, :)
+        integer, optional :: file_unit
+        logical, optional :: keep_file_open
+        integer, optional :: frame_no
+
+        !Internal
+        character*450 flOut
+        integer ios, i, un, nfr
+        integer na1, nt, j, t, k
+        real, dimension(:, :), allocatable :: data_aux
+        character(10) :: ctime
+        character(8) :: cday
+        logical :: opened_status, close_file
+
+        flOut = trim(adjustl(info%pthOut)) // trim(adjustl(info%var_out(indx)%name)) // '_' // trim(adjustl(freq)) // '.csv'
+
+        if (present(file_unit)) then
+            un = file_unit
+        else
+            un = 882
+        end if
+
+        inquire(unit = un, opened = opened_status)
+        if (.not. opened_status) then
+            open(unit   = un                   , &
+                 file   = trim(adjustl(flOut)) , &
+                 status = 'replace'            , &
+                 form   = 'formatted'          , &
+                 action = 'write'              )
+        end if !(.not. opened_status) then
+
+        if (allocated(dates)) then
+
+            do t = 1, size(dates(:, 1))
+
+                if (info%var_out(indx)%opt_printdate) then
+                    if (size(dates, 2) == 5) then
+                        write(un, 9000, advance = 'no') dates(t, 1), dates(t, 2), dates(t, 3), dates(t, 5), 0
+                    elseif (size(dates, 2) == 3) then
+                        write(un, 9000, advance = 'no') dates(t, 1), dates(t, 2), dates(t, 3), 0, 0
+                    else
+                        write(un, 9000, advance = 'no') dates(t, 1), dates(t, 2), 1, 0, 0
+                    end if
+                end if
+
+                select case (info%var_out(indx)%out_seq)
+
+                    case ('gridorder')
+                        write(un, 9001) fld(:, t)
+
+                    case ('shedorder')
+                        allocate(data_aux(ycount, xcount))
+                        data_aux = 0.0
+                        do k = 1, na
+                            data_aux(yyy(k), xxx(k)) = fld(k, t)
+                        end do
+                        do j = 1, (ycount - 1)
+                            write(un, 9001, advance = 'no') (data_aux(j, i), i = 1, xcount)
+                        end do
+                        write(un, 9001) (data_aux(ycount, i), i = 1, xcount)
+                        deallocate(data_aux)
+
+                end select
+
+            end do
+
+        end if !(allocated(dates)) then
+
+        if (present(keep_file_open)) then
+            close_file = .not. keep_file_open
+        else
+            close_file = .true.
+        end if
+
+        if (close_file) close(unit = un)
+
+        9000 format('"', i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':00.000"', ',')
+        9001 format(*(e12.6, ','))
+
+    end subroutine !WriteCSV
 
 end module model_output
