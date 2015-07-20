@@ -31,7 +31,6 @@ module climate_forcing
 
     TYPE clim_info
 
-        integer :: NA !number of cell inside the basin
         integer :: nclim !number of climate variables
         integer :: basefileunit = 89
         type(clim_info_read) :: clin(8) !load extra rainfall
@@ -121,22 +120,21 @@ module climate_forcing
     !> -----------------------------------------------------------------
     !> Description: Initialization of clim_info
     !> -----------------------------------------------------------------
-    subroutine Init_clim_info(cm, ts, indx, bi)
+    subroutine Init_clim_info(bi, ts, indx, cm)
 
-        !> Input
+        !> Input variables.
+        type(basin_info), intent(in) :: bi
         type(dates_model), intent(in) :: ts
         integer, intent(in) :: indx
-        type(basin_info), intent(in) :: bi
 
-        !> Input Output
-        type(clim_info), intent(inout) :: cm
+        !> Input/Output variables.
+        type(clim_info) :: cm
 
-        !> Internals
+        !> Local variables.
         integer nts, rts, timeStepClimF
 
         !cm%nclim = 7
         cm%nclim = 8
-        cm%NA = bi%NA
 
         timeStepClimF = ts%nr_days*24*(60/TIME_STEP_MINS)/real(cm%clin(indx)%hf)*TIME_STEP_MINS
         if (timeStepClimF <= cm%clin(indx)%timeSize) then
@@ -161,21 +159,22 @@ module climate_forcing
     !> *****************************************************************
     !> Open the MESH_input_forcing.bin file
     !> *****************************************************************
-    subroutine climate_module_init(ts, bi, cm, ENDDATA, &
-!todo: These variables can be stored elsewhere instead of passed.
-        YCOUNT)
+    subroutine climate_module_init(bi, ts, cm, ENDDATA)
 
         use FLAGS
 
         !> Input variables.
-        type(DATES_MODEL) :: ts
         type(basin_info) :: bi
+        type(dates_model) :: ts
+
+        !> Input/Output variables.
         type(clim_info) :: cm
+
+        !> Output variables.
         logical ENDDATA
-        integer YCOUNT
 
         !> Local variables.
-        !* toskip   : The number of variables in the file per timestep
+        !* toskip: The number of variables in the file per timestep
 !        integer nyy, ndy,
         integer ISTEP_START, nmy, nhy, nrs, Jday_IND2, Jday_IND3, toskip
         integer i, j, m
@@ -202,7 +201,7 @@ module climate_forcing
 
         !> Open the rest of the forcing files.
         do i = 1, 7
-            call READ_CHECK_FORCING_FILES(cm, i, ts, bi)
+            call READ_CHECK_FORCING_FILES(bi, ts, i, cm)
 
             !> Update the file format counters for the legacy binary format.
             select case (cm%clin(i)%filefmt)
@@ -305,49 +304,49 @@ module climate_forcing
             !> R2C-format (ASCII).
             if (cm%clin(cfk%FS)%filefmt == 1) then !Skip the r2c file's information
                 read(90, *, end = 999)
-                do m = 1, YCOUNT
+                do m = 1, bi%YCOUNT
                     Read (90, *, end = 999)
                 end do
                 read (90, *, end = 999) !:EndFrame line
             end if
             if (cm%clin(cfk%FDL)%filefmt == 1) then
                 read(91, *, end = 999) !:Frame line
-                do m = 1, YCOUNT
+                do m = 1, bi%YCOUNT
                     read(91, *, end = 999)
                 end do
                 read(91, *, end = 999) !:EndFrame line
             end if
             if (cm%clin(cfk%PRE)%filefmt == 1) then
                 read(92, *, end = 999) !:Frame line
-                do m = 1, YCOUNT
+                do m = 1, bi%YCOUNT
                     read(92, *, end = 999)
                 end do
                 read(92, *, end = 999) !:EndFrame line
             end if
             if (cm%clin(cfk%TA)%filefmt == 1) then
                 read(93, *, END=999) !:Frame line
-                do m = 1, YCOUNT
+                do m = 1, bi%YCOUNT
                     read(93, *, end = 999)
                 end do
                 read(93, *, end = 999) !:EndFrame line
             end if
             if (cm%clin(cfk%UL)%filefmt == 1) then
                 read(94, *, end = 999) !:Frame line
-                do m = 1, YCOUNT
+                do m = 1, bi%YCOUNT
                     read(94, *, end = 999)
                 end do
                 read(94, *, end = 999) !:EndFrame line
             end if
             if (cm%clin(cfk%PRES)%filefmt == 1) then
                 read(95, *, end = 999) !:Frame line
-                do m = 1, YCOUNT
+                do m = 1, bi%YCOUNT
                     read(95, *, end = 999)
                 end do
                 read(95, *, end = 999) !:EndFrame line
             end if
             if (cm%clin(cfk%QA)%filefmt == 1) then
                 read(96, *, end = 999) !:Frame line
-                do m = 1, YCOUNT
+                do m = 1, bi%YCOUNT
                     read(96, *, end = 999)
                 end do
                 read(96, *, end = 999)
@@ -394,7 +393,7 @@ module climate_forcing
         FSDOWN = 0.0
 
         !> Allocate and initialize GAT variables.
-        ilg = bi%NA*bi%nm
+        ilg = bi%NA*bi%NTYPE
         allocate( &
             FSVHGAT(ilg), FSIHGAT(ilg), FDLGAT(ilg), PREGAT(ilg), TAGAT(ilg), ULGAT(ilg), PRESGAT(ilg), QAGAT(ilg), VLGAT(ilg))
         FSVHGAT = 0.0
@@ -439,24 +438,23 @@ module climate_forcing
     !> *****************************************************************
     !> MAM - Read in initial meteorological forcing data
     !> *****************************************************************
-    subroutine climate_module_loaddata(bi, cm, firststep, ENDDATA, &
-!todo: These variables can be stored elsewhere instead of passed.
-        YCOUNT, XCOUNT, NML, ILMOS, JLMOS, YYY, XXX, ACLASS)
+    subroutine climate_module_loaddata(bi, firststep, cm, ENDDATA)
 
         use FLAGS
 
         !> Input variables.
         type(basin_info) :: bi
-        type(CLIM_INFO) :: cm
-        logical firststep, ENDDATA
-        integer YCOUNT, XCOUNT, NML, ILMOS(:), JLMOS(:), &
-            YYY(:), XXX(:)
-        real ACLASS(:, :)
+        logical firststep
+
+        !> Input/Output variables.
+        type(clim_info) :: cm
+
+        !> Output variables.
+        logical ENDDATA
 
         !> Local variables.
-        integer i, ilg
+        integer i
 
-        ilg = bi%NA*bi%NM
         if (firststep) then
 
             !> Set the current time step of the input forcing data.
@@ -464,24 +462,28 @@ module climate_forcing
                 cm%clin(i)%timestep_now = TIME_STEP_NOW
             end do
             if (INTERPOLATIONFLAG == 0) then
-                call READ_FORCING_DATA(YCOUNT, XCOUNT, bi%NM, bi%NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+                call READ_FORCING_DATA(bi, cm, &
                                        FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
-                                       FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, cm)
+                                       FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, &
+                                       ENDDATA)
             elseif (INTERPOLATIONFLAG == 1) then
                 if (RESUMEFLAG /= 1) then
-                    call READ_FORCING_DATA(YCOUNT, XCOUNT, bi%NM, bi%NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+                    call READ_FORCING_DATA(bi, cm, &
                                            FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
                                            FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, TAGATPRE, ULGATPRE, &
-                                           PRESGATPRE, QAGATPRE, cm)
-                    call READ_FORCING_DATA(YCOUNT, XCOUNT, bi%NM, bi%NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+                                           PRESGATPRE, QAGATPRE, &
+                                           ENDDATA)
+                    call READ_FORCING_DATA(bi, cm, &
                                            FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
                                            FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, TAGATPST, ULGATPST, &
-                                           PRESGATPST, QAGATPST, cm)
+                                           PRESGATPST, QAGATPST, &
+                                           ENDDATA)
                 else
-                    call READ_FORCING_DATA(YCOUNT, XCOUNT, bi%NM, bi%NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+                    call READ_FORCING_DATA(bi, cm, &
                                            FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
                                            FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, TAGATPST, ULGATPST, &
-                                           PRESGATPST, QAGATPST, cm)
+                                           PRESGATPST, QAGATPST, &
+                                           ENDDATA)
                 end if
             end if
             VLGRD = 0.0
@@ -529,14 +531,16 @@ module climate_forcing
             end if
 
             if (INTERPOLATIONFLAG == 1) then
-                call READ_FORCING_DATA(YCOUNT, XCOUNT, bi%NM, bi%NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+                call READ_FORCING_DATA(bi, cm, &
                                        FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
                                        FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, TAGATPST, ULGATPST, &
-                                       PRESGATPST, QAGATPST, cm)
+                                       PRESGATPST, QAGATPST, &
+                                       ENDDATA)
             else
-                call READ_FORCING_DATA(YCOUNT, XCOUNT, bi%NM, bi%NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+                call READ_FORCING_DATA(bi, cm, &
                                        FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
-                                       FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, cm)
+                                       FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, &
+                                       ENDDATA)
             end if
 
         end if !(firststep) then
@@ -547,16 +551,16 @@ module climate_forcing
     !> Description: Initialization of climate data
     !>
     !> -----------------------------------------------------------------
-    subroutine Init_clim_data(cm, indx, unitR)
+    subroutine Init_clim_data(indx, flunit, cm)
 
-        !> Inputs
-        integer, intent(in) :: indx, unitR
+        !> Input variables.
+        integer, intent(in) :: indx, flunit
 
-        !> Inputs Output
-        type(clim_info), intent(inout) :: cm
+        !> Input/Output variables.
+        type(clim_info) :: cm
 
         !> Set the unit number.
-        cm%clin(indx)%unitR = unitR
+        cm%clin(indx)%unitR = flunit
 
         !> Set the file name.
         if (indx == cfk%FS) then
@@ -578,7 +582,7 @@ module climate_forcing
         end if
 
         !> Call the subroutine to open the data.
-        call OpenData(cm, indx)
+        call OpenData(indx, cm)
 
     end subroutine Init_clim_data
 
@@ -586,12 +590,15 @@ module climate_forcing
     !> Description: Open Units and Load the first block of climate data
     !>
     !> -----------------------------------------------------------------
-    subroutine OpenData(cm, indx)
+    subroutine OpenData(indx, cm)
 
-        !> Input
+        !> Input variables.
         integer, intent(in) :: indx
 
+        !> Input/Output variables.
         type(clim_info) :: cm
+
+        !> Local variables.
         integer ios
         character*80 end_of_r2c_header
 
@@ -692,22 +699,22 @@ module climate_forcing
     !> -----------------------------------------------------------------
     !> Description: Load block of data
     !> -----------------------------------------------------------------
-    subroutine LoadData(cm, indx, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+    subroutine LoadData(bi, indx, cm, ENDDATA)
 
-        type(clim_info) :: cm
-
-        !> Inputs variables
-        integer XCOUNT, YCOUNT, NA
-        integer XXX(NA), YYY(NA)
+        !> Input variables.
+        type(basin_info) :: bi
         integer indx
 
-        !> output
+        !> Input/Output variables.
+        type(clim_info) :: cm
+
+        !> Output variables.
         logical ENDDATA
 
-        !> Internals variables
+        !> Local variables.
         integer NTIME
         integer i, j, ii, jj
-        real INARRAY(YCOUNT, XCOUNT)
+        real INARRAY(bi%YCOUNT, bi%XCOUNT)
 
         select case (cm%clin(indx)%filefmt)
 
@@ -715,12 +722,12 @@ module climate_forcing
             case (1)
                 do j = 1, size(cm%clin(indx)%climv, 2)
                     read(cm%clin(indx)%unitR, *, end = 999) !:Frame line
-                    do ii = 1, YCOUNT
-                        read(cm%clin(indx)%unitR, *, end = 999) (INARRAY(ii, jj), jj = 1, XCOUNT)
+                    do ii = 1, bi%YCOUNT
+                        read(cm%clin(indx)%unitR, *, end = 999) (INARRAY(ii, jj), jj = 1, bi%XCOUNT)
                     end do
                     read(cm%clin(indx)%unitR, *, end = 999) !:EndFrame line
-                    do i = 1, NA
-                        cm%clin(indx)%climv(i, j) = INARRAY(YYY(i), XXX(i))
+                    do i = 1, bi%NA
+                        cm%clin(indx)%climv(i, j) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
                 end do
 
@@ -748,19 +755,22 @@ module climate_forcing
 
     end subroutine LoadData
 
-    subroutine climate_module_interpolatedata(bi, cm, &
+    subroutine climate_module_interpolatedata(bi, &
 !todo: These variables can be stored elsewhere instead of passed.
-        ACLASS, FAREGAT, NML, ILMOS, JLMOS)
+        FAREGAT, &
+        cm)
 
         !> Input variables.
         type(basin_info) :: bi
-        type(CLIM_INFO) :: cm
-        real ACLASS(:, :), FAREGAT(:)
-        integer NML, ILMOS(:), JLMOS(:)
+        real, dimension(:) :: FAREGAT
+
+        !> Input/Output variables.
+        type(clim_info) :: cm
 
         !> Local variables.
         integer k
 
+        !> Determine the time ratio (linear) and interpolate the data for the current time-step.
         TRATIO = min(1.0, real(cm%clin(cfk%FS)%timestep_now)/cm%clin(cfk%FS)%hf)
         FSVHGAT = FSVHGATPRE + TRATIO*(FSVHGATPST - FSVHGATPRE)
         FSIHGAT = FSIHGATPRE + TRATIO*(FSIHGATPST - FSIHGATPRE)
@@ -777,7 +787,7 @@ module climate_forcing
         TRATIO = min(1.0, real(cm%clin(cfk%QA)%timestep_now)/cm%clin(cfk%QA)%hf)
         QAGAT = QAGATPRE + TRATIO*(QAGATPST - QAGATPRE)
 
-        !> INTERPOLATE GRD VARIABLES
+        !> Distribute the grid variables.
         FSVHGRD = 0.0
         FSIHGRD = 0.0
         FDLGRD = 0.0
@@ -786,17 +796,16 @@ module climate_forcing
         QAGRD = 0.0
         PRESGRD = 0.0
         PREGRD = 0.0
-
-        do k = 1, NML
+        do k = 1, bi%NML
             if (FAREGAT(k) > 0.0) then
-                FSVHGRD(ILMOS(k)) = FSVHGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*FSVHGAT(k)
-                FSIHGRD(ILMOS(k)) = FSIHGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*FSIHGAT(k)
-                FDLGRD(ILMOS(k)) = FDLGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*FDLGAT(k)
-                ULGRD(ILMOS(k)) = ULGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*ULGAT(k)
-                TAGRD(ILMOS(k)) = TAGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*TAGAT(k)
-                QAGRD(ILMOS(k)) = QAGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*QAGAT(k)
-                PRESGRD(ILMOS(k)) = PRESGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*PRESGAT(k)
-                PREGRD(ILMOS(k)) = PREGRD(ILMOS(k)) + ACLASS(ILMOS(k), JLMOS(k))*PREGAT(k)
+                FSVHGRD(bi%ILMOS(k)) = FSVHGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*FSVHGAT(k)
+                FSIHGRD(bi%ILMOS(k)) = FSIHGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*FSIHGAT(k)
+                FDLGRD(bi%ILMOS(k)) = FDLGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*FDLGAT(k)
+                ULGRD(bi%ILMOS(k)) = ULGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*ULGAT(k)
+                TAGRD(bi%ILMOS(k)) = TAGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*TAGAT(k)
+                QAGRD(bi%ILMOS(k)) = QAGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*QAGAT(k)
+                PRESGRD(bi%ILMOS(k)) = PRESGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*PRESGAT(k)
+                PREGRD(bi%ILMOS(k)) = PREGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*PREGAT(k)
             end if
         end do !k = 1, NML
         FSDOWN = 2.0*FSVHGRD
@@ -807,23 +816,23 @@ module climate_forcing
     !> Description: Check if we need to load data again if that, we
     !> deallocate and allocate again and then we load data
     !> -----------------------------------------------------------------
-    subroutine NeedUpdate_clim_data(cm, indx, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+    subroutine NeedUpdate_clim_data(bi, indx, cm, ENDDATA)
 
-        type(clim_info) :: cm
-
-        !> Inputs variables
-        integer XCOUNT, YCOUNT, NA
-        integer XXX(NA), YYY(NA)
+        !> Inputs variables.
+        type(basin_info) :: bi
         integer indx
 
-        !> Ouput
+        !> Input/Output variables.
+        type(clim_info) :: cm
+
+        !> Ouput variables.
         logical ENDDATA
 
         !> Check if we need to update.
         if (cm%clin(indx)%itime == 1) then
             if (allocated(cm%clin(indx)%climv)) deallocate(cm%clin(indx)%climv)
-            allocate(cm%clin(indx)%climv(cm%NA, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
-            call LoadData(cm, indx, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+            allocate(cm%clin(indx)%climv(bi%NA, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
+            call LoadData(bi, indx, cm, ENDDATA)
         end if
 
     end subroutine NeedUpdate_clim_data

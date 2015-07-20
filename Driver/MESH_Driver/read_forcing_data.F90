@@ -1,6 +1,7 @@
-subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, YYY, XXX, ENDDATA, ACLASS, &
+subroutine READ_FORCING_DATA(bi, cm, &
                              FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
-                             FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, cm)
+                             FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, &
+                             ENDDATA)
 
     !> *****************************************************************
     !> Read in Meteorological forcing data
@@ -19,25 +20,28 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
     !* R4HUMDGRID2D: SPECIFIC HUMIDITY AT REFERENCE HEIGHT [kg kg-1]
     !> *****************************************************************
 
+    use sa_mesh_shared_variabletypes
     use FLAGS
     use climate_forcing, only: clim_info, cfk, NeedUpdate_clim_data
 
     implicit none
 
-    integer YCOUNT, XCOUNT, NTYPE, NA, NML, ILG
+    !> Input variables.
+    type(basin_info), intent(in) :: bi
+
+    !> Input/Output variables.
+    type(clim_info) :: cm
+
+    !> Output variables.
+    real*4, dimension(bi%NA) :: FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD
+    real*4, dimension(bi%ILG) :: FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT
     logical ENDDATA
 
-    real*4, dimension(YCOUNT, XCOUNT) :: INARRAY
-    real*4, dimension(NTYPE) :: INVECTOR
-    real*4, dimension(NA, NTYPE) :: ACLASS
-    real*4, dimension(NA) :: FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD
-    real*4, dimension(ILG) :: FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT
+    !> Local variables.
+    real*4, dimension(bi%YCOUNT, bi%XCOUNT) :: INARRAY
+    real*4, dimension(bi%NTYPE) :: INVECTOR
     real*4 JUNK
-    integer*4, dimension(NA) :: YYY, XXX
-    integer*4, dimension(ILG) :: ILMOS, JLMOS
     integer i, j, k, CURGRU, ICOUNT
-
-    type(clim_info) :: cm
 
     integer :: NTIME  ! time in read sequential
 
@@ -51,7 +55,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
         !> Read into memory.
         if (cm%clin(cfk%FS)%timeSize > 0) then
-            call NeedUpdate_clim_data(cm, cfk%FS, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+            call NeedUpdate_clim_data(bi, cfk%FS, cm, ENDDATA)
             FSDOWN = cm%clin(cfk%FS)%climv(:, cm%clin(cfk%FS)%itime)
             cm%clin(cfk%FS)%itime = cm%clin(cfk%FS)%itime + 1
             if (cm%clin(cfk%FS)%itime > size(cm%clin(cfk%FS)%climv, 2)) then
@@ -59,7 +63,7 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
             end if
             FSVHGRD = 0.5*FSDOWN
             FSIHGRD = FSVHGRD
-            call GATHER(NA, NML, ILG, ILMOS, FSVHGRD, FSVHGAT)
+            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
             FSIHGAT = FSVHGAT
             ICOUNT = ICOUNT + 1
 
@@ -69,40 +73,40 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
                 !> Legacy binary format.
                 case (0)
-                    read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
-                    do i = 1, NA
-                        FSDOWN(i) = INARRAY(YYY(i), XXX(i))
+                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
+                    do i = 1, bi%NA
+                        FSDOWN(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
                     FSVHGRD = 0.5*FSDOWN
                     FSIHGRD = FSVHGRD
-                    call GATHER(NA, NML, ILG, ILMOS, FSVHGRD, FSVHGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
                     FSIHGAT = FSVHGAT
 
                 !> ASCII R2C format.
                 case (1)
                     read(cm%basefileunit + cfk%FS, *, end = 999) !:Frame line
-                    do i = 1, YCOUNT
-                        read(cm%basefileunit + cfk%FS, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+                    do i = 1, bi%YCOUNT
+                        read(cm%basefileunit + cfk%FS, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
                     read(cm%basefileunit + cfk%FS, *, end = 999) !:EndFrame line
-                    do i = 1, NA
-                        FSDOWN(i) = INARRAY(YYY(i), XXX(i))
+                    do i = 1, bi%NA
+                        FSDOWN(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
                     FSVHGRD = 0.5*FSDOWN
                     FSIHGRD = FSVHGRD
-                    call GATHER(NA, NML, ILG, ILMOS, FSVHGRD, FSVHGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
                     FSIHGAT = FSVHGAT
                     ICOUNT = ICOUNT + 1
 
                 !> CSV format.
                 case (2)
-                    read(cm%basefileunit + cfk%FS, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
-                    do i = 1, NML
-                        CURGRU = JLMOS(i)
+                    read(cm%basefileunit + cfk%FS, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    do i = 1, bi%NML
+                        CURGRU = bi%JLMOS(i)
                         FSVHGAT(i) = 0.5*INVECTOR(CURGRU)
                     end do
                     FSIHGAT = FSVHGAT
-                    call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, FSVHGRD, FSVHGAT)
+                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, FSVHGRD, FSVHGAT)
                     FSDOWN = 2.0*FSVHGRD
                     FSIHGRD = FSVHGRD
                     ICOUNT = ICOUNT + 1
@@ -113,16 +117,16 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
                     read(cm%basefileunit + cfk%FS, end = 999) FSDOWN
                     FSVHGRD = 0.5*FSDOWN
                     FSIHGRD = FSVHGRD
-                    call GATHER(NA, NML, ILG, ILMOS, FSVHGRD, FSVHGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
                     FSIHGAT = FSVHGAT
                     ICOUNT = ICOUNT + 1
 
                 !> ASCII format.
                 case (4)
-                    read(cm%basefileunit + cfk%FS, *, end = 999) (FSDOWN(i), i = 1, NA)
+                    read(cm%basefileunit + cfk%FS, *, end = 999) (FSDOWN(i), i = 1, bi%NA)
                     FSVHGRD = 0.5*FSDOWN
                     FSIHGRD = FSVHGRD
-                    call GATHER(NA, NML, ILG, ILMOS, FSVHGRD, FSVHGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
                     FSIHGAT = FSVHGAT
                     ICOUNT = ICOUNT + 1
 
@@ -141,13 +145,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
         !> Read into memory.
         if (cm%clin(cfk%FDL)%timeSize > 0) then
-            call NeedUpdate_clim_data(cm, cfk%FDL, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+            call NeedUpdate_clim_data(bi, cfk%FDL, cm, ENDDATA)
             FDLGRD = cm%clin(cfk%FDL)%climv(:, cm%clin(cfk%FDL)%itime)
             cm%clin(cfk%FDL)%itime = cm%clin(cfk%FDL)%itime + 1
             if (cm%clin(cfk%FDL)%itime > size(cm%clin(cfk%FDL)%climv, 2)) then
                 cm%clin(cfk%FDL)%itime = 1
             end if
-            call GATHER(NA, NML, ILG, ILMOS, FDLGRD, FDLGAT)
+            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
             ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
@@ -158,44 +162,44 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
                     !> Skip the forcing data that is read from r2c and csv files.
                     do k = 1, ICOUNT
-                        read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
+                        read(51, end = 999) ((JUNK, j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
                     end do
-                    read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
-                    do i = 1, NA
-                        FDLGRD(i) = INARRAY(YYY(i), XXX(i))
+                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
+                    do i = 1, bi%NA
+                        FDLGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
-                    call GATHER(NA, NML, ILG, ILMOS, FDLGRD, FDLGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
 
                 case (1)
                     read(cm%basefileunit + cfk%FDL, *, end = 999) !:Frame line
-                    do i = 1, YCOUNT
-                        read(cm%basefileunit + cfk%FDL, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+                    do i = 1, bi%YCOUNT
+                        read(cm%basefileunit + cfk%FDL, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
                     read(cm%basefileunit + cfk%FDL, *, end = 999) !:EndFrame line
-                    do i = 1, NA
-                        FDLGRD(i) = INARRAY(YYY(i), XXX(i))
+                    do i = 1, bi%NA
+                        FDLGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
-                    call GATHER(NA, NML, ILG, ILMOS, FDLGRD, FDLGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (2)
-                    read(cm%basefileunit + cfk%FDL, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
-                    do i = 1, NML
-                        CURGRU = JLMOS(i)
+                    read(cm%basefileunit + cfk%FDL, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    do i = 1, bi%NML
+                        CURGRU = bi%JLMOS(i)
                         FDLGAT(i) = INVECTOR(CURGRU)
                     end do
-                    call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, FDLGRD, FDLGAT)
+                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, FDLGRD, FDLGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (3)
                     read(cm%basefileunit + cfk%FDL, end = 999) NTIME
                     read(cm%basefileunit + cfk%FDL, end = 999) FDLGRD
-                    call GATHER(NA, NML, ILG, ILMOS, FDLGRD, FDLGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (4)
-                    read(cm%basefileunit + cfk%FDL, *, end = 999) (FDLGRD(i), i = 1, NA)
-                    call GATHER(NA, NML, ILG, ILMOS, FDLGRD, FDLGAT)
+                    read(cm%basefileunit + cfk%FDL, *, end = 999) (FDLGRD(i), i = 1, bi%NA)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
                     ICOUNT = ICOUNT + 1
 
                 case default
@@ -213,13 +217,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
         !> Read into memory.
         if (cm%clin(cfk%PRE)%timeSize > 0) then
-            call NeedUpdate_clim_data(cm, cfk%PRE, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+            call NeedUpdate_clim_data(bi, cfk%PRE, cm, ENDDATA)
             PREGRD = cm%clin(cfk%PRE)%climv(:, cm%clin(cfk%PRE)%itime)
             cm%clin(cfk%PRE)%itime = cm%clin(cfk%PRE)%itime + 1
             if (cm%clin(cfk%PRE)%itime > size(cm%clin(cfk%PRE)%climv, 2)) then
                 cm%clin(cfk%PRE)%itime = 1
             end if
-            call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
+            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
             ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
@@ -230,57 +234,57 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
                     !> Skip the forcing data that is read from r2c and csv files.
                     do k = 1, ICOUNT
-                        read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
+                        read(51, end = 999) ((JUNK, j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
                     end do
-                    read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
-                    do i = 1, NA
-                        PREGRD(i) = INARRAY(YYY(i), XXX(i))
+                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
+                    do i = 1, bi%NA
+                        PREGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
-                    call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
 
                 case (1)
                     read(cm%basefileunit + cfk%PRE, *, end = 999) !:Frame line
-                    do i = 1, YCOUNT
-                        read (cm%basefileunit + cfk%PRE, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+                    do i = 1, bi%YCOUNT
+                        read (cm%basefileunit + cfk%PRE, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
                     read(cm%basefileunit + cfk%PRE, *, end = 999) !:EndFrame line
-                    do i = 1, NA
-                        PREGRD(i) = INARRAY(YYY(i), XXX(i))
+                    do i = 1, bi%NA
+                        PREGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
-                    call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (2)
-                    read(cm%basefileunit + cfk%PRE, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
-                    do i = 1,NML
-                        CURGRU = JLMOS(i)
+                    read(cm%basefileunit + cfk%PRE, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    do i = 1, bi%NML
+                        CURGRU = bi%JLMOS(i)
                         PREGAT(i) = INVECTOR(CURGRU)
                     end do
-                    call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, PREGRD, PREGAT)
+                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, PREGRD, PREGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (3)
                     read(cm%basefileunit + cfk%PRE, end = 999) NTIME
                     read(cm%basefileunit + cfk%PRE, end = 999) PREGRD
-                    call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (4)
-                    read(cm%basefileunit + cfk%PRE, *, end = 999) (PREGRD(i), i = 1, NA)
-                    call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
+                    read(cm%basefileunit + cfk%PRE, *, end = 999) (PREGRD(i), i = 1, bi%NA)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
                     ICOUNT = ICOUNT + 1
 
                 !> Read from two sources of rainfall input.
                 case (6)
-                    call NeedUpdate_clim_data(cm, cfk%PRE, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
-                    call NeedUpdate_clim_data(cm, 8, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+                    call NeedUpdate_clim_data(bi, cfk%PRE, cm, ENDDATA)
+                    call NeedUpdate_clim_data(bi, 8, cm, ENDDATA)
                     PREGRD = cm%clin(8)%alpharain*cm%clin(cfk%PRE)%climv(:, cm%clin(cfk%PRE)%itime) + &
                              (1.0 - cm%clin(8)%alpharain)*cm%clin(8)%climv(:, cm%clin(8)%itime)
                     cm%clin(cfk%PRE)%itime = cm%clin(cfk%PRE)%itime + 1
                     if (cm%clin(cfk%PRE)%itime > size(cm%clin(cfk%PRE)%climv, 2)) cm%clin(cfk%PRE)%itime = 1
                     cm%clin(8)%itime = cm%clin(8)%itime + 1
                     if (cm%clin(8)%itime > size(cm%clin(8)%climv, 2)) cm%clin(8)%itime = 1
-                    call GATHER(NA, NML, ILG, ILMOS, PREGRD, PREGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
                     ICOUNT = ICOUNT + 1
 
                 case default
@@ -298,13 +302,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
         !> Read into memory.
         if (cm%clin(cfk%TA)%timeSize > 0) then
-            call NeedUpdate_clim_data(cm, cfk%TA, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+            call NeedUpdate_clim_data(bi, cfk%TA, cm, ENDDATA)
             TAGRD = cm%clin(cfk%TA)%climv(:, cm%clin(cfk%TA)%itime)
             cm%clin(cfk%TA)%itime = cm%clin(cfk%TA)%itime + 1
             if (cm%clin(cfk%TA)%itime > size(cm%clin(cfk%TA)%climv, 2)) then
                 cm%clin(cfk%TA)%itime = 1
             end if
-            call GATHER(NA, NML, ILG, ILMOS, TAGRD, TAGAT)
+            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
             ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
@@ -315,44 +319,44 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
                     !> Skip the forcing data that is read from r2c and csv files.
                     do k = 1, ICOUNT
-                        read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
+                        read(51, end = 999) ((JUNK, j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
                     end do
-                    read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
-                    do i = 1, NA
-                        TAGRD(i) = INARRAY(YYY(i), XXX(i))
+                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
+                    do i = 1, bi%NA
+                        TAGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
-                    call GATHER(NA, NML, ILG, ILMOS, TAGRD, TAGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
 
                 case (1)
                     read(cm%basefileunit + cfk%TA, *, end = 999) !:Frame line
-                    do i = 1, YCOUNT
-                        read(cm%basefileunit + cfk%TA, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+                    do i = 1, bi%YCOUNT
+                        read(cm%basefileunit + cfk%TA, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
                     read(cm%basefileunit + cfk%TA, *, end = 999) !:EndFrame line
-                    do i = 1, NA
-                        TAGRD(i) = INARRAY(YYY(i), XXX(i))
+                    do i = 1, bi%NA
+                        TAGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
-                    call GATHER(NA, NML, ILG, ILMOS, TAGRD, TAGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (2)
-                    read(cm%basefileunit + cfk%TA, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
-                    do i = 1, NML
-                        CURGRU = JLMOS(i)
+                    read(cm%basefileunit + cfk%TA, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    do i = 1, bi%NML
+                        CURGRU = bi%JLMOS(i)
                         TAGAT(i) = INVECTOR(CURGRU)
                     end do
-                    call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, TAGRD, TAGAT)
+                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, TAGRD, TAGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (3)
                     read(cm%basefileunit + cfk%TA, end = 999) NTIME
                     read(cm%basefileunit + cfk%TA, end = 999) TAGRD
-                    call GATHER(NA, NML, ILG, ILMOS, TAGRD, TAGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (4)
-                    read(cm%basefileunit + cfk%TA, *, end = 999) (TAGRD(i), i = 1, NA)
-                    call GATHER(NA, NML, ILG, ILMOS, TAGRD, TAGAT)
+                    read(cm%basefileunit + cfk%TA, *, end = 999) (TAGRD(i), i = 1, bi%NA)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
                     ICOUNT = ICOUNT + 1
 
                 case default
@@ -370,13 +374,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
         !> Read into memory.
         if (cm%clin(cfk%UL)%timeSize > 0) then
-            call NeedUpdate_clim_data(cm, cfk%UL, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+            call NeedUpdate_clim_data(bi, cfk%UL, cm, ENDDATA)
             ULGRD = cm%clin(cfk%UL)%climv(:, cm%clin(cfk%UL)%itime)
             cm%clin(cfk%UL)%itime = cm%clin(cfk%UL)%itime + 1
             if (cm%clin(cfk%UL)%itime > size(cm%clin(cfk%UL)%climv, 2)) then
                 cm%clin(cfk%UL)%itime = 1
             end if
-            call GATHER(NA, NML, ILG, ILMOS, ULGRD, ULGAT)
+            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
             ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
@@ -387,52 +391,52 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
                     !> Skip the forcing data that is read from r2c and csv files.
                     do k = 1, ICOUNT
-                        read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
+                        read(51, end = 999) ((JUNK, j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
                     end do
-                    read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
-                    do i = 1, NA
-                        ULGRD(i) = INARRAY(YYY(i), XXX(i))
+                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
+                    do i = 1, bi%NA
+                        ULGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
                     !VLGRD = 0.0
                     !VLGAT = 0.0
                     !UVGRD = max(VMIN, ULGRD)
-                    call GATHER(NA, NML, ILG, ILMOS, ULGRD, ULGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
 
                 case (1)
                     read(cm%basefileunit + cfk%UL, *, end = 999) !:Frame line
-                    do i = 1, YCOUNT
-                        read(cm%basefileunit + cfk%UL, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+                    do i = 1, bi%YCOUNT
+                        read(cm%basefileunit + cfk%UL, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
                     read(cm%basefileunit + cfk%UL, *, end = 999) !:EndFrame line
-                    do i = 1, NA
-                        ULGRD(i) = INARRAY(YYY(i), XXX(i))
+                    do i = 1, bi%NA
+                        ULGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
                     !VLGRD = 0.0
                     !VLGAT = 0.0
                     !UVGRD = max(VMIN, ULGRD)
-                    call GATHER(NA, NML, ILG, ILMOS, ULGRD, ULGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (2)
-                    read(cm%basefileunit + cfk%UL, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
-                    do i=1, NML
-                        CURGRU = JLMOS(i)
+                    read(cm%basefileunit + cfk%UL, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    do i=1, bi%NML
+                        CURGRU = bi%JLMOS(i)
                         ULGAT(i) = INVECTOR(CURGRU)
                     end do
                     !VLGRD = 0.0
                     !VLGAT = 0.0
-                    call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, ULGRD, ULGAT)
+                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, ULGRD, ULGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (3)
                     read(cm%basefileunit + cfk%UL, end = 999) NTIME
                     read(cm%basefileunit + cfk%UL, end = 999) ULGRD
-                    call GATHER(NA, NML, ILG, ILMOS, ULGRD, ULGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (4)
-                    read(cm%basefileunit + cfk%UL, *, end = 999) (ULGRD(i), i = 1, NA)
-                    call GATHER(NA, NML, ILG, ILMOS, ULGRD, ULGAT)
+                    read(cm%basefileunit + cfk%UL, *, end = 999) (ULGRD(i), i = 1, bi%NA)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
                     ICOUNT = ICOUNT + 1
 
                 case default
@@ -450,13 +454,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
         !> Read into memory.
         if (cm%clin(cfk%PRES)%timeSize > 0) then
-            call NeedUpdate_clim_data(cm, cfk%PRES, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+            call NeedUpdate_clim_data(bi, cfk%PRES, cm, ENDDATA)
             PRESGRD = cm%clin(cfk%PRES)%climv(:, cm%clin(cfk%PRES)%itime)
             cm%clin(cfk%PRES)%itime = cm%clin(cfk%PRES)%itime + 1
             if (cm%clin(cfk%PRES)%itime > size(cm%clin(cfk%PRES)%climv, 2)) then
                 cm%clin(cfk%PRES)%itime = 1
             end if
-            call GATHER(NA, NML, ILG, ILMOS, PRESGRD, PRESGAT)
+            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
             ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
@@ -467,44 +471,44 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
                     !> Skip the forcing data that is read from r2c and csv files.
                     do k = 1, ICOUNT
-                        read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
+                        read(51, end = 999) ((JUNK, j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
                     end do
-                    read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
-                    do i = 1, NA
-                        PRESGRD(i) = INARRAY(YYY(i), XXX(i))
+                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
+                    do i = 1, bi%NA
+                        PRESGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
-                    call GATHER(NA, NML, ILG, ILMOS, PRESGRD, PRESGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
 
                 case (1)
                     read(cm%basefileunit + cfk%PRES, *, end = 999) !:Frame line
-                    do i = 1, YCOUNT
-                        read(cm%basefileunit + cfk%PRES, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+                    do i = 1, bi%YCOUNT
+                        read(cm%basefileunit + cfk%PRES, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
                     read(cm%basefileunit + cfk%PRES, *, end = 999) !:EndFrame line
-                    do i = 1, NA
-                        PRESGRD(i) = INARRAY(YYY(i), XXX(i))
+                    do i = 1, bi%NA
+                        PRESGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
-                    call GATHER(NA, NML, ILG, ILMOS, PRESGRD, PRESGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (2)
-                    read(cm%basefileunit + cfk%PRES, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
-                    do i = 1, NML
-                        CURGRU = JLMOS(i)
+                    read(cm%basefileunit + cfk%PRES, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    do i = 1, bi%NML
+                        CURGRU = bi%JLMOS(i)
                         PRESGAT(i) = INVECTOR(CURGRU)
                     end do
-                    call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, PRESGRD, PRESGAT)
+                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, PRESGRD, PRESGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (3)
                     read(cm%basefileunit + cfk%PRES, end = 999) NTIME
                     read(cm%basefileunit + cfk%PRES, end = 999) PRESGRD
-                    call GATHER(NA, NML, ILG, ILMOS, PRESGRD, PRESGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (4)
-                    read(cm%basefileunit + cfk%PRES, *, end = 999) (PRESGRD(i), i = 1, NA)
-                    call GATHER(NA, NML, ILG, ILMOS, PRESGRD, PRESGAT)
+                    read(cm%basefileunit + cfk%PRES, *, end = 999) (PRESGRD(i), i = 1, bi%NA)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
                     ICOUNT = ICOUNT + 1
 
                 case default
@@ -522,13 +526,13 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
         !> Read into memory.
         if (cm%clin(cfk%QA)%timeSize > 0) then
-            call NeedUpdate_clim_data(cm, cfk%QA, XCOUNT, YCOUNT, XXX, YYY, NA, ENDDATA)
+            call NeedUpdate_clim_data(bi, cfk%QA, cm, ENDDATA)
             QAGRD = cm%clin(cfk%QA)%climv(:, cm%clin(cfk%QA)%itime)
             cm%clin(cfk%QA)%itime = cm%clin(cfk%QA)%itime + 1
             if (cm%clin(cfk%QA)%itime > size(cm%clin(cfk%QA)%climv, 2)) then
                 cm%clin(cfk%QA)%itime = 1
             end if
-            call GATHER(NA, NML, ILG, ILMOS, QAGRD, QAGAT)
+            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
             ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
@@ -539,44 +543,44 @@ subroutine READ_FORCING_DATA(YCOUNT, XCOUNT, NTYPE, NA, NML, ILG, ILMOS, JLMOS, 
 
                     !> Skip the forcing data that is read from r2c and csv files.
                     do k = 1, ICOUNT
-                        read(51, end = 999) ((JUNK, j = 1, XCOUNT), i = 1, YCOUNT)
+                        read(51, end = 999) ((JUNK, j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
                     end do
-                    read(51, end = 999) ((INARRAY(i, j), j = 1, XCOUNT), i = 1, YCOUNT)
-                    do i = 1, NA
-                        QAGRD(i) = INARRAY(YYY(i), XXX(i))
+                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
+                    do i = 1, bi%NA
+                        QAGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
-                    call GATHER(NA, NML, ILG, ILMOS, QAGRD, QAGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
 
                 case (1)
                     read(cm%basefileunit + cfk%QA, *, end = 999) !:Frame line
-                    do i = 1, YCOUNT
-                        read(cm%basefileunit + cfk%QA, *, end = 999) (INARRAY(i, j), j = 1, XCOUNT)
+                    do i = 1, bi%YCOUNT
+                        read(cm%basefileunit + cfk%QA, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
                     read (cm%basefileunit + cfk%QA, *, end = 999) !:EndFrame line
-                    do i = 1, NA
-                        QAGRD(i) = INARRAY(YYY(i), XXX(i))
+                    do i = 1, bi%NA
+                        QAGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
-                    call GATHER(NA, NML, ILG, ILMOS, QAGRD, QAGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (2)
-                    read(cm%basefileunit + cfk%QA, *, end = 999) (INVECTOR(i), i = 1, NTYPE)
-                    do i = 1, NML
-                        CURGRU = JLMOS(i)
+                    read(cm%basefileunit + cfk%QA, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    do i = 1, bi%NML
+                        CURGRU = bi%JLMOS(i)
                         QAGAT(i) = INVECTOR(CURGRU)
                     end do
-                    call SCATTER(NTYPE, NA, NML, ILMOS, JLMOS, ACLASS, QAGRD, QAGAT)
+                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, QAGRD, QAGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (3)
                     read(cm%basefileunit + cfk%QA, end = 999) NTIME
                     read(cm%basefileunit + cfk%QA, end = 999) QAGRD
-                    call GATHER(NA, NML, ILG, ILMOS, QAGRD, QAGAT)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (4)
-                    read(cm%basefileunit + cfk%QA, *, end = 999) (QAGRD(i), i = 1, NA)
-                    call GATHER(NA, NML, ILG, ILMOS, QAGRD, QAGAT)
+                    read(cm%basefileunit + cfk%QA, *, end = 999) (QAGRD(i), i = 1, bi%NA)
+                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
                     ICOUNT = ICOUNT + 1
 
                 case default

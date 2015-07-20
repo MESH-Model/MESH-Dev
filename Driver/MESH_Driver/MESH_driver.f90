@@ -299,7 +299,8 @@ CHARACTER(30) :: NMTESTFORMAT
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-CHARACTER :: VERSION*24 = "driver_04-09-2015"
+CHARACTER :: VERSION*24 = "TRUNK (839)"
+!+CHARACTER :: VERSION*24 = "TAG"
 CHARACTER*8 :: RELEASE(10)
 LOGICAL :: VER_OK
 !>
@@ -1861,11 +1862,21 @@ ENDIF
 !>  End of subbasin section
 !> **********************************************************************
 
+CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS, &
+             NML,NMW,cp%GCGRD,cp%FAREROW,cp%MIDROW, &
+             NA,NTYPE,ILG,1,NA,NMTEST)
+
+    !> Update basin information.
+    bi%NML = NML
+    bi%NMW = NMW
+    allocate(bi%ILMOS(size(ILMOS)), bi%JLMOS(size(JLMOS)))
+    bi%ILMOS = ILMOS
+    bi%JLMOS = JLMOS
+
 !> Initialize output variables.
 call wb%init(bi)
 
-    call climate_module_init(ts, bi, cm, ENDDATA, &
-        YCOUNT)
+    call climate_module_init(bi, ts, cm, ENDDATA)
     if (ENDDATA) goto 999
 
 !> *********************************************************************
@@ -2619,11 +2630,6 @@ call resume_state( &
   fetchGAT,HtGAT,N_SGAT,A_SGAT,DistribGAT)
 ENDIF! IF (RESUMEFLAG == 1) THEN
 
-
-CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS, &
-             NML,NMW,cp%GCGRD,cp%FAREROW,cp%MIDROW, &
-             NA,NTYPE,ILG,1,NA,NMTEST)
-
 !>
 !>*******************************************************************
 !>
@@ -2989,8 +2995,7 @@ CALL WATDRN3B(PSISROW,THPROW,GRKSROW,BIROW,cp%XSLPROW,cp%DDROW, &
 ENDDATE = .FALSE.
 ENDDATA = .FALSE.
 
-    call climate_module_loaddata(bi, cm, .true., ENDDATA, &
-        YCOUNT, XCOUNT, NML, ILMOS, JLMOS, YYY, XXX, ACLASS)
+    call climate_module_loaddata(bi, .true., cm, ENDDATA)
 
 if (ipid == 0) then
 
@@ -3374,8 +3379,7 @@ N=N+1
 
     !> MAM - Linearly interpolate forcing data for intermediate time steps
     if (INTERPOLATIONFLAG == 1) then
-        call climate_module_interpolatedata(bi, cm, &
-            ACLASS, FAREGAT, NML, ILMOS, JLMOS)
+        call climate_module_interpolatedata(bi, FAREGAT, cm)
     end if
     UVGRD = max(VMIN, ULGRD)
     VMODGRD = UVGRD
@@ -5146,10 +5150,7 @@ ENDIF
     !> *********************************************************************
     !> Read in meteorological forcing data
     !> *********************************************************************
-!    if (HOURLYFLAG == TIME_STEP_MINS .or. TIME_STEP_NOW == 0) then
-        call climate_module_loaddata(bi, cm, .false., ENDDATA, &
-            YCOUNT, XCOUNT, NML, ILMOS, JLMOS, YYY, XXX, ACLASS)
-!    end if
+    call climate_module_loaddata(bi, .false., cm, ENDDATA)
 
 END DO !WHILE(.NOT.ENDDATE .AND. .NOT.ENDDATA)
 

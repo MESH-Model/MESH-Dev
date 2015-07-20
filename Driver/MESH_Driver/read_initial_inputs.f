@@ -206,8 +206,21 @@
 !+        ALLOCATE (FRAC(NA),
 
       !> Initialize basin information variable.
-      bi%na = NA
-      bi%nm = NTYPE
+      bi%xorigin = xorigin
+      bi%yorigin = yorigin
+      bi%AL = al
+      bi%xdelta = xdelta
+      bi%ydelta = ydelta
+      bi%NA = NA
+      bi%xcount = xcount
+      bi%ycount = ycount
+      allocate(bi%XXX(size(XXX)), bi%YYY(size(YYY)))
+      bi%XXX = XXX
+      bi%YYY = YYY
+      bi%NTYPE = NTYPE
+      allocate(bi%ACLASS(size(ACLASS, 1), size(ACLASS, 2)))
+      bi%ACLASS = ACLASS
+      bi%ILG = NA*NTYPE
 
 !>
 !>*******************************************************************
