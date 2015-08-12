@@ -1845,7 +1845,7 @@ SUBBASINCOUNT=0
   
   !> MAM - Write grid number, grid fractional area and percentage of GRUs in each grid
   
-  OPEN(10,FILE='SUBBASIN_INFO.TXT',STATUS='UNKNOWN', action = 'read')
+  OPEN(10,FILE='SUBBASIN_INFO.TXT',STATUS='UNKNOWN')
   WRITE(10,'(A7,3X,A18,3X,A58)')'GRID NO', 'GRID AREA FRACTION', 'GRU FRACTIONS, GRU 1, GRU 2, GRU 3,... IN INCREASING ORDER'
   DO I=1,NA
     IF(SUBBASIN(I).EQ.0) THEN
