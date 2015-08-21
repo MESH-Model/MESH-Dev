@@ -33,13 +33,13 @@ subroutine READ_CHECK_FORCING_FILES(bi, ts, indx, cm)
     !> Initialize the climate variable to read data into memory.
     if (cm%clin(indx)%timeSize > 0) then
         call Init_clim_info(bi, ts, indx, cm)
-        if (indx == cfk%PRE .and. cm%clin(cfk%PRE)%filefmt == 6) call Init_clim_info(bi, ts, 8, cm)
+        if (indx == cfk%PR .and. cm%clin(cfk%PR)%filefmt == 6) call Init_clim_info(bi, ts, 8, cm)
     end if
 
     !> Special case two sources of precipitation with alpha constant.
 !todo generalize this
-    if (indx == cfk%PRE .and. cm%clin(cfk%PRE)%filefmt == 6) then
-        call Init_clim_data(cfk%PRE, 921, cm)
+    if (indx == cfk%PR .and. cm%clin(cfk%PR)%filefmt == 6) then
+        call Init_clim_data(cfk%PR, 921, cm)
         call Init_clim_data(8, 922, cm)
         return
     end if

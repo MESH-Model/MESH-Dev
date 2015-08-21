@@ -14,7 +14,7 @@ module climate_forcing
 
         integer :: timeSize = 0  !minimum size of block read DEFINED IN THE INPUT FILE
         integer, dimension(:), allocatable :: ntimes ! number of time in each block of readed data
-        character(15) :: id_var !climate variable name
+        character(20) :: id_var !climate variable name
         integer :: filefmt = 0
         character fln*200
         integer unitR !Number unit
@@ -33,8 +33,8 @@ module climate_forcing
 
         integer :: nclim !number of climate variables
         integer :: basefileunit = 89
-        type(clim_info_read) :: clin(8) !load extra rainfall
-        !type(clim_info_read) :: clin(7)
+!        type(clim_info_read) :: clin(8) !load extra rainfall
+        type(clim_info_read) :: clin(7)
 
     END TYPE
 
@@ -47,10 +47,10 @@ module climate_forcing
         !* FCLO: Fractional cloud cover [-]
         !integer :: FCLO = -9999
 
-        !* FDL: Downwelling longwave sky radiation [W m-2]
-        integer :: FDL = 2
+        !* FI: Downwelling longwave sky radiation [W m-2]
+        integer :: FI = 2
 
-        !* FS: Incoming solar radiation [W m-2]
+        !* FB: Incoming solar radiation [W m-2]
         !>       CLASS ordinarily requires that the forcing incoming
         !>       shortwave radiation be partitioned into
         !>       the visible and near-infrared components. If these
@@ -61,30 +61,32 @@ module climate_forcing
         !*       horizontal surface [W m-2]
         !* FSVH: Visible shortwave radiation incident on a horizontal
         !*       surface [W m-2]
-        integer :: FS = 1
+        integer :: FB = 1
         !integer :: FSIH = -9999
         !integer :: FSVH = -9999
 
-        !* PRE: Surface precipitation rate [kg m-2 s-1]
-        integer :: PRE = 3
+        !* PR: Surface precipitation rate [kg m-2 s-1]
+        integer :: PR = 3
 
-        !* PRES: Surface air pressure [Pa]
-        integer :: PRES = 6
+        !* P0: Surface air pressure [Pa]
+        integer :: P0 = 6
 
-        !* QA: Specific humidity at reference height [kg kg-1]
-        integer :: QA = 7
+        !* HU: Specific humidity at reference height [kg kg-1]
+        integer :: HU = 7
 
-        !* TA: Air temperature at reference height [K]
-        integer :: TA = 4
+        !* TT: Air temperature at reference height [K]
+        integer :: TT = 4
 
-        !* UL: Zonal component of wind velocity [m s-1]
+        !* UU: Zonal component of wind velocity [m s-1]
+        !* VV: Meridional component of wind velocity [m s-1]
         !>       CLASS does not actually require information on wind
         !>       direction. Thus, if only the scalar wind
         !>       speed is available, either ULGRD or VLGRD can be set
         !>       to it, and the other to zero.
-        !* VL: Meridional component of wind velocity [m s-1]
-        integer :: UL = 5
-        !integer :: VL = -9999
+        !* UV: Wind speed [m s-1]
+        !integer :: UU = -9999
+        !integer :: VV = -9999
+        integer :: UV = 5
 
     end type
 
@@ -133,8 +135,8 @@ module climate_forcing
         !> Local variables.
         integer nts, rts, timeStepClimF
 
-        !cm%nclim = 7
-        cm%nclim = 8
+        cm%nclim = 7
+!        cm%nclim = 8
 
         timeStepClimF = ts%nr_days*24*(60/TIME_STEP_MINS)/real(cm%clin(indx)%hf)*TIME_STEP_MINS
         if (timeStepClimF <= cm%clin(indx)%timeSize) then
@@ -189,13 +191,13 @@ module climate_forcing
         !todo - if we have time (or later), change the binary forcing files to
         !       one for each forcing variable
         !> Only open if there are not enough separate forcing files
-        if (cm%clin(cfk%FS)%filefmt == 0   .or. &
-            cm%clin(cfk%FDL)%filefmt == 0  .or. &
-            cm%clin(cfk%PRE)%filefmt == 0  .or. &
-            cm%clin(cfk%TA)%filefmt == 0   .or. &
-            cm%clin(cfk%UL)%filefmt == 0   .or. &
-            cm%clin(cfk%PRES)%filefmt == 0 .or. &
-            cm%clin(cfk%QA)%filefmt == 0) then
+        if (cm%clin(cfk%FB)%filefmt == 0   .or. &
+            cm%clin(cfk%FI)%filefmt == 0  .or. &
+            cm%clin(cfk%PR)%filefmt == 0  .or. &
+            cm%clin(cfk%TT)%filefmt == 0   .or. &
+            cm%clin(cfk%UV)%filefmt == 0   .or. &
+            cm%clin(cfk%P0)%filefmt == 0 .or. &
+            cm%clin(cfk%HU)%filefmt == 0) then
             open(51, file = 'MESH_input_forcing.bin', status = 'old', form = 'unformatted', action = 'read')
         end if
 
@@ -289,62 +291,62 @@ module climate_forcing
         do i = 1, nrs
 
             !> Legacy BIN-format.
-            if (cm%clin(cfk%FS)%filefmt == 0   .or. &
-                cm%clin(cfk%FDL)%filefmt == 0  .or. &
-                cm%clin(cfk%PRE)%filefmt == 0  .or. &
-                cm%clin(cfk%TA)%filefmt == 0   .or. &
-                cm%clin(cfk%UL)%filefmt == 0   .or. &
-                cm%clin(cfk%PRES)%filefmt == 0 .or. &
-                cm%clin(cfk%QA)%filefmt == 0) then
+            if (cm%clin(cfk%FB)%filefmt == 0   .or. &
+                cm%clin(cfk%FI)%filefmt == 0  .or. &
+                cm%clin(cfk%PR)%filefmt == 0  .or. &
+                cm%clin(cfk%TT)%filefmt == 0   .or. &
+                cm%clin(cfk%UV)%filefmt == 0   .or. &
+                cm%clin(cfk%P0)%filefmt == 0 .or. &
+                cm%clin(cfk%HU)%filefmt == 0) then
                 do j = 1, toskip
                     read(51, end = 999) !Skip the bin's information
                 end do
             end if
 
             !> R2C-format (ASCII).
-            if (cm%clin(cfk%FS)%filefmt == 1) then !Skip the r2c file's information
+            if (cm%clin(cfk%FB)%filefmt == 1) then !Skip the r2c file's information
                 read(90, *, end = 999)
                 do m = 1, bi%YCOUNT
                     Read (90, *, end = 999)
                 end do
                 read (90, *, end = 999) !:EndFrame line
             end if
-            if (cm%clin(cfk%FDL)%filefmt == 1) then
+            if (cm%clin(cfk%FI)%filefmt == 1) then
                 read(91, *, end = 999) !:Frame line
                 do m = 1, bi%YCOUNT
                     read(91, *, end = 999)
                 end do
                 read(91, *, end = 999) !:EndFrame line
             end if
-            if (cm%clin(cfk%PRE)%filefmt == 1) then
+            if (cm%clin(cfk%PR)%filefmt == 1) then
                 read(92, *, end = 999) !:Frame line
                 do m = 1, bi%YCOUNT
                     read(92, *, end = 999)
                 end do
                 read(92, *, end = 999) !:EndFrame line
             end if
-            if (cm%clin(cfk%TA)%filefmt == 1) then
+            if (cm%clin(cfk%TT)%filefmt == 1) then
                 read(93, *, END=999) !:Frame line
                 do m = 1, bi%YCOUNT
                     read(93, *, end = 999)
                 end do
                 read(93, *, end = 999) !:EndFrame line
             end if
-            if (cm%clin(cfk%UL)%filefmt == 1) then
+            if (cm%clin(cfk%UV)%filefmt == 1) then
                 read(94, *, end = 999) !:Frame line
                 do m = 1, bi%YCOUNT
                     read(94, *, end = 999)
                 end do
                 read(94, *, end = 999) !:EndFrame line
             end if
-            if (cm%clin(cfk%PRES)%filefmt == 1) then
+            if (cm%clin(cfk%P0)%filefmt == 1) then
                 read(95, *, end = 999) !:Frame line
                 do m = 1, bi%YCOUNT
                     read(95, *, end = 999)
                 end do
                 read(95, *, end = 999) !:EndFrame line
             end if
-            if (cm%clin(cfk%QA)%filefmt == 1) then
+            if (cm%clin(cfk%HU)%filefmt == 1) then
                 read(96, *, end = 999) !:Frame line
                 do m = 1, bi%YCOUNT
                     read(96, *, end = 999)
@@ -353,25 +355,25 @@ module climate_forcing
             end if
 
             !> CSV-format.
-            if (cm%clin(cfk%FS)%filefmt == 2) then !Skip the csv file's information
+            if (cm%clin(cfk%FB)%filefmt == 2) then !Skip the csv file's information
                 read(90, * , end = 999)
             end if
-            if (cm%clin(cfk%FDL)%filefmt == 2) then
+            if (cm%clin(cfk%FI)%filefmt == 2) then
                 read(91, *, end = 999)
             end if
-            if (cm%clin(cfk%PRE)%filefmt == 2) then
+            if (cm%clin(cfk%PR)%filefmt == 2) then
                 read(92, *, end = 999)
             end if
-            if (cm%clin(cfk%TA)%filefmt == 2) then
+            if (cm%clin(cfk%TT)%filefmt == 2) then
                 read(93, *, end = 999)
             end if
-            if (cm%clin(cfk%UL)%filefmt == 2) then
+            if (cm%clin(cfk%UV)%filefmt == 2) then
                 read(94, *, end = 999)
             end if
-            if (cm%clin(cfk%PRES)%filefmt == 2) then
+            if (cm%clin(cfk%P0)%filefmt == 2) then
                 read(95, *, end = 999)
             end if
-            if (cm%clin(cfk%QA)%filefmt == 2) then
+            if (cm%clin(cfk%HU)%filefmt == 2) then
                 read(96, *, end = 999)
             end if
 
@@ -491,42 +493,42 @@ module climate_forcing
         else
 
             !> Increment the current time step of the input forcing data.
-            cm%clin(cfk%FS)%timestep_now = cm%clin(cfk%FS)%timestep_now + TIME_STEP_MINS
-            if (cm%clin(cfk%FS)%timestep_now >= cm%clin(cfk%FS)%hf) then
-                cm%clin(cfk%FS)%timestep_now = 0
+            cm%clin(cfk%FB)%timestep_now = cm%clin(cfk%FB)%timestep_now + TIME_STEP_MINS
+            if (cm%clin(cfk%FB)%timestep_now >= cm%clin(cfk%FB)%hf) then
+                cm%clin(cfk%FB)%timestep_now = 0
                 if (INTERPOLATIONFLAG == 1) then
                     FSVHGATPRE = FSVHGATPST
                     FSIHGATPRE = FSIHGATPST
                 end if
             end if
-            cm%clin(cfk%FDL)%timestep_now = cm%clin(cfk%FDL)%timestep_now + TIME_STEP_MINS
-            if (cm%clin(cfk%FDL)%timestep_now >= cm%clin(cfk%FDL)%hf) then
-                cm%clin(cfk%FDL)%timestep_now = 0
+            cm%clin(cfk%FI)%timestep_now = cm%clin(cfk%FI)%timestep_now + TIME_STEP_MINS
+            if (cm%clin(cfk%FI)%timestep_now >= cm%clin(cfk%FI)%hf) then
+                cm%clin(cfk%FI)%timestep_now = 0
                 if (INTERPOLATIONFLAG == 1) FDLGATPRE = FDLGATPST
             end if
-            cm%clin(cfk%PRE)%timestep_now = cm%clin(cfk%PRE)%timestep_now + TIME_STEP_MINS
-            if (cm%clin(cfk%PRE)%timestep_now >= cm%clin(cfk%PRE)%hf) then
-                cm%clin(cfk%PRE)%timestep_now = 0
+            cm%clin(cfk%PR)%timestep_now = cm%clin(cfk%PR)%timestep_now + TIME_STEP_MINS
+            if (cm%clin(cfk%PR)%timestep_now >= cm%clin(cfk%PR)%hf) then
+                cm%clin(cfk%PR)%timestep_now = 0
                 if (INTERPOLATIONFLAG == 1) PREGATPRE = PREGATPST
             end if
-            cm%clin(cfk%TA)%timestep_now = cm%clin(cfk%TA)%timestep_now + TIME_STEP_MINS
-            if (cm%clin(cfk%TA)%timestep_now >= cm%clin(cfk%TA)%hf) then
-                cm%clin(cfk%TA)%timestep_now = 0
+            cm%clin(cfk%TT)%timestep_now = cm%clin(cfk%TT)%timestep_now + TIME_STEP_MINS
+            if (cm%clin(cfk%TT)%timestep_now >= cm%clin(cfk%TT)%hf) then
+                cm%clin(cfk%TT)%timestep_now = 0
                 if (INTERPOLATIONFLAG == 1) TAGATPRE = TAGATPST
             end if
-            cm%clin(cfk%UL)%timestep_now = cm%clin(cfk%UL)%timestep_now + TIME_STEP_MINS
-            if (cm%clin(cfk%UL)%timestep_now >= cm%clin(cfk%UL)%hf) then
-                cm%clin(cfk%UL)%timestep_now = 0
+            cm%clin(cfk%UV)%timestep_now = cm%clin(cfk%UV)%timestep_now + TIME_STEP_MINS
+            if (cm%clin(cfk%UV)%timestep_now >= cm%clin(cfk%UV)%hf) then
+                cm%clin(cfk%UV)%timestep_now = 0
                 if (INTERPOLATIONFLAG == 1) ULGATPRE = ULGATPST
             end if
-            cm%clin(cfk%PRES)%timestep_now = cm%clin(cfk%PRES)%timestep_now + TIME_STEP_MINS
-            if (cm%clin(cfk%PRES)%timestep_now >= cm%clin(cfk%PRES)%hf) then
-                cm%clin(cfk%PRES)%timestep_now = 0
+            cm%clin(cfk%P0)%timestep_now = cm%clin(cfk%P0)%timestep_now + TIME_STEP_MINS
+            if (cm%clin(cfk%P0)%timestep_now >= cm%clin(cfk%P0)%hf) then
+                cm%clin(cfk%P0)%timestep_now = 0
                 if (INTERPOLATIONFLAG == 1) PRESGATPRE = PRESGATPST
             end if
-            cm%clin(cfk%QA)%timestep_now = cm%clin(cfk%QA)%timestep_now + TIME_STEP_MINS
-            if (cm%clin(cfk%QA)%timestep_now >= cm%clin(cfk%QA)%hf) then
-                cm%clin(cfk%QA)%timestep_now = 0
+            cm%clin(cfk%HU)%timestep_now = cm%clin(cfk%HU)%timestep_now + TIME_STEP_MINS
+            if (cm%clin(cfk%HU)%timestep_now >= cm%clin(cfk%HU)%hf) then
+                cm%clin(cfk%HU)%timestep_now = 0
                 if (INTERPOLATIONFLAG == 1) QAGATPRE = QAGATPST
             end if
 
@@ -563,21 +565,21 @@ module climate_forcing
         cm%clin(indx)%unitR = flunit
 
         !> Set the file name.
-        if (indx == cfk%FS) then
+        if (indx == cfk%FB) then
             cm%clin(indx)%fln = 'basin_shortwave'
-        elseif (indx == cfk%FDL) then
+        elseif (indx == cfk%FI) then
             cm%clin(indx)%fln = 'basin_longwave'
-        elseif (indx == cfk%PRE) then
+        elseif (indx == cfk%PR) then
             cm%clin(indx)%fln = 'basin_rain'
         elseif (indx == 8) then
             cm%clin(indx)%fln = 'basin_rain_2'
-        elseif (indx == cfk%TA) then
+        elseif (indx == cfk%TT) then
             cm%clin(indx)%fln = 'basin_temperature'
-        elseif (indx == cfk%UL) then
+        elseif (indx == cfk%UV) then
             cm%clin(indx)%fln = 'basin_wind'
-        elseif (indx == cfk%PRES) then
+        elseif (indx == cfk%P0) then
             cm%clin(indx)%fln = 'basin_pres'
-        elseif (indx == cfk%QA) then
+        elseif (indx == cfk%HU) then
             cm%clin(indx)%fln = 'basin_humidity'
         end if
 
@@ -771,20 +773,20 @@ module climate_forcing
         integer k
 
         !> Determine the time ratio (linear) and interpolate the data for the current time-step.
-        TRATIO = min(1.0, real(cm%clin(cfk%FS)%timestep_now)/cm%clin(cfk%FS)%hf)
+        TRATIO = min(1.0, real(cm%clin(cfk%FB)%timestep_now)/cm%clin(cfk%FB)%hf)
         FSVHGAT = FSVHGATPRE + TRATIO*(FSVHGATPST - FSVHGATPRE)
         FSIHGAT = FSIHGATPRE + TRATIO*(FSIHGATPST - FSIHGATPRE)
-        TRATIO = min(1.0, real(cm%clin(cfk%FDL)%timestep_now)/cm%clin(cfk%FDL)%hf)
+        TRATIO = min(1.0, real(cm%clin(cfk%FI)%timestep_now)/cm%clin(cfk%FI)%hf)
         FDLGAT = FDLGATPRE + TRATIO*(FDLGATPST - FDLGATPRE)
-        TRATIO = min(1.0, real(cm%clin(cfk%PRE)%timestep_now)/cm%clin(cfk%PRE)%hf)
+        TRATIO = min(1.0, real(cm%clin(cfk%PR)%timestep_now)/cm%clin(cfk%PR)%hf)
         PREGAT = PREGATPRE + TRATIO*(PREGATPST - PREGATPRE)
-        TRATIO = min(1.0, real(cm%clin(cfk%TA)%timestep_now)/cm%clin(cfk%TA)%hf)
+        TRATIO = min(1.0, real(cm%clin(cfk%TT)%timestep_now)/cm%clin(cfk%TT)%hf)
         TAGAT = TAGATPRE + TRATIO*(TAGATPST - TAGATPRE)
-        TRATIO = min(1.0, real(cm%clin(cfk%UL)%timestep_now)/cm%clin(cfk%UL)%hf)
+        TRATIO = min(1.0, real(cm%clin(cfk%UV)%timestep_now)/cm%clin(cfk%UV)%hf)
         ULGAT = ULGATPRE + TRATIO*(ULGATPST - ULGATPRE)
-        TRATIO = min(1.0, real(cm%clin(cfk%PRES)%timestep_now)/cm%clin(cfk%PRES)%hf)
+        TRATIO = min(1.0, real(cm%clin(cfk%P0)%timestep_now)/cm%clin(cfk%P0)%hf)
         PRESGAT = PRESGATPRE + TRATIO*(PRESGATPST - PRESGATPRE)
-        TRATIO = min(1.0, real(cm%clin(cfk%QA)%timestep_now)/cm%clin(cfk%QA)%hf)
+        TRATIO = min(1.0, real(cm%clin(cfk%HU)%timestep_now)/cm%clin(cfk%HU)%hf)
         QAGAT = QAGATPRE + TRATIO*(QAGATPST - QAGATPRE)
 
         !> Distribute the grid variables.

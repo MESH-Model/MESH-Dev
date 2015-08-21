@@ -51,15 +51,15 @@ subroutine READ_FORCING_DATA(bi, cm, &
     !> *****************************************************************
     !> Read shortwave radiation data
     !> *****************************************************************
-    if (cm%clin(cfk%FS)%timestep_now == 0) then
+    if (cm%clin(cfk%FB)%timestep_now == 0) then
 
         !> Read into memory.
-        if (cm%clin(cfk%FS)%timeSize > 0) then
-            call NeedUpdate_clim_data(bi, cfk%FS, cm, ENDDATA)
-            FSDOWN = cm%clin(cfk%FS)%climv(:, cm%clin(cfk%FS)%itime)
-            cm%clin(cfk%FS)%itime = cm%clin(cfk%FS)%itime + 1
-            if (cm%clin(cfk%FS)%itime > size(cm%clin(cfk%FS)%climv, 2)) then
-                cm%clin(cfk%FS)%itime = 1
+        if (cm%clin(cfk%FB)%timeSize > 0) then
+            call NeedUpdate_clim_data(bi, cfk%FB, cm, ENDDATA)
+            FSDOWN = cm%clin(cfk%FB)%climv(:, cm%clin(cfk%FB)%itime)
+            cm%clin(cfk%FB)%itime = cm%clin(cfk%FB)%itime + 1
+            if (cm%clin(cfk%FB)%itime > size(cm%clin(cfk%FB)%climv, 2)) then
+                cm%clin(cfk%FB)%itime = 1
             end if
             FSVHGRD = 0.5*FSDOWN
             FSIHGRD = FSVHGRD
@@ -69,7 +69,7 @@ subroutine READ_FORCING_DATA(bi, cm, &
 
         !> Switch and read and a single record from file.
         else
-            select case (cm%clin(cfk%FS)%filefmt)
+            select case (cm%clin(cfk%FB)%filefmt)
 
                 !> Legacy binary format.
                 case (0)
@@ -84,11 +84,11 @@ subroutine READ_FORCING_DATA(bi, cm, &
 
                 !> ASCII R2C format.
                 case (1)
-                    read(cm%basefileunit + cfk%FS, *, end = 999) !:Frame line
+                    read(cm%basefileunit + cfk%FB, *, end = 999) !:Frame line
                     do i = 1, bi%YCOUNT
-                        read(cm%basefileunit + cfk%FS, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
+                        read(cm%basefileunit + cfk%FB, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
-                    read(cm%basefileunit + cfk%FS, *, end = 999) !:EndFrame line
+                    read(cm%basefileunit + cfk%FB, *, end = 999) !:EndFrame line
                     do i = 1, bi%NA
                         FSDOWN(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
@@ -100,7 +100,7 @@ subroutine READ_FORCING_DATA(bi, cm, &
 
                 !> CSV format.
                 case (2)
-                    read(cm%basefileunit + cfk%FS, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    read(cm%basefileunit + cfk%FB, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
                     do i = 1, bi%NML
                         CURGRU = bi%JLMOS(i)
                         FSVHGAT(i) = 0.5*INVECTOR(CURGRU)
@@ -113,8 +113,8 @@ subroutine READ_FORCING_DATA(bi, cm, &
 
                 !> Binary sequential format.
                 case (3)
-                    read(cm%basefileunit + cfk%FS, end = 999) NTIME
-                    read(cm%basefileunit + cfk%FS, end = 999) FSDOWN
+                    read(cm%basefileunit + cfk%FB, end = 999) NTIME
+                    read(cm%basefileunit + cfk%FB, end = 999) FSDOWN
                     FSVHGRD = 0.5*FSDOWN
                     FSIHGRD = FSVHGRD
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
@@ -123,7 +123,7 @@ subroutine READ_FORCING_DATA(bi, cm, &
 
                 !> ASCII format.
                 case (4)
-                    read(cm%basefileunit + cfk%FS, *, end = 999) (FSDOWN(i), i = 1, bi%NA)
+                    read(cm%basefileunit + cfk%FB, *, end = 999) (FSDOWN(i), i = 1, bi%NA)
                     FSVHGRD = 0.5*FSDOWN
                     FSIHGRD = FSVHGRD
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
@@ -131,32 +131,32 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case default
-                    print 644, cm%clin(cfk%FS)%id_var, cm%clin(cfk%FS)%filefmt
+                    print 644, cm%clin(cfk%FB)%id_var, cm%clin(cfk%FB)%filefmt
                     stop
 
-            end select !case (cm%clin(cfk%FS)%filefmt)
-        end if !(cm%clin(cfk%FS)%timeSize > 0) then
-    end if !(cm%clin(cfk%FS)%timestep_now == 0) then
+            end select !case (cm%clin(cfk%FB)%filefmt)
+        end if !(cm%clin(cfk%FB)%timeSize > 0) then
+    end if !(cm%clin(cfk%FB)%timestep_now == 0) then
 
     !> *****************************************************************
     !> Read longwave radiation data
     !> *****************************************************************
-    if (cm%clin(cfk%FDL)%timestep_now == 0) then
+    if (cm%clin(cfk%FI)%timestep_now == 0) then
 
         !> Read into memory.
-        if (cm%clin(cfk%FDL)%timeSize > 0) then
-            call NeedUpdate_clim_data(bi, cfk%FDL, cm, ENDDATA)
-            FDLGRD = cm%clin(cfk%FDL)%climv(:, cm%clin(cfk%FDL)%itime)
-            cm%clin(cfk%FDL)%itime = cm%clin(cfk%FDL)%itime + 1
-            if (cm%clin(cfk%FDL)%itime > size(cm%clin(cfk%FDL)%climv, 2)) then
-                cm%clin(cfk%FDL)%itime = 1
+        if (cm%clin(cfk%FI)%timeSize > 0) then
+            call NeedUpdate_clim_data(bi, cfk%FI, cm, ENDDATA)
+            FDLGRD = cm%clin(cfk%FI)%climv(:, cm%clin(cfk%FI)%itime)
+            cm%clin(cfk%FI)%itime = cm%clin(cfk%FI)%itime + 1
+            if (cm%clin(cfk%FI)%itime > size(cm%clin(cfk%FI)%climv, 2)) then
+                cm%clin(cfk%FI)%itime = 1
             end if
             call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
             ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
         else
-            select case (cm%clin(cfk%FDL)%filefmt)
+            select case (cm%clin(cfk%FI)%filefmt)
 
                 case (0)
 
@@ -171,11 +171,11 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
 
                 case (1)
-                    read(cm%basefileunit + cfk%FDL, *, end = 999) !:Frame line
+                    read(cm%basefileunit + cfk%FI, *, end = 999) !:Frame line
                     do i = 1, bi%YCOUNT
-                        read(cm%basefileunit + cfk%FDL, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
+                        read(cm%basefileunit + cfk%FI, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
-                    read(cm%basefileunit + cfk%FDL, *, end = 999) !:EndFrame line
+                    read(cm%basefileunit + cfk%FI, *, end = 999) !:EndFrame line
                     do i = 1, bi%NA
                         FDLGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
@@ -183,7 +183,7 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case (2)
-                    read(cm%basefileunit + cfk%FDL, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    read(cm%basefileunit + cfk%FI, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
                     do i = 1, bi%NML
                         CURGRU = bi%JLMOS(i)
                         FDLGAT(i) = INVECTOR(CURGRU)
@@ -192,43 +192,43 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case (3)
-                    read(cm%basefileunit + cfk%FDL, end = 999) NTIME
-                    read(cm%basefileunit + cfk%FDL, end = 999) FDLGRD
+                    read(cm%basefileunit + cfk%FI, end = 999) NTIME
+                    read(cm%basefileunit + cfk%FI, end = 999) FDLGRD
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (4)
-                    read(cm%basefileunit + cfk%FDL, *, end = 999) (FDLGRD(i), i = 1, bi%NA)
+                    read(cm%basefileunit + cfk%FI, *, end = 999) (FDLGRD(i), i = 1, bi%NA)
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
                     ICOUNT = ICOUNT + 1
 
                 case default
-                    print 644, cm%clin(cfk%FDL)%id_var, cm%clin(cfk%FDL)%filefmt
+                    print 644, cm%clin(cfk%FI)%id_var, cm%clin(cfk%FI)%filefmt
                     stop
 
-            end select !case (cm%clin(cfk%FDL)%filefmt)
-        end if !(cm%clin(cfk%FDL)%timeSize > 0) then
-    end if !(cm%clin(cfk%FDL)%timestep_now == 0) then
+            end select !case (cm%clin(cfk%FI)%filefmt)
+        end if !(cm%clin(cfk%FI)%timeSize > 0) then
+    end if !(cm%clin(cfk%FI)%timestep_now == 0) then
 
     !> *****************************************************************
     !> Read precipitation data
     !> *****************************************************************
-    if (cm%clin(cfk%PRE)%timestep_now == 0) then
+    if (cm%clin(cfk%PR)%timestep_now == 0) then
 
         !> Read into memory.
-        if (cm%clin(cfk%PRE)%timeSize > 0) then
-            call NeedUpdate_clim_data(bi, cfk%PRE, cm, ENDDATA)
-            PREGRD = cm%clin(cfk%PRE)%climv(:, cm%clin(cfk%PRE)%itime)
-            cm%clin(cfk%PRE)%itime = cm%clin(cfk%PRE)%itime + 1
-            if (cm%clin(cfk%PRE)%itime > size(cm%clin(cfk%PRE)%climv, 2)) then
-                cm%clin(cfk%PRE)%itime = 1
+        if (cm%clin(cfk%PR)%timeSize > 0) then
+            call NeedUpdate_clim_data(bi, cfk%PR, cm, ENDDATA)
+            PREGRD = cm%clin(cfk%PR)%climv(:, cm%clin(cfk%PR)%itime)
+            cm%clin(cfk%PR)%itime = cm%clin(cfk%PR)%itime + 1
+            if (cm%clin(cfk%PR)%itime > size(cm%clin(cfk%PR)%climv, 2)) then
+                cm%clin(cfk%PR)%itime = 1
             end if
             call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
             ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
         else
-            select case (cm%clin(cfk%PRE)%filefmt)
+            select case (cm%clin(cfk%PR)%filefmt)
 
                 case (0)
 
@@ -243,11 +243,11 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
 
                 case (1)
-                    read(cm%basefileunit + cfk%PRE, *, end = 999) !:Frame line
+                    read(cm%basefileunit + cfk%PR, *, end = 999) !:Frame line
                     do i = 1, bi%YCOUNT
-                        read (cm%basefileunit + cfk%PRE, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
+                        read (cm%basefileunit + cfk%PR, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
-                    read(cm%basefileunit + cfk%PRE, *, end = 999) !:EndFrame line
+                    read(cm%basefileunit + cfk%PR, *, end = 999) !:EndFrame line
                     do i = 1, bi%NA
                         PREGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
@@ -255,7 +255,7 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case (2)
-                    read(cm%basefileunit + cfk%PRE, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    read(cm%basefileunit + cfk%PR, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
                     do i = 1, bi%NML
                         CURGRU = bi%JLMOS(i)
                         PREGAT(i) = INVECTOR(CURGRU)
@@ -264,56 +264,56 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case (3)
-                    read(cm%basefileunit + cfk%PRE, end = 999) NTIME
-                    read(cm%basefileunit + cfk%PRE, end = 999) PREGRD
+                    read(cm%basefileunit + cfk%PR, end = 999) NTIME
+                    read(cm%basefileunit + cfk%PR, end = 999) PREGRD
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (4)
-                    read(cm%basefileunit + cfk%PRE, *, end = 999) (PREGRD(i), i = 1, bi%NA)
+                    read(cm%basefileunit + cfk%PR, *, end = 999) (PREGRD(i), i = 1, bi%NA)
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
                     ICOUNT = ICOUNT + 1
 
                 !> Read from two sources of rainfall input.
                 case (6)
-                    call NeedUpdate_clim_data(bi, cfk%PRE, cm, ENDDATA)
+                    call NeedUpdate_clim_data(bi, cfk%PR, cm, ENDDATA)
                     call NeedUpdate_clim_data(bi, 8, cm, ENDDATA)
-                    PREGRD = cm%clin(8)%alpharain*cm%clin(cfk%PRE)%climv(:, cm%clin(cfk%PRE)%itime) + &
+                    PREGRD = cm%clin(8)%alpharain*cm%clin(cfk%PR)%climv(:, cm%clin(cfk%PR)%itime) + &
                              (1.0 - cm%clin(8)%alpharain)*cm%clin(8)%climv(:, cm%clin(8)%itime)
-                    cm%clin(cfk%PRE)%itime = cm%clin(cfk%PRE)%itime + 1
-                    if (cm%clin(cfk%PRE)%itime > size(cm%clin(cfk%PRE)%climv, 2)) cm%clin(cfk%PRE)%itime = 1
+                    cm%clin(cfk%PR)%itime = cm%clin(cfk%PR)%itime + 1
+                    if (cm%clin(cfk%PR)%itime > size(cm%clin(cfk%PR)%climv, 2)) cm%clin(cfk%PR)%itime = 1
                     cm%clin(8)%itime = cm%clin(8)%itime + 1
                     if (cm%clin(8)%itime > size(cm%clin(8)%climv, 2)) cm%clin(8)%itime = 1
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
                     ICOUNT = ICOUNT + 1
 
                 case default
-                    print 644, cm%clin(cfk%PRE)%id_var, cm%clin(cfk%PRE)%filefmt
+                    print 644, cm%clin(cfk%PR)%id_var, cm%clin(cfk%PR)%filefmt
                     stop
 
-            end select !case (cm%clin(cfk%PRE)%filefmt)
-        end if !(cm%clin(cfk%PRE)%timeSize > 0) then
-    end if !(cm%clin(cfk%PRE)%timestep_now == 0) then
+            end select !case (cm%clin(cfk%PR)%filefmt)
+        end if !(cm%clin(cfk%PR)%timeSize > 0) then
+    end if !(cm%clin(cfk%PR)%timestep_now == 0) then
 
     !> *****************************************************************
     !> Read temperature data
     !> *****************************************************************
-    if (cm%clin(cfk%TA)%timestep_now == 0) then
+    if (cm%clin(cfk%TT)%timestep_now == 0) then
 
         !> Read into memory.
-        if (cm%clin(cfk%TA)%timeSize > 0) then
-            call NeedUpdate_clim_data(bi, cfk%TA, cm, ENDDATA)
-            TAGRD = cm%clin(cfk%TA)%climv(:, cm%clin(cfk%TA)%itime)
-            cm%clin(cfk%TA)%itime = cm%clin(cfk%TA)%itime + 1
-            if (cm%clin(cfk%TA)%itime > size(cm%clin(cfk%TA)%climv, 2)) then
-                cm%clin(cfk%TA)%itime = 1
+        if (cm%clin(cfk%TT)%timeSize > 0) then
+            call NeedUpdate_clim_data(bi, cfk%TT, cm, ENDDATA)
+            TAGRD = cm%clin(cfk%TT)%climv(:, cm%clin(cfk%TT)%itime)
+            cm%clin(cfk%TT)%itime = cm%clin(cfk%TT)%itime + 1
+            if (cm%clin(cfk%TT)%itime > size(cm%clin(cfk%TT)%climv, 2)) then
+                cm%clin(cfk%TT)%itime = 1
             end if
             call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
             ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
         else
-            select case (cm%clin(cfk%TA)%filefmt)
+            select case (cm%clin(cfk%TT)%filefmt)
 
                 case (0)
 
@@ -328,11 +328,11 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
 
                 case (1)
-                    read(cm%basefileunit + cfk%TA, *, end = 999) !:Frame line
+                    read(cm%basefileunit + cfk%TT, *, end = 999) !:Frame line
                     do i = 1, bi%YCOUNT
-                        read(cm%basefileunit + cfk%TA, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
+                        read(cm%basefileunit + cfk%TT, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
-                    read(cm%basefileunit + cfk%TA, *, end = 999) !:EndFrame line
+                    read(cm%basefileunit + cfk%TT, *, end = 999) !:EndFrame line
                     do i = 1, bi%NA
                         TAGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
@@ -340,7 +340,7 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case (2)
-                    read(cm%basefileunit + cfk%TA, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    read(cm%basefileunit + cfk%TT, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
                     do i = 1, bi%NML
                         CURGRU = bi%JLMOS(i)
                         TAGAT(i) = INVECTOR(CURGRU)
@@ -349,43 +349,43 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case (3)
-                    read(cm%basefileunit + cfk%TA, end = 999) NTIME
-                    read(cm%basefileunit + cfk%TA, end = 999) TAGRD
+                    read(cm%basefileunit + cfk%TT, end = 999) NTIME
+                    read(cm%basefileunit + cfk%TT, end = 999) TAGRD
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (4)
-                    read(cm%basefileunit + cfk%TA, *, end = 999) (TAGRD(i), i = 1, bi%NA)
+                    read(cm%basefileunit + cfk%TT, *, end = 999) (TAGRD(i), i = 1, bi%NA)
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
                     ICOUNT = ICOUNT + 1
 
                 case default
-                    print 644, cm%clin(cfk%TA)%id_var, cm%clin(cfk%TA)%filefmt
+                    print 644, cm%clin(cfk%TT)%id_var, cm%clin(cfk%TT)%filefmt
                     stop
 
-            end select !case (cm%clin(cfk%TA)%filefmt)
-        end if !(cm%clin(cfk%TA)%timeSize > 0) then
-    end if !(cm%clin(cfk%TA)%timestep_now == 0) then
+            end select !case (cm%clin(cfk%TT)%filefmt)
+        end if !(cm%clin(cfk%TT)%timeSize > 0) then
+    end if !(cm%clin(cfk%TT)%timestep_now == 0) then
 
     !> *****************************************************************
     !> Read wind data
     !> *****************************************************************
-    if (cm%clin(cfk%UL)%timestep_now == 0) then
+    if (cm%clin(cfk%UV)%timestep_now == 0) then
 
         !> Read into memory.
-        if (cm%clin(cfk%UL)%timeSize > 0) then
-            call NeedUpdate_clim_data(bi, cfk%UL, cm, ENDDATA)
-            ULGRD = cm%clin(cfk%UL)%climv(:, cm%clin(cfk%UL)%itime)
-            cm%clin(cfk%UL)%itime = cm%clin(cfk%UL)%itime + 1
-            if (cm%clin(cfk%UL)%itime > size(cm%clin(cfk%UL)%climv, 2)) then
-                cm%clin(cfk%UL)%itime = 1
+        if (cm%clin(cfk%UV)%timeSize > 0) then
+            call NeedUpdate_clim_data(bi, cfk%UV, cm, ENDDATA)
+            ULGRD = cm%clin(cfk%UV)%climv(:, cm%clin(cfk%UV)%itime)
+            cm%clin(cfk%UV)%itime = cm%clin(cfk%UV)%itime + 1
+            if (cm%clin(cfk%UV)%itime > size(cm%clin(cfk%UV)%climv, 2)) then
+                cm%clin(cfk%UV)%itime = 1
             end if
             call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
             ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
         else
-            select case (cm%clin(cfk%UL)%filefmt)
+            select case (cm%clin(cfk%UV)%filefmt)
 
                 case (0)
 
@@ -403,11 +403,11 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
 
                 case (1)
-                    read(cm%basefileunit + cfk%UL, *, end = 999) !:Frame line
+                    read(cm%basefileunit + cfk%UV, *, end = 999) !:Frame line
                     do i = 1, bi%YCOUNT
-                        read(cm%basefileunit + cfk%UL, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
+                        read(cm%basefileunit + cfk%UV, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
-                    read(cm%basefileunit + cfk%UL, *, end = 999) !:EndFrame line
+                    read(cm%basefileunit + cfk%UV, *, end = 999) !:EndFrame line
                     do i = 1, bi%NA
                         ULGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
@@ -418,7 +418,7 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case (2)
-                    read(cm%basefileunit + cfk%UL, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    read(cm%basefileunit + cfk%UV, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
                     do i=1, bi%NML
                         CURGRU = bi%JLMOS(i)
                         ULGAT(i) = INVECTOR(CURGRU)
@@ -429,43 +429,43 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case (3)
-                    read(cm%basefileunit + cfk%UL, end = 999) NTIME
-                    read(cm%basefileunit + cfk%UL, end = 999) ULGRD
+                    read(cm%basefileunit + cfk%UV, end = 999) NTIME
+                    read(cm%basefileunit + cfk%UV, end = 999) ULGRD
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (4)
-                    read(cm%basefileunit + cfk%UL, *, end = 999) (ULGRD(i), i = 1, bi%NA)
+                    read(cm%basefileunit + cfk%UV, *, end = 999) (ULGRD(i), i = 1, bi%NA)
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
                     ICOUNT = ICOUNT + 1
 
                 case default
-                    print 644, cm%clin(cfk%UL)%id_var, cm%clin(cfk%UL)%filefmt
+                    print 644, cm%clin(cfk%UV)%id_var, cm%clin(cfk%UV)%filefmt
                     stop
 
-            end select !case (cm%clin(cfk%UL)%filefmt)
-        end if !(cm%clin(cfk%UL)%timeSize > 0) then
-    end if !(cm%clin(cfk%UL)%timestep_now == 0) then
+            end select !case (cm%clin(cfk%UV)%filefmt)
+        end if !(cm%clin(cfk%UV)%timeSize > 0) then
+    end if !(cm%clin(cfk%UV)%timestep_now == 0) then
 
     !> *****************************************************************
     !> Read pressure data
     !> *****************************************************************
-    if (cm%clin(cfk%PRES)%timestep_now == 0) then
+    if (cm%clin(cfk%P0)%timestep_now == 0) then
 
         !> Read into memory.
-        if (cm%clin(cfk%PRES)%timeSize > 0) then
-            call NeedUpdate_clim_data(bi, cfk%PRES, cm, ENDDATA)
-            PRESGRD = cm%clin(cfk%PRES)%climv(:, cm%clin(cfk%PRES)%itime)
-            cm%clin(cfk%PRES)%itime = cm%clin(cfk%PRES)%itime + 1
-            if (cm%clin(cfk%PRES)%itime > size(cm%clin(cfk%PRES)%climv, 2)) then
-                cm%clin(cfk%PRES)%itime = 1
+        if (cm%clin(cfk%P0)%timeSize > 0) then
+            call NeedUpdate_clim_data(bi, cfk%P0, cm, ENDDATA)
+            PRESGRD = cm%clin(cfk%P0)%climv(:, cm%clin(cfk%P0)%itime)
+            cm%clin(cfk%P0)%itime = cm%clin(cfk%P0)%itime + 1
+            if (cm%clin(cfk%P0)%itime > size(cm%clin(cfk%P0)%climv, 2)) then
+                cm%clin(cfk%P0)%itime = 1
             end if
             call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
             ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
         else
-            select case (cm%clin(cfk%PRES)%filefmt)
+            select case (cm%clin(cfk%P0)%filefmt)
 
                 case (0)
 
@@ -480,11 +480,11 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
 
                 case (1)
-                    read(cm%basefileunit + cfk%PRES, *, end = 999) !:Frame line
+                    read(cm%basefileunit + cfk%P0, *, end = 999) !:Frame line
                     do i = 1, bi%YCOUNT
-                        read(cm%basefileunit + cfk%PRES, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
+                        read(cm%basefileunit + cfk%P0, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
-                    read(cm%basefileunit + cfk%PRES, *, end = 999) !:EndFrame line
+                    read(cm%basefileunit + cfk%P0, *, end = 999) !:EndFrame line
                     do i = 1, bi%NA
                         PRESGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
@@ -492,7 +492,7 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case (2)
-                    read(cm%basefileunit + cfk%PRES, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    read(cm%basefileunit + cfk%P0, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
                     do i = 1, bi%NML
                         CURGRU = bi%JLMOS(i)
                         PRESGAT(i) = INVECTOR(CURGRU)
@@ -501,43 +501,43 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case (3)
-                    read(cm%basefileunit + cfk%PRES, end = 999) NTIME
-                    read(cm%basefileunit + cfk%PRES, end = 999) PRESGRD
+                    read(cm%basefileunit + cfk%P0, end = 999) NTIME
+                    read(cm%basefileunit + cfk%P0, end = 999) PRESGRD
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (4)
-                    read(cm%basefileunit + cfk%PRES, *, end = 999) (PRESGRD(i), i = 1, bi%NA)
+                    read(cm%basefileunit + cfk%P0, *, end = 999) (PRESGRD(i), i = 1, bi%NA)
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
                     ICOUNT = ICOUNT + 1
 
                 case default
-                    print 644, cm%clin(cfk%PRES)%id_var, cm%clin(cfk%PRES)%filefmt
+                    print 644, cm%clin(cfk%P0)%id_var, cm%clin(cfk%P0)%filefmt
                     stop
 
-            end select !case (cm%clin(cfk%PRES)%filefmt)
-        end if !(cm%clin(cfk%PRES)%timeSize > 0) then
-    end if !(cm%clin(cfk%PRES)%timestep_now == 0) then
+            end select !case (cm%clin(cfk%P0)%filefmt)
+        end if !(cm%clin(cfk%P0)%timeSize > 0) then
+    end if !(cm%clin(cfk%P0)%timestep_now == 0) then
 
     !> *****************************************************************
     !> Read humidity data
     !> *****************************************************************
-    if (cm%clin(cfk%QA)%timestep_now == 0) then
+    if (cm%clin(cfk%HU)%timestep_now == 0) then
 
         !> Read into memory.
-        if (cm%clin(cfk%QA)%timeSize > 0) then
-            call NeedUpdate_clim_data(bi, cfk%QA, cm, ENDDATA)
-            QAGRD = cm%clin(cfk%QA)%climv(:, cm%clin(cfk%QA)%itime)
-            cm%clin(cfk%QA)%itime = cm%clin(cfk%QA)%itime + 1
-            if (cm%clin(cfk%QA)%itime > size(cm%clin(cfk%QA)%climv, 2)) then
-                cm%clin(cfk%QA)%itime = 1
+        if (cm%clin(cfk%HU)%timeSize > 0) then
+            call NeedUpdate_clim_data(bi, cfk%HU, cm, ENDDATA)
+            QAGRD = cm%clin(cfk%HU)%climv(:, cm%clin(cfk%HU)%itime)
+            cm%clin(cfk%HU)%itime = cm%clin(cfk%HU)%itime + 1
+            if (cm%clin(cfk%HU)%itime > size(cm%clin(cfk%HU)%climv, 2)) then
+                cm%clin(cfk%HU)%itime = 1
             end if
             call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
             ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
         else
-            select case (cm%clin(cfk%QA)%filefmt)
+            select case (cm%clin(cfk%HU)%filefmt)
 
                 case (0)
 
@@ -552,11 +552,11 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
 
                 case (1)
-                    read(cm%basefileunit + cfk%QA, *, end = 999) !:Frame line
+                    read(cm%basefileunit + cfk%HU, *, end = 999) !:Frame line
                     do i = 1, bi%YCOUNT
-                        read(cm%basefileunit + cfk%QA, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
+                        read(cm%basefileunit + cfk%HU, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
                     end do
-                    read (cm%basefileunit + cfk%QA, *, end = 999) !:EndFrame line
+                    read (cm%basefileunit + cfk%HU, *, end = 999) !:EndFrame line
                     do i = 1, bi%NA
                         QAGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
                     end do
@@ -564,7 +564,7 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case (2)
-                    read(cm%basefileunit + cfk%QA, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
+                    read(cm%basefileunit + cfk%HU, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
                     do i = 1, bi%NML
                         CURGRU = bi%JLMOS(i)
                         QAGAT(i) = INVECTOR(CURGRU)
@@ -573,23 +573,23 @@ subroutine READ_FORCING_DATA(bi, cm, &
                     ICOUNT = ICOUNT + 1
 
                 case (3)
-                    read(cm%basefileunit + cfk%QA, end = 999) NTIME
-                    read(cm%basefileunit + cfk%QA, end = 999) QAGRD
+                    read(cm%basefileunit + cfk%HU, end = 999) NTIME
+                    read(cm%basefileunit + cfk%HU, end = 999) QAGRD
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
                     ICOUNT = ICOUNT + 1
 
                 case (4)
-                    read(cm%basefileunit + cfk%QA, *, end = 999) (QAGRD(i), i = 1, bi%NA)
+                    read(cm%basefileunit + cfk%HU, *, end = 999) (QAGRD(i), i = 1, bi%NA)
                     call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
                     ICOUNT = ICOUNT + 1
 
                 case default
-                    print 644, cm%clin(cfk%QA)%id_var, cm%clin(cfk%QA)%filefmt
+                    print 644, cm%clin(cfk%HU)%id_var, cm%clin(cfk%HU)%filefmt
                     stop
 
-            end select !case (cm%clin(cfk%QA)%filefmt)
-        end if !(cm%clin(cfk%QA)%timeSize > 0) then
-    end if !(cm%clin(cfk%QA)%timestep_now == 0) then
+            end select !case (cm%clin(cfk%HU)%filefmt)
+        end if !(cm%clin(cfk%HU)%timeSize > 0) then
+    end if !(cm%clin(cfk%HU)%timestep_now == 0) then
 
 644 format(/1x'The input forcing file format is not supported', &
         /2x, A15, I4/)
