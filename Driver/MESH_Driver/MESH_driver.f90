@@ -887,8 +887,8 @@ DATA VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
 
 real :: startprog, endprog
 integer :: narg
-real :: alpharain
-character*50 :: alphCh
+!real :: alpharain
+!character*50 :: alphCh
 
 !> ((((((((((((((((((((((((((((((((((
 !> Set the acceptable version numbers
@@ -944,15 +944,16 @@ narg = command_argument_count()
 !print *, narg
 if (narg .gt. 0) then
     VARIABLEFILESFLAG = 1
-    if (narg .eq. 1) then
+    if (narg >= 1) then
         call get_command_argument(1, fl_listMesh)
 !        print *, fl_listMesh
-    elseif (narg .eq. 2) then
-        call get_command_argument(1, fl_listMesh)
+!    elseif (narg .eq. 2) then
+!        call get_command_argument(1, fl_listMesh)
 !        print *, fl_listMesh
-        call get_command_argument(2, alphCh)
-        call value(alphCh, alpharain, ios)
-        cm%clin(8)%alpharain = alpharain
+!todo: re-instate alpha
+!        call get_command_argument(2, alphCh)
+!        call value(alphCh, alpharain, ios)
+!        cm%clin(8)%alpharain = alpharain
 !        print *, cm%clin(8)%alpharain
     end if
     call Init_fls(fls, trim(adjustl(fl_listMesh)))

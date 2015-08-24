@@ -10,9 +10,11 @@ module climate_forcing
 
     implicit none
 
-    TYPE clim_info_read
+    type clim_info_read
 
-        integer :: timeSize = 0  !minimum size of block read DEFINED IN THE INPUT FILE
+!        type(counter_date_julian) :: start_date
+        integer :: timeSize = 1  !minimum size of block read DEFINED IN THE INPUT FILE
+        integer :: nSeries = 1
         integer, dimension(:), allocatable :: ntimes ! number of time in each block of readed data
         character(20) :: id_var !climate variable name
         integer :: filefmt = 0
@@ -23,20 +25,25 @@ module climate_forcing
         integer :: itime = 1 !time index
         character freq !time freq of data
         integer :: timestep_now = 0
-        integer hf !hourly flag
-        real, dimension(:, :), allocatable :: climv !Climate variable
-        real :: alpharain !used only for rainfall
+        integer :: hf = 30 !hourly flag
 
-    END TYPE
+        !* climv: Values for forcing data. (1: Grid; 2: Series; 3: Time-step).
+        real, dimension(:, :, :), allocatable :: climv
 
-    TYPE clim_info
+        !* alpha: Uniform weight to assign when there are multiple series of data. (1: Series).
+        real, dimension(:), allocatable :: alpha
 
-        integer :: nclim !number of climate variables
+    end type !clim_info_read
+
+    type clim_info
+
+        !* nclim: Number of climate variables.
+!        integer :: nclim = 7
         integer :: basefileunit = 89
-!        type(clim_info_read) :: clin(8) !load extra rainfall
         type(clim_info_read) :: clin(7)
+        type(counter_date_julian) :: start_date
 
-    END TYPE
+    end type !clim_info
 
     !> *****************************************************************
     !> These are relative indices of the forcing files used throughout
@@ -94,14 +101,13 @@ module climate_forcing
 
     !> These variables are used to keep track of the number of forcing files
     !> that are in different formats
-    integer NUM_CSV, NUM_R2C, NUM_SEQ
+!    integer NUM_CSV, NUM_R2C, NUM_SEQ
 
     !* YEAR_START_CLIM: Year at the start of the simulation.
     !* JDAY_START_CLIM: Julian day at the start of the simulation.
     !* HOUR_START_CLIM: Hour at the start of the simulation.
     !* MINS_START_CLIM: Minute (in 30-min. increment; either 0 or 30) at the start of the simulation.
-    integer YEAR_START_CLIM, JDAY_START_CLIM, HOUR_START_CLIM, MINS_START_CLIM
-    integer JDAY_IND_MET
+!    integer YEAR_START_CLIM, JDAY_START_CLIM, HOUR_START_CLIM, MINS_START_CLIM
 
     real, dimension(:), allocatable :: &
         FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, VLGRD, FSDOWN, &
@@ -135,8 +141,9 @@ module climate_forcing
         !> Local variables.
         integer nts, rts, timeStepClimF
 
-        cm%nclim = 7
-!        cm%nclim = 8
+        !> Allocate alpha for series.
+        allocate(cm%clin(indx)%alpha(cm%clin(indx)%nSeries))
+        cm%clin(indx)%alpha = 1.0 / cm%clin(indx)%nSeries
 
         timeStepClimF = ts%nr_days*24*(60/TIME_STEP_MINS)/real(cm%clin(indx)%hf)*TIME_STEP_MINS
         if (timeStepClimF <= cm%clin(indx)%timeSize) then
@@ -178,51 +185,51 @@ module climate_forcing
         !> Local variables.
         !* toskip: The number of variables in the file per timestep
 !        integer nyy, ndy,
-        integer ISTEP_START, nmy, nhy, nrs, Jday_IND2, Jday_IND3, toskip
+        integer JDAY_IND_MET, ISTEP_START, nmy, nhy, nrs, Jday_IND2, Jday_IND3, toskip
         integer i, j, m
 
         integer ilg
 
         !> Reset the number of forcing variables not in the forcing binary file.
-        NUM_R2C = 0
-        NUM_CSV = 0
-        NUM_SEQ = 0
+!        NUM_R2C = 0
+!        NUM_CSV = 0
+!        NUM_SEQ = 0
 
         !todo - if we have time (or later), change the binary forcing files to
         !       one for each forcing variable
         !> Only open if there are not enough separate forcing files
-        if (cm%clin(cfk%FB)%filefmt == 0   .or. &
-            cm%clin(cfk%FI)%filefmt == 0  .or. &
-            cm%clin(cfk%PR)%filefmt == 0  .or. &
-            cm%clin(cfk%TT)%filefmt == 0   .or. &
-            cm%clin(cfk%UV)%filefmt == 0   .or. &
-            cm%clin(cfk%P0)%filefmt == 0 .or. &
-            cm%clin(cfk%HU)%filefmt == 0) then
-            open(51, file = 'MESH_input_forcing.bin', status = 'old', form = 'unformatted', action = 'read')
-        end if
+!        if (cm%clin(cfk%FB)%filefmt == 0   .or. &
+!            cm%clin(cfk%FI)%filefmt == 0  .or. &
+!            cm%clin(cfk%PR)%filefmt == 0  .or. &
+!            cm%clin(cfk%TT)%filefmt == 0   .or. &
+!            cm%clin(cfk%UV)%filefmt == 0   .or. &
+!            cm%clin(cfk%P0)%filefmt == 0 .or. &
+!            cm%clin(cfk%HU)%filefmt == 0) then
+!            open(51, file = 'MESH_input_forcing.bin', status = 'old', form = 'unformatted', action = 'read')
+!        end if
 
         !> Open the rest of the forcing files.
-        do i = 1, 7
+        do i = 1, size(cm%clin)
             call READ_CHECK_FORCING_FILES(bi, ts, i, cm)
 
             !> Update the file format counters for the legacy binary format.
-            select case (cm%clin(i)%filefmt)
-                case (1, 4)
-                    NUM_R2C = NUM_R2C + 1
-                case (2)
-                    NUM_CSV = NUM_CSV + 1
-                case (3, 5)
-                    NUM_SEQ = NUM_SEQ + 1
-            end select
+!            select case (cm%clin(i)%filefmt)
+!                case (1, 4)
+!                    NUM_R2C = NUM_R2C + 1
+!                case (2)
+!                    NUM_CSV = NUM_CSV + 1
+!                case (3, 5)
+!                    NUM_SEQ = NUM_SEQ + 1
+!            end select
         end do
 
         !todo - leave these in for event based runs
         !> IYEAR is set in the MESH_parameters_CLASS.ini file
         !> YEAR_START is set in the MESH_input_run_options.ini file
-!        nyy = YEAR_START - YEAR_START_CLIM
-!        ndy = JDAY_START - JDAY_START_CLIM
-        nmy = MINS_START - MINS_START_CLIM
-        nhy = HOUR_START - HOUR_START_CLIM
+!        nyy = YEAR_START - cm%start_date%year
+!        ndy = JDAY_START - cm%start_date%jday
+        nmy = MINS_START - cm%start_date%mins
+        nhy = HOUR_START - cm%start_date%hour
 
         ! set ISTEP_START based on HOURLYFLAG
         !  (could be optimised as ISTEP_START = 2 - HOURLYFLAG)
@@ -240,28 +247,29 @@ module climate_forcing
         !and a 1 hour interval forcing data will have 1 record per hour (ISTEP_START = 1). To
         !accomodate forcing data with time intervals greater than 1 hour,
         !it is better to count the number of records in a day:
+!todo: This assumes all forcing data start at the same date (ok?) and share the same time-step (will cause error).
         ISTEP_START = 24*60/HOURLYFLAG
         if (mod(24*60, HOURLYFLAG) /= 0) then
             print 2334
             stop
         end if
 
-2334 format( &
-    //1x'Forcing data time interval needs to be in either', &
-    /1x'of the following values:', &
-    /1x'30 or n*60 where n can be either 1, 2, 3, 4, 6, 8 or 12.'/)
+2334 format(/, &
+        /1x, 'Forcing data time interval needs to be in either', &
+        /1x, 'of the following values:', &
+        /1x, '30 or n*60 where n can be either 1, 2, 3, 4, 6, 8 or 12.', /)
 
         call Julian_Day_ID(YEAR_START, JDAY_START, Jday_IND2)
-        call Julian_Day_ID(YEAR_START_CLIM, JDAY_START_CLIM, Jday_IND3)
+        call Julian_Day_ID(cm%start_date%year, cm%start_date%jday, Jday_IND3)
         if ((Jday_IND2 < Jday_IND3) .and. (YEAR_START /= 0)) then
             print 2442
             stop
         end if
 
-2442 format( &
-    //1x'ERROR: Simulation start date too early. The start date in the', &
-    /3x'run options file may occur before the start date of the met.', &
-    /3x'forcing input data in the CLASS parameter file.'/)
+2442 format(/, &
+        /1x, 'ERROR: Simulation start date too early. The start date in the', &
+        /3x, 'run options file may occur before the start date of the met.', &
+        /3x, 'forcing input data in the CLASS parameter file.', /)
 
         !Notes added by M. Mekonnen - To keep nrs calculation as before
         !(and to be compatible with the above modification) we need to
@@ -286,22 +294,22 @@ module climate_forcing
         if (ro%VERBOSEMODE > 0) print *, 'Skipping', nrs, 'Registers in bin file'
 
         !> skip the values in the forcing files
-        toskip = 7 - NUM_R2C - NUM_CSV - NUM_SEQ
+!        toskip = 7 - NUM_R2C - NUM_CSV - NUM_SEQ
 
         do i = 1, nrs
 
             !> Legacy BIN-format.
-            if (cm%clin(cfk%FB)%filefmt == 0   .or. &
-                cm%clin(cfk%FI)%filefmt == 0  .or. &
-                cm%clin(cfk%PR)%filefmt == 0  .or. &
-                cm%clin(cfk%TT)%filefmt == 0   .or. &
-                cm%clin(cfk%UV)%filefmt == 0   .or. &
-                cm%clin(cfk%P0)%filefmt == 0 .or. &
-                cm%clin(cfk%HU)%filefmt == 0) then
-                do j = 1, toskip
-                    read(51, end = 999) !Skip the bin's information
-                end do
-            end if
+!            if (cm%clin(cfk%FB)%filefmt == 0   .or. &
+!                cm%clin(cfk%FI)%filefmt == 0  .or. &
+!                cm%clin(cfk%PR)%filefmt == 0  .or. &
+!                cm%clin(cfk%TT)%filefmt == 0   .or. &
+!                cm%clin(cfk%UV)%filefmt == 0   .or. &
+!                cm%clin(cfk%P0)%filefmt == 0 .or. &
+!                cm%clin(cfk%HU)%filefmt == 0) then
+!                do j = 1, toskip
+!                    read(51, end = 999) !Skip the bin's information
+!                end do
+!            end if
 
             !> R2C-format (ASCII).
             if (cm%clin(cfk%FB)%filefmt == 1) then !Skip the r2c file's information
@@ -571,8 +579,8 @@ module climate_forcing
             cm%clin(indx)%fln = 'basin_longwave'
         elseif (indx == cfk%PR) then
             cm%clin(indx)%fln = 'basin_rain'
-        elseif (indx == 8) then
-            cm%clin(indx)%fln = 'basin_rain_2'
+!        elseif (indx == 8) then
+!            cm%clin(indx)%fln = 'basin_rain_2'
         elseif (indx == cfk%TT) then
             cm%clin(indx)%fln = 'basin_temperature'
         elseif (indx == cfk%UV) then
@@ -586,7 +594,7 @@ module climate_forcing
         !> Call the subroutine to open the data.
         call OpenData(indx, cm)
 
-    end subroutine Init_clim_data
+    end subroutine !Init_clim_data
 
     !> -----------------------------------------------------------------
     !> Description: Open Units and Load the first block of climate data
@@ -687,16 +695,17 @@ module climate_forcing
         end select
 
 670 format(/ &
-        1x, a20' not found.'/, &
-        1x'Please adjust the MESH_input_run_options.ini file'/, &
-        1x'or put the file in the correct location.'//)
+        /1x, a20, ' not found.', &
+        /1x, 'Please adjust the MESH_input_run_options.ini file', &
+        /1x, 'or put the file in the correct location.', /)
 
-676 format(1x, a20' found.')
+676 format(1x, a20, ' found.')
 
-644 format(/1x'The input forcing file format is not supported', &
-        /2x, A15, I4/)
+644 format(/ &
+        /1x, 'The input forcing file format is not supported', &
+        /2x, a15, i4/)
 
-    end subroutine OpenData
+    end subroutine !OpenData
 
     !> -----------------------------------------------------------------
     !> Description: Load block of data
@@ -715,35 +724,41 @@ module climate_forcing
 
         !> Local variables.
         integer NTIME
-        integer i, j, ii, jj
+        integer t, s, i, ii, jj
         real INARRAY(bi%YCOUNT, bi%XCOUNT)
 
         select case (cm%clin(indx)%filefmt)
 
             !> ASCII R2C format.
             case (1)
-                do j = 1, size(cm%clin(indx)%climv, 2)
-                    read(cm%clin(indx)%unitR, *, end = 999) !:Frame line
-                    do ii = 1, bi%YCOUNT
-                        read(cm%clin(indx)%unitR, *, end = 999) (INARRAY(ii, jj), jj = 1, bi%XCOUNT)
-                    end do
-                    read(cm%clin(indx)%unitR, *, end = 999) !:EndFrame line
-                    do i = 1, bi%NA
-                        cm%clin(indx)%climv(i, j) = INARRAY(bi%YYY(i), bi%XXX(i))
+                do t = 1, size(cm%clin(indx)%climv, 3)
+                    do s = 1, size(cm%clin(indx)%climv, 2)
+                        read(cm%clin(indx)%unitR, *, end = 999) !:Frame line
+                        do ii = 1, bi%YCOUNT
+                            read(cm%clin(indx)%unitR, *, end = 999) (INARRAY(ii, jj), jj = 1, bi%XCOUNT)
+                        end do
+                        read(cm%clin(indx)%unitR, *, end = 999) !:EndFrame line
+                        do i = 1, bi%NA
+                            cm%clin(indx)%climv(i, s, t) = INARRAY(bi%YYY(i), bi%XXX(i))
+                        end do
                     end do
                 end do
 
             !> Binary sequential format.
             case (3)
-                do j = 1, size(cm%clin(indx)%climv, 2)
-                    read(cm%clin(indx)%unitR) NTIME
-                    read(cm%clin(indx)%unitR, end = 999) cm%clin(indx)%climv(:, j)
+                do t = 1, size(cm%clin(indx)%climv, 3)
+                    do s = 1, size(cm%clin(indx)%climv, 2)
+                        read(cm%clin(indx)%unitR) NTIME
+                        read(cm%clin(indx)%unitR, end = 999) cm%clin(indx)%climv(:, s, t)
+                    end do
                 end do
 
             !> ASCII format.
             case (4)
-                do j = 1, size(cm%clin(indx)%climv, 2)
-                    read(cm%clin(indx)%unitR, *, end = 999) cm%clin(indx)%climv(:, j)
+                do t = 1, size(cm%clin(indx)%climv, 3)
+                    do s = 1, size(cm%clin(indx)%climv, 2)
+                        read(cm%clin(indx)%unitR, *, end = 999) cm%clin(indx)%climv(:, s, t)
+                    end do
                 end do
 
             case default
@@ -755,7 +770,7 @@ module climate_forcing
 
 999 ENDDATA = .true.
 
-    end subroutine LoadData
+    end subroutine !LoadData
 
     subroutine climate_module_interpolatedata(bi, &
 !todo: These variables can be stored elsewhere instead of passed.
@@ -833,10 +848,10 @@ module climate_forcing
         !> Check if we need to update.
         if (cm%clin(indx)%itime == 1) then
             if (allocated(cm%clin(indx)%climv)) deallocate(cm%clin(indx)%climv)
-            allocate(cm%clin(indx)%climv(bi%NA, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
+            allocate(cm%clin(indx)%climv(bi%NA, cm%clin(indx)%nSeries, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
             call LoadData(bi, indx, cm, ENDDATA)
         end if
 
-    end subroutine NeedUpdate_clim_data
+    end subroutine !NeedUpdate_clim_data
 
-end module climate_forcing
+end module !climate_forcing

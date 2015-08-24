@@ -30,21 +30,42 @@ subroutine READ_CHECK_FORCING_FILES(bi, ts, indx, cm)
     !* cm: Climate information and data variable.
     type(clim_info) :: cm
 
+    !> *****************************************************************
+    !> Local variables.
+    !> *****************************************************************
+
+    !* i: Index
+    integer i
+
+    !> Check if the format is the legacy binary format.
+    do i = 1, size(cm%clin)
+        if (cm%clin(i)%filefmt == 0) then
+            print 8900, adjustl(trim(cm%clin(i)%id_var))
+            stop
+        end if
+    end do
+
     !> Initialize the climate variable to read data into memory.
     if (cm%clin(indx)%timeSize > 0) then
         call Init_clim_info(bi, ts, indx, cm)
-        if (indx == cfk%PR .and. cm%clin(cfk%PR)%filefmt == 6) call Init_clim_info(bi, ts, 8, cm)
+!        if (indx == cfk%PR .and. cm%clin(cfk%PR)%filefmt == 6) call Init_clim_info(bi, ts, 8, cm)
     end if
 
     !> Special case two sources of precipitation with alpha constant.
 !todo generalize this
-    if (indx == cfk%PR .and. cm%clin(cfk%PR)%filefmt == 6) then
-        call Init_clim_data(cfk%PR, 921, cm)
-        call Init_clim_data(8, 922, cm)
-        return
-    end if
+!    if (indx == cfk%PR .and. cm%clin(cfk%PR)%filefmt == 6) then
+!        call Init_clim_data(cfk%PR, 921, cm)
+!        call Init_clim_data(8, 922, cm)
+!        return
+!    end if
 
     !> Call to open the forcing file.
     call Init_clim_data(indx, cm%basefileunit + indx, cm)
+
+8900 format( &
+        /1x, 'Forcing data in the legacy binary format (*.bin) are no longer', &
+        /1x, 'supported by the model.', &
+        /3x, 'Forcing field: ', a, &
+        /1x, 'Please convert these data to one of the supported formats.'/)
 
 end subroutine !READ_CHECK_FORCING_FILES

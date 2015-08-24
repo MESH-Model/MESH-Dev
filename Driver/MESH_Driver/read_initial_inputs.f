@@ -105,8 +105,8 @@
      +        HOURLY_START_DAY,  HOURLY_STOP_DAY,
      +        DAILY_START_DAY,   DAILY_STOP_DAY,
      +        HOURLY_START_YEAR, HOURLY_STOP_YEAR,
-     +        DAILY_START_YEAR,  DAILY_STOP_YEAR
-!     +        IHOUR, IMIN, IDAY, IYEAR
+     +        DAILY_START_YEAR,  DAILY_STOP_YEAR,
+     +        IHOUR, IMIN, IDAY, IYEAR
       REAL :: DEGLAT, DEGLON
 !> values declared in area watflood:
 !>  NA, NTYPE
@@ -508,17 +508,24 @@
      +  DAILY_START_DAY,   DAILY_STOP_DAY,
      +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
      +  DAILY_START_YEAR,  DAILY_STOP_YEAR,
-!     +  IHOUR, IMIN, IDAY, IYEAR,
+     +  IHOUR, IMIN, IDAY, IYEAR,
      +  cp, fls)
+
+!>    Copy the starting date of input forcing data from CLASS.ini
+!>    to the climate variable.
+      cm%start_date%year = IYEAR
+      cm%start_date%jday = IDAY
+      cm%start_date%hour = IHOUR
+      cm%start_date%mins = IMIN
 
 !>    Set the starting date to that of the forcing data if none is
 !>    provided and intialize the current time-step.
       if (YEAR_START == 0 .and. JDAY_START == 0 .and.
      +    MINS_START == 0 .and. HOUR_START == 0) then
-        YEAR_START = YEAR_START_CLIM
-        JDAY_START = JDAY_START_CLIM
-        HOUR_START = HOUR_START_CLIM
-        MINS_START = MINS_START_CLIM
+        YEAR_START = cm%start_date%year
+        JDAY_START = cm%start_date%jday
+        HOUR_START = cm%start_date%hour
+        MINS_START = cm%start_date%mins
       end if
       YEAR_NOW = YEAR_START
       JDAY_NOW = JDAY_START
