@@ -724,8 +724,8 @@ module climate_forcing
 
         !> Local variables.
         integer NTIME
-        integer t, s, i, ii, jj
-        real INARRAY(bi%YCOUNT, bi%XCOUNT)
+        integer t, s, i, j, ii, jj
+        real INARRAY(bi%YCOUNT, bi%XCOUNT), INGRU(bi%NTYPE)
 
         select case (cm%clin(indx)%filefmt)
 
@@ -740,6 +740,20 @@ module climate_forcing
                         read(cm%clin(indx)%unitR, *, end = 999) !:EndFrame line
                         do i = 1, bi%NA
                             cm%clin(indx)%climv(i, s, t) = INARRAY(bi%YYY(i), bi%XXX(i))
+                        end do
+                    end do
+                end do
+
+            !> CSV format.
+            case (2)
+                do t = 1, size(cm%clin(indx)%climv, 3)
+                    do s = 1, size(cm%clin(indx)%climv, 2)
+                        read(cm%clin(indx)%unitR, *, end = 999) (INGRU(i), i = 1, bi%NTYPE)
+                        cm%clin(indx)%climv(:, s, t) = 0.0
+                        do j = 1, bi%NTYPE
+                            do i = 1, bi%NA
+                                cm%clin(indx)%climv(i, s, t) = cm%clin(indx)%climv(i, s, t) + INGRU(j)*bi%ACLASS(i, j)
+                            end do
                         end do
                     end do
                 end do
