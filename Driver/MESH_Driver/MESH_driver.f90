@@ -299,7 +299,7 @@ CHARACTER(30) :: NMTESTFORMAT
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-CHARACTER :: VERSION*24 = "TRUNK (839)"
+CHARACTER :: VERSION*24 = "TRUNK (849)"
 !+CHARACTER :: VERSION*24 = "TAG"
 CHARACTER*8 :: RELEASE(10)
 LOGICAL :: VER_OK
@@ -1863,6 +1863,21 @@ ENDIF
 !>  End of subbasin section
 !> **********************************************************************
 
+!> Set value of FAREROW:
+!todo - flag this as an issue to explore later and hide basin average code
+!todo - document the problem
+TOTAL_AREA = 0.0
+DO I = 1, NA
+    DO M = 1, NMTEST
+        cp%FAREROW(I, M) = ACLASS(I, M)*FRAC(I)
+        TOTAL_AREA = TOTAL_AREA + cp%FAREROW(I, M)
+    !FUTUREDO: Bruce, FRAC is calculated by EnSim
+    ! using Dan Princz's instructions for EnSim
+    ! FRAC can be greater than 1.00
+    ! So, we cannot use FAREROW in place of BASIN_FRACTION
+    END DO
+END DO
+
 CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS, &
              NML,NMW,cp%GCGRD,cp%FAREROW,cp%MIDROW, &
              NA,NTYPE,ILG,1,NA,NMTEST)
@@ -1876,6 +1891,14 @@ CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS, &
 
 !> Initialize output variables.
 call wb%init(bi)
+wb%grid_area = 0.0
+wb%basin_area = 0.0
+DO I = 1, NA
+    DO M = 1, NMTEST
+        wb%grid_area(i) = wb%grid_area(i) + cp%farerow(i, m)
+    END DO
+    wb%basin_area = wb%basin_area + wb%grid_area(i)
+END DO
 
     call climate_module_init(bi, ts, cm, ENDDATA)
     if (ENDDATA) goto 999
@@ -1894,23 +1917,6 @@ if (ipid == 0) then
     if (OUTFIELDSFLAG == 1) call init_out(vr, ts, iof, bi)
 
 end if !(ipid == 0) then
-
-!> Set value of FAREROW: 
-!todo - flag this as an issue to explore later and hide basin average code
-!todo - document the problem
-TOTAL_AREA = 0.0
-DO I = 1, NA
-    DO M = 1, NMTEST
-        cp%FAREROW(I, M) = ACLASS(I, M)*FRAC(I)
-        TOTAL_AREA = TOTAL_AREA + cp%FAREROW(I, M)
-    !FUTUREDO: Bruce, FRAC is calculated by EnSim
-    ! using Dan Princz's instructions for EnSim
-    ! FRAC can be greater than 1.00
-    ! So, we cannot use FAREROW in place of BASIN_FRACTION
-        wb%grid_area(i) = wb%grid_area(i) + cp%farerow(i, m)
-    END DO
-    wb%basin_area = wb%basin_area + wb%grid_area(i)
-END DO
 
 !> routing parameters
 WF_ROUTETIMESTEP=900
