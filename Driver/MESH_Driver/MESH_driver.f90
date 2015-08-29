@@ -299,7 +299,7 @@ CHARACTER(30) :: NMTESTFORMAT
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-CHARACTER :: VERSION*24 = "TRUNK (850)"
+CHARACTER :: VERSION*24 = "TRUNK (851)"
 !+CHARACTER :: VERSION*24 = "TAG"
 CHARACTER*8 :: RELEASE(10)
 LOGICAL :: VER_OK
@@ -4442,7 +4442,7 @@ DO I=1,nml
     ILMOGRD(ilmos(I))=ILMOGRD(ilmos(I))+ILMOgat(I)*FAREGAT(i)
     UEGRD(ilmos(I))=UEGRD(ilmos(I))+UEgat(I)*FAREGAT(i)
     HBLGRD(ilmos(I))=HBLGRD(ilmos(I))+HBLgat(I)*FAREGAT(i)
-    wb_h%pre(ilmos(I)) = wb_h%pre(ilmos(I)) + FAREGAT(i)*cm%clin(cfk%PR)%climvGrd(ilmos(i))*delt
+    wb_h%pre(ilmos(I)) = wb_h%pre(ilmos(I)) + FAREGAT(i)*PREGAT(i)*delt
     wb_h%evap(ilmos(I)) = wb_h%evap(ilmos(I)) + FAREGAT(i)*qfsgat(i)*delt
     wb_h%rof(ilmos(I)) = wb_h%rof(ilmos(I)) + FAREGAT(i)*rofgat(i)*delt
     wb_h%rofo(ilmos(I)) = wb_h%rofo(ilmos(I)) + FAREGAT(i)*rofogat(i)*delt
@@ -4562,7 +4562,7 @@ ENDIF
 !$omp parallel do
 DO I = 1, nml
    IF(FRAC(ilmos(I)) /= 0.0)THEN
-         PREACC(ilmos(I))  = PREACC(ilmos(I)) + FAREGAT(i)*cm%clin(cfk%PR)%climvGrd(ilmos(I))*DELT
+         PREACC(ilmos(I))  = PREACC(ilmos(I)) + PREGAT(i)* FAREGAT(i)*DELT
          GTACC(ilmos(I))   = GTACC(ilmos(I))  + GTgat(I)*  FAREGAT(i)
          QEVPACC(ilmos(I)) = QEVPACC(ilmos(I))+ QEVPgat(I)*FAREGAT(i)
          EVAPACC(ilmos(I)) = EVAPACC(ilmos(I))+ QFSgat(I)* FAREGAT(i)*DELT
