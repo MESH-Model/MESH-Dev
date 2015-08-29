@@ -1,5 +1,7 @@
 subroutine READ_FORCING_DATA(bi, cm, &
-                             FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+!                             FSDOWN, &
+                             FSVHGRD, FSIHGRD, &
+!                             FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
                              FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, &
                              ENDDATA)
 
@@ -33,20 +35,24 @@ subroutine READ_FORCING_DATA(bi, cm, &
     type(clim_info) :: cm
 
     !> Output variables.
-    real*4, dimension(bi%NA) :: FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD
-    real*4, dimension(bi%ILG) :: FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT
+    real*4, dimension(bi%NA) :: &
+!        FSDOWN,
+        FSVHGRD, FSIHGRD
+!        , FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD
+    real*4, dimension(bi%ILG) :: FSGAT, FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT
     logical ENDDATA
 
     !> Local variables.
-    real*4, dimension(bi%YCOUNT, bi%XCOUNT) :: INARRAY
-    real*4, dimension(bi%NTYPE) :: INVECTOR
-    real*4 JUNK
-    integer t, s, i, j, k, CURGRU, ICOUNT
+!    real*4, dimension(bi%YCOUNT, bi%XCOUNT) :: INARRAY
+!    real*4, dimension(bi%NTYPE) :: INVECTOR
+!    real*4 JUNK
+!    integer t, s, i, j, k, CURGRU, ICOUNT
+     integer s
 
-    integer :: NTIME  ! time in read sequential
+!    integer :: NTIME  ! time in read sequential
 
     !> Initialize counting number of r2c and csv files.
-    ICOUNT = 0
+!    ICOUNT = 0
 
     !> *****************************************************************
     !> Read shortwave radiation data
@@ -55,20 +61,30 @@ subroutine READ_FORCING_DATA(bi, cm, &
 
         !> Read into memory.
 !        if (cm%clin(cfk%FB)%timeSize > 0) then
+
+            !> Read data (if needed).
             call NeedUpdate_clim_data(bi, cfk%FB, cm, ENDDATA)
-            FSDOWN = 0.0
+
+            !> Distribute the variable (for the case of more than one series)
+            FSGAT = 0.0
             do s = 1, size(cm%clin(cfk%FB)%climv, 2)
-                FSDOWN = FSDOWN + cm%clin(cfk%FB)%climv(:, s, cm%clin(cfk%FB)%itime)*cm%clin(cfk%FB)%alpha(s)
+                FSGAT = FSGAT + cm%clin(cfk%FB)%climv(:, s, cm%clin(cfk%FB)%itime)*cm%clin(cfk%FB)%alpha(s)
             end do
+
+            !> Update the counter of the current time-step.
             cm%clin(cfk%FB)%itime = cm%clin(cfk%FB)%itime + 1
             if (cm%clin(cfk%FB)%itime > size(cm%clin(cfk%FB)%climv, 3)) then
                 cm%clin(cfk%FB)%itime = 1
             end if
-            FSVHGRD = 0.5*FSDOWN
-            FSIHGRD = FSVHGRD
-            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
+
+            !> Distribute the gridded variable.
+!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
+            FSVHGAT = 0.5*FSGAT
             FSIHGAT = FSVHGAT
-            ICOUNT = ICOUNT + 1
+            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%FB)%climvGrd, FSGAT)
+            FSVHGRD = 0.5*cm%clin(cfk%FB)%climvGrd
+            FSIHGRD = FSVHGRD
+!            ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
 !        else
@@ -149,16 +165,17 @@ subroutine READ_FORCING_DATA(bi, cm, &
         !> Read into memory.
 !        if (cm%clin(cfk%FI)%timeSize > 0) then
             call NeedUpdate_clim_data(bi, cfk%FI, cm, ENDDATA)
-            FDLGRD = 0.0
+            FDLGAT = 0.0
             do s = 1, size(cm%clin(cfk%FI)%climv, 2)
-                FDLGRD = FDLGRD + cm%clin(cfk%FI)%climv(:, s, cm%clin(cfk%FI)%itime)*cm%clin(cfk%FI)%alpha(s)
+                FDLGAT = FDLGAT + cm%clin(cfk%FI)%climv(:, s, cm%clin(cfk%FI)%itime)*cm%clin(cfk%FI)%alpha(s)
             end do
             cm%clin(cfk%FI)%itime = cm%clin(cfk%FI)%itime + 1
             if (cm%clin(cfk%FI)%itime > size(cm%clin(cfk%FI)%climv, 3)) then
                 cm%clin(cfk%FI)%itime = 1
             end if
-            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
-            ICOUNT = ICOUNT + 1
+!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
+            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%FI)%climvGrd, FDLGAT)
+!            ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
 !        else
@@ -224,16 +241,17 @@ subroutine READ_FORCING_DATA(bi, cm, &
         !> Read into memory.
 !        if (cm%clin(cfk%PR)%timeSize > 0) then
             call NeedUpdate_clim_data(bi, cfk%PR, cm, ENDDATA)
-            PREGRD = 0.0
+            PREGAT = 0.0
             do s = 1, size(cm%clin(cfk%PR)%climv, 2)
-                PREGRD = PREGRD + cm%clin(cfk%PR)%climv(:, s, cm%clin(cfk%PR)%itime)*cm%clin(cfk%PR)%alpha(s)
+                PREGAT = PREGAT + cm%clin(cfk%PR)%climv(:, s, cm%clin(cfk%PR)%itime)*cm%clin(cfk%PR)%alpha(s)
             end do
             cm%clin(cfk%PR)%itime = cm%clin(cfk%PR)%itime + 1
             if (cm%clin(cfk%PR)%itime > size(cm%clin(cfk%PR)%climv, 3)) then
                 cm%clin(cfk%PR)%itime = 1
             end if
-            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
-            ICOUNT = ICOUNT + 1
+!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
+            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%PR)%climvGrd, PREGAT)
+!            ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
 !        else
@@ -313,16 +331,17 @@ subroutine READ_FORCING_DATA(bi, cm, &
         !> Read into memory.
 !        if (cm%clin(cfk%TT)%timeSize > 0) then
             call NeedUpdate_clim_data(bi, cfk%TT, cm, ENDDATA)
-            TAGRD = 0.0
+            TAGAT = 0.0
             do s = 1, size(cm%clin(cfk%TT)%climv, 2)
-                TAGRD = TAGRD + cm%clin(cfk%TT)%climv(:, s, cm%clin(cfk%TT)%itime)*cm%clin(cfk%TT)%alpha(s)
+                TAGAT = TAGAT + cm%clin(cfk%TT)%climv(:, s, cm%clin(cfk%TT)%itime)*cm%clin(cfk%TT)%alpha(s)
             end do
             cm%clin(cfk%TT)%itime = cm%clin(cfk%TT)%itime + 1
             if (cm%clin(cfk%TT)%itime > size(cm%clin(cfk%TT)%climv, 3)) then
                 cm%clin(cfk%TT)%itime = 1
             end if
-            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
-            ICOUNT = ICOUNT + 1
+!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
+            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%TT)%climvGrd, TAGAT)
+!            ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
 !        else
@@ -388,16 +407,17 @@ subroutine READ_FORCING_DATA(bi, cm, &
         !> Read into memory.
 !        if (cm%clin(cfk%UV)%timeSize > 0) then
             call NeedUpdate_clim_data(bi, cfk%UV, cm, ENDDATA)
-            ULGRD = 0.0
+            ULGAT = 0.0
             do s = 1, size(cm%clin(cfk%UV)%climv, 2)
-                ULGRD = ULGRD + cm%clin(cfk%UV)%climv(:, s, cm%clin(cfk%UV)%itime)*cm%clin(cfk%UV)%alpha(s)
+                ULGAT = ULGAT + cm%clin(cfk%UV)%climv(:, s, cm%clin(cfk%UV)%itime)*cm%clin(cfk%UV)%alpha(s)
             end do
             cm%clin(cfk%UV)%itime = cm%clin(cfk%UV)%itime + 1
             if (cm%clin(cfk%UV)%itime > size(cm%clin(cfk%UV)%climv, 3)) then
                 cm%clin(cfk%UV)%itime = 1
             end if
-            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
-            ICOUNT = ICOUNT + 1
+!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
+            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%UV)%climvGrd, ULGAT)
+!            ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
 !        else
@@ -471,16 +491,17 @@ subroutine READ_FORCING_DATA(bi, cm, &
         !> Read into memory.
 !        if (cm%clin(cfk%P0)%timeSize > 0) then
             call NeedUpdate_clim_data(bi, cfk%P0, cm, ENDDATA)
-            PRESGRD = 0.0
+            PRESGAT = 0.0
             do s = 1, size(cm%clin(cfk%P0)%climv, 2)
-                PRESGRD = PRESGRD + cm%clin(cfk%P0)%climv(:, s, cm%clin(cfk%P0)%itime)*cm%clin(cfk%P0)%alpha(s)
+                PRESGAT = PRESGAT + cm%clin(cfk%P0)%climv(:, s, cm%clin(cfk%P0)%itime)*cm%clin(cfk%P0)%alpha(s)
             end do
             cm%clin(cfk%P0)%itime = cm%clin(cfk%P0)%itime + 1
             if (cm%clin(cfk%P0)%itime > size(cm%clin(cfk%P0)%climv, 3)) then
                 cm%clin(cfk%P0)%itime = 1
             end if
-            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
-            ICOUNT = ICOUNT + 1
+!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
+            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%P0)%climvGrd, PRESGAT)
+!            ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
 !        else
@@ -546,16 +567,17 @@ subroutine READ_FORCING_DATA(bi, cm, &
         !> Read into memory.
 !        if (cm%clin(cfk%HU)%timeSize > 0) then
             call NeedUpdate_clim_data(bi, cfk%HU, cm, ENDDATA)
-            QAGRD = 0.0
+            QAGAT = 0.0
             do s = 1, size(cm%clin(cfk%HU)%climv, 2)
-                QAGRD = QAGRD + cm%clin(cfk%HU)%climv(:, s, cm%clin(cfk%HU)%itime)*cm%clin(cfk%HU)%alpha(s)
+                QAGAT = QAGAT + cm%clin(cfk%HU)%climv(:, s, cm%clin(cfk%HU)%itime)*cm%clin(cfk%HU)%alpha(s)
             end do
             cm%clin(cfk%HU)%itime = cm%clin(cfk%HU)%itime + 1
             if (cm%clin(cfk%HU)%itime > size(cm%clin(cfk%HU)%climv, 3)) then
                 cm%clin(cfk%HU)%itime = 1
             end if
-            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
-            ICOUNT = ICOUNT + 1
+!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
+            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%HU)%climvGrd, QAGAT)
+!            ICOUNT = ICOUNT + 1
 
         !> Switch and read and a single record from file.
 !        else

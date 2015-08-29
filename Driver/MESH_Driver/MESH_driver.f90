@@ -299,7 +299,7 @@ CHARACTER(30) :: NMTESTFORMAT
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-CHARACTER :: VERSION*24 = "TRUNK (849)"
+CHARACTER :: VERSION*24 = "TRUNK (850)"
 !+CHARACTER :: VERSION*24 = "TAG"
 CHARACTER*8 :: RELEASE(10)
 LOGICAL :: VER_OK
@@ -2501,11 +2501,11 @@ call resume_state( &
    cm%clin(cfk%FB)%filefmt, cm%clin(cfk%FI)%filefmt, &
    cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
    cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
-   FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, &
+   cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
    I, J, XCOUNT, YCOUNT, jan, &
    VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
-   RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, TAGRD, &
-   QAGRD, PREGRD, RPREGRD, SPREGRD, PRESGRD, &
+   RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
+   cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
 
 !> MAM - FOR FORCING DATA INTERPOLATION
    FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
@@ -2560,7 +2560,7 @@ call resume_state( &
    ASVDROW, ASIDROW, AGVDROW, AGIDROW, &
    ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
    cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, CSZGRD, &
-   ULGRD, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
+   cm%clin(cfk%UV)%climvGrd, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
    cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
    IGDRROW, IGDRGAT, VMODGRD, VMODGAT, QLWOGAT, &
    CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
@@ -2712,8 +2712,8 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              ALGWROW,ALGDROW,ASVDROW,ASIDROW,AGVDROW, &
              AGIDROW,ISNDROW,RADJGRD,cp%ZBLDGRD,Z0ORGRD, &
              cp%ZRFMGRD,cp%ZRFHGRD,ZDMGRD, ZDHGRD, FSVHGRD, &
-             FSIHGRD,CSZGRD, FDLGRD, ULGRD,  VLGRD, &
-             TAGRD,  QAGRD,  PRESGRD,PREGRD, PADRGRD, &
+             FSIHGRD,CSZGRD, cm%clin(cfk%FI)%climvGrd, cm%clin(cfk%UV)%climvGrd,  VLGRD, &
+             cm%clin(cfk%TT)%climvGrd,  cm%clin(cfk%HU)%climvGrd,  cm%clin(cfk%P0)%climvGrd,cm%clin(cfk%PR)%climvGrd, PADRGRD, &
              VPDGRD, TADPGRD,RHOAGRD,RPCPGRD,TRPCGRD, &
              SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD, &
              GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
@@ -3085,7 +3085,7 @@ IF(PBSMFLAG == 1)THEN
        DrySnowROW(I,M) = 0. !1=snowpack is dry (i.e. cold)
        SnowAgeROW(I,M) = 0. !hours since last snowfall
        !todo: this can use the TFREZ parameter instead of a hard-coded value. (dgp: 2015-01-09)
-       IF(TAGRD(I).GE.273.16) THEN
+       IF(cm%clin(cfk%TT)%climvGrd(I).GE.273.16) THEN
          DrySnowROW(I,M) = 0.
          SnowAgeROW(I,M) = 48. !assume 48 hours since last snowfall
        ELSE
@@ -3152,8 +3152,8 @@ CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT, &
              ALGWROW,ALGDROW,ASVDROW,ASIDROW,AGVDROW, &
              AGIDROW,ISNDROW,RADJGRD,cp%ZBLDGRD,Z0ORGRD, &
              cp%ZRFMGRD,cp%ZRFHGRD,ZDMGRD, ZDHGRD, FSVHGRD, &
-             FSIHGRD,CSZGRD, FDLGRD, ULGRD,  VLGRD, &
-             TAGRD,  QAGRD,  PRESGRD,PREGRD, PADRGRD, &
+             FSIHGRD,CSZGRD, cm%clin(cfk%FI)%climvGrd, cm%clin(cfk%UV)%climvGrd,  VLGRD, &
+             cm%clin(cfk%TT)%climvGrd,  cm%clin(cfk%HU)%climvGrd,  cm%clin(cfk%P0)%climvGrd,cm%clin(cfk%PR)%climvGrd, PADRGRD, &
              VPDGRD, TADPGRD,RHOAGRD,RPCPGRD,TRPCGRD, &
              SPCPGRD,TSPCGRD,RHSIGRD,FCLOGRD,DLONGRD, &
              GGEOGRD,cp%MANNROW,MANNGAT,cp%DDROW,DDGAT, &
@@ -3388,7 +3388,7 @@ N=N+1
     if (INTERPOLATIONFLAG == 1) then
         call climate_module_interpolatedata(bi, FAREGAT, cm)
     end if
-    UVGRD = max(VMIN, ULGRD)
+    UVGRD = max(VMIN, cm%clin(cfk%UV)%climvGrd)
     VMODGRD = UVGRD
     VMODGAT = max(VMIN, ULGAT)
 
@@ -4355,15 +4355,15 @@ ENDIF
 !>
 
     !> Grid data for output.
-    md%fsdown = fsdown
+    md%fsdown = cm%clin(cfk%FB)%climvGrd
     md%fsvh = fsvhgrd
     md%fsih = fsihgrd
-    md%fdl = fdlgrd
-    md%ul = ulgrd
-    md%ta = tagrd
-    md%qa = qagrd
-    md%pres = presgrd
-    md%pre = pregrd
+    md%fdl = cm%clin(cfk%FI)%climvGrd
+    md%ul = cm%clin(cfk%UV)%climvGrd
+    md%ta = cm%clin(cfk%TT)%climvGrd
+    md%qa = cm%clin(cfk%HU)%climvGrd
+    md%pres = cm%clin(cfk%P0)%climvGrd
+    md%pre = cm%clin(cfk%PR)%climvGrd
 
 !> GRU-distributed data for output.
 wb_h%pre = 0.0
@@ -4442,7 +4442,7 @@ DO I=1,nml
     ILMOGRD(ilmos(I))=ILMOGRD(ilmos(I))+ILMOgat(I)*FAREGAT(i)
     UEGRD(ilmos(I))=UEGRD(ilmos(I))+UEgat(I)*FAREGAT(i)
     HBLGRD(ilmos(I))=HBLGRD(ilmos(I))+HBLgat(I)*FAREGAT(i)
-    wb_h%pre(ilmos(I)) = wb_h%pre(ilmos(I)) + FAREGAT(i)*pregrd(ilmos(i))*delt
+    wb_h%pre(ilmos(I)) = wb_h%pre(ilmos(I)) + FAREGAT(i)*cm%clin(cfk%PR)%climvGrd(ilmos(i))*delt
     wb_h%evap(ilmos(I)) = wb_h%evap(ilmos(I)) + FAREGAT(i)*qfsgat(i)*delt
     wb_h%rof(ilmos(I)) = wb_h%rof(ilmos(I)) + FAREGAT(i)*rofgat(i)*delt
     wb_h%rofo(ilmos(I)) = wb_h%rofo(ilmos(I)) + FAREGAT(i)*rofogat(i)*delt
@@ -4562,7 +4562,7 @@ ENDIF
 !$omp parallel do
 DO I = 1, nml
    IF(FRAC(ilmos(I)) /= 0.0)THEN
-         PREACC(ilmos(I))  = PREACC(ilmos(I)) + FAREGAT(i)*PREGRD(ilmos(I))*DELT
+         PREACC(ilmos(I))  = PREACC(ilmos(I)) + FAREGAT(i)*cm%clin(cfk%PR)%climvGrd(ilmos(I))*DELT
          GTACC(ilmos(I))   = GTACC(ilmos(I))  + GTgat(I)*  FAREGAT(i)
          QEVPACC(ilmos(I)) = QEVPACC(ilmos(I))+ QEVPgat(I)*FAREGAT(i)
          EVAPACC(ilmos(I)) = EVAPACC(ilmos(I))+ QFSgat(I)* FAREGAT(i)*DELT
@@ -4603,13 +4603,13 @@ DO I = 1, nml
          RCANACC(ilmos(I)) = RCANACC(ilmos(I))+RCANgat(I)*FAREGAT(i)
          SCANACC(ilmos(I)) = SCANACC(ilmos(I))+SCANgat(I)*FAREGAT(i)
          GROACC(ilmos(I))  = GROACC(ilmos(I))+GROgat(I)*FAREGAT(i)
-         FSINACC(ilmos(I)) = FSINACC(ilmos(I))+FSDOWN(ilmos(I))*FAREGAT(i)
-         FLINACC(ilmos(I)) = FLINACC(ilmos(I))+FDLGRD(ilmos(I))*FAREGAT(i)
+         FSINACC(ilmos(I)) = FSINACC(ilmos(I))+cm%clin(cfk%FB)%climvGrd(ilmos(I))*FAREGAT(i)
+         FLINACC(ilmos(I)) = FLINACC(ilmos(I))+cm%clin(cfk%FI)%climvGrd(ilmos(I))*FAREGAT(i)
          FLUTACC(ilmos(I)) = FLUTACC(ilmos(I))+SBC*GTgat(I)**4*FAREGAT(i)
-         TAACC(ilmos(I))   = TAACC(ilmos(I))+TAGRD(ilmos(I))*FAREGAT(i)
+         TAACC(ilmos(I))   = TAACC(ilmos(I))+cm%clin(cfk%TT)%climvGrd(ilmos(I))*FAREGAT(i)
          UVACC(ilmos(I))   = UVACC(ilmos(I))+UVGRD(ilmos(I))*FAREGAT(i)
-         PRESACC(ilmos(I)) = PRESACC(ilmos(I))+PRESGRD(ilmos(I))*FAREGAT(i)
-         QAACC(ilmos(I))   = QAACC(ilmos(I))+QAGRD(ilmos(I))*FAREGAT(i)
+         PRESACC(ilmos(I)) = PRESACC(ilmos(I))+cm%clin(cfk%P0)%climvGrd(ilmos(I))*FAREGAT(i)
+         QAACC(ilmos(I))   = QAACC(ilmos(I))+cm%clin(cfk%HU)%climvGrd(ilmos(I))*FAREGAT(i)
    ENDIF
 ENDDO !DO I=1,nml
 
@@ -5344,11 +5344,11 @@ IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
    cm%clin(cfk%FB)%filefmt, cm%clin(cfk%FI)%filefmt, &
    cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
    cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
-   FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, &
+   cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
    I, J, XCOUNT, YCOUNT, jan, &
    VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
-   RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, TAGRD, &
-   QAGRD, PREGRD, RPREGRD, SPREGRD, PRESGRD, &
+   RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
+   cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
 
 !MAM - FOR FORCING DATA INTERPOLATION
    FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
@@ -5404,7 +5404,7 @@ IF (SAVERESUMEFLAG == 1) THEN !todo: done: use a flag
    ASVDROW, ASIDROW, AGVDROW, AGIDROW, &
    ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
    cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, CSZGRD, &
-   ULGRD, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
+   cm%clin(cfk%UV)%climvGrd, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
    cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
    IGDRROW, IGDRGAT, VMODGRD, VMODGAT, QLWOGAT, &
    CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &

@@ -27,8 +27,16 @@ module climate_forcing
         integer :: timestep_now = 0
         integer :: hf = 30 !hourly flag
 
-        !* climv: Values for forcing data. (1: Grid; 2: Series; 3: Time-step).
+        !* climv: Values for forcing data. (1: Land Element (GAT); 2: Series; 3: Time-step).
+        !> Values are stored at the GAT level, as it is the finest level of
+        !> elemental computation in the model (e.g., with CLASS).
         real, dimension(:, :, :), allocatable :: climv
+
+        !* climvGrd: Values for forcing data. (1: Grid)
+        !> Values are averaged to the grid-level for grid-based processing and certain output.
+        !> Gridded values aren't used to drive the model, as they are incompatible with
+        !> data input at the GRU- (e.g., in one of the CSV formats) or GAT-level.
+        real, dimension(:), allocatable :: climvGrd
 
         !* alpha: Uniform weight to assign when there are multiple series of data. (1: Series).
         real, dimension(:), allocatable :: alpha
@@ -110,7 +118,10 @@ module climate_forcing
 !    integer YEAR_START_CLIM, JDAY_START_CLIM, HOUR_START_CLIM, MINS_START_CLIM
 
     real, dimension(:), allocatable :: &
-        FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, VLGRD, FSDOWN, &
+        FSVHGRD, FSIHGRD, &
+!        FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD,
+        VLGRD, &
+!        FSDOWN, &
         FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, VLGAT
 
     !> MAM - variables for forcing data interpolation:
@@ -145,6 +156,10 @@ module climate_forcing
         allocate(cm%clin(indx)%alpha(cm%clin(indx)%nSeries))
         cm%clin(indx)%alpha = 1.0 / cm%clin(indx)%nSeries
 
+        !> Allocate gridded series.
+        allocate(cm%clin(indx)%climvGrd(bi%NA))
+
+        !> Determine the number of time-steps read from file.
         timeStepClimF = ts%nr_days*24*(60/TIME_STEP_MINS)/real(cm%clin(indx)%hf)*TIME_STEP_MINS
         if (timeStepClimF <= cm%clin(indx)%timeSize) then
             allocate(cm%clin(indx)%ntimes(1))
@@ -389,18 +404,21 @@ module climate_forcing
 
         !> Allocate and initialize GRD variables.
         allocate( &
-            FSVHGRD(bi%NA), FSIHGRD(bi%NA), FDLGRD(bi%NA), PREGRD(bi%NA), TAGRD(bi%NA), ULGRD(bi%NA), PRESGRD(bi%NA), &
-            QAGRD(bi%NA), VLGRD(bi%NA), FSDOWN(bi%NA))
+            FSVHGRD(bi%NA), FSIHGRD(bi%NA), &
+!            , FDLGRD(bi%NA), PREGRD(bi%NA), TAGRD(bi%NA), ULGRD(bi%NA), PRESGRD(bi%NA), &
+!            QAGRD(bi%NA), &
+            VLGRD(bi%NA))
+!            , FSDOWN(bi%NA))
         FSVHGRD = 0.0
         FSIHGRD = 0.0
-        FDLGRD = 0.0
-        PREGRD = 0.0
-        TAGRD = 0.0
-        ULGRD = 0.0
-        PRESGRD = 0.0
-        QAGRD = 0.0
+!        FDLGRD = 0.0
+!        PREGRD = 0.0
+!        TAGRD = 0.0
+!        ULGRD = 0.0
+!        PRESGRD = 0.0
+!        QAGRD = 0.0
         VLGRD = 0.0
-        FSDOWN = 0.0
+!        FSDOWN = 0.0
 
         !> Allocate and initialize GAT variables.
         ilg = bi%NA*bi%NTYPE
@@ -468,29 +486,37 @@ module climate_forcing
         if (firststep) then
 
             !> Set the current time step of the input forcing data.
-            do i = 1, size(cm%clin, 1)
+            do i = 1, size(cm%clin)
                 cm%clin(i)%timestep_now = TIME_STEP_NOW
             end do
             if (INTERPOLATIONFLAG == 0) then
                 call READ_FORCING_DATA(bi, cm, &
-                                       FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+!                                       FSDOWN, &
+                                       FSVHGRD, FSIHGRD, &
+!                                       FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
                                        FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, &
                                        ENDDATA)
             elseif (INTERPOLATIONFLAG == 1) then
                 if (RESUMEFLAG /= 1) then
                     call READ_FORCING_DATA(bi, cm, &
-                                           FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+!                                           FSDOWN, &
+                                           FSVHGRD, FSIHGRD, &
+!                                           FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
                                            FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, TAGATPRE, ULGATPRE, &
                                            PRESGATPRE, QAGATPRE, &
                                            ENDDATA)
                     call READ_FORCING_DATA(bi, cm, &
-                                           FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+!                                           FSDOWN, &
+                                           FSVHGRD, FSIHGRD, &
+!                                           FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
                                            FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, TAGATPST, ULGATPST, &
                                            PRESGATPST, QAGATPST, &
                                            ENDDATA)
                 else
                     call READ_FORCING_DATA(bi, cm, &
-                                           FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+!                                           FSDOWN, &
+                                           FSVHGRD, FSIHGRD, &
+!                                           FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
                                            FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, TAGATPST, ULGATPST, &
                                            PRESGATPST, QAGATPST, &
                                            ENDDATA)
@@ -542,13 +568,17 @@ module climate_forcing
 
             if (INTERPOLATIONFLAG == 1) then
                 call READ_FORCING_DATA(bi, cm, &
-                                       FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+!                                       FSDOWN, &
+                                       FSVHGRD, FSIHGRD, &
+!                                       FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
                                        FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, TAGATPST, ULGATPST, &
                                        PRESGATPST, QAGATPST, &
                                        ENDDATA)
             else
                 call READ_FORCING_DATA(bi, cm, &
-                                       FSDOWN, FSVHGRD, FSIHGRD, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
+!                                       FSDOWN, &
+                                       FSVHGRD, FSIHGRD, &
+!                                       FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
                                        FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, &
                                        ENDDATA)
             end if
@@ -724,8 +754,8 @@ module climate_forcing
 
         !> Local variables.
         integer NTIME
-        integer t, s, i, j, ii, jj
-        real INARRAY(bi%YCOUNT, bi%XCOUNT), INGRU(bi%NTYPE)
+        integer t, s, i, j, k, ii, jj
+        real INR2C(bi%YCOUNT, bi%XCOUNT), INGRU(bi%NTYPE), INGRD(bi%NA)
 
         select case (cm%clin(indx)%filefmt)
 
@@ -735,11 +765,11 @@ module climate_forcing
                     do s = 1, size(cm%clin(indx)%climv, 2)
                         read(cm%clin(indx)%unitR, *, end = 999) !:Frame line
                         do ii = 1, bi%YCOUNT
-                            read(cm%clin(indx)%unitR, *, end = 999) (INARRAY(ii, jj), jj = 1, bi%XCOUNT)
+                            read(cm%clin(indx)%unitR, *, end = 999) (INR2C(ii, jj), jj = 1, bi%XCOUNT)
                         end do
                         read(cm%clin(indx)%unitR, *, end = 999) !:EndFrame line
-                        do i = 1, bi%NA
-                            cm%clin(indx)%climv(i, s, t) = INARRAY(bi%YYY(i), bi%XXX(i))
+                        do k = 1, bi%NML
+                            cm%clin(indx)%climv(k, s, t) = INR2C(bi%YYY(bi%ILMOS(k)), bi%XXX(bi%ILMOS(k)))
                         end do
                     end do
                 end do
@@ -748,12 +778,9 @@ module climate_forcing
             case (2)
                 do t = 1, size(cm%clin(indx)%climv, 3)
                     do s = 1, size(cm%clin(indx)%climv, 2)
-                        read(cm%clin(indx)%unitR, *, end = 999) (INGRU(i), i = 1, bi%NTYPE)
-                        cm%clin(indx)%climv(:, s, t) = 0.0
-                        do j = 1, bi%NTYPE
-                            do i = 1, bi%NA
-                                cm%clin(indx)%climv(i, s, t) = cm%clin(indx)%climv(i, s, t) + INGRU(j)*bi%ACLASS(i, j)
-                            end do
+                        read(cm%clin(indx)%unitR, *, end = 999) (INGRU(j), j = 1, bi%NTYPE)
+                        do k = 1, bi%NML
+                            cm%clin(indx)%climv(k, s, t) = INGRU(bi%JLMOS(k))
                         end do
                     end do
                 end do
@@ -763,7 +790,10 @@ module climate_forcing
                 do t = 1, size(cm%clin(indx)%climv, 3)
                     do s = 1, size(cm%clin(indx)%climv, 2)
                         read(cm%clin(indx)%unitR) NTIME
-                        read(cm%clin(indx)%unitR, end = 999) cm%clin(indx)%climv(:, s, t)
+                        read(cm%clin(indx)%unitR, end = 999) (INGRD(i), i = 1, bi%NA)
+                        do k = 1, bi%NML
+                            cm%clin(indx)%climv(k, s, t) = INGRD(bi%ILMOS(k))
+                        end do
                     end do
                 end do
 
@@ -771,7 +801,10 @@ module climate_forcing
             case (4)
                 do t = 1, size(cm%clin(indx)%climv, 3)
                     do s = 1, size(cm%clin(indx)%climv, 2)
-                        read(cm%clin(indx)%unitR, *, end = 999) cm%clin(indx)%climv(:, s, t)
+                        read(cm%clin(indx)%unitR, *, end = 999) (INGRD(i), i = 1, bi%NA)
+                        do k = 1, bi%NML
+                            cm%clin(indx)%climv(k, s, t) = INGRD(bi%ILMOS(k))
+                        end do
                     end do
                 end do
 
@@ -821,25 +854,31 @@ module climate_forcing
         !> Distribute the grid variables.
         FSVHGRD = 0.0
         FSIHGRD = 0.0
-        FDLGRD = 0.0
-        ULGRD = 0.0
-        TAGRD = 0.0
-        QAGRD = 0.0
-        PRESGRD = 0.0
-        PREGRD = 0.0
+        cm%clin(cfk%FI)%climvGrd = 0.0
+        cm%clin(cfk%UV)%climvGrd = 0.0
+        cm%clin(cfk%TT)%climvGrd = 0.0
+        cm%clin(cfk%HU)%climvGrd = 0.0
+        cm%clin(cfk%P0)%climvGrd = 0.0
+        cm%clin(cfk%PR)%climvGrd = 0.0
         do k = 1, bi%NML
             if (FAREGAT(k) > 0.0) then
                 FSVHGRD(bi%ILMOS(k)) = FSVHGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*FSVHGAT(k)
                 FSIHGRD(bi%ILMOS(k)) = FSIHGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*FSIHGAT(k)
-                FDLGRD(bi%ILMOS(k)) = FDLGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*FDLGAT(k)
-                ULGRD(bi%ILMOS(k)) = ULGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*ULGAT(k)
-                TAGRD(bi%ILMOS(k)) = TAGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*TAGAT(k)
-                QAGRD(bi%ILMOS(k)) = QAGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*QAGAT(k)
-                PRESGRD(bi%ILMOS(k)) = PRESGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*PRESGAT(k)
-                PREGRD(bi%ILMOS(k)) = PREGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*PREGAT(k)
+                cm%clin(cfk%FI)%climvGrd(bi%ILMOS(k)) = cm%clin(cfk%FI)%climvGrd(bi%ILMOS(k)) + &
+                    bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*FDLGAT(k)
+                cm%clin(cfk%UV)%climvGrd(bi%ILMOS(k)) = cm%clin(cfk%UV)%climvGrd(bi%ILMOS(k)) + &
+                    bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*ULGAT(k)
+                cm%clin(cfk%TT)%climvGrd(bi%ILMOS(k)) = cm%clin(cfk%TT)%climvGrd(bi%ILMOS(k)) + &
+                    bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*TAGAT(k)
+                cm%clin(cfk%HU)%climvGrd(bi%ILMOS(k)) = cm%clin(cfk%HU)%climvGrd(bi%ILMOS(k)) + &
+                    bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*QAGAT(k)
+                cm%clin(cfk%P0)%climvGrd(bi%ILMOS(k)) = cm%clin(cfk%P0)%climvGrd(bi%ILMOS(k)) + &
+                    bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*PRESGAT(k)
+                cm%clin(cfk%PR)%climvGrd(bi%ILMOS(k)) = cm%clin(cfk%PR)%climvGrd(bi%ILMOS(k)) + &
+                    bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*PREGAT(k)
             end if
         end do !k = 1, NML
-        FSDOWN = 2.0*FSVHGRD
+        cm%clin(cfk%FB)%climvGrd = 2.0*FSVHGRD
 
     end subroutine !climate_module_interpolatedata
 
@@ -862,7 +901,7 @@ module climate_forcing
         !> Check if we need to update.
         if (cm%clin(indx)%itime == 1) then
             if (allocated(cm%clin(indx)%climv)) deallocate(cm%clin(indx)%climv)
-            allocate(cm%clin(indx)%climv(bi%NA, cm%clin(indx)%nSeries, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
+            allocate(cm%clin(indx)%climv(bi%NML, cm%clin(indx)%nSeries, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
             call LoadData(bi, indx, cm, ENDDATA)
         end if
 
