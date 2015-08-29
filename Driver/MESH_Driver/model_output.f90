@@ -2491,6 +2491,12 @@ module model_output
                     end do
                 end if
 
+                if (trim(adjustl(freq)) == "D") then
+                    do i = 1, nt
+                        fld(:, i) = vr%wbt_d%frws(i, :, igndx)
+                    end do
+                end if
+
             case ('RCAN')
 
                 if (trim(adjustl(freq)) == 'Y') then
