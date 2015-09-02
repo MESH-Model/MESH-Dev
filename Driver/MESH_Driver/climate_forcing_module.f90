@@ -6,104 +6,10 @@ module climate_forcing
 
     use sa_mesh_shared_variabletypes
     use sa_mesh_shared_variables
-    use model_dates
+    use climate_forcing_variabletypes
+    use climate_forcing_variables
 
     implicit none
-
-    type clim_info_read
-
-!        type(counter_date_julian) :: start_date
-        integer :: timeSize = 1  !minimum size of block read DEFINED IN THE INPUT FILE
-        integer :: nSeries = 1
-        integer, dimension(:), allocatable :: ntimes ! number of time in each block of readed data
-        character(20) :: id_var !climate variable name
-        integer :: filefmt = 0
-        character fln*200
-        integer unitR !Number unit
-        logical openFl !true if file is open
-        integer :: readIndx = 1 !index in the block of time that we are reading
-        integer :: itime = 1 !time index
-        character freq !time freq of data
-        integer :: timestep_now = 0
-        integer :: hf = 30 !hourly flag
-
-        !* climv: Values for forcing data. (1: Land Element (GAT); 2: Series; 3: Time-step).
-        !> Values are stored at the GAT level, as it is the finest level of
-        !> elemental computation in the model (e.g., with CLASS).
-        real, dimension(:, :, :), allocatable :: climv
-
-        !* climvGrd: Values for forcing data. (1: Grid)
-        !> Values are averaged to the grid-level for grid-based processing and certain output.
-        !> Gridded values aren't used to drive the model, as they are incompatible with
-        !> data input at the GRU- (e.g., in one of the CSV formats) or GAT-level.
-        real, dimension(:), allocatable :: climvGrd
-
-        !* alpha: Uniform weight to assign when there are multiple series of data. (1: Series).
-        real, dimension(:), allocatable :: alpha
-
-    end type !clim_info_read
-
-    type clim_info
-
-        !* nclim: Number of climate variables.
-!        integer :: nclim = 7
-        integer :: basefileunit = 89
-        type(clim_info_read) :: clin(7)
-        type(counter_date_julian) :: start_date
-
-    end type !clim_info
-
-    !> *****************************************************************
-    !> These are relative indices of the forcing files used throughout
-    !> the I/O code for climate forcing.
-    !> *****************************************************************
-    type climate_forcing_file_keys
-
-        !* FCLO: Fractional cloud cover [-]
-        !integer :: FCLO = -9999
-
-        !* FI: Downwelling longwave sky radiation [W m-2]
-        integer :: FI = 2
-
-        !* FB: Incoming solar radiation [W m-2]
-        !>       CLASS ordinarily requires that the forcing incoming
-        !>       shortwave radiation be partitioned into
-        !>       the visible and near-infrared components. If these
-        !>       are not available, however, they can each
-        !>       be roughly estimated as approximately half of the
-        !>       total incoming solar radiation.
-        !* FSIH: Near infrared shortwave radiation incident on a
-        !*       horizontal surface [W m-2]
-        !* FSVH: Visible shortwave radiation incident on a horizontal
-        !*       surface [W m-2]
-        integer :: FB = 1
-        !integer :: FSIH = -9999
-        !integer :: FSVH = -9999
-
-        !* PR: Surface precipitation rate [kg m-2 s-1]
-        integer :: PR = 3
-
-        !* P0: Surface air pressure [Pa]
-        integer :: P0 = 6
-
-        !* HU: Specific humidity at reference height [kg kg-1]
-        integer :: HU = 7
-
-        !* TT: Air temperature at reference height [K]
-        integer :: TT = 4
-
-        !* UU: Zonal component of wind velocity [m s-1]
-        !* VV: Meridional component of wind velocity [m s-1]
-        !>       CLASS does not actually require information on wind
-        !>       direction. Thus, if only the scalar wind
-        !>       speed is available, either ULGRD or VLGRD can be set
-        !>       to it, and the other to zero.
-        !* UV: Wind speed [m s-1]
-        !integer :: UU = -9999
-        !integer :: VV = -9999
-        integer :: UV = 5
-
-    end type
 
         !>******************************************************************************
 
@@ -132,53 +38,56 @@ module climate_forcing
         TAGATPST, ULGATPST, PRESGATPST, QAGATPST
     real TRATIO
 
-    type(climate_forcing_file_keys) :: cfk
-
     contains
 
     !> -----------------------------------------------------------------
     !> Description: Initialization of clim_info
     !> -----------------------------------------------------------------
-    subroutine Init_clim_info(bi, ts, indx, cm)
+!    subroutine Init_clim_info(bi, ts, indx, cm)
+
+!        use climate_forcing_config, only: open_config
 
         !> Input variables.
-        type(basin_info), intent(in) :: bi
-        type(dates_model), intent(in) :: ts
-        integer, intent(in) :: indx
+!        type(basin_info), intent(in) :: bi
+!        type(dates_model), intent(in) :: ts
+!        integer, intent(in) :: indx
 
         !> Input/Output variables.
-        type(clim_info) :: cm
+!        type(clim_info) :: cm
 
         !> Local variables.
-        integer nts, rts, timeStepClimF
+!        integer nts, rts, timeStepClimF
 
         !> Allocate alpha for series.
-        allocate(cm%clin(indx)%alpha(cm%clin(indx)%nSeries))
-        cm%clin(indx)%alpha = 1.0 / cm%clin(indx)%nSeries
+!        allocate(cm%clin(indx)%alpha(cm%clin(indx)%nSeries))
+!        cm%clin(indx)%alpha = 1.0 / cm%clin(indx)%nSeries
 
         !> Allocate gridded series.
-        allocate(cm%clin(indx)%climvGrd(bi%NA))
+!        allocate(cm%clin(indx)%climvGrd(bi%NA))
 
-        !> Determine the number of time-steps read from file.
-        timeStepClimF = ts%nr_days*24*(60/TIME_STEP_MINS)/real(cm%clin(indx)%hf)*TIME_STEP_MINS
-        if (timeStepClimF <= cm%clin(indx)%timeSize) then
-            allocate(cm%clin(indx)%ntimes(1))
-            cm%clin(indx)%ntimes(1) = timeStepClimF
-        else
-            nts = timeStepClimF/cm%clin(indx)%timeSize
-            rts = timeStepClimF - cm%clin(indx)%timeSize*nts
-            if (rts == 0) then
-                allocate(cm%clin(indx)%ntimes(nts))
-                cm%clin(indx)%ntimes = cm%clin(indx)%timeSize
+        !> Determine the number of time-steps in the run.
+!todo: This doesn't work if run start and stop days are set to zeros;
+!todo: The above should be reflected in module_dates where nr_days is determined;
+!        timeStepClimF = ts%nr_days*24*(60/TIME_STEP_MINS)/real(cm%clin(indx)%hf)*TIME_STEP_MINS
 
-            else
-                allocate(cm%clin(indx)%ntimes(nts + 1))
-                cm%clin(indx)%ntimes = cm%clin(indx)%timeSize
-                cm%clin(indx)%ntimes(nts + 1) = rts
-            end if
-        end if
+        !> Determine the number of time-steps to read from file.
+!        if (timeStepClimF <= cm%clin(indx)%timeSize) then
+!            allocate(cm%clin(indx)%ntimes(1))
+!            cm%clin(indx)%ntimes(1) = timeStepClimF
+!        else
+!            nts = timeStepClimF/cm%clin(indx)%timeSize
+!            rts = timeStepClimF - cm%clin(indx)%timeSize*nts
+!            if (rts == 0) then
+!                allocate(cm%clin(indx)%ntimes(nts))
+!                cm%clin(indx)%ntimes = cm%clin(indx)%timeSize
+!            else
+!                allocate(cm%clin(indx)%ntimes(nts + 1))
+!                cm%clin(indx)%ntimes = cm%clin(indx)%timeSize
+!                cm%clin(indx)%ntimes(nts + 1) = rts
+!            end if
+!        end if
 
-    end subroutine Init_clim_info
+!    end subroutine Init_clim_info
 
     !> *****************************************************************
     !> Open the MESH_input_forcing.bin file
@@ -186,6 +95,7 @@ module climate_forcing
     subroutine climate_module_init(bi, ts, cm, ENDDATA)
 
         use FLAGS
+        use climate_forcing_data, only: OpenData
 
         !> Input variables.
         type(basin_info) :: bi
@@ -224,8 +134,8 @@ module climate_forcing
 !        end if
 
         !> Open the rest of the forcing files.
-        do i = 1, size(cm%clin)
-            call READ_CHECK_FORCING_FILES(bi, ts, i, cm)
+!        do i = 1, size(cm%clin)
+            call READ_CHECK_FORCING_FILES(bi, ts, cm)
 
             !> Update the file format counters for the legacy binary format.
 !            select case (cm%clin(i)%filefmt)
@@ -236,6 +146,11 @@ module climate_forcing
 !                case (3, 5)
 !                    NUM_SEQ = NUM_SEQ + 1
 !            end select
+!        end do
+
+        !> Open the forcing files.
+        do i = 1, size(cm%clin)
+            call OpenData(i, cm)
         end do
 
         !todo - leave these in for event based runs
@@ -469,6 +384,7 @@ module climate_forcing
     subroutine climate_module_loaddata(bi, firststep, cm, ENDDATA)
 
         use FLAGS
+        use climate_forcing_data, only: READ_FORCING_DATA
 
         !> Input variables.
         type(basin_info) :: bi
@@ -591,233 +507,43 @@ module climate_forcing
     !> Description: Initialization of climate data
     !>
     !> -----------------------------------------------------------------
-    subroutine Init_clim_data(indx, flunit, cm)
+!    subroutine Init_clim_data(indx, flunit, cm)
 
         !> Input variables.
-        integer, intent(in) :: indx, flunit
+!        integer, intent(in) :: indx, flunit
 
         !> Input/Output variables.
-        type(clim_info) :: cm
+!        type(clim_info) :: cm
 
         !> Set the unit number.
-        cm%clin(indx)%unitR = flunit
+!        cm%clin(indx)%unitR = flunit
+
+        !> Allocate the name variable.
+!        if (.not. allocated(cm%clin(indx)%name)) allocate(cm%clin(indx)%name(1))
 
         !> Set the file name.
-        if (indx == cfk%FB) then
-            cm%clin(indx)%fln = 'basin_shortwave'
-        elseif (indx == cfk%FI) then
-            cm%clin(indx)%fln = 'basin_longwave'
-        elseif (indx == cfk%PR) then
-            cm%clin(indx)%fln = 'basin_rain'
+!        if (indx == cfk%FB) then
+!            cm%clin(indx)%name(1) = 'basin_shortwave'
+!        elseif (indx == cfk%FI) then
+!            cm%clin(indx)%name(1) = 'basin_longwave'
+!        elseif (indx == cfk%PR) then
+!            cm%clin(indx)%name(1) = 'basin_rain'
 !        elseif (indx == 8) then
-!            cm%clin(indx)%fln = 'basin_rain_2'
-        elseif (indx == cfk%TT) then
-            cm%clin(indx)%fln = 'basin_temperature'
-        elseif (indx == cfk%UV) then
-            cm%clin(indx)%fln = 'basin_wind'
-        elseif (indx == cfk%P0) then
-            cm%clin(indx)%fln = 'basin_pres'
-        elseif (indx == cfk%HU) then
-            cm%clin(indx)%fln = 'basin_humidity'
-        end if
+!            cm%clin(indx)%name(1) = 'basin_rain_2'
+!        elseif (indx == cfk%TT) then
+!            cm%clin(indx)%name(1) = 'basin_temperature'
+!        elseif (indx == cfk%UV) then
+!            cm%clin(indx)%name(1) = 'basin_wind'
+!        elseif (indx == cfk%P0) then
+!            cm%clin(indx)%name(1) = 'basin_pres'
+!        elseif (indx == cfk%HU) then
+!            cm%clin(indx)%name(1) = 'basin_humidity'
+!        end if
 
         !> Call the subroutine to open the data.
-        call OpenData(indx, cm)
+!        call OpenData(indx, cm)
 
-    end subroutine !Init_clim_data
-
-    !> -----------------------------------------------------------------
-    !> Description: Open Units and Load the first block of climate data
-    !>
-    !> -----------------------------------------------------------------
-    subroutine OpenData(indx, cm)
-
-        !> Input variables.
-        integer, intent(in) :: indx
-
-        !> Input/Output variables.
-        type(clim_info) :: cm
-
-        !> Local variables.
-        integer ios
-        character*80 end_of_r2c_header
-
-        !> Open file depending on the format type of the climate data.
-        select case (cm%clin(indx)%filefmt)
-
-            !> ASCII R2C format.
-            case (1)
-                print *, cm%clin(indx)%unitR, trim(adjustl(cm%clin(indx)%fln)) // '.r2c'
-                open(unit = cm%clin(indx)%unitR, &
-                     file = trim(adjustl(cm%clin(indx)%fln)) // '.r2c', &
-                     action = 'read', &
-                     status = 'old', &
-                     form = 'formatted', &
-                     iostat = ios)
-                if (ios /= 0) then
-                    print 670, trim(adjustl(cm%clin(indx)%fln)) // '.r2c'
-                    cm%clin(indx)%openFl = .false.
-                    stop
-                else
-                    print 676, trim(adjustl(cm%clin(indx)%fln)) // '.r2c'
-                    end_of_r2c_header = ''
-                    do while (end_of_r2c_header /= ":endHeader")
-                        read(cm%clin(indx)%unitR, '(A10)') end_of_r2c_header
-                    end do
-                    cm%clin(indx)%openFl = .true.
-                end if
-
-            !> CSV format.
-            case (2)
-                open(unit = cm%clin(indx)%unitR, &
-                     file = trim(adjustl(cm%clin(indx)%fln)) // '.csv', &
-                     action = 'read', &
-                     status = 'old', &
-                     form = 'formatted', &
-                     iostat = ios)
-                if (ios /=0 ) then
-                    print 670, trim(adjustl(cm%clin(indx)%fln)) // '.csv'
-                    cm%clin(indx)%openFl = .false.
-                    stop
-                else
-                    print 676, trim(adjustl(cm%clin(indx)%fln)) // '.csv'
-                    cm%clin(indx)%openFl = .true.
-                end if
-
-            !> Binary sequential format.
-            case (3)
-                open(UNIT = cm%clin(indx)%unitR, &
-                     FILE = trim(adjustl(cm%clin(indx)%fln)) // '.seq', &
-                     action = 'read', &
-                     status = 'old', &
-                     form = 'unformatted', &
-                     access = 'sequential', &
-                     iostat = ios)
-                if (ios /= 0) then
-                    print 670, trim(adjustl(cm%clin(indx)%fln)) // '.seq'
-                    cm%clin(indx)%openFl = .false.
-                    stop
-                else
-                    print 676, trim(adjustl(cm%clin(indx)%fln)) // '.seq'
-                    cm%clin(indx)%openFl = .true.
-                end if
-
-            !> ASCII format.
-            case (4)
-                open(cm%clin(indx)%unitR, &
-                     file = trim(adjustl(cm%clin(indx)%fln)) // '.asc', &
-                     action = 'read', &
-                     status = 'old', &
-                     form = 'formatted', &
-                     iostat = ios)
-                if (ios /= 0) then
-                    print 670, trim(adjustl(cm%clin(indx)%fln)) // '.asc'
-                    cm%clin(indx)%openFl = .false.
-                    stop
-                else
-                    print 676, trim(adjustl(cm%clin(indx)%fln)) // '.asc'
-                    cm%clin(indx)%openFl = .true.
-                end if
-
-            case default
-                print 644, cm%clin(indx)%id_var, cm%clin(indx)%filefmt
-                stop
-        end select
-
-670 format(/ &
-        /1x, a20, ' not found.', &
-        /1x, 'Please adjust the MESH_input_run_options.ini file', &
-        /1x, 'or put the file in the correct location.', /)
-
-676 format(1x, a20, ' found.')
-
-644 format(/ &
-        /1x, 'The input forcing file format is not supported', &
-        /2x, a15, i4/)
-
-    end subroutine !OpenData
-
-    !> -----------------------------------------------------------------
-    !> Description: Load block of data
-    !> -----------------------------------------------------------------
-    subroutine LoadData(bi, indx, cm, ENDDATA)
-
-        !> Input variables.
-        type(basin_info) :: bi
-        integer indx
-
-        !> Input/Output variables.
-        type(clim_info) :: cm
-
-        !> Output variables.
-        logical ENDDATA
-
-        !> Local variables.
-        integer NTIME
-        integer t, s, i, j, k, ii, jj
-        real INR2C(bi%YCOUNT, bi%XCOUNT), INGRU(bi%NTYPE), INGRD(bi%NA)
-
-        select case (cm%clin(indx)%filefmt)
-
-            !> ASCII R2C format.
-            case (1)
-                do t = 1, size(cm%clin(indx)%climv, 3)
-                    do s = 1, size(cm%clin(indx)%climv, 2)
-                        read(cm%clin(indx)%unitR, *, end = 999) !:Frame line
-                        do ii = 1, bi%YCOUNT
-                            read(cm%clin(indx)%unitR, *, end = 999) (INR2C(ii, jj), jj = 1, bi%XCOUNT)
-                        end do
-                        read(cm%clin(indx)%unitR, *, end = 999) !:EndFrame line
-                        do k = 1, bi%NML
-                            cm%clin(indx)%climv(k, s, t) = INR2C(bi%YYY(bi%ILMOS(k)), bi%XXX(bi%ILMOS(k)))
-                        end do
-                    end do
-                end do
-
-            !> CSV format.
-            case (2)
-                do t = 1, size(cm%clin(indx)%climv, 3)
-                    do s = 1, size(cm%clin(indx)%climv, 2)
-                        read(cm%clin(indx)%unitR, *, end = 999) (INGRU(j), j = 1, bi%NTYPE)
-                        do k = 1, bi%NML
-                            cm%clin(indx)%climv(k, s, t) = INGRU(bi%JLMOS(k))
-                        end do
-                    end do
-                end do
-
-            !> Binary sequential format.
-            case (3)
-                do t = 1, size(cm%clin(indx)%climv, 3)
-                    do s = 1, size(cm%clin(indx)%climv, 2)
-                        read(cm%clin(indx)%unitR) NTIME
-                        read(cm%clin(indx)%unitR, end = 999) (INGRD(i), i = 1, bi%NA)
-                        do k = 1, bi%NML
-                            cm%clin(indx)%climv(k, s, t) = INGRD(bi%ILMOS(k))
-                        end do
-                    end do
-                end do
-
-            !> ASCII format.
-            case (4)
-                do t = 1, size(cm%clin(indx)%climv, 3)
-                    do s = 1, size(cm%clin(indx)%climv, 2)
-                        read(cm%clin(indx)%unitR, *, end = 999) (INGRD(i), i = 1, bi%NA)
-                        do k = 1, bi%NML
-                            cm%clin(indx)%climv(k, s, t) = INGRD(bi%ILMOS(k))
-                        end do
-                    end do
-                end do
-
-            case default
-                print *, 'NOT IMPLEMENTED YET'
-                stop
-        end select
-
-        return
-
-999 ENDDATA = .true.
-
-    end subroutine !LoadData
+!    end subroutine !Init_clim_data
 
     subroutine climate_module_interpolatedata(bi, &
 !todo: These variables can be stored elsewhere instead of passed.
@@ -881,30 +607,5 @@ module climate_forcing
         cm%clin(cfk%FB)%climvGrd = 2.0*FSVHGRD
 
     end subroutine !climate_module_interpolatedata
-
-    !> -----------------------------------------------------------------
-    !> Description: Check if we need to load data again if that, we
-    !> deallocate and allocate again and then we load data
-    !> -----------------------------------------------------------------
-    subroutine NeedUpdate_clim_data(bi, indx, cm, ENDDATA)
-
-        !> Inputs variables.
-        type(basin_info) :: bi
-        integer indx
-
-        !> Input/Output variables.
-        type(clim_info) :: cm
-
-        !> Ouput variables.
-        logical ENDDATA
-
-        !> Check if we need to update.
-        if (cm%clin(indx)%itime == 1) then
-            if (allocated(cm%clin(indx)%climv)) deallocate(cm%clin(indx)%climv)
-            allocate(cm%clin(indx)%climv(bi%NML, cm%clin(indx)%nSeries, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
-            call LoadData(bi, indx, cm, ENDDATA)
-        end if
-
-    end subroutine !NeedUpdate_clim_data
 
 end module !climate_forcing
