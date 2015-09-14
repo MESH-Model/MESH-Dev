@@ -123,6 +123,8 @@ module climate_forcing_data
     !> -----------------------------------------------------------------
     subroutine LoadData(bi, indx, cm, ENDDATA)
 
+        use sa_mesh_shared_variabletypes
+
         !> Input variables.
         type(basin_info) :: bi
         integer indx
@@ -225,7 +227,7 @@ module climate_forcing_data
     !> *****************************************************************
 
 !    use strings
-    use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variabletypes
 !    use FLAGS
 !    use climate_forcing, only: clim_info, cfk, NeedUpdate_clim_data
 
@@ -786,6 +788,8 @@ module climate_forcing_data
     !> -----------------------------------------------------------------
     subroutine NeedUpdate_clim_data(bi, indx, cm, ENDDATA)
 
+        use sa_mesh_shared_variabletypes
+
         !> Inputs variables.
         type(basin_info) :: bi
         integer indx
@@ -810,6 +814,7 @@ module climate_forcing_data
     subroutine update_data(bi, cm, indx, gat, need_update, end_data)
 
         use strings
+        use sa_mesh_shared_variabletypes
 
         type(basin_info), intent(in) :: bi
         type(clim_info) :: cm

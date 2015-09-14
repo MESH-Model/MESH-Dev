@@ -4,8 +4,8 @@
 !>**********************************************************************
 module climate_forcing
 
-    use sa_mesh_shared_variabletypes
-    use sa_mesh_shared_variables
+!    use sa_mesh_shared_variabletypes
+!    use sa_mesh_shared_variables
     use climate_forcing_variabletypes
     use climate_forcing_variables
 
@@ -94,6 +94,8 @@ module climate_forcing
     !> *****************************************************************
     subroutine climate_module_init(bi, ts, cm, ENDDATA)
 
+        use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
         use FLAGS
         use climate_forcing_data, only: OpenData
 
@@ -383,6 +385,7 @@ module climate_forcing
     !> *****************************************************************
     subroutine climate_module_loaddata(bi, firststep, cm, ENDDATA)
 
+        use sa_mesh_shared_variabletypes
         use FLAGS
         use climate_forcing_data, only: READ_FORCING_DATA
 
@@ -549,6 +552,8 @@ module climate_forcing
 !todo: These variables can be stored elsewhere instead of passed.
         FAREGAT, &
         cm)
+
+        use sa_mesh_shared_variabletypes
 
         !> Input variables.
         type(basin_info) :: bi
