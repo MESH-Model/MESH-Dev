@@ -1,6 +1,5 @@
 module climate_forcing_data
 
-!    use sa_mesh_shared_variabletypes
     use climate_forcing_variabletypes
     use climate_forcing_variables
 
@@ -226,10 +225,7 @@ module climate_forcing_data
     !* R4HUMDGRID2D: SPECIFIC HUMIDITY AT REFERENCE HEIGHT [kg kg-1]
     !> *****************************************************************
 
-!    use strings
         use sa_mesh_shared_variabletypes
-!    use FLAGS
-!    use climate_forcing, only: clim_info, cfk, NeedUpdate_clim_data
 
         !> Input variables.
         type(basin_info), intent(in) :: bi
@@ -243,28 +239,19 @@ module climate_forcing_data
         real*4, dimension(bi%ILG) :: FSGAT, FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT
         logical ENDDATA
 
-    !> Local variables.
-!    real*4, dimension(bi%YCOUNT, bi%XCOUNT) :: INARRAY
-!    real*4, dimension(bi%NTYPE) :: INVECTOR
-!    real*4 JUNK
-!    integer t, s, i, j, k, CURGRU, ICOUNT
-!    integer s
+        !> Local variables.
         logical need_update
 
-!    integer :: NTIME  ! time in read sequential
+        !> For each forcing variable, a call is made to update_data
+        !> to load new data from memory or file (if necessary).
+        !> If new data are loaded then a call to SCATTER distributes
+        !> these data from the GAT to GRD array.
 
-    !> Initialize counting number of r2c and csv files.
-!    ICOUNT = 0
-
-    !> *****************************************************************
-    !> Read shortwave radiation data
-    !> *****************************************************************
-!    if (cm%clin(cfk%FB)%timestep_now == 0) then
+        !> *************************************************************
+        !> Read shortwave radiation data
+        !> *************************************************************
 
         call update_data(bi, cm, cfk%FB, FSGAT, need_update, ENDDATA)
-
-            !> Distribute the gridded variable.
-!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
         if (need_update) then
             FSVHGAT = 0.5*FSGAT
             FSIHGAT = FSVHGAT
@@ -272,205 +259,24 @@ module climate_forcing_data
             FSVHGRD = 0.5*cm%clin(cfk%FB)%climvGrd
             FSIHGRD = FSVHGRD
         end if
-!            ICOUNT = ICOUNT + 1
 
-        !> Switch and read and a single record from file.
-!        else
-!            select case (cm%clin(cfk%FB)%filefmt)
-
-                !> Legacy binary format.
-!                case (0)
-!                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    do i = 1, bi%NA
-!                        FSDOWN(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-!                    FSVHGRD = 0.5*FSDOWN
-!                    FSIHGRD = FSVHGRD
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
-!                    FSIHGAT = FSVHGAT
-
-                !> ASCII R2C format.
-!                case (1)
-!                    read(cm%basefileunit + cfk%FB, *, end = 999) !:Frame line
-!                    do i = 1, bi%YCOUNT
-!                        read(cm%basefileunit + cfk%FB, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
-!                    end do
-!                    read(cm%basefileunit + cfk%FB, *, end = 999) !:EndFrame line
-!                    do i = 1, bi%NA
-!                        FSDOWN(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-!                    FSVHGRD = 0.5*FSDOWN
-!                    FSIHGRD = FSVHGRD
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
-!                    FSIHGAT = FSVHGAT
-!                    ICOUNT = ICOUNT + 1
-
-                !> CSV format.
-!                case (2)
-!                    read(cm%basefileunit + cfk%FB, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
-!                    do i = 1, bi%NML
-!                        CURGRU = bi%JLMOS(i)
-!                        FSVHGAT(i) = 0.5*INVECTOR(CURGRU)
-!                    end do
-!                    FSIHGAT = FSVHGAT
-!                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, FSVHGRD, FSVHGAT)
-!                    FSDOWN = 2.0*FSVHGRD
-!                    FSIHGRD = FSVHGRD
-!                    ICOUNT = ICOUNT + 1
-
-                !> Binary sequential format.
-!                case (3)
-!                    read(cm%basefileunit + cfk%FB, end = 999) NTIME
-!                    read(cm%basefileunit + cfk%FB, end = 999) FSDOWN
-!                    FSVHGRD = 0.5*FSDOWN
-!                    FSIHGRD = FSVHGRD
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
-!                    FSIHGAT = FSVHGAT
-!                    ICOUNT = ICOUNT + 1
-
-                !> ASCII format.
-!                case (4)
-!                    read(cm%basefileunit + cfk%FB, *, end = 999) (FSDOWN(i), i = 1, bi%NA)
-!                    FSVHGRD = 0.5*FSDOWN
-!                    FSIHGRD = FSVHGRD
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FSVHGRD, FSVHGAT)
-!                    FSIHGAT = FSVHGAT
-!                    ICOUNT = ICOUNT + 1
-
-!                case default
-!                    print 644, cm%clin(cfk%FB)%id_var, cm%clin(cfk%FB)%filefmt
-!                    stop
-
-!            end select !case (cm%clin(cfk%FB)%filefmt)
-!    end if !(cm%clin(cfk%FB)%timestep_now == 0) then
-
-    !> *****************************************************************
-    !> Read longwave radiation data
-    !> *****************************************************************
-!    if (cm%clin(cfk%FI)%timestep_now == 0) then
+        !> *************************************************************
+        !> Read longwave radiation data
+        !> *************************************************************
 
         call update_data(bi, cm, cfk%FI, FDLGAT, need_update, ENDDATA)
-
         if (need_update) then
             call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%FI)%climvGrd, FDLGAT)
         end if
-!            ICOUNT = ICOUNT + 1
 
-        !> Switch and read and a single record from file.
-!        else
-!            select case (cm%clin(cfk%FI)%filefmt)
-
-!                case (0)
-
-                    !> Skip the forcing data that is read from r2c and csv files.
-!                    do k = 1, ICOUNT
-!                        read(51, end = 999) ((JUNK, j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    end do
-!                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    do i = 1, bi%NA
-!                        FDLGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
-
-!                case (1)
-!                    read(cm%basefileunit + cfk%FI, *, end = 999) !:Frame line
-!                    do i = 1, bi%YCOUNT
-!                        read(cm%basefileunit + cfk%FI, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
-!                    end do
-!                    read(cm%basefileunit + cfk%FI, *, end = 999) !:EndFrame line
-!                    do i = 1, bi%NA
-!                        FDLGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (2)
-!                    read(cm%basefileunit + cfk%FI, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
-!                    do i = 1, bi%NML
-!                        CURGRU = bi%JLMOS(i)
-!                        FDLGAT(i) = INVECTOR(CURGRU)
-!                    end do
-!                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, FDLGRD, FDLGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (3)
-!                    read(cm%basefileunit + cfk%FI, end = 999) NTIME
-!                    read(cm%basefileunit + cfk%FI, end = 999) FDLGRD
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (4)
-!                    read(cm%basefileunit + cfk%FI, *, end = 999) (FDLGRD(i), i = 1, bi%NA)
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case default
-!                    print 644, cm%clin(cfk%FI)%id_var, cm%clin(cfk%FI)%filefmt
-!                    stop
-
-!            end select !case (cm%clin(cfk%FI)%filefmt)
-!    end if !(cm%clin(cfk%FI)%timestep_now == 0) then
-
-    !> *****************************************************************
-    !> Read precipitation data
-    !> *****************************************************************
-!    if (cm%clin(cfk%PR)%timestep_now == 0) then
+        !> *************************************************************
+        !> Read precipitation data
+        !> *************************************************************
 
         call update_data(bi, cm, cfk%PR, PREGAT, need_update, ENDDATA)
-
-!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
         if (need_update) then
             call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%PR)%climvGrd, PREGAT)
         end if
-!            ICOUNT = ICOUNT + 1
-
-        !> Switch and read and a single record from file.
-!        else
-!            select case (cm%clin(cfk%PR)%filefmt)
-
-!                case (0)
-
-                    !> Skip the forcing data that is read from r2c and csv files.
-!                    do k = 1, ICOUNT
-!                        read(51, end = 999) ((JUNK, j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    end do
-!                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    do i = 1, bi%NA
-!                        PREGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
-
-!                case (1)
-!                    read(cm%basefileunit + cfk%PR, *, end = 999) !:Frame line
-!                    do i = 1, bi%YCOUNT
-!                        read (cm%basefileunit + cfk%PR, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
-!                    end do
-!                    read(cm%basefileunit + cfk%PR, *, end = 999) !:EndFrame line
-!                    do i = 1, bi%NA
-!                        PREGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (2)
-!                    read(cm%basefileunit + cfk%PR, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
-!                    do i = 1, bi%NML
-!                        CURGRU = bi%JLMOS(i)
-!                        PREGAT(i) = INVECTOR(CURGRU)
-!                    end do
-!                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, PREGRD, PREGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (3)
-!                    read(cm%basefileunit + cfk%PR, end = 999) NTIME
-!                    read(cm%basefileunit + cfk%PR, end = 999) PREGRD
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (4)
-!                    read(cm%basefileunit + cfk%PR, *, end = 999) (PREGRD(i), i = 1, bi%NA)
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
-!                    ICOUNT = ICOUNT + 1
 
                 !> Read from two sources of rainfall input.
 !todo: re-instate with alpha
@@ -486,292 +292,41 @@ module climate_forcing_data
 !                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
 !                    ICOUNT = ICOUNT + 1
 
-!                case default
-!                    print 644, cm%clin(cfk%PR)%id_var, cm%clin(cfk%PR)%filefmt
-!                    stop
-
-!            end select !case (cm%clin(cfk%PR)%filefmt)
-!    end if !(cm%clin(cfk%PR)%timestep_now == 0) then
-
-    !> *****************************************************************
-    !> Read temperature data
-    !> *****************************************************************
-!    if (cm%clin(cfk%TT)%timestep_now == 0) then
+        !> *************************************************************
+        !> Read temperature data
+        !> *************************************************************
 
         call update_data(bi, cm, cfk%TT, TAGAT, need_update, ENDDATA)
-
-!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
         if (need_update) then
             call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%TT)%climvGrd, TAGAT)
         end if
-!            ICOUNT = ICOUNT + 1
 
-        !> Switch and read and a single record from file.
-!        else
-!            select case (cm%clin(cfk%TT)%filefmt)
-
-!                case (0)
-
-                    !> Skip the forcing data that is read from r2c and csv files.
-!                    do k = 1, ICOUNT
-!                        read(51, end = 999) ((JUNK, j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    end do
-!                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    do i = 1, bi%NA
-!                        TAGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
-
-!                case (1)
-!                    read(cm%basefileunit + cfk%TT, *, end = 999) !:Frame line
-!                    do i = 1, bi%YCOUNT
-!                        read(cm%basefileunit + cfk%TT, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
-!                    end do
-!                    read(cm%basefileunit + cfk%TT, *, end = 999) !:EndFrame line
-!                    do i = 1, bi%NA
-!                        TAGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (2)
-!                    read(cm%basefileunit + cfk%TT, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
-!                    do i = 1, bi%NML
-!                        CURGRU = bi%JLMOS(i)
-!                        TAGAT(i) = INVECTOR(CURGRU)
-!                    end do
-!                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, TAGRD, TAGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (3)
-!                    read(cm%basefileunit + cfk%TT, end = 999) NTIME
-!                    read(cm%basefileunit + cfk%TT, end = 999) TAGRD
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (4)
-!                    read(cm%basefileunit + cfk%TT, *, end = 999) (TAGRD(i), i = 1, bi%NA)
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, TAGRD, TAGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case default
-!                    print 644, cm%clin(cfk%TT)%id_var, cm%clin(cfk%TT)%filefmt
-!                    stop
-
-!            end select !case (cm%clin(cfk%TT)%filefmt)
-!    end if !(cm%clin(cfk%TT)%timestep_now == 0) then
-
-    !> *****************************************************************
-    !> Read wind data
-    !> *****************************************************************
-!    if (cm%clin(cfk%UV)%timestep_now == 0) then
+        !> *************************************************************
+        !> Read wind data
+        !> *************************************************************
 
         call update_data(bi, cm, cfk%UV, ULGAT, need_update, ENDDATA)
-
-!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
         if (need_update) then
             call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%UV)%climvGrd, ULGAT)
         end if
-!            ICOUNT = ICOUNT + 1
 
-        !> Switch and read and a single record from file.
-!        else
-!            select case (cm%clin(cfk%UV)%filefmt)
-
-!                case (0)
-
-                    !> Skip the forcing data that is read from r2c and csv files.
-!                    do k = 1, ICOUNT
-!                        read(51, end = 999) ((JUNK, j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    end do
-!                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    do i = 1, bi%NA
-!                        ULGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-                    !VLGRD = 0.0
-                    !VLGAT = 0.0
-                    !UVGRD = max(VMIN, ULGRD)
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
-
-!                case (1)
-!                    read(cm%basefileunit + cfk%UV, *, end = 999) !:Frame line
-!                    do i = 1, bi%YCOUNT
-!                        read(cm%basefileunit + cfk%UV, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
-!                    end do
-!                    read(cm%basefileunit + cfk%UV, *, end = 999) !:EndFrame line
-!                    do i = 1, bi%NA
-!                        ULGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-                    !VLGRD = 0.0
-                    !VLGAT = 0.0
-                    !UVGRD = max(VMIN, ULGRD)
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (2)
-!                    read(cm%basefileunit + cfk%UV, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
-!                    do i=1, bi%NML
-!                        CURGRU = bi%JLMOS(i)
-!                        ULGAT(i) = INVECTOR(CURGRU)
-!                    end do
-                    !VLGRD = 0.0
-                    !VLGAT = 0.0
-!                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, ULGRD, ULGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (3)
-!                    read(cm%basefileunit + cfk%UV, end = 999) NTIME
-!                    read(cm%basefileunit + cfk%UV, end = 999) ULGRD
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (4)
-!                    read(cm%basefileunit + cfk%UV, *, end = 999) (ULGRD(i), i = 1, bi%NA)
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, ULGRD, ULGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case default
-!                    print 644, cm%clin(cfk%UV)%id_var, cm%clin(cfk%UV)%filefmt
-!                    stop
-
-!            end select !case (cm%clin(cfk%UV)%filefmt)
-!    end if !(cm%clin(cfk%UV)%timestep_now == 0) then
-
-    !> *****************************************************************
-    !> Read pressure data
-    !> *****************************************************************
-!    if (cm%clin(cfk%P0)%timestep_now == 0) then
+        !> *************************************************************
+        !> Read pressure data
+        !> *************************************************************
 
         call update_data(bi, cm, cfk%P0, PRESGAT, need_update, ENDDATA)
-
-!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
         if (need_update) then
             call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%P0)%climvGrd, PRESGAT)
         end if
-!            ICOUNT = ICOUNT + 1
 
-        !> Switch and read and a single record from file.
-!        else
-!            select case (cm%clin(cfk%P0)%filefmt)
-
-!                case (0)
-
-                    !> Skip the forcing data that is read from r2c and csv files.
-!                    do k = 1, ICOUNT
-!                        read(51, end = 999) ((JUNK, j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    end do
-!                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    do i = 1, bi%NA
-!                        PRESGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
-
-!                case (1)
-!                    read(cm%basefileunit + cfk%P0, *, end = 999) !:Frame line
-!                    do i = 1, bi%YCOUNT
-!                        read(cm%basefileunit + cfk%P0, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
-!                    end do
-!                    read(cm%basefileunit + cfk%P0, *, end = 999) !:EndFrame line
-!                    do i = 1, bi%NA
-!                        PRESGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (2)
-!                    read(cm%basefileunit + cfk%P0, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
-!                    do i = 1, bi%NML
-!                        CURGRU = bi%JLMOS(i)
-!                        PRESGAT(i) = INVECTOR(CURGRU)
-!                    end do
-!                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, PRESGRD, PRESGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (3)
-!                    read(cm%basefileunit + cfk%P0, end = 999) NTIME
-!                    read(cm%basefileunit + cfk%P0, end = 999) PRESGRD
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (4)
-!                    read(cm%basefileunit + cfk%P0, *, end = 999) (PRESGRD(i), i = 1, bi%NA)
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PRESGRD, PRESGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case default
-!                    print 644, cm%clin(cfk%P0)%id_var, cm%clin(cfk%P0)%filefmt
-!                    stop
-
-!            end select !case (cm%clin(cfk%P0)%filefmt)
-!    end if !(cm%clin(cfk%P0)%timestep_now == 0) then
-
-    !> *****************************************************************
-    !> Read humidity data
-    !> *****************************************************************
-!    if (cm%clin(cfk%HU)%timestep_now == 0) then
+        !> *************************************************************
+        !> Read humidity data
+        !> *************************************************************
 
         call update_data(bi, cm, cfk%HU, QAGAT, need_update, ENDDATA)
-
-!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
         if (need_update) then
             call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%HU)%climvGrd, QAGAT)
         end if
-!            ICOUNT = ICOUNT + 1
-
-        !> Switch and read and a single record from file.
-!        else
-!            select case (cm%clin(cfk%HU)%filefmt)
-
-!                case (0)
-
-                    !> Skip the forcing data that is read from r2c and csv files.
-!                    do k = 1, ICOUNT
-!                        read(51, end = 999) ((JUNK, j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    end do
-!                    read(51, end = 999) ((INARRAY(i, j), j = 1, bi%XCOUNT), i = 1, bi%YCOUNT)
-!                    do i = 1, bi%NA
-!                        QAGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
-
-!                case (1)
-!                    read(cm%basefileunit + cfk%HU, *, end = 999) !:Frame line
-!                    do i = 1, bi%YCOUNT
-!                        read(cm%basefileunit + cfk%HU, *, end = 999) (INARRAY(i, j), j = 1, bi%XCOUNT)
-!                    end do
-!                    read (cm%basefileunit + cfk%HU, *, end = 999) !:EndFrame line
-!                    do i = 1, bi%NA
-!                        QAGRD(i) = INARRAY(bi%YYY(i), bi%XXX(i))
-!                    end do
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (2)
-!                    read(cm%basefileunit + cfk%HU, *, end = 999) (INVECTOR(i), i = 1, bi%NTYPE)
-!                    do i = 1, bi%NML
-!                        CURGRU = bi%JLMOS(i)
-!                        QAGAT(i) = INVECTOR(CURGRU)
-!                    end do
-!                    call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, QAGRD, QAGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (3)
-!                    read(cm%basefileunit + cfk%HU, end = 999) NTIME
-!                    read(cm%basefileunit + cfk%HU, end = 999) QAGRD
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case (4)
-!                    read(cm%basefileunit + cfk%HU, *, end = 999) (QAGRD(i), i = 1, bi%NA)
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, QAGRD, QAGAT)
-!                    ICOUNT = ICOUNT + 1
-
-!                case default
-!                    print 644, cm%clin(cfk%HU)%id_var, cm%clin(cfk%HU)%filefmt
-!                    stop
-
-!            end select !case (cm%clin(cfk%HU)%filefmt)
-!    end if !(cm%clin(cfk%HU)%timestep_now == 0) then
 
 !644 format(/1x'The input forcing file format is not supported', &
 !        /2x, A15, I4/)
