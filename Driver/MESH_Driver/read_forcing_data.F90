@@ -1,6 +1,6 @@
 module climate_forcing_data
 
-    use sa_mesh_shared_variabletypes
+!    use sa_mesh_shared_variabletypes
     use climate_forcing_variabletypes
     use climate_forcing_variables
 
@@ -10,7 +10,6 @@ module climate_forcing_data
 
     !> -----------------------------------------------------------------
     !> Description: Open Units and Load the first block of climate data
-    !>
     !> -----------------------------------------------------------------
     subroutine OpenData(indx, cm)
 
@@ -226,7 +225,7 @@ module climate_forcing_data
     !> *****************************************************************
 
 !    use strings
-!    use sa_mesh_shared_variabletypes
+    use sa_mesh_shared_variabletypes
 !    use FLAGS
 !    use climate_forcing, only: clim_info, cfk, NeedUpdate_clim_data
 
@@ -247,7 +246,7 @@ module climate_forcing_data
 !    real*4, dimension(bi%NTYPE) :: INVECTOR
 !    real*4 JUNK
 !    integer t, s, i, j, k, CURGRU, ICOUNT
-!     integer s
+!    integer s
         logical need_update
 
 !    integer :: NTIME  ! time in read sequential
@@ -259,24 +258,6 @@ module climate_forcing_data
     !> Read shortwave radiation data
     !> *****************************************************************
 !    if (cm%clin(cfk%FB)%timestep_now == 0) then
-
-        !> Read into memory.
-!        if (cm%clin(cfk%FB)%timeSize > 0) then
-
-            !> Read data (if needed).
-!            call NeedUpdate_clim_data(bi, cfk%FB, cm, ENDDATA)
-
-            !> Distribute the variable (for the case of more than one series)
-!            FSGAT = 0.0
-!            do s = 1, size(cm%clin(cfk%FB)%climv, 2)
-!                FSGAT = FSGAT + cm%clin(cfk%FB)%climv(:, s, cm%clin(cfk%FB)%itime)*cm%clin(cfk%FB)%alpha(s)
-!            end do
-
-            !> Update the counter of the current time-step.
-!            cm%clin(cfk%FB)%itime = cm%clin(cfk%FB)%itime + 1
-!            if (cm%clin(cfk%FB)%itime > size(cm%clin(cfk%FB)%climv, 3)) then
-!                cm%clin(cfk%FB)%itime = 1
-!            end if
 
         call update_data(bi, cm, cfk%FB, FSGAT, need_update, ENDDATA)
 
@@ -359,26 +340,12 @@ module climate_forcing_data
 !                    stop
 
 !            end select !case (cm%clin(cfk%FB)%filefmt)
-!        end if !(cm%clin(cfk%FB)%timeSize > 0) then
 !    end if !(cm%clin(cfk%FB)%timestep_now == 0) then
 
     !> *****************************************************************
     !> Read longwave radiation data
     !> *****************************************************************
 !    if (cm%clin(cfk%FI)%timestep_now == 0) then
-
-        !> Read into memory.
-!        if (cm%clin(cfk%FI)%timeSize > 0) then
-!            call NeedUpdate_clim_data(bi, cfk%FI, cm, ENDDATA)
-!            FDLGAT = 0.0
-!            do s = 1, size(cm%clin(cfk%FI)%climv, 2)
-!                FDLGAT = FDLGAT + cm%clin(cfk%FI)%climv(:, s, cm%clin(cfk%FI)%itime)*cm%clin(cfk%FI)%alpha(s)
-!            end do
-!            cm%clin(cfk%FI)%itime = cm%clin(cfk%FI)%itime + 1
-!            if (cm%clin(cfk%FI)%itime > size(cm%clin(cfk%FI)%climv, 3)) then
-!                cm%clin(cfk%FI)%itime = 1
-!            end if
-!            call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, FDLGRD, FDLGAT)
 
         call update_data(bi, cm, cfk%FI, FDLGAT, need_update, ENDDATA)
 
@@ -440,25 +407,12 @@ module climate_forcing_data
 !                    stop
 
 !            end select !case (cm%clin(cfk%FI)%filefmt)
-!        end if !(cm%clin(cfk%FI)%timeSize > 0) then
 !    end if !(cm%clin(cfk%FI)%timestep_now == 0) then
 
     !> *****************************************************************
     !> Read precipitation data
     !> *****************************************************************
 !    if (cm%clin(cfk%PR)%timestep_now == 0) then
-
-        !> Read into memory.
-!        if (cm%clin(cfk%PR)%timeSize > 0) then
-!            call NeedUpdate_clim_data(bi, cfk%PR, cm, ENDDATA)
-!            PREGAT = 0.0
-!            do s = 1, size(cm%clin(cfk%PR)%climv, 2)
-!                PREGAT = PREGAT + cm%clin(cfk%PR)%climv(:, s, cm%clin(cfk%PR)%itime)*cm%clin(cfk%PR)%alpha(s)
-!            end do
-!            cm%clin(cfk%PR)%itime = cm%clin(cfk%PR)%itime + 1
-!            if (cm%clin(cfk%PR)%itime > size(cm%clin(cfk%PR)%climv, 3)) then
-!                cm%clin(cfk%PR)%itime = 1
-!            end if
 
         call update_data(bi, cm, cfk%PR, PREGAT, need_update, ENDDATA)
 
@@ -535,25 +489,12 @@ module climate_forcing_data
 !                    stop
 
 !            end select !case (cm%clin(cfk%PR)%filefmt)
-!        end if !(cm%clin(cfk%PR)%timeSize > 0) then
 !    end if !(cm%clin(cfk%PR)%timestep_now == 0) then
 
     !> *****************************************************************
     !> Read temperature data
     !> *****************************************************************
 !    if (cm%clin(cfk%TT)%timestep_now == 0) then
-
-        !> Read into memory.
-!        if (cm%clin(cfk%TT)%timeSize > 0) then
-!            call NeedUpdate_clim_data(bi, cfk%TT, cm, ENDDATA)
-!            TAGAT = 0.0
-!            do s = 1, size(cm%clin(cfk%TT)%climv, 2)
-!                TAGAT = TAGAT + cm%clin(cfk%TT)%climv(:, s, cm%clin(cfk%TT)%itime)*cm%clin(cfk%TT)%alpha(s)
-!            end do
-!            cm%clin(cfk%TT)%itime = cm%clin(cfk%TT)%itime + 1
-!            if (cm%clin(cfk%TT)%itime > size(cm%clin(cfk%TT)%climv, 3)) then
-!                cm%clin(cfk%TT)%itime = 1
-!            end if
 
         call update_data(bi, cm, cfk%TT, TAGAT, need_update, ENDDATA)
 
@@ -616,25 +557,12 @@ module climate_forcing_data
 !                    stop
 
 !            end select !case (cm%clin(cfk%TT)%filefmt)
-!        end if !(cm%clin(cfk%TT)%timeSize > 0) then
 !    end if !(cm%clin(cfk%TT)%timestep_now == 0) then
 
     !> *****************************************************************
     !> Read wind data
     !> *****************************************************************
 !    if (cm%clin(cfk%UV)%timestep_now == 0) then
-
-        !> Read into memory.
-!        if (cm%clin(cfk%UV)%timeSize > 0) then
-!            call NeedUpdate_clim_data(bi, cfk%UV, cm, ENDDATA)
-!            ULGAT = 0.0
-!            do s = 1, size(cm%clin(cfk%UV)%climv, 2)
-!                ULGAT = ULGAT + cm%clin(cfk%UV)%climv(:, s, cm%clin(cfk%UV)%itime)*cm%clin(cfk%UV)%alpha(s)
-!            end do
-!            cm%clin(cfk%UV)%itime = cm%clin(cfk%UV)%itime + 1
-!            if (cm%clin(cfk%UV)%itime > size(cm%clin(cfk%UV)%climv, 3)) then
-!                cm%clin(cfk%UV)%itime = 1
-!            end if
 
         call update_data(bi, cm, cfk%UV, ULGAT, need_update, ENDDATA)
 
@@ -705,25 +633,12 @@ module climate_forcing_data
 !                    stop
 
 !            end select !case (cm%clin(cfk%UV)%filefmt)
-!        end if !(cm%clin(cfk%UV)%timeSize > 0) then
 !    end if !(cm%clin(cfk%UV)%timestep_now == 0) then
 
     !> *****************************************************************
     !> Read pressure data
     !> *****************************************************************
 !    if (cm%clin(cfk%P0)%timestep_now == 0) then
-
-        !> Read into memory.
-!        if (cm%clin(cfk%P0)%timeSize > 0) then
-!            call NeedUpdate_clim_data(bi, cfk%P0, cm, ENDDATA)
-!            PRESGAT = 0.0
-!            do s = 1, size(cm%clin(cfk%P0)%climv, 2)
-!                PRESGAT = PRESGAT + cm%clin(cfk%P0)%climv(:, s, cm%clin(cfk%P0)%itime)*cm%clin(cfk%P0)%alpha(s)
-!            end do
-!            cm%clin(cfk%P0)%itime = cm%clin(cfk%P0)%itime + 1
-!            if (cm%clin(cfk%P0)%itime > size(cm%clin(cfk%P0)%climv, 3)) then
-!                cm%clin(cfk%P0)%itime = 1
-!            end if
 
         call update_data(bi, cm, cfk%P0, PRESGAT, need_update, ENDDATA)
 
@@ -786,25 +701,12 @@ module climate_forcing_data
 !                    stop
 
 !            end select !case (cm%clin(cfk%P0)%filefmt)
-!        end if !(cm%clin(cfk%P0)%timeSize > 0) then
 !    end if !(cm%clin(cfk%P0)%timestep_now == 0) then
 
     !> *****************************************************************
     !> Read humidity data
     !> *****************************************************************
 !    if (cm%clin(cfk%HU)%timestep_now == 0) then
-
-        !> Read into memory.
-!        if (cm%clin(cfk%HU)%timeSize > 0) then
-!            call NeedUpdate_clim_data(bi, cfk%HU, cm, ENDDATA)
-!            QAGAT = 0.0
-!            do s = 1, size(cm%clin(cfk%HU)%climv, 2)
-!                QAGAT = QAGAT + cm%clin(cfk%HU)%climv(:, s, cm%clin(cfk%HU)%itime)*cm%clin(cfk%HU)%alpha(s)
-!            end do
-!            cm%clin(cfk%HU)%itime = cm%clin(cfk%HU)%itime + 1
-!            if (cm%clin(cfk%HU)%itime > size(cm%clin(cfk%HU)%climv, 3)) then
-!                cm%clin(cfk%HU)%itime = 1
-!            end if
 
         call update_data(bi, cm, cfk%HU, QAGAT, need_update, ENDDATA)
 
@@ -867,7 +769,6 @@ module climate_forcing_data
 !                    stop
 
 !            end select !case (cm%clin(cfk%HU)%filefmt)
-!        end if !(cm%clin(cfk%HU)%timeSize > 0) then
 !    end if !(cm%clin(cfk%HU)%timestep_now == 0) then
 
 !644 format(/1x'The input forcing file format is not supported', &
@@ -950,7 +851,11 @@ module climate_forcing_data
             need_update = .true.
 
         else
+
+            !> If need_update is .false. then READ_FORCING_DATA does
+            !> not re-distribute the data.
             need_update = .false.
+
         end if
 
     end subroutine
