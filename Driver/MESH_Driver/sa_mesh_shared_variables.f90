@@ -7,6 +7,6 @@ module sa_mesh_shared_variables
 
     implicit none
 
-    type(run_options) :: ro
+    type(run_options), save :: ro
 
 end module

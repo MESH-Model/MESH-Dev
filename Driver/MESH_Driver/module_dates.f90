@@ -38,8 +38,8 @@ module model_dates
 
         contains
 
-        procedure :: init => init_iter_counter
-        procedure :: update_now => update_now_iter_counter
+!        procedure :: init => init_iter_counter
+!        procedure :: update_now => update_now_iter_counter
 
     end type
 
@@ -84,7 +84,7 @@ module model_dates
     subroutine init_iter_counter(ic, start_year, start_day_julian, start_hour, start_min, timestep)
 
         !> Derived-type variable.
-        class(iter_counter) :: ic
+        type(iter_counter) :: ic
 
         !> Input variables.
         !* timestep: Time-step of the model iteration [s].
@@ -116,7 +116,7 @@ module model_dates
     subroutine update_now_iter_counter(ic, now_year, now_day_julian, now_hour, now_timestep)
 
         !> Derived-type variable.
-        class(iter_counter) :: ic
+        type(iter_counter) :: ic
 
         !> Input variables.
         integer, intent(in) :: now_year, now_day_julian, now_hour

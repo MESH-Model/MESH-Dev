@@ -1650,6 +1650,7 @@ DO I=1,WF_NO
       ENDIF
 !> ric     initialise smoothed variables
   wf_qsyn(I)=0.0
+      WF_QSYN_AVG = 0.0
       wf_qhyd_avg(I)=0.0
       wf_qsyn_cum(I)=0.0
       wf_qhyd_cum(I)=0.0
@@ -1890,7 +1891,7 @@ CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS, &
     bi%JLMOS = JLMOS
 
 !> Initialize output variables.
-call wb%init(bi)
+call init_water_balance(wb, bi)
 wb%grid_area = 0.0
 wb%basin_area = 0.0
 DO I = 1, NA
@@ -1909,10 +1910,10 @@ END DO
 
 if (ipid == 0) then
 
-    call eng%init(bi)
-    call sov%init(bi)
-    call md%init(bi)
-    call wb_h%init(bi)
+    call init_energy_balance(eng, bi)
+    call init_soil_statevars(sov, bi)
+    call init_met_data(md, bi)
+    call init_water_balance(wb_h, bi)
 
     if (OUTFIELDSFLAG == 1) call init_out(vr, ts, iof, bi)
 
@@ -4020,12 +4021,12 @@ end if !(ipid /= 0 .or. izero == 0) then
                 HOUR_NOW, MINS_NOW, JDAY_NOW, 2.0*FSVHGAT(i), FDLGAT(i), &
                 PREGAT(i), TAGAT(i) - TFREZ, VMODGAT(i), PRESGAT(i), &
                 QAGAT(i)
-            write(150 + k*10 + 7, "(*(E11.4,','))") &
+            write(150 + k*10 + 7, "(999(E11.4,','))") &
                 TROFGAT(i), TROOGAT(i), TROSGAT(i), &
                 TROBGAT(i), ROFGAT(i), ROFOGAT(i), &
                 ROFSGAT(i), ROFBGAT(i), &
                 FCS(i), FGS(i), FC(i), FG(i)
-            write(150 + k*10 + 8, "(*(F12.4,','))") &
+            write(150 + k*10 + 8, "(999(F12.4,','))") &
                 FSGVGAT(i), FSGSGAT(i), FSGGGAT(i), &
                 FLGVGAT(i), FLGSGAT(i), FLGGGAT(i), &
                 HFSCGAT(i), HFSSGAT(i), HFSGGAT(i), &
@@ -4034,14 +4035,14 @@ end if !(ipid /= 0 .or. izero == 0) then
                 (HMFGGAT(i, j), j = 1, IGND), &
                 HTCCGAT(i), HTCSGAT(i), &
                 (HTCGAT(i, j), j = 1, IGND)
-            write(150 + k*10 + 9, "(*(E12.4,','))") &
+            write(150 + k*10 + 9, "(999(E12.4,','))") &
                 PCFCGAT(i), PCLCGAT(i), PCPNGAT(i), &
                 PCPGGAT(i), QFCFGAT(i), QFCLGAT(i), &
                 QFNGAT(i), QFGGAT(i), (QFCGAT(i, j), j = 1, IGND), &
                 ROFCGAT(i), ROFNGAT(i), &
                 ROFOGAT(i), ROFGAT(i), WTRCGAT(i), &
                 WTRSGAT(i), WTRGGAT(i)
-            write(150 + k*10 + 10, "(I2,',', I3,',', I5,',', I6,',', *(F14.6,','))") &
+            write(150 + k*10 + 10, "(I2,',', I3,',', I5,',', I6,',', 999(F14.6,','))") &
                 HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, PREGAT(i)*DELT, QFSGAT(i)*DELT, &
                 ROFGAT(i)*DELT, ROFOGAT(i)*DELT, ROFSGAT(i)*DELT, ROFBGAT(i)*DELT, &
                 SCANGAT(i), RCANGAT(i), SNOGAT(i), WSNOGAT(i), &
@@ -4163,7 +4164,7 @@ end if !(ipid /= 0 .or. izero == 0) then
                 end if
 
                 !> Write to the CLASSOF* output files for daily accumulated output.
-                write(150 + k*10 + 1, "(I4,',', I5,',', 9(F8.2,','), 2(F8.3,','), *(F12.4,','))") &
+                write(150 + k*10 + 1, "(I4,',', I5,',', 9(F8.2,','), 2(F8.3,','), 999(F12.4,','))") &
                     JDAY_NOW, YEAR_NOW, FSSTAR, FLSTAR, QH, QE, SNOMLT, &
                     BEG, GTOUT, co%SNOACC(k), co%RHOSACC(k), &
                     co%WSNOACC(k), ALTOT, co%ROFACC(k), co%ROFOACC(k), &
@@ -4790,7 +4791,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     if (BASINBALANCEOUTFLAG > 0) then
 
         !> Water balance.
-        write(900, "((i4, ','), (i5, ','), *(e14.6, ','))") &
+        write(900, "((i4, ','), (i5, ','), 999(e14.6, ','))") &
             JDAY_NOW, YEAR_NOW              , &   !1
             TOTAL_PREACC/TOTAL_AREA  , &   !2
             TOTAL_EVAPACC/TOTAL_AREA , &   !3
@@ -4820,7 +4821,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
             (TOTAL_STORE - INIT_STORE)/TOTAL_AREA
 
         !> Energy balance.
-        write(901, "((i4, ','), (i5, ','), *(e12.5, ','))") &
+        write(901, "((i4, ','), (i5, ','), 999(e12.5, ','))") &
             JDAY_NOW, YEAR_NOW,    &
             TOTAL_HFSACC/TOTAL_AREA,  &
             TOTAL_QEVPACC/TOTAL_AREA
@@ -4852,7 +4853,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
         call FIND_MONTH(JDAY_NOW, YEAR_NOW, imonth_now)
         if (imonth_now /= imonth_old) then
 
-            write(902, "((i4, ','), (i5, ','), *(e14.6, ','))") &
+            write(902, "((i4, ','), (i5, ','), 999(e14.6, ','))") &
                 JDAY_NOW, YEAR_NOW, &
                 TOTAL_PRE_ACC_M/TOTAL_AREA, &
                 TOTAL_EVAP_ACC_M/TOTAL_AREA, &
@@ -5047,7 +5048,7 @@ ENDIF
 
     !> Write output for hourly streamflow.
     if (STREAMFLOWFLAG == 1 .and. STREAMFLOWOUTFLAG >= 2) then
-        write(71, "(3(i5,','), f10.3, *(',', f10.3))") JDAY_NOW, HOUR_NOW, MINS_NOW, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
+        write(71, "(3(i5,','), f10.3, 999(',', f10.3))") JDAY_NOW, HOUR_NOW, MINS_NOW, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
     end if
 
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
@@ -5059,9 +5060,9 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
     !> Write output for daily and cumulative daily streamflow.
     if (STREAMFLOWOUTFLAG > 0) then
-        write(70, "(i5, ',', f10.3, *(',', f10.3))") JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
+        write(70, "(i5, ',', f10.3, 999(',', f10.3))") JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
         if (STREAMFLOWOUTFLAG >= 2) then
-            write(72, "(i5, ',', f10.3, *(',', f10.3))") JDAY_NOW, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
+            write(72, "(i5, ',', f10.3, 999(',', f10.3))") JDAY_NOW, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
         end if
     end if
 
@@ -5097,7 +5098,7 @@ ENDIF !(NCOUNT==48) THEN
 
 end if !(ipid == 0) then
 
-5176 format(2i5, *(f10.3))
+5176 format(2i5, 999(f10.3))
 
 ! *********************************************************************
 ! Update time counters and return to beginning of main loop
@@ -5535,7 +5536,7 @@ if (ro%VERBOSEMODE > 0) then
     print 5641, 'Total Baseflow              (mm) =', TOTAL_ROFBACC/TOTAL_AREA
     print *
 
-5641 format(3x, a34, *(f11.3))
+5641 format(3x, a34, 999(f11.3))
 5635 format(1x'Program has terminated normally.'/)
 
 end if !(ro%VERBOSEMODE > 0) then

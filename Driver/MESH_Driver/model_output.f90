@@ -38,7 +38,7 @@ module model_output
         contains
 
         !> Procedure to initialize the variables and allocate the arrays.
-        procedure :: init => init_met_data_series
+!        procedure :: init => init_met_data_series
 
     end type !met_data_series
 
@@ -53,7 +53,7 @@ module model_output
         contains
 
         !> Procedure to initialize the variables and allocate the arrays.
-        procedure :: init => init_met_data
+!        procedure :: init => init_met_data
 
     end type !met_data
 
@@ -97,7 +97,7 @@ module model_output
 
         contains
 
-        procedure :: init => init_water_balance_series
+!        procedure :: init => init_water_balance_series
 
     end type !water_balance_series
 
@@ -117,7 +117,7 @@ module model_output
 
         contains
 
-        procedure :: init => init_water_balance
+!        procedure :: init => init_water_balance
 !        procedure :: deallocate => deallocate_water_balance
 
     end type !water_balance
@@ -133,7 +133,7 @@ module model_output
             
         contains
 
-        procedure :: init => init_energy_balance_series           
+!        procedure :: init => init_energy_balance_series           
 
     end type !energy_balance_series
 
@@ -148,7 +148,7 @@ module model_output
             
         contains
 
-        procedure :: init => init_energy_balance            
+!        procedure :: init => init_energy_balance            
 
     end type !energy_balance
 
@@ -163,7 +163,7 @@ module model_output
 
         contains
 
-        procedure :: init => init_soil_statevars_series
+!        procedure :: init => init_soil_statevars_series
 
     end type
     
@@ -174,7 +174,7 @@ module model_output
 
         contains
 
-        procedure :: init => init_soil_statevars
+!        procedure :: init => init_soil_statevars
 
     end type    
 
@@ -185,7 +185,7 @@ module model_output
 
         contains
 
-        procedure :: init => init_wr_output_series
+!        procedure :: init => init_wr_output_series
 
     end type !wr_output_series
 
@@ -210,7 +210,7 @@ module model_output
 
         contains
 
-        procedure :: allocate_args => data_var_out_allocate_args
+!        procedure :: allocate_args => data_var_out_allocate_args
 
     end type
 
@@ -308,7 +308,7 @@ module model_output
 
         contains
 
-        procedure :: init => init_out_flds
+!        procedure :: init => init_out_flds
 
     end type
 
@@ -336,7 +336,7 @@ module model_output
     subroutine init_met_data_series(mdt, bi, nts)
 
         !> Derived-type variable.
-        class(met_data_series) :: mdt
+        type(met_data_series) :: mdt
 
         !> Input variables.
         !* nts: Number of time-steps in the series.
@@ -364,7 +364,7 @@ module model_output
     subroutine init_met_data(md, bi)
 
         !> Derived-type variable.
-        class(met_data) :: md
+        type(met_data) :: md
 
         !> Input variables.
         type(basin_info), intent(in) :: bi
@@ -390,7 +390,7 @@ module model_output
     subroutine data_var_out_allocate_args(vo, args)
 
         !> Type variable.
-        class(data_var_out) :: vo
+        type(data_var_out) :: vo
 
         !> Input variables.
         character*20, dimension(:), intent(in) :: args
@@ -495,7 +495,7 @@ module model_output
     subroutine init_out_flds(vr, bi, ts)
 
         !> Type variable.
-        class(out_flds) :: vr
+        type(out_flds) :: vr
 
         !> Input variables.
         type(basin_info), intent(in) :: bi
@@ -507,41 +507,41 @@ module model_output
         !> Allocate arrays using basin info.
 
         !> Yearly:
-        call vr%wbt_y%init(bi, ts%nyears)
-        call vr%spt_y%init(bi, ts%nyears)
-        call vr%engt_y%init(bi, ts%nyears)
+        call init_water_balance_series(vr%wbt_y, bi, ts%nyears)
+        call init_soil_statevars_series(vr%spt_y, bi, ts%nyears)
+        call init_energy_balance_series(vr%engt_y, bi, ts%nyears)
           
 
         !> Monthly:
-        call vr%wbt_m%init(bi, ts%nmonths)
-        call vr%spt_m%init(bi, ts%nmonths)
-        call vr%engt_m%init(bi, ts%nmonths)        
+        call init_water_balance_series(vr%wbt_m, bi, ts%nmonths)
+        call init_soil_statevars_series(vr%spt_m, bi, ts%nmonths)
+        call init_energy_balance_series(vr%engt_m, bi, ts%nmonths)        
 
         !> Seasonally:
-        call vr%wbt_s%init(bi, ts%nseason)
-        call vr%spt_s%init(bi, ts%nseason)
-        call vr%engt_s%init(bi, ts%nseason)
+        call init_water_balance_series(vr%wbt_s, bi, ts%nseason)
+        call init_soil_statevars_series(vr%spt_s, bi, ts%nseason)
+        call init_energy_balance_series(vr%engt_s, bi, ts%nseason)
         !> Daily:
-        call vr%wbt_d%init(bi, ts%nr_days)
-        call vr%spt_d%init(bi, ts%nr_days)
-        call vr%engt_d%init(bi, ts%nr_days)
+        call init_water_balance_series(vr%wbt_d, bi, ts%nr_days)
+        call init_soil_statevars_series(vr%spt_d, bi, ts%nr_days)
+        call init_energy_balance_series(vr%engt_d, bi, ts%nr_days)
         !> Hourly:
-        call vr%wbt_h%init(bi, max(1, 3600/TIME_STEP_DELT))
-        call vr%mdt_h%init(bi, max(1, 3600/TIME_STEP_DELT))
-        call vr%engt_h%init(bi, max(1, 3600/TIME_STEP_DELT))
-        call vr%wroutt_h%init(bi, max(1, 3600/TIME_STEP_DELT))
+        call init_water_balance_series(vr%wbt_h, bi, max(1, 3600/TIME_STEP_DELT))
+        call init_met_data_series(vr%mdt_h, bi, max(1, 3600/TIME_STEP_DELT))
+        call init_energy_balance_series(vr%engt_h, bi, max(1, 3600/TIME_STEP_DELT))
+        call init_wr_output_series(vr%wroutt_h, bi, max(1, 3600/TIME_STEP_DELT))
         
         
 
         !> Per time-step:
-        call vr%md_ts%init(bi)
+        call init_met_data(vr%md_ts, bi)
 
     end subroutine !init_out_flds
 
     subroutine init_water_balance_series(wbt, bi, nts)
 
         !> Type variable.
-        class(water_balance_series) :: wbt
+        type(water_balance_series) :: wbt
 
         !> Input variables.
         type(basin_info), intent(in) :: bi
@@ -581,7 +581,7 @@ module model_output
     subroutine init_water_balance(wb, bi)
 
         !> Type variable.
-        class(water_balance) :: wb
+        type(water_balance) :: wb
 
         !> Input variables.
         type(basin_info), intent(in) :: bi
@@ -620,7 +620,7 @@ module model_output
     subroutine init_energy_balance(eb, bi)
 
         !> Type variable.
-        class(energy_balance) :: eb
+        type(energy_balance) :: eb
 
         !> Input variables.
         type(basin_info), intent(in) :: bi
@@ -640,7 +640,7 @@ module model_output
     subroutine init_energy_balance_series(engt, bi,nts)
 
         !> Type variable.
-        class(energy_balance_series) :: engt
+        type(energy_balance_series) :: engt
 
         !> Input variables.
         type(basin_info), intent(in) :: bi
@@ -688,7 +688,7 @@ module model_output
     subroutine init_soil_statevars(sv, bi)
 
         !> Type variable.
-        class(soil_statevars) :: sv
+        type(soil_statevars) :: sv
 
         !> Input variables.
         type(basin_info), intent(in) :: bi
@@ -710,7 +710,7 @@ module model_output
     subroutine init_soil_statevars_series(sp, bi, nts)
 
         !> Type variable.
-        class(soil_statevars_series) :: sp
+        type(soil_statevars_series) :: sp
 
         !> Input variables.
         type(basin_info), intent(in) :: bi
@@ -733,7 +733,7 @@ module model_output
     subroutine init_wr_output_series(wroutt, bi, nts)
 
         !> Type variable.
-        class(wr_output_series) :: wroutt
+        type(wr_output_series) :: wroutt
 
         !> Input variables.
         type(basin_info), intent(in) :: bi
@@ -959,10 +959,7 @@ module model_output
         integer, parameter :: StrMax=20, Nmax = 100
         character(len=StrMax), dimension(Nmax) :: argsLine
 
-        call public_ic%init(YEAR_NOW, &
-                            JDAY_NOW, &
-                            HOUR_NOW, &
-                            MINS_NOW)
+        call init_iter_counter(public_ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW)
 
         !>--------------Main Subtrouine start-----------------------------------------------
 
@@ -984,7 +981,7 @@ module model_output
             print *, "Error allocating output variable array from file."
 
         !> Initialize variable.
-        call vr%init(bi, ts)
+        call init_out_flds(vr, bi, ts)
         
         do i = 1, ifo%nr_out
 
@@ -1002,7 +999,7 @@ module model_output
 !                args(j) = argsLine(j)
 !            enddo
             !read(909, *) ifo%var_out(i)%name, nargs, (args(j), j = 1, nargs)
-            call ifo%var_out(i)%allocate_args(argsLine(2:nargs))
+            call data_var_out_allocate_args(ifo%var_out(i), argsLine(2:nargs))
 
             !temp: Copy to old array
 !            ifo%ids_var_out(i, 1) = ifo%var_out(i)%name
@@ -1241,7 +1238,7 @@ module model_output
         end do !i = 1, ifo%nr_out
 
         !> Update index-array counter.
-        call public_ic%update_now(now_year, now_day_julian, now_hour, now_timestep)
+        call update_now_iter_counter(public_ic, now_year, now_day_julian, now_hour, now_timestep)
 
     end subroutine !updatefieldsout_temp
 
@@ -2961,7 +2958,7 @@ if (allocated(dates)) &
             end do
 
             do j = 1, ycount
-                write(un, '(*(e12.6,2x))') (data_aux(j, i), i = 1, xcount)
+                write(un, '(999(e12.6,2x))') (data_aux(j, i), i = 1, xcount)
             end do
 
             write(un, '(a)') ':EndFrame'
@@ -3084,7 +3081,7 @@ if (allocated(dates)) &
         if (close_file) close(unit = un)
 
         9000 format('"', i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':00.000"', 2x)
-        9001 format(*(e12.6, 2x))
+        9001 format(999(e12.6, 2x))
 
     end subroutine !WriteTxt
 
@@ -3176,7 +3173,7 @@ if (allocated(dates)) &
         if (close_file) close(unit = un)
 
         9000 format('"', i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':00.000"', ',')
-        9001 format(*(e12.6, ','))
+        9001 format(999(e12.6, ','))
 
     end subroutine !WriteCSV
 

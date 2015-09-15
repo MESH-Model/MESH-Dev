@@ -54,6 +54,6 @@ module climate_forcing_variables
 
     end type
 
-    type(climate_forcing_file_keys) :: cfk
+    type(climate_forcing_file_keys), save :: cfk
 
 end module
