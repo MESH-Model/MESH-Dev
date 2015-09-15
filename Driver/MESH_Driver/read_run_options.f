@@ -7,6 +7,7 @@
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
      +  IRONAME, GENDIR_OUT, op, ts, cm, fls)
 
+      use sa_mesh_shared_variables
       USE MESH_INPUT_MODULE
       USE strings
       use module_mpi_flags
