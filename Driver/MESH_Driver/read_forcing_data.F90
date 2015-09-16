@@ -143,7 +143,7 @@ module climate_forcing_data
 
         !> If skipdata is present and .true., the routine won't store
         !> the data.
-        if (present(skipdata)) storedata = skipdata
+        if (present(skipdata)) storedata = .not. skipdata
 
         select case (cm%clin(indx)%filefmt)
 
@@ -358,17 +358,43 @@ module climate_forcing_data
 
     end subroutine !READ_FORCING_DATA
 
+    subroutine SKIP_FORCING_DATA(bi, cm, ENDDATA)
+
+        use sa_mesh_shared_variabletypes
+
+        !> Input variables.
+        type(basin_info), intent(in) :: bi
+
+        !> Input/Output variables.
+        type(clim_info) :: cm
+
+        !> Output variables.
+        logical ENDDATA
+
+        !> Local variables.
+        integer i
+
+        !> Call skip data for each of the climate forcing variables.
+        !> Variables have to be called individually in case they use
+        !> different time-stepping.
+        do i = 1, size(cm%clin)
+            call skip_data(bi, cm, i, ENDDATA)
+        end do
+
+    end subroutine
+
     !> -----------------------------------------------------------------
     !> Description: Check if we need to load data again if that, we
     !> deallocate and allocate again and then we load data
     !> -----------------------------------------------------------------
-    subroutine NeedUpdate_clim_data(bi, indx, cm, ENDDATA)
+    subroutine NeedUpdate_clim_data(bi, indx, cm, ENDDATA, skipdata)
 
         use sa_mesh_shared_variabletypes
 
         !> Inputs variables.
         type(basin_info) :: bi
         integer indx
+        logical, optional :: skipdata
 
         !> Input/Output variables.
         type(clim_info) :: cm
@@ -376,13 +402,22 @@ module climate_forcing_data
         !> Ouput variables.
         logical ENDDATA
 
+        !> Local variables.
+        logical :: storedata = .true.
+
+        !> If skipdata is present and .true., the routine won't store
+        !> the data.
+        if (present(skipdata)) storedata = .not. skipdata
+
         !> Check if we need to update.
         if (cm%clin(indx)%itime == 1) then
-            if (allocated(cm%clin(indx)%climv)) deallocate(cm%clin(indx)%climv)
-!            allocate(cm%clin(indx)%climv(bi%NML, cm%clin(indx)%nSeries, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
+            if (storedata) then
+                if (allocated(cm%clin(indx)%climv)) deallocate(cm%clin(indx)%climv)
+!                allocate(cm%clin(indx)%climv(bi%NML, cm%clin(indx)%nSeries, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
 !todo: replace nseries with nfiles
-            allocate(cm%clin(indx)%climv(bi%NML, 1, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
-            call LoadData(bi, indx, cm, ENDDATA)
+                allocate(cm%clin(indx)%climv(bi%NML, 1, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
+            end if
+            call LoadData(bi, indx, cm, ENDDATA, .not. storedata)
         end if
 
     end subroutine !NeedUpdate_clim_data
@@ -436,6 +471,31 @@ module climate_forcing_data
             !> If need_update is .false. then READ_FORCING_DATA does
             !> not re-distribute the data.
             need_update = .false.
+
+        end if
+
+    end subroutine
+
+    subroutine skip_data(bi, cm, indx, end_data)
+
+        use sa_mesh_shared_variabletypes
+
+        type(basin_info), intent(in) :: bi
+        type(clim_info) :: cm
+        integer, intent(in) :: indx
+        logical, intent(out) :: end_data
+
+        !> Read data on a new time-step.
+        if (cm%clin(indx)%timestep_now == 0) then
+
+            !> Read data to skip (if needed).
+            call NeedUpdate_clim_data(bi, indx, cm, end_data)
+
+            !> Update the counter of the current time-step.
+            cm%clin(indx)%itime = cm%clin(indx)%itime + 1
+            if (cm%clin(indx)%itime > size(cm%clin(indx)%climv, 3)) then
+                cm%clin(indx)%itime = 1
+            end if
 
         end if
 

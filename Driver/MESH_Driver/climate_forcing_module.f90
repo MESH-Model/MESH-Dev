@@ -40,7 +40,7 @@ module climate_forcing
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use FLAGS
-        use climate_forcing_data, only: OpenData
+        use climate_forcing_data
 
         !> Input variables.
         type(basin_info) :: bi
@@ -138,81 +138,84 @@ module climate_forcing
         !> of the bin file
         if (ro%VERBOSEMODE > 0) print *, 'Skipping', nrs, 'Registers in bin file'
 
+        !> Skip records of forcing data.
         do i = 1, nrs
 
-            !> R2C-format (ASCII).
-            if (cm%clin(cfk%FB)%filefmt == 1) then !Skip the r2c file's information
-                read(90, *, end = 999)
-                do m = 1, bi%YCOUNT
-                    Read (90, *, end = 999)
-                end do
-                read (90, *, end = 999) !:EndFrame line
-            end if
-            if (cm%clin(cfk%FI)%filefmt == 1) then
-                read(91, *, end = 999) !:Frame line
-                do m = 1, bi%YCOUNT
-                    read(91, *, end = 999)
-                end do
-                read(91, *, end = 999) !:EndFrame line
-            end if
-            if (cm%clin(cfk%PR)%filefmt == 1) then
-                read(92, *, end = 999) !:Frame line
-                do m = 1, bi%YCOUNT
-                    read(92, *, end = 999)
-                end do
-                read(92, *, end = 999) !:EndFrame line
-            end if
-            if (cm%clin(cfk%TT)%filefmt == 1) then
-                read(93, *, END=999) !:Frame line
-                do m = 1, bi%YCOUNT
-                    read(93, *, end = 999)
-                end do
-                read(93, *, end = 999) !:EndFrame line
-            end if
-            if (cm%clin(cfk%UV)%filefmt == 1) then
-                read(94, *, end = 999) !:Frame line
-                do m = 1, bi%YCOUNT
-                    read(94, *, end = 999)
-                end do
-                read(94, *, end = 999) !:EndFrame line
-            end if
-            if (cm%clin(cfk%P0)%filefmt == 1) then
-                read(95, *, end = 999) !:Frame line
-                do m = 1, bi%YCOUNT
-                    read(95, *, end = 999)
-                end do
-                read(95, *, end = 999) !:EndFrame line
-            end if
-            if (cm%clin(cfk%HU)%filefmt == 1) then
-                read(96, *, end = 999) !:Frame line
-                do m = 1, bi%YCOUNT
-                    read(96, *, end = 999)
-                end do
-                read(96, *, end = 999)
-            end if
+            call SKIP_FORCING_DATA(bi, cm, ENDDATA)
+
+!            !> R2C-format (ASCII).
+!            if (cm%clin(cfk%FB)%filefmt == 1) then !Skip the r2c file's information
+!                read(90, *, end = 999)
+!                do m = 1, bi%YCOUNT
+!                    Read (90, *, end = 999)
+!                end do
+!                read (90, *, end = 999) !:EndFrame line
+!            end if
+!            if (cm%clin(cfk%FI)%filefmt == 1) then
+!                read(91, *, end = 999) !:Frame line
+!                do m = 1, bi%YCOUNT
+!                    read(91, *, end = 999)
+!                end do
+!                read(91, *, end = 999) !:EndFrame line
+!            end if
+!            if (cm%clin(cfk%PR)%filefmt == 1) then
+!                read(92, *, end = 999) !:Frame line
+!                do m = 1, bi%YCOUNT
+!                    read(92, *, end = 999)
+!                end do
+!                read(92, *, end = 999) !:EndFrame line
+!            end if
+!            if (cm%clin(cfk%TT)%filefmt == 1) then
+!                read(93, *, END=999) !:Frame line
+!                do m = 1, bi%YCOUNT
+!                    read(93, *, end = 999)
+!                end do
+!                read(93, *, end = 999) !:EndFrame line
+!            end if
+!            if (cm%clin(cfk%UV)%filefmt == 1) then
+!                read(94, *, end = 999) !:Frame line
+!                do m = 1, bi%YCOUNT
+!                    read(94, *, end = 999)
+!                end do
+!                read(94, *, end = 999) !:EndFrame line
+!            end if
+!            if (cm%clin(cfk%P0)%filefmt == 1) then
+!                read(95, *, end = 999) !:Frame line
+!                do m = 1, bi%YCOUNT
+!                    read(95, *, end = 999)
+!                end do
+!                read(95, *, end = 999) !:EndFrame line
+!            end if
+!            if (cm%clin(cfk%HU)%filefmt == 1) then
+!                read(96, *, end = 999) !:Frame line
+!                do m = 1, bi%YCOUNT
+!                    read(96, *, end = 999)
+!                end do
+!                read(96, *, end = 999)
+!            end if
 
             !> CSV-format.
-            if (cm%clin(cfk%FB)%filefmt == 2) then !Skip the csv file's information
-                read(90, * , end = 999)
-            end if
-            if (cm%clin(cfk%FI)%filefmt == 2) then
-                read(91, *, end = 999)
-            end if
-            if (cm%clin(cfk%PR)%filefmt == 2) then
-                read(92, *, end = 999)
-            end if
-            if (cm%clin(cfk%TT)%filefmt == 2) then
-                read(93, *, end = 999)
-            end if
-            if (cm%clin(cfk%UV)%filefmt == 2) then
-                read(94, *, end = 999)
-            end if
-            if (cm%clin(cfk%P0)%filefmt == 2) then
-                read(95, *, end = 999)
-            end if
-            if (cm%clin(cfk%HU)%filefmt == 2) then
-                read(96, *, end = 999)
-            end if
+!            if (cm%clin(cfk%FB)%filefmt == 2) then !Skip the csv file's information
+!                read(90, * , end = 999)
+!            end if
+!            if (cm%clin(cfk%FI)%filefmt == 2) then
+!                read(91, *, end = 999)
+!            end if
+!            if (cm%clin(cfk%PR)%filefmt == 2) then
+!                read(92, *, end = 999)
+!            end if
+!            if (cm%clin(cfk%TT)%filefmt == 2) then
+!                read(93, *, end = 999)
+!            end if
+!            if (cm%clin(cfk%UV)%filefmt == 2) then
+!                read(94, *, end = 999)
+!            end if
+!            if (cm%clin(cfk%P0)%filefmt == 2) then
+!                read(95, *, end = 999)
+!            end if
+!            if (cm%clin(cfk%HU)%filefmt == 2) then
+!                read(96, *, end = 999)
+!            end if
 
         end do !i = 1, nrs
 
