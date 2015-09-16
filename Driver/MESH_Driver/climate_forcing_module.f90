@@ -4,18 +4,10 @@
 !>**********************************************************************
 module climate_forcing
 
-!    use sa_mesh_shared_variabletypes
-!    use sa_mesh_shared_variables
     use climate_forcing_variabletypes
     use climate_forcing_variables
 
     implicit none
-
-        !>******************************************************************************
-
-    !> These variables are used to keep track of the number of forcing files
-    !> that are in different formats
-!    integer NUM_CSV, NUM_R2C, NUM_SEQ
 
     !* YEAR_START_CLIM: Year at the start of the simulation.
     !* JDAY_START_CLIM: Julian day at the start of the simulation.
@@ -39,55 +31,6 @@ module climate_forcing
     real TRATIO
 
     contains
-
-    !> -----------------------------------------------------------------
-    !> Description: Initialization of clim_info
-    !> -----------------------------------------------------------------
-!    subroutine Init_clim_info(bi, ts, indx, cm)
-
-!        use climate_forcing_config, only: open_config
-
-        !> Input variables.
-!        type(basin_info), intent(in) :: bi
-!        type(dates_model), intent(in) :: ts
-!        integer, intent(in) :: indx
-
-        !> Input/Output variables.
-!        type(clim_info) :: cm
-
-        !> Local variables.
-!        integer nts, rts, timeStepClimF
-
-        !> Allocate alpha for series.
-!        allocate(cm%clin(indx)%alpha(cm%clin(indx)%nSeries))
-!        cm%clin(indx)%alpha = 1.0 / cm%clin(indx)%nSeries
-
-        !> Allocate gridded series.
-!        allocate(cm%clin(indx)%climvGrd(bi%NA))
-
-        !> Determine the number of time-steps in the run.
-!todo: This doesn't work if run start and stop days are set to zeros;
-!todo: The above should be reflected in module_dates where nr_days is determined;
-!        timeStepClimF = ts%nr_days*24*(60/TIME_STEP_MINS)/real(cm%clin(indx)%hf)*TIME_STEP_MINS
-
-        !> Determine the number of time-steps to read from file.
-!        if (timeStepClimF <= cm%clin(indx)%timeSize) then
-!            allocate(cm%clin(indx)%ntimes(1))
-!            cm%clin(indx)%ntimes(1) = timeStepClimF
-!        else
-!            nts = timeStepClimF/cm%clin(indx)%timeSize
-!            rts = timeStepClimF - cm%clin(indx)%timeSize*nts
-!            if (rts == 0) then
-!                allocate(cm%clin(indx)%ntimes(nts))
-!                cm%clin(indx)%ntimes = cm%clin(indx)%timeSize
-!            else
-!                allocate(cm%clin(indx)%ntimes(nts + 1))
-!                cm%clin(indx)%ntimes = cm%clin(indx)%timeSize
-!                cm%clin(indx)%ntimes(nts + 1) = rts
-!            end if
-!        end if
-
-!    end subroutine Init_clim_info
 
     !> *****************************************************************
     !> Open the MESH_input_forcing.bin file
@@ -117,38 +60,8 @@ module climate_forcing
 
         integer ilg
 
-        !> Reset the number of forcing variables not in the forcing binary file.
-!        NUM_R2C = 0
-!        NUM_CSV = 0
-!        NUM_SEQ = 0
-
-        !todo - if we have time (or later), change the binary forcing files to
-        !       one for each forcing variable
-        !> Only open if there are not enough separate forcing files
-!        if (cm%clin(cfk%FB)%filefmt == 0   .or. &
-!            cm%clin(cfk%FI)%filefmt == 0  .or. &
-!            cm%clin(cfk%PR)%filefmt == 0  .or. &
-!            cm%clin(cfk%TT)%filefmt == 0   .or. &
-!            cm%clin(cfk%UV)%filefmt == 0   .or. &
-!            cm%clin(cfk%P0)%filefmt == 0 .or. &
-!            cm%clin(cfk%HU)%filefmt == 0) then
-!            open(51, file = 'MESH_input_forcing.bin', status = 'old', form = 'unformatted', action = 'read')
-!        end if
-
-        !> Open the rest of the forcing files.
-!        do i = 1, size(cm%clin)
-            call READ_CHECK_FORCING_FILES(bi, ts, cm)
-
-            !> Update the file format counters for the legacy binary format.
-!            select case (cm%clin(i)%filefmt)
-!                case (1, 4)
-!                    NUM_R2C = NUM_R2C + 1
-!                case (2)
-!                    NUM_CSV = NUM_CSV + 1
-!                case (3, 5)
-!                    NUM_SEQ = NUM_SEQ + 1
-!            end select
-!        end do
+        !> Initialize the climate variable.
+        call READ_CHECK_FORCING_FILES(bi, ts, cm)
 
         !> Open the forcing files.
         do i = 1, size(cm%clin)
@@ -225,23 +138,7 @@ module climate_forcing
         !> of the bin file
         if (ro%VERBOSEMODE > 0) print *, 'Skipping', nrs, 'Registers in bin file'
 
-        !> skip the values in the forcing files
-!        toskip = 7 - NUM_R2C - NUM_CSV - NUM_SEQ
-
         do i = 1, nrs
-
-            !> Legacy BIN-format.
-!            if (cm%clin(cfk%FB)%filefmt == 0   .or. &
-!                cm%clin(cfk%FI)%filefmt == 0  .or. &
-!                cm%clin(cfk%PR)%filefmt == 0  .or. &
-!                cm%clin(cfk%TT)%filefmt == 0   .or. &
-!                cm%clin(cfk%UV)%filefmt == 0   .or. &
-!                cm%clin(cfk%P0)%filefmt == 0 .or. &
-!                cm%clin(cfk%HU)%filefmt == 0) then
-!                do j = 1, toskip
-!                    read(51, end = 999) !Skip the bin's information
-!                end do
-!            end if
 
             !> R2C-format (ASCII).
             if (cm%clin(cfk%FB)%filefmt == 1) then !Skip the r2c file's information
@@ -505,48 +402,6 @@ module climate_forcing
         end if !(firststep) then
 
     end subroutine !climate_module_loaddata
-
-    !> -----------------------------------------------------------------
-    !> Description: Initialization of climate data
-    !>
-    !> -----------------------------------------------------------------
-!    subroutine Init_clim_data(indx, flunit, cm)
-
-        !> Input variables.
-!        integer, intent(in) :: indx, flunit
-
-        !> Input/Output variables.
-!        type(clim_info) :: cm
-
-        !> Set the unit number.
-!        cm%clin(indx)%unitR = flunit
-
-        !> Allocate the name variable.
-!        if (.not. allocated(cm%clin(indx)%name)) allocate(cm%clin(indx)%name(1))
-
-        !> Set the file name.
-!        if (indx == cfk%FB) then
-!            cm%clin(indx)%name(1) = 'basin_shortwave'
-!        elseif (indx == cfk%FI) then
-!            cm%clin(indx)%name(1) = 'basin_longwave'
-!        elseif (indx == cfk%PR) then
-!            cm%clin(indx)%name(1) = 'basin_rain'
-!        elseif (indx == 8) then
-!            cm%clin(indx)%name(1) = 'basin_rain_2'
-!        elseif (indx == cfk%TT) then
-!            cm%clin(indx)%name(1) = 'basin_temperature'
-!        elseif (indx == cfk%UV) then
-!            cm%clin(indx)%name(1) = 'basin_wind'
-!        elseif (indx == cfk%P0) then
-!            cm%clin(indx)%name(1) = 'basin_pres'
-!        elseif (indx == cfk%HU) then
-!            cm%clin(indx)%name(1) = 'basin_humidity'
-!        end if
-
-        !> Call the subroutine to open the data.
-!        call OpenData(indx, cm)
-
-!    end subroutine !Init_clim_data
 
     subroutine climate_module_interpolatedata(bi, &
 !todo: These variables can be stored elsewhere instead of passed.

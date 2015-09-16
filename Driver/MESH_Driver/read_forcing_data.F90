@@ -120,13 +120,14 @@ module climate_forcing_data
     !> -----------------------------------------------------------------
     !> Description: Load block of data
     !> -----------------------------------------------------------------
-    subroutine LoadData(bi, indx, cm, ENDDATA)
+    subroutine LoadData(bi, indx, cm, ENDDATA, skipdata)
 
         use sa_mesh_shared_variabletypes
 
         !> Input variables.
         type(basin_info) :: bi
         integer indx
+        logical, optional :: skipdata
 
         !> Input/Output variables.
         type(clim_info) :: cm
@@ -138,6 +139,11 @@ module climate_forcing_data
         integer NTIME
         integer t, s, i, j, k, ii, jj
         real INR2C(bi%YCOUNT, bi%XCOUNT), INGRU(bi%NTYPE), INGRD(bi%NA)
+        logical :: storedata = .true.
+
+        !> If skipdata is present and .true., the routine won't store
+        !> the data.
+        if (present(skipdata)) storedata = skipdata
 
         select case (cm%clin(indx)%filefmt)
 
@@ -147,12 +153,18 @@ module climate_forcing_data
                     do s = 1, size(cm%clin(indx)%climv, 2)
                         read(cm%clin(indx)%unitR, *, end = 999) !:Frame line
                         do ii = 1, bi%YCOUNT
-                            read(cm%clin(indx)%unitR, *, end = 999) (INR2C(ii, jj), jj = 1, bi%XCOUNT)
+                            if (storedata) then
+                                read(cm%clin(indx)%unitR, *, end = 999) (INR2C(ii, jj), jj = 1, bi%XCOUNT)
+                            else
+                                read(cm%clin(indx)%unitR, *, end = 999)
+                            end if
                         end do
                         read(cm%clin(indx)%unitR, *, end = 999) !:EndFrame line
-                        do k = 1, bi%NML
-                            cm%clin(indx)%climv(k, s, t) = INR2C(bi%YYY(bi%ILMOS(k)), bi%XXX(bi%ILMOS(k)))
-                        end do
+                        if (storedata) then
+                            do k = 1, bi%NML
+                                cm%clin(indx)%climv(k, s, t) = INR2C(bi%YYY(bi%ILMOS(k)), bi%XXX(bi%ILMOS(k)))
+                            end do
+                        end if
                     end do
                 end do
 
@@ -160,10 +172,14 @@ module climate_forcing_data
             case (2)
                 do t = 1, size(cm%clin(indx)%climv, 3)
                     do s = 1, size(cm%clin(indx)%climv, 2)
-                        read(cm%clin(indx)%unitR, *, end = 999) (INGRU(j), j = 1, bi%NTYPE)
-                        do k = 1, bi%NML
-                            cm%clin(indx)%climv(k, s, t) = INGRU(bi%JLMOS(k))
-                        end do
+                        if (storedata) then
+                            read(cm%clin(indx)%unitR, *, end = 999) (INGRU(j), j = 1, bi%NTYPE)
+                            do k = 1, bi%NML
+                                cm%clin(indx)%climv(k, s, t) = INGRU(bi%JLMOS(k))
+                            end do
+                        else
+                            read(cm%clin(indx)%unitR, *, end = 999)
+                        end if
                     end do
                 end do
 
@@ -171,11 +187,16 @@ module climate_forcing_data
             case (3)
                 do t = 1, size(cm%clin(indx)%climv, 3)
                     do s = 1, size(cm%clin(indx)%climv, 2)
-                        read(cm%clin(indx)%unitR) NTIME
-                        read(cm%clin(indx)%unitR, end = 999) (INGRD(i), i = 1, bi%NA)
-                        do k = 1, bi%NML
-                            cm%clin(indx)%climv(k, s, t) = INGRD(bi%ILMOS(k))
-                        end do
+                        if (storedata) then
+                            read(cm%clin(indx)%unitR, end = 999) NTIME
+                            read(cm%clin(indx)%unitR, end = 999) (INGRD(i), i = 1, bi%NA)
+                            do k = 1, bi%NML
+                                cm%clin(indx)%climv(k, s, t) = INGRD(bi%ILMOS(k))
+                            end do
+                        else
+                            read(cm%clin(indx)%unitR, end = 999)
+                            read(cm%clin(indx)%unitR, end = 999)
+                        end if
                     end do
                 end do
 
