@@ -33,8 +33,10 @@ subroutine read_init_prog_variables_class( CMAIROW  , QACROW  , TACROW   , &
 !>***************************************************************************************
 
     use MESH_INPUT_MODULE
+    use model_files_variabletypes
+    use model_files_variables
     use flags
-    use model_files
+!    use model_files
 
     implicit none
 
@@ -54,26 +56,26 @@ subroutine read_init_prog_variables_class( CMAIROW  , QACROW  , TACROW   , &
     integer IOS, unitfl
 
 !--------------Main Subtrouine start-----------------------------------------------
-    if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(9)%isInit)) then
-        open(unit   = fls%fl(9)%unit                , &
-             file   = trim(adjustl(fls%fl(9)%name)) , &
-             status = 'old'                   , &
-             form   = 'unformatted'           , &
-             action = 'read'                  , &
-             access = 'sequential'            , &
-             iostat = IOS                     )
-        unitfl = fls%fl(9)%unit
-    else
-        open(unit   = 883                     , &
-             file   = 'int_statVariables.seq' , &
-             status = 'old'                   , &
-             form   = 'unformatted'           , &
-             action = 'read'                  , &
-             access = 'sequential'            , &
-             iostat = IOS                     )
-
-        unitfl = 883
-    end if
+    unitfl = fls%fl(mfk%f883)%iun
+!    if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(9)%isInit)) then
+    open(unit   = unitfl                             , &
+         file   = trim(adjustl(fls%fl(mfk%f883)%fn)) , &
+         status = 'old'                              , &
+         form   = 'unformatted'                      , &
+         action = 'read'                             , &
+         access = 'sequential'                       , &
+         iostat = IOS                                )
+!        unitfl = fls%fl(9)%unit
+!    else
+!        open(unit   = 883                     , &
+!             file   = 'int_statVariables.seq' , &
+!             status = 'old'                   , &
+!             form   = 'unformatted'           , &
+!             action = 'read'                  , &
+!             access = 'sequential'            , &
+!             iostat = IOS                     )
+!        unitfl = 883
+!    end if
 
     read(unitfl) cp%albsrow   !1
     read(unitfl) cmairow      !2

@@ -10,11 +10,13 @@
       use sa_mesh_shared_variables
       USE MESH_INPUT_MODULE
       USE strings
+      use model_files_variabletypes
+      use model_files_variables
       use module_mpi_flags
       USE FLAGS
       USE climate_forcing
       USE model_dates
-      use model_files
+      use SIMSTATS_config, only: mtsflg
 
       IMPLICIT NONE
 
@@ -44,7 +46,7 @@
       type(fl_ids)              :: fls
 
 !> The following variables are all local to this subroutine
-      INTEGER :: J,I
+      INTEGER :: J,I,iun
 !      INTEGER :: START_DATE(4),END_DATE(4)
 
 !>=======================================================================
@@ -175,7 +177,7 @@
       SOILINIFLAG = 0
 
 !> PRE-EMPTIONFLAG FLAG - DEFAULT = NO PRE-EMPTION
-      PREEMPTIONFLAG = 0
+!      PREEMPTIONFLAG = 0
 
 !> If OBJFNFLAG is 0 {DEFAULT} = SAE - SUM OF ABSOLUTE VALUE OF ERRORS
 !> If OBJFNFLAG is 1, SAESRT - SUM OF ABSOLUTE VALUE OF ERRORS AFTER SORTING
@@ -185,7 +187,7 @@
       OBJFNFLAG = 0
 
 !> AUTOCALIBRATION FLAG - DEFAULT = NO AUTOCALIBRATION
-      AUTOCALIBRATIONFLAG = 0
+!      AUTOCALIBRATIONFLAG = 0
       WINDOWSIZEFLAG = 1
       WINDOWSPACINGFLAG = 1
 
@@ -318,13 +320,16 @@
 !> Open and read in values from MESH_input_run_options.ini file
 !> *********************************************************************
 
-      if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(1)%isInit)) then
-        open(fls%fl(1)%unit, file=trim(adjustl(fls%fl(1)%name)),
-     1  STATUS="OLD", IOSTAT=IOS) 
-      else
-        OPEN (53, FILE="MESH_input_run_options.ini", STATUS="OLD",
-     1  IOSTAT=IOS)
-      end if
+!      if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(1)%isInit)) then
+      iun = fls%fl(mfk%f53)%iun
+      open( iun,
+     +      file=trim(adjustl(fls%fl(mfk%f53)%fn)),
+     +      action='read',
+     +      status='old', iostat=ios)
+!      else
+!        OPEN (53, FILE="MESH_input_run_options.ini", STATUS="OLD",
+!     1  IOSTAT=IOS)
+!      end if
       IF (IOS .NE. 0) THEN !CHECK FILE FOR IOSTAT ERRORS
         WRITE (6, *)
         WRITE (6, *)
@@ -332,16 +337,16 @@
      1      "could not be opened.  Ensure that the file exists and ",
      2      "restart the program."
         STOP
-      ELSE
+      ELSEIF (ro%VERBOSEMODE > 0) THEN
         WRITE (6, '(A)', ADVANCE="NO"),
      +   "READING: MESH_input_run_options.ini"
       END IF
 
       DO I=1,3
-        READ(53,*)
+        READ(iun,*)
       ENDDO
 
-      READ(53,"(I5)") CONFLAGS
+      READ(iun,"(I5)") CONFLAGS
 
       !> Read and parse the control flags.
       IF (CONFLAGS > 0) THEN
@@ -351,7 +356,7 @@
         DO I=1,CONFLAGS
 
           !> Read and parse the entire line.
-          READ(53,'(A)') in_line
+          READ(iun,'(A)') in_line
           CALL parse(in_line, delim, out_args, nargs)
           IF (.NOT. nargs > 0) THEN
             PRINT 9358, I
@@ -570,7 +575,7 @@
             CASE ('STREAMFLOWFLAG')
               CALL value(out_args(2), STREAMFLOWFLAG, IOS)
             CASE ('PREEMPTIONFLAG')
-              CALL value(out_args(2), PREEMPTIONFLAG, IOS)
+              CALL value(out_args(2), mtsflg%PREEMPTIONFLAG, IOS)
             CASE ('INTERPOLATIONFLAG')
               CALL value(out_args(2), INTERPOLATIONFLAG, IOS)
             CASE ('SUBBASINFLAG')
@@ -580,7 +585,7 @@
             CASE ('OBJFNFLAG')
               CALL value(out_args(2), OBJFNFLAG, IOS)
             CASE ('AUTOCALIBRATIONFLAG')
-              CALL value(out_args(2), AUTOCALIBRATIONFLAG, IOS)
+              CALL value(out_args(2), mtsflg%AUTOCALIBRATIONFLAG, IOS)
             CASE ('WINDOWSIZEFLAG')
               CALL value(out_args(2), WINDOWSIZEFLAG, IOS)
             CASE ('WINDOWSPACINGFLAG')
@@ -659,10 +664,10 @@
      +  /1X 'Flag #' I5 ': ' (A))
 
       DO I=1,2
-        READ(53,*)
+        READ(iun,*)
       ENDDO
 
-      READ (53, "(I5)") WF_NUM_POINTS !> READ GRID OUTPUT POINTS
+      READ (iun, "(I5)") WF_NUM_POINTS !> READ GRID OUTPUT POINTS
 !todo prompt the user, asking them if they want to continue.
       IF (WF_NUM_POINTS .GT. 10) THEN
         WRITE (6, *) "WARNING: The number of grid output points is ",
@@ -671,7 +676,7 @@
       END IF
 
 
-      READ (53, *) !BLANK LINES: FIELD HEADER
+      READ (iun, *) !BLANK LINES: FIELD HEADER
 
 !> DIMENSION GRID OUTPUT POINT VARIABLES
       IF (WF_NUM_POINTS .GT. 0) THEN
@@ -684,16 +689,16 @@
      1          "variables.  Check that these bounds are within an ",
      1          "acceptable range."
             WRITE (6, *) "Bound 1 (grid output points): ", WF_NUM_POINTS
-            CLOSE (53)
+            CLOSE (iun)
             STOP
         END IF
-        READ (53, "(5I10)") (op%N_OUT(I), I=1, WF_NUM_POINTS)
-        READ (53, "(5I10)") (op%II_OUT(I), I=1, WF_NUM_POINTS)
-        READ (53, "(5A10)") (op%DIR_OUT(I), I=1, WF_NUM_POINTS)
+        READ (iun, "(5I10)") (op%N_OUT(I), I=1, WF_NUM_POINTS)
+        READ (iun, "(5I10)") (op%II_OUT(I), I=1, WF_NUM_POINTS)
+        READ (iun, "(5A10)") (op%DIR_OUT(I), I=1, WF_NUM_POINTS)
       ELSE !FOR GENERAL PURPOSES
-        READ(53,*)
-        READ(53,*)
-        READ(53,*)
+        READ(iun,*)
+        READ(iun,*)
+        READ(iun,*)
         ALLOCATE (op%DIR_OUT(1), op%N_OUT(1), op%II_OUT(1), op%K_OUT(1))
       END IF !(WF_NUM_POINTS .GT. 0)
 
@@ -732,17 +737,17 @@
       END DO
 
 	  !> This is the directory to output the mesh_output* files and the basin_swe/sca files
-      READ(53,*)
-      READ(53,*)
-      READ(53,'(A10)') GENDIR_OUT
+      READ(iun,*)
+      READ(iun,*)
+      READ(iun,'(A10)') GENDIR_OUT
 
 !todo describe these !P comments better. For now, they mean nothing.
 !P
       !This section is used to start part way through the bin file
-      READ(53,*) !P
-      READ(53,*) !P
-      READ(53, '(4I4)') YEAR_START, JDAY_START, HOUR_START, MINS_START
-      READ(53, '(4I4)') YEAR_STOP, JDAY_STOP, HOUR_STOP, MINS_STOP
+      READ(iun,*) !P
+      READ(iun,*) !P
+      READ(iun, '(4I4)') YEAR_START, JDAY_START, HOUR_START, MINS_START
+      READ(iun, '(4I4)') YEAR_STOP, JDAY_STOP, HOUR_STOP, MINS_STOP
 
 !> Initialization of model  dates
 !        start_date(1) = IYEAR_START
@@ -757,7 +762,7 @@
 
       CALL GET_DATES(ts)
 
-      CLOSE(UNIT=53)
+      CLOSE(iun)
       WRITE (6, FMT=*) " READ: SUCCESSFUL, FILE: CLOSED"
 
       RETURN

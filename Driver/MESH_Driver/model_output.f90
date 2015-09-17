@@ -7,7 +7,8 @@ module model_output
     use sa_mesh_shared_variabletypes
     use model_dates
     use strings
-    use model_files
+    use model_files_variabletypes
+    use model_files_variables
     use flags
     
     implicit none
@@ -2754,19 +2755,21 @@ if (allocated(dates)) &
         integer ios, i, j
         integer na, nt, unitfl
 
-        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(8)%isInit)) then
+!        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(mfk%out_response)%isInit)) then
+        if (len_trim(adjustl(fls%fl(mfk%out_response)%fn)) > 0) then
             flOut = trim(adjustl(fls%pthOut)) // &
                     trim(adjustl(info%var_out(indx)%name)) // &
                     '_' // trim(adjustl(freq)) // '_' // &
-                    trim(adjustl(fls%fl(8)%name)) // '.ts'
-            unitfl = fls%fl(8)%unit
+                    trim(adjustl(fls%fl(mfk%out_response)%fn)) // '.ts'
+!            unitfl = fls%fl(mfk%out_response)%iun
         else
             flOut = trim(adjustl(info%pthOut)) // &
                     trim(adjustl(info%var_out(indx)%name)) // &
                     '_' // trim(adjustl(freq)) // '.ts'
-            unitfl = 444
+!            unitfl = 444
         end if
 
+        unitfl = fls%fl(mfk%out_response)%iun
         open(unit = unitfl               , &
              file = trim(adjustl(flOut)) , &
              status = 'replace'          , &

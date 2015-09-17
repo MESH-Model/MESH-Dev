@@ -35,13 +35,14 @@
      +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
       use sa_mesh_shared_variabletypes
+      use model_files_variabletypes
       USE MESH_INPUT_MODULE
       USE FLAGS
       USE AREA_WATFLOOD
 
       USE climate_forcing
       USE model_dates
-      USE model_files
+!      USE model_files
 
       IMPLICIT NONE
       

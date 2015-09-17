@@ -1,161 +1,166 @@
-!     
-! File:   module_files.f90
-! Author: gonzalo
-!
-! Created on November 17, 2014, 4:12 PM
-!
-
-MODULE model_files
-!>******************************************************************************
-!>  Author: Gonzalo Sapriza Azuri
-!>  Description: handled input and output files in mesh if needed
-!>  Only the parameter files :
-
-!
-!    fls(1) -> MESH_input_run_options.ini
-!    fls(2) -> MESH_parameters_CLASS.ini
-!    fls(3) -> MESH_parameters_hydrology.ini
-!    fls(4) -> Basin_average_water_balance.csv
-!    fls(5) -> Metrics_Out.txt
-!>    If flag VARIABLEFILESFLAG is activated    
-!>******************************************************************************
+!> *********************************************************************
+!> Author: Gonzalo Sapriza Azuri
+!> Description: handled input and output files in mesh if needed
+!>
+!> Created on November 17, 2014, 4:12 PM
+!> *********************************************************************
+module model_files
 
     implicit none
 
-    type file
-        character*250 name
-        logical isInit
-        integer unit
-    end type
-
-    type fl_ids
-        character*500 pthIn     !Input absolute path for the param files
-        character*500 pthOut    !Output absolute path for the output files
-        type(file), dimension(:), allocatable :: fl
-    end type
-
     contains
 
+    !> *****************************************************************
+    !> Description: Initialize fl_ids type reading information from fld
+    !> file that is readed when VARIABLEFILEFLAG is activated (=1)
+    !> *****************************************************************
     subroutine Init_fls(flg, fld)
-    !>**************************************************************************
-    !> Description: Initialize fl_ids type reading information from fld file    
-    !> that is readed when VARIABLEFILEFLAG is activated (=1)
-    !>**************************************************************************        
 
-        !Input
-        character(len=*), intent(in) :: fld !Name file that contains files names
+        use model_files_variabletypes
+        use model_files_variables
+        use SIMSTATS_config, only: mtsfl, mtsk, init_metricsout_files
 
-        !Input-Output
+        !> Input variables.
+        !* fld: Name of the file that contains file information.
+        character(len=*), intent(in), optional :: fld
+
+        !> Input-Output variables.
+        !* flg: Object stores file information.
         type(fl_ids), intent(inout) :: flg
 
-        !Internal
+        !> Local variables.
         integer ios, i
+        logical exists
         character*500 str1, str2, phtfl
 
-        !> 1- Read file fld
-        open(unit   = 271                , &
-             file   = trim(adjustl(fld)) , &
-             status = 'old'              , &
-             iostat = IOS                )
-
-        print *, trim(adjustl(fld))
+        !> Allocate the array that stores file information.
         allocate(flg%fl(10))
 
-        do i = 1, 10
+        !> Default file names and attributes.
+        flg%fl(mfk%f53)%fn = 'MESH_input_run_options.ini'
+        flg%fl(mfk%f53)%iun = 53
 
-            flg%fl(i)%name   = 'sapo'
-            flg%fl(i)%isInit = .false.
-            flg%fl(i)%unit   = 0
+        flg%fl(mfk%f50)%fn = 'MESH_parameters_CLASS.ini'
+        flg%fl(mfk%f50)%iun = 50
 
-        end do
+        flg%fl(mfk%f23)%fn = 'MESH_parameters_hydrology.ini'
+        flg%fl(mfk%f23)%iun = 23
 
-        do while (IOS == 0)
+        flg%fl(mfk%f52)%fn = 'MESH_input_soil_levels.txt'
+        flg%fl(mfk%f52)%iun = 52
 
-            read(271, *, iostat = IOS) str1, str2
+        flg%fl(mfk%f18)%fn = 'MESH_ggeo.ini'
+        flg%fl(mfk%f18)%iun = 18
 
-            if (trim(adjustl(str1)) == 'pthIn') then
+        flg%fl(mfk%f900)%fn = 'Basin_average_water_balance.csv'
+        flg%fl(mfk%f900)%iun = 900
 
-                flg%pthIn = trim(adjustl(str2))
+        flg%fl(mfk%f70)%fn = 'MESH_output_streamflow.csv'
+        flg%fl(mfk%f70)%iun = 70
 
-            else if (trim(adjustl(str1)) == 'pthOut') then
+        flg%fl(mfk%out_response)%fn = ''
+        flg%fl(mfk%out_response)%iun = 444
 
-                flg%pthOut = trim(adjustl(str2))
+        flg%fl(mfk%f883)%fn = 'int_statVariables.seq'
+        flg%fl(mfk%f883)%iun = 883
 
-            else if (trim(adjustl(str1)) == 'class') then
+        !> Check if the array to keep file information for the metrics
+        !> is allocated.
+        if (.not. allocated(mtsfl%fl)) call init_metricsout_files()
 
-                phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
-                flg%fl(2)%name = phtfl
-                flg%fl(2)%isInit = .true.
-                flg%fl(2)%unit = 50
+        !> For files used by SIMSTATS
+        mtsfl%fl(mtsk%fo   )%fn = 'function_out.txt'
+        mtsfl%fl(mtsk%MC   )%fn = 'MonteCarlo.txt'
+        mtsfl%fl(mtsk%NSE  )%fn = 'NS.txt'
+        mtsfl%fl(mtsk%NSW  )%fn = 'NSW.txt'
+        mtsfl%fl(mtsk%RMSE )%fn = 'drms.txt'
+        mtsfl%fl(mtsk%ABSE )%fn = 'abserr.txt'
+        mtsfl%fl(mtsk%out  )%fn = 'Metrics_Out.txt'
+        mtsfl%fl(mtsk%PE   )%fn = 'pre_emption_value.txt'
 
-            else if (trim(adjustl(str1)) == 'hydro') then
+        !> Replace default file information with values from file.
+        if (present(fld)) then
 
-                phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
-                flg%fl(3)%name = phtfl
-                flg%fl(3)%isInit = .true.
-                flg%fl(3)%unit = 23
+            !> Open the file containing file information.
+            open(unit   = 271                , &
+                 file   = trim(adjustl(fld)) , &
+                 status = 'old'              , &
+                 iostat = IOS                )
+            print *, trim(adjustl(fld))
 
-            else if (trim(adjustl(str1)) == 'run_option') then
+            !> Read the information from file.
+            do while (ios == 0)
 
-                phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
-                flg%fl(1)%name = phtfl
-                flg%fl(1)%isInit = .true.
-                flg%fl(1)%unit = 53
+                !> Read line from file.
+                read(271, *, iostat = IOS) str1, str2
 
-            else if (trim(adjustl(str1)) == 'metrics_out') then
+                !> Assign the file attributes by key.
 
-                phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
-                flg%fl(5)%name = phtfl
-                flg%fl(5)%isInit = .true.
-                flg%fl(5)%unit = 100
+                !> Path to input files.
+                if (trim(adjustl(str1)) == 'pthIn') then
+                    flg%pthIn = trim(adjustl(str2))
 
-            else if (trim(adjustl(str1)) == 'basin_wb') then
+                !> Path to output files.
+                else if (trim(adjustl(str1)) == 'pthOut') then
+                    flg%pthOut = trim(adjustl(str2))
 
-                phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
-                flg%fl(4)%name = phtfl
-                flg%fl(4)%isInit = .true.
-                flg%fl(4)%unit = 900
+                !> CLASS.ini file.
+                else if (trim(adjustl(str1)) == 'class') then
+                    phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
+                    flg%fl(mfk%f50)%fn = phtfl
+!                    flg%fl(mfk%f50)%isInit = .true.
 
-            else if (trim(adjustl(str1)) == 'stream_flow') then
+                else if (trim(adjustl(str1)) == 'hydro') then
+                    phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
+                    flg%fl(mfk%f23)%fn = phtfl
+!                    flg%fl(mfk%f23)%isInit = .true.
 
-                phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
-                flg%fl(6)%name = phtfl
-                flg%fl(6)%isInit = .true.
-                flg%fl(6)%unit = 70
+                else if (trim(adjustl(str1)) == 'run_option') then
+                    phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
+                    flg%fl(mfk%f53)%fn = phtfl
+!                    flg%fl(mfk%f53)%isInit = .true.
 
-            else if (trim(adjustl(str1)) == 'ggeo_flux') then
+                else if (trim(adjustl(str1)) == 'metrics_out') then
+                    phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
+                    mtsfl%fl(mtsk%out)%fn = 'Metrics_Out.txt'
+!                    metricsout_file%fn = phtfl
+!                    metricsout_file%isInit = .true.
 
-                phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
-                flg%fl(7)%name = phtfl
-                flg%fl(7)%isInit = .true.
-                flg%fl(7)%unit = 18
+                else if (trim(adjustl(str1)) == 'basin_wb') then
+                    phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
+                    flg%fl(mfk%f900)%fn = phtfl
+!                    flg%fl(mfk%f900)%isInit = .true.
 
-            else if (trim(adjustl(str1)) == 'out_response') then
+                else if (trim(adjustl(str1)) == 'stream_flow') then
+                    phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
+                    flg%fl(mfk%f70)%fn = phtfl
+!                    flg%fl(mfk%f70)%isInit = .true.
 
-                phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
-                flg%fl(8)%name = str2
-                flg%fl(8)%isInit = .true.
-                flg%fl(8)%unit = 556
+                else if (trim(adjustl(str1)) == 'ggeo_flux') then
+                    phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
+                    flg%fl(mfk%f18)%fn = phtfl
+!                    flg%fl(mfk%f18)%isInit = .true.
 
-            else if (trim(adjustl(str1)) == 'int_statVariables') then
+                else if (trim(adjustl(str1)) == 'out_response') then
+                    phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
+                    flg%fl(mfk%out_response)%fn = str2
+!                    flg%fl(mfk%out_response)%isInit = .true.
 
-                phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
-                flg%fl(9)%name = phtfl
-                flg%fl(9)%isInit = .true.
-                flg%fl(9)%unit = 660
+                else if (trim(adjustl(str1)) == 'int_statVariables') then
+                    phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
+                    flg%fl(mfk%f883)%fn = phtfl
+!                    flg%fl(mfk%f883)%isInit = .true.
 
-            else if (trim(adjustl(str1)) == 'soil_levels') then
+                else if (trim(adjustl(str1)) == 'soil_levels') then
+                    phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
+                    flg%fl(mfk%f52)%fn = phtfl
+!                    flg%fl(mfk%f52)%isInit = .true.
 
-                phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
-                flg%fl(10)%name = phtfl
-                flg%fl(10)%isInit = .true.
-                flg%fl(10)%unit = 52
+                end if
+            end do
+            close(271)
+        end if
 
-            end if
-        end do
+    end subroutine
 
-        close(271)
-
-    end subroutine Init_fls
-
-END MODULE model_files
+end module

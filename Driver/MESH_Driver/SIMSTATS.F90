@@ -4,7 +4,9 @@ module simstats
 !>    
 !>******************************************************************************    
 
+    use SIMSTATS_config
 use mesh_input_module
+!use module_files_variablestypes
 use flags
 use model_files
 use model_dates
@@ -39,7 +41,6 @@ public stats_init, stats_update_daily, stats_write, &
 !* QSIM  :  SIMULATED DAILY STREAM FLOW
 
 integer :: ncal, j
-logical :: exists
 real :: fbest, ftest
 real, dimension(:, :), allocatable :: qobs, qsim
 
@@ -201,160 +202,207 @@ subroutine calc_stats(obs, sim, n, bias, nsd, lnsd, nsw, tpd)
 
 end subroutine
 
-subroutine stats_init(ts, ns)
-!>******************************************************************************
-!> Description:     
-!>    
-!>******************************************************************************    
+    !> *****************************************************************
+    !> Description:
+    !>
+    !> *****************************************************************
+    subroutine stats_init(ts, ns)
 
-    !* nyears: Number of simulation years
-    !* ns: Number of streamflow gauges
-    integer          , intent(in) :: ns
-    type(dates_model), intent(in) :: ts
+        !> Input variables.
+        !* nyears: Number of simulation years
+        !* ns: Number of streamflow gauges
+        integer          , intent(in) :: ns
+        type(dates_model), intent(in) :: ts
 
-    if (autocalibrationflag == 0) return
+        !> Local variables.
+        logical exists
+        integer iun, ios
 
-    !+todo replace unit number with variable
-    write(6, *) "================================================="
-    write(6, *)
-    write(6, *) "     SA_MESH IS RUNNING IN AUTOCALIBRATION MODE"
+!todo: move this outside, to the call of the subroutine
+!        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
-    !+todo separate out pre-emption
-    if (preemptionflag >= 1) write(6, *) "                USING PRE-EMPTION"
+        !+todo replace unit number with variable
+        write(6, *) "================================================="
+        write(6, *)
+        write(6, *) "     SA_MESH IS RUNNING IN AUTOCALIBRATION MODE"
 
-    write(6, *)
-    write(6, *) "================================================="
-    write(6, *)
+        !+todo separate out pre-emption
+        if (mtsflg%PREEMPTIONFLAG >= 1) write(6, *) "                USING PRE-EMPTION"
 
-    !+todo split into stats_read()
-    if (preemptionflag >= 1) then
-        inquire(file="pre_emption_value.txt", exist = exists)
-        if (exists) then
-            open(100, file="pre_emption_value.txt")
-            read(100, *) fbest
-            close(100)
-        else
-            fbest = +1.0e+10
+        write(6, *)
+        write(6, *) "================================================="
+        write(6, *)
+
+        !+todo split into stats_read()
+        if (mtsflg%PREEMPTIONFLAG >= 1) then
+            inquire(file = trim(adjustl(mtsfl%fl(mtsk%PE)%fn)), exist = exists)
+            if (exists) then
+                iun = mtsfl%fl(mtsk%PE)%iun
+                open(iun, &
+                     file = trim(adjustl(mtsfl%fl(mtsk%PE)%fn)), &
+                     action = 'read', &
+                     status = 'old', iostat = ios)
+                read(iun, *) fbest
+                close(iun)
+            else
+                fbest = +1.0e+10
+            end if
         end if
-    end if
 
-    ncal = 0
+        ncal = 0
 
-    allocate(qobs(ts%nr_days, ns), qsim(ts%nr_days, ns))
-    allocate(bias(ns), nsd(ns), lnsd(ns), nsw(ns), tpd(ns), tpw(ns))
-    
-    qobs = 0.0
-    qsim = 0.0
+        allocate(qobs(ts%nr_days, ns), qsim(ts%nr_days, ns))
+        allocate(bias(ns), nsd(ns), lnsd(ns), nsw(ns), tpd(ns), tpw(ns))
 
-end subroutine
+        qobs = 0.0
+        qsim = 0.0
 
-subroutine stats_update_daily(qhyd_avg, qsyn_avg, ncount)
-!>******************************************************************************
-!> Description:     
-!>    
-!>******************************************************************************    
-    
-    integer, intent(in) :: ncount
-    real, dimension(:), intent(in) :: qhyd_avg, qsyn_avg
+    end subroutine
 
-    if (autocalibrationflag == 0) return
+    !> *****************************************************************
+    !> Description:
+    !>
+    !> *****************************************************************
+    subroutine stats_update_daily(qhyd_avg, qsyn_avg, ncount)
 
-    ncal = ncal + 1
-    do j = 1, size(qobs, 2)
-        qobs(ncal, :) = qhyd_avg(:)
-        qsim(ncal, :) = qsyn_avg(:) / ncount
-    end do
+        !> Input variables.
+        integer, intent(in) :: ncount
+        real, dimension(:), intent(in) :: qhyd_avg, qsyn_avg
 
-    if (objfnflag == 0) then
-        ftest = sae_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), autocalibrationflag)
-    elseif (objfnflag == 1) then
-        ftest = saesrt_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), autocalibrationflag)
-    elseif (objfnflag == 2) then
-        write(6, *) "THE SAEMSRT (OBJECTIVE FUNCTION = 2) IS NOT ", &
-            "CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE"
-    elseif (objfnflag == 3) then
-        write(6, *) "THE NSE (OBJECTIVE FUNCTION = 3) IS NOT ", &
-            "CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE" , &
-            "TRY NEGNSE (OBJECTIVE FUNCTION = 4)"
-    elseif (objfnflag == 4) then
-        ftest = nse_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), autocalibrationflag)
-        ftest = -1.0 * ftest
-    end if
-    
-end subroutine
+!todo: move this outside, to the call of the subroutine
+!        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
-subroutine stats_write(fls)
-!>******************************************************************************
-!> Description:     
-!>    
-!>******************************************************************************
-   
-    type(fl_ids)::fls
+        ncal = ncal + 1
+        do j = 1, size(qobs, 2)
+            qobs(ncal, :) = qhyd_avg(:)
+            qsim(ncal, :) = qsyn_avg(:)/ncount
+        end do
 
-    if (autocalibrationflag == 0) return
+        if (objfnflag == 0) then
+            ftest = sae_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
+        elseif (objfnflag == 1) then
+            ftest = saesrt_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
+        elseif (objfnflag == 2) then
+            write(6, *) "THE SAEMSRT (OBJECTIVE FUNCTION = 2) IS NOT ", &
+                "CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE"
+        elseif (objfnflag == 3) then
+            write(6, *) "THE NSE (OBJECTIVE FUNCTION = 3) IS NOT ", &
+                "CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE" , &
+                "TRY NEGNSE (OBJECTIVE FUNCTION = 4)"
+        elseif (objfnflag == 4) then
+            ftest = nse_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
+            ftest = -1.0 * ftest
+        end if
 
-    open(100, file="function_out.txt")
-    if (preemptionflag >= 1) &
-        ftest = ftest*nyears*366 / ncal
-    write(100, *) ftest
-    close(100)
+    end subroutine
 
-    do j = 1, size(qobs, 2)
-        call calc_stats(qobs(1:ncal, j) , &
-                        qsim(1:ncal, j) , &
-                        ncal            , &
-                        bias(j)         , &
-                        nsd(j)          , &
-                        lnsd(j)         , &
-                        nsw(j)          , &
-                        tpd(j)          )
-    end do
+    !> *****************************************************************
+    !> Description: Write the metrics of the simulation to file.
+    !> *****************************************************************
+    subroutine stats_write()
 
-    inquire(file="MonteCarlo.txt", exist=exists)
-    if (exists) then
-        open(100, file="MonteCarlo.txt", position="append", status="old")
-    else
-        open(100, file="MonteCarlo.txt", status="unknown")
-        write(100, *) "BIAS ", "NSD ", "NSW ", "TPD "
-    end if
+        !> Input variables.
+!todo: this can be removed.
+!        type(fl_ids), intent(in) :: fls
 
-    write(100, *) (bias(j), nsd(j), nsw(j), int(tpd(j)), j = 1, size(qobs, 2))
-    close(100)
+        !> Local variables.
+        logical exists
+        integer iun
 
-    !> Write Nash-Sutcliffe coefficient.
-    !todo: there's probably a better way to store a set of multiple statistics in one file.
-    open(100, file="NS.txt", status="unknown")
-    write(100, *) (nsd(j), j = 1, size(qobs, 2)), sum(nsd)/size(qobs, 2)
-    close(100)
+        !> Return if autocalibration and metrics are not enabled.
+!todo: move this outside, to the call of the subroutine
+!        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
-    !> Write weekly Nash-Sutcliffe coefficient.
-    open(100, file="NSW.txt", status="unknown")
-    write(100, *) (nsw(j), j = 1, size(qobs, 2))
-    close(100)
+        !> Check if the array to keep file information for the metrics
+        !> is allocated.
+        if (.not. allocated(mtsfl%fl)) call init_metricsout_files()
 
-    !> Write daily root mean squared error
-    st_drms = calc_drms_value(0, ncal, qobs, qsim)
-    open(100, file="drms.txt", status="unknown")
-    write(100, *) st_drms%value_gauge, st_drms%value_gauge_avg
-    close(100)
+        !> Write the output function for pre-emption.
+        if (mtsfl%fl(mtsk%fo)%init) then
+            iun = mtsfl%fl(mtsk%fo)%iun
+            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%fo)%fn)))
+            if (mtsflg%PREEMPTIONFLAG >= 1) ftest = ftest*nyears*366/ncal
+            write(iun, *) ftest
+            close(iun)
+        end if
 
-    !> Write mean absolute error
-    st_abserr = calc_abserr_value(0, ncal, qobs, qsim)
-    open(100, file="abserr.txt", status="unknown")
-    write(100, *) st_abserr%value_gauge, st_abserr%value_gauge_avg
-    close(100)
+        !> Calculate the metrics of the simulation.
 
-    if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(5)%isInit)) then
-       open(fls%fl(5)%unit, file=trim(adjustl(fls%fl(5)%name)))
-    else   
-       open(100, file='Metrics_Out.txt')
-    endif
+        do j = 1, size(qobs, 2)
+            call calc_stats(qobs(1:ncal, j) , &
+                            qsim(1:ncal, j) , &
+                            ncal            , &
+                            bias(j)         , &
+                            nsd(j)          , &
+                            lnsd(j)         , &
+                            nsw(j)          , &
+                            tpd(j)          )
+        end do
+        if (mtsfl%fl(mtsk%out)%init .or. mtsfl%fl(mtsk%RMSE)%init) st_drms = calc_drms_value(0, ncal, qobs, qsim)
+        if (mtsfl%fl(mtsk%out)%init .or. mtsfl%fl(mtsk%RMSE)%init) st_abserr = calc_abserr_value(0, ncal, qobs, qsim)
 
-    write(100, *) "MAE ", "RMSE ", "BIAS ", "NSD ", "lnNSD ", "TPD "
-    write(100, *) (st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), &
-                   nsd(j), lnsd(j), int(tpd(j)), j = 1, size(qobs, 2))
-    close(100)
+        !> Results for Monte-Carlo style analysis are appended to
+        !> results in an existing file.
+        if (mtsfl%fl(mtsk%MC)%init) then
+            inquire(file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)), exist = exists)
+            iun = mtsfl%fl(mtsk%MC)%iun
+            if (exists) then
+                open(iun, file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)), position = 'append', status = 'old')
+            else
+                open(iun, file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)))
+                write(iun, *) "BIAS ", "NSD ", "NSW ", "TPD "
+            end if
+            write(iun, *) (bias(j), nsd(j), nsw(j), int(tpd(j)), j = 1, size(qobs, 2))
+            close(iun)
+        end if
 
-end subroutine
+        !> Write Nash-Sutcliffe coefficient of daily streamflow values.
+!todo: there's probably a better way to store a set of multiple statistics in one file.
+        if (mtsfl%fl(mtsk%NSE)%init) then
+            iun = mtsfl%fl(mtsk%NSE)%iun
+            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%NSE)%fn)))
+            write(iun, *) (nsd(j), j = 1, size(qobs, 2)), sum(nsd)/size(qobs, 2)
+            close(iun)
+        end if
+
+        !> Write Nash-Sutcliffe coefficient of weekly streamflow values.
+        if (mtsfl%fl(mtsk%NSW)%init) then
+            iun = mtsfl%fl(mtsk%NSW)%iun
+            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%NSW)%fn)))
+            write(iun, *) (nsw(j), j = 1, size(qobs, 2))
+            close(iun)
+        end if
+
+        !> Write daily root mean squared error.
+        if (mtsfl%fl(mtsk%RMSE)%init) then
+            iun = mtsfl%fl(mtsk%RMSE)%iun
+            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%RMSE)%fn)))
+            write(iun, *) st_drms%value_gauge, st_drms%value_gauge_avg
+            close(iun)
+        end if
+
+        !> Write mean absolute error.
+        if (mtsfl%fl(mtsk%ABSE)%init) then
+            iun = mtsfl%fl(mtsk%ABSE)%iun
+            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%ABSE)%fn)))
+            write(iun, *) st_abserr%value_gauge, st_abserr%value_gauge_avg
+            close(iun)
+        end if
+
+        !> Write the summary of the metrics to file.
+        if (mtsfl%fl(mtsk%out)%init) then
+!    if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(5)%isInit)) then
+            iun = mtsfl%fl(mtsk%out)%iun
+            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%out)%fn)))
+!    else
+!       open(100, file='Metrics_Out.txt')
+!    endif
+            write(100, *) "MAE ", "RMSE ", "BIAS ", "NSD ", "lnNSD ", "TPD "
+            write(100, *) (st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), nsd(j), lnsd(j), int(tpd(j)), &
+                j = 1, size(qobs, 2))
+            close(iun)
+        end if
+
+    end subroutine
 
 end module

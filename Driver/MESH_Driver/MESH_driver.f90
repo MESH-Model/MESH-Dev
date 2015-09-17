@@ -90,7 +90,9 @@ USE FLAGS
 USE MODEL_OUTPUT
 USE climate_forcing
 USE model_dates
-use simstats
+    use SIMSTATS_config
+    use SIMSTATS
+use model_files_variables
 use model_files
 use strings
 
@@ -105,7 +107,7 @@ INTRINSIC MAXLOC
     integer ipid_recv, itag, izero, ierrcode, istop
     logical lstat
 
-    integer u, invars
+    integer iun, u, invars
 
     !+ For split-vector approach
     integer il1, il2, ilen
@@ -299,7 +301,7 @@ CHARACTER(30) :: NMTESTFORMAT
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-CHARACTER :: VERSION*24 = "TRUNK (863)"
+CHARACTER :: VERSION*24 = "TRUNK (872)"
 !+CHARACTER :: VERSION*24 = "TAG"
 CHARACTER*8 :: RELEASE(10)
 LOGICAL :: VER_OK
@@ -938,14 +940,14 @@ call cpu_time(startprog)
 
 !File handled for variable in/out names
 !At the moment only class,hydro parameters and some outputs
-      
-!Check if any arguments are found
-narg = command_argument_count()
-!print *, narg
-if (narg .gt. 0) then
-    VARIABLEFILESFLAG = 1
-    if (narg >= 1) then
-        call get_command_argument(1, fl_listMesh)
+
+    !> Check if any command line arguments are found.
+    narg = command_argument_count()
+    !print *, narg
+    if (narg > 0) then
+        VARIABLEFILESFLAG = 1
+        if (narg >= 1) then
+            call get_command_argument(1, fl_listMesh)
 !        print *, fl_listMesh
 !    elseif (narg .eq. 2) then
 !        call get_command_argument(1, fl_listMesh)
@@ -955,36 +957,47 @@ if (narg .gt. 0) then
 !        call value(alphCh, alpharain, ios)
 !        cm%clin(8)%alpharain = alpharain
 !        print *, cm%clin(8)%alpharain
-    end if
-    call Init_fls(fls, trim(adjustl(fl_listMesh)))
-end if !(narg .gt. 0) then
-
-! Find the appropriate value of IGND from MESH_input_soil_levels.txt
-IGND = 0
-
-    if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(10)%isInit)) then
-        open(fls%fl(10)%unit, file = trim(adjustl(fls%fl(10)%name)), iostat = IOS)
+        end if
+        call Init_fls(fls, trim(adjustl(fl_listMesh)))
     else
-        open(52, file = 'MESH_input_soil_levels.txt', status = 'old', iostat = IOS)
+!todo: Call this anyway, make loading values from file an alternate subroutine of module_files
+        call Init_fls(fls)
+    end if !(narg .gt. 0) then
+
+    !> Determine the value of IGND from MESH_input_soil_levels.txt
+!todo: Move this to read_soil_levels
+    IGND = 0
+
+    !> Open soil levels file and check for IOSTAT errors.
+!    if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(10)%isInit)) then
+    iun = fls%fl(mfk%f52)%iun
+    open(iun, &
+        file = trim(adjustl(fls%fl(mfk%f52)%fn)), &
+        action = 'read', &
+        status = 'old', iostat = ios)
+!    else
+!        open(52, file = 'MESH_input_soil_levels.txt', status = 'old', iostat = IOS)
+!    end if
+    if (ios /= 0) then
+        print 1002
+        stop
     end if
 
-IF (IOS .NE. 0)THEN !CHECK FILE FOR IOSTAT ERRORS
-    print 1002
-    stop
-ELSE
-   IGND_TEST = 1.0
-   DO WHILE (IGND_TEST.NE.0.0.AND.IOS.EQ.0)
-     read(52, * , iostat = IOS) IGND_TEST, IGND_DEEP
-     IGND = IGND + 1
-   ENDDO
-   IGND = IGND - 1 ! because IGND increments the first time that IGND_TEST = 0.0
-   print *, "IGND = ", IGND
-END IF
-CLOSE(52)
+    !> Count the number of soil layers.
+    IGND_TEST = 1.0
+    do while (IGND_TEST /= 0.0 .and. ios == 0)
+        read(52, * , iostat = ios) IGND_TEST, IGND_DEEP
+        IGND = IGND + 1
+    end do
 
-1002 format( &
-    //1x'MESH_input_soil_levels.txt could not be opened.', &
-    /1x'Ensure that the file exists and restart the program.')
+    !> because IGND increments the first time that IGND_TEST = 0.0
+    IGND = IGND - 1
+    print *, "IGND = ", IGND
+    close(iun)
+
+1002 format(/ &
+        /1x, 'MESH_input_soil_levels.txt could not be opened.', &
+        /1x', Ensure that the file exists and restart the program.', /)
 
 !>=======================================================================
 !> INITIALIZE CLASS VARIABLES
@@ -1754,16 +1767,20 @@ ENDDO
 !> after DEGLAT is used to calculate RADJGRD is it no longer used.  This 
 !> is how it was in the original CLASS code.
 
+    !> Read an intial value for geothermal flux from file.
     if (GGEOFLAG == 1) then
-
-        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(7)%isInit)) then
-            open(fls%fl(7)%unit, file = trim(adjustl(fls%fl(7)%name)))
-        else
-            open(18, file = 'MESH_ggeo.ini', status = 'old')
-        end if
-
-        read(18, *) GGEOGRD(1)
-        close(18)
+!        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(7)%isInit)) then
+!            open(fls%fl(7)%unit, file = trim(adjustl(fls%fl(7)%name)))
+        iun = fls%fl(mfk%f18)%iun
+        open(iun, &
+             file = trim(adjustl(fls%fl(mfk%f18)%fn)), &
+             action = 'read', &
+             status = 'old', iostat = ios)
+!        else
+!            open(18, file = 'MESH_ggeo.ini', status = 'old')
+!        end if
+        read(iun, *) GGEOGRD(1)
+        close(iun)
     else
         GGEOGRD(1) = 0.0
     end if
@@ -2115,13 +2132,13 @@ FRAME_NO_NEW = 1
         write(58, *) "CONFLAGS             = ", CONFLAGS
         write(58, *) "RELFLG               = ", RELFLG
         write(58, *) "OPTFLAGS             = ", OPTFLAGS
-        write(58, *) "PREEMPTIONFLAG       = ", PREEMPTIONFLAG
+        write(58, *) "PREEMPTIONFLAG       = ", mtsflg%PREEMPTIONFLAG
         write(58, *) "INTERPOLATIONFLAG    = ", INTERPOLATIONFLAG
         write(58, *) "SUBBASINFLAG         = ", SUBBASINFLAG
         write(58, *) "TESTCSVFLAG          = ", 'NOTSUPPORTED'
         write(58, *) "R2COUTPUTFLAG        = ", R2COUTPUTFLAG
         write(58, *) "OBJFNFLAG            = ", OBJFNFLAG
-        write(58, *) "AUTOCALIBRATIONFLAG  = ", AUTOCALIBRATIONFLAG
+        write(58, *) "AUTOCALIBRATIONFLAG  = ", mtsflg%AUTOCALIBRATIONFLAG
         write(58, *) "WINDOWSIZEFLAG       = ", WINDOWSIZEFLAG
         write(58, *) "WINDOWSPACINGFLAG    = ", WINDOWSPACINGFLAG
         write(58, *) "FROZENSOILINFILFLAG  = ", FROZENSOILINFILFLAG
@@ -2363,11 +2380,14 @@ if (ipid == 0) then
     if (STREAMFLOWOUTFLAG > 0) then
 
         !> Daily streamflow file.
-        if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(6)%isInit)) then
-            open(fls%fl(6)%unit, file = trim(adjustl(fls%fl(6)%name)))
-        else
-            open(70, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/MESH_output_streamflow.csv")
-        end if
+!        if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(6)%isInit)) then
+        open(fls%fl(mfk%f70)%iun, &
+!todo: This creates a bug if a space doesn't exist in the name of the folder!
+             file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // trim(adjustl(fls%fl(mfk%f70)%fn)), &
+             iostat = ios)
+!        else
+!            open(70, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/MESH_output_streamflow.csv")
+!        end if
 
         !> Hourly and cumulative daily streamflow files.
         if (STREAMFLOWOUTFLAG >= 2) then
@@ -2489,7 +2509,7 @@ PRINT *
 
 end if !(ro%VERBOSEMODE > 0) then
 
-if (ipid == 0) call stats_init(ts, wf_no)
+    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(ts, wf_no)
 
 !>
 !>*******************************************************************
@@ -3032,12 +3052,15 @@ TOTAL_THIC = 0.0
     if (BASINBALANCEOUTFLAG > 0) then
 
         !> Water balance.
-        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(4)%isInit)) then
-            open(fls%fl(4)%unit, file = trim(adjustl(fls%fl(4)%name)))
-        else
-            open(900, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/Basin_average_water_balance.csv")
-            open(902, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/Basin_average_water_balance_Monthly.csv")
-        end if
+!        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(4)%isInit)) then
+        open(fls%fl(mfk%f900)%iun, &
+!todo: This creates a bug if a space doesn't exist in the name of the folder!
+             file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
+             iostat = ios)
+!        else
+!            open(900, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/Basin_average_water_balance.csv")
+        open(902, file = "./" // GENDIR_OUT(1:index(GENDIR_OUT, " ") - 1) // "/Basin_average_water_balance_Monthly.csv")
+!        end if
 
         wrt_900_1 = "DAY,YEAR,PREACC" // ",EVAPACC,ROFACC,ROFOACC," // &
             "ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,"
@@ -3065,7 +3088,7 @@ TOTAL_THIC = 0.0
             trim(adjustl(wrt_900_4)) // &
             "THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE,DSTOR_ACC"
 
-        write(900, "(a)") trim(adjustl(wrt_900_f))
+        write(fls%fl(mfk%f900)%iun, "(a)") trim(adjustl(wrt_900_f))
         write(902, '(a)') trim(adjustl(wrt_900_f))
 
         !> Energy balance.
@@ -4791,7 +4814,7 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
     if (BASINBALANCEOUTFLAG > 0) then
 
         !> Water balance.
-        write(900, "((i4, ','), (i5, ','), 999(e14.6, ','))") &
+        write(fls%fl(mfk%f900)%iun, "((i4, ','), (i5, ','), 999(e14.6, ','))") &
             JDAY_NOW, YEAR_NOW              , &   !1
             TOTAL_PREACC/TOTAL_AREA  , &   !2
             TOTAL_EVAPACC/TOTAL_AREA , &   !3
@@ -5048,7 +5071,7 @@ ENDIF
 
     !> Write output for hourly streamflow.
     if (STREAMFLOWFLAG == 1 .and. STREAMFLOWOUTFLAG >= 2) then
-        write(71, "(3(i5,','), f10.3, 999(',', f10.3))") JDAY_NOW, HOUR_NOW, MINS_NOW, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
+        write(71, 5085) JDAY_NOW, HOUR_NOW, MINS_NOW, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
     end if
 
 IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
@@ -5060,11 +5083,14 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
 
     !> Write output for daily and cumulative daily streamflow.
     if (STREAMFLOWOUTFLAG > 0) then
-        write(70, "(i5, ',', f10.3, 999(',', f10.3))") JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
+        write(fls%fl(mfk%f70)%iun, 5084) JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
         if (STREAMFLOWOUTFLAG >= 2) then
-            write(72, "(i5, ',', f10.3, 999(',', f10.3))") JDAY_NOW, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
+            write(72, 5084) JDAY_NOW, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
         end if
     end if
+
+5084 format(i5,',', f10.3, 999(',', f10.3))
+5085 format(3(i5,','), f10.3, 999(',', f10.3))
 
 if (ro%VERBOSEMODE > 0) then
 
@@ -5081,7 +5107,12 @@ if (ro%VERBOSEMODE > 0) then
     print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(I), WF_QSYN_AVG(I)/NCOUNT, I = 1, WF_NO), wb%pre(j), wb%evap(j), wb%rof(j)
 
   END IF
-  call stats_update_daily(WF_QHYD_AVG, WF_QSYN_AVG, NCOUNT)
+    if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
+        call stats_update_daily(WF_QHYD_AVG, WF_QSYN_AVG, NCOUNT)
+        if (mtsflg%PREEMPTIONFLAG > 1) then
+            if (FTEST > FBEST) goto 199
+        end if
+    end if
 
   WF_QSYN_AVG = 0.0
 
@@ -5109,9 +5140,9 @@ IF (MINS_NOW == 60) THEN
   HOUR_NOW = HOUR_NOW + 1
   IF (HOUR_NOW==24) THEN
     HOUR_NOW = 0
-    IF(AUTOCALIBRATIONFLAG .GE. 1 .AND. PREEMPTIONFLAG == 1)THEN   
-      IF(FTEST > FBEST) GOTO 199
-    ENDIF
+!    IF(mtsflg%AUTOCALIBRATIONFLAG .GE. 1 .AND. mtsflg%PREEMPTIONFLAG == 1)THEN
+!      IF(FTEST > FBEST) GOTO 199
+!    ENDIF
     JDAY_NOW = JDAY_NOW + 1
     IF (JDAY_NOW >= 366) THEN
       IF (MOD(YEAR_NOW,400) == 0) THEN !LEAP YEAR
@@ -5569,7 +5600,7 @@ end if !(ro%VERBOSEMODE > 0) then
 
 199 CONTINUE
 
-call stats_write(fls)
+    if (mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write()
 
 999 CONTINUE
 !> Diane      CLOSE(UNIT=21)
@@ -5599,7 +5630,7 @@ CLOSE(UNIT=51)
     close(58)
 
     !> Close CSV streamflow files.
-    close(70)
+    close(fls%fl(mfk%f70)%iun)
     close(71)
     close(72)
 
@@ -5617,7 +5648,7 @@ CLOSE(UNIT=51)
     close(96)
 
     !> Close the CSV energy and water balance output files.
-    close(900)
+    close(fls%fl(mfk%f900)%iun)
     close(901)
     close(902)
 

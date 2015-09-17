@@ -6,10 +6,14 @@ SUBROUTINE READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, hp, M_C, 
                                      SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
 USE MESH_INPUT_MODULE
+use model_files_variabletypes
+use model_files_variables
 USE FLAGS
 use model_files
 
-INTEGER :: M_C, INDEPPAR, DEPPAR
+implicit none
+
+INTEGER :: NA, NTYPE, M_C, INDEPPAR, DEPPAR
 CHARACTER*8 :: RELEASE(10)
 
 !PARAMETERS FOR FROZEN ALGORITHM
@@ -25,16 +29,19 @@ REAL, DIMENSION (:), ALLOCATABLE :: INDEPPARVAL
 REAL, DIMENSION (:,:), ALLOCATABLE :: DEPPARVAL
 
 !> Internal use variables
-INTEGER :: IOS, I, M
+INTEGER :: IOS, iun, I, J, M
 CHARACTER(8) :: FILE_VER
 LOGICAL :: VER_OK
 
-if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(3)%isInit)) then
-    OPEN (fls%fl(3)%unit, FILE=trim(adjustl(fls%fl(3)%name)), &
-          STATUS="OLD", IOSTAT=IOS)
-else    
-    OPEN (23, FILE="MESH_parameters_hydrology.ini", STATUS="OLD",IOSTAT=IOS)
-end if
+!if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(3)%isInit)) then
+iun = fls%fl(mfk%f23)%iun
+open( iun, &
+      file = trim(adjustl(fls%fl(mfk%f23)%fn)), &
+      action = 'read', &
+      status = 'old', iostat = ios)
+!else
+!    OPEN (23, FILE="MESH_parameters_hydrology.ini", STATUS="OLD",IOSTAT=IOS)
+!end if
 
 !> CHECK FILE FOR IOSTAT ERRORS
 !> when IOS equals 0, the file was opened successfully  
@@ -50,7 +57,7 @@ END IF
 !> DAN * CHECK FILE VERSION (IF RELFLG = 1.0) AS THE NEW FILE FORMATS
 !> DAN * ALLOW VARIABLES AND VARIABLE PLACEMENT FILE VERSIONS TO CHANGE
 IF (RELFLG .EQ. 1) THEN
-  READ (23, "(A8)") FILE_VER !> READ FILE VERSION
+  READ (iun, "(A8)") FILE_VER !> READ FILE VERSION
   IF (INDEX (FILE_VER, ":") .GT. 0) THEN !> FOLLOWED BY COLON
     FILE_VER = TRIM (ADJUSTL (FILE_VER(1:INDEX (FILE_VER,":") - 1)))
   ELSEIF (INDEX (FILE_VER, " ") .GT. 0) THEN !> FOLLOWED BY SPACE
@@ -83,28 +90,28 @@ IF (RELFLG .EQ. 1) THEN
     WRITE (6, *) " "
     WRITE (6, *) "Please insure that all other parameters"
     WRITE (6, *) "are also updated."
-    CLOSE (23)
+    CLOSE (iun)
     STOP
   END IF
 ELSE
-  READ (23, *)
+  READ (iun, *)
 END IF
 
-READ(23,*)
-READ(23,*)
+READ(iun,*)
+READ(iun,*)
 
-READ(23,*) OPTFLAGS
+READ(iun,*) OPTFLAGS
 
 IF(OPTFLAGS>0) THEN
   DO I=1,OPTFLAGS
-    READ(23,*)
+    READ(iun,*)
   ENDDO
 ENDIF
 
-READ(23,*)
-READ(23,*)
+READ(iun,*)
+READ(iun,*)
 
-READ (23,*) (WF_R2(i),I=1,5)
+READ (iun,*) (WF_R2(i),I=1,5)
   DO I=1,5
    IF (wf_r2(i) <= 0)THEN 
     WRITE (6, *)
@@ -116,15 +123,15 @@ READ (23,*) (WF_R2(i),I=1,5)
     STOP
    ENDIF
  ENDDO
-READ(23,*)
-READ(23,*)
+READ(iun,*)
+READ(iun,*)
 
-READ(23,*) INDEPPAR
+READ(iun,*) INDEPPAR
 
 ALLOCATE(INDEPPARVAL(INDEPPAR))
 
 DO I = 1, INDEPPAR
-   READ(23,*,ERR = 9000)INDEPPARVAL(I)
+   READ(iun,*,ERR = 9000)INDEPPARVAL(I)
 ENDDO
 
 IF(FROZENSOILINFILFLAG == 1)THEN
@@ -154,10 +161,10 @@ IF(FROZENSOILINFILFLAG == 1)THEN
     ENDIF
 ENDIF
 
-READ(23,*)
-READ(23,*)
+READ(iun,*)
+READ(iun,*)
 
-READ(23,*) I
+READ(iun,*) I
 IF(I/=NTYPE) THEN
   PRINT *, 'Number of GRUs in hydrology file: ',I
   PRINT *, 'Number of GRUs in drainage database: ',NTYPE
@@ -165,8 +172,8 @@ IF(I/=NTYPE) THEN
   STOP
 ENDIF
 
-READ(23,*) DEPPAR
-READ(23,*)
+READ(iun,*) DEPPAR
+READ(iun,*)
 
 IF(DEPPAR < 9)THEN
    PRINT *
@@ -179,7 +186,7 @@ ENDIF
 ALLOCATE(DEPPARVAL(DEPPAR,NTYPE))
 
 DO I = 1, DEPPAR
-   READ(23,*,ERR = 9001)(DEPPARVAL(I,J),J=1,NTYPE)
+   READ(iun,*,ERR = 9001)(DEPPARVAL(I,J),J=1,NTYPE)
 ENDDO
 
 DO I=1,NA
@@ -203,7 +210,7 @@ DO I=1,NA
   ENDDO
 ENDDO
 
-CLOSE(UNIT=23)
+CLOSE(iun)
 
 RETURN
 
