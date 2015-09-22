@@ -294,6 +294,10 @@ end subroutine
             ftest = -1.0 * ftest
         end if
 
+!    IF(mtsflg%AUTOCALIBRATIONFLAG .GE. 1 .AND. mtsflg%PREEMPTIONFLAG == 1)THEN
+!      IF(FTEST > FBEST) GOTO 199
+!    ENDIF
+
     end subroutine
 
     !> *****************************************************************

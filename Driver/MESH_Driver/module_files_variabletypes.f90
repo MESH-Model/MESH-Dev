@@ -7,7 +7,7 @@ module model_files_variabletypes
     type file
         character*250 :: fn = ''
 !        logical :: isInit = .false.
-        logical :: init = .false.
+        logical :: init = .true.
         integer :: iun = iun_scratch
     end type
 
