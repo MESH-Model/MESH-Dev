@@ -16,10 +16,11 @@ module climate_forcing_config
 
         use strings
         use EF_ParseUtilities
+        use sa_mesh_shared_variables
 
         type(clim_info) :: cm
 
-        integer un, ios
+        integer i, un, ios
         character*256 fname, key, attr, ver_in
         character*4096 ln_in
         logical is_exist, is_climInfo
@@ -51,6 +52,23 @@ module climate_forcing_config
             close(un)
 
         end if
+
+        !> Print summary of climate file information.
+        if (ro%VERBOSEMODE > 0 .and. ro%DIAGNOSEMODE > 0) then
+            do i = 1, size(cm%clin)
+                print 1071, cm%clin(i)%id_var, cm%clin(i)%name, cm%clin(i)%filefmt, cm%clin(i)%unitR, &
+                    cm%clin(i)%hf, cm%clin(i)%timeSize, cm%clin(i)%nseries
+            end do
+        end if
+
+1071    format( &
+            1x, 'Climate Variable: ', (a), /, &
+            3x, 'Name: ', (a), /, &
+            3x, 'File format: ', i5, /, &
+            3x, 'File unit (input): ', i8, /, &
+            3x, 'Record interval (mins): ', i5, /, &
+            3x, 'Timesteps to read into memory: ', i5, /, &
+            3x, 'Series count: ', i5)
 
     end subroutine
 

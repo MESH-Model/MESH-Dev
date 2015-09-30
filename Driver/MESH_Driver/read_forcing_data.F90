@@ -12,6 +12,8 @@ module climate_forcing_data
     !> -----------------------------------------------------------------
     subroutine OpenData(indx, cm)
 
+        use sa_mesh_shared_variables
+
         !> Input variables.
         integer, intent(in) :: indx
 
@@ -27,7 +29,6 @@ module climate_forcing_data
 
             !> ASCII R2C format.
             case (1)
-                print *, cm%clin(indx)%unitR, trim(adjustl(cm%clin(indx)%name(1))) // '.r2c'
                 open(unit = cm%clin(indx)%unitR, &
                      file = trim(adjustl(cm%clin(indx)%name(1))) // '.r2c', &
                      action = 'read', &
@@ -35,11 +36,11 @@ module climate_forcing_data
                      form = 'formatted', &
                      iostat = ios)
                 if (ios /= 0) then
-                    print 670, trim(adjustl(cm%clin(indx)%name(1))) // '.r2c'
+                    if (ro%VERBOSEMODE > 0) print 670, trim(adjustl(cm%clin(indx)%name(1))) // '.r2c'
                     cm%clin(indx)%openFl = .false.
                     stop
                 else
-                    print 676, trim(adjustl(cm%clin(indx)%name(1))) // '.r2c'
+                    if (ro%VERBOSEMODE > 0) print 676, trim(adjustl(cm%clin(indx)%name(1))) // '.r2c'
                     end_of_r2c_header = ''
                     do while (end_of_r2c_header /= ":endHeader")
                         read(cm%clin(indx)%unitR, '(A10)') end_of_r2c_header
@@ -56,11 +57,11 @@ module climate_forcing_data
                      form = 'formatted', &
                      iostat = ios)
                 if (ios /=0 ) then
-                    print 670, trim(adjustl(cm%clin(indx)%name(1))) // '.csv'
+                    if (ro%VERBOSEMODE > 0) print 670, trim(adjustl(cm%clin(indx)%name(1))) // '.csv'
                     cm%clin(indx)%openFl = .false.
                     stop
                 else
-                    print 676, trim(adjustl(cm%clin(indx)%name(1))) // '.csv'
+                    if (ro%VERBOSEMODE > 0) print 676, trim(adjustl(cm%clin(indx)%name(1))) // '.csv'
                     cm%clin(indx)%openFl = .true.
                 end if
 
@@ -74,11 +75,11 @@ module climate_forcing_data
                      access = 'sequential', &
                      iostat = ios)
                 if (ios /= 0) then
-                    print 670, trim(adjustl(cm%clin(indx)%name(1))) // '.seq'
+                    if (ro%VERBOSEMODE > 0) print 670, trim(adjustl(cm%clin(indx)%name(1))) // '.seq'
                     cm%clin(indx)%openFl = .false.
                     stop
                 else
-                    print 676, trim(adjustl(cm%clin(indx)%name(1))) // '.seq'
+                    if (ro%VERBOSEMODE > 0) print 676, trim(adjustl(cm%clin(indx)%name(1))) // '.seq'
                     cm%clin(indx)%openFl = .true.
                 end if
 
@@ -91,29 +92,29 @@ module climate_forcing_data
                      form = 'formatted', &
                      iostat = ios)
                 if (ios /= 0) then
-                    print 670, trim(adjustl(cm%clin(indx)%name(1))) // '.asc'
+                    if (ro%VERBOSEMODE > 0) print 670, trim(adjustl(cm%clin(indx)%name(1))) // '.asc'
                     cm%clin(indx)%openFl = .false.
                     stop
                 else
-                    print 676, trim(adjustl(cm%clin(indx)%name(1))) // '.asc'
+                    if (ro%VERBOSEMODE > 0) print 676, trim(adjustl(cm%clin(indx)%name(1))) // '.asc'
                     cm%clin(indx)%openFl = .true.
                 end if
 
             case default
-                print 644, cm%clin(indx)%id_var, cm%clin(indx)%filefmt
+                if (ro%VERBOSEMODE > 0) print 644, cm%clin(indx)%id_var, cm%clin(indx)%filefmt
                 stop
         end select
 
 670 format(/ &
-        /1x, a20, ' not found.', &
+        /1x, (a), ' not found.', &
         /1x, 'Please adjust the MESH_input_run_options.ini file', &
         /1x, 'or put the file in the correct location.', /)
 
-676 format(1x, a20, ' found.')
+676 format(1x, (a), ' found.')
 
 644 format(/ &
         /1x, 'The input forcing file format is not supported', &
-        /2x, a15, i4/)
+        /2x, (a), i4/)
 
     end subroutine !OpenData
 
@@ -123,6 +124,7 @@ module climate_forcing_data
     subroutine LoadData(bi, indx, cm, ENDDATA, skipdata)
 
         use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
 
         !> Input variables.
         type(basin_info) :: bi
@@ -212,13 +214,17 @@ module climate_forcing_data
                 end do
 
             case default
-                print *, 'NOT IMPLEMENTED YET'
+                if (ro%VERBOSEMODE > 0) print 644, cm%clin(indx)%id_var, cm%clin(indx)%filefmt
                 stop
         end select
 
         return
 
 999 ENDDATA = .true.
+
+644 format(/ &
+        /1x, 'The input forcing file format is not supported', &
+        /2x, (a), i4/)
 
     end subroutine !LoadData
 
