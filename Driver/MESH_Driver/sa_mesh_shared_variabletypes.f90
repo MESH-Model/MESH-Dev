@@ -49,6 +49,12 @@ module sa_mesh_shared_variabletypes
         !> VERBOSEMODE = 0 to disable certain output to the console.
         integer :: VERBOSEMODE = 1
 
+        !* DIAGNOSEMODE: Flag to allow code to write extra diagnostic
+        !*  output.
+        !>  DIAGNOSEMODE = 1: to write extra output to the console.
+        !>  DIAGNOSEMODE = 0: to disable.
+        integer :: DIAGNOSEMODE = 0
+
     end type !run_options
 
 end module

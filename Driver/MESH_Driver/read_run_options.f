@@ -416,11 +416,18 @@
 
             CASE ('RELFLG')
               CALL value(out_args(2), RELFLG, IOS)
+
+      !> CONSOLE OUTPUT OPTIONS
             CASE ('VERBOSEMODE')
               CALL value(out_args(2), ro%VERBOSEMODE, IOS)
+            case ('DIAGNOSEMODE')
+              call value(out_args(2), ro%DIAGNOSEMODE, ios)
+
+      !> MPI OPTIONS
             CASE ('MPIUSEBARRIER')
               CALL value(out_args(2), MPIUSEBARRIER, IOS)
 
+      !> BASIN FORCING DATA OPTIONS
             !> Basin forcing data.
             CASE ('BASINSHORTWAVEFLAG')
               CALL value(out_args(2), cm%clin(cfk%FB)%filefmt, IOS)
