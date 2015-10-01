@@ -55,7 +55,7 @@ OBJECTS+=	read_config_output.o \
 OBJECTS+=	NSE.o SAE.o SAESRT.o SIMSTATS.o
 
 #MESH Driver
-OBJECTS+=	GATHER.o MESH_driver.o read_initial_inputs.o \
+OBJECTS+=	GATHER.o read_initial_inputs.o \
 			read_parameters_class.o read_parameters_hydrology.o \
 			read_run_options.o read_s_moisture_txt.o read_s_temperature_txt.o \
 			read_shed_ef.o read_soil_ini.o read_soil_levels.o \
@@ -90,3 +90,8 @@ OBJECTS+=	tile_connector.o
 
 #Init field state variables for init cond for class
 OBJECTS+=	read_init_prog_variables_class.o save_init_prog_variables_class.o 	
+
+#MESH Driver
+OBJECTS+=	sa_mesh_run_nml_parallel.o sa_mesh_run_na_parallel.o \
+			sa_mesh_run_na_serial.o \
+			MESH_driver.o
