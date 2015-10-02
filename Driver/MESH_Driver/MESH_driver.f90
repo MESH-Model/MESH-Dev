@@ -87,6 +87,10 @@ USE FLAGS
     use module_mpi_flags
     use module_mpi
 
+    use sa_mesh_run_nml_parallel
+    use sa_mesh_run_na_parallel
+    use sa_mesh_run_na_serial
+
 USE MODEL_OUTPUT
 USE climate_forcing
 USE model_dates
@@ -301,7 +305,7 @@ CHARACTER(30) :: NMTESTFORMAT
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-CHARACTER :: VERSION*24 = "TRUNK (872)"
+CHARACTER :: VERSION*24 = "TRUNK (877)"
 !+CHARACTER :: VERSION*24 = "TAG"
 CHARACTER*8 :: RELEASE(10)
 LOGICAL :: VER_OK
