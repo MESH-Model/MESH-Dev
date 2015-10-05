@@ -2848,24 +2848,22 @@ if (allocated(dates)) &
         real fld(:, :)
         integer indx
         type(info_out) :: info
-        character*5 freq
+        character(5) freq
         integer, allocatable :: dates(:, :)
         integer, optional :: file_unit
         logical, optional :: keep_file_open
         integer, optional :: frame_no
 
         !Internal
-        character*450 flOut
+        character(450) flOut
         integer ios, i, un, nfr
         integer na1, nt, j, t, k
         real, dimension(:, :), allocatable :: data_aux
-        character(10) :: ctime
-        character(8) :: cday
-        logical :: opened_status, close_file
+        character(10) ctime
+        character(8) cday
+        logical opened_status, close_file
 
-        flOut = trim(adjustl(info%pthOut)) // &
-                trim(adjustl(info%var_out(indx)%name)) // &
-                '_' // trim(adjustl(freq)) // '.r2c'
+        flOut = trim(adjustl(info%pthOut)) // trim(adjustl(info%var_out(indx)%name)) // '_' // trim(adjustl(freq)) // '.r2c'
 
         if (present(file_unit)) then
             un = file_unit
@@ -2874,101 +2872,101 @@ if (allocated(dates)) &
         end if
 
         inquire(unit = un, opened = opened_status)
+
         if (.not. opened_status) then
 
-        open(unit   = un                   , &
-             file   = trim(adjustl(flOut)) , &
-             status = 'replace'            , &
-             form   = 'formatted'          , &
-             action = 'write'              , &
-             iostat = ios                  )
+            open(unit   = un                   , &
+                 file   = trim(adjustl(flOut)) , &
+                 status = 'replace'            , &
+                 form   = 'formatted'          , &
+                 action = 'write'              , &
+                 iostat = ios                  )
 
-        write(un, 3005) '########################################'
-        write(un, 3005) ':FileType r2c  ASCII  EnSim 1.0         '
-        write(un, 3005) '#                                       '
-        write(un, 3005) '# DataType               2D Rect Cell   '
-        write(un, 3005) '#                                       '
-        write(un, 3005) ':Application               MeshOutput   '
-        write(un, 3005) ':Version                 1.0.00         '
-        write(un, 3020) ':WrittenBy          ', 'MESH_DRIVER                             '
+            write(un, 3005) '########################################'
+            write(un, 3005) ':FileType r2c  ASCII  EnSim 1.0         '
+            write(un, 3005) '#                                       '
+            write(un, 3005) '# DataType               2D Rect Cell   '
+            write(un, 3005) '#                                       '
+            write(un, 3005) ':Application               MeshOutput   '
+            write(un, 3005) ':Version                 1.0.00         '
+            write(un, 3020) ':WrittenBy          ', 'MESH_DRIVER                             '
 
-        call date_and_time(cday, ctime)
+            call date_and_time(cday, ctime)
 
-        write(un, 3010) ':CreationDate       ', &
-            cday(1:4), cday(5:6), cday(7:8), ctime(1:2), ctime(3:4)
+            write(un, 3010) ':CreationDate       ', &
+                cday(1:4), cday(5:6), cday(7:8), ctime(1:2), ctime(3:4)
 
-        write(un, 3005) '#                                       '
-        write(un, 3005) '#---------------------------------------'
-        write(un, 3005) '#                                       '
-        write(un, 3020) ':Name               ', info%var_out(indx)%name !info%ids_var_out(indx, 1)
-        write(un, 3005) '#                                       '
-        write(un, 3004) ':Projection         ', coordsys1
+            write(un, 3005) '#                                       '
+            write(un, 3005) '#---------------------------------------'
+            write(un, 3005) '#                                       '
+            write(un, 3020) ':Name               ', info%var_out(indx)%name !info%ids_var_out(indx, 1)
+            write(un, 3005) '#                                       '
+            write(un, 3004) ':Projection         ', coordsys1
 
-        if (coordsys1 == 'LATLONG   ') &
-            write(un, 3004) ':Ellipsoid          ', datum1
+            if (coordsys1 == 'LATLONG   ') &
+                write(un, 3004) ':Ellipsoid          ', datum1
+            if (coordsys1 == 'UTM       ') then
+                write(un, 3004) ':Ellipsoid          ', datum1
+                write(un, 3004) ':Zone               ', zone1
+            end if
 
-        if (coordsys1 == 'UTM       ') then
-            write(un, 3004) ':Ellipsoid          ', datum1
-            write(un, 3004) ':Zone               ', zone1
-        end if
+            write(un, 3005) '#                                       '
+            write(un, 3003) ':xOrigin            ', xorigin
+            write(un, 3003) ':yOrigin            ', yorigin
+            write(un, 3005) '#                                       '
+            write(un, 3005) ':SourceFile            MESH_DRIVER      '
+            write(un, 3005) '#                                       '
 
-        write(un, 3005) '#                                       '
-        write(un, 3003) ':xOrigin            ', xorigin
-        write(un, 3003) ':yOrigin            ', yorigin
-        write(un, 3005) '#                                       '
-        write(un, 3005) ':SourceFile            MESH_DRIVER      '
-        write(un, 3005) '#                                       '
+            write(un, 3020) ':AttributeName      ', info%var_out(indx)%name !info%ids_var_out(indx, 1)
 
-        write(un, 3020) ':AttributeName      ', info%var_out(indx)%name !info%ids_var_out(indx, 1)
-
-        write(un, 3020) ':AttributeUnits     ', '' !info%ids_var_out(indx, 2)
-        write(un, 3005) '#                                       '
-        write(un, 3001) ':xCount             ', xCount
-        write(un, 3001) ':yCount             ', ycount
-        write(un, 3003) ':xDelta             ', xdelta
-        write(un, 3003) ':yDelta             ', yDelta
-        write(un, 3005) '#                                       '
-        write(un, 3005) '#                                       '
-        write(un, 3005) ':endHeader                              '
+            write(un, 3020) ':AttributeUnits     ', '' !info%ids_var_out(indx, 2)
+            write(un, 3005) '#                                       '
+            write(un, 3001) ':xCount             ', xCount
+            write(un, 3001) ':yCount             ', ycount
+            write(un, 3003) ':xDelta             ', xdelta
+            write(un, 3003) ':yDelta             ', yDelta
+            write(un, 3005) '#                                       '
+            write(un, 3005) '#                                       '
+            write(un, 3005) ':endHeader                              '
 
         end if !(.not. opened_status) then
 
         if (allocated(dates)) then
 
-        nt = size(dates(:, 1))
+            nt = size(dates(:, 1))
 
-        do t = 1, nt
+            do t = 1, nt
 
-            if (present(frame_no)) then
-                nfr = frame_no
-            else
-                nfr = t
-            end if
+                if (present(frame_no)) then
+                    nfr = frame_no
+                else
+                    nfr = t
+                end if
 
-            if (size(dates, 2) == 5) then
-                write(un, 9000) ':Frame', nfr, nfr, dates(t, 1), dates(t, 2), dates(t, 3), dates(t, 5), 0
-            elseif (size(dates, 2) == 3) then
-                write(un, 9000) ':Frame', nfr, nfr, dates(t, 1), dates(t, 2), dates(t, 3), 0, 0
-            else
-                write(un, 9000) ':Frame', nfr, nfr, dates(t, 1), dates(t, 2), 1, 0, 0
-            end if
+                if (size(dates, 2) == 5) then
+                    write(un, 9000) ':Frame', nfr, nfr, dates(t, 1), dates(t, 2), dates(t, 3), dates(t, 5), 0
+                elseif (size(dates, 2) == 3) then
+                    write(un, 9000) ':Frame', nfr, nfr, dates(t, 1), dates(t, 2), dates(t, 3), 0, 0
+                else
+                    write(un, 9000) ':Frame', nfr, nfr, dates(t, 1), dates(t, 2), 1, 0, 0
+                end if
 
-            allocate(data_aux(ycount, xcount))
-            data_aux = 0.0
+                allocate(data_aux(ycount, xcount))
+                data_aux = 0.0
 
-            do k = 1, na
-                data_aux(yyy(k), xxx(k)) = fld(k, t)
+                do k = 1, na
+                    data_aux(yyy(k), xxx(k)) = fld(k, t)
+                end do
+
+                do j = 1, ycount
+                    write(un, '(999(e12.6,2x))') (data_aux(j, i), i = 1, xcount)
+                end do
+
+                write(un, '(a)') ':EndFrame'
+
+                deallocate(data_aux)
+
             end do
-
-            do j = 1, ycount
-                write(un, '(999(e12.6,2x))') (data_aux(j, i), i = 1, xcount)
-            end do
-
-            write(un, '(a)') ':EndFrame'
-
-            deallocate(data_aux)
-
-        end do
 
         end if !(allocated(dates)) then
 
@@ -2978,8 +2976,7 @@ if (allocated(dates)) &
             close_file = .true.
         end if
 
-        if (close_file) &
-            close(unit = un)
+        if (close_file) close(un)
 
         3000 format(a10, i5)
         3001 format(a20, i16)
@@ -3006,20 +3003,20 @@ if (allocated(dates)) &
         real fld(:, :)
         integer indx
         type(info_out) :: info
-        character*5 freq
+        character(5) freq
         integer, allocatable :: dates(:, :)
         integer, optional :: file_unit
         logical, optional :: keep_file_open
         integer, optional :: frame_no
 
         !Internal
-        character*450 flOut
+        character(450) flOut
         integer ios, i, un, nfr
         integer na1, nt, j, t, k
         real, dimension(:, :), allocatable :: data_aux
-        character(10) :: ctime
-        character(8) :: cday
-        logical :: opened_status, close_file
+        character(10) ctime
+        character(8) cday
+        logical opened_status, close_file
 
         flOut = trim(adjustl(info%pthOut)) // trim(adjustl(info%var_out(indx)%name)) // '_' // trim(adjustl(freq)) // '.txt'
 
@@ -3081,7 +3078,7 @@ if (allocated(dates)) &
             close_file = .true.
         end if
 
-        if (close_file) close(unit = un)
+        if (close_file) close(un)
 
         9000 format('"', i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':00.000"', 2x)
         9001 format(999(e12.6, 2x))
@@ -3098,20 +3095,20 @@ if (allocated(dates)) &
         real fld(:, :)
         integer indx
         type(info_out) :: info
-        character*5 freq
+        character(5) freq
         integer, allocatable :: dates(:, :)
         integer, optional :: file_unit
         logical, optional :: keep_file_open
         integer, optional :: frame_no
 
         !Internal
-        character*450 flOut
+        character(450) flOut
         integer ios, i, un, nfr
         integer na1, nt, j, t, k
         real, dimension(:, :), allocatable :: data_aux
-        character(10) :: ctime
-        character(8) :: cday
-        logical :: opened_status, close_file
+        character(10) ctime
+        character(8) cday
+        logical opened_status, close_file
 
         flOut = trim(adjustl(info%pthOut)) // trim(adjustl(info%var_out(indx)%name)) // '_' // trim(adjustl(freq)) // '.csv'
 
@@ -3173,7 +3170,7 @@ if (allocated(dates)) &
             close_file = .true.
         end if
 
-        if (close_file) close(unit = un)
+        if (close_file) close(un)
 
         9000 format('"', i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':00.000"', ',')
         9001 format(999(e12.6, ','))
