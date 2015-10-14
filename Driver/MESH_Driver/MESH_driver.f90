@@ -4941,8 +4941,8 @@ IF(NCOUNT==48) THEN !48 is the last half-hour period of the day
                              wb%rcan, wb%sncan, &
                              wb%pndw, wb%sno, wb%wsno, &
                              eng%gflx, eng%hfs, eng%qevp, &
-                             sov%thlq, sov%thic ,&
-                             NA, IGND, &
+                             sov%thlq, sov%thic, &
+                             IGND, &
                              JDAY_NOW, YEAR_NOW)
     end if
    STG_I = DSTG + STG_I

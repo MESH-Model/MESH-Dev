@@ -17,7 +17,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !       copyright (c) by Nick Kouwen and Dave Watson 2007
 !***********************************************************************
 
-      subroutine read_shed_ef(unitNum, flnNum)
+      subroutine read_shed_ef(fls, indx, bi)
 
 C***********************************************************************
 C ****NOTE****This subroutine works but still requires extensive cleaning up
@@ -55,7 +55,10 @@ C***********************************************************************!
 
 !***********************************************************************
 
-      use area_watflood
+!      use area_watflood
+      use sa_mesh_shared_variabletypes
+      use model_files_variabletypes
+      use strings
 
 C//////////////////////////////////////////////
 C/////////////////////////
@@ -72,31 +75,42 @@ C/////////////////////////
 C//////////////////////////////////////////////
 
 !     SAVES THE LOCAL VARIABLES FROM ONE RUN TO NEXT
-      save
+!      save
 
-      character(128) qstr
-      character(20) junk, junk20
-      character(1) junk1
-      character(80) comment
-      character(79) hdrcomment(100)
-      integer chksum(160), thms(25), gr10k(25), saug(25), hmbr(25),
-     *  dffn(25), simpson(25), colum(50), canag(25), noire8k(25)
-      integer chsm, ndam1, iallcnt5, dummy1, ntest, nchr, iallocate,
-     *  ios,
-     *  latdegmin, latminmin, latdegmax, latminmax, londegmin,
-     *  lonminmin, londegmax, lonminmax, i, j, n, ii, igridflg,
-     *  nrvr1, ntmp, l, newformat
-      real(kind=4) sumclass, cintv, conv
-      integer(kind=2) result1, n_hdr_lines, zone
-      logical exists
+!      character(128) qstr
+!      character(20) junk, junk20
+!      character(1) junk1
+!      character(80) comment
+!      character(79) hdrcomment(100)
+!      integer chksum(160), thms(25), gr10k(25), saug(25), hmbr(25),
+!     *  dffn(25), simpson(25), colum(50), canag(25), noire8k(25)
+!      integer chsm, ndam1,
+      integer
+     *  iallcnt5, nrvr1,
+!     *  dummy1, ntest, nchr, iallocate,
+!     *  ios,
+!     *  latdegmin, latminmin, latdegmax, latminmax, londegmin,
+!     *  lonminmin, londegmax, lonminmax, i, j,
+     *  n, ii
+!     *  igridflg,
+!     *  nrvr1, ntmp, l, newformat
+      real(kind=4) sumclass
+!     *  cintv, conv
+!      integer(kind=2) result1, n_hdr_lines, zone
+!      logical exists
+      real, dimension(:, :), allocatable :: s
 
-      real(kind=4), dimension(:, :), allocatable :: dummy
+      type(fl_ids):: fls
+      integer, intent(in) :: indx
+      type(basin_info) :: bi
+
+!      real(kind=4), dimension(:, :), allocatable :: dummy
 
 !      DATA thms/0,211,176,148,108,70,42,14,11,0,0,0,0,0,0,0,0,0,0,0,0,
 !     *          0,0,0,0/
-      data gr10k / 47, 161, 222, 229, 189, 142, 69, 39, 20, 7, 3, 0, 0,
-     *  0, 0, 0, 0, 0, 0, 0,
-     *  0, 0, 0, 0, 0 /
+!      data gr10k / 47, 161, 222, 229, 189, 142, 69, 39, 20, 7, 3, 0, 0,
+!     *  0, 0, 0, 0, 0, 0, 0,
+!     *  0, 0, 0, 0, 0 /
 !      DATA canag/45,155,204,210,172,143,100,48,4,0,0,0,0,0,0,0,0,0,0,0,
 !     *            0,0,0,0,0/
 !      DATA saug/0,191,216,259,278,297,303,109,58,0,0,0,0,0,0,0,0,0,0,0,
@@ -112,17 +126,18 @@ C//////////////////////////////////////////////
 !     *           2468,2709,2506,3315,3425,3132,2762,3366,
 !     *           3059,2217,2021,1371,1336,1291, 904, 576,1118,1272, 359,
 !     *              0,   0,   0,   0,   0,   0,   0,   0,   0/
-      data noire8k / 0, 0, 82, 179, 299, 213, 117, 288, 263, 222,
-     *  206, 169, 129, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 /
-      data ntest / -10588 / qstr / 'copyright n.kouwen' / nchr / 18 /
-      data iallcnt5 / 0 /
+!      data noire8k / 0, 0, 82, 179, 299, 213, 117, 288, 263, 222,
+!     *  206, 169, 129, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 /
+!      data ntest / -10588 / qstr / 'copyright n.kouwen' / nchr / 18 /
+!      data iallcnt5 / 0 /
 
 C//////////////////////////////////////////////
 C/////////////////////////
 C// Added by Dave
 
 C parameter type definitions
-      integer(kind=4) unitNum, flnNum, iStat
+!      integer(kind=4) unitNum, flnNum, iStat
+      integer ierr
 
 C Local variables
       character(1024) line, subString, tmpString
@@ -136,7 +151,7 @@ C Local variables
 
 !Dan Princz changed this
 CDAN      print*,'avant call initshedparam'
-      if (IOPT == 2) print *, 'avant call initshedparam'
+!      if (IOPT == 2) print *, 'avant call initshedparam'
 C initialize default values
       call InitShedParam(header)
 
@@ -145,50 +160,52 @@ c unitNum = 31
 c flnNum = 1
 
       foundEndHeader = .false.
+      iallcnt5 = 1
 
 !Dan Princz changed this
 CDAN      print*,'in read_shed_ef with',unitNum,flnNum
-      if (IOPT == 2) print *, 'in read_shed_ef with', UNITNUM, FLNNUM
+!      if (IOPT == 2) print *, 'in read_shed_ef with', UNITNUM, FLNNUM
 
 C// End Dave addition
 C/////////////////////////
 C//////////////////////////////////////////////
 
-      if (.not. ID > 1) then      !  changed Jul. 12/04  nk
+!      if (.not. ID > 1) then      !  changed Jul. 12/04  nk
 ! else
 !     TS: NNOTE=100 -> DEFINED AS A PARAMETER IN AREA10A
 !     TS - ALLOCATION OF AREA10A ARRAY (REMAINDER)
-        if (iallcnt5 == 0) then
-          allocate(note(nnote), stat=iAllocate)
-          if (iAllocate /= 0) stop
-     *      'Error with allocation of area10a array in sheda'
-          iallcnt5 = 1
-        end if
-      end if
+!        if (iallcnt5 == 0) then
+!          allocate(note(nnote), stat=iAllocate)
+!          if (iAllocate /= 0) stop
+!     *      'Error with allocation of area10a array in sheda'
+!          iallcnt5 = 1
+!        end if
+!      end if
 
 !     AL MUST BE IN INTEGER KILOMETERS
 !     COORDINATES OF THE OUTSIDE ELEMENTS OF THE GRID.
 !     ALL THE BASIN DATA IS READ ON FILE 9
 
 !Dan Princz changed this
-      if (iopt == 2) print *, 'opening unitnum', unitnum
-      if (iopt == 2) print *, 'filename =', fln(flnnum)
+!      if (iopt == 2) print *, 'opening unitnum', unitnum
+!      if (iopt == 2) print *, 'filename =', fln(flnnum)
 CDAN      print*,'opening unitnum',unitnum
 CDAN      print*,'filename =',fln(flnnum)
 
 !     basin/bsnm_shd.r2c
-      open(unit=unitNum, file=fln(flnNum), status='old', iostat=ios)
-      if (ios /= 0) then
+      open(fls%fl(indx)%iun, file=adjustl(trim(fls%fl(indx)%fn)),
+     +  status='old', iostat=ierr)
+      if (ierr /= 0) then
         print *
-        print *, 'Problems in file', fln(flnNum)
-        write(*, 99162) fln(flnNum)
-        write(98, 99162) fln(flnNum)
-99162   format(' Warning: Error opening or reading fln:', a30/
-     *  ' Probable cause: missing basin/bsnm_???_par.r2c input file'/
-     *  ' OR: in config.sys have you set files=100 & buffers=50?'/
-     *  ' OR: wrong number in line 2 of the event file for '/
-     *  '     number of events listed in event file ')
-        print *, 'iostat code =', ios
+        print *, 'Problems in file', adjustl(trim(fls%fl(indx)%fn))
+!        write(*, 99162) fln(flnNum)
+!        write(98, 99162) fln(flnNum)
+!99162   format(' Warning: Error opening or reading fln:', a30/
+!     *  ' Probable cause: missing basin/bsnm_???_par.r2c input file'/
+!     *  ' OR: in config.sys have you set files=100 & buffers=50?'/
+!     *  ' OR: wrong number in line 2 of the event file for '/
+!     *  '     number of events listed in event file ')
+        print *, 'iostat code =', ierr
         stop 'program aborted in read_shed_ef.for @ 130'
       end if
 
@@ -201,8 +218,8 @@ C// Added by Dave
      &  ((line(1:1) == '#') .or.
      &  (line(1:1) == ':') .or.
      &  (len_trim(line) == 0)))
-        read(UNIT=unitNum, FMT='((A))', iostat=ios) line ! read a line
-        if (ios == -1) then
+        read(fls%fl(indx)%iun, fmt='((A))', iostat=ierr) line ! read a line
+        if (ierr == -1) then
           write(6,'((A))') 'ERROR: Premature EndOfFile encountered'
           stop ' Stopped in read_shed_ef'
         end if
@@ -221,13 +238,14 @@ c      pause
           if (keyword(1:KeyLen) == ':endheader') then
             foundEndHeader = .true.
           else
-            iStat = ParseShedParam(header, keyword, keyLen, subString)
-            if (iStat < 0) then
-              write(*, '(2(A))') 'ERROR parsing ', fln(flnNum)
+            ierr = ParseShedParam(header, keyword, keyLen, subString)
+            if (ierr < 0) then
+              write(*, '(2(A))') 'ERROR parsing ',
+     *          adjustl(trim(fls%fl(indx)%fn))
               write(*, '(2(A))') '   in line: ', line
               stop ' Stopped in read_shed_ef'
               return
-            else if (iStat == 0) then
+            else if (ierr == 0) then
 C     write(*,'((A), (A))')  'Unrecognized keyword line: ',
 C     &          line
             end if
@@ -235,43 +253,44 @@ C     &          line
         end if
       end do
 
-      coordsys1 = header%r2cp%csp%projection
-      datum1 = header%r2cp%csp%ellipsoid
+      bi%CoordSys = header%r2cp%csp%projection
+      bi%Datum = header%r2cp%csp%ellipsoid
 
 !     ugly but effective
-!+todo: replace this with string utilities
-      open(unit=99, file='junk', status='unknown')
-      write(99, 99000) header%r2cp%csp%zone
-99000 format(i10)
-      rewind 99
-      read(99, 99001) zone1
-99001 format(a10)
-      close(unit=99, status='delete')
+!-+todo: replace this with string utilities
+!      open(unit=99, file='junk', status='unknown')
+!      write(99, 99000) header%r2cp%csp%zone
+!99000 format(i10)
+!      rewind 99
+!      read(99, 99001) bi%Zone
+!99001 format(a10)
+!      close(unit=99, status='delete')
+      call writenum(header%r2cp%csp%zone, bi%Zone, '*')
 
-      xcount = header%r2cp%xCount
-      ycount = header%r2cp%yCount
-      xorigin = header%r2cp%xOrigin
-      yorigin = header%r2cp%yOrigin
-      xdelta = header%r2cp%xDelta
-      ydelta = header%r2cp%yDelta
+      bi%xCount = header%r2cp%xCount
+      bi%yCount = header%r2cp%yCount
+      bi%xOrigin = header%r2cp%xOrigin
+      bi%yOrigin = header%r2cp%yOrigin
+      bi%xDelta = header%r2cp%xDelta
+      bi%yDelta = header%r2cp%yDelta
 
-      al = header%nominalGridSize_AL
-      cintv = header%contourInterval
+      bi%AL = header%nominalGridSize_AL
+!+      cintv = header%contourInterval
 
-      ntype = header%classCount - 1
+      bi%NTYPE = header%classCount - 1
 !        every where loops are ntype+1
 !        this needs to be changed  fix fix
 ! ntype = header%classCount
 !        to reading in the actual # land classes &
 !         not no classes -1 for inpervious
 
-      nrvr = header%numRiverClasses
+      bi%NRVR = header%numRiverClasses
 
-      conv = header%r2cp%unitConv
+!+      conv = header%r2cp%unitConv
 
-      na = header%totalNumOfGrids
-      naa = header%numGridsInBasin
-      nnprint = header%debugGridNo
+      bi%NA = header%totalNumOfGrids
+      bi%NAA = header%numGridsInBasin
+!+      nnprint = header%debugGridNo
 
 c      if(iopt.eq.2)then
 c        print*,'al,cintv,ntype,nrvr,conv',al,cintv,ntype,nrvr,conv
@@ -279,17 +298,18 @@ c        print*,'na,naa,nnprint',na,naa,nnprint
 c        print*
 c      endif
 
-      astep = al/1000.0
-      istep = int(astep)
-      step2 = astep*astep
-      if (istep < 1) istep = 1
+!      astep = al/1000.0
+!      istep = int(astep)
+!      step2 = astep*astep
+!      if (istep < 1) istep = 1
 
 c print*,'in read_shed_ef ',al,astep,istep,step2
 c print*
 c pause
 
       attCount = header%r2cp%ep%attCount
-      call LoadAttributeData(header%r2cp%ep, xCount, yCount, unitNum)
+      call LoadAttributeData(header%r2cp%ep, bi%xCount, bi%yCount,
+     +  fls%fl(indx)%iun)
 
 C// End Dave addition
 C/////////////////////////
@@ -301,47 +321,47 @@ C//////////////////////////////////////////////
 !        imax=ycount
 !   jmax=xcount
 !       eventually, IMAXI & jnmax should be replaced everywhere in the code
-      IMAXI = ycount
-      JMAXI = xcount
+!      IMAXI = bi%yCount
+!      JMAXI = bi%xCount
 
 !       added ll separation Jul. 27/04  nk
 C        if(coordsys1.eq.'LATLONG   ')then !commented out line below added by Dave
 CDAN if(IsLatLong(header%r2cp%csp).eq.(.true.))then
       if (IsLatLong(header%r2cp%csp)) then
-        iymin = int(yorigin*60.0)
-        iymax = int((yorigin + ycount*ydelta)*60.0)
-        jxmin = int(xorigin*60.0)
-        jxmax = int((xorigin + xcount*xdelta)*60.0)
-        llflg = 'y'          ! added Mar. 15/06 nk
-        grde = xdelta*60.0
-        grdn = ydelta*60.0
+        bi%iyMin = int(bi%yOrigin*60.0)
+        bi%iyMax = int((bi%yOrigin + bi%yCount*bi%yDelta)*60.0)
+        bi%jxMin = int(bi%xOrigin*60.0)
+        bi%jxMax = int((bi%xOrigin + bi%xCount*bi%xDelta)*60.0)
+!        llflg = 'y'          ! added Mar. 15/06 nk
+        bi%GRDE = bi%xDelta*60.0
+        bi%GRDN = bi%yDelta*60.0
       else
-        grde = xdelta/1000.0
-        grdn = ydelta/1000.0
-        jxmin = int(xorigin/1000.0)
-        jxmax = jxmin + grde*(xcount - 1)
-        iymin = int(yorigin/1000.0)
-        iymax = iymin + grdn*(ycount - 1)
-        llflg = 'n'          ! added Mar. 15/06 nk
+        bi%GRDE = bi%xDelta/1000.0
+        bi%GRDN = bi%yDelta/1000.0
+        bi%jxMin = int(bi%xOrigin/1000.0)
+        bi%jxMax = bi%jxMin + bi%GRDE*(bi%xCount - 1)
+        bi%iyMin = int(bi%yOrigin/1000.0)
+        bi%iyMax = bi%iyMin + bi%GRDN*(bi%yCount - 1)
+!        llflg = 'n'          ! added Mar. 15/06 nk
       end if
 
 !Dan Princz changed this
 CDAN      print*,'avant calling program flg,328'
-      if (IOPT == 2) print *, 'avant calling program flg, 328'
-      if (calling_program_flg == 'snw       ') return
-      if (calling_program_flg == 'moist     ') return
+!      if (IOPT == 2) print *, 'avant calling program flg, 328'
+!      if (calling_program_flg == 'snw       ') return
+!      if (calling_program_flg == 'moist     ') return
 
-      nastart = 1
-      naend = naa
+!      nastart = 1
+!      naend = naa
 !Dan Princz changed this
 CDAN      imin=1
-      IMINI = 1
+!      IMINI = 1
 CDAN      jmin=1
-      JMINI = 1
+!      JMINI = 1
 CDAN      ib=imin+1
-      ib = IMINI + 1
+!      ib = IMINI + 1
 CDAN      it=imax-1
-      it = IMAXI - 1
+!      it = IMAXI - 1
 
 !     rl() and ch_length() are the same thing. ch_length used in bsn
 
@@ -357,69 +377,72 @@ CDAN      it=imax-1
 !Dan Princz changed this
 !DAN       allocate(s(imax,jmax),dummy(imax,jmax),rl(na),
 
-        allocate(s(IMAXI,JMAXI), dummy(IMAXI,JMAXI),
-     *    xxx(na), yyy(na),
-     *    flz2(na), pwr2(na),
-     *    sl2(na), irough(na),
-     *    aclass(na, ntype + 1), glacier_flag(na),
-     *    stat=iAllocate)
+        allocate(s(bi%yCount, bi%xCount),
+!     *    dummy(bi%yCount, bi%xCount),
+     *    bi%xxx(bi%NA), bi%yyy(bi%NA),
+!     *    flz2(na), pwr2(na),
+!     *    sl2(na),
+     *    bi%IROUGH(bi%NA),
+     *    bi%ACLASS(bi%NA, bi%NTYPE + 1),
+!     *    glacier_flag(na),
+     *    stat=ierr)
 
         do ai = 1, attCount
           attribName = header%r2cp%ep%attList(ai)%name(:)
           rStat = ToLowerCase(attribName)
-          attLen = LEN_TRIM(attribName)
+          attLen = len_trim(attribName)
           if (attribName(1:attLen) == 'next') then
-            allocate(next(na), stat=iAllocate)
+            allocate(bi%NEXT(bi%NA), stat=ierr)
           else if (attribName(1:attLen) == 'da') then
-            allocate(da(na), stat=iAllocate)
+            allocate(bi%DA(bi%NA), stat=ierr)
           else if (attribName(1:attLen) == 'bankfull') then
-            allocate(bnkfll(na), stat=iAllocate)
+            allocate(bi%BNKFLL(bi%NA), stat=ierr)
           else if (attribName(1:attLen) == 'chnlslope') then
-            allocate(slope(na), stat=iAllocate)
+            allocate(bi%SLOPE_CHNL(bi%NA), stat=ierr)
           else if (attribName(1:attLen) == 'elev') then
-            allocate(elev(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'chnllength') then
-            allocate(rl(na), stat=iAllocate)
+            allocate(bi%ELEV(bi%NA), stat=ierr)
+!          else if (attribName(1:attLen) == 'chnllength') then
+!            allocate(bi%CHNL_LEN(na), stat=ierr)
           else if (attribName(1:attLen) == 'iak') then
-            allocate(ibn(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'intslope') then
-            allocate(sl1(na), stat=iAllocate)
+            allocate(bi%IAK(bi%NA), stat=ierr)
+!          else if (attribName(1:attLen) == 'intslope') then
+!            allocate(sl1(na), stat=iAllocate)
           else if (attribName(1:attLen) == 'chnl') then
-            allocate(ichnl(na), stat=iAllocate)
+            allocate(bi%ICHNL(bi%NA), stat=ierr)
           else if (attribName(1:attLen) == 'reach') then
-            allocate(ireach(na), stat=iAllocate)
+            allocate(bi%IREACH(bi%NA), stat=ierr)
           else if (attribName(1:attLen) == 'demslope') then
-            allocate(demslp(na), stat=iAllocate)
+            allocate(bi%SLOPE(bi%NA), stat=ierr)
           else if (attribName(1:attLen) == 'drdn') then
-            allocate(drdn(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'flz') then
-            allocate(flz(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'pwr') then
-            allocate(pwr(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'r1n') then
-            allocate(r1n(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'r2n') then
-            allocate(r2n(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'mndr') then
-            allocate(mndr(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'aa2') then
-            allocate(aa2(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'aa3') then
-            allocate(aa3(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'aa4') then
-            allocate(aa4(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'theta')then
-            allocate(theta(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'widep') then
-            allocate(widep(na), stat=iAllocate)
-          else if (attribName(1:attLen) == 'kcond') then
-            allocate(kcond(na), stat=iAllocate)
+            allocate(bi%DRDN(bi%NA), stat=ierr)
+!          else if (attribName(1:attLen) == 'flz') then
+!            allocate(flz(na), stat=iAllocate)
+!          else if (attribName(1:attLen) == 'pwr') then
+!            allocate(pwr(na), stat=iAllocate)
+!          else if (attribName(1:attLen) == 'r1n') then
+!            allocate(r1n(na), stat=iAllocate)
+!          else if (attribName(1:attLen) == 'r2n') then
+!            allocate(r2n(na), stat=iAllocate)
+!          else if (attribName(1:attLen) == 'mndr') then
+!            allocate(mndr(na), stat=iAllocate)
+!          else if (attribName(1:attLen) == 'aa2') then
+!            allocate(aa2(na), stat=iAllocate)
+!          else if (attribName(1:attLen) == 'aa3') then
+!            allocate(aa3(na), stat=iAllocate)
+!          else if (attribName(1:attLen) == 'aa4') then
+!            allocate(aa4(na), stat=iAllocate)
+!          else if (attribName(1:attLen) == 'theta')then
+!            allocate(theta(na), stat=iAllocate)
+!          else if (attribName(1:attLen) == 'widep') then
+!            allocate(widep(na), stat=iAllocate)
+!          else if (attribName(1:attLen) == 'kcond') then
+!            allocate(kcond(na), stat=iAllocate)
           else if (attribName(1:attLen) == 'gridarea') then
-            allocate(grid_area(na), stat=iAllocate)
-            allocate(frac(na), stat=iAllocate)
+            allocate(bi%AREA(bi%NA), stat=ierr)
+            allocate(bi%FRAC(bi%NA), stat=ierr)
           end if
         end do
-        if (iAllocate /= 0) stop
+        if (ierr /= 0) stop
      *    'Error with allocation of area16a arrays in sheda'
 !              glacier_flag(na)      added Mar, 28/06  nk
         iallcnt5 = 2
@@ -430,35 +453,35 @@ C/////////////////////////
 C// Added by Dave
 
 C// First find and copy rank attribute first data over to global array
-      if (unitnum == 31) then
+!      if (unitnum == 31) then
 !       for the shed file:
-        do ai = 1, attCount - (ntype + 1)
-          vi = 0
-          attribName = header%r2cp%ep%attList(ai)%name
-          rStat = ToLowerCase(attribName)
-          attLen = len_trim(attribName)
-          if (attribName(1:attLen) == 'rank') then
+!        do ai = 1, attCount - (bi%NTYPE + 1)
+!          vi = 0
+!          attribName = header%r2cp%ep%attList(ai)%name
+!          rStat = ToLowerCase(attribName)
+!          attLen = len_trim(attribName)
+!          if (attribName(1:attLen) == 'rank') then
 c reverse the direction of the yi loop
-            do yi = 1, yCount
+!            do yi = 1, yCount
 C  do yi=yCount,1,-1
-              do xi = 1, xCount
-                vi = vi + 1
-                val = header%r2cp%ep%attList(ai)%val(vi)
-                s(yi, xi) = val
-              end do
-            end do
-          end if
-        end do
-      else
+!              do xi = 1, xCount
+!                vi = vi + 1
+!                val = header%r2cp%ep%attList(ai)%val(vi)
+!                s(yi, xi) = val
+!              end do
+!            end do
+!          end if
+!        end do
+!      else
 !       for the par file:
         do ai = 1, attCount
           vi = 0
           attribName = header%r2cp%ep%attList(ai)%name
           rStat = ToLowerCase(attribName)
-          attLen = LEN_TRIM(attribName)
+          attLen = len_trim(attribName)
           if (attribName(1:attLen) == 'rank') then
-            do yi = 1, yCount
-              do xi = 1, xCount
+            do yi = 1, bi%yCount
+              do xi = 1, bi%xCount
                 vi = vi + 1
                 val = header%r2cp%ep%attList(ai)%val(vi)
                 s(yi, xi) = val
@@ -466,14 +489,14 @@ C  do yi=yCount,1,-1
             end do
           end if
         end do
-      end if
+!      end if
 
 !C// Copy attribute data (not classes yet) over to global attributes
       vi = 0
 !c reverse the direction of the yi loop
 !c do yi=1,yCount
-      do yi = 1, yCount
-        do xi = 1, xCount
+      do yi = 1, bi%yCount
+        do xi = 1, bi%xCount
           vi = vi + 1
           rank = s(yi, xi)
           if (rank > 0) then
@@ -485,72 +508,73 @@ C  do yi=yCount,1,-1
               attLen = len_trim(attribName)
               val = header%r2cp%ep%attList(ai)%val(vi)
               if (attribName(1:attLen) == 'next') then
-                next(rank) = int(val)
+                bi%NEXT(rank) = int(val)
               else if (attribName(1:attLen) == 'da') then
-                da(rank) = val
+                bi%DA(rank) = val
               else if (attribName(1:attLen) == 'bankfull') then
-                bnkfll(rank) = val
+                bi%BNKFLL(rank) = val
               else if (attribName(1:attLen) == 'chnlslope') then
-                slope(rank) = val
+                bi%SLOPE_CHNL(rank) = val
               else if (attribName(1:attLen) == 'elev') then
-                elev(rank) = val
-              else if (attribName(1:attLen) == 'chnllength') then
-                rl(rank) = val
+                bi%ELEV(rank) = val
+!              else if (attribName(1:attLen) == 'chnllength') then
+!                bi%CHNL_LEN(rank) = val
               else if (attribName(1:attLen) == 'iak') then
-                ibn(rank) = val
-              else if (attribName(1:attLen) == 'intslope') then
-                sl1(rank) = val
+                bi%IAK(rank) = int(val)
+!              else if (attribName(1:attLen) == 'intslope') then
+!                sl1(rank) = val
               else if (attribName(1:attLen) == 'chnl') then
-                ichnl(rank) = val
+                bi%ICHNL(rank) = int(val)
               else if (attribName(1:attLen) == 'reach') then
-                ireach(rank) = val
+                bi%IREACH(rank) = int(val)
     ! Slope dem and drainage density  extracted from dem used in WARTROF.f G.sapriza 11/14
+              else if (attribName(1:attLen) == 'demslope') then
+                bi%SLOPE(rank) = val
               else if (attribName(1:attLen) == 'drdn') then
-                drdn(rank) = val
+!todo: At some point these units were keyed to the first grid square; whether or not it's -1.0 (or maybe 1.0)
+                bi%DRDN(rank) = val
 !                       Convert DD from km/km^2 to m/m^2
 !                       The formulae in WATROF.f expect m/m^2
-                drdn(rank) = drdn(rank)/1000.0
-              else if (attribName(1:attLen) == 'demslope') then
-                demslp(rank) = val
+                bi%DRDN(rank) = bi%DRDN(rank)/1000.0
 
     !      WATROUTE attributes added by nk  Oct. 1/06
-              else if (attribName(1:attLen) == 'flz') then
-                flz(rank) = val
-              else if (attribName(1:attLen) == 'pwr') then
-                pwr(rank) = val
-              else if (attribName(1:attLen) == 'r1n') then
-                r1n(rank) = val
-              else if (attribName(1:attLen) == 'r2n') then
-                r2n(rank) = val
-              else if (attribName(1:attLen) == 'mndr') then
-                mndr(rank) = val
-              else if (attribName(1:attLen) == 'aa2') then
-                aa2(rank) = val
-              else if (attribName(1:attLen) == 'aa3') then
-                aa3(rank) = val
-              else if (attribName(1:attLen) == 'aa4') then
-                aa4(rank) = val
-              else if (attribName(1:attLen) == 'theta') then
-                theta(rank) = val
-              else if (attribName(1:attLen) == 'widep') then
-                widep(rank) = val
-              else if (attribName(1:attLen) == 'kcond') then
-                kcond(rank) = val
+!              else if (attribName(1:attLen) == 'flz') then
+!                flz(rank) = val
+!              else if (attribName(1:attLen) == 'pwr') then
+!                pwr(rank) = val
+!              else if (attribName(1:attLen) == 'r1n') then
+!                r1n(rank) = val
+!              else if (attribName(1:attLen) == 'r2n') then
+!                r2n(rank) = val
+!              else if (attribName(1:attLen) == 'mndr') then
+!                mndr(rank) = val
+!              else if (attribName(1:attLen) == 'aa2') then
+!                aa2(rank) = val
+!              else if (attribName(1:attLen) == 'aa3') then
+!                aa3(rank) = val
+!              else if (attribName(1:attLen) == 'aa4') then
+!                aa4(rank) = val
+!              else if (attribName(1:attLen) == 'theta') then
+!                theta(rank) = val
+!              else if (attribName(1:attLen) == 'widep') then
+!                widep(rank) = val
+!              else if (attribName(1:attLen) == 'kcond') then
+!                kcond(rank) = val
     !      end attributed added by nk
 
               else if (attribName(1:attLen) == 'gridarea') then
-                grid_area(rank) = val
-                frac(rank)=grid_area(rank)/al/al
+                bi%AREA(rank) = val
+                bi%FRAC(rank)=bi%AREA(rank)/bi%AL/bi%AL
     !       frac is still used in the code but no longer in the shed file
-              else if (attribName(1:attLen) == 'frac') then
-    !    frac(rank) = val
-                print *
-                print *, 'Error: old format shd file found'
-                print *,
-     +            'Please create a new bsnm_shd.r2c file using the'
-                print *, 'current version of bsn.exe'
-                print *
-                stop 'Program aborted in read_shed_ef.for @ 447'
+!              else if (attribName(1:attLen) == 'frac') then
+!    !    frac(rank) = val
+!                print *
+!                print *, 'Error: old format shd file found'
+!                print *,
+!     +            'Please create a new bsnm_shd.r2c file using the'
+!                print *, 'current version of bsn.exe'
+!                print *
+!                stop 'Program aborted in read_shed_ef.for @ 447'
 !      impervious area no longer used  nk
 c          else if(attribName(1:attLen) .eq. 'imperv')then
 c     aclass(rank, ntype+1) = val
@@ -561,71 +585,71 @@ c     aclass(rank, ntype+1) = val
         end do
       end do
 
-      manningflg = 'y'
+!      manningflg = 'y'
 
 C// Copy class attribute data over to global attributes
-      if (unitnum == 31) then
+!      if (unitnum == 31) then
         vi = 0
 c reverse the direction of the yi loop
-        do yi = 1, yCount
+        do yi = 1, bi%yCount
 C   do yi=yCount,1,-1
-          do xi = 1, xCount
+          do xi = 1, bi%xCount
             vi = vi + 1
             rank = s(yi, xi)
             if (rank > 0) then
-              do ai = attCount - ntype, attCount
+              do ai = attCount - bi%NTYPE, attCount
                 val = header%r2cp%ep%attList(ai)%val(vi)
-                aclass(rank, ai - (attCount - (ntype + 1))) = val
+                bi%ACLASS(rank, ai - (attCount - bi%NTYPE + 1)) = val
 !     aclass(rank,ai-(attCount-ntype)) = val
               end do
             end if
           end do
         end do
-      end if
+!      end if
 
 !     pick the dominant class in this grid for debug printing
-      iiprint = 1
-      do ii = 2, ntype + 1
-        if (aclass(nnprint, ii) > aclass(nnprint, iiprint)) iiprint = ii
-      end do
+!      iiprint = 1
+!      do ii = 2, ntype + 1
+!        if (aclass(nnprint, ii) > aclass(nnprint, iiprint)) iiprint = ii
+!      end do
 
 C// Copy rows and col over to global attributes
 C// I'm not sure if we need this...check with Nick
       vi = 0
-      do yi = 1, yCount
-        do xi = 1, xCount
+      do yi = 1, bi%yCount
+        do xi = 1, bi%xCount
           vi = vi + 1
           rank = s(yi, xi)
           if (rank > 0) then
-            xxx(rank) = xi
-            yyy(rank) = yi
+            bi%xxx(rank) = xi
+            bi%yyy(rank) = yi
           end if
         end do
       end do
 
-      do i = 1, ycount
-        do j = 1, xcount
-          dummy(i, j)=0.0
-        end do
-      end do
+!      do i = 1, ycount
+!        do j = 1, xcount
+!          dummy(i, j)=0.0
+!        end do
+!      end do
 
 !     Write the land cover class fractions to spl.txt
-      if (iopt >= 1) then
+!      if (iopt >= 1) then
 !        write(51,50002)
-        do ii = 1, ntype + 1
+!        do ii = 1, ntype + 1
 !     write(51,50001)ii
-          do i = 1, ycount
-            do j = 1, xcount
-              n = s(i, j)
-              if (n > 0) dummy(i, j) = aclass(n, ii)
-            end do
+!          do i = 1, ycount
+!            do j = 1, xcount
+!              n = s(i, j)
+!              if (n > 0) dummy(i, j) = aclass(n, ii)
+!            end do
 !            write(51,50000)(dummy(i,j),j=1,xcount)
-          end do
-        end do
-      end if
-50000 format(999f6.2)
-50001 format('class no=', i5)
-50002 format('Land Cover class fractions:')
+!          end do
+!        end do
+!      end if
+!50000 format(999f6.2)
+!50001 format('class no=', i5)
+!50002 format('Land Cover class fractions:')
 
 C// Deallocate the attribute data now that global attributes have been set
       do ai = 1, attCount
@@ -648,43 +672,43 @@ C/////////////////////////
 C//////////////////////////////////////////////
 
 !     GRAND RIVER:
-      if (iymin == 4790 .and. jxmin == 500) then
-        do i = 1, 25
-          chksum(i) = gr10k(i)
-        end do
-      end if
+!      if (iymin == 4790 .and. jxmin == 500) then
+!        do i = 1, 25
+!          chksum(i) = gr10k(i)
+!        end do
+!      end if
 
-      ichsm = 1
+!      ichsm = 1
 !     if one is no good, kill run
 !Dan Princz changed this
 CDAN      do i=1,min(25,imax)
-      do i = 1, min(25, IMAXI)
-        chsm = 0
+!      do i = 1, min(25, IMAXI)
+!        chsm = 0
 !Dan Princz changed this
 CDAN        do j=jmin,jmax
-        do j = JMINI, JMAXI
-          chsm = chsm + s(i, j)
-        end do
+!        do j = JMINI, JMAXI
+!          chsm = chsm + s(i, j)
+!        end do
 !       print*,' i,shksun(i),chsm /',i,chksum(i),chsm
-        if (chsm /= chksum(i)) then
-          ichsm = 0        ! program will abort
-        end if
-      end do
+!        if (chsm /= chksum(i)) then
+!          ichsm = 0        ! program will abort
+!        end if
+!      end do
 
 ! close this loophole - Oct. 15/03 NK
 !     when the top left hand corner of the grid are all zeros
 !     the checksums are all zero and the program would run.
-      chsm = 0
+!      chsm = 0
 CDAN do i=1,min(25,imax)
-      do i = 1, min(25, IMAXI)
+!      do i = 1, min(25, IMAXI)
 CDAN        do j=jmin,jmax
-        do j = JMINI, JMAXI
-          chsm = chsm + s(i, j)
-        end do
-      end do
-      if (chsm == 0) then
-        ichsm = 0        ! program will abort
-      end if
+!        do j = JMINI, JMAXI
+!          chsm = chsm + s(i, j)
+!        end do
+!      end do
+!      if (chsm == 0) then
+!        ichsm = 0        ! program will abort
+!      end if
 
 c!     South Nation
 c      if(xcount.eq.75.and.ycount.eq.44.and.na.eq.1634.and.naa.eq.1631)
@@ -699,44 +723,45 @@ c endif
 !     WATFLOOD LT
 !Dan Princz changed this
 CDAN      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.2000.0)then
-      if (IMAXI <= 7 .and. JMAXI <= 7 .and. na <= 15 .and.
-     +  al <= 2000.0) then
+!      if (IMAXI <= 7 .and. JMAXI <= 7 .and. na <= 15 .and.
+!     +  al <= 2000.0) then
 !       when ever these conditions are met, the program will run
 !       Since the gr10k files exceed these bounds, the messages will
 !       appropriate.
-        ichsm=3
-      end if
+!        ichsm=3
+!      end if
 !     WATFLOOD LT
 !     WATFLOOD LT
 
-      if (nnprint > naa) then
-        nnprint = naa/2
-        ipr = yyy(nnprint)   ! probably not needed anywhere
-        jpr = xxx(nnprint)
-      else
+!todo: is using debug grid from shed file useful?
+!      if (nnprint > naa) then
+!        nnprint = naa/2
+!        ipr = yyy(nnprint)   ! probably not needed anywhere
+!        jpr = xxx(nnprint)
+!      else
 !       this can happen when a sub-watershed is used
 !       for new format
-        ipr = yyy(nnprint)   ! probably not needed anywhere
-        jpr = xxx(nnprint)
-      end if
+!        ipr = yyy(nnprint)   ! probably not needed anywhere
+!        jpr = xxx(nnprint)
+!      end if
 !      write(51,*)
 !      write(51,5000)nnprint,ipr,jpr
 
 !     REV. 8.92 - Dec.  24/89 -  CHECK FOR 100% ACLASS COVERAGE
-      igridflg = 0
-      do n = 1, naa
+!      igridflg = 0
+      do n = 1, bi%NAA
         sumclass = 0.0
-        do ii = 1, ntype + 1
-          sumclass = sumclass + aclass(n, ii)
+        do ii = 1, bi%NTYPE + 1
+          sumclass = sumclass + bi%ACLASS(n, ii)
         end do
         if (sumclass /= 1.0) then
-          igridflg = 1
-          write(98, 9023) n, yyy(n), xxx(n), sumclass
-          do ii = 1, ntype + 1
+!          igridflg = 1
+          print 9023, n, bi%yyy(n), bi%xxx(n), sumclass
+          do ii = 1, bi%NTYPE + 1
             if (sumclass > 0.0) then
-              aclass(n, ii) = aclass(n, ii)/sumclass
+              bi%ACLASS(n, ii) = bi%ACLASS(n, ii)/sumclass
             else
-              write(98, 9024) n, yyy(n), xxx(n)
+              print 9024, n, bi%yyy(n), bi%xxx(n)
             end if
           end do
         end if
@@ -749,13 +774,14 @@ CDAN      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.2000.0)then
 !     Checking data:
 
       nrvr1 = 0
-      do n = 1, na
+      do n = 1, bi%NA
 !       moved this to flowinit at one point but then it got
 !       recalculated with each iteration when optimizing.
 !       A serious snafu resulting in the convergence problem on opt.
-        if (slope(n) < 0.0) then
-          print *, 'In read_shed_ef reading the file :', fln(flnNum)
-          print *, 'The slope in grid no ', n, ' is ', slope(n)
+        if (bi%SLOPE_CHNL(n) < 0.0) then
+          print *, 'In read_shed_ef reading the file :',
+     *      adjustl(trim(fls%fl(indx)%fn))
+          print *, 'The slope in grid no ', n, ' is ', bi%SLOPE_CHNL(n)
           print *, 'Please check the elevations in the map file'
           print *, 'or change the slope value in the shd file'
           print *, 'The former is recommended as the permanent solution'
@@ -763,9 +789,9 @@ CDAN      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.2000.0)then
           stop 'Program aborted in read_shed_ef @ 756'
         end if
 !CRAIG THOMPSON ADDED THIS
-        sl2(n) = sqrt(sl1(n))     ! used for overland flow routing (runof6)
+!        sl2(n) = sqrt(sl1(n))     ! used for overland flow routing (runof6)
 !       check to see how many basins/river classes there are:
-        nrvr1 = max(nrvr1, ibn(n))
+        nrvr1 = max(nrvr1, bi%IAK(n))
       end do
 
 c      if( nrvr.ne.nrvr1)then
@@ -778,7 +804,18 @@ c        print*,'Ignore this warning if you are running a sub-watershed'
 c        pause ' program paused in rd_shed_ef'
 c      endif
 c
-c      nrvr=nrvr1
+
+      if (bi%NRVR /= nrvr1) then
+        print 803, bi%NRVR, nrvr1
+        bi%NRVR = nrvr1
+      end if
+
+803   format(
+     *  /1x, 'WARNING: Total number of river classes is adjusted to',
+     *  /1x, 'match IAK.',
+     *  /3x, 'NRVR: ', i5,
+     *  /3x, 'NRVR (adjusted): ', i5, /)
+
 c      print*,'nrvr=',nrvr
 c      print*
 c      pause 'in read_shed_ef'
@@ -815,7 +852,7 @@ c        print*
 c        stop 'Program aborted in shed @ 242'
 c      endif
 
-      close(unitNum)
+      close(fls%fl(indx)%iun)
 !     WE WILL USE THIS UNIT NUMBER AGAIN FOR THE DAMAGE SITE FILE
 
 !         write(51,6006)
@@ -906,19 +943,19 @@ c      endif
 
 ! * * * *  TS  * * * * *
 !     TS - ALLOCATIONS OF AREAWET ARRAYS
-      if (.not. allocated(wetwid)) then
-        allocate(wetwid(na), chawid(na), chadep(na), wstore1(na),
-     *    wstore2(na),
-     *    wcap(na), flowxa(na), chaxa(na), satxa(na), wetxa(na),
-     *    hcha1(na),
-     *    hcha2(na), hwet1(na), hwet2(na), qin(na), qswevp(na),
-     *    qswrain(na), qiwet1(na), qiwet2(na), qowet1(na), qowet2(na),
-     *    wetarea(na), chaarea(na), bin_precip(na), wsat(na),
-     *    wetfrac(na),
-     *    stat=iAllocate)
-        if (iAllocate /= 0) stop
-     *    'Warning: error with allocation of areaswmp in read_shed_ef'
-      end if
+!      if (.not. allocated(wetwid)) then
+!        allocate(wetwid(na), chawid(na), chadep(na), wstore1(na),
+!     *    wstore2(na),
+!     *    wcap(na), flowxa(na), chaxa(na), satxa(na), wetxa(na),
+!     *    hcha1(na),
+!     *    hcha2(na), hwet1(na), hwet2(na), qin(na), qswevp(na),
+!     *    qswrain(na), qiwet1(na), qiwet2(na), qowet1(na), qowet2(na),
+!     *    wetarea(na), chaarea(na), bin_precip(na), wsat(na),
+!     *    wetfrac(na),
+!     *    stat=iAllocate)
+!        if (iAllocate /= 0) stop
+!     *    'Warning: error with allocation of areaswmp in read_shed_ef'
+!      end if
 ! * * * * * * * * * * *
 
 !     TS - ALLOCATIONS OF AREA1A ARRAYS
@@ -927,61 +964,61 @@ c      endif
 !     *ibn(na),irough(na),ichnl(na),next(na),ireach(na),frac(na),
 !     *aclass(na,ntype+1),ch_length(na),sl1(na),rl(na),
 !     *pot(ntype+1),potfs(ntype+1),qlz(na),psmear(na),punused(na),
-      if (.not. allocated(qi1)) then
-        allocate(qi1(na), qi2(na), qo1(na), qo2(na), qr(na),
-     *    d2(na), qda(na), cap(na), over(na),
-     *    qmax(na), res(na),
-     *    sump(na), store1(na), store2(na), att(na),
-     *    qbase(na), nreach(30),
-     *    rf(na, ntype + 1), rffs(na, ntype + 1),
-     *    r(na, ntype + 1), effpor(na, ntype + 1),
-     *    v(na, ntype + 1), totd1(na), totuzs(na), totsnw(na),
-     *    qstream(na),
-     *    totchnl(na), totgrid(na), netflow(na), storinit(na),
-     *    d1(na, ntype + 1),
-     *    d1fs(na, ntype + 1), uzs(na, ntype + 1), uzsfs(na, ntype + 1),
-     *    lzs(na),
-     *    sumf(na, ntype + 1), sumrechrg(na),
-     *    sumffs(na, ntype + 1), snow(na, ntype + 1), sumrff(na),
-     *    rechrg(na),
+!      if (.not. allocated(qi1)) then
+!        allocate(qi1(na), qi2(na), qo1(na), qo2(na), qr(na),
+!     *    d2(na), qda(na), cap(na), over(na),
+!     *    qmax(na), res(na),
+!     *    sump(na), store1(na), store2(na), att(na),
+!     *    qbase(na), nreach(30),
+!     *    rf(na, ntype + 1), rffs(na, ntype + 1),
+!     *    r(na, ntype + 1), effpor(na, ntype + 1),
+!     *    v(na, ntype + 1), totd1(na), totuzs(na), totsnw(na),
+!     *    qstream(na),
+!     *    totchnl(na), totgrid(na), netflow(na), storinit(na),
+!     *    d1(na, ntype + 1),
+!     *    d1fs(na, ntype + 1), uzs(na, ntype + 1), uzsfs(na, ntype + 1),
+!     *    lzs(na),
+!     *    sumf(na, ntype + 1), sumrechrg(na),
+!     *    sumffs(na, ntype + 1), snow(na, ntype + 1), sumrff(na),
+!     *    rechrg(na),
 !     *pot(ntype+1),potfs(ntype+1),    moved to rrpar  nk  May 15/07
 !Dan Princz changed this
 CDAN     *  qlz(na),sr(ntype+1),x4(ntype+1),x5(ntype+1),q1(na,ntype+1),
-     *    qlz(na), sr(ntype + 1), x4_R(ntype + 1), x5_R(ntype + 1),
-     *    q1(na, ntype + 1),
-     *    q1fs(na, ntype + 1), qint(na, ntype + 1),
-     *    qintfs(na, ntype + 1),
-     *    fake(ntype + 1), fakefs(ntype + 1),
-     *    qdrng(na), qdrngfs(na),
-     *    drng(na, ntype + 1), drngfs(na, ntype + 1), sq1(ntype + 1),
-     *    sq1fs(ntype + 1), sqint(ntype + 1), sqintfs(ntype + 1),
-     *    sdrng(ntype + 1),
-     *    sdrngfs(ntype + 1), sexcess(ntype + 1), qstrm(na),
-     *    sumq1(na), sumqint(na), sumq1fs(na), sumqintfs(na),
-     *    stat=iAllocate)
-        if (iAllocate /= 0) stop
-     *    'Warning: error with allocation of area1 in read_shed_ef'
-      end if
+!     *    qlz(na), sr(ntype + 1), x4_R(ntype + 1), x5_R(ntype + 1),
+!     *    q1(na, ntype + 1),
+!     *    q1fs(na, ntype + 1), qint(na, ntype + 1),
+!     *    qintfs(na, ntype + 1),
+!     *    fake(ntype + 1), fakefs(ntype + 1),
+!     *    qdrng(na), qdrngfs(na),
+!     *    drng(na, ntype + 1), drngfs(na, ntype + 1), sq1(ntype + 1),
+!     *    sq1fs(ntype + 1), sqint(ntype + 1), sqintfs(ntype + 1),
+!     *    sdrng(ntype + 1),
+!     *    sdrngfs(ntype + 1), sexcess(ntype + 1), qstrm(na),
+!     *    sumq1(na), sumqint(na), sumq1fs(na), sumqintfs(na),
+!     *    stat=iAllocate)
+!        if (iAllocate /= 0) stop
+!     *    'Warning: error with allocation of area1 in read_shed_ef'
+!      end if
 
 !     TS - ALLOCATIONS OF AREAETA ARRAYS (PARTIAL)
 !     RAD ALLOCATED IN SHEDA.FOR
 !     rev. 9.1.80  Mar.  31/05  - NK: added sublimation   (sublim)
-      if (.not. allocated(strloss)) then
-        allocate(strloss(na), stat=iAllocate)
-        if (iAllocate /= 0) stop
-     *    'Warning: error with allocation of areaeta arrays in spl9'
-      end if
+!      if (.not. allocated(strloss)) then
+!        allocate(strloss(na), stat=iAllocate)
+!        if (iAllocate /= 0) stop
+!     *    'Warning: error with allocation of areaeta arrays in spl9'
+!      end if
 
 !     OCT30/03 TS:  ADDED SUMQI,SUMQINT,SUMQ1FS AND SUMQINTFS ALLOCATIONS
 
 !     JUN28/06 TS: ADDED DF, DFFS FOR ISOTOPE ROUTINES
-      if (.not. allocated(df)) then
-        allocate(df(na, ntype + 1), dffs(na, ntype + 1),
-     *    qdrng2(na), qdrngfs2(na),
-     *    stat=iAllocate)
-        if (iAllocate /= 0) stop
-     *    'Warning: error with allocation of areaeta arrays in spl9'
-      end if
+!      if (.not. allocated(df)) then
+!        allocate(df(na, ntype + 1), dffs(na, ntype + 1),
+!     *    qdrng2(na), qdrngfs2(na),
+!     *    stat=iAllocate)
+!        if (iAllocate /= 0) stop
+!     *    'Warning: error with allocation of areaeta arrays in spl9'
+!      end if
 
 !     TS - ALLOCATIONS OF AREA4A ARRAYS
 !     ntype for the number of land cover classes
@@ -1226,54 +1263,55 @@ c     endif
 
       return
 
- 9998 ntmp = 0
-      ndam = 0
-      write(98, 9025)
-      write(98, 9026)
-      close(34)
-      return
+! 9998 ntmp = 0
+!      ndam = 0
+!      write(98, 9025)
+!      write(98, 9026)
+!      close(34)
+!      return
 
- 9999 ndam = 0
-      write(98, 9026)
-      close(34)
-      return
+! 9999 ndam = 0
+!      write(98, 9026)
+!      close(34)
+!      return
 
-99901 write(*, 99902) fln(4)
-99902 format(' file', a30, ' not found for unit 34 - check event file')
-      stop 'program stopped in shed.for at 99902'
+!99901 write(*, 99902) fln(4)
+!99902 format(' file', a30, ' not found for unit 34 - check event file')
+!      stop 'program stopped in shed.for at 99902'
 
-99910 write(*, 99911) fln(4)
-99911 format(' no data found or problems with data in ', a30)
-      stop 'program stopped in shed at 99911'
+!99910 write(*, 99911) fln(4)
+!99911 format(' no data found or problems with data in ', a30)
+!      stop 'program stopped in shed at 99911'
 
 ! FORMATS
 
-1000  format(i5)
-1002  format(' ', i5, 'stream gage locations have been passed over')
-1003  format(' ', i5, 'reservoir locations have been passed over')
-1004  format(' ', i5, 'damage sites:')
-1098  format(a80)
-1099  format(2i5, 1x, a12, 7x, 4e10.3, f10.3)
-1100  format(' ', 2i5, 1x, a12, 7x, 4e10.3, f10.3)
-1101  format(' reading the stream gauge location file: ', a30)
-1102  format(' ', 2i5, 1x, a12, 7x, 4e10.3, f10.3/)
-1776  format(' ', 'l,iys(l),jxs(l)', 5i5)
+!1000  format(i5)
+!1002  format(' ', i5, 'stream gage locations have been passed over')
+!1003  format(' ', i5, 'reservoir locations have been passed over')
+!1004  format(' ', i5, 'damage sites:')
+!1098  format(a80)
+!1099  format(2i5, 1x, a12, 7x, 4e10.3, f10.3)
+!1100  format(' ', 2i5, 1x, a12, 7x, 4e10.3, f10.3)
+!1101  format(' reading the stream gauge location file: ', a30)
+!1102  format(' ', 2i5, 1x, a12, 7x, 4e10.3, f10.3/)
+!1776  format(' ', 'l,iys(l),jxs(l)', 5i5)
 !        write(51,*)
 
-5000  format(' Debug grid reset to grid number n,row col', 3i7)
+!5000  format(' Debug grid reset to grid number n,row col', 3i7)
 
-6004  format(1x, 4i4, f7.1, f7.2, f8.4, 2f7.0, i3, f7.4, 2i3, 7f5.2)
-6006  format(2x, 'basin file:')
-6007  format(4x, 'n   yy   xx      da       cap       slope    elv',
-     *'     ibn   sl2    ich  next reach frac  imp area & fractions')
-6014  format(i5)
+!6004  format(1x, 4i4, f7.1, f7.2, f8.4, 2f7.0, i3, f7.4, 2i3, 7f5.2)
+!6006  format(2x, 'basin file:')
+!6007  format(4x, 'n   yy   xx      da       cap       slope    elv',
+!     *'     ibn   sl2    ich  next reach frac  imp area & fractions')
+!6014  format(i5)
 
-9005  format(12i5, 2f5.0)
+!9005  format(12i5, 2f5.0)
 
-9023  format(' Warning: area correction in grid(n,i,j)', 3i5, f9.5)
-9024  format(' Warning: total area = 0.0 for grid(n,i,j)', 3i5)
-9025  format(' Warning: no reservoirs or lakes in bsnm.str file')
-9026  format(' Warning: no damage sites in bsnm.str file')
+9023  format(
+     *  1x, 'WARNING: Area correction in grid n(i, j): ', 3i5, f9.5)
+9024  format(1x, 'WARNING: Total area = 0.0 in grid n (i, j): ', 3i5)
+!9025  format(' Warning: no reservoirs or lakes in bsnm.str file')
+!9026  format(' Warning: no damage sites in bsnm.str file')
 
       return
 
