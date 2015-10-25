@@ -28,7 +28,8 @@
                 R2CFILEUNIT = R2CFILEUNIT + 1
                 NR2CSTATES = NR2CSTATES + 1
                 open(R2CFILEUNIT, FILE = './R2C_OUTPUT/' // trim(R2C_ATTRIBUTES(n, 3)) // '_GRD.r2c')
-                call WRITE_HEADER(R2CFILEUNIT, R2C_ATTRIBUTES(n, :), 0)
+                call WRITE_HEADER(R2CFILEUNIT, R2C_ATTRIBUTES(n, :), 0, coordsys1, datum1, zone1, &
+                                  xorigin, yorigin, xdelta, ydelta, xcount, ycount)
             end if
             if (GAT(n) == 1) then
                 do j = 1, NMTEST
@@ -37,7 +38,8 @@
                     write(FN, '(i2)') j
                     open(R2CFILEUNIT, &
                          FILE = './R2C_OUTPUT/' // trim(R2C_ATTRIBUTES(n, 3)) // '_GAT_CLASS_' // adjustl(trim(FN)) // '.r2c')
-                    call WRITE_HEADER(R2CFILEUNIT, R2C_ATTRIBUTES(n, :), J)
+                    call WRITE_HEADER(R2CFILEUNIT, R2C_ATTRIBUTES(n, :), j, coordsys1, datum1, zone1, &
+                                      xorigin, yorigin, xdelta, ydelta, xcount, ycount)
                 end do
             end if
             if (GRDGAT(n) == 1) then
@@ -47,7 +49,8 @@
                     write(FN, '(i2)') j
                     open(R2CFILEUNIT, &
                          FILE = './R2C_OUTPUT/' // trim(R2C_ATTRIBUTES(n, 3)) // '_GRDGAT_CLASS_' // adjustl(trim(FN)) // '.r2c')
-                    call WRITE_HEADER(R2CFILEUNIT, R2C_ATTRIBUTES(n, :), j)
+                    call WRITE_HEADER(R2CFILEUNIT, R2C_ATTRIBUTES(n, :), j, coordsys1, datum1, zone1, &
+                                      xorigin, yorigin, xdelta, ydelta, xcount, ycount)
                 end do
             end if
         end do
@@ -55,14 +58,18 @@
     end subroutine
 
     !> Writes the header of R2C file
-    subroutine write_header(un, varattr, nc)
+    subroutine write_header(un, varattr, nc, coordsys1, datum1, zone1, &
+        xorigin, yorigin, xdelta, ydelta, xcount, ycount)
 
-        use area_watflood
+!-        use area_watflood
 
         implicit none
 
         integer un, nc
         character(*) varattr(3)
+        character(10) coordsys1, datum1, zone1
+        real xorigin, yorigin, xdelta, ydelta
+        integer xcount, ycount
 
         character(10) ctime
         character(8)  cday
@@ -83,10 +90,10 @@
         write(un, 3020) ':Name               ', varattr(3)
         write(un, 3005) '#                                       '
         write(un, 3004) ':Projection         ', coordsys1
-        if (coordsys_temp == 'LATLONG   ') then
+        if (coordsys1 == 'LATLONG   ') then
             write(un, 3004) ':Ellipsoid          ', datum1
         end if
-        if (coordsys_temp == 'UTM       ') then
+        if (coordsys1 == 'UTM       ') then
             write(un, 3004) ':Ellipsoid          ', datum1
             write(un, 3004) ':Zone               ', zone1
         end if
@@ -108,9 +115,10 @@
         write(un, 3003) ':xDelta             ', xdelta
         write(un, 3003) ':yDelta             ', ydelta
         write(un, 3005) '#                                       '
-        if (unit_conversion /= 0.0) then
-            write(un, 3003) ':UnitConverson      ', unit_conversion
-        end if
+!todo: restore unit_conversion attribute
+!        if (unit_conversion /= 0.0) then
+!            write(un, 3003) ':UnitConverson      ', unit_conversion
+!        end if
         write(un, 3005) '#                                       '
         write(un, 3005) ':endHeader                              '
 

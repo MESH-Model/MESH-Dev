@@ -13,10 +13,13 @@ C
 C    You should have received a copy of the GNU Lesser General Public License
 C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
-      subroutine write_r2c(un, fn,
+      subroutine write_r2c(fls, indx, bi,
      *  no_frames, no_classes, frame_no, class_no,
      *  no_signf,
-     *  EF_YEAR_NOW, EF_MONTH_NOW, EF_DAY_NOW, EF_HOUR_NOW)
+     *  EF_YEAR_NOW, EF_MONTH_NOW, EF_DAY_NOW, EF_HOUR_NOW,
+     *  outarray,
+     *  attribute_name, attribute_units, attribute_type,
+     *  attribute_source, author)
 
 !***********************************************************************
 !       copyright (c) by Nick Kouwen 1987-2007
@@ -29,8 +32,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
 ! - List of arguments:
 
-!   I - un      int        unit number
-!   I - fn      int        file number
+!       fls                 type        File information.
+!       bi                  type        Basin/watershed information.
+!       indx                int         Index of the file in fls.
 !   I - itogo   int        no. of hours until next rainfall
 !   R - unit_conversion    REAL*4     conversion factor (area2)
 !   I - FLN     CHAR*12    file names
@@ -38,19 +42,42 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !   I - ocflg   int        open_close flag 1 open file -1 close file
 !   I - frmflg  int        frame flag  1 new frame -1 end frame
 !                          0 each call = 1 frame with frame marks
+!       EF_YEAR_NOW         int         Year of the current time-step.
+!       EF_MONTH_NOW        int         Month of the current time-step.
+!       EF_DAY_NOW          int         Day of the date of the current
+!                                       time-step.
+!       EF_HOUR_NOW         int         Hour of the current time-step.
+!       outarray            real(:, :)  Array of data to write to file.
+!       attribute_name      char(40)    Name of the data/variable.
+!       attribute_units     char(40)    Units of the data.
+!       attribute_type      char(40)    Not used. Type of attribute
+!                                       (e.g., 'flow').
+!       attribute_source    char(40)   Source of data.
+!       author              char(40)    Name of the steward of the data.
 !***********************************************************************
 
-      use area_watflood
+!      use area_watflood
+      use sa_mesh_shared_variabletypes
+      use sa_mesh_shared_variables
+      use model_files_variabletypes
 
       implicit none
 
-      integer un, fn, ii, no_signf, hour_no, hours_togo,
+      integer iun, ii, no_signf, hour_no, hours_togo,
      *  no_frames, no_classes, frame_no, class_no,
-     *  i, j, ios,
+     *  i, j, ierr,
      *  EF_YEAR_NOW, EF_MONTH_NOW, EF_DAY_NOW, EF_HOUR_NOW
       character(20) junk
       character(10) time
       character(8) cday
+
+      !> Input variables.
+      type(fl_ids), intent(in) :: fls
+      integer, intent(in) :: indx
+      type(basin_info), intent(in) :: bi
+      real, dimension(:, :), intent(in) :: outarray
+      character(40), intent(in), optional :: attribute_name,
+     *  attribute_units, attribute_type, attribute_source, author
 
 !     FIRST TIME THROUGH THIS SUBROUTINE ONLY
 !     OPEN OUTPUT FILE AND WRITE HEADER
@@ -87,77 +114,81 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 ! 1400   format(' opening fln(',i3,'):',a30,'---')
 !        write(*,*)
 
-        open(unit=un, file=fln(fn), status='unknown', iostat=ios)
+        iun = fls%fl(indx)%iun
+        open(iun, file=adjustl(trim(fls%fl(indx)%fn)),
+     *    status='unknown', action='write', iostat=ierr)
 !     print*,' un fn et fln(fn) ',un,fn,fln(fn)
-        print *, 'Opened unit=', un, 'filename  ', fln(fn)
-        if (ios /= 0) then
-          print *, 'Error opening ', fln(fn), ' on unit=', un
-          print *, 'ios = ', ios
-          print *
-          stop 'in write_r2c @ 83'
+        if (ro%VERBOSEMODE > 0) then
+          print 1121, iun, adjustl(trim(fls%fl(indx)%fn))
+          if (ierr /= 0) then
+            print 1122, ierr
+            stop 'in write_r2c @ 83'
+          end if
         end if
+1121  format(1x, 'Opened unit=', i5, ' filename ', (a))
+1122  format(3x, 'Error opening ios = ', i4)
 c   print*,'Opened unit=',un,' filename=',fln(fn)
-        write(un, 3005) '########################################'
-        write(un, 3005) ':FileType r2c  ASCII  EnSim 1.0         '
-        write(un, 3005) '#                                       '
-        write(un, 3005) '# DataType               2D Rect Cell   '
-        write(un, 3005) '#                                       '
-        write(un, 3005) ':Application             EnSimHydrologic'
-        write(un, 3005) ':Version                 2.1.23         '
-        write(un, 3020) ':WrittenBy          ', author
+        write(iun, 3005) '########################################'
+        write(iun, 3005) ':FileType r2c  ASCII  EnSim 1.0         '
+        write(iun, 3005) '#                                       '
+        write(iun, 3005) '# DataType               2D Rect Cell   '
+        write(iun, 3005) '#                                       '
+        write(iun, 3005) ':Application             EnSimHydrologic'
+        write(iun, 3005) ':Version                 2.1.23         '
+        write(iun, 3020) ':WrittenBy          ', author
         call date_and_time(cday, time)
-        write(un, 3010) ':CreationDate       ',
+        write(iun, 3010) ':CreationDate       ',
      *    cday(1:4), cday(5:6), cday(7:8), time(1:2), time(3:4)
 3010  format(a20, a4, '-', a2, '-', a2, 2x, a2, ':', a2)
-        write(un, 3005) '#                                       '
-        write(un, 3005) '#---------------------------------------'
-        write(un, 3005) '#                                       '
-        write(un, 3020) ':Name               ', name
-        write(un, 3005) '#                                       '
-        write(un, 3004) ':Projection         ', coordsys_temp
-        if (coordsys_temp == 'LATLONG   ') then
-          write(un, 3004) ':Ellipsoid          ', datum_temp
+        write(iun, 3005) '#                                       '
+        write(iun, 3005) '#---------------------------------------'
+        write(iun, 3005) '#                                       '
+        write(iun, 3020) ':Name               ', author
+        write(iun, 3005) '#                                       '
+        write(iun, 3004) ':Projection         ', bi%CoordSys
+        if (bi%CoordSys == 'LATLONG   ') then
+          write(iun, 3004) ':Ellipsoid          ', bi%Datum
         end if
-        if (coordsys_temp == 'UTM       ') then
-          write(un, 3004) ':Ellipsoid          ', datum_temp
-          write(un, 3004) ':Zone               ', zone_temp
+        if (bi%CoordSys == 'UTM       ') then
+          write(iun, 3004) ':Ellipsoid          ', bi%Datum
+          write(iun, 3004) ':Zone               ', bi%Zone
         end if
-        write(un, 3005) '#                                       '
-        write(un, 3003) ':xOrigin            ', xorigin_temp
-        write(un, 3003) ':yOrigin            ', yorigin_temp
-        write(un, 3005) '#                                       '
-        write(un, 3020) ':SourceFile         ', source_file_name
-        write(un, 3005) '#                                       '
+        write(iun, 3005) '#                                       '
+        write(iun, 3003) ':xOrigin            ', bi%xOrigin
+        write(iun, 3003) ':yOrigin            ', bi%yOrigin
+        write(iun, 3005) '#                                       '
+        write(iun, 3020) ':SourceFile         ', attribute_source
+        write(iun, 3005) '#                                       '
         if (no_frames == 1 .and. no_classes >= 1) then
           do i = 1, no_classes
-            write(un, 3007) ':AttributeName', i, ' Class', i
+            write(iun, 3007) ':AttributeName', i, ' Class', i
           end do
-          write(un, 3005) '#                                       '
+          write(iun, 3005) '#                                       '
         else
-          write(un, 3020) ':AttributeName 1    ', attribute_name
-          write(un, 3020) ':AttributeUnits     ', attribute_units
+          write(iun, 3020) ':AttributeName 1    ', attribute_name
+          write(iun, 3020) ':AttributeUnits     ', attribute_units
 c!         see note below @***
         end if
-        write(un, 3005) '#                                       '
-        write(un, 3001) ':xCount             ', xcount_temp
-        write(un, 3001) ':yCount             ', ycount_temp
-        write(un, 3003) ':xDelta             ', xdelta_temp
-        write(un, 3003) ':yDelta             ', ydelta_temp
+        write(iun, 3005) '#                                       '
+        write(iun, 3001) ':xCount             ', bi%xCount
+        write(iun, 3001) ':yCount             ', bi%yCount
+        write(iun, 3003) ':xDelta             ', bi%xDelta
+        write(iun, 3003) ':yDelta             ', bi%yDelta
 c        if(no_frames.eq.1)then
-        if (no_frames <= 1) then
-          write(un, 3005) '#                                       '
-          write(un, 3004) ':SampleTime         ', startdate, starttime
+!        if (no_frames <= 1) then
+!          write(un, 3005) '#                                       '
+!          write(un, 3004) ':SampleTime         ', startdate, starttime
 !          write(un,3004)':StartDate          '
-        end if
-        write(un, 3005) '#                                       '
-        if (unit_conversion /= 0.0) then
-          write(un, 3003) ':UnitConverson      ', unit_conversion
-        end if
-        if (name == 'Snow Water Equivalent                   ') then
-          write(un, 3003) ':InitHeatDeficit    ', init_heat_deficit
-        end if
-        write(un, 3005) '#                                       '
-        write(un, 3005) ':endHeader                              '
+!        end if
+        write(iun, 3005) '#                                       '
+!        if (unit_conversion /= 0.0) then
+!          write(un, 3003) ':UnitConverson      ', unit_conversion
+!        end if
+!        if (name == 'Snow Water Equivalent                   ') then
+!          write(un, 3003) ':InitHeatDeficit    ', init_heat_deficit
+!        end if
+        write(iun, 3005) '#                                       '
+        write(iun, 3005) ':endHeader                              '
 
         return
 
@@ -172,7 +203,7 @@ c        if(no_frames.eq.1)then
 
 !     :Frame and :EndFrame lines are written only for time series
 
-      if (data_source == '     ') data_source = source  ! source from area2
+!      if (data_source == '     ') data_source = source  ! source from area2
 
 !      if(no_frames.gt.1)write(un,3011)':Frame',frame_no,frame_no,
 !     *     year1,mo1,day1,hour1,'Hour=',hour_no,hours_togo,data_source
@@ -188,26 +219,26 @@ c   endif
 ! Craig Thompson changed mo1 to month_now so that the
 ! output is correctly formatted
         if (EF_MONTH_NOW <= 9 .and. EF_DAY_NOW <= 9) then
-          if (no_frames > 1) write(un, 3021) ':Frame',
+          if (no_frames > 1) write(iun, 3021) ':Frame',
      *      abs(frame_no), abs(frame_no), EF_YEAR_NOW, EF_MONTH_NOW,
      *      EF_DAY_NOW, EF_HOUR_NOW
 
         else if (EF_MONTH_NOW <= 9 .and. EF_DAY_NOW > 9) then
 ! Craig Thompson changed mo1 to month_now so that the
 ! output is correctly formatted
-          if (no_frames > 1) write(un, 3022) ':Frame',
+          if (no_frames > 1) write(iun, 3022) ':Frame',
      *      abs(frame_no), abs(frame_no), EF_YEAR_NOW, EF_MONTH_NOW,
      *      EF_DAY_NOW, EF_HOUR_NOW
 
         else if (EF_MONTH_NOW > 9 .and. EF_DAY_NOW <= 9) then
 ! Craig Thompson changed mo1 to month_now so that the
 ! output is correctly formatted
-          if (no_frames > 1) write(un, 3023) ':Frame',
+          if (no_frames > 1) write(iun, 3023) ':Frame',
      *      abs(frame_no), abs(frame_no), EF_YEAR_NOW, EF_MONTH_NOW,
      *      EF_DAY_NOW, EF_HOUR_NOW
 
         else
-          if (no_frames > 1) write(un, 3024) ':Frame',
+          if (no_frames > 1) write(iun, 3024) ':Frame',
      *      abs(frame_no), abs(frame_no), EF_YEAR_NOW, EF_MONTH_NOW,
      *      EF_DAY_NOW, EF_HOUR_NOW
 
@@ -218,52 +249,55 @@ c   endif
 !                 south on top, north on bottom    !!!!!!!!!!
 !   write(*,*) outarray(10,10)
         if (no_signf == 0) then
-          do i = 1, ycount_temp
-            write(un, 1300) (outarray(i, j), j = 1, xcount_temp)
+          do i = 1, bi%yCount
+            write(iun, 1300) (outarray(i, j), j = 1, bi%xCount)
           end do
         else if (no_signf == 1) then   ! swe, precip and temp
-          do i = 1, ycount_temp
-            write(un, 1301) (outarray(i, j), j = 1, xcount_temp)
+          do i = 1, bi%yCount
+            write(iun, 1301) (outarray(i, j), j = 1, bi%xCount)
           end do
         else if (no_signf == 2) then   ! swe, precip and temp
-          do i = 1, ycount_temp
-            write(un, 1302) (outarray(i, j), j = 1, xcount_temp)
+          do i = 1, bi%yCount
+            write(iun, 1302) (outarray(i, j), j = 1, bi%xCount)
           end do
         else if (no_signf == 3) then   ! swe, precip and temp
-          do i = 1, ycount_temp
-            write(un, 1303) (outarray(i, j), j = 1, xcount_temp)
+          do i = 1, bi%yCount
+            write(iun, 1303) (outarray(i, j), j = 1, bi%xCount)
           end do
         else if (no_signf == 4) then   ! swe, precip and temp
-          do i = 1, ycount_temp
-            write(un, 1304) (outarray(i, j), j = 1, xcount_temp)
+          do i = 1, bi%yCount
+            write(iun, 1304) (outarray(i, j), j = 1, bi%xCount)
           end do
         else if (no_signf == 5) then   ! swe, precip and temp
-          do i = 1, ycount_temp
-            write(un, 1305) (outarray(i, j), j = 1, xcount_temp)
+          do i = 1, bi%yCount
+            write(iun, 1305) (outarray(i, j), j = 1, bi%xCount)
           end do
         else if (no_signf == 6) then   ! swe, precip and temp
-          do i = 1, ycount_temp
-            write(un, 1306) (outarray(i, j), j = 1, xcount_temp)
+          do i = 1, bi%yCount
+            write(iun, 1306) (outarray(i, j), j = 1, bi%xCount)
           end do
         else if (no_signf == 8) then   ! flow
-          do i = 1, ycount_temp
-            write(un, 1308) (outarray(i, j), j = 1, xcount_temp)
+          do i = 1, bi%yCount
+            write(iun, 1308) (outarray(i, j), j = 1, bi%xCount)
           end do
         else                        ! init soil moisture
-          do i = 1, ycount_temp
-            write(un, 1307) (outarray(i, j), j = 1, xcount_temp)
+          do i = 1, bi%yCount
+            write(iun, 1307) (outarray(i, j), j = 1, bi%xCount)
           end do
         end if
 
-        if(no_classes == 1) write(un, 3012) ':EndFrame'
+        if(no_classes == 1) write(iun, 3012) ':EndFrame'
 
       end if
 
       if (frame_no == no_frames .and. class_no == no_classes) then
-        close(un, status='keep')
-        write(51, *) 'Closed unit ', un, ' Filename=  ', fln(fn)
-        write(*, *) 'Closed unit ', un, ' Filename=  ', fln(fn)
+        close(iun)
+!        write(51, *) 'Closed unit ', un, ' Filename=  ', fln(fn)
+        if (ro%VERBOSEMODE > 0) then
+          print 1291, iun, adjustl(trim(fls%fl(indx)%fn))
+        end if
       end if
+1291  format(3x, 'Opened unit=', i5, ' filename ', (a))
 
       return
 

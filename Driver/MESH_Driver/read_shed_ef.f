@@ -100,7 +100,7 @@ C//////////////////////////////////////////////
 !      logical exists
       real, dimension(:, :), allocatable :: s
 
-      type(fl_ids):: fls
+      type(fl_ids) :: fls
       integer, intent(in) :: indx
       type(basin_info) :: bi
 

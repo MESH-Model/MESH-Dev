@@ -13,29 +13,30 @@ module sa_mesh_shared_variabletypes
         !* NA: Total number of grids. [-]
         !* NAA: Total number of grids in the basin. [-]
         integer :: &
-            NA = 1, &
-            NAA = 1
+            NA = 0, &
+            NAA = 0
 
         !* NM: Number of GRUs. [-]
-        integer :: NTYPE = 1
+        integer :: NTYPE = 0
 
         !* NRVR: Number of river classes. [-]
-        integer :: NRVR = 1
+        integer :: NRVR = 0
 
         !* IGND: Number of soil layers per grid. [-]
         integer :: IGND = 3
 
         !* ILG: Total potential number of land-based contributing units.
-        integer :: ILG = 1
+        integer :: ILG = 0
 
         !* NML: Number of active land-based contributing units.
         integer :: NML = 0
 
         real, dimension(:, :), allocatable :: ACLASS
-        integer, dimension(:), allocatable :: ILMOS, JLMOS, RANK, NEXT
+        integer, dimension(:), allocatable :: ILMOS, JLMOS, IWMOS, JWMOS, RANK, NEXT
 
         !* NMW: Number of active water-based contributing units.
         integer :: NMW = 0
+        integer :: ILW = 0
 
         character(10) CoordSys, Datum, Zone
 

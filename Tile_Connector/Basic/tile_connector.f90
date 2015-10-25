@@ -1,16 +1,18 @@
-subroutine tile_connector(runoff, recharge, leakages, ncount, rofogrd, rofsgrd, rofbgrd, DELT)
+subroutine tile_connector(bi, runoff, recharge, leakage, ncount, rofogrd, rofsgrd, rofbgrd, delt)
 
-    use area_watflood
+!    use area_watflood
+    use sa_mesh_shared_variabletypes
 
     implicit none
 
     !> ----------------------------------------------------------------------------
     !> Parameters
     !> ----------------------------------------------------------------------------
-    real(kind=4), dimension(ycount, xcount) :: runoff, recharge, leakages
-    integer ncount
-    real(kind=4), dimension(NA) :: rofogrd, rofsgrd, rofbgrd
-    real(kind=4) DELT
+    type(basin_info), intent(in) :: bi
+    real, dimension(:, :) :: runoff, recharge, leakage
+    integer, intent(in) :: ncount
+    real, dimension(:), intent(in) :: rofogrd, rofsgrd, rofbgrd
+    real, intent(in) :: delt
 
     !> ----------------------------------------------------------------------------
     !> Declarations
@@ -24,15 +26,15 @@ subroutine tile_connector(runoff, recharge, leakages, ncount, rofogrd, rofsgrd, 
     !> CDAN * half-hour: stand-alone RTE.exe (Watroute) reads hourly data.
     !> CDAN * Output values are multiplies by delt to convert them from
     !> CDAN * [kg m-2 s-1] TO [mm] (Mar 20/08)
-    do i = 1, NA
+    do i = 1, bi%NA
         if (mod(ncount, 2) /= 0) then !Hourly time step
-            runoff(YYY(i), XXX(i)) = (ROFOGRD(i) + ROFSGRD(i))*DELT
-            recharge(YYY(i), XXX(i)) = ROFBGRD(i)*DELT
-!+           leakages(YYY(i), XXX(i)) = 0.0*DELT !todo: determine what this should be
+            runoff(bi%yyy(i), bi%xxx(i)) = (rofogrd(i) + rofsgrd(i))*delt
+            recharge(bi%yyy(i), bi%xxx(i)) = rofbgrd(i)*delt
+!+           leakage(bi%yyy(i), bi%xxx(i)) = roflgrd*delt !todo: determine what this should be
         else !Cumulative half-hourly time step
-            runoff(YYY(i), XXX(i)) = runoff(YYY(i), XXX(i)) + (ROFOGRD(i) + ROFSGRD(i))*DELT
-            recharge(YYY(i), XXX(i)) = recharge(YYY(i), XXX(i)) + ROFBGRD(i)*DELT
-!+           leakages(YYY(i), XXX(i) = leakages(YYY(i), XXX(i)) + 0.0*DELT !todo: determine what this should be
+            runoff(bi%yyy(i), bi%xxx(i)) = runoff(bi%yyy(i), bi%xxx(i)) + (rofogrd(i) + rofsgrd(i))*delt
+            recharge(bi%yyy(i), bi%xxx(i)) = recharge(bi%yyy(i), bi%xxx(i)) + rofbgrd(i)*delt
+!+           leakage(bi%yyy(i), bi%xxx(i) = leakage(bi%yyy(i), bi%xxx(i)) + roflgrd*delt !todo: determine what this should be
         end if
     end do
 
