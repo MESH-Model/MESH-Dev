@@ -146,15 +146,15 @@ program RUNMESH
     real IGND_TEST, IGND_DEEP
 
 !> WATERSHED RELATED VARIABLES
-    integer LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX, LONDEGMIN, &
-        LONMINMIN, LONDEGMAX, LONMINMAX
-    integer WF_IYMAX, WF_JXMAX
+!    integer LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX, LONDEGMIN, &
+!        LONMINMIN, LONDEGMAX, LONMINMAX
+!    integer WF_IYMAX, WF_JXMAX
 !> note, there are more watershed related variables declared in mesh_input_module.f
 
-    real(kind = 8) LATLENGTH, LONGLENGTH
-    real(kind = 8) WF_AL
-    real WF_LAND_MAX, WF_LAND_SUM
-    integer WF_LAND_COUNT
+!    real(kind = 8) LATLENGTH, LONGLENGTH
+!    real(kind = 8) WF_AL
+!    real WF_LAND_MAX, WF_LAND_SUM
+!    integer WF_LAND_COUNT
 
 !> IOSTAT VARIABLE
     integer IOS, IOS_EVT
@@ -353,9 +353,9 @@ program RUNMESH
 !* bi%AL: SINGLE-DIMENSION GRID SQUARE LENGTH
 !* LAT/LONG, SITE LOCATION INFORMATION:
 !* bi%iyMin: MINIMUM Y-DIRECTION GRID CO-ORDINATE (UTM)
-!* WF_IYMAX: MAXIMUM Y-DIRECTION GRID CO-ORDINATE (UTM)
+!* bi%iyMax: MAXIMUM Y-DIRECTION GRID CO-ORDINATE (UTM)
 !* bi%jxMin: MINIMUM X-DIRECTION GRID CO-ORDINATE (UTM)
-!* WF_JXMAX: MAXIMUM X-DIRECTION GRID CO-ORDINATE (UTM)
+!* bi%jxMax: MAXIMUM X-DIRECTION GRID CO-ORDINATE (UTM)
 !* bi%GRDN: GRID NORTHING
 !* bi%GRDE: GRID EASTING
 !* LATLENGTH: SINGLE SIDE LENGTH OF GRID SQUARE IN DEGREES
@@ -1014,11 +1014,11 @@ program RUNMESH
 !  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END, &
                              IRONAME, GENDIR_OUT, &
 !>variables for drainage database or new_shd
-                             bi%IGND, bi%ILG, WF_IYMAX, WF_JXMAX, &
-                             WF_LAND_COUNT, &
-                             LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX, &
-                             LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX, &
-                             WF_LAND_MAX, WF_LAND_SUM, &
+!                             bi%IGND, bi%ILG, WF_IYMAX, WF_JXMAX, &
+!                             WF_LAND_COUNT, &
+!                             LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX, &
+!                             LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX, &
+!                             WF_LAND_MAX, WF_LAND_SUM, &
 !>variables for READ_CHECK_FORCING_FILES
 ! NUM_CSV, NUM_R2C, NUM_SEQ, &
 !>variables for READ_PARAMETERS_CLASS
@@ -1098,7 +1098,7 @@ program RUNMESH
             print 1118, 'Grid square columns', bi%xCount
             stop
         end if
-   end if
+    end if
 
 1114 format(/1x, 'Error allocating ', a, ' variables.', &
             /1x, 'Check that these bounds are within an acceptable range.', /)
@@ -1588,7 +1588,7 @@ program RUNMESH
                 print *, 'Left/Right Coordinate: ', wf_jres(i), bi%jxMin
                 stop
             end if
-            if (WF_IREACH(WF_R(i)) /= i) then
+            if (bi%IREACH(WF_R(i)) /= i) then
                 print *, 'Reservoir Station: ', i, ' is not in the correct reach'
                 print *, 'Up/Down Coordinate: ', wf_ires(i)
                 print *, 'Left/Right Coordinate: ', wf_jres(i)
@@ -1805,7 +1805,7 @@ program RUNMESH
         do while (SUBBASINCOUNT > 0)
             SUBBASINCOUNT = 0
             do i = 1, bi%NA - 1
-                if (SUBBASIN(WF_NEXT(i)) == 1 .and. SUBBASIN(i) == 0) then
+                if (SUBBASIN(bi%NEXT(i)) == 1 .and. SUBBASIN(i) == 0) then
                     SUBBASIN(i) = 1
                     SUBBASINCOUNT = SUBBASINCOUNT + 1
                 end if
@@ -2574,9 +2574,9 @@ program RUNMESH
                           bi%NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
                           M_C, M_S, M_R, &
                           WF_ROUTETIMESTEP, WF_R1, WF_R2, bi%NAA, bi%iyMin, &
-                          WF_IYMAX, bi%jxMin, WF_JXMAX, WF_IBN, WF_IROUGH, &
-                          WF_ICHNL, WF_NEXT, WF_IREACH, bi%AL, bi%GRDN, bi%GRDE, &
-                          WF_DA, WF_BNKFLL, WF_CHANNELSLOPE, WF_ELEV, bi%FRAC, &
+                          bi%iyMax, bi%jxMin, bi%jxMax, bi%IAK, bi%IROUGH, &
+                          bi%ICHNL, bi%NEXT, bi%IREACH, bi%AL, bi%GRDN, bi%GRDE, &
+                          bi%DA, bi%BNKFLL, bi%SLOPE_CHNL, bi%ELEV, bi%FRAC, &
                           WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
                           WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
                           WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
@@ -3960,7 +3960,7 @@ program RUNMESH
                     RHOSGAT(i), WSNOGAT(i), ALTOT, ROFGAT(i), &
                     TPN, ZPNDGAT(i), ZPND, FSTR
                 write(150 + k*10 + 5, "(i2,',', i3,',', i5,',', i6,',', " // trim(adjustl(IGND_CHAR)) // &
-                      "(f7.2,',', 2(f6.3,',')), f8.2,',', f(F8.4,','), f8.2,',', f8.3,',')") &
+                      "(f7.2,',', 2(f6.3,',')), f8.2,',', 2(f8.4,','), f8.2,',', f8.3,',')") &
                     HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, &
                     (TBARGAT(i, j) - TFREZ, THLQGAT(i, j), &
                     THICGAT(i, j), j = 1, bi%IGND), TCN, &
@@ -4457,18 +4457,18 @@ program RUNMESH
 !> Especially for version MESH_Prototype 3.3.1.7b (not to be incorporated in future versions)
 !> calculate and write the basin avg SWE using the similar fudge factor!!!
 
-            if (BASIN_FRACTION(1) == -1) then
-                do i = 1, bi%NA ! NA = number of grid squares
+!            if (BASIN_FRACTION(1) == -1) then
+!                do i = 1, bi%NA ! NA = number of grid squares
 !>         BASIN_FRACTION is the basin snow cover
 !>         (portions of the grids outside the basin are not included)
 !>         for a given day - JDAY_NOW in the if statement
-                    BASIN_FRACTION(i) = bi%FRAC(i)
+!                    BASIN_FRACTION(i) = bi%FRAC(i)
     !TODO: FRAC is not actually the fraction of the grid square
     !within the basin, we should be using some other value, but I'm
     !not sure what.
     !todo: calculate frac and write document to send to someone else.
-                end do
-            end if
+!                end do
+!            end if
 
             if (HOUR_NOW == 12 .and. MINS_NOW == 0) then
                 basin_SCA = 0.0
@@ -4923,9 +4923,9 @@ program RUNMESH
         if (ipid == 0) then
             call WF_ROUTE(WF_ROUTETIMESTEP, WF_R1, WF_R2, &
                           bi%NA, bi%NAA, bi%NTYPE, bi%yCount, bi%xCount, bi%iyMin, &
-                          WF_IYMAX, bi%jxMin, WF_JXMAX, bi%yyy, bi%xxx, WF_IBN, WF_IROUGH, &
-                          WF_ICHNL, WF_NEXT, WF_IREACH, bi%AL, bi%GRDN, bi%GRDE, &
-                          WF_DA, WF_BNKFLL, WF_CHANNELSLOPE, WF_ELEV, bi%FRAC, &
+                          bi%iyMax, bi%jxMin, bi%jxMax, bi%yyy, bi%xxx, bi%IAK, bi%IROUGH, &
+                          bi%ICHNL, bi%NEXT, bi%IREACH, bi%AL, bi%GRDN, bi%GRDE, &
+                          bi%DA, bi%BNKFLL, bi%SLOPE_CHNL, bi%ELEV, bi%FRAC, &
                           WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
                           WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
                           WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
@@ -4985,14 +4985,14 @@ program RUNMESH
                         print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO), &
                             wb%pre(j), wb%evap(j), wb%rof(j)
                     end if
-                    if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
-                        call stats_update_daily(WF_QHYD_AVG, WF_QSYN_AVG, NCOUNT)
-                        if (mtsflg%PREEMPTIONFLAG > 1) then
-                            if (FTEST > FBEST) goto 199
-                        end if
-                    end if
-                    WF_QSYN_AVG = 0.0
                 end if !(ro%VERBOSEMODE > 0) then
+                if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
+                    call stats_update_daily(WF_QHYD_AVG, WF_QSYN_AVG, NCOUNT)
+                    if (mtsflg%PREEMPTIONFLAG > 1) then
+                        if (FTEST > FBEST) goto 199
+                    end if
+                end if
+                WF_QSYN_AVG = 0.0
                 wb%pre = 0.0
                 wb%evap = 0.0
                 wb%rof = 0.0
@@ -5356,9 +5356,9 @@ program RUNMESH
                         bi%NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
                         M_C, M_S, M_R, &
                         WF_ROUTETIMESTEP, WF_R1, WF_R2, bi%NAA, bi%iyMin, &
-                        WF_IYMAX, bi%jxMin, WF_JXMAX, WF_IBN, WF_IROUGH, &
-                        WF_ICHNL, WF_NEXT, WF_IREACH, bi%AL, bi%GRDN, bi%GRDE, &
-                        WF_DA, WF_BNKFLL, WF_CHANNELSLOPE, WF_ELEV, bi%FRAC, &
+                        bi%iyMax, bi%jxMin, bi%jxMax, bi%IAK, bi%IROUGH, &
+                        bi%ICHNL, bi%NEXT, bi%IREACH, bi%AL, bi%GRDN, bi%GRDE, &
+                        bi%DA, bi%BNKFLL, bi%SLOPE_CHNL, bi%ELEV, bi%FRAC, &
                         WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
                         WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
                         WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &

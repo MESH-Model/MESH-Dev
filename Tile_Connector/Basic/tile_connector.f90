@@ -8,11 +8,15 @@ subroutine tile_connector(bi, runoff, recharge, leakage, ncount, rofogrd, rofsgr
     !> ----------------------------------------------------------------------------
     !> Parameters
     !> ----------------------------------------------------------------------------
+
+    !> Input.
     type(basin_info), intent(in) :: bi
-    real, dimension(:, :) :: runoff, recharge, leakage
     integer, intent(in) :: ncount
-    real, dimension(:), intent(in) :: rofogrd, rofsgrd, rofbgrd
+    real, dimension(bi%NA), intent(in) :: rofogrd, rofsgrd, rofbgrd
     real, intent(in) :: delt
+
+    !> Input-Output.
+    real, dimension(bi%yCount, bi%xCount) :: runoff, recharge, leakage
 
     !> ----------------------------------------------------------------------------
     !> Declarations

@@ -9,11 +9,11 @@
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
      +  IRONAME, GENDIR_OUT,
 !> variables for drainage database or new_shd
-     + IGND, ILG, WF_IYMAX, WF_JXMAX,
-     + WF_LAND_COUNT,
-     + LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX,
-     + LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX,
-     + WF_LAND_MAX, WF_LAND_SUM,
+!     + IGND, ILG, WF_IYMAX, WF_JXMAX,
+!     + WF_LAND_COUNT,
+!     + LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX,
+!     + LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX,
+!     + WF_LAND_MAX, WF_LAND_SUM,
 !> variables for READ_CHECK_FORCING_FILES
 !     + NUM_CSV, NUM_R2C, NUM_SEQ,
 !> variables for READ_PARAMETERS_CLASS
@@ -62,11 +62,11 @@
 !> END OF VALUES FOR READ_RUN_OPTIONS
 !> -----------------------------
 !> VALUES NEEDED for drainage_database and/or new_shd.r2c
-      integer IGND, ILG, WF_IYMAX, WF_JXMAX,
-     +  WF_LAND_COUNT,
-     +  LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX,
-     +  LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX
-      real WF_LAND_MAX, WF_LAND_SUM
+!      integer IGND, ILG, WF_IYMAX, WF_JXMAX,
+!     +  WF_LAND_COUNT,
+!     +  LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX,
+!     +  LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX
+!      real WF_LAND_MAX, WF_LAND_SUM
       character(500) fl_listMesh
 !> already declared:
 !>  SHDFILEFLAG, IOS, WF_NUM_POINTS,
@@ -199,7 +199,7 @@
      +      'Reading Drainage Database from MESH_drainage_database.r2c'
 
 !          open(UNIT=98, FILE='1234500124572321.1265489')
-          call READ_SHED_EF(fls, bi)
+          call READ_SHED_EF(fls, mfk%f20, bi)
 !          close(98, STATUS='delete')
           write(6, *) ' READ: SUCCESSFUL, FILE: CLOSED'
 !+        ALLOCATE(FRAC(NA),
@@ -223,32 +223,32 @@
 !>
 !>*******************************************************************
 !>
-          allocate(WF_IBN(bi%NA), WF_IROUGH(bi%NA),
-     +      WF_ICHNL(bi%NA), WF_NEXT(bi%NA), WF_ELEV(bi%NA),
-     +      WF_IREACH(bi%NA),
-     +      WF_DA(bi%NA), WF_BNKFLL(bi%NA), WF_CHANNELSLOPE(bi%NA),
-     +      BASIN_FRACTION(bi%NA))
+!          allocate(WF_IBN(bi%NA), WF_IROUGH(bi%NA),
+!     +      WF_ICHNL(bi%NA), WF_NEXT(bi%NA), WF_ELEV(bi%NA),
+!     +      WF_IREACH(bi%NA),
+!     +      WF_DA(bi%NA), WF_BNKFLL(bi%NA), WF_CHANNELSLOPE(bi%NA),
+!     +      BASIN_FRACTION(bi%NA))
 !+        ALLOCATE (WF_NHYD(NA), WF_QR(NA),
 !+     +  WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA),
 !+     +  WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA),
 !+     +  FSDOWN(NA))
 
-          do i = 1, bi%NA
-            WF_IBN(i) = bi%IAK(i)
-            WF_IROUGH(i) = 1 !irough does not seem
+!          do i = 1, bi%NA
+!            WF_IBN(i) = bi%IAK(i)
+!            WF_IROUGH(i) = 1 !irough does not seem
                             !to be used in new WATROUTE
-            WF_ICHNL(i) = bi%ICHNL(i)
-            WF_NEXT(i) = bi%NEXT(i)
-            WF_ELEV(i) = bi%ELEV(i)
-            WF_IREACH(i) = bi%IREACH(i)
-            WF_DA(i) = bi%DA(i)
-            WF_BNKFLL(i) = bi%BNKFLL(i)
-            WF_CHANNELSLOPE(i) = bi%SLOPE_CHNL(i)
-          end do
+!            WF_ICHNL(i) = bi%ICHNL(i)
+!            WF_NEXT(i) = bi%NEXT(i)
+!            WF_ELEV(i) = bi%ELEV(i)
+!            WF_IREACH(i) = bi%IREACH(i)
+!            WF_DA(i) = bi%DA(i)
+!            WF_BNKFLL(i) = bi%BNKFLL(i)
+!            WF_CHANNELSLOPE(i) = bi%SLOPE_CHNL(i)
+!          end do
 
-          WF_IYMAX = bi%IYMAX
-          WF_JXMAX = bi%JXMAX
-          BASIN_FRACTION(1) = -1
+!          WF_IYMAX = bi%iyMax
+!          WF_JXMAX = bi%jxMax
+!          BASIN_FRACTION(1) = -1
           bi%ILG = bi%NA*bi%NTYPE
 
         else
@@ -395,19 +395,19 @@
 !wc_grksat,wc_hcps,  wc_tcs,   wc_algwet,wc_algdry
       allocate(sv%wc_algwet(bi%NA, bi%NTYPE),
      +  sv%wc_algdry(bi%NA, bi%NTYPE))
-      allocate(sv%wc_thpor(bi%NA, bi%NTYPE, IGND),
-     +  sv%wc_thlret(bi%NA, bi%NTYPE, IGND),
-     +  sv%wc_thlmin(bi%NA, bi%NTYPE, IGND),
-     +  sv%wc_bi(bi%NA, bi%NTYPE, IGND),
-     +  sv%wc_psisat(bi%NA, bi%NTYPE, IGND),
-     +  sv%wc_grksat(bi%NA, bi%NTYPE, IGND),
-     +  sv%wc_hcps(bi%NA, bi%NTYPE, IGND),
-     +  sv%wc_tcs(bi%NA, bi%NTYPE, IGND))
+      allocate(sv%wc_thpor(bi%NA, bi%NTYPE, bi%IGND),
+     +  sv%wc_thlret(bi%NA, bi%NTYPE, bi%IGND),
+     +  sv%wc_thlmin(bi%NA, bi%NTYPE, bi%IGND),
+     +  sv%wc_bi(bi%NA, bi%NTYPE, bi%IGND),
+     +  sv%wc_psisat(bi%NA, bi%NTYPE, bi%IGND),
+     +  sv%wc_grksat(bi%NA, bi%NTYPE, bi%IGND),
+     +  sv%wc_hcps(bi%NA, bi%NTYPE, bi%IGND),
+     +  sv%wc_tcs(bi%NA, bi%NTYPE, bi%IGND))
 
 !ANDY Zero everything we just allocated
       do i = 1, bi%NA
         do j = 1, bi%NTYPE
-          do k = 1, IGND
+          do k = 1, bi%IGND
             sv%wc_thpor(i, j, k) = 0
             sv%wc_thlret(i, j, k) = 0
             sv%wc_thlmin(i, j, k) = 0
@@ -454,10 +454,10 @@
 !> *********************************************************************
 !> Open and read in values from MESH_input_soil_levels.txt file
 !> *********************************************************************
-      allocate(sl%DELZ(IGND), sl%ZBOT(IGND))
-      call READ_SOIL_LEVELS(IGND, sl, fls)
+      allocate(sl%DELZ(bi%IGND), sl%ZBOT(bi%IGND))
+      call READ_SOIL_LEVELS(bi%IGND, sl, fls)
 
-      bi%ignd = IGND
+!-      bi%IGND = bi%IGND
 
       allocate(
      +  cp%ZRFMGRD(bi%NA), cp%ZRFHGRD(bi%NA), cp%ZBLDGRD(bi%NA),
@@ -494,12 +494,12 @@
       allocate(cp%MIDROW(bi%NA, bi%NTYPE))
 
       allocate(
-     +  cp%SANDROW(bi%NA, bi%NTYPE, IGND),
-     +  cp%CLAYROW(bi%NA, bi%NTYPE, IGND),
-     +  cp%ORGMROW(bi%NA, bi%NTYPE, IGND),
-     +  cp%TBARROW(bi%NA, bi%NTYPE, IGND),
-     +  cp%THLQROW(bi%NA, bi%NTYPE, IGND),
-     +  cp%THICROW(bi%NA, bi%NTYPE, IGND))
+     +  cp%SANDROW(bi%NA, bi%NTYPE, bi%IGND),
+     +  cp%CLAYROW(bi%NA, bi%NTYPE, bi%IGND),
+     +  cp%ORGMROW(bi%NA, bi%NTYPE, bi%IGND),
+     +  cp%TBARROW(bi%NA, bi%NTYPE, bi%IGND),
+     +  cp%THLQROW(bi%NA, bi%NTYPE, bi%IGND),
+     +  cp%THICROW(bi%NA, bi%NTYPE, bi%IGND))
 !>
 !>*******************************************************************
 !>
@@ -508,7 +508,7 @@
      +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
      +  PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6,
      +  bi%NA, ILW, NLTEST, NMTEST,
-     +  IGND, JLAT, ICAN, bi%NTYPE,
+     +  bi%IGND, JLAT, ICAN, bi%NTYPE,
      +  DEGLAT, DEGLON,
      +  HOURLY_START_DAY, HOURLY_STOP_DAY,
      +  DAILY_START_DAY, DAILY_STOP_DAY,
@@ -542,7 +542,7 @@
 !>
 !>*******************************************************************
 !>
-      call READ_SOIL_INI(bi%NTYPE, IGND, bi%NTYPE, bi%NA, sv)
+      call READ_SOIL_INI(bi%NTYPE, bi%IGND, bi%NTYPE, bi%NA, sv)
 !>
 !>*******************************************************************
 !>
@@ -559,11 +559,11 @@
 !todo - test this piece of code and make sure we understand how it works.
 !todo - if we implement this, make it an option for the user to select GRU or grid initialization
       call READ_S_MOISTURE_TXT(
-     +  IGND, bi%YCOUNT, bi%XCOUNT, bi%NA, bi%NTYPE,
+     +  bi%IGND, bi%YCOUNT, bi%XCOUNT, bi%NA, bi%NTYPE,
      +  bi%yyy, bi%xxx, cp%THLQROW)
 
       call READ_S_TEMPERATURE_TXT(
-     +  IGND, bi%YCOUNT, bi%XCOUNT, bi%NA, bi%NTYPE,
+     +  bi%IGND, bi%YCOUNT, bi%XCOUNT, bi%NA, bi%NTYPE,
      +  bi%yyy, bi%xxx, cp%TBARROW)
 !>
 !>*******************************************************************

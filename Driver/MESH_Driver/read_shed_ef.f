@@ -94,7 +94,7 @@ C//////////////////////////////////////////////
      *  n, ii
 !     *  igridflg,
 !     *  nrvr1, ntmp, l, newformat
-      real(kind=4) sumclass
+      real sumclass
 !     *  cintv, conv
 !      integer(kind=2) result1, n_hdr_lines, zone
 !      logical exists
@@ -147,7 +147,7 @@ C Local variables
 
       character(64) attribName
       integer ai, vi, xi, yi, attLen, error, rank
-      real(kind=4) val
+      real val
 
 !Dan Princz changed this
 CDAN      print*,'avant call initshedparam'
@@ -265,7 +265,7 @@ C     &          line
 !      read(99, 99001) bi%Zone
 !99001 format(a10)
 !      close(unit=99, status='delete')
-      call writenum(header%r2cp%csp%zone, bi%Zone, '*')
+      call writenum(header%r2cp%csp%zone, bi%Zone, 'i10')
 
       bi%xCount = header%r2cp%xCount
       bi%yCount = header%r2cp%yCount
@@ -599,7 +599,7 @@ C   do yi=yCount,1,-1
             if (rank > 0) then
               do ai = attCount - bi%NTYPE, attCount
                 val = header%r2cp%ep%attList(ai)%val(vi)
-                bi%ACLASS(rank, ai - (attCount - bi%NTYPE + 1)) = val
+                bi%ACLASS(rank, ai - (attCount - (bi%NTYPE + 1))) = val
 !     aclass(rank,ai-(attCount-ntype)) = val
               end do
             end if
