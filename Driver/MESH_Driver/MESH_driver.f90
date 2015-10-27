@@ -5107,6 +5107,9 @@ if (ro%VERBOSEMODE > 0) then
     print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(I), WF_QSYN_AVG(I)/NCOUNT, I = 1, WF_NO), wb%pre(j), wb%evap(j), wb%rof(j)
 
   END IF
+
+end if !(ro%VERBOSEMODE > 0) then
+
     if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
         call stats_update_daily(WF_QHYD_AVG, WF_QSYN_AVG, NCOUNT)
         if (mtsflg%PREEMPTIONFLAG > 1) then
@@ -5115,8 +5118,6 @@ if (ro%VERBOSEMODE > 0) then
     end if
 
   WF_QSYN_AVG = 0.0
-
-end if !(ro%VERBOSEMODE > 0) then
 
 wb%pre = 0.0
 wb%evap = 0.0
