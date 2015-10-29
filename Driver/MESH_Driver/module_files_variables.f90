@@ -16,6 +16,9 @@ module model_files_variables
         !> MESH_input_soil_levels.txt
         integer :: f52 = 10
 
+        !> MESH_input_soil_levels.txt
+        integer :: f54 = 11
+
         !> MESH_ggeo.ini
         integer :: f18 = 7
 

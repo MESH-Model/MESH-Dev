@@ -34,7 +34,7 @@ module model_files
         character*500 str1, str2, phtfl
 
         !> Allocate the array that stores file information.
-        allocate(flg%fl(10))
+        allocate(flg%fl(11))
 
         !> Default file names and attributes.
         flg%fl(mfk%f53)%fn = 'MESH_input_run_options.ini'
@@ -48,6 +48,9 @@ module model_files
 
         flg%fl(mfk%f52)%fn = 'MESH_input_soil_levels.txt'
         flg%fl(mfk%f52)%iun = 52
+
+        flg%fl(mfk%f54)%fn = 'soil.ini'
+        flg%fl(mfk%f54)%iun = 54
 
         flg%fl(mfk%f18)%fn = 'MESH_ggeo.ini'
         flg%fl(mfk%f18)%iun = 18
@@ -155,6 +158,11 @@ module model_files
                     phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
                     flg%fl(mfk%f52)%fn = phtfl
 !                    flg%fl(mfk%f52)%isInit = .true.
+
+                else if (trim(adjustl(str1)) == 'soil_ini') then
+                    phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
+                    flg%fl(mfk%f54)%fn = phtfl
+!                    flg%fl(mfk%f54)%isInit = .true.
 
                 end if
             end do
