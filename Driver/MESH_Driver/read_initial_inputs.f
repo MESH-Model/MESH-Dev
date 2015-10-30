@@ -37,7 +37,6 @@
       use sa_mesh_shared_variabletypes
       use MESH_INPUT_MODULE
       use FLAGS
-!      use AREA_WATFLOOD
       use climate_forcing
       use model_dates
 !      USE model_files
@@ -78,12 +77,6 @@
 !>  WF_QI1, SNOGRD, FSDOWN
 !>  wc_algwet, wc_algdry, wc_thpor, wc_thlret,
 !>  wc_thlmin, wc_bi, wc_psisat, wc_grksat, wc_hcps, wc_tcs
-
-!> declared in area_watflood module
-!>  NTYPE, NA, NAA, AL, NRVR, NTYPE, GRDN, GRDE, FLN
-!>  ibn, ichnl, next, elev, ireach, da, bnkfll, slope
-!>  IYMIN, JXMIN, IYMAX, JXMAX, YCOUNT, XCOUNT
-!>  FRAC, ACLASS, YYY, XXX, MODELFLG,
 
 !> local variables
       integer i, j, k
@@ -180,7 +173,7 @@
 !> dan * THE BASIN SHD FILE.  READ_SHED_EF, FROM STAND-ALONE RTE.EXE
 !> dan * (WATROUTE), IS CALLED TO READ THE NEW FILE.
       if (SHDFILEFLAG == 1) then
-!      allocate(FLN(999))  !declared in area_watflood module
+!      allocate(FLN(999))
 !      FLN(1) = 'MESH_drainage_database.r2c'
 
 !+      OPEN(UNIT=12,FILE='event/event.evt',STATUS='OLD',IOSTAT=IOS_EVT)

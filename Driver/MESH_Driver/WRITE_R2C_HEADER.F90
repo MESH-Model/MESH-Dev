@@ -61,8 +61,6 @@
     subroutine write_header(un, varattr, nc, coordsys1, datum1, zone1, &
         xorigin, yorigin, xdelta, ydelta, xcount, ycount)
 
-!-        use area_watflood
-
         implicit none
 
         integer un, nc

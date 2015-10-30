@@ -1,6 +1,5 @@
 subroutine tile_connector(bi, runoff, recharge, leakage, ncount, rofogrd, rofsgrd, rofbgrd, delt)
 
-!    use area_watflood
     use sa_mesh_shared_variabletypes
 
     implicit none

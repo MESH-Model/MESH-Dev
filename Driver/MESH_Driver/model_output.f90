@@ -2844,8 +2844,6 @@ if (allocated(dates)) &
         !>
         !>------------------------------------------------------------------------------
 
-!        use area_watflood
-
         !Inputs
         real fld(:, :)
         integer indx
@@ -2994,8 +2992,6 @@ if (allocated(dates)) &
     !> Write the output to file in text format.
     subroutine WriteTxt(fld, indx, info, bi, freq, dates, file_unit, keep_file_open, frame_no)
 
-!        use area_watflood
-
         !Inputs
         real fld(:, :)
         integer indx
@@ -3082,8 +3078,6 @@ if (allocated(dates)) &
     !> Subroute: WriteCSV
     !> Write the output to file in CSV format.
     subroutine WriteCSV(fld, indx, info, bi, freq, dates, file_unit, keep_file_open, frame_no)
-
-!        use area_watflood
 
         !Inputs
         real fld(:, :)

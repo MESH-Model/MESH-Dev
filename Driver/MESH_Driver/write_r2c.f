@@ -56,7 +56,6 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !       author              char(40)    Name of the steward of the data.
 !***********************************************************************
 
-!      use area_watflood
       use sa_mesh_shared_variabletypes
       use sa_mesh_shared_variables
       use model_files_variabletypes
