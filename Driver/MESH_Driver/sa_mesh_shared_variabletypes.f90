@@ -10,11 +10,17 @@ module sa_mesh_shared_variabletypes
     !> *****************************************************************
     type basin_info
 
-        !* NA: Number of grid cells in the basin. [-]
-        integer :: NA = 1
+        !* NA: Total number of grids. [-]
+        !* NAA: Total number of grids in the basin. [-]
+        integer :: &
+            NA = 0, &
+            NAA = 0
 
         !* NM: Number of GRUs. [-]
-        integer :: NTYPE = 1
+        integer :: NTYPE = 0
+
+        !* NRVR: Number of river classes. [-]
+        integer :: NRVR = 0
 
         !* IGND: Number of soil layers per grid. [-]
         integer :: IGND = 3
@@ -26,16 +32,53 @@ module sa_mesh_shared_variabletypes
         integer :: NML = 0
 
         real, dimension(:, :), allocatable :: ACLASS
-        integer, dimension(:), allocatable :: ILMOS, JLMOS
+        integer, dimension(:), allocatable :: ILMOS, JLMOS, IWMOS, JWMOS, RANK, NEXT
 
         !* NMW: Number of active water-based contributing units.
         integer :: NMW = 0
+        integer :: ILW = 0
 
-        integer, dimension(:), allocatable :: XXX, YYY
+        character(10) CoordSys, Datum, Zone
 
-        real AL
-        real xorigin, yorigin, xdelta, ydelta
-        integer xcount, ycount
+        integer, dimension(:), allocatable :: xxx, yyy
+
+        real :: AL = 0.0
+
+        real :: &
+            GRDN = 0.0, &
+            GRDE = 0.0
+
+        real :: &
+            xOrigin = 0.0, &
+            yOrigin = 0.0
+
+        real :: &
+            xDelta = 0.0, &
+            yDelta = 0.0
+
+        integer :: &
+            xCount = 1, &
+            yCount = 1
+
+        integer :: &
+            iyMax = 1, &
+            iyMin = 1, &
+            jxMax = 1, &
+            jxMin = 1
+
+        !* ELEV: Grid-cell elevation [m]
+        !* SLOPE: Internal slope (may exist in other files as 'intslope' or 'sl1')
+        !* AREA: Grid-cell area [m^2]
+        !* DA: Drainage area [m^2]
+        !* DRDN: Drainage density [m m^-2]
+        !* FRAC:
+        !* SLOPE_CHNL: Channel slope
+        !* CHNL_LEN: Channel length (may exist in other files as 'chnllength', 'rl', or 'ch_length')
+        !* BNKFLL:
+        real, dimension(:), allocatable :: &
+            ELEV, SLOPE, AREA, DA, DRDN, FRAC, SLOPE_CHNL, CHNL_LEN, BNKFLL
+
+        integer, dimension(:), allocatable :: IAK, IROUGH, ICHNL, IREACH
 
     end type !basin_info
 

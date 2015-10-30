@@ -31,6 +31,7 @@ LFLAG=-c -O2
 # ======================================================================
 all: ${OBJECTS}
 	$(FC) -o sa_mesh  $(OBJECTS)
+#	$(FC) -o mpi_sa_mesh  $(OBJECTS)
 
 #static: ${OBJECTS}
 # For MinGW only (the Cygwin library cannot be statically linked to the binary):
@@ -76,4 +77,5 @@ clean:
 veryclean:
 # 'rm' for Cygwin, 'del' for MinGW - comment as necessary
 	rm *.mod *.o sa_mesh
+#	rm *.mod *.o mpi_sa_mesh
 #	del *.mod *.o sa_mesh.exe

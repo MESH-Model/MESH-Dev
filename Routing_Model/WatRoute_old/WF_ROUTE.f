@@ -19,17 +19,17 @@
       integer wf_yy(NLAT),wf_xx(NLAT),wf_ibn(NLAT),
      +     wf_irough(NLAT),wf_ichnl(NLAT),wf_next(NLAT),
      +     wf_ireach(NLAT),wf_elev(NLAT)
-      real*8 wf_da(NLAT),wf_bnkfll(NLAT),
+      real wf_da(NLAT),wf_bnkfll(NLAT),
      +     wf_channelSlope(NLAT)
-      real*4 wf_frac(NLAT)
-      real*8 wf_al
+      real wf_frac(NLAT)
+      real wf_al
 
 c for baseflow initialization
       integer jan
 
 c     for routing
       integer wf_RouteTimeStep, wf_TimeCount, DriverTimeStep, NLTEST
-	real wf_r1(M_C),wf_r2(M_C),wf_nhyd(NLAT),wf_qbase(NLAT)
+      real wf_r1(M_C),wf_r2(M_C),wf_nhyd(NLAT),wf_qbase(NLAT)
       real wf_qi2(NLAT),wf_qo1(NLAT),wf_qo2(NLAT), wf_qr(NLAT)
       real wf_store1(NLAT), wf_store2(NLAT),wf_qi1(NLAT)
       real ROFGRD(NLAT)
@@ -41,21 +41,21 @@ c     streamflow variables
 
 c     reservoir variables
       integer wf_noresv, wf_nrel, wf_ktr, wf_noresv_ctrl
-	integer wf_ires(M_R), wf_jres(M_R), wf_res(M_R), wf_r(M_R)
-	real wf_b1(M_R),wf_b2(M_R),wf_qrel(M_R), wf_resstore(M_R)
-	character wf_resname(M_R)*8
+      integer wf_ires(M_R), wf_jres(M_R), wf_res(M_R), wf_r(M_R)
+      real wf_b1(M_R),wf_b2(M_R),wf_qrel(M_R), wf_resstore(M_R)
+      character wf_resname(M_R)*8
 
 c     Local variables
       logical converged,retryingIteration, resflag
       integer i,j,l,iter,ii,ll,n,ix,iy
       integer iterPerStep,IterationsPerTimeStep
       integer nnx,inx,jnx,iset(NLAT)
-      real*8 cap,over,rl
-      real*8 rtemp,wf_qo2_last,wf_store2_last,div
-      real*8 qadd(NLAT)    ! qadd doesn't have to be an array
-	real*8  da1,qda1,qch,qinit(M_R),nxtbasin(M_S)
-      real*8 datemp(NLAT),daflow(NLAT)
-      real*8 qda(NLAT),qUngauged,daUngauged
+      real cap,over,rl
+      real rtemp,wf_qo2_last,wf_store2_last,div
+      real qadd(NLAT)    ! qadd doesn't have to be an array
+      real da1,qda1,qch,qinit(M_R),nxtbasin(M_S)
+      real datemp(NLAT),daflow(NLAT)
+      real qda(NLAT),qUngauged,daUngauged
       integer iHourCount
       integer WF_MAX_TIME_SUBDIVISIONS ,WF_MAX_ITERATIONS
       integer wf_a1, wf_a2, wf_a3, wf_a4

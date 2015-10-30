@@ -7,6 +7,9 @@ module model_files_variables
         !> MESH_input_run_options.ini
         integer :: f53 = 1
 
+        !> MESH_drainage_database.r2c
+        integer :: f20 = 11
+
         !> MESH_parameters_CLASS.ini
         integer :: f50 = 2
 
@@ -17,10 +20,16 @@ module model_files_variables
         integer :: f52 = 10
 
         !> MESH_input_soil_levels.txt
-        integer :: f54 = 11
+        integer :: f54 = 14
 
         !> MESH_ggeo.ini
         integer :: f18 = 7
+
+        !> WR_runoff.r2c
+        integer :: f31 = 12
+
+        !> WR_recharge.r2c
+        integer :: f32 = 13
 
         !> Basin_average_water_balance.csv
         integer :: f900 = 4
