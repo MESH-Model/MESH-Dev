@@ -35,7 +35,7 @@ module climate_forcing
     !> *****************************************************************
     !> Open the MESH_input_forcing.bin file
     !> *****************************************************************
-    subroutine climate_module_init(bi, ts, cm, ENDDATA)
+    subroutine climate_module_init(shd, ts, cm, iilen, ii1, ii2, ENDDATA)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -43,8 +43,9 @@ module climate_forcing
         use climate_forcing_data
 
         !> Input variables.
-        type(basin_info) :: bi
+        type(ShedGridParams) :: shd
         type(dates_model) :: ts
+        integer, intent(in) :: iilen, ii1, ii2
 
         !> Input/Output variables.
         type(clim_info) :: cm
@@ -58,10 +59,10 @@ module climate_forcing
         integer JDAY_IND_MET, ISTEP_START, nmy, nhy, nrs, Jday_IND2, Jday_IND3, toskip
         integer i, j, m
 
-        integer ilg
+!        integer ilg
 
         !> Initialize the climate variable.
-        call READ_CHECK_FORCING_FILES(bi, ts, cm)
+        call READ_CHECK_FORCING_FILES(shd, ts, cm)
 
         !> Open the forcing files.
         do i = 1, size(cm%clin)
@@ -141,54 +142,54 @@ module climate_forcing
         !> Skip records of forcing data.
         do i = 1, nrs
 
-            call SKIP_FORCING_DATA(bi, cm, ENDDATA)
+            call SKIP_FORCING_DATA(shd, cm, iilen, ii1, ii2, ENDDATA)
 
 !            !> R2C-format (ASCII).
 !            if (cm%clin(cfk%FB)%filefmt == 1) then !Skip the r2c file's information
 !                read(90, *, end = 999)
-!                do m = 1, bi%YCOUNT
+!                do m = 1, shd%yCount
 !                    Read (90, *, end = 999)
 !                end do
 !                read (90, *, end = 999) !:EndFrame line
 !            end if
 !            if (cm%clin(cfk%FI)%filefmt == 1) then
 !                read(91, *, end = 999) !:Frame line
-!                do m = 1, bi%YCOUNT
+!                do m = 1, shd%yCount
 !                    read(91, *, end = 999)
 !                end do
 !                read(91, *, end = 999) !:EndFrame line
 !            end if
 !            if (cm%clin(cfk%PR)%filefmt == 1) then
 !                read(92, *, end = 999) !:Frame line
-!                do m = 1, bi%YCOUNT
+!                do m = 1, shd%yCount
 !                    read(92, *, end = 999)
 !                end do
 !                read(92, *, end = 999) !:EndFrame line
 !            end if
 !            if (cm%clin(cfk%TT)%filefmt == 1) then
 !                read(93, *, END=999) !:Frame line
-!                do m = 1, bi%YCOUNT
+!                do m = 1, shd%yCount
 !                    read(93, *, end = 999)
 !                end do
 !                read(93, *, end = 999) !:EndFrame line
 !            end if
 !            if (cm%clin(cfk%UV)%filefmt == 1) then
 !                read(94, *, end = 999) !:Frame line
-!                do m = 1, bi%YCOUNT
+!                do m = 1, shd%yCount
 !                    read(94, *, end = 999)
 !                end do
 !                read(94, *, end = 999) !:EndFrame line
 !            end if
 !            if (cm%clin(cfk%P0)%filefmt == 1) then
 !                read(95, *, end = 999) !:Frame line
-!                do m = 1, bi%YCOUNT
+!                do m = 1, shd%yCount
 !                    read(95, *, end = 999)
 !                end do
 !                read(95, *, end = 999) !:EndFrame line
 !            end if
 !            if (cm%clin(cfk%HU)%filefmt == 1) then
 !                read(96, *, end = 999) !:Frame line
-!                do m = 1, bi%YCOUNT
+!                do m = 1, shd%yCount
 !                    read(96, *, end = 999)
 !                end do
 !                read(96, *, end = 999)
@@ -221,11 +222,11 @@ module climate_forcing
 
         !> Allocate and initialize GRD variables.
         allocate( &
-            FSVHGRD(bi%NA), FSIHGRD(bi%NA), &
-!            , FDLGRD(bi%NA), PREGRD(bi%NA), TAGRD(bi%NA), ULGRD(bi%NA), PRESGRD(bi%NA), &
-!            QAGRD(bi%NA), &
-            VLGRD(bi%NA))
-!            , FSDOWN(bi%NA))
+            FSVHGRD(shd%NA), FSIHGRD(shd%NA), &
+!            , FDLGRD(shd%NA), PREGRD(shd%NA), TAGRD(shd%NA), ULGRD(shd%NA), PRESGRD(shd%NA), &
+!            QAGRD(shd%NA), &
+            VLGRD(shd%NA))
+!            , FSDOWN(shd%NA))
         FSVHGRD = 0.0
         FSIHGRD = 0.0
 !        FDLGRD = 0.0
@@ -238,9 +239,9 @@ module climate_forcing
 !        FSDOWN = 0.0
 
         !> Allocate and initialize GAT variables.
-        ilg = bi%NA*bi%NTYPE
-        allocate( &
-            FSVHGAT(ilg), FSIHGAT(ilg), FDLGAT(ilg), PREGAT(ilg), TAGAT(ilg), ULGAT(ilg), PRESGAT(ilg), QAGAT(ilg), VLGAT(ilg))
+!        ilg = shd%NA*shd%lc%NTYPE
+        allocate(FSVHGAT(iilen), FSIHGAT(iilen), FDLGAT(iilen), PREGAT(iilen), TAGAT(iilen), ULGAT(iilen), &
+                 PRESGAT(iilen), QAGAT(iilen), VLGAT(iilen))
         FSVHGAT = 0.0
         FSIHGAT = 0.0
         FDLGAT = 0.0
@@ -253,10 +254,10 @@ module climate_forcing
 
         !> Allocate and initialize GAT variables for climate interpolation.
         allocate( &
-            FSVHGATPRE(ilg), FSIHGATPRE(ilg), FDLGATPRE(ilg), PREGATPRE(ilg), &
-            TAGATPRE(ilg), ULGATPRE(ilg), PRESGATPRE(ilg), QAGATPRE(ilg), &
-            FSVHGATPST(ilg), FSIHGATPST(ilg), FDLGATPST(ilg), PREGATPST(ilg), &
-            TAGATPST(ilg), ULGATPST(ilg), PRESGATPST(ilg), QAGATPST(ilg))
+            FSVHGATPRE(iilen), FSIHGATPRE(iilen), FDLGATPRE(iilen), PREGATPRE(iilen), &
+            TAGATPRE(iilen), ULGATPRE(iilen), PRESGATPRE(iilen), QAGATPRE(iilen), &
+            FSVHGATPST(iilen), FSIHGATPST(iilen), FDLGATPST(iilen), PREGATPST(iilen), &
+            TAGATPST(iilen), ULGATPST(iilen), PRESGATPST(iilen), QAGATPST(iilen))
         FSVHGATPRE = 0.0
         FSIHGATPRE = 0.0
         FDLGATPRE = 0.0
@@ -283,15 +284,16 @@ module climate_forcing
     !> *****************************************************************
     !> MAM - Read in initial meteorological forcing data
     !> *****************************************************************
-    subroutine climate_module_loaddata(bi, firststep, cm, ENDDATA)
+    subroutine climate_module_loaddata(shd, firststep, cm, iilen, ii1, ii2, ENDDATA)
 
         use sa_mesh_shared_variabletypes
         use FLAGS
         use climate_forcing_data, only: READ_FORCING_DATA
 
         !> Input variables.
-        type(basin_info) :: bi
+        type(ShedGridParams) :: shd
         logical firststep
+        integer, intent(in) :: iilen, ii1, ii2
 
         !> Input/Output variables.
         type(clim_info) :: cm
@@ -309,7 +311,7 @@ module climate_forcing
                 cm%clin(i)%timestep_now = TIME_STEP_NOW
             end do
             if (INTERPOLATIONFLAG == 0) then
-                call READ_FORCING_DATA(bi, cm, &
+                call READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
 !                                       FSDOWN, &
                                        FSVHGRD, FSIHGRD, &
 !                                       FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
@@ -317,14 +319,14 @@ module climate_forcing
                                        ENDDATA)
             elseif (INTERPOLATIONFLAG == 1) then
                 if (RESUMEFLAG /= 1) then
-                    call READ_FORCING_DATA(bi, cm, &
+                    call READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
 !                                           FSDOWN, &
                                            FSVHGRD, FSIHGRD, &
 !                                           FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
                                            FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, TAGATPRE, ULGATPRE, &
                                            PRESGATPRE, QAGATPRE, &
                                            ENDDATA)
-                    call READ_FORCING_DATA(bi, cm, &
+                    call READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
 !                                           FSDOWN, &
                                            FSVHGRD, FSIHGRD, &
 !                                           FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
@@ -332,7 +334,7 @@ module climate_forcing
                                            PRESGATPST, QAGATPST, &
                                            ENDDATA)
                 else
-                    call READ_FORCING_DATA(bi, cm, &
+                    call READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
 !                                           FSDOWN, &
                                            FSVHGRD, FSIHGRD, &
 !                                           FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
@@ -386,7 +388,7 @@ module climate_forcing
             end if
 
             if (INTERPOLATIONFLAG == 1) then
-                call READ_FORCING_DATA(bi, cm, &
+                call READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
 !                                       FSDOWN, &
                                        FSVHGRD, FSIHGRD, &
 !                                       FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
@@ -394,7 +396,7 @@ module climate_forcing
                                        PRESGATPST, QAGATPST, &
                                        ENDDATA)
             else
-                call READ_FORCING_DATA(bi, cm, &
+                call READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
 !                                       FSDOWN, &
                                        FSVHGRD, FSIHGRD, &
 !                                       FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
@@ -406,16 +408,17 @@ module climate_forcing
 
     end subroutine !climate_module_loaddata
 
-    subroutine climate_module_interpolatedata(bi, &
+    subroutine climate_module_interpolatedata(shd, &
 !todo: These variables can be stored elsewhere instead of passed.
         FAREGAT, &
-        cm)
+        cm, iilen, ii1, ii2)
 
         use sa_mesh_shared_variabletypes
 
         !> Input variables.
-        type(basin_info) :: bi
+        type(ShedGridParams) :: shd
         real, dimension(:) :: FAREGAT
+        integer, intent(in) :: iilen, ii1, ii2
 
         !> Input/Output variables.
         type(clim_info) :: cm
@@ -441,32 +444,14 @@ module climate_forcing
         QAGAT = QAGATPRE + TRATIO*(QAGATPST - QAGATPRE)
 
         !> Distribute the grid variables.
-        FSVHGRD = 0.0
-        FSIHGRD = 0.0
-        cm%clin(cfk%FI)%climvGrd = 0.0
-        cm%clin(cfk%UV)%climvGrd = 0.0
-        cm%clin(cfk%TT)%climvGrd = 0.0
-        cm%clin(cfk%HU)%climvGrd = 0.0
-        cm%clin(cfk%P0)%climvGrd = 0.0
-        cm%clin(cfk%PR)%climvGrd = 0.0
-        do k = 1, bi%NML
-            if (FAREGAT(k) > 0.0) then
-                FSVHGRD(bi%ILMOS(k)) = FSVHGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*FSVHGAT(k)
-                FSIHGRD(bi%ILMOS(k)) = FSIHGRD(bi%ILMOS(k)) + bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*FSIHGAT(k)
-                cm%clin(cfk%FI)%climvGrd(bi%ILMOS(k)) = cm%clin(cfk%FI)%climvGrd(bi%ILMOS(k)) + &
-                    bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*FDLGAT(k)
-                cm%clin(cfk%UV)%climvGrd(bi%ILMOS(k)) = cm%clin(cfk%UV)%climvGrd(bi%ILMOS(k)) + &
-                    bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*ULGAT(k)
-                cm%clin(cfk%TT)%climvGrd(bi%ILMOS(k)) = cm%clin(cfk%TT)%climvGrd(bi%ILMOS(k)) + &
-                    bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*TAGAT(k)
-                cm%clin(cfk%HU)%climvGrd(bi%ILMOS(k)) = cm%clin(cfk%HU)%climvGrd(bi%ILMOS(k)) + &
-                    bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*QAGAT(k)
-                cm%clin(cfk%P0)%climvGrd(bi%ILMOS(k)) = cm%clin(cfk%P0)%climvGrd(bi%ILMOS(k)) + &
-                    bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*PRESGAT(k)
-                cm%clin(cfk%PR)%climvGrd(bi%ILMOS(k)) = cm%clin(cfk%PR)%climvGrd(bi%ILMOS(k)) + &
-                    bi%ACLASS(bi%ILMOS(k), bi%JLMOS(k))*PREGAT(k)
-            end if
-        end do !k = 1, NML
+        call SCATTER(shd, iilen, ii1, ii2, FSVHGAT, FSVHGRD)
+        call SCATTER(shd, iilen, ii1, ii2, FSIHGAT, FSIHGRD)
+        call SCATTER(shd, iilen, ii1, ii2, FDLGAT, cm%clin(cfk%FI)%climvGrd)
+        call SCATTER(shd, iilen, ii1, ii2, ULGAT, cm%clin(cfk%UV)%climvGrd)
+        call SCATTER(shd, iilen, ii1, ii2, TAGAT, cm%clin(cfk%TT)%climvGrd)
+        call SCATTER(shd, iilen, ii1, ii2, QAGAT, cm%clin(cfk%HU)%climvGrd)
+        call SCATTER(shd, iilen, ii1, ii2, PRESGAT, cm%clin(cfk%P0)%climvGrd)
+        call SCATTER(shd, iilen, ii1, ii2, PREGAT, cm%clin(cfk%PR)%climvGrd)
         cm%clin(cfk%FB)%climvGrd = 2.0*FSVHGRD
 
     end subroutine !climate_module_interpolatedata

@@ -17,7 +17,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !       copyright (c) by Nick Kouwen and Dave Watson 2007
 !***********************************************************************
 
-      subroutine read_shed_ef(fls, indx, bi)
+      subroutine read_shed_ef(fls, indx, shd)
 
 C***********************************************************************
 C ****NOTE****This subroutine works but still requires extensive cleaning up
@@ -56,6 +56,7 @@ C***********************************************************************!
 !***********************************************************************
 
       use sa_mesh_shared_variabletypes
+      use sa_mesh_shared_variables
       use model_files_variabletypes
       use strings
 
@@ -101,7 +102,7 @@ C//////////////////////////////////////////////
 
       type(fl_ids) :: fls
       integer, intent(in) :: indx
-      type(basin_info) :: bi
+      type(ShedGridParams) :: shd
 
 !      real(kind=4), dimension(:, :), allocatable :: dummy
 
@@ -214,9 +215,9 @@ C// Added by Dave
       line(1:1) = '#'
 
       do while ((.not. foundEndHeader) .and.
-     &  ((line(1:1) == '#') .or.
-     &  (line(1:1) == ':') .or.
-     &  (len_trim(line) == 0)))
+     &          ((line(1:1) == '#') .or.
+     &           (line(1:1) == ':') .or.
+     &           (len_trim(line) == 0)))
         read(fls%fl(indx)%iun, fmt='((A))', iostat=ierr) line ! read a line
         if (ierr == -1) then
           write(6,'((A))') 'ERROR: Premature EndOfFile encountered'
@@ -252,8 +253,8 @@ C     &          line
         end if
       end do
 
-      bi%CoordSys = header%r2cp%csp%projection
-      bi%Datum = header%r2cp%csp%ellipsoid
+      shd%CoordSys%Proj = header%r2cp%csp%projection
+      shd%CoordSys%Ellips = header%r2cp%csp%ellipsoid
 
 !     ugly but effective
 !-+todo: replace this with string utilities
@@ -261,34 +262,34 @@ C     &          line
 !      write(99, 99000) header%r2cp%csp%zone
 !99000 format(i10)
 !      rewind 99
-!      read(99, 99001) bi%Zone
+!      read(99, 99001) shd%CoordSys%Zone
 !99001 format(a10)
 !      close(unit=99, status='delete')
-      call writenum(header%r2cp%csp%zone, bi%Zone, 'i10')
+      call writenum(header%r2cp%csp%zone, shd%CoordSys%Zone, 'i10')
 
-      bi%xCount = header%r2cp%xCount
-      bi%yCount = header%r2cp%yCount
-      bi%xOrigin = header%r2cp%xOrigin
-      bi%yOrigin = header%r2cp%yOrigin
-      bi%xDelta = header%r2cp%xDelta
-      bi%yDelta = header%r2cp%yDelta
+      shd%xCount = header%r2cp%xCount
+      shd%yCount = header%r2cp%yCount
+      shd%xOrigin = header%r2cp%xOrigin
+      shd%yOrigin = header%r2cp%yOrigin
+      shd%xDelta = header%r2cp%xDelta
+      shd%yDelta = header%r2cp%yDelta
 
-      bi%AL = header%nominalGridSize_AL
+      shd%AL = header%nominalGridSize_AL
 !+      cintv = header%contourInterval
 
-      bi%NTYPE = header%classCount - 1
+      shd%lc%NTYPE = header%classCount - 1
 !        every where loops are ntype+1
 !        this needs to be changed  fix fix
 ! ntype = header%classCount
 !        to reading in the actual # land classes &
 !         not no classes -1 for inpervious
 
-      bi%NRVR = header%numRiverClasses
+      shd%NRVR = header%numRiverClasses
 
 !+      conv = header%r2cp%unitConv
 
-      bi%NA = header%totalNumOfGrids
-      bi%NAA = header%numGridsInBasin
+      shd%NA = header%totalNumOfGrids
+      shd%NAA = header%numGridsInBasin
 !+      nnprint = header%debugGridNo
 
 c      if(iopt.eq.2)then
@@ -307,7 +308,7 @@ c print*
 c pause
 
       attCount = header%r2cp%ep%attCount
-      call LoadAttributeData(header%r2cp%ep, bi%xCount, bi%yCount,
+      call LoadAttributeData(header%r2cp%ep, shd%xCount, shd%yCount,
      +  fls%fl(indx)%iun)
 
 C// End Dave addition
@@ -320,27 +321,27 @@ C//////////////////////////////////////////////
 !        imax=ycount
 !   jmax=xcount
 !       eventually, IMAXI & jnmax should be replaced everywhere in the code
-!      IMAXI = bi%yCount
-!      JMAXI = bi%xCount
+!      IMAXI = shd%yCount
+!      JMAXI = shd%xCount
 
 !       added ll separation Jul. 27/04  nk
 C        if(coordsys1.eq.'LATLONG   ')then !commented out line below added by Dave
 CDAN if(IsLatLong(header%r2cp%csp).eq.(.true.))then
       if (IsLatLong(header%r2cp%csp)) then
-        bi%iyMin = int(bi%yOrigin*60.0)
-        bi%iyMax = int((bi%yOrigin + bi%yCount*bi%yDelta)*60.0)
-        bi%jxMin = int(bi%xOrigin*60.0)
-        bi%jxMax = int((bi%xOrigin + bi%xCount*bi%xDelta)*60.0)
+        shd%iyMin = int(shd%yOrigin*60.0)
+        shd%iyMax = int((shd%yOrigin + shd%yCount*shd%yDelta)*60.0)
+        shd%jxMin = int(shd%xOrigin*60.0)
+        shd%jxMax = int((shd%xOrigin + shd%xCount*shd%xDelta)*60.0)
 !        llflg = 'y'          ! added Mar. 15/06 nk
-        bi%GRDE = bi%xDelta*60.0
-        bi%GRDN = bi%yDelta*60.0
+        shd%GRDE = shd%xDelta*60.0
+        shd%GRDN = shd%yDelta*60.0
       else
-        bi%GRDE = bi%xDelta/1000.0
-        bi%GRDN = bi%yDelta/1000.0
-        bi%jxMin = int(bi%xOrigin/1000.0)
-        bi%jxMax = bi%jxMin + bi%GRDE*(bi%xCount - 1)
-        bi%iyMin = int(bi%yOrigin/1000.0)
-        bi%iyMax = bi%iyMin + bi%GRDN*(bi%yCount - 1)
+        shd%GRDE = shd%xDelta/1000.0
+        shd%GRDN = shd%yDelta/1000.0
+        shd%jxMin = int(shd%xOrigin/1000.0)
+        shd%jxMax = shd%jxMin + shd%GRDE*(shd%xCount - 1)
+        shd%iyMin = int(shd%yOrigin/1000.0)
+        shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
 !        llflg = 'n'          ! added Mar. 15/06 nk
       end if
 
@@ -376,13 +377,13 @@ CDAN      it=imax-1
 !Dan Princz changed this
 !DAN       allocate(s(imax,jmax),dummy(imax,jmax),rl(na),
 
-        allocate(s(bi%yCount, bi%xCount),
-!     *    dummy(bi%yCount, bi%xCount),
-     *    bi%xxx(bi%NA), bi%yyy(bi%NA),
+        allocate(s(shd%yCount, shd%xCount),
+!     *    dummy(shd%yCount, shd%xCount),
+     *    shd%xxx(shd%NA), shd%yyy(shd%NA),
 !     *    flz2(na), pwr2(na),
 !     *    sl2(na),
-     *    bi%IROUGH(bi%NA),
-     *    bi%ACLASS(bi%NA, bi%NTYPE + 1),
+     *    shd%IROUGH(shd%NA),
+     *    shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1),
 !     *    glacier_flag(na),
      *    stat=ierr)
 
@@ -391,29 +392,29 @@ CDAN      it=imax-1
           rStat = ToLowerCase(attribName)
           attLen = len_trim(attribName)
           if (attribName(1:attLen) == 'next') then
-            allocate(bi%NEXT(bi%NA), stat=ierr)
+            allocate(shd%NEXT(shd%NA), stat=ierr)
           else if (attribName(1:attLen) == 'da') then
-            allocate(bi%DA(bi%NA), stat=ierr)
+            allocate(shd%DA(shd%NA), stat=ierr)
           else if (attribName(1:attLen) == 'bankfull') then
-            allocate(bi%BNKFLL(bi%NA), stat=ierr)
+            allocate(shd%BNKFLL(shd%NA), stat=ierr)
           else if (attribName(1:attLen) == 'chnlslope') then
-            allocate(bi%SLOPE_CHNL(bi%NA), stat=ierr)
+            allocate(shd%SLOPE_CHNL(shd%NA), stat=ierr)
           else if (attribName(1:attLen) == 'elev') then
-            allocate(bi%ELEV(bi%NA), stat=ierr)
+            allocate(shd%ELEV(shd%NA), stat=ierr)
 !          else if (attribName(1:attLen) == 'chnllength') then
-!            allocate(bi%CHNL_LEN(na), stat=ierr)
+!            allocate(shd%CHNL_LEN(na), stat=ierr)
           else if (attribName(1:attLen) == 'iak') then
-            allocate(bi%IAK(bi%NA), stat=ierr)
+            allocate(shd%IAK(shd%NA), stat=ierr)
 !          else if (attribName(1:attLen) == 'intslope') then
 !            allocate(sl1(na), stat=iAllocate)
           else if (attribName(1:attLen) == 'chnl') then
-            allocate(bi%ICHNL(bi%NA), stat=ierr)
+            allocate(shd%ICHNL(shd%NA), stat=ierr)
           else if (attribName(1:attLen) == 'reach') then
-            allocate(bi%IREACH(bi%NA), stat=ierr)
+            allocate(shd%IREACH(shd%NA), stat=ierr)
           else if (attribName(1:attLen) == 'demslope') then
-            allocate(bi%SLOPE(bi%NA), stat=ierr)
+            allocate(shd%SLOPE_INT(shd%NA), stat=ierr)
           else if (attribName(1:attLen) == 'drdn') then
-            allocate(bi%DRDN(bi%NA), stat=ierr)
+            allocate(shd%DRDN(shd%NA), stat=ierr)
 !          else if (attribName(1:attLen) == 'flz') then
 !            allocate(flz(na), stat=iAllocate)
 !          else if (attribName(1:attLen) == 'pwr') then
@@ -437,8 +438,8 @@ CDAN      it=imax-1
 !          else if (attribName(1:attLen) == 'kcond') then
 !            allocate(kcond(na), stat=iAllocate)
           else if (attribName(1:attLen) == 'gridarea') then
-            allocate(bi%AREA(bi%NA), stat=ierr)
-            allocate(bi%FRAC(bi%NA), stat=ierr)
+            allocate(shd%AREA(shd%NA), stat=ierr)
+            allocate(shd%FRAC(shd%NA), stat=ierr)
           end if
         end do
         if (ierr /= 0) stop
@@ -454,7 +455,7 @@ C// Added by Dave
 C// First find and copy rank attribute first data over to global array
 !      if (unitnum == 31) then
 !       for the shed file:
-!        do ai = 1, attCount - (bi%NTYPE + 1)
+!        do ai = 1, attCount - (shd%lc%NTYPE + 1)
 !          vi = 0
 !          attribName = header%r2cp%ep%attList(ai)%name
 !          rStat = ToLowerCase(attribName)
@@ -473,29 +474,29 @@ C  do yi=yCount,1,-1
 !        end do
 !      else
 !       for the par file:
-        do ai = 1, attCount
-          vi = 0
-          attribName = header%r2cp%ep%attList(ai)%name
-          rStat = ToLowerCase(attribName)
-          attLen = len_trim(attribName)
-          if (attribName(1:attLen) == 'rank') then
-            do yi = 1, bi%yCount
-              do xi = 1, bi%xCount
-                vi = vi + 1
-                val = header%r2cp%ep%attList(ai)%val(vi)
-                s(yi, xi) = val
-              end do
+      do ai = 1, attCount
+        vi = 0
+        attribName = header%r2cp%ep%attList(ai)%name
+        rStat = ToLowerCase(attribName)
+        attLen = len_trim(attribName)
+        if (attribName(1:attLen) == 'rank') then
+          do yi = 1, shd%yCount
+            do xi = 1, shd%xCount
+              vi = vi + 1
+              val = header%r2cp%ep%attList(ai)%val(vi)
+              s(yi, xi) = val
             end do
-          end if
-        end do
+          end do
+        end if
+      end do
 !      end if
 
 !C// Copy attribute data (not classes yet) over to global attributes
       vi = 0
 !c reverse the direction of the yi loop
 !c do yi=1,yCount
-      do yi = 1, bi%yCount
-        do xi = 1, bi%xCount
+      do yi = 1, shd%yCount
+        do xi = 1, shd%xCount
           vi = vi + 1
           rank = s(yi, xi)
           if (rank > 0) then
@@ -507,34 +508,34 @@ C  do yi=yCount,1,-1
               attLen = len_trim(attribName)
               val = header%r2cp%ep%attList(ai)%val(vi)
               if (attribName(1:attLen) == 'next') then
-                bi%NEXT(rank) = int(val)
+                shd%NEXT(rank) = int(val)
               else if (attribName(1:attLen) == 'da') then
-                bi%DA(rank) = val
+                shd%DA(rank) = val
               else if (attribName(1:attLen) == 'bankfull') then
-                bi%BNKFLL(rank) = val
+                shd%BNKFLL(rank) = val
               else if (attribName(1:attLen) == 'chnlslope') then
-                bi%SLOPE_CHNL(rank) = val
+                shd%SLOPE_CHNL(rank) = val
               else if (attribName(1:attLen) == 'elev') then
-                bi%ELEV(rank) = val
+                shd%ELEV(rank) = val
 !              else if (attribName(1:attLen) == 'chnllength') then
-!                bi%CHNL_LEN(rank) = val
+!                shd%CHNL_LEN(rank) = val
               else if (attribName(1:attLen) == 'iak') then
-                bi%IAK(rank) = int(val)
+                shd%IAK(rank) = int(val)
 !              else if (attribName(1:attLen) == 'intslope') then
 !                sl1(rank) = val
               else if (attribName(1:attLen) == 'chnl') then
-                bi%ICHNL(rank) = int(val)
+                shd%ICHNL(rank) = int(val)
               else if (attribName(1:attLen) == 'reach') then
-                bi%IREACH(rank) = int(val)
+                shd%IREACH(rank) = int(val)
     ! Slope dem and drainage density  extracted from dem used in WARTROF.f G.sapriza 11/14
               else if (attribName(1:attLen) == 'demslope') then
-                bi%SLOPE(rank) = val
+                shd%SLOPE_INT(rank) = val
               else if (attribName(1:attLen) == 'drdn') then
 !todo: At some point these units were keyed to the first grid square; whether or not it's -1.0 (or maybe 1.0)
-                bi%DRDN(rank) = val
+                shd%DRDN(rank) = val
 !                       Convert DD from km/km^2 to m/m^2
 !                       The formulae in WATROF.f expect m/m^2
-                bi%DRDN(rank) = bi%DRDN(rank)/1000.0
+                shd%DRDN(rank) = shd%DRDN(rank)/1000.0
 
     !      WATROUTE attributes added by nk  Oct. 1/06
 !              else if (attribName(1:attLen) == 'flz') then
@@ -562,8 +563,8 @@ C  do yi=yCount,1,-1
     !      end attributed added by nk
 
               else if (attribName(1:attLen) == 'gridarea') then
-                bi%AREA(rank) = val
-                bi%FRAC(rank)=bi%AREA(rank)/bi%AL/bi%AL
+                shd%AREA(rank) = val
+                shd%FRAC(rank)=shd%AREA(rank)/shd%AL/shd%AL
     !       frac is still used in the code but no longer in the shed file
 !              else if (attribName(1:attLen) == 'frac') then
 !    !    frac(rank) = val
@@ -588,22 +589,23 @@ c     aclass(rank, ntype+1) = val
 
 C// Copy class attribute data over to global attributes
 !      if (unitnum == 31) then
-        vi = 0
+      vi = 0
 c reverse the direction of the yi loop
-        do yi = 1, bi%yCount
+      do yi = 1, shd%yCount
 C   do yi=yCount,1,-1
-          do xi = 1, bi%xCount
-            vi = vi + 1
-            rank = s(yi, xi)
-            if (rank > 0) then
-              do ai = attCount - bi%NTYPE, attCount
-                val = header%r2cp%ep%attList(ai)%val(vi)
-                bi%ACLASS(rank, ai - (attCount - (bi%NTYPE + 1))) = val
+        do xi = 1, shd%xCount
+          vi = vi + 1
+          rank = s(yi, xi)
+          if (rank > 0) then
+            do ai = attCount - shd%lc%NTYPE, attCount
+              val = header%r2cp%ep%attList(ai)%val(vi)
+              shd%lc%ACLASS(rank, ai - (attCount - (shd%lc%NTYPE + 1)))
+     +          = val
 !     aclass(rank,ai-(attCount-ntype)) = val
-              end do
-            end if
-          end do
+            end do
+          end if
         end do
+      end do
 !      end if
 
 !     pick the dominant class in this grid for debug printing
@@ -615,13 +617,13 @@ C   do yi=yCount,1,-1
 C// Copy rows and col over to global attributes
 C// I'm not sure if we need this...check with Nick
       vi = 0
-      do yi = 1, bi%yCount
-        do xi = 1, bi%xCount
+      do yi = 1, shd%yCount
+        do xi = 1, shd%xCount
           vi = vi + 1
           rank = s(yi, xi)
           if (rank > 0) then
-            bi%xxx(rank) = xi
-            bi%yyy(rank) = yi
+            shd%xxx(rank) = xi
+            shd%yyy(rank) = yi
           end if
         end do
       end do
@@ -748,19 +750,23 @@ CDAN      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.2000.0)then
 
 !     REV. 8.92 - Dec.  24/89 -  CHECK FOR 100% ACLASS COVERAGE
 !      igridflg = 0
-      do n = 1, bi%NAA
+      do n = 1, shd%NAA
         sumclass = 0.0
-        do ii = 1, bi%NTYPE + 1
-          sumclass = sumclass + bi%ACLASS(n, ii)
+        do ii = 1, shd%lc%NTYPE + 1
+          sumclass = sumclass + shd%lc%ACLASS(n, ii)
         end do
         if (sumclass /= 1.0) then
 !          igridflg = 1
-          print 9023, n, bi%yyy(n), bi%xxx(n), sumclass
-          do ii = 1, bi%NTYPE + 1
+          if (ro%DIAGNOSEMODE > 0) then
+            print 9023, n, shd%yyy(n), shd%xxx(n), sumclass
+          end if
+          do ii = 1, shd%lc%NTYPE + 1
             if (sumclass > 0.0) then
-              bi%ACLASS(n, ii) = bi%ACLASS(n, ii)/sumclass
+              shd%lc%ACLASS(n, ii) = shd%lc%ACLASS(n, ii)/sumclass
             else
-              print 9024, n, bi%yyy(n), bi%xxx(n)
+              if (ro%DIAGNOSEMODE > 0) then
+                print 9024, n, shd%yyy(n), shd%xxx(n)
+              end if
             end if
           end do
         end if
@@ -773,14 +779,14 @@ CDAN      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.2000.0)then
 !     Checking data:
 
       nrvr1 = 0
-      do n = 1, bi%NA
+      do n = 1, shd%NA
 !       moved this to flowinit at one point but then it got
 !       recalculated with each iteration when optimizing.
 !       A serious snafu resulting in the convergence problem on opt.
-        if (bi%SLOPE_CHNL(n) < 0.0) then
+        if (shd%SLOPE_CHNL(n) < 0.0) then
           print *, 'In read_shed_ef reading the file :',
      *      adjustl(trim(fls%fl(indx)%fn))
-          print *, 'The slope in grid no ', n, ' is ', bi%SLOPE_CHNL(n)
+          print *, 'The slope in grid no ', n, ' is ', shd%SLOPE_CHNL(n)
           print *, 'Please check the elevations in the map file'
           print *, 'or change the slope value in the shd file'
           print *, 'The former is recommended as the permanent solution'
@@ -790,7 +796,7 @@ CDAN      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.2000.0)then
 !CRAIG THOMPSON ADDED THIS
 !        sl2(n) = sqrt(sl1(n))     ! used for overland flow routing (runof6)
 !       check to see how many basins/river classes there are:
-        nrvr1 = max(nrvr1, bi%IAK(n))
+        nrvr1 = max(nrvr1, shd%IAK(n))
       end do
 
 c      if( nrvr.ne.nrvr1)then
@@ -804,9 +810,9 @@ c        pause ' program paused in rd_shed_ef'
 c      endif
 c
 
-      if (bi%NRVR /= nrvr1) then
-        print 803, bi%NRVR, nrvr1
-        bi%NRVR = nrvr1
+      if (shd%NRVR /= nrvr1) then
+        if (ro%VERBOSEMODE > 0) print 803, shd%NRVR, nrvr1
+        shd%NRVR = nrvr1
       end if
 
 803   format(

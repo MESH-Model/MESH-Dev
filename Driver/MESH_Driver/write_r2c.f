@@ -13,7 +13,7 @@ C
 C    You should have received a copy of the GNU Lesser General Public License
 C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
-      subroutine write_r2c(fls, indx, bi,
+      subroutine write_r2c(fls, indx, shd,
      *  no_frames, no_classes, frame_no, class_no,
      *  no_signf,
      *  EF_YEAR_NOW, EF_MONTH_NOW, EF_DAY_NOW, EF_HOUR_NOW,
@@ -33,7 +33,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 ! - List of arguments:
 
 !       fls                 type        File information.
-!       bi                  type        Basin/watershed information.
+!       shd                 type        Basin/watershed information.
 !       indx                int         Index of the file in fls.
 !   I - itogo   int        no. of hours until next rainfall
 !   R - unit_conversion    REAL*4     conversion factor (area2)
@@ -73,7 +73,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       !> Input variables.
       type(fl_ids), intent(in) :: fls
       integer, intent(in) :: indx
-      type(basin_info), intent(in) :: bi
+      type(GridParams), intent(in) :: shd
       real, dimension(:, :), intent(in) :: outarray
       character(40), intent(in), optional :: attribute_name,
      *  attribute_units, attribute_type, attribute_source, author
@@ -144,17 +144,17 @@ c   print*,'Opened unit=',un,' filename=',fln(fn)
         write(iun, 3005) '#                                       '
         write(iun, 3020) ':Name               ', author
         write(iun, 3005) '#                                       '
-        write(iun, 3004) ':Projection         ', bi%CoordSys
-        if (bi%CoordSys == 'LATLONG   ') then
-          write(iun, 3004) ':Ellipsoid          ', bi%Datum
+        write(iun, 3004) ':Projection         ', shd%CoordSys%Proj
+        if (shd%CoordSys%Proj == 'LATLONG   ') then
+          write(iun, 3004) ':Ellipsoid          ', shd%CoordSys%Ellips
         end if
-        if (bi%CoordSys == 'UTM       ') then
-          write(iun, 3004) ':Ellipsoid          ', bi%Datum
-          write(iun, 3004) ':Zone               ', bi%Zone
+        if (shd%CoordSys%Proj == 'UTM       ') then
+          write(iun, 3004) ':Ellipsoid          ', shd%CoordSys%Ellips
+          write(iun, 3004) ':Zone               ', shd%CoordSys%Zone
         end if
         write(iun, 3005) '#                                       '
-        write(iun, 3003) ':xOrigin            ', bi%xOrigin
-        write(iun, 3003) ':yOrigin            ', bi%yOrigin
+        write(iun, 3003) ':xOrigin            ', shd%xOrigin
+        write(iun, 3003) ':yOrigin            ', shd%yOrigin
         write(iun, 3005) '#                                       '
         write(iun, 3020) ':SourceFile         ', attribute_source
         write(iun, 3005) '#                                       '
@@ -169,10 +169,10 @@ c   print*,'Opened unit=',un,' filename=',fln(fn)
 c!         see note below @***
         end if
         write(iun, 3005) '#                                       '
-        write(iun, 3001) ':xCount             ', bi%xCount
-        write(iun, 3001) ':yCount             ', bi%yCount
-        write(iun, 3003) ':xDelta             ', bi%xDelta
-        write(iun, 3003) ':yDelta             ', bi%yDelta
+        write(iun, 3001) ':xCount             ', shd%xCount
+        write(iun, 3001) ':yCount             ', shd%yCount
+        write(iun, 3003) ':xDelta             ', shd%xDelta
+        write(iun, 3003) ':yDelta             ', shd%yDelta
 c        if(no_frames.eq.1)then
 !        if (no_frames <= 1) then
 !          write(un, 3005) '#                                       '
@@ -248,40 +248,40 @@ c   endif
 !                 south on top, north on bottom    !!!!!!!!!!
 !   write(*,*) outarray(10,10)
         if (no_signf == 0) then
-          do i = 1, bi%yCount
-            write(iun, 1300) (outarray(i, j), j = 1, bi%xCount)
+          do i = 1, shd%yCount
+            write(iun, 1300) (outarray(i, j), j = 1, shd%xCount)
           end do
         else if (no_signf == 1) then   ! swe, precip and temp
-          do i = 1, bi%yCount
-            write(iun, 1301) (outarray(i, j), j = 1, bi%xCount)
+          do i = 1, shd%yCount
+            write(iun, 1301) (outarray(i, j), j = 1, shd%xCount)
           end do
         else if (no_signf == 2) then   ! swe, precip and temp
-          do i = 1, bi%yCount
-            write(iun, 1302) (outarray(i, j), j = 1, bi%xCount)
+          do i = 1, shd%yCount
+            write(iun, 1302) (outarray(i, j), j = 1, shd%xCount)
           end do
         else if (no_signf == 3) then   ! swe, precip and temp
-          do i = 1, bi%yCount
-            write(iun, 1303) (outarray(i, j), j = 1, bi%xCount)
+          do i = 1, shd%yCount
+            write(iun, 1303) (outarray(i, j), j = 1, shd%xCount)
           end do
         else if (no_signf == 4) then   ! swe, precip and temp
-          do i = 1, bi%yCount
-            write(iun, 1304) (outarray(i, j), j = 1, bi%xCount)
+          do i = 1, shd%yCount
+            write(iun, 1304) (outarray(i, j), j = 1, shd%xCount)
           end do
         else if (no_signf == 5) then   ! swe, precip and temp
-          do i = 1, bi%yCount
-            write(iun, 1305) (outarray(i, j), j = 1, bi%xCount)
+          do i = 1, shd%yCount
+            write(iun, 1305) (outarray(i, j), j = 1, shd%xCount)
           end do
         else if (no_signf == 6) then   ! swe, precip and temp
-          do i = 1, bi%yCount
-            write(iun, 1306) (outarray(i, j), j = 1, bi%xCount)
+          do i = 1, shd%yCount
+            write(iun, 1306) (outarray(i, j), j = 1, shd%xCount)
           end do
         else if (no_signf == 8) then   ! flow
-          do i = 1, bi%yCount
-            write(iun, 1308) (outarray(i, j), j = 1, bi%xCount)
+          do i = 1, shd%yCount
+            write(iun, 1308) (outarray(i, j), j = 1, shd%xCount)
           end do
         else                        ! init soil moisture
-          do i = 1, bi%yCount
-            write(iun, 1307) (outarray(i, j), j = 1, bi%xCount)
+          do i = 1, shd%yCount
+            write(iun, 1307) (outarray(i, j), j = 1, shd%xCount)
           end do
         end if
 

@@ -9,13 +9,10 @@
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
      +  IRONAME, GENDIR_OUT,
 !> variables for drainage database or new_shd
-!     + IGND, ILG, WF_IYMAX, WF_JXMAX,
 !     + WF_LAND_COUNT,
 !     + LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX,
 !     + LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX,
 !     + WF_LAND_MAX, WF_LAND_SUM,
-!> variables for READ_CHECK_FORCING_FILES
-!     + NUM_CSV, NUM_R2C, NUM_SEQ,
 !> variables for READ_PARAMETERS_CLASS
      +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
      +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
@@ -31,7 +28,7 @@
 !> variables for READ_PARAMETERS_HYDROLOGY
      +  INDEPPAR, DEPPAR, WF_R2, M_C,
 !> the types that are to be allocated and initialised
-     +  bi, op, sl, cp, sv, hp, ts, cm,
+     +  shd, op, sl, cp, sv, hp, ts, cm,
      +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
       use sa_mesh_shared_variabletypes
@@ -61,29 +58,23 @@
 !> END OF VALUES FOR READ_RUN_OPTIONS
 !> -----------------------------
 !> VALUES NEEDED for drainage_database and/or new_shd.r2c
-!      integer IGND, ILG, WF_IYMAX, WF_JXMAX,
+!      integer
 !     +  WF_LAND_COUNT,
 !     +  LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX,
 !     +  LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX
 !      real WF_LAND_MAX, WF_LAND_SUM
-      character(500) fl_listMesh
-!> already declared:
-!>  SHDFILEFLAG, IOS, WF_NUM_POINTS,
 
 !> declared in MESH_INPUT_MODULE
-!>  WF_IBN, WF_IROUGH, WF_ICHNL, WF_NEXT, WF_ELEV, WF_IREACH,
-!>  WF_DA, WF_BNKFLL, WF_CHANNELSLOPE, BASIN_FRACTION, WF_NHYD,
+!>  BASIN_FRACTION, WF_NHYD,
 !>  WF_QR, WF_QBASE, WF_QI2, WF_QO1, WF_QO2, WF_STORE1, WF_STORE2,
 !>  WF_QI1, SNOGRD, FSDOWN
 !>  wc_algwet, wc_algdry, wc_thpor, wc_thlret,
 !>  wc_thlmin, wc_bi, wc_psisat, wc_grksat, wc_hcps, wc_tcs
 
 !> local variables
-      integer i, j, k
+      integer NA, NTYPE, IGND, i, j, k
 !> END OF VALUES NEEDED for drainagedatabase of new_shd.r2c
 !> -----------------------------
-!> values needed for READ_CHECK_FORCING_FILES
-!      INTEGER :: NUM_CSV, NUM_R2C,NUM_SEQ
 !> values that were declared earlier:
 !>  BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG,
 !>  BASINTEMPERATUREFLAG, BASINRAINFLAG, BASINWINDFLAG,
@@ -102,31 +93,26 @@
      +  DAILY_START_YEAR, DAILY_STOP_YEAR,
      +  IHOUR, IMIN, IDAY, IYEAR
       real DEGLAT, DEGLON
-!> values declared in area watflood:
-!>  NA, NTYPE
-!> values declared above:
-!>  IGND
 !> values declared in mesh_input_module
 
 !> -----------------------------
 !> Values needed for READ_SOIL_INI :
 !> values already declared above:
-!>  NMTEST, IGND, NTYPE, NA, SOILINIFLAG
+!>  SOILINIFLAG
 !>  values already declared in MESH_INPUT_MODULE
 !>  wc_thpor,  wc_thlret, wc_thlmin, wc_bi,     wc_psisat,
 !>  wc_grksat, wc_hcps,   wc_tcs,    wc_algwet, wc_algdry
 !> -----------------------------
 !> Values needed for READ_S_MOISTURE_TXT
 !> already declared:
-!>  IGND, YCOUNT, XCOUNT, na, NTYPE
-!>  YYY, XXX, THLQROW, valuem
+!>  THLQROW, valuem
 !> -----------------------------
 !> Values needed for READ_PARAMETERS_HYDROLOGY :
       integer INDEPPAR, DEPPAR, M_C
       real SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
       real WF_R2(M_C)
 !> Values already declared above:
-!>  NTYPE, NA, RELFLG
+!>  RELFLG
 !> -----------------------------
 !> VALUES FOR MANY INPUT FILES
       character(8) RELEASE(10)
@@ -138,7 +124,7 @@
       type(ClassParameters) :: cp
       type(SoilValues) :: sv
       type(HydrologyParameters) :: hp
-      type(basin_info) :: bi
+      type(ShedGridParams) :: shd
       type(CLIM_INFO) :: cm
       type(dates_model) :: ts
       type(fl_ids):: fls
@@ -192,57 +178,23 @@
      +      'Reading Drainage Database from MESH_drainage_database.r2c'
 
 !          open(UNIT=98, FILE='1234500124572321.1265489')
-          call READ_SHED_EF(fls, mfk%f20, bi)
+          call READ_SHED_EF(fls, mfk%f20, shd)
 !          close(98, STATUS='delete')
           write(6, *) ' READ: SUCCESSFUL, FILE: CLOSED'
 !+        ALLOCATE(FRAC(NA),
 
-          !> Initialize basin information variable.
-!-          bi%xOrigin = bi%xOrigin
-!-          bi%yOrigin = bi%yOrigin
-!-          bi%AL = bi%AL
-!-          bi%xDelta = bi%xDelta
-!-          bi%yDelta = bi%yDelta
-!-          bi%NA = bi%NA
-!-          bi%xCount = bi%xCount
-!-          bi%yCount = bi%yCount
-!-          allocate(bi%xxx(bi%NA), bi%yyy(bi%NA))
-!-          bi%xxx = bi%xxx
-!-          bi%yyy = bi%yyy
-!-          bi%NTYPE = NTYPE
-!-          allocate(bi%ACLASS(bi%NA, bi%NTYPE + 1))
-!-          bi%ACLASS = ACLASS
-
 !>
 !>*******************************************************************
 !>
-!          allocate(WF_IBN(bi%NA), WF_IROUGH(bi%NA),
-!     +      WF_ICHNL(bi%NA), WF_NEXT(bi%NA), WF_ELEV(bi%NA),
-!     +      WF_IREACH(bi%NA),
-!     +      WF_DA(bi%NA), WF_BNKFLL(bi%NA), WF_CHANNELSLOPE(bi%NA),
-!     +      BASIN_FRACTION(bi%NA))
+!          allocate(
+!     +      BASIN_FRACTION(NA))
 !+        ALLOCATE (WF_NHYD(NA), WF_QR(NA),
 !+     +  WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA),
 !+     +  WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA),
-!+     +  FSDOWN(NA))
+!+     +  )
 
-!          do i = 1, bi%NA
-!            WF_IBN(i) = bi%IAK(i)
-!            WF_IROUGH(i) = 1 !irough does not seem
-                            !to be used in new WATROUTE
-!            WF_ICHNL(i) = bi%ICHNL(i)
-!            WF_NEXT(i) = bi%NEXT(i)
-!            WF_ELEV(i) = bi%ELEV(i)
-!            WF_IREACH(i) = bi%IREACH(i)
-!            WF_DA(i) = bi%DA(i)
-!            WF_BNKFLL(i) = bi%BNKFLL(i)
-!            WF_CHANNELSLOPE(i) = bi%SLOPE_CHNL(i)
-!          end do
-
-!          WF_IYMAX = bi%iyMax
-!          WF_JXMAX = bi%jxMax
 !          BASIN_FRACTION(1) = -1
-          bi%ILG = bi%NA*bi%NTYPE
+          shd%lc%ILG = shd%NA*shd%lc%NTYPE
 
         else
           print *, 'ERROR with event.evt or new_shd.r2c'
@@ -382,25 +334,30 @@
 
       end if ! IF SHDFILE...
 
+      !> Assign shed values to local variables.
+      NA = shd%NA
+      NTYPE = shd%lc%NTYPE
+      IGND = shd%lc%IGND
+
       !*   ACLASS: PERCENT-GRU FRACTION FOR EACH GRID SQUARE (WF_ACLASS)
 !The following are used in read_soil_ini
 !wc_thpor, wc_thlret,wc_thlmin,wc_bi,    wc_psisat,
 !wc_grksat,wc_hcps,  wc_tcs,   wc_algwet,wc_algdry
-      allocate(sv%wc_algwet(bi%NA, bi%NTYPE),
-     +  sv%wc_algdry(bi%NA, bi%NTYPE))
-      allocate(sv%wc_thpor(bi%NA, bi%NTYPE, bi%IGND),
-     +  sv%wc_thlret(bi%NA, bi%NTYPE, bi%IGND),
-     +  sv%wc_thlmin(bi%NA, bi%NTYPE, bi%IGND),
-     +  sv%wc_bi(bi%NA, bi%NTYPE, bi%IGND),
-     +  sv%wc_psisat(bi%NA, bi%NTYPE, bi%IGND),
-     +  sv%wc_grksat(bi%NA, bi%NTYPE, bi%IGND),
-     +  sv%wc_hcps(bi%NA, bi%NTYPE, bi%IGND),
-     +  sv%wc_tcs(bi%NA, bi%NTYPE, bi%IGND))
+      allocate(sv%wc_algwet(NA, NTYPE),
+     +  sv%wc_algdry(NA, NTYPE))
+      allocate(sv%wc_thpor(NA, NTYPE, IGND),
+     +  sv%wc_thlret(NA, NTYPE, IGND),
+     +  sv%wc_thlmin(NA, NTYPE, IGND),
+     +  sv%wc_bi(NA, NTYPE, IGND),
+     +  sv%wc_psisat(NA, NTYPE, IGND),
+     +  sv%wc_grksat(NA, NTYPE, IGND),
+     +  sv%wc_hcps(NA, NTYPE, IGND),
+     +  sv%wc_tcs(NA, NTYPE, IGND))
 
 !ANDY Zero everything we just allocated
-      do i = 1, bi%NA
-        do j = 1, bi%NTYPE
-          do k = 1, bi%IGND
+      do i = 1, NA
+        do j = 1, NTYPE
+          do k = 1, IGND
             sv%wc_thpor(i, j, k) = 0
             sv%wc_thlret(i, j, k) = 0
             sv%wc_thlmin(i, j, k) = 0
@@ -415,25 +372,25 @@
         end do
       end do
 
-      if (bi%XCOUNT > 100) then
+      if (shd%xCount > 100) then
         write(6, *) 'WARNING: The width of the basin is very high. ',
      *    'This may negatively impact performance.'
       end if
-      if (bi%YCOUNT > 100) then
+      if (shd%yCount > 100) then
         write(6, *) 'WARNING: The height of the basin is very high. ',
      *    'This may negatively impact performance.'
       end if
-      if (bi%ILG > 1500) then
+      if (shd%lc%ILG > 1500) then
         write(6, *) 'WARNING: The number of grid squares in the basin',
      *    ' is very high. This may negatively impact performance.'
       end if
 
 !> CHECK THAT GRID OUTPUT POINTS ARE IN THE BASIN
       do i = 1, WF_NUM_POINTS
-        if (op%N_OUT(i) > bi%NA) then !IF EXISTS IN BASIN
+        if (op%N_OUT(i) > shd%NA) then !IF EXISTS IN BASIN
           write(6, *)
           write(6, *)
-          write(6, *) 'Grids from basin watershed file: ', bi%NA
+          write(6, *) 'Grids from basin watershed file: ', shd%NA
           write(6, *) 'Grid output point ', i, ' is in Grid: ',
      1      op%N_OUT(i)
           write(6, *) 'Please adjust this grid output point in ',
@@ -447,52 +404,50 @@
 !> *********************************************************************
 !> Open and read in values from MESH_input_soil_levels.txt file
 !> *********************************************************************
-      allocate(sl%DELZ(bi%IGND), sl%ZBOT(bi%IGND))
-      call READ_SOIL_LEVELS(bi%IGND, sl, fls)
-
-!-      bi%IGND = bi%IGND
+      allocate(sl%DELZ(IGND), sl%ZBOT(IGND))
+      call READ_SOIL_LEVELS(IGND, sl, fls)
 
       allocate(
-     +  cp%ZRFMGRD(bi%NA), cp%ZRFHGRD(bi%NA), cp%ZBLDGRD(bi%NA),
-     +  cp%GCGRD(bi%NA))
+     +  cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA),
+     +  cp%GCGRD(NA))
 
-      allocate(cp%FCANROW(bi%NA, bi%NTYPE, ICAN + 1),
-     +  cp%LNZ0ROW(bi%NA, bi%NTYPE, ICAN + 1),
-     +  cp%ALVCROW(bi%NA, bi%NTYPE, ICAN + 1),
-     +  cp%ALICROW(bi%NA, bi%NTYPE, ICAN + 1))
-
-      allocate(
-     +  cp%PAMXROW(bi%NA, bi%NTYPE, ICAN),
-     +  cp%PAMNROW(bi%NA, bi%NTYPE, ICAN),
-     +  cp%CMASROW(bi%NA, bi%NTYPE, ICAN),
-     +  cp%ROOTROW(bi%NA, bi%NTYPE, ICAN),
-     +  cp%RSMNROW(bi%NA, bi%NTYPE, ICAN),
-     +  cp%QA50ROW(bi%NA, bi%NTYPE, ICAN),
-     +  cp%VPDAROW(bi%NA, bi%NTYPE, ICAN),
-     +  cp%VPDBROW(bi%NA, bi%NTYPE, ICAN),
-     +  cp%PSGAROW(bi%NA, bi%NTYPE, ICAN),
-     +  cp%PSGBROW(bi%NA, bi%NTYPE, ICAN))
+      allocate(cp%FCANROW(NA, NTYPE, ICAN + 1),
+     +  cp%LNZ0ROW(NA, NTYPE, ICAN + 1),
+     +  cp%ALVCROW(NA, NTYPE, ICAN + 1),
+     +  cp%ALICROW(NA, NTYPE, ICAN + 1))
 
       allocate(
-     +  cp%DRNROW(bi%NA, bi%NTYPE),  cp%SDEPROW(bi%NA, bi%NTYPE),
-     +  cp%FAREROW(bi%NA, bi%NTYPE), cp%DDROW(bi%NA, bi%NTYPE),
-     +  cp%XSLPROW(bi%NA, bi%NTYPE), cp%XDROW(bi%NA, bi%NTYPE),
-     +  cp%MANNROW(bi%NA, bi%NTYPE), cp%KSROW(bi%NA, bi%NTYPE),
-     +  cp%TCANROW(bi%NA, bi%NTYPE), cp%TSNOROW(bi%NA, bi%NTYPE),
-     +  cp%TPNDROW(bi%NA, bi%NTYPE), cp%ZPNDROW(bi%NA, bi%NTYPE),
-     +  cp%RCANROW(bi%NA, bi%NTYPE), cp%SCANROW(bi%NA, bi%NTYPE),
-     +  cp%SNOROW(bi%NA, bi%NTYPE),  cp%ALBSROW(bi%NA, bi%NTYPE),
-     +  cp%RHOSROW(bi%NA, bi%NTYPE), cp%GROROW(bi%NA, bi%NTYPE))
-
-      allocate(cp%MIDROW(bi%NA, bi%NTYPE))
+     +  cp%PAMXROW(NA, NTYPE, ICAN),
+     +  cp%PAMNROW(NA, NTYPE, ICAN),
+     +  cp%CMASROW(NA, NTYPE, ICAN),
+     +  cp%ROOTROW(NA, NTYPE, ICAN),
+     +  cp%RSMNROW(NA, NTYPE, ICAN),
+     +  cp%QA50ROW(NA, NTYPE, ICAN),
+     +  cp%VPDAROW(NA, NTYPE, ICAN),
+     +  cp%VPDBROW(NA, NTYPE, ICAN),
+     +  cp%PSGAROW(NA, NTYPE, ICAN),
+     +  cp%PSGBROW(NA, NTYPE, ICAN))
 
       allocate(
-     +  cp%SANDROW(bi%NA, bi%NTYPE, bi%IGND),
-     +  cp%CLAYROW(bi%NA, bi%NTYPE, bi%IGND),
-     +  cp%ORGMROW(bi%NA, bi%NTYPE, bi%IGND),
-     +  cp%TBARROW(bi%NA, bi%NTYPE, bi%IGND),
-     +  cp%THLQROW(bi%NA, bi%NTYPE, bi%IGND),
-     +  cp%THICROW(bi%NA, bi%NTYPE, bi%IGND))
+     +  cp%DRNROW(NA, NTYPE),  cp%SDEPROW(NA, NTYPE),
+     +  cp%FAREROW(NA, NTYPE), cp%DDROW(NA, NTYPE),
+     +  cp%XSLPROW(NA, NTYPE), cp%XDROW(NA, NTYPE),
+     +  cp%MANNROW(NA, NTYPE), cp%KSROW(NA, NTYPE),
+     +  cp%TCANROW(NA, NTYPE), cp%TSNOROW(NA, NTYPE),
+     +  cp%TPNDROW(NA, NTYPE), cp%ZPNDROW(NA, NTYPE),
+     +  cp%RCANROW(NA, NTYPE), cp%SCANROW(NA, NTYPE),
+     +  cp%SNOROW(NA, NTYPE),  cp%ALBSROW(NA, NTYPE),
+     +  cp%RHOSROW(NA, NTYPE), cp%GROROW(NA, NTYPE))
+
+      allocate(cp%MIDROW(NA, NTYPE))
+
+      allocate(
+     +  cp%SANDROW(NA, NTYPE, IGND),
+     +  cp%CLAYROW(NA, NTYPE, IGND),
+     +  cp%ORGMROW(NA, NTYPE, IGND),
+     +  cp%TBARROW(NA, NTYPE, IGND),
+     +  cp%THLQROW(NA, NTYPE, IGND),
+     +  cp%THICROW(NA, NTYPE, IGND))
 !>
 !>*******************************************************************
 !>
@@ -500,8 +455,8 @@
      +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
      +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
      +  PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6,
-     +  bi%NA, ILW, NLTEST, NMTEST,
-     +  bi%IGND, JLAT, ICAN, bi%NTYPE,
+     +  NA, ILW, NLTEST, NMTEST,
+     +  IGND, JLAT, ICAN, NTYPE,
      +  DEGLAT, DEGLON,
      +  HOURLY_START_DAY, HOURLY_STOP_DAY,
      +  DAILY_START_DAY, DAILY_STOP_DAY,
@@ -535,7 +490,7 @@
 !>
 !>*******************************************************************
 !>
-      call READ_SOIL_INI(bi%NTYPE, bi%IGND, bi%NTYPE, bi%NA, fls, sv)
+      call READ_SOIL_INI(NTYPE, IGND, NTYPE, NA, fls, sv)
 !>
 !>*******************************************************************
 !>
@@ -552,31 +507,31 @@
 !todo - test this piece of code and make sure we understand how it works.
 !todo - if we implement this, make it an option for the user to select GRU or grid initialization
       call READ_S_MOISTURE_TXT(
-     +  bi%IGND, bi%YCOUNT, bi%XCOUNT, bi%NA, bi%NTYPE,
-     +  bi%yyy, bi%xxx, cp%THLQROW)
+     +  IGND, shd%yCount, shd%xCount, NA, NTYPE,
+     +  shd%yyy, shd%xxx, cp%THLQROW)
 
       call READ_S_TEMPERATURE_TXT(
-     +  bi%IGND, bi%YCOUNT, bi%XCOUNT, bi%NA, bi%NTYPE,
-     +  bi%yyy, bi%xxx, cp%TBARROW)
+     +  IGND, shd%yCount, shd%xCount, NA, NTYPE,
+     +  shd%yyy, shd%xxx, cp%TBARROW)
 !>
 !>*******************************************************************
 !>
 !> Read the mesh_parameters_hydrology.ini file
-      allocate(hp%ZSNLROW(bi%NA, bi%NTYPE), hp%ZPLGROW(bi%NA, bi%NTYPE),
-     +  hp%ZPLSROW(bi%NA, bi%NTYPE), hp%FRZCROW(bi%NA, bi%NTYPE),
-     +  hp%CMAXROW(bi%NA, bi%NTYPE), hp%CMINROW(bi%NA, bi%NTYPE),
-     +  hp%BROW(bi%NA, bi%NTYPE), hp%K1ROW(bi%NA, bi%NTYPE),
-     +  hp%K2ROW(bi%NA, bi%NTYPE),
-     +  hp%fetchROW(bi%NA, bi%NTYPE), hp%HtROW(bi%NA, bi%NTYPE),
-     +  hp%N_SROW(bi%NA, bi%NTYPE), hp%A_SROW(bi%NA, bi%NTYPE),
-     +  hp%DistribROW(bi%NA, bi%NTYPE))
+      allocate(hp%ZSNLROW(NA, NTYPE), hp%ZPLGROW(NA, NTYPE),
+     +  hp%ZPLSROW(NA, NTYPE), hp%FRZCROW(NA, NTYPE),
+     +  hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE),
+     +  hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE),
+     +  hp%K2ROW(NA, NTYPE),
+     +  hp%fetchROW(NA, NTYPE), hp%HtROW(NA, NTYPE),
+     +  hp%N_SROW(NA, NTYPE), hp%A_SROW(NA, NTYPE),
+     +  hp%DistribROW(NA, NTYPE))
 
       NYEARS = YEAR_STOP - YEAR_START + 1
       allocate(t0_ACC(NYEARS))
       t0_ACC = 0.0
 
       call READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR,
-     +  RELEASE, WF_R2, hp, M_C, bi%NA, bi%NTYPE,
+     +  RELEASE, WF_R2, hp, M_C, NA, NTYPE,
      +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
       return

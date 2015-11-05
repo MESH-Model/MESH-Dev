@@ -121,14 +121,14 @@ module climate_forcing_data
     !> -----------------------------------------------------------------
     !> Description: Load block of data
     !> -----------------------------------------------------------------
-    subroutine LoadData(bi, indx, cm, ENDDATA, skipdata)
+    subroutine LoadData(shd, indx, cm, iilen, ii1, ii2, ENDDATA, skipdata)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
 
         !> Input variables.
-        type(basin_info) :: bi
-        integer indx
+        type(ShedGridParams) :: shd
+        integer indx, iilen, ii1, ii2
         logical, optional :: skipdata
 
         !> Input/Output variables.
@@ -138,9 +138,10 @@ module climate_forcing_data
         logical ENDDATA
 
         !> Local variables.
-        integer NTIME
+        integer NTIME, IOS
+        logical file_stat
         integer t, s, i, j, k, ii, jj
-        real INR2C(bi%YCOUNT, bi%XCOUNT), INGRU(bi%NTYPE), INGRD(bi%NA)
+        real INR2C(shd%yCount, shd%xCount), INGRU(shd%lc%NTYPE), INGRD(shd%NA)
         logical :: storedata = .true.
 
         !> If skipdata is present and .true., the routine won't store
@@ -154,17 +155,17 @@ module climate_forcing_data
                 do t = 1, size(cm%clin(indx)%climv, 3)
                     do s = 1, size(cm%clin(indx)%climv, 2)
                         read(cm%clin(indx)%unitR, *, end = 999) !:Frame line
-                        do ii = 1, bi%YCOUNT
+                        do ii = 1, shd%yCount
                             if (storedata) then
-                                read(cm%clin(indx)%unitR, *, end = 999) (INR2C(ii, jj), jj = 1, bi%XCOUNT)
+                                read(cm%clin(indx)%unitR, *, end = 999) (INR2C(ii, jj), jj = 1, shd%xCount)
                             else
                                 read(cm%clin(indx)%unitR, *, end = 999)
                             end if
                         end do
                         read(cm%clin(indx)%unitR, *, end = 999) !:EndFrame line
                         if (storedata) then
-                            do k = 1, bi%NML
-                                cm%clin(indx)%climv(k, s, t) = INR2C(bi%YYY(bi%ILMOS(k)), bi%XXX(bi%ILMOS(k)))
+                            do k = ii1, ii2
+                                cm%clin(indx)%climv(k, s, t) = INR2C(shd%yyy(shd%lc%ILMOS(k)), shd%xxx(shd%lc%ILMOS(k)))
                             end do
                         end if
                     end do
@@ -175,9 +176,9 @@ module climate_forcing_data
                 do t = 1, size(cm%clin(indx)%climv, 3)
                     do s = 1, size(cm%clin(indx)%climv, 2)
                         if (storedata) then
-                            read(cm%clin(indx)%unitR, *, end = 999) (INGRU(j), j = 1, bi%NTYPE)
-                            do k = 1, bi%NML
-                                cm%clin(indx)%climv(k, s, t) = INGRU(bi%JLMOS(k))
+                            read(cm%clin(indx)%unitR, *, end = 999) (INGRU(j), j = 1, shd%lc%NTYPE)
+                            do k = ii1, ii2
+                                cm%clin(indx)%climv(k, s, t) = INGRU(shd%lc%JLMOS(k))
                             end do
                         else
                             read(cm%clin(indx)%unitR, *, end = 999)
@@ -191,9 +192,9 @@ module climate_forcing_data
                     do s = 1, size(cm%clin(indx)%climv, 2)
                         if (storedata) then
                             read(cm%clin(indx)%unitR, end = 999) NTIME
-                            read(cm%clin(indx)%unitR, end = 999) (INGRD(i), i = 1, bi%NA)
-                            do k = 1, bi%NML
-                                cm%clin(indx)%climv(k, s, t) = INGRD(bi%ILMOS(k))
+                            read(cm%clin(indx)%unitR, end = 999) (INGRD(i), i = 1, shd%NA)
+                            do k = ii1, ii2
+                                cm%clin(indx)%climv(k, s, t) = INGRD(shd%lc%ILMOS(k))
                             end do
                         else
                             read(cm%clin(indx)%unitR, end = 999)
@@ -206,9 +207,9 @@ module climate_forcing_data
             case (4)
                 do t = 1, size(cm%clin(indx)%climv, 3)
                     do s = 1, size(cm%clin(indx)%climv, 2)
-                        read(cm%clin(indx)%unitR, *, end = 999) (INGRD(i), i = 1, bi%NA)
-                        do k = 1, bi%NML
-                            cm%clin(indx)%climv(k, s, t) = INGRD(bi%ILMOS(k))
+                        read(cm%clin(indx)%unitR, *, end = 999) (INGRD(i), i = 1, shd%NA)
+                        do k = ii1, ii2
+                            cm%clin(indx)%climv(k, s, t) = INGRD(shd%lc%ILMOS(k))
                         end do
                     end do
                 end do
@@ -228,7 +229,7 @@ module climate_forcing_data
 
     end subroutine !LoadData
 
-    subroutine READ_FORCING_DATA(bi, cm, &
+    subroutine READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
 !                                 FSDOWN, &
                                  FSVHGRD, FSIHGRD, &
 !                                 FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
@@ -240,9 +241,9 @@ module climate_forcing_data
     !> *****************************************************************
     !>
     !> *****************************************************************
-    !> THESE HAVE TO BE REAL*4 IN ORDER TO READ IN THE MET DATA
-    !> CORRECTLY.
-    !>
+!-    !> THESE HAVE TO BE REAL*4 IN ORDER TO READ IN THE MET DATA
+!-    !> CORRECTLY.
+!-    !>
     !* R4SHRTGRID2D: VISIBLE SHORTWAVE RADIATION [W m-2]
     !* R4LONGGRID2D: DOWNWELLING LONGWAVE RADIATION [W m-2]
     !* R4RAINGRID2D: PRECIPITATION [kg m-2 s-1]
@@ -255,15 +256,16 @@ module climate_forcing_data
         use sa_mesh_shared_variabletypes
 
         !> Input variables.
-        type(basin_info), intent(in) :: bi
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: iilen, ii1, ii2
 
         !> Input/Output variables.
         type(clim_info) :: cm
 
         !> Output variables.
-        real*4, dimension(bi%NA) :: FSVHGRD, FSIHGRD
+        real, dimension(shd%NA) :: FSVHGRD, FSIHGRD
 !            FSDOWN, FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD
-        real*4, dimension(bi%ILG) :: FSGAT, FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT
+        real, dimension(iilen) :: FSGAT, FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT
         logical ENDDATA
 
         !> Local variables.
@@ -278,11 +280,11 @@ module climate_forcing_data
         !> Read shortwave radiation data
         !> *************************************************************
 
-        call update_data(bi, cm, cfk%FB, FSGAT, need_update, ENDDATA)
+        call update_data(shd, cm, cfk%FB, iilen, ii1, ii2, FSGAT, need_update, ENDDATA)
         if (need_update) then
             FSVHGAT = 0.5*FSGAT
             FSIHGAT = FSVHGAT
-            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%FB)%climvGrd, FSGAT)
+            call SCATTER(shd, FSGAT, iilen, ii1, ii2, cm%clin(cfk%FB)%climvGrd)
             FSVHGRD = 0.5*cm%clin(cfk%FB)%climvGrd
             FSIHGRD = FSVHGRD
         end if
@@ -291,68 +293,68 @@ module climate_forcing_data
         !> Read longwave radiation data
         !> *************************************************************
 
-        call update_data(bi, cm, cfk%FI, FDLGAT, need_update, ENDDATA)
+        call update_data(shd, cm, cfk%FI, iilen, ii1, ii2, FDLGAT, need_update, ENDDATA)
         if (need_update) then
-            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%FI)%climvGrd, FDLGAT)
+            call SCATTER(shd, FDLGAT, iilen, ii1, ii2, cm%clin(cfk%FI)%climvGrd)
         end if
 
         !> *************************************************************
         !> Read precipitation data
         !> *************************************************************
 
-        call update_data(bi, cm, cfk%PR, PREGAT, need_update, ENDDATA)
+        call update_data(shd, cm, cfk%PR, iilen, ii1, ii2, PREGAT, need_update, ENDDATA)
         if (need_update) then
-            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%PR)%climvGrd, PREGAT)
+            call SCATTER(shd, PREGAT, iilen, ii1, ii2, cm%clin(cfk%PR)%climvGrd)
         end if
 
                 !> Read from two sources of rainfall input.
 !todo: re-instate with alpha
 !                case (6)
-!                    call NeedUpdate_clim_data(bi, cfk%PR, cm, ENDDATA)
-!                    call NeedUpdate_clim_data(bi, 8, cm, ENDDATA)
+!                    call NeedUpdate_clim_data(shd, cfk%PR, cm, iilen, ii1, ii2, ENDDATA)
+!                    call NeedUpdate_clim_data(shd, 8, cm, iilen, ii1, ii2, ENDDATA)
 !                    PREGRD = cm%clin(8)%alpharain*cm%clin(cfk%PR)%climv(:, cm%clin(cfk%PR)%itime) + &
 !                             (1.0 - cm%clin(8)%alpharain)*cm%clin(8)%climv(:, cm%clin(8)%itime)
 !                    cm%clin(cfk%PR)%itime = cm%clin(cfk%PR)%itime + 1
 !                    if (cm%clin(cfk%PR)%itime > size(cm%clin(cfk%PR)%climv, 3)) cm%clin(cfk%PR)%itime = 1
 !                    cm%clin(8)%itime = cm%clin(8)%itime + 1
 !                    if (cm%clin(8)%itime > size(cm%clin(8)%climv, 3)) cm%clin(8)%itime = 1
-!                    call GATHER(bi%NA, bi%NML, bi%ILG, bi%ILMOS, PREGRD, PREGAT)
+!                    call GATHER(shd, ii1, ii2, iilen, PREGRD, PREGAT)
 !                    ICOUNT = ICOUNT + 1
 
         !> *************************************************************
         !> Read temperature data
         !> *************************************************************
 
-        call update_data(bi, cm, cfk%TT, TAGAT, need_update, ENDDATA)
+        call update_data(shd, cm, cfk%TT, iilen, ii1, ii2, TAGAT, need_update, ENDDATA)
         if (need_update) then
-            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%TT)%climvGrd, TAGAT)
+            call SCATTER(shd, TAGAT, iilen, ii1, ii2, cm%clin(cfk%TT)%climvGrd)
         end if
 
         !> *************************************************************
         !> Read wind data
         !> *************************************************************
 
-        call update_data(bi, cm, cfk%UV, ULGAT, need_update, ENDDATA)
+        call update_data(shd, cm, cfk%UV, iilen, ii1, ii2, ULGAT, need_update, ENDDATA)
         if (need_update) then
-            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%UV)%climvGrd, ULGAT)
+            call SCATTER(shd, ULGAT, iilen, ii1, ii2, cm%clin(cfk%UV)%climvGrd)
         end if
 
         !> *************************************************************
         !> Read pressure data
         !> *************************************************************
 
-        call update_data(bi, cm, cfk%P0, PRESGAT, need_update, ENDDATA)
+        call update_data(shd, cm, cfk%P0, iilen, ii1, ii2, PRESGAT, need_update, ENDDATA)
         if (need_update) then
-            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%P0)%climvGrd, PRESGAT)
+            call SCATTER(shd, PRESGAT, iilen, ii1, ii2, cm%clin(cfk%P0)%climvGrd)
         end if
 
         !> *************************************************************
         !> Read humidity data
         !> *************************************************************
 
-        call update_data(bi, cm, cfk%HU, QAGAT, need_update, ENDDATA)
+        call update_data(shd, cm, cfk%HU, iilen, ii1, ii2, QAGAT, need_update, ENDDATA)
         if (need_update) then
-            call SCATTER(bi%NTYPE, bi%NA, bi%NML, bi%ILMOS, bi%JLMOS, bi%ACLASS, cm%clin(cfk%HU)%climvGrd, QAGAT)
+            call SCATTER(shd, QAGAT, iilen, ii1, ii2, cm%clin(cfk%HU)%climvGrd)
         end if
 
 !644 format(/1x'The input forcing file format is not supported', &
@@ -364,12 +366,13 @@ module climate_forcing_data
 
     end subroutine !READ_FORCING_DATA
 
-    subroutine SKIP_FORCING_DATA(bi, cm, ENDDATA)
+    subroutine SKIP_FORCING_DATA(shd, cm, iilen, ii1, ii2, ENDDATA)
 
         use sa_mesh_shared_variabletypes
 
         !> Input variables.
-        type(basin_info), intent(in) :: bi
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: iilen, ii1, ii2
 
         !> Input/Output variables.
         type(clim_info) :: cm
@@ -384,7 +387,7 @@ module climate_forcing_data
         !> Variables have to be called individually in case they use
         !> different time-stepping.
         do i = 1, size(cm%clin)
-            call skip_data(bi, cm, i, ENDDATA)
+            call skip_data(shd, cm, i, iilen, ii1, ii2, ENDDATA)
         end do
 
     end subroutine
@@ -393,13 +396,13 @@ module climate_forcing_data
     !> Description: Check if we need to load data again if that, we
     !> deallocate and allocate again and then we load data
     !> -----------------------------------------------------------------
-    subroutine NeedUpdate_clim_data(bi, indx, cm, ENDDATA, skipdata)
+    subroutine NeedUpdate_clim_data(shd, indx, cm, iilen, ii1, ii2, ENDDATA, skipdata)
 
         use sa_mesh_shared_variabletypes
 
         !> Inputs variables.
-        type(basin_info) :: bi
-        integer indx
+        type(ShedGridParams) :: shd
+        integer indx, iilen, ii1, ii2
         logical, optional :: skipdata
 
         !> Input/Output variables.
@@ -419,23 +422,23 @@ module climate_forcing_data
         if (cm%clin(indx)%itime == 1) then
             if (storedata) then
                 if (allocated(cm%clin(indx)%climv)) deallocate(cm%clin(indx)%climv)
-!                allocate(cm%clin(indx)%climv(bi%NML, cm%clin(indx)%nSeries, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
+!                allocate(cm%clin(indx)%climv(iilen, cm%clin(indx)%nSeries, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
 !todo: replace nseries with nfiles
-                allocate(cm%clin(indx)%climv(bi%NML, 1, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
+                allocate(cm%clin(indx)%climv(iilen, 1, cm%clin(indx)%ntimes(cm%clin(indx)%readIndx)))
             end if
-            call LoadData(bi, indx, cm, ENDDATA, .not. storedata)
+            call LoadData(shd, indx, cm, iilen, ii1, ii2, ENDDATA, .not. storedata)
         end if
 
     end subroutine !NeedUpdate_clim_data
 
-    subroutine update_data(bi, cm, indx, gat, need_update, end_data)
+    subroutine update_data(shd, cm, indx, iilen, ii1, ii2, gat, need_update, end_data)
 
         use strings
         use sa_mesh_shared_variabletypes
 
-        type(basin_info), intent(in) :: bi
+        type(ShedGridParams), intent(in) :: shd
         type(clim_info) :: cm
-        integer, intent(in) :: indx
+        integer, intent(in) :: indx, iilen, ii1, ii2
         real, dimension(:) :: gat
         logical, intent(out) :: need_update, end_data
 
@@ -446,7 +449,7 @@ module climate_forcing_data
         if (cm%clin(indx)%timestep_now == 0) then
 
             !> Read data (if needed).
-            call NeedUpdate_clim_data(bi, indx, cm, end_data)
+            call NeedUpdate_clim_data(shd, indx, cm, iilen, ii1, ii2, end_data)
 
             !> Extract data from the climate variable.
             gat = cm%clin(indx)%climv(:, 1, cm%clin(indx)%itime)
@@ -458,7 +461,7 @@ module climate_forcing_data
                         case ('gru')
                             call value(cm%clin(indx)%series(s)%attr(1), j, ios)
                             call value(cm%clin(indx)%series(s)%attr(2), a, ios)
-                            forall (k = 1:bi%NML, bi%JLMOS(k) == j) gat(k) = gat(k)*a
+                            forall (k = ii1:ii2, shd%lc%JLMOS(k) == j) gat(k) = gat(k)*a
                     end select
                 end do
             end if
@@ -482,20 +485,20 @@ module climate_forcing_data
 
     end subroutine
 
-    subroutine skip_data(bi, cm, indx, end_data)
+    subroutine skip_data(shd, cm, indx, iilen, ii1, ii2, end_data)
 
         use sa_mesh_shared_variabletypes
 
-        type(basin_info), intent(in) :: bi
+        type(ShedGridParams), intent(in) :: shd
         type(clim_info) :: cm
-        integer, intent(in) :: indx
+        integer, intent(in) :: indx, iilen, ii1, ii2
         logical, intent(out) :: end_data
 
         !> Read data on a new time-step.
         if (cm%clin(indx)%timestep_now == 0) then
 
             !> Read data to skip (if needed).
-            call NeedUpdate_clim_data(bi, indx, cm, end_data)
+            call NeedUpdate_clim_data(shd, indx, cm, iilen, ii1, ii2, end_data)
 
             !> Update the counter of the current time-step.
             cm%clin(indx)%itime = cm%clin(indx)%itime + 1

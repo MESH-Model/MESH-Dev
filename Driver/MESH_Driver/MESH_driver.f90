@@ -108,7 +108,7 @@ program RUNMESH
 
     !+ For split-vector approach
     integer il1, il2, ilen
-    integer i1, i2
+    integer ii1, ii2, iilen
 
     integer, dimension(:), allocatable :: irqst
     integer, dimension(:, :), allocatable :: imstat
@@ -126,6 +126,9 @@ program RUNMESH
 
 !todo: Investigate what this is
     integer ireport
+
+    !> Local variables.
+    integer NA, NTYPE, NML, IGND, ik, jk
 
 !> DAN  USE RTE SUBROUTINES FOR READING EVENT FILE AND SHD FILE, AND
 !> DAN  WRITING R2C-FORMAT OUTPUT FILES      
@@ -282,13 +285,13 @@ program RUNMESH
 
 !>     * CONSTANTS (PARAMETER DEFINITIONS):
 
-!* bi%NA: MAXIMUM ALLOWABLE NUMBER OF GRID SQUARES
-!* bi%NTYPE: MAXIMUM ALLOWABLE NUMBER OF GRUS
-!* bi%ILG: MAXIMUM ALLOWABLE SINGLE-DIMENSION ARRAY LENGTH
+!* NA: MAXIMUM ALLOWABLE NUMBER OF GRID SQUARES
+!* NTYPE: MAXIMUM ALLOWABLE NUMBER OF GRUS
+!* ILG: MAXIMUM ALLOWABLE SINGLE-DIMENSION ARRAY LENGTH
 !* ICAN: MAXIMUM ALLOWABLE NUMBER OF LAND COVER TYPES
 !* ICP1: MAXIMUM ALLOWABLE NUMBER OF LAND COVER TYPES INCLUDING
 !*       URBAN AREAS
-!* bi%IGND: MAXIMUM ALLOWABLE NUMBER OF SOIL LAYERS
+!* IGND: MAXIMUM ALLOWABLE NUMBER OF SOIL LAYERS
 !* M_X: MAXIMUM ALLOWABLE NUMBER OF GRID COLUMNS IN SHD FILE
 !* M_Y: MAXIMUM ALLOWABLE NUMBER OF GRID ROWS IN SHD FILE
 !* M_S: MAXIMUM ALLOWABLE NUMBER OF STREAMFLOW GAUGES
@@ -300,7 +303,7 @@ program RUNMESH
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-    character(24) :: VERSION = 'TRUNK (893)'
+    character(24) :: VERSION = 'TRUNK (895)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE(7)
     logical VER_OK
@@ -343,19 +346,19 @@ program RUNMESH
 !>
 !>  BASIN INFORMATION AND COUNTS:
 !* WF_NA: NUMBER OF GRID SQUARES
-!* bi%NAA: NUMBER OF GRID OUTLETS
+!* NAA: NUMBER OF GRID OUTLETS
 !* WF_NTYPE: NUMBER OF GRUS
-!* bi%NRVR: NUMBER OF RIVER CLASSES
+!* NRVR: NUMBER OF RIVER CLASSES
 !* WF_IMAX: NUMBER OF GRID COLUMNS IN BASIN
 !* WF_JMAX: NUMBER OF GRID ROWNS IN BASIN
-!* bi%AL: SINGLE-DIMENSION GRID SQUARE LENGTH
+!* AL: SINGLE-DIMENSION GRID SQUARE LENGTH
 !* LAT/LONG, SITE LOCATION INFORMATION:
-!* bi%iyMin: MINIMUM Y-DIRECTION GRID CO-ORDINATE (UTM)
-!* bi%iyMax: MAXIMUM Y-DIRECTION GRID CO-ORDINATE (UTM)
-!* bi%jxMin: MINIMUM X-DIRECTION GRID CO-ORDINATE (UTM)
-!* bi%jxMax: MAXIMUM X-DIRECTION GRID CO-ORDINATE (UTM)
-!* bi%GRDN: GRID NORTHING
-!* bi%GRDE: GRID EASTING
+!* iyMin: MINIMUM Y-DIRECTION GRID CO-ORDINATE (UTM)
+!* iyMax: MAXIMUM Y-DIRECTION GRID CO-ORDINATE (UTM)
+!* jxMin: MINIMUM X-DIRECTION GRID CO-ORDINATE (UTM)
+!* jxMax: MAXIMUM X-DIRECTION GRID CO-ORDINATE (UTM)
+!* GRDN: GRID NORTHING
+!* GRDE: GRID EASTING
 !* LATLENGTH: SINGLE SIDE LENGTH OF GRID SQUARE IN DEGREES
 !*            LATITUDE
 !* LONGLENGTH: SINGLE SIDE LENGTH OF GRID SQUARE IN DEGREES
@@ -433,9 +436,6 @@ program RUNMESH
 !* IDAY: CURRENT DAY OF MET. FORCING DATA (JULIAN FROM YEAR START)
 !*       (CLASS.INI)
 !* IYEAR: CURRENT YEAR OF MET. FORCING DATA (CLASS.INI)
-!* bi%NML: NUMBER OF LAND-ORIENTED GRID SQUARES
-!* bi%NMW: NUMBER OF WATER-ORIENTED GRID SQUARES
-!INTEGER :: ILW
     integer NLTEST, NMTEST, NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
@@ -785,7 +785,7 @@ program RUNMESH
 !>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
 !> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
     type(OUT_FLDS) :: VR
-    type(basin_info) :: bi
+    type(ShedGridParams) :: shd
     type(DATES_MODEL) :: TS
     type(INFO_OUT) :: IOF
     type(CLIM_INFO) :: cm
@@ -938,7 +938,7 @@ program RUNMESH
 
     !> Determine the value of IGND from MESH_input_soil_levels.txt
 !todo: Move this to read_soil_levels
-    bi%IGND = 0
+    shd%lc%IGND = 0
 
     !> Open soil levels file and check for IOSTAT errors.
 !    if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(10)%isInit)) then
@@ -956,12 +956,12 @@ program RUNMESH
     IGND_TEST = 1.0
     do while (IGND_TEST /= 0.0 .and. ios == 0)
         read(52, *, iostat = ios) IGND_TEST, IGND_DEEP
-        bi%IGND = bi%IGND + 1
+        shd%lc%IGND = shd%lc%IGND + 1
     end do
 
     !> because IGND increments the first time that IGND_TEST = 0.0
-    bi%IGND = bi%IGND - 1
-    print *, 'IGND = ', bi%IGND
+    shd%lc%IGND = shd%lc%IGND - 1
+    print *, 'IGND = ', shd%lc%IGND
     close(iun)
 
 1002 format(/1x, 'MESH_input_soil_levels.txt could not be opened.', &
@@ -985,18 +985,15 @@ program RUNMESH
 !  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END, &
                              IRONAME, GENDIR_OUT, &
 !>variables for drainage database or new_shd
-!                             bi%IGND, bi%ILG, WF_IYMAX, WF_JXMAX, &
 !                             WF_LAND_COUNT, &
 !                             LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX, &
 !                             LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX, &
 !                             WF_LAND_MAX, WF_LAND_SUM, &
-!>variables for READ_CHECK_FORCING_FILES
-! NUM_CSV, NUM_R2C, NUM_SEQ, &
 !>variables for READ_PARAMETERS_CLASS
                              TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6, &
                              NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
                              PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6, &
-                             bi%ILW, NLTEST, NMTEST, JLAT, ICAN, &
+                             shd%wc%ILG, NLTEST, NMTEST, JLAT, ICAN, &
                              DEGLAT, DEGLON, &
                              HOURLY_START_DAY, HOURLY_STOP_DAY, &
                              DAILY_START_DAY, DAILY_STOP_DAY, &
@@ -1007,15 +1004,16 @@ program RUNMESH
  !>variables for READ_PARAMETERS_HYDROLOGY
                              INDEPPAR, DEPPAR, WF_R2, M_C, &
  !>the types that are to be allocated and initialised
-                             bi, op, sl, cp, sv, hp, ts, cm, &
+                             shd, op, sl, cp, sv, hp, ts, cm, &
                              SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
 !>
 !>***********************************************************************
-!> Forcing data time step should not be less than 30 min - there is no 
+!> Forcing data time step should not be less than 30 min - there is no
 !> any increase in accuracy as delt (CLASS model time step) is 30 min.
 !>=======================================================================
 
+!todo: Move this to climate module.
     if (HOURLYFLAG < 30) then
         print 1028
         stop
@@ -1026,423 +1024,16 @@ program RUNMESH
 
 !>
 !>***********************************************************************
-!> MAM - Check for parameter values - all parameters should lie within the 
+!> MAM - Check for parameter values - all parameters should lie within the
 !> specified ranges in the "minmax_parameters.txt" file.
 !>=======================================================================
 !>
     call check_parameters(WF_R2, M_C, NMTEST, cp, hp, soil_por_max, soil_depth, s0, t_ice_lens)
 
-!>
-!>*******************************************************************
-!>
-!>=======================================================================
-!> ALLOCATE ALL VARIABLES
-!> DAN * IGND, ICAN, AND ICP1 HAVE BEEN INCLUDED IN CASE THEY WILL BE
-!> DAN * CONFIGURABLE IN THE FUTURE (IF IN THE RUN_OPTIONS.INI FILE)
-!> DAN * (APR 20/08).
-
-!> ANDY * Allocate some variables
-    allocate(WF_NHYD(bi%NA), WF_QR(bi%NA), &
-             WF_QBASE(bi%NA), WF_QI2(bi%NA), WF_QO1(bi%NA), WF_QO2(bi%NA), &
-             WF_STORE1(bi%NA), WF_STORE2(bi%NA), WF_QI1(bi%NA), SNOGRD(bi%NA))
-
-    !> ANDY * Zero everything we just allocated
-    WF_NHYD = 0.0
-    WF_QBASE = 0.0
-    WF_QI2 = 0.0
-    WF_QO1 = 0.0
-    WF_QO2 = 0.0
-    WF_QR = 0.0
-    WF_STORE1 = 0.0
-    WF_STORE2 = 0.0
-    WF_QI1 = 0.0
-
-!!> WATROUTE INPUT FILES:
-!-ALLOCATE (RUNOFF(YCOUNT, XCOUNT), &
-!-  RECHARGE(YCOUNT, XCOUNT), STAT=PAS)
-    if (ipid == 0) then
-        allocate(rte_runoff(bi%yCount, bi%xCount), &
-                 rte_recharge(bi%yCount, bi%xCount), rte_leakage(bi%yCount, bi%xCount), stat = ierr)
-        if (ierr /= 0) then
-            print 1114, 'Standalone RTE input'
-            print 1118, 'Grid square rows', bi%yCount
-            print 1118, 'Grid square columns', bi%xCount
-            stop
-        end if
-    end if
-
-1114 format(/1x, 'Error allocating ', a, ' variables.', &
-            /1x, 'Check that these bounds are within an acceptable range.', /)
-1118 format(3x, a, ': ', i6)
-
-!> MET. FORCING DATA:
-
-!> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
-    allocate(TBARGAT(bi%ILG, bi%IGND), &
-             THLQGAT(bi%ILG, bi%IGND), THICGAT(bi%ILG, bi%IGND), &
-             SANDGAT(bi%ILG, bi%IGND), CLAYGAT(bi%ILG, bi%IGND), &
-             TBASROW(bi%NA, bi%NTYPE), &
-             CMAIROW(bi%NA, bi%NTYPE), TACROW(bi%NA, bi%NTYPE), &
-             QACROW(bi%NA, bi%NTYPE), WSNOROW(bi%NA, bi%NTYPE), &
-             TPNDGAT(bi%ILG), ZPNDGAT(bi%ILG), TBASGAT(bi%ILG), &
-             ALBSGAT(bi%ILG), TSNOGAT(bi%ILG), RHOSGAT(bi%ILG), &
-             SNOGAT(bi%ILG), TCANGAT(bi%ILG), RCANGAT(bi%ILG), &
-             SCANGAT(bi%ILG), &
-             GROGAT(bi%ILG), FRZCGAT(bi%ILG), CMAIGAT(bi%ILG), TACGAT(bi%ILG), &
-             QACGAT(bi%ILG), WSNOGAT(bi%ILG), &
-             TSFSROW(bi%NA, bi%NTYPE, 4), &
-             TSFSGAT(bi%ILG, 4), stat = PAS)
-
-!> PBSM PROGNOSTIC VARIABLES
-    allocate(DrySnowROW(bi%NA, bi%NTYPE), SnowAgeROW(bi%NA, bi%NTYPE), &
-             DrySnowGAT(bi%ILG), SnowAgeGAT(bi%ILG), &
-             TSNOdsROW(bi%NA, bi%NTYPE), RHOSdsROW(bi%NA, bi%NTYPE), &
-             TSNOdsGAT(bi%ILG), RHOSdsGAT(bi%ILG), &
-             DriftROW(bi%NA, bi%NTYPE), SublROW(bi%NA, bi%NTYPE), DepositionROW(bi%NA, bi%NTYPE), &
-             DriftGAT(bi%ILG), SublGAT(bi%ILG), DepositionGAT(bi%ILG), &
-             ZSNOCS(bi%ILG), ZSNOGS(bi%ILG), &
-             ZSNOWC(bi%ILG), ZSNOWG(bi%ILG), &
-             HCPSCS(bi%ILG), HCPSGS(bi%ILG), &
-             HCPSC(bi%ILG), HCPSG(bi%ILG), &
-             TSNOWC(bi%ILG), TSNOWG(bi%ILG), &
-             RHOSC(bi%ILG), RHOSG(bi%ILG), &
-             XSNOWC(bi%ILG), XSNOWG(bi%ILG), &
-             XSNOCS(bi%ILG), XSNOGS(bi%ILG), stat = PAS)
-
-!> LAND SURFACE PROGNOSTIC VARIABLES (for Basin_average_water_balance.csv):
-    allocate(TOTAL_THLQ(bi%IGND), TOTAL_THIC(bi%IGND), &
-             TOTAL_THLQ_M(bi%IGND), TOTAL_THIC_M(bi%IGND), stat = PAS)
-
-    if (PAS /= 0) then
-        print 1114, 'land surface prognostic'
-        print 1118, 'Grid squares', bi%NA
-        print 1118, 'GRUs', bi%NTYPE
-        print 1118, 'Soil layers', bi%IGND
-        stop
-    end if
-
-!> **********************************************************************
-!>  For cacluating the subbasin grids
-!> **********************************************************************
-
-    allocate(SUBBASIN(bi%ILG), stat = PAS)
-
-    if (PAS /= 0) then
-        print 1114, 'subbasin grid'
-        print 1118, 'Grid squares', bi%NA
-        print 1118, 'GRUs', bi%NTYPE
-        print 1118, 'Total tile elements', bi%ILG
-        stop
-    end if
-
-!     * GATHER-SCATTER COUNTS:
-    allocate(bi%ILMOS(bi%ILG), bi%JLMOS(bi%ILG), bi%IWMOS(bi%ILG), &
-             bi%JWMOS(bi%ILG), stat = PAS)
-    if (PAS /= 0) then
-        print 1114, 'gather-scatter count'
-        print 1118, 'Grid squares', bi%NA
-        print 1118, 'GRUs', bi%NTYPE
-        print 1118, 'Total tile elements', bi%ILG
-        stop
-    end if
-
-    allocate(FCANGAT(bi%ILG, ICP1), LNZ0GAT(bi%ILG, ICP1), &
-             ALVCGAT(bi%ILG, ICP1), ALICGAT(bi%ILG, ICP1), &
-             PAIDROW(bi%NA, bi%NTYPE, ICAN), &
-             HGTDROW(bi%NA, bi%NTYPE, ICAN), ACVDROW(bi%NA, bi%NTYPE, ICAN), &
-             ACIDROW(bi%NA, bi%NTYPE, ICAN), &
-             PAMXGAT(bi%ILG, ICAN), PAMNGAT(bi%ILG, ICAN), &
-             CMASGAT(bi%ILG, ICAN), ROOTGAT(bi%ILG, ICAN), &
-             RSMNGAT(bi%ILG, ICAN), QA50GAT(bi%ILG, ICAN), &
-             VPDAGAT(bi%ILG, ICAN), VPDBGAT(bi%ILG, ICAN), &
-             PSGAGAT(bi%ILG, ICAN), &
-             PSGBGAT(bi%ILG, ICAN), PAIDGAT(bi%ILG, ICAN), &
-             HGTDGAT(bi%ILG, ICAN), ACVDGAT(bi%ILG, ICAN), &
-             ACIDGAT(bi%ILG, ICAN), &
-             THPROW(bi%NA, bi%NTYPE, bi%IGND), THRROW(bi%NA, bi%NTYPE, bi%IGND), &
-             THMROW(bi%NA, bi%NTYPE, bi%IGND), &
-             BIROW(bi%NA, bi%NTYPE, bi%IGND), PSISROW(bi%NA, bi%NTYPE, bi%IGND), &
-             GRKSROW(bi%NA, bi%NTYPE, bi%IGND), THRAROW(bi%NA, bi%NTYPE, bi%IGND), &
-             HCPSROW(bi%NA, bi%NTYPE, bi%IGND), TCSROW(bi%NA, bi%NTYPE, bi%IGND), &
-             THFCROW(bi%NA, bi%NTYPE, bi%IGND), &
-             PSIWROW(bi%NA, bi%NTYPE, bi%IGND), DLZWROW(bi%NA, bi%NTYPE, bi%IGND), &
-             ZBTWROW(bi%NA, bi%NTYPE, bi%IGND), &
-             THPGAT(bi%ILG, bi%IGND), THRGAT(bi%ILG, bi%IGND), &
-             THMGAT(bi%ILG, bi%IGND), &
-             BIGAT(bi%ILG, bi%IGND), PSISGAT(bi%ILG, bi%IGND), &
-             GRKSGAT(bi%ILG, bi%IGND), THRAGAT(bi%ILG, bi%IGND), &
-             HCPSGAT(bi%ILG, bi%IGND), TCSGAT(bi%ILG, bi%IGND), &
-             THFCGAT(bi%ILG, bi%IGND), &
-             PSIWGAT(bi%ILG, bi%IGND), DLZWGAT(bi%ILG, bi%IGND), &
-             ZBTWGAT(bi%ILG, bi%IGND), GFLXGAT(bi%ILG, bi%IGND), &
-             WFSFROW(bi%NA, bi%NTYPE),  ALGWROW(bi%NA, bi%NTYPE), &
-             ALGDROW(bi%NA, bi%NTYPE), ASVDROW(bi%NA, bi%NTYPE), ASIDROW(bi%NA, bi%NTYPE), &
-             AGVDROW(bi%NA, bi%NTYPE), &
-             AGIDROW(bi%NA, bi%NTYPE), &
-             DRNGAT(bi%ILG), XSLPGAT(bi%ILG), XDGAT(bi%ILG), &
-             WFSFGAT(bi%ILG), KSGAT(bi%ILG), ALGWGAT(bi%ILG), &
-             ALGDGAT(bi%ILG), ASVDGAT(bi%ILG), ASIDGAT(bi%ILG), &
-             AGVDGAT(bi%ILG), &
-             AGIDGAT(bi%ILG), ZSNLGAT(bi%ILG), ZPLGGAT(bi%ILG), &
-             ZPLSGAT(bi%ILG), SDEPGAT(bi%ILG), FAREGAT(bi%ILG), &
-             ISNDROW(bi%NA, bi%NTYPE, bi%IGND), IORG(bi%NA, bi%NTYPE, bi%IGND), &
-             ISNDGAT(bi%ILG, bi%IGND), IGDRROW(bi%NA,bi%NTYPE), &
-             IGDRGAT(bi%ILG), &
-             fetchGAT(bi%ILG),HtGAT(bi%ILG),N_SGAT(bi%ILG),A_SGAT(bi%ILG), &
-             DistribGAT(bi%ILG),stat = PAS)
-
-    if (PAS /= 0) then
-        print 1114, 'canopy and soil info.'
-        print 1118, 'Grid squares', bi%NA
-        print 1118, 'GRUs', bi%NTYPE
-        print 1118, 'Total tile elements', bi%ILG
-        print 1118, 'Canopy types with urban areas', ICP1
-        print 1118, 'Canopy types', ICAN
-        print 1118, 'Soil layers', bi%IGND
-        stop
-    end if
-
-!> WATROF FLAGS AND VARIABLES:
-    allocate(DDGAT(bi%ILG), MANNGAT(bi%ILG), stat = PAS)
-    if (PAS /= 0) then
-        print 1114, 'WATROF'
-        print 1118, 'Grid squares', bi%NA
-        print 1118, 'GRUs', bi%NTYPE
-        print 1118, 'Total tile elements', bi%ILG
-        stop
-    end if
-
-!> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
-    allocate(ZDMGRD(bi%NA), &
-             ZDHGRD(bi%NA), RADJGRD(bi%NA), &
-             CSZGRD(bi%NA), &
-             PADRGRD(bi%NA), VPDGRD(bi%NA), &
-             TADPGRD(bi%NA), RHOAGRD(bi%NA), RPCPGRD(bi%NA), TRPCGRD(bi%NA), &
-             SPCPGRD(bi%NA), TSPCGRD(bi%NA), RHSIGRD(bi%NA), &
-             FCLOGRD(bi%NA), DLONGRD(bi%NA), Z0ORGRD(bi%NA), GGEOGRD(bi%NA), UVGRD(bi%NA), &
-             XDIFFUS(bi%NA), &
-             RPREGRD(bi%NA), SPREGRD(bi%NA), VMODGRD(bi%NA), &
-             ZRFMGAT(bi%ILG), ZRFHGAT(bi%ILG), ZDMGAT(bi%ILG), &
-             ZDHGAT(bi%ILG), ZBLDGAT(bi%ILG), &
-             RADJGAT(bi%ILG), CSZGAT(bi%ILG), &
-             RPREGAT(bi%ILG), SPREGAT(bi%ILG), &
-             PADRGAT(bi%ILG), VPDGAT(bi%ILG), &
-             TADPGAT(bi%ILG), RHOAGAT(bi%ILG), RPCPGAT(bi%ILG), &
-             TRPCGAT(bi%ILG), SPCPGAT(bi%ILG), TSPCGAT(bi%ILG), &
-             RHSIGAT(bi%ILG), &
-             FCLOGAT(bi%ILG), DLONGAT(bi%ILG), Z0ORGAT(bi%ILG), &
-             GGEOGAT(bi%ILG), VMODGAT(bi%ILG), stat = PAS)
-    if (PAS /= 0) then
-        print 1114, 'atmospheric and grid-cst.'
-        print 1118, 'Grid squares', bi%NA
-        print 1118, 'GRUs', bi%NTYPE
-        print 1118, 'Total tile elements', bi%ILG
-        stop
-    end if
-
-!> LAND SURFACE DIAGNOSTIC VARIABLES:
-    allocate(CDHROW(bi%NA, bi%NTYPE), CDMROW(bi%NA, bi%NTYPE), &
-             HFSROW(bi%NA, bi%NTYPE), &
-             TFXROW(bi%NA, bi%NTYPE), QEVPROW(bi%NA, bi%NTYPE), QFSROW(bi%NA, bi%NTYPE), &
-             QFXROW(bi%NA, bi%NTYPE), PETROW(bi%NA, bi%NTYPE), GAROW(bi%NA, bi%NTYPE), &
-             EFROW(bi%NA, bi%NTYPE), GTROW(bi%NA, bi%NTYPE), &
-             QGROW(bi%NA, bi%NTYPE), TSFROW(bi%NA, bi%NTYPE), ALVSROW(bi%NA, bi%NTYPE), &
-             ALIRROW(bi%NA, bi%NTYPE), FSNOROW(bi%NA, bi%NTYPE), SFCTROW(bi%NA, bi%NTYPE), &
-             SFCUROW(bi%NA, bi%NTYPE), &
-             SFCVROW(bi%NA, bi%NTYPE), SFCQROW(bi%NA, bi%NTYPE), FSGVROW(bi%NA, bi%NTYPE), &
-             FSGSROW(bi%NA, bi%NTYPE), FSGGROW(bi%NA, bi%NTYPE), FLGVROW(bi%NA, bi%NTYPE), &
-             FLGSROW(bi%NA, bi%NTYPE), &
-             FLGGROW(bi%NA, bi%NTYPE), HFSCROW(bi%NA, bi%NTYPE), HFSSROW(bi%NA, bi%NTYPE), &
-             HFSGROW(bi%NA, bi%NTYPE), HEVCROW(bi%NA, bi%NTYPE), HEVSROW(bi%NA, bi%NTYPE), &
-             HEVGROW(bi%NA, bi%NTYPE), &
-             HMFCROW(bi%NA, bi%NTYPE), HMFNROW(bi%NA, bi%NTYPE), HTCCROW(bi%NA, bi%NTYPE), &
-             HTCSROW(bi%NA, bi%NTYPE), PCFCROW(bi%NA, bi%NTYPE), PCLCROW(bi%NA, bi%NTYPE), &
-             PCPNROW(bi%NA, bi%NTYPE), &
-             PCPGROW(bi%NA, bi%NTYPE), QFGROW(bi%NA, bi%NTYPE), QFNROW(bi%NA, bi%NTYPE), &
-             QFCLROW(bi%NA, bi%NTYPE), QFCFROW(bi%NA, bi%NTYPE), ROFROW(bi%NA, bi%NTYPE), &
-             ROFOROW(bi%NA, bi%NTYPE), &
-             ROFSROW(bi%NA, bi%NTYPE), ROFBROW(bi%NA, bi%NTYPE), ROFCROW(bi%NA, bi%NTYPE), &
-             ROFNROW(bi%NA, bi%NTYPE), ROVGROW(bi%NA, bi%NTYPE), WTRCROW(bi%NA, bi%NTYPE), &
-             WTRSROW(bi%NA, bi%NTYPE), &
-             WTRGROW(bi%NA, bi%NTYPE), DRROW(bi%NA, bi%NTYPE), WTABROW(bi%NA, bi%NTYPE), &
-             ILMOROW(bi%NA, bi%NTYPE), UEROW(bi%NA, bi%NTYPE), HBLROW(bi%NA, bi%NTYPE), &
-             TROFROW(bi%NA, bi%NTYPE), &
-             TROOROW(bi%NA, bi%NTYPE), TROSROW(bi%NA, bi%NTYPE), TROBROW(bi%NA, bi%NTYPE), &
-             CDHGAT(bi%ILG), CDMGAT(bi%ILG), HFSGAT(bi%ILG), &
-             TFXGAT(bi%ILG), QEVPGAT(bi%ILG), QFSGAT(bi%ILG), &
-             QFXGAT(bi%ILG), PETGAT(bi%ILG), GAGAT(bi%ILG), &
-             EFGAT(bi%ILG), GTGAT(bi%ILG), &
-             QGGAT(bi%ILG), ALVSGAT(bi%ILG), &
-             ALIRGAT(bi%ILG), FSNOGAT(bi%ILG), SFRHGAT(bi%ILG), SFCTGAT(bi%ILG), &
-             SFCUGAT(bi%ILG), &
-             SFCVGAT(bi%ILG), SFCQGAT(bi%ILG), FSGVGAT(bi%ILG), &
-             FSGSGAT(bi%ILG), FSGGGAT(bi%ILG), FLGVGAT(bi%ILG), &
-             FLGSGAT(bi%ILG), &
-             FLGGGAT(bi%ILG), HFSCGAT(bi%ILG), HFSSGAT(bi%ILG), &
-             HFSGGAT(bi%ILG), HEVCGAT(bi%ILG), HEVSGAT(bi%ILG), &
-             HEVGGAT(bi%ILG), &
-             HMFCGAT(bi%ILG), HMFNGAT(bi%ILG), HTCCGAT(bi%ILG), &
-             HTCSGAT(bi%ILG), PCFCGAT(bi%ILG), PCLCGAT(bi%ILG), &
-             PCPNGAT(bi%ILG), &
-             PCPGGAT(bi%ILG), QFGGAT(bi%ILG), QFNGAT(bi%ILG), &
-             QFCLGAT(bi%ILG), QFCFGAT(bi%ILG), ROFGAT(bi%ILG), &
-             ROFOGAT(bi%ILG), &
-             ROFSGAT(bi%ILG), ROFBGAT(bi%ILG), ROFCGAT(bi%ILG), &
-             ROFNGAT(bi%ILG), ROVGGAT(bi%ILG), WTRCGAT(bi%ILG), &
-             WTRSGAT(bi%ILG), &
-             WTRGGAT(bi%ILG), DRGAT(bi%ILG), WTABGAT(bi%ILG), &
-             ILMOGAT(bi%ILG), UEGAT(bi%ILG), HBLGAT(bi%ILG), QLWOGAT(bi%ILG), &
-             FTEMP(bi%ILG),   FVAP(bi%ILG),  RIB(bi%ILG), TROFGAT(bi%ILG), &
-             TROOGAT(bi%ILG), TROSGAT(bi%ILG), TROBGAT(bi%ILG), &
-             CDHGRD(bi%NA), CDMGRD(bi%NA), HFSGRD(bi%NA), &
-             TFXGRD(bi%NA), QEVPGRD(bi%NA), QFSGRD(bi%NA), QFXGRD(bi%NA), PETGRD(bi%NA), &
-             GAGRD(bi%NA), EFGRD(bi%NA), GTGRD(bi%NA), &
-             QGGRD(bi%NA), TSFGRD(bi%NA), ALVSGRD(bi%NA), ALIRGRD(bi%NA), FSNOGRD(bi%NA), &
-             SFCTGRD(bi%NA), SFCUGRD(bi%NA), &
-             SFCVGRD(bi%NA), SFCQGRD(bi%NA), FSGVGRD(bi%NA), FSGSGRD(bi%NA), &
-             FSGGGRD(bi%NA), FLGVGRD(bi%NA), FLGSGRD(bi%NA), &
-             FLGGGRD(bi%NA), HFSCGRD(bi%NA), HFSSGRD(bi%NA), HFSGGRD(bi%NA), &
-             HEVCGRD(bi%NA), HEVSGRD(bi%NA), HEVGGRD(bi%NA), &
-             HMFCGRD(bi%NA), HMFNGRD(bi%NA), HTCCGRD(bi%NA), HTCSGRD(bi%NA), &
-             PCFCGRD(bi%NA), PCLCGRD(bi%NA), PCPNGRD(bi%NA), &
-             PCPGGRD(bi%NA), QFGGRD(bi%NA), QFNGRD(bi%NA), QFCLGRD(bi%NA), QFCFGRD(bi%NA), &
-             ROFGRD(bi%NA), ROFOGRD(bi%NA), &
-             ROFSGRD(bi%NA), ROFBGRD(bi%NA), ROFCGRD(bi%NA), ROFNGRD(bi%NA), &
-             ROVGGRD(bi%NA), WTRCGRD(bi%NA), WTRSGRD(bi%NA), &
-             WTRGGRD(bi%NA), DRGRD(bi%NA), WTABGRD(bi%NA), ILMOGRD(bi%NA), UEGRD(bi%NA), &
-             HBLGRD(bi%NA), &
-             HMFGROW(bi%NA, bi%NTYPE, bi%IGND), HTCROW(bi%NA, bi%NTYPE, bi%IGND), &
-             QFCROW(bi%NA, bi%NTYPE, bi%IGND), GFLXROW(bi%NA, bi%NTYPE, bi%IGND), &
-             HMFGGAT(bi%ILG, bi%IGND), HTCGAT(bi%ILG, bi%IGND), &
-             QFCGAT(bi%ILG, bi%IGND), &
-             HMFGGRD(bi%NA, bi%IGND), HTCGRD(bi%NA, bi%IGND), QFCGRD(bi%NA, bi%IGND), &
-             GFLXGRD(bi%NA, bi%IGND), &
-             ITCTROW(bi%NA, bi%NTYPE, 6, 50), &
-             ITCTGAT(bi%ILG, 6, 50), stat = PAS)
-    if (PAS /= 0) then
-        print 1114, 'land surface diagnostic'
-        print 1118, 'Grid squares', bi%NA
-        print 1118, 'GRUs', bi%NTYPE
-        print 1118, 'Total tile elements', bi%ILG
-        print 1118, 'Soil layers', bi%IGND
-        stop
-    end if
-
-!> OUTPUT VARIABLES:
-    allocate(PREACC(bi%NA), GTACC(bi%NA), QEVPACC(bi%NA), &
-             HFSACC(bi%NA), ROFACC(bi%NA), SNOACC(bi%NA), ALVSACC(bi%NA), ALIRACC(bi%NA), &
-             FSINACC(bi%NA), FLINACC(bi%NA), &
-             TAACC(bi%NA), UVACC(bi%NA), PRESACC(bi%NA), QAACC(bi%NA), EVAPACC(bi%NA), &
-             FLUTACC(bi%NA), ROFOACC(bi%NA), &
-             ROFSACC(bi%NA), ROFBACC(bi%NA), HMFNACC(bi%NA), WTBLACC(bi%NA), ZPNDACC(bi%NA), &
-             WSNOACC(bi%NA), RHOSACC(bi%NA), TSNOACC(bi%NA), &
-             TCANACC(bi%NA), RCANACC(bi%NA), SCANACC(bi%NA), GROACC(bi%NA), CANARE(bi%NA), &
-             SNOARE(bi%NA), &
-             TBARACC(bi%NA, bi%IGND), THLQACC(bi%NA, bi%IGND), THICACC(bi%NA, bi%IGND), &
-             THALACC(bi%NA, bi%IGND), GFLXACC(bi%NA, bi%IGND), &
-             STG_I(bi%NA), DSTG(bi%NA), THLQ_FLD(bi%NA, bi%IGND), THIC_FLD(bi%NA, bi%IGND), &
-             stat = PAS)
-    if (PAS /= 0) then
-        print 1114, 'accumulator'
-        print 1118, 'Grid squares', bi%NA
-        print 1118, 'Soil layers', bi%IGND
-        stop
-    end if
-
-!> CROSS-CLASS VARIABLES (CLASS):
-    allocate(TBARC(bi%ILG, bi%IGND), TBARG(bi%ILG, bi%IGND), &
-             TBARCS(bi%ILG, bi%IGND), &
-             TBARGS(bi%ILG, bi%IGND), THLIQC(bi%ILG, bi%IGND), &
-             THLIQG(bi%ILG, bi%IGND), THICEC(bi%ILG, bi%IGND), &
-             THICEG(bi%ILG, bi%IGND), FROOT(bi%ILG, bi%IGND), &
-             HCPC(bi%ILG, bi%IGND), HCPG(bi%ILG, bi%IGND), &
-             TCTOPC(bi%ILG, bi%IGND), TCBOTC(bi%ILG, bi%IGND), &
-             TCTOPG(bi%ILG, bi%IGND), TCBOTG(bi%ILG, bi%IGND), &
-             FC(bi%ILG), FG(bi%ILG), FCS(bi%ILG), &
-             FGS(bi%ILG), RBCOEF(bi%ILG), &
-             ZSNOW(bi%ILG), &
-             FSVF(bi%ILG), FSVFS(bi%ILG), ALVSCN(bi%ILG), &
-             ALIRCN(bi%ILG), ALVSG(bi%ILG), &
-             ALIRG(bi%ILG), ALVSCS(bi%ILG), ALIRCS(bi%ILG), &
-             ALVSSN(bi%ILG), ALIRSN(bi%ILG), ALVSGC(bi%ILG), &
-             ALIRGC(bi%ILG), ALVSSC(bi%ILG), &
-             ALIRSC(bi%ILG), TRVSCN(bi%ILG), TRIRCN(bi%ILG), &
-             TRVSCS(bi%ILG), TRIRCS(bi%ILG), RC(bi%ILG), &
-             RCS(bi%ILG), FRAINC(bi%ILG), &
-             FSNOWC(bi%ILG),FRAICS(bi%ILG),FSNOCS(bi%ILG), &
-             CMASSC(bi%ILG), CMASCS(bi%ILG), &
-             DISP(bi%ILG), DISPS(bi%ILG), ZOMLNC(bi%ILG), &
-             ZOELNC(bi%ILG), ZOMLNG(bi%ILG), &
-             ZOELNG(bi%ILG), ZOMLCS(bi%ILG), ZOELCS(bi%ILG), &
-             ZOMLNS(bi%ILG), ZOELNS(bi%ILG), TRSNOW(bi%ILG), &
-             CHCAP(bi%ILG), CHCAPS(bi%ILG), &
-             GZEROC(bi%ILG), GZEROG(bi%ILG), GZROCS(bi%ILG), &
-             GZROGS(bi%ILG), G12C(bi%ILG), G12G(bi%ILG), &
-             G12CS(bi%ILG), G12GS(bi%ILG), G23C(bi%ILG), &
-             G23G(bi%ILG), G23CS(bi%ILG), G23GS(bi%ILG), &
-             QFREZC(bi%ILG), QFREZG(bi%ILG), QMELTC(bi%ILG), &
-             QMELTG(bi%ILG), EVAPC(bi%ILG), &
-             EVAPCG(bi%ILG), EVAPG(bi%ILG), EVAPCS(bi%ILG), &
-             EVPCSG(bi%ILG), EVAPGS(bi%ILG), TCANO(bi%ILG), &
-             TCANS(bi%ILG), RAICAN(bi%ILG), &
-             SNOCAN(bi%ILG), RAICNS(bi%ILG), SNOCNS(bi%ILG), &
-             CWLCAP(bi%ILG), CWFCAP(bi%ILG), CWLCPS(bi%ILG), &
-             CWFCPS(bi%ILG), TSNOCS(bi%ILG), &
-             TSNOGS(bi%ILG), RHOSCS(bi%ILG), RHOSGS(bi%ILG), &
-             WSNOCS(bi%ILG), WSNOGS(bi%ILG), TPONDC(bi%ILG), &
-             TPONDG(bi%ILG), TPNDCS(bi%ILG), &
-             TPNDGS(bi%ILG), ZPLMCS(bi%ILG), ZPLMGS(bi%ILG), &
-             ZPLIMC(bi%ILG), ZPLIMG(bi%ILG), stat = PAS)
-    if (PAS /= 0) then
-        print 1114, 'cross-CLASS'
-        print 1118, 'Grid squares', bi%NA
-        print 1118, 'GRUs', bi%NTYPE
-        print 1118, 'Total tile elements', bi%ILG
-        print 1118, 'Soil layers', bi%IGND
-        stop
-    end if
-
-!> BALANCE ERRORS (CLASS):
-    allocate(CTVSTP(bi%ILG), CTSSTP(bi%ILG), &
-             CT1STP(bi%ILG), &
-             CT2STP(bi%ILG), CT3STP(bi%ILG), WTVSTP(bi%ILG), &
-             WTSSTP(bi%ILG), WTGSTP(bi%ILG), stat = PAS)
-    if (PAS /= 0) then
-        print 1114, 'balance error diagnostic'
-        print 1118, 'Grid squares', bi%NA
-        print 1118, 'GRUs', bi%NTYPE
-        print 1118, 'Total tile elements', bi%ILG
-        stop
-    end if
-
-!> CTEM ERRORS (CLASS):
-    allocate(CO2CONC(bi%ILG), COSZS(bi%ILG), XDIFFUSC(bi%ILG), CFLUXCG(bi%ILG), CFLUXCS(bi%ILG), &
-             AILCG(bi%ILG, ICTEM), AILCGS(bi%ILG, ICTEM), FCANC(bi%ILG, ICTEM), FCANCS(bi%ILG, ICTEM), &
-             CO2I1CG(bi%ILG, ICTEM), CO2I1CS(bi%ILG, ICTEM), CO2I2CG(bi%ILG, ICTEM), CO2I2CS(bi%ILG, ICTEM), &
-             SLAI(bi%ILG, ICTEM), FCANCMX(bi%ILG, ICTEM), ANCSVEG(bi%ILG, ICTEM), ANCGVEG(bi%ILG, ICTEM), &
-             RMLCSVEG(bi%ILG, ICTEM), RMLCGVEG(bi%ILG, ICTEM), &
-             AILC(bi%ILG, ICAN), PAIC(bi%ILG, ICAN), FIELDSM(bi%ILG, bi%IGND), WILTSM(bi%ILG, bi%IGND), &
-             RMATCTEM(bi%ILG, ICTEM, bi%IGND), RMATC(bi%ILG, ICAN, bi%IGND), NOL2PFTS(ICAN), stat = PAS)
-    if (PAS /= 0) then
-        print 1114, 'CTEM'
-        print 1118, 'Grid squares', bi%NA
-        print 1118, 'GRUs', bi%NTYPE
-        print 1118, 'Total tile elements', bi%ILG
-        print 1118, 'Canopy types', ICAN
-        print 1118, 'Soil layers', bi%IGND
-        print 1118, 'CTEM flag', ICTEM
-        stop
-    end if
-!>
-!>*******************************************************************
-!>
-!> *********************************************************************
-!>  Open additional output files
-!> *********************************************************************
-    if (ipid == 0 .and. BASINSWEOUTFLAG > 0) then
-        open(85, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/basin_SCA_alldays.csv')
-        open(86, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/basin_SWE_alldays.csv')
-    end if !(BASINSWEOUTFLAG > 0) then
+    !> Assign shed values to local variables.
+    NA = shd%NA
+    NTYPE = shd%lc%NTYPE
+    IGND = shd%lc%IGND
 
 !> CLASS requires that each GRU for each grid square has its own parameter value,
 !> for MESH the value read in from the parameter file is assumed to be valid for
@@ -1450,7 +1041,11 @@ program RUNMESH
 
 !> bjd - This would be a good spot for setting pre-distributed values
 
-    do i = 2, bi%NA
+    do i = 2, NA
+        cp%ZRFMGRD(i) = cp%ZRFMGRD(1)
+        cp%ZRFHGRD(i) = cp%ZRFHGRD(1)
+        cp%ZBLDGRD(i) = cp%ZBLDGRD(1)
+        cp%GCGRD(i) = cp%GCGRD(1)
         do m = 1, NMTEST
             do j = 1, ICP1
                 cp%FCANROW(i, m, j) = cp%FCANROW(1, m, j)
@@ -1470,7 +1065,7 @@ program RUNMESH
                 cp%PSGAROW(i, m, j) = cp%PSGAROW(1, m, j)
                 cp%PSGBROW(i, m, j) = cp%PSGBROW(1, m, j)
             end do
-            do j = 1, bi%IGND
+            do j = 1, IGND
                 cp%SANDROW(i, m, j) = cp%SANDROW(1, m, j)
                 cp%CLAYROW(i, m, j) = cp%CLAYROW(1, m, j)
                 cp%ORGMROW(i, m, j) = cp%ORGMROW(1, m, j)
@@ -1484,14 +1079,15 @@ program RUNMESH
             cp%TSNOROW(i, m) = cp%TSNOROW(1, m)
             cp%DRNROW(i, m) = cp%DRNROW(1, m)
             cp%SDEPROW(i, m) = cp%SDEPROW(1, m)
-            cp%FAREROW(i, m) = cp%FAREROW(1, m)
+!- FARE is set using
+!-            cp%FAREROW(i, m) = cp%FAREROW(1, m)
             cp%MANNROW(i, m) = cp%MANNROW(1, m)
 !> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
-!> we give the same value for all the GRU that are in one cell    
-            if (allocated(bi%SLOPE)) then
-		        cp%XSLPROW(i, m) = bi%SLOPE(i)
-		        if (i == 2) then
-                    cp%XSLPROW(i - 1, m) = bi%SLOPE(i - 1)
+!> we give the same value for all the GRU that are in one cell
+            if (allocated(shd%SLOPE_INT)) then
+                cp%XSLPROW(i, m) = shd%SLOPE_INT(i)
+                if (i == 2) then
+                    cp%XSLPROW(i - 1, m) = shd%SLOPE_INT(i - 1)
                 end if
             else
                 cp%XSLPROW(i, m) = cp%XSLPROW(1, m)
@@ -1499,15 +1095,15 @@ program RUNMESH
             cp%XDROW(i, m) = cp%XDROW(1, m)
 !> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
 !> we give the same value for all the GRU that are in one cell
-            if (allocated(bi%DRDN)) then
+            if (allocated(shd%DRDN)) then
                 if (i == 2) then
-                    cp%DDROW(i - 1, m) = bi%DRDN(i - 1)
+                    cp%DDROW(i - 1, m) = shd%DRDN(i - 1)
                 end if
-                cp%DDROW(i, m) = bi%DRDN(i)
+                cp%DDROW(i, m) = shd%DRDN(i)
             else
                 cp%DDROW(i, m) = cp%DDROW(1, m)
             end if
-            WFSFROW(i, m) = WFSFROW(1, m)
+!-            WFSFROW(i, m) = WFSFROW(1, m)
             cp%KSROW(i, m) = cp%KSROW(1, m)
             cp%MIDROW(i, m) = cp%MIDROW(1, m)
             cp%TPNDROW(i, m) = cp%TPNDROW(1, m)
@@ -1519,7 +1115,457 @@ program RUNMESH
             cp%RHOSROW(i, m) = cp%RHOSROW(1, m)
             cp%GROROW(i, m) = cp%GROROW(1, m)
         end do !m = 1, NMTEST
-    end do !i = 2, bi%NA
+    end do !i = 2, NA
+
+!     * GATHER-SCATTER COUNTS:
+    allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), shd%wc%ILMOS(shd%wc%ILG), &
+             shd%wc%JLMOS(shd%wc%ILG), stat = PAS)
+    if (PAS /= 0) then
+        print 1114, 'gather-scatter count'
+        print 1118, 'Grid squares', NA
+        print 1118, 'GRUs', NTYPE
+        stop
+    end if
+
+!> Set value of FAREROW:
+!todo - flag this as an issue to explore later and hide basin average code
+!todo - document the problem
+    TOTAL_AREA = 0.0
+    do i = 1, NA
+        do m = 1, NTYPE
+            cp%FAREROW(i, m) = shd%lc%ACLASS(i, m)*shd%FRAC(i)
+            TOTAL_AREA = TOTAL_AREA + cp%FAREROW(i, m)
+    !FUTUREDO: Bruce, FRAC is calculated by EnSim
+    ! using Dan Princz's instructions for EnSim
+    ! FRAC can be greater than 1.00
+    ! So, we cannot use FAREROW in place of BASIN_FRACTION
+        end do
+    end do
+
+    call GATPREP(shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+                 shd%lc%NML, shd%wc%NML, cp%GCGRD, cp%FAREROW, cp%MIDROW, &
+                 NA, NTYPE, shd%lc%ILG, 1, NA, NMTEST)
+
+    NML = shd%lc%NML
+
+!todo+++: Perhaps land-unit indexing can be done prior in the sequence
+!todo+++: of initialization, after reading the drainage database.
+!todo+++: Then, variables could be allocated (il1:il2) instead of
+!todo+++: (1:ILG) to reduce the memory footprint of the model per node.
+!> *********************************************************************
+!> Calculate Indices
+!> *********************************************************************
+
+    call GetIndices(inp, izero, ipid, shd%lc%NML, shd%lc%ILMOS, il1, il2, ilen)
+    if (ro%DIAGNOSEMODE > 0) print 1062, ipid, shd%lc%NML, ilen, il1, il2
+
+1062 format(/1x, 'Configuration and distribution of the domain', &
+            /3x, 'Current process: ', i10, &
+            /3x, 'Tile land elements: ', i10, &
+            /3x, 'Length of single array: ', i10, &
+            /3x, 'Starting index: ', i10, &
+            /3x, 'Stopping index: ', i10, /)
+
+!>
+!>*******************************************************************
+!>
+!>=======================================================================
+!> ALLOCATE ALL VARIABLES
+!> DAN * IGND, ICAN, AND ICP1 HAVE BEEN INCLUDED IN CASE THEY WILL BE
+!> DAN * CONFIGURABLE IN THE FUTURE (IF IN THE RUN_OPTIONS.INI FILE)
+!> DAN * (APR 20/08).
+
+!> ANDY * Allocate some variables
+    allocate(WF_NHYD(NA), WF_QR(NA), &
+             WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA), &
+             WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA))
+
+    !> ANDY * Zero everything we just allocated
+    WF_NHYD = 0.0
+    WF_QBASE = 0.0
+    WF_QI2 = 0.0
+    WF_QO1 = 0.0
+    WF_QO2 = 0.0
+    WF_QR = 0.0
+    WF_STORE1 = 0.0
+    WF_STORE2 = 0.0
+    WF_QI1 = 0.0
+
+!!> WATROUTE INPUT FILES:
+!-ALLOCATE (RUNOFF(YCOUNT, XCOUNT), &
+!-  RECHARGE(YCOUNT, XCOUNT), STAT=PAS)
+    if (ipid == 0) then
+        allocate(rte_runoff(shd%yCount, shd%xCount), &
+                 rte_recharge(shd%yCount, shd%xCount), rte_leakage(shd%yCount, shd%xCount), stat = ierr)
+        if (ierr /= 0) then
+            print 1114, 'Standalone RTE input'
+            print 1118, 'Grid square rows', shd%yCount
+            print 1118, 'Grid square columns', shd%xCount
+            stop
+        end if
+    end if
+
+1114 format(/1x, 'Error allocating ', a, ' variables.', &
+            /1x, 'Check that these bounds are within an acceptable range.', /)
+1118 format(3x, a, ': ', i6)
+
+!> MET. FORCING DATA:
+
+!> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
+    allocate(TBARGAT(NML, IGND), &
+             THLQGAT(NML, IGND), THICGAT(NML, IGND), &
+             SANDGAT(NML, IGND), CLAYGAT(NML, IGND), &
+             TBASROW(NA, NTYPE), &
+             CMAIROW(NA, NTYPE), TACROW(NA, NTYPE), &
+             QACROW(NA, NTYPE), WSNOROW(NA, NTYPE), &
+             TPNDGAT(NML), ZPNDGAT(NML), TBASGAT(NML), &
+             ALBSGAT(NML), TSNOGAT(NML), RHOSGAT(NML), &
+             SNOGAT(NML), TCANGAT(NML), RCANGAT(NML), &
+             SCANGAT(NML), &
+             GROGAT(NML), FRZCGAT(NML), CMAIGAT(NML), TACGAT(NML), &
+             QACGAT(NML), WSNOGAT(NML), &
+             TSFSROW(NA, NTYPE, 4), &
+             TSFSGAT(NML, 4), stat = PAS)
+
+!> PBSM PROGNOSTIC VARIABLES
+    allocate(DrySnowROW(NA, NTYPE), SnowAgeROW(NA, NTYPE), &
+             DrySnowGAT(NML), SnowAgeGAT(NML), &
+             TSNOdsROW(NA, NTYPE), RHOSdsROW(NA, NTYPE), &
+             TSNOdsGAT(NML), RHOSdsGAT(NML), &
+             DriftROW(NA, NTYPE), SublROW(NA, NTYPE), DepositionROW(NA, NTYPE), &
+             DriftGAT(NML), SublGAT(NML), DepositionGAT(NML), &
+             ZSNOCS(NML), ZSNOGS(NML), &
+             ZSNOWC(NML), ZSNOWG(NML), &
+             HCPSCS(NML), HCPSGS(NML), &
+             HCPSC(NML), HCPSG(NML), &
+             TSNOWC(NML), TSNOWG(NML), &
+             RHOSC(NML), RHOSG(NML), &
+             XSNOWC(NML), XSNOWG(NML), &
+             XSNOCS(NML), XSNOGS(NML), stat = PAS)
+
+!> LAND SURFACE PROGNOSTIC VARIABLES (for Basin_average_water_balance.csv):
+    allocate(TOTAL_THLQ(IGND), TOTAL_THIC(IGND), &
+             TOTAL_THLQ_M(IGND), TOTAL_THIC_M(IGND), stat = PAS)
+
+    if (PAS /= 0) then
+        print 1114, 'land surface prognostic'
+        print 1118, 'Grid squares', NA
+        print 1118, 'GRUs', NTYPE
+        print 1118, 'Soil layers', IGND
+        stop
+    end if
+
+!> **********************************************************************
+!>  For cacluating the subbasin grids
+!> **********************************************************************
+
+    allocate(SUBBASIN(NML), stat = PAS)
+
+    if (PAS /= 0) then
+        print 1114, 'subbasin grid'
+        print 1118, 'Grid squares', NA
+        print 1118, 'GRUs', NTYPE
+        print 1118, 'Total tile elements', NML
+        stop
+    end if
+
+    allocate(FCANGAT(NML, ICP1), LNZ0GAT(NML, ICP1), &
+             ALVCGAT(NML, ICP1), ALICGAT(NML, ICP1), &
+             PAIDROW(NA, NTYPE, ICAN), &
+             HGTDROW(NA, NTYPE, ICAN), ACVDROW(NA, NTYPE, ICAN), &
+             ACIDROW(NA, NTYPE, ICAN), &
+             PAMXGAT(NML, ICAN), PAMNGAT(NML, ICAN), &
+             CMASGAT(NML, ICAN), ROOTGAT(NML, ICAN), &
+             RSMNGAT(NML, ICAN), QA50GAT(NML, ICAN), &
+             VPDAGAT(NML, ICAN), VPDBGAT(NML, ICAN), &
+             PSGAGAT(NML, ICAN), &
+             PSGBGAT(NML, ICAN), PAIDGAT(NML, ICAN), &
+             HGTDGAT(NML, ICAN), ACVDGAT(NML, ICAN), &
+             ACIDGAT(NML, ICAN), &
+             THPROW(NA, NTYPE, IGND), THRROW(NA, NTYPE, IGND), &
+             THMROW(NA, NTYPE, IGND), &
+             BIROW(NA, NTYPE, IGND), PSISROW(NA, NTYPE, IGND), &
+             GRKSROW(NA, NTYPE, IGND), THRAROW(NA, NTYPE, IGND), &
+             HCPSROW(NA, NTYPE, IGND), TCSROW(NA, NTYPE, IGND), &
+             THFCROW(NA, NTYPE, IGND), &
+             PSIWROW(NA, NTYPE, IGND), DLZWROW(NA, NTYPE, IGND), &
+             ZBTWROW(NA, NTYPE, IGND), &
+             THPGAT(NML, IGND), THRGAT(NML, IGND), &
+             THMGAT(NML, IGND), &
+             BIGAT(NML, IGND), PSISGAT(NML, IGND), &
+             GRKSGAT(NML, IGND), THRAGAT(NML, IGND), &
+             HCPSGAT(NML, IGND), TCSGAT(NML, IGND), &
+             THFCGAT(NML, IGND), &
+             PSIWGAT(NML, IGND), DLZWGAT(NML, IGND), &
+             ZBTWGAT(NML, IGND), GFLXGAT(NML, IGND), &
+             WFSFROW(NA, NTYPE),  ALGWROW(NA, NTYPE), &
+             ALGDROW(NA, NTYPE), ASVDROW(NA, NTYPE), ASIDROW(NA, NTYPE), &
+             AGVDROW(NA, NTYPE), &
+             AGIDROW(NA, NTYPE), &
+             DRNGAT(NML), XSLPGAT(NML), XDGAT(NML), &
+             WFSFGAT(NML), KSGAT(NML), ALGWGAT(NML), &
+             ALGDGAT(NML), ASVDGAT(NML), ASIDGAT(NML), &
+             AGVDGAT(NML), &
+             AGIDGAT(NML), ZSNLGAT(NML), ZPLGGAT(NML), &
+             ZPLSGAT(NML), SDEPGAT(NML), FAREGAT(NML), &
+             ISNDROW(NA, NTYPE, IGND), IORG(NA, NTYPE, IGND), &
+             ISNDGAT(NML, IGND), IGDRROW(NA,NTYPE), &
+             IGDRGAT(NML), &
+             fetchGAT(NML), HtGAT(NML), N_SGAT(NML), A_SGAT(NML), &
+             DistribGAT(NML), stat = PAS)
+
+    if (PAS /= 0) then
+        print 1114, 'canopy and soil info.'
+        print 1118, 'Grid squares', NA
+        print 1118, 'GRUs', NTYPE
+        print 1118, 'Total tile elements', NML
+        print 1118, 'Canopy types with urban areas', ICP1
+        print 1118, 'Canopy types', ICAN
+        print 1118, 'Soil layers', IGND
+        stop
+    end if
+
+!> WATROF FLAGS AND VARIABLES:
+    allocate(DDGAT(NML), MANNGAT(NML), stat = PAS)
+    if (PAS /= 0) then
+        print 1114, 'WATROF'
+        print 1118, 'Grid squares', NA
+        print 1118, 'GRUs', NTYPE
+        print 1118, 'Total tile elements', NML
+        stop
+    end if
+
+!> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
+    allocate(ZDMGRD(NA), &
+             ZDHGRD(NA), RADJGRD(NA), &
+             CSZGRD(NA), &
+             PADRGRD(NA), VPDGRD(NA), &
+             TADPGRD(NA), RHOAGRD(NA), RPCPGRD(NA), TRPCGRD(NA), &
+             SPCPGRD(NA), TSPCGRD(NA), RHSIGRD(NA), &
+             FCLOGRD(NA), DLONGRD(NA), Z0ORGRD(NA), GGEOGRD(NA), UVGRD(NA), &
+             XDIFFUS(NA), &
+             RPREGRD(NA), SPREGRD(NA), VMODGRD(NA), &
+             ZRFMGAT(NML), ZRFHGAT(NML), ZDMGAT(NML), &
+             ZDHGAT(NML), ZBLDGAT(NML), &
+             RADJGAT(NML), CSZGAT(NML), &
+             RPREGAT(NML), SPREGAT(NML), &
+             PADRGAT(NML), VPDGAT(NML), &
+             TADPGAT(NML), RHOAGAT(NML), RPCPGAT(NML), &
+             TRPCGAT(NML), SPCPGAT(NML), TSPCGAT(NML), &
+             RHSIGAT(NML), &
+             FCLOGAT(NML), DLONGAT(NML), Z0ORGAT(NML), &
+             GGEOGAT(NML), VMODGAT(NML), stat = PAS)
+    if (PAS /= 0) then
+        print 1114, 'atmospheric and grid-cst.'
+        print 1118, 'Grid squares', NA
+        print 1118, 'GRUs', NTYPE
+        print 1118, 'Total tile elements', NML
+        stop
+    end if
+
+!> LAND SURFACE DIAGNOSTIC VARIABLES:
+    allocate(CDHROW(NA, NTYPE), CDMROW(NA, NTYPE), &
+             HFSROW(NA, NTYPE), &
+             TFXROW(NA, NTYPE), QEVPROW(NA, NTYPE), QFSROW(NA, NTYPE), &
+             QFXROW(NA, NTYPE), PETROW(NA, NTYPE), GAROW(NA, NTYPE), &
+             EFROW(NA, NTYPE), GTROW(NA, NTYPE), &
+             QGROW(NA, NTYPE), TSFROW(NA, NTYPE), ALVSROW(NA, NTYPE), &
+             ALIRROW(NA, NTYPE), FSNOROW(NA, NTYPE), SFCTROW(NA, NTYPE), &
+             SFCUROW(NA, NTYPE), &
+             SFCVROW(NA, NTYPE), SFCQROW(NA, NTYPE), FSGVROW(NA, NTYPE), &
+             FSGSROW(NA, NTYPE), FSGGROW(NA, NTYPE), FLGVROW(NA, NTYPE), &
+             FLGSROW(NA, NTYPE), &
+             FLGGROW(NA, NTYPE), HFSCROW(NA, NTYPE), HFSSROW(NA, NTYPE), &
+             HFSGROW(NA, NTYPE), HEVCROW(NA, NTYPE), HEVSROW(NA, NTYPE), &
+             HEVGROW(NA, NTYPE), &
+             HMFCROW(NA, NTYPE), HMFNROW(NA, NTYPE), HTCCROW(NA, NTYPE), &
+             HTCSROW(NA, NTYPE), PCFCROW(NA, NTYPE), PCLCROW(NA, NTYPE), &
+             PCPNROW(NA, NTYPE), &
+             PCPGROW(NA, NTYPE), QFGROW(NA, NTYPE), QFNROW(NA, NTYPE), &
+             QFCLROW(NA, NTYPE), QFCFROW(NA, NTYPE), ROFROW(NA, NTYPE), &
+             ROFOROW(NA, NTYPE), &
+             ROFSROW(NA, NTYPE), ROFBROW(NA, NTYPE), ROFCROW(NA, NTYPE), &
+             ROFNROW(NA, NTYPE), ROVGROW(NA, NTYPE), WTRCROW(NA, NTYPE), &
+             WTRSROW(NA, NTYPE), &
+             WTRGROW(NA, NTYPE), DRROW(NA, NTYPE), WTABROW(NA, NTYPE), &
+             ILMOROW(NA, NTYPE), UEROW(NA, NTYPE), HBLROW(NA, NTYPE), &
+             TROFROW(NA, NTYPE), &
+             TROOROW(NA, NTYPE), TROSROW(NA, NTYPE), TROBROW(NA, NTYPE), &
+             CDHGAT(NML), CDMGAT(NML), HFSGAT(NML), &
+             TFXGAT(NML), QEVPGAT(NML), QFSGAT(NML), &
+             QFXGAT(NML), PETGAT(NML), GAGAT(NML), &
+             EFGAT(NML), GTGAT(NML), &
+             QGGAT(NML), ALVSGAT(NML), &
+             ALIRGAT(NML), FSNOGAT(NML), SFRHGAT(NML), SFCTGAT(NML), &
+             SFCUGAT(NML), &
+             SFCVGAT(NML), SFCQGAT(NML), FSGVGAT(NML), &
+             FSGSGAT(NML), FSGGGAT(NML), FLGVGAT(NML), &
+             FLGSGAT(NML), &
+             FLGGGAT(NML), HFSCGAT(NML), HFSSGAT(NML), &
+             HFSGGAT(NML), HEVCGAT(NML), HEVSGAT(NML), &
+             HEVGGAT(NML), &
+             HMFCGAT(NML), HMFNGAT(NML), HTCCGAT(NML), &
+             HTCSGAT(NML), PCFCGAT(NML), PCLCGAT(NML), &
+             PCPNGAT(NML), &
+             PCPGGAT(NML), QFGGAT(NML), QFNGAT(NML), &
+             QFCLGAT(NML), QFCFGAT(NML), ROFGAT(NML), &
+             ROFOGAT(NML), &
+             ROFSGAT(NML), ROFBGAT(NML), ROFCGAT(NML), &
+             ROFNGAT(NML), ROVGGAT(NML), WTRCGAT(NML), &
+             WTRSGAT(NML), &
+             WTRGGAT(NML), DRGAT(NML), WTABGAT(NML), &
+             ILMOGAT(NML), UEGAT(NML), HBLGAT(NML), QLWOGAT(NML), &
+             FTEMP(NML),   FVAP(NML),  RIB(NML), TROFGAT(NML), &
+             TROOGAT(NML), TROSGAT(NML), TROBGAT(NML), &
+             CDHGRD(NA), CDMGRD(NA), HFSGRD(NA), &
+             TFXGRD(NA), QEVPGRD(NA), QFSGRD(NA), QFXGRD(NA), PETGRD(NA), &
+             GAGRD(NA), EFGRD(NA), GTGRD(NA), &
+             QGGRD(NA), TSFGRD(NA), ALVSGRD(NA), ALIRGRD(NA), FSNOGRD(NA), &
+             SFCTGRD(NA), SFCUGRD(NA), &
+             SFCVGRD(NA), SFCQGRD(NA), FSGVGRD(NA), FSGSGRD(NA), &
+             FSGGGRD(NA), FLGVGRD(NA), FLGSGRD(NA), &
+             FLGGGRD(NA), HFSCGRD(NA), HFSSGRD(NA), HFSGGRD(NA), &
+             HEVCGRD(NA), HEVSGRD(NA), HEVGGRD(NA), &
+             HMFCGRD(NA), HMFNGRD(NA), HTCCGRD(NA), HTCSGRD(NA), &
+             PCFCGRD(NA), PCLCGRD(NA), PCPNGRD(NA), &
+             PCPGGRD(NA), QFGGRD(NA), QFNGRD(NA), QFCLGRD(NA), QFCFGRD(NA), &
+             ROFGRD(NA), ROFOGRD(NA), &
+             ROFSGRD(NA), ROFBGRD(NA), ROFCGRD(NA), ROFNGRD(NA), &
+             ROVGGRD(NA), WTRCGRD(NA), WTRSGRD(NA), &
+             WTRGGRD(NA), DRGRD(NA), WTABGRD(NA), ILMOGRD(NA), UEGRD(NA), &
+             HBLGRD(NA), &
+             HMFGROW(NA, NTYPE, IGND), HTCROW(NA, NTYPE, IGND), &
+             QFCROW(NA, NTYPE, IGND), GFLXROW(NA, NTYPE, IGND), &
+             HMFGGAT(NML, IGND), HTCGAT(NML, IGND), &
+             QFCGAT(NML, IGND), &
+             HMFGGRD(NA, IGND), HTCGRD(NA, IGND), QFCGRD(NA, IGND), &
+             GFLXGRD(NA, IGND), &
+             ITCTROW(NA, NTYPE, 6, 50), &
+             ITCTGAT(NML, 6, 50), stat = PAS)
+    if (PAS /= 0) then
+        print 1114, 'land surface diagnostic'
+        print 1118, 'Grid squares', NA
+        print 1118, 'GRUs', NTYPE
+        print 1118, 'Total tile elements', NML
+        print 1118, 'Soil layers', IGND
+        stop
+    end if
+
+!> OUTPUT VARIABLES:
+    allocate(PREACC(NA), GTACC(NA), QEVPACC(NA), &
+             HFSACC(NA), ROFACC(NA), SNOACC(NA), ALVSACC(NA), ALIRACC(NA), &
+             FSINACC(NA), FLINACC(NA), &
+             TAACC(NA), UVACC(NA), PRESACC(NA), QAACC(NA), EVAPACC(NA), &
+             FLUTACC(NA), ROFOACC(NA), &
+             ROFSACC(NA), ROFBACC(NA), HMFNACC(NA), WTBLACC(NA), ZPNDACC(NA), &
+             WSNOACC(NA), RHOSACC(NA), TSNOACC(NA), &
+             TCANACC(NA), RCANACC(NA), SCANACC(NA), GROACC(NA), CANARE(NA), &
+             SNOARE(NA), &
+             TBARACC(NA, IGND), THLQACC(NA, IGND), THICACC(NA, IGND), &
+             THALACC(NA, IGND), GFLXACC(NA, IGND), &
+             STG_I(NA), DSTG(NA), THLQ_FLD(NA, IGND), THIC_FLD(NA, IGND), &
+             stat = PAS)
+    if (PAS /= 0) then
+        print 1114, 'accumulator'
+        print 1118, 'Grid squares', NA
+        print 1118, 'Soil layers', IGND
+        stop
+    end if
+
+!> CROSS-CLASS VARIABLES (CLASS):
+    allocate(TBARC(NML, IGND), TBARG(NML, IGND), &
+             TBARCS(NML, IGND), &
+             TBARGS(NML, IGND), THLIQC(NML, IGND), &
+             THLIQG(NML, IGND), THICEC(NML, IGND), &
+             THICEG(NML, IGND), FROOT(NML, IGND), &
+             HCPC(NML, IGND), HCPG(NML, IGND), &
+             TCTOPC(NML, IGND), TCBOTC(NML, IGND), &
+             TCTOPG(NML, IGND), TCBOTG(NML, IGND), &
+             FC(NML), FG(NML), FCS(NML), &
+             FGS(NML), RBCOEF(NML), &
+             ZSNOW(NML), &
+             FSVF(NML), FSVFS(NML), ALVSCN(NML), &
+             ALIRCN(NML), ALVSG(NML), &
+             ALIRG(NML), ALVSCS(NML), ALIRCS(NML), &
+             ALVSSN(NML), ALIRSN(NML), ALVSGC(NML), &
+             ALIRGC(NML), ALVSSC(NML), &
+             ALIRSC(NML), TRVSCN(NML), TRIRCN(NML), &
+             TRVSCS(NML), TRIRCS(NML), RC(NML), &
+             RCS(NML), FRAINC(NML), &
+             FSNOWC(NML),FRAICS(NML),FSNOCS(NML), &
+             CMASSC(NML), CMASCS(NML), &
+             DISP(NML), DISPS(NML), ZOMLNC(NML), &
+             ZOELNC(NML), ZOMLNG(NML), &
+             ZOELNG(NML), ZOMLCS(NML), ZOELCS(NML), &
+             ZOMLNS(NML), ZOELNS(NML), TRSNOW(NML), &
+             CHCAP(NML), CHCAPS(NML), &
+             GZEROC(NML), GZEROG(NML), GZROCS(NML), &
+             GZROGS(NML), G12C(NML), G12G(NML), &
+             G12CS(NML), G12GS(NML), G23C(NML), &
+             G23G(NML), G23CS(NML), G23GS(NML), &
+             QFREZC(NML), QFREZG(NML), QMELTC(NML), &
+             QMELTG(NML), EVAPC(NML), &
+             EVAPCG(NML), EVAPG(NML), EVAPCS(NML), &
+             EVPCSG(NML), EVAPGS(NML), TCANO(NML), &
+             TCANS(NML), RAICAN(NML), &
+             SNOCAN(NML), RAICNS(NML), SNOCNS(NML), &
+             CWLCAP(NML), CWFCAP(NML), CWLCPS(NML), &
+             CWFCPS(NML), TSNOCS(NML), &
+             TSNOGS(NML), RHOSCS(NML), RHOSGS(NML), &
+             WSNOCS(NML), WSNOGS(NML), TPONDC(NML), &
+             TPONDG(NML), TPNDCS(NML), &
+             TPNDGS(NML), ZPLMCS(NML), ZPLMGS(NML), &
+             ZPLIMC(NML), ZPLIMG(NML), stat = PAS)
+    if (PAS /= 0) then
+        print 1114, 'cross-CLASS'
+        print 1118, 'Grid squares', NA
+        print 1118, 'GRUs', NTYPE
+        print 1118, 'Total tile elements', NML
+        print 1118, 'Soil layers', IGND
+        stop
+    end if
+
+!> BALANCE ERRORS (CLASS):
+    allocate(CTVSTP(NML), CTSSTP(NML), &
+             CT1STP(NML), &
+             CT2STP(NML), CT3STP(NML), WTVSTP(NML), &
+             WTSSTP(NML), WTGSTP(NML), stat = PAS)
+    if (PAS /= 0) then
+        print 1114, 'balance error diagnostic'
+        print 1118, 'Grid squares', NA
+        print 1118, 'GRUs', NTYPE
+        print 1118, 'Total tile elements', NML
+        stop
+    end if
+
+!> CTEM ERRORS (CLASS):
+    allocate(CO2CONC(NML), COSZS(NML), XDIFFUSC(NML), CFLUXCG(NML), CFLUXCS(NML), &
+             AILCG(NML, ICTEM), AILCGS(NML, ICTEM), FCANC(NML, ICTEM), FCANCS(NML, ICTEM), &
+             CO2I1CG(NML, ICTEM), CO2I1CS(NML, ICTEM), CO2I2CG(NML, ICTEM), CO2I2CS(NML, ICTEM), &
+             SLAI(NML, ICTEM), FCANCMX(NML, ICTEM), ANCSVEG(NML, ICTEM), ANCGVEG(NML, ICTEM), &
+             RMLCSVEG(NML, ICTEM), RMLCGVEG(NML, ICTEM), &
+             AILC(NML, ICAN), PAIC(NML, ICAN), FIELDSM(NML, IGND), WILTSM(NML, IGND), &
+             RMATCTEM(NML, ICTEM, IGND), RMATC(NML, ICAN, IGND), NOL2PFTS(ICAN), stat = PAS)
+    if (PAS /= 0) then
+        print 1114, 'CTEM'
+        print 1118, 'Grid squares', NA
+        print 1118, 'GRUs', NTYPE
+        print 1118, 'Total tile elements', NML
+        print 1118, 'Canopy types', ICAN
+        print 1118, 'Soil layers', IGND
+        print 1118, 'CTEM flag', ICTEM
+        stop
+    end if
+!>
+!>*******************************************************************
+!>
+!> *********************************************************************
+!>  Open additional output files
+!> *********************************************************************
+    if (ipid == 0 .and. BASINSWEOUTFLAG > 0) then
+        open(85, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/basin_SCA_alldays.csv')
+        open(86, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/basin_SWE_alldays.csv')
+    end if !(BASINSWEOUTFLAG > 0) then
 
 !> *********************************************************************
 !>  Open and read in values from MESH_input_reservoir.txt file
@@ -1539,27 +1585,27 @@ program RUNMESH
 ! KCK Added to allow higher precision gauge sites    
             if (LOCATIONFLAG == 1) then
                 read(21, '(2f7.1, 2g10.3, 25x, a12, i2)') I_G, J_G, WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
-                WF_IRES(i) = nint((I_G - bi%yOrigin*60.0)/bi%GRDN)
-                WF_JRES(i) = nint((J_G - bi%xOrigin*60.0)/bi%GRDE)
+                WF_IRES(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
+                WF_JRES(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
             else
                 read(21, '(2i5, 2g10.3, 25x, a12, i2)') WF_IRES(i), WF_JRES(i), WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
-                WF_IRES(i) = int((real(WF_IRES(i)) - real(bi%iyMin))/bi%GRDN + 1.0)
-                WF_JRES(i) = int((real(WF_JRES(i)) - real(bi%jxMin))/bi%GRDE + 1.0)
+                WF_IRES(i) = int((real(WF_IRES(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
+                WF_JRES(i) = int((real(WF_JRES(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
             end if
 !> check if point is in watershed and in river reaches
             WF_R(i) = 0
-            do j = 1, bi%NA
-                if (WF_IRES(i) == bi%yyy(j) .and. WF_JRES(i) == bi%xxx(j)) then
+            do j = 1, NA
+                if (WF_IRES(i) == shd%yyy(j) .and. WF_JRES(i) == shd%xxx(j)) then
                     WF_R(i) = j
                 end if
             end do
             if (WF_R(i) == 0) then
                 print *, 'Reservoir Station: ', i, ' is not in the basin'
-                print *, 'Up/Down Coordinate: ', wf_ires(i), bi%iyMin
-                print *, 'Left/Right Coordinate: ', wf_jres(i), bi%jxMin
+                print *, 'Up/Down Coordinate: ', wf_ires(i), shd%iyMin
+                print *, 'Left/Right Coordinate: ', wf_jres(i), shd%jxMin
                 stop
             end if
-            if (bi%IREACH(WF_R(i)) /= i) then
+            if (shd%IREACH(WF_R(i)) /= i) then
                 print *, 'Reservoir Station: ', i, ' is not in the correct reach'
                 print *, 'Up/Down Coordinate: ', wf_ires(i)
                 print *, 'Left/Right Coordinate: ', wf_jres(i)
@@ -1589,25 +1635,25 @@ program RUNMESH
     do i = 1, WF_NO
         if (LOCATIONFLAG == 1) then
             read(22, *) I_G, J_G, WF_GAGE(i)
-            WF_IY(i) = nint((I_G - bi%yOrigin*60.0)/bi%GRDN)
-            WF_JX(i) = nint((J_G - bi%xOrigin*60.0)/bi%GRDE)
+            WF_IY(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
+            WF_JX(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
         else
             read(22, *) WF_IY(i), WF_JX(i), WF_GAGE(i)
-            WF_IY(i) = int((real(WF_IY(i)) - real(bi%iyMin))/bi%GRDN + 1.0)
-            WF_JX(i) = int((real(WF_JX(i)) - real(bi%jxMin))/bi%GRDE + 1.0)
+            WF_IY(i) = int((real(WF_IY(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
+            WF_JX(i) = int((real(WF_JX(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
         end if
     end do
     do i = 1, WF_NO
         WF_S(i) = 0
-        do j = 1, bi%NA
-            if (WF_JX(i) == bi%xxx(j) .and. WF_IY(i) == bi%yyy(j)) then
+        do j = 1, NA
+            if (WF_JX(i) == shd%xxx(j) .and. WF_IY(i) == shd%yyy(j)) then
                 WF_S(i) = j
             end if
         end do
         if (WF_S(i) == 0) then
             print *, 'STREAMFLOW GAUGE: ', i, ' IS NOT IN THE BASIN'
-            print *, 'UP/DOWN', WF_IY(i), bi%iyMin, bi%yyy(j), bi%yCount
-            print *, 'LEFT/RIGHT', WF_JX(i), bi%jxMin, bi%xxx(j), bi%xCount
+            print *, 'UP/DOWN', WF_IY(i), shd%iyMin, shd%yyy(j), shd%yCount
+            print *, 'LEFT/RIGHT', WF_JX(i), shd%jxMin, shd%xxx(j), shd%xCount
             stop
         end if
     end do
@@ -1658,17 +1704,17 @@ program RUNMESH
 !> Check to make sure input values are consistent
 !> *********************************************************************
 !> compare land classes in class.ini and drainage database files
-    if (bi%NTYPE /= NMTEST .and. bi%NTYPE > 0) then
+    if (NTYPE /= NMTEST .and. NTYPE > 0) then
         print *, 'land classes from MESH_parameters_CLASS.ini: ', NMTEST
-        print *, 'land classes from MESH_drainage_database.txt:', bi%NTYPE
+        print *, 'land classes from MESH_drainage_database.txt:', NTYPE
         print *, 'Please adjust these values.'
         stop
     end if
 
 !> check that run points are in the basin and that there are no repeats
     do i = 1, WF_NUM_POINTS
-        if (op%N_OUT(i) > bi%NA) then
-            print *, 'No. of grids from MESH_drainage_database.txt:', bi%NA
+        if (op%N_OUT(i) > NA) then
+            print *, 'No. of grids from MESH_drainage_database.txt:', NA
             print *, 'out point ', i, ' is: ', op%N_OUT(i)
             print *, 'please adjust MESH_run_options.ini file'
             stop
@@ -1688,6 +1734,21 @@ program RUNMESH
 !> *********************************************************************
 !> Set some more intial values and clear accumulators
 !> *********************************************************************
+
+    !> Read an intial value for geothermal flux from file.
+    if (GGEOFLAG == 1) then
+!        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(7)%isInit)) then
+!            open(fls%fl(7)%unit, file = trim(adjustl(fls%fl(7)%name)))
+        iun = fls%fl(mfk%f18)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f18)%fn)), status = 'old', action = 'read', iostat = ios)
+!        else
+!            open(18, file = 'MESH_ggeo.ini', status = 'old')
+!        end if
+        read(iun, *) GGEOGRD(1)
+        close(iun)
+    else
+        GGEOGRD(1) = 0.0
+    end if
 
 !> ASSIGN VALUES OF LAT/LONG TO EACH SQUARE:
 !> NOTE FROM FRANK
@@ -1712,30 +1773,11 @@ program RUNMESH
 !> after DEGLAT is used to calculate RADJGRD is it no longer used.  This 
 !> is how it was in the original CLASS code.
 
-    !> Read an intial value for geothermal flux from file.
-    if (GGEOFLAG == 1) then
-!        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(7)%isInit)) then
-!            open(fls%fl(7)%unit, file = trim(adjustl(fls%fl(7)%name)))
-        iun = fls%fl(mfk%f18)%iun
-        open(iun, file = trim(adjustl(fls%fl(mfk%f18)%fn)), status = 'old', action = 'read', iostat = ios)
-!        else
-!            open(18, file = 'MESH_ggeo.ini', status = 'old')
-!        end if
-        read(iun, *) GGEOGRD(1)
-        close(iun)
-    else
-        GGEOGRD(1) = 0.0
-    end if
-
-	do i = 1, bi%NA
-        !LATLENGTH = bi%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
-        !LONGLENGTH = bi%AL/1000.0/(111.4172*cos((DEGLAT*PI/180.0)) - 0.094*cos(3*(DEGLAT*PI/180.0)) + 0.0002*cos(5*(DEGLAT*PI/180.0)))
-        RADJGRD(i) = ((bi%yOrigin + bi%yDelta*bi%yyy(i)) - bi%yDelta/2.0)*PI/180.0
-        DLONGRD(i) = (bi%xOrigin + bi%xDelta*bi%xxx(i)) - bi%xDelta/2.0
-        cp%ZRFMGRD(i) = cp%ZRFMGRD(1)
-        cp%ZRFHGRD(i) = cp%ZRFHGRD(1)
-        cp%ZBLDGRD(i) = cp%ZBLDGRD(1)
-        cp%GCGRD(i) = cp%GCGRD(1)
+	do i = 1, NA
+        !LATLENGTH = shd%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
+        !LONGLENGTH = shd%AL/1000.0/(111.4172*cos((DEGLAT*PI/180.0)) - 0.094*cos(3*(DEGLAT*PI/180.0)) + 0.0002*cos(5*(DEGLAT*PI/180.0)))
+        RADJGRD(i) = ((shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0)*PI/180.0
+        DLONGRD(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
         Z0ORGRD(i) = 0.0
         GGEOGRD(i) = GGEOGRD(1)
         ZDMGRD(i) = 10.0
@@ -1747,7 +1789,7 @@ program RUNMESH
 !> we want it to be the number of squares with outlets to outside the
 !> basin.
 !todo - look into the logic of this and suggest how it could be changed
-    bi%NAA = bi%NA - bi%NAA
+    shd%NAA = NA - shd%NAA
 
 !> set initial values of ncount and nsum
 ! NCOUNT = which half-hour period the current time is:
@@ -1762,7 +1804,7 @@ program RUNMESH
 !> **********************************************************************
 
     if (SUBBASINFLAG > 0) then
-        do i = 1, bi%NA
+        do i = 1, NA
             SUBBASIN(i) = 0
         end do
 
@@ -1775,8 +1817,8 @@ program RUNMESH
         SUBBASINCOUNT = 1
         do while (SUBBASINCOUNT > 0)
             SUBBASINCOUNT = 0
-            do i = 1, bi%NA - 1
-                if (SUBBASIN(bi%NEXT(i)) == 1 .and. SUBBASIN(i) == 0) then
+            do i = 1, NA - 1
+                if (SUBBASIN(shd%NEXT(i)) == 1 .and. SUBBASIN(i) == 0) then
                     SUBBASIN(i) = 1
                     SUBBASINCOUNT = SUBBASINCOUNT + 1
                 end if
@@ -1785,9 +1827,9 @@ program RUNMESH
 
 !> Set values of frac to 0 for all grids non-upstream grids
         SUBBASINCOUNT = 0
-        do i = 1, bi%NA
+        do i = 1, NA
             if (SUBBASIN(i) == 0) then
-                bi%FRAC(i) = 0.0
+                shd%FRAC(i) = 0.0
             else
                 SUBBASINCOUNT = SUBBASINCOUNT + 1
             end if
@@ -1797,10 +1839,10 @@ program RUNMESH
         open(10, file = 'subbasin_info.txt')
         write(10, '(a7, 3x, a18, 3x, a58)') &
             'GRID NO', 'GRID AREA FRACTION', 'GRU FRACTIONS, GRU 1, GRU 2, GRU 3,... IN INCREASING ORDER'
-        do i = 1, bi%NA
+        do i = 1, NA
             if (SUBBASIN(i) == 0) then
             else
-                write(10, '(i5, 3x, f10.3, 8x, 50(f10.3, 3x))') i, bi%FRAC(i), (bi%ACLASS(i, m), m = 1, NMTEST)
+                write(10, '(i5, 3x, f10.3, 8x, 50(f10.3, 3x))') i, shd%FRAC(i), (shd%lc%ACLASS(i, m), m = 1, NMTEST)
             end if
         end do
         close(10)
@@ -1811,44 +1853,18 @@ program RUNMESH
 !>  End of subbasin section
 !> **********************************************************************
 
-!> Set value of FAREROW:
-!todo - flag this as an issue to explore later and hide basin average code
-!todo - document the problem
-    TOTAL_AREA = 0.0
-    do i = 1, bi%NA
-        do m = 1, NMTEST
-            cp%FAREROW(i, m) = bi%ACLASS(i, m)*bi%FRAC(i)
-            TOTAL_AREA = TOTAL_AREA + cp%FAREROW(i, m)
-    !FUTUREDO: Bruce, FRAC is calculated by EnSim
-    ! using Dan Princz's instructions for EnSim
-    ! FRAC can be greater than 1.00
-    ! So, we cannot use FAREROW in place of BASIN_FRACTION
-        end do
-    end do
-
-    call GATPREP(bi%ILMOS, bi%JLMOS, bi%IWMOS, bi%JWMOS, &
-                 bi%NML, bi%NMW, cp%GCGRD, cp%FAREROW, cp%MIDROW, &
-                 bi%NA, bi%NTYPE, bi%ILG, 1, bi%NA, NMTEST)
-
-    !> Update basin information.
-!-    bi%NML = NML
-!-    bi%NMW = NMW
-!-    allocate(bi%ILMOS(size(ILMOS)), bi%JLMOS(size(JLMOS)))
-!-    bi%ILMOS = ILMOS
-!-    bi%JLMOS = JLMOS
-
 !> Initialize output variables.
-    call init_water_balance(wb, bi)
+    call init_water_balance(wb, shd)
     wb%grid_area = 0.0
     wb%basin_area = 0.0
-    do i = 1, bi%NA
+    do i = 1, NA
         do m = 1, NMTEST
             wb%grid_area(i) = wb%grid_area(i) + cp%FAREROW(i, m)
         end do
         wb%basin_area = wb%basin_area + wb%grid_area(i)
     end do
 
-    call climate_module_init(bi, ts, cm, ENDDATA)
+    call climate_module_init(shd, ts, cm, NML, il1, il2, ENDDATA)
     if (ENDDATA) goto 999
 
 !> *********************************************************************
@@ -1856,11 +1872,11 @@ program RUNMESH
 !> *********************************************************************
 
     if (ipid == 0) then
-        call init_energy_balance(eng, bi)
-        call init_soil_statevars(sov, bi)
-        call init_met_data(md, bi)
-        call init_water_balance(wb_h, bi)
-        if (OUTFIELDSFLAG == 1) call init_out(vr, ts, iof, bi)
+        call init_energy_balance(eng, shd)
+        call init_soil_statevars(sov, shd)
+        call init_met_data(md, shd)
+        call init_water_balance(wb_h, shd)
+        if (OUTFIELDSFLAG == 1) call init_out(vr, ts, iof, shd)
     end if !(ipid == 0) then
 
 !> routing parameters
@@ -1872,15 +1888,15 @@ program RUNMESH
     JAN = 1
 
 !todo - check that this is compatible with Saul's pre-distributed soil moisture and soil temp.
-    do i = 1, bi%NA
+    do i = 1, NA
         do m = 1, NMTEST
-            do j = 1, bi%IGND
+            do j = 1, IGND
                 cp%TBARROW(i, m, j) = cp%TBARROW(i, m, j) + TFREZ
             end do
             cp%TSNOROW(i, m) = cp%TSNOROW(i, m) + TFREZ
             cp%TCANROW(i, m) = cp%TCANROW(i, m) + TFREZ
             cp%TPNDROW(i, m) = cp%TPNDROW(i, m) + TFREZ
-            TBASROW(i, m) = cp%TBARROW(i, m, bi%IGND)
+            TBASROW(i, m) = cp%TBARROW(i, m, IGND)
             CMAIROW(i, m) = 0.0
             WSNOROW(i, m) = 0.0
             TSFSROW(i, m, 1) = TFREZ
@@ -1889,11 +1905,11 @@ program RUNMESH
             TSFSROW(i, m, 4) = cp%TBARROW(i, m, 1)
             TACROW(i, m) = cp%TCANROW(i, m)
             QACROW(i, m) = 0.5e-2
-            if (bi%IGND > 3) then ! should stay this way to work with class
+            if (IGND > 3) then ! should stay this way to work with class
 
                 !todo - if we have time, change this so that soil.ini can take more than 3 layers.
                 if (NRSOILAYEREADFLAG == 0) then
-                    do j = 4, bi%IGND
+                    do j = 4, IGND
                         cp%THLQROW(i, m, j) = cp%THLQROW(i, m, 3)
                         cp%THICROW(i, m, j) = cp%THICROW(i, m, 3)
                         cp%TBARROW(i, m, j) = cp%TBARROW(i, m, 3)
@@ -1908,7 +1924,7 @@ program RUNMESH
                         end if
                     end do
                 else
-                    do j = 4, bi%IGND
+                    do j = 4, IGND
                         if (cp%SDEPROW(i, m) < (sl%ZBOT(j - 1) + 0.001) .and. cp%SANDROW(i, m, 3) > -2.5) then
                             cp%SANDROW(i, m, j) = -3.0
                             cp%CLAYROW(i, m, j) = -3.0
@@ -1916,14 +1932,14 @@ program RUNMESH
                         end if
                     end do
                 end if !if (NRSOILAYEREADFLAG == 0) then
-            end if !(bi%IGND > 3) then
+            end if !(IGND > 3) then
             do k = 1, 6
                 do l = 1, 50
                     ITCTROW(i, m, k, l) = 0
                 end do
             end do
         end do !m = 1, NMTEST
-    end do !i = 1, bi%NA
+    end do !i = 1, NA
 
 !> clear accumulating variables
     TOTAL_ROF = 0.0
@@ -2027,7 +2043,7 @@ program RUNMESH
 
         if (MODELINFOOUTFLAG > 0) then
             open(58, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/MESH_output_echo_print.txt')
-            write(58, "('Number of Soil Layers (IGND) = ', i5)") bi%IGND
+            write(58, "('Number of Soil Layers (IGND) = ', i5)") IGND
             write(58, *)
             write(58, "('MESH_input_run_options.ini')")
             write(58, *)
@@ -2120,7 +2136,7 @@ program RUNMESH
             write(58, '(2x, 6a4)') PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
             i = 1
             write(58, '(5f10.2, f7.1, 3i5)') &
-                DEGLAT, DEGLON, cp%ZRFMGRD(i), cp%ZRFHGRD(i), cp%ZBLDGRD(i), cp%GCGRD(i), bi%ILW, bi%NA, NMTEST
+                DEGLAT, DEGLON, cp%ZRFMGRD(i), cp%ZRFHGRD(i), cp%ZBLDGRD(i), cp%GCGRD(i), shd%wc%ILG, NA, NMTEST
             do m = 1, NMTEST
                 write(58, '(9f8.3)') (cp%FCANROW(i, m, j), j = 1, ICAN + 1), (cp%PAMXROW(i, m, j), j = 1, ICAN)
                 write(58, '(9f8.3)') (cp%LNZ0ROW(i, m, j), j = 1, ICAN + 1), (cp%PAMNROW(i, m, j), j = 1, ICAN)
@@ -2131,12 +2147,12 @@ program RUNMESH
                 write(58, '(4f8.3, 8x, 4f8.3)') (cp%PSGAROW(i, m, j), j = 1, ICAN), (cp%PSGBROW(i, m, j), j = 1, ICAN)
                 write(58, '(3f8.3, f8.4)') cp%DRNROW(i, m), cp%SDEPROW(i, m), cp%FAREROW(i, m), cp%DDROW(i, m)
                 write(58, '(4e8.1, i8)') cp%XSLPROW(i, m), cp%XDROW(i, m), cp%MANNROW(i, m), cp%KSROW(i, m), cp%MIDROW(i, m)
-                write(58, '(6f10.1)') (cp%SANDROW(i, m, j), j = 1, bi%IGND)
-                write(58, '(6f10.1)') (cp%CLAYROW(i, m, j), j = 1, bi%IGND)
-                write(58, '(6f10.1)') (cp%ORGMROW(i, m, j), j = 1, bi%IGND)
-                write(58, '(9f10.2)') (cp%TBARROW(i, m, j), j = 1, bi%IGND), cp%TCANROW(i, m), cp%TSNOROW(i, m), cp%TPNDROW(i, m)
+                write(58, '(6f10.1)') (cp%SANDROW(i, m, j), j = 1, IGND)
+                write(58, '(6f10.1)') (cp%CLAYROW(i, m, j), j = 1, IGND)
+                write(58, '(6f10.1)') (cp%ORGMROW(i, m, j), j = 1, IGND)
+                write(58, '(9f10.2)') (cp%TBARROW(i, m, j), j = 1, IGND), cp%TCANROW(i, m), cp%TSNOROW(i, m), cp%TPNDROW(i, m)
                 write(58, '(10f10.3)') &
-                    (cp%THLQROW(i, m, j), j = 1, bi%IGND), (cp%THICROW(i, m, j), j = 1, bi%IGND), cp%ZPNDROW(i, m)
+                    (cp%THLQROW(i, m, j), j = 1, IGND), (cp%THICROW(i, m, j), j = 1, IGND), cp%ZPNDROW(i, m)
                 write(58, '(2f10.4, f10.2, f10.3, f10.4, f10.3, f10.3)') &
                     cp%RCANROW(i, m), cp%SCANROW(i, m), cp%SNOROW(i, m), cp%ALBSROW(i, m), cp%RHOSROW(i, m), cp%GROROW(i, m)
                 write(58, *)
@@ -2144,9 +2160,9 @@ program RUNMESH
         end if !(MODELINFOOUTFLAG > 0) then
     end if !(ipid == 0) then
 
-    allocate(INFILTYPE(bi%ILG), SI(bi%ILG), TSI(bi%ILG), &
-             SNOWMELTD(bi%ILG), SNOWMELTD_LAST(bi%ILG), SNOWINFIL(bi%ILG), &
-             CUMSNOWINFILCS(bi%ILG), MELTRUNOFF(bi%ILG), CUMSNOWINFILGS(bi%ILG))
+    allocate(INFILTYPE(NML), SI(NML), TSI(NML), &
+             SNOWMELTD(NML), SNOWMELTD_LAST(NML), SNOWINFIL(NML), &
+             CUMSNOWINFILCS(NML), MELTRUNOFF(NML), CUMSNOWINFILGS(NML))
              
     NMELT = 1
     INFILTYPE = 2 !> INITIALIZED WITH UNLIMITED INFILTRATION
@@ -2159,14 +2175,14 @@ program RUNMESH
     TSI = -0.10
 
 !* PDMROF
-    allocate(CMINPDM(bi%ILG), CMAXPDM(bi%ILG), BPDM(bi%ILG), K1PDM(bi%ILG), &
-             K2PDM(bi%ILG), ZPNDPRECS(bi%ILG), ZPONDPREC(bi%ILG), ZPONDPREG(bi%ILG), &
-             ZPNDPREGS(bi%ILG), &
-             UM1CS(bi%ILG), UM1C(bi%ILG), UM1G(bi%ILG), UM1GS(bi%ILG), &
-             QM1CS(bi%ILG), QM1C(bi%ILG), QM1G(bi%ILG), QM1GS(bi%ILG), &
-             QM2CS(bi%ILG), QM2C(bi%ILG), QM2G(bi%ILG), QM2GS(bi%ILG), &
-             UMQ(bi%ILG), &
-             FSTRCS(bi%ILG), FSTRC(bi%ILG), FSTRG(bi%ILG), FSTRGS(bi%ILG))
+    allocate(CMINPDM(NML), CMAXPDM(NML), BPDM(NML), K1PDM(NML), &
+             K2PDM(NML), ZPNDPRECS(NML), ZPONDPREC(NML), ZPONDPREG(NML), &
+             ZPNDPREGS(NML), &
+             UM1CS(NML), UM1C(NML), UM1G(NML), UM1GS(NML), &
+             QM1CS(NML), QM1C(NML), QM1G(NML), QM1GS(NML), &
+             QM2CS(NML), QM2C(NML), QM2G(NML), QM2GS(NML), &
+             UMQ(NML), &
+             FSTRCS(NML), FSTRC(NML), FSTRG(NML), FSTRGS(NML))
 
 !* PDMROF: INITIALIZE VARIABLES
     ZPNDPRECS = 0.0
@@ -2259,7 +2275,7 @@ program RUNMESH
 !-  ATTRIBUTE_NAME = "channel_inflow"
 !-  ATTRIBUTE_UNITS = "mm"
 !-  ATTRIBUTE_TYPE = "flow"
-            call write_r2c(fls, mfk%f31, bi, &
+            call write_r2c(fls, mfk%f31, shd, &
                            1, 0, 1, 1, &
                            rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
                            rte_runoff, &
@@ -2274,7 +2290,7 @@ program RUNMESH
 !-  ATTRIBUTE_NAME = "recharge"
 !-  ATTRIBUTE_UNITS = "mm"
 !-  ATTRIBUTE_TYPE = "flow"
-            call write_r2c(fls, mfk%f32, bi, &
+            call write_r2c(fls, mfk%f32, shd, &
                            0, 1, 0, 1, 1, &
                            rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
                            rte_recharge, &
@@ -2378,8 +2394,8 @@ program RUNMESH
 !> WRITE THE HEADER FOR R2C FILES:
         if (NR2CFILES > 0) then
             call WRITE_R2C_HEADER(NMTEST, NR2C, NR2CFILES, GRD, GAT, GRDGAT, R2C_ATTRIBUTES, &
-                                  R2CFILEUNITSTART, NR2CSTATES, bi%CoordSys, bi%Datum, bi%Zone, &
-                                  bi%xOrigin, bi%yOrigin, bi%xDelta, bi%yDelta, bi%xCount, bi%yCount)
+                                  R2CFILEUNITSTART, NR2CSTATES, shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, &
+                                  shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta, shd%xCount, shd%yCount)
         end if
 
 !> For the ENSIM timestamp
@@ -2394,14 +2410,14 @@ program RUNMESH
 !> *********************************************************************
 
     if (ro%VERBOSEMODE > 0) then
-        print *, 'NUMBER OF GRID SQUARES: ', bi%NA
+        print *, 'NUMBER OF GRID SQUARES: ', NA
         print *, 'NUMBER OF LAND CLASSES (WITH IMPERVIOUS): ', NMTEST
-        print *, 'NUMBER OF RIVER CLASSES: ', bi%NRVR
-        print *, 'MINIMUM NUMBER FOR ILG: ', bi%NA*NMTEST
-        print *, 'NUMBER OF GRID SQUARES IN West-East DIRECTION: ', bi%xCount
-        print *, 'NUMBER OF GRID SQUARES IN South-North DIRECTION: ', bi%yCount
-        print *, 'LENGTH OF SIDE OF GRID SQUARE IN M: ', bi%AL
-        print *, 'NUMBER OF DRAINAGE OUTLETS: ', bi%NAA
+        print *, 'NUMBER OF RIVER CLASSES: ', shd%NRVR
+        print *, 'MINIMUM NUMBER FOR ILG: ', shd%lc%ILG
+        print *, 'NUMBER OF GRID SQUARES IN West-East DIRECTION: ', shd%xCount
+        print *, 'NUMBER OF GRID SQUARES IN South-North DIRECTION: ', shd%yCount
+        print *, 'LENGTH OF SIDE OF GRID SQUARE IN M: ', shd%AL
+        print *, 'NUMBER OF DRAINAGE OUTLETS: ', shd%NAA
         print *, 'NUMBER OF STREAMFLOW GUAGES: ', WF_NO
         do i = 1, WF_NO
             print *, 'STREAMFLOW STATION: ', i, 'I: ', WF_IY(i), 'J: ', WF_JX(i)
@@ -2436,7 +2452,7 @@ program RUNMESH
                           cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
                           cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
                           cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
-                          i, j, bi%xCount, bi%yCount, jan, &
+                          i, j, shd%xCount, shd%yCount, jan, &
                           VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
                           RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
                           cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
@@ -2444,9 +2460,9 @@ program RUNMESH
 !> MAM - FOR FORCING DATA INTERPOLATION
                           FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
                           TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
-                          IPCP, bi%NA, bi%NA, bi%ILMOS, bi%JLMOS, bi%IWMOS, bi%JWMOS, &
-                          bi%NML, bi%NMW, &
-                          cp%GCGRD, cp%FAREROW, cp%MIDROW, bi%NTYPE, bi%ILG, NMTEST, &
+                          IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+                          shd%lc%NML, shd%wc%NML, &
+                          cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, NML, NMTEST, &
                           TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
                           TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
                           TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
@@ -2478,7 +2494,7 @@ program RUNMESH
                           TROFGAT, TROOGAT, TROSGAT, TROBGAT, ROFCGAT, &
                           ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, WTRGGAT, &
                           DRGAT, HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
-                          bi%IGND, ICAN, ICP1, &
+                          IGND, ICAN, ICP1, &
                           cp%TBARROW, cp%THLQROW, cp%THICROW, cp%TPNDROW, cp%ZPNDROW, &
                           TBASROW, cp%ALBSROW, cp%TSNOROW, cp%RHOSROW, cp%SNOROW, &
                           cp%TCANROW, cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, &
@@ -2524,7 +2540,7 @@ program RUNMESH
                           TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
                           WTABGAT, &
                           ILMOGAT, UEGAT, HBLGAT, &
-                          bi%ILW, ITC, ITCG, ITG, ISLFD, &
+                          shd%wc%ILG, ITC, ITCG, ITG, ISLFD, &
                           NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
                           GFLXGAT, CDHROW, CDMROW, HFSROW, TFXROW, &
                           QEVPROW, QFSROW, QFXROW, PETROW, GAROW, &
@@ -2541,13 +2557,13 @@ program RUNMESH
                           ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
                           QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
                           wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
-                          HOUR_NOW, bi%xxx, bi%yyy, bi%NA, &
-                          bi%NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
+                          HOUR_NOW, shd%xxx, shd%yyy, NA, &
+                          NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
                           M_C, M_S, M_R, &
-                          WF_ROUTETIMESTEP, WF_R1, WF_R2, bi%NAA, bi%iyMin, &
-                          bi%iyMax, bi%jxMin, bi%jxMax, bi%IAK, bi%IROUGH, &
-                          bi%ICHNL, bi%NEXT, bi%IREACH, bi%AL, bi%GRDN, bi%GRDE, &
-                          bi%DA, bi%BNKFLL, bi%SLOPE_CHNL, bi%ELEV, bi%FRAC, &
+                          WF_ROUTETIMESTEP, WF_R1, WF_R2, shd%NAA, shd%iyMin, &
+                          shd%iyMax, shd%jxMin, shd%jxMax, shd%IAK, shd%IROUGH, &
+                          shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
+                          shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
                           WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
                           WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
                           WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
@@ -2627,8 +2643,8 @@ program RUNMESH
 !BEGIN: PDMROF
                      CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
 !END: PDMROF
-                     bi%ILMOS, bi%JLMOS, bi%IWMOS, bi%JWMOS, bi%NML, bi%NA, bi%NTYPE, &
-                     bi%NA*bi%NTYPE, bi%IGND, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
+                     shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, NA, NTYPE, &
+                     NML, il1, il2, IGND, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
                      cp%THICROW, cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, &
                      cp%TSNOROW, cp%RHOSROW, cp%SNOROW, cp%TCANROW, &
                      cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, cp%FCANROW, &
@@ -2742,9 +2758,9 @@ program RUNMESH
 160 continue
 170 continue
 !>
-        call resume_state_r2c(bi%NML, NLTEST, NMTEST, NCOUNT, &
-                              MINS_NOW, bi%ACLASS, NR2C_R, GRD_R, GAT_R, GRDGAT_R, R2C_ATTRIBUTES_R, &
-                              bi%NA, bi%xxx, bi%yyy, bi%xCount, bi%yCount, bi%ILMOS, bi%JLMOS, bi%ILG, ICAN, ICP1, bi%IGND, &
+        call resume_state_r2c(shd%lc%NML, NLTEST, NMTEST, NCOUNT, &
+                              MINS_NOW, shd%lc%ACLASS, NR2C_R, GRD_R, GAT_R, GRDGAT_R, R2C_ATTRIBUTES_R, &
+                              NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
                               TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
                               TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
                               TCANGAT, RCANGAT, SCANGAT, GROGAT, CMAIGAT, &
@@ -2779,15 +2795,16 @@ program RUNMESH
                               WTRCGAT, WTRSGAT, WTRGGAT, DRGAT, GFLXGAT, &
                               HMFGGAT, HTCGAT, QFCGAT, MANNGAT, DDGAT, &
                               SANDGAT, CLAYGAT, IGDRGAT, VMODGAT, QLWOGAT, &
-                              bi%CoordSys, bi%Datum, bi%Zone, bi%xOrigin, bi%yOrigin, bi%xDelta, bi%yDelta)
+                              shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, &
+                              shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
 !>
 ! now scatter the variables so that the GATs don't get overwritten incorrectly
         call CLASSS(cp%TBARROW, cp%THLQROW, cp%THICROW, GFLXROW, TSFSROW, &
                     cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, cp%TSNOROW, &
                     cp%RHOSROW, cp%SNOROW, cp%TCANROW, cp%RCANROW, cp%SCANROW, &
                     cp%GROROW, CMAIROW, TACROW, QACROW, WSNOROW, &
-                    bi%ILMOS, bi%JLMOS, bi%IWMOS, bi%JWMOS, &
-                    bi%NML, bi%NA, bi%NTYPE, bi%ILG, bi%IGND, ICAN, ICAN + 1, &
+                    shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+                    NA, NTYPE, NML, il1, il2, IGND, ICAN, ICAN + 1, &
                     TBARGAT, THLQGAT, THICGAT, GFLXGAT, TSFSGAT, &
                     TPNDGAT, ZPNDGAT, TBASGAT, ALBSGAT, TSNOGAT, &
                     RHOSGAT, SNOGAT, TCANGAT, RCANGAT, SCANGAT, &
@@ -2802,82 +2819,86 @@ program RUNMESH
 !>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF
 !>   * CLASSS FOR CONSISTENCY WITH GCM APPLICATIONS.
 !>
-        do 180 k = 1, bi%NML
-            CDHROW(bi%ILMOS(k), bi%JLMOS(k)) = CDHGAT(k)
-            CDMROW(bi%ILMOS(k), bi%JLMOS(k)) = CDMGAT(k)
-            HFSROW(bi%ILMOS(k), bi%JLMOS(k)) = HFSGAT(k)
-            TFXROW(bi%ILMOS(k), bi%JLMOS(k)) = TFXGAT(k)
-            QEVPROW(bi%ILMOS(k), bi%JLMOS(k)) = QEVPGAT(k)
-            QFSROW(bi%ILMOS(k), bi%JLMOS(k)) = QFSGAT(k)
-            QFXROW(bi%ILMOS(k), bi%JLMOS(k)) = QFXGAT(k)
-            PETROW(bi%ILMOS(k), bi%JLMOS(k)) = PETGAT(k)
-            GAROW(bi%ILMOS(k), bi%JLMOS(k)) = GAGAT(k)
-            EFROW(bi%ILMOS(k), bi%JLMOS(k)) = EFGAT(k)
-            GTROW(bi%ILMOS(k), bi%JLMOS(k)) = GTGAT(k)
-            QGROW(bi%ILMOS(k), bi%JLMOS(k)) = QGGAT(k)
-            ALVSROW(bi%ILMOS(k), bi%JLMOS(k)) = ALVSGAT(k)
-            ALIRROW(bi%ILMOS(k), bi%JLMOS(k)) = ALIRGAT(k)
-            SFCTROW(bi%ILMOS(k), bi%JLMOS(k)) = SFCTGAT(k)
-            SFCUROW(bi%ILMOS(k), bi%JLMOS(k)) = SFCUGAT(k)
-            SFCVROW(bi%ILMOS(k), bi%JLMOS(k)) = SFCVGAT(k)
-            SFCQROW(bi%ILMOS(k), bi%JLMOS(k)) = SFCQGAT(k)
-            FSNOROW(bi%ILMOS(k), bi%JLMOS(k)) = FSNOGAT(k)
-            FSGVROW(bi%ILMOS(k), bi%JLMOS(k)) = FSGVGAT(k)
-            FSGSROW(bi%ILMOS(k), bi%JLMOS(k)) = FSGSGAT(k)
-            FSGGROW(bi%ILMOS(k), bi%JLMOS(k)) = FSGGGAT(k)
-            FLGVROW(bi%ILMOS(k), bi%JLMOS(k)) = FLGVGAT(k)
-            FLGSROW(bi%ILMOS(k), bi%JLMOS(k)) = FLGSGAT(k)
-            FLGGROW(bi%ILMOS(k), bi%JLMOS(k)) = FLGGGAT(k)
-            HFSCROW(bi%ILMOS(k), bi%JLMOS(k)) = HFSCGAT(k)
-            HFSSROW(bi%ILMOS(k), bi%JLMOS(k)) = HFSSGAT(k)
-            HFSGROW(bi%ILMOS(k), bi%JLMOS(k)) = HFSGGAT(k)
-            HEVCROW(bi%ILMOS(k), bi%JLMOS(k)) = HEVCGAT(k)
-            HEVSROW(bi%ILMOS(k), bi%JLMOS(k)) = HEVSGAT(k)
-            HEVGROW(bi%ILMOS(k), bi%JLMOS(k)) = HEVGGAT(k)
-            HMFCROW(bi%ILMOS(k), bi%JLMOS(k)) = HMFCGAT(k)
-            HMFNROW(bi%ILMOS(k), bi%JLMOS(k)) = HMFNGAT(k)
-            HTCCROW(bi%ILMOS(k), bi%JLMOS(k)) = HTCCGAT(k)
-            HTCSROW(bi%ILMOS(k), bi%JLMOS(k)) = HTCSGAT(k)
-            PCFCROW(bi%ILMOS(k), bi%JLMOS(k)) = PCFCGAT(k)
-            PCLCROW(bi%ILMOS(k), bi%JLMOS(k)) = PCLCGAT(k)
-            PCPNROW(bi%ILMOS(k), bi%JLMOS(k)) = PCPNGAT(k)
-            PCPGROW(bi%ILMOS(k), bi%JLMOS(k)) = PCPGGAT(k)
-            QFGROW(bi%ILMOS(k), bi%JLMOS(k)) = QFGGAT(k)
-            QFNROW(bi%ILMOS(k), bi%JLMOS(k)) = QFNGAT(k)
-            QFCLROW(bi%ILMOS(k), bi%JLMOS(k)) = QFCLGAT(k)
-            QFCFROW(bi%ILMOS(k), bi%JLMOS(k)) = QFCFGAT(k)
-            ROFROW(bi%ILMOS(k), bi%JLMOS(k)) = ROFGAT(k)
-            ROFOROW(bi%ILMOS(k), bi%JLMOS(k)) = ROFOGAT(k)
-            ROFSROW(bi%ILMOS(k), bi%JLMOS(k)) = ROFSGAT(k)
-            ROFBROW(bi%ILMOS(k), bi%JLMOS(k)) = ROFBGAT(k)
-            TROFROW(bi%ILMOS(k), bi%JLMOS(k)) = TROFGAT(k)
-            TROOROW(bi%ILMOS(k), bi%JLMOS(k)) = TROOGAT(k)
-            TROSROW(bi%ILMOS(k), bi%JLMOS(k)) = TROSGAT(k)
-            TROBROW(bi%ILMOS(k), bi%JLMOS(k)) = TROBGAT(k)
-            ROFCROW(bi%ILMOS(k), bi%JLMOS(k)) = ROFCGAT(k)
-            ROFNROW(bi%ILMOS(k), bi%JLMOS(k)) = ROFNGAT(k)
-            ROVGROW(bi%ILMOS(k), bi%JLMOS(k)) = ROVGGAT(k)
-            WTRCROW(bi%ILMOS(k), bi%JLMOS(k)) = WTRCGAT(k)
-            WTRSROW(bi%ILMOS(k), bi%JLMOS(k)) = WTRSGAT(k)
-            WTRGROW(bi%ILMOS(k), bi%JLMOS(k)) = WTRGGAT(k)
-            DRROW(bi%ILMOS(k), bi%JLMOS(k)) = DRGAT(k)
-            WTABROW(bi%ILMOS(k), bi%JLMOS(k)) = WTABGAT(k)
-            ILMOROW(bi%ILMOS(k), bi%JLMOS(k)) = ILMOGAT(k)
-            UEROW(bi%ILMOS(k), bi%JLMOS(k)) = UEGAT(k)
-            HBLROW(bi%ILMOS(k), bi%JLMOS(k)) = HBLGAT(k)
+        do 180 k = il1, il2
+            ik = shd%lc%ILMOS(k)
+            jk = shd%lc%JLMOS(k)
+            CDHROW(ik, jk) = CDHGAT(k)
+            CDMROW(ik, jk) = CDMGAT(k)
+            HFSROW(ik, jk) = HFSGAT(k)
+            TFXROW(ik, jk) = TFXGAT(k)
+            QEVPROW(ik, jk) = QEVPGAT(k)
+            QFSROW(ik, jk) = QFSGAT(k)
+            QFXROW(ik, jk) = QFXGAT(k)
+            PETROW(ik, jk) = PETGAT(k)
+            GAROW(ik, jk) = GAGAT(k)
+            EFROW(ik, jk) = EFGAT(k)
+            GTROW(ik, jk) = GTGAT(k)
+            QGROW(ik, jk) = QGGAT(k)
+            ALVSROW(ik, jk) = ALVSGAT(k)
+            ALIRROW(ik, jk) = ALIRGAT(k)
+            SFCTROW(ik, jk) = SFCTGAT(k)
+            SFCUROW(ik, jk) = SFCUGAT(k)
+            SFCVROW(ik, jk) = SFCVGAT(k)
+            SFCQROW(ik, jk) = SFCQGAT(k)
+            FSNOROW(ik, jk) = FSNOGAT(k)
+            FSGVROW(ik, jk) = FSGVGAT(k)
+            FSGSROW(ik, jk) = FSGSGAT(k)
+            FSGGROW(ik, jk) = FSGGGAT(k)
+            FLGVROW(ik, jk) = FLGVGAT(k)
+            FLGSROW(ik, jk) = FLGSGAT(k)
+            FLGGROW(ik, jk) = FLGGGAT(k)
+            HFSCROW(ik, jk) = HFSCGAT(k)
+            HFSSROW(ik, jk) = HFSSGAT(k)
+            HFSGROW(ik, jk) = HFSGGAT(k)
+            HEVCROW(ik, jk) = HEVCGAT(k)
+            HEVSROW(ik, jk) = HEVSGAT(k)
+            HEVGROW(ik, jk) = HEVGGAT(k)
+            HMFCROW(ik, jk) = HMFCGAT(k)
+            HMFNROW(ik, jk) = HMFNGAT(k)
+            HTCCROW(ik, jk) = HTCCGAT(k)
+            HTCSROW(ik, jk) = HTCSGAT(k)
+            PCFCROW(ik, jk) = PCFCGAT(k)
+            PCLCROW(ik, jk) = PCLCGAT(k)
+            PCPNROW(ik, jk) = PCPNGAT(k)
+            PCPGROW(ik, jk) = PCPGGAT(k)
+            QFGROW(ik, jk) = QFGGAT(k)
+            QFNROW(ik, jk) = QFNGAT(k)
+            QFCLROW(ik, jk) = QFCLGAT(k)
+            QFCFROW(ik, jk) = QFCFGAT(k)
+            ROFROW(ik, jk) = ROFGAT(k)
+            ROFOROW(ik, jk) = ROFOGAT(k)
+            ROFSROW(ik, jk) = ROFSGAT(k)
+            ROFBROW(ik, jk) = ROFBGAT(k)
+            TROFROW(ik, jk) = TROFGAT(k)
+            TROOROW(ik, jk) = TROOGAT(k)
+            TROSROW(ik, jk) = TROSGAT(k)
+            TROBROW(ik, jk) = TROBGAT(k)
+            ROFCROW(ik, jk) = ROFCGAT(k)
+            ROFNROW(ik, jk) = ROFNGAT(k)
+            ROVGROW(ik, jk) = ROVGGAT(k)
+            WTRCROW(ik, jk) = WTRCGAT(k)
+            WTRSROW(ik, jk) = WTRSGAT(k)
+            WTRGROW(ik, jk) = WTRGGAT(k)
+            DRROW(ik, jk) = DRGAT(k)
+            WTABROW(ik, jk) = WTABGAT(k)
+            ILMOROW(ik, jk) = ILMOGAT(k)
+            UEROW(ik, jk) = UEGAT(k)
+            HBLROW(ik, jk) = HBLGAT(k)
 180     continue
 !>
-        do 190 l = 1, bi%IGND
-            do 190 k = 1, bi%NML
-                HMFGROW(bi%ILMOS(k), bi%JLMOS(k), l) = HMFGGAT(k, l)
-                HTCROW(bi%ILMOS(k), bi%JLMOS(k), l) = HTCGAT(k, l)
-                QFCROW(bi%ILMOS(k), bi%JLMOS(k), l) = QFCGAT(k, l)
+        do 190 l = 1, IGND
+            do 190 k = il1, il2
+                ik = shd%lc%ILMOS(k)
+                jk = shd%lc%JLMOS(k)
+                HMFGROW(ik, jk, l) = HMFGGAT(k, l)
+                HTCROW(ik, jk, l) = HTCGAT(k, l)
+                QFCROW(ik, jk, l) = QFCGAT(k, l)
 190     continue
 !>
         do 230 m = 1, 50
             do 220 l = 1, 6
-                do 210 k = 1, bi%NML
-                    ITCTROW(bi%ILMOS(k), bi%JLMOS(k), l, m) = ITCTGAT(k, l, m)
+                do 210 k = il1, il2
+                    ITCTROW(shd%lc%ILMOS(k), shd%lc%JLMOS(k), l, m) = ITCTGAT(k, l, m)
 210     continue
 220     continue
 230     continue
@@ -2891,8 +2912,8 @@ program RUNMESH
     if (RESUMEFLAG == 3) then
         call read_init_prog_variables_class(CMAIROW, QACROW, TACROW, &
                                             TBASROW, TSFSROW, WSNOROW, &
-                                            cp, bi%NA, bi%NTYPE, &
-                                            bi%IGND, fls)
+                                            cp, NA, NTYPE, &
+                                            IGND, fls)
     end if !(RESUMEFLAG == 3) then
 
 !> *********************************************************************
@@ -2904,8 +2925,8 @@ program RUNMESH
                 GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
                 PSIWROW, DLZWROW, ZBTWROW, ALGWROW, ALGDROW, &
                 cp%SANDROW, cp%CLAYROW , cp%ORGMROW, sl%DELZ, sl%ZBOT, &
-                cp%SDEPROW, ISNDROW, IGDRROW, bi%NA, bi%NTYPE, &
-                1, bi%NA, NMTEST, bi%IGND, ICTEMMOD, &
+                cp%SDEPROW, ISNDROW, IGDRROW, NA, NTYPE, &
+                1, NA, NMTEST, IGND, ICTEMMOD, &
                 SV%WC_THPOR, SV%WC_THLRET, SV%WC_THLMIN, SV%WC_BI, SV%WC_PSISAT, &
                 SV%WC_GRKSAT, SV%WC_HCPS, SV%WC_TCS)
 
@@ -2913,16 +2934,16 @@ program RUNMESH
 !> ******************************************************************
 !> DGP - June 3, 2011: Now that variables are shared, moved from WD3
 !> flag to ensure allocation.
-    allocate(BTC(bi%NTYPE, bi%IGND), BCAP(bi%NTYPE, bi%IGND), DCOEFF(bi%NTYPE, bi%IGND), &
-             BFCAP(bi%NTYPE, bi%IGND), BFCOEFF(bi%NTYPE, bi%IGND), BFMIN(bi%NTYPE, bi%IGND), &
-             BQMAX(bi%NTYPE, bi%IGND), stat = PAS)
+    allocate(BTC(NTYPE, IGND), BCAP(NTYPE, IGND), DCOEFF(NTYPE, IGND), &
+             BFCAP(NTYPE, IGND), BFCOEFF(NTYPE, IGND), BFMIN(NTYPE, IGND), &
+             BQMAX(NTYPE, IGND), stat = PAS)
 
 !> Call WATDRN3B to set WATDRN (Ric) variables
 !> ******************************************************************
 !> DGP - May 5, 2011: Added.
     if (PAS /= 0) print *, 'Error allocating on WD3 for new WATDRN.'
     call WATDRN3B(PSISROW, THPROW, GRKSROW, BIROW, cp%XSLPROW, cp%DDROW, &
-                  bi%NA, bi%NTYPE, bi%IGND, &
+                  NA, NTYPE, IGND, &
                   BTC, BCAP, DCOEFF, BFCAP, BFCOEFF, BFMIN, BQMAX, &
                   cp%SANDROW, cp%CLAYROW)
 
@@ -2932,7 +2953,7 @@ program RUNMESH
     ENDDATE = .false.
     ENDDATA = .false.
 
-    call climate_module_loaddata(bi, .true., cm, ENDDATA)
+    call climate_module_loaddata(shd, .true., cm, NML, il1, il2, ENDDATA)
 
     if (ipid == 0) then
         TOTAL_STORE = 0.0
@@ -2976,9 +2997,9 @@ program RUNMESH
             wrt_900_3 = 'THIC'
             wrt_900_4 = 'THLQIC'
 
-            do i = 1, bi%IGND
+            do i = 1, IGND
                 write(strInt, '(i1)') i
-                if (i < bi%IGND) then
+                if (i < IGND) then
                     wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(strInt)) // ',THLQ'
                     wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(strInt)) // ',THIC'
                     wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(strInt)) // ',THLQIC'
@@ -2987,7 +3008,7 @@ program RUNMESH
                     wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(strInt)) // ','
                     wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(strInt)) // ','
                 end if
-            end do !> i = 1, bi%IGND
+            end do !> i = 1, IGND
 
             wrt_900_f = trim(adjustl(wrt_900_1)) // &
                 trim(adjustl(wrt_900_2)) // &
@@ -3010,7 +3031,7 @@ program RUNMESH
 !> (MK MacDonald, Sept 2010)
 !>**********************************************************************
         if (PBSMFLAG == 1) then
-            do i = 1, bi%NA  !i = 2, bi%NA
+            do i = 1, NA  !i = 2, NA
                 do m = 1, NMTEST
                     if (cp%SNOROW(i, m) <= 0.0) then
                         DrySnowROW(i, m) = 0.0 !1 = snowpack is dry (i.e. cold)
@@ -3066,8 +3087,8 @@ program RUNMESH
 !BEGIN: PDMROF
                 CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM,  &
 !END: PDMROF
-                bi%ILMOS, bi%JLMOS, bi%IWMOS, bi%JWMOS, bi%NML, bi%NA, bi%NTYPE, &
-                bi%NA*bi%NTYPE, bi%IGND, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
+                shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, NA, NTYPE, &
+                NML, il1, il2, IGND, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
                 cp%THICROW, cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, &
                 cp%TSNOROW, cp%RHOSROW, cp%SNOROW, cp%TCANROW, &
                 cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, cp%FCANROW, &
@@ -3100,23 +3121,13 @@ program RUNMESH
                 DriftROW, SublROW, DepositionROW, &
                 DriftGAT, SublGAT, DepositionGAT)
 
-!todo+++: Perhaps land-unit indexing can be done prior in the sequence
-!todo+++: of initialization, after reading the drainage database.
-!todo+++: Then, variables could be allocated (il1:il2) instead of
-!todo+++: (1:ILG) to reduce the memory footprint of the model per node.
-!> *********************************************************************
-!> Calculate Indices
-!> *********************************************************************
-
-    call GetIndices(inp, izero, ipid, bi%NML, bi%ILMOS, il1, il2, ilen)
-
     !> Initialize and open files for CLASS output.
     if (WF_NUM_POINTS > 0) then
 
         !> After GATPREP. Determine the GAT-index of the output point.
         do k = il1, il2
             do i = 1, WF_NUM_POINTS
-                if (op%N_OUT(i) == bi%ILMOS(k) .and. op%II_OUT(i) == bi%JLMOS(k)) op%K_OUT(i) = k
+                if (op%N_OUT(i) == shd%lc%ILMOS(k) .and. op%II_OUT(i) == shd%lc%JLMOS(k)) op%K_OUT(i) = k
             end do
         end do
 
@@ -3130,8 +3141,8 @@ program RUNMESH
                  co%RCANACC(WF_NUM_POINTS), co%SCANACC(WF_NUM_POINTS), co%GROACC(WF_NUM_POINTS), co%FSINACC(WF_NUM_POINTS), &
                  co%FLINACC(WF_NUM_POINTS), co%FLUTACC(WF_NUM_POINTS), &
                  co%TAACC(WF_NUM_POINTS), co%UVACC(WF_NUM_POINTS), co%PRESACC(WF_NUM_POINTS), co%QAACC(WF_NUM_POINTS))
-        allocate(co%TBARACC(WF_NUM_POINTS, bi%IGND), co%THLQACC(WF_NUM_POINTS, bi%IGND), co%THICACC(WF_NUM_POINTS, bi%IGND), &
-                 co%THALACC(WF_NUM_POINTS, bi%IGND), co%GFLXACC(WF_NUM_POINTS, bi%IGND))
+        allocate(co%TBARACC(WF_NUM_POINTS, IGND), co%THLQACC(WF_NUM_POINTS, IGND), co%THICACC(WF_NUM_POINTS, IGND), &
+                 co%THALACC(WF_NUM_POINTS, IGND), co%GFLXACC(WF_NUM_POINTS, IGND))
 
         !> Initialize the CLASS output variables.
         co%PREACC = 0.0
@@ -3202,7 +3213,7 @@ program RUNMESH
 
                 !> CLASSOF2.
                 write(FMT, *) ''
-                do j = 1, bi%IGND
+                do j = 1, IGND
                     write(IGND_CHAR, *) j
                     IGND_CHAR = adjustl(IGND_CHAR)
                     FMT = trim(adjustl(FMT)) // 'TBARACC(I ' // trim(IGND_CHAR) // ')-TFREZ,THLQACC(I ' // &
@@ -3222,7 +3233,7 @@ program RUNMESH
 
                 !> CLASSOF5.
                 write(FMT, *) ''
-                do j = 1, bi%IGND
+                do j = 1, IGND
                     write(IGND_CHAR, *) j
                     IGND_CHAR = adjustl(IGND_CHAR)
                     FMT = trim(adjustl(FMT)) // 'TBARROW(I ' // trim(IGND_CHAR) // ')-TFREZ,THLQROW(I ' // &
@@ -3241,13 +3252,13 @@ program RUNMESH
 
                 !> CLASSOF8.
                 write(FMT, *) ''
-                do j = 1, bi%IGND
+                do j = 1, IGND
                     write(IGND_CHAR, *) j
                     IGND_CHAR = adjustl(IGND_CHAR)
                     FMT = trim(adjustl(FMT)) // ',HMFGROW(I M ' // trim(IGND_CHAR) // ')'
                 end do
                 FMT = trim(adjustl(FMT)) // ',HTCCROW(I M),HTCSROW(I M)'
-                do j = 1, bi%IGND
+                do j = 1, IGND
                     write(IGND_CHAR, *) j
                     IGND_CHAR = adjustl(IGND_CHAR)
                     FMT = trim(adjustl(FMT)) // ',HTCROW(I M ' // trim(IGND_CHAR) // ')'
@@ -3259,7 +3270,7 @@ program RUNMESH
 
                 !> CLASSOF9.
                 write(FMT, *) ''
-                do j = 1, bi%IGND
+                do j = 1, IGND
                     write(IGND_CHAR, *) j
                     IGND_CHAR = adjustl(IGND_CHAR)
                     FMT = trim(adjustl(FMT)) // 'QFCROW(I M ' // trim(IGND_CHAR) // '),'
@@ -3271,12 +3282,12 @@ program RUNMESH
 
                 !> GRU water balance file.
                 write(FMT, *) ''
-                do j = 1, bi%IGND
+                do j = 1, IGND
                     write(IGND_CHAR, *) j
                     IGND_CHAR = adjustl(IGND_CHAR)
                     FMT = trim(adjustl(FMT)) // 'THLQ' // trim(IGND_CHAR) // ','
                 end do
-                do j = 1, bi%IGND
+                do j = 1, IGND
                     write(IGND_CHAR, *) j
                     IGND_CHAR = adjustl(IGND_CHAR)
                     FMT = trim(adjustl(FMT)) // 'THIC' // trim(IGND_CHAR) // ','
@@ -3315,7 +3326,7 @@ program RUNMESH
 
     !> MAM - Linearly interpolate forcing data for intermediate time steps
         if (INTERPOLATIONFLAG == 1) then
-            call climate_module_interpolatedata(bi, FAREGAT, cm)
+            call climate_module_interpolatedata(shd, FAREGAT, cm, NML, il1, il2)
         end if
         UVGRD = max(VMIN, cm%clin(cfk%UV)%climvGrd)
         VMODGRD = UVGRD
@@ -3380,18 +3391,19 @@ program RUNMESH
         DECL = sin(2.0*PI*(284.0 + RDAY)/365.0)*23.45*PI/180.0
         HOUR = (real(HOUR_NOW) + real(MINS_NOW)/60.0)*PI/12.0 - PI
 
-        do i = il1, il2
-            COSZ = sin(RADJGAT(i))*sin(DECL) + cos(RADJGAT(i))*cos(DECL)*cos(HOUR)
-            CSZGAT(i) = sign(max(abs(COSZ), 1.0e-3), COSZ)
-            CSZGRD(bi%ILMOS(i)) = CSZGAT(i)
-            if (PREGAT(i) > 0.0) then
+        do k = il1, il2
+            ik = shd%lc%ILMOS(k)
+            COSZ = sin(RADJGAT(k))*sin(DECL) + cos(RADJGAT(k))*cos(DECL)*cos(HOUR)
+            CSZGAT(k) = sign(max(abs(COSZ), 1.0e-3), COSZ)
+            CSZGRD(ik) = CSZGAT(k)
+            if (PREGAT(k) > 0.0) then
     !todo: there isn't a GAT variable for this (although, there might be for the canopy)?
-                XDIFFUS(bi%ILMOS(i)) = 1.0
+                XDIFFUS(ik) = 1.0
             else
-                XDIFFUS(bi%ILMOS(i)) = max(0.0, min(1.0 - 0.9*COSZ, 1.0))
+                XDIFFUS(ik) = max(0.0, min(1.0 - 0.9*COSZ, 1.0))
             end if
-            FCLOGAT(i) = XDIFFUS(bi%ILMOS(i))
-            FCLOGRD(bi%ILMOS(i)) = FCLOGAT(i)
+            FCLOGAT(k) = XDIFFUS(ik)
+            FCLOGRD(ik) = FCLOGAT(k)
         end do
 
 !> *********************************************************************
@@ -3483,21 +3495,21 @@ program RUNMESH
         call CLASSI(VPDGAT, TADPGAT, PADRGAT, RHOAGAT, RHSIGAT, &
                     RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, TAGAT, QAGAT, &
                     PREGAT, RPREGAT, SPREGAT, PRESGAT, &
-                    IPCP, bi%ILG, il1, il2)
+                    IPCP, NML, il1, il2)
 
         if (ipid == 0) then
 
 !> Calculate initial storage (after reading in resume.txt file if applicable)
             if (JAN == 1) then
                 INIT_STORE = 0.0
-                do i = 1, bi%NA
-                    if (bi%FRAC(i) >= 0.0) then
+                do i = 1, NA
+                    if (shd%FRAC(i) >= 0.0) then
                         do m = 1, NMTEST
                             INIT_STORE = INIT_STORE + cp%FAREROW(i, m)* &
                                 (cp%RCANROW(i, m) + cp%SCANROW(i, m) + cp%SNOROW(i, m) + WSNOROW(i, m) + cp%ZPNDROW(i, m)*RHOW)
                             wb%stg(i) = cp%FAREROW(i, m)* &
                                 (cp%RCANROW(i, m) + cp%SCANROW(i, m) + cp%SNOROW(i, m) + WSNOROW(i, m) + cp%ZPNDROW(i, m)*RHOW)
-                            do j = 1, bi%IGND
+                            do j = 1, IGND
                                 INIT_STORE = INIT_STORE + cp%FAREROW(i, m)* &
                                     (cp%THLQROW(i, m, j)*RHOW + cp%THICROW(i, m, j)*RHOICE)*DLZWROW(i, m, j)
                                 wb%stg(i) = cp%FAREROW(i, m)* &
@@ -3522,7 +3534,7 @@ program RUNMESH
                                                             cp%SCANROW(:, m) + &
                                                             cp%SNOROW(:, m)  + &
                                                             cp%ZPNDROW(:, m)*RHOW)
-                    do j = 1, bi%IGND
+                    do j = 1, IGND
                         STG_I(:) = STG_I(:) + cp%FAREROW(:, m)*(cp%THLQROW(:, m, j)*RHOW + &
                                                                 cp%THICROW(:, m, j)*RHOICE)*DLZWROW(:, m, j)
                     end do
@@ -3549,7 +3561,7 @@ program RUNMESH
                         TCANGAT, SNOGAT, WSNOGAT, TSNOGAT, THLQGAT, THICGAT, &
                         HCPSGAT, THPGAT, DLZWGAT, TBARGAT, ZPNDGAT, TPNDGAT, &
                         sl%DELZ, FCS, FGS, FC, FG, &
-                        il1, il2, bi%ILG, bi%IGND, N, &
+                        il1, il2, NML, IGND, N, &
                         DriftGAT, SublGAT)
 
 !> ========================================================================
@@ -3582,8 +3594,8 @@ program RUNMESH
                         FCANCMX, ICTEM, ICTEMMOD, RMATC, &
                         AILC, PAIC, L2MAX, NOL2PFTS, &
                         AILCG, AILCGS, FCANC, FCANCS, &
-                        JDAY_NOW, bi%ILG, il1, il2, &
-                        JLAT, N, ICAN, ICAN + 1, bi%IGND, IDISP, IZREF, &
+                        JDAY_NOW, NML, il1, il2, &
+                        JLAT, N, ICAN, ICAN + 1, IGND, IDISP, IZREF, &
                         IWF, IPAI, IHGT, IALC, IALS, IALG)
 !
 !-----------------------------------------------------------------------
@@ -3617,8 +3629,8 @@ program RUNMESH
                         CO2I2CS, COSZS, XDIFFUSC, SLAI, ICTEM, ICTEMMOD, RMATCTEM, &
                         FCANCMX, L2MAX, NOL2PFTS, CFLUXCG, CFLUXCS, ANCSVEG, ANCGVEG, &
                         RMLCSVEG, RMLCGVEG, FIELDSM, WILTSM, &
-                        ITC, ITCG, ITG, bi%ILG, il1, il2, JLAT, N, ICAN, &
-                        bi%IGND, IZREF, ISLFD, NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI)
+                        ITC, ITCG, ITG, NML, il1, il2, JLAT, N, ICAN, &
+                        IGND, IZREF, ISLFD, NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI)
 !
 !-----------------------------------------------------------------------
 !          * WATER BUDGET CALCULATIONS.
@@ -3661,14 +3673,14 @@ program RUNMESH
                         THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, GRKSGAT, &
                         THRAGAT, THFCGAT, DRNGAT, HCPSGAT, sl%DELZ, &
                         DLZWGAT, ZBTWGAT, XSLPGAT, XDGAT, WFSFGAT, KSGAT, &
-                        ISNDGAT, IGDRGAT, IWF, bi%NA*bi%NTYPE, il1, il2, N, &
-                        JLAT, ICAN, bi%IGND, bi%IGND + 1, bi%IGND + 2, &
+                        ISNDGAT, IGDRGAT, IWF, NML, il1, il2, N, &
+                        JLAT, ICAN, IGND, IGND + 1, IGND + 2, &
                         NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
                         MANNGAT, DDGAT, NCOUNT, &
                         t0_ACC(NMELT), SI, TSI, INFILTYPE, SNOWMELTD, SNOWMELTD_LAST, &
                         MELTRUNOFF, SNOWINFIL, CUMSNOWINFILCS, CUMSNOWINFILGS, &
                         SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, &
-                        bi%NA, bi%NTYPE, bi%ILMOS, bi%JLMOS, &
+                        NA, NTYPE, shd%lc%ILMOS, shd%lc%JLMOS, &
                         BTC, BCAP, DCOEFF, BFCAP, BFCOEFF, BFMIN, BQMAX, &
 !FOR PDMROF
                         CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
@@ -3698,7 +3710,7 @@ program RUNMESH
                              SFCTGAT, SFCUGAT, SFCQGAT, PRESGAT, PREGAT, &
                              DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
                              TSNOdsGAT, &
-                             bi%NA*bi%NTYPE, il1, il2, N, ZRFMGAT, ZOMLCS, ZOMLNS)
+                             NML, il1, il2, N, ZRFMGAT, ZOMLCS, ZOMLNS)
             end if
 !========================================================================
 !
@@ -3713,17 +3725,17 @@ program RUNMESH
                         TCANGAT, SNOGAT, WSNOGAT, TSNOGAT, THLQGAT, THICGAT, &
                         HCPSGAT, THPGAT, DLZWGAT, TBARGAT, ZPNDGAT, TPNDGAT, &
                         sl%DELZ, FCS, FGS, FC, FG, &
-                        il1, il2, bi%ILG, bi%IGND, N, &
+                        il1, il2, NML, IGND, N, &
                         DriftGAT, SublGAT)
 !
 !=======================================================================
 !
 !          *Redistribute blowing snow mass between GRUs
 !
-            call REDISTRIB_SNOW(bi%ILG, 1, bi%NA, bi%NTYPE, bi%NML, TSNOGAT, ZSNOW, &
+            call REDISTRIB_SNOW(NML, 1, NA, NTYPE, NML, TSNOGAT, ZSNOW, &
                                 RHOSGAT, SNOGAT, TSNOCS, ZSNOCS, HCPSCS, RHOSCS, TSNOGS, &
                                 ZSNOGS, HCPSGS, RHOSGS, TSNOWC, ZSNOWC, HCPSC, RHOSC, TSNOWG, &
-                                ZSNOWG, HCPSG, RHOSG, cp%GCGRD, bi%ILMOS, DriftGAT, FAREGAT, &
+                                ZSNOWG, HCPSG, RHOSG, cp%GCGRD, shd%lc%ILMOS, DriftGAT, FAREGAT, &
                                 TSNOdsGAT, DistribGAT, WSNOCS, WSNOGS, FCS, FGS, FC, FG, DepositionGAT, &
                                 TROOGAT, ROFOGAT, TROFGAT, ROFGAT, ROFNGAT, PCPGGAT, HTCSGAT, WSNOGAT, N)
 !
@@ -3742,7 +3754,7 @@ program RUNMESH
 
     !> Send/receive process.
         itag = NSUM_TOTAL*1000
-        invars = 14 + 4*bi%IGND
+        invars = 14 + 4*IGND
 
     !> Update the variable count per the active control flags.
         if (SAVERESUMEFLAG == 3) invars = invars + 10 + 4
@@ -3771,7 +3783,7 @@ program RUNMESH
             call mpi_isend(WSNOGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(HFSGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(QEVPGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            do j = 1, bi%IGND
+            do j = 1, IGND
                 call mpi_isend(THLQGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_isend(THICGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_isend(GFLXGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
@@ -3817,44 +3829,44 @@ program RUNMESH
                 irqst = mpi_request_null
                 imstat = 0
 
-                call GetIndices(inp, izero, u, bi%NML, bi%ILMOS, il1, il2, ilen)
+                call GetIndices(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iilen)
 
                 i = 1
-                call mpi_irecv(PREGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(QFSGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(ROFGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(ROFOGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(ROFSGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(ROFBGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(SCANGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(RCANGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(ZPNDGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(SNOGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(FSNOGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(WSNOGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(HFSGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(QEVPGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                do j = 1, bi%IGND
-                    call mpi_irecv(THLQGAT(il1:il2, j), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(THICGAT(il1:il2, j), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(GFLXGAT(il1:il2, j), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(TBARGAT(il1:il2, j), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(PREGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(QFSGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(ROFGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(ROFOGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(ROFSGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(ROFBGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(SCANGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(RCANGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(ZPNDGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(SNOGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(FSNOGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(WSNOGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(HFSGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(QEVPGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                do j = 1, IGND
+                    call mpi_irecv(THLQGAT(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(THICGAT(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(GFLXGAT(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(TBARGAT(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end do
 
             !> Send optional variables per the active control flags.
                 if (SAVERESUMEFLAG == 3) then
-                    call mpi_irecv(ALBSGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(CMAIGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(GROGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(QACGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(RHOSGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(TACGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(TBASGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(TCANGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(TPNDGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(TSNOGAT(il1:il2), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(ALBSGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(CMAIGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(GROGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(QACGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(RHOSGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(TACGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(TBASGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(TCANGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(TPNDGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(TSNOGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                     do j = 1, 4
-                        call mpi_irecv(TSFSGAT(il1:il2, j), ilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                        call mpi_irecv(TSFSGAT(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                     end do
                 end if !(SAVERESUMEFLAG == 3) then
 
@@ -3915,7 +3927,7 @@ program RUNMESH
                 else
                     TPN = 0.0
                 end if
-                if (bi%ILW == 1) then
+                if (shd%wc%ILG == 1) then
                     GTOUT = GTGAT(i) - TFREZ
                 else
                     GTOUT = 0.0
@@ -3934,7 +3946,7 @@ program RUNMESH
                       "(f7.2,',', 2(f6.3,',')), f8.2,',', 2(f8.4,','), f8.2,',', f8.3,',')") &
                     HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, &
                     (TBARGAT(i, j) - TFREZ, THLQGAT(i, j), &
-                    THICGAT(i, j), j = 1, bi%IGND), TCN, &
+                    THICGAT(i, j), j = 1, IGND), TCN, &
                     RCANGAT(i), SCANGAT(i), TSN, ZSN
                 write(150 + k*10 + 6, &
                       "(i2,',', i3,',', i5,',', 2(f10.2,','), f12.6,',', f10.2,',', f8.2,',', f10.2,',', f15.9,',')") &
@@ -3952,13 +3964,13 @@ program RUNMESH
                     HFSCGAT(i), HFSSGAT(i), HFSGGAT(i), &
                     HEVCGAT(i), HEVSGAT(i), HEVGGAT(i), &
                     HMFCGAT(i), HMFNGAT(i), &
-                    (HMFGGAT(i, j), j = 1, bi%IGND), &
+                    (HMFGGAT(i, j), j = 1, IGND), &
                     HTCCGAT(i), HTCSGAT(i), &
-                    (HTCGAT(i, j), j = 1, bi%IGND)
+                    (HTCGAT(i, j), j = 1, IGND)
                 write(150 + k*10 + 9, "(999(e12.4,','))") &
                     PCFCGAT(i), PCLCGAT(i), PCPNGAT(i), &
                     PCPGGAT(i), QFCFGAT(i), QFCLGAT(i), &
-                    QFNGAT(i), QFGGAT(i), (QFCGAT(i, j), j = 1, bi%IGND), &
+                    QFNGAT(i), QFGGAT(i), (QFCGAT(i, j), j = 1, IGND), &
                     ROFCGAT(i), ROFNGAT(i), &
                     ROFOGAT(i), ROFGAT(i), WTRCGAT(i), &
                     WTRSGAT(i), WTRGGAT(i)
@@ -3966,12 +3978,12 @@ program RUNMESH
                     HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, PREGAT(i)*DELT, QFSGAT(i)*DELT, &
                     ROFGAT(i)*DELT, ROFOGAT(i)*DELT, ROFSGAT(i)*DELT, ROFBGAT(i)*DELT, &
                     SCANGAT(i), RCANGAT(i), SNOGAT(i), WSNOGAT(i), &
-                    ZPNDGAT(i)*RHOW, (THLQGAT(i, j)*RHOW*DLZWGAT(i, j), j = 1, bi%IGND), &
-                    (THICGAT(i, j)*RHOICE*DLZWGAT(i, j), j = 1, bi%IGND)
+                    ZPNDGAT(i)*RHOW, (THLQGAT(i, j)*RHOW*DLZWGAT(i, j), j = 1, IGND), &
+                    (THICGAT(i, j)*RHOICE*DLZWGAT(i, j), j = 1, IGND)
 
             !> Calculate accumulated grid variables.
                 do i = il1, il2
-                    if (bi%ILMOS(i) == op%N_OUT(k)) then
+                    if (shd%lc%ILMOS(i) == op%N_OUT(k)) then
                         co%PREACC(k) = co%PREACC(k) + PREGAT(i)*FAREGAT(i)*DELT
                         co%GTACC(k) = co%GTACC(k) + GTGAT(i)*FAREGAT(i)
                         co%QEVPACC(k) = co%QEVPACC(k) + QEVPGAT(i)*FAREGAT(i)
@@ -3983,8 +3995,8 @@ program RUNMESH
                         co%ROFSACC(k) = co%ROFSACC(k) + ROFSGAT(i)*FAREGAT(i)*DELT
                         co%ROFBACC(k) = co%ROFBACC(k) + ROFBGAT(i)*FAREGAT(i)*DELT
                         co%WTBLACC(k) = co%WTBLACC(k) + WTABGAT(i)*FAREGAT(i)
-                        do j = 1, bi%IGND
-                            co%TBARACC(k, j) = co%TBARACC(k, j) + TBARGAT(i, j)*bi%ACLASS(bi%ILMOS(i), bi%JLMOS(i))
+                        do j = 1, IGND
+                            co%TBARACC(k, j) = co%TBARACC(k, j) + TBARGAT(i, j)*shd%lc%ACLASS(shd%lc%ILMOS(i), shd%lc%JLMOS(i))
                             co%THLQACC(k, j) = co%THLQACC(k, j) + THLQGAT(i, j)*FAREGAT(i)
                             co%THICACC(k, j) = co%THICACC(k, j) + THICGAT(i, j)*FAREGAT(i)
                             co%THALACC(k, j) = co%THALACC(k, j) + (THLQGAT(i, j) + THICGAT(i, j))*FAREGAT(i)
@@ -4077,7 +4089,7 @@ program RUNMESH
                     else
                         TSN = 0.0
                     end if
-                    if (bi%ILW == 1) then
+                    if (shd%wc%ILG == 1) then
                         GTOUT = co%GTACC(k) - TFREZ
                     else
                         GTOUT = 0.0
@@ -4092,7 +4104,7 @@ program RUNMESH
                     write(150 + k*10 + 2, "(i4,',', i5,',', " // adjustl(IGND_CHAR) // "((f8.2,','), " // &
                           "2(f6.3,',')), f8.2,',', 2(f7.4,','), 2(f8.2,','))") &
                         JDAY_NOW, YEAR_NOW, (co%TBARACC(k, j) - TFREZ, &
-                        co%THLQACC(k, j), co%THICACC(k, j), j = 1, bi%IGND), &
+                        co%THLQACC(k, j), co%THICACC(k, j), j = 1, IGND), &
                         TCN, co%RCANACC(k), co%SCANACC(k), TSN, ZSN
                     write(150 + k*10 + 3, "(i4,',', i5,',', 3(f9.2,','), f8.2,',', " // &
                           "f10.2,',', e12.3,',', 2(f12.3,','))") &
@@ -4148,12 +4160,12 @@ program RUNMESH
             if (NR2CFILES > 0 .and. mod(NCOUNT*30, DELTR2C) == 0) then
                 call FIND_MONTH (JDAY_NOW, YEAR_NOW, ensim_month)
                 call FIND_DAY (JDAY_NOW, YEAR_NOW, ensim_day)
-                call WRITE_R2C_DATA(bi%NML, NLTEST, NMTEST, NCOUNT, MINS_NOW, bi%ACLASS, &
-                                    bi%NA, bi%xxx, bi%yyy, bi%xCount, bi%yCount, bi%ILMOS, bi%JLMOS, bi%ILG, &
+                call WRITE_R2C_DATA(shd%lc%NML, NLTEST, NMTEST, NCOUNT, MINS_NOW, shd%lc%ACLASS, &
+                                    NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, &
                                     NR2C, NR2CFILES, R2CFILEUNITSTART, GRD, GAT, &
                                     GRDGAT, NR2CSTATES, R2C_ATTRIBUTES, FRAME_NO_NEW, YEAR_NOW, &
                                     ensim_MONTH, ensim_DAY, HOUR_NOW, MINS_NOW, ICAN, &
-                                    ICAN + 1, bi%IGND, &
+                                    ICAN + 1, IGND, &
                                     TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
                                     TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
                                     TCANGAT, RCANGAT, SCANGAT, GROGAT, CMAIGAT, &
@@ -4294,97 +4306,98 @@ program RUNMESH
             wb_h%frws = 0.0
 
             !$omp parallel do
-            do i = 1, bi%NML
-                CDHGRD(bi%ILMOS(i)) = CDHGRD(bi%ILMOS(i)) + CDHGAT(i)*FAREGAT(i)
-                CDMGRD(bi%ILMOS(i)) = CDMGRD(bi%ILMOS(i)) + CDMGAT(i)*FAREGAT(i)
-                HFSGRD(bi%ILMOS(i)) = HFSGRD(bi%ILMOS(i)) + HFSGAT(i)*FAREGAT(i)
-                TFXGRD(bi%ILMOS(i)) = TFXGRD(bi%ILMOS(i)) + TFXGAT(i)*FAREGAT(i)
-                QEVPGRD(bi%ILMOS(i)) = QEVPGRD(bi%ILMOS(i)) + QEVPGAT(i)*FAREGAT(i)
-                QFSGRD(bi%ILMOS(i)) = QFSGRD(bi%ILMOS(i)) + QFSGAT(i)*FAREGAT(i)
-                QFXGRD(bi%ILMOS(i)) = QFXGRD(bi%ILMOS(i)) + QFXGAT(i)*FAREGAT(i)
-                PETGRD(bi%ILMOS(i)) = PETGRD(bi%ILMOS(i)) + PETGAT(i)*FAREGAT(i)
-                GAGRD(bi%ILMOS(i)) = GAGRD(bi%ILMOS(i)) + GAGAT(i)*FAREGAT(i)
-                EFGRD(bi%ILMOS(i)) = EFGRD(bi%ILMOS(i)) + EFGAT(i)*FAREGAT(i)
-                GTGRD(bi%ILMOS(i)) = GTGRD(bi%ILMOS(i)) + GTGAT(i)*FAREGAT(i)
-                QGGRD(bi%ILMOS(i)) = QGGRD(bi%ILMOS(i)) + QGGAT(i)*FAREGAT(i)
-!                TSFGRD(bi%ILMOS(i)) = TSFGRD(bi%ILMOS(i)) + TSFGAT(i)*FAREGAT(i)
-                ALVSGRD(bi%ILMOS(i)) = ALVSGRD(bi%ILMOS(i)) + ALVSGAT(i)*FAREGAT(i)
-                ALIRGRD(bi%ILMOS(i)) = ALIRGRD(bi%ILMOS(i)) + ALIRGAT(i)*FAREGAT(i)
-                SFCTGRD(bi%ILMOS(i)) = SFCTGRD(bi%ILMOS(i)) + SFCTGAT(i)*FAREGAT(i)
-                SFCUGRD(bi%ILMOS(i)) = SFCUGRD(bi%ILMOS(i)) + SFCUGAT(i)*FAREGAT(i)
-                SFCVGRD(bi%ILMOS(i)) = SFCVGRD(bi%ILMOS(i)) + SFCVGAT(i)*FAREGAT(i)
-                SFCQGRD(bi%ILMOS(i)) = SFCQGRD(bi%ILMOS(i)) + SFCQGAT(i)*FAREGAT(i)
-                FSNOGRD(bi%ILMOS(i)) = FSNOGRD(bi%ILMOS(i)) + FSNOGAT(i)*FAREGAT(i)
-                FSGVGRD(bi%ILMOS(i)) = FSGVGRD(bi%ILMOS(i)) + FSGVGAT(i)*FAREGAT(i)
-                FSGSGRD(bi%ILMOS(i)) = FSGSGRD(bi%ILMOS(i)) + FSGSGAT(i)*FAREGAT(i)
-                FSGGGRD(bi%ILMOS(i)) = FSGGGRD(bi%ILMOS(i)) + FSGGGAT(i)*FAREGAT(i)
-                SNOGRD(bi%ILMOS(i)) = SNOGRD(bi%ILMOS(i)) + SNOGAT(i)*FAREGAT(i)
-                FLGVGRD(bi%ILMOS(i)) = FLGVGRD(bi%ILMOS(i)) + FLGVGAT(i)*FAREGAT(i)
-                FLGSGRD(bi%ILMOS(i)) = FLGSGRD(bi%ILMOS(i)) + FLGSGAT(i)*FAREGAT(i)
-                FLGGGRD(bi%ILMOS(i)) = FLGGGRD(bi%ILMOS(i)) + FLGGGAT(i)*FAREGAT(i)
-                HFSCGRD(bi%ILMOS(i)) = HFSCGRD(bi%ILMOS(i)) + HFSCGAT(i)*FAREGAT(i)
-                HFSSGRD(bi%ILMOS(i)) = HFSSGRD(bi%ILMOS(i)) + HFSSGAT(i)*FAREGAT(i)
-                HFSGGRD(bi%ILMOS(i)) = HFSGGRD(bi%ILMOS(i)) + HFSGGAT(i)*FAREGAT(i)
-                HEVCGRD(bi%ILMOS(i)) = HEVCGRD(bi%ILMOS(i)) + HEVCGAT(i)*FAREGAT(i)
-                HEVSGRD(bi%ILMOS(i)) = HEVSGRD(bi%ILMOS(i)) + HEVSGAT(i)*FAREGAT(i)
-                HEVGGRD(bi%ILMOS(i)) = HEVGGRD(bi%ILMOS(i)) + HEVGGAT(i)*FAREGAT(i)
-                HMFCGRD(bi%ILMOS(i)) = HMFCGRD(bi%ILMOS(i)) + HMFCGAT(i)*FAREGAT(i)
-                HMFNGRD(bi%ILMOS(i)) = HMFNGRD(bi%ILMOS(i)) + HMFNGAT(i)*FAREGAT(i)
-                HTCCGRD(bi%ILMOS(i)) = HTCCGRD(bi%ILMOS(i)) + HTCCGAT(i)*FAREGAT(i)
-                HTCSGRD(bi%ILMOS(i)) = HTCSGRD(bi%ILMOS(i)) + HTCSGAT(i)*FAREGAT(i)
-                PCFCGRD(bi%ILMOS(i)) = PCFCGRD(bi%ILMOS(i)) + PCFCGAT(i)*FAREGAT(i)
-                PCLCGRD(bi%ILMOS(i)) = PCLCGRD(bi%ILMOS(i)) + PCLCGAT(i)*FAREGAT(i)
-                PCPNGRD(bi%ILMOS(i)) = PCPNGRD(bi%ILMOS(i)) + PCPNGAT(i)*FAREGAT(i)
-                PCPGGRD(bi%ILMOS(i)) = PCPGGRD(bi%ILMOS(i)) + PCPGGAT(i)*FAREGAT(i)
-                QFGGRD(bi%ILMOS(i)) = QFGGRD(bi%ILMOS(i)) + QFGGAT(i)*FAREGAT(i)
-                QFNGRD(bi%ILMOS(i)) = QFNGRD(bi%ILMOS(i)) + QFNGAT(i)*FAREGAT(i)
-                QFCLGRD(bi%ILMOS(i)) = QFCLGRD(bi%ILMOS(i)) + QFCLGAT(i)*FAREGAT(i)
-                QFCFGRD(bi%ILMOS(i)) = QFCFGRD(bi%ILMOS(i)) + QFCFGAT(i)*FAREGAT(i)
-                ROFGRD(bi%ILMOS(i)) = ROFGRD(bi%ILMOS(i)) + ROFGAT(i)*FAREGAT(i)
-                ROFOGRD(bi%ILMOS(i)) = ROFOGRD(bi%ILMOS(i)) + ROFOGAT(i)*FAREGAT(i)
-                ROFSGRD(bi%ILMOS(i)) = ROFSGRD(bi%ILMOS(i)) + ROFSGAT(i)*FAREGAT(i)
-                ROFBGRD(bi%ILMOS(i)) = ROFBGRD(bi%ILMOS(i)) + ROFBGAT(i)*FAREGAT(i)
-                ROFCGRD(bi%ILMOS(i)) = ROFCGRD(bi%ILMOS(i)) + ROFCGAT(i)*FAREGAT(i)
-                ROFNGRD(bi%ILMOS(i)) = ROFNGRD(bi%ILMOS(i)) + ROFNGAT(i)*FAREGAT(i)
-                ROVGGRD(bi%ILMOS(i)) = ROVGGRD(bi%ILMOS(i)) + ROVGGAT(i)*FAREGAT(i)
-                WTRCGRD(bi%ILMOS(i)) = WTRCGRD(bi%ILMOS(i)) + WTRCGAT(i)*FAREGAT(i)
-                WTRSGRD(bi%ILMOS(i)) = WTRSGRD(bi%ILMOS(i)) + WTRSGAT(i)*FAREGAT(i)
-                WTRGGRD(bi%ILMOS(i)) = WTRGGRD(bi%ILMOS(i)) + WTRGGAT(i)*FAREGAT(i)
-                DRGRD(bi%ILMOS(i)) = DRGRD(bi%ILMOS(i)) + DRGAT(i)*FAREGAT(i)
-                WTABGRD(bi%ILMOS(i)) = WTABGRD(bi%ILMOS(i)) + WTABGAT(i)*FAREGAT(i)
-                ILMOGRD(bi%ILMOS(i)) = ILMOGRD(bi%ILMOS(i)) + ILMOGAT(i)*FAREGAT(i)
-                UEGRD(bi%ILMOS(i)) = UEGRD(bi%ILMOS(i)) + UEGAT(i)*FAREGAT(i)
-                HBLGRD(bi%ILMOS(i)) = HBLGRD(bi%ILMOS(i)) + HBLGAT(i)*FAREGAT(i)
-                wb_h%pre(bi%ILMOS(i)) = wb_h%pre(bi%ILMOS(i)) + FAREGAT(i)*PREGAT(i)*DELT
-                wb_h%evap(bi%ILMOS(i)) = wb_h%evap(bi%ILMOS(i)) + FAREGAT(i)*QFSGAT(i)*DELT
-                wb_h%rof(bi%ILMOS(i)) = wb_h%rof(bi%ILMOS(i)) + FAREGAT(i)*ROFGAT(i)*DELT
-                wb_h%rofo(bi%ILMOS(i)) = wb_h%rofo(bi%ILMOS(i)) + FAREGAT(i)*ROFOGAT(i)*DELT
-                wb_h%rofs(bi%ILMOS(i)) = wb_h%rofs(bi%ILMOS(i)) + FAREGAT(i)*ROFSGAT(i)*DELT
-                wb_h%rofb(bi%ILMOS(i)) = wb_h%rofb(bi%ILMOS(i)) + FAREGAT(i)*ROFBGAT(i)*DELT
-                wb_h%rcan(bi%ILMOS(i)) = wb_h%rcan(bi%ILMOS(i)) + FAREGAT(i)*RCANGAT(i)
-                            wb_h%sncan(bi%ILMOS(i)) = wb_h%sncan(bi%ILMOS(i)) + FAREGAT(i)*SCANGAT(i)
-                wb_h%pndw(bi%ILMOS(i)) = wb_h%pndw(bi%ILMOS(i)) + FAREGAT(i)*ZPNDGAT(i)*RHOW
-                wb_h%sno(bi%ILMOS(i)) = wb_h%sno(bi%ILMOS(i)) + FAREGAT(i)*SNOGAT(i)
-                wb_h%wsno(bi%ILMOS(i)) = wb_h%wsno(bi%ILMOS(i)) + FAREGAT(i)*WSNOGAT(i)
-                do j = 1, bi%IGND
-                    HMFGGRD(bi%ILMOS(i), j) = HMFGGRD(bi%ILMOS(i), j) + HMFGGAT(i, j)*FAREGAT(i)
-                    HTCGRD(bi%ILMOS(i), j) = HTCGRD(bi%ILMOS(i), j) + HTCGAT(i, j)*FAREGAT(i)
-                    QFCGRD(bi%ILMOS(i), j) = QFCGRD(bi%ILMOS(i), j) + QFCGAT(i, j)*FAREGAT(i)
-                    GFLXGRD(bi%ILMOS(i), j) = GFLXGRD(bi%ILMOS(i), j) + GFLXGAT(i, j)*FAREGAT(i)
-                    wb_h%lqws(bi%ILMOS(i), j) = wb_h%lqws(bi%ILMOS(i), j) + FAREGAT(i)*THLQGAT(i, j)*DLZWGAT(i, j)*RHOW
-                    wb_h%frws(bi%ILMOS(i), j) = wb_h%frws(bi%ILMOS(i), j) + FAREGAT(i)*THICGAT(i, j)*DLZWGAT(i, j)*RHOICE
+            do k = il1, il2
+                ik = shd%lc%ILMOS(k)
+                CDHGRD(ik) = CDHGRD(ik) + CDHGAT(k)*FAREGAT(k)
+                CDMGRD(ik) = CDMGRD(ik) + CDMGAT(k)*FAREGAT(k)
+                HFSGRD(ik) = HFSGRD(ik) + HFSGAT(k)*FAREGAT(k)
+                TFXGRD(ik) = TFXGRD(ik) + TFXGAT(k)*FAREGAT(k)
+                QEVPGRD(ik) = QEVPGRD(ik) + QEVPGAT(k)*FAREGAT(k)
+                QFSGRD(ik) = QFSGRD(ik) + QFSGAT(k)*FAREGAT(k)
+                QFXGRD(ik) = QFXGRD(ik) + QFXGAT(k)*FAREGAT(k)
+                PETGRD(ik) = PETGRD(ik) + PETGAT(k)*FAREGAT(k)
+                GAGRD(ik) = GAGRD(ik) + GAGAT(k)*FAREGAT(k)
+                EFGRD(ik) = EFGRD(ik) + EFGAT(k)*FAREGAT(k)
+                GTGRD(ik) = GTGRD(ik) + GTGAT(k)*FAREGAT(k)
+                QGGRD(ik) = QGGRD(ik) + QGGAT(k)*FAREGAT(k)
+!                TSFGRD(ik) = TSFGRD(ik) + TSFGAT(k)*FAREGAT(k)
+                ALVSGRD(ik) = ALVSGRD(ik) + ALVSGAT(k)*FAREGAT(k)
+                ALIRGRD(ik) = ALIRGRD(ik) + ALIRGAT(k)*FAREGAT(k)
+                SFCTGRD(ik) = SFCTGRD(ik) + SFCTGAT(k)*FAREGAT(k)
+                SFCUGRD(ik) = SFCUGRD(ik) + SFCUGAT(k)*FAREGAT(k)
+                SFCVGRD(ik) = SFCVGRD(ik) + SFCVGAT(k)*FAREGAT(k)
+                SFCQGRD(ik) = SFCQGRD(ik) + SFCQGAT(k)*FAREGAT(k)
+                FSNOGRD(ik) = FSNOGRD(ik) + FSNOGAT(k)*FAREGAT(k)
+                FSGVGRD(ik) = FSGVGRD(ik) + FSGVGAT(k)*FAREGAT(k)
+                FSGSGRD(ik) = FSGSGRD(ik) + FSGSGAT(k)*FAREGAT(k)
+                FSGGGRD(ik) = FSGGGRD(ik) + FSGGGAT(k)*FAREGAT(k)
+                SNOGRD(ik) = SNOGRD(ik) + SNOGAT(k)*FAREGAT(k)
+                FLGVGRD(ik) = FLGVGRD(ik) + FLGVGAT(k)*FAREGAT(k)
+                FLGSGRD(ik) = FLGSGRD(ik) + FLGSGAT(k)*FAREGAT(k)
+                FLGGGRD(ik) = FLGGGRD(ik) + FLGGGAT(k)*FAREGAT(k)
+                HFSCGRD(ik) = HFSCGRD(ik) + HFSCGAT(k)*FAREGAT(k)
+                HFSSGRD(ik) = HFSSGRD(ik) + HFSSGAT(k)*FAREGAT(k)
+                HFSGGRD(ik) = HFSGGRD(ik) + HFSGGAT(k)*FAREGAT(k)
+                HEVCGRD(ik) = HEVCGRD(ik) + HEVCGAT(k)*FAREGAT(k)
+                HEVSGRD(ik) = HEVSGRD(ik) + HEVSGAT(k)*FAREGAT(k)
+                HEVGGRD(ik) = HEVGGRD(ik) + HEVGGAT(k)*FAREGAT(k)
+                HMFCGRD(ik) = HMFCGRD(ik) + HMFCGAT(k)*FAREGAT(k)
+                HMFNGRD(ik) = HMFNGRD(ik) + HMFNGAT(k)*FAREGAT(k)
+                HTCCGRD(ik) = HTCCGRD(ik) + HTCCGAT(k)*FAREGAT(k)
+                HTCSGRD(ik) = HTCSGRD(ik) + HTCSGAT(k)*FAREGAT(k)
+                PCFCGRD(ik) = PCFCGRD(ik) + PCFCGAT(k)*FAREGAT(k)
+                PCLCGRD(ik) = PCLCGRD(ik) + PCLCGAT(k)*FAREGAT(k)
+                PCPNGRD(ik) = PCPNGRD(ik) + PCPNGAT(k)*FAREGAT(k)
+                PCPGGRD(ik) = PCPGGRD(ik) + PCPGGAT(k)*FAREGAT(k)
+                QFGGRD(ik) = QFGGRD(ik) + QFGGAT(k)*FAREGAT(k)
+                QFNGRD(ik) = QFNGRD(ik) + QFNGAT(k)*FAREGAT(k)
+                QFCLGRD(ik) = QFCLGRD(ik) + QFCLGAT(k)*FAREGAT(k)
+                QFCFGRD(ik) = QFCFGRD(ik) + QFCFGAT(k)*FAREGAT(k)
+                ROFGRD(ik) = ROFGRD(ik) + ROFGAT(k)*FAREGAT(k)
+                ROFOGRD(ik) = ROFOGRD(ik) + ROFOGAT(k)*FAREGAT(k)
+                ROFSGRD(ik) = ROFSGRD(ik) + ROFSGAT(k)*FAREGAT(k)
+                ROFBGRD(ik) = ROFBGRD(ik) + ROFBGAT(k)*FAREGAT(k)
+                ROFCGRD(ik) = ROFCGRD(ik) + ROFCGAT(k)*FAREGAT(k)
+                ROFNGRD(ik) = ROFNGRD(ik) + ROFNGAT(k)*FAREGAT(k)
+                ROVGGRD(ik) = ROVGGRD(ik) + ROVGGAT(k)*FAREGAT(k)
+                WTRCGRD(ik) = WTRCGRD(ik) + WTRCGAT(k)*FAREGAT(k)
+                WTRSGRD(ik) = WTRSGRD(ik) + WTRSGAT(k)*FAREGAT(k)
+                WTRGGRD(ik) = WTRGGRD(ik) + WTRGGAT(k)*FAREGAT(k)
+                DRGRD(ik) = DRGRD(ik) + DRGAT(k)*FAREGAT(k)
+                WTABGRD(ik) = WTABGRD(ik) + WTABGAT(k)*FAREGAT(k)
+                ILMOGRD(ik) = ILMOGRD(ik) + ILMOGAT(k)*FAREGAT(k)
+                UEGRD(ik) = UEGRD(ik) + UEGAT(k)*FAREGAT(k)
+                HBLGRD(ik) = HBLGRD(ik) + HBLGAT(k)*FAREGAT(k)
+                wb_h%pre(ik) = wb_h%pre(ik) + FAREGAT(k)*PREGAT(k)*DELT
+                wb_h%evap(ik) = wb_h%evap(ik) + FAREGAT(k)*QFSGAT(k)*DELT
+                wb_h%rof(ik) = wb_h%rof(ik) + FAREGAT(k)*ROFGAT(k)*DELT
+                wb_h%rofo(ik) = wb_h%rofo(ik) + FAREGAT(k)*ROFOGAT(k)*DELT
+                wb_h%rofs(ik) = wb_h%rofs(ik) + FAREGAT(k)*ROFSGAT(k)*DELT
+                wb_h%rofb(ik) = wb_h%rofb(ik) + FAREGAT(k)*ROFBGAT(k)*DELT
+                wb_h%rcan(ik) = wb_h%rcan(ik) + FAREGAT(k)*RCANGAT(k)
+                wb_h%sncan(ik) = wb_h%sncan(ik) + FAREGAT(k)*SCANGAT(k)
+                wb_h%pndw(ik) = wb_h%pndw(ik) + FAREGAT(k)*ZPNDGAT(k)*RHOW
+                wb_h%sno(ik) = wb_h%sno(ik) + FAREGAT(k)*SNOGAT(k)
+                wb_h%wsno(ik) = wb_h%wsno(ik) + FAREGAT(k)*WSNOGAT(k)
+                do j = 1, IGND
+                    HMFGGRD(ik, j) = HMFGGRD(ik, j) + HMFGGAT(k, j)*FAREGAT(k)
+                    HTCGRD(ik, j) = HTCGRD(ik, j) + HTCGAT(k, j)*FAREGAT(k)
+                    QFCGRD(ik, j) = QFCGRD(ik, j) + QFCGAT(k, j)*FAREGAT(k)
+                    GFLXGRD(ik, j) = GFLXGRD(ik, j) + GFLXGAT(k, j)*FAREGAT(k)
+                    wb_h%lqws(ik, j) = wb_h%lqws(ik, j) + FAREGAT(k)*THLQGAT(k, j)*DLZWGAT(k, j)*RHOW
+                    wb_h%frws(ik, j) = wb_h%frws(ik, j) + FAREGAT(k)*THICGAT(k, j)*DLZWGAT(k, j)*RHOICE
                 end do
-                wb_h%stg(bi%ILMOS(i)) = wb%rcan(bi%ILMOS(i)) + wb%sncan(bi%ILMOS(i)) + wb%pndw(bi%ILMOS(i)) + &
-                    wb%sno(bi%ILMOS(i)) + wb%wsno(bi%ILMOS(i)) + &
-                    sum(wb%lqws(bi%ILMOS(i), :)) + sum(wb%frws(bi%ILMOS(i), :))
-            end do !i = 1, bi%NML
+                wb_h%stg(ik) = wb%rcan(ik) + wb%sncan(ik) + wb%pndw(ik) + &
+                    wb%sno(ik) + wb%wsno(ik) + &
+                    sum(wb%lqws(ik, :)) + sum(wb%frws(ik, :))
+            end do !k = il1, il2
 
 !>
 !> *******************************************************************
 !> FOR SPL WATROUTE (MODIFIED RPN CODE)
 !> *******************************************************************
 !>
-            call tile_connector(bi, rte_runoff, rte_recharge, rte_leakage, NCOUNT, ROFOGRD, ROFSGRD, ROFBGRD, DELT)
+            call tile_connector(shd, rte_runoff, rte_recharge, rte_leakage, NCOUNT, ROFOGRD, ROFSGRD, ROFBGRD, DELT)
 
 !> FILES ARE ONLY WRITTEN ON THE HOUR (WATROUTE READS HOURLY DATA).
 !> HOURLY TIME STEPS ARE ODD-NUMBERED INTEGERS.
@@ -4401,7 +4414,7 @@ program RUNMESH
 !>
                 if (PRINTRFFR2CFILEFLAG == 1) then
                     !PASS RUNOFF TO WRITE_R2C
-                    call write_r2c(fls, mfk%f31, bi, &
+                    call write_r2c(fls, mfk%f31, shd, &
                                    rte_frames_total, 1, rte_frames_now, 1, 6, &
                                    rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
                                    rte_runoff)
@@ -4411,7 +4424,7 @@ program RUNMESH
 !>
                 if (PRINTRCHR2CFILEFLAG == 1) then !WRITE RECHARGE DATA
                     !PASS RECHARGE TO WRITE_R2C
-                    call write_r2c(fls, mfk%f32, bi, &
+                    call write_r2c(fls, mfk%f32, shd, &
                                    rte_frames_total, 1, rte_frames_now, 1, 6, &
                                    rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
                                    rte_recharge)
@@ -4429,11 +4442,11 @@ program RUNMESH
 !> calculate and write the basin avg SWE using the similar fudge factor!!!
 
 !            if (BASIN_FRACTION(1) == -1) then
-!                do i = 1, bi%NA ! NA = number of grid squares
+!                do i = 1, NA ! NA = number of grid squares
 !>         BASIN_FRACTION is the basin snow cover
 !>         (portions of the grids outside the basin are not included)
 !>         for a given day - JDAY_NOW in the if statement
-!                    BASIN_FRACTION(i) = bi%FRAC(i)
+!                    BASIN_FRACTION(i) = shd%FRAC(i)
     !TODO: FRAC is not actually the fraction of the grid square
     !within the basin, we should be using some other value, but I'm
     !not sure what.
@@ -4444,7 +4457,7 @@ program RUNMESH
             if (HOUR_NOW == 12 .and. MINS_NOW == 0) then
                 basin_SCA = 0.0
                 basin_SWE = 0.0
-!                do i = 1, bi%NA
+!                do i = 1, NA
 !                    if (BASIN_FRACTION(i) /= 0.0) then
 !                        basin_SCA = basin_SCA + FSNOGRD(i)/BASIN_FRACTION(i)
 !                        basin_SWE = basin_SWE + SNOGRD(i)/BASIN_FRACTION(i)
@@ -4455,9 +4468,9 @@ program RUNMESH
 
 ! BRUCE DAVISON - AUG 17, 2009 (see notes in my notebook for this day)
 ! Fixed calculation of basin averages. Needs documenting and testing.
-                do i = 1, bi%NML
-                    basin_SCA = basin_SCA + FSNOGAT(i)*FAREGAT(i)
-                    basin_SWE = basin_SWE + SNOGAT(i)*FAREGAT(i)
+                do k = il1, il2
+                    basin_SCA = basin_SCA + FSNOGAT(k)*FAREGAT(k)
+                    basin_SWE = basin_SWE + SNOGAT(k)*FAREGAT(k)
                 end do
                 basin_SCA = basin_SCA/TOTAL_AREA
                 basin_SWE = basin_SWE/TOTAL_AREA
@@ -4471,58 +4484,59 @@ program RUNMESH
 !> ACCUMULATE OUTPUT DATA FOR DIURNALLY AVERAGED FIELDS.
 
             !$omp parallel do
-            do i = 1, bi%NML
-                if (bi%FRAC(bi%ILMOS(i)) /= 0.0) then
-                    PREACC(bi%ILMOS(i)) = PREACC(bi%ILMOS(i)) + PREGAT(i)*FAREGAT(i)*DELT
-                    GTACC(bi%ILMOS(i)) = GTACC(bi%ILMOS(i)) + GTGAT(i)*FAREGAT(i)
-                    QEVPACC(bi%ILMOS(i)) = QEVPACC(bi%ILMOS(i)) + QEVPGAT(i)*FAREGAT(i)
-                    EVAPACC(bi%ILMOS(i)) = EVAPACC(bi%ILMOS(i)) + QFSGAT(i)*FAREGAT(i)*DELT
-                    HFSACC(bi%ILMOS(i))  = HFSACC(bi%ILMOS(i)) + HFSGAT(i)*FAREGAT(i)
-                    HMFNACC(bi%ILMOS(i)) = HMFNACC(bi%ILMOS(i)) + HMFNGAT(i)*FAREGAT(i)
-                    ROFACC(bi%ILMOS(i)) = ROFACC(bi%ILMOS(i)) + ROFGAT(i)*FAREGAT(i)*DELT
-                    ROFOACC(bi%ILMOS(i)) = ROFOACC(bi%ILMOS(i)) + ROFOGAT(i)*FAREGAT(i)*DELT
-                    ROFSACC(bi%ILMOS(i)) = ROFSACC(bi%ILMOS(i)) + ROFSGAT(i)*FAREGAT(i)*DELT
-                    ROFBACC(bi%ILMOS(i)) = ROFBACC(bi%ILMOS(i)) + ROFBGAT(i)*FAREGAT(i)*DELT
-                    WTBLACC(bi%ILMOS(i)) = WTBLACC(bi%ILMOS(i)) + WTABGAT(i)*FAREGAT(i)
-                    do j = 1, bi%IGND
-                        TBARACC(bi%ILMOS(i), j) = TBARACC(bi%ILMOS(i), j) + TBARGAT(i, j)*bi%ACLASS(bi%ILMOS(i), bi%JLMOS(i))
-                        THLQACC(bi%ILMOS(i), j) = THLQACC(bi%ILMOS(i), j) + THLQGAT(i, j)*FAREGAT(i)
-                        THICACC(bi%ILMOS(i), j) = THICACC(bi%ILMOS(i), j) + THICGAT(i, j)*FAREGAT(i)
-                        THALACC(bi%ILMOS(i), j) = THALACC(bi%ILMOS(i), j) + (THLQGAT(i, j) + THICGAT(i, j))*FAREGAT(i)
+            do k = il1, il2
+                ik = shd%lc%ILMOS(k)
+                if (shd%FRAC(ik) /= 0.0) then
+                    PREACC(ik) = PREACC(ik) + PREGAT(k)*FAREGAT(k)*DELT
+                    GTACC(ik) = GTACC(ik) + GTGAT(k)*FAREGAT(k)
+                    QEVPACC(ik) = QEVPACC(ik) + QEVPGAT(k)*FAREGAT(k)
+                    EVAPACC(ik) = EVAPACC(ik) + QFSGAT(k)*FAREGAT(k)*DELT
+                    HFSACC(ik)  = HFSACC(ik) + HFSGAT(k)*FAREGAT(k)
+                    HMFNACC(ik) = HMFNACC(ik) + HMFNGAT(k)*FAREGAT(k)
+                    ROFACC(ik) = ROFACC(ik) + ROFGAT(k)*FAREGAT(k)*DELT
+                    ROFOACC(ik) = ROFOACC(ik) + ROFOGAT(k)*FAREGAT(k)*DELT
+                    ROFSACC(ik) = ROFSACC(ik) + ROFSGAT(k)*FAREGAT(k)*DELT
+                    ROFBACC(ik) = ROFBACC(ik) + ROFBGAT(k)*FAREGAT(k)*DELT
+                    WTBLACC(ik) = WTBLACC(ik) + WTABGAT(k)*FAREGAT(k)
+                    do j = 1, IGND
+                        TBARACC(ik, j) = TBARACC(ik, j) + TBARGAT(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
+                        THLQACC(ik, j) = THLQACC(ik, j) + THLQGAT(k, j)*FAREGAT(k)
+                        THICACC(ik, j) = THICACC(ik, j) + THICGAT(k, j)*FAREGAT(k)
+                        THALACC(ik, j) = THALACC(ik, j) + (THLQGAT(k, j) + THICGAT(k, j))*FAREGAT(k)
             !Added by GSA compute daily heat conduction flux between layers
-                        GFLXACC(bi%ILMOS(i), j) = GFLXACC(bi%ILMOS(i), j) + GFLXGAT(i, j)*FAREGAT(i)
-!                        (i) = THALACC_STG(i) + THALACC(i, j)
-                        THLQ_FLD(bi%ILMOS(i), j) =  THLQ_FLD(bi%ILMOS(i), j) + THLQGAT(i, j)*RHOW*FAREGAT(i)*DLZWGAT(i, j)
-                        THIC_FLD(bi%ILMOS(i), j) =  THIC_FLD(bi%ILMOS(i), j) + THICGAT(i, j)*RHOICE*FAREGAT(i)*DLZWGAT(i, j)
+                        GFLXACC(ik, j) = GFLXACC(ik, j) + GFLXGAT(k, j)*FAREGAT(k)
+!                        (k) = THALACC_STG(k) + THALACC(k, j)
+                        THLQ_FLD(ik, j) =  THLQ_FLD(ik, j) + THLQGAT(k, j)*RHOW*FAREGAT(k)*DLZWGAT(k, j)
+                        THIC_FLD(ik, j) =  THIC_FLD(ik, j) + THICGAT(k, j)*RHOICE*FAREGAT(k)*DLZWGAT(k, j)
                     end do
-                    ALVSACC(bi%ILMOS(i)) = ALVSACC(bi%ILMOS(i)) + ALVSGAT(i)*FAREGAT(i)*FSVHGRD(bi%ILMOS(i))
-                    ALIRACC(bi%ILMOS(i)) = ALIRACC(bi%ILMOS(i)) + ALIRGAT(i)*FAREGAT(i)*FSIHGRD(bi%ILMOS(i))
-                    if (SNOGAT(i) > 0.0) then
-                        RHOSACC(bi%ILMOS(i)) = RHOSACC(bi%ILMOS(i)) + RHOSGAT(i)*FAREGAT(i)
-                        TSNOACC(bi%ILMOS(i)) = TSNOACC(bi%ILMOS(i)) + TSNOGAT(i)*FAREGAT(i)
-                        WSNOACC(bi%ILMOS(i)) = WSNOACC(bi%ILMOS(i)) + WSNOGAT(i)*FAREGAT(i)
-                        SNOARE(bi%ILMOS(i)) = SNOARE(bi%ILMOS(i)) + FAREGAT(i)
+                    ALVSACC(ik) = ALVSACC(ik) + ALVSGAT(k)*FAREGAT(k)*FSVHGRD(ik)
+                    ALIRACC(ik) = ALIRACC(ik) + ALIRGAT(k)*FAREGAT(k)*FSIHGRD(ik)
+                    if (SNOGAT(k) > 0.0) then
+                        RHOSACC(ik) = RHOSACC(ik) + RHOSGAT(k)*FAREGAT(k)
+                        TSNOACC(ik) = TSNOACC(ik) + TSNOGAT(k)*FAREGAT(k)
+                        WSNOACC(ik) = WSNOACC(ik) + WSNOGAT(k)*FAREGAT(k)
+                        SNOARE(ik) = SNOARE(ik) + FAREGAT(k)
                     end if
-                    if (TCANGAT(i) > 0.5) then
-                        TCANACC(bi%ILMOS(i)) = TCANACC(bi%ILMOS(i)) + TCANGAT(i)*FAREGAT(i)
-                        CANARE(bi%ILMOS(i)) = CANARE(bi%ILMOS(i)) + FAREGAT(i)
+                    if (TCANGAT(k) > 0.5) then
+                        TCANACC(ik) = TCANACC(ik) + TCANGAT(k)*FAREGAT(k)
+                        CANARE(ik) = CANARE(ik) + FAREGAT(k)
                     end if
-                    SNOACC(bi%ILMOS(i)) = SNOACC(bi%ILMOS(i)) + SNOGAT(i)*FAREGAT(i)
-                    RCANACC(bi%ILMOS(i)) = RCANACC(bi%ILMOS(i)) + RCANGAT(i)*FAREGAT(i)
-                    SCANACC(bi%ILMOS(i)) = SCANACC(bi%ILMOS(i)) + SCANGAT(i)*FAREGAT(i)
-                    GROACC(bi%ILMOS(i)) = GROACC(bi%ILMOS(i)) + GROGAT(i)*FAREGAT(i)
-                    FSINACC(bi%ILMOS(i)) = FSINACC(bi%ILMOS(i)) + cm%clin(cfk%FB)%climvGrd(bi%ILMOS(i))*FAREGAT(i)
-                    FLINACC(bi%ILMOS(i)) = FLINACC(bi%ILMOS(i)) + cm%clin(cfk%FI)%climvGrd(bi%ILMOS(i))*FAREGAT(i)
-                    FLUTACC(bi%ILMOS(i)) = FLUTACC(bi%ILMOS(i)) + SBC*GTGAT(i)**4*FAREGAT(i)
-                    TAACC(bi%ILMOS(i)) = TAACC(bi%ILMOS(i)) + cm%clin(cfk%TT)%climvGrd(bi%ILMOS(i))*FAREGAT(i)
-                    UVACC(bi%ILMOS(i)) = UVACC(bi%ILMOS(i)) + UVGRD(bi%ILMOS(i))*FAREGAT(i)
-                    PRESACC(bi%ILMOS(i)) = PRESACC(bi%ILMOS(i)) + cm%clin(cfk%P0)%climvGrd(bi%ILMOS(i))*FAREGAT(i)
-                    QAACC(bi%ILMOS(i)) = QAACC(bi%ILMOS(i)) + cm%clin(cfk%HU)%climvGrd(bi%ILMOS(i))*FAREGAT(i)
+                    SNOACC(ik) = SNOACC(ik) + SNOGAT(k)*FAREGAT(k)
+                    RCANACC(ik) = RCANACC(ik) + RCANGAT(k)*FAREGAT(k)
+                    SCANACC(ik) = SCANACC(ik) + SCANGAT(k)*FAREGAT(k)
+                    GROACC(ik) = GROACC(ik) + GROGAT(k)*FAREGAT(k)
+                    FSINACC(ik) = FSINACC(ik) + cm%clin(cfk%FB)%climvGrd(ik)*FAREGAT(k)
+                    FLINACC(ik) = FLINACC(ik) + cm%clin(cfk%FI)%climvGrd(ik)*FAREGAT(k)
+                    FLUTACC(ik) = FLUTACC(ik) + SBC*GTGAT(k)**4*FAREGAT(k)
+                    TAACC(ik) = TAACC(ik) + cm%clin(cfk%TT)%climvGrd(ik)*FAREGAT(k)
+                    UVACC(ik) = UVACC(ik) + UVGRD(ik)*FAREGAT(k)
+                    PRESACC(ik) = PRESACC(ik) + cm%clin(cfk%P0)%climvGrd(ik)*FAREGAT(k)
+                    QAACC(ik) = QAACC(ik) + cm%clin(cfk%HU)%climvGrd(ik)*FAREGAT(k)
                 end if
-            end do !i = 1, bi%NML
+            end do !k = il1, il2
 
     !> Update output data.
-            call updatefieldsout_temp(vr, ts, iof, bi, &
+            call updatefieldsout_temp(vr, ts, iof, shd, &
                                       md, wb_h, &
                                       YEAR_NOW, JDAY_NOW, ceiling(NCOUNT/2.0), TIME_STEP_DELT - mod(NCOUNT, 2)*TIME_STEP_DELT)
 
@@ -4533,8 +4547,8 @@ program RUNMESH
                       ! when they're numbered 1-48
 
     !no omp b/c of file IO
-                do i = 1, bi%NA
-                    if (bi%FRAC(i) /= 0.0) then
+                do i = 1, NA
+                    if (shd%FRAC(i) /= 0.0) then
                         PREACC(i) = PREACC(i)
                         GTACC(i) = GTACC(i)/real(NSUM)
                         QEVPACC(i) = QEVPACC(i)/real(NSUM)
@@ -4546,7 +4560,7 @@ program RUNMESH
                         ROFSACC(i) = ROFSACC(i)
                         ROFBACC(i) = ROFBACC(i)
                         WTBLACC(i) = WTBLACC(i)/real(NSUM)
-                        do j = 1, bi%IGND
+                        do j = 1, IGND
                             TBARACC(i, j) = TBARACC(i, j)/real(NSUM)
                             THLQACC(i, j) = THLQACC(i, j)/real(NSUM)
                             THICACC(i, j) = THICACC(i, j)/real(NSUM)
@@ -4601,7 +4615,7 @@ program RUNMESH
                         else
                             TSN = 0.0
                         end if
-                        if (bi%ILW == 1) then
+                        if (shd%wc%ILG == 1) then
                             GTOUT = GTACC(i) - TFREZ
                         else
                             GTOUT = 0.0
@@ -4632,7 +4646,7 @@ program RUNMESH
                         TOTAL_QEVPACC = TOTAL_QEVPACC + QEVPACC(i)
                         eng%hfs(i) = eng%hfs(i) + HFSACC(i)
                         eng%qevp(i) = eng%qevp(i) + QEVPACC(i)
-                        do j = 1, bi%IGND
+                        do j = 1, IGND
                             eng%gflx(i, j) = eng%gflx(i, j) + GFLXACC(i, j)
                         end do
                     end if
@@ -4650,31 +4664,30 @@ program RUNMESH
                 sov%thic = 0.0
                 sov%thic = 0.0
 
-                do i = 1, bi%NML
-                    if (bi%FRAC(bi%ILMOS(i)) >= 0.0) then
-!-            DO M = 1, NMTEST
-                        TOTAL_SCAN = TOTAL_SCAN + FAREGAT(i)*SCANGAT(i)
-                        TOTAL_RCAN = TOTAL_RCAN + FAREGAT(i)*RCANGAT(i)
-                        TOTAL_SNO = TOTAL_SNO + FAREGAT(i)*SNOGAT(i)
-                        TOTAL_WSNO = TOTAL_WSNO + FAREGAT(i)*WSNOGAT(i)
-                        TOTAL_ZPND = TOTAL_ZPND + FAREGAT(i)*ZPNDGAT(i)*RHOW
-                        wb%rcan(bi%ILMOS(i)) = wb%rcan(bi%ILMOS(i)) + FAREGAT(i)*SCANGAT(i)
-                        wb%sncan(bi%ILMOS(i)) = wb%sncan(bi%ILMOS(i)) + FAREGAT(i)*RCANGAT(i)
-                        wb%pndw(bi%ILMOS(i)) = wb%pndw(bi%ILMOS(i)) + FAREGAT(i)*ZPNDGAT(i)*RHOW
-                        wb%sno(bi%ILMOS(i)) = wb%sno(bi%ILMOS(i)) + FAREGAT(i)*SNOGAT(i)
-                        wb%wsno(bi%ILMOS(i)) = wb%wsno(bi%ILMOS(i)) + FAREGAT(i)*WSNOGAT(i)
-                        do j = 1, bi%IGND
-                            TOTAL_THLQ(j) = TOTAL_THLQ(j) + FAREGAT(i)*THLQGAT(i, j)*RHOW*DLZWGAT(i, j)
-                            TOTAL_THIC(j) = TOTAL_THIC(j) + FAREGAT(i)*THICGAT(i, j)*RHOICE*DLZWGAT(i, j)
-                            wb%lqws(bi%ILMOS(i), j) = wb%lqws(bi%ILMOS(i), j) + FAREGAT(i)*THLQGAT(i, j)*RHOW*DLZWGAT(i, j)
-                            wb%frws(bi%ILMOS(i), j) = wb%frws(bi%ILMOS(i), j) + FAREGAT(i)*THICGAT(i, j)*RHOICE*DLZWGAT(i, j)
-                            sov%tbar(bi%ILMOS(i), j) = sov%tbar(bi%ILMOS(i), j) + TBARGAT(i, j)*bi%ACLASS(bi%ILMOS(i), bi%JLMOS(i))
-                            sov%thic(bi%ILMOS(i), j) = sov%thic(bi%ILMOS(i), j) + FAREGAT(i)*THICGAT(i, j)
-                            sov%thlq(bi%ILMOS(i), j) = sov%thlq(bi%ILMOS(i), j) + FAREGAT(i)*THLQGAT(i, j)
+                do k = il1, il2
+                    ik = shd%lc%ILMOS(k)
+                    if (shd%FRAC(ik) >= 0.0) then
+                        TOTAL_SCAN = TOTAL_SCAN + FAREGAT(k)*SCANGAT(k)
+                        TOTAL_RCAN = TOTAL_RCAN + FAREGAT(k)*RCANGAT(k)
+                        TOTAL_SNO = TOTAL_SNO + FAREGAT(k)*SNOGAT(k)
+                        TOTAL_WSNO = TOTAL_WSNO + FAREGAT(k)*WSNOGAT(k)
+                        TOTAL_ZPND = TOTAL_ZPND + FAREGAT(k)*ZPNDGAT(k)*RHOW
+                        wb%rcan(ik) = wb%rcan(ik) + FAREGAT(k)*SCANGAT(k)
+                        wb%sncan(ik) = wb%sncan(ik) + FAREGAT(k)*RCANGAT(k)
+                        wb%pndw(ik) = wb%pndw(ik) + FAREGAT(k)*ZPNDGAT(k)*RHOW
+                        wb%sno(ik) = wb%sno(ik) + FAREGAT(k)*SNOGAT(k)
+                        wb%wsno(ik) = wb%wsno(ik) + FAREGAT(k)*WSNOGAT(k)
+                        do j = 1, IGND
+                            TOTAL_THLQ(j) = TOTAL_THLQ(j) + FAREGAT(k)*THLQGAT(k, j)*RHOW*DLZWGAT(k, j)
+                            TOTAL_THIC(j) = TOTAL_THIC(j) + FAREGAT(k)*THICGAT(k, j)*RHOICE*DLZWGAT(k, j)
+                            wb%lqws(ik, j) = wb%lqws(ik, j) + FAREGAT(k)*THLQGAT(k, j)*RHOW*DLZWGAT(k, j)
+                            wb%frws(ik, j) = wb%frws(ik, j) + FAREGAT(k)*THICGAT(k, j)*RHOICE*DLZWGAT(k, j)
+                            sov%tbar(ik, j) = sov%tbar(ik, j) + TBARGAT(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
+                            sov%thic(ik, j) = sov%thic(ik, j) + FAREGAT(k)*THICGAT(k, j)
+                            sov%thlq(ik, j) = sov%thlq(ik, j) + FAREGAT(k)*THLQGAT(k, j)
                         end do
-!-            END DO
-                    end if !(bi%FRAC(i) >= 0.0) then
-                end do !i = 1, bi%NML
+                    end if !(shd%FRAC(ik) >= 0.0) then
+                end do !k = il1, il2
 
     !> Calculate storage
                 wb%stg = wb%rcan + wb%sncan + wb%pndw + wb%sno + wb%wsno + sum(wb%lqws, 2) + sum(wb%frws, 2)
@@ -4704,12 +4717,12 @@ program RUNMESH
                           TOTAL_SNO/TOTAL_AREA, &
                           TOTAL_WSNO/TOTAL_AREA, &
                           TOTAL_ZPND/TOTAL_AREA, &
-                          (TOTAL_THLQ(j)/TOTAL_AREA, j = 1, bi%IGND), &
-                          (TOTAL_THIC(j)/TOTAL_AREA, j = 1, bi%IGND), &
-                          ((TOTAL_THLQ(j) + TOTAL_THIC(j))/TOTAL_AREA, j = 1, bi%IGND), &
-                          SUM(TOTAL_THLQ(1:bi%IGND))/TOTAL_AREA, &
-                          SUM(TOTAL_THIC(1:bi%IGND))/TOTAL_AREA, &
-                          (SUM(TOTAL_THLQ(1:bi%IGND)) + SUM(TOTAL_THIC(1:bi%IGND)))/TOTAL_AREA, &
+                          (TOTAL_THLQ(j)/TOTAL_AREA, j = 1, IGND), &
+                          (TOTAL_THIC(j)/TOTAL_AREA, j = 1, IGND), &
+                          ((TOTAL_THLQ(j) + TOTAL_THIC(j))/TOTAL_AREA, j = 1, IGND), &
+                          SUM(TOTAL_THLQ(1:IGND))/TOTAL_AREA, &
+                          SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
+                          (SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND)))/TOTAL_AREA, &
                           TOTAL_STORE/TOTAL_AREA, &
                           (TOTAL_STORE - TOTAL_STORE_2)/TOTAL_AREA, &
                           (TOTAL_STORE - INIT_STORE)/TOTAL_AREA
@@ -4765,12 +4778,12 @@ program RUNMESH
                               TOTAL_SNO_M/TOTAL_AREA, &
                               TOTAL_WSNO_M/TOTAL_AREA, &
                               TOTAL_ZPND_M/TOTAL_AREA, &
-                              (TOTAL_THLQ_M(j)/TOTAL_AREA, j = 1, bi%IGND), &
-                              (TOTAL_THIC_M(j)/TOTAL_AREA, j = 1, bi%IGND), &
-                              ((TOTAL_THLQ_M(j) + TOTAL_THIC_M(j))/TOTAL_AREA, j = 1, bi%IGND), &
-                              sum(TOTAL_THLQ_M(1:bi%IGND))/TOTAL_AREA, &
-                              sum(TOTAL_THIC_M(1:bi%IGND))/TOTAL_AREA, &
-                              (sum(TOTAL_THLQ_M(1:bi%IGND)) + sum(TOTAL_THIC_M(1:bi%IGND)))/TOTAL_AREA, &
+                              (TOTAL_THLQ_M(j)/TOTAL_AREA, j = 1, IGND), &
+                              (TOTAL_THIC_M(j)/TOTAL_AREA, j = 1, IGND), &
+                              ((TOTAL_THLQ_M(j) + TOTAL_THIC_M(j))/TOTAL_AREA, j = 1, IGND), &
+                              sum(TOTAL_THLQ_M(1:IGND))/TOTAL_AREA, &
+                              sum(TOTAL_THIC_M(1:IGND))/TOTAL_AREA, &
+                              (sum(TOTAL_THLQ_M(1:IGND)) + sum(TOTAL_THIC_M(1:IGND)))/TOTAL_AREA, &
                               TOTAL_STORE_M/TOTAL_AREA, &
                               (TOTAL_STORE_M - TOTAL_STORE_2_M)/TOTAL_AREA, &
                               (TOTAL_STORE_ACC_M - INIT_STORE)/TOTAL_AREA
@@ -4795,7 +4808,7 @@ program RUNMESH
 
 !>  Added by Gonzalo Sapriza
     !DELTA STORAGE
-                do i = 1, bi%IGND
+                do i = 1, IGND
                     DSTG = DSTG + THLQ_FLD(:, i) + THIC_FLD(:, i)
                 end do
                 DSTG = DSTG + RCANACC + SCANACC + SNOACC - STG_I
@@ -4808,7 +4821,7 @@ program RUNMESH
                                          wb%pndw, wb%sno, wb%wsno, &
                                          eng%gflx, eng%hfs, eng%qevp, &
                                          sov%thlq, sov%thic, &
-                                         bi%IGND, &
+                                         IGND, &
                                          JDAY_NOW, YEAR_NOW)
                 end if
                 STG_I = DSTG + STG_I
@@ -4893,17 +4906,17 @@ program RUNMESH
 !> *********************************************************************
         if (ipid == 0) then
             call WF_ROUTE(WF_ROUTETIMESTEP, WF_R1, WF_R2, &
-                          bi%NA, bi%NAA, bi%NTYPE, bi%yCount, bi%xCount, bi%iyMin, &
-                          bi%iyMax, bi%jxMin, bi%jxMax, bi%yyy, bi%xxx, bi%IAK, bi%IROUGH, &
-                          bi%ICHNL, bi%NEXT, bi%IREACH, bi%AL, bi%GRDN, bi%GRDE, &
-                          bi%DA, bi%BNKFLL, bi%SLOPE_CHNL, bi%ELEV, bi%FRAC, &
+                          NA, shd%NAA, NTYPE, shd%yCount, shd%xCount, shd%iyMin, &
+                          shd%iyMax, shd%jxMin, shd%jxMax, shd%yyy, shd%xxx, shd%IAK, shd%IROUGH, &
+                          shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
+                          shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
                           WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
                           WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
                           WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
                           WF_B1, WF_B2, WF_QREL, WF_QR, &
                           WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
                           WF_STORE1, WF_STORE2, &
-                          DRIVERTIMESTEP, ROFGRD, bi%NA, M_C, M_R, M_S, bi%NA, &
+                          DRIVERTIMESTEP, ROFGRD, NA, M_C, M_R, M_S, NA, &
                           WF_S, JAN, JDAY_NOW, HOUR_NOW, MINS_NOW)
             do i = 1, WF_NO
                 WF_QSYN(i) = WF_QO2(WF_S(i))
@@ -4952,7 +4965,7 @@ program RUNMESH
     !todo: Update or remove this altogether. If to update, take NA-1 or something more akin
     !to an outlet, than the average middle-elevation grid (as it's coded now).
     !Should there be a choice to print point-process (pre, evap, rof) vs flow-process (wf_qo2)?
-                        j = ceiling(real(bi%NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
+                        j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
                         print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO), &
                             wb%pre(j), wb%evap(j), wb%rof(j)
                     end if
@@ -5032,7 +5045,7 @@ program RUNMESH
     !> *********************************************************************
     !> Read in meteorological forcing data
     !> *********************************************************************
-        call climate_module_loaddata(bi, .false., cm, ENDDATA)
+        call climate_module_loaddata(shd, .false., cm, NML, il1, il2, ENDDATA)
 
     end do !while (.not. ENDDATE .and. .not. ENDDATA)
 
@@ -5049,8 +5062,8 @@ program RUNMESH
                 cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, cp%TSNOROW, &
                 cp%RHOSROW, cp%SNOROW, cp%TCANROW, cp%RCANROW, cp%SCANROW, &
                 cp%GROROW, CMAIROW, TACROW, QACROW, WSNOROW, &
-                bi%ILMOS, bi%JLMOS, bi%IWMOS, bi%JWMOS, &
-                bi%NML, bi%NA, bi%NTYPE, bi%ILG, bi%IGND, ICAN, ICAN + 1, &
+                shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+                NA, NTYPE, NML, il1, il2, IGND, ICAN, ICAN + 1, &
                 TBARGAT, THLQGAT, THICGAT, GFLXGAT, TSFSGAT, &
                 TPNDGAT, ZPNDGAT, TBASGAT, ALBSGAT, TSNOGAT, &
                 RHOSGAT, SNOGAT, TCANGAT, RCANGAT, SCANGAT, &
@@ -5065,82 +5078,86 @@ program RUNMESH
 !>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF
 !>   * CLASSS FOR CONSISTENCY WITH GCM APPLICATIONS.
 !>
-    do 380 k = 1, bi%NML
-        CDHROW(bi%ILMOS(k), bi%JLMOS(k)) = CDHGAT(k)
-        CDMROW(bi%ILMOS(k), bi%JLMOS(k)) = CDMGAT(k)
-        HFSROW(bi%ILMOS(k), bi%JLMOS(k)) = HFSGAT(k)
-        TFXROW(bi%ILMOS(k), bi%JLMOS(k)) = TFXGAT(k)
-        QEVPROW(bi%ILMOS(k), bi%JLMOS(k)) = QEVPGAT(k)
-        QFSROW(bi%ILMOS(k), bi%JLMOS(k)) = QFSGAT(k)
-        QFXROW(bi%ILMOS(k), bi%JLMOS(k)) = QFXGAT(k)
-        PETROW(bi%ILMOS(k), bi%JLMOS(k)) = PETGAT(k)
-        GAROW(bi%ILMOS(k), bi%JLMOS(k)) = GAGAT(k)
-        EFROW(bi%ILMOS(k), bi%JLMOS(k)) = EFGAT(k)
-        GTROW(bi%ILMOS(k), bi%JLMOS(k)) = GTGAT(k)
-        QGROW(bi%ILMOS(k), bi%JLMOS(k)) = QGGAT(k)
-        ALVSROW(bi%ILMOS(k), bi%JLMOS(k)) = ALVSGAT(k)
-        ALIRROW(bi%ILMOS(k), bi%JLMOS(k)) = ALIRGAT(k)
-        SFCTROW(bi%ILMOS(k), bi%JLMOS(k)) = SFCTGAT(k)
-        SFCUROW(bi%ILMOS(k), bi%JLMOS(k)) = SFCUGAT(k)
-        SFCVROW(bi%ILMOS(k), bi%JLMOS(k)) = SFCVGAT(k)
-        SFCQROW(bi%ILMOS(k), bi%JLMOS(k)) = SFCQGAT(k)
-        FSNOROW(bi%ILMOS(k), bi%JLMOS(k)) = FSNOGAT(k)
-        FSGVROW(bi%ILMOS(k), bi%JLMOS(k)) = FSGVGAT(k)
-        FSGSROW(bi%ILMOS(k), bi%JLMOS(k)) = FSGSGAT(k)
-        FSGGROW(bi%ILMOS(k), bi%JLMOS(k)) = FSGGGAT(k)
-        FLGVROW(bi%ILMOS(k), bi%JLMOS(k)) = FLGVGAT(k)
-        FLGSROW(bi%ILMOS(k), bi%JLMOS(k)) = FLGSGAT(k)
-        FLGGROW(bi%ILMOS(k), bi%JLMOS(k)) = FLGGGAT(k)
-        HFSCROW(bi%ILMOS(k), bi%JLMOS(k)) = HFSCGAT(k)
-        HFSSROW(bi%ILMOS(k), bi%JLMOS(k)) = HFSSGAT(k)
-        HFSGROW(bi%ILMOS(k), bi%JLMOS(k)) = HFSGGAT(k)
-        HEVCROW(bi%ILMOS(k), bi%JLMOS(k)) = HEVCGAT(k)
-        HEVSROW(bi%ILMOS(k), bi%JLMOS(k)) = HEVSGAT(k)
-        HEVGROW(bi%ILMOS(k), bi%JLMOS(k)) = HEVGGAT(k)
-        HMFCROW(bi%ILMOS(k), bi%JLMOS(k)) = HMFCGAT(k)
-        HMFNROW(bi%ILMOS(k), bi%JLMOS(k)) = HMFNGAT(k)
-        HTCCROW(bi%ILMOS(k), bi%JLMOS(k)) = HTCCGAT(k)
-        HTCSROW(bi%ILMOS(k), bi%JLMOS(k)) = HTCSGAT(k)
-        PCFCROW(bi%ILMOS(k), bi%JLMOS(k)) = PCFCGAT(k)
-        PCLCROW(bi%ILMOS(k), bi%JLMOS(k)) = PCLCGAT(k)
-        PCPNROW(bi%ILMOS(k), bi%JLMOS(k)) = PCPNGAT(k)
-        PCPGROW(bi%ILMOS(k), bi%JLMOS(k)) = PCPGGAT(k)
-        QFGROW(bi%ILMOS(k), bi%JLMOS(k)) = QFGGAT(k)
-        QFNROW(bi%ILMOS(k), bi%JLMOS(k)) = QFNGAT(k)
-        QFCLROW(bi%ILMOS(k), bi%JLMOS(k)) = QFCLGAT(k)
-        QFCFROW(bi%ILMOS(k), bi%JLMOS(k)) = QFCFGAT(k)
-        ROFROW(bi%ILMOS(k), bi%JLMOS(k)) = ROFGAT(k)
-        ROFOROW(bi%ILMOS(k), bi%JLMOS(k)) = ROFOGAT(k)
-        ROFSROW(bi%ILMOS(k), bi%JLMOS(k)) = ROFSGAT(k)
-        ROFBROW(bi%ILMOS(k), bi%JLMOS(k)) = ROFBGAT(k)
-        TROFROW(bi%ILMOS(k), bi%JLMOS(k)) = TROFGAT(k)
-        TROOROW(bi%ILMOS(k), bi%JLMOS(k)) = TROOGAT(k)
-        TROSROW(bi%ILMOS(k), bi%JLMOS(k)) = TROSGAT(k)
-        TROBROW(bi%ILMOS(k), bi%JLMOS(k)) = TROBGAT(k)
-        ROFCROW(bi%ILMOS(k), bi%JLMOS(k)) = ROFCGAT(k)
-        ROFNROW(bi%ILMOS(k), bi%JLMOS(k)) = ROFNGAT(k)
-        ROVGROW(bi%ILMOS(k), bi%JLMOS(k)) = ROVGGAT(k)
-        WTRCROW(bi%ILMOS(k), bi%JLMOS(k)) = WTRCGAT(k)
-        WTRSROW(bi%ILMOS(k), bi%JLMOS(k)) = WTRSGAT(k)
-        WTRGROW(bi%ILMOS(k), bi%JLMOS(k)) = WTRGGAT(k)
-        DRROW(bi%ILMOS(k), bi%JLMOS(k)) = DRGAT(k)
-        WTABROW(bi%ILMOS(k), bi%JLMOS(k)) = WTABGAT(k)
-        ILMOROW(bi%ILMOS(k), bi%JLMOS(k)) = ILMOGAT(k)
-        UEROW(bi%ILMOS(k), bi%JLMOS(k)) = UEGAT(k)
-        HBLROW(bi%ILMOS(k), bi%JLMOS(k)) = HBLGAT(k)
+    do 380 k = il1, il2
+        ik = shd%lc%ILMOS(k)
+        jk = shd%lc%JLMOS(k)
+        CDHROW(ik, jk) = CDHGAT(k)
+        CDMROW(ik, jk) = CDMGAT(k)
+        HFSROW(ik, jk) = HFSGAT(k)
+        TFXROW(ik, jk) = TFXGAT(k)
+        QEVPROW(ik, jk) = QEVPGAT(k)
+        QFSROW(ik, jk) = QFSGAT(k)
+        QFXROW(ik, jk) = QFXGAT(k)
+        PETROW(ik, jk) = PETGAT(k)
+        GAROW(ik, jk) = GAGAT(k)
+        EFROW(ik, jk) = EFGAT(k)
+        GTROW(ik, jk) = GTGAT(k)
+        QGROW(ik, jk) = QGGAT(k)
+        ALVSROW(ik, jk) = ALVSGAT(k)
+        ALIRROW(ik, jk) = ALIRGAT(k)
+        SFCTROW(ik, jk) = SFCTGAT(k)
+        SFCUROW(ik, jk) = SFCUGAT(k)
+        SFCVROW(ik, jk) = SFCVGAT(k)
+        SFCQROW(ik, jk) = SFCQGAT(k)
+        FSNOROW(ik, jk) = FSNOGAT(k)
+        FSGVROW(ik, jk) = FSGVGAT(k)
+        FSGSROW(ik, jk) = FSGSGAT(k)
+        FSGGROW(ik, jk) = FSGGGAT(k)
+        FLGVROW(ik, jk) = FLGVGAT(k)
+        FLGSROW(ik, jk) = FLGSGAT(k)
+        FLGGROW(ik, jk) = FLGGGAT(k)
+        HFSCROW(ik, jk) = HFSCGAT(k)
+        HFSSROW(ik, jk) = HFSSGAT(k)
+        HFSGROW(ik, jk) = HFSGGAT(k)
+        HEVCROW(ik, jk) = HEVCGAT(k)
+        HEVSROW(ik, jk) = HEVSGAT(k)
+        HEVGROW(ik, jk) = HEVGGAT(k)
+        HMFCROW(ik, jk) = HMFCGAT(k)
+        HMFNROW(ik, jk) = HMFNGAT(k)
+        HTCCROW(ik, jk) = HTCCGAT(k)
+        HTCSROW(ik, jk) = HTCSGAT(k)
+        PCFCROW(ik, jk) = PCFCGAT(k)
+        PCLCROW(ik, jk) = PCLCGAT(k)
+        PCPNROW(ik, jk) = PCPNGAT(k)
+        PCPGROW(ik, jk) = PCPGGAT(k)
+        QFGROW(ik, jk) = QFGGAT(k)
+        QFNROW(ik, jk) = QFNGAT(k)
+        QFCLROW(ik, jk) = QFCLGAT(k)
+        QFCFROW(ik, jk) = QFCFGAT(k)
+        ROFROW(ik, jk) = ROFGAT(k)
+        ROFOROW(ik, jk) = ROFOGAT(k)
+        ROFSROW(ik, jk) = ROFSGAT(k)
+        ROFBROW(ik, jk) = ROFBGAT(k)
+        TROFROW(ik, jk) = TROFGAT(k)
+        TROOROW(ik, jk) = TROOGAT(k)
+        TROSROW(ik, jk) = TROSGAT(k)
+        TROBROW(ik, jk) = TROBGAT(k)
+        ROFCROW(ik, jk) = ROFCGAT(k)
+        ROFNROW(ik, jk) = ROFNGAT(k)
+        ROVGROW(ik, jk) = ROVGGAT(k)
+        WTRCROW(ik, jk) = WTRCGAT(k)
+        WTRSROW(ik, jk) = WTRSGAT(k)
+        WTRGROW(ik, jk) = WTRGGAT(k)
+        DRROW(ik, jk) = DRGAT(k)
+        WTABROW(ik, jk) = WTABGAT(k)
+        ILMOROW(ik, jk) = ILMOGAT(k)
+        UEROW(ik, jk) = UEGAT(k)
+        HBLROW(ik, jk) = HBLGAT(k)
 380     continue
 !>
-    do 390 l = 1, bi%IGND
-        do 390 k = 1, bi%NML
-            HMFGROW(bi%ILMOS(k), bi%JLMOS(k), l) = HMFGGAT(k, l)
-            HTCROW(bi%ILMOS(k), bi%JLMOS(k), l) = HTCGAT(k, l)
-            QFCROW(bi%ILMOS(k), bi%JLMOS(k), l) = QFCGAT(k, l)
+    do 390 l = 1, IGND
+        do 390 k = il1, il2
+            ik = shd%lc%ILMOS(k)
+            jk = shd%lc%JLMOS(k)
+            HMFGROW(ik, jk, l) = HMFGGAT(k, l)
+            HTCROW(ik, jk, l) = HTCGAT(k, l)
+            QFCROW(ik, jk, l) = QFCGAT(k, l)
 390     continue
 !>
     do 430 m = 1, 50
         do 420 l = 1, 6
-            do 410 k = 1, bi%NML
-                ITCTROW(bi%ILMOS(k), bi%JLMOS(k), l, m) = ITCTGAT(k, l, m)
+            do 410 k = il1, il2
+                ITCTROW(shd%lc%ILMOS(k), shd%lc%JLMOS(k), l, m) = ITCTGAT(k, l, m)
 410     continue
 420     continue
 430     continue
@@ -5171,9 +5188,9 @@ program RUNMESH
         end if
         close(55)
 
-        call SAVE_STATE_R2C(bi%NML, NLTEST, NMTEST, NCOUNT, &
-                            MINS_NOW, bi%ACLASS, NR2C_S, GRD_S, GAT_S, GRDGAT_S, R2C_ATTRIBUTES_S, &
-                            bi%NA, bi%xxx, bi%yyy, bi%xCount, bi%yCount, bi%ILMOS, bi%JLMOS, bi%ILG, ICAN, ICP1, bi%IGND, &
+        call SAVE_STATE_R2C(shd%lc%NML, NLTEST, NMTEST, NCOUNT, &
+                            MINS_NOW, shd%lc%ACLASS, NR2C_S, GRD_S, GAT_S, GRDGAT_S, R2C_ATTRIBUTES_S, &
+                            NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
                             TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
                             TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
                             TCANGAT, RCANGAT, SCANGAT, GROGAT, CMAIGAT, &
@@ -5208,7 +5225,8 @@ program RUNMESH
                             WTRCGAT, WTRSGAT, WTRGGAT, DRGAT, GFLXGAT, &
                             HMFGGAT, HTCGAT, QFCGAT, MANNGAT, DDGAT, &
                             SANDGAT, CLAYGAT, IGDRGAT, VMODGAT, QLWOGAT, &
-                            bi%CoordSys, bi%Datum, bi%Zone, bi%xOrigin, bi%yOrigin, bi%xDelta, bi%yDelta)
+                            shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, &
+                            shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
     end if !(SAVERESUMEFLAG == 2) then
 
 !> Write the resume file
@@ -5219,16 +5237,16 @@ program RUNMESH
                         cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
                         cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
                         cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
-                        i, j, bi%xCount, bi%yCount, jan, &
+                        i, j, shd%xCount, shd%yCount, jan, &
                         VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
                         RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
                         cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
 !MAM - FOR FORCING DATA INTERPOLATION
                         FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
                         TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
-                        IPCP, bi%NA, bi%NA, bi%ILMOS, bi%JLMOS, bi%IWMOS, bi%JWMOS, &
-                        bi%NML, bi%NMW, &
-                        cp%GCGRD, cp%FAREROW, cp%MIDROW, bi%NTYPE, bi%ILG, NMTEST, &
+                        IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+                        shd%lc%NML, shd%wc%NML, &
+                        cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, NML, NMTEST, &
                         TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
                         TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
                         TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
@@ -5260,7 +5278,7 @@ program RUNMESH
                         TROFGAT, TROOGAT, TROSGAT, TROBGAT, ROFCGAT, &
                         ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, WTRGGAT, &
                         DRGAT, HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
-                        bi%IGND, ICAN, ICP1, &
+                        IGND, ICAN, ICP1, &
                         cp%TBARROW, cp%THLQROW, cp%THICROW, cp%TPNDROW, cp%ZPNDROW, &
                         TBASROW, cp%ALBSROW, cp%TSNOROW, cp%RHOSROW, cp%SNOROW, &
                         cp%TCANROW, cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, &
@@ -5306,7 +5324,7 @@ program RUNMESH
                         TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
                         WTABGAT, &
                         ILMOGAT, UEGAT, HBLGAT, &
-                        bi%ILW, ITC, ITCG, ITG, ISLFD, &
+                        shd%wc%ILG, ITC, ITCG, ITG, ISLFD, &
                         NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
                         GFLXGAT, CDHROW, CDMROW, HFSROW, TFXROW, &
                         QEVPROW, QFSROW, QFXROW, PETROW, GAROW, &
@@ -5323,13 +5341,13 @@ program RUNMESH
                         ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
                         QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
                         wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
-                        HOUR_NOW, bi%xxx, bi%yyy, bi%NA, &
-                        bi%NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
+                        HOUR_NOW, shd%xxx, shd%yyy, NA, &
+                        NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
                         M_C, M_S, M_R, &
-                        WF_ROUTETIMESTEP, WF_R1, WF_R2, bi%NAA, bi%iyMin, &
-                        bi%iyMax, bi%jxMin, bi%jxMax, bi%IAK, bi%IROUGH, &
-                        bi%ICHNL, bi%NEXT, bi%IREACH, bi%AL, bi%GRDN, bi%GRDE, &
-                        bi%DA, bi%BNKFLL, bi%SLOPE_CHNL, bi%ELEV, bi%FRAC, &
+                        WF_ROUTETIMESTEP, WF_R1, WF_R2, shd%NAA, shd%iyMin, &
+                        shd%iyMax, shd%jxMin, shd%jxMax, shd%IAK, shd%IROUGH, &
+                        shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
+                        shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
                         WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
                         WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
                         WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
@@ -5365,25 +5383,23 @@ program RUNMESH
                                             cp%TBARROW, cp%TCANROW, cp%THICROW, &
                                             cp%THLQROW, cp%TPNDROW, cp%TSNOROW, &
                                             cp%ZPNDROW, &
-                                            bi%NA, bi%NTYPE, bi%IGND, &
+                                            NA, NTYPE, IGND, &
                                             fls)
     end if !(SAVERESUMEFLAG == 3) then
 
-    if (OUTFIELDSFLAG == 1) call write_outputs(vr, ts, iof, bi, fls)
+    if (OUTFIELDSFLAG == 1) call write_outputs(vr, ts, iof, shd, fls)
 
     if (ENDDATA) print *, 'Reached end of forcing data'
     if (ENDDATE) print *, 'Reached end of simulation date'
 
 !> Calculate final storage
     FINAL_STORE = 0.0
-    do i = 1, bi%NML
-        if (bi%FRAC(bi%ILMOS(i)) >= 0.0) then
-!-        DO M = 1, NMTEST
-            FINAL_STORE = FINAL_STORE + FAREGAT(i)*(RCANGAT(i) + SCANGAT(i) + SNOGAT(i) + WSNOGAT(i) + ZPNDGAT(i)*RHOW)
-            do j = 1, bi%IGND
-                FINAL_STORE = FINAL_STORE + FAREGAT(i)*(THLQGAT(i, j)*RHOW + THICGAT(i, j)*RHOICE)*DLZWGAT(i, j)
+    do k = il1, il2
+        if (shd%FRAC(shd%lc%ILMOS(k)) >= 0.0) then
+            FINAL_STORE = FINAL_STORE + FAREGAT(k)*(RCANGAT(k) + SCANGAT(k) + SNOGAT(k) + WSNOGAT(k) + ZPNDGAT(k)*RHOW)
+            do j = 1, IGND
+                FINAL_STORE = FINAL_STORE + FAREGAT(k)*(THLQGAT(k, j)*RHOW + THICGAT(k, j)*RHOICE)*DLZWGAT(k, j)
             end do
-!-        END DO
         end if
     end do
 
