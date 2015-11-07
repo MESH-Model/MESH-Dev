@@ -303,7 +303,7 @@ program RUNMESH
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-    character(24) :: VERSION = 'TRUNK (895)'
+    character(24) :: VERSION = 'TRUNK (896)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE(7)
     logical VER_OK
@@ -3122,9 +3122,10 @@ program RUNMESH
                 DriftGAT, SublGAT, DepositionGAT)
 
     !> Initialize and open files for CLASS output.
-    if (WF_NUM_POINTS > 0) then
+    if ((ipid /= 0 .or. izero == 0) .and. WF_NUM_POINTS > 0) then
 
         !> After GATPREP. Determine the GAT-index of the output point.
+        op%K_OUT = 0
         do k = il1, il2
             do i = 1, WF_NUM_POINTS
                 if (op%N_OUT(i) == shd%lc%ILMOS(k) .and. op%II_OUT(i) == shd%lc%JLMOS(k)) op%K_OUT(i) = k
@@ -3183,7 +3184,7 @@ program RUNMESH
 
         !> Open the files if the GAT-index of the output point resides on this node.
         do i = 1, WF_NUM_POINTS
-            if (op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
+            if ((ipid /= 0 .or. izero == 0) .and. op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
 
                 !> Open the files in the appropriate directory.
                 BNAM = op%DIR_OUT(i)
@@ -3891,140 +3892,140 @@ program RUNMESH
 !     * WRITE FIELDS FROM CURRENT TIME STEP TO OUTPUT FILES.
 
         !> Write to CLASSOF* output files.
-        do k = 1, WF_NUM_POINTS
-            if (op%K_OUT(k) >= il1 .and. op%K_OUT(k) <= il2) then
+        do i = 1, WF_NUM_POINTS
+            if ((ipid /= 0 .or. izero == 0) .and. op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
 
             !> Update variables.
-                i = op%K_OUT(k)
-                if (2.0*FSVHGAT(i) > 0.0) then
-                    ALTOT = (ALVSGAT(i) + ALIRGAT(i))/2.0
+                k = op%K_OUT(i)
+                if (2.0*FSVHGAT(k) > 0.0) then
+                    ALTOT = (ALVSGAT(k) + ALIRGAT(k))/2.0
                 else
                     ALTOT = 0.0
                 end if
-                FSSTAR = 2.0*FSVHGAT(i)*(1.0 - ALTOT)
-                FLSTAR = FDLGAT(i) - SBC*GTGAT(i)**4
-                QH = HFSGAT(i)
-                QE = QEVPGAT(i)
+                FSSTAR = 2.0*FSVHGAT(k)*(1.0 - ALTOT)
+                FLSTAR = FDLGAT(k) - SBC*GTGAT(k)**4
+                QH = HFSGAT(k)
+                QE = QEVPGAT(k)
                 BEG = FSSTAR + FLSTAR - QH - QE
-                SNOMLT = HMFNGAT(i)
-                if (RHOSGAT(i) > 0.0) then
-                    ZSN = SNOGAT(i)/RHOSGAT(i)
+                SNOMLT = HMFNGAT(k)
+                if (RHOSGAT(k) > 0.0) then
+                    ZSN = SNOGAT(k)/RHOSGAT(k)
                 else
                     ZSN = 0.0
                 end if
-                if (TCANGAT(i) > 0.01) then
-                    TCN = TCANGAT(i) - TFREZ
+                if (TCANGAT(k) > 0.01) then
+                    TCN = TCANGAT(k) - TFREZ
                 else
                     TCN = 0.0
                 end if
-                if (TSNOGAT(i) > 0.01) then
-                    TSN = TSNOGAT(i) - TFREZ
+                if (TSNOGAT(k) > 0.01) then
+                    TSN = TSNOGAT(k) - TFREZ
                 else
                     TSN = 0.0
                 end if
-                if (TPNDGAT(i) > 0.01) then
-                    TPN = TPNDGAT(i) - TFREZ
+                if (TPNDGAT(k) > 0.01) then
+                    TPN = TPNDGAT(k) - TFREZ
                 else
                     TPN = 0.0
                 end if
                 if (shd%wc%ILG == 1) then
-                    GTOUT = GTGAT(i) - TFREZ
+                    GTOUT = GTGAT(k) - TFREZ
                 else
                     GTOUT = 0.0
                 end if
-                ZPND = ZPNDPRECS(i)*FCS(i) + ZPONDPREC(i)*FC(i) + ZPONDPREG(i)*FG(i) + ZPNDPREGS(i)*FGS(i)
-                FSTR = FSTRCS(i)*FCS(i) + FSTRC(i)*FC(i) + FSTRG(i)*FG(i) + FSTRGS(i)*FGS(i)
+                ZPND = ZPNDPRECS(k)*FCS(k) + ZPONDPREC(k)*FC(k) + ZPONDPREG(k)*FG(k) + ZPNDPREGS(k)*FGS(k)
+                FSTR = FSTRCS(k)*FCS(k) + FSTRC(k)*FC(k) + FSTRG(k)*FG(k) + FSTRGS(k)*FGS(k)
 
             !> Write to the CLASSOF* output files for sub-hourly output.
-                write(150 + k*10 + 4, &
+                write(150 + i*10 + 4, &
                       "(i2,',', i3,',', i5,',', i6,',', 9(f8.2,','), 2(f7.3,','), e11.3,',', f8.2,',', 3(f12.4,','))") &
                     HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, FSSTAR, FLSTAR, QH, &
-                    QE, SNOMLT, BEG, GTOUT, SNOGAT(i), &
-                    RHOSGAT(i), WSNOGAT(i), ALTOT, ROFGAT(i), &
-                    TPN, ZPNDGAT(i), ZPND, FSTR
-                write(150 + k*10 + 5, "(i2,',', i3,',', i5,',', i6,',', " // trim(adjustl(IGND_CHAR)) // &
+                    QE, SNOMLT, BEG, GTOUT, SNOGAT(k), &
+                    RHOSGAT(k), WSNOGAT(k), ALTOT, ROFGAT(k), &
+                    TPN, ZPNDGAT(k), ZPND, FSTR
+                write(150 + i*10 + 5, "(i2,',', i3,',', i5,',', i6,',', " // trim(adjustl(IGND_CHAR)) // &
                       "(f7.2,',', 2(f6.3,',')), f8.2,',', 2(f8.4,','), f8.2,',', f8.3,',')") &
                     HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, &
-                    (TBARGAT(i, j) - TFREZ, THLQGAT(i, j), &
-                    THICGAT(i, j), j = 1, IGND), TCN, &
-                    RCANGAT(i), SCANGAT(i), TSN, ZSN
-                write(150 + k*10 + 6, &
+                    (TBARGAT(k, j) - TFREZ, THLQGAT(k, j), &
+                    THICGAT(k, j), j = 1, IGND), TCN, &
+                    RCANGAT(k), SCANGAT(k), TSN, ZSN
+                write(150 + i*10 + 6, &
                       "(i2,',', i3,',', i5,',', 2(f10.2,','), f12.6,',', f10.2,',', f8.2,',', f10.2,',', f15.9,',')") &
-                    HOUR_NOW, MINS_NOW, JDAY_NOW, 2.0*FSVHGAT(i), FDLGAT(i), &
-                    PREGAT(i), TAGAT(i) - TFREZ, VMODGAT(i), PRESGAT(i), &
-                    QAGAT(i)
-                write(150 + k*10 + 7, "(999(e11.4,','))") &
-                    TROFGAT(i), TROOGAT(i), TROSGAT(i), &
-                    TROBGAT(i), ROFGAT(i), ROFOGAT(i), &
-                    ROFSGAT(i), ROFBGAT(i), &
-                    FCS(i), FGS(i), FC(i), FG(i)
-                write(150 + k*10 + 8, "(999(f12.4,','))") &
-                    FSGVGAT(i), FSGSGAT(i), FSGGGAT(i), &
-                    FLGVGAT(i), FLGSGAT(i), FLGGGAT(i), &
-                    HFSCGAT(i), HFSSGAT(i), HFSGGAT(i), &
-                    HEVCGAT(i), HEVSGAT(i), HEVGGAT(i), &
-                    HMFCGAT(i), HMFNGAT(i), &
-                    (HMFGGAT(i, j), j = 1, IGND), &
-                    HTCCGAT(i), HTCSGAT(i), &
-                    (HTCGAT(i, j), j = 1, IGND)
-                write(150 + k*10 + 9, "(999(e12.4,','))") &
-                    PCFCGAT(i), PCLCGAT(i), PCPNGAT(i), &
-                    PCPGGAT(i), QFCFGAT(i), QFCLGAT(i), &
-                    QFNGAT(i), QFGGAT(i), (QFCGAT(i, j), j = 1, IGND), &
-                    ROFCGAT(i), ROFNGAT(i), &
-                    ROFOGAT(i), ROFGAT(i), WTRCGAT(i), &
-                    WTRSGAT(i), WTRGGAT(i)
-                write(150 + k*10 + 10, "(i2,',', i3,',', i5,',', i6,',', 999(f14.6,','))") &
-                    HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, PREGAT(i)*DELT, QFSGAT(i)*DELT, &
-                    ROFGAT(i)*DELT, ROFOGAT(i)*DELT, ROFSGAT(i)*DELT, ROFBGAT(i)*DELT, &
-                    SCANGAT(i), RCANGAT(i), SNOGAT(i), WSNOGAT(i), &
-                    ZPNDGAT(i)*RHOW, (THLQGAT(i, j)*RHOW*DLZWGAT(i, j), j = 1, IGND), &
-                    (THICGAT(i, j)*RHOICE*DLZWGAT(i, j), j = 1, IGND)
+                    HOUR_NOW, MINS_NOW, JDAY_NOW, 2.0*FSVHGAT(k), FDLGAT(k), &
+                    PREGAT(k), TAGAT(k) - TFREZ, VMODGAT(k), PRESGAT(k), &
+                    QAGAT(k)
+                write(150 + i*10 + 7, "(999(e11.4,','))") &
+                    TROFGAT(k), TROOGAT(k), TROSGAT(k), &
+                    TROBGAT(k), ROFGAT(k), ROFOGAT(k), &
+                    ROFSGAT(k), ROFBGAT(k), &
+                    FCS(k), FGS(k), FC(k), FG(k)
+                write(150 + i*10 + 8, "(999(f12.4,','))") &
+                    FSGVGAT(k), FSGSGAT(k), FSGGGAT(k), &
+                    FLGVGAT(k), FLGSGAT(k), FLGGGAT(k), &
+                    HFSCGAT(k), HFSSGAT(k), HFSGGAT(k), &
+                    HEVCGAT(k), HEVSGAT(k), HEVGGAT(k), &
+                    HMFCGAT(k), HMFNGAT(k), &
+                    (HMFGGAT(k, j), j = 1, IGND), &
+                    HTCCGAT(k), HTCSGAT(k), &
+                    (HTCGAT(k, j), j = 1, IGND)
+                write(150 + i*10 + 9, "(999(e12.4,','))") &
+                    PCFCGAT(k), PCLCGAT(k), PCPNGAT(k), &
+                    PCPGGAT(k), QFCFGAT(k), QFCLGAT(k), &
+                    QFNGAT(k), QFGGAT(k), (QFCGAT(k, j), j = 1, IGND), &
+                    ROFCGAT(k), ROFNGAT(k), &
+                    ROFOGAT(k), ROFGAT(k), WTRCGAT(k), &
+                    WTRSGAT(k), WTRGGAT(k)
+                write(150 + i*10 + 10, "(i2,',', i3,',', i5,',', i6,',', 999(f14.6,','))") &
+                    HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, PREGAT(k)*DELT, QFSGAT(k)*DELT, &
+                    ROFGAT(k)*DELT, ROFOGAT(k)*DELT, ROFSGAT(k)*DELT, ROFBGAT(k)*DELT, &
+                    SCANGAT(k), RCANGAT(k), SNOGAT(k), WSNOGAT(k), &
+                    ZPNDGAT(k)*RHOW, (THLQGAT(k, j)*RHOW*DLZWGAT(k, j), j = 1, IGND), &
+                    (THICGAT(k, j)*RHOICE*DLZWGAT(k, j), j = 1, IGND)
 
             !> Calculate accumulated grid variables.
-                do i = il1, il2
-                    if (shd%lc%ILMOS(i) == op%N_OUT(k)) then
-                        co%PREACC(k) = co%PREACC(k) + PREGAT(i)*FAREGAT(i)*DELT
-                        co%GTACC(k) = co%GTACC(k) + GTGAT(i)*FAREGAT(i)
-                        co%QEVPACC(k) = co%QEVPACC(k) + QEVPGAT(i)*FAREGAT(i)
-                        co%EVAPACC(k) = co%EVAPACC(k) + QFSGAT(i)*FAREGAT(i)*DELT
-                        co%HFSACC(k) = co%HFSACC(k) + HFSGAT(i)*FAREGAT(i)
-                        co%HMFNACC(k) = co%HMFNACC(k) + HMFNGAT(i)*FAREGAT(i)
-                        co%ROFACC(k) = co%ROFACC(k) + ROFGAT(i)*FAREGAT(i)*DELT
-                        co%ROFOACC(k) = co%ROFOACC(k) + ROFOGAT(i)*FAREGAT(i)*DELT
-                        co%ROFSACC(k) = co%ROFSACC(k) + ROFSGAT(i)*FAREGAT(i)*DELT
-                        co%ROFBACC(k) = co%ROFBACC(k) + ROFBGAT(i)*FAREGAT(i)*DELT
-                        co%WTBLACC(k) = co%WTBLACC(k) + WTABGAT(i)*FAREGAT(i)
+                do k = il1, il2
+                    if (shd%lc%ILMOS(k) == op%N_OUT(i)) then
+                        co%PREACC(i) = co%PREACC(i) + PREGAT(k)*FAREGAT(k)*DELT
+                        co%GTACC(i) = co%GTACC(i) + GTGAT(k)*FAREGAT(k)
+                        co%QEVPACC(i) = co%QEVPACC(i) + QEVPGAT(k)*FAREGAT(k)
+                        co%EVAPACC(i) = co%EVAPACC(i) + QFSGAT(k)*FAREGAT(k)*DELT
+                        co%HFSACC(i) = co%HFSACC(i) + HFSGAT(k)*FAREGAT(k)
+                        co%HMFNACC(i) = co%HMFNACC(i) + HMFNGAT(k)*FAREGAT(k)
+                        co%ROFACC(i) = co%ROFACC(i) + ROFGAT(k)*FAREGAT(k)*DELT
+                        co%ROFOACC(i) = co%ROFOACC(i) + ROFOGAT(k)*FAREGAT(k)*DELT
+                        co%ROFSACC(i) = co%ROFSACC(i) + ROFSGAT(k)*FAREGAT(k)*DELT
+                        co%ROFBACC(i) = co%ROFBACC(i) + ROFBGAT(k)*FAREGAT(k)*DELT
+                        co%WTBLACC(i) = co%WTBLACC(i) + WTABGAT(k)*FAREGAT(k)
                         do j = 1, IGND
-                            co%TBARACC(k, j) = co%TBARACC(k, j) + TBARGAT(i, j)*shd%lc%ACLASS(shd%lc%ILMOS(i), shd%lc%JLMOS(i))
-                            co%THLQACC(k, j) = co%THLQACC(k, j) + THLQGAT(i, j)*FAREGAT(i)
-                            co%THICACC(k, j) = co%THICACC(k, j) + THICGAT(i, j)*FAREGAT(i)
-                            co%THALACC(k, j) = co%THALACC(k, j) + (THLQGAT(i, j) + THICGAT(i, j))*FAREGAT(i)
-                            co%GFLXACC(k, j) = co%GFLXACC(k, j) + GFLXGAT(i, j)*FAREGAT(i)
+                            co%TBARACC(i, j) = co%TBARACC(i, j) + TBARGAT(k, j)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+                            co%THLQACC(i, j) = co%THLQACC(i, j) + THLQGAT(k, j)*FAREGAT(k)
+                            co%THICACC(i, j) = co%THICACC(i, j) + THICGAT(k, j)*FAREGAT(k)
+                            co%THALACC(i, j) = co%THALACC(i, j) + (THLQGAT(k, j) + THICGAT(k, j))*FAREGAT(k)
+                            co%GFLXACC(i, j) = co%GFLXACC(i, j) + GFLXGAT(k, j)*FAREGAT(k)
                         end do
-                        co%ALVSACC(k) = co%ALVSACC(k) + ALVSGAT(i)*FSVHGAT(i)*FAREGAT(i)
-                        co%ALIRACC(k) = co%ALIRACC(k) + ALIRGAT(i)*FSIHGAT(i)*FAREGAT(i)
-                        if (SNOGAT(i) > 0.0) then
-                            co%RHOSACC(k) = co%RHOSACC(k) + RHOSGAT(i)*FAREGAT(i)
-                            co%TSNOACC(k) = co%TSNOACC(k) + TSNOGAT(i)*FAREGAT(i)
-                            co%WSNOACC(k) = co%WSNOACC(k) + WSNOGAT(i)*FAREGAT(i)
-                            co%SNOARE(k) = co%SNOARE(k) + FAREGAT(i)
+                        co%ALVSACC(i) = co%ALVSACC(i) + ALVSGAT(k)*FSVHGAT(k)*FAREGAT(k)
+                        co%ALIRACC(i) = co%ALIRACC(i) + ALIRGAT(k)*FSIHGAT(k)*FAREGAT(k)
+                        if (SNOGAT(k) > 0.0) then
+                            co%RHOSACC(i) = co%RHOSACC(i) + RHOSGAT(k)*FAREGAT(k)
+                            co%TSNOACC(i) = co%TSNOACC(i) + TSNOGAT(k)*FAREGAT(k)
+                            co%WSNOACC(i) = co%WSNOACC(i) + WSNOGAT(k)*FAREGAT(k)
+                            co%SNOARE(i) = co%SNOARE(i) + FAREGAT(k)
                         end if
-                        if (TCANGAT(i) > 0.5) then
-                            co%TCANACC(k) = co%TCANACC(k) + TCANGAT(i)*FAREGAT(i)
-                            co%CANARE(k) = co%CANARE(k) + FAREGAT(i)
+                        if (TCANGAT(k) > 0.5) then
+                            co%TCANACC(i) = co%TCANACC(i) + TCANGAT(k)*FAREGAT(k)
+                            co%CANARE(i) = co%CANARE(i) + FAREGAT(k)
                         end if
-                        co%SNOACC(k) = co%SNOACC(k) + SNOGAT(i)*FAREGAT(i)
-                        co%RCANACC(k) = co%RCANACC(k) + RCANGAT(i)*FAREGAT(i)
-                        co%SCANACC(k) = co%SCANACC(k) + SCANGAT(i)*FAREGAT(i)
-                        co%GROACC(k) = co%GROACC(k) + GROGAT(i)*FAREGAT(i)
-                        co%FSINACC(k) = co%FSINACC(k) + 2.0*FSVHGAT(i)*FAREGAT(i)
-                        co%FLINACC(k) = co%FLINACC(k) + FDLGAT(i)*FAREGAT(i)
-                        co%FLUTACC(k) = co%FLUTACC(k) + SBC*GTGAT(i)**4*FAREGAT(i)
-                        co%TAACC(k) = co%TAACC(k) + TAGAT(i)*FAREGAT(i)
-                        co%UVACC(k) = co%UVACC(k) + VMODGAT(i)*FAREGAT(i)
-                        co%PRESACC(k) = co%PRESACC(k) + PRESGAT(i)*FAREGAT(i)
-                        co%QAACC(k) = co%QAACC(k) + QAGAT(i)*FAREGAT(i)
+                        co%SNOACC(i) = co%SNOACC(i) + SNOGAT(k)*FAREGAT(k)
+                        co%RCANACC(i) = co%RCANACC(i) + RCANGAT(k)*FAREGAT(k)
+                        co%SCANACC(i) = co%SCANACC(i) + SCANGAT(k)*FAREGAT(k)
+                        co%GROACC(i) = co%GROACC(i) + GROGAT(k)*FAREGAT(k)
+                        co%FSINACC(i) = co%FSINACC(i) + 2.0*FSVHGAT(k)*FAREGAT(k)
+                        co%FLINACC(i) = co%FLINACC(i) + FDLGAT(k)*FAREGAT(k)
+                        co%FLUTACC(i) = co%FLUTACC(i) + SBC*GTGAT(k)**4*FAREGAT(k)
+                        co%TAACC(i) = co%TAACC(i) + TAGAT(k)*FAREGAT(k)
+                        co%UVACC(i) = co%UVACC(i) + VMODGAT(k)*FAREGAT(k)
+                        co%PRESACC(i) = co%PRESACC(i) + PRESGAT(k)*FAREGAT(k)
+                        co%QAACC(i) = co%QAACC(i) + QAGAT(k)*FAREGAT(k)
                     end if
                 end do
 
@@ -4032,85 +4033,85 @@ program RUNMESH
                 if (NCOUNT == 48) then
 
                 !> Calculate grid averages.
-                    co%GTACC(k) = co%GTACC(k)/real(NSUM)
-                    co%QEVPACC(k) = co%QEVPACC(k)/real(NSUM)
-                    co%HFSACC(k) = co%HFSACC(k)/real(NSUM)
-                    co%HMFNACC(k) = co%HMFNACC(k)/real(NSUM)
-                    co%WTBLACC(k) = co%WTBLACC(k)/real(NSUM)
-                    co%TBARACC(k, :) = co%TBARACC(k, :)/real(NSUM)
-                    co%THLQACC(k, :) = co%THLQACC(k, :)/real(NSUM)
-                    co%THICACC(k, :) = co%THICACC(k, :)/real(NSUM)
-                    co%THALACC(k, :) = co%THALACC(k, :)/real(NSUM)
-                    if (co%FSINACC(k) > 0.0) then
-                        co%ALVSACC(k) = co%ALVSACC(k)/(co%FSINACC(k)*0.5)
-                        co%ALIRACC(k) = co%ALIRACC(k)/(co%FSINACC(k)*0.5)
+                    co%GTACC(i) = co%GTACC(i)/real(NSUM)
+                    co%QEVPACC(i) = co%QEVPACC(i)/real(NSUM)
+                    co%HFSACC(i) = co%HFSACC(i)/real(NSUM)
+                    co%HMFNACC(i) = co%HMFNACC(i)/real(NSUM)
+                    co%WTBLACC(i) = co%WTBLACC(i)/real(NSUM)
+                    co%TBARACC(i, :) = co%TBARACC(i, :)/real(NSUM)
+                    co%THLQACC(i, :) = co%THLQACC(i, :)/real(NSUM)
+                    co%THICACC(i, :) = co%THICACC(i, :)/real(NSUM)
+                    co%THALACC(i, :) = co%THALACC(i, :)/real(NSUM)
+                    if (co%FSINACC(i) > 0.0) then
+                        co%ALVSACC(i) = co%ALVSACC(i)/(co%FSINACC(i)*0.5)
+                        co%ALIRACC(i) = co%ALIRACC(i)/(co%FSINACC(i)*0.5)
                     else
-                        co%ALVSACC(k) = 0.0
-                        co%ALIRACC(k) = 0.0
+                        co%ALVSACC(i) = 0.0
+                        co%ALIRACC(i) = 0.0
                     end if
-                    if (co%SNOARE(k) > 0.0) then
-                        co%RHOSACC(k) = co%RHOSACC(k)/co%SNOARE(k)
-                        co%TSNOACC(k) = co%TSNOACC(k)/co%SNOARE(k)
-                        co%WSNOACC(k) = co%WSNOACC(k)/co%SNOARE(k)
+                    if (co%SNOARE(i) > 0.0) then
+                        co%RHOSACC(i) = co%RHOSACC(i)/co%SNOARE(i)
+                        co%TSNOACC(i) = co%TSNOACC(i)/co%SNOARE(i)
+                        co%WSNOACC(i) = co%WSNOACC(i)/co%SNOARE(i)
                     end if
-                    if (co%CANARE(k) > 0.0) then
-                        co%TCANACC(k) = co%TCANACC(k)/co%CANARE(k)
+                    if (co%CANARE(i) > 0.0) then
+                        co%TCANACC(i) = co%TCANACC(i)/co%CANARE(i)
                     end if
-                    co%SNOACC(k) = co%SNOACC(k)/real(NSUM)
-                    co%RCANACC(k) = co%RCANACC(k)/real(NSUM)
-                    co%SCANACC(k) = co%SCANACC(k)/real(NSUM)
-                    co%GROACC(k) = co%GROACC(k)/real(NSUM)
-                    co%FSINACC(k) = co%FSINACC(k)/real(NSUM)
-                    co%FLINACC(k) = co%FLINACC(k)/real(NSUM)
-                    co%FLUTACC(k) = co%FLUTACC(k)/real(NSUM)
-                    co%TAACC(k) = co%TAACC(k)/real(NSUM)
-                    co%UVACC(k) = co%UVACC(k)/real(NSUM)
-                    co%PRESACC(k) = co%PRESACC(k)/real(NSUM)
-                    co%QAACC(k) = co%QAACC(k)/real(NSUM)
-                    ALTOT = (co%ALVSACC(k) + co%ALIRACC(k))/2.0
-                    FSSTAR = co%FSINACC(k)*(1.0 - ALTOT)
-                    FLSTAR = co%FLINACC(k) - co%FLUTACC(k)
-                    QH = co%HFSACC(k)
-                    QE = co%QEVPACC(k)
+                    co%SNOACC(i) = co%SNOACC(i)/real(NSUM)
+                    co%RCANACC(i) = co%RCANACC(i)/real(NSUM)
+                    co%SCANACC(i) = co%SCANACC(i)/real(NSUM)
+                    co%GROACC(i) = co%GROACC(i)/real(NSUM)
+                    co%FSINACC(i) = co%FSINACC(i)/real(NSUM)
+                    co%FLINACC(i) = co%FLINACC(i)/real(NSUM)
+                    co%FLUTACC(i) = co%FLUTACC(i)/real(NSUM)
+                    co%TAACC(i) = co%TAACC(i)/real(NSUM)
+                    co%UVACC(i) = co%UVACC(i)/real(NSUM)
+                    co%PRESACC(i) = co%PRESACC(i)/real(NSUM)
+                    co%QAACC(i) = co%QAACC(i)/real(NSUM)
+                    ALTOT = (co%ALVSACC(i) + co%ALIRACC(i))/2.0
+                    FSSTAR = co%FSINACC(i)*(1.0 - ALTOT)
+                    FLSTAR = co%FLINACC(i) - co%FLUTACC(i)
+                    QH = co%HFSACC(i)
+                    QE = co%QEVPACC(i)
                     BEG = FSSTAR + FLSTAR - QH - QE
-                    SNOMLT = co%HMFNACC(k)
-                    if (co%RHOSACC(k) > 0.0) then
-                        ZSN = co%SNOACC(k)/co%RHOSACC(k)
+                    SNOMLT = co%HMFNACC(i)
+                    if (co%RHOSACC(i) > 0.0) then
+                        ZSN = co%SNOACC(i)/co%RHOSACC(i)
                     else
                         ZSN = 0.0
                     end if
-                    if (co%TCANACC(k) > 0.01) then
-                        TCN = co%TCANACC(k) - TFREZ
+                    if (co%TCANACC(i) > 0.01) then
+                        TCN = co%TCANACC(i) - TFREZ
                     else
                         TCN = 0.0
                     end if
-                    if (co%TSNOACC(k) > 0.01) then
-                        TSN = co%TSNOACC(k) - TFREZ
+                    if (co%TSNOACC(i) > 0.01) then
+                        TSN = co%TSNOACC(i) - TFREZ
                     else
                         TSN = 0.0
                     end if
                     if (shd%wc%ILG == 1) then
-                        GTOUT = co%GTACC(k) - TFREZ
+                        GTOUT = co%GTACC(i) - TFREZ
                     else
                         GTOUT = 0.0
                     end if
 
                 !> Write to the CLASSOF* output files for daily accumulated output.
-                    write(150 + k*10 + 1, "(i4,',', i5,',', 9(f8.2,','), 2(f8.3,','), 999(f12.4,','))") &
+                    write(150 + i*10 + 1, "(i4,',', i5,',', 9(f8.2,','), 2(f8.3,','), 999(f12.4,','))") &
                         JDAY_NOW, YEAR_NOW, FSSTAR, FLSTAR, QH, QE, SNOMLT, &
-                        BEG, GTOUT, co%SNOACC(k), co%RHOSACC(k), &
-                        co%WSNOACC(k), ALTOT, co%ROFACC(k), co%ROFOACC(k), &
-                        co%ROFSACC(k), co%ROFBACC(k)
-                    write(150 + k*10 + 2, "(i4,',', i5,',', " // adjustl(IGND_CHAR) // "((f8.2,','), " // &
+                        BEG, GTOUT, co%SNOACC(i), co%RHOSACC(i), &
+                        co%WSNOACC(i), ALTOT, co%ROFACC(i), co%ROFOACC(i), &
+                        co%ROFSACC(i), co%ROFBACC(i)
+                    write(150 + i*10 + 2, "(i4,',', i5,',', " // adjustl(IGND_CHAR) // "((f8.2,','), " // &
                           "2(f6.3,',')), f8.2,',', 2(f7.4,','), 2(f8.2,','))") &
-                        JDAY_NOW, YEAR_NOW, (co%TBARACC(k, j) - TFREZ, &
-                        co%THLQACC(k, j), co%THICACC(k, j), j = 1, IGND), &
-                        TCN, co%RCANACC(k), co%SCANACC(k), TSN, ZSN
-                    write(150 + k*10 + 3, "(i4,',', i5,',', 3(f9.2,','), f8.2,',', " // &
+                        JDAY_NOW, YEAR_NOW, (co%TBARACC(i, j) - TFREZ, &
+                        co%THLQACC(i, j), co%THICACC(i, j), j = 1, IGND), &
+                        TCN, co%RCANACC(i), co%SCANACC(i), TSN, ZSN
+                    write(150 + i*10 + 3, "(i4,',', i5,',', 3(f9.2,','), f8.2,',', " // &
                           "f10.2,',', e12.3,',', 2(f12.3,','))") &
-                        JDAY_NOW, YEAR_NOW, co%FSINACC(k), co%FLINACC(k), &
-                        co%TAACC(k) - TFREZ, co%UVACC(k), co%PRESACC(k), &
-                        co%QAACC(k), co%PREACC(k), co%EVAPACC(k)
+                        JDAY_NOW, YEAR_NOW, co%FSINACC(i), co%FLINACC(i), &
+                        co%TAACC(i) - TFREZ, co%UVACC(i), co%PRESACC(i), &
+                        co%QAACC(i), co%PREACC(i), co%EVAPACC(i)
 
                 !> Reset the CLASS output variables.
                     co%PREACC = 0.0
@@ -4149,7 +4150,7 @@ program RUNMESH
                     co%PRESACC = 0.0
                     co%QAACC = 0.0
                 end if !(NCOUNT == 48) then
-            end if !(op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
+            end if !(op%K_OUT(k) >= il1 .and. op%K_OUT(k) <= il2) then
         end do !i = 1, WF_NUM_POINTS
 
         if (ipid == 0) then
@@ -5463,7 +5464,7 @@ program RUNMESH
     !todo++:
     !> Close the CLASS output files if the GAT-index of the output point resides on this node.
     do i = 1, WF_NUM_POINTS
-        if (op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
+        if ((ipid /= 0 .or. izero == 0) .and. op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
             close(150 + i*10 + 1)
             close(150 + i*10 + 2)
             close(150 + i*10 + 3)

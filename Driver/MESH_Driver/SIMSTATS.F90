@@ -401,8 +401,8 @@ end subroutine
 !    else
 !       open(100, file='Metrics_Out.txt')
 !    endif
-            write(100, *) "MAE ", "RMSE ", "BIAS ", "NSD ", "lnNSD ", "TPD "
-            write(100, *) (st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), nsd(j), lnsd(j), int(tpd(j)), &
+            write(iun, *) "MAE ", "RMSE ", "BIAS ", "NSD ", "lnNSD ", "TPD "
+            write(iun, *) (st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), nsd(j), lnsd(j), int(tpd(j)), &
                 j = 1, size(qobs, 2))
             close(iun)
         end if
