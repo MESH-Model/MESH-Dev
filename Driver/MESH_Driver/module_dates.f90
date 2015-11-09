@@ -29,12 +29,17 @@ module model_dates
     type iter_counter
 
         integer :: &
-            now_year, now_day_julian, now_month, now_day, &
-            now_hour, now_min, &
-!            timestep = 1800, &
-            count_year, count_day_julian, count_month, count_day, &
-            count_hour, count_min, &
-            count_timestep
+            now_year, now_jday, now_month, now_day, &
+            now_hour, now_mins, &
+            dts = 1800, &
+            count_year, count_jday, count_month, count_day, &
+            count_hour, count_mins, &
+
+            !* ts_daily: Count of the current time-step. Resets daily.
+            !* ts_hourly: Count of the current time-step. Resets hourly.
+            !* ts_halfhourly: Count of the current time-step. Resets every hour or half-past the hour.
+            !* ts_count: Cummulative count of the time-step.
+            ts_daily, ts_hourly, ts_halfhourly, ts_count
 
         contains
 
@@ -81,21 +86,21 @@ module model_dates
 
     contains
 
-    subroutine init_iter_counter(ic, start_year, start_day_julian, start_hour, start_min, timestep)
+    subroutine init_iter_counter(ic, start_year, start_day_julian, start_hour, start_mins, timestep)
 
         !> Derived-type variable.
         type(iter_counter) :: ic
 
         !> Input variables.
         !* timestep: Time-step of the model iteration [s].
-        integer, intent(in) :: start_year, start_day_julian, start_hour, start_min
+        integer, intent(in) :: start_year, start_day_julian, start_hour, start_mins
         integer, intent(in), optional :: timestep
 
         !> Update now counters.
         ic%now_year = start_year
-        ic%now_day_julian = start_day_julian
+        ic%now_jday = start_day_julian
         ic%now_hour = start_hour + 1
-        ic%now_min = start_min
+        ic%now_mins = start_mins
         call julian2monthday(start_day_julian, start_year, ic%now_month, ic%now_day)
 
         !> Override pre-set time-step (if provided).
@@ -104,23 +109,26 @@ module model_dates
             TIME_STEP_DELT = timestep
 
         !> Initialize counters.
-        ic%count_year = 1
-        ic%count_day_julian = 1
-        ic%count_month = 1
-        ic%count_day = 1
-        ic%count_hour = 1
-        ic%count_timestep = 1
+        ic%count_year = 0
+        ic%count_jday = 0
+        ic%count_month = 0
+        ic%count_day = 0
+        ic%count_hour = 0
+        ic%count_mins = 0
+        ic%ts_daily = 0
+        ic%ts_hourly = 0
+        ic%ts_halfhourly = 0
+        ic%ts_count = 0
 
     end subroutine
 
-    subroutine update_now_iter_counter(ic, now_year, now_day_julian, now_hour, now_timestep)
+    subroutine update_now_iter_counter(ic, now_year, now_jday, now_hour, now_mins)
 
         !> Derived-type variable.
         type(iter_counter) :: ic
 
         !> Input variables.
-        integer, intent(in) :: now_year, now_day_julian, now_hour
-        integer, intent(in), optional :: now_timestep
+        integer, intent(in) :: now_year, now_jday, now_hour, now_mins
 
         !> Local variables.
         integer :: month, day
@@ -132,13 +140,13 @@ module model_dates
         end if
 
         !> Julian day:
-        if (now_day_julian /= ic%now_day_julian) then
-            ic%count_day_julian = ic%count_day_julian + 1
-            ic%now_day_julian = now_day_julian
+        if (now_jday /= ic%now_jday) then
+            ic%count_jday = ic%count_jday + 1
+            ic%now_jday = now_jday
         end if
 
         !> Determine the current month and day.
-        call julian2monthday(now_day_julian, now_year, month, day)
+        call julian2monthday(now_jday, now_year, month, day)
 
         !> Month:
         if (month /= ic%now_month) then
@@ -150,27 +158,38 @@ module model_dates
         if (day /= ic%now_day) then
             ic%count_day = ic%count_day + 1
             ic%now_day = day
+            ic%ts_daily = 0
         end if
 
         !> Hourly:
         if (now_hour /= ic%now_hour) then
             ic%count_hour = ic%count_hour + 1
             ic%now_hour = now_hour
+            ic%ts_hourly = 0
+        end if
+
+        !> Minutes:
+        if (now_mins /= ic%now_mins) then
+            ic%count_mins = ic%count_mins + 1
+            ic%now_mins = now_mins
+            if (ic%now_mins == 0 .or. ic%now_mins == 30) then
+                ic%ts_halfhourly = 0
+            end if
         end if
 
         !debug: Print the now.
         !print *, "now: Y JD M D HR"
-        !print *, ic%now_year, ic%now_day_julian, ic%now_month, &
-        !    ic%now_day, ic%now_hour
+        !print *, ic%now_year, ic%now_jday, ic%now_month, ic%now_day, ic%now_hour
 
         !debug: Print count.
         !print *, "count: Y JD M D HR"
-        !print *, ic%count_year, ic%count_day_julian, ic%count_month, &
-        !    ic%count_day, ic%count_hour
+        !print *, ic%count_year, ic%count_jday, ic%count_month, ic%count_day, ic%count_hour
 
-        !> Update time-step.
-        if (present(now_timestep)) &
-            ic%count_timestep = ic%count_timestep + 1
+        !> Update time-step counters.
+        ic%ts_daily = ic%ts_daily + 1
+        ic%ts_hourly = ic%ts_hourly + 1
+        ic%ts_halfhourly = ic%ts_halfhourly + 1
+        ic%ts_count = ic%ts_count + 1
 
     end subroutine
 

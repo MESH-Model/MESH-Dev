@@ -387,17 +387,17 @@ program RUNMESH
 !* J_G: REAL TEMPORARY JX COORDINATE FOR STREAM AND RESERVOIR GAUGES
 !>*******************************************************************
 !>
-!* rte_frames_now: FRAME NUMBER BEING WRITTEN TO R2C-FORMAT FILE
-!* rte_frames_total: TOTAL NUMBER OF FRAMES IN R2C-FORMAT FILE (TOTAL
-!*            NUMBER OF FRAMES IS NEVER KNOWN, IS ALWAYS SET TO
-!*            rte_frames_total + 1)
-    integer rte_frames_now, rte_frames_total
+!-!* rte_frames_now: FRAME NUMBER BEING WRITTEN TO R2C-FORMAT FILE
+!-!* rte_frames_total: TOTAL NUMBER OF FRAMES IN R2C-FORMAT FILE (TOTAL
+!-!*            NUMBER OF FRAMES IS NEVER KNOWN, IS ALWAYS SET TO
+!-!*            rte_frames_total + 1)
+!-    integer rte_frames_now, rte_frames_total
     integer FRAME_NO_NEW
-!* rte_runoff: HOURLY SIMULATED RUNOFF
-!* rte_recharge: HOURLY SIMULATED RECHARGE
-!* rte_leakage: UNKNOWN, BUT MAY BE USED IN THE FUTURE
-    real, dimension(:, :), allocatable :: rte_runoff, rte_recharge, rte_leakage
-!-* LEAKAGE: UNKNOWN, BUT MAY BE USED IN THE FUTURE
+!-!* rte_runoff: HOURLY SIMULATED RUNOFF
+!-!* rte_recharge: HOURLY SIMULATED RECHARGE
+!-!* rte_leakage: UNKNOWN, BUT MAY BE USED IN THE FUTURE
+!-    real, dimension(:, :), allocatable :: rte_runoff, rte_recharge, rte_leakage
+!-!-* LEAKAGE: UNKNOWN, BUT MAY BE USED IN THE FUTURE
 
 !> GRID OUTPUT POINTS
 !* BNAM: TEMPORARY HOLD FOR OUTPUT DIRECTORY (12 CHARACTER STRING)
@@ -790,8 +790,9 @@ program RUNMESH
 !> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
     type(OUT_FLDS) :: VR
     type(ShedGridParams) :: shd
-    type(DATES_MODEL) :: TS
-    type(INFO_OUT) :: IOF
+    type(dates_model) :: ts
+    type(iter_counter) :: ic
+    type(INFO_OUT) :: ifo
     type(CLIM_INFO) :: cm
     type(met_data) :: md
     type(CLASSOUT_VARS) :: co
@@ -1034,6 +1035,8 @@ program RUNMESH
 !>
     call check_parameters(WF_R2, M_C, NMTEST, cp, hp, soil_por_max, soil_depth, s0, t_ice_lens)
 
+    call init_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW)
+
     !> Assign shed values to local variables.
     NA = shd%NA
     NTYPE = shd%lc%NTYPE
@@ -1198,16 +1201,16 @@ program RUNMESH
 !!> WATROUTE INPUT FILES:
 !-ALLOCATE (RUNOFF(YCOUNT, XCOUNT), &
 !-  RECHARGE(YCOUNT, XCOUNT), STAT=PAS)
-    if (ipid == 0) then
-        allocate(rte_runoff(shd%yCount, shd%xCount), &
-                 rte_recharge(shd%yCount, shd%xCount), rte_leakage(shd%yCount, shd%xCount), stat = ierr)
-        if (ierr /= 0) then
-            print 1114, 'Standalone RTE input'
-            print 1118, 'Grid square rows', shd%yCount
-            print 1118, 'Grid square columns', shd%xCount
-            stop
-        end if
-    end if
+!-    if (ipid == 0) then
+!-        allocate(rte_runoff(shd%yCount, shd%xCount), &
+!-                 rte_recharge(shd%yCount, shd%xCount), rte_leakage(shd%yCount, shd%xCount), stat = ierr)
+!-        if (ierr /= 0) then
+!-            print 1114, 'Standalone RTE input'
+!-            print 1118, 'Grid square rows', shd%yCount
+!-            print 1118, 'Grid square columns', shd%xCount
+!-            stop
+!-        end if
+!-    end if
 
 1114 format(/1x, 'Error allocating ', a, ' variables.', &
             /1x, 'Check that these bounds are within an acceptable range.', /)
@@ -1571,6 +1574,8 @@ program RUNMESH
         open(86, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/basin_SWE_alldays.csv')
     end if !(BASINSWEOUTFLAG > 0) then
 
+    if (ipid == 0) call run_between_grid_config(shd, ts, ic)
+
 !> *********************************************************************
 !>  Open and read in values from MESH_input_reservoir.txt file
 !> *********************************************************************
@@ -1880,7 +1885,7 @@ program RUNMESH
         call init_soil_statevars(sov, shd)
         call init_met_data(md, shd)
         call init_water_balance(wb_h, shd)
-        if (OUTFIELDSFLAG == 1) call init_out(vr, ts, iof, shd)
+        if (OUTFIELDSFLAG == 1) call init_out(shd, ts, ic, ifo, vr)
     end if !(ipid == 0) then
 
 !> routing parameters
@@ -2027,19 +2032,19 @@ program RUNMESH
 
     if (ipid == 0) then
 
-!> SET GRID-FORMAT WATROUTE OUTPUT           !
-!-DO I = 1, YCOUNT                            !
-!-  DO J = 1, XCOUNT                          !
-        rte_runoff = 0.0                    !
-        rte_recharge = 0.0                  !
-        rte_leakage = 0.0
-!-> CDAN            LEAKAGE(I, J) = 0.0       !
-!-   END DO                                   !
-!-END DO                                      !
+!-!> SET GRID-FORMAT WATROUTE OUTPUT           !
+!--DO I = 1, YCOUNT                            !
+!--  DO J = 1, XCOUNT                          !
+!-        rte_runoff = 0.0                    !
+!-        rte_recharge = 0.0                  !
+!-        rte_leakage = 0.0
+!--> CDAN            LEAKAGE(I, J) = 0.0       !
+!--   END DO                                   !
+!--END DO                                      !
 
-!>  SET FRAME COUNT FOR WRITE_R2C
-        rte_frames_now = 1
-        rte_frames_total = 1
+!-!>  SET FRAME COUNT FOR WRITE_R2C
+!-        rte_frames_now = 1
+!-        rte_frames_total = 1
 
 !> ******************************************************
 !> echo print information to MESH_output_echo_print.txt
@@ -2238,7 +2243,7 @@ program RUNMESH
 !> *******************************************************************
 !>
 
-    if (ipid == 0) then
+!-    if (ipid == 0) then
 
 !> R2C-FORMAT OUTPUT FILES (RUNOFF, RECHARGE, AND LEAKAGE VALUES)
 !> CALL WRITE_R2C TO WRITE R2C-FORMAT FILES
@@ -2254,17 +2259,17 @@ program RUNMESH
 !>
 !> HEADER INFORMATION
 !>
-!-AUTHOR = "MESH_DRIVER"
-!-COORDSYS_TEMP = COORDSYS1
-!-ZONE_TEMP = ZONE1
-!-DATUM_TEMP = DATUM1
-!-XORIGIN_TEMP = XORIGIN
-!-YORIGIN_TEMP = YORIGIN
-!-XCOUNT_TEMP = XCOUNT
-!-YCOUNT_TEMP = YCOUNT
-!-XDELTA_TEMP = XDELTA
-!-YDELTA_TEMP = YDELTA
-!-SOURCE_FILE_NAME = "CLASS"
+!--AUTHOR = "MESH_DRIVER"
+!--COORDSYS_TEMP = COORDSYS1
+!--ZONE_TEMP = ZONE1
+!--DATUM_TEMP = DATUM1
+!--XORIGIN_TEMP = XORIGIN
+!--YORIGIN_TEMP = YORIGIN
+!--XCOUNT_TEMP = XCOUNT
+!--YCOUNT_TEMP = YCOUNT
+!--XDELTA_TEMP = XDELTA
+!--YDELTA_TEMP = YDELTA
+!--SOURCE_FILE_NAME = "CLASS"
 !>
 !> OPEN RTE.EXE INPUT FILES (UNIT 261, UNIT 262)
 !> (RTE.EXE MIGHT ALSO BE CALLED WATROUTE.EXE)
@@ -2274,33 +2279,33 @@ program RUNMESH
 !>
 !> RUNOFF (MODELFLG .EQ. 'r', 'l', or 'i' (ALL))
 !>
-        if (PRINTRFFR2CFILEFLAG == 1) then
-!-  NAME = "Gridded Channel Inflow"
-!-  ATTRIBUTE_NAME = "channel_inflow"
-!-  ATTRIBUTE_UNITS = "mm"
-!-  ATTRIBUTE_TYPE = "flow"
-            call write_r2c(fls, mfk%f31, shd, &
-                           1, 0, 1, 1, &
-                           rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
-                           rte_runoff, &
+!-        if (PRINTRFFR2CFILEFLAG == 1) then
+!--  NAME = "Gridded Channel Inflow"
+!--  ATTRIBUTE_NAME = "channel_inflow"
+!--  ATTRIBUTE_UNITS = "mm"
+!--  ATTRIBUTE_TYPE = "flow"
+!-            call write_r2c(fls, mfk%f31, shd, &
+!-                           1, 0, 1, 1, &
+!-                           rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
+!-                           rte_runoff, &
 !todo: replace source with LSS flag
-                           'channel_inflow', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
-        end if
+!-                           'channel_inflow', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
+!-        end if
 !>
 !> RECHARGE (MODELFLG .EQ. 'r')
 !>
-        if (PRINTRCHR2CFILEFLAG == 1) then
-!-  NAME = "Gridded Recharge"
-!-  ATTRIBUTE_NAME = "recharge"
-!-  ATTRIBUTE_UNITS = "mm"
-!-  ATTRIBUTE_TYPE = "flow"
-            call write_r2c(fls, mfk%f32, shd, &
-                           0, 1, 0, 1, 1, &
-                           rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
-                           rte_recharge, &
+!-        if (PRINTRCHR2CFILEFLAG == 1) then
+!--  NAME = "Gridded Recharge"
+!--  ATTRIBUTE_NAME = "recharge"
+!--  ATTRIBUTE_UNITS = "mm"
+!--  ATTRIBUTE_TYPE = "flow"
+!-            call write_r2c(fls, mfk%f32, shd, &
+!-                           0, 1, 0, 1, 1, &
+!-                           rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
+!-                           rte_recharge, &
 !todo: replace source with LSS flag
-                           'recharge', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
-        end if
+!-                           'recharge', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
+!-        end if
 !>
 !> LEAKAGE (MODELFLG .EQ. 'l' (NOT SUPPORTED))
 !>
@@ -2312,7 +2317,7 @@ program RUNMESH
 !!+  CALL WRITE_R2C(263, 33, 0, 1, 0, 1, 1)
 !!+END IF
 
-    end if !(ipid == 0) then
+!-    end if !(ipid == 0) then
 
 !> *********************************************************************
 !> Open and print header information to the output files
@@ -4402,44 +4407,44 @@ program RUNMESH
 !> FOR SPL WATROUTE (MODIFIED RPN CODE)
 !> *******************************************************************
 !>
-            call tile_connector(shd, rte_runoff, rte_recharge, rte_leakage, NCOUNT, ROFOGRD, ROFSGRD, ROFBGRD, DELT)
+!-            call tile_connector(shd, rte_runoff, rte_recharge, rte_leakage, NCOUNT, ROFOGRD, ROFSGRD, ROFBGRD, DELT)
 
 !> FILES ARE ONLY WRITTEN ON THE HOUR (WATROUTE READS HOURLY DATA).
 !> HOURLY TIME STEPS ARE ODD-NUMBERED INTEGERS.
 !>
 !todo: these can be removed at some point, as they've been added
 !todo: as flags as a part of the model_output module.
-            if (mod(real(NCOUNT), 2.0) == 0.0) then !HOURLY TIME STEP
-                rte_year_now = YEAR_NOW
-                call FIND_MONTH(JDAY_NOW, YEAR_NOW, rte_month_now)
-                call FIND_DAY(JDAY_NOW, YEAR_NOW, rte_day_now)
-                rte_hour_now = HOUR_NOW + 1 !ROUTING USES 1-24 RANGE, MESH USES 0-23
+!-            if (mod(real(NCOUNT), 2.0) == 0.0) then !HOURLY TIME STEP
+!-                rte_year_now = YEAR_NOW
+!-                call FIND_MONTH(JDAY_NOW, YEAR_NOW, rte_month_now)
+!-                call FIND_DAY(JDAY_NOW, YEAR_NOW, rte_day_now)
+!-                rte_hour_now = HOUR_NOW + 1 !ROUTING USES 1-24 RANGE, MESH USES 0-23
 !>
 !> WRITE OUTPUT FOR RTE.EXE (RUNOFF)
 !>
-                if (PRINTRFFR2CFILEFLAG == 1) then
-                    !PASS RUNOFF TO WRITE_R2C
-                    call write_r2c(fls, mfk%f31, shd, &
-                                   rte_frames_total, 1, rte_frames_now, 1, 6, &
-                                   rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
-                                   rte_runoff)
-                end if
+!-                if (PRINTRFFR2CFILEFLAG == 1) then
+!-                    !PASS RUNOFF TO WRITE_R2C
+!-                    call write_r2c(fls, mfk%f31, shd, &
+!-                                   rte_frames_total, 1, rte_frames_now, 1, 6, &
+!-                                   rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
+!-                                   rte_runoff)
+!-                end if
 !>
 !> WRITE OUTPUT FOR RTE.EXE (RECHARGE)
 !>
-                if (PRINTRCHR2CFILEFLAG == 1) then !WRITE RECHARGE DATA
-                    !PASS RECHARGE TO WRITE_R2C
-                    call write_r2c(fls, mfk%f32, shd, &
-                                   rte_frames_total, 1, rte_frames_now, 1, 6, &
-                                   rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
-                                   rte_recharge)
-                end if
+!-                if (PRINTRCHR2CFILEFLAG == 1) then !WRITE RECHARGE DATA
+!-                    !PASS RECHARGE TO WRITE_R2C
+!-                    call write_r2c(fls, mfk%f32, shd, &
+!-                                   rte_frames_total, 1, rte_frames_now, 1, 6, &
+!-                                   rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
+!-                                   rte_recharge)
+!-                end if
 !>
 !> UPDATE COUNTERS
 !>
-                rte_frames_now = rte_frames_now + 1
-                rte_frames_total = rte_frames_total + 1
-            end if !(mod(real(NCOUNT), 2.0) == 0.0) then
+!-                rte_frames_now = rte_frames_now + 1
+!-                rte_frames_total = rte_frames_total + 1
+!-            end if !(mod(real(NCOUNT), 2.0) == 0.0) then
 
 !> calculate and write the basin avg SCA similar to watclass3.0f5
 !> Same code than in wf_ensim.f subrutine of watclass3.0f8
@@ -4541,9 +4546,9 @@ program RUNMESH
             end do !k = il1, il2
 
     !> Update output data.
-            call updatefieldsout_temp(vr, ts, iof, shd, &
+            call updatefieldsout_temp(shd, ts, ic, ifo, &
                                       md, wb_h, &
-                                      YEAR_NOW, JDAY_NOW, ceiling(NCOUNT/2.0), TIME_STEP_DELT - mod(NCOUNT, 2)*TIME_STEP_DELT)
+                                      vr)
 
 !> CALCULATE AND PRINT DAILY AVERAGES.
 
@@ -4819,7 +4824,7 @@ program RUNMESH
                 DSTG = DSTG + RCANACC + SCANACC + SNOACC - STG_I
 
                 if (OUTFIELDSFLAG == 1) then
-                    call UpdateFIELDSOUT(vr, ts, iof, &
+                    call UpdateFIELDSOUT(vr, ts, ifo, &
                                          wb%pre, wb%evap, wb%rof, wb%dstg, &
                                          sov%tbar, wb%lqws, wb%frws, &
                                          wb%rcan, wb%sncan, &
@@ -4905,6 +4910,8 @@ program RUNMESH
             NCOUNT = 1
             NSUM = 1
         end if
+
+        if (ipid == 0) call run_between_grid(shd, ts, ic, cm, wb, eng, sov)
 
 !> *********************************************************************
 !> Call routing routine
@@ -5046,6 +5053,8 @@ program RUNMESH
         end if
         TIME_STEP_NOW = TIME_STEP_NOW + TIME_STEP_MINS
         if (TIME_STEP_NOW == HOURLYFLAG) TIME_STEP_NOW = 0
+
+        call update_now_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW)
 
     !> *********************************************************************
     !> Read in meteorological forcing data
@@ -5392,7 +5401,7 @@ program RUNMESH
                                             fls)
     end if !(SAVERESUMEFLAG == 3) then
 
-    if (OUTFIELDSFLAG == 1) call write_outputs(vr, ts, iof, shd, fls)
+    if (OUTFIELDSFLAG == 1) call write_outputs(shd, fls, ts, ic, ifo, vr)
 
     if (ENDDATA) print *, 'Reached end of forcing data'
     if (ENDDATE) print *, 'Reached end of simulation date'

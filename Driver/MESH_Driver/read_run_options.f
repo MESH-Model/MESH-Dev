@@ -17,6 +17,7 @@
       USE climate_forcing
       USE model_dates
       use SIMSTATS_config, only: mtsflg
+      use process_SA_RTE, only: SA_RTE_flgs
 
       IMPLICIT NONE
 
@@ -267,13 +268,13 @@
 !TODO: N is not a flag, move it somewhere else
       N = 0
 
-!> FLAGS FOR WATROUTE (MODIFIED RPN CODE)
-!> Format is PRINT(VARIABLE_TERM)R2CFILEFLAG:
-!> If PRINT(VARIABLE_TERM)R2CFILEFLAG is 0, no file is saved.
-!> If PRINT(VARIABLE_TERM)R2CFILEFLAG is 1, the file is saved.
-      PRINTRFFR2CFILEFLAG = 0
-      PRINTRCHR2CFILEFLAG = 0
-!      PRINTLKGR2CFILEFLAG = 0
+!-!> FLAGS FOR WATROUTE (MODIFIED RPN CODE)
+!-!> Format is PRINT(VARIABLE_TERM)R2CFILEFLAG:
+!-!> If PRINT(VARIABLE_TERM)R2CFILEFLAG is 0, no file is saved.
+!-!> If PRINT(VARIABLE_TERM)R2CFILEFLAG is 1, the file is saved.
+!-      PRINTRFFR2CFILEFLAG = 0
+!-      PRINTRCHR2CFILEFLAG = 0
+!-!      PRINTLKGR2CFILEFLAG = 0
 
 !> FLAGS FOR GEOTHERMAL FLUX FOR THE BOTTOM OF THE LAST SOIL LAYER 
 !* If GGEOFLAG is GT 0,  READ UNIQUE VALUE FROM MESH_ggeo.INI FILE
@@ -607,12 +608,15 @@
               CALL value(out_args(2), METRICSINCLUDESPINUP, IOS)
             CASE ('FROZENSOILINFILFLAG')
               CALL value(out_args(2), FROZENSOILINFILFLAG, IOS)
-            CASE ('PRINTRFFR2CFILEFLAG')
-              CALL value(out_args(2), PRINTRFFR2CFILEFLAG, IOS)
-            CASE ('PRINTRCHR2CFILEFLAG')
-              CALL value(out_args(2), PRINTRCHR2CFILEFLAG, IOS)
-!            CASE ('PRINTLKGR2CFILEFLAG')
-!              CALL value(out_args(2), PRINTLKGR2CFILEFLAG, IOS)
+            case ('PRINTRFFR2CFILEFLAG')
+              call value(out_args(2), SA_RTE_flgs%PRINTRFFR2CFILEFLAG,
+     &                  IOS)
+            case ('PRINTRCHR2CFILEFLAG')
+              call value(out_args(2), SA_RTE_flgs%PRINTRCHR2CFILEFLAG,
+     &                  IOS)
+!+            case ('PRINTLKGR2CFILEFLAG')
+!+              call value(out_args(2), SA_RTE_flgs%PRINTLKGR2CFILEFLAG,
+!+     &                  IOS)
             CASE ('WD3')
               CALL value(out_args(2), WD3, IOS)
             CASE ('WD3NEWFILE')

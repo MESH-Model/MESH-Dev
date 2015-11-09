@@ -19,6 +19,7 @@ module model_files
         use model_files_variabletypes
         use model_files_variables
         use SIMSTATS_config, only: mtsfl, mtsk, init_metricsout_files
+        use process_SA_RTE, only: SA_RTE_fls, SA_RTE_flkeys, configure_SA_RTE_fls
 
         !> Input variables.
         !* fld: Name of the file that contains file information.
@@ -58,11 +59,11 @@ module model_files
         flg%fl(mfk%f18)%fn = 'MESH_ggeo.ini'
         flg%fl(mfk%f18)%iun = 18
 
-        flg%fl(mfk%f31)%fn = 'WR_runoff.r2c'
-        flg%fl(mfk%f31)%iun = 31
+!-        flg%fl(mfk%f31)%fn = 'WR_runoff.r2c'
+!-        flg%fl(mfk%f31)%iun = 31
 
-        flg%fl(mfk%f32)%fn = 'WR_recharge.r2c'
-        flg%fl(mfk%f32)%iun = 32
+!-        flg%fl(mfk%f32)%fn = 'WR_recharge.r2c'
+!-        flg%fl(mfk%f32)%iun = 32
 
         flg%fl(mfk%f900)%fn = 'Basin_average_water_balance.csv'
         flg%fl(mfk%f900)%iun = 900
@@ -80,7 +81,7 @@ module model_files
         !> is allocated.
         if (.not. allocated(mtsfl%fl)) call init_metricsout_files()
 
-        !> For files used by SIMSTATS
+        !> For files used by SIMSTATS.
         mtsfl%fl(mtsk%fo   )%fn = 'function_out.txt'
         mtsfl%fl(mtsk%MC   )%fn = 'MonteCarlo.txt'
         mtsfl%fl(mtsk%NSE  )%fn = 'NS.txt'
@@ -89,6 +90,13 @@ module model_files
         mtsfl%fl(mtsk%ABSE )%fn = 'abserr.txt'
         mtsfl%fl(mtsk%out  )%fn = 'Metrics_Out.txt'
         mtsfl%fl(mtsk%PE   )%fn = 'pre_emption_value.txt'
+
+        !> File files used by Standalone RTE.
+        if (.not. allocated(SA_RTE_fls%fl)) call configure_SA_RTE_fls()
+        SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%fn = 'WR_runoff.r2c'
+        SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%iun = 31
+        SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%fn = 'WR_recharge.r2c'
+        SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%iun = 32
 
         !> Replace default file information with values from file.
         if (present(fld)) then
