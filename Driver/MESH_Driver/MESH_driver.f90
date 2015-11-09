@@ -85,9 +85,9 @@ program RUNMESH
     use module_mpi_flags
     use module_mpi
 
-    use sa_mesh_run_nml_parallel
-    use sa_mesh_run_na_parallel
-    use sa_mesh_run_na_serial
+    use sa_mesh_run_within_tile
+    use sa_mesh_run_within_grid
+    use sa_mesh_run_between_grid
 
     use MODEL_OUTPUT
     use climate_forcing
