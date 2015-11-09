@@ -38,7 +38,7 @@ VPATH=	$(DIR_REPO)/Modules: \
 #Modules
 OBJECTS=	module_mpi_flags.o module_mpi.o \
 			sa_mesh_shared_variabletypes.o sa_mesh_shared_variables.o \
-			area_watflood.o EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o mesh_input_module.o \
+			EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o mesh_input_module.o \
 			precmod.o stringmod.o \
 			module_files_variabletypes.o module_files_variables.o \
 			climate_forcing_variabletypes.o climate_forcing_variables.o \
@@ -70,7 +70,7 @@ OBJECTS+=	GATHER.o read_initial_inputs.o \
  
 #CLASS
 OBJECTS+=	APREP.o CANADD.o CANALB.o CANVAP.o  check_parameters.o \
-			CGROW.o CHKWAT.o CLASSA.o  CLASSB.o CLASSBD.o CLASSBHYD.o \
+			CGROW.o CHKWAT.o CLASSA.o  CLASSB.o CLASSBD.o \
 			CLASSD.o CLASSG.o CLASSI.o CLASSS.o CLASST.o CLASSW.o \
 			CLASSZ.o CWCALC.o DIASURFZ.o DRCOEF.o FLXSURFZ.o FROZEN.o \
 			GATPREP.o GRALB.o GRDRAN.o GRINFL.o ICEBAL.o Julian_Day_ID.o \

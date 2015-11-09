@@ -1,7 +1,7 @@
 !> *********************************************************************
 !> Subroutine to initialize the climate forcing input files.
 !> *********************************************************************
-subroutine READ_CHECK_FORCING_FILES(bi, ts, cm)
+subroutine READ_CHECK_FORCING_FILES(shd, ts, cm)
 
     use sa_mesh_shared_variabletypes
     use model_dates
@@ -17,8 +17,8 @@ subroutine READ_CHECK_FORCING_FILES(bi, ts, cm)
     !> Input variables.
     !> *****************************************************************
 
-    !* bi: Basin information (from shed file).
-    type(basin_info) :: bi
+    !* shd: Basin information (from shed file).
+    type(ShedGridParams) :: shd
 
     !* ts: Time-step and time-series information of the simulation.
     type(dates_model) :: ts
@@ -52,7 +52,7 @@ subroutine READ_CHECK_FORCING_FILES(bi, ts, cm)
 !        cm%clin(i)%alpha = 1.0 / cm%clin(i)%nSeries
 
         !> Allocate the gridded series.
-        allocate(cm%clin(i)%climvGrd(bi%NA))
+        allocate(cm%clin(i)%climvGrd(shd%NA))
 
         !> Determine the number of time-steps in the run.
 !todo: This doesn't work if run start and stop days are set to zeros;

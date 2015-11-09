@@ -34,11 +34,14 @@ module model_files
         character*500 str1, str2, phtfl
 
         !> Allocate the array that stores file information.
-        allocate(flg%fl(10))
+        allocate(flg%fl(14))
 
         !> Default file names and attributes.
         flg%fl(mfk%f53)%fn = 'MESH_input_run_options.ini'
         flg%fl(mfk%f53)%iun = 53
+
+        flg%fl(mfk%f20)%fn = 'MESH_drainage_database.r2c'
+        flg%fl(mfk%f20)%iun = 20
 
         flg%fl(mfk%f50)%fn = 'MESH_parameters_CLASS.ini'
         flg%fl(mfk%f50)%iun = 50
@@ -49,8 +52,17 @@ module model_files
         flg%fl(mfk%f52)%fn = 'MESH_input_soil_levels.txt'
         flg%fl(mfk%f52)%iun = 52
 
+        flg%fl(mfk%f54)%fn = 'soil.ini'
+        flg%fl(mfk%f54)%iun = 54
+
         flg%fl(mfk%f18)%fn = 'MESH_ggeo.ini'
         flg%fl(mfk%f18)%iun = 18
+
+        flg%fl(mfk%f31)%fn = 'WR_runoff.r2c'
+        flg%fl(mfk%f31)%iun = 31
+
+        flg%fl(mfk%f32)%fn = 'WR_recharge.r2c'
+        flg%fl(mfk%f32)%iun = 32
 
         flg%fl(mfk%f900)%fn = 'Basin_average_water_balance.csv'
         flg%fl(mfk%f900)%iun = 900
@@ -155,6 +167,11 @@ module model_files
                     phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
                     flg%fl(mfk%f52)%fn = phtfl
 !                    flg%fl(mfk%f52)%isInit = .true.
+
+                else if (trim(adjustl(str1)) == 'soil_ini') then
+                    phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))
+                    flg%fl(mfk%f54)%fn = phtfl
+!                    flg%fl(mfk%f54)%isInit = .true.
 
                 end if
             end do

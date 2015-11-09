@@ -36,7 +36,7 @@ C BEGIN: PDMROF
      1                  CMINGAT,CMAXGAT,BGAT,   K1GAT,  K2GAT,      
 C END: PDMROF
      X                  ILMOS,JLMOS,IWMOS,JWMOS,
-     Y                  NML,NL,NM,ILG,IG,IC,ICP1,
+     Y                  NL,NM,ILG,IL1,IL2,IG,IC,ICP1,
      Z                  TBARROW,THLQROW,THICROW,TPNDROW,ZPNDROW,
      +                  TBASROW,ALBSROW,TSNOROW,RHOSROW,SNOROW, 
      +                  TCANROW,RCANROW,SCANROW,GROROW,CMAIROW,
@@ -98,7 +98,7 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER  NML,NL,NM,ILG,IG,IC,ICP1,K,L,M
+      INTEGER  NL,NM,ILG,IL1,IL2,IG,IC,ICP1,K,L,M
 C
 C     * LAND SURFACE PROGNOSTIC VARIABLES.
 C
@@ -243,7 +243,7 @@ C * PDMROF DECLARATIONS
 C
 C----------------------------------------------------------------------
 !$omp parallel do
-      DO 100 K=1,NML
+      DO 100 K=IL1,IL2
           DDGAT(K)=DDROW(ILMOS(K),JLMOS(K))
           MANNGAT(K)=MANNROW(ILMOS(K),JLMOS(K))
           TPNDGAT(K)=TPNDROW(ILMOS(K),JLMOS(K))  
@@ -329,7 +329,7 @@ c         AGIDGAT(K)=AGIDROW(ILMOS(K),JLMOS(K))
 C
       DO 250 L=1,IG
       !$omp parallel do
-      DO 200 K=1,NML
+      DO 200 K=IL1,IL2
           TBARGAT(K,L)=TBARROW(ILMOS(K),JLMOS(K),L)
           THLQGAT(K,L)=THLQROW(ILMOS(K),JLMOS(K),L)
           THICGAT(K,L)=THICROW(ILMOS(K),JLMOS(K),L)
@@ -354,7 +354,7 @@ C
 C
       DO 300 L=1,ICP1
       !$omp parallel do
-      DO 300 K=1,NML
+      DO 300 K=IL1,IL2
           FCANGAT(K,L)=FCANROW(ILMOS(K),JLMOS(K),L)
           LNZ0GAT(K,L)=LNZ0ROW(ILMOS(K),JLMOS(K),L)
           ALVCGAT(K,L)=ALVCROW(ILMOS(K),JLMOS(K),L)
@@ -363,7 +363,7 @@ C
 C
       DO 400 L=1,IC
       !$omp parallel do
-      DO 400 K=1,NML
+      DO 400 K=IL1,IL2
           PAMXGAT(K,L)=PAMXROW(ILMOS(K),JLMOS(K),L)
           PAMNGAT(K,L)=PAMNROW(ILMOS(K),JLMOS(K),L)
           CMASGAT(K,L)=CMASROW(ILMOS(K),JLMOS(K),L)

@@ -3,7 +3,7 @@
      2                  RHOSROW,SNOROW, TCANROW,RCANROW,SCANROW, 
      3                  GROROW, CMAIROW,TACROW, QACROW, WSNOROW,
      4                  ILMOS,JLMOS,IWMOS,JWMOS,
-     5                  NML,NL,NM,ILG,IG,IC,ICP1,
+     5                  NL,NM,ILG,IL1,IL2,IG,IC,ICP1,
      6                  TBARGAT,THLQGAT,THICGAT,GFLXGAT,TSFSGAT,
      7                  TPNDGAT,ZPNDGAT,TBASGAT,ALBSGAT,TSNOGAT,
      8                  RHOSGAT,SNOGAT, TCANGAT,RCANGAT,SCANGAT,
@@ -33,7 +33,7 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER NML,NL,NM,ILG,IG,IC,ICP1,K,L,M
+      INTEGER NL,NM,ILG,IL1,IL2,IG,IC,ICP1,K,L,M
 C
 C     * LAND SURFACE PROGNOSTIC VARIABLES.
 C
@@ -82,7 +82,7 @@ C * WATROF DECLARATIONS
 C
 C----------------------------------------------------------------------
 !$omp parallel do
-      DO 100 K=1,NML
+      DO 100 K=IL1,IL2
           TPNDROW(ILMOS(K),JLMOS(K))=TPNDGAT(K)  
           ZPNDROW(ILMOS(K),JLMOS(K))=ZPNDGAT(K)  
           TBASROW(ILMOS(K),JLMOS(K))=TBASGAT(K)  
@@ -112,7 +112,7 @@ C----------------------------------------------------------------------
 C
       DO 200 L=1,IG
       !$omp parallel do
-      DO 200 K=1,NML
+      DO 200 K=IL1,IL2
           TBARROW(ILMOS(K),JLMOS(K),L)=TBARGAT(K,L)
           THLQROW(ILMOS(K),JLMOS(K),L)=THLQGAT(K,L)
           THICROW(ILMOS(K),JLMOS(K),L)=THICGAT(K,L)
@@ -123,7 +123,7 @@ C
 C
       DO 300 L=1,4
       !$omp parallel do
-      DO 300 K=1,NML
+      DO 300 K=IL1,IL2
           TSFSROW(ILMOS(K),JLMOS(K),L)=TSFSGAT(K,L)
   300 CONTINUE
 C

@@ -1,11 +1,15 @@
-      SUBROUTINE READ_SOIL_INI(NMTEST, IGND, NTYPE, NA, sv)
+      SUBROUTINE READ_SOIL_INI(NMTEST, IGND, NTYPE, NA, fls, sv)
       USE MESH_INPUT_MODULE
+      use model_files_variabletypes
+      use model_files_variables, only: mfk
 	  USE FLAGS
 !> local variables
-      INTEGER :: SOIL_IOS, M, I, J
+      INTEGER :: SOIL_IOS, iun, M, I, J
+!      character(250) fn
 !> read in variables
       INTEGER :: NMTEST, IGND
       INTEGER*4 :: NA, NTYPE
+      type(fl_ids), intent(in) :: fls
       TYPE(SoilValues) :: sv
 
 !> *********************************************************************
@@ -17,7 +21,15 @@
 
       IF (SOILINIFLAG /= 5) RETURN
 
-      OPEN(UNIT=23,file='soil.ini',status='old',iostat=SOIL_IOS)
+!      if (VARIABLEFILESFLAG == 1 .and. fls%fl(11)%isInit) then
+        iun = fls%fl(mfk%f54)%iun
+!        fn = fls%fl(11)%name
+!      else
+!        iun = 23
+!        fn = 'soil.ini'
+!      end if
+      open(iun, file=adjustl(trim(fls%fl(mfk%f54)%fn)), status='old',
+     +     action='read', iostat=SOIL_IOS)
 !> CHECK TO SEE IF THERE IS A new_soil.ini FILE
 
 !todo - change this so it's an option in one of the ini files
@@ -42,54 +54,54 @@
         PRINT*,'The soil.ini file was found'
         PRINT*,'CLASSBHYD.f will be used'
         PRINT*,'-----------------------------------'
-        READ (23,*)
-        READ (23,*) (sv%wc_thpor (1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thpor (1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thpor (1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thlret(1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thlret(1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thlret(1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thlmin(1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thlmin(1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thlmin(1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_bi    (1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_bi    (1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_bi    (1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_psisat(1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_psisat(1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_psisat(1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_grksat(1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_grksat(1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_grksat(1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_hcps  (1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_hcps  (1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_hcps  (1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_tcs   (1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_tcs   (1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_tcs   (1,m,3),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_thpor (1,m,1),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_thpor (1,m,2),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_thpor (1,m,3),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_thlret(1,m,1),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_thlret(1,m,2),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_thlret(1,m,3),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_thlmin(1,m,1),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_thlmin(1,m,2),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_thlmin(1,m,3),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_bi    (1,m,1),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_bi    (1,m,2),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_bi    (1,m,3),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_psisat(1,m,1),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_psisat(1,m,2),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_psisat(1,m,3),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_grksat(1,m,1),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_grksat(1,m,2),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_grksat(1,m,3),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_hcps  (1,m,1),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_hcps  (1,m,2),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_hcps  (1,m,3),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_tcs   (1,m,1),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_tcs   (1,m,2),m=1,NMTEST)
+        READ (iun, *)
+        READ (iun, *) (sv%wc_tcs   (1,m,3),m=1,NMTEST)
 
         DO I=1,NA
           DO M=1,NMTEST
@@ -117,7 +129,7 @@
         END DO
       ENDIF
 
-      CLOSE(unit=23)
+      CLOSE(iun)
 
       RETURN
       END SUBROUTINE READ_SOIL_INI
