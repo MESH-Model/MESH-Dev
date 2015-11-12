@@ -307,7 +307,7 @@ program RUNMESH
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-    character(24) :: VERSION = 'TRUNK (896)'
+    character(24) :: VERSION = 'TRUNK (901)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE(7)
     logical VER_OK
@@ -2044,7 +2044,7 @@ program RUNMESH
 
 !-!>  SET FRAME COUNT FOR WRITE_R2C
 !-        rte_frames_now = 1
-!-        rte_frames_total = 1
+!-        rte_frames_total = (rte_frames_now + 1)
 
 !> ******************************************************
 !> echo print information to MESH_output_echo_print.txt
