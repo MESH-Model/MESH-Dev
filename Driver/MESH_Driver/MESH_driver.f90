@@ -2035,7 +2035,7 @@ program RUNMESH
 
 !>  SET FRAME COUNT FOR WRITE_R2C
         rte_frames_now = 1
-        rte_frames_total = 1
+        rte_frames_total = (rte_frames_now + 1)
 
 !> ******************************************************
 !> echo print information to MESH_output_echo_print.txt
@@ -2276,7 +2276,7 @@ program RUNMESH
 !-  ATTRIBUTE_UNITS = "mm"
 !-  ATTRIBUTE_TYPE = "flow"
             call write_r2c(fls, mfk%f31, shd, &
-                           1, 0, 1, 1, &
+                           0, 1, 0, 1, 1, &
                            rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
                            rte_runoff, &
 !todo: replace source with LSS flag

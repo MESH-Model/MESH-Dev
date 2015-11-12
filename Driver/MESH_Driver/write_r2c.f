@@ -74,8 +74,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       type(fl_ids), intent(in) :: fls
       integer, intent(in) :: indx
       type(GridParams), intent(in) :: shd
-      real, dimension(:, :), intent(in) :: outarray
-      character(40), intent(in), optional :: attribute_name,
+      real, dimension(shd%yCount, shd%xCount), intent(in) :: outarray
+      character(*), intent(in), optional :: attribute_name,
      *  attribute_units, attribute_type, attribute_source, author
 
 !     FIRST TIME THROUGH THIS SUBROUTINE ONLY
@@ -102,6 +102,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !         in the calling program
       end if
 
+!>    Set the file unit.
+      iun = fls%fl(indx)%iun
+
 !      if(frame_no.eq.1.and.class_no.eq.1)then
 
       if (frame_no == 0) then
@@ -113,7 +116,6 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 ! 1400   format(' opening fln(',i3,'):',a30,'---')
 !        write(*,*)
 
-        iun = fls%fl(indx)%iun
         open(iun, file=adjustl(trim(fls%fl(indx)%fn)),
      *    status='unknown', action='write', iostat=ierr)
 !     print*,' un fn et fln(fn) ',un,fn,fln(fn)
@@ -134,7 +136,7 @@ c   print*,'Opened unit=',un,' filename=',fln(fn)
         write(iun, 3005) '#                                       '
         write(iun, 3005) ':Application             EnSimHydrologic'
         write(iun, 3005) ':Version                 2.1.23         '
-        write(iun, 3020) ':WrittenBy          ', author
+        write(iun, 3002) ':WrittenBy          ', author
         call date_and_time(cday, time)
         write(iun, 3010) ':CreationDate       ',
      *    cday(1:4), cday(5:6), cday(7:8), time(1:2), time(3:4)
@@ -142,7 +144,7 @@ c   print*,'Opened unit=',un,' filename=',fln(fn)
         write(iun, 3005) '#                                       '
         write(iun, 3005) '#---------------------------------------'
         write(iun, 3005) '#                                       '
-        write(iun, 3020) ':Name               ', author
+        write(iun, 3002) ':Name               ', author
         write(iun, 3005) '#                                       '
         write(iun, 3004) ':Projection         ', shd%CoordSys%Proj
         if (shd%CoordSys%Proj == 'LATLONG   ') then
@@ -156,7 +158,7 @@ c   print*,'Opened unit=',un,' filename=',fln(fn)
         write(iun, 3003) ':xOrigin            ', shd%xOrigin
         write(iun, 3003) ':yOrigin            ', shd%yOrigin
         write(iun, 3005) '#                                       '
-        write(iun, 3020) ':SourceFile         ', attribute_source
+        write(iun, 3002) ':SourceFile         ', attribute_source
         write(iun, 3005) '#                                       '
         if (no_frames == 1 .and. no_classes >= 1) then
           do i = 1, no_classes
@@ -164,8 +166,8 @@ c   print*,'Opened unit=',un,' filename=',fln(fn)
           end do
           write(iun, 3005) '#                                       '
         else
-          write(iun, 3020) ':AttributeName 1    ', attribute_name
-          write(iun, 3020) ':AttributeUnits     ', attribute_units
+          write(iun, 3002) ':AttributeName 1    ', attribute_name
+          write(iun, 3002) ':AttributeUnits     ', attribute_units
 c!         see note below @***
         end if
         write(iun, 3005) '#                                       '
