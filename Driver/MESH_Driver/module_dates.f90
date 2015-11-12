@@ -28,10 +28,10 @@ module model_dates
 
     type iter_counter
 
-        integer :: &
+        integer &
             now_year, now_jday, now_month, now_day, &
             now_hour, now_mins, &
-            dts = 1800, &
+            dts, &
             count_year, count_jday, count_month, count_day, &
             count_hour, count_mins, &
 
@@ -93,20 +93,18 @@ module model_dates
 
         !> Input variables.
         !* timestep: Time-step of the model iteration [s].
-        integer, intent(in) :: start_year, start_day_julian, start_hour, start_mins
-        integer, intent(in), optional :: timestep
+        integer, intent(in) :: start_year, start_day_julian, start_hour, start_mins, timestep
 
         !> Update now counters.
         ic%now_year = start_year
         ic%now_jday = start_day_julian
-        ic%now_hour = start_hour + 1
+        ic%now_hour = start_hour
         ic%now_mins = start_mins
         call julian2monthday(start_day_julian, start_year, ic%now_month, ic%now_day)
 
-        !> Override pre-set time-step (if provided).
-        if (present(timestep)) &
-!            ic%timestep = timestep
-            TIME_STEP_DELT = timestep
+        !> Update time-step.
+        TIME_STEP_DELT = timestep
+        ic%dts = timestep
 
         !> Initialize counters.
         ic%count_year = 0

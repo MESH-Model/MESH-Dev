@@ -611,12 +611,15 @@
             case ('PRINTRFFR2CFILEFLAG')
               call value(out_args(2), SA_RTE_flgs%PRINTRFFR2CFILEFLAG,
      &                  IOS)
+              SA_RTE_flgs%PROCESS_ACTIVE = .true.
             case ('PRINTRCHR2CFILEFLAG')
               call value(out_args(2), SA_RTE_flgs%PRINTRCHR2CFILEFLAG,
      &                  IOS)
+              SA_RTE_flgs%PROCESS_ACTIVE = .true.
 !+            case ('PRINTLKGR2CFILEFLAG')
 !+              call value(out_args(2), SA_RTE_flgs%PRINTLKGR2CFILEFLAG,
 !+     &                  IOS)
+!+              SA_RTE_flgs%PROCESS_ACTIVE = .true.
             CASE ('WD3')
               CALL value(out_args(2), WD3, IOS)
             CASE ('WD3NEWFILE')

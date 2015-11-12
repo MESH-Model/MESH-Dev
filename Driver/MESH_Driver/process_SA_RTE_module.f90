@@ -98,17 +98,15 @@ module process_SA_RTE
             !> usually known, so is set to (frame_now + 1).
             !> For: Runoff.
             if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
-                call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, &
-                               (frame_now + 1), 1, frame_now, 1, 6, &
-                               ic%now_year, ic%now_month, ic%now_day, (ic%now_hour + 1), &
+                call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, ic, &
+                               (frame_now + 1), 0, frame_now, 0, 6, &
                                RFF)
             end if
 
             !> For: Recharge.
             if (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1) then
-                call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, &
-                               (frame_now + 1), 1, frame_now, 1, 6, &
-                               ic%now_year, ic%now_month, ic%now_day, (ic%now_hour + 1), &
+                call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, ic, &
+                               (frame_now + 1), 0, frame_now, 0, 6, &
                                RCH)
             end if
 
@@ -128,8 +126,11 @@ module process_SA_RTE
 
     subroutine configure_SA_RTE(shd, ic)
 
-        !> For: type(ShedGridParams) :: shd; cops
+        !> For: type(ShedGridParams) :: shd
         use sa_mesh_shared_variabletypes
+
+        !> For: ro%, cops%
+        use sa_mesh_shared_variables
 
         !> For: type(iter_counter) :: ic
         use model_dates
@@ -143,6 +144,11 @@ module process_SA_RTE
 
         !> Return if the process is not active.
         if (.not. SA_RTE_flgs%PROCESS_ACTIVE) return
+
+        if (ro%VERBOSEMODE > 0) then
+            print 1000
+            print 1001
+        end if
 
         !> Allocate variables used by the process module.
         allocate(RFF(shd%yCount, shd%xCount), &
@@ -179,23 +185,29 @@ module process_SA_RTE
         !> present these are hard-coded or set using VARIABLEFILESFLAG).
         !> For: Runoff (MODELFLG = (r, l, i)).
         if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
-            call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, &
-                           1, 0, 1, 1, &
-                           ic%now_year, ic%now_month, ic%now_day, (ic%now_hour + 1), &
+            call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, ic, &
+                           0, 0, 0, 0, 0, &
                            RFF, &
 !todo: replace source with LSS flag
                            'channel_inflow', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
+            if (ro%VERBOSEMODE > 0) print 1002, 'RFF', adjustl(trim(SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%fn))
         end if
 
         !> For: Recharge (MODELFLG = r).
         if (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1) then
-            call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, &
-                           0, 1, 0, 1, 1, &
-                           ic%now_year, ic%now_month, ic%now_day, (ic%now_hour + 1), &
+            call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, ic, &
+                           0, 0, 0, 0, 0, &
                            RCH, &
 !todo: replace source with LSS flag
                            'recharge', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
+            if (ro%VERBOSEMODE > 0) print 1002, 'RCH', adjustl(trim(SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%fn))
         end if
+
+        if (ro%VERBOSEMODE > 0) print 1000
+
+1000    format(/1x, '*****************************************************************')
+1001    format(1x, 'Standalone Routing is active.')
+1002    format(3x, 'Writing output for ', (a), ' to: ', (a))
 
     end subroutine
 

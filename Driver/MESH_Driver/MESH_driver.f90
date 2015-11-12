@@ -1035,7 +1035,7 @@ program RUNMESH
 !>
     call check_parameters(WF_R2, M_C, NMTEST, cp, hp, soil_por_max, soil_depth, s0, t_ice_lens)
 
-    call init_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW)
+    call init_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW, int(DELT))
 
     !> Assign shed values to local variables.
     NA = shd%NA
@@ -2285,7 +2285,7 @@ program RUNMESH
 !--  ATTRIBUTE_UNITS = "mm"
 !--  ATTRIBUTE_TYPE = "flow"
 !-            call write_r2c(fls, mfk%f31, shd, &
-!-                           1, 0, 1, 1, &
+!-                           0, 1, 0, 1, 1, &
 !-                           rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
 !-                           rte_runoff, &
 !todo: replace source with LSS flag
