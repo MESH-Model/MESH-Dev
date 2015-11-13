@@ -4692,7 +4692,7 @@ program RUNMESH
             NSUM = 1
         end if
 
-        if (ipid == 0) call run_between_grid(shd, ts, ic, cm, wb, eng, sov)
+        if (ipid == 0) call run_between_grid(shd, ts, ic, cm, wb_h, eng, sov)
 
 !> *********************************************************************
 !> Call routing routine

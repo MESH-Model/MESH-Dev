@@ -24,7 +24,7 @@ module process_SA_RTE
         !>   PRINT(VARIABLE_TERM)R2CFILEFLAG = 1 means output is written.
         integer :: PRINTRFFR2CFILEFLAG = 1
         integer :: PRINTRCHR2CFILEFLAG = 1
-        integer :: PRINTLKGR2CFILEFLAG = 0
+!        integer :: PRINTLKGR2CFILEFLAG = 0
 
     end type
 
@@ -52,14 +52,16 @@ module process_SA_RTE
 
     !* RFF: Hourly simulated runoff. [mm].
     !* RCH: Hourly simulated recharge. [mm].
-    !* LKG: (Not known but may used in the future).
-    real, dimension(:, :), allocatable :: RFF, RCH, LKG
+    !* LKG: Leakage is not used.
+    real, dimension(:, :), allocatable :: RFF, RCH
 
     contains
 
     !> Description: Write output of runoff variables to file for offline
     !>              routing. Data are written in R2C format and are
     !>              compatible with the old RPN RTE code.
+!todo: these can be removed at some point, as they've been added
+!todo: as flags as a part of the model_output module.
     subroutine run_SA_RTE(shd, ic, wb)
 
         !> For: type(ShedGridParams) :: shd; cops
@@ -80,40 +82,47 @@ module process_SA_RTE
         type(iter_counter), intent(in) :: ic
         type(water_balance), intent(in) :: wb
 
+        !> Local variables.
+        logical writeout
+
         !> Return if the process is not active.
         if (.not. SA_RTE_flgs%PROCESS_ACTIVE) return
 
-!todo: these can be removed at some point, as they've been added
-!todo: as flags as a part of the model_output module.
-        !> Call the tile connector to accumulate half-hourly values.
-        call tile_connector(shd, ic, RFF, RCH, LKG, wb%rofo, wb%rofs, wb%rofb)
+        !> Call the tile connector to accumulate half-hourly values for
+        !> each variable.
+        !>
+        !> Offline routing reads data every hour so data are written
+        !> the last time-step of the hour.
+        !>
+        !> The hour written to file is the model hour +1 as
+        !> SA_MESH runs from 0-23 but the offline routing runs 1-24.
+        !> The total number of frames in the output file is not
+        !> usually known, so is set to (frame_now + 1).
 
-        !> Offline routing reads data every hour so data are written on
-        !> the hour.
-        if (ic%now_mins == 0) then
+        !> Determine if this is the last time-step of the hour.
+        writeout = (mod(ic%ts_hourly, 3600/ic%dts) == 0)
+!-        print *, ic%now_jday, ic%now_hour, ic%now_mins, writeout
 
-            !> The hour written to file is the model hour +1 as
-            !> SA_MESH runs from 0-23 but the offline routing runs 1-24.
-            !> The total number of frames in the output file is not
-            !> usually known, so is set to (frame_now + 1).
-            !> For: Runoff.
-            if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
-                call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, ic, &
-                               (frame_now + 1), 0, frame_now, 0, 6, &
-                               RFF)
+        !> For: Runoff (RFF).
+        if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
+            call tile_connector(shd, (wb%rofo + wb%rofs), RFF, .true.)
+            if (writeout) then
+                call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, ic, (frame_now + 1), 0, frame_now, 0, 6, RFF)
+                RFF = 0.0
             end if
+        end if
 
-            !> For: Recharge.
-            if (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1) then
-                call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, ic, &
-                               (frame_now + 1), 0, frame_now, 0, 6, &
-                               RCH)
+        !> For: Recharge (RCH).
+        if (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1) then
+            call tile_connector(shd, wb%rofb, RCH, .true.)
+            if (writeout) then
+                call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, ic, (frame_now + 1), 0, frame_now, 0, 6, RCH)
+                RCH = 0.0
             end if
+        end if
 
-            !> Update frame counters.
-            frame_now = frame_now + 1
-
-        end if !(ic%now_mins == 0) then
+        !> Update frame counters.
+        if (writeout) frame_now = frame_now + 1
 
     end subroutine
 
@@ -150,27 +159,24 @@ module process_SA_RTE
             print 1001
         end if
 
-        !> Allocate variables used by the process module.
-        allocate(RFF(shd%yCount, shd%xCount), &
-                 RCH(shd%yCount, shd%xCount), &
-                 LKG(shd%yCount, shd%xCount), stat = ierr)
-
-        !> Stop if an allocation error has occured.
-        if (ierr /= 0) then
-            print 1114, 'Standalone RTE input'
-            print 1118, 'Grid square rows', shd%yCount
-            print 1118, 'Grid square columns', shd%xCount
-            stop
+        !> Allocate and initialize the appropriate variables.
+        if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
+            allocate(RFF(shd%yCount, shd%xCount), stat = ierr)
+            if (ierr /= 0) then
+                print 1004, 'RFF', shd%yCount, shd%xCount
+                stop
+            end if
+            RFF = 0.0
         end if
 
-1114 format(/1x, 'Error allocating ', a, ' variables.', &
-            /1x, 'Check that these bounds are within an acceptable range.', /)
-1118 format(3x, a, ': ', i6)
-
-        !> Initialize variables arrays.
-        RFF = 0.0
-        RCH = 0.0
-        LKG = 0.0
+        if (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1) then
+            allocate(RCH(shd%yCount, shd%xCount), stat = ierr)
+            if (ierr /= 0) then
+                print 1004, 'RCH', shd%yCount, shd%xCount
+                stop
+            end if
+            RCH = 0.0
+        end if
 
         !> Initialize counter for frames.
         frame_now = 1
@@ -205,9 +211,14 @@ module process_SA_RTE
 
         if (ro%VERBOSEMODE > 0) print 1000
 
-1000    format(/1x, '*****************************************************************')
+1000    format(/1x, '*****************************************************************', /)
 1001    format(1x, 'Standalone Routing is active.')
 1002    format(3x, 'Writing output for ', (a), ' to: ', (a))
+
+1004    format(/1x, "ERROR: Allocating: '", (a), "'", &
+               /3x, 'Using:', &
+               /5x, 'yCount=', i10, &
+               /5x, 'xCount=', i10, /)
 
     end subroutine
 

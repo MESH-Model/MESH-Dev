@@ -113,10 +113,10 @@ module model_dates
         ic%count_day = 0
         ic%count_hour = 0
         ic%count_mins = 0
-        ic%ts_daily = 0
-        ic%ts_hourly = 0
-        ic%ts_halfhourly = 0
-        ic%ts_count = 0
+        ic%ts_daily = 1
+        ic%ts_hourly = 1
+        ic%ts_halfhourly = 1
+        ic%ts_count = 1
 
     end subroutine
 

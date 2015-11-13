@@ -1,56 +1,33 @@
 !>
-!> Description: Calculate daily averages from runoff for Standalone
-!>              Watroute.
+!> Description: Scatter GRD values to an R2C grid using the 'xxx' and
+!> 'yyy' attributes of the basin shed information.
 !>
-!> Author: D.G. Princz
-!>
-!> Updates:
-!>  Mar. 20, 2008   DGP Values are only reset on the hour and are
-!>                      accumulated on the half-hour. Standalone
-!>                      Watroute reads hourly input. Output values are
-!>                      multiplied by DELT to convert them from
-!>                      [kg m-2 s-1] to [mm] water.
-!>
-subroutine tile_connector(shd, ic, runoff, recharge, leakage, rofogrd, rofsgrd, rofbgrd)
+subroutine tile_connector(shd, grd, r2c, accumulate)
 
+    !> For: type(GridParams) :: shd.
     use sa_mesh_shared_variabletypes
-    use model_dates
 
     implicit none
 
-    !> ----------------------------------------------------------------------------
-    !> Parameters
-    !> ----------------------------------------------------------------------------
-
     !> Input variables.
     type(GridParams), intent(in) :: shd
-    type(iter_counter), intent(in) :: ic
-    real, dimension(shd%NA), intent(in) :: rofogrd, rofsgrd, rofbgrd
+    real, dimension(shd%NA), intent(in) :: grd
+    logical, optional :: accumulate
 
-    !> Input-output variables.
-    real, dimension(shd%yCount, shd%xCount) :: runoff, recharge, leakage
+    !> Output variables.
+    real, dimension(shd%yCount, shd%xCount) :: r2c
 
     !> Local variables.
     integer i
 
-    !> Accumulate runoff from GRD to R2C grid format.
+    !> Reset the R2C grid if not accumulating the variable.
+    if (present(accumulate)) then
+        if (.not. accumulate) r2c = 0.0
+    end if
+
+    !> Distribute the GRD values to the R2C grid.
     do i = 1, shd%NA
-
-        !> Hourly time-step.
-        if (ic%now_mins == 0) then
-            runoff(shd%yyy(i), shd%xxx(i)) = (rofogrd(i) + rofsgrd(i))*ic%dts
-            recharge(shd%yyy(i), shd%xxx(i)) = rofbgrd(i)*ic%dts
-!todo: determine what this should be
-!+           leakage(shd%yyy(i), shd%xxx(i)) = roflgrd*ic%dts
-
-        !> Sub-hourly time-step.
-        else
-            runoff(shd%yyy(i), shd%xxx(i)) = runoff(shd%yyy(i), shd%xxx(i)) + (rofogrd(i) + rofsgrd(i))*ic%dts
-            recharge(shd%yyy(i), shd%xxx(i)) = recharge(shd%yyy(i), shd%xxx(i)) + rofbgrd(i)*ic%dts
-!todo: determine what this should be
-!+           leakage(shd%yyy(i), shd%xxx(i) = leakage(shd%yyy(i), shd%xxx(i)) + roflgrd*ic%dts
-        end if
-
+        r2c(shd%yyy(i), shd%xxx(i)) = r2c(shd%yyy(i), shd%xxx(i)) + grd(i)
     end do
 
 end subroutine
