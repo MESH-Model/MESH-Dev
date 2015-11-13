@@ -1,6 +1,20 @@
-subroutine tile_connector(shd, runoff, recharge, leakage, ncount, rofogrd, rofsgrd, rofbgrd, delt)
+!>
+!> Description: Calculate daily averages from runoff for Standalone
+!>              Watroute.
+!>
+!> Author: D.G. Princz
+!>
+!> Updates:
+!>  Mar. 20, 2008   DGP Values are only reset on the hour and are
+!>                      accumulated on the half-hour. Standalone
+!>                      Watroute reads hourly input. Output values are
+!>                      multiplied by DELT to convert them from
+!>                      [kg m-2 s-1] to [mm] water.
+!>
+subroutine tile_connector(shd, ic, runoff, recharge, leakage, rofogrd, rofsgrd, rofbgrd)
 
     use sa_mesh_shared_variabletypes
+    use model_dates
 
     implicit none
 
@@ -8,37 +22,35 @@ subroutine tile_connector(shd, runoff, recharge, leakage, ncount, rofogrd, rofsg
     !> Parameters
     !> ----------------------------------------------------------------------------
 
-    !> Input.
+    !> Input variables.
     type(GridParams), intent(in) :: shd
-    integer, intent(in) :: ncount
+    type(iter_counter), intent(in) :: ic
     real, dimension(shd%NA), intent(in) :: rofogrd, rofsgrd, rofbgrd
-    real, intent(in) :: delt
 
-    !> Input-Output.
+    !> Input-output variables.
     real, dimension(shd%yCount, shd%xCount) :: runoff, recharge, leakage
 
-    !> ----------------------------------------------------------------------------
-    !> Declarations
-    !> ----------------------------------------------------------------------------
+    !> Local variables.
     integer i
 
-    !> ----------------------------------------------------------------------------
-    !> Calculate averages for Watroute
-    !> ----------------------------------------------------------------------------
-    !> CDAN * Values are only reset on the hour and are cumulative on the
-    !> CDAN * half-hour: stand-alone RTE.exe (Watroute) reads hourly data.
-    !> CDAN * Output values are multiplies by delt to convert them from
-    !> CDAN * [kg m-2 s-1] TO [mm] (Mar 20/08)
+    !> Accumulate runoff from GRD to R2C grid format.
     do i = 1, shd%NA
-        if (mod(ncount, 2) /= 0) then !Hourly time step
-            runoff(shd%yyy(i), shd%xxx(i)) = (rofogrd(i) + rofsgrd(i))*delt
-            recharge(shd%yyy(i), shd%xxx(i)) = rofbgrd(i)*delt
-!+           leakage(shd%yyy(i), shd%xxx(i)) = roflgrd*delt !todo: determine what this should be
-        else !Cumulative half-hourly time step
-            runoff(shd%yyy(i), shd%xxx(i)) = runoff(shd%yyy(i), shd%xxx(i)) + (rofogrd(i) + rofsgrd(i))*delt
-            recharge(shd%yyy(i), shd%xxx(i)) = recharge(shd%yyy(i), shd%xxx(i)) + rofbgrd(i)*delt
-!+           leakage(shd%yyy(i), shd%xxx(i) = leakage(shd%yyy(i), shd%xxx(i)) + roflgrd*delt !todo: determine what this should be
+
+        !> Hourly time-step.
+        if (ic%now_mins == 0) then
+            runoff(shd%yyy(i), shd%xxx(i)) = (rofogrd(i) + rofsgrd(i))*ic%dts
+            recharge(shd%yyy(i), shd%xxx(i)) = rofbgrd(i)*ic%dts
+!todo: determine what this should be
+!+           leakage(shd%yyy(i), shd%xxx(i)) = roflgrd*ic%dts
+
+        !> Sub-hourly time-step.
+        else
+            runoff(shd%yyy(i), shd%xxx(i)) = runoff(shd%yyy(i), shd%xxx(i)) + (rofogrd(i) + rofsgrd(i))*ic%dts
+            recharge(shd%yyy(i), shd%xxx(i)) = recharge(shd%yyy(i), shd%xxx(i)) + rofbgrd(i)*ic%dts
+!todo: determine what this should be
+!+           leakage(shd%yyy(i), shd%xxx(i) = leakage(shd%yyy(i), shd%xxx(i)) + roflgrd*ic%dts
         end if
+
     end do
 
 end subroutine

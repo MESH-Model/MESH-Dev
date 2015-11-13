@@ -126,7 +126,6 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
         end if
 1121  format(1x, 'Opened unit=', i5, ' filename ', (a))
 1122  format(3x, 'Error opening ios = ', i4)
-c   print*,'Opened unit=',un,' filename=',fln(fn)
         write(iun, 3005) '########################################'
         write(iun, 3005) ':FileType r2c  ASCII  EnSim 1.0         '
         write(iun, 3005) '#                                       '
@@ -291,12 +290,11 @@ c   endif
 
       if (frame_no == no_frames .and. class_no == no_classes) then
         close(iun)
-!        write(51, *) 'Closed unit ', un, ' Filename=  ', fln(fn)
         if (ro%VERBOSEMODE > 0) then
           print 1291, iun, adjustl(trim(fls%fl(indx)%fn))
         end if
       end if
-1291  format(3x, 'Opened unit=', i5, ' filename ', (a))
+1291  format(3x, 'Closed unit=', i5, ' filename ', (a))
 
       return
 
@@ -320,7 +318,6 @@ c   endif
 3006  format(a3,a10)
 3007  format(a14, i5, a6, i5)
 3012  format(a9)
-!-3020  format(a20, a40)
 
 3021  format(a6, 2i10, 3x, '"', i4, '/', i1, '/', i1, 1x, i2,
      *  ':00:00.000"', 2x, a5, 2i5, 2x, a5)

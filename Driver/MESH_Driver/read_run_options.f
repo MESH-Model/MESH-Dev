@@ -48,7 +48,6 @@
 
 !> The following variables are all local to this subroutine
       INTEGER :: J,I,iun
-!      INTEGER :: START_DATE(4),END_DATE(4)
 
 !>=======================================================================
 !>    * SET RUN OPTIONS
@@ -152,7 +151,7 @@
 !* if SAVERESUMEFLAG is 2, the user wants to make the r2c resume file.
 !* if SAVERESUMEFLAG is 3, the user wants to make the only class prognostic variables resume file.
       SAVERESUMEFLAG = 0
-      
+
 !> FORCING DATA FILES:
 !>  0 = read forcing data from .bin file
 !>  1 = read forcing data from .r2c
@@ -160,13 +159,13 @@
 !>  3 = read forcing data from .seq binary sequential files      
 !>  3 = read forcing data from .seq ascii sequential files
 !>  5 = read forcing data from load buffer in memory
-!      BASINSHORTWAVEFLAG = 0
-!      BASINLONGWAVEFLAG = 0
-!      BASINRAINFLAG = 0
-!      BASINTEMPERATUREFLAG = 0
-!      BASINWINDFLAG = 0
-!      BASINPRESFLAG = 0
-!      BASINHUMIDITYFLAG = 0
+!-      BASINSHORTWAVEFLAG = 0
+!-      BASINLONGWAVEFLAG = 0
+!-      BASINRAINFLAG = 0
+!-      BASINTEMPERATUREFLAG = 0
+!-      BASINWINDFLAG = 0
+!-      BASINPRESFLAG = 0
+!-      BASINHUMIDITYFLAG = 0
 
 !> SOIL INITIALIZATION  FLAG - DEFAULT = STOP SIMULATION IF SUM OF SOIL PERCENTAGES EXCEEDS 100%
 !> If SOILINIFLAG is 0, stop simulation if the sum of soil percentages is greater than 100%
@@ -177,9 +176,6 @@
 !> If SOILINIFLAG is 5, directly read soil parameter values from soil.ini file.
       SOILINIFLAG = 0
 
-!> PRE-EMPTIONFLAG FLAG - DEFAULT = NO PRE-EMPTION
-!      PREEMPTIONFLAG = 0
-
 !> If OBJFNFLAG is 0 {DEFAULT} = SAE - SUM OF ABSOLUTE VALUE OF ERRORS
 !> If OBJFNFLAG is 1, SAESRT - SUM OF ABSOLUTE VALUE OF ERRORS AFTER SORTING
 !> If OBJFNFLAG is 2, SAEMSRT - SUM OF ABSOLUTE VALUE OF MOVING ERRORS AFTER SORTING 
@@ -187,8 +183,6 @@
 !> IF OBJFNFLAG is 4, NSE - MEAN NASH-SUTFLIFFE MODEL EFFICIENCY INDEX (-ve FOR MINIMIZATION)
       OBJFNFLAG = 0
 
-!> AUTOCALIBRATION FLAG - DEFAULT = NO AUTOCALIBRATION
-!      AUTOCALIBRATIONFLAG = 0
       WINDOWSIZEFLAG = 1
       WINDOWSPACINGFLAG = 1
 
@@ -268,14 +262,6 @@
 !TODO: N is not a flag, move it somewhere else
       N = 0
 
-!-!> FLAGS FOR WATROUTE (MODIFIED RPN CODE)
-!-!> Format is PRINT(VARIABLE_TERM)R2CFILEFLAG:
-!-!> If PRINT(VARIABLE_TERM)R2CFILEFLAG is 0, no file is saved.
-!-!> If PRINT(VARIABLE_TERM)R2CFILEFLAG is 1, the file is saved.
-!-      PRINTRFFR2CFILEFLAG = 0
-!-      PRINTRCHR2CFILEFLAG = 0
-!-!      PRINTLKGR2CFILEFLAG = 0
-
 !> FLAGS FOR GEOTHERMAL FLUX FOR THE BOTTOM OF THE LAST SOIL LAYER 
 !* If GGEOFLAG is GT 0,  READ UNIQUE VALUE FROM MESH_ggeo.INI FILE
       GGEOFLAG = 0
@@ -321,16 +307,12 @@
 !> Open and read in values from MESH_input_run_options.ini file
 !> *********************************************************************
 
-!      if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(1)%isInit)) then
       iun = fls%fl(mfk%f53)%iun
-      open( iun,
-     +      file=trim(adjustl(fls%fl(mfk%f53)%fn)),
-     +      action='read',
-     +      status='old', iostat=ios)
-!      else
-!        OPEN (53, FILE="MESH_input_run_options.ini", STATUS="OLD",
-!     1  IOSTAT=IOS)
-!      end if
+      open(iun,
+     +     file=trim(adjustl(fls%fl(mfk%f53)%fn)),
+     +     action='read',
+     +     status='old', iostat=ios)
+
       IF (IOS .NE. 0) THEN !CHECK FILE FOR IOSTAT ERRORS
         WRITE (6, *)
         WRITE (6, *)
@@ -762,17 +744,6 @@
       READ(iun,*) !P
       READ(iun, '(4I4)') YEAR_START, JDAY_START, HOUR_START, MINS_START
       READ(iun, '(4I4)') YEAR_STOP, JDAY_STOP, HOUR_STOP, MINS_STOP
-
-!> Initialization of model  dates
-!        start_date(1) = IYEAR_START
-!        start_date(2) = IDAY_START
-!        start_date(3) = IHOUR_START
-!        start_date(4) = IMIN_START
-
-!        end_date(1) = IYEAR_END
-!        end_date(2) = IDAY_END
-!        end_date(3) = IHOUR_END
-!        end_date(4) = IMIN_END
 
       CALL GET_DATES(ts)
 

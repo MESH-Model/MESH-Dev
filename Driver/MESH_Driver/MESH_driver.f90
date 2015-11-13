@@ -150,19 +150,8 @@ program RUNMESH
 !INTEGER IGND
     real IGND_TEST, IGND_DEEP
 
-!> WATERSHED RELATED VARIABLES
-!    integer LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX, LONDEGMIN, &
-!        LONMINMIN, LONDEGMAX, LONMINMAX
-!    integer WF_IYMAX, WF_JXMAX
-!> note, there are more watershed related variables declared in mesh_input_module.f
-
-!    real(kind = 8) LATLENGTH, LONGLENGTH
-!    real(kind = 8) WF_AL
-!    real WF_LAND_MAX, WF_LAND_SUM
-!    integer WF_LAND_COUNT
-
 !> IOSTAT VARIABLE
-    integer IOS, IOS_EVT
+    integer IOS
 
 !> FOR OUTPUT
     character(450) GENDIR_OUT
@@ -479,9 +468,6 @@ program RUNMESH
      
     real, dimension(:, :, :), allocatable :: TSFSROW
     real, dimension(:, :), allocatable :: TSFSGAT
-
-!> GATHER-SCATTER COUNTS:
-!-INTEGER, DIMENSION(:), ALLOCATABLE :: ILMOS, JLMOS, IWMOS, JWMOS
 !>
 !>*******************************************************************
 !>
@@ -541,12 +527,6 @@ program RUNMESH
     real, dimension(:), allocatable :: DDGAT, MANNGAT
     real, dimension(:, :), allocatable :: BTC, BCAP, DCOEFF, BFCAP, &
         BFCOEFF, BFMIN, BQMAX
-
-!> CONTROL FLAGS
-!* ALL: DEFINITIONS ARE WRITTEN JUST BEFORE RUN_OPTIONS.INI IS
-!*      OPENED
-!* RELFLG: RELEASE-MATCH STRICTNESS
-!INTEGER :: RELFLG
 !>
 !>*******************************************************************
 !>
@@ -719,11 +699,6 @@ program RUNMESH
         GRKSORG
     real, dimension(18, 4, 2) :: GROWYR
 
-!-    integer found
-
-!-    character(10) time
-!-    character(8) cday
-
 !> **********************************************************************
 !>  For cacluating the subbasin grids
 !> **********************************************************************
@@ -783,7 +758,6 @@ program RUNMESH
     type(ClassParameters) :: cp
     type(SoilValues) :: sv
     type(HydrologyParameters) :: hp
-
     type(fl_ids) :: fls
 
 !>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
@@ -857,10 +831,6 @@ program RUNMESH
     common /CLASSD2/ AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
 
 !> THE FOLLOWING COMMON BLOCKS ARE DEFINED FOR WATROF
-!-COMMON    /WATFLGS/   VICEFLG, PSI_LIMIT, HICEFLG, LZFFLG, &
-!-                      EXTFLG, IWFICE, ERRFLG, IMIN, IHOUR, IDAY, &
-!-                      IYEAR
-
     data VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
         EXTFLG/0/, IWFICE/3/, ERRFLG/1/
 
@@ -946,12 +916,8 @@ program RUNMESH
     shd%lc%IGND = 0
 
     !> Open soil levels file and check for IOSTAT errors.
-!    if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(10)%isInit)) then
     iun = fls%fl(mfk%f52)%iun
     open(iun, file = trim(adjustl(fls%fl(mfk%f52)%fn)), status = 'old', action = 'read', iostat = ios)
-!    else
-!        open(52, file = 'MESH_input_soil_levels.txt', status = 'old', iostat = IOS)
-!    end if
     if (ios /= 0) then
         print 1002
         stop
@@ -989,11 +955,6 @@ program RUNMESH
 !  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, &
 !  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END, &
                              IRONAME, GENDIR_OUT, &
-!>variables for drainage database or new_shd
-!                             WF_LAND_COUNT, &
-!                             LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX, &
-!                             LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX, &
-!                             WF_LAND_MAX, WF_LAND_SUM, &
 !>variables for READ_PARAMETERS_CLASS
                              TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6, &
                              NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
@@ -1004,7 +965,6 @@ program RUNMESH
                              DAILY_START_DAY, DAILY_STOP_DAY, &
                              HOURLY_START_YEAR, HOURLY_STOP_YEAR, &
                              DAILY_START_YEAR, DAILY_STOP_YEAR, &
-!  IHOUR, IMIN, IDAY, IYEAR, &
  !>variables for READ_SOIL_INI
  !>variables for READ_PARAMETERS_HYDROLOGY
                              INDEPPAR, DEPPAR, WF_R2, M_C, &
@@ -1197,20 +1157,6 @@ program RUNMESH
     WF_STORE1 = 0.0
     WF_STORE2 = 0.0
     WF_QI1 = 0.0
-
-!!> WATROUTE INPUT FILES:
-!-ALLOCATE (RUNOFF(YCOUNT, XCOUNT), &
-!-  RECHARGE(YCOUNT, XCOUNT), STAT=PAS)
-!-    if (ipid == 0) then
-!-        allocate(rte_runoff(shd%yCount, shd%xCount), &
-!-                 rte_recharge(shd%yCount, shd%xCount), rte_leakage(shd%yCount, shd%xCount), stat = ierr)
-!-        if (ierr /= 0) then
-!-            print 1114, 'Standalone RTE input'
-!-            print 1118, 'Grid square rows', shd%yCount
-!-            print 1118, 'Grid square columns', shd%xCount
-!-            stop
-!-        end if
-!-    end if
 
 1114 format(/1x, 'Error allocating ', a, ' variables.', &
             /1x, 'Check that these bounds are within an acceptable range.', /)
@@ -1563,12 +1509,11 @@ program RUNMESH
         print 1118, 'CTEM flag', ICTEM
         stop
     end if
-!>
-!>*******************************************************************
-!>
+
 !> *********************************************************************
 !>  Open additional output files
 !> *********************************************************************
+
     if (ipid == 0 .and. BASINSWEOUTFLAG > 0) then
         open(85, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/basin_SCA_alldays.csv')
         open(86, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/basin_SWE_alldays.csv')
@@ -1631,6 +1576,7 @@ program RUNMESH
 !> *********************************************************************
 !> Open and read in values from MESH_input_streamflow.txt file
 !> *********************************************************************
+
     open(22, file = 'MESH_input_streamflow.txt', status = 'old', action = 'read')
     read(22, *)
     read(22, *) WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
@@ -1712,6 +1658,7 @@ program RUNMESH
 !> *********************************************************************
 !> Check to make sure input values are consistent
 !> *********************************************************************
+
 !> compare land classes in class.ini and drainage database files
     if (NTYPE /= NMTEST .and. NTYPE > 0) then
         print *, 'land classes from MESH_parameters_CLASS.ini: ', NMTEST
@@ -1746,13 +1693,8 @@ program RUNMESH
 
     !> Read an intial value for geothermal flux from file.
     if (GGEOFLAG == 1) then
-!        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(7)%isInit)) then
-!            open(fls%fl(7)%unit, file = trim(adjustl(fls%fl(7)%name)))
         iun = fls%fl(mfk%f18)%iun
         open(iun, file = trim(adjustl(fls%fl(mfk%f18)%fn)), status = 'old', action = 'read', iostat = ios)
-!        else
-!            open(18, file = 'MESH_ggeo.ini', status = 'old')
-!        end if
         read(iun, *) GGEOGRD(1)
         close(iun)
     else
@@ -2032,20 +1974,6 @@ program RUNMESH
 
     if (ipid == 0) then
 
-!-!> SET GRID-FORMAT WATROUTE OUTPUT           !
-!--DO I = 1, YCOUNT                            !
-!--  DO J = 1, XCOUNT                          !
-!-        rte_runoff = 0.0                    !
-!-        rte_recharge = 0.0                  !
-!-        rte_leakage = 0.0
-!--> CDAN            LEAKAGE(I, J) = 0.0       !
-!--   END DO                                   !
-!--END DO                                      !
-
-!-!>  SET FRAME COUNT FOR WRITE_R2C
-!-        rte_frames_now = 1
-!-        rte_frames_total = (rte_frames_now + 1)
-
 !> ******************************************************
 !> echo print information to MESH_output_echo_print.txt
 !> ******************************************************
@@ -2237,87 +2165,6 @@ program RUNMESH
         end if
         close(88)
     end if
-!>
-!> *******************************************************************
-!> FOR SPL WATROUTE (MODIFIED RPN CODE)
-!> *******************************************************************
-!>
-
-!-    if (ipid == 0) then
-
-!> R2C-FORMAT OUTPUT FILES (RUNOFF, RECHARGE, AND LEAKAGE VALUES)
-!> CALL WRITE_R2C TO WRITE R2C-FORMAT FILES
-!>
-!> IF (MODELFLG .EQ. "i") AUTHOR="MESH_DRIVER (rte -i)"
-!>   Requires _RFF (RUNOFF) file
-!> IF (MODELFLG .EQ. "r") AUTHOR="MESH_DRIVER (rte -r)"
-!>   Requires _RFF (RUNOFF) &
-!>            _RCH (RECHARGE) files
-!> IF (MODELFLG .EQ. "l") AUTHOR="MESH_DRIVER (rte -l)"
-!>   Requires _RFF (RUNOFF) &
-!>            _LKG (LEAKAGE) files (not currently supported)
-!>
-!> HEADER INFORMATION
-!>
-!--AUTHOR = "MESH_DRIVER"
-!--COORDSYS_TEMP = COORDSYS1
-!--ZONE_TEMP = ZONE1
-!--DATUM_TEMP = DATUM1
-!--XORIGIN_TEMP = XORIGIN
-!--YORIGIN_TEMP = YORIGIN
-!--XCOUNT_TEMP = XCOUNT
-!--YCOUNT_TEMP = YCOUNT
-!--XDELTA_TEMP = XDELTA
-!--YDELTA_TEMP = YDELTA
-!--SOURCE_FILE_NAME = "CLASS"
-!>
-!> OPEN RTE.EXE INPUT FILES (UNIT 261, UNIT 262)
-!> (RTE.EXE MIGHT ALSO BE CALLED WATROUTE.EXE)
-!> UNIT NUMBERS HAVE BEEN PULLED FROM RTE.EXE SUBROUTINES, THEIR
-!> FILE NAMES (FLN(31), FLN(32)) ARE READ FROM THE EVENT FILE
-!> FILES ARE OPENED ACCORDING TO MODELFLG IN THE EVENT FILE
-!>
-!> RUNOFF (MODELFLG .EQ. 'r', 'l', or 'i' (ALL))
-!>
-!-        if (PRINTRFFR2CFILEFLAG == 1) then
-!--  NAME = "Gridded Channel Inflow"
-!--  ATTRIBUTE_NAME = "channel_inflow"
-!--  ATTRIBUTE_UNITS = "mm"
-!--  ATTRIBUTE_TYPE = "flow"
-!-            call write_r2c(fls, mfk%f31, shd, &
-!-                           0, 1, 0, 1, 1, &
-!-                           rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
-!-                           rte_runoff, &
-!todo: replace source with LSS flag
-!-                           'channel_inflow', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
-!-        end if
-!>
-!> RECHARGE (MODELFLG .EQ. 'r')
-!>
-!-        if (PRINTRCHR2CFILEFLAG == 1) then
-!--  NAME = "Gridded Recharge"
-!--  ATTRIBUTE_NAME = "recharge"
-!--  ATTRIBUTE_UNITS = "mm"
-!--  ATTRIBUTE_TYPE = "flow"
-!-            call write_r2c(fls, mfk%f32, shd, &
-!-                           0, 1, 0, 1, 1, &
-!-                           rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
-!-                           rte_recharge, &
-!todo: replace source with LSS flag
-!-                           'recharge', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
-!-        end if
-!>
-!> LEAKAGE (MODELFLG .EQ. 'l' (NOT SUPPORTED))
-!>
-!!+IF (PRINTLKGR2CFILEFLAG == 1) THEN
-!!+  NAME = "Gridded Leakage"
-!!+  ATTRIBUTE_NAME = "leakage"
-!!+  ATTRIBUTE_UNITS = "cms"
-!!+  ATTRIBUTE_TYPE = " "
-!!+  CALL WRITE_R2C(263, 33, 0, 1, 0, 1, 1)
-!!+END IF
-
-!-    end if !(ipid == 0) then
 
 !> *********************************************************************
 !> Open and print header information to the output files
@@ -2329,14 +2176,10 @@ program RUNMESH
         if (STREAMFLOWOUTFLAG > 0) then
 
         !> Daily streamflow file.
-!        if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(6)%isInit)) then
             open(fls%fl(mfk%f70)%iun, &
 !todo: This creates a bug if a space doesn't exist in the name of the folder!
                  file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // trim(adjustl(fls%fl(mfk%f70)%fn)), &
                  iostat = ios)
-!        else
-!            open(70, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/MESH_output_streamflow.csv')
-!        end if
 
         !> Hourly and cumulative daily streamflow files.
             if (STREAMFLOWOUTFLAG >= 2) then
@@ -2349,6 +2192,7 @@ program RUNMESH
 !> *********************************************************************
 !> Open and read in values from r2c_output.txt file
 !> *********************************************************************
+
         NR2CFILES = 0
         if (R2COUTPUTFLAG >= 1) then
             inquire(file = 'r2c_output.txt', exist = R2COUTPUT)
@@ -2753,20 +2597,12 @@ program RUNMESH
         WTRSGAT = 0.0
         WTRGGAT = 0.0
         DRGAT = 0.0
-120 continue
-!>
         HMFGGAT = 0.0
         HTCGAT = 0.0
         QFCGAT = 0.0
         GFLXGAT = 0.0
-130 continue
-140 continue
-!>
         ITCTGAT = 0
-150 continue
-160 continue
-170 continue
-!>
+
         call resume_state_r2c(shd%lc%NML, NLTEST, NMTEST, NCOUNT, &
                               MINS_NOW, shd%lc%ACLASS, NR2C_R, GRD_R, GAT_R, GRDGAT_R, R2C_ATTRIBUTES_R, &
                               NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
@@ -2989,15 +2825,12 @@ program RUNMESH
         if (BASINBALANCEOUTFLAG > 0) then
 
         !> Water balance.
-!        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(4)%isInit)) then
             open(fls%fl(mfk%f900)%iun, &
 !todo: This creates a bug if a space doesn't exist in the name of the folder!
                  file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
                  iostat = ios)
-!        else
-!            open(900, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/Basin_average_water_balance.csv')
+!todo: Create this only by flag.
             open(902, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/Basin_average_water_balance_Monthly.csv')
-!        end if
 
             wrt_900_1 = 'DAY,YEAR,PREACC' // ',EVAPACC,ROFACC,ROFOACC,' // &
                 'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,'
@@ -3488,20 +3321,12 @@ program RUNMESH
         WTRSGAT = 0.0
         WTRGGAT = 0.0
         DRGAT = 0.0
-320     continue
-!>
         HMFGGAT = 0.0
         HTCGAT = 0.0
         QFCGAT = 0.0
         GFLXGAT = 0.0
-330     continue
-340     continue
-!>
         ITCTGAT = 0
-350     continue
-360     continue
-370     continue
-!>
+
         call CLASSI(VPDGAT, TADPGAT, PADRGAT, RHOAGAT, RHSIGAT, &
                     RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, TAGAT, QAGAT, &
                     PREGAT, RPREGAT, SPREGAT, PRESGAT, &
@@ -4402,50 +4227,6 @@ program RUNMESH
                     sum(wb%lqws(ik, :)) + sum(wb%frws(ik, :))
             end do !k = il1, il2
 
-!>
-!> *******************************************************************
-!> FOR SPL WATROUTE (MODIFIED RPN CODE)
-!> *******************************************************************
-!>
-!-            call tile_connector(shd, rte_runoff, rte_recharge, rte_leakage, NCOUNT, ROFOGRD, ROFSGRD, ROFBGRD, DELT)
-
-!> FILES ARE ONLY WRITTEN ON THE HOUR (WATROUTE READS HOURLY DATA).
-!> HOURLY TIME STEPS ARE ODD-NUMBERED INTEGERS.
-!>
-!todo: these can be removed at some point, as they've been added
-!todo: as flags as a part of the model_output module.
-!-            if (mod(real(NCOUNT), 2.0) == 0.0) then !HOURLY TIME STEP
-!-                rte_year_now = YEAR_NOW
-!-                call FIND_MONTH(JDAY_NOW, YEAR_NOW, rte_month_now)
-!-                call FIND_DAY(JDAY_NOW, YEAR_NOW, rte_day_now)
-!-                rte_hour_now = HOUR_NOW + 1 !ROUTING USES 1-24 RANGE, MESH USES 0-23
-!>
-!> WRITE OUTPUT FOR RTE.EXE (RUNOFF)
-!>
-!-                if (PRINTRFFR2CFILEFLAG == 1) then
-!-                    !PASS RUNOFF TO WRITE_R2C
-!-                    call write_r2c(fls, mfk%f31, shd, &
-!-                                   rte_frames_total, 1, rte_frames_now, 1, 6, &
-!-                                   rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
-!-                                   rte_runoff)
-!-                end if
-!>
-!> WRITE OUTPUT FOR RTE.EXE (RECHARGE)
-!>
-!-                if (PRINTRCHR2CFILEFLAG == 1) then !WRITE RECHARGE DATA
-!-                    !PASS RECHARGE TO WRITE_R2C
-!-                    call write_r2c(fls, mfk%f32, shd, &
-!-                                   rte_frames_total, 1, rte_frames_now, 1, 6, &
-!-                                   rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
-!-                                   rte_recharge)
-!-                end if
-!>
-!> UPDATE COUNTERS
-!>
-!-                rte_frames_now = rte_frames_now + 1
-!-                rte_frames_total = rte_frames_total + 1
-!-            end if !(mod(real(NCOUNT), 2.0) == 0.0) then
-
 !> calculate and write the basin avg SCA similar to watclass3.0f5
 !> Same code than in wf_ensim.f subrutine of watclass3.0f8
 !> Especially for version MESH_Prototype 3.3.1.7b (not to be incorporated in future versions)
@@ -4916,6 +4697,7 @@ program RUNMESH
 !> *********************************************************************
 !> Call routing routine
 !> *********************************************************************
+
         if (ipid == 0) then
             call WF_ROUTE(WF_ROUTETIMESTEP, WF_R1, WF_R2, &
                           NA, shd%NAA, NTYPE, shd%yCount, shd%xCount, shd%iyMin, &
@@ -4936,6 +4718,7 @@ program RUNMESH
                 WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + WF_QO2(WF_S(i))
                 WF_QHYD_AVG(i) = WF_QHYD(i) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
             end do
+
             if (JAN == 1) then
 !>     this is done so that INIT_STORE is not recalculated for
 !>     each iteration when wf_route is not used
@@ -5003,15 +4786,13 @@ program RUNMESH
 ! *********************************************************************
 ! Update time counters and return to beginning of main loop
 ! *********************************************************************
+
         MINS_NOW = MINS_NOW + TIME_STEP_MINS ! increment the current time by 30 minutes
         if (MINS_NOW == 60) then
             MINS_NOW = 0
             HOUR_NOW = HOUR_NOW + 1
             if (HOUR_NOW == 24) then
                 HOUR_NOW = 0
-!    IF(mtsflg%AUTOCALIBRATIONFLAG .GE. 1 .AND. mtsflg%PREEMPTIONFLAG == 1)THEN
-!      IF(FTEST > FBEST) GOTO 199
-!    ENDIF
                 JDAY_NOW = JDAY_NOW + 1
                 if (JDAY_NOW >= 366) then
                     if (mod(YEAR_NOW, 400) == 0) then !LEAP YEAR
@@ -5387,6 +5168,7 @@ program RUNMESH
 !> Call save_init_prog_variables_class.f90 to save initi prognostic variables by
 !> by fields needd by classas as initial conditions
 !> *********************************************************************
+
 !> bjd - July 14, 2014: Gonzalo Sapriza
     if (SAVERESUMEFLAG == 3) then
 !> Save the last time step
@@ -5468,8 +5250,6 @@ program RUNMESH
     if (mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write()
 
 999 continue
-!> Diane      close(21)
-!>      close(22)
     close(51)
 
     !todo++:
@@ -5504,13 +5284,13 @@ program RUNMESH
     close(86)
 
     !> Close the legacy binary format forcing files.
-    close(90)
-    close(91)
-    close(92)
-    close(93)
-    close(94)
-    close(95)
-    close(96)
+!    close(90)
+!    close(91)
+!    close(92)
+!    close(93)
+!    close(94)
+!    close(95)
+!    close(96)
 
     !> Close the CSV energy and water balance output files.
     close(fls%fl(mfk%f900)%iun)

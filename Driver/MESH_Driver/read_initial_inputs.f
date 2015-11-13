@@ -8,11 +8,6 @@
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
      +  IRONAME, GENDIR_OUT,
-!> variables for drainage database or new_shd
-!     + WF_LAND_COUNT,
-!     + LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX,
-!     + LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX,
-!     + WF_LAND_MAX, WF_LAND_SUM,
 !> variables for READ_PARAMETERS_CLASS
      +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
      +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
@@ -23,7 +18,6 @@
      +  DAILY_START_DAY, DAILY_STOP_DAY,
      +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
      +  DAILY_START_YEAR, DAILY_STOP_YEAR,
-!     +  IHOUR, IMIN, IDAY, IYEAR,
 !> variables for READ_SOIL_INI
 !> variables for READ_PARAMETERS_HYDROLOGY
      +  INDEPPAR, DEPPAR, WF_R2, M_C,
@@ -74,12 +68,6 @@
 !> local variables
       integer NA, NTYPE, IGND, i, j, k
 !> END OF VALUES NEEDED for drainagedatabase of new_shd.r2c
-!> -----------------------------
-!> values that were declared earlier:
-!>  BASINSHORTWAVEFLAG, BASINLONGWAVEFLAG,
-!>  BASINTEMPERATUREFLAG, BASINRAINFLAG, BASINWINDFLAG,
-!>  BASINPRESFLAG, BASINHUMIDITYFLAG
-!> -----------------------------
 !> values needed for READ_PARAMETERS_CLASS
       character(4)
      +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
@@ -159,30 +147,17 @@
 !> dan * THE BASIN SHD FILE.  READ_SHED_EF, FROM STAND-ALONE RTE.EXE
 !> dan * (WATROUTE), IS CALLED TO READ THE NEW FILE.
       if (SHDFILEFLAG == 1) then
-!      allocate(FLN(999))
-!      FLN(1) = 'MESH_drainage_database.r2c'
 
 !+      OPEN(UNIT=12,FILE='event/event.evt',STATUS='OLD',IOSTAT=IOS_EVT)
         open(fls%fl(mfk%f20)%iun,
      +    file=adjustl(trim(fls%fl(mfk%f20)%fn)),
      +    status='old', iostat=ios)
         if (IOS == 0) then
-        !CLOSE(12)
           close(fls%fl(mfk%f20)%iun)
-
-!> these settings are for producing input files for the new watroute
-!          FLN(31) = 'WR_runoff.r2c'
-!          FLN(32) = 'WR_recharge.r2c'
-
           print *,
      +      'Reading Drainage Database from MESH_drainage_database.r2c'
-
-!          open(UNIT=98, FILE='1234500124572321.1265489')
           call READ_SHED_EF(fls, mfk%f20, shd)
-!          close(98, STATUS='delete')
           write(6, *) ' READ: SUCCESSFUL, FILE: CLOSED'
-!+        ALLOCATE(FRAC(NA),
-
 !>
 !>*******************************************************************
 !>
@@ -192,10 +167,8 @@
 !+     +  WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA),
 !+     +  WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA),
 !+     +  )
-
 !          BASIN_FRACTION(1) = -1
           shd%lc%ILG = shd%NA*shd%lc%NTYPE
-
         else
           print *, 'ERROR with event.evt or new_shd.r2c'
           stop

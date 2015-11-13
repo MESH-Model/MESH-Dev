@@ -25,12 +25,6 @@ module model_files_variables
         !> MESH_ggeo.ini
         integer :: f18 = 7
 
-!-        !> WR_runoff.r2c
-!-        integer :: f31 = 12
-
-!-        !> WR_recharge.r2c
-!-        integer :: f32 = 13
-
         !> Basin_average_water_balance.csv
         integer :: f900 = 4
 
@@ -39,8 +33,6 @@ module model_files_variables
 
         !> out_response
         integer :: out_response = 8
-
-!        integer :: MetricsSummaryOut = 5
 
         !> int_statVariables.seq
         integer :: f883 = 9

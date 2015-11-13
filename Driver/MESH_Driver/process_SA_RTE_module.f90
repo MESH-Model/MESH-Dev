@@ -86,7 +86,7 @@ module process_SA_RTE
 !todo: these can be removed at some point, as they've been added
 !todo: as flags as a part of the model_output module.
         !> Call the tile connector to accumulate half-hourly values.
-        call tile_connector(shd, RFF, RCH, LKG, ic%ts_daily, wb%rofo, wb%rofs, wb%rofb, ic%dts)
+        call tile_connector(shd, ic, RFF, RCH, LKG, wb%rofo, wb%rofs, wb%rofb)
 
         !> Offline routing reads data every hour so data are written on
         !> the hour.
