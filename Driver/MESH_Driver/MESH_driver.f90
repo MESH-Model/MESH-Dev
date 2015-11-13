@@ -4700,7 +4700,7 @@ program RUNMESH
 
         if (ipid == 0) then
             call WF_ROUTE(WF_ROUTETIMESTEP, WF_R1, WF_R2, &
-                          NA, shd%NAA, NTYPE, shd%yCount, shd%xCount, shd%iyMin, &
+                          shd%NA, shd%NAA, shd%lc%NTYPE, shd%yCount, shd%xCount, shd%iyMin, &
                           shd%iyMax, shd%jxMin, shd%jxMax, shd%yyy, shd%xxx, shd%IAK, shd%IROUGH, &
                           shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
                           shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
@@ -4710,8 +4710,8 @@ program RUNMESH
                           WF_B1, WF_B2, WF_QREL, WF_QR, &
                           WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
                           WF_STORE1, WF_STORE2, &
-                          DRIVERTIMESTEP, ROFGRD, NA, M_C, M_R, M_S, NA, &
-                          WF_S, JAN, JDAY_NOW, HOUR_NOW, MINS_NOW)
+                          ic%dts, (wb_h%rof/ic%dts), shd%NA, M_C, M_R, M_S, shd%NA, &
+                          WF_S, JAN, ic%now_jday, ic%now_hour, ic%now_mins)
             do i = 1, WF_NO
                 WF_QSYN(i) = WF_QO2(WF_S(i))
                 WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + WF_QO2(WF_S(i))
