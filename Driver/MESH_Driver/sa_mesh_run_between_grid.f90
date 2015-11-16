@@ -19,7 +19,7 @@ module sa_mesh_run_between_grid
 
 !todo: switch
         call configure_SA_RTE(shd, ic)
-        call config_WF_ROUTE(shd)
+        call config_WF_ROUTE(shd, ic)
 
     end subroutine
 
@@ -44,7 +44,7 @@ module sa_mesh_run_between_grid
 
 !todo: Switch
         call run_SA_RTE(shd, ic, wb)
-        call run_WF_ROUTE(shd, wb)
+        call run_WF_ROUTE(shd, ic, wb)
 
     end subroutine
 

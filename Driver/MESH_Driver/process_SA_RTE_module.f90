@@ -16,7 +16,7 @@ module process_SA_RTE
     !> Option flags for offline routing.
     type SA_RTE_flags
 
-        !> Flag used to active the process module.
+        !> Flag used to enable the module.
         logical :: PROCESS_ACTIVE = .false.
 
         !> Format of the variable name is PRINT(VARIABLE_TERM)R2CFILEFLAG.
@@ -28,9 +28,9 @@ module process_SA_RTE
 
     end type
 
-    !* SA_RTE_flgs: Current configuration of the module. Sub-keys of
-    !*                this object control what output is written for
-    !*                offline routing.
+    !* SA_RTE_flgs: Configuration flags for the module. Sub-keys of
+    !*              this object control what output is written for
+    !*              offline routing.
     type(SA_RTE_flags), save :: SA_RTE_flgs
 
     type SA_RTE_file_keys
