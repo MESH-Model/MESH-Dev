@@ -47,6 +47,9 @@ OBJECTS=	module_mpi_flags.o module_mpi.o \
 			SIMSTATS_config.o model_output_variabletypes.o model_output.o \
 			calc_drms.o calc_abserr.o
 
+#WF_ROUTE
+OBJECTS+=	process_WF_ROUTE_config.o WF_ROUTE.o process_WF_ROUTE_module.o
+
 #SA_RTE (Standalone RPN ROUTE)
 OBJECTS+=	process_SA_RTE_module.o
 
@@ -80,9 +83,6 @@ OBJECTS+=	process_CLASS_config.o APREP.o CANADD.o CANALB.o CANVAP.o check_parame
 
 #WATDRN3
 OBJECTS+=	WATDRN3.o WATDRN3B.o
-
-#Route
-OBJECTS+=	process_WF_ROUTE_config.o WF_ROUTE.o process_WF_ROUTE_module.o
 
 #Blowing snow
 OBJECTS+=   PBSMrates.o PBSMrun.o ProbabilityThreshold.o \

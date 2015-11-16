@@ -28,6 +28,7 @@ module model_files_variables
         !> Basin_average_water_balance.csv
         integer :: f900 = 4
 
+!todo: remove this
         !> MESH_output_streamflow.csv
         integer :: f70 = 6
 

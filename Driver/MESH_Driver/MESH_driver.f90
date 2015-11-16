@@ -157,7 +157,7 @@ program RUNMESH
     character(450) GENDIR_OUT
 
     !> For R2C-format out
-    integer rte_year_now, rte_month_now, rte_day_now, rte_hour_now
+!-    integer rte_year_now, rte_month_now, rte_day_now, rte_hour_now
 
 !todo clean up commets and arrange variables a bit better
 
@@ -4692,32 +4692,42 @@ program RUNMESH
             NSUM = 1
         end if
 
-        if (ipid == 0) call run_between_grid(shd, ts, ic, cm, wb_h, eng, sov)
+        if (ipid == 0) call run_between_grid(shd, ts, ic, cm, wb_h, eng, sov, &
+                                             WF_ROUTETIMESTEP, WF_R1, WF_R2, &
+                                             WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
+                                             WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
+                                             WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
+                                             WF_B1, WF_B2, WF_QREL, WF_QR, &
+                                             WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
+                                             WF_STORE1, WF_STORE2, &
+                                             M_C, M_R, M_S, &
+                                             WF_S, JAN, &
+                                             WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM, WF_QHYD_AVG, WF_QHYD_CUM)
 
 !> *********************************************************************
 !> Call routing routine
 !> *********************************************************************
 
         if (ipid == 0) then
-            call WF_ROUTE(WF_ROUTETIMESTEP, WF_R1, WF_R2, &
-                          shd%NA, shd%NAA, shd%lc%NTYPE, shd%yCount, shd%xCount, shd%iyMin, &
-                          shd%iyMax, shd%jxMin, shd%jxMax, shd%yyy, shd%xxx, shd%IAK, shd%IROUGH, &
-                          shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
-                          shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
-                          WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
-                          WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
-                          WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
-                          WF_B1, WF_B2, WF_QREL, WF_QR, &
-                          WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
-                          WF_STORE1, WF_STORE2, &
-                          ic%dts, (wb_h%rof/ic%dts), shd%NA, M_C, M_R, M_S, shd%NA, &
-                          WF_S, JAN, ic%now_jday, ic%now_hour, ic%now_mins)
-            do i = 1, WF_NO
-                WF_QSYN(i) = WF_QO2(WF_S(i))
-                WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + WF_QO2(WF_S(i))
-                WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + WF_QO2(WF_S(i))
-                WF_QHYD_AVG(i) = WF_QHYD(i) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
-            end do
+!-            call WF_ROUTE(WF_ROUTETIMESTEP, WF_R1, WF_R2, &
+!-                          shd%NA, shd%NAA, shd%lc%NTYPE, shd%yCount, shd%xCount, shd%iyMin, &
+!-                          shd%iyMax, shd%jxMin, shd%jxMax, shd%yyy, shd%xxx, shd%IAK, shd%IROUGH, &
+!-                          shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
+!-                          shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
+!-                          WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
+!-                          WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
+!-                          WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
+!-                          WF_B1, WF_B2, WF_QREL, WF_QR, &
+!-                          WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
+!-                          WF_STORE1, WF_STORE2, &
+!-                          ic%dts, (wb_h%rof/ic%dts), shd%NA, M_C, M_R, M_S, shd%NA, &
+!-                          WF_S, JAN, ic%now_jday, ic%now_hour, ic%now_mins)
+!-            do i = 1, WF_NO
+!-                WF_QSYN(i) = WF_QO2(WF_S(i))
+!-                WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + WF_QO2(WF_S(i))
+!-                WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + WF_QO2(WF_S(i))
+!-                WF_QHYD_AVG(i) = WF_QHYD(i) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
+!-            end do
 
             if (JAN == 1) then
 !>     this is done so that INIT_STORE is not recalculated for
@@ -4731,35 +4741,33 @@ program RUNMESH
 !> *********************************************************************
 
     !> Write output for hourly streamflow.
-            if (STREAMFLOWFLAG == 1 .and. STREAMFLOWOUTFLAG >= 2) then
-                write(71, 5085) JDAY_NOW, HOUR_NOW, MINS_NOW, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
-            end if
+!-            if (STREAMFLOWFLAG == 1 .and. STREAMFLOWOUTFLAG >= 2) then
+!-                write(71, 5085) JDAY_NOW, HOUR_NOW, MINS_NOW, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
+!-            end if
 
             if (NCOUNT == 48) then !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
+print *, NCOUNT, ic%ts_daily
 
-                do i = 1, WF_NO
-                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + WF_QHYD_AVG(i)
-                end do
+!-                do i = 1, WF_NO
+!-                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + WF_QHYD_AVG(i)
+!-                end do
 
     !> Write output for daily and cumulative daily streamflow.
-                if (STREAMFLOWOUTFLAG > 0) then
-                    write(fls%fl(mfk%f70)%iun, 5084) JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
-                    if (STREAMFLOWOUTFLAG >= 2) then
-                        write(72, 5084) JDAY_NOW, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
-                    end if
-                end if
+!-                if (STREAMFLOWOUTFLAG > 0) then
+!-                    write(fls%fl(mfk%f70)%iun, 5084) JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
+!-                    if (STREAMFLOWOUTFLAG >= 2) then
+!-                        write(72, 5084) JDAY_NOW, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
+!-                    end if
+!-                end if
 
-5084    format(i5, ',', f10.3, 999(',', f10.3))
-5085    format(3(i5, ','), f10.3, 999(',', f10.3))
+!-5084    format(i5, ',', f10.3, 999(',', f10.3))
+!-5085    format(3(i5, ','), f10.3, 999(',', f10.3))
 
                 if (ro%VERBOSEMODE > 0) then
                     if (WF_NUM_POINTS > 1) then !FOR MORE THAN ONE OUTPUT
                         print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
                     else !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
-    !todo: Update or remove this altogether. If to update, take NA-1 or something more akin
-    !to an outlet, than the average middle-elevation grid (as it's coded now).
-    !Should there be a choice to print point-process (pre, evap, rof) vs flow-process (wf_qo2)?
                         j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
                         print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO), &
                             wb%pre(j), wb%evap(j), wb%rof(j)
@@ -4771,7 +4779,7 @@ program RUNMESH
                         if (FTEST > FBEST) goto 199
                     end if
                 end if
-                WF_QSYN_AVG = 0.0
+!-                WF_QSYN_AVG = 0.0
                 wb%pre = 0.0
                 wb%evap = 0.0
                 wb%rof = 0.0
