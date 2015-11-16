@@ -115,7 +115,7 @@
 !>  RELFLG
 !> -----------------------------
 !> VALUES FOR MANY INPUT FILES
-      character(8) RELEASE(10)
+      character(8) RELEASE
 
 !> The types that contain allocatable values
       type(OutputPoints) :: op
