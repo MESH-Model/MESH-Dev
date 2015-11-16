@@ -14,7 +14,7 @@ use model_files
 implicit none
 
 INTEGER :: NA, NTYPE, M_C, INDEPPAR, DEPPAR
-CHARACTER*8 :: RELEASE(10)
+CHARACTER*8 :: RELEASE
 
 !PARAMETERS FOR FROZEN ALGORITHM
 REAL :: SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
@@ -66,12 +66,12 @@ IF (RELFLG .EQ. 1) THEN
     FILE_VER = TRIM (ADJUSTL (FILE_VER))
   END IF
   VER_OK = .FALSE.
-  DO I=1,6 !TODO: MAKE THIS MORE GENERIC
-    IF (FILE_VER .EQ. RELEASE(I)) THEN
+!-  DO I=1,6 !TODO: MAKE THIS MORE GENERIC
+!    IF (FILE_VER .EQ. RELEASE) THEN
       VER_OK = .TRUE.
-      EXIT
-    END IF
-  END DO
+!      EXIT
+!    END IF
+!-  END DO
   IF (.NOT.VER_OK) THEN !WRONG FILE VERSION
     WRITE (6, *)
     WRITE (6, *)
@@ -86,7 +86,7 @@ IF (RELFLG .EQ. 1) THEN
     WRITE (6, *) "The file must contain the version number"
     WRITE (6, *) "on the first line, followed by a colon."
     WRITE (6, *) "EXAMPLE:"
-    WRITE (6, *) RELEASE(4),": MESH_parameters_hydrology.ini"
+    WRITE (6, *) RELEASE,": MESH_parameters_hydrology.ini"
     WRITE (6, *) " "
     WRITE (6, *) "Please insure that all other parameters"
     WRITE (6, *) "are also updated."
