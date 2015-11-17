@@ -49,6 +49,10 @@ module process_WF_ROUTE
 
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
 
+        if (ic%ts_daily == 1) then
+            WF_QSYN_AVG = 0.0
+        end if
+
         call WF_ROUTE(WF_ROUTETIMESTEP, WF_R1, WF_R2, &
                       shd%NA, shd%NAA, shd%lc%NTYPE, shd%yCount, shd%xCount, shd%iyMin, &
                       shd%iyMax, shd%jxMin, shd%jxMax, shd%yyy, shd%xxx, shd%IAK, shd%IROUGH, &
@@ -107,7 +111,7 @@ module process_WF_ROUTE
                 end if
             end if
 
-            WF_QSYN_AVG = 0.0
+!-            WF_QSYN_AVG = 0.0
 
         end if !(writeout) then
 

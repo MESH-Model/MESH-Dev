@@ -315,7 +315,7 @@ program RUNMESH
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-    character(24) :: VERSION = 'TRUNK (909)'
+    character(24) :: VERSION = 'TRUNK (911)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
     logical VER_OK
@@ -4502,8 +4502,8 @@ program RUNMESH
                             wb%lqws(ik, j) = wb%lqws(ik, j) + FAREGAT(k)*THLQGAT(k, j)*RHOW*DLZWGAT(k, j)
                             wb%frws(ik, j) = wb%frws(ik, j) + FAREGAT(k)*THICGAT(k, j)*RHOICE*DLZWGAT(k, j)
                             sov%tbar(ik, j) = sov%tbar(ik, j) + TBARGAT(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
-                            sov%thic(ik, j) = sov%thic(ik, j) + FAREGAT(k)*THICGAT(k, j)
                             sov%thlq(ik, j) = sov%thlq(ik, j) + FAREGAT(k)*THLQGAT(k, j)
+                            sov%thic(ik, j) = sov%thic(ik, j) + FAREGAT(k)*THICGAT(k, j)
                         end do
                     end if !(shd%FRAC(ik) >= 0.0) then
                 end do !k = il1, il2
@@ -4760,7 +4760,6 @@ program RUNMESH
 
             if (NCOUNT == 48) then !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
-print *, NCOUNT, ic%ts_daily
 
 !-                do i = 1, WF_NO
 !-                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + WF_QHYD_AVG(i)
@@ -4811,7 +4810,7 @@ print *, NCOUNT, ic%ts_daily
                 eng%hfs = 0.0
                 eng%qevp = 0.0
                 sov%tbar = 0.0
-                sov%thic = 0.0
+                sov%thlq = 0.0
                 sov%thic = 0.0
                 eng%gflx = 0.0
                 wb%stg = 0.0
