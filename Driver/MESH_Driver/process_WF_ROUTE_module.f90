@@ -6,7 +6,7 @@ module process_WF_ROUTE
 
     contains
 
-    subroutine run_WF_ROUTE(shd, ic, wb, &
+    subroutine run_WF_ROUTE(shd, ic, wb, stfl, &
                             WF_ROUTETIMESTEP, WF_R1, WF_R2, &
                             WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
                             WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
@@ -21,10 +21,12 @@ module process_WF_ROUTE
         use sa_mesh_shared_variabletypes
         use model_dates
         use MODEL_OUTPUT
+        use model_output_variabletypes
 
         type(ShedGridParams), intent(in) :: shd
         type(iter_counter), intent(in) :: ic
         type(water_balance), intent(in) :: wb
+        type(streamflow_hydrograph) :: stfl
 
         integer M_S, M_R
         integer, intent(in) :: M_C
@@ -112,6 +114,10 @@ module process_WF_ROUTE
             end if
 
 !-            WF_QSYN_AVG = 0.0
+
+            !> Assign to the output variables.
+            stfl%qhyd = WF_QHYD_AVG
+            stfl%qsyn = WF_QSYN_AVG/ic%ts_daily
 
         end if !(writeout) then
 

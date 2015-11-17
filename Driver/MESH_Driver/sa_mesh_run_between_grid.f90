@@ -4,11 +4,12 @@ module sa_mesh_run_between_grid
 
     contains
 
-    subroutine run_between_grid_config(shd, ts, ic)
+    subroutine run_between_grid_config(shd, ts, ic, stfl)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_dates
+        use model_output_variabletypes
 
         use process_SA_RTE, only: configure_SA_RTE
         use process_WF_ROUTE_config, only: config_WF_ROUTE
@@ -16,14 +17,15 @@ module sa_mesh_run_between_grid
         type(ShedGridParams), intent(in) :: shd
         type(dates_model) :: ts
         type(iter_counter), intent(in) :: ic
+        type(streamflow_hydrograph) :: stfl
 
 !todo: switch
         call configure_SA_RTE(shd, ic)
-        call config_WF_ROUTE(shd, ic)
+        call config_WF_ROUTE(shd, ic, stfl)
 
     end subroutine
 
-    subroutine run_between_grid(shd, ts, ic, cm, wb, eb, sov, &
+    subroutine run_between_grid(shd, ts, ic, cm, wb, eb, sov, stfl, &
                                 WF_ROUTETIMESTEP, WF_R1, WF_R2, &
                                 WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
                                 WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
@@ -40,6 +42,7 @@ module sa_mesh_run_between_grid
         use model_dates
         use climate_forcing
         use MODEL_OUTPUT
+        use model_output_variabletypes
 
         use process_SA_RTE, only: run_SA_RTE
         use process_WF_ROUTE, only: run_WF_ROUTE
@@ -51,6 +54,7 @@ module sa_mesh_run_between_grid
         type(water_balance) :: wb
         type(energy_balance) :: eb
         type(soil_statevars) :: sov
+        type(streamflow_hydrograph) :: stfl
 
         integer M_S, M_R
         integer, intent(in) :: M_C
@@ -71,7 +75,7 @@ module sa_mesh_run_between_grid
 
 !todo: Switch
         call run_SA_RTE(shd, ic, wb)
-        call run_WF_ROUTE(shd, ic, wb, &
+        call run_WF_ROUTE(shd, ic, wb, stfl, &
                           WF_ROUTETIMESTEP, WF_R1, WF_R2, &
                           WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
                           WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &

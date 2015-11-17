@@ -134,14 +134,16 @@ module process_WF_ROUTE_config
     !>              the output files, in preparation for running the
     !>              WF_ROUTE process.
     !>
-    subroutine config_WF_ROUTE(shd, ic)
+    subroutine config_WF_ROUTE(shd, ic, stfl)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_dates
+        use model_output_variabletypes
 
         type(ShedGridParams), intent(in) :: shd
         type(iter_counter), intent(in) :: ic
+        type(streamflow_hydrograph) :: stfl
 
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
 

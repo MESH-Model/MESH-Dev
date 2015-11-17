@@ -109,6 +109,7 @@ program RUNMESH
     use sa_mesh_run_between_grid
 
     use MODEL_OUTPUT
+    use model_output_variabletypes
     use climate_forcing
     use model_dates
     use SIMSTATS_config
@@ -779,6 +780,14 @@ program RUNMESH
     type(HydrologyParameters) :: hp
     type(fl_ids) :: fls
 
+    !* printoutwb: Print components of the water balance to the
+    !*             console if enabled.
+    logical printoutwb
+
+    !* printoutstfl: Print members of the simulation hydrograph to the
+    !*               console if enabled.
+    logical printoutstfl, printoutqhyd
+
 !>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
 !> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
     type(OUT_FLDS) :: VR
@@ -792,6 +801,7 @@ program RUNMESH
     type(water_balance) :: wb, wb_h
     type(energy_balance) :: eng
     type(soil_statevars) :: sov
+    type(streamflow_hydrograph) :: stfl
 
     logical R2COUTPUT
     integer, parameter :: R2CFILEUNITSTART = 500
@@ -1532,7 +1542,7 @@ program RUNMESH
         open(86, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/basin_SWE_alldays.csv')
     end if !(BASINSWEOUTFLAG > 0) then
 
-    if (ipid == 0) call run_between_grid_config(shd, ts, ic)
+    if (ipid == 0) call run_between_grid_config(shd, ts, ic, stfl)
 
 !> *********************************************************************
 !>  Open and read in values from MESH_input_reservoir.txt file
@@ -1632,6 +1642,12 @@ program RUNMESH
     wf_qhyd_avg = 0.0
     wf_qsyn_cum = 0.0
     wf_qhyd_cum = 0.0
+
+    !> Allocate the output variable for the streamflow hydrograph.
+    stfl%ns = WF_NO
+    allocate(stfl%qhyd(WF_NO), stfl%qsyn(WF_NO))
+    stfl%qhyd = 0.0
+    stfl%qsyn = 0.0
 
 !>MAM - The first stream flow record is used for flow initialization
     read(22, *, iostat = IOS) (WF_QHYD(i), i = 1, WF_NO)
@@ -2009,6 +2025,11 @@ program RUNMESH
     wb%dstg = 0.0
 
     FRAME_NO_NEW = 1
+
+    !> Determine what output will print to the console.
+    printoutwb = (allocated(wb%pre) .and. allocated(wb%evap) .and. allocated(wb%rof))
+    printoutstfl = allocated(stfl%qsyn)
+    printoutqhyd = (allocated(stfl%qhyd) .and. allocated(stfl%qsyn))
 
     if (ipid == 0) then
 
@@ -4705,7 +4726,7 @@ program RUNMESH
             end if !(NCOUNT == 48) then
         end if !(ipid == 0) then
 
-        if (ipid == 0) call run_between_grid(shd, ts, ic, cm, wb_h, eng, sov, &
+        if (ipid == 0) call run_between_grid(shd, ts, ic, cm, wb_h, eng, sov, stfl, &
                                              WF_ROUTETIMESTEP, WF_R1, WF_R2, &
                                              WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
                                              WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
@@ -4777,13 +4798,23 @@ program RUNMESH
 !-5085    format(3(i5, ','), f10.3, 999(',', f10.3))
 
                 if (ro%VERBOSEMODE > 0) then
-                    if (WF_NUM_POINTS > 1) then !FOR MORE THAN ONE OUTPUT
-                        print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
-                    else !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
-                        j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
-                        print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO), &
-                            wb%pre(j), wb%evap(j), wb%rof(j)
+!-                    if (WF_NUM_POINTS > 1) then !FOR MORE THAN ONE OUTPUT
+!-                        print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
+!-                    else !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
+!-                        j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
+!-                        print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO), &
+!-                            wb%pre(j), wb%evap(j), wb%rof(j)
+!-                    end if
+                    write(6, '(2i5)', advance = 'no') YEAR_NOW, JDAY_NOW
+                    if (printoutstfl) then
+                        do j = 1, stfl%ns
+                            if (printoutqhyd) write(6, '(f10.3)', advance = 'no') stfl%qhyd(j)
+                            write(6, '(f10.3)', advance = 'no') stfl%qsyn(j)
+                        end do
                     end if
+                    j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
+                    if (printoutwb) write(6, '(3(f10.3))', advance = 'no') wb%pre(j), wb%evap(j), wb%rof(j)
+                    write(6, *)
                 end if !(ro%VERBOSEMODE > 0) then
                 if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
                     call stats_update_daily(WF_QHYD_AVG, WF_QSYN_AVG, NCOUNT)
