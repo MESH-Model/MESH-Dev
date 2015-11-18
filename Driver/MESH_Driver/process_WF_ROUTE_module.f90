@@ -6,13 +6,7 @@ module process_WF_ROUTE
 
     contains
 
-    subroutine run_WF_ROUTE_within_tile(shd, ic, stfl, rrls, &
-                                        WF_NORESV_CTRL, &
-                                        WF_KTR, &
-                                        WF_QREL, &
-                                        JAN, &
-                                        WF_NORESV, &
-                                        WF_QHYD, WF_KT, WF_NO)
+    subroutine run_WF_ROUTE_within_tile(shd, ic, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use model_dates
@@ -23,12 +17,6 @@ module process_WF_ROUTE
         type(iter_counter), intent(in) :: ic
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
-
-        integer WF_NO, WF_KT
-        real, dimension(:), allocatable :: WF_QHYD
-        real, dimension(:), allocatable :: WF_QREL
-        integer JAN
-        integer WF_NORESV, WF_KTR, WF_NORESV_CTRL
 
         !> Local variables.
         integer i, ios
@@ -84,16 +72,7 @@ module process_WF_ROUTE
     end subroutine
 
     subroutine run_WF_ROUTE_between_grid(shd, ic, wb, stfl, rrls, &
-                                         WF_ROUTETIMESTEP, WF_R1, WF_R2, &
-                                         WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
-                                         WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
-                                         WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
-                                         WF_B1, WF_B2, WF_QREL, WF_QR, &
-                                         WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
-                                         WF_STORE1, WF_STORE2, &
-                                         M_C, M_R, M_S, &
-                                         WF_S, JAN, &
-                                         WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM, WF_QHYD_AVG, WF_QHYD_CUM)
+                                         WF_R1, WF_R2, M_C)
 
         use sa_mesh_shared_variabletypes
         use model_dates
@@ -106,22 +85,9 @@ module process_WF_ROUTE
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        integer M_S, M_R
-        integer, intent(in) :: M_C
-        integer WF_NO, WF_NL, WF_MHRD, WF_KT
-        integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
-        real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
-        real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
-        character(8), dimension(:), allocatable :: WF_GAGE
-        integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R
-        real, dimension(:), allocatable :: WF_B1, WF_B2, WF_QREL, WF_RESSTORE
-        character(8), dimension(:), allocatable :: WF_RESNAME
-        integer JAN
+        !> Temporary variables.
+        integer M_C
         real WF_R1(M_C), WF_R2(M_C)
-        real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI2, &
-            WF_QO1, WF_QO2, WF_QR, WF_STORE1, WF_STORE2, WF_QI1
-        integer WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
-        integer WF_ROUTETIMESTEP, WF_TIMECOUNT, DRIVERTIMESTEP
 
         !> Local variables.
         integer i

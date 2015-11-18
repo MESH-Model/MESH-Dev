@@ -160,7 +160,7 @@ program RUNMESH
 !INTEGER ILG
 !INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
     integer, parameter :: ICAN = 4, ICP1 = ICAN + 1, ICTEM = 1 !Number of CTEM vegetation categories (set to 1 if not using CTEM)
-    integer M_S, M_R
+!-    integer M_S, M_R
     integer, parameter :: M_C = 5
 !INTEGER,PARAMETER :: M_S=290, M_R=7, M_C=5
 !M_S and M_R are now read in and used to allocate the appropriate arrays - Frank S Jul 2013
@@ -201,17 +201,17 @@ program RUNMESH
 !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
 !* WF_START_DAY OBSERVED STREAMFLOW START DAY
 !* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
-    integer WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, &
-        WF_START_DAY, WF_START_HOUR
-    integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
-    real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
-    real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
-    character(8), dimension(:), allocatable :: WF_GAGE
+!-    integer WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, &
+!-        WF_START_DAY, WF_START_HOUR
+!-    integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
+!-    real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
+!-    real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
+!-    character(8), dimension(:), allocatable :: WF_GAGE
 
 !> RESERVOIR VARIABLES
-    integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R
-    real, dimension(:), allocatable :: WF_B1, WF_B2, WF_QREL, WF_RESSTORE
-    character(8), dimension(:), allocatable :: WF_RESNAME
+!-    integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R
+!-    real, dimension(:), allocatable :: WF_B1, WF_B2, WF_QREL, WF_RESSTORE
+!-    character(8), dimension(:), allocatable :: WF_RESNAME
 
 !> FOR BASEFLOW INITIALIZATION
     integer JAN
@@ -222,8 +222,8 @@ program RUNMESH
 !* WF_R2: OPTIMIZED RIVER ROUGHNESS FACTOR
 !* WF_QO2: SIMULATED STREAMFLOW VALUE
     real WF_R1(M_C), WF_R2(M_C)
-    real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI2, &
-        WF_QO1, WF_QO2, WF_QR, WF_STORE1, WF_STORE2, WF_QI1
+!-    real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI2, &
+!-        WF_QO1, WF_QO2, WF_QR, WF_STORE1, WF_STORE2, WF_QI1
 
 ! Saul=======
 !* HOURLY_START_*: Start day/year for recording hourly averaged data
@@ -234,7 +234,7 @@ program RUNMESH
         DAILY_STOP_DAY
     integer HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
         DAILY_STOP_YEAR
-    integer JDAY_IND_STRM, JDAY_IND1, JDAY_IND2, JDAY_IND3
+!-    integer JDAY_IND_STRM, JDAY_IND1, JDAY_IND2, JDAY_IND3
 !*******************************************************************************
 
 !> LAND SURFACE DIAGNOSTIC VARIABLES.
@@ -388,10 +388,11 @@ program RUNMESH
 !* WF_R: RESERVOIR'S PARENT GRID SQUARE
 !* WF_QREL: RESERVOIR VALUE
 
-    integer WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
-    integer WF_ROUTETIMESTEP, WF_TIMECOUNT, DRIVERTIMESTEP
+!-    integer WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
+!-    integer WF_ROUTETIMESTEP, WF_TIMECOUNT
+    integer DRIVERTIMESTEP
 !>
-    real I_G, J_G
+!-    real I_G, J_G
 !* I_G: REAL TEMPORARY IY COORDINATE FOR STREAM AND RESERVOIR GAUGES
 !* J_G: REAL TEMPORARY JX COORDINATE FOR STREAM AND RESERVOIR GAUGES
 !>*******************************************************************
@@ -1546,24 +1547,6 @@ program RUNMESH
 
     if (ipid == 0) call run_between_grid_ini(shd, ts, ic, stfl, rrls, &
                                              LOCATIONFLAG, STREAMFLOWOUTFLAG, &
-                                             M_R, M_S, &
-                                             WF_NHYD, &
-                                             WF_QBASE, WF_QI2, WF_QO1, WF_QO2, &
-                                             WF_STORE1, WF_STORE2, WF_QI1, WF_QR, &
-                                             WF_NORESV, WF_NREL, WF_KTR, &
-                                             WF_NORESV_CTRL, &
-                                             WF_IRES, WF_JRES, WF_RES, WF_R, WF_B1, WF_B2, &
-                                             WF_QREL, WF_RESSTORE, WF_RESNAME, &
-                                             I_G, J_G, &
-                                             WF_IY, &
-                                             WF_NO, WF_NL, WF_MHRD, WF_KT, &
-                                             WF_JX, WF_S, WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM, &
-                                             WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM, WF_GAGE, &
-                                             WF_ROUTETIMESTEP, WF_TIMECOUNT, &
-                                             JAN, &
-                                             WF_START_YEAR, WF_START_DAY, WF_START_HOUR, JDAY_IND1, &
-                                             JDAY_IND2, &
-                                             JDAY_IND_STRM, &
                                              GENDIR_OUT)
 
 !> *********************************************************************
@@ -1805,51 +1788,51 @@ program RUNMESH
 !>  that are listed in the streamflow file (subbasin)
 !> **********************************************************************
 
-    if (SUBBASINFLAG > 0) then
-        do i = 1, NA
-            SUBBASIN(i) = 0
-        end do
-
-!> Set values at guages to 1
-        do i = 1, WF_NO
-            SUBBASIN(WF_S(i)) = 1
-        end do
-
-!> Set values of subbasin to 1 for all upstream grids
-        SUBBASINCOUNT = 1
-        do while (SUBBASINCOUNT > 0)
-            SUBBASINCOUNT = 0
-            do i = 1, NA - 1
-                if (SUBBASIN(shd%NEXT(i)) == 1 .and. SUBBASIN(i) == 0) then
-                    SUBBASIN(i) = 1
-                    SUBBASINCOUNT = SUBBASINCOUNT + 1
-                end if
-            end do
-        end do !while (SUBBASINCOUNT > 0)
-
-!> Set values of frac to 0 for all grids non-upstream grids
-        SUBBASINCOUNT = 0
-        do i = 1, NA
-            if (SUBBASIN(i) == 0) then
-                shd%FRAC(i) = 0.0
-            else
-                SUBBASINCOUNT = SUBBASINCOUNT + 1
-            end if
-        end do
-
-  !> MAM - Write grid number, grid fractional area and percentage of GRUs in each grid
-        open(10, file = 'subbasin_info.txt')
-        write(10, '(a7, 3x, a18, 3x, a58)') &
-            'GRID NO', 'GRID AREA FRACTION', 'GRU FRACTIONS, GRU 1, GRU 2, GRU 3,... IN INCREASING ORDER'
-        do i = 1, NA
-            if (SUBBASIN(i) == 0) then
-            else
-                write(10, '(i5, 3x, f10.3, 8x, 50(f10.3, 3x))') i, shd%FRAC(i), (shd%lc%ACLASS(i, m), m = 1, NMTEST)
-            end if
-        end do
-        close(10)
-
-    end if !(SUBBASINFLAG > 0) then
+!    if (SUBBASINFLAG > 0) then
+!        do i = 1, NA
+!            SUBBASIN(i) = 0
+!        end do
+!
+!!> Set values at guages to 1
+!        do i = 1, WF_NO
+!            SUBBASIN(WF_S(i)) = 1
+!        end do
+!
+!!> Set values of subbasin to 1 for all upstream grids
+!        SUBBASINCOUNT = 1
+!        do while (SUBBASINCOUNT > 0)
+!            SUBBASINCOUNT = 0
+!            do i = 1, NA - 1
+!                if (SUBBASIN(shd%NEXT(i)) == 1 .and. SUBBASIN(i) == 0) then
+!                    SUBBASIN(i) = 1
+!                    SUBBASINCOUNT = SUBBASINCOUNT + 1
+!                end if
+!            end do
+!        end do !while (SUBBASINCOUNT > 0)
+!
+!!> Set values of frac to 0 for all grids non-upstream grids
+!        SUBBASINCOUNT = 0
+!        do i = 1, NA
+!            if (SUBBASIN(i) == 0) then
+!                shd%FRAC(i) = 0.0
+!            else
+!                SUBBASINCOUNT = SUBBASINCOUNT + 1
+!            end if
+!        end do
+!
+!  !> MAM - Write grid number, grid fractional area and percentage of GRUs in each grid
+!        open(10, file = 'subbasin_info.txt')
+!        write(10, '(a7, 3x, a18, 3x, a58)') &
+!            'GRID NO', 'GRID AREA FRACTION', 'GRU FRACTIONS, GRU 1, GRU 2, GRU 3,... IN INCREASING ORDER'
+!        do i = 1, NA
+!            if (SUBBASIN(i) == 0) then
+!            else
+!                write(10, '(i5, 3x, f10.3, 8x, 50(f10.3, 3x))') i, shd%FRAC(i), (shd%lc%ACLASS(i, m), m = 1, NMTEST)
+!            end if
+!        end do
+!        close(10)
+!
+!    end if !(SUBBASINFLAG > 0) then
 
 !> **********************************************************************
 !>  End of subbasin section
@@ -1887,7 +1870,7 @@ program RUNMESH
     DRIVERTIMESTEP = DELT    ! Be sure it's REAL*8
 
 !* JAN: The first time throught he loop, jan = 1. Jan will equal 2 after that.
-!-    JAN = 1
+    JAN = 1
 
 !todo - check that this is compatible with Saul's pre-distributed soil moisture and soil temp.
     do i = 1, NA
@@ -2230,22 +2213,22 @@ program RUNMESH
 !>
 !>****************CHECK RESUME FILE***************************************************
 !>
-    if (RESUMEFLAG == 1) then
+!+    if (RESUMEFLAG == 1) then
 !todo: can do this using inquire statement
-        open(88, file = 'class_resume.txt', status = 'old', action = 'read', iostat = IOS)
-        if (IOS /= 0) then
-            if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
-                write(58, *) "WARNING: You've specified a start time", ' without having a resume file. Now ending run.'
-            end if
-            print *, 'No class_resume.txt found.'
-            print *, 'The RESUMEFLAG in MESH_input_run_options.ini is', &
-                ' set to 1, which means that class_resume.txt should be here,', &
-                ' but it is not here.'
-            print *, 'Ending Run'
-            stop
-        end if
-        close(88)
-    end if
+!=        open(88, file = 'class_resume.txt', status = 'old', action = 'read', iostat = IOS)
+!+        if (IOS /= 0) then
+!+            if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
+!+                write(58, *) "WARNING: You've specified a start time", ' without having a resume file. Now ending run.'
+!+            end if
+!+            print *, 'No class_resume.txt found.'
+!+            print *, 'The RESUMEFLAG in MESH_input_run_options.ini is', &
+!+                ' set to 1, which means that class_resume.txt should be here,', &
+!+                ' but it is not here.'
+!+            print *, 'Ending Run'
+!+            stop
+!+        end if
+!+        close(88)
+!+    end if
 
 !> *********************************************************************
 !> Open and print header information to the output files
@@ -2373,151 +2356,151 @@ program RUNMESH
         print *
     end if !(ro%VERBOSEMODE > 0) then
 
-    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(ts, wf_no)
+    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(ts, stfl%ns)
 
 !>
 !>*******************************************************************
 !>
 !> Check if we are reading in a resume file
-    if (RESUMEFLAG == 1) then
-        print *, 'Reading saved state variables'
-        call resume_state(HOURLYFLAG, MINS_NOW, TIME_STEP_NOW, &
-                          cm%clin(cfk%FB)%filefmt, cm%clin(cfk%FI)%filefmt, &
-                          cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
-                          cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
-                          cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
-                          i, j, shd%xCount, shd%yCount, jan, &
-                          VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
-                          RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
-                          cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
-
-!> MAM - FOR FORCING DATA INTERPOLATION
-                          FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
-                          TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
-                          IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
-                          shd%lc%NML, shd%wc%NML, &
-                          cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, NML, NMTEST, &
-                          TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
-                          TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
-                          TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
-                          FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
-                          PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
-                          VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
-                          HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
-                          THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
-                          GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
-                          PSIWGAT, DLZWGAT, ZBTWGAT, ZSNLGAT, ZPLGGAT, &
-                          ZPLSGAT, TACGAT, QACGAT, DRNGAT, XSLPGAT, &
-                          XDGAT, WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, &
-                          ASVDGAT, ASIDGAT, AGVDGAT, AGIDGAT, ISNDGAT, &
-                          RADJGAT, ZBLDGAT, Z0ORGAT, ZRFMGAT, ZRFHGAT, &
-                          ZDMGAT, ZDHGAT, FSVHGAT, FSIHGAT, CSZGAT, &
-                          FDLGAT, ULGAT, VLGAT, TAGAT, QAGAT, PRESGAT, &
-                          PREGAT, PADRGAT, VPDGAT, TADPGAT, RHOAGAT, &
-                          RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, RHSIGAT, &
-                          FCLOGAT, DLONGAT, GGEOGAT, CDHGAT, CDMGAT, &
-                          HFSGAT, TFXGAT, QEVPGAT, QFSGAT, QFXGAT, &
-                          PETGAT, GAGAT, EFGAT, GTGAT, QGGAT, &
-                          ALVSGAT, ALIRGAT, SFCTGAT, SFCUGAT, SFCVGAT, &
-                          SFCQGAT, FSNOGAT, FSGVGAT, FSGSGAT, FSGGGAT, &
-                          FLGVGAT, FLGSGAT, FLGGGAT, HFSCGAT, HFSSGAT, &
-                          HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, HMFCGAT, &
-                          HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, &
-                          PCPNGAT, PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, &
-                          QFCFGAT, ROFGAT, ROFOGAT, ROFSGAT, ROFBGAT, &
-                          TROFGAT, TROOGAT, TROSGAT, TROBGAT, ROFCGAT, &
-                          ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, WTRGGAT, &
-                          DRGAT, HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
-                          IGND, ICAN, ICP1, &
-                          cp%TBARROW, cp%THLQROW, cp%THICROW, cp%TPNDROW, cp%ZPNDROW, &
-                          TBASROW, cp%ALBSROW, cp%TSNOROW, cp%RHOSROW, cp%SNOROW, &
-                          cp%TCANROW, cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, &
-                          cp%FCANROW, cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
-                          cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, cp%QA50ROW, &
-                          cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, cp%PSGBROW, PAIDROW, &
-                          HGTDROW, ACVDROW, ACIDROW, TSFSROW, WSNOROW, &
-                          THPROW, THRROW, THMROW, BIROW, PSISROW, &
-                          GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
-                          PSIWROW, DLZWROW, ZBTWROW, hp%ZSNLROW, hp%ZPLGROW, &
-                          hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, cp%DRNROW, cp%XSLPROW, &
-                          cp%XDROW, WFSFROW, cp%KSROW, ALGWROW, ALGDROW, &
-                          ASVDROW, ASIDROW, AGVDROW, AGIDROW, &
-                          ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
-                          cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, CSZGRD, &
-                          cm%clin(cfk%UV)%climvGrd, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
-                          cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
-                          IGDRROW, IGDRGAT, VMODGRD, VMODGAT, QLWOGAT, &
-                          CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
-                          WTVSTP, WTSSTP, WTGSTP, &
-                          sl%DELZ, FCS, FGS, FC, FG, N, &
-                          ALVSCN, ALIRCN, ALVSG, ALIRG, ALVSCS, &
-                          ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, &
-                          ALVSSC, ALIRSC, TRVSCN, TRIRCN, TRVSCS, &
-                          TRIRCS, FSVF, FSVFS, &
-                          RAICAN, RAICNS, SNOCAN, SNOCNS, &
-                          FRAINC, FSNOWC, FRAICS, FSNOCS, &
-                          DISP, DISPS, ZOMLNC, ZOMLCS, ZOELNC, ZOELCS, &
-                          ZOMLNG, ZOMLNS, ZOELNG, ZOELNS, &
-                          CHCAP, CHCAPS, CMASSC, CMASCS, CWLCAP, &
-                          CWFCAP, CWLCPS, CWFCPS, RC, RCS, RBCOEF, &
-                          FROOT, ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, &
-                          TRSNOW, ZSNOW, JDAY_NOW, JLAT, IDISP, &
-                          IZREF, IWF, IPAI, IHGT, IALC, IALS, IALG, &
-                          TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
-                          THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, &
-                          TCTOPG, TCBOTG, &
-                          GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, &
-                          G12CS, G12GS, G23C, G23G, G23CS, G23GS, &
-                          QFREZC, QFREZG, QMELTC, QMELTG, &
-                          EVAPC, EVAPCG, EVAPG, EVAPCS, EVPCSG, EVAPGS, &
-                          TCANO, TCANS, TPONDC, TPONDG, TPNDCS, TPNDGS, &
-                          TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
-                          WTABGAT, &
-                          ILMOGAT, UEGAT, HBLGAT, &
-                          shd%wc%ILG, ITC, ITCG, ITG, ISLFD, &
-                          NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
-                          GFLXGAT, CDHROW, CDMROW, HFSROW, TFXROW, &
-                          QEVPROW, QFSROW, QFXROW, PETROW, GAROW, &
-                          EFROW, GTROW, QGROW, TSFROW, ALVSROW, &
-                          ALIRROW, SFCTROW, SFCUROW, SFCVROW, SFCQROW, &
-                          FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
-                          FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, &
-                          HEVSROW, HEVGROW, HMFCROW, HMFNROW, HTCCROW, &
-                          HTCSROW, PCFCROW, PCLCROW, PCPNROW, PCPGROW, &
-                          QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, &
-                          ROFOROW, ROFSROW, ROFBROW, TROFROW, TROOROW, &
-                          TROSROW, TROBROW, ROFCROW, ROFNROW, ROVGROW, &
-                          WTRCROW, WTRSROW, WTRGROW, DRROW, WTABROW, &
-                          ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
-                          QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
-                          wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
-                          HOUR_NOW, shd%xxx, shd%yyy, NA, &
-                          NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
-                          M_C, M_S, M_R, &
-                          WF_ROUTETIMESTEP, WF_R1, WF_R2, shd%NAA, shd%iyMin, &
-                          shd%iyMax, shd%jxMin, shd%jxMax, shd%IAK, shd%IROUGH, &
-                          shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
-                          shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
-                          WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
-                          WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
-                          WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
-                          WF_B1, WF_B2, WF_QREL, WF_QR, &
-                          WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
-                          WF_STORE1, WF_STORE2, &
-                          DRIVERTIMESTEP, ROFGRD, &
-                          WF_S, &
-                          TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
-                          TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-                          FINAL_STORE, TOTAL_AREA, TOTAL_HFSACC, TOTAL_QEVPACC, &
-                          SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, NMELT, t0_ACC, &
-                          CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS, &
-                          AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
-                          SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
-                          AILC, PAIC, FIELDSM, WILTSM, &
-                          RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM, &
-                          hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
-                          fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT)
-    end if !(RESUMEFLAG == 1) then
+!    if (RESUMEFLAG == 1) then
+!        print *, 'Reading saved state variables'
+!        call resume_state(HOURLYFLAG, MINS_NOW, TIME_STEP_NOW, &
+!                          cm%clin(cfk%FB)%filefmt, cm%clin(cfk%FI)%filefmt, &
+!                          cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
+!                          cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
+!                          cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
+!                          i, j, shd%xCount, shd%yCount, jan, &
+!                          VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
+!                          RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
+!                          cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
+!
+!!> MAM - FOR FORCING DATA INTERPOLATION
+!                          FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
+!                          TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
+!                          IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+!                          shd%lc%NML, shd%wc%NML, &
+!                          cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, NML, NMTEST, &
+!                          TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
+!                          TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
+!                          TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
+!                          FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
+!                          PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
+!                          VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
+!                          HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
+!                          THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
+!                          GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
+!                          PSIWGAT, DLZWGAT, ZBTWGAT, ZSNLGAT, ZPLGGAT, &
+!                          ZPLSGAT, TACGAT, QACGAT, DRNGAT, XSLPGAT, &
+!                          XDGAT, WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, &
+!                          ASVDGAT, ASIDGAT, AGVDGAT, AGIDGAT, ISNDGAT, &
+!                          RADJGAT, ZBLDGAT, Z0ORGAT, ZRFMGAT, ZRFHGAT, &
+!                          ZDMGAT, ZDHGAT, FSVHGAT, FSIHGAT, CSZGAT, &
+!                          FDLGAT, ULGAT, VLGAT, TAGAT, QAGAT, PRESGAT, &
+!                          PREGAT, PADRGAT, VPDGAT, TADPGAT, RHOAGAT, &
+!                          RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, RHSIGAT, &
+!                          FCLOGAT, DLONGAT, GGEOGAT, CDHGAT, CDMGAT, &
+!                          HFSGAT, TFXGAT, QEVPGAT, QFSGAT, QFXGAT, &
+!                          PETGAT, GAGAT, EFGAT, GTGAT, QGGAT, &
+!                          ALVSGAT, ALIRGAT, SFCTGAT, SFCUGAT, SFCVGAT, &
+!                          SFCQGAT, FSNOGAT, FSGVGAT, FSGSGAT, FSGGGAT, &
+!                          FLGVGAT, FLGSGAT, FLGGGAT, HFSCGAT, HFSSGAT, &
+!                          HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, HMFCGAT, &
+!                          HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, &
+!                          PCPNGAT, PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, &
+!                          QFCFGAT, ROFGAT, ROFOGAT, ROFSGAT, ROFBGAT, &
+!                          TROFGAT, TROOGAT, TROSGAT, TROBGAT, ROFCGAT, &
+!                          ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, WTRGGAT, &
+!                          DRGAT, HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
+!                          IGND, ICAN, ICP1, &
+!                          cp%TBARROW, cp%THLQROW, cp%THICROW, cp%TPNDROW, cp%ZPNDROW, &
+!                          TBASROW, cp%ALBSROW, cp%TSNOROW, cp%RHOSROW, cp%SNOROW, &
+!                          cp%TCANROW, cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, &
+!                          cp%FCANROW, cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
+!                          cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, cp%QA50ROW, &
+!                          cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, cp%PSGBROW, PAIDROW, &
+!                          HGTDROW, ACVDROW, ACIDROW, TSFSROW, WSNOROW, &
+!                          THPROW, THRROW, THMROW, BIROW, PSISROW, &
+!                          GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
+!                          PSIWROW, DLZWROW, ZBTWROW, hp%ZSNLROW, hp%ZPLGROW, &
+!                          hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, cp%DRNROW, cp%XSLPROW, &
+!                          cp%XDROW, WFSFROW, cp%KSROW, ALGWROW, ALGDROW, &
+!                          ASVDROW, ASIDROW, AGVDROW, AGIDROW, &
+!                          ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
+!                          cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, CSZGRD, &
+!                          cm%clin(cfk%UV)%climvGrd, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
+!                          cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
+!                          IGDRROW, IGDRGAT, VMODGRD, VMODGAT, QLWOGAT, &
+!                          CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
+!                          WTVSTP, WTSSTP, WTGSTP, &
+!                          sl%DELZ, FCS, FGS, FC, FG, N, &
+!                          ALVSCN, ALIRCN, ALVSG, ALIRG, ALVSCS, &
+!                          ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, &
+!                          ALVSSC, ALIRSC, TRVSCN, TRIRCN, TRVSCS, &
+!                          TRIRCS, FSVF, FSVFS, &
+!                          RAICAN, RAICNS, SNOCAN, SNOCNS, &
+!                          FRAINC, FSNOWC, FRAICS, FSNOCS, &
+!                          DISP, DISPS, ZOMLNC, ZOMLCS, ZOELNC, ZOELCS, &
+!                          ZOMLNG, ZOMLNS, ZOELNG, ZOELNS, &
+!                          CHCAP, CHCAPS, CMASSC, CMASCS, CWLCAP, &
+!                          CWFCAP, CWLCPS, CWFCPS, RC, RCS, RBCOEF, &
+!                          FROOT, ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, &
+!                          TRSNOW, ZSNOW, JDAY_NOW, JLAT, IDISP, &
+!                          IZREF, IWF, IPAI, IHGT, IALC, IALS, IALG, &
+!                          TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
+!                          THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, &
+!                          TCTOPG, TCBOTG, &
+!                          GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, &
+!                          G12CS, G12GS, G23C, G23G, G23CS, G23GS, &
+!                          QFREZC, QFREZG, QMELTC, QMELTG, &
+!                          EVAPC, EVAPCG, EVAPG, EVAPCS, EVPCSG, EVAPGS, &
+!                          TCANO, TCANS, TPONDC, TPONDG, TPNDCS, TPNDGS, &
+!                          TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
+!                          WTABGAT, &
+!                          ILMOGAT, UEGAT, HBLGAT, &
+!                          shd%wc%ILG, ITC, ITCG, ITG, ISLFD, &
+!                          NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
+!                          GFLXGAT, CDHROW, CDMROW, HFSROW, TFXROW, &
+!                          QEVPROW, QFSROW, QFXROW, PETROW, GAROW, &
+!                          EFROW, GTROW, QGROW, TSFROW, ALVSROW, &
+!                          ALIRROW, SFCTROW, SFCUROW, SFCVROW, SFCQROW, &
+!                          FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
+!                          FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, &
+!                          HEVSROW, HEVGROW, HMFCROW, HMFNROW, HTCCROW, &
+!                          HTCSROW, PCFCROW, PCLCROW, PCPNROW, PCPGROW, &
+!                          QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, &
+!                          ROFOROW, ROFSROW, ROFBROW, TROFROW, TROOROW, &
+!                          TROSROW, TROBROW, ROFCROW, ROFNROW, ROVGROW, &
+!                          WTRCROW, WTRSROW, WTRGROW, DRROW, WTABROW, &
+!                          ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
+!                          QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
+!                          wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
+!                          HOUR_NOW, shd%xxx, shd%yyy, NA, &
+!                          NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
+!                          M_C, M_S, M_R, &
+!                          WF_ROUTETIMESTEP, WF_R1, WF_R2, shd%NAA, shd%iyMin, &
+!                          shd%iyMax, shd%jxMin, shd%jxMax, shd%IAK, shd%IROUGH, &
+!                          shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
+!                          shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
+!                          WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
+!                          WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
+!                          WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
+!                          WF_B1, WF_B2, WF_QREL, WF_QR, &
+!                          WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
+!                          WF_STORE1, WF_STORE2, &
+!                          DRIVERTIMESTEP, ROFGRD, &
+!                          WF_S, &
+!                          TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
+!                          TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
+!                          FINAL_STORE, TOTAL_AREA, TOTAL_HFSACC, TOTAL_QEVPACC, &
+!                          SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, NMELT, t0_ACC, &
+!                          CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS, &
+!                          AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
+!                          SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
+!                          AILC, PAIC, FIELDSM, WILTSM, &
+!                          RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM, &
+!                          hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
+!                          fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT)
+!    end if !(RESUMEFLAG == 1) then
 
 !>
 !>*******************************************************************
@@ -3256,13 +3239,7 @@ program RUNMESH
         VMODGRD = UVGRD
         VMODGAT = max(VMIN, ULGAT)
 
-        call run_within_tile(shd, ts, ic, cm, wb, eng, sov, stfl, rrls, &
-                             WF_NORESV_CTRL, &
-                             WF_KTR, &
-                             WF_QREL, &
-                             JAN, &
-                             WF_NORESV, &
-                             WF_QHYD, WF_KT, WF_NO)
+        call run_within_tile(shd, ts, ic, cm, wb, eng, sov, stfl, rrls)
 
 !> *********************************************************************
 !> Read in current reservoir release value
@@ -4757,16 +4734,7 @@ program RUNMESH
         end if !(ipid == 0) then
 
         if (ipid == 0) call run_between_grid(shd, ts, ic, cm, wb_h, eng, sov, stfl, rrls, &
-                                             WF_ROUTETIMESTEP, WF_R1, WF_R2, &
-                                             WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
-                                             WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
-                                             WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
-                                             WF_B1, WF_B2, WF_QREL, WF_QR, &
-                                             WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
-                                             WF_STORE1, WF_STORE2, &
-                                             M_C, M_R, M_S, &
-                                             WF_S, JAN, &
-                                             WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM, WF_QHYD_AVG, WF_QHYD_CUM)
+                                             WF_R1, WF_R2, M_C)
 
 !> *********************************************************************
 !> Call routing routine
@@ -4847,7 +4815,7 @@ program RUNMESH
                     write(6, *)
                 end if !(ro%VERBOSEMODE > 0) then
                 if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
-                    call stats_update_daily(WF_QHYD_AVG, WF_QSYN_AVG, NCOUNT)
+                    call stats_update_daily(stfl%qhyd, stfl%qsyn, NCOUNT)
                     if (mtsflg%PREEMPTIONFLAG > 1) then
                         if (FTEST > FBEST) goto 199
                     end if
@@ -5131,144 +5099,144 @@ program RUNMESH
     end if !(SAVERESUMEFLAG == 2) then
 
 !> Write the resume file
-    if (SAVERESUMEFLAG == 1) then !todo: done: use a flag
-        print *, 'Saving state variables'
-        call SAVE_STATE(HOURLYFLAG, MINS_NOW, TIME_STEP_NOW, &
-                        cm%clin(cfk%FB)%filefmt, cm%clin(cfk%FI)%filefmt, &
-                        cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
-                        cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
-                        cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
-                        i, j, shd%xCount, shd%yCount, jan, &
-                        VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
-                        RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
-                        cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
-!MAM - FOR FORCING DATA INTERPOLATION
-                        FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
-                        TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
-                        IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
-                        shd%lc%NML, shd%wc%NML, &
-                        cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, NML, NMTEST, &
-                        TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
-                        TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
-                        TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
-                        FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
-                        PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
-                        VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
-                        HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
-                        THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
-                        GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
-                        PSIWGAT, DLZWGAT, ZBTWGAT, ZSNLGAT, ZPLGGAT, &
-                        ZPLSGAT, TACGAT, QACGAT, DRNGAT, XSLPGAT, &
-                        XDGAT, WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, &
-                        ASVDGAT, ASIDGAT, AGVDGAT, AGIDGAT, ISNDGAT, &
-                        RADJGAT, ZBLDGAT, Z0ORGAT, ZRFMGAT, ZRFHGAT, &
-                        ZDMGAT, ZDHGAT, FSVHGAT, FSIHGAT, CSZGAT, &
-                        FDLGAT, ULGAT, VLGAT, TAGAT, QAGAT, PRESGAT, &
-                        PREGAT, PADRGAT, VPDGAT, TADPGAT, RHOAGAT, &
-                        RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, RHSIGAT, &
-                        FCLOGAT, DLONGAT, GGEOGAT, CDHGAT, CDMGAT, &
-                        HFSGAT, TFXGAT, QEVPGAT, QFSGAT, QFXGAT, &
-                        PETGAT, GAGAT, EFGAT, GTGAT, QGGAT, &
-                        ALVSGAT, ALIRGAT, SFCTGAT, SFCUGAT, SFCVGAT, &
-                        SFCQGAT, FSNOGAT, FSGVGAT, FSGSGAT, FSGGGAT, &
-                        FLGVGAT, FLGSGAT, FLGGGAT, HFSCGAT, HFSSGAT, &
-                        HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, HMFCGAT, &
-                        HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, &
-                        PCPNGAT, PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, &
-                        QFCFGAT, ROFGAT, ROFOGAT, ROFSGAT, ROFBGAT, &
-                        TROFGAT, TROOGAT, TROSGAT, TROBGAT, ROFCGAT, &
-                        ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, WTRGGAT, &
-                        DRGAT, HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
-                        IGND, ICAN, ICP1, &
-                        cp%TBARROW, cp%THLQROW, cp%THICROW, cp%TPNDROW, cp%ZPNDROW, &
-                        TBASROW, cp%ALBSROW, cp%TSNOROW, cp%RHOSROW, cp%SNOROW, &
-                        cp%TCANROW, cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, &
-                        cp%FCANROW, cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
-                        cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, cp%QA50ROW, &
-                        cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, cp%PSGBROW, PAIDROW, &
-                        HGTDROW, ACVDROW, ACIDROW, TSFSROW, WSNOROW, &
-                        THPROW, THRROW, THMROW, BIROW, PSISROW, &
-                        GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
-                        PSIWROW, DLZWROW, ZBTWROW, hp%ZSNLROW, hp%ZPLGROW, &
-                        hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, cp%DRNROW, cp%XSLPROW, &
-                        cp%XDROW, WFSFROW, cp%KSROW, ALGWROW, ALGDROW, &
-                        ASVDROW, ASIDROW, AGVDROW, AGIDROW, &
-                        ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
-                        cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, CSZGRD, &
-                        cm%clin(cfk%UV)%climvGrd, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
-                        cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
-                        IGDRROW, IGDRGAT, VMODGRD, VMODGAT, QLWOGAT, &
-                        CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
-                        WTVSTP, WTSSTP, WTGSTP, &
-                        sl%DELZ, FCS, FGS, FC, FG, N, &
-                        ALVSCN, ALIRCN, ALVSG, ALIRG, ALVSCS, &
-                        ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, &
-                        ALVSSC, ALIRSC, TRVSCN, TRIRCN, TRVSCS, &
-                        TRIRCS, FSVF, FSVFS, &
-                        RAICAN, RAICNS, SNOCAN, SNOCNS, &
-                        FRAINC, FSNOWC, FRAICS, FSNOCS, &
-                        DISP, DISPS, ZOMLNC, ZOMLCS, ZOELNC, ZOELCS, &
-                        ZOMLNG, ZOMLNS, ZOELNG, ZOELNS, &
-                        CHCAP, CHCAPS, CMASSC, CMASCS, CWLCAP, &
-                        CWFCAP, CWLCPS, CWFCPS, RC, RCS, RBCOEF, &
-                        FROOT, ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, &
-                        TRSNOW, ZSNOW, JDAY_NOW, JLAT, IDISP, &
-                        IZREF, IWF, IPAI, IHGT, IALC, IALS, IALG, &
-                        TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
-                        THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, &
-                        TCTOPG, TCBOTG, &
-                        GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, &
-                        G12CS, G12GS, G23C, G23G, G23CS, G23GS, &
-                        QFREZC, QFREZG, QMELTC, QMELTG, &
-                        EVAPC, EVAPCG,EVAPG, EVAPCS, EVPCSG, EVAPGS, &
-                        TCANO, TCANS, TPONDC, TPONDG, TPNDCS, TPNDGS, &
-                        TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
-                        WTABGAT, &
-                        ILMOGAT, UEGAT, HBLGAT, &
-                        shd%wc%ILG, ITC, ITCG, ITG, ISLFD, &
-                        NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
-                        GFLXGAT, CDHROW, CDMROW, HFSROW, TFXROW, &
-                        QEVPROW, QFSROW, QFXROW, PETROW, GAROW, &
-                        EFROW, GTROW, QGROW, TSFROW, ALVSROW, &
-                        ALIRROW, SFCTROW, SFCUROW, SFCVROW, SFCQROW, &
-                        FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
-                        FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, &
-                        HEVSROW, HEVGROW, HMFCROW, HMFNROW, HTCCROW, &
-                        HTCSROW, PCFCROW, PCLCROW, PCPNROW, PCPGROW, &
-                        QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, &
-                        ROFOROW, ROFSROW, ROFBROW, TROFROW, TROOROW, &
-                        TROSROW, TROBROW, ROFCROW, ROFNROW, ROVGROW, &
-                        WTRCROW, WTRSROW, WTRGROW, DRROW, WTABROW, &
-                        ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
-                        QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
-                        wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
-                        HOUR_NOW, shd%xxx, shd%yyy, NA, &
-                        NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
-                        M_C, M_S, M_R, &
-                        WF_ROUTETIMESTEP, WF_R1, WF_R2, shd%NAA, shd%iyMin, &
-                        shd%iyMax, shd%jxMin, shd%jxMax, shd%IAK, shd%IROUGH, &
-                        shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
-                        shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
-                        WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
-                        WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
-                        WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
-                        WF_B1, WF_B2, WF_QREL, WF_QR, &
-                        WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
-                        WF_STORE1, WF_STORE2, &
-                        DRIVERTIMESTEP, ROFGRD, &
-                        WF_S, &
-                        TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
-                        TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-                        FINAL_STORE, TOTAL_AREA, TOTAL_HFSACC, TOTAL_QEVPACC, &
-                        SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, NMELT, t0_ACC, &
-                        CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS, &
-                        AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
-                        SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
-                        AILC, PAIC, FIELDSM, WILTSM, &
-                        RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM, &
-                        hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
-                        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT)
-    end if !(SAVERESUMEFLAG == 1) then
+!    if (SAVERESUMEFLAG == 1) then !todo: done: use a flag
+!        print *, 'Saving state variables'
+!        call SAVE_STATE(HOURLYFLAG, MINS_NOW, TIME_STEP_NOW, &
+!                        cm%clin(cfk%FB)%filefmt, cm%clin(cfk%FI)%filefmt, &
+!                        cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
+!                        cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
+!                        cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
+!                        i, j, shd%xCount, shd%yCount, jan, &
+!                        VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
+!                        RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
+!                        cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
+!!MAM - FOR FORCING DATA INTERPOLATION
+!                        FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
+!                        TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
+!                        IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+!                        shd%lc%NML, shd%wc%NML, &
+!                        cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, NML, NMTEST, &
+!                        TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
+!                        TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
+!                        TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
+!                        FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
+!                        PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
+!                        VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
+!                        HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
+!                        THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
+!                        GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
+!                        PSIWGAT, DLZWGAT, ZBTWGAT, ZSNLGAT, ZPLGGAT, &
+!                        ZPLSGAT, TACGAT, QACGAT, DRNGAT, XSLPGAT, &
+!                        XDGAT, WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, &
+!                        ASVDGAT, ASIDGAT, AGVDGAT, AGIDGAT, ISNDGAT, &
+!                        RADJGAT, ZBLDGAT, Z0ORGAT, ZRFMGAT, ZRFHGAT, &
+!                        ZDMGAT, ZDHGAT, FSVHGAT, FSIHGAT, CSZGAT, &
+!                        FDLGAT, ULGAT, VLGAT, TAGAT, QAGAT, PRESGAT, &
+!                        PREGAT, PADRGAT, VPDGAT, TADPGAT, RHOAGAT, &
+!                        RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, RHSIGAT, &
+!                        FCLOGAT, DLONGAT, GGEOGAT, CDHGAT, CDMGAT, &
+!                        HFSGAT, TFXGAT, QEVPGAT, QFSGAT, QFXGAT, &
+!                        PETGAT, GAGAT, EFGAT, GTGAT, QGGAT, &
+!                        ALVSGAT, ALIRGAT, SFCTGAT, SFCUGAT, SFCVGAT, &
+!                        SFCQGAT, FSNOGAT, FSGVGAT, FSGSGAT, FSGGGAT, &
+!                        FLGVGAT, FLGSGAT, FLGGGAT, HFSCGAT, HFSSGAT, &
+!                        HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, HMFCGAT, &
+!                        HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, &
+!                        PCPNGAT, PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, &
+!                        QFCFGAT, ROFGAT, ROFOGAT, ROFSGAT, ROFBGAT, &
+!                        TROFGAT, TROOGAT, TROSGAT, TROBGAT, ROFCGAT, &
+!                        ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, WTRGGAT, &
+!                        DRGAT, HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
+!                        IGND, ICAN, ICP1, &
+!                        cp%TBARROW, cp%THLQROW, cp%THICROW, cp%TPNDROW, cp%ZPNDROW, &
+!                        TBASROW, cp%ALBSROW, cp%TSNOROW, cp%RHOSROW, cp%SNOROW, &
+!                        cp%TCANROW, cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, &
+!                        cp%FCANROW, cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
+!                        cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, cp%QA50ROW, &
+!                        cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, cp%PSGBROW, PAIDROW, &
+!                        HGTDROW, ACVDROW, ACIDROW, TSFSROW, WSNOROW, &
+!                        THPROW, THRROW, THMROW, BIROW, PSISROW, &
+!                        GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
+!                        PSIWROW, DLZWROW, ZBTWROW, hp%ZSNLROW, hp%ZPLGROW, &
+!                        hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, cp%DRNROW, cp%XSLPROW, &
+!                        cp%XDROW, WFSFROW, cp%KSROW, ALGWROW, ALGDROW, &
+!                        ASVDROW, ASIDROW, AGVDROW, AGIDROW, &
+!                        ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
+!                        cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, CSZGRD, &
+!                        cm%clin(cfk%UV)%climvGrd, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
+!                        cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
+!                        IGDRROW, IGDRGAT, VMODGRD, VMODGAT, QLWOGAT, &
+!                        CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
+!                        WTVSTP, WTSSTP, WTGSTP, &
+!                        sl%DELZ, FCS, FGS, FC, FG, N, &
+!                        ALVSCN, ALIRCN, ALVSG, ALIRG, ALVSCS, &
+!                        ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, &
+!                        ALVSSC, ALIRSC, TRVSCN, TRIRCN, TRVSCS, &
+!                        TRIRCS, FSVF, FSVFS, &
+!                        RAICAN, RAICNS, SNOCAN, SNOCNS, &
+!                        FRAINC, FSNOWC, FRAICS, FSNOCS, &
+!                        DISP, DISPS, ZOMLNC, ZOMLCS, ZOELNC, ZOELCS, &
+!                        ZOMLNG, ZOMLNS, ZOELNG, ZOELNS, &
+!                        CHCAP, CHCAPS, CMASSC, CMASCS, CWLCAP, &
+!                        CWFCAP, CWLCPS, CWFCPS, RC, RCS, RBCOEF, &
+!                        FROOT, ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, &
+!                        TRSNOW, ZSNOW, JDAY_NOW, JLAT, IDISP, &
+!                        IZREF, IWF, IPAI, IHGT, IALC, IALS, IALG, &
+!                        TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
+!                        THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, &
+!                        TCTOPG, TCBOTG, &
+!                        GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, &
+!                        G12CS, G12GS, G23C, G23G, G23CS, G23GS, &
+!                        QFREZC, QFREZG, QMELTC, QMELTG, &
+!                        EVAPC, EVAPCG,EVAPG, EVAPCS, EVPCSG, EVAPGS, &
+!                        TCANO, TCANS, TPONDC, TPONDG, TPNDCS, TPNDGS, &
+!                        TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
+!                        WTABGAT, &
+!                        ILMOGAT, UEGAT, HBLGAT, &
+!                        shd%wc%ILG, ITC, ITCG, ITG, ISLFD, &
+!                        NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
+!                        GFLXGAT, CDHROW, CDMROW, HFSROW, TFXROW, &
+!                        QEVPROW, QFSROW, QFXROW, PETROW, GAROW, &
+!                        EFROW, GTROW, QGROW, TSFROW, ALVSROW, &
+!                        ALIRROW, SFCTROW, SFCUROW, SFCVROW, SFCQROW, &
+!                        FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
+!                        FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, &
+!                        HEVSROW, HEVGROW, HMFCROW, HMFNROW, HTCCROW, &
+!                        HTCSROW, PCFCROW, PCLCROW, PCPNROW, PCPGROW, &
+!                        QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, &
+!                        ROFOROW, ROFSROW, ROFBROW, TROFROW, TROOROW, &
+!                        TROSROW, TROBROW, ROFCROW, ROFNROW, ROVGROW, &
+!                        WTRCROW, WTRSROW, WTRGROW, DRROW, WTABROW, &
+!                        ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
+!                        QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
+!                        wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
+!                        HOUR_NOW, shd%xxx, shd%yyy, NA, &
+!                        NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
+!                        M_C, M_S, M_R, &
+!                        WF_ROUTETIMESTEP, WF_R1, WF_R2, shd%NAA, shd%iyMin, &
+!                        shd%iyMax, shd%jxMin, shd%jxMax, shd%IAK, shd%IROUGH, &
+!                        shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
+!                        shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
+!                        WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
+!                        WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
+!                        WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
+!                        WF_B1, WF_B2, WF_QREL, WF_QR, &
+!                        WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
+!                        WF_STORE1, WF_STORE2, &
+!                        DRIVERTIMESTEP, ROFGRD, &
+!                        WF_S, &
+!                        TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
+!                        TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
+!                        FINAL_STORE, TOTAL_AREA, TOTAL_HFSACC, TOTAL_QEVPACC, &
+!                        SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, NMELT, t0_ACC, &
+!                        CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS, &
+!                        AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
+!                        SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
+!                        AILC, PAIC, FIELDSM, WILTSM, &
+!                        RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM, &
+!                        hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
+!                        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT)
+!    end if !(SAVERESUMEFLAG == 1) then
 
 !> *********************************************************************
 !> Call save_init_prog_variables_class.f90 to save initi prognostic variables by

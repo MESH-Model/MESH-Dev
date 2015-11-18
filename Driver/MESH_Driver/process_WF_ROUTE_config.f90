@@ -58,8 +58,8 @@ module process_WF_ROUTE_config
     !> Local variables.
     !> *****************************************************************
 
-!    integer M_S, M_R
-!    integer, parameter :: M_C = 5
+    integer M_S, M_R
+!-    integer, parameter :: M_C = 5
     !integer, parameter :: M_S = 290, M_R = 7, M_C = 5
     !M_S and M_R are now read in and used to allocate the appropriate arrays - Frank S Jul 2013
 !todo it should be read in from the shd file
@@ -79,26 +79,26 @@ module process_WF_ROUTE_config
     !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
     !* WF_START_DAY OBSERVED STREAMFLOW START DAY
     !* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
-!    integer WF_NO, WF_NL, WF_MHRD, WF_KT
-!    integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
-!    real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
-!    real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
-!    character(8), dimension(:), allocatable :: WF_GAGE
+    integer WF_NO, WF_NL, WF_MHRD, WF_KT
+    integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
+    real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
+    real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
+    character(8), dimension(:), allocatable :: WF_GAGE
 
     !> RESERVOIR VARIABLES
-!    integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R
-!    real, dimension(:), allocatable :: WF_B1, WF_B2, WF_QREL, WF_RESSTORE
-!    character(8), dimension(:), allocatable :: WF_RESNAME
+    integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R
+    real, dimension(:), allocatable :: WF_B1, WF_B2, WF_QREL, WF_RESSTORE
+    character(8), dimension(:), allocatable :: WF_RESNAME
 
     !> FOR BASEFLOW INITIALIZATION
-!    integer JAN
+    integer JAN
 
     !* WF_R1: MANNING'S N FOR RIVER CHANNEL
     !* WF_R2: OPTIMIZED RIVER ROUGHNESS FACTOR
     !* WF_QO2: SIMULATED STREAMFLOW VALUE
-!    real WF_R1(M_C), WF_R2(M_C)
-!    real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI2, &
-!        WF_QO1, WF_QO2, WF_QR, WF_STORE1, WF_STORE2, WF_QI1
+!-    real WF_R1(M_C), WF_R2(M_C)
+    real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI2, &
+        WF_QO1, WF_QO2, WF_QR, WF_STORE1, WF_STORE2, WF_QI1
 
     !> RESERVOIR MEASUREMENTS:
     !* WF_RESNAME: RESERVOIR IDENTIFIER (8 CHARACTER STRING)
@@ -109,8 +109,8 @@ module process_WF_ROUTE_config
     !* WF_JRES: X-DIRECTION GAUGE CO-ORDINATE
     !* WF_R: RESERVOIR'S PARENT GRID SQUARE
     !* WF_QREL: RESERVOIR VALUE
-!    integer WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
-!    integer WF_ROUTETIMESTEP, WF_TIMECOUNT, DRIVERTIMESTEP
+    integer WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
+    integer WF_ROUTETIMESTEP, WF_TIMECOUNT, DRIVERTIMESTEP
 
     contains
 
@@ -135,25 +135,8 @@ module process_WF_ROUTE_config
     !>              WF_ROUTE process.
     !>
     subroutine run_WF_ROUTE_ini(shd, ic, stfl, rrls, &
+!todo: remove these
                                 LOCATIONFLAG, STREAMFLOWOUTFLAG, &
-                                M_R, M_S, &
-                                WF_NHYD, &
-                                WF_QBASE, WF_QI2, WF_QO1, WF_QO2, &
-                                WF_STORE1, WF_STORE2, WF_QI1, WF_QR, &
-                                WF_NORESV, WF_NREL, WF_KTR, &
-                                WF_NORESV_CTRL, &
-                                WF_IRES, WF_JRES, WF_RES, WF_R, WF_B1, WF_B2, &
-                                WF_QREL, WF_RESSTORE, WF_RESNAME, &
-                                I_G, J_G, &
-                                WF_IY, &
-                                WF_NO, WF_NL, WF_MHRD, WF_KT, &
-                                WF_JX, WF_S, WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM, &
-                                WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM, WF_GAGE, &
-                                WF_ROUTETIMESTEP, WF_TIMECOUNT, &
-                                JAN, &
-                                WF_START_YEAR, WF_START_DAY, WF_START_HOUR, JDAY_IND1, &
-                                JDAY_IND2, &
-                                JDAY_IND_STRM, &
                                 GENDIR_OUT)
 
         use sa_mesh_shared_variabletypes
@@ -167,21 +150,8 @@ module process_WF_ROUTE_config
         type(reservoir_release) :: rrls
 
         !> Temporary variables.
+!todo: remove these
         integer LOCATIONFLAG, STREAMFLOWOUTFLAG
-        integer M_S, M_R
-        integer WF_NO, WF_NL, WF_MHRD, WF_KT
-        integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
-        real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
-        real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
-        character(8), dimension(:), allocatable :: WF_GAGE
-        integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R
-        real, dimension(:), allocatable :: WF_B1, WF_B2, WF_QREL, WF_RESSTORE
-        character(8), dimension(:), allocatable :: WF_RESNAME
-        integer JAN
-        real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI2, &
-            WF_QO1, WF_QO2, WF_QR, WF_STORE1, WF_STORE2, WF_QI1
-        integer WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
-        integer WF_ROUTETIMESTEP, WF_TIMECOUNT
         character(450) GENDIR_OUT
 
         !> Local variables.

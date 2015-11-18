@@ -5,25 +5,8 @@ module sa_mesh_run_between_grid
     contains
 
     subroutine run_between_grid_ini(shd, ts, ic, stfl, rrls, &
+!todo: remove these
                                 LOCATIONFLAG, STREAMFLOWOUTFLAG, &
-                                M_R, M_S, &
-                                WF_NHYD, &
-                                WF_QBASE, WF_QI2, WF_QO1, WF_QO2, &
-                                WF_STORE1, WF_STORE2, WF_QI1, WF_QR, &
-                                WF_NORESV, WF_NREL, WF_KTR, &
-                                WF_NORESV_CTRL, &
-                                WF_IRES, WF_JRES, WF_RES, WF_R, WF_B1, WF_B2, &
-                                WF_QREL, WF_RESSTORE, WF_RESNAME, &
-                                I_G, J_G, &
-                                WF_IY, &
-                                WF_NO, WF_NL, WF_MHRD, WF_KT, &
-                                WF_JX, WF_S, WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM, &
-                                WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM, WF_GAGE, &
-                                WF_ROUTETIMESTEP, WF_TIMECOUNT, &
-                                JAN, &
-                                WF_START_YEAR, WF_START_DAY, WF_START_HOUR, JDAY_IND1, &
-                                JDAY_IND2, &
-                                JDAY_IND_STRM, &
                                 GENDIR_OUT)
 
         use sa_mesh_shared_variabletypes
@@ -41,21 +24,8 @@ module sa_mesh_run_between_grid
         type(reservoir_release) :: rrls
 
         !> Temporary variables.
+!todo: remove these
         integer LOCATIONFLAG, STREAMFLOWOUTFLAG
-        integer M_S, M_R
-        integer WF_NO, WF_NL, WF_MHRD, WF_KT
-        integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
-        real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
-        real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
-        character(8), dimension(:), allocatable :: WF_GAGE
-        integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R
-        real, dimension(:), allocatable :: WF_B1, WF_B2, WF_QREL, WF_RESSTORE
-        character(8), dimension(:), allocatable :: WF_RESNAME
-        integer JAN
-        real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI2, &
-            WF_QO1, WF_QO2, WF_QR, WF_STORE1, WF_STORE2, WF_QI1
-        integer WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
-        integer WF_ROUTETIMESTEP, WF_TIMECOUNT
         character(450) GENDIR_OUT
 
         !> Local variables.
@@ -70,39 +40,12 @@ module sa_mesh_run_between_grid
         call configure_SA_RTE(shd, ic)
         call run_WF_ROUTE_ini(shd, ic, stfl, rrls, &
                               LOCATIONFLAG, STREAMFLOWOUTFLAG, &
-                              M_R, M_S, &
-                              WF_NHYD, &
-                              WF_QBASE, WF_QI2, WF_QO1, WF_QO2, &
-                              WF_STORE1, WF_STORE2, WF_QI1, WF_QR, &
-                              WF_NORESV, WF_NREL, WF_KTR, &
-                              WF_NORESV_CTRL, &
-                              WF_IRES, WF_JRES, WF_RES, WF_R, WF_B1, WF_B2, &
-                              WF_QREL, WF_RESSTORE, WF_RESNAME, &
-                              I_G, J_G, &
-                              WF_IY, &
-                              WF_NO, WF_NL, WF_MHRD, WF_KT, &
-                              WF_JX, WF_S, WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM, &
-                              WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM, WF_GAGE, &
-                              WF_ROUTETIMESTEP, WF_TIMECOUNT, &
-                              JAN, &
-                              WF_START_YEAR, WF_START_DAY, WF_START_HOUR, JDAY_IND1, &
-                              JDAY_IND2, &
-                              JDAY_IND_STRM, &
                               GENDIR_OUT)
 
     end subroutine
 
     subroutine run_between_grid(shd, ts, ic, cm, wb, eg, sp, stfl, rrls, &
-                                WF_ROUTETIMESTEP, WF_R1, WF_R2, &
-                                WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
-                                WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
-                                WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
-                                WF_B1, WF_B2, WF_QREL, WF_QR, &
-                                WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
-                                WF_STORE1, WF_STORE2, &
-                                M_C, M_R, M_S, &
-                                WF_S, JAN, &
-                                WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM, WF_QHYD_AVG, WF_QHYD_CUM)
+                                WF_R1, WF_R2, M_C)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -124,36 +67,14 @@ module sa_mesh_run_between_grid
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        integer M_S, M_R
-        integer, intent(in) :: M_C
-        integer WF_NO, WF_NL, WF_MHRD, WF_KT
-        integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
-        real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
-        real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
-        character(8), dimension(:), allocatable :: WF_GAGE
-        integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R
-        real, dimension(:), allocatable :: WF_B1, WF_B2, WF_QREL, WF_RESSTORE
-        character(8), dimension(:), allocatable :: WF_RESNAME
-        integer JAN
+        !> Temporary variables.
+        integer M_C
         real WF_R1(M_C), WF_R2(M_C)
-        real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI2, &
-            WF_QO1, WF_QO2, WF_QR, WF_STORE1, WF_STORE2, WF_QI1
-        integer WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
-        integer WF_ROUTETIMESTEP, WF_TIMECOUNT, DRIVERTIMESTEP
 
 !todo: Switch
         call run_SA_RTE(shd, ic, wb)
         call run_WF_ROUTE_between_grid(shd, ic, wb, stfl, rrls, &
-                                       WF_ROUTETIMESTEP, WF_R1, WF_R2, &
-                                       WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
-                                       WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
-                                       WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
-                                       WF_B1, WF_B2, WF_QREL, WF_QR, &
-                                       WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
-                                       WF_STORE1, WF_STORE2, &
-                                       M_C, M_R, M_S, &
-                                       WF_S, JAN, &
-                                       WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM, WF_QHYD_AVG, WF_QHYD_CUM)
+                                       WF_R1, WF_R2, M_C)
 
     end subroutine
 

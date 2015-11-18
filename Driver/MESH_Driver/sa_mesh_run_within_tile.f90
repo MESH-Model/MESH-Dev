@@ -23,13 +23,7 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
-    subroutine run_within_tile(shd, ts, ic, cm, wb, eg, sp, stfl, rrls, &
-                               WF_NORESV_CTRL, &
-                               WF_KTR, &
-                               WF_QREL, &
-                               JAN, &
-                               WF_NORESV, &
-                               WF_QHYD, WF_KT, WF_NO)
+    subroutine run_within_tile(shd, ts, ic, cm, wb, eg, sp, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -50,19 +44,7 @@ module sa_mesh_run_within_tile
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        integer WF_NO, WF_KT
-        real, dimension(:), allocatable :: WF_QHYD
-        real, dimension(:), allocatable :: WF_QREL
-        integer JAN
-        integer WF_NORESV, WF_KTR, WF_NORESV_CTRL
-
-        call run_WF_ROUTE_within_tile(shd, ic, stfl, rrls, &
-                                      WF_NORESV_CTRL, &
-                                      WF_KTR, &
-                                      WF_QREL, &
-                                      JAN, &
-                                      WF_NORESV, &
-                                      WF_QHYD, WF_KT, WF_NO)
+        call run_WF_ROUTE_within_tile(shd, ic, stfl, rrls)
 
     end subroutine
 
