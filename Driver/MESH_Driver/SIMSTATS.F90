@@ -20,8 +20,7 @@ use calc_abserr
 implicit none
 
 private
-public stats_init, stats_update_daily, stats_write, &
-    fbest, ftest
+public stats_init, stats_update_stfl_daily, stats_write, fbest, ftest
 
 !integer, parameter :: dp=kind(0.d0)
 
@@ -263,10 +262,9 @@ end subroutine
     !> Description:
     !>
     !> *****************************************************************
-    subroutine stats_update_daily(qhyd_avg, qsyn_avg, ncount)
+    subroutine stats_update_stfl_daily(qhyd_avg, qsyn_avg)
 
         !> Input variables.
-        integer, intent(in) :: ncount
         real, dimension(:), intent(in) :: qhyd_avg, qsyn_avg
 
 !todo: move this outside, to the call of the subroutine
@@ -275,7 +273,7 @@ end subroutine
         ncal = ncal + 1
         do j = 1, size(qobs, 2)
             qobs(ncal, :) = qhyd_avg(:)
-            qsim(ncal, :) = qsyn_avg(:)/ncount
+            qsim(ncal, :) = qsyn_avg(:)
         end do
 
         if (objfnflag == 0) then

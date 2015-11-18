@@ -8,6 +8,7 @@ module process_WF_ROUTE
 
     subroutine run_WF_ROUTE_within_tile(shd, ic, stfl, rrls)
 
+        use module_mpi_shared_variables
         use sa_mesh_shared_variabletypes
         use model_dates
         use MODEL_OUTPUT
@@ -19,10 +20,13 @@ module process_WF_ROUTE
         type(reservoir_release) :: rrls
 
         !> Local variables.
-        integer i, ios
+        integer i, ierr
 
-!todo: Attach this to ipid == 0.
-        if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
+        !> WF_ROUTE only runs in serial. If ipid /= 0 then the model is
+        !> likely running in parallel. This subroutine returns if ipid
+        !> of the current process /= 0 or if the process has been marked
+        !> inactive.
+        if (.not. WF_RTE_flgs%PROCESS_ACTIVE .or. ipid /= 0) return
 
         !> *************************************************************
         !> Read in current reservoir release value
@@ -37,14 +41,14 @@ module process_WF_ROUTE
         if (WF_NORESV_CTRL > 0) then
             if (mod(HOUR_NOW, WF_KTR) == 0 .and. MINS_NOW == 0) then
             !>        READ in current reservoir value
-                read(21, '(100f10.3)', iostat = IOS) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
-                if (IOS /= 0) then
+                read(21, '(100f10.3)', iostat = ierr) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
+                if (ierr /= 0) then
                     print *, 'ran out of reservoir data before met data'
                     stop
                 end if
             else
                 if (JAN == 1 .and. WF_NORESV_CTRL > 0) then
-                    read(21, '(100f10.3)', iostat = IOS) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
+                    read(21, '(100f10.3)', iostat = ierr) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
                     rewind 21
                     read(21, *)
                     do i = 1, WF_NORESV
@@ -62,8 +66,8 @@ module process_WF_ROUTE
         !> also read in the first value if this is the first time through
         if (mod(HOUR_NOW, WF_KT) == 0 .and. MINS_NOW == 0 .and. JAN > 1) then
             !>       read in current streamflow value
-            read(22, *, iostat = IOS) (WF_QHYD(i), i = 1, WF_NO)
-            if (IOS /= 0) then
+            read(22, *, iostat = ierr) (WF_QHYD(i), i = 1, WF_NO)
+            if (ierr /= 0) then
                 print *, 'ran out of streamflow data before met data'
                 stop
             end if

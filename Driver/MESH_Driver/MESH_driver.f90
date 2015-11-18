@@ -102,6 +102,7 @@ program RUNMESH
     use FLAGS
 
     use module_mpi_flags
+    use module_mpi_shared_variables
     use module_mpi
 
     use sa_mesh_run_within_tile
@@ -124,7 +125,7 @@ program RUNMESH
     !> istop: To stop all MPI process
     !* inp: Number of active tasks.
     !* ipid: Current process ID.
-    integer :: ierr = 0, inp = 1, ipid = 0
+    integer :: ierr = 0
     integer ipid_recv, itag, izero, ierrcode, istop
     logical lstat
 
@@ -4815,7 +4816,7 @@ program RUNMESH
                     write(6, *)
                 end if !(ro%VERBOSEMODE > 0) then
                 if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
-                    call stats_update_daily(stfl%qhyd, stfl%qsyn, NCOUNT)
+                    call stats_update_stfl_daily(stfl%qhyd, stfl%qsyn)
                     if (mtsflg%PREEMPTIONFLAG > 1) then
                         if (FTEST > FBEST) goto 199
                     end if

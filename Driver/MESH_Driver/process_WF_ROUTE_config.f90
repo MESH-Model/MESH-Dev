@@ -58,6 +58,11 @@ module process_WF_ROUTE_config
     !> Local variables.
     !> *****************************************************************
 
+    !>
+    !> Description: Variables used by WF_ROUTE. These variables are used
+    !> by WF_ROUTE and are only accessible to code that use this module.
+    !>
+
     integer M_S, M_R
 !-    integer, parameter :: M_C = 5
     !integer, parameter :: M_S = 290, M_R = 7, M_C = 5
@@ -277,6 +282,19 @@ module process_WF_ROUTE_config
             end if
         end do
 
+        if (ro%VERBOSEMODE > 0) then
+            print *, 'NUMBER OF STREAMFLOW GUAGES: ', WF_NO
+            do i = 1, WF_NO
+                print *, 'STREAMFLOW STATION: ', i, 'I: ', WF_IY(i), 'J: ', WF_JX(i)
+            end do
+            print *, 'NUMBER OF RESERVOIR STATIONS: ', WF_NORESV
+            if (WF_NORESV > 0) then
+                do i = 1, WF_NORESV
+                    print *, 'RESERVOIR STATION: ', i, 'I: ', WF_IRES(i), 'J: ', WF_JRES(i)
+                end do
+            end if
+        end if !(ro%VERBOSEMODE > 0) then
+
         !> ric     initialise smoothed variables
         WF_QSYN = 0.0
         WF_QSYN_AVG = 0.0
@@ -351,19 +369,6 @@ module process_WF_ROUTE_config
             end if
 
         end if !(STREAMFLOWOUTFLAG > 0) then
-
-        if (ro%VERBOSEMODE > 0) then
-            print *, 'NUMBER OF STREAMFLOW GUAGES: ', WF_NO
-            do i = 1, WF_NO
-                print *, 'STREAMFLOW STATION: ', i, 'I: ', WF_IY(i), 'J: ', WF_JX(i)
-            end do
-            print *, 'NUMBER OF RESERVOIR STATIONS: ', WF_NORESV
-            if (WF_NORESV > 0) then
-                do i = 1, WF_NORESV
-                    print *, 'RESERVOIR STATION: ', i, 'I: ', WF_IRES(i), 'J: ', WF_JRES(i)
-                end do
-            end if
-        end if !(ro%VERBOSEMODE > 0) then
 
     end subroutine
 
