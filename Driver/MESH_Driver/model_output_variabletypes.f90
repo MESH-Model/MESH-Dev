@@ -16,4 +16,21 @@ module model_output_variabletypes
 
     end type
 
+    !> Description: Type-set to store reservoir release, storage, and
+    !>              abstraction for multiple reservoirs or of a
+    !>              time-series for a single reservoir.
+    type reservoir_release
+
+        !* rls: Reservoir release.
+        !* store: Storage.
+        !* abst: Storage abstracted from the reservoir for demand.
+        real, dimension(:), allocatable :: rls
+        real, dimension(:), allocatable :: store
+        real, dimension(:), allocatable :: abst
+
+        !* nr: Number of reservoirs or records.
+        integer nr
+
+    end type
+
 end module

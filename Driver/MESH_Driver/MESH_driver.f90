@@ -802,6 +802,7 @@ program RUNMESH
     type(energy_balance) :: eng
     type(soil_statevars) :: sov
     type(streamflow_hydrograph) :: stfl
+    type(reservoir_release) :: rrls
 
     logical R2COUTPUT
     integer, parameter :: R2CFILEUNITSTART = 500
@@ -1166,20 +1167,21 @@ program RUNMESH
 !> DAN * (APR 20/08).
 
 !> ANDY * Allocate some variables
-    allocate(WF_NHYD(NA), WF_QR(NA), &
-             WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA), &
-             WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA))
+!-    allocate(WF_NHYD(NA), WF_QR(NA), &
+!-             WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA), &
+!-             WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA))
+    allocate(SNOGRD(NA))
 
     !> ANDY * Zero everything we just allocated
-    WF_NHYD = 0.0
-    WF_QBASE = 0.0
-    WF_QI2 = 0.0
-    WF_QO1 = 0.0
-    WF_QO2 = 0.0
-    WF_QR = 0.0
-    WF_STORE1 = 0.0
-    WF_STORE2 = 0.0
-    WF_QI1 = 0.0
+!-    WF_NHYD = 0.0
+!-    WF_QBASE = 0.0
+!-    WF_QI2 = 0.0
+!-    WF_QO1 = 0.0
+!-    WF_QO2 = 0.0
+!-    WF_QR = 0.0
+!-    WF_STORE1 = 0.0
+!-    WF_STORE2 = 0.0
+!-    WF_QI1 = 0.0
 
 1114 format(/1x, 'Error allocating ', a, ' variables.', &
             /1x, 'Check that these bounds are within an acceptable range.', /)
@@ -1542,145 +1544,165 @@ program RUNMESH
         open(86, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/basin_SWE_alldays.csv')
     end if !(BASINSWEOUTFLAG > 0) then
 
-    if (ipid == 0) call run_between_grid_config(shd, ts, ic, stfl)
+    if (ipid == 0) call run_between_grid_ini(shd, ts, ic, stfl, rrls, &
+                                             LOCATIONFLAG, STREAMFLOWOUTFLAG, &
+                                             M_R, M_S, &
+                                             WF_NHYD, &
+                                             WF_QBASE, WF_QI2, WF_QO1, WF_QO2, &
+                                             WF_STORE1, WF_STORE2, WF_QI1, WF_QR, &
+                                             WF_NORESV, WF_NREL, WF_KTR, &
+                                             WF_NORESV_CTRL, &
+                                             WF_IRES, WF_JRES, WF_RES, WF_R, WF_B1, WF_B2, &
+                                             WF_QREL, WF_RESSTORE, WF_RESNAME, &
+                                             I_G, J_G, &
+                                             WF_IY, &
+                                             WF_NO, WF_NL, WF_MHRD, WF_KT, &
+                                             WF_JX, WF_S, WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM, &
+                                             WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM, WF_GAGE, &
+                                             WF_ROUTETIMESTEP, WF_TIMECOUNT, &
+                                             JAN, &
+                                             WF_START_YEAR, WF_START_DAY, WF_START_HOUR, JDAY_IND1, &
+                                             JDAY_IND2, &
+                                             JDAY_IND_STRM, &
+                                             GENDIR_OUT)
 
 !> *********************************************************************
 !>  Open and read in values from MESH_input_reservoir.txt file
 !> *********************************************************************
 
-    open(21, file = 'MESH_input_reservoir.txt', status = 'old', action = 'read')
-    read(21, '(3i5)') WF_NORESV, WF_NREL, WF_KTR
-    WF_NORESV_CTRL = 0
+!-    open(21, file = 'MESH_input_reservoir.txt', status = 'old', action = 'read')
+!-    read(21, '(3i5)') WF_NORESV, WF_NREL, WF_KTR
+!-    WF_NORESV_CTRL = 0
 
 ! allocate reservoir arrays
-    M_R = WF_NORESV
-    allocate(WF_IRES(M_R), WF_JRES(M_R), WF_RES(M_R), WF_R(M_R), WF_B1(M_R), WF_B2(M_R), &
-             WF_QREL(M_R), WF_RESSTORE(M_R), WF_RESNAME(M_R))
+!-    M_R = WF_NORESV
+!-    allocate(WF_IRES(M_R), WF_JRES(M_R), WF_RES(M_R), WF_R(M_R), WF_B1(M_R), WF_B2(M_R), &
+!-             WF_QREL(M_R), WF_RESSTORE(M_R), WF_RESNAME(M_R))
 
-    if (WF_NORESV > 0) then
-        do i = 1, WF_NORESV
+!-    if (WF_NORESV > 0) then
+!-        do i = 1, WF_NORESV
 ! KCK Added to allow higher precision gauge sites    
-            if (LOCATIONFLAG == 1) then
-                read(21, '(2f7.1, 2g10.3, 25x, a12, i2)') I_G, J_G, WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
-                WF_IRES(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
-                WF_JRES(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
-            else
-                read(21, '(2i5, 2g10.3, 25x, a12, i2)') WF_IRES(i), WF_JRES(i), WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
-                WF_IRES(i) = int((real(WF_IRES(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
-                WF_JRES(i) = int((real(WF_JRES(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
-            end if
+!-            if (LOCATIONFLAG == 1) then
+!-                read(21, '(2f7.1, 2g10.3, 25x, a12, i2)') I_G, J_G, WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
+!-                WF_IRES(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
+!-                WF_JRES(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
+!-            else
+!-                read(21, '(2i5, 2g10.3, 25x, a12, i2)') WF_IRES(i), WF_JRES(i), WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
+!-                WF_IRES(i) = int((real(WF_IRES(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
+!-                WF_JRES(i) = int((real(WF_JRES(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
+!-            end if
 !> check if point is in watershed and in river reaches
-            WF_R(i) = 0
-            do j = 1, NA
-                if (WF_IRES(i) == shd%yyy(j) .and. WF_JRES(i) == shd%xxx(j)) then
-                    WF_R(i) = j
-                end if
-            end do
-            if (WF_R(i) == 0) then
-                print *, 'Reservoir Station: ', i, ' is not in the basin'
-                print *, 'Up/Down Coordinate: ', wf_ires(i), shd%iyMin
-                print *, 'Left/Right Coordinate: ', wf_jres(i), shd%jxMin
-                stop
-            end if
-            if (shd%IREACH(WF_R(i)) /= i) then
-                print *, 'Reservoir Station: ', i, ' is not in the correct reach'
-                print *, 'Up/Down Coordinate: ', wf_ires(i)
-                print *, 'Left/Right Coordinate: ', wf_jres(i)
-                print *, 'ireach value at station: ', wf_iy(i)
-                stop
-            end if
-            if (WF_B1(i) == 0.0) then
-                WF_NORESV_CTRL = WF_NORESV_CTRL + 1
-            end if
-        end do
-    end if
+!-            WF_R(i) = 0
+!-            do j = 1, NA
+!-                if (WF_IRES(i) == shd%yyy(j) .and. WF_JRES(i) == shd%xxx(j)) then
+!-                    WF_R(i) = j
+!-                end if
+!-            end do
+!-            if (WF_R(i) == 0) then
+!-                print *, 'Reservoir Station: ', i, ' is not in the basin'
+!-                print *, 'Up/Down Coordinate: ', wf_ires(i), shd%iyMin
+!-                print *, 'Left/Right Coordinate: ', wf_jres(i), shd%jxMin
+!-                stop
+!-            end if
+!-            if (shd%IREACH(WF_R(i)) /= i) then
+!-                print *, 'Reservoir Station: ', i, ' is not in the correct reach'
+!-                print *, 'Up/Down Coordinate: ', wf_ires(i)
+!-                print *, 'Left/Right Coordinate: ', wf_jres(i)
+!-                print *, 'ireach value at station: ', wf_iy(i)
+!-                stop
+!-            end if
+!-            if (WF_B1(i) == 0.0) then
+!-                WF_NORESV_CTRL = WF_NORESV_CTRL + 1
+!-            end if
+!-        end do
+!-    end if
 !> leave file open and read in the reservoir files when needed
 
 !> *********************************************************************
 !> Open and read in values from MESH_input_streamflow.txt file
 !> *********************************************************************
 
-    open(22, file = 'MESH_input_streamflow.txt', status = 'old', action = 'read')
-    read(22, *)
-    read(22, *) WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
+!-    open(22, file = 'MESH_input_streamflow.txt', status = 'old', action = 'read')
+!-    read(22, *)
+!-    read(22, *) WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
 
 ! Allocate variable based on value from streamflow file
-    M_S = WF_NO !todo M_S is same as WF_NO and could be removed.
+!-    M_S = WF_NO !todo M_S is same as WF_NO and could be removed.
 
-    allocate(WF_IY(M_S), WF_JX(M_S), WF_S(M_S), WF_QHYD(M_S), WF_QHYD_AVG(M_S), WF_QHYD_CUM(M_S), &
-             WF_QSYN(M_S), WF_QSYN_AVG(M_S), WF_QSYN_CUM(M_S), WF_GAGE(M_S))
+!-    allocate(WF_IY(M_S), WF_JX(M_S), WF_S(M_S), WF_QHYD(M_S), WF_QHYD_AVG(M_S), WF_QHYD_CUM(M_S), &
+!-             WF_QSYN(M_S), WF_QSYN_AVG(M_S), WF_QSYN_CUM(M_S), WF_GAGE(M_S))
 
-    do i = 1, WF_NO
-        if (LOCATIONFLAG == 1) then
-            read(22, *) I_G, J_G, WF_GAGE(i)
-            WF_IY(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
-            WF_JX(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
-        else
-            read(22, *) WF_IY(i), WF_JX(i), WF_GAGE(i)
-            WF_IY(i) = int((real(WF_IY(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
-            WF_JX(i) = int((real(WF_JX(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
-        end if
-    end do
-    do i = 1, WF_NO
-        WF_S(i) = 0
-        do j = 1, NA
-            if (WF_JX(i) == shd%xxx(j) .and. WF_IY(i) == shd%yyy(j)) then
-                WF_S(i) = j
-            end if
-        end do
-        if (WF_S(i) == 0) then
-            print *, 'STREAMFLOW GAUGE: ', i, ' IS NOT IN THE BASIN'
-            print *, 'UP/DOWN', WF_IY(i), shd%iyMin, shd%yyy(j), shd%yCount
-            print *, 'LEFT/RIGHT', WF_JX(i), shd%jxMin, shd%xxx(j), shd%xCount
-            stop
-        end if
-    end do
+!-    do i = 1, WF_NO
+!-        if (LOCATIONFLAG == 1) then
+!-            read(22, *) I_G, J_G, WF_GAGE(i)
+!-            WF_IY(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
+!-            WF_JX(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
+!-        else
+!-            read(22, *) WF_IY(i), WF_JX(i), WF_GAGE(i)
+!-            WF_IY(i) = int((real(WF_IY(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
+!-            WF_JX(i) = int((real(WF_JX(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
+!-        end if
+!-    end do
+!-    do i = 1, WF_NO
+!-        WF_S(i) = 0
+!-        do j = 1, NA
+!-            if (WF_JX(i) == shd%xxx(j) .and. WF_IY(i) == shd%yyy(j)) then
+!-                WF_S(i) = j
+!-            end if
+!-        end do
+!-        if (WF_S(i) == 0) then
+!-            print *, 'STREAMFLOW GAUGE: ', i, ' IS NOT IN THE BASIN'
+!-            print *, 'UP/DOWN', WF_IY(i), shd%iyMin, shd%yyy(j), shd%yCount
+!-            print *, 'LEFT/RIGHT', WF_JX(i), shd%jxMin, shd%xxx(j), shd%xCount
+!-            stop
+!-        end if
+!-    end do
 
 !> ric     initialise smoothed variables
-    wf_qsyn = 0.0
-    WF_QSYN_AVG = 0.0
-    wf_qhyd_avg = 0.0
-    wf_qsyn_cum = 0.0
-    wf_qhyd_cum = 0.0
+!-    wf_qsyn = 0.0
+!-    WF_QSYN_AVG = 0.0
+!-    wf_qhyd_avg = 0.0
+!-    wf_qsyn_cum = 0.0
+!-    wf_qhyd_cum = 0.0
 
     !> Allocate the output variable for the streamflow hydrograph.
-    stfl%ns = WF_NO
-    allocate(stfl%qhyd(WF_NO), stfl%qsyn(WF_NO))
-    stfl%qhyd = 0.0
-    stfl%qsyn = 0.0
+!-    stfl%ns = WF_NO
+!-    allocate(stfl%qhyd(WF_NO), stfl%qsyn(WF_NO))
+!-    stfl%qhyd = 0.0
+!-    stfl%qsyn = 0.0
 
 !>MAM - The first stream flow record is used for flow initialization
-    read(22, *, iostat = IOS) (WF_QHYD(i), i = 1, WF_NO)
+!-    read(22, *, iostat = IOS) (WF_QHYD(i), i = 1, WF_NO)
 
       ! fixed streamflow start time bug. add in function to enable the
       ! correct start time. Feb2009 aliu.
-    call Julian_Day_ID(WF_START_YEAR, WF_START_day, Jday_IND1)
-    call Julian_Day_ID(YEAR_START, JDAY_START, Jday_IND2)
+!-    call Julian_Day_ID(WF_START_YEAR, WF_START_day, Jday_IND1)
+!-    call Julian_Day_ID(YEAR_START, JDAY_START, Jday_IND2)
 !    print *, WF_START_YEAR, WF_START_day, Jday_IND1
-    if (YEAR_START == 0) then
-        Jday_IND2 = Jday_IND1
-    end if
-    if (Jday_IND2 < Jday_IND1) then
-        print *, 'ERROR: Simulation start date too early, check ', &
-            ' MESH_input_streamflow.txt, The start date in ', &
-            ' MESH_input_run_options.ini may be out of range'
-        stop
-    end if
-    jday_ind_strm = (jday_ind2 - jday_ind1)*24/WF_KT
+!-    if (YEAR_START == 0) then
+!-        Jday_IND2 = Jday_IND1
+!-    end if
+!-    if (Jday_IND2 < Jday_IND1) then
+!-        print *, 'ERROR: Simulation start date too early, check ', &
+!-            ' MESH_input_streamflow.txt, The start date in ', &
+!-            ' MESH_input_run_options.ini may be out of range'
+!-        stop
+!-    end if
+!-    jday_ind_strm = (jday_ind2 - jday_ind1)*24/WF_KT
 
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          !skip the unused streamflow records in streamflow.txt .
-    do j = 1, jday_ind_strm
-        read(22, *, iostat = IOS)
-        if (IOS < 0) then
-            print *, 'ERROR: end of file reached when reading ', &
-                ' MESH_input_streamflow.txt, The start date in ', &
-                ' MESH_input_run_options.ini may be out of range'
-            stop
-        end if
-    end do
+!-    do j = 1, jday_ind_strm
+!-        read(22, *, iostat = IOS)
+!-        if (IOS < 0) then
+!-            print *, 'ERROR: end of file reached when reading ', &
+!-                ' MESH_input_streamflow.txt, The start date in ', &
+!-                ' MESH_input_run_options.ini may be out of range'
+!-            stop
+!-        end if
+!-    end do
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    print *, 'Skipping', jday_ind_strm, 'Registers in streamflow file'
+!-    print *, 'Skipping', jday_ind_strm, 'Registers in streamflow file'
 !> leave unit open and read new streamflow each hour
 
 !todo - verify that all checks are needed and in the right spot
@@ -1860,12 +1882,12 @@ program RUNMESH
     end if !(ipid == 0) then
 
 !> routing parameters
-    WF_ROUTETIMESTEP = 900
-    WF_TIMECOUNT = 0
+!-    WF_ROUTETIMESTEP = 900
+!-    WF_TIMECOUNT = 0
     DRIVERTIMESTEP = DELT    ! Be sure it's REAL*8
 
 !* JAN: The first time throught he loop, jan = 1. Jan will equal 2 after that.
-    JAN = 1
+!-    JAN = 1
 
 !todo - check that this is compatible with Saul's pre-distributed soil moisture and soil temp.
     do i = 1, NA
@@ -2232,21 +2254,21 @@ program RUNMESH
     if (ipid == 0) then
 
     !> Streamflow output files.
-        if (STREAMFLOWOUTFLAG > 0) then
+!-        if (STREAMFLOWOUTFLAG > 0) then
 
         !> Daily streamflow file.
-            open(fls%fl(mfk%f70)%iun, &
+!-            open(fls%fl(mfk%f70)%iun, &
 !todo: This creates a bug if a space doesn't exist in the name of the folder!
-                 file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // trim(adjustl(fls%fl(mfk%f70)%fn)), &
-                 iostat = ios)
+!-                 file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // trim(adjustl(fls%fl(mfk%f70)%fn)), &
+!-                 iostat = ios)
 
         !> Hourly and cumulative daily streamflow files.
-            if (STREAMFLOWOUTFLAG >= 2) then
-                open(71, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/MESH_output_streamflow_all.csv')
-                open(72, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/MESH_output_streamflow_cumulative.csv')
-            end if
+!-            if (STREAMFLOWOUTFLAG >= 2) then
+!-                open(71, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/MESH_output_streamflow_all.csv')
+!-                open(72, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/MESH_output_streamflow_cumulative.csv')
+!-            end if
 
-        end if !(STREAMFLOWOUTFLAG > 0) then
+!-        end if !(STREAMFLOWOUTFLAG > 0) then
 
 !> *********************************************************************
 !> Open and read in values from r2c_output.txt file
@@ -2330,16 +2352,16 @@ program RUNMESH
         print *, 'NUMBER OF GRID SQUARES IN South-North DIRECTION: ', shd%yCount
         print *, 'LENGTH OF SIDE OF GRID SQUARE IN M: ', shd%AL
         print *, 'NUMBER OF DRAINAGE OUTLETS: ', shd%NAA
-        print *, 'NUMBER OF STREAMFLOW GUAGES: ', WF_NO
-        do i = 1, WF_NO
-            print *, 'STREAMFLOW STATION: ', i, 'I: ', WF_IY(i), 'J: ', WF_JX(i)
-        end do
-        print *, 'NUMBER OF RESERVOIR STATIONS: ', WF_NORESV
-        if (WF_NORESV > 0) then
-            do i = 1, WF_NORESV
-                print *, 'RESERVOIR STATION: ', i, 'I: ', WF_IRES(i), 'J: ', WF_JRES(i)
-            end do
-        end if
+!-        print *, 'NUMBER OF STREAMFLOW GUAGES: ', WF_NO
+!-        do i = 1, WF_NO
+!-            print *, 'STREAMFLOW STATION: ', i, 'I: ', WF_IY(i), 'J: ', WF_JX(i)
+!-        end do
+!-        print *, 'NUMBER OF RESERVOIR STATIONS: ', WF_NORESV
+!-        if (WF_NORESV > 0) then
+!-            do i = 1, WF_NORESV
+!-                print *, 'RESERVOIR STATION: ', i, 'I: ', WF_IRES(i), 'J: ', WF_JRES(i)
+!-            end do
+!-        end if
         print *
         print *, 'Found these output locations:'
         print *, 'Output Directory, grid number, land class number'
@@ -3234,6 +3256,14 @@ program RUNMESH
         VMODGRD = UVGRD
         VMODGAT = max(VMIN, ULGAT)
 
+        call run_within_tile(shd, ts, ic, cm, wb, eng, sov, stfl, rrls, &
+                             WF_NORESV_CTRL, &
+                             WF_KTR, &
+                             WF_QREL, &
+                             JAN, &
+                             WF_NORESV, &
+                             WF_QHYD, WF_KT, WF_NO)
+
 !> *********************************************************************
 !> Read in current reservoir release value
 !> *********************************************************************
@@ -3244,25 +3274,25 @@ program RUNMESH
 !> there might not be any data in wf_qrel, wf_qhyd
 !> make sure we have a controlled reservoir (if not the mod(HOUR_NOW, wf_ktr)
 !> may give an error. Frank S Jun 2007
-        if (WF_NORESV_CTRL > 0) then
-            if (mod(HOUR_NOW, WF_KTR) == 0 .and. MINS_NOW == 0) then
+!-        if (WF_NORESV_CTRL > 0) then
+!-            if (mod(HOUR_NOW, WF_KTR) == 0 .and. MINS_NOW == 0) then
 !>        READ in current reservoir value
-                read(21, '(100f10.3)', iostat = IOS) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
-                if (IOS /= 0) then
-                    print *, 'ran out of reservoir data before met data'
-                    stop
-                end if
-            else
-                if (JAN == 1 .and. WF_NORESV_CTRL > 0) then
-                    read(21, '(100f10.3)', iostat = IOS) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
-                    rewind 21
-                    read(21, *)
-                    do i = 1, WF_NORESV
-                        read(21, *)
-                    end do
-                end if
-            end if
-        end if
+!-                read(21, '(100f10.3)', iostat = IOS) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
+!-                if (IOS /= 0) then
+!-                    print *, 'ran out of reservoir data before met data'
+!-                    stop
+!-                end if
+!-            else
+!-                if (JAN == 1 .and. WF_NORESV_CTRL > 0) then
+!-                    read(21, '(100f10.3)', iostat = IOS) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
+!-                    rewind 21
+!-                    read(21, *)
+!-                    do i = 1, WF_NORESV
+!-                        read(21, *)
+!-                    end do
+!-                end if
+!-            end if
+!-        end if
 
 ! *********************************************************************
 !> Read in current streamflow value
@@ -3270,14 +3300,14 @@ program RUNMESH
 
 !> only read in current value if we are on the correct time step
 !> also read in the first value if this is the first time through
-        if (mod(HOUR_NOW, WF_KT) == 0 .and. MINS_NOW == 0 .and. JAN > 1) then
+!-        if (mod(HOUR_NOW, WF_KT) == 0 .and. MINS_NOW == 0 .and. JAN > 1) then
 !>       read in current streamflow value
-            read(22, *, iostat = IOS) (WF_QHYD(i), i = 1, WF_NO)
-            if (IOS /= 0) then
-                print *, 'ran out of streamflow data before met data'
-                stop
-            end if
-        end if
+!-            read(22, *, iostat = IOS) (WF_QHYD(i), i = 1, WF_NO)
+!-            if (IOS /= 0) then
+!-                print *, 'ran out of streamflow data before met data'
+!-                stop
+!-            end if
+!-        end if
 
 !> *********************************************************************
 !> Set some more CLASS parameters
@@ -4726,7 +4756,7 @@ program RUNMESH
             end if !(NCOUNT == 48) then
         end if !(ipid == 0) then
 
-        if (ipid == 0) call run_between_grid(shd, ts, ic, cm, wb_h, eng, sov, stfl, &
+        if (ipid == 0) call run_between_grid(shd, ts, ic, cm, wb_h, eng, sov, stfl, rrls, &
                                              WF_ROUTETIMESTEP, WF_R1, WF_R2, &
                                              WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
                                              WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
@@ -5351,9 +5381,9 @@ program RUNMESH
     close(58)
 
     !> Close CSV streamflow files.
-    close(fls%fl(mfk%f70)%iun)
-    close(71)
-    close(72)
+!-    close(fls%fl(mfk%f70)%iun)
+!-    close(71)
+!-    close(72)
 
     !> Close the SWE CSV files.
     close(85)
