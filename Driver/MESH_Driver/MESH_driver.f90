@@ -158,15 +158,9 @@ program RUNMESH
 !> DAN  USE RTE SUBROUTINES FOR READING EVENT FILE AND SHD FILE, AND
 !> DAN  WRITING R2C-FORMAT OUTPUT FILES      
 !>  INTEGER CONSTANTS.
-!INTEGER ILG
 !INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
     integer, parameter :: ICAN = 4, ICP1 = ICAN + 1, ICTEM = 1 !Number of CTEM vegetation categories (set to 1 if not using CTEM)
-!-    integer M_S, M_R
     integer, parameter :: M_C = 5
-!INTEGER,PARAMETER :: M_S=290, M_R=7, M_C=5
-!M_S and M_R are now read in and used to allocate the appropriate arrays - Frank S Jul 2013
-!todo it should be read in from the shd file
-!todo M_S could be removed as it is now just a surrogate of WF_NO (KCK)
 
 !INTEGER IGND
     real IGND_TEST, IGND_DEEP
@@ -177,9 +171,6 @@ program RUNMESH
 !> FOR OUTPUT
     character(450) GENDIR_OUT
 
-    !> For R2C-format out
-!-    integer rte_year_now, rte_month_now, rte_day_now, rte_hour_now
-
 !todo clean up commets and arrange variables a bit better
 
 !> SCA variables
@@ -188,43 +179,15 @@ program RUNMESH
 !todo are in groups that make sense
     real basin_SCA
     real basin_SWE
-!> STREAMFLOW VARIABLES
-!* WF_GAGE: GAUGE IDENTIFIER (8 CHARACTER STRING)
-!* WF_NO: NUMBER OF STREAMFLOW GAUGES
-!* WF_NL: NUMBER OF DATA POINTS
-!* WF_MHRD: NUMBER OF HOURS OF DATA PER MONTH
-!* WF_KT: HOURLY INCREMENT FOR STREAMFLOW INPUT (24 = DAILY)
-!* WF_IY: Y-DIRECTION GAUGE CO-ORDINATE (UTM OR LATLONG)
-!* WF_JX: X-DIRECTION GAUGE CO-ORDINATE (UTM OR LATLONG)
-!* WF_S: GAUGE'S PARENT GRID SQUARE
-!* WF_QHYD: STREAMFLOW VALUE (_AVG = DAILY AVERAGE)
-!* WF_QSYN: SIMULATED STREAFLOW VALUE (_AVG = DAILY AVERAGE)
-!* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
-!* WF_START_DAY OBSERVED STREAMFLOW START DAY
-!* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
-!-    integer WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, &
-!-        WF_START_DAY, WF_START_HOUR
-!-    integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
-!-    real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
-!-    real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
-!-    character(8), dimension(:), allocatable :: WF_GAGE
 
-!> RESERVOIR VARIABLES
-!-    integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R
-!-    real, dimension(:), allocatable :: WF_B1, WF_B2, WF_QREL, WF_RESSTORE
-!-    character(8), dimension(:), allocatable :: WF_RESNAME
-
-!> FOR BASEFLOW INITIALIZATION
+!> FOR INITIALIZATION OF BASIN STORAGE
     integer JAN
     integer imonth_now, imonth_old
 
 !>     FOR ROUTING
 !* WF_R1: MANNING'S N FOR RIVER CHANNEL
 !* WF_R2: OPTIMIZED RIVER ROUGHNESS FACTOR
-!* WF_QO2: SIMULATED STREAMFLOW VALUE
     real WF_R1(M_C), WF_R2(M_C)
-!-    real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI2, &
-!-        WF_QO1, WF_QO2, WF_QR, WF_STORE1, WF_STORE2, WF_QI1
 
 ! Saul=======
 !* HOURLY_START_*: Start day/year for recording hourly averaged data
@@ -235,8 +198,6 @@ program RUNMESH
         DAILY_STOP_DAY
     integer HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
         DAILY_STOP_YEAR
-!-    integer JDAY_IND_STRM, JDAY_IND1, JDAY_IND2, JDAY_IND3
-!*******************************************************************************
 
 !> LAND SURFACE DIAGNOSTIC VARIABLES.
 
@@ -299,13 +260,9 @@ program RUNMESH
 
 !>     * CONSTANTS (PARAMETER DEFINITIONS):
 
-!* NA: MAXIMUM ALLOWABLE NUMBER OF GRID SQUARES
-!* NTYPE: MAXIMUM ALLOWABLE NUMBER OF GRUS
-!* ILG: MAXIMUM ALLOWABLE SINGLE-DIMENSION ARRAY LENGTH
 !* ICAN: MAXIMUM ALLOWABLE NUMBER OF LAND COVER TYPES
 !* ICP1: MAXIMUM ALLOWABLE NUMBER OF LAND COVER TYPES INCLUDING
 !*       URBAN AREAS
-!* IGND: MAXIMUM ALLOWABLE NUMBER OF SOIL LAYERS
 !* M_X: MAXIMUM ALLOWABLE NUMBER OF GRID COLUMNS IN SHD FILE
 !* M_Y: MAXIMUM ALLOWABLE NUMBER OF GRID ROWS IN SHD FILE
 !* M_S: MAXIMUM ALLOWABLE NUMBER OF STREAMFLOW GAUGES
@@ -355,60 +312,10 @@ program RUNMESH
         INDEPPAR, DEPPAR, PAS, NSUM_TOTAL
 !  CONFLAGS, OPTFLAGS, INDEPPAR, DEPPAR, PAS
     logical OPN
-!>
-!>*******************************************************************
-!>
-!>  BASIN INFORMATION AND COUNTS:
-!* WF_NA: NUMBER OF GRID SQUARES
-!* NAA: NUMBER OF GRID OUTLETS
-!* WF_NTYPE: NUMBER OF GRUS
-!* NRVR: NUMBER OF RIVER CLASSES
-!* WF_IMAX: NUMBER OF GRID COLUMNS IN BASIN
-!* WF_JMAX: NUMBER OF GRID ROWNS IN BASIN
-!* AL: SINGLE-DIMENSION GRID SQUARE LENGTH
-!* LAT/LONG, SITE LOCATION INFORMATION:
-!* iyMin: MINIMUM Y-DIRECTION GRID CO-ORDINATE (UTM)
-!* iyMax: MAXIMUM Y-DIRECTION GRID CO-ORDINATE (UTM)
-!* jxMin: MINIMUM X-DIRECTION GRID CO-ORDINATE (UTM)
-!* jxMax: MAXIMUM X-DIRECTION GRID CO-ORDINATE (UTM)
-!* GRDN: GRID NORTHING
-!* GRDE: GRID EASTING
-!* LATLENGTH: SINGLE SIDE LENGTH OF GRID SQUARE IN DEGREES
-!*            LATITUDE
-!* LONGLENGTH: SINGLE SIDE LENGTH OF GRID SQUARE IN DEGREES
-!*             LONGITUDE
-!>************************************************************
-!>
-!> RESERVOIR MEASUREMENTS:
-!* WF_RESNAME: RESERVOIR IDENTIFIER (8 CHARACTER STRING)
-!* WF_NORESV: NUMBER OF RESERVOIRS
-!* WR_NREL: NUMBER OF DATA POINTS
-!* WF_KTR: HOURLY INCREMENT FOR RESERVOIR INPUR (24 = DAILY)
-!* WF_IRES: Y-DIRECTION GAUGE CO-ORDINATE
-!* WF_JRES: X-DIRECTION GAUGE CO-ORDINATE
-!* WF_R: RESERVOIR'S PARENT GRID SQUARE
-!* WF_QREL: RESERVOIR VALUE
 
-!-    integer WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
-!-    integer WF_ROUTETIMESTEP, WF_TIMECOUNT
     integer DRIVERTIMESTEP
-!>
-!-    real I_G, J_G
-!* I_G: REAL TEMPORARY IY COORDINATE FOR STREAM AND RESERVOIR GAUGES
-!* J_G: REAL TEMPORARY JX COORDINATE FOR STREAM AND RESERVOIR GAUGES
-!>*******************************************************************
-!>
-!-!* rte_frames_now: FRAME NUMBER BEING WRITTEN TO R2C-FORMAT FILE
-!-!* rte_frames_total: TOTAL NUMBER OF FRAMES IN R2C-FORMAT FILE (TOTAL
-!-!*            NUMBER OF FRAMES IS NEVER KNOWN, IS ALWAYS SET TO
-!-!*            rte_frames_total + 1)
-!-    integer rte_frames_now, rte_frames_total
+
     integer FRAME_NO_NEW
-!-!* rte_runoff: HOURLY SIMULATED RUNOFF
-!-!* rte_recharge: HOURLY SIMULATED RECHARGE
-!-!* rte_leakage: UNKNOWN, BUT MAY BE USED IN THE FUTURE
-!-    real, dimension(:, :), allocatable :: rte_runoff, rte_recharge, rte_leakage
-!-!-* LEAKAGE: UNKNOWN, BUT MAY BE USED IN THE FUTURE
 
 !> GRID OUTPUT POINTS
 !* BNAM: TEMPORARY HOLD FOR OUTPUT DIRECTORY (12 CHARACTER STRING)
@@ -745,37 +652,10 @@ program RUNMESH
 !> FIND_DAY: SUBROUTINE USED TO CONVERT JULIAN DAY FROM YEAR START
 !>           INTO DAY FROM MONTH START (1 TO 31)
 
-!> DAN * VARIABLES:
-
-!* xCount: NUMBER OF GRID SQUARES IN X-DIRECTION OF
-!*                      BASIN (COLUMNS) (JMAX)
-!* yCount: NUMBER OF GRID SQUARES IN Y-DIRECTION OF
-!*                      BASIN (ROWS) (IMAX)
-!* AL: SINGLE GRID SIDE LENGTH IN METRES (AL)
-!* NA: NUMBER OF GRID SQUARES IN BASIN (WF_NA)
-!* NAA: NUMBER OF GRID SQUARE OUTLETS IN BASIN (NAA)
-!* NTYPE: NUMBER OF GRUS (WF_NTYPE)
-!* FRAC: GRID FRACTION (previously WF_FRAC)
-!* ACLASS: PERCENT-GRU FRACTION FOR EACH GRID SQUARE
-!* CoordSys: CO-ORDINATE SYSTEM (FROM BASIN SHD
-!*                           FILE)
-!* Zone: CO-ORDINATE SYSTEM (FROM BASIN SHD FILE)
-!* Datum: CO-ORDINATE SYSTEM (FROM BASIN SHD FILE)
-!* xOrigin: X-DIRECTION CO-ORDINATE OF BASIN GRID
-!*                        (FROM BASIN SHD FILE)
-!* yOrigin: Y-DIRECTION CO-ORDINATE OF BASIN GRID
-!*                        (FROM BASIN SHD FILE)
-!* xDelta: AVERAGE DIFFERENCE BETWEEN TWO X-DIRECTION
-!*                      SIDES OF GRID SQUARE (FROM BASIN SHD FILE)
-!* yDelta: AVERAGE DIFFERENCE BETWEEN TWO Y-DIRECTION
-!*                      SIDES OF GRID SQUARE (FROM BASIN SHD FILE)
-!* yyy: Y-DIRECTION GRID SQUARE CO-ORDINATE (YYY), aka column coordinate
-!* xxx: X-DIRECTION GRID SQUARE CO-ORDIANTE (XXX), aka row coordinate
-
 !> These are the types defined in mesh_input_module.f that contain arrays
 !> that need to be allocated in read_initial_inputs.f.
     type(OutputPoints) :: op
-!+    type(ShedInformation) :: si
+    type(ShedGridParams) :: shd
     type(SoilLevels) :: sl
     type(ClassParameters) :: cp
     type(SoilValues) :: sv
@@ -793,7 +673,6 @@ program RUNMESH
 !>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
 !> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
     type(OUT_FLDS) :: VR
-    type(ShedGridParams) :: shd
     type(dates_model) :: ts
     type(iter_counter) :: ic
     type(INFO_OUT) :: ifo
@@ -1169,27 +1048,11 @@ program RUNMESH
 !> DAN * (APR 20/08).
 
 !> ANDY * Allocate some variables
-!-    allocate(WF_NHYD(NA), WF_QR(NA), &
-!-             WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA), &
-!-             WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA))
     allocate(SNOGRD(NA))
-
-    !> ANDY * Zero everything we just allocated
-!-    WF_NHYD = 0.0
-!-    WF_QBASE = 0.0
-!-    WF_QI2 = 0.0
-!-    WF_QO1 = 0.0
-!-    WF_QO2 = 0.0
-!-    WF_QR = 0.0
-!-    WF_STORE1 = 0.0
-!-    WF_STORE2 = 0.0
-!-    WF_QI1 = 0.0
 
 1114 format(/1x, 'Error allocating ', a, ' variables.', &
             /1x, 'Check that these bounds are within an acceptable range.', /)
 1118 format(3x, a, ': ', i6)
-
-!> MET. FORCING DATA:
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
     allocate(TBARGAT(NML, IGND), &
@@ -1550,145 +1413,6 @@ program RUNMESH
                                              LOCATIONFLAG, STREAMFLOWOUTFLAG, &
                                              GENDIR_OUT)
 
-!> *********************************************************************
-!>  Open and read in values from MESH_input_reservoir.txt file
-!> *********************************************************************
-
-!-    open(21, file = 'MESH_input_reservoir.txt', status = 'old', action = 'read')
-!-    read(21, '(3i5)') WF_NORESV, WF_NREL, WF_KTR
-!-    WF_NORESV_CTRL = 0
-
-! allocate reservoir arrays
-!-    M_R = WF_NORESV
-!-    allocate(WF_IRES(M_R), WF_JRES(M_R), WF_RES(M_R), WF_R(M_R), WF_B1(M_R), WF_B2(M_R), &
-!-             WF_QREL(M_R), WF_RESSTORE(M_R), WF_RESNAME(M_R))
-
-!-    if (WF_NORESV > 0) then
-!-        do i = 1, WF_NORESV
-! KCK Added to allow higher precision gauge sites    
-!-            if (LOCATIONFLAG == 1) then
-!-                read(21, '(2f7.1, 2g10.3, 25x, a12, i2)') I_G, J_G, WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
-!-                WF_IRES(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
-!-                WF_JRES(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
-!-            else
-!-                read(21, '(2i5, 2g10.3, 25x, a12, i2)') WF_IRES(i), WF_JRES(i), WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
-!-                WF_IRES(i) = int((real(WF_IRES(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
-!-                WF_JRES(i) = int((real(WF_JRES(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
-!-            end if
-!> check if point is in watershed and in river reaches
-!-            WF_R(i) = 0
-!-            do j = 1, NA
-!-                if (WF_IRES(i) == shd%yyy(j) .and. WF_JRES(i) == shd%xxx(j)) then
-!-                    WF_R(i) = j
-!-                end if
-!-            end do
-!-            if (WF_R(i) == 0) then
-!-                print *, 'Reservoir Station: ', i, ' is not in the basin'
-!-                print *, 'Up/Down Coordinate: ', wf_ires(i), shd%iyMin
-!-                print *, 'Left/Right Coordinate: ', wf_jres(i), shd%jxMin
-!-                stop
-!-            end if
-!-            if (shd%IREACH(WF_R(i)) /= i) then
-!-                print *, 'Reservoir Station: ', i, ' is not in the correct reach'
-!-                print *, 'Up/Down Coordinate: ', wf_ires(i)
-!-                print *, 'Left/Right Coordinate: ', wf_jres(i)
-!-                print *, 'ireach value at station: ', wf_iy(i)
-!-                stop
-!-            end if
-!-            if (WF_B1(i) == 0.0) then
-!-                WF_NORESV_CTRL = WF_NORESV_CTRL + 1
-!-            end if
-!-        end do
-!-    end if
-!> leave file open and read in the reservoir files when needed
-
-!> *********************************************************************
-!> Open and read in values from MESH_input_streamflow.txt file
-!> *********************************************************************
-
-!-    open(22, file = 'MESH_input_streamflow.txt', status = 'old', action = 'read')
-!-    read(22, *)
-!-    read(22, *) WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
-
-! Allocate variable based on value from streamflow file
-!-    M_S = WF_NO !todo M_S is same as WF_NO and could be removed.
-
-!-    allocate(WF_IY(M_S), WF_JX(M_S), WF_S(M_S), WF_QHYD(M_S), WF_QHYD_AVG(M_S), WF_QHYD_CUM(M_S), &
-!-             WF_QSYN(M_S), WF_QSYN_AVG(M_S), WF_QSYN_CUM(M_S), WF_GAGE(M_S))
-
-!-    do i = 1, WF_NO
-!-        if (LOCATIONFLAG == 1) then
-!-            read(22, *) I_G, J_G, WF_GAGE(i)
-!-            WF_IY(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
-!-            WF_JX(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
-!-        else
-!-            read(22, *) WF_IY(i), WF_JX(i), WF_GAGE(i)
-!-            WF_IY(i) = int((real(WF_IY(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
-!-            WF_JX(i) = int((real(WF_JX(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
-!-        end if
-!-    end do
-!-    do i = 1, WF_NO
-!-        WF_S(i) = 0
-!-        do j = 1, NA
-!-            if (WF_JX(i) == shd%xxx(j) .and. WF_IY(i) == shd%yyy(j)) then
-!-                WF_S(i) = j
-!-            end if
-!-        end do
-!-        if (WF_S(i) == 0) then
-!-            print *, 'STREAMFLOW GAUGE: ', i, ' IS NOT IN THE BASIN'
-!-            print *, 'UP/DOWN', WF_IY(i), shd%iyMin, shd%yyy(j), shd%yCount
-!-            print *, 'LEFT/RIGHT', WF_JX(i), shd%jxMin, shd%xxx(j), shd%xCount
-!-            stop
-!-        end if
-!-    end do
-
-!> ric     initialise smoothed variables
-!-    wf_qsyn = 0.0
-!-    WF_QSYN_AVG = 0.0
-!-    wf_qhyd_avg = 0.0
-!-    wf_qsyn_cum = 0.0
-!-    wf_qhyd_cum = 0.0
-
-    !> Allocate the output variable for the streamflow hydrograph.
-!-    stfl%ns = WF_NO
-!-    allocate(stfl%qhyd(WF_NO), stfl%qsyn(WF_NO))
-!-    stfl%qhyd = 0.0
-!-    stfl%qsyn = 0.0
-
-!>MAM - The first stream flow record is used for flow initialization
-!-    read(22, *, iostat = IOS) (WF_QHYD(i), i = 1, WF_NO)
-
-      ! fixed streamflow start time bug. add in function to enable the
-      ! correct start time. Feb2009 aliu.
-!-    call Julian_Day_ID(WF_START_YEAR, WF_START_day, Jday_IND1)
-!-    call Julian_Day_ID(YEAR_START, JDAY_START, Jday_IND2)
-!    print *, WF_START_YEAR, WF_START_day, Jday_IND1
-!-    if (YEAR_START == 0) then
-!-        Jday_IND2 = Jday_IND1
-!-    end if
-!-    if (Jday_IND2 < Jday_IND1) then
-!-        print *, 'ERROR: Simulation start date too early, check ', &
-!-            ' MESH_input_streamflow.txt, The start date in ', &
-!-            ' MESH_input_run_options.ini may be out of range'
-!-        stop
-!-    end if
-!-    jday_ind_strm = (jday_ind2 - jday_ind1)*24/WF_KT
-
-         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         !skip the unused streamflow records in streamflow.txt .
-!-    do j = 1, jday_ind_strm
-!-        read(22, *, iostat = IOS)
-!-        if (IOS < 0) then
-!-            print *, 'ERROR: end of file reached when reading ', &
-!-                ' MESH_input_streamflow.txt, The start date in ', &
-!-                ' MESH_input_run_options.ini may be out of range'
-!-            stop
-!-        end if
-!-    end do
-          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!-    print *, 'Skipping', jday_ind_strm, 'Registers in streamflow file'
-!> leave unit open and read new streamflow each hour
-
 !todo - verify that all checks are needed and in the right spot
 !> *********************************************************************
 !> Check to make sure input values are consistent
@@ -1789,51 +1513,51 @@ program RUNMESH
 !>  that are listed in the streamflow file (subbasin)
 !> **********************************************************************
 
-!    if (SUBBASINFLAG > 0) then
-!        do i = 1, NA
-!            SUBBASIN(i) = 0
-!        end do
-!
-!!> Set values at guages to 1
-!        do i = 1, WF_NO
-!            SUBBASIN(WF_S(i)) = 1
-!        end do
-!
-!!> Set values of subbasin to 1 for all upstream grids
-!        SUBBASINCOUNT = 1
-!        do while (SUBBASINCOUNT > 0)
-!            SUBBASINCOUNT = 0
-!            do i = 1, NA - 1
-!                if (SUBBASIN(shd%NEXT(i)) == 1 .and. SUBBASIN(i) == 0) then
-!                    SUBBASIN(i) = 1
-!                    SUBBASINCOUNT = SUBBASINCOUNT + 1
-!                end if
-!            end do
-!        end do !while (SUBBASINCOUNT > 0)
-!
-!!> Set values of frac to 0 for all grids non-upstream grids
-!        SUBBASINCOUNT = 0
-!        do i = 1, NA
-!            if (SUBBASIN(i) == 0) then
-!                shd%FRAC(i) = 0.0
-!            else
-!                SUBBASINCOUNT = SUBBASINCOUNT + 1
-!            end if
-!        end do
-!
-!  !> MAM - Write grid number, grid fractional area and percentage of GRUs in each grid
-!        open(10, file = 'subbasin_info.txt')
-!        write(10, '(a7, 3x, a18, 3x, a58)') &
-!            'GRID NO', 'GRID AREA FRACTION', 'GRU FRACTIONS, GRU 1, GRU 2, GRU 3,... IN INCREASING ORDER'
-!        do i = 1, NA
-!            if (SUBBASIN(i) == 0) then
-!            else
-!                write(10, '(i5, 3x, f10.3, 8x, 50(f10.3, 3x))') i, shd%FRAC(i), (shd%lc%ACLASS(i, m), m = 1, NMTEST)
-!            end if
-!        end do
-!        close(10)
-!
-!    end if !(SUBBASINFLAG > 0) then
+!+    if (SUBBASINFLAG > 0) then
+!+        do i = 1, NA
+!+            SUBBASIN(i) = 0
+!+        end do
+
+!> Set values at guages to 1
+!+        do i = 1, WF_NO
+!+            SUBBASIN(WF_S(i)) = 1
+!+        end do
+
+!> Set values of subbasin to 1 for all upstream grids
+!+        SUBBASINCOUNT = 1
+!+        do while (SUBBASINCOUNT > 0)
+!+            SUBBASINCOUNT = 0
+!+            do i = 1, NA - 1
+!+                if (SUBBASIN(shd%NEXT(i)) == 1 .and. SUBBASIN(i) == 0) then
+!+                    SUBBASIN(i) = 1
+!+                    SUBBASINCOUNT = SUBBASINCOUNT + 1
+!+                end if
+!+            end do
+!+        end do !while (SUBBASINCOUNT > 0)
+
+!> Set values of frac to 0 for all grids non-upstream grids
+!+        SUBBASINCOUNT = 0
+!+        do i = 1, NA
+!+            if (SUBBASIN(i) == 0) then
+!+                shd%FRAC(i) = 0.0
+!+            else
+!+                SUBBASINCOUNT = SUBBASINCOUNT + 1
+!+            end if
+!+        end do
+
+  !> MAM - Write grid number, grid fractional area and percentage of GRUs in each grid
+!+        open(10, file = 'subbasin_info.txt')
+!+        write(10, '(a7, 3x, a18, 3x, a58)') &
+!+            'GRID NO', 'GRID AREA FRACTION', 'GRU FRACTIONS, GRU 1, GRU 2, GRU 3,... IN INCREASING ORDER'
+!+        do i = 1, NA
+!+            if (SUBBASIN(i) == 0) then
+!+            else
+!+                write(10, '(i5, 3x, f10.3, 8x, 50(f10.3, 3x))') i, shd%FRAC(i), (shd%lc%ACLASS(i, m), m = 1, NMTEST)
+!+            end if
+!+        end do
+!+        close(10)
+
+!+    end if !(SUBBASINFLAG > 0) then
 
 !> **********************************************************************
 !>  End of subbasin section
@@ -1865,9 +1589,6 @@ program RUNMESH
         if (OUTFIELDSFLAG == 1) call init_out(shd, ts, ic, ifo, vr)
     end if !(ipid == 0) then
 
-!> routing parameters
-!-    WF_ROUTETIMESTEP = 900
-!-    WF_TIMECOUNT = 0
     DRIVERTIMESTEP = DELT    ! Be sure it's REAL*8
 
 !* JAN: The first time throught he loop, jan = 1. Jan will equal 2 after that.
@@ -2237,23 +1958,6 @@ program RUNMESH
 
     if (ipid == 0) then
 
-    !> Streamflow output files.
-!-        if (STREAMFLOWOUTFLAG > 0) then
-
-        !> Daily streamflow file.
-!-            open(fls%fl(mfk%f70)%iun, &
-!todo: This creates a bug if a space doesn't exist in the name of the folder!
-!-                 file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // trim(adjustl(fls%fl(mfk%f70)%fn)), &
-!-                 iostat = ios)
-
-        !> Hourly and cumulative daily streamflow files.
-!-            if (STREAMFLOWOUTFLAG >= 2) then
-!-                open(71, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/MESH_output_streamflow_all.csv')
-!-                open(72, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/MESH_output_streamflow_cumulative.csv')
-!-            end if
-
-!-        end if !(STREAMFLOWOUTFLAG > 0) then
-
 !> *********************************************************************
 !> Open and read in values from r2c_output.txt file
 !> *********************************************************************
@@ -2336,16 +2040,6 @@ program RUNMESH
         print *, 'NUMBER OF GRID SQUARES IN South-North DIRECTION: ', shd%yCount
         print *, 'LENGTH OF SIDE OF GRID SQUARE IN M: ', shd%AL
         print *, 'NUMBER OF DRAINAGE OUTLETS: ', shd%NAA
-!-        print *, 'NUMBER OF STREAMFLOW GUAGES: ', WF_NO
-!-        do i = 1, WF_NO
-!-            print *, 'STREAMFLOW STATION: ', i, 'I: ', WF_IY(i), 'J: ', WF_JX(i)
-!-        end do
-!-        print *, 'NUMBER OF RESERVOIR STATIONS: ', WF_NORESV
-!-        if (WF_NORESV > 0) then
-!-            do i = 1, WF_NORESV
-!-                print *, 'RESERVOIR STATION: ', i, 'I: ', WF_IRES(i), 'J: ', WF_JRES(i)
-!-            end do
-!-        end if
         print *
         print *, 'Found these output locations:'
         print *, 'Output Directory, grid number, land class number'
@@ -2375,7 +2069,7 @@ program RUNMESH
 !                          RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
 !                          cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
 !
-!!> MAM - FOR FORCING DATA INTERPOLATION
+!> MAM - FOR FORCING DATA INTERPOLATION
 !                          FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
 !                          TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
 !                          IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
@@ -3243,51 +2937,6 @@ program RUNMESH
         call run_within_tile(shd, ts, ic, cm, wb, eng, sov, stfl, rrls)
 
 !> *********************************************************************
-!> Read in current reservoir release value
-!> *********************************************************************
-
-!> only read in current value if we are on the correct time step
-!> however put in an exception if this is the first time through (ie. jan = 1),
-!> otherwise depending on the hour of the first time step
-!> there might not be any data in wf_qrel, wf_qhyd
-!> make sure we have a controlled reservoir (if not the mod(HOUR_NOW, wf_ktr)
-!> may give an error. Frank S Jun 2007
-!-        if (WF_NORESV_CTRL > 0) then
-!-            if (mod(HOUR_NOW, WF_KTR) == 0 .and. MINS_NOW == 0) then
-!>        READ in current reservoir value
-!-                read(21, '(100f10.3)', iostat = IOS) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
-!-                if (IOS /= 0) then
-!-                    print *, 'ran out of reservoir data before met data'
-!-                    stop
-!-                end if
-!-            else
-!-                if (JAN == 1 .and. WF_NORESV_CTRL > 0) then
-!-                    read(21, '(100f10.3)', iostat = IOS) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
-!-                    rewind 21
-!-                    read(21, *)
-!-                    do i = 1, WF_NORESV
-!-                        read(21, *)
-!-                    end do
-!-                end if
-!-            end if
-!-        end if
-
-! *********************************************************************
-!> Read in current streamflow value
-!> *********************************************************************
-
-!> only read in current value if we are on the correct time step
-!> also read in the first value if this is the first time through
-!-        if (mod(HOUR_NOW, WF_KT) == 0 .and. MINS_NOW == 0 .and. JAN > 1) then
-!>       read in current streamflow value
-!-            read(22, *, iostat = IOS) (WF_QHYD(i), i = 1, WF_NO)
-!-            if (IOS /= 0) then
-!-                print *, 'ran out of streamflow data before met data'
-!-                stop
-!-            end if
-!-        end if
-
-!> *********************************************************************
 !> Set some more CLASS parameters
 !> *********************************************************************
 
@@ -3428,7 +3077,6 @@ program RUNMESH
                 TOTAL_STORE_2_M = INIT_STORE
             end if
 
-!>=========================================================================
 !> Initialization of the Storage field
             if (JAN == 1) then
                 do m = 1, NMTEST
@@ -3449,7 +3097,6 @@ program RUNMESH
 !> Start of the NML-based LSS loop.
 !> *********************************************************************
 
-!> ========================================================================
         if (ipid /= 0 .or. izero == 0) then
 
             call CLASSZ(0, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
@@ -3466,7 +3113,6 @@ program RUNMESH
                         il1, il2, NML, IGND, N, &
                         DriftGAT, SublGAT)
 
-!> ========================================================================
 !> ALBEDO AND TRANSMISSIVITY CALCULATIONS; GENERAL VEGETATION
 !> CHARACTERISTICS.
             call CLASSA(FC, FG, FCS, FGS, ALVSCN, ALIRCN, &
@@ -3499,10 +3145,8 @@ program RUNMESH
                         JDAY_NOW, NML, il1, il2, &
                         JLAT, N, ICAN, ICAN + 1, IGND, IDISP, IZREF, &
                         IWF, IPAI, IHGT, IALC, IALS, IALG)
-!
-!-----------------------------------------------------------------------
+
 !          * SURFACE TEMPERATURE AND FLUX CALCULATIONS.
-!
             call CLASST(TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
                         THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, TCTOPG, TCBOTG, &
                         GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, G12CS, G12GS, &
@@ -3533,10 +3177,8 @@ program RUNMESH
                         RMLCSVEG, RMLCGVEG, FIELDSM, WILTSM, &
                         ITC, ITCG, ITG, NML, il1, il2, JLAT, N, ICAN, &
                         IGND, IZREF, ISLFD, NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI)
-!
-!-----------------------------------------------------------------------
+
 !          * WATER BUDGET CALCULATIONS.
-!
             if (JDAY_NOW == 1 .and. NCOUNT == 48) then
        ! bruce davison - only increase NMELT if we don't start the run on January 1st, otherwise t0_ACC allocation is too large
        ! and the model crashes if the compiler is checking for array bounds when t0_ACC is passed into CLASSW with size NMELT
@@ -3595,10 +3237,8 @@ program RUNMESH
                         HCPSCS, HCPSGS, HCPSC, HCPSG, &
                         TSNOWC, TSNOWG, RHOSC, RHOSG, &
                         XSNOWC, XSNOWG, XSNOCS, XSNOGS)
-!
-!========================================================================
+
 !          * SINGLE COLUMN BLOWING SNOW CALCULATIONS.
-!
             if (PBSMFLAG == 1) then
                 call PBSMrun(ZSNOW, WSNOGAT, SNOGAT, RHOSGAT, TSNOGAT, HTCSGAT, &
                              ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
@@ -3614,8 +3254,7 @@ program RUNMESH
                              TSNOdsGAT, &
                              NML, il1, il2, N, ZRFMGAT, ZOMLCS, ZOMLNS)
             end if
-!========================================================================
-!
+
             call CLASSZ(1, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
                         FSGVGAT, FLGVGAT, HFSCGAT, HEVCGAT, HMFCGAT, HTCCGAT, &
@@ -3629,19 +3268,14 @@ program RUNMESH
                         sl%DELZ, FCS, FGS, FC, FG, &
                         il1, il2, NML, IGND, N, &
                         DriftGAT, SublGAT)
-!
-!=======================================================================
-!
+
 !          *Redistribute blowing snow mass between GRUs
-!
             call REDISTRIB_SNOW(NML, 1, NA, NTYPE, NML, TSNOGAT, ZSNOW, &
                                 RHOSGAT, SNOGAT, TSNOCS, ZSNOCS, HCPSCS, RHOSCS, TSNOGS, &
                                 ZSNOGS, HCPSGS, RHOSGS, TSNOWC, ZSNOWC, HCPSC, RHOSC, TSNOWG, &
                                 ZSNOWG, HCPSG, RHOSG, cp%GCGRD, shd%lc%ILMOS, DriftGAT, FAREGAT, &
                                 TSNOdsGAT, DistribGAT, WSNOCS, WSNOGS, FCS, FGS, FC, FG, DepositionGAT, &
                                 TROOGAT, ROFOGAT, TROFGAT, ROFGAT, ROFNGAT, PCPGGAT, HTCSGAT, WSNOGAT, N)
-!
-!=======================================================================
             ROFGAT = ROFGAT - UMQ
 
         end if !(ipid /= 0 .or. izero == 0) then
@@ -3788,8 +3422,6 @@ program RUNMESH
 !> Start of book-keeping and grid accumulation.
 !> *********************************************************************
 
-!
-!=======================================================================
 !     * WRITE FIELDS FROM CURRENT TIME STEP TO OUTPUT FILES.
 
         !> Write to CLASSOF* output files.
@@ -4177,9 +3809,6 @@ program RUNMESH
             HTCGRD = 0.0
             QFCGRD = 0.0
             GFLXGRD = 0.0
-!>
-!>*******************************************************************
-!>
 
     !> Grid data for output.
             md%fsdown = cm%clin(cfk%FB)%climvGrd
@@ -4742,25 +4371,6 @@ program RUNMESH
 !> *********************************************************************
 
         if (ipid == 0) then
-!-            call WF_ROUTE(WF_ROUTETIMESTEP, WF_R1, WF_R2, &
-!-                          shd%NA, shd%NAA, shd%lc%NTYPE, shd%yCount, shd%xCount, shd%iyMin, &
-!-                          shd%iyMax, shd%jxMin, shd%jxMax, shd%yyy, shd%xxx, shd%IAK, shd%IROUGH, &
-!-                          shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
-!-                          shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
-!-                          WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
-!-                          WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
-!-                          WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
-!-                          WF_B1, WF_B2, WF_QREL, WF_QR, &
-!-                          WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
-!-                          WF_STORE1, WF_STORE2, &
-!-                          ic%dts, (wb_h%rof/ic%dts), shd%NA, M_C, M_R, M_S, shd%NA, &
-!-                          WF_S, JAN, ic%now_jday, ic%now_hour, ic%now_mins)
-!-            do i = 1, WF_NO
-!-                WF_QSYN(i) = WF_QO2(WF_S(i))
-!-                WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + WF_QO2(WF_S(i))
-!-                WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + WF_QO2(WF_S(i))
-!-                WF_QHYD_AVG(i) = WF_QHYD(i) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
-!-            end do
 
             if (JAN == 1) then
 !>     this is done so that INIT_STORE is not recalculated for
@@ -4769,41 +4379,13 @@ program RUNMESH
             end if
 
 !> *********************************************************************
-!> Write measured and simulated streamflow to file and screen
-!> Also write daily summary (pre, evap, rof)
+!> Write output to console.
 !> *********************************************************************
-
-    !> Write output for hourly streamflow.
-!-            if (STREAMFLOWFLAG == 1 .and. STREAMFLOWOUTFLAG >= 2) then
-!-                write(71, 5085) JDAY_NOW, HOUR_NOW, MINS_NOW, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
-!-            end if
 
             if (NCOUNT == 48) then !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
 
-!-                do i = 1, WF_NO
-!-                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + WF_QHYD_AVG(i)
-!-                end do
-
-    !> Write output for daily and cumulative daily streamflow.
-!-                if (STREAMFLOWOUTFLAG > 0) then
-!-                    write(fls%fl(mfk%f70)%iun, 5084) JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
-!-                    if (STREAMFLOWOUTFLAG >= 2) then
-!-                        write(72, 5084) JDAY_NOW, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
-!-                    end if
-!-                end if
-
-!-5084    format(i5, ',', f10.3, 999(',', f10.3))
-!-5085    format(3(i5, ','), f10.3, 999(',', f10.3))
-
                 if (ro%VERBOSEMODE > 0) then
-!-                    if (WF_NUM_POINTS > 1) then !FOR MORE THAN ONE OUTPUT
-!-                        print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
-!-                    else !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
-!-                        j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
-!-                        print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO), &
-!-                            wb%pre(j), wb%evap(j), wb%rof(j)
-!-                    end if
                     write(6, '(2i5)', advance = 'no') YEAR_NOW, JDAY_NOW
                     if (printoutstfl) then
                         do j = 1, stfl%ns
@@ -4821,8 +4403,6 @@ program RUNMESH
                         if (FTEST > FBEST) goto 199
                     end if
                 end if
-
-!-                WF_QSYN_AVG = 0.0
 
                 wb%pre = 0.0
                 wb%evap = 0.0
@@ -5348,11 +4928,6 @@ program RUNMESH
 
     !> Close model output file.
     close(58)
-
-    !> Close CSV streamflow files.
-!-    close(fls%fl(mfk%f70)%iun)
-!-    close(71)
-!-    close(72)
 
     !> Close the SWE CSV files.
     close(85)
