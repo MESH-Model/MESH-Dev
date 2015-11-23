@@ -19,6 +19,8 @@ module model_files
         use model_files_variabletypes
         use model_files_variables
         use SIMSTATS_config, only: mtsfl, mtsk, init_metricsout_files
+        use process_WF_ROUTE_config, only: WF_RTE_fls, WF_RTE_flks, configure_WF_ROUTE_fls
+        use process_SA_RTE, only: SA_RTE_fls, SA_RTE_flkeys, configure_SA_RTE_fls
 
         !> Input variables.
         !* fld: Name of the file that contains file information.
@@ -58,15 +60,10 @@ module model_files
         flg%fl(mfk%f18)%fn = 'MESH_ggeo.ini'
         flg%fl(mfk%f18)%iun = 18
 
-        flg%fl(mfk%f31)%fn = 'WR_runoff.r2c'
-        flg%fl(mfk%f31)%iun = 31
-
-        flg%fl(mfk%f32)%fn = 'WR_recharge.r2c'
-        flg%fl(mfk%f32)%iun = 32
-
         flg%fl(mfk%f900)%fn = 'Basin_average_water_balance.csv'
         flg%fl(mfk%f900)%iun = 900
 
+!todo: remove this
         flg%fl(mfk%f70)%fn = 'MESH_output_streamflow.csv'
         flg%fl(mfk%f70)%iun = 70
 
@@ -76,28 +73,44 @@ module model_files
         flg%fl(mfk%f883)%fn = 'int_statVariables.seq'
         flg%fl(mfk%f883)%iun = 883
 
+        !> For files used by SIMSTATS.
         !> Check if the array to keep file information for the metrics
         !> is allocated.
         if (.not. allocated(mtsfl%fl)) call init_metricsout_files()
+        mtsfl%fl(mtsk%fo)%fn   = 'function_out.txt'
+        mtsfl%fl(mtsk%MC)%fn   = 'MonteCarlo.txt'
+        mtsfl%fl(mtsk%NSE)%fn  = 'NS.txt'
+        mtsfl%fl(mtsk%NSW)%fn  = 'NSW.txt'
+        mtsfl%fl(mtsk%RMSE)%fn = 'drms.txt'
+        mtsfl%fl(mtsk%ABSE)%fn = 'abserr.txt'
+        mtsfl%fl(mtsk%out)%fn  = 'Metrics_Out.txt'
+        mtsfl%fl(mtsk%PE)%fn   = 'pre_emption_value.txt'
 
-        !> For files used by SIMSTATS
-        mtsfl%fl(mtsk%fo   )%fn = 'function_out.txt'
-        mtsfl%fl(mtsk%MC   )%fn = 'MonteCarlo.txt'
-        mtsfl%fl(mtsk%NSE  )%fn = 'NS.txt'
-        mtsfl%fl(mtsk%NSW  )%fn = 'NSW.txt'
-        mtsfl%fl(mtsk%RMSE )%fn = 'drms.txt'
-        mtsfl%fl(mtsk%ABSE )%fn = 'abserr.txt'
-        mtsfl%fl(mtsk%out  )%fn = 'Metrics_Out.txt'
-        mtsfl%fl(mtsk%PE   )%fn = 'pre_emption_value.txt'
+        !> For files used by WF_ROUTE.
+        if (.not. allocated(WF_RTE_fls%fl)) call configure_WF_ROUTE_fls()
+        WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%fn = 'MESH_input_streamflow.txt'
+        WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun = 22
+        WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn = 'MESH_input_reservoir.txt'
+        WF_RTE_fls%fl(WF_RTE_flks%resv_in)%iun = 21
+        WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%fn = 'MESH_output_streamflow.csv'
+        WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%iun = 70
+        WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%fn = 'MESH_output_streamflow_cumulative.csv'
+        WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun = 72
+        WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%fn = 'MESH_output_streamflow_all.csv'
+        WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun = 71
+
+        !> For files used by Standalone RTE.
+        if (.not. allocated(SA_RTE_fls%fl)) call configure_SA_RTE_fls()
+        SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%fn  = 'WR_runoff.r2c'
+        SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%iun = 31
+        SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%fn  = 'WR_recharge.r2c'
+        SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%iun = 32
 
         !> Replace default file information with values from file.
         if (present(fld)) then
 
             !> Open the file containing file information.
-            open(unit   = 271                , &
-                 file   = trim(adjustl(fld)) , &
-                 status = 'old'              , &
-                 iostat = IOS                )
+            open(unit = 271, file = trim(adjustl(fld)), status = 'old', action = 'read', iostat = IOS)
             print *, trim(adjustl(fld))
 
             !> Read the information from file.
@@ -134,9 +147,8 @@ module model_files
 
                 else if (trim(adjustl(str1)) == 'metrics_out') then
                     phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
-                    mtsfl%fl(mtsk%out)%fn = 'Metrics_Out.txt'
-!                    metricsout_file%fn = phtfl
-!                    metricsout_file%isInit = .true.
+                    mtsfl%fl(mtsk%out)%fn = phtfl
+!                    mtsfl%fl(mtsk%out)%isInit = .true.
 
                 else if (trim(adjustl(str1)) == 'basin_wb') then
                     phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
@@ -145,8 +157,10 @@ module model_files
 
                 else if (trim(adjustl(str1)) == 'stream_flow') then
                     phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
+!todo: update this
                     flg%fl(mfk%f70)%fn = phtfl
-!                    flg%fl(mfk%f70)%isInit = .true.
+!                    WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%fn = phtfl
+!                    WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%isInit = .true.
 
                 else if (trim(adjustl(str1)) == 'ggeo_flux') then
                     phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))

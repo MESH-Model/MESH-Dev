@@ -256,15 +256,6 @@ C     &          line
       shd%CoordSys%Proj = header%r2cp%csp%projection
       shd%CoordSys%Ellips = header%r2cp%csp%ellipsoid
 
-!     ugly but effective
-!-+todo: replace this with string utilities
-!      open(unit=99, file='junk', status='unknown')
-!      write(99, 99000) header%r2cp%csp%zone
-!99000 format(i10)
-!      rewind 99
-!      read(99, 99001) shd%CoordSys%Zone
-!99001 format(a10)
-!      close(unit=99, status='delete')
       call writenum(header%r2cp%csp%zone, shd%CoordSys%Zone, 'i10')
 
       shd%xCount = header%r2cp%xCount
@@ -316,17 +307,11 @@ C/////////////////////////
 C//////////////////////////////////////////////
 
 !       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!Dan Princz changed this
-!       eventually, imax & jnmax should be replaced everywhere in the code
-!        imax=ycount
-!   jmax=xcount
-!       eventually, IMAXI & jnmax should be replaced everywhere in the code
-!      IMAXI = shd%yCount
-!      JMAXI = shd%xCount
+!        imax = shd%yCount
+!        jmax = shd%xCount
 
 !       added ll separation Jul. 27/04  nk
 C        if(coordsys1.eq.'LATLONG   ')then !commented out line below added by Dave
-CDAN if(IsLatLong(header%r2cp%csp).eq.(.true.))then
       if (IsLatLong(header%r2cp%csp)) then
         shd%iyMin = int(shd%yOrigin*60.0)
         shd%iyMax = int((shd%yOrigin + shd%yCount*shd%yDelta)*60.0)
@@ -353,15 +338,10 @@ CDAN      print*,'avant calling program flg,328'
 
 !      nastart = 1
 !      naend = naa
-!Dan Princz changed this
-CDAN      imin=1
-!      IMINI = 1
-CDAN      jmin=1
-!      JMINI = 1
-CDAN      ib=imin+1
-!      ib = IMINI + 1
-CDAN      it=imax-1
-!      it = IMAXI - 1
+!      imin = 1
+!      jmin = 1
+!      ib = imin + 1
+!      it = imax - 1
 
 !     rl() and ch_length() are the same thing. ch_length used in bsn
 
@@ -374,8 +354,6 @@ CDAN      it=imax-1
 !            Probably not a good idea to change for spl because of opt.
 
       if (iallcnt5 == 1) then
-!Dan Princz changed this
-!DAN       allocate(s(imax,jmax),dummy(imax,jmax),rl(na),
 
         allocate(s(shd%yCount, shd%xCount),
 !     *    dummy(shd%yCount, shd%xCount),
@@ -681,13 +659,9 @@ C//////////////////////////////////////////////
 
 !      ichsm = 1
 !     if one is no good, kill run
-!Dan Princz changed this
-CDAN      do i=1,min(25,imax)
-!      do i = 1, min(25, IMAXI)
+!      do i=1,min(25,imax)
 !        chsm = 0
-!Dan Princz changed this
-CDAN        do j=jmin,jmax
-!        do j = JMINI, JMAXI
+!        do j=jmin,jmax
 !          chsm = chsm + s(i, j)
 !        end do
 !       print*,' i,shksun(i),chsm /',i,chksum(i),chsm
@@ -700,10 +674,8 @@ CDAN        do j=jmin,jmax
 !     when the top left hand corner of the grid are all zeros
 !     the checksums are all zero and the program would run.
 !      chsm = 0
-CDAN do i=1,min(25,imax)
-!      do i = 1, min(25, IMAXI)
-CDAN        do j=jmin,jmax
-!        do j = JMINI, JMAXI
+!      do i=1,min(25,imax)
+!        do j=jmin,jmax
 !          chsm = chsm + s(i, j)
 !        end do
 !      end do
@@ -722,10 +694,7 @@ c endif
 !     rev. 9.1.46  Jul.  17/03  - WATFLOOD LITE incorporated
 !     WATFLOOD LT
 !     WATFLOOD LT
-!Dan Princz changed this
-CDAN      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.2000.0)then
-!      if (IMAXI <= 7 .and. JMAXI <= 7 .and. na <= 15 .and.
-!     +  al <= 2000.0) then
+!      if(imax.le.7.and.jmax.le.7.and.na.le.15.and.al.le.2000.0)then
 !       when ever these conditions are met, the program will run
 !       Since the gr10k files exceed these bounds, the messages will
 !       appropriate.
@@ -883,9 +852,7 @@ c         endif
 !      endif
 
 c!     WRITE THE MAP INFORMATION TO THE /SPL/SIMOUT/PIC.LST FILE:
-!Dan Princz changed this
-CDANc      write(56,9005)na,jmax,imax
-c      write(56,9005)na,JMAXI,IMAXI
+c      write(56,9005)na,jmax,imax
 c      do n=1,na
 c         write(56,9005)n,yyy(n),xxx(n),next(n)
 c      end do
@@ -987,9 +954,7 @@ c      endif
 !     *    sumffs(na, ntype + 1), snow(na, ntype + 1), sumrff(na),
 !     *    rechrg(na),
 !     *pot(ntype+1),potfs(ntype+1),    moved to rrpar  nk  May 15/07
-!Dan Princz changed this
-CDAN     *  qlz(na),sr(ntype+1),x4(ntype+1),x5(ntype+1),q1(na,ntype+1),
-!     *    qlz(na), sr(ntype + 1), x4_R(ntype + 1), x5_R(ntype + 1),
+!     *    qlz(na), sr(ntype + 1), x4(ntype + 1), x5(ntype + 1),
 !     *    q1(na, ntype + 1),
 !     *    q1fs(na, ntype + 1), qint(na, ntype + 1),
 !     *    qintfs(na, ntype + 1),

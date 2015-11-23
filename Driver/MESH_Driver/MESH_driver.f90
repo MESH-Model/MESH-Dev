@@ -102,9 +102,15 @@ program RUNMESH
     use FLAGS
 
     use module_mpi_flags
+    use module_mpi_shared_variables
     use module_mpi
 
+    use sa_mesh_run_within_tile
+    use sa_mesh_run_within_grid
+    use sa_mesh_run_between_grid
+
     use MODEL_OUTPUT
+    use model_output_variabletypes
     use climate_forcing
     use model_dates
     use SIMSTATS_config
@@ -119,7 +125,7 @@ program RUNMESH
     !> istop: To stop all MPI process
     !* inp: Number of active tasks.
     !* ipid: Current process ID.
-    integer :: ierr = 0, inp = 1, ipid = 0
+    integer :: ierr = 0
     integer ipid_recv, itag, izero, ierrcode, istop
     logical lstat
 
@@ -152,38 +158,18 @@ program RUNMESH
 !> DAN  USE RTE SUBROUTINES FOR READING EVENT FILE AND SHD FILE, AND
 !> DAN  WRITING R2C-FORMAT OUTPUT FILES      
 !>  INTEGER CONSTANTS.
-!INTEGER ILG
 !INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
     integer, parameter :: ICAN = 4, ICP1 = ICAN + 1, ICTEM = 1 !Number of CTEM vegetation categories (set to 1 if not using CTEM)
-    integer M_S, M_R
     integer, parameter :: M_C = 5
-!INTEGER,PARAMETER :: M_S=290, M_R=7, M_C=5
-!M_S and M_R are now read in and used to allocate the appropriate arrays - Frank S Jul 2013
-!todo it should be read in from the shd file
-!todo M_S could be removed as it is now just a surrogate of WF_NO (KCK)
 
 !INTEGER IGND
     real IGND_TEST, IGND_DEEP
 
-!> WATERSHED RELATED VARIABLES
-!    integer LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX, LONDEGMIN, &
-!        LONMINMIN, LONDEGMAX, LONMINMAX
-!    integer WF_IYMAX, WF_JXMAX
-!> note, there are more watershed related variables declared in mesh_input_module.f
-
-!    real(kind = 8) LATLENGTH, LONGLENGTH
-!    real(kind = 8) WF_AL
-!    real WF_LAND_MAX, WF_LAND_SUM
-!    integer WF_LAND_COUNT
-
 !> IOSTAT VARIABLE
-    integer IOS, IOS_EVT
+    integer IOS
 
 !> FOR OUTPUT
     character(450) GENDIR_OUT
-
-    !> For R2C-format out
-    integer rte_year_now, rte_month_now, rte_day_now, rte_hour_now
 
 !todo clean up commets and arrange variables a bit better
 
@@ -193,43 +179,15 @@ program RUNMESH
 !todo are in groups that make sense
     real basin_SCA
     real basin_SWE
-!> STREAMFLOW VARIABLES
-!* WF_GAGE: GAUGE IDENTIFIER (8 CHARACTER STRING)
-!* WF_NO: NUMBER OF STREAMFLOW GAUGES
-!* WF_NL: NUMBER OF DATA POINTS
-!* WF_MHRD: NUMBER OF HOURS OF DATA PER MONTH
-!* WF_KT: HOURLY INCREMENT FOR STREAMFLOW INPUT (24 = DAILY)
-!* WF_IY: Y-DIRECTION GAUGE CO-ORDINATE (UTM OR LATLONG)
-!* WF_JX: X-DIRECTION GAUGE CO-ORDINATE (UTM OR LATLONG)
-!* WF_S: GAUGE'S PARENT GRID SQUARE
-!* WF_QHYD: STREAMFLOW VALUE (_AVG = DAILY AVERAGE)
-!* WF_QSYN: SIMULATED STREAFLOW VALUE (_AVG = DAILY AVERAGE)
-!* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
-!* WF_START_DAY OBSERVED STREAMFLOW START DAY
-!* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
-    integer WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, &
-        WF_START_DAY, WF_START_HOUR
-    integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
-    real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
-    real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
-    character(8), dimension(:), allocatable :: WF_GAGE
 
-!> RESERVOIR VARIABLES
-    integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R
-    real, dimension(:), allocatable :: WF_B1, WF_B2, WF_QREL, WF_RESSTORE
-    character(8), dimension(:), allocatable :: WF_RESNAME
-
-!> FOR BASEFLOW INITIALIZATION
+!> FOR INITIALIZATION OF BASIN STORAGE
     integer JAN
     integer imonth_now, imonth_old
 
 !>     FOR ROUTING
 !* WF_R1: MANNING'S N FOR RIVER CHANNEL
 !* WF_R2: OPTIMIZED RIVER ROUGHNESS FACTOR
-!* WF_QO2: SIMULATED STREAMFLOW VALUE
     real WF_R1(M_C), WF_R2(M_C)
-    real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI2, &
-        WF_QO1, WF_QO2, WF_QR, WF_STORE1, WF_STORE2, WF_QI1
 
 ! Saul=======
 !* HOURLY_START_*: Start day/year for recording hourly averaged data
@@ -240,8 +198,6 @@ program RUNMESH
         DAILY_STOP_DAY
     integer HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
         DAILY_STOP_YEAR
-    integer JDAY_IND_STRM, JDAY_IND1, JDAY_IND2, JDAY_IND3
-!*******************************************************************************
 
 !> LAND SURFACE DIAGNOSTIC VARIABLES.
 
@@ -304,13 +260,9 @@ program RUNMESH
 
 !>     * CONSTANTS (PARAMETER DEFINITIONS):
 
-!* NA: MAXIMUM ALLOWABLE NUMBER OF GRID SQUARES
-!* NTYPE: MAXIMUM ALLOWABLE NUMBER OF GRUS
-!* ILG: MAXIMUM ALLOWABLE SINGLE-DIMENSION ARRAY LENGTH
 !* ICAN: MAXIMUM ALLOWABLE NUMBER OF LAND COVER TYPES
 !* ICP1: MAXIMUM ALLOWABLE NUMBER OF LAND COVER TYPES INCLUDING
 !*       URBAN AREAS
-!* IGND: MAXIMUM ALLOWABLE NUMBER OF SOIL LAYERS
 !* M_X: MAXIMUM ALLOWABLE NUMBER OF GRID COLUMNS IN SHD FILE
 !* M_Y: MAXIMUM ALLOWABLE NUMBER OF GRID ROWS IN SHD FILE
 !* M_S: MAXIMUM ALLOWABLE NUMBER OF STREAMFLOW GAUGES
@@ -322,7 +274,7 @@ program RUNMESH
 !> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
 !> ANDY *    INTEGER, PARAMETER :: M_G = 5
-    character(24) :: VERSION = 'TRUNK (910)'
+    character(24) :: VERSION = 'TRUNK (918)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
     logical VER_OK
@@ -360,59 +312,10 @@ program RUNMESH
         INDEPPAR, DEPPAR, PAS, NSUM_TOTAL
 !  CONFLAGS, OPTFLAGS, INDEPPAR, DEPPAR, PAS
     logical OPN
-!>
-!>*******************************************************************
-!>
-!>  BASIN INFORMATION AND COUNTS:
-!* WF_NA: NUMBER OF GRID SQUARES
-!* NAA: NUMBER OF GRID OUTLETS
-!* WF_NTYPE: NUMBER OF GRUS
-!* NRVR: NUMBER OF RIVER CLASSES
-!* WF_IMAX: NUMBER OF GRID COLUMNS IN BASIN
-!* WF_JMAX: NUMBER OF GRID ROWNS IN BASIN
-!* AL: SINGLE-DIMENSION GRID SQUARE LENGTH
-!* LAT/LONG, SITE LOCATION INFORMATION:
-!* iyMin: MINIMUM Y-DIRECTION GRID CO-ORDINATE (UTM)
-!* iyMax: MAXIMUM Y-DIRECTION GRID CO-ORDINATE (UTM)
-!* jxMin: MINIMUM X-DIRECTION GRID CO-ORDINATE (UTM)
-!* jxMax: MAXIMUM X-DIRECTION GRID CO-ORDINATE (UTM)
-!* GRDN: GRID NORTHING
-!* GRDE: GRID EASTING
-!* LATLENGTH: SINGLE SIDE LENGTH OF GRID SQUARE IN DEGREES
-!*            LATITUDE
-!* LONGLENGTH: SINGLE SIDE LENGTH OF GRID SQUARE IN DEGREES
-!*             LONGITUDE
-!>************************************************************
-!>
-!> RESERVOIR MEASUREMENTS:
-!* WF_RESNAME: RESERVOIR IDENTIFIER (8 CHARACTER STRING)
-!* WF_NORESV: NUMBER OF RESERVOIRS
-!* WR_NREL: NUMBER OF DATA POINTS
-!* WF_KTR: HOURLY INCREMENT FOR RESERVOIR INPUR (24 = DAILY)
-!* WF_IRES: Y-DIRECTION GAUGE CO-ORDINATE
-!* WF_JRES: X-DIRECTION GAUGE CO-ORDINATE
-!* WF_R: RESERVOIR'S PARENT GRID SQUARE
-!* WF_QREL: RESERVOIR VALUE
 
-    integer WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
-    integer WF_ROUTETIMESTEP, WF_TIMECOUNT, DRIVERTIMESTEP
-!>
-    real I_G, J_G
-!* I_G: REAL TEMPORARY IY COORDINATE FOR STREAM AND RESERVOIR GAUGES
-!* J_G: REAL TEMPORARY JX COORDINATE FOR STREAM AND RESERVOIR GAUGES
-!>*******************************************************************
-!>
-!* rte_frames_now: FRAME NUMBER BEING WRITTEN TO R2C-FORMAT FILE
-!* rte_frames_total: TOTAL NUMBER OF FRAMES IN R2C-FORMAT FILE (TOTAL
-!*            NUMBER OF FRAMES IS NEVER KNOWN, IS ALWAYS SET TO
-!*            rte_frames_total + 1)
-    integer rte_frames_now, rte_frames_total
+    integer DRIVERTIMESTEP
+
     integer FRAME_NO_NEW
-!* rte_runoff: HOURLY SIMULATED RUNOFF
-!* rte_recharge: HOURLY SIMULATED RECHARGE
-!* rte_leakage: UNKNOWN, BUT MAY BE USED IN THE FUTURE
-    real, dimension(:, :), allocatable :: rte_runoff, rte_recharge, rte_leakage
-!-* LEAKAGE: UNKNOWN, BUT MAY BE USED IN THE FUTURE
 
 !> GRID OUTPUT POINTS
 !* BNAM: TEMPORARY HOLD FOR OUTPUT DIRECTORY (12 CHARACTER STRING)
@@ -494,9 +397,6 @@ program RUNMESH
      
     real, dimension(:, :, :), allocatable :: TSFSROW
     real, dimension(:, :), allocatable :: TSFSGAT
-
-!> GATHER-SCATTER COUNTS:
-!-INTEGER, DIMENSION(:), ALLOCATABLE :: ILMOS, JLMOS, IWMOS, JWMOS
 !>
 !>*******************************************************************
 !>
@@ -556,12 +456,6 @@ program RUNMESH
     real, dimension(:), allocatable :: DDGAT, MANNGAT
     real, dimension(:, :), allocatable :: BTC, BCAP, DCOEFF, BFCAP, &
         BFCOEFF, BFMIN, BQMAX
-
-!> CONTROL FLAGS
-!* ALL: DEFINITIONS ARE WRITTEN JUST BEFORE RUN_OPTIONS.INI IS
-!*      OPENED
-!* RELFLG: RELEASE-MATCH STRICTNESS
-!INTEGER :: RELFLG
 !>
 !>*******************************************************************
 !>
@@ -734,11 +628,6 @@ program RUNMESH
         GRKSORG
     real, dimension(18, 4, 2) :: GROWYR
 
-!-    integer found
-
-!-    character(10) time
-!-    character(8) cday
-
 !> **********************************************************************
 !>  For cacluating the subbasin grids
 !> **********************************************************************
@@ -763,56 +652,38 @@ program RUNMESH
 !> FIND_DAY: SUBROUTINE USED TO CONVERT JULIAN DAY FROM YEAR START
 !>           INTO DAY FROM MONTH START (1 TO 31)
 
-!> DAN * VARIABLES:
-
-!* xCount: NUMBER OF GRID SQUARES IN X-DIRECTION OF
-!*                      BASIN (COLUMNS) (JMAX)
-!* yCount: NUMBER OF GRID SQUARES IN Y-DIRECTION OF
-!*                      BASIN (ROWS) (IMAX)
-!* AL: SINGLE GRID SIDE LENGTH IN METRES (AL)
-!* NA: NUMBER OF GRID SQUARES IN BASIN (WF_NA)
-!* NAA: NUMBER OF GRID SQUARE OUTLETS IN BASIN (NAA)
-!* NTYPE: NUMBER OF GRUS (WF_NTYPE)
-!* FRAC: GRID FRACTION (previously WF_FRAC)
-!* ACLASS: PERCENT-GRU FRACTION FOR EACH GRID SQUARE
-!* CoordSys: CO-ORDINATE SYSTEM (FROM BASIN SHD
-!*                           FILE)
-!* Zone: CO-ORDINATE SYSTEM (FROM BASIN SHD FILE)
-!* Datum: CO-ORDINATE SYSTEM (FROM BASIN SHD FILE)
-!* xOrigin: X-DIRECTION CO-ORDINATE OF BASIN GRID
-!*                        (FROM BASIN SHD FILE)
-!* yOrigin: Y-DIRECTION CO-ORDINATE OF BASIN GRID
-!*                        (FROM BASIN SHD FILE)
-!* xDelta: AVERAGE DIFFERENCE BETWEEN TWO X-DIRECTION
-!*                      SIDES OF GRID SQUARE (FROM BASIN SHD FILE)
-!* yDelta: AVERAGE DIFFERENCE BETWEEN TWO Y-DIRECTION
-!*                      SIDES OF GRID SQUARE (FROM BASIN SHD FILE)
-!* yyy: Y-DIRECTION GRID SQUARE CO-ORDINATE (YYY), aka column coordinate
-!* xxx: X-DIRECTION GRID SQUARE CO-ORDIANTE (XXX), aka row coordinate
-
 !> These are the types defined in mesh_input_module.f that contain arrays
 !> that need to be allocated in read_initial_inputs.f.
     type(OutputPoints) :: op
-!+    type(ShedInformation) :: si
+    type(ShedGridParams) :: shd
     type(SoilLevels) :: sl
     type(ClassParameters) :: cp
     type(SoilValues) :: sv
     type(HydrologyParameters) :: hp
-
     type(fl_ids) :: fls
+
+    !* printoutwb: Print components of the water balance to the
+    !*             console if enabled.
+    logical printoutwb
+
+    !* printoutstfl: Print members of the simulation hydrograph to the
+    !*               console if enabled.
+    logical printoutstfl, printoutqhyd
 
 !>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
 !> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
     type(OUT_FLDS) :: VR
-    type(ShedGridParams) :: shd
-    type(DATES_MODEL) :: TS
-    type(INFO_OUT) :: IOF
+    type(dates_model) :: ts
+    type(iter_counter) :: ic
+    type(INFO_OUT) :: ifo
     type(CLIM_INFO) :: cm
     type(met_data) :: md
     type(CLASSOUT_VARS) :: co
     type(water_balance) :: wb, wb_h
     type(energy_balance) :: eng
     type(soil_statevars) :: sov
+    type(streamflow_hydrograph) :: stfl
+    type(reservoir_release) :: rrls
 
     logical R2COUTPUT
     integer, parameter :: R2CFILEUNITSTART = 500
@@ -871,10 +742,6 @@ program RUNMESH
     common /CLASSD2/ AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
 
 !> THE FOLLOWING COMMON BLOCKS ARE DEFINED FOR WATROF
-!-COMMON    /WATFLGS/   VICEFLG, PSI_LIMIT, HICEFLG, LZFFLG, &
-!-                      EXTFLG, IWFICE, ERRFLG, IMIN, IHOUR, IDAY, &
-!-                      IYEAR
-
     data VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
         EXTFLG/0/, IWFICE/3/, ERRFLG/1/
 
@@ -954,12 +821,8 @@ program RUNMESH
     shd%lc%IGND = 0
 
     !> Open soil levels file and check for IOSTAT errors.
-!    if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(10)%isInit)) then
     iun = fls%fl(mfk%f52)%iun
     open(iun, file = trim(adjustl(fls%fl(mfk%f52)%fn)), status = 'old', action = 'read', iostat = ios)
-!    else
-!        open(52, file = 'MESH_input_soil_levels.txt', status = 'old', iostat = IOS)
-!    end if
     if (ios /= 0) then
         print 1002
         stop
@@ -997,11 +860,6 @@ program RUNMESH
 !  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, &
 !  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END, &
                              IRONAME, GENDIR_OUT, &
-!>variables for drainage database or new_shd
-!                             WF_LAND_COUNT, &
-!                             LATDEGMIN, LATMINMIN, LATDEGMAX, LATMINMAX, &
-!                             LONDEGMIN, LONMINMIN, LONDEGMAX, LONMINMAX, &
-!                             WF_LAND_MAX, WF_LAND_SUM, &
 !>variables for READ_PARAMETERS_CLASS
                              TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6, &
                              NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
@@ -1012,7 +870,6 @@ program RUNMESH
                              DAILY_START_DAY, DAILY_STOP_DAY, &
                              HOURLY_START_YEAR, HOURLY_STOP_YEAR, &
                              DAILY_START_YEAR, DAILY_STOP_YEAR, &
-!  IHOUR, IMIN, IDAY, IYEAR, &
  !>variables for READ_SOIL_INI
  !>variables for READ_PARAMETERS_HYDROLOGY
                              INDEPPAR, DEPPAR, WF_R2, M_C, &
@@ -1042,6 +899,8 @@ program RUNMESH
 !>=======================================================================
 !>
     call check_parameters(WF_R2, M_C, NMTEST, cp, hp, soil_por_max, soil_depth, s0, t_ice_lens)
+
+    call init_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW, int(DELT))
 
     !> Assign shed values to local variables.
     NA = shd%NA
@@ -1189,40 +1048,11 @@ program RUNMESH
 !> DAN * (APR 20/08).
 
 !> ANDY * Allocate some variables
-    allocate(WF_NHYD(NA), WF_QR(NA), &
-             WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA), &
-             WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), SNOGRD(NA))
-
-    !> ANDY * Zero everything we just allocated
-    WF_NHYD = 0.0
-    WF_QBASE = 0.0
-    WF_QI2 = 0.0
-    WF_QO1 = 0.0
-    WF_QO2 = 0.0
-    WF_QR = 0.0
-    WF_STORE1 = 0.0
-    WF_STORE2 = 0.0
-    WF_QI1 = 0.0
-
-!!> WATROUTE INPUT FILES:
-!-ALLOCATE (RUNOFF(YCOUNT, XCOUNT), &
-!-  RECHARGE(YCOUNT, XCOUNT), STAT=PAS)
-    if (ipid == 0) then
-        allocate(rte_runoff(shd%yCount, shd%xCount), &
-                 rte_recharge(shd%yCount, shd%xCount), rte_leakage(shd%yCount, shd%xCount), stat = ierr)
-        if (ierr /= 0) then
-            print 1114, 'Standalone RTE input'
-            print 1118, 'Grid square rows', shd%yCount
-            print 1118, 'Grid square columns', shd%xCount
-            stop
-        end if
-    end if
+    allocate(SNOGRD(NA))
 
 1114 format(/1x, 'Error allocating ', a, ' variables.', &
             /1x, 'Check that these bounds are within an acceptable range.', /)
 1118 format(3x, a, ': ', i6)
-
-!> MET. FORCING DATA:
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
     allocate(TBARGAT(NML, IGND), &
@@ -1569,153 +1399,25 @@ program RUNMESH
         print 1118, 'CTEM flag', ICTEM
         stop
     end if
-!>
-!>*******************************************************************
-!>
+
 !> *********************************************************************
 !>  Open additional output files
 !> *********************************************************************
+
     if (ipid == 0 .and. BASINSWEOUTFLAG > 0) then
         open(85, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/basin_SCA_alldays.csv')
         open(86, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/basin_SWE_alldays.csv')
     end if !(BASINSWEOUTFLAG > 0) then
 
-!> *********************************************************************
-!>  Open and read in values from MESH_input_reservoir.txt file
-!> *********************************************************************
-
-    open(21, file = 'MESH_input_reservoir.txt', status = 'old', action = 'read')
-    read(21, '(3i5)') WF_NORESV, WF_NREL, WF_KTR
-    WF_NORESV_CTRL = 0
-
-! allocate reservoir arrays
-    M_R = WF_NORESV
-    allocate(WF_IRES(M_R), WF_JRES(M_R), WF_RES(M_R), WF_R(M_R), WF_B1(M_R), WF_B2(M_R), &
-             WF_QREL(M_R), WF_RESSTORE(M_R), WF_RESNAME(M_R))
-
-    if (WF_NORESV > 0) then
-        do i = 1, WF_NORESV
-! KCK Added to allow higher precision gauge sites    
-            if (LOCATIONFLAG == 1) then
-                read(21, '(2f7.1, 2g10.3, 25x, a12, i2)') I_G, J_G, WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
-                WF_IRES(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
-                WF_JRES(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
-            else
-                read(21, '(2i5, 2g10.3, 25x, a12, i2)') WF_IRES(i), WF_JRES(i), WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
-                WF_IRES(i) = int((real(WF_IRES(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
-                WF_JRES(i) = int((real(WF_JRES(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
-            end if
-!> check if point is in watershed and in river reaches
-            WF_R(i) = 0
-            do j = 1, NA
-                if (WF_IRES(i) == shd%yyy(j) .and. WF_JRES(i) == shd%xxx(j)) then
-                    WF_R(i) = j
-                end if
-            end do
-            if (WF_R(i) == 0) then
-                print *, 'Reservoir Station: ', i, ' is not in the basin'
-                print *, 'Up/Down Coordinate: ', wf_ires(i), shd%iyMin
-                print *, 'Left/Right Coordinate: ', wf_jres(i), shd%jxMin
-                stop
-            end if
-            if (shd%IREACH(WF_R(i)) /= i) then
-                print *, 'Reservoir Station: ', i, ' is not in the correct reach'
-                print *, 'Up/Down Coordinate: ', wf_ires(i)
-                print *, 'Left/Right Coordinate: ', wf_jres(i)
-                print *, 'ireach value at station: ', wf_iy(i)
-                stop
-            end if
-            if (WF_B1(i) == 0.0) then
-                WF_NORESV_CTRL = WF_NORESV_CTRL + 1
-            end if
-        end do
-    end if
-!> leave file open and read in the reservoir files when needed
-
-!> *********************************************************************
-!> Open and read in values from MESH_input_streamflow.txt file
-!> *********************************************************************
-    open(22, file = 'MESH_input_streamflow.txt', status = 'old', action = 'read')
-    read(22, *)
-    read(22, *) WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
-
-! Allocate variable based on value from streamflow file
-    M_S = WF_NO !todo M_S is same as WF_NO and could be removed.
-
-    allocate(WF_IY(M_S), WF_JX(M_S), WF_S(M_S), WF_QHYD(M_S), WF_QHYD_AVG(M_S), WF_QHYD_CUM(M_S), &
-             WF_QSYN(M_S), WF_QSYN_AVG(M_S), WF_QSYN_CUM(M_S), WF_GAGE(M_S))
-
-    do i = 1, WF_NO
-        if (LOCATIONFLAG == 1) then
-            read(22, *) I_G, J_G, WF_GAGE(i)
-            WF_IY(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
-            WF_JX(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
-        else
-            read(22, *) WF_IY(i), WF_JX(i), WF_GAGE(i)
-            WF_IY(i) = int((real(WF_IY(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
-            WF_JX(i) = int((real(WF_JX(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
-        end if
-    end do
-    do i = 1, WF_NO
-        WF_S(i) = 0
-        do j = 1, NA
-            if (WF_JX(i) == shd%xxx(j) .and. WF_IY(i) == shd%yyy(j)) then
-                WF_S(i) = j
-            end if
-        end do
-        if (WF_S(i) == 0) then
-            print *, 'STREAMFLOW GAUGE: ', i, ' IS NOT IN THE BASIN'
-            print *, 'UP/DOWN', WF_IY(i), shd%iyMin, shd%yyy(j), shd%yCount
-            print *, 'LEFT/RIGHT', WF_JX(i), shd%jxMin, shd%xxx(j), shd%xCount
-            stop
-        end if
-    end do
-
-!> ric     initialise smoothed variables
-    wf_qsyn = 0.0
-    WF_QSYN_AVG = 0.0
-    wf_qhyd_avg = 0.0
-    wf_qsyn_cum = 0.0
-    wf_qhyd_cum = 0.0
-
-!>MAM - The first stream flow record is used for flow initialization
-    read(22, *, iostat = IOS) (WF_QHYD(i), i = 1, WF_NO)
-
-      ! fixed streamflow start time bug. add in function to enable the
-      ! correct start time. Feb2009 aliu.
-    call Julian_Day_ID(WF_START_YEAR, WF_START_day, Jday_IND1)
-    call Julian_Day_ID(YEAR_START, JDAY_START, Jday_IND2)
-!    print *, WF_START_YEAR, WF_START_day, Jday_IND1
-    if (YEAR_START == 0) then
-        Jday_IND2 = Jday_IND1
-    end if
-    if (Jday_IND2 < Jday_IND1) then
-        print *, 'ERROR: Simulation start date too early, check ', &
-            ' MESH_input_streamflow.txt, The start date in ', &
-            ' MESH_input_run_options.ini may be out of range'
-        stop
-    end if
-    jday_ind_strm = (jday_ind2 - jday_ind1)*24/WF_KT
-
-         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         !skip the unused streamflow records in streamflow.txt .
-    do j = 1, jday_ind_strm
-        read(22, *, iostat = IOS)
-        if (IOS < 0) then
-            print *, 'ERROR: end of file reached when reading ', &
-                ' MESH_input_streamflow.txt, The start date in ', &
-                ' MESH_input_run_options.ini may be out of range'
-            stop
-        end if
-    end do
-          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    print *, 'Skipping', jday_ind_strm, 'Registers in streamflow file'
-!> leave unit open and read new streamflow each hour
+    if (ipid == 0) call run_between_grid_ini(shd, ts, ic, stfl, rrls, &
+                                             LOCATIONFLAG, STREAMFLOWOUTFLAG, &
+                                             GENDIR_OUT)
 
 !todo - verify that all checks are needed and in the right spot
 !> *********************************************************************
 !> Check to make sure input values are consistent
 !> *********************************************************************
+
 !> compare land classes in class.ini and drainage database files
     if (NTYPE /= NMTEST .and. NTYPE > 0) then
         print *, 'land classes from MESH_parameters_CLASS.ini: ', NMTEST
@@ -1750,13 +1452,8 @@ program RUNMESH
 
     !> Read an intial value for geothermal flux from file.
     if (GGEOFLAG == 1) then
-!        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(7)%isInit)) then
-!            open(fls%fl(7)%unit, file = trim(adjustl(fls%fl(7)%name)))
         iun = fls%fl(mfk%f18)%iun
         open(iun, file = trim(adjustl(fls%fl(mfk%f18)%fn)), status = 'old', action = 'read', iostat = ios)
-!        else
-!            open(18, file = 'MESH_ggeo.ini', status = 'old')
-!        end if
         read(iun, *) GGEOGRD(1)
         close(iun)
     else
@@ -1816,51 +1513,51 @@ program RUNMESH
 !>  that are listed in the streamflow file (subbasin)
 !> **********************************************************************
 
-    if (SUBBASINFLAG > 0) then
-        do i = 1, NA
-            SUBBASIN(i) = 0
-        end do
+!+    if (SUBBASINFLAG > 0) then
+!+        do i = 1, NA
+!+            SUBBASIN(i) = 0
+!+        end do
 
 !> Set values at guages to 1
-        do i = 1, WF_NO
-            SUBBASIN(WF_S(i)) = 1
-        end do
+!+        do i = 1, WF_NO
+!+            SUBBASIN(WF_S(i)) = 1
+!+        end do
 
 !> Set values of subbasin to 1 for all upstream grids
-        SUBBASINCOUNT = 1
-        do while (SUBBASINCOUNT > 0)
-            SUBBASINCOUNT = 0
-            do i = 1, NA - 1
-                if (SUBBASIN(shd%NEXT(i)) == 1 .and. SUBBASIN(i) == 0) then
-                    SUBBASIN(i) = 1
-                    SUBBASINCOUNT = SUBBASINCOUNT + 1
-                end if
-            end do
-        end do !while (SUBBASINCOUNT > 0)
+!+        SUBBASINCOUNT = 1
+!+        do while (SUBBASINCOUNT > 0)
+!+            SUBBASINCOUNT = 0
+!+            do i = 1, NA - 1
+!+                if (SUBBASIN(shd%NEXT(i)) == 1 .and. SUBBASIN(i) == 0) then
+!+                    SUBBASIN(i) = 1
+!+                    SUBBASINCOUNT = SUBBASINCOUNT + 1
+!+                end if
+!+            end do
+!+        end do !while (SUBBASINCOUNT > 0)
 
 !> Set values of frac to 0 for all grids non-upstream grids
-        SUBBASINCOUNT = 0
-        do i = 1, NA
-            if (SUBBASIN(i) == 0) then
-                shd%FRAC(i) = 0.0
-            else
-                SUBBASINCOUNT = SUBBASINCOUNT + 1
-            end if
-        end do
+!+        SUBBASINCOUNT = 0
+!+        do i = 1, NA
+!+            if (SUBBASIN(i) == 0) then
+!+                shd%FRAC(i) = 0.0
+!+            else
+!+                SUBBASINCOUNT = SUBBASINCOUNT + 1
+!+            end if
+!+        end do
 
   !> MAM - Write grid number, grid fractional area and percentage of GRUs in each grid
-        open(10, file = 'subbasin_info.txt')
-        write(10, '(a7, 3x, a18, 3x, a58)') &
-            'GRID NO', 'GRID AREA FRACTION', 'GRU FRACTIONS, GRU 1, GRU 2, GRU 3,... IN INCREASING ORDER'
-        do i = 1, NA
-            if (SUBBASIN(i) == 0) then
-            else
-                write(10, '(i5, 3x, f10.3, 8x, 50(f10.3, 3x))') i, shd%FRAC(i), (shd%lc%ACLASS(i, m), m = 1, NMTEST)
-            end if
-        end do
-        close(10)
+!+        open(10, file = 'subbasin_info.txt')
+!+        write(10, '(a7, 3x, a18, 3x, a58)') &
+!+            'GRID NO', 'GRID AREA FRACTION', 'GRU FRACTIONS, GRU 1, GRU 2, GRU 3,... IN INCREASING ORDER'
+!+        do i = 1, NA
+!+            if (SUBBASIN(i) == 0) then
+!+            else
+!+                write(10, '(i5, 3x, f10.3, 8x, 50(f10.3, 3x))') i, shd%FRAC(i), (shd%lc%ACLASS(i, m), m = 1, NMTEST)
+!+            end if
+!+        end do
+!+        close(10)
 
-    end if !(SUBBASINFLAG > 0) then
+!+    end if !(SUBBASINFLAG > 0) then
 
 !> **********************************************************************
 !>  End of subbasin section
@@ -1889,12 +1586,9 @@ program RUNMESH
         call init_soil_statevars(sov, shd)
         call init_met_data(md, shd)
         call init_water_balance(wb_h, shd)
-        if (OUTFIELDSFLAG == 1) call init_out(vr, ts, iof, shd)
+        if (OUTFIELDSFLAG == 1) call init_out(shd, ts, ic, ifo, vr)
     end if !(ipid == 0) then
 
-!> routing parameters
-    WF_ROUTETIMESTEP = 900
-    WF_TIMECOUNT = 0
     DRIVERTIMESTEP = DELT    ! Be sure it's REAL*8
 
 !* JAN: The first time throught he loop, jan = 1. Jan will equal 2 after that.
@@ -2059,21 +1753,12 @@ program RUNMESH
 
     FRAME_NO_NEW = 1
 
+    !> Determine what output will print to the console.
+    printoutwb = (allocated(wb%pre) .and. allocated(wb%evap) .and. allocated(wb%rof))
+    printoutstfl = allocated(stfl%qsyn)
+    printoutqhyd = (allocated(stfl%qhyd) .and. allocated(stfl%qsyn))
+
     if (ipid == 0) then
-
-!> SET GRID-FORMAT WATROUTE OUTPUT           !
-!-DO I = 1, YCOUNT                            !
-!-  DO J = 1, XCOUNT                          !
-        rte_runoff = 0.0                    !
-        rte_recharge = 0.0                  !
-        rte_leakage = 0.0
-!-> CDAN            LEAKAGE(I, J) = 0.0       !
-!-   END DO                                   !
-!-END DO                                      !
-
-!>  SET FRAME COUNT FOR WRITE_R2C
-        rte_frames_now = 1
-        rte_frames_total = (rte_frames_now + 1)
 
 !> ******************************************************
 !> echo print information to MESH_output_echo_print.txt
@@ -2250,103 +1935,22 @@ program RUNMESH
 !>
 !>****************CHECK RESUME FILE***************************************************
 !>
-    if (RESUMEFLAG == 1) then
+!+    if (RESUMEFLAG == 1) then
 !todo: can do this using inquire statement
-        open(88, file = 'class_resume.txt', status = 'old', action = 'read', iostat = IOS)
-        if (IOS /= 0) then
-            if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
-                write(58, *) "WARNING: You've specified a start time", ' without having a resume file. Now ending run.'
-            end if
-            print *, 'No class_resume.txt found.'
-            print *, 'The RESUMEFLAG in MESH_input_run_options.ini is', &
-                ' set to 1, which means that class_resume.txt should be here,', &
-                ' but it is not here.'
-            print *, 'Ending Run'
-            stop
-        end if
-        close(88)
-    end if
-!>
-!> *******************************************************************
-!> FOR SPL WATROUTE (MODIFIED RPN CODE)
-!> *******************************************************************
-!>
-
-    if (ipid == 0) then
-
-!> R2C-FORMAT OUTPUT FILES (RUNOFF, RECHARGE, AND LEAKAGE VALUES)
-!> CALL WRITE_R2C TO WRITE R2C-FORMAT FILES
-!>
-!> IF (MODELFLG .EQ. "i") AUTHOR="MESH_DRIVER (rte -i)"
-!>   Requires _RFF (RUNOFF) file
-!> IF (MODELFLG .EQ. "r") AUTHOR="MESH_DRIVER (rte -r)"
-!>   Requires _RFF (RUNOFF) &
-!>            _RCH (RECHARGE) files
-!> IF (MODELFLG .EQ. "l") AUTHOR="MESH_DRIVER (rte -l)"
-!>   Requires _RFF (RUNOFF) &
-!>            _LKG (LEAKAGE) files (not currently supported)
-!>
-!> HEADER INFORMATION
-!>
-!-AUTHOR = "MESH_DRIVER"
-!-COORDSYS_TEMP = COORDSYS1
-!-ZONE_TEMP = ZONE1
-!-DATUM_TEMP = DATUM1
-!-XORIGIN_TEMP = XORIGIN
-!-YORIGIN_TEMP = YORIGIN
-!-XCOUNT_TEMP = XCOUNT
-!-YCOUNT_TEMP = YCOUNT
-!-XDELTA_TEMP = XDELTA
-!-YDELTA_TEMP = YDELTA
-!-SOURCE_FILE_NAME = "CLASS"
-!>
-!> OPEN RTE.EXE INPUT FILES (UNIT 261, UNIT 262)
-!> (RTE.EXE MIGHT ALSO BE CALLED WATROUTE.EXE)
-!> UNIT NUMBERS HAVE BEEN PULLED FROM RTE.EXE SUBROUTINES, THEIR
-!> FILE NAMES (FLN(31), FLN(32)) ARE READ FROM THE EVENT FILE
-!> FILES ARE OPENED ACCORDING TO MODELFLG IN THE EVENT FILE
-!>
-!> RUNOFF (MODELFLG .EQ. 'r', 'l', or 'i' (ALL))
-!>
-        if (PRINTRFFR2CFILEFLAG == 1) then
-!-  NAME = "Gridded Channel Inflow"
-!-  ATTRIBUTE_NAME = "channel_inflow"
-!-  ATTRIBUTE_UNITS = "mm"
-!-  ATTRIBUTE_TYPE = "flow"
-            call write_r2c(fls, mfk%f31, shd, &
-                           0, 1, 0, 1, 1, &
-                           rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
-                           rte_runoff, &
-!todo: replace source with LSS flag
-                           'channel_inflow', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
-        end if
-!>
-!> RECHARGE (MODELFLG .EQ. 'r')
-!>
-        if (PRINTRCHR2CFILEFLAG == 1) then
-!-  NAME = "Gridded Recharge"
-!-  ATTRIBUTE_NAME = "recharge"
-!-  ATTRIBUTE_UNITS = "mm"
-!-  ATTRIBUTE_TYPE = "flow"
-            call write_r2c(fls, mfk%f32, shd, &
-                           0, 1, 0, 1, 1, &
-                           rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
-                           rte_recharge, &
-!todo: replace source with LSS flag
-                           'recharge', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
-        end if
-!>
-!> LEAKAGE (MODELFLG .EQ. 'l' (NOT SUPPORTED))
-!>
-!!+IF (PRINTLKGR2CFILEFLAG == 1) THEN
-!!+  NAME = "Gridded Leakage"
-!!+  ATTRIBUTE_NAME = "leakage"
-!!+  ATTRIBUTE_UNITS = "cms"
-!!+  ATTRIBUTE_TYPE = " "
-!!+  CALL WRITE_R2C(263, 33, 0, 1, 0, 1, 1)
-!!+END IF
-
-    end if !(ipid == 0) then
+!=        open(88, file = 'class_resume.txt', status = 'old', action = 'read', iostat = IOS)
+!+        if (IOS /= 0) then
+!+            if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
+!+                write(58, *) "WARNING: You've specified a start time", ' without having a resume file. Now ending run.'
+!+            end if
+!+            print *, 'No class_resume.txt found.'
+!+            print *, 'The RESUMEFLAG in MESH_input_run_options.ini is', &
+!+                ' set to 1, which means that class_resume.txt should be here,', &
+!+                ' but it is not here.'
+!+            print *, 'Ending Run'
+!+            stop
+!+        end if
+!+        close(88)
+!+    end if
 
 !> *********************************************************************
 !> Open and print header information to the output files
@@ -2354,30 +1958,10 @@ program RUNMESH
 
     if (ipid == 0) then
 
-    !> Streamflow output files.
-        if (STREAMFLOWOUTFLAG > 0) then
-
-        !> Daily streamflow file.
-!        if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(6)%isInit)) then
-            open(fls%fl(mfk%f70)%iun, &
-!todo: This creates a bug if a space doesn't exist in the name of the folder!
-                 file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // trim(adjustl(fls%fl(mfk%f70)%fn)), &
-                 iostat = ios)
-!        else
-!            open(70, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/MESH_output_streamflow.csv')
-!        end if
-
-        !> Hourly and cumulative daily streamflow files.
-            if (STREAMFLOWOUTFLAG >= 2) then
-                open(71, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/MESH_output_streamflow_all.csv')
-                open(72, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/MESH_output_streamflow_cumulative.csv')
-            end if
-
-        end if !(STREAMFLOWOUTFLAG > 0) then
-
 !> *********************************************************************
 !> Open and read in values from r2c_output.txt file
 !> *********************************************************************
+
         NR2CFILES = 0
         if (R2COUTPUTFLAG >= 1) then
             inquire(file = 'r2c_output.txt', exist = R2COUTPUT)
@@ -2456,16 +2040,6 @@ program RUNMESH
         print *, 'NUMBER OF GRID SQUARES IN South-North DIRECTION: ', shd%yCount
         print *, 'LENGTH OF SIDE OF GRID SQUARE IN M: ', shd%AL
         print *, 'NUMBER OF DRAINAGE OUTLETS: ', shd%NAA
-        print *, 'NUMBER OF STREAMFLOW GUAGES: ', WF_NO
-        do i = 1, WF_NO
-            print *, 'STREAMFLOW STATION: ', i, 'I: ', WF_IY(i), 'J: ', WF_JX(i)
-        end do
-        print *, 'NUMBER OF RESERVOIR STATIONS: ', WF_NORESV
-        if (WF_NORESV > 0) then
-            do i = 1, WF_NORESV
-                print *, 'RESERVOIR STATION: ', i, 'I: ', WF_IRES(i), 'J: ', WF_JRES(i)
-            end do
-        end if
         print *
         print *, 'Found these output locations:'
         print *, 'Output Directory, grid number, land class number'
@@ -2477,151 +2051,151 @@ program RUNMESH
         print *
     end if !(ro%VERBOSEMODE > 0) then
 
-    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(ts, wf_no)
+    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(ts, stfl%ns)
 
 !>
 !>*******************************************************************
 !>
 !> Check if we are reading in a resume file
-    if (RESUMEFLAG == 1) then
-        print *, 'Reading saved state variables'
-        call resume_state(HOURLYFLAG, MINS_NOW, TIME_STEP_NOW, &
-                          cm%clin(cfk%FB)%filefmt, cm%clin(cfk%FI)%filefmt, &
-                          cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
-                          cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
-                          cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
-                          i, j, shd%xCount, shd%yCount, jan, &
-                          VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
-                          RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
-                          cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
-
+!    if (RESUMEFLAG == 1) then
+!        print *, 'Reading saved state variables'
+!        call resume_state(HOURLYFLAG, MINS_NOW, TIME_STEP_NOW, &
+!                          cm%clin(cfk%FB)%filefmt, cm%clin(cfk%FI)%filefmt, &
+!                          cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
+!                          cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
+!                          cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
+!                          i, j, shd%xCount, shd%yCount, jan, &
+!                          VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
+!                          RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
+!                          cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
+!
 !> MAM - FOR FORCING DATA INTERPOLATION
-                          FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
-                          TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
-                          IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
-                          shd%lc%NML, shd%wc%NML, &
-                          cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, NML, NMTEST, &
-                          TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
-                          TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
-                          TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
-                          FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
-                          PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
-                          VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
-                          HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
-                          THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
-                          GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
-                          PSIWGAT, DLZWGAT, ZBTWGAT, ZSNLGAT, ZPLGGAT, &
-                          ZPLSGAT, TACGAT, QACGAT, DRNGAT, XSLPGAT, &
-                          XDGAT, WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, &
-                          ASVDGAT, ASIDGAT, AGVDGAT, AGIDGAT, ISNDGAT, &
-                          RADJGAT, ZBLDGAT, Z0ORGAT, ZRFMGAT, ZRFHGAT, &
-                          ZDMGAT, ZDHGAT, FSVHGAT, FSIHGAT, CSZGAT, &
-                          FDLGAT, ULGAT, VLGAT, TAGAT, QAGAT, PRESGAT, &
-                          PREGAT, PADRGAT, VPDGAT, TADPGAT, RHOAGAT, &
-                          RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, RHSIGAT, &
-                          FCLOGAT, DLONGAT, GGEOGAT, CDHGAT, CDMGAT, &
-                          HFSGAT, TFXGAT, QEVPGAT, QFSGAT, QFXGAT, &
-                          PETGAT, GAGAT, EFGAT, GTGAT, QGGAT, &
-                          ALVSGAT, ALIRGAT, SFCTGAT, SFCUGAT, SFCVGAT, &
-                          SFCQGAT, FSNOGAT, FSGVGAT, FSGSGAT, FSGGGAT, &
-                          FLGVGAT, FLGSGAT, FLGGGAT, HFSCGAT, HFSSGAT, &
-                          HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, HMFCGAT, &
-                          HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, &
-                          PCPNGAT, PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, &
-                          QFCFGAT, ROFGAT, ROFOGAT, ROFSGAT, ROFBGAT, &
-                          TROFGAT, TROOGAT, TROSGAT, TROBGAT, ROFCGAT, &
-                          ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, WTRGGAT, &
-                          DRGAT, HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
-                          IGND, ICAN, ICP1, &
-                          cp%TBARROW, cp%THLQROW, cp%THICROW, cp%TPNDROW, cp%ZPNDROW, &
-                          TBASROW, cp%ALBSROW, cp%TSNOROW, cp%RHOSROW, cp%SNOROW, &
-                          cp%TCANROW, cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, &
-                          cp%FCANROW, cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
-                          cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, cp%QA50ROW, &
-                          cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, cp%PSGBROW, PAIDROW, &
-                          HGTDROW, ACVDROW, ACIDROW, TSFSROW, WSNOROW, &
-                          THPROW, THRROW, THMROW, BIROW, PSISROW, &
-                          GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
-                          PSIWROW, DLZWROW, ZBTWROW, hp%ZSNLROW, hp%ZPLGROW, &
-                          hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, cp%DRNROW, cp%XSLPROW, &
-                          cp%XDROW, WFSFROW, cp%KSROW, ALGWROW, ALGDROW, &
-                          ASVDROW, ASIDROW, AGVDROW, AGIDROW, &
-                          ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
-                          cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, CSZGRD, &
-                          cm%clin(cfk%UV)%climvGrd, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
-                          cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
-                          IGDRROW, IGDRGAT, VMODGRD, VMODGAT, QLWOGAT, &
-                          CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
-                          WTVSTP, WTSSTP, WTGSTP, &
-                          sl%DELZ, FCS, FGS, FC, FG, N, &
-                          ALVSCN, ALIRCN, ALVSG, ALIRG, ALVSCS, &
-                          ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, &
-                          ALVSSC, ALIRSC, TRVSCN, TRIRCN, TRVSCS, &
-                          TRIRCS, FSVF, FSVFS, &
-                          RAICAN, RAICNS, SNOCAN, SNOCNS, &
-                          FRAINC, FSNOWC, FRAICS, FSNOCS, &
-                          DISP, DISPS, ZOMLNC, ZOMLCS, ZOELNC, ZOELCS, &
-                          ZOMLNG, ZOMLNS, ZOELNG, ZOELNS, &
-                          CHCAP, CHCAPS, CMASSC, CMASCS, CWLCAP, &
-                          CWFCAP, CWLCPS, CWFCPS, RC, RCS, RBCOEF, &
-                          FROOT, ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, &
-                          TRSNOW, ZSNOW, JDAY_NOW, JLAT, IDISP, &
-                          IZREF, IWF, IPAI, IHGT, IALC, IALS, IALG, &
-                          TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
-                          THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, &
-                          TCTOPG, TCBOTG, &
-                          GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, &
-                          G12CS, G12GS, G23C, G23G, G23CS, G23GS, &
-                          QFREZC, QFREZG, QMELTC, QMELTG, &
-                          EVAPC, EVAPCG, EVAPG, EVAPCS, EVPCSG, EVAPGS, &
-                          TCANO, TCANS, TPONDC, TPONDG, TPNDCS, TPNDGS, &
-                          TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
-                          WTABGAT, &
-                          ILMOGAT, UEGAT, HBLGAT, &
-                          shd%wc%ILG, ITC, ITCG, ITG, ISLFD, &
-                          NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
-                          GFLXGAT, CDHROW, CDMROW, HFSROW, TFXROW, &
-                          QEVPROW, QFSROW, QFXROW, PETROW, GAROW, &
-                          EFROW, GTROW, QGROW, TSFROW, ALVSROW, &
-                          ALIRROW, SFCTROW, SFCUROW, SFCVROW, SFCQROW, &
-                          FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
-                          FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, &
-                          HEVSROW, HEVGROW, HMFCROW, HMFNROW, HTCCROW, &
-                          HTCSROW, PCFCROW, PCLCROW, PCPNROW, PCPGROW, &
-                          QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, &
-                          ROFOROW, ROFSROW, ROFBROW, TROFROW, TROOROW, &
-                          TROSROW, TROBROW, ROFCROW, ROFNROW, ROVGROW, &
-                          WTRCROW, WTRSROW, WTRGROW, DRROW, WTABROW, &
-                          ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
-                          QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
-                          wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
-                          HOUR_NOW, shd%xxx, shd%yyy, NA, &
-                          NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
-                          M_C, M_S, M_R, &
-                          WF_ROUTETIMESTEP, WF_R1, WF_R2, shd%NAA, shd%iyMin, &
-                          shd%iyMax, shd%jxMin, shd%jxMax, shd%IAK, shd%IROUGH, &
-                          shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
-                          shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
-                          WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
-                          WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
-                          WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
-                          WF_B1, WF_B2, WF_QREL, WF_QR, &
-                          WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
-                          WF_STORE1, WF_STORE2, &
-                          DRIVERTIMESTEP, ROFGRD, &
-                          WF_S, &
-                          TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
-                          TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-                          FINAL_STORE, TOTAL_AREA, TOTAL_HFSACC, TOTAL_QEVPACC, &
-                          SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, NMELT, t0_ACC, &
-                          CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS, &
-                          AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
-                          SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
-                          AILC, PAIC, FIELDSM, WILTSM, &
-                          RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM, &
-                          hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
-                          fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT)
-    end if !(RESUMEFLAG == 1) then
+!                          FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
+!                          TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
+!                          IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+!                          shd%lc%NML, shd%wc%NML, &
+!                          cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, NML, NMTEST, &
+!                          TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
+!                          TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
+!                          TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
+!                          FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
+!                          PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
+!                          VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
+!                          HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
+!                          THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
+!                          GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
+!                          PSIWGAT, DLZWGAT, ZBTWGAT, ZSNLGAT, ZPLGGAT, &
+!                          ZPLSGAT, TACGAT, QACGAT, DRNGAT, XSLPGAT, &
+!                          XDGAT, WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, &
+!                          ASVDGAT, ASIDGAT, AGVDGAT, AGIDGAT, ISNDGAT, &
+!                          RADJGAT, ZBLDGAT, Z0ORGAT, ZRFMGAT, ZRFHGAT, &
+!                          ZDMGAT, ZDHGAT, FSVHGAT, FSIHGAT, CSZGAT, &
+!                          FDLGAT, ULGAT, VLGAT, TAGAT, QAGAT, PRESGAT, &
+!                          PREGAT, PADRGAT, VPDGAT, TADPGAT, RHOAGAT, &
+!                          RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, RHSIGAT, &
+!                          FCLOGAT, DLONGAT, GGEOGAT, CDHGAT, CDMGAT, &
+!                          HFSGAT, TFXGAT, QEVPGAT, QFSGAT, QFXGAT, &
+!                          PETGAT, GAGAT, EFGAT, GTGAT, QGGAT, &
+!                          ALVSGAT, ALIRGAT, SFCTGAT, SFCUGAT, SFCVGAT, &
+!                          SFCQGAT, FSNOGAT, FSGVGAT, FSGSGAT, FSGGGAT, &
+!                          FLGVGAT, FLGSGAT, FLGGGAT, HFSCGAT, HFSSGAT, &
+!                          HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, HMFCGAT, &
+!                          HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, &
+!                          PCPNGAT, PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, &
+!                          QFCFGAT, ROFGAT, ROFOGAT, ROFSGAT, ROFBGAT, &
+!                          TROFGAT, TROOGAT, TROSGAT, TROBGAT, ROFCGAT, &
+!                          ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, WTRGGAT, &
+!                          DRGAT, HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
+!                          IGND, ICAN, ICP1, &
+!                          cp%TBARROW, cp%THLQROW, cp%THICROW, cp%TPNDROW, cp%ZPNDROW, &
+!                          TBASROW, cp%ALBSROW, cp%TSNOROW, cp%RHOSROW, cp%SNOROW, &
+!                          cp%TCANROW, cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, &
+!                          cp%FCANROW, cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
+!                          cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, cp%QA50ROW, &
+!                          cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, cp%PSGBROW, PAIDROW, &
+!                          HGTDROW, ACVDROW, ACIDROW, TSFSROW, WSNOROW, &
+!                          THPROW, THRROW, THMROW, BIROW, PSISROW, &
+!                          GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
+!                          PSIWROW, DLZWROW, ZBTWROW, hp%ZSNLROW, hp%ZPLGROW, &
+!                          hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, cp%DRNROW, cp%XSLPROW, &
+!                          cp%XDROW, WFSFROW, cp%KSROW, ALGWROW, ALGDROW, &
+!                          ASVDROW, ASIDROW, AGVDROW, AGIDROW, &
+!                          ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
+!                          cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, CSZGRD, &
+!                          cm%clin(cfk%UV)%climvGrd, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
+!                          cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
+!                          IGDRROW, IGDRGAT, VMODGRD, VMODGAT, QLWOGAT, &
+!                          CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
+!                          WTVSTP, WTSSTP, WTGSTP, &
+!                          sl%DELZ, FCS, FGS, FC, FG, N, &
+!                          ALVSCN, ALIRCN, ALVSG, ALIRG, ALVSCS, &
+!                          ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, &
+!                          ALVSSC, ALIRSC, TRVSCN, TRIRCN, TRVSCS, &
+!                          TRIRCS, FSVF, FSVFS, &
+!                          RAICAN, RAICNS, SNOCAN, SNOCNS, &
+!                          FRAINC, FSNOWC, FRAICS, FSNOCS, &
+!                          DISP, DISPS, ZOMLNC, ZOMLCS, ZOELNC, ZOELCS, &
+!                          ZOMLNG, ZOMLNS, ZOELNG, ZOELNS, &
+!                          CHCAP, CHCAPS, CMASSC, CMASCS, CWLCAP, &
+!                          CWFCAP, CWLCPS, CWFCPS, RC, RCS, RBCOEF, &
+!                          FROOT, ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, &
+!                          TRSNOW, ZSNOW, JDAY_NOW, JLAT, IDISP, &
+!                          IZREF, IWF, IPAI, IHGT, IALC, IALS, IALG, &
+!                          TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
+!                          THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, &
+!                          TCTOPG, TCBOTG, &
+!                          GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, &
+!                          G12CS, G12GS, G23C, G23G, G23CS, G23GS, &
+!                          QFREZC, QFREZG, QMELTC, QMELTG, &
+!                          EVAPC, EVAPCG, EVAPG, EVAPCS, EVPCSG, EVAPGS, &
+!                          TCANO, TCANS, TPONDC, TPONDG, TPNDCS, TPNDGS, &
+!                          TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
+!                          WTABGAT, &
+!                          ILMOGAT, UEGAT, HBLGAT, &
+!                          shd%wc%ILG, ITC, ITCG, ITG, ISLFD, &
+!                          NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
+!                          GFLXGAT, CDHROW, CDMROW, HFSROW, TFXROW, &
+!                          QEVPROW, QFSROW, QFXROW, PETROW, GAROW, &
+!                          EFROW, GTROW, QGROW, TSFROW, ALVSROW, &
+!                          ALIRROW, SFCTROW, SFCUROW, SFCVROW, SFCQROW, &
+!                          FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
+!                          FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, &
+!                          HEVSROW, HEVGROW, HMFCROW, HMFNROW, HTCCROW, &
+!                          HTCSROW, PCFCROW, PCLCROW, PCPNROW, PCPGROW, &
+!                          QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, &
+!                          ROFOROW, ROFSROW, ROFBROW, TROFROW, TROOROW, &
+!                          TROSROW, TROBROW, ROFCROW, ROFNROW, ROVGROW, &
+!                          WTRCROW, WTRSROW, WTRGROW, DRROW, WTABROW, &
+!                          ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
+!                          QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
+!                          wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
+!                          HOUR_NOW, shd%xxx, shd%yyy, NA, &
+!                          NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
+!                          M_C, M_S, M_R, &
+!                          WF_ROUTETIMESTEP, WF_R1, WF_R2, shd%NAA, shd%iyMin, &
+!                          shd%iyMax, shd%jxMin, shd%jxMax, shd%IAK, shd%IROUGH, &
+!                          shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
+!                          shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
+!                          WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
+!                          WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
+!                          WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
+!                          WF_B1, WF_B2, WF_QREL, WF_QR, &
+!                          WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
+!                          WF_STORE1, WF_STORE2, &
+!                          DRIVERTIMESTEP, ROFGRD, &
+!                          WF_S, &
+!                          TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
+!                          TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
+!                          FINAL_STORE, TOTAL_AREA, TOTAL_HFSACC, TOTAL_QEVPACC, &
+!                          SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, NMELT, t0_ACC, &
+!                          CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS, &
+!                          AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
+!                          SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
+!                          AILC, PAIC, FIELDSM, WILTSM, &
+!                          RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM, &
+!                          hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
+!                          fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT)
+!    end if !(RESUMEFLAG == 1) then
 
 !>
 !>*******************************************************************
@@ -2782,20 +2356,12 @@ program RUNMESH
         WTRSGAT = 0.0
         WTRGGAT = 0.0
         DRGAT = 0.0
-120 continue
-!>
         HMFGGAT = 0.0
         HTCGAT = 0.0
         QFCGAT = 0.0
         GFLXGAT = 0.0
-130 continue
-140 continue
-!>
         ITCTGAT = 0
-150 continue
-160 continue
-170 continue
-!>
+
         call resume_state_r2c(shd%lc%NML, NLTEST, NMTEST, NCOUNT, &
                               MINS_NOW, shd%lc%ACLASS, NR2C_R, GRD_R, GAT_R, GRDGAT_R, R2C_ATTRIBUTES_R, &
                               NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
@@ -3018,15 +2584,12 @@ program RUNMESH
         if (BASINBALANCEOUTFLAG > 0) then
 
         !> Water balance.
-!        if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(4)%isInit)) then
             open(fls%fl(mfk%f900)%iun, &
 !todo: This creates a bug if a space doesn't exist in the name of the folder!
                  file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
                  iostat = ios)
-!        else
-!            open(900, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/Basin_average_water_balance.csv')
+!todo: Create this only by flag.
             open(902, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/Basin_average_water_balance_Monthly.csv')
-!        end if
 
             wrt_900_1 = 'DAY,YEAR,PREACC' // ',EVAPACC,ROFACC,ROFOACC,' // &
                 'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,'
@@ -3371,50 +2934,7 @@ program RUNMESH
         VMODGRD = UVGRD
         VMODGAT = max(VMIN, ULGAT)
 
-!> *********************************************************************
-!> Read in current reservoir release value
-!> *********************************************************************
-
-!> only read in current value if we are on the correct time step
-!> however put in an exception if this is the first time through (ie. jan = 1),
-!> otherwise depending on the hour of the first time step
-!> there might not be any data in wf_qrel, wf_qhyd
-!> make sure we have a controlled reservoir (if not the mod(HOUR_NOW, wf_ktr)
-!> may give an error. Frank S Jun 2007
-        if (WF_NORESV_CTRL > 0) then
-            if (mod(HOUR_NOW, WF_KTR) == 0 .and. MINS_NOW == 0) then
-!>        READ in current reservoir value
-                read(21, '(100f10.3)', iostat = IOS) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
-                if (IOS /= 0) then
-                    print *, 'ran out of reservoir data before met data'
-                    stop
-                end if
-            else
-                if (JAN == 1 .and. WF_NORESV_CTRL > 0) then
-                    read(21, '(100f10.3)', iostat = IOS) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
-                    rewind 21
-                    read(21, *)
-                    do i = 1, WF_NORESV
-                        read(21, *)
-                    end do
-                end if
-            end if
-        end if
-
-! *********************************************************************
-!> Read in current streamflow value
-!> *********************************************************************
-
-!> only read in current value if we are on the correct time step
-!> also read in the first value if this is the first time through
-        if (mod(HOUR_NOW, WF_KT) == 0 .and. MINS_NOW == 0 .and. JAN > 1) then
-!>       read in current streamflow value
-            read(22, *, iostat = IOS) (WF_QHYD(i), i = 1, WF_NO)
-            if (IOS /= 0) then
-                print *, 'ran out of streamflow data before met data'
-                stop
-            end if
-        end if
+        call run_within_tile(shd, ts, ic, cm, wb, eng, sov, stfl, rrls)
 
 !> *********************************************************************
 !> Set some more CLASS parameters
@@ -3517,20 +3037,12 @@ program RUNMESH
         WTRSGAT = 0.0
         WTRGGAT = 0.0
         DRGAT = 0.0
-320     continue
-!>
         HMFGGAT = 0.0
         HTCGAT = 0.0
         QFCGAT = 0.0
         GFLXGAT = 0.0
-330     continue
-340     continue
-!>
         ITCTGAT = 0
-350     continue
-360     continue
-370     continue
-!>
+
         call CLASSI(VPDGAT, TADPGAT, PADRGAT, RHOAGAT, RHSIGAT, &
                     RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, TAGAT, QAGAT, &
                     PREGAT, RPREGAT, SPREGAT, PRESGAT, &
@@ -3565,7 +3077,6 @@ program RUNMESH
                 TOTAL_STORE_2_M = INIT_STORE
             end if
 
-!>=========================================================================
 !> Initialization of the Storage field
             if (JAN == 1) then
                 do m = 1, NMTEST
@@ -3586,7 +3097,6 @@ program RUNMESH
 !> Start of the NML-based LSS loop.
 !> *********************************************************************
 
-!> ========================================================================
         if (ipid /= 0 .or. izero == 0) then
 
             call CLASSZ(0, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
@@ -3603,7 +3113,6 @@ program RUNMESH
                         il1, il2, NML, IGND, N, &
                         DriftGAT, SublGAT)
 
-!> ========================================================================
 !> ALBEDO AND TRANSMISSIVITY CALCULATIONS; GENERAL VEGETATION
 !> CHARACTERISTICS.
             call CLASSA(FC, FG, FCS, FGS, ALVSCN, ALIRCN, &
@@ -3636,10 +3145,8 @@ program RUNMESH
                         JDAY_NOW, NML, il1, il2, &
                         JLAT, N, ICAN, ICAN + 1, IGND, IDISP, IZREF, &
                         IWF, IPAI, IHGT, IALC, IALS, IALG)
-!
-!-----------------------------------------------------------------------
+
 !          * SURFACE TEMPERATURE AND FLUX CALCULATIONS.
-!
             call CLASST(TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
                         THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, TCTOPG, TCBOTG, &
                         GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, G12CS, G12GS, &
@@ -3670,10 +3177,8 @@ program RUNMESH
                         RMLCSVEG, RMLCGVEG, FIELDSM, WILTSM, &
                         ITC, ITCG, ITG, NML, il1, il2, JLAT, N, ICAN, &
                         IGND, IZREF, ISLFD, NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI)
-!
-!-----------------------------------------------------------------------
+
 !          * WATER BUDGET CALCULATIONS.
-!
             if (JDAY_NOW == 1 .and. NCOUNT == 48) then
        ! bruce davison - only increase NMELT if we don't start the run on January 1st, otherwise t0_ACC allocation is too large
        ! and the model crashes if the compiler is checking for array bounds when t0_ACC is passed into CLASSW with size NMELT
@@ -3732,10 +3237,8 @@ program RUNMESH
                         HCPSCS, HCPSGS, HCPSC, HCPSG, &
                         TSNOWC, TSNOWG, RHOSC, RHOSG, &
                         XSNOWC, XSNOWG, XSNOCS, XSNOGS)
-!
-!========================================================================
+
 !          * SINGLE COLUMN BLOWING SNOW CALCULATIONS.
-!
             if (PBSMFLAG == 1) then
                 call PBSMrun(ZSNOW, WSNOGAT, SNOGAT, RHOSGAT, TSNOGAT, HTCSGAT, &
                              ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
@@ -3751,8 +3254,7 @@ program RUNMESH
                              TSNOdsGAT, &
                              NML, il1, il2, N, ZRFMGAT, ZOMLCS, ZOMLNS)
             end if
-!========================================================================
-!
+
             call CLASSZ(1, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
                         FSGVGAT, FLGVGAT, HFSCGAT, HEVCGAT, HMFCGAT, HTCCGAT, &
@@ -3766,19 +3268,14 @@ program RUNMESH
                         sl%DELZ, FCS, FGS, FC, FG, &
                         il1, il2, NML, IGND, N, &
                         DriftGAT, SublGAT)
-!
-!=======================================================================
-!
+
 !          *Redistribute blowing snow mass between GRUs
-!
             call REDISTRIB_SNOW(NML, 1, NA, NTYPE, NML, TSNOGAT, ZSNOW, &
                                 RHOSGAT, SNOGAT, TSNOCS, ZSNOCS, HCPSCS, RHOSCS, TSNOGS, &
                                 ZSNOGS, HCPSGS, RHOSGS, TSNOWC, ZSNOWC, HCPSC, RHOSC, TSNOWG, &
                                 ZSNOWG, HCPSG, RHOSG, cp%GCGRD, shd%lc%ILMOS, DriftGAT, FAREGAT, &
                                 TSNOdsGAT, DistribGAT, WSNOCS, WSNOGS, FCS, FGS, FC, FG, DepositionGAT, &
                                 TROOGAT, ROFOGAT, TROFGAT, ROFGAT, ROFNGAT, PCPGGAT, HTCSGAT, WSNOGAT, N)
-!
-!=======================================================================
             ROFGAT = ROFGAT - UMQ
 
         end if !(ipid /= 0 .or. izero == 0) then
@@ -3925,8 +3422,6 @@ program RUNMESH
 !> Start of book-keeping and grid accumulation.
 !> *********************************************************************
 
-!
-!=======================================================================
 !     * WRITE FIELDS FROM CURRENT TIME STEP TO OUTPUT FILES.
 
         !> Write to CLASSOF* output files.
@@ -4314,9 +3809,6 @@ program RUNMESH
             HTCGRD = 0.0
             QFCGRD = 0.0
             GFLXGRD = 0.0
-!>
-!>*******************************************************************
-!>
 
     !> Grid data for output.
             md%fsdown = cm%clin(cfk%FB)%climvGrd
@@ -4431,50 +3923,6 @@ program RUNMESH
                     sum(wb%lqws(ik, :)) + sum(wb%frws(ik, :))
             end do !k = il1, il2
 
-!>
-!> *******************************************************************
-!> FOR SPL WATROUTE (MODIFIED RPN CODE)
-!> *******************************************************************
-!>
-            call tile_connector(shd, rte_runoff, rte_recharge, rte_leakage, NCOUNT, ROFOGRD, ROFSGRD, ROFBGRD, DELT)
-
-!> FILES ARE ONLY WRITTEN ON THE HOUR (WATROUTE READS HOURLY DATA).
-!> HOURLY TIME STEPS ARE ODD-NUMBERED INTEGERS.
-!>
-!todo: these can be removed at some point, as they've been added
-!todo: as flags as a part of the model_output module.
-            if (mod(real(NCOUNT), 2.0) == 0.0) then !HOURLY TIME STEP
-                rte_year_now = YEAR_NOW
-                call FIND_MONTH(JDAY_NOW, YEAR_NOW, rte_month_now)
-                call FIND_DAY(JDAY_NOW, YEAR_NOW, rte_day_now)
-                rte_hour_now = HOUR_NOW + 1 !ROUTING USES 1-24 RANGE, MESH USES 0-23
-!>
-!> WRITE OUTPUT FOR RTE.EXE (RUNOFF)
-!>
-                if (PRINTRFFR2CFILEFLAG == 1) then
-                    !PASS RUNOFF TO WRITE_R2C
-                    call write_r2c(fls, mfk%f31, shd, &
-                                   rte_frames_total, 1, rte_frames_now, 1, 6, &
-                                   rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
-                                   rte_runoff)
-                end if
-!>
-!> WRITE OUTPUT FOR RTE.EXE (RECHARGE)
-!>
-                if (PRINTRCHR2CFILEFLAG == 1) then !WRITE RECHARGE DATA
-                    !PASS RECHARGE TO WRITE_R2C
-                    call write_r2c(fls, mfk%f32, shd, &
-                                   rte_frames_total, 1, rte_frames_now, 1, 6, &
-                                   rte_year_now, rte_month_now, rte_day_now, rte_hour_now, &
-                                   rte_recharge)
-                end if
-!>
-!> UPDATE COUNTERS
-!>
-                rte_frames_now = rte_frames_now + 1
-                rte_frames_total = rte_frames_total + 1
-            end if !(mod(real(NCOUNT), 2.0) == 0.0) then
-
 !> calculate and write the basin avg SCA similar to watclass3.0f5
 !> Same code than in wf_ensim.f subrutine of watclass3.0f8
 !> Especially for version MESH_Prototype 3.3.1.7b (not to be incorporated in future versions)
@@ -4575,9 +4023,9 @@ program RUNMESH
             end do !k = il1, il2
 
     !> Update output data.
-            call updatefieldsout_temp(vr, ts, iof, shd, &
+            call updatefieldsout_temp(shd, ts, ic, ifo, &
                                       md, wb_h, &
-                                      YEAR_NOW, JDAY_NOW, ceiling(NCOUNT/2.0), TIME_STEP_DELT - mod(NCOUNT, 2)*TIME_STEP_DELT)
+                                      vr)
 
 !> CALCULATE AND PRINT DAILY AVERAGES.
 
@@ -4843,7 +4291,7 @@ program RUNMESH
                 DSTG = DSTG + RCANACC + SCANACC + SNOACC - STG_I
 
                 if (OUTFIELDSFLAG == 1) then
-                    call UpdateFIELDSOUT(vr, ts, iof, &
+                    call UpdateFIELDSOUT(vr, ts, ifo, &
                                          wb%pre, wb%evap, wb%rof, wb%dstg, &
                                          sov%tbar, wb%lqws, wb%frws, &
                                          wb%rcan, wb%sncan, &
@@ -4915,29 +4363,15 @@ program RUNMESH
             end if !(NCOUNT == 48) then
         end if !(ipid == 0) then
 
+        if (ipid == 0) call run_between_grid(shd, ts, ic, cm, wb_h, eng, sov, stfl, rrls, &
+                                             WF_R1, WF_R2, M_C)
+
 !> *********************************************************************
 !> Call routing routine
 !> *********************************************************************
+
         if (ipid == 0) then
-            call WF_ROUTE(WF_ROUTETIMESTEP, WF_R1, WF_R2, &
-                          NA, shd%NAA, NTYPE, shd%yCount, shd%xCount, shd%iyMin, &
-                          shd%iyMax, shd%jxMin, shd%jxMax, shd%yyy, shd%xxx, shd%IAK, shd%IROUGH, &
-                          shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
-                          shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
-                          WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
-                          WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
-                          WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
-                          WF_B1, WF_B2, WF_QREL, WF_QR, &
-                          WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
-                          WF_STORE1, WF_STORE2, &
-                          DRIVERTIMESTEP, ROFGRD, NA, M_C, M_R, M_S, NA, &
-                          WF_S, JAN, JDAY_NOW, HOUR_NOW, MINS_NOW)
-            do i = 1, WF_NO
-                WF_QSYN(i) = WF_QO2(WF_S(i))
-                WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + WF_QO2(WF_S(i))
-                WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + WF_QO2(WF_S(i))
-                WF_QHYD_AVG(i) = WF_QHYD(i) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
-            end do
+
             if (JAN == 1) then
 !>     this is done so that INIT_STORE is not recalculated for
 !>     each iteration when wf_route is not used
@@ -4945,53 +4379,30 @@ program RUNMESH
             end if
 
 !> *********************************************************************
-!> Write measured and simulated streamflow to file and screen
-!> Also write daily summary (pre, evap, rof)
+!> Write output to console.
 !> *********************************************************************
-
-    !> Write output for hourly streamflow.
-            if (STREAMFLOWFLAG == 1 .and. STREAMFLOWOUTFLAG >= 2) then
-                write(71, 5085) JDAY_NOW, HOUR_NOW, MINS_NOW, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
-            end if
 
             if (NCOUNT == 48) then !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
 
-                do i = 1, WF_NO
-                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + WF_QHYD_AVG(i)
-                end do
-
-    !> Write output for daily and cumulative daily streamflow.
-                if (STREAMFLOWOUTFLAG > 0) then
-                    write(fls%fl(mfk%f70)%iun, 5084) JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
-                    if (STREAMFLOWOUTFLAG >= 2) then
-                        write(72, 5084) JDAY_NOW, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/NCOUNT, i = 1, WF_NO)
-                    end if
-                end if
-
-5084    format(i5, ',', f10.3, 999(',', f10.3))
-5085    format(3(i5, ','), f10.3, 999(',', f10.3))
-
                 if (ro%VERBOSEMODE > 0) then
-                    if (WF_NUM_POINTS > 1) then !FOR MORE THAN ONE OUTPUT
-                        print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO)
-                    else !FOR GENERAL CASE OR SINGLE GRID OUTPUT POINT
-    !todo: Update or remove this altogether. If to update, take NA-1 or something more akin
-    !to an outlet, than the average middle-elevation grid (as it's coded now).
-    !Should there be a choice to print point-process (pre, evap, rof) vs flow-process (wf_qo2)?
-                        j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
-                        print 5176, YEAR_NOW, JDAY_NOW, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/NCOUNT, i = 1, WF_NO), &
-                            wb%pre(j), wb%evap(j), wb%rof(j)
+                    write(6, '(2i5)', advance = 'no') YEAR_NOW, JDAY_NOW
+                    if (printoutstfl) then
+                        do j = 1, stfl%ns
+                            if (printoutqhyd) write(6, '(f10.3)', advance = 'no') stfl%qhyd(j)
+                            write(6, '(f10.3)', advance = 'no') stfl%qsyn(j)
+                        end do
                     end if
+                    j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
+                    if (printoutwb) write(6, '(3(f10.3))', advance = 'no') wb%pre(j), wb%evap(j), wb%rof(j)
+                    write(6, *)
                 end if !(ro%VERBOSEMODE > 0) then
                 if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
-                    call stats_update_daily(WF_QHYD_AVG, WF_QSYN_AVG, NCOUNT)
+                    call stats_update_stfl_daily(stfl%qhyd, stfl%qsyn)
                     if (mtsflg%PREEMPTIONFLAG > 1) then
                         if (FTEST > FBEST) goto 199
                     end if
                 end if
-
-                WF_QSYN_AVG = 0.0
 
                 wb%pre = 0.0
                 wb%evap = 0.0
@@ -5037,9 +4448,6 @@ program RUNMESH
             HOUR_NOW = HOUR_NOW + 1
             if (HOUR_NOW == 24) then
                 HOUR_NOW = 0
-!    IF(mtsflg%AUTOCALIBRATIONFLAG .GE. 1 .AND. mtsflg%PREEMPTIONFLAG == 1)THEN
-!      IF(FTEST > FBEST) GOTO 199
-!    ENDIF
                 JDAY_NOW = JDAY_NOW + 1
                 if (JDAY_NOW >= 366) then
                     if (mod(YEAR_NOW, 400) == 0) then !LEAP YEAR
@@ -5081,6 +4489,8 @@ program RUNMESH
         end if
         TIME_STEP_NOW = TIME_STEP_NOW + TIME_STEP_MINS
         if (TIME_STEP_NOW == HOURLYFLAG) TIME_STEP_NOW = 0
+
+        call update_now_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW)
 
     !> *********************************************************************
     !> Read in meteorological forcing data
@@ -5270,149 +4680,150 @@ program RUNMESH
     end if !(SAVERESUMEFLAG == 2) then
 
 !> Write the resume file
-    if (SAVERESUMEFLAG == 1) then !todo: done: use a flag
-        print *, 'Saving state variables'
-        call SAVE_STATE(HOURLYFLAG, MINS_NOW, TIME_STEP_NOW, &
-                        cm%clin(cfk%FB)%filefmt, cm%clin(cfk%FI)%filefmt, &
-                        cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
-                        cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
-                        cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
-                        i, j, shd%xCount, shd%yCount, jan, &
-                        VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
-                        RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
-                        cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
-!MAM - FOR FORCING DATA INTERPOLATION
-                        FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
-                        TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
-                        IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
-                        shd%lc%NML, shd%wc%NML, &
-                        cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, NML, NMTEST, &
-                        TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
-                        TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
-                        TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
-                        FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
-                        PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
-                        VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
-                        HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
-                        THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
-                        GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
-                        PSIWGAT, DLZWGAT, ZBTWGAT, ZSNLGAT, ZPLGGAT, &
-                        ZPLSGAT, TACGAT, QACGAT, DRNGAT, XSLPGAT, &
-                        XDGAT, WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, &
-                        ASVDGAT, ASIDGAT, AGVDGAT, AGIDGAT, ISNDGAT, &
-                        RADJGAT, ZBLDGAT, Z0ORGAT, ZRFMGAT, ZRFHGAT, &
-                        ZDMGAT, ZDHGAT, FSVHGAT, FSIHGAT, CSZGAT, &
-                        FDLGAT, ULGAT, VLGAT, TAGAT, QAGAT, PRESGAT, &
-                        PREGAT, PADRGAT, VPDGAT, TADPGAT, RHOAGAT, &
-                        RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, RHSIGAT, &
-                        FCLOGAT, DLONGAT, GGEOGAT, CDHGAT, CDMGAT, &
-                        HFSGAT, TFXGAT, QEVPGAT, QFSGAT, QFXGAT, &
-                        PETGAT, GAGAT, EFGAT, GTGAT, QGGAT, &
-                        ALVSGAT, ALIRGAT, SFCTGAT, SFCUGAT, SFCVGAT, &
-                        SFCQGAT, FSNOGAT, FSGVGAT, FSGSGAT, FSGGGAT, &
-                        FLGVGAT, FLGSGAT, FLGGGAT, HFSCGAT, HFSSGAT, &
-                        HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, HMFCGAT, &
-                        HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, &
-                        PCPNGAT, PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, &
-                        QFCFGAT, ROFGAT, ROFOGAT, ROFSGAT, ROFBGAT, &
-                        TROFGAT, TROOGAT, TROSGAT, TROBGAT, ROFCGAT, &
-                        ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, WTRGGAT, &
-                        DRGAT, HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
-                        IGND, ICAN, ICP1, &
-                        cp%TBARROW, cp%THLQROW, cp%THICROW, cp%TPNDROW, cp%ZPNDROW, &
-                        TBASROW, cp%ALBSROW, cp%TSNOROW, cp%RHOSROW, cp%SNOROW, &
-                        cp%TCANROW, cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, &
-                        cp%FCANROW, cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
-                        cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, cp%QA50ROW, &
-                        cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, cp%PSGBROW, PAIDROW, &
-                        HGTDROW, ACVDROW, ACIDROW, TSFSROW, WSNOROW, &
-                        THPROW, THRROW, THMROW, BIROW, PSISROW, &
-                        GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
-                        PSIWROW, DLZWROW, ZBTWROW, hp%ZSNLROW, hp%ZPLGROW, &
-                        hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, cp%DRNROW, cp%XSLPROW, &
-                        cp%XDROW, WFSFROW, cp%KSROW, ALGWROW, ALGDROW, &
-                        ASVDROW, ASIDROW, AGVDROW, AGIDROW, &
-                        ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
-                        cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, CSZGRD, &
-                        cm%clin(cfk%UV)%climvGrd, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
-                        cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
-                        IGDRROW, IGDRGAT, VMODGRD, VMODGAT, QLWOGAT, &
-                        CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
-                        WTVSTP, WTSSTP, WTGSTP, &
-                        sl%DELZ, FCS, FGS, FC, FG, N, &
-                        ALVSCN, ALIRCN, ALVSG, ALIRG, ALVSCS, &
-                        ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, &
-                        ALVSSC, ALIRSC, TRVSCN, TRIRCN, TRVSCS, &
-                        TRIRCS, FSVF, FSVFS, &
-                        RAICAN, RAICNS, SNOCAN, SNOCNS, &
-                        FRAINC, FSNOWC, FRAICS, FSNOCS, &
-                        DISP, DISPS, ZOMLNC, ZOMLCS, ZOELNC, ZOELCS, &
-                        ZOMLNG, ZOMLNS, ZOELNG, ZOELNS, &
-                        CHCAP, CHCAPS, CMASSC, CMASCS, CWLCAP, &
-                        CWFCAP, CWLCPS, CWFCPS, RC, RCS, RBCOEF, &
-                        FROOT, ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, &
-                        TRSNOW, ZSNOW, JDAY_NOW, JLAT, IDISP, &
-                        IZREF, IWF, IPAI, IHGT, IALC, IALS, IALG, &
-                        TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
-                        THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, &
-                        TCTOPG, TCBOTG, &
-                        GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, &
-                        G12CS, G12GS, G23C, G23G, G23CS, G23GS, &
-                        QFREZC, QFREZG, QMELTC, QMELTG, &
-                        EVAPC, EVAPCG,EVAPG, EVAPCS, EVPCSG, EVAPGS, &
-                        TCANO, TCANS, TPONDC, TPONDG, TPNDCS, TPNDGS, &
-                        TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
-                        WTABGAT, &
-                        ILMOGAT, UEGAT, HBLGAT, &
-                        shd%wc%ILG, ITC, ITCG, ITG, ISLFD, &
-                        NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
-                        GFLXGAT, CDHROW, CDMROW, HFSROW, TFXROW, &
-                        QEVPROW, QFSROW, QFXROW, PETROW, GAROW, &
-                        EFROW, GTROW, QGROW, TSFROW, ALVSROW, &
-                        ALIRROW, SFCTROW, SFCUROW, SFCVROW, SFCQROW, &
-                        FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
-                        FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, &
-                        HEVSROW, HEVGROW, HMFCROW, HMFNROW, HTCCROW, &
-                        HTCSROW, PCFCROW, PCLCROW, PCPNROW, PCPGROW, &
-                        QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, &
-                        ROFOROW, ROFSROW, ROFBROW, TROFROW, TROOROW, &
-                        TROSROW, TROBROW, ROFCROW, ROFNROW, ROVGROW, &
-                        WTRCROW, WTRSROW, WTRGROW, DRROW, WTABROW, &
-                        ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
-                        QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
-                        wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
-                        HOUR_NOW, shd%xxx, shd%yyy, NA, &
-                        NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
-                        M_C, M_S, M_R, &
-                        WF_ROUTETIMESTEP, WF_R1, WF_R2, shd%NAA, shd%iyMin, &
-                        shd%iyMax, shd%jxMin, shd%jxMax, shd%IAK, shd%IROUGH, &
-                        shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
-                        shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
-                        WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
-                        WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
-                        WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
-                        WF_B1, WF_B2, WF_QREL, WF_QR, &
-                        WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
-                        WF_STORE1, WF_STORE2, &
-                        DRIVERTIMESTEP, ROFGRD, &
-                        WF_S, &
-                        TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
-                        TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-                        FINAL_STORE, TOTAL_AREA, TOTAL_HFSACC, TOTAL_QEVPACC, &
-                        SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, NMELT, t0_ACC, &
-                        CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS, &
-                        AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
-                        SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
-                        AILC, PAIC, FIELDSM, WILTSM, &
-                        RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM, &
-                        hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
-                        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT)
-    end if !(SAVERESUMEFLAG == 1) then
+!    if (SAVERESUMEFLAG == 1) then !todo: done: use a flag
+!        print *, 'Saving state variables'
+!        call SAVE_STATE(HOURLYFLAG, MINS_NOW, TIME_STEP_NOW, &
+!                        cm%clin(cfk%FB)%filefmt, cm%clin(cfk%FI)%filefmt, &
+!                        cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
+!                        cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
+!                        cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
+!                        i, j, shd%xCount, shd%yCount, jan, &
+!                        VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
+!                        RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
+!                        cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
+!!MAM - FOR FORCING DATA INTERPOLATION
+!                        FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
+!                        TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
+!                        IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+!                        shd%lc%NML, shd%wc%NML, &
+!                        cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, NML, NMTEST, &
+!                        TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
+!                        TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
+!                        TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
+!                        FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
+!                        PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
+!                        VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
+!                        HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
+!                        THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
+!                        GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
+!                        PSIWGAT, DLZWGAT, ZBTWGAT, ZSNLGAT, ZPLGGAT, &
+!                        ZPLSGAT, TACGAT, QACGAT, DRNGAT, XSLPGAT, &
+!                        XDGAT, WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, &
+!                        ASVDGAT, ASIDGAT, AGVDGAT, AGIDGAT, ISNDGAT, &
+!                        RADJGAT, ZBLDGAT, Z0ORGAT, ZRFMGAT, ZRFHGAT, &
+!                        ZDMGAT, ZDHGAT, FSVHGAT, FSIHGAT, CSZGAT, &
+!                        FDLGAT, ULGAT, VLGAT, TAGAT, QAGAT, PRESGAT, &
+!                        PREGAT, PADRGAT, VPDGAT, TADPGAT, RHOAGAT, &
+!                        RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, RHSIGAT, &
+!                        FCLOGAT, DLONGAT, GGEOGAT, CDHGAT, CDMGAT, &
+!                        HFSGAT, TFXGAT, QEVPGAT, QFSGAT, QFXGAT, &
+!                        PETGAT, GAGAT, EFGAT, GTGAT, QGGAT, &
+!                        ALVSGAT, ALIRGAT, SFCTGAT, SFCUGAT, SFCVGAT, &
+!                        SFCQGAT, FSNOGAT, FSGVGAT, FSGSGAT, FSGGGAT, &
+!                        FLGVGAT, FLGSGAT, FLGGGAT, HFSCGAT, HFSSGAT, &
+!                        HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, HMFCGAT, &
+!                        HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, &
+!                        PCPNGAT, PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, &
+!                        QFCFGAT, ROFGAT, ROFOGAT, ROFSGAT, ROFBGAT, &
+!                        TROFGAT, TROOGAT, TROSGAT, TROBGAT, ROFCGAT, &
+!                        ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, WTRGGAT, &
+!                        DRGAT, HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
+!                        IGND, ICAN, ICP1, &
+!                        cp%TBARROW, cp%THLQROW, cp%THICROW, cp%TPNDROW, cp%ZPNDROW, &
+!                        TBASROW, cp%ALBSROW, cp%TSNOROW, cp%RHOSROW, cp%SNOROW, &
+!                        cp%TCANROW, cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, &
+!                        cp%FCANROW, cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
+!                        cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, cp%QA50ROW, &
+!                        cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, cp%PSGBROW, PAIDROW, &
+!                        HGTDROW, ACVDROW, ACIDROW, TSFSROW, WSNOROW, &
+!                        THPROW, THRROW, THMROW, BIROW, PSISROW, &
+!                        GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
+!                        PSIWROW, DLZWROW, ZBTWROW, hp%ZSNLROW, hp%ZPLGROW, &
+!                        hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, cp%DRNROW, cp%XSLPROW, &
+!                        cp%XDROW, WFSFROW, cp%KSROW, ALGWROW, ALGDROW, &
+!                        ASVDROW, ASIDROW, AGVDROW, AGIDROW, &
+!                        ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
+!                        cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, CSZGRD, &
+!                        cm%clin(cfk%UV)%climvGrd, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
+!                        cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
+!                        IGDRROW, IGDRGAT, VMODGRD, VMODGAT, QLWOGAT, &
+!                        CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
+!                        WTVSTP, WTSSTP, WTGSTP, &
+!                        sl%DELZ, FCS, FGS, FC, FG, N, &
+!                        ALVSCN, ALIRCN, ALVSG, ALIRG, ALVSCS, &
+!                        ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, &
+!                        ALVSSC, ALIRSC, TRVSCN, TRIRCN, TRVSCS, &
+!                        TRIRCS, FSVF, FSVFS, &
+!                        RAICAN, RAICNS, SNOCAN, SNOCNS, &
+!                        FRAINC, FSNOWC, FRAICS, FSNOCS, &
+!                        DISP, DISPS, ZOMLNC, ZOMLCS, ZOELNC, ZOELCS, &
+!                        ZOMLNG, ZOMLNS, ZOELNG, ZOELNS, &
+!                        CHCAP, CHCAPS, CMASSC, CMASCS, CWLCAP, &
+!                        CWFCAP, CWLCPS, CWFCPS, RC, RCS, RBCOEF, &
+!                        FROOT, ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, &
+!                        TRSNOW, ZSNOW, JDAY_NOW, JLAT, IDISP, &
+!                        IZREF, IWF, IPAI, IHGT, IALC, IALS, IALG, &
+!                        TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
+!                        THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, &
+!                        TCTOPG, TCBOTG, &
+!                        GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, &
+!                        G12CS, G12GS, G23C, G23G, G23CS, G23GS, &
+!                        QFREZC, QFREZG, QMELTC, QMELTG, &
+!                        EVAPC, EVAPCG,EVAPG, EVAPCS, EVPCSG, EVAPGS, &
+!                        TCANO, TCANS, TPONDC, TPONDG, TPNDCS, TPNDGS, &
+!                        TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
+!                        WTABGAT, &
+!                        ILMOGAT, UEGAT, HBLGAT, &
+!                        shd%wc%ILG, ITC, ITCG, ITG, ISLFD, &
+!                        NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
+!                        GFLXGAT, CDHROW, CDMROW, HFSROW, TFXROW, &
+!                        QEVPROW, QFSROW, QFXROW, PETROW, GAROW, &
+!                        EFROW, GTROW, QGROW, TSFROW, ALVSROW, &
+!                        ALIRROW, SFCTROW, SFCUROW, SFCVROW, SFCQROW, &
+!                        FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
+!                        FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, &
+!                        HEVSROW, HEVGROW, HMFCROW, HMFNROW, HTCCROW, &
+!                        HTCSROW, PCFCROW, PCLCROW, PCPNROW, PCPGROW, &
+!                        QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, &
+!                        ROFOROW, ROFSROW, ROFBROW, TROFROW, TROOROW, &
+!                        TROSROW, TROBROW, ROFCROW, ROFNROW, ROVGROW, &
+!                        WTRCROW, WTRSROW, WTRGROW, DRROW, WTABROW, &
+!                        ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
+!                        QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
+!                        wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
+!                        HOUR_NOW, shd%xxx, shd%yyy, NA, &
+!                        NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
+!                        M_C, M_S, M_R, &
+!                        WF_ROUTETIMESTEP, WF_R1, WF_R2, shd%NAA, shd%iyMin, &
+!                        shd%iyMax, shd%jxMin, shd%jxMax, shd%IAK, shd%IROUGH, &
+!                        shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
+!                        shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
+!                        WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
+!                        WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
+!                        WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
+!                        WF_B1, WF_B2, WF_QREL, WF_QR, &
+!                        WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
+!                        WF_STORE1, WF_STORE2, &
+!                        DRIVERTIMESTEP, ROFGRD, &
+!                        WF_S, &
+!                        TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
+!                        TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
+!                        FINAL_STORE, TOTAL_AREA, TOTAL_HFSACC, TOTAL_QEVPACC, &
+!                        SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, NMELT, t0_ACC, &
+!                        CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS, &
+!                        AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
+!                        SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
+!                        AILC, PAIC, FIELDSM, WILTSM, &
+!                        RMATCTEM, RMATC, NOL2PFTS, ICTEMMOD, L2MAX, ICTEM, &
+!                        hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
+!                        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT)
+!    end if !(SAVERESUMEFLAG == 1) then
 
 !> *********************************************************************
 !> Call save_init_prog_variables_class.f90 to save initi prognostic variables by
 !> by fields needd by classas as initial conditions
 !> *********************************************************************
+
 !> bjd - July 14, 2014: Gonzalo Sapriza
     if (SAVERESUMEFLAG == 3) then
 !> Save the last time step
@@ -5427,7 +4838,7 @@ program RUNMESH
                                             fls)
     end if !(SAVERESUMEFLAG == 3) then
 
-    if (OUTFIELDSFLAG == 1) call write_outputs(vr, ts, iof, shd, fls)
+    if (OUTFIELDSFLAG == 1) call write_outputs(shd, fls, ts, ic, ifo, vr)
 
     if (ENDDATA) print *, 'Reached end of forcing data'
     if (ENDDATE) print *, 'Reached end of simulation date'
@@ -5494,8 +4905,6 @@ program RUNMESH
     if (mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write()
 
 999 continue
-!> Diane      close(21)
-!>      close(22)
     close(51)
 
     !todo++:
@@ -5520,23 +4929,18 @@ program RUNMESH
     !> Close model output file.
     close(58)
 
-    !> Close CSV streamflow files.
-    close(fls%fl(mfk%f70)%iun)
-    close(71)
-    close(72)
-
     !> Close the SWE CSV files.
     close(85)
     close(86)
 
     !> Close the legacy binary format forcing files.
-    close(90)
-    close(91)
-    close(92)
-    close(93)
-    close(94)
-    close(95)
-    close(96)
+!    close(90)
+!    close(91)
+!    close(92)
+!    close(93)
+!    close(94)
+!    close(95)
+!    close(96)
 
     !> Close the CSV energy and water balance output files.
     close(fls%fl(mfk%f900)%iun)

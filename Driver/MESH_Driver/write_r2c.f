@@ -13,13 +13,12 @@ C
 C    You should have received a copy of the GNU Lesser General Public License
 C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
-      subroutine write_r2c(fls, indx, shd,
-     *  no_frames, no_classes, frame_no, class_no,
-     *  no_signf,
-     *  EF_YEAR_NOW, EF_MONTH_NOW, EF_DAY_NOW, EF_HOUR_NOW,
-     *  outarray,
-     *  attribute_name, attribute_units, attribute_type,
-     *  attribute_source, author)
+      subroutine write_r2c(fls, indx, shd, ic,
+     *                     no_frames, no_classes, frame_no, class_no,
+     *                     no_signf,
+     *                     outarray,
+     *                     attr_name, attr_units, attr_type,
+     *                     attr_src, attr_author)
 
 !***********************************************************************
 !       copyright (c) by Nick Kouwen 1987-2007
@@ -32,9 +31,10 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
 ! - List of arguments:
 
-!       fls                 type        File information.
-!       shd                 type        Basin/watershed information.
-!       indx                int         Index of the file in fls.
+!       fls             type        File information.
+!       indx            int         Index of the file in fls%fl().
+!       shd             type        Basin/watershed information.
+!       ic              type        Counter.
 !   I - itogo   int        no. of hours until next rainfall
 !   R - unit_conversion    REAL*4     conversion factor (area2)
 !   I - FLN     CHAR*12    file names
@@ -42,30 +42,25 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !   I - ocflg   int        open_close flag 1 open file -1 close file
 !   I - frmflg  int        frame flag  1 new frame -1 end frame
 !                          0 each call = 1 frame with frame marks
-!       EF_YEAR_NOW         int         Year of the current time-step.
-!       EF_MONTH_NOW        int         Month of the current time-step.
-!       EF_DAY_NOW          int         Day of the date of the current
-!                                       time-step.
-!       EF_HOUR_NOW         int         Hour of the current time-step.
-!       outarray            real(:, :)  Array of data to write to file.
-!       attribute_name      char(40)    Name of the data/variable.
-!       attribute_units     char(40)    Units of the data.
-!       attribute_type      char(40)    Not used. Type of attribute
-!                                       (e.g., 'flow').
-!       attribute_source    char(40)   Source of data.
-!       author              char(40)    Name of the steward of the data.
+!       outarray        real(y, x)  Array of data to write to file.
+!       attr_name       char(*)     Name of the data/variable.
+!       attr_units      char(*)     Units of the data.
+!       attr_type       char(*)     Not used. Type of attribute
+!                                   (e.g., 'flow').
+!       attr_src        char(*)     Source of data.
+!       attr_author     char(*)     Author of the file.
 !***********************************************************************
 
       use sa_mesh_shared_variabletypes
       use sa_mesh_shared_variables
+      use model_dates
       use model_files_variabletypes
 
       implicit none
 
       integer iun, ii, no_signf, hour_no, hours_togo,
      *  no_frames, no_classes, frame_no, class_no,
-     *  i, j, ierr,
-     *  EF_YEAR_NOW, EF_MONTH_NOW, EF_DAY_NOW, EF_HOUR_NOW
+     *  i, j, ierr
       character(20) junk
       character(10) time
       character(8) cday
@@ -74,14 +69,15 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       type(fl_ids), intent(in) :: fls
       integer, intent(in) :: indx
       type(GridParams), intent(in) :: shd
+      type(iter_counter), intent(in) :: ic
       real, dimension(shd%yCount, shd%xCount), intent(in) :: outarray
-      character(*), intent(in), optional :: attribute_name,
-     *  attribute_units, attribute_type, attribute_source, author
+      character(*), intent(in), optional :: attr_name,
+     *  attr_units, attr_type, attr_src, attr_author
 
 !     FIRST TIME THROUGH THIS SUBROUTINE ONLY
 !     OPEN OUTPUT FILE AND WRITE HEADER
 
-      hour_no = frame_no
+      hour_no = ic%now_hour + 1
 
 !     user notes
 
@@ -120,7 +116,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *    status='unknown', action='write', iostat=ierr)
 !     print*,' un fn et fln(fn) ',un,fn,fln(fn)
         if (ro%VERBOSEMODE > 0) then
-          print 1121, iun, adjustl(trim(fls%fl(indx)%fn))
+          if (ro%DIAGNOSEMODE > 0) then
+            print 1121, iun, adjustl(trim(fls%fl(indx)%fn))
+          end if
           if (ierr /= 0) then
             print 1122, ierr
             stop 'in write_r2c @ 83'
@@ -128,7 +126,6 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
         end if
 1121  format(1x, 'Opened unit=', i5, ' filename ', (a))
 1122  format(3x, 'Error opening ios = ', i4)
-c   print*,'Opened unit=',un,' filename=',fln(fn)
         write(iun, 3005) '########################################'
         write(iun, 3005) ':FileType r2c  ASCII  EnSim 1.0         '
         write(iun, 3005) '#                                       '
@@ -136,7 +133,7 @@ c   print*,'Opened unit=',un,' filename=',fln(fn)
         write(iun, 3005) '#                                       '
         write(iun, 3005) ':Application             EnSimHydrologic'
         write(iun, 3005) ':Version                 2.1.23         '
-        write(iun, 3002) ':WrittenBy          ', author
+        write(iun, 3002) ':WrittenBy          ', attr_author
         call date_and_time(cday, time)
         write(iun, 3010) ':CreationDate       ',
      *    cday(1:4), cday(5:6), cday(7:8), time(1:2), time(3:4)
@@ -144,7 +141,7 @@ c   print*,'Opened unit=',un,' filename=',fln(fn)
         write(iun, 3005) '#                                       '
         write(iun, 3005) '#---------------------------------------'
         write(iun, 3005) '#                                       '
-        write(iun, 3002) ':Name               ', author
+        write(iun, 3002) ':Name               ', attr_author
         write(iun, 3005) '#                                       '
         write(iun, 3004) ':Projection         ', shd%CoordSys%Proj
         if (shd%CoordSys%Proj == 'LATLONG   ') then
@@ -158,7 +155,7 @@ c   print*,'Opened unit=',un,' filename=',fln(fn)
         write(iun, 3003) ':xOrigin            ', shd%xOrigin
         write(iun, 3003) ':yOrigin            ', shd%yOrigin
         write(iun, 3005) '#                                       '
-        write(iun, 3002) ':SourceFile         ', attribute_source
+        write(iun, 3002) ':SourceFile         ', attr_src
         write(iun, 3005) '#                                       '
         if (no_frames == 1 .and. no_classes >= 1) then
           do i = 1, no_classes
@@ -166,8 +163,8 @@ c   print*,'Opened unit=',un,' filename=',fln(fn)
           end do
           write(iun, 3005) '#                                       '
         else
-          write(iun, 3002) ':AttributeName 1    ', attribute_name
-          write(iun, 3002) ':AttributeUnits     ', attribute_units
+          write(iun, 3002) ':AttributeName 1    ', attr_name
+          write(iun, 3002) ':AttributeUnits     ', attr_units
 c!         see note below @***
         end if
         write(iun, 3005) '#                                       '
@@ -209,7 +206,7 @@ c        if(no_frames.eq.1)then
 !      if(no_frames.gt.1)write(un,3011)':Frame',frame_no,frame_no,
 !     *     year1,mo1,day1,hour1,'Hour=',hour_no,hours_togo,data_source
 
-      if (hour_no >= 1) then
+      if (frame_no > 0) then
 
 c        if(hour_now.eq.0)then
 c          day_now=day_now-1
@@ -219,29 +216,29 @@ c   endif
 !       if(mo1.le.9.and.day_now.le.9)then
 ! Craig Thompson changed mo1 to month_now so that the
 ! output is correctly formatted
-        if (EF_MONTH_NOW <= 9 .and. EF_DAY_NOW <= 9) then
+        if (ic%now_month <= 9 .and. ic%now_day <= 9) then
           if (no_frames > 1) write(iun, 3021) ':Frame',
-     *      abs(frame_no), abs(frame_no), EF_YEAR_NOW, EF_MONTH_NOW,
-     *      EF_DAY_NOW, EF_HOUR_NOW
+     *      abs(frame_no), abs(frame_no), ic%now_year, ic%now_month,
+     *      ic%now_day, hour_no
 
-        else if (EF_MONTH_NOW <= 9 .and. EF_DAY_NOW > 9) then
+        else if (ic%now_month <= 9 .and. ic%now_day > 9) then
 ! Craig Thompson changed mo1 to month_now so that the
 ! output is correctly formatted
           if (no_frames > 1) write(iun, 3022) ':Frame',
-     *      abs(frame_no), abs(frame_no), EF_YEAR_NOW, EF_MONTH_NOW,
-     *      EF_DAY_NOW, EF_HOUR_NOW
+     *      abs(frame_no), abs(frame_no), ic%now_year, ic%now_month,
+     *      ic%now_day, hour_no
 
-        else if (EF_MONTH_NOW > 9 .and. EF_DAY_NOW <= 9) then
+        else if (ic%now_month > 9 .and. ic%now_day <= 9) then
 ! Craig Thompson changed mo1 to month_now so that the
 ! output is correctly formatted
           if (no_frames > 1) write(iun, 3023) ':Frame',
-     *      abs(frame_no), abs(frame_no), EF_YEAR_NOW, EF_MONTH_NOW,
-     *      EF_DAY_NOW, EF_HOUR_NOW
+     *      abs(frame_no), abs(frame_no), ic%now_year, ic%now_month,
+     *      ic%now_day, hour_no
 
         else
           if (no_frames > 1) write(iun, 3024) ':Frame',
-     *      abs(frame_no), abs(frame_no), EF_YEAR_NOW, EF_MONTH_NOW,
-     *      EF_DAY_NOW, EF_HOUR_NOW
+     *      abs(frame_no), abs(frame_no), ic%now_year, ic%now_month,
+     *      ic%now_day, hour_no
 
         end if
 
@@ -287,18 +284,17 @@ c   endif
           end do
         end if
 
-        if(no_classes == 1) write(iun, 3012) ':EndFrame'
+        if(class_no == no_classes) write(iun, 3012) ':EndFrame'
 
       end if
 
       if (frame_no == no_frames .and. class_no == no_classes) then
         close(iun)
-!        write(51, *) 'Closed unit ', un, ' Filename=  ', fln(fn)
         if (ro%VERBOSEMODE > 0) then
           print 1291, iun, adjustl(trim(fls%fl(indx)%fn))
         end if
       end if
-1291  format(3x, 'Opened unit=', i5, ' filename ', (a))
+1291  format(3x, 'Closed unit=', i5, ' filename ', (a))
 
       return
 
@@ -322,7 +318,6 @@ c   endif
 3006  format(a3,a10)
 3007  format(a14, i5, a6, i5)
 3012  format(a9)
-3020  format(a20, a40)
 
 3021  format(a6, 2i10, 3x, '"', i4, '/', i1, '/', i1, 1x, i2,
      *  ':00:00.000"', 2x, a5, 2i5, 2x, a5)
