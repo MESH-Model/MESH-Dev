@@ -119,6 +119,8 @@ program RUNMESH
     use model_files
     use strings
 
+    use process_CLASS_config
+
     implicit none
 
     !> ierr: For status return from MPI
@@ -138,16 +140,16 @@ program RUNMESH
     integer, dimension(:), allocatable :: irqst
     integer, dimension(:, :), allocatable :: imstat
 
-    type CLASSOUT_VARS
-        real, dimension(:), allocatable :: &
-            PREACC, GTACC, QEVPACC, EVAPACC, HFSACC, HMFNACC, &
-            ROFACC, ROFOACC, ROFSACC, ROFBACC, WTBLACC, ALVSACC, ALIRACC, &
-            RHOSACC, TSNOACC, WSNOACC, SNOARE, TCANACC, CANARE, SNOACC, &
-            RCANACC, SCANACC, GROACC, FSINACC, FLINACC, FLUTACC, &
-            TAACC, UVACC, PRESACC, QAACC
-        real, dimension(:, :), allocatable :: &
-            TBARACC, THLQACC, THICACC, THALACC, GFLXACC
-    end type !CLASSOUT_VARS
+!    type CLASSOUT_VARS
+!        real, dimension(:), allocatable :: &
+!            PREACC, GTACC, QEVPACC, EVAPACC, HFSACC, HMFNACC, &
+!            ROFACC, ROFOACC, ROFSACC, ROFBACC, WTBLACC, ALVSACC, ALIRACC, &
+!            RHOSACC, TSNOACC, WSNOACC, SNOARE, TCANACC, CANARE, SNOACC, &
+!            RCANACC, SCANACC, GROACC, FSINACC, FLINACC, FLUTACC, &
+!            TAACC, UVACC, PRESACC, QAACC
+!        real, dimension(:, :), allocatable :: &
+!            TBARACC, THLQACC, THICACC, THALACC, GFLXACC
+!    end type !CLASSOUT_VARS
 
 !todo: Investigate what this is
     integer ireport
@@ -159,7 +161,7 @@ program RUNMESH
 !> DAN  WRITING R2C-FORMAT OUTPUT FILES      
 !>  INTEGER CONSTANTS.
 !INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
-    integer, parameter :: ICAN = 4, ICP1 = ICAN + 1, ICTEM = 1 !Number of CTEM vegetation categories (set to 1 if not using CTEM)
+!    integer, parameter :: ICAN = 4, ICP1 = ICAN + 1, ICTEM = 1 !Number of CTEM vegetation categories (set to 1 if not using CTEM)
     integer, parameter :: M_C = 5
 
 !INTEGER IGND
@@ -194,14 +196,14 @@ program RUNMESH
 !* HOURLY_STOP_*: Stop day/year for recording hourly averaged data
 !* DAILY_START_*: Start day/year for recording daily averaged data
 !* DAILY_STOP_*: Stop day/year for recording daily averaged data
-    integer HOURLY_START_DAY, HOURLY_STOP_DAY, DAILY_START_DAY, &
-        DAILY_STOP_DAY
-    integer HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
-        DAILY_STOP_YEAR
+!    integer HOURLY_START_DAY, HOURLY_STOP_DAY, DAILY_START_DAY, &
+!        DAILY_STOP_DAY
+!    integer HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
+!        DAILY_STOP_YEAR
 
 !> LAND SURFACE DIAGNOSTIC VARIABLES.
 
-    real, dimension(:), allocatable :: SNOGRD
+!    real, dimension(:), allocatable :: SNOGRD
 
 !>==========
 !>
@@ -215,10 +217,10 @@ program RUNMESH
 !>== ENSIM == ENSIM == ENSIM == ENSIM == ENSIM ==
 
 !>  CONSTANTS AND TEMPORARY VARIABLES.
-    real DEGLAT, DEGLON, FSDOWN1, FSDOWN2, FSDOWN3, RDAY, &
-        DECL, HOUR, COSZ, &
-        ALTOT, FSSTAR, FLSTAR, QH, QE, BEG, SNOMLT, ZSN, TCN, TSN, TPN, GTOUT
-    integer JLAT
+!    real DEGLAT, DEGLON, FSDOWN1, FSDOWN2, FSDOWN3, RDAY, &
+!        DECL, HOUR, COSZ, &
+!        ALTOT, FSSTAR, FLSTAR, QH, QE, BEG, SNOMLT, ZSN, TCN, TSN, TPN, GTOUT
+!    integer JLAT
 
 !> *************************************************************
 !> For reading in options information from MESH_run_options.ini
@@ -308,7 +310,8 @@ program RUNMESH
 !* FILE_VER: FILE VERSION USED TO SEEK INPUT FILE COMPATIBILITY
 !*           (COMPARED TO "RELEASE")
     character(8) FILE_VER
-    integer N, NCOUNT, NSUM, i, j, k, l, m, &
+!    integer N, NCOUNT, NSUM
+    integer i, j, k, l, m, &
         INDEPPAR, DEPPAR, PAS, NSUM_TOTAL
 !  CONFLAGS, OPTFLAGS, INDEPPAR, DEPPAR, PAS
     logical OPN
@@ -339,7 +342,7 @@ program RUNMESH
 !* KOUT2: YEARLY-AVERAGED OUTPUT STOP DAY (JULIAN FROM YEAR START)
 !* KAV1: YEARLY-AVERAGED OUTPUT START YEAR
 !* KAV2: YEARLY-AVERAGED OUTPUT STOP YEAR
-    integer JOUT1, JOUT2, JAV1, JAV2, KOUT1, KOUT2, KAV1, KAV2
+!    integer JOUT1, JOUT2, JAV1, JAV2, KOUT1, KOUT2, KAV1, KAV2
 !>
 !>*******************************************************************
 !>
@@ -347,8 +350,8 @@ program RUNMESH
 !> DAN  CONSIDER INCLUDING AS CONTROL FLAGS IN RUN_OPTIONS.INI FILE SO
 !> DAN  THAT THEY ARE NO LONGER HARD-CODED.
 !* ALL: DESCRIPTIONS ARE WRITTEN WHERE RUN_OPTIONS.INI IS READ
-    integer IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
-        IALS, IALG, ITG, ITC, ITCG
+!    integer IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
+!        IALS, IALG, ITG, ITC, ITCG
 
 !> GRID SQUARE COUNTS:
 !* NLTEST: NUMBER OF GRID SQUARES (CLASS.INI)
@@ -358,31 +361,32 @@ program RUNMESH
 !* IDAY: CURRENT DAY OF MET. FORCING DATA (JULIAN FROM YEAR START)
 !*       (CLASS.INI)
 !* IYEAR: CURRENT YEAR OF MET. FORCING DATA (CLASS.INI)
-    integer NLTEST, NMTEST, NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI
+    integer NLTEST, NMTEST
+!    integer NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
 !* TBAR: INITIAL SOIL LAYER TEMPERATURE
 !* THLQ: INITIAL SOIL LAYER LIQUID WATER CONTENT
 !* THIC: INITIAL SOIL LAYER ICE WATER CONTENT
-    real, dimension(:, :), allocatable :: TBARGAT, THLQGAT, THICGAT, &
-        SANDGAT, CLAYGAT
-    real, dimension(:, :), allocatable :: TBASROW, &
-        CMAIROW, TACROW, QACROW, WSNOROW
-     
+!    real, dimension(:, :), allocatable :: TBARGAT, THLQGAT, THICGAT, &
+!        SANDGAT, CLAYGAT
+!    real, dimension(:, :), allocatable :: TBASROW, &
+!        CMAIROW, TACROW, QACROW, WSNOROW
+
 !>PBSM VARIABLES (GRU)
 !* DrySnow: 0 = air temperature above 0 degC
 !*          1 = air temperature below 0 degC
 !* SnowAge: hours since last snowfall
 !* Drift: blowing snow transport (kg/m^2)
 !* Subl: blowing snow sublimation (kg/m^2)
-    real, dimension(:), allocatable :: DrySnowGAT, SnowAgeGAT, &
-        TSNOdsGAT, RHOSdsGAT, DriftGAT, SublGAT, DepositionGAT
-    real, dimension(:, :), allocatable :: DrySnowROW, SnowAgeROW, &
-        TSNOdsROW, RHOSdsROW, DriftROW, SublROW, DepositionROW
+!    real, dimension(:), allocatable :: DrySnowGAT, SnowAgeGAT, &
+!        TSNOdsGAT, RHOSdsGAT, DriftGAT, SublGAT, DepositionGAT
+!    real, dimension(:, :), allocatable :: DrySnowROW, SnowAgeROW, &
+!        TSNOdsROW, RHOSdsROW, DriftROW, SublROW, DepositionROW
 !>CLASS SUBAREA VARIABLES NEEDED FOR PBSM
-    real, dimension(:), allocatable :: ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
-        HCPSCS, HCPSGS, HCPSC, HCPSG, TSNOWC, TSNOWG, &
-        RHOSC, RHOSG, XSNOWC, XSNOWG, XSNOCS, XSNOGS
+!    real, dimension(:), allocatable :: ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
+!        HCPSCS, HCPSGS, HCPSC, HCPSG, TSNOWC, TSNOWG, &
+!        RHOSC, RHOSG, XSNOWC, XSNOWG, XSNOCS, XSNOGS
 !* TPND: INITIAL PONDING TEMPERATURE (CLASS.INI)
 !* ZPND: INITIAL PONDING DEPTH (CLASS.INI)
 !* ALBS: ALBEDO OF SNOWPACK (CLASS.INI)
@@ -391,12 +395,12 @@ program RUNMESH
 !* SNO: SNOWPACK ON CANOPY LAYER (CLASS.INI)
 !* TCAN: INITIAL CANOPY TEMPERATURE (CLASS.INI)
 !* GRO: VEGETATION GROWTH INDEX (CLASS.INI)
-    real, dimension(:), allocatable :: TPNDGAT, ZPNDGAT, TBASGAT, &
-        ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, TCANGAT, RCANGAT, SCANGAT, &
-        GROGAT, FRZCGAT, CMAIGAT, TACGAT, QACGAT, WSNOGAT
+!    real, dimension(:), allocatable :: TPNDGAT, ZPNDGAT, TBASGAT, &
+!        ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, TCANGAT, RCANGAT, SCANGAT, &
+!        GROGAT, FRZCGAT, CMAIGAT, TACGAT, QACGAT, WSNOGAT
      
-    real, dimension(:, :, :), allocatable :: TSFSROW
-    real, dimension(:, :), allocatable :: TSFSGAT
+!    real, dimension(:, :, :), allocatable :: TSFSROW
+!    real, dimension(:, :), allocatable :: TSFSGAT
 !>
 !>*******************************************************************
 !>
@@ -405,33 +409,33 @@ program RUNMESH
 !> OF SOIL LAYERS (3) AND THE NUMBER OF BROAD VEGETATION
 !> CATEGORIES (4, OR 5 INCLUDING URBAN AREAS).
 !* ALL: DEFINITIONS IN CLASS DOCUMENTATION (CLASS.INI)
-    real, dimension(:, :), allocatable :: FCANGAT, LNZ0GAT, &
-        ALVCGAT, ALICGAT
-    real, dimension(:, :, :), allocatable :: &
-        PAIDROW, HGTDROW, ACVDROW, ACIDROW
-    real, dimension(:, :), allocatable :: PAMXGAT, PAMNGAT, &
-        CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, VPDAGAT, VPDBGAT, PSGAGAT, &
-        PSGBGAT, PAIDGAT, HGTDGAT, ACVDGAT, ACIDGAT
-    real, dimension(:, :, :), allocatable :: THPROW, THRROW, THMROW, &
-        BIROW, PSISROW, GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
-        PSIWROW, DLZWROW, ZBTWROW
-    real, dimension(:, :), allocatable :: THPGAT, THRGAT, THMGAT, &
-        BIGAT, PSISGAT, GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
-        PSIWGAT, DLZWGAT, ZBTWGAT, GFLXGAT
-    real, dimension(:, :), allocatable :: &
-        WFSFROW, ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
-        AGIDROW
-    real, dimension(:), allocatable :: DRNGAT, XSLPGAT, XDGAT, &
-        WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, ASVDGAT, ASIDGAT, AGVDGAT, &
-        AGIDGAT, ZSNLGAT, ZPLGGAT, ZPLSGAT, SDEPGAT, FAREGAT
+!    real, dimension(:, :), allocatable :: FCANGAT, LNZ0GAT, &
+!        ALVCGAT, ALICGAT
+!    real, dimension(:, :, :), allocatable :: &
+!        PAIDROW, HGTDROW, ACVDROW, ACIDROW
+!    real, dimension(:, :), allocatable :: PAMXGAT, PAMNGAT, &
+!        CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, VPDAGAT, VPDBGAT, PSGAGAT, &
+!        PSGBGAT, PAIDGAT, HGTDGAT, ACVDGAT, ACIDGAT
+!    real, dimension(:, :, :), allocatable :: THPROW, THRROW, THMROW, &
+!        BIROW, PSISROW, GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
+!        PSIWROW, DLZWROW, ZBTWROW
+!    real, dimension(:, :), allocatable :: THPGAT, THRGAT, THMGAT, &
+!        BIGAT, PSISGAT, GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
+!        PSIWGAT, DLZWGAT, ZBTWGAT, GFLXGAT
+!    real, dimension(:, :), allocatable :: &
+!        WFSFROW, ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
+!        AGIDROW
+!    real, dimension(:), allocatable :: DRNGAT, XSLPGAT, XDGAT, &
+!        WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, ASVDGAT, ASIDGAT, AGVDGAT, &
+!        AGIDGAT, ZSNLGAT, ZPLGGAT, ZPLSGAT, SDEPGAT, FAREGAT
 !* PBSM parameters
 !  fetch: fetch distance (m)
 !  Ht: vegetation height (m)
 !  N_S:vegetation density (number/m^2)
 !  A_S: vegetation width (m)
 !  Distrib: Inter-GRU snow redistribution factor
-    real, dimension(:), allocatable :: &
-        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT
+!    real, dimension(:), allocatable :: &
+!        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT
 
 !* SAND: PERCENT-CONTENT OF SAND IN SOIL LAYER (CLASS.INI)
 !* CLAY: PERCENT-CONTENT OF CLAY IN SOIL LAYER (CLASS.INI)
@@ -439,89 +443,89 @@ program RUNMESH
 
 !* MIDROW: DEFINITION IN CLASS DOCUMENTATION (CLASS.INI)
 
-    integer, dimension(:, :, :), allocatable :: ISNDROW, IORG
-    integer, dimension(:, :), allocatable :: ISNDGAT
-    integer, dimension(:,:), allocatable :: IGDRROW
-    integer, dimension(:), allocatable :: IGDRGAT
+!    integer, dimension(:, :, :), allocatable :: ISNDROW, IORG
+!    integer, dimension(:, :), allocatable :: ISNDGAT
+!    integer, dimension(:,:), allocatable :: IGDRROW
+!    integer, dimension(:), allocatable :: IGDRGAT
 !>
 !>*******************************************************************
 !>
 !> WATROF FLAGS AND VARIABLES:
 !* VICEFLG: VERTICAL ICE FLAG OR LIMIT
 !* HICEFLG: HORIZONTAL ICE FLAG OR LIMIT
-    integer LZFFLG, EXTFLG, IWFICE, ERRFLG, IWFOFLW
-    real VICEFLG, PSI_LIMIT, HICEFLG
+!    integer LZFFLG, EXTFLG, IWFICE, ERRFLG, IWFOFLW
+!    real VICEFLG, PSI_LIMIT, HICEFLG
 !* DD (DDEN): DRAINAGE DENSITY (CLASS.INI)
 !* MANN (WFSF): MANNING'S n (CLASS.INI)
-    real, dimension(:), allocatable :: DDGAT, MANNGAT
-    real, dimension(:, :), allocatable :: BTC, BCAP, DCOEFF, BFCAP, &
-        BFCOEFF, BFMIN, BQMAX
+!    real, dimension(:), allocatable :: DDGAT, MANNGAT
+!    real, dimension(:, :), allocatable :: BTC, BCAP, DCOEFF, BFCAP, &
+!        BFCOEFF, BFMIN, BQMAX
 !>
 !>*******************************************************************
 !>
 !> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
-    real, dimension(:), allocatable :: ZDMGRD, &
-        ZDHGRD, RADJGRD, CSZGRD, &
-        PADRGRD, VPDGRD, &
-        TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, RHSIGRD, &
-        FCLOGRD, DLONGRD, Z0ORGRD, GGEOGRD, UVGRD, XDIFFUS, &
-        RPREGRD, SPREGRD, VMODGRD
+!    real, dimension(:), allocatable :: ZDMGRD, &
+!        ZDHGRD, RADJGRD, CSZGRD, &
+!        PADRGRD, VPDGRD, &
+!        TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, RHSIGRD, &
+!        FCLOGRD, DLONGRD, Z0ORGRD, GGEOGRD, UVGRD, XDIFFUS, &
+!        RPREGRD, SPREGRD, VMODGRD
 
 !> MAM - logical variables to control simulation runs:
     logical ENDDATE, ENDDATA
 
-    real, dimension(:), allocatable :: ZRFMGAT, ZRFHGAT, ZDMGAT, &
-        ZDHGAT, ZBLDGAT, RADJGAT, CSZGAT, &
-        RPREGAT, SPREGAT, &
-        PADRGAT, VPDGAT, TADPGAT, RHOAGAT, RPCPGAT, TRPCGAT, SPCPGAT, &
-        TSPCGAT, RHSIGAT, FCLOGAT, DLONGAT, Z0ORGAT, GGEOGAT, VMODGAT
+!    real, dimension(:), allocatable :: ZRFMGAT, ZRFHGAT, ZDMGAT, &
+!        ZDHGAT, ZBLDGAT, RADJGAT, CSZGAT, &
+!        RPREGAT, SPREGAT, &
+!        PADRGAT, VPDGAT, TADPGAT, RHOAGAT, RPCPGAT, TRPCGAT, SPCPGAT, &
+!        TSPCGAT, RHSIGAT, FCLOGAT, DLONGAT, Z0ORGAT, GGEOGAT, VMODGAT
 !>
 !>*******************************************************************
 !>
 !> LAND SURFACE DIAGNOSTIC VARIABLES:
-    real, dimension(:, :), allocatable :: CDHROW, CDMROW, HFSROW, &
-        TFXROW, QEVPROW, QFSROW, QFXROW, PETROW, GAROW, EFROW, GTROW, &
-        QGROW, TSFROW, ALVSROW, ALIRROW, FSNOROW, SFCTROW, SFCUROW, &
-        SFCVROW, SFCQROW, FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
-        FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, HEVSROW, HEVGROW, &
-        HMFCROW, HMFNROW, HTCCROW, HTCSROW, PCFCROW, PCLCROW, PCPNROW, &
-        PCPGROW, QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, ROFOROW, &
-        ROFSROW, ROFBROW, ROFCROW, ROFNROW, ROVGROW, WTRCROW, WTRSROW, &
-        WTRGROW, DRROW, WTABROW, ILMOROW, UEROW, HBLROW, TROFROW, &
-        TROOROW, TROSROW, TROBROW
-    real, dimension(:), allocatable :: CDHGAT, CDMGAT, HFSGAT, &
-        TFXGAT, QEVPGAT, QFSGAT, QFXGAT, PETGAT, GAGAT, EFGAT, GTGAT, &
-        QGGAT, ALVSGAT, ALIRGAT, FSNOGAT, SFRHGAT, SFCTGAT, SFCUGAT, &
-        SFCVGAT, SFCQGAT, FSGVGAT, FSGSGAT, FSGGGAT, FLGVGAT, FLGSGAT, &
-        FLGGGAT, HFSCGAT, HFSSGAT, HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, &
-        HMFCGAT, HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, PCPNGAT, &
-        PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, QFCFGAT, ROFGAT, ROFOGAT, &
-        ROFSGAT, ROFBGAT, ROFCGAT, ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, &
-        WTRGGAT, DRGAT, WTABGAT, ILMOGAT, UEGAT, HBLGAT, QLWOGAT, FTEMP, &
-        FVAP, RIB, TROFGAT, TROOGAT, TROSGAT, TROBGAT
-    real, dimension(:), allocatable :: CDHGRD, CDMGRD, HFSGRD, &
-        TFXGRD, QEVPGRD, QFSGRD, QFXGRD, PETGRD, GAGRD, EFGRD, GTGRD, &
-        QGGRD, TSFGRD, ALVSGRD, ALIRGRD, FSNOGRD, SFCTGRD, SFCUGRD, &
-        SFCVGRD, SFCQGRD, FSGVGRD, FSGSGRD, FSGGGRD, FLGVGRD, FLGSGRD, &
-        FLGGGRD, HFSCGRD, HFSSGRD, HFSGGRD, HEVCGRD, HEVSGRD, HEVGGRD, &
-        HMFCGRD, HMFNGRD, HTCCGRD, HTCSGRD, PCFCGRD, PCLCGRD, PCPNGRD, &
-        PCPGGRD, QFGGRD, QFNGRD, QFCLGRD, QFCFGRD, ROFGRD, ROFOGRD, &
-        ROFSGRD, ROFBGRD, ROFCGRD, ROFNGRD, ROVGGRD, WTRCGRD, WTRSGRD, &
-        WTRGGRD, DRGRD, WTABGRD, ILMOGRD, UEGRD, HBLGRD
+!    real, dimension(:, :), allocatable :: CDHROW, CDMROW, HFSROW, &
+!        TFXROW, QEVPROW, QFSROW, QFXROW, PETROW, GAROW, EFROW, GTROW, &
+!        QGROW, TSFROW, ALVSROW, ALIRROW, FSNOROW, SFCTROW, SFCUROW, &
+!        SFCVROW, SFCQROW, FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
+!        FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, HEVSROW, HEVGROW, &
+!        HMFCROW, HMFNROW, HTCCROW, HTCSROW, PCFCROW, PCLCROW, PCPNROW, &
+!        PCPGROW, QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, ROFOROW, &
+!        ROFSROW, ROFBROW, ROFCROW, ROFNROW, ROVGROW, WTRCROW, WTRSROW, &
+!        WTRGROW, DRROW, WTABROW, ILMOROW, UEROW, HBLROW, TROFROW, &
+!        TROOROW, TROSROW, TROBROW
+!    real, dimension(:), allocatable :: CDHGAT, CDMGAT, HFSGAT, &
+!        TFXGAT, QEVPGAT, QFSGAT, QFXGAT, PETGAT, GAGAT, EFGAT, GTGAT, &
+!        QGGAT, ALVSGAT, ALIRGAT, FSNOGAT, SFRHGAT, SFCTGAT, SFCUGAT, &
+!        SFCVGAT, SFCQGAT, FSGVGAT, FSGSGAT, FSGGGAT, FLGVGAT, FLGSGAT, &
+!        FLGGGAT, HFSCGAT, HFSSGAT, HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, &
+!        HMFCGAT, HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, PCPNGAT, &
+!        PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, QFCFGAT, ROFGAT, ROFOGAT, &
+!        ROFSGAT, ROFBGAT, ROFCGAT, ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, &
+!        WTRGGAT, DRGAT, WTABGAT, ILMOGAT, UEGAT, HBLGAT, QLWOGAT, FTEMP, &
+!        FVAP, RIB, TROFGAT, TROOGAT, TROSGAT, TROBGAT
+!    real, dimension(:), allocatable :: CDHGRD, CDMGRD, HFSGRD, &
+!        TFXGRD, QEVPGRD, QFSGRD, QFXGRD, PETGRD, GAGRD, EFGRD, GTGRD, &
+!        QGGRD, TSFGRD, ALVSGRD, ALIRGRD, FSNOGRD, SFCTGRD, SFCUGRD, &
+!        SFCVGRD, SFCQGRD, FSGVGRD, FSGSGRD, FSGGGRD, FLGVGRD, FLGSGRD, &
+!        FLGGGRD, HFSCGRD, HFSSGRD, HFSGGRD, HEVCGRD, HEVSGRD, HEVGGRD, &
+!        HMFCGRD, HMFNGRD, HTCCGRD, HTCSGRD, PCFCGRD, PCLCGRD, PCPNGRD, &
+!        PCPGGRD, QFGGRD, QFNGRD, QFCLGRD, QFCFGRD, ROFGRD, ROFOGRD, &
+!        ROFSGRD, ROFBGRD, ROFCGRD, ROFNGRD, ROVGGRD, WTRCGRD, WTRSGRD, &
+!        WTRGGRD, DRGRD, WTABGRD, ILMOGRD, UEGRD, HBLGRD
 
-    real, dimension(:, :, :), allocatable :: HMFGROW, HTCROW, QFCROW, &
-        GFLXROW
-    real, dimension(:, :), allocatable :: HMFGGAT, HTCGAT, QFCGAT
-    real, dimension(:, :), allocatable :: HMFGGRD, HTCGRD, QFCGRD, GFLXGRD
-    integer, dimension(:, :, :, :), allocatable :: ITCTROW
-    integer, dimension(:, :, :), allocatable :: ITCTGAT
+!    real, dimension(:, :, :), allocatable :: HMFGROW, HTCROW, QFCROW, &
+!        GFLXROW
+!    real, dimension(:, :), allocatable :: HMFGGAT, HTCGAT, QFCGAT
+!    real, dimension(:, :), allocatable :: HMFGGRD, HTCGRD, QFCGRD, GFLXGRD
+!    integer, dimension(:, :, :, :), allocatable :: ITCTROW
+!    integer, dimension(:, :, :), allocatable :: ITCTGAT
 
 !* TITLE: PROJECT DESCRIPTOR (6 COLUMNS: 4 CHARACTER STRINGS)
 !* NAME: AUTHOR, RESEARCHER (6 COLUMNS: 4 CHARACTER STRINGS)
 !* PLACE: SITE LOCATION, BASIN (6 COLUMNS: 4 CHARACTER STRINGS)
-    character(4) TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, &
-        TITLE6, NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
-        PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
+!    character(4) TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, &
+!        TITLE6, NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
+!        PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
 !>
 !>*******************************************************************
 !>*******************************************************************
@@ -530,17 +534,17 @@ program RUNMESH
 !> THE SUFFIX "ACC" REFERS TO THE ACCUMULATOR ARRAYS USED IN
 !> CALCULATING TIME AVERAGES.
 !* ALL: DEFINITIONS IN CLASS DOCUMENTATION
-    real, dimension(:), allocatable :: PREACC, GTACC, QEVPACC, &
-        HFSACC, ROFACC, SNOACC, ALVSACC, ALIRACC, FSINACC, FLINACC, &
-        TAACC, UVACC, PRESACC, QAACC, EVAPACC, FLUTACC, ROFOACC, &
-        ROFSACC, ROFBACC, HMFNACC, WTBLACC, WSNOACC, RHOSACC, TSNOACC, &
-        TCANACC, RCANACC, SCANACC, GROACC, CANARE, SNOARE, ZPNDACC
+!    real, dimension(:), allocatable :: PREACC, GTACC, QEVPACC, &
+!        HFSACC, ROFACC, SNOACC, ALVSACC, ALIRACC, FSINACC, FLINACC, &
+!        TAACC, UVACC, PRESACC, QAACC, EVAPACC, FLUTACC, ROFOACC, &
+!        ROFSACC, ROFBACC, HMFNACC, WTBLACC, WSNOACC, RHOSACC, TSNOACC, &
+!        TCANACC, RCANACC, SCANACC, GROACC, CANARE, SNOARE, ZPNDACC
 
 !> FIELD OF DELTA STORAGE AND INITIAL STORAGE
     real, dimension(:), allocatable :: DSTG, STG_I
 
-    real, dimension(:, :), allocatable :: TBARACC, THLQACC, THICACC, &
-        THALACC , THLQ_FLD, THIC_FLD, GFLXACC
+!    real, dimension(:, :), allocatable :: TBARACC, THLQACC, THICACC, &
+!        THALACC , THLQ_FLD, THIC_FLD, GFLXACC
 
 !* TOTAL_ROFACC: TOTAL RUNOFF
 !* TOTAL_EVAPACC: TOTAL EVAPORATION
@@ -573,60 +577,60 @@ program RUNMESH
 !> CROSS-CLASS VARIABLES (CLASS):
 !> ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
 !> SUBSECTIONS OF CLASS ("CLASSA", "CLASST" AND "CLASSW").
-    real, dimension(:, :), allocatable :: TBARC, TBARG, TBARCS, &
-        TBARGS, THLIQC, THLIQG, THICEC, THICEG, FROOT, HCPC, HCPG, &
-        TCTOPC, TCBOTC, TCTOPG, TCBOTG
+!    real, dimension(:, :), allocatable :: TBARC, TBARG, TBARCS, &
+!        TBARGS, THLIQC, THLIQG, THICEC, THICEG, FROOT, HCPC, HCPG, &
+!        TCTOPC, TCBOTC, TCTOPG, TCBOTG
 
-    real, dimension(:), allocatable :: FC, FG, FCS, FGS, RBCOEF, &
-        ZSNOW, FSVF, FSVFS, ALVSCN, ALIRCN, ALVSG, &
-        ALIRG, ALVSCS, ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, ALVSSC, &
-        ALIRSC, TRVSCN, TRIRCN, TRVSCS, TRIRCS, RC, RCS, FRAINC, &
-        FSNOWC, FRAICS, FSNOCS, CMASSC, CMASCS, DISP, DISPS, ZOMLNC, &
-        ZOELNC, ZOMLNG, &
-        ZOELNG, ZOMLCS, ZOELCS, ZOMLNS, ZOELNS, TRSNOW, CHCAP, CHCAPS, &
-        GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, G12CS, G12GS, G23C, &
-        G23G, G23CS, G23GS, QFREZC, QFREZG, QMELTC, QMELTG, EVAPC, &
-        EVAPCG, EVAPG, EVAPCS, EVPCSG, EVAPGS, TCANO, TCANS, RAICAN, &
-        SNOCAN, RAICNS, SNOCNS, CWLCAP, CWFCAP, CWLCPS, CWFCPS, TSNOCS, &
-        TSNOGS, RHOSCS, RHOSGS, WSNOCS, WSNOGS, TPONDC, TPONDG, TPNDCS, &
-        TPNDGS, ZPLMCS, ZPLMGS, ZPLIMC, ZPLIMG
+!    real, dimension(:), allocatable :: FC, FG, FCS, FGS, RBCOEF, &
+!        ZSNOW, FSVF, FSVFS, ALVSCN, ALIRCN, ALVSG, &
+!        ALIRG, ALVSCS, ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, ALVSSC, &
+!        ALIRSC, TRVSCN, TRIRCN, TRVSCS, TRIRCS, RC, RCS, FRAINC, &
+!        FSNOWC, FRAICS, FSNOCS, CMASSC, CMASCS, DISP, DISPS, ZOMLNC, &
+!        ZOELNC, ZOMLNG, &
+!        ZOELNG, ZOMLCS, ZOELCS, ZOMLNS, ZOELNS, TRSNOW, CHCAP, CHCAPS, &
+!        GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, G12CS, G12GS, G23C, &
+!        G23G, G23CS, G23GS, QFREZC, QFREZG, QMELTC, QMELTG, EVAPC, &
+!        EVAPCG, EVAPG, EVAPCS, EVPCSG, EVAPGS, TCANO, TCANS, RAICAN, &
+!        SNOCAN, RAICNS, SNOCNS, CWLCAP, CWFCAP, CWLCPS, CWFCPS, TSNOCS, &
+!        TSNOGS, RHOSCS, RHOSGS, WSNOCS, WSNOGS, TPONDC, TPONDG, TPNDCS, &
+!        TPNDGS, ZPLMCS, ZPLMGS, ZPLIMC, ZPLIMG
 
 !> BALANCE ERRORS (CLASS):
 !> DIAGNOSTIC ARRAYS USED FOR CHECKING ENERGY AND WATER
 !> BALANCES.
-    real, dimension(:), allocatable :: CTVSTP, CTSSTP, CT1STP, &
-        CT2STP, CT3STP, WTVSTP, WTSSTP, WTGSTP
+!    real, dimension(:), allocatable :: CTVSTP, CTSSTP, CT1STP, &
+!        CT2STP, CT3STP, WTVSTP, WTSSTP, WTGSTP
 
 !> CTEM-RELATED FIELDS (NOT USED IN STANDARD OFFLINE CLASS RUNS).
-    real, dimension(:), allocatable :: &
-        CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS
-    real, dimension(:, :), allocatable :: &
-        AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
-        SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
-        AILC, PAIC, &
-        FIELDSM, WILTSM
-    real, dimension(:, :, :), allocatable :: &
-        RMATCTEM, RMATC
-    integer, dimension(:), allocatable :: NOL2PFTS
-    integer ICTEMMOD, L2MAX
+!    real, dimension(:), allocatable :: &
+!        CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS
+!    real, dimension(:, :), allocatable :: &
+!        AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
+!        SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
+!        AILC, PAIC, &
+!        FIELDSM, WILTSM
+!    real, dimension(:, :, :), allocatable :: &
+!        RMATCTEM, RMATC
+!    integer, dimension(:), allocatable :: NOL2PFTS
+!    integer ICTEMMOD, L2MAX
 
 !> COMMON BLOCK PARAMETERS (CLASS):
-    integer K1, K2, K3, K4, K5, K6, K7, K8, K9, K10, K11
-    real X1, X2, X3, X4, G, GAS, X5, X6, CPRES, GASV, X7, CPI, X8, &
-        CELZRO, X9, X10, X11, X12, X13, X14, X15, SIGMA, X16, DELTIM, &
-        DELT, TFREZ, RGAS, RGASV, GRAV, SBC, VKC, CT, VMIN, TCW, TCICE, &
-        TCSAND, TCCLAY, TCOM, TCDRYS, RHOSOL, RHOOM, HCPW, HCPICE, &
-        HCPSOL, HCPOM, HCPSND, HCPCLY, SPHW, SPHICE, SPHVEG, SPHAIR, &
-        RHOW, RHOICE, TCGLAC, CLHMLT, CLHVAP, PI, ZOLNG, ZOLNS, ZOLNI, &
-        ZORATG, ALVSI, ALIRI, ALVSO, ALIRO, ALBRCK, DELTA, CGRAV, &
-        CKARM, CPD, AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
+!    integer K1, K2, K3, K4, K5, K6, K7, K8, K9, K10, K11
+!    real X1, X2, X3, X4, G, GAS, X5, X6, CPRES, GASV, X7, CPI, X8, &
+!        CELZRO, X9, X10, X11, X12, X13, X14, X15, SIGMA, X16, DELTIM, &
+!        DELT, TFREZ, RGAS, RGASV, GRAV, SBC, VKC, CT, VMIN, TCW, TCICE, &
+!        TCSAND, TCCLAY, TCOM, TCDRYS, RHOSOL, RHOOM, HCPW, HCPICE, &
+!        HCPSOL, HCPOM, HCPSND, HCPCLY, SPHW, SPHICE, SPHVEG, SPHAIR, &
+!        RHOW, RHOICE, TCGLAC, CLHMLT, CLHVAP, PI, ZOLNG, ZOLNS, ZOLNI, &
+!        ZORATG, ALVSI, ALIRI, ALVSO, ALIRO, ALBRCK, DELTA, CGRAV, &
+!        CKARM, CPD, AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
 
 !> DAN * CONFLICTS WITH COMMON BLOCK DEFINITIONS (APR 20/08)
-    real, dimension(ICAN) :: CANEXT, XLEAF, ZORAT
+!    real, dimension(ICAN) :: CANEXT, XLEAF, ZORAT
 
-    real, dimension(3) :: THPORG, THRORG, THMORG, BORG, PSISORG, &
-        GRKSORG
-    real, dimension(18, 4, 2) :: GROWYR
+!    real, dimension(3) :: THPORG, THRORG, THMORG, BORG, PSISORG, &
+!        GRKSORG
+!    real, dimension(18, 4, 2) :: GROWYR
 
 !> **********************************************************************
 !>  For cacluating the subbasin grids
@@ -691,20 +695,20 @@ program RUNMESH
     integer, allocatable, dimension(:) :: GRD, GAT, GRDGAT, GRD_R, GAT_R, GRDGAT_R, GRD_S, GAT_S, GRDGAT_S
     character(50), allocatable, dimension(:, :) :: R2C_ATTRIBUTES, R2C_ATTRIBUTES_R, R2C_ATTRIBUTES_S
 
-    integer NMELT
-    real SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
-    integer, dimension(:), allocatable :: INFILTYPE
-    real, dimension(:), allocatable :: SI, TSI, SNOWMELTD, SNOWMELTD_LAST, &
-        SNOWINFIL, CUMSNOWINFILCS, MELTRUNOFF, CUMSNOWINFILGS
+!    integer NMELT
+!    real SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
+!    integer, dimension(:), allocatable :: INFILTYPE
+!    real, dimension(:), allocatable :: SI, TSI, SNOWMELTD, SNOWMELTD_LAST, &
+!        SNOWINFIL, CUMSNOWINFILCS, MELTRUNOFF, CUMSNOWINFILGS
 
 !* PDMROF
-    real ZPND, FSTR
-    real, dimension(:), allocatable   :: CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
-        ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &
-        UM1CS, UM1C, UM1G, UM1GS, &
-        QM1CS, QM1C, QM1G, QM1GS, &
-        QM2CS, QM2C, QM2G, QM2GS, UMQ, &
-        FSTRCS, FSTRC, FSTRG, FSTRGS
+!    real ZPND, FSTR
+!    real, dimension(:), allocatable   :: CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
+!        ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &
+!        UM1CS, UM1C, UM1G, UM1GS, &
+!        QM1CS, QM1C, QM1G, QM1GS, &
+!        QM2CS, QM2C, QM2G, QM2GS, UMQ, &
+!        FSTRCS, FSTRC, FSTRG, FSTRGS
 
 ! To use with variable format expressions in writing some output files
     character(20) IGND_CHAR
@@ -716,34 +720,34 @@ program RUNMESH
 !=======================================================================
 !     * SET PHYSICAL CONSTANTS AND COMMON BLOCKS
 
-    common /PARAMS/ X1, X2, X3, X4, G, GAS, X5, X6, CPRES, &
-        GASV, X7
-    common /PARAM1/ CPI, X8, CELZRO, X9, X10, X11
-    common /PARAM3/ X12, X13, X14, X15, SIGMA, X16
-    common /TIMES/ DELTIM, K1, K2, K3, K4, K5, K6, K7, K8, K9, &
-        K10, K11
+!    common /PARAMS/ X1, X2, X3, X4, G, GAS, X5, X6, CPRES, &
+!        GASV, X7
+!    common /PARAM1/ CPI, X8, CELZRO, X9, X10, X11
+!    common /PARAM3/ X12, X13, X14, X15, SIGMA, X16
+!    common /TIMES/ DELTIM, K1, K2, K3, K4, K5, K6, K7, K8, K9, &
+!        K10, K11
 
 !> THE FOLLOWING COMMON BLOCKS ARE DEFINED SPECIFICALLY FOR USE
 !> IN CLASS, VIA BLOCK DATA AND THE SUBROUTINE "CLASSD".
-    common /CLASS1/ DELT, TFREZ
-    common /CLASS2/ RGAS, RGASV, GRAV, SBC, VKC, CT, VMIN
-    common /CLASS3/ TCW, TCICE, TCSAND, TCCLAY, TCOM, TCDRYS, &
-        RHOSOL, RHOOM
-    common /CLASS4/ HCPW, HCPICE, HCPSOL, HCPOM, HCPSND, &
-        HCPCLY, SPHW, SPHICE, SPHVEG, SPHAIR, RHOW, &
-        RHOICE, TCGLAC, CLHMLT, CLHVAP
-    common /CLASS5/ THPORG, THRORG, THMORG, BORG, PSISORG, &
-        GRKSORG
-    common /CLASS6/ PI, GROWYR, ZOLNG, ZOLNS, ZOLNI, ZORAT, &
-        ZORATG
-    common /CLASS7/ CANEXT, XLEAF
-    common /CLASS8/ ALVSI, ALIRI, ALVSO, ALIRO, ALBRCK
-    common /PHYCON/ DELTA, CGRAV, CKARM, CPD
-    common /CLASSD2/ AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
+!    common /CLASS1/ DELT, TFREZ
+!    common /CLASS2/ RGAS, RGASV, GRAV, SBC, VKC, CT, VMIN
+!    common /CLASS3/ TCW, TCICE, TCSAND, TCCLAY, TCOM, TCDRYS, &
+!        RHOSOL, RHOOM
+!    common /CLASS4/ HCPW, HCPICE, HCPSOL, HCPOM, HCPSND, &
+!        HCPCLY, SPHW, SPHICE, SPHVEG, SPHAIR, RHOW, &
+!        RHOICE, TCGLAC, CLHMLT, CLHVAP
+!    common /CLASS5/ THPORG, THRORG, THMORG, BORG, PSISORG, &
+!        GRKSORG
+!    common /CLASS6/ PI, GROWYR, ZOLNG, ZOLNS, ZOLNI, ZORAT, &
+!        ZORATG
+!    common /CLASS7/ CANEXT, XLEAF
+!    common /CLASS8/ ALVSI, ALIRI, ALVSO, ALIRO, ALBRCK
+!    common /PHYCON/ DELTA, CGRAV, CKARM, CPD
+!    common /CLASSD2/ AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
 
 !> THE FOLLOWING COMMON BLOCKS ARE DEFINED FOR WATROF
-    data VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
-        EXTFLG/0/, IWFICE/3/, ERRFLG/1/
+!    data VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
+!        EXTFLG/0/, IWFICE/3/, ERRFLG/1/
 
     real :: startprog, endprog
     integer :: narg

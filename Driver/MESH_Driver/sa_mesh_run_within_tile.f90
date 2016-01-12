@@ -12,6 +12,8 @@ module sa_mesh_run_within_tile
         use MODEL_OUTPUT
         use model_output_variabletypes
 
+        use process_CLASS_config, only: RUNCLASS_ini
+
         type(ShedGridParams), intent(in) :: shd
         type(dates_model) :: ts
         type(iter_counter), intent(in) :: ic
@@ -20,6 +22,8 @@ module sa_mesh_run_within_tile
         type(soil_statevars) :: sp
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
+
+        call RUNCLASS_ini()
 
     end subroutine
 
