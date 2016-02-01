@@ -559,8 +559,18 @@ program RUNMESH
         TOTAL_SNO_M, TOTAL_WSNO_M, &
         TOTAL_ZPND_M, &
         TOTAL_STORE_M, TOTAL_STORE_2_M, &
-        TOTAL_STORE_ACC_M
-  
+        TOTAL_STORE_ACC_M, &
+
+        !> For hourly basin output.
+        TOTAL_PRE_ACC_HLY, TOTAL_EVAP_ACC_HLY, TOTAL_ROF_ACC_HLY, &
+        TOTAL_ROFO_ACC_HLY, TOTAL_ROFS_ACC_HLY, TOTAL_ROFB_ACC_HLY, &
+        TOTAL_PRE_HLY, TOTAL_EVAP_HLY, TOTAL_ROF_HLY, &
+        TOTAL_ROFO_HLY, TOTAL_ROFS_HLY, TOTAL_ROFB_HLY, &
+        TOTAL_SCAN_HLY, TOTAL_RCAN_HLY, &
+        TOTAL_SNO_HLY, TOTAL_WSNO_HLY, &
+        TOTAL_PNDW_HLY, &
+        TOTAL_STORE_HLY, TOTAL_STORE_2_HLY
+
 !* TOTAL_HFS = TOTAL SENSIBLE HEAT FLUX
 !* TOTAL_QEVP = TOTAL LATENT HEAT FLUX
     real TOTAL_HFSACC, TOTAL_QEVPACC
@@ -568,7 +578,10 @@ program RUNMESH
     real TOTAL_STORE, TOTAL_STORE_2, TOTAL_RCAN, TOTAL_SCAN, TOTAL_SNO, TOTAL_WSNO, TOTAL_ZPND
     real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
     real, dimension(:), allocatable :: TOTAL_THLQ, TOTAL_THIC, &
-        TOTAL_THLQ_M, TOTAL_THIC_M
+        TOTAL_THLQ_M, TOTAL_THIC_M, &
+
+        !> For hourly basin output.
+        TOTAL_LQWS_HLY, TOTAL_FZWS_HLY
 
 !> CROSS-CLASS VARIABLES (CLASS):
 !> ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
@@ -1088,7 +1101,8 @@ program RUNMESH
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (for Basin_average_water_balance.csv):
     allocate(TOTAL_THLQ(IGND), TOTAL_THIC(IGND), &
-             TOTAL_THLQ_M(IGND), TOTAL_THIC_M(IGND), stat = PAS)
+             TOTAL_THLQ_M(IGND), TOTAL_THIC_M(IGND), &
+             TOTAL_LQWS_HLY(IGND), TOTAL_FZWS_HLY(IGND), stat = PAS)
 
     if (PAS /= 0) then
         print 1114, 'land surface prognostic'
@@ -1677,6 +1691,20 @@ program RUNMESH
     TOTAL_ROFB_ACC_M = 0.0
     TOTAL_EVAP_ACC_M = 0.0
     TOTAL_PRE_ACC_M = 0.0
+
+    !> For hourly basin totals.
+    TOTAL_ROF_HLY = 0.0
+    TOTAL_ROFO_HLY = 0.0
+    TOTAL_ROFS_HLY = 0.0
+    TOTAL_ROFB_HLY = 0.0
+    TOTAL_EVAP_HLY = 0.0
+    TOTAL_PRE_HLY = 0.0
+    TOTAL_ROF_ACC_HLY = 0.0
+    TOTAL_ROFO_ACC_HLY = 0.0
+    TOTAL_ROFS_ACC_HLY = 0.0
+    TOTAL_ROFB_ACC_HLY = 0.0
+    TOTAL_EVAP_ACC_HLY = 0.0
+    TOTAL_PRE_ACC_HLY = 0.0
 
 !> *********************************************************************
 !> Set accumulation variables to zero.
@@ -2580,6 +2608,16 @@ program RUNMESH
         TOTAL_THLQ_M = 0.0
         TOTAL_THIC_M = 0.0
 
+        TOTAL_STORE_HLY = 0.0
+        TOTAL_STORE_2_HLY = 0.0
+        TOTAL_RCAN_HLY = 0.0
+        TOTAL_SCAN_HLY = 0.0
+        TOTAL_SNO_HLY = 0.0
+        TOTAL_WSNO_HLY = 0.0
+        TOTAL_PNDW_HLY = 0.0
+        TOTAL_LQWS_HLY = 0.0
+        TOTAL_FZWS_HLY = 0.0
+
     !> Open CSV output files.
         if (BASINBALANCEOUTFLAG > 0) then
 
@@ -2590,6 +2628,7 @@ program RUNMESH
                  iostat = ios)
 !todo: Create this only by flag.
             open(902, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/Basin_average_water_balance_Monthly.csv')
+            open(903, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/Basin_average_water_balance_Hourly.csv')
 
             wrt_900_1 = 'DAY,YEAR,PREACC' // ',EVAPACC,ROFACC,ROFOACC,' // &
                 'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,'
@@ -2619,6 +2658,12 @@ program RUNMESH
 
             write(fls%fl(mfk%f900)%iun, '(a)') trim(adjustl(wrt_900_f))
             write(902, '(a)') trim(adjustl(wrt_900_f))
+            write(903, '(a)') 'DAY,YEAR,HOUR,PREACC' // ',EVAPACC,ROFACC,ROFOACC,' // &
+                'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,' // &
+                trim(adjustl(wrt_900_2)) // &
+                trim(adjustl(wrt_900_3)) // &
+                trim(adjustl(wrt_900_4)) // &
+                'THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE,DSTOR_ACC'
 
         !> Energy balance.
             open(901, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/Basin_average_energy_balance.csv')
@@ -3052,29 +3097,34 @@ program RUNMESH
 
 !> Calculate initial storage (after reading in resume.txt file if applicable)
             if (JAN == 1) then
+
+                !> Calculate initial storage.
                 INIT_STORE = 0.0
-                do i = 1, NA
-                    if (shd%FRAC(i) >= 0.0) then
-                        do m = 1, NMTEST
-                            INIT_STORE = INIT_STORE + cp%FAREROW(i, m)* &
-                                (cp%RCANROW(i, m) + cp%SCANROW(i, m) + cp%SNOROW(i, m) + WSNOROW(i, m) + cp%ZPNDROW(i, m)*RHOW)
-                            wb%stg(i) = cp%FAREROW(i, m)* &
-                                (cp%RCANROW(i, m) + cp%SCANROW(i, m) + cp%SNOROW(i, m) + WSNOROW(i, m) + cp%ZPNDROW(i, m)*RHOW)
-                            do j = 1, IGND
-                                INIT_STORE = INIT_STORE + cp%FAREROW(i, m)* &
-                                    (cp%THLQROW(i, m, j)*RHOW + cp%THICROW(i, m, j)*RHOICE)*DLZWROW(i, m, j)
-                                wb%stg(i) = cp%FAREROW(i, m)* &
-                                    (cp%THLQROW(i, m, j)*RHOW + cp%THICROW(i, m, j)*RHOICE)*DLZWROW(i, m, j)
-                            end do
+                wb%stg = 0.0
+                do k = 1, NML
+                    ik = shd%lc%ILMOS(k)
+                    if (shd%FRAC(ik) >= 0.0) then
+                        INIT_STORE = INIT_STORE + (RCANGAT(k) + SCANGAT(k) + SNOGAT(k) + ZPNDGAT(k)*RHOW)*FAREGAT(k)
+                        wb%stg(ik) = wb%stg(ik) + (RCANGAT(k) + SCANGAT(k) + SNOGAT(k) + ZPNDGAT(k)*RHOW)*FAREGAT(k)
+                        if (SNOGAT(k) > 0.0) then
+                            INIT_STORE = INIT_STORE + WSNOGAT(k)*FAREGAT(k)
+                            wb%stg(ik) = wb%stg(ik) + WSNOGAT(k)*FAREGAT(k)
+                        end if
+                        do j = 1, IGND
+                            INIT_STORE = INIT_STORE + (THLQGAT(k, j)*RHOW + THICGAT(k, j)*RHOICE)*FAREGAT(k)*DLZWGAT(k, j)
+                            wb%stg(ik) = wb%stg(ik) + (THLQGAT(k, j)*RHOW + THICGAT(k, j)*RHOICE)*FAREGAT(k)*DLZWGAT(k, j)
                         end do
-                        wb%dstg(i) = wb%stg(i)
                     end if
                 end do
+                wb%dstg = wb%stg
                 TOTAL_STORE_2 = INIT_STORE
 
     ! For monthly totals.
                 call FIND_MONTH(JDAY_NOW, YEAR_NOW, imonth_old)
                 TOTAL_STORE_2_M = INIT_STORE
+
+                !> For hourly basin totals.
+                TOTAL_STORE_2_HLY = INIT_STORE
             end if
 
 !> Initialization of the Storage field
@@ -4027,6 +4077,93 @@ program RUNMESH
                                       md, wb_h, &
                                       vr)
 
+            !> Hourly basin totals.
+            do k = il1, il2
+                if (shd%lc%ILMOS(k) >= 0.0) then
+
+                    !> Accumulated precip., evap., and runoff terms.
+                    TOTAL_PRE_ACC_HLY = TOTAL_PRE_ACC_HLY + PREGAT(k)*FAREGAT(k)*DELT
+                    TOTAL_EVAP_ACC_HLY = TOTAL_EVAP_ACC_HLY + QFSGAT(k)*FAREGAT(k)*DELT
+                    TOTAL_ROF_ACC_HLY = TOTAL_ROF_ACC_HLY + ROFGAT(k)*FAREGAT(k)*DELT
+                    TOTAL_ROFO_ACC_HLY = TOTAL_ROFO_ACC_HLY + ROFOGAT(k)*FAREGAT(k)*DELT
+                    TOTAL_ROFS_ACC_HLY = TOTAL_ROFS_ACC_HLY + ROFSGAT(k)*FAREGAT(k)*DELT
+                    TOTAL_ROFB_ACC_HLY = TOTAL_ROFB_ACC_HLY + ROFBGAT(k)*FAREGAT(k)*DELT
+                    TOTAL_PRE_HLY = TOTAL_PRE_HLY + PREGAT(k)*FAREGAT(k)*DELT
+                    TOTAL_EVAP_HLY = TOTAL_EVAP_HLY + QFSGAT(k)*FAREGAT(k)*DELT
+                    TOTAL_ROF_HLY = TOTAL_ROF_HLY + ROFGAT(k)*FAREGAT(k)*DELT
+                    TOTAL_ROFO_HLY = TOTAL_ROFO_HLY + ROFOGAT(k)*FAREGAT(k)*DELT
+                    TOTAL_ROFS_HLY = TOTAL_ROFS_HLY + ROFSGAT(k)*FAREGAT(k)*DELT
+                    TOTAL_ROFB_HLY = TOTAL_ROFB_HLY + ROFBGAT(k)*FAREGAT(k)*DELT
+
+                    !> Average storage terms.
+                    TOTAL_SCAN_HLY = TOTAL_SCAN_HLY + SCANGAT(k)*FAREGAT(k)/2.0
+                    TOTAL_RCAN_HLY = TOTAL_RCAN_HLY + RCANGAT(k)*FAREGAT(k)/2.0
+                    TOTAL_SNO_HLY = TOTAL_SNO_HLY + SNOGAT(k)*FAREGAT(k)/2.0
+                    if (SNOGAT(k) > 0.0) TOTAL_WSNO_HLY = TOTAL_WSNO_HLY + WSNOGAT(k)*FAREGAT(k)/2.0
+                    TOTAL_PNDW_HLY = TOTAL_PNDW_HLY + ZPNDGAT(k)*RHOW*FAREGAT(k)/2.0
+                    do j = 1, IGND
+                        TOTAL_LQWS_HLY(j) = TOTAL_LQWS_HLY(j) + THLQGAT(k, j)*RHOW*DLZWGAT(k, j)*FAREGAT(k)/2.0
+                        TOTAL_FZWS_HLY(j) = TOTAL_FZWS_HLY(j) + THICGAT(k, j)*RHOICE*DLZWGAT(k, j)*FAREGAT(k)/2.0
+                    end do
+                end if !(shd%lc%ILMOS(k) >= 0.0) then
+            end do !k = il1, il2
+
+            !> Write out hourly basin totals.
+            if (mod(real(NCOUNT), 2.0) == 0.0) then
+
+                !> Calculate total storage.
+                TOTAL_STORE_HLY = TOTAL_SCAN_HLY + TOTAL_RCAN_HLY + TOTAL_SNO_HLY + TOTAL_WSNO_HLY + TOTAL_PNDW_HLY + &
+                    sum(TOTAL_LQWS_HLY(1:IGND)) + sum(TOTAL_FZWS_HLY(1:IGND))
+
+                !> Write the output to file.
+                write(903, "((i4, ','), (i5, ','), (i3, ','), 999(e14.6, ','))") &
+                    JDAY_NOW, YEAR_NOW, HOUR_NOW, &
+                    TOTAL_PRE_ACC_HLY/TOTAL_AREA, &
+                    TOTAL_EVAP_ACC_HLY/TOTAL_AREA, &
+                    TOTAL_ROF_ACC_HLY/TOTAL_AREA, &
+                    TOTAL_ROFO_ACC_HLY/TOTAL_AREA, &
+                    TOTAL_ROFS_ACC_HLY/TOTAL_AREA, &
+                    TOTAL_ROFB_ACC_HLY/TOTAL_AREA, &
+                    TOTAL_PRE_HLY/TOTAL_AREA, &
+                    TOTAL_EVAP_HLY/TOTAL_AREA, &
+                    TOTAL_ROF_HLY/TOTAL_AREA, &
+                    TOTAL_ROFO_HLY/TOTAL_AREA, &
+                    TOTAL_ROFS_HLY/TOTAL_AREA, &
+                    TOTAL_ROFB_HLY/TOTAL_AREA, &
+                    TOTAL_SCAN_HLY/TOTAL_AREA, &
+                    TOTAL_RCAN_HLY/TOTAL_AREA, &
+                    TOTAL_SNO_HLY/TOTAL_AREA, &
+                    TOTAL_WSNO_HLY/TOTAL_AREA, &
+                    TOTAL_PNDW_HLY/TOTAL_AREA, &
+                    (TOTAL_LQWS_HLY(j)/TOTAL_AREA, j = 1, IGND), &
+                    (TOTAL_FZWS_HLY(j)/TOTAL_AREA, j = 1, IGND), &
+                    ((TOTAL_LQWS_HLY(j) + TOTAL_FZWS_HLY(j))/TOTAL_AREA, j = 1, IGND), &
+                    sum(TOTAL_LQWS_HLY(1:IGND))/TOTAL_AREA, &
+                    sum(TOTAL_FZWS_HLY(1:IGND))/TOTAL_AREA, &
+                    (sum(TOTAL_LQWS_HLY(1:IGND)) + sum(TOTAL_FZWS_HLY(1:IGND)))/TOTAL_AREA, &
+                    TOTAL_STORE_HLY/TOTAL_AREA, &
+                    (TOTAL_STORE_HLY - TOTAL_STORE_2_HLY)/TOTAL_AREA, &
+                    (TOTAL_STORE_HLY - INIT_STORE)/TOTAL_AREA
+
+                !> Reset the accumulators.
+                TOTAL_PRE_HLY = 0.0
+                TOTAL_EVAP_HLY = 0.0
+                TOTAL_ROF_HLY = 0.0
+                TOTAL_ROFO_HLY = 0.0
+                TOTAL_ROFS_HLY = 0.0
+                TOTAL_ROFB_HLY = 0.0
+                TOTAL_SCAN_HLY = 0.0
+                TOTAL_RCAN_HLY = 0.0
+                TOTAL_SNO_HLY = 0.0
+                TOTAL_WSNO_HLY = 0.0
+                TOTAL_PNDW_HLY = 0.0
+                TOTAL_LQWS_HLY = 0.0
+                TOTAL_FZWS_HLY = 0.0
+                TOTAL_STORE_2_HLY = TOTAL_STORE_HLY
+                TOTAL_STORE_HLY = 0.0
+
+            end if
+
 !> CALCULATE AND PRINT DAILY AVERAGES.
 
 !todo: use delta t here
@@ -4147,13 +4284,13 @@ program RUNMESH
                         TOTAL_SCAN = TOTAL_SCAN + FAREGAT(k)*SCANGAT(k)
                         TOTAL_RCAN = TOTAL_RCAN + FAREGAT(k)*RCANGAT(k)
                         TOTAL_SNO = TOTAL_SNO + FAREGAT(k)*SNOGAT(k)
-                        TOTAL_WSNO = TOTAL_WSNO + FAREGAT(k)*WSNOGAT(k)
+                        if (SNOGAT(k) > 0.0) TOTAL_WSNO = TOTAL_WSNO + FAREGAT(k)*WSNOGAT(k)
                         TOTAL_ZPND = TOTAL_ZPND + FAREGAT(k)*ZPNDGAT(k)*RHOW
-                        wb%rcan(ik) = wb%rcan(ik) + FAREGAT(k)*SCANGAT(k)
-                        wb%sncan(ik) = wb%sncan(ik) + FAREGAT(k)*RCANGAT(k)
+                        wb%rcan(ik) = wb%rcan(ik) + FAREGAT(k)*RCANGAT(k)
+                        wb%sncan(ik) = wb%sncan(ik) + FAREGAT(k)*SCANGAT(k)
                         wb%pndw(ik) = wb%pndw(ik) + FAREGAT(k)*ZPNDGAT(k)*RHOW
                         wb%sno(ik) = wb%sno(ik) + FAREGAT(k)*SNOGAT(k)
-                        wb%wsno(ik) = wb%wsno(ik) + FAREGAT(k)*WSNOGAT(k)
+                        if (SNOGAT(k) > 0.0) wb%wsno(ik) = wb%wsno(ik) + FAREGAT(k)*WSNOGAT(k)
                         do j = 1, IGND
                             TOTAL_THLQ(j) = TOTAL_THLQ(j) + FAREGAT(k)*THLQGAT(k, j)*RHOW*DLZWGAT(k, j)
                             TOTAL_THIC(j) = TOTAL_THIC(j) + FAREGAT(k)*THICGAT(k, j)*RHOICE*DLZWGAT(k, j)
@@ -4847,9 +4984,10 @@ program RUNMESH
     FINAL_STORE = 0.0
     do k = il1, il2
         if (shd%FRAC(shd%lc%ILMOS(k)) >= 0.0) then
-            FINAL_STORE = FINAL_STORE + FAREGAT(k)*(RCANGAT(k) + SCANGAT(k) + SNOGAT(k) + WSNOGAT(k) + ZPNDGAT(k)*RHOW)
+            FINAL_STORE = FINAL_STORE + (RCANGAT(k) + SCANGAT(k) + SNOGAT(k) + ZPNDGAT(k)*RHOW)*FAREGAT(k)
+            if (SNOGAT(k) > 0.0) FINAL_STORE = FINAL_STORE + WSNOGAT(k)*FAREGAT(k)
             do j = 1, IGND
-                FINAL_STORE = FINAL_STORE + FAREGAT(k)*(THLQGAT(k, j)*RHOW + THICGAT(k, j)*RHOICE)*DLZWGAT(k, j)
+                FINAL_STORE = FINAL_STORE + (THLQGAT(k, j)*RHOW + THICGAT(k, j)*RHOICE)*DLZWGAT(k, j)*FAREGAT(k)
             end do
         end if
     end do
@@ -4946,6 +5084,7 @@ program RUNMESH
     close(fls%fl(mfk%f900)%iun)
     close(901)
     close(902)
+    close(903)
 
 9000    format(/1x, 'INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY AND IS SET TO 0 BY THE MODEL.', &
                /1x, '0: NO INTERPOLATION OF FORCING DATA.', &
