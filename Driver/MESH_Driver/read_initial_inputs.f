@@ -2,27 +2,33 @@
 !> GENERIC VARIABLES
      +  RELEASE,
 !> VARIABLES FOR READ_RUN_OPTIONS
-     +  IDISP, IZREF, ISLFD, IPCP, IWF,
-     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
-     +  ICTEMMOD, IOS, PAS, N, IROVAL, WF_NUM_POINTS,
+!     +  IDISP, IZREF, ISLFD, IPCP, IWF,
+!     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
+!     +  ICTEMMOD,
+     +  IOS, PAS, N, IROVAL,
+!     +  WF_NUM_POINTS,
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
      +  IRONAME, GENDIR_OUT,
 !> variables for READ_PARAMETERS_CLASS
-     +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
-     +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
-     +  PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6,
-     +  ILW, NLTEST, NMTEST, JLAT, ICAN,
-     +  DEGLAT, DEGLON,
-     +  HOURLY_START_DAY, HOURLY_STOP_DAY,
-     +  DAILY_START_DAY, DAILY_STOP_DAY,
-     +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
-     +  DAILY_START_YEAR, DAILY_STOP_YEAR,
+!     +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
+!     +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
+!     +  PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6,
+!     +  ILW, NLTEST, NMTEST, JLAT, ICAN,
+!     +  DEGLAT, DEGLON,
+!     +  HOURLY_START_DAY, HOURLY_STOP_DAY,
+!     +  DAILY_START_DAY, DAILY_STOP_DAY,
+!     +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
+!     +  DAILY_START_YEAR, DAILY_STOP_YEAR,
 !> variables for READ_SOIL_INI
 !> variables for READ_PARAMETERS_HYDROLOGY
      +  INDEPPAR, DEPPAR, WF_R2, M_C,
 !> the types that are to be allocated and initialised
-     +  shd, op, sl, cp, sv, hp, ts, cm,
+     +  shd,
+!     +  op,
+     +  sl,
+!     +  cp,
+     +  sv, hp, ts, cm,
      +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
       use sa_mesh_shared_variabletypes
@@ -34,14 +40,21 @@
       use model_files_variabletypes
       use model_files_variables
 
+      use process_CLASS_constants
+      use process_CLASS_variables
+      use process_CLASS_save_output
+
       implicit none
 
 !> DECLARE THE READ IN VARIABLES.
 !> ----------------------------
 !> VALUES NEEDED FOR READ_RUN_OPTIONS
-      integer IDISP, IZREF, ISLFD, IPCP, IWF,
-     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
-     +  ICTEMMOD, IOS, PAS, N, IROVAL, WF_NUM_POINTS
+      integer
+!     +  IDISP, IZREF, ISLFD, IPCP, IWF,
+!     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
+!     +  ICTEMMOD,
+     +  IOS, PAS, N, IROVAL
+!     +  WF_NUM_POINTS
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END
       character(20) IRONAME
@@ -69,18 +82,19 @@
       integer NA, NTYPE, IGND, i, j, k
 !> END OF VALUES NEEDED for drainagedatabase of new_shd.r2c
 !> values needed for READ_PARAMETERS_CLASS
-      character(4)
-     +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
-     +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
-     +  PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
-      integer ILW, NLTEST, NMTEST,
-     +  JLAT, ICAN,
-     +  HOURLY_START_DAY, HOURLY_STOP_DAY,
-     +  DAILY_START_DAY, DAILY_STOP_DAY,
-     +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
-     +  DAILY_START_YEAR, DAILY_STOP_YEAR,
-     +  IHOUR, IMIN, IDAY, IYEAR
-      real DEGLAT, DEGLON
+!      character(4)
+!     +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
+!     +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
+!     +  PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
+!      integer
+!     +  ILW, NLTEST, NMTEST,
+!     +  JLAT, ICAN,
+!     +  HOURLY_START_DAY, HOURLY_STOP_DAY,
+!     +  DAILY_START_DAY, DAILY_STOP_DAY,
+!     +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
+!     +  DAILY_START_YEAR, DAILY_STOP_YEAR,
+!     +  IHOUR, IMIN, IDAY, IYEAR
+!      real DEGLAT, DEGLON
 !> values declared in mesh_input_module
 
 !> -----------------------------
@@ -106,10 +120,10 @@
       character(8) RELEASE
 
 !> The types that contain allocatable values
-      type(OutputPoints) :: op
+!      type(OutputPoints) :: op
 !+     TYPE(ShedInformation) :: si
       type(SoilLevels) :: sl
-      type(ClassParameters) :: cp
+!      type(ClassParameters) :: cp
       type(SoilValues) :: sv
       type(HydrologyParameters) :: hp
       type(ShedGridParams) :: shd
@@ -124,13 +138,17 @@
 !> and SET or RESET any CONTROL FLAGS
 !> and READ the GRID OUTPUT DIRECTORIES.
       call READ_RUN_OPTIONS(
-     +  IDISP, IZREF, ISLFD, IPCP, IWF,
-     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
-     +  ICTEMMOD, IOS, PAS, N,
-     +  IROVAL, WF_NUM_POINTS,
+!     +  IDISP, IZREF, ISLFD, IPCP, IWF,
+!     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
+!     +  ICTEMMOD,
+     +  IOS, PAS, N,
+     +  IROVAL,
+!     +  WF_NUM_POINTS,
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
-     +  IRONAME, GENDIR_OUT, op, ts, cm, fls)
+     +  IRONAME, GENDIR_OUT,
+!     +  op,
+     +  ts, cm, fls)
 
 !> =====================================
 !> DAN  * READ EVENT FILE
@@ -380,85 +398,85 @@
       allocate(sl%DELZ(IGND), sl%ZBOT(IGND))
       call READ_SOIL_LEVELS(IGND, sl, fls)
 
-      allocate(
-     +  cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA),
-     +  cp%GCGRD(NA))
+!      allocate(
+!     +  cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA),
+!     +  cp%GCGRD(NA))
 
-      allocate(cp%FCANROW(NA, NTYPE, ICAN + 1),
-     +  cp%LNZ0ROW(NA, NTYPE, ICAN + 1),
-     +  cp%ALVCROW(NA, NTYPE, ICAN + 1),
-     +  cp%ALICROW(NA, NTYPE, ICAN + 1))
+!      allocate(cp%FCANROW(NA, NTYPE, ICAN + 1),
+!     +  cp%LNZ0ROW(NA, NTYPE, ICAN + 1),
+!     +  cp%ALVCROW(NA, NTYPE, ICAN + 1),
+!     +  cp%ALICROW(NA, NTYPE, ICAN + 1))
 
-      allocate(
-     +  cp%PAMXROW(NA, NTYPE, ICAN),
-     +  cp%PAMNROW(NA, NTYPE, ICAN),
-     +  cp%CMASROW(NA, NTYPE, ICAN),
-     +  cp%ROOTROW(NA, NTYPE, ICAN),
-     +  cp%RSMNROW(NA, NTYPE, ICAN),
-     +  cp%QA50ROW(NA, NTYPE, ICAN),
-     +  cp%VPDAROW(NA, NTYPE, ICAN),
-     +  cp%VPDBROW(NA, NTYPE, ICAN),
-     +  cp%PSGAROW(NA, NTYPE, ICAN),
-     +  cp%PSGBROW(NA, NTYPE, ICAN))
+!      allocate(
+!     +  cp%PAMXROW(NA, NTYPE, ICAN),
+!     +  cp%PAMNROW(NA, NTYPE, ICAN),
+!     +  cp%CMASROW(NA, NTYPE, ICAN),
+!     +  cp%ROOTROW(NA, NTYPE, ICAN),
+!     +  cp%RSMNROW(NA, NTYPE, ICAN),
+!     +  cp%QA50ROW(NA, NTYPE, ICAN),
+!     +  cp%VPDAROW(NA, NTYPE, ICAN),
+!     +  cp%VPDBROW(NA, NTYPE, ICAN),
+!     +  cp%PSGAROW(NA, NTYPE, ICAN),
+!     +  cp%PSGBROW(NA, NTYPE, ICAN))
 
-      allocate(
-     +  cp%DRNROW(NA, NTYPE),  cp%SDEPROW(NA, NTYPE),
-     +  cp%FAREROW(NA, NTYPE), cp%DDROW(NA, NTYPE),
-     +  cp%XSLPROW(NA, NTYPE), cp%XDROW(NA, NTYPE),
-     +  cp%MANNROW(NA, NTYPE), cp%KSROW(NA, NTYPE),
-     +  cp%TCANROW(NA, NTYPE), cp%TSNOROW(NA, NTYPE),
-     +  cp%TPNDROW(NA, NTYPE), cp%ZPNDROW(NA, NTYPE),
-     +  cp%RCANROW(NA, NTYPE), cp%SCANROW(NA, NTYPE),
-     +  cp%SNOROW(NA, NTYPE),  cp%ALBSROW(NA, NTYPE),
-     +  cp%RHOSROW(NA, NTYPE), cp%GROROW(NA, NTYPE))
+!      allocate(
+!     +  cp%DRNROW(NA, NTYPE),  cp%SDEPROW(NA, NTYPE),
+!     +  cp%FAREROW(NA, NTYPE), cp%DDROW(NA, NTYPE),
+!     +  cp%XSLPROW(NA, NTYPE), cp%XDROW(NA, NTYPE),
+!     +  cp%MANNROW(NA, NTYPE), cp%KSROW(NA, NTYPE),
+!     +  cp%TCANROW(NA, NTYPE), cp%TSNOROW(NA, NTYPE),
+!     +  cp%TPNDROW(NA, NTYPE), cp%ZPNDROW(NA, NTYPE),
+!     +  cp%RCANROW(NA, NTYPE), cp%SCANROW(NA, NTYPE),
+!     +  cp%SNOROW(NA, NTYPE),  cp%ALBSROW(NA, NTYPE),
+!     +  cp%RHOSROW(NA, NTYPE), cp%GROROW(NA, NTYPE))
 
-      allocate(cp%MIDROW(NA, NTYPE))
+!      allocate(cp%MIDROW(NA, NTYPE))
 
-      allocate(
-     +  cp%SANDROW(NA, NTYPE, IGND),
-     +  cp%CLAYROW(NA, NTYPE, IGND),
-     +  cp%ORGMROW(NA, NTYPE, IGND),
-     +  cp%TBARROW(NA, NTYPE, IGND),
-     +  cp%THLQROW(NA, NTYPE, IGND),
-     +  cp%THICROW(NA, NTYPE, IGND))
+!      allocate(
+!     +  cp%SANDROW(NA, NTYPE, IGND),
+!     +  cp%CLAYROW(NA, NTYPE, IGND),
+!     +  cp%ORGMROW(NA, NTYPE, IGND),
+!     +  cp%TBARROW(NA, NTYPE, IGND),
+!     +  cp%THLQROW(NA, NTYPE, IGND),
+!     +  cp%THICROW(NA, NTYPE, IGND))
 !>
 !>*******************************************************************
 !>
-      call READ_PARAMETERS_CLASS(
-     +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
-     +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
-     +  PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6,
-     +  NA, ILW, NLTEST, NMTEST,
-     +  IGND, JLAT, ICAN, NTYPE,
-     +  DEGLAT, DEGLON,
-     +  HOURLY_START_DAY, HOURLY_STOP_DAY,
-     +  DAILY_START_DAY, DAILY_STOP_DAY,
-     +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
-     +  DAILY_START_YEAR, DAILY_STOP_YEAR,
-     +  IHOUR, IMIN, IDAY, IYEAR,
-     +  cp, fls)
+!      call READ_PARAMETERS_CLASS(
+!     +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
+!     +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
+!     +  PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6,
+!     +  NA, ILW, NLTEST, NMTEST,
+!     +  IGND, JLAT, ICAN, NTYPE,
+!     +  DEGLAT, DEGLON,
+!     +  HOURLY_START_DAY, HOURLY_STOP_DAY,
+!     +  DAILY_START_DAY, DAILY_STOP_DAY,
+!     +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
+!     +  DAILY_START_YEAR, DAILY_STOP_YEAR,
+!     +  IHOUR, IMIN, IDAY, IYEAR,
+!     +  cp, fls)
 
 !>    Copy the starting date of input forcing data from CLASS.ini
 !>    to the climate variable.
-      cm%start_date%year = IYEAR
-      cm%start_date%jday = IDAY
-      cm%start_date%hour = IHOUR
-      cm%start_date%mins = IMIN
+!      cm%start_date%year = IYEAR
+!      cm%start_date%jday = IDAY
+!      cm%start_date%hour = IHOUR
+!      cm%start_date%mins = IMIN
 
 !>    Set the starting date to that of the forcing data if none is
 !>    provided and intialize the current time-step.
-      if (YEAR_START == 0 .and. JDAY_START == 0 .and.
-     +  MINS_START == 0 .and. HOUR_START == 0) then
-        YEAR_START = cm%start_date%year
-        JDAY_START = cm%start_date%jday
-        HOUR_START = cm%start_date%hour
-        MINS_START = cm%start_date%mins
-      end if
-      YEAR_NOW = YEAR_START
-      JDAY_NOW = JDAY_START
-      HOUR_NOW = HOUR_START
-      MINS_NOW = MINS_START
-      TIME_STEP_NOW = MINS_START
+!      if (YEAR_START == 0 .and. JDAY_START == 0 .and.
+!     +  MINS_START == 0 .and. HOUR_START == 0) then
+!        YEAR_START = cm%start_date%year
+!        JDAY_START = cm%start_date%jday
+!        HOUR_START = cm%start_date%hour
+!        MINS_START = cm%start_date%mins
+!      end if
+!      YEAR_NOW = YEAR_START
+!      JDAY_NOW = JDAY_START
+!      HOUR_NOW = HOUR_START
+!      MINS_NOW = MINS_START
+!      TIME_STEP_NOW = MINS_START
 
 !>
 !>*******************************************************************

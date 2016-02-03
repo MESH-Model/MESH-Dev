@@ -1,31 +1,46 @@
       SUBROUTINE READ_RUN_OPTIONS(
-     +  IDISP, IZREF, ISLFD, IPCP, IWF,
-     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
-     +  ICTEMMOD, IOS, PAS, N,
-     +  IROVAL, WF_NUM_POINTS,
+!     +  IDISP, IZREF, ISLFD, IPCP, IWF,
+!     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
+!     +  ICTEMMOD,
+     +  IOS, PAS, N,
+     +  IROVAL,
+!     +  WF_NUM_POINTS,
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
-     +  IRONAME, GENDIR_OUT, op, ts, cm, fls)
+     +  IRONAME, GENDIR_OUT,
+!     +  op,
+     +  ts, cm, fls)
+
+      use module_mpi_flags
 
       use sa_mesh_shared_variables
       USE MESH_INPUT_MODULE
       USE strings
+
       use model_files_variabletypes
       use model_files_variables
-      use module_mpi_flags
+
       USE FLAGS
       USE climate_forcing
       USE model_dates
+
       use SIMSTATS_config, only: mtsflg
+
+      use process_CLASS_constants
+      use process_CLASS_save_output
+
       use process_SA_RTE, only: SA_RTE_flgs
 
       IMPLICIT NONE
 
 !> the following variables were passed in from the subroutine call
-      INTEGER :: IDISP, IZREF, ISLFD, IPCP, IWF,
-     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
-     +  ICTEMMOD, IOS, PAS, N,
-     +  IROVAL, WF_NUM_POINTS,
+      INTEGER ::
+!     +  IDISP, IZREF, ISLFD, IPCP, IWF,
+!     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
+!     +  ICTEMMOD,
+     +  IOS, PAS, N,
+     +  IROVAL,
+!     +  WF_NUM_POINTS,
      +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, !P
      +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END !P
 
@@ -38,7 +53,7 @@
       CHARACTER(20) :: IRONAME
       CHARACTER*10 GENDIR_OUT
       
-      TYPE(OutputPoints) :: op
+!      TYPE(OutputPoints) :: op
 
       TYPE(CLIM_INFO) :: cm
       type(dates_model) :: ts

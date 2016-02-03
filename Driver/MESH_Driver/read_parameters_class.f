@@ -1,42 +1,53 @@
-      SUBROUTINE READ_PARAMETERS_CLASS(
-     +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
-     +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
-     +  PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6,
-     +  NA, ILW, NLTEST, NMTEST,
-     +  IGND, JLAT, ICAN, NTYPE,
-     +  DEGLAT, DEGLON,
-     +  HOURLY_START_DAY,  HOURLY_STOP_DAY,
-     +  DAILY_START_DAY,   DAILY_STOP_DAY,
-     +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
-     +  DAILY_START_YEAR,  DAILY_STOP_YEAR,
-     +  IHOUR, IMIN, IDAY, IYEAR,
-     +  cp, fls)
+      SUBROUTINE READ_PARAMETERS_CLASS(shd, fls)
+!     +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
+!     +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
+!     +  PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6,
+!     +  NA, ILW, NLTEST, NMTEST,
+!     +  IGND, JLAT, ICAN, NTYPE,
+!     +  DEGLAT, DEGLON,
+!     +  HOURLY_START_DAY,  HOURLY_STOP_DAY,
+!     +  DAILY_START_DAY,   DAILY_STOP_DAY,
+!     +  HOURLY_START_YEAR, HOURLY_STOP_YEAR,
+!     +  DAILY_START_YEAR,  DAILY_STOP_YEAR,
+!     +  IHOUR, IMIN, IDAY, IYEAR,
+!     +  cp, fls)
 
-      USE MESH_INPUT_MODULE
+!      USE MESH_INPUT_MODULE
+      use sa_mesh_shared_variabletypes
+
       use model_files_variabletypes
       use model_files_variables
-      use climate_forcing
+!      use climate_forcing
       use model_files
+
+      use process_CLASS_constants
+      use process_CLASS_variables
+
       USE FLAGS
 
       implicit none
 
-      CHARACTER*4 ::
-     +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
-     +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
-     +  PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
+!      CHARACTER*4 ::
+!     +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
+!     +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
+!     +  PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
 !> passed in variables
-      INTEGER :: NA, ILW, NLTEST, NMTEST,
-     +        IGND, JLAT, ICAN,
-     +        HOURLY_START_DAY,  HOURLY_STOP_DAY,
-     +        DAILY_START_DAY,   DAILY_STOP_DAY,
-     +        HOURLY_START_YEAR, HOURLY_STOP_YEAR,
-     +        DAILY_START_YEAR,  DAILY_STOP_YEAR,
-     +        IHOUR, IMIN, IDAY, IYEAR
+      INTEGER
+!     +        NA, ILW,
+     +         NLTEST, NMTEST
+!     +        IGND,
+!     +        JLAT, ICAN,
+!     +        HOURLY_START_DAY,  HOURLY_STOP_DAY,
+!     +        DAILY_START_DAY,   DAILY_STOP_DAY,
+!     +        HOURLY_START_YEAR, HOURLY_STOP_YEAR,
+!     +        DAILY_START_YEAR,  DAILY_STOP_YEAR,
+!     +        IHOUR, IMIN, IDAY, IYEAR
 
       integer*4 :: NTYPE
-      REAL :: DEGLAT, DEGLON
-      TYPE(ClassParameters) :: cp
+!      REAL :: DEGLAT, DEGLON
+!      TYPE(ClassParameters) :: cp
+
+      type(ShedGridParams) :: shd
       
       !file handled
       type(fl_ids)              :: fls 
@@ -72,13 +83,13 @@
       READ (iun,'(2X,6A4)') NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
       READ (iun,'(2X,6A4)') PLACE1,PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
       READ(iun,*) DEGLAT,DEGLON,cp%ZRFMGRD(1),
-     +  cp%ZRFHGRD(1),cp%ZBLDGRD(1),cp%GCGRD(1),ILW,NLTEST,NMTEST
+     +  cp%ZRFHGRD(1),cp%ZBLDGRD(1),cp%GCGRD(1),shd%wc%ILG,NLTEST,NMTEST
 
-      IF(NTYPE.NE.NMTEST .AND. NTYPE.GT.0) THEN
+      IF(shd%lc%NTYPE.NE.NMTEST .AND. shd%lc%NTYPE.GT.0) THEN
         WRITE (6, *)
         WRITE (6, *)
         WRITE (6, *) "GRUs from MESH_parameters_CLASS.ini: ", NMTEST
-        WRITE (6, *) "GRUs from basin watershed file: ", NTYPE
+        WRITE (6, *) "GRUs from basin watershed file: ", shd%lc%NTYPE
         WRITE (6, *) "These values must be equal."
         CLOSE (iun)
 	  STOP
@@ -86,7 +97,7 @@
 
 
 !todo - fix this so that we only use one of the variables (use NA and ignore NLTEST - doc)
-      IF (NLTEST /= NA) THEN
+      IF (NLTEST /= shd%NA) THEN
         WRITE (6, *)
         WRITE (6, *) "ERROR: The number of grid squares in the class",
      1  " parameters file does not match the number of grid squares ",
@@ -95,7 +106,7 @@
       END IF
 
       if (NRSOILAYEREADFLAG == 1) then
-          ignd_r = IGND
+          ignd_r = shd%lc%IGND
       else
           ignd_r = 3
       end if

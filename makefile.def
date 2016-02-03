@@ -43,6 +43,7 @@ OBJECTS=	module_mpi_flags.o module_mpi_shared_variables.o module_mpi.o \
 			module_files_variabletypes.o module_files_variables.o \
 			climate_forcing_variabletypes.o climate_forcing_variables.o \
 			climate_forcing_module_config.o \
+			process_CLASS_constants.o process_CLASS_variables.o process_CLASS_save_output.o \
 			read_forcing_data.o climate_forcing_module.o read_check_forcing_files.o \
 			SIMSTATS_config.o model_output_variabletypes.o model_output.o \
 			calc_drms.o calc_abserr.o
