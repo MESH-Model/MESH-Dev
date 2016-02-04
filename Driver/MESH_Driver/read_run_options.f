@@ -2,12 +2,13 @@
 !     +  IDISP, IZREF, ISLFD, IPCP, IWF,
 !     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
 !     +  ICTEMMOD,
-     +  IOS, PAS, N,
-     +  IROVAL,
+!     +  IOS, PAS, N,
+!     +  IROVAL,
 !     +  WF_NUM_POINTS,
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
-     +  IRONAME, GENDIR_OUT,
+!     +  IRONAME,
+     +  GENDIR_OUT,
 !     +  op,
      +  ts, cm, fls)
 
@@ -38,8 +39,8 @@
 !     +  IDISP, IZREF, ISLFD, IPCP, IWF,
 !     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
 !     +  ICTEMMOD,
-     +  IOS, PAS, N,
-     +  IROVAL,
+!     +  IOS, PAS, N,
+!     +  IROVAL,
 !     +  WF_NUM_POINTS,
      +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, !P
      +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END !P
@@ -50,9 +51,13 @@
       CHARACTER(MaxLenField), DIMENSION(MaxArgs) :: out_args
 
       INTEGER:: M_G  ! PARAMETER :: M_G = 5
-      CHARACTER(20) :: IRONAME
+!      CHARACTER(20) :: IRONAME
       CHARACTER*10 GENDIR_OUT
-      
+
+      !> Local variables.
+      character(20) IRONAME
+      integer IROVAL, PAS, ios
+
 !      TYPE(OutputPoints) :: op
 
       TYPE(CLIM_INFO) :: cm
@@ -275,7 +280,7 @@
 
 !> SET N = 0 RESETS THE CLASS COUNTER.
 !TODO: N is not a flag, move it somewhere else
-      N = 0
+!      N = 0
 
 !> FLAGS FOR GEOTHERMAL FLUX FOR THE BOTTOM OF THE LAST SOIL LAYER 
 !* If GGEOFLAG is GT 0,  READ UNIQUE VALUE FROM MESH_ggeo.INI FILE

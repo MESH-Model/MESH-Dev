@@ -228,8 +228,8 @@ program RUNMESH
 !> *************************************************************
 !> For reading in options information from MESH_run_options.ini
 !> *************************************************************
-    character(20) IRONAME
-    integer IROVAL
+!    character(20) IRONAME
+!    integer IROVAL
 
 !> *******************************************************************
 !> For reading in the last information in mesh_paramters_hydrology.ini
@@ -313,7 +313,7 @@ program RUNMESH
 !* FILE_VER: FILE VERSION USED TO SEEK INPUT FILE COMPATIBILITY
 !*           (COMPARED TO "RELEASE")
     character(8) FILE_VER
-    integer N, NCOUNT, NSUM
+    integer :: N = 0, NCOUNT, NSUM
     integer i, j, k, l, m, &
         INDEPPAR, DEPPAR, PAS, NSUM_TOTAL
 !  CONFLAGS, OPTFLAGS, INDEPPAR, DEPPAR, PAS
@@ -864,11 +864,13 @@ program RUNMESH
 !                             IDISP, IZREF, ISLFD, IPCP, IWF, &
 !                             IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG, &
 !                             ICTEMMOD, &
-                             IOS, PAS, N, IROVAL, &
+!                             IOS, PAS, N, &
+!                             IROVAL, &
 !                             WF_NUM_POINTS, &
 !  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, &
 !  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END, &
-                             IRONAME, GENDIR_OUT, &
+!                             IRONAME,
+                             GENDIR_OUT, &
 !>variables for READ_PARAMETERS_CLASS
 !                             TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6, &
 !                             NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &

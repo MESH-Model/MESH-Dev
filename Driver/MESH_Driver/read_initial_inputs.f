@@ -5,11 +5,13 @@
 !     +  IDISP, IZREF, ISLFD, IPCP, IWF,
 !     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
 !     +  ICTEMMOD,
-     +  IOS, PAS, N, IROVAL,
+!     +  IOS, PAS, N,
+!     +  IROVAL,
 !     +  WF_NUM_POINTS,
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
-     +  IRONAME, GENDIR_OUT,
+!     +  IRONAME,
+     +  GENDIR_OUT,
 !> variables for READ_PARAMETERS_CLASS
 !     +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
 !     +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
@@ -49,15 +51,16 @@
 !> DECLARE THE READ IN VARIABLES.
 !> ----------------------------
 !> VALUES NEEDED FOR READ_RUN_OPTIONS
-      integer
+!      integer
 !     +  IDISP, IZREF, ISLFD, IPCP, IWF,
 !     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
 !     +  ICTEMMOD,
-     +  IOS, PAS, N, IROVAL
+!     +  IOS, PAS, N
+!     +  IROVAL
 !     +  WF_NUM_POINTS
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END
-      character(20) IRONAME
+!      character(20) IRONAME
       character(10) GENDIR_OUT
 !> declared MESH_INPUT_MODULE:
 !>     op%N_OUT, op%II_OUT, op%DIR_OUT
@@ -79,7 +82,7 @@
 !>  wc_thlmin, wc_bi, wc_psisat, wc_grksat, wc_hcps, wc_tcs
 
 !> local variables
-      integer NA, NTYPE, IGND, i, j, k
+      integer NA, NTYPE, IGND, ios, i, j, k
 !> END OF VALUES NEEDED for drainagedatabase of new_shd.r2c
 !> values needed for READ_PARAMETERS_CLASS
 !      character(4)
@@ -141,12 +144,13 @@
 !     +  IDISP, IZREF, ISLFD, IPCP, IWF,
 !     +  IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG,
 !     +  ICTEMMOD,
-     +  IOS, PAS, N,
-     +  IROVAL,
+!     +  IOS, PAS, N,
+!     +  IROVAL,
 !     +  WF_NUM_POINTS,
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
-     +  IRONAME, GENDIR_OUT,
+!     +  IRONAME,
+     +  GENDIR_OUT,
 !     +  op,
      +  ts, cm, fls)
 
