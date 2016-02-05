@@ -84,7 +84,7 @@ module process_WF_ROUTE_config
     !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
     !* WF_START_DAY OBSERVED STREAMFLOW START DAY
     !* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
-    integer WF_NO, WF_NL, WF_MHRD, WF_KT
+    integer WF_NAA, WF_NO, WF_NL, WF_MHRD, WF_KT
     integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
     real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
     real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
@@ -141,13 +141,15 @@ module process_WF_ROUTE_config
     !>
     subroutine run_WF_ROUTE_ini(shd, ic, stfl, rrls, &
 !todo: remove these
-                                LOCATIONFLAG, STREAMFLOWOUTFLAG, &
                                 GENDIR_OUT)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_dates
         use model_output_variabletypes
+
+        !> For: LOCATIONFLAG, STREAMFLOWOUTFLAG
+        use FLAGS
 
         type(ShedGridParams), intent(in) :: shd
         type(iter_counter), intent(in) :: ic
@@ -156,7 +158,6 @@ module process_WF_ROUTE_config
 
         !> Temporary variables.
 !todo: remove these
-        integer LOCATIONFLAG, STREAMFLOWOUTFLAG
         character(450) GENDIR_OUT
 
         !> Local variables.
@@ -172,6 +173,7 @@ module process_WF_ROUTE_config
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
 
         NA = shd%NA
+        WF_NAA = NA - shd%NAA
 
         allocate(WF_NHYD(NA), WF_QR(NA), &
                  WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA), &

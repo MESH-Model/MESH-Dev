@@ -740,8 +740,7 @@ program RUNMESH
         open(86, file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/basin_SWE_alldays.csv')
     end if !(BASINSWEOUTFLAG > 0) then
 
-    if (ipid == 0) call run_between_grid_ini(shd, ts, ic, stfl, rrls, &
-                                             LOCATIONFLAG, STREAMFLOWOUTFLAG, &
+    if (ipid == 0) call run_between_grid_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls, &
                                              GENDIR_OUT)
 
 !> *********************************************************************
@@ -3149,7 +3148,7 @@ program RUNMESH
             end if !(NCOUNT == 48) then
         end if !(ipid == 0) then
 
-        if (ipid == 0) call run_between_grid(shd, ts, ic, cm, wb_h, eb, sp, stfl, rrls, &
+        if (ipid == 0) call run_between_grid(shd, fls, ts, ic, cm, wb_h, eb, sp, stfl, rrls, &
                                              WF_R1, WF_R2, M_C)
 
 !> *********************************************************************

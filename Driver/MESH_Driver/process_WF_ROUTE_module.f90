@@ -103,8 +103,11 @@ module process_WF_ROUTE
             WF_QSYN_AVG = 0.0
         end if
 
+        !> shd%NAA is the total number of grids.
+        !> shd%NA is the total number of grids in the basin.
+        !> WF_NAA is the number of outlets in the basin (e.g., shd%NA - shd%NAA).
         call WF_ROUTE(WF_ROUTETIMESTEP, WF_R1, WF_R2, &
-                      shd%NA, shd%NAA, shd%lc%NTYPE, shd%yCount, shd%xCount, shd%iyMin, &
+                      shd%NA, WF_NAA, shd%lc%NTYPE, shd%yCount, shd%xCount, shd%iyMin, &
                       shd%iyMax, shd%jxMin, shd%jxMax, shd%yyy, shd%xxx, shd%IAK, shd%IROUGH, &
                       shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
                       shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
