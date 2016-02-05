@@ -4,30 +4,33 @@ module sa_mesh_run_within_tile
 
     contains
 
-    subroutine run_within_tile_ini(shd, fls, ts, ic, cm, wb, eg, sp, stfl, rrls)
+    subroutine run_within_tile_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
+        use module_mpi_flags
+        use module_mpi_shared_variables
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_files_variabletypes
+        use model_files_variables
         use model_dates
         use climate_forcing
-        use MODEL_OUTPUT
         use model_output_variabletypes
+        use MODEL_OUTPUT
 
         use process_CLASS_config, only: RUNCLASS_ini
 
-        type(fl_ids) :: fls
         type(ShedGridParams) :: shd
+        type(fl_ids) :: fls
         type(dates_model) :: ts
         type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
-        type(energy_balance) :: eg
+        type(energy_balance) :: eb
         type(soil_statevars) :: sp
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        call RUNCLASS_ini(shd, fls, ts, ic, cm)
+        call RUNCLASS_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
 !>
 !>***********************************************************************
@@ -41,29 +44,34 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
-    subroutine run_within_tile(shd, ts, ic, cm, wb, eg, sp, stfl, rrls)
+    subroutine run_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
+        use module_mpi_flags
+        use module_mpi_shared_variables
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
+        use model_files_variabletypes
+        use model_files_variables
         use model_dates
         use climate_forcing
-        use MODEL_OUTPUT
         use model_output_variabletypes
+        use MODEL_OUTPUT
 
         use process_CLASS, only: RUNCLASS_within_tile
         use process_WF_ROUTE, only: run_WF_ROUTE_within_tile
 
-        type(ShedGridParams), intent(in) :: shd
+        type(ShedGridParams) :: shd
+        type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter), intent(in) :: ic
-        type(clim_info), intent(in) :: cm
+        type(iter_counter) :: ic
+        type(clim_info) :: cm
         type(water_balance) :: wb
-        type(energy_balance) :: eg
+        type(energy_balance) :: eb
         type(soil_statevars) :: sp
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        call RUNCLASS_within_tile(shd, ic)
+        call RUNCLASS_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
         call run_WF_ROUTE_within_tile(shd, ic, stfl, rrls)
 
     end subroutine

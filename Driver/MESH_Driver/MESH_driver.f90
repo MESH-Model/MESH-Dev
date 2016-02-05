@@ -123,7 +123,6 @@ program RUNMESH
     use process_CLASS_constants
     use process_CLASS_variables
     use process_CLASS_config
-    use process_CLASS_save_output
 
     implicit none
 
@@ -142,17 +141,6 @@ program RUNMESH
 
     integer, dimension(:), allocatable :: irqst
     integer, dimension(:, :), allocatable :: imstat
-
-!    type CLASSOUT_VARS
-!        real, dimension(:), allocatable :: &
-!            PREACC, GTACC, QEVPACC, EVAPACC, HFSACC, HMFNACC, &
-!            ROFACC, ROFOACC, ROFSACC, ROFBACC, WTBLACC, ALVSACC, ALIRACC, &
-!            RHOSACC, TSNOACC, WSNOACC, SNOARE, TCANACC, CANARE, SNOACC, &
-!            RCANACC, SCANACC, GROACC, FSINACC, FLINACC, FLUTACC, &
-!            TAACC, UVACC, PRESACC, QAACC
-!        real, dimension(:, :), allocatable :: &
-!            TBARACC, THLQACC, THICACC, THALACC, GFLXACC
-!    end type !CLASSOUT_VARS
 
 !todo: Investigate what this is
     integer ireport
@@ -371,7 +359,7 @@ program RUNMESH
 !* TBAR: INITIAL SOIL LAYER TEMPERATURE
 !* THLQ: INITIAL SOIL LAYER LIQUID WATER CONTENT
 !* THIC: INITIAL SOIL LAYER ICE WATER CONTENT
-!    real, dimension(:, :), allocatable :: TBARGAT, THLQGAT, THICGAT, &
+!    real, dimension(:, :), allocatable :: cpv%TBAR, cpv%THLQ, cpv%THIC, &
 !        SANDGAT, CLAYGAT
 !    real, dimension(:, :), allocatable :: TBASROW, &
 !        CMAIROW, TACROW, QACROW, WSNOROW
@@ -398,12 +386,12 @@ program RUNMESH
 !* SNO: SNOWPACK ON CANOPY LAYER (CLASS.INI)
 !* TCAN: INITIAL CANOPY TEMPERATURE (CLASS.INI)
 !* GRO: VEGETATION GROWTH INDEX (CLASS.INI)
-!    real, dimension(:), allocatable :: TPNDGAT, ZPNDGAT, TBASGAT, &
-!        ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, TCANGAT, RCANGAT, SCANGAT, &
-!        GROGAT, FRZCGAT, CMAIGAT, TACGAT, QACGAT, WSNOGAT
+!    real, dimension(:), allocatable :: cpv%TPND, cpv%ZPND, cpv%TBAS, &
+!        cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
+!        cpv%GRO, FRZCGAT, cpv%CMAI, cpv%TAC, cpv%QAC, cpv%WSNO
      
 !    real, dimension(:, :, :), allocatable :: TSFSROW
-!    real, dimension(:, :), allocatable :: TSFSGAT
+!    real, dimension(:, :), allocatable :: cpv%TSFS
 !>
 !>*******************************************************************
 !>
@@ -424,7 +412,7 @@ program RUNMESH
 !        PSIWROW, DLZWROW, ZBTWROW
 !    real, dimension(:, :), allocatable :: THPGAT, THRGAT, THMGAT, &
 !        BIGAT, PSISGAT, GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
-!        PSIWGAT, DLZWGAT, ZBTWGAT, GFLXGAT
+!        PSIWGAT, cpv%DELZW, ZBTWGAT, cdv%GFLX
 !    real, dimension(:, :), allocatable :: &
 !        WFSFROW, ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
 !        AGIDROW
@@ -477,11 +465,11 @@ program RUNMESH
 !> MAM - logical variables to control simulation runs:
     logical :: ENDDATE = .false., ENDDATA = .false.
 
-!    real, dimension(:), allocatable :: ZRFMGAT, ZRFHGAT, ZDMGAT, &
-!        ZDHGAT, ZBLDGAT, RADJGAT, CSZGAT, &
+!    real, dimension(:), allocatable :: cf%ZRFM, cf%ZRFH, ZDMGAT, &
+!        ZDHGAT, cf%ZBLD, RADJGAT, CSZGAT, &
 !        RPREGAT, SPREGAT, &
 !        PADRGAT, VPDGAT, TADPGAT, RHOAGAT, RPCPGAT, TRPCGAT, SPCPGAT, &
-!        TSPCGAT, RHSIGAT, FCLOGAT, DLONGAT, Z0ORGAT, GGEOGAT, VMODGAT
+!        TSPCGAT, RHSIGAT, DLONGAT, Z0ORGAT, GGEOGAT, cf%VMOD
 !>
 !>*******************************************************************
 !>
@@ -496,16 +484,16 @@ program RUNMESH
 !        ROFSROW, ROFBROW, ROFCROW, ROFNROW, ROVGROW, WTRCROW, WTRSROW, &
 !        WTRGROW, DRROW, WTABROW, ILMOROW, UEROW, HBLROW, TROFROW, &
 !        TROOROW, TROSROW, TROBROW
-!    real, dimension(:), allocatable :: CDHGAT, CDMGAT, HFSGAT, &
-!        TFXGAT, QEVPGAT, QFSGAT, QFXGAT, PETGAT, GAGAT, EFGAT, GTGAT, &
-!        QGGAT, ALVSGAT, ALIRGAT, FSNOGAT, SFRHGAT, SFCTGAT, SFCUGAT, &
-!        SFCVGAT, SFCQGAT, FSGVGAT, FSGSGAT, FSGGGAT, FLGVGAT, FLGSGAT, &
-!        FLGGGAT, HFSCGAT, HFSSGAT, HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, &
-!        HMFCGAT, HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, PCPNGAT, &
-!        PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, QFCFGAT, ROFGAT, ROFOGAT, &
-!        ROFSGAT, ROFBGAT, ROFCGAT, ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, &
-!        WTRGGAT, DRGAT, WTABGAT, ILMOGAT, UEGAT, HBLGAT, QLWOGAT, FTEMP, &
-!        FVAP, RIB, TROFGAT, TROOGAT, TROSGAT, TROBGAT
+!    real, dimension(:), allocatable :: cdv%CDH, cdv%CDM, cdv%HFS, &
+!        cdv%TFX, cdv%QEVP, cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, cdv%GTE, &
+!        cdv%QG, cdv%ALVS, cdv%ALIR, cdv%FSNO, SFRHGAT, cdv%SFCT, cdv%SFCU, &
+!        cdv%SFCV, cdv%SFCQ, cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
+!        cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, cdv%HEVS, cdv%HEVG, &
+!        cdv%HMFC, cdv%HMFN, cdv%HTCC, cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, &
+!        cdv%PCPG, cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, cdv%ROFO, &
+!        cdv%ROFS, cdv%ROFB, cdv%ROFC, cdv%ROFN, cdv%ROVG, cdv%WTRC, cdv%WTRS, &
+!        cdv%WTRG, cdv%DR, cdv%WTAB, cdv%ILMO, cdv%UE, cdv%HBL, QLWOGAT, FTEMP, &
+!        FVAP, RIB, cdv%TROF, cdv%TROO, cdv%TROS, cdv%TROB
 !    real, dimension(:), allocatable :: CDHGRD, CDMGRD, HFSGRD, &
 !        TFXGRD, QEVPGRD, QFSGRD, QFXGRD, PETGRD, GAGRD, EFGRD, GTGRD, &
 !        QGGRD, TSFGRD, ALVSGRD, ALIRGRD, FSNOGRD, SFCTGRD, SFCUGRD, &
@@ -518,7 +506,7 @@ program RUNMESH
 
 !    real, dimension(:, :, :), allocatable :: HMFGROW, HTCROW, QFCROW, &
 !        GFLXROW
-!    real, dimension(:, :), allocatable :: HMFGGAT, HTCGAT, QFCGAT
+!    real, dimension(:, :), allocatable :: cdv%HMFG, cdv%HTC, cdv%QFC
 !    real, dimension(:, :), allocatable :: HMFGGRD, HTCGRD, QFCGRD, GFLXGRD
 !    integer, dimension(:, :, :, :), allocatable :: ITCTROW
 !    integer, dimension(:, :, :), allocatable :: ITCTGAT
@@ -584,7 +572,7 @@ program RUNMESH
 !        TBARGS, THLIQC, THLIQG, THICEC, THICEG, FROOT, HCPC, HCPG, &
 !        TCTOPC, TCBOTC, TCTOPG, TCBOTG
 
-!    real, dimension(:), allocatable :: FC, FG, FCS, FGS, RBCOEF, &
+!    real, dimension(:), allocatable :: cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, RBCOEF, &
 !        ZSNOW, FSVF, FSVFS, ALVSCN, ALIRCN, ALVSG, &
 !        ALIRG, ALVSCS, ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, ALVSSC, &
 !        ALIRSC, TRVSCN, TRIRCN, TRVSCS, TRIRCS, RC, RCS, FRAINC, &
@@ -685,7 +673,6 @@ program RUNMESH
     type(INFO_OUT) :: ifo
     type(CLIM_INFO) :: cm
     type(met_data) :: md
-!    type(CLASSOUT_VARS) :: co
     type(water_balance) :: wb, wb_h
     type(energy_balance) :: eb
     type(soil_statevars) :: sp
@@ -861,15 +848,6 @@ program RUNMESH
 !>GENERIC VARIABLES
                              RELEASE, &
 !>VARIABLES FOR READ_RUN_OPTIONS
-!                             IDISP, IZREF, ISLFD, IPCP, IWF, &
-!                             IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG, &
-!                             ICTEMMOD, &
-!                             IOS, PAS, N, &
-!                             IROVAL, &
-!                             WF_NUM_POINTS, &
-!  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, &
-!  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END, &
-!                             IRONAME,
                              GENDIR_OUT, &
 !>variables for READ_PARAMETERS_CLASS
 !                             TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6, &
@@ -1067,20 +1045,20 @@ program RUNMESH
 1118 format(3x, a, ': ', i6)
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
-!    allocate(TBARGAT(NML, IGND), &
-!             THLQGAT(NML, IGND), THICGAT(NML, IGND), &
+!    allocate(cpv%TBAR(NML, IGND), &
+!             cpv%THLQ(NML, IGND), cpv%THIC(NML, IGND), &
 !             SANDGAT(NML, IGND), CLAYGAT(NML, IGND), &
 !             TBASROW(NA, NTYPE), &
 !             CMAIROW(NA, NTYPE), TACROW(NA, NTYPE), &
 !             QACROW(NA, NTYPE), WSNOROW(NA, NTYPE), &
-!             TPNDGAT(NML), ZPNDGAT(NML), TBASGAT(NML), &
-!             ALBSGAT(NML), TSNOGAT(NML), RHOSGAT(NML), &
-!             SNOGAT(NML), TCANGAT(NML), RCANGAT(NML), &
-!             SCANGAT(NML), &
-!             GROGAT(NML), FRZCGAT(NML), CMAIGAT(NML), TACGAT(NML), &
-!             QACGAT(NML), WSNOGAT(NML), &
+!             cpv%TPND(NML), cpv%ZPND(NML), cpv%TBAS(NML), &
+!             cpv%ALBS(NML), cpv%TSNO(NML), cpv%RHOS(NML), &
+!             cpv%SNO(NML), cpv%TCAN(NML), cpv%RCAN(NML), &
+!             cpv%SNCAN(NML), &
+!             cpv%GRO(NML), FRZCGAT(NML), cpv%CMAI(NML), cpv%TAC(NML), &
+!             cpv%QAC(NML), cpv%WSNO(NML), &
 !             TSFSROW(NA, NTYPE, 4), &
-!             TSFSGAT(NML, 4), stat = PAS)
+!             cpv%TSFS(NML, 4), stat = PAS)
 
 !> PBSM PROGNOSTIC VARIABLES
 !    allocate(DrySnowROW(NA, NTYPE), SnowAgeROW(NA, NTYPE), &
@@ -1151,8 +1129,8 @@ program RUNMESH
 !             GRKSGAT(NML, IGND), THRAGAT(NML, IGND), &
 !             HCPSGAT(NML, IGND), TCSGAT(NML, IGND), &
 !             THFCGAT(NML, IGND), &
-!             PSIWGAT(NML, IGND), DLZWGAT(NML, IGND), &
-!             ZBTWGAT(NML, IGND), GFLXGAT(NML, IGND), &
+!             PSIWGAT(NML, IGND), cpv%DELZW(NML, IGND), &
+!             ZBTWGAT(NML, IGND), cdv%GFLX(NML, IGND), &
 !             WFSFROW(NA, NTYPE),  ALGWROW(NA, NTYPE), &
 !             ALGDROW(NA, NTYPE), ASVDROW(NA, NTYPE), ASIDROW(NA, NTYPE), &
 !             AGVDROW(NA, NTYPE), &
@@ -1200,16 +1178,16 @@ program RUNMESH
 !             FCLOGRD(NA), DLONGRD(NA), Z0ORGRD(NA), GGEOGRD(NA), UVGRD(NA), &
 !             XDIFFUS(NA), &
 !             RPREGRD(NA), SPREGRD(NA), VMODGRD(NA), &
-!             ZRFMGAT(NML), ZRFHGAT(NML), ZDMGAT(NML), &
-!             ZDHGAT(NML), ZBLDGAT(NML), &
+!             cf%ZRFM(NML), cf%ZRFH(NML), ZDMGAT(NML), &
+!             ZDHGAT(NML), cf%ZBLD(NML), &
 !             RADJGAT(NML), CSZGAT(NML), &
 !             RPREGAT(NML), SPREGAT(NML), &
 !             PADRGAT(NML), VPDGAT(NML), &
 !             TADPGAT(NML), RHOAGAT(NML), RPCPGAT(NML), &
 !             TRPCGAT(NML), SPCPGAT(NML), TSPCGAT(NML), &
 !             RHSIGAT(NML), &
-!             FCLOGAT(NML), DLONGAT(NML), Z0ORGAT(NML), &
-!             GGEOGAT(NML), VMODGAT(NML), stat = PAS)
+!             DLONGAT(NML), Z0ORGAT(NML), &
+!             GGEOGAT(NML), cf%VMOD(NML), stat = PAS)
 !    if (PAS /= 0) then
 !        print 1114, 'atmospheric and grid-cst.'
 !        print 1118, 'Grid squares', NA
@@ -1246,32 +1224,32 @@ program RUNMESH
 !             ILMOROW(NA, NTYPE), UEROW(NA, NTYPE), HBLROW(NA, NTYPE), &
 !             TROFROW(NA, NTYPE), &
 !             TROOROW(NA, NTYPE), TROSROW(NA, NTYPE), TROBROW(NA, NTYPE), &
-!             CDHGAT(NML), CDMGAT(NML), HFSGAT(NML), &
-!             TFXGAT(NML), QEVPGAT(NML), QFSGAT(NML), &
-!             QFXGAT(NML), PETGAT(NML), GAGAT(NML), &
-!             EFGAT(NML), GTGAT(NML), &
-!             QGGAT(NML), ALVSGAT(NML), &
-!             ALIRGAT(NML), FSNOGAT(NML), SFRHGAT(NML), SFCTGAT(NML), &
-!             SFCUGAT(NML), &
-!             SFCVGAT(NML), SFCQGAT(NML), FSGVGAT(NML), &
-!             FSGSGAT(NML), FSGGGAT(NML), FLGVGAT(NML), &
-!             FLGSGAT(NML), &
-!             FLGGGAT(NML), HFSCGAT(NML), HFSSGAT(NML), &
-!             HFSGGAT(NML), HEVCGAT(NML), HEVSGAT(NML), &
-!             HEVGGAT(NML), &
-!             HMFCGAT(NML), HMFNGAT(NML), HTCCGAT(NML), &
-!             HTCSGAT(NML), PCFCGAT(NML), PCLCGAT(NML), &
-!             PCPNGAT(NML), &
-!             PCPGGAT(NML), QFGGAT(NML), QFNGAT(NML), &
-!             QFCLGAT(NML), QFCFGAT(NML), ROFGAT(NML), &
-!             ROFOGAT(NML), &
-!             ROFSGAT(NML), ROFBGAT(NML), ROFCGAT(NML), &
-!             ROFNGAT(NML), ROVGGAT(NML), WTRCGAT(NML), &
-!             WTRSGAT(NML), &
-!             WTRGGAT(NML), DRGAT(NML), WTABGAT(NML), &
-!             ILMOGAT(NML), UEGAT(NML), HBLGAT(NML), QLWOGAT(NML), &
-!             FTEMP(NML),   FVAP(NML),  RIB(NML), TROFGAT(NML), &
-!             TROOGAT(NML), TROSGAT(NML), TROBGAT(NML), &
+!             cdv%CDH(NML), cdv%CDM(NML), cdv%HFS(NML), &
+!             cdv%TFX(NML), cdv%QEVP(NML), cdv%QFS(NML), &
+!             cdv%QFX(NML), cdv%PET(NML), cdv%GA(NML), &
+!             cdv%EF(NML), cdv%GTE(NML), &
+!             cdv%QG(NML), cdv%ALVS(NML), &
+!             cdv%ALIR(NML), cdv%FSNO(NML), SFRHGAT(NML), cdv%SFCT(NML), &
+!             cdv%SFCU(NML), &
+!             cdv%SFCV(NML), cdv%SFCQ(NML), cdv%FSGV(NML), &
+!             cdv%FSGS(NML), cdv%FSGG(NML), cdv%FLGV(NML), &
+!             cdv%FLGS(NML), &
+!             cdv%FLGG(NML), cdv%HFSC(NML), cdv%HFSS(NML), &
+!             cdv%HFSG(NML), cdv%HEVC(NML), cdv%HEVS(NML), &
+!             cdv%HEVG(NML), &
+!             cdv%HMFC(NML), cdv%HMFN(NML), cdv%HTCC(NML), &
+!             cdv%HTCS(NML), cdv%PCFC(NML), cdv%PCLC(NML), &
+!             cdv%PCPN(NML), &
+!             cdv%PCPG(NML), cdv%QFG(NML), cdv%QFN(NML), &
+!             cdv%QFCL(NML), cdv%QFCF(NML), cdv%ROF(NML), &
+!             cdv%ROFO(NML), &
+!             cdv%ROFS(NML), cdv%ROFB(NML), cdv%ROFC(NML), &
+!             cdv%ROFN(NML), cdv%ROVG(NML), cdv%WTRC(NML), &
+!             cdv%WTRS(NML), &
+!             cdv%WTRG(NML), cdv%DR(NML), cdv%WTAB(NML), &
+!             cdv%ILMO(NML), cdv%UE(NML), cdv%HBL(NML), QLWOGAT(NML), &
+!             FTEMP(NML),   FVAP(NML),  RIB(NML), cdv%TROF(NML), &
+!             cdv%TROO(NML), cdv%TROS(NML), cdv%TROB(NML), &
 !             CDHGRD(NA), CDMGRD(NA), HFSGRD(NA), &
 !             TFXGRD(NA), QEVPGRD(NA), QFSGRD(NA), QFXGRD(NA), PETGRD(NA), &
 !             GAGRD(NA), EFGRD(NA), GTGRD(NA), &
@@ -1291,8 +1269,8 @@ program RUNMESH
 !             HBLGRD(NA), &
 !             HMFGROW(NA, NTYPE, IGND), HTCROW(NA, NTYPE, IGND), &
 !             QFCROW(NA, NTYPE, IGND), GFLXROW(NA, NTYPE, IGND), &
-!             HMFGGAT(NML, IGND), HTCGAT(NML, IGND), &
-!             QFCGAT(NML, IGND), &
+!             cdv%HMFG(NML, IGND), cdv%HTC(NML, IGND), &
+!             cdv%QFC(NML, IGND), &
 !             HMFGGRD(NA, IGND), HTCGRD(NA, IGND), QFCGRD(NA, IGND), &
 !             GFLXGRD(NA, IGND), &
 !             ITCTROW(NA, NTYPE, 6, 50), &
@@ -1336,8 +1314,8 @@ program RUNMESH
 !             HCPC(NML, IGND), HCPG(NML, IGND), &
 !             TCTOPC(NML, IGND), TCBOTC(NML, IGND), &
 !             TCTOPG(NML, IGND), TCBOTG(NML, IGND), &
-!             FC(NML), FG(NML), FCS(NML), &
-!             FGS(NML), RBCOEF(NML), &
+!             cdv%FC(NML), cdv%FG(NML), cdv%FCS(NML), &
+!             cdv%FGS(NML), RBCOEF(NML), &
 !             ZSNOW(NML), &
 !             FSVF(NML), FSVFS(NML), ALVSCN(NML), &
 !             ALIRCN(NML), ALVSG(NML), &
@@ -1511,7 +1489,7 @@ program RUNMESH
 !> we want it to be the number of squares with outlets to outside the
 !> basin.
 !todo - look into the logic of this and suggest how it could be changed
-    shd%NAA = NA - shd%NAA
+!-    shd%NAA = NA - shd%NAA
 
 !> set initial values of ncount and nsum
 ! NCOUNT = which half-hour period the current time is:
@@ -1821,10 +1799,11 @@ program RUNMESH
                 write(58, 9000)
                 INTERPOLATIONFLAG = 0
             end if !(INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%clin(:)%hf) == 210)) then
-            write(58, "('WF_NUM_POINTS: ', i5)") WF_NUM_POINTS
-            write(58, "('Out directory:', 5a10)") (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
-            write(58, "('Grid number:  ', 5i10)") (op%N_OUT(i), i = 1, WF_NUM_POINTS)
-            write(58, "('Land class:   ', 5i10)") (op%II_OUT(i), i = 1, WF_NUM_POINTS)
+!todo: restore this.
+!            write(58, "('WF_NUM_POINTS: ', i5)") WF_NUM_POINTS
+!            write(58, "('Out directory:', 5a10)") (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
+!            write(58, "('Grid number:  ', 5i10)") (op%N_OUT(i), i = 1, WF_NUM_POINTS)
+!            write(58, "('Land class:   ', 5i10)") (op%II_OUT(i), i = 1, WF_NUM_POINTS)
             write(58, *)
             write(58, "('MESH_parameters_hydrology.ini')")
             write(58, *)
@@ -2051,14 +2030,14 @@ program RUNMESH
         print *, 'NUMBER OF GRID SQUARES IN West-East DIRECTION: ', shd%xCount
         print *, 'NUMBER OF GRID SQUARES IN South-North DIRECTION: ', shd%yCount
         print *, 'LENGTH OF SIDE OF GRID SQUARE IN M: ', shd%AL
-        print *, 'NUMBER OF DRAINAGE OUTLETS: ', shd%NAA
+        print *, 'NUMBER OF DRAINAGE OUTLETS: ', (NA - shd%NAA)
         print *
-        print *, 'Found these output locations:'
-        print *, 'Output Directory, grid number, land class number'
-        do i = 1, WF_NUM_POINTS
-            print *, op%DIR_OUT(i), op%N_OUT(i), op%II_OUT(i)
-        end do
-        print *
+!        print *, 'Found these output locations:'
+!        print *, 'Output Directory, grid number, land class number'
+!        do i = 1, WF_NUM_POINTS
+!            print *, op%DIR_OUT(i), op%N_OUT(i), op%II_OUT(i)
+!        end do
+!        print *
         print *
         print *
     end if !(ro%VERBOSEMODE > 0) then
@@ -2075,11 +2054,11 @@ program RUNMESH
 !                          cm%clin(cfk%FB)%filefmt, cm%clin(cfk%FI)%filefmt, &
 !                          cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
 !                          cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
-!                          cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
+!                          cm%clin(cfk%FB)%GRD, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%GRD, &
 !                          i, j, shd%xCount, shd%yCount, jan, &
 !                          VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
-!                          RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
-!                          cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
+!                          RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%GRD, &
+!                          cm%clin(cfk%HU)%GRD, cm%clin(cfk%PR)%GRD, RPREGRD, SPREGRD, cm%clin(cfk%P0)%GRD, &
 !
 !> MAM - FOR FORCING DATA INTERPOLATION
 !                          FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
@@ -2087,37 +2066,37 @@ program RUNMESH
 !                          IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
 !                          shd%lc%NML, shd%wc%NML, &
 !                          cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, NML, NMTEST, &
-!                          TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
-!                          TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
-!                          TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
+!                          cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
+!                          cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
+!                          cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, FRZCGAT, cpv%CMAI, &
 !                          FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
 !                          PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
 !                          VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
-!                          HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
+!                          HGTDGAT, ACVDGAT, ACIDGAT, cpv%TSFS, cpv%WSNO, &
 !                          THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
 !                          GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
-!                          PSIWGAT, DLZWGAT, ZBTWGAT, ZSNLGAT, ZPLGGAT, &
-!                          ZPLSGAT, TACGAT, QACGAT, DRNGAT, XSLPGAT, &
+!                          PSIWGAT, cpv%DELZW, ZBTWGAT, ZSNLGAT, ZPLGGAT, &
+!                          ZPLSGAT, cpv%TAC, cpv%QAC, DRNGAT, XSLPGAT, &
 !                          XDGAT, WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, &
 !                          ASVDGAT, ASIDGAT, AGVDGAT, AGIDGAT, ISNDGAT, &
-!                          RADJGAT, ZBLDGAT, Z0ORGAT, ZRFMGAT, ZRFHGAT, &
-!                          ZDMGAT, ZDHGAT, FSVHGAT, FSIHGAT, CSZGAT, &
-!                          FDLGAT, ULGAT, VLGAT, TAGAT, QAGAT, PRESGAT, &
-!                          PREGAT, PADRGAT, VPDGAT, TADPGAT, RHOAGAT, &
+!                          RADJGAT, cf%ZBLD, Z0ORGAT, cf%ZRFM, cf%ZRFH, &
+!                          ZDMGAT, ZDHGAT, cf%FSVH, cf%FSIH, CSZGAT, &
+!                          cf%FDL, cf%UL, cf%VL, cf%TA, cf%QA, cf%PRES, &
+!                          cf%PRE, PADRGAT, VPDGAT, TADPGAT, RHOAGAT, &
 !                          RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, RHSIGAT, &
-!                          FCLOGAT, DLONGAT, GGEOGAT, CDHGAT, CDMGAT, &
-!                          HFSGAT, TFXGAT, QEVPGAT, QFSGAT, QFXGAT, &
-!                          PETGAT, GAGAT, EFGAT, GTGAT, QGGAT, &
-!                          ALVSGAT, ALIRGAT, SFCTGAT, SFCUGAT, SFCVGAT, &
-!                          SFCQGAT, FSNOGAT, FSGVGAT, FSGSGAT, FSGGGAT, &
-!                          FLGVGAT, FLGSGAT, FLGGGAT, HFSCGAT, HFSSGAT, &
-!                          HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, HMFCGAT, &
-!                          HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, &
-!                          PCPNGAT, PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, &
-!                          QFCFGAT, ROFGAT, ROFOGAT, ROFSGAT, ROFBGAT, &
-!                          TROFGAT, TROOGAT, TROSGAT, TROBGAT, ROFCGAT, &
-!                          ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, WTRGGAT, &
-!                          DRGAT, HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
+!                          cf%FCLO, DLONGAT, GGEOGAT, cdv%CDH, cdv%CDM, &
+!                          cdv%HFS, cdv%TFX, cdv%QEVP, cdv%QFS, cdv%QFX, &
+!                          cdv%PET, cdv%GA, cdv%EF, cdv%GTE, cdv%QG, &
+!                          cdv%ALVS, cdv%ALIR, cdv%SFCT, cdv%SFCU, cdv%SFCV, &
+!                          cdv%SFCQ, cdv%FSNO, cdv%FSGV, cdv%FSGS, cdv%FSGG, &
+!                          cdv%FLGV, cdv%FLGS, cdv%FLGG, cdv%HFSC, cdv%HFSS, &
+!                          cdv%HFSG, cdv%HEVC, cdv%HEVS, cdv%HEVG, cdv%HMFC, &
+!                          cdv%HMFN, cdv%HTCC, cdv%HTCS, cdv%PCFC, cdv%PCLC, &
+!                          cdv%PCPN, cdv%PCPG, cdv%QFG, cdv%QFN, cdv%QFCL, &
+!                          cdv%QFCF, cdv%ROF, cdv%ROFO, cdv%ROFS, cdv%ROFB, &
+!                          cdv%TROF, cdv%TROO, cdv%TROS, cdv%TROB, cdv%ROFC, &
+!                          cdv%ROFN, cdv%ROVG, cdv%WTRC, cdv%WTRS, cdv%WTRG, &
+!                          cdv%DR, cdv%HMFG, cdv%HTC, cdv%QFC, ITCTGAT, &
 !                          IGND, ICAN, ICP1, &
 !                          cp%TBARROW, cp%THLQROW, cp%THICROW, cp%TPNDROW, cp%ZPNDROW, &
 !                          TBASROW, cp%ALBSROW, cp%TSNOROW, cp%RHOSROW, cp%SNOROW, &
@@ -2134,12 +2113,12 @@ program RUNMESH
 !                          ASVDROW, ASIDROW, AGVDROW, AGIDROW, &
 !                          ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
 !                          cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, CSZGRD, &
-!                          cm%clin(cfk%UV)%climvGrd, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
+!                          cm%clin(cfk%UV)%GRD, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
 !                          cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
-!                          IGDRROW, IGDRGAT, VMODGRD, VMODGAT, QLWOGAT, &
+!                          IGDRROW, IGDRGAT, VMODGRD, cf%VMOD, QLWOGAT, &
 !                          CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
 !                          WTVSTP, WTSSTP, WTGSTP, &
-!                          sl%DELZ, FCS, FGS, FC, FG, N, &
+!                          sl%DELZ, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, N, &
 !                          ALVSCN, ALIRCN, ALVSG, ALIRG, ALVSCS, &
 !                          ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, &
 !                          ALVSSC, ALIRSC, TRVSCN, TRIRCN, TRVSCS, &
@@ -2162,11 +2141,11 @@ program RUNMESH
 !                          EVAPC, EVAPCG, EVAPG, EVAPCS, EVPCSG, EVAPGS, &
 !                          TCANO, TCANS, TPONDC, TPONDG, TPNDCS, TPNDGS, &
 !                          TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
-!                          WTABGAT, &
-!                          ILMOGAT, UEGAT, HBLGAT, &
+!                          cdv%WTAB, &
+!                          cdv%ILMO, cdv%UE, cdv%HBL, &
 !                          shd%wc%ILG, ITC, ITCG, ITG, ISLFD, &
 !                          NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
-!                          GFLXGAT, CDHROW, CDMROW, HFSROW, TFXROW, &
+!                          cdv%GFLX, CDHROW, CDMROW, HFSROW, TFXROW, &
 !                          QEVPROW, QFSROW, QFXROW, PETROW, GAROW, &
 !                          EFROW, GTROW, QGROW, TSFROW, ALVSROW, &
 !                          ALIRROW, SFCTROW, SFCUROW, SFCVROW, SFCQROW, &
@@ -2231,39 +2210,39 @@ program RUNMESH
         close(54)
 
 ! start by gathering from ROW to GAT so as not to mess-up with CLASSS after call to save_state_r2c
-        call CLASSG (TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
-                     TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
-                     TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
+        call CLASSG (cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
+                     cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
+                     cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, FRZCGAT, cpv%CMAI, &
                      FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
                      PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
                      VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
-                     HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
+                     HGTDGAT, ACVDGAT, ACIDGAT, cpv%TSFS, cpv%WSNO, &
                      THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
                      GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, IGDRGAT, &
-                     THFCGAT, PSIWGAT, DLZWGAT, ZBTWGAT, VMODGAT, &
-                     ZSNLGAT, ZPLGGAT, ZPLSGAT, TACGAT, QACGAT, &
+                     THFCGAT, PSIWGAT, cpv%DELZW, ZBTWGAT, cf%VMOD, &
+                     ZSNLGAT, ZPLGGAT, ZPLSGAT, cpv%TAC, cpv%QAC, &
                      DRNGAT, XSLPGAT, XDGAT, WFSFGAT, KSGAT, &
                      ALGWGAT, ALGDGAT, ASVDGAT, ASIDGAT, AGVDGAT, &
-                     AGIDGAT, ISNDGAT, RADJGAT, ZBLDGAT, Z0ORGAT, &
-                     ZRFMGAT, ZRFHGAT, ZDMGAT, ZDHGAT, FSVHGAT, &
-                     FSIHGAT, CSZGAT, FDLGAT, ULGAT, VLGAT, &
-                     TAGAT, QAGAT, PRESGAT, PREGAT, PADRGAT, &
+                     AGIDGAT, ISNDGAT, RADJGAT, cf%ZBLD, Z0ORGAT, &
+                     cf%ZRFM, cf%ZRFH, ZDMGAT, ZDHGAT, cf%FSVH, &
+                     cf%FSIH, CSZGAT, cf%FDL, cf%UL, cf%VL, &
+                     cf%TA, cf%QA, cf%PRES, cf%PRE, PADRGAT, &
                      VPDGAT, TADPGAT, RHOAGAT, RPCPGAT, TRPCGAT, &
-                     SPCPGAT, TSPCGAT, RHSIGAT, FCLOGAT, DLONGAT, &
+                     SPCPGAT, TSPCGAT, RHSIGAT, cf%FCLO, DLONGAT, &
                      GGEOGAT, &
-                     CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
-                     QFSGAT, QFXGAT, PETGAT, GAGAT, EFGAT, &
-                     GTGAT, QGGAT, ALVSGAT, ALIRGAT, &
-                     SFCTGAT, SFCUGAT, SFCVGAT, SFCQGAT, FSNOGAT, &
-                     FSGVGAT, FSGSGAT, FSGGGAT, FLGVGAT, FLGSGAT, &
-                     FLGGGAT, HFSCGAT, HFSSGAT, HFSGGAT, HEVCGAT, &
-                     HEVSGAT, HEVGGAT, HMFCGAT, HMFNGAT, HTCCGAT, &
-                     HTCSGAT, PCFCGAT, PCLCGAT, PCPNGAT, PCPGGAT, &
-                     QFGGAT, QFNGAT, QFCLGAT, QFCFGAT, ROFGAT, &
-                     ROFOGAT, ROFSGAT, ROFBGAT, TROFGAT, TROOGAT, &
-                     TROSGAT, TROBGAT, ROFCGAT, ROFNGAT, ROVGGAT, &
-                     WTRCGAT, WTRSGAT, WTRGGAT, DRGAT, GFLXGAT, &
-                     HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
+                     cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
+                     cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
+                     cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
+                     cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
+                     cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
+                     cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
+                     cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
+                     cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
+                     cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
+                     cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
+                     cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
+                     cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
+                     cdv%HMFG, cdv%HTC, cdv%QFC, ITCTGAT, &
 !BEGIN: PDMROF
                      CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
 !END: PDMROF
@@ -2284,9 +2263,9 @@ program RUNMESH
                      ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
                      AGIDROW, ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
                      cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, FSVHGRD, &
-                     FSIHGRD, CSZGRD, cm%clin(cfk%FI)%climvGrd, cm%clin(cfk%UV)%climvGrd, VLGRD, &
-                     cm%clin(cfk%TT)%climvGrd, cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%P0)%climvGrd, &
-                     cm%clin(cfk%PR)%climvGrd, PADRGRD, &
+                     FSIHGRD, CSZGRD, cm%clin(cfk%FI)%GRD, cm%clin(cfk%UV)%GRD, VLGRD, &
+                     cm%clin(cfk%TT)%GRD, cm%clin(cfk%HU)%GRD, cm%clin(cfk%P0)%GRD, &
+                     cm%clin(cfk%PR)%GRD, PADRGRD, &
                      VPDGRD, TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, &
                      SPCPGRD, TSPCGRD, RHSIGRD, FCLOGRD, DLONGRD, &
                      GGEOGRD, cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
@@ -2310,107 +2289,107 @@ program RUNMESH
 !> Set variables arrays to zero.
 !> *********************************************************************
 
-        CDHGAT = 0.0
-        CDMGAT = 0.0
-        HFSGAT = 0.0
-        TFXGAT = 0.0
-        QEVPGAT = 0.0
-        QFSGAT = 0.0
-        QFXGAT = 0.0
-        PETGAT = 0.0
-        GAGAT = 0.0
-        EFGAT = 0.0
-        GTGAT = 0.0
-        QGGAT = 0.0
-        ALVSGAT = 0.0
-        ALIRGAT = 0.0
-        SFCTGAT = 0.0
-        SFCUGAT = 0.0
-        SFCVGAT = 0.0
-        SFCQGAT = 0.0
-        FSNOGAT = 0.0
-        FSGVGAT = 0.0
-        FSGSGAT = 0.0
-        FSGGGAT = 0.0
-        FLGVGAT = 0.0
-        FLGSGAT = 0.0
-        FLGGGAT = 0.0
-        HFSCGAT = 0.0
-        HFSSGAT = 0.0
-        HFSGGAT = 0.0
-        HEVCGAT = 0.0
-        HEVSGAT = 0.0
-        HEVGGAT = 0.0
-        HMFCGAT = 0.0
-        HMFNGAT = 0.0
-        HTCCGAT = 0.0
-        HTCSGAT = 0.0
-        PCFCGAT = 0.0
-        PCLCGAT = 0.0
-        PCPNGAT = 0.0
-        PCPGGAT = 0.0
-        QFGGAT = 0.0
-        QFNGAT = 0.0
-        QFCFGAT = 0.0
-        QFCLGAT = 0.0
-        ROFGAT = 0.0
-        ROFOGAT = 0.0
-        ROFSGAT = 0.0
-        ROFBGAT = 0.0
-        TROFGAT = 0.0
-        TROOGAT = 0.0
-        TROSGAT = 0.0
-        TROBGAT = 0.0
-        ROFCGAT = 0.0
-        ROFNGAT = 0.0
-        ROVGGAT = 0.0
-        WTRCGAT = 0.0
-        WTRSGAT = 0.0
-        WTRGGAT = 0.0
-        DRGAT = 0.0
-        HMFGGAT = 0.0
-        HTCGAT = 0.0
-        QFCGAT = 0.0
-        GFLXGAT = 0.0
+        cdv%CDH = 0.0
+        cdv%CDM = 0.0
+        cdv%HFS = 0.0
+        cdv%TFX = 0.0
+        cdv%QEVP = 0.0
+        cdv%QFS = 0.0
+        cdv%QFX = 0.0
+        cdv%PET = 0.0
+        cdv%GA = 0.0
+        cdv%EF = 0.0
+        cdv%GTE = 0.0
+        cdv%QG = 0.0
+        cdv%ALVS = 0.0
+        cdv%ALIR = 0.0
+        cdv%SFCT = 0.0
+        cdv%SFCU = 0.0
+        cdv%SFCV = 0.0
+        cdv%SFCQ = 0.0
+        cdv%FSNO = 0.0
+        cdv%FSGV = 0.0
+        cdv%FSGS = 0.0
+        cdv%FSGG = 0.0
+        cdv%FLGV = 0.0
+        cdv%FLGS = 0.0
+        cdv%FLGG = 0.0
+        cdv%HFSC = 0.0
+        cdv%HFSS = 0.0
+        cdv%HFSG = 0.0
+        cdv%HEVC = 0.0
+        cdv%HEVS = 0.0
+        cdv%HEVG = 0.0
+        cdv%HMFC = 0.0
+        cdv%HMFN = 0.0
+        cdv%HTCC = 0.0
+        cdv%HTCS = 0.0
+        cdv%PCFC = 0.0
+        cdv%PCLC = 0.0
+        cdv%PCPN = 0.0
+        cdv%PCPG = 0.0
+        cdv%QFG = 0.0
+        cdv%QFN = 0.0
+        cdv%QFCF = 0.0
+        cdv%QFCL = 0.0
+        cdv%ROF = 0.0
+        cdv%ROFO = 0.0
+        cdv%ROFS = 0.0
+        cdv%ROFB = 0.0
+        cdv%TROF = 0.0
+        cdv%TROO = 0.0
+        cdv%TROS = 0.0
+        cdv%TROB = 0.0
+        cdv%ROFC = 0.0
+        cdv%ROFN = 0.0
+        cdv%ROVG = 0.0
+        cdv%WTRC = 0.0
+        cdv%WTRS = 0.0
+        cdv%WTRG = 0.0
+        cdv%DR = 0.0
+        cdv%HMFG = 0.0
+        cdv%HTC = 0.0
+        cdv%QFC = 0.0
+        cdv%GFLX = 0.0
         ITCTGAT = 0
 
         call resume_state_r2c(shd%lc%NML, NA, NTYPE, NCOUNT, &
                               MINS_NOW, shd%lc%ACLASS, NR2C_R, GRD_R, GAT_R, GRDGAT_R, R2C_ATTRIBUTES_R, &
                               NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
-                              TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
-                              TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
-                              TCANGAT, RCANGAT, SCANGAT, GROGAT, CMAIGAT, &
+                              cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
+                              cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
+                              cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
                               FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
                               PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
                               VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
-                              HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
+                              HGTDGAT, ACVDGAT, ACIDGAT, cpv%TSFS, cpv%WSNO, &
                               THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
                               GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, &
-                              THFCGAT, PSIWGAT, DLZWGAT, ZBTWGAT, &
-                              ZSNLGAT, ZPLGGAT, ZPLSGAT, TACGAT, QACGAT, &
+                              THFCGAT, PSIWGAT, cpv%DELZW, ZBTWGAT, &
+                              ZSNLGAT, ZPLGGAT, ZPLSGAT, cpv%TAC, cpv%QAC, &
                               DRNGAT, XSLPGAT, XDGAT, WFSFGAT, KSGAT, &
                               ALGWGAT, ALGDGAT, ASVDGAT, ASIDGAT, AGVDGAT, &
-                              AGIDGAT, ISNDGAT, RADJGAT, ZBLDGAT, Z0ORGAT, &
-                              ZRFMGAT, ZRFHGAT, ZDMGAT, ZDHGAT, FSVHGAT, &
-                              FSIHGAT, CSZGAT, FDLGAT, ULGAT, VLGAT, &
-                              TAGAT, QAGAT, PRESGAT, PREGAT, PADRGAT, &
+                              AGIDGAT, ISNDGAT, RADJGAT, cf%ZBLD, Z0ORGAT, &
+                              cf%ZRFM, cf%ZRFH, ZDMGAT, ZDHGAT, cf%FSVH, &
+                              cf%FSIH, CSZGAT, cf%FDL, cf%UL, cf%VL, &
+                              cf%TA, cf%QA, cf%PRES, cf%PRE, PADRGAT, &
                               VPDGAT, TADPGAT, RHOAGAT, RPCPGAT, TRPCGAT, &
-                              SPCPGAT, TSPCGAT, RHSIGAT, FCLOGAT, DLONGAT, &
+                              SPCPGAT, TSPCGAT, RHSIGAT, cf%FCLO, DLONGAT, &
                               GGEOGAT, &
-                              CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
-                              QFSGAT, QFXGAT, PETGAT, GAGAT, EFGAT, &
-                              GTGAT, QGGAT, ALVSGAT, ALIRGAT, &
-                              SFCTGAT, SFCUGAT, SFCVGAT, SFCQGAT, FSNOGAT, &
-                              FSGVGAT, FSGSGAT, FSGGGAT, FLGVGAT, FLGSGAT, &
-                              FLGGGAT, HFSCGAT, HFSSGAT, HFSGGAT, HEVCGAT, &
-                              HEVSGAT, HEVGGAT, HMFCGAT, HMFNGAT, HTCCGAT, &
-                              HTCSGAT, PCFCGAT, PCLCGAT, PCPNGAT, PCPGGAT, &
-                              QFGGAT, QFNGAT, QFCLGAT, QFCFGAT, ROFGAT, &
-                              ROFOGAT, ROFSGAT, ROFBGAT, TROFGAT, TROOGAT, &
-                              TROSGAT, TROBGAT, ROFCGAT, ROFNGAT, ROVGGAT, &
-                              WTRCGAT, WTRSGAT, WTRGGAT, DRGAT, GFLXGAT, &
-                              HMFGGAT, HTCGAT, QFCGAT, MANNGAT, DDGAT, &
-                              SANDGAT, CLAYGAT, IGDRGAT, VMODGAT, QLWOGAT, &
+                              cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
+                              cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
+                              cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
+                              cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
+                              cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
+                              cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
+                              cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
+                              cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
+                              cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
+                              cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
+                              cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
+                              cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
+                              cdv%HMFG, cdv%HTC, cdv%QFC, MANNGAT, DDGAT, &
+                              SANDGAT, CLAYGAT, IGDRGAT, cf%VMOD, QLWOGAT, &
                               shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, &
                               shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
 !>
@@ -2421,10 +2400,10 @@ program RUNMESH
                     cp%GROROW, CMAIROW, TACROW, QACROW, WSNOROW, &
                     shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
                     NA, NTYPE, NML, il1, il2, IGND, ICAN, ICAN + 1, &
-                    TBARGAT, THLQGAT, THICGAT, GFLXGAT, TSFSGAT, &
-                    TPNDGAT, ZPNDGAT, TBASGAT, ALBSGAT, TSNOGAT, &
-                    RHOSGAT, SNOGAT, TCANGAT, RCANGAT, SCANGAT, &
-                    GROGAT, CMAIGAT, TACGAT, QACGAT, WSNOGAT, &
+                    cpv%TBAR, cpv%THLQ, cpv%THIC, cdv%GFLX, cpv%TSFS, &
+                    cpv%TPND, cpv%ZPND, cpv%TBAS, cpv%ALBS, cpv%TSNO, &
+                    cpv%RHOS, cpv%SNO, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
+                    cpv%GRO, cpv%CMAI, cpv%TAC, cpv%QAC, cpv%WSNO, &
                     cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
                     cp%SANDROW, SANDGAT, cp%CLAYROW, CLAYGAT, cp%XSLPROW, XSLPGAT, &
                     DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
@@ -2438,77 +2417,77 @@ program RUNMESH
         do 180 k = il1, il2
             ik = shd%lc%ILMOS(k)
             jk = shd%lc%JLMOS(k)
-            CDHROW(ik, jk) = CDHGAT(k)
-            CDMROW(ik, jk) = CDMGAT(k)
-            HFSROW(ik, jk) = HFSGAT(k)
-            TFXROW(ik, jk) = TFXGAT(k)
-            QEVPROW(ik, jk) = QEVPGAT(k)
-            QFSROW(ik, jk) = QFSGAT(k)
-            QFXROW(ik, jk) = QFXGAT(k)
-            PETROW(ik, jk) = PETGAT(k)
-            GAROW(ik, jk) = GAGAT(k)
-            EFROW(ik, jk) = EFGAT(k)
-            GTROW(ik, jk) = GTGAT(k)
-            QGROW(ik, jk) = QGGAT(k)
-            ALVSROW(ik, jk) = ALVSGAT(k)
-            ALIRROW(ik, jk) = ALIRGAT(k)
-            SFCTROW(ik, jk) = SFCTGAT(k)
-            SFCUROW(ik, jk) = SFCUGAT(k)
-            SFCVROW(ik, jk) = SFCVGAT(k)
-            SFCQROW(ik, jk) = SFCQGAT(k)
-            FSNOROW(ik, jk) = FSNOGAT(k)
-            FSGVROW(ik, jk) = FSGVGAT(k)
-            FSGSROW(ik, jk) = FSGSGAT(k)
-            FSGGROW(ik, jk) = FSGGGAT(k)
-            FLGVROW(ik, jk) = FLGVGAT(k)
-            FLGSROW(ik, jk) = FLGSGAT(k)
-            FLGGROW(ik, jk) = FLGGGAT(k)
-            HFSCROW(ik, jk) = HFSCGAT(k)
-            HFSSROW(ik, jk) = HFSSGAT(k)
-            HFSGROW(ik, jk) = HFSGGAT(k)
-            HEVCROW(ik, jk) = HEVCGAT(k)
-            HEVSROW(ik, jk) = HEVSGAT(k)
-            HEVGROW(ik, jk) = HEVGGAT(k)
-            HMFCROW(ik, jk) = HMFCGAT(k)
-            HMFNROW(ik, jk) = HMFNGAT(k)
-            HTCCROW(ik, jk) = HTCCGAT(k)
-            HTCSROW(ik, jk) = HTCSGAT(k)
-            PCFCROW(ik, jk) = PCFCGAT(k)
-            PCLCROW(ik, jk) = PCLCGAT(k)
-            PCPNROW(ik, jk) = PCPNGAT(k)
-            PCPGROW(ik, jk) = PCPGGAT(k)
-            QFGROW(ik, jk) = QFGGAT(k)
-            QFNROW(ik, jk) = QFNGAT(k)
-            QFCLROW(ik, jk) = QFCLGAT(k)
-            QFCFROW(ik, jk) = QFCFGAT(k)
-            ROFROW(ik, jk) = ROFGAT(k)
-            ROFOROW(ik, jk) = ROFOGAT(k)
-            ROFSROW(ik, jk) = ROFSGAT(k)
-            ROFBROW(ik, jk) = ROFBGAT(k)
-            TROFROW(ik, jk) = TROFGAT(k)
-            TROOROW(ik, jk) = TROOGAT(k)
-            TROSROW(ik, jk) = TROSGAT(k)
-            TROBROW(ik, jk) = TROBGAT(k)
-            ROFCROW(ik, jk) = ROFCGAT(k)
-            ROFNROW(ik, jk) = ROFNGAT(k)
-            ROVGROW(ik, jk) = ROVGGAT(k)
-            WTRCROW(ik, jk) = WTRCGAT(k)
-            WTRSROW(ik, jk) = WTRSGAT(k)
-            WTRGROW(ik, jk) = WTRGGAT(k)
-            DRROW(ik, jk) = DRGAT(k)
-            WTABROW(ik, jk) = WTABGAT(k)
-            ILMOROW(ik, jk) = ILMOGAT(k)
-            UEROW(ik, jk) = UEGAT(k)
-            HBLROW(ik, jk) = HBLGAT(k)
+            CDHROW(ik, jk) = cdv%CDH(k)
+            CDMROW(ik, jk) = cdv%CDM(k)
+            HFSROW(ik, jk) = cdv%HFS(k)
+            TFXROW(ik, jk) = cdv%TFX(k)
+            QEVPROW(ik, jk) = cdv%QEVP(k)
+            QFSROW(ik, jk) = cdv%QFS(k)
+            QFXROW(ik, jk) = cdv%QFX(k)
+            PETROW(ik, jk) = cdv%PET(k)
+            GAROW(ik, jk) = cdv%GA(k)
+            EFROW(ik, jk) = cdv%EF(k)
+            GTROW(ik, jk) = cdv%GTE(k)
+            QGROW(ik, jk) = cdv%QG(k)
+            ALVSROW(ik, jk) = cdv%ALVS(k)
+            ALIRROW(ik, jk) = cdv%ALIR(k)
+            SFCTROW(ik, jk) = cdv%SFCT(k)
+            SFCUROW(ik, jk) = cdv%SFCU(k)
+            SFCVROW(ik, jk) = cdv%SFCV(k)
+            SFCQROW(ik, jk) = cdv%SFCQ(k)
+            FSNOROW(ik, jk) = cdv%FSNO(k)
+            FSGVROW(ik, jk) = cdv%FSGV(k)
+            FSGSROW(ik, jk) = cdv%FSGS(k)
+            FSGGROW(ik, jk) = cdv%FSGG(k)
+            FLGVROW(ik, jk) = cdv%FLGV(k)
+            FLGSROW(ik, jk) = cdv%FLGS(k)
+            FLGGROW(ik, jk) = cdv%FLGG(k)
+            HFSCROW(ik, jk) = cdv%HFSC(k)
+            HFSSROW(ik, jk) = cdv%HFSS(k)
+            HFSGROW(ik, jk) = cdv%HFSG(k)
+            HEVCROW(ik, jk) = cdv%HEVC(k)
+            HEVSROW(ik, jk) = cdv%HEVS(k)
+            HEVGROW(ik, jk) = cdv%HEVG(k)
+            HMFCROW(ik, jk) = cdv%HMFC(k)
+            HMFNROW(ik, jk) = cdv%HMFN(k)
+            HTCCROW(ik, jk) = cdv%HTCC(k)
+            HTCSROW(ik, jk) = cdv%HTCS(k)
+            PCFCROW(ik, jk) = cdv%PCFC(k)
+            PCLCROW(ik, jk) = cdv%PCLC(k)
+            PCPNROW(ik, jk) = cdv%PCPN(k)
+            PCPGROW(ik, jk) = cdv%PCPG(k)
+            QFGROW(ik, jk) = cdv%QFG(k)
+            QFNROW(ik, jk) = cdv%QFN(k)
+            QFCLROW(ik, jk) = cdv%QFCL(k)
+            QFCFROW(ik, jk) = cdv%QFCF(k)
+            ROFROW(ik, jk) = cdv%ROF(k)
+            ROFOROW(ik, jk) = cdv%ROFO(k)
+            ROFSROW(ik, jk) = cdv%ROFS(k)
+            ROFBROW(ik, jk) = cdv%ROFB(k)
+            TROFROW(ik, jk) = cdv%TROF(k)
+            TROOROW(ik, jk) = cdv%TROO(k)
+            TROSROW(ik, jk) = cdv%TROS(k)
+            TROBROW(ik, jk) = cdv%TROB(k)
+            ROFCROW(ik, jk) = cdv%ROFC(k)
+            ROFNROW(ik, jk) = cdv%ROFN(k)
+            ROVGROW(ik, jk) = cdv%ROVG(k)
+            WTRCROW(ik, jk) = cdv%WTRC(k)
+            WTRSROW(ik, jk) = cdv%WTRS(k)
+            WTRGROW(ik, jk) = cdv%WTRG(k)
+            DRROW(ik, jk) = cdv%DR(k)
+            WTABROW(ik, jk) = cdv%WTAB(k)
+            ILMOROW(ik, jk) = cdv%ILMO(k)
+            UEROW(ik, jk) = cdv%UE(k)
+            HBLROW(ik, jk) = cdv%HBL(k)
 180     continue
 !>
         do 190 l = 1, IGND
             do 190 k = il1, il2
                 ik = shd%lc%ILMOS(k)
                 jk = shd%lc%JLMOS(k)
-                HMFGROW(ik, jk, l) = HMFGGAT(k, l)
-                HTCROW(ik, jk, l) = HTCGAT(k, l)
-                QFCROW(ik, jk, l) = QFCGAT(k, l)
+                HMFGROW(ik, jk, l) = cdv%HMFG(k, l)
+                HTCROW(ik, jk, l) = cdv%HTC(k, l)
+                QFCROW(ik, jk, l) = cdv%QFC(k, l)
 190     continue
 !>
         do 230 m = 1, 50
@@ -2651,7 +2630,7 @@ program RUNMESH
                         DrySnowROW(i, m) = 0.0 !1 = snowpack is dry (i.e. cold)
                         SnowAgeROW(i, m) = 0.0 !hours since last snowfall
        !todo: this can use the TFREZ parameter instead of a hard-coded value. (dgp: 2015-01-09)
-                        if (cm%clin(cfk%TT)%climvGrd(i) >= 273.16) then
+                        if (cm%clin(cfk%TT)%GRD(i) >= 273.16) then
                             DrySnowROW(i, m) = 0.0
                             SnowAgeROW(i, m) = 48.0 !assume 48 hours since last snowfall
                         else
@@ -2665,39 +2644,39 @@ program RUNMESH
 
     end if !(ipid == 0) then
 
-    call CLASSG(TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
-                TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
-                TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
+    call CLASSG(cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
+                cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
+                cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, FRZCGAT, cpv%CMAI, &
                 FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
                 PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
                 VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
-                HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
+                HGTDGAT, ACVDGAT, ACIDGAT, cpv%TSFS, cpv%WSNO, &
                 THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
                 GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, IGDRGAT, &
-                THFCGAT, PSIWGAT, DLZWGAT, ZBTWGAT, VMODGAT, &
-                ZSNLGAT, ZPLGGAT, ZPLSGAT, TACGAT, QACGAT, &
+                THFCGAT, PSIWGAT, cpv%DELZW, ZBTWGAT, cf%VMOD, &
+                ZSNLGAT, ZPLGGAT, ZPLSGAT, cpv%TAC, cpv%QAC, &
                 DRNGAT, XSLPGAT, XDGAT, WFSFGAT, KSGAT, &
                 ALGWGAT, ALGDGAT, ASVDGAT, ASIDGAT, AGVDGAT, &
-                AGIDGAT, ISNDGAT, RADJGAT, ZBLDGAT, Z0ORGAT, &
-                ZRFMGAT, ZRFHGAT, ZDMGAT, ZDHGAT, FSVHGAT, &
-                FSIHGAT, CSZGAT, FDLGAT, ULGAT, VLGAT, &
-                TAGAT, QAGAT, PRESGAT, PREGAT, PADRGAT, &
+                AGIDGAT, ISNDGAT, RADJGAT, cf%ZBLD, Z0ORGAT, &
+                cf%ZRFM, cf%ZRFH, ZDMGAT, ZDHGAT, cf%FSVH, &
+                cf%FSIH, CSZGAT, cf%FDL, cf%UL, cf%VL, &
+                cf%TA, cf%QA, cf%PRES, cf%PRE, PADRGAT, &
                 VPDGAT, TADPGAT, RHOAGAT, RPCPGAT, TRPCGAT, &
-                SPCPGAT, TSPCGAT, RHSIGAT, FCLOGAT, DLONGAT, &
+                SPCPGAT, TSPCGAT, RHSIGAT, cf%FCLO, DLONGAT, &
                 GGEOGAT, &
-                CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
-                QFSGAT, QFXGAT, PETGAT, GAGAT, EFGAT, &
-                GTGAT, QGGAT, ALVSGAT, ALIRGAT, &
-                SFCTGAT, SFCUGAT, SFCVGAT, SFCQGAT, FSNOGAT, &
-                FSGVGAT, FSGSGAT, FSGGGAT, FLGVGAT, FLGSGAT, &
-                FLGGGAT, HFSCGAT, HFSSGAT, HFSGGAT, HEVCGAT, &
-                HEVSGAT, HEVGGAT, HMFCGAT, HMFNGAT, HTCCGAT, &
-                HTCSGAT, PCFCGAT, PCLCGAT, PCPNGAT, PCPGGAT, &
-                QFGGAT, QFNGAT, QFCLGAT, QFCFGAT, ROFGAT, &
-                ROFOGAT, ROFSGAT, ROFBGAT, TROFGAT, TROOGAT, &
-                TROSGAT, TROBGAT, ROFCGAT, ROFNGAT, ROVGGAT, &
-                WTRCGAT, WTRSGAT, WTRGGAT, DRGAT, GFLXGAT, &
-                HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
+                cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
+                cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
+                cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
+                cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
+                cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
+                cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
+                cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
+                cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
+                cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
+                cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
+                cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
+                cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
+                cdv%HMFG, cdv%HTC, cdv%QFC, ITCTGAT, &
 !BEGIN: PDMROF
                 CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM,  &
 !END: PDMROF
@@ -2718,8 +2697,8 @@ program RUNMESH
                 ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
                 AGIDROW, ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
                 cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, FSVHGRD, &
-                FSIHGRD, CSZGRD, cm%clin(cfk%FI)%climvGrd, cm%clin(cfk%UV)%climvGrd, VLGRD, &
-                cm%clin(cfk%TT)%climvGrd, cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%P0)%climvGrd, cm%clin(cfk%PR)%climvGrd, PADRGRD, &
+                FSIHGRD, CSZGRD, cm%clin(cfk%FI)%GRD, cm%clin(cfk%UV)%GRD, VLGRD, &
+                cm%clin(cfk%TT)%GRD, cm%clin(cfk%HU)%GRD, cm%clin(cfk%P0)%GRD, cm%clin(cfk%PR)%GRD, PADRGRD, &
                 VPDGRD, TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, &
                 SPCPGRD, TSPCGRD, RHSIGRD, FCLOGRD, DLONGRD, &
                 GGEOGRD, cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
@@ -2734,186 +2713,6 @@ program RUNMESH
                 TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
                 DriftROW, SublROW, DepositionROW, &
                 DriftGAT, SublGAT, DepositionGAT)
-
-    !> Initialize and open files for CLASS output.
-!    if ((ipid /= 0 .or. izero == 0) .and. WF_NUM_POINTS > 0) then
-
-        !> After GATPREP. Determine the GAT-index of the output point.
-!        op%K_OUT = 0
-!        do k = il1, il2
-!            do i = 1, WF_NUM_POINTS
-!                if (op%N_OUT(i) == shd%lc%ILMOS(k) .and. op%II_OUT(i) == shd%lc%JLMOS(k)) op%K_OUT(i) = k
-!            end do
-!        end do
-
-        !> Allocate the CLASS output variables.
-!        allocate(co%PREACC(WF_NUM_POINTS), co%GTACC(WF_NUM_POINTS), co%QEVPACC(WF_NUM_POINTS), co%EVAPACC(WF_NUM_POINTS), &
-!                 co%HFSACC(WF_NUM_POINTS), co%HMFNACC(WF_NUM_POINTS), &
-!                 co%ROFACC(WF_NUM_POINTS), co%ROFOACC(WF_NUM_POINTS), co%ROFSACC(WF_NUM_POINTS), co%ROFBACC(WF_NUM_POINTS), &
-!                 co%WTBLACC(WF_NUM_POINTS), co%ALVSACC(WF_NUM_POINTS), co%ALIRACC(WF_NUM_POINTS), &
-!                 co%RHOSACC(WF_NUM_POINTS), co%TSNOACC(WF_NUM_POINTS), co%WSNOACC(WF_NUM_POINTS), co%SNOARE(WF_NUM_POINTS), &
-!                 co%TCANACC(WF_NUM_POINTS), co%CANARE(WF_NUM_POINTS), co%SNOACC(WF_NUM_POINTS), &
-!                 co%RCANACC(WF_NUM_POINTS), co%SCANACC(WF_NUM_POINTS), co%GROACC(WF_NUM_POINTS), co%FSINACC(WF_NUM_POINTS), &
-!                 co%FLINACC(WF_NUM_POINTS), co%FLUTACC(WF_NUM_POINTS), &
-!                 co%TAACC(WF_NUM_POINTS), co%UVACC(WF_NUM_POINTS), co%PRESACC(WF_NUM_POINTS), co%QAACC(WF_NUM_POINTS))
-!        allocate(co%TBARACC(WF_NUM_POINTS, IGND), co%THLQACC(WF_NUM_POINTS, IGND), co%THICACC(WF_NUM_POINTS, IGND), &
-!                 co%THALACC(WF_NUM_POINTS, IGND), co%GFLXACC(WF_NUM_POINTS, IGND))
-
-        !> Initialize the CLASS output variables.
-!        co%PREACC = 0.0
-!        co%GTACC = 0.0
-!        co%QEVPACC = 0.0
-!        co%EVAPACC = 0.0
-!        co%HFSACC = 0.0
-!        co%HMFNACC = 0.0
-!        co%ROFACC = 0.0
-!        co%ROFOACC = 0.0
-!        co%ROFSACC = 0.0
-!        co%ROFBACC = 0.0
-!        co%WTBLACC = 0.0
-!        co%TBARACC = 0.0
-!        co%THLQACC = 0.0
-!        co%THICACC = 0.0
-!        co%THALACC = 0.0
-!        co%GFLXACC = 0.0
-!        co%ALVSACC = 0.0
-!        co%ALIRACC = 0.0
-!        co%RHOSACC = 0.0
-!        co%TSNOACC = 0.0
-!        co%WSNOACC = 0.0
-!        co%SNOARE = 0.0
-!        co%TCANACC = 0.0
-!        co%CANARE = 0.0
-!        co%SNOACC = 0.0
-!        co%RCANACC = 0.0
-!        co%SCANACC = 0.0
-!        co%GROACC = 0.0
-!        co%FSINACC = 0.0
-!        co%FLINACC = 0.0
-!        co%FLUTACC = 0.0
-!        co%TAACC = 0.0
-!        co%UVACC = 0.0
-!        co%PRESACC = 0.0
-!        co%QAACC = 0.0
-
-        !> Open the files if the GAT-index of the output point resides on this node.
-!        do i = 1, WF_NUM_POINTS
-!            if ((ipid /= 0 .or. izero == 0) .and. op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
-
-                !> Open the files in the appropriate directory.
-!                BNAM = op%DIR_OUT(i)
-!                j = 1
-!                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF1.csv'); j = j + 1
-!                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF2.csv'); j = j + 1
-!                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF3.csv'); j = j + 1
-!                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF4.csv'); j = j + 1
-!                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF5.csv'); j = j + 1
-!                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF6.csv'); j = j + 1
-!                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF7.csv'); j = j + 1
-!                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF8.csv'); j = j + 1
-!                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF9.csv'); j = j + 1
-!                open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/GRU_water_balance.csv')
-
-                !> Write project header information.
-!                do j = 1, 9
-!                    write(150 + i*10 + j, "('CLASS TEST RUN:     ', 6a4)") TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6
-!                    write(150 + i*10 + j, "('RESEARCHER:         ', 6a4)") NAME1, NAME2, NAME3, NAME4, NAME5, NAME6
-!                    write(150 + i*10 + j, "('INSTITUTION:        ', 6a4)") PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
-!                end do
-
-                !> CLASSOF1.
-!                write(150 + i*10 + 1, "('IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,SNOMLT,BEG," // &
-!                    'GTOUT,SNOACC(I),RHOSACC(I),WSNOACC(I),ALTOT,ROFACC(I),' // &
-!                    "ROFOACC(I),ROFSACC(I),ROFBACC(I)')")
-
-                !> CLASSOF2.
-!                write(FMT, *) ''
-!                do j = 1, IGND
-!                    write(IGND_CHAR, *) j
-!                    IGND_CHAR = adjustl(IGND_CHAR)
-!                    FMT = trim(adjustl(FMT)) // 'TBARACC(I ' // trim(IGND_CHAR) // ')-TFREZ,THLQACC(I ' // &
-!                        trim(IGND_CHAR) // '),THICACC(I ' // trim(IGND_CHAR) // '),'
-!                end do
-!                write(150 + i*10 + 2, "('IDAY,IYEAR," // trim(FMT) // "TCN,RCANACC(I),SCANACC(I),TSN,ZSN')")
-
-                !> CLASSOF3.
-!                write(150 + i*10 + 3, "('IDAY,IYEAR,FSINACC(I),FLINACC(I)," // &
-!                    'TAACC(I)-TFREZ,UVACC(I),PRESACC(I),QAACC(I),PREACC(I),' // &
-!                    "EVAPACC(I)')")
-
-                !> CLASSOF4.
-!                write(150 + i*10 + 4, "('IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE," // &
-!                    'SNOMLT,BEG,GTOUT,SNOROW(I M),RHOSROW(I M),WSNOROW(I M),ALTOT,' // &
-!                    "ROFROW(I M),TPN,ZPNDROW(I M),ZPND,FSTR')")
-
-                !> CLASSOF5.
-!                write(FMT, *) ''
-!                do j = 1, IGND
-!                    write(IGND_CHAR, *) j
-!                    IGND_CHAR = adjustl(IGND_CHAR)
-!                    FMT = trim(adjustl(FMT)) // 'TBARROW(I ' // trim(IGND_CHAR) // ')-TFREZ,THLQROW(I ' // &
-!                        trim(IGND_CHAR) // '),THICROW(I ' // trim(IGND_CHAR) // '),'
-!                end do
-!                write(150 + i*10 + 5, "('IHOUR,IMIN,IDAY,IYEAR," // trim(FMT) // "TCN,RCANROW(I M),SCANROW(I M),TSN,ZSN')")
-
-                !> CLASSOF6.
-!                write(150 + i*10 + 6, "('IHOUR,IMIN,IDAY,FSDOWN(I),FDLGRD(I)," // &
-!                    "PREGRD(I),TAGRD(I)-TFREZ,UVGRD(I),PRESGRD(I),QAGRD(I)')")
-
-                !> CLASSOF7.
-!                write(150 + i*10 + 7,"('TROFROW(I M),TROOROW(I M),TROSROW(I M)," // &
-!                    'TROBROW(I M),ROFROW(I M),ROFOROW(I M),ROFSROW(I M),' // &
-!                    "ROFBROW(I M),FCS(I),FGS(I),FC(I),FG(I)')")
-
-                !> CLASSOF8.
-!                write(FMT, *) ''
-!                do j = 1, IGND
-!                    write(IGND_CHAR, *) j
-!                    IGND_CHAR = adjustl(IGND_CHAR)
-!                    FMT = trim(adjustl(FMT)) // ',HMFGROW(I M ' // trim(IGND_CHAR) // ')'
-!                end do
-!                FMT = trim(adjustl(FMT)) // ',HTCCROW(I M),HTCSROW(I M)'
-!                do j = 1, IGND
-!                    write(IGND_CHAR, *) j
-!                    IGND_CHAR = adjustl(IGND_CHAR)
-!                    FMT = trim(adjustl(FMT)) // ',HTCROW(I M ' // trim(IGND_CHAR) // ')'
-!                end do
-!                write(150 + i*10 + 8, "('FSGVROW(I M),FSGSROW(I M),FSGGROW(I M)," // &
-!                    'FLGVROW(I M),FLGSROW(I M),FLGGROW(I M),HFSCROW(I M),' // &
-!                    'HFSSROW(I M),HFSGROW(I M),HEVCROW(I M),HEVSROW(I M),' // &
-!                    'HEVGROW(I M),HMFCROW(I M),HMFNROW(I M)' // trim(FMT) // "')")
-
-                !> CLASSOF9.
-!                write(FMT, *) ''
-!                do j = 1, IGND
-!                    write(IGND_CHAR, *) j
-!                    IGND_CHAR = adjustl(IGND_CHAR)
-!                    FMT = trim(adjustl(FMT)) // 'QFCROW(I M ' // trim(IGND_CHAR) // '),'
-!                end do
-!                write(150 + i*10 + 9, "('PCFCROW(I M),PCLCROW(I M),PCPNROW(I M)," // &
-!                    'PCPGROW(I M),QFCFROW(I M),QFCLROW(I M),QFNROW(I M),QFGROW(I M),' // trim(FMT) // 'ROFCROW(I M),' // &
-!                    'ROFNROW(I M),ROFOROW(I M),ROFROW(I M),WTRCROW(I M),' // &
-!                    "WTRSROW(I M),WTRGROW(I M)')")
-
-                !> GRU water balance file.
-!                write(FMT, *) ''
-!                do j = 1, IGND
-!                    write(IGND_CHAR, *) j
-!                    IGND_CHAR = adjustl(IGND_CHAR)
-!                    FMT = trim(adjustl(FMT)) // 'THLQ' // trim(IGND_CHAR) // ','
-!                end do
-!                do j = 1, IGND
-!                    write(IGND_CHAR, *) j
-!                    IGND_CHAR = adjustl(IGND_CHAR)
-!                    FMT = trim(adjustl(FMT)) // 'THIC' // trim(IGND_CHAR) // ','
-!                end do
-!                write(150 + i*10 + 10, "('IHOUR,IMIN,IDAY,IYEAR," // &
-!                    'PRE,EVAP,ROF,ROFO,ROFS,ROFB,' // &
-!                    'SCAN,RCAN,SNO,WSNO,ZPND,' // trim(FMT) // "')")
-
-!            end if !(op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
-!        end do !i = 1, wf_num_points
-!    end if !(WF_NUM_POINTS > 0) then
 
 !> *********************************************************************
 !> End of Initialization
@@ -2943,9 +2742,19 @@ program RUNMESH
         if (INTERPOLATIONFLAG == 1) then
             call climate_module_interpolatedata(shd, FAREGAT, cm, NML, il1, il2)
         end if
-        UVGRD = max(VMIN, cm%clin(cfk%UV)%climvGrd)
+
+        cf%FSVH(il1:il2) = FSVHGAT(il1:il2)
+        cf%FSIH(il1:il2) = FSIHGAT(il1:il2)
+        cf%FDL(il1:il2) = cm%clin(cfk%FI)%GAT(il1:il2)
+        cf%PRE(il1:il2) = cm%clin(cfk%PR)%GAT(il1:il2)
+        cf%TA(il1:il2) = cm%clin(cfk%TT)%GAT(il1:il2)
+        cf%UL(il1:il2) = cm%clin(cfk%UV)%GAT(il1:il2)
+        cf%PRES(il1:il2) = cm%clin(cfk%P0)%GAT(il1:il2)
+        cf%QA(il1:il2) = cm%clin(cfk%HU)%GAT(il1:il2)
+
+        UVGRD = max(VMIN, cm%clin(cfk%UV)%GRD)
         VMODGRD = UVGRD
-        VMODGAT = max(VMIN, ULGAT)
+        cf%VMOD = max(VMIN, cf%UL)
 
 !> *********************************************************************
 !> Set some more CLASS parameters
@@ -2966,14 +2775,14 @@ program RUNMESH
             COSZ = sin(RADJGAT(k))*sin(DECL) + cos(RADJGAT(k))*cos(DECL)*cos(HOUR)
             CSZGAT(k) = sign(max(abs(COSZ), 1.0e-3), COSZ)
             CSZGRD(ik) = CSZGAT(k)
-            if (PREGAT(k) > 0.0) then
+            if (cf%PRE(k) > 0.0) then
     !todo: there isn't a GAT variable for this (although, there might be for the canopy)?
                 XDIFFUS(ik) = 1.0
             else
                 XDIFFUS(ik) = max(0.0, min(1.0 - 0.9*COSZ, 1.0))
             end if
-            FCLOGAT(k) = XDIFFUS(ik)
-            FCLOGRD(ik) = FCLOGAT(k)
+            cf%FCLO(k) = XDIFFUS(ik)
+            FCLOGRD(ik) = cf%FCLO(k)
         end do
 
 !> *********************************************************************
@@ -2990,73 +2799,73 @@ program RUNMESH
 !>   * FOR CONSISTENCY WITH GCM APPLICATIONS.
 !>
 
-        CDHGAT = 0.0
-        CDMGAT = 0.0
-        HFSGAT = 0.0
-        TFXGAT = 0.0
-        QEVPGAT = 0.0
-        QFSGAT = 0.0
-        QFXGAT = 0.0
-        PETGAT = 0.0
-        GAGAT = 0.0
-        EFGAT = 0.0
-        GTGAT = 0.0
-        QGGAT = 0.0
-        ALVSGAT = 0.0
-        ALIRGAT = 0.0
-        SFCTGAT = 0.0
-        SFCUGAT = 0.0
-        SFCVGAT = 0.0
-        SFCQGAT = 0.0
-        FSNOGAT = 0.0
-        FSGVGAT = 0.0
-        FSGSGAT = 0.0
-        FSGGGAT = 0.0
-        FLGVGAT = 0.0
-        FLGSGAT = 0.0
-        FLGGGAT = 0.0
-        HFSCGAT = 0.0
-        HFSSGAT = 0.0
-        HFSGGAT = 0.0
-        HEVCGAT = 0.0
-        HEVSGAT = 0.0
-        HEVGGAT = 0.0
-        HMFCGAT = 0.0
-        HMFNGAT = 0.0
-        HTCCGAT = 0.0
-        HTCSGAT = 0.0
-        PCFCGAT = 0.0
-        PCLCGAT = 0.0
-        PCPNGAT = 0.0
-        PCPGGAT = 0.0
-        QFGGAT = 0.0
-        QFNGAT = 0.0
-        QFCFGAT = 0.0
-        QFCLGAT = 0.0
-        ROFGAT = 0.0
-        ROFOGAT = 0.0
-        ROFSGAT = 0.0
-        ROFBGAT = 0.0
-        TROFGAT = 0.0
-        TROOGAT = 0.0
-        TROSGAT = 0.0
-        TROBGAT = 0.0
-        ROFCGAT = 0.0
-        ROFNGAT = 0.0
-        ROVGGAT = 0.0
-        WTRCGAT = 0.0
-        WTRSGAT = 0.0
-        WTRGGAT = 0.0
-        DRGAT = 0.0
-        HMFGGAT = 0.0
-        HTCGAT = 0.0
-        QFCGAT = 0.0
-        GFLXGAT = 0.0
+        cdv%CDH = 0.0
+        cdv%CDM = 0.0
+        cdv%HFS = 0.0
+        cdv%TFX = 0.0
+        cdv%QEVP = 0.0
+        cdv%QFS = 0.0
+        cdv%QFX = 0.0
+        cdv%PET = 0.0
+        cdv%GA = 0.0
+        cdv%EF = 0.0
+        cdv%GTE = 0.0
+        cdv%QG = 0.0
+        cdv%ALVS = 0.0
+        cdv%ALIR = 0.0
+        cdv%SFCT = 0.0
+        cdv%SFCU = 0.0
+        cdv%SFCV = 0.0
+        cdv%SFCQ = 0.0
+        cdv%FSNO = 0.0
+        cdv%FSGV = 0.0
+        cdv%FSGS = 0.0
+        cdv%FSGG = 0.0
+        cdv%FLGV = 0.0
+        cdv%FLGS = 0.0
+        cdv%FLGG = 0.0
+        cdv%HFSC = 0.0
+        cdv%HFSS = 0.0
+        cdv%HFSG = 0.0
+        cdv%HEVC = 0.0
+        cdv%HEVS = 0.0
+        cdv%HEVG = 0.0
+        cdv%HMFC = 0.0
+        cdv%HMFN = 0.0
+        cdv%HTCC = 0.0
+        cdv%HTCS = 0.0
+        cdv%PCFC = 0.0
+        cdv%PCLC = 0.0
+        cdv%PCPN = 0.0
+        cdv%PCPG = 0.0
+        cdv%QFG = 0.0
+        cdv%QFN = 0.0
+        cdv%QFCF = 0.0
+        cdv%QFCL = 0.0
+        cdv%ROF = 0.0
+        cdv%ROFO = 0.0
+        cdv%ROFS = 0.0
+        cdv%ROFB = 0.0
+        cdv%TROF = 0.0
+        cdv%TROO = 0.0
+        cdv%TROS = 0.0
+        cdv%TROB = 0.0
+        cdv%ROFC = 0.0
+        cdv%ROFN = 0.0
+        cdv%ROVG = 0.0
+        cdv%WTRC = 0.0
+        cdv%WTRS = 0.0
+        cdv%WTRG = 0.0
+        cdv%DR = 0.0
+        cdv%HMFG = 0.0
+        cdv%HTC = 0.0
+        cdv%QFC = 0.0
+        cdv%GFLX = 0.0
         ITCTGAT = 0
 
         call CLASSI(VPDGAT, TADPGAT, PADRGAT, RHOAGAT, RHSIGAT, &
-                    RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, TAGAT, QAGAT, &
-                    PREGAT, RPREGAT, SPREGAT, PRESGAT, &
+                    RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, cf%TA, cf%QA, &
+                    cf%PRE, RPREGAT, SPREGAT, cf%PRES, &
                     IPCP, NML, il1, il2)
 
         if (ipid == 0) then
@@ -3112,21 +2921,21 @@ program RUNMESH
 
             call CLASSZ(0, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
-                        FSGVGAT, FLGVGAT, HFSCGAT, HEVCGAT, HMFCGAT, HTCCGAT, &
-                        FSGSGAT, FLGSGAT, HFSSGAT, HEVSGAT, HMFNGAT, HTCSGAT, &
-                        FSGGGAT, FLGGGAT, HFSGGAT, HEVGGAT, HMFGGAT, HTCGAT, &
-                        PCFCGAT, PCLCGAT, QFCFGAT, QFCLGAT, ROFCGAT, WTRCGAT, &
-                        PCPNGAT, QFNGAT, ROFNGAT, WTRSGAT, PCPGGAT, QFGGAT, &
-                        QFCGAT, ROFGAT, WTRGGAT, CMAIGAT, RCANGAT, SCANGAT, &
-                        TCANGAT, SNOGAT, WSNOGAT, TSNOGAT, THLQGAT, THICGAT, &
-                        HCPSGAT, THPGAT, DLZWGAT, TBARGAT, ZPNDGAT, TPNDGAT, &
-                        sl%DELZ, FCS, FGS, FC, FG, &
+                        cdv%FSGV, cdv%FLGV, cdv%HFSC, cdv%HEVC, cdv%HMFC, cdv%HTCC, &
+                        cdv%FSGS, cdv%FLGS, cdv%HFSS, cdv%HEVS, cdv%HMFN, cdv%HTCS, &
+                        cdv%FSGG, cdv%FLGG, cdv%HFSG, cdv%HEVG, cdv%HMFG, cdv%HTC, &
+                        cdv%PCFC, cdv%PCLC, cdv%QFCF, cdv%QFCL, cdv%ROFC, cdv%WTRC, &
+                        cdv%PCPN, cdv%QFN, cdv%ROFN, cdv%WTRS, cdv%PCPG, cdv%QFG, &
+                        cdv%QFC, cdv%ROF, cdv%WTRG, cpv%CMAI, cpv%RCAN, cpv%SNCAN, &
+                        cpv%TCAN, cpv%SNO, cpv%WSNO, cpv%TSNO, cpv%THLQ, cpv%THIC, &
+                        HCPSGAT, THPGAT, cpv%DELZW, cpv%TBAR, cpv%ZPND, cpv%TPND, &
+                        sl%DELZ, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                         il1, il2, NML, IGND, N, &
                         DriftGAT, SublGAT)
 
 !> ALBEDO AND TRANSMISSIVITY CALCULATIONS; GENERAL VEGETATION
 !> CHARACTERISTICS.
-            call CLASSA(FC, FG, FCS, FGS, ALVSCN, ALIRCN, &
+            call CLASSA(cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, ALVSCN, ALIRCN, &
                         ALVSG, ALIRG, ALVSCS, ALIRCS, ALVSSN, ALIRSN, &
                         ALVSGC, ALIRGC, ALVSSC, ALIRSC, TRVSCN, TRIRCN, &
                         TRVSCS, TRIRCS, FSVF, FSVFS, &
@@ -3137,17 +2946,17 @@ program RUNMESH
                         CHCAP, CHCAPS, CMASSC, CMASCS, CWLCAP, CWFCAP, &
                         CWLCPS, CWFCPS, RC, RCS, RBCOEF, FROOT, &
                         ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, TRSNOW, ZSNOW, &
-                        WSNOGAT, ALVSGAT, ALIRGAT, HTCCGAT, HTCSGAT, HTCGAT, &
-                        WTRCGAT, WTRSGAT, WTRGGAT, CMAIGAT, FSNOGAT, &
+                        cpv%WSNO, cdv%ALVS, cdv%ALIR, cdv%HTCC, cdv%HTCS, cdv%HTC, &
+                        cdv%WTRC, cdv%WTRS, cdv%WTRG, cpv%CMAI, cdv%FSNO, &
                         FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, PAMNGAT, &
                         CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, VPDAGAT, VPDBGAT, &
                         PSGAGAT, PSGBGAT, PAIDGAT, HGTDGAT, ACVDGAT, ACIDGAT, &
                         ASVDGAT, ASIDGAT, AGVDGAT, AGIDGAT, ALGWGAT, ALGDGAT, &
-                        THLQGAT, THICGAT, TBARGAT, RCANGAT, SCANGAT, TCANGAT, &
-                        GROGAT, SNOGAT, TSNOGAT, RHOSGAT, ALBSGAT, ZBLDGAT, &
+                        cpv%THLQ, cpv%THIC, cpv%TBAR, cpv%RCAN, cpv%SNCAN, cpv%TCAN, &
+                        cpv%GRO, cpv%SNO, cpv%TSNO, cpv%RHOS, cpv%ALBS, cf%ZBLD, &
                         Z0ORGAT, ZSNLGAT, ZPLGGAT, ZPLSGAT, &
-                        FCLOGAT, TAGAT, VPDGAT, RHOAGAT, CSZGAT, &
-                        FSVHGAT, RADJGAT, DLONGAT, RHSIGAT, sl%DELZ, DLZWGAT, &
+                        cf%FCLO, cf%TA, VPDGAT, RHOAGAT, CSZGAT, &
+                        cf%FSVH, RADJGAT, DLONGAT, RHSIGAT, sl%DELZ, cpv%DELZW, &
                         ZBTWGAT, THPGAT, THMGAT, PSISGAT, BIGAT, PSIWGAT, &
                         HCPSGAT, ISNDGAT, &
                         FCANCMX, ICTEM, ICTEMMOD, RMATC, &
@@ -3165,22 +2974,22 @@ program RUNMESH
                         EVAPC, EVAPCG, EVAPG, EVAPCS, EVPCSG, EVAPGS, TCANO, TCANS, &
                         RAICAN, SNOCAN, RAICNS, SNOCNS, CHCAP, CHCAPS, TPONDC, TPONDG, &
                         TPNDCS, TPNDGS, TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
-                        ITCTGAT, CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, QFSGAT, QFXGAT, &
-                        PETGAT, GAGAT, EFGAT, GTGAT, QGGAT, SFCTGAT, SFCUGAT, SFCVGAT, &
-                        SFCQGAT, SFRHGAT, FSGVGAT, FSGSGAT, FSGGGAT, FLGVGAT, FLGSGAT, FLGGGAT, &
-                        HFSCGAT, HFSSGAT, HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, HMFCGAT, HMFNGAT, &
-                        HTCCGAT, HTCSGAT, HTCGAT, QFCFGAT, QFCLGAT, DRGAT, WTABGAT, ILMOGAT, &
-                        UEGAT, HBLGAT, TACGAT, QACGAT, ZRFMGAT, ZRFHGAT, ZDMGAT, ZDHGAT, &
-                        VPDGAT, TADPGAT, RHOAGAT, FSVHGAT, FSIHGAT, FDLGAT, ULGAT, VLGAT, &
-                        TAGAT, QAGAT, PADRGAT, FC, FG, FCS, FGS, RBCOEF, &
-                        FSVF, FSVFS, PRESGAT, VMODGAT, ALVSCN, ALIRCN, ALVSG, ALIRG, &
+                        ITCTGAT, cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, cdv%QFS, cdv%QFX, &
+                        cdv%PET, cdv%GA, cdv%EF, cdv%GTE, cdv%QG, cdv%SFCT, cdv%SFCU, cdv%SFCV, &
+                        cdv%SFCQ, SFRHGAT, cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, cdv%FLGG, &
+                        cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, &
+                        cdv%HTCC, cdv%HTCS, cdv%HTC, cdv%QFCF, cdv%QFCL, cdv%DR, cdv%WTAB, cdv%ILMO, &
+                        cdv%UE, cdv%HBL, cpv%TAC, cpv%QAC, cf%ZRFM, cf%ZRFH, ZDMGAT, ZDHGAT, &
+                        VPDGAT, TADPGAT, RHOAGAT, cf%FSVH, cf%FSIH, cf%FDL, cf%UL, cf%VL, &
+                        cf%TA, cf%QA, PADRGAT, cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, RBCOEF, &
+                        FSVF, FSVFS, cf%PRES, cf%VMOD, ALVSCN, ALIRCN, ALVSG, ALIRG, &
                         ALVSCS, ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, ALVSSC, ALIRSC, &
-                        TRVSCN, TRIRCN, TRVSCS, TRIRCS, RC, RCS, WTRGGAT, QLWOGAT, &
+                        TRVSCN, TRIRCN, TRVSCS, TRIRCS, RC, RCS, cdv%WTRG, QLWOGAT, &
                         FRAINC, FSNOWC, FRAICS, FSNOCS, CMASSC, CMASCS, DISP, DISPS, &
                         ZOMLNC, ZOELNC, ZOMLNG, ZOELNG, ZOMLCS, ZOELCS, ZOMLNS, ZOELNS, &
-                        TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, TBASGAT, TCANGAT, TSNOGAT, &
-                        ZSNOW, TRSNOW, RHOSGAT, WSNOGAT, THPGAT, THRGAT, THMGAT, THFCGAT, &
-                        RADJGAT, PREGAT, HCPSGAT, TCSGAT, TSFSGAT, sl%DELZ, DLZWGAT, ZBTWGAT, &
+                        cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, cpv%TBAS, cpv%TCAN, cpv%TSNO, &
+                        ZSNOW, TRSNOW, cpv%RHOS, cpv%WSNO, THPGAT, THRGAT, THMGAT, THFCGAT, &
+                        RADJGAT, cf%PRE, HCPSGAT, TCSGAT, cpv%TSFS, sl%DELZ, cpv%DELZW, ZBTWGAT, &
                         FTEMP, FVAP, RIB, ISNDGAT, &
                         AILCG, AILCGS, FCANC, FCANCS, CO2CONC, CO2I1CG, CO2I1CS, CO2I2CG, &
                         CO2I2CS, COSZS, XDIFFUSC, SLAI, ICTEM, ICTEMMOD, RMATCTEM, &
@@ -3203,18 +3012,18 @@ program RUNMESH
                 INFILTYPE = 2
             end if
 
-            call CLASSW(THLQGAT, THICGAT, TBARGAT, TCANGAT, RCANGAT, SCANGAT, &
-                        ROFGAT, TROFGAT, SNOGAT, TSNOGAT, RHOSGAT, ALBSGAT, &
-                        WSNOGAT, ZPNDGAT, TPNDGAT, GROGAT, FRZCGAT, TBASGAT, GFLXGAT, &
-                        PCFCGAT, PCLCGAT, PCPNGAT, PCPGGAT, QFCFGAT, QFCLGAT, &
-                        QFNGAT, QFGGAT, QFCGAT, HMFCGAT, HMFGGAT, HMFNGAT, &
-                        HTCCGAT, HTCSGAT, HTCGAT, ROFCGAT, ROFNGAT, ROVGGAT, &
-                        WTRSGAT, WTRGGAT, ROFOGAT, ROFSGAT, ROFBGAT, &
-                        TROOGAT, TROSGAT, TROBGAT, QFSGAT, &
+            call CLASSW(cpv%THLQ, cpv%THIC, cpv%TBAR, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
+                        cdv%ROF, cdv%TROF, cpv%SNO, cpv%TSNO, cpv%RHOS, cpv%ALBS, &
+                        cpv%WSNO, cpv%ZPND, cpv%TPND, cpv%GRO, FRZCGAT, cpv%TBAS, cdv%GFLX, &
+                        cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, cdv%QFCF, cdv%QFCL, &
+                        cdv%QFN, cdv%QFG, cdv%QFC, cdv%HMFC, cdv%HMFG, cdv%HMFN, &
+                        cdv%HTCC, cdv%HTCS, cdv%HTC, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
+                        cdv%WTRS, cdv%WTRG, cdv%ROFO, cdv%ROFS, cdv%ROFB, &
+                        cdv%TROO, cdv%TROS, cdv%TROB, cdv%QFS, &
                         TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
                         THICEC, THICEG, HCPC, HCPG, RPCPGAT, TRPCGAT, &
-                        SPCPGAT, TSPCGAT, PREGAT, TAGAT, RHSIGAT, GGEOGAT, &
-                        FC, FG, FCS, FGS, TPONDC, TPONDG, &
+                        SPCPGAT, TSPCGAT, cf%PRE, cf%TA, RHSIGAT, GGEOGAT, &
+                        cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, TPONDC, TPONDG, &
                         TPNDCS, TPNDGS, EVAPC, EVAPCG, EVAPG, EVAPCS, &
                         EVPCSG, EVAPGS, QFREZC, QFREZG, QMELTC, QMELTG, &
                         RAICAN, SNOCAN, RAICNS, SNOCNS, FROOT, FSVF, &
@@ -3223,11 +3032,11 @@ program RUNMESH
                         GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, &
                         G12CS, G12GS, G23C, G23G, G23CS, G23GS, &
                         TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
-                        ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, TSFSGAT, &
+                        ZPLIMC, ZPLIMG, ZPLMCS, ZPLMGS, cpv%TSFS, &
                         TCTOPC, TCBOTC, TCTOPG, TCBOTG, &
                         THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, GRKSGAT, &
                         THRAGAT, THFCGAT, DRNGAT, HCPSGAT, sl%DELZ, &
-                        DLZWGAT, ZBTWGAT, XSLPGAT, XDGAT, WFSFGAT, KSGAT, &
+                        cpv%DELZW, ZBTWGAT, XSLPGAT, XDGAT, WFSFGAT, KSGAT, &
                         ISNDGAT, IGDRGAT, IWF, NML, il1, il2, N, &
                         JLAT, ICAN, IGND, IGND + 1, IGND + 2, &
                         NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
@@ -3251,158 +3060,47 @@ program RUNMESH
 
 !          * SINGLE COLUMN BLOWING SNOW CALCULATIONS.
             if (PBSMFLAG == 1) then
-                call PBSMrun(ZSNOW, WSNOGAT, SNOGAT, RHOSGAT, TSNOGAT, HTCSGAT, &
+                call PBSMrun(ZSNOW, cpv%WSNO, cpv%SNO, cpv%RHOS, cpv%TSNO, cdv%HTCS, &
                              ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
                              HCPSCS, HCPSGS, HCPSC, HCPSG, &
                              TSNOWC, TSNOWG, TSNOCS, TSNOGS, &
                              RHOSC, RHOSG, RHOSCS, RHOSGS,&
                              XSNOWC, XSNOWG, XSNOCS, XSNOGS, &
                              WSNOCS, WSNOGS, &
-                             FC, FG, FCS, FGS, &
+                             cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, &
                              fetchGAT, N_SGAT, A_SGAT, HtGAT, &
-                             SFCTGAT, SFCUGAT, SFCQGAT, PRESGAT, PREGAT, &
+                             cdv%SFCT, cdv%SFCU, cdv%SFCQ, cf%PRES, cf%PRE, &
                              DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
                              TSNOdsGAT, &
-                             NML, il1, il2, N, ZRFMGAT, ZOMLCS, ZOMLNS)
+                             NML, il1, il2, N, cf%ZRFM, ZOMLCS, ZOMLNS)
             end if
 
             call CLASSZ(1, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
-                        FSGVGAT, FLGVGAT, HFSCGAT, HEVCGAT, HMFCGAT, HTCCGAT, &
-                        FSGSGAT, FLGSGAT, HFSSGAT, HEVSGAT, HMFNGAT, HTCSGAT, &
-                        FSGGGAT, FLGGGAT, HFSGGAT, HEVGGAT, HMFGGAT, HTCGAT, &
-                        PCFCGAT, PCLCGAT, QFCFGAT, QFCLGAT, ROFCGAT, WTRCGAT, &
-                        PCPNGAT, QFNGAT, ROFNGAT, WTRSGAT, PCPGGAT, QFGGAT, &
-                        QFCGAT, ROFGAT, WTRGGAT, CMAIGAT, RCANGAT, SCANGAT, &
-                        TCANGAT, SNOGAT, WSNOGAT, TSNOGAT, THLQGAT, THICGAT, &
-                        HCPSGAT, THPGAT, DLZWGAT, TBARGAT, ZPNDGAT, TPNDGAT, &
-                        sl%DELZ, FCS, FGS, FC, FG, &
+                        cdv%FSGV, cdv%FLGV, cdv%HFSC, cdv%HEVC, cdv%HMFC, cdv%HTCC, &
+                        cdv%FSGS, cdv%FLGS, cdv%HFSS, cdv%HEVS, cdv%HMFN, cdv%HTCS, &
+                        cdv%FSGG, cdv%FLGG, cdv%HFSG, cdv%HEVG, cdv%HMFG, cdv%HTC, &
+                        cdv%PCFC, cdv%PCLC, cdv%QFCF, cdv%QFCL, cdv%ROFC, cdv%WTRC, &
+                        cdv%PCPN, cdv%QFN, cdv%ROFN, cdv%WTRS, cdv%PCPG, cdv%QFG, &
+                        cdv%QFC, cdv%ROF, cdv%WTRG, cpv%CMAI, cpv%RCAN, cpv%SNCAN, &
+                        cpv%TCAN, cpv%SNO, cpv%WSNO, cpv%TSNO, cpv%THLQ, cpv%THIC, &
+                        HCPSGAT, THPGAT, cpv%DELZW, cpv%TBAR, cpv%ZPND, cpv%TPND, &
+                        sl%DELZ, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                         il1, il2, NML, IGND, N, &
                         DriftGAT, SublGAT)
 
 !          *Redistribute blowing snow mass between GRUs
-            call REDISTRIB_SNOW(NML, 1, NA, NTYPE, NML, TSNOGAT, ZSNOW, &
-                                RHOSGAT, SNOGAT, TSNOCS, ZSNOCS, HCPSCS, RHOSCS, TSNOGS, &
+            call REDISTRIB_SNOW(NML, 1, NA, NTYPE, NML, cpv%TSNO, ZSNOW, &
+                                cpv%RHOS, cpv%SNO, TSNOCS, ZSNOCS, HCPSCS, RHOSCS, TSNOGS, &
                                 ZSNOGS, HCPSGS, RHOSGS, TSNOWC, ZSNOWC, HCPSC, RHOSC, TSNOWG, &
                                 ZSNOWG, HCPSG, RHOSG, cp%GCGRD, shd%lc%ILMOS, DriftGAT, FAREGAT, &
-                                TSNOdsGAT, DistribGAT, WSNOCS, WSNOGS, FCS, FGS, FC, FG, DepositionGAT, &
-                                TROOGAT, ROFOGAT, TROFGAT, ROFGAT, ROFNGAT, PCPGGAT, HTCSGAT, WSNOGAT, N)
-            ROFGAT = ROFGAT - UMQ
+                                TSNOdsGAT, DistribGAT, WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, DepositionGAT, &
+                                cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, N)
+            cdv%ROF = cdv%ROF - UMQ
 
         end if !(ipid /= 0 .or. izero == 0) then
 
-        if (WF_NUM_POINTS > 0) then
-
-            cf%FCLO(il1:il2)    = FCLOGAT(il1:il2)
-            cf%FDL(il1:il2)     = FDLGAT(il1:il2)
-            cf%FSIH(il1:il2)    = FSIHGAT(il1:il2)
-            cf%FSVH(il1:il2)    = FSVHGAT(il1:il2)
-            cf%PRE(il1:il2)     = PREGAT(il1:il2)
-            cf%PRES(il1:il2)    = PRESGAT(il1:il2)
-            cf%QA(il1:il2)      = QAGAT(il1:il2)
-            cf%TA(il1:il2)      = TAGAT(il1:il2)
-            cf%UL(il1:il2)      = ULGAT(il1:il2)
-            cf%VL(il1:il2)      = VLGAT(il1:il2)
-            cf%VMOD(il1:il2)    = VMODGAT(il1:il2)
-            cf%ZBLD(il1:il2)    = ZBLDGAT(il1:il2)
-            cf%ZRFH(il1:il2)    = ZRFHGAT(il1:il2)
-            cf%ZRFM(il1:il2)    = ZRFMGAT(il1:il2)
-
-            cpv%ALBS(il1:il2)   = ALBSGAT(il1:il2)
-            cpv%CMAI(il1:il2)   = CMAIGAT(il1:il2)
-            cpv%GRO(il1:il2)    = GROGAT(il1:il2)
-            cpv%QAC(il1:il2)    = QACGAT(il1:il2)
-            cpv%RCAN(il1:il2)   = RCANGAT(il1:il2)
-            cpv%RHOS(il1:il2)   = RHOSGAT(il1:il2)
-            cpv%SNCAN(il1:il2)  = SCANGAT(il1:il2)
-            cpv%SNO(il1:il2)    = SNOGAT(il1:il2)
-            cpv%TAC(il1:il2)    = TACGAT(il1:il2)
-            cpv%TBAS(il1:il2)   = TBASGAT(il1:il2)
-            cpv%TCAN(il1:il2)   = TCANGAT(il1:il2)
-            cpv%TPND(il1:il2)   = TPNDGAT(il1:il2)
-!            cpv%TSFS(il1:il2)   = TSFSGAT(il1:il2)
-            cpv%TSNO(il1:il2)   = TSNOGAT(il1:il2)
-            cpv%WSNO(il1:il2)   = WSNOGAT(il1:il2)
-            cpv%ZPND(il1:il2)   = ZPNDGAT(il1:il2)
-            cpv%TBAR(il1:il2, 1:IGND)   = TBARGAT(il1:il2, 1:IGND)
-            cpv%THIC(il1:il2, 1:IGND)   = THICGAT(il1:il2, 1:IGND)
-            cpv%THLQ(il1:il2, 1:IGND)   = THLQGAT(il1:il2, 1:IGND)
-
-!            ISUM, ITCT
-            cdv%ALIR(il1:il2)   = ALIRGAT(il1:il2)
-            cdv%ALVS(il1:il2)   = ALVSGAT(il1:il2)
-            cdv%CDH(il1:il2)    = CDHGAT(il1:il2)
-            cdv%CDM(il1:il2)    = CDMGAT(il1:il2)
-            cdv%DR(il1:il2)     = DRGAT(il1:il2)
-            cdv%EF(il1:il2)     = EFGAT(il1:il2)
-            cdv%FCS(il1:il2)    = FCS(il1:il2)
-            cdv%FGS(il1:il2)    = FGS(il1:il2)
-            cdv%FC(il1:il2)     = FC(il1:il2)
-            cdv%FG(il1:il2)     = FG(il1:il2)
-            cdv%FLGG(il1:il2)   = FLGGGAT(il1:il2)
-            cdv%FLGS(il1:il2)   = FLGSGAT(il1:il2)
-            cdv%FLGV(il1:il2)   = FLGVGAT(il1:il2)
-            cdv%FSGG(il1:il2)   = FSGGGAT(il1:il2)
-            cdv%FSGS(il1:il2)   = FSGSGAT(il1:il2)
-            cdv%FSGV(il1:il2)   = FSGVGAT(il1:il2)
-            cdv%FSNO(il1:il2)   = FSNOGAT(il1:il2)
-            cdv%GA(il1:il2)     = GAGAT(il1:il2)
-            cdv%GTE(il1:il2)    = GTGAT(il1:il2)
-            cdv%HBL(il1:il2)    = HBLGAT(il1:il2)
-            cdv%HEVC(il1:il2)   = HEVCGAT(il1:il2)
-            cdv%HEVG(il1:il2)   = HEVGGAT(il1:il2)
-            cdv%HEVS(il1:il2)   = HEVSGAT(il1:il2)
-            cdv%HFS(il1:il2)    = HFSGAT(il1:il2)
-            cdv%HFSC(il1:il2)   = HFSCGAT(il1:il2)
-            cdv%HFSG(il1:il2)   = HFSGGAT(il1:il2)
-            cdv%HFSS(il1:il2)   = HFSSGAT(il1:il2)
-            cdv%HMFC(il1:il2)   = HMFCGAT(il1:il2)
-            cdv%HMFN(il1:il2)   = HMFNGAT(il1:il2)
-            cdv%HTCC(il1:il2)   = HTCCGAT(il1:il2)
-            cdv%HTCS(il1:il2)   = HTCSGAT(il1:il2)
-            cdv%ILMO(il1:il2)   = ILMOGAT(il1:il2)
-            cdv%PCFC(il1:il2)   = PCFCGAT(il1:il2)
-            cdv%PCLC(il1:il2)   = PCLCGAT(il1:il2)
-            cdv%PCPG(il1:il2)   = PCPGGAT(il1:il2)
-            cdv%PCPN(il1:il2)   = PCPNGAT(il1:il2)
-            cdv%PET(il1:il2)    = PETGAT(il1:il2)
-            cdv%QEVP(il1:il2)   = QEVPGAT(il1:il2)
-            cdv%QFCF(il1:il2)   = QFCFGAT(il1:il2)
-            cdv%QFCL(il1:il2)   = QFCLGAT(il1:il2)
-            cdv%QFG(il1:il2)    = QFGGAT(il1:il2)
-            cdv%QFN(il1:il2)    = QFNGAT(il1:il2)
-            cdv%QFS(il1:il2)    = QFSGAT(il1:il2)
-            cdv%QFX(il1:il2)    = QFXGAT(il1:il2)
-            cdv%QG(il1:il2)     = QGGAT(il1:il2)
-            cdv%ROF(il1:il2)    = ROFGAT(il1:il2)
-            cdv%ROFB(il1:il2)   = ROFBGAT(il1:il2)
-            cdv%ROFC(il1:il2)   = ROFCGAT(il1:il2)
-            cdv%ROFN(il1:il2)   = ROFNGAT(il1:il2)
-            cdv%ROFO(il1:il2)   = ROFOGAT(il1:il2)
-            cdv%ROFS(il1:il2)   = ROFSGAT(il1:il2)
-            cdv%ROVG(il1:il2)   = ROVGGAT(il1:il2)
-            cdv%SFCQ(il1:il2)   = SFCQGAT(il1:il2)
-            cdv%SFCT(il1:il2)   = SFCTGAT(il1:il2)
-            cdv%SFCU(il1:il2)   = SFCUGAT(il1:il2)
-            cdv%SFCV(il1:il2)   = SFCVGAT(il1:il2)
-            cdv%TFX(il1:il2)    = TFXGAT(il1:il2)
-            cdv%TROB(il1:il2)   = TROBGAT(il1:il2)
-            cdv%TROF(il1:il2)   = TROFGAT(il1:il2)
-            cdv%TROO(il1:il2)   = TROOGAT(il1:il2)
-            cdv%TROS(il1:il2)   = TROSGAT(il1:il2)
-!            cdv%TSF(il1:il2)    = TSFGAT(il1:il2)
-            cdv%UE(il1:il2)     = UEGAT(il1:il2)
-            cdv%WTAB(il1:il2)   = WTABGAT(il1:il2)
-            cdv%WTRC(il1:il2)   = WTRCGAT(il1:il2)
-            cdv%WTRG(il1:il2)   = WTRGGAT(il1:il2)
-            cdv%WTRS(il1:il2)   = WTRSGAT(il1:il2)
-            cdv%GFLX(il1:il2, 1:IGND)   = GFLXGAT(il1:il2, 1:IGND)
-            cdv%HMFG(il1:il2, 1:IGND)   = HMFGGAT(il1:il2, 1:IGND)
-            cdv%HTC(il1:il2, 1:IGND)    = HTCGAT(il1:il2, 1:IGND)
-            cdv%QFC(il1:il2, 1:IGND)    = QFCGAT(il1:il2, 1:IGND)
-        end if
-
-        call run_within_tile(shd, ts, ic, cm, wb, eb, sp, stfl, rrls)
+        call run_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
 !> *********************************************************************
 !> End of the NML-based LSS loop.
@@ -3429,41 +3127,41 @@ program RUNMESH
             irqst = mpi_request_null
 
             i = 1
-            call mpi_isend(PREGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(QFSGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(ROFGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(ROFOGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(ROFSGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(ROFBGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(SCANGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(RCANGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(ZPNDGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(SNOGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(FSNOGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(WSNOGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(HFSGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(QEVPGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cf%PRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cdv%QFS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cdv%ROF(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cdv%ROFO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cdv%ROFS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cdv%ROFB(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cpv%SNCAN(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cpv%RCAN(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cpv%ZPND(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cpv%SNO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cdv%FSNO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cpv%WSNO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cdv%HFS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cdv%QEVP(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             do j = 1, IGND
-                call mpi_isend(THLQGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(THICGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(GFLXGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(TBARGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%THLQ(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%THIC(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cdv%GFLX(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%TBAR(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             end do
 
         !> Send optional variables per the active control flags.
             if (SAVERESUMEFLAG == 3) then
-                call mpi_isend(ALBSGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(CMAIGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(GROGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(QACGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(RHOSGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(TACGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(TBASGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(TCANGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(TPNDGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(TSNOGAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%ALBS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%CMAI(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%GRO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%QAC(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%RHOS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%TAC(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%TBAS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%TCAN(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%TPND(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cpv%TSNO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 do j = 1, 4
-                    call mpi_isend(TSFSGAT(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_isend(cpv%TSFS(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end do
             end if !(SAVERESUMEFLAG == 3) then
 
@@ -3492,41 +3190,42 @@ program RUNMESH
                 call GetIndices(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iilen)
 
                 i = 1
-                call mpi_irecv(PREGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(QFSGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(ROFGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(ROFOGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(ROFSGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(ROFBGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(SCANGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(RCANGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(ZPNDGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(SNOGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(FSNOGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(WSNOGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(HFSGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(QEVPGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cf%PRE(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cdv%QFS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cdv%ROF(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cdv%ROFO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cdv%ROFS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cdv%ROFB(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cpv%SNCAN(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cpv%RCAN(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cpv%ZPND(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cpv%SNO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cdv%FSNO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cpv%WSNO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cdv%HFS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cdv%QEVP(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 do j = 1, IGND
-                    call mpi_irecv(THLQGAT(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(THICGAT(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(GFLXGAT(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(TBARGAT(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%THLQ(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%THIC(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cdv%GFLX(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%TBAR(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end do
 
             !> Send optional variables per the active control flags.
                 if (SAVERESUMEFLAG == 3) then
-                    call mpi_irecv(ALBSGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(CMAIGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(GROGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(QACGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(RHOSGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(TACGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(TBASGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(TCANGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(TPNDGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(TSNOGAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%ALBS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%CMAI(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%GRO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%QAC(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%RHOS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%TAC(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%TBAS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%TCAN(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%TPND(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cpv%TSNO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                     do j = 1, 4
-                        call mpi_irecv(TSFSGAT(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                        call mpi_irecv(cpv%TSFS(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                        i = i + 1
                     end do
                 end if !(SAVERESUMEFLAG == 3) then
 
@@ -3546,270 +3245,6 @@ program RUNMESH
 !> Start of book-keeping and grid accumulation.
 !> *********************************************************************
 
-!     * WRITE FIELDS FROM CURRENT TIME STEP TO OUTPUT FILES.
-
-        !> Write to CLASSOF* output files.
-!        do i = 1, WF_NUM_POINTS
-!            if ((ipid /= 0 .or. izero == 0) .and. op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
-
-            !> Update variables.
-!                k = op%K_OUT(i)
-!                if (2.0*FSVHGAT(k) > 0.0) then
-!                    ALTOT = (ALVSGAT(k) + ALIRGAT(k))/2.0
-!                else
-!                    ALTOT = 0.0
-!                end if
-!                FSSTAR = 2.0*FSVHGAT(k)*(1.0 - ALTOT)
-!                FLSTAR = FDLGAT(k) - SBC*GTGAT(k)**4
-!                QH = HFSGAT(k)
-!                QE = QEVPGAT(k)
-!                BEG = FSSTAR + FLSTAR - QH - QE
-!                SNOMLT = HMFNGAT(k)
-!                if (RHOSGAT(k) > 0.0) then
-!                    ZSN = SNOGAT(k)/RHOSGAT(k)
-!                else
-!                    ZSN = 0.0
-!                end if
-!                if (TCANGAT(k) > 0.01) then
-!                    TCN = TCANGAT(k) - TFREZ
-!                else
-!                    TCN = 0.0
-!                end if
-!                if (TSNOGAT(k) > 0.01) then
-!                    TSN = TSNOGAT(k) - TFREZ
-!                else
-!                    TSN = 0.0
-!                end if
-!                if (TPNDGAT(k) > 0.01) then
-!                    TPN = TPNDGAT(k) - TFREZ
-!                else
-!                    TPN = 0.0
-!                end if
-!                if (shd%wc%ILG == 1) then
-!                    GTOUT = GTGAT(k) - TFREZ
-!                else
-!                    GTOUT = 0.0
-!                end if
-!                ZPND = ZPNDPRECS(k)*FCS(k) + ZPONDPREC(k)*FC(k) + ZPONDPREG(k)*FG(k) + ZPNDPREGS(k)*FGS(k)
-!                FSTR = FSTRCS(k)*FCS(k) + FSTRC(k)*FC(k) + FSTRG(k)*FG(k) + FSTRGS(k)*FGS(k)
-
-            !> Write to the CLASSOF* output files for sub-hourly output.
-!                write(150 + i*10 + 4, &
-!                      "(i2,',', i3,',', i5,',', i6,',', 9(f8.2,','), 2(f7.3,','), e11.3,',', f8.2,',', 3(f12.4,','))") &
-!                    HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, FSSTAR, FLSTAR, QH, &
-!                    QE, SNOMLT, BEG, GTOUT, SNOGAT(k), &
-!                    RHOSGAT(k), WSNOGAT(k), ALTOT, ROFGAT(k), &
-!                    TPN, ZPNDGAT(k), ZPND, FSTR
-!                write(150 + i*10 + 5, "(i2,',', i3,',', i5,',', i6,',', " // trim(adjustl(IGND_CHAR)) // &
-!                      "(f7.2,',', 2(f6.3,',')), f8.2,',', 2(f8.4,','), f8.2,',', f8.3,',')") &
-!                    HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, &
-!                    (TBARGAT(k, j) - TFREZ, THLQGAT(k, j), &
-!                    THICGAT(k, j), j = 1, IGND), TCN, &
-!                    RCANGAT(k), SCANGAT(k), TSN, ZSN
-!                write(150 + i*10 + 6, &
-!                      "(i2,',', i3,',', i5,',', 2(f10.2,','), f12.6,',', f10.2,',', f8.2,',', f10.2,',', f15.9,',')") &
-!                    HOUR_NOW, MINS_NOW, JDAY_NOW, 2.0*FSVHGAT(k), FDLGAT(k), &
-!                    PREGAT(k), TAGAT(k) - TFREZ, VMODGAT(k), PRESGAT(k), &
-!                    QAGAT(k)
-!                write(150 + i*10 + 7, "(999(e11.4,','))") &
-!                    TROFGAT(k), TROOGAT(k), TROSGAT(k), &
-!                    TROBGAT(k), ROFGAT(k), ROFOGAT(k), &
-!                    ROFSGAT(k), ROFBGAT(k), &
-!                    FCS(k), FGS(k), FC(k), FG(k)
-!                write(150 + i*10 + 8, "(999(f12.4,','))") &
-!                    FSGVGAT(k), FSGSGAT(k), FSGGGAT(k), &
-!                    FLGVGAT(k), FLGSGAT(k), FLGGGAT(k), &
-!                    HFSCGAT(k), HFSSGAT(k), HFSGGAT(k), &
-!                    HEVCGAT(k), HEVSGAT(k), HEVGGAT(k), &
-!                    HMFCGAT(k), HMFNGAT(k), &
-!                    (HMFGGAT(k, j), j = 1, IGND), &
-!                    HTCCGAT(k), HTCSGAT(k), &
-!                    (HTCGAT(k, j), j = 1, IGND)
-!                write(150 + i*10 + 9, "(999(e12.4,','))") &
-!                    PCFCGAT(k), PCLCGAT(k), PCPNGAT(k), &
-!                    PCPGGAT(k), QFCFGAT(k), QFCLGAT(k), &
-!                    QFNGAT(k), QFGGAT(k), (QFCGAT(k, j), j = 1, IGND), &
-!                    ROFCGAT(k), ROFNGAT(k), &
-!                    ROFOGAT(k), ROFGAT(k), WTRCGAT(k), &
-!                    WTRSGAT(k), WTRGGAT(k)
-!                write(150 + i*10 + 10, "(i2,',', i3,',', i5,',', i6,',', 999(f14.6,','))") &
-!                    HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, PREGAT(k)*DELT, QFSGAT(k)*DELT, &
-!                    ROFGAT(k)*DELT, ROFOGAT(k)*DELT, ROFSGAT(k)*DELT, ROFBGAT(k)*DELT, &
-!                    SCANGAT(k), RCANGAT(k), SNOGAT(k), WSNOGAT(k), &
-!                    ZPNDGAT(k)*RHOW, (THLQGAT(k, j)*RHOW*DLZWGAT(k, j), j = 1, IGND), &
-!                    (THICGAT(k, j)*RHOICE*DLZWGAT(k, j), j = 1, IGND)
-
-            !> Calculate accumulated grid variables.
-!                do k = il1, il2
-!                    if (shd%lc%ILMOS(k) == op%N_OUT(i)) then
-!                        co%PREACC(i) = co%PREACC(i) + PREGAT(k)*FAREGAT(k)*DELT
-!                        co%GTACC(i) = co%GTACC(i) + GTGAT(k)*FAREGAT(k)
-!                        co%QEVPACC(i) = co%QEVPACC(i) + QEVPGAT(k)*FAREGAT(k)
-!                        co%EVAPACC(i) = co%EVAPACC(i) + QFSGAT(k)*FAREGAT(k)*DELT
-!                        co%HFSACC(i) = co%HFSACC(i) + HFSGAT(k)*FAREGAT(k)
-!                        co%HMFNACC(i) = co%HMFNACC(i) + HMFNGAT(k)*FAREGAT(k)
-!                        co%ROFACC(i) = co%ROFACC(i) + ROFGAT(k)*FAREGAT(k)*DELT
-!                        co%ROFOACC(i) = co%ROFOACC(i) + ROFOGAT(k)*FAREGAT(k)*DELT
-!                        co%ROFSACC(i) = co%ROFSACC(i) + ROFSGAT(k)*FAREGAT(k)*DELT
-!                        co%ROFBACC(i) = co%ROFBACC(i) + ROFBGAT(k)*FAREGAT(k)*DELT
-!                        co%WTBLACC(i) = co%WTBLACC(i) + WTABGAT(k)*FAREGAT(k)
-!                        do j = 1, IGND
-!                            co%TBARACC(i, j) = co%TBARACC(i, j) + TBARGAT(k, j)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-!                            co%THLQACC(i, j) = co%THLQACC(i, j) + THLQGAT(k, j)*FAREGAT(k)
-!                            co%THICACC(i, j) = co%THICACC(i, j) + THICGAT(k, j)*FAREGAT(k)
-!                            co%THALACC(i, j) = co%THALACC(i, j) + (THLQGAT(k, j) + THICGAT(k, j))*FAREGAT(k)
-!                            co%GFLXACC(i, j) = co%GFLXACC(i, j) + GFLXGAT(k, j)*FAREGAT(k)
-!                        end do
-!                        co%ALVSACC(i) = co%ALVSACC(i) + ALVSGAT(k)*FSVHGAT(k)*FAREGAT(k)
-!                        co%ALIRACC(i) = co%ALIRACC(i) + ALIRGAT(k)*FSIHGAT(k)*FAREGAT(k)
-!                        if (SNOGAT(k) > 0.0) then
-!                            co%RHOSACC(i) = co%RHOSACC(i) + RHOSGAT(k)*FAREGAT(k)
-!                            co%TSNOACC(i) = co%TSNOACC(i) + TSNOGAT(k)*FAREGAT(k)
-!                            co%WSNOACC(i) = co%WSNOACC(i) + WSNOGAT(k)*FAREGAT(k)
-!                            co%SNOARE(i) = co%SNOARE(i) + FAREGAT(k)
-!                        end if
-!                        if (TCANGAT(k) > 0.5) then
-!                            co%TCANACC(i) = co%TCANACC(i) + TCANGAT(k)*FAREGAT(k)
-!                            co%CANARE(i) = co%CANARE(i) + FAREGAT(k)
-!                        end if
-!                        co%SNOACC(i) = co%SNOACC(i) + SNOGAT(k)*FAREGAT(k)
-!                        co%RCANACC(i) = co%RCANACC(i) + RCANGAT(k)*FAREGAT(k)
-!                        co%SCANACC(i) = co%SCANACC(i) + SCANGAT(k)*FAREGAT(k)
-!                        co%GROACC(i) = co%GROACC(i) + GROGAT(k)*FAREGAT(k)
-!                        co%FSINACC(i) = co%FSINACC(i) + 2.0*FSVHGAT(k)*FAREGAT(k)
-!                        co%FLINACC(i) = co%FLINACC(i) + FDLGAT(k)*FAREGAT(k)
-!                        co%FLUTACC(i) = co%FLUTACC(i) + SBC*GTGAT(k)**4*FAREGAT(k)
-!                        co%TAACC(i) = co%TAACC(i) + TAGAT(k)*FAREGAT(k)
-!                        co%UVACC(i) = co%UVACC(i) + VMODGAT(k)*FAREGAT(k)
-!                        co%PRESACC(i) = co%PRESACC(i) + PRESGAT(k)*FAREGAT(k)
-!                        co%QAACC(i) = co%QAACC(i) + QAGAT(k)*FAREGAT(k)
-!                    end if
-!                end do
-
-            !> Write to the CLASSOF* output files for daily output.
-!                if (NCOUNT == 48) then
-
-                !> Calculate grid averages.
-!                    co%GTACC(i) = co%GTACC(i)/real(NSUM)
-!                    co%QEVPACC(i) = co%QEVPACC(i)/real(NSUM)
-!                    co%HFSACC(i) = co%HFSACC(i)/real(NSUM)
-!                    co%HMFNACC(i) = co%HMFNACC(i)/real(NSUM)
-!                    co%WTBLACC(i) = co%WTBLACC(i)/real(NSUM)
-!                    co%TBARACC(i, :) = co%TBARACC(i, :)/real(NSUM)
-!                    co%THLQACC(i, :) = co%THLQACC(i, :)/real(NSUM)
-!                    co%THICACC(i, :) = co%THICACC(i, :)/real(NSUM)
-!                    co%THALACC(i, :) = co%THALACC(i, :)/real(NSUM)
-!                    if (co%FSINACC(i) > 0.0) then
-!                        co%ALVSACC(i) = co%ALVSACC(i)/(co%FSINACC(i)*0.5)
-!                        co%ALIRACC(i) = co%ALIRACC(i)/(co%FSINACC(i)*0.5)
-!                    else
-!                        co%ALVSACC(i) = 0.0
-!                        co%ALIRACC(i) = 0.0
-!                    end if
-!                    if (co%SNOARE(i) > 0.0) then
-!                        co%RHOSACC(i) = co%RHOSACC(i)/co%SNOARE(i)
-!                        co%TSNOACC(i) = co%TSNOACC(i)/co%SNOARE(i)
-!                        co%WSNOACC(i) = co%WSNOACC(i)/co%SNOARE(i)
-!                    end if
-!                    if (co%CANARE(i) > 0.0) then
-!                        co%TCANACC(i) = co%TCANACC(i)/co%CANARE(i)
-!                    end if
-!                    co%SNOACC(i) = co%SNOACC(i)/real(NSUM)
-!                    co%RCANACC(i) = co%RCANACC(i)/real(NSUM)
-!                    co%SCANACC(i) = co%SCANACC(i)/real(NSUM)
-!                    co%GROACC(i) = co%GROACC(i)/real(NSUM)
-!                    co%FSINACC(i) = co%FSINACC(i)/real(NSUM)
-!                    co%FLINACC(i) = co%FLINACC(i)/real(NSUM)
-!                    co%FLUTACC(i) = co%FLUTACC(i)/real(NSUM)
-!                    co%TAACC(i) = co%TAACC(i)/real(NSUM)
-!                    co%UVACC(i) = co%UVACC(i)/real(NSUM)
-!                    co%PRESACC(i) = co%PRESACC(i)/real(NSUM)
-!                    co%QAACC(i) = co%QAACC(i)/real(NSUM)
-!                    ALTOT = (co%ALVSACC(i) + co%ALIRACC(i))/2.0
-!                    FSSTAR = co%FSINACC(i)*(1.0 - ALTOT)
-!                    FLSTAR = co%FLINACC(i) - co%FLUTACC(i)
-!                    QH = co%HFSACC(i)
-!                    QE = co%QEVPACC(i)
-!                    BEG = FSSTAR + FLSTAR - QH - QE
-!                    SNOMLT = co%HMFNACC(i)
-!                    if (co%RHOSACC(i) > 0.0) then
-!                        ZSN = co%SNOACC(i)/co%RHOSACC(i)
-!                    else
-!                        ZSN = 0.0
-!                    end if
-!                    if (co%TCANACC(i) > 0.01) then
-!                        TCN = co%TCANACC(i) - TFREZ
-!                    else
-!                        TCN = 0.0
-!                    end if
-!                    if (co%TSNOACC(i) > 0.01) then
-!                        TSN = co%TSNOACC(i) - TFREZ
-!                    else
-!                        TSN = 0.0
-!                    end if
-!                    if (shd%wc%ILG == 1) then
-!                        GTOUT = co%GTACC(i) - TFREZ
-!                    else
-!                        GTOUT = 0.0
-!                    end if
-
-                !> Write to the CLASSOF* output files for daily accumulated output.
-!                    write(150 + i*10 + 1, "(i4,',', i5,',', 9(f8.2,','), 2(f8.3,','), 999(f12.4,','))") &
-!                        JDAY_NOW, YEAR_NOW, FSSTAR, FLSTAR, QH, QE, SNOMLT, &
-!                        BEG, GTOUT, co%SNOACC(i), co%RHOSACC(i), &
-!                        co%WSNOACC(i), ALTOT, co%ROFACC(i), co%ROFOACC(i), &
-!                        co%ROFSACC(i), co%ROFBACC(i)
-!                    write(150 + i*10 + 2, "(i4,',', i5,',', " // adjustl(IGND_CHAR) // "((f8.2,','), " // &
-!                          "2(f6.3,',')), f8.2,',', 2(f7.4,','), 2(f8.2,','))") &
-!                        JDAY_NOW, YEAR_NOW, (co%TBARACC(i, j) - TFREZ, &
-!                        co%THLQACC(i, j), co%THICACC(i, j), j = 1, IGND), &
-!                        TCN, co%RCANACC(i), co%SCANACC(i), TSN, ZSN
-!                    write(150 + i*10 + 3, "(i4,',', i5,',', 3(f9.2,','), f8.2,',', " // &
-!                          "f10.2,',', e12.3,',', 2(f12.3,','))") &
-!                        JDAY_NOW, YEAR_NOW, co%FSINACC(i), co%FLINACC(i), &
-!                        co%TAACC(i) - TFREZ, co%UVACC(i), co%PRESACC(i), &
-!                        co%QAACC(i), co%PREACC(i), co%EVAPACC(i)
-
-                !> Reset the CLASS output variables.
-!                    co%PREACC = 0.0
-!                    co%GTACC = 0.0
-!                    co%QEVPACC = 0.0
-!                    co%EVAPACC = 0.0
-!                    co%HFSACC = 0.0
-!                    co%HMFNACC = 0.0
-!                    co%ROFACC = 0.0
-!                    co%ROFOACC = 0.0
-!                    co%ROFSACC = 0.0
-!                    co%ROFBACC = 0.0
-!                    co%WTBLACC = 0.0
-!                    co%TBARACC = 0.0
-!                    co%THLQACC = 0.0
-!                    co%THICACC = 0.0
-!                    co%THALACC = 0.0
-!                    co%GFLXACC = 0.0
-!                    co%ALVSACC = 0.0
-!                    co%ALIRACC = 0.0
-!                    co%RHOSACC = 0.0
-!                    co%TSNOACC = 0.0
-!                    co%WSNOACC = 0.0
-!                    co%SNOARE = 0.0
-!                    co%TCANACC = 0.0
-!                    co%CANARE = 0.0
-!                    co%SNOACC = 0.0
-!                    co%RCANACC = 0.0
-!                    co%SCANACC = 0.0
-!                    co%GROACC = 0.0
-!                    co%FSINACC = 0.0
-!                    co%FLINACC = 0.0
-!                    co%FLUTACC = 0.0
-!                    co%TAACC = 0.0
-!                    co%UVACC = 0.0
-!                    co%PRESACC = 0.0
-!                    co%QAACC = 0.0
-!                end if !(NCOUNT == 48) then
-!            end if !(op%K_OUT(k) >= il1 .and. op%K_OUT(k) <= il2) then
-!        end do !i = 1, WF_NUM_POINTS
-
         if (ipid == 0) then
 
 !> Write ENSIM output
@@ -3824,40 +3259,40 @@ program RUNMESH
                                     GRDGAT, NR2CSTATES, R2C_ATTRIBUTES, FRAME_NO_NEW, YEAR_NOW, &
                                     ensim_MONTH, ensim_DAY, HOUR_NOW, MINS_NOW, ICAN, &
                                     ICAN + 1, IGND, &
-                                    TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
-                                    TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
-                                    TCANGAT, RCANGAT, SCANGAT, GROGAT, CMAIGAT, &
+                                    cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
+                                    cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
+                                    cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
                                     FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
                                     PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
                                     VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
-                                    HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
+                                    HGTDGAT, ACVDGAT, ACIDGAT, cpv%TSFS, cpv%WSNO, &
                                     THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
                                     GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, &
-                                    THFCGAT, PSIWGAT, DLZWGAT, ZBTWGAT, &
-                                    ZSNLGAT, ZPLGGAT, ZPLSGAT, TACGAT, QACGAT, &
+                                    THFCGAT, PSIWGAT, cpv%DELZW, ZBTWGAT, &
+                                    ZSNLGAT, ZPLGGAT, ZPLSGAT, cpv%TAC, cpv%QAC, &
                                     DRNGAT, XSLPGAT, XDGAT, WFSFGAT, KSGAT, &
                                     ALGWGAT, ALGDGAT, ASVDGAT, ASIDGAT, AGVDGAT, &
-                                    AGIDGAT, ISNDGAT, RADJGAT, ZBLDGAT, Z0ORGAT, &
-                                    ZRFMGAT, ZRFHGAT, ZDMGAT, ZDHGAT, FSVHGAT, &
-                                    FSIHGAT, CSZGAT, FDLGAT, ULGAT, VLGAT, &
-                                    TAGAT, QAGAT, PRESGAT, PREGAT, PADRGAT, &
+                                    AGIDGAT, ISNDGAT, RADJGAT, cf%ZBLD, Z0ORGAT, &
+                                    cf%ZRFM, cf%ZRFH, ZDMGAT, ZDHGAT, cf%FSVH, &
+                                    cf%FSIH, CSZGAT, cf%FDL, cf%UL, cf%VL, &
+                                    cf%TA, cf%QA, cf%PRES, cf%PRE, PADRGAT, &
                                     VPDGAT, TADPGAT, RHOAGAT, RPCPGAT, TRPCGAT, &
-                                    SPCPGAT, TSPCGAT, RHSIGAT, FCLOGAT, DLONGAT, &
+                                    SPCPGAT, TSPCGAT, RHSIGAT, cf%FCLO, DLONGAT, &
                                     GGEOGAT, &
-                                    CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
-                                    QFSGAT, QFXGAT, PETGAT, GAGAT, EFGAT, &
-                                    GTGAT, QGGAT, ALVSGAT, ALIRGAT, &
-                                    SFCTGAT, SFCUGAT, SFCVGAT, SFCQGAT, FSNOGAT, &
-                                    FSGVGAT, FSGSGAT, FSGGGAT, FLGVGAT, FLGSGAT, &
-                                    FLGGGAT, HFSCGAT, HFSSGAT, HFSGGAT, HEVCGAT, &
-                                    HEVSGAT, HEVGGAT, HMFCGAT, HMFNGAT, HTCCGAT, &
-                                    HTCSGAT, PCFCGAT, PCLCGAT, PCPNGAT, PCPGGAT, &
-                                    QFGGAT, QFNGAT, QFCLGAT, QFCFGAT, ROFGAT, &
-                                    ROFOGAT, ROFSGAT, ROFBGAT, TROFGAT, TROOGAT, &
-                                    TROSGAT, TROBGAT, ROFCGAT, ROFNGAT, ROVGGAT, &
-                                    WTRCGAT, WTRSGAT, WTRGGAT, DRGAT, GFLXGAT, &
-                                    HMFGGAT, HTCGAT, QFCGAT, MANNGAT, DDGAT, &
-                                    IGDRGAT, VMODGAT, QLWOGAT)
+                                    cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
+                                    cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
+                                    cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
+                                    cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
+                                    cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
+                                    cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
+                                    cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
+                                    cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
+                                    cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
+                                    cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
+                                    cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
+                                    cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
+                                    cdv%HMFG, cdv%HTC, cdv%QFC, MANNGAT, DDGAT, &
+                                    IGDRGAT, cf%VMOD, QLWOGAT)
                 FRAME_NO_NEW = FRAME_NO_NEW + 1 !UPDATE COUNTERS
             end if
 
@@ -3935,15 +3370,15 @@ program RUNMESH
             GFLXGRD = 0.0
 
     !> Grid data for output.
-            md%fsdown = cm%clin(cfk%FB)%climvGrd
+            md%fsdown = cm%clin(cfk%FB)%GRD
             md%fsvh = fsvhgrd
             md%fsih = fsihgrd
-            md%fdl = cm%clin(cfk%FI)%climvGrd
-            md%ul = cm%clin(cfk%UV)%climvGrd
-            md%ta = cm%clin(cfk%TT)%climvGrd
-            md%qa = cm%clin(cfk%HU)%climvGrd
-            md%pres = cm%clin(cfk%P0)%climvGrd
-            md%pre = cm%clin(cfk%PR)%climvGrd
+            md%fdl = cm%clin(cfk%FI)%GRD
+            md%ul = cm%clin(cfk%UV)%GRD
+            md%ta = cm%clin(cfk%TT)%GRD
+            md%qa = cm%clin(cfk%HU)%GRD
+            md%pres = cm%clin(cfk%P0)%GRD
+            md%pre = cm%clin(cfk%PR)%GRD
 
 !> GRU-distributed data for output.
             wb_h%pre = 0.0
@@ -3963,84 +3398,84 @@ program RUNMESH
             !$omp parallel do
             do k = il1, il2
                 ik = shd%lc%ILMOS(k)
-                CDHGRD(ik) = CDHGRD(ik) + CDHGAT(k)*FAREGAT(k)
-                CDMGRD(ik) = CDMGRD(ik) + CDMGAT(k)*FAREGAT(k)
-                HFSGRD(ik) = HFSGRD(ik) + HFSGAT(k)*FAREGAT(k)
-                TFXGRD(ik) = TFXGRD(ik) + TFXGAT(k)*FAREGAT(k)
-                QEVPGRD(ik) = QEVPGRD(ik) + QEVPGAT(k)*FAREGAT(k)
-                QFSGRD(ik) = QFSGRD(ik) + QFSGAT(k)*FAREGAT(k)
-                QFXGRD(ik) = QFXGRD(ik) + QFXGAT(k)*FAREGAT(k)
-                PETGRD(ik) = PETGRD(ik) + PETGAT(k)*FAREGAT(k)
-                GAGRD(ik) = GAGRD(ik) + GAGAT(k)*FAREGAT(k)
-                EFGRD(ik) = EFGRD(ik) + EFGAT(k)*FAREGAT(k)
-                GTGRD(ik) = GTGRD(ik) + GTGAT(k)*FAREGAT(k)
-                QGGRD(ik) = QGGRD(ik) + QGGAT(k)*FAREGAT(k)
-!                TSFGRD(ik) = TSFGRD(ik) + TSFGAT(k)*FAREGAT(k)
-                ALVSGRD(ik) = ALVSGRD(ik) + ALVSGAT(k)*FAREGAT(k)
-                ALIRGRD(ik) = ALIRGRD(ik) + ALIRGAT(k)*FAREGAT(k)
-                SFCTGRD(ik) = SFCTGRD(ik) + SFCTGAT(k)*FAREGAT(k)
-                SFCUGRD(ik) = SFCUGRD(ik) + SFCUGAT(k)*FAREGAT(k)
-                SFCVGRD(ik) = SFCVGRD(ik) + SFCVGAT(k)*FAREGAT(k)
-                SFCQGRD(ik) = SFCQGRD(ik) + SFCQGAT(k)*FAREGAT(k)
-                FSNOGRD(ik) = FSNOGRD(ik) + FSNOGAT(k)*FAREGAT(k)
-                FSGVGRD(ik) = FSGVGRD(ik) + FSGVGAT(k)*FAREGAT(k)
-                FSGSGRD(ik) = FSGSGRD(ik) + FSGSGAT(k)*FAREGAT(k)
-                FSGGGRD(ik) = FSGGGRD(ik) + FSGGGAT(k)*FAREGAT(k)
-                SNOGRD(ik) = SNOGRD(ik) + SNOGAT(k)*FAREGAT(k)
-                FLGVGRD(ik) = FLGVGRD(ik) + FLGVGAT(k)*FAREGAT(k)
-                FLGSGRD(ik) = FLGSGRD(ik) + FLGSGAT(k)*FAREGAT(k)
-                FLGGGRD(ik) = FLGGGRD(ik) + FLGGGAT(k)*FAREGAT(k)
-                HFSCGRD(ik) = HFSCGRD(ik) + HFSCGAT(k)*FAREGAT(k)
-                HFSSGRD(ik) = HFSSGRD(ik) + HFSSGAT(k)*FAREGAT(k)
-                HFSGGRD(ik) = HFSGGRD(ik) + HFSGGAT(k)*FAREGAT(k)
-                HEVCGRD(ik) = HEVCGRD(ik) + HEVCGAT(k)*FAREGAT(k)
-                HEVSGRD(ik) = HEVSGRD(ik) + HEVSGAT(k)*FAREGAT(k)
-                HEVGGRD(ik) = HEVGGRD(ik) + HEVGGAT(k)*FAREGAT(k)
-                HMFCGRD(ik) = HMFCGRD(ik) + HMFCGAT(k)*FAREGAT(k)
-                HMFNGRD(ik) = HMFNGRD(ik) + HMFNGAT(k)*FAREGAT(k)
-                HTCCGRD(ik) = HTCCGRD(ik) + HTCCGAT(k)*FAREGAT(k)
-                HTCSGRD(ik) = HTCSGRD(ik) + HTCSGAT(k)*FAREGAT(k)
-                PCFCGRD(ik) = PCFCGRD(ik) + PCFCGAT(k)*FAREGAT(k)
-                PCLCGRD(ik) = PCLCGRD(ik) + PCLCGAT(k)*FAREGAT(k)
-                PCPNGRD(ik) = PCPNGRD(ik) + PCPNGAT(k)*FAREGAT(k)
-                PCPGGRD(ik) = PCPGGRD(ik) + PCPGGAT(k)*FAREGAT(k)
-                QFGGRD(ik) = QFGGRD(ik) + QFGGAT(k)*FAREGAT(k)
-                QFNGRD(ik) = QFNGRD(ik) + QFNGAT(k)*FAREGAT(k)
-                QFCLGRD(ik) = QFCLGRD(ik) + QFCLGAT(k)*FAREGAT(k)
-                QFCFGRD(ik) = QFCFGRD(ik) + QFCFGAT(k)*FAREGAT(k)
-                ROFGRD(ik) = ROFGRD(ik) + ROFGAT(k)*FAREGAT(k)
-                ROFOGRD(ik) = ROFOGRD(ik) + ROFOGAT(k)*FAREGAT(k)
-                ROFSGRD(ik) = ROFSGRD(ik) + ROFSGAT(k)*FAREGAT(k)
-                ROFBGRD(ik) = ROFBGRD(ik) + ROFBGAT(k)*FAREGAT(k)
-                ROFCGRD(ik) = ROFCGRD(ik) + ROFCGAT(k)*FAREGAT(k)
-                ROFNGRD(ik) = ROFNGRD(ik) + ROFNGAT(k)*FAREGAT(k)
-                ROVGGRD(ik) = ROVGGRD(ik) + ROVGGAT(k)*FAREGAT(k)
-                WTRCGRD(ik) = WTRCGRD(ik) + WTRCGAT(k)*FAREGAT(k)
-                WTRSGRD(ik) = WTRSGRD(ik) + WTRSGAT(k)*FAREGAT(k)
-                WTRGGRD(ik) = WTRGGRD(ik) + WTRGGAT(k)*FAREGAT(k)
-                DRGRD(ik) = DRGRD(ik) + DRGAT(k)*FAREGAT(k)
-                WTABGRD(ik) = WTABGRD(ik) + WTABGAT(k)*FAREGAT(k)
-                ILMOGRD(ik) = ILMOGRD(ik) + ILMOGAT(k)*FAREGAT(k)
-                UEGRD(ik) = UEGRD(ik) + UEGAT(k)*FAREGAT(k)
-                HBLGRD(ik) = HBLGRD(ik) + HBLGAT(k)*FAREGAT(k)
-                wb_h%pre(ik) = wb_h%pre(ik) + FAREGAT(k)*PREGAT(k)*DELT
-                wb_h%evap(ik) = wb_h%evap(ik) + FAREGAT(k)*QFSGAT(k)*DELT
-                wb_h%rof(ik) = wb_h%rof(ik) + FAREGAT(k)*ROFGAT(k)*DELT
-                wb_h%rofo(ik) = wb_h%rofo(ik) + FAREGAT(k)*ROFOGAT(k)*DELT
-                wb_h%rofs(ik) = wb_h%rofs(ik) + FAREGAT(k)*ROFSGAT(k)*DELT
-                wb_h%rofb(ik) = wb_h%rofb(ik) + FAREGAT(k)*ROFBGAT(k)*DELT
-                wb_h%rcan(ik) = wb_h%rcan(ik) + FAREGAT(k)*RCANGAT(k)
-                wb_h%sncan(ik) = wb_h%sncan(ik) + FAREGAT(k)*SCANGAT(k)
-                wb_h%pndw(ik) = wb_h%pndw(ik) + FAREGAT(k)*ZPNDGAT(k)*RHOW
-                wb_h%sno(ik) = wb_h%sno(ik) + FAREGAT(k)*SNOGAT(k)
-                wb_h%wsno(ik) = wb_h%wsno(ik) + FAREGAT(k)*WSNOGAT(k)
+                CDHGRD(ik) = CDHGRD(ik) + cdv%CDH(k)*FAREGAT(k)
+                CDMGRD(ik) = CDMGRD(ik) + cdv%CDM(k)*FAREGAT(k)
+                HFSGRD(ik) = HFSGRD(ik) + cdv%HFS(k)*FAREGAT(k)
+                TFXGRD(ik) = TFXGRD(ik) + cdv%TFX(k)*FAREGAT(k)
+                QEVPGRD(ik) = QEVPGRD(ik) + cdv%QEVP(k)*FAREGAT(k)
+                QFSGRD(ik) = QFSGRD(ik) + cdv%QFS(k)*FAREGAT(k)
+                QFXGRD(ik) = QFXGRD(ik) + cdv%QFX(k)*FAREGAT(k)
+                PETGRD(ik) = PETGRD(ik) + cdv%PET(k)*FAREGAT(k)
+                GAGRD(ik) = GAGRD(ik) + cdv%GA(k)*FAREGAT(k)
+                EFGRD(ik) = EFGRD(ik) + cdv%EF(k)*FAREGAT(k)
+                GTGRD(ik) = GTGRD(ik) + cdv%GTE(k)*FAREGAT(k)
+                QGGRD(ik) = QGGRD(ik) + cdv%QG(k)*FAREGAT(k)
+!                TSFGRD(ik) = TSFGRD(ik) + cdv%TSF(k)*FAREGAT(k)
+                ALVSGRD(ik) = ALVSGRD(ik) + cdv%ALVS(k)*FAREGAT(k)
+                ALIRGRD(ik) = ALIRGRD(ik) + cdv%ALIR(k)*FAREGAT(k)
+                SFCTGRD(ik) = SFCTGRD(ik) + cdv%SFCT(k)*FAREGAT(k)
+                SFCUGRD(ik) = SFCUGRD(ik) + cdv%SFCU(k)*FAREGAT(k)
+                SFCVGRD(ik) = SFCVGRD(ik) + cdv%SFCV(k)*FAREGAT(k)
+                SFCQGRD(ik) = SFCQGRD(ik) + cdv%SFCQ(k)*FAREGAT(k)
+                FSNOGRD(ik) = FSNOGRD(ik) + cdv%FSNO(k)*FAREGAT(k)
+                FSGVGRD(ik) = FSGVGRD(ik) + cdv%FSGV(k)*FAREGAT(k)
+                FSGSGRD(ik) = FSGSGRD(ik) + cdv%FSGS(k)*FAREGAT(k)
+                FSGGGRD(ik) = FSGGGRD(ik) + cdv%FSGG(k)*FAREGAT(k)
+                SNOGRD(ik) = SNOGRD(ik) + cpv%SNO(k)*FAREGAT(k)
+                FLGVGRD(ik) = FLGVGRD(ik) + cdv%FLGV(k)*FAREGAT(k)
+                FLGSGRD(ik) = FLGSGRD(ik) + cdv%FLGS(k)*FAREGAT(k)
+                FLGGGRD(ik) = FLGGGRD(ik) + cdv%FLGG(k)*FAREGAT(k)
+                HFSCGRD(ik) = HFSCGRD(ik) + cdv%HFSC(k)*FAREGAT(k)
+                HFSSGRD(ik) = HFSSGRD(ik) + cdv%HFSS(k)*FAREGAT(k)
+                HFSGGRD(ik) = HFSGGRD(ik) + cdv%HFSG(k)*FAREGAT(k)
+                HEVCGRD(ik) = HEVCGRD(ik) + cdv%HEVC(k)*FAREGAT(k)
+                HEVSGRD(ik) = HEVSGRD(ik) + cdv%HEVS(k)*FAREGAT(k)
+                HEVGGRD(ik) = HEVGGRD(ik) + cdv%HEVG(k)*FAREGAT(k)
+                HMFCGRD(ik) = HMFCGRD(ik) + cdv%HMFC(k)*FAREGAT(k)
+                HMFNGRD(ik) = HMFNGRD(ik) + cdv%HMFN(k)*FAREGAT(k)
+                HTCCGRD(ik) = HTCCGRD(ik) + cdv%HTCC(k)*FAREGAT(k)
+                HTCSGRD(ik) = HTCSGRD(ik) + cdv%HTCS(k)*FAREGAT(k)
+                PCFCGRD(ik) = PCFCGRD(ik) + cdv%PCFC(k)*FAREGAT(k)
+                PCLCGRD(ik) = PCLCGRD(ik) + cdv%PCLC(k)*FAREGAT(k)
+                PCPNGRD(ik) = PCPNGRD(ik) + cdv%PCPN(k)*FAREGAT(k)
+                PCPGGRD(ik) = PCPGGRD(ik) + cdv%PCPG(k)*FAREGAT(k)
+                QFGGRD(ik) = QFGGRD(ik) + cdv%QFG(k)*FAREGAT(k)
+                QFNGRD(ik) = QFNGRD(ik) + cdv%QFN(k)*FAREGAT(k)
+                QFCLGRD(ik) = QFCLGRD(ik) + cdv%QFCL(k)*FAREGAT(k)
+                QFCFGRD(ik) = QFCFGRD(ik) + cdv%QFCF(k)*FAREGAT(k)
+                ROFGRD(ik) = ROFGRD(ik) + cdv%ROF(k)*FAREGAT(k)
+                ROFOGRD(ik) = ROFOGRD(ik) + cdv%ROFO(k)*FAREGAT(k)
+                ROFSGRD(ik) = ROFSGRD(ik) + cdv%ROFS(k)*FAREGAT(k)
+                ROFBGRD(ik) = ROFBGRD(ik) + cdv%ROFB(k)*FAREGAT(k)
+                ROFCGRD(ik) = ROFCGRD(ik) + cdv%ROFC(k)*FAREGAT(k)
+                ROFNGRD(ik) = ROFNGRD(ik) + cdv%ROFN(k)*FAREGAT(k)
+                ROVGGRD(ik) = ROVGGRD(ik) + cdv%ROVG(k)*FAREGAT(k)
+                WTRCGRD(ik) = WTRCGRD(ik) + cdv%WTRC(k)*FAREGAT(k)
+                WTRSGRD(ik) = WTRSGRD(ik) + cdv%WTRS(k)*FAREGAT(k)
+                WTRGGRD(ik) = WTRGGRD(ik) + cdv%WTRG(k)*FAREGAT(k)
+                DRGRD(ik) = DRGRD(ik) + cdv%DR(k)*FAREGAT(k)
+                WTABGRD(ik) = WTABGRD(ik) + cdv%WTAB(k)*FAREGAT(k)
+                ILMOGRD(ik) = ILMOGRD(ik) + cdv%ILMO(k)*FAREGAT(k)
+                UEGRD(ik) = UEGRD(ik) + cdv%UE(k)*FAREGAT(k)
+                HBLGRD(ik) = HBLGRD(ik) + cdv%HBL(k)*FAREGAT(k)
+                wb_h%pre(ik) = wb_h%pre(ik) + FAREGAT(k)*cf%PRE(k)*DELT
+                wb_h%evap(ik) = wb_h%evap(ik) + FAREGAT(k)*cdv%QFS(k)*DELT
+                wb_h%rof(ik) = wb_h%rof(ik) + FAREGAT(k)*cdv%ROF(k)*DELT
+                wb_h%rofo(ik) = wb_h%rofo(ik) + FAREGAT(k)*cdv%ROFO(k)*DELT
+                wb_h%rofs(ik) = wb_h%rofs(ik) + FAREGAT(k)*cdv%ROFS(k)*DELT
+                wb_h%rofb(ik) = wb_h%rofb(ik) + FAREGAT(k)*cdv%ROFB(k)*DELT
+                wb_h%rcan(ik) = wb_h%rcan(ik) + FAREGAT(k)*cpv%RCAN(k)
+                wb_h%sncan(ik) = wb_h%sncan(ik) + FAREGAT(k)*cpv%SNCAN(k)
+                wb_h%pndw(ik) = wb_h%pndw(ik) + FAREGAT(k)*cpv%ZPND(k)*RHOW
+                wb_h%sno(ik) = wb_h%sno(ik) + FAREGAT(k)*cpv%SNO(k)
+                wb_h%wsno(ik) = wb_h%wsno(ik) + FAREGAT(k)*cpv%WSNO(k)
                 do j = 1, IGND
-                    HMFGGRD(ik, j) = HMFGGRD(ik, j) + HMFGGAT(k, j)*FAREGAT(k)
-                    HTCGRD(ik, j) = HTCGRD(ik, j) + HTCGAT(k, j)*FAREGAT(k)
-                    QFCGRD(ik, j) = QFCGRD(ik, j) + QFCGAT(k, j)*FAREGAT(k)
-                    GFLXGRD(ik, j) = GFLXGRD(ik, j) + GFLXGAT(k, j)*FAREGAT(k)
-                    wb_h%lqws(ik, j) = wb_h%lqws(ik, j) + FAREGAT(k)*THLQGAT(k, j)*DLZWGAT(k, j)*RHOW
-                    wb_h%frws(ik, j) = wb_h%frws(ik, j) + FAREGAT(k)*THICGAT(k, j)*DLZWGAT(k, j)*RHOICE
+                    HMFGGRD(ik, j) = HMFGGRD(ik, j) + cdv%HMFG(k, j)*FAREGAT(k)
+                    HTCGRD(ik, j) = HTCGRD(ik, j) + cdv%HTC(k, j)*FAREGAT(k)
+                    QFCGRD(ik, j) = QFCGRD(ik, j) + cdv%QFC(k, j)*FAREGAT(k)
+                    GFLXGRD(ik, j) = GFLXGRD(ik, j) + cdv%GFLX(k, j)*FAREGAT(k)
+                    wb_h%lqws(ik, j) = wb_h%lqws(ik, j) + FAREGAT(k)*cpv%THLQ(k, j)*cpv%DELZW(k, j)*RHOW
+                    wb_h%frws(ik, j) = wb_h%frws(ik, j) + FAREGAT(k)*cpv%THIC(k, j)*cpv%DELZW(k, j)*RHOICE
                 end do
                 wb_h%stg(ik) = wb%rcan(ik) + wb%sncan(ik) + wb%pndw(ik) + &
                     wb%sno(ik) + wb%wsno(ik) + &
@@ -4080,8 +3515,8 @@ program RUNMESH
 ! BRUCE DAVISON - AUG 17, 2009 (see notes in my notebook for this day)
 ! Fixed calculation of basin averages. Needs documenting and testing.
                 do k = il1, il2
-                    basin_SCA = basin_SCA + FSNOGAT(k)*FAREGAT(k)
-                    basin_SWE = basin_SWE + SNOGAT(k)*FAREGAT(k)
+                    basin_SCA = basin_SCA + cdv%FSNO(k)*FAREGAT(k)
+                    basin_SWE = basin_SWE + cpv%SNO(k)*FAREGAT(k)
                 end do
                 basin_SCA = basin_SCA/TOTAL_AREA
                 basin_SWE = basin_SWE/TOTAL_AREA
@@ -4098,51 +3533,51 @@ program RUNMESH
             do k = il1, il2
                 ik = shd%lc%ILMOS(k)
                 if (shd%FRAC(ik) /= 0.0) then
-                    PREACC(ik) = PREACC(ik) + PREGAT(k)*FAREGAT(k)*DELT
-!                    GTACC(ik) = GTACC(ik) + GTGAT(k)*FAREGAT(k)
-                    QEVPACC(ik) = QEVPACC(ik) + QEVPGAT(k)*FAREGAT(k)
-                    EVAPACC(ik) = EVAPACC(ik) + QFSGAT(k)*FAREGAT(k)*DELT
-                    HFSACC(ik)  = HFSACC(ik) + HFSGAT(k)*FAREGAT(k)
-!                    HMFNACC(ik) = HMFNACC(ik) + HMFNGAT(k)*FAREGAT(k)
-                    ROFACC(ik) = ROFACC(ik) + ROFGAT(k)*FAREGAT(k)*DELT
-                    ROFOACC(ik) = ROFOACC(ik) + ROFOGAT(k)*FAREGAT(k)*DELT
-                    ROFSACC(ik) = ROFSACC(ik) + ROFSGAT(k)*FAREGAT(k)*DELT
-                    ROFBACC(ik) = ROFBACC(ik) + ROFBGAT(k)*FAREGAT(k)*DELT
-!                    WTBLACC(ik) = WTBLACC(ik) + WTABGAT(k)*FAREGAT(k)
+                    PREACC(ik) = PREACC(ik) + cf%PRE(k)*FAREGAT(k)*DELT
+!                    GTACC(ik) = GTACC(ik) + cdv%GTE(k)*FAREGAT(k)
+                    QEVPACC(ik) = QEVPACC(ik) + cdv%QEVP(k)*FAREGAT(k)
+                    EVAPACC(ik) = EVAPACC(ik) + cdv%QFS(k)*FAREGAT(k)*DELT
+                    HFSACC(ik)  = HFSACC(ik) + cdv%HFS(k)*FAREGAT(k)
+!                    HMFNACC(ik) = HMFNACC(ik) + cdv%HMFN(k)*FAREGAT(k)
+                    ROFACC(ik) = ROFACC(ik) + cdv%ROF(k)*FAREGAT(k)*DELT
+                    ROFOACC(ik) = ROFOACC(ik) + cdv%ROFO(k)*FAREGAT(k)*DELT
+                    ROFSACC(ik) = ROFSACC(ik) + cdv%ROFS(k)*FAREGAT(k)*DELT
+                    ROFBACC(ik) = ROFBACC(ik) + cdv%ROFB(k)*FAREGAT(k)*DELT
+!                    WTBLACC(ik) = WTBLACC(ik) + cdv%WTAB(k)*FAREGAT(k)
                     do j = 1, IGND
-!                        TBARACC(ik, j) = TBARACC(ik, j) + TBARGAT(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
-                        THLQACC(ik, j) = THLQACC(ik, j) + THLQGAT(k, j)*FAREGAT(k)
-                        THICACC(ik, j) = THICACC(ik, j) + THICGAT(k, j)*FAREGAT(k)
-                        THALACC(ik, j) = THALACC(ik, j) + (THLQGAT(k, j) + THICGAT(k, j))*FAREGAT(k)
+!                        TBARACC(ik, j) = TBARACC(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
+                        THLQACC(ik, j) = THLQACC(ik, j) + cpv%THLQ(k, j)*FAREGAT(k)
+                        THICACC(ik, j) = THICACC(ik, j) + cpv%THIC(k, j)*FAREGAT(k)
+                        THALACC(ik, j) = THALACC(ik, j) + (cpv%THLQ(k, j) + cpv%THIC(k, j))*FAREGAT(k)
             !Added by GSA compute daily heat conduction flux between layers
-                        GFLXACC(ik, j) = GFLXACC(ik, j) + GFLXGAT(k, j)*FAREGAT(k)
+                        GFLXACC(ik, j) = GFLXACC(ik, j) + cdv%GFLX(k, j)*FAREGAT(k)
 !                        (k) = THALACC_STG(k) + THALACC(k, j)
-!                        THLQ_FLD(ik, j) =  THLQ_FLD(ik, j) + THLQGAT(k, j)*RHOW*FAREGAT(k)*DLZWGAT(k, j)
-!                        THIC_FLD(ik, j) =  THIC_FLD(ik, j) + THICGAT(k, j)*RHOICE*FAREGAT(k)*DLZWGAT(k, j)
+!                        THLQ_FLD(ik, j) =  THLQ_FLD(ik, j) + cpv%THLQ(k, j)*RHOW*FAREGAT(k)*cpv%DELZW(k, j)
+!                        THIC_FLD(ik, j) =  THIC_FLD(ik, j) + cpv%THIC(k, j)*RHOICE*FAREGAT(k)*cpv%DELZW(k, j)
                     end do
-!                    ALVSACC(ik) = ALVSACC(ik) + ALVSGAT(k)*FAREGAT(k)*FSVHGRD(ik)
-!                    ALIRACC(ik) = ALIRACC(ik) + ALIRGAT(k)*FAREGAT(k)*FSIHGRD(ik)
-                    if (SNOGAT(k) > 0.0) then
-!                        RHOSACC(ik) = RHOSACC(ik) + RHOSGAT(k)*FAREGAT(k)
-!                        TSNOACC(ik) = TSNOACC(ik) + TSNOGAT(k)*FAREGAT(k)
-                        WSNOACC(ik) = WSNOACC(ik) + WSNOGAT(k)*FAREGAT(k)
+!                    ALVSACC(ik) = ALVSACC(ik) + cdv%ALVS(k)*FAREGAT(k)*FSVHGRD(ik)
+!                    ALIRACC(ik) = ALIRACC(ik) + cdv%ALIR(k)*FAREGAT(k)*FSIHGRD(ik)
+                    if (cpv%SNO(k) > 0.0) then
+!                        RHOSACC(ik) = RHOSACC(ik) + cpv%RHOS(k)*FAREGAT(k)
+!                        TSNOACC(ik) = TSNOACC(ik) + cpv%TSNO(k)*FAREGAT(k)
+                        WSNOACC(ik) = WSNOACC(ik) + cpv%WSNO(k)*FAREGAT(k)
                         SNOARE(ik) = SNOARE(ik) + FAREGAT(k)
                     end if
-!                    if (TCANGAT(k) > 0.5) then
-!                        TCANACC(ik) = TCANACC(ik) + TCANGAT(k)*FAREGAT(k)
+!                    if (cpv%TCAN(k) > 0.5) then
+!                        TCANACC(ik) = TCANACC(ik) + cpv%TCAN(k)*FAREGAT(k)
 !                        CANARE(ik) = CANARE(ik) + FAREGAT(k)
 !                    end if
-                    SNOACC(ik) = SNOACC(ik) + SNOGAT(k)*FAREGAT(k)
-                    RCANACC(ik) = RCANACC(ik) + RCANGAT(k)*FAREGAT(k)
-                    SCANACC(ik) = SCANACC(ik) + SCANGAT(k)*FAREGAT(k)
-!                    GROACC(ik) = GROACC(ik) + GROGAT(k)*FAREGAT(k)
-!                    FSINACC(ik) = FSINACC(ik) + cm%clin(cfk%FB)%climvGrd(ik)*FAREGAT(k)
-!                    FLINACC(ik) = FLINACC(ik) + cm%clin(cfk%FI)%climvGrd(ik)*FAREGAT(k)
-!                    FLUTACC(ik) = FLUTACC(ik) + SBC*GTGAT(k)**4*FAREGAT(k)
-!                    TAACC(ik) = TAACC(ik) + cm%clin(cfk%TT)%climvGrd(ik)*FAREGAT(k)
+                    SNOACC(ik) = SNOACC(ik) + cpv%SNO(k)*FAREGAT(k)
+                    RCANACC(ik) = RCANACC(ik) + cpv%RCAN(k)*FAREGAT(k)
+                    SCANACC(ik) = SCANACC(ik) + cpv%SNCAN(k)*FAREGAT(k)
+!                    GROACC(ik) = GROACC(ik) + cpv%GRO(k)*FAREGAT(k)
+!                    FSINACC(ik) = FSINACC(ik) + cm%clin(cfk%FB)%GRD(ik)*FAREGAT(k)
+!                    FLINACC(ik) = FLINACC(ik) + cm%clin(cfk%FI)%GRD(ik)*FAREGAT(k)
+!                    FLUTACC(ik) = FLUTACC(ik) + SBC*cdv%GTE(k)**4*FAREGAT(k)
+!                    TAACC(ik) = TAACC(ik) + cm%clin(cfk%TT)%GRD(ik)*FAREGAT(k)
 !                    UVACC(ik) = UVACC(ik) + UVGRD(ik)*FAREGAT(k)
-!                    PRESACC(ik) = PRESACC(ik) + cm%clin(cfk%P0)%climvGrd(ik)*FAREGAT(k)
-!                    QAACC(ik) = QAACC(ik) + cm%clin(cfk%HU)%climvGrd(ik)*FAREGAT(k)
+!                    PRESACC(ik) = PRESACC(ik) + cm%clin(cfk%P0)%GRD(ik)*FAREGAT(k)
+!                    QAACC(ik) = QAACC(ik) + cm%clin(cfk%HU)%GRD(ik)*FAREGAT(k)
                 end if
             end do !k = il1, il2
 
@@ -4268,24 +3703,24 @@ program RUNMESH
                 do k = il1, il2
                     ik = shd%lc%ILMOS(k)
                     if (shd%FRAC(ik) >= 0.0) then
-                        TOTAL_SCAN = TOTAL_SCAN + FAREGAT(k)*SCANGAT(k)
-                        TOTAL_RCAN = TOTAL_RCAN + FAREGAT(k)*RCANGAT(k)
-                        TOTAL_SNO = TOTAL_SNO + FAREGAT(k)*SNOGAT(k)
-                        TOTAL_WSNO = TOTAL_WSNO + FAREGAT(k)*WSNOGAT(k)
-                        TOTAL_ZPND = TOTAL_ZPND + FAREGAT(k)*ZPNDGAT(k)*RHOW
-                        wb%rcan(ik) = wb%rcan(ik) + FAREGAT(k)*SCANGAT(k)
-                        wb%sncan(ik) = wb%sncan(ik) + FAREGAT(k)*RCANGAT(k)
-                        wb%pndw(ik) = wb%pndw(ik) + FAREGAT(k)*ZPNDGAT(k)*RHOW
-                        wb%sno(ik) = wb%sno(ik) + FAREGAT(k)*SNOGAT(k)
-                        wb%wsno(ik) = wb%wsno(ik) + FAREGAT(k)*WSNOGAT(k)
+                        TOTAL_SCAN = TOTAL_SCAN + FAREGAT(k)*cpv%SNCAN(k)
+                        TOTAL_RCAN = TOTAL_RCAN + FAREGAT(k)*cpv%RCAN(k)
+                        TOTAL_SNO = TOTAL_SNO + FAREGAT(k)*cpv%SNO(k)
+                        TOTAL_WSNO = TOTAL_WSNO + FAREGAT(k)*cpv%WSNO(k)
+                        TOTAL_ZPND = TOTAL_ZPND + FAREGAT(k)*cpv%ZPND(k)*RHOW
+                        wb%rcan(ik) = wb%rcan(ik) + FAREGAT(k)*cpv%RCAN(k)
+                        wb%sncan(ik) = wb%sncan(ik) + FAREGAT(k)*cpv%SNCAN(k)
+                        wb%pndw(ik) = wb%pndw(ik) + FAREGAT(k)*cpv%ZPND(k)*RHOW
+                        wb%sno(ik) = wb%sno(ik) + FAREGAT(k)*cpv%SNO(k)
+                        wb%wsno(ik) = wb%wsno(ik) + FAREGAT(k)*cpv%WSNO(k)
                         do j = 1, IGND
-                            TOTAL_THLQ(j) = TOTAL_THLQ(j) + FAREGAT(k)*THLQGAT(k, j)*RHOW*DLZWGAT(k, j)
-                            TOTAL_THIC(j) = TOTAL_THIC(j) + FAREGAT(k)*THICGAT(k, j)*RHOICE*DLZWGAT(k, j)
-                            wb%lqws(ik, j) = wb%lqws(ik, j) + FAREGAT(k)*THLQGAT(k, j)*RHOW*DLZWGAT(k, j)
-                            wb%frws(ik, j) = wb%frws(ik, j) + FAREGAT(k)*THICGAT(k, j)*RHOICE*DLZWGAT(k, j)
-                            sp%tbar(ik, j) = sp%tbar(ik, j) + TBARGAT(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
-                            sp%thlq(ik, j) = sp%thlq(ik, j) + FAREGAT(k)*THLQGAT(k, j)
-                            sp%thic(ik, j) = sp%thic(ik, j) + FAREGAT(k)*THICGAT(k, j)
+                            TOTAL_THLQ(j) = TOTAL_THLQ(j) + FAREGAT(k)*cpv%THLQ(k, j)*RHOW*cpv%DELZW(k, j)
+                            TOTAL_THIC(j) = TOTAL_THIC(j) + FAREGAT(k)*cpv%THIC(k, j)*RHOICE*cpv%DELZW(k, j)
+                            wb%lqws(ik, j) = wb%lqws(ik, j) + FAREGAT(k)*cpv%THLQ(k, j)*RHOW*cpv%DELZW(k, j)
+                            wb%frws(ik, j) = wb%frws(ik, j) + FAREGAT(k)*cpv%THIC(k, j)*RHOICE*cpv%DELZW(k, j)
+                            sp%tbar(ik, j) = sp%tbar(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
+                            sp%thlq(ik, j) = sp%thlq(ik, j) + FAREGAT(k)*cpv%THLQ(k, j)
+                            sp%thic(ik, j) = sp%thic(ik, j) + FAREGAT(k)*cpv%THIC(k, j)
                         end do
                     end if !(shd%FRAC(ik) >= 0.0) then
                 end do !k = il1, il2
@@ -4517,7 +3952,9 @@ program RUNMESH
                             write(6, '(f10.3)', advance = 'no') stfl%qsyn(j)
                         end do
                     end if
-                    j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
+!todo: restore this.
+!                    j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
+                    j = shd%NAA
                     if (printoutwb) write(6, '(3(f10.3))', advance = 'no') wb%pre(j), wb%evap(j), wb%rof(j)
                     write(6, *)
                 end if !(ro%VERBOSEMODE > 0) then
@@ -4638,10 +4075,10 @@ program RUNMESH
                 cp%GROROW, CMAIROW, TACROW, QACROW, WSNOROW, &
                 shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
                 NA, NTYPE, NML, il1, il2, IGND, ICAN, ICAN + 1, &
-                TBARGAT, THLQGAT, THICGAT, GFLXGAT, TSFSGAT, &
-                TPNDGAT, ZPNDGAT, TBASGAT, ALBSGAT, TSNOGAT, &
-                RHOSGAT, SNOGAT, TCANGAT, RCANGAT, SCANGAT, &
-                GROGAT, CMAIGAT, TACGAT, QACGAT, WSNOGAT, &
+                cpv%TBAR, cpv%THLQ, cpv%THIC, cdv%GFLX, cpv%TSFS, &
+                cpv%TPND, cpv%ZPND, cpv%TBAS, cpv%ALBS, cpv%TSNO, &
+                cpv%RHOS, cpv%SNO, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
+                cpv%GRO, cpv%CMAI, cpv%TAC, cpv%QAC, cpv%WSNO, &
                 cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
                 cp%SANDROW, SANDGAT, cp%CLAYROW, CLAYGAT, cp%XSLPROW, XSLPGAT, &
                 DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
@@ -4655,77 +4092,77 @@ program RUNMESH
     do 380 k = il1, il2
         ik = shd%lc%ILMOS(k)
         jk = shd%lc%JLMOS(k)
-        CDHROW(ik, jk) = CDHGAT(k)
-        CDMROW(ik, jk) = CDMGAT(k)
-        HFSROW(ik, jk) = HFSGAT(k)
-        TFXROW(ik, jk) = TFXGAT(k)
-        QEVPROW(ik, jk) = QEVPGAT(k)
-        QFSROW(ik, jk) = QFSGAT(k)
-        QFXROW(ik, jk) = QFXGAT(k)
-        PETROW(ik, jk) = PETGAT(k)
-        GAROW(ik, jk) = GAGAT(k)
-        EFROW(ik, jk) = EFGAT(k)
-        GTROW(ik, jk) = GTGAT(k)
-        QGROW(ik, jk) = QGGAT(k)
-        ALVSROW(ik, jk) = ALVSGAT(k)
-        ALIRROW(ik, jk) = ALIRGAT(k)
-        SFCTROW(ik, jk) = SFCTGAT(k)
-        SFCUROW(ik, jk) = SFCUGAT(k)
-        SFCVROW(ik, jk) = SFCVGAT(k)
-        SFCQROW(ik, jk) = SFCQGAT(k)
-        FSNOROW(ik, jk) = FSNOGAT(k)
-        FSGVROW(ik, jk) = FSGVGAT(k)
-        FSGSROW(ik, jk) = FSGSGAT(k)
-        FSGGROW(ik, jk) = FSGGGAT(k)
-        FLGVROW(ik, jk) = FLGVGAT(k)
-        FLGSROW(ik, jk) = FLGSGAT(k)
-        FLGGROW(ik, jk) = FLGGGAT(k)
-        HFSCROW(ik, jk) = HFSCGAT(k)
-        HFSSROW(ik, jk) = HFSSGAT(k)
-        HFSGROW(ik, jk) = HFSGGAT(k)
-        HEVCROW(ik, jk) = HEVCGAT(k)
-        HEVSROW(ik, jk) = HEVSGAT(k)
-        HEVGROW(ik, jk) = HEVGGAT(k)
-        HMFCROW(ik, jk) = HMFCGAT(k)
-        HMFNROW(ik, jk) = HMFNGAT(k)
-        HTCCROW(ik, jk) = HTCCGAT(k)
-        HTCSROW(ik, jk) = HTCSGAT(k)
-        PCFCROW(ik, jk) = PCFCGAT(k)
-        PCLCROW(ik, jk) = PCLCGAT(k)
-        PCPNROW(ik, jk) = PCPNGAT(k)
-        PCPGROW(ik, jk) = PCPGGAT(k)
-        QFGROW(ik, jk) = QFGGAT(k)
-        QFNROW(ik, jk) = QFNGAT(k)
-        QFCLROW(ik, jk) = QFCLGAT(k)
-        QFCFROW(ik, jk) = QFCFGAT(k)
-        ROFROW(ik, jk) = ROFGAT(k)
-        ROFOROW(ik, jk) = ROFOGAT(k)
-        ROFSROW(ik, jk) = ROFSGAT(k)
-        ROFBROW(ik, jk) = ROFBGAT(k)
-        TROFROW(ik, jk) = TROFGAT(k)
-        TROOROW(ik, jk) = TROOGAT(k)
-        TROSROW(ik, jk) = TROSGAT(k)
-        TROBROW(ik, jk) = TROBGAT(k)
-        ROFCROW(ik, jk) = ROFCGAT(k)
-        ROFNROW(ik, jk) = ROFNGAT(k)
-        ROVGROW(ik, jk) = ROVGGAT(k)
-        WTRCROW(ik, jk) = WTRCGAT(k)
-        WTRSROW(ik, jk) = WTRSGAT(k)
-        WTRGROW(ik, jk) = WTRGGAT(k)
-        DRROW(ik, jk) = DRGAT(k)
-        WTABROW(ik, jk) = WTABGAT(k)
-        ILMOROW(ik, jk) = ILMOGAT(k)
-        UEROW(ik, jk) = UEGAT(k)
-        HBLROW(ik, jk) = HBLGAT(k)
+        CDHROW(ik, jk) = cdv%CDH(k)
+        CDMROW(ik, jk) = cdv%CDM(k)
+        HFSROW(ik, jk) = cdv%HFS(k)
+        TFXROW(ik, jk) = cdv%TFX(k)
+        QEVPROW(ik, jk) = cdv%QEVP(k)
+        QFSROW(ik, jk) = cdv%QFS(k)
+        QFXROW(ik, jk) = cdv%QFX(k)
+        PETROW(ik, jk) = cdv%PET(k)
+        GAROW(ik, jk) = cdv%GA(k)
+        EFROW(ik, jk) = cdv%EF(k)
+        GTROW(ik, jk) = cdv%GTE(k)
+        QGROW(ik, jk) = cdv%QG(k)
+        ALVSROW(ik, jk) = cdv%ALVS(k)
+        ALIRROW(ik, jk) = cdv%ALIR(k)
+        SFCTROW(ik, jk) = cdv%SFCT(k)
+        SFCUROW(ik, jk) = cdv%SFCU(k)
+        SFCVROW(ik, jk) = cdv%SFCV(k)
+        SFCQROW(ik, jk) = cdv%SFCQ(k)
+        FSNOROW(ik, jk) = cdv%FSNO(k)
+        FSGVROW(ik, jk) = cdv%FSGV(k)
+        FSGSROW(ik, jk) = cdv%FSGS(k)
+        FSGGROW(ik, jk) = cdv%FSGG(k)
+        FLGVROW(ik, jk) = cdv%FLGV(k)
+        FLGSROW(ik, jk) = cdv%FLGS(k)
+        FLGGROW(ik, jk) = cdv%FLGG(k)
+        HFSCROW(ik, jk) = cdv%HFSC(k)
+        HFSSROW(ik, jk) = cdv%HFSS(k)
+        HFSGROW(ik, jk) = cdv%HFSG(k)
+        HEVCROW(ik, jk) = cdv%HEVC(k)
+        HEVSROW(ik, jk) = cdv%HEVS(k)
+        HEVGROW(ik, jk) = cdv%HEVG(k)
+        HMFCROW(ik, jk) = cdv%HMFC(k)
+        HMFNROW(ik, jk) = cdv%HMFN(k)
+        HTCCROW(ik, jk) = cdv%HTCC(k)
+        HTCSROW(ik, jk) = cdv%HTCS(k)
+        PCFCROW(ik, jk) = cdv%PCFC(k)
+        PCLCROW(ik, jk) = cdv%PCLC(k)
+        PCPNROW(ik, jk) = cdv%PCPN(k)
+        PCPGROW(ik, jk) = cdv%PCPG(k)
+        QFGROW(ik, jk) = cdv%QFG(k)
+        QFNROW(ik, jk) = cdv%QFN(k)
+        QFCLROW(ik, jk) = cdv%QFCL(k)
+        QFCFROW(ik, jk) = cdv%QFCF(k)
+        ROFROW(ik, jk) = cdv%ROF(k)
+        ROFOROW(ik, jk) = cdv%ROFO(k)
+        ROFSROW(ik, jk) = cdv%ROFS(k)
+        ROFBROW(ik, jk) = cdv%ROFB(k)
+        TROFROW(ik, jk) = cdv%TROF(k)
+        TROOROW(ik, jk) = cdv%TROO(k)
+        TROSROW(ik, jk) = cdv%TROS(k)
+        TROBROW(ik, jk) = cdv%TROB(k)
+        ROFCROW(ik, jk) = cdv%ROFC(k)
+        ROFNROW(ik, jk) = cdv%ROFN(k)
+        ROVGROW(ik, jk) = cdv%ROVG(k)
+        WTRCROW(ik, jk) = cdv%WTRC(k)
+        WTRSROW(ik, jk) = cdv%WTRS(k)
+        WTRGROW(ik, jk) = cdv%WTRG(k)
+        DRROW(ik, jk) = cdv%DR(k)
+        WTABROW(ik, jk) = cdv%WTAB(k)
+        ILMOROW(ik, jk) = cdv%ILMO(k)
+        UEROW(ik, jk) = cdv%UE(k)
+        HBLROW(ik, jk) = cdv%HBL(k)
 380     continue
 !>
     do 390 l = 1, IGND
         do 390 k = il1, il2
             ik = shd%lc%ILMOS(k)
             jk = shd%lc%JLMOS(k)
-            HMFGROW(ik, jk, l) = HMFGGAT(k, l)
-            HTCROW(ik, jk, l) = HTCGAT(k, l)
-            QFCROW(ik, jk, l) = QFCGAT(k, l)
+            HMFGROW(ik, jk, l) = cdv%HMFG(k, l)
+            HTCROW(ik, jk, l) = cdv%HTC(k, l)
+            QFCROW(ik, jk, l) = cdv%QFC(k, l)
 390     continue
 !>
     do 430 m = 1, 50
@@ -4765,40 +4202,40 @@ program RUNMESH
         call SAVE_STATE_R2C(shd%lc%NML, NA, NTYPE, NCOUNT, &
                             MINS_NOW, shd%lc%ACLASS, NR2C_S, GRD_S, GAT_S, GRDGAT_S, R2C_ATTRIBUTES_S, &
                             NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
-                            TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
-                            TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
-                            TCANGAT, RCANGAT, SCANGAT, GROGAT, CMAIGAT, &
+                            cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
+                            cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
+                            cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
                             FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
                             PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
                             VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
-                            HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
+                            HGTDGAT, ACVDGAT, ACIDGAT, cpv%TSFS, cpv%WSNO, &
                             THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
                             GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, &
-                            THFCGAT, PSIWGAT, DLZWGAT, ZBTWGAT, &
-                            ZSNLGAT, ZPLGGAT, ZPLSGAT, TACGAT, QACGAT, &
+                            THFCGAT, PSIWGAT, cpv%DELZW, ZBTWGAT, &
+                            ZSNLGAT, ZPLGGAT, ZPLSGAT, cpv%TAC, cpv%QAC, &
                             DRNGAT, XSLPGAT, XDGAT, WFSFGAT, KSGAT, &
                             ALGWGAT, ALGDGAT, ASVDGAT, ASIDGAT, AGVDGAT, &
-                            AGIDGAT, ISNDGAT, RADJGAT, ZBLDGAT, Z0ORGAT, &
-                            ZRFMGAT, ZRFHGAT, ZDMGAT, ZDHGAT, FSVHGAT, &
-                            FSIHGAT, CSZGAT, FDLGAT, ULGAT, VLGAT, &
-                            TAGAT, QAGAT, PRESGAT, PREGAT, PADRGAT, &
+                            AGIDGAT, ISNDGAT, RADJGAT, cf%ZBLD, Z0ORGAT, &
+                            cf%ZRFM, cf%ZRFH, ZDMGAT, ZDHGAT, cf%FSVH, &
+                            cf%FSIH, CSZGAT, cf%FDL, cf%UL, cf%VL, &
+                            cf%TA, cf%QA, cf%PRES, cf%PRE, PADRGAT, &
                             VPDGAT, TADPGAT, RHOAGAT, RPCPGAT, TRPCGAT, &
-                            SPCPGAT, TSPCGAT, RHSIGAT, FCLOGAT, DLONGAT, &
+                            SPCPGAT, TSPCGAT, RHSIGAT, cf%FCLO, DLONGAT, &
                             GGEOGAT, &
-                            CDHGAT, CDMGAT, HFSGAT, TFXGAT, QEVPGAT, &
-                            QFSGAT, QFXGAT, PETGAT, GAGAT, EFGAT, &
-                            GTGAT, QGGAT, ALVSGAT, ALIRGAT, &
-                            SFCTGAT, SFCUGAT, SFCVGAT, SFCQGAT, FSNOGAT, &
-                            FSGVGAT, FSGSGAT, FSGGGAT, FLGVGAT, FLGSGAT, &
-                            FLGGGAT, HFSCGAT, HFSSGAT, HFSGGAT, HEVCGAT, &
-                            HEVSGAT, HEVGGAT, HMFCGAT, HMFNGAT, HTCCGAT, &
-                            HTCSGAT, PCFCGAT, PCLCGAT, PCPNGAT, PCPGGAT, &
-                            QFGGAT, QFNGAT, QFCLGAT, QFCFGAT, ROFGAT, &
-                            ROFOGAT, ROFSGAT, ROFBGAT, TROFGAT, TROOGAT, &
-                            TROSGAT, TROBGAT, ROFCGAT, ROFNGAT, ROVGGAT, &
-                            WTRCGAT, WTRSGAT, WTRGGAT, DRGAT, GFLXGAT, &
-                            HMFGGAT, HTCGAT, QFCGAT, MANNGAT, DDGAT, &
-                            SANDGAT, CLAYGAT, IGDRGAT, VMODGAT, QLWOGAT, &
+                            cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
+                            cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
+                            cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
+                            cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
+                            cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
+                            cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
+                            cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
+                            cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
+                            cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
+                            cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
+                            cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
+                            cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
+                            cdv%HMFG, cdv%HTC, cdv%QFC, MANNGAT, DDGAT, &
+                            SANDGAT, CLAYGAT, IGDRGAT, cf%VMOD, QLWOGAT, &
                             shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, &
                             shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
     end if !(SAVERESUMEFLAG == 2) then
@@ -4810,48 +4247,48 @@ program RUNMESH
 !                        cm%clin(cfk%FB)%filefmt, cm%clin(cfk%FI)%filefmt, &
 !                        cm%clin(cfk%PR)%filefmt, cm%clin(cfk%TT)%filefmt, &
 !                        cm%clin(cfk%UV)%filefmt, cm%clin(cfk%P0)%filefmt, cm%clin(cfk%HU)%filefmt, &
-!                        cm%clin(cfk%FB)%climvGrd, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%climvGrd, &
+!                        cm%clin(cfk%FB)%GRD, FSVHGRD, FSIHGRD, cm%clin(cfk%FI)%GRD, &
 !                        i, j, shd%xCount, shd%yCount, jan, &
 !                        VPDGRD, TADPGRD, PADRGRD, RHOAGRD, RHSIGRD, &
-!                        RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%climvGrd, &
-!                        cm%clin(cfk%HU)%climvGrd, cm%clin(cfk%PR)%climvGrd, RPREGRD, SPREGRD, cm%clin(cfk%P0)%climvGrd, &
+!                        RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, cm%clin(cfk%TT)%GRD, &
+!                        cm%clin(cfk%HU)%GRD, cm%clin(cfk%PR)%GRD, RPREGRD, SPREGRD, cm%clin(cfk%P0)%GRD, &
 !!MAM - FOR FORCING DATA INTERPOLATION
 !                        FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, &
 !                        TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
 !                        IPCP, NA, NA, shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
 !                        shd%lc%NML, shd%wc%NML, &
 !                        cp%GCGRD, cp%FAREROW, cp%MIDROW, NTYPE, NML, NMTEST, &
-!                        TBARGAT, THLQGAT, THICGAT, TPNDGAT, ZPNDGAT, &
-!                        TBASGAT, ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, &
-!                        TCANGAT, RCANGAT, SCANGAT, GROGAT, FRZCGAT, CMAIGAT, &
+!                        cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
+!                        cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
+!                        cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, FRZCGAT, cpv%CMAI, &
 !                        FCANGAT, LNZ0GAT, ALVCGAT, ALICGAT, PAMXGAT, &
 !                        PAMNGAT, CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, &
 !                        VPDAGAT, VPDBGAT, PSGAGAT, PSGBGAT, PAIDGAT, &
-!                        HGTDGAT, ACVDGAT, ACIDGAT, TSFSGAT, WSNOGAT, &
+!                        HGTDGAT, ACVDGAT, ACIDGAT, cpv%TSFS, cpv%WSNO, &
 !                        THPGAT, THRGAT, THMGAT, BIGAT, PSISGAT, &
 !                        GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
-!                        PSIWGAT, DLZWGAT, ZBTWGAT, ZSNLGAT, ZPLGGAT, &
-!                        ZPLSGAT, TACGAT, QACGAT, DRNGAT, XSLPGAT, &
+!                        PSIWGAT, cpv%DELZW, ZBTWGAT, ZSNLGAT, ZPLGGAT, &
+!                        ZPLSGAT, cpv%TAC, cpv%QAC, DRNGAT, XSLPGAT, &
 !                        XDGAT, WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, &
 !                        ASVDGAT, ASIDGAT, AGVDGAT, AGIDGAT, ISNDGAT, &
-!                        RADJGAT, ZBLDGAT, Z0ORGAT, ZRFMGAT, ZRFHGAT, &
-!                        ZDMGAT, ZDHGAT, FSVHGAT, FSIHGAT, CSZGAT, &
-!                        FDLGAT, ULGAT, VLGAT, TAGAT, QAGAT, PRESGAT, &
-!                        PREGAT, PADRGAT, VPDGAT, TADPGAT, RHOAGAT, &
+!                        RADJGAT, cf%ZBLD, Z0ORGAT, cf%ZRFM, cf%ZRFH, &
+!                        ZDMGAT, ZDHGAT, cf%FSVH, cf%FSIH, CSZGAT, &
+!                        cf%FDL, cf%UL, cf%VL, cf%TA, cf%QA, cf%PRES, &
+!                        cf%PRE, PADRGAT, VPDGAT, TADPGAT, RHOAGAT, &
 !                        RPCPGAT, TRPCGAT, SPCPGAT, TSPCGAT, RHSIGAT, &
-!                        FCLOGAT, DLONGAT, GGEOGAT, CDHGAT, CDMGAT, &
-!                        HFSGAT, TFXGAT, QEVPGAT, QFSGAT, QFXGAT, &
-!                        PETGAT, GAGAT, EFGAT, GTGAT, QGGAT, &
-!                        ALVSGAT, ALIRGAT, SFCTGAT, SFCUGAT, SFCVGAT, &
-!                        SFCQGAT, FSNOGAT, FSGVGAT, FSGSGAT, FSGGGAT, &
-!                        FLGVGAT, FLGSGAT, FLGGGAT, HFSCGAT, HFSSGAT, &
-!                        HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, HMFCGAT, &
-!                        HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, &
-!                        PCPNGAT, PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, &
-!                        QFCFGAT, ROFGAT, ROFOGAT, ROFSGAT, ROFBGAT, &
-!                        TROFGAT, TROOGAT, TROSGAT, TROBGAT, ROFCGAT, &
-!                        ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, WTRGGAT, &
-!                        DRGAT, HMFGGAT, HTCGAT, QFCGAT, ITCTGAT, &
+!                        cf%FCLO, DLONGAT, GGEOGAT, cdv%CDH, cdv%CDM, &
+!                        cdv%HFS, cdv%TFX, cdv%QEVP, cdv%QFS, cdv%QFX, &
+!                        cdv%PET, cdv%GA, cdv%EF, cdv%GTE, cdv%QG, &
+!                        cdv%ALVS, cdv%ALIR, cdv%SFCT, cdv%SFCU, cdv%SFCV, &
+!                        cdv%SFCQ, cdv%FSNO, cdv%FSGV, cdv%FSGS, cdv%FSGG, &
+!                        cdv%FLGV, cdv%FLGS, cdv%FLGG, cdv%HFSC, cdv%HFSS, &
+!                        cdv%HFSG, cdv%HEVC, cdv%HEVS, cdv%HEVG, cdv%HMFC, &
+!                        cdv%HMFN, cdv%HTCC, cdv%HTCS, cdv%PCFC, cdv%PCLC, &
+!                        cdv%PCPN, cdv%PCPG, cdv%QFG, cdv%QFN, cdv%QFCL, &
+!                        cdv%QFCF, cdv%ROF, cdv%ROFO, cdv%ROFS, cdv%ROFB, &
+!                        cdv%TROF, cdv%TROO, cdv%TROS, cdv%TROB, cdv%ROFC, &
+!                        cdv%ROFN, cdv%ROVG, cdv%WTRC, cdv%WTRS, cdv%WTRG, &
+!                        cdv%DR, cdv%HMFG, cdv%HTC, cdv%QFC, ITCTGAT, &
 !                        IGND, ICAN, ICP1, &
 !                        cp%TBARROW, cp%THLQROW, cp%THICROW, cp%TPNDROW, cp%ZPNDROW, &
 !                        TBASROW, cp%ALBSROW, cp%TSNOROW, cp%RHOSROW, cp%SNOROW, &
@@ -4868,12 +4305,12 @@ program RUNMESH
 !                        ASVDROW, ASIDROW, AGVDROW, AGIDROW, &
 !                        ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
 !                        cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, CSZGRD, &
-!                        cm%clin(cfk%UV)%climvGrd, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
+!                        cm%clin(cfk%UV)%GRD, VLGRD, FCLOGRD, DLONGRD, GGEOGRD, &
 !                        cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
-!                        IGDRROW, IGDRGAT, VMODGRD, VMODGAT, QLWOGAT, &
+!                        IGDRROW, IGDRGAT, VMODGRD, cf%VMOD, QLWOGAT, &
 !                        CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
 !                        WTVSTP, WTSSTP, WTGSTP, &
-!                        sl%DELZ, FCS, FGS, FC, FG, N, &
+!                        sl%DELZ, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, N, &
 !                        ALVSCN, ALIRCN, ALVSG, ALIRG, ALVSCS, &
 !                        ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, &
 !                        ALVSSC, ALIRSC, TRVSCN, TRIRCN, TRVSCS, &
@@ -4896,11 +4333,11 @@ program RUNMESH
 !                        EVAPC, EVAPCG,EVAPG, EVAPCS, EVPCSG, EVAPGS, &
 !                        TCANO, TCANS, TPONDC, TPONDG, TPNDCS, TPNDGS, &
 !                        TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
-!                        WTABGAT, &
-!                        ILMOGAT, UEGAT, HBLGAT, &
+!                        cdv%WTAB, &
+!                        cdv%ILMO, cdv%UE, cdv%HBL, &
 !                        shd%wc%ILG, ITC, ITCG, ITG, ISLFD, &
 !                        NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
-!                        GFLXGAT, CDHROW, CDMROW, HFSROW, TFXROW, &
+!                        cdv%GFLX, CDHROW, CDMROW, HFSROW, TFXROW, &
 !                        QEVPROW, QFSROW, QFXROW, PETROW, GAROW, &
 !                        EFROW, GTROW, QGROW, TSFROW, ALVSROW, &
 !                        ALIRROW, SFCTROW, SFCUROW, SFCVROW, SFCQROW, &
@@ -4971,9 +4408,9 @@ program RUNMESH
     FINAL_STORE = 0.0
     do k = il1, il2
         if (shd%FRAC(shd%lc%ILMOS(k)) >= 0.0) then
-            FINAL_STORE = FINAL_STORE + FAREGAT(k)*(RCANGAT(k) + SCANGAT(k) + SNOGAT(k) + WSNOGAT(k) + ZPNDGAT(k)*RHOW)
+            FINAL_STORE = FINAL_STORE + FAREGAT(k)*(cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%WSNO(k) + cpv%ZPND(k)*RHOW)
             do j = 1, IGND
-                FINAL_STORE = FINAL_STORE + FAREGAT(k)*(THLQGAT(k, j)*RHOW + THICGAT(k, j)*RHOICE)*DLZWGAT(k, j)
+                FINAL_STORE = FINAL_STORE + FAREGAT(k)*(cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*cpv%DELZW(k, j)
             end do
         end if
     end do
@@ -5030,25 +4467,6 @@ program RUNMESH
 
 999 continue
     close(51)
-
-    !todo++:
-    !todo++: CUT OUT CLASS ACCUMULATION AND OUTPUT FILES TO APPROPRIATE NODE
-    !todo++:
-    !> Close the CLASS output files if the GAT-index of the output point resides on this node.
-!    do i = 1, WF_NUM_POINTS
-!        if ((ipid /= 0 .or. izero == 0) .and. op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2) then
-!            close(150 + i*10 + 1)
-!            close(150 + i*10 + 2)
-!            close(150 + i*10 + 3)
-!            close(150 + i*10 + 4)
-!            close(150 + i*10 + 5)
-!            close(150 + i*10 + 6)
-!            close(150 + i*10 + 7)
-!            close(150 + i*10 + 8)
-!            close(150 + i*10 + 9)
-!            close(150 + i*10 + 10)
-!        end if
-!    end do
 
     !> Close model output file.
     close(58)

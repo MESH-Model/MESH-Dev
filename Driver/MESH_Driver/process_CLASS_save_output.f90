@@ -364,12 +364,12 @@ module process_CLASS_save_output
                     cdv%ROFC(k), cdv%ROFN(k), &
                     cdv%ROFO(k), cdv%ROF(k), cdv%WTRC(k), &
                     cdv%WTRS(k), cdv%WTRG(k)
-!                write(150 + i*10 + 10, "(i2,',', i3,',', i5,',', i6,',', 999(f14.6,','))") &
-!                    HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, cf%PRE(k)*DELT, cdv%QFS(k)*DELT, &
-!                    cdv%ROF(k)*DELT, cdv%ROFO(k)*DELT, cdv%ROFS(k)*DELT, cdv%ROFB(k)*DELT, &
-!                    cpv%SNCAN(k), cpv%RCAN(k), cpv%SNO(k), cpv%WSNO(k), &
-!                    cpv%ZPND(k)*RHOW, (cpv%THLQ(k, j)*RHOW*DLZW(k, j), j = 1, IGND), &
-!                    (cpv%THIC(k, j)*RHOICE*DLZW(k, j), j = 1, IGND)
+                write(150 + i*10 + 10, "(i2,',', i3,',', i5,',', i6,',', 999(f14.6,','))") &
+                    HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, cf%PRE(k)*DELT, cdv%QFS(k)*DELT, &
+                    cdv%ROF(k)*DELT, cdv%ROFO(k)*DELT, cdv%ROFS(k)*DELT, cdv%ROFB(k)*DELT, &
+                    cpv%SNCAN(k), cpv%RCAN(k), cpv%SNO(k), cpv%WSNO(k), &
+                    cpv%ZPND(k)*RHOW, (cpv%THLQ(k, j)*RHOW*cpv%DELZW(k, j), j = 1, IGND), &
+                    (cpv%THIC(k, j)*RHOICE*cpv%DELZW(k, j), j = 1, IGND)
 
                 !> Calculate accumulated grid variables.
                 do k = il1, il2

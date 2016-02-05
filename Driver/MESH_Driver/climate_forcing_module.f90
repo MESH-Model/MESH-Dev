@@ -20,7 +20,9 @@ module climate_forcing
 !        FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD,
         VLGRD, &
 !        FSDOWN, &
-        FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, VLGAT
+        FSVHGAT, FSIHGAT, &
+!        FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, &
+        VLGAT
 
     !> MAM - variables for forcing data interpolation:
     real, dimension(:), allocatable :: &
@@ -240,16 +242,19 @@ module climate_forcing
 
         !> Allocate and initialize GAT variables.
 !        ilg = shd%NA*shd%lc%NTYPE
-        allocate(FSVHGAT(iilen), FSIHGAT(iilen), FDLGAT(iilen), PREGAT(iilen), TAGAT(iilen), ULGAT(iilen), &
-                 PRESGAT(iilen), QAGAT(iilen), VLGAT(iilen))
+        allocate( &
+            FSVHGAT(iilen), FSIHGAT(iilen), &
+!            FDLGAT(iilen), PREGAT(iilen), TAGAT(iilen), ULGAT(iilen), &
+!            PRESGAT(iilen), QAGAT(iilen), &
+            VLGAT(iilen))
         FSVHGAT = 0.0
         FSIHGAT = 0.0
-        FDLGAT = 0.0
-        PREGAT = 0.0
-        TAGAT = 0.0
-        ULGAT = 0.0
-        PRESGAT = 0.0
-        QAGAT = 0.0
+!        FDLGAT = 0.0
+!        PREGAT = 0.0
+!        TAGAT = 0.0
+!        ULGAT = 0.0
+!        PRESGAT = 0.0
+!        QAGAT = 0.0
         VLGAT = 0.0
 
         !> Allocate and initialize GAT variables for climate interpolation.
@@ -315,7 +320,8 @@ module climate_forcing
 !                                       FSDOWN, &
                                        FSVHGRD, FSIHGRD, &
 !                                       FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
-                                       FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, &
+                                       FSVHGAT, FSIHGAT, cm%clin(cfk%FI)%GAT, cm%clin(cfk%PR)%GAT, cm%clin(cfk%TT)%GAT, &
+                                       cm%clin(cfk%UV)%GAT, cm%clin(cfk%P0)%GAT, cm%clin(cfk%HU)%GAT, &
                                        ENDDATA)
             elseif (INTERPOLATIONFLAG == 1) then
                 if (RESUMEFLAG /= 1) then
@@ -400,7 +406,8 @@ module climate_forcing
 !                                       FSDOWN, &
                                        FSVHGRD, FSIHGRD, &
 !                                       FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
-                                       FSVHGAT, FSIHGAT, FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, &
+                                       FSVHGAT, FSIHGAT, cm%clin(cfk%FI)%GAT, cm%clin(cfk%PR)%GAT, cm%clin(cfk%TT)%GAT, &
+                                       cm%clin(cfk%UV)%GAT, cm%clin(cfk%P0)%GAT, cm%clin(cfk%HU)%GAT, &
                                        ENDDATA)
             end if
 
@@ -431,28 +438,28 @@ module climate_forcing
         FSVHGAT = FSVHGATPRE + TRATIO*(FSVHGATPST - FSVHGATPRE)
         FSIHGAT = FSIHGATPRE + TRATIO*(FSIHGATPST - FSIHGATPRE)
         TRATIO = min(1.0, real(cm%clin(cfk%FI)%timestep_now)/cm%clin(cfk%FI)%hf)
-        FDLGAT = FDLGATPRE + TRATIO*(FDLGATPST - FDLGATPRE)
+        cm%clin(cfk%FI)%GAT = FDLGATPRE + TRATIO*(FDLGATPST - FDLGATPRE)
         TRATIO = min(1.0, real(cm%clin(cfk%PR)%timestep_now)/cm%clin(cfk%PR)%hf)
-        PREGAT = PREGATPRE + TRATIO*(PREGATPST - PREGATPRE)
+        cm%clin(cfk%PR)%GAT = PREGATPRE + TRATIO*(PREGATPST - PREGATPRE)
         TRATIO = min(1.0, real(cm%clin(cfk%TT)%timestep_now)/cm%clin(cfk%TT)%hf)
-        TAGAT = TAGATPRE + TRATIO*(TAGATPST - TAGATPRE)
+        cm%clin(cfk%TT)%GAT = TAGATPRE + TRATIO*(TAGATPST - TAGATPRE)
         TRATIO = min(1.0, real(cm%clin(cfk%UV)%timestep_now)/cm%clin(cfk%UV)%hf)
-        ULGAT = ULGATPRE + TRATIO*(ULGATPST - ULGATPRE)
+        cm%clin(cfk%UV)%GAT = ULGATPRE + TRATIO*(ULGATPST - ULGATPRE)
         TRATIO = min(1.0, real(cm%clin(cfk%P0)%timestep_now)/cm%clin(cfk%P0)%hf)
-        PRESGAT = PRESGATPRE + TRATIO*(PRESGATPST - PRESGATPRE)
+        cm%clin(cfk%P0)%GAT = PRESGATPRE + TRATIO*(PRESGATPST - PRESGATPRE)
         TRATIO = min(1.0, real(cm%clin(cfk%HU)%timestep_now)/cm%clin(cfk%HU)%hf)
-        QAGAT = QAGATPRE + TRATIO*(QAGATPST - QAGATPRE)
+        cm%clin(cfk%HU)%GAT = QAGATPRE + TRATIO*(QAGATPST - QAGATPRE)
 
         !> Distribute the grid variables.
         call SCATTER(shd, iilen, ii1, ii2, FSVHGAT, FSVHGRD)
         call SCATTER(shd, iilen, ii1, ii2, FSIHGAT, FSIHGRD)
-        call SCATTER(shd, iilen, ii1, ii2, FDLGAT, cm%clin(cfk%FI)%climvGrd)
-        call SCATTER(shd, iilen, ii1, ii2, ULGAT, cm%clin(cfk%UV)%climvGrd)
-        call SCATTER(shd, iilen, ii1, ii2, TAGAT, cm%clin(cfk%TT)%climvGrd)
-        call SCATTER(shd, iilen, ii1, ii2, QAGAT, cm%clin(cfk%HU)%climvGrd)
-        call SCATTER(shd, iilen, ii1, ii2, PRESGAT, cm%clin(cfk%P0)%climvGrd)
-        call SCATTER(shd, iilen, ii1, ii2, PREGAT, cm%clin(cfk%PR)%climvGrd)
-        cm%clin(cfk%FB)%climvGrd = 2.0*FSVHGRD
+        call SCATTER(shd, iilen, ii1, ii2, cm%clin(cfk%FI)%GAT, cm%clin(cfk%FI)%GRD)
+        call SCATTER(shd, iilen, ii1, ii2, cm%clin(cfk%UV)%GAT, cm%clin(cfk%UV)%GRD)
+        call SCATTER(shd, iilen, ii1, ii2, cm%clin(cfk%TT)%GAT, cm%clin(cfk%TT)%GRD)
+        call SCATTER(shd, iilen, ii1, ii2, cm%clin(cfk%HU)%GAT, cm%clin(cfk%HU)%GRD)
+        call SCATTER(shd, iilen, ii1, ii2, cm%clin(cfk%P0)%GAT, cm%clin(cfk%P0)%GRD)
+        call SCATTER(shd, iilen, ii1, ii2, cm%clin(cfk%PR)%GAT, cm%clin(cfk%PR)%GRD)
+        cm%clin(cfk%FB)%GRD = 2.0*FSVHGRD
 
     end subroutine !climate_module_interpolatedata
 

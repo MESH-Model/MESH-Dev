@@ -91,7 +91,7 @@ module process_CLASS_config
 !* TBAR: INITIAL SOIL LAYER TEMPERATURE
 !* THLQ: INITIAL SOIL LAYER LIQUID WATER CONTENT
 !* THIC: INITIAL SOIL LAYER ICE WATER CONTENT
-    real, dimension(:, :), allocatable :: TBARGAT, THLQGAT, THICGAT, &
+    real, dimension(:, :), allocatable :: &
         SANDGAT, CLAYGAT
     real, dimension(:, :), allocatable :: TBASROW, &
         CMAIROW, TACROW, QACROW, WSNOROW
@@ -104,12 +104,10 @@ module process_CLASS_config
 !* SNO: SNOWPACK ON CANOPY LAYER (CLASS.INI)
 !* TCAN: INITIAL CANOPY TEMPERATURE (CLASS.INI)
 !* GRO: VEGETATION GROWTH INDEX (CLASS.INI)
-    real, dimension(:), allocatable :: TPNDGAT, ZPNDGAT, TBASGAT, &
-        ALBSGAT, TSNOGAT, RHOSGAT, SNOGAT, TCANGAT, RCANGAT, SCANGAT, &
-        GROGAT, FRZCGAT, CMAIGAT, TACGAT, QACGAT, WSNOGAT
+    real, dimension(:), allocatable :: &
+        FRZCGAT
 
     real, dimension(:, :, :), allocatable :: TSFSROW
-    real, dimension(:, :), allocatable :: TSFSGAT
 
 !> CANOPY AND SOIL INFORMATION (CLASS):
 !> THE LENGTH OF THESE ARRAYS IS DETERMINED BY THE NUMBER
@@ -128,7 +126,7 @@ module process_CLASS_config
         PSIWROW, DLZWROW, ZBTWROW
     real, dimension(:, :), allocatable :: THPGAT, THRGAT, THMGAT, &
         BIGAT, PSISGAT, GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
-        PSIWGAT, DLZWGAT, ZBTWGAT, GFLXGAT
+        PSIWGAT, ZBTWGAT
     real, dimension(:, :), allocatable :: &
         WFSFROW, ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
         AGIDROW
@@ -155,11 +153,11 @@ module process_CLASS_config
         FCLOGRD, DLONGRD, Z0ORGRD, GGEOGRD, UVGRD, XDIFFUS, &
         RPREGRD, SPREGRD, VMODGRD
 
-    real, dimension(:), allocatable :: ZRFMGAT, ZRFHGAT, ZDMGAT, &
-        ZDHGAT, ZBLDGAT, RADJGAT, CSZGAT, &
+    real, dimension(:), allocatable :: ZDMGAT, &
+        ZDHGAT, RADJGAT, CSZGAT, &
         RPREGAT, SPREGAT, &
         PADRGAT, VPDGAT, TADPGAT, RHOAGAT, RPCPGAT, TRPCGAT, SPCPGAT, &
-        TSPCGAT, RHSIGAT, FCLOGAT, DLONGAT, Z0ORGAT, GGEOGAT, VMODGAT
+        TSPCGAT, RHSIGAT, DLONGAT, Z0ORGAT, GGEOGAT
 
 !> LAND SURFACE DIAGNOSTIC VARIABLES:
     real, dimension(:, :), allocatable :: CDHROW, CDMROW, HFSROW, &
@@ -172,16 +170,10 @@ module process_CLASS_config
         ROFSROW, ROFBROW, ROFCROW, ROFNROW, ROVGROW, WTRCROW, WTRSROW, &
         WTRGROW, DRROW, WTABROW, ILMOROW, UEROW, HBLROW, TROFROW, &
         TROOROW, TROSROW, TROBROW
-    real, dimension(:), allocatable :: CDHGAT, CDMGAT, HFSGAT, &
-        TFXGAT, QEVPGAT, QFSGAT, QFXGAT, PETGAT, GAGAT, EFGAT, GTGAT, &
-        QGGAT, ALVSGAT, ALIRGAT, FSNOGAT, SFRHGAT, SFCTGAT, SFCUGAT, &
-        SFCVGAT, SFCQGAT, FSGVGAT, FSGSGAT, FSGGGAT, FLGVGAT, FLGSGAT, &
-        FLGGGAT, HFSCGAT, HFSSGAT, HFSGGAT, HEVCGAT, HEVSGAT, HEVGGAT, &
-        HMFCGAT, HMFNGAT, HTCCGAT, HTCSGAT, PCFCGAT, PCLCGAT, PCPNGAT, &
-        PCPGGAT, QFGGAT, QFNGAT, QFCLGAT, QFCFGAT, ROFGAT, ROFOGAT, &
-        ROFSGAT, ROFBGAT, ROFCGAT, ROFNGAT, ROVGGAT, WTRCGAT, WTRSGAT, &
-        WTRGGAT, DRGAT, WTABGAT, ILMOGAT, UEGAT, HBLGAT, QLWOGAT, FTEMP, &
-        FVAP, RIB, TROFGAT, TROOGAT, TROSGAT, TROBGAT
+    real, dimension(:), allocatable :: &
+        SFRHGAT, &
+        QLWOGAT, FTEMP, &
+        FVAP, RIB
     real, dimension(:), allocatable :: CDHGRD, CDMGRD, HFSGRD, &
         TFXGRD, QEVPGRD, QFSGRD, QFXGRD, PETGRD, GAGRD, EFGRD, GTGRD, &
         QGGRD, TSFGRD, ALVSGRD, ALIRGRD, FSNOGRD, SFCTGRD, SFCUGRD, &
@@ -194,7 +186,6 @@ module process_CLASS_config
 
     real, dimension(:, :, :), allocatable :: HMFGROW, HTCROW, QFCROW, &
         GFLXROW
-    real, dimension(:, :), allocatable :: HMFGGAT, HTCGAT, QFCGAT
     real, dimension(:, :), allocatable :: HMFGGRD, HTCGRD, QFCGRD, GFLXGRD
     integer, dimension(:, :, :, :), allocatable :: ITCTROW
     integer, dimension(:, :, :), allocatable :: ITCTGAT
@@ -225,7 +216,7 @@ module process_CLASS_config
         TBARGS, THLIQC, THLIQG, THICEC, THICEG, FROOT, HCPC, HCPG, &
         TCTOPC, TCBOTC, TCTOPG, TCBOTG
 
-    real, dimension(:), allocatable :: FC, FG, FCS, FGS, RBCOEF, &
+    real, dimension(:), allocatable :: RBCOEF, &
         ZSNOW, FSVF, FSVFS, ALVSCN, ALIRCN, ALVSG, &
         ALIRG, ALVSCS, ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, ALVSSC, &
         ALIRSC, TRVSCN, TRIRCN, TRVSCS, TRIRCS, RC, RCS, FRAINC, &
@@ -421,25 +412,33 @@ module process_CLASS_config
 
     contains
 
-    subroutine RUNCLASS_ini(shd, fls, ts, ic, cm)
+    subroutine RUNCLASS_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
         use module_mpi_flags
         use module_mpi_shared_variables
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_files_variabletypes
+        use model_files_variables
         use model_dates
         use climate_forcing
-        use MESH_INPUT_MODULE, only: GetIndices
+        use model_output_variabletypes
+        use MODEL_OUTPUT
 
         !> For CLASS output.
         use process_CLASS_save_output
+        use MESH_INPUT_MODULE, only: GetIndices
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
         type(iter_counter) :: ic
         type(clim_info) :: cm
+        type(water_balance) :: wb
+        type(energy_balance) :: eb
+        type(soil_statevars) :: sp
+        type(streamflow_hydrograph) :: stfl
+        type(reservoir_release) :: rrls
 
         integer NA, NTYPE, NML, IGND, m, j, i, ierr
 
@@ -659,20 +658,13 @@ module process_CLASS_config
 1118 format(3x, a, ': ', i6)
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
-        allocate(TBARGAT(NML, IGND), &
-                 THLQGAT(NML, IGND), THICGAT(NML, IGND), &
-                 SANDGAT(NML, IGND), CLAYGAT(NML, IGND), &
+        allocate(SANDGAT(NML, IGND), CLAYGAT(NML, IGND), &
                  TBASROW(NA, NTYPE), &
                  CMAIROW(NA, NTYPE), TACROW(NA, NTYPE), &
                  QACROW(NA, NTYPE), WSNOROW(NA, NTYPE), &
-                 TPNDGAT(NML), ZPNDGAT(NML), TBASGAT(NML), &
-                 ALBSGAT(NML), TSNOGAT(NML), RHOSGAT(NML), &
-                 SNOGAT(NML), TCANGAT(NML), RCANGAT(NML), &
-                 SCANGAT(NML), &
-                 GROGAT(NML), FRZCGAT(NML), CMAIGAT(NML), TACGAT(NML), &
-                 QACGAT(NML), WSNOGAT(NML), &
+                 FRZCGAT(NML), &
                  TSFSROW(NA, NTYPE, 4), &
-                 TSFSGAT(NML, 4), stat = ierr)
+                 stat = ierr)
 
 !> PBSM PROGNOSTIC VARIABLES
         allocate(DrySnowROW(NA, NTYPE), SnowAgeROW(NA, NTYPE), &
@@ -717,8 +709,8 @@ module process_CLASS_config
                  GRKSGAT(NML, IGND), THRAGAT(NML, IGND), &
                  HCPSGAT(NML, IGND), TCSGAT(NML, IGND), &
                  THFCGAT(NML, IGND), &
-                 PSIWGAT(NML, IGND), DLZWGAT(NML, IGND), &
-                 ZBTWGAT(NML, IGND), GFLXGAT(NML, IGND), &
+                 PSIWGAT(NML, IGND), &
+                 ZBTWGAT(NML, IGND), &
                  WFSFROW(NA, NTYPE),  ALGWROW(NA, NTYPE), &
                  ALGDROW(NA, NTYPE), ASVDROW(NA, NTYPE), ASIDROW(NA, NTYPE), &
                  AGVDROW(NA, NTYPE), &
@@ -766,16 +758,16 @@ module process_CLASS_config
                  FCLOGRD(NA), DLONGRD(NA), Z0ORGRD(NA), GGEOGRD(NA), UVGRD(NA), &
                  XDIFFUS(NA), &
                  RPREGRD(NA), SPREGRD(NA), VMODGRD(NA), &
-                 ZRFMGAT(NML), ZRFHGAT(NML), ZDMGAT(NML), &
-                 ZDHGAT(NML), ZBLDGAT(NML), &
+                 ZDMGAT(NML), &
+                 ZDHGAT(NML), &
                  RADJGAT(NML), CSZGAT(NML), &
                  RPREGAT(NML), SPREGAT(NML), &
                  PADRGAT(NML), VPDGAT(NML), &
                  TADPGAT(NML), RHOAGAT(NML), RPCPGAT(NML), &
                  TRPCGAT(NML), SPCPGAT(NML), TSPCGAT(NML), &
                  RHSIGAT(NML), &
-                 FCLOGAT(NML), DLONGAT(NML), Z0ORGAT(NML), &
-                 GGEOGAT(NML), VMODGAT(NML), stat = ierr)
+                 DLONGAT(NML), Z0ORGAT(NML), &
+                 GGEOGAT(NML), stat = ierr)
         if (ierr /= 0) then
             print 1114, 'atmospheric and grid-cst.'
             print 1118, 'Grid squares', NA
@@ -812,32 +804,9 @@ module process_CLASS_config
                  ILMOROW(NA, NTYPE), UEROW(NA, NTYPE), HBLROW(NA, NTYPE), &
                  TROFROW(NA, NTYPE), &
                  TROOROW(NA, NTYPE), TROSROW(NA, NTYPE), TROBROW(NA, NTYPE), &
-                 CDHGAT(NML), CDMGAT(NML), HFSGAT(NML), &
-                 TFXGAT(NML), QEVPGAT(NML), QFSGAT(NML), &
-                 QFXGAT(NML), PETGAT(NML), GAGAT(NML), &
-                 EFGAT(NML), GTGAT(NML), &
-                 QGGAT(NML), ALVSGAT(NML), &
-                 ALIRGAT(NML), FSNOGAT(NML), SFRHGAT(NML), SFCTGAT(NML), &
-                 SFCUGAT(NML), &
-                 SFCVGAT(NML), SFCQGAT(NML), FSGVGAT(NML), &
-                 FSGSGAT(NML), FSGGGAT(NML), FLGVGAT(NML), &
-                 FLGSGAT(NML), &
-                 FLGGGAT(NML), HFSCGAT(NML), HFSSGAT(NML), &
-                 HFSGGAT(NML), HEVCGAT(NML), HEVSGAT(NML), &
-                 HEVGGAT(NML), &
-                 HMFCGAT(NML), HMFNGAT(NML), HTCCGAT(NML), &
-                 HTCSGAT(NML), PCFCGAT(NML), PCLCGAT(NML), &
-                 PCPNGAT(NML), &
-                 PCPGGAT(NML), QFGGAT(NML), QFNGAT(NML), &
-                 QFCLGAT(NML), QFCFGAT(NML), ROFGAT(NML), &
-                 ROFOGAT(NML), &
-                 ROFSGAT(NML), ROFBGAT(NML), ROFCGAT(NML), &
-                 ROFNGAT(NML), ROVGGAT(NML), WTRCGAT(NML), &
-                 WTRSGAT(NML), &
-                 WTRGGAT(NML), DRGAT(NML), WTABGAT(NML), &
-                 ILMOGAT(NML), UEGAT(NML), HBLGAT(NML), QLWOGAT(NML), &
-                 FTEMP(NML),   FVAP(NML),  RIB(NML), TROFGAT(NML), &
-                 TROOGAT(NML), TROSGAT(NML), TROBGAT(NML), &
+                 SFRHGAT(NML), &
+                 QLWOGAT(NML), &
+                 FTEMP(NML), FVAP(NML), RIB(NML), &
                  CDHGRD(NA), CDMGRD(NA), HFSGRD(NA), &
                  TFXGRD(NA), QEVPGRD(NA), QFSGRD(NA), QFXGRD(NA), PETGRD(NA), &
                  GAGRD(NA), EFGRD(NA), GTGRD(NA), &
@@ -857,8 +826,6 @@ module process_CLASS_config
                  HBLGRD(NA), &
                  HMFGROW(NA, NTYPE, IGND), HTCROW(NA, NTYPE, IGND), &
                  QFCROW(NA, NTYPE, IGND), GFLXROW(NA, NTYPE, IGND), &
-                 HMFGGAT(NML, IGND), HTCGAT(NML, IGND), &
-                 QFCGAT(NML, IGND), &
                  HMFGGRD(NA, IGND), HTCGRD(NA, IGND), QFCGRD(NA, IGND), &
                  GFLXGRD(NA, IGND), &
                  ITCTROW(NA, NTYPE, 6, 50), &
@@ -881,8 +848,7 @@ module process_CLASS_config
                  HCPC(NML, IGND), HCPG(NML, IGND), &
                  TCTOPC(NML, IGND), TCBOTC(NML, IGND), &
                  TCTOPG(NML, IGND), TCBOTG(NML, IGND), &
-                 FC(NML), FG(NML), FCS(NML), &
-                 FGS(NML), RBCOEF(NML), &
+                 RBCOEF(NML), &
                  ZSNOW(NML), &
                  FSVF(NML), FSVFS(NML), ALVSCN(NML), &
                  ALIRCN(NML), ALVSG(NML), &
@@ -984,9 +950,10 @@ module process_CLASS_config
                      cf%UL(NML), cf%VL(NML), cf%VMOD(NML), cf%ZBLD(NML), cf%ZRFH(NML), cf%ZRFM(NML))
 
             allocate(cpv%ALBS(NML), cpv%CMAI(NML), cpv%GRO(NML), cpv%QAC(NML), cpv%RCAN(NML), cpv%RHOS(NML), cpv%SNCAN(NML), &
-                     cpv%SNO(NML), cpv%TAC(NML), cpv%TBAS(NML), cpv%TCAN(NML), cpv%TPND(NML), cpv%TSFS(NML), cpv%TSNO(NML), &
-                     cpv%WSNO(NML), cpv%ZPND(NML))
-            allocate(cpv%TBAR(NML, IGND), cpv%THIC(NML, IGND), cpv%THLQ(NML, IGND))
+                     cpv%SNO(NML), cpv%TAC(NML), cpv%TBAS(NML), cpv%TCAN(NML), cpv%TPND(NML), cpv%TSNO(NML), cpv%WSNO(NML), &
+                     cpv%ZPND(NML))
+            allocate(cpv%DELZW(NML, IGND), cpv%TBAR(NML, IGND), cpv%THIC(NML, IGND), cpv%THLQ(NML, IGND))
+            allocate(cpv%TSFS(NML, 4))
 
 !            ISUM, ITCT
             allocate(cdv%ALIR(NML), cdv%ALVS(NML), cdv%CDH(NML), cdv%CDM(NML), cdv%DR(NML), cdv%EF(NML), cdv%FCS(NML), &
@@ -1000,6 +967,13 @@ module process_CLASS_config
                      cdv%TFX(NML), cdv%TROB(NML), cdv%TROF(NML), cdv%TROO(NML), cdv%TROS(NML), cdv%TSF(NML), cdv%UE(NML), &
                      cdv%WTAB(NML), cdv%WTRC(NML), cdv%WTRG(NML), cdv%WTRS(NML))
             allocate(cdv%GFLX(NML, IGND), cdv%HMFG(NML, IGND), cdv%HTC(NML, IGND), cdv%QFC(NML, IGND))
+
+            print *, 'Found these output locations:'
+            print *, 'Output Directory, grid number, land class number'
+            do i = 1, WF_NUM_POINTS
+                print *, op%DIR_OUT(i), op%N_OUT(i), op%II_OUT(i)
+            end do
+            print *
 
             call CLASSOUT_open_files(shd)
         end if

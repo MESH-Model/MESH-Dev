@@ -350,9 +350,9 @@ module process_CLASS_variables
     type CLASS_prognostic_variables
         real, dimension(:), allocatable :: &
             ALBS, CMAI, GRO, QAC, RCAN, RHOS, SNCAN, SNO, TAC, TBAS, &
-            TCAN, TPND, TSFS, TSNO, WSNO, ZPND
+            TCAN, TPND, TSNO, WSNO, ZPND
         real, dimension(:, :), allocatable :: &
-            TBAR, THIC, THLQ
+            DELZW, TBAR, THIC, THLQ, TSFS
     end type
 
     type CLASS_diagnostic_variables

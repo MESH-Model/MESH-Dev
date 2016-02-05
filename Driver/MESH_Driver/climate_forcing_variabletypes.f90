@@ -34,11 +34,14 @@ module climate_forcing_variabletypes
         !> elemental computation in the model (e.g., with CLASS).
         real, dimension(:, :, :), allocatable :: climv
 
-        !* climvGrd: Values for forcing data. (1: Grid)
+        !* GRD: Values for forcing data. (1: Grid)
         !> Values are averaged to the grid-level for grid-based processing and certain output.
         !> Gridded values aren't used to drive the model, as they are incompatible with
         !> data input at the GRU- (e.g., in one of the CSV formats) or GAT-level.
-        real, dimension(:), allocatable :: climvGrd
+        real, dimension(:), allocatable :: GRD
+
+        !* GAT: Values for forcing data. (1: Land Element)
+        real, dimension(:), allocatable :: GAT
 
         !* alpha: Uniform weight to assign when there are multiple series of data. (1: Series).
 !        real, dimension(:), allocatable :: alpha
