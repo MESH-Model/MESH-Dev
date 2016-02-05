@@ -343,8 +343,8 @@ module process_CLASS_variables
 
     type CLASS_forcing_input
         real, dimension(:), allocatable :: &
-            FCLO, FDL, FSIH, FSVH, PRE, PRES, QA, TA, UL, VL, VMOD, &
-            ZBLD, ZRFH, ZRFM
+            FDL, FSIH, FSVH, PRE, PRES, QA, TA, UL, VL, VMOD
+!            FCLO, ZBLD, ZRFH, ZRFM
     end type
 
     type CLASS_prognostic_variables
@@ -352,7 +352,43 @@ module process_CLASS_variables
             ALBS, CMAI, GRO, QAC, RCAN, RHOS, SNCAN, SNO, TAC, TBAS, &
             TCAN, TPND, TSNO, WSNO, ZPND
         real, dimension(:, :), allocatable :: &
-            DELZW, TBAR, THIC, THLQ, TSFS
+            TBAR, THIC, THLQ, TSFS
+    end type
+
+    type CLASS_surface_variables
+
+!WATROF GRKF
+!WATROF WFCI
+!WATROF WFSF
+!WATROF XSLP
+
+        !> Dimension: NML
+        real, dimension(:), allocatable :: &
+            AGID, AGVD, ALGD, ALGW, ASID, ASVD, DRN, FARE, GRKF, MID, &
+            SDEP, WFCI, WFSF, XSLP, ZPLG, ZPLS, ZSNL
+
+        !> Dimension: NML, IGND
+        real, dimension(:, :), allocatable :: &
+            BI, CLAY, DELZW, GRKS, HCPS, IORG, ISND, ORGM, PSIS, PSIW, &
+            SAND, TCS, THFC, THM, THP, THR, THRA, ZBTW
+
+        !> Dimension: NML, ICAN
+        real, dimension(:, :), allocatable :: &
+            ACID, ACVD, CMAS, HGTD, PAID, PAMN, PAMX, PSGA, PSGB, &
+            QA50, ROOT, RSMN, VPDA, VPDB
+
+        !> Dimension: NML, ICP1
+        real, dimension(:, :), allocatable :: &
+            ALIC, ALVC, FCAN, LNZ0
+    end type
+
+    type CLASS_atmospheric_variables
+        integer GC
+        real, dimension(:), allocatable :: &
+            CSZ, DLON, FCLO, GGEO, PADR, RADJ, RHOA, RHSI, RPCP, RPRE, &
+            SPCP, SPRE, TADP, TRPC, TSPC, VPD, Z0OR, ZBLD, ZDH, ZDM, &
+            ZRFH, ZRFM
+!            FDL, FSIH, FSVH, PRE, PRES, QA, TA, UL, UV, VL
     end type
 
     type CLASS_diagnostic_variables
@@ -442,8 +478,10 @@ module process_CLASS_variables
 !    data VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
 !        EXTFLG/0/, IWFICE/3/, ERRFLG/1/
 
-    type(CLASS_forcing_input), save :: cf
+    type(CLASS_forcing_input), save :: cfi
     type(CLASS_prognostic_variables), save :: cpv
+    type(CLASS_surface_variables), save :: csfv
+    type(CLASS_atmospheric_variables), save :: catv
     type(CLASS_diagnostic_variables), save :: cdv
 
 end module

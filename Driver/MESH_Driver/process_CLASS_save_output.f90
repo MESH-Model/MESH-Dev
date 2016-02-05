@@ -286,13 +286,13 @@ module process_CLASS_save_output
 
                 !> Update variables.
                 k = op%K_OUT(i)
-                if (2.0*cf%FSVH(k) > 0.0) then
+                if (2.0*cfi%FSVH(k) > 0.0) then
                     ALTOT = (cdv%ALVS(k) + cdv%ALIR(k))/2.0
                 else
                     ALTOT = 0.0
                 end if
-                FSSTAR = 2.0*cf%FSVH(k)*(1.0 - ALTOT)
-                FLSTAR = cf%FDL(k) - SBC*cdv%GTE(k)**4
+                FSSTAR = 2.0*cfi%FSVH(k)*(1.0 - ALTOT)
+                FLSTAR = cfi%FDL(k) - SBC*cdv%GTE(k)**4
                 QH = cdv%HFS(k)
                 QE = cdv%QEVP(k)
                 BEG = FSSTAR + FLSTAR - QH - QE
@@ -340,9 +340,9 @@ module process_CLASS_save_output
                     cpv%RCAN(k), cpv%SNCAN(k), TSN, ZSN
                 write(150 + i*10 + 6, &
                       "(i2,',', i3,',', i5,',', 2(f10.2,','), f12.6,',', f10.2,',', f8.2,',', f10.2,',', f15.9,',')") &
-                    HOUR_NOW, MINS_NOW, JDAY_NOW, 2.0*cf%FSVH(k), cf%FDL(k), &
-                    cf%PRE(k), cf%TA(k) - TFREZ, cf%VMOD(k), cf%PRES(k), &
-                    cf%QA(k)
+                    HOUR_NOW, MINS_NOW, JDAY_NOW, 2.0*cfi%FSVH(k), cfi%FDL(k), &
+                    cfi%PRE(k), cfi%TA(k) - TFREZ, cfi%VMOD(k), cfi%PRES(k), &
+                    cfi%QA(k)
                 write(150 + i*10 + 7, "(999(e11.4,','))") &
                     cdv%TROF(k), cdv%TROO(k), cdv%TROS(k), &
                     cdv%TROB(k), cdv%ROF(k), cdv%ROFO(k), &
@@ -365,11 +365,11 @@ module process_CLASS_save_output
                     cdv%ROFO(k), cdv%ROF(k), cdv%WTRC(k), &
                     cdv%WTRS(k), cdv%WTRG(k)
                 write(150 + i*10 + 10, "(i2,',', i3,',', i5,',', i6,',', 999(f14.6,','))") &
-                    HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, cf%PRE(k)*DELT, cdv%QFS(k)*DELT, &
+                    HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, cfi%PRE(k)*DELT, cdv%QFS(k)*DELT, &
                     cdv%ROF(k)*DELT, cdv%ROFO(k)*DELT, cdv%ROFS(k)*DELT, cdv%ROFB(k)*DELT, &
                     cpv%SNCAN(k), cpv%RCAN(k), cpv%SNO(k), cpv%WSNO(k), &
-                    cpv%ZPND(k)*RHOW, (cpv%THLQ(k, j)*RHOW*cpv%DELZW(k, j), j = 1, IGND), &
-                    (cpv%THIC(k, j)*RHOICE*cpv%DELZW(k, j), j = 1, IGND)
+                    cpv%ZPND(k)*RHOW, (cpv%THLQ(k, j)*RHOW*csfv%DELZW(k, j), j = 1, IGND), &
+                    (cpv%THIC(k, j)*RHOICE*csfv%DELZW(k, j), j = 1, IGND)
 
                 !> Calculate accumulated grid variables.
                 do k = il1, il2
@@ -378,7 +378,7 @@ module process_CLASS_save_output
                         FARE = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%FRAC(shd%lc%ILMOS(k))
                         LCC = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
 
-                        co%PREACC(i) = co%PREACC(i) + cf%PRE(k)*FARE*DELT
+                        co%PREACC(i) = co%PREACC(i) + cfi%PRE(k)*FARE*DELT
                         co%GTACC(i) = co%GTACC(i) + cdv%GTE(k)*FARE
                         co%QEVPACC(i) = co%QEVPACC(i) + cdv%QEVP(k)*FARE
                         co%EVAPACC(i) = co%EVAPACC(i) + cdv%QFS(k)*FARE*DELT
@@ -396,8 +396,8 @@ module process_CLASS_save_output
                             co%THALACC(i, j) = co%THALACC(i, j) + (cpv%THLQ(k, j) + cpv%THIC(k, j))*FARE
                             co%GFLXACC(i, j) = co%GFLXACC(i, j) + cdv%GFLX(k, j)*FARE
                         end do
-                        co%ALVSACC(i) = co%ALVSACC(i) + cdv%ALVS(k)*cf%FSVH(k)*FARE
-                        co%ALIRACC(i) = co%ALIRACC(i) + cdv%ALIR(k)*cf%FSIH(k)*FARE
+                        co%ALVSACC(i) = co%ALVSACC(i) + cdv%ALVS(k)*cfi%FSVH(k)*FARE
+                        co%ALIRACC(i) = co%ALIRACC(i) + cdv%ALIR(k)*cfi%FSIH(k)*FARE
                         if (cpv%SNO(k) > 0.0) then
                             co%RHOSACC(i) = co%RHOSACC(i) + cpv%RHOS(k)*FARE
                             co%TSNOACC(i) = co%TSNOACC(i) + cpv%TSNO(k)*FARE
@@ -412,13 +412,13 @@ module process_CLASS_save_output
                         co%RCANACC(i) = co%RCANACC(i) + cpv%RCAN(k)*FARE
                         co%SCANACC(i) = co%SCANACC(i) + cpv%SNCAN(k)*FARE
                         co%GROACC(i) = co%GROACC(i) + cpv%GRO(k)*FARE
-                        co%FSINACC(i) = co%FSINACC(i) + 2.0*cf%FSVH(k)*FARE
-                        co%FLINACC(i) = co%FLINACC(i) + cf%FDL(k)*FARE
+                        co%FSINACC(i) = co%FSINACC(i) + 2.0*cfi%FSVH(k)*FARE
+                        co%FLINACC(i) = co%FLINACC(i) + cfi%FDL(k)*FARE
                         co%FLUTACC(i) = co%FLUTACC(i) + SBC*cdv%GTE(k)**4*FARE
-                        co%TAACC(i) = co%TAACC(i) + cf%TA(k)*FARE
-                        co%UVACC(i) = co%UVACC(i) + cf%VMOD(k)*FARE
-                        co%PRESACC(i) = co%PRESACC(i) + cf%PRES(k)*FARE
-                        co%QAACC(i) = co%QAACC(i) + cf%QA(k)*FARE
+                        co%TAACC(i) = co%TAACC(i) + cfi%TA(k)*FARE
+                        co%UVACC(i) = co%UVACC(i) + cfi%VMOD(k)*FARE
+                        co%PRESACC(i) = co%PRESACC(i) + cfi%PRES(k)*FARE
+                        co%QAACC(i) = co%QAACC(i) + cfi%QA(k)*FARE
                     end if
                 end do
 
