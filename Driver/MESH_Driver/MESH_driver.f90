@@ -148,11 +148,7 @@ program RUNMESH
     !> Local variables.
     integer NA, NTYPE, NML, IGND, ik, jk
 
-!> DAN  USE RTE SUBROUTINES FOR READING EVENT FILE AND SHD FILE, AND
-!> DAN  WRITING R2C-FORMAT OUTPUT FILES      
 !>  INTEGER CONSTANTS.
-!INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
-!    integer, parameter :: ICAN = 4, ICP1 = ICAN + 1, ICTEM = 1 !Number of CTEM vegetation categories (set to 1 if not using CTEM)
     integer, parameter :: M_C = 5
 
 !INTEGER IGND
@@ -182,20 +178,6 @@ program RUNMESH
 !* WF_R2: OPTIMIZED RIVER ROUGHNESS FACTOR
     real WF_R1(M_C), WF_R2(M_C)
 
-! Saul=======
-!* HOURLY_START_*: Start day/year for recording hourly averaged data
-!* HOURLY_STOP_*: Stop day/year for recording hourly averaged data
-!* DAILY_START_*: Start day/year for recording daily averaged data
-!* DAILY_STOP_*: Stop day/year for recording daily averaged data
-!    integer HOURLY_START_DAY, HOURLY_STOP_DAY, DAILY_START_DAY, &
-!        DAILY_STOP_DAY
-!    integer HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
-!        DAILY_STOP_YEAR
-
-!> LAND SURFACE DIAGNOSTIC VARIABLES.
-
-!    real, dimension(:), allocatable :: SNOGRD
-
 !>==========
 !>
 !> START ENSIM == FOR ENSIM == FOR ENSIM == FOR ENSIM ==
@@ -206,18 +188,6 @@ program RUNMESH
     integer(kind = 4) CURREC
 !> End of ENSIM Changes 
 !>== ENSIM == ENSIM == ENSIM == ENSIM == ENSIM ==
-
-!>  CONSTANTS AND TEMPORARY VARIABLES.
-!    real DEGLAT, DEGLON, FSDOWN1, FSDOWN2, FSDOWN3, RDAY, &
-!        DECL, HOUR, COSZ, &
-!        ALTOT, FSSTAR, FLSTAR, QH, QE, BEG, SNOMLT, ZSN, TCN, TSN, TPN, GTOUT
-!    integer JLAT
-
-!> *************************************************************
-!> For reading in options information from MESH_run_options.ini
-!> *************************************************************
-!    character(20) IRONAME
-!    integer IROVAL
 
 !> *******************************************************************
 !> For reading in the last information in mesh_paramters_hydrology.ini
@@ -253,9 +223,6 @@ program RUNMESH
 
 !>     * CONSTANTS (PARAMETER DEFINITIONS):
 
-!* ICAN: MAXIMUM ALLOWABLE NUMBER OF LAND COVER TYPES
-!* ICP1: MAXIMUM ALLOWABLE NUMBER OF LAND COVER TYPES INCLUDING
-!*       URBAN AREAS
 !* M_X: MAXIMUM ALLOWABLE NUMBER OF GRID COLUMNS IN SHD FILE
 !* M_Y: MAXIMUM ALLOWABLE NUMBER OF GRID ROWS IN SHD FILE
 !* M_S: MAXIMUM ALLOWABLE NUMBER OF STREAMFLOW GAUGES
@@ -263,10 +230,9 @@ program RUNMESH
 !* M_C: MAXIMUM ALLOWABLE NUMBER OF RIVER CHANNELS
 !* M_G: MAXIMUM ALLOWABLE NUMBER OF GRID OUTPUTS
 
-!> DAN  * VERSION: MESH_DRIVER VERSION
-!> DAN  * RELEASE: PROGRAM RELEASE VERSIONS
+!* VERSION: MESH_DRIVER VERSION
+!* RELEASE: PROGRAM RELEASE VERSIONS
 !> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-!> ANDY *    INTEGER, PARAMETER :: M_G = 5
     character(24) :: VERSION = 'TRUNK (918)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
@@ -304,7 +270,6 @@ program RUNMESH
     integer :: N = 0, NCOUNT, NSUM
     integer i, j, k, l, m, &
         INDEPPAR, DEPPAR, PAS, NSUM_TOTAL
-!  CONFLAGS, OPTFLAGS, INDEPPAR, DEPPAR, PAS
     logical OPN
 
     integer DRIVERTIMESTEP
@@ -314,55 +279,6 @@ program RUNMESH
 !> GRID OUTPUT POINTS
 !* BNAM: TEMPORARY HOLD FOR OUTPUT DIRECTORY (12 CHARACTER STRING)
 !    character(12) BNAM
-!* WF_NUM_POINTS: NUMBER OF GRID OUTPUTS
-!* I_OUT: OUTPUT GRID SQUARE TEMPORARY STORE
-!    integer WF_NUM_POINTS, I_OUT
-!>
-!>*******************************************************************
-!>
-!>*******************************************************************
-!>
-!> LIMITING TIME STEPS (CLASS.INI):
-!> DAN  NOT USED RIGHT NOW.  CONSIDER USING THEM TO LIMIT RUN INSTEAD
-!> DAN  OF END OF FORCING.BIN FILE (IS ESPECIALLY USEFUL WHEN DEBUGGING).
-!* JOUT1: DAILY-AVERAGED OUTPUT START DAY (JULIAN FROM YEAR START)
-!* JOUT2: DAILY-AVERAGED OUTPUT STOP DAY (JULIAN FROM YEAR START)
-!* JAV1: DAILY-AVERAGED OUTPUT START YEAR
-!* JAV2: DAILY-AVERAGED OUTPUT STOP YEAR
-!* KOUT1: YEARLY-AVERAGED OUTPUT START DAY (JULIAN FROM YEAR START)
-!* KOUT2: YEARLY-AVERAGED OUTPUT STOP DAY (JULIAN FROM YEAR START)
-!* KAV1: YEARLY-AVERAGED OUTPUT START YEAR
-!* KAV2: YEARLY-AVERAGED OUTPUT STOP YEAR
-!    integer JOUT1, JOUT2, JAV1, JAV2, KOUT1, KOUT2, KAV1, KAV2
-!>
-!>*******************************************************************
-!>
-!> CLASS CONTROL FLAGS:
-!> DAN  CONSIDER INCLUDING AS CONTROL FLAGS IN RUN_OPTIONS.INI FILE SO
-!> DAN  THAT THEY ARE NO LONGER HARD-CODED.
-!* ALL: DESCRIPTIONS ARE WRITTEN WHERE RUN_OPTIONS.INI IS READ
-!    integer IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
-!        IALS, IALG, ITG, ITC, ITCG
-
-!> GRID SQUARE COUNTS:
-!* NLTEST: NUMBER OF GRID SQUARES (CLASS.INI)
-!* NMTEST: NUMBER OF GRUS (CLASS.INI)
-!* IHOUR: CURRENT HOUR OF MET. FORCING DATA (0 TO 23) (CLASS.INI)
-!* IMIN: CURRENT MINUTE OF MET. FORCING DATA (0 OR 30) (CLASS.INI)
-!* IDAY: CURRENT DAY OF MET. FORCING DATA (JULIAN FROM YEAR START)
-!*       (CLASS.INI)
-!* IYEAR: CURRENT YEAR OF MET. FORCING DATA (CLASS.INI)
-!    integer NLTEST, NMTEST
-!    integer NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI
-
-!> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
-!* TBAR: INITIAL SOIL LAYER TEMPERATURE
-!* THLQ: INITIAL SOIL LAYER LIQUID WATER CONTENT
-!* THIC: INITIAL SOIL LAYER ICE WATER CONTENT
-!    real, dimension(:, :), allocatable :: cpv%TBAR, cpv%THLQ, cpv%THIC, &
-!        SANDGAT, CLAYGAT
-!    real, dimension(:, :), allocatable :: TBASROW, &
-!        CMAIROW, TACROW, QACROW, WSNOROW
 
 !>PBSM VARIABLES (GRU)
 !* DrySnow: 0 = air temperature above 0 degC
@@ -374,51 +290,12 @@ program RUNMESH
 !        TSNOdsGAT, RHOSdsGAT, DriftGAT, SublGAT, DepositionGAT
 !    real, dimension(:, :), allocatable :: DrySnowROW, SnowAgeROW, &
 !        TSNOdsROW, RHOSdsROW, DriftROW, SublROW, DepositionROW
+
 !>CLASS SUBAREA VARIABLES NEEDED FOR PBSM
 !    real, dimension(:), allocatable :: ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
 !        HCPSCS, HCPSGS, HCPSC, HCPSG, TSNOWC, TSNOWG, &
 !        RHOSC, RHOSG, XSNOWC, XSNOWG, XSNOCS, XSNOGS
-!* TPND: INITIAL PONDING TEMPERATURE (CLASS.INI)
-!* ZPND: INITIAL PONDING DEPTH (CLASS.INI)
-!* ALBS: ALBEDO OF SNOWPACK (CLASS.INI)
-!* TSNO: INITIAL SNOWPACK TEMPERATURE (CLASS.INI)
-!* RHOS: DENSITY OF SNOWPACK (CLASS.INI)
-!* SNO: SNOWPACK ON CANOPY LAYER (CLASS.INI)
-!* TCAN: INITIAL CANOPY TEMPERATURE (CLASS.INI)
-!* GRO: VEGETATION GROWTH INDEX (CLASS.INI)
-!    real, dimension(:), allocatable :: cpv%TPND, cpv%ZPND, cpv%TBAS, &
-!        cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
-!        cpv%GRO, FRZCGAT, cpv%CMAI, cpv%TAC, cpv%QAC, cpv%WSNO
-     
-!    real, dimension(:, :, :), allocatable :: TSFSROW
-!    real, dimension(:, :), allocatable :: cpv%TSFS
-!>
-!>*******************************************************************
-!>
-!> CANOPY AND SOIL INFORMATION (CLASS):
-!> THE LENGTH OF THESE ARRAYS IS DETERMINED BY THE NUMBER
-!> OF SOIL LAYERS (3) AND THE NUMBER OF BROAD VEGETATION
-!> CATEGORIES (4, OR 5 INCLUDING URBAN AREAS).
-!* ALL: DEFINITIONS IN CLASS DOCUMENTATION (CLASS.INI)
-!    real, dimension(:, :), allocatable :: FCANGAT, LNZ0GAT, &
-!        ALVCGAT, ALICGAT
-!    real, dimension(:, :, :), allocatable :: &
-!        PAIDROW, HGTDROW, ACVDROW, ACIDROW
-!    real, dimension(:, :), allocatable :: PAMXGAT, PAMNGAT, &
-!        CMASGAT, ROOTGAT, RSMNGAT, QA50GAT, VPDAGAT, VPDBGAT, PSGAGAT, &
-!        PSGBGAT, PAIDGAT, HGTDGAT, ACVDGAT, ACIDGAT
-!    real, dimension(:, :, :), allocatable :: THPROW, THRROW, THMROW, &
-!        BIROW, PSISROW, GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
-!        PSIWROW, DLZWROW, ZBTWROW
-!    real, dimension(:, :), allocatable :: THPGAT, THRGAT, THMGAT, &
-!        BIGAT, PSISGAT, GRKSGAT, THRAGAT, HCPSGAT, TCSGAT, THFCGAT, &
-!        PSIWGAT, cpv%DELZW, ZBTWGAT, cdv%GFLX
-!    real, dimension(:, :), allocatable :: &
-!        WFSFROW, ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
-!        AGIDROW
-!    real, dimension(:), allocatable :: DRNGAT, XSLPGAT, XDGAT, &
-!        WFSFGAT, KSGAT, ALGWGAT, ALGDGAT, ASVDGAT, ASIDGAT, AGVDGAT, &
-!        AGIDGAT, ZSNLGAT, ZPLGGAT, ZPLSGAT, SDEPGAT, FAREGAT
+
 !* PBSM parameters
 !  fetch: fetch distance (m)
 !  Ht: vegetation height (m)
@@ -428,99 +305,17 @@ program RUNMESH
 !    real, dimension(:), allocatable :: &
 !        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT
 
-!* SAND: PERCENT-CONTENT OF SAND IN SOIL LAYER (CLASS.INI)
-!* CLAY: PERCENT-CONTENT OF CLAY IN SOIL LAYER (CLASS.INI)
-!* ORGM: PERCENT-CONTENT OF ORGANIC MATTER IN SOIL LAYER (CLASS.INI)
-
-!* MIDROW: DEFINITION IN CLASS DOCUMENTATION (CLASS.INI)
-
-!    integer, dimension(:, :, :), allocatable :: ISNDROW, IORG
-!    integer, dimension(:, :), allocatable :: ISNDGAT
-!    integer, dimension(:,:), allocatable :: IGDRROW
-!    integer, dimension(:), allocatable :: IGDRGAT
-!>
-!>*******************************************************************
-!>
 !> WATROF FLAGS AND VARIABLES:
 !* VICEFLG: VERTICAL ICE FLAG OR LIMIT
 !* HICEFLG: HORIZONTAL ICE FLAG OR LIMIT
 !    integer LZFFLG, EXTFLG, IWFICE, ERRFLG, IWFOFLW
 !    real VICEFLG, PSI_LIMIT, HICEFLG
-!* DD (DDEN): DRAINAGE DENSITY (CLASS.INI)
-!* MANN (WFSF): MANNING'S n (CLASS.INI)
-!    real, dimension(:), allocatable :: DDGAT, MANNGAT
 !    real, dimension(:, :), allocatable :: BTC, BCAP, DCOEFF, BFCAP, &
 !        BFCOEFF, BFMIN, BQMAX
-!>
-!>*******************************************************************
-!>
-!> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
-!    real, dimension(:), allocatable :: ZDMGRD, &
-!        ZDHGRD, RADJGRD, CSZGRD, &
-!        PADRGRD, VPDGRD, &
-!        TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, SPCPGRD, TSPCGRD, RHSIGRD, &
-!        FCLOGRD, DLONGRD, Z0ORGRD, GGEOGRD, UVGRD, XDIFFUS, &
-!        RPREGRD, SPREGRD, VMODGRD
 
 !> MAM - logical variables to control simulation runs:
     logical :: ENDDATE = .false., ENDDATA = .false.
 
-!    real, dimension(:), allocatable :: cf%ZRFM, cf%ZRFH, ZDMGAT, &
-!        ZDHGAT, cf%ZBLD, RADJGAT, CSZGAT, &
-!        RPREGAT, SPREGAT, &
-!        PADRGAT, VPDGAT, TADPGAT, RHOAGAT, RPCPGAT, TRPCGAT, SPCPGAT, &
-!        TSPCGAT, RHSIGAT, DLONGAT, Z0ORGAT, GGEOGAT, cf%VMOD
-!>
-!>*******************************************************************
-!>
-!> LAND SURFACE DIAGNOSTIC VARIABLES:
-!    real, dimension(:, :), allocatable :: CDHROW, CDMROW, HFSROW, &
-!        TFXROW, QEVPROW, QFSROW, QFXROW, PETROW, GAROW, EFROW, GTROW, &
-!        QGROW, TSFROW, ALVSROW, ALIRROW, FSNOROW, SFCTROW, SFCUROW, &
-!        SFCVROW, SFCQROW, FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
-!        FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, HEVSROW, HEVGROW, &
-!        HMFCROW, HMFNROW, HTCCROW, HTCSROW, PCFCROW, PCLCROW, PCPNROW, &
-!        PCPGROW, QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, ROFOROW, &
-!        ROFSROW, ROFBROW, ROFCROW, ROFNROW, ROVGROW, WTRCROW, WTRSROW, &
-!        WTRGROW, DRROW, WTABROW, ILMOROW, UEROW, HBLROW, TROFROW, &
-!        TROOROW, TROSROW, TROBROW
-!    real, dimension(:), allocatable :: cdv%CDH, cdv%CDM, cdv%HFS, &
-!        cdv%TFX, cdv%QEVP, cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, cdv%GTE, &
-!        cdv%QG, cdv%ALVS, cdv%ALIR, cdv%FSNO, SFRHGAT, cdv%SFCT, cdv%SFCU, &
-!        cdv%SFCV, cdv%SFCQ, cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
-!        cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, cdv%HEVS, cdv%HEVG, &
-!        cdv%HMFC, cdv%HMFN, cdv%HTCC, cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, &
-!        cdv%PCPG, cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, cdv%ROFO, &
-!        cdv%ROFS, cdv%ROFB, cdv%ROFC, cdv%ROFN, cdv%ROVG, cdv%WTRC, cdv%WTRS, &
-!        cdv%WTRG, cdv%DR, cdv%WTAB, cdv%ILMO, cdv%UE, cdv%HBL, QLWOGAT, FTEMP, &
-!        FVAP, RIB, cdv%TROF, cdv%TROO, cdv%TROS, cdv%TROB
-!    real, dimension(:), allocatable :: CDHGRD, CDMGRD, HFSGRD, &
-!        TFXGRD, QEVPGRD, QFSGRD, QFXGRD, PETGRD, GAGRD, EFGRD, GTGRD, &
-!        QGGRD, TSFGRD, ALVSGRD, ALIRGRD, FSNOGRD, SFCTGRD, SFCUGRD, &
-!        SFCVGRD, SFCQGRD, FSGVGRD, FSGSGRD, FSGGGRD, FLGVGRD, FLGSGRD, &
-!        FLGGGRD, HFSCGRD, HFSSGRD, HFSGGRD, HEVCGRD, HEVSGRD, HEVGGRD, &
-!        HMFCGRD, HMFNGRD, HTCCGRD, HTCSGRD, PCFCGRD, PCLCGRD, PCPNGRD, &
-!        PCPGGRD, QFGGRD, QFNGRD, QFCLGRD, QFCFGRD, ROFGRD, ROFOGRD, &
-!        ROFSGRD, ROFBGRD, ROFCGRD, ROFNGRD, ROVGGRD, WTRCGRD, WTRSGRD, &
-!        WTRGGRD, DRGRD, WTABGRD, ILMOGRD, UEGRD, HBLGRD
-
-!    real, dimension(:, :, :), allocatable :: HMFGROW, HTCROW, QFCROW, &
-!        GFLXROW
-!    real, dimension(:, :), allocatable :: cdv%HMFG, cdv%HTC, cdv%QFC
-!    real, dimension(:, :), allocatable :: HMFGGRD, HTCGRD, QFCGRD, GFLXGRD
-!    integer, dimension(:, :, :, :), allocatable :: ITCTROW
-!    integer, dimension(:, :, :), allocatable :: ITCTGAT
-
-!* TITLE: PROJECT DESCRIPTOR (6 COLUMNS: 4 CHARACTER STRINGS)
-!* NAME: AUTHOR, RESEARCHER (6 COLUMNS: 4 CHARACTER STRINGS)
-!* PLACE: SITE LOCATION, BASIN (6 COLUMNS: 4 CHARACTER STRINGS)
-!    character(4) TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, &
-!        TITLE6, NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
-!        PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
-!>
-!>*******************************************************************
-!>*******************************************************************
-!>
 !> OUTPUT VARIABLES:
 !> THE SUFFIX "ACC" REFERS TO THE ACCUMULATOR ARRAYS USED IN
 !> CALCULATING TIME AVERAGES.
@@ -555,7 +350,7 @@ program RUNMESH
         TOTAL_ZPND_M, &
         TOTAL_STORE_M, TOTAL_STORE_2_M, &
         TOTAL_STORE_ACC_M
-  
+
 !* TOTAL_HFS = TOTAL SENSIBLE HEAT FLUX
 !* TOTAL_QEVP = TOTAL LATENT HEAT FLUX
     real TOTAL_HFSACC, TOTAL_QEVPACC
@@ -564,33 +359,6 @@ program RUNMESH
     real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
     real, dimension(:), allocatable :: TOTAL_THLQ, TOTAL_THIC, &
         TOTAL_THLQ_M, TOTAL_THIC_M
-
-!> CROSS-CLASS VARIABLES (CLASS):
-!> ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
-!> SUBSECTIONS OF CLASS ("CLASSA", "CLASST" AND "CLASSW").
-!    real, dimension(:, :), allocatable :: TBARC, TBARG, TBARCS, &
-!        TBARGS, THLIQC, THLIQG, THICEC, THICEG, FROOT, HCPC, HCPG, &
-!        TCTOPC, TCBOTC, TCTOPG, TCBOTG
-
-!    real, dimension(:), allocatable :: cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, RBCOEF, &
-!        ZSNOW, FSVF, FSVFS, ALVSCN, ALIRCN, ALVSG, &
-!        ALIRG, ALVSCS, ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, ALVSSC, &
-!        ALIRSC, TRVSCN, TRIRCN, TRVSCS, TRIRCS, RC, RCS, FRAINC, &
-!        FSNOWC, FRAICS, FSNOCS, CMASSC, CMASCS, DISP, DISPS, ZOMLNC, &
-!        ZOELNC, ZOMLNG, &
-!        ZOELNG, ZOMLCS, ZOELCS, ZOMLNS, ZOELNS, TRSNOW, CHCAP, CHCAPS, &
-!        GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, G12CS, G12GS, G23C, &
-!        G23G, G23CS, G23GS, QFREZC, QFREZG, QMELTC, QMELTG, EVAPC, &
-!        EVAPCG, EVAPG, EVAPCS, EVPCSG, EVAPGS, TCANO, TCANS, RAICAN, &
-!        SNOCAN, RAICNS, SNOCNS, CWLCAP, CWFCAP, CWLCPS, CWFCPS, TSNOCS, &
-!        TSNOGS, RHOSCS, RHOSGS, WSNOCS, WSNOGS, TPONDC, TPONDG, TPNDCS, &
-!        TPNDGS, ZPLMCS, ZPLMGS, ZPLIMC, ZPLIMG
-
-!> BALANCE ERRORS (CLASS):
-!> DIAGNOSTIC ARRAYS USED FOR CHECKING ENERGY AND WATER
-!> BALANCES.
-!    real, dimension(:), allocatable :: CTVSTP, CTSSTP, CT1STP, &
-!        CT2STP, CT3STP, WTVSTP, WTSSTP, WTGSTP
 
 !> CTEM-RELATED FIELDS (NOT USED IN STANDARD OFFLINE CLASS RUNS).
 !    real, dimension(:), allocatable :: &
@@ -605,23 +373,8 @@ program RUNMESH
 !    integer, dimension(:), allocatable :: NOL2PFTS
 !    integer ICTEMMOD, L2MAX
 
-!> COMMON BLOCK PARAMETERS (CLASS):
-!    integer K1, K2, K3, K4, K5, K6, K7, K8, K9, K10, K11
-!    real X1, X2, X3, X4, G, GAS, X5, X6, CPRES, GASV, X7, CPI, X8, &
-!        CELZRO, X9, X10, X11, X12, X13, X14, X15, SIGMA, X16, DELTIM, &
-!        DELT, TFREZ, RGAS, RGASV, GRAV, SBC, VKC, CT, VMIN, TCW, TCICE, &
-!        TCSAND, TCCLAY, TCOM, TCDRYS, RHOSOL, RHOOM, HCPW, HCPICE, &
-!        HCPSOL, HCPOM, HCPSND, HCPCLY, SPHW, SPHICE, SPHVEG, SPHAIR, &
-!        RHOW, RHOICE, TCGLAC, CLHMLT, CLHVAP, PI, ZOLNG, ZOLNS, ZOLNI, &
-!        ZORATG, ALVSI, ALIRI, ALVSO, ALIRO, ALBRCK, DELTA, CGRAV, &
-!        CKARM, CPD, AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
-
-!> DAN * CONFLICTS WITH COMMON BLOCK DEFINITIONS (APR 20/08)
-!    real, dimension(ICAN) :: CANEXT, XLEAF, ZORAT
-
 !    real, dimension(3) :: THPORG, THRORG, THMORG, BORG, PSISORG, &
 !        GRKSORG
-!    real, dimension(18, 4, 2) :: GROWYR
 
 !> **********************************************************************
 !>  For cacluating the subbasin grids
@@ -630,29 +383,10 @@ program RUNMESH
     integer SUBBASINCOUNT
     integer, dimension(:), allocatable :: SUBBASIN
 
-!>=======================================================================
-!> DAN * GLOBAL SUBROUTINES AND VARIABLES
-
-!> DAN * SUBROUTINES AND MODULES:
-!
-!> READ_SHED_EF: SUBROUTINE USED TO READ THE BASIN SHD FILE
-!> WRITE_R2C: SUBROUTINE USED TO WRITE R2C-FORMAT RTE.EXE INPUT
-!>            FILES (RUNOFF, RECHARGE, AND LEAKAGE VALUES)
-!> EF_MODULE: MODULE CONTAINING FORMATTING FUNCTIONS AND
-!>            SUBROUTINES
-!> EF_PARSEUTILITIES: MODULE CONTAINING FORMATTING FUNCTIONS AND
-!>                    SUBROUTINES CALLED BY EF_MODULE
-!> FIND_MONTH: SUBROUTINE USED TO CONVERT JULIAN DAY FROM YEAR
-!>             START INTO MONTH FROM YEAR START (1 TO 12)
-!> FIND_DAY: SUBROUTINE USED TO CONVERT JULIAN DAY FROM YEAR START
-!>           INTO DAY FROM MONTH START (1 TO 31)
-
 !> These are the types defined in mesh_input_module.f that contain arrays
 !> that need to be allocated in read_initial_inputs.f.
-!    type(OutputPoints) :: op
     type(ShedGridParams) :: shd
     type(SoilLevels) :: sl
-!    type(ClassParameters) :: cp
     type(SoilValues) :: sv
     type(HydrologyParameters) :: hp
     type(fl_ids) :: fls
@@ -707,33 +441,6 @@ program RUNMESH
     character(500) WRT_900_1, WRT_900_2, WRT_900_3, WRT_900_4, WRT_900_f
     character(500) fl_listMesh
     character(5) strInt
-!=======================================================================
-!     * SET PHYSICAL CONSTANTS AND COMMON BLOCKS
-
-!    common /PARAMS/ X1, X2, X3, X4, G, GAS, X5, X6, CPRES, &
-!        GASV, X7
-!    common /PARAM1/ CPI, X8, CELZRO, X9, X10, X11
-!    common /PARAM3/ X12, X13, X14, X15, SIGMA, X16
-!    common /TIMES/ DELTIM, K1, K2, K3, K4, K5, K6, K7, K8, K9, &
-!        K10, K11
-
-!> THE FOLLOWING COMMON BLOCKS ARE DEFINED SPECIFICALLY FOR USE
-!> IN CLASS, VIA BLOCK DATA AND THE SUBROUTINE "CLASSD".
-!    common /CLASS1/ DELT, TFREZ
-!    common /CLASS2/ RGAS, RGASV, GRAV, SBC, VKC, CT, VMIN
-!    common /CLASS3/ TCW, TCICE, TCSAND, TCCLAY, TCOM, TCDRYS, &
-!        RHOSOL, RHOOM
-!    common /CLASS4/ HCPW, HCPICE, HCPSOL, HCPOM, HCPSND, &
-!        HCPCLY, SPHW, SPHICE, SPHVEG, SPHAIR, RHOW, &
-!        RHOICE, TCGLAC, CLHMLT, CLHVAP
-!    common /CLASS5/ THPORG, THRORG, THMORG, BORG, PSISORG, &
-!        GRKSORG
-!    common /CLASS6/ PI, GROWYR, ZOLNG, ZOLNS, ZOLNI, ZORAT, &
-!        ZORATG
-!    common /CLASS7/ CANEXT, XLEAF
-!    common /CLASS8/ ALVSI, ALIRI, ALVSO, ALIRO, ALBRCK
-!    common /PHYCON/ DELTA, CGRAV, CKARM, CPD
-!    common /CLASSD2/ AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
 
 !> THE FOLLOWING COMMON BLOCKS ARE DEFINED FOR WATROF
 !    data VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
@@ -837,40 +544,19 @@ program RUNMESH
 1002 format(/1x, 'MESH_input_soil_levels.txt could not be opened.', &
             /1x, 'Ensure that the file exists and restart the program.', /)
 
-!>=======================================================================
-!> INITIALIZE CLASS VARIABLES
-!> SET COMMON CLASS PARAMETERS.
-!    call CLASSD
-!>
-!>*******************************************************************
-!>
     call READ_INITIAL_INPUTS( &
 !>GENERIC VARIABLES
                              RELEASE, &
 !>VARIABLES FOR READ_RUN_OPTIONS
                              GENDIR_OUT, &
-!>variables for READ_PARAMETERS_CLASS
-!                             TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6, &
-!                             NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
-!                             PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6, &
-!                             shd%wc%ILG, NLTEST, NMTEST, JLAT, ICAN, &
-!                             DEGLAT, DEGLON, &
-!                             HOURLY_START_DAY, HOURLY_STOP_DAY, &
-!                             DAILY_START_DAY, DAILY_STOP_DAY, &
-!                             HOURLY_START_YEAR, HOURLY_STOP_YEAR, &
-!                             DAILY_START_YEAR, DAILY_STOP_YEAR, &
- !>variables for READ_SOIL_INI
  !>variables for READ_PARAMETERS_HYDROLOGY
                              INDEPPAR, DEPPAR, WF_R2, M_C, &
  !>the types that are to be allocated and initialised
                              shd, &
-!                             op, &
                              sl, &
-!                             cp, &
                              sv, hp, ts, cm, &
                              SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
-!>
 !>***********************************************************************
 !> Forcing data time step should not be less than 30 min - there is no
 !> any increase in accuracy as delt (CLASS model time step) is 30 min.
@@ -898,98 +584,6 @@ program RUNMESH
     NTYPE = shd%lc%NTYPE
     IGND = shd%lc%IGND
 
-!> CLASS requires that each GRU for each grid square has its own parameter value,
-!> for MESH the value read in from the parameter file is assumed to be valid for
-!> all grid squares in the study area - Frank Seglenieks Aug 2007
-
-!> bjd - This would be a good spot for setting pre-distributed values
-
-!    do i = 2, NA
-!        cp%ZRFMGRD(i) = cp%ZRFMGRD(1)
-!        cp%ZRFHGRD(i) = cp%ZRFHGRD(1)
-!        cp%ZBLDGRD(i) = cp%ZBLDGRD(1)
-!        cp%GCGRD(i) = cp%GCGRD(1)
-!        do m = 1, NMTEST
-!            do j = 1, ICP1
-!                cp%FCANROW(i, m, j) = cp%FCANROW(1, m, j)
-!                cp%LNZ0ROW(i, m, j) = cp%LNZ0ROW(1, m, j)
-!                cp%ALVCROW(i, m, j) = cp%ALVCROW(1, m, j)
-!                cp%ALICROW(i, m, j) = cp%ALICROW(1, m, j)
-!            end do
-!            do j = 1, ICAN
-!                cp%PAMXROW(i, m, j) = cp%PAMXROW(1, m, j)
-!                cp%PAMNROW(i, m, j) = cp%PAMNROW(1, m, j)
-!                cp%CMASROW(i, m, j) = cp%CMASROW(1, m, j)
-!                cp%ROOTROW(i, m, j) = cp%ROOTROW(1, m, j)
-!                cp%RSMNROW(i, m, j) = cp%RSMNROW(1, m, j)
-!                cp%QA50ROW(i, m, j) = cp%QA50ROW(1, m, j)
-!                cp%VPDAROW(i, m, j) = cp%VPDAROW(1, m, j)
-!                cp%VPDBROW(i, m, j) = cp%VPDBROW(1, m, j)
-!                cp%PSGAROW(i, m, j) = cp%PSGAROW(1, m, j)
-!                cp%PSGBROW(i, m, j) = cp%PSGBROW(1, m, j)
-!            end do
-!            do j = 1, IGND
-!                cp%SANDROW(i, m, j) = cp%SANDROW(1, m, j)
-!                cp%CLAYROW(i, m, j) = cp%CLAYROW(1, m, j)
-!                cp%ORGMROW(i, m, j) = cp%ORGMROW(1, m, j)
-!> note333 see read_s_temperature_txt.f for more TBARROW information
-!                cp%TBARROW(i, m, j) = cp%TBARROW(1, m, j)
-!> note444 see read_s_moisture_txt.f for more THLQROW information
-!                cp%THLQROW(i, m, j) = cp%THLQROW(1, m, j)
-!                cp%THICROW(i, m, j) = cp%THICROW(1, m, j)
-!            end do
-!            cp%TCANROW(i, m) = cp%TCANROW(1, m)
-!            cp%TSNOROW(i, m) = cp%TSNOROW(1, m)
-!            cp%DRNROW(i, m) = cp%DRNROW(1, m)
-!            cp%SDEPROW(i, m) = cp%SDEPROW(1, m)
-!- FARE is set using
-!-            cp%FAREROW(i, m) = cp%FAREROW(1, m)
-!            cp%MANNROW(i, m) = cp%MANNROW(1, m)
-!> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
-!> we give the same value for all the GRU that are in one cell
-!            if (allocated(shd%SLOPE_INT)) then
-!                cp%XSLPROW(i, m) = shd%SLOPE_INT(i)
-!                if (i == 2) then
-!                    cp%XSLPROW(i - 1, m) = shd%SLOPE_INT(i - 1)
-!                end if
-!            else
-!                cp%XSLPROW(i, m) = cp%XSLPROW(1, m)
-!            end if
-!            cp%XDROW(i, m) = cp%XDROW(1, m)
-!> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
-!> we give the same value for all the GRU that are in one cell
-!            if (allocated(shd%DRDN)) then
-!                if (i == 2) then
-!                    cp%DDROW(i - 1, m) = shd%DRDN(i - 1)
-!                end if
-!                cp%DDROW(i, m) = shd%DRDN(i)
-!            else
-!                cp%DDROW(i, m) = cp%DDROW(1, m)
-!            end if
-!-            WFSFROW(i, m) = WFSFROW(1, m)
-!            cp%KSROW(i, m) = cp%KSROW(1, m)
-!            cp%MIDROW(i, m) = cp%MIDROW(1, m)
-!            cp%TPNDROW(i, m) = cp%TPNDROW(1, m)
-!            cp%ZPNDROW(i, m) = cp%ZPNDROW(1, m)
-!            cp%RCANROW(i, m) = cp%RCANROW(1, m)
-!            cp%SCANROW(i, m) = cp%SCANROW(1, m)
-!            cp%SNOROW(i, m) = cp%SNOROW(1, m)
-!            cp%ALBSROW(i, m) = cp%ALBSROW(1, m)
-!            cp%RHOSROW(i, m) = cp%RHOSROW(1, m)
-!            cp%GROROW(i, m) = cp%GROROW(1, m)
-!        end do !m = 1, NMTEST
-!    end do !i = 2, NA
-
-!     * GATHER-SCATTER COUNTS:
-!    allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), shd%wc%ILMOS(shd%wc%ILG), &
-!             shd%wc%JLMOS(shd%wc%ILG), stat = PAS)
-!    if (PAS /= 0) then
-!        print 1114, 'gather-scatter count'
-!        print 1118, 'Grid squares', NA
-!        print 1118, 'GRUs', NTYPE
-!        stop
-!    end if
-
     call run_within_tile_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
     call init_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW, int(DELT))
@@ -997,22 +591,11 @@ program RUNMESH
 !> Set value of FAREROW:
 !todo - flag this as an issue to explore later and hide basin average code
 !todo - document the problem
-!    TOTAL_AREA = 0.0
-!    do i = 1, NA
-!        do m = 1, NTYPE
-!            cp%FAREROW(i, m) = shd%lc%ACLASS(i, m)*shd%FRAC(i)
-!            TOTAL_AREA = TOTAL_AREA + cp%FAREROW(i, m)
     !FUTUREDO: Bruce, FRAC is calculated by EnSim
     ! using Dan Princz's instructions for EnSim
     ! FRAC can be greater than 1.00
     ! So, we cannot use FAREROW in place of BASIN_FRACTION
-!        end do
-!    end do
     TOTAL_AREA = sum(cp%FAREROW)
-
-!    call GATPREP(shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
-!                 shd%lc%NML, shd%wc%NML, cp%GCGRD, cp%FAREROW, cp%MIDROW, &
-!                 NA, NTYPE, shd%lc%ILG, 1, NA, NMTEST)
 
     NML = shd%lc%NML
 
@@ -1037,28 +620,9 @@ program RUNMESH
 !>=======================================================================
 !> ALLOCATE ALL VARIABLES
 
-!> ANDY * Allocate some variables
-!    allocate(SNOGRD(NA))
-
 1114 format(/1x, 'Error allocating ', a, ' variables.', &
             /1x, 'Check that these bounds are within an acceptable range.', /)
 1118 format(3x, a, ': ', i6)
-
-!> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
-!    allocate(cpv%TBAR(NML, IGND), &
-!             cpv%THLQ(NML, IGND), cpv%THIC(NML, IGND), &
-!             SANDGAT(NML, IGND), CLAYGAT(NML, IGND), &
-!             TBASROW(NA, NTYPE), &
-!             CMAIROW(NA, NTYPE), TACROW(NA, NTYPE), &
-!             QACROW(NA, NTYPE), WSNOROW(NA, NTYPE), &
-!             cpv%TPND(NML), cpv%ZPND(NML), cpv%TBAS(NML), &
-!             cpv%ALBS(NML), cpv%TSNO(NML), cpv%RHOS(NML), &
-!             cpv%SNO(NML), cpv%TCAN(NML), cpv%RCAN(NML), &
-!             cpv%SNCAN(NML), &
-!             cpv%GRO(NML), FRZCGAT(NML), cpv%CMAI(NML), cpv%TAC(NML), &
-!             cpv%QAC(NML), cpv%WSNO(NML), &
-!             TSFSROW(NA, NTYPE, 4), &
-!             cpv%TSFS(NML, 4), stat = PAS)
 
 !> PBSM PROGNOSTIC VARIABLES
 !    allocate(DrySnowROW(NA, NTYPE), SnowAgeROW(NA, NTYPE), &
@@ -1102,48 +666,7 @@ program RUNMESH
         stop
     end if
 
-!    allocate(FCANGAT(NML, ICP1), LNZ0GAT(NML, ICP1), &
-!             ALVCGAT(NML, ICP1), ALICGAT(NML, ICP1), &
-!             PAIDROW(NA, NTYPE, ICAN), &
-!             HGTDROW(NA, NTYPE, ICAN), ACVDROW(NA, NTYPE, ICAN), &
-!             ACIDROW(NA, NTYPE, ICAN), &
-!             PAMXGAT(NML, ICAN), PAMNGAT(NML, ICAN), &
-!             CMASGAT(NML, ICAN), ROOTGAT(NML, ICAN), &
-!             RSMNGAT(NML, ICAN), QA50GAT(NML, ICAN), &
-!             VPDAGAT(NML, ICAN), VPDBGAT(NML, ICAN), &
-!             PSGAGAT(NML, ICAN), &
-!             PSGBGAT(NML, ICAN), PAIDGAT(NML, ICAN), &
-!             HGTDGAT(NML, ICAN), ACVDGAT(NML, ICAN), &
-!             ACIDGAT(NML, ICAN), &
-!             THPROW(NA, NTYPE, IGND), THRROW(NA, NTYPE, IGND), &
-!             THMROW(NA, NTYPE, IGND), &
-!             BIROW(NA, NTYPE, IGND), PSISROW(NA, NTYPE, IGND), &
-!             GRKSROW(NA, NTYPE, IGND), THRAROW(NA, NTYPE, IGND), &
-!             HCPSROW(NA, NTYPE, IGND), TCSROW(NA, NTYPE, IGND), &
-!             THFCROW(NA, NTYPE, IGND), &
-!             PSIWROW(NA, NTYPE, IGND), DLZWROW(NA, NTYPE, IGND), &
-!             ZBTWROW(NA, NTYPE, IGND), &
-!             THPGAT(NML, IGND), THRGAT(NML, IGND), &
-!             THMGAT(NML, IGND), &
-!             BIGAT(NML, IGND), PSISGAT(NML, IGND), &
-!             GRKSGAT(NML, IGND), THRAGAT(NML, IGND), &
-!             HCPSGAT(NML, IGND), TCSGAT(NML, IGND), &
-!             THFCGAT(NML, IGND), &
-!             PSIWGAT(NML, IGND), cpv%DELZW(NML, IGND), &
-!             ZBTWGAT(NML, IGND), cdv%GFLX(NML, IGND), &
-!             WFSFROW(NA, NTYPE),  ALGWROW(NA, NTYPE), &
-!             ALGDROW(NA, NTYPE), ASVDROW(NA, NTYPE), ASIDROW(NA, NTYPE), &
-!             AGVDROW(NA, NTYPE), &
-!             AGIDROW(NA, NTYPE), &
-!             DRNGAT(NML), XSLPGAT(NML), XDGAT(NML), &
-!             WFSFGAT(NML), KSGAT(NML), ALGWGAT(NML), &
-!             ALGDGAT(NML), ASVDGAT(NML), ASIDGAT(NML), &
-!             AGVDGAT(NML), &
-!             AGIDGAT(NML), ZSNLGAT(NML), ZPLGGAT(NML), &
-!             ZPLSGAT(NML), SDEPGAT(NML), FAREGAT(NML), &
-!             ISNDROW(NA, NTYPE, IGND), IORG(NA, NTYPE, IGND), &
-!             ISNDGAT(NML, IGND), IGDRROW(NA,NTYPE), &
-!             IGDRGAT(NML), &
+!    allocate( &
 !             fetchGAT(NML), HtGAT(NML), N_SGAT(NML), A_SGAT(NML), &
 !             DistribGAT(NML), stat = PAS)
 
@@ -1168,122 +691,6 @@ program RUNMESH
 !        stop
 !    end if
 
-!> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
-!    allocate(ZDMGRD(NA), &
-!             ZDHGRD(NA), RADJGRD(NA), &
-!             CSZGRD(NA), &
-!             PADRGRD(NA), VPDGRD(NA), &
-!             TADPGRD(NA), RHOAGRD(NA), RPCPGRD(NA), TRPCGRD(NA), &
-!             SPCPGRD(NA), TSPCGRD(NA), RHSIGRD(NA), &
-!             FCLOGRD(NA), DLONGRD(NA), Z0ORGRD(NA), GGEOGRD(NA), UVGRD(NA), &
-!             XDIFFUS(NA), &
-!             RPREGRD(NA), SPREGRD(NA), VMODGRD(NA), &
-!             cf%ZRFM(NML), cf%ZRFH(NML), ZDMGAT(NML), &
-!             ZDHGAT(NML), cf%ZBLD(NML), &
-!             RADJGAT(NML), CSZGAT(NML), &
-!             RPREGAT(NML), SPREGAT(NML), &
-!             PADRGAT(NML), VPDGAT(NML), &
-!             TADPGAT(NML), RHOAGAT(NML), RPCPGAT(NML), &
-!             TRPCGAT(NML), SPCPGAT(NML), TSPCGAT(NML), &
-!             RHSIGAT(NML), &
-!             DLONGAT(NML), Z0ORGAT(NML), &
-!             GGEOGAT(NML), cf%VMOD(NML), stat = PAS)
-!    if (PAS /= 0) then
-!        print 1114, 'atmospheric and grid-cst.'
-!        print 1118, 'Grid squares', NA
-!        print 1118, 'GRUs', NTYPE
-!        print 1118, 'Total tile elements', NML
-!        stop
-!    end if
-
-!> LAND SURFACE DIAGNOSTIC VARIABLES:
-!    allocate(CDHROW(NA, NTYPE), CDMROW(NA, NTYPE), &
-!             HFSROW(NA, NTYPE), &
-!             TFXROW(NA, NTYPE), QEVPROW(NA, NTYPE), QFSROW(NA, NTYPE), &
-!             QFXROW(NA, NTYPE), PETROW(NA, NTYPE), GAROW(NA, NTYPE), &
-!             EFROW(NA, NTYPE), GTROW(NA, NTYPE), &
-!             QGROW(NA, NTYPE), TSFROW(NA, NTYPE), ALVSROW(NA, NTYPE), &
-!             ALIRROW(NA, NTYPE), FSNOROW(NA, NTYPE), SFCTROW(NA, NTYPE), &
-!             SFCUROW(NA, NTYPE), &
-!             SFCVROW(NA, NTYPE), SFCQROW(NA, NTYPE), FSGVROW(NA, NTYPE), &
-!             FSGSROW(NA, NTYPE), FSGGROW(NA, NTYPE), FLGVROW(NA, NTYPE), &
-!             FLGSROW(NA, NTYPE), &
-!             FLGGROW(NA, NTYPE), HFSCROW(NA, NTYPE), HFSSROW(NA, NTYPE), &
-!             HFSGROW(NA, NTYPE), HEVCROW(NA, NTYPE), HEVSROW(NA, NTYPE), &
-!             HEVGROW(NA, NTYPE), &
-!             HMFCROW(NA, NTYPE), HMFNROW(NA, NTYPE), HTCCROW(NA, NTYPE), &
-!             HTCSROW(NA, NTYPE), PCFCROW(NA, NTYPE), PCLCROW(NA, NTYPE), &
-!             PCPNROW(NA, NTYPE), &
-!             PCPGROW(NA, NTYPE), QFGROW(NA, NTYPE), QFNROW(NA, NTYPE), &
-!             QFCLROW(NA, NTYPE), QFCFROW(NA, NTYPE), ROFROW(NA, NTYPE), &
-!             ROFOROW(NA, NTYPE), &
-!             ROFSROW(NA, NTYPE), ROFBROW(NA, NTYPE), ROFCROW(NA, NTYPE), &
-!             ROFNROW(NA, NTYPE), ROVGROW(NA, NTYPE), WTRCROW(NA, NTYPE), &
-!             WTRSROW(NA, NTYPE), &
-!             WTRGROW(NA, NTYPE), DRROW(NA, NTYPE), WTABROW(NA, NTYPE), &
-!             ILMOROW(NA, NTYPE), UEROW(NA, NTYPE), HBLROW(NA, NTYPE), &
-!             TROFROW(NA, NTYPE), &
-!             TROOROW(NA, NTYPE), TROSROW(NA, NTYPE), TROBROW(NA, NTYPE), &
-!             cdv%CDH(NML), cdv%CDM(NML), cdv%HFS(NML), &
-!             cdv%TFX(NML), cdv%QEVP(NML), cdv%QFS(NML), &
-!             cdv%QFX(NML), cdv%PET(NML), cdv%GA(NML), &
-!             cdv%EF(NML), cdv%GTE(NML), &
-!             cdv%QG(NML), cdv%ALVS(NML), &
-!             cdv%ALIR(NML), cdv%FSNO(NML), SFRHGAT(NML), cdv%SFCT(NML), &
-!             cdv%SFCU(NML), &
-!             cdv%SFCV(NML), cdv%SFCQ(NML), cdv%FSGV(NML), &
-!             cdv%FSGS(NML), cdv%FSGG(NML), cdv%FLGV(NML), &
-!             cdv%FLGS(NML), &
-!             cdv%FLGG(NML), cdv%HFSC(NML), cdv%HFSS(NML), &
-!             cdv%HFSG(NML), cdv%HEVC(NML), cdv%HEVS(NML), &
-!             cdv%HEVG(NML), &
-!             cdv%HMFC(NML), cdv%HMFN(NML), cdv%HTCC(NML), &
-!             cdv%HTCS(NML), cdv%PCFC(NML), cdv%PCLC(NML), &
-!             cdv%PCPN(NML), &
-!             cdv%PCPG(NML), cdv%QFG(NML), cdv%QFN(NML), &
-!             cdv%QFCL(NML), cdv%QFCF(NML), cdv%ROF(NML), &
-!             cdv%ROFO(NML), &
-!             cdv%ROFS(NML), cdv%ROFB(NML), cdv%ROFC(NML), &
-!             cdv%ROFN(NML), cdv%ROVG(NML), cdv%WTRC(NML), &
-!             cdv%WTRS(NML), &
-!             cdv%WTRG(NML), cdv%DR(NML), cdv%WTAB(NML), &
-!             cdv%ILMO(NML), cdv%UE(NML), cdv%HBL(NML), QLWOGAT(NML), &
-!             FTEMP(NML),   FVAP(NML),  RIB(NML), cdv%TROF(NML), &
-!             cdv%TROO(NML), cdv%TROS(NML), cdv%TROB(NML), &
-!             CDHGRD(NA), CDMGRD(NA), HFSGRD(NA), &
-!             TFXGRD(NA), QEVPGRD(NA), QFSGRD(NA), QFXGRD(NA), PETGRD(NA), &
-!             GAGRD(NA), EFGRD(NA), GTGRD(NA), &
-!             QGGRD(NA), TSFGRD(NA), ALVSGRD(NA), ALIRGRD(NA), FSNOGRD(NA), &
-!             SFCTGRD(NA), SFCUGRD(NA), &
-!             SFCVGRD(NA), SFCQGRD(NA), FSGVGRD(NA), FSGSGRD(NA), &
-!             FSGGGRD(NA), FLGVGRD(NA), FLGSGRD(NA), &
-!             FLGGGRD(NA), HFSCGRD(NA), HFSSGRD(NA), HFSGGRD(NA), &
-!             HEVCGRD(NA), HEVSGRD(NA), HEVGGRD(NA), &
-!             HMFCGRD(NA), HMFNGRD(NA), HTCCGRD(NA), HTCSGRD(NA), &
-!             PCFCGRD(NA), PCLCGRD(NA), PCPNGRD(NA), &
-!             PCPGGRD(NA), QFGGRD(NA), QFNGRD(NA), QFCLGRD(NA), QFCFGRD(NA), &
-!             ROFGRD(NA), ROFOGRD(NA), &
-!             ROFSGRD(NA), ROFBGRD(NA), ROFCGRD(NA), ROFNGRD(NA), &
-!             ROVGGRD(NA), WTRCGRD(NA), WTRSGRD(NA), &
-!             WTRGGRD(NA), DRGRD(NA), WTABGRD(NA), ILMOGRD(NA), UEGRD(NA), &
-!             HBLGRD(NA), &
-!             HMFGROW(NA, NTYPE, IGND), HTCROW(NA, NTYPE, IGND), &
-!             QFCROW(NA, NTYPE, IGND), GFLXROW(NA, NTYPE, IGND), &
-!             cdv%HMFG(NML, IGND), cdv%HTC(NML, IGND), &
-!             cdv%QFC(NML, IGND), &
-!             HMFGGRD(NA, IGND), HTCGRD(NA, IGND), QFCGRD(NA, IGND), &
-!             GFLXGRD(NA, IGND), &
-!             ITCTROW(NA, NTYPE, 6, 50), &
-!             ITCTGAT(NML, 6, 50), stat = PAS)
-!    if (PAS /= 0) then
-!        print 1114, 'land surface diagnostic'
-!        print 1118, 'Grid squares', NA
-!        print 1118, 'GRUs', NTYPE
-!        print 1118, 'Total tile elements', NML
-!        print 1118, 'Soil layers', IGND
-!        stop
-!    end if
-
 !> OUTPUT VARIABLES:
     allocate(PREACC(NA), GTACC(NA), QEVPACC(NA), &
              HFSACC(NA), ROFACC(NA), SNOACC(NA), ALVSACC(NA), ALIRACC(NA), &
@@ -1304,72 +711,6 @@ program RUNMESH
         print 1118, 'Soil layers', IGND
         stop
     end if
-
-!> CROSS-CLASS VARIABLES (CLASS):
-!    allocate(TBARC(NML, IGND), TBARG(NML, IGND), &
-!             TBARCS(NML, IGND), &
-!             TBARGS(NML, IGND), THLIQC(NML, IGND), &
-!             THLIQG(NML, IGND), THICEC(NML, IGND), &
-!             THICEG(NML, IGND), FROOT(NML, IGND), &
-!             HCPC(NML, IGND), HCPG(NML, IGND), &
-!             TCTOPC(NML, IGND), TCBOTC(NML, IGND), &
-!             TCTOPG(NML, IGND), TCBOTG(NML, IGND), &
-!             cdv%FC(NML), cdv%FG(NML), cdv%FCS(NML), &
-!             cdv%FGS(NML), RBCOEF(NML), &
-!             ZSNOW(NML), &
-!             FSVF(NML), FSVFS(NML), ALVSCN(NML), &
-!             ALIRCN(NML), ALVSG(NML), &
-!             ALIRG(NML), ALVSCS(NML), ALIRCS(NML), &
-!             ALVSSN(NML), ALIRSN(NML), ALVSGC(NML), &
-!             ALIRGC(NML), ALVSSC(NML), &
-!             ALIRSC(NML), TRVSCN(NML), TRIRCN(NML), &
-!             TRVSCS(NML), TRIRCS(NML), RC(NML), &
-!             RCS(NML), FRAINC(NML), &
-!             FSNOWC(NML),FRAICS(NML),FSNOCS(NML), &
-!             CMASSC(NML), CMASCS(NML), &
-!             DISP(NML), DISPS(NML), ZOMLNC(NML), &
-!             ZOELNC(NML), ZOMLNG(NML), &
-!             ZOELNG(NML), ZOMLCS(NML), ZOELCS(NML), &
-!             ZOMLNS(NML), ZOELNS(NML), TRSNOW(NML), &
-!             CHCAP(NML), CHCAPS(NML), &
-!             GZEROC(NML), GZEROG(NML), GZROCS(NML), &
-!             GZROGS(NML), G12C(NML), G12G(NML), &
-!             G12CS(NML), G12GS(NML), G23C(NML), &
-!             G23G(NML), G23CS(NML), G23GS(NML), &
-!             QFREZC(NML), QFREZG(NML), QMELTC(NML), &
-!             QMELTG(NML), EVAPC(NML), &
-!             EVAPCG(NML), EVAPG(NML), EVAPCS(NML), &
-!             EVPCSG(NML), EVAPGS(NML), TCANO(NML), &
-!             TCANS(NML), RAICAN(NML), &
-!             SNOCAN(NML), RAICNS(NML), SNOCNS(NML), &
-!             CWLCAP(NML), CWFCAP(NML), CWLCPS(NML), &
-!             CWFCPS(NML), TSNOCS(NML), &
-!             TSNOGS(NML), RHOSCS(NML), RHOSGS(NML), &
-!             WSNOCS(NML), WSNOGS(NML), TPONDC(NML), &
-!             TPONDG(NML), TPNDCS(NML), &
-!             TPNDGS(NML), ZPLMCS(NML), ZPLMGS(NML), &
-!             ZPLIMC(NML), ZPLIMG(NML), stat = PAS)
-!    if (PAS /= 0) then
-!        print 1114, 'cross-CLASS'
-!        print 1118, 'Grid squares', NA
-!        print 1118, 'GRUs', NTYPE
-!        print 1118, 'Total tile elements', NML
-!        print 1118, 'Soil layers', IGND
-!        stop
-!    end if
-
-!> BALANCE ERRORS (CLASS):
-!    allocate(CTVSTP(NML), CTSSTP(NML), &
-!             CT1STP(NML), &
-!             CT2STP(NML), CT3STP(NML), WTVSTP(NML), &
-!             WTSSTP(NML), WTGSTP(NML), stat = PAS)
-!    if (PAS /= 0) then
-!        print 1114, 'balance error diagnostic'
-!        print 1118, 'Grid squares', NA
-!        print 1118, 'GRUs', NTYPE
-!        print 1118, 'Total tile elements', NML
-!        stop
-!    end if
 
 !> CTEM ERRORS (CLASS):
 !    allocate(CO2CONC(NML), COSZS(NML), XDIFFUSC(NML), CFLUXCG(NML), CFLUXCS(NML), &
@@ -1402,39 +743,6 @@ program RUNMESH
     if (ipid == 0) call run_between_grid_ini(shd, ts, ic, stfl, rrls, &
                                              LOCATIONFLAG, STREAMFLOWOUTFLAG, &
                                              GENDIR_OUT)
-
-!todo - verify that all checks are needed and in the right spot
-!> *********************************************************************
-!> Check to make sure input values are consistent
-!> *********************************************************************
-
-!> compare land classes in class.ini and drainage database files
-!    if (NTYPE /= NMTEST .and. NTYPE > 0) then
-!        print *, 'land classes from MESH_parameters_CLASS.ini: ', NMTEST
-!        print *, 'land classes from MESH_drainage_database.txt:', NTYPE
-!        print *, 'Please adjust these values.'
-!        stop
-!    end if
-
-!> check that run points are in the basin and that there are no repeats
-!    do i = 1, WF_NUM_POINTS
-!        if (op%N_OUT(i) > NA) then
-!            print *, 'No. of grids from MESH_drainage_database.txt:', NA
-!            print *, 'out point ', i, ' is: ', op%N_OUT(i)
-!            print *, 'please adjust MESH_run_options.ini file'
-!            stop
-!        end if
-!        if (i < WF_NUM_POINTS) then
-!            do j = i + 1, WF_NUM_POINTS
-!                if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
-!                    print *, 'grid number ', op%N_OUT(i)
-!                    print *, 'is repeated in MESH_run_options.ini file'
-!                    print *, 'please adjust MESH_run_options.ini file'
-!                    stop
-!                end if
-!            end do
-!        end if
-!    end do
 
 !> *********************************************************************
 !> Set some more intial values and clear accumulators
@@ -2032,12 +1340,6 @@ program RUNMESH
         print *, 'LENGTH OF SIDE OF GRID SQUARE IN M: ', shd%AL
         print *, 'NUMBER OF DRAINAGE OUTLETS: ', (NA - shd%NAA)
         print *
-!        print *, 'Found these output locations:'
-!        print *, 'Output Directory, grid number, land class number'
-!        do i = 1, WF_NUM_POINTS
-!            print *, op%DIR_OUT(i), op%N_OUT(i), op%II_OUT(i)
-!        end do
-!        print *
         print *
         print *
     end if !(ro%VERBOSEMODE > 0) then
@@ -3534,50 +2836,27 @@ program RUNMESH
                 ik = shd%lc%ILMOS(k)
                 if (shd%FRAC(ik) /= 0.0) then
                     PREACC(ik) = PREACC(ik) + cf%PRE(k)*FAREGAT(k)*DELT
-!                    GTACC(ik) = GTACC(ik) + cdv%GTE(k)*FAREGAT(k)
                     QEVPACC(ik) = QEVPACC(ik) + cdv%QEVP(k)*FAREGAT(k)
                     EVAPACC(ik) = EVAPACC(ik) + cdv%QFS(k)*FAREGAT(k)*DELT
                     HFSACC(ik)  = HFSACC(ik) + cdv%HFS(k)*FAREGAT(k)
-!                    HMFNACC(ik) = HMFNACC(ik) + cdv%HMFN(k)*FAREGAT(k)
                     ROFACC(ik) = ROFACC(ik) + cdv%ROF(k)*FAREGAT(k)*DELT
                     ROFOACC(ik) = ROFOACC(ik) + cdv%ROFO(k)*FAREGAT(k)*DELT
                     ROFSACC(ik) = ROFSACC(ik) + cdv%ROFS(k)*FAREGAT(k)*DELT
                     ROFBACC(ik) = ROFBACC(ik) + cdv%ROFB(k)*FAREGAT(k)*DELT
-!                    WTBLACC(ik) = WTBLACC(ik) + cdv%WTAB(k)*FAREGAT(k)
                     do j = 1, IGND
-!                        TBARACC(ik, j) = TBARACC(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
                         THLQACC(ik, j) = THLQACC(ik, j) + cpv%THLQ(k, j)*FAREGAT(k)
                         THICACC(ik, j) = THICACC(ik, j) + cpv%THIC(k, j)*FAREGAT(k)
                         THALACC(ik, j) = THALACC(ik, j) + (cpv%THLQ(k, j) + cpv%THIC(k, j))*FAREGAT(k)
             !Added by GSA compute daily heat conduction flux between layers
                         GFLXACC(ik, j) = GFLXACC(ik, j) + cdv%GFLX(k, j)*FAREGAT(k)
-!                        (k) = THALACC_STG(k) + THALACC(k, j)
-!                        THLQ_FLD(ik, j) =  THLQ_FLD(ik, j) + cpv%THLQ(k, j)*RHOW*FAREGAT(k)*cpv%DELZW(k, j)
-!                        THIC_FLD(ik, j) =  THIC_FLD(ik, j) + cpv%THIC(k, j)*RHOICE*FAREGAT(k)*cpv%DELZW(k, j)
                     end do
-!                    ALVSACC(ik) = ALVSACC(ik) + cdv%ALVS(k)*FAREGAT(k)*FSVHGRD(ik)
-!                    ALIRACC(ik) = ALIRACC(ik) + cdv%ALIR(k)*FAREGAT(k)*FSIHGRD(ik)
                     if (cpv%SNO(k) > 0.0) then
-!                        RHOSACC(ik) = RHOSACC(ik) + cpv%RHOS(k)*FAREGAT(k)
-!                        TSNOACC(ik) = TSNOACC(ik) + cpv%TSNO(k)*FAREGAT(k)
                         WSNOACC(ik) = WSNOACC(ik) + cpv%WSNO(k)*FAREGAT(k)
                         SNOARE(ik) = SNOARE(ik) + FAREGAT(k)
                     end if
-!                    if (cpv%TCAN(k) > 0.5) then
-!                        TCANACC(ik) = TCANACC(ik) + cpv%TCAN(k)*FAREGAT(k)
-!                        CANARE(ik) = CANARE(ik) + FAREGAT(k)
-!                    end if
                     SNOACC(ik) = SNOACC(ik) + cpv%SNO(k)*FAREGAT(k)
                     RCANACC(ik) = RCANACC(ik) + cpv%RCAN(k)*FAREGAT(k)
                     SCANACC(ik) = SCANACC(ik) + cpv%SNCAN(k)*FAREGAT(k)
-!                    GROACC(ik) = GROACC(ik) + cpv%GRO(k)*FAREGAT(k)
-!                    FSINACC(ik) = FSINACC(ik) + cm%clin(cfk%FB)%GRD(ik)*FAREGAT(k)
-!                    FLINACC(ik) = FLINACC(ik) + cm%clin(cfk%FI)%GRD(ik)*FAREGAT(k)
-!                    FLUTACC(ik) = FLUTACC(ik) + SBC*cdv%GTE(k)**4*FAREGAT(k)
-!                    TAACC(ik) = TAACC(ik) + cm%clin(cfk%TT)%GRD(ik)*FAREGAT(k)
-!                    UVACC(ik) = UVACC(ik) + UVGRD(ik)*FAREGAT(k)
-!                    PRESACC(ik) = PRESACC(ik) + cm%clin(cfk%P0)%GRD(ik)*FAREGAT(k)
-!                    QAACC(ik) = QAACC(ik) + cm%clin(cfk%HU)%GRD(ik)*FAREGAT(k)
                 end if
             end do !k = il1, il2
 
@@ -3596,76 +2875,24 @@ program RUNMESH
                 do i = 1, NA
                     if (shd%FRAC(i) /= 0.0) then
                         PREACC(i) = PREACC(i)
-!                        GTACC(i) = GTACC(i)/real(NSUM)
                         QEVPACC(i) = QEVPACC(i)/real(NSUM)
                         EVAPACC(i) = EVAPACC(i)
                         HFSACC(i) = HFSACC(i)/real(NSUM)
-!                        HMFNACC(i) = HMFNACC(i)/real(NSUM)
                         ROFACC(i) = ROFACC(i)
                         ROFOACC(i) = ROFOACC(i)
                         ROFSACC(i) = ROFSACC(i)
                         ROFBACC(i) = ROFBACC(i)
-!                        WTBLACC(i) = WTBLACC(i)/real(NSUM)
                         do j = 1, IGND
-!                            TBARACC(i, j) = TBARACC(i, j)/real(NSUM)
                             THLQACC(i, j) = THLQACC(i, j)/real(NSUM)
                             THICACC(i, j) = THICACC(i, j)/real(NSUM)
                             THALACC(i, j) = THALACC(i, j)/real(NSUM)
                         end do
-!                        if (FSINACC(i) > 0.0) then
-!                            ALVSACC(i) = ALVSACC(i)/(FSINACC(i)*0.5)
-!                            ALIRACC(i) = ALIRACC(i)/(FSINACC(i)*0.5)
-!                        else
-!                            ALVSACC(i) = 0.0
-!                            ALIRACC(i) = 0.0
-!                        end if
                         if (SNOARE(i) > 0.0) then
-!                            RHOSACC(i) = RHOSACC(i)/SNOARE(i)
-!                            TSNOACC(i) = TSNOACC(i)/SNOARE(i)
                             WSNOACC(i) = WSNOACC(i)/SNOARE(i)
                         end if
-!                        if (CANARE(i) > 0.0) then
-!                            TCANACC(i) = TCANACC(i)/CANARE(i)
-!                        end if
                         SNOACC(i) = SNOACC(i)/real(NSUM)
                         RCANACC(i) = RCANACC(i)/real(NSUM)
                         SCANACC(i) = SCANACC(i)/real(NSUM)
-!                        GROACC(i) = GROACC(i)/real(NSUM)
-!                        FSINACC(i) = FSINACC(i)/real(NSUM)
-!                        FLINACC(i) = FLINACC(i)/real(NSUM)
-!                        FLUTACC(i) = FLUTACC(i)/real(NSUM)
-!                        TAACC(i) = TAACC(i)/real(NSUM)
-!                        UVACC(i) = UVACC(i)/real(NSUM)
-!                        PRESACC(i) = PRESACC(i)/real(NSUM)
-!                        QAACC(i) = QAACC(i)/real(NSUM)
-!* ALTOT: the average of the visible spectrum and infrared spectrum
-!                        ALTOT = (ALVSACC(i) + ALIRACC(i))/2.0
-!                        FSSTAR = FSINACC(i)*(1.0 - ALTOT)
-!                        FLSTAR = FLINACC(i) - FLUTACC(i)
-!                        QH = HFSACC(i)
-!                        QE = QEVPACC(i)
-!                        BEG = FSSTAR + FLSTAR - QH - QE
-!                        SNOMLT = HMFNACC(i)
-!                        if (RHOSACC(i) > 0.0) then
-!                            ZSN = SNOACC(i)/RHOSACC(i)
-!                        else
-!                            ZSN = 0.0
-!                        end if
-!                        if (TCANACC(i) > 0.01) then
-!                            TCN = TCANACC(i) - TFREZ
-!                        else
-!                            TCN = 0.0
-!                        end if
-!                        if (TSNOACC(i) > 0.01) then
-!                            TSN = TSNOACC(i) - TFREZ
-!                        else
-!                            TSN = 0.0
-!                        end if
-!                        if (shd%wc%ILG == 1) then
-!                            GTOUT = GTACC(i) - TFREZ
-!                        else
-!                            GTOUT = 0.0
-!                        end if
 
 !> update components for final water balance tally
                         TOTAL_PRE = TOTAL_PRE + PREACC(i)
@@ -4466,7 +3693,6 @@ program RUNMESH
     if (mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write()
 
 999 continue
-    close(51)
 
     !> Close model output file.
     close(58)
@@ -4474,15 +3700,6 @@ program RUNMESH
     !> Close the SWE CSV files.
     close(85)
     close(86)
-
-    !> Close the legacy binary format forcing files.
-!    close(90)
-!    close(91)
-!    close(92)
-!    close(93)
-!    close(94)
-!    close(95)
-!    close(96)
 
     !> Close the CSV energy and water balance output files.
     close(fls%fl(mfk%f900)%iun)
