@@ -163,8 +163,8 @@ program RUNMESH
 !todo clean up commets and arrange variables a bit better
 
 !> FOR INITIALIZATION OF BASIN STORAGE
-    integer JAN
-    integer imonth_now, imonth_old
+!-    integer JAN
+!-    integer imonth_now, imonth_old
 
 !>     FOR ROUTING
 !* WF_R1: MANNING'S N FOR RIVER CHANNEL
@@ -283,10 +283,12 @@ program RUNMESH
 !        TCANACC, RCANACC, SCANACC, GROACC, CANARE, SNOARE, ZPNDACC
 
 !> FIELD OF DELTA STORAGE AND INITIAL STORAGE
-    real, dimension(:), allocatable :: DSTG, STG_I
+!-    real, dimension(:), allocatable :: DSTG, STG_I
 
 !    real, dimension(:, :), allocatable :: TBARACC, THLQACC, THICACC, &
-!        THALACC , THLQ_FLD, THIC_FLD, GFLXACC
+!        THALACC, &
+!-        THLQ_FLD, THIC_FLD, &
+!        GFLXACC
 
 !* TOTAL_ROFACC: TOTAL RUNOFF
 !* TOTAL_EVAPACC: TOTAL EVAPORATION
@@ -554,7 +556,7 @@ program RUNMESH
              SNOARE(NA), &
              TBARACC(NA, IGND), THLQACC(NA, IGND), THICACC(NA, IGND), &
              THALACC(NA, IGND), GFLXACC(NA, IGND), &
-             STG_I(NA), DSTG(NA), THLQ_FLD(NA, IGND), THIC_FLD(NA, IGND), &
+!             STG_I(NA), DSTG(NA), THLQ_FLD(NA, IGND), THIC_FLD(NA, IGND), &
              stat = PAS)
     if (PAS /= 0) then
         print 1114, 'accumulator'
@@ -667,7 +669,7 @@ program RUNMESH
     DRIVERTIMESTEP = DELT    ! Be sure it's REAL*8
 
 !* JAN: The first time throught he loop, jan = 1. Jan will equal 2 after that.
-    JAN = 1
+!-    JAN = 1
 
 !> clear accumulating variables
     TOTAL_ROF = 0.0
@@ -765,10 +767,10 @@ program RUNMESH
         eb%gflx = 0.0
     end if
 
-    STG_I = 0.0
-    DSTG = 0.0
-    THLQ_FLD = 0.0
-    THIC_FLD = 0.0
+!-    STG_I = 0.0
+!-    DSTG = 0.0
+!-    THLQ_FLD = 0.0
+!-    THIC_FLD = 0.0
     wb%stg = 0.0
     wb%dstg = 0.0
 
@@ -1649,6 +1651,49 @@ program RUNMESH
                 DriftROW, SublROW, DepositionROW, &
                 DriftGAT, SublGAT, DepositionGAT)
 
+    !> Calculate initial storage.
+!todo: Preserve 'initial' initial storage for the case of RESUMEFLAG;
+!      but also preserve the initial storage of the time-step and delta
+!      storage for the case of RESUMEFLAG.
+    if (ipid == 0) then
+        INIT_STORE = 0.0
+        do i = 1, NA
+            if (shd%FRAC(i) >= 0.0) then
+                do m = 1, NTYPE
+                    INIT_STORE = INIT_STORE + cp%FAREROW(i, m)* &
+                        (cp%RCANROW(i, m) + cp%SCANROW(i, m) + cp%SNOROW(i, m) + WSNOROW(i, m) + cp%ZPNDROW(i, m)*RHOW)
+                    wb%stg(i) = cp%FAREROW(i, m)* &
+                        (cp%RCANROW(i, m) + cp%SCANROW(i, m) + cp%SNOROW(i, m) + WSNOROW(i, m) + cp%ZPNDROW(i, m)*RHOW)
+                    do j = 1, IGND
+                        INIT_STORE = INIT_STORE + cp%FAREROW(i, m)* &
+                            (cp%THLQROW(i, m, j)*RHOW + cp%THICROW(i, m, j)*RHOICE)*DLZWROW(i, m, j)
+                        wb%stg(i) = cp%FAREROW(i, m)* &
+                            (cp%THLQROW(i, m, j)*RHOW + cp%THICROW(i, m, j)*RHOICE)*DLZWROW(i, m, j)
+                    end do
+                end do
+                wb%dstg(i) = wb%stg(i)
+            end if
+        end do
+        TOTAL_STORE_2 = INIT_STORE
+
+    ! For monthly totals.
+!-        call FIND_MONTH(JDAY_NOW, YEAR_NOW, imonth_old)
+        TOTAL_STORE_2_M = INIT_STORE
+
+!> Initialization of the Storage field
+!-        do m = 1, NTYPE
+!-            STG_I(:) = STG_I(:) + cp%FAREROW(:, m)*(cp%RCANROW(:, m) + &
+!-                                                    cp%SCANROW(:, m) + &
+!-                                                    cp%SNOROW(:, m)  + &
+!-                                                    cp%ZPNDROW(:, m)*RHOW)
+!-            do j = 1, IGND
+!-                STG_I(:) = STG_I(:) + cp%FAREROW(:, m)*(cp%THLQROW(:, m, j)*RHOW + &
+!-                                                        cp%THICROW(:, m, j)*RHOICE)*DLZWROW(:, m, j)
+!-            end do
+!-        end do
+
+    end if !(ipid == 0) then
+
 !> *********************************************************************
 !> End of Initialization
 !> *********************************************************************
@@ -1673,56 +1718,7 @@ program RUNMESH
             call climate_module_interpolatedata(shd, csfv%FARE, cm, NML, il1, il2)
         end if
 
-        if (ipid == 0) then
-
-!> Calculate initial storage (after reading in resume.txt file if applicable)
-            if (JAN == 1) then
-                INIT_STORE = 0.0
-                do i = 1, NA
-                    if (shd%FRAC(i) >= 0.0) then
-                        do m = 1, NTYPE
-                            INIT_STORE = INIT_STORE + cp%FAREROW(i, m)* &
-                                (cp%RCANROW(i, m) + cp%SCANROW(i, m) + cp%SNOROW(i, m) + WSNOROW(i, m) + cp%ZPNDROW(i, m)*RHOW)
-                            wb%stg(i) = cp%FAREROW(i, m)* &
-                                (cp%RCANROW(i, m) + cp%SCANROW(i, m) + cp%SNOROW(i, m) + WSNOROW(i, m) + cp%ZPNDROW(i, m)*RHOW)
-                            do j = 1, IGND
-                                INIT_STORE = INIT_STORE + cp%FAREROW(i, m)* &
-                                    (cp%THLQROW(i, m, j)*RHOW + cp%THICROW(i, m, j)*RHOICE)*DLZWROW(i, m, j)
-                                wb%stg(i) = cp%FAREROW(i, m)* &
-                                    (cp%THLQROW(i, m, j)*RHOW + cp%THICROW(i, m, j)*RHOICE)*DLZWROW(i, m, j)
-                            end do
-                        end do
-                        wb%dstg(i) = wb%stg(i)
-                    end if
-                end do
-                TOTAL_STORE_2 = INIT_STORE
-
-    ! For monthly totals.
-                call FIND_MONTH(JDAY_NOW, YEAR_NOW, imonth_old)
-                TOTAL_STORE_2_M = INIT_STORE
-            end if
-
-!> Initialization of the Storage field
-            if (JAN == 1) then
-                do m = 1, NTYPE
-                    STG_I(:) = STG_I(:) + cp%FAREROW(:, m)*(cp%RCANROW(:, m) + &
-                                                            cp%SCANROW(:, m) + &
-                                                            cp%SNOROW(:, m)  + &
-                                                            cp%ZPNDROW(:, m)*RHOW)
-                    do j = 1, IGND
-                        STG_I(:) = STG_I(:) + cp%FAREROW(:, m)*(cp%THLQROW(:, m, j)*RHOW + &
-                                                                cp%THICROW(:, m, j)*RHOICE)*DLZWROW(:, m, j)
-                    end do
-                end do
-            end if
-
-        end if !(ipid == 0) then
-
         call run_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
-
-!> *********************************************************************
-!> End of the NML-based LSS loop.
-!> *********************************************************************
 
 ! *********************************************************************
 ! Calculate values for output files and print them out
@@ -2292,8 +2288,8 @@ program RUNMESH
                     TOTAL_STORE_ACC_M = TOTAL_STORE
 
         ! Write out monthly totals.
-                    call FIND_MONTH(JDAY_NOW, YEAR_NOW, imonth_now)
-                    if (imonth_now /= imonth_old) then
+!-                    call FIND_MONTH(JDAY_NOW, YEAR_NOW, imonth_now)
+                    if (ic%now_day == 1) then
                         write(902, "(i4,',', i5,',', 999(e14.6,','))") &
                               JDAY_NOW, YEAR_NOW, &
                               TOTAL_PRE_ACC_M/TOTAL_AREA, &
@@ -2337,16 +2333,16 @@ program RUNMESH
                         TOTAL_THIC_M = 0.0
                         TOTAL_STORE_2_M = TOTAL_STORE_M
                         TOTAL_STORE_M = 0.0
-                        imonth_old = imonth_now
+!-                        imonth_old = imonth_now
                     end if
                 end if !(BASINBALANCEOUTFLAG > 0) then
 
 !>  Added by Gonzalo Sapriza
     !DELTA STORAGE
-                do i = 1, IGND
-                    DSTG = DSTG + THLQ_FLD(:, i) + THIC_FLD(:, i)
-                end do
-                DSTG = DSTG + RCANACC + SCANACC + SNOACC - STG_I
+!-                do i = 1, IGND
+!-                    DSTG = DSTG + THLQ_FLD(:, i) + THIC_FLD(:, i)
+!-                end do
+!-                DSTG = DSTG + RCANACC + SCANACC + SNOACC - STG_I
 
                 if (OUTFIELDSFLAG == 1) then
                     call UpdateFIELDSOUT(vr, ts, ifo, &
@@ -2359,7 +2355,7 @@ program RUNMESH
                                          IGND, &
                                          JDAY_NOW, YEAR_NOW)
                 end if
-                STG_I = DSTG + STG_I
+!-                STG_I = DSTG + STG_I
 
 !RESET ACCUMULATION VARIABLES TO ZERO
 !> RESET ACCUMULATOR ARRAYS.
@@ -2415,9 +2411,9 @@ program RUNMESH
                 TOTAL_ROFB = 0.0
                 TOTAL_HFSACC = 0.0
                 TOTAL_QEVPACC = 0.0
-                THIC_FLD = 0.0
-                THLQ_FLD = 0.0
-                DSTG = 0.0
+!-                THIC_FLD = 0.0
+!-                THLQ_FLD = 0.0
+!-                DSTG = 0.0
             end if !(NCOUNT == 48) then
         end if !(ipid == 0) then
 
@@ -2430,11 +2426,11 @@ program RUNMESH
 
         if (ipid == 0) then
 
-            if (JAN == 1) then
+!-            if (JAN == 1) then
 !>     this is done so that INIT_STORE is not recalculated for
 !>     each iteration when wf_route is not used
-                JAN = 2
-            end if
+!-                JAN = 2
+!-            end if
 
 !> *********************************************************************
 !> Write output to console.
