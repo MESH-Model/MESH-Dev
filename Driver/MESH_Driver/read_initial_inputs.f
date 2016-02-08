@@ -28,10 +28,11 @@
 !> the types that are to be allocated and initialised
      +  shd,
 !     +  op,
-     +  sl,
+!     +  sl,
 !     +  cp,
      +  sv, hp, ts, cm,
-     +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
+!     +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,
+     +  fls)
 
       use sa_mesh_shared_variabletypes
       use MESH_INPUT_MODULE
@@ -114,7 +115,7 @@
 !> -----------------------------
 !> Values needed for READ_PARAMETERS_HYDROLOGY :
       integer INDEPPAR, DEPPAR, M_C
-      real SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
+!      real SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
       real WF_R2(M_C)
 !> Values already declared above:
 !>  RELFLG
@@ -125,7 +126,7 @@
 !> The types that contain allocatable values
 !      type(OutputPoints) :: op
 !+     TYPE(ShedInformation) :: si
-      type(SoilLevels) :: sl
+!      type(SoilLevels) :: sl
 !      type(ClassParameters) :: cp
       type(SoilValues) :: sv
       type(HydrologyParameters) :: hp
@@ -332,6 +333,13 @@
       !> Assign shed values to local variables.
       NA = shd%NA
       NTYPE = shd%lc%NTYPE
+
+!> *********************************************************************
+!> Open and read in values from MESH_input_soil_levels.txt file
+!> *********************************************************************
+      call READ_SOIL_LEVELS(shd, fls)
+      print *, 'IGND = ', shd%lc%IGND
+
       IGND = shd%lc%IGND
 
       !*   ACLASS: PERCENT-GRU FRACTION FOR EACH GRID SQUARE (WF_ACLASS)
@@ -399,8 +407,8 @@
 !> *********************************************************************
 !> Open and read in values from MESH_input_soil_levels.txt file
 !> *********************************************************************
-      allocate(sl%DELZ(IGND), sl%ZBOT(IGND))
-      call READ_SOIL_LEVELS(IGND, sl, fls)
+!      allocate(shd%lc%sl%DELZ(IGND), shd%lc%sl%ZBOT(IGND))
+!      call READ_SOIL_LEVELS(shd, fls)
 
 !      allocate(
 !     +  cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA),
@@ -526,8 +534,10 @@
       t0_ACC = 0.0
 
       call READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR,
-     +  RELEASE, WF_R2, hp, M_C, NA, NTYPE,
-     +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
+     +  RELEASE, WF_R2, hp, M_C,
+!     +  NA, NTYPE,
+!     +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,
+     +  shd, fls)
 
       return
 

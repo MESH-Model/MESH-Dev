@@ -1,7 +1,7 @@
       module MESH_INPUT_MODULE
 
-      INTEGER NYEARS
-      REAL, DIMENSION(:), ALLOCATABLE :: t0_ACC
+!      INTEGER NYEARS
+!      REAL, DIMENSION(:), ALLOCATABLE :: t0_ACC
 !      TYPE OutputPoints
 !* N_OUT: GRID SQUARE TO OUTPUT
 !* II_OUT: GRU TO OUTPUT
@@ -26,11 +26,11 @@
       !END TYPE
 
 !> variables for reading soil_levels
-      TYPE SoilLevels
+!      TYPE SoilLevels
 !* DELZ: SOIL LAYER DEPTH (SOIL_LEVELS.TXT)
 !* ZBOT: CUMULATIVE SOIL DEPTH (SOIL_LEVELS.TXT)
-        REAL, DIMENSION(:), ALLOCATABLE :: DELZ, ZBOT
-      END TYPE
+!        REAL, DIMENSION(:), ALLOCATABLE :: DELZ, ZBOT
+!      END TYPE
 
 !!variables for reading parameters_class.ini
 !      TYPE ClassParameters

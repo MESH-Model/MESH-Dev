@@ -2,25 +2,31 @@
 !> Open and read in values from MESH_parameters_hydrology.ini file
 !> *********************************************************************
 
-SUBROUTINE READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, hp, M_C, NA, NTYPE, &
-                                     SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
+SUBROUTINE READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, hp, M_C, &
+!                                     NA, NTYPE, &
+!                                     SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, &
+                                     shd, fls)
 
+use sa_mesh_shared_variabletypes
 USE MESH_INPUT_MODULE
 use model_files_variabletypes
 use model_files_variables
 USE FLAGS
 use model_files
+use process_CLASS_variables, only: SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, t0_ACC, NYEARS
 
 implicit none
 
-INTEGER :: NA, NTYPE, M_C, INDEPPAR, DEPPAR
+!INTEGER :: NA, NTYPE
+integer M_C, INDEPPAR, DEPPAR
 CHARACTER*8 :: RELEASE
 
 !PARAMETERS FOR FROZEN ALGORITHM
-REAL :: SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
+!REAL :: SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
 
 REAL :: WF_R2(M_C)
 TYPE(HydrologyParameters) :: hp
+type(ShedGridParams) :: shd
 
 !file handled
 type(fl_ids):: fls 
@@ -29,9 +35,12 @@ REAL, DIMENSION (:), ALLOCATABLE :: INDEPPARVAL
 REAL, DIMENSION (:,:), ALLOCATABLE :: DEPPARVAL
 
 !> Internal use variables
-INTEGER :: IOS, iun, I, J, M
+INTEGER :: IOS, iun, NTYPE, NA, I, J, M
 CHARACTER(8) :: FILE_VER
 LOGICAL :: VER_OK
+
+NA = shd%NA
+NTYPE = shd%lc%NTYPE
 
 !if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(3)%isInit)) then
 iun = fls%fl(mfk%f23)%iun

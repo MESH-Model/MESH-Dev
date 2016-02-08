@@ -322,8 +322,8 @@ module process_CLASS_save_output
                 else
                     GTOUT = 0.0
                 end if
-!                ZPND = ZPNDPRECS(k)*cdv%FCS(k) + ZPONDPREC(k)*cdv%FC(k) + ZPONDPREG(k)*cdv%FG(k) + ZPNDPREGS(k)*cdv%FGS(k)
-!                FSTR = FSTRCS(k)*cdv%FCS(k) + FSTRC(k)*cdv%FC(k) + FSTRG(k)*cdv%FG(k) + FSTRGS(k)*cdv%FGS(k)
+                ZPND = ZPNDPRECS(k)*cdv%FCS(k) + ZPONDPREC(k)*cdv%FC(k) + ZPONDPREG(k)*cdv%FG(k) + ZPNDPREGS(k)*cdv%FGS(k)
+                FSTR = FSTRCS(k)*cdv%FCS(k) + FSTRC(k)*cdv%FC(k) + FSTRG(k)*cdv%FG(k) + FSTRGS(k)*cdv%FGS(k)
 
                 !> Write to the CLASSOF* output files for sub-hourly output.
                 write(150 + i*10 + 4, &

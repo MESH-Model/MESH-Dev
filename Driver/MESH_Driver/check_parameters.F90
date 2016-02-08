@@ -1,4 +1,4 @@
-subroutine check_parameters(wf_r2, m_c, nmtest, hp, soil_por_max, soil_depth, s0, t_ice_lens)
+subroutine check_parameters(wf_r2, m_c, nmtest, hp)
 !>
 !>       March 23, 2010 - M.A. Mekonnen/B. Davidson/M. MacDonald
 !>=======================================================================
@@ -38,7 +38,8 @@ integer     i,j,ib0,ib1,ib2,ib3,i4,i5,ir,m_c,nmtest
 integer     parflag(nrows,nmtest)
 
 real        total,percent
-real        wf_r2(m_c),soil_por_max,soil_depth,s0,t_ice_lens
+real        wf_r2(m_c)
+!           soil_por_max,soil_depth,s0,t_ice_lens
 real        parv(nrows,nmtest),minlimit(nrows,nmtest),maxlimit(nrows,nmtest)
 
 !type(ClassParameters)     :: cp

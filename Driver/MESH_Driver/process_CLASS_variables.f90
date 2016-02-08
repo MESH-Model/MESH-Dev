@@ -243,19 +243,6 @@ module process_CLASS_variables
 !    real, dimension(:), allocatable :: CTVSTP, CTSSTP, CT1STP, &
 !        CT2STP, CT3STP, WTVSTP, WTSSTP, WTGSTP
 
-!> CTEM-RELATED FIELDS (NOT USED IN STANDARD OFFLINE CLASS RUNS).
-!    real, dimension(:), allocatable :: &
-!        CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS
-!    real, dimension(:, :), allocatable :: &
-!        AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
-!        SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
-!        AILC, PAIC, &
-!        FIELDSM, WILTSM
-!    real, dimension(:, :, :), allocatable :: &
-!        RMATCTEM, RMATC
-!    integer, dimension(:), allocatable :: NOL2PFTS
-!    integer ICTEMMOD, L2MAX
-
 !> COMMON BLOCK PARAMETERS (CLASS):
 !    integer K1, K2, K3, K4, K5, K6, K7, K8, K9, K10, K11
 !    real X1, X2, X3, X4, G, GAS, X5, X6, CPRES, GASV, X7, CPI, X8, &
@@ -274,54 +261,74 @@ module process_CLASS_variables
 !        GRKSORG
 !    real, dimension(18, 4, 2) :: GROWYR
 
+!> CTEM-RELATED FIELDS (NOT USED IN STANDARD OFFLINE CLASS RUNS).
+!todo: isolate CTEM from CLASS code (if possible)
+    real, dimension(:), allocatable :: &
+        CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS
+    real, dimension(:, :), allocatable :: &
+        AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
+        SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
+        AILC, PAIC, &
+        FIELDSM, WILTSM
+    real, dimension(:, :, :), allocatable :: &
+        RMATCTEM, RMATC
+    integer, dimension(:), allocatable :: NOL2PFTS
+!    integer ICTEMMOD
+    integer L2MAX
+
 !> WATROF FLAGS AND VARIABLES:
+!todo: isolate WATROF from CLASS code
 !* VICEFLG: VERTICAL ICE FLAG OR LIMIT
 !* HICEFLG: HORIZONTAL ICE FLAG OR LIMIT
 !    integer LZFFLG, EXTFLG, IWFICE, ERRFLG, IWFOFLW
 !    real VICEFLG, PSI_LIMIT, HICEFLG
 !* DD (DDEN): DRAINAGE DENSITY (CLASS.INI)
 !* MANN (WFSF): MANNING'S n (CLASS.INI)
-!    real, dimension(:), allocatable :: DDGAT, MANNGAT
-!    real, dimension(:, :), allocatable :: BTC, BCAP, DCOEFF, BFCAP, &
-!        BFCOEFF, BFMIN, BQMAX
+    real, dimension(:), allocatable :: DDGAT, MANNGAT
+    real, dimension(:, :), allocatable :: BTC, BCAP, DCOEFF, BFCAP, &
+        BFCOEFF, BFMIN, BQMAX
 
 !>PBSM VARIABLES (GRU)
-!* DrySnow: 0 = air temperature above 0 degC
-!*          1 = air temperature below 0 degC
-!* SnowAge: hours since last snowfall
-!* Drift: blowing snow transport (kg/m^2)
-!* Subl: blowing snow sublimation (kg/m^2)
-!    real, dimension(:), allocatable :: DrySnowGAT, SnowAgeGAT, &
-!        TSNOdsGAT, RHOSdsGAT, DriftGAT, SublGAT, DepositionGAT
-!    real, dimension(:, :), allocatable :: DrySnowROW, SnowAgeROW, &
-!        TSNOdsROW, RHOSdsROW, DriftROW, SublROW, DepositionROW
-!>CLASS SUBAREA VARIABLES NEEDED FOR PBSM
-!    real, dimension(:), allocatable :: ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
-!        HCPSCS, HCPSGS, HCPSC, HCPSG, TSNOWC, TSNOWG, &
-!        RHOSC, RHOSG, XSNOWC, XSNOWG, XSNOCS, XSNOGS
+!todo: isolate PBSM from CLASS code
 !* PBSM parameters
 !  fetch: fetch distance (m)
 !  Ht: vegetation height (m)
 !  N_S:vegetation density (number/m^2)
 !  A_S: vegetation width (m)
 !  Distrib: Inter-GRU snow redistribution factor
-!    real, dimension(:), allocatable :: &
-!        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT
+    real, dimension(:), allocatable :: &
+        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT
+!* DrySnow: 0 = air temperature above 0 degC
+!*          1 = air temperature below 0 degC
+!* SnowAge: hours since last snowfall
+!* Drift: blowing snow transport (kg/m^2)
+!* Subl: blowing snow sublimation (kg/m^2)
+    real, dimension(:), allocatable :: DrySnowGAT, SnowAgeGAT, &
+        TSNOdsGAT, RHOSdsGAT, DriftGAT, SublGAT, DepositionGAT
+    real, dimension(:, :), allocatable :: DrySnowROW, SnowAgeROW, &
+        TSNOdsROW, RHOSdsROW, DriftROW, SublROW, DepositionROW
+!>CLASS SUBAREA VARIABLES NEEDED FOR PBSM
+    real, dimension(:), allocatable :: ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
+        HCPSCS, HCPSGS, HCPSC, HCPSG, TSNOWC, TSNOWG, &
+        RHOSC, RHOSG, XSNOWC, XSNOWG, XSNOCS, XSNOGS
 
-!    integer NMELT
-!    real SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
-!    integer, dimension(:), allocatable :: INFILTYPE
-!    real, dimension(:), allocatable :: SI, TSI, SNOWMELTD, SNOWMELTD_LAST, &
-!        SNOWINFIL, CUMSNOWINFILCS, MELTRUNOFF, CUMSNOWINFILGS
+!> FROZENSOILINIFLAG variables.
+!todo: isolate from CLASS code if possible
+    integer NMELT, NYEARS
+    real SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
+    integer, dimension(:), allocatable :: INFILTYPE
+    real, dimension(:), allocatable :: SI, TSI, SNOWMELTD, SNOWMELTD_LAST, &
+        SNOWINFIL, CUMSNOWINFILCS, MELTRUNOFF, CUMSNOWINFILGS, t0_ACC
 
 !* PDMROF
-!    real ZPND, FSTR
-!    real, dimension(:), allocatable   :: CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
-!        ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &
-!        UM1CS, UM1C, UM1G, UM1GS, &
-!        QM1CS, QM1C, QM1G, QM1GS, &
-!        QM2CS, QM2C, QM2G, QM2GS, UMQ, &
-!        FSTRCS, FSTRC, FSTRG, FSTRGS
+!todo: isolate PDMROF from CLASS code
+    real ZPND, FSTR
+    real, dimension(:), allocatable   :: CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
+        ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &
+        UM1CS, UM1C, UM1G, UM1GS, &
+        QM1CS, QM1C, QM1G, QM1GS, &
+        QM2CS, QM2C, QM2G, QM2GS, UMQ, &
+        FSTRCS, FSTRC, FSTRG, FSTRGS
 
 !> GRID OUTPUT POINTS
 !* BNAM: TEMPORARY HOLD FOR OUTPUT DIRECTORY (12 CHARACTER STRING)
