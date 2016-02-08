@@ -139,9 +139,7 @@ module process_WF_ROUTE_config
     !>              the output files, in preparation for running the
     !>              WF_ROUTE process.
     !>
-    subroutine run_WF_ROUTE_ini(shd, ic, stfl, rrls, &
-!todo: remove these
-                                GENDIR_OUT)
+    subroutine run_WF_ROUTE_ini(shd, fls, ic, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -152,13 +150,10 @@ module process_WF_ROUTE_config
         use FLAGS
 
         type(ShedGridParams), intent(in) :: shd
+        type(fl_ids) :: fls
         type(iter_counter), intent(in) :: ic
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
-
-        !> Temporary variables.
-!todo: remove these
-        character(450) GENDIR_OUT
 
         !> Local variables.
         !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
@@ -355,18 +350,17 @@ module process_WF_ROUTE_config
 
             !> Daily streamflow file.
             open(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%iun, &
-!todo: This creates a bug if a space doesn't exist in the name of the folder!
-                 file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // &
+                 file = './' // trim(fls%GENDIR_OUT) // '/' // &
                         trim(adjustl(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%fn)), &
                  iostat = ierr)
 
             !> Hourly and cumulative daily streamflow files.
             if (STREAMFLOWOUTFLAG >= 2) then
                 open(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun, &
-                     file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // &
+                     file = './' // trim(fls%GENDIR_OUT) // '/' // &
                             adjustl(trim(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%fn)))
                 open(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun, &
-                     file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // &
+                     file = './' // trim(fls%GENDIR_OUT) // '/' // &
                             adjustl(trim(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%fn)))
             end if
 

@@ -37,7 +37,10 @@ module process_CLASS
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        integer NA, NTYPE, NML, IGND
+        integer NA, NTYPE, NML, IGND, k, ik
+
+        !> SCA variables
+        real TOTAL_AREA, basin_SCA, basin_SWE
 
 !> *********************************************************************
 !> Start of the NML-based LSS loop.
@@ -48,7 +51,128 @@ module process_CLASS
         NML = shd%lc%NML
         IGND = shd%lc%IGND
 
+!* N: is only used for debugging purposes.
+!> N is incremented at the beginning of each loop. so you can tell which
+!> iteration of the loop you are on by what the value of N is.
+!> N is printed out with each of the error messages in CLASSZ.
+!> N is replaced with ic%ts_count
+!        N = N + 1
+
         if (ipid /= 0 .or. izero == 0) then
+
+            cfi%FSVH(il1:il2) = FSVHGAT(il1:il2)
+            cfi%FSIH(il1:il2) = FSIHGAT(il1:il2)
+            cfi%FDL(il1:il2) = cm%clin(cfk%FI)%GAT(il1:il2)
+            cfi%PRE(il1:il2) = cm%clin(cfk%PR)%GAT(il1:il2)
+            cfi%TA(il1:il2) = cm%clin(cfk%TT)%GAT(il1:il2)
+            cfi%UL(il1:il2) = cm%clin(cfk%UV)%GAT(il1:il2)
+            cfi%PRES(il1:il2) = cm%clin(cfk%P0)%GAT(il1:il2)
+            cfi%QA(il1:il2) = cm%clin(cfk%HU)%GAT(il1:il2)
+
+            UVGRD = max(VMIN, cm%clin(cfk%UV)%GRD)
+            VMODGRD = UVGRD
+            cfi%VMOD = max(VMIN, cfi%UL)
+
+            !> This estimates the fractional cloud cover (FCLOGRD) by the basis
+            !> of the solar zenith angle and the occurrence of precipitation.
+            !> Assumed to be 1 (100%) when precipitation occurs and somewhere
+            !> in the range of [0.1, 1] based on the location of the sun in the
+            !> sky when precipitation is not occuring. (0.1 when the sun is at
+            !> the zenith, 1 when the sun is at the horizon).
+            RDAY = real(JDAY_NOW) + (real(HOUR_NOW) + real(MINS_NOW)/60.0)/24.0
+            DECL = sin(2.0*PI*(284.0 + RDAY)/365.0)*23.45*PI/180.0
+            HOUR = (real(HOUR_NOW) + real(MINS_NOW)/60.0)*PI/12.0 - PI
+
+            do k = il1, il2
+                ik = shd%lc%ILMOS(k)
+                COSZ = sin(catv%RADJ(k))*sin(DECL) + cos(catv%RADJ(k))*cos(DECL)*cos(HOUR)
+                catv%CSZ(k) = sign(max(abs(COSZ), 1.0e-3), COSZ)
+                CSZGRD(ik) = catv%CSZ(k)
+                if (cfi%PRE(k) > 0.0) then
+!todo: there isn't a GAT variable for this (although, there might be for the canopy)?
+                    XDIFFUS(ik) = 1.0
+                else
+                    XDIFFUS(ik) = max(0.0, min(1.0 - 0.9*COSZ, 1.0))
+                end if
+                catv%FCLO(k) = XDIFFUS(ik)
+                FCLOGRD(ik) = catv%FCLO(k)
+            end do
+
+            !> Were initialized in CLASSG and so have been extracted.
+            DriftGAT = 0.0 !DriftROW (ILMOS(k), JLMOS(k))
+            SublGAT = 0.0 !SublROW (ILMOS(k), JLMOS(k))
+            DepositionGAT = 0.0
+
+            !> INITIALIZATION OF DIAGNOSTIC VARIABLES SPLIT OUT OF CLASSG
+            !> FOR CONSISTENCY WITH GCM APPLICATIONS.
+            cdv%CDH = 0.0
+            cdv%CDM = 0.0
+            cdv%HFS = 0.0
+            cdv%TFX = 0.0
+            cdv%QEVP = 0.0
+            cdv%QFS = 0.0
+            cdv%QFX = 0.0
+            cdv%PET = 0.0
+            cdv%GA = 0.0
+            cdv%EF = 0.0
+            cdv%GTE = 0.0
+            cdv%QG = 0.0
+            cdv%ALVS = 0.0
+            cdv%ALIR = 0.0
+            cdv%SFCT = 0.0
+            cdv%SFCU = 0.0
+            cdv%SFCV = 0.0
+            cdv%SFCQ = 0.0
+            cdv%FSNO = 0.0
+            cdv%FSGV = 0.0
+            cdv%FSGS = 0.0
+            cdv%FSGG = 0.0
+            cdv%FLGV = 0.0
+            cdv%FLGS = 0.0
+            cdv%FLGG = 0.0
+            cdv%HFSC = 0.0
+            cdv%HFSS = 0.0
+            cdv%HFSG = 0.0
+            cdv%HEVC = 0.0
+            cdv%HEVS = 0.0
+            cdv%HEVG = 0.0
+            cdv%HMFC = 0.0
+            cdv%HMFN = 0.0
+            cdv%HTCC = 0.0
+            cdv%HTCS = 0.0
+            cdv%PCFC = 0.0
+            cdv%PCLC = 0.0
+            cdv%PCPN = 0.0
+            cdv%PCPG = 0.0
+            cdv%QFG = 0.0
+            cdv%QFN = 0.0
+            cdv%QFCF = 0.0
+            cdv%QFCL = 0.0
+            cdv%ROF = 0.0
+            cdv%ROFO = 0.0
+            cdv%ROFS = 0.0
+            cdv%ROFB = 0.0
+            cdv%TROF = 0.0
+            cdv%TROO = 0.0
+            cdv%TROS = 0.0
+            cdv%TROB = 0.0
+            cdv%ROFC = 0.0
+            cdv%ROFN = 0.0
+            cdv%ROVG = 0.0
+            cdv%WTRC = 0.0
+            cdv%WTRS = 0.0
+            cdv%WTRG = 0.0
+            cdv%DR = 0.0
+            cdv%HMFG = 0.0
+            cdv%HTC = 0.0
+            cdv%QFC = 0.0
+            cdv%GFLX = 0.0
+            ITCTGAT = 0
+
+            call CLASSI(catv%VPD, catv%TADP, catv%PADR, catv%RHOA, catv%RHSI, &
+                        catv%RPCP, catv%TRPC, catv%SPCP, catv%TSPC, cfi%TA, cfi%QA, &
+                        cfi%PRE, catv%RPRE, catv%SPRE, cfi%PRES, &
+                        IPCP, NML, il1, il2)
 
             call CLASSZ(0, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
@@ -235,6 +359,54 @@ module process_CLASS
         if (WF_NUM_POINTS > 0) then
             call CLASSOUT_update_files(shd, ic)
         end if
+
+        !> calculate and write the basin avg SCA similar to watclass3.0f5
+        !> Same code than in wf_ensim.f subrutine of watclass3.0f8
+        !> Especially for version MESH_Prototype 3.3.1.7b (not to be incorporated in future versions)
+        !> calculate and write the basin avg SWE using the similar fudge factor!!!
+        if (ipid == 0 .and. BASINSWEOUTFLAG > 0) then
+
+            !> BASIN_FRACTION is the basin snow cover
+            !> (portions of the grids outside the basin are not included)
+            !> for a given day - JDAY_NOW in the if statement
+!            if (BASIN_FRACTION(1) == -1) then
+!todo: FRAC is not actually the fraction of the grid square
+!within the basin, we should be using some other value, but I'm
+!not sure what.
+!todo: calculate frac and write document to send to someone else.
+!                do i = 1, NA ! NA = number of grid squares
+!                    BASIN_FRACTION(i) = shd%FRAC(i)
+!                end do
+!            end if
+
+            if (HOUR_NOW == 12 .and. MINS_NOW == 0) then
+                basin_SCA = 0.0
+                basin_SWE = 0.0
+!                do i = 1, NA
+!                    if (BASIN_FRACTION(i) /= 0.0) then
+!                        basin_SCA = basin_SCA + FSNOGRD(i)/BASIN_FRACTION(i)
+!                        basin_SWE = basin_SWE + SNOGRD(i)/BASIN_FRACTION(i)
+!                    end if
+!                end do
+!                basin_SCA = basin_SCA/NA
+!                basin_SWE = basin_SWE/NA
+                TOTAL_AREA = sum(cp%FAREROW)
+
+                !> BRUCE DAVISON - AUG 17, 2009 (see notes in my notebook for this day)
+                !> Fixed calculation of basin averages. Needs documenting and testing.
+                do k = il1, il2
+                    basin_SCA = basin_SCA + cdv%FSNO(k)*csfv%FARE(k)
+                    basin_SWE = basin_SWE + cpv%SNO(k)*csfv%FARE(k)
+                end do
+                basin_SCA = basin_SCA/TOTAL_AREA
+                basin_SWE = basin_SWE/TOTAL_AREA
+                if (BASINSWEOUTFLAG > 0) then
+                    write(85, "(i5,',', f10.3)") JDAY_NOW, basin_SCA
+                    write(86, "(i5,',', f10.3)") JDAY_NOW, basin_SWE
+                end if
+            end if
+
+        end if !(ipid == 0) then
 
     end subroutine
 

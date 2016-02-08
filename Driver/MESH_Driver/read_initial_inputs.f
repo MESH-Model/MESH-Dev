@@ -11,7 +11,7 @@
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
 !     +  IRONAME,
-     +  GENDIR_OUT,
+!-     +  GENDIR_OUT,
 !> variables for READ_PARAMETERS_CLASS
 !     +  TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6,
 !     +  NAME1, NAME2, NAME3, NAME4, NAME5, NAME6,
@@ -62,7 +62,7 @@
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END
 !      character(20) IRONAME
-      character(10) GENDIR_OUT
+!-      character(10) GENDIR_OUT
 !> declared MESH_INPUT_MODULE:
 !>     op%N_OUT, op%II_OUT, op%DIR_OUT
 
@@ -151,7 +151,7 @@
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
 !     +  IRONAME,
-     +  GENDIR_OUT,
+!-     +  GENDIR_OUT,
 !     +  op,
      +  ts, cm, fls)
 

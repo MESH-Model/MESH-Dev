@@ -8,7 +8,7 @@
 !     +  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START,
 !     +  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END,
 !     +  IRONAME,
-     +  GENDIR_OUT,
+!-     +  GENDIR_OUT,
 !     +  op,
      +  ts, cm, fls)
 
@@ -52,10 +52,11 @@
 
       INTEGER:: M_G  ! PARAMETER :: M_G = 5
 !      CHARACTER(20) :: IRONAME
-      CHARACTER*10 GENDIR_OUT
+!-      CHARACTER*10 GENDIR_OUT
 
       !> Local variables.
       character(20) IRONAME
+      character(10) GENDIR_OUT
       integer IROVAL, PAS, ios
 
 !      TYPE(OutputPoints) :: op
@@ -753,9 +754,11 @@
       END DO
 
 	  !> This is the directory to output the mesh_output* files and the basin_swe/sca files
-      READ(iun,*)
-      READ(iun,*)
-      READ(iun,'(A10)') GENDIR_OUT
+      read(iun, *)
+      read(iun, *)
+      read(iun, '(a10)') GENDIR_OUT
+      call removesp(GENDIR_OUT)
+      fls%GENDIR_OUT = adjustl(GENDIR_OUT)
 
 !todo describe these !P comments better. For now, they mean nothing.
 !P

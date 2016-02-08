@@ -4,9 +4,7 @@ module sa_mesh_run_between_grid
 
     contains
 
-    subroutine run_between_grid_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls, &
-!todo: remove these
-                                GENDIR_OUT)
+    subroutine run_between_grid_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -31,10 +29,6 @@ module sa_mesh_run_between_grid
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        !> Temporary variables.
-!todo: remove these
-        character(450) GENDIR_OUT
-
         !> Local variables.
         !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
         !* WF_START_DAY OBSERVED STREAMFLOW START DAY
@@ -45,8 +39,7 @@ module sa_mesh_run_between_grid
 
 !todo: switch
         call configure_SA_RTE(shd, ic)
-        call run_WF_ROUTE_ini(shd, ic, stfl, rrls, &
-                              GENDIR_OUT)
+        call run_WF_ROUTE_ini(shd, fls, ic, stfl, rrls)
 
     end subroutine
 
