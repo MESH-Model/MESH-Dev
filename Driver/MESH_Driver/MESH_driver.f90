@@ -276,43 +276,6 @@ program RUNMESH
 
     integer FRAME_NO_NEW
 
-!> GRID OUTPUT POINTS
-!* BNAM: TEMPORARY HOLD FOR OUTPUT DIRECTORY (12 CHARACTER STRING)
-!    character(12) BNAM
-
-!>PBSM VARIABLES (GRU)
-!* DrySnow: 0 = air temperature above 0 degC
-!*          1 = air temperature below 0 degC
-!* SnowAge: hours since last snowfall
-!* Drift: blowing snow transport (kg/m^2)
-!* Subl: blowing snow sublimation (kg/m^2)
-!    real, dimension(:), allocatable :: DrySnowGAT, SnowAgeGAT, &
-!        TSNOdsGAT, RHOSdsGAT, DriftGAT, SublGAT, DepositionGAT
-!    real, dimension(:, :), allocatable :: DrySnowROW, SnowAgeROW, &
-!        TSNOdsROW, RHOSdsROW, DriftROW, SublROW, DepositionROW
-
-!>CLASS SUBAREA VARIABLES NEEDED FOR PBSM
-!    real, dimension(:), allocatable :: ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
-!        HCPSCS, HCPSGS, HCPSC, HCPSG, TSNOWC, TSNOWG, &
-!        RHOSC, RHOSG, XSNOWC, XSNOWG, XSNOCS, XSNOGS
-
-!* PBSM parameters
-!  fetch: fetch distance (m)
-!  Ht: vegetation height (m)
-!  N_S:vegetation density (number/m^2)
-!  A_S: vegetation width (m)
-!  Distrib: Inter-GRU snow redistribution factor
-!    real, dimension(:), allocatable :: &
-!        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT
-
-!> WATROF FLAGS AND VARIABLES:
-!* VICEFLG: VERTICAL ICE FLAG OR LIMIT
-!* HICEFLG: HORIZONTAL ICE FLAG OR LIMIT
-!    integer LZFFLG, EXTFLG, IWFICE, ERRFLG, IWFOFLW
-!    real VICEFLG, PSI_LIMIT, HICEFLG
-!    real, dimension(:, :), allocatable :: BTC, BCAP, DCOEFF, BFCAP, &
-!        BFCOEFF, BFMIN, BQMAX
-
 !> MAM - logical variables to control simulation runs:
     logical :: ENDDATE = .false., ENDDATA = .false.
 
@@ -360,22 +323,6 @@ program RUNMESH
     real, dimension(:), allocatable :: TOTAL_THLQ, TOTAL_THIC, &
         TOTAL_THLQ_M, TOTAL_THIC_M
 
-!> CTEM-RELATED FIELDS (NOT USED IN STANDARD OFFLINE CLASS RUNS).
-!    real, dimension(:), allocatable :: &
-!        CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS
-!    real, dimension(:, :), allocatable :: &
-!        AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
-!        SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
-!        AILC, PAIC, &
-!        FIELDSM, WILTSM
-!    real, dimension(:, :, :), allocatable :: &
-!        RMATCTEM, RMATC
-!    integer, dimension(:), allocatable :: NOL2PFTS
-!    integer ICTEMMOD, L2MAX
-
-!    real, dimension(3) :: THPORG, THRORG, THMORG, BORG, PSISORG, &
-!        GRKSORG
-
 !> **********************************************************************
 !>  For cacluating the subbasin grids
 !> **********************************************************************
@@ -419,21 +366,6 @@ program RUNMESH
     integer, allocatable, dimension(:) :: GRD, GAT, GRDGAT, GRD_R, GAT_R, GRDGAT_R, GRD_S, GAT_S, GRDGAT_S
     character(50), allocatable, dimension(:, :) :: R2C_ATTRIBUTES, R2C_ATTRIBUTES_R, R2C_ATTRIBUTES_S
 
-!    integer NMELT
-!    real SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
-!    integer, dimension(:), allocatable :: INFILTYPE
-!    real, dimension(:), allocatable :: SI, TSI, SNOWMELTD, SNOWMELTD_LAST, &
-!        SNOWINFIL, CUMSNOWINFILCS, MELTRUNOFF, CUMSNOWINFILGS
-
-!* PDMROF
-!    real ZPND, FSTR
-!    real, dimension(:), allocatable   :: CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
-!        ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &
-!        UM1CS, UM1C, UM1G, UM1GS, &
-!        QM1CS, QM1C, QM1G, QM1GS, &
-!        QM2CS, QM2C, QM2G, QM2GS, UMQ, &
-!        FSTRCS, FSTRC, FSTRG, FSTRGS
-
 ! To use with variable format expressions in writing some output files
     character(20) IGND_CHAR
     character(2000) FMT
@@ -441,10 +373,6 @@ program RUNMESH
     character(500) WRT_900_1, WRT_900_2, WRT_900_3, WRT_900_4, WRT_900_f
     character(500) fl_listMesh
     character(5) strInt
-
-!> THE FOLLOWING COMMON BLOCKS ARE DEFINED FOR WATROF
-!    data VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
-!        EXTFLG/0/, IWFICE/3/, ERRFLG/1/
 
     real :: startprog, endprog
     integer :: narg
@@ -517,33 +445,6 @@ program RUNMESH
         call Init_fls(fls)
     end if !(narg > 0) then
 
-    !> Determine the value of IGND from MESH_input_soil_levels.txt
-!todo: Move this to read_soil_levels
-!    shd%lc%IGND = 0
-
-    !> Open soil levels file and check for IOSTAT errors.
-!    iun = fls%fl(mfk%f52)%iun
-!    open(iun, file = trim(adjustl(fls%fl(mfk%f52)%fn)), status = 'old', action = 'read', iostat = ios)
-!    if (ios /= 0) then
-!        print 1002
-!        stop
-!    end if
-
-    !> Count the number of soil layers.
-!    IGND_TEST = 1.0
-!    do while (IGND_TEST /= 0.0 .and. ios == 0)
-!        read(52, *, iostat = ios) IGND_TEST, IGND_DEEP
-!        shd%lc%IGND = shd%lc%IGND + 1
-!    end do
-
-    !> because IGND increments the first time that IGND_TEST = 0.0
-!    shd%lc%IGND = shd%lc%IGND - 1
-!    print *, 'IGND = ', shd%lc%IGND
-!    close(iun)
-
-!1002 format(/1x, 'MESH_input_soil_levels.txt could not be opened.', &
-!            /1x, 'Ensure that the file exists and restart the program.', /)
-
     call READ_INITIAL_INPUTS( &
 !>GENERIC VARIABLES
                              RELEASE, &
@@ -551,11 +452,8 @@ program RUNMESH
                              GENDIR_OUT, &
  !>variables for READ_PARAMETERS_HYDROLOGY
                              INDEPPAR, DEPPAR, WF_R2, M_C, &
- !>the types that are to be allocated and initialised
                              shd, &
-!                             sl, &
                              sv, hp, ts, cm, &
-!                             SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, &
                              fls)
 
 !>***********************************************************************
@@ -572,20 +470,20 @@ program RUNMESH
 1028 format(/1x, 'FORCING DATA TIME STEP IS LESS THAN 30 MIN', &
             /1x, 'AGGREGATE THE FORCING DATA TO 30 MIN INTERVAL AND TRY AGAIN', /)
 
-!>
-!>***********************************************************************
-!> MAM - Check for parameter values - all parameters should lie within the
-!> specified ranges in the "minmax_parameters.txt" file.
-!>=======================================================================
-!>
-!    call check_parameters(WF_R2, M_C, NMTEST, cp, hp, soil_por_max, soil_depth, s0, t_ice_lens)
-
     !> Assign shed values to local variables.
     NA = shd%NA
     NTYPE = shd%lc%NTYPE
     IGND = shd%lc%IGND
 
     call run_within_tile_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+
+!>
+!>***********************************************************************
+!> MAM - Check for parameter values - all parameters should lie within the
+!> specified ranges in the "minmax_parameters.txt" file.
+!>=======================================================================
+!>
+    call check_parameters(WF_R2, M_C, NTYPE, hp)
 
     call init_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW, int(DELT))
 
@@ -625,22 +523,6 @@ program RUNMESH
             /1x, 'Check that these bounds are within an acceptable range.', /)
 1118 format(3x, a, ': ', i6)
 
-!> PBSM PROGNOSTIC VARIABLES
-!    allocate(DrySnowROW(NA, NTYPE), SnowAgeROW(NA, NTYPE), &
-!             DrySnowGAT(NML), SnowAgeGAT(NML), &
-!             TSNOdsROW(NA, NTYPE), RHOSdsROW(NA, NTYPE), &
-!             TSNOdsGAT(NML), RHOSdsGAT(NML), &
-!             DriftROW(NA, NTYPE), SublROW(NA, NTYPE), DepositionROW(NA, NTYPE), &
-!             DriftGAT(NML), SublGAT(NML), DepositionGAT(NML), &
-!             ZSNOCS(NML), ZSNOGS(NML), &
-!             ZSNOWC(NML), ZSNOWG(NML), &
-!             HCPSCS(NML), HCPSGS(NML), &
-!             HCPSC(NML), HCPSG(NML), &
-!             TSNOWC(NML), TSNOWG(NML), &
-!             RHOSC(NML), RHOSG(NML), &
-!             XSNOWC(NML), XSNOWG(NML), &
-!             XSNOCS(NML), XSNOGS(NML), stat = PAS)
-
 !> LAND SURFACE PROGNOSTIC VARIABLES (for Basin_average_water_balance.csv):
     allocate(TOTAL_THLQ(IGND), TOTAL_THIC(IGND), &
              TOTAL_THLQ_M(IGND), TOTAL_THIC_M(IGND), stat = PAS)
@@ -667,31 +549,6 @@ program RUNMESH
         stop
     end if
 
-!    allocate( &
-!             fetchGAT(NML), HtGAT(NML), N_SGAT(NML), A_SGAT(NML), &
-!             DistribGAT(NML), stat = PAS)
-
-!    if (PAS /= 0) then
-!        print 1114, 'canopy and soil info.'
-!        print 1118, 'Grid squares', NA
-!        print 1118, 'GRUs', NTYPE
-!        print 1118, 'Total tile elements', NML
-!        print 1118, 'Canopy types with urban areas', ICP1
-!        print 1118, 'Canopy types', ICAN
-!        print 1118, 'Soil layers', IGND
-!        stop
-!    end if
-
-!> WATROF FLAGS AND VARIABLES:
-!    allocate(DDGAT(NML), MANNGAT(NML), stat = PAS)
-!    if (PAS /= 0) then
-!        print 1114, 'WATROF'
-!        print 1118, 'Grid squares', NA
-!        print 1118, 'GRUs', NTYPE
-!        print 1118, 'Total tile elements', NML
-!        stop
-!    end if
-
 !> OUTPUT VARIABLES:
     allocate(PREACC(NA), GTACC(NA), QEVPACC(NA), &
              HFSACC(NA), ROFACC(NA), SNOACC(NA), ALVSACC(NA), ALIRACC(NA), &
@@ -712,25 +569,6 @@ program RUNMESH
         print 1118, 'Soil layers', IGND
         stop
     end if
-
-!> CTEM ERRORS (CLASS):
-!    allocate(CO2CONC(NML), COSZS(NML), XDIFFUSC(NML), CFLUXCG(NML), CFLUXCS(NML), &
-!             AILCG(NML, ICTEM), AILCGS(NML, ICTEM), FCANC(NML, ICTEM), FCANCS(NML, ICTEM), &
-!             CO2I1CG(NML, ICTEM), CO2I1CS(NML, ICTEM), CO2I2CG(NML, ICTEM), CO2I2CS(NML, ICTEM), &
-!             SLAI(NML, ICTEM), FCANCMX(NML, ICTEM), ANCSVEG(NML, ICTEM), ANCGVEG(NML, ICTEM), &
-!             RMLCSVEG(NML, ICTEM), RMLCGVEG(NML, ICTEM), &
-!             AILC(NML, ICAN), PAIC(NML, ICAN), FIELDSM(NML, IGND), WILTSM(NML, IGND), &
-!             RMATCTEM(NML, ICTEM, IGND), RMATC(NML, ICAN, IGND), NOL2PFTS(ICAN), stat = PAS)
-!    if (PAS /= 0) then
-!        print 1114, 'CTEM'
-!        print 1118, 'Grid squares', NA
-!        print 1118, 'GRUs', NTYPE
-!        print 1118, 'Total tile elements', NML
-!        print 1118, 'Canopy types', ICAN
-!        print 1118, 'Soil layers', IGND
-!        print 1118, 'CTEM flag', ICTEM
-!        stop
-!    end if
 
 !> *********************************************************************
 !>  Open additional output files
@@ -1108,10 +946,10 @@ program RUNMESH
                 INTERPOLATIONFLAG = 0
             end if !(INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%clin(:)%hf) == 210)) then
 !todo: restore this.
-!            write(58, "('WF_NUM_POINTS: ', i5)") WF_NUM_POINTS
-!            write(58, "('Out directory:', 5a10)") (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
-!            write(58, "('Grid number:  ', 5i10)") (op%N_OUT(i), i = 1, WF_NUM_POINTS)
-!            write(58, "('Land class:   ', 5i10)") (op%II_OUT(i), i = 1, WF_NUM_POINTS)
+!+            write(58, "('WF_NUM_POINTS: ', i5)") WF_NUM_POINTS
+!+            write(58, "('Out directory:', 5a10)") (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
+!+            write(58, "('Grid number:  ', 5i10)") (op%N_OUT(i), i = 1, WF_NUM_POINTS)
+!+            write(58, "('Land class:   ', 5i10)") (op%II_OUT(i), i = 1, WF_NUM_POINTS)
             write(58, *)
             write(58, "('MESH_parameters_hydrology.ini')")
             write(58, *)
@@ -2078,7 +1916,7 @@ program RUNMESH
             catv%CSZ(k) = sign(max(abs(COSZ), 1.0e-3), COSZ)
             CSZGRD(ik) = catv%CSZ(k)
             if (cfi%PRE(k) > 0.0) then
-    !todo: there isn't a GAT variable for this (although, there might be for the canopy)?
+!todo: there isn't a GAT variable for this (although, there might be for the canopy)?
                 XDIFFUS(ik) = 1.0
             else
                 XDIFFUS(ik) = max(0.0, min(1.0 - 0.9*COSZ, 1.0))
