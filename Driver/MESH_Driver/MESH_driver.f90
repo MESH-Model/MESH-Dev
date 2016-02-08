@@ -477,6 +477,8 @@ program RUNMESH
 
     call run_within_tile_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
+    NML = shd%lc%NML
+
 !>
 !>***********************************************************************
 !> MAM - Check for parameter values - all parameters should lie within the
@@ -495,8 +497,6 @@ program RUNMESH
     ! FRAC can be greater than 1.00
     ! So, we cannot use FAREROW in place of BASIN_FRACTION
     TOTAL_AREA = sum(cp%FAREROW)
-
-    NML = shd%lc%NML
 
 !todo+++: Perhaps land-unit indexing can be done prior in the sequence
 !todo+++: of initialization, after reading the drainage database.
@@ -585,50 +585,6 @@ program RUNMESH
 !> *********************************************************************
 !> Set some more intial values and clear accumulators
 !> *********************************************************************
-
-    !> Read an intial value for geothermal flux from file.
-    if (GGEOFLAG == 1) then
-        iun = fls%fl(mfk%f18)%iun
-        open(iun, file = trim(adjustl(fls%fl(mfk%f18)%fn)), status = 'old', action = 'read', iostat = ios)
-        read(iun, *) GGEOGRD(1)
-        close(iun)
-    else
-        GGEOGRD(1) = 0.0
-    end if
-
-!> ASSIGN VALUES OF LAT/LONG TO EACH SQUARE:
-!> NOTE FROM FRANK
-!> I got the equations to determine the actual length of a 
-!> degree of latitude and longitude from this paper, thank you 
-!> Geoff Kite (I have attached it):
-!> http://www.agu.org/pubs/crossref/1994/94WR00231.shtml
-!> This chunk of code is a way to put the actual values of 
-!> longitude and latitude for each cell in a large basin.  
-!> The original CLASS code just put in the same value for each cell.  
-!> The problem is that the class.ini file only has a single value 
-!> of long and lat (as it was only designed for a point).  So in order 
-!> to get the values across the basin I assumed that the single value 
-!> from the class.ini file is in the centre of the basin and then use 
-!> information from the watflow.shd file to figure out the long/lat 
-!> varies across the basin.  However, the watflod.shd file only gives 
-!> information in kilometers not degrees of long/lat so I had 
-!> to use the formulas from the above paper to go between the two.
-!
-!> The only value of DEGLAT is the one read in from the class.ini file, 
-!> after that Diana uses RADJGRD (the value of latitude in radians) so 
-!> after DEGLAT is used to calculate RADJGRD is it no longer used.  This 
-!> is how it was in the original CLASS code.
-
-	do i = 1, NA
-        !LATLENGTH = shd%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
-        !LONGLENGTH = shd%AL/1000.0/(111.4172*cos((DEGLAT*PI/180.0)) - 0.094*cos(3*(DEGLAT*PI/180.0)) + 0.0002*cos(5*(DEGLAT*PI/180.0)))
-        RADJGRD(i) = ((shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0)*PI/180.0
-        DLONGRD(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
-        Z0ORGRD(i) = 0.0
-        GGEOGRD(i) = GGEOGRD(1)
-        ZDMGRD(i) = 10.0
-        ZDHGRD(i) = 2.0
-	end do
 
 !> adjust NAA to the be number of outlet squares, as currently it is the
 !> number of squares with outlets into other squares in the basin, and
@@ -729,60 +685,6 @@ program RUNMESH
 
 !* JAN: The first time throught he loop, jan = 1. Jan will equal 2 after that.
     JAN = 1
-
-!todo - check that this is compatible with Saul's pre-distributed soil moisture and soil temp.
-    do i = 1, NA
-        do m = 1, NTYPE
-            do j = 1, IGND
-                cp%TBARROW(i, m, j) = cp%TBARROW(i, m, j) + TFREZ
-            end do
-            cp%TSNOROW(i, m) = cp%TSNOROW(i, m) + TFREZ
-            cp%TCANROW(i, m) = cp%TCANROW(i, m) + TFREZ
-            cp%TPNDROW(i, m) = cp%TPNDROW(i, m) + TFREZ
-            TBASROW(i, m) = cp%TBARROW(i, m, IGND)
-            CMAIROW(i, m) = 0.0
-            WSNOROW(i, m) = 0.0
-            TSFSROW(i, m, 1) = TFREZ
-            TSFSROW(i, m, 2) = TFREZ
-            TSFSROW(i, m, 3) = cp%TBARROW(i, m, 1)
-            TSFSROW(i, m, 4) = cp%TBARROW(i, m, 1)
-            TACROW(i, m) = cp%TCANROW(i, m)
-            QACROW(i, m) = 0.5e-2
-            if (IGND > 3) then ! should stay this way to work with class
-
-                !todo - if we have time, change this so that soil.ini can take more than 3 layers.
-                if (NRSOILAYEREADFLAG == 0) then
-                    do j = 4, IGND
-                        cp%THLQROW(i, m, j) = cp%THLQROW(i, m, 3)
-                        cp%THICROW(i, m, j) = cp%THICROW(i, m, 3)
-                        cp%TBARROW(i, m, j) = cp%TBARROW(i, m, 3)
-                        if (cp%SDEPROW(i, m) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. cp%SANDROW(i, m, 3) > -2.5) then
-                            cp%SANDROW(i, m, j) = -3.0
-                            cp%CLAYROW(i, m, j) = -3.0
-                            cp%ORGMROW(i, m, j) = -3.0
-                        else
-                            cp%SANDROW(i, m, j) = cp%SANDROW(i, m, 3)
-                            cp%CLAYROW(i, m, j) = cp%CLAYROW(i, m, 3)
-                            cp%ORGMROW(i, m, j) = cp%ORGMROW(i, m, 3)
-                        end if
-                    end do
-                else
-                    do j = 4, IGND
-                        if (cp%SDEPROW(i, m) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. cp%SANDROW(i, m, 3) > -2.5) then
-                            cp%SANDROW(i, m, j) = -3.0
-                            cp%CLAYROW(i, m, j) = -3.0
-                            cp%ORGMROW(i, m, j) = -3.0
-                        end if
-                    end do
-                end if !if (NRSOILAYEREADFLAG == 0) then
-            end if !(IGND > 3) then
-            do k = 1, 6
-                do l = 1, 50
-                    ITCTROW(i, m, k, l) = 0
-                end do
-            end do
-        end do !m = 1, NTYPE
-    end do !i = 1, NA
 
 !> clear accumulating variables
     TOTAL_ROF = 0.0
@@ -1019,55 +921,6 @@ program RUNMESH
             end do !m = 1, NTYPE
         end if !(MODELINFOOUTFLAG > 0) then
     end if !(ipid == 0) then
-
-    allocate(INFILTYPE(NML), SI(NML), TSI(NML), &
-             SNOWMELTD(NML), SNOWMELTD_LAST(NML), SNOWINFIL(NML), &
-             CUMSNOWINFILCS(NML), MELTRUNOFF(NML), CUMSNOWINFILGS(NML))
-             
-    NMELT = 1
-    INFILTYPE = 2 !> INITIALIZED WITH UNLIMITED INFILTRATION
-    SNOWMELTD = 0.0
-    SNOWINFIL = 0.0
-    CUMSNOWINFILCS = 0.0
-    CUMSNOWINFILGS = 0.0
-    MELTRUNOFF = 0.0
-    SI = 0.20
-    TSI = -0.10
-
-!* PDMROF
-    allocate(CMINPDM(NML), CMAXPDM(NML), BPDM(NML), K1PDM(NML), &
-             K2PDM(NML), ZPNDPRECS(NML), ZPONDPREC(NML), ZPONDPREG(NML), &
-             ZPNDPREGS(NML), &
-             UM1CS(NML), UM1C(NML), UM1G(NML), UM1GS(NML), &
-             QM1CS(NML), QM1C(NML), QM1G(NML), QM1GS(NML), &
-             QM2CS(NML), QM2C(NML), QM2G(NML), QM2GS(NML), &
-             UMQ(NML), &
-             FSTRCS(NML), FSTRC(NML), FSTRG(NML), FSTRGS(NML))
-
-!* PDMROF: INITIALIZE VARIABLES
-    ZPNDPRECS = 0.0
-    ZPONDPREC = 0.0
-    ZPONDPREG = 0.0
-    ZPNDPREGS = 0.0
-    ZPND = 0.0
-    UM1CS = 0.0
-    UM1C = 0.0
-    UM1G = 0.0
-    UM1GS = 0.0
-    QM1CS = 0.0
-    QM1C = 0.0
-    QM1G = 0.0
-    QM1GS = 0.0
-    QM2CS = 0.0
-    QM2C = 0.0
-    QM2G = 0.0
-    QM2GS = 0.0
-    UMQ = 0.0
-    FSTRCS = 0.0
-    FSTRC = 0.0
-    FSTRG = 0.0
-    FSTRGS = 0.0
-    FSTR = 0.0
 
 !>
 !>****************CHECK RESUME FILE***************************************************
@@ -1666,23 +1519,6 @@ program RUNMESH
                 SV%WC_THPOR, SV%WC_THLRET, SV%WC_THLMIN, SV%WC_BI, SV%WC_PSISAT, &
                 SV%WC_GRKSAT, SV%WC_HCPS, SV%WC_TCS)
 
-!> Allocate variables for WATDRN3
-!> ******************************************************************
-!> DGP - June 3, 2011: Now that variables are shared, moved from WD3
-!> flag to ensure allocation.
-    allocate(BTC(NTYPE, IGND), BCAP(NTYPE, IGND), DCOEFF(NTYPE, IGND), &
-             BFCAP(NTYPE, IGND), BFCOEFF(NTYPE, IGND), BFMIN(NTYPE, IGND), &
-             BQMAX(NTYPE, IGND), stat = PAS)
-
-!> Call WATDRN3B to set WATDRN (Ric) variables
-!> ******************************************************************
-!> DGP - May 5, 2011: Added.
-    if (PAS /= 0) print *, 'Error allocating on WD3 for new WATDRN.'
-    call WATDRN3B(PSISROW, THPROW, GRKSROW, BIROW, cp%XSLPROW, cp%DDROW, &
-                  NA, NTYPE, IGND, &
-                  BTC, BCAP, DCOEFF, BFCAP, BFCOEFF, BFMIN, BQMAX, &
-                  cp%SANDROW, cp%CLAYROW)
-
 !> *********************************************************************
 !> MAM - Initialize ENDDATE and ENDDATA
 !> *********************************************************************
@@ -1758,29 +1594,6 @@ program RUNMESH
             write(901, '(a)') 'DAY,YEAR,HFSACC,QEVPACC'
 
         end if !(BASINBALANCEOUTFLAG > 0) then
-
-!>**********************************************************************
-!> Set initial SnowAge & DrySnow values for PBSM calculations
-!> (MK MacDonald, Sept 2010)
-!>**********************************************************************
-        if (PBSMFLAG == 1) then
-            do i = 1, NA  !i = 2, NA
-                do m = 1, NTYPE
-                    if (cp%SNOROW(i, m) <= 0.0) then
-                        DrySnowROW(i, m) = 0.0 !1 = snowpack is dry (i.e. cold)
-                        SnowAgeROW(i, m) = 0.0 !hours since last snowfall
-       !todo: this can use the TFREZ parameter instead of a hard-coded value. (dgp: 2015-01-09)
-                        if (cm%clin(cfk%TT)%GRD(i) >= 273.16) then
-                            DrySnowROW(i, m) = 0.0
-                            SnowAgeROW(i, m) = 48.0 !assume 48 hours since last snowfall
-                        else
-                            DrySnowROW(i, m) = 1.0
-                            SnowAgeROW(i, m) = 48.0
-                        end if
-                    end if
-                end do
-            end do
-        end if !PBSMFLAG == 1
 
     end if !(ipid == 0) then
 

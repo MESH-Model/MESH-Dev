@@ -5,106 +5,20 @@ module process_CLASS_config
 
     implicit none
 
-!>  INTEGER CONSTANTS.
-!INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
-!    integer, parameter :: ICAN = 4, ICP1 = ICAN + 1, ICTEM = 1 !Number of CTEM vegetation categories (set to 1 if not using CTEM)
-
-!* HOURLY_START_*: Start day/year for recording hourly averaged data
-!* HOURLY_STOP_*: Stop day/year for recording hourly averaged data
-!* DAILY_START_*: Start day/year for recording daily averaged data
-!* DAILY_STOP_*: Stop day/year for recording daily averaged data
-!    integer HOURLY_START_DAY, HOURLY_STOP_DAY, DAILY_START_DAY, &
-!        DAILY_STOP_DAY
-!    integer HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
-!        DAILY_STOP_YEAR
-
 !> LAND SURFACE DIAGNOSTIC VARIABLES.
 
     real, dimension(:), allocatable :: SNOGRD
 
 !>  CONSTANTS AND TEMPORARY VARIABLES.
-!    real DEGLAT, DEGLON
     real FSDOWN1, FSDOWN2, FSDOWN3, RDAY, &
         DECL, HOUR, COSZ
-!        ALTOT, FSSTAR, FLSTAR, QH, QE, BEG, SNOMLT, ZSN, TCN, TSN, TPN, GTOUT
-!    integer JLAT
-
-!> FIRST SET OF DEFINITIONS:
-
-!> BACKGROUND VARIABLES, AND PROGNOSTIC AND DIAGNOSTIC
-!> VARIABLES NORMALLY PROVIDED BY AND/OR USED BY THE GCM.
-!> THE SUFFIX "ROW" REFERS TO VARIABLES EXISTING ON THE
-!> MOSAIC GRID ON THE CURRENT LATITUDE CIRCLE.  THE SUFFIX
-!> "GAT" REFERS TO THE SAME VARIABLES AFTER THEY HAVE UNDERGONE
-!> A "GATHER" OPERATION IN WHICH THE TWO MOSAIC DIMENSIONS
-!> ARE COLLAPSED INTO ONE.  THE SUFFIX "GRD" REFERS BOTH TO
-!> GRID-CONSTANT INPUT VARIABLES. AND TO GRID-AVERAGED
-!> DIAGNOSTIC VARIABLES.
-
-!> THE FIRST DIMENSION ELEMENT OF THE "ROW" VARIABLES
-!> REFERS TO THE NUMBER OF GRID CELLS ON THE CURRENT
-!> LATITUDE CIRCLE.  IN THIS STAND-ALONE VERSION, THIS
-!> NUMBER IS ARBITRARILY SET TO THREE, TO ALLOW UP TO THREE
-!> SIMULTANEOUS TESTS TO BE RUN.  THE SECOND DIMENSION
-!> ELEMENT OF THE "ROW" VARIABLES REFERS TO THE MAXIMUM
-!> NUMBER OF TILES IN THE MOSAIC.  IN THIS STAND-ALONE
-!> VERSION, THIS NUMBER IS SET TO EIGHT.  THE FIRST
-!> DIMENSION ELEMENT IN THE "GAT" VARIABLES IS GIVEN BY
-!> THE PRODUCT OF THE FIRST TWO DIMENSION ELEMENTS IN THE
-!> "ROW" VARIABLES.
-
-!>     * CONSTANTS (PARAMETER DEFINITIONS):
-
-!* ICAN: MAXIMUM ALLOWABLE NUMBER OF LAND COVER TYPES
-!* ICP1: MAXIMUM ALLOWABLE NUMBER OF LAND COVER TYPES INCLUDING
-!*       URBAN AREAS
-
-!* N: COUNTER USED BY CLASS
-!* NCOUNT: HALF-HOURLY BASED TIME STEP (200 LOOP)
-!* NSUM: NUMBER OF ITERATIONS, TIME STEPS PASSED (200 LOOP)
-!* NSUM_TOTAL: total number of iterations
-!    integer N, NCOUNT, NSUM
-
-!> LIMITING TIME STEPS (CLASS.INI):
-!> DAN  NOT USED RIGHT NOW.  CONSIDER USING THEM TO LIMIT RUN INSTEAD
-!> DAN  OF END OF FORCING.BIN FILE (IS ESPECIALLY USEFUL WHEN DEBUGGING).
-!* JOUT1: DAILY-AVERAGED OUTPUT START DAY (JULIAN FROM YEAR START)
-!* JOUT2: DAILY-AVERAGED OUTPUT STOP DAY (JULIAN FROM YEAR START)
-!* JAV1: DAILY-AVERAGED OUTPUT START YEAR
-!* JAV2: DAILY-AVERAGED OUTPUT STOP YEAR
-!* KOUT1: YEARLY-AVERAGED OUTPUT START DAY (JULIAN FROM YEAR START)
-!* KOUT2: YEARLY-AVERAGED OUTPUT STOP DAY (JULIAN FROM YEAR START)
-!* KAV1: YEARLY-AVERAGED OUTPUT START YEAR
-!* KAV2: YEARLY-AVERAGED OUTPUT STOP YEAR
-!    integer JOUT1, JOUT2, JAV1, JAV2, KOUT1, KOUT2, KAV1, KAV2
-
-!> CLASS CONTROL FLAGS:
-!> DAN  CONSIDER INCLUDING AS CONTROL FLAGS IN RUN_OPTIONS.INI FILE SO
-!> DAN  THAT THEY ARE NO LONGER HARD-CODED.
-!* ALL: DESCRIPTIONS ARE WRITTEN WHERE RUN_OPTIONS.INI IS READ
-!    integer IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
-!        IALS, IALG, ITG, ITC, ITCG
 
     integer NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI
 
-!> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
-!* TBAR: INITIAL SOIL LAYER TEMPERATURE
-!* THLQ: INITIAL SOIL LAYER LIQUID WATER CONTENT
-!* THIC: INITIAL SOIL LAYER ICE WATER CONTENT
     real, dimension(:, :), allocatable :: TBASROW, &
         CMAIROW, TACROW, QACROW, WSNOROW
-
-!* TPND: INITIAL PONDING TEMPERATURE (CLASS.INI)
-!* ZPND: INITIAL PONDING DEPTH (CLASS.INI)
-!* ALBS: ALBEDO OF SNOWPACK (CLASS.INI)
-!* TSNO: INITIAL SNOWPACK TEMPERATURE (CLASS.INI)
-!* RHOS: DENSITY OF SNOWPACK (CLASS.INI)
-!* SNO: SNOWPACK ON CANOPY LAYER (CLASS.INI)
-!* TCAN: INITIAL CANOPY TEMPERATURE (CLASS.INI)
-!* GRO: VEGETATION GROWTH INDEX (CLASS.INI)
     real, dimension(:), allocatable :: &
         FRZCGAT
-
     real, dimension(:, :, :), allocatable :: TSFSROW
 
 !> CANOPY AND SOIL INFORMATION (CLASS):
@@ -122,12 +36,6 @@ module process_CLASS_config
         AGIDROW
     real, dimension(:), allocatable :: XDGAT, &
         KSGAT
-
-!* SAND: PERCENT-CONTENT OF SAND IN SOIL LAYER (CLASS.INI)
-!* CLAY: PERCENT-CONTENT OF CLAY IN SOIL LAYER (CLASS.INI)
-!* ORGM: PERCENT-CONTENT OF ORGANIC MATTER IN SOIL LAYER (CLASS.INI)
-
-!* MIDROW: DEFINITION IN CLASS DOCUMENTATION (CLASS.INI)
 
     integer, dimension(:, :, :), allocatable :: ISNDROW, IORG
     integer, dimension(:,:), allocatable :: IGDRROW
@@ -172,13 +80,6 @@ module process_CLASS_config
     integer, dimension(:, :, :, :), allocatable :: ITCTROW
     integer, dimension(:, :, :), allocatable :: ITCTGAT
 
-!* TITLE: PROJECT DESCRIPTOR (6 COLUMNS: 4 CHARACTER STRINGS)
-!* NAME: AUTHOR, RESEARCHER (6 COLUMNS: 4 CHARACTER STRINGS)
-!* PLACE: SITE LOCATION, BASIN (6 COLUMNS: 4 CHARACTER STRINGS)
-!    character(4) TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, &
-!        TITLE6, NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
-!        PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
-
 !> OUTPUT VARIABLES:
 !> THE SUFFIX "ACC" REFERS TO THE ACCUMULATOR ARRAYS USED IN
 !> CALCULATING TIME AVERAGES.
@@ -218,169 +119,6 @@ module process_CLASS_config
     real, dimension(:), allocatable :: CTVSTP, CTSSTP, CT1STP, &
         CT2STP, CT3STP, WTVSTP, WTSSTP, WTGSTP
 
-!> CTEM-RELATED FIELDS (NOT USED IN STANDARD OFFLINE CLASS RUNS).
-!    real, dimension(:), allocatable :: &
-!        CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS
-!    real, dimension(:, :), allocatable :: &
-!        AILCG, AILCGS, FCANC, FCANCS, CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
-!        SLAI, FCANCMX, ANCSVEG, ANCGVEG, RMLCSVEG, RMLCGVEG, &
-!        AILC, PAIC, &
-!        FIELDSM, WILTSM
-!    real, dimension(:, :, :), allocatable :: &
-!        RMATCTEM, RMATC
-!    integer, dimension(:), allocatable :: NOL2PFTS
-!    integer ICTEMMOD
-!    integer L2MAX
-
-!> COMMON BLOCK PARAMETERS (CLASS):
-!    integer K1, K2, K3, K4, K5, K6, K7, K8, K9, K10, K11
-!    real X1, X2, X3, X4, G, GAS, X5, X6, CPRES, GASV, X7, CPI, X8, &
-!        CELZRO, X9, X10, X11, X12, X13, X14, X15, SIGMA, X16, DELTIM, &
-!        DELT, TFREZ, RGAS, RGASV, GRAV, SBC, VKC, CT, VMIN, TCW, TCICE, &
-!        TCSAND, TCCLAY, TCOM, TCDRYS, RHOSOL, RHOOM, HCPW, HCPICE, &
-!        HCPSOL, HCPOM, HCPSND, HCPCLY, SPHW, SPHICE, SPHVEG, SPHAIR, &
-!        RHOW, RHOICE, TCGLAC, CLHMLT, CLHVAP, PI, ZOLNG, ZOLNS, ZOLNI, &
-!        ZORATG, ALVSI, ALIRI, ALVSO, ALIRO, ALBRCK, DELTA, CGRAV, &
-!        CKARM, CPD, AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
-!    real, dimension(ICAN) :: CANEXT, XLEAF, ZORAT
-!    real, dimension(3) :: THPORG, THRORG, THMORG, BORG, PSISORG, &
-!        GRKSORG
-!    real, dimension(18, 4, 2) :: GROWYR
-
-!> WATROF FLAGS AND VARIABLES:
-!* VICEFLG: VERTICAL ICE FLAG OR LIMIT
-!* HICEFLG: HORIZONTAL ICE FLAG OR LIMIT
-!    integer LZFFLG, EXTFLG, IWFICE, ERRFLG, IWFOFLW
-!    real VICEFLG, PSI_LIMIT, HICEFLG
-!* DD (DDEN): DRAINAGE DENSITY (CLASS.INI)
-!* MANN (WFSF): MANNING'S n (CLASS.INI)
-!    real, dimension(:), allocatable :: DDGAT, MANNGAT
-!    real, dimension(:, :), allocatable :: BTC, BCAP, DCOEFF, BFCAP, &
-!        BFCOEFF, BFMIN, BQMAX
-
-!>PBSM VARIABLES (GRU)
-!* DrySnow: 0 = air temperature above 0 degC
-!*          1 = air temperature below 0 degC
-!* SnowAge: hours since last snowfall
-!* Drift: blowing snow transport (kg/m^2)
-!* Subl: blowing snow sublimation (kg/m^2)
-!    real, dimension(:), allocatable :: DrySnowGAT, SnowAgeGAT, &
-!        TSNOdsGAT, RHOSdsGAT, DriftGAT, SublGAT, DepositionGAT
-!    real, dimension(:, :), allocatable :: DrySnowROW, SnowAgeROW, &
-!        TSNOdsROW, RHOSdsROW, DriftROW, SublROW, DepositionROW
-!>CLASS SUBAREA VARIABLES NEEDED FOR PBSM
-!    real, dimension(:), allocatable :: ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
-!        HCPSCS, HCPSGS, HCPSC, HCPSG, TSNOWC, TSNOWG, &
-!        RHOSC, RHOSG, XSNOWC, XSNOWG, XSNOCS, XSNOGS
-
-!* PBSM parameters
-!  fetch: fetch distance (m)
-!  Ht: vegetation height (m)
-!  N_S:vegetation density (number/m^2)
-!  A_S: vegetation width (m)
-!  Distrib: Inter-GRU snow redistribution factor
-!    real, dimension(:), allocatable :: &
-!        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT
-!    integer NMELT
-!    real SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
-!    integer, dimension(:), allocatable :: INFILTYPE
-!    real, dimension(:), allocatable :: SI, TSI, SNOWMELTD, SNOWMELTD_LAST, &
-!        SNOWINFIL, CUMSNOWINFILCS, MELTRUNOFF, CUMSNOWINFILGS
-
-!* PDMROF
-!    real ZPND, FSTR
-!    real, dimension(:), allocatable :: &
-!        CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
-!        ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &
-!        UM1CS, UM1C, UM1G, UM1GS, &
-!        QM1CS, QM1C, QM1G, QM1GS, &
-!        QM2CS, QM2C, QM2G, QM2GS, UMQ, &
-!        FSTRCS, FSTRC, FSTRG, FSTRGS
-
-!> GRID OUTPUT POINTS
-!* BNAM: TEMPORARY HOLD FOR OUTPUT DIRECTORY (12 CHARACTER STRING)
-!    character(12) BNAM
-!* WF_NUM_POINTS: NUMBER OF GRID OUTPUTS
-!* I_OUT: OUTPUT GRID SQUARE TEMPORARY STORE
-!    integer WF_NUM_POINTS, I_OUT
-
-!    type CLASSOUT_VARS
-!        real, dimension(:), allocatable :: &
-!            PREACC, GTACC, QEVPACC, EVAPACC, HFSACC, HMFNACC, &
-!            ROFACC, ROFOACC, ROFSACC, ROFBACC, WTBLACC, ALVSACC, ALIRACC, &
-!            RHOSACC, TSNOACC, WSNOACC, SNOARE, TCANACC, CANARE, SNOACC, &
-!            RCANACC, SCANACC, GROACC, FSINACC, FLINACC, FLUTACC, &
-!            TAACC, UVACC, PRESACC, QAACC
-!        real, dimension(:, :), allocatable :: &
-!            TBARACC, THLQACC, THICACC, THALACC, GFLXACC
-!    end type !CLASSOUT_VARS
-
-!!variables for reading parameters_class.ini
-!    type ClassParameters
-       !> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
-!        real, dimension(:), allocatable :: ZRFMGRD, &
-!                                           ZRFHGRD, ZBLDGRD, GCGRD
-!> CANOPY AND SOIL INFORMATION (CLASS):
-!        real, dimension(:, :, :), allocatable :: &
-!            FCANROW, LNZ0ROW, ALVCROW, ALICROW, PAMXROW, PAMNROW, &
-!            CMASROW, ROOTROW, RSMNROW, QA50ROW, VPDAROW, VPDBROW, PSGAROW, &
-!            PSGBROW
-!> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
-!* DD (DDEN): DRAINAGE DENSITY (CLASS.INI)
-!* MANN (WFSF): MANNING'S n (CLASS.INI)
-!        real, dimension(:, :), allocatable :: DRNROW, XSLPROW, &
-!                                              XDROW, SDEPROW, FAREROW, DDROW, MANNROW, TCANROW, &
-!                                              TSNOROW, TPNDROW, ZPNDROW, RCANROW, SCANROW, SNOROW, &
-!                                              ALBSROW, RHOSROW, GROROW, KSROW
-!* MIDROW: DEFINITION IN CLASS DOCUMENTATION (CLASS.INI)
-!        integer, dimension(:, :), allocatable :: MIDROW
-!> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
-!* TBAR: INITIAL SOIL LAYER TEMPERATURE
-!* THLQ: INITIAL SOIL LAYER LIQUID WATER CONTENT
-!* THIC: INITIAL SOIL LAYER ICE WATER CONTENT
-!* SAND: PERCENT-CONTENT OF SAND IN SOIL LAYER (CLASS.INI)
-!* CLAY: PERCENT-CONTENT OF CLAY IN SOIL LAYER (CLASS.INI)
-!* ORGM: PERCENT-CONTENT OF ORGANIC MATTER IN SOIL LAYER (CLASS.INI)
-!        real, dimension(:, :, :), allocatable :: &
-!            SANDROW, CLAYROW, ORGMROW, &
-!            TBARROW, THLQROW, THICROW
-!    end type
-
-!> These are the types defined in mesh_input_module.f that contain arrays
-!> that need to be allocated in read_initial_inputs.f.
-!    type(OutputPoints), save :: op
-!    type(ClassParameters), save :: cp
-!    type(CLASSOUT_VARS), save :: co
-
-!    common /PARAMS/ X1, X2, X3, X4, G, GAS, X5, X6, CPRES, &
-!        GASV, X7
-!    common /PARAM1/ CPI, X8, CELZRO, X9, X10, X11
-!    common /PARAM3/ X12, X13, X14, X15, SIGMA, X16
-!    common /TIMES/ DELTIM, K1, K2, K3, K4, K5, K6, K7, K8, K9, &
-!        K10, K11
-
-!> THE FOLLOWING COMMON BLOCKS ARE DEFINED SPECIFICALLY FOR USE
-!> IN CLASS, VIA BLOCK DATA AND THE SUBROUTINE "CLASSD".
-!    common /CLASS1/ DELT, TFREZ
-!    common /CLASS2/ RGAS, RGASV, GRAV, SBC, VKC, CT, VMIN
-!    common /CLASS3/ TCW, TCICE, TCSAND, TCCLAY, TCOM, TCDRYS, &
-!        RHOSOL, RHOOM
-!    common /CLASS4/ HCPW, HCPICE, HCPSOL, HCPOM, HCPSND, &
-!        HCPCLY, SPHW, SPHICE, SPHVEG, SPHAIR, RHOW, &
-!        RHOICE, TCGLAC, CLHMLT, CLHVAP
-!    common /CLASS5/ THPORG, THRORG, THMORG, BORG, PSISORG, &
-!        GRKSORG
-!    common /CLASS6/ PI, GROWYR, ZOLNG, ZOLNS, ZOLNI, ZORAT, &
-!        ZORATG
-!    common /CLASS7/ CANEXT, XLEAF
-!    common /CLASS8/ ALVSI, ALIRI, ALVSO, ALIRO, ALBRCK
-!    common /PHYCON/ DELTA, CGRAV, CKARM, CPD
-!    common /CLASSD2/ AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
-
-!> THE FOLLOWING COMMON BLOCKS ARE DEFINED FOR WATROF
-!    data VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
-!        EXTFLG/0/, IWFICE/3/, ERRFLG/1/
-
     contains
 
     subroutine RUNCLASS_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
@@ -411,7 +149,7 @@ module process_CLASS_config
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        integer NA, NTYPE, NML, IGND, m, j, i, ierr
+        integer NA, NTYPE, NML, IGND, l, k, m, j, i, iun, ierr
 
         NA = shd%NA
         NTYPE = shd%lc%NTYPE
@@ -421,35 +159,6 @@ module process_CLASS_config
 !> INITIALIZE CLASS VARIABLES
 !> SET COMMON CLASS PARAMETERS.
         call CLASSD
-!>
-!>*******************************************************************
-!>
-!    call READ_INITIAL_INPUTS( &
-!>GENERIC VARIABLES
-!                             RELEASE, &
-!>VARIABLES FOR READ_RUN_OPTIONS
-!                             IDISP, IZREF, ISLFD, IPCP, IWF, &
-!                             IPAI, IHGT, IALC, IALS, IALG, ITG, ITC, ITCG, &
-!                             ICTEMMOD, IOS, PAS, N, IROVAL, WF_NUM_POINTS, &
-!  IYEAR_START, IDAY_START, IHOUR_START, IMIN_START, &
-!  IYEAR_END,IDAY_END, IHOUR_END, IMIN_END, &
-!                             IRONAME, GENDIR_OUT, &
-!>variables for READ_PARAMETERS_CLASS
-!                             TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6, &
-!                             NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
-!                             PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6, &
-!                             shd%wc%ILG, NLTEST, NMTEST, JLAT, ICAN, &
-!                             DEGLAT, DEGLON, &
-!                             HOURLY_START_DAY, HOURLY_STOP_DAY, &
-!                             DAILY_START_DAY, DAILY_STOP_DAY, &
-!                             HOURLY_START_YEAR, HOURLY_STOP_YEAR, &
-!                             DAILY_START_YEAR, DAILY_STOP_YEAR, &
- !>variables for READ_SOIL_INI
- !>variables for READ_PARAMETERS_HYDROLOGY
-!                             INDEPPAR, DEPPAR, WF_R2, M_C, &
- !>the types that are to be allocated and initialised
-!                             shd, op, sl, cp, sv, hp, ts, cm, &
-!                             SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
 
         allocate(cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA), &
                  cp%GCGRD(NA))
@@ -473,9 +182,7 @@ module process_CLASS_config
 
         allocate(cp%SANDROW(NA, NTYPE, IGND), cp%CLAYROW(NA, NTYPE, IGND), cp%ORGMROW(NA, NTYPE, IGND), &
                  cp%TBARROW(NA, NTYPE, IGND), cp%THLQROW(NA, NTYPE, IGND), cp%THICROW(NA, NTYPE, IGND))
-!>
-!>*******************************************************************
-!>
+
         call READ_PARAMETERS_CLASS(shd, fls)
 
 !>
@@ -928,6 +635,157 @@ module process_CLASS_config
                  cdv%WTRC(NML), cdv%WTRG(NML), cdv%WTRS(NML))
         allocate(cdv%GFLX(NML, IGND), cdv%HMFG(NML, IGND), cdv%HTC(NML, IGND), cdv%QFC(NML, IGND))
 
+        !> Read an intial value for geothermal flux from file.
+        if (GGEOFLAG == 1) then
+            iun = fls%fl(mfk%f18)%iun
+            open(iun, file = trim(adjustl(fls%fl(mfk%f18)%fn)), status = 'old', action = 'read', iostat = ierr)
+            read(iun, *) GGEOGRD(1)
+            close(iun)
+        else
+            GGEOGRD(1) = 0.0
+        end if
+
+!todo - check that this is compatible with Saul's pre-distributed soil moisture and soil temp.
+        do i = 1, NA
+            do m = 1, NTYPE
+                do j = 1, IGND
+                    cp%TBARROW(i, m, j) = cp%TBARROW(i, m, j) + TFREZ
+                end do
+                cp%TSNOROW(i, m) = cp%TSNOROW(i, m) + TFREZ
+                cp%TCANROW(i, m) = cp%TCANROW(i, m) + TFREZ
+                cp%TPNDROW(i, m) = cp%TPNDROW(i, m) + TFREZ
+                TBASROW(i, m) = cp%TBARROW(i, m, IGND)
+                CMAIROW(i, m) = 0.0
+                WSNOROW(i, m) = 0.0
+                TSFSROW(i, m, 1) = TFREZ
+                TSFSROW(i, m, 2) = TFREZ
+                TSFSROW(i, m, 3) = cp%TBARROW(i, m, 1)
+                TSFSROW(i, m, 4) = cp%TBARROW(i, m, 1)
+                TACROW(i, m) = cp%TCANROW(i, m)
+                QACROW(i, m) = 0.5e-2
+                if (IGND > 3) then ! should stay this way to work with class
+
+                    !todo - if we have time, change this so that soil.ini can take more than 3 layers.
+                    if (NRSOILAYEREADFLAG == 0) then
+                        do j = 4, IGND
+                            cp%THLQROW(i, m, j) = cp%THLQROW(i, m, 3)
+                            cp%THICROW(i, m, j) = cp%THICROW(i, m, 3)
+                            cp%TBARROW(i, m, j) = cp%TBARROW(i, m, 3)
+                            if (cp%SDEPROW(i, m) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. cp%SANDROW(i, m, 3) > -2.5) then
+                                cp%SANDROW(i, m, j) = -3.0
+                                cp%CLAYROW(i, m, j) = -3.0
+                                cp%ORGMROW(i, m, j) = -3.0
+                            else
+                                cp%SANDROW(i, m, j) = cp%SANDROW(i, m, 3)
+                                cp%CLAYROW(i, m, j) = cp%CLAYROW(i, m, 3)
+                                cp%ORGMROW(i, m, j) = cp%ORGMROW(i, m, 3)
+                            end if
+                        end do
+                    else
+                        do j = 4, IGND
+                            if (cp%SDEPROW(i, m) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. cp%SANDROW(i, m, 3) > -2.5) then
+                                cp%SANDROW(i, m, j) = -3.0
+                                cp%CLAYROW(i, m, j) = -3.0
+                                cp%ORGMROW(i, m, j) = -3.0
+                            end if
+                        end do
+                    end if !if (NRSOILAYEREADFLAG == 0) then
+                end if !(IGND > 3) then
+                do k = 1, 6
+                    do l = 1, 50
+                        ITCTROW(i, m, k, l) = 0
+                    end do
+                end do
+            end do !m = 1, NTYPE
+        end do !i = 1, NA
+
+        !> FROZENSOILINFILFLAG
+        allocate(INFILTYPE(NML), SI(NML), TSI(NML), &
+                 SNOWMELTD(NML), SNOWMELTD_LAST(NML), SNOWINFIL(NML), &
+                 CUMSNOWINFILCS(NML), MELTRUNOFF(NML), CUMSNOWINFILGS(NML))
+        NMELT = 1
+        INFILTYPE = 2 !> INITIALIZED WITH UNLIMITED INFILTRATION
+        SNOWMELTD = 0.0
+        SNOWINFIL = 0.0
+        CUMSNOWINFILCS = 0.0
+        CUMSNOWINFILGS = 0.0
+        MELTRUNOFF = 0.0
+        SI = 0.20
+        TSI = -0.10
+
+        !> PDMROF
+        allocate(CMINPDM(NML), CMAXPDM(NML), BPDM(NML), K1PDM(NML), &
+                 K2PDM(NML), ZPNDPRECS(NML), ZPONDPREC(NML), ZPONDPREG(NML), &
+                 ZPNDPREGS(NML), &
+                 UM1CS(NML), UM1C(NML), UM1G(NML), UM1GS(NML), &
+                 QM1CS(NML), QM1C(NML), QM1G(NML), QM1GS(NML), &
+                 QM2CS(NML), QM2C(NML), QM2G(NML), QM2GS(NML), &
+                 UMQ(NML), &
+                 FSTRCS(NML), FSTRC(NML), FSTRG(NML), FSTRGS(NML))
+        ZPNDPRECS = 0.0
+        ZPONDPREC = 0.0
+        ZPONDPREG = 0.0
+        ZPNDPREGS = 0.0
+        ZPND = 0.0
+        UM1CS = 0.0
+        UM1C = 0.0
+        UM1G = 0.0
+        UM1GS = 0.0
+        QM1CS = 0.0
+        QM1C = 0.0
+        QM1G = 0.0
+        QM1GS = 0.0
+        QM2CS = 0.0
+        QM2C = 0.0
+        QM2G = 0.0
+        QM2GS = 0.0
+        UMQ = 0.0
+        FSTRCS = 0.0
+        FSTRC = 0.0
+        FSTRG = 0.0
+        FSTRGS = 0.0
+        FSTR = 0.0
+
+        !> Allocate variables for WATDRN3
+        !> ******************************************************************
+        !> DGP - June 3, 2011: Now that variables are shared, moved from WD3
+        !> flag to ensure allocation.
+        allocate(BTC(NTYPE, IGND), BCAP(NTYPE, IGND), DCOEFF(NTYPE, IGND), &
+                 BFCAP(NTYPE, IGND), BFCOEFF(NTYPE, IGND), BFMIN(NTYPE, IGND), &
+                 BQMAX(NTYPE, IGND), stat = ierr)
+        if (ierr /= 0) print *, 'Error allocating on WD3 for new WATDRN.'
+
+        !> Call WATDRN3B to set WATDRN (Ric) variables
+        !> ******************************************************************
+        !> DGP - May 5, 2011: Added.
+        call WATDRN3B(PSISROW, THPROW, GRKSROW, BIROW, cp%XSLPROW, cp%DDROW, &
+                      NA, NTYPE, IGND, &
+                      BTC, BCAP, DCOEFF, BFCAP, BFCOEFF, BFMIN, BQMAX, &
+                      cp%SANDROW, cp%CLAYROW)
+
+        !>**********************************************************************
+        !> Set initial SnowAge & DrySnow values for PBSM calculations
+        !> (MK MacDonald, Sept 2010)
+        !>**********************************************************************
+        if (PBSMFLAG == 1) then
+            do i = 1, NA  !i = 2, NA
+                do m = 1, NTYPE
+                    if (cp%SNOROW(i, m) <= 0.0) then
+                        DrySnowROW(i, m) = 0.0 !1 = snowpack is dry (i.e. cold)
+                        SnowAgeROW(i, m) = 0.0 !hours since last snowfall
+       !todo: this can use the TFREZ parameter instead of a hard-coded value. (dgp: 2015-01-09)
+                        if (cm%clin(cfk%TT)%GRD(i) >= 273.16) then
+                            DrySnowROW(i, m) = 0.0
+                            SnowAgeROW(i, m) = 48.0 !assume 48 hours since last snowfall
+                        else
+                            DrySnowROW(i, m) = 1.0
+                            SnowAgeROW(i, m) = 48.0
+                        end if
+                    end if
+                end do
+            end do
+        end if !PBSMFLAG == 1
+
         if (WF_NUM_POINTS > 0) then
 
             print *, 'Found these output locations:'
@@ -939,6 +797,38 @@ module process_CLASS_config
 
             call CLASSOUT_open_files(shd)
         end if
+
+        !> ASSIGN VALUES OF LAT/LONG TO EACH SQUARE:
+        !> NOTE FROM FRANK
+        !> I got the equations to determine the actual length of a
+        !> degree of latitude and longitude from this paper, thank you
+        !> Geoff Kite (I have attached it):
+        !> http://www.agu.org/pubs/crossref/1994/94WR00231.shtml
+        !> This chunk of code is a way to put the actual values of
+        !> longitude and latitude for each cell in a large basin.
+        !> The original CLASS code just put in the same value for each cell.
+        !> The problem is that the class.ini file only has a single value
+        !> of long and lat (as it was only designed for a point).  So in order
+        !> to get the values across the basin I assumed that the single value
+        !> from the class.ini file is in the centre of the basin and then use
+        !> information from the watflow.shd file to figure out the long/lat
+        !> varies across the basin.  However, the watflod.shd file only gives
+        !> information in kilometers not degrees of long/lat so I had
+        !> to use the formulas from the above paper to go between the two.
+        !> The only value of DEGLAT is the one read in from the class.ini file,
+        !> after that Diana uses RADJGRD (the value of latitude in radians) so
+        !> after DEGLAT is used to calculate RADJGRD is it no longer used.  This
+        !> is how it was in the original CLASS code.
+        do i = 1, NA
+            !LATLENGTH = shd%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
+            !LONGLENGTH = shd%AL/1000.0/(111.4172*cos((DEGLAT*PI/180.0)) - 0.094*cos(3*(DEGLAT*PI/180.0)) + 0.0002*cos(5*(DEGLAT*PI/180.0)))
+            RADJGRD(i) = ((shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0)*PI/180.0
+            DLONGRD(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
+            Z0ORGRD(i) = 0.0
+            GGEOGRD(i) = GGEOGRD(1)
+            ZDMGRD(i) = 10.0
+            ZDHGRD(i) = 2.0
+        end do
 
     end subroutine
 
