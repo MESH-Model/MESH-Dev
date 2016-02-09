@@ -57,7 +57,6 @@
       !> Local variables.
       character(20) IRONAME
       character(10) GENDIR_OUT
-      integer IROVAL, PAS, ios
 
 !      TYPE(OutputPoints) :: op
 
@@ -68,7 +67,7 @@
       type(fl_ids)              :: fls
 
 !> The following variables are all local to this subroutine
-      INTEGER :: J,I,iun
+      integer CONFLAGS, IROVAL, iun, ierr, j, i
 
 !>=======================================================================
 !>    * SET RUN OPTIONS
@@ -332,9 +331,9 @@
       open(iun,
      +     file=trim(adjustl(fls%fl(mfk%f53)%fn)),
      +     action='read',
-     +     status='old', iostat=ios)
+     +     status='old', iostat=ierr)
 
-      IF (IOS .NE. 0) THEN !CHECK FILE FOR IOSTAT ERRORS
+      IF (ierr .NE. 0) THEN !CHECK FILE FOR IOSTAT ERRORS
         WRITE (6, *)
         WRITE (6, *)
         WRITE (6, *) "MESH_input_run_options.ini ",
@@ -375,40 +374,40 @@
 !>    ******************************************************************
 
             CASE ('IDISP')
-              CALL value(out_args(2), IDISP, IOS)
+              CALL value(out_args(2), IDISP, ierr)
             CASE ('IZREF')
-              CALL value(out_args(2), IZREF, IOS)
+              CALL value(out_args(2), IZREF, ierr)
             CASE ('ISLFD')
-              CALL value(out_args(2), ISLFD, IOS)
+              CALL value(out_args(2), ISLFD, ierr)
             CASE ('IPCP')
-              CALL value(out_args(2), IPCP, IOS)
+              CALL value(out_args(2), IPCP, ierr)
             CASE ('ITC')
-              CALL value(out_args(2), ITC, IOS)
+              CALL value(out_args(2), ITC, ierr)
             CASE ('ITCG')
-              CALL value(out_args(2), ITCG, IOS)
+              CALL value(out_args(2), ITCG, ierr)
             CASE ('ITG')
-              CALL value(out_args(2), ITG, IOS)
+              CALL value(out_args(2), ITG, ierr)
             CASE ('IWF')
-              CALL value(out_args(2), IWF, IOS)
+              CALL value(out_args(2), IWF, ierr)
             CASE ('IPAI')
-              CALL value(out_args(2), IPAI, IOS)
+              CALL value(out_args(2), IPAI, ierr)
             CASE ('IHGT')
-              CALL value(out_args(2), IHGT, IOS)
+              CALL value(out_args(2), IHGT, ierr)
             CASE ('IALC')
-              CALL value(out_args(2), IALC, IOS)
+              CALL value(out_args(2), IALC, ierr)
             CASE ('IALS')
-              CALL value(out_args(2), IALS, IOS)
+              CALL value(out_args(2), IALS, ierr)
             CASE ('IALG')
-              CALL value(out_args(2), IALG, IOS)
+              CALL value(out_args(2), IALG, ierr)
             CASE ('RESUMEFLAG')
-              CALL value(out_args(2), RESUMEFLAG, IOS)
+              CALL value(out_args(2), RESUMEFLAG, ierr)
             CASE ('SAVERESUMEFLAG')
-              CALL value(out_args(2), SAVERESUMEFLAG, IOS)
+              CALL value(out_args(2), SAVERESUMEFLAG, ierr)
 
             !> Basin forcing time-step flag.
             CASE ('HOURLYFLAG')
-              CALL value(out_args(2), HOURLYFLAG, IOS)
-              IF (IOS == 0) THEN
+              CALL value(out_args(2), HOURLYFLAG, ierr)
+              IF (ierr == 0) THEN
                 DO j = 1,size(cm%clin)
                   cm%clin(j)%hf = HOURLYFLAG
                 END DO
@@ -416,239 +415,243 @@
 
             !> Model time-step.
             CASE ('TIMESTEPFLAG')
-              CALL value(out_args(2), TIME_STEP_MINS, IOS)
+              CALL value(out_args(2), TIME_STEP_MINS, ierr)
 
             CASE ('RELFLG')
-              CALL value(out_args(2), RELFLG, IOS)
+              CALL value(out_args(2), RELFLG, ierr)
 
       !> CONSOLE OUTPUT OPTIONS
             CASE ('VERBOSEMODE')
-              CALL value(out_args(2), ro%VERBOSEMODE, IOS)
+              CALL value(out_args(2), ro%VERBOSEMODE, ierr)
             case ('DIAGNOSEMODE')
-              call value(out_args(2), ro%DIAGNOSEMODE, ios)
+              call value(out_args(2), ro%DIAGNOSEMODE, ierr)
 
       !> MPI OPTIONS
             CASE ('MPIUSEBARRIER')
-              CALL value(out_args(2), MPIUSEBARRIER, IOS)
+              CALL value(out_args(2), MPIUSEBARRIER, ierr)
 
       !> BASIN FORCING DATA OPTIONS
             !> Basin forcing data.
             CASE ('BASINSHORTWAVEFLAG')
-              CALL value(out_args(2), cm%clin(cfk%FB)%filefmt, IOS)
+              CALL value(out_args(2), cm%clin(cfk%FB)%filefmt, ierr)
               cm%clin(cfk%FB)%id_var = 'FB'
               IF (cm%clin(cfk%FB)%filefmt == 5) THEN
-                CALL value(out_args(3), cm%clin(cfk%FB)%filefmt, IOS)
-                CALL value(out_args(4), cm%clin(cfk%FB)%timeSize, IOS)
+                CALL value(out_args(3), cm%clin(cfk%FB)%filefmt, ierr)
+                CALL value(out_args(4), cm%clin(cfk%FB)%timeSize, ierr)
               END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(cfk%FB)%hf, IOS)
+                    CALL value(out_args(j)(4:),
+     +                         cm%clin(cfk%FB)%hf, ierr)
                   END IF
                 END IF
                 IF (len_trim(out_args(j)) > 4) THEN
                   IF (out_args(j)(1:4) == 'nts=') THEN
                     CALL value(out_args(j)(5:),
-     +                         cm%clin(cfk%FB)%timeSize, IOS)
+     +                         cm%clin(cfk%FB)%timeSize, ierr)
                   END IF
                 END IF
               END DO
             CASE ('BASINLONGWAVEFLAG')
-              CALL value(out_args(2), cm%clin(cfk%FI)%filefmt, IOS)
+              CALL value(out_args(2), cm%clin(cfk%FI)%filefmt, ierr)
               cm%clin(cfk%FI)%id_var = 'FI'
               IF (cm%clin(cfk%FI)%filefmt == 5) THEN
-                CALL value(out_args(3), cm%clin(cfk%FI)%filefmt, IOS)
-                CALL value(out_args(4), cm%clin(cfk%FI)%timeSize, IOS)
+                CALL value(out_args(3), cm%clin(cfk%FI)%filefmt, ierr)
+                CALL value(out_args(4), cm%clin(cfk%FI)%timeSize, ierr)
               END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(cfk%FI)%hf,
-     +                  IOS)
+                    CALL value(out_args(j)(4:),
+     +                         cm%clin(cfk%FI)%hf, ierr)
                   END IF
                 END IF
                 IF (len_trim(out_args(j)) > 4) THEN
                   IF (out_args(j)(1:4) == 'nts=') THEN
                     CALL value(out_args(j)(5:),
-     +                         cm%clin(cfk%FI)%timeSize, IOS)
+     +                         cm%clin(cfk%FI)%timeSize, ierr)
                   END IF
                 END IF
               END DO
             CASE ('BASINRAINFLAG')
-              CALL value(out_args(2), cm%clin(cfk%PR)%filefmt, IOS)
+              CALL value(out_args(2), cm%clin(cfk%PR)%filefmt, ierr)
               cm%clin(cfk%PR)%id_var = 'PR'
               IF (cm%clin(cfk%PR)%filefmt == 5) THEN
-                CALL value(out_args(3), cm%clin(cfk%PR)%filefmt, IOS)
-                CALL value(out_args(4), cm%clin(cfk%PR)%timeSize, IOS)
+                CALL value(out_args(3), cm%clin(cfk%PR)%filefmt, ierr)
+                CALL value(out_args(4), cm%clin(cfk%PR)%timeSize, ierr)
               END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(cfk%PR)%hf,
-     +                  IOS)
+                    CALL value(out_args(j)(4:),
+     +                         cm%clin(cfk%PR)%hf, ierr)
                   END IF
                 END IF
                 IF (len_trim(out_args(j)) > 4) THEN
                   IF (out_args(j)(1:4) == 'nts=') THEN
                     CALL value(out_args(j)(5:),
-     +                         cm%clin(cfk%PR)%timeSize, IOS)
+     +                         cm%clin(cfk%PR)%timeSize, ierr)
                   END IF
                 END IF
               END DO
             CASE ('BASINTEMPERATUREFLAG')
-              CALL value(out_args(2), cm%clin(cfk%TT)%filefmt, IOS)
+              CALL value(out_args(2), cm%clin(cfk%TT)%filefmt, ierr)
               cm%clin(cfk%TT)%id_var = 'TT'
               IF (cm%clin(cfk%TT)%filefmt == 5) THEN
-                CALL value(out_args(3), cm%clin(cfk%TT)%filefmt, IOS)
-                CALL value(out_args(4), cm%clin(cfk%TT)%timeSize, IOS)
+                CALL value(out_args(3), cm%clin(cfk%TT)%filefmt, ierr)
+                CALL value(out_args(4), cm%clin(cfk%TT)%timeSize, ierr)
               END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(cfk%TT)%hf, IOS)
+                    CALL value(out_args(j)(4:),
+     +                         cm%clin(cfk%TT)%hf, ierr)
                   END IF
                 END IF
                 IF (len_trim(out_args(j)) > 4) THEN
                   IF (out_args(j)(1:4) == 'nts=') THEN
                     CALL value(out_args(j)(5:),
-     +                         cm%clin(cfk%TT)%timeSize, IOS)
+     +                         cm%clin(cfk%TT)%timeSize, ierr)
                   END IF
                 END IF
               END DO
             CASE ('BASINWINDFLAG')
-              CALL value(out_args(2), cm%clin(cfk%UV)%filefmt, IOS)
+              CALL value(out_args(2), cm%clin(cfk%UV)%filefmt, ierr)
               cm%clin(cfk%UV)%id_var = 'UV'
               IF (cm%clin(cfk%UV)%filefmt == 5) THEN
-                CALL value(out_args(3), cm%clin(cfk%UV)%filefmt, IOS)
-                CALL value(out_args(4), cm%clin(cfk%UV)%timeSize, IOS)
+                CALL value(out_args(3), cm%clin(cfk%UV)%filefmt, ierr)
+                CALL value(out_args(4), cm%clin(cfk%UV)%timeSize, ierr)
               END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(cfk%UV)%hf, IOS)
+                    CALL value(out_args(j)(4:),
+     +                         cm%clin(cfk%UV)%hf, ierr)
                   END IF
                 END IF
                 IF (len_trim(out_args(j)) > 4) THEN
                   IF (out_args(j)(1:4) == 'nts=') THEN
                     CALL value(out_args(j)(5:),
-     +                         cm%clin(cfk%UV)%timeSize, IOS)
+     +                         cm%clin(cfk%UV)%timeSize, ierr)
                   END IF
                 END IF
               END DO
             CASE ('BASINPRESFLAG')
-              CALL value(out_args(2), cm%clin(cfk%P0)%filefmt, IOS)
+              CALL value(out_args(2), cm%clin(cfk%P0)%filefmt, ierr)
               cm%clin(cfk%P0)%id_var = 'P0'
               IF (cm%clin(cfk%P0)%filefmt == 5) THEN
-                CALL value(out_args(3), cm%clin(cfk%P0)%filefmt, IOS)
-                CALL value(out_args(4), cm%clin(cfk%P0)%timeSize, IOS)
+                CALL value(out_args(3), cm%clin(cfk%P0)%filefmt, ierr)
+                CALL value(out_args(4), cm%clin(cfk%P0)%timeSize, ierr)
               END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(cfk%P0)%hf,
-     +                  IOS)
+                    CALL value(out_args(j)(4:),
+     +                         cm%clin(cfk%P0)%hf, ierr)
                   END IF
                 END IF
                 IF (len_trim(out_args(j)) > 4) THEN
                   IF (out_args(j)(1:4) == 'nts=') THEN
                     CALL value(out_args(j)(5:),
-     +                         cm%clin(cfk%P0)%timeSize, IOS)
+     +                         cm%clin(cfk%P0)%timeSize, ierr)
                   END IF
                 END IF
               END DO
             CASE ('BASINHUMIDITYFLAG')
-              CALL value(out_args(2), cm%clin(cfk%HU)%filefmt, IOS)
+              CALL value(out_args(2), cm%clin(cfk%HU)%filefmt, ierr)
               cm%clin(cfk%HU)%id_var = 'HU'
               IF (cm%clin(cfk%HU)%filefmt == 5) THEN
-                CALL value(out_args(3), cm%clin(cfk%HU)%filefmt, IOS)
-                CALL value(out_args(4), cm%clin(cfk%HU)%timeSize, IOS)
+                CALL value(out_args(3), cm%clin(cfk%HU)%filefmt, ierr)
+                CALL value(out_args(4), cm%clin(cfk%HU)%timeSize, ierr)
               END IF
               DO j = 3,nargs
                 IF (len_trim(out_args(j)) > 3) THEN
                   IF (out_args(j)(1:3) == 'hf=') THEN
-                    CALL value(out_args(j)(4:), cm%clin(cfk%HU)%hf, IOS)
+                    CALL value(out_args(j)(4:),
+     +                         cm%clin(cfk%HU)%hf, ierr)
                   END IF
                 END IF
                 IF (len_trim(out_args(j)) > 4) THEN
                   IF (out_args(j)(1:4) == 'nts=') THEN
                     CALL value(out_args(j)(5:),
-     +                         cm%clin(cfk%HU)%timeSize, IOS)
+     +                         cm%clin(cfk%HU)%timeSize, ierr)
                   END IF
                 END IF
               END DO
 
             CASE ('SHDFILEFLAG')
-              CALL value(out_args(2), SHDFILEFLAG, IOS)
+              CALL value(out_args(2), SHDFILEFLAG, ierr)
             CASE ('SOILINIFLAG')
-              CALL value(out_args(2), SOILINIFLAG, IOS)
+              CALL value(out_args(2), SOILINIFLAG, ierr)
             CASE ('NRSOILAYEREADFLAG')
-              CALL value(out_args(2), NRSOILAYEREADFLAG, IOS)
+              CALL value(out_args(2), NRSOILAYEREADFLAG, ierr)
             CASE ('STREAMFLOWFLAG')
-              CALL value(out_args(2), STREAMFLOWFLAG, IOS)
+              CALL value(out_args(2), STREAMFLOWFLAG, ierr)
             CASE ('PREEMPTIONFLAG')
-              CALL value(out_args(2), mtsflg%PREEMPTIONFLAG, IOS)
+              CALL value(out_args(2), mtsflg%PREEMPTIONFLAG, ierr)
             CASE ('INTERPOLATIONFLAG')
-              CALL value(out_args(2), INTERPOLATIONFLAG, IOS)
+              CALL value(out_args(2), INTERPOLATIONFLAG, ierr)
             CASE ('SUBBASINFLAG')
-              CALL value(out_args(2), SUBBASINFLAG, IOS)
+              CALL value(out_args(2), SUBBASINFLAG, ierr)
             CASE ('R2COUTPUTFLAG')
-              CALL value(out_args(2), R2COUTPUTFLAG, IOS)
+              CALL value(out_args(2), R2COUTPUTFLAG, ierr)
             CASE ('OBJFNFLAG')
-              CALL value(out_args(2), OBJFNFLAG, IOS)
+              CALL value(out_args(2), OBJFNFLAG, ierr)
             CASE ('AUTOCALIBRATIONFLAG')
-              CALL value(out_args(2), mtsflg%AUTOCALIBRATIONFLAG, IOS)
+              CALL value(out_args(2), mtsflg%AUTOCALIBRATIONFLAG, ierr)
             CASE ('WINDOWSIZEFLAG')
-              CALL value(out_args(2), WINDOWSIZEFLAG, IOS)
+              CALL value(out_args(2), WINDOWSIZEFLAG, ierr)
             CASE ('WINDOWSPACINGFLAG')
-              CALL value(out_args(2), WINDOWSPACINGFLAG, IOS)
+              CALL value(out_args(2), WINDOWSPACINGFLAG, ierr)
             CASE ('METRICSSTATSOUTFLAG')
-              CALL value(out_args(2), METRICSSTATSOUTFLAG, IOS)
+              CALL value(out_args(2), METRICSSTATSOUTFLAG, ierr)
             CASE ('METRICSFILTEROBSFLAG')
-              CALL value(out_args(2), METRICSFILTEROBSFLAG, IOS)
+              CALL value(out_args(2), METRICSFILTEROBSFLAG, ierr)
             CASE ('METRICSSPINUP')
-              CALL value(out_args(2), METRICSSPINUP, IOS)
+              CALL value(out_args(2), METRICSSPINUP, ierr)
             CASE ('METRICSINCLUDESPINUP')
-              CALL value(out_args(2), METRICSINCLUDESPINUP, IOS)
+              CALL value(out_args(2), METRICSINCLUDESPINUP, ierr)
             CASE ('FROZENSOILINFILFLAG')
-              CALL value(out_args(2), FROZENSOILINFILFLAG, IOS)
+              CALL value(out_args(2), FROZENSOILINFILFLAG, ierr)
             case ('PRINTRFFR2CFILEFLAG')
-              call value(out_args(2), SA_RTE_flgs%PRINTRFFR2CFILEFLAG,
-     &                  IOS)
+              call value(out_args(2),
+     +                   SA_RTE_flgs%PRINTRFFR2CFILEFLAG, ierr)
               SA_RTE_flgs%PROCESS_ACTIVE = .true.
             case ('PRINTRCHR2CFILEFLAG')
-              call value(out_args(2), SA_RTE_flgs%PRINTRCHR2CFILEFLAG,
-     &                  IOS)
+              call value(out_args(2),
+     +                   SA_RTE_flgs%PRINTRCHR2CFILEFLAG, ierr)
               SA_RTE_flgs%PROCESS_ACTIVE = .true.
 !+            case ('PRINTLKGR2CFILEFLAG')
-!+              call value(out_args(2), SA_RTE_flgs%PRINTLKGR2CFILEFLAG,
-!+     &                  IOS)
+!+              call value(out_args(2),
+!+    +                    SA_RTE_flgs%PRINTLKGR2CFILEFLAG, ierr)
 !+              SA_RTE_flgs%PROCESS_ACTIVE = .true.
             CASE ('WD3')
-              CALL value(out_args(2), WD3, IOS)
+              CALL value(out_args(2), WD3, ierr)
             CASE ('WD3NEWFILE')
-              CALL value(out_args(2), WD3NEWFILE, IOS)
+              CALL value(out_args(2), WD3NEWFILE, ierr)
             CASE ('WD3FLOW')
-              CALL value(out_args(2), WD3FLOW, IOS)
+              CALL value(out_args(2), WD3FLOW, ierr)
             CASE ('WD3BKFC')
-              CALL value(out_args(2), WD3BKFC, IOS)
+              CALL value(out_args(2), WD3BKFC, ierr)
             CASE ('ICTEMMOD')
-              CALL value(out_args(2), ICTEMMOD, IOS)
+              CALL value(out_args(2), ICTEMMOD, ierr)
             CASE ('PBSMFLAG')
-              CALL value(out_args(2), PBSMFLAG, IOS)
+              CALL value(out_args(2), PBSMFLAG, ierr)
             CASE ('LOCATIONFLAG')
-              CALL value(out_args(2), LOCATIONFLAG, IOS)
+              CALL value(out_args(2), LOCATIONFLAG, ierr)
             CASE ('OUTFIELDSFLAG')
-              CALL value(out_args(2), OUTFIELDSFLAG, IOS)
+              CALL value(out_args(2), OUTFIELDSFLAG, ierr)
             CASE ('GGEOFLAG')
-              CALL value(out_args(2), GGEOFLAG, IOS)
+              CALL value(out_args(2), GGEOFLAG, ierr)
             CASE ('BASINBALANCEOUTFLAG')
-              CALL value(out_args(2), BASINBALANCEOUTFLAG, IOS)
+              CALL value(out_args(2), BASINBALANCEOUTFLAG, ierr)
             CASE ('MODELINFOOUTFLAG')
-              CALL value(out_args(2), MODELINFOOUTFLAG, IOS)
+              CALL value(out_args(2), MODELINFOOUTFLAG, ierr)
             CASE ('STREAMFLOWOUTFLAG')
-              CALL value(out_args(2), STREAMFLOWOUTFLAG, IOS)
+              CALL value(out_args(2), STREAMFLOWOUTFLAG, ierr)
             CASE ('BASINSWEOUTFLAG')
-              CALL value(out_args(2), BASINSWEOUTFLAG, IOS)
+              CALL value(out_args(2), BASINSWEOUTFLAG, ierr)
 
 !>    ******************************************************************
 !>     PARSE CONTROL FLAG ENDS
@@ -662,7 +665,7 @@
           END SELECT !CASE (trim(adjustl(out_args(1))))
 
           !> Error check.
-          IF (IOS /= 0) THEN
+          IF (ierr /= 0) THEN
             PRINT 9484, trim(out_args(1)), I, trim(in_line)
             STOP
           END IF
@@ -697,9 +700,10 @@
 
 !> DIMENSION GRID OUTPUT POINT VARIABLES
       IF (WF_NUM_POINTS .GT. 0) THEN
-        ALLOCATE (op%DIR_OUT(WF_NUM_POINTS), op%N_OUT(WF_NUM_POINTS),
-     1      op%II_OUT(WF_NUM_POINTS), op%K_OUT(WF_NUM_POINTS), STAT=PAS)
-        IF (PAS. NE. 0) THEN
+        ALLOCATE(op%DIR_OUT(WF_NUM_POINTS), op%N_OUT(WF_NUM_POINTS),
+     +           op%II_OUT(WF_NUM_POINTS), op%K_OUT(WF_NUM_POINTS),
+     +           STAT=ierr)
+        IF (ierr. NE. 0) THEN
             WRITE (6, *)
             WRITE (6, *)
             WRITE (6, *) "Error allocating grid output point ",
@@ -736,8 +740,8 @@
           END DO
         ELSE !> IF DIRECTORY EXISTS
           OPEN (17, FILE="./"// TRIM (ADJUSTL (op%DIR_OUT(I)))//
-     1      "/fort.17", STATUS="UNKNOWN", IOSTAT=IOS)
-          IF (IOS .NE. 0) THEN !TRY WRITING DUMMY FILE TO DIRECTORY
+     1      "/fort.17", STATUS="UNKNOWN", IOSTAT=ierr)
+          IF (ierr .NE. 0) THEN !TRY WRITING DUMMY FILE TO DIRECTORY
             WRITE (6, *)
             WRITE (6, *)
             WRITE (6, *) "Grid output point ", I

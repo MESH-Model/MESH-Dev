@@ -35,7 +35,7 @@ REAL, DIMENSION (:), ALLOCATABLE :: INDEPPARVAL
 REAL, DIMENSION (:,:), ALLOCATABLE :: DEPPARVAL
 
 !> Internal use variables
-INTEGER :: IOS, iun, NTYPE, NA, I, J, M
+integer OPTFLAGS, NTYPE, NA, ierr, iun, m, j, i
 CHARACTER(8) :: FILE_VER
 LOGICAL :: VER_OK
 
@@ -47,14 +47,14 @@ iun = fls%fl(mfk%f23)%iun
 open( iun, &
       file = trim(adjustl(fls%fl(mfk%f23)%fn)), &
       action = 'read', &
-      status = 'old', iostat = ios)
+      status = 'old', iostat = ierr)
 !else
-!    OPEN (23, FILE="MESH_parameters_hydrology.ini", STATUS="OLD",IOSTAT=IOS)
+!    OPEN (23, FILE="MESH_parameters_hydrology.ini", STATUS="OLD",IOSTAT=ierr)
 !end if
 
 !> CHECK FILE FOR IOSTAT ERRORS
-!> when IOS equals 0, the file was opened successfully  
-IF (IOS .NE. 0)THEN 
+!> when ierr equals 0, the file was opened successfully
+IF (ierr .NE. 0)THEN
   WRITE (6, *)
   WRITE (6, *)
   WRITE (6, *) "MESH_parameters_hydrology.ini could not be opened.  Ensure that the file exists and restart the program."

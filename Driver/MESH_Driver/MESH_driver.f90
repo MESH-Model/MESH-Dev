@@ -97,7 +97,11 @@ program RUNMESH
     use sa_mesh_shared_variabletypes
     use sa_mesh_shared_variables
 
+    !> For subroutines: FIND_MONTH, FIND_DAY.
     use EF_MODULE
+
+    !> For data types: HydrologyParameters, SoilValues.
+    !> For subroutine: GetIndices.
     use MESH_INPUT_MODULE
     use FLAGS
 
@@ -118,44 +122,46 @@ program RUNMESH
     use model_files_variabletypes
     use model_files_variables
     use model_files
-    use strings
 
-    use process_CLASS_constants
-    use process_CLASS_variables
     use process_CLASS_config
 
     implicit none
 
-    !> ierr: For status return from MPI
     !> istop: To stop all MPI process
     !* inp: Number of active tasks.
     !* ipid: Current process ID.
-    integer :: ierr = 0
-    integer ipid_recv, itag, ierrcode, istop
+    integer ipid_recv, itag, ierrcode, istop, u, invars
     logical lstat
-
-    integer iun, u, invars
-
-    !+ For split-vector approach
-    integer ii1, ii2, iilen
 
     integer, dimension(:), allocatable :: irqst
     integer, dimension(:, :), allocatable :: imstat
 
-!todo: Investigate what this is
-    integer ireport
+    !* ierr: Diagnostic error/status return from various subroutines.
+    integer :: ierr = 0
 
     !> Local variables.
-    integer NA, NTYPE, NML, IGND, ik, jk
+    !* NA: Temporary store for the number of grid cells.
+    !* NTYPE: Temporary store for the number of GRUs.
+    !* NML: Temporary store for the number of active land elements (NA, NTYPE).
+    !* IGND: Temporary store for the number of soil layers.
+    !* iun: Temporary store for the unit number of a file.
+    integer NA, NTYPE, NML, IGND, iun, ik, jk
+
+    !+ For split-vector approach
+    integer ii1, ii2, iilen
+
+!todo: Investigate what this is
+!-    integer ireport
 
 !>  INTEGER CONSTANTS.
+!todo: Fix this (e.g., replace M_C with NRVR; move to process_WF_ROUTE).
     integer, parameter :: M_C = 5
 
 !INTEGER IGND
 !    real IGND_TEST, IGND_DEEP
 
 !> IOSTAT VARIABLE
-    integer IOS
+!-    integeierrOS
 
 !> FOR OUTPUT
 !-    character(450) GENDIR_OUT
@@ -167,6 +173,7 @@ program RUNMESH
 !-    integer imonth_now, imonth_old
 
 !>     FOR ROUTING
+!todo: Fix this (e.g., replace M_C with NRVR; move to process_WF_ROUTE).
 !* WF_R1: MANNING'S N FOR RIVER CHANNEL
 !* WF_R2: OPTIMIZED RIVER ROUGHNESS FACTOR
     real WF_R1(M_C), WF_R2(M_C)
@@ -235,13 +242,10 @@ program RUNMESH
 !>
 !> OPERATIONAL VARIABLES:
 
-!* IOS: IOSTAT (ERROR) RETURN ON READ EXTERNAL FILE
 !* IY: Y-DIRECTION GRID CO-ORDINATE, USED TO READ FORCING DATA
 !* JX: X-DIRECTION GRID CO-ORDINATE, USED TO READ FORCING DATA
 !* NN: GRID SQUARE, USED TO READ DRAINAGE DATABASE
 !* II: GRU, USED TO READ DRAINAGE DATABASE
-!* JAN: IS USED TO INITIALISE BASEFLOW (WHEN JAN = 1)
-!* N: COUNTER USED BY CLASS
 !* NCOUNT: HALF-HOURLY BASED TIME STEP (200 LOOP)
 !* NSUM: NUMBER OF ITERATIONS, TIME STEPS PASSED (200 LOOP)
 !* NSUM_TOTAL: total number of iterations
@@ -250,22 +254,14 @@ program RUNMESH
 !* k: COUNTER
 !* l: COUNTER
 !* m: COUNTER
-!* CONFLAGS: NUMBER OF CONTROL FLAGS
-!* OPTFLAGS: NUMBER OF OPTFLAGS
 !* INDEPPAR: NUMBER OF GRU-INDEPENDENT VARIABLES
 !* DEPPAR: NUMBER OF GRU-DEPENDENT VARIABLES
-!* PAS: STAT (ERROR) RETURN ON ALLOCATE VARIABLE
-!* OPN: OPENED RETURN ON INQUIRE STATEMENT (USED TO CHECK IF AN
-!*      EXTERNAL FILE HAS BEEN OPENED BY THE PROGRAM)
-!* FILE_VER: FILE VERSION USED TO SEEK INPUT FILE COMPATIBILITY
-!*           (COMPARED TO "RELEASE")
-    character(8) FILE_VER
-    integer NCOUNT, NSUM
+!-    integer NCOUNT, NSUM
     integer i, j, k, l, m, &
-        INDEPPAR, DEPPAR, PAS, NSUM_TOTAL
-    logical OPN
+        INDEPPAR, DEPPAR
+!-        NSUM_TOTAL
 
-    integer DRIVERTIMESTEP
+!-    integer DRIVERTIMESTEP
 
     integer FRAME_NO_NEW
 
@@ -296,34 +292,34 @@ program RUNMESH
 !* INIT_STORE: INITIAL STORAGE
 !* FINAL_STORE: FINAL STORAGE
 !* TOTAL_AREA: TOTAL FRACTIONED DRAINAGE AREA
-    real TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
-        TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-        FINAL_STORE, TOTAL_AREA, &
-        TOTAL_PRE_ACC_M, TOTAL_EVAP_ACC_M, TOTAL_ROF_ACC_M, &
-        TOTAL_ROFO_ACC_M, TOTAL_ROFS_ACC_M, TOTAL_ROFB_ACC_M, &
-        TOTAL_PRE_M, TOTAL_EVAP_M, TOTAL_ROF_M, &
-        TOTAL_ROFO_M, TOTAL_ROFS_M, TOTAL_ROFB_M, &
-        TOTAL_SCAN_M, TOTAL_RCAN_M, &
-        TOTAL_SNO_M, TOTAL_WSNO_M, &
-        TOTAL_ZPND_M, &
-        TOTAL_STORE_M, TOTAL_STORE_2_M, &
-        TOTAL_STORE_ACC_M
+!    real TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
+!        TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
+!        FINAL_STORE, TOTAL_AREA, &
+!        TOTAL_PRE_ACC_M, TOTAL_EVAP_ACC_M, TOTAL_ROF_ACC_M, &
+!        TOTAL_ROFO_ACC_M, TOTAL_ROFS_ACC_M, TOTAL_ROFB_ACC_M, &
+!        TOTAL_PRE_M, TOTAL_EVAP_M, TOTAL_ROF_M, &
+!        TOTAL_ROFO_M, TOTAL_ROFS_M, TOTAL_ROFB_M, &
+!        TOTAL_SCAN_M, TOTAL_RCAN_M, &
+!        TOTAL_SNO_M, TOTAL_WSNO_M, &
+!        TOTAL_ZPND_M, &
+!        TOTAL_STORE_M, TOTAL_STORE_2_M, &
+!        TOTAL_STORE_ACC_M
 
 !* TOTAL_HFS = TOTAL SENSIBLE HEAT FLUX
 !* TOTAL_QEVP = TOTAL LATENT HEAT FLUX
-    real TOTAL_HFSACC, TOTAL_QEVPACC
+!    real TOTAL_HFSACC, TOTAL_QEVPACC
 
-    real TOTAL_STORE, TOTAL_STORE_2, TOTAL_RCAN, TOTAL_SCAN, TOTAL_SNO, TOTAL_WSNO, TOTAL_ZPND
-    real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
-    real, dimension(:), allocatable :: TOTAL_THLQ, TOTAL_THIC, &
-        TOTAL_THLQ_M, TOTAL_THIC_M
+!    real TOTAL_STORE, TOTAL_STORE_2, TOTAL_RCAN, TOTAL_SCAN, TOTAL_SNO, TOTAL_WSNO, TOTAL_ZPND
+!    real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
+!    real, dimension(:), allocatable :: TOTAL_THLQ, TOTAL_THIC, &
+!        TOTAL_THLQ_M, TOTAL_THIC_M
 
 !> **********************************************************************
 !>  For cacluating the subbasin grids
 !> **********************************************************************
 
-    integer SUBBASINCOUNT
-    integer, dimension(:), allocatable :: SUBBASIN
+!+    integer SUBBASINCOUNT
+!+    integer, dimension(:), allocatable :: SUBBASIN
 
 !> These are the types defined in mesh_input_module.f that contain arrays
 !> that need to be allocated in read_initial_inputs.f.
@@ -348,10 +344,10 @@ program RUNMESH
     type(iter_counter) :: ic
     type(INFO_OUT) :: ifo
     type(CLIM_INFO) :: cm
-    type(met_data) :: md
-    type(water_balance) :: wb, wb_h
-    type(energy_balance) :: eb
-    type(soil_statevars) :: sp
+    type(met_data) :: md_grd
+    type(water_balance) :: wb_grd, wb_acc, wb_out
+    type(energy_balance) :: eb_grd, eb_acc, eb_out
+    type(soil_statevars) :: spv_grd, spv_acc
     type(streamflow_hydrograph) :: stfl
     type(reservoir_release) :: rrls
 
@@ -367,7 +363,6 @@ program RUNMESH
 
     character(500) WRT_900_1, WRT_900_2, WRT_900_3, WRT_900_4, WRT_900_f
     character(500) fl_listMesh
-    character(5) strInt
 
     real :: startprog, endprog
     integer :: narg
@@ -430,7 +425,7 @@ program RUNMESH
 !            print *, fl_listMesh
 !todo: re-instate alpha
 !            call get_command_argument(2, alphCh)
-!            call value(alphCh, alpharain, ios)
+!            call value(alphCh, alpharain, ierr)
 !            cm%clin(8)%alpharain = alpharain
 !            print *, cm%clin(8)%alpharain
         end if
@@ -445,8 +440,10 @@ program RUNMESH
                              RELEASE, &
 !>VARIABLES FOR READ_RUN_OPTIONS
 !-                             GENDIR_OUT, &
- !>variables for READ_PARAMETERS_HYDROLOGY
-                             INDEPPAR, DEPPAR, WF_R2, M_C, &
+!>variables for READ_PARAMETERS_HYDROLOGY
+!todo: remove these
+                             INDEPPAR, DEPPAR, &
+                             WF_R2, M_C, &
                              shd, &
                              sv, hp, ts, cm, &
                              fls)
@@ -470,7 +467,46 @@ program RUNMESH
     NTYPE = shd%lc%NTYPE
     IGND = shd%lc%IGND
 
-    call run_within_tile_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    !> Initialize output fields.
+    call init_water_balance(wb_grd, shd)
+    call init_energy_balance(eb_grd, shd)
+    call init_soil_statevars(spv_grd, shd)
+
+    !> Calculate the grid and basin fractional areas.
+    wb_grd%grid_area = 0.0
+    wb_grd%basin_area = 0.0
+    do i = 1, NA
+        do m = 1, NTYPE
+            wb_grd%grid_area(i) = wb_grd%grid_area(i) + shd%lc%ACLASS(i, m)*shd%FRAC(i)
+        end do
+        wb_grd%basin_area = wb_grd%basin_area + wb_grd%grid_area(i)
+    end do
+
+    if (ipid == 0) then
+
+        !> Hourly output.
+        call init_met_data(md_grd, shd)
+
+        !> Daily average grid values.
+        call init_energy_balance(eb_acc, shd)
+        call init_soil_statevars(spv_acc, shd)
+        call init_water_balance(wb_acc, shd)
+
+        !> Basin output values.
+        !* 1: Accumulated over the run.
+        !* 2: Daily average.
+        !* 3: Monthly average.
+        !* 4: Hourly average.
+        allocate(wb_out%PRE(1:4), wb_out%EVAP(1:4), wb_out%ROF(1:4), wb_out%ROFO(1:4), wb_out%ROFS(1:4), wb_out%ROFB(1:4), &
+                 wb_out%STG(1:4), wb_out%DSTG(1:4), &
+                 wb_out%RCAN(2:4), wb_out%SNCAN(2:4), wb_out%SNO(2:4), wb_out%WSNO(2:4), wb_out%PNDW(2:4), &
+                 wb_out%LQWS(2:4, IGND), wb_out%FRWS(2:4, IGND))
+        wb_out%basin_area = wb_grd%basin_area
+        allocate(eb_out%HFS(2:2), eb_out%QEVP(2:2), eb_out%GFLX(2:2, IGND))
+
+    end if !(ipid == 0) then
+
+    call run_within_tile_ini(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
     NML = shd%lc%NML
 
@@ -491,7 +527,7 @@ program RUNMESH
     ! using Dan Princz's instructions for EnSim
     ! FRAC can be greater than 1.00
     ! So, we cannot use FAREROW in place of BASIN_FRACTION
-    TOTAL_AREA = sum(cp%FAREROW)
+!-    TOTAL_AREA = sum(cp%FAREROW)
 
 !todo+++: Perhaps land-unit indexing can be done prior in the sequence
 !todo+++: of initialization, after reading the drainage database.
@@ -519,10 +555,10 @@ program RUNMESH
 1118 format(3x, a, ': ', i6)
 
 !> LAND SURFACE PROGNOSTIC VARIABLES (for Basin_average_water_balance.csv):
-    allocate(TOTAL_THLQ(IGND), TOTAL_THIC(IGND), &
-             TOTAL_THLQ_M(IGND), TOTAL_THIC_M(IGND), stat = PAS)
+!    allocate(TOTAL_THLQ(IGND), TOTAL_THIC(IGND), &
+!             TOTAL_THLQ_M(IGND), TOTAL_THIC_M(IGND), stat = ierr)
 
-    if (PAS /= 0) then
+    if (ierr /= 0) then
         print 1114, 'land surface prognostic'
         print 1118, 'Grid squares', NA
         print 1118, 'GRUs', NTYPE
@@ -534,38 +570,37 @@ program RUNMESH
 !>  For cacluating the subbasin grids
 !> **********************************************************************
 
-    allocate(SUBBASIN(NML), stat = PAS)
-
-    if (PAS /= 0) then
-        print 1114, 'subbasin grid'
-        print 1118, 'Grid squares', NA
-        print 1118, 'GRUs', NTYPE
-        print 1118, 'Total tile elements', NML
-        stop
-    end if
+!+    allocate(SUBBASIN(NML), stat = ierr)
+!+    if (ierr /= 0) then
+!+        print 1114, 'subbasin grid'
+!+        print 1118, 'Grid squares', NA
+!+        print 1118, 'GRUs', NTYPE
+!+        print 1118, 'Total tile elements', NML
+!+        stop
+!+    end if
 
 !> OUTPUT VARIABLES:
-    allocate(PREACC(NA), GTACC(NA), QEVPACC(NA), &
-             HFSACC(NA), ROFACC(NA), SNOACC(NA), ALVSACC(NA), ALIRACC(NA), &
-             FSINACC(NA), FLINACC(NA), &
-             TAACC(NA), UVACC(NA), PRESACC(NA), QAACC(NA), EVAPACC(NA), &
-             FLUTACC(NA), ROFOACC(NA), &
-             ROFSACC(NA), ROFBACC(NA), HMFNACC(NA), WTBLACC(NA), ZPNDACC(NA), &
-             WSNOACC(NA), RHOSACC(NA), TSNOACC(NA), &
-             TCANACC(NA), RCANACC(NA), SCANACC(NA), GROACC(NA), CANARE(NA), &
-             SNOARE(NA), &
-             TBARACC(NA, IGND), THLQACC(NA, IGND), THICACC(NA, IGND), &
-             THALACC(NA, IGND), GFLXACC(NA, IGND), &
-!             STG_I(NA), DSTG(NA), THLQ_FLD(NA, IGND), THIC_FLD(NA, IGND), &
-             stat = PAS)
-    if (PAS /= 0) then
-        print 1114, 'accumulator'
-        print 1118, 'Grid squares', NA
-        print 1118, 'Soil layers', IGND
-        stop
-    end if
+!    allocate(PREACC(NA), GTACC(NA), QEVPACC(NA), &
+!             HFSACC(NA), ROFACC(NA), SNOACC(NA), ALVSACC(NA), ALIRACC(NA), &
+!             FSINACC(NA), FLINACC(NA), &
+!             TAACC(NA), UVACC(NA), PRESACC(NA), QAACC(NA), EVAPACC(NA), &
+!             FLUTACC(NA), ROFOACC(NA), &
+!             ROFSACC(NA), ROFBACC(NA), HMFNACC(NA), WTBLACC(NA), ZPNDACC(NA), &
+!             WSNOACC(NA), RHOSACC(NA), TSNOACC(NA), &
+!             TCANACC(NA), RCANACC(NA), SCANACC(NA), GROACC(NA), CANARE(NA), &
+!             SNOARE(NA), &
+!             TBARACC(NA, IGND), THLQACC(NA, IGND), THICACC(NA, IGND), &
+!             THALACC(NA, IGND), GFLXACC(NA, IGND), &
+!-             STG_I(NA), DSTG(NA), THLQ_FLD(NA, IGND), THIC_FLD(NA, IGND), &
+!             stat = ierr)
+!    if (ierr /= 0) then
+!        print 1114, 'accumulator'
+!        print 1118, 'Grid squares', NA
+!        print 1118, 'Soil layers', IGND
+!        stop
+!    end if
 
-    if (ipid == 0) call run_between_grid_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    if (ipid == 0) call run_between_grid_ini(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
 !> *********************************************************************
 !> Set some more intial values and clear accumulators
@@ -581,9 +616,9 @@ program RUNMESH
 !> set initial values of ncount and nsum
 ! NCOUNT = which half-hour period the current time is:
 ! The first period (0:00-0:30) is #1, the last period (23:30-0:00) is #48
-    NCOUNT = HOUR_NOW*2 + MINS_NOW/TIME_STEP_MINS + 1
-    NSUM = 1
-    NSUM_TOTAL = 1
+!-    NCOUNT = HOUR_NOW*2 + MINS_NOW/TIME_STEP_MINS + 1
+!-    NSUM = 1
+!-    NSUM_TOTAL = 1
 
 !> **********************************************************************
 !>  Start of section to only run on squares that make up the watersheds
@@ -640,17 +675,6 @@ program RUNMESH
 !>  End of subbasin section
 !> **********************************************************************
 
-!> Initialize output variables.
-    call init_water_balance(wb, shd)
-    wb%grid_area = 0.0
-    wb%basin_area = 0.0
-    do i = 1, NA
-        do m = 1, NTYPE
-            wb%grid_area(i) = wb%grid_area(i) + cp%FAREROW(i, m)
-        end do
-        wb%basin_area = wb%basin_area + wb%grid_area(i)
-    end do
-
     call climate_module_init(shd, ts, cm, NML, il1, il2, ENDDATA)
     if (ENDDATA) goto 999
 
@@ -659,125 +683,120 @@ program RUNMESH
 !> *********************************************************************
 
     if (ipid == 0) then
-        call init_energy_balance(eb, shd)
-        call init_soil_statevars(sp, shd)
-        call init_met_data(md, shd)
-        call init_water_balance(wb_h, shd)
         if (OUTFIELDSFLAG == 1) call init_out(shd, ts, ic, ifo, vr)
     end if !(ipid == 0) then
 
-    DRIVERTIMESTEP = DELT    ! Be sure it's REAL*8
+!-    DRIVERTIMESTEP = DELT    ! Be sure it's REAL*8
 
 !* JAN: The first time throught he loop, jan = 1. Jan will equal 2 after that.
 !-    JAN = 1
 
 !> clear accumulating variables
-    TOTAL_ROF = 0.0
-    TOTAL_ROFO = 0.0
-    TOTAL_ROFS = 0.0
-    TOTAL_ROFB = 0.0
-    TOTAL_EVAP = 0.0
-    TOTAL_PRE = 0.0
-    TOTAL_ROFACC = 0.0
-    TOTAL_ROFOACC = 0.0
-    TOTAL_ROFSACC = 0.0
-    TOTAL_ROFBACC = 0.0
-    TOTAL_EVAPACC = 0.0
-    TOTAL_PREACC = 0.0
-    TOTAL_HFSACC = 0.0
-    TOTAL_QEVPACC = 0.0
+    wb_out%ROF(2) = 0.0
+    wb_out%ROFO(2) = 0.0
+    wb_out%ROFS(2) = 0.0
+    wb_out%ROFB(2) = 0.0
+    wb_out%EVAP(2) = 0.0
+    wb_out%PRE(2) = 0.0
+    wb_out%ROF(1) = 0.0
+    wb_out%ROFO(1) = 0.0
+    wb_out%ROFS(1) = 0.0
+    wb_out%ROFB(1) = 0.0
+    wb_out%EVAP(1) = 0.0
+    wb_out%PRE(1) = 0.0
+!-    TOTAL_HFSACC = 0.0
+!-    TOTAL_QEVPACC = 0.0
 
     ! For monthly totals.
-    TOTAL_ROF_M = 0.0
-    TOTAL_ROFO_M = 0.0
-    TOTAL_ROFS_M = 0.0
-    TOTAL_ROFB_M = 0.0
-    TOTAL_EVAP_M = 0.0
-    TOTAL_PRE_M = 0.0
-    TOTAL_ROF_ACC_M = 0.0
-    TOTAL_ROFO_ACC_M = 0.0
-    TOTAL_ROFS_ACC_M = 0.0
-    TOTAL_ROFB_ACC_M = 0.0
-    TOTAL_EVAP_ACC_M = 0.0
-    TOTAL_PRE_ACC_M = 0.0
+    wb_out%ROF(3) = 0.0
+    wb_out%ROFO(3) = 0.0
+    wb_out%ROFS(3) = 0.0
+    wb_out%ROFB(3) = 0.0
+    wb_out%EVAP(3) = 0.0
+    wb_out%PRE(3) = 0.0
+!-    TOTAL_ROF_ACC_M = 0.0
+!-    TOTAL_ROFO_ACC_M = 0.0
+!-    TOTAL_ROFS_ACC_M = 0.0
+!-    TOTAL_ROFB_ACC_M = 0.0
+!-    TOTAL_EVAP_ACC_M = 0.0
+!-    TOTAL_PRE_ACC_M = 0.0
 
 !> *********************************************************************
 !> Set accumulation variables to zero.
 !> *********************************************************************
 
   !> Grid Variables
-    PREACC = 0.0
-    GTACC = 0.0
-    QEVPACC = 0.0
-    EVAPACC = 0.0
-    HFSACC = 0.0
-    HMFNACC = 0.0
-    ROFACC = 0.0
-    ROFOACC = 0.0
-    ROFSACC = 0.0
-    ROFBACC = 0.0
-    WTBLACC = 0.0
-    ALVSACC = 0.0
-    ALIRACC = 0.0
-    RHOSACC = 0.0
-    SNOACC = 0.0
-    WSNOACC = 0.0
-    CANARE = 0.0
-    SNOARE = 0.0
-    TSNOACC = 0.0
-    TCANACC = 0.0
-    RCANACC = 0.0
-    SCANACC = 0.0
-    GROACC = 0.0
-    FSINACC = 0.0
-    FLINACC = 0.0
-    FLUTACC = 0.0
-    TAACC = 0.0
-    UVACC = 0.0
-    PRESACC = 0.0
-    QAACC = 0.0
-    wb%pre = 0.0
-    wb%evap = 0.0
-    wb%rof = 0.0
-    wb%rofo = 0.0
-    wb%rofs = 0.0
-    wb%rofb = 0.0
-    wb%rcan = 0.0
-    wb%sncan = 0.0
-    wb%sno = 0.0
-    wb%wsno = 0.0
-    wb%pndw = 0.0
-    wb%lqws = 0.0
-    wb%frws = 0.0
+    wb_acc%PRE = 0.0
+!-    GTACC = 0.0
+    eb_acc%QEVP = 0.0
+    wb_acc%EVAP = 0.0
+    eb_acc%HFS = 0.0
+!-    HMFNACC = 0.0
+    wb_acc%ROF = 0.0
+    wb_acc%ROFO = 0.0
+    wb_acc%ROFS = 0.0
+    wb_acc%ROFB = 0.0
+!-    WTBLACC = 0.0
+!-    ALVSACC = 0.0
+!-    ALIRACC = 0.0
+!-    RHOSACC = 0.0
+    wb_acc%SNO = 0.0
+    wb_acc%WSNO = 0.0
+!-    CANARE = 0.0
+!-    SNOARE = 0.0
+!-    TSNOACC = 0.0
+!-    TCANACC = 0.0
+    wb_acc%RCAN = 0.0
+    wb_acc%SNCAN = 0.0
+!-    GROACC = 0.0
+!-    FSINACC = 0.0
+!-    FLINACC = 0.0
+!-    FLUTACC = 0.0
+!-    TAACC = 0.0
+!-    UVACC = 0.0
+!-    PRESACC = 0.0
+!-    QAACC = 0.0
+    wb_acc%pre = 0.0
+    wb_acc%evap = 0.0
+    wb_acc%rof = 0.0
+    wb_acc%rofo = 0.0
+    wb_acc%rofs = 0.0
+    wb_acc%rofb = 0.0
+    wb_acc%rcan = 0.0
+    wb_acc%sncan = 0.0
+    wb_acc%sno = 0.0
+    wb_acc%wsno = 0.0
+    wb_acc%pndw = 0.0
+    wb_acc%lqws = 0.0
+    wb_acc%frws = 0.0
     if (ipid == 0) then
-        eb%hfs = 0.0
-        eb%qevp = 0.0
+        eb_acc%hfs = 0.0
+        eb_acc%qevp = 0.0
     end if
 
     !> Soil variables
-    TBARACC = 0.0
-    THLQACC = 0.0
-    THICACC = 0.0
-    THALACC = 0.0
-    GFLXACC = 0.0
+    spv_grd%TBAR = 0.0
+    spv_grd%THLQ = 0.0
+    spv_grd%THIC = 0.0
+!-    THALACC = 0.0
     if (ipid == 0) then
-        sp%tbar = 0.0
-        sp%thlq = 0.0
-        sp%thic = 0.0
-        eb%gflx = 0.0
+        spv_acc%tbar = 0.0
+        spv_acc%thlq = 0.0
+        spv_acc%thic = 0.0
+        eb_acc%GFLX = 0.0
     end if
 
 !-    STG_I = 0.0
 !-    DSTG = 0.0
 !-    THLQ_FLD = 0.0
 !-    THIC_FLD = 0.0
-    wb%stg = 0.0
-    wb%dstg = 0.0
+    wb_acc%stg = 0.0
+    wb_acc%dstg = 0.0
 
     FRAME_NO_NEW = 1
 
     !> Determine what output will print to the console.
-    printoutwb = (allocated(wb%pre) .and. allocated(wb%evap) .and. allocated(wb%rof))
+    printoutwb = (allocated(wb_acc%pre) .and. allocated(wb_acc%evap) .and. allocated(wb_acc%rof))
     printoutstfl = allocated(stfl%qsyn)
     printoutqhyd = (allocated(stfl%qhyd) .and. allocated(stfl%qsyn))
 
@@ -795,7 +814,7 @@ program RUNMESH
             write(58, *)
             write(58, "('Configuration flags - specified by user or default values')")
 
-        !todo: this list should be updated (dgp: 2015-01-09)
+!todo: this list should be updated (dgp: 2015-01-09)
             write(58, *) 'BASINSHORTWAVEFLAG   = ', cm%clin(cfk%FB)%filefmt
             write(58, *) 'BASINLONGWAVEFLAG    = ', cm%clin(cfk%FI)%filefmt
             write(58, *) 'BASINRAINFLAG        = ', cm%clin(cfk%PR)%filefmt
@@ -809,9 +828,9 @@ program RUNMESH
             write(58, *) 'SHDFILEFLAG          = ', SHDFILEFLAG
             write(58, *) 'SOILINIFLAG          = ', SOILINIFLAG
             write(58, *) 'STREAMFLOWFLAG       = ', STREAMFLOWFLAG
-            write(58, *) 'CONFLAGS             = ', CONFLAGS
+!-            write(58, *) 'CONFLAGS             = ', CONFLAGS
             write(58, *) 'RELFLG               = ', RELFLG
-            write(58, *) 'OPTFLAGS             = ', OPTFLAGS
+!-            write(58, *) 'OPTFLAGS             = ', OPTFLAGS
             write(58, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
             write(58, *) 'INTERPOLATIONFLAG    = ', INTERPOLATIONFLAG
             write(58, *) 'SUBBASINFLAG         = ', SUBBASINFLAG
@@ -840,12 +859,13 @@ program RUNMESH
             write(58, *)
             write(58, "('MESH_parameters_hydrology.ini')")
             write(58, *)
-            write(58, "('Option flags:')")
-            if (OPTFLAGS > 0) then
-                do i = 1, OPTFLAGS
-                    write(58, '(a11, i2, a19)') 'PARAMETER ', i, ' NOT CURRENTLY USED'
-                end do
-            end if
+!todo: fix this.
+!-            write(58, "('Option flags:')")
+!-            if (OPTFLAGS > 0) then
+!-                do i = 1, OPTFLAGS
+!-                    write(58, '(a11, i2, a19)') 'PARAMETER ', i, ' NOT CURRENTLY USED'
+!-                end do
+!-            end if
             write(58, "('River roughnesses:')")
 !todo: change this to use NRVR
             write(58, '(5f6.3)') (WF_R2(i), i = 1, 5)
@@ -912,8 +932,8 @@ program RUNMESH
 !>
 !+    if (RESUMEFLAG == 1) then
 !todo: can do this using inquire statement
-!=        open(88, file = 'class_resume.txt', status = 'old', action = 'read', iostat = IOS)
-!+        if (IOS /= 0) then
+!=        open(88, file = 'class_resume.txt', status = 'old', action = 'read', iostat = ierr)
+!+        if (ierr /= 0) then
 !+            if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
 !+                write(58, *) "WARNING: You've specified a start time", ' without having a resume file. Now ending run.'
 !+            end if
@@ -942,25 +962,25 @@ program RUNMESH
             inquire(file = 'r2c_output.txt', exist = R2COUTPUT)
             if (R2COUTPUT) then
                 open(56, file = 'r2c_output.txt', action = 'read')
-                read(56, *, iostat = IOS) NR2C, DELTR2C
-                if (IOS == 0) then
-                    allocate(GRD(NR2C), GAT(NR2C), GRDGAT(NR2C), R2C_ATTRIBUTES(NR2C, 3), stat = PAS)
-                    if (PAS /= 0) then
+                read(56, *, iostat = ierr) NR2C, DELTR2C
+                if (ierr == 0) then
+                    allocate(GRD(NR2C), GAT(NR2C), GRDGAT(NR2C), R2C_ATTRIBUTES(NR2C, 3), stat = ierr)
+                    if (ierr /= 0) then
                         print *, 'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
                             'RECORD AT THE FIRST LINE IN THE r2c_output.txt FILE. ', &
                             'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
                         stop
                     end if
                 end if
-                if (IOS /= 0 .or. mod(DELTR2C, 30) /= 0) then
+                if (ierr /= 0 .or. mod(DELTR2C, 30) /= 0) then
                     print 9002
                     stop
                 end if
                 print *
                 print *, 'THE FOLLOWING R2C OUTPUT FILES WILL BE WRITTEN:'
                 do i = 1, NR2C
-                    read(56, *, iostat = IOS) GRD(i), GAT(i), GRDGAT(i), (R2C_ATTRIBUTES(i, j), j = 1, 3)
-                    if (IOS /= 0) then
+                    read(56, *, iostat = ierr) GRD(i), GAT(i), GRDGAT(i), (R2C_ATTRIBUTES(i, j), j = 1, 3)
+                    if (ierr /= 0) then
                         print *, 'ERROR READING r2c_output.txt FILE AT LINE ', i + 1
                         stop
                     else
@@ -1136,7 +1156,7 @@ program RUNMESH
 !                          TROSROW, TROBROW, ROFCROW, ROFNROW, ROVGROW, &
 !                          WTRCROW, WTRSROW, WTRGROW, DRROW, WTABROW, &
 !                          ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
-!                          QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
+!                          QFCROW, FSNOROW, ITCTROW, ic%ts_daily, ireport, &
 !                          wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
 !                          HOUR_NOW, shd%xxx, shd%yyy, NA, &
 !                          NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
@@ -1175,10 +1195,10 @@ program RUNMESH
 
 ! Allocate arrays for resume_state_r2c
         open(54, file = 'resume_state_r2c.txt', action = 'read')
-        read(54, *, iostat = IOS) NR2C_R, DELTR2C_R
-        if (IOS == 0) then
-            allocate(GRD_R(NR2C_R), GAT_R(NR2C_R), GRDGAT_R(NR2C_R), R2C_ATTRIBUTES_R(NR2C_R, 3), stat = PAS)
-            if (PAS /= 0) then
+        read(54, *, iostat = ierr) NR2C_R, DELTR2C_R
+        if (ierr == 0) then
+            allocate(GRD_R(NR2C_R), GAT_R(NR2C_R), GRDGAT_R(NR2C_R), R2C_ATTRIBUTES_R(NR2C_R, 3), stat = ierr)
+            if (ierr /= 0) then
                 print *, 'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
                     'RECORD AT THE FIRST LINE IN THE resume_state_r2c.txt FILE. ', &
                     'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
@@ -1331,7 +1351,7 @@ program RUNMESH
         cdv%GFLX = 0.0
         ITCTGAT = 0
 
-        call resume_state_r2c(shd%lc%NML, NA, NTYPE, NCOUNT, &
+        call resume_state_r2c(shd%lc%NML, NA, NTYPE, ic%ts_daily, &
                               MINS_NOW, shd%lc%ACLASS, NR2C_R, GRD_R, GAT_R, GRDGAT_R, R2C_ATTRIBUTES_R, &
                               NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
                               cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
@@ -1513,25 +1533,25 @@ program RUNMESH
     call climate_module_loaddata(shd, .true., cm, NML, il1, il2, ENDDATA)
 
     if (ipid == 0) then
-        TOTAL_STORE = 0.0
-        TOTAL_STORE_2 = 0.0
-        TOTAL_RCAN = 0.0
-        TOTAL_SCAN = 0.0
-        TOTAL_SNO = 0.0
-        TOTAL_WSNO = 0.0
-        TOTAL_ZPND = 0.0
-        TOTAL_THLQ = 0.0
-        TOTAL_THIC = 0.0
-        TOTAL_STORE_M = 0.0
-        TOTAL_STORE_2_M = 0.0
-        TOTAL_STORE_ACC_M = 0.0
-        TOTAL_RCAN_M = 0.0
-        TOTAL_SCAN_M = 0.0
-        TOTAL_SNO_M = 0.0
-        TOTAL_WSNO_M = 0.0
-        TOTAL_ZPND_M = 0.0
-        TOTAL_THLQ_M = 0.0
-        TOTAL_THIC_M = 0.0
+        wb_out%STG(2) = 0.0
+        wb_out%DSTG(2) = 0.0
+        wb_out%RCAN(2) = 0.0
+        wb_out%SNCAN(2) = 0.0
+        wb_out%SNO(2) = 0.0
+        wb_out%WSNO(2) = 0.0
+        wb_out%PNDW(2) = 0.0
+        wb_out%LQWS(2, :) = 0.0
+        wb_out%FRWS(2, :) = 0.0
+        wb_out%STG(3) = 0.0
+        wb_out%DSTG(3) = 0.0
+!-        TOTAL_STORE_ACC_M = 0.0
+        wb_out%RCAN(3) = 0.0
+        wb_out%SNCAN(3) = 0.0
+        wb_out%SNO(3) = 0.0
+        wb_out%WSNO(3) = 0.0
+        wb_out%PNDW(3) = 0.0
+        wb_out%LQWS(3, :) = 0.0
+        wb_out%FRWS(3, :) = 0.0
 
     !> Open CSV output files.
         if (BASINBALANCEOUTFLAG > 0) then
@@ -1539,7 +1559,7 @@ program RUNMESH
         !> Water balance.
             open(fls%fl(mfk%f900)%iun, &
                  file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
-                 iostat = ios)
+                 iostat = ierr)
 !todo: Create this only by flag.
             open(902, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Monthly.csv')
 
@@ -1551,15 +1571,15 @@ program RUNMESH
             wrt_900_4 = 'THLQIC'
 
             do i = 1, IGND
-                write(strInt, '(i1)') i
+                write(IGND_CHAR, '(i1)') i
                 if (i < IGND) then
-                    wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(strInt)) // ',THLQ'
-                    wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(strInt)) // ',THIC'
-                    wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(strInt)) // ',THLQIC'
+                    wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(IGND_CHAR)) // ',THLQ'
+                    wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(IGND_CHAR)) // ',THIC'
+                    wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(IGND_CHAR)) // ',THLQIC'
                 else
-                    wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(strInt)) // ','
-                    wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(strInt)) // ','
-                    wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(strInt)) // ','
+                    wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(IGND_CHAR)) // ','
+                    wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(IGND_CHAR)) // ','
+                    wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(IGND_CHAR)) // ','
                 end if
             end do !> i = 1, IGND
 
@@ -1656,29 +1676,33 @@ program RUNMESH
 !      but also preserve the initial storage of the time-step and delta
 !      storage for the case of RESUMEFLAG.
     if (ipid == 0) then
-        INIT_STORE = 0.0
+        wb_out%STG(1) = 0.0
         do i = 1, NA
+            wb_grd%stg(i) = 0.0
             if (shd%FRAC(i) >= 0.0) then
                 do m = 1, NTYPE
-                    INIT_STORE = INIT_STORE + cp%FAREROW(i, m)* &
-                        (cp%RCANROW(i, m) + cp%SCANROW(i, m) + cp%SNOROW(i, m) + WSNOROW(i, m) + cp%ZPNDROW(i, m)*RHOW)
-                    wb%stg(i) = cp%FAREROW(i, m)* &
-                        (cp%RCANROW(i, m) + cp%SCANROW(i, m) + cp%SNOROW(i, m) + WSNOROW(i, m) + cp%ZPNDROW(i, m)*RHOW)
+                    wb_out%STG(1) = wb_out%STG(1) + &
+                        (cp%RCANROW(i, m) + cp%SCANROW(i, m) + cp%SNOROW(i, m) + WSNOROW(i, m) + cp%ZPNDROW(i, m)*RHOW)* &
+                        cp%FAREROW(i, m)
+                    wb_grd%stg(i) = wb_grd%stg(i) + &
+                        (cp%RCANROW(i, m) + cp%SCANROW(i, m) + cp%SNOROW(i, m) + WSNOROW(i, m) + cp%ZPNDROW(i, m)*RHOW)* &
+                        cp%FAREROW(i, m)
                     do j = 1, IGND
-                        INIT_STORE = INIT_STORE + cp%FAREROW(i, m)* &
-                            (cp%THLQROW(i, m, j)*RHOW + cp%THICROW(i, m, j)*RHOICE)*DLZWROW(i, m, j)
-                        wb%stg(i) = cp%FAREROW(i, m)* &
-                            (cp%THLQROW(i, m, j)*RHOW + cp%THICROW(i, m, j)*RHOICE)*DLZWROW(i, m, j)
+                        wb_out%STG(1) = wb_out%STG(1) + &
+                            (cp%THLQROW(i, m, j)*RHOW + cp%THICROW(i, m, j)*RHOICE)*DLZWROW(i, m, j)*cp%FAREROW(i, m)
+                        wb_grd%stg(i) = wb_grd%stg(i) + &
+                            (cp%THLQROW(i, m, j)*RHOW + cp%THICROW(i, m, j)*RHOICE)*DLZWROW(i, m, j)*cp%FAREROW(i, m)
                     end do
                 end do
-                wb%dstg(i) = wb%stg(i)
             end if
+            wb_grd%dstg(i) = wb_grd%stg(i)
         end do
-        TOTAL_STORE_2 = INIT_STORE
+        wb_out%DSTG(1) = wb_out%STG(1)
+        wb_out%DSTG(2) = wb_out%STG(1)
 
     ! For monthly totals.
 !-        call FIND_MONTH(JDAY_NOW, YEAR_NOW, imonth_old)
-        TOTAL_STORE_2_M = INIT_STORE
+        wb_out%DSTG(3) = wb_out%STG(1)
 
 !> Initialization of the Storage field
 !-        do m = 1, NTYPE
@@ -1718,14 +1742,14 @@ program RUNMESH
             call climate_module_interpolatedata(shd, csfv%FARE, cm, NML, il1, il2)
         end if
 
-        call run_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+        call run_within_tile(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
 ! *********************************************************************
 ! Calculate values for output files and print them out
 ! *********************************************************************
 
     !> Send/receive process.
-        itag = NSUM_TOTAL*1000
+        itag = ic%ts_count*1000
         invars = 14 + 4*IGND
 
     !> Update the variable count per the active control flags.
@@ -1853,7 +1877,8 @@ program RUNMESH
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-        if (inp > 1 .and. NCOUNT == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
+!todo: change this to use mod.
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
 
 !> *********************************************************************
 !> Start of book-keeping and grid accumulation.
@@ -1864,10 +1889,10 @@ program RUNMESH
 !> Write ENSIM output
 !> -----------------------------------------------------c
 !>
-            if (NR2CFILES > 0 .and. mod(NCOUNT*30, DELTR2C) == 0) then
+            if (NR2CFILES > 0 .and. mod(ic%ts_daily*30, DELTR2C) == 0) then
                 call FIND_MONTH (JDAY_NOW, YEAR_NOW, ensim_month)
                 call FIND_DAY (JDAY_NOW, YEAR_NOW, ensim_day)
-                call WRITE_R2C_DATA(shd%lc%NML, NA, NTYPE, NCOUNT, MINS_NOW, shd%lc%ACLASS, &
+                call WRITE_R2C_DATA(shd%lc%NML, NA, NTYPE, ic%ts_daily, MINS_NOW, shd%lc%ACLASS, &
                                     NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, &
                                     NR2C, NR2CFILES, R2CFILEUNITSTART, GRD, GAT, &
                                     GRDGAT, NR2CSTATES, R2C_ATTRIBUTES, FRAME_NO_NEW, YEAR_NOW, &
@@ -1984,30 +2009,30 @@ program RUNMESH
             GFLXGRD = 0.0
 
     !> Grid data for output.
-            md%fsdown = cm%clin(cfk%FB)%GRD
-            md%fsvh = fsvhgrd
-            md%fsih = fsihgrd
-            md%fdl = cm%clin(cfk%FI)%GRD
-            md%ul = cm%clin(cfk%UV)%GRD
-            md%ta = cm%clin(cfk%TT)%GRD
-            md%qa = cm%clin(cfk%HU)%GRD
-            md%pres = cm%clin(cfk%P0)%GRD
-            md%pre = cm%clin(cfk%PR)%GRD
+            md_grd%fsdown = cm%clin(cfk%FB)%GRD
+            md_grd%fsvh = fsvhgrd
+            md_grd%fsih = fsihgrd
+            md_grd%fdl = cm%clin(cfk%FI)%GRD
+            md_grd%ul = cm%clin(cfk%UV)%GRD
+            md_grd%ta = cm%clin(cfk%TT)%GRD
+            md_grd%qa = cm%clin(cfk%HU)%GRD
+            md_grd%pres = cm%clin(cfk%P0)%GRD
+            md_grd%pre = cm%clin(cfk%PR)%GRD
 
 !> GRU-distributed data for output.
-            wb_h%pre = 0.0
-            wb_h%evap = 0.0
-            wb_h%rof = 0.0
-            wb_h%rofo = 0.0
-            wb_h%rofs = 0.0
-            wb_h%rofb = 0.0
-            wb_h%rcan = 0.0
-            wb_h%sncan = 0.0
-            wb_h%pndw = 0.0
-            wb_h%sno = 0.0
-            wb_h%wsno = 0.0
-            wb_h%lqws = 0.0
-            wb_h%frws = 0.0
+            wb_grd%pre = 0.0
+            wb_grd%evap = 0.0
+            wb_grd%rof = 0.0
+            wb_grd%rofo = 0.0
+            wb_grd%rofs = 0.0
+            wb_grd%rofb = 0.0
+            wb_grd%rcan = 0.0
+            wb_grd%sncan = 0.0
+            wb_grd%pndw = 0.0
+            wb_grd%sno = 0.0
+            wb_grd%wsno = 0.0
+            wb_grd%lqws = 0.0
+            wb_grd%frws = 0.0
 
             !$omp parallel do
             do k = il1, il2
@@ -2072,29 +2097,32 @@ program RUNMESH
                 ILMOGRD(ik) = ILMOGRD(ik) + cdv%ILMO(k)*csfv%FARE(k)
                 UEGRD(ik) = UEGRD(ik) + cdv%UE(k)*csfv%FARE(k)
                 HBLGRD(ik) = HBLGRD(ik) + cdv%HBL(k)*csfv%FARE(k)
-                wb_h%pre(ik) = wb_h%pre(ik) + csfv%FARE(k)*cfi%PRE(k)*DELT
-                wb_h%evap(ik) = wb_h%evap(ik) + csfv%FARE(k)*cdv%QFS(k)*DELT
-                wb_h%rof(ik) = wb_h%rof(ik) + csfv%FARE(k)*cdv%ROF(k)*DELT
-                wb_h%rofo(ik) = wb_h%rofo(ik) + csfv%FARE(k)*cdv%ROFO(k)*DELT
-                wb_h%rofs(ik) = wb_h%rofs(ik) + csfv%FARE(k)*cdv%ROFS(k)*DELT
-                wb_h%rofb(ik) = wb_h%rofb(ik) + csfv%FARE(k)*cdv%ROFB(k)*DELT
-                wb_h%rcan(ik) = wb_h%rcan(ik) + csfv%FARE(k)*cpv%RCAN(k)
-                wb_h%sncan(ik) = wb_h%sncan(ik) + csfv%FARE(k)*cpv%SNCAN(k)
-                wb_h%pndw(ik) = wb_h%pndw(ik) + csfv%FARE(k)*cpv%ZPND(k)*RHOW
-                wb_h%sno(ik) = wb_h%sno(ik) + csfv%FARE(k)*cpv%SNO(k)
-                wb_h%wsno(ik) = wb_h%wsno(ik) + csfv%FARE(k)*cpv%WSNO(k)
+                wb_grd%pre(ik) = wb_grd%pre(ik) + csfv%FARE(k)*cfi%PRE(k)*DELT
+                wb_grd%evap(ik) = wb_grd%evap(ik) + csfv%FARE(k)*cdv%QFS(k)*DELT
+                wb_grd%rof(ik) = wb_grd%rof(ik) + csfv%FARE(k)*cdv%ROF(k)*DELT
+                wb_grd%rofo(ik) = wb_grd%rofo(ik) + csfv%FARE(k)*cdv%ROFO(k)*DELT
+                wb_grd%rofs(ik) = wb_grd%rofs(ik) + csfv%FARE(k)*cdv%ROFS(k)*DELT
+                wb_grd%rofb(ik) = wb_grd%rofb(ik) + csfv%FARE(k)*cdv%ROFB(k)*DELT
+                wb_grd%rcan(ik) = wb_grd%rcan(ik) + csfv%FARE(k)*cpv%RCAN(k)
+                wb_grd%sncan(ik) = wb_grd%sncan(ik) + csfv%FARE(k)*cpv%SNCAN(k)
+                wb_grd%pndw(ik) = wb_grd%pndw(ik) + csfv%FARE(k)*cpv%ZPND(k)*RHOW
+                wb_grd%sno(ik) = wb_grd%sno(ik) + csfv%FARE(k)*cpv%SNO(k)
+                wb_grd%wsno(ik) = wb_grd%wsno(ik) + csfv%FARE(k)*cpv%WSNO(k)
                 do j = 1, IGND
                     HMFGGRD(ik, j) = HMFGGRD(ik, j) + cdv%HMFG(k, j)*csfv%FARE(k)
                     HTCGRD(ik, j) = HTCGRD(ik, j) + cdv%HTC(k, j)*csfv%FARE(k)
                     QFCGRD(ik, j) = QFCGRD(ik, j) + cdv%QFC(k, j)*csfv%FARE(k)
                     GFLXGRD(ik, j) = GFLXGRD(ik, j) + cdv%GFLX(k, j)*csfv%FARE(k)
-                    wb_h%lqws(ik, j) = wb_h%lqws(ik, j) + csfv%FARE(k)*cpv%THLQ(k, j)*csfv%DELZW(k, j)*RHOW
-                    wb_h%frws(ik, j) = wb_h%frws(ik, j) + csfv%FARE(k)*cpv%THIC(k, j)*csfv%DELZW(k, j)*RHOICE
+                    wb_grd%lqws(ik, j) = wb_grd%lqws(ik, j) + csfv%FARE(k)*cpv%THLQ(k, j)*csfv%DELZW(k, j)*RHOW
+                    wb_grd%frws(ik, j) = wb_grd%frws(ik, j) + csfv%FARE(k)*cpv%THIC(k, j)*csfv%DELZW(k, j)*RHOICE
                 end do
-                wb_h%stg(ik) = wb%rcan(ik) + wb%sncan(ik) + wb%pndw(ik) + &
-                    wb%sno(ik) + wb%wsno(ik) + &
-                    sum(wb%lqws(ik, :)) + sum(wb%frws(ik, :))
             end do !k = il1, il2
+            do i = 1, NA
+                wb_grd%stg(ik) = wb_grd%rcan(ik) + wb_grd%sncan(ik) + wb_grd%pndw(ik) + &
+                    wb_grd%sno(ik) + wb_grd%wsno(ik) + &
+                    sum(wb_grd%lqws(ik, :)) + sum(wb_grd%frws(ik, :))
+                wb_grd%dstg(ik) = wb_grd%stg(ik) - wb_grd%dstg(ik)
+            end do
 
 !> =======================================================================
 !> ACCUMULATE OUTPUT DATA FOR DIURNALLY AVERAGED FIELDS.
@@ -2103,127 +2131,115 @@ program RUNMESH
             do k = il1, il2
                 ik = shd%lc%ILMOS(k)
                 if (shd%FRAC(ik) /= 0.0) then
-                    PREACC(ik) = PREACC(ik) + cfi%PRE(k)*csfv%FARE(k)*DELT
-                    QEVPACC(ik) = QEVPACC(ik) + cdv%QEVP(k)*csfv%FARE(k)
-                    EVAPACC(ik) = EVAPACC(ik) + cdv%QFS(k)*csfv%FARE(k)*DELT
-                    HFSACC(ik)  = HFSACC(ik) + cdv%HFS(k)*csfv%FARE(k)
-                    ROFACC(ik) = ROFACC(ik) + cdv%ROF(k)*csfv%FARE(k)*DELT
-                    ROFOACC(ik) = ROFOACC(ik) + cdv%ROFO(k)*csfv%FARE(k)*DELT
-                    ROFSACC(ik) = ROFSACC(ik) + cdv%ROFS(k)*csfv%FARE(k)*DELT
-                    ROFBACC(ik) = ROFBACC(ik) + cdv%ROFB(k)*csfv%FARE(k)*DELT
+                    wb_acc%PRE(ik) = wb_acc%PRE(ik) + cfi%PRE(k)*csfv%FARE(k)*DELT
+                    eb_acc%QEVP(ik) = eb_acc%QEVP(ik) + cdv%QEVP(k)*csfv%FARE(k)
+                    wb_acc%EVAP(ik) = wb_acc%EVAP(ik) + cdv%QFS(k)*csfv%FARE(k)*DELT
+                    eb_acc%HFS(ik)  = eb_acc%HFS(ik) + cdv%HFS(k)*csfv%FARE(k)
+                    wb_acc%ROF(ik) = wb_acc%ROF(ik) + cdv%ROF(k)*csfv%FARE(k)*DELT
+                    wb_acc%ROFO(ik) = wb_acc%ROFO(ik) + cdv%ROFO(k)*csfv%FARE(k)*DELT
+                    wb_acc%ROFS(ik) = wb_acc%ROFS(ik) + cdv%ROFS(k)*csfv%FARE(k)*DELT
+                    wb_acc%ROFB(ik) = wb_acc%ROFB(ik) + cdv%ROFB(k)*csfv%FARE(k)*DELT
                     do j = 1, IGND
-                        THLQACC(ik, j) = THLQACC(ik, j) + cpv%THLQ(k, j)*csfv%FARE(k)
-                        THICACC(ik, j) = THICACC(ik, j) + cpv%THIC(k, j)*csfv%FARE(k)
-                        THALACC(ik, j) = THALACC(ik, j) + (cpv%THLQ(k, j) + cpv%THIC(k, j))*csfv%FARE(k)
+                        spv_acc%THLQ(ik, j) = spv_acc%THLQ(ik, j) + cpv%THLQ(k, j)*csfv%FARE(k)
+                        spv_acc%THIC(ik, j) = spv_acc%THIC(ik, j) + cpv%THIC(k, j)*csfv%FARE(k)
+!-                        THALACC(ik, j) = THALACC(ik, j) + (cpv%THLQ(k, j) + cpv%THIC(k, j))*csfv%FARE(k)
             !Added by GSA compute daily heat conduction flux between layers
-                        GFLXACC(ik, j) = GFLXACC(ik, j) + cdv%GFLX(k, j)*csfv%FARE(k)
+                        eb_acc%GFLX(ik, j) = eb_acc%GFLX(ik, j) + cdv%GFLX(k, j)*csfv%FARE(k)
                     end do
                     if (cpv%SNO(k) > 0.0) then
-                        WSNOACC(ik) = WSNOACC(ik) + cpv%WSNO(k)*csfv%FARE(k)
-                        SNOARE(ik) = SNOARE(ik) + csfv%FARE(k)
+                        wb_acc%WSNO(ik) = wb_acc%WSNO(ik) + cpv%WSNO(k)*csfv%FARE(k)
+!                        SNOARE(ik) = SNOARE(ik) + csfv%FARE(k)
                     end if
-                    SNOACC(ik) = SNOACC(ik) + cpv%SNO(k)*csfv%FARE(k)
-                    RCANACC(ik) = RCANACC(ik) + cpv%RCAN(k)*csfv%FARE(k)
-                    SCANACC(ik) = SCANACC(ik) + cpv%SNCAN(k)*csfv%FARE(k)
+                    wb_acc%SNO(ik) = wb_acc%SNO(ik) + cpv%SNO(k)*csfv%FARE(k)
+                    wb_acc%RCAN(ik) = wb_acc%RCAN(ik) + cpv%RCAN(k)*csfv%FARE(k)
+                    wb_acc%SNCAN(ik) = wb_acc%SNCAN(ik) + cpv%SNCAN(k)*csfv%FARE(k)
                 end if
             end do !k = il1, il2
 
     !> Update output data.
             call updatefieldsout_temp(shd, ts, ic, ifo, &
-                                      md, wb_h, &
+                                      md_grd, wb_grd, &
                                       vr)
 
 !> CALCULATE AND PRINT DAILY AVERAGES.
 
 !todo: use delta t here
-            if (NCOUNT == 48) then !48 is the last half-hour period of the day
+            if (ic%ts_daily == 48) then !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
 
     !no omp b/c of file IO
                 do i = 1, NA
                     if (shd%FRAC(i) /= 0.0) then
-                        PREACC(i) = PREACC(i)
-                        QEVPACC(i) = QEVPACC(i)/real(NSUM)
-                        EVAPACC(i) = EVAPACC(i)
-                        HFSACC(i) = HFSACC(i)/real(NSUM)
-                        ROFACC(i) = ROFACC(i)
-                        ROFOACC(i) = ROFOACC(i)
-                        ROFSACC(i) = ROFSACC(i)
-                        ROFBACC(i) = ROFBACC(i)
+!                        wb_acc%PRE(i) = wb_acc%PRE(i)
+                        eb_acc%QEVP(i) = eb_acc%QEVP(i)/real(ic%ts_daily)
+!                        wb_acc%EVAP(i) = wb_acc%EVAP(i)
+                        eb_acc%HFS(i) = eb_acc%HFS(i)/real(ic%ts_daily)
+!                        wb_acc%ROF(i) = wb_acc%ROF(i)
+!                        wb_acc%ROFO(i) = wb_acc%ROFO(i)
+!                        wb_acc%ROFS(i) = wb_acc%ROFS(i)
+!                        wb_acc%ROFB(i) = wb_acc%ROFB(i)
                         do j = 1, IGND
-                            THLQACC(i, j) = THLQACC(i, j)/real(NSUM)
-                            THICACC(i, j) = THICACC(i, j)/real(NSUM)
-                            THALACC(i, j) = THALACC(i, j)/real(NSUM)
+                            spv_acc%THLQ(i, j) = spv_acc%THLQ(i, j)/real(ic%ts_daily)
+                            spv_acc%THIC(i, j) = spv_acc%THIC(i, j)/real(ic%ts_daily)
+!-                            THALACC(i, j) = THALACC(i, j)/real(NSUM)
                         end do
-                        if (SNOARE(i) > 0.0) then
-                            WSNOACC(i) = WSNOACC(i)/SNOARE(i)
-                        end if
-                        SNOACC(i) = SNOACC(i)/real(NSUM)
-                        RCANACC(i) = RCANACC(i)/real(NSUM)
-                        SCANACC(i) = SCANACC(i)/real(NSUM)
+!                        if (SNOARE(i) > 0.0) then
+!                            wb_acc%WSNO(i) = wb_acc%WSNO(i)/SNOARE(i)
+!                        end if
+                        wb_acc%SNO(i) = wb_acc%SNO(i)/real(ic%ts_daily)
+                        wb_acc%WSNO(i) = wb_acc%WSNO(i)/real(ic%ts_daily)
+                        wb_acc%RCAN(i) = wb_acc%RCAN(i)/real(ic%ts_daily)
+                        wb_acc%SNCAN(i) = wb_acc%SNCAN(i)/real(ic%ts_daily)
 
 !> update components for final water balance tally
-                        TOTAL_PRE = TOTAL_PRE + PREACC(i)
-                        TOTAL_EVAP = TOTAL_EVAP + EVAPACC(i)
-                        TOTAL_ROF = TOTAL_ROF + ROFACC(i)
-                        TOTAL_ROFO = TOTAL_ROFO + ROFOACC(i)
-                        TOTAL_ROFS = TOTAL_ROFS + ROFSACC(i)
-                        TOTAL_ROFB = TOTAL_ROFB + ROFBACC(i)
-                        TOTAL_PREACC = TOTAL_PREACC + PREACC(i)
-                        TOTAL_EVAPACC = TOTAL_EVAPACC + EVAPACC(i)
-                        TOTAL_ROFACC = TOTAL_ROFACC + ROFACC(i)
-                        TOTAL_ROFOACC = TOTAL_ROFOACC + ROFOACC(i)
-                        TOTAL_ROFSACC = TOTAL_ROFSACC + ROFSACC(i)
-                        TOTAL_ROFBACC = TOTAL_ROFBACC + ROFBACC(i)
-                        wb%pre(i) = wb%pre(i) + PREACC(i)
-                        wb%evap(i) = wb%evap(i) + EVAPACC(i)
-                        wb%rof(i) = wb%rof(i) + ROFACC(i)
-                        wb%rofo(i) = wb%rofo(i) + ROFOACC(i)
-                        wb%rofs(i) =  wb%rofs(i) + ROFSACC(i)
-                        wb%rofb(i) = wb%rofb(i) + ROFBACC(i)
-
+                        wb_out%PRE(2) = wb_out%PRE(2) + wb_acc%PRE(i)
+                        wb_out%EVAP(2) = wb_out%EVAP(2) + wb_acc%EVAP(i)
+                        wb_out%ROF(2) = wb_out%ROF(2) + wb_acc%ROF(i)
+                        wb_out%ROFO(2) = wb_out%ROFO(2) + wb_acc%ROFO(i)
+                        wb_out%ROFS(2) = wb_out%ROFS(2) + wb_acc%ROFS(i)
+                        wb_out%ROFB(2) = wb_out%ROFB(2) + wb_acc%ROFB(i)
+                        wb_out%PRE(1) = wb_out%PRE(1) + wb_acc%PRE(i)
+                        wb_out%EVAP(1) = wb_out%EVAP(1) + wb_acc%EVAP(i)
+                        wb_out%ROF(1) = wb_out%ROF(1) + wb_acc%ROF(i)
+                        wb_out%ROFO(1) = wb_out%ROFO(1) + wb_acc%ROFO(i)
+                        wb_out%ROFS(1) = wb_out%ROFS(1) + wb_acc%ROFS(i)
+                        wb_out%ROFB(1) = wb_out%ROFB(1) + wb_acc%ROFB(i)
 !> update components for final energy balance tally
-                        TOTAL_HFSACC  = TOTAL_HFSACC  + HFSACC(i)
-                        TOTAL_QEVPACC = TOTAL_QEVPACC + QEVPACC(i)
-                        eb%hfs(i) = eb%hfs(i) + HFSACC(i)
-                        eb%qevp(i) = eb%qevp(i) + QEVPACC(i)
+!-                        TOTAL_HFSACC  = TOTAL_HFSACC  + eb_acc%HFS(i)
+!-                        TOTAL_QEVPACC = TOTAL_QEVPACC + eb_acc%QEVP(i)
+                        eb_out%HFS(2) = eb_out%HFS(2) + eb_acc%HFS(i)
+                        eb_out%QEVP(2) = eb_out%QEVP(2) + eb_acc%QEVP(i)
                         do j = 1, IGND
-                            eb%gflx(i, j) = eb%gflx(i, j) + GFLXACC(i, j)
+                            eb_out%GFLX(2, j) = eb_out%GFLX(2, j) + eb_acc%GFLX(i, j)
                         end do
                     end if
                 end do
 
     !> update components for final water balance tally
-
                 do k = il1, il2
                     ik = shd%lc%ILMOS(k)
                     if (shd%FRAC(ik) >= 0.0) then
-                        TOTAL_SCAN = TOTAL_SCAN + csfv%FARE(k)*cpv%SNCAN(k)
-                        TOTAL_RCAN = TOTAL_RCAN + csfv%FARE(k)*cpv%RCAN(k)
-                        TOTAL_SNO = TOTAL_SNO + csfv%FARE(k)*cpv%SNO(k)
-                        TOTAL_WSNO = TOTAL_WSNO + csfv%FARE(k)*cpv%WSNO(k)
-                        TOTAL_ZPND = TOTAL_ZPND + csfv%FARE(k)*cpv%ZPND(k)*RHOW
-                        wb%rcan(ik) = wb%rcan(ik) + csfv%FARE(k)*cpv%RCAN(k)
-                        wb%sncan(ik) = wb%sncan(ik) + csfv%FARE(k)*cpv%SNCAN(k)
-                        wb%pndw(ik) = wb%pndw(ik) + csfv%FARE(k)*cpv%ZPND(k)*RHOW
-                        wb%sno(ik) = wb%sno(ik) + csfv%FARE(k)*cpv%SNO(k)
-                        wb%wsno(ik) = wb%wsno(ik) + csfv%FARE(k)*cpv%WSNO(k)
+                        wb_out%SNCAN(2) = wb_out%SNCAN(2) + csfv%FARE(k)*cpv%SNCAN(k)
+                        wb_out%RCAN(2) = wb_out%RCAN(2) + csfv%FARE(k)*cpv%RCAN(k)
+                        wb_out%SNO(2) = wb_out%SNO(2) + csfv%FARE(k)*cpv%SNO(k)
+                        wb_out%WSNO(2) = wb_out%WSNO(2) + csfv%FARE(k)*cpv%WSNO(k)
+                        wb_out%PNDW(2) = wb_out%PNDW(2) + csfv%FARE(k)*cpv%ZPND(k)*RHOW
                         do j = 1, IGND
-                            TOTAL_THLQ(j) = TOTAL_THLQ(j) + csfv%FARE(k)*cpv%THLQ(k, j)*RHOW*csfv%DELZW(k, j)
-                            TOTAL_THIC(j) = TOTAL_THIC(j) + csfv%FARE(k)*cpv%THIC(k, j)*RHOICE*csfv%DELZW(k, j)
-                            wb%lqws(ik, j) = wb%lqws(ik, j) + csfv%FARE(k)*cpv%THLQ(k, j)*RHOW*csfv%DELZW(k, j)
-                            wb%frws(ik, j) = wb%frws(ik, j) + csfv%FARE(k)*cpv%THIC(k, j)*RHOICE*csfv%DELZW(k, j)
-                            sp%tbar(ik, j) = sp%tbar(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
-                            sp%thlq(ik, j) = sp%thlq(ik, j) + csfv%FARE(k)*cpv%THLQ(k, j)
-                            sp%thic(ik, j) = sp%thic(ik, j) + csfv%FARE(k)*cpv%THIC(k, j)
+                            wb_out%LQWS(2, j) = wb_out%LQWS(2, j) + csfv%FARE(k)*cpv%THLQ(k, j)*RHOW*csfv%DELZW(k, j)
+                            wb_out%FRWS(2, j) = wb_out%FRWS(2, j) + csfv%FARE(k)*cpv%THIC(k, j)*RHOICE*csfv%DELZW(k, j)
+                            spv_acc%tbar(ik, j) = spv_acc%tbar(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
                         end do
                     end if !(shd%FRAC(ik) >= 0.0) then
                 end do !k = il1, il2
 
     !> Calculate storage
-                wb%stg = wb%rcan + wb%sncan + wb%pndw + wb%sno + wb%wsno + sum(wb%lqws, 2) + sum(wb%frws, 2)
-                wb%dstg = wb%stg - wb%dstg
-                TOTAL_STORE = TOTAL_SCAN + TOTAL_RCAN + TOTAL_SNO + TOTAL_WSNO + TOTAL_ZPND + sum(TOTAL_THLQ) + sum(TOTAL_THIC)
+                wb_acc%stg = &
+                    wb_acc%rcan + wb_acc%sncan + wb_acc%pndw + wb_acc%sno + wb_acc%wsno + sum(wb_acc%lqws, 2) + sum(wb_acc%frws, 2)
+                wb_acc%dstg = wb_acc%stg - wb_acc%dstg
+                wb_out%STG(2) = &
+                    wb_out%SNCAN(2) + wb_out%RCAN(2) + wb_out%SNO(2) + wb_out%WSNO(2) + wb_out%PNDW(2) + &
+                    sum(wb_out%LQWS(2, :)) + sum(wb_out%FRWS(2, :))
+                wb_out%DSTG(2) = wb_out%STG(2) - wb_out%DSTG(2)
 
     !> Write output CSV files.
                 if (BASINBALANCEOUTFLAG > 0) then
@@ -2231,108 +2247,108 @@ program RUNMESH
         !> Water balance.
                     write(fls%fl(mfk%f900)%iun, "(i4,',', i5,',', 999(e14.6,','))") &
                           JDAY_NOW, YEAR_NOW, &
-                          TOTAL_PREACC/TOTAL_AREA, &
-                          TOTAL_EVAPACC/TOTAL_AREA, &
-                          TOTAL_ROFACC/TOTAL_AREA, &
-                          TOTAL_ROFOACC/TOTAL_AREA, &
-                          TOTAL_ROFSACC/TOTAL_AREA, &
-                          TOTAL_ROFBACC/TOTAL_AREA, &
-                          TOTAL_PRE/TOTAL_AREA, &
-                          TOTAL_EVAP/TOTAL_AREA, &
-                          TOTAL_ROF/TOTAL_AREA, &
-                          TOTAL_ROFO/TOTAL_AREA, &
-                          TOTAL_ROFS/TOTAL_AREA, &
-                          TOTAL_ROFB/TOTAL_AREA, &
-                          TOTAL_SCAN/TOTAL_AREA, &
-                          TOTAL_RCAN/TOTAL_AREA, &
-                          TOTAL_SNO/TOTAL_AREA, &
-                          TOTAL_WSNO/TOTAL_AREA, &
-                          TOTAL_ZPND/TOTAL_AREA, &
-                          (TOTAL_THLQ(j)/TOTAL_AREA, j = 1, IGND), &
-                          (TOTAL_THIC(j)/TOTAL_AREA, j = 1, IGND), &
-                          ((TOTAL_THLQ(j) + TOTAL_THIC(j))/TOTAL_AREA, j = 1, IGND), &
-                          SUM(TOTAL_THLQ(1:IGND))/TOTAL_AREA, &
-                          SUM(TOTAL_THIC(1:IGND))/TOTAL_AREA, &
-                          (SUM(TOTAL_THLQ(1:IGND)) + SUM(TOTAL_THIC(1:IGND)))/TOTAL_AREA, &
-                          TOTAL_STORE/TOTAL_AREA, &
-                          (TOTAL_STORE - TOTAL_STORE_2)/TOTAL_AREA, &
-                          (TOTAL_STORE - INIT_STORE)/TOTAL_AREA
+                          wb_out%PRE(1)/wb_out%basin_area, &
+                          wb_out%EVAP(1)/wb_out%basin_area, &
+                          wb_out%ROF(1)/wb_out%basin_area, &
+                          wb_out%ROFO(1)/wb_out%basin_area, &
+                          wb_out%ROFS(1)/wb_out%basin_area, &
+                          wb_out%ROFB(1)/wb_out%basin_area, &
+                          wb_out%PRE(2)/wb_out%basin_area, &
+                          wb_out%EVAP(2)/wb_out%basin_area, &
+                          wb_out%ROF(2)/wb_out%basin_area, &
+                          wb_out%ROFO(2)/wb_out%basin_area, &
+                          wb_out%ROFS(2)/wb_out%basin_area, &
+                          wb_out%ROFB(2)/wb_out%basin_area, &
+                          wb_out%SNCAN(2)/wb_out%basin_area, &
+                          wb_out%RCAN(2)/wb_out%basin_area, &
+                          wb_out%SNO(2)/wb_out%basin_area, &
+                          wb_out%WSNO(2)/wb_out%basin_area, &
+                          wb_out%PNDW(2)/wb_out%basin_area, &
+                          (wb_out%LQWS(2, j)/wb_out%basin_area, j = 1, IGND), &
+                          (wb_out%FRWS(2, j)/wb_out%basin_area, j = 1, IGND), &
+                          ((wb_out%LQWS(2, j) + wb_out%FRWS(2, j))/wb_out%basin_area, j = 1, IGND), &
+                          SUM(wb_out%LQWS(2, :))/wb_out%basin_area, &
+                          SUM(wb_out%FRWS(2, :))/wb_out%basin_area, &
+                          (SUM(wb_out%LQWS(2, :)) + SUM(wb_out%FRWS(2, :)))/wb_out%basin_area, &
+                          wb_out%STG(2)/wb_out%basin_area, &
+                          (wb_out%DSTG(2))/wb_out%basin_area, &
+                          (wb_out%STG(2) - wb_out%STG(1))/wb_out%basin_area
 
         !> Energy balance.
                     write(901, "(i4,',', i5,',', 999(e12.5,','))") &
                           JDAY_NOW, YEAR_NOW, &
-                          TOTAL_HFSACC/TOTAL_AREA, &
-                          TOTAL_QEVPACC/TOTAL_AREA
+                          eb_out%HFS(2)/wb_out%basin_area, &
+                          eb_out%QEVP(2)/wb_out%basin_area
 
         ! Monthly totals.
-                    TOTAL_PRE_ACC_M = TOTAL_PRE_ACC_M + TOTAL_PRE
-                    TOTAL_EVAP_ACC_M = TOTAL_EVAP_ACC_M + TOTAL_EVAP
-                    TOTAL_ROF_ACC_M = TOTAL_ROF_ACC_M + TOTAL_ROF
-                    TOTAL_ROFO_ACC_M = TOTAL_ROFO_ACC_M + TOTAL_ROFO
-                    TOTAL_ROFS_ACC_M = TOTAL_ROFS_ACC_M + TOTAL_ROFS
-                    TOTAL_ROFB_ACC_M = TOTAL_ROFB_ACC_M + TOTAL_ROFB
-                    TOTAL_PRE_M = TOTAL_PRE_M + TOTAL_PRE
-                    TOTAL_EVAP_M = TOTAL_EVAP_M + TOTAL_EVAP
-                    TOTAL_ROF_M = TOTAL_ROF_M + TOTAL_ROF
-                    TOTAL_ROFO_M = TOTAL_ROFO_M + TOTAL_ROFO
-                    TOTAL_ROFS_M = TOTAL_ROFS_M + TOTAL_ROFS
-                    TOTAL_ROFB_M = TOTAL_ROFB_M + TOTAL_ROFB
-                    TOTAL_SCAN_M = TOTAL_SCAN_M + TOTAL_SCAN
-                    TOTAL_RCAN_M = TOTAL_RCAN_M + TOTAL_RCAN
-                    TOTAL_SNO_M = TOTAL_SNO_M + TOTAL_SNO
-                    TOTAL_WSNO_M = TOTAL_WSNO_M + TOTAL_WSNO
-                    TOTAL_ZPND_M = TOTAL_ZPND_M + TOTAL_ZPND
-                    TOTAL_THLQ_M = TOTAL_THLQ_M + TOTAL_THLQ
-                    TOTAL_THIC_M = TOTAL_THIC_M + TOTAL_THIC
-                    TOTAL_STORE_M = TOTAL_STORE
-                    TOTAL_STORE_ACC_M = TOTAL_STORE
+!-                    TOTAL_PRE_ACC_M = TOTAL_PRE_ACC_M + wb_out%PRE(2)
+!-                    TOTAL_EVAP_ACC_M = TOTAL_EVAP_ACC_M + wb_out%EVAP(2)
+!-                    TOTAL_ROF_ACC_M = TOTAL_ROF_ACC_M + wb_out%ROF(2)
+!-                    TOTAL_ROFO_ACC_M = TOTAL_ROFO_ACC_M + wb_out%ROFO(2)
+!-                    TOTAL_ROFS_ACC_M = TOTAL_ROFS_ACC_M + wb_out%ROFS(2)
+!-                    TOTAL_ROFB_ACC_M = TOTAL_ROFB_ACC_M + wb_out%ROFB(2)
+                    wb_out%PRE(3) = wb_out%PRE(3) + wb_out%PRE(2)
+                    wb_out%EVAP(3) = wb_out%EVAP(3) + wb_out%EVAP(2)
+                    wb_out%ROF(3) = wb_out%ROF(3) + wb_out%ROF(2)
+                    wb_out%ROFO(3) = wb_out%ROFO(3) + wb_out%ROFO(2)
+                    wb_out%ROFS(3) = wb_out%ROFS(3) + wb_out%ROFS(2)
+                    wb_out%ROFB(3) = wb_out%ROFB(3) + wb_out%ROFB(2)
+                    wb_out%SNCAN(3) = wb_out%SNCAN(3) + wb_out%SNCAN(2)
+                    wb_out%RCAN(3) = wb_out%RCAN(3) + wb_out%RCAN(2)
+                    wb_out%SNO(3) = wb_out%SNO(3) + wb_out%SNO(2)
+                    wb_out%WSNO(3) = wb_out%WSNO(3) + wb_out%WSNO(2)
+                    wb_out%PNDW(3) = wb_out%PNDW(3) + wb_out%PNDW(2)
+                    wb_out%LQWS(3, :) = wb_out%LQWS(3, :) + wb_out%LQWS(2, :)
+                    wb_out%FRWS(3, :) = wb_out%FRWS(3, :) + wb_out%FRWS(2, :)
+                    wb_out%STG(3) = wb_out%STG(2)
+!-                    TOTAL_STORE_ACC_M = wb_out%STG(2)
 
         ! Write out monthly totals.
 !-                    call FIND_MONTH(JDAY_NOW, YEAR_NOW, imonth_now)
                     if (ic%now_day == 1) then
                         write(902, "(i4,',', i5,',', 999(e14.6,','))") &
                               JDAY_NOW, YEAR_NOW, &
-                              TOTAL_PRE_ACC_M/TOTAL_AREA, &
-                              TOTAL_EVAP_ACC_M/TOTAL_AREA, &
-                              TOTAL_ROF_ACC_M/TOTAL_AREA, &
-                              TOTAL_ROFO_ACC_M/TOTAL_AREA, &
-                              TOTAL_ROFS_ACC_M/TOTAL_AREA, &
-                              TOTAL_ROFB_ACC_M/TOTAL_AREA, &
-                              TOTAL_PRE_M/TOTAL_AREA, &
-                              TOTAL_EVAP_M/TOTAL_AREA, &
-                              TOTAL_ROF_M/TOTAL_AREA, &
-                              TOTAL_ROFO_M/TOTAL_AREA, &
-                              TOTAL_ROFS_M/TOTAL_AREA, &
-                              TOTAL_ROFB_M/TOTAL_AREA, &
-                              TOTAL_SCAN_M/TOTAL_AREA, &
-                              TOTAL_RCAN_M/TOTAL_AREA, &
-                              TOTAL_SNO_M/TOTAL_AREA, &
-                              TOTAL_WSNO_M/TOTAL_AREA, &
-                              TOTAL_ZPND_M/TOTAL_AREA, &
-                              (TOTAL_THLQ_M(j)/TOTAL_AREA, j = 1, IGND), &
-                              (TOTAL_THIC_M(j)/TOTAL_AREA, j = 1, IGND), &
-                              ((TOTAL_THLQ_M(j) + TOTAL_THIC_M(j))/TOTAL_AREA, j = 1, IGND), &
-                              sum(TOTAL_THLQ_M(1:IGND))/TOTAL_AREA, &
-                              sum(TOTAL_THIC_M(1:IGND))/TOTAL_AREA, &
-                              (sum(TOTAL_THLQ_M(1:IGND)) + sum(TOTAL_THIC_M(1:IGND)))/TOTAL_AREA, &
-                              TOTAL_STORE_M/TOTAL_AREA, &
-                              (TOTAL_STORE_M - TOTAL_STORE_2_M)/TOTAL_AREA, &
-                              (TOTAL_STORE_ACC_M - INIT_STORE)/TOTAL_AREA
-                        TOTAL_PRE_M = 0.0
-                        TOTAL_EVAP_M = 0.0
-                        TOTAL_ROF_M = 0.0
-                        TOTAL_ROFO_M = 0.0
-                        TOTAL_ROFS_M = 0.0
-                        TOTAL_ROFB_M = 0.0
-                        TOTAL_SCAN_M = 0.0
-                        TOTAL_RCAN_M = 0.0
-                        TOTAL_SNO_M = 0.0
-                        TOTAL_WSNO_M = 0.0
-                        TOTAL_ZPND_M = 0.0
-                        TOTAL_THLQ_M = 0.0
-                        TOTAL_THIC_M = 0.0
-                        TOTAL_STORE_2_M = TOTAL_STORE_M
-                        TOTAL_STORE_M = 0.0
+                              wb_out%PRE(1)/wb_out%basin_area, &
+                              wb_out%EVAP(1)/wb_out%basin_area, &
+                              wb_out%ROF(1)/wb_out%basin_area, &
+                              wb_out%ROFO(1)/wb_out%basin_area, &
+                              wb_out%ROFS(1)/wb_out%basin_area, &
+                              wb_out%ROFB(1)/wb_out%basin_area, &
+                              wb_out%PRE(3)/wb_out%basin_area, &
+                              wb_out%EVAP(3)/wb_out%basin_area, &
+                              wb_out%ROF(3)/wb_out%basin_area, &
+                              wb_out%ROFO(3)/wb_out%basin_area, &
+                              wb_out%ROFS(3)/wb_out%basin_area, &
+                              wb_out%ROFB(3)/wb_out%basin_area, &
+                              wb_out%SNCAN(3)/wb_out%basin_area, &
+                              wb_out%RCAN(3)/wb_out%basin_area, &
+                              wb_out%SNO(3)/wb_out%basin_area, &
+                              wb_out%WSNO(3)/wb_out%basin_area, &
+                              wb_out%PNDW(3)/wb_out%basin_area, &
+                              (wb_out%LQWS(3, j)/wb_out%basin_area, j = 1, IGND), &
+                              (wb_out%FRWS(3, j)/wb_out%basin_area, j = 1, IGND), &
+                              ((wb_out%LQWS(3, j) + wb_out%FRWS(3, j))/wb_out%basin_area, j = 1, IGND), &
+                              sum(wb_out%LQWS(3, :))/wb_out%basin_area, &
+                              sum(wb_out%FRWS(3, :))/wb_out%basin_area, &
+                              (sum(wb_out%LQWS(3, :)) + sum(wb_out%FRWS(3, :)))/wb_out%basin_area, &
+                              wb_out%STG(3)/wb_out%basin_area, &
+                              (wb_out%DSTG(3))/wb_out%basin_area, &
+                              (wb_out%STG(3) - wb_out%STG(1))/wb_out%basin_area
+                        wb_out%PRE(3) = 0.0
+                        wb_out%EVAP(3) = 0.0
+                        wb_out%ROF(3) = 0.0
+                        wb_out%ROFO(3) = 0.0
+                        wb_out%ROFS(3) = 0.0
+                        wb_out%ROFB(3) = 0.0
+                        wb_out%SNCAN(3) = 0.0
+                        wb_out%RCAN(3) = 0.0
+                        wb_out%SNO(3) = 0.0
+                        wb_out%WSNO(3) = 0.0
+                        wb_out%PNDW(3) = 0.0
+                        wb_out%LQWS(3, :) = 0.0
+                        wb_out%FRWS(3, :) = 0.0
+!-                        TOTAL_STORE_2_M = wb_out%STG(3)
+                        wb_out%STG(3) = 0.0
 !-                        imonth_old = imonth_now
                     end if
                 end if !(BASINBALANCEOUTFLAG > 0) then
@@ -2346,12 +2362,12 @@ program RUNMESH
 
                 if (OUTFIELDSFLAG == 1) then
                     call UpdateFIELDSOUT(vr, ts, ifo, &
-                                         wb%pre, wb%evap, wb%rof, wb%dstg, &
-                                         sp%tbar, wb%lqws, wb%frws, &
-                                         wb%rcan, wb%sncan, &
-                                         wb%pndw, wb%sno, wb%wsno, &
-                                         eb%gflx, eb%hfs, eb%qevp, &
-                                         sp%thlq, sp%thic, &
+                                         wb_acc%pre, wb_acc%evap, wb_acc%rof, wb_acc%dstg, &
+                                         spv_acc%tbar, wb_acc%lqws, wb_acc%frws, &
+                                         wb_acc%rcan, wb_acc%sncan, &
+                                         wb_acc%pndw, wb_acc%sno, wb_acc%wsno, &
+                                         eb_acc%gflx, eb_acc%hfs, eb_acc%qevp, &
+                                         spv_acc%thlq, spv_acc%thic, &
                                          IGND, &
                                          JDAY_NOW, YEAR_NOW)
                 end if
@@ -2359,65 +2375,49 @@ program RUNMESH
 
 !RESET ACCUMULATION VARIABLES TO ZERO
 !> RESET ACCUMULATOR ARRAYS.
-                PREACC = 0.0
-                GTACC = 0.0
-                QEVPACC = 0.0
-                HFSACC = 0.0
-                HMFNACC = 0.0
-                ROFACC = 0.0
-                SNOACC = 0.0
-                CANARE = 0.0
-                SNOARE = 0.0
-                ROFOACC = 0.0
-                ROFSACC = 0.0
-                ROFBACC = 0.0
-                WTBLACC = 0.0
-                TBARACC = 0.0
-                THLQACC = 0.0
-                THICACC = 0.0
-                THALACC = 0.0
-                GFLXACC = 0.0
-                ALVSACC = 0.0
-                ALIRACC = 0.0
-                RHOSACC = 0.0
-                TSNOACC = 0.0
-                WSNOACC = 0.0
-                TCANACC = 0.0
-                RCANACC = 0.0
-                SCANACC = 0.0
-                GROACC = 0.0
-                FSINACC = 0.0
-                FLINACC = 0.0
-                TAACC = 0.0
-                UVACC = 0.0
-                PRESACC = 0.0
-                QAACC = 0.0
-                EVAPACC = 0.0
-                FLUTACC = 0.0
-                TOTAL_STORE_2 = TOTAL_STORE
-                TOTAL_STORE = 0.0
-                TOTAL_RCAN = 0.0
-                TOTAL_SCAN = 0.0
-                TOTAL_SNO = 0.0
-                TOTAL_WSNO = 0.0
-                TOTAL_ZPND = 0.0
-                TOTAL_THLQ = 0.0
-                TOTAL_THIC = 0.0
-                TOTAL_PRE = 0.0
-                TOTAL_EVAP = 0.0
-                TOTAL_ROF = 0.0
-                TOTAL_ROFO = 0.0
-                TOTAL_ROFS = 0.0
-                TOTAL_ROFB = 0.0
-                TOTAL_HFSACC = 0.0
-                TOTAL_QEVPACC = 0.0
+!-                GTACC = 0.0
+!-                HMFNACC = 0.0
+!-                CANARE = 0.0
+!-                SNOARE = 0.0
+!-                WTBLACC = 0.0
+!-                THALACC = 0.0
+!-                ALVSACC = 0.0
+!-                ALIRACC = 0.0
+!-                RHOSACC = 0.0
+!-                TSNOACC = 0.0
+!-                TCANACC = 0.0
+!-                GROACC = 0.0
+!-                FSINACC = 0.0
+!-                FLINACC = 0.0
+!-                TAACC = 0.0
+!-                UVACC = 0.0
+!-                PRESACC = 0.0
+!-                QAACC = 0.0
+!-                FLUTACC = 0.0
+!-                TOTAL_STORE_2 = wb_out%STG(2)
+                wb_out%STG(2) = 0.0
+                wb_out%RCAN(2) = 0.0
+                wb_out%SNCAN(2) = 0.0
+                wb_out%SNO(2) = 0.0
+                wb_out%WSNO(2) = 0.0
+                wb_out%PNDW(2) = 0.0
+                wb_out%LQWS(2, :) = 0.0
+                wb_out%FRWS(2, :) = 0.0
+                wb_out%PRE(2) = 0.0
+                wb_out%EVAP(2) = 0.0
+                wb_out%ROF(2) = 0.0
+                wb_out%ROFO(2) = 0.0
+                wb_out%ROFS(2) = 0.0
+                wb_out%ROFB(2) = 0.0
+!-                TOTAL_HFSACC = 0.0
+!-                TOTAL_QEVPACC = 0.0
 !-                THIC_FLD = 0.0
 !-                THLQ_FLD = 0.0
 !-                DSTG = 0.0
-            end if !(NCOUNT == 48) then
+            end if !(ic%ts_daily == 48) then
         end if !(ipid == 0) then
 
-        if (ipid == 0) call run_between_grid(shd, fls, ts, ic, cm, wb_h, eb, sp, stfl, rrls, &
+        if (ipid == 0) call run_between_grid(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls, &
                                              WF_R1, WF_R2, M_C)
 
 !> *********************************************************************
@@ -2436,7 +2436,7 @@ program RUNMESH
 !> Write output to console.
 !> *********************************************************************
 
-            if (NCOUNT == 48) then !48 is the last half-hour period of the day
+            if (ic%ts_daily == 48) then !48 is the last half-hour period of the day
                       ! when they're numbered 1-48
 
                 if (ro%VERBOSEMODE > 0) then
@@ -2450,7 +2450,7 @@ program RUNMESH
 !todo: restore this.
 !                    j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
                     j = shd%NAA
-                    if (printoutwb) write(6, '(3(f10.3))', advance = 'no') wb%pre(j), wb%evap(j), wb%rof(j)
+                    if (printoutwb) write(6, '(3(f10.3))', advance = 'no') wb_acc%pre(j), wb_acc%evap(j), wb_acc%rof(j)
                     write(6, *)
                 end if !(ro%VERBOSEMODE > 0) then
                 if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
@@ -2460,28 +2460,28 @@ program RUNMESH
                     end if
                 end if
 
-                wb%pre = 0.0
-                wb%evap = 0.0
-                wb%rof = 0.0
-                wb%rofo = 0.0
-                wb%rofs =  0.0
-                wb%rofb = 0.0
-                wb%rcan = 0.0
-                wb%sncan = 0.0
-                wb%pndw = 0.0
-                wb%sno = 0.0
-                wb%wsno = 0.0
-                wb%lqws = 0.0
-                wb%frws = 0.0
-                eb%hfs = 0.0
-                eb%qevp = 0.0
-                sp%tbar = 0.0
-                sp%thlq = 0.0
-                sp%thic = 0.0
-                eb%gflx = 0.0
-                wb%stg = 0.0
+                wb_acc%pre = 0.0
+                eb_acc%qevp = 0.0
+                wb_acc%evap = 0.0
+                eb_acc%hfs = 0.0
+                wb_acc%rof = 0.0
+                wb_acc%rofo = 0.0
+                wb_acc%rofs =  0.0
+                wb_acc%rofb = 0.0
+                wb_acc%rcan = 0.0
+                wb_acc%sncan = 0.0
+                wb_acc%pndw = 0.0
+                wb_acc%sno = 0.0
+                wb_acc%wsno = 0.0
+                spv_acc%thlq = 0.0
+                wb_acc%lqws = 0.0
+                spv_acc%thic = 0.0
+                wb_acc%frws = 0.0
+                spv_acc%tbar = 0.0
+                eb_acc%gflx = 0.0
+                wb_acc%stg = 0.0
 
-            end if !(NCOUNT == 48) then
+            end if !(ic%ts_daily == 48) then
         end if !(ipid == 0) then
 
 5176    format(2i5, 999(f10.3))
@@ -2489,14 +2489,14 @@ program RUNMESH
 ! *********************************************************************
 ! Update time counters and return to beginning of main loop
 ! *********************************************************************
-        NCOUNT = NCOUNT + 1 !todo: does this work with hourly forcing data?
-        NSUM = NSUM + 1
-        NSUM_TOTAL = NSUM_TOTAL + 1
-        if (NCOUNT > 48) then !48 is the last half-hour period of the day
-                      ! when they're numbered 1-48
-            NCOUNT = 1
-            NSUM = 1
-        end if
+!-        NCOUNT = NCOUNT + 1 !todo: does this work with hourly forcing data?
+!-        NSUM = NSUM + 1
+!-        NSUM_TOTAL = NSUM_TOTAL + 1
+!-        if (NCOUNT > 48) then !48 is the last half-hour period of the day
+!-                      ! when they're numbered 1-48
+!-            NCOUNT = 1
+!-            NSUM = 1
+!-        end if
 
         MINS_NOW = MINS_NOW + TIME_STEP_MINS ! increment the current time by 30 minutes
         if (MINS_NOW == 60) then
@@ -2682,10 +2682,10 @@ program RUNMESH
 
 ! Allocate arrays for save_state_r2c
         open(55, file = 'save_state_r2c.txt', action = 'read')
-        read(55, *, iostat = IOS) NR2C_S, DELTR2C_S
-        if (IOS == 0) then
-            allocate(GRD_S(NR2C_S), GAT_S(NR2C_S), GRDGAT_S(NR2C_S), R2C_ATTRIBUTES_S(NR2C_S, 3), stat = PAS)
-            if (PAS /= 0) then
+        read(55, *, iostat = ierr) NR2C_S, DELTR2C_S
+        if (ierr == 0) then
+            allocate(GRD_S(NR2C_S), GAT_S(NR2C_S), GRDGAT_S(NR2C_S), R2C_ATTRIBUTES_S(NR2C_S, 3), stat = ierr)
+            if (ierr /= 0) then
                 print *, 'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
                     'RECORD AT THE FIRST LINE IN THE save_state_r2c.txt FILE. ', &
                     'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
@@ -2694,7 +2694,7 @@ program RUNMESH
         end if
         close(55)
 
-        call SAVE_STATE_R2C(shd%lc%NML, NA, NTYPE, NCOUNT, &
+        call SAVE_STATE_R2C(shd%lc%NML, NA, NTYPE, ic%ts_daily, &
                             MINS_NOW, shd%lc%ACLASS, NR2C_S, GRD_S, GAT_S, GRDGAT_S, R2C_ATTRIBUTES_S, &
                             NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
                             cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
@@ -2845,7 +2845,7 @@ program RUNMESH
 !                        TROSROW, TROBROW, ROFCROW, ROFNROW, ROVGROW, &
 !                        WTRCROW, WTRSROW, WTRGROW, DRROW, WTABROW, &
 !                        ILMOROW, UEROW, HBLROW, HMFGROW, HTCROW, &
-!                        QFCROW, FSNOROW, ITCTROW, NCOUNT, ireport, &
+!                        QFCROW, FSNOROW, ITCTROW, ic%ts_daily, ireport, &
 !                        wfo_seq, YEAR_NOW, ensim_MONTH, ensim_DAY, &
 !                        HOUR_NOW, shd%xxx, shd%yyy, NA, &
 !                        NTYPE, DELT, TFREZ, UVGRD, SBC, RHOW, CURREC, &
@@ -2900,12 +2900,13 @@ program RUNMESH
     if (ENDDATE) print *, 'Reached end of simulation date'
 
 !> Calculate final storage
-    FINAL_STORE = 0.0
+    wb_out%DSTG(1) = 0.0
     do k = il1, il2
         if (shd%FRAC(shd%lc%ILMOS(k)) >= 0.0) then
-            FINAL_STORE = FINAL_STORE + csfv%FARE(k)*(cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%WSNO(k) + cpv%ZPND(k)*RHOW)
+            wb_out%DSTG(1) = &
+                wb_out%DSTG(1) + csfv%FARE(k)*(cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%WSNO(k) + cpv%ZPND(k)*RHOW)
             do j = 1, IGND
-                FINAL_STORE = FINAL_STORE + csfv%FARE(k)*(cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*csfv%DELZW(k, j)
+                wb_out%DSTG(1) = wb_out%DSTG(1) + csfv%FARE(k)*(cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*csfv%DELZW(k, j)
             end do
         end if
     end do
@@ -2914,15 +2915,17 @@ program RUNMESH
     if (ro%VERBOSEMODE > 0) then
 
         print *
-        print 5641, 'Total Precipitation         (mm) =', TOTAL_PREACC/TOTAL_AREA
-        print 5641, 'Total Evaporation           (mm) =', TOTAL_EVAPACC/TOTAL_AREA
-        print 5641, 'Total Runoff                (mm) =', TOTAL_ROFACC/TOTAL_AREA
-        print 5641, 'Storage (Change/Init/Final) (mm) =', (FINAL_STORE - INIT_STORE)/TOTAL_AREA, INIT_STORE/TOTAL_AREA, &
-            FINAL_STORE/TOTAL_AREA
+        print 5641, 'Total Precipitation         (mm) =', wb_out%PRE(1)/wb_out%basin_area
+        print 5641, 'Total Evaporation           (mm) =', wb_out%EVAP(1)/wb_out%basin_area
+        print 5641, 'Total Runoff                (mm) =', wb_out%ROF(1)/wb_out%basin_area
+        print 5641, 'Storage (Change/Init/Final) (mm) =', &
+            (wb_out%DSTG(1) - wb_out%STG(1))/wb_out%basin_area, &
+            wb_out%STG(1)/wb_out%basin_area, &
+            wb_out%DSTG(1)/wb_out%basin_area
         print *
-        print 5641, 'Total Overland flow         (mm) =', TOTAL_ROFOACC/TOTAL_AREA
-        print 5641, 'Total Interflow             (mm) =', TOTAL_ROFSACC/TOTAL_AREA
-        print 5641, 'Total Baseflow              (mm) =', TOTAL_ROFBACC/TOTAL_AREA
+        print 5641, 'Total Overland flow         (mm) =', wb_out%ROFO(1)/wb_out%basin_area
+        print 5641, 'Total Interflow             (mm) =', wb_out%ROFS(1)/wb_out%basin_area
+        print 5641, 'Total Baseflow              (mm) =', wb_out%ROFB(1)/wb_out%basin_area
         print *
 
 5641    format(3x, a34, 999(f11.3))
@@ -2936,16 +2939,16 @@ program RUNMESH
     if (MODELINFOOUTFLAG > 0) then
 
         write(58, *)
-        write(58, '(a, f11.3)') '  Total Precipitation         (mm) = ', TOTAL_PREACC/TOTAL_AREA
-        write(58, '(a, f11.3)') '  Total Evaporation           (mm) = ', TOTAL_EVAPACC/TOTAL_AREA
-        write(58, '(a, f11.3)') '  Total Runoff                (mm) = ', TOTAL_ROFACC/TOTAL_AREA
+        write(58, '(a, f11.3)') '  Total Precipitation         (mm) = ', wb_out%PRE(1)/wb_out%basin_area
+        write(58, '(a, f11.3)') '  Total Evaporation           (mm) = ', wb_out%EVAP(1)/wb_out%basin_area
+        write(58, '(a, f11.3)') '  Total Runoff                (mm) = ', wb_out%ROF(1)/wb_out%basin_area
         write(58, '(a, 3f11.3)') '  Storage(Change/Init/Final)  (mm) = ', &
-            (FINAL_STORE - INIT_STORE)/TOTAL_AREA, &
-            INIT_STORE/TOTAL_AREA, &
-            FINAL_STORE/TOTAL_AREA
-        write(58, '(a, f11.3)') '  Total Overland flow         (mm) = ', TOTAL_ROFOACC/TOTAL_AREA
-        write(58, '(a, f11.3)') '  Total Interflow             (mm) = ', TOTAL_ROFSACC/TOTAL_AREA
-        write(58, '(a, f11.3)') '  Total Baseflow              (mm) = ', TOTAL_ROFBACC/TOTAL_AREA
+            (wb_out%DSTG(1) - wb_out%STG(1))/wb_out%basin_area, &
+            wb_out%STG(1)/wb_out%basin_area, &
+            wb_out%DSTG(1)/wb_out%basin_area
+        write(58, '(a, f11.3)') '  Total Overland flow         (mm) = ', wb_out%ROFO(1)/wb_out%basin_area
+        write(58, '(a, f11.3)') '  Total Interflow             (mm) = ', wb_out%ROFS(1)/wb_out%basin_area
+        write(58, '(a, f11.3)') '  Total Baseflow              (mm) = ', wb_out%ROFB(1)/wb_out%basin_area
         write(58, *)
         write(58, *)
         write(58, '(a)') 'Program has terminated normally.'
