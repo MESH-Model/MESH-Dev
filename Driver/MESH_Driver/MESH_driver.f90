@@ -1470,6 +1470,29 @@ program RUNMESH
             call climate_module_interpolatedata(shd, csfv%FARE, cm, NML, il1, il2)
         end if
 
+        !> Reset variables that accumulate on the daily time-step.
+        if (ipid == 0 .and. ic%ts_daily == 1) then
+            wb_acc%PRE = 0.0
+            eb_acc%QEVP = 0.0
+            wb_acc%EVAP = 0.0
+            eb_acc%HFS = 0.0
+            wb_acc%ROF = 0.0
+            wb_acc%ROFO = 0.0
+            wb_acc%ROFS =  0.0
+            wb_acc%ROFB = 0.0
+            spv_acc%TBAR = 0.0
+            spv_acc%THLQ = 0.0
+            wb_acc%LQWS = 0.0
+            spv_acc%THIC = 0.0
+            wb_acc%FRWS = 0.0
+            eb_acc%GFLX = 0.0
+            wb_acc%RCAN = 0.0
+            wb_acc%SNCAN = 0.0
+            wb_acc%SNO = 0.0
+            wb_acc%WSNO = 0.0
+            wb_acc%PNDW = 0.0
+        end if
+
         call run_within_tile(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
 ! *********************************************************************
@@ -1934,26 +1957,6 @@ program RUNMESH
                                          IGND, &
                                          JDAY_NOW, YEAR_NOW)
                 end if
-
-                wb_acc%PRE = 0.0
-                eb_acc%QEVP = 0.0
-                wb_acc%EVAP = 0.0
-                eb_acc%HFS = 0.0
-                wb_acc%ROF = 0.0
-                wb_acc%ROFO = 0.0
-                wb_acc%ROFS =  0.0
-                wb_acc%ROFB = 0.0
-                spv_acc%TBAR = 0.0
-                spv_acc%THLQ = 0.0
-                wb_acc%LQWS = 0.0
-                spv_acc%THIC = 0.0
-                wb_acc%FRWS = 0.0
-                eb_acc%GFLX = 0.0
-                wb_acc%RCAN = 0.0
-                wb_acc%SNCAN = 0.0
-                wb_acc%SNO = 0.0
-                wb_acc%WSNO = 0.0
-                wb_acc%PNDW = 0.0
 
             end if !(ic%ts_daily == 48) then
         end if !(ipid == 0) then
