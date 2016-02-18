@@ -1,6 +1,7 @@
 subroutine read_init_prog_variables_class( CMAIROW  , QACROW  , TACROW   , &
                                            TBASROW  , TSFSROW , WSNOROW  , &
-                                           cp       , NA      , NTYPE    , &
+!                                           cp       , &
+                                           NA      , NTYPE    , &
                                            IGND     , fls                 )
 !>***************************************************************************************
 !>***************************************************************************************
@@ -32,11 +33,12 @@ subroutine read_init_prog_variables_class( CMAIROW  , QACROW  , TACROW   , &
 !>***************************************************************************************
 !>***************************************************************************************
 
-    use MESH_INPUT_MODULE
+!    use MESH_INPUT_MODULE
     use model_files_variabletypes
     use model_files_variables
-    use flags
+!    use flags
 !    use model_files
+    use process_CLASS_variables
 
     implicit none
 
@@ -46,11 +48,11 @@ subroutine read_init_prog_variables_class( CMAIROW  , QACROW  , TACROW   , &
 
     !Outputs
     real,dimension(NA,NTYPE)  :: CMAIROW , QACROW  , TACROW , &
-                                 TBASROW  , WSNOROW
+                                 TBASROW , WSNOROW
 
     real,dimension(NA, NTYPE, 4)  :: TSFSROW
 
-    TYPE(ClassParameters) :: cp
+!    TYPE(ClassParameters) :: cp
 
     !Internals
     integer IOS, unitfl

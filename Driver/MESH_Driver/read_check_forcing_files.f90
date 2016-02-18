@@ -52,7 +52,7 @@ subroutine READ_CHECK_FORCING_FILES(shd, ts, cm)
 !        cm%clin(i)%alpha = 1.0 / cm%clin(i)%nSeries
 
         !> Allocate the gridded series.
-        allocate(cm%clin(i)%climvGrd(shd%NA))
+        allocate(cm%clin(i)%GRD(shd%NA), cm%clin(i)%GAT(shd%lc%NML))
 
         !> Determine the number of time-steps in the run.
 !todo: This doesn't work if run start and stop days are set to zeros;

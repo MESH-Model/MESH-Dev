@@ -284,8 +284,8 @@ module climate_forcing_data
         if (need_update) then
             FSVHGAT = 0.5*FSGAT
             FSIHGAT = FSVHGAT
-            call SCATTER(shd, FSGAT, iilen, ii1, ii2, cm%clin(cfk%FB)%climvGrd)
-            FSVHGRD = 0.5*cm%clin(cfk%FB)%climvGrd
+            call SCATTER(shd, FSGAT, iilen, ii1, ii2, cm%clin(cfk%FB)%GRD)
+            FSVHGRD = 0.5*cm%clin(cfk%FB)%GRD
             FSIHGRD = FSVHGRD
         end if
 
@@ -295,7 +295,7 @@ module climate_forcing_data
 
         call update_data(shd, cm, cfk%FI, iilen, ii1, ii2, FDLGAT, need_update, ENDDATA)
         if (need_update) then
-            call SCATTER(shd, FDLGAT, iilen, ii1, ii2, cm%clin(cfk%FI)%climvGrd)
+            call SCATTER(shd, FDLGAT, iilen, ii1, ii2, cm%clin(cfk%FI)%GRD)
         end if
 
         !> *************************************************************
@@ -304,7 +304,7 @@ module climate_forcing_data
 
         call update_data(shd, cm, cfk%PR, iilen, ii1, ii2, PREGAT, need_update, ENDDATA)
         if (need_update) then
-            call SCATTER(shd, PREGAT, iilen, ii1, ii2, cm%clin(cfk%PR)%climvGrd)
+            call SCATTER(shd, PREGAT, iilen, ii1, ii2, cm%clin(cfk%PR)%GRD)
         end if
 
                 !> Read from two sources of rainfall input.
@@ -327,7 +327,7 @@ module climate_forcing_data
 
         call update_data(shd, cm, cfk%TT, iilen, ii1, ii2, TAGAT, need_update, ENDDATA)
         if (need_update) then
-            call SCATTER(shd, TAGAT, iilen, ii1, ii2, cm%clin(cfk%TT)%climvGrd)
+            call SCATTER(shd, TAGAT, iilen, ii1, ii2, cm%clin(cfk%TT)%GRD)
         end if
 
         !> *************************************************************
@@ -336,7 +336,7 @@ module climate_forcing_data
 
         call update_data(shd, cm, cfk%UV, iilen, ii1, ii2, ULGAT, need_update, ENDDATA)
         if (need_update) then
-            call SCATTER(shd, ULGAT, iilen, ii1, ii2, cm%clin(cfk%UV)%climvGrd)
+            call SCATTER(shd, ULGAT, iilen, ii1, ii2, cm%clin(cfk%UV)%GRD)
         end if
 
         !> *************************************************************
@@ -345,7 +345,7 @@ module climate_forcing_data
 
         call update_data(shd, cm, cfk%P0, iilen, ii1, ii2, PRESGAT, need_update, ENDDATA)
         if (need_update) then
-            call SCATTER(shd, PRESGAT, iilen, ii1, ii2, cm%clin(cfk%P0)%climvGrd)
+            call SCATTER(shd, PRESGAT, iilen, ii1, ii2, cm%clin(cfk%P0)%GRD)
         end if
 
         !> *************************************************************
@@ -354,7 +354,7 @@ module climate_forcing_data
 
         call update_data(shd, cm, cfk%HU, iilen, ii1, ii2, QAGAT, need_update, ENDDATA)
         if (need_update) then
-            call SCATTER(shd, QAGAT, iilen, ii1, ii2, cm%clin(cfk%HU)%climvGrd)
+            call SCATTER(shd, QAGAT, iilen, ii1, ii2, cm%clin(cfk%HU)%GRD)
         end if
 
 !644 format(/1x'The input forcing file format is not supported', &

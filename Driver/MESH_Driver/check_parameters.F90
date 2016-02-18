@@ -1,4 +1,4 @@
-subroutine check_parameters(wf_r2,m_c,nmtest,cp,hp,soil_por_max,soil_depth,s0,t_ice_lens)
+subroutine check_parameters(wf_r2, m_c, nmtest)
 !>
 !>       March 23, 2010 - M.A. Mekonnen/B. Davidson/M. MacDonald
 !>=======================================================================
@@ -27,6 +27,7 @@ subroutine check_parameters(wf_r2,m_c,nmtest,cp,hp,soil_por_max,soil_depth,s0,t_
 
 use     mesh_input_module
 use     flags
+use     process_CLASS_variables
 
 implicit none     
 
@@ -37,11 +38,12 @@ integer     i,j,ib0,ib1,ib2,ib3,i4,i5,ir,m_c,nmtest
 integer     parflag(nrows,nmtest)
 
 real        total,percent
-real        wf_r2(m_c),soil_por_max,soil_depth,s0,t_ice_lens
+real        wf_r2(m_c)
+!           soil_por_max,soil_depth,s0,t_ice_lens
 real        parv(nrows,nmtest),minlimit(nrows,nmtest),maxlimit(nrows,nmtest)
 
-type(ClassParameters)     :: cp
-type(HydrologyParameters) :: hp
+!type(ClassParameters)     :: cp
+!type(HydrologyParameters) :: hp
 !>=======================================================================
 
 ! Activate the parameters

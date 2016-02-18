@@ -1,60 +1,81 @@
-      SUBROUTINE READ_SOIL_LEVELS(IGND, sl, fls)
+      subroutine READ_SOIL_LEVELS(shd, fls)
 
-      USE MESH_INPUT_MODULE
+      use sa_mesh_shared_variabletypes
+      use sa_mesh_shared_variables
       use model_files_variabletypes
       use model_files_variables
-      USE  FLAGS
-      USE model_files
 
       implicit none
 
-!> passed in variables
-      INTEGER :: IGND
-      TYPE(SoilLevels) :: sl
-!> local variables
-      real deep
-      INTEGER IOS, iun, i
+      !> Input variables.
+      type(ShedGridParams) :: shd
+      type(fl_ids) :: fls
 
-!> file handled
-      type(fl_ids):: fls
+      !> Local variables.
+      integer :: IGND = 0, ierr, iun, i
+      real DELZ_TEST, ZBOT_TEST
 
-!      IF ((VARIABLEFILESFLAG==1) .AND. (fls%fl(10)%isInit)) THEN
+      !> Determine the value of IGND from MESH_input_soil_levels.txt
+      shd%lc%IGND = 0
+
+      !> Open soil levels file and check for IOSTAT errors.
       iun = fls%fl(mfk%f52)%iun
-      open( iun,
-     +      file=trim(adjustl(fls%fl(mfk%f52)%fn)),
-     +      action='read',
-     +      status='old', iostat=ios)
-!      ELSE
-!        OPEN(52, FILE='MESH_input_soil_levels.txt', STATUS='OLD',
-!     1       IOSTAT=IOS)
-!      END IF
+      open(iun,
+     &     file = trim(adjustl(fls%fl(mfk%f52)%fn)),
+     &     status = 'old',
+     &     action = 'read',
+     &     iostat = ierr)
 
-      IF (IOS .NE. 0)THEN !CHECK FILE FOR IOSTAT ERRORS
-        WRITE (6, *)
-        WRITE (6, *)
-        WRITE (6, *) "MESH_input_soil_levels.txt could not be ",
-     1      "opened.  Ensure that the file exists and restart the ",
-     2      "program."
-        STOP
-      ELSE
-        WRITE (6, '(A)', ADVANCE="NO")
-     +          "READING: MESH_input_soil_levels.txt"
-      END IF
+      !> Check if there was an error opening the file.
+      if (ierr /= 0) then
+        print 1002
+        stop
+      else if (ro%VERBOSEMODE > 0) then
+        write(6, '(a)', advance = 'no')
+     +    'READING: MESH_input_soil_levels.txt'
+      end if
 
-      DO I=1,IGND
-!todo change documentation to reflect that we read in delz only (and not zbot)
-!todo check other variables read-in from other files
-!todo put in a warning that at least 3 layers are needed.
-        READ(iun,*) sl%DELZ(I), deep
-      ENDDO
+      !> Count the number of soil layers.
+      DELZ_TEST = 1.0
+      do while (DELZ_TEST /= 0.0 .and. ierr == 0)
+        read(iun, *, iostat = ierr) DELZ_TEST
+        IGND = IGND + 1
+      end do
 
-      sl%ZBOT(1) = sl%DELZ(1)
-      DO I=2,IGND
-         sl%ZBOT(I) = sl%ZBOT(I-1) + sl%DELZ(I)
-      ENDDO
+      !> because IGND increments the first time that IGND_TEST = 0.0
+      IGND = IGND - 1
+      shd%lc%IGND = IGND
 
-      CLOSE(iun)
-      WRITE (6, *) " READ: SUCCESSFUL, FILE: CLOSED"
+!todo: put in a warning that at least 3 layers are needed.
 
-      RETURN
-      END SUBROUTINE READ_SOIL_LEVELS
+      rewind(iun)
+
+      allocate(shd%lc%sl%DELZ(IGND), shd%lc%sl%ZBOT(IGND))
+      if (ro%DIAGNOSEMODE > 0) print 1011
+      do i = 1, IGND
+        read(iun, *) DELZ_TEST
+        shd%lc%sl%DELZ(i) = DELZ_TEST
+        if (i > 1 .and. IGND > 2) then
+          shd%lc%sl%ZBOT(i) = shd%lc%sl%ZBOT(i - 1) + DELZ_TEST
+        else
+          shd%lc%sl%ZBOT(i) = DELZ_TEST
+        end if
+        if (ro%DIAGNOSEMODE > 0) then
+          print 1012, i, shd%lc%sl%DELZ(i), shd%lc%sl%ZBOT(i)
+        end if
+      end do
+
+      close(iun)
+      if (ro%VERBOSEMODE > 0) then
+        write(6, *) ' READ: SUCCESSFUL, FILE: CLOSED'
+      end if
+
+1002  format(
+     +  /1x, 'MESH_input_soil_levels.txt could not be opened.',
+     +  /1x, 'Ensure that the file exists and restart the program.', /)
+1011  format(/1x, 'Soil layer summary (IGND)')
+1012  format(3x, 'Soil layer (IGND): ', i6, 2f10.3)
+
+      return
+
+      end subroutine

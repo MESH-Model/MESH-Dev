@@ -39,7 +39,7 @@ public stats_init, stats_update_stfl_daily, stats_write, fbest, ftest
 !* QOBS  :  OBSERVED DAILY STREAM FLOW
 !* QSIM  :  SIMULATED DAILY STREAM FLOW
 
-integer :: ncal, j
+integer :: nyears, ncal, j
 real :: fbest, ftest
 real, dimension(:, :), allocatable :: qobs, qsim
 
@@ -248,6 +248,7 @@ end subroutine
             end if
         end if
 
+        nyears = ts%nyears
         ncal = 0
 
         allocate(qobs(ts%nr_days, ns), qsim(ts%nr_days, ns))

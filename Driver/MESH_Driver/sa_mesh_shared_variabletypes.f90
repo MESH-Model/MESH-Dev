@@ -40,6 +40,16 @@ module sa_mesh_shared_variabletypes
 
     end type
 
+    type SoilLayer
+
+        !* DELZ: Depth of the soil layer. [m]
+        real, dimension(:), allocatable :: DELZ
+
+        !* ZBOT: Depth at the bottom of the soil layer to the top of the column. [m]
+        real, dimension(:), allocatable :: ZBOT
+
+    end type
+
     !> This type extends the ContribElemsParams type so it includes
     !> all the same parameters as listed in the ContribElemsParams
     !> type as well as those listed below.
@@ -47,6 +57,9 @@ module sa_mesh_shared_variabletypes
 
         !* IGND: Number of soil layers. [-]
         integer :: IGND = 0
+
+        !* sl: Soil layers.
+        type(SoilLayer) :: sl
 
     end type
 

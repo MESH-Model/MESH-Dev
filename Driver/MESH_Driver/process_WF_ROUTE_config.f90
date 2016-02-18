@@ -84,7 +84,7 @@ module process_WF_ROUTE_config
     !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
     !* WF_START_DAY OBSERVED STREAMFLOW START DAY
     !* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
-    integer WF_NO, WF_NL, WF_MHRD, WF_KT
+    integer WF_NAA, WF_NO, WF_NL, WF_MHRD, WF_KT
     integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
     real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
     real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
@@ -139,25 +139,21 @@ module process_WF_ROUTE_config
     !>              the output files, in preparation for running the
     !>              WF_ROUTE process.
     !>
-    subroutine run_WF_ROUTE_ini(shd, ic, stfl, rrls, &
-!todo: remove these
-                                LOCATIONFLAG, STREAMFLOWOUTFLAG, &
-                                GENDIR_OUT)
+    subroutine run_WF_ROUTE_ini(shd, fls, ic, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_dates
         use model_output_variabletypes
 
+        !> For: LOCATIONFLAG, STREAMFLOWOUTFLAG
+        use FLAGS
+
         type(ShedGridParams), intent(in) :: shd
+        type(fl_ids) :: fls
         type(iter_counter), intent(in) :: ic
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
-
-        !> Temporary variables.
-!todo: remove these
-        integer LOCATIONFLAG, STREAMFLOWOUTFLAG
-        character(450) GENDIR_OUT
 
         !> Local variables.
         !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
@@ -172,6 +168,7 @@ module process_WF_ROUTE_config
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
 
         NA = shd%NA
+        WF_NAA = NA - shd%NAA
 
         allocate(WF_NHYD(NA), WF_QR(NA), &
                  WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA), &
@@ -353,18 +350,17 @@ module process_WF_ROUTE_config
 
             !> Daily streamflow file.
             open(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%iun, &
-!todo: This creates a bug if a space doesn't exist in the name of the folder!
-                 file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // &
+                 file = './' // trim(fls%GENDIR_OUT) // '/' // &
                         trim(adjustl(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%fn)), &
                  iostat = ierr)
 
             !> Hourly and cumulative daily streamflow files.
             if (STREAMFLOWOUTFLAG >= 2) then
                 open(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun, &
-                     file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // &
+                     file = './' // trim(fls%GENDIR_OUT) // '/' // &
                             adjustl(trim(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%fn)))
                 open(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun, &
-                     file = './' // GENDIR_OUT(1:index(GENDIR_OUT, ' ') - 1) // '/' // &
+                     file = './' // trim(fls%GENDIR_OUT) // '/' // &
                             adjustl(trim(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%fn)))
             end if
 

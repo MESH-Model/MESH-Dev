@@ -2,222 +2,232 @@
 !> Open and read in values from MESH_parameters_hydrology.ini file
 !> *********************************************************************
 
-SUBROUTINE READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, hp, M_C, NA, NTYPE, &
-                                     SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, fls)
+subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
+                                     shd, fls)
 
-USE MESH_INPUT_MODULE
-use model_files_variabletypes
-use model_files_variables
-USE FLAGS
-use model_files
+    use sa_mesh_shared_variabletypes
+    use sa_mesh_shared_variables
+    use model_files_variabletypes
+    use model_files_variables
+    use FLAGS
+    use process_CLASS_variables
 
-implicit none
+    implicit none
 
-INTEGER :: NA, NTYPE, M_C, INDEPPAR, DEPPAR
-CHARACTER*8 :: RELEASE
+    !> Input variables.
+    integer M_C, INDEPPAR, DEPPAR
+    real WF_R2(M_C)
+    character(8) RELEASE
 
-!PARAMETERS FOR FROZEN ALGORITHM
-REAL :: SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS
+!    type(HydrologyParameters) :: hp
 
-REAL :: WF_R2(M_C)
-TYPE(HydrologyParameters) :: hp
+    type(ShedGridParams) :: shd
+    type(fl_ids):: fls
 
-!file handled
-type(fl_ids):: fls 
+    !> Local variables.
+    integer OPTFLAGS, NTYPE, NA, ierr, iun, m, j, i
+    real, dimension(:), allocatable :: INDEPPARVAL
+    real, dimension(:, :), allocatable :: DEPPARVAL
+    character(8) FILE_VER
+    logical :: VER_OK = .true.
 
-REAL, DIMENSION (:), ALLOCATABLE :: INDEPPARVAL
-REAL, DIMENSION (:,:), ALLOCATABLE :: DEPPARVAL
+    NA = shd%NA
+    NTYPE = shd%lc%NTYPE
 
-!> Internal use variables
-INTEGER :: IOS, iun, I, J, M
-CHARACTER(8) :: FILE_VER
-LOGICAL :: VER_OK
+    if (ro%VERBOSEMODE > 0) write(6, '(a)', advance = 'no') 'READING: MESH_parameters_hydrology.ini '
 
-!if ((VARIABLEFILESFLAG .eq. 1) .and. (fls%fl(3)%isInit)) then
-iun = fls%fl(mfk%f23)%iun
-open( iun, &
-      file = trim(adjustl(fls%fl(mfk%f23)%fn)), &
-      action = 'read', &
-      status = 'old', iostat = ios)
-!else
-!    OPEN (23, FILE="MESH_parameters_hydrology.ini", STATUS="OLD",IOSTAT=IOS)
-!end if
+    iun = fls%fl(mfk%f23)%iun
+    open(iun, file = trim(adjustl(fls%fl(mfk%f23)%fn)), status = 'old', action = 'read', iostat = ierr)
 
-!> CHECK FILE FOR IOSTAT ERRORS
-!> when IOS equals 0, the file was opened successfully  
-IF (IOS .NE. 0)THEN 
-  WRITE (6, *)
-  WRITE (6, *)
-  WRITE (6, *) "MESH_parameters_hydrology.ini could not be opened.  Ensure that the file exists and restart the program."
-  STOP
-ELSE
-  WRITE (6, '(A)', ADVANCE="NO")"READING: MESH_parameters_hydrology.ini"
-END IF
+    !> Check for errors opening the file.
+    if (ierr /= 0) then
+        print *, 'FAILED'
+        print *
+        print *, 'MESH_parameters_hydrology.ini could not be opened. ', &
+                 'Ensure that the file exists and restart the program.'
+        stop
+    end if
 
-!> DAN * CHECK FILE VERSION (IF RELFLG = 1.0) AS THE NEW FILE FORMATS
-!> DAN * ALLOW VARIABLES AND VARIABLE PLACEMENT FILE VERSIONS TO CHANGE
-IF (RELFLG .EQ. 1) THEN
-  READ (iun, "(A8)") FILE_VER !> READ FILE VERSION
-  IF (INDEX (FILE_VER, ":") .GT. 0) THEN !> FOLLOWED BY COLON
-    FILE_VER = TRIM (ADJUSTL (FILE_VER(1:INDEX (FILE_VER,":") - 1)))
-  ELSEIF (INDEX (FILE_VER, " ") .GT. 0) THEN !> FOLLOWED BY SPACE
-    FILE_VER = TRIM (ADJUSTL (FILE_VER(1:INDEX (FILE_VER," ") - 1)))
-  ELSE !> ANYTHING ELSE
-    FILE_VER = TRIM (ADJUSTL (FILE_VER))
-  END IF
-  VER_OK = .FALSE.
-!-  DO I=1,6 !TODO: MAKE THIS MORE GENERIC
-!    IF (FILE_VER .EQ. RELEASE) THEN
-      VER_OK = .TRUE.
-!      EXIT
-!    END IF
-!-  END DO
-  IF (.NOT.VER_OK) THEN !WRONG FILE VERSION
-    WRITE (6, *)
-    WRITE (6, *)
-    IF (LEN (TRIM (ADJUSTL (FILE_VER))) .GT. 0) THEN
-      WRITE (6, *) "File version: ", FILE_VER
-    ELSE
-      WRITE (6, *) "This file is out of date."
-    END IF
+    !> Check the file version (if RELFLG = 1.0).
+    if (RELFLG == 1) then
 
-    WRITE (6, *) "MESH requires file version: ", RELEASE
-    WRITE (6, *) "Please update MESH_parameters_hydrology.ini."
-    WRITE (6, *) "The file must contain the version number"
-    WRITE (6, *) "on the first line, followed by a colon."
-    WRITE (6, *) "EXAMPLE:"
-    WRITE (6, *) RELEASE,": MESH_parameters_hydrology.ini"
-    WRITE (6, *) " "
-    WRITE (6, *) "Please insure that all other parameters"
-    WRITE (6, *) "are also updated."
-    CLOSE (iun)
-    STOP
-  END IF
-ELSE
-  READ (iun, *)
-END IF
+        !> Read the file version.
+        read(iun, '(a8)') FILE_VER
+        if (index(FILE_VER, ':') > 0) then
+            FILE_VER = trim(adjustl(FILE_VER(1:index(FILE_VER, ':') - 1)))
+        else if (index(FILE_VER, ' ') > 0) then
+            FILE_VER = trim(adjustl(FILE_VER(1:index(FILE_VER, ' ') - 1)))
+        else
+            FILE_VER = trim(adjustl(FILE_VER))
+        end if
+!+        VER_OK = .false.
+!+        if (FILE_VER == RELEASE) then
+!+            VER_OK = .true.
+!+        end if
 
-READ(iun,*)
-READ(iun,*)
+        !> Wrong file version.
+        if (.not. VER_OK) then
+            print *
+            if (len(trim(adjustl(FILE_VER))) > 0) then
+                print *, ' File version: ', FILE_VER
+            else
+                print *, 'This file is out of date.'
+            end if
 
-READ(iun,*) OPTFLAGS
+            print *, 'MESH requires file version: ', RELEASE
+            print *, 'Please update MESH_parameters_hydrology.ini.'
+            print *, 'The file must contain the version number'
+            print *, 'on the first line, followed by a colon.'
+            print *, 'EXAMPLE: '
+            print *, RELEASE, ': MESH_parameters_hydrology.ini'
+            print *
+            print *, 'Please insure that all other parameters'
+            print *, 'are also updated.'
+            stop
+        end if
+    else
+        read(iun, *)
+    end if
 
-IF(OPTFLAGS>0) THEN
-  DO I=1,OPTFLAGS
-    READ(iun,*)
-  ENDDO
-ENDIF
+    !> Option flags.
+    read(iun, *)
+    read(iun, *)
+    read(iun, *) OPTFLAGS
+    if (OPTFLAGS > 0) then
+        do i = 1, OPTFLAGS
+            read(iun, *)
+        end do
+    end if
 
-READ(iun,*)
-READ(iun,*)
+    !> WF_R2 (roughness coefficient) values.
+    read(iun, *)
+    read(iun, *)
+!todo: change this to use NRVR or CHNL.
+    read(iun, *) (WF_R2(i), i = 1, 5)
+    do i = 1, 5
+        if (WF_R2(i) <= 0) then
+            print *
+            print *, 'River roughness =0 (in MESH parameters_hydrology.ini) '
+            print *, 'Even if you only have only one river class, all initial WF_R2'
+            print *, 'values must be non-zero in MESH_parameters_hydrology.ini '
+            stop
+        end if
+    end do
 
-READ (iun,*) (WF_R2(i),I=1,5)
-  DO I=1,5
-   IF (wf_r2(i) <= 0)THEN 
-    WRITE (6, *)
-    WRITE (6, *) "River roughness =0 (in MESH parameters_hydrology.ini) "
-    WRITE (6, *) "Even if you only have only one river class, all initial wf_r2"
-    WRITE (6, *) "values must be non-zero in MESH_parameters_hydrology.ini "
-    WRITE (6, *) "MESH STOP "
-    WRITE (6, *)
-    STOP
-   ENDIF
- ENDDO
-READ(iun,*)
-READ(iun,*)
+    !> GRU-independent parameters.
+    read(iun, *)
+    read(iun, *)
+    read(iun, *) INDEPPAR
+    if (INDEPPAR > 0) then
 
-READ(iun,*) INDEPPAR
+        !> Distribute variables.
+        allocate(INDEPPARVAL(INDEPPAR))
+        do i = 1, INDEPPAR
+            read(iun, *, err = 9000) INDEPPARVAL(i)
+        end do
 
-ALLOCATE(INDEPPARVAL(INDEPPAR))
+        !> FROZENSOILINIFLAG (infiltration into frozen soils).
+        if (FROZENSOILINFILFLAG == 1) then
+            if (INDEPPAR == 4 + NYEARS) then
+                SOIL_POR_MAX = INDEPPARVAL(1)
+                SOIL_DEPTH = INDEPPARVAL(2)
+                S0 = INDEPPARVAL(3)
+                T_ICE_LENS = INDEPPARVAL(4)
+                do i = 5, INDEPPAR
+                    t0_ACC(i - 4) = INDEPPARVAL(i)
+                end do
+            else
+                print *
+                print *, 'ERROR: FROZEN SOIL INFILTRATION FLAG IS ON BUT CORRESPONDING PARAMETER VALUES ', &
+                         'ARE NOT CORRECTLY SPECIFIED IN THE HYDROLOGY INITIALIZATION FILE.'
+                print *, 'PROVIDE PARAMETER VALUES FOR:'
+                print *, 'MAXIMUM SOIL POROSITY [0 - 1]'
+                print *, 'DEPTH FROM SURFACE TO BOTTOM OF ROOTING ZONE FOR MAXIMUM WATER HOLDING CAPACITY, m'
+                print *, 'SURFACE SOIL SATURATION [0 - 1]'
+                print *, 'OVER NIGHT TEMPERATURE TO CAUSE ICE LENS [-50 - 0]'
+                print *, 'OPPORTUNITY TIME IN HOURS [100 - 1000] FOR EACH SIMULATION YEAR'
+                print *, 'AN EMPIRICAL EQUATION WILL BE USED FOR OPPORTUNITY TIME VALUES SET TO 0'
+                print *
+                stop
+            end if
+        end if
 
-DO I = 1, INDEPPAR
-   READ(iun,*,ERR = 9000)INDEPPARVAL(I)
-ENDDO
+        !> Clean-up/deallocate variable.
+        deallocate(INDEPPARVAL)
+    end if
 
-IF(FROZENSOILINFILFLAG == 1)THEN
+    !> GRU-dependent parameters.
+    read(iun, *)
+    read(iun, *)
+    read(iun, *) i
+    read(iun, *) DEPPAR
+    if (DEPPAR > 0) then
 
-   !> READ FROZEN SOIL INFILTRATION PARAMETERS
-   IF(INDEPPAR == 4 + NYEARS)THEN
-       SOIL_POR_MAX = INDEPPARVAL(1)
-       SOIL_DEPTH   = INDEPPARVAL(2)
-       S0           = INDEPPARVAL(3)
-       T_ICE_LENS   = INDEPPARVAL(4)
-       DO I = 5,INDEPPAR
-          t0_ACC(I-4) = INDEPPARVAL(I)
-       ENDDO
-    ELSE   
-       PRINT *
-       PRINT *,'ERROR: FROZEN SOIL INFILTRATION FLAG IS ON BUT CORRESPONDING PARAMETER VALUES ', & 
-                          'ARE NOT CORRECTLY SPECIFIED IN THE HYDROLOGY INITIALIZATION FILE.'
-       PRINT *,'PROVIDE PARAMETER VALUES FOR:'
-       PRINT *,'MAXIMUM SOIL POROSITY [0 - 1]'
-       PRINT *,'DEPTH FROM SURFACE TO BOTTOM OF ROOTING ZONE FOR MAXIMUM WATER HOLDING CAPACITY, m'
-       PRINT *,'SURFACE SOIL SATURATION [0 - 1]' 
-       PRINT *,'OVER NIGHT TEMPERATURE TO CAUSE ICE LENS [-50 - 0]'
-       PRINT *,'OPPORTUNITY TIME IN HOURS [100 - 1000] FOR EACH SIMULATION YEAR'
-       PRINT *,'AN EMPIRICAL EQUATION WILL BE USED FOR OPPORTUNITY TIME VALUES SET TO 0'
-       PRINT *
-       STOP
-    ENDIF
-ENDIF
+        !> Check that GRU count matches the GRU count from the shd file.
+        if (i /= NTYPE) then
+            print *, 'Number of GRUs in hydrology file: ', i
+            print *, 'Number of GRUs in drainage database: ', NTYPE
+            print *, 'Please adjust these values.'
+            stop
+        end if
+        read(iun, *)
+        if (DEPPAR < 9) then
+            print *
+            print *, 'ERROR: THE NUMBER OF GRU DEPENDANT HYDROLOGY PARAMETERS SHOULD BE 9'
+            print *, 'PLEASE REFER TO THE CURRENT TEMPLATE OF HYDROLOGY PARAMETERS FILE.'
+            print *
+            stop
+        end if
 
-READ(iun,*)
-READ(iun,*)
+        !> Distribute variables.
+        allocate(DEPPARVAL(DEPPAR, NTYPE))
+        do i = 1, DEPPAR
+            read(iun, *, err = 9001) (DEPPARVAL(i, j), j = 1, NTYPE)
+        end do
+!todo: change this to il2, il2
+        do i = 1, NA
+            do m = 1, NTYPE
 
-READ(iun,*) I
-IF(I/=NTYPE) THEN
-  PRINT *, 'Number of GRUs in hydrology file: ',I
-  PRINT *, 'Number of GRUs in drainage database: ',NTYPE
-  PRINT *, 'Please adjust these values.'
-  STOP
-ENDIF
+                !> CLASS ponding limits.
+                hp%ZSNLROW(i, m) = DEPPARVAL(1, m)
+                hp%ZPLSROW(i, m) = DEPPARVAL(2, m)
+                hp%ZPLGROW(i, m) = DEPPARVAL(3, m)
 
-READ(iun,*) DEPPAR
-READ(iun,*)
+                !> FROZENSOILINIFLAG (infiltration into frozen soils).
+                hp%FRZCROW(i, m) = DEPPARVAL(4, m)
 
-IF(DEPPAR < 9)THEN
-   PRINT *
-   PRINT *,'ERROR: THE NUMBER OF GRU DEPENDANT HYDROLOGY PARAMETERS SHOULD BE 9'
-   PRINT *,'PLEASE REFER TO THE CURRENT TEMPLATE OF HYDROLOGY PARAMETERS FILE.'
-   PRINT *
-   STOP
-ENDIF
+                !> PDMROF.
+                hp%CMAXROW(i, m) = DEPPARVAL(5, m)
+                hp%CMINROW(i, m) = DEPPARVAL(6, m)
+                hp%BROW(i, m) = DEPPARVAL(7, m)
+                hp%K1ROW(i, m) = DEPPARVAL(8, m)
+                hp%K2ROW(i, m) = DEPPARVAL(9, m)
 
-ALLOCATE(DEPPARVAL(DEPPAR,NTYPE))
+                !> PBSM (blowing snow model).
+                if (PBSMFLAG == 1) then
+                    hp%fetchROW(i, m) = DEPPARVAL(10, m)
+                    hp%HtROW(i, m) = DEPPARVAL(11, m)
+                    hp%N_SROW(i, m) = DEPPARVAL(12, m)
+                    hp%A_SROW(i, m) = DEPPARVAL(13, m)
+                    hp%DistribROW(i, m) = DEPPARVAL(14, m)
+                end if
+            end do
+        end do
 
-DO I = 1, DEPPAR
-   READ(iun,*,ERR = 9001)(DEPPARVAL(I,J),J=1,NTYPE)
-ENDDO
+        !> Clean-up/deallocate the variable.
+        deallocate(DEPPARVAL)
+    end if
 
-DO I=1,NA
-  DO M=1,NTYPE
-    hp%ZSNLROW(I,M)=DEPPARVAL(1,M)
-    hp%ZPLSROW(I,M)=DEPPARVAL(2,M)
-    hp%ZPLGROW(I,M)=DEPPARVAL(3,M)
-    hp%FRZCROW(I,M)=DEPPARVAL(4,M)
-    hp%CMAXROW(I,M)=DEPPARVAL(5,M)
-    hp%CMINROW(I,M)=DEPPARVAL(6,M)
-    hp%BROW   (I,M)=DEPPARVAL(7,M)
-    hp%K1ROW  (I,M)=DEPPARVAL(8,M)
-    hp%K2ROW  (I,M)=DEPPARVAL(9,M)
-   IF(PBSMFLAG==1) THEN
-    hp%fetchROW(I,M)=DEPPARVAL(10,M)
-    hp%HtROW(I,M)=DEPPARVAL(11,M)
-    hp%N_SROW(I,M)=DEPPARVAL(12,M)
-    hp%A_SROW(I,M)=DEPPARVAL(13,M)
-    hp%DistribROW(I,M)=DEPPARVAL(14,M)
-   ENDIF
-  ENDDO
-ENDDO
+    !> Close the file.
+    close(iun)
+    if (ro%VERBOSEMODE > 0) print *, 'READ: SUCCESSFUL, FILE: CLOSED'
 
-CLOSE(iun)
+    return
 
-RETURN
+9000    print *, 'ERROR: READING GRU-INDEPENDENT PARAMETER ', i, 'IN THE HYDROLOGY FILE.'
+        stop
 
-9000 PRINT*,'ERROR: READING INDEPENDANT PARAMETER ', I, 'IN THE HYDROLOGY FILE.'
-     STOP
+9001    print *, 'ERROR: READING GRU-DEPENDENT PARAMETER: ROW ', i, 'COLUMN ', j, 'IN THE HYDROLOGY FILE.'
+        stop
 
-9001 PRINT*,'ERROR: READING DEPENDANT PARAMETER: ROW ', I, 'COLUMN ', J, 'IN THE HYDROLOGY FILE.'
-     STOP
-
-END SUBROUTINE
+end subroutine
