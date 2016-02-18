@@ -309,8 +309,8 @@ program RUNMESH
 !> that need to be allocated in read_initial_inputs.f.
     type(ShedGridParams) :: shd
 !    type(SoilLevels) :: sl
-    type(SoilValues) :: sv
-    type(HydrologyParameters) :: hp
+!-    type(SoilValues) :: sv
+!-    type(HydrologyParameters) :: hp
     type(fl_ids) :: fls
 
     !* printoutwb: Print components of the water balance to the
@@ -427,7 +427,9 @@ program RUNMESH
                              INDEPPAR, DEPPAR, &
                              WF_R2, M_C, &
                              shd, &
-                             sv, hp, ts, cm, &
+!                             sv, &
+!                             hp, &
+                             ts, cm, &
                              fls)
 
 !>***********************************************************************
@@ -498,7 +500,7 @@ program RUNMESH
 !> specified ranges in the "minmax_parameters.txt" file.
 !>=======================================================================
 !>
-    call check_parameters(WF_R2, M_C, NTYPE, hp)
+    call check_parameters(WF_R2, M_C, NTYPE)
 
     call init_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW, int(DELT))
 
@@ -899,102 +901,102 @@ program RUNMESH
     if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(ts, stfl%ns)
 
     !todo: temporary until mpi-friendly RESUMEFLAG/SAVERESUMEFLAG has been implemented.
-    if (RESUMEFLAG == 1) then
-        stop 'RESUMEFLAG 1 not supported'
+    if (RESUMEFLAG > 0) then
+        stop ' RESUMEFLAG and SAVERESUMEFLAG not supported'
     end if
 
 !>
 !>*******************************************************************
 !>
 !> Check if we are reading in a resume_state.r2c file
-    if (RESUMEFLAG == 2) then
-        print *, 'Reading saved state variables'
+!+    if (RESUMEFLAG == 2) then
+!+        print *, 'Reading saved state variables'
 
 ! Allocate arrays for resume_state_r2c
-        open(54, file = 'resume_state_r2c.txt', action = 'read')
-        read(54, *, iostat = ierr) NR2C_R, DELTR2C_R
-        if (ierr == 0) then
-            allocate(GRD_R(NR2C_R), GAT_R(NR2C_R), GRDGAT_R(NR2C_R), R2C_ATTRIBUTES_R(NR2C_R, 3), stat = ierr)
-            if (ierr /= 0) then
-                print *, 'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
-                    'RECORD AT THE FIRST LINE IN THE resume_state_r2c.txt FILE. ', &
-                    'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
-                stop
-            end if
-        end if
-        close(54)
+!+        open(54, file = 'resume_state_r2c.txt', action = 'read')
+!+        read(54, *, iostat = ierr) NR2C_R, DELTR2C_R
+!+        if (ierr == 0) then
+!+            allocate(GRD_R(NR2C_R), GAT_R(NR2C_R), GRDGAT_R(NR2C_R), R2C_ATTRIBUTES_R(NR2C_R, 3), stat = ierr)
+!+            if (ierr /= 0) then
+!+                print *, 'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
+!+                    'RECORD AT THE FIRST LINE IN THE resume_state_r2c.txt FILE. ', &
+!+                    'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
+!+                stop
+!+            end if
+!+        end if
+!+        close(54)
 
 ! start by gathering from ROW to GAT so as not to mess-up with CLASSS after call to save_state_r2c
-        call CLASSG (cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
-                     cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
-                     cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, FRZCGAT, cpv%CMAI, &
-                     csfv%FCAN, csfv%LNZ0, csfv%ALVC, csfv%ALIC, csfv%PAMX, &
-                     csfv%PAMN, csfv%CMAS, csfv%ROOT, csfv%RSMN, csfv%QA50, &
-                     csfv%VPDA, csfv%VPDB, csfv%PSGA, csfv%PSGB, csfv%PAID, &
-                     csfv%HGTD, csfv%ACVD, csfv%ACID, cpv%TSFS, cpv%WSNO, &
-                     csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, &
-                     csfv%GRKS, csfv%THRA, csfv%HCPS, csfv%TCS, IGDRGAT, &
-                     csfv%THFC, csfv%PSIW, csfv%DELZW, csfv%ZBTW, cfi%VMOD, &
-                     csfv%ZSNL, csfv%ZPLG, csfv%ZPLS, cpv%TAC, cpv%QAC, &
-                     csfv%DRN, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
-                     csfv%ALGW, csfv%ALGD, csfv%ASVD, csfv%ASID, csfv%AGVD, &
-                     csfv%AGID, csfv%ISND, catv%RADJ, catv%ZBLD, catv%Z0OR, &
-                     catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, cfi%FSVH, &
-                     cfi%FSIH, catv%CSZ, cfi%FDL, cfi%UL, cfi%VL, &
-                     cfi%TA, cfi%QA, cfi%PRES, cfi%PRE, catv%PADR, &
-                     catv%VPD, catv%TADP, catv%RHOA, catv%RPCP, catv%TRPC, &
-                     catv%SPCP, catv%TSPC, catv%RHSI, catv%FCLO, catv%DLON, &
-                     catv%GGEO, &
-                     cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
-                     cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
-                     cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
-                     cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
-                     cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
-                     cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
-                     cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
-                     cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
-                     cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
-                     cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
-                     cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
-                     cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
-                     cdv%HMFG, cdv%HTC, cdv%QFC, ITCTGAT, &
+!        call CLASSG (cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
+!                     cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
+!                     cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, FRZCGAT, cpv%CMAI, &
+!                     csfv%FCAN, csfv%LNZ0, csfv%ALVC, csfv%ALIC, csfv%PAMX, &
+!                     csfv%PAMN, csfv%CMAS, csfv%ROOT, csfv%RSMN, csfv%QA50, &
+!                     csfv%VPDA, csfv%VPDB, csfv%PSGA, csfv%PSGB, csfv%PAID, &
+!                     csfv%HGTD, csfv%ACVD, csfv%ACID, cpv%TSFS, cpv%WSNO, &
+!                     csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, &
+!                     csfv%GRKS, csfv%THRA, csfv%HCPS, csfv%TCS, csfv%IGDR, &
+!                     csfv%THFC, csfv%PSIW, csfv%DELZW, csfv%ZBTW, cfi%VMOD, &
+!                     csfv%ZSNL, csfv%ZPLG, csfv%ZPLS, cpv%TAC, cpv%QAC, &
+!                     csfv%DRN, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
+!                     csfv%ALGW, csfv%ALGD, csfv%ASVD, csfv%ASID, csfv%AGVD, &
+!                     csfv%AGID, csfv%ISND, catv%RADJ, catv%ZBLD, catv%Z0OR, &
+!                     catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, cfi%FSVH, &
+!                     cfi%FSIH, catv%CSZ, cfi%FDL, cfi%UL, cfi%VL, &
+!                     cfi%TA, cfi%QA, cfi%PRES, cfi%PRE, catv%PADR, &
+!                     catv%VPD, catv%TADP, catv%RHOA, catv%RPCP, catv%TRPC, &
+!                     catv%SPCP, catv%TSPC, catv%RHSI, catv%FCLO, catv%DLON, &
+!                     catv%GGEO, &
+!                     cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
+!                     cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
+!                     cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
+!                     cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
+!                     cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
+!                     cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
+!                     cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
+!                     cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
+!                     cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
+!                     cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
+!                     cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
+!                     cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
+!                     cdv%HMFG, cdv%HTC, cdv%QFC, ITCTGAT, &
 !BEGIN: PDMROF
-                     CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
+!                     CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
 !END: PDMROF
-                     shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, NA, NTYPE, &
-                     NML, il1, il2, IGND, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
-                     cp%THICROW, cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, &
-                     cp%TSNOROW, cp%RHOSROW, cp%SNOROW, cp%TCANROW, &
-                     cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, cp%FCANROW, &
-                     cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
-                     cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, &
-                     cp%QA50ROW, cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, &
-                     cp%PSGBROW, PAIDROW, HGTDROW, ACVDROW, ACIDROW, TSFSROW, &
-                     WSNOROW, THPROW, THRROW, THMROW, BIROW, PSISROW, &
-                     GRKSROW, THRAROW, HCPSROW, TCSROW, IGDRROW, &
-                     THFCROW, PSIWROW, DLZWROW, ZBTWROW, VMODGRD, &
-                     hp%ZSNLROW, hp%ZPLGROW, hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, &
-                     cp%DRNROW, cp%XSLPROW, cp%XDROW, WFSFROW, cp%KSROW, &
-                     ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
-                     AGIDROW, ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
-                     cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, FSVHGRD, &
-                     FSIHGRD, CSZGRD, cm%clin(cfk%FI)%GRD, cm%clin(cfk%UV)%GRD, VLGRD, &
-                     cm%clin(cfk%TT)%GRD, cm%clin(cfk%HU)%GRD, cm%clin(cfk%P0)%GRD, &
-                     cm%clin(cfk%PR)%GRD, PADRGRD, &
-                     VPDGRD, TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, &
-                     SPCPGRD, TSPCGRD, RHSIGRD, FCLOGRD, DLONGRD, &
-                     GGEOGRD, cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
-                     cp%SANDROW, csfv%SAND, cp%CLAYROW, csfv%CLAY, &
+!                     shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, NA, NTYPE, &
+!                     NML, il1, il2, IGND, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
+!                     cp%THICROW, cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, &
+!                     cp%TSNOROW, cp%RHOSROW, cp%SNOROW, cp%TCANROW, &
+!                     cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, cp%FCANROW, &
+!                     cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
+!                     cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, &
+!                     cp%QA50ROW, cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, &
+!                     cp%PSGBROW, PAIDROW, HGTDROW, ACVDROW, ACIDROW, TSFSROW, &
+!                     WSNOROW, THPROW, THRROW, THMROW, BIROW, PSISROW, &
+!                     GRKSROW, THRAROW, HCPSROW, TCSROW, IGDRROW, &
+!                     THFCROW, PSIWROW, DLZWROW, ZBTWROW, VMODGRD, &
+!                     hp%ZSNLROW, hp%ZPLGROW, hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, &
+!                     cp%DRNROW, cp%XSLPROW, cp%XDROW, WFSFROW, cp%KSROW, &
+!                     ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
+!                     AGIDROW, ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
+!                     cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, FSVHGRD, &
+!                     FSIHGRD, CSZGRD, cm%clin(cfk%FI)%GRD, cm%clin(cfk%UV)%GRD, VLGRD, &
+!                     cm%clin(cfk%TT)%GRD, cm%clin(cfk%HU)%GRD, cm%clin(cfk%P0)%GRD, &
+!                     cm%clin(cfk%PR)%GRD, PADRGRD, &
+!                     VPDGRD, TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, &
+!                     SPCPGRD, TSPCGRD, RHSIGRD, FCLOGRD, DLONGRD, &
+!                     GGEOGRD, cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
+!                     cp%SANDROW, csfv%SAND, cp%CLAYROW, csfv%CLAY, &
 !BEGIN: PDMROF
-                     hp%CMINROW, hp%CMAXROW, hp%BROW, hp%K1ROW, hp%K2ROW, &
+!                     hp%CMINROW, hp%CMAXROW, hp%BROW, hp%K1ROW, hp%K2ROW, &
 !END: PDMROF
-                     cp%FAREROW, csfv%FARE, &
-                     hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
-                     fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT, &
-                     DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
-                     TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
-                     DriftROW, SublROW, DepositionROW, &
-                     DriftGAT, SublGAT, DepositionGAT)
+!                     cp%FAREROW, csfv%FARE, &
+!                     hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
+!                     fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT, &
+!                     DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
+!                     TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
+!                     DriftROW, SublROW, DepositionROW, &
+!                     DriftGAT, SublGAT, DepositionGAT)
 !>
 !>   * INITIALIZATION OF DIAGNOSTIC VARIABLES SPLIT OUT OF CLASSG
 !>   * FOR CONSISTENCY WITH GCM APPLICATIONS.
@@ -1004,242 +1006,242 @@ program RUNMESH
 !> Set variables arrays to zero.
 !> *********************************************************************
 
-        cdv%CDH = 0.0
-        cdv%CDM = 0.0
-        cdv%HFS = 0.0
-        cdv%TFX = 0.0
-        cdv%QEVP = 0.0
-        cdv%QFS = 0.0
-        cdv%QFX = 0.0
-        cdv%PET = 0.0
-        cdv%GA = 0.0
-        cdv%EF = 0.0
-        cdv%GTE = 0.0
-        cdv%QG = 0.0
-        cdv%ALVS = 0.0
-        cdv%ALIR = 0.0
-        cdv%SFCT = 0.0
-        cdv%SFCU = 0.0
-        cdv%SFCV = 0.0
-        cdv%SFCQ = 0.0
-        cdv%FSNO = 0.0
-        cdv%FSGV = 0.0
-        cdv%FSGS = 0.0
-        cdv%FSGG = 0.0
-        cdv%FLGV = 0.0
-        cdv%FLGS = 0.0
-        cdv%FLGG = 0.0
-        cdv%HFSC = 0.0
-        cdv%HFSS = 0.0
-        cdv%HFSG = 0.0
-        cdv%HEVC = 0.0
-        cdv%HEVS = 0.0
-        cdv%HEVG = 0.0
-        cdv%HMFC = 0.0
-        cdv%HMFN = 0.0
-        cdv%HTCC = 0.0
-        cdv%HTCS = 0.0
-        cdv%PCFC = 0.0
-        cdv%PCLC = 0.0
-        cdv%PCPN = 0.0
-        cdv%PCPG = 0.0
-        cdv%QFG = 0.0
-        cdv%QFN = 0.0
-        cdv%QFCF = 0.0
-        cdv%QFCL = 0.0
-        cdv%ROF = 0.0
-        cdv%ROFO = 0.0
-        cdv%ROFS = 0.0
-        cdv%ROFB = 0.0
-        cdv%TROF = 0.0
-        cdv%TROO = 0.0
-        cdv%TROS = 0.0
-        cdv%TROB = 0.0
-        cdv%ROFC = 0.0
-        cdv%ROFN = 0.0
-        cdv%ROVG = 0.0
-        cdv%WTRC = 0.0
-        cdv%WTRS = 0.0
-        cdv%WTRG = 0.0
-        cdv%DR = 0.0
-        cdv%HMFG = 0.0
-        cdv%HTC = 0.0
-        cdv%QFC = 0.0
-        cdv%GFLX = 0.0
-        ITCTGAT = 0
+!        cdv%CDH = 0.0
+!        cdv%CDM = 0.0
+!        cdv%HFS = 0.0
+!        cdv%TFX = 0.0
+!        cdv%QEVP = 0.0
+!        cdv%QFS = 0.0
+!        cdv%QFX = 0.0
+!        cdv%PET = 0.0
+!        cdv%GA = 0.0
+!        cdv%EF = 0.0
+!        cdv%GTE = 0.0
+!        cdv%QG = 0.0
+!        cdv%ALVS = 0.0
+!        cdv%ALIR = 0.0
+!        cdv%SFCT = 0.0
+!        cdv%SFCU = 0.0
+!        cdv%SFCV = 0.0
+!        cdv%SFCQ = 0.0
+!        cdv%FSNO = 0.0
+!        cdv%FSGV = 0.0
+!        cdv%FSGS = 0.0
+!        cdv%FSGG = 0.0
+!        cdv%FLGV = 0.0
+!        cdv%FLGS = 0.0
+!        cdv%FLGG = 0.0
+!        cdv%HFSC = 0.0
+!        cdv%HFSS = 0.0
+!        cdv%HFSG = 0.0
+!        cdv%HEVC = 0.0
+!        cdv%HEVS = 0.0
+!        cdv%HEVG = 0.0
+!        cdv%HMFC = 0.0
+!        cdv%HMFN = 0.0
+!        cdv%HTCC = 0.0
+!        cdv%HTCS = 0.0
+!        cdv%PCFC = 0.0
+!        cdv%PCLC = 0.0
+!        cdv%PCPN = 0.0
+!        cdv%PCPG = 0.0
+!        cdv%QFG = 0.0
+!        cdv%QFN = 0.0
+!        cdv%QFCF = 0.0
+!        cdv%QFCL = 0.0
+!        cdv%ROF = 0.0
+!        cdv%ROFO = 0.0
+!        cdv%ROFS = 0.0
+!        cdv%ROFB = 0.0
+!        cdv%TROF = 0.0
+!        cdv%TROO = 0.0
+!        cdv%TROS = 0.0
+!        cdv%TROB = 0.0
+!        cdv%ROFC = 0.0
+!        cdv%ROFN = 0.0
+!        cdv%ROVG = 0.0
+!        cdv%WTRC = 0.0
+!        cdv%WTRS = 0.0
+!        cdv%WTRG = 0.0
+!        cdv%DR = 0.0
+!        cdv%HMFG = 0.0
+!        cdv%HTC = 0.0
+!        cdv%QFC = 0.0
+!        cdv%GFLX = 0.0
+!        ITCTGAT = 0
 
-        call resume_state_r2c(shd%lc%NML, NA, NTYPE, ic%ts_daily, &
-                              MINS_NOW, shd%lc%ACLASS, NR2C_R, GRD_R, GAT_R, GRDGAT_R, R2C_ATTRIBUTES_R, &
-                              NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
-                              cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
-                              cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
-                              cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
-                              csfv%FCAN, csfv%LNZ0, csfv%ALVC, csfv%ALIC, csfv%PAMX, &
-                              csfv%PAMN, csfv%CMAS, csfv%ROOT, csfv%RSMN, csfv%QA50, &
-                              csfv%VPDA, csfv%VPDB, csfv%PSGA, csfv%PSGB, csfv%PAID, &
-                              csfv%HGTD, csfv%ACVD, csfv%ACID, cpv%TSFS, cpv%WSNO, &
-                              csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, &
-                              csfv%GRKS, csfv%THRA, csfv%HCPS, csfv%TCS, &
-                              csfv%THFC, csfv%PSIW, csfv%DELZW, csfv%ZBTW, &
-                              csfv%ZSNL, csfv%ZPLG, csfv%ZPLS, cpv%TAC, cpv%QAC, &
-                              csfv%DRN, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
-                              csfv%ALGW, csfv%ALGD, csfv%ASVD, csfv%ASID, csfv%AGVD, &
-                              csfv%AGID, csfv%ISND, catv%RADJ, catv%ZBLD, catv%Z0OR, &
-                              catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, cfi%FSVH, &
-                              cfi%FSIH, catv%CSZ, cfi%FDL, cfi%UL, cfi%VL, &
-                              cfi%TA, cfi%QA, cfi%PRES, cfi%PRE, catv%PADR, &
-                              catv%VPD, catv%TADP, catv%RHOA, catv%RPCP, catv%TRPC, &
-                              catv%SPCP, catv%TSPC, catv%RHSI, catv%FCLO, catv%DLON, &
-                              catv%GGEO, &
-                              cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
-                              cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
-                              cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
-                              cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
-                              cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
-                              cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
-                              cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
-                              cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
-                              cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
-                              cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
-                              cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
-                              cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
-                              cdv%HMFG, cdv%HTC, cdv%QFC, MANNGAT, DDGAT, &
-                              csfv%SAND, csfv%CLAY, IGDRGAT, cfi%VMOD, QLWOGAT, &
-                              shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, &
-                              shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
+!+        call resume_state_r2c(shd%lc%NML, NA, NTYPE, ic%ts_daily, &
+!+                              MINS_NOW, shd%lc%ACLASS, NR2C_R, GRD_R, GAT_R, GRDGAT_R, R2C_ATTRIBUTES_R, &
+!+                              NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
+!+                              cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
+!+                              cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
+!+                              cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
+!+                              csfv%FCAN, csfv%LNZ0, csfv%ALVC, csfv%ALIC, csfv%PAMX, &
+!+                              csfv%PAMN, csfv%CMAS, csfv%ROOT, csfv%RSMN, csfv%QA50, &
+!+                              csfv%VPDA, csfv%VPDB, csfv%PSGA, csfv%PSGB, csfv%PAID, &
+!+                              csfv%HGTD, csfv%ACVD, csfv%ACID, cpv%TSFS, cpv%WSNO, &
+!+                              csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, &
+!+                              csfv%GRKS, csfv%THRA, csfv%HCPS, csfv%TCS, &
+!+                              csfv%THFC, csfv%PSIW, csfv%DELZW, csfv%ZBTW, &
+!+                              csfv%ZSNL, csfv%ZPLG, csfv%ZPLS, cpv%TAC, cpv%QAC, &
+!+                              csfv%DRN, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
+!+                              csfv%ALGW, csfv%ALGD, csfv%ASVD, csfv%ASID, csfv%AGVD, &
+!+                              csfv%AGID, csfv%ISND, catv%RADJ, catv%ZBLD, catv%Z0OR, &
+!+                              catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, cfi%FSVH, &
+!+                              cfi%FSIH, catv%CSZ, cfi%FDL, cfi%UL, cfi%VL, &
+!+                              cfi%TA, cfi%QA, cfi%PRES, cfi%PRE, catv%PADR, &
+!+                              catv%VPD, catv%TADP, catv%RHOA, catv%RPCP, catv%TRPC, &
+!+                              catv%SPCP, catv%TSPC, catv%RHSI, catv%FCLO, catv%DLON, &
+!+                              catv%GGEO, &
+!+                              cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
+!+                              cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
+!+                              cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
+!+                              cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
+!+                              cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
+!+                              cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
+!+                              cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
+!+                              cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
+!+                              cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
+!+                              cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
+!+                              cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
+!+                              cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
+!+                              cdv%HMFG, cdv%HTC, cdv%QFC, MANNGAT, DDGAT, &
+!+                              csfv%SAND, csfv%CLAY, csfv%IGDR, cfi%VMOD, QLWOGAT, &
+!+                              shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, &
+!+                              shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
 !>
 ! now scatter the variables so that the GATs don't get overwritten incorrectly
-        call CLASSS(cp%TBARROW, cp%THLQROW, cp%THICROW, GFLXROW, TSFSROW, &
-                    cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, cp%TSNOROW, &
-                    cp%RHOSROW, cp%SNOROW, cp%TCANROW, cp%RCANROW, cp%SCANROW, &
-                    cp%GROROW, CMAIROW, TACROW, QACROW, WSNOROW, &
-                    shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
-                    NA, NTYPE, NML, il1, il2, IGND, ICAN, ICAN + 1, &
-                    cpv%TBAR, cpv%THLQ, cpv%THIC, cdv%GFLX, cpv%TSFS, &
-                    cpv%TPND, cpv%ZPND, cpv%TBAS, cpv%ALBS, cpv%TSNO, &
-                    cpv%RHOS, cpv%SNO, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
-                    cpv%GRO, cpv%CMAI, cpv%TAC, cpv%QAC, cpv%WSNO, &
-                    cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
-                    cp%SANDROW, csfv%SAND, cp%CLAYROW, csfv%CLAY, cp%XSLPROW, csfv%XSLP, &
-                    DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
-                    TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
-                    DriftROW, SublROW, DepositionROW, &
-                    DriftGAT, SublGAT, DepositionGAT)
+!        call CLASSS(cp%TBARROW, cp%THLQROW, cp%THICROW, GFLXROW, TSFSROW, &
+!                    cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, cp%TSNOROW, &
+!                    cp%RHOSROW, cp%SNOROW, cp%TCANROW, cp%RCANROW, cp%SCANROW, &
+!                    cp%GROROW, CMAIROW, TACROW, QACROW, WSNOROW, &
+!                    shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+!                    NA, NTYPE, NML, il1, il2, IGND, ICAN, ICAN + 1, &
+!                    cpv%TBAR, cpv%THLQ, cpv%THIC, cdv%GFLX, cpv%TSFS, &
+!                    cpv%TPND, cpv%ZPND, cpv%TBAS, cpv%ALBS, cpv%TSNO, &
+!                    cpv%RHOS, cpv%SNO, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
+!                    cpv%GRO, cpv%CMAI, cpv%TAC, cpv%QAC, cpv%WSNO, &
+!                    cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
+!                    cp%SANDROW, csfv%SAND, cp%CLAYROW, csfv%CLAY, cp%XSLPROW, csfv%XSLP, &
+!                    DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
+!                    TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
+!                    DriftROW, SublROW, DepositionROW, &
+!                    DriftGAT, SublGAT, DepositionGAT)
 !>
 !>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF
 !>   * CLASSS FOR CONSISTENCY WITH GCM APPLICATIONS.
 !>
-        do 180 k = il1, il2
-            ik = shd%lc%ILMOS(k)
-            jk = shd%lc%JLMOS(k)
-            CDHROW(ik, jk) = cdv%CDH(k)
-            CDMROW(ik, jk) = cdv%CDM(k)
-            HFSROW(ik, jk) = cdv%HFS(k)
-            TFXROW(ik, jk) = cdv%TFX(k)
-            QEVPROW(ik, jk) = cdv%QEVP(k)
-            QFSROW(ik, jk) = cdv%QFS(k)
-            QFXROW(ik, jk) = cdv%QFX(k)
-            PETROW(ik, jk) = cdv%PET(k)
-            GAROW(ik, jk) = cdv%GA(k)
-            EFROW(ik, jk) = cdv%EF(k)
-            GTROW(ik, jk) = cdv%GTE(k)
-            QGROW(ik, jk) = cdv%QG(k)
-            ALVSROW(ik, jk) = cdv%ALVS(k)
-            ALIRROW(ik, jk) = cdv%ALIR(k)
-            SFCTROW(ik, jk) = cdv%SFCT(k)
-            SFCUROW(ik, jk) = cdv%SFCU(k)
-            SFCVROW(ik, jk) = cdv%SFCV(k)
-            SFCQROW(ik, jk) = cdv%SFCQ(k)
-            FSNOROW(ik, jk) = cdv%FSNO(k)
-            FSGVROW(ik, jk) = cdv%FSGV(k)
-            FSGSROW(ik, jk) = cdv%FSGS(k)
-            FSGGROW(ik, jk) = cdv%FSGG(k)
-            FLGVROW(ik, jk) = cdv%FLGV(k)
-            FLGSROW(ik, jk) = cdv%FLGS(k)
-            FLGGROW(ik, jk) = cdv%FLGG(k)
-            HFSCROW(ik, jk) = cdv%HFSC(k)
-            HFSSROW(ik, jk) = cdv%HFSS(k)
-            HFSGROW(ik, jk) = cdv%HFSG(k)
-            HEVCROW(ik, jk) = cdv%HEVC(k)
-            HEVSROW(ik, jk) = cdv%HEVS(k)
-            HEVGROW(ik, jk) = cdv%HEVG(k)
-            HMFCROW(ik, jk) = cdv%HMFC(k)
-            HMFNROW(ik, jk) = cdv%HMFN(k)
-            HTCCROW(ik, jk) = cdv%HTCC(k)
-            HTCSROW(ik, jk) = cdv%HTCS(k)
-            PCFCROW(ik, jk) = cdv%PCFC(k)
-            PCLCROW(ik, jk) = cdv%PCLC(k)
-            PCPNROW(ik, jk) = cdv%PCPN(k)
-            PCPGROW(ik, jk) = cdv%PCPG(k)
-            QFGROW(ik, jk) = cdv%QFG(k)
-            QFNROW(ik, jk) = cdv%QFN(k)
-            QFCLROW(ik, jk) = cdv%QFCL(k)
-            QFCFROW(ik, jk) = cdv%QFCF(k)
-            ROFROW(ik, jk) = cdv%ROF(k)
-            ROFOROW(ik, jk) = cdv%ROFO(k)
-            ROFSROW(ik, jk) = cdv%ROFS(k)
-            ROFBROW(ik, jk) = cdv%ROFB(k)
-            TROFROW(ik, jk) = cdv%TROF(k)
-            TROOROW(ik, jk) = cdv%TROO(k)
-            TROSROW(ik, jk) = cdv%TROS(k)
-            TROBROW(ik, jk) = cdv%TROB(k)
-            ROFCROW(ik, jk) = cdv%ROFC(k)
-            ROFNROW(ik, jk) = cdv%ROFN(k)
-            ROVGROW(ik, jk) = cdv%ROVG(k)
-            WTRCROW(ik, jk) = cdv%WTRC(k)
-            WTRSROW(ik, jk) = cdv%WTRS(k)
-            WTRGROW(ik, jk) = cdv%WTRG(k)
-            DRROW(ik, jk) = cdv%DR(k)
-            WTABROW(ik, jk) = cdv%WTAB(k)
-            ILMOROW(ik, jk) = cdv%ILMO(k)
-            UEROW(ik, jk) = cdv%UE(k)
-            HBLROW(ik, jk) = cdv%HBL(k)
-180     continue
+!        do 180 k = il1, il2
+!            ik = shd%lc%ILMOS(k)
+!            jk = shd%lc%JLMOS(k)
+!            CDHROW(ik, jk) = cdv%CDH(k)
+!            CDMROW(ik, jk) = cdv%CDM(k)
+!            HFSROW(ik, jk) = cdv%HFS(k)
+!            TFXROW(ik, jk) = cdv%TFX(k)
+!            QEVPROW(ik, jk) = cdv%QEVP(k)
+!            QFSROW(ik, jk) = cdv%QFS(k)
+!            QFXROW(ik, jk) = cdv%QFX(k)
+!            PETROW(ik, jk) = cdv%PET(k)
+!            GAROW(ik, jk) = cdv%GA(k)
+!            EFROW(ik, jk) = cdv%EF(k)
+!            GTROW(ik, jk) = cdv%GTE(k)
+!            QGROW(ik, jk) = cdv%QG(k)
+!            ALVSROW(ik, jk) = cdv%ALVS(k)
+!            ALIRROW(ik, jk) = cdv%ALIR(k)
+!            SFCTROW(ik, jk) = cdv%SFCT(k)
+!            SFCUROW(ik, jk) = cdv%SFCU(k)
+!            SFCVROW(ik, jk) = cdv%SFCV(k)
+!            SFCQROW(ik, jk) = cdv%SFCQ(k)
+!            FSNOROW(ik, jk) = cdv%FSNO(k)
+!            FSGVROW(ik, jk) = cdv%FSGV(k)
+!            FSGSROW(ik, jk) = cdv%FSGS(k)
+!            FSGGROW(ik, jk) = cdv%FSGG(k)
+!            FLGVROW(ik, jk) = cdv%FLGV(k)
+!            FLGSROW(ik, jk) = cdv%FLGS(k)
+!            FLGGROW(ik, jk) = cdv%FLGG(k)
+!            HFSCROW(ik, jk) = cdv%HFSC(k)
+!            HFSSROW(ik, jk) = cdv%HFSS(k)
+!            HFSGROW(ik, jk) = cdv%HFSG(k)
+!            HEVCROW(ik, jk) = cdv%HEVC(k)
+!            HEVSROW(ik, jk) = cdv%HEVS(k)
+!            HEVGROW(ik, jk) = cdv%HEVG(k)
+!            HMFCROW(ik, jk) = cdv%HMFC(k)
+!            HMFNROW(ik, jk) = cdv%HMFN(k)
+!            HTCCROW(ik, jk) = cdv%HTCC(k)
+!            HTCSROW(ik, jk) = cdv%HTCS(k)
+!            PCFCROW(ik, jk) = cdv%PCFC(k)
+!            PCLCROW(ik, jk) = cdv%PCLC(k)
+!            PCPNROW(ik, jk) = cdv%PCPN(k)
+!            PCPGROW(ik, jk) = cdv%PCPG(k)
+!            QFGROW(ik, jk) = cdv%QFG(k)
+!            QFNROW(ik, jk) = cdv%QFN(k)
+!            QFCLROW(ik, jk) = cdv%QFCL(k)
+!            QFCFROW(ik, jk) = cdv%QFCF(k)
+!            ROFROW(ik, jk) = cdv%ROF(k)
+!            ROFOROW(ik, jk) = cdv%ROFO(k)
+!            ROFSROW(ik, jk) = cdv%ROFS(k)
+!            ROFBROW(ik, jk) = cdv%ROFB(k)
+!            TROFROW(ik, jk) = cdv%TROF(k)
+!            TROOROW(ik, jk) = cdv%TROO(k)
+!            TROSROW(ik, jk) = cdv%TROS(k)
+!            TROBROW(ik, jk) = cdv%TROB(k)
+!            ROFCROW(ik, jk) = cdv%ROFC(k)
+!            ROFNROW(ik, jk) = cdv%ROFN(k)
+!            ROVGROW(ik, jk) = cdv%ROVG(k)
+!            WTRCROW(ik, jk) = cdv%WTRC(k)
+!            WTRSROW(ik, jk) = cdv%WTRS(k)
+!            WTRGROW(ik, jk) = cdv%WTRG(k)
+!            DRROW(ik, jk) = cdv%DR(k)
+!            WTABROW(ik, jk) = cdv%WTAB(k)
+!            ILMOROW(ik, jk) = cdv%ILMO(k)
+!            UEROW(ik, jk) = cdv%UE(k)
+!            HBLROW(ik, jk) = cdv%HBL(k)
+!180     continue
 !>
-        do 190 l = 1, IGND
-            do 190 k = il1, il2
-                ik = shd%lc%ILMOS(k)
-                jk = shd%lc%JLMOS(k)
-                HMFGROW(ik, jk, l) = cdv%HMFG(k, l)
-                HTCROW(ik, jk, l) = cdv%HTC(k, l)
-                QFCROW(ik, jk, l) = cdv%QFC(k, l)
-190     continue
+!        do 190 l = 1, IGND
+!            do 190 k = il1, il2
+!                ik = shd%lc%ILMOS(k)
+!                jk = shd%lc%JLMOS(k)
+!                HMFGROW(ik, jk, l) = cdv%HMFG(k, l)
+!                HTCROW(ik, jk, l) = cdv%HTC(k, l)
+!                QFCROW(ik, jk, l) = cdv%QFC(k, l)
+!190     continue
 !>
-        do 230 m = 1, 50
-            do 220 l = 1, 6
-                do 210 k = il1, il2
-                    ITCTROW(shd%lc%ILMOS(k), shd%lc%JLMOS(k), l, m) = ITCTGAT(k, l, m)
-210     continue
-220     continue
-230     continue
-    end if !(RESUMEFLAG == 2) then
+!        do 230 m = 1, 50
+!            do 220 l = 1, 6
+!                do 210 k = il1, il2
+!                    ITCTROW(shd%lc%ILMOS(k), shd%lc%JLMOS(k), l, m) = ITCTGAT(k, l, m)
+!210     continue
+!220     continue
+!230     continue
+!+    end if !(RESUMEFLAG == 2) then
 
 !> *********************************************************************
 !> Call read_init_prog_variables.f90 for initi prognostic variables by
 !> by fields needd by classas as initial conditions
 !> *********************************************************************
 !> bjd - July 14, 2014: Gonzalo Sapriza
-    if (RESUMEFLAG == 3) then
-        call read_init_prog_variables_class(CMAIROW, QACROW, TACROW, &
-                                            TBASROW, TSFSROW, WSNOROW, &
+!+    if (RESUMEFLAG == 3) then
+!+        call read_init_prog_variables_class(CMAIROW, QACROW, TACROW, &
+!+                                            TBASROW, TSFSROW, WSNOROW, &
 !                                            cp, &
-                                            NA, NTYPE, &
-                                            IGND, fls)
-    end if !(RESUMEFLAG == 3) then
+!+                                            NA, NTYPE, &
+!+                                            IGND, fls)
+!+    end if !(RESUMEFLAG == 3) then
 
 !> *********************************************************************
 !> Call CLASSB to set more CLASS variables
 !> *********************************************************************
 !> bjd - July 25, 2005: For inputting field measured soil properties.
 
-    call CLASSB(THPROW, THRROW, THMROW, BIROW, PSISROW, &
-                GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
-                PSIWROW, DLZWROW, ZBTWROW, ALGWROW, ALGDROW, &
-                cp%SANDROW, cp%CLAYROW , cp%ORGMROW, shd%lc%sl%DELZ, shd%lc%sl%ZBOT, &
-                cp%SDEPROW, ISNDROW, IGDRROW, NA, NTYPE, &
-                1, NA, NTYPE, IGND, ICTEMMOD, &
-                SV%WC_THPOR, SV%WC_THLRET, SV%WC_THLMIN, SV%WC_BI, SV%WC_PSISAT, &
-                SV%WC_GRKSAT, SV%WC_HCPS, SV%WC_TCS)
+!-    call CLASSB(THPROW, THRROW, THMROW, BIROW, PSISROW, &
+!-                GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
+!-                PSIWROW, DLZWROW, ZBTWROW, ALGWROW, ALGDROW, &
+!-                cp%SANDROW, cp%CLAYROW , cp%ORGMROW, shd%lc%sl%DELZ, shd%lc%sl%ZBOT, &
+!-                cp%SDEPROW, ISNDROW, IGDRROW, NA, NTYPE, &
+!-                1, NA, NTYPE, IGND, ICTEMMOD, &
+!-                SV%WC_THPOR, SV%WC_THLRET, SV%WC_THLMIN, SV%WC_BI, SV%WC_PSISAT, &
+!-                SV%WC_GRKSAT, SV%WC_HCPS, SV%WC_TCS)
 
 !> *********************************************************************
 !> MAM - Initialize ENDDATE and ENDDATA
@@ -1345,75 +1347,75 @@ program RUNMESH
 
     end if !(ipid == 0) then
 
-    call CLASSG(cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
-                cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
-                cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, FRZCGAT, cpv%CMAI, &
-                csfv%FCAN, csfv%LNZ0, csfv%ALVC, csfv%ALIC, csfv%PAMX, &
-                csfv%PAMN, csfv%CMAS, csfv%ROOT, csfv%RSMN, csfv%QA50, &
-                csfv%VPDA, csfv%VPDB, csfv%PSGA, csfv%PSGB, csfv%PAID, &
-                csfv%HGTD, csfv%ACVD, csfv%ACID, cpv%TSFS, cpv%WSNO, &
-                csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, &
-                csfv%GRKS, csfv%THRA, csfv%HCPS, csfv%TCS, IGDRGAT, &
-                csfv%THFC, csfv%PSIW, csfv%DELZW, csfv%ZBTW, cfi%VMOD, &
-                csfv%ZSNL, csfv%ZPLG, csfv%ZPLS, cpv%TAC, cpv%QAC, &
-                csfv%DRN, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
-                csfv%ALGW, csfv%ALGD, csfv%ASVD, csfv%ASID, csfv%AGVD, &
-                csfv%AGID, csfv%ISND, catv%RADJ, catv%ZBLD, catv%Z0OR, &
-                catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, cfi%FSVH, &
-                cfi%FSIH, catv%CSZ, cfi%FDL, cfi%UL, cfi%VL, &
-                cfi%TA, cfi%QA, cfi%PRES, cfi%PRE, catv%PADR, &
-                catv%VPD, catv%TADP, catv%RHOA, catv%RPCP, catv%TRPC, &
-                catv%SPCP, catv%TSPC, catv%RHSI, catv%FCLO, catv%DLON, &
-                catv%GGEO, &
-                cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
-                cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
-                cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
-                cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
-                cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
-                cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
-                cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
-                cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
-                cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
-                cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
-                cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
-                cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
-                cdv%HMFG, cdv%HTC, cdv%QFC, ITCTGAT, &
+!-    call CLASSG(cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
+!-                cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
+!-                cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, FRZCGAT, cpv%CMAI, &
+!-                csfv%FCAN, csfv%LNZ0, csfv%ALVC, csfv%ALIC, csfv%PAMX, &
+!-                csfv%PAMN, csfv%CMAS, csfv%ROOT, csfv%RSMN, csfv%QA50, &
+!-                csfv%VPDA, csfv%VPDB, csfv%PSGA, csfv%PSGB, csfv%PAID, &
+!-                csfv%HGTD, csfv%ACVD, csfv%ACID, cpv%TSFS, cpv%WSNO, &
+!-                csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, &
+!-                csfv%GRKS, csfv%THRA, csfv%HCPS, csfv%TCS, csfv%IGDR, &
+!-                csfv%THFC, csfv%PSIW, csfv%DELZW, csfv%ZBTW, cfi%VMOD, &
+!-                csfv%ZSNL, csfv%ZPLG, csfv%ZPLS, cpv%TAC, cpv%QAC, &
+!-                csfv%DRN, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
+!-                csfv%ALGW, csfv%ALGD, csfv%ASVD, csfv%ASID, csfv%AGVD, &
+!-                csfv%AGID, csfv%ISND, catv%RADJ, catv%ZBLD, catv%Z0OR, &
+!-                catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, cfi%FSVH, &
+!-                cfi%FSIH, catv%CSZ, cfi%FDL, cfi%UL, cfi%VL, &
+!-                cfi%TA, cfi%QA, cfi%PRES, cfi%PRE, catv%PADR, &
+!-                catv%VPD, catv%TADP, catv%RHOA, catv%RPCP, catv%TRPC, &
+!-                catv%SPCP, catv%TSPC, catv%RHSI, catv%FCLO, catv%DLON, &
+!-                catv%GGEO, &
+!-                cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
+!-                cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
+!-                cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
+!-                cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
+!-                cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
+!-                cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
+!-                cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
+!-                cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
+!-                cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
+!-                cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
+!-                cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
+!-                cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
+!-                cdv%HMFG, cdv%HTC, cdv%QFC, ITCTGAT, &
 !BEGIN: PDMROF
-                CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM,  &
+!-                CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM,  &
 !END: PDMROF
-                shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, NA, NTYPE, &
-                NML, il1, il2, IGND, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
-                cp%THICROW, cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, &
-                cp%TSNOROW, cp%RHOSROW, cp%SNOROW, cp%TCANROW, &
-                cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, cp%FCANROW, &
-                cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
-                cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, &
-                cp%QA50ROW, cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, &
-                cp%PSGBROW, PAIDROW, HGTDROW, ACVDROW, ACIDROW, TSFSROW, &
-                WSNOROW, THPROW, THRROW, THMROW, BIROW, PSISROW, &
-                GRKSROW, THRAROW, HCPSROW, TCSROW, IGDRROW, &
-                THFCROW, PSIWROW, DLZWROW, ZBTWROW, VMODGRD, &
-                hp%ZSNLROW, hp%ZPLGROW, hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, &
-                cp%DRNROW, cp%XSLPROW, cp%XDROW, WFSFROW, cp%KSROW, &
-                ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
-                AGIDROW, ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
-                cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, FSVHGRD, &
-                FSIHGRD, CSZGRD, cm%clin(cfk%FI)%GRD, cm%clin(cfk%UV)%GRD, VLGRD, &
-                cm%clin(cfk%TT)%GRD, cm%clin(cfk%HU)%GRD, cm%clin(cfk%P0)%GRD, cm%clin(cfk%PR)%GRD, PADRGRD, &
-                VPDGRD, TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, &
-                SPCPGRD, TSPCGRD, RHSIGRD, FCLOGRD, DLONGRD, &
-                GGEOGRD, cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
-                cp%SANDROW, csfv%SAND, cp%CLAYROW, csfv%CLAY, &
+!-                shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, NA, NTYPE, &
+!-                NML, il1, il2, IGND, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
+!-                cp%THICROW, cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, &
+!-                cp%TSNOROW, cp%RHOSROW, cp%SNOROW, cp%TCANROW, &
+!-                cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, cp%FCANROW, &
+!-                cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
+!-                cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, &
+!-                cp%QA50ROW, cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, &
+!-                cp%PSGBROW, PAIDROW, HGTDROW, ACVDROW, ACIDROW, TSFSROW, &
+!-                WSNOROW, THPROW, THRROW, THMROW, BIROW, PSISROW, &
+!-                GRKSROW, THRAROW, HCPSROW, TCSROW, IGDRROW, &
+!-                THFCROW, PSIWROW, DLZWROW, ZBTWROW, VMODGRD, &
+!-                hp%ZSNLROW, hp%ZPLGROW, hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, &
+!-                cp%DRNROW, cp%XSLPROW, cp%XDROW, WFSFROW, cp%KSROW, &
+!-                ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
+!-                AGIDROW, ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
+!-                cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, FSVHGRD, &
+!-                FSIHGRD, CSZGRD, cm%clin(cfk%FI)%GRD, cm%clin(cfk%UV)%GRD, VLGRD, &
+!-                cm%clin(cfk%TT)%GRD, cm%clin(cfk%HU)%GRD, cm%clin(cfk%P0)%GRD, cm%clin(cfk%PR)%GRD, PADRGRD, &
+!-                VPDGRD, TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, &
+!-                SPCPGRD, TSPCGRD, RHSIGRD, FCLOGRD, DLONGRD, &
+!-                GGEOGRD, cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
+!-                cp%SANDROW, csfv%SAND, cp%CLAYROW, csfv%CLAY, &
 !BEGIN: PDMROF
-                hp%CMINROW, hp%CMAXROW, hp%BROW, hp%K1ROW, hp%K2ROW, &
+!-                hp%CMINROW, hp%CMAXROW, hp%BROW, hp%K1ROW, hp%K2ROW, &
 !END: PDMROF
-                cp%FAREROW, csfv%FARE, &
-                hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
-                fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT, &
-                DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
-                TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
-                DriftROW, SublROW, DepositionROW, &
-                DriftGAT, SublGAT, DepositionGAT)
+!-                cp%FAREROW, csfv%FARE, &
+!-                hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
+!-                fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT, &
+!-                DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
+!-                TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
+!-                DriftROW, SublROW, DepositionROW, &
+!-                DriftGAT, SublGAT, DepositionGAT)
 
     !> Calculate initial storage.
 !todo: Preserve 'initial' initial storage for the case of RESUMEFLAG;
@@ -1657,7 +1659,7 @@ program RUNMESH
                                     cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
                                     cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
                                     cdv%HMFG, cdv%HTC, cdv%QFC, MANNGAT, DDGAT, &
-                                    IGDRGAT, cfi%VMOD, QLWOGAT)
+                                    csfv%IGDR, cfi%VMOD, QLWOGAT)
                 FRAME_NO_NEW = FRAME_NO_NEW + 1 !UPDATE COUNTERS
             end if
 
@@ -2079,109 +2081,109 @@ program RUNMESH
 
     end if !(ipid /= 0) then
 
-    call CLASSS(cp%TBARROW, cp%THLQROW, cp%THICROW, GFLXROW, TSFSROW, &
-                cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, cp%TSNOROW, &
-                cp%RHOSROW, cp%SNOROW, cp%TCANROW, cp%RCANROW, cp%SCANROW, &
-                cp%GROROW, CMAIROW, TACROW, QACROW, WSNOROW, &
-                shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
-                NA, NTYPE, NML, il1, il2, IGND, ICAN, ICAN + 1, &
-                cpv%TBAR, cpv%THLQ, cpv%THIC, cdv%GFLX, cpv%TSFS, &
-                cpv%TPND, cpv%ZPND, cpv%TBAS, cpv%ALBS, cpv%TSNO, &
-                cpv%RHOS, cpv%SNO, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
-                cpv%GRO, cpv%CMAI, cpv%TAC, cpv%QAC, cpv%WSNO, &
-                cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
-                cp%SANDROW, csfv%SAND, cp%CLAYROW, csfv%CLAY, cp%XSLPROW, csfv%XSLP, &
-                DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
-                TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
-                DriftROW, SublROW, DepositionROW, &
-                DriftGAT, SublGAT, DepositionGAT)
+!    call CLASSS(cp%TBARROW, cp%THLQROW, cp%THICROW, GFLXROW, TSFSROW, &
+!                cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, cp%TSNOROW, &
+!                cp%RHOSROW, cp%SNOROW, cp%TCANROW, cp%RCANROW, cp%SCANROW, &
+!                cp%GROROW, CMAIROW, TACROW, QACROW, WSNOROW, &
+!                shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+!                NA, NTYPE, NML, il1, il2, IGND, ICAN, ICAN + 1, &
+!                cpv%TBAR, cpv%THLQ, cpv%THIC, cdv%GFLX, cpv%TSFS, &
+!                cpv%TPND, cpv%ZPND, cpv%TBAS, cpv%ALBS, cpv%TSNO, &
+!                cpv%RHOS, cpv%SNO, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
+!                cpv%GRO, cpv%CMAI, cpv%TAC, cpv%QAC, cpv%WSNO, &
+!                cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
+!                cp%SANDROW, csfv%SAND, cp%CLAYROW, csfv%CLAY, cp%XSLPROW, csfv%XSLP, &
+!                DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
+!                TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
+!                DriftROW, SublROW, DepositionROW, &
+!                DriftGAT, SublGAT, DepositionGAT)
 !>
 !>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF
 !>   * CLASSS FOR CONSISTENCY WITH GCM APPLICATIONS.
 !>
-    do 380 k = il1, il2
-        ik = shd%lc%ILMOS(k)
-        jk = shd%lc%JLMOS(k)
-        CDHROW(ik, jk) = cdv%CDH(k)
-        CDMROW(ik, jk) = cdv%CDM(k)
-        HFSROW(ik, jk) = cdv%HFS(k)
-        TFXROW(ik, jk) = cdv%TFX(k)
-        QEVPROW(ik, jk) = cdv%QEVP(k)
-        QFSROW(ik, jk) = cdv%QFS(k)
-        QFXROW(ik, jk) = cdv%QFX(k)
-        PETROW(ik, jk) = cdv%PET(k)
-        GAROW(ik, jk) = cdv%GA(k)
-        EFROW(ik, jk) = cdv%EF(k)
-        GTROW(ik, jk) = cdv%GTE(k)
-        QGROW(ik, jk) = cdv%QG(k)
-        ALVSROW(ik, jk) = cdv%ALVS(k)
-        ALIRROW(ik, jk) = cdv%ALIR(k)
-        SFCTROW(ik, jk) = cdv%SFCT(k)
-        SFCUROW(ik, jk) = cdv%SFCU(k)
-        SFCVROW(ik, jk) = cdv%SFCV(k)
-        SFCQROW(ik, jk) = cdv%SFCQ(k)
-        FSNOROW(ik, jk) = cdv%FSNO(k)
-        FSGVROW(ik, jk) = cdv%FSGV(k)
-        FSGSROW(ik, jk) = cdv%FSGS(k)
-        FSGGROW(ik, jk) = cdv%FSGG(k)
-        FLGVROW(ik, jk) = cdv%FLGV(k)
-        FLGSROW(ik, jk) = cdv%FLGS(k)
-        FLGGROW(ik, jk) = cdv%FLGG(k)
-        HFSCROW(ik, jk) = cdv%HFSC(k)
-        HFSSROW(ik, jk) = cdv%HFSS(k)
-        HFSGROW(ik, jk) = cdv%HFSG(k)
-        HEVCROW(ik, jk) = cdv%HEVC(k)
-        HEVSROW(ik, jk) = cdv%HEVS(k)
-        HEVGROW(ik, jk) = cdv%HEVG(k)
-        HMFCROW(ik, jk) = cdv%HMFC(k)
-        HMFNROW(ik, jk) = cdv%HMFN(k)
-        HTCCROW(ik, jk) = cdv%HTCC(k)
-        HTCSROW(ik, jk) = cdv%HTCS(k)
-        PCFCROW(ik, jk) = cdv%PCFC(k)
-        PCLCROW(ik, jk) = cdv%PCLC(k)
-        PCPNROW(ik, jk) = cdv%PCPN(k)
-        PCPGROW(ik, jk) = cdv%PCPG(k)
-        QFGROW(ik, jk) = cdv%QFG(k)
-        QFNROW(ik, jk) = cdv%QFN(k)
-        QFCLROW(ik, jk) = cdv%QFCL(k)
-        QFCFROW(ik, jk) = cdv%QFCF(k)
-        ROFROW(ik, jk) = cdv%ROF(k)
-        ROFOROW(ik, jk) = cdv%ROFO(k)
-        ROFSROW(ik, jk) = cdv%ROFS(k)
-        ROFBROW(ik, jk) = cdv%ROFB(k)
-        TROFROW(ik, jk) = cdv%TROF(k)
-        TROOROW(ik, jk) = cdv%TROO(k)
-        TROSROW(ik, jk) = cdv%TROS(k)
-        TROBROW(ik, jk) = cdv%TROB(k)
-        ROFCROW(ik, jk) = cdv%ROFC(k)
-        ROFNROW(ik, jk) = cdv%ROFN(k)
-        ROVGROW(ik, jk) = cdv%ROVG(k)
-        WTRCROW(ik, jk) = cdv%WTRC(k)
-        WTRSROW(ik, jk) = cdv%WTRS(k)
-        WTRGROW(ik, jk) = cdv%WTRG(k)
-        DRROW(ik, jk) = cdv%DR(k)
-        WTABROW(ik, jk) = cdv%WTAB(k)
-        ILMOROW(ik, jk) = cdv%ILMO(k)
-        UEROW(ik, jk) = cdv%UE(k)
-        HBLROW(ik, jk) = cdv%HBL(k)
-380     continue
+!    do 380 k = il1, il2
+!        ik = shd%lc%ILMOS(k)
+!        jk = shd%lc%JLMOS(k)
+!        CDHROW(ik, jk) = cdv%CDH(k)
+!        CDMROW(ik, jk) = cdv%CDM(k)
+!        HFSROW(ik, jk) = cdv%HFS(k)
+!        TFXROW(ik, jk) = cdv%TFX(k)
+!        QEVPROW(ik, jk) = cdv%QEVP(k)
+!        QFSROW(ik, jk) = cdv%QFS(k)
+!        QFXROW(ik, jk) = cdv%QFX(k)
+!        PETROW(ik, jk) = cdv%PET(k)
+!        GAROW(ik, jk) = cdv%GA(k)
+!        EFROW(ik, jk) = cdv%EF(k)
+!        GTROW(ik, jk) = cdv%GTE(k)
+!        QGROW(ik, jk) = cdv%QG(k)
+!        ALVSROW(ik, jk) = cdv%ALVS(k)
+!        ALIRROW(ik, jk) = cdv%ALIR(k)
+!        SFCTROW(ik, jk) = cdv%SFCT(k)
+!        SFCUROW(ik, jk) = cdv%SFCU(k)
+!        SFCVROW(ik, jk) = cdv%SFCV(k)
+!        SFCQROW(ik, jk) = cdv%SFCQ(k)
+!        FSNOROW(ik, jk) = cdv%FSNO(k)
+!        FSGVROW(ik, jk) = cdv%FSGV(k)
+!        FSGSROW(ik, jk) = cdv%FSGS(k)
+!        FSGGROW(ik, jk) = cdv%FSGG(k)
+!        FLGVROW(ik, jk) = cdv%FLGV(k)
+!        FLGSROW(ik, jk) = cdv%FLGS(k)
+!        FLGGROW(ik, jk) = cdv%FLGG(k)
+!        HFSCROW(ik, jk) = cdv%HFSC(k)
+!        HFSSROW(ik, jk) = cdv%HFSS(k)
+!        HFSGROW(ik, jk) = cdv%HFSG(k)
+!        HEVCROW(ik, jk) = cdv%HEVC(k)
+!        HEVSROW(ik, jk) = cdv%HEVS(k)
+!        HEVGROW(ik, jk) = cdv%HEVG(k)
+!        HMFCROW(ik, jk) = cdv%HMFC(k)
+!        HMFNROW(ik, jk) = cdv%HMFN(k)
+!        HTCCROW(ik, jk) = cdv%HTCC(k)
+!        HTCSROW(ik, jk) = cdv%HTCS(k)
+!        PCFCROW(ik, jk) = cdv%PCFC(k)
+!        PCLCROW(ik, jk) = cdv%PCLC(k)
+!        PCPNROW(ik, jk) = cdv%PCPN(k)
+!        PCPGROW(ik, jk) = cdv%PCPG(k)
+!        QFGROW(ik, jk) = cdv%QFG(k)
+!        QFNROW(ik, jk) = cdv%QFN(k)
+!        QFCLROW(ik, jk) = cdv%QFCL(k)
+!        QFCFROW(ik, jk) = cdv%QFCF(k)
+!        ROFROW(ik, jk) = cdv%ROF(k)
+!        ROFOROW(ik, jk) = cdv%ROFO(k)
+!        ROFSROW(ik, jk) = cdv%ROFS(k)
+!        ROFBROW(ik, jk) = cdv%ROFB(k)
+!        TROFROW(ik, jk) = cdv%TROF(k)
+!        TROOROW(ik, jk) = cdv%TROO(k)
+!        TROSROW(ik, jk) = cdv%TROS(k)
+!        TROBROW(ik, jk) = cdv%TROB(k)
+!        ROFCROW(ik, jk) = cdv%ROFC(k)
+!        ROFNROW(ik, jk) = cdv%ROFN(k)
+!        ROVGROW(ik, jk) = cdv%ROVG(k)
+!        WTRCROW(ik, jk) = cdv%WTRC(k)
+!        WTRSROW(ik, jk) = cdv%WTRS(k)
+!        WTRGROW(ik, jk) = cdv%WTRG(k)
+!        DRROW(ik, jk) = cdv%DR(k)
+!        WTABROW(ik, jk) = cdv%WTAB(k)
+!        ILMOROW(ik, jk) = cdv%ILMO(k)
+!        UEROW(ik, jk) = cdv%UE(k)
+!        HBLROW(ik, jk) = cdv%HBL(k)
+!380     continue
 !>
-    do 390 l = 1, IGND
-        do 390 k = il1, il2
-            ik = shd%lc%ILMOS(k)
-            jk = shd%lc%JLMOS(k)
-            HMFGROW(ik, jk, l) = cdv%HMFG(k, l)
-            HTCROW(ik, jk, l) = cdv%HTC(k, l)
-            QFCROW(ik, jk, l) = cdv%QFC(k, l)
-390     continue
+!    do 390 l = 1, IGND
+!        do 390 k = il1, il2
+!            ik = shd%lc%ILMOS(k)
+!            jk = shd%lc%JLMOS(k)
+!            HMFGROW(ik, jk, l) = cdv%HMFG(k, l)
+!            HTCROW(ik, jk, l) = cdv%HTC(k, l)
+!            QFCROW(ik, jk, l) = cdv%QFC(k, l)
+!390     continue
 !>
-    do 430 m = 1, 50
-        do 420 l = 1, 6
-            do 410 k = il1, il2
-                ITCTROW(shd%lc%ILMOS(k), shd%lc%JLMOS(k), l, m) = ITCTGAT(k, l, m)
-410     continue
-420     continue
-430     continue
+!    do 430 m = 1, 50
+!        do 420 l = 1, 6
+!            do 410 k = il1, il2
+!                ITCTROW(shd%lc%ILMOS(k), shd%lc%JLMOS(k), l, m) = ITCTGAT(k, l, m)
+!410     continue
+!420     continue
+!430     continue
 
 !> *********************************************************************
 !> Run is now over, print final results to the screen and close files
@@ -2192,63 +2194,63 @@ program RUNMESH
 !> *********************************************************************
 
 !> Write the resume file
-    if (SAVERESUMEFLAG == 2) then !todo: done: use a flag
-        print *, 'Saving state variables in r2c file format'
+!+    if (SAVERESUMEFLAG == 2) then !todo: done: use a flag
+!+        print *, 'Saving state variables in r2c file format'
 
 ! Allocate arrays for save_state_r2c
-        open(55, file = 'save_state_r2c.txt', action = 'read')
-        read(55, *, iostat = ierr) NR2C_S, DELTR2C_S
-        if (ierr == 0) then
-            allocate(GRD_S(NR2C_S), GAT_S(NR2C_S), GRDGAT_S(NR2C_S), R2C_ATTRIBUTES_S(NR2C_S, 3), stat = ierr)
-            if (ierr /= 0) then
-                print *, 'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
-                    'RECORD AT THE FIRST LINE IN THE save_state_r2c.txt FILE. ', &
-                    'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
-                stop
-            end if
-        end if
-        close(55)
+!+        open(55, file = 'save_state_r2c.txt', action = 'read')
+!+        read(55, *, iostat = ierr) NR2C_S, DELTR2C_S
+!+        if (ierr == 0) then
+!+            allocate(GRD_S(NR2C_S), GAT_S(NR2C_S), GRDGAT_S(NR2C_S), R2C_ATTRIBUTES_S(NR2C_S, 3), stat = ierr)
+!+            if (ierr /= 0) then
+!+                print *, 'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
+!+                    'RECORD AT THE FIRST LINE IN THE save_state_r2c.txt FILE. ', &
+!+                    'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
+!+                stop
+!+            end if
+!+        end if
+!+        close(55)
 
-        call SAVE_STATE_R2C(shd%lc%NML, NA, NTYPE, ic%ts_daily, &
-                            MINS_NOW, shd%lc%ACLASS, NR2C_S, GRD_S, GAT_S, GRDGAT_S, R2C_ATTRIBUTES_S, &
-                            NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
-                            cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
-                            cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
-                            cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
-                            csfv%FCAN, csfv%LNZ0, csfv%ALVC, csfv%ALIC, csfv%PAMX, &
-                            csfv%PAMN, csfv%CMAS, csfv%ROOT, csfv%RSMN, csfv%QA50, &
-                            csfv%VPDA, csfv%VPDB, csfv%PSGA, csfv%PSGB, csfv%PAID, &
-                            csfv%HGTD, csfv%ACVD, csfv%ACID, cpv%TSFS, cpv%WSNO, &
-                            csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, &
-                            csfv%GRKS, csfv%THRA, csfv%HCPS, csfv%TCS, &
-                            csfv%THFC, csfv%PSIW, csfv%DELZW, csfv%ZBTW, &
-                            csfv%ZSNL, csfv%ZPLG, csfv%ZPLS, cpv%TAC, cpv%QAC, &
-                            csfv%DRN, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
-                            csfv%ALGW, csfv%ALGD, csfv%ASVD, csfv%ASID, csfv%AGVD, &
-                            csfv%AGID, csfv%ISND, catv%RADJ, catv%ZBLD, catv%Z0OR, &
-                            catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, cfi%FSVH, &
-                            cfi%FSIH, catv%CSZ, cfi%FDL, cfi%UL, cfi%VL, &
-                            cfi%TA, cfi%QA, cfi%PRES, cfi%PRE, catv%PADR, &
-                            catv%VPD, catv%TADP, catv%RHOA, catv%RPCP, catv%TRPC, &
-                            catv%SPCP, catv%TSPC, catv%RHSI, catv%FCLO, catv%DLON, &
-                            catv%GGEO, &
-                            cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
-                            cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
-                            cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
-                            cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
-                            cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
-                            cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
-                            cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
-                            cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
-                            cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
-                            cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
-                            cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
-                            cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
-                            cdv%HMFG, cdv%HTC, cdv%QFC, MANNGAT, DDGAT, &
-                            csfv%SAND, csfv%CLAY, IGDRGAT, cfi%VMOD, QLWOGAT, &
-                            shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, &
-                            shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
-    end if !(SAVERESUMEFLAG == 2) then
+!+        call SAVE_STATE_R2C(shd%lc%NML, NA, NTYPE, ic%ts_daily, &
+!+                            MINS_NOW, shd%lc%ACLASS, NR2C_S, GRD_S, GAT_S, GRDGAT_S, R2C_ATTRIBUTES_S, &
+!+                            NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
+!+                            cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
+!+                            cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
+!+                            cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
+!+                            csfv%FCAN, csfv%LNZ0, csfv%ALVC, csfv%ALIC, csfv%PAMX, &
+!+                            csfv%PAMN, csfv%CMAS, csfv%ROOT, csfv%RSMN, csfv%QA50, &
+!+                            csfv%VPDA, csfv%VPDB, csfv%PSGA, csfv%PSGB, csfv%PAID, &
+!+                            csfv%HGTD, csfv%ACVD, csfv%ACID, cpv%TSFS, cpv%WSNO, &
+!+                            csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, &
+!+                            csfv%GRKS, csfv%THRA, csfv%HCPS, csfv%TCS, &
+!+                            csfv%THFC, csfv%PSIW, csfv%DELZW, csfv%ZBTW, &
+!+                            csfv%ZSNL, csfv%ZPLG, csfv%ZPLS, cpv%TAC, cpv%QAC, &
+!+                            csfv%DRN, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
+!+                            csfv%ALGW, csfv%ALGD, csfv%ASVD, csfv%ASID, csfv%AGVD, &
+!+                            csfv%AGID, csfv%ISND, catv%RADJ, catv%ZBLD, catv%Z0OR, &
+!+                            catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, cfi%FSVH, &
+!+                            cfi%FSIH, catv%CSZ, cfi%FDL, cfi%UL, cfi%VL, &
+!+                            cfi%TA, cfi%QA, cfi%PRES, cfi%PRE, catv%PADR, &
+!+                            catv%VPD, catv%TADP, catv%RHOA, catv%RPCP, catv%TRPC, &
+!+                            catv%SPCP, catv%TSPC, catv%RHSI, catv%FCLO, catv%DLON, &
+!+                            catv%GGEO, &
+!+                            cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
+!+                            cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
+!+                            cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
+!+                            cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
+!+                            cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
+!+                            cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
+!+                            cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
+!+                            cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
+!+                            cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
+!+                            cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
+!+                            cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
+!+                            cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
+!+                            cdv%HMFG, cdv%HTC, cdv%QFC, MANNGAT, DDGAT, &
+!+                            csfv%SAND, csfv%CLAY, csfv%IGDR, cfi%VMOD, QLWOGAT, &
+!+                            shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, &
+!+                            shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
+!+    end if !(SAVERESUMEFLAG == 2) then
 
 !> *********************************************************************
 !> Call save_init_prog_variables_class.f90 to save initi prognostic variables by
@@ -2256,18 +2258,18 @@ program RUNMESH
 !> *********************************************************************
 
 !> bjd - July 14, 2014: Gonzalo Sapriza
-    if (SAVERESUMEFLAG == 3) then
+!+    if (SAVERESUMEFLAG == 3) then
 !> Save the last time step
-        call save_init_prog_variables_class(CMAIROW, QACROW, TACROW, &
-                                            TBASROW, TSFSROW, WSNOROW, &
-                                            cp%ALBSROW, cp%GROROW, cp%RCANROW, &
-                                            cp%RHOSROW, cp%SCANROW, cp%SNOROW, &
-                                            cp%TBARROW, cp%TCANROW, cp%THICROW, &
-                                            cp%THLQROW, cp%TPNDROW, cp%TSNOROW, &
-                                            cp%ZPNDROW, &
-                                            NA, NTYPE, IGND, &
-                                            fls)
-    end if !(SAVERESUMEFLAG == 3) then
+!+        call save_init_prog_variables_class(CMAIROW, QACROW, TACROW, &
+!+                                            TBASROW, TSFSROW, WSNOROW, &
+!+                                            cp%ALBSROW, cp%GROROW, cp%RCANROW, &
+!+                                            cp%RHOSROW, cp%SCANROW, cp%SNOROW, &
+!+                                            cp%TBARROW, cp%TCANROW, cp%THICROW, &
+!+                                            cp%THLQROW, cp%TPNDROW, cp%TSNOROW, &
+!+                                            cp%ZPNDROW, &
+!+                                            NA, NTYPE, IGND, &
+!+                                            fls)
+!+    end if !(SAVERESUMEFLAG == 3) then
 
     if (OUTFIELDSFLAG == 1) call write_outputs(shd, fls, ts, ic, ifo, vr)
 

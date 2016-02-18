@@ -375,9 +375,12 @@ module process_CLASS_variables
             SDEP, WFCI, WFSF, XSLP, ZPLG, ZPLS, ZSNL
 
         !> Dimension: NML, IGND
+        integer, dimension(:), allocatable :: IGDR
+        integer, dimension(:, :), allocatable :: &
+            IORG, ISND
         real, dimension(:, :), allocatable :: &
-            BI, CLAY, DELZW, GRKS, HCPS, IORG, ISND, ORGM, PSIS, PSIW, &
-            SAND, TCS, THFC, THM, THP, THR, THRA, ZBTW
+            BI, CLAY, DELZW, GRKS, HCPS, ORGM, PSIS, PSIW, SAND, TCS, &
+            THFC, THM, THP, THR, THRA, ZBTW
 
         !> Dimension: NML, ICAN
         real, dimension(:, :), allocatable :: &
@@ -390,16 +393,16 @@ module process_CLASS_variables
     end type
 
     type CLASS_atmospheric_variables
-        integer GC
         real, dimension(:), allocatable :: &
-            CSZ, DLON, FCLO, GGEO, PADR, RADJ, RHOA, RHSI, RPCP, RPRE, &
-            SPCP, SPRE, TADP, TRPC, TSPC, VPD, Z0OR, ZBLD, ZDH, ZDM, &
-            ZRFH, ZRFM
+            CSZ, DLON, FCLO, GC, GGEO, PADR, RADJ, RHOA, RHSI, RPCP, &
+            RPRE, SPCP, SPRE, TADP, TRPC, TSPC, VPD, Z0OR, ZBLD, ZDH, &
+            ZDM, ZRFH, ZRFM
 !            FDL, FSIH, FSVH, PRE, PRES, QA, TA, UL, UV, VL
     end type
 
     type CLASS_diagnostic_variables
-        integer ISUM, ITCT
+        integer ISUM
+        integer, dimension(:, :, :), allocatable :: ITCT
         real, dimension(:), allocatable :: &
             ALIR, ALVS, CDH, CDM, DR, EF, FCS, FGS, FC, FG, FLGG, &
             FLGS, FLGV, FSGG, FSGS, FSGV, FSNO, GA, GTE, HBL, HEVC, &
@@ -450,10 +453,32 @@ module process_CLASS_variables
             TBARROW, THLQROW, THICROW
     end type
 
+    !> Variables to read from soil.ini.
+!todo: Move this to soil module.
+    type SoilValues
+        real, dimension(:, :), allocatable :: &
+            wc_algwet, wc_algdry
+        real, dimension(:, :, :), allocatable :: &
+            wc_thpor, wc_thlret, &
+            wc_thlmin, wc_bi, wc_psisat, wc_grksat, wc_hcps, wc_tcs
+    end type
+
+!todo: Move this?
+    type HydrologyParameters
+        real, dimension(:,:), allocatable :: &
+            ZSNLROW, ZPLSROW, ZPLGROW, &
+            FRZCROW, &
+            CMAXROW, CMINROW, BROW, &
+            K1ROW, K2ROW, &
+            fetchROW, HtROW, N_SROW, A_SROW, DistribROW
+    end type
+
 !> These are the types defined in mesh_input_module.f that contain arrays
 !> that need to be allocated in read_initial_inputs.f.
 !    type(OutputPoints), save :: op
     type(ClassParameters), save :: cp
+    type(SoilValues), save :: sv
+    type(HydrologyParameters), save :: hp
 !    type(CLASSOUT_VARS), save :: co
 
 !    common /PARAMS/ X1, X2, X3, X4, G, GAS, X5, X6, CPRES, &

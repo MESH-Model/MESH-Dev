@@ -30,7 +30,9 @@
 !     +  op,
 !     +  sl,
 !     +  cp,
-     +  sv, hp, ts, cm,
+!     +  sv,
+!     +  hp,
+     +  ts, cm,
 !     +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,
      +  fls)
 
@@ -128,8 +130,8 @@
 !+     TYPE(ShedInformation) :: si
 !      type(SoilLevels) :: sl
 !      type(ClassParameters) :: cp
-      type(SoilValues) :: sv
-      type(HydrologyParameters) :: hp
+!-      type(SoilValues) :: sv
+!-      type(HydrologyParameters) :: hp
       type(ShedGridParams) :: shd
       type(CLIM_INFO) :: cm
       type(dates_model) :: ts
@@ -346,34 +348,34 @@
 !The following are used in read_soil_ini
 !wc_thpor, wc_thlret,wc_thlmin,wc_bi,    wc_psisat,
 !wc_grksat,wc_hcps,  wc_tcs,   wc_algwet,wc_algdry
-      allocate(sv%wc_algwet(NA, NTYPE),
-     +  sv%wc_algdry(NA, NTYPE))
-      allocate(sv%wc_thpor(NA, NTYPE, IGND),
-     +  sv%wc_thlret(NA, NTYPE, IGND),
-     +  sv%wc_thlmin(NA, NTYPE, IGND),
-     +  sv%wc_bi(NA, NTYPE, IGND),
-     +  sv%wc_psisat(NA, NTYPE, IGND),
-     +  sv%wc_grksat(NA, NTYPE, IGND),
-     +  sv%wc_hcps(NA, NTYPE, IGND),
-     +  sv%wc_tcs(NA, NTYPE, IGND))
+!-      allocate(sv%wc_algwet(NA, NTYPE),
+!-     +  sv%wc_algdry(NA, NTYPE))
+!-      allocate(sv%wc_thpor(NA, NTYPE, IGND),
+!-     +  sv%wc_thlret(NA, NTYPE, IGND),
+!-     +  sv%wc_thlmin(NA, NTYPE, IGND),
+!-     +  sv%wc_bi(NA, NTYPE, IGND),
+!-     +  sv%wc_psisat(NA, NTYPE, IGND),
+!-     +  sv%wc_grksat(NA, NTYPE, IGND),
+!-     +  sv%wc_hcps(NA, NTYPE, IGND),
+!-     +  sv%wc_tcs(NA, NTYPE, IGND))
 
 !ANDY Zero everything we just allocated
-      do i = 1, NA
-        do j = 1, NTYPE
-          do k = 1, IGND
-            sv%wc_thpor(i, j, k) = 0
-            sv%wc_thlret(i, j, k) = 0
-            sv%wc_thlmin(i, j, k) = 0
-            sv%wc_bi(i, j, k) = 0
-            sv%wc_psisat(i, j, k) = 0
-            sv%wc_grksat(i, j, k) = 0
-            sv%wc_hcps(i, j, k) = 0
-            sv%wc_tcs(i, j, k) = 0
-          end do
-          sv%wc_algwet(i, j) = 0
-          sv%wc_algdry(i, j) = 0
-        end do
-      end do
+!-      do i = 1, NA
+!-        do j = 1, NTYPE
+!-          do k = 1, IGND
+!-            sv%wc_thpor(i, j, k) = 0
+!-            sv%wc_thlret(i, j, k) = 0
+!-            sv%wc_thlmin(i, j, k) = 0
+!-            sv%wc_bi(i, j, k) = 0
+!-            sv%wc_psisat(i, j, k) = 0
+!-            sv%wc_grksat(i, j, k) = 0
+!-            sv%wc_hcps(i, j, k) = 0
+!-            sv%wc_tcs(i, j, k) = 0
+!-          end do
+!-          sv%wc_algwet(i, j) = 0
+!-          sv%wc_algdry(i, j) = 0
+!-        end do
+!-      end do
 
       if (shd%xCount > 100) then
         write(6, *) 'WARNING: The width of the basin is very high. ',
@@ -493,7 +495,7 @@
 !>
 !>*******************************************************************
 !>
-      call READ_SOIL_INI(NTYPE, IGND, NTYPE, NA, fls, sv)
+!-      call READ_SOIL_INI(NTYPE, IGND, NTYPE, NA, fls, sv)
 !>
 !>*******************************************************************
 !>
@@ -533,11 +535,9 @@
       allocate(t0_ACC(NYEARS))
       t0_ACC = 0.0
 
-      call READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR,
-     +  RELEASE, WF_R2, hp, M_C,
-!     +  NA, NTYPE,
-!     +  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,
-     +  shd, fls)
+      call READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE,
+     +                               WF_R2, M_C,
+     +                               shd, fls)
 
       return
 

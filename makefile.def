@@ -71,7 +71,7 @@ OBJECTS+=	GATHER.o read_initial_inputs.o \
 			SCATTER.o WRITE_R2C_HEADER.o write_r2c.o WRITE_R2C_DATA.o
  
 #CLASS
-OBJECTS+=	process_CLASS_config.o APREP.o CANADD.o CANALB.o CANVAP.o check_parameters.o \
+OBJECTS+=	process_CLASS_config.o APREP.o CANADD.o CANALB.o CLASSBG.o CANVAP.o check_parameters.o \
 			CGROW.o CHKWAT.o CLASSA.o  CLASSB.o CLASSBD.o \
 			CLASSD.o CLASSG.o CLASSI.o CLASSS.o CLASST.o CLASSW.o \
 			CLASSZ.o CWCALC.o DIASURFZ.o DRCOEF.o FLXSURFZ.o FROZEN.o \

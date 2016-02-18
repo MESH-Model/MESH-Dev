@@ -1,4 +1,4 @@
-subroutine check_parameters(wf_r2, m_c, nmtest, hp)
+subroutine check_parameters(wf_r2, m_c, nmtest)
 !>
 !>       March 23, 2010 - M.A. Mekonnen/B. Davidson/M. MacDonald
 !>=======================================================================
@@ -43,7 +43,7 @@ real        wf_r2(m_c)
 real        parv(nrows,nmtest),minlimit(nrows,nmtest),maxlimit(nrows,nmtest)
 
 !type(ClassParameters)     :: cp
-type(HydrologyParameters) :: hp
+!type(HydrologyParameters) :: hp
 !>=======================================================================
 
 ! Activate the parameters

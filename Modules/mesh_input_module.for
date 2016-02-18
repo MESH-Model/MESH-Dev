@@ -64,20 +64,20 @@
 !      END TYPE
 
 !> variables for read_soil_ini
-      TYPE SoilValues
-        REAL, DIMENSION(:,:), ALLOCATABLE :: wc_algwet, wc_algdry
-        REAL, DIMENSION(:,:,:), ALLOCATABLE :: wc_thpor, wc_thlret,
-     +    wc_thlmin, wc_bi, wc_psisat, wc_grksat, wc_hcps, wc_tcs
-      END TYPE
+!-      TYPE SoilValues
+!-        REAL, DIMENSION(:,:), ALLOCATABLE :: wc_algwet, wc_algdry
+!-        REAL, DIMENSION(:,:,:), ALLOCATABLE :: wc_thpor, wc_thlret,
+!-     +    wc_thlmin, wc_bi, wc_psisat, wc_grksat, wc_hcps, wc_tcs
+!-      END TYPE
 
 !> variables for read_parameters_hydrology
-      TYPE HydrologyParameters
-        REAL, DIMENSION(:,:), ALLOCATABLE :: ZSNLROW, ZPLSROW, ZPLGROW, 
-     +                                       FRZCROW,
-     +                                       CMAXROW, CMINROW, BROW,
-     +                                       K1ROW,   K2ROW,
-     +                      fetchROW, HtROW, N_SROW, A_SROW, DistribROW
-      END TYPE
+!-      TYPE HydrologyParameters
+!-        REAL, DIMENSION(:,:), ALLOCATABLE :: ZSNLROW, ZPLSROW, ZPLGROW,
+!-     +                                       FRZCROW,
+!-     +                                       CMAXROW, CMINROW, BROW,
+!-     +                                       K1ROW,   K2ROW,
+!-     +                      fetchROW, HtROW, N_SROW, A_SROW, DistribROW
+!-      END TYPE
 
       contains
 

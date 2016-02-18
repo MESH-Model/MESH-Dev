@@ -37,7 +37,7 @@ module process_CLASS
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        integer NA, NTYPE, NML, IGND, k, ik
+        integer NA, NTYPE, NML, IGND, k
 
         !> SCA variables
         real TOTAL_AREA, basin_SCA, basin_SWE
@@ -69,8 +69,8 @@ module process_CLASS
             cfi%PRES(il1:il2) = cm%clin(cfk%P0)%GAT(il1:il2)
             cfi%QA(il1:il2) = cm%clin(cfk%HU)%GAT(il1:il2)
 
-            UVGRD = max(VMIN, cm%clin(cfk%UV)%GRD)
-            VMODGRD = UVGRD
+!-            UVGRD = max(VMIN, cm%clin(cfk%UV)%GRD)
+!-            VMODGRD = UVGRD
             cfi%VMOD = max(VMIN, cfi%UL)
 
             !> This estimates the fractional cloud cover (FCLOGRD) by the basis
@@ -84,18 +84,16 @@ module process_CLASS
             HOUR = (real(HOUR_NOW) + real(MINS_NOW)/60.0)*PI/12.0 - PI
 
             do k = il1, il2
-                ik = shd%lc%ILMOS(k)
+!                ik = shd%lc%ILMOS(k)
                 COSZ = sin(catv%RADJ(k))*sin(DECL) + cos(catv%RADJ(k))*cos(DECL)*cos(HOUR)
                 catv%CSZ(k) = sign(max(abs(COSZ), 1.0e-3), COSZ)
-                CSZGRD(ik) = catv%CSZ(k)
+!                CSZGRD(ik) = catv%CSZ(k)
                 if (cfi%PRE(k) > 0.0) then
-!todo: there isn't a GAT variable for this (although, there might be for the canopy)?
-                    XDIFFUS(ik) = 1.0
+                    catv%FCLO(k) = 1.0
                 else
-                    XDIFFUS(ik) = max(0.0, min(1.0 - 0.9*COSZ, 1.0))
+                    catv%FCLO(k) = max(0.0, min(1.0 - 0.9*COSZ, 1.0))
                 end if
-                catv%FCLO(k) = XDIFFUS(ik)
-                FCLOGRD(ik) = catv%FCLO(k)
+!-                FCLOGRD(ik) = catv%FCLO(k)
             end do
 
             !> Were initialized in CLASSG and so have been extracted.
@@ -167,7 +165,7 @@ module process_CLASS
             cdv%HTC = 0.0
             cdv%QFC = 0.0
             cdv%GFLX = 0.0
-            ITCTGAT = 0
+            cdv%ITCT = 0
 
             call CLASSI(catv%VPD, catv%TADP, catv%PADR, catv%RHOA, catv%RHSI, &
                         catv%RPCP, catv%TRPC, catv%SPCP, catv%TSPC, cfi%TA, cfi%QA, &
@@ -229,7 +227,7 @@ module process_CLASS
                         EVAPC, EVAPCG, EVAPG, EVAPCS, EVPCSG, EVAPGS, TCANO, TCANS, &
                         RAICAN, SNOCAN, RAICNS, SNOCNS, CHCAP, CHCAPS, TPONDC, TPONDG, &
                         TPNDCS, TPNDGS, TSNOCS, TSNOGS, WSNOCS, WSNOGS, RHOSCS, RHOSGS, &
-                        ITCTGAT, cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, cdv%QFS, cdv%QFX, &
+                        cdv%ITCT, cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, cdv%QFS, cdv%QFX, &
                         cdv%PET, cdv%GA, cdv%EF, cdv%GTE, cdv%QG, cdv%SFCT, cdv%SFCU, cdv%SFCV, &
                         cdv%SFCQ, SFRHGAT, cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, cdv%FLGG, &
                         cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, &
@@ -292,7 +290,7 @@ module process_CLASS
                         csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, csfv%GRKS, &
                         csfv%THRA, csfv%THFC, csfv%DRN, csfv%HCPS, shd%lc%sl%DELZ, &
                         csfv%DELZW, csfv%ZBTW, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
-                        csfv%ISND, IGDRGAT, IWF, NML, il1, il2, ic%ts_count, &
+                        csfv%ISND, csfv%IGDR, IWF, NML, il1, il2, ic%ts_count, &
                         JLAT, ICAN, IGND, IGND + 1, IGND + 2, &
                         NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
                         MANNGAT, DDGAT, ic%ts_daily, &
