@@ -5,27 +5,25 @@ module process_CLASS_config
 
     implicit none
 
-!> LAND SURFACE DIAGNOSTIC VARIABLES.
-
+    !> LAND SURFACE DIAGNOSTIC VARIABLES.
     real, dimension(:), allocatable :: SNOGRD
 
-!>  CONSTANTS AND TEMPORARY VARIABLES.
+    !>  CONSTANTS AND TEMPORARY VARIABLES.
     real FSDOWN1, FSDOWN2, FSDOWN3, RDAY, &
         DECL, HOUR, COSZ
 
     integer NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI
-
 !    real, dimension(:, :), allocatable :: TBASROW, &
 !        CMAIROW, TACROW, QACROW, WSNOROW
     real, dimension(:), allocatable :: &
         FRZCGAT
 !    real, dimension(:, :, :), allocatable :: TSFSROW
 
-!> CANOPY AND SOIL INFORMATION (CLASS):
-!> THE LENGTH OF THESE ARRAYS IS DETERMINED BY THE NUMBER
-!> OF SOIL LAYERS (3) AND THE NUMBER OF BROAD VEGETATION
-!> CATEGORIES (4, OR 5 INCLUDING URBAN AREAS).
-!* ALL: DEFINITIONS IN CLASS DOCUMENTATION (CLASS.INI)
+    !> CANOPY AND SOIL INFORMATION (CLASS):
+    !> THE LENGTH OF THESE ARRAYS IS DETERMINED BY THE NUMBER
+    !> OF SOIL LAYERS (3) AND THE NUMBER OF BROAD VEGETATION
+    !> CATEGORIES (4, OR 5 INCLUDING URBAN AREAS).
+    !* ALL: DEFINITIONS IN CLASS DOCUMENTATION (CLASS.INI)
 !    real, dimension(:, :, :), allocatable :: &
 !        PAIDROW, HGTDROW, ACVDROW, ACIDROW
 !    real, dimension(:, :, :), allocatable :: THPROW, THRROW, THMROW, &
@@ -41,7 +39,7 @@ module process_CLASS_config
 !    integer, dimension(:,:), allocatable :: IGDRROW
 !-    integer, dimension(:), allocatable :: IGDRGAT
 
-!> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
+    !> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
     real, dimension(:), allocatable :: ZDMGRD, &
         ZDHGRD, RADJGRD, CSZGRD, &
         PADRGRD, VPDGRD, &
@@ -49,7 +47,7 @@ module process_CLASS_config
         FCLOGRD, DLONGRD, Z0ORGRD, GGEOGRD, UVGRD, XDIFFUS, &
         RPREGRD, SPREGRD, VMODGRD
 
-!> LAND SURFACE DIAGNOSTIC VARIABLES:
+    !> LAND SURFACE DIAGNOSTIC VARIABLES:
 !    real, dimension(:, :), allocatable :: CDHROW, CDMROW, HFSROW, &
 !        TFXROW, QEVPROW, QFSROW, QFXROW, PETROW, GAROW, EFROW, GTROW, &
 !        QGROW, TSFROW, ALVSROW, ALIRROW, FSNOROW, SFCTROW, SFCUROW, &
@@ -80,27 +78,9 @@ module process_CLASS_config
 !    integer, dimension(:, :, :, :), allocatable :: ITCTROW
 !    integer, dimension(:, :, :), allocatable :: ITCTGAT
 
-!> OUTPUT VARIABLES:
-!> THE SUFFIX "ACC" REFERS TO THE ACCUMULATOR ARRAYS USED IN
-!> CALCULATING TIME AVERAGES.
-!* ALL: DEFINITIONS IN CLASS DOCUMENTATION
-!    real, dimension(:), allocatable :: PREACC, GTACC, QEVPACC, &
-!        HFSACC, ROFACC, SNOACC, ALVSACC, ALIRACC, FSINACC, FLINACC, &
-!        TAACC, UVACC, PRESACC, QAACC, EVAPACC, FLUTACC, ROFOACC, &
-!        ROFSACC, ROFBACC, HMFNACC, WTBLACC, WSNOACC, RHOSACC, TSNOACC, &
-!        TCANACC, RCANACC, SCANACC, GROACC, CANARE, SNOARE, ZPNDACC
-!    real, dimension(:, :), allocatable :: TBARACC, THLQACC, THICACC, &
-!        THALACC, &
-!-        THLQ_FLD, THIC_FLD, &
-!        GFLXACC
-
-!> CROSS-CLASS VARIABLES (CLASS):
-!> ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
-!> SUBSECTIONS OF CLASS ("CLASSA", "CLASST" AND "CLASSW").
-    real, dimension(:, :), allocatable :: TBARC, TBARG, TBARCS, &
-        TBARGS, THLIQC, THLIQG, THICEC, THICEG, FROOT, HCPC, HCPG, &
-        TCTOPC, TCBOTC, TCTOPG, TCBOTG
-
+    !> CROSS-CLASS VARIABLES (CLASS):
+    !> ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
+    !> SUBSECTIONS OF CLASS ("CLASSA", "CLASST" AND "CLASSW").
     real, dimension(:), allocatable :: RBCOEF, &
         ZSNOW, FSVF, FSVFS, ALVSCN, ALIRCN, ALVSG, &
         ALIRG, ALVSCS, ALIRCS, ALVSSN, ALIRSN, ALVSGC, ALIRGC, ALVSSC, &
@@ -114,10 +94,13 @@ module process_CLASS_config
         SNOCAN, RAICNS, SNOCNS, CWLCAP, CWFCAP, CWLCPS, CWFCPS, TSNOCS, &
         TSNOGS, RHOSCS, RHOSGS, WSNOCS, WSNOGS, TPONDC, TPONDG, TPNDCS, &
         TPNDGS, ZPLMCS, ZPLMGS, ZPLIMC, ZPLIMG
+    real, dimension(:, :), allocatable :: TBARC, TBARG, TBARCS, &
+        TBARGS, THLIQC, THLIQG, THICEC, THICEG, FROOT, HCPC, HCPG, &
+        TCTOPC, TCBOTC, TCTOPG, TCBOTG
 
-!> BALANCE ERRORS (CLASS):
-!> DIAGNOSTIC ARRAYS USED FOR CHECKING ENERGY AND WATER
-!> BALANCES.
+    !> BALANCE ERRORS (CLASS):
+    !> DIAGNOSTIC ARRAYS USED FOR CHECKING ENERGY AND WATER
+    !> BALANCES.
     real, dimension(:), allocatable :: CTVSTP, CTSSTP, CT1STP, &
         CT2STP, CT3STP, WTVSTP, WTSSTP, WTGSTP
 
@@ -157,9 +140,8 @@ module process_CLASS_config
         NTYPE = shd%lc%NTYPE
         IGND = shd%lc%IGND
 
-!>=======================================================================
-!> INITIALIZE CLASS VARIABLES
-!> SET COMMON CLASS PARAMETERS.
+        !> INITIALIZE CLASS VARIABLES.
+        !> SET COMMON CLASS PARAMETERS.
         call CLASSD
 
         allocate(cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA), &
@@ -227,15 +209,11 @@ module process_CLASS_config
 
         call READ_PARAMETERS_CLASS(shd, fls)
 
-!>
-!>***********************************************************************
-!> MAM - Check for parameter values - all parameters should lie within the
-!> specified ranges in the "minmax_parameters.txt" file.
-!>=======================================================================
-!>
-!    call check_parameters(WF_R2, M_C, NMTEST, cp, hp, soil_por_max, soil_depth, s0, t_ice_lens)
+        !> MAM - Check for parameter values - all parameters should lie within the
+        !> specified ranges in the "minmax_parameters.txt" file.
+!        call check_parameters(WF_R2, M_C, NMTEST, cp, hp, soil_por_max, soil_depth, s0, t_ice_lens)
 
-!     * GATHER-SCATTER COUNTS:
+        !> GATHER-SCATTER COUNTS:
         allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), shd%wc%ILMOS(shd%wc%ILG), &
                  shd%wc%JLMOS(shd%wc%ILG), stat = ierr)
         if (ierr /= 0) then
@@ -245,18 +223,16 @@ module process_CLASS_config
             stop
         end if
 
-!> CLASS requires that each GRU for each grid square has its own parameter value,
-!> for MESH the value read in from the parameter file is assumed to be valid for
-!> all grid squares in the study area - Frank Seglenieks Aug 2007
-
-!> bjd - This would be a good spot for setting pre-distributed values
-
+        !> CLASS requires that each GRU for each grid square has its own parameter value,
+        !> for MESH the value read in from the parameter file is assumed to be valid for
+        !> all grid squares in the study area - Frank Seglenieks Aug 2007
+        !> bjd - This would be a good spot for setting pre-distributed values
         cp%GCGRD(:) = cp%GCGRD(1)
         do m = 1, NTYPE
             cp%MIDROW(:, m) = cp%MIDROW(1, m)
         end do
 
-!> Set value of FAREROW:
+        !> Set value of FAREROW:
 !todo - flag this as an issue to explore later and hide basin average code
 !todo - document the problem
 !        TOTAL_AREA = 0.0
@@ -265,16 +241,16 @@ module process_CLASS_config
             do m = 1, NTYPE
                 cp%FAREROW(i, m) = shd%lc%ACLASS(i, m)*shd%FRAC(i)
 !                TOTAL_AREA = TOTAL_AREA + cp%FAREROW(i, m)
-    !FUTUREDO: Bruce, FRAC is calculated by EnSim
-    ! using Dan Princz's instructions for EnSim
-    ! FRAC can be greater than 1.00
-    ! So, we cannot use FAREROW in place of BASIN_FRACTION
+!FUTUREDO: Bruce, FRAC is calculated by EnSim
+! using Dan Princz's instructions for EnSim
+! FRAC can be greater than 1.00
+! So, we cannot use FAREROW in place of BASIN_FRACTION
             end do
         end do
 
         !> The following are used to read from soil.ini:
-        !>  wc_thpor, wc_thlret, wc_thlmin, wc_bi, wc_psisat,
-        !>  wc_grksat, wc_hcps, wc_tcs, wc_algwet, wc_algdry
+        !> wc_thpor, wc_thlret, wc_thlmin, wc_bi, wc_psisat,
+        !> wc_grksat, wc_hcps, wc_tcs, wc_algwet, wc_algdry
         allocate(sv%wc_algwet(NA, NTYPE), sv%wc_algdry(NA, NTYPE))
         allocate(sv%wc_thpor(NA, NTYPE, IGND), sv%wc_thlret(NA, NTYPE, IGND), sv%wc_thlmin(NA, NTYPE, IGND), &
                  sv%wc_bi(NA, NTYPE, IGND), sv%wc_psisat(NA, NTYPE, IGND), sv%wc_grksat(NA, NTYPE, IGND), &
@@ -305,10 +281,8 @@ module process_CLASS_config
 !todo+++: of initialization, after reading the drainage database.
 !todo+++: Then, variables could be allocated (il1:il2) instead of
 !todo+++: (1:ILG) to reduce the memory footprint of the model per node.
-!> *********************************************************************
-!> Calculate Indices
-!> *********************************************************************
 
+        !> Calculate Indices.
         call GetIndices(inp, izero, ipid, NML, shd%lc%ILMOS, il1, il2, ilen)
         if (ro%DIAGNOSEMODE > 0) print 1062, ipid, NML, ilen, il1, il2
 
@@ -319,32 +293,19 @@ module process_CLASS_config
             /3x, 'Starting index: ', i10, &
             /3x, 'Stopping index: ', i10, /)
 
-!>=======================================================================
-!> ALLOCATE ALL VARIABLES
-
-!> ANDY * Allocate some variables
+        !> ALLOCATE ALL VARIABLES
         allocate(SNOGRD(NA))
 
 1114 format(/1x, 'Error allocating ', a, ' variables.', &
             /1x, 'Check that these bounds are within an acceptable range.', /)
 1118 format(3x, a, ': ', i6)
 
-!> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
-        allocate( &
-!                 TBASROW(NA, NTYPE), &
-!                 CMAIROW(NA, NTYPE), TACROW(NA, NTYPE), &
-!                 QACROW(NA, NTYPE), WSNOROW(NA, NTYPE), &
-                 FRZCGAT(NML), &
-!                 TSFSROW(NA, NTYPE, 4), &
-                 stat = ierr)
+        !> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
+        allocate(FRZCGAT(NML), stat = ierr)
 
-!> PBSM PROGNOSTIC VARIABLES
-        allocate( &
-!                 DrySnowROW(NA, NTYPE), SnowAgeROW(NA, NTYPE), &
-                 DrySnowGAT(NML), SnowAgeGAT(NML), &
-!                 TSNOdsROW(NA, NTYPE), RHOSdsROW(NA, NTYPE), &
+        !> PBSM PROGNOSTIC VARIABLES
+        allocate(DrySnowGAT(NML), SnowAgeGAT(NML), &
                  TSNOdsGAT(NML), RHOSdsGAT(NML), &
-!                 DriftROW(NA, NTYPE), SublROW(NA, NTYPE), DepositionROW(NA, NTYPE), &
                  DriftGAT(NML), SublGAT(NML), DepositionGAT(NML), &
                  ZSNOCS(NML), ZSNOGS(NML), &
                  ZSNOWC(NML), ZSNOWG(NML), &
@@ -355,27 +316,8 @@ module process_CLASS_config
                  XSNOWC(NML), XSNOWG(NML), &
                  XSNOCS(NML), XSNOGS(NML), stat = ierr)
 
-        allocate( &
-!                 PAIDROW(NA, NTYPE, ICAN), &
-!                 HGTDROW(NA, NTYPE, ICAN), ACVDROW(NA, NTYPE, ICAN), &
-!                 ACIDROW(NA, NTYPE, ICAN), &
-!                 THPROW(NA, NTYPE, IGND), THRROW(NA, NTYPE, IGND), &
-!                 THMROW(NA, NTYPE, IGND), &
-!                 BIROW(NA, NTYPE, IGND), PSISROW(NA, NTYPE, IGND), &
-!                 GRKSROW(NA, NTYPE, IGND), THRAROW(NA, NTYPE, IGND), &
-!                 HCPSROW(NA, NTYPE, IGND), TCSROW(NA, NTYPE, IGND), &
-!                 THFCROW(NA, NTYPE, IGND), &
-!                 PSIWROW(NA, NTYPE, IGND), DLZWROW(NA, NTYPE, IGND), &
-!                 ZBTWROW(NA, NTYPE, IGND), &
-!                 WFSFROW(NA, NTYPE),  ALGWROW(NA, NTYPE), &
-!                 ALGDROW(NA, NTYPE), ASVDROW(NA, NTYPE), ASIDROW(NA, NTYPE), &
-!                 AGVDROW(NA, NTYPE), &
-!                 AGIDROW(NA, NTYPE), &
-                 XDGAT(NML), &
+        allocate(XDGAT(NML), &
                  KSGAT(NML), &
-!                 ISNDROW(NA, NTYPE, IGND), IORG(NA, NTYPE, IGND), &
-!                 IGDRROW(NA,NTYPE), &
-!-                 IGDRGAT(NML), &
                  fetchGAT(NML), HtGAT(NML), N_SGAT(NML), A_SGAT(NML), &
                  DistribGAT(NML), stat = ierr)
 
@@ -390,7 +332,7 @@ module process_CLASS_config
             stop
         end if
 
-!> WATROF FLAGS AND VARIABLES:
+        !> WATROF FLAGS AND VARIABLES:
         allocate(DDGAT(NML), MANNGAT(NML), stat = ierr)
         if (ierr /= 0) then
             print 1114, 'WATROF'
@@ -400,7 +342,7 @@ module process_CLASS_config
             stop
         end if
 
-!> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
+        !> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
         allocate(ZDMGRD(NA), &
                  ZDHGRD(NA), RADJGRD(NA), &
                  CSZGRD(NA), &
@@ -419,36 +361,8 @@ module process_CLASS_config
             stop
         end if
 
-!> LAND SURFACE DIAGNOSTIC VARIABLES:
-        allocate( &
-!                 CDHROW(NA, NTYPE), CDMROW(NA, NTYPE), &
-!                 HFSROW(NA, NTYPE), &
-!                 TFXROW(NA, NTYPE), QEVPROW(NA, NTYPE), QFSROW(NA, NTYPE), &
-!                 QFXROW(NA, NTYPE), PETROW(NA, NTYPE), GAROW(NA, NTYPE), &
-!                 EFROW(NA, NTYPE), GTROW(NA, NTYPE), &
-!                 QGROW(NA, NTYPE), TSFROW(NA, NTYPE), ALVSROW(NA, NTYPE), &
-!                 ALIRROW(NA, NTYPE), FSNOROW(NA, NTYPE), SFCTROW(NA, NTYPE), &
-!                 SFCUROW(NA, NTYPE), &
-!                 SFCVROW(NA, NTYPE), SFCQROW(NA, NTYPE), FSGVROW(NA, NTYPE), &
-!                 FSGSROW(NA, NTYPE), FSGGROW(NA, NTYPE), FLGVROW(NA, NTYPE), &
-!                 FLGSROW(NA, NTYPE), &
-!                 FLGGROW(NA, NTYPE), HFSCROW(NA, NTYPE), HFSSROW(NA, NTYPE), &
-!                 HFSGROW(NA, NTYPE), HEVCROW(NA, NTYPE), HEVSROW(NA, NTYPE), &
-!                 HEVGROW(NA, NTYPE), &
-!                 HMFCROW(NA, NTYPE), HMFNROW(NA, NTYPE), HTCCROW(NA, NTYPE), &
-!                 HTCSROW(NA, NTYPE), PCFCROW(NA, NTYPE), PCLCROW(NA, NTYPE), &
-!                 PCPNROW(NA, NTYPE), &
-!                 PCPGROW(NA, NTYPE), QFGROW(NA, NTYPE), QFNROW(NA, NTYPE), &
-!                 QFCLROW(NA, NTYPE), QFCFROW(NA, NTYPE), ROFROW(NA, NTYPE), &
-!                 ROFOROW(NA, NTYPE), &
-!                 ROFSROW(NA, NTYPE), ROFBROW(NA, NTYPE), ROFCROW(NA, NTYPE), &
-!                 ROFNROW(NA, NTYPE), ROVGROW(NA, NTYPE), WTRCROW(NA, NTYPE), &
-!                 WTRSROW(NA, NTYPE), &
-!                 WTRGROW(NA, NTYPE), DRROW(NA, NTYPE), WTABROW(NA, NTYPE), &
-!                 ILMOROW(NA, NTYPE), UEROW(NA, NTYPE), HBLROW(NA, NTYPE), &
-!                 TROFROW(NA, NTYPE), &
-!                 TROOROW(NA, NTYPE), TROSROW(NA, NTYPE), TROBROW(NA, NTYPE), &
-                 SFRHGAT(NML), &
+        !> LAND SURFACE DIAGNOSTIC VARIABLES:
+        allocate(SFRHGAT(NML), &
                  QLWOGAT(NML), &
                  FTEMP(NML), FVAP(NML), RIB(NML), &
                  CDHGRD(NA), CDMGRD(NA), HFSGRD(NA), &
@@ -468,13 +382,8 @@ module process_CLASS_config
                  ROVGGRD(NA), WTRCGRD(NA), WTRSGRD(NA), &
                  WTRGGRD(NA), DRGRD(NA), WTABGRD(NA), ILMOGRD(NA), UEGRD(NA), &
                  HBLGRD(NA), &
-!                 HMFGROW(NA, NTYPE, IGND), HTCROW(NA, NTYPE, IGND), &
-!                 QFCROW(NA, NTYPE, IGND), GFLXROW(NA, NTYPE, IGND), &
                  HMFGGRD(NA, IGND), HTCGRD(NA, IGND), QFCGRD(NA, IGND), &
-                 GFLXGRD(NA, IGND), &
-!                 ITCTROW(NA, NTYPE, 6, 50), &
-!                 ITCTGAT(NML, 6, 50), &
-                 stat = ierr)
+                 GFLXGRD(NA, IGND), stat = ierr)
         if (ierr /= 0) then
             print 1114, 'land surface diagnostic'
             print 1118, 'Grid squares', NA
@@ -484,7 +393,7 @@ module process_CLASS_config
             stop
         end if
 
-!> CROSS-CLASS VARIABLES (CLASS):
+        !> CROSS-CLASS VARIABLES (CLASS):
         allocate(TBARC(NML, IGND), TBARG(NML, IGND), &
                  TBARCS(NML, IGND), &
                  TBARGS(NML, IGND), THLIQC(NML, IGND), &
@@ -536,7 +445,7 @@ module process_CLASS_config
             stop
         end if
 
-!> BALANCE ERRORS (CLASS):
+        !> BALANCE ERRORS (CLASS):
         allocate(CTVSTP(NML), CTSSTP(NML), &
                  CT1STP(NML), &
                  CT2STP(NML), CT3STP(NML), WTVSTP(NML), &
@@ -549,7 +458,7 @@ module process_CLASS_config
             stop
         end if
 
-!> CTEM ERRORS (CLASS):
+        !> CTEM ERRORS (CLASS):
         allocate(CO2CONC(NML), COSZS(NML), XDIFFUSC(NML), CFLUXCG(NML), CFLUXCS(NML), &
                  AILCG(NML, ICTEM), AILCGS(NML, ICTEM), FCANC(NML, ICTEM), FCANCS(NML, ICTEM), &
                  CO2I1CG(NML, ICTEM), CO2I1CS(NML, ICTEM), CO2I2CG(NML, ICTEM), CO2I2CS(NML, ICTEM), &
@@ -568,15 +477,15 @@ module process_CLASS_config
             stop
         end if
 
-!>    Copy the starting date of input forcing data from CLASS.ini
-!>    to the climate variable.
+        !> Copy the starting date of input forcing data from CLASS.ini
+        !> to the climate variable.
         cm%start_date%year = IYEAR
         cm%start_date%jday = IDAY
         cm%start_date%hour = IHOUR
         cm%start_date%mins = IMIN
 
-!>    Set the starting date to that of the forcing data if none is
-!>    provided and intialize the current time-step.
+        !> Set the starting date to that of the forcing data if none is
+        !> provided and intialize the current time-step.
         if (YEAR_START == 0 .and. JDAY_START == 0 .and. MINS_START == 0 .and. HOUR_START == 0) then
             YEAR_START = cm%start_date%year
             JDAY_START = cm%start_date%jday
@@ -622,7 +531,6 @@ module process_CLASS_config
                  catv%ZRFH(NML), catv%ZRFM(NML))
 
         !> Diagnostic variables.
-!        ISUM
         allocate(cdv%ITCT(NML, 6, 50))
         allocate(cdv%ALIR(NML), cdv%ALVS(NML), cdv%CDH(NML), cdv%CDM(NML), cdv%DR(NML), cdv%EF(NML), cdv%FCS(NML), cdv%FGS(NML), &
                  cdv%FC(NML), cdv%FG(NML), cdv%FLGG(NML), cdv%FLGS(NML), cdv%FLGV(NML), cdv%FSGG(NML), cdv%FSGS(NML), &
@@ -688,16 +596,16 @@ module process_CLASS_config
             else
                 csfv%XSLP(k) = cp%XSLPROW(1, jk)
             end if
-!> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
-!> we give the same value for all the GRU that are in one cell
+            !> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
+            !> we give the same value for all the GRU that are in one cell
             if (allocated(shd%DRDN)) then
                 DDGAT(k) = shd%DRDN(ik)
             else
                 DDGAT(k) = cp%DDROW(1, jk)
             end if
             MANNGAT(k) = cp%MANNROW(1, jk)
-!> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
-!> we give the same value for all the GRU that are in one cell
+            !> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
+            !> we give the same value for all the GRU that are in one cell
             XDGAT(k) = cp%XDROW(1, jk)
             KSGAT(k) = cp%KSROW(1, jk)
             cpv%TCAN(k) = cp%TCANROW(1, jk) + TFREZ
@@ -715,7 +623,7 @@ module process_CLASS_config
             csfv%ZPLS(k) = hp%ZPLSROW(ik, jk)
             cpv%GRO(k) = cp%GROROW(1, jk)
 
-!> note333 see read_s_temperature_txt.f for more TBARROW information
+            !> note333 see read_s_temperature_txt.f for more TBARROW information
             do j = 1, IGND
                 cpv%TBAR(k, j) = cp%TBARROW(1, jk, j) + TFREZ
             end do
@@ -726,7 +634,7 @@ module process_CLASS_config
             cpv%TSFS(k, 4) = cpv%TBAR(k, 1)
             csfv%SDEP(k) = cp%SDEPROW(1, jk)
 
-!> note444 see read_s_moisture_txt.f for more THLQROW information
+            !> note444 see read_s_moisture_txt.f for more THLQROW information
             do j = 1, 3
                 cpv%THLQ(k, j) = cp%THLQROW(1, jk, j)
                 cpv%THIC(k, j) = cp%THICROW(1, jk, j)

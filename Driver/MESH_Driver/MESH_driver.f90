@@ -100,7 +100,6 @@ program RUNMESH
     !> For subroutines: FIND_MONTH, FIND_DAY.
     use EF_MODULE
 
-    !> For data types: HydrologyParameters, SoilValues.
     !> For subroutine: GetIndices.
     use MESH_INPUT_MODULE
     use FLAGS
@@ -150,167 +149,60 @@ program RUNMESH
     !+ For split-vector approach
     integer ii1, ii2, iilen
 
-!>  INTEGER CONSTANTS.
+    !> INTEGER CONSTANTS.
 !todo: Fix this (e.g., replace M_C with NRVR; move to process_WF_ROUTE).
     integer, parameter :: M_C = 5
 
 !todo clean up commets and arrange variables a bit better
 
-!> FOR INITIALIZATION OF BASIN STORAGE
-!-    integer JAN
-
-!>     FOR ROUTING
+    !> FOR ROUTING
 !todo: Fix this (e.g., replace M_C with NRVR; move to process_WF_ROUTE).
-!* WF_R1: MANNING'S N FOR RIVER CHANNEL
-!* WF_R2: OPTIMIZED RIVER ROUGHNESS FACTOR
+    !* WF_R1: MANNING'S N FOR RIVER CHANNEL
+    !* WF_R2: OPTIMIZED RIVER ROUGHNESS FACTOR
     real WF_R1(M_C), WF_R2(M_C)
 
-!>==========
-!>
 !> START ENSIM == FOR ENSIM == FOR ENSIM == FOR ENSIM ==
     character(10) wf_landclassname(10)
     integer(kind = 4) wfo_yy, wfo_mm, wfo_dd, wfo_hh, wfo_mi, wfo_ss, &
         wfo_ms, nj, ensim_month, ensim_day
     integer(kind = 4) WFO_SEQ, ENSIM_IOS
     integer(kind = 4) CURREC
-!> End of ENSIM Changes 
-!>== ENSIM == ENSIM == ENSIM == ENSIM == ENSIM ==
+!> == ENSIM == ENSIM == ENSIM == ENSIM == ENSIM ==
 
-!> *******************************************************************
-!> For reading in the last information in mesh_paramters_hydrology.ini
-!> *******************************************************************
+    !> For reading in the last information in mesh_paramters_hydrology.ini
     character(30) NMTESTFORMAT
 
-!>=======================================================================
-!>     * DIMENSION STATEMENTS
+    !> CONSTANTS (PARAMETER DEFINITIONS):
+    !* M_X: MAXIMUM ALLOWABLE NUMBER OF GRID COLUMNS IN SHD FILE
+    !* M_Y: MAXIMUM ALLOWABLE NUMBER OF GRID ROWS IN SHD FILE
+    !* M_S: MAXIMUM ALLOWABLE NUMBER OF STREAMFLOW GAUGES
+    !* M_R: MAXIMUM ALLOWABLE NUMBER OF RESERVOIRS
+    !* M_C: MAXIMUM ALLOWABLE NUMBER OF RIVER CHANNELS
+    !* M_G: MAXIMUM ALLOWABLE NUMBER OF GRID OUTPUTS
 
-!> FIRST SET OF DEFINITIONS:
-
-!> BACKGROUND VARIABLES, AND PROGNOSTIC AND DIAGNOSTIC
-!> VARIABLES NORMALLY PROVIDED BY AND/OR USED BY THE GCM.
-!> THE SUFFIX "ROW" REFERS TO VARIABLES EXISTING ON THE
-!> MOSAIC GRID ON THE CURRENT LATITUDE CIRCLE.  THE SUFFIX
-!> "GAT" REFERS TO THE SAME VARIABLES AFTER THEY HAVE UNDERGONE
-!> A "GATHER" OPERATION IN WHICH THE TWO MOSAIC DIMENSIONS
-!> ARE COLLAPSED INTO ONE.  THE SUFFIX "GRD" REFERS BOTH TO
-!> GRID-CONSTANT INPUT VARIABLES. AND TO GRID-AVERAGED
-!> DIAGNOSTIC VARIABLES.
-
-!> THE FIRST DIMENSION ELEMENT OF THE "ROW" VARIABLES
-!> REFERS TO THE NUMBER OF GRID CELLS ON THE CURRENT
-!> LATITUDE CIRCLE.  IN THIS STAND-ALONE VERSION, THIS
-!> NUMBER IS ARBITRARILY SET TO THREE, TO ALLOW UP TO THREE
-!> SIMULTANEOUS TESTS TO BE RUN.  THE SECOND DIMENSION
-!> ELEMENT OF THE "ROW" VARIABLES REFERS TO THE MAXIMUM
-!> NUMBER OF TILES IN THE MOSAIC.  IN THIS STAND-ALONE
-!> VERSION, THIS NUMBER IS SET TO EIGHT.  THE FIRST
-!> DIMENSION ELEMENT IN THE "GAT" VARIABLES IS GIVEN BY
-!> THE PRODUCT OF THE FIRST TWO DIMENSION ELEMENTS IN THE
-!> "ROW" VARIABLES.
-
-!>     * CONSTANTS (PARAMETER DEFINITIONS):
-
-!* M_X: MAXIMUM ALLOWABLE NUMBER OF GRID COLUMNS IN SHD FILE
-!* M_Y: MAXIMUM ALLOWABLE NUMBER OF GRID ROWS IN SHD FILE
-!* M_S: MAXIMUM ALLOWABLE NUMBER OF STREAMFLOW GAUGES
-!* M_R: MAXIMUM ALLOWABLE NUMBER OF RESERVOIRS
-!* M_C: MAXIMUM ALLOWABLE NUMBER OF RIVER CHANNELS
-!* M_G: MAXIMUM ALLOWABLE NUMBER OF GRID OUTPUTS
-
-!* VERSION: MESH_DRIVER VERSION
-!* RELEASE: PROGRAM RELEASE VERSIONS
-!> ANDY * VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
+    !* VERSION: MESH_DRIVER VERSION
+    !* RELEASE: PROGRAM RELEASE VERSIONS
+    !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
     character(24) :: VERSION = 'TRUNK (918)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
     logical VER_OK
-!>
-!>*******************************************************************
-!>
-!> OPERATIONAL VARIABLES:
 
-!* IY: Y-DIRECTION GRID CO-ORDINATE, USED TO READ FORCING DATA
-!* JX: X-DIRECTION GRID CO-ORDINATE, USED TO READ FORCING DATA
-!* NN: GRID SQUARE, USED TO READ DRAINAGE DATABASE
-!* II: GRU, USED TO READ DRAINAGE DATABASE
-!* NCOUNT: HALF-HOURLY BASED TIME STEP (200 LOOP)
-!* NSUM: NUMBER OF ITERATIONS, TIME STEPS PASSED (200 LOOP)
-!* NSUM_TOTAL: total number of iterations
-!* i: COUNTER
-!* j: COUNTER
-!* k: COUNTER
-!* l: COUNTER
-!* m: COUNTER
-!* INDEPPAR: NUMBER OF GRU-INDEPENDENT VARIABLES
-!* DEPPAR: NUMBER OF GRU-DEPENDENT VARIABLES
-!-    integer NCOUNT, NSUM
+    !* INDEPPAR: NUMBER OF GRU-INDEPENDENT VARIABLES
+    !* DEPPAR: NUMBER OF GRU-DEPENDENT VARIABLES
     integer i, j, k, l, m, &
         INDEPPAR, DEPPAR
 
     integer FRAME_NO_NEW
 
-!> MAM - logical variables to control simulation runs:
+    !> MAM - logical variables to control simulation runs:
     logical :: ENDDATE = .false., ENDDATA = .false.
 
-!> OUTPUT VARIABLES:
-!> THE SUFFIX "ACC" REFERS TO THE ACCUMULATOR ARRAYS USED IN
-!> CALCULATING TIME AVERAGES.
-!* ALL: DEFINITIONS IN CLASS DOCUMENTATION
-!    real, dimension(:), allocatable :: PREACC, GTACC, QEVPACC, &
-!        HFSACC, ROFACC, SNOACC, ALVSACC, ALIRACC, FSINACC, FLINACC, &
-!        TAACC, UVACC, PRESACC, QAACC, EVAPACC, FLUTACC, ROFOACC, &
-!        ROFSACC, ROFBACC, HMFNACC, WTBLACC, WSNOACC, RHOSACC, TSNOACC, &
-!        TCANACC, RCANACC, SCANACC, GROACC, CANARE, SNOARE, ZPNDACC
-
-!> FIELD OF DELTA STORAGE AND INITIAL STORAGE
-!-    real, dimension(:), allocatable :: DSTG, STG_I
-
-!    real, dimension(:, :), allocatable :: TBARACC, THLQACC, THICACC, &
-!        THALACC, &
-!-        THLQ_FLD, THIC_FLD, &
-!        GFLXACC
-
-!* TOTAL_ROFACC: TOTAL RUNOFF
-!* TOTAL_EVAPACC: TOTAL EVAPORATION
-!* TOTAL_PREACC: TOTAL PRECIPITATION
-!* INIT_STORE: INITIAL STORAGE
-!* FINAL_STORE: FINAL STORAGE
-!* TOTAL_AREA: TOTAL FRACTIONED DRAINAGE AREA
-!    real TOTAL_ROFACC, TOTAL_ROFOACC, TOTAL_ROFSACC, &
-!        TOTAL_ROFBACC, TOTAL_EVAPACC, TOTAL_PREACC, INIT_STORE, &
-!        FINAL_STORE, TOTAL_AREA, &
-!        TOTAL_PRE_ACC_M, TOTAL_EVAP_ACC_M, TOTAL_ROF_ACC_M, &
-!        TOTAL_ROFO_ACC_M, TOTAL_ROFS_ACC_M, TOTAL_ROFB_ACC_M, &
-!        TOTAL_PRE_M, TOTAL_EVAP_M, TOTAL_ROF_M, &
-!        TOTAL_ROFO_M, TOTAL_ROFS_M, TOTAL_ROFB_M, &
-!        TOTAL_SCAN_M, TOTAL_RCAN_M, &
-!        TOTAL_SNO_M, TOTAL_WSNO_M, &
-!        TOTAL_ZPND_M, &
-!        TOTAL_STORE_M, TOTAL_STORE_2_M, &
-!        TOTAL_STORE_ACC_M
-
-!* TOTAL_HFS = TOTAL SENSIBLE HEAT FLUX
-!* TOTAL_QEVP = TOTAL LATENT HEAT FLUX
-!    real TOTAL_HFSACC, TOTAL_QEVPACC
-
-!    real TOTAL_STORE, TOTAL_STORE_2, TOTAL_RCAN, TOTAL_SCAN, TOTAL_SNO, TOTAL_WSNO, TOTAL_ZPND
-!    real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
-!    real, dimension(:), allocatable :: TOTAL_THLQ, TOTAL_THIC, &
-!        TOTAL_THLQ_M, TOTAL_THIC_M
-
-!> **********************************************************************
-!>  For cacluating the subbasin grids
-!> **********************************************************************
-
+    !>  For cacluating the subbasin grids
 !+    integer SUBBASINCOUNT
 !+    integer, dimension(:), allocatable :: SUBBASIN
 
-!> These are the types defined in mesh_input_module.f that contain arrays
-!> that need to be allocated in read_initial_inputs.f.
     type(ShedGridParams) :: shd
-!    type(SoilLevels) :: sl
-!-    type(SoilValues) :: sv
-!-    type(HydrologyParameters) :: hp
     type(fl_ids) :: fls
 
     !* printoutwb: Print components of the water balance to the
@@ -321,8 +213,9 @@ program RUNMESH
     !*               console if enabled.
     logical printoutstfl, printoutqhyd
 
-!>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
-!> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
+    !>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
+    !> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
+!todo: clean-up.
     type(OUT_FLDS) :: VR
     type(dates_model) :: ts
     type(iter_counter) :: ic
@@ -341,29 +234,26 @@ program RUNMESH
     integer, allocatable, dimension(:) :: GRD, GAT, GRDGAT, GRD_R, GAT_R, GRDGAT_R, GRD_S, GAT_S, GRDGAT_S
     character(50), allocatable, dimension(:, :) :: R2C_ATTRIBUTES, R2C_ATTRIBUTES_R, R2C_ATTRIBUTES_S
 
-! To use with variable format expressions in writing some output files
+    !> To use with variable format expressions in writing some output files
     character(20) IGND_CHAR
     character(2000) FMT
-
     character(500) WRT_900_1, WRT_900_2, WRT_900_3, WRT_900_4, WRT_900_f
     character(500) fl_listMesh
 
-    real :: startprog, endprog
-    integer :: narg
-!real :: alpharain
-!character*50 :: alphCh
+    real startprog, endprog
+    integer narg
+!+    real alpharain
+!+    character(50) alphCh
 
 !> ((((((((((((((((((((((((((((((((((
 !> Set the acceptable version numbers
 !> ))))))))))))))))))))))))))))))))))
-!> todo this should be input file dependant,
-!>  because different files will work with different releases
-!>  so, make them local variables inside each read subroutine.
+!todo: this should be input file dependent,
+!because different files will work with different releases
+!so, make them local variables inside each read subroutine.
     RELEASE = '1.4'
 
     call cpu_time(startprog)
-!>=======================================================================
-!>      PROGRAM START
 
     !> Initialize MPI.
     call mpi_init(ierr)
@@ -393,13 +283,13 @@ program RUNMESH
 
 951 format(1x, 'MESH ', a, ' ---  (', a, ')', /)
 
-!File handled for variable in/out names
-!At the moment only class,hydro parameters and some outputs
-
     !> Check if any command line arguments are found.
     narg = command_argument_count()
     !print *, narg
     if (narg > 0) then
+
+        !> File handled for variable in/out names
+        !> At the moment only class, hydro parameters and some outputs
         VARIABLEFILESFLAG = 1
         if (narg >= 1) then
             call get_command_argument(1, fl_listMesh)
@@ -420,23 +310,20 @@ program RUNMESH
     end if !(narg > 0) then
 
     call READ_INITIAL_INPUTS( &
-!>GENERIC VARIABLES
+
+                             !> GENERIC VARIABLES
                              RELEASE, &
-!>variables for READ_PARAMETERS_HYDROLOGY
+
+                             !> READ_PARAMETERS_HYDROLOGY
 !todo: remove these
                              INDEPPAR, DEPPAR, &
                              WF_R2, M_C, &
                              shd, &
-!                             sv, &
-!                             hp, &
                              ts, cm, &
                              fls)
 
-!>***********************************************************************
-!> Forcing data time step should not be less than 30 min - there is no
-!> any increase in accuracy as delt (CLASS model time step) is 30 min.
-!>=======================================================================
-
+    !> Forcing data time step should not be less than 30 min - there is no
+    !> any increase in accuracy as delt (CLASS model time step) is 30 min.
 !todo: Move this to climate module.
     if (HOURLYFLAG < 30) then
         print 1028
@@ -494,66 +381,19 @@ program RUNMESH
 
     NML = shd%lc%NML
 
-!>
-!>***********************************************************************
-!> MAM - Check for parameter values - all parameters should lie within the
-!> specified ranges in the "minmax_parameters.txt" file.
-!>=======================================================================
-!>
+    !> MAM - Check for parameter values - all parameters should lie within the
+    !> specified ranges in the "minmax_parameters.txt" file.
     call check_parameters(WF_R2, M_C, NTYPE)
 
     call init_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW, int(DELT))
 
-!> Set value of FAREROW:
-!todo - flag this as an issue to explore later and hide basin average code
-!todo - document the problem
-    !FUTUREDO: Bruce, FRAC is calculated by EnSim
-    ! using Dan Princz's instructions for EnSim
-    ! FRAC can be greater than 1.00
-    ! So, we cannot use FAREROW in place of BASIN_FRACTION
-!-    TOTAL_AREA = sum(cp%FAREROW)
-
-!todo+++: Perhaps land-unit indexing can be done prior in the sequence
-!todo+++: of initialization, after reading the drainage database.
-!todo+++: Then, variables could be allocated (il1:il2) instead of
-!todo+++: (1:ILG) to reduce the memory footprint of the model per node.
-!> *********************************************************************
-!> Calculate Indices
-!> *********************************************************************
-
-!    call GetIndices(inp, izero, ipid, shd%lc%NML, shd%lc%ILMOS, il1, il2, ilen)
-!    if (ro%DIAGNOSEMODE > 0) print 1062, ipid, shd%lc%NML, ilen, il1, il2
-
-!1062 format(/1x, 'Configuration and distribution of the domain', &
-!            /3x, 'Current process: ', i10, &
-!            /3x, 'Tile land elements: ', i10, &
-!            /3x, 'Length of single array: ', i10, &
-!            /3x, 'Starting index: ', i10, &
-!            /3x, 'Stopping index: ', i10, /)
-
-!>=======================================================================
-!> ALLOCATE ALL VARIABLES
+    !> ALLOCATE ALL VARIABLES
 
 1114 format(/1x, 'Error allocating ', a, ' variables.', &
             /1x, 'Check that these bounds are within an acceptable range.', /)
 1118 format(3x, a, ': ', i6)
 
-!> LAND SURFACE PROGNOSTIC VARIABLES (for Basin_average_water_balance.csv):
-!    allocate(TOTAL_THLQ(IGND), TOTAL_THIC(IGND), &
-!             TOTAL_THLQ_M(IGND), TOTAL_THIC_M(IGND), stat = ierr)
-
-    if (ierr /= 0) then
-        print 1114, 'land surface prognostic'
-        print 1118, 'Grid squares', NA
-        print 1118, 'GRUs', NTYPE
-        print 1118, 'Soil layers', IGND
-        stop
-    end if
-
-!> **********************************************************************
-!>  For cacluating the subbasin grids
-!> **********************************************************************
-
+    !>  For cacluating the subbasin grids
 !+    allocate(SUBBASIN(NML), stat = ierr)
 !+    if (ierr /= 0) then
 !+        print 1114, 'subbasin grid'
@@ -563,44 +403,7 @@ program RUNMESH
 !+        stop
 !+    end if
 
-!> OUTPUT VARIABLES:
-!    allocate(PREACC(NA), GTACC(NA), QEVPACC(NA), &
-!             HFSACC(NA), ROFACC(NA), SNOACC(NA), ALVSACC(NA), ALIRACC(NA), &
-!             FSINACC(NA), FLINACC(NA), &
-!             TAACC(NA), UVACC(NA), PRESACC(NA), QAACC(NA), EVAPACC(NA), &
-!             FLUTACC(NA), ROFOACC(NA), &
-!             ROFSACC(NA), ROFBACC(NA), HMFNACC(NA), WTBLACC(NA), ZPNDACC(NA), &
-!             WSNOACC(NA), RHOSACC(NA), TSNOACC(NA), &
-!             TCANACC(NA), RCANACC(NA), SCANACC(NA), GROACC(NA), CANARE(NA), &
-!             SNOARE(NA), &
-!             TBARACC(NA, IGND), THLQACC(NA, IGND), THICACC(NA, IGND), &
-!             THALACC(NA, IGND), GFLXACC(NA, IGND), &
-!-             STG_I(NA), DSTG(NA), THLQ_FLD(NA, IGND), THIC_FLD(NA, IGND), &
-!             stat = ierr)
-!    if (ierr /= 0) then
-!        print 1114, 'accumulator'
-!        print 1118, 'Grid squares', NA
-!        print 1118, 'Soil layers', IGND
-!        stop
-!    end if
-
     if (ipid == 0) call run_between_grid_ini(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
-
-!> *********************************************************************
-!> Set some more intial values and clear accumulators
-!> *********************************************************************
-
-!> adjust NAA to the be number of outlet squares, as currently it is the
-!> number of squares with outlets into other squares in the basin, and
-!> we want it to be the number of squares with outlets to outside the
-!> basin.
-!todo - look into the logic of this and suggest how it could be changed
-!-    shd%NAA = NA - shd%NAA
-
-!> set initial values of ncount and nsum
-! NCOUNT = which half-hour period the current time is:
-! The first period (0:00-0:30) is #1, the last period (23:30-0:00) is #48
-!-    NCOUNT = HOUR_NOW*2 + MINS_NOW/TIME_STEP_MINS + 1
 
 !> **********************************************************************
 !>  Start of section to only run on squares that make up the watersheds
@@ -612,12 +415,12 @@ program RUNMESH
 !+            SUBBASIN(i) = 0
 !+        end do
 
-!> Set values at guages to 1
+          !> Set values at guages to 1
 !+        do i = 1, WF_NO
 !+            SUBBASIN(WF_S(i)) = 1
 !+        end do
 
-!> Set values of subbasin to 1 for all upstream grids
+          !> Set values of subbasin to 1 for all upstream grids
 !+        SUBBASINCOUNT = 1
 !+        do while (SUBBASINCOUNT > 0)
 !+            SUBBASINCOUNT = 0
@@ -629,7 +432,7 @@ program RUNMESH
 !+            end do
 !+        end do !while (SUBBASINCOUNT > 0)
 
-!> Set values of frac to 0 for all grids non-upstream grids
+          !> Set values of frac to 0 for all grids non-upstream grids
 !+        SUBBASINCOUNT = 0
 !+        do i = 1, NA
 !+            if (SUBBASIN(i) == 0) then
@@ -639,7 +442,7 @@ program RUNMESH
 !+            end if
 !+        end do
 
-  !> MAM - Write grid number, grid fractional area and percentage of GRUs in each grid
+          !> MAM - Write grid number, grid fractional area and percentage of GRUs in each grid
 !+        open(10, file = 'subbasin_info.txt')
 !+        write(10, '(a7, 3x, a18, 3x, a58)') &
 !+            'GRID NO', 'GRID AREA FRACTION', 'GRU FRACTIONS, GRU 1, GRU 2, GRU 3,... IN INCREASING ORDER'
@@ -660,16 +463,10 @@ program RUNMESH
     call climate_module_init(shd, ts, cm, NML, il1, il2, ENDDATA)
     if (ENDDATA) goto 999
 
-!> *********************************************************************
-!> Initialize water balance output fields
-!> *********************************************************************
-
+    !> Initialize output fields.
     if (ipid == 0) then
         if (OUTFIELDSFLAG == 1) call init_out(shd, ts, ic, ifo, vr)
     end if !(ipid == 0) then
-
-!* JAN: The first time throught he loop, jan = 1. Jan will equal 2 after that.
-!-    JAN = 1
 
     FRAME_NO_NEW = 1
 
@@ -680,9 +477,9 @@ program RUNMESH
 
     if (ipid == 0) then
 
-!> ******************************************************
-!> echo print information to MESH_output_echo_print.txt
-!> ******************************************************
+    !> ******************************************************
+    !> echo print information to MESH_output_echo_print.txt
+    !> ******************************************************
 
         if (MODELINFOOUTFLAG > 0) then
             open(58, file = './' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
@@ -721,9 +518,9 @@ program RUNMESH
             write(58, *) 'FROZENSOILINFILFLAG  = ', FROZENSOILINFILFLAG
             write(58, *) 'LOCATIONFLAG         = ', LOCATIONFLAG
 
-        !> MAM - ALLOCATE AND INITIALIZE INTERPOLATION VARIABLES:
-        !> For 30 minute forcing data there is no need for interpolation and
-        !> hence no need to assign PRE and PST variables
+            !> MAM - ALLOCATE AND INITIALIZE INTERPOLATION VARIABLES:
+            !> For 30 minute forcing data there is no need for interpolation and
+            !> hence no need to assign PRE and PST variables
             if (INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%clin(:)%hf) == 210)) then
                 print 9000
                 write(58, 9000)
@@ -745,7 +542,7 @@ program RUNMESH
 !-                end do
 !-            end if
             write(58, "('River roughnesses:')")
-!todo: change this to use NRVR
+!todo: change this to use NRVR.
             write(58, '(5f6.3)') (WF_R2(i), i = 1, 5)
             write(58, "('Land class independent hydrologic parameters:')")
             if (FROZENSOILINFILFLAG == 1) then
@@ -805,16 +602,9 @@ program RUNMESH
         end if !(MODELINFOOUTFLAG > 0) then
     end if !(ipid == 0) then
 
-!> *********************************************************************
-!> Open and print header information to the output files
-!> *********************************************************************
-
+    !> Open and print header information to the output files
+    !> Open and read in values from r2c_output.txt file
     if (ipid == 0) then
-
-!> *********************************************************************
-!> Open and read in values from r2c_output.txt file
-!> *********************************************************************
-
         NR2CFILES = 0
         if (R2COUTPUTFLAG >= 1) then
             inquire(file = 'r2c_output.txt', exist = R2COUTPUT)
@@ -866,23 +656,21 @@ program RUNMESH
             end if
         end if
 
-!> WRITE THE HEADER FOR R2C FILES:
+        !> WRITE THE HEADER FOR R2C FILES:
         if (NR2CFILES > 0) then
             call WRITE_R2C_HEADER(NTYPE, NR2C, NR2CFILES, GRD, GAT, GRDGAT, R2C_ATTRIBUTES, &
                                   R2CFILEUNITSTART, NR2CSTATES, shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, &
                                   shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta, shd%xCount, shd%yCount)
         end if
 
-!> For the ENSIM timestamp
+        !> For the ENSIM timestamp
         wfo_seq = 0
 
     end if !(ipid == 0) then
 
-!> End of ENSIM Changes
-
-!> *********************************************************************
-!> Output information to screen
-!> *********************************************************************
+    !> *********************************************************************
+    !> Output diagnostic information to screen.
+    !> *********************************************************************
 
     if (ro%VERBOSEMODE > 0) then
         print *, 'NUMBER OF GRID SQUARES: ', NA
@@ -900,19 +688,20 @@ program RUNMESH
 
     if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(ts, stfl%ns)
 
-    !todo: temporary until mpi-friendly RESUMEFLAG/SAVERESUMEFLAG has been implemented.
+!todo: temporary until mpi-friendly RESUMEFLAG/SAVERESUMEFLAG has been implemented.
     if (RESUMEFLAG > 0) then
         stop ' RESUMEFLAG and SAVERESUMEFLAG not supported'
     end if
 
-!>
-!>*******************************************************************
-!>
-!> Check if we are reading in a resume_state.r2c file
+!> ********************************************************************
+!> RESUMEFLAG
+!> ********************************************************************
+
+      !> Check if we are reading in a resume_state.r2c file
 !+    if (RESUMEFLAG == 2) then
 !+        print *, 'Reading saved state variables'
 
-! Allocate arrays for resume_state_r2c
+          !> Allocate arrays for resume_state_r2c
 !+        open(54, file = 'resume_state_r2c.txt', action = 'read')
 !+        read(54, *, iostat = ierr) NR2C_R, DELTR2C_R
 !+        if (ierr == 0) then
@@ -926,7 +715,7 @@ program RUNMESH
 !+        end if
 !+        close(54)
 
-! start by gathering from ROW to GAT so as not to mess-up with CLASSS after call to save_state_r2c
+         !> start by gathering from ROW to GAT so as not to mess-up with CLASSS after call to save_state_r2c
 !        call CLASSG (cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
 !                     cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
 !                     cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, FRZCGAT, cpv%CMAI, &
@@ -997,14 +786,6 @@ program RUNMESH
 !                     TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
 !                     DriftROW, SublROW, DepositionROW, &
 !                     DriftGAT, SublGAT, DepositionGAT)
-!>
-!>   * INITIALIZATION OF DIAGNOSTIC VARIABLES SPLIT OUT OF CLASSG
-!>   * FOR CONSISTENCY WITH GCM APPLICATIONS.
-!>
-
-!> *********************************************************************
-!> Set variables arrays to zero.
-!> *********************************************************************
 
 !        cdv%CDH = 0.0
 !        cdv%CDM = 0.0
@@ -1109,8 +890,8 @@ program RUNMESH
 !+                              csfv%SAND, csfv%CLAY, csfv%IGDR, cfi%VMOD, QLWOGAT, &
 !+                              shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, &
 !+                              shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
-!>
-! now scatter the variables so that the GATs don't get overwritten incorrectly
+
+         !> now scatter the variables so that the GATs don't get overwritten incorrectly
 !        call CLASSS(cp%TBARROW, cp%THLQROW, cp%THICROW, GFLXROW, TSFSROW, &
 !                    cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, cp%TSNOROW, &
 !                    cp%RHOSROW, cp%SNOROW, cp%TCANROW, cp%RCANROW, cp%SCANROW, &
@@ -1127,10 +908,7 @@ program RUNMESH
 !                    TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
 !                    DriftROW, SublROW, DepositionROW, &
 !                    DriftGAT, SublGAT, DepositionGAT)
-!>
-!>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF
-!>   * CLASSS FOR CONSISTENCY WITH GCM APPLICATIONS.
-!>
+
 !        do 180 k = il1, il2
 !            ik = shd%lc%ILMOS(k)
 !            jk = shd%lc%JLMOS(k)
@@ -1197,7 +975,7 @@ program RUNMESH
 !            UEROW(ik, jk) = cdv%UE(k)
 !            HBLROW(ik, jk) = cdv%HBL(k)
 !180     continue
-!>
+
 !        do 190 l = 1, IGND
 !            do 190 k = il1, il2
 !                ik = shd%lc%ILMOS(k)
@@ -1206,7 +984,7 @@ program RUNMESH
 !                HTCROW(ik, jk, l) = cdv%HTC(k, l)
 !                QFCROW(ik, jk, l) = cdv%QFC(k, l)
 !190     continue
-!>
+
 !        do 230 m = 1, 50
 !            do 220 l = 1, 6
 !                do 210 k = il1, il2
@@ -1216,10 +994,8 @@ program RUNMESH
 !230     continue
 !+    end if !(RESUMEFLAG == 2) then
 
-!> *********************************************************************
-!> Call read_init_prog_variables.f90 for initi prognostic variables by
-!> by fields needd by classas as initial conditions
-!> *********************************************************************
+    !> Call read_init_prog_variables.f90 for initi prognostic variables by
+    !> by fields needd by classas as initial conditions
 !> bjd - July 14, 2014: Gonzalo Sapriza
 !+    if (RESUMEFLAG == 3) then
 !+        call read_init_prog_variables_class(CMAIROW, QACROW, TACROW, &
@@ -1229,23 +1005,7 @@ program RUNMESH
 !+                                            IGND, fls)
 !+    end if !(RESUMEFLAG == 3) then
 
-!> *********************************************************************
-!> Call CLASSB to set more CLASS variables
-!> *********************************************************************
-!> bjd - July 25, 2005: For inputting field measured soil properties.
-
-!-    call CLASSB(THPROW, THRROW, THMROW, BIROW, PSISROW, &
-!-                GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
-!-                PSIWROW, DLZWROW, ZBTWROW, ALGWROW, ALGDROW, &
-!-                cp%SANDROW, cp%CLAYROW , cp%ORGMROW, shd%lc%sl%DELZ, shd%lc%sl%ZBOT, &
-!-                cp%SDEPROW, ISNDROW, IGDRROW, NA, NTYPE, &
-!-                1, NA, NTYPE, IGND, ICTEMMOD, &
-!-                SV%WC_THPOR, SV%WC_THLRET, SV%WC_THLMIN, SV%WC_BI, SV%WC_PSISAT, &
-!-                SV%WC_GRKSAT, SV%WC_HCPS, SV%WC_TCS)
-
-!> *********************************************************************
-!> MAM - Initialize ENDDATE and ENDDATA
-!> *********************************************************************
+    !> MAM - Initialize ENDDATE and ENDDATA
     ENDDATE = .false.
     ENDDATA = .false.
 
@@ -1253,10 +1013,10 @@ program RUNMESH
 
     if (ipid == 0) then
 
-    !> Open CSV output files.
+        !> Open CSV output files.
         if (BASINBALANCEOUTFLAG > 0) then
 
-        !> Water balance.
+            !> Water balance.
             open(fls%fl(mfk%f900)%iun, &
                  file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
                  iostat = ierr)
@@ -1292,7 +1052,7 @@ program RUNMESH
             write(fls%fl(mfk%f900)%iun, '(a)') trim(adjustl(wrt_900_f))
             write(902, '(a)') trim(adjustl(wrt_900_f))
 
-        !> Energy balance.
+            !> Energy balance.
             open(901, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance.csv')
 
             write(901, '(a)') 'DAY,YEAR,HFS,QEVP'
@@ -1318,11 +1078,7 @@ program RUNMESH
 
         end if !(BASINBALANCEOUTFLAG > 0) then
 
-!> *********************************************************************
-!> Initialize accumulation variables.
-!> *********************************************************************
-
-        !> Grid Variables.
+        !> Initialize accumulation variables.
         wb_acc%PRE = 0.0
         eb_acc%QEVP = 0.0
         wb_acc%EVAP = 0.0
@@ -1346,76 +1102,6 @@ program RUNMESH
         wb_acc%DSTG = 0.0
 
     end if !(ipid == 0) then
-
-!-    call CLASSG(cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
-!-                cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
-!-                cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, FRZCGAT, cpv%CMAI, &
-!-                csfv%FCAN, csfv%LNZ0, csfv%ALVC, csfv%ALIC, csfv%PAMX, &
-!-                csfv%PAMN, csfv%CMAS, csfv%ROOT, csfv%RSMN, csfv%QA50, &
-!-                csfv%VPDA, csfv%VPDB, csfv%PSGA, csfv%PSGB, csfv%PAID, &
-!-                csfv%HGTD, csfv%ACVD, csfv%ACID, cpv%TSFS, cpv%WSNO, &
-!-                csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, &
-!-                csfv%GRKS, csfv%THRA, csfv%HCPS, csfv%TCS, csfv%IGDR, &
-!-                csfv%THFC, csfv%PSIW, csfv%DELZW, csfv%ZBTW, cfi%VMOD, &
-!-                csfv%ZSNL, csfv%ZPLG, csfv%ZPLS, cpv%TAC, cpv%QAC, &
-!-                csfv%DRN, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
-!-                csfv%ALGW, csfv%ALGD, csfv%ASVD, csfv%ASID, csfv%AGVD, &
-!-                csfv%AGID, csfv%ISND, catv%RADJ, catv%ZBLD, catv%Z0OR, &
-!-                catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, cfi%FSVH, &
-!-                cfi%FSIH, catv%CSZ, cfi%FDL, cfi%UL, cfi%VL, &
-!-                cfi%TA, cfi%QA, cfi%PRES, cfi%PRE, catv%PADR, &
-!-                catv%VPD, catv%TADP, catv%RHOA, catv%RPCP, catv%TRPC, &
-!-                catv%SPCP, catv%TSPC, catv%RHSI, catv%FCLO, catv%DLON, &
-!-                catv%GGEO, &
-!-                cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
-!-                cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
-!-                cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
-!-                cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
-!-                cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
-!-                cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
-!-                cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
-!-                cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
-!-                cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
-!-                cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
-!-                cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
-!-                cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
-!-                cdv%HMFG, cdv%HTC, cdv%QFC, ITCTGAT, &
-!BEGIN: PDMROF
-!-                CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM,  &
-!END: PDMROF
-!-                shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, NA, NTYPE, &
-!-                NML, il1, il2, IGND, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
-!-                cp%THICROW, cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, &
-!-                cp%TSNOROW, cp%RHOSROW, cp%SNOROW, cp%TCANROW, &
-!-                cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, cp%FCANROW, &
-!-                cp%LNZ0ROW, cp%ALVCROW, cp%ALICROW, cp%PAMXROW, &
-!-                cp%PAMNROW, cp%CMASROW, cp%ROOTROW, cp%RSMNROW, &
-!-                cp%QA50ROW, cp%VPDAROW, cp%VPDBROW, cp%PSGAROW, &
-!-                cp%PSGBROW, PAIDROW, HGTDROW, ACVDROW, ACIDROW, TSFSROW, &
-!-                WSNOROW, THPROW, THRROW, THMROW, BIROW, PSISROW, &
-!-                GRKSROW, THRAROW, HCPSROW, TCSROW, IGDRROW, &
-!-                THFCROW, PSIWROW, DLZWROW, ZBTWROW, VMODGRD, &
-!-                hp%ZSNLROW, hp%ZPLGROW, hp%ZPLSROW, hp%FRZCROW, TACROW, QACROW, &
-!-                cp%DRNROW, cp%XSLPROW, cp%XDROW, WFSFROW, cp%KSROW, &
-!-                ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
-!-                AGIDROW, ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
-!-                cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, FSVHGRD, &
-!-                FSIHGRD, CSZGRD, cm%clin(cfk%FI)%GRD, cm%clin(cfk%UV)%GRD, VLGRD, &
-!-                cm%clin(cfk%TT)%GRD, cm%clin(cfk%HU)%GRD, cm%clin(cfk%P0)%GRD, cm%clin(cfk%PR)%GRD, PADRGRD, &
-!-                VPDGRD, TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, &
-!-                SPCPGRD, TSPCGRD, RHSIGRD, FCLOGRD, DLONGRD, &
-!-                GGEOGRD, cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
-!-                cp%SANDROW, csfv%SAND, cp%CLAYROW, csfv%CLAY, &
-!BEGIN: PDMROF
-!-                hp%CMINROW, hp%CMAXROW, hp%BROW, hp%K1ROW, hp%K2ROW, &
-!END: PDMROF
-!-                cp%FAREROW, csfv%FARE, &
-!-                hp%fetchROW, hp%HtROW, hp%N_SROW, hp%A_SROW, hp%DistribROW, &
-!-                fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT, &
-!-                DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
-!-                TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
-!-                DriftROW, SublROW, DepositionROW, &
-!-                DriftGAT, SublGAT, DepositionGAT)
 
     !> Calculate initial storage.
 !todo: Preserve 'initial' initial storage for the case of RESUMEFLAG;
@@ -1446,9 +1132,9 @@ program RUNMESH
 
     end if !(ipid == 0) then
 
-!> *********************************************************************
-!> End of Initialization
-!> *********************************************************************
+    !> *********************************************************************
+    !> End of Initialization
+    !> *********************************************************************
 
     if (ro%VERBOSEMODE > 0) then
         print *
@@ -1459,13 +1145,13 @@ program RUNMESH
 2836    format(/1x, 'DONE INTITIALIZATION')
 2835    format(/1x, 'STARTING MESH')
 
-!> *********************************************************************
-!> Start of main loop that is run each half hour
-!> *********************************************************************
+    !> *********************************************************************
+    !> Start of main loop that is run each half hour
+    !> *********************************************************************
 
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
-    !> MAM - Linearly interpolate forcing data for intermediate time steps
+        !> MAM - Linearly interpolate forcing data for intermediate time steps
         if (INTERPOLATIONFLAG == 1) then
             call climate_module_interpolatedata(shd, csfv%FARE, cm, NML, il1, il2)
         end if
@@ -1495,21 +1181,19 @@ program RUNMESH
 
         call run_within_tile(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
-! *********************************************************************
-! Calculate values for output files and print them out
-! *********************************************************************
+        !> Gather variables from parallel nodes.
+!todo: move this.
 
-    !> Send/receive process.
+        !> Send/receive process.
         itag = ic%ts_count*1000
         invars = 14 + 4*IGND
 
-    !> Update the variable count per the active control flags.
+        !> Update the variable count per the active control flags.
         if (SAVERESUMEFLAG == 3) invars = invars + 10 + 4
 
         if (inp > 1 .and. ipid /= 0) then
 
-        !> Send data back to head-node.
-
+            !> Send data back to head-node.
             if (allocated(irqst)) deallocate(irqst)
             if (allocated(imstat)) deallocate(imstat)
             allocate(irqst(invars), imstat(mpi_status_size, invars))
@@ -1537,7 +1221,7 @@ program RUNMESH
                 call mpi_isend(cpv%TBAR(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             end do
 
-        !> Send optional variables per the active control flags.
+            !> Send optional variables per the active control flags.
             if (SAVERESUMEFLAG == 3) then
                 call mpi_isend(cpv%ALBS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_isend(cpv%CMAI(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
@@ -1563,12 +1247,12 @@ program RUNMESH
 
         else if (inp > 1) then
 
-        !> Receive data from worker nodes.
+            !> Receive data from worker nodes.
             if (allocated(irqst)) deallocate(irqst)
             if (allocated(imstat)) deallocate(imstat)
             allocate(irqst(invars), imstat(mpi_status_size, invars))
 
-        !> Receive and assign variables.
+            !> Receive and assign variables.
             do u = 1, (inp - 1)
 
 !                print *, 'initiating irecv for:', u, ' with ', itag
@@ -1600,7 +1284,7 @@ program RUNMESH
                     call mpi_irecv(cpv%TBAR(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end do
 
-            !> Send optional variables per the active control flags.
+                !> Send optional variables per the active control flags.
                 if (SAVERESUMEFLAG == 3) then
                     call mpi_irecv(cpv%ALBS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                     call mpi_irecv(cpv%CMAI(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
@@ -1628,18 +1312,15 @@ program RUNMESH
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-!todo: change this to use mod.
         if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
 
-!> *********************************************************************
-!> Start of book-keeping and grid accumulation.
-!> *********************************************************************
+        !> *********************************************************************
+        !> Start of book-keeping and grid accumulation.
+        !> *********************************************************************
 
         if (ipid == 0) then
 
-!> Write ENSIM output
-!> -----------------------------------------------------c
-!>
+            !> Write ENSIM output
             if (NR2CFILES > 0 .and. mod(ic%ts_daily*30, DELTR2C) == 0) then
                 call FIND_MONTH (JDAY_NOW, YEAR_NOW, ensim_month)
                 call FIND_DAY (JDAY_NOW, YEAR_NOW, ensim_day)
@@ -1686,10 +1367,9 @@ program RUNMESH
                 FRAME_NO_NEW = FRAME_NO_NEW + 1 !UPDATE COUNTERS
             end if
 
-!> =======================================================================
-!>     * CALCULATE GRID CELL AVERAGE DIAGNOSTIC FIELDS.
+            !> CALCULATE GRID CELL AVERAGE DIAGNOSTIC FIELDS.
 
-    !> Grid data for output.
+            !> Grid data for output.
             md_grd%fsdown = cm%clin(cfk%FB)%GRD
             md_grd%fsvh = fsvhgrd
             md_grd%fsih = fsihgrd
@@ -1721,7 +1401,6 @@ program RUNMESH
             wb_grd%DSTG = wb_grd%STG
             wb_grd%STG = 0.0
 
-            !$omp parallel do
             do k = il1, il2
                 if (csfv%FARE(k) > 0.0) then
                     ik = shd%lc%ILMOS(k)
@@ -1755,14 +1434,12 @@ program RUNMESH
                 sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2) - wb_grd%STG
             wb_grd%STG = wb_grd%DSTG + wb_grd%STG
 
-    !> Update output data.
+            !> Update output data.
             call updatefieldsout_temp(shd, ts, ic, ifo, &
                                       md_grd, wb_grd, &
                                       vr)
 
-!> =======================================================================
-!> ACCUMULATE OUTPUT DATA FOR DIURNALLY AVERAGED FIELDS.
-
+            !> ACCUMULATE OUTPUT DATA FOR DIURNALLY AVERAGED FIELDS.
             wb_acc%PRE = wb_acc%PRE + wb_grd%PRE
             eb_acc%QEVP = eb_acc%QEVP + eb_grd%QEVP
             wb_acc%EVAP = wb_acc%EVAP + wb_grd%EVAP
@@ -1783,9 +1460,9 @@ program RUNMESH
 !            wb_acc%WSNO = wb_acc%WSNO + wb_grd%WSNO
 !            wb_acc%PNDW = wb_acc%PNDW + wb_grd%PNDW
 
-!> CALCULATE AND PRINT DAILY AVERAGES.
+            !> CALCULATE AND PRINT DAILY AVERAGES.
             if (ic%ts_daily == 48) then !48 is the last half-hour period of the day
-                      ! when they're numbered 1-48
+                                        !when they're numbered 1-48
 
 !                wb_acc%PRE = wb_acc%PRE
                 eb_acc%QEVP = eb_acc%QEVP/real(ic%ts_daily)
@@ -1815,7 +1492,7 @@ program RUNMESH
                 wb_acc%WSNO = wb_grd%WSNO
                 wb_acc%PNDW = wb_grd%PNDW
 
-    !> Write output CSV files.
+                !> Write output CSV files.
                 if (BASINBALANCEOUTFLAG > 0) then
 
                     wb_out%PRE(1) = wb_out%PRE(1) + sum(wb_acc%PRE)
@@ -1844,7 +1521,7 @@ program RUNMESH
                     wb_out%DSTG(2) = sum(wb_grd%STG) - wb_out%STG(2)
                     wb_out%STG(2) = sum(wb_grd%STG)
 
-        !> Water balance.
+                    !> Water balance.
                     write(fls%fl(mfk%f900)%iun, "(i4,',', i5,',', 999(e14.6,','))") &
                           JDAY_NOW, YEAR_NOW, &
                           wb_out%PRE(1)/wb_out%basin_area, &
@@ -1874,13 +1551,13 @@ program RUNMESH
                           (wb_out%DSTG(2))/wb_out%basin_area, &
                           (wb_out%STG(2) - wb_out%STG(1))/wb_out%basin_area
 
-        !> Energy balance.
+                    !> Energy balance.
                     write(901, "(i4,',', i5,',', 999(e12.5,','))") &
                           JDAY_NOW, YEAR_NOW, &
                           eb_out%HFS(2)/wb_out%basin_area, &
                           eb_out%QEVP(2)/wb_out%basin_area
 
-        ! Monthly totals.
+                    ! Monthly totals.
                     wb_out%PRE(3) = wb_out%PRE(3) + wb_out%PRE(2)
                     wb_out%EVAP(3) = wb_out%EVAP(3) + wb_out%EVAP(2)
                     wb_out%ROF(3) = wb_out%ROF(3) + wb_out%ROF(2)
@@ -1888,7 +1565,7 @@ program RUNMESH
                     wb_out%ROFS(3) = wb_out%ROFS(3) + wb_out%ROFS(2)
                     wb_out%ROFB(3) = wb_out%ROFB(3) + wb_out%ROFB(2)
 
-        ! Write out monthly totals.
+                    !> Write out monthly totals.
                     if (ic%now_day == 1) then
 
                         wb_out%LQWS(3, :) = sum(wb_acc%LQWS, 1)
@@ -1964,24 +1641,11 @@ program RUNMESH
         if (ipid == 0) call run_between_grid(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls, &
                                              WF_R1, WF_R2, M_C)
 
-!> *********************************************************************
-!> Call routing routine
-!> *********************************************************************
-
         if (ipid == 0) then
 
-!-            if (JAN == 1) then
-!>     this is done so that INIT_STORE is not recalculated for
-!>     each iteration when wf_route is not used
-!-                JAN = 2
-!-            end if
-
-!> *********************************************************************
-!> Write output to console.
-!> *********************************************************************
-
+            !> Write output to the console.
             if (ic%ts_daily == 48) then !48 is the last half-hour period of the day
-                      ! when they're numbered 1-48
+                                        !when they're numbered 1-48
 
                 if (ro%VERBOSEMODE > 0) then
                     write(6, '(2i5)', advance = 'no') YEAR_NOW, JDAY_NOW
@@ -1991,7 +1655,7 @@ program RUNMESH
                             write(6, '(f10.3)', advance = 'no') stfl%qsyn(j)
                         end do
                     end if
-!todo: restore this.
+!todo: restore this or replace with basin total.
 !                    j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
                     j = shd%NAA
                     if (printoutwb) write(6, '(3(f10.3))', advance = 'no') wb_acc%pre(j), wb_acc%evap(j), wb_acc%rof(j)
@@ -2009,15 +1673,7 @@ program RUNMESH
 
 5176    format(2i5, 999(f10.3))
 
-! *********************************************************************
-! Update time counters and return to beginning of main loop
-! *********************************************************************
-!-        NCOUNT = NCOUNT + 1 !todo: does this work with hourly forcing data?
-!-        if (NCOUNT > 48) then !48 is the last half-hour period of the day
-!-                      ! when they're numbered 1-48
-!-            NCOUNT = 1
-!-        end if
-
+        !> Update time counters and return to beginning of main loop
         MINS_NOW = MINS_NOW + TIME_STEP_MINS ! increment the current time by 30 minutes
         if (MINS_NOW == 60) then
             MINS_NOW = 0
@@ -2047,7 +1703,7 @@ program RUNMESH
             end if
         end if
 
-!> check if we should terminate the run yet
+        !> Check if we should terminate the run yet.
         if (YEAR_NOW >= YEAR_STOP .and. YEAR_STOP > 0) then
             if (YEAR_NOW > YEAR_STOP) then
                 ENDDATE = .true.
@@ -2066,11 +1722,10 @@ program RUNMESH
         TIME_STEP_NOW = TIME_STEP_NOW + TIME_STEP_MINS
         if (TIME_STEP_NOW == HOURLYFLAG) TIME_STEP_NOW = 0
 
+        !> Update the current time-step and counter.
         call update_now_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW)
 
-    !> *********************************************************************
-    !> Read in meteorological forcing data
-    !> *********************************************************************
+        !> Read in meteorological forcing data for next time-step.
         call climate_module_loaddata(shd, .false., cm, NML, il1, il2, ENDDATA)
 
     end do !while (.not. ENDDATE .and. .not. ENDDATA)
@@ -2100,10 +1755,7 @@ program RUNMESH
 !                TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
 !                DriftROW, SublROW, DepositionROW, &
 !                DriftGAT, SublGAT, DepositionGAT)
-!>
-!>   * SCATTER OPERATION ON DIAGNOSTIC VARIABLES SPLIT OUT OF
-!>   * CLASSS FOR CONSISTENCY WITH GCM APPLICATIONS.
-!>
+
 !    do 380 k = il1, il2
 !        ik = shd%lc%ILMOS(k)
 !        jk = shd%lc%JLMOS(k)
@@ -2170,7 +1822,7 @@ program RUNMESH
 !        UEROW(ik, jk) = cdv%UE(k)
 !        HBLROW(ik, jk) = cdv%HBL(k)
 !380     continue
-!>
+
 !    do 390 l = 1, IGND
 !        do 390 k = il1, il2
 !            ik = shd%lc%ILMOS(k)
@@ -2179,7 +1831,7 @@ program RUNMESH
 !            HTCROW(ik, jk, l) = cdv%HTC(k, l)
 !            QFCROW(ik, jk, l) = cdv%QFC(k, l)
 !390     continue
-!>
+
 !    do 430 m = 1, 50
 !        do 420 l = 1, 6
 !            do 410 k = il1, il2
@@ -2188,19 +1840,15 @@ program RUNMESH
 !420     continue
 !430     continue
 
-!> *********************************************************************
-!> Run is now over, print final results to the screen and close files
-!> *********************************************************************
+    !> *********************************************************************
+    !> SAVERESUMEFLAG
+    !> *********************************************************************
 
-!> *********************************************************************
-!> Save the state of the basin in r2c file format
-!> *********************************************************************
-
-!> Write the resume file
+    !> Write the resume file
 !+    if (SAVERESUMEFLAG == 2) then !todo: done: use a flag
 !+        print *, 'Saving state variables in r2c file format'
 
-! Allocate arrays for save_state_r2c
+    !> Allocate arrays for save_state_r2c
 !+        open(55, file = 'save_state_r2c.txt', action = 'read')
 !+        read(55, *, iostat = ierr) NR2C_S, DELTR2C_S
 !+        if (ierr == 0) then
@@ -2255,14 +1903,14 @@ program RUNMESH
 !+                            shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
 !+    end if !(SAVERESUMEFLAG == 2) then
 
-!> *********************************************************************
-!> Call save_init_prog_variables_class.f90 to save initi prognostic variables by
-!> by fields needd by classas as initial conditions
-!> *********************************************************************
-
+    !> *********************************************************************
+    !> Call save_init_prog_variables_class.f90 to save initi prognostic variables by
+    !> by fields needd by classas as initial conditions
+    !> *********************************************************************
 !> bjd - July 14, 2014: Gonzalo Sapriza
 !+    if (SAVERESUMEFLAG == 3) then
-!> Save the last time step
+
+          !> Save the last time step
 !+        call save_init_prog_variables_class(CMAIROW, QACROW, TACROW, &
 !+                                            TBASROW, TSFSROW, WSNOROW, &
 !+                                            cp%ALBSROW, cp%GROROW, cp%RCANROW, &
@@ -2276,10 +1924,14 @@ program RUNMESH
 
     if (OUTFIELDSFLAG == 1) call write_outputs(shd, fls, ts, ic, ifo, vr)
 
+    !> *********************************************************************
+    !> Run is now over, print final results to the screen and close files
+    !> *********************************************************************
+
     if (ENDDATA) print *, 'Reached end of forcing data'
     if (ENDDATE) print *, 'Reached end of simulation date'
 
-!> Calculate final storage
+    !> Calculate final storage
     wb_out%DSTG(1) = 0.0
     do k = il1, il2
         if (csfv%FARE(k) > 0.0) then
@@ -2346,14 +1998,6 @@ program RUNMESH
     if (mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write()
 
 999 continue
-
-    !> Close model output file.
-    close(58)
-
-    !> Close the CSV energy and water balance output files.
-    close(fls%fl(mfk%f900)%iun)
-    close(901)
-    close(902)
 
 9000    format(/1x, 'INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY AND IS SET TO 0 BY THE MODEL.', &
                /1x, '0: NO INTERPOLATION OF FORCING DATA.', &

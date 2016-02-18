@@ -1,36 +1,32 @@
       subroutine READ_SOIL_LEVELS(shd, fls)
 
-!      USE MESH_INPUT_MODULE
       use sa_mesh_shared_variabletypes
       use sa_mesh_shared_variables
       use model_files_variabletypes
       use model_files_variables
-!      USE  FLAGS
-!      USE model_files
 
       implicit none
 
-!> passed in variables
-!INTEGER IGND
-      integer :: IGND = 0
-      real DELZ_TEST, ZBOT_TEST
-!      TYPE(SoilLevels) :: sl
+      !> Input variables.
       type(ShedGridParams) :: shd
-!> local variables
-!      real deep
-      integer ierr, iun, i
-
-!> file handled
       type(fl_ids) :: fls
+
+      !> Local variables.
+      integer :: IGND = 0, ierr, iun, i
+      real DELZ_TEST, ZBOT_TEST
 
       !> Determine the value of IGND from MESH_input_soil_levels.txt
       shd%lc%IGND = 0
 
       !> Open soil levels file and check for IOSTAT errors.
       iun = fls%fl(mfk%f52)%iun
-      open(iun, file = trim(adjustl(fls%fl(mfk%f52)%fn)),
-     +     status = 'old', action = 'read',
-     +     iostat = ierr)
+      open(iun,
+     &     file = trim(adjustl(fls%fl(mfk%f52)%fn)),
+     &     status = 'old',
+     &     action = 'read',
+     &     iostat = ierr)
+
+      !> Check if there was an error opening the file.
       if (ierr /= 0) then
         print 1002
         stop

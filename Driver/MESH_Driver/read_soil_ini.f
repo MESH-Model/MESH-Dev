@@ -1,8 +1,9 @@
       subroutine READ_SOIL_INI(shd, fls)
 
       use sa_mesh_shared_variabletypes
+      use sa_mesh_shared_variables
       use model_files_variabletypes
-      use model_files_variables, only: mfk
+      use model_files_variables
       use process_CLASS_variables
 
 !todo: remove this
@@ -48,9 +49,10 @@
 		stop
       end if
 
-      print *, 'The soil.ini file was found'
-      print *, 'CLASSBHYD.f will be used'
-      print *, '-----------------------------------'
+      if (ro%VERBOSEMODE > 0) then
+        print *, 'The soil.ini file was found'
+        print *, 'CLASSBHYD.f will be used'
+      end if
 
       NA = shd%NA
       NTYPE = shd%lc%NTYPE

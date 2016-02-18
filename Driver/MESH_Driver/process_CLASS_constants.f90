@@ -2,27 +2,25 @@ module process_CLASS_constants
 
     implicit none
 
-!>  INTEGER CONSTANTS.
-!* ICAN: MAXIMUM ALLOWABLE NUMBER OF LAND COVER TYPES
-!* ICP1: MAXIMUM ALLOWABLE NUMBER OF LAND COVER TYPES INCLUDING
-!*       URBAN AREAS
-!INTEGER,PARAMETER :: ICAN=4, IGND=6, ICP1=ICAN+1
-    integer, parameter :: ICAN = 4, ICP1 = ICAN + 1, ICTEM = 1 !Number of CTEM vegetation categories (set to 1 if not using CTEM)
+    !> Constants.
+    !* ICAN: Number of vegetation canopy types.
+    !* ICP1: Number of vegetation canopy types including urban area.
+    !* ICTEM: Number of CTEM vegetation categories (1: not using CTEM).
+    integer, parameter :: ICAN = 4, ICP1 = ICAN + 1, ICTEM = 1
 
-!> CLASS CONTROL FLAGS:
-!* ALL: DESCRIPTIONS ARE WRITTEN WHERE RUN_OPTIONS.INI IS READ
+    !> Control flags.
+    !* ALL: DESCRIPTIONS ARE WRITTEN WHERE RUN_OPTIONS.INI IS READ
     integer IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
         IALS, IALG, ITG, ITC, ITCG
     integer ICTEMMOD
 
-!* TITLE: PROJECT DESCRIPTOR (6 COLUMNS: 4 CHARACTER STRINGS)
-!* NAME: AUTHOR, RESEARCHER (6 COLUMNS: 4 CHARACTER STRINGS)
-!* PLACE: SITE LOCATION, BASIN (6 COLUMNS: 4 CHARACTER STRINGS)
-!    character(4) TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, &
-!        TITLE6, NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
-!        PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
+    !> Flags for WATROF.
+    !* VICEFLG: Vertical ice flag or limit.
+    !* HICEFLG: Horizontal ice flag or limit.
+    integer :: LZFFLG = 0, EXTFLG = 0, IWFICE = 3, ERRFLG = 1, IWFOFLW
+    real :: VICEFLG = 3.0, PSI_LIMIT = 1.0, HICEFLG = 1.0
 
-!> COMMON BLOCK PARAMETERS (CLASS):
+    !> Common parameters.
     integer K1, K2, K3, K4, K5, K6, K7, K8, K9, K10, K11
     real X1, X2, X3, X4, G, GAS, X5, X6, CPRES, GASV, X7, CPI, X8, &
         CELZRO, X9, X10, X11, X12, X13, X14, X15, SIGMA, X16, DELTIM, &
@@ -37,21 +35,13 @@ module process_CLASS_constants
         GRKSORG
     real, dimension(18, 4, 2) :: GROWYR
 
-!> WATROF FLAGS AND VARIABLES:
-!* VICEFLG: VERTICAL ICE FLAG OR LIMIT
-!* HICEFLG: HORIZONTAL ICE FLAG OR LIMIT
-    integer LZFFLG, EXTFLG, IWFICE, ERRFLG, IWFOFLW
-    real VICEFLG, PSI_LIMIT, HICEFLG
-
+    !> Common CLASS blocks defined and set in CLASSBD and CLASSD.
     common /PARAMS/ X1, X2, X3, X4, G, GAS, X5, X6, CPRES, &
         GASV, X7
     common /PARAM1/ CPI, X8, CELZRO, X9, X10, X11
     common /PARAM3/ X12, X13, X14, X15, SIGMA, X16
     common /TIMES/ DELTIM, K1, K2, K3, K4, K5, K6, K7, K8, K9, &
         K10, K11
-
-!> THE FOLLOWING COMMON BLOCKS ARE DEFINED SPECIFICALLY FOR USE
-!> IN CLASS, VIA BLOCK DATA AND THE SUBROUTINE "CLASSD".
     common /CLASS1/ DELT, TFREZ
     common /CLASS2/ RGAS, RGASV, GRAV, SBC, VKC, CT, VMIN
     common /CLASS3/ TCW, TCICE, TCSAND, TCCLAY, TCOM, TCDRYS, &
@@ -67,9 +57,5 @@ module process_CLASS_constants
     common /CLASS8/ ALVSI, ALIRI, ALVSO, ALIRO, ALBRCK
     common /PHYCON/ DELTA, CGRAV, CKARM, CPD
     common /CLASSD2/ AS, ASX, CI, BS, BETA, FACTN, HMIN, ANGMAX
-
-!> THE FOLLOWING COMMON BLOCKS ARE DEFINED FOR WATROF
-    data VICEFLG/3.0/, PSI_LIMIT/1.0/, HICEFLG/1.0/, LZFFLG/0/, &
-        EXTFLG/0/, IWFICE/3/, ERRFLG/1/
 
 end module

@@ -186,8 +186,8 @@ module process_CLASS
                         il1, il2, NML, IGND, ic%ts_count, &
                         DriftGAT, SublGAT)
 
-!> ALBEDO AND TRANSMISSIVITY CALCULATIONS; GENERAL VEGETATION
-!> CHARACTERISTICS.
+            !> ALBEDO AND TRANSMISSIVITY CALCULATIONS; GENERAL VEGETATION
+            !> CHARACTERISTICS.
             call CLASSA(cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, ALVSCN, ALIRCN, &
                         ALVSG, ALIRG, ALVSCS, ALIRCS, ALVSSN, ALIRSN, &
                         ALVSGC, ALIRGC, ALVSSC, ALIRSC, TRVSCN, TRIRCN, &
@@ -219,7 +219,7 @@ module process_CLASS
                         JLAT, ic%ts_count, ICAN, ICAN + 1, IGND, IDISP, IZREF, &
                         IWF, IPAI, IHGT, IALC, IALS, IALG)
 
-!          * SURFACE TEMPERATURE AND FLUX CALCULATIONS.
+            !> SURFACE TEMPERATURE AND FLUX CALCULATIONS.
             call CLASST(TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
                         THICEC, THICEG, HCPC, HCPG, TCTOPC, TCBOTC, TCTOPG, TCBOTG, &
                         GZEROC, GZEROG, GZROCS, GZROGS, G12C, G12G, G12CS, G12GS, &
@@ -251,7 +251,6 @@ module process_CLASS
                         ITC, ITCG, ITG, NML, il1, il2, JLAT, ic%ts_count, ICAN, &
                         IGND, IZREF, ISLFD, NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI)
 
-!          * WATER BUDGET CALCULATIONS.
             if (ic%now_jday == 1 .and. ic%ts_daily == 48) then
        ! bruce davison - only increase NMELT if we don't start the run on January 1st, otherwise t0_ACC allocation is too large
        ! and the model crashes if the compiler is checking for array bounds when t0_ACC is passed into CLASSW with size NMELT
@@ -265,6 +264,7 @@ module process_CLASS
                 INFILTYPE = 2
             end if
 
+            !> WATER BUDGET CALCULATIONS.
             call CLASSW(cpv%THLQ, cpv%THIC, cpv%TBAR, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
                         cdv%ROF, cdv%TROF, cpv%SNO, cpv%TSNO, cpv%RHOS, cpv%ALBS, &
                         cpv%WSNO, cpv%ZPND, cpv%TPND, cpv%GRO, FRZCGAT, cpv%TBAS, cdv%GFLX, &
@@ -311,7 +311,7 @@ module process_CLASS
                         TSNOWC, TSNOWG, RHOSC, RHOSG, &
                         XSNOWC, XSNOWG, XSNOCS, XSNOGS)
 
-!          * SINGLE COLUMN BLOWING SNOW CALCULATIONS.
+            !> SINGLE COLUMN BLOWING SNOW CALCULATIONS.
             if (PBSMFLAG == 1) then
                 call PBSMrun(ZSNOW, cpv%WSNO, cpv%SNO, cpv%RHOS, cpv%TSNO, cdv%HTCS, &
                              ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
@@ -342,7 +342,7 @@ module process_CLASS
                         il1, il2, NML, IGND, ic%ts_count, &
                         DriftGAT, SublGAT)
 
-!          *Redistribute blowing snow mass between GRUs
+            !> Redistribute blowing snow mass between GRUs.
             call REDISTRIB_SNOW(NML, 1, NA, NTYPE, NML, cpv%TSNO, ZSNOW, &
                                 cpv%RHOS, cpv%SNO, TSNOCS, ZSNOCS, HCPSCS, RHOSCS, TSNOGS, &
                                 ZSNOGS, HCPSGS, RHOSGS, TSNOWC, ZSNOWC, HCPSC, RHOSC, TSNOWG, &
