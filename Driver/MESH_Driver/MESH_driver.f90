@@ -145,6 +145,7 @@ program RUNMESH
     !* IGND: Temporary store for the number of soil layers.
     !* iun: Temporary store for the unit number of a file.
     integer NA, NTYPE, NML, IGND, iun, ik, jk
+    real FRAC
 
     !+ For split-vector approach
     integer ii1, ii2, iilen
@@ -222,11 +223,14 @@ program RUNMESH
     type(INFO_OUT) :: ifo
     type(CLIM_INFO) :: cm
     type(met_data) :: md_grd
-    type(water_balance) :: wb_grd, wb_acc, wb_out
-    type(energy_balance) :: eb_grd, eb_acc, eb_out
+    type(water_balance) :: wb_grd, wb_acc
+    type(energy_balance) :: eb_grd, eb_acc
     type(soil_statevars) :: spv_grd, spv_acc
     type(streamflow_hydrograph) :: stfl
     type(reservoir_release) :: rrls
+
+    !> Basin totals for the run.
+    real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
 
     logical R2COUTPUT
     integer, parameter :: R2CFILEUNITSTART = 500
@@ -235,9 +239,9 @@ program RUNMESH
     character(50), allocatable, dimension(:, :) :: R2C_ATTRIBUTES, R2C_ATTRIBUTES_R, R2C_ATTRIBUTES_S
 
     !> To use with variable format expressions in writing some output files
-    character(20) IGND_CHAR
-    character(2000) FMT
-    character(500) WRT_900_1, WRT_900_2, WRT_900_3, WRT_900_4, WRT_900_f
+!-    character(20) IGND_CHAR
+!-    character(2000) FMT
+!-    character(500) WRT_900_1, WRT_900_2, WRT_900_3, WRT_900_4, WRT_900_f
     character(500) fl_listMesh
 
     real startprog, endprog
@@ -369,12 +373,20 @@ program RUNMESH
         !* 2: Daily average.
         !* 3: Monthly average.
         !* 4: Hourly average.
-        allocate(wb_out%PRE(1:5), wb_out%EVAP(1:5), wb_out%ROF(1:5), wb_out%ROFO(1:5), wb_out%ROFS(1:5), wb_out%ROFB(1:5), &
-                 wb_out%STG(1:5), wb_out%DSTG(1:5), &
-                 wb_out%RCAN(2:4), wb_out%SNCAN(2:4), wb_out%SNO(2:4), wb_out%WSNO(2:4), wb_out%PNDW(2:4), &
-                 wb_out%LQWS(2:4, IGND), wb_out%FRWS(2:4, IGND))
-        wb_out%basin_area = wb_grd%basin_area
-        allocate(eb_out%HFS(2:2), eb_out%QEVP(2:2), eb_out%GFLX(2:2, IGND))
+!-        allocate(wb_out%PRE(1:5), wb_out%EVAP(1:5), wb_out%ROF(1:5), wb_out%ROFO(1:5), wb_out%ROFS(1:5), wb_out%ROFB(1:5), &
+!-                 wb_out%STG(1:5), wb_out%DSTG(1:5), &
+!-                 wb_out%RCAN(2:4), wb_out%SNCAN(2:4), wb_out%SNO(2:4), wb_out%WSNO(2:4), wb_out%PNDW(2:4), &
+!-                 wb_out%LQWS(2:4, IGND), wb_out%FRWS(2:4, IGND))
+!-        wb_out%basin_area = wb_grd%basin_area
+!-        allocate(eb_out%HFS(2:2), eb_out%QEVP(2:2), eb_out%GFLX(2:2, IGND))
+
+        !> Basin totals for the run.
+        TOTAL_PRE = 0.0
+        TOTAL_EVAP = 0.0
+        TOTAL_ROF = 0.0
+        TOTAL_ROFO = 0.0
+        TOTAL_ROFS = 0.0
+        TOTAL_ROFB = 0.0
 
     end if !(ipid == 0) then
 
@@ -1015,76 +1027,76 @@ program RUNMESH
     if (ipid == 0) then
 
         !> Open CSV output files.
-        if (BASINBALANCEOUTFLAG > 0) then
+!-        if (BASINBALANCEOUTFLAG > 0) then
 
             !> Water balance.
-            open(fls%fl(mfk%f900)%iun, &
-                 file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
-                 iostat = ierr)
+!-            open(fls%fl(mfk%f900)%iun, &
+!-                 file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
+!-                 iostat = ierr)
 !todo: Create this only by flag.
-            open(902, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Monthly.csv')
-            open(903, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Hourly.csv')
+!-            open(902, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Monthly.csv')
+!-            open(903, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Hourly.csv')
 
-            wrt_900_1 = 'DAY,YEAR,PREACC' // ',EVAPACC,ROFACC,ROFOACC,' // &
-                'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNCAN,RCAN,SNO,WSNO,PNDW,'
+!-            wrt_900_1 = 'DAY,YEAR,PREACC' // ',EVAPACC,ROFACC,ROFOACC,' // &
+!-                'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNCAN,RCAN,SNO,WSNO,PNDW,'
 
-            wrt_900_2 = 'LQWS'
-            wrt_900_3 = 'FRWS'
-            wrt_900_4 = 'ALWS'
+!-            wrt_900_2 = 'LQWS'
+!-            wrt_900_3 = 'FRWS'
+!-            wrt_900_4 = 'ALWS'
 
-            do i = 1, IGND
-                write(IGND_CHAR, '(i1)') i
-                if (i < IGND) then
-                    wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(IGND_CHAR)) // ',LQWS'
-                    wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(IGND_CHAR)) // ',FRWS'
-                    wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(IGND_CHAR)) // ',ALWS'
-                else
-                    wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(IGND_CHAR)) // ','
-                    wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(IGND_CHAR)) // ','
-                    wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(IGND_CHAR)) // ','
-                end if
-            end do !> i = 1, IGND
+!-            do i = 1, IGND
+!-                write(IGND_CHAR, '(i1)') i
+!-                if (i < IGND) then
+!-                    wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(IGND_CHAR)) // ',LQWS'
+!-                    wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(IGND_CHAR)) // ',FRWS'
+!-                    wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(IGND_CHAR)) // ',ALWS'
+!-                else
+!-                    wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(IGND_CHAR)) // ','
+!-                    wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(IGND_CHAR)) // ','
+!-                    wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(IGND_CHAR)) // ','
+!-                end if
+!-            end do !> i = 1, IGND
 
-            wrt_900_f = trim(adjustl(wrt_900_1)) // &
-                trim(adjustl(wrt_900_2)) // &
-                trim(adjustl(wrt_900_3)) // &
-                trim(adjustl(wrt_900_4)) // &
-                'LQWS,FRWS,ALWS,STG,DSTG,DSTGACC'
+!-            wrt_900_f = trim(adjustl(wrt_900_1)) // &
+!-                trim(adjustl(wrt_900_2)) // &
+!-                trim(adjustl(wrt_900_3)) // &
+!-                trim(adjustl(wrt_900_4)) // &
+!-                'LQWS,FRWS,ALWS,STG,DSTG,DSTGACC'
 
-            write(fls%fl(mfk%f900)%iun, '(a)') trim(adjustl(wrt_900_f))
-            write(902, '(a)') trim(adjustl(wrt_900_f))
-            write(903, '(a)') 'DAY,YEAR,HOUR,PREACC' // ',EVAPACC,ROFACC,ROFOACC,' // &
-                'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,' // &
-                trim(adjustl(wrt_900_2)) // &
-                trim(adjustl(wrt_900_3)) // &
-                trim(adjustl(wrt_900_4)) // &
-                'THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE,DSTOR_ACC'
+!-            write(fls%fl(mfk%f900)%iun, '(a)') trim(adjustl(wrt_900_f))
+!-            write(902, '(a)') trim(adjustl(wrt_900_f))
+!-            write(903, '(a)') 'DAY,YEAR,HOUR,PREACC' // ',EVAPACC,ROFACC,ROFOACC,' // &
+!-                'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,' // &
+!-                trim(adjustl(wrt_900_2)) // &
+!-                trim(adjustl(wrt_900_3)) // &
+!-                trim(adjustl(wrt_900_4)) // &
+!-                'THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE,DSTOR_ACC'
 
             !> Energy balance.
-            open(901, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance.csv')
+!-            open(901, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance.csv')
 
-            write(901, '(a)') 'DAY,YEAR,HFS,QEVP'
+!-            write(901, '(a)') 'DAY,YEAR,HFS,QEVP'
 
             !> Variables for basin totals.
-            wb_out%PRE = 0.0
-            eb_out%QEVP = 0.0
-            wb_out%EVAP = 0.0
-            eb_out%HFS = 0.0
-            wb_out%ROF = 0.0
-            wb_out%ROFO = 0.0
-            wb_out%ROFS = 0.0
-            wb_out%ROFB = 0.0
-            wb_out%LQWS = 0.0
-            wb_out%FRWS = 0.0
-            wb_out%RCAN = 0.0
-            wb_out%SNCAN = 0.0
-            wb_out%SNO = 0.0
-            wb_out%WSNO = 0.0
-            wb_out%PNDW = 0.0
-            wb_out%STG = 0.0
-            wb_out%DSTG = 0.0
+!-            wb_out%PRE = 0.0
+!-            eb_out%QEVP = 0.0
+!-            wb_out%EVAP = 0.0
+!-            eb_out%HFS = 0.0
+!-            wb_out%ROF = 0.0
+!-            wb_out%ROFO = 0.0
+!-            wb_out%ROFS = 0.0
+!-            wb_out%ROFB = 0.0
+!-            wb_out%LQWS = 0.0
+!-            wb_out%FRWS = 0.0
+!-            wb_out%RCAN = 0.0
+!-            wb_out%SNCAN = 0.0
+!-            wb_out%SNO = 0.0
+!-            wb_out%WSNO = 0.0
+!-            wb_out%PNDW = 0.0
+!-            wb_out%STG = 0.0
+!-            wb_out%DSTG = 0.0
 
-        end if !(BASINBALANCEOUTFLAG > 0) then
+!-        end if !(BASINBALANCEOUTFLAG > 0) then
 
         !> Initialize accumulation variables.
         wb_acc%PRE = 0.0
@@ -1119,24 +1131,25 @@ program RUNMESH
 
         !> For grid output.
         do k = il1, il2
-            if (csfv%FARE(k) >= 0.0) then
-                ik = shd%lc%ILMOS(k)
-                wb_grd%stg(ik) = wb_grd%stg(ik) + (cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%ZPND(k)*RHOW)*csfv%FARE(k)
-                if (cpv%SNO(k) > 0.0) wb_grd%stg(ik) = wb_grd%stg(ik) + cpv%WSNO(k)
+            ik = shd%lc%ILMOS(k)
+            FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
+            if (FRAC > 0.0) then
+                wb_grd%stg(ik) = wb_grd%stg(ik) + (cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%ZPND(k)*RHOW)*FRAC
+                if (cpv%SNO(k) > 0.0) wb_grd%stg(ik) = wb_grd%stg(ik) + cpv%WSNO(k)*FRAC
                 do j = 1, IGND
-                    wb_grd%stg(ik) = wb_grd%stg(ik) + (cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*csfv%DELZW(k, j)*csfv%FARE(k)
+                    wb_grd%stg(ik) = wb_grd%stg(ik) + (cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*csfv%DELZW(k, j)*FRAC
                 end do
             end if
         end do
 
-        !> For basin accumulated totals.
-        wb_out%STG(1) = sum(wb_grd%stg)
+        !> For basin output of the accumulated water balance.
+        STG_INI = sum(wb_grd%stg)/wb_grd%basin_area
 
-        !> For daily basin totals.
-        wb_out%STG(2) = sum(wb_grd%stg)
+!-        !> For daily basin totals.
+!-        wb_out%STG(2) = sum(wb_grd%stg)
 
-        !> For monthly basin totals.
-        wb_out%STG(3) = sum(wb_grd%stg)
+!-        !> For monthly basin totals.
+!-        wb_out%STG(3) = sum(wb_grd%stg)
 
     end if !(ipid == 0) then
 
@@ -1410,31 +1423,32 @@ program RUNMESH
             wb_grd%STG = 0.0
 
             do k = il1, il2
-                if (csfv%FARE(k) > 0.0) then
-                    ik = shd%lc%ILMOS(k)
-                    wb_grd%PRE(ik) = wb_grd%PRE(ik) + cfi%PRE(k)*csfv%FARE(k)*ic%dts
-                    eb_grd%QEVP(ik) = eb_grd%QEVP(ik) + cdv%QEVP(k)*csfv%FARE(k)
-                    wb_grd%EVAP(ik) = wb_grd%EVAP(ik) + cdv%QFS(k)*csfv%FARE(k)*ic%dts
-                    eb_grd%HFS(ik)  = eb_grd%HFS(ik) + cdv%HFS(k)*csfv%FARE(k)
-                    wb_grd%ROF(ik) = wb_grd%ROF(ik) + cdv%ROF(k)*csfv%FARE(k)*ic%dts
-                    wb_grd%ROFO(ik) = wb_grd%ROFO(ik) + cdv%ROFO(k)*csfv%FARE(k)*ic%dts
-                    wb_grd%ROFS(ik) = wb_grd%ROFS(ik) + cdv%ROFS(k)*csfv%FARE(k)*ic%dts
-                    wb_grd%ROFB(ik) = wb_grd%ROFB(ik) + cdv%ROFB(k)*csfv%FARE(k)*ic%dts
+                ik = shd%lc%ILMOS(k)
+                FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
+                if (FRAC > 0.0) then
+                    wb_grd%PRE(ik) = wb_grd%PRE(ik) + cfi%PRE(k)*FRAC*ic%dts
+                    eb_grd%QEVP(ik) = eb_grd%QEVP(ik) + cdv%QEVP(k)*FRAC
+                    wb_grd%EVAP(ik) = wb_grd%EVAP(ik) + cdv%QFS(k)*FRAC*ic%dts
+                    eb_grd%HFS(ik)  = eb_grd%HFS(ik) + cdv%HFS(k)*FRAC
+                    wb_grd%ROF(ik) = wb_grd%ROF(ik) + cdv%ROF(k)*FRAC*ic%dts
+                    wb_grd%ROFO(ik) = wb_grd%ROFO(ik) + cdv%ROFO(k)*FRAC*ic%dts
+                    wb_grd%ROFS(ik) = wb_grd%ROFS(ik) + cdv%ROFS(k)*FRAC*ic%dts
+                    wb_grd%ROFB(ik) = wb_grd%ROFB(ik) + cdv%ROFB(k)*FRAC*ic%dts
                     do j = 1, IGND
                         spv_grd%TBAR(ik, j) = spv_grd%TBAR(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
-                        spv_grd%THLQ(ik, j) = spv_grd%THLQ(ik, j) + cpv%THLQ(k, j)*csfv%FARE(k)
-                        wb_grd%LQWS(ik, j) = wb_grd%LQWS(ik, j) + cpv%THLQ(k, j)*csfv%DELZW(k, j)*csfv%FARE(k)*RHOW
-                        spv_grd%THIC(ik, j) = spv_grd%THIC(ik, j) + cpv%THIC(k, j)*csfv%FARE(k)
-                        wb_grd%FRWS(ik, j) = wb_grd%FRWS(ik, j) + cpv%THIC(k, j)*csfv%DELZW(k, j)*csfv%FARE(k)*RHOICE
-                        eb_grd%GFLX(ik, j) = eb_grd%GFLX(ik, j) + cdv%GFLX(k, j)*csfv%FARE(k)
+                        spv_grd%THLQ(ik, j) = spv_grd%THLQ(ik, j) + cpv%THLQ(k, j)*FRAC
+                        wb_grd%LQWS(ik, j) = wb_grd%LQWS(ik, j) + cpv%THLQ(k, j)*csfv%DELZW(k, j)*FRAC*RHOW
+                        spv_grd%THIC(ik, j) = spv_grd%THIC(ik, j) + cpv%THIC(k, j)*FRAC
+                        wb_grd%FRWS(ik, j) = wb_grd%FRWS(ik, j) + cpv%THIC(k, j)*csfv%DELZW(k, j)*FRAC*RHOICE
+                        eb_grd%GFLX(ik, j) = eb_grd%GFLX(ik, j) + cdv%GFLX(k, j)*FRAC
                     end do
-                    wb_grd%RCAN(ik) = wb_grd%RCAN(ik) + cpv%RCAN(k)*csfv%FARE(k)
-                    wb_grd%SNCAN(ik) = wb_grd%SNCAN(ik) + cpv%SNCAN(k)*csfv%FARE(k)
-                    wb_grd%SNO(ik) = wb_grd%SNO(ik) + cpv%SNO(k)*csfv%FARE(k)
+                    wb_grd%RCAN(ik) = wb_grd%RCAN(ik) + cpv%RCAN(k)*FRAC
+                    wb_grd%SNCAN(ik) = wb_grd%SNCAN(ik) + cpv%SNCAN(k)*FRAC
+                    wb_grd%SNO(ik) = wb_grd%SNO(ik) + cpv%SNO(k)*FRAC
                     if (cpv%SNO(k) > 0.0) then
-                        wb_grd%WSNO(ik) = wb_grd%WSNO(ik) + cpv%WSNO(k)*csfv%FARE(k)
+                        wb_grd%WSNO(ik) = wb_grd%WSNO(ik) + cpv%WSNO(k)*FRAC
                     end if
-                    wb_grd%PNDW(ik) = wb_grd%PNDW(ik) + cpv%ZPND(k)*csfv%FARE(k)*RHOW
+                    wb_grd%PNDW(ik) = wb_grd%PNDW(ik) + cpv%ZPND(k)*FRAC*RHOW
                 end if
             end do !k = il1, il2
 
@@ -1447,6 +1461,14 @@ program RUNMESH
                                       md_grd, wb_grd, &
                                       vr)
 
+            !> Basin totals for the run.
+            TOTAL_PRE = TOTAL_PRE + sum(wb_grd%PRE)
+            TOTAL_EVAP = TOTAL_EVAP + sum(wb_grd%EVAP)
+            TOTAL_ROF = TOTAL_ROF + sum(wb_grd%ROF)
+            TOTAL_ROFO = TOTAL_ROFO + sum(wb_grd%ROFO)
+            TOTAL_ROFS = TOTAL_ROFS + sum(wb_grd%ROFS)
+            TOTAL_ROFB = TOTAL_ROFB + sum(wb_grd%ROFB)
+
             !> ACCUMULATE OUTPUT DATA FOR DIURNALLY AVERAGED FIELDS.
             wb_acc%PRE = wb_acc%PRE + wb_grd%PRE
             eb_acc%QEVP = eb_acc%QEVP + eb_grd%QEVP
@@ -1458,15 +1480,15 @@ program RUNMESH
             wb_acc%ROFB = wb_acc%ROFB + wb_grd%ROFB
             spv_acc%TBAR = spv_acc%TBAR + spv_grd%TBAR
             spv_acc%THLQ = spv_acc%THLQ + spv_grd%THLQ
-!            wb_acc%LQWS = wb_acc%LQWS + wb_grd%LQWS
+            wb_acc%LQWS = wb_acc%LQWS + wb_grd%LQWS
             spv_acc%THIC = spv_acc%THIC + spv_grd%THIC
-!            wb_acc%FRWS = wb_acc%FRWS + wb_grd%FRWS
+            wb_acc%FRWS = wb_acc%FRWS + wb_grd%FRWS
             eb_acc%GFLX = eb_acc%GFLX + eb_grd%GFLX
-!            wb_acc%RCAN = wb_acc%RCAN + wb_grd%RCAN
-!            wb_acc%SNCAN = wb_acc%SNCAN + wb_grd%SNCAN
-!            wb_acc%SNO = wb_acc%SNO + wb_grd%SNO
-!            wb_acc%WSNO = wb_acc%WSNO + wb_grd%WSNO
-!            wb_acc%PNDW = wb_acc%PNDW + wb_grd%PNDW
+            wb_acc%RCAN = wb_acc%RCAN + wb_grd%RCAN
+            wb_acc%SNCAN = wb_acc%SNCAN + wb_grd%SNCAN
+            wb_acc%SNO = wb_acc%SNO + wb_grd%SNO
+            wb_acc%WSNO = wb_acc%WSNO + wb_grd%WSNO
+            wb_acc%PNDW = wb_acc%PNDW + wb_grd%PNDW
 
             !> CALCULATE AND PRINT DAILY AVERAGES.
             if (ic%ts_daily == 48) then !48 is the last half-hour period of the day
@@ -1482,150 +1504,142 @@ program RUNMESH
 !                wb_acc%ROFB = wb_acc%ROFB
                 spv_acc%TBAR = spv_acc%TBAR/real(ic%ts_daily)
                 spv_acc%THLQ = spv_acc%THLQ/real(ic%ts_daily)
-!                wb_acc%LQWS = wb_acc%LQWS/real(ic%ts_daily)
+                wb_acc%LQWS = wb_acc%LQWS/real(ic%ts_daily)
                 spv_acc%THIC = spv_acc%THIC/real(ic%ts_daily)
-!                wb_acc%FRWS = wb_acc%FRWS/real(ic%ts_daily)
+                wb_acc%FRWS = wb_acc%FRWS/real(ic%ts_daily)
                 eb_acc%GFLX = eb_acc%GFLX/real(ic%ts_daily)
-!                wb_acc%RCAN = wb_acc%RCAN/real(ic%ts_daily)
-!                wb_acc%SNCAN = wb_acc%SNCAN/real(ic%ts_daily)
-!                wb_acc%SNO = wb_acc%SNO/real(ic%ts_daily)
-!                wb_acc%WSNO = wb_acc%WSNO/real(ic%ts_daily)
-!                wb_acc%PNDW = wb_acc%PNDW/real(ic%ts_daily)
-
-                wb_acc%LQWS = wb_grd%LQWS
-                wb_acc%FRWS = wb_grd%FRWS
-                wb_acc%RCAN = wb_grd%RCAN
-                wb_acc%SNCAN = wb_grd%SNCAN
-                wb_acc%SNO = wb_grd%SNO
-                wb_acc%WSNO = wb_grd%WSNO
-                wb_acc%PNDW = wb_grd%PNDW
+                wb_acc%RCAN = wb_acc%RCAN/real(ic%ts_daily)
+                wb_acc%SNCAN = wb_acc%SNCAN/real(ic%ts_daily)
+                wb_acc%SNO = wb_acc%SNO/real(ic%ts_daily)
+                wb_acc%WSNO = wb_acc%WSNO/real(ic%ts_daily)
+                wb_acc%PNDW = wb_acc%PNDW/real(ic%ts_daily)
 
                 !> Write output CSV files.
-                if (BASINBALANCEOUTFLAG > 0) then
+!-                if (BASINBALANCEOUTFLAG > 0) then
 
-                    wb_out%PRE(1) = wb_out%PRE(1) + sum(wb_acc%PRE)
-                    wb_out%EVAP(1) = wb_out%EVAP(1) + sum(wb_acc%EVAP)
-                    wb_out%ROF(1) = wb_out%ROF(1) + sum(wb_acc%ROF)
-                    wb_out%ROFO(1) = wb_out%ROFO(1) + sum(wb_acc%ROFO)
-                    wb_out%ROFS(1) = wb_out%ROFS(1) + sum(wb_acc%ROFS)
-                    wb_out%ROFB(1) = wb_out%ROFB(1) + sum(wb_acc%ROFB)
+!-                    wb_out%PRE(1) = wb_out%PRE(1) + sum(wb_acc%PRE)
+!-                    wb_out%EVAP(1) = wb_out%EVAP(1) + sum(wb_acc%EVAP)
+!-                    wb_out%ROF(1) = wb_out%ROF(1) + sum(wb_acc%ROF)
+!-                    wb_out%ROFO(1) = wb_out%ROFO(1) + sum(wb_acc%ROFO)
+!-                    wb_out%ROFS(1) = wb_out%ROFS(1) + sum(wb_acc%ROFS)
+!-                    wb_out%ROFB(1) = wb_out%ROFB(1) + sum(wb_acc%ROFB)
 
-                    wb_out%PRE(2) = sum(wb_acc%PRE)
-                    eb_out%QEVP(2) = sum(eb_acc%QEVP)
-                    wb_out%EVAP(2) = sum(wb_acc%EVAP)
-                    eb_out%HFS(2) = sum(eb_acc%HFS)
-                    wb_out%ROF(2) = sum(wb_acc%ROF)
-                    wb_out%ROFO(2) = sum(wb_acc%ROFO)
-                    wb_out%ROFS(2) = sum(wb_acc%ROFS)
-                    wb_out%ROFB(2) = sum(wb_acc%ROFB)
-                    wb_out%LQWS(2, :) = sum(wb_acc%LQWS, 1)
-                    wb_out%FRWS(2, :) = sum(wb_acc%FRWS, 1)
-                    wb_out%RCAN(2) = sum(wb_acc%RCAN)
-                    wb_out%SNCAN(2) = sum(wb_acc%SNCAN)
-                    wb_out%SNO(2) = sum(wb_acc%SNO)
-                    wb_out%WSNO(2) = sum(wb_acc%WSNO)
-                    wb_out%PNDW(2) = sum(wb_acc%PNDW)
+!-                    wb_out%PRE(2) = sum(wb_acc%PRE)
+!-                    eb_out%QEVP(2) = sum(eb_acc%QEVP)
+!-                    wb_out%EVAP(2) = sum(wb_acc%EVAP)
+!-                    eb_out%HFS(2) = sum(eb_acc%HFS)
+!-                    wb_out%ROF(2) = sum(wb_acc%ROF)
+!-                    wb_out%ROFO(2) = sum(wb_acc%ROFO)
+!-                    wb_out%ROFS(2) = sum(wb_acc%ROFS)
+!-                    wb_out%ROFB(2) = sum(wb_acc%ROFB)
+!-                    wb_out%LQWS(2, :) = sum(wb_acc%LQWS, 1)
+!-                    wb_out%FRWS(2, :) = sum(wb_acc%FRWS, 1)
+!-                    wb_out%RCAN(2) = sum(wb_acc%RCAN)
+!-                    wb_out%SNCAN(2) = sum(wb_acc%SNCAN)
+!-                    wb_out%SNO(2) = sum(wb_acc%SNO)
+!-                    wb_out%WSNO(2) = sum(wb_acc%WSNO)
+!-                    wb_out%PNDW(2) = sum(wb_acc%PNDW)
 
-                    wb_out%DSTG(2) = sum(wb_grd%STG) - wb_out%STG(2)
-                    wb_out%STG(2) = sum(wb_grd%STG)
+!-                    wb_out%DSTG(2) = sum(wb_grd%STG) - wb_out%STG(2)
+!-                    wb_out%STG(2) = sum(wb_grd%STG)
 
                     !> Water balance.
-                    write(fls%fl(mfk%f900)%iun, "(i4,',', i5,',', 999(e14.6,','))") &
-                          JDAY_NOW, YEAR_NOW, &
-                          wb_out%PRE(1)/wb_out%basin_area, &
-                          wb_out%EVAP(1)/wb_out%basin_area, &
-                          wb_out%ROF(1)/wb_out%basin_area, &
-                          wb_out%ROFO(1)/wb_out%basin_area, &
-                          wb_out%ROFS(1)/wb_out%basin_area, &
-                          wb_out%ROFB(1)/wb_out%basin_area, &
-                          wb_out%PRE(2)/wb_out%basin_area, &
-                          wb_out%EVAP(2)/wb_out%basin_area, &
-                          wb_out%ROF(2)/wb_out%basin_area, &
-                          wb_out%ROFO(2)/wb_out%basin_area, &
-                          wb_out%ROFS(2)/wb_out%basin_area, &
-                          wb_out%ROFB(2)/wb_out%basin_area, &
-                          wb_out%SNCAN(2)/wb_out%basin_area, &
-                          wb_out%RCAN(2)/wb_out%basin_area, &
-                          wb_out%SNO(2)/wb_out%basin_area, &
-                          wb_out%WSNO(2)/wb_out%basin_area, &
-                          wb_out%PNDW(2)/wb_out%basin_area, &
-                          (wb_out%LQWS(2, j)/wb_out%basin_area, j = 1, IGND), &
-                          (wb_out%FRWS(2, j)/wb_out%basin_area, j = 1, IGND), &
-                          ((wb_out%LQWS(2, j) + wb_out%FRWS(2, j))/wb_out%basin_area, j = 1, IGND), &
-                          sum(wb_out%LQWS(2, :))/wb_out%basin_area, &
-                          sum(wb_out%FRWS(2, :))/wb_out%basin_area, &
-                          (sum(wb_out%LQWS(2, :)) + sum(wb_out%FRWS(2, :)))/wb_out%basin_area, &
-                          wb_out%STG(2)/wb_out%basin_area, &
-                          (wb_out%DSTG(2))/wb_out%basin_area, &
-                          (wb_out%STG(2) - wb_out%STG(1))/wb_out%basin_area
+!-                    write(fls%fl(mfk%f900)%iun, "(i4,',', i5,',', 999(e14.6,','))") &
+!-                          JDAY_NOW, YEAR_NOW, &
+!-                          wb_out%PRE(1)/wb_out%basin_area, &
+!-                          wb_out%EVAP(1)/wb_out%basin_area, &
+!-                          wb_out%ROF(1)/wb_out%basin_area, &
+!-                          wb_out%ROFO(1)/wb_out%basin_area, &
+!-                          wb_out%ROFS(1)/wb_out%basin_area, &
+!-                          wb_out%ROFB(1)/wb_out%basin_area, &
+!-                          wb_out%PRE(2)/wb_out%basin_area, &
+!-                          wb_out%EVAP(2)/wb_out%basin_area, &
+!-                          wb_out%ROF(2)/wb_out%basin_area, &
+!-                          wb_out%ROFO(2)/wb_out%basin_area, &
+!-                          wb_out%ROFS(2)/wb_out%basin_area, &
+!-                          wb_out%ROFB(2)/wb_out%basin_area, &
+!-                          wb_out%SNCAN(2)/wb_out%basin_area, &
+!-                          wb_out%RCAN(2)/wb_out%basin_area, &
+!-                          wb_out%SNO(2)/wb_out%basin_area, &
+!-                          wb_out%WSNO(2)/wb_out%basin_area, &
+!-                          wb_out%PNDW(2)/wb_out%basin_area, &
+!-                          (wb_out%LQWS(2, j)/wb_out%basin_area, j = 1, IGND), &
+!-                          (wb_out%FRWS(2, j)/wb_out%basin_area, j = 1, IGND), &
+!-                          ((wb_out%LQWS(2, j) + wb_out%FRWS(2, j))/wb_out%basin_area, j = 1, IGND), &
+!-                          sum(wb_out%LQWS(2, :))/wb_out%basin_area, &
+!-                          sum(wb_out%FRWS(2, :))/wb_out%basin_area, &
+!-                          (sum(wb_out%LQWS(2, :)) + sum(wb_out%FRWS(2, :)))/wb_out%basin_area, &
+!-                          wb_out%STG(2)/wb_out%basin_area, &
+!-                          (wb_out%DSTG(2))/wb_out%basin_area, &
+!-                          (wb_out%STG(2) - wb_out%STG(1))/wb_out%basin_area
 
                     !> Energy balance.
-                    write(901, "(i4,',', i5,',', 999(e12.5,','))") &
-                          JDAY_NOW, YEAR_NOW, &
-                          eb_out%HFS(2)/wb_out%basin_area, &
-                          eb_out%QEVP(2)/wb_out%basin_area
+!-                    write(901, "(i4,',', i5,',', 999(e12.5,','))") &
+!-                          JDAY_NOW, YEAR_NOW, &
+!-                          eb_out%HFS(2)/wb_out%basin_area, &
+!-                          eb_out%QEVP(2)/wb_out%basin_area
 
                     !> Monthly totals.
-                    wb_out%PRE(3) = wb_out%PRE(3) + wb_out%PRE(2)
-                    wb_out%EVAP(3) = wb_out%EVAP(3) + wb_out%EVAP(2)
-                    wb_out%ROF(3) = wb_out%ROF(3) + wb_out%ROF(2)
-                    wb_out%ROFO(3) = wb_out%ROFO(3) + wb_out%ROFO(2)
-                    wb_out%ROFS(3) = wb_out%ROFS(3) + wb_out%ROFS(2)
-                    wb_out%ROFB(3) = wb_out%ROFB(3) + wb_out%ROFB(2)
+!-                    wb_out%PRE(3) = wb_out%PRE(3) + wb_out%PRE(2)
+!-                    wb_out%EVAP(3) = wb_out%EVAP(3) + wb_out%EVAP(2)
+!-                    wb_out%ROF(3) = wb_out%ROF(3) + wb_out%ROF(2)
+!-                    wb_out%ROFO(3) = wb_out%ROFO(3) + wb_out%ROFO(2)
+!-                    wb_out%ROFS(3) = wb_out%ROFS(3) + wb_out%ROFS(2)
+!-                    wb_out%ROFB(3) = wb_out%ROFB(3) + wb_out%ROFB(2)
 
                     !> Write out monthly totals.
-                    if (ic%now_day == 1) then
+!-                    if (ic%now_day == 1) then
 
-                        wb_out%LQWS(3, :) = sum(wb_acc%LQWS, 1)
-                        wb_out%FRWS(3, :) = sum(wb_acc%FRWS, 1)
-                        wb_out%RCAN(3) = sum(wb_acc%RCAN)
-                        wb_out%SNCAN(3) = sum(wb_acc%SNCAN)
-                        wb_out%SNO(3) = sum(wb_acc%SNO)
-                        wb_out%WSNO(3) = sum(wb_acc%WSNO)
-                        wb_out%PNDW(3) = sum(wb_acc%PNDW)
+!-                        wb_out%LQWS(3, :) = sum(wb_acc%LQWS, 1)
+!-                        wb_out%FRWS(3, :) = sum(wb_acc%FRWS, 1)
+!-                        wb_out%RCAN(3) = sum(wb_acc%RCAN)
+!-                        wb_out%SNCAN(3) = sum(wb_acc%SNCAN)
+!-                        wb_out%SNO(3) = sum(wb_acc%SNO)
+!-                        wb_out%WSNO(3) = sum(wb_acc%WSNO)
+!-                        wb_out%PNDW(3) = sum(wb_acc%PNDW)
 
-                        wb_out%DSTG(3) = sum(wb_grd%STG) - wb_out%STG(3)
-                        wb_out%STG(3) = sum(wb_grd%STG)
+!-                        wb_out%DSTG(3) = sum(wb_grd%STG) - wb_out%STG(3)
+!-                        wb_out%STG(3) = sum(wb_grd%STG)
 
-                        write(902, "(i4,',', i5,',', 999(e14.6,','))") &
-                              JDAY_NOW, YEAR_NOW, &
-                              wb_out%PRE(1)/wb_out%basin_area, &
-                              wb_out%EVAP(1)/wb_out%basin_area, &
-                              wb_out%ROF(1)/wb_out%basin_area, &
-                              wb_out%ROFO(1)/wb_out%basin_area, &
-                              wb_out%ROFS(1)/wb_out%basin_area, &
-                              wb_out%ROFB(1)/wb_out%basin_area, &
-                              wb_out%PRE(3)/wb_out%basin_area, &
-                              wb_out%EVAP(3)/wb_out%basin_area, &
-                              wb_out%ROF(3)/wb_out%basin_area, &
-                              wb_out%ROFO(3)/wb_out%basin_area, &
-                              wb_out%ROFS(3)/wb_out%basin_area, &
-                              wb_out%ROFB(3)/wb_out%basin_area, &
-                              wb_out%SNCAN(3)/wb_out%basin_area, &
-                              wb_out%RCAN(3)/wb_out%basin_area, &
-                              wb_out%SNO(3)/wb_out%basin_area, &
-                              wb_out%WSNO(3)/wb_out%basin_area, &
-                              wb_out%PNDW(3)/wb_out%basin_area, &
-                              (wb_out%LQWS(3, j)/wb_out%basin_area, j = 1, IGND), &
-                              (wb_out%FRWS(3, j)/wb_out%basin_area, j = 1, IGND), &
-                              ((wb_out%LQWS(3, j) + wb_out%FRWS(3, j))/wb_out%basin_area, j = 1, IGND), &
-                              sum(wb_out%LQWS(3, :))/wb_out%basin_area, &
-                              sum(wb_out%FRWS(3, :))/wb_out%basin_area, &
-                              (sum(wb_out%LQWS(3, :)) + sum(wb_out%FRWS(3, :)))/wb_out%basin_area, &
-                              wb_out%STG(3)/wb_out%basin_area, &
-                              (wb_out%DSTG(3))/wb_out%basin_area, &
-                              (wb_out%STG(3) - wb_out%STG(1))/wb_out%basin_area
+!-                        write(902, "(i4,',', i5,',', 999(e14.6,','))") &
+!-                              JDAY_NOW, YEAR_NOW, &
+!-                              wb_out%PRE(1)/wb_out%basin_area, &
+!-                              wb_out%EVAP(1)/wb_out%basin_area, &
+!-                              wb_out%ROF(1)/wb_out%basin_area, &
+!-                              wb_out%ROFO(1)/wb_out%basin_area, &
+!-                              wb_out%ROFS(1)/wb_out%basin_area, &
+!-                              wb_out%ROFB(1)/wb_out%basin_area, &
+!-                              wb_out%PRE(3)/wb_out%basin_area, &
+!-                              wb_out%EVAP(3)/wb_out%basin_area, &
+!-                              wb_out%ROF(3)/wb_out%basin_area, &
+!-                              wb_out%ROFO(3)/wb_out%basin_area, &
+!-                              wb_out%ROFS(3)/wb_out%basin_area, &
+!-                              wb_out%ROFB(3)/wb_out%basin_area, &
+!-                              wb_out%SNCAN(3)/wb_out%basin_area, &
+!-                              wb_out%RCAN(3)/wb_out%basin_area, &
+!-                              wb_out%SNO(3)/wb_out%basin_area, &
+!-                              wb_out%WSNO(3)/wb_out%basin_area, &
+!-                              wb_out%PNDW(3)/wb_out%basin_area, &
+!-                              (wb_out%LQWS(3, j)/wb_out%basin_area, j = 1, IGND), &
+!-                              (wb_out%FRWS(3, j)/wb_out%basin_area, j = 1, IGND), &
+!-                              ((wb_out%LQWS(3, j) + wb_out%FRWS(3, j))/wb_out%basin_area, j = 1, IGND), &
+!-                              sum(wb_out%LQWS(3, :))/wb_out%basin_area, &
+!-                              sum(wb_out%FRWS(3, :))/wb_out%basin_area, &
+!-                              (sum(wb_out%LQWS(3, :)) + sum(wb_out%FRWS(3, :)))/wb_out%basin_area, &
+!-                              wb_out%STG(3)/wb_out%basin_area, &
+!-                              (wb_out%DSTG(3))/wb_out%basin_area, &
+!-                              (wb_out%STG(3) - wb_out%STG(1))/wb_out%basin_area
 
-                        wb_out%PRE(3) = 0.0
-                        wb_out%EVAP(3) = 0.0
-                        wb_out%ROF(3) = 0.0
-                        wb_out%ROFO(3) = 0.0
-                        wb_out%ROFS(3) = 0.0
-                        wb_out%ROFB(3) = 0.0
+!-                        wb_out%PRE(3) = 0.0
+!-                        wb_out%EVAP(3) = 0.0
+!-                        wb_out%ROF(3) = 0.0
+!-                        wb_out%ROFO(3) = 0.0
+!-                        wb_out%ROFS(3) = 0.0
+!-                        wb_out%ROFB(3) = 0.0
 
-                    end if
+!-                    end if
 
-                end if !(BASINBALANCEOUTFLAG > 0) then
+!-                end if !(BASINBALANCEOUTFLAG > 0) then
 
                 !> Calculate storage terms.
                 wb_acc%DSTG = wb_grd%DSTG
@@ -1646,69 +1660,69 @@ program RUNMESH
             end if !(ic%ts_daily == 48) then
 
             !> Write output for sub-daily increments.
-            if (BASINBALANCEOUTFLAG > 0) then
+!-            if (BASINBALANCEOUTFLAG > 0) then
 
                 !> Hourly totals.
-                wb_out%PRE(5) = wb_out%PRE(5) + sum(wb_grd%PRE)
-                wb_out%EVAP(5) = wb_out%EVAP(5) + sum(wb_grd%EVAP)
-                wb_out%ROF(5) = wb_out%ROF(5) + sum(wb_grd%ROF)
-                wb_out%ROFO(5) = wb_out%ROFO(5) + sum(wb_grd%ROFO)
-                wb_out%ROFS(5) = wb_out%ROFS(5) + sum(wb_grd%ROFS)
-                wb_out%ROFB(5) = wb_out%ROFB(5) + sum(wb_grd%ROFB)
-                wb_out%PRE(4) = wb_out%PRE(4) + sum(wb_grd%PRE)
-                wb_out%EVAP(4) = wb_out%EVAP(4) + sum(wb_grd%EVAP)
-                wb_out%ROF(4) = wb_out%ROF(4) + sum(wb_grd%ROF)
-                wb_out%ROFO(4) = wb_out%ROFO(4) + sum(wb_grd%ROFO)
-                wb_out%ROFS(4) = wb_out%ROFS(4) + sum(wb_grd%ROFS)
-                wb_out%ROFB(4) = wb_out%ROFB(4) + sum(wb_grd%ROFB)
+!-                wb_out%PRE(5) = wb_out%PRE(5) + sum(wb_grd%PRE)
+!-                wb_out%EVAP(5) = wb_out%EVAP(5) + sum(wb_grd%EVAP)
+!-                wb_out%ROF(5) = wb_out%ROF(5) + sum(wb_grd%ROF)
+!-                wb_out%ROFO(5) = wb_out%ROFO(5) + sum(wb_grd%ROFO)
+!-                wb_out%ROFS(5) = wb_out%ROFS(5) + sum(wb_grd%ROFS)
+!-                wb_out%ROFB(5) = wb_out%ROFB(5) + sum(wb_grd%ROFB)
+!-                wb_out%PRE(4) = wb_out%PRE(4) + sum(wb_grd%PRE)
+!-                wb_out%EVAP(4) = wb_out%EVAP(4) + sum(wb_grd%EVAP)
+!-                wb_out%ROF(4) = wb_out%ROF(4) + sum(wb_grd%ROF)
+!-                wb_out%ROFO(4) = wb_out%ROFO(4) + sum(wb_grd%ROFO)
+!-                wb_out%ROFS(4) = wb_out%ROFS(4) + sum(wb_grd%ROFS)
+!-                wb_out%ROFB(4) = wb_out%ROFB(4) + sum(wb_grd%ROFB)
 
                 !> Write out hourly totals.
-                if (mod(ic%ts_hourly, 3600/ic%dts) == 0) then
-                    wb_out%LQWS(4, :) = sum(wb_grd%LQWS, 1)
-                    wb_out%FRWS(4, :) = sum(wb_grd%FRWS, 1)
-                    wb_out%RCAN(4) = sum(wb_grd%RCAN)
-                    wb_out%SNCAN(4) = sum(wb_grd%SNCAN)
-                    wb_out%SNO(4) = sum(wb_grd%SNO)
-                    wb_out%WSNO(4) = sum(wb_grd%WSNO)
-                    wb_out%PNDW(4) = sum(wb_grd%PNDW)
-                    wb_out%DSTG(4) = sum(wb_grd%STG) - wb_out%STG(4)
-                    wb_out%STG(4) = sum(wb_grd%STG)
-                    write(903, "((i4, ','), (i5, ','), (i3, ','), 999(e14.6, ','))") &
-                          JDAY_NOW, YEAR_NOW, HOUR_NOW, &
-                          wb_out%PRE(5)/wb_out%basin_area, &
-                          wb_out%EVAP(5)/wb_out%basin_area, &
-                          wb_out%ROF(5)/wb_out%basin_area, &
-                          wb_out%ROFO(5)/wb_out%basin_area, &
-                          wb_out%ROFS(5)/wb_out%basin_area, &
-                          wb_out%ROFB(5)/wb_out%basin_area, &
-                          wb_out%PRE(4)/wb_out%basin_area, &
-                          wb_out%EVAP(4)/wb_out%basin_area, &
-                          wb_out%ROF(4)/wb_out%basin_area, &
-                          wb_out%ROFO(4)/wb_out%basin_area, &
-                          wb_out%ROFS(4)/wb_out%basin_area, &
-                          wb_out%ROFB(4)/wb_out%basin_area, &
-                          wb_out%SNCAN(4)/wb_out%basin_area, &
-                          wb_out%RCAN(4)/wb_out%basin_area, &
-                          wb_out%SNO(4)/wb_out%basin_area, &
-                          wb_out%WSNO(4)/wb_out%basin_area, &
-                          wb_out%PNDW(4)/wb_out%basin_area, &
-                          (wb_out%LQWS(4, j)/wb_out%basin_area, j = 1, IGND), &
-                          (wb_out%FRWS(4, j)/wb_out%basin_area, j = 1, IGND), &
-                          ((wb_out%LQWS(4, j) + wb_out%FRWS(4, j))/wb_out%basin_area, j = 1, IGND), &
-                          sum(wb_out%LQWS(4, :))/wb_out%basin_area, &
-                          sum(wb_out%FRWS(4, :))/wb_out%basin_area, &
-                          (sum(wb_out%LQWS(4, :)) + sum(wb_out%FRWS(4, :)))/wb_out%basin_area, &
-                          wb_out%STG(4)/wb_out%basin_area, &
-                          (wb_out%DSTG(4))/wb_out%basin_area, &
-                          (wb_out%STG(4) - wb_out%STG(1))/wb_out%basin_area
-                    wb_out%PRE(4) = 0.0
-                    wb_out%EVAP(4) = 0.0
-                    wb_out%ROF(4) = 0.0
-                    wb_out%ROFO(4) = 0.0
-                    wb_out%ROFS(4) = 0.0
-                    wb_out%ROFB(4) = 0.0
-                end if
-            end if
+!-                if (mod(ic%ts_hourly, 3600/ic%dts) == 0) then
+!-                    wb_out%LQWS(4, :) = sum(wb_grd%LQWS, 1)
+!-                    wb_out%FRWS(4, :) = sum(wb_grd%FRWS, 1)
+!-                    wb_out%RCAN(4) = sum(wb_grd%RCAN)
+!-                    wb_out%SNCAN(4) = sum(wb_grd%SNCAN)
+!-                    wb_out%SNO(4) = sum(wb_grd%SNO)
+!-                    wb_out%WSNO(4) = sum(wb_grd%WSNO)
+!-                    wb_out%PNDW(4) = sum(wb_grd%PNDW)
+!-                    wb_out%DSTG(4) = sum(wb_grd%STG) - wb_out%STG(4)
+!-                    wb_out%STG(4) = sum(wb_grd%STG)
+!-                    write(903, "((i4, ','), (i5, ','), (i3, ','), 999(e14.6, ','))") &
+!-                          JDAY_NOW, YEAR_NOW, HOUR_NOW, &
+!-                          wb_out%PRE(5)/wb_out%basin_area, &
+!-                          wb_out%EVAP(5)/wb_out%basin_area, &
+!-                          wb_out%ROF(5)/wb_out%basin_area, &
+!-                          wb_out%ROFO(5)/wb_out%basin_area, &
+!-                          wb_out%ROFS(5)/wb_out%basin_area, &
+!-                          wb_out%ROFB(5)/wb_out%basin_area, &
+!-                          wb_out%PRE(4)/wb_out%basin_area, &
+!-                          wb_out%EVAP(4)/wb_out%basin_area, &
+!-                          wb_out%ROF(4)/wb_out%basin_area, &
+!-                          wb_out%ROFO(4)/wb_out%basin_area, &
+!-                          wb_out%ROFS(4)/wb_out%basin_area, &
+!-                          wb_out%ROFB(4)/wb_out%basin_area, &
+!-                          wb_out%SNCAN(4)/wb_out%basin_area, &
+!-                          wb_out%RCAN(4)/wb_out%basin_area, &
+!-                          wb_out%SNO(4)/wb_out%basin_area, &
+!-                          wb_out%WSNO(4)/wb_out%basin_area, &
+!-                          wb_out%PNDW(4)/wb_out%basin_area, &
+!-                          (wb_out%LQWS(4, j)/wb_out%basin_area, j = 1, IGND), &
+!-                          (wb_out%FRWS(4, j)/wb_out%basin_area, j = 1, IGND), &
+!-                          ((wb_out%LQWS(4, j) + wb_out%FRWS(4, j))/wb_out%basin_area, j = 1, IGND), &
+!-                          sum(wb_out%LQWS(4, :))/wb_out%basin_area, &
+!-                          sum(wb_out%FRWS(4, :))/wb_out%basin_area, &
+!-                          (sum(wb_out%LQWS(4, :)) + sum(wb_out%FRWS(4, :)))/wb_out%basin_area, &
+!-                          wb_out%STG(4)/wb_out%basin_area, &
+!-                          (wb_out%DSTG(4))/wb_out%basin_area, &
+!-                          (wb_out%STG(4) - wb_out%STG(1))/wb_out%basin_area
+!-                    wb_out%PRE(4) = 0.0
+!-                    wb_out%EVAP(4) = 0.0
+!-                    wb_out%ROF(4) = 0.0
+!-                    wb_out%ROFO(4) = 0.0
+!-                    wb_out%ROFS(4) = 0.0
+!-                    wb_out%ROFB(4) = 0.0
+!-                end if
+!-            end if
 
         end if !(ipid == 0) then
 
@@ -2005,67 +2019,74 @@ program RUNMESH
     if (ENDDATA) print *, 'Reached end of forcing data'
     if (ENDDATE) print *, 'Reached end of simulation date'
 
-    !> Calculate final storage
-    wb_out%DSTG(1) = 0.0
-    do k = il1, il2
-        if (csfv%FARE(k) > 0.0) then
-            wb_out%DSTG(1) = wb_out%DSTG(1) + (cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%ZPND(k)*RHOW)*csfv%FARE(k)
-            if (cpv%SNO(k) > 0.0) wb_out%DSTG(1) = wb_out%DSTG(1) + cpv%WSNO(k)*csfv%FARE(k)
-            do j = 1, IGND
-                wb_out%DSTG(1) = wb_out%DSTG(1) + (cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*csfv%DELZW(k, j)*csfv%FARE(k)
-            end do
-        end if
-    end do
-    wb_out%DSTG(1) = wb_out%DSTG(1) - wb_out%STG(1)
-    wb_out%STG(1) = wb_out%DSTG(1) + wb_out%STG(1)
+    if (ipid == 0 ) then
 
-    !> write out final totals to screen
-    if (ro%VERBOSEMODE > 0) then
+        !> Calculate final storage for the run.
+        STG_FIN = 0.0
+        do k = il1, il2
+            ik = shd%lc%ILMOS(k)
+            FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
+            if (FRAC > 0.0) then
+                STG_FIN = STG_FIN + (cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%ZPND(k)*RHOW)*FRAC
+                if (cpv%SNO(k) > 0.0) STG_FIN = STG_FIN + cpv%WSNO(k)*FRAC
+                do j = 1, IGND
+                    STG_FIN = STG_FIN + (cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*csfv%DELZW(k, j)*FRAC
+                end do
+            end if
+        end do
+        STG_FIN = STG_FIN/wb_grd%basin_area
 
-        print *
-        print 5641, 'Total Precipitation         (mm) =', wb_out%PRE(1)/wb_out%basin_area
-        print 5641, 'Total Evaporation           (mm) =', wb_out%EVAP(1)/wb_out%basin_area
-        print 5641, 'Total Runoff                (mm) =', wb_out%ROF(1)/wb_out%basin_area
-        print 5641, 'Storage (Change/Init/Final) (mm) =', &
-            wb_out%DSTG(1)/wb_out%basin_area, &
-            (wb_out%STG(1) - wb_out%DSTG(1))/wb_out%basin_area, &
-            wb_out%STG(1)/wb_out%basin_area
-        print *
-        print 5641, 'Total Overland flow         (mm) =', wb_out%ROFO(1)/wb_out%basin_area
-        print 5641, 'Total Interflow             (mm) =', wb_out%ROFS(1)/wb_out%basin_area
-        print 5641, 'Total Baseflow              (mm) =', wb_out%ROFB(1)/wb_out%basin_area
-        print *
+        !> Basin totals for the run.
+        TOTAL_PRE = TOTAL_PRE/wb_grd%basin_area
+        TOTAL_EVAP = TOTAL_EVAP/wb_grd%basin_area
+        TOTAL_ROF = TOTAL_ROF/wb_grd%basin_area
+        TOTAL_ROFO = TOTAL_ROFO/wb_grd%basin_area
+        TOTAL_ROFS = TOTAL_ROFS/wb_grd%basin_area
+        TOTAL_ROFB = TOTAL_ROFB/wb_grd%basin_area
+
+        !> Write basin totals to screen.
+        if (ro%VERBOSEMODE > 0) then
+
+            print *
+            print 5641, 'Total Precipitation         (mm) =', TOTAL_PRE
+            print 5641, 'Total Evaporation           (mm) =', TOTAL_EVAP
+            print 5641, 'Total Runoff                (mm) =', TOTAL_ROF
+            print 5641, 'Storage (Change/Init/Final) (mm) =', (STG_FIN - STG_INI), STG_INI, STG_FIN
+            print *
+            print 5641, 'Total Overland flow         (mm) =', TOTAL_ROFO
+            print 5641, 'Total Interflow             (mm) =', TOTAL_ROFS
+            print 5641, 'Total Baseflow              (mm) =', TOTAL_ROFB
+            print *
 
 5641    format(3x, a34, 999(f11.3))
 5635    format(1x, 'Program has terminated normally.'/)
 
-    end if !(ro%VERBOSEMODE > 0) then
+        end if !(ro%VERBOSEMODE > 0) then
 
-    print 5635
+        print 5635
 
-    !> Write final totals to output file.
-    if (MODELINFOOUTFLAG > 0) then
+        !> Write basin totals to file.
+        if (MODELINFOOUTFLAG > 0) then
 
-        write(58, *)
-        write(58, '(a, f11.3)') '  Total Precipitation         (mm) = ', wb_out%PRE(1)/wb_out%basin_area
-        write(58, '(a, f11.3)') '  Total Evaporation           (mm) = ', wb_out%EVAP(1)/wb_out%basin_area
-        write(58, '(a, f11.3)') '  Total Runoff                (mm) = ', wb_out%ROF(1)/wb_out%basin_area
-        write(58, '(a, 3f11.3)') '  Storage(Change/Init/Final)  (mm) = ', &
-            wb_out%DSTG(1)/wb_out%basin_area, &
-            (wb_out%STG(1) - wb_out%DSTG(1))/wb_out%basin_area, &
-            wb_out%STG(1)/wb_out%basin_area
-        write(58, '(a, f11.3)') '  Total Overland flow         (mm) = ', wb_out%ROFO(1)/wb_out%basin_area
-        write(58, '(a, f11.3)') '  Total Interflow             (mm) = ', wb_out%ROFS(1)/wb_out%basin_area
-        write(58, '(a, f11.3)') '  Total Baseflow              (mm) = ', wb_out%ROFB(1)/wb_out%basin_area
-        write(58, *)
-        write(58, *)
-        write(58, '(a)') 'Program has terminated normally.'
-        write(58, *)
+            write(58, *)
+            write(58, '(a, f11.3)') '  Total Precipitation         (mm) = ', TOTAL_PRE
+            write(58, '(a, f11.3)') '  Total Evaporation           (mm) = ', TOTAL_EVAP
+            write(58, '(a, f11.3)') '  Total Runoff                (mm) = ', TOTAL_ROF
+            write(58, '(a, 3f11.3)') '  Storage(Change/Init/Final)  (mm) = ', (STG_FIN - STG_INI), STG_INI, STG_FIN
+            write(58, '(a, f11.3)') '  Total Overland flow         (mm) = ', TOTAL_ROFO
+            write(58, '(a, f11.3)') '  Total Interflow             (mm) = ', TOTAL_ROFS
+            write(58, '(a, f11.3)') '  Total Baseflow              (mm) = ', TOTAL_ROFB
+            write(58, *)
+            write(58, *)
+            write(58, '(a)') 'Program has terminated normally.'
+            write(58, *)
 
-        call cpu_time(endprog)
-        write(58, "('Time = ', e14.6, ' seconds.')") (endprog - startprog)
+            call cpu_time(endprog)
+            write(58, "('Time = ', e14.6, ' seconds.')") (endprog - startprog)
 
-    end if !(MODELINFOOUTFLAG > 0) then
+        end if !(MODELINFOOUTFLAG > 0) then
+
+    end if !(ipid == 0 ) then
 
 199 continue
 

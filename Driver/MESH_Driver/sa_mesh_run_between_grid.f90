@@ -17,6 +17,7 @@ module sa_mesh_run_between_grid
 
         use process_SA_RTE, only: configure_SA_RTE
         use process_WF_ROUTE_config, only: run_WF_ROUTE_ini
+        use save_basin_output
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -40,6 +41,7 @@ module sa_mesh_run_between_grid
 !todo: switch
         call configure_SA_RTE(shd, ic)
         call run_WF_ROUTE_ini(shd, fls, ic, stfl, rrls)
+        call run_save_basin_output_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
     end subroutine
 
@@ -57,6 +59,7 @@ module sa_mesh_run_between_grid
 
         use process_SA_RTE, only: run_SA_RTE
         use process_WF_ROUTE, only: run_WF_ROUTE_between_grid
+        use save_basin_output
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -77,6 +80,7 @@ module sa_mesh_run_between_grid
         call run_SA_RTE(shd, ic, wb)
         call run_WF_ROUTE_between_grid(shd, ic, wb, stfl, rrls, &
                                        WF_R1, WF_R2, M_C)
+        call run_save_basin_output(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
     end subroutine
 
