@@ -417,14 +417,12 @@ module climate_forcing
 
     subroutine climate_module_interpolatedata(shd, &
 !todo: These variables can be stored elsewhere instead of passed.
-        FAREGAT, &
         cm, iilen, ii1, ii2)
 
         use sa_mesh_shared_variabletypes
 
         !> Input variables.
         type(ShedGridParams) :: shd
-        real, dimension(:) :: FAREGAT
         integer, intent(in) :: iilen, ii1, ii2
 
         !> Input/Output variables.

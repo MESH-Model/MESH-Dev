@@ -44,7 +44,7 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
-    subroutine run_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    function run_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
         use module_mpi_flags
         use module_mpi_shared_variables
@@ -60,6 +60,8 @@ module sa_mesh_run_within_tile
         use process_CLASS, only: RUNCLASS_within_tile
         use process_WF_ROUTE, only: run_WF_ROUTE_within_tile
 
+        character(100) run_within_tile
+
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
@@ -71,9 +73,14 @@ module sa_mesh_run_within_tile
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        call RUNCLASS_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
-        call run_WF_ROUTE_within_tile(shd, ic, stfl, rrls)
+        run_within_tile = ''
 
-    end subroutine
+        call RUNCLASS_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+        run_within_tile = run_WF_ROUTE_within_tile(shd, ic, stfl, rrls)
+        if (len_Trim(run_within_tile) > 0) return
+
+        return
+
+    end function
 
 end module

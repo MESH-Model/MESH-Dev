@@ -98,10 +98,10 @@ program RUNMESH
     use sa_mesh_shared_variables
 
     !> For subroutines: FIND_MONTH, FIND_DAY.
-    use EF_MODULE
+!-    use EF_MODULE
 
     !> For subroutine: GetIndices.
-    use MESH_INPUT_MODULE
+!-    use MESH_INPUT_MODULE
     use FLAGS
 
     use module_mpi_flags
@@ -122,20 +122,12 @@ program RUNMESH
     use model_files_variables
     use model_files
 
-    use process_CLASS_config
+!-    use process_CLASS_config
 
     implicit none
 
-    !> istop: To stop all MPI process
-    !* inp: Number of active tasks.
-    !* ipid: Current process ID.
-    integer ipid_recv, itag, ierrcode, istop, u, invars
-    logical lstat
-
-    integer, dimension(:), allocatable :: irqst
-    integer, dimension(:, :), allocatable :: imstat
-
     !* ierr: Diagnostic error/status return from various subroutines.
+    integer ierrcode
     integer :: ierr = 0
 
     !> Local variables.
@@ -146,9 +138,6 @@ program RUNMESH
     !* iun: Temporary store for the unit number of a file.
     integer NA, NTYPE, NML, IGND, iun, ik, jk
     real FRAC
-
-    !+ For split-vector approach
-    integer ii1, ii2, iilen
 
     !> INTEGER CONSTANTS.
 !todo: Fix this (e.g., replace M_C with NRVR; move to process_WF_ROUTE).
@@ -197,6 +186,7 @@ program RUNMESH
     integer FRAME_NO_NEW
 
     !> MAM - logical variables to control simulation runs:
+    character(100) cstate
     logical :: ENDDATE = .false., ENDDATA = .false.
 
     !>  For cacluating the subbasin grids
@@ -382,7 +372,7 @@ program RUNMESH
     !> specified ranges in the "minmax_parameters.txt" file.
     call check_parameters(WF_R2, M_C, NTYPE)
 
-    call init_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW, int(DELT))
+    call init_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW, TIME_STEP_DELT)
 
     !> ALLOCATE ALL VARIABLES
 
@@ -526,9 +516,9 @@ program RUNMESH
 !+            write(58, "('Out directory:', 5a10)") (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
 !+            write(58, "('Grid number:  ', 5i10)") (op%N_OUT(i), i = 1, WF_NUM_POINTS)
 !+            write(58, "('Land class:   ', 5i10)") (op%II_OUT(i), i = 1, WF_NUM_POINTS)
-            write(58, *)
-            write(58, "('MESH_parameters_hydrology.ini')")
-            write(58, *)
+!            write(58, *)
+!            write(58, "('MESH_parameters_hydrology.ini')")
+!            write(58, *)
 !todo: fix this.
 !-            write(58, "('Option flags:')")
 !-            if (OPTFLAGS > 0) then
@@ -536,64 +526,64 @@ program RUNMESH
 !-                    write(58, '(a11, i2, a19)') 'PARAMETER ', i, ' NOT CURRENTLY USED'
 !-                end do
 !-            end if
-            write(58, "('River roughnesses:')")
+!            write(58, "('River roughnesses:')")
 !todo: change this to use NRVR.
-            write(58, '(5f6.3)') (WF_R2(i), i = 1, 5)
-            write(58, "('Land class independent hydrologic parameters:')")
-            if (FROZENSOILINFILFLAG == 1) then
-                write(58, *) 'SOIL_POR_MAX = ', SOIL_POR_MAX
-                write(58, *) 'SOIL_DEPTH   = ', SOIL_DEPTH
-                write(58, *) 'S0           = ', S0
-                write(58, *) 'T_ICE_LENS   = ', T_ICE_LENS
-                do i = 5, INDEPPAR
-                    j = i - 4
-                    write(58, '(a38, i2, a3, f6.2)') 'OPPORTUNITY TIME FOR SIMULATION YEAR ', j, ' = ', t0_ACC(j)
-                end do
-            else
-                do i = 1, INDEPPAR
-                    write(58, '(a36, i2, a19)') 'FROZEN SOIL INFILTRATION PARAMETER ', i, ' READ BUT NOT USED'
-                end do
-            end if !(FROZENSOILINFILFLAG == 1) then
-            write(58, "('Land class dependent hydrologic parameters:')")
-            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZSNLROW'", NTYPE
-            write(58, NMTESTFORMAT) (hp%ZSNLROW(1, m), m = 1, NTYPE)
-            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZPLSROW'", NTYPE
-            write(58, NMTESTFORMAT) (hp%ZPLSROW(1, m), m = 1, NTYPE)
-            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZPLGROW'", NTYPE
-            write(58, NMTESTFORMAT) (hp%ZPLGROW(1, m), m = 1, NTYPE)
-            if (DEPPAR >= 4) then
-                write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('FRZCROW'", NTYPE
-                write(58, NMTESTFORMAT) (hp%FRZCROW(1, m), m = 1, NTYPE)
-            end if
-            write(58, *)
-            write(58, "('MESH_parameters_CLASS.ini')")
-            write(58, *)
-            write(58, '(2x, 6a4)') TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6
-            write(58, '(2x, 6a4)') NAME1, NAME2, NAME3, NAME4, NAME5, NAME6
-            write(58, '(2x, 6a4)') PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
-            i = 1
-            write(58, '(5f10.2, f7.1, 3i5)') &
-                DEGLAT, DEGLON, cp%ZRFMGRD(i), cp%ZRFHGRD(i), cp%ZBLDGRD(i), cp%GCGRD(i), shd%wc%ILG, NA, NTYPE
-            do m = 1, NTYPE
-                write(58, '(9f8.3)') (cp%FCANROW(i, m, j), j = 1, ICAN + 1), (cp%PAMXROW(i, m, j), j = 1, ICAN)
-                write(58, '(9f8.3)') (cp%LNZ0ROW(i, m, j), j = 1, ICAN + 1), (cp%PAMNROW(i, m, j), j = 1, ICAN)
-                write(58, '(9f8.3)') (cp%ALVCROW(i, m, j), j = 1, ICAN + 1), (cp%CMASROW(i, m, j), j = 1, ICAN)
-                write(58, '(9f8.3)') (cp%ALICROW(i, m, j), j = 1, ICAN + 1), (cp%ROOTROW(i, m, j), j = 1, ICAN)
-                write(58, '(4f8.3, 8x, 4f8.3)') (cp%RSMNROW(i, m, j), j = 1, ICAN), (cp%QA50ROW(i, m, j), j = 1, ICAN)
-                write(58, '(4f8.3, 8x, 4f8.3)') (cp%VPDAROW(i, m, j), j = 1, ICAN), (cp%VPDBROW(i, m, j), j = 1, ICAN)
-                write(58, '(4f8.3, 8x, 4f8.3)') (cp%PSGAROW(i, m, j), j = 1, ICAN), (cp%PSGBROW(i, m, j), j = 1, ICAN)
-                write(58, '(3f8.3, f8.4)') cp%DRNROW(i, m), cp%SDEPROW(i, m), cp%FAREROW(i, m), cp%DDROW(i, m)
-                write(58, '(4e8.1, i8)') cp%XSLPROW(i, m), cp%XDROW(i, m), cp%MANNROW(i, m), cp%KSROW(i, m), cp%MIDROW(i, m)
-                write(58, '(6f10.1)') (cp%SANDROW(i, m, j), j = 1, IGND)
-                write(58, '(6f10.1)') (cp%CLAYROW(i, m, j), j = 1, IGND)
-                write(58, '(6f10.1)') (cp%ORGMROW(i, m, j), j = 1, IGND)
-                write(58, '(9f10.2)') (cp%TBARROW(i, m, j), j = 1, IGND), cp%TCANROW(i, m), cp%TSNOROW(i, m), cp%TPNDROW(i, m)
-                write(58, '(10f10.3)') &
-                    (cp%THLQROW(i, m, j), j = 1, IGND), (cp%THICROW(i, m, j), j = 1, IGND), cp%ZPNDROW(i, m)
-                write(58, '(2f10.4, f10.2, f10.3, f10.4, f10.3, f10.3)') &
-                    cp%RCANROW(i, m), cp%SCANROW(i, m), cp%SNOROW(i, m), cp%ALBSROW(i, m), cp%RHOSROW(i, m), cp%GROROW(i, m)
-                write(58, *)
-            end do !m = 1, NTYPE
+!            write(58, '(5f6.3)') (WF_R2(i), i = 1, 5)
+!            write(58, "('Land class independent hydrologic parameters:')")
+!            if (FROZENSOILINFILFLAG == 1) then
+!                write(58, *) 'SOIL_POR_MAX = ', SOIL_POR_MAX
+!                write(58, *) 'SOIL_DEPTH   = ', SOIL_DEPTH
+!                write(58, *) 'S0           = ', S0
+!                write(58, *) 'T_ICE_LENS   = ', T_ICE_LENS
+!                do i = 5, INDEPPAR
+!                    j = i - 4
+!                    write(58, '(a38, i2, a3, f6.2)') 'OPPORTUNITY TIME FOR SIMULATION YEAR ', j, ' = ', t0_ACC(j)
+!                end do
+!            else
+!                do i = 1, INDEPPAR
+!                    write(58, '(a36, i2, a19)') 'FROZEN SOIL INFILTRATION PARAMETER ', i, ' READ BUT NOT USED'
+!                end do
+!            end if !(FROZENSOILINFILFLAG == 1) then
+!            write(58, "('Land class dependent hydrologic parameters:')")
+!            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZSNLROW'", NTYPE
+!            write(58, NMTESTFORMAT) (hp%ZSNLROW(1, m), m = 1, NTYPE)
+!            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZPLSROW'", NTYPE
+!            write(58, NMTESTFORMAT) (hp%ZPLSROW(1, m), m = 1, NTYPE)
+!            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZPLGROW'", NTYPE
+!            write(58, NMTESTFORMAT) (hp%ZPLGROW(1, m), m = 1, NTYPE)
+!            if (DEPPAR >= 4) then
+!                write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('FRZCROW'", NTYPE
+!                write(58, NMTESTFORMAT) (hp%FRZCROW(1, m), m = 1, NTYPE)
+!            end if
+!            write(58, *)
+!            write(58, "('MESH_parameters_CLASS.ini')")
+!            write(58, *)
+!            write(58, '(2x, 6a4)') TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6
+!            write(58, '(2x, 6a4)') NAME1, NAME2, NAME3, NAME4, NAME5, NAME6
+!            write(58, '(2x, 6a4)') PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
+!            i = 1
+!            write(58, '(5f10.2, f7.1, 3i5)') &
+!                DEGLAT, DEGLON, cp%ZRFMGRD(i), cp%ZRFHGRD(i), cp%ZBLDGRD(i), cp%GCGRD(i), shd%wc%ILG, NA, NTYPE
+!            do m = 1, NTYPE
+!                write(58, '(9f8.3)') (cp%FCANROW(i, m, j), j = 1, ICAN + 1), (cp%PAMXROW(i, m, j), j = 1, ICAN)
+!                write(58, '(9f8.3)') (cp%LNZ0ROW(i, m, j), j = 1, ICAN + 1), (cp%PAMNROW(i, m, j), j = 1, ICAN)
+!                write(58, '(9f8.3)') (cp%ALVCROW(i, m, j), j = 1, ICAN + 1), (cp%CMASROW(i, m, j), j = 1, ICAN)
+!                write(58, '(9f8.3)') (cp%ALICROW(i, m, j), j = 1, ICAN + 1), (cp%ROOTROW(i, m, j), j = 1, ICAN)
+!                write(58, '(4f8.3, 8x, 4f8.3)') (cp%RSMNROW(i, m, j), j = 1, ICAN), (cp%QA50ROW(i, m, j), j = 1, ICAN)
+!                write(58, '(4f8.3, 8x, 4f8.3)') (cp%VPDAROW(i, m, j), j = 1, ICAN), (cp%VPDBROW(i, m, j), j = 1, ICAN)
+!                write(58, '(4f8.3, 8x, 4f8.3)') (cp%PSGAROW(i, m, j), j = 1, ICAN), (cp%PSGBROW(i, m, j), j = 1, ICAN)
+!                write(58, '(3f8.3, f8.4)') cp%DRNROW(i, m), cp%SDEPROW(i, m), cp%FAREROW(i, m), cp%DDROW(i, m)
+!                write(58, '(4e8.1, i8)') cp%XSLPROW(i, m), cp%XDROW(i, m), cp%MANNROW(i, m), cp%KSROW(i, m), cp%MIDROW(i, m)
+!                write(58, '(6f10.1)') (cp%SANDROW(i, m, j), j = 1, IGND)
+!                write(58, '(6f10.1)') (cp%CLAYROW(i, m, j), j = 1, IGND)
+!                write(58, '(6f10.1)') (cp%ORGMROW(i, m, j), j = 1, IGND)
+!                write(58, '(9f10.2)') (cp%TBARROW(i, m, j), j = 1, IGND), cp%TCANROW(i, m), cp%TSNOROW(i, m), cp%TPNDROW(i, m)
+!                write(58, '(10f10.3)') &
+!                    (cp%THLQROW(i, m, j), j = 1, IGND), (cp%THICROW(i, m, j), j = 1, IGND), cp%ZPNDROW(i, m)
+!                write(58, '(2f10.4, f10.2, f10.3, f10.4, f10.3, f10.3)') &
+!                    cp%RCANROW(i, m), cp%SCANROW(i, m), cp%SNOROW(i, m), cp%ALBSROW(i, m), cp%RHOSROW(i, m), cp%GROROW(i, m)
+!                write(58, *)
+!            end do !m = 1, NTYPE
         end if !(MODELINFOOUTFLAG > 0) then
     end if !(ipid == 0) then
 
@@ -1040,17 +1030,17 @@ program RUNMESH
     if (ipid == 0) then
 
         !> For grid output.
-        do k = il1, il2
-            ik = shd%lc%ILMOS(k)
-            FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-            if (FRAC > 0.0) then
-                wb_grd%stg(ik) = wb_grd%stg(ik) + (cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%ZPND(k)*RHOW)*FRAC
-                if (cpv%SNO(k) > 0.0) wb_grd%stg(ik) = wb_grd%stg(ik) + cpv%WSNO(k)*FRAC
-                do j = 1, IGND
-                    wb_grd%stg(ik) = wb_grd%stg(ik) + (cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*csfv%DELZW(k, j)*FRAC
-                end do
-            end if
-        end do
+!-        do k = il1, il2
+!-            ik = shd%lc%ILMOS(k)
+!-            FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
+!-            if (FRAC > 0.0) then
+!-                wb_grd%stg(ik) = wb_grd%stg(ik) + (cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%ZPND(k)*RHOW)*FRAC
+!-                if (cpv%SNO(k) > 0.0) wb_grd%stg(ik) = wb_grd%stg(ik) + cpv%WSNO(k)*FRAC
+!-                do j = 1, IGND
+!-                    wb_grd%stg(ik) = wb_grd%stg(ik) + (cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*csfv%DELZW(k, j)*FRAC
+!-                end do
+!-            end if
+!-        end do
 
         !> For basin output of the accumulated water balance.
         STG_INI = sum(wb_grd%stg)/wb_grd%basin_area
@@ -1078,7 +1068,7 @@ program RUNMESH
 
         !> MAM - Linearly interpolate forcing data for intermediate time steps
         if (INTERPOLATIONFLAG == 1) then
-            call climate_module_interpolatedata(shd, csfv%FARE, cm, NML, il1, il2)
+            call climate_module_interpolatedata(shd, cm, NML, il1, il2)
         end if
 
         !> Reset variables that accumulate on the daily time-step.
@@ -1104,206 +1094,8 @@ program RUNMESH
             wb_acc%PNDW = 0.0
         end if
 
-        call run_within_tile(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
-
-        !> Gather variables from parallel nodes.
-!todo: move this.
-
-        !> Send/receive process.
-        itag = ic%ts_count*1000
-        invars = 14 + 4*IGND
-
-        !> Update the variable count per the active control flags.
-        if (SAVERESUMEFLAG == 3) invars = invars + 10 + 4
-
-        if (inp > 1 .and. ipid /= 0) then
-
-            !> Send data back to head-node.
-            if (allocated(irqst)) deallocate(irqst)
-            if (allocated(imstat)) deallocate(imstat)
-            allocate(irqst(invars), imstat(mpi_status_size, invars))
-            irqst = mpi_request_null
-
-            i = 1
-            call mpi_isend(cfi%PRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%QFS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%ROF(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%ROFO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%ROFS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%ROFB(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cpv%SNCAN(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cpv%RCAN(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cpv%ZPND(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cpv%SNO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%FSNO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cpv%WSNO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%HFS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%QEVP(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            do j = 1, IGND
-                call mpi_isend(cpv%THLQ(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%THIC(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cdv%GFLX(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%TBAR(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            end do
-
-            !> Send optional variables per the active control flags.
-            if (SAVERESUMEFLAG == 3) then
-                call mpi_isend(cpv%ALBS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%CMAI(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%GRO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%QAC(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%RHOS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%TAC(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%TBAS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%TCAN(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%TPND(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%TSNO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                do j = 1, 4
-                    call mpi_isend(cpv%TSFS(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                end do
-            end if !(SAVERESUMEFLAG == 3) then
-
-            lstat = .false.
-            do while (.not. lstat)
-                call mpi_testall(invars, irqst, lstat, imstat, ierr)
-            end do
-
-!            print *, ipid, ' done sending'
-
-        else if (inp > 1) then
-
-            !> Receive data from worker nodes.
-            if (allocated(irqst)) deallocate(irqst)
-            if (allocated(imstat)) deallocate(imstat)
-            allocate(irqst(invars), imstat(mpi_status_size, invars))
-
-            !> Receive and assign variables.
-            do u = 1, (inp - 1)
-
-!                print *, 'initiating irecv for:', u, ' with ', itag
-
-                irqst = mpi_request_null
-                imstat = 0
-
-                call GetIndices(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iilen)
-
-                i = 1
-                call mpi_irecv(cfi%PRE(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%QFS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%ROF(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%ROFO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%ROFS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%ROFB(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cpv%SNCAN(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cpv%RCAN(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cpv%ZPND(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cpv%SNO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%FSNO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cpv%WSNO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%HFS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%QEVP(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                do j = 1, IGND
-                    call mpi_irecv(cpv%THLQ(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%THIC(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cdv%GFLX(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%TBAR(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                end do
-
-                !> Send optional variables per the active control flags.
-                if (SAVERESUMEFLAG == 3) then
-                    call mpi_irecv(cpv%ALBS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%CMAI(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%GRO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%QAC(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%RHOS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%TAC(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%TBAS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%TCAN(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%TPND(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%TSNO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    do j = 1, 4
-                        call mpi_irecv(cpv%TSFS(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
-                        i = i + 1
-                    end do
-                end if !(SAVERESUMEFLAG == 3) then
-
-                lstat = .false.
-                do while (.not. lstat)
-                    call mpi_testall(invars, irqst, lstat, imstat, ierr)
-                end do
-
-            end do !u = 1, (inp - 1)
-!            print *, 'done receiving'
-
-        end if !(inp > 1 .and. ipid /= 0) then
-
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
-
-        !> *********************************************************************
-        !> Start of book-keeping and grid accumulation.
-        !> *********************************************************************
-
+        !> Reset variables.
         if (ipid == 0) then
-
-            !> Write ENSIM output
-            if (NR2CFILES > 0 .and. mod(ic%ts_daily*30, DELTR2C) == 0) then
-                call FIND_MONTH (JDAY_NOW, YEAR_NOW, ensim_month)
-                call FIND_DAY (JDAY_NOW, YEAR_NOW, ensim_day)
-                call WRITE_R2C_DATA(shd%lc%NML, NA, NTYPE, ic%ts_daily, MINS_NOW, shd%lc%ACLASS, &
-                                    NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, &
-                                    NR2C, NR2CFILES, R2CFILEUNITSTART, GRD, GAT, &
-                                    GRDGAT, NR2CSTATES, R2C_ATTRIBUTES, FRAME_NO_NEW, YEAR_NOW, &
-                                    ensim_MONTH, ensim_DAY, HOUR_NOW, MINS_NOW, ICAN, &
-                                    ICAN + 1, IGND, &
-                                    cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
-                                    cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
-                                    cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
-                                    csfv%FCAN, csfv%LNZ0, csfv%ALVC, csfv%ALIC, csfv%PAMX, &
-                                    csfv%PAMN, csfv%CMAS, csfv%ROOT, csfv%RSMN, csfv%QA50, &
-                                    csfv%VPDA, csfv%VPDB, csfv%PSGA, csfv%PSGB, csfv%PAID, &
-                                    csfv%HGTD, csfv%ACVD, csfv%ACID, cpv%TSFS, cpv%WSNO, &
-                                    csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, &
-                                    csfv%GRKS, csfv%THRA, csfv%HCPS, csfv%TCS, &
-                                    csfv%THFC, csfv%PSIW, csfv%DELZW, csfv%ZBTW, &
-                                    csfv%ZSNL, csfv%ZPLG, csfv%ZPLS, cpv%TAC, cpv%QAC, &
-                                    csfv%DRN, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
-                                    csfv%ALGW, csfv%ALGD, csfv%ASVD, csfv%ASID, csfv%AGVD, &
-                                    csfv%AGID, csfv%ISND, catv%RADJ, catv%ZBLD, catv%Z0OR, &
-                                    catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, cfi%FSVH, &
-                                    cfi%FSIH, catv%CSZ, cfi%FDL, cfi%UL, cfi%VL, &
-                                    cfi%TA, cfi%QA, cfi%PRES, cfi%PRE, catv%PADR, &
-                                    catv%VPD, catv%TADP, catv%RHOA, catv%RPCP, catv%TRPC, &
-                                    catv%SPCP, catv%TSPC, catv%RHSI, catv%FCLO, catv%DLON, &
-                                    catv%GGEO, &
-                                    cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
-                                    cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
-                                    cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
-                                    cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
-                                    cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
-                                    cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
-                                    cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
-                                    cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
-                                    cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
-                                    cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
-                                    cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
-                                    cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
-                                    cdv%HMFG, cdv%HTC, cdv%QFC, MANNGAT, DDGAT, &
-                                    csfv%IGDR, cfi%VMOD, QLWOGAT)
-                FRAME_NO_NEW = FRAME_NO_NEW + 1 !UPDATE COUNTERS
-            end if
-
-            !> CALCULATE GRID CELL AVERAGE DIAGNOSTIC FIELDS.
-
-            !> Grid data for output.
-            md_grd%fsdown = cm%clin(cfk%FB)%GRD
-            md_grd%fsvh = fsvhgrd
-            md_grd%fsih = fsihgrd
-            md_grd%fdl = cm%clin(cfk%FI)%GRD
-            md_grd%ul = cm%clin(cfk%UV)%GRD
-            md_grd%ta = cm%clin(cfk%TT)%GRD
-            md_grd%qa = cm%clin(cfk%HU)%GRD
-            md_grd%pres = cm%clin(cfk%P0)%GRD
-            md_grd%pre = cm%clin(cfk%PR)%GRD
             wb_grd%PRE = 0.0
             eb_grd%QEVP = 0.0
             wb_grd%EVAP = 0.0
@@ -1325,36 +1117,127 @@ program RUNMESH
             wb_grd%PNDW = 0.0
             wb_grd%DSTG = wb_grd%STG
             wb_grd%STG = 0.0
+        end if
 
-            do k = il1, il2
-                ik = shd%lc%ILMOS(k)
-                FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-                if (FRAC > 0.0) then
-                    wb_grd%PRE(ik) = wb_grd%PRE(ik) + cfi%PRE(k)*FRAC*ic%dts
-                    eb_grd%QEVP(ik) = eb_grd%QEVP(ik) + cdv%QEVP(k)*FRAC
-                    wb_grd%EVAP(ik) = wb_grd%EVAP(ik) + cdv%QFS(k)*FRAC*ic%dts
-                    eb_grd%HFS(ik)  = eb_grd%HFS(ik) + cdv%HFS(k)*FRAC
-                    wb_grd%ROF(ik) = wb_grd%ROF(ik) + cdv%ROF(k)*FRAC*ic%dts
-                    wb_grd%ROFO(ik) = wb_grd%ROFO(ik) + cdv%ROFO(k)*FRAC*ic%dts
-                    wb_grd%ROFS(ik) = wb_grd%ROFS(ik) + cdv%ROFS(k)*FRAC*ic%dts
-                    wb_grd%ROFB(ik) = wb_grd%ROFB(ik) + cdv%ROFB(k)*FRAC*ic%dts
-                    do j = 1, IGND
-                        spv_grd%TBAR(ik, j) = spv_grd%TBAR(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
-                        spv_grd%THLQ(ik, j) = spv_grd%THLQ(ik, j) + cpv%THLQ(k, j)*FRAC
-                        wb_grd%LQWS(ik, j) = wb_grd%LQWS(ik, j) + cpv%THLQ(k, j)*csfv%DELZW(k, j)*FRAC*RHOW
-                        spv_grd%THIC(ik, j) = spv_grd%THIC(ik, j) + cpv%THIC(k, j)*FRAC
-                        wb_grd%FRWS(ik, j) = wb_grd%FRWS(ik, j) + cpv%THIC(k, j)*csfv%DELZW(k, j)*FRAC*RHOICE
-                        eb_grd%GFLX(ik, j) = eb_grd%GFLX(ik, j) + cdv%GFLX(k, j)*FRAC
-                    end do
-                    wb_grd%RCAN(ik) = wb_grd%RCAN(ik) + cpv%RCAN(k)*FRAC
-                    wb_grd%SNCAN(ik) = wb_grd%SNCAN(ik) + cpv%SNCAN(k)*FRAC
-                    wb_grd%SNO(ik) = wb_grd%SNO(ik) + cpv%SNO(k)*FRAC
-                    if (cpv%SNO(k) > 0.0) then
-                        wb_grd%WSNO(ik) = wb_grd%WSNO(ik) + cpv%WSNO(k)*FRAC
-                    end if
-                    wb_grd%PNDW(ik) = wb_grd%PNDW(ik) + cpv%ZPND(k)*FRAC*RHOW
-                end if
-            end do !k = il1, il2
+        cstate = run_within_tile(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+        if (len_trim(cstate) > 0) goto 998
+
+        !> *********************************************************************
+        !> Start of book-keeping and grid accumulation.
+        !> *********************************************************************
+
+        if (ipid == 0) then
+
+            !> Write ENSIM output
+            if (NR2CFILES > 0 .and. mod(ic%ts_daily*30, DELTR2C) == 0) then
+!                call FIND_MONTH (JDAY_NOW, YEAR_NOW, ensim_month)
+!                call FIND_DAY (JDAY_NOW, YEAR_NOW, ensim_day)
+!                call WRITE_R2C_DATA(shd%lc%NML, NA, NTYPE, ic%ts_daily, MINS_NOW, shd%lc%ACLASS, &
+!                                    NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, &
+!                                    NR2C, NR2CFILES, R2CFILEUNITSTART, GRD, GAT, &
+!                                    GRDGAT, NR2CSTATES, R2C_ATTRIBUTES, FRAME_NO_NEW, YEAR_NOW, &
+!                                    ensim_MONTH, ensim_DAY, HOUR_NOW, MINS_NOW, ICAN, &
+!                                    ICAN + 1, IGND, &
+!                                    cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
+!                                    cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
+!                                    cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
+!                                    csfv%FCAN, csfv%LNZ0, csfv%ALVC, csfv%ALIC, csfv%PAMX, &
+!                                    csfv%PAMN, csfv%CMAS, csfv%ROOT, csfv%RSMN, csfv%QA50, &
+!                                    csfv%VPDA, csfv%VPDB, csfv%PSGA, csfv%PSGB, csfv%PAID, &
+!                                    csfv%HGTD, csfv%ACVD, csfv%ACID, cpv%TSFS, cpv%WSNO, &
+!                                    csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, &
+!                                    csfv%GRKS, csfv%THRA, csfv%HCPS, csfv%TCS, &
+!                                    csfv%THFC, csfv%PSIW, csfv%DELZW, csfv%ZBTW, &
+!                                    csfv%ZSNL, csfv%ZPLG, csfv%ZPLS, cpv%TAC, cpv%QAC, &
+!                                    csfv%DRN, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
+!                                    csfv%ALGW, csfv%ALGD, csfv%ASVD, csfv%ASID, csfv%AGVD, &
+!                                    csfv%AGID, csfv%ISND, catv%RADJ, catv%ZBLD, catv%Z0OR, &
+!                                    catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, cfi%FSVH, &
+!                                    cfi%FSIH, catv%CSZ, cfi%FDL, cfi%UL, cfi%VL, &
+!                                    cfi%TA, cfi%QA, cfi%PRES, cfi%PRE, catv%PADR, &
+!                                    catv%VPD, catv%TADP, catv%RHOA, catv%RPCP, catv%TRPC, &
+!                                    catv%SPCP, catv%TSPC, catv%RHSI, catv%FCLO, catv%DLON, &
+!                                    catv%GGEO, &
+!                                    cdv%CDH, cdv%CDM, cdv%HFS, cdv%TFX, cdv%QEVP, &
+!                                    cdv%QFS, cdv%QFX, cdv%PET, cdv%GA, cdv%EF, &
+!                                    cdv%GTE, cdv%QG, cdv%ALVS, cdv%ALIR, &
+!                                    cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%SFCQ, cdv%FSNO, &
+!                                    cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, &
+!                                    cdv%FLGG, cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, &
+!                                    cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, cdv%HTCC, &
+!                                    cdv%HTCS, cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, &
+!                                    cdv%QFG, cdv%QFN, cdv%QFCL, cdv%QFCF, cdv%ROF, &
+!                                    cdv%ROFO, cdv%ROFS, cdv%ROFB, cdv%TROF, cdv%TROO, &
+!                                    cdv%TROS, cdv%TROB, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
+!                                    cdv%WTRC, cdv%WTRS, cdv%WTRG, cdv%DR, cdv%GFLX, &
+!                                    cdv%HMFG, cdv%HTC, cdv%QFC, MANNGAT, DDGAT, &
+!                                    csfv%IGDR, cfi%VMOD, QLWOGAT)
+                FRAME_NO_NEW = FRAME_NO_NEW + 1 !UPDATE COUNTERS
+            end if
+
+            !> CALCULATE GRID CELL AVERAGE DIAGNOSTIC FIELDS.
+
+            !> Grid data for output.
+            md_grd%fsdown = cm%clin(cfk%FB)%GRD
+            md_grd%fsvh = fsvhgrd
+            md_grd%fsih = fsihgrd
+            md_grd%fdl = cm%clin(cfk%FI)%GRD
+            md_grd%ul = cm%clin(cfk%UV)%GRD
+            md_grd%ta = cm%clin(cfk%TT)%GRD
+            md_grd%qa = cm%clin(cfk%HU)%GRD
+            md_grd%pres = cm%clin(cfk%P0)%GRD
+            md_grd%pre = cm%clin(cfk%PR)%GRD
+!-            wb_grd%PRE = 0.0
+!-            eb_grd%QEVP = 0.0
+!-            wb_grd%EVAP = 0.0
+!-            eb_grd%HFS = 0.0
+!-            wb_grd%ROF = 0.0
+!-            wb_grd%ROFO = 0.0
+!-            wb_grd%ROFS =  0.0
+!-            wb_grd%ROFB = 0.0
+!-            spv_grd%TBAR = 0.0
+!-            spv_grd%THLQ = 0.0
+!-            wb_grd%LQWS = 0.0
+!-            spv_grd%THIC = 0.0
+!-            wb_grd%FRWS = 0.0
+!-            eb_grd%GFLX = 0.0
+!-            wb_grd%RCAN = 0.0
+!-            wb_grd%SNCAN = 0.0
+!-            wb_grd%SNO = 0.0
+!-            wb_grd%WSNO = 0.0
+!-            wb_grd%PNDW = 0.0
+!-            wb_grd%DSTG = wb_grd%STG
+!-            wb_grd%STG = 0.0
+
+!-            do k = il1, il2
+!-                ik = shd%lc%ILMOS(k)
+!-                FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
+!-                if (FRAC > 0.0) then
+!-                    wb_grd%PRE(ik) = wb_grd%PRE(ik) + cfi%PRE(k)*FRAC*ic%dts
+!-                    eb_grd%QEVP(ik) = eb_grd%QEVP(ik) + cdv%QEVP(k)*FRAC
+!-                    wb_grd%EVAP(ik) = wb_grd%EVAP(ik) + cdv%QFS(k)*FRAC*ic%dts
+!-                    eb_grd%HFS(ik)  = eb_grd%HFS(ik) + cdv%HFS(k)*FRAC
+!-                    wb_grd%ROF(ik) = wb_grd%ROF(ik) + cdv%ROF(k)*FRAC*ic%dts
+!-                    wb_grd%ROFO(ik) = wb_grd%ROFO(ik) + cdv%ROFO(k)*FRAC*ic%dts
+!-                    wb_grd%ROFS(ik) = wb_grd%ROFS(ik) + cdv%ROFS(k)*FRAC*ic%dts
+!-                    wb_grd%ROFB(ik) = wb_grd%ROFB(ik) + cdv%ROFB(k)*FRAC*ic%dts
+!-                    do j = 1, IGND
+!-                        spv_grd%TBAR(ik, j) = spv_grd%TBAR(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
+!-                        spv_grd%THLQ(ik, j) = spv_grd%THLQ(ik, j) + cpv%THLQ(k, j)*FRAC
+!-                        wb_grd%LQWS(ik, j) = wb_grd%LQWS(ik, j) + cpv%THLQ(k, j)*csfv%DELZW(k, j)*FRAC*RHOW
+!-                        spv_grd%THIC(ik, j) = spv_grd%THIC(ik, j) + cpv%THIC(k, j)*FRAC
+!-                        wb_grd%FRWS(ik, j) = wb_grd%FRWS(ik, j) + cpv%THIC(k, j)*csfv%DELZW(k, j)*FRAC*RHOICE
+!-                        eb_grd%GFLX(ik, j) = eb_grd%GFLX(ik, j) + cdv%GFLX(k, j)*FRAC
+!-                    end do
+!-                    wb_grd%RCAN(ik) = wb_grd%RCAN(ik) + cpv%RCAN(k)*FRAC
+!-                    wb_grd%SNCAN(ik) = wb_grd%SNCAN(ik) + cpv%SNCAN(k)*FRAC
+!-                    wb_grd%SNO(ik) = wb_grd%SNO(ik) + cpv%SNO(k)*FRAC
+!-                    if (cpv%SNO(k) > 0.0) then
+!-                        wb_grd%WSNO(ik) = wb_grd%WSNO(ik) + cpv%WSNO(k)*FRAC
+!-                    end if
+!-                    wb_grd%PNDW(ik) = wb_grd%PNDW(ik) + cpv%ZPND(k)*FRAC*RHOW
+!-                end if
+!-            end do !k = il1, il2
 
             wb_grd%DSTG = wb_grd%RCAN + wb_grd%SNCAN + wb_grd%SNO + wb_grd%WSNO + wb_grd%PNDW + &
                 sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2) - wb_grd%STG
@@ -1725,22 +1608,26 @@ program RUNMESH
     if (ENDDATA) print *, 'Reached end of forcing data'
     if (ENDDATE) print *, 'Reached end of simulation date'
 
+998     continue
+
+    if (len_trim(cstate) > 0) print *, trim(cstate)
+
     if (ipid == 0 ) then
 
         !> Calculate final storage for the run.
-        STG_FIN = 0.0
-        do k = il1, il2
-            ik = shd%lc%ILMOS(k)
-            FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-            if (FRAC > 0.0) then
-                STG_FIN = STG_FIN + (cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%ZPND(k)*RHOW)*FRAC
-                if (cpv%SNO(k) > 0.0) STG_FIN = STG_FIN + cpv%WSNO(k)*FRAC
-                do j = 1, IGND
-                    STG_FIN = STG_FIN + (cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*csfv%DELZW(k, j)*FRAC
-                end do
-            end if
-        end do
-        STG_FIN = STG_FIN/wb_grd%basin_area
+!-        STG_FIN = 0.0
+!-        do k = il1, il2
+!-            ik = shd%lc%ILMOS(k)
+!-            FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
+!-            if (FRAC > 0.0) then
+!-                STG_FIN = STG_FIN + (cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%ZPND(k)*RHOW)*FRAC
+!-                if (cpv%SNO(k) > 0.0) STG_FIN = STG_FIN + cpv%WSNO(k)*FRAC
+!-                do j = 1, IGND
+!-                    STG_FIN = STG_FIN + (cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*csfv%DELZW(k, j)*FRAC
+!-                end do
+!-            end if
+!-        end do
+        STG_FIN = sum(wb_grd%stg)/wb_grd%basin_area
 
         !> Basin totals for the run.
         TOTAL_PRE = TOTAL_PRE/wb_grd%basin_area
@@ -1798,7 +1685,7 @@ program RUNMESH
 
     if (mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write()
 
-999 continue
+999     continue
 
 9000    format(/1x, 'INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY AND IS SET TO 0 BY THE MODEL.', &
                /1x, '0: NO INTERPOLATION OF FORCING DATA.', &

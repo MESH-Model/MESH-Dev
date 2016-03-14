@@ -862,6 +862,7 @@ module process_CLASS_config
                 wb%PNDW(ik) = wb%PNDW(ik) + cpv%ZPND(k)*RHOW*FRAC
             end if
         end do
+        wb%stg = wb%RCAN + wb%SNCAN + wb%SNO + wb%WSNO + wb%PNDW + sum(wb%LQWS, 2) + sum(wb%FRWS, 2)
 
     end subroutine
 
