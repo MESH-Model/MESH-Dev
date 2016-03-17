@@ -1,104 +1,82 @@
-subroutine read_init_prog_variables_class( CMAIROW  , QACROW  , TACROW   , &
-                                           TBASROW  , TSFSROW , WSNOROW  , &
-!                                           cp       , &
-                                           NA      , NTYPE    , &
-                                           IGND     , fls                 )
-!>***************************************************************************************
-!>***************************************************************************************
+!>
 !> AUTHOR : GONZALO SAPRIZA
 !> DATE CREATION : 2014-07-14
 !> DATES MODIFICATIONS : -
-!> DESCRIPTION : Read only the prognostic variables needed by class as initial
-!>               condtions.
-!> The variables readed are:
-!>1)  ALBSROW  - Snow albedo [] (cp%ALBSROW)
-!>2)  CMAIROW  - Aggregated mass of vegetation canopy [kg m-2]
-!>3)  GROROW   - Vegetation growth index [] (cp%GROROW)
-!>4)  QACROW   - Spec. Humidity of air within veget canopy space [kg kg-1]
-!>5)  RCANROW  - Intercepted liquid water sotred on canopy [kg m-2] (cp%RCANROW)
-!>6)  RHOSROW  - Density of snow [kg m-3] (cp%RHOSROW)
-!>7)  SCANROW  - Intercepted frozen water stored on canopy [kg m-2] (cp%SCANROW)
-!>8)  SNOROW   - Mass of snow pack [kg m-2] (cp%SNOROW)
-!>9)  TACROW   - Temp of air within veget canopy [K]
-!>10) TBARROW  - Temp of soil layers [k] (cp%TBARROW)
-!>11) TBASROW  - Temp of bedrock in third soil layer [K]
-!>12) TCANROW  - Temp veget canopy [K] (cp%TCANROW)
-!>13) THICROW  - Vol frozen water conetent of soil layers [m3 m-3] (cp%THICROW)
-!>14) THLQROW  - Vol liquid water conetent of soil layers [m3 m-3] (cp%THLQROW)
-!>15) TPNDROW  - Temp of ponded water [k] (cp%TPNDROW)
-!>16) TSFSROW  - Ground surf temp over subarea [K]
-!>17) TSNOROW  - Snowpack temp [K] (cp%TSNOROW)
-!>18) WSNOROW  - Liquid water content of snow pack [kg m-2]
-!>19) ZPNDROW  - Depth of ponded water on surface [m] (cp%ZPNDROW)
-!>***************************************************************************************
-!>***************************************************************************************
+!> DESCRIPTION : Read only the prognostic variables needed by CLASS as initial
+!>               conditions.
+!>
+!> The variables read are:
+!> 1)   ALBS        - Snow albedo []
+!> 2)   CMAI        - Aggregated mass of vegetation canopy [kg m-2]
+!> 3)   GRO         - Vegetation growth index []
+!> 4)   QAC         - Spec. Humidity of air within veget canopy space [kg kg-1]
+!> 5)   RCAN        - Intercepted liquid water sotred on canopy [kg m-2]
+!> 6)   RHOS        - Density of snow [kg m-3]
+!> 7)   SCAN/SNCAN  - Intercepted frozen water stored on canopy [kg m-2]
+!> 8)   SNO         - Mass of snow pack [kg m-2]
+!> 9)   TAC         - Temp of air within veget canopy [K]
+!> 10)  TBAR        - Temp of soil layers [k]
+!> 11)  TBAS        - Temp of bedrock in third soil layer [K]
+!> 12)  TCAN        - Temp veget canopy [K]
+!> 13)  THIC        - Vol frozen water conetent of soil layers [m3 m-3]
+!> 14)  THLQ        - Vol liquid water conetent of soil layers [m3 m-3]
+!> 15)  TPND        - Temp of ponded water [k]
+!> 16)  TSFS        - Ground surf temp over subarea [K]
+!> 17)  TSNO        - Snowpack temp [K]
+!> 18)  WSNO        - Liquid water content of snow pack [kg m-2]
+!> 19)  ZPND        - Depth of ponded water on surface [m]
+!>
+    subroutine read_init_prog_variables_class(fls)
 
-!    use MESH_INPUT_MODULE
-    use model_files_variabletypes
-    use model_files_variables
-!    use flags
-!    use model_files
-    use process_CLASS_variables
+        use model_files_variabletypes
+        use model_files_variables
+        use process_CLASS_variables, only: cpv
 
-    implicit none
+        implicit none
 
-    !Inputs
-    integer NA, NTYPE, IGND
-    type(fl_ids) :: fls
+        !> Input variables.
+        type(fl_ids) :: fls
 
-    !Outputs
-    real,dimension(NA,NTYPE)  :: CMAIROW , QACROW  , TACROW , &
-                                 TBASROW , WSNOROW
+        !> Local variables.
+        integer ierr, iun
 
-    real,dimension(NA, NTYPE, 4)  :: TSFSROW
+        !> Open the resume state file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'old', action = 'read', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
 
-!    TYPE(ClassParameters) :: cp
+!todo: condition for ierr.
 
-    !Internals
-    integer IOS, unitfl
+!>    type CLASS_prognostic_variables
+!>        real, dimension(:), allocatable :: &
+!>            ALBS, CMAI, GRO, QAC, RCAN, RHOS, SNCAN, SNO, TAC, TBAS, &
+!>            TCAN, TPND, TSNO, WSNO, ZPND
+!>        real, dimension(:, :), allocatable :: &
+!>            TBAR, THIC, THLQ, TSFS
+!>    end type
 
-!--------------Main Subtrouine start-----------------------------------------------
-    unitfl = fls%fl(mfk%f883)%iun
-!    if ((VARIABLEFILESFLAG == 1) .and. (fls%fl(9)%isInit)) then
-    open(unit   = unitfl                             , &
-         file   = trim(adjustl(fls%fl(mfk%f883)%fn)) , &
-         status = 'old'                              , &
-         form   = 'unformatted'                      , &
-         action = 'read'                             , &
-         access = 'sequential'                       , &
-         iostat = IOS                                )
-!        unitfl = fls%fl(9)%unit
-!    else
-!        open(unit   = 883                     , &
-!             file   = 'int_statVariables.seq' , &
-!             status = 'old'                   , &
-!             form   = 'unformatted'           , &
-!             action = 'read'                  , &
-!             access = 'sequential'            , &
-!             iostat = IOS                     )
-!        unitfl = 883
-!    end if
+        !> Read inital values from the file.
+        read(iun) cpv%ALBS      !1 (NML)
+        read(iun) cpv%CMAI      !2 (NML)
+        read(iun) cpv%GRO       !3 (NML)
+        read(iun) cpv%QAC       !4 (NML)
+        read(iun) cpv%RCAN      !5 (NML)
+        read(iun) cpv%RHOS      !6 (NML)
+        read(iun) cpv%SNCAN     !7 (NML)
+        read(iun) cpv%SNO       !8 (NML)
+        read(iun) cpv%TAC       !9 (NML)
+        read(iun) cpv%TBAR      !10 (NML, IGND)
+        read(iun) cpv%TBAS      !11 (NML)
+        read(iun) cpv%TCAN      !12 (NML)
+        read(iun) cpv%THIC      !13 (NML, IGND)
+        read(iun) cpv%THLQ      !14 (NML, IGND)
+        read(iun) cpv%TPND      !15 (NML)
+        read(iun) cpv%TSFS      !16 (NML, IGND)
+        read(iun) cpv%TSNO      !17 (NML)
+        read(iun) cpv%WSNO      !18 (NML)
+        read(iun) cpv%ZPND      !19 (NML)
 
-    read(unitfl) cp%albsrow   !1
-    read(unitfl) cmairow      !2
-    read(unitfl) cp%grorow    !3
-    read(unitfl) qacrow       !4
-    read(unitfl) cp%rcanrow   !5
-    read(unitfl) cp%rhosrow   !6
-    read(unitfl) cp%scanrow   !7
-    read(unitfl) cp%snorow    !8
-    read(unitfl) tacrow       !9
-    read(unitfl) cp%tbarrow   !10
-    read(unitfl) tbasrow      !11
-    read(unitfl) cp%tcanrow   !12
-    read(unitfl) cp%thicrow   !13
-    read(unitfl) cp%thlqrow   !14
-    read(unitfl) cp%tpndrow   !15
-    read(unitfl) tsfsrow      !16
-    read(unitfl) cp%tsnorow   !17
-    read(unitfl) wsnorow      !18
-    read(unitfl) cp%zpndrow   !19
+        !> Close the file to free the unit.
+        close(iun)
 
-    close(unitfl)
-
-end subroutine read_init_prog_variables_class
+    end subroutine !read_init_prog_variables_class

@@ -106,7 +106,7 @@ module process_CLASS_config
 
     contains
 
-    subroutine RUNCLASS_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine RUNCLASS_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
         use module_mpi_flags
         use module_mpi_shared_variables
@@ -863,6 +863,43 @@ module process_CLASS_config
             end if
         end do
         wb%stg = wb%RCAN + wb%SNCAN + wb%SNO + wb%WSNO + wb%PNDW + sum(wb%LQWS, 2) + sum(wb%FRWS, 2)
+
+        !> Read initial prognostic variables for CLASS.
+!> bjd - July 14, 2014: Gonzalo Sapriza
+        if (RESUMEFLAG == 3) then
+            call read_init_prog_variables_class(fls)
+        end if !(RESUMEFLAG == 3) then
+
+    end subroutine
+
+    subroutine RUNCLASS_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+
+        use module_mpi_shared_variables
+        use model_files_variabletypes
+        use sa_mesh_shared_variabletypes
+        use model_dates
+        use climate_forcing
+        use model_output_variabletypes
+        use MODEL_OUTPUT
+
+        type(fl_ids) :: fls
+        type(ShedGridParams) :: shd
+        type(iter_counter) :: ic
+        type(clim_info) :: cm
+        type(water_balance) :: wb
+        type(energy_balance) :: eb
+        type(soil_statevars) :: sv
+        type(streamflow_hydrograph) :: stfl
+        type(reservoir_release) :: rrls
+
+        !> Only the head node writes CLASS output.
+        if (.not. ipid == 0) return
+
+        !> Save initial prognostic variables for CLASS.
+!> bjd - July 14, 2014: Gonzalo Sapriza
+        if (SAVERESUMEFLAG == 3) then
+            call save_init_prog_variables_class(fls)
+        end if !(SAVERESUMEFLAG == 3) then
 
     end subroutine
 

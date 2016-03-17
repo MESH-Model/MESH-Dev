@@ -86,8 +86,8 @@ c start of baseflow section
 c check if there was a resume file, if yes, then we don't need to initialize the routing
 c data as the values should already be set in the resume.txt file.
 
-      OPEN (52,FILE='resume.txt',STATUS='OLD',iostat=ios)
-      IF(IOS.NE.0) THEN
+!-      OPEN (52,FILE='resume.txt',STATUS='OLD',iostat=ios)
+!-      IF(IOS.NE.0) THEN
 
 c     Initialize
       rl=wf_al*wf_a1
@@ -344,7 +344,7 @@ c     Initialize outlet elements
          wf_store2(n)=0.0
       end do
 
-        ENDIF  !IF(IOS.NE.0) THEN
+!-        ENDIF  !IF(IOS.NE.0) THEN
 
       JAN=2
 

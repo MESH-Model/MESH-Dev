@@ -68,7 +68,7 @@ module process_WF_ROUTE
 
         !> only read in current value if we are on the correct time step
         !> also read in the first value if this is the first time through
-        if (mod(HOUR_NOW, WF_KT) == 0 .and. MINS_NOW == 0 .and. JAN > 1) then
+        if (mod(HOUR_NOW, WF_KT) == 0 .and. MINS_NOW == 0) then
             !>       read in current streamflow value
             read(22, *, iostat = ierr) (WF_QHYD(i), i = 1, WF_NO)
             if (ierr /= 0) then

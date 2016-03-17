@@ -139,10 +139,11 @@ module process_WF_ROUTE_config
     !>              the output files, in preparation for running the
     !>              WF_ROUTE process.
     !>
-    subroutine run_WF_ROUTE_ini(shd, fls, ic, stfl, rrls)
+    subroutine run_WF_ROUTE_init(shd, fls, ic, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
+        use model_files_variables
         use model_dates
         use model_output_variabletypes
 
@@ -307,6 +308,7 @@ module process_WF_ROUTE_config
 
         !>MAM - The first stream flow record is used for flow initialization
         read(iun, *, iostat = ierr) (WF_QHYD(i), i = 1, WF_NO)
+        backspace(iun)
 
         ! fixed streamflow start time bug. add in function to enable the
         ! correct start time. Feb2009 aliu.
@@ -365,6 +367,83 @@ module process_WF_ROUTE_config
             end if
 
         end if !(STREAMFLOWOUTFLAG > 0) then
+
+        if (RESUMEFLAG == 3) then
+
+            !> Open the resume file.
+            iun = fls%fl(mfk%f883)%iun
+            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.wf_route', status = 'old', action = 'read', &
+                 form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+            !> Read inital values from the file.
+            read(iun) JAN
+            read(iun) wf_TimeCount
+            read(iun) WF_QHYD
+            read(iun) WF_QHYD_AVG
+            read(iun) WF_QHYD_CUM
+            read(iun) WF_QSYN
+            read(iun) WF_QSYN_AVG
+            read(iun) WF_QSYN_CUM
+            read(iun) wf_qo2
+            read(iun) wf_store2
+            read(iun) wf_qi2
+
+            !> Close the file to free the unit.
+            close(iun)
+
+        end if !(RESUMEFLAG == 3) then
+
+    end subroutine
+
+    subroutine run_WF_ROUTE_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+
+        use model_files_variabletypes
+        use model_files_variables
+        use sa_mesh_shared_variabletypes
+        use model_dates
+        use climate_forcing
+        use model_output_variabletypes
+        use MODEL_OUTPUT
+
+        type(fl_ids) :: fls
+        type(ShedGridParams) :: shd
+        type(iter_counter) :: ic
+        type(clim_info) :: cm
+        type(water_balance) :: wb
+        type(energy_balance) :: eb
+        type(soil_statevars) :: sv
+        type(streamflow_hydrograph) :: stfl
+        type(reservoir_release) :: rrls
+
+        !> Local variables.
+        integer ierr, iun
+
+        if (SAVERESUMEFLAG == 3) then
+
+            !> Open the resume file.
+            iun = fls%fl(mfk%f883)%iun
+            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.wf_route', status = 'replace', action = 'write', &
+                 form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+            !> Write the current state of these variables to the file.
+            write(iun) JAN
+            write(iun) wf_TimeCount
+            write(iun) WF_QHYD
+            write(iun) WF_QHYD_AVG
+            write(iun) WF_QHYD_CUM
+            write(iun) WF_QSYN
+            write(iun) WF_QSYN_AVG
+            write(iun) WF_QSYN_CUM
+            write(iun) wf_qo2
+            write(iun) wf_store2
+            write(iun) wf_qi2
+
+            !> Close the file to free the unit.
+            close(iun)
+
+        end if !(SAVERESUMEFLAG == 3) then
 
     end subroutine
 

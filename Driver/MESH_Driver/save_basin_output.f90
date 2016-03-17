@@ -43,7 +43,7 @@ module save_basin_output
 
     !> Global routines.
 
-    subroutine run_save_basin_output_ini(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine run_save_basin_output_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -71,7 +71,7 @@ module save_basin_output
         character(500) WRT_900_1, WRT_900_2, WRT_900_3, WRT_900_4, WRT_900_f
 
         !> Local variables.
-        integer IOUT, IGND, ierr, j, i
+        integer IOUT, IGND, j, i, ierr, iun
         real dnar
 
         !> Return if basin output has been disabled.
@@ -178,6 +178,59 @@ module save_basin_output
                              /dnar
         bno%wbdts(:)%STG_INI = bno%wbtot%STG_INI
 
+        !> Read initial variables values from file.
+        if (RESUMEFLAG == 3) then
+
+            !> Open the resume file.
+            iun = fls%fl(mfk%f883)%iun
+            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.basin_output', status = 'old', action = 'read', &
+                 form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+            !> Basin totals for the water balance.
+            read(iun) bno%wbtot%PRE
+            read(iun) bno%wbtot%EVAP
+            read(iun) bno%wbtot%ROF
+            read(iun) bno%wbtot%ROFO
+            read(iun) bno%wbtot%ROFS
+            read(iun) bno%wbtot%ROFB
+            read(iun) bno%wbtot%LQWS
+            read(iun) bno%wbtot%FRWS
+            read(iun) bno%wbtot%RCAN
+            read(iun) bno%wbtot%SNCAN
+            read(iun) bno%wbtot%SNO
+            read(iun) bno%wbtot%WSNO
+            read(iun) bno%wbtot%PNDW
+            read(iun) bno%wbtot%STG_INI
+
+            !> Other accumulators for the water balance.
+            iout = max(IKEY_ACC, IKEY_DLY, IKEY_MLY, IKEY_HLY, IKEY_TSP)
+            do i = 1, iout
+                read(iun) bno%wbdts(i)%PRE
+                read(iun) bno%wbdts(i)%EVAP
+                read(iun) bno%wbdts(i)%ROF
+                read(iun) bno%wbdts(i)%ROFO
+                read(iun) bno%wbdts(i)%ROFS
+                read(iun) bno%wbdts(i)%ROFB
+                read(iun) bno%wbdts(i)%RCAN
+                read(iun) bno%wbdts(i)%SNCAN
+                read(iun) bno%wbdts(i)%SNO
+                read(iun) bno%wbdts(i)%WSNO
+                read(iun) bno%wbdts(i)%PNDW
+                read(iun) bno%wbdts(i)%LQWS
+                read(iun) bno%wbdts(i)%FRWS
+                read(iun) bno%wbdts(i)%STG_INI
+            end do
+
+            !> Energy balance.
+            read(iun) eb_out%QEVP
+            read(iun) eb_out%HFS
+
+            !> Close the file to free the unit.
+            close(iun)
+
+        end if !(RESUMEFLAG == 3) then
+
     end subroutine
 
     subroutine run_save_basin_output(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
@@ -283,6 +336,87 @@ module save_basin_output
 
         !> Time-step (wb): IKEY_TSP
         call update_water_balance(shd, fls, 904, ic, ic%dts, IKEY_TSP)
+
+    end subroutine
+
+    subroutine run_save_basin_output_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+
+        use model_files_variabletypes
+        use model_files_variables
+        use sa_mesh_shared_variabletypes
+        use model_dates
+        use climate_forcing
+        use model_output_variabletypes
+        use MODEL_OUTPUT
+
+        type(fl_ids) :: fls
+        type(ShedGridParams) :: shd
+        type(iter_counter) :: ic
+        type(clim_info) :: cm
+        type(water_balance) :: wb
+        type(energy_balance) :: eb
+        type(soil_statevars) :: sv
+        type(streamflow_hydrograph) :: stfl
+        type(reservoir_release) :: rrls
+
+        !> Local variables.
+        integer iout, i, ierr, iun
+
+        !> Return if basin output has been disabled.
+        if (BASINBALANCEOUTFLAG == 0) return
+
+        !> Save the current state of the variables.
+        if (SAVERESUMEFLAG == 3) then
+
+            !> Open the resume file.
+            iun = fls%fl(mfk%f883)%iun
+            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.basin_output', status = 'replace', action = 'write', &
+                 form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+            !> Basin totals for the water balance.
+            write(iun) bno%wbtot%PRE
+            write(iun) bno%wbtot%EVAP
+            write(iun) bno%wbtot%ROF
+            write(iun) bno%wbtot%ROFO
+            write(iun) bno%wbtot%ROFS
+            write(iun) bno%wbtot%ROFB
+            write(iun) bno%wbtot%LQWS
+            write(iun) bno%wbtot%FRWS
+            write(iun) bno%wbtot%RCAN
+            write(iun) bno%wbtot%SNCAN
+            write(iun) bno%wbtot%SNO
+            write(iun) bno%wbtot%WSNO
+            write(iun) bno%wbtot%PNDW
+            write(iun) bno%wbtot%STG_INI
+
+            !> Other accumulators for the water balance.
+            iout = max(IKEY_ACC, IKEY_DLY, IKEY_MLY, IKEY_HLY, IKEY_TSP)
+            do i = 1, iout
+                write(iun) bno%wbdts(i)%PRE
+                write(iun) bno%wbdts(i)%EVAP
+                write(iun) bno%wbdts(i)%ROF
+                write(iun) bno%wbdts(i)%ROFO
+                write(iun) bno%wbdts(i)%ROFS
+                write(iun) bno%wbdts(i)%ROFB
+                write(iun) bno%wbdts(i)%RCAN
+                write(iun) bno%wbdts(i)%SNCAN
+                write(iun) bno%wbdts(i)%SNO
+                write(iun) bno%wbdts(i)%WSNO
+                write(iun) bno%wbdts(i)%PNDW
+                write(iun) bno%wbdts(i)%LQWS
+                write(iun) bno%wbdts(i)%FRWS
+                write(iun) bno%wbdts(i)%STG_INI
+            end do
+
+            !> Energy balance.
+            write(iun) eb_out%QEVP
+            write(iun) eb_out%HFS
+
+            !> Close the file to free the unit.
+            close(iun)
+
+        end if !(SAVERESUMEFLAG == 3) then
 
     end subroutine
 
