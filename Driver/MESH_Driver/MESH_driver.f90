@@ -97,11 +97,6 @@ program RUNMESH
     use sa_mesh_shared_variabletypes
     use sa_mesh_shared_variables
 
-    !> For subroutines: FIND_MONTH, FIND_DAY.
-!-    use EF_MODULE
-
-    !> For subroutine: GetIndices.
-!-    use MESH_INPUT_MODULE
     use FLAGS
 
     use module_mpi_flags
@@ -121,8 +116,6 @@ program RUNMESH
     use model_files_variabletypes
     use model_files_variables
     use model_files
-
-!-    use process_CLASS_config
 
     implicit none
 
@@ -173,7 +166,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = 'TRUNK (950)'
+    character(24) :: VERSION = 'TRUNK (951)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
     logical VER_OK
@@ -671,14 +664,19 @@ program RUNMESH
         print *
     end if !(ro%VERBOSEMODE > 0) then
 
-    !> RESUME/SAVERESUME 0 and 1 are not supported with MPI.
-    if (ipid == 0 .and. inp > 1) then
-        if (RESUMEFLAG == 1 .or. SAVERESUMEFLAG == 1) then
-            stop ' RESUMEFLAG 1 and SAVERESUMEFLAG 1 are not supported with MPI enabled.'
-        else if (RESUMEFLAG == 2 .or. SAVERESUMEFLAG == 2) then
-            stop ' RESUMEFLAG 2 and SAVERESUMEFLAG 2 are not supported with MPI enabled.'
+    !> RESUME/SAVERESUME 1 or 2 are not supported.
+    if (ipid == 0) then
+        if (RESUMEFLAG == 1 .or. SAVERESUMEFLAG == 1 .or. RESUMEFLAG == 2 .or. SAVERESUMEFLAG == 2) then
+            print 679, RESUMEFLAG, SAVERESUMEFLAG
+            stop
         end if
     end if
+
+679     format(/ &
+               /1x, 'RESUMEFLAG ', i1, ' and SAVERESUMEFLAG ', i1, ' are not supported.', &
+               /1x, 'Use RESUMEFLAG 4 or SAVERESUMEFLAG 4 instead.', &
+               /1x, 'Individual variables for RESUME/SAVERESUME or the file format', &
+               /1x, 'of the resume files cannot be configured at this time.')
 
 !> ********************************************************************
 !> RESUMEFLAG
@@ -981,12 +979,6 @@ program RUNMESH
 !230     continue
 !+    end if !(RESUMEFLAG == 2) then
 
-    !> Read initial prognostic variables for CLASS.
-!> bjd - July 14, 2014: Gonzalo Sapriza
-!-    if (RESUMEFLAG == 3) then
-!-        call read_init_prog_variables_class(fls)
-!-    end if !(RESUMEFLAG == 3) then
-
     if (ipid == 0) then
 
         !> Initialize accumulation variables.
@@ -1016,23 +1008,7 @@ program RUNMESH
 
     !> Calculate initial storage.
     if (ipid == 0) then
-
-        !> For grid output.
-!-        do k = il1, il2
-!-            ik = shd%lc%ILMOS(k)
-!-            FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-!-            if (FRAC > 0.0) then
-!-                wb_grd%stg(ik) = wb_grd%stg(ik) + (cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%ZPND(k)*RHOW)*FRAC
-!-                if (cpv%SNO(k) > 0.0) wb_grd%stg(ik) = wb_grd%stg(ik) + cpv%WSNO(k)*FRAC
-!-                do j = 1, IGND
-!-                    wb_grd%stg(ik) = wb_grd%stg(ik) + (cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*csfv%DELZW(k, j)*FRAC
-!-                end do
-!-            end if
-!-        end do
-
-        !> For basin output of the accumulated water balance.
         STG_INI = sum(wb_grd%stg)/wb_grd%basin_area
-
     end if !(ipid == 0) then
 
     !> Read in existing basin states for RESUMEFLAG.
@@ -1215,27 +1191,6 @@ program RUNMESH
             md_grd%qa = cm%clin(cfk%HU)%GRD
             md_grd%pres = cm%clin(cfk%P0)%GRD
             md_grd%pre = cm%clin(cfk%PR)%GRD
-!-            wb_grd%PRE = 0.0
-!-            eb_grd%QEVP = 0.0
-!-            wb_grd%EVAP = 0.0
-!-            eb_grd%HFS = 0.0
-!-            wb_grd%ROF = 0.0
-!-            wb_grd%ROFO = 0.0
-!-            wb_grd%ROFS =  0.0
-!-            wb_grd%ROFB = 0.0
-!-            spv_grd%TBAR = 0.0
-!-            spv_grd%THLQ = 0.0
-!-            wb_grd%LQWS = 0.0
-!-            spv_grd%THIC = 0.0
-!-            wb_grd%FRWS = 0.0
-!-            eb_grd%GFLX = 0.0
-!-            wb_grd%RCAN = 0.0
-!-            wb_grd%SNCAN = 0.0
-!-            wb_grd%SNO = 0.0
-!-            wb_grd%WSNO = 0.0
-!-            wb_grd%PNDW = 0.0
-!-            wb_grd%DSTG = wb_grd%STG
-!-            wb_grd%STG = 0.0
 
 !-            do k = il1, il2
 !-                ik = shd%lc%ILMOS(k)
@@ -1444,107 +1399,6 @@ program RUNMESH
 
     end if !(ipid /= 0) then
 
-!    call CLASSS(cp%TBARROW, cp%THLQROW, cp%THICROW, GFLXROW, TSFSROW, &
-!                cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, cp%TSNOROW, &
-!                cp%RHOSROW, cp%SNOROW, cp%TCANROW, cp%RCANROW, cp%SCANROW, &
-!                cp%GROROW, CMAIROW, TACROW, QACROW, WSNOROW, &
-!                shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
-!                NA, NTYPE, NML, il1, il2, IGND, ICAN, ICAN + 1, &
-!                cpv%TBAR, cpv%THLQ, cpv%THIC, cdv%GFLX, cpv%TSFS, &
-!                cpv%TPND, cpv%ZPND, cpv%TBAS, cpv%ALBS, cpv%TSNO, &
-!                cpv%RHOS, cpv%SNO, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
-!                cpv%GRO, cpv%CMAI, cpv%TAC, cpv%QAC, cpv%WSNO, &
-!                cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
-!                cp%SANDROW, csfv%SAND, cp%CLAYROW, csfv%CLAY, cp%XSLPROW, csfv%XSLP, &
-!                DrySnowRow, SnowAgeROW, DrySnowGAT, SnowAgeGAT, &
-!                TSNOdsROW, RHOSdsROW, TSNOdsGAT, RHOSdsGAT, &
-!                DriftROW, SublROW, DepositionROW, &
-!                DriftGAT, SublGAT, DepositionGAT)
-
-!    do 380 k = il1, il2
-!        ik = shd%lc%ILMOS(k)
-!        jk = shd%lc%JLMOS(k)
-!        CDHROW(ik, jk) = cdv%CDH(k)
-!        CDMROW(ik, jk) = cdv%CDM(k)
-!        HFSROW(ik, jk) = cdv%HFS(k)
-!        TFXROW(ik, jk) = cdv%TFX(k)
-!        QEVPROW(ik, jk) = cdv%QEVP(k)
-!        QFSROW(ik, jk) = cdv%QFS(k)
-!        QFXROW(ik, jk) = cdv%QFX(k)
-!        PETROW(ik, jk) = cdv%PET(k)
-!        GAROW(ik, jk) = cdv%GA(k)
-!        EFROW(ik, jk) = cdv%EF(k)
-!        GTROW(ik, jk) = cdv%GTE(k)
-!        QGROW(ik, jk) = cdv%QG(k)
-!        ALVSROW(ik, jk) = cdv%ALVS(k)
-!        ALIRROW(ik, jk) = cdv%ALIR(k)
-!        SFCTROW(ik, jk) = cdv%SFCT(k)
-!        SFCUROW(ik, jk) = cdv%SFCU(k)
-!        SFCVROW(ik, jk) = cdv%SFCV(k)
-!        SFCQROW(ik, jk) = cdv%SFCQ(k)
-!        FSNOROW(ik, jk) = cdv%FSNO(k)
-!        FSGVROW(ik, jk) = cdv%FSGV(k)
-!        FSGSROW(ik, jk) = cdv%FSGS(k)
-!        FSGGROW(ik, jk) = cdv%FSGG(k)
-!        FLGVROW(ik, jk) = cdv%FLGV(k)
-!        FLGSROW(ik, jk) = cdv%FLGS(k)
-!        FLGGROW(ik, jk) = cdv%FLGG(k)
-!        HFSCROW(ik, jk) = cdv%HFSC(k)
-!        HFSSROW(ik, jk) = cdv%HFSS(k)
-!        HFSGROW(ik, jk) = cdv%HFSG(k)
-!        HEVCROW(ik, jk) = cdv%HEVC(k)
-!        HEVSROW(ik, jk) = cdv%HEVS(k)
-!        HEVGROW(ik, jk) = cdv%HEVG(k)
-!        HMFCROW(ik, jk) = cdv%HMFC(k)
-!        HMFNROW(ik, jk) = cdv%HMFN(k)
-!        HTCCROW(ik, jk) = cdv%HTCC(k)
-!        HTCSROW(ik, jk) = cdv%HTCS(k)
-!        PCFCROW(ik, jk) = cdv%PCFC(k)
-!        PCLCROW(ik, jk) = cdv%PCLC(k)
-!        PCPNROW(ik, jk) = cdv%PCPN(k)
-!        PCPGROW(ik, jk) = cdv%PCPG(k)
-!        QFGROW(ik, jk) = cdv%QFG(k)
-!        QFNROW(ik, jk) = cdv%QFN(k)
-!        QFCLROW(ik, jk) = cdv%QFCL(k)
-!        QFCFROW(ik, jk) = cdv%QFCF(k)
-!        ROFROW(ik, jk) = cdv%ROF(k)
-!        ROFOROW(ik, jk) = cdv%ROFO(k)
-!        ROFSROW(ik, jk) = cdv%ROFS(k)
-!        ROFBROW(ik, jk) = cdv%ROFB(k)
-!        TROFROW(ik, jk) = cdv%TROF(k)
-!        TROOROW(ik, jk) = cdv%TROO(k)
-!        TROSROW(ik, jk) = cdv%TROS(k)
-!        TROBROW(ik, jk) = cdv%TROB(k)
-!        ROFCROW(ik, jk) = cdv%ROFC(k)
-!        ROFNROW(ik, jk) = cdv%ROFN(k)
-!        ROVGROW(ik, jk) = cdv%ROVG(k)
-!        WTRCROW(ik, jk) = cdv%WTRC(k)
-!        WTRSROW(ik, jk) = cdv%WTRS(k)
-!        WTRGROW(ik, jk) = cdv%WTRG(k)
-!        DRROW(ik, jk) = cdv%DR(k)
-!        WTABROW(ik, jk) = cdv%WTAB(k)
-!        ILMOROW(ik, jk) = cdv%ILMO(k)
-!        UEROW(ik, jk) = cdv%UE(k)
-!        HBLROW(ik, jk) = cdv%HBL(k)
-!380     continue
-
-!    do 390 l = 1, IGND
-!        do 390 k = il1, il2
-!            ik = shd%lc%ILMOS(k)
-!            jk = shd%lc%JLMOS(k)
-!            HMFGROW(ik, jk, l) = cdv%HMFG(k, l)
-!            HTCROW(ik, jk, l) = cdv%HTC(k, l)
-!            QFCROW(ik, jk, l) = cdv%QFC(k, l)
-!390     continue
-
-!    do 430 m = 1, 50
-!        do 420 l = 1, 6
-!            do 410 k = il1, il2
-!                ITCTROW(shd%lc%ILMOS(k), shd%lc%JLMOS(k), l, m) = ITCTGAT(k, l, m)
-!410     continue
-!420     continue
-!430     continue
-
     !> *********************************************************************
     !> SAVERESUMEFLAG
     !> *********************************************************************
@@ -1608,12 +1462,6 @@ program RUNMESH
 !+                            shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
 !+    end if !(SAVERESUMEFLAG == 2) then
 
-    !> Save initial prognostic variables for CLASS.
-!> bjd - July 14, 2014: Gonzalo Sapriza
-!-    if (SAVERESUMEFLAG == 3) then
-!-        call save_init_prog_variables_class(fls)
-!-    end if !(SAVERESUMEFLAG == 3) then
-
     if (OUTFIELDSFLAG == 1) call write_outputs(shd, fls, ts, ic, ifo, vr)
 
     !> *********************************************************************
@@ -1664,18 +1512,6 @@ program RUNMESH
         end if !(SAVERESUMEFLAG == 4) then
 
         !> Calculate final storage for the run.
-!-        STG_FIN = 0.0
-!-        do k = il1, il2
-!-            ik = shd%lc%ILMOS(k)
-!-            FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-!-            if (FRAC > 0.0) then
-!-                STG_FIN = STG_FIN + (cpv%RCAN(k) + cpv%SNCAN(k) + cpv%SNO(k) + cpv%ZPND(k)*RHOW)*FRAC
-!-                if (cpv%SNO(k) > 0.0) STG_FIN = STG_FIN + cpv%WSNO(k)*FRAC
-!-                do j = 1, IGND
-!-                    STG_FIN = STG_FIN + (cpv%THLQ(k, j)*RHOW + cpv%THIC(k, j)*RHOICE)*csfv%DELZW(k, j)*FRAC
-!-                end do
-!-            end if
-!-        end do
         STG_FIN = sum(wb_grd%stg)/wb_grd%basin_area
 
         !> Basin totals for the run.
