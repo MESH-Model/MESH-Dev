@@ -7,6 +7,7 @@ module SIMSTATS
 
     use SIMSTATS_config
     use mesh_input_module
+    use model_output_variabletypes
     use flags
     use model_files
     use model_dates
@@ -188,12 +189,12 @@ module SIMSTATS
     !>
     !> Description:
     !>
-    subroutine stats_init(fls, ins)
+    subroutine stats_init(fls, ic, stfl)
 
         !> Input variables.
-        !* ns: Number of streamflow gauges
         type(fl_ids) :: fls
-        integer, intent(in) :: ins
+        type(iter_counter) :: ic
+        type(streamflow_hydrograph) :: stfl
 
         !> Local variables.
         logical exists
@@ -226,9 +227,9 @@ module SIMSTATS
         end if
 
         ncal = 0
-        ns = ins
+        ns = stfl%ns
 
-        allocate(qobs(9000, ns), qsim(9000, ns))
+        allocate(qobs(leap_year(ic%now_year), ns), qsim(leap_year(ic%now_year), ns))
         allocate(bias(ns), nsd(ns), lnsd(ns), nsw(ns), tpd(ns), tpw(ns))
 
         qobs = 0.0
@@ -243,16 +244,43 @@ module SIMSTATS
     !>
     !> Description:
     !>
-    subroutine stats_update_stfl_daily(qhyd_avg, qsyn_avg)
+    subroutine stats_update_stfl_daily(fls, ic, stfl)
 
         !> Input variables.
-        real, dimension(:), intent(in) :: qhyd_avg, qsyn_avg
+        type(fl_ids) :: fls
+        type(iter_counter) :: ic
+        type(streamflow_hydrograph) :: stfl
+
+        integer isz
+        real, dimension(:, :), allocatable :: tmp
 
         if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
         ncal = ncal + 1
-        qobs(ncal, :) = qhyd_avg(:)
-        qsim(ncal, :) = qsyn_avg(:)
+
+        if (ncal > size(qobs, 1)) then
+
+            isz = size(qobs, 1)
+            allocate(tmp(size(qobs, 1), ns))
+            tmp = qobs
+            deallocate(qobs)
+            isz = isz + leap_year(ic%now_year)
+            allocate(qobs(isz, ns))
+            qobs = 0.0
+            qobs(1:(ncal - 1), :) = tmp(1:(ncal - 1), :)
+            tmp = 0.0
+            tmp = qsim
+            deallocate(qsim)
+            isz = isz + leap_year(ic%now_year)
+            allocate(qsim(isz, ns))
+            qsim = 0.0
+            qsim(1:(ncal - 1), :) = tmp(1:(ncal - 1), :)
+            deallocate(tmp)
+
+        end if
+
+        qobs(ncal, :) = stfl%qhyd
+        qsim(ncal, :) = stfl%qsyn
 
         if (objfnflag == 0) then
             ftest = sae_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
@@ -303,6 +331,7 @@ module SIMSTATS
 
         !> Write the values of the variables to file.
         write(iun) ncal
+        write(iun) ns
         write(iun) fbest, ftest
         do j = 1, ns
             write(iun) qobs(1:ncal, j)
@@ -339,7 +368,10 @@ module SIMSTATS
 
         !> Read the values of the variables from file.
         read(iun) ncal
+        read(iun) ns
         read(iun) fbest, ftest
+        if (allocated(qobs)) deallocate(qobs, qsim)
+        allocate(qobs(ncal, ns), qsim(ncal, ns))
         do j = 1, ns
             read(iun) qobs(1:ncal, j)
             read(iun) qsim(1:ncal, j)

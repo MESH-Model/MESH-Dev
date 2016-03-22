@@ -671,7 +671,7 @@ program RUNMESH
         print *
     end if !(ro%VERBOSEMODE > 0) then
 
-    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls, stfl%ns)
+    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls, ic, stfl)
 
 !todo: temporary until mpi-friendly RESUMEFLAG/SAVERESUMEFLAG has been implemented.
     if ((RESUMEFLAG > 0 .and. RESUMEFLAG /= 3) .or. (SAVERESUMEFLAG > 0 .and. SAVERESUMEFLAG /= 3)) then
@@ -1375,7 +1375,7 @@ program RUNMESH
                     write(6, *)
                 end if !(ro%VERBOSEMODE > 0) then
                 if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
-                    call stats_update_stfl_daily(stfl%qhyd, stfl%qsyn)
+                    call stats_update_stfl_daily(fls, ic, stfl)
                     if (mtsflg%PREEMPTIONFLAG > 1) then
                         if (FTEST > FBEST) goto 199
                     end if
@@ -1752,7 +1752,7 @@ program RUNMESH
 
 199 continue
 
-    if (mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls, ic)
+    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls, ic)
 
 999     continue
 
