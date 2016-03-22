@@ -866,9 +866,9 @@ module process_CLASS_config
 
         !> Read initial prognostic variables for CLASS.
 !> bjd - July 14, 2014: Gonzalo Sapriza
-        if (RESUMEFLAG == 3) then
+        if (RESUMEFLAG == 3 .or. RESUMEFLAG == 4) then
             call read_init_prog_variables_class(fls)
-        end if !(RESUMEFLAG == 3) then
+        end if !(RESUMEFLAG == 3 .or. RESUMEFLAG == 4) then
 
     end subroutine
 
@@ -897,9 +897,9 @@ module process_CLASS_config
 
         !> Save initial prognostic variables for CLASS.
 !> bjd - July 14, 2014: Gonzalo Sapriza
-        if (SAVERESUMEFLAG == 3) then
+        if (SAVERESUMEFLAG == 3 .or. SAVERESUMEFLAG == 4) then
             call save_init_prog_variables_class(fls)
-        end if !(SAVERESUMEFLAG == 3) then
+        end if !(SAVERESUMEFLAG == 3 .or. SAVERESUMEFLAG == 4) then
 
     end subroutine
 

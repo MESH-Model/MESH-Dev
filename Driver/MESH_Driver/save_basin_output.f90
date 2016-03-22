@@ -179,7 +179,7 @@ module save_basin_output
         bno%wbdts(:)%STG_INI = bno%wbtot%STG_INI
 
         !> Read initial variables values from file.
-        if (RESUMEFLAG == 3) then
+        if (RESUMEFLAG == 4) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
@@ -229,7 +229,7 @@ module save_basin_output
             !> Close the file to free the unit.
             close(iun)
 
-        end if !(RESUMEFLAG == 3) then
+        end if !(RESUMEFLAG == 4) then
 
     end subroutine
 
@@ -366,7 +366,7 @@ module save_basin_output
         if (BASINBALANCEOUTFLAG == 0) return
 
         !> Save the current state of the variables.
-        if (SAVERESUMEFLAG == 3) then
+        if (SAVERESUMEFLAG == 4) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
@@ -416,7 +416,7 @@ module save_basin_output
             !> Close the file to free the unit.
             close(iun)
 
-        end if !(SAVERESUMEFLAG == 3) then
+        end if !(SAVERESUMEFLAG == 4) then
 
     end subroutine
 

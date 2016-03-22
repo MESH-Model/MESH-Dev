@@ -235,7 +235,7 @@ module SIMSTATS
         qobs = 0.0
         qsim = 0.0
 
-        if (RESUMEFLAG == 3) then
+        if (RESUMEFLAG == 4) then
             call stats_state_resume(fls)
         end if
 
@@ -395,7 +395,7 @@ module SIMSTATS
         logical exists
         integer j, iun
 
-        if (SAVERESUMEFLAG == 3) then
+        if (SAVERESUMEFLAG == 4) then
             call stats_state_save(fls)
             return
         end if

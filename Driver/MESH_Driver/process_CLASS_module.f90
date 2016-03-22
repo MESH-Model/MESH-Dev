@@ -383,7 +383,7 @@ module process_CLASS
         invars = 14 + 4*IGND
 
         !> Update the variable count per the active control flags.
-        if (SAVERESUMEFLAG == 3) invars = invars + 10 + 4
+        if (SAVERESUMEFLAG == 3 .or. SAVERESUMEFLAG == 4) invars = invars + 10 + 4
 
         if (inp > 1 .and. ipid /= 0) then
 
@@ -416,7 +416,7 @@ module process_CLASS
             end do
 
             !> Send optional variables per the active control flags.
-            if (SAVERESUMEFLAG == 3) then
+            if (SAVERESUMEFLAG == 3 .or. SAVERESUMEFLAG == 4) then
                 call mpi_isend(cpv%ALBS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_isend(cpv%CMAI(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_isend(cpv%GRO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
@@ -430,7 +430,7 @@ module process_CLASS
                 do j = 1, 4
                     call mpi_isend(cpv%TSFS(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end do
-            end if !(SAVERESUMEFLAG == 3) then
+            end if !(SAVERESUMEFLAG == 3 .or. SAVERESUMEFLAG == 4) then
 
             lstat = .false.
             do while (.not. lstat)
@@ -479,7 +479,7 @@ module process_CLASS
                 end do
 
                 !> Send optional variables per the active control flags.
-                if (SAVERESUMEFLAG == 3) then
+                if (SAVERESUMEFLAG == 3 .or. SAVERESUMEFLAG == 4) then
                     call mpi_irecv(cpv%ALBS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                     call mpi_irecv(cpv%CMAI(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                     call mpi_irecv(cpv%GRO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
@@ -494,7 +494,7 @@ module process_CLASS
                         call mpi_irecv(cpv%TSFS(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
                         i = i + 1
                     end do
-                end if !(SAVERESUMEFLAG == 3) then
+                end if !(SAVERESUMEFLAG == 3 .or. SAVERESUMEFLAG == 4) then
 
                 lstat = .false.
                 do while (.not. lstat)

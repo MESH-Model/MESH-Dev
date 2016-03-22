@@ -31,6 +31,7 @@
         use model_files_variabletypes
         use model_files_variables
         use process_CLASS_variables, only: cpv
+        use FLAGS, only: SAVERESUMEFLAG
 
         implicit none
 
@@ -38,11 +39,14 @@
         type(fl_ids) :: fls
 
         !> Local variables.
+        character(250) fn
         integer ierr, iun
 
         !> Open the resume state file.
         iun = fls%fl(mfk%f883)%iun
-        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'replace', action = 'write', &
+        fn = trim(adjustl(fls%fl(mfk%f883)%fn))
+        if (SAVERESUMEFLAG == 4) fn = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.runclass'
+        open(iun, file = fn, status = 'replace', action = 'write', &
              form = 'unformatted', access = 'sequential', iostat = ierr)
 
 !todo: condition for ierr.

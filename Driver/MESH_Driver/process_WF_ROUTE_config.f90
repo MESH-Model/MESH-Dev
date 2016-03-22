@@ -368,7 +368,7 @@ module process_WF_ROUTE_config
 
         end if !(STREAMFLOWOUTFLAG > 0) then
 
-        if (RESUMEFLAG == 3) then
+        if (RESUMEFLAG == 4) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
@@ -392,7 +392,7 @@ module process_WF_ROUTE_config
             !> Close the file to free the unit.
             close(iun)
 
-        end if !(RESUMEFLAG == 3) then
+        end if !(RESUMEFLAG == 4) then
 
     end subroutine
 
@@ -419,7 +419,7 @@ module process_WF_ROUTE_config
         !> Local variables.
         integer ierr, iun
 
-        if (SAVERESUMEFLAG == 3) then
+        if (SAVERESUMEFLAG == 4) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
@@ -443,7 +443,7 @@ module process_WF_ROUTE_config
             !> Close the file to free the unit.
             close(iun)
 
-        end if !(SAVERESUMEFLAG == 3) then
+        end if !(SAVERESUMEFLAG == 4) then
 
     end subroutine
 

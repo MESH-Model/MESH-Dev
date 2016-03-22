@@ -173,7 +173,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = 'TRUNK (943)'
+    character(24) :: VERSION = 'TRUNK (950)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
     logical VER_OK
@@ -671,11 +671,13 @@ program RUNMESH
         print *
     end if !(ro%VERBOSEMODE > 0) then
 
-    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls, ic, stfl)
-
-!todo: temporary until mpi-friendly RESUMEFLAG/SAVERESUMEFLAG has been implemented.
-    if ((RESUMEFLAG > 0 .and. RESUMEFLAG /= 3) .or. (SAVERESUMEFLAG > 0 .and. SAVERESUMEFLAG /= 3)) then
-        stop ' Only RESUMEFLAG 3 and SAVERESUMEFLAG 3 are supported.'
+    !> RESUME/SAVERESUME 0 and 1 are not supported with MPI.
+    if (ipid == 0 .and. inp > 1) then
+        if (RESUMEFLAG == 1 .or. SAVERESUMEFLAG == 1) then
+            stop ' RESUMEFLAG 1 and SAVERESUMEFLAG 1 are not supported with MPI enabled.'
+        else if (RESUMEFLAG == 2 .or. SAVERESUMEFLAG == 2) then
+            stop ' RESUMEFLAG 2 and SAVERESUMEFLAG 2 are not supported with MPI enabled.'
+        end if
     end if
 
 !> ********************************************************************
@@ -985,12 +987,6 @@ program RUNMESH
 !-        call read_init_prog_variables_class(fls)
 !-    end if !(RESUMEFLAG == 3) then
 
-    !> MAM - Initialize ENDDATE and ENDDATA
-    ENDDATE = .false.
-    ENDDATA = .false.
-
-    call climate_module_loaddata(shd, .true., cm, NML, il1, il2, ENDDATA)
-
     if (ipid == 0) then
 
         !> Initialize accumulation variables.
@@ -1019,9 +1015,6 @@ program RUNMESH
     end if !(ipid == 0) then
 
     !> Calculate initial storage.
-!todo: Preserve 'initial' initial storage for the case of RESUMEFLAG;
-!      but also preserve the initial storage of the time-step and delta
-!      storage for the case of RESUMEFLAG.
     if (ipid == 0) then
 
         !> For grid output.
@@ -1042,16 +1035,12 @@ program RUNMESH
 
     end if !(ipid == 0) then
 
-    !> *********************************************************************
-    !> End of Initialization
-    !> *********************************************************************
-
     !> Read in existing basin states for RESUMEFLAG.
-    if (RESUMEFLAG > 0) then
+    if (RESUMEFLAG == 4) then
 
         !> Open the resume file for the driver.
         iun = fls%fl(mfk%f883)%iun
-        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.mesh_driver.parallel', status = 'old', action = 'read', &
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.mesh_driver', status = 'old', action = 'read', &
              form = 'unformatted', access = 'sequential', iostat = ierr)
 !todo: condition for ierr.
 
@@ -1060,17 +1049,8 @@ program RUNMESH
         read(iun) ic%count_year, ic%count_jday, ic%count_month, ic%count_day, ic%count_hour, ic%count_mins
         read(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
 
-        !> Close the file to free the unit.
-        close(iun)
-
-        !> Read states for the driver.
+        !> Read states for the driver (for the head node or in serial).
         if (ipid == 0) then
-
-            !> Open the resume file for the driver.
-            iun = fls%fl(mfk%f883)%iun
-            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.mesh_driver.serial', status = 'old', action = 'read', &
-                 form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
 
             !> Water balance totals.
             read(iun) TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
@@ -1080,12 +1060,20 @@ program RUNMESH
             read(iun) stfl%qhyd
             read(iun) stfl%qsyn
 
-            !> Close the file to free the unit.
-            close(iun)
-
         end if
 
-    end if !(RESUMEFLAG > 0) then
+        !> Close the file to free the unit.
+        close(iun)
+
+    end if !(RESUMEFLAG == 4) then
+
+    call climate_module_loaddata(shd, .true., cm, NML, il1, il2, ENDDATA)
+
+    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls, ic, stfl)
+
+    !> *********************************************************************
+    !> End of Initialization
+    !> *********************************************************************
 
     if (ro%VERBOSEMODE > 0) then
         print *
@@ -1099,6 +1087,10 @@ program RUNMESH
     !> *********************************************************************
     !> Start of main loop that is run each half hour
     !> *********************************************************************
+
+    !> MAM - Initialize ENDDATE and ENDDATA
+    ENDDATE = .false.
+    ENDDATA = .false.
 
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
@@ -1622,52 +1614,6 @@ program RUNMESH
 !-        call save_init_prog_variables_class(fls)
 !-    end if !(SAVERESUMEFLAG == 3) then
 
-    !> Save the current state of the model for SAVERESUMEFLAG.
-    if (SAVERESUMEFLAG > 0) then
-
-        !> Allow process modules to save the current state
-        call run_within_tile_finalize(fls, shd, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
-        call run_within_grid_finalize(fls, shd, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
-        call run_between_grid_finalize(fls, shd, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
-
-        !> Open the resume file for the driver.
-        iun = fls%fl(mfk%f883)%iun
-        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.mesh_driver.parallel', status = 'replace', action = 'write', &
-             form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
-
-        !> Time-stepping information.
-        write(iun) ic%now_year, ic%now_jday, ic%now_month, ic%now_day, ic%now_hour, ic%now_mins
-        write(iun) ic%count_year, ic%count_jday, ic%count_month, ic%count_day, ic%count_hour, ic%count_mins
-        write(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
-
-        !> Close the file to free the unit.
-        close(iun)
-
-        !> Save output for the driver.
-        if (ipid == 0) then
-
-            !> Open the resume file for the driver.
-            iun = fls%fl(mfk%f883)%iun
-            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.mesh_driver.serial', status = 'replace', action = 'write', &
-                 form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
-
-            !> Water balance totals.
-            write(iun) TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
-            write(iun) STG_INI
-
-            !> Daily streamflow values.
-            write(iun) stfl%qhyd
-            write(iun) stfl%qsyn
-
-            !> Close the file to free the unit.
-            close(iun)
-
-        end if
-
-    end if !(SAVERESUMEFLAG > 0) then
-
     if (OUTFIELDSFLAG == 1) call write_outputs(shd, fls, ts, ic, ifo, vr)
 
     !> *********************************************************************
@@ -1681,7 +1627,41 @@ program RUNMESH
 
     if (len_trim(cstate) > 0) print *, trim(cstate)
 
+    !> Call finalization routines.
+    call run_within_tile_finalize(fls, shd, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    call run_within_grid_finalize(fls, shd, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+
     if (ipid == 0 ) then
+
+        !> Call finalization routines.
+        call run_between_grid_finalize(fls, shd, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+
+        !> Save the current state of the model for SAVERESUMEFLAG.
+        if (SAVERESUMEFLAG == 4) then
+
+            !> Open the resume file for the driver.
+            iun = fls%fl(mfk%f883)%iun
+            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.mesh_driver', status = 'replace', action = 'write', &
+                 form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+            !> Time-stepping information.
+            write(iun) ic%now_year, ic%now_jday, ic%now_month, ic%now_day, ic%now_hour, ic%now_mins
+            write(iun) ic%count_year, ic%count_jday, ic%count_month, ic%count_day, ic%count_hour, ic%count_mins
+            write(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
+
+            !> Water balance totals.
+            write(iun) TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
+            write(iun) STG_INI
+
+            !> Daily streamflow values.
+            write(iun) stfl%qhyd
+            write(iun) stfl%qsyn
+
+            !> Close the file to free the unit.
+            close(iun)
+
+        end if !(SAVERESUMEFLAG == 4) then
 
         !> Calculate final storage for the run.
 !-        STG_FIN = 0.0
