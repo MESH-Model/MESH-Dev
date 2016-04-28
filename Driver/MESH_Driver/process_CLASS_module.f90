@@ -77,8 +77,8 @@ module process_CLASS
 
         if (ipid /= 0 .or. izero == 0) then
 
-            cfi%FSVH(il1:il2) = FSVHGAT(il1:il2)
-            cfi%FSIH(il1:il2) = FSIHGAT(il1:il2)
+            cfi%FSVH(il1:il2) = cm%dat(ck%FB)%GAT(il1:il2)/2.0
+            cfi%FSIH(il1:il2) = cm%dat(ck%FB)%GAT(il1:il2)/2.0
             cfi%FDL(il1:il2) = cm%dat(ck%FI)%GAT(il1:il2)
             cfi%PRE(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)
             cfi%TA(il1:il2) = cm%dat(ck%TT)%GAT(il1:il2)

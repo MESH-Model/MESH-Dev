@@ -17,14 +17,14 @@ module climate_forcing
     !* MINS_START_CLIM: Minute (in 30-min. increment; either 0 or 30) at the start of the simulation.
 !-    integer YEAR_START_CLIM, JDAY_START_CLIM, HOUR_START_CLIM, MINS_START_CLIM
 
-    real, dimension(:), allocatable, save :: &
-        FSVHGRD, FSIHGRD, &
+!-    real, dimension(:), allocatable, save :: &
+!-        FSVHGRD, FSIHGRD, &
 !-        FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD,
-        VLGRD, &
+!-        VLGRD, &
 !-        FSDOWN, &
-        FSVHGAT, FSIHGAT, &
+!-        FSVHGAT, FSIHGAT, &
 !-        FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, &
-        VLGAT
+!-        VLGAT
 
     !> MAM - variables for forcing data interpolation:
 !-    real, dimension(:), allocatable :: &
@@ -331,39 +331,39 @@ module climate_forcing
         end do !vid = 1, cm%nclim
 
         !> Allocate and initialize GRD variables.
-        allocate( &
-            FSVHGRD(shd%NA), FSIHGRD(shd%NA), &
+!-        allocate( &
+!-            FSVHGRD(shd%NA), FSIHGRD(shd%NA), &
 !            , FDLGRD(shd%NA), PREGRD(shd%NA), TAGRD(shd%NA), ULGRD(shd%NA), PRESGRD(shd%NA), &
 !            QAGRD(shd%NA), &
-            VLGRD(shd%NA))
+!-            VLGRD(shd%NA))
 !            , FSDOWN(shd%NA))
-        FSVHGRD = 0.0
-        FSIHGRD = 0.0
+!-        FSVHGRD = 0.0
+!-        FSIHGRD = 0.0
 !        FDLGRD = 0.0
 !        PREGRD = 0.0
 !        TAGRD = 0.0
 !        ULGRD = 0.0
 !        PRESGRD = 0.0
 !        QAGRD = 0.0
-        VLGRD = 0.0
+!-        VLGRD = 0.0
 !        FSDOWN = 0.0
 
         !> Allocate and initialize GAT variables.
 !        ilg = shd%NA*shd%lc%NTYPE
-        allocate( &
-            FSVHGAT(shd%lc%NML), FSIHGAT(shd%lc%NML), &
+!-        allocate( &
+!-            FSVHGAT(shd%lc%NML), FSIHGAT(shd%lc%NML), &
 !            FDLGAT(ilg), PREGAT(ilg), TAGAT(ilg), ULGAT(ilg), &
 !            PRESGAT(ilg), QAGAT(ilg), &
-            VLGAT(shd%lc%NML))
-        FSVHGAT = 0.0
-        FSIHGAT = 0.0
+!-            VLGAT(shd%lc%NML))
+!-        FSVHGAT = 0.0
+!-        FSIHGAT = 0.0
 !        FDLGAT = 0.0
 !        PREGAT = 0.0
 !        TAGAT = 0.0
 !        ULGAT = 0.0
 !        PRESGAT = 0.0
 !        QAGAT = 0.0
-        VLGAT = 0.0
+!-        VLGAT = 0.0
 
         !> Allocate and initialize GAT variables for climate interpolation.
 !-        allocate( &
@@ -620,8 +620,8 @@ module climate_forcing
                 !> Grab data from file.
                 if (cm%dat(vid)%itimestep == 0) then
 
-!?                VLGRD = 0.0
-!?                VLGAT = 0.0
+!-                VLGRD = 0.0
+!-                VLGAT = 0.0
 
                     !> Update the input forcing data.
                     if (update_data(shd, ii1, ii2, .false., vid, cm)) goto 999
@@ -697,12 +697,12 @@ module climate_forcing
 
                 end select
 
-                if (vid == ck%FB) then
-                    FSVHGAT = cm%dat(ck%FB)%GAT/2.0
-                    FSVHGRD = cm%dat(ck%FB)%GRD/2.0
-                    FSIHGAT = cm%dat(ck%FB)%GAT/2.0
-                    FSIHGRD = cm%dat(ck%FB)%GRD/2.0
-                end if
+!-                if (vid == ck%FB) then
+!-                    FSVHGAT = cm%dat(ck%FB)%GAT/2.0
+!-                    FSVHGRD = cm%dat(ck%FB)%GRD/2.0
+!-                    FSIHGAT = cm%dat(ck%FB)%GAT/2.0
+!-                    FSIHGRD = cm%dat(ck%FB)%GRD/2.0
+!-                end if
 
                 !> Increment the time-step of the variable.
                 cm%dat(vid)%itimestep = cm%dat(vid)%itimestep + (ic%dts/60)

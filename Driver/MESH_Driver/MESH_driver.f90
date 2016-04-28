@@ -753,8 +753,8 @@ program RUNMESH
 !                     cp%DRNROW, cp%XSLPROW, cp%XDROW, WFSFROW, cp%KSROW, &
 !                     ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
 !                     AGIDROW, ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
-!                     cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, FSVHGRD, &
-!                     FSIHGRD, CSZGRD, cm%dat(ck%FI)%GRD, cm%dat(ck%UV)%GRD, VLGRD, &
+!                     cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, cm%dat(ck%FB)%GRD/2.0, &
+!                     cm%dat(ck%FB)%GRD/2.0, CSZGRD, cm%dat(ck%FI)%GRD, cm%dat(ck%UV)%GRD, VLGRD, &
 !                     cm%dat(ck%TT)%GRD, cm%dat(ck%HU)%GRD, cm%dat(ck%P0)%GRD, &
 !                     cm%dat(ck%RT)%GRD, PADRGRD, &
 !                     VPDGRD, TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, &
@@ -1185,8 +1185,8 @@ program RUNMESH
 
             !> Grid data for output.
             md_grd%fsdown = cm%dat(ck%FB)%GRD
-            md_grd%fsvh = fsvhgrd
-            md_grd%fsih = fsihgrd
+            md_grd%fsvh = cm%dat(ck%FB)%GRD/2.0
+            md_grd%fsih = cm%dat(ck%FB)%GRD/2.0
             md_grd%fdl = cm%dat(ck%FI)%GRD
             md_grd%ul = cm%dat(ck%UV)%GRD
             md_grd%ta = cm%dat(ck%TT)%GRD
