@@ -1,7 +1,6 @@
-!>**********************************************************************
-!>  Athor: Gonzalo Sapriza Azuri
-!>  Description: Handled climate forcing data to be loaded in memory
-!>**********************************************************************
+!>
+!> Description: Module to manage input climate forcing data.
+!>
 module climate_forcing
 
     use climate_forcing_constants
@@ -17,38 +16,28 @@ module climate_forcing
     !* MINS_START_CLIM: Minute (in 30-min. increment; either 0 or 30) at the start of the simulation.
 !-    integer YEAR_START_CLIM, JDAY_START_CLIM, HOUR_START_CLIM, MINS_START_CLIM
 
-!-    real, dimension(:), allocatable, save :: &
-!-        FSVHGRD, FSIHGRD, &
-!-        FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD,
-!-        VLGRD, &
-!-        FSDOWN, &
-!-        FSVHGAT, FSIHGAT, &
-!-        FDLGAT, PREGAT, TAGAT, ULGAT, PRESGAT, QAGAT, &
-!-        VLGAT
-
-    !> MAM - variables for forcing data interpolation:
-!-    real, dimension(:), allocatable :: &
-!-        FSVHGATPRE, FSIHGATPRE, &
-!-        FDLGATPRE, PREGATPRE, &
-!-        TAGATPRE, ULGATPRE, PRESGATPRE, QAGATPRE, &
-!-        FSVHGATPST, FSIHGATPST
-!-        FDLGATPST, PREGATPST, &
-!-        TAGATPST, ULGATPST, PRESGATPST, QAGATPST
-!-    real TRATIO
-
     contains
 
-    !> *****************************************************************
-    !> Open the MESH_input_forcing.bin file
-    !> *****************************************************************
-    subroutine climate_module_init(ts, shd, ii1, ii2, cm, ENDDATA)
+    !>
+    !> Description: Initialize the climate forcing object, allocate variables in the object to store data, and open input climate forcing files.
+    !>
+    !> Inputs:
+    !>  - shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
+    !>  - ii1: Starting index in the GAT vector.
+    !>  - ii2: Stopping index in the GAT vector.
+    !>  - cm: Climate forcing object. Contains the file name, format, and its unit.
+    !>
+    !> Outputs:
+    !>  - ENDDATA: Returns .true. if there was an error occurred intializing the climate object or its variables.
+    !>
+    function climate_module_init(shd, ii1, ii2, cm) result(ENDDATA)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use FLAGS
 
         !> Input variables.
-        type(dates_model) :: ts
+!-        type(dates_model) :: ts
         type(ShedGridParams) :: shd
         integer ii1, ii2
 
@@ -65,7 +54,7 @@ module climate_forcing
 !-        integer nts, rts, timeStepClimF
         integer vid, t, s, k, j, i
 
-!-        integer ilg
+        ENDDATA = .false.
 
         !> Allocate the climate forcing variable.
 !?        cm%nclim = ck%nn
@@ -84,12 +73,7 @@ module climate_forcing
         !> Read from file to override default configuration.
         call open_config(cm)
 
-        !> Initialize the climate variable.
-!-        call READ_CHECK_FORCING_FILES(shd, ts, cm)
-
-    !> Call to open the forcing file.
-!-    call Init_clim_data(vid, cm%basefileunit + vid, cm)
-
+        !> Initialize climate variables.
         do vid = 1, cm%nclim
 
             !> Check if the file is in the legacy binary format.
@@ -150,38 +134,37 @@ module climate_forcing
 
             !> Set the unit number and allocate the default number of source files.
             cm%dat(vid)%fiun = cm%basefileunit + vid
-!-            allocate(cm%dat(vid)%name(1))
 
             !> Allocate the gridded series.
             allocate(cm%dat(vid)%GRD(shd%NA), cm%dat(vid)%GAT(shd%lc%NML), cm%dat(vid)%GRU(shd%lc%NTYPE))
 
             !> Open the forcing files.
-            if (open_data(shd, vid, cm)) goto 999
+            if (open_data(shd, cm, vid)) goto 999
 
 !todo - leave these in for event based runs
-        !> IYEAR is set in the MESH_parameters_CLASS.ini file
-        !> YEAR_START is set in the MESH_input_run_options.ini file
-!        nyy = YEAR_START - cm%dat(vid)%start_date%year
-!        ndy = JDAY_START - cm%dat(vid)%start_date%jday
+            !> IYEAR is set in the MESH_parameters_CLASS.ini file
+            !> YEAR_START is set in the MESH_input_run_options.ini file
+!            nyy = YEAR_START - cm%dat(vid)%start_date%year
+!            ndy = JDAY_START - cm%dat(vid)%start_date%jday
             nmy = MINS_START - cm%dat(vid)%start_date%mins
             nhy = HOUR_START - cm%dat(vid)%start_date%hour
 
-        ! set ISTEP_START based on HOURLYFLAG
-        !  (could be optimised as ISTEP_START = 2 - HOURLYFLAG)
-        !HOURLYFLAG is 1 if the data is every hour, and 0 if the data is every half-hour
-        !ISTEP_START is used to calculate nrs, and doubles the effect of the hours and
-        ! minutes if the data is in half-hourly format
-!        if (HOURLYFLAG == 1) then
-!            ISTEP_START = 1
-!        else
-!            ISTEP_START = 2
-!        end if
-        !Note added by M. Mekonnen
-        !ISTEP_START is used to count the number of records in one hour,
-        !hence a 30 minute interval forcing data will have 2 records per hour (ISTEP_START = 2)
-        !and a 1 hour interval forcing data will have 1 record per hour (ISTEP_START = 1). To
-        !accomodate forcing data with time intervals greater than 1 hour,
-        !it is better to count the number of records in a day:
+            ! set ISTEP_START based on HOURLYFLAG
+            !  (could be optimised as ISTEP_START = 2 - HOURLYFLAG)
+            !HOURLYFLAG is 1 if the data is every hour, and 0 if the data is every half-hour
+            !ISTEP_START is used to calculate nrs, and doubles the effect of the hours and
+            ! minutes if the data is in half-hourly format
+!            if (HOURLYFLAG == 1) then
+!                ISTEP_START = 1
+!            else
+!                ISTEP_START = 2
+!            end if
+            !Note added by M. Mekonnen
+            !ISTEP_START is used to count the number of records in one hour,
+            !hence a 30 minute interval forcing data will have 2 records per hour (ISTEP_START = 2)
+            !and a 1 hour interval forcing data will have 1 record per hour (ISTEP_START = 1). To
+            !accomodate forcing data with time intervals greater than 1 hour,
+            !it is better to count the number of records in a day:
             ISTEP_START = 24*60/cm%dat(vid)%hf
             if (mod(24*60, cm%dat(vid)%hf) /= 0) then
                 print 2334
@@ -203,14 +186,14 @@ module climate_forcing
                /3x, 'run options file may occur before the start date of the met.', &
                /3x, 'forcing input data in the CLASS parameter file.', /)
 
-        !Notes added by M. Mekonnen - To keep nrs calculation as before
-        !(and to be compatible with the above modification) we need to
-        !divide ISTEP_START by 24.
-        !nrs = JDAY_IND_MET*ISTEP_START*24 + nhy*ISTEP_START + nmy/30  !aLIU
+            !Notes added by M. Mekonnen - To keep nrs calculation as before
+            !(and to be compatible with the above modification) we need to
+            !divide ISTEP_START by 24.
+            !nrs = JDAY_IND_MET*ISTEP_START*24 + nhy*ISTEP_START + nmy/30  !aLIU
             JDAY_IND_MET = Jday_IND2 - Jday_IND3
             nrs = JDAY_IND_MET*ISTEP_START + nhy*ISTEP_START/24 + nmy/30
             if (ro%VERBOSEMODE > 0) print *, 'NRS=', nrs
-        ! FIX BUG IN JULIAN DAY CALCULATION FOR NRS ---ALIU FEB2009
+            ! FIX BUG IN JULIAN DAY CALCULATION FOR NRS ---ALIU FEB2009
             if (YEAR_START == 0 .and. JDAY_START == 0 .and. MINS_START == 0 .and. HOUR_START == 0) then
                 nrs = 0
             elseif (nrs < 0) then
@@ -221,92 +204,18 @@ module climate_forcing
                 stop
             end if
 
-        !> the following code is used to skip entries at the start
-        !> of the bin file
+            !> the following code is used to skip entries at the start
+            !> of the bin file
             if (ro%VERBOSEMODE > 0) print *, 'Skipping', nrs, 'Registers in bin file'
 
-        !> Preserve the last record skipped with INTERPOLATIONFLAG 2.
+            !> Preserve the last record skipped with INTERPOLATIONFLAG 2.
 !?            if (INTERPOLATIONFLAG == 2) nrs = nrs - 1
 
-        !> Skip records of forcing data.
+            !> Skip records of forcing data.
             do i = 1, nrs
 
                 !> Call skip data for the climate forcing variable.
-                if (update_data(shd, ii1, ii2, .true., vid, cm)) goto 999
-
-            !> R2C-format (ASCII).
-!-            if (cm%dat(ck%FB)%ffmt == 1) then !Skip the r2c file's information
-!-                read(90, *, end = 999)
-!-                do m = 1, shd%yCount
-!-                    Read (90, *, end = 999)
-!-                end do
-!-                read (90, *, end = 999) !:EndFrame line
-!-            end if
-!-            if (cm%dat(ck%FI)%ffmt == 1) then
-!-                read(91, *, end = 999) !:Frame line
-!-                do m = 1, shd%yCount
-!-                    read(91, *, end = 999)
-!-                end do
-!-                read(91, *, end = 999) !:EndFrame line
-!-            end if
-!-            if (cm%dat(ck%RT)%ffmt == 1) then
-!-                read(92, *, end = 999) !:Frame line
-!-                do m = 1, shd%yCount
-!-                    read(92, *, end = 999)
-!-                end do
-!-                read(92, *, end = 999) !:EndFrame line
-!-            end if
-!-            if (cm%dat(ck%TT)%ffmt == 1) then
-!-                read(93, *, END=999) !:Frame line
-!-                do m = 1, shd%yCount
-!-                    read(93, *, end = 999)
-!-                end do
-!-                read(93, *, end = 999) !:EndFrame line
-!-            end if
-!-            if (cm%dat(ck%UV)%ffmt == 1) then
-!-                read(94, *, end = 999) !:Frame line
-!-                do m = 1, shd%yCount
-!-                    read(94, *, end = 999)
-!-                end do
-!-                read(94, *, end = 999) !:EndFrame line
-!-            end if
-!-            if (cm%dat(ck%P0)%ffmt == 1) then
-!-                read(95, *, end = 999) !:Frame line
-!-                do m = 1, shd%yCount
-!-                    read(95, *, end = 999)
-!-                end do
-!-                read(95, *, end = 999) !:EndFrame line
-!-            end if
-!-            if (cm%dat(ck%HU)%ffmt == 1) then
-!-                read(96, *, end = 999) !:Frame line
-!-                do m = 1, shd%yCount
-!-                    read(96, *, end = 999)
-!-                end do
-!-                read(96, *, end = 999)
-!-            end if
-
-            !> CSV-format.
-!-            if (cm%dat(ck%FB)%ffmt == 2) then !Skip the csv file's information
-!-                read(90, * , end = 999)
-!-            end if
-!-            if (cm%dat(ck%FI)%ffmt == 2) then
-!-                read(91, *, end = 999)
-!-            end if
-!-            if (cm%dat(ck%RT)%ffmt == 2) then
-!-                read(92, *, end = 999)
-!-            end if
-!-            if (cm%dat(ck%TT)%ffmt == 2) then
-!-                read(93, *, end = 999)
-!-            end if
-!-            if (cm%dat(ck%UV)%ffmt == 2) then
-!-                read(94, *, end = 999)
-!-            end if
-!-            if (cm%dat(ck%P0)%ffmt == 2) then
-!-                read(95, *, end = 999)
-!-            end if
-!-            if (cm%dat(ck%HU)%ffmt == 2) then
-!-                read(96, *, end = 999)
-!-            end if
+                if (update_data(shd, cm, vid, .true.)) goto 999
 
             end do !i = 1, nrs
 
@@ -330,259 +239,32 @@ module climate_forcing
 
         end do !vid = 1, cm%nclim
 
-        !> Allocate and initialize GRD variables.
-!-        allocate( &
-!-            FSVHGRD(shd%NA), FSIHGRD(shd%NA), &
-!            , FDLGRD(shd%NA), PREGRD(shd%NA), TAGRD(shd%NA), ULGRD(shd%NA), PRESGRD(shd%NA), &
-!            QAGRD(shd%NA), &
-!-            VLGRD(shd%NA))
-!            , FSDOWN(shd%NA))
-!-        FSVHGRD = 0.0
-!-        FSIHGRD = 0.0
-!        FDLGRD = 0.0
-!        PREGRD = 0.0
-!        TAGRD = 0.0
-!        ULGRD = 0.0
-!        PRESGRD = 0.0
-!        QAGRD = 0.0
-!-        VLGRD = 0.0
-!        FSDOWN = 0.0
-
-        !> Allocate and initialize GAT variables.
-!        ilg = shd%NA*shd%lc%NTYPE
-!-        allocate( &
-!-            FSVHGAT(shd%lc%NML), FSIHGAT(shd%lc%NML), &
-!            FDLGAT(ilg), PREGAT(ilg), TAGAT(ilg), ULGAT(ilg), &
-!            PRESGAT(ilg), QAGAT(ilg), &
-!-            VLGAT(shd%lc%NML))
-!-        FSVHGAT = 0.0
-!-        FSIHGAT = 0.0
-!        FDLGAT = 0.0
-!        PREGAT = 0.0
-!        TAGAT = 0.0
-!        ULGAT = 0.0
-!        PRESGAT = 0.0
-!        QAGAT = 0.0
-!-        VLGAT = 0.0
-
-        !> Allocate and initialize GAT variables for climate interpolation.
-!-        allocate( &
-!-            FSVHGATPRE(shd%lc%NML), FSIHGATPRE(shd%lc%NML), &
-!-            FDLGATPRE(ilg), PREGATPRE(ilg), &
-!-            TAGATPRE(ilg), ULGATPRE(ilg), PRESGATPRE(ilg), QAGATPRE(ilg), &
-!-            FSVHGATPST(shd%lc%NML), FSIHGATPST(shd%lc%NML))
-!-            FDLGATPST(ilg), PREGATPST(ilg), &
-!-            TAGATPST(ilg), ULGATPST(ilg), PRESGATPST(ilg), QAGATPST(ilg))
-!-        FSVHGATPRE = 0.0
-!-        FSIHGATPRE = 0.0
-!-        FDLGATPRE = 0.0
-!-        PREGATPRE = 0.0
-!-        TAGATPRE = 0.0
-!-        ULGATPRE = 0.0
-!-        PRESGATPRE = 0.0
-!-        QAGATPRE = 0.0
-!-        FSVHGATPST = 0.0
-!-        FSIHGATPST = 0.0
-!-        FDLGATPST = 0.0
-!-        PREGATPST = 0.0
-!-        TAGATPST = 0.0
-!-        ULGATPST = 0.0
-!-        PRESGATPST = 0.0
-!-        QAGATPST = 0.0
-
         return
 
 999     ENDDATA = .true.
 
-    end subroutine !climate_module_init
-
-    !> *****************************************************************
-    !> MAM - Read in initial meteorological forcing data
-    !> *****************************************************************
-!-    subroutine climate_module_loaddata(shd, firststep, cm, iilen, ii1, ii2, ENDDATA)
-
-!-        use sa_mesh_shared_variabletypes
-!-        use FLAGS
-!-        use climate_forcing_data, only: READ_FORCING_DATA
-
-        !> Input variables.
-!-        type(ShedGridParams) :: shd
-!-        logical firststep
-!-        integer, intent(in) :: iilen, ii1, ii2
-
-        !> Input/Output variables.
-!-        type(clim_info) :: cm
-
-        !> Output variables.
-!-        logical ENDDATA
-
-        !> Local variables.
-!-        integer i
-
-!-        if (firststep) then
-
-            !> Set the current time step of the input forcing data.
-!-            do i = 1, size(cm%clin)
-!-                cm%clin(i)%timestep_now = TIME_STEP_NOW
-!-            end do
-!-            if (INTERPOLATIONFLAG == 0) then
-!-                call READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
-!                                       FSDOWN, &
-!-                                       FSVHGRD, FSIHGRD, &
-!                                       FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
-!-                                       FSVHGAT, FSIHGAT, cm%clin(cfk%FI)%GAT, cm%clin(cfk%PR)%GAT, cm%clin(cfk%TT)%GAT, &
-!-                                       cm%clin(cfk%UV)%GAT, cm%clin(cfk%P0)%GAT, cm%clin(cfk%HU)%GAT, &
-!-                                       ENDDATA)
-!-            elseif (INTERPOLATIONFLAG == 1) then
-!-                if (RESUMEFLAG /= 1) then
-!-                    call READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
-!                                           FSDOWN, &
-!-                                           FSVHGRD, FSIHGRD, &
-!                                           FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
-!-                                           FSVHGATPRE, FSIHGATPRE, FDLGATPRE, PREGATPRE, TAGATPRE, ULGATPRE, &
-!-                                           PRESGATPRE, QAGATPRE, &
-!-                                           ENDDATA)
-!-                    call READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
-!                                           FSDOWN, &
-!-                                           FSVHGRD, FSIHGRD, &
-!                                           FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
-!-                                           FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, TAGATPST, ULGATPST, &
-!-                                           PRESGATPST, QAGATPST, &
-!-                                           ENDDATA)
-!-                else
-!-                    call READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
-!                                           FSDOWN, &
-!-                                           FSVHGRD, FSIHGRD, &
-!                                           FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
-!-                                           FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, TAGATPST, ULGATPST, &
-!-                                           PRESGATPST, QAGATPST, &
-!-                                           ENDDATA)
-!-                end if
-!-            end if
-!-            VLGRD = 0.0
-!-            VLGAT = 0.0
-!-        else
-
-            !> Increment the current time step of the input forcing data.
-!-            cm%clin(cfk%FB)%timestep_now = cm%clin(cfk%FB)%timestep_now + TIME_STEP_MINS
-!-            if (cm%clin(cfk%FB)%timestep_now >= cm%clin(cfk%FB)%hf) then
-!-                cm%clin(cfk%FB)%timestep_now = 0
-!-                if (INTERPOLATIONFLAG == 1) then
-!-                    FSVHGATPRE = FSVHGATPST
-!-                    FSIHGATPRE = FSIHGATPST
-!-                end if
-!-            end if
-!-            cm%clin(cfk%FI)%timestep_now = cm%clin(cfk%FI)%timestep_now + TIME_STEP_MINS
-!-            if (cm%clin(cfk%FI)%timestep_now >= cm%clin(cfk%FI)%hf) then
-!-                cm%clin(cfk%FI)%timestep_now = 0
-!-                if (INTERPOLATIONFLAG == 1) FDLGATPRE = FDLGATPST
-!-            end if
-!-            cm%clin(cfk%PR)%timestep_now = cm%clin(cfk%PR)%timestep_now + TIME_STEP_MINS
-!-            if (cm%clin(cfk%PR)%timestep_now >= cm%clin(cfk%PR)%hf) then
-!-                cm%clin(cfk%PR)%timestep_now = 0
-!-                if (INTERPOLATIONFLAG == 1) PREGATPRE = PREGATPST
-!-            end if
-!-            cm%clin(cfk%TT)%timestep_now = cm%clin(cfk%TT)%timestep_now + TIME_STEP_MINS
-!-            if (cm%clin(cfk%TT)%timestep_now >= cm%clin(cfk%TT)%hf) then
-!-                cm%clin(cfk%TT)%timestep_now = 0
-!-                if (INTERPOLATIONFLAG == 1) TAGATPRE = TAGATPST
-!-            end if
-!-            cm%clin(cfk%UV)%timestep_now = cm%clin(cfk%UV)%timestep_now + TIME_STEP_MINS
-!-            if (cm%clin(cfk%UV)%timestep_now >= cm%clin(cfk%UV)%hf) then
-!-                cm%clin(cfk%UV)%timestep_now = 0
-!-                if (INTERPOLATIONFLAG == 1) ULGATPRE = ULGATPST
-!-            end if
-!-            cm%clin(cfk%P0)%timestep_now = cm%clin(cfk%P0)%timestep_now + TIME_STEP_MINS
-!-            if (cm%clin(cfk%P0)%timestep_now >= cm%clin(cfk%P0)%hf) then
-!-                cm%clin(cfk%P0)%timestep_now = 0
-!-                if (INTERPOLATIONFLAG == 1) PRESGATPRE = PRESGATPST
-!-            end if
-!-            cm%clin(cfk%HU)%timestep_now = cm%clin(cfk%HU)%timestep_now + TIME_STEP_MINS
-!-            if (cm%clin(cfk%HU)%timestep_now >= cm%clin(cfk%HU)%hf) then
-!-                cm%clin(cfk%HU)%timestep_now = 0
-!-                if (INTERPOLATIONFLAG == 1) QAGATPRE = QAGATPST
-!-            end if
-!-
-!-            if (INTERPOLATIONFLAG == 1) then
-!-                call READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
-!                                       FSDOWN, &
-!-                                       FSVHGRD, FSIHGRD, &
-!                                       FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
-!-                                       FSVHGATPST, FSIHGATPST, FDLGATPST, PREGATPST, TAGATPST, ULGATPST, &
-!-                                       PRESGATPST, QAGATPST, &
-!-                                       ENDDATA)
-!-            else
-!-                call READ_FORCING_DATA(shd, cm, iilen, ii1, ii2, &
-!                                       FSDOWN, &
-!-                                       FSVHGRD, FSIHGRD, &
-!                                       FDLGRD, PREGRD, TAGRD, ULGRD, PRESGRD, QAGRD, &
-!-                                       FSVHGAT, FSIHGAT, cm%clin(cfk%FI)%GAT, cm%clin(cfk%PR)%GAT, cm%clin(cfk%TT)%GAT, &
-!-                                       cm%clin(cfk%UV)%GAT, cm%clin(cfk%P0)%GAT, cm%clin(cfk%HU)%GAT, &
-!-                                       ENDDATA)
-!-            end if
-
-!-        end if !(firststep) then
-
-!-    end subroutine !climate_module_loaddata
-
-!-    subroutine climate_module_interpolatedata(shd, &
-!todo: These variables can be stored elsewhere instead of passed.
-!-        cm, iilen, ii1, ii2)
-
-!-        use sa_mesh_shared_variabletypes
-
-        !> Input variables.
-!-        type(ShedGridParams) :: shd
-!-        integer, intent(in) :: iilen, ii1, ii2
-
-        !> Input/Output variables.
-!-        type(clim_info) :: cm
-
-        !> Local variables.
-!-        integer k
-
-        !> Determine the time ratio (linear) and interpolate the data for the current time-step.
-!-        TRATIO = min(1.0, real(cm%clin(cfk%FB)%timestep_now)/cm%clin(cfk%FB)%hf)
-!-        FSVHGAT = FSVHGATPRE + TRATIO*(FSVHGATPST - FSVHGATPRE)
-!-        FSIHGAT = FSIHGATPRE + TRATIO*(FSIHGATPST - FSIHGATPRE)
-!-        TRATIO = min(1.0, real(cm%clin(cfk%FI)%timestep_now)/cm%clin(cfk%FI)%hf)
-!-        cm%clin(cfk%FI)%GAT = FDLGATPRE + TRATIO*(FDLGATPST - FDLGATPRE)
-!-        TRATIO = min(1.0, real(cm%clin(cfk%PR)%timestep_now)/cm%clin(cfk%PR)%hf)
-!-        cm%clin(cfk%PR)%GAT = PREGATPRE + TRATIO*(PREGATPST - PREGATPRE)
-!-        TRATIO = min(1.0, real(cm%clin(cfk%TT)%timestep_now)/cm%clin(cfk%TT)%hf)
-!-        cm%clin(cfk%TT)%GAT = TAGATPRE + TRATIO*(TAGATPST - TAGATPRE)
-!-        TRATIO = min(1.0, real(cm%clin(cfk%UV)%timestep_now)/cm%clin(cfk%UV)%hf)
-!-        cm%clin(cfk%UV)%GAT = ULGATPRE + TRATIO*(ULGATPST - ULGATPRE)
-!-        TRATIO = min(1.0, real(cm%clin(cfk%P0)%timestep_now)/cm%clin(cfk%P0)%hf)
-!-        cm%clin(cfk%P0)%GAT = PRESGATPRE + TRATIO*(PRESGATPST - PRESGATPRE)
-!-        TRATIO = min(1.0, real(cm%clin(cfk%HU)%timestep_now)/cm%clin(cfk%HU)%hf)
-!-        cm%clin(cfk%HU)%GAT = QAGATPRE + TRATIO*(QAGATPST - QAGATPRE)
-
-        !> Distribute the grid variables.
-!-        call SCATTER(shd, iilen, ii1, ii2, FSVHGAT, FSVHGRD)
-!-        call SCATTER(shd, iilen, ii1, ii2, FSIHGAT, FSIHGRD)
-!-        call SCATTER(shd, iilen, ii1, ii2, cm%clin(cfk%FI)%GAT, cm%clin(cfk%FI)%GRD)
-!-        call SCATTER(shd, iilen, ii1, ii2, cm%clin(cfk%UV)%GAT, cm%clin(cfk%UV)%GRD)
-!-        call SCATTER(shd, iilen, ii1, ii2, cm%clin(cfk%TT)%GAT, cm%clin(cfk%TT)%GRD)
-!-        call SCATTER(shd, iilen, ii1, ii2, cm%clin(cfk%HU)%GAT, cm%clin(cfk%HU)%GRD)
-!-        call SCATTER(shd, iilen, ii1, ii2, cm%clin(cfk%P0)%GAT, cm%clin(cfk%P0)%GRD)
-!-        call SCATTER(shd, iilen, ii1, ii2, cm%clin(cfk%PR)%GAT, cm%clin(cfk%PR)%GRD)
-!-        cm%clin(cfk%FB)%GRD = 2.0*FSVHGRD
-
-!-    end subroutine !climate_module_interpolatedata
+    end function !climate_module_init
 
     !>
-    !> Description: Read in initial meteorological forcing data.
+    !> Description: Update climate data, either from memory or from input climate forcing files.
     !>
-    function climate_module_update_data(shd, ic, cm, ii1, ii2) result(ENDDATA)
+    !> Inputs:
+    !>  - shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
+    !>  - ic: Simulation counter object.
+    !>  - ii1: Starting index in the GAT vector.
+    !>  - ii2: Stopping index in the GAT vector.
+    !>  - cm: Climate forcing object. Contains the file name, format, and its unit.
+    !>
+    !> Outputs:
+    !>  - ENDDATA: Returns .true. if there was an error occurred intializing the climate object or its variables.
+    !>
+    function climate_module_update_data(shd, ic, ii1, ii2, cm) result(ENDDATA)
 
         !> Required for 'shd' variable.
         use sa_mesh_shared_variabletypes
 
         !> Required for 'ic' variable.
         use model_dates
-
-!-        use FLAGS
 
         !> Required for 'value' function.
         use strings
@@ -591,7 +273,6 @@ module climate_forcing
         type(ShedGridParams), intent(in) :: shd
         type(iter_counter), intent(in) :: ic
         integer, intent(in) :: ii1, ii2
-!-        logical firststep
 
         !> Input/Output variables.
         type(clim_info) :: cm
@@ -613,18 +294,15 @@ module climate_forcing
 
                 !> INTERPOLATIONFLAG 1 requires an additional frame be read in the first time-step.
                 if (ic%ts_count == 1 .and. cm%dat(vid)%ipflg == 1) then
-                    if (update_data(shd, ii1, ii2, .false., vid, cm)) goto 999
+                    if (update_data(shd, cm, vid, .false.)) goto 999
                     cm%dat(vid)%ipdat(:, 2) = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
                 end if
 
                 !> Grab data from file.
                 if (cm%dat(vid)%itimestep == 0) then
 
-!-                VLGRD = 0.0
-!-                VLGAT = 0.0
-
                     !> Update the input forcing data.
-                    if (update_data(shd, ii1, ii2, .false., vid, cm)) goto 999
+                    if (update_data(shd, cm, vid, .false.)) goto 999
 
                     !> Apply conditions to the series of data is such conditions exist.
                     if (cm%dat(vid)%nseries > 0) then
@@ -697,13 +375,6 @@ module climate_forcing
 
                 end select
 
-!-                if (vid == ck%FB) then
-!-                    FSVHGAT = cm%dat(ck%FB)%GAT/2.0
-!-                    FSVHGRD = cm%dat(ck%FB)%GRD/2.0
-!-                    FSIHGAT = cm%dat(ck%FB)%GAT/2.0
-!-                    FSIHGRD = cm%dat(ck%FB)%GRD/2.0
-!-                end if
-
                 !> Increment the time-step of the variable.
                 cm%dat(vid)%itimestep = cm%dat(vid)%itimestep + (ic%dts/60)
                 if (cm%dat(vid)%itimestep >= cm%dat(vid)%hf) then
@@ -718,6 +389,6 @@ module climate_forcing
 
 999     ENDDATA = .true.
 
-    end function !climate_module_load_data
+    end function !climate_module_update_data
 
 end module !climate_forcing

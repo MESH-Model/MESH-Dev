@@ -166,7 +166,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = 'TRUNK (951)'
+    character(24) :: VERSION = 'TRUNK (954)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
     logical VER_OK
@@ -262,7 +262,7 @@ program RUNMESH
     !> Reset verbose flag for worker nodes.
     if (ipid > 0) ro%VERBOSEMODE = 0
 
-!>!TODO: UPDATE THIS (RELEASE(*)) WITH VERSION CHANGE
+!TODO: UPDATE THIS (RELEASE(*)) WITH VERSION CHANGE
     if (ro%VERBOSEMODE > 0) print 951, trim(RELEASE), trim(VERSION)
 
 951 format(1x, 'MESH ', a, ' ---  (', a, ')', /)
@@ -305,17 +305,6 @@ program RUNMESH
                              shd, &
                              ts, cm, &
                              fls)
-
-    !> Forcing data time step should not be less than 30 min - there is no
-    !> any increase in accuracy as delt (CLASS model time step) is 30 min.
-!todo: Move this to climate module.
-!-    if (HOURLYFLAG < 30) then
-!-        print 1028
-!-        stop
-!-    end if
-
-!-1028 format(/1x, 'FORCING DATA TIME STEP IS LESS THAN 30 MIN', &
-!-            /1x, 'AGGREGATE THE FORCING DATA TO 30 MIN INTERVAL AND TRY AGAIN', /)
 
     !> Assign shed values to local variables.
     NA = shd%NA
@@ -440,8 +429,8 @@ program RUNMESH
 !>  End of subbasin section
 !> **********************************************************************
 
-    call climate_module_init(ts, shd, il1, il2, cm, ENDDATA)
-    if (ENDDATA) goto 999
+    ENDDATA = climate_module_init(shd, il1, il2, cm)
+    if (ENDDATA) goto 997
 
     !> Initialize output fields.
     if (ipid == 0) then
@@ -496,14 +485,6 @@ program RUNMESH
             write(58, *) 'FROZENSOILINFILFLAG  = ', FROZENSOILINFILFLAG
             write(58, *) 'LOCATIONFLAG         = ', LOCATIONFLAG
 
-            !> MAM - ALLOCATE AND INITIALIZE INTERPOLATION VARIABLES:
-            !> For 30 minute forcing data there is no need for interpolation and
-            !> hence no need to assign PRE and PST variables
-!-            if (INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%dat(:)%hf) == 210)) then
-!-                print 9000
-!-                write(58, 9000)
-!-                INTERPOLATIONFLAG = 0
-!-            end if !(INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%dat(:)%hf) == 210)) then
 !todo: restore this.
 !+            write(58, "('WF_NUM_POINTS: ', i5)") WF_NUM_POINTS
 !+            write(58, "('Out directory:', 5a10)") (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
@@ -1043,8 +1024,6 @@ program RUNMESH
 
     end if !(RESUMEFLAG == 4) then
 
-!-    call climate_module_loaddata(shd, .true., cm, NML, il1, il2, ENDDATA)
-
     if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls, ic, stfl)
 
     !> *********************************************************************
@@ -1070,12 +1049,9 @@ program RUNMESH
 
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
-        !> MAM - Linearly interpolate forcing data for intermediate time steps
-!-        if (INTERPOLATIONFLAG == 1) then
-!-            call climate_module_interpolatedata(shd, cm, il1, il2)
-!-        end if
-
-        if (climate_module_update_data(shd, ic, cm, il1, il2)) goto 997
+        !> Load or update climate forcing input.
+        ENDDATA = climate_module_update_data(shd, ic, il1, il2, cm)
+        if (ENDDATA) goto 997
 
         !> Reset variables that accumulate on the daily time-step.
         if (ipid == 0 .and. ic%ts_daily == 1) then
@@ -1381,14 +1357,9 @@ program RUNMESH
                 end if
             end if
         end if
-!-        TIME_STEP_NOW = TIME_STEP_NOW + TIME_STEP_MINS
-!-        if (TIME_STEP_NOW == HOURLYFLAG) TIME_STEP_NOW = 0
 
         !> Update the current time-step and counter.
         call update_now_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW)
-
-        !> Read in meteorological forcing data for next time-step.
-!-        call climate_module_loaddata(shd, .false., cm, NML, il1, il2, ENDDATA)
 
     end do !while (.not. ENDDATE .and. .not. ENDDATA)
 
@@ -1579,11 +1550,6 @@ program RUNMESH
     if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls, ic)
 
 999     continue
-
-!-9000    format(/1x, 'INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY AND IS SET TO 0 BY THE MODEL.', &
-!-               /1x, '0: NO INTERPOLATION OF FORCING DATA.', &
-!-               /1x, '1: LINEARLY INTERPOLATES FORCING DATA FOR INTERMEDIATE TIME STEPS.', &
-!-               /1x, 'NOTE: INTERPOLATIONFLAG SHOULD BE SET TO 0 FOR 30 MINUTE FORCING DATA.', /)
 
 9002    format(/1x, 'ERROR IN READING r2c_output.txt FILE.', &
                /1x, 'THE FIRST RECORD AT THE FIRST LINE IS FOR THE NUMBER OF ALL THE', &

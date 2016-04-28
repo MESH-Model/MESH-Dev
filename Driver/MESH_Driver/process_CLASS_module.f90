@@ -86,8 +86,6 @@ module process_CLASS
             cfi%PRES(il1:il2) = cm%dat(ck%P0)%GAT(il1:il2)
             cfi%QA(il1:il2) = cm%dat(ck%HU)%GAT(il1:il2)
 
-!-            UVGRD = max(VMIN, cm%clin(ck%UV)%GRD)
-!-            VMODGRD = UVGRD
             cfi%VMOD = max(VMIN, cfi%UL)
 
             !> This estimates the fractional cloud cover (FCLOGRD) by the basis

@@ -83,56 +83,14 @@ module climate_forcing_variabletypes
 
     end type
 
-!-    type clim_info_read
-
-!-        character(20) :: id_var
-!-        integer :: filefmt = 0
-!-        character(200), dimension(:), allocatable :: name
-!-        integer unitR
-!-        logical openFl
-
-!-        integer :: timeSize = 1
-!-        integer, dimension(:), allocatable :: ntimes
-!-        integer :: readIndx = 1 !index in the block of time that we are reading
-!-        integer :: itime = 1 !time index
-!-        integer :: timestep_now = 0
-
-!-        integer :: hf = 30 !hourly flag
-!-        character freq !time freq of data
-
-!-        integer :: nseries = 1
-
-        !* climv: Values for forcing data. (1: Land Element (GAT); 2: Series; 3: Time-step).
-        !> Values are stored at the GAT level, as it is the finest level of
-        !> elemental computation in the model (e.g., with CLASS).
-!-        real, dimension(:, :, :), allocatable :: climv
-
-        !* GRD: Values for forcing data. (1: Grid)
-        !> Values are averaged to the grid-level for grid-based processing and certain output.
-        !> Gridded values aren't used to drive the model, as they are incompatible with
-        !> data input at the GRU- (e.g., in one of the CSV formats) or GAT-level.
-!-        real, dimension(:), allocatable :: GRD
-
-        !* GAT: Values for forcing data. (1: Land Element)
-!-        real, dimension(:), allocatable :: GAT
-
-        !* alpha: Uniform weight to assign when there are multiple series of data. (1: Series).
-!        real, dimension(:), allocatable :: alpha
-!-        type(clim_info_series), dimension(:), allocatable :: series
-
-!-    end type !clim_info_read
-
     type clim_info
 
         integer :: basefileunit = 89
-
-!-        type(counter_date_julian) :: start_date
 
         !* nclim: Number of climate variables.
         !* dat: Climate variables.
         integer :: nclim = 7
         type(clim_series) :: dat(7)
-!-        type(clim_info_read) :: clin(7)
 
     end type !clim_info
 
