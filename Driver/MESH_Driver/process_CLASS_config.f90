@@ -480,24 +480,26 @@ module process_CLASS_config
 
         !> Copy the starting date of input forcing data from CLASS.ini
         !> to the climate variable.
-        cm%start_date%year = IYEAR
-        cm%start_date%jday = IDAY
-        cm%start_date%hour = IHOUR
-        cm%start_date%mins = IMIN
+        do i = 1, cm%nclim
+            cm%dat(i)%start_date%year = IYEAR
+            cm%dat(i)%start_date%jday = IDAY
+            cm%dat(i)%start_date%hour = IHOUR
+            cm%dat(i)%start_date%mins = IMIN
+        end do
 
         !> Set the starting date to that of the forcing data if none is
         !> provided and intialize the current time-step.
         if (YEAR_START == 0 .and. JDAY_START == 0 .and. MINS_START == 0 .and. HOUR_START == 0) then
-            YEAR_START = cm%start_date%year
-            JDAY_START = cm%start_date%jday
-            HOUR_START = cm%start_date%hour
-            MINS_START = cm%start_date%mins
+            YEAR_START = IYEAR
+            JDAY_START = IDAY
+            HOUR_START = IHOUR
+            MINS_START = IMIN
         end if
         YEAR_NOW = YEAR_START
         JDAY_NOW = JDAY_START
         HOUR_NOW = HOUR_START
         MINS_NOW = MINS_START
-        TIME_STEP_NOW = MINS_START
+!-        TIME_STEP_NOW = MINS_START
 
         !> Forcing input.
         allocate(cfi%FDL(NML), cfi%FSIH(NML), cfi%FSVH(NML), cfi%PRE(NML), cfi%PRES(NML), cfi%QA(NML), cfi%TA(NML), cfi%UL(NML), &
@@ -758,7 +760,7 @@ module process_CLASS_config
                 if (cpv%SNO(k) <= 0.0) then
                     DrySnowGAT(k) = 0.0 !1 = snowpack is dry (i.e. cold)
                     SnowAgeGAT(k) = 0.0 !hours since last snowfall
-                    if (cm%clin(cfk%TT)%GAT(k) >= TFREZ) then
+                    if (cm%dat(ck%TT)%GAT(k) >= TFREZ) then
                         DrySnowGAT(k) = 0.0
                         SnowAgeGAT(k) = 48.0 !assume 48 hours since last snowfall
                     else

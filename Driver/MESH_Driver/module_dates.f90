@@ -74,7 +74,8 @@ module model_dates
     !* TIME_STEP_NOW: Current time-step in minutes.
     !* TIME_STEP_MINS: Time-step of the model in minutes.
     !* TIME_STEP_DELT: Time-step of the model in seconds.
-    integer YEAR_NOW, JDAY_NOW, HOUR_NOW, TIME_STEP_NOW, MINS_NOW
+    integer YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW
+!-    integer TIME_STEP_NOW
     integer :: TIME_STEP_MINS = 30, TIME_STEP_DELT = 1800
 
     !* YEAR_START: Year at the start of the simulation.
@@ -103,7 +104,7 @@ module model_dates
         call julian2monthday(start_day_julian, start_year, ic%now_month, ic%now_day)
 
         !> Update time-step.
-        TIME_STEP_DELT = timestep
+!-        TIME_STEP_DELT = timestep
         ic%dts = timestep
 
         !> Initialize counters.

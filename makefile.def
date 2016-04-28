@@ -41,10 +41,10 @@ OBJECTS=	module_mpi_flags.o module_mpi_shared_variables.o module_mpi.o \
 			EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o mesh_input_module.o \
 			precmod.o stringmod.o \
 			module_files_variabletypes.o module_files_variables.o \
-			climate_forcing_variabletypes.o climate_forcing_variables.o \
+			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
 			climate_forcing_module_config.o \
 			process_CLASS_constants.o process_CLASS_variables.o process_CLASS_save_output.o \
-			read_forcing_data.o climate_forcing_module.o read_check_forcing_files.o \
+			climate_forcing_module_io.o climate_forcing_module.o \
 			SIMSTATS_config.o model_output_variabletypes.o model_output.o \
 			calc_drms.o calc_abserr.o
 

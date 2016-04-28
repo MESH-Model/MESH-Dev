@@ -284,8 +284,8 @@ program RUNMESH
 !todo: re-instate alpha
 !            call get_command_argument(2, alphCh)
 !            call value(alphCh, alpharain, ierr)
-!            cm%clin(8)%alpharain = alpharain
-!            print *, cm%clin(8)%alpharain
+!            cm%dat(8)%alpha = alpha
+!            print *, cm%dat(8)%alpha
         end if
         call Init_fls(fls, trim(adjustl(fl_listMesh)))
     else
@@ -309,13 +309,13 @@ program RUNMESH
     !> Forcing data time step should not be less than 30 min - there is no
     !> any increase in accuracy as delt (CLASS model time step) is 30 min.
 !todo: Move this to climate module.
-    if (HOURLYFLAG < 30) then
-        print 1028
-        stop
-    end if
+!-    if (HOURLYFLAG < 30) then
+!-        print 1028
+!-        stop
+!-    end if
 
-1028 format(/1x, 'FORCING DATA TIME STEP IS LESS THAN 30 MIN', &
-            /1x, 'AGGREGATE THE FORCING DATA TO 30 MIN INTERVAL AND TRY AGAIN', /)
+!-1028 format(/1x, 'FORCING DATA TIME STEP IS LESS THAN 30 MIN', &
+!-            /1x, 'AGGREGATE THE FORCING DATA TO 30 MIN INTERVAL AND TRY AGAIN', /)
 
     !> Assign shed values to local variables.
     NA = shd%NA
@@ -440,7 +440,7 @@ program RUNMESH
 !>  End of subbasin section
 !> **********************************************************************
 
-    call climate_module_init(shd, ts, cm, NML, il1, il2, ENDDATA)
+    call climate_module_init(ts, shd, il1, il2, cm, ENDDATA)
     if (ENDDATA) goto 999
 
     !> Initialize output fields.
@@ -470,14 +470,14 @@ program RUNMESH
             write(58, "('Configuration flags - specified by user or default values')")
 
 !todo: this list should be updated (dgp: 2015-01-09)
-            write(58, *) 'BASINSHORTWAVEFLAG   = ', cm%clin(cfk%FB)%filefmt
-            write(58, *) 'BASINLONGWAVEFLAG    = ', cm%clin(cfk%FI)%filefmt
-            write(58, *) 'BASINRAINFLAG        = ', cm%clin(cfk%PR)%filefmt
-            write(58, *) 'BASINTEMPERATUREFLAG = ', cm%clin(cfk%TT)%filefmt
-            write(58, *) 'BASINWINDFLAG        = ', cm%clin(cfk%UV)%filefmt
-            write(58, *) 'BASINPRESFLAG        = ', cm%clin(cfk%P0)%filefmt
-            write(58, *) 'BASINHUMIDITYFLAG    = ', cm%clin(cfk%HU)%filefmt
-            write(58, *) 'HOURLYFLAG           = ', HOURLYFLAG
+            write(58, *) 'BASINSHORTWAVEFLAG   = ', cm%dat(ck%FB)%ffmt
+            write(58, *) 'BASINLONGWAVEFLAG    = ', cm%dat(ck%FI)%ffmt
+            write(58, *) 'BASINRAINFLAG        = ', cm%dat(ck%RT)%ffmt
+            write(58, *) 'BASINTEMPERATUREFLAG = ', cm%dat(ck%TT)%ffmt
+            write(58, *) 'BASINWINDFLAG        = ', cm%dat(ck%UV)%ffmt
+            write(58, *) 'BASINPRESFLAG        = ', cm%dat(ck%P0)%ffmt
+            write(58, *) 'BASINHUMIDITYFLAG    = ', cm%dat(ck%HU)%ffmt
+!-            write(58, *) 'HOURLYFLAG           = ', HOURLYFLAG
             write(58, *) 'RESUMEFLAG           = ', RESUMEFLAG
             write(58, *) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG
             write(58, *) 'SHDFILEFLAG          = ', SHDFILEFLAG
@@ -485,7 +485,7 @@ program RUNMESH
             write(58, *) 'STREAMFLOWFLAG       = ', STREAMFLOWFLAG
             write(58, *) 'RELFLG               = ', RELFLG
             write(58, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
-            write(58, *) 'INTERPOLATIONFLAG    = ', INTERPOLATIONFLAG
+!-            write(58, *) 'INTERPOLATIONFLAG    = ', INTERPOLATIONFLAG
             write(58, *) 'SUBBASINFLAG         = ', SUBBASINFLAG
             write(58, *) 'TESTCSVFLAG          = ', 'NOTSUPPORTED'
             write(58, *) 'R2COUTPUTFLAG        = ', R2COUTPUTFLAG
@@ -499,11 +499,11 @@ program RUNMESH
             !> MAM - ALLOCATE AND INITIALIZE INTERPOLATION VARIABLES:
             !> For 30 minute forcing data there is no need for interpolation and
             !> hence no need to assign PRE and PST variables
-            if (INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%clin(:)%hf) == 210)) then
-                print 9000
-                write(58, 9000)
-                INTERPOLATIONFLAG = 0
-            end if !(INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%clin(:)%hf) == 210)) then
+!-            if (INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%dat(:)%hf) == 210)) then
+!-                print 9000
+!-                write(58, 9000)
+!-                INTERPOLATIONFLAG = 0
+!-            end if !(INTERPOLATIONFLAG > 1 .or. (INTERPOLATIONFLAG == 1 .and. sum(cm%dat(:)%hf) == 210)) then
 !todo: restore this.
 !+            write(58, "('WF_NUM_POINTS: ', i5)") WF_NUM_POINTS
 !+            write(58, "('Out directory:', 5a10)") (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
@@ -754,9 +754,9 @@ program RUNMESH
 !                     ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
 !                     AGIDROW, ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
 !                     cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, FSVHGRD, &
-!                     FSIHGRD, CSZGRD, cm%clin(cfk%FI)%GRD, cm%clin(cfk%UV)%GRD, VLGRD, &
-!                     cm%clin(cfk%TT)%GRD, cm%clin(cfk%HU)%GRD, cm%clin(cfk%P0)%GRD, &
-!                     cm%clin(cfk%PR)%GRD, PADRGRD, &
+!                     FSIHGRD, CSZGRD, cm%dat(ck%FI)%GRD, cm%dat(ck%UV)%GRD, VLGRD, &
+!                     cm%dat(ck%TT)%GRD, cm%dat(ck%HU)%GRD, cm%dat(ck%P0)%GRD, &
+!                     cm%dat(ck%RT)%GRD, PADRGRD, &
 !                     VPDGRD, TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, &
 !                     SPCPGRD, TSPCGRD, RHSIGRD, FCLOGRD, DLONGRD, &
 !                     GGEOGRD, cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
@@ -1043,7 +1043,7 @@ program RUNMESH
 
     end if !(RESUMEFLAG == 4) then
 
-    call climate_module_loaddata(shd, .true., cm, NML, il1, il2, ENDDATA)
+!-    call climate_module_loaddata(shd, .true., cm, NML, il1, il2, ENDDATA)
 
     if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls, ic, stfl)
 
@@ -1071,9 +1071,11 @@ program RUNMESH
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
         !> MAM - Linearly interpolate forcing data for intermediate time steps
-        if (INTERPOLATIONFLAG == 1) then
-            call climate_module_interpolatedata(shd, cm, NML, il1, il2)
-        end if
+!-        if (INTERPOLATIONFLAG == 1) then
+!-            call climate_module_interpolatedata(shd, cm, il1, il2)
+!-        end if
+
+        if (climate_module_update_data(shd, ic, cm, il1, il2)) goto 997
 
         !> Reset variables that accumulate on the daily time-step.
         if (ipid == 0 .and. ic%ts_daily == 1) then
@@ -1182,15 +1184,15 @@ program RUNMESH
             !> CALCULATE GRID CELL AVERAGE DIAGNOSTIC FIELDS.
 
             !> Grid data for output.
-            md_grd%fsdown = cm%clin(cfk%FB)%GRD
+            md_grd%fsdown = cm%dat(ck%FB)%GRD
             md_grd%fsvh = fsvhgrd
             md_grd%fsih = fsihgrd
-            md_grd%fdl = cm%clin(cfk%FI)%GRD
-            md_grd%ul = cm%clin(cfk%UV)%GRD
-            md_grd%ta = cm%clin(cfk%TT)%GRD
-            md_grd%qa = cm%clin(cfk%HU)%GRD
-            md_grd%pres = cm%clin(cfk%P0)%GRD
-            md_grd%pre = cm%clin(cfk%PR)%GRD
+            md_grd%fdl = cm%dat(ck%FI)%GRD
+            md_grd%ul = cm%dat(ck%UV)%GRD
+            md_grd%ta = cm%dat(ck%TT)%GRD
+            md_grd%qa = cm%dat(ck%HU)%GRD
+            md_grd%pres = cm%dat(ck%P0)%GRD
+            md_grd%pre = cm%dat(ck%RT)%GRD
 
 !-            do k = il1, il2
 !-                ik = shd%lc%ILMOS(k)
@@ -1379,16 +1381,22 @@ program RUNMESH
                 end if
             end if
         end if
-        TIME_STEP_NOW = TIME_STEP_NOW + TIME_STEP_MINS
-        if (TIME_STEP_NOW == HOURLYFLAG) TIME_STEP_NOW = 0
+!-        TIME_STEP_NOW = TIME_STEP_NOW + TIME_STEP_MINS
+!-        if (TIME_STEP_NOW == HOURLYFLAG) TIME_STEP_NOW = 0
 
         !> Update the current time-step and counter.
         call update_now_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW)
 
         !> Read in meteorological forcing data for next time-step.
-        call climate_module_loaddata(shd, .false., cm, NML, il1, il2, ENDDATA)
+!-        call climate_module_loaddata(shd, .false., cm, NML, il1, il2, ENDDATA)
 
     end do !while (.not. ENDDATE .and. .not. ENDDATA)
+
+    !>
+    !> ENDDATA mark
+    !>
+
+997     continue
 
     !> End program if not the head node.
     if (ipid /= 0) then
@@ -1572,10 +1580,10 @@ program RUNMESH
 
 999     continue
 
-9000    format(/1x, 'INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY AND IS SET TO 0 BY THE MODEL.', &
-               /1x, '0: NO INTERPOLATION OF FORCING DATA.', &
-               /1x, '1: LINEARLY INTERPOLATES FORCING DATA FOR INTERMEDIATE TIME STEPS.', &
-               /1x, 'NOTE: INTERPOLATIONFLAG SHOULD BE SET TO 0 FOR 30 MINUTE FORCING DATA.', /)
+!-9000    format(/1x, 'INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY AND IS SET TO 0 BY THE MODEL.', &
+!-               /1x, '0: NO INTERPOLATION OF FORCING DATA.', &
+!-               /1x, '1: LINEARLY INTERPOLATES FORCING DATA FOR INTERMEDIATE TIME STEPS.', &
+!-               /1x, 'NOTE: INTERPOLATIONFLAG SHOULD BE SET TO 0 FOR 30 MINUTE FORCING DATA.', /)
 
 9002    format(/1x, 'ERROR IN READING r2c_output.txt FILE.', &
                /1x, 'THE FIRST RECORD AT THE FIRST LINE IS FOR THE NUMBER OF ALL THE', &

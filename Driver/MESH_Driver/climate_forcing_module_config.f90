@@ -1,12 +1,11 @@
-!> Module to read configuration information for the climate
-!> forcing module from file.
 !>
-!> This module aligns with a file that has :1.0 in its header.
+!> Module to read configuration information for the climate forcing
+!> module from file.
 !>
 module climate_forcing_config
 
+    use climate_forcing_constants
     use climate_forcing_variabletypes
-    use climate_forcing_variables
 
     implicit none
 
@@ -20,23 +19,23 @@ module climate_forcing_config
 
         type(clim_info) :: cm
 
-        integer i, un, ios
+        integer i, iun, ios
         character*256 fname, key, attr, ver_in
         character*4096 ln_in
         logical is_exist, is_climInfo
 
         !> Open the file if one exists.
         fname = 'climate_info.ini'
-        un = cm%basefileunit
+        iun = cm%basefileunit
         inquire(file = fname, exist = is_exist)
         if (is_exist) then
 
             !> Open the file.
-            open(un, file = fname, status ='old', action = 'read')
+            open(iun, file = fname, status ='old', action = 'read')
 
             !> First uncommented line contains the tag and version of the file.
             !> :clim_info 1.0
-            call readline(un, ln_in, ios)
+            call readline(iun, ln_in, ios)
             ios = SplitLine(ln_in, key, attr)
             if (lowercase(key) == ':clim_info') then
                 is_climInfo = .true.
@@ -45,19 +44,19 @@ module climate_forcing_config
 
             !> Call subroutine to parse the content of the file.
             if (is_climInfo) then
-                if (ver_in == '1.0') call parse_config_1_0(un, cm)
+                if (ver_in == '1.0') call parse_config_1_0(iun, cm)
             end if
 
             !> Close the file.
-            close(un)
+            close(iun)
 
         end if
 
         !> Print summary of climate file information.
         if (ro%VERBOSEMODE > 0 .and. ro%DIAGNOSEMODE > 0) then
-            do i = 1, size(cm%clin)
-                print 1071, cm%clin(i)%id_var, cm%clin(i)%name, cm%clin(i)%filefmt, cm%clin(i)%unitR, &
-                    cm%clin(i)%hf, cm%clin(i)%timeSize, cm%clin(i)%nseries
+            do i = 1, cm%nclim
+                print 1071, cm%dat(i)%id_var, cm%dat(i)%fname, cm%dat(i)%ffmt, cm%dat(i)%fiun, &
+                    cm%dat(i)%hf, cm%dat(i)%nblocks, cm%dat(i)%nseries
             end do
         end if
 
@@ -72,20 +71,24 @@ module climate_forcing_config
 
     end subroutine
 
-    subroutine parse_config_1_0(un, cm)
+    !>
+    !> This subroutine aligns with the 'climate_info.ini' file that has
+    !> ':1.0' in its header.
+    !>
+    subroutine parse_config_1_0(iun, cm)
 
         use strings
 
-        integer, intent(in) :: un
+        integer, intent(in) :: iun
 
         type(clim_info) :: cm
 
-        integer ios, i, j, jj, n, nn, indx, nlines, nargs
+        integer ios, i, j, jj, n, nn, vid, nlines, nargs
         character*4096, dimension(:), allocatable :: lines, args
         character*256 key, attr, mark
 
         !> Extract the sections of the file.
-!        call parse_seek_section(un, 'filenames', lines, nlines)
+!        call parse_seek_section(iun, 'filenames', lines, nlines)
 
         !> Section of series
         !* Key: Variable name (must match a recognized key)
@@ -98,7 +101,7 @@ module climate_forcing_config
         !> :StartSeries
         !> FB, n=2, per:1=gru, per:2=gru, attr1:1=1, attr2:1=0.5, attr1:2=2, attr2:2=1.0
         !> :EndSeries
-        call parse_seek_section(un, 'series', lines, nlines)
+        call parse_seek_section(iun, 'series', lines, nlines)
 
         !> The lines returned include the :start and :end lines.
         do i = 2, (nlines - 1)
@@ -107,13 +110,13 @@ module climate_forcing_config
 
                 !> Extract the climate variable.
                 select case (trim(args(1)))
-                    case ('fb'); indx = cfk%FB
-                    case ('fi'); indx = cfk%FI
-                    case ('pr'); indx = cfk%PR
-                    case ('tt'); indx = cfk%TT
-                    case ('uv'); indx = cfk%UV
-                    case ('p0'); indx = cfk%P0
-                    case ('hu'); indx = cfk%HU
+                    case ('fb'); vid = ck%FB
+                    case ('fi'); vid = ck%FI
+                    case ('rt'); vid = ck%RT
+                    case ('tt'); vid = ck%TT
+                    case ('uv'); vid = ck%UV
+                    case ('p0'); vid = ck%P0
+                    case ('hu'); vid = ck%HU
                 end select
 
                 !> Extract the number of series.
@@ -128,9 +131,9 @@ module climate_forcing_config
 
                         !> Update the number of series.
                         if (n > 0) then
-                            cm%clin(indx)%nseries = n
-                            if (allocated(cm%clin(indx)%series)) deallocate(cm%clin(indx)%series)
-                            allocate(cm%clin(indx)%series(cm%clin(indx)%nseries))
+                            cm%dat(vid)%nseries = n
+                            if (allocated(cm%dat(vid)%series)) deallocate(cm%dat(vid)%series)
+                            allocate(cm%dat(vid)%series(cm%dat(vid)%nseries))
                         end if
                         exit
                     end if
@@ -149,27 +152,27 @@ module climate_forcing_config
                                 call value(mark, n, ios)
 
                                 !> Assigned the type of the attribute as 'gru'.
-                                cm%clin(indx)%series(n)%attrtype = attr
+                                cm%dat(vid)%series(n)%attrtype = attr
 
                                 !> Populate the variables for this type of series.
-                                if (allocated(cm%clin(indx)%series(n)%attr)) deallocate(cm%clin(indx)%series(n)%attr)
-                                allocate(cm%clin(indx)%series(n)%attr(2))
+                                if (allocated(cm%dat(vid)%series(n)%attr)) deallocate(cm%dat(vid)%series(n)%attr)
+                                allocate(cm%dat(vid)%series(n)%attr(2))
                                 do jj = 2, nargs
                                     call parse_split_attr(args(jj), key, mark, attr)
                                     call value(mark, nn, ios)
                                     if (n == nn) then
                                         select case (key)
                                             case ('per1')
-                                                cm%clin(indx)%series(n)%attr(1) = attr
+                                                cm%dat(vid)%series(n)%attr(1) = attr
                                             case ('per2')
-                                                cm%clin(indx)%series(n)%attr(2) = attr
+                                                cm%dat(vid)%series(n)%attr(2) = attr
                                         end select
                                     end if
                                 end do
 !print *, 'n: ', n
-!print *, 'attrtype: ', trim(cm%clin(indx)%series(n)%attrtype)
-!print *, 'per1: ', trim(cm%clin(indx)%series(n)%attr(1))
-!print *, 'per2: ', trim(cm%clin(indx)%series(n)%attr(2))
+!print *, 'attrtype: ', trim(cm%dat(vid)%series(n)%attrtype)
+!print *, 'per1: ', trim(cm%dat(vid)%series(n)%attr(1))
+!print *, 'per2: ', trim(cm%dat(vid)%series(n)%attr(2))
                             end if
                     end select
                 end do
@@ -178,11 +181,11 @@ module climate_forcing_config
 
     end subroutine
 
-    subroutine parse_seek_section(un, name, lines, nlines, preserveCasing)
+    subroutine parse_seek_section(iun, name, lines, nlines, preserveCasing)
 
         use strings
 
-        integer, intent(in) :: un
+        integer, intent(in) :: iun
         character(len=*), intent(in) :: name
         character*4096, intent(out), dimension(:), allocatable :: lines
         integer, intent(out) :: nlines
@@ -199,12 +202,12 @@ module climate_forcing_config
         if (present(preserveCasing)) lpreserveCasing = preserveCasing
 
         !> Rewind the file.
-        rewind(un)
+        rewind(iun)
 
         !> Identify the end of the section using the header.
         posln_end = 1
         do while (ios == 0)
-            call readline(un, ln_in, ios)
+            call readline(iun, ln_in, ios)
 !            if (ios /= 0) then
 !todo: Fix this.
 !print *, 'error: end of file before end token', lname
@@ -215,12 +218,12 @@ module climate_forcing_config
         end do
 
         !> Rewind the file.
-        rewind(un)
+        rewind(iun)
 
         !> Identify the start of the section using the header.
         posln_start = 1
         do while (ios == 0)
-            call readline(un, ln_in, ios)
+            call readline(iun, ln_in, ios)
 !            if (ios /= 0) then
 !todo: Fix this.
 !print *, 'error: end of file before start token', lname
@@ -232,7 +235,7 @@ module climate_forcing_config
                 if (.not. lpreserveCasing) ln_in = lowercase(ln_in)
                 lines(1) = ln_in
                 do i = 2, nlines
-                    call readline(un, ln_in, ios)
+                    call readline(iun, ln_in, ios)
                     if (.not. lpreserveCasing) ln_in = lowercase(ln_in)
                     lines(i) = ln_in
                 end do
