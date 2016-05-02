@@ -97,64 +97,64 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       
       integer*4    :: rgrd,rads,radw,rade,radn
 
-        real*4       :: rgrdn,rgrde     !changed to real Jul. 27/04 nk
-        real*4       :: evt_version
+      real*4       :: rgrdn,rgrde     !changed to real Jul. 27/04 nk
+      real*4       :: evt_version
 
-        integer*4    :: mm,yy,iall,nclt,nch,irdt,ii_water
-        integer(2)   :: year,month,day,hrs,mins,secs,hsecs,hh,dd
-        integer*4, parameter :: flen=9000
-        real*4       :: ver,grdn,grde,al,astep,step2,scalesnw,scaleall,
+      integer*4    :: mm,yy,iall,nclt,nch,irdt,ii_water
+      integer(2)   :: year,month,day,hrs,mins,secs,hsecs,hh,dd
+      integer*4, parameter :: flen=9000
+      real*4       :: ver,grdn,grde,al,astep,step2,scalesnw,scaleall,
      *                     scaletem,scalealltem,sstep,rdt,flowunitconv
 	  logical(1)   :: keyflg,precflg,found_data_end
-        CHARACTER(5) :: title(200)
-        character(40) :: notes(100)
-        CHARACTER(80) :: heading(10)
-        character(1) :: snwflg,sedflg,vapflg,smrflg,resinflg,
+      CHARACTER(5) :: title(200)
+      character(40) :: notes(100)
+      CHARACTER(80) :: heading(10)
+      character(1) :: snwflg,sedflg,vapflg,smrflg,resinflg,
      *                  resumflg,tbcflg,contflg,routeflg,crseflg,
      *                  ensimflg,leapflg,llflg,picflg,wetflg,
      *                  modelflg,shdflg,wfo_open_flg,trcflg,frcflg,
      *                  newevtflg,manningflg,translateflg,flowfillflg,
      *                  outfileflg,initflg,
      *                  fstflg !csubich
-        character(1) :: ssmc_firstpass
+      character(1) :: ssmc_firstpass
 !        character(1), dimension(:), allocatable :: glacier_flag
 !       these things taken out of some argument lists  nk 05/10/04
-        integer      :: yr1,year1,mo1,day1,hour1
+      integer      :: yr1,year1,mo1,day1,hour1
 	  integer      :: year_now,month_now,day_now,hour_now,no_dt
 	  character(2) :: yy2,mm2,dd2,hh2
-        character(4) :: yyyy4, nostr
+      character(4) :: yyyy4, nostr
 
-        character(5) :: source,rdr,data_source
-        character(80):: querystring
+      character(5) :: source,rdr,data_source
+      character(80):: querystring
 !       	  character(14)   :: date
 !     rev. 9.1.55  Jun.  12/04  - NK: write new str files to strfw\newfmt folder.
-        character(10)   :: coordsys1,datum1,zone1
+      character(10)   :: coordsys1,datum1,zone1
 	  character(40)   :: attribute_name,attribute_units,attribute_type,
      *                      application,author,char_block,name
-        character(30)   :: source_file_name
+      character(30)   :: source_file_name
 	  integer         :: attribute_count
-        real*4          :: init_heat_deficit,unit_conversion
+      real*4          :: init_heat_deficit,unit_conversion
 !       this set of variables needed when reading files other than the 
 !       shed file so coincidence of data can be checked
 !       fix fix   do this in all rd**** files someday
 
 !       for the gridded precip file in rdrain
-        character(10)   :: coordsys2,datum2,zone2
-        real            :: xorigin2,yorigin2,xdelta2,ydelta2,
+      character(10)   :: coordsys2,datum2,zone2
+      real            :: xorigin2,yorigin2,xdelta2,ydelta2,
      *                     dtrain,convrain
-        integer         :: xcount2,ycount2,deltat2,nhrain
+      integer         :: xcount2,ycount2,deltat2,nhrain
 
 !       for the gridded temperature file in rdtemp
-        character(10)   :: coordsys3,datum3,zone3
-        real            :: xorigin3,yorigin3,xdelta3,ydelta3,
+      character(10)   :: coordsys3,datum3,zone3
+      real            :: xorigin3,yorigin3,xdelta3,ydelta3,
      *                     dttemp,convtemp
-        integer         :: xcount3,ycount3,deltat3,nhtemp
+      integer         :: xcount3,ycount3,deltat3,nhtemp
 
 !       for the generic read & write modules (e.g write_r2c
-        character(10)   :: coordsys_temp,datum_temp,zone_temp
-        real            :: xorigin_temp,yorigin_temp,
+      character(10)   :: coordsys_temp,datum_temp,zone_temp
+      real            :: xorigin_temp,yorigin_temp,
      *                     xdelta_temp,ydelta_temp
-        integer         :: xcount_temp,ycount_temp,deltat_temp,
+      integer         :: xcount_temp,ycount_temp,deltat_temp,
      *	               deltat_report
 
 !       please note that coordsys and datum are used elsewhere.
@@ -194,7 +194,7 @@ ccccc      END MODULE area2
 
 ccccc      MODULE area3
 
-        integer*4 :: na,naa,ij,ji,ls,ks,js,ijk,ih,ipr,jpr,iw,ntype,
+      integer*4 :: na,naa,ij,ji,ls,ks,js,ijk,ih,ipr,jpr,iw,ntype,
      *             ntypeo,nbsn,nrvr,nsnow,nlz,net,nastart,naend
 
 ccccc      END MODULE area3
@@ -236,27 +236,27 @@ ccccc      END MODULE area4
 
 ccccc      MODULE area5
 
-        real*4,  dimension(:,:), allocatable :: qrel,qinfl,qdwpr,
+      real*4,  dimension(:,:), allocatable :: qrel,qinfl,qdwpr,
      *                     lake_stor,lake_outflow,lake_inflow,lake_elv,
      *                     del_stor
 !     *                     del_stor,net_lake_inflow,net_lake_outflow
      *                     ,qstream_sum,strloss_sum
 
 ! dch
-        real*4, DIMENSION(:), ALLOCATABLE :: reach_last
+      real*4, DIMENSION(:), ALLOCATABLE :: reach_last
 
-        real*4,    dimension(:), allocatable :: b1,b2,b3,b4,b5,ppsum,
+      real*4,    dimension(:), allocatable :: b1,b2,b3,b4,b5,ppsum,
      *                                          yres,xres
 
-        integer*4, dimension(:), allocatable :: ires,jres,nnsum,nopti
+      integer*4, dimension(:), allocatable :: ires,jres,nnsum,nopti
 
-        integer*4  noresv,local,mhto,index,nrel,noresvi,mhtoi,nreli,ktr
+      integer*4  noresv,local,mhto,index,nrel,noresvi,mhtoi,nreli,ktr
 
-	character*12, dimension(:), allocatable :: resname,resnamei
-        character(10) :: starttime1,startdate1
-        character(50) :: strfw_option
-        character*1 :: poliflg
-        logical :: first_run
+	  character*12, dimension(:), allocatable :: resname,resnamei
+      character(10) :: starttime1,startdate1
+      character(50) :: strfw_option
+      character*1 :: poliflg
+      logical :: first_run
 
 ccccc      END MODULE area5
 
@@ -307,9 +307,9 @@ ccccc      END MODULE area8
 
 ccccc      MODULE area9
 
-        real(4) :: optim
+      real(4) :: optim
 
-        integer*4      :: numa,nstart,nper,kc,maxn,nnn,dds_flag
+      integer*4      :: numa,nstart,nper,kc,maxn,nnn,dds_flag
 
 ccccc      END MODULE area9
 
@@ -345,12 +345,12 @@ c                                 vel,   already in areatr
 !     *                                              jxlondeg,jxlonmin
 
 
-        character(12), dimension(:), allocatable :: gage,damage
-        character(80), dimension(:), allocatable :: note
+      character(12), dimension(:), allocatable :: gage,damage
+      character(80), dimension(:), allocatable :: note
 
-        integer, parameter :: nnote=100
-        integer :: ns,nr,mo,itogo,month1,month2,nnnote
-        real    :: arain,tm
+      integer, parameter :: nnote=100
+      integer :: ns,nr,mo,itogo,month1,month2,nnnote
+      real    :: arain,tm
 
 ccccc      END MODULE area10
 
@@ -372,7 +372,7 @@ ccccc      END MODULE area10
 
 ccccc      MODULE area11
 
-        real, dimension(:,:), allocatable :: qrgrid
+      real, dimension(:,:), allocatable :: qrgrid
 
 ccccc      END MODULE area11
 
@@ -382,14 +382,14 @@ ccccc      END MODULE area11
 
 ccccc      MODULE area12
 
-        character(999), dimension(:), allocatable :: fln
-        character(999), dimension(:), allocatable :: filename
-        character(999), dimension(:), allocatable :: outfln
-        character(999), dimension(:), allocatable :: infln
-        character(3) :: filetype
-        character(1) :: chars(99) 
-        integer(4)   :: filename_length
-        integer      :: Nreaches,Nreachesmax=15
+      character(999), dimension(:), allocatable :: fln
+      character(999), dimension(:), allocatable :: filename
+      character(999), dimension(:), allocatable :: outfln
+      character(999), dimension(:), allocatable :: infln
+      character(3) :: filetype
+      character(1) :: chars(99)
+      integer(4)   :: filename_length
+      integer      :: Nreaches,Nreachesmax=15
 
 !        DATA Nreachesmax/15/
 
@@ -414,19 +414,19 @@ ccccc      END MODULE area15
 
 ccccc      MODULE area16
 
-        real, dimension(:),     allocatable :: smc,smcrag,xsta,ysta,
+      real, dimension(:),     allocatable :: smc,smcrag,xsta,ysta,
 c     *                                         temp,d,rsum,gsum,ratio,
      *                                         temp,rsum,gsum,ratio,
      *                                         axx,ayy
-        real, dimension(:,:),   allocatable :: p,psum,pmin,rrain,radp,
+      real, dimension(:,:),   allocatable :: p,psum,pmin,rrain,radp,
      *                                         sumr,cltr,f,f1,sto,g,sum,
      *	                                     smc_class
-        real, dimension(:,:,:), allocatable :: w
-        integer, dimension(:),  allocatable :: ntogo,ewg,sng,sngmin,
+      real, dimension(:,:,:), allocatable :: w
+      integer, dimension(:),  allocatable :: ntogo,ewg,sng,sngmin,
      *                                         ewgmin
-        integer                             :: nw
+      integer                             :: nw
 
-        character(12), dimension(:),allocatable :: gname
+      character(12), dimension(:),allocatable :: gname
 
 ccccc      END MODULE area16
 
@@ -447,20 +447,20 @@ ccccc      END MODULE areacg
 ccccc      MODULE areaet
 !     rev. 9.1.80  Mar.  31/05  - NK: added sublimation   (sublim)
 
-        real*4, dimension(:,:), allocatable :: vo,evap,intev,ev,
+      real*4, dimension(:,:), allocatable :: vo,evap,intev,ev,
      *                        pet,x2,x3,intevt,evt,ssumr,v1,rad,
      *                        sublim,sum_sublim,sum_et,sum_pet
 c     *                       , strloss_sum,qstream_sum
 
-        real*4,   dimension(:), allocatable :: 
+      real*4,   dimension(:), allocatable ::
      *                        fpet2,flint,tto,ttomin,ttomax,
      *                        eloss,diff,hu,ffcap,fcap,totint,
      *                        spore,alb,uzsinit,radv,pres,flgtemp,rh,
      *                        sublim_factor,ice_factor
 
-        real*4    :: lat,flgevp2,tempa1,tempa2,tempa3,uzsid,sinlat,
+      real*4    :: lat,flgevp2,tempa1,tempa2,tempa3,uzsid,sinlat,
      *          coslat,tanlat,albe,alamb,den,alpha,tton,akt,flgtmp1,so
-        integer*4 :: ngauges,ntemps,ittoflg
+      integer*4 :: ngauges,ntemps,ittoflg
 
 ccccc      END MODULE areaet
 
@@ -471,35 +471,35 @@ ccccc      END MODULE areaindx
 
 ccccc      MODULE areamelt
 
-        real*4, dimension(:,:),allocatable :: excess1,snowf,snowt,raint,
+      real*4, dimension(:,:),allocatable :: excess1,snowf,snowt,raint,
      *                                 ta,deld,dsno,top,bot,water,wlmax
 
-        real*4,  dimension(:,:),allocatable :: snw,snowc,dsn,ttemp,tmx,
+      real*4,  dimension(:,:),allocatable :: snw,snowc,dsn,ttemp,tmx,
      *                         tmn,sca,oldsca,fexcess,snowcmin,wcl,sdcd,
      *                         sdcsca,ati,def,el
 
-        real*4,    dimension(:), allocatable :: dsnow,tempv,tempvmin,
+      real*4,    dimension(:), allocatable :: dsnow,tempv,tempvmin,
      *                         tmax,tmin,
      *                         tmin1,tmin2,base,fm,fmn,whcl,snocap,
      *                         tipm,uadj,elev,rho,qtot,robg,rosn,qnet,
      *                         smelt,excess,extra,qrain,qsnow,qrn,
      *                         qsn,glmelt,qe,qh,qn,qp,refrz,fmadj
 
-        real*4    :: conv31,conv32,tlst31,tlst32,conv33,tlst33,daygm,
+      real*4    :: conv31,conv32,tlst31,tlst32,conv33,tlst33,daygm,
      *             gladjust,rlapse,elvref,fmadjust,fmalow,fmahigh
 
-        integer*4, dimension(:), allocatable :: nsdc,idump
+      integer*4, dimension(:), allocatable :: nsdc,idump
 
-        integer*4 :: idt31,idt32,mltpivot,mflag,iiout
+      integer*4 :: idt31,idt32,mltpivot,mflag,iiout
 
 ccccc      END MODULE areamelt
 
 ccccc      MODULE areanash
 
-        real*4,    dimension(:), allocatable :: aa,bb,cc,ashnum,ashden,
+      real*4,    dimension(:), allocatable :: aa,bb,cc,ashnum,ashden,
      *                         rsquare,qbarobs
 
-        integer*4, dimension(:), allocatable :: nq,nqc
+      integer*4, dimension(:), allocatable :: nq,nqc
 
 ccccc      END MODULE areanash
 
@@ -507,11 +507,11 @@ ccccc      END MODULE areanash
 
     
 ccccc      MODULE areaopts
-        real*4, dimension(:), allocatable :: fmdlt,fmlow,fmhgh,fmndlt,
+      real*4, dimension(:), allocatable :: fmdlt,fmlow,fmhgh,fmndlt,
      *                         fmnlow,fmnhgh,uajdlt,uajlow,uajhgh,
      *                         basdlt,baslow,bashgh
-        integer*4,dimension(:), allocatable :: mbsdlt,mbslow,mbshgh
-        real*4 :: a5dlt,a5low,a5hgh,a8dlt,a8low,a8hgh,a9dlt,a9low,a9hgh,
+      integer*4,dimension(:), allocatable :: mbsdlt,mbslow,mbshgh
+      real*4 :: a5dlt,a5low,a5hgh,a8dlt,a8low,a8hgh,a9dlt,a9low,a9hgh,
      *          a10dlt,a10low,a10hgh,a11dlt,a11low,a11hgh,
      *          a12dlt,a12low,a12hgh
 c        integer*4 :: nrec       >> used in wqnut only - see below
@@ -535,14 +535,14 @@ ccccc      MODULE areatrc
      *             snwwt,isowt,oldiso,oldiso1,oldiso2,oldiso3,oldiso4,
      *             oldiso5,oldiso6,oldiso7,oldiso8,wetinit
       REAL*4    :: pdec,sdep,navr,navs,ndmv,nrmv,pdmv,prmv,nrnc
-	REAL*8    :: sqerr
+	  REAL*8    :: sqerr
       REAL*4, DIMENSION(:), ALLOCATABLE :: 
      * massin,massout,masstore,ISOdelta,wmassin,wmassout,wmasstore,
      * wISOdelta,tt,vel,disp,coeff
-	INTEGER, DIMENSION(:), ALLOCATABLE :: nn
+	  INTEGER, DIMENSION(:), ALLOCATABLE :: nn
       
 !      DATA itrace/5/
-	DATA wetinit/0.75/icount/0/
+	  DATA wetinit/0.75/icount/0/
 
 
 !     SUB-BASIN TRACERS = TRACER 0
@@ -618,15 +618,15 @@ ccccc      MODULE areawet
      *        oldisow6,isooutwet1,isooutwet2,isooutwet3,isooutwet4,
      *        isooutwet5,isooutwet6
 
-	real*4, dimension(:,:), allocatable :: isoin1wet,isoin2wet,
+	  real*4, dimension(:,:), allocatable :: isoin1wet,isoin2wet,
      *             isoout1wet,isoout2wet,isoconcwet,isowstore1,
      *             isowstore2
-	real*4, dimension(:,:), allocatable :: isoin1SWwet,isoin2SWwet,
+	  real*4, dimension(:,:), allocatable :: isoin1SWwet,isoin2SWwet,
      *             isoout1SWwet,isoout2SWwet,isoconcSWwet,isowstore1SW,
      *             isowstore2SW,isoin1IFwet,isoin2IFwet,
      *             isoout1IFwet,isoout2IFwet,isoconcIFwet,isowstore1IF,
      *             isowstore2IF
-	real*4, dimension(:,:), allocatable :: isoin1fswet,isoin2fswet,
+	  real*4, dimension(:,:), allocatable :: isoin1fswet,isoin2fswet,
      *             isoout1fswet,isoout2fswet,isoconcfswet,isowstore1fs,
      *             isowstore2fs,isoin1SWfswet,isoin2SWfswet,
      *      isoout1SWfswet,isoout2SWfswet,isoconcSWfswet,isowstore1SWfs,
@@ -686,8 +686,8 @@ ccccc      MODULE areawfo
       integer      :: xcount,ycount,deltat
       character(10) ::  starttime,startdate
 
-        CHARACTER(64), DIMENSION(:), ALLOCATABLE :: attname
-        CHARACTER(32), DIMENSION(:), ALLOCATABLE :: attunits
+      CHARACTER(64), DIMENSION(:), ALLOCATABLE :: attname
+      CHARACTER(32), DIMENSION(:), ALLOCATABLE :: attunits
 
 
 

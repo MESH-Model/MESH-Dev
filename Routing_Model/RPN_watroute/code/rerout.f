@@ -75,9 +75,12 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !     Initial water elevations
 c      data sup_init,mhu_init,stc_init,eri_init,ont_init/
 c     *      183.2,175.98,174.8,174.01,74.61/
-
-      allocate(reach_init(Nreaches),stat=iAllocate)
-      if (iAllocate.ne.0) STOP 
+	  
+	  if(.not.allocated(reach_init)) then
+		allocate(reach_init(Nreaches),stat=iAllocate)
+	  end if
+	  !print *, 'rerout @80', iAllocate, Nreaches
+      if (iAllocate.ne.0) STOP
 
 !     see s/r lake_evap.f for lake evaporation model
 
@@ -381,7 +384,7 @@ c        dtmin=amin1(at,dtmin)
   502 format(' resv flow data extrapolated ',i5,' hours')
   504 format(' noresv,nrel,ktr/',3i5)
  1011 format(' ',3x,'  i  ires(i) jres(i)    b1(i)     b2(i)',
-     *	'    b3(i)     b4(i)')
+     *   '    b3(i)     b4(i)')
  1013 format(' ',3x,i3,2i8,5f10.5,a12/)
  4901 format(25i1)
  4902 format(3i5)

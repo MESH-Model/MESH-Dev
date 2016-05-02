@@ -89,7 +89,7 @@
         if(exists) then
           open(unit=unitNum,file=trim(adjustl(fln(flnNum))),
      *              status='old',iostat=ios)
-      print*,'Opened unit',unitNum,' filename  ',trim(fln(flnNum))
+          print*,'Opened unit',unitNum,' filename  ',trim(fln(flnNum))
           if(ios.ne.0)then
             print*, 'Problems opening the tem file',trim(fln(flnNum))
             STOP ' Stopped in read_r2c'
@@ -162,10 +162,10 @@
 !        print*,header%r2cp%yDelta,ydelta       !ido
 !        print*,header%r2cp%xCount,xcount       !ido
 !        print*,header%r2cp%yCount,ycount       !ido
-      if(header%r2cp%xOrigin.ne.xorigin)print*,'xorig_swe.ne.xorigin'
-      if(header%r2cp%yOrigin.ne.yorigin)print*,'yorig_swe.ne.yorigin'
+        if(header%r2cp%xOrigin.ne.xorigin)print*,'xorig_swe.ne.xorigin'
+        if(header%r2cp%yOrigin.ne.yorigin)print*,'yorig_swe.ne.yorigin'
         if(header%r2cp%xDelta.ne.xdelta)print*,'xdelta_swe.ne.xdelta'
-      if(header%r2cp%yDelta.ne.ydelta)print*,'ydelta_swe.ne.ydelta'
+        if(header%r2cp%yDelta.ne.ydelta)print*,'ydelta_swe.ne.ydelta'
         if(header%r2cp%xCount.ne.xcount)print*,'xcount_swe.ne.xcount'
         if(header%r2cp%yCount.ne.ycount)print*,'ycount_swe.ne.ycount'
         if(header%r2cp%xOrigin.ne.xorigin.or.
@@ -179,14 +179,14 @@
             print*,'    and SHD files'
             print*,'Check files for origins, deltas and counts'
             print*,'Could be due to # significant digits in header' 
-        STOP 'Program aborted in read_r2c_ef @ 158'
-      endif
+            STOP 'Program aborted in read_r2c_ef @ 158'
+        endif
 
 ! Scan data frames
-             frameCount = 0
+        frameCount = 0
 !                do while((.NOT.EOF(unitNum)))  !ido
-               ios=0                           !ido
-              do while(ios.eq.0)         !ido
+        ios=0                           !ido
+        do while(ios.eq.0)         !ido
           read(unit=unitNum, FMT='((A))', iostat=ios) line  ! read a line
 !      write(654,*)line
           if(ios.gt.0)then      !ido
@@ -199,41 +199,41 @@
              line = adjustl(line)    ! Get rid of leading white space
              lineLen = len_trim(line)    ! Find the length excluding trailing spaces
 
-          if(line(1:1) .eq. ':')then
-            wordCount = SplitLine(line, keyword, subString)  ! find the keyword
-            rStat = ToLowerCase(keyword)
-            KeyLen = len_trim(keyword)
+            if(line(1:1) .eq. ':')then
+              wordCount = SplitLine(line, keyword, subString)  ! find the keyword
+              rStat = ToLowerCase(keyword)
+              KeyLen = len_trim(keyword)
             
-            if(keyword(1:KeyLen).eq.':frame')then
-              iStat = ParseFrameLine(frameRec,keyword,keyLen,
+              if(keyword(1:KeyLen).eq.':frame')then
+                iStat = ParseFrameLine(frameRec,keyword,keyLen,
      &                          subString)
               
 !  Identify the first and last frame's timestamp 
-              if(iStat .lt. 0) then
-                 write(*,'(2(A))') 'ERROR parsing ', trim(fln(flnNum))
-                 write(*,'(2(A))') '   in line: ',line          
-                 STOP ' Stopped in read_r2c'
-                 return
-              else if(iStat .eq. 0) then
+                if(iStat .lt. 0) then
+                   write(*,'(2(A))') 'ERROR parsing ', trim(fln(flnNum))
+                   write(*,'(2(A))') '   in line: ',line          
+                   STOP ' Stopped in read_r2c'
+                   return
+                else if(iStat .eq. 0) then
 !            write(*,'((A), (A))')
 !     &                'Unrecognized keyword line: ', line
-              else if(frameRec%frame.EQ.1) then
-                header%startJulianDay =
+                else if(frameRec%frame.EQ.1) then
+                  header%startJulianDay =
      &            JDATE(frameRec%tStamp%year,
      &              frameRec%tStamp%month,
      &              frameRec%tStamp%day)
-                header%startHour = frameRec%tStamp%hour
-              else
-                header%endJulianDay =
-     &            JDATE(frameRec%tStamp%year,
+                  header%startHour = frameRec%tStamp%hour
+                else
+                  header%endJulianDay =
+     &              JDATE(frameRec%tStamp%year,
      &              frameRec%tStamp%month,
      &              frameRec%tStamp%day)
-                header%endHour = frameRec%tStamp%hour
+                  header%endHour = frameRec%tStamp%hour
+                end if
+                header%r2cp%frameCount = header%r2cp%frameCount+1
               end if
-              header%r2cp%frameCount = header%r2cp%frameCount+1
             end if
           end if
-                      end if
         enddo  
       
 !  deltat2 = model timestep in hours 
@@ -267,50 +267,52 @@
 !      pause 30
 ! firstpass means this is the first tem file of the first event...which is the only time it needs to be done
         if(firstpass.eq.'y')then
+		  print *, firstpass
           firstpass='n'        
 !      allocate(ttemp(ycount3,xcount3),tempv(na),tempvmin(na),
 !     *            rh(na),stat=iAllocate)
-              if(.NOT.allocated(inarray))then    
+          if(.NOT.allocated(inarray))then    
 !               inarray not previously allocated
             allocate(inarray(ycount_temp,xcount_temp),
      *                                         stat=iAllocate)
-          if(iAllocate.ne.0) STOP
-     *     'Error with allocation in read_r2c'
-          xcount_max=xcount_temp
-          ycount_max=ycount_temp
-          xcount_local=xcount_temp
-          ycount_local=ycount_temp
+            if(iAllocate.ne.0) STOP
+     *      'Error with allocation in read_r2c'
+             xcount_max=xcount_temp
+             ycount_max=ycount_temp
+             xcount_local=xcount_temp
+             ycount_local=ycount_temp
                   
-              else
+            else
 !               inarray previously allocated but check to see this 
 !               data fits in the allocated memory
-         if(xcount_temp.gt.xcount_max.or.ycount_temp.gt.ycount_max)then
-              deallocate(inarray,stat=iDeallocate)
-          if(iDeallocate.ne.0)then
-            print*,'Warning: error with deallocation of inarray'
-          endif
+              if(xcount_temp.gt.xcount_max.or.ycount_temp.gt.ycount_max)then
+                deallocate(inarray,stat=iDeallocate)
+                if(iDeallocate.ne.0)then
+                  print*,'Warning: error with deallocation of inarray'
+              endif
 
-          xcount_max=xcount_temp
-          ycount_max=ycount_temp
-          xcount_local=xcount_temp
-          ycount_local=ycount_temp
+                xcount_max=xcount_temp
+                ycount_max=ycount_temp
+                xcount_local=xcount_temp
+                ycount_local=ycount_temp
 !       outarray is in areawfo
 !       this has to be allocated before calling write_r2c
-              allocate(inarray(ycount_max,xcount_max),
+                allocate(inarray(ycount_max,xcount_max),
      *                             stat=iAllocate)
-          if(iAllocate.ne.0)then
-            STOP 'Error with allocation of inarray in read_qlz'      
-          end if
-                endif
-              endif
-        endif
+                if(iAllocate.ne.0)then
+                  STOP 'Error with allocation of inarray in read_qlz'      
+                end if
+            endif
+          endif
+        endif !First Pass
  
 
 ! Check for change of grid size (could happen for next event)
-            if(allocated(inarray))then    ! check that inarray is allocated
+        if(allocated(inarray))then    ! check that inarray is allocated
           if(xcount_temp.gt.xcount_max.
      *                          or.ycount_temp.gt.ycount_max)then
           deallocate(inarray,stat=iDeallocate)
+		  print *, 'inarray deallocated'
           if(iDeallocate.ne.0) then
             print*,'Warning: error with deallocation of intarray'
           endif
@@ -324,7 +326,7 @@
           STOP 'Error with allocation of inarray in read_r2c'      
           end if
           endif
-            endif
+        endif
 
         xcount_temp=xcount_local
         ycount_temp=ycount_local
@@ -354,11 +356,11 @@
 !  if(modelHour.eq.dataHour)then
 !  Go ahead and read the data for this frame 
 
-!      print*
-
+      print *, 'zeft'
+		print *, size(inarray,1), size(inarray,2),xcount_local,ycount_local
         do i=1, ycount_local
           read(unitNum,*,iostat=ios)(inarray(i,j),j=1,xcount_local)
-!          write(*,*)(inarray(i,j),j=1,xcount_local)
+          !write(*,*)(inarray(i,j),j=1,xcount_local)
           if(ios.ne.0)then
             write(*,9993)modelHour,i
                   print*,' unit number =',unitNum

@@ -11,8 +11,8 @@ include makefile.def
 FC=gfortran
 
 # Flag for compiling and debugging (-g) - comment as necessary
-#LFLAG = -O3 -g -ffixed-line-length-none -fd-lines-as-comments -fno-range-check
-LFLAG = -O3 -static -ffixed-line-length-none -fd-lines-as-comments -fno-range-check
+LFLAG = -O3 -g -ffixed-line-length-none -fd-lines-as-comments -fno-range-check
+#LFLAG = -O3 -static -ffixed-line-length-none -fd-lines-as-comments -fno-range-check
 
 .SECONDARY:
 
@@ -63,13 +63,13 @@ fst_io.mod : fst_io_stub.f90
 # ======================================================================
 clean:
 # 'rm' for Cygwin, 'del' for MinGW - comment as necessary
-#	rm *.mod *.o
-	del *.mod *.o
+	rm *.mod *.o
+#	del *.mod *.o
 
 # ======================================================================
 # Cleaning everything including the previously built executable
 # ======================================================================
 veryclean:
 # 'rm' for Cygwin, 'del' for MinGW - comment as necessary
-#	rm *.mod *.o watroute
-	del *.mod *.o watroute
+	rm *.mod *.o watroute
+#	del *.mod *.o watroute
