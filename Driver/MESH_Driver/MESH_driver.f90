@@ -120,8 +120,9 @@ program RUNMESH
     implicit none
 
     !* ierr: Diagnostic error/status return from various subroutines.
-    integer ierrcode
     integer :: ierr = 0
+
+    integer istop, ierrcode, irecv, itag
 
     !> Local variables.
     !* NA: Temporary store for the number of grid cells.
@@ -173,7 +174,7 @@ program RUNMESH
 
     !* INDEPPAR: NUMBER OF GRU-INDEPENDENT VARIABLES
     !* DEPPAR: NUMBER OF GRU-DEPENDENT VARIABLES
-    integer i, j, k, l, m, &
+    integer i, j, k, l, m, u, &
         INDEPPAR, DEPPAR
 
     integer FRAME_NO_NEW
@@ -181,6 +182,7 @@ program RUNMESH
     !> MAM - logical variables to control simulation runs:
     character(100) cstate
     logical :: ENDDATE = .false., ENDDATA = .false.
+    integer :: RUNSTATE = 0
 
     !>  For cacluating the subbasin grids
 !+    integer SUBBASINCOUNT
@@ -430,7 +432,10 @@ program RUNMESH
 !> **********************************************************************
 
     ENDDATA = climate_module_init(shd, il1, il2, cm)
-    if (ENDDATA) goto 997
+    if (ENDDATA) then
+        RUNSTATE = 1
+        goto 997
+    end if
 
     !> Initialize output fields.
     if (ipid == 0) then
@@ -1044,14 +1049,34 @@ program RUNMESH
     !> *********************************************************************
 
     !> MAM - Initialize ENDDATE and ENDDATA
-    ENDDATE = .false.
-    ENDDATA = .false.
+!-    ENDDATE = .false.
+!-    ENDDATA = .false.
 
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
+        !> Pass the run state from the head to worker nodes.
+        if (inp > 1 .and. ipid /= 0) then
+
+            !> Receive data from the head node.
+            call MPI_Recv(RUNSTATE, 1, MPI_INT, 0, ipid, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
+        else if (inp > 1) then
+
+            !> Send data for the worker nodes.
+            do u = 1, (inp - 1)
+                call MPI_Send(RUNSTATE, 1, MPI_INT, u, u, MPI_COMM_WORLD, ierr)
+            end do
+        end if !(inp > 1 .and. ipid /= 0) then
+
+!-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
+
+        if (RUNSTATE /= 0) exit
+
         !> Load or update climate forcing input.
         ENDDATA = climate_module_update_data(shd, ic, il1, il2, cm)
-        if (ENDDATA) goto 997
+        if (ENDDATA) then
+            RUNSTATE = 1
+            cycle
+        end if
 
         !> Reset variables that accumulate on the daily time-step.
         if (ipid == 0 .and. ic%ts_daily == 1) then
@@ -1102,7 +1127,10 @@ program RUNMESH
         end if
 
         cstate = run_within_tile(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
-        if (len_trim(cstate) > 0) goto 998
+        if (len_trim(cstate) > 0) then
+            RUNSTATE = 1
+            cycle
+        end if
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.
@@ -1361,6 +1389,28 @@ program RUNMESH
         !> Update the current time-step and counter.
         call update_now_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW)
 
+        !> Check the run state.
+        if (ENDDATA .or. ENDDATE) then
+            RUNSTATE = 1
+            exit
+        end if
+
+        !> Pass the run state from the worker to head nodes.
+        if (inp > 1 .and. ipid /= 0) then
+
+            !> Receive data from the head node.
+            call MPI_Send(RUNSTATE, 1, MPI_INT, 0, ipid, MPI_COMM_WORLD, ierr)
+        else if (inp > 1) then
+
+            !> Send data for the worker nodes.
+            do u = 1, (inp - 1)
+                call MPI_Recv(irecv, 1, MPI_INT, u, u, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
+                RUNSTATE = max(RUNSTATE, irecv)
+            end do
+        end if !(inp > 1 .and. ipid /= 0) then
+
+!-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
+
     end do !while (.not. ENDDATE .and. .not. ENDDATA)
 
     !>
@@ -1371,10 +1421,10 @@ program RUNMESH
 
     !> End program if not the head node.
     if (ipid /= 0) then
-!        print 4696, ipid
+        if (ro%DIAGNOSEMODE > 0) print 4696, ipid
         goto 999
 
-!4696 format (1x, 'Node ', i4, ' is exiting...')
+4696    format (1x, 'Node ', i4, ' is exiting...')
 
     end if !(ipid /= 0) then
 
