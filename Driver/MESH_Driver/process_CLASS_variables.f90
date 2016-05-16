@@ -231,10 +231,17 @@ module process_CLASS_variables
             fetchROW, HtROW, N_SROW, A_SROW, DistribROW
     end type
 
+    !> Type: RUNCLASS_Flags
+    !* PROCESS_ACTIVE: Flag to enable CLASS.
+    type RUNCLASS_flags
+        logical :: PROCESS_ACTIVE = .true.
+    end type
+
 !todo: may need to move these.
     type(ClassParameters), save :: cp
     type(SoilValues), save :: sv
     type(HydrologyParameters), save :: hp
+    type(RUNCLASS_flags), save :: RUNCLASS_flgs
 
 !todo: may need to move these.
     type(CLASS_forcing_input), save :: cfi

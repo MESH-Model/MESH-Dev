@@ -137,6 +137,10 @@ module process_CLASS_config
         integer NA, NTYPE, NML, IGND, l, k, ik, jk, m, j, i, iun, ierr
         real FRAC
 
+        !> Return if the process is not marked active.
+!todo: can't remove yet because dependencies on 'cp' in other parts of the code.
+!+        if (.not. RUNCLASS_flgs%PROCESS_ACTIVE) return
+
         NA = shd%NA
         NTYPE = shd%lc%NTYPE
         IGND = shd%lc%IGND
@@ -893,6 +897,9 @@ module process_CLASS_config
         type(soil_statevars) :: sv
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
+
+        !> Return if the process is not marked active.
+        if (.not. RUNCLASS_flgs%PROCESS_ACTIVE) return
 
         !> Only the head node writes CLASS output.
         if (.not. ipid == 0) return

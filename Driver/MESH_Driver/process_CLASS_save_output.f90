@@ -54,6 +54,9 @@ module process_CLASS_save_output
         character(2000) FMT
         integer k, j, i
 
+        !> Return if the process is not marked active.
+        if (.not. RUNCLASS_flgs%PROCESS_ACTIVE) return
+
         !> check that run points are in the basin and that there are no repeats
         do i = 1, WF_NUM_POINTS
             if (op%N_OUT(i) > shd%NA) then
@@ -274,6 +277,9 @@ module process_CLASS_save_output
         real ZPND, FSTR
         character(20) IGND_CHAR
         integer NSUM, k, j, i
+
+        !> Return if the process is not marked active.
+        if (.not. RUNCLASS_flgs%PROCESS_ACTIVE) return
 
         !> Constant variables.
         DELT = ic%dts

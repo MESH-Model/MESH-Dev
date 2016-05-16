@@ -59,6 +59,9 @@ module process_CLASS
         !> SCA variables
         real TOTAL_AREA, basin_SCA, basin_SWE
 
+        !> Return if the process is not marked active.
+        if (.not. RUNCLASS_flgs%PROCESS_ACTIVE) return
+
 !> *********************************************************************
 !> Start of the NML-based LSS loop.
 !> *********************************************************************
