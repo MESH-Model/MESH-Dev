@@ -1,0 +1,56 @@
+version v1.1.0
+
+1) REMOVE SUBROUTINES THAT ARE IDENTICAL WITH THE PHYSICS PACKAGE
+
+glaciers1.ftn90
+aggcovernat.ftn90
+
+2) check_options.ftn90
+
+--merge but remove ISBANOVF scheme from options
+means that SVS in new code is ischmsol.eq.4 rather than ischmsol.eq.5
+** watchout for that in other subroutines
+
+3) coherence.ftn90
+tons of changes because of new incremental analysis protection needed
+also, ischmsol eq 4 replace ischmsol eq 5
+slight re-organization
+
+Question: minimum for water in soil: 0.0 or 1E-7 ??? like for ISBA ???
+Answer with Vincent: 1E-7 is okay
+
+4) inisurf1.ftn90
+tons of changes because of new incremental analysis protection needed
+slight re-organization
+
+Question: on impose un minimum pour la densite relative de la neige sur l'eau ...
+est-ce qu'on veut ca ???
+Answer with Vincent: oui... le maximum qu'on impose c'est rhoice ... on ne veut pas la densite de la neige au-dessus de rhoice !
+
+** remove option of deciding snow albedo from snow age ... for SVS ... 
+because we do not do it for snval ???
+Answer with Stephane: Always read albedo at entry ... so can remove the snow age calc. 
+
+5) inicover_svs.ftn90
+take svs v1.0.0-rc2 as is
+
+6) inisoili_svs.ftn90
+take svs v1.0.0-rc2 as is
+
+7) isbapar.cdk , phy_output_mod.cdk90, physimple_transforms.ftn90
+take svs v1.0.0-rc2 as is
+
+8) phybusinit.ftn90, sfcbus.cdk, phybus.cdk, phydebu.ftn90
+classic merge
+
+9) phyexe.ftn90
+add svs option in v1.1.0 subroutine
+
+10) surface.ftn90
+ischmsol eq 4 rather than 5
+
+the rest take as is ... 
+
+
+
+

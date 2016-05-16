@@ -1,0 +1,120 @@
+This branch contains the source code for the RUNSVS standalone driver for SVS.
+It should be SELF-CONTAINED, ie this branch contains ALL OF THE CODE required
+to run SVS in column mode. There should be no dependencies on other source code.
+
+It can read either CLASS or MESH or SVS input files for simple benchmark cases.
+
+To run a CLASS benchmark, you need:
+----------------------------------
+- a CLASS INI file
+- a CLASS MET file
+
+  In order to run you need to put these two files in the DATA subdirectory.
+  They can be copied from the CLASS repository hosted in Diana Verseghy's account
+  They are found at ~acrnrdv on CMC machines, for example here:
+  ~acrnrdv/class_v3.6.1/Old_Aspen_1999-2005
+  The data subdirectory should already contain symbolic links to these files
+
+To run a MESH benchmark, you need:
+---------------------------------
+
+- a MESH INI file containing a single GRU definition
+  (if it contains more than one GRU, only the first GRU is used)
+- a MESH MET file, which is a concatenation of MESH R2C files, 
+   obtained using the paste command
+
+  When using standalone MESH, a separate R2c file is used for each variable,
+  whereas this driver expects a single met forcing file. You can combine all
+  forcing datafiles using the paste command so that all data for a given time
+  step be on the same line. Variables should be pasted in the following order:
+
+	SW,LW,RT,TT,HU,UV,P0
+
+To run a SVS benchmark, you need:
+---------------------------------
+
+Note: see SVS_COOK_RECEIPE.txt for how to setup an experiment with SVS-type files starting from an experiment with fst files.
+
+- a SVS INI file 
+- a SVS GEO file containing geophysical variables for the domain of interest; 
+the GEO file consists of a conversion of the SVS fst geophys. file into
+the r2c (text) format.
+- a SVS MET file, i.e. a concatenation of R2C files (forcing files), (same as for MESH benchmark case);
+  however for SVS we also want the VV wind component;
+  Variables should be pasted in the following order:
+    FB,FI,PR,TT,HU,UU,VV,P0
+- a SVS INTRP file, which contains the info required to compute watershed averages of a given variable;
+  this is used to compute the watershed outflow in stand-alone svs without having to run Watroute afterwards.
+- a SVS .rte file, containing the values for the routing parameters
+
+
+In all three benchmark cases, the configuration options are found in 'data/*.nml' and should be adjusted.
+
+---------------------------------
+---------------------------------
+To run the driver:
+
+runsvs < runsvs.nml
+
+# even if using class or mesh-type input files
+# (copy the .nml file located in data into main directory)
+
+---------------------------------
+---------------------------------
+To compile:
+
+# if required load the compiler and ARMNLIB environment
+. ./ssmuse
+
+# if changes occur to <svs_code>/phybusinit.ftn90 or <svs_code>/phydebu.ftn90,
+# re-create the RUNSVS bus by parsins SVS source code:
+# copy 'bin/create_source_code_for_runsvs.sh' into main directory and type:
+create_source_code_for_runsvs.sh <svs_code>
+
+!!$ (to update:)
+!!$# create the surface bus where all SVS variables will be stored
+!!$make bus SVS=<svs_code>
+
+# make the executable
+make TARGET=<target> NG=<ngridcells> SVS=<svs_code>
+
+<target> should be one of the following:
+"runsvs_svs_inputs" to use SVS data files
+"runsvs_class_inputs" to use class data files
+"runsvs_mesh_inputs" to use MESH data files
+
+<ngridcells> is the size of the row vector
+typically "1" for class files
+must be equal to xCount*yCount for mesh and svs-type files
+
+<svs_code> is the directory containing the version of the SVS code you want to use
+for example "svs_v1.1.3_cleanup"
+
+Default for these parameters are:
+<target>:     runsvs_class_inputs
+<ngridcells>: 1
+<svs_code>:   svs_v1.1.3_cleanup 
+
+------------------------------------
+------------------------------------
+
+Content of the directory:
+
+Makefile		Makefile used to create the runsvs executable
+README			This file
+bin			Subdirectory containing scripts used to generate source code
+changes_to_rpnphy	Files from the RPN physics that were modified
+data			Subdirectory used to store input and output files, and convert fst files to r2c format
+rpnphy_5.5.0-rc2_all	Files from the RPN physics that are unchanged
+runsvs.nml		namelist with options that are read by the driver
+src			runsvs source code
+ssmuse			file to be sourced in order to be load the compiler
+SVS_COOK_RECEIPE.txt txt file containing the directives to create a standalone-svs experiment with svs input files; this requires converting fst to r2c files.
+svs_v1.1.3_cleanup	SVS source code that needs to be added to the RPN physics
+svs_v1.1.3_cleanup_new  latest SVS source code with 11 soil layers, snowmelt modif., hydraulic properties derived from soil texture, etc.
+svs_armnnal_paper	SVS source code that was used for Alavi et al. (2015) paper
+
+Note: standalone-svs is currently made to operate with the latest version of the code: svs_v1.1.3_cleanup_new;
+if you want to use other versions which make use of only 7 soil layers, you'll have to update src/runsvs_io_svs.ftn90 in read_geo subroutine
+and comment out the lines were soil texture is defined for layers 8-11 (7-10 in the bus).
+

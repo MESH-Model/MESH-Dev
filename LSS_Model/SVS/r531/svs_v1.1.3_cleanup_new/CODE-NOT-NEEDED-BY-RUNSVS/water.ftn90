@@ -1,0 +1,397 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** S/P WATER
+!
+#include "phy_macros_f.h"
+      SUBROUTINE WATER ( bus, bussiz, &
+                         ptsurf, ptsurfsiz, &
+                         trnch, kount, &
+                         n, m, nk )
+!
+      implicit none
+#include <arch_specific.hf>
+!
+      integer bussiz, kount, trnch
+      real bus(bussiz)
+      integer ptsurfsiz
+      integer ptsurf(ptsurfsiz)
+!
+!
+      INTEGER N, M, NK
+
+!
+!Author
+!          J. Mailhot, S. Belair and B. Bilodeau (Dec 1998)
+!
+!Revisions
+! 001      B. Bilodeau (Nov 2000) - New comdeck sfcbus.cdk
+! 002      B. Bilodeau (Jan 2001) - Automatic arrays
+! 003      B. Bilodeau (Aug 2001) - LOCBUS
+! 004      B. Bilodeau (Feb 2002) - Add Z0TCST option
+! 005      J.-F. Mahfouf (Spring 2003) -
+!              Add implicit boundary condition option for vert. diff.
+! 006      A.-M. Leduc and B. Bilodeau (April 2004) - Add Z0tlat
+!              (latitudinal variation of z0t between Charnock
+!               and a constant value)
+! 008      M. Faucher (Summer 2006) - If OWFLUX. is .true. in coupling mode,
+!                fluxes over ocean are taken from ocean model.
+! 009      P. Vaillancourt (May 2010) - modify saturation vapor pressure over salty water (ocean) - Zeng et al. 1998, J.ofClim.
+! 009b     M. Carrera and V. Fortin (Nov 2007) - Compute total runoff
+!                as precipitation - evaporation (no storage)
+! 010      D. Deacu,Fortin,Vaillancourt (Spring 2010) - Option Z0TRDPS300 for scalar roughness length
+!                similar to that used in the ECMWF model (Deacu et al. 2012, J. Hydrometeor, 13, 1739-1759) 
+! 011      M. Abrahamowicz (May 2013) - replace call to flxsurf3 by call to flxsurf4, with optz0=0 (neutral change)
+!
+!Object
+!          Calculate: - surface roughness length (Z0) over open water
+!                       (not covered by ice) using Charnock's relation with a
+!                       BETA parameter (optional sea state dependency);
+!                     - surface fluxes of momentum, heat and moisture.
+!
+!Arguments
+!
+!             - Input/Output -
+! BUS         Bus for the WATER surface scheme
+!
+!             - Input -
+! BUSSIZ      dimension of bus
+! PTSURF      surface pointers
+! PTSURFSIZ   dimension of ptsurf
+! TRNCH       row number
+! KOUNT       timestep number
+! N           horizontal dimension (row length)
+! M           horizontal dimensions of fields
+!             (not used for the moment)
+! NK          vertical dimension
+!
+!
+!Notes
+!          Z0 = BETA*USTAR**2/GRAV (in metres) with minimum value
+!          Z0MIN and a maximum value Z0MAX.  This Z0MTYPE='Charnock' 
+!          formula is adjusted using a term proportional to the inverse
+!          of the friction velocity if Z0MTYPE='Beljaars'.
+!
+!IMPLICITES
+!
+include "thermoconsts.inc"
+!
+#include "clefcon.cdk"
+#include "options.cdk"
+#include "phyinput.cdk"
+!
+!
+      integer ptr, x
+      INTEGER I, J, K
+      real qsat_o_salty
+!
+!
+!
+!MODULES
+!
+      EXTERNAL FLXSURF4
+!
+!
+!***************************************************
+!     AUTOMATIC ARRAYS
+!***************************************************
+!
+      AUTOMATIC ( VMOD  , REAL , (N) )
+      AUTOMATIC ( SCR1  , REAL , (N) )
+      AUTOMATIC ( SCR2  , REAL , (N) )
+      AUTOMATIC ( SCR3  , REAL , (N) )
+      AUTOMATIC ( SCR4  , REAL , (N) )
+      AUTOMATIC ( SCR5  , REAL , (N) )
+      AUTOMATIC ( SCR6  , REAL , (N) )
+      AUTOMATIC ( SCR7  , REAL , (N) )
+      AUTOMATIC ( ZTN   , REAL , (N) )
+      AUTOMATIC ( ZUN   , REAL , (N) )
+!
+!***************************************************
+!
+      REAL, PARAMETER :: AM=0.11        !Roughness adjustment coefficient (Beljaars QJRMS 1994)
+      REAL, PARAMETER :: BETA=0.018     !Charnock's coefficient
+      REAL, PARAMETER :: K_VISC=1.5E-5  !Kinematic viscosity estimate at ~20oC
+      REAL, PARAMETER :: ZFRVMIN=0.01   !Minimum friction velocity for inverse relations
+!
+      REAL ALVIS_WAT, CMU, CTU, FC_WAT
+      REAL FC_CPL, FV_CPL, MC_CPL, MLAC
+      REAL FV_WAT
+      REAL HST_WAT, HU, ILMO_WAT
+      REAL PS, QS, TH, TS, TT, UU, VV
+      REAL Z0H, Z0M, RHO
+      REAL ZALFAQ, ZALFAT, ZDLAT, ZFCOR
+      REAL ZFTEMP, ZFVAP, ZQDIAG, ZTDIAG
+      REAL ZTSURF, ZTSRAD, ZUDIAG, ZVDIAG
+      REAL ZFRV, ZZUSL, ZZTSL
+
+      REAL, DIMENSION(N) :: Z0M_ADJUST
+
+      REAL ZRUNOFFTOT, ZRAINRATE, ZSNOWRATE
+!
+      POINTER (IALVIS_WAT , ALVIS_WAT  (1) )
+      POINTER (ICMU       , CMU        (1) )
+      POINTER (ICTU       , CTU        (1) )
+      POINTER (IML        , MLAC       (1) )
+      POINTER (IFC_CPL    , FC_CPL     (1) )
+      POINTER (IFV_CPL    , FV_CPL     (1) )
+      POINTER (IMC_CPL    , MC_CPL     (1) )
+      POINTER (IFC_WAT    , FC_WAT     (1) )
+      POINTER (IFV_WAT    , FV_WAT     (1) )
+      POINTER (IHST_WAT   , HST_WAT    (1) )
+      POINTER (IHU        , HU         (1) )
+      POINTER (IILMO_WAT  , ILMO_WAT   (1) )
+      POINTER (IPS        , PS         (1) )
+      POINTER (IQS        , QS         (1) )
+      POINTER (ITH        , TH         (1) )
+      POINTER (ITS        , TS         (1) )
+      POINTER (ITT        , TT         (1) )
+      POINTER (IUU        , UU         (1) )
+      POINTER (IVV        , VV         (1) )
+      POINTER (IZ0H       , Z0H        (1) )
+      POINTER (IZ0M       , Z0M        (1) )
+      POINTER (IZALFAQ    , ZALFAQ     (1) )
+      POINTER (IZALFAT    , ZALFAT     (1) )
+      POINTER (IZDLAT     , ZDLAT      (1) )
+      POINTER (IZFCOR     , ZFCOR      (1) )
+      POINTER (IZFTEMP    , ZFTEMP     (1) )
+      POINTER (IZFVAP     , ZFVAP      (1) )
+      POINTER (IZQDIAG    , ZQDIAG     (1) )
+      POINTER (IZRFTOT    , ZRUNOFFTOT (1) )
+      POINTER (IZRAINRATE , ZRAINRATE  (1) )
+      POINTER (IZSNOWRATE , ZSNOWRATE  (1) )
+      POINTER (IZTDIAG    , ZTDIAG     (1) )
+      POINTER (IZTSURF    , ZTSURF     (1) )
+      POINTER (IZTSRAD    , ZTSRAD     (1) )
+      POINTER (IZUDIAG    , ZUDIAG     (1) )
+      POINTER (IZVDIAG    , ZVDIAG     (1) )
+      POINTER (IZFRV      , ZFRV       (1) )
+      POINTER (IZZUSL     , ZZUSL      (1) )
+      POINTER (IZZTSL     , ZZTSL      (1) )
+!
+!
+!**
+!
+#include "zuzt.cdk"
+!
+      REAL Z0MAX
+#include "vamin.cdk"
+      SAVE VAMIN, Z0MAX
+!
+!**
+!
+!**  WARNING ------ the value for Z0MAX needs to be increased when coupled with WAM
+!
+!**   DATA Z0MAX / 5.E-2 /
+      DATA Z0MAX / 5.E-3 /
+!
+!** ------------------------------------------------------------------
+!
+#include "locbus.cdk"
+      INTEGER INDX_SFC, SURFLEN
+      PARAMETER (INDX_SFC = INDX_WATER)
+      INTEGER QUELNIVO(MAXVARSURF)
+!
+!
+#include "sfcbus.cdk"
+!
+include "dintern.inc"
+include "fintern.inc"
+#include "xptsurf.cdk"
+!
+!
+!
+      SURFLEN = M
+!
+!
+!     EQUIVALENCES
+!
+      INIT_LOCBUS()
+!
+!     Syntax of macro locbus (must be typed in CAPITAL letters):
+!     locbus (pointer, array_name_in_the_bus, level)
+!     If level=0, array chosen automatically as follows:
+!        1) level =  1 if array has  1 level only (e.g. TSURF )
+!        2) level = nk if array has nk levels     (e.g. TMOINS)
+!        3) level = indx_sfc if array has a level for each surface type (e.g. FC)
+!        4) level has to be specified by user if array has more than one level
+!           that all "belong" to the same surface type (e.g. TSOIL)
+!
+      LOCBUS (IALVIS_WAT, ALVIS  ,  0 )
+      LOCBUS (ICMU      , BM     ,  0 )
+      LOCBUS (ICTU      , BT     ,  0 )
+      LOCBUS (IML       , ML     ,  0 )
+      LOCBUS (IFC_CPL   , FCCPL  ,  0 )
+      LOCBUS (IFV_CPL   , FVCPL  ,  0 )
+      LOCBUS (IMC_CPL   , MCCPL  ,  0 )
+      LOCBUS (IFC_WAT   , FC     ,  0 )
+      LOCBUS (IFV_WAT   , FV     ,  0 )
+      LOCBUS (IHST_WAT  , HST    ,  0 )
+      LOCBUS (IHU       , HUMOINS,  0 )
+      LOCBUS (IILMO_WAT , ILMO   ,  0 )
+      LOCBUS (IPS       , PMOINS ,  0 )
+      LOCBUS (IQS       , QSURF  ,  0 )
+      LOCBUS (ITH       , THETAA ,  0 )
+      LOCBUS (ITS       , TWATER ,  0 )
+      LOCBUS (ITT       , TMOINS ,  0 )
+      LOCBUS (IUU       , UMOINS ,  0 )
+      LOCBUS (IVV       , VMOINS ,  0 )
+      LOCBUS (IZ0H      , Z0T    ,  0 )
+      LOCBUS (IZ0M      , Z0     ,  0 )
+      LOCBUS (IZALFAQ   , ALFAQ  ,  0 )
+      LOCBUS (IZALFAT   , ALFAT  ,  0 )
+      LOCBUS (IZDLAT    , DLAT   ,  0 )
+      LOCBUS (IZFCOR    , FCOR   ,  0 )
+      LOCBUS (IZFTEMP   , FTEMP  ,  0 )
+      LOCBUS (IZFVAP    , FVAP   ,  0 )
+      LOCBUS (IZTSURF   , TSURF  ,  0 )
+      LOCBUS (IZTSRAD   , TSRAD  ,  0 )
+      LOCBUS (IZUDIAG   , UDIAG  ,  0 )
+      LOCBUS (IZVDIAG   , VDIAG  ,  0 )
+      LOCBUS (IZTDIAG   , TDIAG  ,  0 )
+      LOCBUS (IZQDIAG   , QDIAG  ,  0 )
+      LOCBUS (IZRFTOT   , RUNOFFTOT,0 )
+      LOCBUS (IZRAINRATE, RAINRATE, 0 )
+      LOCBUS (IZSNOWRATE, SNOWRATE, 0 )
+      LOCBUS (IZFRV     , FRV    ,  0 )
+      LOCBUS (IZZUSL    , ZUSL   ,  0 )
+      LOCBUS (IZZTSL    , ZTSL   ,  0 )
+!
+      do i=1,n
+         zun(i) = zu
+         ztn(i) = zt
+      end do
+!
+!------------------------------------------------------------------------
+!
+!
+!       1.     Saturated specific humidity at the water surface
+!       -------------------------------------------------------
+!
+!                           Uses FOQSA instead of FOQST to take into account saturation
+!                           with respect to sea water (liquid between 0 and -1.8 C)
+      qsat_o_salty = 1.0
+      if (salty_qsat) qsat_o_salty = 0.98
+      DO I=1,N
+!        QS(I) = FOQSA(TS(I),PS(I)) * (1.-MLAC(I))*qsat_o_salty
+        QS(I) = FOQSA(TS(I),PS(I))
+        IF(MLAC(I) .LE. 0.001) QS(I) = qsat_o_salty*QS(I)
+      END DO
+!
+!
+!       2.     Calculate roughness lengths based on generalized Charnock's relation
+!       ---------------------------------------------------------------------------
+!
+      if (kount.gt.0 .or. any('frv'==phyinread_list_s(1:phyinread_n))) then
+!
+!     Precompute the Beljaars (QJRMS 1995, pp255-270) adjustment to the Charnock 
+!     relationship to increase the roughness length at low wind speeds (low ZFRV).
+        z0m_beljaars: if (iz0mtype == 2) then
+           Z0M_ADJUST = AM*K_VISC/MAX(ZFRV,ZFRVMIN)
+        else
+           Z0M_ADJUST = 0.
+        endif z0m_beljaars
+!
+!     Use Charnock's relation to estimate roughness length
+        DO I=1,N
+           Z0M(I) = MAX( MIN( BETA*ZFRV(I)**2/GRAV + Z0M_ADJUST(I),Z0MAX ) , Z0MIN )
+        ENDDO
+     endif
+!
+      IF (Z0TRDPS300) THEN
+         DO I=1,N
+            ZFRV(I)=MAX(ZFRVMIN,  ZFRV(I))
+            Z0H(I) = MIN(2.e-05/ZFRV(I), 1.e-04)
+         END DO
+      ELSE
+         DO I=1,N
+            Z0H(I) = Z0M(I)
+         END DO
+      ENDIF
+!
+!
+!     Note:  For |lat| >= Z0TLAT(2)  Charnock's (or Deacu) relation is used
+!            For |lat| <= Z0TLAT(1)  Z0HCON is used.
+!            For Z0TLAT(1) < |lat| < Z0TLAT(2)
+!            we do a linear interpolation between Charnock(or Deacu) and Z0HCON.
+!
+      DO I=1,N
+
+        IF (ABS(ZDLAT(I)) .GE. Z0TLAT(2)) THEN
+          Z0H(I) = Z0H(I)
+        ELSE IF (ABS(ZDLAT(I)) .LE. Z0TLAT(1)) THEN
+          Z0H(I) = Z0HCON
+        ELSE
+          Z0H(I)=( ((ABS(ZDLAT(I))-Z0TLAT(1))/(Z0TLAT(2)-Z0TLAT(1))) &
+                        *(Z0H(I)-Z0HCON) ) + Z0HCON
+        ENDIF
+
+        VMOD  (I) = SQRT(MAX(VAMIN,UU(I)**2+VV(I)**2))
+      END DO
+!
+!
+!       3.     Calculate the surface transfer coefficient and fluxes
+!       ------------------------------------------------------------
+!
+!     call flxsurf4 with optz0=0 i.e., no call to compz0
+!
+      CALL FLXSURF4( CMU, CTU, SCR1, ZFTEMP, ZFVAP, &
+                     ILMO_WAT, ZFRV, ZFCOR, TH, HU, &
+                     ZZUSL, ZZTSL, VMOD, TS, QS, HST_WAT, &
+                     Z0M, Z0H,SCR2, SCR3, SCR4, SCR5, N, 0 )
+!
+!
+      CALL DIASURF2(ZUDIAG, ZVDIAG, ZTDIAG, ZQDIAG, &
+                    N, UU, VV, TS, QS, &
+                    Z0M, Z0H, ILMO_WAT, ZZUSL, &
+                    HST_WAT, ZFRV, ZFTEMP, ZFVAP, &
+                    ZUN, ZTN, ZDLAT)
+!
+!
+!
+!       4.     Finalize the fluxes
+!       --------------------------
+!
+!VDIR NODEP
+      DO I=1,N
+!
+        ZTSURF   (I) = TS (I)
+        ZTSRAD   (I) = TS (I)
+!
+        ZALFAT   (I) = - CTU(I) * ( TS(I)-TH(I) )
+        ZALFAQ   (I) = - CTU(I) * ( QS(I)-HU(I) )
+        IF (.NOT.IMPFLX) CTU (I) = 0.
+        RHO = PS(I)/(RGASD * ZTDIAG(I)*(1.+DELTA*ZQDIAG(I)))
+! Compute runoff as total precipitation in kg/m2/s (or mm/s) minus evaporation.
+! ZALFAQ being negative for an upward flux, we need to add rho*zalfaq        
+        ZRUNOFFTOT (I) = (1000.*(ZRAINRATE(I) + ZSNOWRATE(I)) &
+                         + RHO*ZALFAQ(I)) * DELT
+        FC_WAT(I)    = -CPD *RHO*ZALFAT(I)
+        FV_WAT(I)    = -CHLC*RHO*ZALFAQ(I)
+!
+        IF (IMPFLX) THEN
+          ZALFAT   (I) = - CTU(I) *  TS(I)
+          ZALFAQ   (I) = - CTU(I) *  QS(I)
+        ENDIF
+!***
+!
+      END DO
+!
+!     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
+      CALL FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_WATER, &
+                     SURFLEN )
+!
+      RETURN
+      END

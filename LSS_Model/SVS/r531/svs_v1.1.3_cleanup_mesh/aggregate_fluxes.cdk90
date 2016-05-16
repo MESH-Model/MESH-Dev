@@ -1,0 +1,39 @@
+!     FUNCTION TO AGGREGATE SURFACE VARIABLES OVER 3 TYPES OF SURFACES
+!     (Bare Ground, Vegetation, Snow)
+!Author
+!          M. Abrahamowicz (July 2009)
+!Revisions
+! 001      M. Abrahamowicz (July 2009) - blah blah
+!
+!
+!
+!Object
+!          Aggregate surface variable over 3 different types of surfaces
+!          (Snow, Vegetation & Bare Ground)
+!
+!Arguments
+!
+!          - Input -
+! FVH      Fraction of grid cell covered by HIGH vegetation
+! FVL      Fraction of grid cell covered by LOW  vegetation
+! FSNVH    Fraction of HIGH vegetation covered by snow (from ground or atm)
+! FSN      Fraction of LOW  vegetation or bare ground covered by snow
+! BG       Bare Ground Variable 
+! VG       Vegetation  Variable
+! SNO      Snow Only Variable 
+! SNV      Snow-under-vegetation variable
+!
+!         - Output -
+! AG       Aggregated Variable
+!
+      real function AG(FVH,FVL,FSNVH,FSN,BG,VG,SNO,SNV)
+
+      REAL, intent(in) :: FVH,FVL,FSNVH,FSN,BG,VG,SNO,SNV
+     
+      AG =  (1. - FVH - FVL ) * (1. - FSN)             * BG   &
+          + (FVH * (1. - FSNVH)  + FVL * (1. - FSN))   * VG   &
+          + (1. - FVH) * FSN                           * SNO  &
+          +  FVH * FSNVH                               * SNV  
+
+      return
+      end function AG

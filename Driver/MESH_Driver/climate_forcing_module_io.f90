@@ -3,6 +3,9 @@
 !>
 module climate_forcing_io
 
+!temp
+use SVS_module_variables, only: metr2c
+
     use climate_forcing_constants
     use climate_forcing_variabletypes
 
@@ -137,6 +140,9 @@ module climate_forcing_io
         if (ro%VERBOSEMODE > 0) print 199, trim(adjustl(cm%dat(vid)%fpath))
         cm%dat(vid)%fopen = .true.
 
+!temp
+if (.not. allocated(metr2c)) allocate(metr2c(shd%yCount, shd%xCount, ck%nn))
+
         return
 
 699     format(//1x, (a), ' not found.', &
@@ -258,6 +264,9 @@ module climate_forcing_io
 
             end select
         end do
+
+!temp
+metr2c(:, :, vid) = inr2c
 
         return
 

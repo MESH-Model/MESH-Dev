@@ -1,0 +1,3 @@
+!     The variable varmtn is .true. if the mountains are growing.
+      integer varmtn
+      common /mountains/ varmtn

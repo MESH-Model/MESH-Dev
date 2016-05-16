@@ -1,0 +1,148 @@
+!copyright (C) 2009  MSC-RPN COMM  %%%RPNPHY%%%
+!!!S/P VEGLOWHIGH
+!
+      SUBROUTINE VEGLOWHIGH( FCOVER, TABLEN, TABLES, LOW, HIGH,& 
+                                   DECI, EVER, LAT,&  
+                                   NI, NCLASS)
+!
+!
+      implicit none
+#include <arch_specific.hf>
+!
+!
+      INTEGER NI, NCLASS
+      REAL LOW(NI), HIGH(NI), DECI(NI), EVER(NI)
+      REAL FCOVER(NI,NCLASS), TABLEN(NCLASS)
+      REAL TABLES(NCLASS), LAT(NI)
+!
+!
+!Author
+!        Maria Abrahamowicz (dec 2012)
+!Revision
+! 001    Maria Abrahamowicz (sept. 2013)
+!        remove nclassurb argument and variable
+!Object
+!        Compute fraction of tile covered by low and high vegetation respectively
+!        ! NOTE: THIS SUBROUTINE MUST BE CHANGED BY HAND IF CLASSIFICATION CHANGES 
+!Argumens
+!
+!            - Input -
+! FCOVER     Fraction of vegetation (masks)
+! TABLEN     Geophysical fields values for each type of vegetation (northern hemisphere)
+! TABLES     Geophysical fields values for each type of vegetation (southern hemisphere)
+! LAT        Latitude
+!
+!            - Output -
+! LOW        Fraction of (soil) grid covered by low vegetation classes i.e.
+!            10,11,12,13,14,15,16,17,18,19,20,22,23
+! HIGH       Fraction of (soil) grid covered by high  vegetation classes i.e.
+!            i.e.4,5,6,7,8,9,25,26
+! DECI       Fraction of HIGH vegetation that is deciduous
+! EVER       Fraction of HIGH vegetation that is evergreen 
+
+!            - Input -
+! NI         Horizontal dimension
+! NCLASS     Number of natural landuse classes
+!
+!
+#include "surfacepar.cdk"
+!
+!     !change size of V*_TYPE() arrays below
+      INTEGER I,M,K,VL_TYPE(13),VH_TYPE(8),TYPE,ntypeh,ntypel
+!
+      REAL totfract, table_val
+      REAL PETIT
+      DATA PETIT/1.E-7/
+!
+      DATA VL_TYPE / 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22 , 23  /
+!     ! Change ntypes if number of types changes !!!!
+      ntypel=13
+!
+      DATA VH_TYPE / 4, 5, 6, 7, 8, 9, 25, 26 /
+!     ! Change ntypes if number of types changes !!!!
+      ntypeh=8
+!
+!
+      DO i=1,ni
+        low(i) = 0.0
+        high(i)= 0.0
+        deci(i)= 0.0
+        ever(i)= 0.0
+      END DO
+!
+!
+!
+      DO i=1,ni
+        totfract = 0.
+
+        DO m=4,nclass                        ! loop on veg/natural soil classes
+          totfract = totfract + fcover(i,m)
+        END DO
+!
+        IF (totfract.GE.PETIT) THEN
+
+          DO k=1,ntypel  
+           type=vl_type(k)  ! loop on LOW vegetation classes
+!
+            if (lat(i).ge.0.0) then    
+!              northern hemisphere
+               table_val = tablen(type)
+            else
+!              southern hemisphere
+               table_val = tables(type)
+            endif
+            low(i)  = low(i) + fcover(i,type)* table_val
+          END DO
+
+          DO k=1,ntypeh  
+           type=vh_type(k)  ! loop on HIGH vegetation classes
+!
+            if (lat(i).ge.0.0) then    
+!              northern hemisphere
+               table_val = tablen(type)
+            else
+!              southern hemisphere
+               table_val = tables(type)
+            endif
+            high(i) = high(i) + fcover(i,type)* table_val
+          END DO
+!
+          low(i)  = low(i)  / totfract
+          high(i) = high(i) / totfract
+!
+
+        END IF
+
+!              Calculate deciduous and evergreen fractions
+        IF(high(i).gt.PETIT)THEN
+!
+           if (lat(i).ge.0.0) then    
+!              northern hemisphere
+              deci(i) = (fcover(i,6) * tablen(6)  &
+                      +  fcover(i,7) * tablen(7)  & 
+                      +  0.5 * fcover(i,25) * tablen(25)) /high(i)
+!        
+              ever(i) = 1.0 - deci(i)
+           else
+!              southern hemisphere
+              deci(i) = (fcover(i,6) * tables(6)  &  
+                           +  fcover(i,7) * tables(7)  &  
+                           +  0.5 * fcover(i,25) * tables(25)) /high(i)
+           
+
+              ever(i) = 1.0 - deci(i)
+
+           endif
+        else
+           deci(i)=0.0
+           ever(i)=0.0
+!
+        ENDIF
+
+!
+      END DO
+!
+!
+!
+      RETURN
+      END

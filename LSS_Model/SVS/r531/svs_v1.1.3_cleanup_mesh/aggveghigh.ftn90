@@ -1,0 +1,98 @@
+!copyright (C) 2009  MSC-RPN COMM  %%%RPNPHY%%%
+!!!S/P AGGVEGHIGH
+!
+      SUBROUTINE AGGVEGHIGH( FCOVER, TABLEN, TABLES, AGGF, LAT, &
+                                   NI, NCLASS )
+!
+!
+!
+      implicit none
+#include <arch_specific.hf>
+!
+!
+      INTEGER NI, NCLASS
+      REAL AGGF(NI), FCOVER(NI,NCLASS), TABLEN(NCLASS)
+      REAL TABLES(NCLASS), LAT(NI)
+!
+!
+!Author
+!        Maria Abrahamowicz (dec 2012)
+!Revision
+! 001    Maria Abrahamowicz (sept. 2013)
+!        remove nclassurb argument and variable
+!Object
+!        Aggregation of vegetation fields (veg fraction, lai, rsmin, etc...)
+!        from the vegetation fraction mask for HIGH VEGATION TYPE
+!!       !!! THIS SUBROUTINE MUST BE CHANGED IF CLASSIFICATION CHANGES !!!
+!
+!Arguments
+!
+!            - Input -
+! FCOVER      Fraction of vegetation (masks)
+! TABLEN     Geophysical fields values for each type of vegetation (northern hemisphere)
+! TABLES     Geophysical fields values for each type of vegetation (southern hemisphere)
+! LAT        Latitude
+!
+!            - Output -
+! AGGF       Aggretated geophysical field representative of an entire
+!            grid area, only considerinf high vegetation classes i.e, 4,5,6,7,8,9,25,26
+!
+!            - Input -
+! NI         Horizontal dimension
+! NCLASS     Number of natural landuse classes
+!
+!
+#include "surfacepar.cdk"
+!
+!     ! Change size of array if number of types changes !!!!
+      INTEGER I,M,VH_TYPE(8),TYPE,ntypes
+!
+      REAL totfract, table_val
+!
+      REAL PETIT
+      DATA PETIT/1.E-7/
+ 
+      DATA VH_TYPE / 4, 5, 6, 7, 8, 9, 25, 26 /
+!     ! Change ntypes if number of types changes !!!!
+      ntypes=8
+!
+!
+      DO i=1,ni
+        aggf(i) = 0.0
+      END DO
+!
+!
+!
+      DO i=1,ni
+        totfract = 0.
+        DO m=1,ntypes 
+           type=vh_type(m)  ! loop on high vegetation classes
+!
+           totfract = totfract + fcover(i,type)
+!
+        END DO
+!
+        IF (totfract.GE.PETIT) THEN
+
+          DO m=1,ntypes  
+           type=vh_type(m)  ! loop on high vegetation classes
+!
+            if (lat(i).ge.0.0) then    
+!              northern hemisphere
+               table_val = tablen(type)
+            else
+!              southern hemisphere
+               table_val = tables(type)
+            endif
+            aggf(i) = aggf(i) + fcover(i,type)* table_val
+          END DO
+          aggf(i) = aggf(i) / totfract
+
+        END IF
+!
+      END DO
+!
+!
+!
+      RETURN
+      END

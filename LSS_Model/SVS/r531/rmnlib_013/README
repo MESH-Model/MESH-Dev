@@ -1,0 +1,3 @@
+This subdirectory includes ARMNLIB files that are used by the standalone SVS driver.
+It was modified to force the use of leap years in date calculations.
+This is mainly because the function NewDate_Options did not compile.

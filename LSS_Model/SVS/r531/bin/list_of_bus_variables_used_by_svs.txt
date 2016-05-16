@@ -1,0 +1,146 @@
+ alfaq ; alfaq        ;AQ  ;inhomog. term for Q diff.                      ;1           
+ alfat ; alfat        ;AT  ;inhomog. term for T diffu.                     ;1           
+ algr ; algr         ;ALGR;visible albedo for bare ground                 ;1                    
+ alvh ; alvh         ;ALVH;visible canopy albedo for high vegetation only ;1                    
+ alvis ; alvis        ;AL  ;visible surface albedo                         ;5
+ alvl ; alvl         ;ALVL;visible canopy albedo for low vegetation only  ;1                    
+ bcoef ; bcoef        ;1G  ;slope of retention curve                       ;11                   
+ bm ; bm           ;BM  ;homog. term for U,V diffu.                     ;1           
+ bt ; bt           ;BT  ;homog. term for T,Q diffu.                     ;5
+ cgsat ; cgsat        ;6I  ;thermal coef. at saturation                    ;1                    
+ clay ; clay         ;J2  ;percentage of clay in soil                     ;11                  
+ co2i1 ; co2i1        ;CO3 ;CO2 CONCENTRATION   CTEM                       ;9                  
+ cvh ; cvh          ;CVH ;thermal coefficient for canopy of high veg     ;1                    
+ cvl ; cvl          ;CVL ;thermal coefficient for canopy of low veg     ;1                     
+ deciduous ; deciduous    ;DECI;frac. of high veg. that is deciduous.          ;1                    
+ dlat ; dlat         ;LA  ;latitude                                       ;1                    
+ dlon ; dlon         ;LO  ;longitude                                      ;1                    
+ drainaf ; drainaf      ;O1  ;accum. of base drainage                        ;1                    
+ draindens ; draindens    ;DRND;drainage density (m/m2)                        ;1                    
+ eflux ; eflux        ;4F  ;specific hum. flux (=-alfaq)                   ;1                    
+ eg ; eg           ;EG  ;evapo. rate over bare grnd(no frac)            ;1                    
+ emisgr ; emisgr       ;EMGR;emissivity of bare ground                      ;1                    
+ emisvh ; emisvh       ;EMVH;emissivity of high vegetation                  ;1                    
+ emisvl ; emisvl       ;EMVL;emissivity of low vegetation                  ;1                    
+ er ; er           ;ER  ;evapo rate from leaves(no frac)                ;1                    
+ etr ; etr          ;ETR ;evapotranspiration rate (no frac)              ;1                    
+ evergreen ; evergreen    ;EVER;frac. of high veg. that is evergreen           ;1                    
+ fc ; fc           ;FC  ;surface sensible heat flux                     ;5
+ fcor ; fcor         ;WC  ;Coriolos factor                                ;1                    
+ fdsi ; fdsi         ;FI  ;IR energy flux towards ground                  ;1                    
+ fl ; fl           ;FL  ;heat flux in the ground                        ;1           
+ fluslop ; fluslop      ;FBSL;VIS flux twrds slp ground                      ;1                    
+ flusolis ; flusolis     ;FB  ;VIS flux towards ground                        ;1                    
+ fq ; fq           ;FQ  ;surf. momentum flux                            ;1                    
+ frootd ; frootd       ;FRTD;deep soil layer root density                   ;11                  
+ frv ; frv          ;B5  ;friction velocity                              ;5
+ ftemp ; ftemp        ;FT  ;sfc. temperature flux (T-DT)                   ;5
+ fv ; fv           ;FV  ;surface latent flux                            ;5
+ fvap ; fvap         ;HF  ;surf. vapour flux (T-DT)                       ;5
+ gamvh ; gamvh        ;GGVH;stomatal resistance parameter for high veg     ;1                    
+ gamvl ; gamvl        ;GGVL;stomatal resistance parameter for low veg      ;1                    
+ grkef ; grkef        ;GKE; WATDR parameter                                ;1                    
+ grkeff ; grkeff       ;GKEF;Watdrain parameter                             ;11                  
+ grksat ; grksat       ;GKS  ;sat. horiz. soil hydraulic conductivity       ;11                  
+ hfluxsa ; hfluxsa      ;HFSA;sensible heat flux (snow only)                 ;1                    
+ hfluxsv ; hfluxsv      ;HFSV;sensible heat flux (snow under veg. only)      ;1                    
+ hst ; hst          ;H1  ;PBL height for stable case                     ;5
+ humoins ; TR/hu:M,w    ;H8  ;specific humidity at t-dt                      ;1                    
+ husurf ; husurf       ;FH  ;spec. humid. of the surface                    ;1                    
+ hv ; hv           ;HV  ;relative humidity of veg. canopy               ;1                    
+ ilmo ; ilmo         ;IO  ;(length of Monin-Obukhov)**-1                  ;5
+ isoil ; isoil        ;I2  ;soil volumetric ice contents                   ;1                    
+ khc ; khc          ;K5   ;soil hydraulic conductivity                   ;11                  
+ ksat ; ksat         ;KSAT  ;sat. soil hydraulic conductivity             ;11                  
+ ksatc ; ksatc        ;KSTC  ;corrected sat. soil hydraulic conductivity   ;11                  
+ laictem ; laictem      ;LC  ;vegetation LAI                                 ;26                 
+ laideci ; laideci      ;LAID;leaf area index for high deciduous veg. only   ;1                    
+ laiva ; laiva        ;LAIA;avg. leaf area index seen from atm.            ;1                    
+ laivh ; laivh        ;LAIH;leaf area index for high vegetation only       ;1                    
+ laivl ; laivl        ;LAIL;leaf area index for low vegetation only        ;1                    
+ latflaf ; latflaf      ;ALAT;Accum. of LATF at all levels (kg/m2 = mm)      ;1                    
+ latflw ; latflw       ;LATF;Lateral flow                                   ;11                  
+ leg ; leg          ;L2  ;latent heat flux over bare grnd                ;1                    
+ ler ; ler          ;LR  ;latent heat flux from leaves                   ;1                    
+ les ; les          ;LS  ;latent heat flux over snow                     ;1                    
+ lesv ; lesv         ;LSV ;latent heat flux over snow-under-veg           ;1                    
+ letr ; letr         ;LT  ;latent heat of evapotransp.                    ;1                    
+ lev ; lev          ;LV  ;latent heat flux over vegetation               ;1                    
+ melts ; melts        ;MLTS;accum. snow melting (kg/m2)                    ;1                    
+ meltsr ; meltsr       ;MLTR;accum. snow melting due to rain (kg/m2)        ;1                    
+ pmoins ; PW_PM:M      ;P8  ;surface pressure at t-dt                       ;1                    
+ psi ; psi          ;PSI   ;soil water suction                           ;11                  
+ psisat ; psisat       ;D5  ;sat. soil water suction                        ;11                  
+ psngrvl ; psngrvl      ;PSGL;frac. of bare soil &/or low veg. cov. by snow  ;1                    
+ psnvh ; psnvh        ;PSVH;fraction of high vegetation covered by snow    ;1                    
+ psnvha ; psnvha       ;PSVA;frac. of high veg. covered by snow from atm.   ;1                    
+ qdiag ; qdiag        ;DQ  ;screen level specific humidity                 ;1           
+ qsurf ; qsurf        ;J9  ;area-averaged surf. spec. humidity             ;5
+ rainrate ; rainrate     ;U1  ;liquid precip. rate                            ;1                    
+ rcctem ; rcctem       ;RCC ;stomatal resistance CTEM                       ;1                    
+ resagr ; resagr       ;RSGR;aerodynamic resistance over bare ground        ;1                    
+ resavg ; resavg       ;RSVG;aerodynamic resistance over veget.             ;1                    
+ rglvh ; rglvh        ;RGVH;parameter stomatal resistance for high veg     ;1                    
+ rglvl ; rglvl        ;RGVL;parameter stomatal resistance for low veg      ;1                    
+ rnet_s ; rnet_s       ;NR  ;net radiation (isba/svs sfc only)              ;1                    
+ rnetsa ; rnetsa       ;RNSA;net radiation (snow only)                      ;1                    
+ rnetsv ; rnetsv       ;RNSV;net radiation (snow under veg. only)           ;1                    
+ rootdp ; rootdp       ;D2  ;rooting soil depth                             ;1                    
+ rsnowsa ; rsnowsa      ;RSA ;liquid water out of the snow pack              ;1                    
+ rsnowsv ; rsnowsv      ;RSV ;liquid water out of the snow-under-veg pack    ;1                    
+ rst ; rst          ;R1  ;stomatal resistance                            ;1                    
+ runofftot ; runofftot    ;TRUN;total surface runoff                           ;5         
+ sand ; sand         ;J1  ;percentage of sand in soil                     ;11                  
+ skyview ; skyview      ;SVF ;sky view factor for tall vegetation            ;1                    
+ slop ; slop         ;SLOP;average maximum subgrid-scale topo slope (nil) ;1                    
+ snoal ; snoal        ;I6  ;albedo of snow                                 ;1           
+ snoden ; snoden       ;DN  ;snow density in kg/m3                          ;1           
+ snodp ; snodp        ;SD  ;snow depth                                     ;5         
+ snoma ; snoma        ;I5  ;snow mass                                      ;1                    
+ snoro ; snoro        ;7S  ;relative snow density                          ;1                    
+ snowrate ; snowrate     ;U3  ;solid precip. rate                             ;1                    
+ snval ; snval        ;SNVA;albedo of snow under veg.                      ;1                    
+ snvden ; snvden       ;SVDN;snow-under-veg density in kg/m3                ;1                    
+ snvdp ; snvdp        ;SVDP;snow-under-vegetation depth                    ;1                    
+ snvma ; snvma        ;SVM ;snow-under-vegetation mass                     ;1                    
+ snvro ; snvro        ;SNVR;relative density of snow under veg.            ;1                    
+ stomrvh ; stomrvh      ;RSVH;min. stomatal resistance for high vegetation   ;1                    
+ stomrvl ; stomrvl      ;RSVL;min. stomatal resistance for low vegetation    ;1                    
+ tdiag ; tdiag        ;TJ  ;screen level temperature                       ;1           
+ tground ; tground      ;TGR ;skin and mean ground temp. (multibudget)       ;2                  
+ thetaa ; thetaa       ;N1  ;first-level pot. temp.                         ;1                    
+ tmoins ; PW_TT:M      ;T8  ;temperature at t-dt                            ;1                    
+ tsa ; tsa          ;TSA ;skin temp. of land surface as seen from atm    ;1                    
+ tsnow ; tsnow        ;TSN ;skin and mean snow temp. (multibuget)          ;2                  
+ tsnowveg ; tsnowveg     ;TSNV;skin and mean temp. of snow under veg.         ;2                  
+ tsoil ; tsoil        ;I0  ;Aggregated superfic. and mean soil temp.       ;2                  
+ tsrad ; tsrad        ;TG  ;radiative surface temperature                  ;1           
+ tsurf ; tsurf        ;J8  ;area-averaged surf. temperature                ;1           
+ tvege ; tvege        ;TVG ;skin and mean vegetation temp.(multibudget)    ;2                  
+ udiag ; udiag        ;UD  ;screen level X-component of wind               ;1           
+ umoins ; PW_UU:M      ;U8  ;wind speed along-x at t-dt                     ;1                    
+ vdiag ; vdiag        ;VD  ;screen level Y-component of wind               ;1           
+ vegf ; vegf         ;2V  ;vegetation fractions                           ;26                 
+ vegh ; vegh         ;VEGH;fraction of grid covered by high vegetation    ;1                    
+ vegl ; vegl         ;VEGL;fraction of grid covered by low vegetation     ;1                    
+ vegtrans ; vegtrans     ;VGTR;transmissivity of tall vegetation              ;1                    
+ vmoins ; PW_VV:M      ;V8  ;wind speed along-y at t-dt                     ;1                    
+ watflow ; watflow      ;WFL ;waterflow between layers                       ;12                  
+ wdm ; wdm          ;I1DM;mean deep soil volm watr cont                  ;1                    
+ wdsoil ; wdsoil       ;I1D ;deep soil volm water contents                  ;11                  
+ wfc ; wfc          ;J5  ;vol. water content at field cap.               ;11                   
+ wfcdp ; wfcdp        ;J15  ;vol. water content at field cap. at lowest layer   ;1                    
+ wfcint ; wfcint       ;WFCI;water content at field capacity along slope    ;11                  
+ wflux ; wflux        ;M8  ;water flux from surface to atm.                ;1                    
+ wsat ; wsat         ;J6  ;vol. water content at saturation               ;11                    
+ wsnow ; wsnow        ;I4  ;water in the snow pack                         ;1           
+ wsnv ; wsnv         ;WSNV;water in the snow-under-veg pack               ;1                    
+ wveg ; wveg         ;I3  ;water retained on the vegetation               ;1                    
+ wwilt ; wwilt        ;J7  ;vol. water cont. at wilting pt.                ;11                  
+ z0 ; z0           ;Z0  ;momentum roughness length                      ;5
+ z0ha ; z0ha         ;Z0HA;thermal roughness for snowless veg.            ;1                    
+ z0mvh ; z0mvh        ;Z0VH;local mom roughness length for high veg.       ;1                    
+ z0mvl ; z0mvl        ;Z0VL;local mom roughness length for low veg.        ;1                    
+ z0t ; z0t          ;ZT  ;thermal roughness length                       ;5
+ ztsl ; ztsl         ;ZH  ;temperature level at top of surface layer      ;1                    
+ zusl ; zusl         ;ZU  ;wind level at top of surface layer             ;1                    

@@ -1,0 +1,683 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** S/P CHECK_SWITCHES
+      integer function check_options (prout)
+      implicit none
+#include <arch_specific.hf>
+!
+      logical prout
+!
+!Author
+!          B. Bilodeau (Feb 2007)
+!
+!Revisions
+!
+! 001      J. Milbrandt (Oct 2007) - added options for experimental and full
+!                                    versions of M-Y scheme; changed STCOND
+!                                    keys to 'my_sm', 'my_exp1', and 'my_full'
+! 002      B. Dugas (Dec 2008)     - Add Bechtold-Kain-Fritsch schemes
+!                                    (Bechtold)
+! 003      J. Milbrandt (Apr 2009) - Replaced 'my_exp1' with 'my_dm'
+! 004      J. Toviessi (July 2009) - radslope will not run with newrad
+!                                    and oldrad
+! 005      J. Milbrandt (Aug 2009) - Replaced 'my_full' with 'my_tm'
+! 006      A-M. Leduc   (Mar 2010) - Fix the bechtold shallow condition
+!                                    ISHLCVT(2) = 3.
+!                                    Allow Bechtold with moistke.
+! 007      L. Spacek    (Sep 2011)   Eliminate obsolete options
+! 008      M.Abrahamowicz(Nov 2012)  Add new schmsol=SVS
+!
+!
+!Object
+!          * conversion of character type options to upper case
+!          * check the validity of the chosen options
+!          * definition of integer equivalents to character type options
+!          * check the consistency of some options
+!
+!Arguments
+!          - Input -
+! prout    logical switch to print on stdout
+!
+!          - Output -
+!
+!MODULES
+!
+#include "phy_master_ctrl.cdk"
+#include "options.cdk"
+
+      integer i, k, maxsloflux
+      character dumc*16
+!
+      integer noptions_c, status
+      character*16 options_character(1)
+!
+      equivalence (OPTIONS_CHARACTER, OPTIONS_CHARACTER_FIRST(0))
+!
+      check_options = -1
+!
+!     ----------------------------------------------------
+!     AUTOMATIC CONVERSION TO UPPER CASE
+!     ----------------------------------------------------
+
+!     calculate the number of options of character type
+      noptions_c=(loc(OPTIONS_CHARACTER_LAST    ) - loc(OPTIONS_CHARACTER_FIRST( 0))) / &
+                 (loc(OPTIONS_CHARACTER_FIRST(0)) - loc(OPTIONS_CHARACTER_FIRST(-1)))
+!
+      do i=2,noptions_c
+         call low2up(options_character(i),dumc)
+         options_character(i) = dumc
+         status=permitted(dumc)
+      end do
+      if(status==0)goto 777
+!
+!     ----------------------------------------------------
+!     CHECK THE CONSISTENCY OF RADIATION OPTIONS
+!     ----------------------------------------------------
+!
+      IF ((RADIA.EQ.'NEWRAD'.OR.RADIA.EQ.'CCCMARAD') &
+                                   .AND.KNTRAD.LE.0) THEN
+         if (prout) WRITE(6,1800) 'KNTRAD',KNTRAD
+         GOTO 777
+      ENDIF
+!
+!     ----------------------------------------------------
+!     CHECK THE CONSISTENCY OF SOME OPTIONS
+!     ----------------------------------------------------
+!
+      IF ( (CONVEC.EQ.'MANABE'.OR.CONVEC.EQ.'SEC')                 .AND. &
+           (STCOND.NE.'NIL') )                                      THEN
+!
+          if (prout) WRITE(6,1200)
+          GOTO 777
+!
+      ELSE IF ( (CONVEC.EQ.'NEWKUO'.AND.STCOND.NE.'NEWSUND') )     THEN
+!
+          if (prout) WRITE(6,1300)
+          GOTO 777
+!
+      ELSE IF ( STCOND.EQ.'CONSUN'.AND. &
+               (CONVEC.NE.'KUOSTD'.AND.CONVEC.NE.'KUOSYM'.AND. &
+                CONVEC.NE.'KUOSUN'.AND.CONVEC.NE.'RAS'   .AND. &
+                CONVEC.NE.'FCP'   .AND.CONVEC.NE.'KFC'   .AND. &
+                CONVEC.NE.'FCPKUO'.AND.CONVEC.NE.'BECHTOLD'.AND. &
+                CONVEC.NE.'NIL') )          THEN
+!
+          if (prout) WRITE(6,1400)
+          GOTO 777
+!
+      ELSE IF ( (CONVEC.EQ.'FCPKUO' .OR. CONVEC.EQ.'KUOSYM'.OR. &
+                 CONVEC.EQ.'KUOSTD' .OR. CONVEC.EQ.'KUOSUN') &
+                 .AND. STCOND.NE.'CONSUN')                         THEN
+!
+          if (prout) WRITE(6,1500)
+          GOTO 777
+!
+      ENDIF
+!
+      IF (FLUVERT.EQ.'MOISTKE' .AND. &
+         (CONVEC.NE.'KFC'.AND.CONVEC.NE.'KFCKUO2'.AND. &
+          CONVEC.NE.'FCP'.AND.CONVEC.NE.'BECHTOLD'.AND. &
+          CONVEC.NE.'NIL'))                    THEN
+         if (prout) WRITE(6,1700) CONVEC,FLUVERT
+         GOTO 777
+      ENDIF
+!
+      IF (FLUVERT.EQ.'MOISTKE' .AND. &
+          .NOT.(     STCOND.EQ.'NIL' &
+                .OR. STCOND.EQ.'CONSUN' &
+                .OR. STCOND.EQ.'EXC' &
+                .OR. STCOND.EQ.'EXCRIG' &
+                .OR. STCOND.EQ.'MY_SM' &
+                .OR. STCOND.EQ.'MY_DM' &
+                .OR. STCOND.EQ.'MY_TM'  ) )   THEN
+         if (prout) WRITE(6,1700) STCOND,FLUVERT
+         GOTO 777
+      ENDIF
+!
+      IF (OFFLINE) THEN
+         FLUVERT = 'SURFACE'
+         AGREGAT = .TRUE.
+         BKGALB  = .FALSE.
+      ENDIF
+!
+      IF (COUPLING .and. IMPFLX) THEN
+         if (prout) WRITE(6,1700) 'COUPLING', 'IMPFLX'
+         GOTO 777
+      ENDIF
+!
+      IF (COUPLING .and. SCHMURB.NE.'NIL') THEN
+         if (prout) WRITE(6,1700) 'COUPLING', 'TEB'
+         GOTO 777
+      ENDIF
+!
+      MAXSLOFLUX = 20
+      IF (NSLOFLUX.GT.MAXSLOFLUX) THEN
+          if (prout) WRITE(6,1600) MAXSLOFLUX
+          GOTO 777
+      ENDIF
+!
+      IF ((CLIMAT .OR. STRATOS) .AND. RADFIX) THEN
+!         LES MODES CLIMAT ET STRATOS
+!         DOIVENT UTILISER RADFIX=FAUX
+          RADFIX = .FALSE.
+          if (prout) WRITE(6,2000)
+      ENDIF
+!
+!
+      IF (FOMIC) THEN
+!
+         IF(RADIA.NE.'NEWRAD') THEN
+            if (prout) WRITE(6,2100)
+            GOTO 777
+         ENDIF
+!
+         IF(RADFIX) THEN
+            if (prout) WRITE(6,2200)
+            GOTO 777
+         ENDIF
+!
+      ENDIF
+!
+      IF ( PCPTYPE.EQ.'BOURGE')THEN
+         IF (STCOND.EQ.'EXC'     .OR. &
+             STCOND.EQ.'EXCRIG'  .OR. &
+             STCOND.EQ.'MY_SM'   .OR. &
+             STCOND.EQ.'MY_DM'   .OR. &
+             STCOND.EQ.'MY_TM'  )   THEN
+
+            if (prout) WRITE(6,2300)
+            GOTO 777
+         ENDIF
+      ENDIF
+!
+      IF ( PCPTYPE.EQ.'BOURGE3D')THEN
+         IF (STCOND.NE.'CONSUN'    .OR. &
+             CONVEC.NE.'KFC'  )   THEN
+
+            if (prout) WRITE(6,2400)
+            GOTO 777
+         ENDIF
+      ENDIF
+
+
+!
+!     ----------------------------------------------------
+!     CHECK THE VALIDITY OF THE CHOSEN OPTIONS
+!     AND
+!     DEFINE INTEGER EQUIVALENTS TO CHARACTER TYPE OPTIONS
+!     ----------------------------------------------------
+!
+!
+      IF      (CONVEC.EQ.'NIL')               THEN
+         ICONVEC = 0
+      ELSE IF (CONVEC.EQ.'SEC')               THEN
+         ICONVEC = 1
+      ELSE IF (CONVEC.EQ.'MANABE')            THEN
+         ICONVEC = 2
+      ELSE IF (CONVEC.EQ.'OLDKUO')            THEN
+         ICONVEC = 3
+      ELSE IF (CONVEC.EQ.'FCP')               THEN
+         ICONVEC = 5
+      ELSE IF (CONVEC.EQ.'KFC')               THEN
+         ICONVEC = 6
+      ELSE IF (CONVEC.EQ.'KUOSTD')            THEN
+         ICONVEC = 7
+      ELSE IF (CONVEC.EQ.'KUOSYM')            THEN
+         ICONVEC = 8
+      ELSE IF (CONVEC.EQ.'KUOSUN')            THEN
+         ICONVEC = 9
+      ELSE IF (CONVEC.EQ.'RAS')               THEN
+         ICONVEC =10
+      ELSE IF (CONVEC.EQ.'FCPKUO')            THEN
+         ICONVEC =11
+      ELSE IF (CONVEC.EQ.'KFCKUO2')           THEN
+         ICONVEC =12
+      ELSE IF (CONVEC.EQ.'BECHTOLD')          THEN
+         ICONVEC =13
+      ELSE
+         if (prout) then
+            WRITE(6,1000) 'CONVEC','NIL,SEC,MANABE,OLDKUO,FCP,KFC,  '
+            WRITE(6,1010)          'KUOSTD,KUOSYM,KUOSUN,RAS,       '
+            WRITE(6,1010)          'FCPKUO2,FCPKUO,KFCKUO2,BECHTOLD '
+            WRITE(6,1020)
+         endif
+         goto 777
+      ENDIF
+      IF      (FLUVERT.EQ.'NIL')              THEN
+         IFLUVERT = 0
+      ELSE IF (FLUVERT.EQ.'SURFACE')          THEN
+         IFLUVERT = -1
+      ELSE IF (FLUVERT.EQ.'PHYSIMP')          THEN
+         IFLUVERT = 1
+      ELSE IF (FLUVERT.EQ.'CLEF')              THEN
+         IFLUVERT = 2
+      ELSE IF (FLUVERT.EQ.'MOISTKE')           THEN
+         IFLUVERT = 3
+      ELSE
+         if (prout) WRITE(6,1100) 'FLUVERT','MOISTKE,CLEF,PHYSIMP,NIL'
+         goto 777
+      ENDIF
+      IF      (GWDRAG.EQ.'NIL')                THEN
+         IGWDRAG = 0
+      ELSE IF (GWDRAG.EQ.'GWD86')              THEN
+         IGWDRAG = 1
+      ELSE IF (GWDRAG.EQ.'GWD95')              THEN
+         IGWDRAG = 2
+      ELSE
+         if (prout) WRITE(6,1100) 'GWDRAG','NIL, GWD86, GWD95'
+         goto 777
+      ENDIF
+      IF      (KFCPCP.EQ.'ORI')                THEN
+         IKFCPCP = 0
+      ELSE IF (KFCPCP.EQ.'CONSPCPN')           THEN
+         IKFCPCP = 1
+      ELSE
+         if (prout) WRITE(6,1100) 'KFCPCP',' ORI, CONSPCPN'
+         goto 777
+      ENDIF
+      IF   (LONGMEL.EQ.'BLAC62')               THEN
+         ILONGMEL= 0
+      ELSE IF (LONGMEL.EQ.'BOUJO')             THEN
+         ILONGMEL= 1
+      ELSE
+         if (prout) WRITE(6,1100) 'LONGMEL','BLAC62, BOUJO '
+         goto 777
+      ENDIF
+      IF      (RADIA.EQ.'NIL')               THEN
+         IRADIA = 0
+      ELSE IF (RADIA.EQ.'OLDRAD')            THEN
+         IRADIA = 1
+      ELSE IF (RADIA.EQ.'NEWRAD')            THEN
+         IRADIA = 2
+      ELSE IF (RADIA.EQ.'CCCMARAD')          THEN
+         IRADIA = 3
+      ELSE
+          if (prout) WRITE(6,1100) 'RADIA','NIL,OLDRAD,NEWRAD,CCCMARAD'
+          goto 777
+      ENDIF
+      IF      (SHLCVT(1).EQ.'NIL')          THEN
+         ISHLCVT(1) = 0
+      ELSE IF (SHLCVT(1).EQ.'GELEYN')       THEN
+         ISHLCVT(1) = 1
+      ELSE IF (SHLCVT(1).EQ.'CONRES')       THEN
+         ISHLCVT(1) = 2
+      ELSE IF (SHLCVT(1).EQ.'SHALOW')       THEN
+         ISHLCVT(1) = 3
+      ELSE IF (SHLCVT(1).EQ.'SHALODQC')     THEN
+         ISHLCVT(1) = 4
+      ELSE
+         if (prout) &
+           WRITE(6,1100) 'SHLCVT(1)','NIL,GELEYN,CONRES,SHALOW,SHALODQC'
+         goto 777
+      ENDIF
+!
+      IF      (SHLCVT(2).EQ.'NIL')          THEN
+         ISHLCVT(2) = 0
+      ELSE IF (SHLCVT(2).EQ.'KTRSNT')       THEN
+         ISHLCVT(2) = 1
+      ELSE IF (SHLCVT(2).EQ.'KTRSNT_MG')    THEN
+         ISHLCVT(2) = 2
+      ELSE IF (SHLCVT(2).EQ.'BECHTOLD')     THEN
+         ISHLCVT(2) = 3
+      ELSE
+         if (prout) WRITE(6,1100) 'SHLCVT(2)','NIL, KTRSNT, KTRSNT_MG,BECHTOLD'
+         goto 777
+      ENDIF
+      IF      (STCOND.EQ.'NIL')               THEN
+         ISTCOND = 0
+      ELSE IF (STCOND.EQ.'CONDS')             THEN
+         ISTCOND = 1
+      ELSE IF (STCOND.EQ.'NEWSUND')           THEN
+         ISTCOND = 3
+      ELSE IF (STCOND.EQ.'CONSUN')            THEN
+         ISTCOND = 4
+      ELSE IF (STCOND.EQ.'EXC')               THEN  !Tremblay (mixed-phase)
+         ISTCOND = 5
+      ELSE IF (STCOND.EQ.'EXCRIG')            THEN  !Kong-Yau
+         ISTCOND = 9
+      ELSE IF (STCOND.EQ.'MY_SM')             THEN  !Milbrandt-Yau, single-moment (optimized)
+         ISTCOND = 10
+!     ELSE IF (STCOND.EQ.'MY_EXP1')           THEN  !Milbrandt-Yau - FUTURE VERSION, NOT YET AVAILABLE
+!        ISTCOND = 11
+      ELSE IF (STCOND.EQ.'MY_DM')             THEN  !Milbrandt-Yau, double-moment
+         ISTCOND = 12
+!     ELSE IF (STCOND.EQ.'MY_EXP2')           THEN  !Milbrandt-Yau - FUTURE VERSION, NOT YET AVAILABLE
+!        ISTCOND = 13
+      ELSE IF (STCOND.EQ.'MY_TM')             THEN  !Milbrandt-Yau, triple-moment (optional multi-moment)
+         ISTCOND = 14
+      ELSE
+         if (prout) WRITE(6,1100) 'STCOND', &
+                    'NIL,CONDS,NEWSUND,CONSUN,EXC,EXCRIG,MY_SM,MY_DM,MY_TM)'
+         goto 777
+      ENDIF
+      IF      (SCHMSOL.EQ.'NIL')               THEN
+         ISCHMSOL = 0
+      ELSE IF (SCHMSOL.EQ.'FCREST')            THEN
+         ISCHMSOL = 1
+      ELSE IF (SCHMSOL.EQ.'CLASS')             THEN
+         ISCHMSOL = 2
+      ELSE IF (SCHMSOL.EQ.'ISBA')              THEN
+         ISCHMSOL = 3
+      ELSE IF (SCHMSOL.EQ.'SVS')               THEN
+         ISCHMSOL = 4
+
+      ELSE
+         if (prout) WRITE(6,1100) 'SCHMSOL', &
+                    'NIL, FCREST, CLASS, ISBA, SVS'
+         goto 777
+      ENDIF
+      IF      (SCHMURB.EQ.'NIL')               THEN
+         ISCHMURB = 0
+      ELSE IF (SCHMURB.EQ.'TEB')               THEN
+         ISCHMURB = 1
+      ELSE
+         if (prout) WRITE(6,1100) 'SCHMURB','NIL, TEB'
+         goto 777
+      ENDIF
+      IF      (PCPTYPE.EQ.'NIL')            THEN
+         IPCPTYPE = 0
+      ELSE IF (PCPTYPE.EQ.'BOURGE')         THEN
+         IPCPTYPE = 1
+      ELSE IF (PCPTYPE.EQ.'BOURGE3D')       THEN
+         IPCPTYPE = 2
+      ELSE
+         if (prout) WRITE(6,1100) 'PCPTYPE','NIL,BOURGE,BOURGE3D'
+         goto 777
+      ENDIF
+      IF      (Z0MTYPE.EQ.'CHARNOCK')       THEN
+         IZ0MTYPE = 1
+      ELSE IF (Z0MTYPE.EQ.'BELJAARS')       THEN
+         IZ0MTYPE = 2
+      ELSE
+         if (prout) WRITE(6,1100) 'Z0MTYPE','CHARNOCK,BELJAARS'
+         goto 777
+      ENDIF
+!
+!     ----------------------------------------------------
+!
+      IF ((RADSLOPE).AND.(RADIA.NE.'CCCMARAD')) THEN
+         IF (PROUT) WRITE(6,1705) 'RADSLOPE',RADSLOPE, &
+                                  'RADIA   ',RADIA
+         GOTO 777
+      ENDIF
+!
+!     Operating mode for cldoptx regarding cloud water
+      if (     istcond.eq.0.or.         &! NIL
+               istcond.eq.1    ) then  ! CONDS
+!        no cloud water is provided to cldoptx
+         cw_rad = 0
+      else if (istcond.eq.3.or.         &! NEWSUND
+               istcond.eq.4    ) then  ! CONSUN
+!        total cloud water only is provided to cldoptx
+         cw_rad = 1
+      else if (istcond.eq.5.or.         &! EXC        (Tremblay mixed-phase)
+               istcond.eq.9.or.         &! EXCRIG     (Kong-Yau)
+               istcond.eq.10.or.        &! MY_SM      (Milbrandt-Yau, single-moment, optimized)
+               istcond.eq.11.or.        &! MY_EXP1    (Milbrandt-Yau, double-moment, optimized)
+               istcond.eq.12.or.        &! MY_DM      (Milbrandt-Yau, double-moment, sm/dm switches)
+               istcond.eq.13.or.        &! MY_EXP2    (Milbrandt-Yau, experimental,  development version)
+               istcond.eq.14   ) then  ! MY_FULL    (Milbrandt-Yau, full multi-moment)
+!        both liquid and ice water are provided to cldoptx
+         cw_rad = 2
+      endif
+
+      if (     istcond.le.4) then
+         IOPTIX = 1 ! older parameterization
+      else if (istcond.ge.5) then
+         IOPTIX = 2 ! newer parameterization
+      endif
+
+! Check for an invalid flux enhancement modification in conres
+      if (ifluvert == 2) then
+         if (fnnmod <= 1.) then
+            write(options_character(1),'(e16.8)') fnnmod
+            if (prout) write(6,1101) 'FNNMOD',options_character(1),'> 1 ONLY'
+            goto 777
+         endif
+      endif
+
+666   continue
+!
+      check_options = 1
+!
+777   continue
+!
+!     ----------------------------------------------------
+!     FORMATS
+!     ----------------------------------------------------
+!
+!
+1000   FORMAT (2(1x,60('*')/),1x,'*',58(' '),'*'/ &
+               1x,5('***** ABORT'),'*****'/1x,'*',58(' '),'*'/ &
+               ' *',2(' '),"FUNCTION CHECK_OPTIONS:  INVALID OPTION: '",A8,"'", &
+               5(' '),'*'/' *    ','ALLOWED: ',a,13(' '),'*')
+1010   FORMAT (' *             ',a,13(' '),'*')
+1020   FORMAT (1x,'*',58(' '),'*',/2(1x,60('*')/))
+!
+1101   format (  2(/58('*'))/'*',56x,'*'/4('****** ABORT '),'******'/ &
+              / '* FUNCTION CHECK_OPTIONS: ILLEGAL VALUE', &
+              / '*   FOR OPTION ',a,': ',a, &
+              / '*   ALLOWED: ',A//58('*'))
+1100   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' * FUNCTION CHECK_OPTIONS: ILLEGAL VALUE *', &
+              / ' *         FOR OPTION ', A9, '           *', &
+              / ' *     ALLOWED :',A,'                    *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+!
+1200   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' *  FUNCTION CHECK_OPTIONS:              *', &
+              / ' *                                       *', &
+              / ' *     IF CONVEC = MANABE                *', &
+              / ' *                                       *', &
+              / ' *            OR IF                      *', &
+              / ' *                                       *', &
+              / ' *     IF CONVEC = SEC                   *', &
+              / ' *                                       *', &
+              / ' *           THEN USE                    *', &
+              / ' *                                       *', &
+              / ' *        STCOND = NIL                   *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+!
+1300   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' *  FUNCTION CHECK_OPTIONS:              *', &
+              / ' *                                       *', &
+              / ' *     IF CONVEC = NEWKUO                *', &
+              / ' *                                       *', &
+              / ' *                                       *', &
+              / ' *           THEN USE                    *', &
+              / ' *                                       *', &
+              / ' *        STCOND = NEWSUND               *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+!
+1400   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' *  FUNCTION CHECK_OPTIONS:              *', &
+              / ' *                                       *', &
+              / ' *     IF STCOND = CONSUN                *', &
+              / ' *                                       *', &
+              / ' *           THEN USE                    *', &
+              / ' *                                       *', &
+              / ' *                 KUOSTD                *', &
+              / ' *        CONVEC = KUOSYM                *', &
+              / ' *                 KUOSUN                *', &
+              / ' *                 RAS                   *', &
+              / ' *                 FCP                   *', &
+              / ' *                 FCPKUO                *', &
+              / ' *                 KFC                   *', &
+              / ' *                 BECHTOLD              *', &
+              / ' *                                       *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+!
+1500   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' *  FUNCTION CHECK_OPTIONS:              *', &
+              / ' *                                       *', &
+              / ' *     IF CONVEC = FCPKUO, KUOSYM,       *', &
+              / ' *                 KUOSTD OR KUOSUN,     *', &
+              / ' *                                       *', &
+              / ' *           THEN USE                    *', &
+              / ' *                                       *', &
+              / ' *        STCOND = CONSUN                *', &
+              / ' *                                       *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+!
+1600   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' *  FUNCTION CHECK_OPTIONS:              *', &
+              / ' *                                       *', &
+              / ' *     NSLOFLUX CANNOT EXCEED            *', &
+              / ' *     A VALUE OF',I3, 21X,             '*', &
+              / ' *                                       *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+!
+1700   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' * CHECK_OPTIONS: INVALID COMBINATION    *', &
+              / ' *  OF OPTIONS : ', A16,2x,A8,         ' *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+!
+!
+1705   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' * CHECK_OPTIONS: INVALID COMBINATION    *', &
+              / ' *  OF OPTIONS : ', A16,2x,A8,   '  *', &
+              / ' *               ', A16,2x,A8,   '  *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+!
+
+1800   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' *     INVALID VALUE FOR OPTION          *', &
+              / ' *  ', A8,' : ',I4,                   '  *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+!
+1900  FORMAT( ' *****************************************************', &
+            / ' *****************************************************', &
+            / ' *                                                   *', &
+            / ' *   FUNCTION CHECK_OPTIONS, OPTION RADNIV:          *', &
+            / ' *       ',A, &
+            / ' *                                                   *', &
+            / ' *****************************************************', &
+            / ' *****************************************************')
+!
+2000   FORMAT ( ' RADFIX SET TO .FALSE. FOR CLIMATE OR STRATOS MODE ')
+!
+2100   FORMAT ( ' FOMIC MUST BE USED WITH NEWRAD')
+!
+2200   FORMAT ( ' FOMIC AND RADFIX ARE INCOMPATIBLE')
+!
+2300   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' *  CHECK_OPTIONS: INVALID COMBINATION   *', &
+              / ' *                                       *', &
+              / ' *     IF PCPTYPE = BOURGE               *', &
+              / ' *                                       *', &
+              / ' *     THEN YOU CANNOT USE ANY OF STCOND:*', &
+              / ' *                                       *', &
+              / ' *            EXC, EXCRIG,               *', &
+              / ' *       MY_SM, MY_DM, or MY_TM          *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+!
+2400   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' *  S/R PHYDEBU4: INVALID COMBINATION    *', &
+              / ' *                                       *', &
+              / ' *     IF PCPTYPE = BOURGE3D             *', &
+              / ' *                                       *', &
+              / ' *     THEN YOU CAN OLY USE              *', &
+              / ' *                                       *', &
+              / ' *         CONSUN and KFC                *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+!
+!
+      contains
+      integer function permitted(parameterization)
+      character(len=*)                :: parameterization
+      integer, parameter              :: no=14
+      integer                         :: i,status=1
+      character(len=8), dimension(no) :: not_permitted= &
+      (/'MANABE  ','FCP     ','KUOSYM  ','KUOSUN  ',    &
+        'RAS     ','FCPKUO  ','FCPKUO2 ','GWD95   ',    &
+        'OLDRAD  ','GELEYN  ','SHALOW  ','SHALODQC',    &
+        'MY_TM   ','BECHTOLD'/)
+      do i=1,no
+         if(parameterization==not_permitted(i))then
+            if(prout) &
+            write(*,*)'parameterization not permitted ',parameterization
+            status=0*status
+         endif
+      enddo
+      permitted=status
+      end function permitted
+      end

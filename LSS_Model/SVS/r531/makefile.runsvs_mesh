@@ -1,0 +1,118 @@
+# ======================================================================
+#
+#						Makefile for  
+#
+# Author: Vincent Fortin
+# Email:  vincent.fortin@ec.gc.ca
+# Date:   August 17, 2015
+#
+# Standard use cases:
+# 1) To make SVS driver for CLASS benchmark
+#      make TARGET=runsvs_class_inputs NG=1
+#    Or simply:
+#      make
+# 2) To make SVS driver for standalone MESH benchmark on a grid of 35 cells:
+#      make TARGET=runsvs_mesh_inputs NG=35
+# 3) To clean the working directory
+#      make clean
+#
+# ======================================================================
+
+# ======================================================================
+# Include definition file
+# ======================================================================
+include makefile.runsvs_mesh.def
+
+# Default makefile parameters - can be redifined on the command line as follow:
+# make TARGET=<target> NG=<ngridcells> LIBRMN=<rmnlib version>
+# For example:
+# make TARGET=runsvs_class_inputs NG=1
+# make TARGET=runsvs_mesh_inputs NG=35
+#
+# Default number of grid cells in a row:
+#NG=1
+#
+# Default executable name
+# Depending on the name, different modules are compiled and linked
+#TARGET=runsvs_mesh_inputs
+#
+#ifeq ($(TARGET),runsvs_class_inputs)
+#  RUNSVS_DRIVER=runsvs_class_mesh_inputs.ftn90
+#  RUNSVS_IO=runsvs_io_class.ftn90
+#  RUNSVS_INIT=runsvs_init_class.ftn90
+#endif
+#ifeq ($(TARGET),runsvs_mesh_inputs)
+#  RUNSVS_DRIVER=runsvs_class_mesh_inputs.ftn90
+#  RUNSVS_IO=runsvs_io_mesh.ftn90
+#  RUNSVS_INIT=runsvs_init_mesh.ftn90
+#endif
+#ifeq ($(TARGET),runsvs_svs_inputs)
+#  RUNSVS_DRIVER=runsvs_svs_inputs.ftn90
+#  RUNSVS_IO=runsvs_io_svs.ftn90
+#  RUNSVS_INIT=runsvs_init_svs.ftn90
+#endif
+
+# ======================================================================
+# Declaring variables
+# ======================================================================
+# Flags for compiling, profiling, and debugging - comment as necessary
+# Flag for compiling
+LFLAG=-c
+
+# Flag for debugging
+#LFLAG=-c -g
+
+# Flag for defines
+#DFLAG=-DRUNSVS -DNGRIDCELLS=$(NG)
+DFLAG=-DRUNSVS
+
+# ======================================================================
+# Build  executable and print message
+# ======================================================================
+all: ${OBJECTS}
+	gfortran -o runsvs  $(OBJECTS)
+
+lib: ${OBJECTS}
+	ar cr -o librunsvs.a  $(OBJECTS)
+
+#static: ${OBJECTS}
+# For MinGW only (the Cygwin library cannot be statically linked to the binary):
+#	$(FC) -o runsvs -static-libgcc -static-libgfortran  $(OBJECTS)
+
+# ======================================================================
+# Rules for MPI
+# ======================================================================
+
+# ======================================================================
+# General rules
+# ======================================================================
+%.o: %.f
+	gcc -x f95 -cpp $(LFLAG) -ffixed-form -ffixed-line-length-none -fcray-pointer -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) $<
+
+%.o: %.ftn90
+	gcc -x f95 -cpp $(LFLAG) -ffree-form -ffree-line-length-none -fcray-pointer -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) $<
+
+%.o: %.f90
+	gcc -x f95 -cpp $(LFLAG) -ffree-form -ffree-line-length-none -fcray-pointer -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) $<
+
+# ======================================================================
+# Dependencies that can't be captured by the above general rules
+# ======================================================================
+runsvs_mod.o: runsvs_mod_sa_mesh.ftn90
+	gcc -x f95 -cpp $(LFLAG) -ffree-form -ffree-line-length-none -fcray-pointer -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) -o runsvs_mod.o $<
+
+# ======================================================================
+# Cleaning object files
+# ======================================================================
+clean:
+# 'rm' for Cygwin, 'del' for MinGW - comment as necessary
+	rm *.mod *.o
+#	del *.mod *.o
+
+# ======================================================================
+# Cleaning everything including the previously built executable
+# ======================================================================
+veryclean:
+# 'rm' for Cygwin, 'del' for MinGW - comment as necessary
+	rm *.mod *.o runsvs
+#	del *.mod *.o runsvs.exe

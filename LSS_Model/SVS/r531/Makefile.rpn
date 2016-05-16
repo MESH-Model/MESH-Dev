@@ -1,0 +1,140 @@
+# Makefile for standalone SVS driver
+#
+# -----------------------------------------------------------------------------
+#
+# Author: Vincent Fortin
+# Email:  vincent.fortin@ec.gc.ca
+# Date:   August 17, 2015
+#
+# -----------------------------------------------------------------------------
+#
+# Standard use cases:
+# 1) To make SVS driver for CLASS benchmark
+#      make TARGET=runsvs_class_inputs NG=1
+#    Or simply:
+#      make
+# 2) To make SVS driver for standalone MESH benchmark on a grid of 35 cells:
+#      make TARGET=runsvs_mesh_inputs NG=35
+# 3) To clean the working directory
+#      make clean
+#
+# -----------------------------------------------------------------------------
+#
+# Default makefile parameters - can be redifined on the command line as follow:
+# make TARGET=<target> NG=<ngridcells> LIBRMN=<rmnlib version>
+# For example:
+# make TARGET=runsvs_class_inputs NG=1
+# make TARGET=runsvs_mesh_inputs NG=35
+#
+# Default number of grid cells in a row:
+NG=1
+#
+# Default executable name
+# Depending on the name, different modules are compiled and linked
+TARGET=runsvs_class_inputs
+#
+# Version of ARMNLIB to use (driver only uses ARMNLIB to manage dates).
+# Leave blank to use local copy of date management functions from ARMNLIB v013
+LIBRMN=""
+#LIBRMN="rmn_015.2"
+#
+#------------------------------------------------------------------------------
+#
+ifeq ($(TARGET),runsvs_class_inputs)
+  RUNSVS_DRIVER=runsvs_class_mesh_inputs.ftn90
+  RUNSVS_IO=runsvs_io_class.ftn90
+  RUNSVS_INIT=runsvs_init_class.ftn90
+endif
+ifeq ($(TARGET),runsvs_mesh_inputs)
+  RUNSVS_DRIVER=runsvs_class_mesh_inputs.ftn90
+  RUNSVS_IO=runsvs_io_mesh.ftn90
+  RUNSVS_INIT=runsvs_init_mesh.ftn90
+endif
+ifeq ($(TARGET),runsvs_svs_inputs)
+  RUNSVS_DRIVER=runsvs_svs_inputs.ftn90
+  RUNSVS_IO=runsvs_io_svs.ftn90
+  RUNSVS_INIT=runsvs_init_svs.ftn90
+endif
+#
+#------------------------------------------------------------------------------
+#
+ifeq ($(LIBRMN),"")
+  LOCAL_LIBRMN=rmnlib_013
+  LOCAL_LIBRMN_FILES=$(LOCAL_LIBRMN)/datec.f $(LOCAL_LIBRMN)/moduledate.f
+else
+  INCLUDE_LIBRARY_RMN="-librmn $(LIBRMN)"
+  LOCAL_LIBRMN_FILES=""
+endif
+
+#
+#------------------------------------------------------------------------------
+#
+PHY=rpnphy_5.5.0-rc2_all
+SVS=svs_v1.1.3_cleanup
+RUNSVS=src
+CHANGES2PHY=changes_to_rpnphy
+COMPILE=s.compile
+OPT=-W0
+OPT2="-DLINUX_X86_64 -diag-disable 7713 -diag-disable 10212 -diag-disable 5140 -mkl -fp-model source  -g -traceback"
+#OPT2="-DLINUX_X86_64 -diag-disable 7713 -diag-disable 10212 -diag-disable 5140 -fp-model source  -g -traceback"
+DEFINES="-DRUNSVS -DNGRIDCELLS=$(NG)"
+INCLUDES="$(PHY) $(SVS) $(RUNSVS) $(CHANGES2PHY)"
+#
+#------------------------------------------------------------------------------
+#
+all:
+	make $(TARGET) NG=$(NG)
+#
+clean:
+	rm -f *.o *.mod *.f90
+#
+$(TARGET): $(RUNSVS)/*.ftn90 $(CHANGES2PHY)/*.ftn90 $(CHANGES2PHY)/*.cdk $(RUNSVS)/strings/*.f90
+	$(COMPILE) \
+	-defines=$(DEFINES) \
+	-opt=$(OPT) \
+	-o runsvs \
+        -includes=$(INCLUDES) \
+	-openmp -mpi -O 2 \
+	-opt=$(OPT2) \
+	$(INCLUDE_LIBRARY_RMN) \
+	-src \
+	$(LOCAL_LIBRMN_FILES) \
+        $(RUNSVS)/strings/precmod.f90 \
+        $(RUNSVS)/strings/stringmod.f90 \
+	$(RUNSVS)/runsvs_mod.ftn90 \
+	$(RUNSVS)/runsvs_utils.ftn90 \
+	$(RUNSVS)/$(RUNSVS_IO) \
+        $(RUNSVS)/$(RUNSVS_INIT) \
+	$(RUNSVS)/$(RUNSVS_DRIVER) \
+        $(SVS)/inicover_svs.ftn90 \
+        $(SVS)/inisoili_svs.ftn90 \
+	$(SVS)/svs.ftn90 \
+	$(SVS)/soili_svs.ftn90 \
+	$(SVS)/aggveghigh.ftn90 \
+	$(SVS)/aggveglow.ftn90 \
+	$(SVS)/veglowhigh.ftn90 \
+	$(SVS)/vegi_svs.ftn90 \
+	$(SVS)/drag_svs.ftn90 \
+	$(SVS)/snow_alone.ftn90 \
+	$(SVS)/snow_veg.ftn90 \
+	$(SVS)/ebudget_svs.ftn90 \
+	$(SVS)/hydro_svs.ftn90 \
+	$(SVS)/phtsyn_svs.ftn90 \
+	$(SVS)/update_svs.ftn90 \
+	$(SVS)/WATDRN.f \
+        $(CHANGES2PHY)/phy_debu_data.ftn90 \
+	$(CHANGES2PHY)/vscos.ftn90 \
+	$(CHANGES2PHY)/vssin.ftn90 \
+	$(CHANGES2PHY)/vslog.ftn90 \
+        $(PHY)/aggcovernat.ftn90 \
+        $(PHY)/juliand.ftn90 \
+        $(PHY)/suncos1.ftn90 \
+        $(PHY)/prelim1.ftn90 \
+        $(PHY)/interpveg.ftn90 \
+        $(PHY)/flxsurf.ftn90 \
+        $(PHY)/compz0.ftn90 \
+        $(PHY)/sf_heat.ftn90 \
+        $(PHY)/sf_momentum.ftn90 \
+        $(PHY)/sf_pblheight.ftn90 \
+        $(PHY)/diasurf2.ftn90 \
+        $(PHY)/phyopt_initdata.ftn90 

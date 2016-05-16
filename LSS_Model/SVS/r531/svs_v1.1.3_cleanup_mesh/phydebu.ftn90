@@ -1,0 +1,616 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** S/P PHY_DEBU2
+function phydebu0(p_ni,p_nj,p_nk,prout,rdradf_d) result(F_istat)
+   implicit none
+#include <arch_specific.hf>
+!
+      integer,intent(in) :: p_ni,p_nj,p_nk
+      logical,intent(in) :: prout
+      external :: rdradf_d
+      integer :: F_istat
+
+!Author
+!          B. Bilodeau (Spring 1994)
+!
+!Revisions
+! 001      M. Gagnon   (Jul 95) - Added validation code for radniv
+! 002      M. Desgagne (Nov 95) - Unified physics interface
+! 003      L. Lefaivre (Nov 95/Feb 96) - Initialize ETRMIN and Z0MIN
+!                                 with values passed from dynamics
+! 004      B. Dugas (Sep 96) - Coherence check between CLIMAT, RADFIX
+! 005      G. Pellerin (Nov 95) - Added switches for deep convection
+!                                 KUOSTD,KUOSYM,KUOSUN with CONSUN
+! 006      G. Pellerin (Nov 96) - Insert common tables for RAS option
+! 007      B. Bilodeau (Apr 97) - Insert comdeck for CLASS
+! 008      M. Desgagne (Spring 97) - Microphysics
+! 009      B. Bilodeau (Jan 98) - Connect FCP and KFC with CONSUN
+! 010      Y. Delage (Feb 98) - Addition of HMIN in "surfcon.cdk"
+! 011      B. Bilodeau (Jun 98) - RADFILES and FOMICHEV
+! 012      M. Desgagne (Oct 98) - call back to rdradf_d (from dynamics)
+! 013      B. Bilodeau (Dec 98) - New "entry" bus
+! 014      M. Desgagne (Dec 98) - Correct bug in calculation of moyhr
+! 015      B. Bilodeau (Oct 99) - CW_RAD
+! 016      B. Bilodeau (Oct 2000) - Move consistency tests at the end
+!                         of the subroutine to correct FOMIC-REDUC bug
+! 017      B. Bilodeau (Nov 2000) - Replace call to radini, turbini,
+!                                   gwdini and convini by call to phy_ini.
+!                                   Eliminate call to ptcalc.
+! 018      S. Belair and B. Bilodeau (May 2001)
+!                                 - New density for fresh snow.
+! 019      B. Bilodeau (Mar 2001) - OPTIX
+! 020      B. Dugas (Jan 2002) - FOMIC and REDUC are now compatible
+! 021      B. Bilodeau (Mar 2002) - Correct bug in calculation of nspliti
+!                                   and add dzsedi.cdk
+! 022      A-M. Leduc (Jan 2003)  - SHLCVT becomes SHLCVT(1) or SHLCVT(2)
+! 023      B. Dugas (Feb 2003)    - share small_sedimentation_dt and
+!                                   cldopt_mode comdecks with SAVE_OPTIONS
+! 024      B. Bilodeau (Feb 2003) - AS2, BETA2 and KKL2 parameters
+!                                   Remove ALAT and BLAT
+! 025      B. Dugas (Mar 2003)    - Add STRATOS parametre
+! 026      A. Plante (June 2003)  - Add VARMTN (mountains.cdk)
+! 027      B. Dugas (July 2003)   - Add CRITLAC parametre
+! 028      A. Plante (sep 2003)   - Add key pcptype rule
+! 029      Y. Delage (Apr 2004)   - Reactivate land surface module CLASS
+!                                 - Default values of parameters in common SURFCON
+!                                    now defined in surfcon_ini.cdk
+! 030      B. Bilodeau (Jul 2004) - Add Z0TLAT
+! 031      L. Spacek (Aug 2004)   - cloud clean-up
+!                                   elimination of ISTCOND=2,6,7,8 ICONVEC=4
+! 032      B. Bilodeau (Oct 2004) - Add protective code for dzsedi
+!
+! 033      S. Valcke (Apr 2005)   - COUPLING and IMPFLX incompatible
+! 034      B. Dugas (Aug 2005)    - Initialize commons in Block DATA PHYDEBU4_DATA
+! 035      D. Talbot (may 2006)   - Add option cccmarad
+! 036      J. Cole  (May 2006)    - Implement the ISCCP cloud simulator
+! 037      B. Dugas (Dec 2006)    - Remove all reference to DEBUT
+! 038      J. Milbrandt (Dec 2006) - Added options for 5 versions of Milbrandt-Yau scheme
+! 039      M. Desgagne (July 2006) - Revised interface. Change name to phy_debu.
+! 039      B. Bilodeau (Feb 2007) - Cleanup and creation of check_options
+! 040      M. Desgagne (Mar 2008) - optional ozone file
+! 041      A-M. Leduc  (Feb 2009) - add TRIGLAT
+! 042      A. Plante (Sept. 2011) - allocate standard Pressure profil std_p_prof for non_oro gwd.
+! 043      M. Abrahamowicz (dec 2012) -- add LAI0 in ispabar.cdk
+!
+!Object
+!          initialization of the physics at the beginning
+!          of each execution of the model
+!
+!Arguments
+!          - Input -
+! N        horizontal dimension
+! P_NK       vertical   dimension
+!
+!          - Input -
+! prout    logical switch to print on stdout
+! rdradf_d call back routine from the dynamics to manage the file
+!
+!Notes
+!          phy_debu does the following :
+!          1) it initializes a few constants necessary
+!             for the execution of the physics package.
+!          2) it reads the radiation files if necessary.
+!          3) it constructs the 3 main buses dictionaries.
+!
+!MODULES
+      EXTERNAL PHY_DEBU_DATA
+!
+!*
+#include <gmm.hf>
+#include "phy_master_ctrl.cdk"
+#include "surfcon.cdk"
+#include "acmcon.cdk"
+include "thermoconsts.inc"
+#include "clefcon.cdk"
+#include "machcon.cdk"
+#include "scfrst.cdk"
+#include "buses.cdk"
+#include "options.cdk"
+#include "sedipara.cdk"
+#include "nbvarsurf.cdk"
+#include "phygmm.cdk"
+#include "dimsurf.cdk"
+#include "workspc.cdk"
+!
+#include "tables.cdk"
+#include "dzsedi.cdk"
+!
+      character varenv*512, fichozo*64, fichrad*64, sousrep*64, dumc*16
+!
+      integer err, noptions_c
+!
+      integer i,k,courant(14),jour,mois,is1,is2,nv, gmmstat
+      integer maxsloflux
+      real*8 heure
+      logical okinit
+!
+      integer espsurf,espdiff,espturb,espvis,espir,espredu
+      REAL PTOP,dt0,dti0
+
+      type(gmm_metadata) :: meta_busent,meta_busper,meta_busdyn,meta_busvol
+
+!
+!
+!     CALL TO EXTERNAL SUBROUTINE TO GENERATE CLOUD TABLE
+      external TABULATE_XCW
+!
+!     CALL TO READ IN COMMON BLOCKS FOR ISCCP SIMULATOR
+!     PUT DATA IN MODULE LATER
+      external READ_ISCCPDATA
+!
+      save okinit
+      data okinit/.false./
+      data varenv/'AFSISIO'/, sousrep/'/datafiles/constants/'/
+!
+!     PTOP SERT AU CALCUL DES TABLES POUR LE SCHEMA RAS
+      DATA PTOP/0.0/
+      SAVE PTOP
+!
+!---------------------------------------------------------------------
+!
+!     DEFINITION DE CODES DE CONTROLE
+!     - - - - - - - - - - - - - - - -
+!
+      F_istat = -1
+      if (phy_init_ctrl.ne.1001) then
+!        phy_init must be called before phy_debu
+         if (prout) write (6,2010)
+         goto 777
+      endif
+      phy_init_ctrl= 1002
+      if ((date(14).eq.0).or.(delt.eq.0)) then
+         if (prout) write (6,2020)
+         goto 777
+      endif
+
+!
+!
+!     INITIALISATION DE VARIABLES POUR CLEF
+!     - - - - - - - - - - - - - - - - - - -
+!
+      PBL_NK = (2*PBL_ZSPLIT) * ((P_NK-1) - PBL_KTOP) + 1
+#include "surfcon_ini.cdk"
+      AS     = AS2
+      BETA   = BETA2
+      ETRMIN = ETRMIN2
+      Z0MIN = Z0MIN2
+      EXPLIM = 75.
+      TANLIM = EXP(12. * ALOG(2.))
+!
+!
+!     CONSTANTES NUMERIQUES DANS LA FERMETURE DU MODELE CLEF
+!     - - - - - - - - - - - - - - - - - - - - - - - - - - -
+!
+!     REF : THERRY ET LACARRERE
+!           ANDRE ET AL.
+!           BOUGEAULT
+!           MAILHOT ET BENOIT , JAS 1982
+!           WYNGAARD ET AL.
+!
+      CLEFC1 = 3.75/1.75
+      CLEFC4 = 4.5
+      CLEFC6 = 4.85
+      CLEFC7 = 1.0-0.125*CLEFC6
+      CLEFC8 = 6.5
+      CLEFCB = 0.4
+      CLEFAE = 3.0*CLEFC4/CLEFC8
+!
+      RIMB = 1.0 / RGASD
+!
+!
+!     INITIALISATION DE CONSTANTES POUR LE SCHEME DE MANABE
+!     - - - - - - - - - - - - - - - - - - - - - - - - - - -
+!
+!
+      DEPTH = 1.0/(RAUW * GRAV)
+!
+!     PARAMETRES UTILISES DANS LE SOUS-PROGRAMME MCONADJ
+!
+      HC = HC2
+      HF = HF2
+      HM = HM2
+!
+      IF ( MOIADJ.NE.1 ) MOIADJ = 0
+      ITRMAX = 4*LEVMAX
+      HMHCMIN = MIN( HC , HM )
+      HCMTOL = HC - TOL
+!
+!     PARAMETRE UTILISE DANS L'INSTRUCTION FONCTION CHIC
+!     GAMMA CRITIQUE = CHIC( H ) * GAMMA SATURATION
+!
+!     CHIC( H ) = CVMGT( HCI * ( H - HC ) , 1.0 , H.LT.1.0 )
+!
+      HCI = 1.0
+      IF ( HC.NE.1.0 ) HCI = 1.0/( 1.0 - HC )
+!
+!     PARAMETRE UTILISE DANS L'INSTRUCTION FONCTION CRIRLH
+!     SI ITER = 1 , HS ( HUMIDITE RELATIVE DE CRITIQUE DE SATURATION )
+!                      = CRIRLH( H )
+!
+!     CRIRLH( H ) = MIN( H , 1.0 ) - AA * ( MIN( H , 2.0 - H ) - HM )**3
+!
+      AA = 0.0
+      IF( HM.LT.1.0 )  AA = 1.0/(6.0 * (1.0 - HM) ** 2)
+!
+!
+!     RADIATION
+!     - - - - -
+!
+!     reduction des niveaux pour les calculs radiatifs
+!     pour option "NEWRAD"
+!
+      NV = 0
+      do i=1,LEVMAX
+         if (radnivl(i).eq.0) goto 100
+         if (radnivl(i).lt.0.or.radnivl(i).gt.p_nk) then
+           if (prout) write(6,1600) 'WRONG LEVELS IN THE LIST'
+           goto 777
+         endif
+         NV = NV+1
+      enddo
+!
+ 100  if (NV.gt.0 .and. NV.lt.p_nk) then
+         do i=NV,1,-1
+            radnivl(i+1) = radnivl(i)
+         enddo
+         radnivl(1) = NV
+      else if (NV.eq.p_nk) then
+         radnivl(1) = 0
+      else if (NV.gt.p_nk) then
+           if (prout) write(6,1600) 'TOO MANY LEVELS IN THE LIST'
+           goto 777
+      end if
+!
+      IF (RADNIVL(1) .EQ. 0 .OR. RADNIVL(1).EQ.P_NK) THEN
+!
+         REDUC = .FALSE.
+!
+      ELSE
+!
+         REDUC = .TRUE.
+!
+         if( radnivl(2) .ne. 1 ) then
+           if (prout) write(6,1600) 'THE LIST MUST BEGIN WITH LEVEL 1'
+           goto 777
+         endif
+!
+         do i=2,radnivl(1)
+           if( radnivl(i) .ge. radnivl(i+1) ) then
+             if (prout) write(6,1600) 'THE LIST MUST BE SORTED IN ASCENDING ORDER'
+             goto 777
+           endif
+         enddo
+!
+      ENDIF
+
+!
+!     lecture des tableaux de radiation
+!
+      if (radia.eq.'NEWRAD' .OR. radia.eq.'CCCMARAD') then
+!
+         if (.not. okinit) then
+!
+            ozone_file_S= 'ozone_clim.fst'
+            fichrad     = 'rad_table.fst'
+
+            call litozon2  (ozone_file_S, rdradf_d, 3)
+
+            call litblrad2 (fichrad     , rdradf_d, 3)
+
+            okinit = .true.
+!
+            if (simisccp) then
+!
+!              compute the table needed to generate variability
+!              for the  stochastic cloud generator
+!
+               call TABULATE_XCW()
+!
+!              read in data blocks for ISCCP simulator code
+!
+               call READ_ISCCPDATA()
+!
+            endif
+!
+         endif
+      endif
+
+!
+!
+!     initialisation des common block de CLASS
+!     - - - - - - -  - - - - - - - - - - - - -
+!
+      if (schmsol.eq.'CLASS') then
+!
+!        pour initialiser dans CLASS les constantes contenues
+!        dans les common CONSPHY et SURFCON
+         call set_class_const()
+!
+!        pour initialiser les constantes propres a CLASS
+         call classd(delt)
+!
+      endif
+!
+!     calcul des tableaux de pkappa et qsatvp pour RAS
+!     - - - - - - - - - - - - - - - - - - - - - - - -
+!
+!     pkappa: fonction d'Exner
+!     qsatvp: pression de vapeur saturante (mb)
+!
+      if (CONVEC .eq. 'RAS') then
+        call ntables (pkappa,qsatvp,npkappa,nqsatvp,cappa,max(ptop,.01))
+        call iniras
+      endif
+!
+      if (dzsedi.lt.0..or.dzsedi.gt.500.) then
+         if (prout) write(6,1500)
+         goto 777
+      endif
+!
+      if (istcond.ge.9) then
+!
+!     the following comdeck is shared with SAVE_OPTIONS
+!
+#include "small_sedimentation_dt.cdk"
+!
+      endif
+!
+!
+!     check if z0tlat is valid and change units
+!     - - - - - - - - - - - - - - - - - - - - -
+!
+      if ( (min(z0tlat(1),z0tlat(2)).LT. 0.0)    .or. &
+           (max(z0tlat(1),z0tlat(2)).GT.90.0)    .or. &
+           (z0tlat(1).GT.z0tlat(2))         )    then
+            if (prout) write(6,2100)
+            goto 777
+      else
+!        conversion from degrees to radians
+         z0tlat(1) = z0tlat(1) * PI/180.
+         z0tlat(2) = z0tlat(2) * PI/180.
+      endif
+!
+!
+!     check if triglat is valid and change units
+!     - - - - - - - - - - - - - - - - - - - - -
+!
+      if ( (min(triglat(1),triglat(2)).LT. 0.0)    .or. &
+           (max(triglat(1),triglat(2)).GT.90.0)    .or. &
+           (triglat(1).GT.triglat(2))         )    then
+            if (prout) write(6,2110)
+            goto 777
+      else
+!        conversion from degrees to radians
+         triglat(1) = triglat(1) * PI/180.
+         triglat(2) = triglat(2) * PI/180.
+      endif
+
+!
+!     CONSTRUCTION OF THE 4 MAIN BUSES DICTIONARIES:
+!     - - - - - - - - - - - - - - - - - - - - - - -
+!     BUSENT, BUSDYN, BUSPER and BUSVOL
+!     - - - - - - - - - - - - - - - - -
+!
+      if (schmurb.eq.'NIL') then
+         nsurf = max (indx_soil,indx_glacier,indx_water, &
+                      indx_ice,indx_agrege) - 1
+      else
+         nsurf = max (indx_soil,indx_glacier,indx_water, &
+                      indx_ice,indx_agrege,indx_urb) - 1
+      endif
+!
+      call phybusinit (p_ni,p_nk)
+
+      buslck  = .true.
+!
+      phydim_ni = p_ni
+      phydim_nj = p_nj
+      phydim_nk = p_nk
+!
+      esp_busent= entpar(enttop,1)+entpar(enttop,2)-1
+      esp_busper= perpar(pertop,1)+perpar(pertop,2)-1
+      esp_busdyn= dynpar(dyntop,1)+dynpar(dyntop,2)-1
+      esp_busvol= volpar(voltop,1)+volpar(voltop,2)-1
+!
+! Create 4 GMM variables to hold BUSENT_3d, BUSPER_3d, BUSDYN_3d and BUSVOL_3d
+!
+
+      call gmm_build_meta2D ( meta_busent, 1,esp_busent,0,0,esp_busent, 1,p_nj,0,0,p_nj, 0,GMM_NULL_FLAGS )
+      call gmm_build_meta2D ( meta_busper, 1,esp_busper,0,0,esp_busper, 1,p_nj,0,0,p_nj, 0,GMM_NULL_FLAGS )
+      call gmm_build_meta2D ( meta_busdyn, 1,esp_busdyn,0,0,esp_busdyn, 1,p_nj,0,0,p_nj, 0,GMM_NULL_FLAGS )
+      call gmm_build_meta2D ( meta_busvol, 1,esp_busvol,0,0,esp_busvol, 1,p_nj,0,0,p_nj, 0,GMM_NULL_FLAGS )
+      nullify (BUSENT_3d, BUSPER_3d, BUSDYN_3d, BUSVOL_3d)
+      gmmstat= gmm_create ('BUSENT_3d', BUSENT_3d ,meta_busent,GMM_FLAG_IZER)
+      gmmstat= gmm_create ('BUSPER_3d', BUSPER_3d ,meta_busper,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      gmmstat= gmm_create ('BUSDYN_3d', BUSDYN_3d ,meta_busdyn,GMM_FLAG_IZER)
+      gmmstat= gmm_create ('BUSVOL_3d', BUSVOL_3d ,meta_busvol,GMM_FLAG_IZER)
+
+! TO DO: Verify why the following initialization of BUSVOL_3d is necessary
+      gmmstat= gmm_get ('BUSVOL_3d',BUSVOL_3d,meta_busvol)
+      BUSVOL_3d = 0.
+!
+!     initialisation des pointeurs pour le "minibus de surface"
+      call iniptsurf(p_ni,p_nk,prout)
+!
+!
+!     Espace de travail commun de la physique
+!     - - - - - - - - - - - - - - - - - - - -
+!
+!     espace requis pour les processus de surface
+      espsurf = (nsurf+1)*((surfesptot+1)*p_ni + nvarsurf)
+!
+!     espace requis pour la diffusion verticale
+      espdiff = 9*p_ni + 13*p_ni*p_nk + 2*p_nk
+!
+!     espace requis pour les calculs de la turbulence
+      espturb = 10*p_ni*p_nk + 4*p_ni
+!
+      if (radia == 'NEWRAD') then
+!
+!        espace requis pour l'option de reduction des niveaux
+         if (reduc) then
+            espredu = 7*p_ni*radnivl(1) + 12*p_ni*p_nk + 3*p_ni
+         else
+            espredu = 12*p_ni*p_nk + 3*p_ni
+         endif
+!
+!        espace necessaire au scheme de rad. solaire
+         espvis = 47*p_ni*(p_nk+2) + espredu
+!
+!        espace necessaire au scheme de rad. infrarouge
+         espir  = p_ni*(5+ (p_nk+1)*(18+ 3*(p_nk+1))) + espredu
+!
+      else
+         espvis=0 ; espir=0
+      endif
+!
+!     memoire requise pour l'espace de travail total
+      espwork = max( espvis,espir,espsurf,espdiff,espturb )
+!
+!
+!     Calcul de moyhr
+!     - - - - - - - -
+!
+!     moyhr (acchr) est la periode de moyennage (accumulation) des diagnostics.
+!     conversion : nombre d'heures --> nombre de pas de temps.
+      moyhr = nint (moyhr * 3600./delt)
+      acchr = nint (acchr * 3600./delt)
+!
+      F_istat = 1
+777   if (F_istat.gt.0) then
+         phy_init_ctrl = 1003
+      else
+         if (prout) write (6,2000)
+      endif
+!
+!     Allocate space for standard pressure profil (momentum levels)
+      allocate(std_p_prof(p_nk))
+      std_p_prof=-1.
+!
+1500   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' *  S/R PHYDEBU:                         *', &
+              / ' *                                       *', &
+              / ' *       DZSEDI HAS INCORRECT VALUE      *', &
+              / ' *                                       *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+!
+1600  FORMAT( ' *****************************************************', &
+            / ' *****************************************************', &
+            / ' *                                                   *', &
+            / ' *       S/R PHYDEBU, OPTION RADNIVL:                *', &
+            / ' *       ',A, &
+            / ' *                                                   *', &
+            / ' *****************************************************', &
+            / ' *****************************************************')
+!
+2000   FORMAT (' --- ABORT CODE FROM S/R PHYDEBU ---'/)
+2010   FORMAT (/' SUBROUTINE PHY_INIT MUST BE CALLED BEFORE PHYDEBU')
+2020   FORMAT (/' VARIABLES: date,delt NOT INITIALIZED')
+2100   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' *  SUBROUTINE PHYDEBU:                  *', &
+              / ' *                                       *', &
+              / ' *     WRONG SPECIFICATION OF Z0TLAT     *', &
+              / ' *                                       *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+
+2110   FORMAT ( ' *****************************************', &
+              / ' *****************************************', &
+              / ' *                                       *', &
+              / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+              / ' *                                       *', &
+              / ' *  SUBROUTINE PHYDEBU:                  *', &
+              / ' *                                       *', &
+              / ' *     WRONG SPECIFICATION OF TRIGLAT    *', &
+              / ' *                                       *', &
+              / ' *                                       *', &
+              / ' *****************************************', &
+              / ' *****************************************')
+
+!
+!
+!
+!----------------------------------------------------------------------
+      return
+   end function phydebu0
+
+
+      BLOCK DATA PHY_DEBU_DATA
+!
+#include "acmcon.cdk"
+#include "buses.cdk"
+#include "comphy.cdk"
+#include "isbapar.cdk"
+#include "mountains.cdk"
+#include "surfacepar.cdk"
+#include "surfcon.cdk"
+!
+!     POUR INITIALISER LE COMMON ACMCON
+      data lheat,moiadj,moiflx,itret/1,1,1,1/
+      DATA TOL / 0.01 /
+      DATA TRESHLD / 0.01 /
+!
+      integer maxbus3
+      parameter (maxbus3=3*maxbus)
+!
+!     POUR INITIALISER LES COMMONs de buses.cdk
+      data enttop,dyntop,pertop,voltop /4*0/
+      data entspc,dynspc,perspc,volspc /4*0/
+      data entnm,dynnm,pernm,volnm    /maxbus3*' ',maxbus3*' ', &
+                                       maxbus3*' ',maxbus3*' '/
+      data entdc,dyndc,perdc,voldc    /maxbus*' ' ,maxbus*' ', &
+                                       maxbus*' ' ,maxbus*' ' /
+      data entpar,dynpar,perpar,volpar / &
+                                 maxbus*0,maxbus*0,maxbus*0,maxbus*0, &
+                                 maxbus*0,maxbus*0,maxbus*0,maxbus*0, &
+                                 maxbus*0,maxbus*0,maxbus*0,maxbus*0, &
+                                 maxbus*0,maxbus*0,maxbus*0,maxbus*0, &
+                                 maxbus*0,maxbus*0,maxbus*0,maxbus*0, &
+                                 maxbus*0,maxbus*0,maxbus*0,maxbus*0, &
+                                 maxbus*0,maxbus*0,maxbus*0,maxbus*0, &
+                                 maxbus*0,maxbus*0,maxbus*0,maxbus*0 &
+                                       /
+      data buslck /.false./
+!
+!     POUR INITIALISER LE COMMON COMPHY
+      DATA  CEVAP ,CMELT, CCCTIM &
+           /1.2E-4,2.4E+4, 1800./
+!
+!     POUR INITIALISER LE COMMON ISBAPAR
+      DATA ANSMAX,TODRY,RHOMIN,RHOSDEF,WCRN,LAI0 /0.80, 0.008, 0.05, 0.15, 10.0, 1.0/
+!
+!     POUR INITIALISER LE COMMON mountains
+      DATA VARMTN/0/
+!
+!     POUR INITIALISER LE COMMON SURFACEPAR
+      DATA CRITMASK,CRITSNOW,CRITWATER,CRITEXTURE,MINICEDP,CRITLAC &
+          / 0.001  , 0.0001 ,  0.001  ,     0.1  ,   0.05 ,  0.01 /
+!
+!     POUR INITIALISER LE COMMON SURFCON
+      DATA ANGMAX / 0.85 /
+!
+      END BLOCK DATA PHY_DEBU_DATA

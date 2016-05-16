@@ -14,6 +14,7 @@ module sa_mesh_run_within_grid
         use climate_forcing
         use model_output_variabletypes
         use MODEL_OUTPUT
+        use SVS_module_config, only: RUNSVS_config
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -25,6 +26,8 @@ module sa_mesh_run_within_grid
         type(soil_statevars) :: sp
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
+
+        call RUNSVS_config(shd, fls, ts, ic, cm, wb, eb, sp)
 
     end subroutine
 
@@ -38,6 +41,7 @@ module sa_mesh_run_within_grid
         use climate_forcing
         use model_output_variabletypes
         use MODEL_OUTPUT
+        use SVS_module, only: RUNSVS
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -49,6 +53,8 @@ module sa_mesh_run_within_grid
         type(soil_statevars) :: sp
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
+
+        call RUNSVS(shd, fls, ts, ic, cm, wb, eb, sp)
 
     end subroutine
 

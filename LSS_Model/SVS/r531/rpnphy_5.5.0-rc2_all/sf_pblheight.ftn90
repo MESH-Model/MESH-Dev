@@ -1,0 +1,61 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**
+function sf_pblheight(F_zu,F_z0,F_u,F_ilmo,F_fcor,F_fm) result(F_nhb)
+  implicit none
+#include <arch_specific.hf>
+#include "surfcon.cdk"
+  include "thermoconsts.inc"
+  !@objective Compute the planetary boundary layer height.
+  !@arguments
+  real, intent(in) :: F_zu                !height of wind input (m)
+  real, intent(in) :: F_z0                !roughness length for momentum (m)
+  real, intent(in) :: F_u                 !wind speed at F_zu (m/s)
+  real, intent(in) :: F_ilmo              !inverse of Monin-Obukhov length (1/m)
+  real, intent(in) :: F_fcor              !Coriolis factor (1/s)
+  real, intent(in) :: F_fm                !integrated stability function for momemtum
+  real :: F_nhb                           !height of the PBL (m)
+  !@author  A. Zadra, 2011-10
+  !@revisions
+  !  2011-10, A. Zadra; original code
+  !@description
+  !   Compute the planetary boundary layer height for
+  !   both stable and unstable cases.
+  !**
+
+  real h1,h2,h3,cormin,f
+  !
+  cormin = 0.7e-4
+  !
+  f = MAX(ABS(F_fcor),cormin)
+  !
+  if (F_ilmo.ge.0.) then
+     !------ stable branch
+     h1 = (F_zu+10.*F_z0)*factn
+     h2 = bs*SQRT(karman*F_u/(F_ilmo*f*F_fm))
+     h3 = factn/(4*as*beta*F_ilmo)
+     !
+     F_nhb = MAX(hmin,h1,h2,h3)
+  else
+     !------ unstable branch
+     h1 = 0.3*(F_u*karman/F_fm)/f
+     !
+     F_nhb = MAX(hmin,h1)
+  endif
+  !
+  return
+end function sf_pblheight
+!

@@ -1,0 +1,4 @@
+#include "nbvarsurf.cdk"
+#include "dimsurf.cdk"
+#define INIT_LOCBUS() continue
+#define LOCBUS(_POINTEUR_,_VAR_) _POINTEUR_ = LOC(BUS(_VAR_))

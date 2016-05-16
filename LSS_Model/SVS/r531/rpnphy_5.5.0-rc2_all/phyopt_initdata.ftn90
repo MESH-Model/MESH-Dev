@@ -1,0 +1,162 @@
+      SUBROUTINE PHYOPT_INITDATA
+      implicit none
+!
+#include "options.cdk"
+!
+!     _________________________________________
+!
+!     INITIALIZATION OF PHYSICS OPTIONS
+!
+!     PLEASE KEEP IN STRICT ALPHABETICAL ORDER!
+!     _________________________________________
+!
+      ADVECTKE        = .FALSE.
+      AGREGAT         = .FALSE.
+      AS2             = 12.
+      BETA2           = 1.0
+      BKGALB          = .TRUE.
+      CHAUF           = .TRUE.
+      CLIMAT          = .FALSE.
+      CONVEC          = 'NIL'
+      COUPLING        = .FALSE.
+      DATE            = 0
+      DBGMEM          = .FALSE.
+      DELT            = 0.
+      DIAG_TWIND      = .FALSE.
+      DIFFUW          = .FALSE.
+      DRAG            = .TRUE.
+      DRYLAPS         = .TRUE.
+      DZSEDI          = 60.
+      ETRMIN2         = 1.E-4
+      EVAP            = .TRUE.
+      FLUVERT         = 'NIL'
+      FOMIC           = .FALSE.
+      GEOL_HSEA       = 3000
+      GEOL_POIN       = 3
+      GWDRAG          = 'NIL'
+      HC2             = 0.6
+      HF2             = 1.0
+      hines_flux_filter = 0
+      HM2             = 1.0
+      ICELAC          = .FALSE.
+      ICEMELT         = .FALSE.
+      ICONVEC         = 1000
+      IFLUVERT        = 1000
+      IGWDRAG         = 1000
+      IHEATCAL        = 0
+      IKFCPCP         = 1000
+      ILONGMEL        = 1000
+      IMPFLX          = .FALSE.
+      IMRKV2          = 0
+      INILWC          = .FALSE.
+      ININCR          = .FALSE.
+      INTOZOT         = .FALSE.
+      IPCPTYPE        = 1000
+      IRADIA          = 1000
+      ISCHMSOL        = 1000
+      ISCHMURB        = 0
+      ISHLCVT         = 1000
+      ISTCOND         = 1000
+      KFCDEPTH        = 4000.
+      KFCDET          = 0.
+      KFCDLEV         = 0.5
+      KFCFDBK         = .FALSE.
+      KFCMOM          = .FALSE.
+      KFCPCP          = 'ORI'
+      KFCPROD         = .FALSE.
+      KFCRAD          = 1500.
+      KFCTIMEA        = 3600.
+      KFCTIMEC        = 3600.
+      KFCTRIG4        = (/0., 0., 0.05, 0.05/)
+      KFCTRIGA        = -1.0
+      KFCTRIGL        = 0.05
+      KFCTRIGLAT      = .FALSE.
+      KKL2            = 0.1
+      KNTRAD          = 0
+      KTICEFRAC       = .TRUE.
+      LIMSNODP        = .FALSE.
+      LIN_KPH         = 0
+      LIN_PBL         = 0
+      LIN_LSC         = 0
+      LIN_SGO         = 0
+      LIN_V4D         = 0
+      LMETOX          = .FALSE.
+      LONGMEL         = 'BLAC62'
+      MY_CCNTYPE      = 1
+      MY_DIAGON       = .TRUE.
+      MY_DZSEDI       = 50.
+      MY_DBLMOM_C     = .TRUE.
+      MY_DBLMOM_R     = .TRUE.
+      MY_DBLMOM_I     = .TRUE.
+      MY_DBLMOM_S     = .TRUE.
+      MY_DBLMOM_G     = .TRUE.
+      MY_DBLMOM_H     = .TRUE.
+      MY_FULL_VERSION = 4
+      MY_ICEON        = .TRUE.
+      MY_INITN        = .TRUE.
+      MY_RAINON       = .TRUE.
+      MY_SEDION       = .TRUE.
+      MY_SNOWON       = .TRUE.
+      MY_WARMON       = .TRUE.
+      MOYHR           = 0
+      NON_ORO         = .FALSE.
+      NON_ORO_PBOT    = 61000.0
+      NOTOP           = .FALSE.
+      NSLOFLUX        = 0
+      OFFLINE         = .FALSE.
+      OWFLUX          = .FALSE.
+      OZONE_FILE_S    = 'NIL'
+      p_runlgt        = -1
+      PARSOL          = (/2.3E+06, 1.0E+06, 2.0E+06, 0.5E-06, 0.6E-06, 1.1E-06/)
+      PBL_COUPLED     = .FALSE.
+      PBL_KTOP        = 1
+      PBL_RICRIT      = 1.
+      PBL_TSPLIT      = 1
+      PBL_ZSPLIT      = 1
+      PCPTYPE         = 'NIL'
+      QCFC11          = 0.280
+      QCFC12          = 0.530
+      QCH4            = 1.783
+      QCO2            = 380.
+      QN2O            = 0.3186
+      RADFILES        = 'STD'
+      RADFIX          = .TRUE.
+      RADFLTR         = .TRUE.
+      RADIA           = 'NIL'
+      RADNIVL         = 0
+      RADSLOPE        = .FALSE.
+      REFRACT         = .FALSE.
+      RMSCON          = 1.0
+      salty_qsat      = .false.
+      SATUCO          = .TRUE.
+      SCHMSOL         = 'FCREST'
+      SCHMURB         = 'NIL'
+      sgo_stabfac     = .true.
+      sgo_nldirfac    = .true.
+      sgo_cdmin       = 1.0   
+      SHLCVT          = 'NIL'
+      SIMISCCP        = .FALSE.
+      SNOALB_ANL      = .TRUE.
+      SNOWMELT        = .FALSE.
+      STCOND          = 'NIL'
+      STOMATE         = .FALSE.
+      STRATOS         = .FALSE.
+      TAUFAC          = 8.E-6
+      TDIAGLIM        = .FALSE.
+      TLIFT           = 0
+      TRIGLAT         = 0.0
+      TS_FLXIR        = .FALSE.
+      TSCONFC         = .FALSE.
+      TYPSOL          = .FALSE.
+      VSTAG           = .FALSE.
+      Z0CST           = -1.
+      Z0DIR           = .FALSE.
+      Z0MIN2          = 1.5E-5
+      Z0TLAT          = 0.0
+      Z0TRDPS300      = .FALSE.
+      ZTA             = -1.
+      ZUA             = -1.
+
+      return
+      end
+

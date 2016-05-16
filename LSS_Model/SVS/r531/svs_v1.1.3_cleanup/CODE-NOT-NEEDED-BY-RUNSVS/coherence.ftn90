@@ -1,0 +1,474 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**S/P COHERENCE
+!
+      SUBROUTINE COHERENCE( f, fsiz, ni )
+!
+!
+      implicit none
+#include <arch_specific.hf>
+!
+!
+      INTEGER ni, fsiz
+      REAL f(fsiz)
+!
+!
+!Author
+!         Stephane Belair (September 1999)
+!
+!
+!Revision
+! 001     S. Belair (Feb 2000)
+!             More coherence tests
+!             Use permanent bus "f"
+! 002     B. Bilodeau (Jan 2001)
+!             New comdeck phybus.cdk
+! 003     B. Dugas (Sep 2000)
+!             Adapt to Force-Restore and Climate mode
+! 004     S. Belair and B. Bilodeau (May 2001)
+!             New density for fresh snow
+! 005     S. Belair (Sep 2001)
+!             Assure coherence of WVEG
+! 006     B. Dugas (Nov 2002)
+!             Define second WSOIL level for Force-Restore
+! 007     Y. Delage (Dec 2002)
+!             Introduction of CLASS
+! 008     Olympic Team (~2010)
+!             Add correction on TSOIL based on snow fraction
+! 009     M. Abrahamowicz (August 2013)
+!             For FLUVERT=SURFACE only: 
+!              -Remove artificial humidification of dry soil
+!               i.e., remove "desert-bug" for ISBA only
+! 010     M. Abrahamowicz and S.Z. Husain (Jan 2013)
+!             Assure coherence of SVS variables
+!
+!Object
+!         Assure the coherence between the different masks
+!         (i.e., MG, GLSEA, and GLACIER) and the surface fields
+!
+!
+!Arguments
+!
+!             - Input/Output -
+! f           physics permanent bus
+!
+!             - Input -
+! ni          horizontal length of a slab
+!
+!
+#include "indx_sfc.cdk"
+#include "isbapar.cdk"
+#include "surfacepar.cdk"
+!
+#include "phy_macros_f.h"
+#include "phybus.cdk"
+!
+include "thermoconsts.inc"
+#include "options.cdk"
+#include "phyinput.cdk"
+!
+      INTEGER I , K
+      REAL FSNOW
+!
+!
+!***************************************************************
+!                COHERENCE TESTS ON THE MASK "MG"
+!***************************************************************
+!
+!                       OVER WATER SURFACES (mg = 0), MANY
+!                       FIELDS CAN BE PUT TO 0
+!                      -- for esthetic look of output only --
+!
+!
+      NEW_MG_MASK: if (any('mgen'==phyinread_list_s(1:phyinread_n))) then
+!VDIR NODEP
+         DO i=0,ni-1
+            IF (f(mg+i).LT.critmask) THEN
+!
+               f(mg      + i)        = 0.0
+               f(glacier + i)        = 0.0
+
+               if (ischmsol.eq.3) then               
+                  f(wsoil   + i)        = 1.0
+                  f(wsoil   + i + ni)   = 1.0
+               else if (ischmsol.eq.4) then
+                  DO k=0,2
+                     f(wssoil  + i + ni*k) = 1.0
+                  END DO
+                  DO k=0,6
+                     f(wdsoil  + i + ni*k) = 1.0
+                  END DO
+               endif
+                  
+               f(snodp   + i + (indx_soil   -1)*ni) = 0.0
+               f(snodp   + i + (indx_glacier-1)*ni) = 0.0
+!
+            END IF
+         END DO
+!
+!     COHERENCE COMMON TO ISBA AND SVS (UNLESS OTHEWISE INDICATED        
+         IF (ischmsol.eq.3.or.ischmsol.eq.4) THEN
+!
+!VDIR NODEP
+            DO i=0,ni-1
+               IF (f(mg+i).LT.critmask) THEN
+!
+                  f(wveg    + i)      = 0.0
+                  f(isoil   + i)      = 0.0
+                  f(rootdp  + i)      = 0.0
+                  f(stomr   + i)      = 0.0
+                  f(lai     + i)      = 0.0
+                  f(vegfrac + i)      = 0.0
+                  f(sand    + i)      = 0.0
+                  f(clay    + i)      = 0.0
+!
+                  if(ischmsol.eq.4) then
+                     f(vegh + i)      = 0.0
+                     f(vegl + i)      = 0.0
+                  endif
+
+               END IF
+            END DO
+!
+!
+!
+!                       OVER LAND, WE NEED TO MAKE SURE THAT
+!                       SOIL TEXTURE IS REASONABLE AND THAT THERE
+!                       IS WATER IN THE SOIL
+!                       -- not for esthetics --
+!
+!VDIR NODEP
+      DO i=0,ni-1
+        IF (f(mg+i).GE.critmask) THEN
+!
+!                       If no sand and clay components are found
+!                       over points where MG > critmask
+!                       attribute to these points characteristics
+!                       of typical loamy soils
+!
+          IF ((f(sand+i)+f(clay+i)).LT.critexture) THEN
+            f(sand+i) = 35.
+            f(clay+i) = 35.
+          END IF
+!
+          IF (FLUVERT.NE.'SURFACE') THEN 
+!
+!                       Make sure there is soil water where
+!                       MG > critmask
+!
+             IF (f(wsoil+i).LT.critwater) THEN
+                f(wsoil+i)    = 0.30
+             END IF
+             IF ((f(wsoil+i+ni)+f(isoil+i)).LT.critwater) THEN
+                f(wsoil+i+ni) = 0.30
+             END IF
+!
+          ELSE
+             if(ischmsol.eq.3) then
+                f(wsoil+i)    = max(f(wsoil+i)     , 1.E-7)
+                f(wsoil+i+ni) = max(f(wsoil+i+ni)  , 1.E-7)
+             else if (ischmsol.eq.4) then
+                DO k=0,2
+                   f(wssoil+i+ni*k) = max(f(wssoil+i+ni*k),1.E-7)
+                END DO
+                DO k=0,6
+                   f(wdsoil+i+ni*k) = max(f(wdsoil+i+ni*k),1.E-7)
+                END DO
+             end if
+          ENDIF
+!
+          f(sand+i) = MAX(1.,f(sand+i))
+          f(clay+i) = MAX(1.,f(clay+i))
+!
+          if(ischmsol.eq.3) then
+             f(alveg  + i) = MAX( f(alveg  + i) , 0.12 )
+             f(rootdp + i) = MAX( f(rootdp + i) , 0.5  )
+             f(stomr  + i) = MAX( f(stomr  + i) , 40.  )
+             f(cveg   + i) = MAX( f(cveg   + i) , 1.E-5)
+             f(rgl    + i) = MAX( f(rgl    + i) , 30.  )
+             f(lai    + i) = MAX( f(lai    + i) , 0.0  )
+             f(vegfrac+ i) = MAX( f(vegfrac+ i) , 0.0  )
+             f(gamveg + i) = MAX( f(gamveg + i) , 0.0  )
+             f(wveg   + i) = MAX( 0.0 , MIN( f(wveg   + i) , &
+                  0.2 * f(vegfrac+i) * f(lai+i) ) )
+          else if (ischmsol.eq.4) then
+              f(rootdp + i) = MAX( f(rootdp + i) , 0.5  )
+              f(cveg   + i) = MAX( f(cveg   + i) , 1.E-5)
+              f(lai    + i) = MAX( f(lai    + i) , 0.0  )
+              f(vegfrac+ i) = MAX( f(vegfrac+ i) , 0.0  )
+              f(wveg   + i) = MAX( f(wveg   + i) , 0.0  )
+!
+              f(z0mloc + i) = MAX( f(z0mloc + i) , 0.001)
+           endif
+!
+        END IF
+     END DO
+!
+     END IF
+      endif NEW_MG_MASK
+!
+      IF (schmsol.EQ.'CLASS') THEN
+!
+!VDIR NODEP
+      DO i=0,ni-1
+         if (any('sdepthen'==phyinread_list_s(1:phyinread_n))) then
+            f(sdepth + i) = MAX( f(sdepth + i) , 0.38 )
+            f(sdepth + i) = MIN( f(sdepth + i) , 3.0  )
+         endif
+!
+!                       OVER LAND, WE NEED TO MAKE SURE THAT
+!                       SOIL TEXTURE IS REASONABLE AND THAT THERE
+!                       IS WATER IN THE SOIL
+!                       -- not for esthetics --
+!
+!                       If no sand and clay components are found
+!                       over points where MG > critmask
+!                       attribute to these points characteristics
+!                       of typical loamy soils
+!
+         if (any('sanden'==phyinread_list_s(1:phyinread_n)) .or. &
+              any('clayen'==phyinread_list_s(1:phyinread_n))) then
+!VDIR NODEP
+            IF ((f(sand+i)+f(clay+i)).LT.critexture) THEN
+               f(sand+i)      = 35.
+               f(sand+i+  ni) = 35.
+               f(sand+i+2*ni) = 35.
+               f(clay+i)      = 35.
+               f(clay+i+  ni) = 35.
+               f(clay+i+2*ni) = 35.
+            END IF
+         endif
+!
+!
+!                       Make sure there is soil water where
+!                       MG > critmask
+!
+         if (any('wsoilen'==phyinread_list_s(1:phyinread_n))) then
+            IF (f(wsoil+i).LT.critwater) THEN
+               f(wsoil+i)    = 0.30
+            END IF
+         endif
+         if (any('wsoilen'==phyinread_list_s(1:phyinread_n)) .or. & 
+              any('isoilen'==phyinread_list_s(1:phyinread_n))) then
+            IF ((f(wsoil+i+ni)+f(isoil+i)).LT.critwater) THEN
+               f(wsoil+i+ni)   = 0.30
+               f(wsoil+i+2*ni) = 0.30
+            END IF
+         endif
+!
+         if (any('tsoilen'==phyinread_list_s(1:phyinread_n))) then
+            if (f(tsoil+i     ).lt.273.15) f(wsoil+i     )=0.04
+            if (f(tsoil+1*ni+i).lt.273.15) f(wsoil+1*ni+i)=0.04
+            if (f(tsoil+2*ni+i).lt.273.15) f(wsoil+2*ni+i)=0.04
+         endif
+         if (any('wsoilen'==phyinread_list_s(1:phyinread_n)) .or. & 
+              any('isoilen'==phyinread_list_s(1:phyinread_n)) .or. &
+              any('tsoilen'==phyinread_list_s(1:phyinread_n))) then
+            f(wsoil+i)     = max(0.04,f(wsoil+i))
+            f(wsoil+i+ni)  = max(0.04,f(wsoil+i+ni))
+            f(wsoil+i+2*ni)= max(0.04,f(wsoil+i+2*ni))
+         endif
+         if (any('sanden'==phyinread_list_s(1:phyinread_n)) .or. &
+              any('clayen'==phyinread_list_s(1:phyinread_n))) then
+            f(sand+i)      = MAX(1.,f(sand+i))
+            f(sand+i+  ni) = MAX(1.,f(sand+i+ni))
+            f(sand+i+2*ni) = MAX(1.,f(sand+i+2*ni))
+            f(clay+i)      = MAX(1.,f(clay+i))
+            f(clay+i+  ni) = MAX(1.,f(clay+i+ni))
+            f(clay+i+2*ni) = MAX(1.,f(clay+i+2*ni))
+         endif
+!
+!
+      END DO
+!
+      END IF
+
+!
+!                       OVER SURFACE OF LAND ONLY (mg=1) THERE
+!                       IS NO SEA ICE
+!                       -- for esthetics of output only --
+!
+      if (any('mgen'==phyinread_list_s(1:phyinread_n))) then
+!VDIR NODEP
+         DO i=0,ni-1
+            IF(f(mg+i).GT.1.-critmask) THEN
+!
+               f(mg   +i) = 1.
+               f(glsea+i) = 0.0
+               f(icedp+i) = 0.0
+!
+            END IF
+         END DO
+      endif
+!
+!
+!
+!**************************************************************
+!               COHERENCE TESTS ON THE MASK "GLSEA"
+!**************************************************************
+!
+!
+      NEW_GLSEA_MASK: if (any('glseaen'==phyinread_list_s(1:phyinread_n))) then
+!VDIR NODEP
+         DO i=0,ni-1
+            IF (f(glsea+i).LT.critmask) THEN
+               f(glsea + i) = 0.0
+               f(icedp + i) = 0.0
+               f(snodp + i + (indx_ice-1)*ni) = 0.0
+            ELSE
+               f(icedp + i) = MAX( f(icedp  +i) , minicedp )
+            END IF
+         END DO
+!
+!
+!                    The following situation can only occur is
+!                    LEADFRAC = 0., which is not usually the case
+!
+!VDIR NODEP
+      DO i=0,ni-1
+        IF (f(glsea+i).GT.1.-critmask) THEN
+          f(glsea + i) = 1.
+        END IF
+      END DO
+      endif NEW_GLSEA_MASK
+!
+!
+!
+!**************************************************************
+!               COHERENCE TESTS ON THE MASK "GLACIER"
+!**************************************************************
+!
+      NEW_GL_MASK: if (any('glacen'==phyinread_list_s(1:phyinread_n))) then
+!VDIR NODEP
+      DO i=0,ni-1
+        IF (f(glacier+i).GE.critmask) THEN
+!          Deep glacier temperature cannot be greater than 0 C
+           f(tglacier +ni + i) = min(f(tglacier + ni + i),TRPL)
+        END IF
+      END DO
+!
+!VDIR NODEP
+      DO i=0,ni-1
+        IF (f(glacier+i).LT.critmask) THEN
+          f(glacier + i) = 0.0
+        END IF
+      END DO
+!
+!                       For outputs esthetics only
+!
+!VDIR NODEP
+      DO i=0,ni-1
+        IF (f(glacier+i).GT.1.-critmask) THEN
+          f(glacier + i) = 1.0
+          if(ischmsol.eq.3) then
+             f(wsoil   + i) = 1.0
+             f(wsoil   + i + ni) = 1.0
+          else if (ischmsol.eq.4) then
+              DO k=0,2
+                f(wssoil  + i + ni*k) = 1.0
+             END DO
+             DO k=0,6
+                f(wdsoil  + i + ni*k) = 1.0
+             END DO
+          endif
+        END IF
+      END DO
+!
+      IF (ischmsol.eq.3.or.ischmsol.eq.4) THEN
+!
+!VDIR NODEP
+        DO i=0,ni-1
+           IF (f(glacier+i).GT.1.-critmask) THEN
+!
+               f(wveg    + i)      = 0.0
+               f(isoil   + i)      = 0.0
+               f(rootdp  + i)      = 0.0
+               f(stomr   + i)      = 0.0
+               f(lai     + i)      = 0.0
+               f(vegfrac + i)      = 0.0
+               f(sand    + i)      = 0.0
+               f(clay    + i)      = 0.0
+!
+            END IF
+         END DO
+      END IF
+      endif NEW_GL_MASK
+!
+!
+!**************************************************************
+!               COHERENCE TESTS ON SNOW FIELDS
+!**************************************************************
+!
+!
+      NEW_SD_MASK: if (any('snodpen'==phyinread_list_s(1:phyinread_n))) then
+!VDIR NODEP
+      DO i=0,ni-1
+          IF (f(snodp+i+(indx_soil-1)*ni).LT.critsnow) THEN
+             f(snodp+i+(indx_soil-1)*ni) = 0.0
+          END IF
+      END DO
+!
+      IF (ischmsol.eq.3) THEN
+!VDIR NODEP
+         DO i=0,ni-1
+            IF (f(snodp+i+(indx_soil-1)*ni).LT.critsnow) THEN
+               f(snoma+i) = 0.0
+               f(wsnow+i) = 0.0
+               f(snoro+i) = RHOSDEF
+               f(snoal+i) = ANSMAX
+            ELSE
+               FSNOW = MIN( f(snodp+i+(indx_soil-1)*ni) / 0.10 , 1. )
+               IF (f(tsoil+i).gt.273.16) &
+                    f(tsoil+i)    = (1.-FSNOW)*f(tsoil+i)    + FSNOW*273.16
+               IF(f(tsoil+i+ni).gt.273.16) &
+                    f(tsoil+i+ni) = (1.-FSNOW)*f(tsoil+i+ni) + FSNOW*273.16
+            END IF
+         END DO
+      ELSE IF (ischmsol.eq.4) THEN
+         DO i=0,ni-1
+            IF (f(snodp+i+(indx_soil-1)*ni).LT.critsnow) THEN  
+               f(snoma+i) = 0.0
+               f(wsnow+i) = 0.0
+               f(snoro+i) = RHOSDEF
+               f(snoal+i) = ANSMAX
+	    ENDIF
+!
+            IF (f(snvdp+i).lt.critsnow) then
+               f(snvdp+i) = 0.0
+               f(snvma+i) = 0.0
+               f(wsnv +i) = 0.0
+               f(snvro+i) = RHOSDEF
+               f(snval+i) = ANSMAX 
+            ENDIF
+         END DO
+      ENDIF
+     endif NEW_SD_MASK
+!
+!                       WHEN USING FORCE-RESTORE, THE SECOND
+!                       LEVEL OF SOIL MOISTURE IS SET TO THAT
+!                       FOUND IN THE FIRST LEVEL
+!                      -- for esthetic look of output only --
+!
+      IF ((schmsol.EQ.'FCREST').OR.(schmsol.EQ.'fcrest')) THEN
+         if (any('wsoilen'==phyinread_list_s(1:phyinread_n))) then
+            DO i=0,ni-1
+               f(wsoil + i + ni) = f(wsoil   + i)
+            END DO
+         endif
+      END IF
+!
+      RETURN
+      END

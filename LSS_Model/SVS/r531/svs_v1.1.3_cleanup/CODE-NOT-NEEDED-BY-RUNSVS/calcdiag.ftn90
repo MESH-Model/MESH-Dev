@@ -1,0 +1,950 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** S/P CALCDIAG
+      subroutine calcdiag (d,f,v,dsiz,fsiz,vsiz, &
+                           dt,trnch,kount,ni,nk)
+!
+#include "phy_macros_f.h"
+      implicit none
+#include <arch_specific.hf>
+!
+      integer dsiz,fsiz,vsiz,trnch,kount,ni,nk
+      real dt
+      real d(dsiz),f(fsiz), v(vsiz)
+      logical init
+!
+!
+!Author
+!          B. Bilodeau Feb 2003
+!
+!Revisions
+! 001      A. PLante       (Sep 2003) - test temperature at surface and not at nk-1 for freezing rain
+!                                       diag. Also include ipcptype in ice pellets logic (fip)
+! 002      B. Bilodeau and L. Spacek (Dec 2003) - set accumulators to zero
+! 003      A. Plante       (Dec 2003) - PCPN TYPE from volatile pcpn rate
+! 004      A. Plante       (Feb 2004) - added shallow convection precipitation rate and accumulation.
+! 005      A. Plante       (Mar 2004) - moved bourge in this routine from vkuocon
+! 006      A. Plante       (Apr 2004) - default PCPN TYPE from PCPN rates tsc tlc tscs tlcs tss tls.
+! 007      Y. Delage       (Jun 2004) - added diagnostics for CLASS
+! 008      L. Spacek       (Aug 2004) - cloud clean-up ccn changes to ftot
+! 009      A. Plante       (Feb 2005) - corrected code for ttmin and ttmax in order to get level nk
+! 010      Y. Delage       (Apr 2005) - added key ifluvert = -1 for MEC
+! 011      A. Lemonsu      (Jun 2005) - flusolis in permanent bus
+! 012      Dugas/Winger    (Jul 2005) - added a few variables for a ICTS/GWEX study
+! 013      M. Charron      (Nov 2005) - added q tend. due to methane oxydation in stratosphere
+!                                     - added tendencies (U,V,T) from non-oro GWD (Hines)
+! 014      K. Winger       (Jun 2006) - added variable tdiagavg for a ICTS/GWEX study
+! 015      P. Vaillancourt (Jul 2006) - added cloud rad variables
+! 016      J. Milbrandt    (Nov 2007) - added precip rates/accumulations of different precipitation types
+!                                       from Milbrandt-Yau microphysics scheme
+! 017      B. Bilodeau     (Oct 2007) - calculate accumulators in offline mode
+! 018      L. Tong         (Oct 2007) - add option bourge3d for which
+!          A-M. Leduc                   fneige moved from volatile to permanent bus.
+!          A. Plante                    and compute azr3d aif3d
+! 019      A-M. Leduc      (Nov 2007) - add d(pplus) to call bourge_3d and change name to bourge1_3d
+!                                       v(fip) becomes f(fip)
+! 020      P. Vaillancourt (Dec 2008) - added accumulated flux variables for cccmarad
+! 021      A.M. Leduc,P. Vaillancourt - replacement of faulty usage of v(fneige+i) in the context of bourge1_3d
+!                          (Jan 2009) - by f(fneige+ind+i)
+! 022      J. Milbrandt    (Apr 2009) - added computation of SND and S2L from microphysics
+! 023      R. McTaggart-Cowan (Apr 2009) - add calculation of derived screen-level fields
+! 024      B. Dugas        (Oct 2009) - Correct accumulation of FR,PE,RN,SN when PCPTYPE='NIL'
+! 025      A-M Leduc, P. Vaillancourt -add d(pplus) to call bourge1
+!                          (Jan 2010)  and change name to bourge2
+! 026      A-M Leduc, P. vaillancourt - add new tendencies: uadv,vadv,uadm,vadm,
+!                          (Jan 2010) - tphytdm,huphytdm,uphytdm,vphytdm
+! 027      R. McTaggart    (Feb 2012) - add max/min of tadv
+! 028      J. Milbrandt    (Feb 2014) - correction to FR bug for shallow convection (with microphysics)
+! 029      D. Durnford     (Apr-Aug 2014) - add the accumulation of fvapliqaf, runofftotaf, overflaf, latflaf and drainaf for svs
+!
+!
+!Object
+!          Calculates averages and accumulators of tendencies and diagnostics
+!
+!Arguments
+!
+!          - Input/Output -
+! D        dynamic bus
+! F        permanent bus
+!
+!          - Input -
+! V        volatile (output) bus
+!
+!          - Input -
+! DSIZ     dimension of d
+! FSIZ     dimension of f
+! VSIZ     dimension of v
+! TRNCH    slice number
+! KOUNT    timestep number
+! DT       length of timestep
+! N        horizontal running length
+! NK       vertical dimension
+!
+!
+!IMPLICITES
+!
+#include "indx_sfc.cdk"
+include "thermoconsts.inc"
+#include "phybus.cdk"
+#include "options.cdk"
+include "physteps.cdk"
+!
+!MODULES
+!
+!*
+      EXTERNAL BOURGE2,BOURGE1_3D
+      INTEGER I,J,MODP,IND,MOYHR_STEPS
+      REAL MOYHRI, HRS(0:NI-1),UVS(0:NI-1),TMP, d1,d2,d3
+      REAL TEMPO, TEMPO2, SOL_STRA, SOL_CONV, LIQ_STRA, LIQ_CONV
+      REAL RHOAIR
+!
+!****************************************************************
+!     DERIVED SCREEN-LEVEL FIELDS                               *
+!     -------------------------------------                     *
+!****************************************************************
+!
+!
+      IF_IFLUVERT: If (.not.(ifluvert < 2 .and. kount == 0)) then
+
+         !     Screen level relative humidity
+         call mfohr4(  v(rhdiag), f(qdiag), f(tdiag), &
+                       d(pplus),ni,1,ni,satuco )
+         !       Clip the screen level relative humidity to a range from 0-1
+         do i = 0, ni-1
+            v(rhdiag + i) = max( min( v(rhdiag + i), 1.0 ), 0. )
+         enddo
+         !
+         !     Screen level dewpoint depression
+         call mhuaes3(v(esdiag),f(qdiag),f(tdiag),d(pplus), &
+              .false.,ni,1,ni)
+         !     Screen level dewpoint
+         do i=0,ni-1
+            v(tdew + i) = f(tdiag + i) - v(esdiag + i)
+         enddo
+
+      endif IF_IFLUVERT
+
+!
+!****************************************************************
+!     PRECIPITATION RATES AND ACCUMULATIONS                     *
+!     -------------------------------------                     *
+!****************************************************************
+!
+      d1 = 0.10
+      d2 = 0.25
+      d3 = 3.75
+!
+!     compute the averaging interval (inverse), with all available data averaged when
+!     moving through driver step=0
+      if (moyhr.gt.0) then
+         moyhr_steps = moyhr
+         if (step_driver == 0 .and. kount > 0) moyhr_steps = min(moyhr,kount)
+         moyhri = 1./float(moyhr_steps)
+      endif
+
+!     set precipitation accumulators to zero at the beginning and after every acchr hours, and by
+!     default (acchr=0) as the model step goes through 0.
+      RESET_PRECIP: if (kount == 0 .or. (acchr > 0 .and. mod((step_driver-1),acchr) == 0) .or. &
+           (acchr == 0 .and. step_driver-1 == 0)) then
+         do i=0,ni-1
+            f(asc +i) = 0.
+            f(ascs+i) = 0.
+            f(alc +i) = 0.
+            f(alcs+i) = 0.
+            f(ass +i) = 0.
+            f(als +i) = 0.
+            v(pc  +i) = 0.
+            v(py  +i) = 0.
+            v(pz  +i) = 0.
+            v(ae  +i) = 0.
+            v(pr  +i) = 0.
+            f(azr +i) = 0.
+            f(rn  +i) = 0.
+            f(aip +i) = 0.
+            f(sn  +i) = 0.
+         enddo
+         if  (istcond.ge.10 .and. istcond.le.13)  then
+            do i=0,ni-1
+               f(als_rn1 +i) = 0.
+               f(als_rn2 +i) = 0.
+               f(als_fr1 +i) = 0.
+               f(als_fr2 +i) = 0.
+               f(ass_sn1 +i) = 0.
+               f(ass_sn2 +i) = 0.
+               f(ass_sn3 +i) = 0.
+               f(ass_pe1 +i) = 0.
+               f(ass_pe2 +i) = 0.
+               f(ass_pe2l+i) = 0.
+               f(ass_snd +i) = 0.
+               f(ass_mx  +i) = 0.
+               f(ass_s2l +i) = 0.
+            enddo
+         endif
+      endif RESET_PRECIP
+
+      if (kount.ne.0) then
+
+!     DIAGNOSTICS ON PRECIPITATION TYPE.
+         if (ipcptype.eq.1 .or. (istcond.ge.10 .and. istcond.le.13)) then
+           !note: 'bourge2' is always called if explicit microphysics scheme is used,
+           !       but it is only applied to implicit convection.
+            call bourge2(v(fneige),v(fip),d(tplus),d(sigw),d(pplus),ni,nk-1)
+         else if(ipcptype.eq.2)then
+            call bourge1_3d(f(fneige),f(fip),d(tplus),d(sigw),d(pplus),ni,nk-1)
+         endif
+!
+         if (ipcptype.eq.2) then
+
+!           AZR3D: ACCUMULATION DES PRECIPITATIONS VERGLACLACANTES EN 3D
+!           AIP3D: ACCUMULATION DES PRECIPITATIONS RE-GELEES EN 3D
+
+            if ( ( istcond.eq.4 ) .and. &
+                 ( iconvec.eq.6 ) ) then
+
+               do i = 0, ni*(nk-1)-1
+
+!                 Flux de consun1
+                  tempo=(v(snoflx+ni+i)+v(rnflx+ni+i))*.001
+                  sol_stra=max(0.,f(fneige+ni+i)*tempo)
+                  liq_stra=max(0.,tempo-sol_stra)
+!                 Flux de kfc
+                  tempo=(f(kfcrf+i)+f(kfcsf+i))*.001
+                  sol_conv=max(0.,f(fneige+ni+i)*tempo)
+                  liq_conv=max(0.,tempo-sol_conv)
+
+                  tempo=liq_stra+liq_conv
+
+                  if  ( d(tplus+ni+i) .lt. tcdk ) then
+                     f(azr3d+ni+i) = f(azr3d+ni+i) + &
+                          (1.-f(fip+ni+i))*tempo*dt
+                  endif
+!
+                  f(aip3d+ni+i) = f(aip3d+ni+i) + &
+                       f(fip+ni+i)*tempo*dt
+               enddo
+            endif
+         endif
+!
+!VDIR NODEP
+
+         ind=(nk-1)*ni
+
+         do i=0,ni-1
+!
+!           taux des precipitations de la convection profonde
+            v(ry+i) = f(tsc+i) + f(tlc+i)
+!
+!           taux des precipitations de la convection restreinte
+            v(rz+i) = f(tscs+i) + f(tlcs+i)
+!
+!           taux des precipitations implicites
+            v(rc+i) = v(ry+i) + v(rz+i)
+!
+!        Precipitation types from Milbrandt-Yau cloud microphysics scheme:
+!
+            if  (istcond.ge.10 .and. istcond.le.13)  then !SM,DM,EXP1,EXP2 versions (excludes FULL)
+!
+!             tls:  rate of liquid precipitation (sum of rain and drizzle)
+              f(tls+i) = f(tls_rn1+i) + f(tls_rn2+i) + f(tls_fr1+i) + f(tls_fr2+i)
+!
+!             tss:  rate of solid precipitation (sum of all fozen precipitation types)
+              f(tss+i) = f(tss_sn1+i) + f(tss_sn2+i) + f(tss_sn3+i) &
+                       + f(tss_pe1+i) + f(tss_pe2+i)
+!
+!             tss_mx:  rate of mixed precipitation (liquid and solid simultaneously [>0.01 mm/h each])
+              if (f(tls+i)>2.78e-9 .and. f(tss+i)>2.78e-9) then   ![note: 2.78e-9 m/s = 0.01 mm/h]
+                  f(tss_mx+i)= f(tls+i) + f(tss+i)
+              else
+                  f(tss_mx+i)= 0.
+              endif
+!
+!             als_rn1:  accumulation of liquid drizzle
+              f(als_rn1+i) = f(als_rn1+i) + f(tls_rn1+i) * dt
+!
+!             als_rn2:  accumulation of liquid rain
+              f(als_rn2+i) = f(als_rn2+i) + f(tls_rn2+i) * dt
+!
+!             als_fr1:  accumulation of freezing drizzle
+              f(als_fr1+i) = f(als_fr1+i) + f(tls_fr1+i) * dt
+!
+!             als_fr2:  accumulation of freezing rain
+              f(als_fr2+i) = f(als_fr2+i) + f(tls_fr2+i) * dt
+!
+!             ass_sn1:  accumulation of ice crystals
+              f(ass_sn1+i) = f(ass_sn1+i) + f(tss_sn1+i) * dt
+!
+!             ass_sn2:  accumulation of snow
+              f(ass_sn2+i) = f(ass_sn2+i) + f(tss_sn2+i) * dt
+!
+!             ass_sn3:  accumulation of graupel
+              f(ass_sn3+i) = f(ass_sn3+i) + f(tss_sn3+i) * dt
+!
+!             ass_pe1:  accumulation of ice pellets
+              f(ass_pe1+i) = f(ass_pe1+i) + f(tss_pe1+i) * dt
+!
+!             ass_pe2:  accumulation of hail
+              f(ass_pe2+i) = f(ass_pe2+i) + f(tss_pe2+i) * dt
+!
+!             ass_pe2l:  accumulation of hail (large only)
+              f(ass_pe2l+i) = f(ass_pe2l+i) + f(tss_pe2l+i) * dt
+!
+!             ass_snd:  accumulation of total unmelted snow (i+s+g)
+              f(ass_snd+i) = f(ass_snd+i) + f(tss_snd+i) * dt
+!
+!             ass_mx:  accumulation of mixed precipitation
+              f(ass_mx+i) = f(ass_mx+i) + f(tss_mx+i) * dt
+!
+!             ass_s2l:  solid-to-liquid ratio for accumulated total snow (i+s+g)
+              TEMPO= f(ass_sn1+i)+f(ass_sn2+i)+f(ass_sn3+i)
+              if (TEMPO > 1.e-6) then
+                 f(ass_s2l+i) = f(ass_snd+i)/TEMPO
+              else
+                 f(ass_s2l+i) = 0.
+              endif
+!
+            endif
+!
+!           taux des precipitations, grid-scale condensation scheme
+            v(rr+i) = f(tss+i) + f(tls+i)
+!
+!           taux total
+            v(rt+i) = v(rc+i) + v(rr+i)
+!
+!           asc : accumulation des precipitations solides de la convection profonde
+            f(asc+i) = f(asc+i) + f(tsc+i) * dt
+!
+!           ascs : accumulation des precipitations solides de la convection restreinte
+            f(ascs+i) = f(ascs+i) + f(tscs+i) * dt
+!
+!           alc : accumulation des precipitations liquides de la convection profonde
+            f(alc+i) = f(alc+i) + f(tlc+i) * dt
+!
+!           alcs : accumulation des precipitations liquides de la convection restreinte
+            f(alcs+i) = f(alcs+i) + f(tlcs+i) * dt
+!
+!           ass : accumulation of total solid precipitation, grid-scale condensation scheme
+            f(ass+i) = f(ass+i) + f(tss+i) * dt
+!
+!           als : accumulation des precipitations liquides, grid-scale condensation scheme
+            f(als+i) = f(als+i) + f(tls+i) * dt
+!
+!           pc : accumulation des precipitations implicites
+            v(pc+i) = f(alc+i) + f(asc+i) + f(alcs+i) + f(ascs+i)
+!
+!           py : accumulation des precipitations de la convection profonde
+            v(py+i) = f(alc+i) + f(asc+i)
+!*
+!           pz : accumulation des precipitations de la convection restreinte
+            v(pz+i) = f(alcs+i) + f(ascs+i)
+!
+!           ae : accumulation des precipitations, grid-scale condensation scheme
+            v(ae+i) = f(als+i) + f(ass+i)
+!
+!           pr : accumulation des precipitations totales
+            v(pr+i) = v(pc+i) + v(ae+i)
+
+            if (ipcptype.eq.2.and.istcond.eq.4) then
+               tempo=f(tls+i)+f(tss+i)
+               sol_stra=max(0.,f(fneige+ind+i)*tempo)
+               liq_stra=max(0.,tempo-sol_stra)
+               tempo=(f(tlc+i)+f(tlcs+i))+(f(tsc+i)+f(tscs+i))
+               sol_conv=max(0.,f(fneige+ind+i)*tempo)
+               liq_conv=max(0.,tempo-sol_conv)
+            elseif(ipcptype.eq.1.and.istcond.eq.4) then
+               tempo=f(tls+i)+f(tss+i)
+               sol_stra=max(0.,v(fneige+i)*tempo)
+               liq_stra=max(0.,tempo-sol_stra)
+               tempo=(f(tlc+i)+f(tlcs+i))+(f(tsc+i)+f(tscs+i))
+               sol_conv=max(0.,v(fneige+i)*tempo)
+               liq_conv=max(0.,tempo-sol_conv)
+            elseif(ipcptype == 0.and.istcond /= 5) then
+               sol_stra=f(tss+i)
+               liq_stra=f(tls+i)
+               sol_conv=f(tsc+i)+f(tscs+i)
+               liq_conv=f(tlc+i)+f(tlcs+i)
+            else
+               tempo=f(tls+i)+f(tss+i)
+               sol_stra=max(0.,v(fneige+i)*tempo)
+               liq_stra=max(0.,tempo-sol_stra)
+               tempo=(f(tlc+i)+f(tlcs+i))+(f(tsc+i)+f(tscs+i))
+               sol_conv=max(0.,v(fneige+i)*tempo)
+               liq_conv=max(0.,tempo-sol_conv)
+            endif
+
+!           RN : ACCUMULATION DES PRECIPITATIONS de PLUIE
+!           AZR: ACCUMULATION DES PRECIPITATIONS VERGLACLACANTES
+!           AIP: ACCUMULATION DES PRECIPITATIONS RE-GELEES
+!           SN : ACCUMULATION DES PRECIPITATIONS de neige
+
+            if (istcond.lt.10 ) then
+
+            !diagnostic partitioning of rain vs. freezing rain:
+            ! (total precipitation from all schemes)
+!              BOURGE and NIL
+               if(ipcptype <= 1)then
+                 tempo= liq_stra+liq_conv
+                 if  ( d(tplus+(nk-1)*ni+i) .lt. tcdk ) then
+                   f(azr+i) = f(azr+i) + (1.-v(fip+i))*tempo*dt
+                   if (tempo.gt.0.) v(zrflag+i)=1.
+                 else
+                   f(rn+i)  = f(rn+i)  + (1.-v(fip+i))*tempo*dt
+                 endif
+                 f(aip+i) = f(aip+i) + v(fip+i)*tempo*dt
+                 f(sn +i) = f(sn +i) + (sol_stra+sol_conv)*dt
+!              BOURGE3D
+               else if(ipcptype.eq.2)then
+                 tempo=liq_stra+liq_conv
+                 if  ( d(tplus+ind+i) .lt. tcdk ) then
+                   f(azr+i) = f(azr+i) + &
+                           (1.-f(fip+ind+i))*tempo*dt
+                   if(tempo.gt.0.)v(zrflag+i)=1.
+                 else
+                    f(rn+i)  = f(rn+i)  + &
+                           (1.-f(fip+ind+i))*tempo*dt
+                 endif
+                 f(aip+i) = f(aip+i) + &
+                         f(fip+ind+i)*tempo*dt
+                 f(sn+i) = f(sn+i) + (sol_stra+sol_conv)*dt
+               endif
+
+            elseif (istcond.ge.10 .and. istcond.le.13) then   !i.e. if Milbrandt-Yau scheme
+
+               sol_stra = f(tss+i)
+               liq_stra = f(tls+i)
+               tempo    = f(tlc+i)+f(tlcs+i)+f(tsc+i)+f(tscs+i)
+               sol_conv = max(0.,v(fneige+i)*tempo)
+               liq_conv = max(0.,tempo-sol_conv)
+               tempo2  = f(azr+i)
+               f(azr+i)= f(azr+i) + (f(tls_fr1+i) + f(tls_fr2+i))*dt    !from grid-scale scheme
+               f(rn +i)= f(rn +i) + (f(tls_rn1+i) + f(tls_rn2+i))*dt    !from grid-scale scheme
+             !Add diagnostic portion of rain/freezing rain from convective schemes:
+               if  ( d(tplus+(nk-1)*ni+i) .lt. tcdk ) then
+                  f(azr+i) = f(azr+i) + (1.-v(fip+i))*liq_conv*dt       !from convective schemes
+               else
+                  f(rn +i) = f(rn +i) + (1.-v(fip+i))*liq_conv*dt       !from convective schemes
+               endif
+               if (f(azr+i) .gt. tempo2) v(zrflag+i)=1.
+               f(aip+i) = f(aip+i) &
+                          + f(tss_pe1+i)*dt                          &  !from grid-scale scheme
+                          + v(fip+i)*tempo*dt                           !from convective schemes
+               !note: Hail from M-Y (tss_pe2) is not included in total ice pellets (aip)
+               f(sn+i)  = f(sn+i) &
+                          + (f(tss_sn1+i)+f(tss_sn2+i)+f(tss_sn3+i))*dt & !from grid-scale scheme
+                          + sol_conv*dt                                   !from convective schemes
+               !note: contribution to SN from M-Y scheme is from ice, snow, and graupel
+!              !instantaneous solid-to-liquid ratio for pcp rate total snow (i+s+g):
+               TEMPO= f(tss_sn1+i)+f(tss_sn2+i)+f(tss_sn3+i)
+               if (TEMPO > 1.e-12) then
+                  f(tss_s2l+i) = f(tss_snd+i)/TEMPO
+               else
+                  f(tss_s2l+i) = 0.
+               endif
+
+            endif
+!
+         end do
+!
+      endif
+
+
+      if (refract) then
+         call refractivity(d,f,v,dsiz,fsiz,vsiz,ni,nk)
+      end if
+!
+!
+!
+!****************************************************************
+!     AVERAGES                                                  *
+!     --------                                                  *
+!****************************************************************
+!
+!     set averages to zero every moyhr hours
+      if (moyhr.gt.0) then
+!
+!        pre-calculate screen wind modulus
+!
+         do i = 0,ni-1
+            uvs(i) = f(udiag + i)*f(udiag + i) &
+                   + f(vdiag + i)*f(vdiag + i)
+         end do
+!
+         call VSSQRT( uvs,uvs,ni )
+!
+         RESET_AVERAGES: if (kount == 0 .or. mod((step_driver-1),moyhr).eq.0) then
+!
+            do i = 0, ni-1
+               f(fcmy   +i) = 0.0
+               f(fvmy   +i) = 0.0
+               f(kshalm +i) = 0.0
+               f(iwvm   +i) = 0.0
+               f(tlwpm   +i) = 0.0
+               f(tiwpm   +i) = 0.0
+!
+               f(hrsmax +i) = v(rhdiag + i)
+               f(hrsmin +i) = v(rhdiag + i)
+               f(husavg +i) = 0.0
+               f(tdiagavg+i)= 0.0
+               f(insmavg+i) = 0.0
+               f(p0avg  +i) = 0.0
+               f(uvsavg +i) = 0.0
+               f(uvsmax +i) = uvs(i)
+            end do
+!
+            do i = 0, ni*(nk)-1
+!              minimum and maximum temperature
+               f(ttmin  +i) = d(tplus +i)
+               f(ttmax  +i) = d(tplus +i)
+!              minimum and maximum temperature tendencies
+               f(tadvmin+i) = v(tadv  +i)
+               f(tadvmax+i) = v(tadv  +i)
+            end do
+!
+            do i = 0, ni*(nk-1)-1
+!
+               f(ccnm   +i) = 0.0
+               f(tim    +i) = 0.0
+               f(t2m    +i) = 0.0
+               f(ugwdm  +i) = 0.0
+               f(vgwdm  +i) = 0.0
+               f(ugnom  +i) = 0.0
+               f(vgnom  +i) = 0.0
+               f(tgnom  +i) = 0.0
+               f(udifvm +i) = 0.0
+               f(vdifvm +i) = 0.0
+               f(tdifvm +i) = 0.0
+               f(qdifvm +i) = 0.0
+               f(tadvm  +i) = 0.0
+               f(uadvm  +i) = 0.0
+               f(vadvm  +i) = 0.0
+               f(qadvm  +i) = 0.0
+               f(qmetoxm+i) = 0.0
+               f(hushalm+i) = 0.0
+               f(tshalm +i) = 0.0
+               f(lwcm   +i) = 0.0
+               f(iwcm   +i) = 0.0
+               f(lwcradm+i) = 0.0
+               f(iwcradm+i) = 0.0
+               f(cldradm+i) = 0.0
+               f(tphytdm+i) = 0.0
+               f(huphytdm+i)= 0.0
+               f(uphytdm+i) = 0.0
+               f(vphytdm+i) = 0.0
+!
+!              see vkuocon6 for the calculation of the
+!              averages of the following arrays
+               f(zctem  +i) = 0.0
+               f(zstem  +i) = 0.0
+               f(zcqem  +i) = 0.0
+               f(zsqem  +i) = 0.0
+               f(zcqcem +i) = 0.0
+               f(zsqcem +i) = 0.0
+
+            end do
+!
+!           kfc or kfckuo2 convection schemes
+            if (iconvec.eq.6.or.iconvec.eq.12) then
+!
+               do i=0, ni-1
+                  f(capekfcm +i) = 0.0
+                  f(wumkfcm  +i) = 0.0
+                  f(zbaskfcm +i) = 0.0
+                  f(ztopkfcm +i) = 0.0
+                  f(kkfcm    +i) = 0.0
+               end do
+!
+               do i = 0, ni*(nk-1)-1
+                  f(tfcpm    +i) = 0.0
+                  f(hufcpm   +i) = 0.0
+                  f(qckfcm   +i) = 0.0
+                  f(umfkfcm  +i) = 0.0
+                  f(dmfkfcm  +i) = 0.0
+               end do
+!
+            endif
+!
+         endif RESET_AVERAGES
+!
+      endif
+
+!
+      if (moyhr.gt.0 .and. kount.ne.0) then
+!
+!        take care of integrated soil moisture in kg/m**2
+         if (ischmsol.eq.1 .or. ischmsol.eq.3) then
+!
+            if (ischmsol.eq.1) d2 = 0.5
+!
+            do i = 0, ni-1
+               if (ischmsol.eq.3) d2 = f(rootdp + i)
+!
+               f(insmavg+ i) =      f(insmavg   +i) + 1000. * &
+             ( f(isoil  + i) +      f(wsoil + ni+i) ) * d2
+            end do
+!
+         else if (ischmsol.eq.2) then
+!
+            do i = 0, ni-1
+               f(insmavg+ i) =      f(insmavg+i) + 1000.* &
+            (( f(isoil  +      i) + f(wsoil +      i) ) * d1 + &
+             ( f(isoil  +ni+   i) + f(wsoil +ni+   i) ) * d2 + &
+             ( f(isoil  +ni+ni+i) + f(wsoil +ni+ni+i) ) * d3 )
+            end do
+
+         endif
+
+         do i = 0, ni-1
+!
+            f(fcmy +i) = f(fcmy +i) + v(fc + (indx_agrege-1)*ni+i)
+            f(fvmy +i) = f(fvmy +i) + v(fv + (indx_agrege-1)*ni+i)
+            f(kshalm +i) = f(kshalm +i)+ v(kshal +i)
+            f(iwvm   +i) = f(iwvm   +i) + v(iwv  +i)
+            f(tlwpm  +i) = f(tlwpm  +i) + f(tlwp +i)
+            f(tiwpm  +i) = f(tiwpm  +i) + f(tiwp +i)
+!
+            f(hrsmax + i) = max( f(hrsmax +i) , v(rhdiag + i) )
+            f(hrsmin + i) = min( f(hrsmin +i) , v(rhdiag + i) )
+            f(husavg + i) =      f(husavg +i) + f(qdiag + i)
+            f(tdiagavg+i) =      f(tdiagavg+i)+ f(tdiag + i)
+            f(p0avg  + i) =      f(p0avg  +i) + d(pplus + i)
+            f(uvsavg + i) =      f(uvsavg +i) + uvs(i)
+            f(uvsmax + i) = max( f(uvsmax +i) , uvs(i) )
+!
+            if (mod(step_driver,moyhr).eq.0) then
+                f(fcmy   +i) = f(fcmy  +i)  * moyhri
+                f(fvmy   +i) = f(fvmy  +i)  * moyhri
+                f(kshalm +i) = f(kshalm +i) * moyhri
+                f(iwvm   +i) = f(iwvm   +i) * moyhri
+                f(tlwpm  +i) = f(tlwpm  +i) * moyhri
+                f(tiwpm  +i) = f(tiwpm  +i) * moyhri
+!
+                f(husavg +i) = f(husavg +i) * moyhri
+                f(tdiagavg+i)= f(tdiagavg+i)* moyhri
+                f(insmavg+i) = f(insmavg+i) * moyhri
+                f(p0avg  +i) = f(p0avg  +i) * moyhri
+                f(uvsavg +i) = f(uvsavg +i) * moyhri
+            endif
+!
+         end do
+!
+         do i = 0, ni*(nk)-1
+!           minimum and maximum temperature
+            f(ttmin  +i) = min( f(ttmin  +i), d(tplus + i) )
+            f(ttmax  +i) = max( f(ttmax  +i), d(tplus + i) )
+!           minimum and maximum temperature tendencies
+            f(tadvmin+i) = min( f(tadvmin+i), v(tadv  + i) )
+            f(tadvmax+i) = max( f(tadvmax+i), v(tadv  + i) )
+         end do
+!
+         do i = 0, ni*(nk-1)-1
+!
+            f(ccnm   +i) = f(ccnm   +i) + f(ftot+i)
+            f(tim    +i) = f(tim    +i) + f(ti  +i)
+            f(t2m    +i) = f(t2m    +i) + f(t2  +i)
+            f(ugwdm  +i) = f(ugwdm  +i) + v(ugwd+i)
+            f(vgwdm  +i) = f(vgwdm  +i) + v(vgwd+i)
+            f(ugnom  +i) = f(ugnom  +i) + v(ugno+i)
+            f(vgnom  +i) = f(vgnom  +i) + v(vgno+i)
+            f(tgnom  +i) = f(tgnom  +i) + v(tgno+i)
+            f(udifvm +i) = f(udifvm +i) + v(udifv+i)
+            f(vdifvm +i) = f(vdifvm +i) + v(vdifv+i)
+            f(tdifvm +i) = f(tdifvm +i) + v(tdifv+i)
+            f(qdifvm +i) = f(qdifvm +i) + v(qdifv+i)
+            f(tadvm  +i) = f(tadvm  +i) + v(tadv +i)
+            f(uadvm  +i) = f(uadvm  +i) + v(uadv +i)
+            f(vadvm  +i) = f(vadvm  +i) + v(vadv +i)
+            f(qadvm  +i) = f(qadvm  +i) + v(qadv +i)
+            f(qmetoxm+i) = f(qmetoxm+i) + v(qmetox+i)
+            f(hushalm+i) = f(hushalm+i) + v(hushal+i)
+            f(tshalm +i) = f(tshalm +i) + v(tshal+i)
+            f(lwcm   +i) = f(lwcm   +i) + f(lwc+i)
+            f(iwcm   +i) = f(iwcm   +i) + f(iwc+i)
+            f(lwcradm+i) = f(lwcradm+i) + v(lwcrad+i)
+            f(iwcradm+i) = f(iwcradm+i) + v(iwcrad+i)
+            f(cldradm+i) = f(cldradm+i) + v(cldrad+i)
+            f(tphytdm+i) = f(tphytdm+i) + v(tphytd+i)
+            f(huphytdm+i)= f(huphytdm+i)+ v(huphytd+i)
+            f(uphytdm+i) = f(uphytdm+i) + v(uphytd+i)
+            f(vphytdm+i) = f(vphytdm+i) + v(vphytd+i)
+!
+            if (mod(step_driver,moyhr).eq.0) then
+               f(ccnm   +i) = f(ccnm   +i) * moyhri
+               f(tim    +i) = f(tim    +i) * moyhri
+               f(t2m    +i) = f(t2m    +i) * moyhri
+               f(ugwdm  +i) = f(ugwdm  +i) * moyhri
+               f(vgwdm  +i) = f(vgwdm  +i) * moyhri
+               f(ugnom  +i) = f(ugnom  +i) * moyhri
+               f(vgnom  +i) = f(vgnom  +i) * moyhri
+               f(tgnom  +i) = f(tgnom  +i) * moyhri
+               f(udifvm +i) = f(udifvm +i) * moyhri
+               f(vdifvm +i) = f(vdifvm +i) * moyhri
+               f(tdifvm +i) = f(tdifvm +i) * moyhri
+               f(qdifvm +i) = f(qdifvm +i) * moyhri
+               f(tadvm  +i) = f(tadvm  +i) * moyhri
+               f(uadvm  +i) = f(uadvm  +i) * moyhri
+               f(vadvm  +i) = f(vadvm  +i) * moyhri
+               f(qadvm  +i) = f(qadvm  +i) * moyhri
+               f(qmetoxm+i) = f(qmetoxm+i) * moyhri
+               f(zctem  +i) = f(zctem  +i) * moyhri
+               f(zcqem  +i) = f(zcqem  +i) * moyhri
+               f(zcqcem +i) = f(zcqcem +i) * moyhri
+               f(zstem  +i) = f(zstem  +i) * moyhri
+               f(zsqem  +i) = f(zsqem  +i) * moyhri
+               f(zsqcem +i) = f(zsqcem +i) * moyhri
+               f(hushalm+i) = f(hushalm+i) * moyhri
+               f(tshalm +i) = f(tshalm +i) * moyhri
+               f(lwcm   +i) = f(lwcm   +i) * moyhri
+               f(iwcm   +i) = f(iwcm   +i) * moyhri
+               f(lwcradm+i) = f(lwcradm+i) * moyhri
+               f(iwcradm+i) = f(iwcradm+i) * moyhri
+               f(cldradm+i) = f(cldradm+i) * moyhri
+               f(tphytdm+i) = f(tphytdm+i) * moyhri
+               f(huphytdm+i)= f(huphytdm+i)* moyhri
+               f(uphytdm+i) = f(uphytdm+i) * moyhri
+               f(vphytdm+i) = f(vphytdm+i) * moyhri
+!
+            endif
+         end do
+!
+         if (iconvec.eq.6.or.iconvec.eq.12) then
+         do i = 0, ni*(nk-1)-1
+            f(tfcpm  +i) = f(tfcpm  +i) + f(tfcp +i)
+            f(hufcpm +i) = f(hufcpm +i) + f(hufcp+i)
+            f(qckfcm +i) = f(qckfcm +i) + f(qckfc+i)
+            f(umfkfcm +i) = f(umfkfcm +i) + f(umfkfc+i)
+            f(dmfkfcm +i) = f(dmfkfcm +i) + f(dmfkfc+i)
+!
+            if (mod(step_driver,moyhr).eq.0) then
+               f(tfcpm  +i) = f(tfcpm  +i) * moyhri
+               f(hufcpm +i) = f(hufcpm +i) * moyhri
+               f(qckfcm +i) = f(qckfcm +i) * moyhri
+               f(umfkfcm +i) = f(umfkfcm +i) * moyhri
+               f(dmfkfcm +i) = f(dmfkfcm +i) * moyhri
+            endif
+         end do
+         do i=0, ni-1
+            f(capekfcm +i) = f(capekfcm+i) + f(capekfc+i)
+            f(wumkfcm +i) = f(wumkfcm+i) + f(wumaxkfc+i)
+            f(zbaskfcm +i) = f(zbaskfcm+i) + f(zbasekfc+i)
+            f(ztopkfcm +i) = f(ztopkfcm+i) + f(ztopkfc+i)
+            f(kkfcm+i) = f(kkfcm+i) + v(kkfc+i)
+!
+            if (mod(step_driver,moyhr).eq.0) then
+                f(capekfcm +i) = f(capekfcm +i) * moyhri
+                f(wumkfcm+i) = f(wumkfcm+i) * moyhri
+                f(zbaskfcm+i) = f(zbaskfcm+i) * moyhri
+                f(ztopkfcm+i) = f(ztopkfcm+i) * moyhri
+                f(kkfcm+i) = f(kkfcm+i) * moyhri
+            endif
+!
+         end do
+         endif
+!
+      endif
+!
+!
+!****************************************************************
+!     ACCUMULATORS                                              *
+!     ------------                                              *
+!****************************************************************
+!
+!     set accumulators to zero at the beginning and after every acchr hours, and by
+!     default (acchr=0) as the model step goes through 0.
+      RESET_ACCUMULATORS: if (kount == 0. .or. (acchr > 0 .and. mod((step_driver-1),acchr) == 0) .or. &
+           (acchr == 0 .and. step_driver-1 == 0)) then
+         do i=0,ni-1
+            f(rainaf+i) = 0.
+            f(snowaf+i) = 0.
+         enddo
+         if (iradia.ge.1.or.ifluvert.eq.-1) then
+            do i=0,ni-1
+               f(eiaf    +i) = 0.
+               f(evaf    +i) = 0.
+               f(fiaf    +i) = 0.
+               f(fsaf    +i) = 0.
+               f(ivaf    +i) = 0.
+               f(ntaf    +i) = 0.
+               f(flusolaf+i) = 0.
+            enddo
+         endif
+         if (iradia.eq.3) then
+            do i=0,ni-1
+               f(clbaf    +i) = 0.
+               f(cltaf    +i) = 0.
+               f(cstaf    +i) = 0.
+               f(csbaf    +i) = 0.
+               f(fsdaf    +i) = 0.
+               f(fsfaf    +i) = 0.
+               f(fsiaf    +i) = 0.
+               f(fsvaf    +i) = 0.
+               f(parraf   +i) = 0.
+            enddo
+         endif
+         if (ifluvert.ge.1.or.ifluvert.eq.-1) then
+            do i=0,ni-1
+               f(suaf +i) = 0.
+               f(svaf +i) = 0.
+               f(fqaf +i) = 0.
+               f(siaf +i) = 0.
+               f(flaf +i) = 0.
+               f(fcaf +i) = 0.
+               f(fvaf +i) = 0.
+            enddo
+         endif
+         if (ischmsol.eq.3) then
+            do i=0,ni-1
+               f(legaf   +i) = 0.
+               f(leraf   +i) = 0.
+               f(letraf  +i) = 0.
+               f(levaf   +i) = 0.
+               f(lesaf   +i) = 0.
+               f(drainaf +i) = 0.
+               f(overflaf+i) = 0.
+               f(wfluxaf+i)  = 0.
+            enddo
+         endif
+         if (ischmsol.eq.2) then
+            do i=0,ni-1
+               f(wfluxaf +i) = 0.
+               f(drainaf +i) = 0.
+               f(overflaf+i) = 0.
+            enddo
+         endif
+      endif RESET_ACCUMULATORS
+
+      if (kount.ne.0) then
+!
+!VDIR NODEP
+         do i = 0,ni-1
+!
+!                        Accumulation of precipitation (in m)
+!
+          f(rainaf+i) = f(rainaf+i) + v(rainrate+i)*dt
+          f(snowaf+i) = f(snowaf+i) + v(snowrate+i)*dt
+!
+          if (iradia.ge.1.or.ifluvert.eq.-1) then
+          f(eiaf    +i) = f(eiaf +i) + f(ei  +i) * dt
+          f(evaf    +i) = f(evaf +i) + f(ev  +i) * dt
+          f(fiaf    +i) = f(fiaf +i) + f(fdsi+i) * dt
+          f(fsaf    +i) = f(fsaf +i) + f(fdss+i) * dt
+          f(ivaf    +i) = f(ivaf +i) + v(iv  +i) * dt
+          f(ntaf    +i) = f(ntaf +i) + f(nt  +i) * dt
+          f(flusolaf+i) = f(flusolaf+i) + &
+                          f(flusolis+i) * dt
+          endif
+!
+!                        Accumulation of sfc and toa net clear sky fluxes, available with cccmarad
+!
+          if (iradia.eq.3) then
+          f(clbaf    +i) = f(clbaf +i) + f(clb  +i) * dt
+          f(cltaf    +i) = f(cltaf +i) + f(clt  +i) * dt
+          f(cstaf    +i) = f(cstaf +i) + f(cstt +i) * dt
+          f(csbaf    +i) = f(csbaf +i) + f(csb  +i) * dt
+          f(fsdaf    +i) = f(fsdaf +i) + v(fsd  +i) * dt
+          f(fsfaf    +i) = f(fsfaf +i) + v(fsf  +i) * dt
+          f(fsiaf    +i) = f(fsiaf +i) + v(fsi  +i) * dt
+          f(fsvaf    +i) = f(fsvaf +i) + v(fsv  +i) * dt
+          f(parraf    +i) = f(parraf +i) + v(parr  +i) * dt
+          endif
+!
+          if (ifluvert.ge.1.or.ifluvert.eq.-1) then
+          f(suaf +i) = f(suaf +i) + v(ustress+i) * dt
+          f(svaf +i) = f(svaf +i) + v(vstress+i) * dt
+          f(fqaf +i) = f(fqaf +i) + f(fq  +i) * dt
+          f(siaf +i) = f(siaf +i) + v(fnsi+i) * dt
+          f(flaf +i) = f(flaf +i) + v(fl  +i) * dt
+          f(fcaf +i) = f(fcaf +i) + &
+                 v(fc + (indx_agrege-1)*ni+i) * dt
+          f(fvaf +i) = f(fvaf +i) + &
+                 v(fv + (indx_agrege-1)*ni+i) * dt
+          endif
+!
+!
+!                        Accumulation of total runoff (land,glacier,water,seaice,aggregated) (kg/m2 or mm)
+          !                     
+          do j=1,indx_agrege
+             
+             f(runofftotaf+(j-1)*ni+i) = f(runofftotaf+(j-1)*ni+i)      &
+                                      + v(runofftot  +(j-1)*ni+i)
+          end do
+
+
+          if (ischmsol.eq.3) then
+!
+!                        Accumulation of evaporation (in kg/m2)
+!
+            f(legaf   +i) = f(legaf   +i) + v(leg   +i) * dt / CHLC
+            f(leraf   +i) = f(leraf   +i) + v(ler   +i) * dt / CHLC
+            f(letraf  +i) = f(letraf  +i) + v(letr  +i) * dt / CHLC
+            f(levaf   +i) = f(levaf   +i) + v(lev   +i) * dt / CHLC
+            f(lesaf   +i) = f(lesaf   +i) + v(les   +i) * dt &
+                                                        / (CHLC+CHLF)
+!
+!                        Accumulation of drained water
+!                        (soil base water flux, in kg/m2 or mm);
+!                        factor 1000 is for density of water.
+!
+            f(drainaf +i) = f(drainaf +i) &
+                         - 1000. * f(drain+i) * f(rootdp+i)
+!
+!                        Accumulation of surface runoff (in kg/m2 or mm)
+!
+            f(overflaf+i) = f(overflaf+i) + v(overfl+i)
+!
+!                        Accumulation of upwards surface water flux (in kg/m2 or mm)
+            f(wfluxaf+i)  = f(wfluxaf+i) + v(wflux+i) * dt
+!
+          endif
+!
+          if (ischmsol.eq.2) then
+               f(wfluxaf +i) = f(wfluxaf +i) + v(wflux+i) * dt
+               f(drainaf +i) = f(drainaf +i) + f(drain+i)
+               f(overflaf+i) = f(overflaf+i) + v(overfl+i)
+          end if
+!
+          end do
+!
+      endif
+!
+!!
+!****************************************************************
+!                                  
+!     EVAPORATION FLUX DIAGNOSTICS                                              
+!
+!****************************************************************
+      if (ischmsol.eq.3.or.ischmsol.eq.4) then
+
+         !     Calcul du flux d'evaporation en kg/m2 a partir
+         !     du flux d'humidite en m/s*kg/kg: m/s * kg water / kg air:
+         !     il faut multiplier par la densite de l'air 
+         !     and by the length of the timestep
+         !     It only makes sense theoretically to calculate fvapliq from the aggregated field
+         !     since HU is averaged over all surface types
+      
+        if (KOUNT .le. 0) then
+          do i=0,ni-1
+            f(fvapliq+i) = 0.0  ! tdiag and qdiag are wildly wrong during the zeroth timestep
+          end do
+        else
+          do i=0,ni-1
+            rhoair=d(pmoins+i)/(RGASD * f(tdiag+i)*(1.+DELTA*f(qdiag+i)))
+            f(fvapliq+i) = f(fvap+(indx_agrege-1)*ni+i) * dt * rhoair
+            f(fvapliqaf+i) = f(fvapliqaf+i) + f(fvapliq  +i)
+          end do
+        end if
+      end if
+
+      return
+      end

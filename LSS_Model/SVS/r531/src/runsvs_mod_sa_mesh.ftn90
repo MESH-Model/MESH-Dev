@@ -1,0 +1,433 @@
+module runsvs_mod
+
+    implicit none
+
+    integer, parameter :: runsvs_busnvar = 160
+    integer, parameter :: runsvs_ntiles = 5
+    integer NG
+    integer, dimension(runsvs_busnvar), save :: runsvs_buspos
+    integer, dimension(runsvs_busnvar), save :: runsvs_buslev
+    integer, save :: runsvs_busdim
+    character(len = 20), dimension(runsvs_busnvar), save :: runsvs_busvarname
+    character(len = 4), dimension(runsvs_busnvar), save :: runsvs_busoutname
+    integer, save :: accevap
+    integer, save :: alfaq
+    integer, save :: alfat
+    integer, save :: algr
+    integer, save :: alvh
+    integer, save :: alvis
+    integer, save :: alvl
+    integer, save :: bcoef
+    integer, save :: bm
+    integer, save :: bt
+    integer, save :: cgsat
+    integer, save :: clay
+    integer, save :: co2i1
+    integer, save :: cvh
+    integer, save :: cvl
+    integer, save :: deciduous
+    integer, save :: dlat
+    integer, save :: dlon
+    integer, save :: drainaf
+    integer, save :: draindens
+    integer, save :: eflux
+    integer, save :: eg
+    integer, save :: emisgr
+    integer, save :: emisvh
+    integer, save :: emisvl
+    integer, save :: er
+    integer, save :: etr
+    integer, save :: evergreen
+    integer, save :: fc
+    integer, save :: fcor
+    integer, save :: fdsi
+    integer, save :: fl
+    integer, save :: fluslop
+    integer, save :: flusolis
+    integer, save :: fq
+    integer, save :: frootd
+    integer, save :: frv
+    integer, save :: ftemp
+    integer, save :: fv
+    integer, save :: fvap
+    integer, save :: gamvh
+    integer, save :: gamvl
+    integer, save :: grkef
+    integer, save :: grkeff
+    integer, save :: grksat
+    integer, save :: hfluxsa
+    integer, save :: hfluxsv
+    integer, save :: hst
+    integer, save :: humoins
+    integer, save :: husurf
+    integer, save :: hv
+    integer, save :: ilmo
+    integer, save :: isoil
+    integer, save :: khc
+    integer, save :: ksat
+    integer, save :: ksatc
+    integer, save :: laictem
+    integer, save :: laideci
+    integer, save :: laiva
+    integer, save :: laivh
+    integer, save :: laivl
+    integer, save :: latflaf
+    integer, save :: latflw
+    integer, save :: leg
+    integer, save :: ler
+    integer, save :: les
+    integer, save :: lesv
+    integer, save :: letr
+    integer, save :: lev
+    integer, save :: melts
+    integer, save :: meltsr
+    integer, save :: pmoins
+    integer, save :: psi
+    integer, save :: psisat
+    integer, save :: psngrvl
+    integer, save :: psnvh
+    integer, save :: psnvha
+    integer, save :: qdiag
+    integer, save :: qsurf
+    integer, save :: rainrate
+    integer, save :: rcctem
+    integer, save :: resagr
+    integer, save :: resavg
+    integer, save :: rglvh
+    integer, save :: rglvl
+    integer, save :: rnet_s
+    integer, save :: rnetsa
+    integer, save :: rnetsv
+    integer, save :: rootdp
+    integer, save :: rsnowsa
+    integer, save :: rsnowsv
+    integer, save :: rst
+    integer, save :: runofftot
+    integer, save :: runofftotaf
+    integer, save :: sand
+    integer, save :: skyview
+    integer, save :: slop
+    integer, save :: snoal
+    integer, save :: snoden
+    integer, save :: snodp
+    integer, save :: snoma
+    integer, save :: snoro
+    integer, save :: snowrate
+    integer, save :: snval
+    integer, save :: snvden
+    integer, save :: snvdp
+    integer, save :: snvma
+    integer, save :: snvro
+    integer, save :: stomrvh
+    integer, save :: stomrvl
+    integer, save :: tdiag
+    integer, save :: tground
+    integer, save :: thetaa
+    integer, save :: tmoins
+    integer, save :: tsa
+    integer, save :: tsnow
+    integer, save :: tsnowveg
+    integer, save :: tsoil
+    integer, save :: tsrad
+    integer, save :: tsurf
+    integer, save :: tvege
+    integer, save :: udiag
+    integer, save :: umoins
+    integer, save :: vdiag
+    integer, save :: vegf
+    integer, save :: vegh
+    integer, save :: vegl
+    integer, save :: vegtrans
+    integer, save :: vmoins
+    integer, save :: watflow
+    integer, save :: wdm
+    integer, save :: wdsoil
+    integer, save :: wfc
+    integer, save :: wfcdp
+    integer, save :: wfcint
+    integer, save :: wflux
+    integer, save :: wsat
+    integer, save :: wsnow
+    integer, save :: wsnv
+    integer, save :: wveg
+    integer, save :: wwilt
+    integer, save :: z0
+    integer, save :: z0ha
+    integer, save :: z0mvh
+    integer, save :: z0mvl
+    integer, save :: z0t
+    integer, save :: ztsl
+    integer, save :: zusl
+    integer, save :: lai
+    integer, save :: z0mloc
+    integer, save :: acoef
+    integer, save :: pcoef
+    integer, save :: c1sat
+    integer, save :: c3ref
+    integer, save :: cd1ref
+    integer, save :: overfl
+    integer, save :: overfl_new
+    integer, save :: psn
+    integer, save :: teta
+    integer, save :: wssoil
+
+    contains
+
+    subroutine svs_bus_init(NGRIDCELLS)
+
+        implicit none
+
+        integer NGRIDCELLS
+
+        NG = NGRIDCELLS
+
+        runsvs_busdim = 453*NG
+        runsvs_buspos = (/ &
+            (1-1)*NG+1, (2-1)*NG+1, (3-1)*NG+1, (4-1)*NG+1, (5-1)*NG+1, (6-1)*NG+1, (11-1)*NG+1, (12-1)*NG+1, (23-1)*NG+1, &
+            (24-1)*NG+1, (29-1)*NG+1, (30-1)*NG+1, (41-1)*NG+1, (50-1)*NG+1, (51-1)*NG+1, (52-1)*NG+1, (53-1)*NG+1, (54-1)*NG+1, &
+            (55-1)*NG+1, (56-1)*NG+1, (57-1)*NG+1, (58-1)*NG+1, (59-1)*NG+1, (60-1)*NG+1, (61-1)*NG+1, (62-1)*NG+1, (63-1)*NG+1, &
+            (64-1)*NG+1, (65-1)*NG+1, (70-1)*NG+1, (71-1)*NG+1, (72-1)*NG+1, (73-1)*NG+1, (74-1)*NG+1, (75-1)*NG+1, (76-1)*NG+1, &
+            (87-1)*NG+1, (92-1)*NG+1, (97-1)*NG+1, (102-1)*NG+1, (107-1)*NG+1, (108-1)*NG+1, (109-1)*NG+1, (110-1)*NG+1, &
+            (121-1)*NG+1, (132-1)*NG+1, (133-1)*NG+1, (134-1)*NG+1, (139-1)*NG+1, (140-1)*NG+1, (141-1)*NG+1, (142-1)*NG+1, &
+            (147-1)*NG+1, (148-1)*NG+1, (159-1)*NG+1, (170-1)*NG+1, (181-1)*NG+1, (207-1)*NG+1, (208-1)*NG+1, (209-1)*NG+1, &
+            (210-1)*NG+1, (211-1)*NG+1, (212-1)*NG+1, (223-1)*NG+1, (224-1)*NG+1, (225-1)*NG+1, (226-1)*NG+1, (227-1)*NG+1, &
+            (228-1)*NG+1, (229-1)*NG+1, (230-1)*NG+1, (231-1)*NG+1, (232-1)*NG+1, (243-1)*NG+1, (254-1)*NG+1, (255-1)*NG+1, &
+            (256-1)*NG+1, (257-1)*NG+1, (258-1)*NG+1, (263-1)*NG+1, (264-1)*NG+1, (265-1)*NG+1, (266-1)*NG+1, (267-1)*NG+1, &
+            (268-1)*NG+1, (269-1)*NG+1, (270-1)*NG+1, (271-1)*NG+1, (272-1)*NG+1, (273-1)*NG+1, (274-1)*NG+1, (275-1)*NG+1, &
+            (276-1)*NG+1, (281-1)*NG+1, (286-1)*NG+1, (297-1)*NG+1, (298-1)*NG+1, (299-1)*NG+1, (300-1)*NG+1, (301-1)*NG+1, &
+            (306-1)*NG+1, (307-1)*NG+1, (308-1)*NG+1, (309-1)*NG+1, (310-1)*NG+1, (311-1)*NG+1, (312-1)*NG+1, (313-1)*NG+1, &
+            (314-1)*NG+1, (315-1)*NG+1, (316-1)*NG+1, (317-1)*NG+1, (319-1)*NG+1, (320-1)*NG+1, (321-1)*NG+1, (322-1)*NG+1, &
+            (324-1)*NG+1, (326-1)*NG+1, (328-1)*NG+1, (329-1)*NG+1, (330-1)*NG+1, (332-1)*NG+1, (333-1)*NG+1, (334-1)*NG+1, &
+            (335-1)*NG+1, (361-1)*NG+1, (362-1)*NG+1, (363-1)*NG+1, (364-1)*NG+1, (365-1)*NG+1, (377-1)*NG+1, (378-1)*NG+1, &
+            (389-1)*NG+1, (400-1)*NG+1, (401-1)*NG+1, (412-1)*NG+1, (413-1)*NG+1, (424-1)*NG+1, (425-1)*NG+1, (426-1)*NG+1, &
+            (427-1)*NG+1, (438-1)*NG+1, (443-1)*NG+1, (444-1)*NG+1, (445-1)*NG+1, (446-1)*NG+1, (451-1)*NG+1, (452-1)*NG+1, &
+            (453-1)*NG+1, (454-1)*NG+1, (455-1)*NG+1, (456-1)*NG+1, (457-1)*NG+1, (458-1)*NG+1, (459-1)*NG+1, (460-1)*NG+1, &
+            (461-1)*NG+1, (462-1)*NG+1, (463-1)*NG+1, (464-1)*NG+1 /)
+        runsvs_buslev = (/ &
+            1, 1, 1, 1, 1, 5, 1, 11, 1, &
+            5, 1, 11, 9, 1, 1, 1, 1, 1, &
+            1, 1, 1, 1, 1, 1, 1, 1, 1, &
+            1, 5, 1, 1, 1, 1, 1, 1, 11, &
+            5, 5, 5, 5, 1, 1, 1, 11, &
+            11, 1, 1, 5, 1, 1, 1, 5, &
+            1, 11, 11, 11, 26, 1, 1, 1, &
+            1, 1, 11, 1, 1, 1, 1, 1, &
+            1, 1, 1, 1, 11, 11, 1, 1, &
+            1, 1, 5, 1, 1, 1, 1, 1, &
+            1, 1, 1, 1, 1, 1, 1, 1, &
+            5, 5, 11, 1, 1, 1, 1, 5, &
+            1, 1, 1, 1, 1, 1, 1, 1, &
+            1, 1, 1, 2, 1, 1, 1, 2, &
+            2, 2, 1, 1, 2, 1, 1, 1, &
+            26, 1, 1, 1, 1, 12, 1, 11, &
+            11, 1, 11, 1, 11, 1, 1, 1, &
+            11, 5, 1, 1, 1, 5, 1, 1, &
+            1, 1, 1, 1, 1, 1, 1, 1, &
+            1, 1, 1, 1 /)
+        runsvs_busvarname = [ character(len=20) :: &
+            "accevap", "alfaq", "alfat", "algr", "alvh", "alvis", "alvl", "bcoef", "bm", &
+            "bt", "cgsat", "clay", "co2i1", "cvh", "cvl", "deciduous", "dlat", "dlon", &
+            "drainaf", "draindens", "eflux", "eg", "emisgr", "emisvh", "emisvl", "er", "etr", &
+            "evergreen", "fc", "fcor", "fdsi", "fl", "fluslop", "flusolis", "fq", "frootd", &
+            "frv", "ftemp", "fv", "fvap", "gamvh", "gamvl", "grkef", "grkeff", &
+            "grksat", "hfluxsa", "hfluxsv", "hst", "humoins", "husurf", "hv", "ilmo", &
+            "isoil", "khc", "ksat", "ksatc", "laictem", "laideci", "laiva", "laivh", &
+            "laivl", "latflaf", "latflw", "leg", "ler", "les", "lesv", "letr", &
+            "lev", "melts", "meltsr", "pmoins", "psi", "psisat", "psngrvl", "psnvh", &
+            "psnvha", "qdiag", "qsurf", "rainrate", "rcctem", "resagr", "resavg", "rglvh", &
+            "rglvl", "rnet_s", "rnetsa", "rnetsv", "rootdp", "rsnowsa", "rsnowsv", "rst", &
+            "runofftot", "runofftotaf", "sand", "skyview", "slop", "snoal", "snoden", "snodp", &
+            "snoma", "snoro", "snowrate", "snval", "snvden", "snvdp", "snvma", "snvro", &
+            "stomrvh", "stomrvl", "tdiag", "tground", "thetaa", "tmoins", "tsa", "tsnow", &
+            "tsnowveg", "tsoil", "tsrad", "tsurf", "tvege", "udiag", "umoins", "vdiag", &
+            "vegf", "vegh", "vegl", "vegtrans", "vmoins", "watflow", "wdm", "wdsoil", &
+            "wfc", "wfcdp", "wfcint", "wflux", "wsat", "wsnow", "wsnv", "wveg", &
+            "wwilt", "z0", "z0ha", "z0mvh", "z0mvl", "z0t", "ztsl", "zusl", &
+            "lai", "z0mloc", "acoef", "pcoef", "c1sat", "c3ref", "cd1ref", "overfl", &
+            "overfl_new", "psn", "teta", "wssoil" ]
+        runsvs_busoutname = [ character(len=4) :: &
+            " ACWF", "AQ  ", "AT  ", "ALGR", "ALVH", "AL  ", "ALVL", "1G  ", "BM  ", &
+            "BT  ", "6I  ", "J2  ", "CO3 ", "CVH ", "CVL ", "DECI", "LA  ", "LO  ", &
+            "O1  ", "DRND", "4F  ", "EG  ", "EMGR", "EMVH", "EMVL", "ER  ", "ETR ", &
+            "EVER", "FC  ", "WC  ", "FI  ", "FL  ", "FBSL", "FB  ", "FQ  ", "FRTD", &
+            "B5  ", "FT  ", "FV  ", "HF  ", "GGVH", "GGVL", "GKE", "GKEF", &
+            "GKS  ", "HFSA", "HFSV", "H1  ", "H8  ", "FH  ", "HV  ", "IO  ", &
+            "I2  ", "K5   ", "KSAT  ", "KSTC  ", "LC  ", "LAID", "LAIA", "LAIH", &
+            "LAIL", "ALAT", "LATF", "L2  ", "LR  ", "LS  ", "LSV ", "LT  ", &
+            "LV  ", "MLTS", "MLTR", "P8  ", "PSI   ", "D5  ", "PSGL", "PSVH", &
+            "PSVA", "DQ  ", "J9  ", "U1  ", "RCC ", "RSGR", "RSVG", "RGVH", &
+            "RGVL", "NR  ", "RNSA", "RNSV", "D2  ", "RSA ", "RSV ", "R1  ", &
+            "TRUN", "TRAF", "J1  ", "SVF ", "SLOP", "I6  ", "DN  ", "SD  ", &
+            "I5  ", "7S  ", "U3  ", "SNVA", "SVDN", "SVDP", "SVM ", "SNVR", &
+            "RSVH", "RSVL", "TJ  ", "TGR ", "N1  ", "T8  ", "TSA ", "TSN ", &
+            "TSNV", "I0  ", "TG  ", "J8  ", "TVG ", "UD  ", "U8  ", "VD  ", &
+            "2V  ", "VEGH", "VEGL", "VGTR", "V8  ", "WFL ", "I1DM", "I1D ", &
+            "J5  ", "J15  ", "WFCI", "M8  ", "J6  ", "I4  ", "WSNV", "I3  ", &
+            "J7  ", "Z0  ", "Z0HA", "Z0VH", "Z0VL", "ZT  ", "ZH  ", "ZU  ", &
+            "LAI", "z0mloc", "acoef", "pcoef", "c1sat", "c3ref", "cd1ref", "overfl", &
+            "overfl_new", "psn", "teta", "wssoil" ]
+
+        accevap = (1 - 1)*NG + 1
+        alfaq = (2 - 1)*NG + 1
+        alfat = (3 - 1)*NG + 1
+        algr = (4 - 1)*NG + 1
+        alvh = (5 - 1)*NG + 1
+        alvis = (6 - 1)*NG + 1
+        alvl = (11 - 1)*NG + 1
+        bcoef = (12 - 1)*NG + 1
+        bm = (23 - 1)*NG + 1
+        bt = (24 - 1)*NG + 1
+        cgsat = (29 - 1)*NG + 1
+        clay = (30 - 1)*NG + 1
+        co2i1 = (41 - 1)*NG + 1
+        cvh = (50 - 1)*NG + 1
+        cvl = (51 - 1)*NG + 1
+        deciduous = (52 - 1)*NG + 1
+        dlat = (53 - 1)*NG + 1
+        dlon = (54 - 1)*NG + 1
+        drainaf = (55 - 1)*NG + 1
+        draindens = (56 - 1)*NG + 1
+        eflux = (57 - 1)*NG + 1
+        eg = (58 - 1)*NG + 1
+        emisgr = (59 - 1)*NG + 1
+        emisvh = (60 - 1)*NG + 1
+        emisvl = (61 - 1)*NG + 1
+        er = (62 - 1)*NG + 1
+        etr = (63 - 1)*NG + 1
+        evergreen = (64 - 1)*NG + 1
+        fc = (65 - 1)*NG + 1
+        fcor = (70 - 1)*NG + 1
+        fdsi = (71 - 1)*NG + 1
+        fl = (72 - 1)*NG + 1
+        fluslop = (73 - 1)*NG + 1
+        flusolis = (74 - 1)*NG + 1
+        fq = (75 - 1)*NG + 1
+        frootd = (76 - 1)*NG + 1
+        frv = (87 - 1)*NG + 1
+        ftemp = (92 - 1)*NG + 1
+        fv = (97 - 1)*NG + 1
+        fvap = (102 - 1)*NG + 1
+        gamvh = (107 - 1)*NG + 1
+        gamvl = (108 - 1)*NG + 1
+        grkef = (109 - 1)*NG + 1
+        grkeff = (110 - 1)*NG + 1
+        grksat = (121 - 1)*NG + 1
+        hfluxsa = (132 - 1)*NG + 1
+        hfluxsv = (133 - 1)*NG + 1
+        hst = (134 - 1)*NG + 1
+        humoins = (139 - 1)*NG + 1
+        husurf = (140 - 1)*NG + 1
+        hv = (141 - 1)*NG + 1
+        ilmo = (142 - 1)*NG + 1
+        isoil = (147 - 1)*NG + 1
+        khc = (148 - 1)*NG + 1
+        ksat = (159 - 1)*NG + 1
+        ksatc = (170 - 1)*NG + 1
+        laictem = (181 - 1)*NG + 1
+        laideci = (207 - 1)*NG + 1
+        laiva = (208 - 1)*NG + 1
+        laivh = (209 - 1)*NG + 1
+        laivl = (210 - 1)*NG + 1
+        latflaf = (211 - 1)*NG + 1
+        latflw = (212 - 1)*NG + 1
+        leg = (223 - 1)*NG + 1
+        ler = (224 - 1)*NG + 1
+        les = (225 - 1)*NG + 1
+        lesv = (226 - 1)*NG + 1
+        letr = (227 - 1)*NG + 1
+        lev = (228 - 1)*NG + 1
+        melts = (229 - 1)*NG + 1
+        meltsr = (230 - 1)*NG + 1
+        pmoins = (231 - 1)*NG + 1
+        psi = (232 - 1)*NG + 1
+        psisat = (243 - 1)*NG + 1
+        psngrvl = (254 - 1)*NG + 1
+        psnvh = (255 - 1)*NG + 1
+        psnvha = (256 - 1)*NG + 1
+        qdiag = (257 - 1)*NG + 1
+        qsurf = (258 - 1)*NG + 1
+        rainrate = (263 - 1)*NG + 1
+        rcctem = (264 - 1)*NG + 1
+        resagr = (265 - 1)*NG + 1
+        resavg = (266 - 1)*NG + 1
+        rglvh = (267 - 1)*NG + 1
+        rglvl = (268 - 1)*NG + 1
+        rnet_s = (269 - 1)*NG + 1
+        rnetsa = (270 - 1)*NG + 1
+        rnetsv = (271 - 1)*NG + 1
+        rootdp = (272 - 1)*NG + 1
+        rsnowsa = (273 - 1)*NG + 1
+        rsnowsv = (274 - 1)*NG + 1
+        rst = (275 - 1)*NG + 1
+        runofftot = (276 - 1)*NG + 1
+        runofftotaf = (281 - 1)*NG + 1
+        sand = (286 - 1)*NG + 1
+        skyview = (297 - 1)*NG + 1
+        slop = (298 - 1)*NG + 1
+        snoal = (299 - 1)*NG + 1
+        snoden = (300 - 1)*NG + 1
+        snodp = (301 - 1)*NG + 1
+        snoma = (306 - 1)*NG + 1
+        snoro = (307 - 1)*NG + 1
+        snowrate = (308 - 1)*NG + 1
+        snval = (309 - 1)*NG + 1
+        snvden = (310 - 1)*NG + 1
+        snvdp = (311 - 1)*NG + 1
+        snvma = (312 - 1)*NG + 1
+        snvro = (313 - 1)*NG + 1
+        stomrvh = (314 - 1)*NG + 1
+        stomrvl = (315 - 1)*NG + 1
+        tdiag = (316 - 1)*NG + 1
+        tground = (317 - 1)*NG + 1
+        thetaa = (319 - 1)*NG + 1
+        tmoins = (320 - 1)*NG + 1
+        tsa = (321 - 1)*NG + 1
+        tsnow = (322 - 1)*NG + 1
+        tsnowveg = (324 - 1)*NG + 1
+        tsoil = (326 - 1)*NG + 1
+        tsrad = (328 - 1)*NG + 1
+        tsurf = (329 - 1)*NG + 1
+        tvege = (330 - 1)*NG + 1
+        udiag = (332 - 1)*NG + 1
+        umoins = (333 - 1)*NG + 1
+        vdiag = (334 - 1)*NG + 1
+        vegf = (335 - 1)*NG + 1
+        vegh = (361 - 1)*NG + 1
+        vegl = (362 - 1)*NG + 1
+        vegtrans = (363 - 1)*NG + 1
+        vmoins = (364 - 1)*NG + 1
+        watflow = (365 - 1)*NG + 1
+        wdm = (377 - 1)*NG + 1
+        wdsoil = (378 - 1)*NG + 1
+        wfc = (389 - 1)*NG + 1
+        wfcdp = (400 - 1)*NG + 1
+        wfcint = (401 - 1)*NG + 1
+        wflux = (412 - 1)*NG + 1
+        wsat = (413 - 1)*NG + 1
+        wsnow = (424 - 1)*NG + 1
+        wsnv = (425 - 1)*NG + 1
+        wveg = (426 - 1)*NG + 1
+        wwilt = (427 - 1)*NG + 1
+        z0 = (438 - 1)*NG + 1
+        z0ha = (443 - 1)*NG + 1
+        z0mvh = (444 - 1)*NG + 1
+        z0mvl = (445 - 1)*NG + 1
+        z0t = (446 - 1)*NG + 1
+        ztsl = (451 - 1)*NG + 1
+        zusl = (452 - 1)*NG + 1
+        lai = (453 - 1)*NG + 1
+        z0mloc = (454 - 1)*NG + 1
+        acoef = (455 - 1)*NG + 1
+        pcoef = (456 - 1)*NG + 1
+        c1sat = (457 - 1)*NG + 1
+        c3ref = (458 - 1)*NG + 1
+        cd1ref = (459 - 1)*NG + 1
+        overfl = (460 - 1)*NG + 1
+        overfl_new = (461 - 1)*NG + 1
+        psn = (462 - 1)*NG + 1
+        teta = (463 - 1)*NG + 1
+        wssoil = (464 - 1)*NG + 1
+
+    end subroutine
+
+end module

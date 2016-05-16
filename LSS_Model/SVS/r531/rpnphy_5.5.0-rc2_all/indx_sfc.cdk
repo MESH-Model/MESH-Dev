@@ -1,0 +1,12 @@
+!
+      integer     indx_soil   , indx_glacier
+      integer     indx_water  , indx_ice
+      integer     indx_agrege , indx_urb
+!
+      parameter ( indx_soil    =  1 )
+      parameter ( indx_glacier =  2 )
+      parameter ( indx_water   =  3 )
+      parameter ( indx_ice     =  4 )
+      parameter ( indx_urb     =  6 )
+      parameter ( indx_agrege  =  5 )
+!

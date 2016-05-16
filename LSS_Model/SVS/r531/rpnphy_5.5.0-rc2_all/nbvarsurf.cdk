@@ -1,0 +1,5 @@
+      integer maxvarsurf, nvarsurf,nsurf
+      parameter(maxvarsurf=1000)
+      common /nbvarsurf/ nvarsurf,nsurf
+!
+#include "indx_sfc.cdk"

@@ -1,0 +1,969 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+!** S/P EBUDGET_SVS
+!
+#include "phy_macros_f.h"
+      SUBROUTINE EBUDGET_SVS( T, TS, TD, TSA, WD1, WF , &
+                   TGRS,TGRD,TVGS,TVGD, & 
+                   DT, VMOD, & 
+                   RG, ALVG, LAI, GAMVEG, & 
+                   ALGR,EMGR, & 
+                   RAT, THETAA, FCOR, ZUSL, ZTSL, HU, PS, &  
+                   RHOA, Z0, Z0H,  & 
+                   HRSURF, HV, DEL, RS, & 
+                   CG,CVP, EMIS, PSNG, &  
+                   D2,WSAT, & 
+                   RESAGR, RESAVG,  &
+                   RNETSN, HFLUXSN, LESNOFRAC, ESNOFRAC, & 
+                   ALPHAS, &  
+                   TSND,TSNS, & 
+                   RNETSV, HFLUXSV, LESVNOFRAC, ESVNOFRAC,  &
+                   ALPHASV, & 
+                   TSVD,TSVS, & 
+                   VEGH, VEGL, PSNVH,PSNVHA,SKYVIEW, & 
+                   RAINRATE,WR,WSNV, NL,&
+                   ALBT, & 
+                   RNET, HFLUX, LE, LEG, LEV, LES,LESV, & 
+                   LER, LETR, EG, ER, ETR, GFLUX, EFLUX, & 
+                   BM, FQ, CTU, & 
+                   LEFF, DWATERDT, & 
+                   FTEMP, FVAP, ZQS, FRV, & 
+                   ALFAT, ALFAQ, ILMO, HST, TRAD, N)
+!
+      implicit none
+#include <arch_specific.hf>
+!
+!
+      INTEGER N
+      INTEGER NL
+      REAL T(N), TS(N), TSA(N), TD(N), DT, VMOD(N)
+      REAL TGRS(N), TGRD(N), TVGS(N), TVGD(N)
+      REAL TSND(N), TSNS(N)
+      REAL WD1(N), WF(N),  D2, WSAT(N,NL)
+      REAL RG(N), ALVG(N), RAT(N), THETAA(N), FCOR(N)
+      REAL ZUSL(N), ZTSL(N)
+      REAL HU(N), PS(N), RHOA(N), Z0(N), Z0H(N)
+      REAL HV(N), DEL(N), RS(N)
+      REAL CG(N), CVP(N),  PSNG(N), EMIS(N)
+      REAL LAI(N), GAMVEG(N), ALGR(N), EMGR(N)
+      REAL RNET(N), HFLUX(N), LE(N), ALPHAS(N)
+      REAL ALBT(N)
+      REAL LEG(N), LEV(N), LER(N), LETR(N), GFLUX(N)
+      REAL EFLUX(N), BM(N), FQ(N), CTU(N), LES(N)
+      REAL FTEMP(N), FVAP(N), ER(N), ETR(N)
+      REAL LEFF(N), DWATERDT(N), ZQS(N), FRV(N)
+      REAL EG(N), HRSURF(N)
+      REAL RESAGR(N), RESAVG(N)
+      REAL RNETSN(N), HFLUXSN(N), LESNOFRAC(N), ESNOFRAC(N)
+      REAL RNETSV(N), HFLUXSV(N), LESVNOFRAC(N), ESVNOFRAC(N)
+      REAL TSVS(N), TSVD(N),ALPHASV(N)
+      REAL ALFAT(N), ALFAQ(N), LESV(N)
+      REAL VEGH(N), VEGL(N), PSNVH(N), PSNVHA(N)
+      REAL SKYVIEW(N), ILMO(N), HST(N), TRAD(N)
+      REAL WR(N),RAINRATE(N),RR(N),WSNV(N)
+!
+!Author
+!          S. Belair (January 1997)
+!Revisions
+! 001      S. Belair (November 1998)
+!             Use physics package thermodynamic functions
+!
+! 002      S. Belair (December 1998)
+!             Correction to the latent heat coefficients due to
+!             soil water freezing.
+!             Calculation of the FREEZG and MELTG tendencies for
+!             soil water freezing and melting.
+!             Tendencies for the surface temperature TS.
+!
+! 003      S. Belair (January 1999)
+!             Tendencies for melting and freezing of snow
+!
+! 004      B. Bilodeau (December 1999)
+!             real downward radiation as an argument 
+!             different albedos for vegetation and snow as arguments
+!
+! 005      S. Belair (January 2000)
+!             diagnostic equation for the maximum density of snow
+!             effect of incident rain on the snowpack
+!
+! 006      B. Bilodeau (January 2001)
+!             Automatic arrays
+!
+! 007      S. Belair (Fall 2003)
+!             include the effect of soil freeze/thaw
+!
+! 008      B. Bilodeau (April 2007)
+!             add snow melting diagnostics
+!
+! 009      S. Belair (May 2007)
+!             Variable emissivity of the surface (depends on
+!               the land use land cover)
+!             Modifications to snow melting (tsnow and effect
+!               of rain on snow)
+!             Freezing and melting tendencies of soil water
+!             Bug correction in the calculation of the sublimation
+!               of snow
+!
+! 010      M. Abrahamowicz (Jan 2009) - add calculations for 
+!             evolution of surface and deep (1)(bare) ground, (2)vegetation
+!             and (3)snow temperatures
+!             add 6 input variables and 6 output variables
+!             associated with it 
+!
+! 011     M. Abrahamowicz (Jan 2009) - small BUG correction
+!         max() function must get 2 same types as input
+!         i.e. replace 0 by 0.0 whenever used with real
+! 012     M. Abr... (May 2009) - rename ebudget4.ftn as add TSSOIL output variable,
+!         and RESAGR,RESAVG as input variables (from drag3.ftn)
+!         - Remove calculations/variables related to snow temperature ... 
+!         - small detail correction ALBT is OUTPUT variable,
+!           not input i.e. need to leave calculation of it 
+!         - Added calculation of ZQS and FRV (moved from drag3.ftn to here)
+!           (needed to add FLXSURF3 as an external function)
+!         - Added calculation of Latent Heat flux over snow (LS) because the 
+!           snow subroutine does not know the snow fraction in the grid
+!         - Update temperature variables at the end of the subroutine (locally)
+!           i.e. do not output temp. at time t+dt from this subroutine
+!         - (September 2009) Bug fix for vegetation, replaced TVGS by TVGD in
+!           C3 coefficient calculation
+!
+! 013      S. Z. Husain (Feb 2012)
+!          - Modify C3(I) calculattion for TVGST by removing contribution of TSVS     
+!          - BUG FIX: Calculation of TGRDT when including effect of soil freeze/thaw
+!          - Replaced FTEMP and FVAP with their values computed from FLXSURF3.FTN      
+!                
+! 014      M. Abrahamowicz (dec 2012) rename ebudget_svs
+! 015      S.Z.Husain (Apr 2013)
+!          - WF is connected to the third deep soil layer at 40cm  
+! 016      M. Abrahamowicz (August 2013) -- switch to flxsurf4          
+!
+!Object
+!
+!     Calculates the evolution of the surface and deep-soil temperature
+!     (i.e., Ts and T2), as well as all the surface fluxes.
+!
+!
+!!!!  METHOD
+!!    ------
+!
+!     1- find the grid-averaged albedo, emissivity, and roughness length
+!     2- compute the za, zb, and zc terms involved in the numerical
+!        resolution of the equations for Ts and T2.
+!     3- find Ts(t) and T2(t).
+!     4- derive the surface fluxes.!
+!
+!Arguments
+!
+!
+!          - Input/Output -
+! TGRS      (bare) ground temperature -- S for "skin"
+! TGRD      mean ground temperature -- D for "deep"
+! TVGS      vegetation temperature -- S for "skin"
+! TVGD      mean vegetation temperature -- D for "deep"
+! TS        surface  temperature (new) as seen from ground
+!
+!          - Input -
+! VMOD      module of the low-level wind
+! T         surface air temperature
+! WD1       soil water content of the first deep layer 
+! WF        frozen soil water
+! DT        timestep
+! RG        global radiation (downward solar)
+! ALVG      AVERAGED surface albedo associated with vegetation type
+! LAI       AVERAGED vegetation leaf area index
+! GAMVEG    AVERAGED parameter related to the vegetation height
+! ALGR      albedo of bare ground (soil)
+! EMGR      emissivity of bare ground (soil)   
+! RAT       atmospheric radiation incident on the ground (NIR)
+! THETAA    air potential temperature at the lowest level
+! FCOR      Coriolis factor
+! ZTSL      reference height for temperature and humidity input
+! ZUSL      reference height for wind input
+! HU        specific humidity of air at the lowest level
+! PS        surface pressure
+! RHOA      air density near the surface
+! Z0H       agg. roughness length for heat transfer considering snow
+! Z0        momentum roughness length (no snow)
+! HRSURF    relative humidity of the bare ground surface (1st soil layer)
+! HV        Halstead coefficient (relative humidity of veg. canopy)
+! DEL       portion of the leaves covered by water
+! RS        stomatal resistance
+! CG        soil thermal coefficient
+! CVP       AVERAGED vegetation thermal coefficient (with LAI effect)
+! EMIS      AVERAGED surface emissivity when vegetation fully grown
+! PSNG      fraction of bare ground or low veg. covered by snow
+! D2        Firt deep soil layer depth (0.4m)
+! WSAT      volumetric water content at saturation
+! RESAGR    aerodynamical surface resistance for bare ground
+! RESAVG    aerodynamical surface resistance for vegetation
+!
+! RNETSN    net radiation over snow 
+! HFLUXSN   sensible heat flux over snow 
+! ESNOFRAC  water vapor flux from the snow surface
+! LESNOFRAC latent heat flux from the snow surface 
+! ALPHAS    albedo of snow
+! TSND      deep (mean) snow temperature at time t+dt (updated in snow_alone.ftn)
+! TSNS      surface (skin) snow temperature at time t+dt (update in snow_alone.ftn)
+!
+! RNETSV    net radiation over snow-under-vegetation
+! HFLUXSV   sensible heat flux over snow-under-vegetation
+! ESVNOFRAC water vapor flux from the snow-under-vegetation
+! LESVNOFRAC latent heat flux from the snow-under-vegetation 
+! ALPHASV   albedo of snow-under-veg
+! TSVD      deep (mean) snow-under-veg temperature at time t+dt (updated in snow_veg.ftn)
+! TSVS      surface (skin) snow-under-veg temperature at time t+dt (update in snow_alone.ftn)
+!
+! VEGH     fraction of HIGH vegetation
+! VEGL     fraction of LOW vegetation
+! PSNVH    fraction of HIGH vegetation covered by snow
+! PSNVHA   fraction of HIGH vegetation covered by snow as seen from
+!          the ATMOSPHERE 
+! SKYVIEW  Sky view factor for tall/high vegetation
+! RAINRATE Liquid precipitation rate at the surface
+! WR       Water retained by vegetation
+! WSNV     Water in the snow-under-veg pack
+! NL       Number of SOIL LAYERS
+!
+!           - Output -
+! ALBT      total surface albedo (snow + vegetation + bare ground)
+! RNET      net radiation
+! HFLUX     sensible heat flux
+! LE        latent heat flux
+! LEG       latent heat flux over bare ground
+! LEV       latent heat flux over vegetation
+! LES       latent heat flux over snow
+! LESV      latent heat flux over snow-under-veg
+! LER       direct latent heat flux from vegetation leaves
+! LETR      evapotranspiration latent heat flux
+! EG         evaporation rate (no fraction) over bare ground (1st soil layer)
+! ER        direct evaporation rate (no fraction) from veg. leaves
+! ETR       evapotranspiration rate (no faction) 
+!
+! GFLUX     ground flux
+! EFLUX     water vapor flux
+! DWATERDT  net tendency of melting-freezing of soil water
+! TS        surface  temperature (new) as seen from ground
+! TD        mean soil temperature
+! TSA       surface  temperature (new) as seen from space
+! LEFF      effective latent heat
+! FTEMP     turbulent surface flux of temperature
+! FVAP      turbulent surface flux of vapor
+! BM        homogeneous boundary condition term in the
+!           diffusion equation for U and V
+! FQ        surface momentum flux
+! CTU       turbulent transfer coefficient for thermodynamic variables
+! ZQS       area-averaged specific  humidity of a model tile
+! FRV       average friction velocity for model tile
+! ALFAT     inhomogeneous boundary term in the diffusion equation for Theta
+! ALFAQ     inhomogeneous boundary term in the diffusion equation for Q
+! ILMO      (1/length of Monin-Obukov) -- passed to diasurf
+! HST       height of the boundary layer -- passed to diasurf
+! TRAD      averaged radiative temperature
+
+!
+#include "isbapar.cdk"
+#include "options.cdk"
+include "thermoconsts.inc"
+include "dintern.inc"
+include "fintern.inc"
+#include "surfacepar.cdk"
+!
+      INTEGER I
+!
+!
+      REAL EMISSN, EMSOIL, KCOEF, RHOW
+      REAL PRATE, AA, BB, CC, B2M4AC, M
+      REAL BFREEZ, MLTRAIN, RAIN1, RAIN2
+      REAL ABARK
+!
+      REAL PETIT
+      DATA PETIT/1.E-7/
+!
+!
+      EXTERNAL FLXSURF4
+!
+!
+!
+!
+!***********************************************************************
+!     AUTOMATIC ARRAYS
+!     MULTIBUDGET VARIABLES 
+!     GR:ground, SN:snow, VG:vegetation, AG: aggregated 
+!!**********************************************************************
+!
+      AUTOMATIC ( A2        , REAL , (N) )
+      AUTOMATIC ( B2        , REAL , (N) )
+      AUTOMATIC ( C2        , REAL , (N) )
+!
+      AUTOMATIC ( A3        , REAL , (N) )
+      AUTOMATIC ( B3        , REAL , (N) )
+      AUTOMATIC ( C3        , REAL , (N) )
+!
+      AUTOMATIC ( ZHV       , REAL , (N) )
+      AUTOMATIC ( FREEZFRAC , REAL , (N) )
+
+!
+      AUTOMATIC ( EMVG      , REAL , (N) )
+!
+      AUTOMATIC ( ALVGLAI   , REAL , (N) )
+!
+      AUTOMATIC ( ZQSATGR   , REAL , (N) )
+      AUTOMATIC ( ZDQSATGR  , REAL , (N) )
+      AUTOMATIC ( ZQSATVG   , REAL , (N) )
+      AUTOMATIC ( ZDQSATVG  , REAL , (N) )
+      AUTOMATIC ( ZQSATGRT  , REAL , (N) )
+      AUTOMATIC ( ZQSATVGT  , REAL , (N) )
+!
+      AUTOMATIC ( RNETGR    , REAL , (N) )
+      AUTOMATIC ( RNETVG    , REAL , (N) )
+!
+      AUTOMATIC ( HFLUXGR   , REAL , (N) )
+      AUTOMATIC ( HFLUXVG   , REAL , (N) )
+!
+      AUTOMATIC ( RORAGR    , REAL , (N) )
+      AUTOMATIC ( RORAVG    , REAL , (N) )
+!
+      AUTOMATIC ( TNMT0     , REAL , (N) )
+      AUTOMATIC ( FREEZG    , REAL , (N) )
+      AUTOMATIC ( MELTG     , REAL , (N) )
+!
+      AUTOMATIC ( ZQSATSNO  , REAL , (N) )
+
+!        
+      AUTOMATIC ( CMU       , REAL , (N) )      
+      AUTOMATIC ( SORTI2    , REAL , (N) )  
+      AUTOMATIC ( SORTI7    , REAL , (N) ) 
+      AUTOMATIC ( SORTI8    , REAL , (N) ) 
+      AUTOMATIC ( SORTI9    , REAL , (N) ) 
+      AUTOMATIC ( SORTI10   , REAL , (N) )
+      AUTOMATIC ( CD        , REAL , (N) )
+! 
+      AUTOMATIC ( TGRST     , REAL , (N) ) 
+      AUTOMATIC ( TGRDT     , REAL , (N) )
+      AUTOMATIC ( TVGST     , REAL , (N) )
+      AUTOMATIC ( TVGDT     , REAL , (N) )
+!
+      AUTOMATIC ( ESF       , REAL , (N) )
+      AUTOMATIC ( ESVF      , REAL , (N) )
+      AUTOMATIC ( EVF       , REAL , (N) )
+      AUTOMATIC ( EGF       , REAL , (N) )
+      AUTOMATIC ( ETRF      , REAL , (N) )
+      AUTOMATIC ( ERF       , REAL , (N) )
+      AUTOMATIC ( EV        , REAL , (N) )
+!
+      AUTOMATIC ( ZQSATSNV  , REAL , (N) )
+      AUTOMATIC ( LEVNOFRAC , REAL , (N) )
+      AUTOMATIC ( LEGNOFRAC , REAL , (N) )
+!
+      AUTOMATIC ( TVEGLOW   , REAL , (N) )
+!
+      AUTOMATIC ( FRACH     , REAL , (N) )
+!
+      AUTOMATIC ( TSN4     , REAL , (N) )
+      AUTOMATIC ( TSNVG4   , REAL , (N) )
+      AUTOMATIC ( TVG4     , REAL , (N) )
+      AUTOMATIC ( TGR4     , REAL , (N) )
+!
+!         
+!
+!
+!
+!
+!************************************************************************
+
+ DO I=1,N
+!
+!                   Rainrate (in mm/s).
+!
+        RR(I) = 1000. * RAINRATE(I)
+!
+      END DO
+!************************************************************************
+!
+!
+!
+!                                THE FOLLOWING SHOULD BE PUT IN 
+!                                A COMMON COMDECK
+!
+      EMISSN = 0.97
+      EMSOIL = 0.94
+      RHOW   = 1000.  
+      KCOEF  = 1.E-6
+      BFREEZ = 4.
+!                                Albedo of Bark (S. Wang, Ecological Modelling, 2005)
+      ABARK  = 0.15
+!
+!
+      RAIN1  = 2.8e-8
+      RAIN2  = 2.8e-7
+! 
+!
+!
+!!       1.     GRID-AVERAGED ALBEDO, EMISSIVITY, AND ROUGHNESS LENGTH
+!       ------------------------------------------------------
+!                          (considering snow surfaces)
+!
+      DO I=1,N
+!
+!
+!                               Calculate grid-averaged albedo 
+!
+!                               Using PSNVHA
+!        
+        ALBT(I) = AG(VEGH(I),VEGL(I),PSNVHA(I),PSNG(I),ALGR(I),&  
+                     ALVG(I),ALPHAS(I),ALPHASV(I))
+
+! 
+!                               Recalculate vegetation-only albedo to take LAI
+!                               effect into account, can only consider it 
+!                               if have high Vegetation (i.e. Gamveg greater
+!                               or equal to 0.01). In the high vegetation case,
+!                               weight albedo of leaves vs. bark according to LAI
+!
+            IF(GAMVEG(I).GE.0.01)THEN 
+               ALVGLAI(I) = MIN( LAI(I)      , LAI0 )   * ALVG(I) / LAI0 &  
+                          + MAX( LAI0-LAI(I) , 0.0    ) * ABARK  / LAI0
+            ELSE
+               ALVGLAI(I) = ALVG(I)
+            ENDIF
+!
+!
+!                            
+!                               Calculate vegetation-only emissivity,
+!                               the only bark emissivity i could find
+!                               was for eucalyptus trees which is not
+!                               very helpful as the bark is usually very
+!                               bright
+        EMVG(I)  = EMIS(I) 
+!
+      END DO
+!        2.     LATENT HEAT COEFFICIENTS - CORRECTION DUE TO FREEZING
+!               AND MELTING OF SOIL WATER
+!               -----------------------------------------------------
+!
+!                               Using the fraction of frozen water
+!                               in the soil, calculate the "effective"
+!                               latent heat of evaporation/sublimation
+!
+        DO I=1,N
+           FREEZFRAC(I) = WF(I) / (WD1(I)+WF(I)+PETIT)
+           LEFF(I)      = FREEZFRAC(I)      * (CHLC+CHLF)  &
+                         + (1.-FREEZFRAC(I)) *  CHLC
+        END DO
+!
+!
+!
+!
+!
+!!       3A.     COEFFICIENTS FOR THE TIME INTEGRATION OF  TGRS
+!                     (i.e. BARE SOIL/GROUND SKIN TEMPERATURE)
+!               --------------------------------------------
+!
+!                            Thermodynamic functions
+!
+!
+       DO I=1,N
+          ZQSATGR(I)  = FOQST( TGRS(I),PS(I) )
+          ZDQSATGR(I) = FODQS( ZQSATGR(I),TGRS(I) )
+       END DO
+!
+!
+!                              function zrsra
+!
+       DO I=1,N
+          RORAGR(I) = RHOA(I) / RESAGR(I)
+       END DO
+!
+!                          
+!
+!                                        terms za, zb, and zc for the
+!                                              calculation of tgrs(t)
+!
+       DO I=1,N
+
+          A2(I) = 1. / DT + CG(I) * & 
+                 (4. * EMGR(I) * STEFAN * (TGRS(I)**3) &   
+                 +  RORAGR(I) * ZDQSATGR(I) * LEFF(I)* HRSURF(I) &  
+                 +  RORAGR(I) * CPD) &  
+                 + 2. * PI / 86400.
+
+          B2(I) = 1. / DT + CG(I) *  &  
+                 (3. * EMGR(I) * STEFAN * (TGRS(I)**3) &   
+                 + RORAGR(I) * ZDQSATGR(I) * LEFF(I) * HRSURF(I) )
+
+
+          C2(I) = 2. * PI * TGRD(I) / 86400. &   
+                 + CG(I) *  & 
+                 (RORAGR(I) * CPD * THETAA(I) &   
+                 + RG(I) * (1. - ALGR(I)) + EMGR(I)*RAT(I)  &  
+                 - RORAGR(I) *  & 
+                 LEFF(I)* (HRSURF(I)*ZQSATGR(I)-HU(I)))
+       END DO
+!
+!
+!
+       DO I=1,N
+          TGRST(I) = ( TGRS(I)*B2(I) + C2(I) ) / A2(I) 
+       ENDDO
+!
+!!       3B.     COEFFICIENTS FOR THE TIME INTEGRATION OF  TVGS
+!                     (i.e. VEGETATION SKIN TEMPERATURE)
+!               --------------------------------------------
+!
+!                            Thermodynamic functions
+!
+       DO I=1,N
+         ZQSATVG(I)  = FOQST( TVGS(I),PS(I) )
+         ZDQSATVG(I) = FODQS( ZQSATVG(I),TVGS(I) )
+       END DO
+!
+!                              function zrsra
+!
+       DO I=1,N
+         RORAVG(I) = RHOA(I) / RESAVG(I)
+!
+!                              Fraction of high vegetation to total vegetation
+!          
+
+         IF((VEGH(I)+VEGL(I)*(1.-PSNG(I))).gt.PETIT) then
+            FRACH(I) =  (VEGH(I)*PSNVH(I))/(VEGH(I)+VEGL(I)*(1-PSNG(I)))
+         ELSE
+            FRACH(I) = 0.0
+         ENDIF
+!
+         FRACH(I) =  MIN(FRACH(I) , 1.0)
+       END DO
+!
+!                          
+!
+!                                        terms za, zb, and zc for the
+!                                              calculation of tvgs(t)
+!
+      DO I=1,N
+!
+        A3(I) = 1. / DT + CVP(I) *  & 
+                (4. * EMVG(I) * STEFAN * (TVGS(I)**3)  &  
+                +  RORAVG(I) * ZDQSATVG(I) * CHLC * HV(I) &  
+                +  RORAVG(I) * CPD )  & 
+                + 2. * PI / 86400.
+!
+        B3(I) = 1. / DT + CVP(I) *   &
+                (3. * EMVG(I) * STEFAN * (TVGS(I)** 3)  &   
+                + RORAVG(I) * ZDQSATVG(I) * CHLC* HV(I) )
+           
+!
+        C3(I) = 2. * PI * TVGD(I) / 86400. &   
+                + CVP(I) *  & 
+                ( RORAVG(I) * CPD * THETAA(I)  &  
+                + RG(I) * (1. - ALVGLAI(I)) + EMVG(I)*RAT(I)  & 
+                + FRACH(I) * (1. - SKYVIEW(I))* EMISSN * STEFAN * (TSVS(I)**4)  &    
+                - RORAVG(I)  & 
+                * CHLC * HV(I) * (ZQSATVG(I)-HU(I)) )
+!
+      END DO
+
+
+!
+      DO I=1,N
+
+!                   Note that as an added precaution,
+!                   we set the vegetation temperature to
+!                   that of the ground, when no vegetation is present
+!
+         IF(A3(I).gt.PETIT) then
+             TVEGLOW(I) = ( TVGS(I)*B3(I) + C3(I) ) / A3(I)
+
+
+         ENDIF
+
+
+
+
+
+      ENDDO
+!
+      DO I=1,N
+
+!                   Note that as an added precaution,
+!                   we set the vegetation temperature to
+!                   that of the ground, when no vegetation is present
+!
+         IF(VEGH(I)+VEGL(I)*(1.-PSNG(I)).gt.PETIT) then
+            TVGST(I) = TVEGLOW(I)
+         ELSE  
+            TVGST(I) = TGRST(I)
+         ENDIF
+
+
+      ENDDO
+
+!
+!
+!
+!!$!        4.     FREEZING AND MELTING TENDENCIES FOR SOIL WATER
+!!$!               ----------------------------------------------
+!!$!
+!!$      DO I=1,N
+!!$       TNMT0(I) = TS(I)  - TRPL
+!!$      END DO
+!!$!
+!!$!
+!!$!
+!!$!                             Calculate the freezing and melting
+!!$!                             tendencies
+!!$!
+!!$      DO I=1,N
+!!$!
+!!$        IF (TNMT0(I).GE.PETIT) THEN
+!!$          FREEZG(I) = 0.
+!!$          MELTG(I)  = KCOEF * TNMT0(I)
+!!$        ELSE
+!!$          FREEZG(I) = - KCOEF * TNMT0(I) * (WD1(I)/WSAT(I,1))**BFREEZ
+!!$          MELTG(I)  = 0.
+!!$        END IF
+!!$!
+!!$        DWATERDT(I) = 0.      !(FREEZG(I)-MELTG(I))*DT        
+!!$!
+!!$      END DO
+!!$!
+!!$!
+!!$!
+!!$!
+!!$!                             Make sure we do not remove more liquid
+!!$!                             or solid water than there is in the soil
+!!$!
+!!$      DO I=1,N
+!!$        IF (DWATERDT(I).GT.0.) THEN
+!!$              DWATERDT(I) = 0.0 !  MIN( WD1(I), DWATERDT(I) )
+!!$        ELSE
+!!$              DWATERDT(I) = 0.0 !  MAX( -WF(I), DWATERDT(I) )
+!!$        END IF
+!!$      END DO
+!
+!
+!!       5.A     TGRD AT TIME 'T+DT'
+!               -----------------
+!
+      DO I=1,N
+        TGRDT(I) = (TGRD(I) + DT*TGRST(I)/86400.) /   &  
+                      (1.+DT/86400.)
+!
+!
+!
+!                            Include the effect of soil freeze/thaw
+! note dwaterdt already multiplied by DT above, so have DT^2 ...below
+!chekc if this is ok
+! ** DO NOT INCLUDE THE EFFECT OF DWATERDT BECAUSE SET TO ZERO ABOVE !
+!
+
+        TGRDT(I) = TGRDT(I) 
+
+      END DO
+!
+!!       5.B     TVGD AT TIME 'T+DT'
+!               -----------------
+!
+      DO I=1,N
+!                   Note that as an added precaution,
+!                   we set the vegetation temperature to
+!                   that of the ground, when no vegetation is present
+!
+         IF(VEGH(I)+VEGL(I)*(1.-PSNG(I)).gt.PETIT)THEN
+            TVGDT(I) = (TVGD(I) + DT*TVGST(I)/86400.) / (1.+DT/86400.)
+         ELSE
+            TVGDT(I) = TGRDT(I)
+         ENDIF
+            
+      END DO
+!
+!        6.     CALCULATE NEW SOIL SURFACE TEMPERATURE (TS) BASED ON MULTIBUDGET TEMPERATURES
+!               ----------------------------------------------
+!
+      DO I=1,N
+!
+!
+
+        TS(I) = (1. - VEGH(I) - VEGL(I) ) * (1. - PSNG(I) )             * TGRST(I) & 
+                      + (VEGH(I) * (1. - PSNVH(I)) + VEGL(I) * (1. - PSNG(I)))* TVGDT(I)&  
+                      + (1. - VEGH(I)) * PSNG(I)                              * TSND(I)&  
+                      + VEGH(I) * PSNVH(I)                                    * TSVD(I)
+!
+!
+        TD(I) = (TD(I) + DT*TS(I)/86400.) /  (1.+DT/86400.)
+!
+     
+      END DO
+
+!
+!
+!
+!!       7.     FLUX CALCULATIONS
+!               -----------------
+!
+!
+
+      DO I=1,N
+!                                            recalculate the qsat functions
+!
+        ZQSATGRT(I)  = FOQST(  TGRST(I)  ,  PS(I)   )
+        ZQSATVGT(I) =  FOQST(  TVGST(I)  ,  PS(I)   )
+!
+      ENDDO
+!                     
+!
+!
+      DO I=1,N
+!
+!                                            NET RADIATION 
+!                                            ---------------
+!
+!                                            Net radiation over bare ground
+!
+        RNETGR(I) = (1. - ALGR(I)) * RG(I) + EMGR(I) *&  
+                 (RAT(I) - STEFAN * (TGRST(I)** 4))
+!
+!                                            Net radiation over vegetation
+!
+        RNETVG(I) = (1. - ALVGLAI(I)) * RG(I) + EMVG(I) *&  
+                 (RAT(I) - STEFAN * (TVGST(I)** 4))
+!
+!                                            AGGREGATED net radiation (including snow)
+!                                    
+        RNET(I) = AG(VEGH(I),VEGL(I),PSNVHA(I),PSNG(I),RNETGR(I),&  
+                  RNETVG(I),RNETSN(I),RNETSV(I))
+
+!        
+!
+!                                            SENSIBLE HEAT FLUX 
+!                                            ---------------
+!
+!
+!                                            Sensible heat flux from the ground
+!
+        HFLUXGR(I) = RHOA(I) * CPD * (TGRST(I) - THETAA(I)) / RESAGR(I)
+!
+!                                            Sensible heat flux from the vegetation
+!
+        HFLUXVG(I) = RHOA(I) * CPD * (TVGST(I) - THETAA(I)) / RESAVG(I)
+!
+!                                             AGGREGATED sensible heat flux (including snow)
+        HFLUX(I)   = AG(VEGH(I),VEGL(I),PSNVHA(I),PSNG(I),HFLUXGR(I),&  
+                   HFLUXVG(I),HFLUXSN(I),HFLUXSV(I))
+!
+!
+!
+!                                             AGGREGATED turbulent surface flux of temperature
+!
+!        FTEMP(I) = HFLUX(I) / ( RHOA(I) * CPD )
+!
+!
+!
+!                                            LATENT HEAT FLUXES 
+!                                            ---------------
+!
+!
+!                                            Latent heat of evaporation from
+!                                            the ground
+!
+        LEGNOFRAC(I) = RHOA(I) * LEFF(I) * (HRSURF(I)* ZQSATGRT(I) - HU(I)) / RESAGR(I)
+        LEG(I) = (1.-VEGH(I)-VEGL(I))*(1.-PSNG(I)) * LEGNOFRAC(I)          
+!
+!
+!                                            Water vapor flux from ground
+        EGF(I) = (1.-VEGH(I)-VEGL(I))*(1.-PSNG(I))  &
+                     * (HRSURF(I)* ZQSATGRT(I) - HU(I)) / RESAGR(I)
+!
+!                                            Evaporation rate from ground (for hydro_svs.ftn)
+!
+        EG(I) = RHOA(I)*(HRSURF(I)* ZQSATGRT(I) - HU(I)) / RESAGR(I)
+
+!
+! 
+!                                            Latent heat of evaporation from
+!                                            vegetation
+!
+        LEVNOFRAC(I) = RHOA(I) * CHLC * HV(I) * (ZQSATVGT(I) - HU(I)) / RESAVG(I)
+
+
+
+!
+
+!                                            Latent heat of Transpiration
+!
+!
+        ZHV(I) = MAX(0.0 , SIGN(1.,ZQSATVG(I) - HU(I)))
+        LETR(I) = ZHV(I) * (1. - DEL(I)) * RHOA(I)  &
+                      * CHLC * (VEGH(I) * (1. - PSNVHA(I)) + VEGL(I) * (1. - PSNG(I))) & 
+                      * (ZQSATVGT(I)  - HU(I)) / (RESAVG(I) + RS(I))
+!
+!                                           Transpiration rate (for hydro_svs.ftn)
+!
+        ETR(I) = RHOA(I)*ZHV(I)*(1. - DEL(I))*(ZQSATVGT(I) - HU(I))/(RESAVG(I) + RS(I))
+
+
+!                                            Evapotranspiration rate from vege. (for hydro_svs.ftn)
+
+        EV(I) =  RHOA(I)*HV(I) * (ZQSATVGT(I) - HU(I)) / RESAVG(I)
+!
+!                                            Latent heat of evapotranspiration from
+!                                            vegetation
+!
+        LEVNOFRAC(I) = RHOA(I) * CHLC * HV(I) * (ZQSATVGT(I) - HU(I)) / RESAVG(I)
+
+!  EV is limited to WR/DT+RR+ETR to avoid negative WR in hydro_svs when direct evaporation exceeds rainrate
+!  When snow is present, rain falls through vegetation to snow bank... so is not considered in evaporation... This is to conserve water budget.
+
+        IF (WSNV(I).GE.CRITSNOW)THEN
+            EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
+        ELSE
+            EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)))
+        ENDIF
+!                                            Water vapor flux from vegetation
+        EVF(I) =  (VEGH(I) * (1. - PSNVHA(I)) + VEGL(I) * (1. - PSNG(I))) * EV(I)/RHOA(I)
+!                                            Latent heat of evaporation from vegetation
+        LEV(I) = RHOA(I) * CHLC*EVF(I)
+!
+!
+!                                            Direct evapo. rate from veg.(for hydro_svs.ftn)
+!
+        ER(I) = EV(I) - ETR(I)
+!
+!                                            Latent heat of direct evaporation
+!
+        LER(I)  = LEV(I) - LETR(I)
+!
+!                                            Calculate latent heat snow weighted
+!                                            by grid-cell snow-coverage fraction
+!       
+        LES(I)  = (1. - VEGH(I)) * PSNG(I) *  LESNOFRAC(I)
+        ESF(I)  = (1. - VEGH(I)) * PSNG(I) *  ESNOFRAC(I)
+!
+!                                            Same for snow-under-vegetation
+!
+        LESV(I) =  VEGH(I) * PSNVHA(I)  *  LESVNOFRAC(I)
+        ESVF(I)  =  VEGH(I) * PSNVHA(I) *  ESVNOFRAC(I)
+!
+!                                            Total latent heat of evaporation
+!                                            (Including snow contribution)
+!
+        LE(I) = LEG(I) + LEV(I) + LES(I) + LESV(I)
+!
+!                                            Total water vapor flux
+!                                            (Including snow contribution)
+        EFLUX(I) = EGF(I) + EVF(I) + ESF(I) + ESVF(I)
+!        FVAP(I)  = EFLUX(I)
+!
+!                                            Heat flux into the ground
+!
+        GFLUX(I) = RNET(I) - HFLUX(I) - LE(I)
+!
+      ENDDO
+!
+!
+!
+!
+!*       8.     NEW GRID-AVERAGED QUANTITIES  (FRV, ZQS, BM, FQ)
+!               -----------------------------------------------  
+!
+!
+!
+      DO I=1,N
+!                                             Re-calculate snow saturation humidity
+!                                             instead of passing it from snow_alone.ftn
+!                                             (N.B. snow always saturated 
+!                                             i.e., specific=saturation humidity)
+!
+        ZQSATSNO(I)=FOQST( TSNS(I), PS(I) )
+        ZQSATSNV(I)=FOQST( TSVS(I), PS(I) )
+!
+!                                             Calculate grid-averaged specific humidity
+!
+        ZQS(I) = (1.-VEGH(I)-VEGL(I))*(1.-PSNG(I)) * HRSURF(I)           * ZQSATGR(I) & 
+                   + (1.-VEGH(I))*PSNG(I)                                      * ZQSATSNO(I)&  
+                   +  VEGH(I)*PSNVHA(I)                                        * ZQSATSNV(I)&  
+                   + (VEGH(I)*(1.-PSNVHA(I))+VEGL(I)*(1.-PSNG(I))) *    HV(I)  * ZQSATVG(I) & 
+                   + (VEGH(I)*(1.-PSNVHA(I))+VEGL(I)*(1.-PSNG(I))) *(1.-HV(I)) * HU(I)
+!
+!                                             Calculate grid-averaged surface temperature
+!                                             i.e., aggregate skin temperatures of diff.
+!                                             surfaces 
+!
+        TSA(I) = AG(VEGH(I),VEGL(I),PSNVHA(I),PSNG(I),TGRST(I),TVGST(I),TSNS(I),TSVS(I))
+
+!            Calculated averaged radiative Temperature
+
+        TSN4    = TSNS(I)**4
+        TSNVG4  = TSVS(I)**4
+        TVG4    = TVGST(I)**4
+        TGR4    = TGRST(I)**4
+    
+
+        TRAD(I)= AG(VEGH(I),VEGL(I),PSNVHA(I),PSNG(I),TGR4(I),TVG4(I),TSN4(I),TSNVG4(I))
+        
+        TRAD(I)=TRAD(I)**(1./4.)
+
+
+      ENDDO
+!
+!
+!                                             Calculate surface layer transfer coefficients
+!                                             and fluxes using ZQS and TSA. 
+!                                             Here want FRV (average friction velocity for 
+!                                             grid-cell, used in diasurf2.ftn), CMU and 
+!                                             CTU(Turbulent transfer coeff. for thermodynamics) 
+!
+!
+      CALL FLXSURF4(CMU, CTU, SORTI2, FTEMP, FVAP, ILMO,&  
+                          FRV, FCOR, THETAA , HU , ZUSL, ZTSL, VMOD,&  
+                          TSA , ZQS , HST , Z0 , Z0H,  &
+                          SORTI7, SORTI8, SORTI9, SORTI10, N, 0 )
+!
+!
+      DO I=1,N
+!
+!
+        CMU(I) = CMU(I)/ FRV(I)
+
+          
+!                                   Calculate surface transfer coefficients for  
+!                                             momentum (CD)
+        CD(I) = CMU(I) * CMU(I)
+!                    
+ !                        Calculate (grid) average homogeneous diffusion
+!                                             boundary condition term 
+        BM(I)      =  VMOD(I)*CD(I)
+!
+!                                             Calculate (grid) average surface momentum flux 
+        FQ(I)      =  RHOA(I)*CD(I)*VMOD(I)*VMOD(I)
+
+!
+!                                             Calculate inhomogeneous boundary conditions
+!                                             (Feedback on vertical diffusion)
+        ALFAT(I)   =  -FTEMP(I)
+        ALFAQ(I)   =  -FVAP(I)
+!
+        IF (IMPFLX) THEN
+          ALFAT(I)   =   ALFAT(I) - CTU(I)* THETAA(I)
+          ALFAQ(I)   =   ALFAQ(I) - CTU(I)* HU(I)
+        ENDIF
+!
+      ENDDO
+!
+!
+!
+
+!
+!*       9.     UPDATE TEMPERATURE VARIABLES
+!              -----------------------------
+!
+      DO I=1,N
+        TGRS(I)   = TGRST(I)
+        TGRD(I)   = TGRDT(I)
+        TVGS(I)   = TVGST(I)
+        TVGD(I)   = TVGDT(I)
+      ENDDO
+!
+!
+      RETURN
+      CONTAINS
+#include "aggregate_fluxes.cdk90"
+      END

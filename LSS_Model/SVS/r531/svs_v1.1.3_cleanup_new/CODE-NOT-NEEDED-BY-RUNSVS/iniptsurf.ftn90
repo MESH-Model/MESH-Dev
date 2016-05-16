@@ -1,0 +1,457 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+      subroutine iniptsurf(ni,nk,prout)
+!
+      implicit none
+#include <arch_specific.hf>
+!
+      integer ni, nk
+      logical prout
+!
+!Author
+!          B. Bilodeau (Sept 1999)
+!
+!Revisions
+! 001      B. Bilodeau (Nov 2000) - New comdeck sfcbus.cdk
+! 002      B. Bilodeau (Feb 2004) - Revised logic to facilitate the
+!                                   addition of new types of surface
+! 004      A. Lemonsu  (Jun 2005) - Add variables for urban module
+! 005      B. Dugas    (Aug 2005) - Initialize sfcbus character variables
+!                                   in Block DATA SFCBUS_DATA
+! 006      B. Bilodeau (Jun 2005) - Add mosaic capability for CLASS
+! 007      M. Desgagne (Apr 2009) - Add coupling values (TMICECPL, MCCPL)
+! 008      V.Lee (Mar 2011)       - mosaik=real number of mosaic tiles + 1
+!                                   to calculate pointer position
+! 009      M. Abrahamowicz (Sept. 2012) - Add more urban var.
+!
+!
+!Object
+!          Initialization of common blocks used in the surface package
+!
+!Arguments
+!
+!          - Input -
+! NI       horizontal dimension
+! NK       vertical dimension
+! PROUT    switch for printing some informative message
+!
+!
+!Notes
+!
+!IMPLICITES
+!
+!
+!MODULES
+      EXTERNAL sfcbus_data
+!
+!**
+!
+#include "options.cdk"
+!
+#define DCLCHAR
+#include "phy_macros_f.h"
+#include "sfcbus.cdk"
+!
+#include "nbvarsurf.cdk"
+      character*16 nom
+      integer     pointeurs(0:1)
+      character*16 nomsurf  (0:1)
+      equivalence (sfcbus_i_first(0),pointeurs(0))
+      equivalence (sfcbus_c_first(0),nomsurf  (0))
+!
+#include "dimsurf.cdk"
+#include "buses.cdk"
+!
+      integer i, j, l, m
+      integer nb_agrege, nb_glaciers, nb_water, nb_ice, nb_urb
+!
+      parameter (nb_agrege=25)
+      character*16 agrege_out(nb_agrege)
+!
+!     les variables de sortie du module "soils" ont preseance
+!     sur celles de tous les autres schemas, sauf exceptions
+!     contenues dans les listes plus bas
+!
+!     liste des variables de surface a agreger
+      data agrege_out   / &
+!
+!      ces variables sont moyennees lineairement
+       'ALFAQ'    , 'ALFAT'    , 'ALVIS'    , 'BM'       , 'BT'       , &
+       'FC'       , 'FCCPL'    , 'FRV'      , 'FTEMP'    , 'FV'       , &
+       'FVAP'     , 'FVCPL'    , 'HST'      , 'ILMO'     , &
+       'QDIAG'    , 'QSURF'    , 'SNODP'    , 'TDIAG'    , 'TSURF'    , &
+       'UDIAG'    , 'VDIAG'    , 'RUNOFFTOT', &
+!
+!      le flux infrarouge emis par la surface, qui est
+!      proportionnel a TSRAD**4, est moyenne lineairement
+       'TSRAD'    , &
+!
+!      on prend la moyennne logarithmique des longueurs de rugosite
+       'Z0'       , 'Z0T' &
+!
+                        /
+!
+!
+!     liste des variables de sortie du module "glaciers"
+      parameter (nb_glaciers=1)
+      character*16 glaciers_out(nb_glaciers)
+      data glaciers_out / &
+!
+       'TGLACIER' &
+                        /
+!
+!
+!     liste des variables de sortie du module "water"
+      parameter (nb_water=1)
+      character*16 water_out(nb_water)
+      data water_out    / &
+!
+       'TWATER' &
+                        /
+!
+!
+!     liste des variables de sortie du module "ice"
+      parameter (nb_ice=4)
+      character*16 ice_out(nb_ice)
+      data ice_out      / &
+!
+       'ICEDP'    , 'TMICE', 'TMICECPL', 'MCCPL' &
+!
+                        /
+!
+!
+!     liste des variables de sortie du module "urb"
+      parameter (nb_urb=68)
+      character*16 urb_out(nb_urb)
+      data urb_out      / &
+!
+       'T_CANYON' , 'Q_CANYON' , 'U_CANYON' , 'TI_BLD'   , 'T_ROOF'   , &
+       'T_ROAD'   , 'T_WALL'   , 'RN_TOWN'  , 'H_TOWN'   , 'LE_TOWN'  , &
+       'G_TOWN'   , 'RN_ROOF'  , 'H_ROOF'   , 'LE_ROOF'  , 'G_ROOF'   , &
+       'RN_ROAD'  , 'H_ROAD'   , 'LE_ROAD'  , 'G_ROAD'   , 'RN_WALL'  , &
+       'H_WALL'   , 'LE_WALL'  , 'G_WALL'   , 'TI_ROAD'  , 'WS_ROOF'  , &
+       'WS_ROAD'  , 'QDIAG_CAN', 'UDIAG_CAN', 'VDIAG_CAN', 'TDIAG_CAN', &
+     'SROOF_WSNOW', 'SROOF_T'  , 'SROOF_RHO', 'SROOF_ALB', 'SROOF_EMIS',&
+       'SROOF_TS' ,'SROAD_WSNOW','SROAD_T'  , 'SROAD_RHO', 'SROAD_ALB', &
+      'SROAD_EMIS', 'SROAD_TS' , 'Z0_TOWN'  , 'Z0_ROOF'  , 'Z0_ROAD'  , &
+      'BLD_HEIGHT','WALL_O_HOR','CAN_HW_RATIO','ALB_ROOF', 'ALB_ROAD' , &
+       'ALB_WALL' , 'EMIS_ROOF', 'EMIS_ROAD', 'EMIS_WALL', 'HC_ROOF'  , &
+        'HC_ROAD' , 'HC_WALL'  , 'TC_ROOF'  , 'TC_ROAD'  , 'TC_WALL'  , &
+        'D_ROAD'  , 'D_ROOF'   , 'D_WALL'   , 'H_TRAFFIC', 'H_INDUSTRY',&
+      'LE_TRAFFIC','LE_INDUSTRY', 'EMIS_TOWN' & 
+                             /
+!
+!
+      nvarsurf = COMPHY_SIZE(sfcbus)
+!
+!     verification de la dimension du common
+      if (nvarsurf.gt.maxvarsurf) then
+         write(6,1060) nvarsurf
+         call qqexit(1)
+      endif
+!
+!     conversion des noms de minuscule a majuscule, si necessaire
+      do j=1,nvarsurf
+         call low2up(nomsurf(j),nom)
+         nomsurf(j) = nom
+      end do
+!
+!     initialisations
+      do j=1,nvarsurf
+         agg      (j) = 0
+         quel_bus (j) = 0
+         pointeurs(j) = 0
+         ptdebut  (j) = 0
+      end do
+!
+      do m=1,mulmax
+         do j=1,nvarsurf
+            statut(j,m) = 0
+         end do
+      end do
+!
+!     multiple 2D fields and mosaic tiles are stored in
+!     slices of NI where the order is as follows:
+!     Example is for Mult=3, mosaic = 3
+!     1 (multiple 1)
+!     2 (multiple 2)
+!     3 (multiple 3)
+!     1.01 (aggregate of tile 1 for multiple 1
+!     2.01 (aggregate of tile 1 for multiple 2
+!     3.01 (aggregate of tile 1 for multiple 3
+!     1.02 (aggregate of tile 2 for multiple 1
+!     2.02 (aggregate of tile 2 for multiple 2
+!     3.02 (aggregate of tile 2 for multiple 3
+!     1.03 (aggregate of tile 2 for multiple 1
+!     2.03 (aggregate of tile 2 for multiple 2
+!     3.03 (aggregate of tile 2 for multiple 3
+!
+!     exploration du bus dynamique
+!
+      do i=1,dyntop
+         do j=1,nvarsurf
+            if (nomsurf(j).eq.dynnm(i,1)) then
+               quel_bus (j) = 1
+               ptdebut  (j) = dynpar(i,1)
+               mul      (j) = dynpar(i,6)
+               niveaux  (j) = dynpar(i,7)
+               mosaik   (j) = dynpar(i,8)+1
+               if (mul(j).gt.mulmax) then
+                  write(6,1000) nomsurf(j)
+                  call qqexit(1)
+               endif
+            endif
+         end do
+      end do
+!
+!     exploration du bus permanent
+!
+      do i=1,pertop
+         do j=1,nvarsurf
+            if (nomsurf(j).eq.pernm(i,1)) then
+               quel_bus (j) = 2
+               ptdebut  (j) = perpar(i,1)
+               mul      (j) = perpar(i,6)
+               niveaux  (j) = perpar(i,7)
+               mosaik   (j) = perpar(i,8)+1
+               if (mul(j).gt.mulmax) then
+                  write(6,1000) nomsurf(j)
+                  call qqexit(1)
+               endif
+               if      (nomsurf(j).eq.'TSRAD')  then
+                  tsrad_i = j
+               else if (nomsurf(j).eq.'Z0'   )  then
+                  z0_i    = j
+               else if (nomsurf(j).eq.'Z0T'   ) then
+                  z0t_i   = j
+               endif
+            endif
+         end do
+      end do
+!
+!     exploration du bus volatil
+!
+      do i=1,voltop
+         do j=1,nvarsurf
+            if (nomsurf(j).eq.volnm(i,1)) then
+               quel_bus(j) = 3
+               ptdebut (j) = volpar(i,1)
+               mul     (j) = volpar(i,6)
+               niveaux (j) = volpar(i,7)
+               mosaik  (j) = volpar(i,8)+1
+               if (mul(j).gt.mulmax) then
+                  write(6,1000) nomsurf(j)
+                  call qqexit(1)
+               endif
+            endif
+         end do
+      end do
+!
+!
+      surfesptot = 0
+!
+      do j=1,nvarsurf
+!
+         pointeurs(j) = j
+!
+         surfesptot = surfesptot + mul(j)*mosaik(j)*niveaux(j)
+!
+!
+!        initialisation de la variable "statut",
+!        pour le controle des variables qui seront
+!        soit agregees (moyennees), soit sorties
+!        directement d'un bus des bus de surface
+!        correspondant a chacun des 5 types de surface :
+!        statut = 1 --> bus de "sol"      vers bus permanent ou volatil
+!               = 2 --> bus de "glaciers"  "    "      "      "     "
+!               = 3 --> bus de "water"     "    "      "      "     "
+!               = 4 --> bus de "ice"       "    "      "      "     "
+!               = 5 --> moyenne des 5      "    "      "      "     "
+!               = 6 --> bus de "urb"       "    "      "      "     "
+!        voir comdeck "indx_sfc.cdk"
+!
+!        variables agregees
+         do l=1,nb_agrege
+!
+            if (agrege_out(l).eq.nomsurf(j)) then
+!
+!              cas no 1 : variables agregees de dimension 1
+               if (mul(j).eq.1) then
+!
+                  agg   (j  )  = 1
+                  statut(j,1)  = indx_agrege
+!
+!              cas no 2 : variables agregees pour lesquelles on conserve
+!              non seulement la moyenne mais aussi les valeurs associees
+!              a chaque type de surface
+               else if (mul(j).eq.(nsurf+1)) then
+!
+                  agg   (j)              = indx_agrege
+                  statut(j,indx_agrege)  = indx_agrege
+                  statut(j,indx_soil  )  = indx_soil
+                  statut(j,indx_glacier) = indx_glacier
+                  statut(j,indx_water  ) = indx_water
+                  statut(j,indx_ice    ) = indx_ice
+                  if (schmurb.ne.'NIL') then
+                     statut(j,indx_urb    ) = indx_urb
+                  endif
+!
+               else if (mul(j).gt.1.and.mul(j).ne.(nsurf+1)) then
+!
+                  write(6,1010) nomsurf(j)
+                  call qqexit(1)
+!
+               endif
+!
+            endif
+!
+         end do
+!
+!        variables de sortie du module "glaciers"
+         do l=1,nb_glaciers
+            if (glaciers_out(l).eq.nomsurf(j)) then
+!
+!              Tous les "niveaux" de la variable sont
+!              assignes au module glaciers
+               do m=1,mul(j)
+                     statut(j,m           )  = indx_glacier
+               end do
+!
+            endif
+100      end do
+!
+!        variables de sortie du module "water"
+         do l=1,nb_water
+            if (water_out(l).eq.nomsurf(j)) then
+!
+!              Tous les "niveaux" de la variable sont
+!              assignes au module water
+               do m=1,mul(j)
+                     statut(j,m           )  = indx_water
+               end do
+!
+            endif
+200      end do
+!
+!        variables de sortie du module "ice"
+         do l=1,nb_ice
+            if (ice_out(l).eq.nomsurf(j)) then
+!
+!              Tous les "niveaux" de la variable sont
+!              assignes au module ice
+               do m=1,mul(j)
+                     statut(j,m           )  = indx_ice
+               end do
+!
+            endif
+300      end do
+!
+!
+         if (schmurb.ne.'NIL') then
+!
+!           variables de sortie du module "urb"
+            do l=1,nb_urb
+               if (urb_out(l).eq.nomsurf(j)) then
+!
+!                 Tous les "niveaux" de la variable sont
+!                 assignes au module urb
+                  do m=1,mul(j)
+                        statut(j,m           )  = indx_urb
+                  end do
+!
+               endif
+400         end do
+         endif
+!
+!
+!        les autres variables seront transferees du module "soils"
+         do m=1,mul(j)
+            if (statut(j,m).eq.0) statut(j,m) = indx_soil
+         end do
+!
+      end do
+!
+      if (prout) then
+!
+      print *,' '
+      write(6,1020)
+      write(6,1030) 'SOIL            ', indx_soil
+      write(6,1030) 'GLACIERS        ', indx_glacier
+      write(6,1030) 'WATER           ', indx_water
+      write(6,1030) 'MARINE ICE      ', indx_ice
+      if (schmurb.ne.'NIL') then
+      write(6,1030) 'URBAN AREAS     ', indx_urb
+      endif
+      if (agregat) then
+      write(6,1030) 'AGGREGATED VALUE', indx_agrege
+      else
+      write(6,1030) 'COMPOSITE  VALUE', indx_agrege
+      write(6,1040) '--> NO AGGREGATION IS PERFORMED <--'
+      endif
+      write(6,1050)
+
+      endif
+!
+
+1000  format ( ' *****************************************', &
+             / ' *****************************************', &
+             / ' *                                       *', &
+             / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+             / ' *                                       *', &
+             / ' *  S/R INIPTSURF: MULMAX EXCEEDED FOR   *', &
+             / ' *  VARIABLE = ', A16, '         *', &
+             / ' *                                       *', &
+             / ' *****************************************', &
+             / ' *****************************************')
+!
+!
+1010  format ( ' *****************************************', &
+             / ' *****************************************', &
+             / ' *                                       *', &
+             / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+             / ' *                                       *', &
+             / ' *  S/R INIPTSURF: MULTIPLICITY FACTOR   *', &
+             / ' *  EXCEEDED FOR VARIABLE = ', A16, '*', &
+             / ' *                                       *', &
+             / ' *****************************************', &
+             / ' *****************************************')
+
+1020   FORMAT (2(1x,60('*')/),1x,'*',58(' '),'*'/ &
+               1x,'*',('   TYPES OF SURFACE :'),37(' '),'*'/ &
+               ' *',3(' '),"----------------",39(' '),'*'/ &
+               1x,'*',58(' '),'*')
+
+1030   FORMAT (1x,'*',20(' '),A20,4(' '),I2,12(' '),'*'/ &
+               1x,'*',58(' '),'*')
+1040   FORMAT (1x,'*',10(' '),A36,4(' '),8(' '),'*'/ &
+               1x,'*',58(' '),'*')
+1050   FORMAT (2(1x,60('*')/)/)
+!
+1060  format ( ' *****************************************', &
+             / ' *****************************************', &
+             / ' *                                       *', &
+             / ' ***** ABORT ***** ABORT ***** ABORT *****', &
+             / ' *                                       *', &
+             / ' *            S/R INIPTSURF:             *', &
+             / ' *       MAXVARSURF IS TOO SMALL.        *', &
+             / ' *      MINIMUM VALUE : ',I6,'           *', &
+             / ' *       SEE COMDECK NBVARSURF.          *', &
+             / ' *                                       *', &
+             / ' *****************************************', &
+             / ' *****************************************')
+!
+      return
+      end

@@ -1,0 +1,91 @@
+This file explains how to setup a standalone-svs (sasvs) experiment
+with svs-type input files (geophysical file, interpolation file, met file, ini file).
+
+First of all, download the SASVS code from the SVN repository:
+svn co svn://mrbsvn/mesh/sps/branches/standalone-svs ${EXP_DIR}
+where {EXP_DIR} is a directory of your choice, at the location of your choice. 
+
+They are three pre-requisite for building a sasvs experiment with svs-type input files with the procedure described here:
+
+#1- you need to have already run a SPS experiment, because the SASVS forcings will be read from SPS output files.
+
+	It may be possible to read the forcing variables directly from SPS forcing files (which would avoid having to run SPS)
+with only slight adjustments to the script "SVS_forcings.sh" (i.e. by adjusting the variables
+attributes such as  names, levels, conversion factors...).
+
+	However it still may be better to take SASVS forcings from
+SPS outputs with having run SPS over the same domain and resolution that you wish to use in SASVS:
+this way, the interpolation of the forcings over your domain will be performed by SPS itself, and not during the .fst 
+to .r2c conversion. 
+ 
+#2- you need to have created the .fst geophysical file for SVS over a domain including your domain of interest
+	To do so, please refer to the wiki: "https://wiki.cmc.ec.gc.ca/wiki/Hydrology/SPS_geophys"
+Note that the coordinates you specify for the lower-left pixel, in the script "runGenPhysX_wat.ksh", correspond to the center of the pixel
+	Moreover, the scripts made to convert a SVS .fst geophysical file into a r2c file assumes that there
+are at least 7 soil layers in this file.
+	To do so, create the geophys. .fst file with the BNU soil database following 
+the instructions of the wiki, and then put the script "add_soil.py" into the directory containing the .fst files 
+just produced and run it; "add_soil.py" is in {EXP_DIR}/data/fst_conversion
+	
+#3- you need to run a SPS experiment for at least one day over the exact same domain that you wish to use in sasvs;
+this is because the script "OGR_Interp_SLOP.tcl" (see #6 below) needed to compute the pixel weights must have a .fst grid 
+for the exact same domain you'll use in sasvs; to work on the same domain, remember that the coordinates you specify in "gem_settings.nml"
+and "sps.cfg" for the lower-left pixel correspond to the center of the pixel. ALso note that the lower-left pixel of the STASVS domain must not include a part of your watershed under study; this is because odd results are obtained for the lower left pixel in stand-alone SVS (yet unknown reason)
+When finished, copy an output .fst file to "{EXP_DIR}/data/fst_conversion/SPS_output_grid.fst"
+
+Then, you need to convert the forcing and geophysical .fst files to .r2c (.txt) format.
+ 
+	#Conversion of the .fst geophysical file: 
+#4-  copy "GenPhysXout.fst" from the directory where you created it (with the wiki instructions and "add_soil.py")
+into "{EXP_DIR}/data/fst_conversion/Gem_geophy.fst"
+	adjust the coordinates, resolution, and X and Y number of points in "{EXP_DIR}/data/fst_conversion/header.r2c"
+using the info in the "gem_settings.nml" file which is in the same directory where you created the .fst geophys. file
+   WARNING: however the coordinates you specify in the header for the lower-left pixel must be somewhere in the lower-left part of the lower-left pixel,
+   in opposition to coordinates of the "gem_settings.nml" file of the SPS experiment, which correspond to the center of the pixel.
+   otherwise you may have bad surprises in the values of the final .r2c file
+	go into "{EXP_DIR}/data/fst_conversion/" and run "Geophy_conv.sh"
+	the .r2c output file is in "{EXP_DIR}/data/fst_converted/geophy/"
+	copy the "{EXP_DIR}/data/fst_converted/geophy/Gem_geophy.r2c" into "{EXP_DIR}/data/${catchment_name}.geo"
+
+#5-	go into "{EXP_DIR}/data/fst_conversion/", adjust and run "SVS_forcings.sh" (see documentation inside the script).
+	this can take some time to run (about two hours) depending on the length of your time period
+	when finished, adjust and run "merge_forcing_files.sh" (see inside script).
+	copy the "output_file.met" into "{EXP_DIR}/data/${catchment_name}.met"    
+
+#6-	create the interpolation file (which contains the weights of each pixel of your domain in order to compute
+	watershed averages, for example to estimate the catchment daily outflow).
+	put the shape (.shp) file of your watershed (along with accompanying files if any, such as .sbx, .prj, .dbf, .sbn ...)
+	into "{EXP_DIR}/data/fst_conversion/4interp/shape/shed.shp" or similar if any accompanying files exist, 
+	for example "{EXP_DIR}/data/fst_conversion/4interp/shape/shed.dbf", etc.
+	run "{EXP_DIR}/data/fst_conversion/OGR_Interp_SLOP.tcl"
+	go into "{EXP_DIR}/data/fst_conversion/4interp/" and open "Output_Idx.txt"
+	modify it to add to it the total number of points contained in the file, as well as the watershed area.
+	see a template .intrp file in: "{EXP_DIR}/data/fst_conversion/4interp/INTRP_TEMPLATE.intrp"
+	copy "{EXP_DIR}/data/fst_conversion/4interp/Output_Idx.txt" (when modified) into "{EXP_DIR}/data/${catchment_name}.intrp"
+
+#7-	adjust  "{EXP_DIR}/data/runsvs.02HL001.nml" and move it into: "{EXP_DIR}/runsvs.nml"
+	you have to adjust the timestep dt(s) (600s recommended), total number of time-steps (nt),
+	first date (dateo), first hour (houro), names of svs input files (${catchment_name}.ini, .geo, etc.), and 
+	number of points in the domain in the X and Y directions.		
+
+#8-	copy "{EXP_DIR}/data/02HL001.ini" into "{EXP_DIR}/data/${catchment_name}.ini" and adjust it
+	(at least for the lower-left pixel coordinates, see inside of file). 
+
+Note: In stand-alone svs, model states (temperature, snow density, soil water content etc.) are initialized 
+withfixed values for the whole domain. As a consequence, be sure to use a long (one-year) spin-up period 
+before assessing model outputs.
+	
+ 
+#9-     before compiling and executing SASVS, adjust the Unit Hydrograph delay factor (in hours) in "{EXP_DIR}/src/runsvs_svs_inputs.ftn90"
+        this corresponds to the catchment lag time in hours. Methods based on catchment area, perimeter and main river mean slope do exist, such as the EPSEY method.
+	also adjust the FLZ and PWR parameters of the LZS (Lower zone storage);
+	default values are FLZ = 1.0E-5 and PWR=2.8 for lake Ontario watershed
+	and then, compile and run SASVS following the instructions in the "README" .txt file and the "Makefile" file itself.
+ 
+
+# Notes:
+        - Stand-alone SVS will filter out the water-type land cover and dispatch its occupied area among the other classes;
+           
+        - when finished, you may use the scripts "Create_SASVS_outputs_bal.py" and "sasvs_strf_perfs.py" to compute watershed averages of main SVS variables,
+          and to draw Hydrographs and compute scores.  
+

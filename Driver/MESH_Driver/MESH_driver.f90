@@ -349,6 +349,7 @@ program RUNMESH
     end if !(ipid == 0) then
 
     call run_within_tile_init(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    call run_within_grid_init(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
     NML = shd%lc%NML
 
@@ -1131,6 +1132,8 @@ program RUNMESH
             RUNSTATE = 1
             cycle
         end if
+
+        call run_within_grid(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.

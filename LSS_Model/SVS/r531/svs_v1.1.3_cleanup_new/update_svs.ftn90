@@ -1,0 +1,64 @@
+!copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
+!!! S/P UPDATE_SVS
+!
+      SUBROUTINE UPDATE_SVS( WDT, WFT, WRT, D, NL, &
+           WD, WF, WR, WDM, N )
+
+
+      implicit none
+#include <arch_specific.hf>
+!
+!
+      INTEGER N, NL
+      REAL WDT(N,NL)
+      REAL WFT(N), WRT(N), D(NL)
+
+      REAL WD(N,NL)
+      REAL WF(N), WR(N), WDM(N)
+!
+!Author
+!          S. Belair,M.Abrahamowicz,S.Z.Husain (2015)
+!Revisions
+! 001      Name (date) - Comment
+!
+!Object
+!          Update the prognostic variables
+!
+!Arguments
+!
+!           - Input -
+! WDT(NL)    soil volumetric water content in soil layer (NL layers) at time +
+! WFT        frozen soil water at time +   
+! WRT        water content retained by the vegetation canopy at time +
+! D(NL)      Depth of soil layer (NL soil layers) in METERS
+! NL         Number of SOIL LAYERS
+!
+!          - Output -
+! WD         updated prognostic variables at current time
+! WF       
+! WR  
+! WDM        Mean soil moisture for the soil layers (NL soil layers)
+
+      INTEGER I,K
+!
+!
+!
+      DO I=1,N
+         DO K=1,NL         
+            WD(I,K) = MAX ( WDT(I,K) , 0.001 )
+         ENDDO   
+         WF(I)      = WFT(I)
+         WR(I)      = WRT(I) 
+!     
+!           Calculate mean soil moisture 
+!           Soil moisture weighted by depth of each layer...        
+         WDM(I) = WD(I,1) * D(1)
+         DO K=2,NL
+            WDM(I) = WDM(I) + WD(I,K) * ( D(K) - D(K-1) )
+         ENDDO
+         WDM(I) = WDM(I) / D(NL)
+      END DO
+!
+!
+      RETURN
+      END

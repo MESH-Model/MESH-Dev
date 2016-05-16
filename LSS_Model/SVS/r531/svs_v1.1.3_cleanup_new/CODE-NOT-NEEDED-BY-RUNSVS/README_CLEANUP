@@ -1,0 +1,56 @@
+START CLEANUP ON HADAR --- COMPILES BUT ABORTS ON LINUX + INTEL
+
+-- GOAL IS TO CLEANUP -- NOT TO REPRODUCE RESULTS FOR NOW...
+START FROM:
+svn  checkout svn://mrbsvn/mesh/sps/branches/svs_hydo_photsyn_ready/
+REVISION 340
+
+--------------------------------------------------------------------------
+STEP 1
+MAKE SURE SUBROUTINES CONSISTENT WITH OFFICIAL PHYSICS !!!
+
+1) check_options.ftn90
+--remove ICEMELT=.TRUE. ---> change configs 
+
+---------------------------------------------------------------------------
+STEP2
+CLEANUP SUBROUTINES 
+
+---------  SUBROUTINES that don't change for now -------------
+aggregate_fluxes.cdk90
+aggveghigh.ftn90
+aggveglow.ftn90
+coherence.ftn90
+
+---------  SUBROUTINES with modifications in alphabet. ord.---
+
+1) drag_svs.ftn90
+
+I/0 variables 
+wd1 -- definition 
+wd2 -- to be removed ...
+--remove comment and vegh vegl that are not needed in the calc. of wrmax...
+
+2) ebudget_svs.ftn90
+
+need to decide on FVAP, FTEMP and VEGETATION WATER VAPOR and EVAPORATION
+
+
+
+-------- PASS LEVELS OF *DEEP* SOIL AUTOMATICALLY AND PASS ARRAYS  ------
+-------- REMOVE "SUPERFICIAL SOIL LAYERS" VN=WSSOIL ON=I1S
+
+AFFECTED SUBROUTINES:
+1) hydro_svs.ftn90
+2) update_svs.ftn90
+3) svs.ftn90
+4) soili_svs.ftn90
+5) inisoili_svs.ftn90, phybusinit.ftn90,phybus.cdk,sfcbus.cdk
+6) vegi_svs.ftn90
+
+------ cleanup photosynthesis code ---- 
+
+* bug fix ... for input resavg being "corrupted"...
+
+
+

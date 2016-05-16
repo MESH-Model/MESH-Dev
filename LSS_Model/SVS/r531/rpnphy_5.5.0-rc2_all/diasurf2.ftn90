@@ -1,0 +1,174 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** S/P  DIASURF2
+!
+#include "phy_macros_f.h"
+subroutine diasurf2(uz,vz,tz,qz,ni,u,v,tg,qg,z0,z0t,ilmo,za, &
+     h,ue,ftemp,fvap,zu,zt,lat)
+  implicit none
+#include <arch_specific.hf>
+  integer ni
+  real zt(ni),zu(ni)
+  real uz(ni),vz(ni),tz(ni),qz(ni),za(ni),u(ni),v(ni)
+  real tg(ni),qg(ni),ue(ni),ftemp(ni),fvap(ni)
+  real lat(ni),ilmo(ni),z0t(ni),z0(ni),h(ni)
+  !
+  !Author
+  !          Yves Delage  (Aug1990)
+  !
+  !Revision
+  ! 001      G. Pellerin(JUN94)
+  !          Adaptation to new surface formulation
+  ! 002      B. Bilodeau (Nov 95) - Replace VK by KARMAN
+  ! 003      R. Sarrazin (Jan 96) - Prevent problems if zu < za
+  ! 004      G. Pellerin (Feb 96) - Rewrite stable formulation
+  ! 005      Y. Delage and B. Bilodeau (Jul 97) - Cleanup
+  ! 006      Y. Delage (Feb 98) - Addition of HMIN
+  ! 007      G. Pellerin (Mai 03) - Conversion IBM
+  !               - calls to vslog routine (from massvp4 library)
+  ! 008      Y. Delage (Oct 03) - Change UE2 by UE and rename subroutine
+  !             - Introduce log-linear profile for near-neutral cases
+  !             - Put stability functions into local functions via stabfunc.cdk
+  ! 009      R. McTaggart-Cowan and B. Bilodeau (May 2006)
+  !             - Clean up stabfunc.cdk
+  ! 010      A. Zadra (Apr 11) - clean up, simplify and add comments
+  ! 011      A. Zadra (Sep 11) - convert to fortran 90
+  !
+  !Object
+  !          to calculate the diagnostic values of U, V, T, Q
+  !          near the surface (ZU and ZT)
+  !
+  !Arguments
+  !
+  !          - Output -
+  ! uz       U component of the wind at z=zu
+  ! vz       V component of the wind at z=zu
+  ! tz       temperature in kelvins at z=zt
+  ! qz       specific humidity at z=zt
+  !
+  !          - Input -
+  ! ni       number of points to process
+  ! u        U component of wind at z=za
+  ! v        V component of wind at z=za
+  ! tg       temperature at the surface (z=0) in Kelvins
+  ! qg       specific humidity
+  ! ps       surface pressure at the surface
+  ! ilmo     inverse of Monin-Obukhov lenth
+  ! h        height of boundary layer
+  ! ue       friction velocity
+  ! z0       roughness lenth for winds
+  ! z0t      roughness lenth for temperature and moisture
+  ! ftemp    temperature flux at surface
+  ! fvap     vapor flux at surface
+  ! za       heights of first model level above ground
+  ! zu       heights for computation of wind components
+  ! zt       heights for computation of temperature and moisture
+  ! lat      latitude
+  !
+  !
+#include "surfcon.cdk"
+  include "thermoconsts.inc"
+  !
+  !
+  !
+  integer j
+  real fh,fm,x0,x1,y0,y1,h1,h2,h3,hh
+  real ct,ctu,cm,vits
+  real angi,dang,ang,hi
+  real, external :: sf_heat,sf_momentum
+  !
+  REAL lzz0t  (ni) 
+  REAL lzz0   (ni) 
+  !
+  !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !     STEP 1: Initialize neutral stability functions (lzz0 and lzz0t)
+  !
+  do j=1,ni
+     lzz0 (j) = 1+zu(j)/z0(j)
+     lzz0t(j) = 1+zt(j)/z0t(j)
+  enddo
+  call vslog(lzz0t,lzz0t,ni)
+  call vslog(lzz0 ,lzz0 ,ni)
+  !
+  !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !     STEP 2: Compute diagnostic fields, given the fluxes (ftemp,fvap,ue):
+  !
+  !     (a) for tz and qz, this is done by reversing the flux equations
+  !       ftemp = -ctu*((tz + g*zt/cp) - tg) ==> tz = tg - ftemp/ctu - g*zt/cp
+  !       fvap  = -ctu*( qz            - qg) ==> qz = qg - fvap /ctu
+  !
+  !     (b) for vits, this is done reversing the friction velocity equation 
+  !       ue = cm*vits ==> vits = ue/cm
+  !
+  do j=1,ni
+     !
+     !---- integrated stability functions and transfer coefficients
+     !     for the diagnostic layers
+     if ( ilmo(j).gt.0.) then
+        h1    = (za(j)+10.*z0(j))*factn
+        h2    = h(j)
+        h3    = factn/(4*as*beta*ilmo(j))
+        hh    = MAX(hmin,h1,h2,h3)
+     else
+        hh    = h(j)
+     endif
+     !
+     fm    =        lzz0 (j) &
+          + sf_momentum(zu(j)+z0 (j),ilmo(j),hh,x1) &
+          - sf_momentum(      z0 (j),ilmo(j),hh,x0)
+     fh    = beta*( lzz0t(j) &
+          + sf_heat(zt(j)+z0t(j),ilmo(j),hh,y1) &
+          - sf_heat(      z0t(j),ilmo(j),hh,y0))
+     ct    = karman/fh
+     cm    = karman/fm
+     !
+     !---- diagnostic temperature tz and specific humidity qz
+     !
+     ctu   = ct*ue(j)
+     tz(j) = tg(j) - ftemp(j)/ctu - grav/cpd*zt(j)
+     qz(j) = qg(j) - fvap (j)/ctu
+     !
+     !---- diagnostic wind speed
+     !
+     vits  = ue(j)/cm
+     !
+     !---- diagnostic wind components
+     !     Note: We assume that the wind direction changes in the 
+     !           stable layer only, according to the formula
+     !             (ang2-ang1)/ang_max = - (z2-z1)/h * sin(lat)
+     !
+     !     (1) angle at input level za (angi)
+     angi = ATAN2( v(j), SIGN( ABS(u(j)) + 1.e-05, u(j)) )
+     !
+     !     (2) angle difference between levels zu and za (dang)
+     if (ilmo(j).gt.0.) then
+        hi = 1./MAX(hmin,hh)
+     else
+        hi = 0.
+     endif
+     dang = (za(j)-zu(j)) * hi * angmax * SIN(lat(j))
+     !
+     !     (3) angle at diagnostic level zu
+     ang = angi + dang
+     !
+     !     (4) wind components at diagnostic level zu
+     uz(j) = vits*COS(ang)
+     vz(j) = vits*SIN(ang)
+     !
+  enddo
+  !
+  return
+end subroutine diasurf2

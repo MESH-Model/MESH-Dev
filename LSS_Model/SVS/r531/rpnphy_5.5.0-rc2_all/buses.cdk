@@ -1,0 +1,36 @@
+      integer, parameter :: maxbus=1000
+      integer, parameter :: BUSNM_VN=1
+      integer, parameter :: BUSNM_ON=2
+      integer, parameter :: BUSNM_IN=3
+
+      integer, parameter :: BUSPAR_I0=1
+      integer, parameter :: BUSPAR_NIK=2
+      integer, parameter :: BUSPAR_INIT=3
+      integer, parameter :: BUSPAR_STAG=4
+      integer, parameter :: BUSPAR_ESP=5
+      integer, parameter :: BUSPAR_FMUL=6
+      integer, parameter :: BUSPAR_NK=7
+      integer, parameter :: BUSPAR_MOSAIC=8
+!
+      character(len=16) entnm(maxbus,3),dynnm(maxbus,3)
+      character(len=16) pernm(maxbus,3),volnm(maxbus,3)
+      common   /busesc/ entnm, dynnm, pernm, volnm
+!
+      character(len=60) entdc(maxbus),dyndc(maxbus)
+      character(len=60) perdc(maxbus),voldc(maxbus)
+      common   /busesc/ entdc, dyndc, perdc, voldc
+!
+      logical buslck
+      common /busesl/ buslck
+!
+      integer entpar(maxbus,8),dynpar(maxbus,8)
+      integer perpar(maxbus,8),volpar(maxbus,8)
+      common /busesi/ entpar,dynpar,perpar,volpar
+!
+      integer         enttop,dyntop,pertop,voltop
+      common /busesi/ enttop,dyntop,pertop,voltop
+!
+      integer         entspc,dynspc,perspc,volspc
+      common /busesi/ entspc,dynspc,perspc,volspc
+!
+!
