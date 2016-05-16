@@ -40,11 +40,34 @@ all: ${OBJECTS}
 # ======================================================================
 # Rules for MPI
 # ======================================================================
-
 # Enable the next two lines if using a regular compiler. Comment the 
 # next two lines if using the MPI compiler.
 module_mpi.o : module_mpi_stub.f90
 	$(FC) $(LFLAG) $< -o module_mpi.o
+
+# ======================================================================
+# Rules for SVS
+# ======================================================================
+
+# Flag for defines
+#DFLAG=-DRUNSVS -DNGRIDCELLS=$(NG)
+DFLAG=-DRUNSVS
+
+# Rules
+%.o: %.ftn90
+	gcc -x f95 -cpp $(LFLAG) -ffree-form -ffree-line-length-none -fcray-pointer -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) $<
+
+runsvs_mod.o: runsvs_mod_sa_mesh.ftn90
+	gcc -x f95 -cpp $(LFLAG) -ffree-form -ffree-line-length-none -fcray-pointer -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) -o runsvs_mod.o $<
+
+process_SVS_variables.o: process_SVS_variables.f90
+	$(FC) -cpp $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
+
+process_SVS_config.o: process_SVS_config.f90
+	$(FC) -cpp $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
+
+process_SVS_module.o: process_SVS_module.f90
+	$(FC) -cpp $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
 
 # ======================================================================
 # General rules

@@ -21,6 +21,13 @@
 # To build from the current directory:
 DIR_REPO=.
 
+# Paths for SVS
+PHY=$(DIR_REPO)/LSS_Model/SVS/r531/rpnphy_5.5.0-rc2_all
+CHANGES2PHY=$(DIR_REPO)/LSS_Model/SVS/r531/changes_to_rpnphy
+RMNLIB=$(DIR_REPO)/LSS_Model/SVS/r531/rmnlib_013
+SVS=$(DIR_REPO)/LSS_Model/SVS/r531/svs_v1.1.3_cleanup_mesh
+RUNSVS=$(DIR_REPO)/LSS_Model/SVS/r531/src
+
 # ======================================================================
 # Include the following directories in the source file searching path
 # ======================================================================
@@ -29,7 +36,8 @@ VPATH=	$(DIR_REPO)/Modules: \
 		$(DIR_REPO)/LSS_Model/CLASS: \
 		$(DIR_REPO)/Routing_Model/WatRoute_old: \
 		$(DIR_REPO)/Blowing_Snow: \
-		$(DIR_REPO)/Tile_Connector/Basic:
+		$(DIR_REPO)/Tile_Connector/Basic: \
+		$(PHY): $(CHANGES2PHY): $(SVS): $(RMNLIB): $(RUNSVS): $(RUNSVS)/strings: 
 
 # ======================================================================
 # Object files needed to build SA_MESH
@@ -41,6 +49,7 @@ OBJECTS=	module_mpi_flags.o module_mpi_shared_variables.o module_mpi.o \
 			EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o mesh_input_module.o \
 			precmod.o stringmod.o \
 			module_files_variabletypes.o module_files_variables.o \
+			process_SVS_variables.o \
 			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
 			climate_forcing_module_config.o \
 			process_CLASS_constants.o process_CLASS_variables.o process_CLASS_save_output.o \
@@ -71,16 +80,37 @@ OBJECTS+=	GATHER.o read_initial_inputs.o \
 			SCATTER.o WRITE_R2C_HEADER.o write_r2c.o WRITE_R2C_DATA.o
  
 #CLASS
-OBJECTS+=	process_CLASS_config.o APREP.o CANADD.o CANALB.o CLASSBG.o CANVAP.o check_parameters.o \
+OBJECTS+=	Julian_Day_ID.o check_parameters.o 
+OBJECTS+=	process_CLASS_config.o APREP.o CANADD.o CANALB.o CLASSBG.o CANVAP.o \
 			CGROW.o CHKWAT.o CLASSA.o  CLASSB.o CLASSBD.o \
 			CLASSD.o CLASSG.o CLASSI.o CLASSS.o CLASST.o CLASSW.o \
 			CLASSZ.o CWCALC.o DIASURFZ.o DRCOEF.o FLXSURFZ.o FROZEN.o \
-			GATPREP.o GRALB.o GRDRAN.o GRINFL.o ICEBAL.o Julian_Day_ID.o \
+			GATPREP.o GRALB.o GRDRAN.o GRINFL.o ICEBAL.o \
 			SLDIAG.o SNINFL.o SNINFLM.o SNOADD.o SNOALBA.o SNOALBW.o SNOVAP.o \
 			SUBCAN.o TFREEZ.o TMCALC.o TMELT.o TNPOST.o TNPREP.o TPREP.o \
 			TSOLVC.o TSOLVE.o TSPOST.o TSPREP.o TWCALC.o WATDRN.o WATROF.o \
 			WEND.o WFILL.o WFLOW.o WPREP.o XIT.o \
 			SCREENRH.o PDMROF.o process_CLASS_module.o
+
+# SVS
+OBJECTS+=	datec.o moduledate.o 
+#OBJECTS+=	precmod.o stringmod.o 
+OBJECTS+=	runsvs_mod_sa_mesh.o runsvs_utils.o \
+			runsvs_io_mesh.o runsvs_init_mesh.o
+#			runsvs_class_mesh_inputs.o 
+OBJECTS+=	inicover_svs.o inisoili_svs.o 
+OBJECTS+=	svs.o soili_svs.o \
+			aggveghigh.o aggveglow.o \
+			veglowhigh.o vegi_svs.o drag_svs.o \
+			snow_alone.o snow_veg.o ebudget_svs.o \
+			hydro_svs.o phtsyn_svs.o update_svs.o 
+#OBJECTS+=	WATDRN.o 
+OBJECTS+=	RUNSVSDRN.o 
+OBJECTS+=	phy_debu_data.o 
+OBJECTS+=   vscos.o vssin.o vslog.o 
+OBJECTS+=	aggcovernat.o juliand.o suncos1.o prelim1.o interpveg.o flxsurf.o \
+			compz0.o sf_heat.o sf_momentum.o sf_pblheight.o diasurf2.o phyopt_initdata.o 
+OBJECTS+=	process_SVS_config.o process_SVS_module.o 
 
 #WATDRN3
 OBJECTS+=	WATDRN3.o WATDRN3B.o
