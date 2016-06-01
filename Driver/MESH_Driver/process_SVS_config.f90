@@ -25,7 +25,7 @@ module SVS_module_config
         use runsvs_utils
 !        use runsvs_io
 
-        use process_CLASS_variables, only: cp, DEGLAT, DEGLON
+        use process_CLASS_variables
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -46,7 +46,7 @@ module SVS_module_config
 !        integer datecmc_o
 !        integer datecmc_v, date_v, hour_v, date_f, hour_f, istat, kount, bidon
 !        real(kind = 8) kdt
-        integer NA, NTYPE, j, i
+        integer k, j
         real sumfcanz0
 
         integer, external :: newdate
@@ -74,7 +74,7 @@ module SVS_module_config
 !        ycount = 7
 
 !        call svs_bus_init(xcount*ycount)
-        call svs_bus_init(shd%NA)
+        call svs_bus_init(shd%lc%NML)
         bussiz = runsvs_busdim
         allocate(bus(bussiz))
         bus = 0.0
@@ -90,22 +90,20 @@ module SVS_module_config
 !        call read_ini_file(bus, bussiz)
 
         !> Parse CLASS variables to bus.
-        NTYPE = 1
-        NA = 1
-        do i = 0, NG - 1
+        do k = 0, NG - 1
 
             !> Basic configuration.
 
             !> Convert lat, lon to radian.
-            bus(dlat + i) = DEGLAT*PI/180.0
-            bus(dlon + i) = DEGLON*PI/180.0
+            bus(dlat + k) = DEGLAT*PI/180.0
+            bus(dlon + k) = DEGLON*PI/180.0
 
             !> Map CLASS parameters to SVS parameters.
             !* zusl: Height of wind forcing.
             !* ztsl: Height of temperature forcing.
             if (observed_forcing) then
-                bus(zusl + i) = cp%ZRFMGRD(NA)
-                bus(ztsl + i) = cp%ZRFHGRD(NA)
+                bus(zusl + k) = catv%ZRFM(k + 1)
+                bus(ztsl + k) = catv%ZRFH(k + 1)
             end if
 
             !> Parameters.
@@ -117,27 +115,27 @@ module SVS_module_config
             !* slop: Subgrid-scale slope.
             !* draindens: Drainage density (km/km2 converted to m/m2 but provided already by CLASS in m/m2).
             !* rootdp: Max depth of root zone.
-            bus(vegf + 3*NG + i) = cp%FCANROW(NA, NTYPE, 1)
-            bus(vegf + 6*NG + i) = cp%FCANROW(NA, NTYPE, 2)
-            bus(vegf + 14*NG + i) = cp%FCANROW(NA, NTYPE, 3)
-            bus(vegf + 13*NG + i) = cp%FCANROW(NA, NTYPE, 4)
-            bus(vegf + 20*NG + i) = cp%FCANROW(NA, NTYPE, 5)
-            bus(slop + i) = cp%XSLPROW(NA, NTYPE)
-            bus(draindens + i) = cp%DDROW(NA, NTYPE)!*0.001
-            bus(rootdp + i) = cp%SDEPROW(NA, NTYPE)
+            bus(vegf + 3*NG + k) = csfv%FCAN(k + 1, 1)
+            bus(vegf + 6*NG + k) = csfv%FCAN(k + 1, 2)
+            bus(vegf + 14*NG + k) = csfv%FCAN(k + 1, 3)
+            bus(vegf + 13*NG + k) = csfv%FCAN(k + 1, 4)
+            bus(vegf + 20*NG + k) = csfv%FCAN(k + 1, 5)
+            bus(slop + k) = csfv%XSLP(k + 1)
+            bus(draindens + k) = DDGAT(k + 1)!*0.001
+            bus(rootdp + k) = csfv%SDEP(k + 1)
 
             !> Compute weighted average of log z0 wrt vegetation
             !> (used for momentum only - local z0 used for temperature/humidity).
-            bus(z0 + i) = 0.0
+            bus(z0 + k) = 0.0
             sumfcanz0 = 0.0
             do j = 1, 5
-                bus(z0 + i) = bus(z0 + i) + cp%FCANROW(NA, NTYPE, j)*cp%LNZ0ROW(NA, NTYPE, j)
-                sumfcanz0 = sumfcanz0 + cp%FCANROW(NA, NTYPE, j)
+                bus(z0 + k) = bus(z0 + k) + csfv%FCAN(k + 1, j)*csfv%LNZ0(k + 1, j)
+                sumfcanz0 = sumfcanz0 + csfv%FCAN(k + 1, j)
             end do
             if (sumfcanz0 > 0.0) then
-                bus(z0 + i) = bus(z0 + i)/sumfcanz0
+                bus(z0 + k) = bus(z0 + k)/sumfcanz0
             end if
-            bus(z0 + i) = exp(bus(z0 + i))
+            bus(z0 + k) = exp(bus(z0 + k))
 
             !> Map soil texture.
             !> CLASS layer  <->  SVS layer
@@ -146,15 +144,15 @@ module SVS_module_config
             !>       3              4-7
             !> For soil texture we ignore negative numbers
             !> which signal special soils (organic/impermeable/glaciers).
-            bus(sand + i) = max(cp%SANDROW(NA, NTYPE, 1), 0.0)
-            bus(sand + NG + i) = max(cp%SANDROW(NA, NTYPE, 1), 0.0)
-            bus(sand + 2*NG + i) = max(cp%SANDROW(NA, NTYPE, 2), 0.0)
-            bus(clay + i) = max(cp%CLAYROW(NA, NTYPE, 1), 0.0)
-            bus(clay + NG + i) = max(cp%CLAYROW(NA, NTYPE, 1), 0.0)
-            bus(clay + 2*NG + i) = max(cp%CLAYROW(NA, NTYPE, 2), 0.0)
+            bus(sand + k) = max(csfv%SAND(k + 1, 1), 0.0)
+            bus(sand + NG + k) = max(csfv%SAND(k + 1, 1), 0.0)
+            bus(sand + 2*NG + k) = max(csfv%SAND(k + 1, 2), 0.0)
+            bus(clay + k) = max(csfv%CLAY(k + 1, 1), 0.0)
+            bus(clay + NG + k) = max(csfv%CLAY(k + 1, 1), 0.0)
+            bus(clay + 2*NG + k) = max(csfv%CLAY(k + 1, 2), 0.0)
             do j = 3, 6
-                bus(sand + j*NG + i) = max(cp%SANDROW(NA, NTYPE, 3), 0.0)
-                bus(clay + j*NG + i) = max(cp%CLAYROW(NA, NTYPE, 3), 0.0)
+                bus(sand + j*NG + k) = max(csfv%SAND(k + 1, 3), 0.0)
+                bus(clay + j*NG + k) = max(csfv%CLAY(k + 1, 3), 0.0)
             end do
 
             !> State variables.
@@ -164,37 +162,37 @@ module SVS_module_config
             !>       1              1-2
             !>       2               3
             !>       3              4-7
-            bus(wdsoil + i) = cp%THLQROW(NA, NTYPE, 1)
-            bus(wdsoil + NG + i) = cp%THLQROW(NA, NTYPE, 2)
-            bus(wdsoil + 2*NG + i) = cp%THLQROW(NA, NTYPE, 3)
+            bus(wdsoil + k) = cpv%THLQ(k + 1, 1)
+            bus(wdsoil + NG + k) = cpv%THLQ(k + 1, 2)
+            bus(wdsoil + 2*NG + k) = cpv%THLQ(k + 1, 3)
             do j = 3, 6
-                bus(wdsoil + j*NG + i) = cp%THLQROW(NA, NTYPE, 3)
+                bus(wdsoil + j*NG + k) = cpv%THLQ(k + 1, 3)
             end do
 
             !> Map soil temperature.
             !> CLASS layer  <->  SVS layer
             !>       1               1
             !>       2               2
-            bus(tsoil + i) = cp%TBARROW(NA, NTYPE, 1) + tcdk
-            bus(tsoil + NG + i) = cp%TBARROW(NA, NTYPE, 2) + tcdk
-            bus(tground + i) = cp%TBARROW(NA, NTYPE, 1) + tcdk
-            bus(tground + NG + i) = cp%TBARROW(NA, NTYPE, 2) + tcdk
+            bus(tsoil + k) = cpv%TBAR(k + 1, 1)! + tcdk
+            bus(tsoil + NG + k) = cpv%TBAR(k + 1, 2)! + tcdk
+            bus(tground + k) = cpv%TBAR(k + 1, 1)! + tcdk
+            bus(tground + NG + k) = cpv%TBAR(k + 1, 2)! + tcdk
 
             !> Map vegetation temperature.
             do j = 0, 1
-                bus(tvege + j*NG + i) = cp%TCANROW(NA, NTYPE) + tcdk
-                bus(tsnowveg + j*NG + i) = cp%TCANROW(NA, NTYPE) + tcdk
+                bus(tvege + j*NG + k) = cpv%TCAN(k + 1)! + tcdk
+                bus(tsnowveg + j*NG + k) = cpv%TCAN(k + 1)! + tcdk
             end do
 
             !> Map snow properties.
             !* snoro: Density (kg/m3) to relative density wrt ice.
             do j = 0, 1
-                bus(tsnow + j*NG + i) = cp%TSNOROW(NA, NTYPE) + tcdk
+                bus(tsnow + j*NG + k) = cpv%TSNO(k + 1)! + tcdk
             end do
-            bus(snoro + i) = cp%RHOSROW(NA, NTYPE)/900.0
-            bus(snvro + i) = cp%RHOSROW(NA, NTYPE)/900.0
-            bus(snoal + i) = cp%ALBSROW(NA, NTYPE)
-            bus(snval + i) = cp%ALBSROW(NA, NTYPE)
+            bus(snoro + k) = cpv%RHOS(k + 1)/900.0
+            bus(snvro + k) = cpv%RHOS(k + 1)/900.0
+            bus(snoal + k) = cpv%ALBS(k + 1)
+            bus(snval + k) = cpv%ALBS(k + 1)
 
         end do
 

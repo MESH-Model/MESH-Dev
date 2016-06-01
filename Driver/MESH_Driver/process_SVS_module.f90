@@ -44,8 +44,7 @@ module SVS_module
         integer datecmc_v, date_v, hour_v, istat, kount, bidon
         real(kind = 8) kdt
 
-        integer i
-        real fb(NG), fi(NG), pr(NG), ta(NG), qa(NG), uv(NG), p0(NG)
+        integer k, ki, kj
 
         integer, external :: newdate
         external incdatr
@@ -117,41 +116,21 @@ module SVS_module
 !                call read_met_file(date_v, hour_v, date_f, hour_f, bus, bussiz)
 !            end if
 
-!        do j = 1, yCount
-!            do i = 1, xCount
-!                k = i + (j - 1)*xCount - 1
-!                if(metr2c(j, i, ck%TT) > tcdk) then
-!                    bus(rainrate + k) = metr2c(j, i, ck%RT)/1000.0
-!                    bus(snowrate + k) = 0.0
-!                else
-!                    bus(rainrate + k) = 0.0
-!                    bus(snowrate + k) = metr2c(j, i, ck%RT)/1000.0
-!                end if
-!                bus(flusolis + k) = metr2c(j, i, ck%FB)
-!                bus(fdsi + k) = metr2c(j, i, ck%FI)
-!                bus(tmoins + k) = metr2c(j, i, ck%TT)
-!                bus(humoins + k) = metr2c(j, i, ck%HU)
-!                bus(umoins + k) = metr2c(j, i, ck%UV)
-!                bus(vmoins + k) = 0.0
-!                bus(pmoins + k) = metr2c(j, i, ck%P0)
-!            end do
-!        end do
-
-        do i = 0, NG - 1
-            if(cm%dat(ck%TT)%GRD(i + 1) > tcdk) then
-                bus(rainrate + i) = cm%dat(ck%RT)%GRD(i + 1)/1000.0
-                bus(snowrate + i) = 0.0
+        do k = 0, NG - 1
+            if(cm%dat(ck%TT)%GAT(k + 1) > tcdk) then
+                bus(rainrate + k) = cm%dat(ck%RT)%GAT(k + 1)/1000.0
+                bus(snowrate + k) = 0.0
             else
-                bus(rainrate + i) = 0.0
-                bus(snowrate + i) = cm%dat(ck%RT)%GRD(i + 1)/1000.0
+                bus(rainrate + k) = 0.0
+                bus(snowrate + k) = cm%dat(ck%RT)%GAT(k + 1)/1000.0
             end if
-            bus(flusolis + i) = cm%dat(ck%FB)%GRD(i + 1)
-            bus(fdsi + i) = cm%dat(ck%FI)%GRD(i + 1)
-            bus(tmoins + i) = cm%dat(ck%TT)%GRD(i + 1)
-            bus(humoins + i) = cm%dat(ck%HU)%GRD(i + 1)
-            bus(umoins + i) = cm%dat(ck%UV)%GRD(i + 1)
-            bus(vmoins + i) = 0.0
-            bus(pmoins + i) = cm%dat(ck%P0)%GRD(i + 1)
+            bus(flusolis + k) = cm%dat(ck%FB)%GAT(k + 1)
+            bus(fdsi + k) = cm%dat(ck%FI)%GAT(k + 1)
+            bus(tmoins + k) = cm%dat(ck%TT)%GAT(k + 1)
+            bus(humoins + k) = cm%dat(ck%HU)%GAT(k + 1)
+            bus(umoins + k) = cm%dat(ck%UV)%GAT(k + 1)
+            bus(vmoins + k) = 0.0
+            bus(pmoins + k) = cm%dat(ck%P0)%GAT(k + 1)
         end do
 
                 call compvirttemp(sigma_t, bus, bussiz)
@@ -177,18 +156,23 @@ module SVS_module
 
             !> Write outputs (currently in ASCII format).
 !            call write_out_file(date_v, hour_v, bus, bussiz)
-!        do i = 0, NG - 1
-!            bus(runofftotaf + i) = bus(runofftotaf + i) + bus(runofftot + i)
+!        do k = 0, NG - 1
+!            bus(runofftotaf + k) = bus(runofftotaf + k) + bus(runofftot + k)
 !            if (hour_v == 0) then
-!                write (fid_out, '(i8, a1, i8.8, i5, 10(f10.4))') date_v, '.', hour_v, (i + 1), &
-!                    (bus(wdsoil + j*NG + i), j = 0, 6), bus(runofftotaf + i), bus(latflaf + i), bus(drainaf + i)
+!                write (fid_out, '(i8, a1, i8.8, i5, 10(f10.4))') date_v, '.', hour_v, (k + 1), &
+!                    (bus(wdsoil + j*NG + k), j = 0, 6), bus(runofftotaf + k), bus(latflaf + k), bus(drainaf + k)
 !            end if
 !        end do
 
-        do i = 0, NG - 1
-            wb%ROFO(i + 1) = bus(runofftot + i)
-            wb%ROFS(i + 1) = bus(latflw + i)
-            wb%ROFB(i + 1) = bus(watflow + 6*NG + i)
+        wb%ROFO = 0.0
+        wb%ROFS = 0.0
+        wb%ROFB = 0.0
+        do k = 0, NG - 1
+            ki = shd%lc%ILMOS(k + 1)
+            kj = shd%lc%JLMOS(k + 1)
+            wb%ROFO(ki) = wb%ROFO(ki) + bus(runofftot + k)*shd%lc%ACLASS(ki, kj)
+            wb%ROFS(ki) = wb%ROFS(ki) + bus(latflw + k)*shd%lc%ACLASS(ki, kj)
+            wb%ROFB(ki) = wb%ROFB(ki) + bus(watflow + 6*NG + k)*shd%lc%ACLASS(ki, kj)
         end do
         wb%ROF = wb%ROFO + wb%ROFS + wb%ROFB
         wb%PRE = cm%dat(ck%RT)%GRD

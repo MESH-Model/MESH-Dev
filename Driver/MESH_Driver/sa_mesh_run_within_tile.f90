@@ -18,6 +18,7 @@ module sa_mesh_run_within_tile
         use MODEL_OUTPUT
 
         use process_CLASS_config, only: RUNCLASS_init
+        use SVS_module_config, only: RUNSVS_config
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -42,6 +43,8 @@ module sa_mesh_run_within_tile
 !                           cp, &
 !                           hp, soil_por_max, soil_depth, s0, t_ice_lens)
 
+        call RUNSVS_config(shd, fls, ts, ic, cm, wb, eb, sp)
+
     end subroutine
 
     function run_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
@@ -58,6 +61,7 @@ module sa_mesh_run_within_tile
         use MODEL_OUTPUT
 
         use process_CLASS, only: RUNCLASS_within_tile
+        use SVS_module, only: RUNSVS
         use process_WF_ROUTE, only: run_WF_ROUTE_within_tile
 
         character(100) run_within_tile
@@ -76,6 +80,9 @@ module sa_mesh_run_within_tile
         run_within_tile = ''
 
         call RUNCLASS_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+
+        call RUNSVS(shd, fls, ts, ic, cm, wb, eb, sp)
+
         run_within_tile = run_WF_ROUTE_within_tile(shd, ic, stfl, rrls)
         if (len_Trim(run_within_tile) > 0) return
 
