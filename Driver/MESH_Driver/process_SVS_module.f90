@@ -45,6 +45,7 @@ module SVS_module
         real(kind = 8) kdt
 
         integer k, ki, kj
+        real FRAC
 
         integer, external :: newdate
         external incdatr
@@ -164,18 +165,26 @@ module SVS_module
 !            end if
 !        end do
 
+        wb%PRE = 0.0
         wb%ROFO = 0.0
         wb%ROFS = 0.0
         wb%ROFB = 0.0
         do k = 0, NG - 1
+
+            !> Grab the Grid, GRU indices for the NML element.
             ki = shd%lc%ILMOS(k + 1)
             kj = shd%lc%JLMOS(k + 1)
-            wb%ROFO(ki) = wb%ROFO(ki) + bus(runofftot + k)*shd%lc%ACLASS(ki, kj)
-            wb%ROFS(ki) = wb%ROFS(ki) + bus(latflw + k)*shd%lc%ACLASS(ki, kj)
-            wb%ROFB(ki) = wb%ROFB(ki) + bus(watflow + 6*NG + k)*shd%lc%ACLASS(ki, kj)
+
+            !> Calculate the contributing FRAC.
+            FRAC = shd%lc%ACLASS(ki, kj)*shd%FRAC(ki)
+
+            !> Accumulate totals.
+            wb%PRE(ki) = wb%PRE(ki) + cm%dat(ck%RT)%GRD(ki)*FRAC*ic%dts
+            if (bus(runofftot + k) > 0.0) wb%ROFO(ki) = wb%ROFO(ki) + bus(runofftot + k)*FRAC
+            if (bus(latflw + k) > 0.0) wb%ROFS(ki) = wb%ROFS(ki) + bus(latflw + k)*FRAC
+            if (bus(watflow + 6*NG + k) > 0.0) wb%ROFB(ki) = wb%ROFB(ki) + bus(watflow + 6*NG + k)*FRAC
         end do
         wb%ROF = wb%ROFO + wb%ROFS + wb%ROFB
-        wb%PRE = cm%dat(ck%RT)%GRD
 
             !> Read meteorological forcing data.
             !> Careful: at kount=0 we read data for kount=1 so we skip reading if kount=1.
