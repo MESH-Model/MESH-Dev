@@ -137,6 +137,10 @@ module process_CLASS_config
         integer NA, NTYPE, NML, IGND, l, k, ik, jk, m, j, i, iun, ierr
         real FRAC
 
+        !> For RESUMEFLAG 3
+        real, dimension(:, :), allocatable :: TBASROW, CMAIROW, TACROW, QACROW, WSNOROW
+        real, dimension(:, :, :), allocatable :: TSFSROW
+
         !> Return if the process is not marked active.
 !todo: can't remove yet because dependencies on 'cp' in other parts of the code.
 !+        if (.not. RUNCLASS_flgs%PROCESS_ACTIVE) return
@@ -738,6 +742,91 @@ module process_CLASS_config
             K2PDM(k) = hp%K2ROW(ik, jk)
         end do
 
+        !> Resume the state of prognostic variables from file.
+        select case (RESUMEFLAG)
+
+            !> RESUMEFLAG 3.
+            case (3)
+
+                !> Open the resume state file.
+                iun = fls%fl(mfk%f883)%iun
+                open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'old', action = 'read', &
+                     form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+                !> Allocate temporary variables.
+                allocate(TBASROW(NA, NTYPE), CMAIROW(NA, NTYPE), &
+                         TACROW(NA, NTYPE), QACROW(NA, NTYPE), WSNOROW(NA, NTYPE), &
+                         TSFSROW(NA, NTYPE, 4))
+                TBASROW = 0.0; CMAIROW = 0.0; &
+                TACROW = 0.0; QACROW = 0.0; WSNOROW = 0.0; &
+                TSFSROW = 0.0
+
+                !> Read inital values from the file.
+                read(iun) cp%ALBSROW
+                read(iun) CMAIROW
+                read(iun) cp%GROROW
+                read(iun) QACROW
+                read(iun) cp%RCANROW
+                read(iun) cp%RHOSROW
+                read(iun) cp%SCANROW
+                read(iun) cp%SNOROW
+                read(iun) TACROW
+                read(iun) cp%TBARROW
+                read(iun) TBASROW
+                read(iun) cp%TCANROW
+                read(iun) cp%THICROW
+                read(iun) cp%THLQROW
+                read(iun) cp%TPNDROW
+                read(iun) TSFSROW
+                read(iun) cp%TSNOROW
+                read(iun) WSNOROW
+                read(iun) cp%ZPNDROW
+
+                !> Close the file to free the unit.
+                close(iun)
+
+                !> Scatter the temporary variables.
+                do k = il1, il2
+
+                    !> Gather the indices.
+                    ik = shd%lc%ILMOS(k)
+                    jk = shd%lc%JLMOS(k)
+
+                    !> Assign values.
+                    cpv%ALBS(k) = cp%ALBSROW(ik, jk)
+                    cpv%CMAI(k) = CMAIROW(ik, jk)
+                    cpv%GRO(k) = cp%GROROW(ik, jk)
+                    cpv%QAC(k) = QACROW(ik, jk)
+                    cpv%RCAN(k) = cp%RCANROW(ik, jk)
+                    cpv%RHOS(k) = cp%RHOSROW(ik, jk)
+                    cpv%SNCAN(k) = cp%SCANROW(ik, jk)
+                    cpv%SNO(k) = cp%SNOROW(ik, jk)
+                    cpv%TAC(k) = TACROW(ik, jk)
+                    cpv%TBAR(k, :) = cp%TBARROW(ik, jk, :)
+                    cpv%TBAS(k) = TBASROW(ik, jk)
+                    cpv%TCAN(k) = cp%TCANROW(ik, jk)
+                    cpv%THIC(k, :) = cp%THICROW(ik, jk, :)
+                    cpv%THLQ(k, :) = cp%THLQROW(ik, jk, :)
+                    cpv%TPND(k) = cp%TPNDROW(ik, jk)
+                    cpv%TSFS(k, :) = TSFSROW(ik, jk, :)
+                    cpv%TSNO(k) = cp%TSNOROW(ik, jk)
+                    cpv%WSNO(k) = WSNOROW(ik, jk)
+                    cpv%ZPND(k) = cp%ZPNDROW(ik, jk)
+
+                end do
+
+                !> Deallocate temporary variables.
+                deallocate(TBASROW, CMAIROW, &
+                           TACROW, QACROW, WSNOROW, &
+                           TSFSROW)
+
+            !> RESUMEFLAG 4.
+            case (4)
+                call read_init_prog_variables_class(fls)
+
+        end select !case (RESUMEFLAG)
+
         !> Allocate variables for WATDRN3
         !> ******************************************************************
         !> DGP - June 3, 2011: Now that variables are shared, moved from WD3
@@ -870,12 +959,6 @@ module process_CLASS_config
         end do
         wb%stg = wb%RCAN + wb%SNCAN + wb%SNO + wb%WSNO + wb%PNDW + sum(wb%LQWS, 2) + sum(wb%FRWS, 2)
 
-        !> Read initial prognostic variables for CLASS.
-!> bjd - July 14, 2014: Gonzalo Sapriza
-        if (RESUMEFLAG == 3 .or. RESUMEFLAG == 4) then
-            call read_init_prog_variables_class(fls)
-        end if !(RESUMEFLAG == 3 .or. RESUMEFLAG == 4) then
-
     end subroutine
 
     subroutine RUNCLASS_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
@@ -898,17 +981,106 @@ module process_CLASS_config
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
+        !> For SAVERESUMEFLAG 3
+        real, dimension(:, :), allocatable :: TBASROW, CMAIROW, TACROW, QACROW, WSNOROW
+        real, dimension(:, :, :), allocatable :: TSFSROW
+
+        integer NA, NTYPE, k, ik, jk, iun, ierr
+
         !> Return if the process is not marked active.
         if (.not. RUNCLASS_flgs%PROCESS_ACTIVE) return
 
         !> Only the head node writes CLASS output.
         if (.not. ipid == 0) return
 
-        !> Save initial prognostic variables for CLASS.
-!> bjd - July 14, 2014: Gonzalo Sapriza
-        if (SAVERESUMEFLAG == 3 .or. SAVERESUMEFLAG == 4) then
-            call save_init_prog_variables_class(fls)
-        end if !(SAVERESUMEFLAG == 3 .or. SAVERESUMEFLAG == 4) then
+        !> Local indices.
+        NA = shd%NA
+        NTYPE = shd%lc%NTYPE
+
+        !> Save the state of prognostic variables to file.
+        select case (SAVERESUMEFLAG)
+
+            !> SAVERESUMEFLAG 3.
+            case (3)
+
+                !> Open the resume state file.
+                iun = fls%fl(mfk%f883)%iun
+                open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'replace', action = 'write', &
+                     form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+                !> Allocate temporary variables.
+                allocate(TBASROW(NA, NTYPE), CMAIROW(NA, NTYPE), &
+                         TACROW(NA, NTYPE), QACROW(NA, NTYPE), WSNOROW(NA, NTYPE), &
+                         TSFSROW(NA, NTYPE, 4))
+                TBASROW = 0.0; CMAIROW = 0.0; &
+                TACROW = 0.0; QACROW = 0.0; WSNOROW = 0.0; &
+                TSFSROW = 0.0
+
+                !> Gather the temporary variables.
+                do k = 1, shd%lc%NML
+
+                    !> Gather the indices.
+                    ik = shd%lc%ILMOS(k)
+                    jk = shd%lc%JLMOS(k)
+
+                    !> Assign values.
+                    cp%ALBSROW(ik, jk) = cpv%ALBS(k)
+                    CMAIROW(ik, jk) = cpv%CMAI(k)
+                    cp%GROROW(ik, jk) = cpv%GRO(k)
+                    QACROW(ik, jk) = cpv%QAC(k)
+                    cp%RCANROW(ik, jk) = cpv%RCAN(k)
+                    cp%RHOSROW(ik, jk) = cpv%RHOS(k)
+                    cp%SCANROW(ik, jk) = cpv%SNCAN(k)
+                    cp%SNOROW(ik, jk) = cpv%SNO(k)
+                    TACROW(ik, jk) = cpv%TAC(k)
+                    cp%TBARROW(ik, jk, :) = cpv%TBAR(k, :)
+                    TBASROW(ik, jk) = cpv%TBAS(k)
+                    cp%TCANROW(ik, jk) = cpv%TCAN(k)
+                    cp%THICROW(ik, jk, :) = cpv%THIC(k, :)
+                    cp%THLQROW(ik, jk, :) = cpv%THLQ(k, :)
+                    cp%TPNDROW(ik, jk) = cpv%TPND(k)
+                    TSFSROW(ik, jk, :) = cpv%TSFS(k, :)
+                    cp%TSNOROW(ik, jk) = cpv%TSNO(k)
+                    WSNOROW(ik, jk) = cpv%WSNO(k)
+                    cp%ZPNDROW(ik, jk) = cpv%ZPND(k)
+
+                end do
+
+                !> Read inital values from the file.
+                write(iun) cp%ALBSROW
+                write(iun) CMAIROW
+                write(iun) cp%GROROW
+                write(iun) QACROW
+                write(iun) cp%RCANROW
+                write(iun) cp%RHOSROW
+                write(iun) cp%SCANROW
+                write(iun) cp%SNOROW
+                write(iun) TACROW
+                write(iun) cp%TBARROW
+                write(iun) TBASROW
+                write(iun) cp%TCANROW
+                write(iun) cp%THICROW
+                write(iun) cp%THLQROW
+                write(iun) cp%TPNDROW
+                write(iun) TSFSROW
+                write(iun) cp%TSNOROW
+                write(iun) WSNOROW
+                write(iun) cp%ZPNDROW
+
+                !> Close the file to free the unit.
+                close(iun)
+
+                !> Deallocate temporary variables.
+                deallocate(TBASROW, CMAIROW, &
+                           TACROW, QACROW, WSNOROW, &
+                           TSFSROW)
+
+            !> SAVERESUMEFLAG 4.
+            case (4)
+                call save_init_prog_variables_class(fls)
+
+        end select !case (SAVERESUMEFLAG)
 
     end subroutine
 
