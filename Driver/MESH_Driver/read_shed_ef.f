@@ -141,7 +141,7 @@ C parameter type definitions
 
 C Local variables
       character(1024) line, subString, tmpString
-      character(128) keyword, value
+      character(128) keyword
       integer lineLen, keyLen, wordCount, attCount
       logical rStat, lineType, foundEndHeader
 

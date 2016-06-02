@@ -18,25 +18,21 @@ include makefile.def
 # SERIAL compilers
 #   FC=gfortran for GNU compiler (Cygwin or MinGW)
 #   FC=ifort for Intel compiler (Intel Visual Compiler or plato.usask.ca)
-#
-
+# ALSO UPDATE FTN90PP PRECOMPILER FOR SVS.
 FC=gfortran
 #FC=ifort
 
 # MPI compilers for parallel computing
-# Ensure to disable the MPI stub if using an MPI compiler.
 #   FC=mpifort for OpenMPI wrapper with either GNU or Intel compiler (Cygwin or plato.usask.ca)
-#
-
+# COMMENT MPI STUB IF USING AN MPI COMPILER.
 #FC=mpifort
 
 # Flags for compiling, profiling, and debugging - comment as necessary
-
-# Flag for compiling
+#   -O2: Default optimization.
+#   -O3 -ffast-math: faster optimization (for GCC/gfortran only).
+#   -g: For debugging.
 LFLAG=-c -O2
 #LFLAG=-c -O3 -ffast-math
-
-# Flag for debugging
 #LFLAG=-c -g
 
 # ======================================================================
@@ -66,22 +62,27 @@ module_mpi.o : module_mpi_stub.f90
 #DFLAG=-DRUNSVS -DNGRIDCELLS=$(NG)
 DFLAG=-DRUNSVS
 
+# Precompiler
+FTN90PP=-x f95 -cpp -ffree-form -ffree-line-length-none -fcray-pointer
+FTN90PPOPT=
+#FTN90PP=-fpp -free
+#FTN90PPOPT=-Tf
+
 # Rules
-# Note: EXPERIMENTAL: Not yet tested with Intel compiler (plato.usask.ca)
 %.o: %.ftn90
-	gcc -x f95 -cpp $(LFLAG) -ffree-form -ffree-line-length-none -fcray-pointer -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) $<
+	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) $(FTN90PPOPT)$<
 
 runsvs_mod.o: runsvs_mod_sa_mesh.ftn90
-	gcc -x f95 -cpp $(LFLAG) -ffree-form -ffree-line-length-none -fcray-pointer -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) -o runsvs_mod.o $<
+	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) -o runsvs_mod.o $(FTN90PPOPT)$<
 
 process_SVS_variables.o: process_SVS_variables.f90
-	$(FC) -cpp $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
+	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
 
 process_SVS_config.o: process_SVS_config.f90
-	$(FC) -cpp $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
+	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
 
 process_SVS_module.o: process_SVS_module.f90
-	$(FC) -cpp $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
+	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
 
 # ======================================================================
 # General rules

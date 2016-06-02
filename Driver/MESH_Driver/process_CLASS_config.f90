@@ -758,8 +758,8 @@ module process_CLASS_config
                 allocate(TBASROW(NA, NTYPE), CMAIROW(NA, NTYPE), &
                          TACROW(NA, NTYPE), QACROW(NA, NTYPE), WSNOROW(NA, NTYPE), &
                          TSFSROW(NA, NTYPE, 4))
-                TBASROW = 0.0; CMAIROW = 0.0; &
-                TACROW = 0.0; QACROW = 0.0; WSNOROW = 0.0; &
+                TBASROW = 0.0; CMAIROW = 0.0
+                TACROW = 0.0; QACROW = 0.0; WSNOROW = 0.0
                 TSFSROW = 0.0
 
                 !> Read inital values from the file.
@@ -1013,8 +1013,8 @@ module process_CLASS_config
                 allocate(TBASROW(NA, NTYPE), CMAIROW(NA, NTYPE), &
                          TACROW(NA, NTYPE), QACROW(NA, NTYPE), WSNOROW(NA, NTYPE), &
                          TSFSROW(NA, NTYPE, 4))
-                TBASROW = 0.0; CMAIROW = 0.0; &
-                TACROW = 0.0; QACROW = 0.0; WSNOROW = 0.0; &
+                TBASROW = 0.0; CMAIROW = 0.0
+                TACROW = 0.0; QACROW = 0.0; WSNOROW = 0.0
                 TSFSROW = 0.0
 
                 !> Gather the temporary variables.
