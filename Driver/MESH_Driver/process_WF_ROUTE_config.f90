@@ -117,6 +117,9 @@ module process_WF_ROUTE_config
     integer WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
     integer WF_ROUTETIMESTEP, WF_TIMECOUNT, DRIVERTIMESTEP
 
+    !* WF_NODATA_VALUE: No data value for when the streamflow record does not exist.
+    real :: WF_NODATA_VALUE = -999.0
+
     contains
 
     !> *****************************************************************
@@ -328,17 +331,18 @@ module process_WF_ROUTE_config
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !skip the unused streamflow records in streamflow.txt .
-        do j = 1, JDAY_IND_STRM
-            read(iun, *, iostat = ierr)
-            if (ierr < 0) then
-                print *, 'ERROR: end of file reached when reading ', &
-                    ' MESH_input_streamflow.txt, The start date in ', &
-                    ' MESH_input_run_options.ini may be out of range'
-                stop
-            end if
-        end do
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         print *, 'Skipping', JDAY_IND_STRM, 'Registers in streamflow file'
+        do j = 1, JDAY_IND_STRM
+            read(iun, *, iostat = ierr)
+            if (ierr /= 0) then
+                print *, 'WARNING: end of file reached when reading ', &
+                    ' MESH_input_streamflow.txt, The start date in ', &
+                    ' MESH_input_run_options.ini may be out of range'
+!-                stop
+                exit
+            end if
+        end do
         !> leave unit open and read new streamflow each hour
 
         WF_ROUTETIMESTEP = 900

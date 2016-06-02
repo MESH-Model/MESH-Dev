@@ -72,8 +72,9 @@ module process_WF_ROUTE
             !>       read in current streamflow value
             read(22, *, iostat = ierr) (WF_QHYD(i), i = 1, WF_NO)
             if (ierr /= 0) then
-                run_WF_ROUTE_within_tile = 'ran out of streamflow data before met data'
-                return
+!-                run_WF_ROUTE_within_tile = 'ran out of streamflow data before met data'
+!-                return
+                WF_QHYD = WF_NODATA_VALUE
             end if
         end if
 

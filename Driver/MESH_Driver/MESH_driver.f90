@@ -1056,17 +1056,17 @@ program RUNMESH
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
         !> Pass the run state from the head to worker nodes.
-        if (inp > 1 .and. ipid /= 0) then
+!+        if (inp > 1 .and. ipid /= 0) then
 
             !> Receive data from the head node.
-            call MPI_Recv(RUNSTATE, 1, MPI_INT, 0, ipid, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
-        else if (inp > 1) then
+!+            call MPI_Recv(RUNSTATE, 1, MPI_INT, 0, ipid, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
+!+        else if (inp > 1) then
 
             !> Send data for the worker nodes.
-            do u = 1, (inp - 1)
-                call MPI_Send(RUNSTATE, 1, MPI_INT, u, u, MPI_COMM_WORLD, ierr)
-            end do
-        end if !(inp > 1 .and. ipid /= 0) then
+!+            do u = 1, (inp - 1)
+!+                call MPI_Send(RUNSTATE, 1, MPI_INT, u, u, MPI_COMM_WORLD, ierr)
+!+            end do
+!+        end if !(inp > 1 .and. ipid /= 0) then
 
 !-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
 
@@ -1399,18 +1399,18 @@ program RUNMESH
         end if
 
         !> Pass the run state from the worker to head nodes.
-        if (inp > 1 .and. ipid /= 0) then
+!+        if (inp > 1 .and. ipid /= 0) then
 
             !> Receive data from the head node.
-            call MPI_Send(RUNSTATE, 1, MPI_INT, 0, ipid, MPI_COMM_WORLD, ierr)
-        else if (inp > 1) then
+!+            call MPI_Send(RUNSTATE, 1, MPI_INT, 0, ipid, MPI_COMM_WORLD, ierr)
+!+        else if (inp > 1) then
 
             !> Send data for the worker nodes.
-            do u = 1, (inp - 1)
-                call MPI_Recv(irecv, 1, MPI_INT, u, u, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
-                RUNSTATE = max(RUNSTATE, irecv)
-            end do
-        end if !(inp > 1 .and. ipid /= 0) then
+!+            do u = 1, (inp - 1)
+!+                call MPI_Recv(irecv, 1, MPI_INT, u, u, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
+!+                RUNSTATE = max(RUNSTATE, irecv)
+!+            end do
+!+        end if !(inp > 1 .and. ipid /= 0) then
 
 !-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
 
