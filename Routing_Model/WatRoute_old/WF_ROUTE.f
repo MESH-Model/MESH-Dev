@@ -383,7 +383,7 @@ c        Carry forward flows/storage from last time step
                wf_qi2(i)=0.0
             end do
          else
-            do n=1,NLTEST-wf_naa
+            do i=1,NLTEST-wf_naa
                wf_qo2(i)=0.0
                wf_qi2(i)=0.0
                wf_store2(i)=wf_store1(i)
