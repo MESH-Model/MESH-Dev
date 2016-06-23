@@ -32,6 +32,9 @@ RUNSVS=$(DIR_REPO)/LSS_Model/SVS/r531/src
 # Include the following directories in the source file searching path
 # ======================================================================
 VPATH=	$(DIR_REPO)/Modules: \
+		$(DIR_REPO)/Modules/strings: \
+		$(DIR_REPO)/Modules/climate_forcing_module: \
+		$(DIR_REPO)/Modules/simulation_statistics: \
 		$(DIR_REPO)/Driver/MESH_Driver: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/sa_mesh_process: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/src: \
