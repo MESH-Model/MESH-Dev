@@ -1,17 +1,17 @@
-module SVS_module_config
+module RUNSVS113_config
 
     use sa_mesh_shared_variables
-    use SVS_module_variables
+    use RUNSVS113_variables
 
     implicit none
 
     private
 
-    public RUNSVS_config
+    public RUNSVS113_init
 
     contains
 
-    subroutine RUNSVS_config(shd, fls, ts, ic, cm, wb, eb, sp)
+    subroutine RUNSVS113_init(shd, fls, ts, ic, cm, wb, eb, sp)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -55,7 +55,7 @@ module SVS_module_config
 !        external inisoili_svs, phyopt_initdata, runsvs_init
 
         !> Return if the process is not marked active.
-        if (.not. SVS_flgs%PROCESS_ACTIVE) return
+        if (.not. RUNSVS113_flgs%PROCESS_ACTIVE) return
 
         !> Initialize common blocks, read options and configuration file.
 !        read(*, nml = RUNSVS_OPT)
@@ -290,7 +290,7 @@ module SVS_module_config
         !> Wrap up.
 !        call close_files()
 
-!        stop 'by RUNSVS_config()'
+!        stop 'by RUNSVS113_init()'
 
     end subroutine
 

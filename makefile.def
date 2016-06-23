@@ -38,6 +38,7 @@ VPATH=	$(DIR_REPO)/Modules: \
 		$(DIR_REPO)/Routing_Model/WatRoute_old: \
 		$(DIR_REPO)/Blowing_Snow: \
 		$(DIR_REPO)/Tile_Connector/Basic: \
+		$(DIR_REPO)/LSS_Model/SVS/r531/sa_mesh_process: \
 		$(PHY): $(CHANGES2PHY): $(SVS): $(RMNLIB): $(RUNSVS): $(RUNSVS)/strings: 
 
 # ======================================================================
@@ -50,7 +51,7 @@ OBJECTS=	module_mpi_flags.o module_mpi_shared_variables.o module_mpi.o \
 			EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o mesh_input_module.o \
 			precmod.o stringmod.o \
 			module_files_variabletypes.o module_files_variables.o \
-			process_SVS_variables.o \
+			RUNSVS113_variables.o \
 			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
 			climate_forcing_module_config.o \
 			RUNCLASS36_constants.o RUNCLASS36_variables.o RUNCLASS36_save_output.o \
@@ -111,7 +112,7 @@ OBJECTS+=	phy_debu_data.o
 OBJECTS+=   vscos.o vssin.o vslog.o 
 OBJECTS+=	aggcovernat.o juliand.o suncos1.o prelim1.o interpveg.o flxsurf.o \
 			compz0.o sf_heat.o sf_momentum.o sf_pblheight.o diasurf2.o phyopt_initdata.o 
-OBJECTS+=	process_SVS_config.o process_SVS_module.o 
+OBJECTS+=	RUNSVS113_config.o RUNSVS113_module.o 
 
 #WATDRN3
 OBJECTS+=	WATDRN3.o WATDRN3B.o

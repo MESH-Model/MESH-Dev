@@ -75,13 +75,13 @@ FTN90PPOPT=
 runsvs_mod.o: runsvs_mod_sa_mesh.ftn90
 	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) -o runsvs_mod.o $(FTN90PPOPT)$<
 
-process_SVS_variables.o: process_SVS_variables.f90
+RUNSVS113_variables.o: RUNSVS113_variables.f90
 	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
 
-process_SVS_config.o: process_SVS_config.f90
+RUNSVS113_config.o: RUNSVS113_config.f90
 	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
 
-process_SVS_module.o: process_SVS_module.f90
+RUNSVS113_module.o: RUNSVS113_module.f90
 	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
 
 # ======================================================================

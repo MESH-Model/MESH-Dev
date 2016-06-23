@@ -1,4 +1,4 @@
-module SVS_module_variables
+module RUNSVS113_variables
 
     implicit none
 
@@ -33,10 +33,10 @@ module SVS_module_variables
 
     !> Type: SVS_Flags
     !* PROCESS_ACTIVE: Variable to enable SVS.
-    type SVS_flags
+    type RUNSVS113_flags
         logical :: PROCESS_ACTIVE = .false.
     end type
 
-    type(SVS_flags), save :: SVS_flgs
+    type(RUNSVS113_flags), save :: RUNSVS113_flgs
 
 end module
