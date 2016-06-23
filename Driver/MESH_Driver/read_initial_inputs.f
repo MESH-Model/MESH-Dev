@@ -16,9 +16,9 @@
       use FLAGS
       use climate_forcing
 
-      use process_CLASS_constants
-      use process_CLASS_variables
-      use process_CLASS_save_output
+      use RUNCLASS36_constants
+      use RUNCLASS36_variables
+      use RUNCLASS36_save_output
 
       implicit none
 

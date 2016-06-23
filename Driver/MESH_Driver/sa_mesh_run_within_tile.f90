@@ -17,7 +17,7 @@ module sa_mesh_run_within_tile
         use model_output_variabletypes
         use MODEL_OUTPUT
 
-        use process_CLASS_config, only: RUNCLASS_init
+        use RUNCLASS36_config, only: RUNCLASS36_init
         use SVS_module_config, only: RUNSVS_config
 
         type(ShedGridParams) :: shd
@@ -31,7 +31,7 @@ module sa_mesh_run_within_tile
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        call RUNCLASS_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+        call RUNCLASS36_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
 !>
 !>***********************************************************************
@@ -60,7 +60,7 @@ module sa_mesh_run_within_tile
         use model_output_variabletypes
         use MODEL_OUTPUT
 
-        use process_CLASS, only: RUNCLASS_within_tile
+        use RUNCLASS36_module, only: RUNCLASS36_within_tile
         use SVS_module, only: RUNSVS
         use process_WF_ROUTE, only: run_WF_ROUTE_within_tile
 
@@ -79,7 +79,7 @@ module sa_mesh_run_within_tile
 
         run_within_tile = ''
 
-        call RUNCLASS_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+        call RUNCLASS36_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
         call RUNSVS(shd, fls, ts, ic, cm, wb, eb, sp)
 
@@ -99,7 +99,7 @@ module sa_mesh_run_within_tile
         use model_output_variabletypes
         use MODEL_OUTPUT
 
-        use process_CLASS_config, only: RUNCLASS_finalize
+        use RUNCLASS36_config, only: RUNCLASS36_finalize
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
@@ -111,7 +111,7 @@ module sa_mesh_run_within_tile
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        call RUNCLASS_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+        call RUNCLASS36_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
 
     end subroutine
 

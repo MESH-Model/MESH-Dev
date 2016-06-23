@@ -1,7 +1,7 @@
-module process_CLASS_save_output
+module RUNCLASS36_save_output
 
-    use process_CLASS_constants
-    use process_CLASS_variables
+    use RUNCLASS36_constants
+    use RUNCLASS36_variables
 
     implicit none
 
@@ -55,7 +55,7 @@ module process_CLASS_save_output
         integer k, j, i
 
         !> Return if the process is not marked active.
-        if (.not. RUNCLASS_flgs%PROCESS_ACTIVE) return
+        if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
 
         !> check that run points are in the basin and that there are no repeats
         do i = 1, WF_NUM_POINTS
@@ -279,7 +279,7 @@ module process_CLASS_save_output
         integer NSUM, k, j, i
 
         !> Return if the process is not marked active.
-        if (.not. RUNCLASS_flgs%PROCESS_ACTIVE) return
+        if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
 
         !> Constant variables.
         DELT = ic%dts

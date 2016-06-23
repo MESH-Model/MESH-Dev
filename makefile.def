@@ -33,7 +33,8 @@ RUNSVS=$(DIR_REPO)/LSS_Model/SVS/r531/src
 # ======================================================================
 VPATH=	$(DIR_REPO)/Modules: \
 		$(DIR_REPO)/Driver/MESH_Driver: \
-		$(DIR_REPO)/LSS_Model/CLASS: \
+		$(DIR_REPO)/LSS_Model/CLASS/3.6/sa_mesh_process: \
+		$(DIR_REPO)/LSS_Model/CLASS/3.6/src: \
 		$(DIR_REPO)/Routing_Model/WatRoute_old: \
 		$(DIR_REPO)/Blowing_Snow: \
 		$(DIR_REPO)/Tile_Connector/Basic: \
@@ -52,7 +53,7 @@ OBJECTS=	module_mpi_flags.o module_mpi_shared_variables.o module_mpi.o \
 			process_SVS_variables.o \
 			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
 			climate_forcing_module_config.o \
-			process_CLASS_constants.o process_CLASS_variables.o process_CLASS_save_output.o \
+			RUNCLASS36_constants.o RUNCLASS36_variables.o RUNCLASS36_save_output.o \
 			climate_forcing_module_io.o climate_forcing_module.o \
 			SIMSTATS_config.o model_output_variabletypes.o model_output.o \
 			calc_drms.o calc_abserr.o
@@ -81,7 +82,7 @@ OBJECTS+=	GATHER.o read_initial_inputs.o \
  
 #CLASS
 OBJECTS+=	Julian_Day_ID.o check_parameters.o 
-OBJECTS+=	process_CLASS_config.o APREP.o CANADD.o CANALB.o CLASSBG.o CANVAP.o \
+OBJECTS+=	RUNCLASS36_config.o APREP.o CANADD.o CANALB.o CLASSBG.o CANVAP.o \
 			CGROW.o CHKWAT.o CLASSA.o  CLASSB.o CLASSBD.o \
 			CLASSD.o CLASSG.o CLASSI.o CLASSS.o CLASST.o CLASSW.o \
 			CLASSZ.o CWCALC.o DIASURFZ.o DRCOEF.o FLXSURFZ.o FROZEN.o \
@@ -90,7 +91,7 @@ OBJECTS+=	process_CLASS_config.o APREP.o CANADD.o CANALB.o CLASSBG.o CANVAP.o \
 			SUBCAN.o TFREEZ.o TMCALC.o TMELT.o TNPOST.o TNPREP.o TPREP.o \
 			TSOLVC.o TSOLVE.o TSPOST.o TSPREP.o TWCALC.o WATDRN.o WATROF.o \
 			WEND.o WFILL.o WFLOW.o WPREP.o XIT.o \
-			SCREENRH.o PDMROF.o process_CLASS_module.o
+			SCREENRH.o PDMROF.o RUNCLASS36_module.o
 
 # SVS
 OBJECTS+=	datec.o moduledate.o 

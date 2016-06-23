@@ -30,7 +30,7 @@
 
         use model_files_variabletypes
         use model_files_variables
-        use process_CLASS_variables, only: cpv
+        use RUNCLASS36_variables, only: cpv
         use FLAGS, only: RESUMEFLAG
 
         implicit none
@@ -45,7 +45,7 @@
         !> Open the resume state file.
         iun = fls%fl(mfk%f883)%iun
         fn = trim(adjustl(fls%fl(mfk%f883)%fn))
-        if (RESUMEFLAG == 4) fn = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.runclass'
+        if (RESUMEFLAG == 4) fn = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.runclass36'
         open(iun, file = fn, status = 'old', action = 'read', &
              form = 'unformatted', access = 'sequential', iostat = ierr)
 

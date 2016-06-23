@@ -4,7 +4,7 @@
       use sa_mesh_shared_variables
       use model_files_variabletypes
       use model_files_variables
-      use process_CLASS_variables
+      use RUNCLASS36_variables
 
 !todo: remove this
 	  use FLAGS

@@ -10,7 +10,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
     use model_files_variabletypes
     use model_files_variables
     use FLAGS
-    use process_CLASS_variables
+    use RUNCLASS36_variables
 
     implicit none
 

@@ -25,7 +25,7 @@ module SVS_module_config
         use runsvs_utils
 !        use runsvs_io
 
-        use process_CLASS_variables, only: cp
+        use RUNCLASS36_variables, only: cp
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls

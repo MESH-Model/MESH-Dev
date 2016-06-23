@@ -1,7 +1,7 @@
-module process_CLASS_config
+module RUNCLASS36_config
 
-    use process_CLASS_constants
-    use process_CLASS_variables
+    use RUNCLASS36_constants
+    use RUNCLASS36_variables
 
     implicit none
 
@@ -106,7 +106,7 @@ module process_CLASS_config
 
     contains
 
-    subroutine RUNCLASS_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine RUNCLASS36_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
         use module_mpi_flags
         use module_mpi_shared_variables
@@ -120,7 +120,7 @@ module process_CLASS_config
         use MODEL_OUTPUT
 
         !> For CLASS output.
-        use process_CLASS_save_output
+        use RUNCLASS36_save_output
         use MESH_INPUT_MODULE, only: GetIndices
 
         type(ShedGridParams) :: shd
@@ -143,7 +143,7 @@ module process_CLASS_config
 
         !> Return if the process is not marked active.
 !todo: can't remove yet because dependencies on 'cp' in other parts of the code.
-!+        if (.not. RUNCLASS_flgs%PROCESS_ACTIVE) return
+!+        if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
 
         NA = shd%NA
         NTYPE = shd%lc%NTYPE
@@ -961,7 +961,7 @@ module process_CLASS_config
 
     end subroutine
 
-    subroutine RUNCLASS_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+    subroutine RUNCLASS36_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
 
         use module_mpi_shared_variables
         use model_files_variabletypes
@@ -988,7 +988,7 @@ module process_CLASS_config
         integer NA, NTYPE, k, ik, jk, iun, ierr
 
         !> Return if the process is not marked active.
-        if (.not. RUNCLASS_flgs%PROCESS_ACTIVE) return
+        if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
 
         !> Only the head node writes CLASS output.
         if (.not. ipid == 0) return

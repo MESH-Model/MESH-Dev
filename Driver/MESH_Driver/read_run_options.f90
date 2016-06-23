@@ -12,8 +12,8 @@
 
         use SIMSTATS_config, only: mtsflg
 
-        use process_CLASS_constants
-        use process_CLASS_save_output
+        use RUNCLASS36_constants
+        use RUNCLASS36_save_output
 
         use process_SA_RTE, only: SA_RTE_flgs
 

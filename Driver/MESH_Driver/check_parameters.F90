@@ -27,7 +27,7 @@ subroutine check_parameters(wf_r2, m_c, nmtest)
 
 use     mesh_input_module
 use     flags
-use     process_CLASS_variables
+use     RUNCLASS36_variables
 
 implicit none     
 

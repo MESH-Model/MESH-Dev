@@ -1,4 +1,4 @@
-module process_CLASS_constants
+module RUNCLASS36_constants
 
     implicit none
 

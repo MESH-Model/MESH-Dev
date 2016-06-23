@@ -1,13 +1,13 @@
-module process_CLASS
+module RUNCLASS36_module
 
-    use process_CLASS_constants
-    use process_CLASS_variables
+    use RUNCLASS36_constants
+    use RUNCLASS36_variables
 
     implicit none
 
     contains
 
-    subroutine RUNCLASS_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine RUNCLASS36_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
         use module_mpi_flags
         use module_mpi_shared_variables
@@ -22,10 +22,10 @@ module process_CLASS
         use MODEL_OUTPUT
 
         !> For internal variables.
-        use process_CLASS_config
+        use RUNCLASS36_config
 
         !> For CLASS output.
-        use process_CLASS_save_output
+        use RUNCLASS36_save_output
 
         !> For subroutine: GetIndices.
         use MESH_INPUT_MODULE
@@ -60,7 +60,7 @@ module process_CLASS
         real TOTAL_AREA, basin_SCA, basin_SWE
 
         !> Return if the process is not marked active.
-        if (.not. RUNCLASS_flgs%PROCESS_ACTIVE) return
+        if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
 
 !> *********************************************************************
 !> Start of the NML-based LSS loop.

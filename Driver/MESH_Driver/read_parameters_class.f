@@ -6,8 +6,8 @@
       use model_files_variables
 !      use climate_forcing
 
-      use process_CLASS_constants
-      use process_CLASS_variables
+      use RUNCLASS36_constants
+      use RUNCLASS36_variables
 
       use FLAGS
 
