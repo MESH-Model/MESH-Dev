@@ -15,8 +15,8 @@ module sa_mesh_run_between_grid
         use model_output_variabletypes
         use MODEL_OUTPUT
 
-        use process_SA_RTE, only: configure_SA_RTE
-        use process_WF_ROUTE_config, only: run_WF_ROUTE_init
+        use SA_RTE_module, only: SA_RTE_init
+        use WF_ROUTE_config, only: WF_ROUTE_init
         use save_basin_output, only: run_save_basin_output_init
 
         type(ShedGridParams) :: shd
@@ -39,8 +39,8 @@ module sa_mesh_run_between_grid
         real I_G, J_G
 
 !todo: switch
-        call configure_SA_RTE(shd, ic)
-        call run_WF_ROUTE_init(shd, fls, ic, stfl, rrls)
+        call SA_RTE_init(shd, ic)
+        call WF_ROUTE_init(shd, fls, ic, stfl, rrls)
         call run_save_basin_output_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
     end subroutine
@@ -57,8 +57,8 @@ module sa_mesh_run_between_grid
         use model_output_variabletypes
         use MODEL_OUTPUT
 
-        use process_SA_RTE, only: run_SA_RTE
-        use process_WF_ROUTE, only: run_WF_ROUTE_between_grid
+        use SA_RTE_module, only: SA_RTE
+        use WF_ROUTE_module, only: WF_ROUTE_between_grid
         use save_basin_output, only: run_save_basin_output
 
         type(ShedGridParams) :: shd
@@ -77,9 +77,9 @@ module sa_mesh_run_between_grid
         real WF_R1(M_C), WF_R2(M_C)
 
 !todo: Switch
-        call run_SA_RTE(shd, ic, wb)
-        call run_WF_ROUTE_between_grid(shd, ic, wb, stfl, rrls, &
-                                       WF_R1, WF_R2, M_C)
+        call SA_RTE(shd, ic, wb)
+        call WF_ROUTE_between_grid(shd, ic, wb, stfl, rrls, &
+                                   WF_R1, WF_R2, M_C)
         call run_save_basin_output(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
     end subroutine
@@ -93,7 +93,7 @@ module sa_mesh_run_between_grid
         use model_output_variabletypes
         use MODEL_OUTPUT
 
-        use process_WF_ROUTE_config, only: run_WF_ROUTE_finalize
+        use WF_ROUTE_config, only: WF_ROUTE_finalize
         use save_basin_output, only: run_save_basin_output_finalize
 
         type(fl_ids) :: fls
@@ -106,7 +106,7 @@ module sa_mesh_run_between_grid
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        call run_WF_ROUTE_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+        call WF_ROUTE_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
         call run_save_basin_output_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
 
     end subroutine

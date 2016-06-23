@@ -1,4 +1,4 @@
-module process_WF_ROUTE_config
+module WF_ROUTE_config
 
     use model_files_variabletypes, only: fl_ids
 
@@ -129,7 +129,7 @@ module process_WF_ROUTE_config
     !>
     !> Description: Allocate the object containing file information.
     !>
-    subroutine configure_WF_ROUTE_fls()
+    subroutine WF_ROUTE_init_fls()
 
         !> Allocate file object.
         allocate(WF_RTE_fls%fl(5))
@@ -142,7 +142,7 @@ module process_WF_ROUTE_config
     !>              the output files, in preparation for running the
     !>              WF_ROUTE process.
     !>
-    subroutine run_WF_ROUTE_init(shd, fls, ic, stfl, rrls)
+    subroutine WF_ROUTE_init(shd, fls, ic, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -400,7 +400,7 @@ module process_WF_ROUTE_config
 
     end subroutine
 
-    subroutine run_WF_ROUTE_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+    subroutine WF_ROUTE_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
 
         use model_files_variabletypes
         use model_files_variables

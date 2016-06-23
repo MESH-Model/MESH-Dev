@@ -62,7 +62,7 @@ module sa_mesh_run_within_tile
 
         use RUNCLASS36_module, only: RUNCLASS36_within_tile
         use RUNSVS113_module, only: RUNSVS113
-        use process_WF_ROUTE, only: run_WF_ROUTE_within_tile
+        use WF_ROUTE_module, only: WF_ROUTE_within_tile
 
         character(100) run_within_tile
 
@@ -83,7 +83,7 @@ module sa_mesh_run_within_tile
 
         call RUNSVS113(shd, fls, ts, ic, cm, wb, eb, sp)
 
-        run_within_tile = run_WF_ROUTE_within_tile(shd, ic, stfl, rrls)
+        run_within_tile = WF_ROUTE_within_tile(shd, ic, stfl, rrls)
         if (len_Trim(run_within_tile) > 0) return
 
         return

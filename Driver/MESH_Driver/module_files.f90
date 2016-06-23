@@ -19,8 +19,8 @@ module model_files
         use model_files_variabletypes
         use model_files_variables
         use SIMSTATS_config, only: mtsfl, mtsk, init_metricsout_files
-        use process_WF_ROUTE_config, only: WF_RTE_fls, WF_RTE_flks, configure_WF_ROUTE_fls
-        use process_SA_RTE, only: SA_RTE_fls, SA_RTE_flkeys, configure_SA_RTE_fls
+        use WF_ROUTE_config, only: WF_RTE_fls, WF_RTE_flks, WF_ROUTE_init_fls
+        use SA_RTE_module, only: SA_RTE_fls, SA_RTE_flkeys, SA_RTE_init_fls
 
         !> Input variables.
         !* fld: Name of the file that contains file information.
@@ -87,7 +87,7 @@ module model_files
         mtsfl%fl(mtsk%PE)%fn   = 'pre_emption_value.txt'
 
         !> For files used by WF_ROUTE.
-        if (.not. allocated(WF_RTE_fls%fl)) call configure_WF_ROUTE_fls()
+        if (.not. allocated(WF_RTE_fls%fl)) call WF_ROUTE_init_fls()
         WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%fn = 'MESH_input_streamflow.txt'
         WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun = 22
         WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn = 'MESH_input_reservoir.txt'
@@ -100,7 +100,7 @@ module model_files
         WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun = 71
 
         !> For files used by Standalone RTE.
-        if (.not. allocated(SA_RTE_fls%fl)) call configure_SA_RTE_fls()
+        if (.not. allocated(SA_RTE_fls%fl)) call SA_RTE_init_fls()
         SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%fn  = 'WR_runoff.r2c'
         SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%iun = 31
         SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%fn  = 'WR_recharge.r2c'

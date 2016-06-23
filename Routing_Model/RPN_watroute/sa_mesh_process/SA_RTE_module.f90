@@ -7,7 +7,7 @@
 !> Updated:
 !>  2015-11-09  DGP - Pulled code from MESH_Driver.f90.
 !>
-module process_SA_RTE
+module SA_RTE_module
 
     use model_files_variabletypes, only: fl_ids
 
@@ -62,7 +62,7 @@ module process_SA_RTE
     !>              compatible with the old RPN RTE code.
 !todo: these can be removed at some point, as they've been added
 !todo: as flags as a part of the model_output module.
-    subroutine run_SA_RTE(shd, ic, wb)
+    subroutine SA_RTE(shd, ic, wb)
 
         !> For: type(ShedGridParams) :: shd; cops
         use sa_mesh_shared_variabletypes
@@ -126,14 +126,14 @@ module process_SA_RTE
 
     end subroutine
 
-    subroutine configure_SA_RTE_fls()
+    subroutine SA_RTE_init_fls()
 
         !> Allocate file object.
         allocate(SA_RTE_fls%fl(2))
 
     end subroutine
 
-    subroutine configure_SA_RTE(shd, ic)
+    subroutine SA_RTE_init(shd, ic)
 
         !> For: type(ShedGridParams) :: shd
         use sa_mesh_shared_variabletypes

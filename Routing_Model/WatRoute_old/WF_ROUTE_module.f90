@@ -1,12 +1,12 @@
-module process_WF_ROUTE
+module WF_ROUTE_module
 
-    use process_WF_ROUTE_config
+    use WF_ROUTE_config
 
     implicit none
 
     contains
 
-    function run_WF_ROUTE_within_tile(shd, ic, stfl, rrls)
+    function WF_ROUTE_within_tile(shd, ic, stfl, rrls)
 
         use module_mpi_shared_variables
         use sa_mesh_shared_variabletypes
@@ -14,7 +14,7 @@ module process_WF_ROUTE
         use MODEL_OUTPUT
         use model_output_variabletypes
 
-        character(100) run_WF_ROUTE_within_tile
+        character(100) WF_ROUTE_within_tile
 
         type(ShedGridParams), intent(in) :: shd
         type(iter_counter), intent(in) :: ic
@@ -24,7 +24,7 @@ module process_WF_ROUTE
         !> Local variables.
         integer i, ierr
 
-        run_WF_ROUTE_within_tile = ''
+        WF_ROUTE_within_tile = ''
 
         !> WF_ROUTE only runs in serial. If ipid /= 0 then the model is
         !> likely running in parallel. This subroutine returns if ipid
@@ -47,7 +47,7 @@ module process_WF_ROUTE
             !>        READ in current reservoir value
                 read(21, '(100f10.3)', iostat = ierr) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
                 if (ierr /= 0) then
-                    run_WF_ROUTE_within_tile = 'ran out of reservoir data before met data'
+                    WF_ROUTE_within_tile = 'ran out of reservoir data before met data'
                     return
                 end if
             else
@@ -72,7 +72,7 @@ module process_WF_ROUTE
             !>       read in current streamflow value
             read(22, *, iostat = ierr) (WF_QHYD(i), i = 1, WF_NO)
             if (ierr /= 0) then
-!-                run_WF_ROUTE_within_tile = 'ran out of streamflow data before met data'
+!-                WF_ROUTE_within_tile = 'ran out of streamflow data before met data'
 !-                return
                 WF_QHYD = WF_NODATA_VALUE
             end if
@@ -82,8 +82,8 @@ module process_WF_ROUTE
 
     end function
 
-    subroutine run_WF_ROUTE_between_grid(shd, ic, wb, stfl, rrls, &
-                                         WF_R1, WF_R2, M_C)
+    subroutine WF_ROUTE_between_grid(shd, ic, wb, stfl, rrls, &
+                                     WF_R1, WF_R2, M_C)
 
         use sa_mesh_shared_variabletypes
         use model_dates

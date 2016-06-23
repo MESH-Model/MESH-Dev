@@ -36,6 +36,7 @@ VPATH=	$(DIR_REPO)/Modules: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/sa_mesh_process: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/src: \
 		$(DIR_REPO)/Routing_Model/WatRoute_old: \
+		$(DIR_REPO)/Routing_Model/RPN_watroute/sa_mesh_process: \
 		$(DIR_REPO)/Blowing_Snow: \
 		$(DIR_REPO)/Tile_Connector/Basic: \
 		$(DIR_REPO)/LSS_Model/SVS/r531/sa_mesh_process: \
@@ -60,10 +61,10 @@ OBJECTS=	module_mpi_flags.o module_mpi_shared_variables.o module_mpi.o \
 			calc_drms.o calc_abserr.o
 
 #WF_ROUTE
-OBJECTS+=	process_WF_ROUTE_config.o WF_ROUTE.o process_WF_ROUTE_module.o
+OBJECTS+=	WF_ROUTE_config.o WF_ROUTE.o WF_ROUTE_module.o
 
 #SA_RTE (Standalone RPN ROUTE)
-OBJECTS+=	process_SA_RTE_module.o
+OBJECTS+=	SA_RTE_module.o
 
 #IO
 OBJECTS+=	read_config_output.o \

@@ -15,7 +15,7 @@
         use RUNCLASS36_constants
         use RUNCLASS36_save_output
 
-        use process_SA_RTE, only: SA_RTE_flgs
+        use SA_RTE_module, only: SA_RTE_flgs
 
         implicit none
 
