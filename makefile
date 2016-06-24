@@ -51,8 +51,8 @@ all: ${OBJECTS}
 # ======================================================================
 # Enable the next two lines if using a regular compiler.
 # Comment the next two lines if using the MPI compiler.
-module_mpi.o : module_mpi_stub.f90
-	$(FC) $(LFLAG) $< -o module_mpi.o
+mpi_module.o : mpi_stub.f90
+	$(FC) $(LFLAG) $< -o mpi_module.o
 
 # ======================================================================
 # Rules for SVS

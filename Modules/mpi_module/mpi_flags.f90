@@ -1,7 +1,7 @@
 !>
 !> MPI-related control flags.
 !>
-module module_mpi_flags
+module mpi_flags
 
     implicit none
 
@@ -12,4 +12,4 @@ module module_mpi_flags
         !> as quickly as it can be sent.
         integer :: MPIUSEBARRIER = 1
 
-end module !module_mpi_flags
+end module !mpi_flags

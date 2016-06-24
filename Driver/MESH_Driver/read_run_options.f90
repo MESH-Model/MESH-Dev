@@ -1,6 +1,6 @@
     subroutine READ_RUN_OPTIONS(ts, cm, fls)
 
-        use module_mpi_flags
+        use mpi_flags
 
         use strings
         use sa_mesh_shared_variables

@@ -41,7 +41,7 @@ module RUNCLASS36_save_output
 
     subroutine CLASSOUT_open_files(shd)
 
-        use module_mpi_shared_variables
+        use mpi_shared_variables
         use sa_mesh_shared_variabletypes
 
         type(ShedGridParams) :: shd
@@ -263,7 +263,7 @@ module RUNCLASS36_save_output
 
     subroutine CLASSOUT_update_files(shd, ic)
 
-        use module_mpi_shared_variables
+        use mpi_shared_variables
         use sa_mesh_shared_variabletypes
         use model_dates
 

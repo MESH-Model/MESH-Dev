@@ -35,6 +35,7 @@ VPATH=	$(DIR_REPO)/Modules: \
 		$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/Modules/climate_forcing_module: \
 		$(DIR_REPO)/Modules/simulation_statistics: \
+		$(DIR_REPO)/Modules/mpi_module: \
 		$(DIR_REPO)/Driver/MESH_Driver: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/sa_mesh_process: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/src: \
@@ -50,9 +51,10 @@ VPATH=	$(DIR_REPO)/Modules: \
 # ======================================================================
 
 #Modules
-OBJECTS=	module_mpi_flags.o module_mpi_shared_variables.o module_mpi.o \
+OBJECTS=	mpi_flags.o mpi_shared_variables.o mpi_module.o \
+			mpi_utilities.o \
 			sa_mesh_shared_variabletypes.o sa_mesh_shared_variables.o \
-			EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o mesh_input_module.o \
+			EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o \
 			precmod.o stringmod.o \
 			module_files_variabletypes.o module_files_variables.o \
 			RUNSVS113_variables.o \

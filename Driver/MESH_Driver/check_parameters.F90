@@ -25,7 +25,6 @@ subroutine check_parameters(wf_r2, m_c, nmtest)
 !>       parflag    -   parameter flags (two dimensional array)
 !>=======================================================================
 
-use     mesh_input_module
 use     flags
 use     RUNCLASS36_variables
 

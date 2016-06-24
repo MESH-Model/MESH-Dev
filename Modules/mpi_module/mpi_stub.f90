@@ -1,7 +1,7 @@
 !>
 !> Stub for MPI subroutines if an MPI compiler cannot be used.
 !>
-module module_mpi
+module mpi_module
 
     implicit none
 
@@ -167,4 +167,4 @@ module module_mpi
         ierr = MPI_SUCCESS
     end subroutine
 
-end module !module_mpi
+end module !mpi_module

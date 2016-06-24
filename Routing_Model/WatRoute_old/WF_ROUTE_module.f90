@@ -8,7 +8,7 @@ module WF_ROUTE_module
 
     function WF_ROUTE_within_tile(shd, ic, stfl, rrls)
 
-        use module_mpi_shared_variables
+        use mpi_shared_variables
         use sa_mesh_shared_variabletypes
         use model_dates
         use MODEL_OUTPUT

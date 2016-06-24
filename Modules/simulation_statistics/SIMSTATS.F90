@@ -6,7 +6,6 @@
 module SIMSTATS
 
     use SIMSTATS_config
-    use mesh_input_module
     use model_output_variabletypes
     use flags
     use model_files
@@ -308,7 +307,7 @@ module SIMSTATS
 
     subroutine stats_state_save(fls)
 
-        use module_mpi_shared_variables
+        use mpi_shared_variables
         use model_files_variables
 
         !> Input variables.
@@ -345,7 +344,7 @@ module SIMSTATS
 
     subroutine stats_state_resume(fls)
 
-        use module_mpi_shared_variables
+        use mpi_shared_variables
         use model_files_variables
 
         !> Input variables.

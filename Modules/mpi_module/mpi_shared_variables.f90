@@ -1,4 +1,4 @@
-module module_mpi_shared_variables
+module mpi_shared_variables
 
     integer :: inp = 1, ipid = 0
 

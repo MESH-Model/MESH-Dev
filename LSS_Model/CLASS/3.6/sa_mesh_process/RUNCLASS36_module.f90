@@ -9,9 +9,10 @@ module RUNCLASS36_module
 
     subroutine RUNCLASS36_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
-        use module_mpi_flags
-        use module_mpi_shared_variables
-        use module_mpi
+        use mpi_flags
+        use mpi_shared_variables
+        use mpi_module
+        use mpi_utilities
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_files_variabletypes
@@ -26,9 +27,6 @@ module RUNCLASS36_module
 
         !> For CLASS output.
         use RUNCLASS36_save_output
-
-        !> For subroutine: GetIndices.
-        use MESH_INPUT_MODULE
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -455,7 +453,7 @@ module RUNCLASS36_module
                 irqst = mpi_request_null
                 imstat = 0
 
-                call GetIndices(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iilen)
+                call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iilen)
 
                 i = 1
                 call mpi_irecv(cfi%PRE(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1

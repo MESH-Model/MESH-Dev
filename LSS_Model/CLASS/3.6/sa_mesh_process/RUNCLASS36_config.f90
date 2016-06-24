@@ -108,8 +108,9 @@ module RUNCLASS36_config
 
     subroutine RUNCLASS36_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
-        use module_mpi_flags
-        use module_mpi_shared_variables
+        use mpi_flags
+        use mpi_shared_variables
+        use mpi_utilities
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_files_variabletypes
@@ -121,7 +122,6 @@ module RUNCLASS36_config
 
         !> For CLASS output.
         use RUNCLASS36_save_output
-        use MESH_INPUT_MODULE, only: GetIndices
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -292,7 +292,7 @@ module RUNCLASS36_config
 !todo+++: (1:ILG) to reduce the memory footprint of the model per node.
 
         !> Calculate Indices.
-        call GetIndices(inp, izero, ipid, NML, shd%lc%ILMOS, il1, il2, ilen)
+        call mpi_split_nml(inp, izero, ipid, NML, shd%lc%ILMOS, il1, il2, ilen)
         if (ro%DIAGNOSEMODE > 0) print 1062, ipid, NML, ilen, il1, il2
 
 1062 format(/1x, 'Configuration and distribution of the domain', &
@@ -963,7 +963,7 @@ module RUNCLASS36_config
 
     subroutine RUNCLASS36_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
 
-        use module_mpi_shared_variables
+        use mpi_shared_variables
         use model_files_variabletypes
         use sa_mesh_shared_variabletypes
         use model_dates

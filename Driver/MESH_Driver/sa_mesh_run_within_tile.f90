@@ -6,8 +6,6 @@ module sa_mesh_run_within_tile
 
     subroutine run_within_tile_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
-        use module_mpi_flags
-        use module_mpi_shared_variables
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_files_variabletypes
@@ -49,8 +47,6 @@ module sa_mesh_run_within_tile
 
     function run_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
-        use module_mpi_flags
-        use module_mpi_shared_variables
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_files_variabletypes

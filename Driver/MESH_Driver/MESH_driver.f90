@@ -99,9 +99,9 @@ program RUNMESH
 
     use FLAGS
 
-    use module_mpi_flags
-    use module_mpi_shared_variables
-    use module_mpi
+    use mpi_flags
+    use mpi_shared_variables
+    use mpi_module
 
     use sa_mesh_run_within_tile
     use sa_mesh_run_within_grid
