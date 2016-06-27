@@ -15,6 +15,8 @@
         use RUNCLASS36_constants
         use RUNCLASS36_save_output
 
+        use baseflow_module, only: lzsp
+
         use SA_RTE_module, only: SA_RTE_flgs
 
         implicit none
@@ -616,6 +618,10 @@
                         call value(out_args(2), STREAMFLOWOUTFLAG, ierr)
                     case ('BASINSWEOUTFLAG')
                         call value(out_args(2), BASINSWEOUTFLAG, ierr)
+
+                    !> BASEFLOW routing.
+                    case ('BASEFLOWFLAG')
+                        call value(out_args(2), lzsp%BASEFLOWFLAG, ierr)
 
                     !> Unrecognized flag.
                     case default

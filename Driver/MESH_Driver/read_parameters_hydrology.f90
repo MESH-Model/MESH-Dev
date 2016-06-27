@@ -10,7 +10,10 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
     use model_files_variabletypes
     use model_files_variables
     use FLAGS
+
     use RUNCLASS36_variables
+
+    use baseflow_module, only: lzsp
 
     implicit none
 
@@ -120,20 +123,23 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
     read(iun, *) INDEPPAR
     if (INDEPPAR > 0) then
 
-        !> Distribute variables.
+        !> Allocate and distribute variables.
         allocate(INDEPPARVAL(INDEPPAR))
         do i = 1, INDEPPAR
             read(iun, *, err = 9000) INDEPPARVAL(i)
         end do
 
+        !> Count for active flags (read from run options).
+        j = 0
+
         !> FROZENSOILINIFLAG (infiltration into frozen soils).
         if (FROZENSOILINFILFLAG == 1) then
-            if (INDEPPAR == 4 + NYEARS) then
+            if (INDEPPAR < (4 + NYEARS)) then
                 SOIL_POR_MAX = INDEPPARVAL(1)
                 SOIL_DEPTH = INDEPPARVAL(2)
                 S0 = INDEPPARVAL(3)
                 T_ICE_LENS = INDEPPARVAL(4)
-                do i = 5, INDEPPAR
+                do i = 5, NYEARS
                     t0_ACC(i - 4) = INDEPPARVAL(i)
                 end do
             else
@@ -150,6 +156,14 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
                 print *
                 stop
             end if
+            j = j + (4 + NYEARS)
+        end if
+
+        !> BASEFLOWFLAG (lower zone storage).
+        if (lzsp%BASEFLOWFLAG > 0) then
+            lzsp%WrchrgIni = INDEPPARVAL(j + 1)
+            lzsp%QbIni = INDEPPARVAL(j + 2)
+            j = j + 2
         end if
 
         !> Clean-up/deallocate variable.
@@ -179,8 +193,16 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
             stop
         end if
 
-        !> Distribute variables.
+        !> Allocate and distribute variables.
         allocate(DEPPARVAL(DEPPAR, NTYPE))
+        if (lzsp%BASEFLOWFLAG > 0) then
+            select case (lzsp%BASEFLOWFLAG)
+                case (1)
+                    allocate(lzsp%dgwsh(NA, NTYPE), lzsp%agwsh(NA, NTYPE))
+                case (2)
+                    allocate(lzsp%WF_LZFA(NA, NTYPE), lzsp%WF_LZFPWR(NA, NTYPE))
+            end select
+        end if
         do i = 1, DEPPAR
             read(iun, *, err = 9001) (DEPPARVAL(i, j), j = 1, NTYPE)
         end do
@@ -203,6 +225,9 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
                 hp%K1ROW(i, m) = DEPPARVAL(8, m)
                 hp%K2ROW(i, m) = DEPPARVAL(9, m)
 
+                !> Count for active flags (read from run options).
+                j = 9
+
                 !> PBSM (blowing snow model).
                 if (PBSMFLAG == 1) then
                     hp%fetchROW(i, m) = DEPPARVAL(10, m)
@@ -210,6 +235,21 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
                     hp%N_SROW(i, m) = DEPPARVAL(12, m)
                     hp%A_SROW(i, m) = DEPPARVAL(13, m)
                     hp%DistribROW(i, m) = DEPPARVAL(14, m)
+                    j = j + 5
+                end if
+
+                !> BASEFLOWFLAG (lower zone storage).
+                if (lzsp%BASEFLOWFLAG > 0) then
+                    select case (lzsp%BASEFLOWFLAG)
+                        case (1)
+                            lzsp%dgwsh(i, m) = DEPPARVAL(j + 1, m)
+                            lzsp%agwsh(i, m) = DEPPARVAL(j + 2, m)
+                            j = j + 2
+                        case (2)
+                            lzsp%WF_LZFPWR(i, m) = DEPPARVAL(j + 1, m)
+                            lzsp%WF_LZFA(i, m) = DEPPARVAL(j + 2, m)
+                            j = j + 2
+                    end select
                 end if
             end do
         end do

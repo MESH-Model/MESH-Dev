@@ -28,6 +28,10 @@ module RUNCLASS36_module
         !> For CLASS output.
         use RUNCLASS36_save_output
 
+        !> For BASEFLOWFLAG.
+!todo: Isolate this.
+        use baseflow_module
+
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
@@ -366,6 +370,30 @@ module RUNCLASS36_module
                                 TSNOdsGAT, DistribGAT, WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, DepositionGAT, &
                                 cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, ic%ts_count)
             cdv%ROF = cdv%ROF - UMQ
+
+            !> BASEFLOWFLAG
+            if (lzsp%BASEFLOWFLAG > 0) then
+                select case (lzsp%BASEFLOWFLAG)
+                    case (1)
+                        cdv%ROF = cdv%ROF - cdv%ROFB
+                        Wseep = cdv%ROFB*3600.0
+                        do k = il1, il2
+                            call baseFlow(Wseep(k), dgw(k), Wrchrg(k), agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
+                            cdv%ROFB(k) = Qb_new/3600.0
+                            Qb(k) = Qb_new
+                            Wrchrg(k) = Wrchrg_new
+                        end do
+                        cdv%ROF = cdv%ROF + cdv%ROFB
+                        cdv%WTRG = cdv%WTRG - (Wseep/3600.0 - cdv%ROFB)
+                    case (2)
+                        cdv%ROF = cdv%ROF - cdv%ROFB
+                        Wseep = cdv%ROFB
+                        Wrchrg = Wrchrg + cdv%ROFB
+                        call baseflow_wfqlz(WF_LZFA, WF_LZFPWR, Wrchrg, cdv%ROFB, NML, il1, il1)
+                        cdv%ROF = cdv%ROF + cdv%ROFB
+                        cdv%WTRG = cdv%WTRG - (Wseep - cdv%ROFB)
+                end select
+            end if
 
         end if !(ipid /= 0 .or. izero == 0) then
 

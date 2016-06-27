@@ -41,6 +41,7 @@ VPATH=	$(DIR_REPO)/Modules: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/src: \
 		$(DIR_REPO)/Routing_Model/WatRoute_old: \
 		$(DIR_REPO)/Routing_Model/RPN_watroute/sa_mesh_process: \
+		$(DIR_REPO)/Routing_Model/baseflow_module: \
 		$(DIR_REPO)/Blowing_Snow: \
 		$(DIR_REPO)/Tile_Connector/Basic: \
 		$(DIR_REPO)/LSS_Model/SVS/r531/sa_mesh_process: \
@@ -67,6 +68,9 @@ OBJECTS=	mpi_flags.o mpi_shared_variables.o mpi_module.o \
 
 #WF_ROUTE
 OBJECTS+=	WF_ROUTE_config.o WF_ROUTE.o WF_ROUTE_module.o
+
+#baseflow_module
+OBJECTS+=	baseFlow.o baseflow_wfqlz.o baseflow3.o baseflow_module.o
 
 #SA_RTE (Standalone RPN ROUTE)
 OBJECTS+=	SA_RTE_module.o
