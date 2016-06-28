@@ -72,7 +72,7 @@ c from WATCLASS 2.7 - I'm assuming they are correct still
       wf_a3 = 0.43
       wf_a4 = 1.0
 
-      do i=1,5
+      do i=1,M_C
       wf_r1(i)=2.0*wf_r2(i)
 c      wf_r1(i)=2.0
       enddo
@@ -134,7 +134,9 @@ c     Initialize qinit for controlled reservoirs
 c     Loop thru all elements and subtract upstream reservoir releases
 c     from downstream gauge flows
       do l=1,wf_noresv_ctrl
-            n=wf_s(l)
+         do ll=1,wf_no
+            n=wf_s(ll)
+            if ( n.le.wf_r(l) ) cycle
             resflag=.false.
             do while( .not.resflag .and. n.le.NLTEST-wf_naa )
                if( qda(n).gt.0.0 ) then
@@ -146,6 +148,7 @@ c                 WARNING - should record difference if negative
                n=wf_next(n)
                if( wf_r(l).eq.n ) resflag=.true. ! Controlled reservoir
             end do
+         end do
       end do
 
 c     Calculate baseflow for each element
@@ -272,13 +275,16 @@ c     the reaches below the dams to set proper initial river flows.
 c     Track the river to the outlet or to the wf_next reservoir.
 
       do l=1,wf_noresv_ctrl
-            n=wf_s(l)
+         do ll=1,wf_no
+            n=wf_s(ll)
+            if ( n.le.wf_r(l) ) cycle
             resflag=.false.
             do while( .not.resflag .and. n.le.NLTEST-wf_naa )
                qda(n)=qda(n)+qinit(l)
                n=wf_next(n)
                if( wf_r(l).gt.n ) resflag=.true.
             end do
+         end do
       end do
 
 c     This section came from reset.for
