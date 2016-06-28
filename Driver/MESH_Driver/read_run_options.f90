@@ -15,6 +15,8 @@
         use RUNCLASS36_constants
         use RUNCLASS36_save_output
 
+        use WF_ROUTE_config, only: WF_RTE_flgs
+
         use baseflow_module, only: lzsp
 
         use SA_RTE_module, only: SA_RTE_flgs
@@ -202,7 +204,7 @@
 
         !* If STREAMFLOWFLAG is 1, the user wants to output streamflow values for each
         !* timestep. If STREAMFLOWFLAG is 0, the user will get the default daily file.
-        STREAMFLOWFLAG = 0
+!-        STREAMFLOWFLAG = 0
 
         !* If SUBBASINFLAG is 1, calculations will only be done for grid squares that are
         !* in the watersheds of the locations listed in the streamflow files.
@@ -268,7 +270,7 @@
         !>     1 = Save the observed versus simulated streamflow output file.
         !>     2 = Save the observed versus simulated, as well as the
         !>         cumulative and every time-step streamflow files.
-        STREAMFLOWOUTFLAG = 2
+!-        STREAMFLOWOUTFLAG = 2
 
         !> BASIN SWE OUTPUT FLAG
         !> If enabled, saves the SCA and SWE output files.
@@ -548,7 +550,7 @@
                     case ('NRSOILAYEREADFLAG')
                         call value(out_args(2), NRSOILAYEREADFLAG, ierr)
                     case ('STREAMFLOWFLAG')
-                        call value(out_args(2), STREAMFLOWFLAG, ierr)
+                        call value(out_args(2), WF_RTE_flgs%STREAMFLOWFLAG, ierr)
                     case ('PREEMPTIONFLAG')
                         call value(out_args(2), mtsflg%PREEMPTIONFLAG, ierr)
 
@@ -615,13 +617,17 @@
                     case ('MODELINFOOUTFLAG')
                         call value(out_args(2), MODELINFOOUTFLAG, ierr)
                     case ('STREAMFLOWOUTFLAG')
-                        call value(out_args(2), STREAMFLOWOUTFLAG, ierr)
+                        call value(out_args(2), WF_RTE_flgs%STREAMFLOWOUTFLAG, ierr)
                     case ('BASINSWEOUTFLAG')
                         call value(out_args(2), BASINSWEOUTFLAG, ierr)
 
                     !> BASEFLOW routing.
                     case ('BASEFLOWFLAG')
                         call value(out_args(2), lzsp%BASEFLOWFLAG, ierr)
+
+                    !> Reservoir Release function flag (Number of WF_B coefficients).
+                    case ('RESVRELSWFB')
+                        call value(out_args(2), WF_RTE_flgs%RESVRELSWFB, ierr)
 
                     !> Unrecognized flag.
                     case default

@@ -121,7 +121,7 @@ module WF_ROUTE_module
                       WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
                       WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
                       WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
-                      WF_B1, WF_B2, WF_QREL, WF_QR, &
+                      WF_B1, WF_B2, WF_B3, WF_B4, WF_B5, WF_QREL, WF_QR, &
                       WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
                       WF_STORE1, WF_STORE2, &
                       ic%dts, (wb%rof/ic%dts), shd%NA, M_C, M_R, M_S, shd%NA, &
@@ -145,7 +145,7 @@ module WF_ROUTE_module
         !> *********************************************************************
 
         !> Write output for hourly streamflow.
-        if (STREAMFLOWFLAG == 1 .and. STREAMFLOWOUTFLAG >= 2) then
+        if (WF_RTE_flgs%STREAMFLOWFLAG == 1 .and. WF_RTE_flgs%STREAMFLOWOUTFLAG >= 2) then
             write(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun, 1002) &
                 ic%now_jday, ic%now_hour, ic%now_mins, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
         end if
@@ -162,10 +162,10 @@ module WF_ROUTE_module
             end do
 
             !> Write output for daily and cumulative daily streamflow.
-            if (STREAMFLOWOUTFLAG > 0) then
+            if (WF_RTE_flgs%STREAMFLOWOUTFLAG > 0) then
                 write(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%iun, 1001) &
                     ic%now_jday, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/ic%ts_daily, i = 1, WF_NO)
-                if (STREAMFLOWOUTFLAG >= 2) then
+                if (WF_RTE_flgs%STREAMFLOWOUTFLAG >= 2) then
                     write(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun, 1001) &
                         ic%now_jday, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily, i = 1, WF_NO)
                 end if

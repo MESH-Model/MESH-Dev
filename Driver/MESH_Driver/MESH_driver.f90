@@ -167,7 +167,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = 'TRUNK (972)'
+    character(24) :: VERSION = 'TRUNK (975)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
     logical VER_OK
@@ -477,7 +477,7 @@ program RUNMESH
             write(58, *) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG
             write(58, *) 'SHDFILEFLAG          = ', SHDFILEFLAG
             write(58, *) 'SOILINIFLAG          = ', SOILINIFLAG
-            write(58, *) 'STREAMFLOWFLAG       = ', STREAMFLOWFLAG
+!-            write(58, *) 'STREAMFLOWFLAG       = ', STREAMFLOWFLAG
             write(58, *) 'RELFLG               = ', RELFLG
             write(58, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
 !-            write(58, *) 'INTERPOLATIONFLAG    = ', INTERPOLATIONFLAG

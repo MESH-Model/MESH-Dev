@@ -6,7 +6,7 @@
      f     wf_no,wf_nl,wf_mhrd,wf_kt,wf_iy,wf_jx,
      f     wf_qhyd,wf_res,wf_resstore, wf_noresv_ctrl,wf_r,
      r     wf_noresv,wf_nrel,wf_ktr,wf_ires,wf_jres,wf_resname,
-     r     wf_b1,wf_b2,wf_qrel, wf_qr,
+     r     wf_b1,wf_b2,wf_b3,wf_b4,wf_b5,wf_qrel, wf_qr,
      s     wf_TimeCount,wf_nhyd,wf_qbase,wf_qi1,wf_qi2,wf_qo1,wf_qo2,
      s     wf_store1,wf_store2,
      +     DriverTimeStep,ROFGRD, NLAT, M_C,M_R,M_S, NLTEST,
@@ -43,6 +43,7 @@ c     reservoir variables
       integer wf_noresv, wf_nrel, wf_ktr, wf_noresv_ctrl
       integer wf_ires(M_R), wf_jres(M_R), wf_res(M_R), wf_r(M_R)
       real wf_b1(M_R),wf_b2(M_R),wf_qrel(M_R), wf_resstore(M_R)
+      real wf_b3(M_R),wf_b4(M_R),wf_b5(M_R)
       character wf_resname(M_R)*8
 
 c     Local variables
@@ -316,7 +317,22 @@ c       modified statements
          if( wf_b1(wf_ireach(n)).gt.0 ) then
 c           Natural reservoir element
             l=wf_ireach(n)
+           if (wf_b3(l) == 0.0) then
             wf_store2(n)=(wf_qo2(n)/wf_b1(l))**(1.0/wf_b2(l))
+           else
+            wf_store2(n)=10.0
+            try1=0.0
+            do while(try1.lt.wf_qo2(n))
+            wf_store2(n)=2.0*wf_store2(n)
+            try1=wf_b1(l)*wf_store2(n)+
+     +           wf_b2(l)*wf_store2(n)**2+
+     +           wf_b3(l)*wf_store2(n)**3+
+     +           wf_b4(l)*wf_store2(n)**4+
+     +           wf_b5(l)*wf_store2(n)**5
+!            write(53,*)try1, wf_b1(l), wf_qo1(n)
+            end do
+!            write(53,*)try1, wf_b1(l), wf_qo1(n)
+           end if
 c         elseif( wf_res(n).gt.0 ) then
 c           Controlled reservoir
 c           WHAT SHOULD THIS BE?  Unclear from rerout, etc.
@@ -416,7 +432,14 @@ C yes we are at the outlet, use the big storage term to determine wf_qo2
 
                   wf_qi1(i)=wf_resstore(l)+qadd(i)
                   wf_store2(i)=wf_store2(i)+wf_qi1(i)
+                if (wf_b3(l) == 0.0) then
                   wf_qo2(i)=wf_b1(l)*wf_store2(i)**wf_b2(l)
+                else
+                  wf_qo2(i)=wf_b1(l)*wf_store2(i)+
+     +wf_b2(l)*wf_store2(i)**2+wf_b3(l)*wf_store2(i)**3+
+     +wf_b4(l)*wf_store2(i)**4+wf_b5(l)*wf_store2(i)**5
+                end if
+                  wf_qo2=max(wf_qo2,0.0)
                   wf_store2(i)=wf_store2(i)-wf_qo2(i)
                   wf_resstore(l)=0.0
 

@@ -23,8 +23,22 @@ module WF_ROUTE_config
         !> Flag used to enable the module.
         logical :: PROCESS_ACTIVE = .true.
 
-        integer :: STREAMFLOWFLAG = 1
+        !* If STREAMFLOWFLAG is 1, the user wants to output streamflow values for each
+        !* timestep. If STREAMFLOWFLAG is 0, the user will get the default daily file.
+        integer :: STREAMFLOWFLAG = 0
+
+        !> BASIN CSV-FORMAT STREAMFLOW OUTPUT FLAG
+        !> If enabled, saves the observed versus simulated streamflow output
+        !> file. The flag can also enable the cumulative and every time-step
+        !> streamflow files written by past model configurations.
+        !>     0 = Create no output.
+        !>     1 = Save the observed versus simulated streamflow output file.
+        !>     2 = Save the observed versus simulated, as well as the
+        !>         cumulative and every time-step streamflow files.
         integer :: STREAMFLOWOUTFLAG = 2
+
+        !> Flag to control the reservoir release function used in WF_ROUTE.f.
+        integer :: RESVRELSWFB = 2
 
     end type
 
@@ -93,6 +107,7 @@ module WF_ROUTE_config
     !> RESERVOIR VARIABLES
     integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R
     real, dimension(:), allocatable :: WF_B1, WF_B2, WF_QREL, WF_RESSTORE
+    real, dimension(:), allocatable :: WF_B3, WF_B4, WF_B5
     character(8), dimension(:), allocatable :: WF_RESNAME
 
     !> FOR BASEFLOW INITIALIZATION
@@ -197,20 +212,41 @@ module WF_ROUTE_config
         read(iun, '(3i5)') WF_NORESV, WF_NREL, WF_KTR
         WF_NORESV_CTRL = 0
 
-        ! allocate reservoir arrays
-        M_R = WF_NORESV
-        allocate(WF_IRES(M_R), WF_JRES(M_R), WF_RES(M_R), WF_R(M_R), WF_B1(M_R), WF_B2(M_R), &
-                 WF_QREL(M_R), WF_RESSTORE(M_R), WF_RESNAME(M_R))
-
         if (WF_NORESV > 0) then
+
+            !> Allocate and initialize reservoir variables.
+            M_R = WF_NORESV
+            allocate(WF_IRES(M_R), WF_JRES(M_R), WF_RES(M_R), WF_R(M_R), WF_B1(M_R), WF_B2(M_R), &
+                     WF_B3(M_R), WF_B4(M_R), WF_B5(M_R), WF_QREL(M_R), WF_RESSTORE(M_R), WF_RESNAME(M_R))
+            WF_QREL = 0.0
+            WF_RESSTORE = 0.0
+            WF_B1 = 0.0
+            WF_B2 = 0.0
+            WF_B3 = 0.0
+            WF_B4 = 0.0
+            WF_B5 = 0.0
+
             do i = 1, WF_NORESV
                 ! KCK Added to allow higher precision gauge sites
                 if (LOCATIONFLAG == 1) then
-                    read(iun, '(2f7.1, 2g10.3, 25x, a12, i2)') I_G, J_G, WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
+                    if (WF_RTE_flgs%RESVRELSWFB == 5) then
+                        read(iun, '(2f7.1, 5g10.3, a7, i2)') I_G, J_G, &
+                            WF_B1(i), WF_B2(i), WF_B3(i), WF_B4(i), WF_B5(i), &
+                            WF_RESNAME(i), WF_RES(i)
+                    else
+                        read(iun, '(2f7.1, 2g10.3, 25x, a12, i2)') I_G, J_G, WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
+                    end if
                     WF_IRES(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
                     WF_JRES(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
                 else
-                    read(iun, '(2i5, 2g10.3, 25x, a12, i2)') WF_IRES(i), WF_JRES(i), WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
+                    if (WF_RTE_flgs%RESVRELSWFB == 5) then
+                        read(iun, '(2i5, 5g10.3, a7, i2)') WF_IRES(i), WF_JRES(i), &
+                            WF_B1(i), WF_B2(i), WF_B3(i), WF_B4(i), WF_B5(i), &
+                            WF_RESNAME(i), WF_RES(i)
+                    else
+                        read(iun, '(2i5, 2g10.3, 25x, a12, i2)') &
+                            WF_IRES(i), WF_JRES(i), WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
+                    end if
                     WF_IRES(i) = int((real(WF_IRES(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
                     WF_JRES(i) = int((real(WF_JRES(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
                 end if
@@ -231,8 +267,7 @@ module WF_ROUTE_config
                     print *, 'Reservoir Station: ', i, ' is not in the correct reach'
                     print *, 'Up/Down Coordinate: ', WF_IRES(i)
                     print *, 'Left/Right Coordinate: ', WF_JRES(i)
-!todo: This will crash. WF_IY is used before it's allocated.
-                    print *, 'ireach value at station: ', WF_IY(i)
+                    print *, 'IREACH value at station: ', shd%IREACH(WF_R(i))
                     stop
                 end if
                 if (WF_B1(i) == 0.0) then
@@ -352,7 +387,7 @@ module WF_ROUTE_config
         JAN = 1
 
         !> Streamflow output files.
-        if (STREAMFLOWOUTFLAG > 0) then
+        if (WF_RTE_flgs%STREAMFLOWOUTFLAG > 0) then
 
             !> Daily streamflow file.
             open(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%iun, &
@@ -361,7 +396,7 @@ module WF_ROUTE_config
                  iostat = ierr)
 
             !> Hourly and cumulative daily streamflow files.
-            if (STREAMFLOWOUTFLAG >= 2) then
+            if (WF_RTE_flgs%STREAMFLOWOUTFLAG >= 2) then
                 open(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun, &
                      file = './' // trim(fls%GENDIR_OUT) // '/' // &
                             adjustl(trim(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%fn)))
