@@ -368,7 +368,7 @@ c     Initializations
       if( IterationsPerTimeStep.lt.1 ) IterationsPerTimeStep=1
 
       WF_MAX_TIME_SUBDIVISIONS = 10 
-	WF_MAX_ITERATIONS = 20
+      WF_MAX_ITERATIONS = 20
 
 c     Convert kg/m^2/s of water (RUNOFF(I)) to cms (wf_qr(i))
       do i=1,NLTEST
@@ -426,7 +426,7 @@ C storage reservoir and give fake value to outflow and storage
 c                  wf_resstore(l)=wf_resstore(l)+qadd(i)*div
                   wf_resstore(l)=wf_resstore(l)+qadd(i)+wf_qi2(i)
                   wf_qo2(i)=0.001
-	            wf_store2(i)=1000.0
+                  wf_store2(i)=1000.0
 
               endif !if(wf_ires(l).eq.wf_yy(i).and.wf_jres(l).eq.wf_xx(i)) then
 
@@ -445,7 +445,7 @@ c as it will be overwritten later, just for something keep adding the
 c flow to the big reservoir stoage
                   wf_resstore(l)=wf_resstore(l)+qadd(i)+wf_qi2(i)
                   wf_qo2(i)=1.0
-	            wf_store2(i)=1000.0
+                  wf_store2(i)=1000.0
 
                endif !are we at the outlest of controlled reservoir
 
@@ -514,7 +514,7 @@ c                       by 50% during very big storms
                endif            ! if( wf_ireach(n).gt.0 ...
 
                if( (wf_store2(i).le.0.0 .or. wf_qo2(i).le.0.0)
-     +			 .and.wf_ireach(i).lt.1 ) then
+     +                   .and.wf_ireach(i).lt.1 ) then
                   if( IterationsPerTimeStep.lt.WF_MAX_TIME_SUBDIVISIONS 
      + ) then
 c                    Try changing time step, and redo whole basin
