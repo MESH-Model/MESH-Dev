@@ -98,6 +98,8 @@ module model_files
         WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun = 72
         WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%fn = 'MESH_output_streamflow_all.csv'
         WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun = 71
+        WF_RTE_fls%fl(WF_RTE_flks%stfl_bal)%fn = 'MESH_output_streamflow_balance.csv'
+        WF_RTE_fls%fl(WF_RTE_flks%stfl_bal)%iun = 73
 
         !> For files used by Standalone RTE.
         if (.not. allocated(SA_RTE_fls%fl)) call SA_RTE_init_fls()

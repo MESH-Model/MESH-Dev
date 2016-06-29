@@ -28,6 +28,12 @@ module WF_ROUTE_config
         integer :: STREAMFLOWFLAG = 0
 
         !> BASIN CSV-FORMAT STREAMFLOW OUTPUT FLAG
+        !>
+        !>  Combine values to activate a subset of the files:
+        !>     3 = 1 and 2
+        !>     7 = 1, 2, and 3
+        !>     5 = 1 and 4
+        !>
         !> If enabled, saves the observed versus simulated streamflow output
         !> file. The flag can also enable the cumulative and every time-step
         !> streamflow files written by past model configurations.
@@ -35,7 +41,8 @@ module WF_ROUTE_config
         !>     1 = Save the observed versus simulated streamflow output file.
         !>     2 = Save the observed versus simulated, as well as the
         !>         cumulative and every time-step streamflow files.
-        integer :: STREAMFLOWOUTFLAG = 2
+        !>     4 = Save the streamflow channel water balance to file.
+        integer(kind=4) :: STREAMFLOWOUTFLAG = 3
 
         !> Flag to control the reservoir release function used in WF_ROUTE.f.
         integer :: RESVRELSWFB = 2
@@ -59,6 +66,7 @@ module WF_ROUTE_config
         !* stfl_ts: MESH_output_streamflow_all.csv
         integer :: stfl_daily = 3
         integer :: stfl_cumm = 4
+        integer :: stfl_bal = 6
         integer :: stfl_ts = 5
 
     end type
@@ -135,6 +143,8 @@ module WF_ROUTE_config
     !* WF_NODATA_VALUE: No data value for when the streamflow record does not exist.
     real :: WF_NODATA_VALUE = -999.0
 
+    real, dimension(:), allocatable :: WF_QO2_ACC_MM, WF_STORE2_ACC_MM
+
     contains
 
     !> *****************************************************************
@@ -147,7 +157,7 @@ module WF_ROUTE_config
     subroutine WF_ROUTE_init_fls()
 
         !> Allocate file object.
-        allocate(WF_RTE_fls%fl(5))
+        allocate(WF_RTE_fls%fl(6))
 
     end subroutine
 
@@ -191,7 +201,8 @@ module WF_ROUTE_config
 
         allocate(WF_NHYD(NA), WF_QR(NA), &
                  WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA), &
-                 WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA))
+                 WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), &
+                 WF_QO2_ACC_MM(NA), WF_STORE2_ACC_MM(NA))
 
         WF_NHYD = 0.0
         WF_QBASE = 0.0
@@ -202,6 +213,8 @@ module WF_ROUTE_config
         WF_STORE1 = 0.0
         WF_STORE2 = 0.0
         WF_QI1 = 0.0
+        WF_QO2_ACC_MM = 0.0
+        WF_STORE2_ACC_MM = 0.0
 
         !> *************************************************************
         !>  Open and read in values from MESH_input_reservoir.txt file
@@ -386,26 +399,33 @@ module WF_ROUTE_config
         !* JAN: The first time throught he loop, jan = 1. Jan will equal 2 after that.
         JAN = 1
 
-        !> Streamflow output files.
-        if (WF_RTE_flgs%STREAMFLOWOUTFLAG > 0) then
-
-            !> Daily streamflow file.
+        !> Daily streamflow output file.
+        if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 0)) then
             open(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%iun, &
                  file = './' // trim(fls%GENDIR_OUT) // '/' // &
                         trim(adjustl(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%fn)), &
                  iostat = ierr)
+        end if
 
-            !> Hourly and cumulative daily streamflow files.
-            if (WF_RTE_flgs%STREAMFLOWOUTFLAG >= 2) then
+        !> Per time-step and cumulative daily streamflow files.
+        if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 1)) then
+            if (WF_RTE_flgs%STREAMFLOWFLAG == 1) then
                 open(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun, &
                      file = './' // trim(fls%GENDIR_OUT) // '/' // &
                             adjustl(trim(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%fn)))
-                open(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun, &
-                     file = './' // trim(fls%GENDIR_OUT) // '/' // &
-                            adjustl(trim(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%fn)))
             end if
+            open(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun, &
+                 file = './' // trim(fls%GENDIR_OUT) // '/' // &
+                        adjustl(trim(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%fn)))
+        end if
 
-        end if !(STREAMFLOWOUTFLAG > 0) then
+        !> Streamflow channel water balance output file.
+        if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 2)) then
+            open(WF_RTE_fls%fl(WF_RTE_flks%stfl_bal)%iun, &
+                 file = './' // trim(fls%GENDIR_OUT) // '/' // &
+                        trim(adjustl(WF_RTE_fls%fl(WF_RTE_flks%stfl_bal)%fn)), &
+                 iostat = ierr)
+        end if
 
         if (RESUMEFLAG == 4) then
 

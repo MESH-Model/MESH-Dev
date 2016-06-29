@@ -4,6 +4,10 @@ module WF_ROUTE_module
 
     implicit none
 
+    private
+
+    public WF_ROUTE_within_tile, WF_ROUTE_between_grid
+
     contains
 
     function WF_ROUTE_within_tile(shd, ic, stfl, rrls)
@@ -132,6 +136,8 @@ module WF_ROUTE_module
             WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + WF_QO2(WF_S(i))
             WF_QHYD_AVG(i) = WF_QHYD(i) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
         end do
+        WF_QO2_ACC_MM = WF_QO2_ACC_MM + WF_QO2/shd%DA/1000.0*ic%dts
+        WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + WF_STORE2/shd%DA/1000.0
 
         !> this is done so that INIT_STORE is not recalculated for
         !> each iteration when wf_route is not used
@@ -144,8 +150,8 @@ module WF_ROUTE_module
         !> Also write daily summary (pre, evap, rof)
         !> *********************************************************************
 
-        !> Write output for hourly streamflow.
-        if (WF_RTE_flgs%STREAMFLOWFLAG == 1 .and. WF_RTE_flgs%STREAMFLOWOUTFLAG >= 2) then
+        !> Write output for per time-step streamflow output file.
+        if (WF_RTE_flgs%STREAMFLOWFLAG == 1 .and. btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 1)) then
             write(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun, 1002) &
                 ic%now_jday, ic%now_hour, ic%now_mins, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
         end if
@@ -161,14 +167,23 @@ module WF_ROUTE_module
                 WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + WF_QHYD_AVG(i)
             end do
 
-            !> Write output for daily and cumulative daily streamflow.
-            if (WF_RTE_flgs%STREAMFLOWOUTFLAG > 0) then
+            !> Write output for daily streamflow output file.
+            if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 0)) then
                 write(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%iun, 1001) &
                     ic%now_jday, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/ic%ts_daily, i = 1, WF_NO)
-                if (WF_RTE_flgs%STREAMFLOWOUTFLAG >= 2) then
-                    write(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun, 1001) &
-                        ic%now_jday, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily, i = 1, WF_NO)
-                end if
+            end if
+
+            !> Write output for cumulative daily streamflow output file.
+            if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 1)) then
+                write(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun, 1001) &
+                    ic%now_jday, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily, i = 1, WF_NO)
+            end if
+
+            !> Write output for streamflow channel water balance output file.
+            if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 2)) then
+                write(WF_RTE_fls%fl(WF_RTE_flks%stfl_bal)%iun, 1001) &
+                    ic%now_jday, (WF_QO2_ACC_MM(WF_S(i)), &
+                                  WF_STORE2_ACC_MM(WF_S(i))/ic%ts_count, i = 1, WF_NO)
             end if
 
 !-            WF_QSYN_AVG = 0.0
