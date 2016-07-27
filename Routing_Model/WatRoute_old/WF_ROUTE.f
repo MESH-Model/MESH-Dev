@@ -430,7 +430,7 @@ C Are we at the outlet of a natural reservoir
               if(wf_r(l).eq.i) then
 C yes we are at the outlet, use the big storage term to determine wf_qo2
 
-                  wf_qi1(i)=wf_resstore(l)+qadd(i)
+                  wf_qi1(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
                   wf_store2(i)=wf_store2(i)+wf_qi1(i)
                 if (wf_b3(l) == 0.0) then
                   wf_qo2(i)=wf_b1(l)*wf_store2(i)**wf_b2(l)
@@ -448,7 +448,7 @@ C No we are just in the reservoir, hence just add the flow to the big
 C storage reservoir and give fake value to outflow and storage
 c                  wf_resstore(l)=wf_resstore(l)+qadd(i)*div
                   wf_resstore(l)=wf_resstore(l)+qadd(i)+wf_qi2(i)
-                  wf_qo2(i)=0.001
+                  wf_qo2(i)=0.0
                   wf_store2(i)=1000.0
 
               endif !if(wf_ires(l).eq.wf_yy(i).and.wf_jres(l).eq.wf_xx(i)) then
