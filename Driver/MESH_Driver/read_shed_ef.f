@@ -379,8 +379,8 @@ CDAN      print*,'avant calling program flg,328'
             allocate(shd%SLOPE_CHNL(shd%NA), stat=ierr)
           else if (attribName(1:attLen) == 'elev') then
             allocate(shd%ELEV(shd%NA), stat=ierr)
-!          else if (attribName(1:attLen) == 'chnllength') then
-!            allocate(shd%CHNL_LEN(na), stat=ierr)
+          else if (attribName(1:attLen) == 'chnllength') then
+            allocate(shd%CHNL_LEN(shd%NA), stat=ierr)
           else if (attribName(1:attLen) == 'iak') then
             allocate(shd%IAK(shd%NA), stat=ierr)
 !          else if (attribName(1:attLen) == 'intslope') then
@@ -495,8 +495,8 @@ C  do yi=yCount,1,-1
                 shd%SLOPE_CHNL(rank) = val
               else if (attribName(1:attLen) == 'elev') then
                 shd%ELEV(rank) = val
-!              else if (attribName(1:attLen) == 'chnllength') then
-!                shd%CHNL_LEN(rank) = val
+              else if (attribName(1:attLen) == 'chnllength') then
+                shd%CHNL_LEN(rank) = val
               else if (attribName(1:attLen) == 'iak') then
                 shd%IAK(rank) = int(val)
 !              else if (attribName(1:attLen) == 'intslope') then

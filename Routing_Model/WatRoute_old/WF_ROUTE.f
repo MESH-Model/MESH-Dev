@@ -3,6 +3,8 @@
      b     wf_iymax,wf_jxmin,wf_jxmax,wf_yy,wf_xx,wf_ibn,wf_irough,
      b     wf_ichnl,wf_next,wf_ireach,wf_al,wf_grdn,wf_grde,
      b     wf_da,wf_bnkfll,wf_channelSlope,wf_elev,wf_frac,
+     b     wf_CHNL_LEN,
+     b     wf_RLFLAG, wf_CAPFLAG,
      f     wf_no,wf_nl,wf_mhrd,wf_kt,wf_iy,wf_jx,
      f     wf_qhyd,wf_res,wf_resstore, wf_noresv_ctrl,wf_r,
      r     wf_noresv,wf_nrel,wf_ktr,wf_ires,wf_jres,wf_resname,
@@ -16,6 +18,7 @@
       integer wf_ntype,wf_iymin,wf_iymax,wf_jxmin,
      +wf_jxmax,wf_imax,wf_jmax, wf_naa, wf_na
       real wf_grdn,wf_grde
+      integer wf_RLFLAG, wf_CAPFLAG
 
       integer wf_yy(NLAT),wf_xx(NLAT),wf_ibn(NLAT),
      +     wf_irough(NLAT),wf_ichnl(NLAT),wf_next(NLAT),
@@ -23,6 +26,7 @@
       real wf_da(NLAT),wf_bnkfll(NLAT),
      +     wf_channelSlope(NLAT)
       real wf_frac(NLAT)
+      real wf_CHNL_LEN(NLAT)
       real wf_al
 
 c for baseflow initialization
@@ -304,7 +308,10 @@ c        Only have initial input to downstream elements
          wf_qo2(n)=qda(n)
 
 c        Cap is the volume of water in a reach for the mean annual flow
+         rl=wf_al*wf_a1
+         if (wf_RLFLAG == 1) rl = wf_CHNL_LEN(n)
          cap=(wf_a2+wf_a3*wf_da(n)**wf_a4)*rl
+         if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)
          qch=(cap/rl)**1.33*SQRT(wf_channelSlope(n))/wf_r2(ii)
           
          over=0.0
@@ -495,7 +502,9 @@ c                          No outflow - channel is empty
 c                          Cap is the volume of water in a reach 
 c                          for the mean annual flow
                            rl=wf_al*wf_a1
+                           if (wf_RLFLAG == 1) rl = wf_CHNL_LEN(i)
                            cap=(wf_a2+wf_a3*wf_da(i)**wf_a4)*rl
+                           if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)
                            over=(wf_store2(i)-cap)/rl
                            if( over.le.0.0 ) then
 c                             Channel flow only
