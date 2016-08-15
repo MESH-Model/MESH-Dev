@@ -8,6 +8,7 @@
      r     wf_noresv,wf_nrel,wf_ktr,wf_ires,wf_jres,wf_resname,
      r     wf_b1,wf_b2,wf_b3,wf_b4,wf_b5,wf_qrel, wf_qr,
      s     wf_TimeCount,wf_nhyd,wf_qbase,wf_qi1,wf_qi2,wf_qo1,wf_qo2,
+     s     wf_a1, wf_a2, wf_a3, wf_a4,
      s     wf_store1,wf_store2,
      +     DriverTimeStep,ROFGRD, NLAT, M_C,M_R,M_S, NLTEST,
      +     wf_s, jan,IDAY,IHOUR,IMIN)
@@ -59,7 +60,7 @@ c     Local variables
       real qda(NLAT),qUngauged,daUngauged
       integer iHourCount
       integer WF_MAX_TIME_SUBDIVISIONS ,WF_MAX_ITERATIONS
-      integer wf_a1, wf_a2, wf_a3, wf_a4
+      real wf_a1, wf_a2, wf_a3, wf_a4
       integer top(NLAT)
 
       COMMON /CLASS1/ DELT,TFREZ
@@ -68,14 +69,13 @@ c     Local variables
      2                TCGLAC,CLHMLT,CLHVAP
 
 c from WATCLASS 2.7 - I'm assuming they are correct still
-      wf_a1 = 1.0
-      wf_a2 = 11.0
-      wf_a3 = 0.43
-      wf_a4 = 1.0
+!-      wf_a1 = 1.0
+!-      wf_a2 = 11.0
+!-      wf_a3 = 0.43
+!-      wf_a4 = 1.0
 
       do i=1,M_C
-      wf_r1(i)=2.0*wf_r2(i)
-c      wf_r1(i)=2.0
+      wf_r1(i)=2.0
       enddo
 
 c if this is the first time through, initialize baseflows

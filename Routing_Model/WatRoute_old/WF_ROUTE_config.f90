@@ -31,7 +31,7 @@ module WF_ROUTE_config
         !>
         !>  Combine values to activate a subset of the files:
         !>     3 = 1 and 2
-        !>     7 = 1, 2, and 3
+        !>     7 = 1, 2, and 4
         !>     5 = 1 and 4
         !>
         !> If enabled, saves the observed versus simulated streamflow output

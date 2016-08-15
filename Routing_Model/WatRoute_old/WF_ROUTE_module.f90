@@ -127,6 +127,7 @@ module WF_ROUTE_module
                       WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
                       WF_B1, WF_B2, WF_B3, WF_B4, WF_B5, WF_QREL, WF_QR, &
                       WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
+                      1.0, 11.0, 0.43, 1.0, &
                       WF_STORE1, WF_STORE2, &
                       ic%dts, (wb%rof/ic%dts), shd%NA, M_C, M_R, M_S, shd%NA, &
                       WF_S, JAN, ic%now_jday, ic%now_hour, ic%now_mins)
