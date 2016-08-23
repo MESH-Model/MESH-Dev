@@ -220,7 +220,7 @@ module RUNCLASS36_config
 
         !> MAM - Check for parameter values - all parameters should lie within the
         !> specified ranges in the "minmax_parameters.txt" file.
-!        call check_parameters(WF_R2, M_C, NMTEST, cp, hp, soil_por_max, soil_depth, s0, t_ice_lens)
+!        call check_parameters(shd)
 
         !> GATHER-SCATTER COUNTS:
         allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), shd%wc%ILMOS(shd%wc%ILG), &

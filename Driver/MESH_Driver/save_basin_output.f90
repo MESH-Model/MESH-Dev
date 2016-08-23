@@ -68,7 +68,7 @@ module save_basin_output
 
         !> Local variables for formatting headers for the output files.
         character(20) IGND_CHAR
-        character(500) WRT_900_1, WRT_900_2, WRT_900_3, WRT_900_4, WRT_900_f
+        character(500) WRT_900_FMT, WRT_900_2, WRT_900_3, WRT_900_4
 
         !> Local variables.
         integer IOUT, IGND, j, i, ierr, iun
@@ -130,43 +130,33 @@ module save_basin_output
         open(904, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_ts.csv')
 
         !> Create a header that accounts for the proper number of soil layers.
-        wrt_900_1 = 'DAY,YEAR,PREACC' // ',EVAPACC,ROFACC,ROFOACC,' // &
-            'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNCAN,RCAN,SNO,WSNO,PNDW,'
-        wrt_900_2 = 'LQWS'
-        wrt_900_3 = 'FRWS'
-        wrt_900_4 = 'ALWS'
+        WRT_900_2 = 'LQWS'
+        WRT_900_3 = 'FRWS'
+        WRT_900_4 = 'ALWS'
         do j = 1, IGND
             write(IGND_CHAR, '(i1)') j
             if (j < IGND) then
-                wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(IGND_CHAR)) // ',LQWS'
-                wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(IGND_CHAR)) // ',FRWS'
-                wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(IGND_CHAR)) // ',ALWS'
+                WRT_900_2 = trim(adjustl(WRT_900_2)) // trim(adjustl(IGND_CHAR)) // ',LQWS'
+                WRT_900_3 = trim(adjustl(WRT_900_3)) // trim(adjustl(IGND_CHAR)) // ',FRWS'
+                WRT_900_4 = trim(adjustl(WRT_900_4)) // trim(adjustl(IGND_CHAR)) // ',ALWS'
             else
-                wrt_900_2 = trim(adjustl(wrt_900_2)) // trim(adjustl(IGND_CHAR)) // ','
-                wrt_900_3 = trim(adjustl(wrt_900_3)) // trim(adjustl(IGND_CHAR)) // ','
-                wrt_900_4 = trim(adjustl(wrt_900_4)) // trim(adjustl(IGND_CHAR)) // ','
+                WRT_900_2 = trim(adjustl(WRT_900_2)) // trim(adjustl(IGND_CHAR)) // ','
+                WRT_900_3 = trim(adjustl(WRT_900_3)) // trim(adjustl(IGND_CHAR)) // ','
+                WRT_900_4 = trim(adjustl(WRT_900_4)) // trim(adjustl(IGND_CHAR)) // ','
             end if
         end do !> j = 1, IGND
-        wrt_900_f = trim(adjustl(wrt_900_1)) // &
-                    trim(adjustl(wrt_900_2)) // &
-                    trim(adjustl(wrt_900_3)) // &
-                    trim(adjustl(wrt_900_4)) // 'LQWS,FRWS,ALWS,STG,DSTG,DSTGACC'
+        WRT_900_FMT = 'PREACC,EVAPACC,ROFACC,ROFOACC,' // &
+                      'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SNCAN,RCAN,SNO,WSNO,PNDW,' // &
+                      trim(adjustl(WRT_900_2)) // &
+                      trim(adjustl(WRT_900_3)) // &
+                      trim(adjustl(WRT_900_4)) // &
+                      'LQWS,FRWS,ALWS,STG,DSTG,DSTGACC'
 
         !> Write the header.
-        write(fls%fl(mfk%f900)%iun, '(a)') trim(adjustl(wrt_900_f))
-        write(902, '(a)') trim(adjustl(wrt_900_f))
-        write(903, '(a)') 'DAY,YEAR,HOUR,PREACC' // ',EVAPACC,ROFACC,ROFOACC,' // &
-            'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,' // &
-            trim(adjustl(wrt_900_2)) // &
-            trim(adjustl(wrt_900_3)) // &
-            trim(adjustl(wrt_900_4)) // &
-            'THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE,DSTOR_ACC'
-        write(904, '(a)') 'DAY,YEAR,HOUR,MINS,PREACC' // ',EVAPACC,ROFACC,ROFOACC,' // &
-            'ROFSACC,ROFBACC,PRE,EVAP,ROF,ROFO,ROFS,ROFB,SCAN,RCAN,SNO,WSNO,ZPND,' // &
-            trim(adjustl(wrt_900_2)) // &
-            trim(adjustl(wrt_900_3)) // &
-            trim(adjustl(wrt_900_4)) // &
-            'THLQ,THLIC,THLQIC,STORAGE,DELTA_STORAGE,DSTOR_ACC'
+        write(fls%fl(mfk%f900)%iun, '(a)') 'DAY,YEAR,' // trim(adjustl(WRT_900_FMT))
+        write(902, '(a)') 'DAY,YEAR,' // trim(adjustl(WRT_900_FMT))
+        write(903, '(a)') 'DAY,YEAR,HOUR,' // trim(adjustl(WRT_900_FMT))
+        write(904, '(a)') 'DAY,YEAR,HOUR,MINS,' // trim(adjustl(WRT_900_FMT))
 
         !> Open CSV output files for the energy balance and write the header.
         open(901, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance.csv')

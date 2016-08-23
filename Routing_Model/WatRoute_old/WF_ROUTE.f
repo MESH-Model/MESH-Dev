@@ -35,6 +35,7 @@ c for baseflow initialization
 c     for routing
       integer wf_RouteTimeStep, wf_TimeCount, DriverTimeStep, NLTEST
       real wf_r1(M_C),wf_r2(M_C),wf_nhyd(NLAT),wf_qbase(NLAT)
+      real wf_a1(M_C), wf_a2(M_C), wf_a3(M_C), wf_a4(M_C)
       real wf_qi2(NLAT),wf_qo1(NLAT),wf_qo2(NLAT), wf_qr(NLAT)
       real wf_store1(NLAT), wf_store2(NLAT),wf_qi1(NLAT)
       real ROFGRD(NLAT)
@@ -64,7 +65,6 @@ c     Local variables
       real qda(NLAT),qUngauged,daUngauged
       integer iHourCount
       integer WF_MAX_TIME_SUBDIVISIONS ,WF_MAX_ITERATIONS
-      real wf_a1, wf_a2, wf_a3, wf_a4
       integer top(NLAT)
 
       COMMON /CLASS1/ DELT,TFREZ
@@ -79,7 +79,7 @@ c from WATCLASS 2.7 - I'm assuming they are correct still
 !-      wf_a4 = 1.0
 
       do i=1,M_C
-      wf_r1(i)=2.0
+         wf_r1(i)=2.0
       enddo
 
 c if this is the first time through, initialize baseflows
@@ -95,7 +95,6 @@ c data as the values should already be set in the resume.txt file.
 !-      IF(IOS.NE.0) THEN
 
 c     Initialize
-      rl=wf_al*wf_a1
       do n=1,NLTEST              ! na or wf_naa ?
          i=wf_yy(n)
          j=wf_xx(n)
@@ -308,9 +307,9 @@ c        Only have initial input to downstream elements
          wf_qo2(n)=qda(n)
 
 c        Cap is the volume of water in a reach for the mean annual flow
-         rl=wf_al*wf_a1
+         rl=wf_al*wf_a1(ii)
          if (wf_RLFLAG == 1) rl = wf_CHNL_LEN(n)
-         cap=(wf_a2+wf_a3*wf_da(n)**wf_a4)*rl
+         cap=(wf_a2(ii)+wf_a3(ii)*wf_da(n)**wf_a4(ii))*rl
          if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)
          qch=(cap/rl)**1.33*SQRT(wf_channelSlope(n))/wf_r2(ii)
           
@@ -501,9 +500,10 @@ c                          No outflow - channel is empty
                         else
 c                          Cap is the volume of water in a reach 
 c                          for the mean annual flow
-                           rl=wf_al*wf_a1
+                           rl=wf_al*wf_a1(ii)
                            if (wf_RLFLAG == 1) rl = wf_CHNL_LEN(i)
-                           cap=(wf_a2+wf_a3*wf_da(i)**wf_a4)*rl
+                           cap=
+     +(wf_a2(ii)+wf_a3(ii)*wf_da(i)**wf_a4(ii))*rl
                            if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)
                            over=(wf_store2(i)-cap)/rl
                            if( over.le.0.0 ) then

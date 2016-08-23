@@ -45,8 +45,7 @@ module sa_mesh_run_between_grid
 
     end subroutine
 
-    subroutine run_between_grid(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls, &
-                                WF_R1, WF_R2, M_C)
+    subroutine run_between_grid(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -72,14 +71,9 @@ module sa_mesh_run_between_grid
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        !> Temporary variables.
-        integer M_C
-        real WF_R1(M_C), WF_R2(M_C)
-
 !todo: Switch
         call SA_RTE(shd, ic, wb)
-        call WF_ROUTE_between_grid(shd, ic, wb, stfl, rrls, &
-                                   WF_R1, WF_R2, M_C)
+        call WF_ROUTE_between_grid(shd, ic, wb, stfl, rrls)
         call run_save_basin_output(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
 
     end subroutine

@@ -44,8 +44,26 @@ module WF_ROUTE_config
         !>     4 = Save the streamflow channel water balance to file.
         integer(kind=4) :: STREAMFLOWOUTFLAG = 3
 
-        !> Flag to control the reservoir release function used in WF_ROUTE.f.
+        !> Flag to control the reservoir release function used in
+        !> WF_ROUTE.f.
+        !>  2 = 2-parameter power release function.
+        !>  5 = 5-parameter polynomial release function.
         integer :: RESVRELSWFB = 2
+
+        !> Channel length 'rl' flag for WF_ROUTE.f.
+!todo: Verify units if read from shed file.
+        !>  0 = 'rl' is calculated using WF_AL and WF_A1 (default).
+        !>  1 = Values are taken from the 'chnllength' attribute from
+        !>      the drainage database/r2c shed file.
+        integer :: RLFLAG = 0
+
+        !> Bankfull/capacity 'cap' flag for WF_ROUTE.f
+!todo: Verify units if read from shed file.
+        !>  0 = 'cap' is calculated using WF_DA, WF_A2, WF_A3, and WF_A4
+        !>      (default).
+        !>  1 = Values are taken from the 'bankfull' attribute from the
+        !>      drainage database/r2c shed file.
+        integer :: CAPFLAG = 0
 
     end type
 
@@ -71,10 +89,28 @@ module WF_ROUTE_config
 
     end type
 
+    type WF_RTE_parameters
+
+        !> Channel roughness coefficients.
+        !* r2: River channel roughness coefficient.
+        !* r1: Overbank channel roughness coefficient.
+        real(kind=4), dimension(:), allocatable :: r2, r1
+
+        !> Fitting coefficients.
+        !* aa1: Channel length coefficient.
+        !* aa2: Bankfull area coefficient.
+        !* aa3: Bankfull area coefficient.
+        !* aa4: Bankfull area coefficient.
+        real(kind=4), dimension(:), allocatable :: aa1, aa2, aa3, aa4
+
+    end type
+
     !> WF_RTE_fls: Stores information about files used by the module.
     type(fl_ids), save :: WF_RTE_fls
 
     type(WF_RTE_file_keys), save :: WF_RTE_flks
+
+    type(WF_RTE_parameters), save :: wfp
 
     !> *****************************************************************
     !> Local variables.
@@ -103,6 +139,10 @@ module WF_ROUTE_config
     !* WF_S: GAUGE'S PARENT GRID SQUARE
     !* WF_QHYD: STREAMFLOW VALUE (_AVG = DAILY AVERAGE)
     !* WF_QSYN: SIMULATED STREAFLOW VALUE (_AVG = DAILY AVERAGE)
+    !* WF_A1: Channel fitting parameter for average channel length (default: 1.0).
+    !* WF_A2: Channel fitting parameter for average bankfull capacity (default: 11.0).
+    !* WF_A3: Channel fitting parameter for average bankfull capacity (default: 0.43).
+    !* WF_A4: Channel fitting parameter for average bankfull capacity (default: 1.0).
     !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
     !* WF_START_DAY OBSERVED STREAMFLOW START DAY
     !* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
@@ -111,6 +151,7 @@ module WF_ROUTE_config
     real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
     real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
     character(8), dimension(:), allocatable :: WF_GAGE
+!-    real, dimension(:), allocatable :: WF_A1, WF_A2, WF_A3, WF_A4
 
     !> RESERVOIR VARIABLES
     integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R

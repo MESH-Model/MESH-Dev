@@ -2,9 +2,9 @@
 !> Open and read in values from MESH_parameters_hydrology.ini file
 !> *********************************************************************
 
-subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
-                                     shd, fls)
+subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
+    use strings
     use sa_mesh_shared_variabletypes
     use sa_mesh_shared_variables
     use model_files_variabletypes
@@ -13,14 +13,23 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
 
     use RUNCLASS36_variables
 
+    use WF_ROUTE_config, only: wfp
+
     use baseflow_module, only: lzsp
 
     implicit none
 
+    !> Local variables for parsing control flag strings.
+    integer, parameter :: MaxLenField = 20, MaxArgs = 20, MaxLenLine = 100
+    character(MaxLenLine) in_line
+    character(MaxLenField), dimension(MaxArgs) :: out_args
+    integer nargs
+    character(1) :: delim = ' '
+
     !> Input variables.
-    integer M_C, INDEPPAR, DEPPAR
-    real WF_R2(M_C)
-    character(8) RELEASE
+!-    integer M_C, INDEPPAR, DEPPAR
+!-    real WF_R2(M_C)
+!-    character(8) RELEASE
 
 !    type(HydrologyParameters) :: hp
 
@@ -28,11 +37,13 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
     type(fl_ids):: fls
 
     !> Local variables.
-    integer OPTFLAGS, NTYPE, NA, ierr, iun, m, j, i
+!-    integer OPTFLAGS
+    integer NTYPE, NA, NRVR
+    integer iun, ierr, m, n, j, i
     real, dimension(:), allocatable :: INDEPPARVAL
     real, dimension(:, :), allocatable :: DEPPARVAL
     character(8) FILE_VER
-    logical :: VER_OK = .true.
+!-    logical :: VER_OK = .true.
 
     NA = shd%NA
     NTYPE = shd%lc%NTYPE
@@ -52,7 +63,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
     end if
 
     !> Check the file version (if RELFLG = 1.0).
-    if (RELFLG == 1) then
+!-    if (RELFLG == 1) then
 
         !> Read the file version.
         read(iun, '(a8)') FILE_VER
@@ -69,46 +80,97 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
 !+        end if
 
         !> Wrong file version.
-        if (.not. VER_OK) then
-            print *
-            if (len(trim(adjustl(FILE_VER))) > 0) then
-                print *, ' File version: ', FILE_VER
-            else
-                print *, 'This file is out of date.'
-            end if
+!-        if (.not. VER_OK) then
+!-            print *
+!-            if (len(trim(adjustl(FILE_VER))) > 0) then
+!-                print *, ' File version: ', FILE_VER
+!-            else
+!-                print *, 'This file is out of date.'
+!-            end if
 
-            print *, 'MESH requires file version: ', RELEASE
-            print *, 'Please update MESH_parameters_hydrology.ini.'
-            print *, 'The file must contain the version number'
-            print *, 'on the first line, followed by a colon.'
-            print *, 'EXAMPLE: '
-            print *, RELEASE, ': MESH_parameters_hydrology.ini'
-            print *
-            print *, 'Please insure that all other parameters'
-            print *, 'are also updated.'
-            stop
-        end if
-    else
-        read(iun, *)
-    end if
+!-            print *, 'MESH requires file version: ', RELEASE
+!-            print *, 'Please update MESH_parameters_hydrology.ini.'
+!-            print *, 'The file must contain the version number'
+!-            print *, 'on the first line, followed by a colon.'
+!-            print *, 'EXAMPLE: '
+!-            print *, RELEASE, ': MESH_parameters_hydrology.ini'
+!-            print *
+!-            print *, 'Please insure that all other parameters'
+!-            print *, 'are also updated.'
+!-            stop
+!-        end if
+!-    else
+!-        read(iun, *)
+!-    end if
 
     !> Option flags.
     read(iun, *)
     read(iun, *)
-    read(iun, *) OPTFLAGS
-    if (OPTFLAGS > 0) then
-        do i = 1, OPTFLAGS
+    read(iun, *) n
+    if (n > 0) then
+        do i = 1, n
             read(iun, *)
         end do
     end if
 
-    !> WF_R2 (roughness coefficient) values.
+    !> *****************************************************************
+    !> River channel routing variables.
+    !> *****************************************************************
+
+    !> Initialize variables.
+    NRVR = shd%NRVR
+    allocate(wfp%r1(NRVR), wfp%r2(NRVR), &
+             wfp%aa1(NRVR), wfp%aa2(NRVR), wfp%aa3(NRVR), wfp%aa4(NRVR))
+    wfp%r1 = 0.0
+    wfp%r2 = 0.0
+    wfp%aa1 = 1.0
+    wfp%aa2 = 11.0
+    wfp%aa3 = 0.43
+    wfp%aa4 = 1.0
+
+    !> Read variables from file.
     read(iun, *)
     read(iun, *)
-!todo: change this to use NRVR or CHNL.
-    read(iun, *) (WF_R2(i), i = 1, 5)
-    do i = 1, 5
-        if (WF_R2(i) <= 0) then
+    select case (FILE_VER)
+
+        !> Version 2.0. (2.980 is a placeholder for an intermediate commit to TRUNK).
+        case ('2.980')
+
+            !> Read number of channel routing parameters.
+            read(iun, *) n
+            do i = 1, n
+                read(iun,'(a)') in_line
+                call parse(in_line, delim, out_args, nargs)
+                select case (lowercase(out_args(1)))
+
+                    !> WF_R2.
+                    case ('r2')
+                        do j = 1, NRVR
+                            call value(out_args(j + 1), wfp%r2(j), ierr)
+                            if (ierr /= 0) then
+                                print 9100, trim(out_args(1)), j, trim(out_args(j + 1))
+                                stop
+                            end if
+                        end do
+9100    format(//3x, 'Error converting channel routing parameter ', (a), ' #', i3, ": '", (a), "'", /)
+
+                    !> Unrecognized parameter name.
+                    case default
+                        print *
+                        print 9200, trim(out_args(1))
+                        stop
+9200    format(//3x, 'Unrecognized channel routing parameter: ', (a), /)
+
+                end select
+            end do
+
+        !> Original format of the hydrology.ini file.
+        case default
+            read(iun, *) (wfp%r2(i), i = 1, NRVR)
+
+    end select
+    do i = 1, NRVR
+        if (wfp%r2(i) <= 0) then
             print *
             print *, 'River roughness =0 (in MESH parameters_hydrology.ini) '
             print *, 'Even if you only have only one river class, all initial WF_R2'
@@ -120,12 +182,12 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
     !> GRU-independent parameters.
     read(iun, *)
     read(iun, *)
-    read(iun, *) INDEPPAR
-    if (INDEPPAR > 0) then
+    read(iun, *) n
+    if (n > 0) then
 
         !> Allocate and distribute variables.
-        allocate(INDEPPARVAL(INDEPPAR))
-        do i = 1, INDEPPAR
+        allocate(INDEPPARVAL(n))
+        do i = 1, n
             read(iun, *, err = 9000) INDEPPARVAL(i)
         end do
 
@@ -134,7 +196,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
 
         !> FROZENSOILINIFLAG (infiltration into frozen soils).
         if (FROZENSOILINFILFLAG == 1) then
-            if (INDEPPAR < (4 + NYEARS)) then
+            if (n < (4 + NYEARS)) then
                 SOIL_POR_MAX = INDEPPARVAL(1)
                 SOIL_DEPTH = INDEPPARVAL(2)
                 S0 = INDEPPARVAL(3)
@@ -174,8 +236,8 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
     read(iun, *)
     read(iun, *)
     read(iun, *) i
-    read(iun, *) DEPPAR
-    if (DEPPAR > 0) then
+    read(iun, *) n
+    if (n > 0) then
 
         !> Check that GRU count matches the GRU count from the shd file.
         if (i /= NTYPE) then
@@ -185,7 +247,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
             stop
         end if
         read(iun, *)
-        if (DEPPAR < 9) then
+        if (n < 9) then
             print *
             print *, 'ERROR: THE NUMBER OF GRU DEPENDANT HYDROLOGY PARAMETERS SHOULD BE 9'
             print *, 'PLEASE REFER TO THE CURRENT TEMPLATE OF HYDROLOGY PARAMETERS FILE.'
@@ -194,7 +256,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
         end if
 
         !> Allocate and distribute variables.
-        allocate(DEPPARVAL(DEPPAR, NTYPE))
+        allocate(DEPPARVAL(n, NTYPE))
         if (lzsp%BASEFLOWFLAG > 0) then
             select case (lzsp%BASEFLOWFLAG)
                 case (1)
@@ -203,7 +265,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE, WF_R2, M_C, &
                     allocate(lzsp%WF_LZFA(NA, NTYPE), lzsp%WF_LZFPWR(NA, NTYPE))
             end select
         end if
-        do i = 1, DEPPAR
+        do i = 1, n
             read(iun, *, err = 9001) (DEPPARVAL(i, j), j = 1, NTYPE)
         end do
 !todo: change this to il2, il2

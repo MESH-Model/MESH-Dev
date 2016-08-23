@@ -135,7 +135,7 @@ program RUNMESH
 
     !> INTEGER CONSTANTS.
 !todo: Fix this (e.g., replace M_C with NRVR; move to process_WF_ROUTE).
-    integer, parameter :: M_C = 5
+!-    integer, parameter :: M_C = 5
 
 !todo clean up commets and arrange variables a bit better
 
@@ -143,7 +143,7 @@ program RUNMESH
 !todo: Fix this (e.g., replace M_C with NRVR; move to process_WF_ROUTE).
     !* WF_R1: MANNING'S N FOR RIVER CHANNEL
     !* WF_R2: OPTIMIZED RIVER ROUGHNESS FACTOR
-    real WF_R1(M_C), WF_R2(M_C)
+!-    real WF_R1(M_C), WF_R2(M_C)
 
 !> START ENSIM == FOR ENSIM == FOR ENSIM == FOR ENSIM ==
     character(10) wf_landclassname(10)
@@ -170,12 +170,12 @@ program RUNMESH
     character(24) :: VERSION = 'TRUNK (979)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
-    logical VER_OK
+!-    logical VER_OK
 
     !* INDEPPAR: NUMBER OF GRU-INDEPENDENT VARIABLES
     !* DEPPAR: NUMBER OF GRU-DEPENDENT VARIABLES
-    integer i, j, k, l, m, u, &
-        INDEPPAR, DEPPAR
+    integer i, j, k, l, m, u
+!-    integer INDEPPAR, DEPPAR
 
     integer FRAME_NO_NEW
 
@@ -295,16 +295,7 @@ program RUNMESH
         call Init_fls(fls)
     end if !(narg > 0) then
 
-    call READ_INITIAL_INPUTS( &
-
-                             !> GENERIC VARIABLES
-                             RELEASE, &
-
-                             !> READ_PARAMETERS_HYDROLOGY
-!todo: remove these
-                             INDEPPAR, DEPPAR, &
-                             WF_R2, M_C, &
-                             shd, &
+    call READ_INITIAL_INPUTS(shd, &
                              ts, cm, &
                              fls)
 
@@ -355,7 +346,7 @@ program RUNMESH
 
     !> MAM - Check for parameter values - all parameters should lie within the
     !> specified ranges in the "minmax_parameters.txt" file.
-    call check_parameters(WF_R2, M_C, NTYPE)
+    call check_parameters(shd)
 
     call init_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW, TIME_STEP_DELT)
 
@@ -482,7 +473,6 @@ program RUNMESH
             write(58, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
 !-            write(58, *) 'INTERPOLATIONFLAG    = ', INTERPOLATIONFLAG
             write(58, *) 'SUBBASINFLAG         = ', SUBBASINFLAG
-            write(58, *) 'TESTCSVFLAG          = ', 'NOTSUPPORTED'
             write(58, *) 'R2COUTPUTFLAG        = ', R2COUTPUTFLAG
             write(58, *) 'OBJFNFLAG            = ', OBJFNFLAG
             write(58, *) 'AUTOCALIBRATIONFLAG  = ', mtsflg%AUTOCALIBRATIONFLAG
@@ -1307,8 +1297,7 @@ program RUNMESH
 
         end if !(ipid == 0) then
 
-        if (ipid == 0) call run_between_grid(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls, &
-                                             WF_R1, WF_R2, M_C)
+        if (ipid == 0) call run_between_grid(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
         if (ipid == 0) then
 

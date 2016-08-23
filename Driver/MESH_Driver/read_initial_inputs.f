@@ -1,9 +1,4 @@
       subroutine READ_INITIAL_INPUTS(
-!> GENERIC VARIABLES
-     &  RELEASE,
-!> variables for READ_PARAMETERS_HYDROLOGY
-     &  INDEPPAR, DEPPAR, WF_R2, M_C,
-!> the types that are to be allocated and initialised
      &  shd,
      &  ts, cm,
      &  fls)
@@ -40,8 +35,8 @@
 !>  THLQROW, valuem
 !> -----------------------------
 !> Values needed for READ_PARAMETERS_HYDROLOGY :
-      integer INDEPPAR, DEPPAR, M_C
-      real WF_R2(M_C)
+!-      integer INDEPPAR, DEPPAR, M_C
+!-      real WF_R2(M_C)
 !> Values already declared above:
 !>  RELFLG
 !> -----------------------------
@@ -303,9 +298,7 @@
       allocate(t0_ACC(NYEARS))
       t0_ACC = 0.0
 
-      call READ_PARAMETERS_HYDROLOGY(INDEPPAR, DEPPAR, RELEASE,
-     &                               WF_R2, M_C,
-     &                               shd, fls)
+      call READ_PARAMETERS_HYDROLOGY(shd, fls)
 
       return
 
