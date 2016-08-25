@@ -393,6 +393,7 @@ module SIMSTATS
         !> Local variables.
         logical exists
         integer j, iun
+        character(len=20) cfmt
 
         if (SAVERESUMEFLAG == 4) then
             call stats_state_save(fls)
@@ -471,10 +472,15 @@ module SIMSTATS
         !> Write the summary of the metrics to file.
         if (mtsfl%fl(mtsk%out)%init) then
             iun = mtsfl%fl(mtsk%out)%iun
+            cfmt = "(100(g12.3e2, ' '))"
             open(iun, file = trim(adjustl(mtsfl%fl(mtsk%out)%fn)))
-            write(iun, *) "MAE ", "RMSE ", "BIAS ", "NSD ", "lnNSD ", "TPD "
-            write(iun, *) (st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), nsd(j), lnsd(j), int(tpd(j)), &
-                j = 1, size(qobs, 2))
+            write(iun, cfmt) "Gauge", "MAE", "RMSE", "BIAS", "AbsBIAS", "NSD", "NegNSD", "lnNSD", "NeglnNSD", "TPD"
+            do j = 1, size(qobs, 2)
+                write(iun, cfmt) &
+                    j, &
+                    st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), abs(bias(j)), &
+                    nsd(j), (-1.0*nsd(j)), lnsd(j), (-1.0*lnsd(j)), int(tpd(j))
+            end do
             close(iun)
         end if
 

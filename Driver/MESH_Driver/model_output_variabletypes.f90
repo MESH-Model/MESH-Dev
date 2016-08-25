@@ -6,10 +6,13 @@ module model_output_variabletypes
     !>              streamflow gauge location.
     type streamflow_hydrograph
 
+        !* name: ID printed to output files.
+        !* iy:
         !* qhyd: Observed value.
         !* qsyn: Synthesis.
-        real, dimension(:), allocatable :: qhyd
-        real, dimension(:), allocatable :: qsyn
+        character(len=8), dimension(:), allocatable :: name
+        integer, dimension(:), allocatable :: iy, jx, n
+        real, dimension(:), allocatable :: i, j, qhyd, qsyn
 
         !* ns: Number of streamflow gauges or records.
         integer ns
