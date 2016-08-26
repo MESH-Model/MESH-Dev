@@ -89,6 +89,11 @@ module WF_ROUTE_config
 
     end type
 
+    !> WF_RTE_fls: Stores information about files used by the module.
+    type(fl_ids), save :: WF_RTE_fls
+
+    type(WF_RTE_file_keys), save :: WF_RTE_flks
+
     type WF_RTE_parameters
 
         !> Channel roughness coefficients.
@@ -105,11 +110,6 @@ module WF_ROUTE_config
 
     end type
 
-    !> WF_RTE_fls: Stores information about files used by the module.
-    type(fl_ids), save :: WF_RTE_fls
-
-    type(WF_RTE_file_keys), save :: WF_RTE_flks
-
     type(WF_RTE_parameters), save :: wfp
 
     !> *****************************************************************
@@ -121,22 +121,13 @@ module WF_ROUTE_config
     !> by WF_ROUTE and are only accessible to code that use this module.
     !>
 
-    integer M_S, M_R
-!-    integer, parameter :: M_C = 5
     !integer, parameter :: M_S = 290, M_R = 7, M_C = 5
-    !M_S and M_R are now read in and used to allocate the appropriate arrays - Frank S Jul 2013
 !todo it should be read in from the shd file
-!todo M_S could be removed as it is now just a surrogate of WF_NO (KCK)
 
     !> STREAMFLOW VARIABLES
-    !* WF_GAGE: GAUGE IDENTIFIER (8 CHARACTER STRING)
-    !* WF_NO: NUMBER OF STREAMFLOW GAUGES
     !* WF_NL: NUMBER OF DATA POINTS
     !* WF_MHRD: NUMBER OF HOURS OF DATA PER MONTH
     !* WF_KT: HOURLY INCREMENT FOR STREAMFLOW INPUT (24 = DAILY)
-    !* WF_IY: Y-DIRECTION GAUGE CO-ORDINATE (UTM OR LATLONG)
-    !* WF_JX: X-DIRECTION GAUGE CO-ORDINATE (UTM OR LATLONG)
-    !* WF_S: GAUGE'S PARENT GRID SQUARE
     !* WF_QHYD: STREAMFLOW VALUE (_AVG = DAILY AVERAGE)
     !* WF_QSYN: SIMULATED STREAFLOW VALUE (_AVG = DAILY AVERAGE)
     !* WF_A1: Channel fitting parameter for average channel length (default: 1.0).
@@ -146,18 +137,19 @@ module WF_ROUTE_config
     !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
     !* WF_START_DAY OBSERVED STREAMFLOW START DAY
     !* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
-    integer WF_NAA, WF_NO, WF_NL, WF_MHRD, WF_KT
-    integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
+    integer WF_NAA, WF_NL, WF_MHRD, WF_KT
+!-    integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
     real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
     real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
-    character(8), dimension(:), allocatable :: WF_GAGE
+!-    character(8), dimension(:), allocatable :: WF_GAGE
 !-    real, dimension(:), allocatable :: WF_A1, WF_A2, WF_A3, WF_A4
 
     !> RESERVOIR VARIABLES
-    integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_RES, WF_R
+!-    integer, dimension(:), allocatable :: WF_IRES, WF_JRES, WF_R
+    integer, dimension(:), allocatable :: WF_RES
     real, dimension(:), allocatable :: WF_B1, WF_B2, WF_QREL, WF_RESSTORE
     real, dimension(:), allocatable :: WF_B3, WF_B4, WF_B5
-    character(8), dimension(:), allocatable :: WF_RESNAME
+!-    character(8), dimension(:), allocatable :: WF_RESNAME
 
     !> FOR BASEFLOW INITIALIZATION
     integer JAN
@@ -167,19 +159,16 @@ module WF_ROUTE_config
     !* WF_QO2: SIMULATED STREAMFLOW VALUE
 !-    real WF_R1(M_C), WF_R2(M_C)
     real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI2, &
-        WF_QO1, WF_QO2, WF_QR, WF_STORE1, WF_STORE2, WF_QI1
+        WF_QO1, WF_QR, WF_STORE1
+!-    real, dimension(:), allocatable :: WF_QI1, WF_QO2, WF_STORE2
 
     !> RESERVOIR MEASUREMENTS:
-    !* WF_RESNAME: RESERVOIR IDENTIFIER (8 CHARACTER STRING)
-    !* WF_NORESV: NUMBER OF RESERVOIRS
     !* WR_NREL: NUMBER OF DATA POINTS
     !* WF_KTR: HOURLY INCREMENT FOR RESERVOIR INPUR (24 = DAILY)
-    !* WF_IRES: Y-DIRECTION GAUGE CO-ORDINATE
-    !* WF_JRES: X-DIRECTION GAUGE CO-ORDINATE
-    !* WF_R: RESERVOIR'S PARENT GRID SQUARE
     !* WF_QREL: RESERVOIR VALUE
-    integer WF_NORESV, WF_NREL, WF_KTR, WF_NORESV_CTRL
-    integer WF_ROUTETIMESTEP, WF_TIMECOUNT, DRIVERTIMESTEP
+    integer WF_NREL, WF_KTR, WF_NORESV_CTRL
+    integer WF_ROUTETIMESTEP, WF_TIMECOUNT
+!-    integer DRIVERTIMESTEP
 
     !* WF_NODATA_VALUE: No data value for when the streamflow record does not exist.
     real :: WF_NODATA_VALUE = -999.0
@@ -210,7 +199,6 @@ module WF_ROUTE_config
     !>
     subroutine WF_ROUTE_init(shd, fls, ic, stfl, rrls)
 
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_files_variables
         use model_dates
@@ -229,11 +217,22 @@ module WF_ROUTE_config
         !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
         !* WF_START_DAY OBSERVED STREAMFLOW START DAY
         !* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
-        integer NA
-        integer WF_START_YEAR, WF_START_DAY, WF_START_HOUR
-        integer JDAY_IND_STRM, JDAY_IND1, JDAY_IND2
-        real I_G, J_G
-        integer i, j, ierr, iun
+        integer WF_START_YEAR, WF_START_DAY, WF_START_HOUR, JDAY_IND_STRM, JDAY_IND1, JDAY_IND2
+
+        !> Temporary variables for frequently accessed terms.
+        !* NA: Number of grid cells.
+        !* NS: Number of streamflow gauges.
+        !* NR: Number of reservoir outlets.
+        integer NS, NR, NA
+
+        !> Temporary variables.
+        !* ry/iy: Y-component of the location (real/integer).
+        !* rx/ix: X-component of the location (real/integer)
+        !* i, j: Counters.
+        !* ierr: Error return from external calls.
+        !* iun: Unit number.
+        real ry, rx
+        integer iy, ix, i, j, ierr, iun
 
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
 
@@ -241,19 +240,19 @@ module WF_ROUTE_config
         WF_NAA = NA - shd%NAA
 
         allocate(WF_NHYD(NA), WF_QR(NA), &
-                 WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), WF_QO2(NA), &
-                 WF_STORE1(NA), WF_STORE2(NA), WF_QI1(NA), &
+                 WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), &
+                 WF_STORE1(NA), &
                  WF_QO2_ACC_MM(NA), WF_STORE2_ACC_MM(NA))
 
         WF_NHYD = 0.0
         WF_QBASE = 0.0
         WF_QI2 = 0.0
         WF_QO1 = 0.0
-        WF_QO2 = 0.0
+!-        WF_QO2 = 0.0
         WF_QR = 0.0
         WF_STORE1 = 0.0
-        WF_STORE2 = 0.0
-        WF_QI1 = 0.0
+!-        WF_STORE2 = 0.0
+!-        WF_QI1 = 0.0
         WF_QO2_ACC_MM = 0.0
         WF_STORE2_ACC_MM = 0.0
 
@@ -263,15 +262,16 @@ module WF_ROUTE_config
 
         iun = WF_RTE_fls%fl(WF_RTE_flks%resv_in)%iun
         open(iun, file = WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn, status = 'old', action = 'read')
-        read(iun, '(3i5)') WF_NORESV, WF_NREL, WF_KTR
+        read(iun, '(3i5)') fms%rsvr%n, WF_NREL, WF_KTR
         WF_NORESV_CTRL = 0
+        NR = fms%rsvr%n
 
-        if (WF_NORESV > 0) then
+        if (NR > 0) then
 
             !> Allocate and initialize reservoir variables.
-            M_R = WF_NORESV
-            allocate(WF_IRES(M_R), WF_JRES(M_R), WF_RES(M_R), WF_R(M_R), WF_B1(M_R), WF_B2(M_R), &
-                     WF_B3(M_R), WF_B4(M_R), WF_B5(M_R), WF_QREL(M_R), WF_RESSTORE(M_R), WF_RESNAME(M_R))
+            allocate(WF_RES(NR), &
+                     WF_B1(NR), WF_B2(NR), WF_B3(NR), WF_B4(NR), WF_B5(NR), &
+                     WF_QREL(NR), WF_RESSTORE(NR))
             WF_QREL = 0.0
             WF_RESSTORE = 0.0
             WF_B1 = 0.0
@@ -280,48 +280,79 @@ module WF_ROUTE_config
             WF_B4 = 0.0
             WF_B5 = 0.0
 
-            do i = 1, WF_NORESV
+            !> Allocate configuration variables for the driver.
+            allocate(fms%rsvr%name(NR), &
+                     fms%rsvr%y(NR), fms%rsvr%x(NR), &
+                     fms%rsvr%iy(NR), fms%rsvr%jx(NR), fms%rsvr%rnk(NR), &
+                     fms%rsvr%cfn(NR))
+
+            !> Allocate state variables for the driver.
+            allocate(stas%rsvr%qi(NR), stas%rsvr%qo(NR), stas%rsvr%s(NR), stas%rsvr%ab(NR))
+            stas%rsvr%qi = 0.0
+            stas%rsvr%qo = 0.0
+            stas%rsvr%s = 0.0
+            stas%rsvr%ab = 0.0
+
+            !> Allocate output variable for the driver.
+            rrls%nr = NR
+            allocate(rrls%rls(NR), rrls%store(NR), rrls%abst(NR))
+            rrls%rls = 0.0
+            rrls%store = 0.0
+            rrls%abst = 0.0
+
+            do i = 1, NR
                 ! KCK Added to allow higher precision gauge sites
                 if (LOCATIONFLAG == 1) then
                     if (WF_RTE_flgs%RESVRELSWFB == 5) then
-                        read(iun, '(2f7.1, 5g10.3, a7, i2)') I_G, J_G, &
+                        read(iun, '(2f7.1, 5g10.3, a7, i2)') ry, rx, &
                             WF_B1(i), WF_B2(i), WF_B3(i), WF_B4(i), WF_B5(i), &
-                            WF_RESNAME(i), WF_RES(i)
+                            fms%rsvr%name(i), WF_RES(i)
                     else
-                        read(iun, '(2f7.1, 2g10.3, 25x, a12, i2)') I_G, J_G, WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
+                        read(iun, '(2f7.1, 2g10.3, 25x, a12, i2)') ry, rx, WF_B1(i), WF_B2(i), fms%rsvr%name(i), WF_RES(i)
                     end if
-                    WF_IRES(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
-                    WF_JRES(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
+                    fms%rsvr%y(i) = ry
+                    fms%rsvr%iy(i) = nint((ry - shd%yOrigin*60.0)/shd%GRDN)
+                    fms%rsvr%x(i) = rx
+                    fms%rsvr%jx(i) = nint((rx - shd%xOrigin*60.0)/shd%GRDE)
                 else
                     if (WF_RTE_flgs%RESVRELSWFB == 5) then
-                        read(iun, '(2i5, 5g10.3, a7, i2)') WF_IRES(i), WF_JRES(i), &
+                        read(iun, '(2i5, 5g10.3, a7, i2)') iy, ix, &
                             WF_B1(i), WF_B2(i), WF_B3(i), WF_B4(i), WF_B5(i), &
-                            WF_RESNAME(i), WF_RES(i)
+                            fms%rsvr%name(i), WF_RES(i)
                     else
                         read(iun, '(2i5, 2g10.3, 25x, a12, i2)') &
-                            WF_IRES(i), WF_JRES(i), WF_B1(i), WF_B2(i), WF_RESNAME(i), WF_RES(i)
+                            iy, ix, WF_B1(i), WF_B2(i), fms%rsvr%name(i), WF_RES(i)
                     end if
-                    WF_IRES(i) = int((real(WF_IRES(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
-                    WF_JRES(i) = int((real(WF_JRES(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
+                    fms%rsvr%y(i) = real(iy)
+                    fms%rsvr%iy(i) = int((real(iy) - real(shd%iyMin))/shd%GRDN + 1.0)
+                    fms%rsvr%x(i) = real(ix)
+                    fms%rsvr%jx(i) = int((real(ix) - real(shd%jxMin))/shd%GRDE + 1.0)
+                end if
+                if (WF_B3(i) > 0.0) then
+                    fms%rsvr%cfn(i) = 3
+                else if (WF_B1(i) > 0.0) then
+                    fms%rsvr%cfn(i) = 2
+                else
+                    fms%rsvr%cfn(i) = 1
                 end if
                 !> check if point is in watershed and in river reaches
-                WF_R(i) = 0
+                fms%rsvr%rnk(i) = 0
                 do j = 1, NA
-                    if (WF_IRES(i) == shd%yyy(j) .and. WF_JRES(i) == shd%xxx(j)) then
-                        WF_R(i) = j
+                    if (fms%rsvr%iy(i) == shd%yyy(j) .and. fms%rsvr%jx(i) == shd%xxx(j)) then
+                        fms%rsvr%rnk(i) = j
                     end if
                 end do
-                if (WF_R(i) == 0) then
+                if (fms%rsvr%rnk(i) == 0) then
                     print *, 'Reservoir Station: ', i, ' is not in the basin'
-                    print *, 'Up/Down Coordinate: ', WF_IRES(i), shd%iyMin
-                    print *, 'Left/Right Coordinate: ', WF_JRES(i), shd%jxMin
+                    print *, 'Up/Down Coordinate: ', fms%rsvr%iy(i), shd%iyMin
+                    print *, 'Left/Right Coordinate: ', fms%rsvr%jx(i), shd%jxMin
                     stop
                 end if
-                if (shd%IREACH(WF_R(i)) /= i) then
+                if (shd%IREACH(fms%rsvr%rnk(i)) /= i) then
                     print *, 'Reservoir Station: ', i, ' is not in the correct reach'
-                    print *, 'Up/Down Coordinate: ', WF_IRES(i)
-                    print *, 'Left/Right Coordinate: ', WF_JRES(i)
-                    print *, 'IREACH value at station: ', shd%IREACH(WF_R(i))
+                    print *, 'Up/Down Coordinate: ', fms%rsvr%iy(i)
+                    print *, 'Left/Right Coordinate: ', fms%rsvr%jx(i)
+                    print *, 'IREACH value at station: ', shd%IREACH(fms%rsvr%rnk(i))
                     stop
                 end if
                 if (WF_B1(i) == 0.0) then
@@ -338,63 +369,68 @@ module WF_ROUTE_config
         iun = WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun
         open(iun, file = WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%fn, status = 'old', action = 'read')
         read(iun, *)
-        read(iun, *) WF_NO, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
+        read(iun, *) fms%stmg%n, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
+        NS = fms%stmg%n
 
-! Allocate variable based on value from streamflow file
-        M_S = WF_NO !todo M_S is same as WF_NO and could be removed.
+        allocate(WF_QHYD(NS), WF_QHYD_AVG(NS), WF_QHYD_CUM(NS), &
+                 WF_QSYN(NS), WF_QSYN_AVG(NS), WF_QSYN_CUM(NS))
 
-        allocate(WF_IY(M_S), WF_JX(M_S), WF_S(M_S), WF_QHYD(M_S), WF_QHYD_AVG(M_S), WF_QHYD_CUM(M_S), &
-                 WF_QSYN(M_S), WF_QSYN_AVG(M_S), WF_QSYN_CUM(M_S), WF_GAGE(M_S))
+        !> Allocate configuration variables for the driver.
+            allocate(fms%stmg%name(NS), &
+                     fms%stmg%y(NS), fms%stmg%x(NS), &
+                     fms%stmg%iy(NS), fms%stmg%jx(NS), fms%stmg%rnk(NS))
 
-        !> Allocate the output variable for the streamflow hydrograph.
-        stfl%ns = WF_NO
-        allocate(stfl%name(WF_NO), &
-                 stfl%iy(WF_NO), stfl%jx(WF_NO), stfl%n(WF_NO), &
-                 stfl%i(WF_NO), stfl%j(WF_NO), stfl%qhyd(WF_NO), stfl%qsyn(WF_NO))
+        !> Allocate state variables for the driver.
+        allocate(stas%chnl%qi(NA), stas%chnl%qo(NA), stas%chnl%s(NA))
+        stas%chnl%qi = 0.0
+        stas%chnl%qo = 0.0
+        stas%chnl%s = 0.0
+
+        !> Allocate output variable for the driver.
+        stfl%ns = NS
+        allocate(stfl%qhyd(NS), stfl%qsyn(NS))
         stfl%qhyd = 0.0
         stfl%qsyn = 0.0
 
-        do i = 1, WF_NO
+        do i = 1, NS
             if (LOCATIONFLAG == 1) then
-                read(iun, *) I_G, J_G, WF_GAGE(i)
-                stfl%i(i) = I_G
-                stfl%iy(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
-                stfl%j(i) = J_G
-                stfl%jx(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
+                read(iun, *) ry, rx, fms%stmg%name(i)
+                fms%stmg%y(i) = ry
+                fms%stmg%iy(i) = nint((ry - shd%yOrigin*60.0)/shd%GRDN)
+                fms%stmg%x(i) = rx
+                fms%stmg%jx(i) = nint((rx - shd%xOrigin*60.0)/shd%GRDE)
             else
-                read(iun, *) WF_IY(i), WF_JX(i), WF_GAGE(i)
-                stfl%i(i) = real(WF_IY(i))
-                stfl%iy(i) = int((real(WF_IY(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
-                stfl%j(i) = real(WF_JX(i))
-                stfl%jx(i) = int((real(WF_JX(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
+                read(iun, *) iy, ix, fms%stmg%name(i)
+                fms%stmg%y(i) = real(iy)
+                fms%stmg%iy(i) = int((real(iy) - real(shd%iyMin))/shd%GRDN + 1.0)
+                fms%stmg%x(i) = real(ix)
+                fms%stmg%jx(i) = int((real(ix) - real(shd%jxMin))/shd%GRDE + 1.0)
             end if
-            stfl%name(i) = WF_GAGE(i)
         end do
-        do i = 1, WF_NO
-            WF_S(i) = 0
+        do i = 1, NS
+            fms%stmg%rnk(i) = 0
             do j = 1, NA
-                if (stfl%jx(i) == shd%xxx(j) .and. stfl%iy(i) == shd%yyy(j)) then
-                    WF_S(i) = j
-                    stfl%n(WF_NO) = j
+                if (fms%stmg%jx(i) == shd%xxx(j) .and. fms%stmg%iy(i) == shd%yyy(j)) then
+                    fms%stmg%rnk(i) = j
                 end if
             end do
-            if (WF_S(i) == 0) then
+            if (fms%stmg%rnk(i) == 0) then
                 print *, 'STREAMFLOW GAUGE: ', i, ' IS NOT IN THE BASIN'
-                print *, 'UP/DOWN', stfl%iy(i), shd%iyMin, shd%yyy(j), shd%yCount
-                print *, 'LEFT/RIGHT', stfl%jx(i), shd%jxMin, shd%xxx(j), shd%xCount
+                print *, 'UP/DOWN', fms%stmg%iy(i), shd%iyMin, shd%yyy(j), shd%yCount
+                print *, 'LEFT/RIGHT', fms%stmg%jx(i), shd%jxMin, shd%xxx(j), shd%xCount
                 stop
             end if
         end do
 
         if (ro%VERBOSEMODE > 0) then
-            print *, 'NUMBER OF STREAMFLOW GUAGES: ', WF_NO
-            do i = 1, WF_NO
-                print *, 'STREAMFLOW STATION: ', i, 'I: ', stfl%iy(i), 'J: ', stfl%jx(i)
+            print *, 'NUMBER OF STREAMFLOW GUAGES: ', NS
+            do i = 1, NS
+                print *, 'STREAMFLOW STATION: ', i, 'I: ', fms%stmg%iy(i), 'J: ', fms%stmg%jx(i)
             end do
-            print *, 'NUMBER OF RESERVOIR STATIONS: ', WF_NORESV
-            if (WF_NORESV > 0) then
-                do i = 1, WF_NORESV
-                    print *, 'RESERVOIR STATION: ', i, 'I: ', WF_IRES(i), 'J: ', WF_JRES(i)
+            print *, 'NUMBER OF RESERVOIR STATIONS: ', NR
+            if (NR > 0) then
+                do i = 1, NR
+                    print *, 'RESERVOIR STATION: ', i, 'I: ', fms%rsvr%iy(i), 'J: ', fms%rsvr%jx(i)
                 end do
             end if
         end if !(ro%VERBOSEMODE > 0) then
@@ -407,7 +443,7 @@ module WF_ROUTE_config
         WF_QHYD_CUM = 0.0
 
         !>MAM - The first stream flow record is used for flow initialization
-        read(iun, *, iostat = ierr) (WF_QHYD(i), i = 1, WF_NO)
+        read(iun, *, iostat = ierr) (WF_QHYD(i), i = 1, NS)
         backspace(iun)
 
         ! fixed streamflow start time bug. add in function to enable the
@@ -493,8 +529,8 @@ module WF_ROUTE_config
             read(iun) WF_QSYN
             read(iun) WF_QSYN_AVG
             read(iun) WF_QSYN_CUM
-            read(iun) wf_qo2
-            read(iun) wf_store2
+            read(iun) stas%chnl%qo
+            read(iun) stas%chnl%s
             read(iun) wf_qi2
 
             !> Close the file to free the unit.
@@ -509,6 +545,7 @@ module WF_ROUTE_config
         use model_files_variabletypes
         use model_files_variables
         use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -544,8 +581,8 @@ module WF_ROUTE_config
             write(iun) WF_QSYN
             write(iun) WF_QSYN_AVG
             write(iun) WF_QSYN_CUM
-            write(iun) wf_qo2
-            write(iun) wf_store2
+            write(iun) stas%chnl%qo
+            write(iun) stas%chnl%s
             write(iun) wf_qi2
 
             !> Close the file to free the unit.

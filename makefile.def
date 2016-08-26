@@ -54,7 +54,11 @@ VPATH=	$(DIR_REPO)/Modules: \
 #Modules
 OBJECTS=	mpi_flags.o mpi_shared_variables.o mpi_module.o \
 			mpi_utilities.o \
-			sa_mesh_shared_variabletypes.o sa_mesh_shared_variables.o \
+			control_variables.o \
+			shd_variables.o fm_variables.o input_parameters.o state_variables.o \
+			output_variables.o \
+			variablename_constants.o parametername_constants.o \
+			sa_mesh_shared_variables.o \
 			EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o \
 			precmod.o stringmod.o \
 			module_files_variabletypes.o module_files_variables.o \
@@ -63,7 +67,7 @@ OBJECTS=	mpi_flags.o mpi_shared_variables.o mpi_module.o \
 			climate_forcing_module_config.o \
 			RUNCLASS36_constants.o RUNCLASS36_variables.o RUNCLASS36_save_output.o \
 			climate_forcing_module_io.o climate_forcing_module.o \
-			SIMSTATS_config.o model_output_variabletypes.o model_output.o \
+			SIMSTATS_config.o model_output.o \
 			calc_drms.o calc_abserr.o
 
 #WF_ROUTE
