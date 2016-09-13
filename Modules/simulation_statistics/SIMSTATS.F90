@@ -188,11 +188,10 @@ module SIMSTATS
     !>
     !> Description:
     !>
-    subroutine stats_init(fls, ic, stfl)
+    subroutine stats_init(fls, stfl)
 
         !> Input variables.
         type(fl_ids) :: fls
-        type(iter_counter) :: ic
         type(streamflow_hydrograph) :: stfl
 
         !> Local variables.
@@ -228,7 +227,7 @@ module SIMSTATS
         ncal = 0
         ns = stfl%ns
 
-        allocate(qobs(leap_year(ic%now_year), ns), qsim(leap_year(ic%now_year), ns))
+        allocate(qobs(leap_year(ic%now%year), ns), qsim(leap_year(ic%now%year), ns))
         allocate(bias(ns), nsd(ns), lnsd(ns), nsw(ns), tpd(ns), tpw(ns))
 
         qobs = 0.0
@@ -243,11 +242,10 @@ module SIMSTATS
     !>
     !> Description:
     !>
-    subroutine stats_update_stfl_daily(fls, ic, stfl)
+    subroutine stats_update_stfl_daily(fls, stfl)
 
         !> Input variables.
         type(fl_ids) :: fls
-        type(iter_counter) :: ic
         type(streamflow_hydrograph) :: stfl
 
         integer isz
@@ -263,14 +261,14 @@ module SIMSTATS
             allocate(tmp(size(qobs, 1), ns))
             tmp = qobs
             deallocate(qobs)
-            isz = isz + leap_year(ic%now_year)
+            isz = isz + leap_year(ic%now%year)
             allocate(qobs(isz, ns))
             qobs = 0.0
             qobs(1:(ncal - 1), :) = tmp(1:(ncal - 1), :)
             tmp = 0.0
             tmp = qsim
             deallocate(qsim)
-            isz = isz + leap_year(ic%now_year)
+            isz = isz + leap_year(ic%now%year)
             allocate(qsim(isz, ns))
             qsim = 0.0
             qsim(1:(ncal - 1), :) = tmp(1:(ncal - 1), :)
@@ -384,11 +382,10 @@ module SIMSTATS
     !>
     !> Description: Write the metrics of the simulation to file.
     !>
-    subroutine stats_write(fls, ic)
+    subroutine stats_write(fls)
 
         !> Input variables.
         type(fl_ids) :: fls
-        type(iter_counter) :: ic
 
         !> Local variables.
         logical exists

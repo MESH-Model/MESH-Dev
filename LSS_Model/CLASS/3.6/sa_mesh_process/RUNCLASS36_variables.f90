@@ -6,22 +6,15 @@ module RUNCLASS36_variables
     !* HOURLY_STOP_*: Stop day/year for recording hourly averaged data
     !* DAILY_START_*: Start day/year for recording daily averaged data
     !* DAILY_STOP_*: Stop day/year for recording daily averaged data
-    integer HOURLY_START_DAY, HOURLY_STOP_DAY, DAILY_START_DAY, &
-        DAILY_STOP_DAY
-    integer HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
-        DAILY_STOP_YEAR
-
-    !* TITLE: PROJECT DESCRIPTOR (6 COLUMNS: 4 CHARACTER STRINGS)
-    !* NAME: AUTHOR, RESEARCHER (6 COLUMNS: 4 CHARACTER STRINGS)
-    !* PLACE: SITE LOCATION, BASIN (6 COLUMNS: 4 CHARACTER STRINGS)
-    character(4) TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, &
-        TITLE6, NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
-        PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
+!-    integer HOURLY_START_DAY, HOURLY_STOP_DAY, DAILY_START_DAY, &
+!-        DAILY_STOP_DAY
+!-    integer HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
+!-        DAILY_STOP_YEAR
 
     !> Temporary variables.
 !todo: remove these.
-    integer JLAT
-    real DEGLAT, DEGLON
+!-    integer JLAT
+!-    real DEGLAT, DEGLON
 
     !> CLASS diagnostic output starting and stopping dates.
     !* JOUT1: DAILY-AVERAGED OUTPUT START DAY (JULIAN FROM YEAR START)
@@ -32,8 +25,8 @@ module RUNCLASS36_variables
     !* KOUT2: YEARLY-AVERAGED OUTPUT STOP DAY (JULIAN FROM YEAR START)
     !* KAV1: YEARLY-AVERAGED OUTPUT START YEAR
     !* KAV2: YEARLY-AVERAGED OUTPUT STOP YEAR
-    integer JOUT1, JOUT2, JAV1, JAV2, KOUT1, KOUT2, KAV1, KAV2
-    integer IHOUR, IMIN, IDAY, IYEAR
+!-    integer JOUT1, JOUT2, JAV1, JAV2, KOUT1, KOUT2, KAV1, KAV2
+!-    integer IHOUR, IMIN, IDAY, IYEAR
 
     !> CTEM-related fields (inactive in current version of CLASS).
 !todo: isolate CTEM from CLASS code (if possible).

@@ -41,7 +41,7 @@ module sa_mesh_shared_variables
         type(snow_balance) :: sno
         type(surface_layer) :: sfc
         type(soil_layer) :: sl
-        type(deep_zone) :: lz, dz
+        type(deep_zone) :: lzs, dzs
         type(water_storage) :: wb
     end type
 

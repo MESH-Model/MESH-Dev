@@ -3,7 +3,11 @@
      &  ts, cm,
      &  fls)
 
+      use mpi_shared_variables
+      use mpi_utilities
+      use sa_mesh_shared_parameters
       use sa_mesh_shared_variabletypes
+      use sa_mesh_shared_variables
       use model_files_variabletypes
       use model_files_variables
       use model_dates
@@ -50,7 +54,7 @@
       type(fl_ids):: fls
 
 !> DECLARE THE LOCAL VARIABLES
-      integer NA, NTYPE, IGND, ios, i, j, k
+      integer NA, NTYPE, NML, IGND, NSL, ios, ierr, k, i, m, j
 
 !> ====================================
 !> read the RUN_OPTIONS input file called "MESH_input_run_options.ini"
@@ -241,13 +245,268 @@
      &    ' is very high. This may negatively impact performance.'
       end if
 
+        !> GATHER-SCATTER COUNTS:
+!todo: fix this.
+        allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG),
+     &           shd%wc%ILMOS(shd%wc%ILG),
+     &           shd%wc%JLMOS(shd%wc%ILG), stat = ierr)
+!-        if (ierr /= 0) then
+!-            print 1114, 'gather-scatter count'
+!-            print 1118, 'Grid squares', NA
+!-            print 1118, 'GRUs', NTYPE
+!-            stop
+!-        end if
+
+        !> CLASS requires that each GRU for each grid square has its own parameter value,
+        !> for MESH the value read in from the parameter file is assumed to be valid for
+        !> all grid squares in the study area - Frank Seglenieks Aug 2007
+        !> bjd - This would be a good spot for setting pre-distributed values
+!todo: fix this.
+!-        cp%GCGRD(:) = cp%GCGRD(1)
+!-        do m = 1, NTYPE
+!-            cp%MIDROW(:, m) = cp%MIDROW(1, m)
+!-        end do
+
+        !> Set value of FAREROW:
+!todo: fix this.
+!todo - flag this as an issue to explore later and hide basin average code
+!todo - document the problem
+!        TOTAL_AREA = 0.0
+!-        cp%FAREROW = 0.0
+!-        do i = 1, NA
+!-            do m = 1, NTYPE
+!-                cp%FAREROW(i, m) = shd%lc%ACLASS(i, m)*shd%FRAC(i)
+!                TOTAL_AREA = TOTAL_AREA + cp%FAREROW(i, m)
+!FUTUREDO: Bruce, FRAC is calculated by EnSim
+! using Dan Princz's instructions for EnSim
+! FRAC can be greater than 1.00
+! So, we cannot use FAREROW in place of BASIN_FRACTION
+!-            end do
+!-        end do
+
+!todo: fix this.
+!-        call GATPREP(shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+!-                     shd%lc%NML, shd%wc%NML, cp%GCGRD, cp%FAREROW, cp%MIDROW, &
+!-                     NA, NTYPE, shd%lc%ILG, 1, NA, NTYPE)
+
+        shd%lc%NML = 0
+        shd%wc%NML = 0
+
+        do i = 1, NA
+            if (-1.0 <= -0.5) then
+                do m = 1, NTYPE
+                    if (shd%lc%ACLASS(i, m) > 0.0) then
+                        if (shd%IAK(i) > 0) then
+                            shd%lc%NML = shd%lc%NML + 1
+                            shd%lc%ILMOS(shd%lc%NML) = i
+                            shd%lc%JLMOS(shd%lc%NML) = m
+                        else
+                            shd%wc%NML = shd%wc%NML + 1
+                            shd%wc%ILMOS(shd%wc%NML) = i
+                            shd%wc%JLMOS(shd%wc%NML) = m
+                        end if
+                    end if
+                end do
+            end if
+        end do
+
+        !> Initialization of states.
+        NML = shd%lc%NML
+
+!todo+++: Perhaps land-unit indexing can be done prior in the sequence
+!todo+++: of initialization, after reading the drainage database.
+!todo+++: Then, variables could be allocated (il1:il2) instead of
+!todo+++: (1:ILG) to reduce the memory footprint of the model per node.
+
+        !> Calculate Indices.
+!todo: fix this.
+        call mpi_split_nml(inp, izero, ipid, NML, shd%lc%ILMOS, il1,
+     &                      il2, ilen)
+        if (ro%DIAGNOSEMODE > 0) print 1062, ipid, NML, ilen, il1, il2
+
+1062    format(/1x, 'Configuration and distribution of the domain',
+     &      /3x, 'Current process: ', i10,
+     &      /3x, 'Tile land elements: ', i10,
+     &      /3x, 'Length of single array: ', i10,
+     &      /3x, 'Starting index: ', i10,
+     &      /3x, 'Stopping index: ', i10, /)
+
 !> *********************************************************************
 !> Open and read in values from MESH_input_soil_levels.txt file
 !> *********************************************************************
       call READ_SOIL_LEVELS(shd, fls)
       print *, 'IGND = ', shd%lc%IGND
 
-      IGND = shd%lc%IGND
+      NSL = shd%lc%IGND
+      IGND = NSL
+
+        allocate(pm%tp%gc(NML), pm%tp%fare(NML), pm%tp%xslp(NML),
+     &           pm%tp%mid(NML),
+     &           pm%cp%fcan(NML, 5), pm%cp%z0or(NML, 5),
+     &           pm%cp%lnz0(NML, 5), pm%cp%alvc(NML, 5),
+     &           pm%cp%alic(NML, 5),
+     &           pm%cp%lamx(NML, 4), pm%cp%lamn(NML, 4),
+     &           pm%cp%cmas(NML, 4), pm%cp%root(NML, 4),
+     &           pm%cp%rsmn(NML, 4),
+     &           pm%cp%qa50(NML, 4), pm%cp%vpda(NML, 4),
+     &           pm%cp%vpdb(NML, 4), pm%cp%psga(NML, 4),
+     &           pm%cp%psgb(NML, 4),
+     &           pm%sfp%zbld(NML), pm%sfp%zrfh(NML),
+     &           pm%sfp%zrfm(NML), pm%sfp%zplg(NML),
+     &           pm%snp%zsnl(NML), pm%snp%zpls(NML),
+     &           pm%slp%sdep(NML), pm%slp%ggeo(NML),
+     &           pm%slp%delz(NML), pm%slp%zbot(NML),
+     &           pm%slp%sand(NML, NSL), pm%slp%clay(NML, NSL),
+     &           pm%slp%orgm(NML, NSL),
+     &           pm%hp%drn(NML), pm%hp%dd(NML), pm%hp%grkf(NML),
+     &           pm%hp%mann(NML), pm%hp%ks(NML))
+
+        !> Initialization of states.
+
+        !> Canopy.
+        stas%cnpy%n = NML
+        allocate(stas%cnpy%qac(NML), stas%cnpy%rcan(NML),
+     &           stas%cnpy%sncan(NML), stas%cnpy%tac(NML),
+     &           stas%cnpy%tcan(NML),
+     &           stas%cnpy%cmai(NML), stas%cnpy%gro(NML))
+        stas%cnpy%qac = 0.0
+        stas%cnpy%rcan = 0.0
+        stas%cnpy%sncan = 0.0
+        stas%cnpy%tac = 0.0
+        stas%cnpy%tcan = 0.0
+        stas%cnpy%cmai = 0.0
+        stas%cnpy%gro = 0.0
+
+        !> Snow.
+        stas%sno%n = NML
+        allocate(stas%sno%sno(NML), stas%sno%albs(NML),
+     &           stas%sno%rhos(NML), stas%sno%tsno(NML),
+     &           stas%sno%wsno(NML))
+        stas%sno%sno = 0.0
+        stas%sno%albs = 0.0
+        stas%sno%rhos = 0.0
+        stas%sno%tsno = 0.0
+        stas%sno%wsno = 0.0
+
+        !> Surface or at near surface.
+        stas%sfc%n = NML
+        allocate(stas%sfc%tpnd(NML), stas%sfc%zpnd(NML),
+     &           stas%sfc%tsfs(NML, 4))
+        stas%sfc%tpnd = 0.0
+        stas%sfc%zpnd = 0.0
+        stas%sfc%tsfs = 0.0
+
+        !> Soil layers.
+        stas%sl%n = NML
+        allocate(stas%sl%tbas(NML), stas%sl%thic(NML, NSL),
+     &           stas%sl%thlq(NML, NSL), stas%sl%tbar(NML, NSL))
+        stas%sl%tbas = 0.0
+        stas%sl%thic = 0.0
+        stas%sl%thlq = 0.0
+        stas%sl%tbar = 0.0
+
+        !> Lower zone storage.
+        stas%lzs%n = NML
+        allocate(stas%lzs%zlw(NML), stas%lzs%tbas(NML))
+        stas%lzs%zlw = 0.0
+        stas%lzs%tbas = 0.0
+
+        !> Deep zone storage.
+        stas%dzs%n = NML
+        allocate(stas%dzs%zlw(NML), stas%dzs%tbas(NML))
+        stas%dzs%zlw = 0.0
+        stas%dzs%tbas = 0.0
+
+        !> SET COMMON CLASS PARAMETERS.
+        call CLASSD
+
+        !> INITIALIZE CLASS VARIABLES.
+!todo: fix this.
+        allocate(cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA),
+     &           cp%GCGRD(NA))
+        allocate(cp%FCANROW(NA, NTYPE, ICAN + 1),
+     &           cp%LNZ0ROW(NA, NTYPE, ICAN + 1),
+     &           cp%ALVCROW(NA, NTYPE, ICAN + 1),
+     &           cp%ALICROW(NA, NTYPE, ICAN + 1))
+        allocate(cp%PAMXROW(NA, NTYPE, ICAN),
+     &           cp%PAMNROW(NA, NTYPE, ICAN),
+     &           cp%CMASROW(NA, NTYPE, ICAN),
+     &           cp%ROOTROW(NA, NTYPE, ICAN),
+     &           cp%RSMNROW(NA, NTYPE, ICAN),
+     &           cp%QA50ROW(NA, NTYPE, ICAN),
+     &           cp%VPDAROW(NA, NTYPE, ICAN),
+     &           cp%VPDBROW(NA, NTYPE, ICAN),
+     &           cp%PSGAROW(NA, NTYPE, ICAN),
+     &           cp%PSGBROW(NA, NTYPE, ICAN))
+        allocate(cp%DRNROW(NA, NTYPE),  cp%SDEPROW(NA, NTYPE),
+     &           cp%FAREROW(NA, NTYPE), cp%DDROW(NA, NTYPE),
+     &           cp%XSLPROW(NA, NTYPE), cp%XDROW(NA, NTYPE),
+     &           cp%MANNROW(NA, NTYPE), cp%KSROW(NA, NTYPE),
+     &           cp%TCANROW(NA, NTYPE), cp%TSNOROW(NA, NTYPE),
+     &           cp%TPNDROW(NA, NTYPE), cp%ZPNDROW(NA, NTYPE),
+     &           cp%RCANROW(NA, NTYPE), cp%SCANROW(NA, NTYPE),
+     &           cp%SNOROW(NA, NTYPE),  cp%ALBSROW(NA, NTYPE),
+     &           cp%RHOSROW(NA, NTYPE), cp%GROROW(NA, NTYPE))
+        allocate(cp%MIDROW(NA, NTYPE))
+        allocate(cp%SANDROW(NA, NTYPE, IGND),
+     &           cp%CLAYROW(NA, NTYPE, IGND),
+     &           cp%ORGMROW(NA, NTYPE, IGND),
+     &           cp%TBARROW(NA, NTYPE, IGND),
+     &           cp%THLQROW(NA, NTYPE, IGND),
+     &           cp%THICROW(NA, NTYPE, IGND))
+
+        call READ_PARAMETERS_CLASS(shd, fls, cm)
+
+        do k = il1, il2
+
+            i = shd%lc%ILMOS(k)
+            m = shd%lc%JLMOS(k)
+
+            cp%ZRFMGRD(i) = pm%sfp%zrfm(k)
+            cp%ZRFHGRD(i) = pm%sfp%zrfh(k)
+            cp%ZBLDGRD(i) = pm%sfp%zbld(k)
+            cp%GCGRD(i) = pm%tp%gc(k)
+            cp%FCANROW(i, m, :) = pm%cp%fcan(k, :)
+            cp%LNZ0ROW(i, m, :) = pm%cp%lnz0(k, :)
+            cp%ALVCROW(i, m, :) = pm%cp%alvc(k, :)
+            cp%ALICROW(i, m, :) = pm%cp%alic(k, :)
+            cp%PAMXROW(i, m, :) = pm%cp%lamx(k, :)
+            cp%PAMNROW(i, m, :) = pm%cp%lamn(k, :)
+            cp%CMASROW(i, m, :) = pm%cp%cmas(k, :)
+            cp%ROOTROW(i, m, :) = pm%cp%root(k, :)
+            cp%RSMNROW(i, m, :) = pm%cp%rsmn(k, :)
+            cp%QA50ROW(i, m, :) = pm%cp%qa50(k, :)
+            cp%VPDAROW(i, m, :) = pm%cp%vpda(k, :)
+            cp%VPDBROW(i, m, :) = pm%cp%vpdb(k, :)
+            cp%PSGAROW(i, m, :) = pm%cp%psga(k, :)
+            cp%PSGBROW(i, m, :) = pm%cp%psgb(k, :)
+            cp%DRNROW(i, m) = pm%hp%drn(k)
+            cp%SDEPROW(i, m) = pm%slp%sdep(k)
+            cp%FAREROW(i, m) = pm%tp%fare(k)
+            cp%DDROW(i, m) = pm%hp%dd(k)
+            cp%XSLPROW(i, m) = pm%tp%xslp(k)
+            cp%XDROW(i, m) = pm%hp%grkf(k)
+            cp%MANNROW(i, m) = pm%hp%mann(k)
+            cp%KSROW(i, m) = pm%hp%ks(k)
+            cp%TCANROW(i, m) = stas%cnpy%tcan(k) - TFREZ
+            cp%TSNOROW(i, m) = stas%sno%tsno(k) - TFREZ
+            cp%TPNDROW(i, m) = stas%sfc%tpnd(k) - TFREZ
+            cp%ZPNDROW(i, m) = stas%sfc%zpnd(k)
+            cp%RCANROW(i, m) = stas%cnpy%rcan(k)
+            cp%SCANROW(i, m) = stas%cnpy%sncan(k)
+            cp%SNOROW(i, m) = stas%sno%sno(k)
+            cp%ALBSROW(i, m) = stas%sno%albs(k)
+            cp%RHOSROW(i, m) = stas%sno%rhos(k)
+            cp%GROROW(i, m) = stas%cnpy%gro(k)
+            cp%MIDROW(i, m) = pm%tp%mid(k)
+            cp%SANDROW(i, m, :) = pm%slp%sand(k, :)
+            cp%CLAYROW(i, m, :) = pm%slp%clay(k, :)
+            cp%ORGMROW(i, m, :) = pm%slp%orgm(k, :)
+            cp%TBARROW(i, m, :) = stas%sl%tbar(k, :) - TFREZ
+            cp%THLQROW(i, m, :) = stas%sl%thlq(k, :)
+            cp%THICROW(i, m, :) = stas%sl%thic(k, :)
+
+        end do
 
 !> CHECK THAT GRID OUTPUT POINTS ARE IN THE BASIN
       do i = 1, WF_NUM_POINTS
@@ -294,11 +553,25 @@
      &         hp%N_SROW(NA, NTYPE), hp%A_SROW(NA, NTYPE),
      &         hp%DistribROW(NA, NTYPE))
 
-      NYEARS = YEAR_STOP - YEAR_START + 1
+      NYEARS = ic%stop%year - ic%start%year + 1
       allocate(t0_ACC(NYEARS))
       t0_ACC = 0.0
 
       call READ_PARAMETERS_HYDROLOGY(shd, fls)
+
+        !> Distribute the values.
+        do k = il1, il2
+
+            !> Grab the indeces of the grid cell and GRU.
+            i = shd%lc%ILMOS(k)
+            m = shd%lc%JLMOS(k)
+
+            !> Distribute the parameter values.
+            hp%ZSNLROW(i, m) = pm%snp%zsnl(k)
+            hp%ZPLGROW(i, m) = pm%sfp%zplg(k)
+            hp%ZPLSROW(i, m) = pm%snp%zpls(k)
+
+        end do !k = il1, il2
 
       return
 

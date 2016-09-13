@@ -10,7 +10,7 @@ module WF_ROUTE_module
 
     contains
 
-    function WF_ROUTE_within_tile(shd, ic, stfl, rrls)
+    function WF_ROUTE_within_tile(shd, stfl, rrls)
 
         use mpi_shared_variables
         use sa_mesh_shared_variabletypes
@@ -22,7 +22,6 @@ module WF_ROUTE_module
         character(100) WF_ROUTE_within_tile
 
         type(ShedGridParams), intent(in) :: shd
-        type(iter_counter), intent(in) :: ic
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
@@ -48,7 +47,7 @@ module WF_ROUTE_module
         !> make sure we have a controlled reservoir (if not the mod(HOUR_NOW, wf_ktr)
         !> may give an error. Frank S Jun 2007
         if (WF_NORESV_CTRL > 0) then
-            if (mod(HOUR_NOW, WF_KTR) == 0 .and. MINS_NOW == 0) then
+            if (mod(ic%now%hour, WF_KTR) == 0 .and. ic%now%mins == 0) then
             !>        READ in current reservoir value
                 read(21, '(100f10.3)', iostat = ierr) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
                 if (ierr /= 0) then
@@ -73,7 +72,7 @@ module WF_ROUTE_module
 
         !> only read in current value if we are on the correct time step
         !> also read in the first value if this is the first time through
-        if (mod(HOUR_NOW, WF_KT) == 0 .and. MINS_NOW == 0) then
+        if (mod(ic%now%hour, WF_KT) == 0 .and. ic%now%mins == 0) then
             !>       read in current streamflow value
             read(22, *, iostat = ierr) (WF_QHYD(i), i = 1, fms%stmg%n)
             if (ierr /= 0) then
@@ -87,7 +86,7 @@ module WF_ROUTE_module
 
     end function
 
-    subroutine WF_ROUTE_between_grid(shd, ic, wb, stfl, rrls)
+    subroutine WF_ROUTE_between_grid(shd, wb, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -96,7 +95,6 @@ module WF_ROUTE_module
         use model_output_variabletypes
 
         type(ShedGridParams), intent(in) :: shd
-        type(iter_counter), intent(in) :: ic
         type(water_balance), intent(in) :: wb
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
@@ -133,7 +131,7 @@ module WF_ROUTE_module
                       wfp%aa1, wfp%aa2, wfp%aa3, wfp%aa4, &
                       WF_STORE1, stas%chnl%s, &
                       ic%dts, (wb%rof/ic%dts), shd%NA, shd%NRVR, fms%rsvr%n, fms%stmg%n, shd%NA, &
-                      fms%stmg%rnk, JAN, ic%now_jday, ic%now_hour, ic%now_mins)
+                      fms%stmg%rnk, JAN, ic%now%jday, ic%now%hour, ic%now%mins)
         do i = 1, fms%stmg%n
             WF_QSYN(i) = stas%chnl%qo(fms%stmg%rnk(i))
             WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + stas%chnl%qo(fms%stmg%rnk(i))
@@ -164,12 +162,12 @@ module WF_ROUTE_module
         !> Write output for per time-step streamflow output file.
         if (WF_RTE_flgs%STREAMFLOWFLAG == 1 .and. btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 1)) then
             write(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun, 1002) &
-                ic%now_jday, ic%now_hour, ic%now_mins, (WF_QHYD(i), WF_QSYN(i), i = 1, fms%stmg%n)
+                ic%now%jday, ic%now%hour, ic%now%mins, (WF_QHYD(i), WF_QSYN(i), i = 1, fms%stmg%n)
         end if
 
         !> Determine if this is the last time-step of the hour.
         writeout = (mod(ic%ts_daily, 3600/ic%dts*24) == 0)
-!        print *, ic%now_jday, ic%now_hour, ic%now_mins, writeout
+!        print *, ic%now%jday, ic%now%hour, ic%now%mins, writeout
 
         !> This occurs the last time-step of the day.
         if (writeout) then
@@ -181,19 +179,19 @@ module WF_ROUTE_module
             !> Write output for daily streamflow output file.
             if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 0)) then
                 write(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%iun, 1001) &
-                    ic%now_jday, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/ic%ts_daily, i = 1, fms%stmg%n)
+                    ic%now%jday, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/ic%ts_daily, i = 1, fms%stmg%n)
             end if
 
             !> Write output for cumulative daily streamflow output file.
             if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 1)) then
                 write(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun, 1001) &
-                    ic%now_jday, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily, i = 1, fms%stmg%n)
+                    ic%now%jday, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily, i = 1, fms%stmg%n)
             end if
 
             !> Write output for streamflow channel water balance output file.
             if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 2)) then
                 write(WF_RTE_fls%fl(WF_RTE_flks%stfl_bal)%iun, 1001) &
-                    ic%now_jday, (WF_QO2_ACC_MM(fms%stmg%rnk(i)), &
+                    ic%now%jday, (WF_QO2_ACC_MM(fms%stmg%rnk(i)), &
                                   WF_STORE2_ACC_MM(fms%stmg%rnk(i))/ic%ts_count, i = 1, fms%stmg%n)
             end if
 

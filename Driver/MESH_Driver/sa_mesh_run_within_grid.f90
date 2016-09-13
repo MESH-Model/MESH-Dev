@@ -4,7 +4,7 @@ module sa_mesh_run_within_grid
 
     contains
 
-    subroutine run_within_grid_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine run_within_grid_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -18,7 +18,6 @@ module sa_mesh_run_within_grid
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -26,9 +25,28 @@ module sa_mesh_run_within_grid
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
+        !> Local variables.
+        integer NA
+
+        !> Initialiation of states.
+        NA = shd%NA
+
+        !> Water balance.
+        stas%wb%n = NA
+        allocate(stas%wb%cnpy(1:NA), stas%wb%sfc(1:NA), stas%wb%sl(1:NA), stas%wb%lz(1:NA), stas%wb%dz(1:NA), stas%wb%lost(1:NA), &
+                 stas%wb%s(1:NA), stas%wb%ds(1:NA))
+        stas%wb%cnpy(1:NA) = 0.0
+        stas%wb%sfc(1:NA) = 0.0
+        stas%wb%sl(1:NA) = 0.0
+        stas%wb%lz(1:NA) = 0.0
+        stas%wb%dz(1:NA) = 0.0
+        stas%wb%lost(1:NA) = 0.0
+        stas%wb%s(1:NA) = 0.0
+        stas%wb%ds(1:NA) = 0.0
+
     end subroutine
 
-    subroutine run_within_grid(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine run_within_grid(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -42,7 +60,6 @@ module sa_mesh_run_within_grid
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -52,7 +69,7 @@ module sa_mesh_run_within_grid
 
     end subroutine
 
-    subroutine run_within_grid_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+    subroutine run_within_grid_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
         use model_files_variabletypes
         use sa_mesh_shared_variabletypes
@@ -63,7 +80,6 @@ module sa_mesh_run_within_grid
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb

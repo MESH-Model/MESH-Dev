@@ -10,7 +10,7 @@ module RUNSVS113_module
 
     contains
 
-    subroutine RUNSVS113(shd, fls, ts, ic, cm, wb, eb, sp)
+    subroutine RUNSVS113(shd, fls, ts, cm, wb, eb, sp)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -27,7 +27,6 @@ module RUNSVS113_module
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -94,8 +93,8 @@ module RUNSVS113_module
 !        do kount = 0, nt
 
         if (kount == 0) then
-            dateo = ic%now_year*10000 + ic%now_month*100 + ic%now_day
-            houro = ic%now_hour*1000000 + ic%now_mins*10000
+            dateo = ic%now%year*10000 + ic%now%month*100 + ic%now%day
+            houro = ic%now%hour*1000000 + ic%now%mins*10000
             istat = newdate(datecmc_o, dateo, houro, 3)
         end if
 

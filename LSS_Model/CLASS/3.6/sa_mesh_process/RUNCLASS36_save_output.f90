@@ -261,14 +261,13 @@ module RUNCLASS36_save_output
 
     end subroutine
 
-    subroutine CLASSOUT_update_files(shd, ic)
+    subroutine CLASSOUT_update_files(shd)
 
         use mpi_shared_variables
         use sa_mesh_shared_variabletypes
         use model_dates
 
         type(ShedGridParams), intent(in) :: shd
-        type(iter_counter), intent(in) :: ic
 
 !* I_OUT: OUTPUT GRID SQUARE TEMPORARY STORE
         integer DELT, IGND, I_OUT
@@ -334,19 +333,19 @@ module RUNCLASS36_save_output
                 !> Write to the CLASSOF* output files for sub-hourly output.
                 write(150 + i*10 + 4, &
                       "(i2,',', i3,',', i5,',', i6,',', 9(f8.2,','), 2(f7.3,','), e11.3,',', f8.2,',', 3(f12.4,','))") &
-                    HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, FSSTAR, FLSTAR, QH, &
+                    ic%now%hour, ic%now%mins, ic%now%jday, ic%now%year, FSSTAR, FLSTAR, QH, &
                     QE, SNOMLT, BEG, GTOUT, cpv%SNO(k), &
                     cpv%RHOS(k), cpv%WSNO(k), ALTOT, cdv%ROF(k), &
                     TPN, cpv%ZPND(k), ZPND, FSTR
                 write(150 + i*10 + 5, "(i2,',', i3,',', i5,',', i6,',', " // trim(adjustl(IGND_CHAR)) // &
                       "(f7.2,',', 2(f6.3,',')), f8.2,',', 2(f8.4,','), f8.2,',', f8.3,',')") &
-                    HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, &
+                    ic%now%hour, ic%now%mins, ic%now%jday, ic%now%year, &
                     (cpv%TBAR(k, j) - TFREZ, cpv%THLQ(k, j), &
                     cpv%THIC(k, j), j = 1, IGND), TCN, &
                     cpv%RCAN(k), cpv%SNCAN(k), TSN, ZSN
                 write(150 + i*10 + 6, &
                       "(i2,',', i3,',', i5,',', 2(f10.2,','), f12.6,',', f10.2,',', f8.2,',', f10.2,',', f15.9,',')") &
-                    HOUR_NOW, MINS_NOW, JDAY_NOW, 2.0*cfi%FSVH(k), cfi%FDL(k), &
+                    ic%now%hour, ic%now%mins, ic%now%jday, 2.0*cfi%FSVH(k), cfi%FDL(k), &
                     cfi%PRE(k), cfi%TA(k) - TFREZ, cfi%VMOD(k), cfi%PRES(k), &
                     cfi%QA(k)
                 write(150 + i*10 + 7, "(999(e11.4,','))") &
@@ -371,7 +370,7 @@ module RUNCLASS36_save_output
                     cdv%ROFO(k), cdv%ROF(k), cdv%WTRC(k), &
                     cdv%WTRS(k), cdv%WTRG(k)
                 write(150 + i*10 + 10, "(i2,',', i3,',', i5,',', i6,',', 999(f14.6,','))") &
-                    HOUR_NOW, MINS_NOW, JDAY_NOW, YEAR_NOW, cfi%PRE(k)*DELT, cdv%QFS(k)*DELT, &
+                    ic%now%hour, ic%now%mins, ic%now%jday, ic%now%year, cfi%PRE(k)*DELT, cdv%QFS(k)*DELT, &
                     cdv%ROF(k)*DELT, cdv%ROFO(k)*DELT, cdv%ROFS(k)*DELT, cdv%ROFB(k)*DELT, &
                     cpv%SNCAN(k), cpv%RCAN(k), cpv%SNO(k), cpv%WSNO(k), &
                     cpv%ZPND(k)*RHOW, (cpv%THLQ(k, j)*RHOW*csfv%DELZW(k, j), j = 1, IGND), &
@@ -499,18 +498,18 @@ module RUNCLASS36_save_output
 
                     !> Write to the CLASSOF* output files for daily accumulated output.
                     write(150 + i*10 + 1, "(i4,',', i5,',', 9(f8.2,','), 2(f8.3,','), 999(f12.4,','))") &
-                        JDAY_NOW, YEAR_NOW, FSSTAR, FLSTAR, QH, QE, SNOMLT, &
+                        ic%now%jday, ic%now%year, FSSTAR, FLSTAR, QH, QE, SNOMLT, &
                         BEG, GTOUT, co%SNOACC(i), co%RHOSACC(i), &
                         co%WSNOACC(i), ALTOT, co%ROFACC(i), co%ROFOACC(i), &
                         co%ROFSACC(i), co%ROFBACC(i)
                     write(150 + i*10 + 2, "(i4,',', i5,',', " // adjustl(IGND_CHAR) // "((f8.2,','), " // &
                           "2(f6.3,',')), f8.2,',', 2(f7.4,','), 2(f8.2,','))") &
-                        JDAY_NOW, YEAR_NOW, (co%TBARACC(i, j) - TFREZ, &
+                        ic%now%jday, ic%now%year, (co%TBARACC(i, j) - TFREZ, &
                         co%THLQACC(i, j), co%THICACC(i, j), j = 1, IGND), &
                         TCN, co%RCANACC(i), co%SCANACC(i), TSN, ZSN
                     write(150 + i*10 + 3, "(i4,',', i5,',', 3(f9.2,','), f8.2,',', " // &
                           "f10.2,',', e12.3,',', 2(f12.3,','))") &
-                        JDAY_NOW, YEAR_NOW, co%FSINACC(i), co%FLINACC(i), &
+                        ic%now%jday, ic%now%year, co%FSINACC(i), co%FLINACC(i), &
                         co%TAACC(i) - TFREZ, co%UVACC(i), co%PRESACC(i), &
                         co%QAACC(i), co%PREACC(i), co%EVAPACC(i)
 

@@ -4,9 +4,9 @@ module sa_mesh_run_within_tile
 
     contains
 
-    subroutine run_within_tile_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine run_within_tile_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_parameters
         use sa_mesh_shared_variables
         use model_files_variabletypes
         use model_files_variables
@@ -15,14 +15,13 @@ module sa_mesh_run_within_tile
         use model_output_variabletypes
         use MODEL_OUTPUT
 
-        use RUNCLASS36_config, only: RUNCLASS36_init
-        use RUNSVS113_config, only: RUNSVS113_init
+        use RUNCLASS36_config
+        use RUNSVS113_config
         use baseflow_module
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -30,7 +29,15 @@ module sa_mesh_run_within_tile
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        call RUNCLASS36_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+        !> Local variables.
+        integer NA, NTYPE, NML, NSL
+
+        NA = shd%NA
+        NTYPE = shd%lc%NTYPE
+        NSL = shd%lc%IGND
+        NML = shd%lc%NML
+
+        call RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
 !>
 !>***********************************************************************
@@ -42,13 +49,13 @@ module sa_mesh_run_within_tile
 !                           cp, &
 !                           hp, soil_por_max, soil_depth, s0, t_ice_lens)
 
-        call RUNSVS113_init(shd, fls, ts, ic, cm, wb, eb, sp)
+        call RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
 
-        call LZS_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+        call LZS_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
     end subroutine
 
-    function run_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    function run_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -69,7 +76,6 @@ module sa_mesh_run_within_tile
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -79,20 +85,20 @@ module sa_mesh_run_within_tile
 
         run_within_tile = ''
 
-        call RUNCLASS36_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+        call RUNCLASS36_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        call RUNSVS113(shd, fls, ts, ic, cm, wb, eb, sp)
+        call RUNSVS113(shd, fls, ts, cm, wb, eb, sp)
 
-!+        call LZS_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+!+        call LZS_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        run_within_tile = WF_ROUTE_within_tile(shd, ic, stfl, rrls)
+        run_within_tile = WF_ROUTE_within_tile(shd, stfl, rrls)
         if (len_Trim(run_within_tile) > 0) return
 
         return
 
     end function
 
-    subroutine run_within_tile_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+    subroutine run_within_tile_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
         use model_files_variabletypes
         use sa_mesh_shared_variabletypes
@@ -105,7 +111,6 @@ module sa_mesh_run_within_tile
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -113,7 +118,7 @@ module sa_mesh_run_within_tile
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        call RUNCLASS36_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+        call RUNCLASS36_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
     end subroutine
 

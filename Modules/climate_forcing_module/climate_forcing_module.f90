@@ -144,10 +144,10 @@ module climate_forcing
 !todo - leave these in for event based runs
             !> IYEAR is set in the MESH_parameters_CLASS.ini file
             !> YEAR_START is set in the MESH_input_run_options.ini file
-!            nyy = YEAR_START - cm%dat(vid)%start_date%year
-!            ndy = JDAY_START - cm%dat(vid)%start_date%jday
-            nmy = MINS_START - cm%dat(vid)%start_date%mins
-            nhy = HOUR_START - cm%dat(vid)%start_date%hour
+!            nyy = ic%start%year - cm%dat(vid)%start_date%year
+!            ndy = ic%start%jday - cm%dat(vid)%start_date%jday
+            nmy = ic%start%mins - cm%dat(vid)%start_date%mins
+            nhy = ic%start%hour - cm%dat(vid)%start_date%hour
 
             ! set ISTEP_START based on HOURLYFLAG
             !  (could be optimised as ISTEP_START = 2 - HOURLYFLAG)
@@ -175,9 +175,9 @@ module climate_forcing
                /1x, 'of the following values:', &
                /1x, '30 or n*60 where n can be either 1, 2, 3, 4, 6, 8 or 12.', /)
 
-            call Julian_Day_ID(YEAR_START, JDAY_START, Jday_IND2)
+            call Julian_Day_ID(ic%start%year, ic%start%jday, Jday_IND2)
             call Julian_Day_ID(cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday, Jday_IND3)
-            if ((Jday_IND2 < Jday_IND3) .and. (YEAR_START /= 0)) then
+            if ((Jday_IND2 < Jday_IND3) .and. (ic%start%year /= 0)) then
                 print 2442
                 stop
             end if
@@ -194,7 +194,7 @@ module climate_forcing
             nrs = JDAY_IND_MET*ISTEP_START + nhy*ISTEP_START/24 + nmy/30
             if (ro%VERBOSEMODE > 0) print *, 'NRS=', nrs
             ! FIX BUG IN JULIAN DAY CALCULATION FOR NRS ---ALIU FEB2009
-            if (YEAR_START == 0 .and. JDAY_START == 0 .and. MINS_START == 0 .and. HOUR_START == 0) then
+            if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%mins == 0 .and. ic%start%hour == 0) then
                 nrs = 0
             elseif (nrs < 0) then
                 print *, 'Desired start date is before the start of the ', &
@@ -258,7 +258,7 @@ module climate_forcing
     !> Outputs:
     !>  - ENDDATA: Returns .true. if there was an error occurred intializing the climate object or its variables.
     !>
-    function climate_module_update_data(shd, ic, ii1, ii2, cm) result(ENDDATA)
+    function climate_module_update_data(shd, ii1, ii2, cm) result(ENDDATA)
 
         !> Required for 'shd' variable.
         use sa_mesh_shared_variabletypes
@@ -271,7 +271,6 @@ module climate_forcing
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
-        type(iter_counter), intent(in) :: ic
         integer, intent(in) :: ii1, ii2
 
         !> Input/Output variables.

@@ -384,8 +384,8 @@
 
                     !> Model time-step.
                     case ('TIMESTEPFLAG')
-                        call value(out_args(2), TIME_STEP_MINS, ierr)
-                        TIME_STEP_DELT = TIME_STEP_MINS*60
+                        call value(out_args(2), ic%dtmins, ierr)
+                        ic%dts = ic%dtmins*60
 
                     case ('RELFLG')
                         call value(out_args(2), RELFLG, ierr)
@@ -732,8 +732,8 @@
         !> Simulation starting and stopping dates.
         read(iun, *)
         read(iun, *)
-        read(iun, '(4i4)') YEAR_START, JDAY_START, HOUR_START, MINS_START
-        read(iun, '(4i4)') YEAR_STOP, JDAY_STOP, HOUR_STOP, MINS_STOP
+        read(iun, '(4i4)') ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
+        read(iun, '(4i4)') ic%stop%year, ic%stop%jday, ic%stop%hour, ic%stop%mins
 
         call GET_DATES(ts)
 

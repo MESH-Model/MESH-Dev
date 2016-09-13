@@ -26,152 +26,166 @@ module model_dates
 
     end type !dates_model
 
-    type iter_counter
+    type counter_date
 
-        integer &
-            now_year, now_jday, now_month, now_day, &
-            now_hour, now_mins, &
-            dts, &
-            count_year, count_jday, count_month, count_day, &
-            count_hour, count_mins, &
+        !> Date (from the beginning of the year).
+        !*  year: Year.
+        !*  jday: Day from the beginning of the year.
+        !*  month: Month.
+        !*  day: Day in month.
+        !*  hour: Hour.
+        !*  mins: Half-hour in the hour (0 or 30 minutes).
+        integer :: year = 0, jday = 0, month = 0, day = 0, hour = 0, mins = 0
 
-            !* ts_daily: Count of the current time-step. Resets daily.
-            !* ts_hourly: Count of the current time-step. Resets hourly.
-            !* ts_halfhourly: Count of the current time-step. Resets every hour or half-past the hour.
-            !* ts_count: Cummulative count of the time-step.
-            ts_daily, ts_hourly, ts_halfhourly, ts_count
+    end type !counter_date_julian
 
-        contains
+    type counter
 
-!        procedure :: init => init_iter_counter
-!        procedure :: update_now => update_now_iter_counter
+        !> Time-stepping information.
+        !*  dts: Time-step in seconds.
+        !*  dtmins: Time-step in minutes.
+        integer :: dts = 1800, dtmins = 30
+
+        !> Current date.
+        !*  start: Starting date.
+        !*  now: Current date.
+        !*  stop: Stopping date.
+        type(counter_date) :: start, now, stop
+
+        !> Time-step counts (no reset).
+        !*  count_year: Number of simulation years run.
+        !*  count_month: Number of simulation months run.
+        !*  count_jday: Number of simulation days run.
+        !*  count_hour: Number of simulation hours run.
+        !*  count_mins: Number of simulation minutes run (half-hourly).
+        !*  count_ts: Number of simulation time-steps run.
+        integer :: count_year = 0, count_month = 0, count_jday = 0, count_hour = 0, count_mins = 0
+
+        !> Time-step counts (reset).
+        !*  ts_daily: Count of the current time-step. Resets daily.
+        !*  ts_hourly: Count of the current time-step. Resets hourly.
+        !*  ts_halfhourly: Count of the current time-step. Resets every hour or half-past the hour.
+        integer :: ts_daily = 1, ts_hourly = 1, ts_halfhourly = 1, ts_count = 1
 
     end type
-
-    !> *****************************************************************
-    !> Type: counter_date_julian
-    !> Description: Object to contain a Julian date, with hour and
-    !> minute interval.
-    !> *****************************************************************
-    type counter_date_julian
-
-        integer &
-
-            !> Year.
-            year, &
-
-            !> Julian day.
-            jday, &
-
-            !> Hour.
-            hour, &
-
-            !> Minute interval.
-            mins
-
-    end type !counter_date
 
     !* TIME_STEP_NOW: Current time-step in minutes.
     !* TIME_STEP_MINS: Time-step of the model in minutes.
     !* TIME_STEP_DELT: Time-step of the model in seconds.
-    integer YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW
+!-    integer YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW
 !-    integer TIME_STEP_NOW
-    integer :: TIME_STEP_MINS = 30, TIME_STEP_DELT = 1800
+!-    integer :: TIME_STEP_MINS = 30, TIME_STEP_DELT = 1800
 
     !* YEAR_START: Year at the start of the simulation.
     !* JDAY_START: Julian day at the start of the simulation.
     !* HOUR_START: Hour at the start of the simulation.
     !* MINS_START: Minute (in 30-min. increment; either 0 or 30) at the start of the simulation.
-    integer YEAR_START, JDAY_START, HOUR_START, MINS_START
-    integer YEAR_STOP, JDAY_STOP, HOUR_STOP, MINS_STOP
+!-    integer YEAR_START, JDAY_START, HOUR_START, MINS_START
+!-    integer YEAR_STOP, JDAY_STOP, HOUR_STOP, MINS_STOP
+
+    type(counter), save :: ic
 
     contains
 
-    subroutine init_iter_counter(ic, start_year, start_day_julian, start_hour, start_mins, timestep)
-
-        !> Derived-type variable.
-        type(iter_counter) :: ic
-
-        !> Input variables.
-        !* timestep: Time-step of the model iteration [s].
-        integer, intent(in) :: start_year, start_day_julian, start_hour, start_mins, timestep
+!-    subroutine counter_init()
 
         !> Update now counters.
-        ic%now_year = start_year
-        ic%now_jday = start_day_julian
-        ic%now_hour = start_hour
-        ic%now_mins = start_mins
-        call julian2monthday(start_day_julian, start_year, ic%now_month, ic%now_day)
+!-        ic%now%year = 0
+!-        ic%now%jday = 0
+!-        ic%now%month = 0
+!-        ic%now%day = 0
+!-        ic%now%hour = 0
+!-        ic%now%mins = 0
 
         !> Update time-step.
-!-        TIME_STEP_DELT = timestep
-        ic%dts = timestep
+!-        ic%dts = 1800
+!-        ic%dtmins = 30
 
         !> Initialize counters.
-        ic%count_year = 0
-        ic%count_jday = 0
-        ic%count_month = 0
-        ic%count_day = 0
-        ic%count_hour = 0
-        ic%count_mins = 0
-        ic%ts_daily = 1
-        ic%ts_hourly = 1
-        ic%ts_halfhourly = 1
-        ic%ts_count = 1
+!-        ic%count_year = 0
+!-        ic%count_month = 0
+!-        ic%count_jday = 0
+!-        ic%count_hour = 0
+!-        ic%count_mins = 0
+!-        ic%ts_daily = 1
+!-        ic%ts_hourly = 1
+!-        ic%ts_halfhourly = 1
+!-        ic%ts_count = 1
 
-    end subroutine
+!-    end subroutine
 
-    subroutine update_now_iter_counter(ic, now_year, now_jday, now_hour, now_mins)
-
-        !> Derived-type variable.
-        type(iter_counter) :: ic
-
-        !> Input variables.
-        integer, intent(in) :: now_year, now_jday, now_hour, now_mins
+    subroutine counter_update()
 
         !> Local variables.
-        integer :: month, day
+        integer old_year, old_jday, old_month, old_day, old_hour, old_mins
+
+        !> Keep the old values for comparison.
+        old_year = ic%now%year
+        old_jday = ic%now%jday
+        old_month = ic%now%month
+        old_day = ic%now%day
+        old_hour = ic%now%hour
+        old_mins = ic%now%mins
+
+        !> Increment the current time-step.
+        ic%now%mins = ic%now%mins + ic%dtmins ! increment the current time by 30 minutes
+        if (ic%now%mins == 60) then
+            ic%now%mins = 0
+            ic%now%hour = ic%now%hour + 1
+            if (ic%now%hour == 24) then
+                ic%now%hour = 0
+                ic%now%jday = ic%now%jday + 1
+                if (ic%now%jday >= 366) then
+                    if (mod(ic%now%year, 400) == 0) then !LEAP YEAR
+                        if (ic%now%jday == 367) then
+                            ic%now%jday = 1
+                            ic%now%year = ic%now%year + 1
+                        end if
+                    else if (mod(ic%now%year, 100) == 0) then !NOT A LEAP YEAR
+                        ic%now%jday = 1
+                        ic%now%year = ic%now%year + 1
+                    else if (mod(ic%now%year, 4) == 0) then !LEAP YEAR
+                        if (ic%now%jday == 367) then
+                            ic%now%jday = 1
+                            ic%now%year = ic%now%year + 1
+                        end if
+                    else !NOT A LEAP YEAR
+                        ic%now%jday = 1
+                        ic%now%year = ic%now%year + 1
+                    end if
+                end if
+            end if
+        end if
 
         !> Year:
-        if (now_year /= ic%now_year) then
+        if (old_year /= ic%now%year) then
             ic%count_year = ic%count_year + 1
-            ic%now_year = now_year
         end if
 
         !> Julian day:
-        if (now_jday /= ic%now_jday) then
+        if (old_jday /= ic%now%jday) then
             ic%count_jday = ic%count_jday + 1
-            ic%now_jday = now_jday
-        end if
-
-        !> Determine the current month and day.
-        call julian2monthday(now_jday, now_year, month, day)
-
-        !> Month:
-        if (month /= ic%now_month) then
-            ic%count_month = ic%count_month + 1
-            ic%now_month = month
-        end if
-
-        !> Day:
-        if (day /= ic%now_day) then
-            ic%count_day = ic%count_day + 1
-            ic%now_day = day
             ic%ts_daily = 0
         end if
 
+        !> Determine the current month and day.
+        call julian2monthday(ic%now%jday, ic%now%year, ic%now%month, ic%now%day)
+
+        !> Month:
+        if (old_month /= ic%now%month) then
+            ic%count_month = ic%count_month + 1
+        end if
+
         !> Hourly:
-        if (now_hour /= ic%now_hour) then
+        if (old_hour /= ic%now%hour) then
             ic%count_hour = ic%count_hour + 1
-            ic%now_hour = now_hour
             ic%ts_hourly = 0
         end if
 
         !> Minutes:
-        if (now_mins /= ic%now_mins) then
+        if (old_mins /= ic%now%mins) then
             ic%count_mins = ic%count_mins + 1
-            ic%now_mins = now_mins
-            if (ic%now_mins == 0 .or. ic%now_mins == 30) then
+            if (ic%now%mins == 0 .or. ic%now%mins == 30) then
                 ic%ts_halfhourly = 0
             end if
         end if
@@ -211,15 +225,15 @@ module model_dates
         integer nr_days!, hours
 
         ts%freq = "D"
-        ts%nyears = YEAR_STOP - YEAR_START + 1
+        ts%nyears = ic%stop%year - ic%start%year + 1
         ts%nseason = 12
 
 !        ts%start_date = start_date
 !        ts%end_date = end_date
 
-        iyear = YEAR_START
-        fyear = YEAR_STOP
-        year = YEAR_START
+        iyear = ic%start%year
+        fyear = ic%stop%year
+        year = ic%start%year
 
         allocate(days_inyear(ts%nyears))
         allocate(ts%years(ts%nyears))
@@ -232,9 +246,9 @@ module model_dates
             days_inyear(i) = leap_year(year)
             year = year + 1
             if (i == 1) then
-                nr_days = days_inyear(i) - JDAY_START + 1
+                nr_days = days_inyear(i) - ic%start%jday + 1
             else if (i == ts%nyears) then
-                nr_days = nr_days + (days_inyear(i) - (days_inyear(i) - JDAY_STOP))
+                nr_days = nr_days + (days_inyear(i) - (days_inyear(i) - ic%stop%jday))
             else
                 nr_days = nr_days + days_inyear(i)
             end if
@@ -248,8 +262,8 @@ module model_dates
 !        hours= stepclim/30
 !        ts%nr_timeStepClimF = ts%nr_days*48/hours
 
-        year = YEAR_START
-        jday = JDAY_START
+        year = ic%start%year
+        jday = ic%start%jday
         do i = 1, nr_days
             ts%dates(i, 1) = year
             ts%dates(i, 4) = jday
@@ -295,7 +309,7 @@ module model_dates
         !> Year
         days = 0
         j = 1
-        do i = YEAR_START, YEAR_STOP
+        do i = ic%start%year, ic%stop%year
             where(ts%dates(:, 1) == i) days = 1
             ts%daysINyears(j) = sum(days)
             j = j + 1
@@ -448,13 +462,13 @@ module model_dates
 
         iy = 0
         id = iday
-        if (iyear == YEAR_START) id = iday - JDAY_START + 1
-        do i = YEAR_START, YEAR_STOP
+        if (iyear == ic%start%year) id = iday - ic%start%jday + 1
+        do i = ic%start%year, ic%stop%year
             iy = iy + 1
             if (i == iyear) then
                 exit
             end if
-            id = id + ts%daysinyears(i - YEAR_START + 1)
+            id = id + ts%daysinyears(i - ic%start%year + 1)
         end do
 
         call Julian2MonthDay(iday, iyear, iss, day)

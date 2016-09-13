@@ -13,7 +13,7 @@ C
 C    You should have received a copy of the GNU Lesser General Public License
 C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
-      subroutine write_r2c(fls, indx, shd, ic,
+      subroutine write_r2c(fls, indx, shd,
      *                     no_frames, no_classes, frame_no, class_no,
      *                     no_signf,
      *                     outarray,
@@ -69,7 +69,6 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       type(fl_ids), intent(in) :: fls
       integer, intent(in) :: indx
       type(GridParams), intent(in) :: shd
-      type(iter_counter), intent(in) :: ic
       real, dimension(shd%yCount, shd%xCount), intent(in) :: outarray
       character(*), intent(in), optional :: attr_name,
      *  attr_units, attr_type, attr_src, attr_author
@@ -77,7 +76,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !     FIRST TIME THROUGH THIS SUBROUTINE ONLY
 !     OPEN OUTPUT FILE AND WRITE HEADER
 
-      hour_no = ic%now_hour + 1
+      hour_no = ic%now%hour + 1
 
 !     user notes
 
@@ -216,29 +215,29 @@ c   endif
 !       if(mo1.le.9.and.day_now.le.9)then
 ! Craig Thompson changed mo1 to month_now so that the
 ! output is correctly formatted
-        if (ic%now_month <= 9 .and. ic%now_day <= 9) then
+        if (ic%now%month <= 9 .and. ic%now%day <= 9) then
           if (no_frames > 1) write(iun, 3021) ':Frame',
-     *      abs(frame_no), abs(frame_no), ic%now_year, ic%now_month,
-     *      ic%now_day, hour_no
+     *      abs(frame_no), abs(frame_no), ic%now%year, ic%now%month,
+     *      ic%now%day, hour_no
 
-        else if (ic%now_month <= 9 .and. ic%now_day > 9) then
+        else if (ic%now%month <= 9 .and. ic%now%day > 9) then
 ! Craig Thompson changed mo1 to month_now so that the
 ! output is correctly formatted
           if (no_frames > 1) write(iun, 3022) ':Frame',
-     *      abs(frame_no), abs(frame_no), ic%now_year, ic%now_month,
-     *      ic%now_day, hour_no
+     *      abs(frame_no), abs(frame_no), ic%now%year, ic%now%month,
+     *      ic%now%day, hour_no
 
-        else if (ic%now_month > 9 .and. ic%now_day <= 9) then
+        else if (ic%now%month > 9 .and. ic%now%day <= 9) then
 ! Craig Thompson changed mo1 to month_now so that the
 ! output is correctly formatted
           if (no_frames > 1) write(iun, 3023) ':Frame',
-     *      abs(frame_no), abs(frame_no), ic%now_year, ic%now_month,
-     *      ic%now_day, hour_no
+     *      abs(frame_no), abs(frame_no), ic%now%year, ic%now%month,
+     *      ic%now%day, hour_no
 
         else
           if (no_frames > 1) write(iun, 3024) ':Frame',
-     *      abs(frame_no), abs(frame_no), ic%now_year, ic%now_month,
-     *      ic%now_day, hour_no
+     *      abs(frame_no), abs(frame_no), ic%now%year, ic%now%month,
+     *      ic%now%day, hour_no
 
         end if
 

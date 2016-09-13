@@ -83,4 +83,26 @@
         !> Close the file to free the unit.
         close(iun)
 
+        open(iun, file = trim(adjustl(fn)) // '.txt', status = 'replace', action = 'write', iostat = ierr)
+        write(iun, *) cpv%ALBS     !1 (NML)
+        write(iun, *) cpv%CMAI     !2 (NML)
+        write(iun, *) cpv%GRO      !3 (NML)
+        write(iun, *) cpv%QAC      !4 (NML)
+        write(iun, *) cpv%RCAN     !5 (NML)
+        write(iun, *) cpv%RHOS     !6 (NML)
+        write(iun, *) cpv%SNCAN    !7 (NML)
+        write(iun, *) cpv%SNO      !8 (NML)
+        write(iun, *) cpv%TAC      !9 (NML)
+        write(iun, *) cpv%TBAR     !10 (NML, IGND)
+        write(iun, *) cpv%TBAS     !11 (NML)
+        write(iun, *) cpv%TCAN     !12 (NML)
+        write(iun, *) cpv%THIC     !13 (NML, IGND)
+        write(iun, *) cpv%THLQ     !14 (NML, IGND)
+        write(iun, *) cpv%TPND     !15 (NML)
+        write(iun, *) cpv%TSFS     !16 (NML, IGND)
+        write(iun, *) cpv%TSNO     !17 (NML)
+        write(iun, *) cpv%WSNO     !18 (NML)
+        write(iun, *) cpv%ZPND     !19 (NML)
+        close(iun)
+
     end subroutine !save_init_prog_variables_class

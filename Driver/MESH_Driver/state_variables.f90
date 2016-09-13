@@ -20,7 +20,7 @@ module state_variables
     !*  qo: Flow from the element. [m3 s-1].
     !*  s: Channel storage held in the element. [m3].
     type flow_state
-        integer n
+        integer(kind = 4) :: n
         real(kind = 4), dimension(:), allocatable :: qi, qo, s
     end type
 
@@ -56,7 +56,7 @@ module state_variables
     !*  cmai: Aggregated mass of vegetation canopy. [kg m-2].
     !*  gro: Vegetation growth index.
     type canopy
-        integer n
+        integer(kind = 4) :: n
         real(kind = 4), dimension(:), allocatable :: qac, rcan, sncan, tac, tcan, cmai, gro
     end type
 
@@ -73,7 +73,7 @@ module state_variables
     !*  tsno: Snowpack temperature. [K].
     !*  wsno: Liquid water content of snow pack. [kg m-2].
     type snow_balance
-        integer n
+        integer(kind = 4) :: n
         real(kind = 4), dimension(:), allocatable :: sno, albs, rhos, tsno, wsno
     end type
 
@@ -88,8 +88,9 @@ module state_variables
     !*  tpnd: Temperature of ponded water. [K].
     !*  zpnd: Depth of ponded water on surface. [m].
     type surface_layer
-        integer n
-        real(kind = 4), dimension(:), allocatable :: tsfs, tpnd, zpnd
+        integer(kind = 4) :: n
+        real(kind = 4), dimension(:), allocatable :: tpnd, zpnd
+        real(kind = 4), dimension(:, :), allocatable :: tsfs
     end type
 
     !> Type: soil_layer
@@ -104,8 +105,9 @@ module state_variables
     !*  tbar: Temperature of soil layers. [K].
     !*  tbas: Temperature of bedrock in third soil layer. [K].
     type soil_layer
-        integer n
-        real(kind = 4), dimension(:), allocatable :: thic, thlq, tbar, tbas
+        integer(kind = 4) :: n
+        real(kind = 4), dimension(:), allocatable :: tbas
+        real(kind = 4), dimension(:, :), allocatable :: thic, thlq, tbar
     end type
 
     !> Type: deep_zone
@@ -118,7 +120,7 @@ module state_variables
     !*  zlw: Depth of water. [m].
     !*  tbas: Temperature. [m].
     type deep_zone
-        integer n
+        integer(kind = 4) :: n
         real(kind = 4), dimension(:), allocatable :: zlw, tbas
     end type
 
@@ -132,7 +134,7 @@ module state_variables
     !*  s1: Storage at the beginning of the time-step.
     !*  s2: Storage at the end of the time-step.
     type storage_state
-        integer n
+        integer(kind = 4) :: n
         real(kind = 4), dimension(:), allocatable :: s, ds
     end type
 

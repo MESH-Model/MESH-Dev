@@ -11,7 +11,7 @@ module RUNSVS113_config
 
     contains
 
-    subroutine RUNSVS113_init(shd, fls, ts, ic, cm, wb, eb, sp)
+    subroutine RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -30,7 +30,6 @@ module RUNSVS113_config
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb

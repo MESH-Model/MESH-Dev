@@ -7,7 +7,7 @@ module RUNCLASS36_module
 
     contains
 
-    subroutine RUNCLASS36_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine RUNCLASS36_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use mpi_flags
         use mpi_shared_variables
@@ -35,7 +35,6 @@ module RUNCLASS36_module
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -82,6 +81,7 @@ module RUNCLASS36_module
 
         if (ipid /= 0 .or. izero == 0) then
 
+            !> Grab climate data.
             cfi%FSVH(il1:il2) = cm%dat(ck%FB)%GAT(il1:il2)/2.0
             cfi%FSIH(il1:il2) = cm%dat(ck%FB)%GAT(il1:il2)/2.0
             cfi%FDL(il1:il2) = cm%dat(ck%FI)%GAT(il1:il2)
@@ -99,9 +99,9 @@ module RUNCLASS36_module
             !> in the range of [0.1, 1] based on the location of the sun in the
             !> sky when precipitation is not occuring. (0.1 when the sun is at
             !> the zenith, 1 when the sun is at the horizon).
-            RDAY = real(JDAY_NOW) + (real(HOUR_NOW) + real(MINS_NOW)/60.0)/24.0
+            RDAY = real(ic%now%jday) + (real(ic%now%hour) + real(ic%now%mins)/60.0)/24.0
             DECL = sin(2.0*PI*(284.0 + RDAY)/365.0)*23.45*PI/180.0
-            HOUR = (real(HOUR_NOW) + real(MINS_NOW)/60.0)*PI/12.0 - PI
+            HOUR = (real(ic%now%hour) + real(ic%now%mins)/60.0)*PI/12.0 - PI
 
             do k = il1, il2
 !                ik = shd%lc%ILMOS(k)
@@ -115,6 +115,27 @@ module RUNCLASS36_module
                 end if
 !-                FCLOGRD(ik) = catv%FCLO(k)
             end do
+
+            !> Grab states.
+            cpv%QAC(il1:il2) = stas%cnpy%qac(il1:il2)
+            cpv%RCAN(il1:il2) = stas%cnpy%rcan(il1:il2)
+            cpv%SNCAN(il1:il2) = stas%cnpy%sncan(il1:il2)
+            cpv%TAC(il1:il2) = stas%cnpy%tac(il1:il2)
+            cpv%TCAN(il1:il2) = stas%cnpy%tcan(il1:il2)
+            cpv%CMAI(il1:il2) = stas%cnpy%cmai(il1:il2)
+            cpv%GRO(il1:il2) = stas%cnpy%gro(il1:il2)
+            cpv%SNO(il1:il2) = stas%sno%sno(il1:il2)
+            cpv%ALBS(il1:il2) = stas%sno%albs(il1:il2)
+            cpv%RHOS(il1:il2) = stas%sno%rhos(il1:il2)
+            cpv%TSNO(il1:il2) = stas%sno%tsno(il1:il2)
+            cpv%WSNO(il1:il2) = stas%sno%wsno(il1:il2)
+            cpv%TPND(il1:il2) = stas%sfc%tpnd(il1:il2)
+            cpv%ZPND(il1:il2) = stas%sfc%zpnd(il1:il2)
+            cpv%TSFS(il1:il2, :) = stas%sfc%tsfs(il1:il2, :)
+            cpv%TBAS(il1:il2) = stas%sl%tbas(il1:il2)
+            cpv%THIC(il1:il2, :) = stas%sl%thic(il1:il2, :)
+            cpv%THLQ(il1:il2, :) = stas%sl%thlq(il1:il2, :)
+            cpv%TBAR(il1:il2, :) = stas%sl%tbar(il1:il2, :)
 
             !> Were initialized in CLASSG and so have been extracted.
             DriftGAT = 0.0 !DriftROW (ILMOS(k), JLMOS(k))
@@ -235,7 +256,7 @@ module RUNCLASS36_module
                         FCANCMX, ICTEM, ICTEMMOD, RMATC, &
                         AILC, PAIC, L2MAX, NOL2PFTS, &
                         AILCG, AILCGS, FCANC, FCANCS, &
-                        ic%now_jday, NML, il1, il2, &
+                        ic%now%jday, NML, il1, il2, &
                         JLAT, ic%ts_count, ICAN, ICAN + 1, IGND, IDISP, IZREF, &
                         IWF, IPAI, IHGT, IALC, IALS, IALG)
 
@@ -271,10 +292,10 @@ module RUNCLASS36_module
                         ITC, ITCG, ITG, NML, il1, il2, JLAT, ic%ts_count, ICAN, &
                         IGND, IZREF, ISLFD, NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI)
 
-            if (ic%now_jday == 1 .and. ic%ts_daily == 48) then
+            if (ic%now%jday == 1 .and. ic%ts_daily == 48) then
        ! bruce davison - only increase NMELT if we don't start the run on January 1st, otherwise t0_ACC allocation is too large
        ! and the model crashes if the compiler is checking for array bounds when t0_ACC is passed into CLASSW with size NMELT
-                if (JDAY_START == 1 .and. ic%ts_count < 49) then
+                if (ic%start%jday == 1 .and. ic%ts_count < 49) then
                     continue ! NMELT should stay = 1
                 else
                     NMELT = NMELT + 1
@@ -332,21 +353,21 @@ module RUNCLASS36_module
                         XSNOWC, XSNOWG, XSNOCS, XSNOGS)
 
             !> SINGLE COLUMN BLOWING SNOW CALCULATIONS.
-            if (PBSMFLAG == 1) then
-                call PBSMrun(ZSNOW, cpv%WSNO, cpv%SNO, cpv%RHOS, cpv%TSNO, cdv%HTCS, &
-                             ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
-                             HCPSCS, HCPSGS, HCPSC, HCPSG, &
-                             TSNOWC, TSNOWG, TSNOCS, TSNOGS, &
-                             RHOSC, RHOSG, RHOSCS, RHOSGS,&
-                             XSNOWC, XSNOWG, XSNOCS, XSNOGS, &
-                             WSNOCS, WSNOGS, &
-                             cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, &
-                             fetchGAT, N_SGAT, A_SGAT, HtGAT, &
-                             cdv%SFCT, cdv%SFCU, cdv%SFCQ, cfi%PRES, cfi%PRE, &
-                             DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
-                             TSNOdsGAT, &
-                             NML, il1, il2, ic%ts_count, catv%ZRFM, ZOMLCS, ZOMLNS)
-            end if
+!+            if (PBSMFLAG == 1) then
+!+                call PBSMrun(ZSNOW, cpv%WSNO, cpv%SNO, cpv%RHOS, cpv%TSNO, cdv%HTCS, &
+!+                             ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
+!+                             HCPSCS, HCPSGS, HCPSC, HCPSG, &
+!+                             TSNOWC, TSNOWG, TSNOCS, TSNOGS, &
+!+                             RHOSC, RHOSG, RHOSCS, RHOSGS,&
+!+                             XSNOWC, XSNOWG, XSNOCS, XSNOGS, &
+!+                             WSNOCS, WSNOGS, &
+!+                             cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, &
+!+                             fetchGAT, N_SGAT, A_SGAT, HtGAT, &
+!+                             cdv%SFCT, cdv%SFCU, cdv%SFCQ, cfi%PRES, cfi%PRE, &
+!+                             DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
+!+                             TSNOdsGAT, &
+!+                             NML, il1, il2, ic%ts_count, catv%ZRFM, ZOMLCS, ZOMLNS)
+!+            end if
 
             call CLASSZ(1, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
@@ -363,12 +384,13 @@ module RUNCLASS36_module
                         DriftGAT, SublGAT)
 
             !> Redistribute blowing snow mass between GRUs.
-            call REDISTRIB_SNOW(NML, 1, NA, NTYPE, NML, cpv%TSNO, ZSNOW, &
-                                cpv%RHOS, cpv%SNO, TSNOCS, ZSNOCS, HCPSCS, RHOSCS, TSNOGS, &
-                                ZSNOGS, HCPSGS, RHOSGS, TSNOWC, ZSNOWC, HCPSC, RHOSC, TSNOWG, &
-                                ZSNOWG, HCPSG, RHOSG, cp%GCGRD, shd%lc%ILMOS, DriftGAT, csfv%FARE, &
-                                TSNOdsGAT, DistribGAT, WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, DepositionGAT, &
-                                cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, ic%ts_count)
+!todo: This has a dependency on cp%GCGRD.
+!+            call REDISTRIB_SNOW(NML, 1, NA, NTYPE, NML, cpv%TSNO, ZSNOW, &
+!+                                cpv%RHOS, cpv%SNO, TSNOCS, ZSNOCS, HCPSCS, RHOSCS, TSNOGS, &
+!+                                ZSNOGS, HCPSGS, RHOSGS, TSNOWC, ZSNOWC, HCPSC, RHOSC, TSNOWG, &
+!+                                ZSNOWG, HCPSG, RHOSG, cp%GCGRD, shd%lc%ILMOS, DriftGAT, csfv%FARE, &
+!+                                TSNOdsGAT, DistribGAT, WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, DepositionGAT, &
+!+                                cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, ic%ts_count)
             cdv%ROF = cdv%ROF - UMQ
 
             !> BASEFLOWFLAG
@@ -399,7 +421,7 @@ module RUNCLASS36_module
 
         !> WRITE FIELDS FROM CURRENT TIME STEP TO OUTPUT FILES.
         if (WF_NUM_POINTS > 0) then
-            call CLASSOUT_update_files(shd, ic)
+            call CLASSOUT_update_files(shd)
         end if
 
         !> Gather variables from parallel nodes.
@@ -554,7 +576,7 @@ module RUNCLASS36_module
 !                end do
 !            end if
 
-            if (HOUR_NOW == 12 .and. MINS_NOW == 0) then
+            if (ic%now%hour == 12 .and. ic%now%mins == 0) then
                 basin_SCA = 0.0
                 basin_SWE = 0.0
 !                do i = 1, NA
@@ -565,25 +587,48 @@ module RUNCLASS36_module
 !                end do
 !                basin_SCA = basin_SCA/NA
 !                basin_SWE = basin_SWE/NA
-                TOTAL_AREA = sum(cp%FAREROW)
+                TOTAL_AREA = wb%basin_area
 
                 !> BRUCE DAVISON - AUG 17, 2009 (see notes in my notebook for this day)
                 !> Fixed calculation of basin averages. Needs documenting and testing.
                 do k = il1, il2
-                    basin_SCA = basin_SCA + cdv%FSNO(k)*csfv%FARE(k)
-                    basin_SWE = basin_SWE + cpv%SNO(k)*csfv%FARE(k)
+                    ik = shd%lc%ILMOS(k)
+                    FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
+                    basin_SCA = basin_SCA + cdv%FSNO(k)*FRAC
+                    basin_SWE = basin_SWE + cpv%SNO(k)*FRAC
                 end do
                 basin_SCA = basin_SCA/TOTAL_AREA
                 basin_SWE = basin_SWE/TOTAL_AREA
                 if (BASINSWEOUTFLAG > 0) then
-                    write(85, "(i5,',', f10.3)") JDAY_NOW, basin_SCA
-                    write(86, "(i5,',', f10.3)") JDAY_NOW, basin_SWE
+                    write(85, "(i5,',', f10.3)") ic%now%jday, basin_SCA
+                    write(86, "(i5,',', f10.3)") ic%now%jday, basin_SWE
                 end if
             end if
 
         end if !(ipid == 0) then
 
         if (ipid == 0) then
+
+            !> Copy over state variables.
+            stas%cnpy%qac = cpv%QAC
+            stas%cnpy%rcan = cpv%RCAN
+            stas%cnpy%sncan = cpv%SNCAN
+            stas%cnpy%tac = cpv%TAC
+            stas%cnpy%tcan = cpv%TCAN
+            stas%cnpy%cmai = cpv%CMAI
+            stas%cnpy%gro = cpv%GRO
+            stas%sno%sno = cpv%SNO
+            stas%sno%albs = cpv%ALBS
+            stas%sno%rhos = cpv%RHOS
+            stas%sno%tsno = cpv%TSNO
+            stas%sno%wsno = cpv%WSNO
+            stas%sfc%tpnd = cpv%TPND
+            stas%sfc%zpnd = cpv%ZPND
+            stas%sfc%tsfs = cpv%TSFS
+            stas%sl%tbas = cpv%TBAS
+            stas%sl%thic = cpv%THIC
+            stas%sl%thlq = cpv%THLQ
+            stas%sl%tbar = cpv%TBAR
 
             do k = il1, il2
                 ik = shd%lc%ILMOS(k)
@@ -618,6 +663,29 @@ module RUNCLASS36_module
             wb%DSTG = wb%RCAN + wb%SNCAN + wb%SNO + wb%WSNO + wb%PNDW + &
                 sum(wb%LQWS, 2) + sum(wb%FRWS, 2) - wb%STG
             wb%STG = wb%DSTG + wb%STG
+
+        else
+
+            !> Copy over state variables.
+            stas%cnpy%qac(il1:il2) = cpv%QAC(il1:il2)
+            stas%cnpy%rcan(il1:il2) = cpv%RCAN(il1:il2)
+            stas%cnpy%sncan(il1:il2) = cpv%SNCAN(il1:il2)
+            stas%cnpy%tac(il1:il2) = cpv%TAC(il1:il2)
+            stas%cnpy%tcan(il1:il2) = cpv%TCAN(il1:il2)
+            stas%cnpy%cmai(il1:il2) = cpv%CMAI(il1:il2)
+            stas%cnpy%gro(il1:il2) = cpv%GRO(il1:il2)
+            stas%sno%sno(il1:il2) = cpv%SNO(il1:il2)
+            stas%sno%albs(il1:il2) = cpv%ALBS(il1:il2)
+            stas%sno%rhos(il1:il2) = cpv%RHOS(il1:il2)
+            stas%sno%tsno(il1:il2) = cpv%TSNO(il1:il2)
+            stas%sno%wsno(il1:il2) = cpv%WSNO(il1:il2)
+            stas%sfc%tpnd(il1:il2) = cpv%TPND(il1:il2)
+            stas%sfc%zpnd(il1:il2) = cpv%ZPND(il1:il2)
+            stas%sfc%tsfs(il1:il2, :) = cpv%TSFS(il1:il2, :)
+            stas%sl%tbas(il1:il2) = cpv%TBAS(il1:il2)
+            stas%sl%thic(il1:il2, :) = cpv%THIC(il1:il2, :)
+            stas%sl%thlq(il1:il2, :) = cpv%THLQ(il1:il2, :)
+            stas%sl%tbar(il1:il2, :) = cpv%TBAR(il1:il2, :)
 
         end if
 
