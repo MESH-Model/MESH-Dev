@@ -39,7 +39,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     type(fl_ids):: fls
 
     !> Local variables.
-    integer NA, NTYPE, NML, NSL, ierr, k, i, m, j
+    integer NA, NTYPE, NML, NSL, ierr, k, n, i, m, j
 
 !> ====================================
 !> read the RUN_OPTIONS input file called "MESH_input_run_options.ini"
@@ -296,6 +296,20 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
              pm%slp%sand(NML, NSL), pm%slp%clay(NML, NSL), pm%slp%orgm(NML, NSL), &
              pm%hp%drn(NML), pm%hp%dd(NML), pm%hp%grkf(NML), pm%hp%mann(NML), pm%hp%ks(NML))
 
+    !> Initialize parameter values for output ('ROW' indexing).
+    allocate(pmrow%tp%gc(1), pmrow%tp%fare(NTYPE), pmrow%tp%xslp(NTYPE), pmrow%tp%mid(NTYPE), &
+             pmrow%cp%fcan(NTYPE, ICP1), pmrow%cp%z0or(NTYPE, ICP1), pmrow%cp%lnz0(NTYPE, ICP1), &
+             pmrow%cp%alvc(NTYPE, ICP1), pmrow%cp%alic(NTYPE, ICP1), &
+             pmrow%cp%lamx(NTYPE, ICAN), pmrow%cp%lamn(NTYPE, ICAN), pmrow%cp%cmas(NTYPE, ICAN), &
+             pmrow%cp%root(NTYPE, ICAN), pmrow%cp%rsmn(NTYPE, ICAN), &
+             pmrow%cp%qa50(NTYPE, ICAN), pmrow%cp%vpda(NTYPE, ICAN), pmrow%cp%vpdb(NTYPE, ICAN), &
+             pmrow%cp%psga(NTYPE, ICAN), pmrow%cp%psgb(NTYPE, ICAN), &
+             pmrow%sfp%zbld(1), pmrow%sfp%zrfh(1), pmrow%sfp%zrfm(1), &
+             pmrow%sfp%zplg(NTYPE), pmrow%snp%zsnl(NTYPE), pmrow%snp%zpls(NTYPE), &
+             pmrow%slp%sdep(NTYPE), pmrow%slp%ggeo(1), pmrow%slp%delz(NSL), pmrow%slp%zbot(NSL), &
+             pmrow%slp%sand(NTYPE, NSL), pmrow%slp%clay(NTYPE, NSL), pmrow%slp%orgm(NTYPE, NSL), &
+             pmrow%hp%drn(NTYPE), pmrow%hp%dd(NTYPE), pmrow%hp%grkf(NTYPE), pmrow%hp%mann(NTYPE), pmrow%hp%ks(NTYPE))
+
     !> Initialize states.
 
     !> Canopy.
@@ -346,26 +360,20 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     stas%dzs%zlw = 0.0
     stas%dzs%tbas = 0.0
 
+    !> Initiate state variables for output ('ROW' indexing).
+    allocate(stasrow%cnpy%qac(NTYPE), stasrow%cnpy%tac(NTYPE), stasrow%cnpy%tcan(NTYPE), &
+             stasrow%cnpy%rcan(NTYPE), stasrow%cnpy%sncan(NTYPE), &
+             stasrow%cnpy%cmai(NTYPE), stasrow%cnpy%gro(NTYPE), &
+             stasrow%sno%sno(NTYPE), stasrow%sno%albs(NTYPE), stasrow%sno%rhos(NTYPE), stasrow%sno%tsno(NTYPE), &
+             stasrow%sno%wsno(NTYPE), &
+             stasrow%sfc%tpnd(NTYPE), stasrow%sfc%zpnd(NTYPE), stasrow%sfc%tsfs(NTYPE, 4), &
+             stasrow%sl%tbas(NTYPE), stasrow%sl%thic(NTYPE, NSL), stasrow%sl%thlq(NTYPE, NSL), stasrow%sl%tbar(NTYPE, NSL), &
+             stasrow%lzs%zlw(NTYPE), stasrow%lzs%tbas(NTYPE), &
+             stasrow%dzs%zlw(NTYPE), stasrow%dzs%tbas(NTYPE))
+
     !> Call 'CLASSD' to initialize constants.
 !todo: replace this with a non-CLASS/generic version.
     call CLASSD
-
-    !> Initialize output parameters ('ROW' format).
-!todo: fix this.
-    allocate(cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA), cp%GCGRD(NA))
-    allocate(cp%FCANROW(NA, NTYPE, ICAN + 1), cp%LNZ0ROW(NA, NTYPE, ICAN + 1), &
-             cp%ALVCROW(NA, NTYPE, ICAN + 1), cp%ALICROW(NA, NTYPE, ICAN + 1))
-    allocate(cp%PAMXROW(NA, NTYPE, ICAN), cp%PAMNROW(NA, NTYPE, ICAN), cp%CMASROW(NA, NTYPE, ICAN), cp%ROOTROW(NA, NTYPE, ICAN), &
-             cp%RSMNROW(NA, NTYPE, ICAN), cp%QA50ROW(NA, NTYPE, ICAN), cp%VPDAROW(NA, NTYPE, ICAN), cp%VPDBROW(NA, NTYPE, ICAN), &
-             cp%PSGAROW(NA, NTYPE, ICAN), cp%PSGBROW(NA, NTYPE, ICAN))
-    allocate(cp%DRNROW(NA, NTYPE),  cp%SDEPROW(NA, NTYPE), cp%FAREROW(NA, NTYPE), cp%DDROW(NA, NTYPE), &
-             cp%XSLPROW(NA, NTYPE), cp%XDROW(NA, NTYPE), cp%MANNROW(NA, NTYPE), cp%KSROW(NA, NTYPE), &
-             cp%TCANROW(NA, NTYPE), cp%TSNOROW(NA, NTYPE), cp%TPNDROW(NA, NTYPE), cp%ZPNDROW(NA, NTYPE), &
-             cp%RCANROW(NA, NTYPE), cp%SCANROW(NA, NTYPE), cp%SNOROW(NA, NTYPE),  cp%ALBSROW(NA, NTYPE), cp%RHOSROW(NA, NTYPE), &
-             cp%GROROW(NA, NTYPE))
-    allocate(cp%MIDROW(NA, NTYPE))
-    allocate(cp%SANDROW(NA, NTYPE, NSL), cp%CLAYROW(NA, NTYPE, NSL), cp%ORGMROW(NA, NTYPE, NSL), &
-             cp%TBARROW(NA, NTYPE, NSL), cp%THLQROW(NA, NTYPE, NSL), cp%THICROW(NA, NTYPE, NSL))
 
     !> Read parameters from file.
     call READ_PARAMETERS_CLASS(shd, fls, cm)
@@ -373,56 +381,75 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> Distribute the values.
     do k = il1, il2
 
-        !> Grab the grid and GRU of the current tile.
+        !> Grab the indices of the grid cell and GRU.
         i = shd%lc%ILMOS(k)
         m = shd%lc%JLMOS(k)
 
-        !> Grab the appropriate value.
-        cp%ZRFMGRD(i) = pm%sfp%zrfm(k)
-        cp%ZRFHGRD(i) = pm%sfp%zrfh(k)
-        cp%ZBLDGRD(i) = pm%sfp%zbld(k)
-        cp%GCGRD(i) = pm%tp%gc(k)
-        cp%FCANROW(i, m, :) = pm%cp%fcan(k, :)
-        cp%LNZ0ROW(i, m, :) = pm%cp%lnz0(k, :)
-        cp%ALVCROW(i, m, :) = pm%cp%alvc(k, :)
-        cp%ALICROW(i, m, :) = pm%cp%alic(k, :)
-        cp%PAMXROW(i, m, :) = pm%cp%lamx(k, :)
-        cp%PAMNROW(i, m, :) = pm%cp%lamn(k, :)
-        cp%CMASROW(i, m, :) = pm%cp%cmas(k, :)
-        cp%ROOTROW(i, m, :) = pm%cp%root(k, :)
-        cp%RSMNROW(i, m, :) = pm%cp%rsmn(k, :)
-        cp%QA50ROW(i, m, :) = pm%cp%qa50(k, :)
-        cp%VPDAROW(i, m, :) = pm%cp%vpda(k, :)
-        cp%VPDBROW(i, m, :) = pm%cp%vpdb(k, :)
-        cp%PSGAROW(i, m, :) = pm%cp%psga(k, :)
-        cp%PSGBROW(i, m, :) = pm%cp%psgb(k, :)
-        cp%DRNROW(i, m) = pm%hp%drn(k)
-        cp%SDEPROW(i, m) = pm%slp%sdep(k)
-        cp%FAREROW(i, m) = pm%tp%fare(k)
-        cp%DDROW(i, m) = pm%hp%dd(k)
-        cp%XSLPROW(i, m) = pm%tp%xslp(k)
-        cp%XDROW(i, m) = pm%hp%grkf(k)
-        cp%MANNROW(i, m) = pm%hp%mann(k)
-        cp%KSROW(i, m) = pm%hp%ks(k)
-        cp%TCANROW(i, m) = stas%cnpy%tcan(k) - TFREZ
-        cp%TSNOROW(i, m) = stas%sno%tsno(k) - TFREZ
-        cp%TPNDROW(i, m) = stas%sfc%tpnd(k) - TFREZ
-        cp%ZPNDROW(i, m) = stas%sfc%zpnd(k)
-        cp%RCANROW(i, m) = stas%cnpy%rcan(k)
-        cp%SCANROW(i, m) = stas%cnpy%sncan(k)
-        cp%SNOROW(i, m) = stas%sno%sno(k)
-        cp%ALBSROW(i, m) = stas%sno%albs(k)
-        cp%RHOSROW(i, m) = stas%sno%rhos(k)
-        cp%GROROW(i, m) = stas%cnpy%gro(k)
-        cp%MIDROW(i, m) = pm%tp%mid(k)
-        cp%SANDROW(i, m, :) = pm%slp%sand(k, :)
-        cp%CLAYROW(i, m, :) = pm%slp%clay(k, :)
-        cp%ORGMROW(i, m, :) = pm%slp%orgm(k, :)
-        cp%TBARROW(i, m, :) = stas%sl%tbar(k, :) - TFREZ
-        cp%THLQROW(i, m, :) = stas%sl%thlq(k, :)
-        cp%THICROW(i, m, :) = stas%sl%thic(k, :)
+        !> Distribute the parameter values.
+        pm%sfp%zrfm(k) = pmrow%sfp%zrfm(1)
+        pm%sfp%zrfh(k) = pmrow%sfp%zrfh(1)
+        pm%sfp%zbld(k) = pmrow%sfp%zbld(1)
+        pm%tp%gc(k) = pmrow%tp%gc(1)
+        pm%tp%fare(k) = pmrow%tp%fare(m)
+        pm%tp%mid(k) = max(1, pmrow%tp%mid(m))
+        pm%cp%fcan(k, :) = pmrow%cp%fcan(m, :)
+        pm%cp%lnz0(k, :) = pmrow%cp%lnz0(m, :)
+        pm%cp%alvc(k, :) = pmrow%cp%alvc(m, :)
+        pm%cp%alic(k, :) = pmrow%cp%alic(m, :)
+        pm%cp%lamx(k, :) = pmrow%cp%lamx(m, :)
+        pm%cp%lamn(k, :) = pmrow%cp%lamn(m, :)
+        pm%cp%cmas(k, :) = pmrow%cp%cmas(m, :)
+        pm%cp%root(k, :) = pmrow%cp%root(m, :)
+        pm%cp%rsmn(k, :) = pmrow%cp%rsmn(m, :)
+        pm%cp%qa50(k, :) = pmrow%cp%qa50(m, :)
+        pm%cp%vpda(k, :) = pmrow%cp%vpda(m, :)
+        pm%cp%vpdb(k, :) = pmrow%cp%vpdb(m, :)
+        pm%cp%psga(k, :) = pmrow%cp%psga(m, :)
+        pm%cp%psgb(k, :) = pmrow%cp%psgb(m, :)
+        pm%slp%sdep(k) = pmrow%slp%sdep(m)
+        pm%hp%drn(k) = pmrow%hp%drn(m)
+        if (allocated(shd%SLOPE_INT)) then
+            pm%tp%xslp(k) = shd%SLOPE_INT(i) !taken from the drainage database.
+        else
+            pm%tp%xslp(k) = pmrow%tp%xslp(m) !taken by GRU from CLASS.ini
+        end if
+        if (allocated(shd%DRDN)) then
+            pm%hp%dd(k) = shd%DRDN(i) !taken from the drainage database.
+        else
+            pm%hp%dd(k) = pmrow%hp%dd(m)/1000.0 !taken from CLASS.ini and from km/km^2 to m/m^2 for WATROF.
+        end if
+        pm%hp%mann(k) = pmrow%hp%mann(m)
+        pm%hp%grkf(k) = pmrow%hp%grkf(m)
+        pm%hp%ks(k) = pmrow%hp%ks(m)
+        pm%slp%sand(k, :) = pmrow%slp%sand(m, :)
+        pm%slp%clay(k, :) = pmrow%slp%clay(m, :)
+        pm%slp%orgm(k, :) = pmrow%slp%orgm(m, :)
 
-    end do
+        !> Distribute the initial prognostic variable values.
+        stas%cnpy%cmai = 0.0
+        stas%sno%wsno = 0.0
+        stas%cnpy%qac = 0.5e-2
+        stas%cnpy%tcan(k) = stasrow%cnpy%tcan(m) + TFREZ
+        stas%cnpy%tac(k) = stasrow%cnpy%tcan(m) + TFREZ
+        stas%sno%tsno(k) = stasrow%sno%tsno(m) + TFREZ
+        stas%sfc%tpnd(k) = stasrow%sfc%tpnd(m) + TFREZ
+        stas%sfc%zpnd(k) = stasrow%sfc%zpnd(m)
+        stas%cnpy%rcan(k) = stasrow%cnpy%rcan(m)
+        stas%cnpy%sncan(k) = stasrow%cnpy%sncan(m)
+        stas%sno%sno(k) = stasrow%sno%sno(m)
+        stas%sno%albs(k) = stasrow%sno%albs(m)
+        stas%sno%rhos(k) = stasrow%sno%rhos(m)
+        stas%cnpy%gro(k) = stasrow%cnpy%gro(m)
+        stas%sfc%tsfs(k, 1) = TFREZ
+        stas%sfc%tsfs(k, 2) = TFREZ
+        stas%sfc%tsfs(k, 3) = stasrow%sl%tbar(m, 1) + TFREZ
+        stas%sfc%tsfs(k, 4) = stasrow%sl%tbar(m, 1) + TFREZ
+        stas%sl%tbar(k, :) = stasrow%sl%tbar(m, :) + TFREZ
+        stas%sl%thlq(k, :) = stasrow%sl%thlq(m, :)
+        stas%sl%thic(k, :) = stasrow%sl%thic(m, :)
+        stas%sl%tbas(k) = stasrow%sl%tbar(m, NSL) + TFREZ
+
+    end do !k = il1, il2
 
     !> Check that grid output points are in the basin.
     do i = 1, WF_NUM_POINTS
@@ -436,6 +463,29 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         end if
     end do
 
+    !> Distribute the starting date of the forcing files.
+    do n = 1, cm%nclim
+        cm%dat(n)%start_date%year = cm%start_date%year
+        cm%dat(n)%start_date%jday = cm%start_date%jday
+        cm%dat(n)%start_date%hour = cm%start_date%hour
+        cm%dat(n)%start_date%mins = cm%start_date%mins
+    end do
+
+    !> Set the starting date from the forcing files if none is provided.
+    if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%hour == 0 .and. ic%start%mins == 0) then
+        ic%start%year = cm%start_date%year
+        ic%start%jday = cm%start_date%jday
+        ic%start%hour = cm%start_date%hour
+        ic%start%mins = cm%start_date%mins
+    end if
+
+    !> Initialize the current time-step.
+    ic%now%year = ic%start%year
+    ic%now%jday = ic%start%jday
+    call julian2monthday(ic%now%jday, ic%now%year, ic%now%month, ic%now%day)
+    ic%now%hour = ic%start%hour
+    ic%now%mins = ic%start%mins
+
 !> *********************************************************************
 !> Open and read INITIAL SOIL MOISTURE AND SOIL TEMPERATURE values
 !> when data is available
@@ -447,13 +497,20 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
 !todo - test this piece of code and make sure we understand how it works.
 !todo - if we implement this, make it an option for the user to select GRU or grid initialization
-    call READ_S_MOISTURE_TXT(NSL, shd%yCount, shd%xCount, NA, NTYPE, shd%yyy, shd%xxx, cp%THLQROW)
-    call READ_S_TEMPERATURE_TXT(NSL, shd%yCount, shd%xCount, NA, NTYPE, shd%yyy, shd%xxx, cp%TBARROW)
+    call READ_S_MOISTURE_TXT( &
+            shd%yCount, shd%xCount, NA, NTYPE, NML, NSL, shd%yyy, shd%xxx, shd%lc%ILMOS, shd%lc%JLMOS, &
+            stas%sl%thlq, &
+            il1, il2)
+    call READ_S_TEMPERATURE_TXT(&
+            shd%yCount, shd%xCount, NA, NTYPE, NML, NSL, shd%yyy, shd%xxx, shd%lc%ILMOS, shd%lc%JLMOS, &
+            stas%sl%tbar, &
+            il1, il2)
 
     !> Allocate additional parameters.
-    allocate(hp%ZSNLROW(NA, NTYPE), hp%ZPLGROW(NA, NTYPE), hp%ZPLSROW(NA, NTYPE), hp%FRZCROW(NA, NTYPE), &
-             hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE), hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE), hp%K2ROW(NA, NTYPE), &
-             hp%fetchROW(NA, NTYPE), hp%HtROW(NA, NTYPE), hp%N_SROW(NA, NTYPE), hp%A_SROW(NA, NTYPE), hp%DistribROW(NA, NTYPE))
+    allocate( &
+        hp%FRZCROW(NA, NTYPE), &
+        hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE), hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE), hp%K2ROW(NA, NTYPE), &
+        hp%fetchROW(NA, NTYPE), hp%HtROW(NA, NTYPE), hp%N_SROW(NA, NTYPE), hp%A_SROW(NA, NTYPE), hp%DistribROW(NA, NTYPE))
 
     NYEARS = ic%stop%year - ic%start%year + 1
     allocate(t0_ACC(NYEARS))
@@ -465,14 +522,14 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> Distribute the values.
     do k = il1, il2
 
-        !> Grab the grid and GRU of the current tile.
+        !> Grab the indices of the grid cell and GRU.
         i = shd%lc%ILMOS(k)
         m = shd%lc%JLMOS(k)
 
-        !> Grad the appropriate value.
-        hp%ZSNLROW(i, m) = pm%snp%zsnl(k)
-        hp%ZPLGROW(i, m) = pm%sfp%zplg(k)
-        hp%ZPLSROW(i, m) = pm%snp%zpls(k)
+        !> Distribute the parameter values.
+        pm%snp%zsnl(k) = pmrow%snp%zsnl(m)
+        pm%sfp%zplg(k) = pmrow%sfp%zplg(m)
+        pm%snp%zpls(k) = pmrow%snp%zpls(m)
 
     end do !k = il1, il2
 
