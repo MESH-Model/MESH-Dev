@@ -465,6 +465,90 @@ module RUNCLASS36_config
             GGEOGRD(1) = 0.0
         end if
 
+        !> Resume the state of prognostic variables from file.
+        select case (RESUMEFLAG)
+
+            !> RESUMEFLAG 3.
+            case (3)
+
+                !> Open the resume state file.
+                iun = fls%fl(mfk%f883)%iun
+                open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'old', action = 'read', &
+                     form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+                !> Allocate temporary variables.
+                allocate(ALBSROW(NA, NTYPE), CMAIROW(NA, NTYPE), GROROW(NA, NTYPE), QACROW(NA, NTYPE), RCANROW(NA, NTYPE), &
+                         RHOSROW(NA, NTYPE), SCANROW(NA, NTYPE), SNOROW(NA, NTYPE), TACROW(NA, NTYPE), TBASROW(NA, NTYPE), &
+                         TCANROW(NA, NTYPE), TPNDROW(NA, NTYPE), TSNOROW(NA, NTYPE), WSNOROW(NA, NTYPE), ZPNDROW(NA, NTYPE), &
+                         TBARROW(NA, NTYPE, NSL), THICROW(NA, NTYPE, NSL), THLQROW(NA, NTYPE, NSL), TSFSROW(NA, NTYPE, 4))
+
+                !> Read inital values from the file.
+                read(iun) ALBSROW
+                read(iun) CMAIROW
+                read(iun) GROROW
+                read(iun) QACROW
+                read(iun) RCANROW
+                read(iun) RHOSROW
+                read(iun) SCANROW
+                read(iun) SNOROW
+                read(iun) TACROW
+                read(iun) TBARROW
+                read(iun) TBASROW
+                read(iun) TCANROW
+                read(iun) THICROW
+                read(iun) THLQROW
+                read(iun) TPNDROW
+                read(iun) TSFSROW
+                read(iun) TSNOROW
+                read(iun) WSNOROW
+                read(iun) ZPNDROW
+
+                !> Close the file to free the unit.
+                close(iun)
+
+                !> Scatter the temporary variables.
+                do k = il1, il2
+
+                    !> Grab the grid and GRU of the current tile.
+                    ik = shd%lc%ILMOS(k)
+                    jk = shd%lc%JLMOS(k)
+
+                    !> Assign values.
+                    stas%sno%albs(k) = ALBSROW(ik, jk)
+                    stas%cnpy%cmai(k) = CMAIROW(ik, jk)
+                    stas%cnpy%gro(k) = GROROW(ik, jk)
+                    stas%cnpy%qac(k) = QACROW(ik, jk)
+                    stas%cnpy%rcan(k) = RCANROW(ik, jk)
+                    stas%sno%rhos(k) = RHOSROW(ik, jk)
+                    stas%cnpy%sncan(k) = SCANROW(ik, jk)
+                    stas%sno%sno(k) = SNOROW(ik, jk)
+                    stas%cnpy%tac(k) = TACROW(ik, jk)
+                    stas%sl%tbar(k, :) = TBARROW(ik, jk, :)
+                    stas%sl%tbas(k) = TBASROW(ik, jk)
+                    stas%cnpy%tcan(k) = TCANROW(ik, jk)
+                    stas%sl%thic(k, :) = THICROW(ik, jk, :)
+                    stas%sl%thlq(k, :) = THLQROW(ik, jk, :)
+                    stas%sfc%tpnd(k) = TPNDROW(ik, jk)
+                    stas%sfc%tsfs(k, :) = TSFSROW(ik, jk, :)
+                    stas%sno%tsno(k) = TSNOROW(ik, jk)
+                    stas%sno%wsno(k) = WSNOROW(ik, jk)
+                    stas%sfc%zpnd(k) = ZPNDROW(ik, jk)
+
+                end do
+
+                !> Deallocate temporary variables.
+                deallocate(ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+                           RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
+                           TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW, &
+                           TBARROW, THICROW, THLQROW, TSFSROW)
+
+            !> RESUMEFLAG 4.
+            case (4)
+                call read_init_prog_variables_class(fls)
+
+        end select !case (RESUMEFLAG)
+
         !> Distribute variables.
         catv%ZRFM = pm%sfp%zrfm
         catv%ZRFH = pm%sfp%zrfh
@@ -579,90 +663,6 @@ module RUNCLASS36_config
             K1PDM(k) = hp%K1ROW(ik, jk)
             K2PDM(k) = hp%K2ROW(ik, jk)
         end do
-
-        !> Resume the state of prognostic variables from file.
-        select case (RESUMEFLAG)
-
-            !> RESUMEFLAG 3.
-            case (3)
-
-                !> Open the resume state file.
-                iun = fls%fl(mfk%f883)%iun
-                open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'old', action = 'read', &
-                     form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
-
-                !> Allocate temporary variables.
-                allocate(ALBSROW(NA, NTYPE), CMAIROW(NA, NTYPE), GROROW(NA, NTYPE), QACROW(NA, NTYPE), RCANROW(NA, NTYPE), &
-                         RHOSROW(NA, NTYPE), SCANROW(NA, NTYPE), SNOROW(NA, NTYPE), TACROW(NA, NTYPE), TBASROW(NA, NTYPE), &
-                         TCANROW(NA, NTYPE), TPNDROW(NA, NTYPE), TSNOROW(NA, NTYPE), WSNOROW(NA, NTYPE), ZPNDROW(NA, NTYPE), &
-                         TBARROW(NA, NTYPE, NSL), THICROW(NA, NTYPE, NSL), THLQROW(NA, NTYPE, NSL), TSFSROW(NA, NTYPE, 4))
-
-                !> Read inital values from the file.
-                read(iun) ALBSROW
-                read(iun) CMAIROW
-                read(iun) GROROW
-                read(iun) QACROW
-                read(iun) RCANROW
-                read(iun) RHOSROW
-                read(iun) SCANROW
-                read(iun) SNOROW
-                read(iun) TACROW
-                read(iun) TBARROW
-                read(iun) TBASROW
-                read(iun) TCANROW
-                read(iun) THICROW
-                read(iun) THLQROW
-                read(iun) TPNDROW
-                read(iun) TSFSROW
-                read(iun) TSNOROW
-                read(iun) WSNOROW
-                read(iun) ZPNDROW
-
-                !> Close the file to free the unit.
-                close(iun)
-
-                !> Scatter the temporary variables.
-                do k = il1, il2
-
-                    !> Grab the grid and GRU of the current tile.
-                    ik = shd%lc%ILMOS(k)
-                    jk = shd%lc%JLMOS(k)
-
-                    !> Assign values.
-                    cpv%ALBS(k) = ALBSROW(ik, jk)
-                    cpv%CMAI(k) = CMAIROW(ik, jk)
-                    cpv%GRO(k) = GROROW(ik, jk)
-                    cpv%QAC(k) = QACROW(ik, jk)
-                    cpv%RCAN(k) = RCANROW(ik, jk)
-                    cpv%RHOS(k) = RHOSROW(ik, jk)
-                    cpv%SNCAN(k) = SCANROW(ik, jk)
-                    cpv%SNO(k) = SNOROW(ik, jk)
-                    cpv%TAC(k) = TACROW(ik, jk)
-                    cpv%TBAR(k, :) = TBARROW(ik, jk, :)
-                    cpv%TBAS(k) = TBASROW(ik, jk)
-                    cpv%TCAN(k) = TCANROW(ik, jk)
-                    cpv%THIC(k, :) = THICROW(ik, jk, :)
-                    cpv%THLQ(k, :) = THLQROW(ik, jk, :)
-                    cpv%TPND(k) = TPNDROW(ik, jk)
-                    cpv%TSFS(k, :) = TSFSROW(ik, jk, :)
-                    cpv%TSNO(k) = TSNOROW(ik, jk)
-                    cpv%WSNO(k) = WSNOROW(ik, jk)
-                    cpv%ZPND(k) = ZPNDROW(ik, jk)
-
-                end do
-
-                !> Deallocate temporary variables.
-                deallocate(ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
-                           RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
-                           TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW, &
-                           TBARROW, THICROW, THLQROW, TSFSROW)
-
-            !> RESUMEFLAG 4.
-            case (4)
-                call read_init_prog_variables_class(fls)
-
-        end select !case (RESUMEFLAG)
 
         !> Allocate variables for WATDRN3
         !> ******************************************************************
@@ -803,6 +803,7 @@ module RUNCLASS36_config
         use mpi_shared_variables
         use model_files_variabletypes
         use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -866,25 +867,25 @@ module RUNCLASS36_config
                     jk = shd%lc%JLMOS(k)
 
                     !> Assign values.
-                    ALBSROW(ik, jk) = cpv%ALBS(k)
-                    CMAIROW(ik, jk) = cpv%CMAI(k)
-                    GROROW(ik, jk) = cpv%GRO(k)
-                    QACROW(ik, jk) = cpv%QAC(k)
-                    RCANROW(ik, jk) = cpv%RCAN(k)
-                    RHOSROW(ik, jk) = cpv%RHOS(k)
-                    SCANROW(ik, jk) = cpv%SNCAN(k)
-                    SNOROW(ik, jk) = cpv%SNO(k)
-                    TACROW(ik, jk) = cpv%TAC(k)
-                    TBARROW(ik, jk, :) = cpv%TBAR(k, :)
-                    TBASROW(ik, jk) = cpv%TBAS(k)
-                    TCANROW(ik, jk) = cpv%TCAN(k)
-                    THICROW(ik, jk, :) = cpv%THIC(k, :)
-                    THLQROW(ik, jk, :) = cpv%THLQ(k, :)
-                    TPNDROW(ik, jk) = cpv%TPND(k)
-                    TSFSROW(ik, jk, :) = cpv%TSFS(k, :)
-                    TSNOROW(ik, jk) = cpv%TSNO(k)
-                    WSNOROW(ik, jk) = cpv%WSNO(k)
-                    ZPNDROW(ik, jk) = cpv%ZPND(k)
+                    ALBSROW(ik, jk) = stas%sno%albs(k)
+                    CMAIROW(ik, jk) = stas%cnpy%cmai(k)
+                    GROROW(ik, jk) = stas%cnpy%gro(k)
+                    QACROW(ik, jk) = stas%cnpy%qac(k)
+                    RCANROW(ik, jk) = stas%cnpy%rcan(k)
+                    RHOSROW(ik, jk) = stas%sno%rhos(k)
+                    SCANROW(ik, jk) = stas%cnpy%sncan(k)
+                    SNOROW(ik, jk) = stas%sno%sno(k)
+                    TACROW(ik, jk) = stas%cnpy%tac(k)
+                    TBARROW(ik, jk, :) = stas%sl%tbar(k, :)
+                    TBASROW(ik, jk) = stas%sl%tbas(k)
+                    TCANROW(ik, jk) = stas%cnpy%tcan(k)
+                    THICROW(ik, jk, :) = stas%sl%thic(k, :)
+                    THLQROW(ik, jk, :) = stas%sl%thlq(k, :)
+                    TPNDROW(ik, jk) = stas%sfc%tpnd(k)
+                    TSFSROW(ik, jk, :) = stas%sfc%tsfs(k, :)
+                    TSNOROW(ik, jk) = stas%sno%tsno(k)
+                    WSNOROW(ik, jk) = stas%sno%wsno(k)
+                    ZPNDROW(ik, jk) = stas%sfc%zpnd(k)
 
                 end do
 

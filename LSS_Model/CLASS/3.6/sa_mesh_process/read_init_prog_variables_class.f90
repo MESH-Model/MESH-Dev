@@ -30,7 +30,7 @@
 
         use model_files_variabletypes
         use model_files_variables
-        use RUNCLASS36_variables, only: cpv
+        use sa_mesh_shared_variables
         use FLAGS, only: RESUMEFLAG
 
         implicit none
@@ -60,25 +60,25 @@
 !>    end type
 
         !> Read inital values from the file.
-        read(iun) cpv%ALBS      !1 (NML)
-        read(iun) cpv%CMAI      !2 (NML)
-        read(iun) cpv%GRO       !3 (NML)
-        read(iun) cpv%QAC       !4 (NML)
-        read(iun) cpv%RCAN      !5 (NML)
-        read(iun) cpv%RHOS      !6 (NML)
-        read(iun) cpv%SNCAN     !7 (NML)
-        read(iun) cpv%SNO       !8 (NML)
-        read(iun) cpv%TAC       !9 (NML)
-        read(iun) cpv%TBAR      !10 (NML, IGND)
-        read(iun) cpv%TBAS      !11 (NML)
-        read(iun) cpv%TCAN      !12 (NML)
-        read(iun) cpv%THIC      !13 (NML, IGND)
-        read(iun) cpv%THLQ      !14 (NML, IGND)
-        read(iun) cpv%TPND      !15 (NML)
-        read(iun) cpv%TSFS      !16 (NML, IGND)
-        read(iun) cpv%TSNO      !17 (NML)
-        read(iun) cpv%WSNO      !18 (NML)
-        read(iun) cpv%ZPND      !19 (NML)
+        read(iun) stas%sno%albs     !1 (NML)
+        read(iun) stas%cnpy%cmai    !2 (NML)
+        read(iun) stas%cnpy%gro     !3 (NML)
+        read(iun) stas%cnpy%qac     !4 (NML)
+        read(iun) stas%cnpy%rcan    !5 (NML)
+        read(iun) stas%sno%rhos     !6 (NML)
+        read(iun) stas%cnpy%sncan   !7 (NML)
+        read(iun) stas%sno%sno      !8 (NML)
+        read(iun) stas%cnpy%tac     !9 (NML)
+        read(iun) stas%sl%tbar      !10 (NML, IGND)
+        read(iun) stas%sl%tbas      !11 (NML)
+        read(iun) stas%cnpy%tcan    !12 (NML)
+        read(iun) stas%sl%thic      !13 (NML, IGND)
+        read(iun) stas%sl%thlq      !14 (NML, IGND)
+        read(iun) stas%sfc%tpnd     !15 (NML)
+        read(iun) stas%sfc%tsfs     !16 (NML, 4)
+        read(iun) stas%sno%tsno     !17 (NML)
+        read(iun) stas%sno%wsno     !18 (NML)
+        read(iun) stas%sfc%zpnd     !19 (NML)
 
         !> Close the file to free the unit.
         close(iun)

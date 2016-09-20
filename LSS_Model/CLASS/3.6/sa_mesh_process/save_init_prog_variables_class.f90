@@ -30,7 +30,7 @@
 
         use model_files_variabletypes
         use model_files_variables
-        use RUNCLASS36_variables, only: cpv
+        use sa_mesh_shared_variables
         use FLAGS, only: SAVERESUMEFLAG
 
         implicit none
@@ -60,25 +60,25 @@
 !>    end type
 
         !> Write the current state of these variables to the file.
-        write(iun) cpv%ALBS     !1 (NML)
-        write(iun) cpv%CMAI     !2 (NML)
-        write(iun) cpv%GRO      !3 (NML)
-        write(iun) cpv%QAC      !4 (NML)
-        write(iun) cpv%RCAN     !5 (NML)
-        write(iun) cpv%RHOS     !6 (NML)
-        write(iun) cpv%SNCAN    !7 (NML)
-        write(iun) cpv%SNO      !8 (NML)
-        write(iun) cpv%TAC      !9 (NML)
-        write(iun) cpv%TBAR     !10 (NML, IGND)
-        write(iun) cpv%TBAS     !11 (NML)
-        write(iun) cpv%TCAN     !12 (NML)
-        write(iun) cpv%THIC     !13 (NML, IGND)
-        write(iun) cpv%THLQ     !14 (NML, IGND)
-        write(iun) cpv%TPND     !15 (NML)
-        write(iun) cpv%TSFS     !16 (NML, IGND)
-        write(iun) cpv%TSNO     !17 (NML)
-        write(iun) cpv%WSNO     !18 (NML)
-        write(iun) cpv%ZPND     !19 (NML)
+        write(iun) stas%sno%albs    !1 (NML)
+        write(iun) stas%cnpy%cmai   !2 (NML)
+        write(iun) stas%cnpy%gro    !3 (NML)
+        write(iun) stas%cnpy%qac    !4 (NML)
+        write(iun) stas%cnpy%rcan   !5 (NML)
+        write(iun) stas%sno%rhos    !6 (NML)
+        write(iun) stas%cnpy%sncan  !7 (NML)
+        write(iun) stas%sno%sno     !8 (NML)
+        write(iun) stas%cnpy%tac    !9 (NML)
+        write(iun) stas%sl%tbar     !10 (NML, IGND)
+        write(iun) stas%sl%tbas     !11 (NML)
+        write(iun) stas%cnpy%tcan   !12 (NML)
+        write(iun) stas%sl%thic     !13 (NML, IGND)
+        write(iun) stas%sl%thlq     !14 (NML, IGND)
+        write(iun) stas%sfc%tpnd    !15 (NML)
+        write(iun) stas%sfc%tsfs    !16 (NML, 4)
+        write(iun) stas%sno%tsno    !17 (NML)
+        write(iun) stas%sno%wsno    !18 (NML)
+        write(iun) stas%sfc%zpnd    !19 (NML)
 
         !> Close the file to free the unit.
         close(iun)
