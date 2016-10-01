@@ -29,8 +29,11 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !> Required for 'hp' (contains FROZENSOILINFIL, PDMROF, and PBSM parameters).
 !todo: remove this.
     use RUNCLASS36_variables
+
+    !> Variables of various modules.
     use WF_ROUTE_config, only: wfp
     use baseflow_module, only: lzsp
+    use cropland_irrigation_variables, only: ciprot, cifg
 
     implicit none
 
@@ -698,6 +701,107 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                     call value(out_args(j + 1), lzsp%WF_LZFA(1, j), ierr)
                                     if (ierr /= 0) goto 931
                                     lzsp%WF_LZFA(:, j) = lzsp%WF_LZFA(1, j)
+                                end do
+                            end if
+
+                        !> Cropland irrigation module.
+
+                        !> jdsow.
+                        case ('jdsow')
+                            if (.not. cifg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NTYPE
+                                    call value(out_args(j + 1), ciprot%jdsow(j), ierr)
+                                    if (ierr /= 0) goto 931
+                                end do
+                            end if
+
+                        !> ldini.
+                        case ('ldini')
+                            if (.not. cifg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NTYPE
+                                    call value(out_args(j + 1), ciprot%ldini(j), ierr)
+                                    if (ierr /= 0) goto 931
+                                end do
+                            end if
+
+                        !> lddev.
+                        case ('lddev')
+                            if (.not. cifg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NTYPE
+                                    call value(out_args(j + 1), ciprot%lddev(j), ierr)
+                                    if (ierr /= 0) goto 931
+                                end do
+                            end if
+
+                        !> ldmid.
+                        case ('ldmid')
+                            if (.not. cifg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NTYPE
+                                    call value(out_args(j + 1), ciprot%ldmid(j), ierr)
+                                    if (ierr /= 0) goto 931
+                                end do
+                            end if
+
+                        !> ldlate.
+                        case ('ldlate')
+                            if (.not. cifg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NTYPE
+                                    call value(out_args(j + 1), ciprot%ldlate(j), ierr)
+                                    if (ierr /= 0) goto 931
+                                end do
+                            end if
+
+                        !> Kcini.
+                        case ('kcini')
+                            if (.not. cifg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NTYPE
+                                    call value(out_args(j + 1), ciprot%Kcini(j), ierr)
+                                    if (ierr /= 0) goto 931
+                                end do
+                            end if
+
+                        !> Kcdev.
+                        case ('kcdev')
+                            if (.not. cifg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NTYPE
+                                    call value(out_args(j + 1), ciprot%Kcdev(j), ierr)
+                                    if (ierr /= 0) goto 931
+                                end do
+                            end if
+
+                        !> Kcmid.
+                        case ('kcmid')
+                            if (.not. cifg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NTYPE
+                                    call value(out_args(j + 1), ciprot%Kcmid(j), ierr)
+                                    if (ierr /= 0) goto 931
+                                end do
+                            end if
+
+                        !> Kclate.
+                        case ('kclate')
+                            if (.not. cifg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NTYPE
+                                    call value(out_args(j + 1), ciprot%Kclate(j), ierr)
+                                    if (ierr /= 0) goto 931
                                 end do
                             end if
 

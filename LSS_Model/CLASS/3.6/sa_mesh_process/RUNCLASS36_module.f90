@@ -445,6 +445,7 @@ module RUNCLASS36_module
             i = 1
             call mpi_isend(cfi%PRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(cdv%QFS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cdv%PET(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(cdv%ROF(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(cdv%ROFO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(cdv%ROFS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
@@ -508,6 +509,7 @@ module RUNCLASS36_module
                 i = 1
                 call mpi_irecv(cfi%PRE(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(cdv%QFS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cdv%PET(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(cdv%ROF(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(cdv%ROFO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(cdv%ROFS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
@@ -627,8 +629,12 @@ module RUNCLASS36_module
             stas%sfc%tsfs = cpv%TSFS
             stas%sl%tbas = cpv%TBAS
             stas%sl%thic = cpv%THIC
+            stas%sl%fzws = cpv%THIC*csfv%DELZW*RHOICE
             stas%sl%thlq = cpv%THLQ
+            stas%sl%lqws = cpv%THLQ*csfv%DELZW*RHOW
             stas%sl%tbar = cpv%TBAR
+            stas%cnpy%evp = cdv%QFS
+            stas%cnpy%pevp = cdv%PET
 
             do k = il1, il2
                 ik = shd%lc%ILMOS(k)
@@ -683,9 +689,13 @@ module RUNCLASS36_module
             stas%sfc%zpnd(il1:il2) = cpv%ZPND(il1:il2)
             stas%sfc%tsfs(il1:il2, :) = cpv%TSFS(il1:il2, :)
             stas%sl%tbas(il1:il2) = cpv%TBAS(il1:il2)
-            stas%sl%thic(il1:il2, :) = cpv%THIC(il1:il2, :)
+            stas%sl%fzws(il1:il2, :) = cpv%THIC(il1:il2, :)*csfv%DELZW(il1:il2, :)*RHOICE
+            stas%sl%thlq(il1:il2, :) = cpv%THLQ(il1:il2, :)
+            stas%sl%lqws(il1:il2, :) = cpv%THLQ(il1:il2, :)*csfv%DELZW(il1:il2, :)*RHOW
             stas%sl%thlq(il1:il2, :) = cpv%THLQ(il1:il2, :)
             stas%sl%tbar(il1:il2, :) = cpv%TBAR(il1:il2, :)
+            stas%cnpy%evp(il1:il2) = cdv%QFS(il1:il2)
+            stas%cnpy%pevp(il1:il2) = cdv%PET(il1:il2)
 
         end if
 

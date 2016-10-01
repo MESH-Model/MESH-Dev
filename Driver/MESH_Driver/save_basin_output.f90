@@ -9,6 +9,8 @@ module save_basin_output
 
     !> Global types.
 
+    !> For basin water balance.
+
     type BasinWaterBalance
         real PRE, EVAP, ROF, ROFO, ROFS, ROFB, STG_INI, STG_FIN
     end type
@@ -18,9 +20,18 @@ module save_basin_output
         real, dimension(:), allocatable :: LQWS, FRWS
     end type
 
+    !> For PEVP-EVAP and EVPB output.
+
+    type BasinEvp
+        real EVAP, PEVP, EVPB, ARRD
+    end type
+
+    !> Basin output.
+
     type BasinOutput
         type(BasinWaterStorage) :: wbtot
         type(BasinWaterStorage), dimension(:), allocatable :: wbdts
+        type(BasinEvp), dimension(:), allocatable :: evpdts
     end type
 
     !> Local type instances.
@@ -115,6 +126,11 @@ module save_basin_output
             bno%wbdts(i)%LQWS = 0.0
             bno%wbdts(i)%FRWS = 0.0
         end do
+        allocate(bno%evpdts(IOUT))
+        bno%evpdts(:)%EVAP = 0.0
+        bno%evpdts(:)%PEVP = 0.0
+        bno%evpdts(:)%EVPB = 0.0
+        bno%evpdts(:)%ARRD = 0.0
         allocate(eb_out%HFS(2:2), eb_out%QEVP(2:2), eb_out%GFLX(2:2, IGND))
         eb_out%QEVP = 0.0
         eb_out%HFS = 0.0
@@ -171,6 +187,33 @@ module save_basin_output
         !> Open CSV output files for the energy balance and write the header.
         open(901, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance.csv')
         write(901, '(a)') 'DAY,YEAR,HFS,QEVP'
+
+        !> For PEVP-EVAP and EVPB output.
+        WRT_900_FMT = 'EVAP,PEVP,EVPB,ARRD'
+
+        !> Daily.
+        if (btest(BASINAVGEVPFILEFLAG, 0)) then
+            open(910, file = './' // trim(fls%GENDIR_OUT) // '/' // '/Basin_average_evap.csv')
+            write(910, '(a)') 'DAY,YEAR,' // trim(adjustl(WRT_900_FMT))
+        end if
+
+        !> Monthly.
+        if (btest(BASINAVGEVPFILEFLAG, 1)) then
+            open(911, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_Monthly.csv')
+            write(911, '(a)') 'DAY,YEAR,' // trim(adjustl(WRT_900_FMT))
+        end if
+
+        !> Hourly.
+        if (btest(BASINAVGEVPFILEFLAG, 2)) then
+            open(912, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_Hourly.csv')
+            write(912, '(a)') 'DAY,YEAR,HOUR,' // trim(adjustl(WRT_900_FMT))
+        end if
+
+        !> Per time-step.
+        if (btest(BASINAVGEVPFILEFLAG, 3)) then
+            open(913, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_ts.csv')
+            write(913, '(a)') 'DAY,YEAR,HOUR,MINS,' // trim(adjustl(WRT_900_FMT))
+        end if
 
         !> Calculate the initial storage component of the water balance and copy it to the time-averaged output variables.
         bno%wbtot%STG_INI = (sum(wb%LQWS) + sum(wb%FRWS) + &
@@ -303,15 +346,23 @@ module save_basin_output
         bno%wbdts(:)%WSNO = bno%wbdts(:)%WSNO + sum(wb%WSNO)/dnar
         bno%wbdts(:)%PNDW = bno%wbdts(:)%PNDW + sum(wb%PNDW)/dnar
 
+        !> For PEVP-EVAP and EVPB output
+        bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(wb%EVAP)/dnar
+        bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(wb%PEVP)/dnar
+        bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(wb%EVPB)/dnar
+        bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(wb%ARRD)/dnar
+
         !> Hourly (wb): IKEY_HLY
-        if (mod(ic%ts_hourly, 3600/ic%dts) == 0 .and. btest(BASINAVGWBFILEFLAG, 2)) then
+        if (mod(ic%ts_hourly, 3600/ic%dts) == 0) then
 !todo: change this to pass the index of the file object.
-            call update_water_balance(shd, fls, 903, 3600, IKEY_HLY)
+            if (btest(BASINAVGWBFILEFLAG, 2)) call update_water_balance(shd, fls, 903, 3600, IKEY_HLY)
+            if (btest(BASINAVGEVPFILEFLAG, 2)) call update_evp(shd, fls, 912, 3600, IKEY_HLY)
         end if
 
         !> Daily (wb, eb): IKEY_DLY
         if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
             if (btest(BASINAVGWBFILEFLAG, 0)) call update_water_balance(shd, fls, fls%fl(mfk%f900)%iun, 86400, IKEY_DLY)
+            if (btest(BASINAVGEVPFILEFLAG, 0)) call update_evp(shd, fls, 910, 86400, IKEY_DLY)
 
             !> Energy balance.
             write(901, "(i4,',', i5,',', 999(e12.5,','))") &
@@ -321,7 +372,7 @@ module save_basin_output
         end if
 
         !> Monthly (wb): IKEY_MLY
-        if (mod(ic%ts_daily, 86400/ic%dts) == 0 .and. btest(BASINAVGWBFILEFLAG, 1)) then
+        if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
 
             !> Determine the next day in the month.
             call Julian2MonthDay((ic%now%jday + 1), ic%now%year, nmth, ndy)
@@ -329,12 +380,14 @@ module save_basin_output
             !> Write-out if the next day will be a new month (current day is the last of the month).
             if (ndy == 1 .or. (ic%now%jday + 1) > leap_year(ic%now%year)) then
                 call Julian2MonthDay(ic%now%jday, ic%now%year, nmth, ndy)
-                call update_water_balance(shd, fls, 902, (86400*ndy), IKEY_MLY)
+                if (btest(BASINAVGWBFILEFLAG, 1)) call update_water_balance(shd, fls, 902, (86400*ndy), IKEY_MLY)
+                if (btest(BASINAVGEVPFILEFLAG, 1)) call update_evp(shd, fls, 911, (86400*ndy), IKEY_MLY)
             end if
         end if
 
         !> Time-step (wb): IKEY_TSP
         if (btest(BASINAVGWBFILEFLAG, 3)) call update_water_balance(shd, fls, 904, ic%dts, IKEY_TSP)
+        if (btest(BASINAVGEVPFILEFLAG, 3)) call update_evp(shd, fls, 913, ic%dts, IKEY_TSP)
 
     end subroutine
 
@@ -499,6 +552,50 @@ module save_basin_output
         bno%wbdts(ikdts)%SNO = 0.0
         bno%wbdts(ikdts)%WSNO = 0.0
         bno%wbdts(ikdts)%PNDW = 0.0
+
+    end subroutine
+
+    subroutine update_evp(shd, fls, fik, dts, ikdts)
+
+        use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
+        use model_files_variabletypes
+        use model_files_variables
+        use model_dates
+
+        !> Input variables.
+        type(ShedGridParams) :: shd
+        type(fl_ids) :: fls
+        integer fik
+        integer dts, ikdts
+
+        !> Local variables.
+        integer IGND, j
+        real dnts
+
+        !> Denominator for time-step averaged variables.
+        dnts = real(dts/ic%dts)
+
+        !> Average of the storage components.
+        bno%evpdts(ikdts)%EVPB = bno%evpdts(ikdts)%EVPB/dnts
+
+        !> Write the time-stamp for the period.
+!todo: change this to the unit attribute of the file object.
+        write(fik, "(i4, ',')", advance = 'no') ic%now%jday
+        write(fik, "(i5, ',')", advance = 'no') ic%now%year
+        if (dts < 86400) write(fik, "(i3, ',')", advance = 'no') ic%now%hour
+        if (dts < 3600) write(fik, "(i3, ',')", advance = 'no') ic%now%mins
+
+        !> Write the water balance to file.
+        IGND = shd%lc%IGND
+        write(fik, "(999(e14.6, ','))") &
+            bno%evpdts(ikdts)%EVAP, bno%evpdts(ikdts)%PEVP, bno%evpdts(ikdts)%EVPB, bno%evpdts(ikdts)%ARRD
+
+        !> Reset the accumulation for time-averaged output.
+        bno%evpdts(ikdts)%EVAP = 0.0
+        bno%evpdts(ikdts)%PEVP = 0.0
+        bno%evpdts(ikdts)%EVPB = 0.0
+        bno%evpdts(ikdts)%ARRD = 0.0
 
     end subroutine
 

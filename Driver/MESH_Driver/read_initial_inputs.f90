@@ -14,6 +14,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     use RUNCLASS36_constants
     use RUNCLASS36_variables
     use RUNCLASS36_save_output
+    use cropland_irrigation_variables, only: cip, ciprot, cifg
 
     implicit none
 
@@ -230,6 +231,15 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
             ' is very high. This may negatively impact performance.'
     end if
 
+    !> Determine coordinates for intermediate grid locations.
+    allocate(shd%ylat(NA), shd%xlng(NA))
+    do i = 1, NA
+            !LATLENGTH = shd%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
+            !LONGLENGTH = shd%AL/1000.0/(111.4172*cos((DEGLAT*PI/180.0)) - 0.094*cos(3*(DEGLAT*PI/180.0)) + 0.0002*cos(5*(DEGLAT*PI/180.0)))
+        shd%ylat(i) = (shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0
+        shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
+    end do
+
     !> Determine the number of active tile elements.
     allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), &
              shd%wc%ILMOS(shd%wc%ILG), shd%wc%JLMOS(shd%wc%ILG))
@@ -315,61 +325,62 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> Canopy.
     stas%cnpy%n = NML
     allocate(stas%cnpy%qac(NML), stas%cnpy%rcan(NML), stas%cnpy%sncan(NML), stas%cnpy%tac(NML), stas%cnpy%tcan(NML), &
-             stas%cnpy%cmai(NML), stas%cnpy%gro(NML))
-    stas%cnpy%qac = 0.0
-    stas%cnpy%rcan = 0.0
-    stas%cnpy%sncan = 0.0
-    stas%cnpy%tac = 0.0
-    stas%cnpy%tcan = 0.0
-    stas%cnpy%cmai = 0.0
-    stas%cnpy%gro = 0.0
+             stas%cnpy%cmai(NML), stas%cnpy%gro(NML), &
+             stas%cnpy%evp(NML), stas%cnpy%pevp(NML), stas%cnpy%evpb(NML), stas%cnpy%arrd(NML))
+    stas%cnpy%qac = 0.0; stas%cnpy%rcan = 0.0; stas%cnpy%sncan = 0.0; stas%cnpy%tac = 0.0; stas%cnpy%tcan = 0.0
+    stas%cnpy%cmai = 0.0; stas%cnpy%gro = 0.0
+    stas%cnpy%evp = 0.0; stas%cnpy%pevp = 0.0; stas%cnpy%evpb = 0.0; stas%cnpy%arrd = 0.0
 
     !> Snow.
     stas%sno%n = NML
     allocate(stas%sno%sno(NML), stas%sno%albs(NML), stas%sno%rhos(NML), stas%sno%tsno(NML), stas%sno%wsno(NML))
-    stas%sno%sno = 0.0
-    stas%sno%albs = 0.0
-    stas%sno%rhos = 0.0
-    stas%sno%tsno = 0.0
-    stas%sno%wsno = 0.0
+    stas%sno%sno = 0.0; stas%sno%albs = 0.0; stas%sno%rhos = 0.0; stas%sno%tsno = 0.0; stas%sno%wsno = 0.0
 
     !> Surface or at near surface.
     stas%sfc%n = NML
     allocate(stas%sfc%tpnd(NML), stas%sfc%zpnd(NML), stas%sfc%tsfs(NML, 4))
-    stas%sfc%tpnd = 0.0
-    stas%sfc%zpnd = 0.0
-    stas%sfc%tsfs = 0.0
+    stas%sfc%tpnd = 0.0; stas%sfc%zpnd = 0.0; stas%sfc%tsfs = 0.0
 
     !> Soil layers.
     stas%sl%n = NML
-    allocate(stas%sl%tbas(NML), stas%sl%thic(NML, NSL), stas%sl%thlq(NML, NSL), stas%sl%tbar(NML, NSL))
-    stas%sl%tbas = 0.0
-    stas%sl%thic = 0.0
-    stas%sl%thlq = 0.0
-    stas%sl%tbar = 0.0
+    allocate(stas%sl%thic(NML, NSL), stas%sl%fzws(NML, NSL), stas%sl%thlq(NML, NSL), stas%sl%lqws(NML, NSL), &
+             stas%sl%tbar(NML, NSL), stas%sl%tbas(NML))
+    stas%sl%thic = 0.0; stas%sl%fzws = 0.0; stas%sl%thlq = 0.0; stas%sl%lqws = 0.0
+    stas%sl%tbar = 0.0; stas%sl%tbas = 0.0
 
     !> Lower zone storage.
     stas%lzs%n = NML
     allocate(stas%lzs%zlw(NML), stas%lzs%tbas(NML))
-    stas%lzs%zlw = 0.0
-    stas%lzs%tbas = 0.0
+    stas%lzs%zlw = 0.0; stas%lzs%tbas = 0.0
 
     !> Deep zone storage.
     stas%dzs%n = NML
     allocate(stas%dzs%zlw(NML), stas%dzs%tbas(NML))
-    stas%dzs%zlw = 0.0
-    stas%dzs%tbas = 0.0
+    stas%dzs%zlw = 0.0; stas%dzs%tbas = 0.0
 
     !> Initiate state variables for output ('ROW' indexing).
     allocate(stasrow%cnpy%qac(NTYPE), stasrow%cnpy%tac(NTYPE), stasrow%cnpy%tcan(NTYPE), &
              stasrow%cnpy%rcan(NTYPE), stasrow%cnpy%sncan(NTYPE), &
              stasrow%cnpy%cmai(NTYPE), stasrow%cnpy%gro(NTYPE), &
+             stasrow%cnpy%evp(NTYPE), stasrow%cnpy%pevp(NTYPE), stasrow%cnpy%evpb(NTYPE), stasrow%cnpy%arrd(NTYPE), &
              stasrow%sno%sno(NTYPE), stasrow%sno%albs(NTYPE), stasrow%sno%rhos(NTYPE), stasrow%sno%tsno(NTYPE), &
              stasrow%sno%wsno(NTYPE), &
              stasrow%sfc%tpnd(NTYPE), stasrow%sfc%zpnd(NTYPE), stasrow%sfc%tsfs(NTYPE, 4), &
-             stasrow%sl%tbas(NTYPE), stasrow%sl%thic(NTYPE, NSL), stasrow%sl%thlq(NTYPE, NSL), stasrow%sl%tbar(NTYPE, NSL), &
+             stasrow%sl%thic(NTYPE, NSL), stasrow%sl%fzws(NTYPE, NSL), stasrow%sl%thlq(NTYPE, NSL), stasrow%sl%lqws(NTYPE, NSL), &
+             stasrow%sl%tbar(NTYPE, NSL), stasrow%sl%tbas(NTYPE), &
              stasrow%lzs%zlw(NTYPE), stasrow%lzs%tbas(NTYPE), &
              stasrow%dzs%zlw(NTYPE), stasrow%dzs%tbas(NTYPE))
+    stasrow%cnpy%qac = 0.0; stasrow%cnpy%tac = 0.0; stasrow%cnpy%tcan = 0.0
+    stasrow%cnpy%rcan = 0.0; stasrow%cnpy%sncan = 0.0
+    stasrow%cnpy%cmai = 0.0; stasrow%cnpy%gro = 0.0
+    stasrow%cnpy%evp = 0.0; stasrow%cnpy%pevp = 0.0; stasrow%cnpy%evpb = 0.0; stasrow%cnpy%arrd = 0.0
+    stasrow%sno%sno = 0.0; stasrow%sno%albs = 0.0; stasrow%sno%rhos = 0.0; stasrow%sno%tsno = 0.0
+    stasrow%sno%wsno = 0.0
+    stasrow%sfc%tpnd = 0.0; stasrow%sfc%zpnd = 0.0; stasrow%sfc%tsfs = 0.0
+    stasrow%sl%thic = 0.0; stasrow%sl%fzws = 0.0; stasrow%sl%thlq = 0.0; stasrow%sl%lqws = 0.0
+    stasrow%sl%tbar = 0.0; stasrow%sl%tbas = 0.0
+    stasrow%lzs%zlw = 0.0; stasrow%lzs%tbas = 0.0
+    stasrow%dzs%zlw = 0.0; stasrow%dzs%tbas = 0.0
 
     !> Call 'CLASSD' to initialize constants.
 !todo: replace this with a non-CLASS/generic version.
@@ -426,8 +437,6 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         pm%slp%orgm(k, :) = pmrow%slp%orgm(m, :)
 
         !> Distribute the initial prognostic variable values.
-        stas%cnpy%cmai = 0.0
-        stas%sno%wsno = 0.0
         stas%cnpy%qac = 0.5e-2
         stas%cnpy%tcan(k) = stasrow%cnpy%tcan(m) + TFREZ
         stas%cnpy%tac(k) = stasrow%cnpy%tcan(m) + TFREZ
@@ -516,6 +525,20 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     allocate(t0_ACC(NYEARS))
     t0_ACC = 0.0
 
+    !> Allocate and initialize parameters for the cropland irrigation module.
+    if (cifg%PROCESS_ACTIVE) then
+        allocate( &
+            ciprot%jdsow(NTYPE), ciprot%ldini(NTYPE), ciprot%lddev(NTYPE), ciprot%ldmid(NTYPE), ciprot%ldlate(NTYPE), &
+            ciprot%Kcini(NTYPE), ciprot%Kcdev(NTYPE), ciprot%Kcmid(NTYPE), ciprot%Kclate(NTYPE))
+        ciprot%jdsow = 0; ciprot%ldini = 0; ciprot%lddev = 0; ciprot%ldmid = 0; ciprot%ldlate = 0
+        ciprot%Kcini = 0.0; ciprot%Kcdev = 0.0; ciprot%Kcmid = 0.0; ciprot%Kclate = 0.0
+        allocate( &
+            cip%jdsow(NML), cip%ldini(NML), cip%lddev(NML), cip%ldmid(NML), cip%ldlate(NML), &
+            cip%Kcini(NML), cip%Kcdev(NML), cip%Kcmid(NML), cip%Kclate(NML))
+        cip%jdsow = 0; cip%ldini = 0; cip%lddev = 0; cip%ldmid = 0; cip%ldlate = 0
+        cip%Kcini = 0.0; cip%Kcdev = 0.0; cip%Kcmid = 0.0; cip%Kclate = 0.0
+    end if
+
     !> Read parameters from file.
     call READ_PARAMETERS_HYDROLOGY(shd, fls)
 
@@ -530,6 +553,19 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         pm%snp%zsnl(k) = pmrow%snp%zsnl(m)
         pm%sfp%zplg(k) = pmrow%sfp%zplg(m)
         pm%snp%zpls(k) = pmrow%snp%zpls(m)
+
+        !> Cropland irrigation module.
+        if (cifg%PROCESS_ACTIVE) then
+            cip%jdsow(k) = ciprot%jdsow(m)
+            cip%ldini(k) = ciprot%ldini(m)
+            cip%lddev(k) = ciprot%lddev(m)
+            cip%ldmid(k) = ciprot%ldmid(m)
+            cip%ldlate(k) = ciprot%ldlate(m)
+            cip%Kcini(k) = ciprot%Kcini(m)
+            cip%Kcdev(k) = ciprot%Kcdev(m)
+            cip%Kcmid(k) = ciprot%Kcmid(m)
+            cip%Kclate(k) = ciprot%Kclate(m)
+        end if
 
     end do !k = il1, il2
 

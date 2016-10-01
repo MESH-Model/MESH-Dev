@@ -21,6 +21,9 @@
 
         use SA_RTE_module, only: SA_RTE_flgs
 
+        !> Cropland irrigation module.
+        use cropland_irrigation_variables, only: cifg
+
         implicit none
 
         !> Input variables.
@@ -614,6 +617,8 @@
                         call value(out_args(2), GGEOFLAG, ierr)
                     case ('BASINBALANCEOUTFLAG')
                         call value(out_args(2), BASINBALANCEOUTFLAG, ierr)
+
+                    !> Time-averaged basin water balance output.
                     case ('BASINAVGWBFILEFLAG')
                         BASINAVGWBFILEFLAG = 0
                         do j = 2, nargs
@@ -634,6 +639,29 @@
                                     exit
                             end select
                         end do
+
+                    !> Time-averaged basin PEVP-EVAP and EVPB output.
+                    case ('BASINAVGEVPFILEFLAG')
+                        BASINAVGEVPFILEFLAG = 0
+                        do j = 2, nargs
+                            select case (lowercase(out_args(j)))
+                                case ('daily')
+                                    BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 1
+                                case ('monthly')
+                                    BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 2
+                                case ('hourly')
+                                    BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 4
+                                case ('ts')
+                                    BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 8
+                                case ('default')
+                                    BASINAVGEVPFILEFLAG = 1
+                                    exit
+                                case ('none')
+                                    BASINAVGEVPFILEFLAG = 0
+                                    exit
+                            end select
+                        end do
+
                     case ('MODELINFOOUTFLAG')
                         call value(out_args(2), MODELINFOOUTFLAG, ierr)
                     case ('STREAMFLOWOUTFLAG')
@@ -648,6 +676,25 @@
                     !> Reservoir Release function flag (Number of WF_B coefficients).
                     case ('RESVRELSWFB')
                         call value(out_args(2), WF_RTE_flgs%RESVRELSWFB, ierr)
+
+                    !> Cropland irrigation module.
+                    case ('CROPLANDIRRIGATION')
+                        cifg%ts_flag = 0
+                        select case (lowercase(out_args(2)))
+                            case ('daily')
+                                cifg%ts_flag = 1
+                            case ('hourly')
+                                cifg%ts_flag = 4
+                            case ('ts')
+                                cifg%ts_flag = 8
+                            case ('default')
+                                cifg%ts_flag = 1
+                                exit
+                            case ('none')
+                                cifg%ts_flag = 0
+                                exit
+                        end select
+                        cifg%PROCESS_ACTIVE = (cifg%ts_flag > 0)
 
                     !> Unrecognized flag.
                     case default

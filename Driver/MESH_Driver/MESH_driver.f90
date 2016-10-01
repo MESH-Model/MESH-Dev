@@ -167,7 +167,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = 'TRUNK (989)'
+    character(24) :: VERSION = 'TRUNK (991)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
 !-    logical VER_OK
@@ -1096,6 +1096,8 @@ program RUNMESH
             wb_grd%PRE = 0.0
             eb_grd%QEVP = 0.0
             wb_grd%EVAP = 0.0
+            wb_grd%pevp = 0.0
+            wb_grd%evpb = 0.0
             eb_grd%HFS = 0.0
             wb_grd%ROF = 0.0
             wb_grd%ROFO = 0.0

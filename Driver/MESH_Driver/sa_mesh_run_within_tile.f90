@@ -29,25 +29,7 @@ module sa_mesh_run_within_tile
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        !> Local variables.
-        integer NA, NTYPE, NML, NSL
-
-        NA = shd%NA
-        NTYPE = shd%lc%NTYPE
-        NSL = shd%lc%IGND
-        NML = shd%lc%NML
-
         call RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
-
-!>
-!>***********************************************************************
-!> MAM - Check for parameter values - all parameters should lie within the
-!> specified ranges in the "minmax_parameters.txt" file.
-!>=======================================================================
-!>
-!    call check_parameters(WF_R2, M_C, NMTEST, &
-!                           cp, &
-!                           hp, soil_por_max, soil_depth, s0, t_ice_lens)
 
         call RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
 
@@ -57,6 +39,7 @@ module sa_mesh_run_within_tile
 
     function run_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
+        use mpi_shared_variables
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_files_variabletypes
@@ -66,12 +49,17 @@ module sa_mesh_run_within_tile
         use model_output_variabletypes
         use MODEL_OUTPUT
 
+        use cropland_irrigation_within_tile, only: runci_within_tile
         use RUNCLASS36_module, only: RUNCLASS36_within_tile
         use RUNSVS113_module, only: RUNSVS113
         use WF_ROUTE_module, only: WF_ROUTE_within_tile
         use baseflow_module
 
         character(100) run_within_tile
+
+        !> Internal variables for accumulation.
+        integer k, ik
+        real FRAC
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -93,6 +81,26 @@ module sa_mesh_run_within_tile
 
         run_within_tile = WF_ROUTE_within_tile(shd, stfl, rrls)
         if (len_Trim(run_within_tile) > 0) return
+
+        !> Cropland irrigation module (PEVP).
+        call runci_within_tile(shd, fls, cm)
+
+        if (ipid == 0) then
+            stas%cnpy%evpb = 0.0
+            where (stas%cnpy%pevp /= 0.0)
+                stas%cnpy%evpb = stas%cnpy%evp/stas%cnpy%pevp
+                stas%cnpy%arrd = cm%dat(ck%RT)%GAT/stas%cnpy%pevp
+            end where
+            do k = il1, il2
+                ik = shd%lc%ILMOS(k)
+                FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
+                if (FRAC > 0.0) then
+                    wb%pevp(ik) = wb%pevp(ik) + stas%cnpy%pevp(k)*FRAC*ic%dts
+                    wb%evpb(ik) = wb%evpb(ik) + stas%cnpy%evpb(k)*FRAC
+                    wb%arrd(ik) = wb%arrd(ik) + stas%cnpy%arrd(k)*FRAC
+                end if
+            end do
+        end if
 
         return
 
