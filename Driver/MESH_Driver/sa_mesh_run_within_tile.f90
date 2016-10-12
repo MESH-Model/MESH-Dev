@@ -57,10 +57,6 @@ module sa_mesh_run_within_tile
 
         character(100) run_within_tile
 
-        !> Internal variables for accumulation.
-        integer k, ik
-        real FRAC
-
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
@@ -70,6 +66,15 @@ module sa_mesh_run_within_tile
         type(soil_statevars) :: sp
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
+
+        stas%cnpy%pevp(il1:il2) = 0.0
+        stas%sfc%evap(il1:il2) = 0.0
+        stas%cnpy%evpb(il1:il2) = 0.0
+        stas%sfc%qevp(il1:il2) = 0.0
+        stas%sfc%hfs(il1:il2) = 0.0
+        stas%sfc%rofo(il1:il2) = 0.0
+        stas%sl%rofs(il1:il2) = 0.0
+        stas%lzs%rofb(il1:il2) = 0.0
 
         run_within_tile = ''
 
@@ -85,22 +90,10 @@ module sa_mesh_run_within_tile
         !> Cropland irrigation module (PEVP).
         call runci_within_tile(shd, fls, cm)
 
-        if (ipid == 0) then
-            stas%cnpy%evpb = 0.0
-            where (stas%cnpy%pevp /= 0.0)
-                stas%cnpy%evpb = stas%cnpy%evp/stas%cnpy%pevp
-                stas%cnpy%arrd = cm%dat(ck%RT)%GAT/stas%cnpy%pevp
-            end where
-            do k = il1, il2
-                ik = shd%lc%ILMOS(k)
-                FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-                if (FRAC > 0.0) then
-                    wb%pevp(ik) = wb%pevp(ik) + stas%cnpy%pevp(k)*FRAC*ic%dts
-                    wb%evpb(ik) = wb%evpb(ik) + stas%cnpy%evpb(k)*FRAC
-                    wb%arrd(ik) = wb%arrd(ik) + stas%cnpy%arrd(k)*FRAC
-                end if
-            end do
-        end if
+        where (stas%cnpy%pevp(il1:il2) /= 0.0)
+            stas%cnpy%evpb(il1:il2) = stas%sfc%evap(il1:il2)/stas%cnpy%pevp(il1:il2)
+            stas%cnpy%arrd(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)/stas%cnpy%pevp(il1:il2)
+        end where
 
         return
 

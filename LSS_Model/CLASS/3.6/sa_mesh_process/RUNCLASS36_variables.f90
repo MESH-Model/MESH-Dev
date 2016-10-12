@@ -206,14 +206,13 @@ module RUNCLASS36_variables
 !-    end type
 
     !> For hydraulic parameters read from soil.ini.
-!todo: Move this to soil module.
-    type SoilValues
-        real, dimension(:, :), allocatable :: &
-            wc_algwet, wc_algdry
-        real, dimension(:, :, :), allocatable :: &
-            wc_thpor, wc_thlret, &
-            wc_thlmin, wc_bi, wc_psisat, wc_grksat, wc_hcps, wc_tcs
-    end type
+!-    type SoilValues
+!-        real, dimension(:, :), allocatable :: &
+!-            wc_algwet, wc_algdry
+!-        real, dimension(:, :, :), allocatable :: &
+!-            wc_thpor, wc_thlret, &
+!-            wc_thlmin, wc_bi, wc_psisat, wc_grksat, wc_hcps, wc_tcs
+!-    end type
 
 !todo: Move this?
     type HydrologyParameters
@@ -230,9 +229,9 @@ module RUNCLASS36_variables
         logical :: PROCESS_ACTIVE = .true.
     end type
 
-!todo: may need to move these.
 !-    type(ClassParameters), save :: cp
-    type(SoilValues), save :: sv
+!-    type(SoilValues), save :: sv
+!todo: may need to move these.
     type(HydrologyParameters), save :: hp
     type(RUNCLASS36_flags), save :: RUNCLASS36_flgs
 

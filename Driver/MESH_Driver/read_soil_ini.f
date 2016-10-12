@@ -2,9 +2,9 @@
 
       use sa_mesh_shared_variabletypes
       use sa_mesh_shared_variables
+      use sa_mesh_shared_output_variables
       use model_files_variabletypes
       use model_files_variables
-      use RUNCLASS36_variables
 
 !todo: remove this
 	  use FLAGS
@@ -14,7 +14,7 @@
       type(fl_ids) :: fls
 
       !> Local variables.
-      integer NA, NTYPE, IGND, ierr, iun, j, m, i
+      integer NTYPE, NSL, ierr, iun, m, j
 
 !> *********************************************************************
 !>  Open and read in values from soil.ini file
@@ -54,85 +54,72 @@
         print *, 'CLASSBHYD.f will be used'
       end if
 
-      NA = shd%NA
       NTYPE = shd%lc%NTYPE
-      IGND = shd%lc%IGND
+      NSL = shd%lc%IGND
 
       !> Read variables from the file.
       read(iun, *)
-      read(iun, *) (sv%wc_thpor(1, m, 1), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%thpor(m, 1), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_thpor(1, m, 2), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%thpor(m, 2), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_thpor(1, m, 3), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%thpor(m, 3), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_thlret(1, m, 1), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%thlret(m, 1), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_thlret(1, m, 2), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%thlret(m, 2), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_thlret(1, m, 3), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%thlret(m, 3), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_thlmin(1, m, 1), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%thlmin(m, 1), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_thlmin(1, m, 2), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%thlmin(m, 2), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_thlmin(1, m, 3), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%thlmin(m, 3), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_bi(1, m, 1), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%bi(m, 1), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_bi(1, m, 2), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%bi(m, 2), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_bi(1, m, 3), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%bi(m, 3), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_psisat(1, m, 1), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%psisat(m, 1), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_psisat(1, m, 2), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%psisat(m, 2), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_psisat(1, m, 3), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%psisat(m, 3), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_grksat(1, m, 1), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%grksat(m, 1), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_grksat(1, m, 2), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%grksat(m, 2), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_grksat(1, m, 3), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%grksat(m, 3), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_hcps(1, m, 1), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%hcps(m, 1), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_hcps(1, m, 2), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%hcps(m, 2), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_hcps(1, m, 3), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%hcps(m, 3), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_tcs(1, m, 1), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%tcs(m, 1), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_tcs(1, m, 2), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%tcs(m, 2), m = 1, NTYPE)
       read(iun, *)
-      read(iun, *) (sv%wc_tcs(1, m, 3), m = 1, NTYPE)
+      read(iun, *) (pmrow%slp%tcs(m, 3), m = 1, NTYPE)
 
       close(iun)
 
       !> Distribute the variables.
-      do i = 1, NA
-        do m = 1, NTYPE
-          do j = 1, 3
-            sv%wc_thpor(i, m, j) = sv%wc_thpor(1, m, j)
-            sv%wc_thlret(i, m, j) = sv%wc_thlret(1, m, j)
-            sv%wc_thlmin(i, m, j) = sv%wc_thlmin(1, m, j)
-            sv%wc_bi(i, m, j) = sv%wc_bi(1, m, j)
-            sv%wc_psisat(i, m, j) = sv%wc_psisat(1, m, j)
-            sv%wc_grksat(i, m, j) = sv%wc_grksat(1, m, j)
-            sv%wc_hcps(i, m, j) = sv%wc_hcps(1, m, j)
-            sv%wc_tcs(i, m, j) = sv%wc_tcs(1, m, j)
-          end do
-          do j=4,IGND
-            sv%wc_thpor(i, m, j) = sv%wc_thpor(i, m, 3)
-            sv%wc_thlret(i, m, j) = sv%wc_thlret(i, m, 3)
-            sv%wc_thlmin(i, m, j) = sv%wc_thlmin(i, m, 3)
-            sv%wc_bi(i, m, j) = sv%wc_bi(i, m, 3)
-            sv%wc_psisat(i, m, j) = sv%wc_psisat(i, m, 3)
-            sv%wc_grksat(i, m, j) = sv%wc_grksat(i, m, 3)
-            sv%wc_hcps(i, m, j) = sv%wc_hcps(i, m, 3)
-            sv%wc_tcs(i, m, j) = sv%wc_tcs(i, m, 3)
-          end do
+      do m = 1, NTYPE
+        do j = 4, IGND
+          pmrow%slp%thpor(m, j) = pmrow%slp%thpor(m, 3)
+          pmrow%slp%thlret(m, j) = pmrow%slp%thlret(m, 3)
+          pmrow%slp%thlmin(m, j) = pmrow%slp%thlmin(m, 3)
+          pmrow%slp%bi(m, j) = pmrow%slp%bi(m, 3)
+          pmrow%slp%psisat(m, j) = pmrow%slp%psisat(m, 3)
+          pmrow%slp%grksat(m, j) = pmrow%slp%grksat(m, 3)
+          pmrow%slp%hcps(m, j) = pmrow%slp%hcps(m, 3)
+          pmrow%slp%tcs(m, j) = pmrow%slp%tcs(m, 3)
         end do
       end do
 

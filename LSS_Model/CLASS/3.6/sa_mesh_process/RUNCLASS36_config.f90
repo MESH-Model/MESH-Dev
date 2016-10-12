@@ -113,6 +113,7 @@ module RUNCLASS36_config
         use sa_mesh_shared_parameters
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
+        use sa_mesh_shared_output_variables
         use model_files_variabletypes
         use model_files_variables
         use model_dates
@@ -181,25 +182,25 @@ module RUNCLASS36_config
         !> The following are used to read from soil.ini:
         !> wc_thpor, wc_thlret, wc_thlmin, wc_bi, wc_psisat,
         !> wc_grksat, wc_hcps, wc_tcs, wc_algwet, wc_algdry
-        allocate(sv%wc_algwet(NA, NTYPE), sv%wc_algdry(NA, NTYPE))
-        allocate(sv%wc_thpor(NA, NTYPE, NSL), sv%wc_thlret(NA, NTYPE, NSL), sv%wc_thlmin(NA, NTYPE, NSL), &
-                 sv%wc_bi(NA, NTYPE, NSL), sv%wc_psisat(NA, NTYPE, NSL), sv%wc_grksat(NA, NTYPE, NSL), &
-                 sv%wc_hcps(NA, NTYPE, NSL), sv%wc_tcs(NA, NTYPE, NSL))
+!-        allocate(sv%wc_algwet(NA, NTYPE), sv%wc_algdry(NA, NTYPE))
+!-        allocate(sv%wc_thpor(NA, NTYPE, NSL), sv%wc_thlret(NA, NTYPE, NSL), sv%wc_thlmin(NA, NTYPE, NSL), &
+!-                 sv%wc_bi(NA, NTYPE, NSL), sv%wc_psisat(NA, NTYPE, NSL), sv%wc_grksat(NA, NTYPE, NSL), &
+!-                 sv%wc_hcps(NA, NTYPE, NSL), sv%wc_tcs(NA, NTYPE, NSL))
 
         !> Zero everything we just allocated.
-        sv%wc_algwet = 0.0
-        sv%wc_algdry = 0.0
-        sv%wc_thpor = 0.0
-        sv%wc_thlret = 0.0
-        sv%wc_thlmin = 0.0
-        sv%wc_bi = 0.0
-        sv%wc_psisat = 0.0
-        sv%wc_grksat = 0.0
-        sv%wc_hcps = 0.0
-        sv%wc_tcs = 0.0
+!-        sv%wc_algwet = 0.0
+!-        sv%wc_algdry = 0.0
+!-        sv%wc_thpor = 0.0
+!-        sv%wc_thlret = 0.0
+!-        sv%wc_thlmin = 0.0
+!-        sv%wc_bi = 0.0
+!-        sv%wc_psisat = 0.0
+!-        sv%wc_grksat = 0.0
+!-        sv%wc_hcps = 0.0
+!-        sv%wc_tcs = 0.0
 
         !> Call to read from soil.ini.
-        call READ_SOIL_INI(shd, fls)
+!-        call READ_SOIL_INI(shd, fls)
 
         NML = shd%lc%NML
 
@@ -719,9 +720,25 @@ module RUNCLASS36_config
                      csfv%DELZW, csfv%ZBTW, csfv%ALGW, csfv%ALGD, &
                      csfv%SAND, csfv%CLAY, csfv%ORGM, shd%lc%sl%DELZ, shd%lc%sl%ZBOT, csfv%SDEP, &
                      csfv%ISND, csfv%IGDR, NML, il1, il2, NSL, ICTEMMOD, &
-                     sv%WC_THPOR, sv%WC_THLRET, sv%WC_THLMIN, sv%WC_BI, &
-                     sv%WC_PSISAT, sv%WC_GRKSAT, sv%WC_HCPS, sv%WC_TCS, &
+                     pmrow%slp%thpor, pmrow%slp%thlret, pmrow%slp%thlmin, pmrow%slp%bi, &
+                     pmrow%slp%psisat, pmrow%slp%grksat, pmrow%slp%hcps, pmrow%slp%tcs, &
                      NA, NTYPE, shd%lc%ILG, shd%lc%ILMOS, shd%lc%JLMOS)
+
+        pm%slp%alwet = csfv%ALGW
+        pm%slp%aldry = csfv%ALGD
+        pm%slp%thpor = csfv%THP
+        pm%slp%thlret = csfv%THR
+        pm%slp%thlmin = csfv%THM
+        pm%slp%bi = csfv%BI
+        pm%slp%psisat = csfv%PSIS
+        pm%slp%grksat = csfv%GRKS
+        pm%slp%thlrat = csfv%THRA
+        pm%slp%hcps = csfv%HCPS
+        pm%slp%tcs = csfv%TCS
+        pm%slp%thfc = csfv%THFC
+        pm%slp%psiwlt = csfv%PSIW
+        stas%sl%delzw = csfv%DELZW
+        stas%sl%zbotw = csfv%ZBTW
 
         if (WF_NUM_POINTS > 0) then
 
