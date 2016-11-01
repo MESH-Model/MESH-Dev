@@ -825,6 +825,10 @@ module RUNCLASS36_config
             case (4)
                 call read_init_prog_variables_class(fls)
 
+            !> RESUMEFLAG 5.
+            case (5)
+                call read_init_prog_variables_class(fls)
+
         end select !case (RESUMEFLAG)
 
         !> Allocate variables for WATDRN3
@@ -1078,6 +1082,10 @@ module RUNCLASS36_config
 
             !> SAVERESUMEFLAG 4.
             case (4)
+                call save_init_prog_variables_class(fls)
+
+            !> RESUMEFLAG 5.
+            case (5)
                 call save_init_prog_variables_class(fls)
 
         end select !case (SAVERESUMEFLAG)

@@ -410,7 +410,7 @@ module SIMSTATS
             iun = mtsfl%fl(mtsk%fo)%iun
             open(iun, file = trim(adjustl(mtsfl%fl(mtsk%fo)%fn)))
             if (mtsflg%PREEMPTIONFLAG >= 1) ftest = ftest*ic%count_jday/ncal
-            write(iun, *) ftest
+            write(iun, "(9999(g12.3e2, ' '))") ftest
             close(iun)
         end if
 
@@ -429,9 +429,9 @@ module SIMSTATS
                 open(iun, file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)), position = 'append', status = 'old')
             else
                 open(iun, file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)))
-                write(iun, *) "BIAS ", "NSD ", "NSW ", "TPD "
+                write(iun, "(9999(g12.3e2, ' '))") "BIAS ", "NSD ", "NSW ", "TPD "
             end if
-            write(iun, *) (bias(j), nsd(j), nsw(j), int(tpd(j)), j = 1, size(qobs, 2))
+            write(iun, "(9999(g12.3e2, ' '))") (bias(j), nsd(j), nsw(j), int(tpd(j)), j = 1, size(qobs, 2))
             close(iun)
         end if
 
@@ -440,7 +440,7 @@ module SIMSTATS
         if (mtsfl%fl(mtsk%NSE)%init) then
             iun = mtsfl%fl(mtsk%NSE)%iun
             open(iun, file = trim(adjustl(mtsfl%fl(mtsk%NSE)%fn)))
-            write(iun, *) (nsd(j), j = 1, size(qobs, 2)), sum(nsd)/size(qobs, 2)
+            write(iun, "(9999(g12.3e2, ' '))") (nsd(j), j = 1, size(qobs, 2)), sum(nsd)/size(qobs, 2)
             close(iun)
         end if
 
@@ -448,7 +448,7 @@ module SIMSTATS
         if (mtsfl%fl(mtsk%NSW)%init) then
             iun = mtsfl%fl(mtsk%NSW)%iun
             open(iun, file = trim(adjustl(mtsfl%fl(mtsk%NSW)%fn)))
-            write(iun, *) (nsw(j), j = 1, size(qobs, 2))
+            write(iun, "(9999(g12.3e2, ' '))") (nsw(j), j = 1, size(qobs, 2))
             close(iun)
         end if
 
@@ -456,7 +456,7 @@ module SIMSTATS
         if (mtsfl%fl(mtsk%RMSE)%init) then
             iun = mtsfl%fl(mtsk%RMSE)%iun
             open(iun, file = trim(adjustl(mtsfl%fl(mtsk%RMSE)%fn)))
-            write(iun, *) st_drms%value_gauge, st_drms%value_gauge_avg
+            write(iun, "(9999(g12.3e2, ' '))") st_drms%value_gauge, st_drms%value_gauge_avg
             close(iun)
         end if
 
@@ -464,7 +464,7 @@ module SIMSTATS
         if (mtsfl%fl(mtsk%ABSE)%init) then
             iun = mtsfl%fl(mtsk%ABSE)%iun
             open(iun, file = trim(adjustl(mtsfl%fl(mtsk%ABSE)%fn)))
-            write(iun, *) st_abserr%value_gauge, st_abserr%value_gauge_avg
+            write(iun, "(9999(g12.3e2, ' '))") st_abserr%value_gauge, st_abserr%value_gauge_avg
             close(iun)
         end if
 
@@ -472,9 +472,13 @@ module SIMSTATS
         if (mtsfl%fl(mtsk%out)%init) then
             iun = mtsfl%fl(mtsk%out)%iun
             open(iun, file = trim(adjustl(mtsfl%fl(mtsk%out)%fn)))
-            write(iun, *) "MAE ", "RMSE ", "BIAS ", "NSD ", "lnNSD ", "TPD "
-            write(iun, *) (st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), nsd(j), lnsd(j), int(tpd(j)), &
-                j = 1, size(qobs, 2))
+            write(iun, "(9999(g12.3e2, ' '))") &
+                "Gauge", "MAE", "RMSE", "BIAS", "AbsBIAS", "NSD", "NegNSD", "lnNSD", "NeglnNSD", "TPD"
+            do j = 1, size(qobs, 2)
+                write(iun, "(9999(g12.3e2, ' '))") &
+                    j, st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), abs(bias(j)), &
+                    nsd(j), (-1.0*nsd(j)), lnsd(j), (-1.0*lnsd(j)), int(tpd(j))
+            end do
             close(iun)
         end if
 

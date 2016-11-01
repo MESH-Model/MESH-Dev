@@ -235,6 +235,7 @@ module WF_ROUTE_config
         real I_G, J_G
         integer i, j, ierr, iun
 
+        !> Return in the process is inactive.
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
 
         NA = shd%NA
@@ -468,7 +469,8 @@ module WF_ROUTE_config
                  iostat = ierr)
         end if
 
-        if (RESUMEFLAG == 4) then
+        !> Read the state of these variables.
+        if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
@@ -488,16 +490,21 @@ module WF_ROUTE_config
             read(iun) wf_qo2
             read(iun) wf_store2
             read(iun) wf_qi2
+            if (RESUMEFLAG == 4) then
+                read(iun) WF_QO2_ACC_MM
+                read(iun) WF_STORE2_ACC_MM
+            end if
 
             !> Close the file to free the unit.
             close(iun)
 
-        end if !(RESUMEFLAG == 4) then
+        end if !(RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
 
     end subroutine
 
     subroutine WF_ROUTE_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
 
+        use mpi_shared_variables
         use model_files_variabletypes
         use model_files_variables
         use sa_mesh_shared_variabletypes
@@ -519,7 +526,14 @@ module WF_ROUTE_config
         !> Local variables.
         integer ierr, iun
 
-        if (SAVERESUMEFLAG == 4) then
+        !> Return in the process is inactive.
+        if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
+
+        !> Return if not the head node.
+        if (ipid /= 0) return
+
+        !> Save the state of these variables.
+        if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
@@ -539,11 +553,15 @@ module WF_ROUTE_config
             write(iun) wf_qo2
             write(iun) wf_store2
             write(iun) wf_qi2
+            if (SAVERESUMEFLAG == 4) then
+                write(iun) WF_QO2_ACC_MM
+                write(iun) WF_STORE2_ACC_MM
+            end if
 
             !> Close the file to free the unit.
             close(iun)
 
-        end if !(SAVERESUMEFLAG == 4) then
+        end if !(SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
 
     end subroutine
 

@@ -102,6 +102,7 @@ module sa_mesh_run_within_tile
         use MODEL_OUTPUT
 
         use RUNCLASS36_config, only: RUNCLASS36_finalize
+        use baseflow_module
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
@@ -114,6 +115,8 @@ module sa_mesh_run_within_tile
         type(reservoir_release) :: rrls
 
         call RUNCLASS36_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+
+        call LZS_finalize(fls, shd, ic)
 
     end subroutine
 

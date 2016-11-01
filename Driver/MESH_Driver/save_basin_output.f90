@@ -169,7 +169,7 @@ module save_basin_output
         bno%wbdts(:)%STG_INI = bno%wbtot%STG_INI
 
         !> Read initial variables values from file.
-        if (RESUMEFLAG == 4) then
+        if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
@@ -178,20 +178,37 @@ module save_basin_output
 !todo: condition for ierr.
 
             !> Basin totals for the water balance.
-            read(iun) bno%wbtot%PRE
-            read(iun) bno%wbtot%EVAP
-            read(iun) bno%wbtot%ROF
-            read(iun) bno%wbtot%ROFO
-            read(iun) bno%wbtot%ROFS
-            read(iun) bno%wbtot%ROFB
-            read(iun) bno%wbtot%LQWS
-            read(iun) bno%wbtot%FRWS
-            read(iun) bno%wbtot%RCAN
-            read(iun) bno%wbtot%SNCAN
-            read(iun) bno%wbtot%SNO
-            read(iun) bno%wbtot%WSNO
-            read(iun) bno%wbtot%PNDW
-            read(iun) bno%wbtot%STG_INI
+            if (RESUMEFLAG == 4) then
+                read(iun) bno%wbtot%PRE
+                read(iun) bno%wbtot%EVAP
+                read(iun) bno%wbtot%ROF
+                read(iun) bno%wbtot%ROFO
+                read(iun) bno%wbtot%ROFS
+                read(iun) bno%wbtot%ROFB
+                read(iun) bno%wbtot%LQWS
+                read(iun) bno%wbtot%FRWS
+                read(iun) bno%wbtot%RCAN
+                read(iun) bno%wbtot%SNCAN
+                read(iun) bno%wbtot%SNO
+                read(iun) bno%wbtot%WSNO
+                read(iun) bno%wbtot%PNDW
+                read(iun) bno%wbtot%STG_INI
+            else
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+            end if
 
             !> Other accumulators for the water balance.
             iout = max(IKEY_ACC, IKEY_DLY, IKEY_MLY, IKEY_HLY, IKEY_TSP)
@@ -331,6 +348,7 @@ module save_basin_output
 
     subroutine run_save_basin_output_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
 
+        use mpi_shared_variables
         use model_files_variabletypes
         use model_files_variables
         use sa_mesh_shared_variabletypes
@@ -352,11 +370,14 @@ module save_basin_output
         !> Local variables.
         integer iout, i, ierr, iun
 
+        !> Return if not the head node.
+        if (ipid /= 0) return
+
         !> Return if basin output has been disabled.
         if (BASINBALANCEOUTFLAG == 0) return
 
         !> Save the current state of the variables.
-        if (SAVERESUMEFLAG == 4) then
+        if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun

@@ -167,7 +167,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = 'TRUNK (979)'
+    character(24) :: VERSION = 'TRUNK (981_Mod.v2)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
 !-    logical VER_OK
@@ -321,6 +321,11 @@ program RUNMESH
 
     if (ipid == 0) then
 
+        !> Open status file.
+        if (MODELINFOOUTFLAG > 0) then
+            open(58, file = './' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
+        end if
+
         !> Hourly output.
         call init_met_data(md_grd, shd)
 
@@ -423,7 +428,7 @@ program RUNMESH
 !>  End of subbasin section
 !> **********************************************************************
 
-    ENDDATA = climate_module_init(shd, il1, il2, cm)
+    ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
     if (ENDDATA) then
         RUNSTATE = 1
         goto 997
@@ -448,7 +453,6 @@ program RUNMESH
     !> ******************************************************
 
         if (MODELINFOOUTFLAG > 0) then
-            open(58, file = './' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
             write(58, "('Number of Soil Layers (IGND) = ', i5)") IGND
             write(58, *)
             write(58, "('MESH_input_run_options.ini')")
@@ -1063,7 +1067,7 @@ program RUNMESH
         if (RUNSTATE /= 0) exit
 
         !> Load or update climate forcing input.
-        ENDDATA = climate_module_update_data(shd, ic, il1, il2, cm)
+        ENDDATA = climate_module_update_data(fls, shd, ic, il1, il2, cm)
         if (ENDDATA) then
             RUNSTATE = 1
             cycle
@@ -1499,8 +1503,9 @@ program RUNMESH
     !> Call finalization routines.
     call run_within_tile_finalize(fls, shd, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
     call run_within_grid_finalize(fls, shd, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    call climate_module_finalize(fls, shd, cm)
 
-    if (ipid == 0 ) then
+    if (ipid == 0) then
 
         !> Call finalization routines.
         call run_between_grid_finalize(fls, shd, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
