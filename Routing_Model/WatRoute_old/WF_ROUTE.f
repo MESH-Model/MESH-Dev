@@ -99,7 +99,7 @@ c     Initialize
          i=wf_yy(n)
          j=wf_xx(n)
          iset(n)=0
-         wf_nhyd(n)=0          
+         wf_nhyd(n)=0
          qda(n)=0.0
          wf_qbase(n)=0.0
 c        CHANGE for wf_route: use two temporary da arrays
@@ -157,9 +157,9 @@ c                 WARNING - should record difference if negative
 
 c     Calculate baseflow for each element
 
-c     Work upstream 
+c     Work upstream
 c     The following initialises the base flows for each grid point
-c     according to the nearest downstream gauge recorded flow at 
+c     according to the nearest downstream gauge recorded flow at
 c     the beginning of the simulation
 c     Reservoir releases are taken off above
       do n=NLTEST-wf_naa,1,-1
@@ -183,17 +183,17 @@ c we are in a reservoir, check if we are at the outlet of the reservoir
                       do l=1,wf_noresv_ctrl
                         if(wf_r(l).eq.n) resflag=.false.
                       enddo
-                  	if (resflag) then
+                    if (resflag) then
                        qda(n)=qda(nnx)*wf_da(n)/wf_da(nnx)
                        daflow(n)=wf_da(n)
                        iset(n)=1
-                  	endif
+                    endif
                   endif
 c                 IMPORTANT:  this leaves sub-basin elements of a gauge
-c                 with no flow data unset.  So, other gauges in the 
-c                 basin that have flow data have a chance to define 
+c                 with no flow data unset.  So, other gauges in the
+c                 basin that have flow data have a chance to define
 c                 the initial state of elements outside their sub-basin
-                  if( qda(n).le.0.0 ) then 
+                  if( qda(n).le.0.0 ) then
                      daflow(n)=0.0
                      iset(n)=0
                   endif
@@ -219,14 +219,14 @@ c     associated drainage area
          endif
       end do
 
-c     Find the average of the outlets for a best guess at ungauged 
+c     Find the average of the outlets for a best guess at ungauged
 c     sub-basin outlet flow
       qUngauged=0.0
       daUngauged=0.0
       do n=NLTEST-wf_naa+1, NLTEST
          if( qda(n).gt.0.0 ) then
             qUngauged=qUngauged+qda(n)
-            daUngauged=daUngauged+daflow(n) ! drainage area associated 
+            daUngauged=daUngauged+daflow(n) ! drainage area associated
                                             ! with qUngauged
          endif
       end do
@@ -253,7 +253,7 @@ c                    Fill flow at elements adjacent to outlet
                   if( qda(n).le.0.0 ) then
 c                    Fill flow at internal elements
                      qda(n)=qda(nnx)*wf_da(n)/wf_da(nnx)
-                  else 
+                  else
                      if( daflow(n).gt.0.0 ) then
 c                       Fill flow where two streams meet
                         qda(n)=qda(n)*wf_da(n)/daflow(n)
@@ -274,7 +274,7 @@ c     Baseflows should all be set
       end do
 
 c     Add releases back in for routing initialization
-c     Loop thru all reservoirs, working downstream and add qinit to 
+c     Loop thru all reservoirs, working downstream and add qinit to
 c     the reaches below the dams to set proper initial river flows.
 c     Track the river to the outlet or to the wf_next reservoir.
 
@@ -312,7 +312,7 @@ c        Cap is the volume of water in a reach for the mean annual flow
          cap=(wf_a2(ii)+wf_a3(ii)*wf_da(n)**wf_a4(ii))*rl
          if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)
          qch=(cap/rl)**1.33*SQRT(wf_channelSlope(n))/wf_r2(ii)
-          
+
          over=0.0
          wf_store1(n)=0.0
 c this line had to be changed for certain compilers - Frank Seglenieks - Sep, 2010
@@ -327,11 +327,11 @@ c           Natural reservoir element
             do ll=1,wf_no
 c Gauge locations
                 nn=wf_s(ll)
-                if(nn.eq.n) then 
-! We found a gauge at the outlet                
+                if(nn.eq.n) then
+! We found a gauge at the outlet
                    if( wf_qhyd(ll).gt.0.0 ) wf_qo2(n) = wf_qhyd(ll)
                 end if
-           end do       
+           end do
            if (wf_b3(l) == 0.0) then
             wf_store2(n)=(wf_qo2(n)/wf_b1(l))**(1.0/wf_b2(l))
            else
@@ -371,18 +371,18 @@ c           basin but is in a receiving element
          endif
       end do                    ! do n=1,wf_naa
 
-c      write(707, *) 'After big loop that came from reset.for'     
+c      write(707, *) 'After big loop that came from reset.for'
 c      do n=1,NLTEST-wf_naa
 c      if( wf_ireach(n).gt.0 ) then
 c         if( wf_b1(wf_ireach(n)).gt.0 ) then
 cc           Natural reservoir element
-c            l=wf_ireach(n)   
+c            l=wf_ireach(n)
 c            write(707, *) l, n, qda(n),wf_qo2(n)
 c         endif
 c      endif
 c      end do
-c      close(707)  
-      
+c      close(707)
+
 c     Initialize outlet elements
       do n=NLTEST-wf_naa+1, NLTEST
          wf_qi1(n)=0.0
@@ -397,7 +397,7 @@ c     Initialize outlet elements
 
       JAN=2
 
-      ENDIF  !IF(jan.eq.1) THEN 
+      ENDIF  !IF(jan.eq.1) THEN
 
 c end of baseflow section
 c ********************************************
@@ -410,7 +410,7 @@ c     Initializations
       IterationsPerTimeStep=int(DriverTimeStep/wf_RouteTimeStep+0.5)
       if( IterationsPerTimeStep.lt.1 ) IterationsPerTimeStep=1
 
-      WF_MAX_TIME_SUBDIVISIONS = 10 
+      WF_MAX_TIME_SUBDIVISIONS = 10
       WF_MAX_ITERATIONS = 20
 
 c     Convert kg/m^2/s of water (RUNOFF(I)) to cms (wf_qr(i))
@@ -419,7 +419,7 @@ c     Convert kg/m^2/s of water (RUNOFF(I)) to cms (wf_qr(i))
       enddo
       retryingIteration=.FALSE.
  100  continue
-      
+
       do iterPerStep=1,IterationsPerTimeStep
          div=DriverTimeStep/real(IterationsPerTimeStep)/2.0 ! time step
 c        Carry forward flows/storage from last time step
@@ -488,11 +488,12 @@ C yes we are at the outlet
                   wf_qi1(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
                   if( wf_qo2(i).lt.0.0 ) wf_qo2(i)=wf_qo2(i)
                   wf_store2(i)=wf_store2(i)+wf_qi1(i)-wf_qo2(i)
+                  wf_resstore(l)=0.0
 c                  wf_store2(i)=wf_store1(i)+(wf_qi1(i)+wf_qi2(i)-
 c     +wf_qo1(i)-wf_qo2(i))*div+qadd(i)*div*2.0
-C           write(708+l,'(2(I6,A1),7(G12.5,A1))') l, z, wf_r(l), z, 
-C      +     wf_resstore(l), z, qadd(i), z, wf_qi2(i), z, 
-C      +      wf_qi1(i), z, wf_store1(i), z, wf_store2(i), z, wf_qo2(i),z 
+C           write(708+l,'(2(I6,A1),7(G12.5,A1))') l, z, wf_r(l), z,
+C      +     wf_resstore(l), z, qadd(i), z, wf_qi2(i), z,
+C      +      wf_qi1(i), z, wf_store1(i), z, wf_store2(i), z, wf_qo2(i),z
                else
 c no we are in the reservoir
 c don't really know what to do here, the flow doesn't really matter
@@ -502,9 +503,9 @@ c flow to the big reservoir stoage
                   wf_qo2(i)=1.0
                   wf_store2(i)=1000.0
 
-               endif !are we at the outlest of controlled reservoir
+               endif !are we at the outlet of controlled reservoir
 
-             endif  !end of natural vs controlled reservoir question 
+             endif  !end of natural vs controlled reservoir question
 
 
           else ! Channel routing
@@ -514,7 +515,7 @@ c flow to the big reservoir stoage
                   iter=1
                   converged=.FALSE.
 
-                  do while( .not.converged .and. 
+                  do while( .not.converged .and.
      +                 iter.le.WF_MAX_ITERATIONS )
 c                    This iterates to 0.3%
                      if( ABS(wf_store2_last-wf_store2(i))
@@ -524,7 +525,7 @@ c                    This iterates to 0.3%
 c                          No outflow - channel is empty
                            wf_qo2(i)=0.0
                         else
-c                          Cap is the volume of water in a reach 
+c                          Cap is the volume of water in a reach
 c                          for the mean annual flow
                            rl=wf_al*wf_a1(ii)
                            if (wf_RLFLAG == 1) rl = wf_CHNL_LEN(i)
@@ -573,7 +574,7 @@ c                       by 50% during very big storms
 
                if( (wf_store2(i).le.0.0 .or. wf_qo2(i).le.0.0)
      +                   .and.wf_ireach(i).lt.1 ) then
-                  if( IterationsPerTimeStep.lt.WF_MAX_TIME_SUBDIVISIONS 
+                  if( IterationsPerTimeStep.lt.WF_MAX_TIME_SUBDIVISIONS
      + ) then
 c                    Try changing time step, and redo whole basin
                      IterationsPerTimeStep=IterationsPerTimeStep+1
@@ -603,7 +604,7 @@ c              Add flow to downstream element
             endif               ! if( wf_next(i).gt.0.0 ) then
 c      grids above gauges
       end do                    ! do i=1,NLTEST-wf_naa
-    
+
       end do                    ! do iterPerStep
 
       return
