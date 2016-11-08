@@ -54,7 +54,7 @@ c     reservoir variables
 
 c     Local variables
       logical converged,retryingIteration, resflag
-      integer i,j,l,iter,ii,ll,n,ix,iy
+      integer i,j,l,iter,ii,ll,n,ix,iy,nn
       integer iterPerStep,IterationsPerTimeStep
       integer nnx,inx,jnx,iset(NLAT)
       real cap,over,rl
@@ -323,6 +323,15 @@ c       modified statements
          if( wf_b1(wf_ireach(n)).gt.0 ) then
 c           Natural reservoir element
             l=wf_ireach(n)
+            ! Check to see if there is a gauge at the natural reservoir outlet
+            do ll=1,wf_no
+c Gauge locations
+                nn=wf_s(ll)
+                if(nn.eq.n) then 
+! We found a gauge at the outlet                
+                   if( wf_qhyd(ll).gt.0.0 ) wf_qo2(n) = wf_qhyd(ll)
+                end if
+           end do       
            if (wf_b3(l) == 0.0) then
             wf_store2(n)=(wf_qo2(n)/wf_b1(l))**(1.0/wf_b2(l))
            else
@@ -362,6 +371,18 @@ c           basin but is in a receiving element
          endif
       end do                    ! do n=1,wf_naa
 
+c      write(707, *) 'After big loop that came from reset.for'     
+c      do n=1,NLTEST-wf_naa
+c      if( wf_ireach(n).gt.0 ) then
+c         if( wf_b1(wf_ireach(n)).gt.0 ) then
+cc           Natural reservoir element
+c            l=wf_ireach(n)   
+c            write(707, *) l, n, qda(n),wf_qo2(n)
+c         endif
+c      endif
+c      end do
+c      close(707)  
+      
 c     Initialize outlet elements
       do n=NLTEST-wf_naa+1, NLTEST
          wf_qi1(n)=0.0
@@ -464,9 +485,14 @@ C are we at the outlet of the controlled reservoir
               if(wf_r(l).eq.i) then
 C yes we are at the outlet
                   wf_qo2(i)=wf_qrel(l)
+                  wf_qi1(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
                   if( wf_qo2(i).lt.0.0 ) wf_qo2(i)=wf_qo2(i)
-                  wf_store2(i)=wf_store1(i)+(wf_qi1(i)+wf_qi2(i)-
-     +wf_qo1(i)-wf_qo2(i))*div+qadd(i)*div*2.0
+                  wf_store2(i)=wf_store2(i)+wf_qi1(i)-wf_qo2(i)
+c                  wf_store2(i)=wf_store1(i)+(wf_qi1(i)+wf_qi2(i)-
+c     +wf_qo1(i)-wf_qo2(i))*div+qadd(i)*div*2.0
+C           write(708+l,'(2(I6,A1),7(G12.5,A1))') l, z, wf_r(l), z, 
+C      +     wf_resstore(l), z, qadd(i), z, wf_qi2(i), z, 
+C      +      wf_qi1(i), z, wf_store1(i), z, wf_store2(i), z, wf_qo2(i),z 
                else
 c no we are in the reservoir
 c don't really know what to do here, the flow doesn't really matter

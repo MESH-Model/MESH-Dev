@@ -233,9 +233,11 @@ module WF_ROUTE_config
         integer WF_START_YEAR, WF_START_DAY, WF_START_HOUR
         integer JDAY_IND_STRM, JDAY_IND1, JDAY_IND2
         real I_G, J_G
-        integer i, j, ierr, iun
+        integer l, i, j, ierr, iun
 
-        !> Return in the process is inactive.
+        character*10 fn
+
+        !> Return if the process is inactive.
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
 
         NA = shd%NA
@@ -499,6 +501,20 @@ module WF_ROUTE_config
             close(iun)
 
         end if !(RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
+
+        do l = 1, wf_noresv
+            if(l.lt.10) then
+                write (fn, '(I1)') l
+            else
+                write (fn, '(I2)') l
+            endif
+            open(UNIT=708+l, &
+                 FILE='./' // trim(fls%GENDIR_OUT) // '/' // 'res_' // adjustl(trim(fn)) // '.csv', &
+                 status='unknown', action = 'write')
+            write(708+l,"(2(a6','),7(a12,','))") &
+                'l', 'wf_r', &
+                'wf_qi1', 'wf_store1', 'wf_qi2', 'wf_store2', 'wf_qo2'
+        end do
 
     end subroutine
 
