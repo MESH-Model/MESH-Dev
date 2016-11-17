@@ -41,7 +41,8 @@
      2                  UM1CS,     UM1C,      UM1G,      UM1GS, 
      3                  QM1CS,     QM1C,      QM1G,      QM1GS, 
      4                  QM2CS,     QM2C,      QM2G,      QM2GS,  UMQ,
-     5                  FSTRCS,    FSTRC,     FSTRG,    FSTRGS,
+     5                  FSTRCS,    FSTRC,     FSTRG,     FSTRGS,
+     *                  !CSTRCS, CSTRC, CSTRG, CSTRGS,
      6                  ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG,
      7                  HCPSCS,HCPSGS,HCPSC,HCPSG,
      8                  TSNOWC,TSNOWG,RHOSC,RHOSG,
@@ -308,7 +309,9 @@ C     * PDMROF
      3     QM2CS    (ILG),QM2C     (ILG),QM2G     (ILG),QM2GS    (ILG),
      4     UMQCS    (ILG),UMQC     (ILG),UMQG     (ILG),UMQGS    (ILG),
      5     UMQ      (ILG),
-     6     FSTRCS   (ILG),    FSTRC(ILG),    FSTRG(ILG),   FSTRGS(ILG) 
+     6     FSTRCS   (ILG),    FSTRC(ILG),    FSTRG(ILG),   FSTRGS(ILG),
+     *     CSTRCS(ILG), CSTRC(ILG), CSTRG(ILG), CSTRGS(ILG)
+
       UMQ   = 0.0
       UMQCS = 0.0
       UMQC  = 0.0
@@ -425,7 +428,16 @@ C
      2                   OVRFLW,   TOVRFL, RUNFCS, TRNFCS,  TFREZ,
      3                   CMIN,     CMAX,   B,      K1,      K2,
      4                   UM1CS,  QM1CS,  QM2CS,   UMQCS,    DELT)
-          ELSE
+          ELSE IF (IWF == 3) THEN
+            CALL LATFLOW(THLQCS,THICCS,TPNDCS,OVRFLW,TOVRFL,
+     1                SUBFLW,TSUBFL,RUNFCS,TRNFCS,FCS,ZPLMCS,
+     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBRWCS,
+     3                DELZW,THPOR,THLMIN,BI,DIDRN,
+     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
+     6                NA,NTYPE,ILMOS,JLMOS,
+     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,
+     8                ZPNDPRECS,ZPNDCS,FSTRCS,CMIN,CMAX,B,CSTRCS,UMQCS)
+		  ELSE
 
 !Craig Thompson added call to watrof, june 2008.
           CALL WATROF(THLQCS,THICCS,ZPNDCS,TPNDCS,OVRFLW,TOVRFL,
@@ -523,6 +535,15 @@ C
      2                   OVRFLW,   TOVRFL, RUNFGS, TRNFGS,  TFREZ,
      3                   CMIN,     CMAX,   B,      K1,      K2,
      4                   UM1GS,  QM1GS,  QM2GS,   UMQGS,    DELT)
+          ELSE IF (IWF == 3) THEN
+            CALL LATFLOW(THLQGS,THICGS,TPNDGS,OVRFLW,TOVRFL,
+     1                SUBFLW,TSUBFL,RUNFGS,TRNFGS,FGS,ZPLMGS,
+     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBRWGS,
+     3                DELZW,THPOR,THLMIN,BI,DIDRN,
+     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
+     6                NA,NTYPE,ILMOS,JLMOS,
+     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,
+     8                ZPNDPREGS,ZPNDGS,FSTRGS,CMIN,CMAX,B,CSTRGS,UMQGS)
           ELSE
 
 !Craig Thompson added call to watrof, june 2008.
@@ -607,6 +628,15 @@ C
      2                   OVRFLW,   TOVRFL, RUNFC, TRUNFC,  TFREZ,
      3                   CMIN,     CMAX,   B,      K1,      K2,
      4                   UM1C,     QM1C,   QM2C,   UMQC,    DELT)
+          ELSE IF (IWF == 3) THEN
+            CALL LATFLOW(THLQCO,THICCO,ZPONDC,TPONDC,OVRFLW,TOVRFL,
+     1                SUBFLW,TSUBFL,RUNFC,TRUNFC,FC,ZPLIMC,
+     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARWC,
+     3                DELZW,THPOR,THLMIN,BI,DIDRN,
+     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
+     6                NA,NTYPE,ILMOS,JLMOS,
+     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,
+     8                ZPONDPREC,ZPONDC,FSTRC,CMIN,CMAX,B,CSTRC,UMQC)
           ELSE
 
 !Craig Thompson added call to watrof, june 2008.
@@ -685,6 +715,15 @@ C
      2                   OVRFLW,   TOVRFL, RUNFG, TRUNFG,  TFREZ,
      3                   CMIN,     CMAX,   B,      K1,      K2,
      4                   UM1G,     QM1G,   QM2G,   UMQG,    DELT)
+          ELSE IF (IWF == 3) THEN
+            CALL LATFLOW(THLQGO,THICGO,ZPONDG,TPONDG,OVRFLW,TOVRFL,
+     1                SUBFLW,TSUBFL,RUNFG,TRUNFG,FG,ZPLIMG,
+     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARWG,
+     3                DELZW,THPOR,THLMIN,BI,DIDRN,
+     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
+     6                NA,NTYPE,ILMOS,JLMOS,
+     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,
+     8         ZPONDPREG,ZPONDG,FSTRG,CMIN,CMAX,B,CSTRG,UMQG)
           ELSE
 
 !Craig Thompson added call to watrof, june 2008.
