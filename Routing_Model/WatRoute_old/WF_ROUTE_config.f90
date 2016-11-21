@@ -349,28 +349,42 @@ module WF_ROUTE_config
         allocate(WF_IY(M_S), WF_JX(M_S), WF_S(M_S), WF_QHYD(M_S), WF_QHYD_AVG(M_S), WF_QHYD_CUM(M_S), &
                  WF_QSYN(M_S), WF_QSYN_AVG(M_S), WF_QSYN_CUM(M_S), WF_GAGE(M_S))
 
+        !> Allocate the output variable for the streamflow hydrograph.
+        stfl%ns = WF_NO
+        allocate(stfl%name(WF_NO), &
+                 stfl%iy(WF_NO), stfl%jx(WF_NO), stfl%n(WF_NO), &
+                 stfl%i(WF_NO), stfl%j(WF_NO), stfl%qhyd(WF_NO), stfl%qsyn(WF_NO))
+        stfl%qhyd = 0.0
+        stfl%qsyn = 0.0
+
         do i = 1, WF_NO
             if (LOCATIONFLAG == 1) then
                 read(iun, *) I_G, J_G, WF_GAGE(i)
-                WF_IY(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
-                WF_JX(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
+                stfl%i(i) = I_G
+                stfl%iy(i) = nint((I_G - shd%yOrigin*60.0)/shd%GRDN)
+                stfl%j(i) = J_G
+                stfl%jx(i) = nint((J_G - shd%xOrigin*60.0)/shd%GRDE)
             else
                 read(iun, *) WF_IY(i), WF_JX(i), WF_GAGE(i)
-                WF_IY(i) = int((real(WF_IY(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
-                WF_JX(i) = int((real(WF_JX(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
+                stfl%i(i) = real(WF_IY(i))
+                stfl%iy(i) = int((real(WF_IY(i)) - real(shd%iyMin))/shd%GRDN + 1.0)
+                stfl%j(i) = real(WF_JX(i))
+                stfl%jx(i) = int((real(WF_JX(i)) - real(shd%jxMin))/shd%GRDE + 1.0)
             end if
+            stfl%name(i) = WF_GAGE(i)
         end do
         do i = 1, WF_NO
             WF_S(i) = 0
             do j = 1, NA
-                if (WF_JX(i) == shd%xxx(j) .and. WF_IY(i) == shd%yyy(j)) then
+                if (stfl%jx(i) == shd%xxx(j) .and. stfl%iy(i) == shd%yyy(j)) then
                     WF_S(i) = j
+                    stfl%n(WF_NO) = j
                 end if
             end do
             if (WF_S(i) == 0) then
                 print *, 'STREAMFLOW GAUGE: ', i, ' IS NOT IN THE BASIN'
-                print *, 'UP/DOWN', WF_IY(i), shd%iyMin, shd%yyy(j), shd%yCount
-                print *, 'LEFT/RIGHT', WF_JX(i), shd%jxMin, shd%xxx(j), shd%xCount
+                print *, 'UP/DOWN', stfl%iy(i), shd%iyMin, shd%yyy(j), shd%yCount
+                print *, 'LEFT/RIGHT', stfl%jx(i), shd%jxMin, shd%xxx(j), shd%xCount
                 stop
             end if
         end do
@@ -378,7 +392,7 @@ module WF_ROUTE_config
         if (ro%VERBOSEMODE > 0) then
             print *, 'NUMBER OF STREAMFLOW GUAGES: ', WF_NO
             do i = 1, WF_NO
-                print *, 'STREAMFLOW STATION: ', i, 'I: ', WF_IY(i), 'J: ', WF_JX(i)
+                print *, 'STREAMFLOW STATION: ', i, 'I: ', stfl%iy(i), 'J: ', stfl%jx(i)
             end do
             print *, 'NUMBER OF RESERVOIR STATIONS: ', WF_NORESV
             if (WF_NORESV > 0) then
@@ -394,12 +408,6 @@ module WF_ROUTE_config
         WF_QHYD_AVG = 0.0
         WF_QSYN_CUM = 0.0
         WF_QHYD_CUM = 0.0
-
-        !> Allocate the output variable for the streamflow hydrograph.
-        stfl%ns = WF_NO
-        allocate(stfl%qhyd(WF_NO), stfl%qsyn(WF_NO))
-        stfl%qhyd = 0.0
-        stfl%qsyn = 0.0
 
         !>MAM - The first stream flow record is used for flow initialization
         read(iun, *, iostat = ierr) (WF_QHYD(i), i = 1, WF_NO)
