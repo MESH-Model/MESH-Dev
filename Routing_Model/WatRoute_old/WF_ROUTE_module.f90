@@ -14,6 +14,7 @@ module WF_ROUTE_module
 
         use mpi_shared_variables
         use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
         use model_dates
         use MODEL_OUTPUT
         use model_output_variabletypes
@@ -59,7 +60,7 @@ module WF_ROUTE_module
                     read(21, '(100f10.3)', iostat = ierr) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
                     rewind 21
                     read(21, *)
-                    do i = 1, WF_NORESV
+                    do i = 1, fms%rsvr%n
                         read(21, *)
                     end do
                 end if
@@ -74,7 +75,7 @@ module WF_ROUTE_module
         !> also read in the first value if this is the first time through
         if (mod(HOUR_NOW, WF_KT) == 0 .and. MINS_NOW == 0) then
             !>       read in current streamflow value
-            read(22, *, iostat = ierr) (WF_QHYD(i), i = 1, WF_NO)
+            read(22, *, iostat = ierr) (WF_QHYD(i), i = 1, fms%stmg%n)
             if (ierr /= 0) then
 !-                WF_ROUTE_within_tile = 'ran out of streamflow data before met data'
 !-                return
@@ -89,6 +90,7 @@ module WF_ROUTE_module
     subroutine WF_ROUTE_between_grid(shd, ic, wb, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
         use model_dates
         use MODEL_OUTPUT
         use model_output_variabletypes
@@ -123,23 +125,30 @@ module WF_ROUTE_module
                       shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
                       shd%CHNL_LEN, &
                       WF_RTE_flgs%RLFLAG, WF_RTE_flgs%CAPFLAG, &
-                      WF_NO, WF_NL, WF_MHRD, WF_KT, WF_IY, WF_JX, &
-                      WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, WF_R, &
-                      WF_NORESV, WF_NREL, WF_KTR, WF_IRES, WF_JRES, WF_RESNAME, &
+                      fms%stmg%n, WF_NL, WF_MHRD, WF_KT, fms%stmg%iy, fms%stmg%jx, &
+                      WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, fms%rsvr%rnk, &
+                      fms%rsvr%n, WF_NREL, WF_KTR, fms%rsvr%iy, fms%rsvr%jx, fms%rsvr%name, &
                       WF_B1, WF_B2, WF_B3, WF_B4, WF_B5, WF_QREL, WF_QR, &
-                      WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, WF_QI2, WF_QO1, WF_QO2, &
+                      WF_TIMECOUNT, WF_NHYD, WF_QBASE, stas%chnl%qi, WF_QI2, WF_QO1, stas%chnl%qo, &
                       wfp%aa1, wfp%aa2, wfp%aa3, wfp%aa4, &
-                      WF_STORE1, WF_STORE2, &
-                      ic%dts, (wb%rof/ic%dts), shd%NA, shd%NRVR, M_R, M_S, shd%NA, &
-                      WF_S, JAN, ic%now_jday, ic%now_hour, ic%now_mins)
-        do i = 1, WF_NO
-            WF_QSYN(i) = WF_QO2(WF_S(i))
-            WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + WF_QO2(WF_S(i))
-            WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + WF_QO2(WF_S(i))
+                      WF_STORE1, stas%chnl%s, &
+                      ic%dts, (wb%rof/ic%dts), shd%NA, shd%NRVR, fms%rsvr%n, fms%stmg%n, shd%NA, &
+                      fms%stmg%rnk, JAN, ic%now_jday, ic%now_hour, ic%now_mins)
+        do i = 1, fms%stmg%n
+            WF_QSYN(i) = stas%chnl%qo(fms%stmg%rnk(i))
+            WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + stas%chnl%qo(fms%stmg%rnk(i))
+            WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + stas%chnl%qo(fms%stmg%rnk(i))
             WF_QHYD_AVG(i) = WF_QHYD(i) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
         end do
-        WF_QO2_ACC_MM = WF_QO2_ACC_MM + WF_QO2/shd%DA/1000.0*ic%dts
-        WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + WF_STORE2/shd%DA/1000.0
+        WF_QO2_ACC_MM = WF_QO2_ACC_MM + stas%chnl%qo/shd%DA/1000.0*ic%dts
+        WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + stas%chnl%s/shd%DA/1000.0
+
+        !> Update state variables for the driver.
+        do i = 1, fms%rsvr%n
+            stas%rsvr%qi(i) = stas%chnl%qi(fms%rsvr%rnk(i))
+            stas%rsvr%qo(i) = stas%chnl%qo(fms%rsvr%rnk(i))
+            stas%rsvr%s(i) = stas%chnl%s(fms%rsvr%rnk(i))
+        end do
 
         !> this is done so that INIT_STORE is not recalculated for
         !> each iteration when wf_route is not used
@@ -147,10 +156,10 @@ module WF_ROUTE_module
             JAN = 2
         end if
 
-        do l = 1, wf_noresv
-            i = wf_r(l)
-            write(708+l,"(2(I6,','),7(G12.5,','))") l, wf_r(l), &
-                wf_qi1(i), wf_store1(i), wf_qi2(i), wf_store2(i), wf_qo2(i)
+        do l = 1, fms%rsvr%n
+            i = fms%rsvr%rnk(l)
+            write(708+l,"(2(I6,','),7(G12.5,','))") l, i, &
+                stas%chnl%qi(i), wf_store1(i), wf_qi2(i), stas%chnl%s(i), stas%chnl%qo(i)
         end do
 
         !> *********************************************************************
@@ -161,7 +170,7 @@ module WF_ROUTE_module
         !> Write output for per time-step streamflow output file.
         if (WF_RTE_flgs%STREAMFLOWFLAG == 1 .and. btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 1)) then
             write(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun, 1002) &
-                ic%now_jday, ic%now_hour, ic%now_mins, (WF_QHYD(i), WF_QSYN(i), i = 1, WF_NO)
+                ic%now_jday, ic%now_hour, ic%now_mins, (WF_QHYD(i), WF_QSYN(i), i = 1, fms%stmg%n)
         end if
 
         !> Determine if this is the last time-step of the hour.
@@ -171,27 +180,27 @@ module WF_ROUTE_module
         !> This occurs the last time-step of the day.
         if (writeout) then
 
-            do i = 1, WF_NO
+            do i = 1, fms%stmg%n
                 WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + WF_QHYD_AVG(i)
             end do
 
             !> Write output for daily streamflow output file.
             if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 0)) then
                 write(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%iun, 1001) &
-                    ic%now_jday, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/ic%ts_daily, i = 1, WF_NO)
+                    ic%now_jday, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/ic%ts_daily, i = 1, fms%stmg%n)
             end if
 
             !> Write output for cumulative daily streamflow output file.
             if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 1)) then
                 write(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun, 1001) &
-                    ic%now_jday, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily, i = 1, WF_NO)
+                    ic%now_jday, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily, i = 1, fms%stmg%n)
             end if
 
             !> Write output for streamflow channel water balance output file.
             if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 2)) then
                 write(WF_RTE_fls%fl(WF_RTE_flks%stfl_bal)%iun, 1001) &
-                    ic%now_jday, (WF_QO2_ACC_MM(WF_S(i)), &
-                                  WF_STORE2_ACC_MM(WF_S(i))/ic%ts_count, i = 1, WF_NO)
+                    ic%now_jday, (WF_QO2_ACC_MM(fms%stmg%rnk(i)), &
+                                  WF_STORE2_ACC_MM(fms%stmg%rnk(i))/ic%ts_count, i = 1, fms%stmg%n)
             end if
 
 !-            WF_QSYN_AVG = 0.0
