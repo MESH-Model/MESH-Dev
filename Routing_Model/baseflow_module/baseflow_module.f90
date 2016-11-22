@@ -46,7 +46,7 @@ module baseflow_module
 
     contains
 
-    subroutine LZS_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine LZS_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use mpi_shared_variables
         use sa_mesh_shared_variabletypes
@@ -63,7 +63,6 @@ module baseflow_module
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -155,7 +154,7 @@ module baseflow_module
 
     end subroutine
 
-    subroutine LZS_within_tile(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine LZS_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use mpi_shared_variables
         use sa_mesh_shared_variabletypes
@@ -170,7 +169,6 @@ module baseflow_module
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -220,7 +218,7 @@ module baseflow_module
 
     end subroutine
 
-    subroutine LZS_finalize(fls, shd, ic)
+    subroutine LZS_finalize(fls, shd)
 
         use mpi_shared_variables
         use model_files_variabletypes
@@ -233,7 +231,6 @@ module baseflow_module
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(iter_counter) :: ic
 
         !> Local variables.
         integer ierr, iun

@@ -42,7 +42,7 @@ module save_basin_output
 
     !> Global routines.
 
-    subroutine run_save_basin_output_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine run_save_basin_output_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -57,7 +57,6 @@ module save_basin_output
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -212,7 +211,7 @@ module save_basin_output
 
     end subroutine
 
-    subroutine run_save_basin_output(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine run_save_basin_output(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -228,7 +227,6 @@ module save_basin_output
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -249,17 +247,17 @@ module save_basin_output
         !> Hourly (wb): IKEY_HLY
         if (mod(ic%ts_hourly, 3600/ic%dts) == 0) then
 !todo: change this to pass the index of the file object.
-            call save_water_balance(shd, fls, 903, ic, 3600, shd%NAA, IKEY_HLY)
+            call save_water_balance(shd, fls, 903, 3600, shd%NAA, IKEY_HLY)
         end if
 
         !> Daily (wb, eb): IKEY_DLY
         if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
-            call save_water_balance(shd, fls, fls%fl(mfk%f900)%iun, ic, 86400, shd%NAA, IKEY_DLY)
+            call save_water_balance(shd, fls, fls%fl(mfk%f900)%iun, 86400, shd%NAA, IKEY_DLY)
 
             !> Energy balance.
             dnar = wb%basin_area
             write(901, "(i4,',', i5,',', 999(e12.5,','))") &
-                  JDAY_NOW, YEAR_NOW, &
+                  ic%now%jday, ic%now%year, &
                   eb_out%HFS(IKEY_DLY)/dnar, &
                   eb_out%QEVP(IKEY_DLY)/dnar
         end if
@@ -268,21 +266,21 @@ module save_basin_output
         if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
 
             !> Determine the next day in the month.
-            call Julian2MonthDay((JDAY_NOW + 1), YEAR_NOW, nmth, ndy)
+            call Julian2MonthDay((ic%now%jday + 1), ic%now%year, nmth, ndy)
 
             !> Write-out if the next day will be a new month (current day is the last of the month).
-            if (ndy == 1 .or. (JDAY_NOW + 1) > leap_year(YEAR_NOW)) then
-                call Julian2MonthDay(JDAY_NOW, YEAR_NOW, nmth, ndy)
-                call save_water_balance(shd, fls, 902, ic, (86400*ndy), shd%NAA, IKEY_MLY)
+            if (ndy == 1 .or. (ic%now%jday + 1) > leap_year(ic%now%year)) then
+                call Julian2MonthDay(ic%now%jday, ic%now%year, nmth, ndy)
+                call save_water_balance(shd, fls, 902, (86400*ndy), shd%NAA, IKEY_MLY)
             end if
         end if
 
         !> Time-step (wb): IKEY_TSP
-        call save_water_balance(shd, fls, 904, ic, ic%dts, shd%NAA, IKEY_TSP)
+        call save_water_balance(shd, fls, 904, ic%dts, shd%NAA, IKEY_TSP)
 
     end subroutine
 
-    subroutine run_save_basin_output_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+    subroutine run_save_basin_output_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
         use mpi_shared_variables
         use model_files_variabletypes
@@ -295,7 +293,6 @@ module save_basin_output
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -438,7 +435,7 @@ module save_basin_output
 
     end subroutine
 
-    subroutine save_water_balance(shd, fls, fik, ic, dts, ina, ikdts)
+    subroutine save_water_balance(shd, fls, fik, dts, ina, ikdts)
 
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
@@ -450,7 +447,6 @@ module save_basin_output
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         integer fik
-        type(iter_counter) :: ic
         integer dts, ina, ikdts
 
         !> Local variables.
@@ -485,10 +481,10 @@ module save_basin_output
 
         !> Write the time-stamp for the period.
 !todo: change this to the unit attribute of the file object.
-        write(fik, "(i4, ',')", advance = 'no') JDAY_NOW
-        write(fik, "(i5, ',')", advance = 'no') YEAR_NOW
-        if (dts < 86400) write(fik, "(i3, ',')", advance = 'no') HOUR_NOW
-        if (dts < 3600) write(fik, "(i3, ',')", advance = 'no') MINS_NOW
+        write(fik, "(i4, ',')", advance = 'no') ic%now%jday
+        write(fik, "(i5, ',')", advance = 'no') ic%now%year
+        if (dts < 86400) write(fik, "(i3, ',')", advance = 'no') ic%now%hour
+        if (dts < 3600) write(fik, "(i3, ',')", advance = 'no') ic%now%mins
 
         !> Write the water balance to file.
         NSL = shd%lc%IGND

@@ -197,7 +197,7 @@ module WF_ROUTE_config
     !>              the output files, in preparation for running the
     !>              WF_ROUTE process.
     !>
-    subroutine WF_ROUTE_init(shd, fls, ic, stfl, rrls)
+    subroutine WF_ROUTE_init(shd, fls, stfl, rrls)
 
         use sa_mesh_shared_variables
         use model_files_variables
@@ -209,7 +209,6 @@ module WF_ROUTE_config
 
         type(ShedGridParams), intent(in) :: shd
         type(fl_ids) :: fls
-        type(iter_counter), intent(in) :: ic
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
@@ -383,12 +382,6 @@ module WF_ROUTE_config
                      fms%stmg%y(NS), fms%stmg%x(NS), &
                      fms%stmg%iy(NS), fms%stmg%jx(NS), fms%stmg%rnk(NS))
 
-        !> Allocate state variables for the driver.
-        allocate(stas%chnl%qi(NA), stas%chnl%qo(NA), stas%chnl%s(NA))
-        stas%chnl%qi = 0.0
-        stas%chnl%qo = 0.0
-        stas%chnl%s = 0.0
-
         !> Allocate output variable for the driver.
         stfl%ns = NS
         allocate(stfl%qhyd(NS), stfl%qsyn(NS))
@@ -452,9 +445,9 @@ module WF_ROUTE_config
         ! fixed streamflow start time bug. add in function to enable the
         ! correct start time. Feb2009 aliu.
         call Julian_Day_ID(WF_START_YEAR, WF_START_DAY, JDAY_IND1)
-        call Julian_Day_ID(YEAR_START, JDAY_START, JDAY_IND2)
+        call Julian_Day_ID(ic%start%year, ic%start%jday, JDAY_IND2)
 !        print *, WF_START_YEAR, WF_START_DAY, JDAY_IND1
-        if (YEAR_START == 0) then
+        if (ic%start%year == 0) then
             JDAY_IND2 = JDAY_IND1
         end if
         if (JDAY_IND2 < JDAY_IND1) then
@@ -562,7 +555,7 @@ module WF_ROUTE_config
 
     end subroutine
 
-    subroutine WF_ROUTE_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+    subroutine WF_ROUTE_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
         use mpi_shared_variables
         use model_files_variabletypes
@@ -576,7 +569,6 @@ module WF_ROUTE_config
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb

@@ -204,7 +204,6 @@ program RUNMESH
 !todo: clean-up.
     type(OUT_FLDS) :: VR
     type(dates_model) :: ts
-    type(iter_counter) :: ic
     type(INFO_OUT) :: ifo
     type(CLIM_INFO) :: cm
     type(met_data) :: md_grd
@@ -295,6 +294,8 @@ program RUNMESH
         call Init_fls(fls)
     end if !(narg > 0) then
 
+!-    call counter_init()
+
     call READ_INITIAL_INPUTS(shd, &
                              ts, cm, &
                              fls)
@@ -344,16 +345,14 @@ program RUNMESH
 
     end if !(ipid == 0) then
 
-    call run_within_tile_init(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
-    call run_within_grid_init(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    call run_within_tile_init(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    call run_within_grid_init(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
     NML = shd%lc%NML
 
     !> MAM - Check for parameter values - all parameters should lie within the
     !> specified ranges in the "minmax_parameters.txt" file.
     call check_parameters(shd)
-
-    call init_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW, TIME_STEP_DELT)
 
     !> ALLOCATE ALL VARIABLES
 
@@ -371,7 +370,7 @@ program RUNMESH
 !+        stop
 !+    end if
 
-    if (ipid == 0) call run_between_grid_init(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    if (ipid == 0) call run_between_grid_init(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
 !> **********************************************************************
 !>  Start of section to only run on squares that make up the watersheds
@@ -436,7 +435,7 @@ program RUNMESH
 
     !> Initialize output fields.
     if (ipid == 0) then
-        if (OUTFIELDSFLAG == 1) call init_out(shd, ts, ic, ifo, vr)
+        if (OUTFIELDSFLAG == 1) call init_out(shd, ts, ifo, vr)
     end if !(ipid == 0) then
 
     FRAME_NO_NEW = 1
@@ -818,7 +817,7 @@ program RUNMESH
 !        ITCTGAT = 0
 
 !+        call resume_state_r2c(shd%lc%NML, NA, NTYPE, ic%ts_daily, &
-!+                              MINS_NOW, shd%lc%ACLASS, NR2C_R, GRD_R, GAT_R, GRDGAT_R, R2C_ATTRIBUTES_R, &
+!+                              ic%now%mins, shd%lc%ACLASS, NR2C_R, GRD_R, GAT_R, GRDGAT_R, R2C_ATTRIBUTES_R, &
 !+                              NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
 !+                              cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
 !+                              cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
@@ -1002,8 +1001,8 @@ program RUNMESH
 !todo: condition for ierr.
 
         !> Time-stepping information.
-        read(iun) ic%now_year, ic%now_jday, ic%now_month, ic%now_day, ic%now_hour, ic%now_mins
-        read(iun) ic%count_year, ic%count_jday, ic%count_month, ic%count_day, ic%count_hour, ic%count_mins
+        read(iun) ic%now%year, ic%now%jday, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins
+        read(iun) ic%count_year, ic%count_jday, ic%count_month, ic%count_jday, ic%count_hour, ic%count_mins
         read(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
 
         !> Read states for the driver (for the head node or in serial).
@@ -1024,7 +1023,7 @@ program RUNMESH
 
     end if !(RESUMEFLAG == 4) then
 
-    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls, ic, stfl)
+    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls, stfl)
 
     !> *********************************************************************
     !> End of Initialization
@@ -1067,7 +1066,7 @@ program RUNMESH
         if (RUNSTATE /= 0) exit
 
         !> Load or update climate forcing input.
-        ENDDATA = climate_module_update_data(fls, shd, ic, il1, il2, cm)
+        ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
         if (ENDDATA) then
             RUNSTATE = 1
             cycle
@@ -1121,13 +1120,13 @@ program RUNMESH
             wb_grd%STG = 0.0
         end if
 
-        cstate = run_within_tile(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+        cstate = run_within_tile(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
         if (len_trim(cstate) > 0) then
             RUNSTATE = 1
             cycle
         end if
 
-        call run_within_grid(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+        call run_within_grid(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.
@@ -1137,13 +1136,13 @@ program RUNMESH
 
             !> Write ENSIM output
             if (NR2CFILES > 0 .and. mod(ic%ts_daily*30, DELTR2C) == 0) then
-!                call FIND_MONTH (JDAY_NOW, YEAR_NOW, ensim_month)
-!                call FIND_DAY (JDAY_NOW, YEAR_NOW, ensim_day)
-!                call WRITE_R2C_DATA(shd%lc%NML, NA, NTYPE, ic%ts_daily, MINS_NOW, shd%lc%ACLASS, &
+!                call FIND_MONTH (ic%now%jday, ic%now%year, ensim_month)
+!                call FIND_DAY (ic%now%jday, ic%now%year, ensim_day)
+!                call WRITE_R2C_DATA(shd%lc%NML, NA, NTYPE, ic%ts_daily, ic%now%mins, shd%lc%ACLASS, &
 !                                    NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, &
 !                                    NR2C, NR2CFILES, R2CFILEUNITSTART, GRD, GAT, &
-!                                    GRDGAT, NR2CSTATES, R2C_ATTRIBUTES, FRAME_NO_NEW, YEAR_NOW, &
-!                                    ensim_MONTH, ensim_DAY, HOUR_NOW, MINS_NOW, ICAN, &
+!                                    GRDGAT, NR2CSTATES, R2C_ATTRIBUTES, FRAME_NO_NEW, ic%now%year, &
+!                                    ensim_MONTH, ensim_DAY, ic%now%hour, ic%now%mins, ICAN, &
 !                                    ICAN + 1, IGND, &
 !                                    cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
 !                                    cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
@@ -1230,7 +1229,7 @@ program RUNMESH
             wb_grd%STG = wb_grd%DSTG + wb_grd%STG
 
             !> Update output data.
-            call updatefieldsout_temp(shd, ts, ic, ifo, &
+            call updatefieldsout_temp(shd, ts, ifo, &
                                       md_grd, wb_grd, &
                                       vr)
 
@@ -1294,14 +1293,14 @@ program RUNMESH
                                          eb_acc%gflx, eb_acc%hfs, eb_acc%qevp, &
                                          spv_acc%thlq, spv_acc%thic, &
                                          IGND, &
-                                         JDAY_NOW, YEAR_NOW)
+                                         ic%now%jday, ic%now%year)
                 end if
 
             end if !(ic%ts_daily == 48) then
 
         end if !(ipid == 0) then
 
-        if (ipid == 0) call run_between_grid(shd, fls, ts, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+        if (ipid == 0) call run_between_grid(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
         if (ipid == 0) then
 
@@ -1310,7 +1309,7 @@ program RUNMESH
                                         !when they're numbered 1-48
 
                 if (ro%VERBOSEMODE > 0) then
-                    write(6, '(2i5)', advance = 'no') YEAR_NOW, JDAY_NOW
+                    write(6, '(2i5)', advance = 'no') ic%now%year, ic%now%jday
                     if (printoutstfl) then
                         do j = 1, stfl%ns
                             if (printoutqhyd) write(6, '(f10.3)', advance = 'no') stfl%qhyd(j)
@@ -1324,7 +1323,7 @@ program RUNMESH
                     write(6, *)
                 end if !(ro%VERBOSEMODE > 0) then
                 if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
-                    call stats_update_stfl_daily(fls, ic, stfl)
+                    call stats_update_stfl_daily(fls, stfl)
                     if (mtsflg%PREEMPTIONFLAG > 1) then
                         if (FTEST > FBEST) goto 199
                     end if
@@ -1336,54 +1335,54 @@ program RUNMESH
 5176    format(2i5, 999(f10.3))
 
         !> Update time counters and return to beginning of main loop
-        MINS_NOW = MINS_NOW + TIME_STEP_MINS ! increment the current time by 30 minutes
-        if (MINS_NOW == 60) then
-            MINS_NOW = 0
-            HOUR_NOW = HOUR_NOW + 1
-            if (HOUR_NOW == 24) then
-                HOUR_NOW = 0
-                JDAY_NOW = JDAY_NOW + 1
-                if (JDAY_NOW >= 366) then
-                    if (mod(YEAR_NOW, 400) == 0) then !LEAP YEAR
-                        if (JDAY_NOW == 367) then
-                            JDAY_NOW = 1
-                            YEAR_NOW = YEAR_NOW + 1
-                        end if
-                    else if (mod(YEAR_NOW, 100) == 0) then !NOT A LEAP YEAR
-                        JDAY_NOW = 1
-                        YEAR_NOW = YEAR_NOW + 1
-                    else if (mod(YEAR_NOW, 4) == 0) then !LEAP YEAR
-                        if (JDAY_NOW == 367) then
-                            JDAY_NOW = 1
-                            YEAR_NOW = YEAR_NOW + 1
-                        end if
-                    else !NOT A LEAP YEAR
-                        JDAY_NOW = 1
-                        YEAR_NOW = YEAR_NOW + 1
-                    end if
-                end if
-            end if
-        end if
-
-        !> Check if we should terminate the run yet.
-        if (YEAR_NOW >= YEAR_STOP .and. YEAR_STOP > 0) then
-            if (YEAR_NOW > YEAR_STOP) then
-                ENDDATE = .true.
-            else if (YEAR_NOW == YEAR_STOP .and. JDAY_NOW >= JDAY_STOP) then
-                if (JDAY_NOW > JDAY_STOP) then
-                    ENDDATE = .true.
-                else if (JDAY_NOW == JDAY_STOP .and. HOUR_NOW >= HOUR_STOP) then
-                    if (HOUR_NOW > HOUR_STOP) then
-                        ENDDATE = .true.
-                    else if (HOUR_NOW == HOUR_STOP .and. MINS_NOW >= MINS_STOP) then
-                        ENDDATE = .true.
-                    end if
-                end if
-            end if
-        end if
+!-        ic%now%mins = ic%now%mins + ic%dtmins ! increment the current time by 30 minutes
+!-        if (ic%now%mins == 60) then
+!-            ic%now%mins = 0
+!-            ic%now%hour = ic%now%hour + 1
+!-            if (ic%now%hour == 24) then
+!-                ic%now%hour = 0
+!-                ic%now%jday = ic%now%jday + 1
+!-                if (ic%now%jday >= 366) then
+!-                    if (mod(ic%now%year, 400) == 0) then !LEAP YEAR
+!-                        if (ic%now%jday == 367) then
+!-                            ic%now%jday = 1
+!-                            ic%now%year = ic%now%year + 1
+!-                        end if
+!-                    else if (mod(ic%now%year, 100) == 0) then !NOT A LEAP YEAR
+!-                        ic%now%jday = 1
+!-                        ic%now%year = ic%now%year + 1
+!-                    else if (mod(ic%now%year, 4) == 0) then !LEAP YEAR
+!-                        if (ic%now%jday == 367) then
+!-                            ic%now%jday = 1
+!-                            ic%now%year = ic%now%year + 1
+!-                        end if
+!-                    else !NOT A LEAP YEAR
+!-                        ic%now%jday = 1
+!-                        ic%now%year = ic%now%year + 1
+!-                    end if
+!-                end if
+!-            end if
+!-        end if
 
         !> Update the current time-step and counter.
-        call update_now_iter_counter(ic, YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW)
+        call counter_update()
+
+        !> Check if we should terminate the run yet.
+        if (ic%now%year >= ic%stop%year .and. ic%stop%year > 0) then
+            if (ic%now%year > ic%stop%year) then
+                ENDDATE = .true.
+            else if (ic%now%year == ic%stop%year .and. ic%now%jday >= ic%stop%jday) then
+                if (ic%now%jday > ic%stop%jday) then
+                    ENDDATE = .true.
+                else if (ic%now%jday == ic%stop%jday .and. ic%now%hour >= ic%stop%hour) then
+                    if (ic%now%hour > ic%stop%hour) then
+                        ENDDATE = .true.
+                    else if (ic%now%hour == ic%stop%hour .and. ic%now%mins >= ic%stop%mins) then
+                        ENDDATE = .true.
+                    end if
+                end if
+            end if
+        end if
 
         !> Check the run state.
         if (ENDDATA .or. ENDDATE) then
@@ -1447,7 +1446,7 @@ program RUNMESH
 !+        close(55)
 
 !+        call SAVE_STATE_R2C(shd%lc%NML, NA, NTYPE, ic%ts_daily, &
-!+                            MINS_NOW, shd%lc%ACLASS, NR2C_S, GRD_S, GAT_S, GRDGAT_S, R2C_ATTRIBUTES_S, &
+!+                            ic%now%mins, shd%lc%ACLASS, NR2C_S, GRD_S, GAT_S, GRDGAT_S, R2C_ATTRIBUTES_S, &
 !+                            NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
 !+                            cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
 !+                            cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
@@ -1487,7 +1486,7 @@ program RUNMESH
 !+                            shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
 !+    end if !(SAVERESUMEFLAG == 2) then
 
-    if (OUTFIELDSFLAG == 1) call write_outputs(shd, fls, ts, ic, ifo, vr)
+    if (OUTFIELDSFLAG == 1) call write_outputs(shd, fls, ts, ifo, vr)
 
     !> *********************************************************************
     !> Run is now over, print final results to the screen and close files
@@ -1501,14 +1500,14 @@ program RUNMESH
     if (len_trim(cstate) > 0) print *, trim(cstate)
 
     !> Call finalization routines.
-    call run_within_tile_finalize(fls, shd, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
-    call run_within_grid_finalize(fls, shd, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    call run_within_tile_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    call run_within_grid_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
     call climate_module_finalize(fls, shd, cm)
 
     if (ipid == 0) then
 
         !> Call finalization routines.
-        call run_between_grid_finalize(fls, shd, ic, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+        call run_between_grid_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
         !> Save the current state of the model for SAVERESUMEFLAG.
         if (SAVERESUMEFLAG == 4) then
@@ -1520,8 +1519,8 @@ program RUNMESH
 !todo: condition for ierr.
 
             !> Time-stepping information.
-            write(iun) ic%now_year, ic%now_jday, ic%now_month, ic%now_day, ic%now_hour, ic%now_mins
-            write(iun) ic%count_year, ic%count_jday, ic%count_month, ic%count_day, ic%count_hour, ic%count_mins
+            write(iun) ic%now%year, ic%now%jday, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins
+            write(iun) ic%count_year, ic%count_jday, ic%count_month, ic%count_jday, ic%count_hour, ic%count_mins
             write(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
 
             !> Water balance totals.
@@ -1594,7 +1593,7 @@ program RUNMESH
 
 199 continue
 
-    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls, ic)
+    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
 
 999     continue
 

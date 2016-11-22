@@ -5,6 +5,8 @@
 subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
     use strings
+    use mpi_shared_variables
+    use sa_mesh_shared_parameters
     use sa_mesh_shared_variabletypes
     use sa_mesh_shared_variables
     use model_files_variabletypes
@@ -43,12 +45,14 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !> Local variables.
 !-    integer OPTFLAGS
     integer NTYPE, NA, NRVR
-    integer iun, ierr, m, n, j, i
+    integer iun, ierr, n, k, i, m, j
     real, dimension(:), allocatable :: INDEPPARVAL
     real, dimension(:, :), allocatable :: DEPPARVAL
     character(8) FILE_VER
 !-    logical :: VER_OK = .true.
 
+    !> Local variables (read from file).
+    real, dimension(:), allocatable :: ZSNL, ZPLG, ZPLS
 
     !>
     !> OPEN FILE
@@ -451,6 +455,9 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
         end select
     end if
 
+    !> Allocate temporary variables.
+    allocate(ZSNL(NTYPE), ZPLG(NTYPE), ZPLS(NTYPE))
+
     !> Read variables from file.
     call readline(iun, in_line, ierr)
     call readline(iun, in_line, ierr)
@@ -487,25 +494,22 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                         !> ZSNL.
                         case ('zsnl')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), hp%ZSNLROW(1, j), ierr)
+                                call value(out_args(j + 1), ZSNL(j), ierr)
                                 if (ierr /= 0) goto 931
-                                hp%ZSNLROW(:, j) = hp%ZSNLROW(1, j)
                             end do
 
                         !> ZPLS.
                         case ('zpls')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), hp%ZPLSROW(1, j), ierr)
+                                call value(out_args(j + 1), ZPLS(j), ierr)
                                 if (ierr /= 0) goto 931
-                                hp%ZPLSROW(:, j) = hp%ZPLSROW(1, j)
                             end do
 
                         !> ZPLG.
                         case ('zplg')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), hp%ZPLGROW(1, j), ierr)
+                                call value(out_args(j + 1), ZPLG(j), ierr)
                                 if (ierr /= 0) goto 931
-                                hp%ZPLGROW(:, j) = hp%ZPLGROW(1, j)
                             end do
 
                         !> FROZENSOILINFILFLAG == 1 (infiltration into frozen soils).
@@ -751,15 +755,15 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                     if (ierr /= 0) goto 939
                 end do
 
+                !> Distribute CLASS ponding limits.
+                ZSNL = DEPPARVAL(1, :)
+                ZPLS = DEPPARVAL(2, :)
+                ZPLG = DEPPARVAL(3, :)
+
                 !> Distribute the parameters.
 !todo: change this to il2, il2
                 do i = 1, NA
                     do m = 1, NTYPE
-
-                        !> CLASS ponding limits.
-                        hp%ZSNLROW(i, m) = DEPPARVAL(1, m)
-                        hp%ZPLSROW(i, m) = DEPPARVAL(2, m)
-                        hp%ZPLGROW(i, m) = DEPPARVAL(3, m)
 
                         !> FROZENSOILINFILFLAG == 1 (infiltration into frozen soils).
                         hp%FRZCROW(i, m) = DEPPARVAL(4, m)
@@ -847,6 +851,28 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                //3x, 'The file could not be opened.', &
                 /3x, 'Ensure the file exists and restart the program.', &
                 /3x, 'Path: ', (a))
+
+    !> Distribute the values for legacy parameter checks.
+    hp%ZSNLROW(1, :) = ZSNL(:)
+    hp%ZPLGROW(1, :) = ZPLG(:)
+    hp%ZPLSROW(1, :) = ZPLS(:)
+
+    !> Distribute the values.
+    do k = il1, il2
+
+        !> Grab the indeces of the grid cell and GRU.
+        i = shd%lc%ILMOS(k)
+        m = shd%lc%JLMOS(k)
+
+        !> Distribute the parameter values.
+        pm%snp%zsnl(k) = ZSNL(m)
+        pm%sfp%zplg(k) = ZPLG(m)
+        pm%snp%zpls(k) = ZPLS(m)
+
+    end do !k = il1, il2
+
+    !> Deallocate temporary variables
+    deallocate(ZSNL, ZPLG, ZPLS)
 
     goto 999
 

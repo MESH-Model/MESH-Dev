@@ -58,7 +58,7 @@ OBJECTS=	mpi_flags.o mpi_shared_variables.o mpi_module.o \
 			shd_variables.o fm_variables.o input_parameters.o state_variables.o \
 			output_variables.o \
 			variablename_constants.o parametername_constants.o \
-			sa_mesh_shared_variables.o \
+			sa_mesh_shared_parameters.o sa_mesh_shared_variables.o \
 			EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o \
 			precmod.o stringmod.o \
 			module_files_variabletypes.o module_files_variables.o \

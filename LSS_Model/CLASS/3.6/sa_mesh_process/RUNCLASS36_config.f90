@@ -106,11 +106,11 @@ module RUNCLASS36_config
 
     contains
 
-    subroutine RUNCLASS36_init(shd, fls, ts, ic, cm, wb, eb, sp, stfl, rrls)
+    subroutine RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_flags
         use mpi_shared_variables
-        use mpi_utilities
+!-        use mpi_utilities
+        use sa_mesh_shared_parameters
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_files_variabletypes
@@ -126,7 +126,6 @@ module RUNCLASS36_config
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -149,113 +148,119 @@ module RUNCLASS36_config
         NTYPE = shd%lc%NTYPE
         IGND = shd%lc%IGND
 
-        !> INITIALIZE CLASS VARIABLES.
         !> SET COMMON CLASS PARAMETERS.
-        call CLASSD
+!-        call CLASSD
 
-        allocate(cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA), &
-                 cp%GCGRD(NA))
-        allocate(cp%FCANROW(NA, NTYPE, ICAN + 1), cp%LNZ0ROW(NA, NTYPE, ICAN + 1), &
-                 cp%ALVCROW(NA, NTYPE, ICAN + 1), cp%ALICROW(NA, NTYPE, ICAN + 1))
-        allocate(cp%PAMXROW(NA, NTYPE, ICAN), cp%PAMNROW(NA, NTYPE, ICAN), &
-                 cp%CMASROW(NA, NTYPE, ICAN), cp%ROOTROW(NA, NTYPE, ICAN), &
-                 cp%RSMNROW(NA, NTYPE, ICAN), cp%QA50ROW(NA, NTYPE, ICAN), &
-                 cp%VPDAROW(NA, NTYPE, ICAN), cp%VPDBROW(NA, NTYPE, ICAN), &
-                 cp%PSGAROW(NA, NTYPE, ICAN), cp%PSGBROW(NA, NTYPE, ICAN))
-        allocate(cp%DRNROW(NA, NTYPE),  cp%SDEPROW(NA, NTYPE), cp%FAREROW(NA, NTYPE), cp%DDROW(NA, NTYPE), &
-                 cp%XSLPROW(NA, NTYPE), cp%XDROW(NA, NTYPE), cp%MANNROW(NA, NTYPE), cp%KSROW(NA, NTYPE), &
-                 cp%TCANROW(NA, NTYPE), cp%TSNOROW(NA, NTYPE), cp%TPNDROW(NA, NTYPE), cp%ZPNDROW(NA, NTYPE), &
-                 cp%RCANROW(NA, NTYPE), cp%SCANROW(NA, NTYPE), cp%SNOROW(NA, NTYPE),  cp%ALBSROW(NA, NTYPE), &
-                 cp%RHOSROW(NA, NTYPE), cp%GROROW(NA, NTYPE))
-        allocate(cp%MIDROW(NA, NTYPE))
-        allocate(cp%SANDROW(NA, NTYPE, IGND), cp%CLAYROW(NA, NTYPE, IGND), cp%ORGMROW(NA, NTYPE, IGND), &
-                 cp%TBARROW(NA, NTYPE, IGND), cp%THLQROW(NA, NTYPE, IGND), cp%THICROW(NA, NTYPE, IGND))
+        !> INITIALIZE CLASS VARIABLES.
+!-        allocate(cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA), &
+!-                 cp%GCGRD(NA))
+!-        allocate(cp%FCANROW(NA, NTYPE, ICAN + 1), cp%LNZ0ROW(NA, NTYPE, ICAN + 1), &
+!-                 cp%ALVCROW(NA, NTYPE, ICAN + 1), cp%ALICROW(NA, NTYPE, ICAN + 1))
+!-        allocate(cp%PAMXROW(NA, NTYPE, ICAN), cp%PAMNROW(NA, NTYPE, ICAN), &
+!-                 cp%CMASROW(NA, NTYPE, ICAN), cp%ROOTROW(NA, NTYPE, ICAN), &
+!-                 cp%RSMNROW(NA, NTYPE, ICAN), cp%QA50ROW(NA, NTYPE, ICAN), &
+!-                 cp%VPDAROW(NA, NTYPE, ICAN), cp%VPDBROW(NA, NTYPE, ICAN), &
+!-                 cp%PSGAROW(NA, NTYPE, ICAN), cp%PSGBROW(NA, NTYPE, ICAN))
+!-        allocate(cp%DRNROW(NA, NTYPE),  cp%SDEPROW(NA, NTYPE), cp%FAREROW(NA, NTYPE), cp%DDROW(NA, NTYPE), &
+!-                 cp%XSLPROW(NA, NTYPE), cp%XDROW(NA, NTYPE), cp%MANNROW(NA, NTYPE), cp%KSROW(NA, NTYPE), &
+!-                 cp%TCANROW(NA, NTYPE), cp%TSNOROW(NA, NTYPE), cp%TPNDROW(NA, NTYPE), cp%ZPNDROW(NA, NTYPE), &
+!-                 cp%RCANROW(NA, NTYPE), cp%SCANROW(NA, NTYPE), cp%SNOROW(NA, NTYPE),  cp%ALBSROW(NA, NTYPE), &
+!-                 cp%RHOSROW(NA, NTYPE), cp%GROROW(NA, NTYPE))
+!-        allocate(cp%MIDROW(NA, NTYPE))
+!-        allocate(cp%SANDROW(NA, NTYPE, IGND), cp%CLAYROW(NA, NTYPE, IGND), cp%ORGMROW(NA, NTYPE, IGND), &
+!-                 cp%TBARROW(NA, NTYPE, IGND), cp%THLQROW(NA, NTYPE, IGND), cp%THICROW(NA, NTYPE, IGND))
 
-        cp%ZRFMGRD = 0.0
-        cp%ZRFHGRD = 0.0
-        cp%ZBLDGRD = 0.0
-        cp%GCGRD = 0.0
+!-        do k = il1, il2
 
-        cp%FCANROW = 0.0
-        cp%LNZ0ROW = 0.0
-        cp%ALVCROW = 0.0
-        cp%ALICROW = 0.0
-        cp%PAMXROW = 0.0
-        cp%PAMNROW = 0.0
-        cp%CMASROW = 0.0
-        cp%ROOTROW = 0.0
-        cp%RSMNROW = 0.0
-        cp%QA50ROW = 0.0
-        cp%VPDAROW = 0.0
-        cp%VPDBROW = 0.0
-        cp%PSGAROW = 0.0
-        cp%PSGBROW = 0.0
-        cp%DRNROW = 0.0
-        cp%SDEPROW = 0.0
-        cp%FAREROW = 0.0
-        cp%DDROW = 0.0
-        cp%XSLPROW = 0.0
-        cp%XDROW = 0.0
-        cp%MANNROW = 0.0
-        cp%KSROW = 0.0
-        cp%TCANROW = 0.0
-        cp%TSNOROW = 0.0
-        cp%TPNDROW = 0.0
-        cp%ZPNDROW = 0.0
-        cp%RCANROW = 0.0
-        cp%SCANROW = 0.0
-        cp%SNOROW = 0.0
-        cp%ALBSROW = 0.0
-        cp%RHOSROW = 0.0
-        cp%GROROW = 0.0
-        cp%MIDROW = 0
-        cp%SANDROW = 0.0
-        cp%CLAYROW = 0.0
-        cp%ORGMROW = 0.0
-        cp%TBARROW = 0.0
-        cp%THLQROW = 0.0
-        cp%THICROW = 0.0
+!-            i = shd%lc%ILMOS(k)
+!-            m = shd%lc%JLMOS(k)
 
-        call READ_PARAMETERS_CLASS(shd, fls)
+!-            cp%ZRFMGRD(i) = pm%sfp%zrfm(k)
+!-            cp%ZRFHGRD(i) = pm%sfp%zrfh(k)
+!-            cp%ZBLDGRD(i) = pm%sfp%zbld(k)
+!-            cp%GCGRD(i) = pm%tp%gc(k)
+!-            cp%FCANROW(i, m, :) = pm%cp%fcan(k, :)
+!-            cp%LNZ0ROW(i, m, :) = pm%cp%lnz0(k, :)
+!-            cp%ALVCROW(i, m, :) = pm%cp%alvc(k, :)
+!-            cp%ALICROW(i, m, :) = pm%cp%alic(k, :)
+!-            cp%PAMXROW(i, m, :) = pm%cp%lamx(k, :)
+!-            cp%PAMNROW(i, m, :) = pm%cp%lamn(k, :)
+!-            cp%CMASROW(i, m, :) = pm%cp%cmas(k, :)
+!-            cp%ROOTROW(i, m, :) = pm%cp%root(k, :)
+!-            cp%RSMNROW(i, m, :) = pm%cp%rsmn(k, :)
+!-            cp%QA50ROW(i, m, :) = pm%cp%qa50(k, :)
+!-            cp%VPDAROW(i, m, :) = pm%cp%vpda(k, :)
+!-            cp%VPDBROW(i, m, :) = pm%cp%vpdb(k, :)
+!-            cp%PSGAROW(i, m, :) = pm%cp%psga(k, :)
+!-            cp%PSGBROW(i, m, :) = pm%cp%psgb(k, :)
+!-            cp%DRNROW(i, m) = pm%hp%drn(k)
+!-            cp%SDEPROW(i, m) = pm%slp%sdep(k)
+!-            cp%FAREROW(i, m) = pm%tp%fare(k)
+!-            cp%DDROW(i, m) = pm%hp%dd(k)
+!-            cp%XSLPROW(i, m) = pm%tp%xslp(k)
+!-            cp%XDROW(i, m) = pm%hp%grkf(k)
+!-            cp%MANNROW(i, m) = pm%hp%mann(k)
+!-            cp%KSROW(i, m) = pm%hp%ks(k)
+!-            cp%TCANROW(i, m) = stas%cnpy%tcan(k) - TFREZ
+!-            cp%TSNOROW(i, m) = stas%sno%tsno(k) - TFREZ
+!-            cp%TPNDROW(i, m) = stas%sfc%tpnd(k) - TFREZ
+!-            cp%ZPNDROW(i, m) = stas%sfc%zpnd(k) - TFREZ
+!-            cp%RCANROW(i, m) = stas%cnpy%rcan(k)
+!-            cp%SCANROW(i, m) = stas%cnpy%sncan(k)
+!-            cp%SNOROW(i, m) = stas%sno%sno(k)
+!-            cp%ALBSROW(i, m) = stas%sno%albs(k)
+!-            cp%RHOSROW(i, m) = stas%sno%rhos(k)
+!-            cp%GROROW(i, m) = stas%cnpy%gro(k)
+!-            cp%MIDROW(i, m) = pm%tp%mid(k)
+!-            cp%SANDROW(i, m, :) = pm%slp%sand(k, :)
+!-            cp%CLAYROW(i, m, :) = pm%slp%clay(k, :)
+!-            cp%ORGMROW(i, m, :) = pm%slp%orgm(k, :)
+!-            cp%TBARROW(i, m, :) = stas%sl%tbar(k, :) - TFREZ
+!-            cp%THLQROW(i, m, :) = stas%sl%thlq(k, :)
+!-            cp%THICROW(i, m, :) = stas%sl%thic(k, :)
+
+!-        end do
+
+!-        call READ_PARAMETERS_CLASS(shd, fls)
 
         !> MAM - Check for parameter values - all parameters should lie within the
         !> specified ranges in the "minmax_parameters.txt" file.
 !        call check_parameters(shd)
 
         !> GATHER-SCATTER COUNTS:
-        allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), shd%wc%ILMOS(shd%wc%ILG), &
-                 shd%wc%JLMOS(shd%wc%ILG), stat = ierr)
-        if (ierr /= 0) then
-            print 1114, 'gather-scatter count'
-            print 1118, 'Grid squares', NA
-            print 1118, 'GRUs', NTYPE
-            stop
-        end if
+!-        allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), shd%wc%ILMOS(shd%wc%ILG), &
+!-                 shd%wc%JLMOS(shd%wc%ILG), stat = ierr)
+!-        if (ierr /= 0) then
+!-            print 1114, 'gather-scatter count'
+!-            print 1118, 'Grid squares', NA
+!-            print 1118, 'GRUs', NTYPE
+!-            stop
+!-        end if
 
         !> CLASS requires that each GRU for each grid square has its own parameter value,
         !> for MESH the value read in from the parameter file is assumed to be valid for
         !> all grid squares in the study area - Frank Seglenieks Aug 2007
         !> bjd - This would be a good spot for setting pre-distributed values
-        cp%GCGRD(:) = cp%GCGRD(1)
-        do m = 1, NTYPE
-            cp%MIDROW(:, m) = cp%MIDROW(1, m)
-        end do
+!-        cp%GCGRD(:) = cp%GCGRD(1)
+!-        do m = 1, NTYPE
+!-            cp%MIDROW(:, m) = cp%MIDROW(1, m)
+!-        end do
 
         !> Set value of FAREROW:
 !todo - flag this as an issue to explore later and hide basin average code
 !todo - document the problem
 !        TOTAL_AREA = 0.0
-        cp%FAREROW = 0.0
-        do i = 1, NA
-            do m = 1, NTYPE
-                cp%FAREROW(i, m) = shd%lc%ACLASS(i, m)*shd%FRAC(i)
+!-        cp%FAREROW = 0.0
+!-        do i = 1, NA
+!-            do m = 1, NTYPE
+!-                cp%FAREROW(i, m) = shd%lc%ACLASS(i, m)*shd%FRAC(i)
 !                TOTAL_AREA = TOTAL_AREA + cp%FAREROW(i, m)
 !FUTUREDO: Bruce, FRAC is calculated by EnSim
 ! using Dan Princz's instructions for EnSim
 ! FRAC can be greater than 1.00
 ! So, we cannot use FAREROW in place of BASIN_FRACTION
-            end do
-        end do
+!-            end do
+!-        end do
 
         !> The following are used to read from soil.ini:
         !> wc_thpor, wc_thlret, wc_thlmin, wc_bi, wc_psisat,
@@ -280,9 +285,9 @@ module RUNCLASS36_config
         !> Call to read from soil.ini.
         call READ_SOIL_INI(shd, fls)
 
-        call GATPREP(shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
-                     shd%lc%NML, shd%wc%NML, cp%GCGRD, cp%FAREROW, cp%MIDROW, &
-                     NA, NTYPE, shd%lc%ILG, 1, NA, NTYPE)
+!-        call GATPREP(shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
+!-                     shd%lc%NML, shd%wc%NML, cp%GCGRD, cp%FAREROW, cp%MIDROW, &
+!-                     NA, NTYPE, shd%lc%ILG, 1, NA, NTYPE)
 
         NML = shd%lc%NML
 
@@ -292,15 +297,15 @@ module RUNCLASS36_config
 !todo+++: (1:ILG) to reduce the memory footprint of the model per node.
 
         !> Calculate Indices.
-        call mpi_split_nml(inp, izero, ipid, NML, shd%lc%ILMOS, il1, il2, ilen)
-        if (ro%DIAGNOSEMODE > 0) print 1062, ipid, NML, ilen, il1, il2
+!-        call mpi_split_nml(inp, izero, ipid, NML, shd%lc%ILMOS, il1, il2, ilen)
+!-        if (ro%DIAGNOSEMODE > 0) print 1062, ipid, NML, ilen, il1, il2
 
-1062 format(/1x, 'Configuration and distribution of the domain', &
-            /3x, 'Current process: ', i10, &
-            /3x, 'Tile land elements: ', i10, &
-            /3x, 'Length of single array: ', i10, &
-            /3x, 'Starting index: ', i10, &
-            /3x, 'Stopping index: ', i10, /)
+!-1062 format(/1x, 'Configuration and distribution of the domain', &
+!-            /3x, 'Current process: ', i10, &
+!-            /3x, 'Tile land elements: ', i10, &
+!-            /3x, 'Length of single array: ', i10, &
+!-            /3x, 'Starting index: ', i10, &
+!-            /3x, 'Stopping index: ', i10, /)
 
         !> ALLOCATE ALL VARIABLES
         allocate(SNOGRD(NA))
@@ -488,26 +493,25 @@ module RUNCLASS36_config
 
         !> Copy the starting date of input forcing data from CLASS.ini
         !> to the climate variable.
-        do i = 1, cm%nclim
-            cm%dat(i)%start_date%year = IYEAR
-            cm%dat(i)%start_date%jday = IDAY
-            cm%dat(i)%start_date%hour = IHOUR
-            cm%dat(i)%start_date%mins = IMIN
-        end do
+!-        do i = 1, cm%nclim
+!-            cm%dat(i)%start_date%year = IYEAR
+!-            cm%dat(i)%start_date%jday = IDAY
+!-            cm%dat(i)%start_date%hour = IHOUR
+!-            cm%dat(i)%start_date%mins = IMIN
+!-        end do
 
         !> Set the starting date to that of the forcing data if none is
         !> provided and intialize the current time-step.
-        if (YEAR_START == 0 .and. JDAY_START == 0 .and. MINS_START == 0 .and. HOUR_START == 0) then
-            YEAR_START = IYEAR
-            JDAY_START = IDAY
-            HOUR_START = IHOUR
-            MINS_START = IMIN
-        end if
-        YEAR_NOW = YEAR_START
-        JDAY_NOW = JDAY_START
-        HOUR_NOW = HOUR_START
-        MINS_NOW = MINS_START
-!-        TIME_STEP_NOW = MINS_START
+!-        if (YEAR_START == 0 .and. JDAY_START == 0 .and. MINS_START == 0 .and. HOUR_START == 0) then
+!-            YEAR_START = IYEAR
+!-            JDAY_START = IDAY
+!-            HOUR_START = IHOUR
+!-            MINS_START = IMIN
+!-        end if
+!-        YEAR_NOW = YEAR_START
+!-        JDAY_NOW = JDAY_START
+!-        HOUR_NOW = HOUR_START
+!-        MINS_NOW = MINS_START
 
         !> Forcing input.
         allocate(cfi%FDL(NML), cfi%FSIH(NML), cfi%FSVH(NML), cfi%PRE(NML), cfi%PRES(NML), cfi%QA(NML), cfi%TA(NML), cfi%UL(NML), &
@@ -565,123 +569,42 @@ module RUNCLASS36_config
             GGEOGRD(1) = 0.0
         end if
 
-        do k = il1, il2
+        !> Distribute variables.
+        catv%ZRFM = pm%sfp%zrfm
+        catv%ZRFH = pm%sfp%zrfh
+        catv%ZBLD = pm%sfp%zbld
+        catv%GC = pm%tp%gc
+        csfv%FARE = pm%tp%fare
+        csfv%MID = pm%tp%mid
+        csfv%FCAN = pm%cp%fcan
+        csfv%LNZ0 = pm%cp%lnz0
+        csfv%ALVC = pm%cp%alvc
+        csfv%ALIC = pm%cp%alic
+        csfv%PAMX = pm%cp%lamx
+        csfv%PAMN = pm%cp%lamn
+        csfv%CMAS = pm%cp%cmas
+        csfv%ROOT = pm%cp%root
+        csfv%RSMN = pm%cp%rsmn
+        csfv%QA50 = pm%cp%qa50
+        csfv%VPDA = pm%cp%vpda
+        csfv%VPDB = pm%cp%vpdb
+        csfv%PSGA = pm%cp%psga
+        csfv%PSGB = pm%cp%psgb
+        csfv%DRN = pm%hp%drn
+        csfv%SDEP = pm%slp%sdep
+        csfv%XSLP = pm%tp%xslp
+        DDGAT = pm%hp%dd
+        MANNGAT = pm%hp%mann
+        XDGAT = pm%hp%grkf
+        KSGAT = pm%hp%ks
+        csfv%SAND = pm%slp%sand
+        csfv%CLAY = pm%slp%clay
+        csfv%ORGM = pm%slp%orgm
+        csfv%ZSNL = pm%snp%zsnl
+        csfv%ZPLG = pm%sfp%zplg
+        csfv%ZPLS = pm%snp%zpls
 
-            !> Extract the grid and GRU index values.
-            ik = shd%lc%ILMOS(k)
-            jk = shd%lc%JLMOS(k)
-
-            !> Distribute variables.
-            catv%ZRFM(k) = cp%ZRFMGRD(1)
-            catv%ZRFH(k) = cp%ZRFHGRD(1)
-            catv%ZBLD(k) = cp%ZBLDGRD(1)
-            catv%GC(k) = cp%GCGRD(ik)
-            csfv%FARE(k) = cp%FAREROW(ik, jk)
-            csfv%MID(k) = cp%MIDROW(1, jk)
-            do j = 1, ICP1
-                csfv%FCAN(k, j) = cp%FCANROW(1, jk, j)
-                csfv%LNZ0(k, j) = cp%LNZ0ROW(1, jk, j)
-                csfv%ALVC(k, j) = cp%ALVCROW(1, jk, j)
-                csfv%ALIC(k, j) = cp%ALICROW(1, jk, j)
-            end do
-            do j = 1, ICAN
-                csfv%PAMX(k, j) = cp%PAMXROW(1, jk, j)
-                csfv%PAMN(k, j) = cp%PAMNROW(1, jk, j)
-                csfv%CMAS(k, j) = cp%CMASROW(1, jk, j)
-                csfv%ROOT(k, j) = cp%ROOTROW(1, jk, j)
-                csfv%RSMN(k, j) = cp%RSMNROW(1, jk, j)
-                csfv%QA50(k, j) = cp%QA50ROW(1, jk, j)
-                csfv%VPDA(k, j) = cp%VPDAROW(1, jk, j)
-                csfv%VPDB(k, j) = cp%VPDBROW(1, jk, j)
-                csfv%PSGA(k, j) = cp%PSGAROW(1, jk, j)
-                csfv%PSGB(k, j) = cp%PSGBROW(1, jk, j)
-            end do
-            cpv%CMAI = 0.0
-            cpv%WSNO = 0.0
-            cpv%QAC = 0.5e-2
-            cdv%ITCT = 0
-            csfv%DRN(k) = cp%DRNROW(1, jk)
-            csfv%SDEP(k) = cp%SDEPROW(1, jk)
-            if (allocated(shd%SLOPE_INT)) then
-                csfv%XSLP(k) = shd%SLOPE_INT(ik)
-            else
-                csfv%XSLP(k) = cp%XSLPROW(1, jk)
-            end if
-            !> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
-            !> we give the same value for all the GRU that are in one cell
-            if (allocated(shd%DRDN)) then
-                DDGAT(k) = shd%DRDN(ik)
-            else
-                DDGAT(k) = cp%DDROW(1, jk)
-            end if
-            MANNGAT(k) = cp%MANNROW(1, jk)
-            !> note, if drdn (drainage density) is provided from the Mesh_drainage_database.r2c
-            !> we give the same value for all the GRU that are in one cell
-            XDGAT(k) = cp%XDROW(1, jk)
-            KSGAT(k) = cp%KSROW(1, jk)
-            cpv%TCAN(k) = cp%TCANROW(1, jk) + TFREZ
-            cpv%TAC(k) = cp%TCANROW(1, jk) + TFREZ
-            cpv%TSNO(k) = cp%TSNOROW(1, jk) + TFREZ
-            cpv%TPND(k) = cp%TPNDROW(1, jk) + TFREZ
-            cpv%ZPND(k) = cp%ZPNDROW(1, jk)
-            cpv%RCAN(k) = cp%RCANROW(1, jk)
-            cpv%SNCAN(k) = cp%SCANROW(1, jk)
-            cpv%SNO(k) = cp%SNOROW(1, jk)
-            cpv%ALBS(k) = cp%ALBSROW(1, jk)
-            cpv%RHOS(k) = cp%RHOSROW(1, jk)
-            csfv%ZSNL(k) = hp%ZSNLROW(ik, jk)
-            csfv%ZPLG(k) = hp%ZPLGROW(ik, jk)
-            csfv%ZPLS(k) = hp%ZPLSROW(ik, jk)
-            cpv%GRO(k) = cp%GROROW(1, jk)
-
-            !> note333 see read_s_temperature_txt.f for more TBARROW information
-            do j = 1, IGND
-                cpv%TBAR(k, j) = cp%TBARROW(1, jk, j) + TFREZ
-            end do
-            cpv%TBAS(k) = cpv%TBAR(k, IGND)
-            cpv%TSFS(k, 1) = TFREZ
-            cpv%TSFS(k, 2) = TFREZ
-            cpv%TSFS(k, 3) = cpv%TBAR(k, 1)
-            cpv%TSFS(k, 4) = cpv%TBAR(k, 1)
-            csfv%SDEP(k) = cp%SDEPROW(1, jk)
-
-            !> note444 see read_s_moisture_txt.f for more THLQROW information
-            do j = 1, 3
-                cpv%THLQ(k, j) = cp%THLQROW(1, jk, j)
-                cpv%THIC(k, j) = cp%THICROW(1, jk, j)
-                csfv%SAND(k, j) = cp%SANDROW(1, jk, j)
-                csfv%CLAY(k, j) = cp%CLAYROW(1, jk, j)
-                csfv%ORGM(k, j) = cp%ORGMROW(1, jk, j)
-            end do
-            if (IGND > 3) then ! should stay this way to work with class
-
-                !todo - if we have time, change this so that soil.ini can take more than 3 layers.
-                if (NRSOILAYEREADFLAG == 0) then
-                    do j = 4, IGND
-                        cpv%THLQ(k, j) = cpv%THLQ(k, 3)
-                        cpv%THIC(k, j) = cpv%THIC(k, 3)
-                        cpv%TBAR(k, j) = cpv%TBAR(k, 3)
-                        if (csfv%SDEP(k) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. csfv%SAND(k, 3) > -2.5) then
-                            csfv%SAND(k, j) = -3.0
-                            csfv%CLAY(k, j) = -3.0
-                            csfv%ORGM(k, j) = -3.0
-                        else
-                            csfv%SAND(k, j) = csfv%SAND(k, 3)
-                            csfv%CLAY(k, j) = csfv%CLAY(k, 3)
-                            csfv%ORGM(k, j) = csfv%ORGM(k, 3)
-                        end if
-                    end do
-                else
-                    do j = 4, IGND
-                        if (csfv%SDEP(k) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. csfv%SAND(k, 3) > -2.5) then
-                            csfv%SAND(k, j) = -3.0
-                            csfv%CLAY(k, j) = -3.0
-                            csfv%ORGM(k, j) = -3.0
-                        end if
-                    end do
-                end if !if (NRSOILAYEREADFLAG == 0) then
-            end if !(IGND > 3) then
-        end do !i = 1, NML
+        cdv%ITCT = 0
 
         !> FROZENSOILINFILFLAG
         allocate(INFILTYPE(NML), SI(NML), TSI(NML), &
@@ -794,25 +717,25 @@ module RUNCLASS36_config
                     jk = shd%lc%JLMOS(k)
 
                     !> Assign values.
-                    cpv%ALBS(k) = cp%ALBSROW(ik, jk)
-                    cpv%CMAI(k) = CMAIROW(ik, jk)
-                    cpv%GRO(k) = cp%GROROW(ik, jk)
-                    cpv%QAC(k) = QACROW(ik, jk)
-                    cpv%RCAN(k) = cp%RCANROW(ik, jk)
-                    cpv%RHOS(k) = cp%RHOSROW(ik, jk)
-                    cpv%SNCAN(k) = cp%SCANROW(ik, jk)
-                    cpv%SNO(k) = cp%SNOROW(ik, jk)
-                    cpv%TAC(k) = TACROW(ik, jk)
-                    cpv%TBAR(k, :) = cp%TBARROW(ik, jk, :)
-                    cpv%TBAS(k) = TBASROW(ik, jk)
-                    cpv%TCAN(k) = cp%TCANROW(ik, jk)
-                    cpv%THIC(k, :) = cp%THICROW(ik, jk, :)
-                    cpv%THLQ(k, :) = cp%THLQROW(ik, jk, :)
-                    cpv%TPND(k) = cp%TPNDROW(ik, jk)
-                    cpv%TSFS(k, :) = TSFSROW(ik, jk, :)
-                    cpv%TSNO(k) = cp%TSNOROW(ik, jk)
-                    cpv%WSNO(k) = WSNOROW(ik, jk)
-                    cpv%ZPND(k) = cp%ZPNDROW(ik, jk)
+                    stas%sno%albs(k) = cp%ALBSROW(ik, jk)
+                    stas%cnpy%cmai(k) = CMAIROW(ik, jk)
+                    stas%cnpy%gro(k) = cp%GROROW(ik, jk)
+                    stas%cnpy%qac(k) = QACROW(ik, jk)
+                    stas%cnpy%rcan(k) = cp%RCANROW(ik, jk)
+                    stas%sno%rhos(k) = cp%RHOSROW(ik, jk)
+                    stas%cnpy%sncan(k) = cp%SCANROW(ik, jk)
+                    stas%sno%sno(k) = cp%SNOROW(ik, jk)
+                    stas%cnpy%tac(k) = TACROW(ik, jk)
+                    stas%sl%tbar(k, :) = cp%TBARROW(ik, jk, :)
+                    stas%sl%tbas(k) = TBASROW(ik, jk)
+                    stas%cnpy%tcan(k) = cp%TCANROW(ik, jk)
+                    stas%sl%thic(k, :) = cp%THICROW(ik, jk, :)
+                    stas%sl%thlq(k, :) = cp%THLQROW(ik, jk, :)
+                    stas%sfc%tpnd(k) = cp%TPNDROW(ik, jk)
+                    stas%sfc%tsfs(k, :) = TSFSROW(ik, jk, :)
+                    stas%sno%tsno(k) = cp%TSNOROW(ik, jk)
+                    stas%sno%wsno(k) = WSNOROW(ik, jk)
+                    stas%sfc%zpnd(k) = cp%ZPNDROW(ik, jk)
 
                 end do
 
@@ -830,6 +753,27 @@ module RUNCLASS36_config
                 call read_init_prog_variables_class(fls)
 
         end select !case (RESUMEFLAG)
+
+        !> Grab states.
+        cpv%QAC(il1:il2) = stas%cnpy%qac(il1:il2)
+        cpv%RCAN(il1:il2) = stas%cnpy%rcan(il1:il2)
+        cpv%SNCAN(il1:il2) = stas%cnpy%sncan(il1:il2)
+        cpv%TAC(il1:il2) = stas%cnpy%tac(il1:il2)
+        cpv%TCAN(il1:il2) = stas%cnpy%tcan(il1:il2)
+        cpv%CMAI(il1:il2) = stas%cnpy%cmai(il1:il2)
+        cpv%GRO(il1:il2) = stas%cnpy%gro(il1:il2)
+        cpv%SNO(il1:il2) = stas%sno%sno(il1:il2)
+        cpv%ALBS(il1:il2) = stas%sno%albs(il1:il2)
+        cpv%RHOS(il1:il2) = stas%sno%rhos(il1:il2)
+        cpv%TSNO(il1:il2) = stas%sno%tsno(il1:il2)
+        cpv%WSNO(il1:il2) = stas%sno%wsno(il1:il2)
+        cpv%TPND(il1:il2) = stas%sfc%tpnd(il1:il2)
+        cpv%ZPND(il1:il2) = stas%sfc%zpnd(il1:il2)
+        cpv%TSFS(il1:il2, :) = stas%sfc%tsfs(il1:il2, :)
+        cpv%TBAS(il1:il2) = stas%sl%tbas(il1:il2)
+        cpv%THIC(il1:il2, :) = stas%sl%thic(il1:il2, :)
+        cpv%THLQ(il1:il2, :) = stas%sl%thlq(il1:il2, :)
+        cpv%TBAR(il1:il2, :) = stas%sl%tbar(il1:il2, :)
 
         !> Allocate variables for WATDRN3
         !> ******************************************************************
@@ -965,11 +909,12 @@ module RUNCLASS36_config
 
     end subroutine
 
-    subroutine RUNCLASS36_finalize(fls, shd, ic, cm, wb, eb, sv, stfl, rrls)
+    subroutine RUNCLASS36_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
         use mpi_shared_variables
         use model_files_variabletypes
         use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -977,7 +922,6 @@ module RUNCLASS36_config
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(iter_counter) :: ic
         type(clim_info) :: cm
         type(water_balance) :: wb
         type(energy_balance) :: eb
@@ -1029,25 +973,25 @@ module RUNCLASS36_config
                     jk = shd%lc%JLMOS(k)
 
                     !> Assign values.
-                    cp%ALBSROW(ik, jk) = cpv%ALBS(k)
-                    CMAIROW(ik, jk) = cpv%CMAI(k)
-                    cp%GROROW(ik, jk) = cpv%GRO(k)
-                    QACROW(ik, jk) = cpv%QAC(k)
-                    cp%RCANROW(ik, jk) = cpv%RCAN(k)
-                    cp%RHOSROW(ik, jk) = cpv%RHOS(k)
-                    cp%SCANROW(ik, jk) = cpv%SNCAN(k)
-                    cp%SNOROW(ik, jk) = cpv%SNO(k)
-                    TACROW(ik, jk) = cpv%TAC(k)
-                    cp%TBARROW(ik, jk, :) = cpv%TBAR(k, :)
-                    TBASROW(ik, jk) = cpv%TBAS(k)
-                    cp%TCANROW(ik, jk) = cpv%TCAN(k)
-                    cp%THICROW(ik, jk, :) = cpv%THIC(k, :)
-                    cp%THLQROW(ik, jk, :) = cpv%THLQ(k, :)
-                    cp%TPNDROW(ik, jk) = cpv%TPND(k)
-                    TSFSROW(ik, jk, :) = cpv%TSFS(k, :)
-                    cp%TSNOROW(ik, jk) = cpv%TSNO(k)
-                    WSNOROW(ik, jk) = cpv%WSNO(k)
-                    cp%ZPNDROW(ik, jk) = cpv%ZPND(k)
+                    cp%ALBSROW(ik, jk) = stas%sno%albs(k)
+                    CMAIROW(ik, jk) = stas%cnpy%cmai(k)
+                    cp%GROROW(ik, jk) = stas%cnpy%gro(k)
+                    QACROW(ik, jk) = stas%cnpy%qac(k)
+                    cp%RCANROW(ik, jk) = stas%cnpy%rcan(k)
+                    cp%RHOSROW(ik, jk) = stas%sno%rhos(k)
+                    cp%SCANROW(ik, jk) = stas%cnpy%sncan(k)
+                    cp%SNOROW(ik, jk) = stas%sno%sno(k)
+                    TACROW(ik, jk) = stas%cnpy%tac(k)
+                    cp%TBARROW(ik, jk, :) = stas%sl%tbar(k, :)
+                    TBASROW(ik, jk) = stas%sl%tbas(k)
+                    cp%TCANROW(ik, jk) = stas%cnpy%tcan(k)
+                    cp%THICROW(ik, jk, :) = stas%sl%thic(k, :)
+                    cp%THLQROW(ik, jk, :) = stas%sl%thlq(k, :)
+                    cp%TPNDROW(ik, jk) = stas%sfc%tpnd(k)
+                    TSFSROW(ik, jk, :) = stas%sfc%tsfs(k, :)
+                    cp%TSNOROW(ik, jk) = stas%sno%tsno(k)
+                    WSNOROW(ik, jk) = stas%sno%wsno(k)
+                    cp%ZPNDROW(ik, jk) = stas%sfc%zpnd(k)
 
                 end do
 

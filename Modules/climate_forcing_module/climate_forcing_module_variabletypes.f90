@@ -65,7 +65,7 @@ module climate_forcing_variabletypes
         !* start_date: Starting date of the data in the file.
         !* hf: Increment of minutes passed in each frame of data [mins].
         !* itimestep: Current time-step [mins].
-        type(counter_date_julian) :: start_date
+        type(counter_date) :: start_date
         integer :: hf = 30
         integer :: itimestep = 0
 

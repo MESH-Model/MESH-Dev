@@ -62,13 +62,14 @@ module SA_RTE_module
     !>              compatible with the old RPN RTE code.
 !todo: these can be removed at some point, as they've been added
 !todo: as flags as a part of the model_output module.
-    subroutine SA_RTE(shd, ic, wb)
+    subroutine SA_RTE(shd, wb)
 
         !> For: type(ShedGridParams) :: shd; cops
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
 
         !> For: type(iter_counter) :: ic
+        !* ic: Active counter.
         use model_dates
 
         !> For: type(water_balance) :: wb
@@ -76,10 +77,8 @@ module SA_RTE_module
 
         !> Input variables.
         !* shd: Basin and watershed information.
-        !* ic: Active counter.
         !* wb: Water balance at the current time-step.
         type(ShedGridParams), intent(in) :: shd
-        type(iter_counter), intent(in) :: ic
         type(water_balance), intent(in) :: wb
 
         !> Local variables.
@@ -133,7 +132,7 @@ module SA_RTE_module
 
     end subroutine
 
-    subroutine SA_RTE_init(shd, ic)
+    subroutine SA_RTE_init(shd)
 
         !> For: type(ShedGridParams) :: shd
         use sa_mesh_shared_variabletypes
@@ -146,7 +145,6 @@ module SA_RTE_module
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
-        type(iter_counter), intent(in) :: ic
 
         !> Local variables.
         integer ierr
