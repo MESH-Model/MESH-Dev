@@ -4,20 +4,32 @@
 !>
 subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
-    use strings
-    use mpi_shared_variables
-    use sa_mesh_shared_parameters
+    !> Required for 'ShedGridParams' type.
     use sa_mesh_shared_variabletypes
+
+    !> Required for run option flags.
     use sa_mesh_shared_variables
+
+    !> Required for parameters ('ROW' indexing).
+    use sa_mesh_shared_output_variables
+
+    !> Required for line operations and string conversion.
+    use strings
+
+    !> Required for file object and CLASS.ini file index.
     use model_files_variabletypes
     use model_files_variables
+
+    !> Required for 'FROZENSOILINFILFLAG' and 'PBSMFLAG'.
     use FLAGS
 
+    !> Required for IWF.
     use RUNCLASS36_constants
+
+    !> Required for 'hp' (contains FROZENSOILINFIL, PDMROF, and PBSM parameters).
+!todo: remove this.
     use RUNCLASS36_variables
-
     use WF_ROUTE_config, only: wfp
-
     use baseflow_module, only: lzsp
 
     implicit none
@@ -32,27 +44,17 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !> Local variables for check active variables (Version 2.0).
     integer :: ikey = 0, ikeystate = 0
 
-    !> Input variables.
-!-    integer M_C, INDEPPAR, DEPPAR
-!-    real WF_R2(M_C)
-!-    character(8) RELEASE
-
-!    type(HydrologyParameters) :: hp
-
     type(ShedGridParams) :: shd
     type(fl_ids):: fls
 
     !> Local variables.
-!-    integer OPTFLAGS
-    integer NTYPE, NA, NRVR
-    integer iun, ierr, n, k, i, m, j
+    integer NTYPE, NA, NRVR, iun, ierr, n, k, i, m, j
+
+    !> Local variables for reading from file.
     real, dimension(:), allocatable :: INDEPPARVAL
     real, dimension(:, :), allocatable :: DEPPARVAL
     character(8) FILE_VER
 !-    logical :: VER_OK = .true.
-
-    !> Local variables (read from file).
-    real, dimension(:), allocatable :: ZSNL, ZPLG, ZPLS
 
     !>
     !> OPEN FILE
@@ -455,9 +457,6 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
         end select
     end if
 
-    !> Allocate temporary variables.
-    allocate(ZSNL(NTYPE), ZPLG(NTYPE), ZPLS(NTYPE))
-
     !> Read variables from file.
     call readline(iun, in_line, ierr)
     call readline(iun, in_line, ierr)
@@ -494,21 +493,21 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                         !> ZSNL.
                         case ('zsnl')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), ZSNL(j), ierr)
+                                call value(out_args(j + 1), pmrow%snp%zsnl(j), ierr)
                                 if (ierr /= 0) goto 931
                             end do
 
                         !> ZPLS.
                         case ('zpls')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), ZPLS(j), ierr)
+                                call value(out_args(j + 1), pmrow%snp%zpls(j), ierr)
                                 if (ierr /= 0) goto 931
                             end do
 
                         !> ZPLG.
                         case ('zplg')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), ZPLG(j), ierr)
+                                call value(out_args(j + 1), pmrow%sfp%zplg(j), ierr)
                                 if (ierr /= 0) goto 931
                             end do
 
@@ -756,9 +755,9 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                 end do
 
                 !> Distribute CLASS ponding limits.
-                ZSNL = DEPPARVAL(1, :)
-                ZPLS = DEPPARVAL(2, :)
-                ZPLG = DEPPARVAL(3, :)
+                pmrow%snp%zsnl = DEPPARVAL(1, :)
+                pmrow%snp%zpls = DEPPARVAL(2, :)
+                pmrow%sfp%zplg = DEPPARVAL(3, :)
 
                 !> Distribute the parameters.
 !todo: change this to il2, il2
@@ -851,28 +850,6 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                //3x, 'The file could not be opened.', &
                 /3x, 'Ensure the file exists and restart the program.', &
                 /3x, 'Path: ', (a))
-
-    !> Distribute the values for legacy parameter checks.
-    hp%ZSNLROW(1, :) = ZSNL(:)
-    hp%ZPLGROW(1, :) = ZPLG(:)
-    hp%ZPLSROW(1, :) = ZPLS(:)
-
-    !> Distribute the values.
-    do k = il1, il2
-
-        !> Grab the indeces of the grid cell and GRU.
-        i = shd%lc%ILMOS(k)
-        m = shd%lc%JLMOS(k)
-
-        !> Distribute the parameter values.
-        pm%snp%zsnl(k) = ZSNL(m)
-        pm%sfp%zplg(k) = ZPLG(m)
-        pm%snp%zpls(k) = ZPLS(m)
-
-    end do !k = il1, il2
-
-    !> Deallocate temporary variables
-    deallocate(ZSNL, ZPLG, ZPLS)
 
     goto 999
 

@@ -31,9 +31,17 @@
 !>
 subroutine check_parameters(shd)
 
-    use sa_mesh_shared_variabletypes, only: ShedGridParams
+    !> Required for 'ShedGridParams' type.
+    use sa_mesh_shared_variabletypes
+
+    !> Required for parameters ('ROW' indexing).
+    use sa_mesh_shared_output_variables
+
+    !> Required for 'FROZENSOILINFILFLAG' and 'SOILINIFLAG'
     use FLAGS
-    use RUNCLASS36_variables, only: cp, hp, soil_por_max, soil_depth, s0, t_ice_lens
+
+    !> Required for additional parameters.
+    use RUNCLASS36_variables, only: hp, soil_por_max, soil_depth, s0, t_ice_lens
     use WF_ROUTE_config, only: wfp
 
     implicit none
@@ -130,14 +138,14 @@ subroutine check_parameters(shd)
     !> *****************************************************************
     ib0 = ir
     do j = 1, NTYPE
-        parv(ir + 1, j) = cp%drnrow(1, j)
-        parv(ir + 2, j) = cp%sdeprow(1, j)
-        parv(ir + 3, j) = cp%farerow(1, j)
-        parv(ir + 4, j) = cp%ddrow(1, j)
-        parv(ir + 5, j) = cp%xslprow(1, j)
-        parv(ir + 6, j) = cp%xdrow(1, j)
-        parv(ir + 7, j) = cp%mannrow(1, j)
-        parv(ir + 8, j) = cp%ksrow(1, j)
+        parv(ir + 1, j) = pmrow%hp%drn(j)
+        parv(ir + 2, j) = pmrow%slp%sdep(j)
+        parv(ir + 3, j) = pmrow%tp%fare(j)
+        parv(ir + 4, j) = pmrow%hp%dd(j)/1000.0
+        parv(ir + 5, j) = pmrow%tp%xslp(j)
+        parv(ir + 6, j) = pmrow%hp%grkf(j)
+        parv(ir + 7, j) = pmrow%hp%mann(j)
+        parv(ir + 8, j) = pmrow%hp%ks(j)
     end do
     parn(ir + 1) = 'DRN'
     parn(ir + 2) = 'SDEP'
@@ -151,16 +159,17 @@ subroutine check_parameters(shd)
     !> *****************************************************************
     !> Check the sum of soil percentages and adjust if necessary.
     !> *****************************************************************
+!todo: move this elsewhere?
     ib1 = ir + 8
     do i = 1, NSL
         ir = ib1 + (i - 1)*NSL
         do j = 1, NTYPE
 
             !> Skip checking sum of soil percentages if soil layer is rock, glacier etc.
-            if (cp%sandrow(1, j, i) >= 0.0) then
+            if (pmrow%slp%sand(j, i) >= 0.0) then
 
                 !> Compute sum of soil percentages.
-                total = cp%sandrow(1, j, i) + cp%clayrow(1, j, i) + cp%orgmrow(1, j, i)
+                total = pmrow%slp%sand(j, i) + pmrow%slp%clay(j, i) + pmrow%slp%orgm(j, i)
                 if (total > 100.0) then
                     print *
                     if (SOILINIFLAG == 1) then
@@ -175,25 +184,25 @@ subroutine check_parameters(shd)
                         print *
                         print *, 'Sum of soil percentages greater than 100% - clay (and orgm) percentages re-adjusted'
                         print('(a8, i3, /, a8, i3)'), 'GRU: ', j, 'LAYER: ', i
-                        cp%clayrow(1, j, i) = max(0.0, 100.0 - cp%sandrow(1, j, i) - cp%orgmrow(1, j, i))
-                        cp%orgmrow(1, j, i) = min(cp%orgmrow(1, j, i), 100.0 - cp%sandrow(1, j, i) - cp%clayrow(1, j, i))
+                        pmrow%slp%clay(j, i) = max(0.0, 100.0 - pmrow%slp%sand(j, i) - pmrow%slp%orgm(j, i))
+                        pmrow%slp%orgm(j, i) = min(pmrow%slp%orgm(j, i), 100.0 - pmrow%slp%sand(j, i) - pmrow%slp%clay(j, i))
                     else if (SOILINIFLAG == 3) then
 
                         !> Keep clay percentage as is and adjust sand (and orgm) percentages.
                         print *
                         print *, 'Sum of soil percentages greater than 100% - sand (and orgm) percentages re-adjusted'
                         print('(a8, i3, /, a8, i3)'), 'GRU: ', j, 'LAYER: ', i
-                        cp%sandrow(1, j, i) = max(0.0, 100.0 - cp%clayrow(1, j, i) - cp%orgmrow(1, j, i))
-                        cp%orgmrow(1, j, i) = min(cp%orgmrow(1, j, i), 100.0 - cp%sandrow(1, j ,i) - cp%clayrow(1, j, i))
+                        pmrow%slp%sand(j, i) = max(0.0, 100.0 - pmrow%slp%clay(j, i) - pmrow%slp%orgm(j, i))
+                        pmrow%slp%orgm(j, i) = min(pmrow%slp%orgm(j, i), 100.0 - pmrow%slp%sand(j ,i) - pmrow%slp%clay(j, i))
                     else if (SOILINIFLAG == 4) then
 
                         !> Re-adjust both sand and clay percentages.
                         print *
                         print *, 'Sum of soil percentages greater than 100% - soil percentages re-adjusted'
                         print('(a8, i3, /, a8, i3)'), 'GRU: ', j, 'LAYER: ', i
-                        cp%sandrow(1, j, i) = cp%sandrow(1, j, i)*100.0/total
-                        cp%clayrow(1, j, i) = cp%clayrow(1, j, i)*100.0/total
-                        cp%orgmrow(1, j, i) = cp%orgmrow(1, j, i)*100.0/total
+                        pmrow%slp%sand(j, i) = pmrow%slp%sand(j, i)*100.0/total
+                        pmrow%slp%clay(j, i) = pmrow%slp%clay(j, i)*100.0/total
+                        pmrow%slp%orgm(j, i) = pmrow%slp%orgm(j, i)*100.0/total
                     else if (SOILINIFLAG == 5) then
 
                         !> Re-adjust both sand and clay percentages.
@@ -212,9 +221,9 @@ subroutine check_parameters(shd)
                     end if
                 end if
             end if
-            parv(ir + 1, j) = cp%sandrow(1, j, i)
-            parv(ir + 2, j) = cp%clayrow(1, j, i)
-            parv(ir + 3, j) = cp%orgmrow(1, j, i)
+            parv(ir + 1, j) = pmrow%slp%sand(j, i)
+            parv(ir + 2, j) = pmrow%slp%clay(j, i)
+            parv(ir + 3, j) = pmrow%slp%orgm(j, i)
         end do
         write(parn(ir + 1), '(a4, i1)') 'SAND', i
         write(parn(ir + 2), '(a4, i1)') 'CLAY', i
@@ -226,9 +235,9 @@ subroutine check_parameters(shd)
     !> *****************************************************************
     ir = ir + NSL
     do j = 1, NTYPE
-        parv(ir + 1, j) = hp%zsnlrow(1, j)
-        parv(ir + 2, j) = hp%zplsrow(1, j)
-        parv(ir + 3, j) = hp%zplgrow(1, j)
+        parv(ir + 1, j) = pmrow%snp%zsnl(j)
+        parv(ir + 2, j) = pmrow%snp%zpls(j)
+        parv(ir + 3, j) = pmrow%sfp%zplg(j)
         parv(ir + 4, j) = hp%frzcrow(1, j)
         if (FROZENSOILINFILFLAG == 0) parflag(ir + 4, j) = 0
     end do
@@ -244,13 +253,13 @@ subroutine check_parameters(shd)
     do i5 = 1, 5
         ir = ib2 + (i5 - 1)*6
         do j = 1, NTYPE
-            parv(ir + 1, j) = cp%lnz0row(1, j, i5)
-            parv(ir + 2, j) = cp%alvcrow(1, j, i5)
-            parv(ir + 3, j) = cp%alicrow(1, j, i5)
+            parv(ir + 1, j) = pmrow%cp%lnz0(j, i5)
+            parv(ir + 2, j) = pmrow%cp%alvc(j, i5)
+            parv(ir + 3, j) = pmrow%cp%alic(j, i5)
             if (i5 < 5) then !urban areas
-                parv(ir + 4, j) = cp%rsmnrow(1, j, i5)
-                parv(ir + 5, j) = cp%vpdarow(1, j, i5)
-                parv(ir + 6, j) = cp%psgarow(1, j, i5)
+                parv(ir + 4, j) = pmrow%cp%rsmn(j, i5)
+                parv(ir + 5, j) = pmrow%cp%vpda(j, i5)
+                parv(ir + 6, j) = pmrow%cp%psga(j, i5)
             end if
         end do
         parn(ir + 1) = 'LNZ0'
@@ -270,13 +279,13 @@ subroutine check_parameters(shd)
     do i4 = 1, 4
         ir = ib3 + (i4 - 1)*7
         do j = 1, NTYPE
-            parv(ir + 1, j) = cp%pamxrow(1, j, i4)
-            parv(ir + 2, j) = cp%pamnrow(1, j, i4)
-            parv(ir + 3, j) = cp%cmasrow(1, j, i4)
-            parv(ir + 4, j) = cp%rootrow(1, j, i4)
-            parv(ir + 5, j) = cp%qa50row(1, j, i4)
-            parv(ir + 6, j) = cp%vpdbrow(1, j, i4)
-            parv(ir + 7, j) = cp%psgbrow(1, j, i4)
+            parv(ir + 1, j) = pmrow%cp%lamx(j, i4)
+            parv(ir + 2, j) = pmrow%cp%lamn(j, i4)
+            parv(ir + 3, j) = pmrow%cp%cmas(j, i4)
+            parv(ir + 4, j) = pmrow%cp%root(j, i4)
+            parv(ir + 5, j) = pmrow%cp%qa50(j, i4)
+            parv(ir + 6, j) = pmrow%cp%vpdb(j, i4)
+            parv(ir + 7, j) = pmrow%cp%psgb(j, i4)
         end do
         parn(ir + 1) = 'PAMX'
         parn(ir + 2) = 'PAMN'

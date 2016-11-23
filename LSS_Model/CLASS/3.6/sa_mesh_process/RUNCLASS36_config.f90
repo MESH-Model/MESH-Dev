@@ -133,109 +133,25 @@ module RUNCLASS36_config
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        integer NA, NTYPE, NML, IGND, l, k, ik, jk, m, j, i, iun, ierr
+        integer NA, NTYPE, NML, NSL, l, k, ik, jk, m, j, i, iun, ierr
         real FRAC
 
         !> For RESUMEFLAG 3
-        real, dimension(:, :), allocatable :: TBASROW, CMAIROW, TACROW, QACROW, WSNOROW
-        real, dimension(:, :, :), allocatable :: TSFSROW
+        real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+            RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
+            TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW
+        real(kind = 4), dimension(:, :, :), allocatable :: TBARROW, THICROW, THLQROW, TSFSROW
 
         !> Return if the process is not marked active.
-!todo: can't remove yet because dependencies on 'cp' in other parts of the code.
-!+        if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
+        if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
 
         NA = shd%NA
         NTYPE = shd%lc%NTYPE
-        IGND = shd%lc%IGND
-
-        !> SET COMMON CLASS PARAMETERS.
-!-        call CLASSD
-
-        !> INITIALIZE CLASS VARIABLES.
-!-        allocate(cp%ZRFMGRD(NA), cp%ZRFHGRD(NA), cp%ZBLDGRD(NA), &
-!-                 cp%GCGRD(NA))
-!-        allocate(cp%FCANROW(NA, NTYPE, ICAN + 1), cp%LNZ0ROW(NA, NTYPE, ICAN + 1), &
-!-                 cp%ALVCROW(NA, NTYPE, ICAN + 1), cp%ALICROW(NA, NTYPE, ICAN + 1))
-!-        allocate(cp%PAMXROW(NA, NTYPE, ICAN), cp%PAMNROW(NA, NTYPE, ICAN), &
-!-                 cp%CMASROW(NA, NTYPE, ICAN), cp%ROOTROW(NA, NTYPE, ICAN), &
-!-                 cp%RSMNROW(NA, NTYPE, ICAN), cp%QA50ROW(NA, NTYPE, ICAN), &
-!-                 cp%VPDAROW(NA, NTYPE, ICAN), cp%VPDBROW(NA, NTYPE, ICAN), &
-!-                 cp%PSGAROW(NA, NTYPE, ICAN), cp%PSGBROW(NA, NTYPE, ICAN))
-!-        allocate(cp%DRNROW(NA, NTYPE),  cp%SDEPROW(NA, NTYPE), cp%FAREROW(NA, NTYPE), cp%DDROW(NA, NTYPE), &
-!-                 cp%XSLPROW(NA, NTYPE), cp%XDROW(NA, NTYPE), cp%MANNROW(NA, NTYPE), cp%KSROW(NA, NTYPE), &
-!-                 cp%TCANROW(NA, NTYPE), cp%TSNOROW(NA, NTYPE), cp%TPNDROW(NA, NTYPE), cp%ZPNDROW(NA, NTYPE), &
-!-                 cp%RCANROW(NA, NTYPE), cp%SCANROW(NA, NTYPE), cp%SNOROW(NA, NTYPE),  cp%ALBSROW(NA, NTYPE), &
-!-                 cp%RHOSROW(NA, NTYPE), cp%GROROW(NA, NTYPE))
-!-        allocate(cp%MIDROW(NA, NTYPE))
-!-        allocate(cp%SANDROW(NA, NTYPE, IGND), cp%CLAYROW(NA, NTYPE, IGND), cp%ORGMROW(NA, NTYPE, IGND), &
-!-                 cp%TBARROW(NA, NTYPE, IGND), cp%THLQROW(NA, NTYPE, IGND), cp%THICROW(NA, NTYPE, IGND))
-
-!-        do k = il1, il2
-
-!-            i = shd%lc%ILMOS(k)
-!-            m = shd%lc%JLMOS(k)
-
-!-            cp%ZRFMGRD(i) = pm%sfp%zrfm(k)
-!-            cp%ZRFHGRD(i) = pm%sfp%zrfh(k)
-!-            cp%ZBLDGRD(i) = pm%sfp%zbld(k)
-!-            cp%GCGRD(i) = pm%tp%gc(k)
-!-            cp%FCANROW(i, m, :) = pm%cp%fcan(k, :)
-!-            cp%LNZ0ROW(i, m, :) = pm%cp%lnz0(k, :)
-!-            cp%ALVCROW(i, m, :) = pm%cp%alvc(k, :)
-!-            cp%ALICROW(i, m, :) = pm%cp%alic(k, :)
-!-            cp%PAMXROW(i, m, :) = pm%cp%lamx(k, :)
-!-            cp%PAMNROW(i, m, :) = pm%cp%lamn(k, :)
-!-            cp%CMASROW(i, m, :) = pm%cp%cmas(k, :)
-!-            cp%ROOTROW(i, m, :) = pm%cp%root(k, :)
-!-            cp%RSMNROW(i, m, :) = pm%cp%rsmn(k, :)
-!-            cp%QA50ROW(i, m, :) = pm%cp%qa50(k, :)
-!-            cp%VPDAROW(i, m, :) = pm%cp%vpda(k, :)
-!-            cp%VPDBROW(i, m, :) = pm%cp%vpdb(k, :)
-!-            cp%PSGAROW(i, m, :) = pm%cp%psga(k, :)
-!-            cp%PSGBROW(i, m, :) = pm%cp%psgb(k, :)
-!-            cp%DRNROW(i, m) = pm%hp%drn(k)
-!-            cp%SDEPROW(i, m) = pm%slp%sdep(k)
-!-            cp%FAREROW(i, m) = pm%tp%fare(k)
-!-            cp%DDROW(i, m) = pm%hp%dd(k)
-!-            cp%XSLPROW(i, m) = pm%tp%xslp(k)
-!-            cp%XDROW(i, m) = pm%hp%grkf(k)
-!-            cp%MANNROW(i, m) = pm%hp%mann(k)
-!-            cp%KSROW(i, m) = pm%hp%ks(k)
-!-            cp%TCANROW(i, m) = stas%cnpy%tcan(k) - TFREZ
-!-            cp%TSNOROW(i, m) = stas%sno%tsno(k) - TFREZ
-!-            cp%TPNDROW(i, m) = stas%sfc%tpnd(k) - TFREZ
-!-            cp%ZPNDROW(i, m) = stas%sfc%zpnd(k) - TFREZ
-!-            cp%RCANROW(i, m) = stas%cnpy%rcan(k)
-!-            cp%SCANROW(i, m) = stas%cnpy%sncan(k)
-!-            cp%SNOROW(i, m) = stas%sno%sno(k)
-!-            cp%ALBSROW(i, m) = stas%sno%albs(k)
-!-            cp%RHOSROW(i, m) = stas%sno%rhos(k)
-!-            cp%GROROW(i, m) = stas%cnpy%gro(k)
-!-            cp%MIDROW(i, m) = pm%tp%mid(k)
-!-            cp%SANDROW(i, m, :) = pm%slp%sand(k, :)
-!-            cp%CLAYROW(i, m, :) = pm%slp%clay(k, :)
-!-            cp%ORGMROW(i, m, :) = pm%slp%orgm(k, :)
-!-            cp%TBARROW(i, m, :) = stas%sl%tbar(k, :) - TFREZ
-!-            cp%THLQROW(i, m, :) = stas%sl%thlq(k, :)
-!-            cp%THICROW(i, m, :) = stas%sl%thic(k, :)
-
-!-        end do
-
-!-        call READ_PARAMETERS_CLASS(shd, fls)
+        NSL = shd%lc%IGND
 
         !> MAM - Check for parameter values - all parameters should lie within the
         !> specified ranges in the "minmax_parameters.txt" file.
 !        call check_parameters(shd)
-
-        !> GATHER-SCATTER COUNTS:
-!-        allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), shd%wc%ILMOS(shd%wc%ILG), &
-!-                 shd%wc%JLMOS(shd%wc%ILG), stat = ierr)
-!-        if (ierr /= 0) then
-!-            print 1114, 'gather-scatter count'
-!-            print 1118, 'Grid squares', NA
-!-            print 1118, 'GRUs', NTYPE
-!-            stop
-!-        end if
 
         !> CLASS requires that each GRU for each grid square has its own parameter value,
         !> for MESH the value read in from the parameter file is assumed to be valid for
@@ -266,9 +182,9 @@ module RUNCLASS36_config
         !> wc_thpor, wc_thlret, wc_thlmin, wc_bi, wc_psisat,
         !> wc_grksat, wc_hcps, wc_tcs, wc_algwet, wc_algdry
         allocate(sv%wc_algwet(NA, NTYPE), sv%wc_algdry(NA, NTYPE))
-        allocate(sv%wc_thpor(NA, NTYPE, IGND), sv%wc_thlret(NA, NTYPE, IGND), sv%wc_thlmin(NA, NTYPE, IGND), &
-                 sv%wc_bi(NA, NTYPE, IGND), sv%wc_psisat(NA, NTYPE, IGND), sv%wc_grksat(NA, NTYPE, IGND), &
-                 sv%wc_hcps(NA, NTYPE, IGND), sv%wc_tcs(NA, NTYPE, IGND))
+        allocate(sv%wc_thpor(NA, NTYPE, NSL), sv%wc_thlret(NA, NTYPE, NSL), sv%wc_thlmin(NA, NTYPE, NSL), &
+                 sv%wc_bi(NA, NTYPE, NSL), sv%wc_psisat(NA, NTYPE, NSL), sv%wc_grksat(NA, NTYPE, NSL), &
+                 sv%wc_hcps(NA, NTYPE, NSL), sv%wc_tcs(NA, NTYPE, NSL))
 
         !> Zero everything we just allocated.
         sv%wc_algwet = 0.0
@@ -285,27 +201,7 @@ module RUNCLASS36_config
         !> Call to read from soil.ini.
         call READ_SOIL_INI(shd, fls)
 
-!-        call GATPREP(shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
-!-                     shd%lc%NML, shd%wc%NML, cp%GCGRD, cp%FAREROW, cp%MIDROW, &
-!-                     NA, NTYPE, shd%lc%ILG, 1, NA, NTYPE)
-
         NML = shd%lc%NML
-
-!todo+++: Perhaps land-unit indexing can be done prior in the sequence
-!todo+++: of initialization, after reading the drainage database.
-!todo+++: Then, variables could be allocated (il1:il2) instead of
-!todo+++: (1:ILG) to reduce the memory footprint of the model per node.
-
-        !> Calculate Indices.
-!-        call mpi_split_nml(inp, izero, ipid, NML, shd%lc%ILMOS, il1, il2, ilen)
-!-        if (ro%DIAGNOSEMODE > 0) print 1062, ipid, NML, ilen, il1, il2
-
-!-1062 format(/1x, 'Configuration and distribution of the domain', &
-!-            /3x, 'Current process: ', i10, &
-!-            /3x, 'Tile land elements: ', i10, &
-!-            /3x, 'Length of single array: ', i10, &
-!-            /3x, 'Starting index: ', i10, &
-!-            /3x, 'Stopping index: ', i10, /)
 
         !> ALLOCATE ALL VARIABLES
         allocate(SNOGRD(NA))
@@ -342,7 +238,7 @@ module RUNCLASS36_config
             print 1118, 'Total tile elements', NML
             print 1118, 'Canopy types with urban areas', ICP1
             print 1118, 'Canopy types', ICAN
-            print 1118, 'Soil layers', IGND
+            print 1118, 'Soil layers', NSL
             stop
         end if
 
@@ -396,26 +292,26 @@ module RUNCLASS36_config
                  ROVGGRD(NA), WTRCGRD(NA), WTRSGRD(NA), &
                  WTRGGRD(NA), DRGRD(NA), WTABGRD(NA), ILMOGRD(NA), UEGRD(NA), &
                  HBLGRD(NA), &
-                 HMFGGRD(NA, IGND), HTCGRD(NA, IGND), QFCGRD(NA, IGND), &
-                 GFLXGRD(NA, IGND), stat = ierr)
+                 HMFGGRD(NA, NSL), HTCGRD(NA, NSL), QFCGRD(NA, NSL), &
+                 GFLXGRD(NA, NSL), stat = ierr)
         if (ierr /= 0) then
             print 1114, 'land surface diagnostic'
             print 1118, 'Grid squares', NA
             print 1118, 'GRUs', NTYPE
             print 1118, 'Total tile elements', NML
-            print 1118, 'Soil layers', IGND
+            print 1118, 'Soil layers', NSL
             stop
         end if
 
         !> CROSS-CLASS VARIABLES (CLASS):
-        allocate(TBARC(NML, IGND), TBARG(NML, IGND), &
-                 TBARCS(NML, IGND), &
-                 TBARGS(NML, IGND), THLIQC(NML, IGND), &
-                 THLIQG(NML, IGND), THICEC(NML, IGND), &
-                 THICEG(NML, IGND), FROOT(NML, IGND), &
-                 HCPC(NML, IGND), HCPG(NML, IGND), &
-                 TCTOPC(NML, IGND), TCBOTC(NML, IGND), &
-                 TCTOPG(NML, IGND), TCBOTG(NML, IGND), &
+        allocate(TBARC(NML, NSL), TBARG(NML, NSL), &
+                 TBARCS(NML, NSL), &
+                 TBARGS(NML, NSL), THLIQC(NML, NSL), &
+                 THLIQG(NML, NSL), THICEC(NML, NSL), &
+                 THICEG(NML, NSL), FROOT(NML, NSL), &
+                 HCPC(NML, NSL), HCPG(NML, NSL), &
+                 TCTOPC(NML, NSL), TCBOTC(NML, NSL), &
+                 TCTOPG(NML, NSL), TCBOTG(NML, NSL), &
                  RBCOEF(NML), &
                  ZSNOW(NML), &
                  FSVF(NML), FSVFS(NML), ALVSCN(NML), &
@@ -455,7 +351,7 @@ module RUNCLASS36_config
             print 1118, 'Grid squares', NA
             print 1118, 'GRUs', NTYPE
             print 1118, 'Total tile elements', NML
-            print 1118, 'Soil layers', IGND
+            print 1118, 'Soil layers', NSL
             stop
         end if
 
@@ -478,15 +374,15 @@ module RUNCLASS36_config
                  CO2I1CG(NML, ICTEM), CO2I1CS(NML, ICTEM), CO2I2CG(NML, ICTEM), CO2I2CS(NML, ICTEM), &
                  SLAI(NML, ICTEM), FCANCMX(NML, ICTEM), ANCSVEG(NML, ICTEM), ANCGVEG(NML, ICTEM), &
                  RMLCSVEG(NML, ICTEM), RMLCGVEG(NML, ICTEM), &
-                 AILC(NML, ICAN), PAIC(NML, ICAN), FIELDSM(NML, IGND), WILTSM(NML, IGND), &
-                 RMATCTEM(NML, ICTEM, IGND), RMATC(NML, ICAN, IGND), NOL2PFTS(ICAN), stat = ierr)
+                 AILC(NML, ICAN), PAIC(NML, ICAN), FIELDSM(NML, NSL), WILTSM(NML, NSL), &
+                 RMATCTEM(NML, ICTEM, NSL), RMATC(NML, ICAN, NSL), NOL2PFTS(ICAN), stat = ierr)
         if (ierr /= 0) then
             print 1114, 'CTEM'
             print 1118, 'Grid squares', NA
             print 1118, 'GRUs', NTYPE
             print 1118, 'Total tile elements', NML
             print 1118, 'Canopy types', ICAN
-            print 1118, 'Soil layers', IGND
+            print 1118, 'Soil layers', NSL
             print 1118, 'CTEM flag', ICTEM
             stop
         end if
@@ -521,7 +417,7 @@ module RUNCLASS36_config
         allocate(cpv%ALBS(NML), cpv%CMAI(NML), cpv%GRO(NML), cpv%QAC(NML), cpv%RCAN(NML), cpv%RHOS(NML), cpv%SNCAN(NML), &
                  cpv%SNO(NML), cpv%TAC(NML), cpv%TBAS(NML), cpv%TCAN(NML), cpv%TPND(NML), cpv%TSNO(NML), cpv%WSNO(NML), &
                  cpv%ZPND(NML))
-        allocate(cpv%TBAR(NML, IGND), cpv%THIC(NML, IGND), cpv%THLQ(NML, IGND))
+        allocate(cpv%TBAR(NML, NSL), cpv%THIC(NML, NSL), cpv%THLQ(NML, NSL))
         allocate(cpv%TSFS(NML, 4))
 
         !> Land-surface variables.
@@ -529,11 +425,11 @@ module RUNCLASS36_config
                  csfv%FARE(NML), csfv%GRKF(NML), csfv%MID(NML), csfv%SDEP(NML), csfv%WFCI(NML), csfv%WFSF(NML), csfv%XSLP(NML), &
                  csfv%ZPLG(NML), csfv%ZPLS(NML), csfv%ZSNL(NML))
         allocate(csfv%IGDR(NML))
-        allocate(csfv%IORG(NML, IGND), csfv%ISND(NML, IGND))
-        allocate(csfv%BI(NML, IGND), csfv%CLAY(NML, IGND), csfv%DELZW(NML, IGND), csfv%GRKS(NML, IGND), csfv%HCPS(NML, IGND), &
-                 csfv%ORGM(NML, IGND), csfv%PSIS(NML, IGND), csfv%PSIW(NML, IGND), csfv%SAND(NML, IGND), csfv%TCS(NML, IGND), &
-                 csfv%THFC(NML, IGND), csfv%THM(NML, IGND), csfv%THP(NML, IGND), csfv%THR(NML, IGND), csfv%THRA(NML, IGND), &
-                 csfv%ZBTW(NML, IGND))
+        allocate(csfv%IORG(NML, NSL), csfv%ISND(NML, NSL))
+        allocate(csfv%BI(NML, NSL), csfv%CLAY(NML, NSL), csfv%DELZW(NML, NSL), csfv%GRKS(NML, NSL), csfv%HCPS(NML, NSL), &
+                 csfv%ORGM(NML, NSL), csfv%PSIS(NML, NSL), csfv%PSIW(NML, NSL), csfv%SAND(NML, NSL), csfv%TCS(NML, NSL), &
+                 csfv%THFC(NML, NSL), csfv%THM(NML, NSL), csfv%THP(NML, NSL), csfv%THR(NML, NSL), csfv%THRA(NML, NSL), &
+                 csfv%ZBTW(NML, NSL))
         allocate(csfv%ACID(NML, ICAN), csfv%ACVD(NML, ICAN), csfv%CMAS(NML, ICAN), csfv%HGTD(NML, ICAN), csfv%PAID(NML, ICAN), &
                  csfv%PAMN(NML, ICAN), csfv%PAMX(NML, ICAN), csfv%PSGA(NML, ICAN), csfv%PSGB(NML, ICAN), csfv%QA50(NML, ICAN), &
                  csfv%ROOT(NML, ICAN), csfv%RSMN(NML, ICAN), csfv%VPDA(NML, ICAN), csfv%VPDB(NML, ICAN))
@@ -557,7 +453,7 @@ module RUNCLASS36_config
                  cdv%ROFS(NML), cdv%ROVG(NML), cdv%SFCQ(NML), cdv%SFCT(NML), cdv%SFCU(NML), cdv%SFCV(NML), cdv%TFX(NML), &
                  cdv%TROB(NML), cdv%TROF(NML), cdv%TROO(NML), cdv%TROS(NML), cdv%TSF(NML), cdv%UE(NML), cdv%WTAB(NML), &
                  cdv%WTRC(NML), cdv%WTRG(NML), cdv%WTRS(NML))
-        allocate(cdv%GFLX(NML, IGND), cdv%HMFG(NML, IGND), cdv%HTC(NML, IGND), cdv%QFC(NML, IGND))
+        allocate(cdv%GFLX(NML, NSL), cdv%HMFG(NML, NSL), cdv%HTC(NML, NSL), cdv%QFC(NML, NSL))
 
         !> Read an initial value for geothermal flux from file.
         if (GGEOFLAG == 1) then
@@ -568,6 +464,94 @@ module RUNCLASS36_config
         else
             GGEOGRD(1) = 0.0
         end if
+
+        !> Resume the state of prognostic variables from file.
+        select case (RESUMEFLAG)
+
+            !> RESUMEFLAG 3.
+            case (3)
+
+                !> Open the resume state file.
+                iun = fls%fl(mfk%f883)%iun
+                open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'old', action = 'read', &
+                     form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+                !> Allocate temporary variables.
+                allocate(ALBSROW(NA, NTYPE), CMAIROW(NA, NTYPE), GROROW(NA, NTYPE), QACROW(NA, NTYPE), RCANROW(NA, NTYPE), &
+                         RHOSROW(NA, NTYPE), SCANROW(NA, NTYPE), SNOROW(NA, NTYPE), TACROW(NA, NTYPE), TBASROW(NA, NTYPE), &
+                         TCANROW(NA, NTYPE), TPNDROW(NA, NTYPE), TSNOROW(NA, NTYPE), WSNOROW(NA, NTYPE), ZPNDROW(NA, NTYPE), &
+                         TBARROW(NA, NTYPE, NSL), THICROW(NA, NTYPE, NSL), THLQROW(NA, NTYPE, NSL), TSFSROW(NA, NTYPE, 4))
+
+                !> Read inital values from the file.
+                read(iun) ALBSROW
+                read(iun) CMAIROW
+                read(iun) GROROW
+                read(iun) QACROW
+                read(iun) RCANROW
+                read(iun) RHOSROW
+                read(iun) SCANROW
+                read(iun) SNOROW
+                read(iun) TACROW
+                read(iun) TBARROW
+                read(iun) TBASROW
+                read(iun) TCANROW
+                read(iun) THICROW
+                read(iun) THLQROW
+                read(iun) TPNDROW
+                read(iun) TSFSROW
+                read(iun) TSNOROW
+                read(iun) WSNOROW
+                read(iun) ZPNDROW
+
+                !> Close the file to free the unit.
+                close(iun)
+
+                !> Scatter the temporary variables.
+                do k = il1, il2
+
+                    !> Grab the grid and GRU of the current tile.
+                    ik = shd%lc%ILMOS(k)
+                    jk = shd%lc%JLMOS(k)
+
+                    !> Assign values.
+                    stas%sno%albs(k) = ALBSROW(ik, jk)
+                    stas%cnpy%cmai(k) = CMAIROW(ik, jk)
+                    stas%cnpy%gro(k) = GROROW(ik, jk)
+                    stas%cnpy%qac(k) = QACROW(ik, jk)
+                    stas%cnpy%rcan(k) = RCANROW(ik, jk)
+                    stas%sno%rhos(k) = RHOSROW(ik, jk)
+                    stas%cnpy%sncan(k) = SCANROW(ik, jk)
+                    stas%sno%sno(k) = SNOROW(ik, jk)
+                    stas%cnpy%tac(k) = TACROW(ik, jk)
+                    stas%sl%tbar(k, :) = TBARROW(ik, jk, :)
+                    stas%sl%tbas(k) = TBASROW(ik, jk)
+                    stas%cnpy%tcan(k) = TCANROW(ik, jk)
+                    stas%sl%thic(k, :) = THICROW(ik, jk, :)
+                    stas%sl%thlq(k, :) = THLQROW(ik, jk, :)
+                    stas%sfc%tpnd(k) = TPNDROW(ik, jk)
+                    stas%sfc%tsfs(k, :) = TSFSROW(ik, jk, :)
+                    stas%sno%tsno(k) = TSNOROW(ik, jk)
+                    stas%sno%wsno(k) = WSNOROW(ik, jk)
+                    stas%sfc%zpnd(k) = ZPNDROW(ik, jk)
+
+                end do
+
+                !> Deallocate temporary variables.
+                deallocate(ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+                           RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
+                           TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW, &
+                           TBARROW, THICROW, THLQROW, TSFSROW)
+
+            !> RESUMEFLAG 4.
+            case (4)
+                call read_init_prog_variables_class(fls)
+
+            !> RESUMEFLAG 5.
+            case (5)
+                call read_init_prog_variables_class(fls)
+
+        end select !case (RESUMEFLAG)
 
         !> Distribute variables.
         catv%ZRFM = pm%sfp%zrfm
@@ -600,6 +584,25 @@ module RUNCLASS36_config
         csfv%SAND = pm%slp%sand
         csfv%CLAY = pm%slp%clay
         csfv%ORGM = pm%slp%orgm
+        cpv%CMAI = stas%cnpy%cmai
+        cpv%WSNO = stas%sno%wsno
+        cpv%QAC = stas%cnpy%qac
+        cpv%TCAN = stas%cnpy%tcan
+        cpv%TAC = stas%cnpy%tac
+        cpv%TSNO = stas%sno%tsno
+        cpv%TPND = stas%sfc%tpnd
+        cpv%ZPND = stas%sfc%zpnd
+        cpv%RCAN = stas%cnpy%rcan
+        cpv%SNCAN = stas%cnpy%sncan
+        cpv%SNO = stas%sno%sno
+        cpv%ALBS = stas%sno%albs
+        cpv%RHOS = stas%sno%rhos
+        cpv%GRO = stas%cnpy%gro
+        cpv%TSFS = stas%sfc%tsfs
+        cpv%TBAR = stas%sl%tbar
+        cpv%THLQ = stas%sl%thlq
+        cpv%THIC = stas%sl%thic
+        cpv%TBAS = stas%sl%tbas
         csfv%ZSNL = pm%snp%zsnl
         csfv%ZPLG = pm%sfp%zplg
         csfv%ZPLS = pm%snp%zpls
@@ -665,130 +668,20 @@ module RUNCLASS36_config
             K2PDM(k) = hp%K2ROW(ik, jk)
         end do
 
-        !> Resume the state of prognostic variables from file.
-        select case (RESUMEFLAG)
-
-            !> RESUMEFLAG 3.
-            case (3)
-
-                !> Open the resume state file.
-                iun = fls%fl(mfk%f883)%iun
-                open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'old', action = 'read', &
-                     form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
-
-                !> Allocate temporary variables.
-                allocate(TBASROW(NA, NTYPE), CMAIROW(NA, NTYPE), &
-                         TACROW(NA, NTYPE), QACROW(NA, NTYPE), WSNOROW(NA, NTYPE), &
-                         TSFSROW(NA, NTYPE, 4))
-                TBASROW = 0.0; CMAIROW = 0.0
-                TACROW = 0.0; QACROW = 0.0; WSNOROW = 0.0
-                TSFSROW = 0.0
-
-                !> Read inital values from the file.
-                read(iun) cp%ALBSROW
-                read(iun) CMAIROW
-                read(iun) cp%GROROW
-                read(iun) QACROW
-                read(iun) cp%RCANROW
-                read(iun) cp%RHOSROW
-                read(iun) cp%SCANROW
-                read(iun) cp%SNOROW
-                read(iun) TACROW
-                read(iun) cp%TBARROW
-                read(iun) TBASROW
-                read(iun) cp%TCANROW
-                read(iun) cp%THICROW
-                read(iun) cp%THLQROW
-                read(iun) cp%TPNDROW
-                read(iun) TSFSROW
-                read(iun) cp%TSNOROW
-                read(iun) WSNOROW
-                read(iun) cp%ZPNDROW
-
-                !> Close the file to free the unit.
-                close(iun)
-
-                !> Scatter the temporary variables.
-                do k = il1, il2
-
-                    !> Gather the indices.
-                    ik = shd%lc%ILMOS(k)
-                    jk = shd%lc%JLMOS(k)
-
-                    !> Assign values.
-                    stas%sno%albs(k) = cp%ALBSROW(ik, jk)
-                    stas%cnpy%cmai(k) = CMAIROW(ik, jk)
-                    stas%cnpy%gro(k) = cp%GROROW(ik, jk)
-                    stas%cnpy%qac(k) = QACROW(ik, jk)
-                    stas%cnpy%rcan(k) = cp%RCANROW(ik, jk)
-                    stas%sno%rhos(k) = cp%RHOSROW(ik, jk)
-                    stas%cnpy%sncan(k) = cp%SCANROW(ik, jk)
-                    stas%sno%sno(k) = cp%SNOROW(ik, jk)
-                    stas%cnpy%tac(k) = TACROW(ik, jk)
-                    stas%sl%tbar(k, :) = cp%TBARROW(ik, jk, :)
-                    stas%sl%tbas(k) = TBASROW(ik, jk)
-                    stas%cnpy%tcan(k) = cp%TCANROW(ik, jk)
-                    stas%sl%thic(k, :) = cp%THICROW(ik, jk, :)
-                    stas%sl%thlq(k, :) = cp%THLQROW(ik, jk, :)
-                    stas%sfc%tpnd(k) = cp%TPNDROW(ik, jk)
-                    stas%sfc%tsfs(k, :) = TSFSROW(ik, jk, :)
-                    stas%sno%tsno(k) = cp%TSNOROW(ik, jk)
-                    stas%sno%wsno(k) = WSNOROW(ik, jk)
-                    stas%sfc%zpnd(k) = cp%ZPNDROW(ik, jk)
-
-                end do
-
-                !> Deallocate temporary variables.
-                deallocate(TBASROW, CMAIROW, &
-                           TACROW, QACROW, WSNOROW, &
-                           TSFSROW)
-
-            !> RESUMEFLAG 4.
-            case (4)
-                call read_init_prog_variables_class(fls)
-
-            !> RESUMEFLAG 5.
-            case (5)
-                call read_init_prog_variables_class(fls)
-
-        end select !case (RESUMEFLAG)
-
-        !> Grab states.
-        cpv%QAC(il1:il2) = stas%cnpy%qac(il1:il2)
-        cpv%RCAN(il1:il2) = stas%cnpy%rcan(il1:il2)
-        cpv%SNCAN(il1:il2) = stas%cnpy%sncan(il1:il2)
-        cpv%TAC(il1:il2) = stas%cnpy%tac(il1:il2)
-        cpv%TCAN(il1:il2) = stas%cnpy%tcan(il1:il2)
-        cpv%CMAI(il1:il2) = stas%cnpy%cmai(il1:il2)
-        cpv%GRO(il1:il2) = stas%cnpy%gro(il1:il2)
-        cpv%SNO(il1:il2) = stas%sno%sno(il1:il2)
-        cpv%ALBS(il1:il2) = stas%sno%albs(il1:il2)
-        cpv%RHOS(il1:il2) = stas%sno%rhos(il1:il2)
-        cpv%TSNO(il1:il2) = stas%sno%tsno(il1:il2)
-        cpv%WSNO(il1:il2) = stas%sno%wsno(il1:il2)
-        cpv%TPND(il1:il2) = stas%sfc%tpnd(il1:il2)
-        cpv%ZPND(il1:il2) = stas%sfc%zpnd(il1:il2)
-        cpv%TSFS(il1:il2, :) = stas%sfc%tsfs(il1:il2, :)
-        cpv%TBAS(il1:il2) = stas%sl%tbas(il1:il2)
-        cpv%THIC(il1:il2, :) = stas%sl%thic(il1:il2, :)
-        cpv%THLQ(il1:il2, :) = stas%sl%thlq(il1:il2, :)
-        cpv%TBAR(il1:il2, :) = stas%sl%tbar(il1:il2, :)
-
         !> Allocate variables for WATDRN3
         !> ******************************************************************
         !> DGP - June 3, 2011: Now that variables are shared, moved from WD3
         !> flag to ensure allocation.
-!-        allocate(BTC(NTYPE, IGND), BCAP(NTYPE, IGND), DCOEFF(NTYPE, IGND), &
-!-                 BFCAP(NTYPE, IGND), BFCOEFF(NTYPE, IGND), BFMIN(NTYPE, IGND), &
-!-                 BQMAX(NTYPE, IGND), stat = ierr)
+!-        allocate(BTC(NTYPE, NSL), BCAP(NTYPE, NSL), DCOEFF(NTYPE, NSL), &
+!-                 BFCAP(NTYPE, NSL), BFCOEFF(NTYPE, NSL), BFMIN(NTYPE, NSL), &
+!-                 BQMAX(NTYPE, NSL), stat = ierr)
 !-        if (ierr /= 0) print *, 'Error allocating on WD3 for new WATDRN.'
 
         !> Call WATDRN3B to set WATDRN (Ric) variables
         !> ******************************************************************
         !> DGP - May 5, 2011: Added.
 !-        call WATDRN3B(PSISROW, THPROW, GRKSROW, BIROW, cp%XSLPROW, cp%DDROW, &
-!-                      NA, NTYPE, IGND, &
+!-                      NA, NTYPE, NSL, &
 !-                      BTC, BCAP, DCOEFF, BFCAP, BFCOEFF, BFMIN, BQMAX, &
 !-                      cp%SANDROW, cp%CLAYROW)
 
@@ -829,7 +722,7 @@ module RUNCLASS36_config
                      csfv%THRA, csfv%HCPS, csfv%TCS, csfv%THFC, csfv%PSIW, &
                      csfv%DELZW, csfv%ZBTW, csfv%ALGW, csfv%ALGD, &
                      csfv%SAND, csfv%CLAY, csfv%ORGM, shd%lc%sl%DELZ, shd%lc%sl%ZBOT, csfv%SDEP, &
-                     csfv%ISND, csfv%IGDR, NML, il1, il2, IGND, ICTEMMOD, &
+                     csfv%ISND, csfv%IGDR, NML, il1, il2, NSL, ICTEMMOD, &
                      sv%WC_THPOR, sv%WC_THLRET, sv%WC_THLMIN, sv%WC_BI, &
                      sv%WC_PSISAT, sv%WC_GRKSAT, sv%WC_HCPS, sv%WC_TCS, &
                      NA, NTYPE, shd%lc%ILG, shd%lc%ILMOS, shd%lc%JLMOS)
@@ -930,10 +823,12 @@ module RUNCLASS36_config
         type(reservoir_release) :: rrls
 
         !> For SAVERESUMEFLAG 3
-        real, dimension(:, :), allocatable :: TBASROW, CMAIROW, TACROW, QACROW, WSNOROW
-        real, dimension(:, :, :), allocatable :: TSFSROW
+        real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+            RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
+            TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW
+        real(kind = 4), dimension(:, :, :), allocatable :: TBARROW, THICROW, THLQROW, TSFSROW
 
-        integer NA, NTYPE, k, ik, jk, iun, ierr
+        integer NA, NTYPE, NSL, k, ik, jk, iun, ierr
 
         !> Return if the process is not marked active.
         if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
@@ -944,6 +839,7 @@ module RUNCLASS36_config
         !> Local indices.
         NA = shd%NA
         NTYPE = shd%lc%NTYPE
+        NSL = shd%lc%IGND
 
         !> Save the state of prognostic variables to file.
         select case (SAVERESUMEFLAG)
@@ -957,72 +853,75 @@ module RUNCLASS36_config
                      form = 'unformatted', access = 'sequential', iostat = ierr)
 !todo: condition for ierr.
 
-                !> Allocate temporary variables.
-                allocate(TBASROW(NA, NTYPE), CMAIROW(NA, NTYPE), &
-                         TACROW(NA, NTYPE), QACROW(NA, NTYPE), WSNOROW(NA, NTYPE), &
-                         TSFSROW(NA, NTYPE, 4))
-                TBASROW = 0.0; CMAIROW = 0.0
-                TACROW = 0.0; QACROW = 0.0; WSNOROW = 0.0
-                TSFSROW = 0.0
+                !> Allocate and initialize temporary variables.
+                allocate(ALBSROW(NA, NTYPE), CMAIROW(NA, NTYPE), GROROW(NA, NTYPE), QACROW(NA, NTYPE), RCANROW(NA, NTYPE), &
+                         RHOSROW(NA, NTYPE), SCANROW(NA, NTYPE), SNOROW(NA, NTYPE), TACROW(NA, NTYPE), TBASROW(NA, NTYPE), &
+                         TCANROW(NA, NTYPE), TPNDROW(NA, NTYPE), TSNOROW(NA, NTYPE), WSNOROW(NA, NTYPE), ZPNDROW(NA, NTYPE), &
+                         TBARROW(NA, NTYPE, NSL), THICROW(NA, NTYPE, NSL), THLQROW(NA, NTYPE, NSL), TSFSROW(NA, NTYPE, 4))
+                ALBSROW = 0.0; CMAIROW = 0.0; GROROW = 0.0; QACROW = 0.0; RCANROW = 0.0; RHOSROW = 0.0
+                SCANROW = 0.0; SNOROW = 0.0; TACROW = 0.0; TBASROW = 0.0; TCANROW = 0.0; TPNDROW = 0.0
+                TSNOROW = 0.0; WSNOROW = 0.0; ZPNDROW = 0.0
+                TBARROW = 0.0; THICROW = 0.0; THLQROW = 0.0; TSFSROW = 0.0
 
                 !> Gather the temporary variables.
                 do k = 1, shd%lc%NML
 
-                    !> Gather the indices.
+                    !> Grab the grid and GRU of the current tile.
                     ik = shd%lc%ILMOS(k)
                     jk = shd%lc%JLMOS(k)
 
                     !> Assign values.
-                    cp%ALBSROW(ik, jk) = stas%sno%albs(k)
+                    ALBSROW(ik, jk) = stas%sno%albs(k)
                     CMAIROW(ik, jk) = stas%cnpy%cmai(k)
-                    cp%GROROW(ik, jk) = stas%cnpy%gro(k)
+                    GROROW(ik, jk) = stas%cnpy%gro(k)
                     QACROW(ik, jk) = stas%cnpy%qac(k)
-                    cp%RCANROW(ik, jk) = stas%cnpy%rcan(k)
-                    cp%RHOSROW(ik, jk) = stas%sno%rhos(k)
-                    cp%SCANROW(ik, jk) = stas%cnpy%sncan(k)
-                    cp%SNOROW(ik, jk) = stas%sno%sno(k)
+                    RCANROW(ik, jk) = stas%cnpy%rcan(k)
+                    RHOSROW(ik, jk) = stas%sno%rhos(k)
+                    SCANROW(ik, jk) = stas%cnpy%sncan(k)
+                    SNOROW(ik, jk) = stas%sno%sno(k)
                     TACROW(ik, jk) = stas%cnpy%tac(k)
-                    cp%TBARROW(ik, jk, :) = stas%sl%tbar(k, :)
+                    TBARROW(ik, jk, :) = stas%sl%tbar(k, :)
                     TBASROW(ik, jk) = stas%sl%tbas(k)
-                    cp%TCANROW(ik, jk) = stas%cnpy%tcan(k)
-                    cp%THICROW(ik, jk, :) = stas%sl%thic(k, :)
-                    cp%THLQROW(ik, jk, :) = stas%sl%thlq(k, :)
-                    cp%TPNDROW(ik, jk) = stas%sfc%tpnd(k)
+                    TCANROW(ik, jk) = stas%cnpy%tcan(k)
+                    THICROW(ik, jk, :) = stas%sl%thic(k, :)
+                    THLQROW(ik, jk, :) = stas%sl%thlq(k, :)
+                    TPNDROW(ik, jk) = stas%sfc%tpnd(k)
                     TSFSROW(ik, jk, :) = stas%sfc%tsfs(k, :)
-                    cp%TSNOROW(ik, jk) = stas%sno%tsno(k)
+                    TSNOROW(ik, jk) = stas%sno%tsno(k)
                     WSNOROW(ik, jk) = stas%sno%wsno(k)
-                    cp%ZPNDROW(ik, jk) = stas%sfc%zpnd(k)
+                    ZPNDROW(ik, jk) = stas%sfc%zpnd(k)
 
                 end do
 
                 !> Read inital values from the file.
-                write(iun) cp%ALBSROW
+                write(iun) ALBSROW
                 write(iun) CMAIROW
-                write(iun) cp%GROROW
+                write(iun) GROROW
                 write(iun) QACROW
-                write(iun) cp%RCANROW
-                write(iun) cp%RHOSROW
-                write(iun) cp%SCANROW
-                write(iun) cp%SNOROW
+                write(iun) RCANROW
+                write(iun) RHOSROW
+                write(iun) SCANROW
+                write(iun) SNOROW
                 write(iun) TACROW
-                write(iun) cp%TBARROW
+                write(iun) TBARROW
                 write(iun) TBASROW
-                write(iun) cp%TCANROW
-                write(iun) cp%THICROW
-                write(iun) cp%THLQROW
-                write(iun) cp%TPNDROW
+                write(iun) TCANROW
+                write(iun) THICROW
+                write(iun) THLQROW
+                write(iun) TPNDROW
                 write(iun) TSFSROW
-                write(iun) cp%TSNOROW
+                write(iun) TSNOROW
                 write(iun) WSNOROW
-                write(iun) cp%ZPNDROW
+                write(iun) ZPNDROW
 
                 !> Close the file to free the unit.
                 close(iun)
 
                 !> Deallocate temporary variables.
-                deallocate(TBASROW, CMAIROW, &
-                           TACROW, QACROW, WSNOROW, &
-                           TSFSROW)
+                deallocate(ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+                           RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
+                           TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW, &
+                           TBARROW, THICROW, THLQROW, TSFSROW)
 
             !> SAVERESUMEFLAG 4.
             case (4)

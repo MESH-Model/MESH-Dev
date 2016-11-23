@@ -170,40 +170,40 @@ module RUNCLASS36_variables
             TBAR, THAL, THIC, THLQ, TCAN, TSNO, UV, WSNO, WTBL
     end type
 
-!!variables for reading parameters_class.ini
-    type ClassParameters
+!> variables for reading parameters_class.ini
+!-    type ClassParameters
 
         !> Atmospheric and grid-constant variables.
-        real, dimension(:), allocatable :: &
-            ZRFMGRD, ZRFHGRD, ZBLDGRD, GCGRD
+!-        real, dimension(:), allocatable :: &
+!-            ZRFMGRD, ZRFHGRD, ZBLDGRD, GCGRD
 
         !> Vegetation canopy.
-        real, dimension(:, :, :), allocatable :: &
-            FCANROW, LNZ0ROW, ALVCROW, ALICROW, PAMXROW, PAMNROW, &
-            CMASROW, ROOTROW, RSMNROW, QA50ROW, VPDAROW, VPDBROW, &
-            PSGAROW, PSGBROW
+!-        real, dimension(:, :, :), allocatable :: &
+!-            FCANROW, LNZ0ROW, ALVCROW, ALICROW, PAMXROW, PAMNROW, &
+!-            CMASROW, ROOTROW, RSMNROW, QA50ROW, VPDAROW, VPDBROW, &
+!-            PSGAROW, PSGBROW
 
         !> Soil texture (for default hydraulic parameters).
-        real, dimension(:, :, :), allocatable :: &
-            SANDROW, CLAYROW, ORGMROW
+!-        real, dimension(:, :, :), allocatable :: &
+!-            SANDROW, CLAYROW, ORGMROW
 
         !> Hydraulic parameters.
 !WATROF: DDROW
 !WATROF: MANNROW
-        real, dimension(:, :), allocatable :: &
-            DRNROW, XSLPROW, XDROW, SDEPROW, DDROW, MANNROW
+!-        real, dimension(:, :), allocatable :: &
+!-            DRNROW, XSLPROW, XDROW, SDEPROW, DDROW, MANNROW
 
         !> Land-surface variables.
-        integer, dimension(:, :), allocatable :: MIDROW
-        real, dimension(:, :), allocatable :: FAREROW
+!-        integer, dimension(:, :), allocatable :: MIDROW
+!-        real, dimension(:, :), allocatable :: FAREROW
 
         !> Initial prognostic variables.
-        real, dimension(:, :), allocatable :: &
-            TCANROW, TSNOROW, TPNDROW, ZPNDROW, RCANROW, SCANROW, &
-            SNOROW, ALBSROW, RHOSROW, GROROW, KSROW
-        real, dimension(:, :, :), allocatable :: &
-            TBARROW, THLQROW, THICROW
-    end type
+!-        real, dimension(:, :), allocatable :: &
+!-            TCANROW, TSNOROW, TPNDROW, ZPNDROW, RCANROW, SCANROW, &
+!-            SNOROW, ALBSROW, RHOSROW, GROROW, KSROW
+!-        real, dimension(:, :, :), allocatable :: &
+!-            TBARROW, THLQROW, THICROW
+!-    end type
 
     !> For hydraulic parameters read from soil.ini.
 !todo: Move this to soil module.
@@ -218,7 +218,7 @@ module RUNCLASS36_variables
 !todo: Move this?
     type HydrologyParameters
         real, dimension(:,:), allocatable :: &
-            ZSNLROW, ZPLSROW, ZPLGROW, &
+!-            ZSNLROW, ZPLSROW, ZPLGROW, &
             FRZCROW, &
             CMAXROW, CMINROW, BROW, K1ROW, K2ROW, &
             fetchROW, HtROW, N_SROW, A_SROW, DistribROW
@@ -231,7 +231,7 @@ module RUNCLASS36_variables
     end type
 
 !todo: may need to move these.
-    type(ClassParameters), save :: cp
+!-    type(ClassParameters), save :: cp
     type(SoilValues), save :: sv
     type(HydrologyParameters), save :: hp
     type(RUNCLASS36_flags), save :: RUNCLASS36_flgs

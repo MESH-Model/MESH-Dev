@@ -30,9 +30,8 @@
 
         use model_files_variabletypes
         use model_files_variables
-!-        use RUNCLASS36_variables, only: cpv
         use sa_mesh_shared_variables
-!-        use FLAGS, only: SAVERESUMEFLAG
+        use FLAGS, only: SAVERESUMEFLAG
 
         implicit none
 
