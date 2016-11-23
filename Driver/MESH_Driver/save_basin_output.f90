@@ -104,15 +104,6 @@ module save_basin_output
         eb_out%QEVP = 0.0
         eb_out%HFS = 0.0
 
-        !> Open CSV output files for the water balance.
-        open(fls%fl(mfk%f900)%iun, &
-             file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
-             iostat = ierr)
-!todo: Create this only by flag.
-        open(902, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Monthly.csv')
-        open(903, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Hourly.csv')
-        open(904, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_ts.csv')
-
         !> Create a header that accounts for the proper number of soil layers.
         WRT_900_2 = 'LQWS'
         WRT_900_3 = 'FRWS'
@@ -136,11 +127,31 @@ module save_basin_output
                       trim(adjustl(WRT_900_4)) // &
                       'LQWS,FRWS,ALWS,STG,DSTG,DSTGACC'
 
-        !> Write the header.
-        write(fls%fl(mfk%f900)%iun, '(a)') 'DAY,YEAR,' // trim(adjustl(WRT_900_FMT))
-        write(902, '(a)') 'DAY,YEAR,' // trim(adjustl(WRT_900_FMT))
-        write(903, '(a)') 'DAY,YEAR,HOUR,' // trim(adjustl(WRT_900_FMT))
-        write(904, '(a)') 'DAY,YEAR,HOUR,MINS,' // trim(adjustl(WRT_900_FMT))
+        !> Daily.
+        if (btest(BASINAVGWBFILEFLAG, 0)) then
+            open(fls%fl(mfk%f900)%iun, &
+                 file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
+                 iostat = ierr)
+            write(fls%fl(mfk%f900)%iun, '(a)') 'DAY,YEAR,' // trim(adjustl(WRT_900_FMT))
+        end if
+
+        !> Monthly.
+        if (btest(BASINAVGWBFILEFLAG, 1)) then
+            open(902, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Monthly.csv')
+            write(902, '(a)') 'DAY,YEAR,' // trim(adjustl(WRT_900_FMT))
+        end if
+
+        !> Hourly.
+        if (btest(BASINAVGWBFILEFLAG, 2)) then
+            open(903, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Hourly.csv')
+            write(903, '(a)') 'DAY,YEAR,HOUR,' // trim(adjustl(WRT_900_FMT))
+        end if
+
+        !> Per time-step.
+        if (btest(BASINAVGWBFILEFLAG, 3)) then
+            open(904, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_ts.csv')
+            write(904, '(a)') 'DAY,YEAR,HOUR,MINS,' // trim(adjustl(WRT_900_FMT))
+        end if
 
         !> Open CSV output files for the energy balance and write the header.
         open(901, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance.csv')
@@ -245,14 +256,14 @@ module save_basin_output
         call update_water_balance(shd, wb, shd%NAA, shd%lc%IGND)
 
         !> Hourly (wb): IKEY_HLY
-        if (mod(ic%ts_hourly, 3600/ic%dts) == 0) then
+        if (mod(ic%ts_hourly, 3600/ic%dts) == 0 .and. btest(BASINAVGWBFILEFLAG, 2)) then
 !todo: change this to pass the index of the file object.
             call save_water_balance(shd, fls, 903, 3600, shd%NAA, IKEY_HLY)
         end if
 
         !> Daily (wb, eb): IKEY_DLY
         if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
-            call save_water_balance(shd, fls, fls%fl(mfk%f900)%iun, 86400, shd%NAA, IKEY_DLY)
+            if (btest(BASINAVGWBFILEFLAG, 0)) call save_water_balance(shd, fls, fls%fl(mfk%f900)%iun, 86400, shd%NAA, IKEY_DLY)
 
             !> Energy balance.
             dnar = wb%basin_area
@@ -263,7 +274,7 @@ module save_basin_output
         end if
 
         !> Monthly (wb): IKEY_MLY
-        if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
+        if (mod(ic%ts_daily, 86400/ic%dts) == 0 .and. btest(BASINAVGWBFILEFLAG, 1)) then
 
             !> Determine the next day in the month.
             call Julian2MonthDay((ic%now%jday + 1), ic%now%year, nmth, ndy)
@@ -276,7 +287,7 @@ module save_basin_output
         end if
 
         !> Time-step (wb): IKEY_TSP
-        call save_water_balance(shd, fls, 904, ic%dts, shd%NAA, IKEY_TSP)
+        if (btest(BASINAVGWBFILEFLAG, 3)) call save_water_balance(shd, fls, 904, ic%dts, shd%NAA, IKEY_TSP)
 
     end subroutine
 

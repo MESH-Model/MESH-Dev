@@ -614,6 +614,26 @@
                         call value(out_args(2), GGEOFLAG, ierr)
                     case ('BASINBALANCEOUTFLAG')
                         call value(out_args(2), BASINBALANCEOUTFLAG, ierr)
+                    case ('BASINAVGWBFILEFLAG')
+                        BASINAVGWBFILEFLAG = 0
+                        do j = 2, nargs
+                            select case (lowercase(out_args(j)))
+                                case ('daily')
+                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 1
+                                case ('monthly')
+                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 2
+                                case ('hourly')
+                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 4
+                                case ('ts')
+                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 8
+                                case ('default')
+                                    BASINAVGWBFILEFLAG = 1
+                                    exit
+                                case ('none')
+                                    BASINAVGWBFILEFLAG = 0
+                                    exit
+                            end select
+                        end do
                     case ('MODELINFOOUTFLAG')
                         call value(out_args(2), MODELINFOOUTFLAG, ierr)
                     case ('STREAMFLOWOUTFLAG')
