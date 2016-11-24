@@ -241,6 +241,8 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     end do
 
     !> Determine the number of active tile elements.
+!todo: fix this.
+    shd%wc%ILG = shd%lc%ILG
     allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), &
              shd%wc%ILMOS(shd%wc%ILG), shd%wc%JLMOS(shd%wc%ILG))
 
@@ -474,17 +476,50 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     end do !k = il1, il2
 
-    !> Check that grid output points are in the basin.
-    do i = 1, WF_NUM_POINTS
-        if (op%N_OUT(i) > shd%NA) then
-            write(6, *)
-            write(6, *)
-            write(6, *) 'Grids from basin watershed file: ', shd%NA
-            write(6, *) 'Grid output point ', i, ' is in Grid: ', op%N_OUT(i)
-            write(6, *) 'Please adjust this grid output point in ', 'MESH_input_run_options.ini'
-            stop
-        end if
-    end do
+    !> Check the grid output points.
+!todo: fix this.
+    if (ipid == 0) then
+        do i = 1, WF_NUM_POINTS
+
+            !> Check that output grid points aren't repeated and that the
+            !> output directories exist.
+            if (i < WF_NUM_POINTS) then
+                do j = i + 1, WF_NUM_POINTS
+                    if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
+                        print *
+                        print *, 'Output for Grid ', op%N_OUT(i), ' and GRU ', &
+                                 op%II_OUT(i), ' is repeated in grid output point: ', j
+                        print *, 'Please adjust this grid output ', &
+                                 'point in MESH_input_run_options.ini.'
+                        stop
+                    end if
+                end do
+            else
+                open(17, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/fort.17', status = 'unknown', iostat = ierr)
+                if (ierr /= 0) then
+                    print *
+                    print *, 'Grid output point ', i
+                    print *, 'The output directory does not exist: ' // trim(adjustl(op%DIR_OUT(i)))
+                    print *, 'Please adjust this grid output point ', &
+                             'in MESH_input_run_options.ini or create the ', &
+                             'folder.'
+                    stop
+                else
+                    close(17, status = 'delete')
+                end if
+            end if
+
+            !> Check that grid output points are in the basin.
+            if (op%N_OUT(i) > shd%NA) then
+                write(6, *)
+                write(6, *)
+                write(6, *) 'Grids from basin watershed file: ', shd%NA
+                write(6, *) 'Grid output point ', i, ' is in Grid: ', op%N_OUT(i)
+                write(6, *) 'Please adjust this grid output point in ', 'MESH_input_run_options.ini'
+                stop
+            end if
+        end do
+    end if
 
     !> Distribute the starting date of the forcing files.
     do n = 1, cm%nclim

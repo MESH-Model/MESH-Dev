@@ -48,6 +48,7 @@ module baseflow_module
 
     subroutine LZS_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
+        use mpi_shared_variables
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_files_variabletypes
@@ -56,6 +57,8 @@ module baseflow_module
         use climate_forcing
         use model_output_variabletypes
         use MODEL_OUTPUT
+
+        use FLAGS
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -79,30 +82,32 @@ module baseflow_module
         NML = shd%lc%NML
 
         !> Summarize current BASEFLOWFLAG configuration to file.
-        write(iun, "('BASEFLOW component ACTIVATED')")
-        write(iun, *)
-        select case (lzsp%BASEFLOWFLAG)
-            case (1)
-                write(iun, "(a22, f8.3)") 'WRCHRG_INI', lzsp%WrchrgIni
-                write(iun, "(a22, f8.3)") 'QB_INI', lzsp%QbIni
-                write(iun, *)
-                write(NMTESTFORMAT, "(a17, i3, 'f10.2)')") "('DGWSH'", NTYPE
-                write(iun, NMTESTFORMAT) (lzsp%dgwsh(1, m), m = 1, NTYPE)
-                write(NMTESTFORMAT, "(a17, i3, 'f10.2)')") "('AGWSH'", NTYPE
-                write(iun, NMTESTFORMAT) (lzsp%agwsh(1, m), m = 1, NTYPE)
-            case (2)
-                write(NMTESTFORMAT, "(a17, i3, 'f10.2)')") "('WF_LZFPWR'", NTYPE
-                write(iun, NMTESTFORMAT) (lzsp%WF_LZFPWR(1, m), m = 1, NTYPE)
-                write(NMTESTFORMAT, "(a17, i3, 'f10.2)')") "('WF_LZFA'", NTYPE
-                write(iun, NMTESTFORMAT) (lzsp%WF_LZFA(1, m), m = 1, NTYPE)
-            case default
-                write(iun, "('WARNING: Configuration not supported.')")
-                write(iun, "(a26, i4)") 'BASEFLOWFLAG', lzsp%BASEFLOWFLAG
-        end select
-        write(iun, *)
+        if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
+            write(iun, "('BASEFLOW component ACTIVATED')")
+            write(iun, *)
+            select case (lzsp%BASEFLOWFLAG)
+                case (1)
+                    write(iun, "(a22, f8.3)") 'WRCHRG_INI', lzsp%WrchrgIni
+                    write(iun, "(a22, f8.3)") 'QB_INI', lzsp%QbIni
+                    write(iun, *)
+                    write(NMTESTFORMAT, "(a17, i3, 'f10.2)')") "('DGWSH'", NTYPE
+                    write(iun, NMTESTFORMAT) (lzsp%dgwsh(1, m), m = 1, NTYPE)
+                    write(NMTESTFORMAT, "(a17, i3, 'f10.2)')") "('AGWSH'", NTYPE
+                    write(iun, NMTESTFORMAT) (lzsp%agwsh(1, m), m = 1, NTYPE)
+                case (2)
+                    write(NMTESTFORMAT, "(a17, i3, 'f10.2)')") "('WF_LZFPWR'", NTYPE
+                    write(iun, NMTESTFORMAT) (lzsp%WF_LZFPWR(1, m), m = 1, NTYPE)
+                    write(NMTESTFORMAT, "(a17, i3, 'f10.2)')") "('WF_LZFA'", NTYPE
+                    write(iun, NMTESTFORMAT) (lzsp%WF_LZFA(1, m), m = 1, NTYPE)
+                case default
+                    write(iun, "('WARNING: Configuration not supported.')")
+                    write(iun, "(a26, i4)") 'BASEFLOWFLAG', lzsp%BASEFLOWFLAG
+            end select
+            write(iun, *)
+        end if
 
         !> Summarize current BASEFLOWFLAG configuration to screen.
-        print '(/1x, (a), /)', 'BASEFLOW component ACTIVATED'
+        if (ro%VERBOSEMODE > 0) print '(/1x, (a), /)', 'BASEFLOW component ACTIVATED'
 
         !> Initialize and distribute BASEFLOWFLAG initial values and parameterization.
         select case (lzsp%BASEFLOWFLAG)
@@ -126,7 +131,26 @@ module baseflow_module
                 end do
             case default
                 print *, ' WARNING: BASEFLOWFLAG ', lzsp%BASEFLOWFLAG, ' not configured.'
+                stop
         end select
+
+        if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
+            select case (lzsp%BASEFLOWFLAG)
+                case (1)
+                    iun = fls%fl(mfk%f883)%iun
+                    open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012', status = 'old', action = 'read', &
+                        form = 'unformatted', access = 'sequential', iostat = ierr)
+                    read(iun) Wrchrg
+                    read(iun) Qb
+                    close(iun)
+                case (2)
+                    iun = fls%fl(mfk%f883)%iun
+                    open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz', status = 'old', action = 'read', &
+                        form = 'unformatted', access = 'sequential', iostat = ierr)
+                    read(iun) Wrchrg
+                    close(iun)
+            end select
+        end if
 
     end subroutine
 
@@ -191,6 +215,49 @@ module baseflow_module
 !+                ROFGAT = ROFGAT + ROFBGAT
 !+                WTRGGAT = WTRGGAT - (Wseep - ROFBGAT)
 !+        end select
+
+    end subroutine
+
+    subroutine LZS_finalize(fls, shd)
+
+        use mpi_shared_variables
+        use model_files_variabletypes
+        use model_files_variables
+        use sa_mesh_shared_variabletypes
+        use model_dates
+
+        !> For: SAVERESUMEFLAG
+        use FLAGS
+
+        type(fl_ids) :: fls
+        type(ShedGridParams) :: shd
+
+        !> Local variables.
+        integer ierr, iun
+
+        !> Return if not the head node.
+        if (ipid /= 0) return
+
+        !> Return if BASEFLOWFLAG is not active
+        if (lzsp%BASEFLOWFLAG == 0) return
+
+        if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
+            select case (lzsp%BASEFLOWFLAG)
+                case (1)
+                    iun = fls%fl(mfk%f883)%iun
+                    open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012', status = 'replace', &
+                        action = 'write', form = 'unformatted', access = 'sequential', iostat = ierr)
+                    write(iun) Wrchrg
+                    write(iun) Qb
+                    close(iun)
+                case (2)
+                    iun = fls%fl(mfk%f883)%iun
+                    open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz', status = 'replace', &
+                        action = 'write', form = 'unformatted', access = 'sequential', iostat = ierr)
+                    write(iun) Wrchrg
+                    close(iun)
+            end select
+        end if
 
     end subroutine
 

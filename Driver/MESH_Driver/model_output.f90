@@ -323,7 +323,7 @@ module model_output
         character*450 :: flIn
         character*450 :: pthOut
 !        character*20, dimension(:,:), allocatable :: ids_var_out
-        integer :: nr_out
+        integer :: nr_out = 0
         type(data_var_out), dimension(:), allocatable :: var_out
 
     END TYPE

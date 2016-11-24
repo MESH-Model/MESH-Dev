@@ -167,7 +167,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = 'TRUNK (991)'
+    character(24) :: VERSION = 'TRUNK (1009)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
 !-    logical VER_OK
@@ -322,6 +322,11 @@ program RUNMESH
 
     if (ipid == 0) then
 
+        !> Open status file.
+        if (MODELINFOOUTFLAG > 0) then
+            open(58, file = './' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
+        end if
+
         !> Hourly output.
         call init_met_data(md_grd, shd)
 
@@ -422,7 +427,7 @@ program RUNMESH
 !>  End of subbasin section
 !> **********************************************************************
 
-    ENDDATA = climate_module_init(shd, il1, il2, cm)
+    ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
     if (ENDDATA) then
         RUNSTATE = 1
         goto 997
@@ -447,7 +452,6 @@ program RUNMESH
     !> ******************************************************
 
         if (MODELINFOOUTFLAG > 0) then
-            open(58, file = './' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
             write(58, "('Number of Soil Layers (IGND) = ', i5)") IGND
             write(58, *)
             write(58, "('MESH_input_run_options.ini')")
@@ -1062,7 +1066,7 @@ program RUNMESH
         if (RUNSTATE /= 0) exit
 
         !> Load or update climate forcing input.
-        ENDDATA = climate_module_update_data(shd, il1, il2, cm)
+        ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
         if (ENDDATA) then
             RUNSTATE = 1
             cycle
@@ -1227,9 +1231,9 @@ program RUNMESH
             wb_grd%STG = wb_grd%DSTG + wb_grd%STG
 
             !> Update output data.
-            call updatefieldsout_temp(shd, ts, ifo, &
-                                      md_grd, wb_grd, &
-                                      vr)
+            if (OUTFIELDSFLAG == 1) call updatefieldsout_temp(shd, ts, ifo, &
+                                                              md_grd, wb_grd, &
+                                                              vr)
 
             !> Basin totals for the run.
             TOTAL_PRE = TOTAL_PRE + sum(wb_grd%PRE)
@@ -1500,8 +1504,9 @@ program RUNMESH
     !> Call finalization routines.
     call run_within_tile_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
     call run_within_grid_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    call climate_module_finalize(fls, shd, cm)
 
-    if (ipid == 0 ) then
+    if (ipid == 0) then
 
         !> Call finalization routines.
         call run_between_grid_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)

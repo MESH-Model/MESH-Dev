@@ -548,6 +548,10 @@ module RUNCLASS36_config
             case (4)
                 call read_init_prog_variables_class(fls)
 
+            !> RESUMEFLAG 5.
+            case (5)
+                call read_init_prog_variables_class(fls)
+
         end select !case (RESUMEFLAG)
 
         !> Distribute variables.
@@ -782,8 +786,8 @@ module RUNCLASS36_config
             ik = shd%lc%ILMOS(k)
             !LATLENGTH = shd%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
             !LONGLENGTH = shd%AL/1000.0/(111.4172*cos((DEGLAT*PI/180.0)) - 0.094*cos(3*(DEGLAT*PI/180.0)) + 0.0002*cos(5*(DEGLAT*PI/180.0)))
-            catv%RADJ(k) = ((shd%yOrigin + shd%yDelta*shd%yyy(ik)) - shd%yDelta/2.0)*PI/180.0
-            catv%DLON(k) = (shd%xOrigin + shd%xDelta*shd%xxx(ik)) - shd%xDelta/2.0
+            catv%RADJ(k) = shd%ylat(ik)*PI/180.0
+            catv%DLON(k) = shd%xlng(ik)
         end do
         catv%Z0OR = 0.0
         catv%GGEO(:) = GGEOGRD(1)
@@ -938,6 +942,10 @@ module RUNCLASS36_config
 
             !> SAVERESUMEFLAG 4.
             case (4)
+                call save_init_prog_variables_class(fls)
+
+            !> RESUMEFLAG 5.
+            case (5)
                 call save_init_prog_variables_class(fls)
 
         end select !case (SAVERESUMEFLAG)

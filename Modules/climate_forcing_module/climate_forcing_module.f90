@@ -30,13 +30,22 @@ module climate_forcing
     !> Outputs:
     !>  - ENDDATA: Returns .true. if there was an error occurred intializing the climate object or its variables.
     !>
-    function climate_module_init(shd, ii1, ii2, cm) result(ENDDATA)
+    function climate_module_init(fls, shd, ii1, ii2, cm) result(ENDDATA)
 
+
+        !> Required for 'fls', 'mfk' variables.
+        use model_files_variabletypes
+        use model_files_variables
+
+        !> Required for 'shd', 'ro' variables.
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
+
+        !> Required for 'RESUMEFLAG'.
         use FLAGS
 
         !> Input variables.
+        type(fl_ids) :: fls
 !-        type(dates_model) :: ts
         type(ShedGridParams) :: shd
         integer ii1, ii2
@@ -52,7 +61,7 @@ module climate_forcing
 !        integer nyy, ndy,
         integer JDAY_IND_MET, ISTEP_START, nmy, nhy, nrs, Jday_IND2, Jday_IND3, toskip
 !-        integer nts, rts, timeStepClimF
-        integer vid, t, s, k, j, i
+        integer vid, t, s, k, j, i, iun, ierr
 
         ENDDATA = .false.
 
@@ -239,6 +248,53 @@ module climate_forcing
 
         end do !vid = 1, cm%nclim
 
+        !> Read the state of these variables.
+        if (RESUMEFLAG == 4) then
+
+            !> Open the resume file.
+            iun = fls%fl(mfk%f883)%iun
+            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat', status = 'old', action = 'read', &
+                 form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+            !> Stop if the state file does not contain the same number of climate variables.
+            read(iun) ierr
+            if (ierr /= cm%nclim) then
+                print *, 'Incompatible ranking in climate state file: ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat'
+                print *, ' Number of clim. variables read: ', ierr
+                print *, ' Number of clim. variabels expected: ', cm%nclim
+                stop
+            end if
+
+            !> Loop through variables in the climate forcing object and populate their state from file.
+            do vid = 1, cm%nclim
+
+                !> Read the state of the climate variable (in case reading into memory).
+                read(iun) cm%dat(vid)%blocks
+                read(iun) cm%dat(vid)%iblock
+
+                !> Read the last time-step read from file.
+                read(iun) cm%dat(vid)%itimestep
+
+                !> Read the interpolation state (if active).
+                read(iun) cm%dat(vid)%ipflg
+                if (cm%dat(vid)%ipflg == 1) then
+                    read(iun) cm%dat(vid)%ipdat
+
+                    !> INTERPOLATIONFLAG 1 requires an additional frame be read from the next time-step.
+                    if (cm%dat(vid)%itimestep == 0) then
+                        if (update_data(shd, cm, vid, .false.)) goto 999
+                        cm%dat(vid)%ipdat(:, 2) = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
+                    end if
+                end if
+
+            end do !vid = 1, cm%nclim
+
+            !> Close the file to free the unit.
+            close(iun)
+
+        end if !(RESUMEFLAG == 4) then
+
         return
 
 999     ENDDATA = .true.
@@ -258,7 +314,10 @@ module climate_forcing
     !> Outputs:
     !>  - ENDDATA: Returns .true. if there was an error occurred intializing the climate object or its variables.
     !>
-    function climate_module_update_data(shd, ii1, ii2, cm) result(ENDDATA)
+    function climate_module_update_data(fls, shd, ii1, ii2, cm) result(ENDDATA)
+
+        !> Required for 'fls' variable.
+        use model_files_variabletypes
 
         !> Required for 'shd' variable.
         use sa_mesh_shared_variabletypes
@@ -270,6 +329,7 @@ module climate_forcing
         use strings
 
         !> Input variables.
+        type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
         integer, intent(in) :: ii1, ii2
 
@@ -389,5 +449,67 @@ module climate_forcing
 999     ENDDATA = .true.
 
     end function !climate_module_update_data
+
+    subroutine climate_module_finalize(fls, shd, cm)
+
+        !> Required for 'ipid' variable.
+        use mpi_shared_variables
+
+        !> Required for 'fls', 'mfk' variables.
+        use model_files_variabletypes
+        use model_files_variables
+
+        !> Required for 'shd' variable.
+        use sa_mesh_shared_variabletypes
+
+        !> Required for 'SAVERESUMEFLAG'.
+        use FLAGS
+
+        type(fl_ids) :: fls
+        type(ShedGridParams) :: shd
+        type(clim_info) :: cm
+
+        !> Local variables.
+        integer vid, ierr, iun
+
+        !> Return if not the head node.
+        if (ipid /= 0) return
+
+        !> Save the state of these variables.
+        if (SAVERESUMEFLAG == 4) then
+
+            !> Open the resume file.
+            iun = fls%fl(mfk%f883)%iun
+            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat', status = 'replace', action = 'write', &
+                 form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+            !> Write the current number of climate variables.
+            write(iun) cm%nclim
+
+            !> Loop through variables in the climate forcing object and write the current state to file.
+            do vid = 1, cm%nclim
+
+                !> Save the state of the climate variable (in case reading into memory).
+                write(iun) cm%dat(vid)%blocks
+                write(iun) cm%dat(vid)%iblock
+
+                !> Save the current time-step read from file.
+                write(iun) cm%dat(vid)%itimestep
+
+                !> Save the interpolation state (if active).
+                write(iun) cm%dat(vid)%ipflg
+                if (cm%dat(vid)%ipflg == 1) then
+                    write(iun) cm%dat(vid)%ipdat
+                end if
+
+            end do !vid = 1, cm%nclim
+
+            !> Close the file to free the unit.
+            close(iun)
+
+        end if !(SAVERESUMEFLAG == 4) then
+
+    end subroutine
 
 end module !climate_forcing

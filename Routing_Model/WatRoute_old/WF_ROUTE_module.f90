@@ -104,7 +104,7 @@ module WF_ROUTE_module
 !-        real WF_R1(M_C), WF_R2(M_C)
 
         !> Local variables.
-        integer i
+        integer l, i
         logical writeout
 
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
@@ -153,6 +153,12 @@ module WF_ROUTE_module
         if (JAN == 1) then
             JAN = 2
         end if
+
+        do l = 1, fms%rsvr%n
+            i = fms%rsvr%rnk(l)
+            write(708+l,"(2(I6,','),7(G12.5,','))") l, i, &
+                stas%chnl%qi(i), wf_store1(i), wf_qi2(i), stas%chnl%s(i), stas%chnl%qo(i)
+        end do
 
         !> *********************************************************************
         !> Write measured and simulated streamflow to file and screen

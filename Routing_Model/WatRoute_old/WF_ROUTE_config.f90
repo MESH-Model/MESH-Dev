@@ -231,8 +231,11 @@ module WF_ROUTE_config
         !* ierr: Error return from external calls.
         !* iun: Unit number.
         real ry, rx
-        integer iy, ix, i, j, ierr, iun
+        integer iy, ix, l, i, j, ierr, iun
 
+        character*10 fn
+
+        !> Return if the process is inactive.
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
 
         NA = shd%NA
@@ -505,7 +508,8 @@ module WF_ROUTE_config
                  iostat = ierr)
         end if
 
-        if (RESUMEFLAG == 4) then
+        !> Read the state of these variables.
+        if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
@@ -525,16 +529,35 @@ module WF_ROUTE_config
             read(iun) stas%chnl%qo
             read(iun) stas%chnl%s
             read(iun) wf_qi2
+            if (RESUMEFLAG == 4) then
+                read(iun) WF_QO2_ACC_MM
+                read(iun) WF_STORE2_ACC_MM
+            end if
 
             !> Close the file to free the unit.
             close(iun)
 
-        end if !(RESUMEFLAG == 4) then
+        end if !(RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
+
+        do l = 1, NR
+            if(l.lt.10) then
+                write (fn, '(I1)') l
+            else
+                write (fn, '(I2)') l
+            endif
+            open(UNIT=708+l, &
+                 FILE='./' // trim(fls%GENDIR_OUT) // '/' // 'res_' // adjustl(trim(fn)) // '.csv', &
+                 status='unknown', action = 'write')
+            write(708+l,"(2(a6','),7(a12,','))") &
+                'l', 'wf_r', &
+                'wf_qi1', 'wf_store1', 'wf_qi2', 'wf_store2', 'wf_qo2'
+        end do
 
     end subroutine
 
     subroutine WF_ROUTE_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
+        use mpi_shared_variables
         use model_files_variabletypes
         use model_files_variables
         use sa_mesh_shared_variabletypes
@@ -556,7 +579,14 @@ module WF_ROUTE_config
         !> Local variables.
         integer ierr, iun
 
-        if (SAVERESUMEFLAG == 4) then
+        !> Return in the process is inactive.
+        if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
+
+        !> Return if not the head node.
+        if (ipid /= 0) return
+
+        !> Save the state of these variables.
+        if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
@@ -576,11 +606,15 @@ module WF_ROUTE_config
             write(iun) stas%chnl%qo
             write(iun) stas%chnl%s
             write(iun) wf_qi2
+            if (SAVERESUMEFLAG == 4) then
+                write(iun) WF_QO2_ACC_MM
+                write(iun) WF_STORE2_ACC_MM
+            end if
 
             !> Close the file to free the unit.
             close(iun)
 
-        end if !(SAVERESUMEFLAG == 4) then
+        end if !(SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
 
     end subroutine
 
