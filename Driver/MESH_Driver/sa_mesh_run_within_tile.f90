@@ -49,6 +49,7 @@ module sa_mesh_run_within_tile
         use model_output_variabletypes
         use MODEL_OUTPUT
 
+        use cropland_irrigation_within_tile, only: runci_within_tile
         use RUNCLASS36_module, only: RUNCLASS36_within_tile
         use RUNSVS113_module, only: RUNSVS113
         use WF_ROUTE_module, only: WF_ROUTE_within_tile
@@ -80,6 +81,9 @@ module sa_mesh_run_within_tile
 
         run_within_tile = WF_ROUTE_within_tile(shd, stfl, rrls)
         if (len_Trim(run_within_tile) > 0) return
+
+        !> Cropland irrigation module (PEVP).
+        call runci_within_tile(shd, fls, cm)
 
         stas%cnpy%evpb(il1:il2) = 0.0
         where (stas%cnpy%pevp(il1:il2) /= 0.0)

@@ -21,6 +21,9 @@
 
         use SA_RTE_module, only: SA_RTE_flgs
 
+        !> Cropland irrigation module.
+        use cropland_irrigation_variables, only: cifg
+
         implicit none
 
         !> Input variables.
@@ -673,6 +676,25 @@
                     !> Reservoir Release function flag (Number of WF_B coefficients).
                     case ('RESVRELSWFB')
                         call value(out_args(2), WF_RTE_flgs%RESVRELSWFB, ierr)
+
+                    !> Cropland irrigation module.
+                    case ('CROPLANDIRRIGATION')
+                        cifg%ts_flag = 0
+                        select case (lowercase(out_args(2)))
+                            case ('daily')
+                                cifg%ts_flag = 1
+                            case ('hourly')
+                                cifg%ts_flag = 4
+                            case ('ts')
+                                cifg%ts_flag = 8
+                            case ('default')
+                                cifg%ts_flag = 1
+                                exit
+                            case ('none')
+                                cifg%ts_flag = 0
+                                exit
+                        end select
+                        cifg%PROCESS_ACTIVE = (cifg%ts_flag > 0)
 
                     !> Unrecognized flag.
                     case default

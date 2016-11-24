@@ -14,6 +14,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     use RUNCLASS36_constants
     use RUNCLASS36_variables
     use RUNCLASS36_save_output
+    use cropland_irrigation_variables, only: cip, ciprot, cifg
 
     implicit none
 
@@ -569,6 +570,20 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     allocate(t0_ACC(NYEARS))
     t0_ACC = 0.0
 
+    !> Allocate and initialize parameters for the cropland irrigation module.
+    if (cifg%PROCESS_ACTIVE) then
+        allocate( &
+            ciprot%jdsow(NTYPE), ciprot%ldini(NTYPE), ciprot%lddev(NTYPE), ciprot%ldmid(NTYPE), ciprot%ldlate(NTYPE), &
+            ciprot%Kcini(NTYPE), ciprot%Kcdev(NTYPE), ciprot%Kcmid(NTYPE), ciprot%Kclate(NTYPE))
+        ciprot%jdsow = 0; ciprot%ldini = 0; ciprot%lddev = 0; ciprot%ldmid = 0; ciprot%ldlate = 0
+        ciprot%Kcini = 0.0; ciprot%Kcdev = 0.0; ciprot%Kcmid = 0.0; ciprot%Kclate = 0.0
+        allocate( &
+            cip%jdsow(NML), cip%ldini(NML), cip%lddev(NML), cip%ldmid(NML), cip%ldlate(NML), &
+            cip%Kcini(NML), cip%Kcdev(NML), cip%Kcmid(NML), cip%Kclate(NML))
+        cip%jdsow = 0; cip%ldini = 0; cip%lddev = 0; cip%ldmid = 0; cip%ldlate = 0
+        cip%Kcini = 0.0; cip%Kcdev = 0.0; cip%Kcmid = 0.0; cip%Kclate = 0.0
+    end if
+
     !> Read parameters from file.
     call READ_PARAMETERS_HYDROLOGY(shd, fls)
 
@@ -583,6 +598,19 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         pm%snp%zsnl(k) = pmrow%snp%zsnl(m)
         pm%sfp%zplg(k) = pmrow%sfp%zplg(m)
         pm%snp%zpls(k) = pmrow%snp%zpls(m)
+
+        !> Cropland irrigation module.
+        if (cifg%PROCESS_ACTIVE) then
+            cip%jdsow(k) = ciprot%jdsow(m)
+            cip%ldini(k) = ciprot%ldini(m)
+            cip%lddev(k) = ciprot%lddev(m)
+            cip%ldmid(k) = ciprot%ldmid(m)
+            cip%ldlate(k) = ciprot%ldlate(m)
+            cip%Kcini(k) = ciprot%Kcini(m)
+            cip%Kcdev(k) = ciprot%Kcdev(m)
+            cip%Kcmid(k) = ciprot%Kcmid(m)
+            cip%Kclate(k) = ciprot%Kclate(m)
+        end if
 
     end do !k = il1, il2
 
