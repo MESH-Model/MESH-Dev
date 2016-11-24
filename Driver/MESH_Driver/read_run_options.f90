@@ -636,6 +636,29 @@
                                     exit
                             end select
                         end do
+
+                    !> Time-averaged basin PEVP-EVAP and EVPB output.
+                    case ('BASINAVGEVPFILEFLAG')
+                        BASINAVGEVPFILEFLAG = 0
+                        do j = 2, nargs
+                            select case (lowercase(out_args(j)))
+                                case ('daily')
+                                    BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 1
+                                case ('monthly')
+                                    BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 2
+                                case ('hourly')
+                                    BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 4
+                                case ('ts')
+                                    BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 8
+                                case ('default')
+                                    BASINAVGEVPFILEFLAG = 1
+                                    exit
+                                case ('none')
+                                    BASINAVGEVPFILEFLAG = 0
+                                    exit
+                            end select
+                        end do
+
                     case ('MODELINFOOUTFLAG')
                         call value(out_args(2), MODELINFOOUTFLAG, ierr)
                     case ('STREAMFLOWOUTFLAG')

@@ -87,7 +87,7 @@ module model_output
     type water_balance_series
 
         real, dimension(:, :), allocatable :: &
-            pre, evap, rof, &
+            pre, evap, pevp, evpb, arrd, rof, &
             rofo, rofs, rofb, &
             rcan, sncan, pndw, sno, wsno, &
             stg, dstg, &
@@ -107,7 +107,7 @@ module model_output
     type water_balance
 
         real, dimension(:), allocatable :: &
-            pre, evap, rof, &
+            pre, evap, pevp, evpb, arrd, rof, &
             rofo, rofs, rofb, &
             rcan, sncan, pndw, sno, wsno, &
             stg, dstg, &
@@ -549,8 +549,8 @@ module model_output
 
         !> Allocate arrays using basin info.
         allocate( &
-            wbt%pre(nts, shd%NA), wbt%evap(nts, shd%NA), wbt%rof(nts, shd%NA), &
-            wbt%rofo(nts, shd%NA), wbt%rofs(nts, shd%NA), wbt%rofb(nts, shd%NA), &
+            wbt%pre(nts, shd%NA), wbt%evap(nts, shd%NA), wbt%pevp(nts, shd%NA), wbt%evpb(nts, shd%NA), wbt%arrd(nts, shd%NA), &
+            wbt%rof(nts, shd%NA), wbt%rofo(nts, shd%NA), wbt%rofs(nts, shd%NA), wbt%rofb(nts, shd%NA), &
             wbt%rcan(nts, shd%NA), wbt%sncan(nts, shd%NA), &
             wbt%pndw(nts, shd%NA), wbt%sno(nts, shd%NA), wbt%wsno(nts, shd%NA), &
             wbt%stg(nts, shd%NA), wbt%dstg(nts, shd%NA), &
@@ -560,6 +560,9 @@ module model_output
         !> Explicitly set all variables to 0.0.
         wbt%pre = 0.0
         wbt%evap = 0.0
+        wbt%pevp = 0.0
+        wbt%evpb = 0.0
+        wbt%arrd = 0.0
         wbt%rof = 0.0
         wbt%rofo = 0.0
         wbt%rofs = 0.0
@@ -588,8 +591,8 @@ module model_output
 
         !> Allocate arrays using basin info.
         allocate( &
-            wb%pre(shd%NA), wb%evap(shd%NA), wb%rof(shd%NA), &
-            wb%rofo(shd%NA), wb%rofs(shd%NA), wb%rofb(shd%NA), &
+            wb%pre(shd%NA), wb%evap(shd%NA), wb%pevp(shd%NA), wb%evpb(shd%NA), wb%arrd(shd%NA), &
+            wb%rof(shd%NA), wb%rofo(shd%NA), wb%rofs(shd%NA), wb%rofb(shd%NA), &
             wb%rcan(shd%NA), wb%sncan(shd%NA), &
             wb%pndw(shd%NA), wb%sno(shd%NA), wb%wsno(shd%NA), &
             wb%stg(shd%NA), wb%dstg(shd%NA), &
@@ -599,6 +602,9 @@ module model_output
         !> Explicitly set all variables to 0.0.
         wb%pre = 0.0
         wb%evap = 0.0
+        wb%pevp = 0.0
+        wb%evpb = 0.0
+        wb%arrd = 0.0
         wb%rof = 0.0
         wb%rofo = 0.0
         wb%rofs = 0.0

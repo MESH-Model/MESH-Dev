@@ -1100,6 +1100,8 @@ program RUNMESH
             wb_grd%PRE = 0.0
             eb_grd%QEVP = 0.0
             wb_grd%EVAP = 0.0
+            wb_grd%pevp = 0.0
+            wb_grd%evpb = 0.0
             eb_grd%HFS = 0.0
             wb_grd%ROF = 0.0
             wb_grd%ROFO = 0.0

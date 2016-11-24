@@ -56,6 +56,10 @@ module sa_mesh_run_within_tile
 
         character(100) run_within_tile
 
+        !> Internal variables for accumulation.
+        integer k, ik
+        real FRAC
+
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
@@ -82,6 +86,18 @@ module sa_mesh_run_within_tile
             stas%cnpy%evpb(il1:il2) = stas%cnpy%evp(il1:il2)/stas%cnpy%pevp(il1:il2)
             stas%cnpy%arrd(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)/stas%cnpy%pevp(il1:il2)
         end where
+
+        if (ipid == 0) then
+            do k = il1, il2
+                ik = shd%lc%ILMOS(k)
+                FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
+                if (FRAC > 0.0) then
+                    wb%pevp(ik) = wb%pevp(ik) + stas%cnpy%pevp(k)*FRAC*ic%dts
+                    wb%evpb(ik) = wb%evpb(ik) + stas%cnpy%evpb(k)*FRAC
+                    wb%arrd(ik) = wb%arrd(ik) + stas%cnpy%arrd(k)*FRAC
+                end if
+            end do
+        end if
 
         return
 
