@@ -42,7 +42,6 @@ module sa_mesh_shared_variables
         type(surface_interface) :: sfc
         type(soil_layer) :: sl
         type(deep_zone) :: lzs, dzs
-        type(water_storage) :: wb
     end type
 
     !* stas: Collection of the state of variables in the current time-step.

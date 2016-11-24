@@ -53,7 +53,7 @@ C
 C     * INTEGER CONSTANTS.
 C
       integer NML, IL1, IL2, IG, ICTEMMOD, NL, NM, ILG,
-     &        k, j, ik, jk
+     &        k, m, j
 C
 C     * OUTPUT ARRAYS.
 C
@@ -80,10 +80,10 @@ C
 
 C     * VARIABLES FOR SOIL.INI FILE
       integer ILMOS(ILG), JLMOS(ILG)
-      real WC_THPOR(NL, NM, IG), WC_THLRET(NL, NM, IG),
-     &     WC_THLMIN(NL, NM, IG), WC_BI(NL, NM, IG),
-     &     WC_PSISAT(NL, NM, IG), WC_GRKSAT(NL, NM, IG),
-     &     WC_HCPS(NL, NM, IG), WC_TCS(NL, NM, IG)
+      real WC_THPOR(NM, IG), WC_THLRET(NM, IG),
+     &     WC_THLMIN(NM, IG), WC_BI(NM, IG),
+     &     WC_PSISAT(NM, IG), WC_GRKSAT(NM, IG),
+     &     WC_HCPS(NM, IG), WC_TCS(NM, IG)
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -147,8 +147,7 @@ C
 C
       do 300 j = 1, IG
         do 300 k = IL1, IL2
-          ik = ILMOS(k)
-          jk = JLMOS(k)
+          m = JLMOS(k)
           if (ISAND(k, j) == -4) then
             THPOR(k, j) = 0.0
             THLRET(k, j) = 0.0
@@ -188,14 +187,14 @@ C
      &                     THPOR(k, j))**(-BI(k, j))
           else if (SAND(k, j) >= 0) then
 		    if (SOILINIFLAG == 5) then
-			  THPOR(k, j) = WC_THPOR(ik, jk, j)
-              THLRET(k, j) = WC_THLRET(ik, jk, j)
-              THLMIN(k, j) = WC_THLMIN(ik, jk, j)
-              BI(k, j) = WC_BI(ik, jk, j)
-              PSISAT(k, j) = WC_PSISAT(ik, jk, j)
-              GRKSAT(k, j) = WC_GRKSAT(ik, jk, j)
-              HCPS(k, j) = WC_HCPS(ik, jk, j)
-              TCS(k, j) = WC_TCS(ik, jk, j)
+			  THPOR(k, j) = WC_THPOR(m, j)
+              THLRET(k, j) = WC_THLRET(m, j)
+              THLMIN(k, j) = WC_THLMIN(m, j)
+              BI(k, j) = WC_BI(m, j)
+              PSISAT(k, j) = WC_PSISAT(m, j)
+              GRKSAT(k, j) = WC_GRKSAT(m, j)
+              HCPS(k, j) = WC_HCPS(m, j)
+              TCS(k, j) = WC_TCS(m, j)
 			else
               THPOR(k, j) = (-0.126*SAND(k, j) + 48.9)/100.0
               THLRET(k, j) = 0.04
@@ -232,8 +231,8 @@ C
 		    print *
 			print '(A,/,A,F5.2,/,A8,I3,/,A8,I3,/,A8,I3)',
      &            'SPECIFIED SAND PERCENTAGE IS NOT VALID',
-     &            '%SAND = ', SAND(k, j), ' GRID: ', ik,
-     &            ' GRU: ', jk, ' LAYER: ', j
+     &            '%SAND = ', SAND(k, j),
+     &            ' GRU: ', m, ' LAYER: ', j
 	        stop
           end if
 C

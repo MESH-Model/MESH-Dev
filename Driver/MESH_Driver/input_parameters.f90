@@ -90,17 +90,30 @@ module input_parameters
     !*  n: Number of elements dimensioned.
     !>
     !> Variables:
-    !*  sdep: Permeable depth of the soil column. [m].
-    !*  ggeo: Geothermal heat flux. [W m-2].
-    !*  delz: Layer thickness. [m].
-    !*  zbot: Depth of bottom. [m].
     !*  sand: Percent content of sand in the mineral soil. [%].
     !*  clay: Percent content of clay in the mineral soil. [%].
     !*  orgm: Percent content of organic matter in the mineral soil. [%].
+    !*  sdep: Permeable depth of the soil column. [m].
+    !*  delz: Layer thickness. [m].
+    !*  zbot: Depth to bottom of the column. [m].
+    !*  alwet: Reference all-wave albedo of wet soil for modelled area. [--].
+    !*  aldry: Reference all-wave albedo of dry soil for modelled area. [--].
+    !*  thpor: Pore volume. [m3 m-3].
+    !*  thlret: Liquid water retention capacity for organic soil. [m3 m-3].
+    !*  thlmin: Residual soil liquid water content remaining after freezing or evaporation. [m3 m-3].
+    !*  thlrat: Fractional saturation of soil at half the saturated hydraulic conductivity. [--].
+    !*  bi: Clapp and Hornberger empirical parameter. [--].
+    !*  psisat: Soil moisture suction at saturation. [m].
+    !*  psiwlt: Soil moisture suction at wilting point. [m].
+    !*  grksat: Hydraulic conductivity of soil at saturation. [m s-1].
+    !*  thfc: Field capacity. [m3 m-3].
+    !*  hcps: Volumetric heat capacity of soil matter. [J m-3 K-1].
+    !*  tcs: Thermal conductivity of soil. [W m-1 K-1].
     type soil_parameters
-        integer(kind = 4) :: n
-        real(kind = 4), dimension(:), allocatable :: sdep, ggeo, delz, zbot
-        real(kind = 4), dimension(:, :), allocatable :: sand, clay, orgm
+        real(kind = 4), dimension(:), allocatable :: sdep, alwet, aldry
+        real(kind = 4), dimension(:), allocatable :: delz, zbot
+        real(kind = 4), dimension(:, :), allocatable :: sand, clay, orgm, &
+            thpor, thlret, thlmin, thlrat, bi, psisat, psiwlt, grksat, thfc, hcps, tcs
     end type
 
     !> Type: Hydraulic parameters.

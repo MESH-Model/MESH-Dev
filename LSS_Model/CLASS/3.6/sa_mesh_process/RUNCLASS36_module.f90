@@ -633,68 +633,68 @@ module RUNCLASS36_module
 
         end if !(ipid == 0) then
 
-        if (ipid == 0) then
+!-        if (ipid == 0) then
 
             !> Copy over state variables.
-            stas%cnpy%qac = cpv%QAC
-            stas%cnpy%rcan = cpv%RCAN
-            stas%cnpy%sncan = cpv%SNCAN
-            stas%cnpy%tac = cpv%TAC
-            stas%cnpy%tcan = cpv%TCAN
-            stas%cnpy%cmai = cpv%CMAI
-            stas%cnpy%gro = cpv%GRO
-            stas%sno%sno = cpv%SNO
-            stas%sno%albs = cpv%ALBS
-            stas%sno%rhos = cpv%RHOS
-            stas%sno%tsno = cpv%TSNO
-            stas%sno%wsno = cpv%WSNO
-            stas%sfc%tpnd = cpv%TPND
-            stas%sfc%zpnd = cpv%ZPND
-            stas%sfc%tsfs = cpv%TSFS
-            stas%sl%tbas = cpv%TBAS
-            stas%sl%thic = cpv%THIC
-            stas%sl%fzws = cpv%THIC*csfv%DELZW*RHOICE
-            stas%sl%thlq = cpv%THLQ
-            stas%sl%lqws = cpv%THLQ*csfv%DELZW*RHOW
-            stas%sl%tbar = cpv%TBAR
-            stas%cnpy%evp = cdv%QFS
-            stas%cnpy%pevp = cdv%PET
+!-            stas%cnpy%qac = cpv%QAC
+!-            stas%cnpy%rcan = cpv%RCAN
+!-            stas%cnpy%sncan = cpv%SNCAN
+!-            stas%cnpy%tac = cpv%TAC
+!-            stas%cnpy%tcan = cpv%TCAN
+!-            stas%cnpy%cmai = cpv%CMAI
+!-            stas%cnpy%gro = cpv%GRO
+!-            stas%sno%sno = cpv%SNO
+!-            stas%sno%albs = cpv%ALBS
+!-            stas%sno%rhos = cpv%RHOS
+!-            stas%sno%tsno = cpv%TSNO
+!-            stas%sno%wsno = cpv%WSNO
+!-            stas%sfc%tpnd = cpv%TPND
+!-            stas%sfc%zpnd = cpv%ZPND
+!-            stas%sfc%tsfs = cpv%TSFS
+!-            stas%sl%tbas = cpv%TBAS
+!-            stas%sl%thic = cpv%THIC
+!-            stas%sl%fzws = cpv%THIC*csfv%DELZW*RHOICE
+!-            stas%sl%thlq = cpv%THLQ
+!-            stas%sl%lqws = cpv%THLQ*csfv%DELZW*RHOW
+!-            stas%sl%tbar = cpv%TBAR
+!-            stas%cnpy%evp = cdv%QFS
+!-            stas%cnpy%pevp = cdv%PET
 
-            do k = il1, il2
-                ik = shd%lc%ILMOS(k)
-                FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-                if (FRAC > 0.0) then
-                    wb%PRE(ik) = wb%PRE(ik) + cfi%PRE(k)*FRAC*ic%dts
-                    eb%QEVP(ik) = eb%QEVP(ik) + cdv%QEVP(k)*FRAC
-                    wb%EVAP(ik) = wb%EVAP(ik) + cdv%QFS(k)*FRAC*ic%dts
-                    eb%HFS(ik)  = eb%HFS(ik) + cdv%HFS(k)*FRAC
-                    wb%ROF(ik) = wb%ROF(ik) + cdv%ROF(k)*FRAC*ic%dts
-                    wb%ROFO(ik) = wb%ROFO(ik) + cdv%ROFO(k)*FRAC*ic%dts
-                    wb%ROFS(ik) = wb%ROFS(ik) + cdv%ROFS(k)*FRAC*ic%dts
-                    wb%ROFB(ik) = wb%ROFB(ik) + cdv%ROFB(k)*FRAC*ic%dts
-                    do j = 1, IGND
-                        sp%TBAR(ik, j) = sp%TBAR(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
-                        sp%THLQ(ik, j) = sp%THLQ(ik, j) + cpv%THLQ(k, j)*FRAC
-                        wb%LQWS(ik, j) = wb%LQWS(ik, j) + cpv%THLQ(k, j)*csfv%DELZW(k, j)*FRAC*RHOW
-                        sp%THIC(ik, j) = sp%THIC(ik, j) + cpv%THIC(k, j)*FRAC
-                        wb%FRWS(ik, j) = wb%FRWS(ik, j) + cpv%THIC(k, j)*csfv%DELZW(k, j)*FRAC*RHOICE
-                        eb%GFLX(ik, j) = eb%GFLX(ik, j) + cdv%GFLX(k, j)*FRAC
-                    end do
-                    wb%RCAN(ik) = wb%RCAN(ik) + cpv%RCAN(k)*FRAC
-                    wb%SNCAN(ik) = wb%SNCAN(ik) + cpv%SNCAN(k)*FRAC
-                    wb%SNO(ik) = wb%SNO(ik) + cpv%SNO(k)*FRAC
-                    if (cpv%SNO(k) > 0.0) then
-                        wb%WSNO(ik) = wb%WSNO(ik) + cpv%WSNO(k)*FRAC
-                    end if
-                    wb%PNDW(ik) = wb%PNDW(ik) + cpv%ZPND(k)*FRAC*RHOW
-                end if
-            end do !k = il1, il2
+!-            do k = il1, il2
+!-                ik = shd%lc%ILMOS(k)
+!-                FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
+!-                if (FRAC > 0.0) then
+!-                    wb%PRE(ik) = wb%PRE(ik) + cfi%PRE(k)*FRAC*ic%dts
+!-                    eb%QEVP(ik) = eb%QEVP(ik) + cdv%QEVP(k)*FRAC
+!-                    wb%EVAP(ik) = wb%EVAP(ik) + cdv%QFS(k)*FRAC*ic%dts
+!-                    eb%HFS(ik)  = eb%HFS(ik) + cdv%HFS(k)*FRAC
+!-                    wb%ROF(ik) = wb%ROF(ik) + cdv%ROF(k)*FRAC*ic%dts
+!-                    wb%ROFO(ik) = wb%ROFO(ik) + cdv%ROFO(k)*FRAC*ic%dts
+!-                    wb%ROFS(ik) = wb%ROFS(ik) + cdv%ROFS(k)*FRAC*ic%dts
+!-                    wb%ROFB(ik) = wb%ROFB(ik) + cdv%ROFB(k)*FRAC*ic%dts
+!-                    do j = 1, IGND
+!-                        sp%TBAR(ik, j) = sp%TBAR(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
+!-                        sp%THLQ(ik, j) = sp%THLQ(ik, j) + cpv%THLQ(k, j)*FRAC
+!-                        wb%LQWS(ik, j) = wb%LQWS(ik, j) + cpv%THLQ(k, j)*csfv%DELZW(k, j)*FRAC*RHOW
+!-                        sp%THIC(ik, j) = sp%THIC(ik, j) + cpv%THIC(k, j)*FRAC
+!-                        wb%FRWS(ik, j) = wb%FRWS(ik, j) + cpv%THIC(k, j)*csfv%DELZW(k, j)*FRAC*RHOICE
+!-                        eb%GFLX(ik, j) = eb%GFLX(ik, j) + cdv%GFLX(k, j)*FRAC
+!-                    end do
+!-                    wb%RCAN(ik) = wb%RCAN(ik) + cpv%RCAN(k)*FRAC
+!-                    wb%SNCAN(ik) = wb%SNCAN(ik) + cpv%SNCAN(k)*FRAC
+!-                    wb%SNO(ik) = wb%SNO(ik) + cpv%SNO(k)*FRAC
+!-                    if (cpv%SNO(k) > 0.0) then
+!-                        wb%WSNO(ik) = wb%WSNO(ik) + cpv%WSNO(k)*FRAC
+!-                    end if
+!-                    wb%PNDW(ik) = wb%PNDW(ik) + cpv%ZPND(k)*FRAC*RHOW
+!-                end if
+!-            end do !k = il1, il2
 
-            wb%DSTG = wb%RCAN + wb%SNCAN + wb%SNO + wb%WSNO + wb%PNDW + &
-                sum(wb%LQWS, 2) + sum(wb%FRWS, 2) - wb%STG
-            wb%STG = wb%DSTG + wb%STG
+!-            wb%DSTG = wb%RCAN + wb%SNCAN + wb%SNO + wb%WSNO + wb%PNDW + &
+!-                sum(wb%LQWS, 2) + sum(wb%FRWS, 2) - wb%STG
+!-            wb%STG = wb%DSTG + wb%STG
 
-        else
+!-        else
 
             !> Copy over state variables.
             stas%cnpy%qac(il1:il2) = cpv%QAC(il1:il2)
@@ -704,24 +704,35 @@ module RUNCLASS36_module
             stas%cnpy%tcan(il1:il2) = cpv%TCAN(il1:il2)
             stas%cnpy%cmai(il1:il2) = cpv%CMAI(il1:il2)
             stas%cnpy%gro(il1:il2) = cpv%GRO(il1:il2)
+            stas%cnpy%pevp(il1:il2) = cdv%PET(il1:il2)
             stas%sno%sno(il1:il2) = cpv%SNO(il1:il2)
             stas%sno%albs(il1:il2) = cpv%ALBS(il1:il2)
             stas%sno%rhos(il1:il2) = cpv%RHOS(il1:il2)
             stas%sno%tsno(il1:il2) = cpv%TSNO(il1:il2)
-            stas%sno%wsno(il1:il2) = cpv%WSNO(il1:il2)
+            where (cpv%SNO(il1:il2) > 0.0)
+                stas%sno%wsno(il1:il2) = cpv%WSNO(il1:il2)
+            elsewhere
+                stas%sno%wsno(il1:il2) = 0.0
+            end where
             stas%sfc%tpnd(il1:il2) = cpv%TPND(il1:il2)
             stas%sfc%zpnd(il1:il2) = cpv%ZPND(il1:il2)
+            stas%sfc%pndw(il1:il2) = cpv%ZPND(il1:il2)*RHOW
+            stas%sfc%evap(il1:il2) = cdv%QFS(il1:il2)
+            stas%sfc%qevp(il1:il2) = cdv%QEVP(il1:il2)
+            stas%sfc%hfs(il1:il2) = cdv%HFS(il1:il2)
+            stas%sfc%rofo(il1:il2) = cdv%ROFO(il1:il2)
             stas%sfc%tsfs(il1:il2, :) = cpv%TSFS(il1:il2, :)
             stas%sl%tbas(il1:il2) = cpv%TBAS(il1:il2)
+            stas%sl%rofs(il1:il2) = cdv%ROFS(il1:il2)
             stas%sl%thic(il1:il2, :) = cpv%THIC(il1:il2, :)
             stas%sl%fzws(il1:il2, :) = cpv%THIC(il1:il2, :)*csfv%DELZW(il1:il2, :)*RHOICE
             stas%sl%thlq(il1:il2, :) = cpv%THLQ(il1:il2, :)
             stas%sl%lqws(il1:il2, :) = cpv%THLQ(il1:il2, :)*csfv%DELZW(il1:il2, :)*RHOW
             stas%sl%tbar(il1:il2, :) = cpv%TBAR(il1:il2, :)
-            stas%cnpy%evp(il1:il2) = cdv%QFS(il1:il2)
-            stas%cnpy%pevp(il1:il2) = cdv%PET(il1:il2)
+            stas%sl%gflx(il1:il2, :) = cdv%GFLX(il1:il2, :)
+            stas%lzs%rofb(il1:il2) = cdv%ROFB(il1:il2)
 
-        end if
+!-        end if
 
     end subroutine
 

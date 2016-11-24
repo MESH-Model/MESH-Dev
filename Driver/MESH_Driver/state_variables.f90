@@ -55,15 +55,12 @@ module state_variables
     !*  tcan: Vegetation canopy temperature. [K].
     !*  cmai: Aggregated mass of vegetation canopy. [kg m-2].
     !*  gro: Vegetation growth index.
-    !*  evp: Diagnosed total surface water vapour flux over modelled area. [kg m-2 s-1].
     !*  pevp: Diagnosed potential evapotranspiration. [kg m-2 s-1].
     !*  evpb: Evaporation efficiency (EVP to PEVP) of the canopy. [--].
     !*  arrd: Arridity index (PRE to PEVP). [--].
     type canopy
         integer(kind = 4) :: n
-        real(kind = 4), dimension(:), allocatable :: &
-            qac, rcan, sncan, tac, tcan, cmai, gro, &
-            evp, pevp, evpb, arrd
+        real(kind = 4), dimension(:), allocatable :: qac, rcan, sncan, tac, tcan, cmai, gro, pevp, evpb, arrd
     end type
 
     !> Type: snow_balance
@@ -93,9 +90,12 @@ module state_variables
     !*  tsfs: Ground surface temperature over subarea. [K].
     !*  tpnd: Temperature of ponded water. [K].
     !*  zpnd: Depth of ponded water on surface. [m].
+    !*  pndw: Ponded water storage on the surface. [kg m-2].
+    !*  evap: Evapotranspiration. [kg m-2].
+    !*  rofo: Overland component of total runoff. [kg m-2].
     type surface_interface
         integer(kind = 4) :: n
-        real(kind = 4), dimension(:), allocatable :: tpnd, zpnd
+        real(kind = 4), dimension(:), allocatable :: tpnd, zpnd, pndw, evap, qevp, hfs, rofo
         real(kind = 4), dimension(:, :), allocatable :: tsfs
     end type
 
@@ -107,13 +107,20 @@ module state_variables
     !>
     !> Variables:
     !*  thic: Volumetric frozen water content of soil layers. [m3 m-3].
+    !*  fzws: Frozen water storage. [kg m-2].
     !*  thlq: Volumetric liquid water content of soil layers. [m3 m-3].
+    !*  lqws: Liquid water storage. [kg m-2].
     !*  tbar: Temperature of soil layers. [K].
     !*  tbas: Temperature of bedrock in third soil layer. [K].
+    !*  delzw: Thickness of permeable part of soil layer. [m].
+    !*  zbotw: Depth of bottom of permeable part of soil layer. [m].
+    !*  rofs: Interflow component of total runoff. [kg m-2].
+    !*  gflx: Heat conduction between soil layers. [W m-2].
+    !*  ggeo: Geothermal heat flux. [W m-2].
     type soil_layer
         integer(kind = 4) :: n
-        real(kind = 4), dimension(:), allocatable :: tbas
-        real(kind = 4), dimension(:, :), allocatable :: thic, fzws, thlq, lqws, tbar
+        real(kind = 4), dimension(:), allocatable :: tbas, ggeo, rofs
+        real(kind = 4), dimension(:, :), allocatable :: thic, fzws, thlq, lqws, tbar, delzw, zbotw, gflx
     end type
 
     !> Type: deep_zone
@@ -124,10 +131,10 @@ module state_variables
     !>
     !> Variables:
     !*  zlw: Depth of water. [m].
-    !*  tbas: Temperature. [m].
+    !*  rofb: Baseflow component of total runoff. [kg m-2].
     type deep_zone
         integer(kind = 4) :: n
-        real(kind = 4), dimension(:), allocatable :: zlw, tbas
+        real(kind = 4), dimension(:), allocatable :: zlw, rofb
     end type
 
     !> Type: storage_state
