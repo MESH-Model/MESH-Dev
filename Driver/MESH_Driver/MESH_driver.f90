@@ -167,7 +167,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = 'TRUNK (981_Mod.v2)'
+    character(24) :: VERSION = 'TRUNK (991_Mod.v2)'
 !+CHARACTER :: VERSION*24 = 'TAG'
     character(8) RELEASE
 !-    logical VER_OK
@@ -1229,9 +1229,9 @@ program RUNMESH
             wb_grd%STG = wb_grd%DSTG + wb_grd%STG
 
             !> Update output data.
-            call updatefieldsout_temp(shd, ts, ifo, &
-                                      md_grd, wb_grd, &
-                                      vr)
+            if (OUTFIELDSFLAG == 1) call updatefieldsout_temp(shd, ts, ifo, &
+                                                              md_grd, wb_grd, &
+                                                              vr)
 
             !> Basin totals for the run.
             TOTAL_PRE = TOTAL_PRE + sum(wb_grd%PRE)

@@ -9,6 +9,8 @@ module save_basin_output
 
     !> Global types.
 
+    !> For basin water balance.
+
     type BasinWaterBalance
         real, dimension(:), allocatable :: PRE, EVAP, ROF, ROFO, ROFS, ROFB, STG_INI, STG_FIN
     end type

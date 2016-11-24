@@ -31,7 +31,6 @@
         use model_files_variabletypes
         use model_files_variables
         use sa_mesh_shared_variables
-        use FLAGS, only: SAVERESUMEFLAG
 
         implicit none
 

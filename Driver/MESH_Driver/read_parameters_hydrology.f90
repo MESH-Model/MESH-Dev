@@ -29,6 +29,8 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !> Required for 'hp' (contains FROZENSOILINFIL, PDMROF, and PBSM parameters).
 !todo: remove this.
     use RUNCLASS36_variables
+
+    !> Variables of various modules.
     use WF_ROUTE_config, only: wfp
     use baseflow_module, only: lzsp
 

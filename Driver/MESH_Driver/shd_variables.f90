@@ -104,6 +104,12 @@ module sa_mesh_shared_variabletypes
         integer :: jxMax = 0
         integer :: jxMin = 0
 
+        !* ylat: Latitude of the grid in the y-direction. [-]
+        real, dimension(:), allocatable :: ylat
+
+        !* xlng: Longitude of the grid in the x-direction. [-]
+        real, dimension(:), allocatable :: xlng
+
     end type
 
     !> This type extends GridParams so it includes all the same

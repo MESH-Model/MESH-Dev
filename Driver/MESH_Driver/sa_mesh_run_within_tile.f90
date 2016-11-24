@@ -29,25 +29,7 @@ module sa_mesh_run_within_tile
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        !> Local variables.
-        integer NA, NTYPE, NML, NSL
-
-        NA = shd%NA
-        NTYPE = shd%lc%NTYPE
-        NSL = shd%lc%IGND
-        NML = shd%lc%NML
-
         call RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
-
-!>
-!>***********************************************************************
-!> MAM - Check for parameter values - all parameters should lie within the
-!> specified ranges in the "minmax_parameters.txt" file.
-!>=======================================================================
-!>
-!    call check_parameters(WF_R2, M_C, NMTEST, &
-!                           cp, &
-!                           hp, soil_por_max, soil_depth, s0, t_ice_lens)
 
         call RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
 

@@ -230,6 +230,15 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
             ' is very high. This may negatively impact performance.'
     end if
 
+    !> Determine coordinates for intermediate grid locations.
+    allocate(shd%ylat(NA), shd%xlng(NA))
+    do i = 1, NA
+            !LATLENGTH = shd%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
+            !LONGLENGTH = shd%AL/1000.0/(111.4172*cos((DEGLAT*PI/180.0)) - 0.094*cos(3*(DEGLAT*PI/180.0)) + 0.0002*cos(5*(DEGLAT*PI/180.0)))
+        shd%ylat(i) = (shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0
+        shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
+    end do
+
     !> Determine the number of active tile elements.
 !todo: fix this.
     shd%wc%ILG = shd%lc%ILG

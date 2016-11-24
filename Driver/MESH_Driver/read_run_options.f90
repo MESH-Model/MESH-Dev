@@ -614,6 +614,8 @@
                         call value(out_args(2), GGEOFLAG, ierr)
                     case ('BASINBALANCEOUTFLAG')
                         call value(out_args(2), BASINBALANCEOUTFLAG, ierr)
+
+                    !> Time-averaged basin water balance output.
                     case ('BASINAVGWBFILEFLAG')
                         BASINAVGWBFILEFLAG = 0
                         do j = 2, nargs
