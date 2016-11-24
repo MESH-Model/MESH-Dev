@@ -55,9 +55,15 @@ module state_variables
     !*  tcan: Vegetation canopy temperature. [K].
     !*  cmai: Aggregated mass of vegetation canopy. [kg m-2].
     !*  gro: Vegetation growth index.
+    !*  evp: Diagnosed total surface water vapour flux over modelled area. [kg m-2 s-1].
+    !*  pevp: Diagnosed potential evapotranspiration. [kg m-2 s-1].
+    !*  evpb: Evaporation efficiency (EVP to PEVP) of the canopy. [--].
+    !*  arrd: Arridity index (PRE to PEVP). [--].
     type canopy
         integer(kind = 4) :: n
-        real(kind = 4), dimension(:), allocatable :: qac, rcan, sncan, tac, tcan, cmai, gro
+        real(kind = 4), dimension(:), allocatable :: &
+            qac, rcan, sncan, tac, tcan, cmai, gro, &
+            evp, pevp, evpb, arrd
     end type
 
     !> Type: snow_balance
@@ -77,7 +83,7 @@ module state_variables
         real(kind = 4), dimension(:), allocatable :: sno, albs, rhos, tsno, wsno
     end type
 
-    !> Type: surface_layer
+    !> Type: surface_interface
     !>  States at the interface between the atmosphere and soil profile.
     !>
     !> Indices:
@@ -87,7 +93,7 @@ module state_variables
     !*  tsfs: Ground surface temperature over subarea. [K].
     !*  tpnd: Temperature of ponded water. [K].
     !*  zpnd: Depth of ponded water on surface. [m].
-    type surface_layer
+    type surface_interface
         integer(kind = 4) :: n
         real(kind = 4), dimension(:), allocatable :: tpnd, zpnd
         real(kind = 4), dimension(:, :), allocatable :: tsfs
@@ -107,7 +113,7 @@ module state_variables
     type soil_layer
         integer(kind = 4) :: n
         real(kind = 4), dimension(:), allocatable :: tbas
-        real(kind = 4), dimension(:, :), allocatable :: thic, thlq, tbar
+        real(kind = 4), dimension(:, :), allocatable :: thic, fzws, thlq, lqws, tbar
     end type
 
     !> Type: deep_zone

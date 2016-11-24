@@ -39,6 +39,7 @@ module sa_mesh_run_within_tile
 
     function run_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
+        use mpi_shared_variables
         use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_files_variabletypes
@@ -75,6 +76,12 @@ module sa_mesh_run_within_tile
 
         run_within_tile = WF_ROUTE_within_tile(shd, stfl, rrls)
         if (len_Trim(run_within_tile) > 0) return
+
+        stas%cnpy%evpb(il1:il2) = 0.0
+        where (stas%cnpy%pevp(il1:il2) /= 0.0)
+            stas%cnpy%evpb(il1:il2) = stas%cnpy%evp(il1:il2)/stas%cnpy%pevp(il1:il2)
+            stas%cnpy%arrd(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)/stas%cnpy%pevp(il1:il2)
+        end where
 
         return
 

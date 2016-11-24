@@ -39,7 +39,7 @@ module sa_mesh_shared_variables
         type(lake_flow) :: lk, rsvr
         type(canopy) :: cnpy
         type(snow_balance) :: sno
-        type(surface_layer) :: sfc
+        type(surface_interface) :: sfc
         type(soil_layer) :: sl
         type(deep_zone) :: lzs, dzs
         type(water_storage) :: wb

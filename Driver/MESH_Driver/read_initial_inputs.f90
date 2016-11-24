@@ -326,7 +326,8 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> Canopy.
     stas%cnpy%n = NML
     allocate(stas%cnpy%qac(NML), stas%cnpy%rcan(NML), stas%cnpy%sncan(NML), stas%cnpy%tac(NML), stas%cnpy%tcan(NML), &
-             stas%cnpy%cmai(NML), stas%cnpy%gro(NML))
+             stas%cnpy%cmai(NML), stas%cnpy%gro(NML), &
+             stas%cnpy%evp(NML), stas%cnpy%pevp(NML), stas%cnpy%evpb(NML), stas%cnpy%arrd(NML))
     stas%cnpy%qac = 0.0
     stas%cnpy%rcan = 0.0
     stas%cnpy%sncan = 0.0
@@ -334,6 +335,10 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     stas%cnpy%tcan = 0.0
     stas%cnpy%cmai = 0.0
     stas%cnpy%gro = 0.0
+    stas%cnpy%evp = 0.0
+    stas%cnpy%pevp = 0.0
+    stas%cnpy%evpb = 0.0
+    stas%cnpy%arrd = 0.0
 
     !> Snow.
     stas%sno%n = NML
@@ -353,10 +358,14 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     !> Soil layers.
     stas%sl%n = NML
-    allocate(stas%sl%tbas(NML), stas%sl%thic(NML, NSL), stas%sl%thlq(NML, NSL), stas%sl%tbar(NML, NSL))
+    allocate(stas%sl%tbas(NML), &
+             stas%sl%thic(NML, NSL), stas%sl%fzws(NML, NSL), stas%sl%thlq(NML, NSL), stas%sl%lqws(NML, NSL), &
+             stas%sl%tbar(NML, NSL))
     stas%sl%tbas = 0.0
     stas%sl%thic = 0.0
+    stas%sl%fzws = 0.0
     stas%sl%thlq = 0.0
+    stas%sl%lqws = 0.0
     stas%sl%tbar = 0.0
 
     !> Lower zone storage.
