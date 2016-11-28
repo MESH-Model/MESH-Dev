@@ -19,6 +19,9 @@ module sa_mesh_run_within_tile
         use RUNSVS113_config
         use baseflow_module
 
+        !> Cropland irrigation module.
+        use cropland_irrigation_init, only: runci_init
+
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
@@ -34,6 +37,9 @@ module sa_mesh_run_within_tile
         call RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
 
         call LZS_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+
+        !> Cropland irrigation module.
+        call runci_init(shd, fls)
 
     end subroutine
 

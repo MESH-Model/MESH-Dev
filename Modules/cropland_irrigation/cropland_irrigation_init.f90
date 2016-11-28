@@ -2,6 +2,8 @@ module cropland_irrigation_init
 
     use cropland_irrigation_variables
 
+    implicit none
+
     contains
 
     subroutine runci_init(shd, fls)
@@ -26,7 +28,7 @@ module cropland_irrigation_init
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
 
-        integer NML, k, m, ierr
+        integer NML, k, m, ikey, ierr
 
         if (.not. cifg%PROCESS_ACTIVE) return
 
@@ -48,9 +50,15 @@ module cropland_irrigation_init
         !> Allocate and initialize internal variables.
         allocate(&
             civ%icrop(NML), civ%jdini(NML), civ%jddev(NML), civ%jdmid(NML), civ%jdlate(NML), civ%jdend(NML), &
-            civ%lqws2_mm(NML), civ%lqws1_mm(NML), civ%pre_mm(NML), civ%pevp_mm(NML), civ%icu_mm(NML))
+            civ%vars(civ%fk%kmin:civ%fk%kmax))
         civ%icrop = 0; civ%jdini = 0; civ%jddev = 0; civ%jdmid = 0; civ%jdlate = 0; civ%jdend = 0
-        civ%lqws2_mm = 0.0; civ%lqws1_mm = 0.0; civ%pre_mm = 0.0; civ%pevp_mm = 0.0; civ%icu_mm = 0.0
+        do ikey = civ%fk%kmin, civ%fk%kmax
+            allocate( &
+                civ%vars(ikey)%lqws2_mm(NML), civ%vars(ikey)%lqws1_mm(NML), &
+                civ%vars(ikey)%pre_mm(NML), civ%vars(ikey)%pevp_mm(NML), civ%vars(ikey)%icu_mm(NML))
+            civ%vars(ikey)%lqws2_mm = 0.0; civ%vars(ikey)%lqws1_mm = 0.0
+            civ%vars(ikey)%pre_mm = 0.0; civ%vars(ikey)%pevp_mm = 0.0; civ%vars(ikey)%icu_mm = 0.0
+        end do
 
         !> Check the parameter values.
         if (ipid == 0) then
@@ -120,22 +128,27 @@ module cropland_irrigation_init
 
         end do
 
-        !> Daily.
-        if (btest(cifg%ts_flag, 0)) then
-            open(950, file = './' // trim(fls%GENDIR_OUT) // '/' // '/Basin_average_crop_irrigation.csv')
-            write(950, '(a)') 'DAY,YEAR,' // 'ICU'
-        end if
+        !> Open output files.
+        if (ipid == 0) then
 
-        !> Hourly.
-        if (btest(cifg%ts_flag, 2)) then
-            open(952, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation_Hourly.csv')
-            write(952, '(a)') 'DAY,YEAR,HOUR,' // 'ICU'
-        end if
+            !> Daily.
+            if (btest(cifg%ts_flag, civ%fk%KDLY)) then
+                open(950, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation.csv')
+                write(950, '(a)') 'DAY,YEAR,' // 'ICU'
+            end if
 
-        !> Per time-step.
-        if (btest(cifg%ts_flag, 3)) then
-            open(953, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation_ts.csv')
-            write(953, '(a)') 'DAY,YEAR,HOUR,MINS,' // 'ICU'
+            !> Hourly.
+            if (btest(cifg%ts_flag, civ%fk%KHLY)) then
+                open(952, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation_Hourly.csv')
+                write(952, '(a)') 'DAY,YEAR,HOUR,' // 'ICU'
+            end if
+
+            !> Per time-step.
+            if (btest(cifg%ts_flag, civ%fk%KTS)) then
+                open(953, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation_ts.csv')
+                write(953, '(a)') 'DAY,YEAR,HOUR,MINS,' // 'ICU'
+            end if
+
         end if
 
     end subroutine

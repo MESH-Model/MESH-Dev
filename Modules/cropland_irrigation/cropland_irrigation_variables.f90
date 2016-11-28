@@ -24,6 +24,31 @@ module cropland_irrigation_variables
     !* cip: Instance of parameters used by the cropland irrigation module (ROT indexing).
     type(cropland_irrigation_parameters), save :: ciprot
 
+    !> Variable type: cropland_irrigation_variables_vars
+    !>  Description: Internal states used by the cropland irrigation module.
+    !>
+    !> Variables:
+    !*  lqws2_mm: State of soil water storage in the previous period. [mm].
+    !*  lqws1_mm: State of soil water storage in the present period. [mm].
+    !*  pre_mm: Accumulation of precipitation over the period. [mm].
+    !*  pevp_mm: Accumulation of potential evapotranspiration over the period. [mm].
+    !*  icu_mm: Irrigation demand at the end of the period. [mm].
+    type cropland_irrigation_variables_vars
+        real(kind = 4), dimension(:), allocatable :: lqws2_mm, lqws1_mm, pre_mm, pevp_mm, icu_mm
+    end type
+
+    !> Variable type: cropland_irrigation_variables_fkey
+    !>  Description: Internal file keys used by the cropland irrigation module.
+    !>
+    !> Variables:
+    !*  KDLY: Daily output
+    !*  KHLY: Hourly output
+    !*  KTS: Per time-step output
+    type cropland_irrigation_variables_fkey
+        integer(kind = 4) :: KDLY = 0, KHLY = 2, KTS = 3
+        integer :: kmin = 0, kmax = 3
+    end type
+
     !> Variable type: cropland_irrigation_variables_int
     !>  Description: Internal variables used by the cropland irrigation module.
     !>
@@ -34,14 +59,10 @@ module cropland_irrigation_variables
     !*  jdmid: Day in the year the middle stage begins. [day in year, 1-365/366].
     !*  jdlate: Day in the year the late stage begins. [day in year, 1-365/366].
     !*  jdend: Day in the year the growth stage ends. [day in year, 1-365/366].
-    !*  lqws2_mm: State of soil water storage in the previous period. [mm].
-    !*  lqws1_mm: State of soil water storage in the present period. [mm].
-    !*  pre_mm: Accumulation of precipitation over the period. [mm].
-    !*  pevp_mm: Accumulation of potential evapotranspiration over the period. [mm].
-    !*  icu_mm: Irrigation demand at the end of the period. [mm].
     type cropland_irrigation_variables_int
+        type(cropland_irrigation_variables_fkey) :: fk
         integer(kind = 4), dimension(:), allocatable :: icrop, jdini, jddev, jdmid, jdlate, jdend
-        real(kind = 4), dimension(:), allocatable :: lqws2_mm, lqws1_mm, pre_mm, pevp_mm, icu_mm
+        type(cropland_irrigation_variables_vars), dimension(:), allocatable :: vars
     end type
 
     !* civ: Instance of variables used by the cropland irrigation module.
