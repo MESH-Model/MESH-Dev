@@ -8,7 +8,7 @@ module cropland_irrigation_within_tile
 
     subroutine runci_within_tile(shd, fls, cm)
 
-        use mpi
+        use mpi_module
         use mpi_shared_variables
         use mpi_utilities
         use mpi_flags
