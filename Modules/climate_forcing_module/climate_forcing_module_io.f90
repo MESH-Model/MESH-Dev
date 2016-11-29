@@ -179,10 +179,7 @@ module climate_forcing_io
     !>
     function load_data(shd, cm, vid, skip_data) result(ENDDATA)
 
-        !> Required for 'shd' variable.
-        use sa_mesh_shared_variabletypes
-
-        !> Required for 'ro' run options for VERBOSEMODE.
+        !> For: 'ShedGridParams' type, 'ro' run options for VERBOSEMODE.
         use sa_mesh_shared_variables
 
         !> Input variables.
@@ -282,8 +279,8 @@ module climate_forcing_io
     !>
     function update_data(shd, cm, vid, skip_data) result(ENDDATA)
 
-        !> Required for 'shd' variable.
-        use sa_mesh_shared_variabletypes
+        !> For: 'ShedGridParams' type.
+        use sa_mesh_shared_variables
 
         !> Input variables.
         type(ShedGridParams) :: shd

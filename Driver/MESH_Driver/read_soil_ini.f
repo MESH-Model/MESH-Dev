@@ -1,9 +1,7 @@
       subroutine READ_SOIL_INI(shd, fls)
 
-      use sa_mesh_shared_variabletypes
       use sa_mesh_shared_variables
       use sa_mesh_shared_output_variables
-      use model_files_variabletypes
       use model_files_variables
 
 !todo: remove this

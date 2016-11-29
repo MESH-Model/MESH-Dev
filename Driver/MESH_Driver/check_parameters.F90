@@ -32,7 +32,7 @@
 subroutine check_parameters(shd)
 
     !> Required for 'ShedGridParams' type.
-    use sa_mesh_shared_variabletypes
+    use sa_mesh_shared_variables
 
     !> Required for parameters ('ROW' indexing).
     use sa_mesh_shared_output_variables

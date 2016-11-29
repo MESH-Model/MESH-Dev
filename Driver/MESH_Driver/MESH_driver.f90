@@ -94,7 +94,6 @@ program RUNMESH
 !>  -the symbol "!futuredo" refers to places where the developers
 !>  would like to work on with a low priority.
 
-    use sa_mesh_shared_variabletypes
     use sa_mesh_shared_variables
 
     use FLAGS
@@ -111,10 +110,7 @@ program RUNMESH
     use model_output_variabletypes
     use climate_forcing
     use model_dates
-    use SIMSTATS_config
     use SIMSTATS
-    use model_files_variabletypes
-    use model_files_variables
     use model_files
 
     implicit none

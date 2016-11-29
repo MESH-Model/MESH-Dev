@@ -9,8 +9,8 @@ module cropland_irrigation_between_grid
     subroutine runci_between_grid_init(shd, fls)
 
         use mpi_shared_variables
-        use sa_mesh_shared_variabletypes
-        use model_files_variabletypes
+        use sa_mesh_shared_variables
+        use model_files_variables
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -46,8 +46,8 @@ module cropland_irrigation_between_grid
     subroutine runci_between_grid(shd, fls, cm)
 
         use mpi_shared_variables
-        use sa_mesh_shared_variabletypes
-        use model_files_variabletypes
+        use sa_mesh_shared_variables
+        use model_files_variables
         use climate_forcing
         use model_dates
 
@@ -83,7 +83,7 @@ module cropland_irrigation_between_grid
 
     subroutine runci_between_grid_process(shd, fk)
 
-        use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
 
         !> Input variables.
         type(ShedGridParams) :: shd

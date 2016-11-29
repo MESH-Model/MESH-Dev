@@ -3,7 +3,8 @@
 !>
 module sa_mesh_shared_variables
 
-    use sa_mesh_shared_variabletypes
+    use control_variables
+    use shd_variables
     use fm_variables
     use state_variables
 

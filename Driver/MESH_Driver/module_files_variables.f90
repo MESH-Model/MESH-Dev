@@ -1,5 +1,7 @@
 module model_files_variables
 
+    use model_files_variabletypes
+
     implicit none
 
     type model_file_keys

@@ -49,9 +49,7 @@ module baseflow_module
     subroutine LZS_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use mpi_shared_variables
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
-        use model_files_variabletypes
         use model_files_variables
         use model_dates
         use climate_forcing
@@ -157,9 +155,7 @@ module baseflow_module
     subroutine LZS_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use mpi_shared_variables
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
-        use model_files_variabletypes
         use model_files_variables
         use model_dates
         use climate_forcing
@@ -221,9 +217,8 @@ module baseflow_module
     subroutine LZS_finalize(fls, shd)
 
         use mpi_shared_variables
-        use model_files_variabletypes
         use model_files_variables
-        use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
         use model_dates
 
         !> For: SAVERESUMEFLAG

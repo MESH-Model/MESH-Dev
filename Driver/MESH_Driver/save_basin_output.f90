@@ -55,10 +55,8 @@ module save_basin_output
 
     subroutine run_save_basin_output_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use FLAGS
-        use model_files_variabletypes
         use model_files_variables
         use model_dates
         use climate_forcing
@@ -267,10 +265,8 @@ module save_basin_output
 
     subroutine run_save_basin_output(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use FLAGS
-        use model_files_variabletypes
         use model_files_variables
         use model_dates
         use climate_forcing
@@ -347,9 +343,8 @@ module save_basin_output
     subroutine run_save_basin_output_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
         use mpi_shared_variables
-        use model_files_variabletypes
         use model_files_variables
-        use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -432,7 +427,7 @@ module save_basin_output
     subroutine update_water_balance(shd, wb, naa, nsl)
 
         !> For 'shd' variable.
-        use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
 
         !> For 'wb' variable.
         use model_output_variabletypes
@@ -501,9 +496,7 @@ module save_basin_output
 
     subroutine save_water_balance(shd, fls, fik, dts, ina, ikdts)
 
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
-        use model_files_variabletypes
         use model_files_variables
         use model_dates
 
@@ -592,9 +585,7 @@ module save_basin_output
 
     subroutine update_evp(shd, fls, fik, dts, ikdts)
 
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
-        use model_files_variabletypes
         use model_files_variables
         use model_dates
 

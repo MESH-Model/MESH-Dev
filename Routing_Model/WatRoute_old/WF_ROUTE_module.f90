@@ -13,7 +13,6 @@ module WF_ROUTE_module
     function WF_ROUTE_within_tile(shd, stfl, rrls)
 
         use mpi_shared_variables
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_dates
         use MODEL_OUTPUT
@@ -88,7 +87,6 @@ module WF_ROUTE_module
 
     subroutine WF_ROUTE_between_grid(shd, wb, stfl, rrls)
 
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_dates
         use MODEL_OUTPUT

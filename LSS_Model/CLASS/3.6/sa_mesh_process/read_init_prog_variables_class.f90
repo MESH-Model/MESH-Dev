@@ -28,7 +28,6 @@
 !>
     subroutine read_init_prog_variables_class(fls)
 
-        use model_files_variabletypes
         use model_files_variables
         use sa_mesh_shared_variables
 

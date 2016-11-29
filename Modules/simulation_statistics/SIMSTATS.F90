@@ -20,7 +20,7 @@ module SIMSTATS
     implicit none
 
     private
-    public stats_init, stats_update_stfl_daily, stats_write, fbest, ftest
+    public mtsflg, stats_init, stats_update_stfl_daily, stats_write, fbest, ftest
 
 !    integer, parameter :: dp=kind(0.d0)
 

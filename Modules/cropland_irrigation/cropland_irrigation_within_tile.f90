@@ -12,12 +12,10 @@ module cropland_irrigation_within_tile
         use mpi_shared_variables
         use mpi_utilities
         use mpi_flags
-        use model_files_variabletypes
+        use model_files_variables
         use sa_mesh_shared_parameters
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use model_dates
-        use model_files_variabletypes
         use climate_forcing
 
         type(ShedGridParams) :: shd

@@ -8,7 +8,6 @@ module sa_mesh_run_within_tile
 
         use sa_mesh_shared_parameters
         use sa_mesh_shared_variables
-        use model_files_variabletypes
         use model_files_variables
         use model_dates
         use climate_forcing
@@ -46,9 +45,7 @@ module sa_mesh_run_within_tile
     function run_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use mpi_shared_variables
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
-        use model_files_variabletypes
         use model_files_variables
         use model_dates
         use climate_forcing
@@ -108,7 +105,7 @@ module sa_mesh_run_within_tile
     subroutine run_within_tile_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
         use model_files_variabletypes
-        use sa_mesh_shared_variabletypes
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes

@@ -12,9 +12,8 @@ module RUNSVS113_module
 
     subroutine RUNSVS113(shd, fls, ts, cm, wb, eb, sp)
 
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
-        use model_files_variabletypes
+        use model_files_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes

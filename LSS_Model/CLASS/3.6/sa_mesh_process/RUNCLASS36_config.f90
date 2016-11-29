@@ -111,10 +111,8 @@ module RUNCLASS36_config
         use mpi_shared_variables
 !-        use mpi_utilities
         use sa_mesh_shared_parameters
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use sa_mesh_shared_output_variables
-        use model_files_variabletypes
         use model_files_variables
         use model_dates
         use climate_forcing
@@ -822,8 +820,7 @@ module RUNCLASS36_config
     subroutine RUNCLASS36_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
         use mpi_shared_variables
-        use model_files_variabletypes
-        use sa_mesh_shared_variabletypes
+        use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing

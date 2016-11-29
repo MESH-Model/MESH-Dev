@@ -3,7 +3,7 @@
 !>
 subroutine GATHER(shd, iilen, ii1, ii2, GRD, GAT)
 
-    use sa_mesh_shared_variabletypes
+    use sa_mesh_shared_variables
 
     !> Input variables.
     type(ShedGridParams), intent(in) :: shd

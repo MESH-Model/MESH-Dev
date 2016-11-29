@@ -1,8 +1,6 @@
       subroutine READ_SOIL_LEVELS(shd, fls)
 
-      use sa_mesh_shared_variabletypes
       use sa_mesh_shared_variables
-      use model_files_variabletypes
       use model_files_variables
 
       implicit none

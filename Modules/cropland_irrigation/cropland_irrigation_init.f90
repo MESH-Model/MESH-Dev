@@ -15,12 +15,11 @@ module cropland_irrigation_init
         use sa_mesh_shared_parameters
 
         !> For 'shd' type (basin information), 'ro%' (run options) for print options, and 'FCAN' (canopy fraction, ROW indexing).
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
         use sa_mesh_shared_output_variables
 
         !> For 'fls%GENDIR_OUT'.
-        use model_files_variabletypes
+        use model_files_variables
 
         !> For current date and counter.
         use model_dates

@@ -4,10 +4,9 @@ module model_output
     !>  Athor: Gonzalo Sapriza Azuri
     !>******************************************************************************
 
-    use sa_mesh_shared_variabletypes
+    use sa_mesh_shared_variables
     use model_dates
     use strings
-    use model_files_variabletypes
     use model_files_variables
     use flags
     

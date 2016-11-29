@@ -65,7 +65,6 @@ module SA_RTE_module
     subroutine SA_RTE(shd, wb)
 
         !> For: type(ShedGridParams) :: shd; cops
-        use sa_mesh_shared_variabletypes
         use sa_mesh_shared_variables
 
         !> For: type(iter_counter) :: ic
@@ -134,10 +133,7 @@ module SA_RTE_module
 
     subroutine SA_RTE_init(shd)
 
-        !> For: type(ShedGridParams) :: shd
-        use sa_mesh_shared_variabletypes
-
-        !> For: ro%, cops%
+        !> For: type(ShedGridParams) :: shd, ro%, cops%
         use sa_mesh_shared_variables
 
         !> For: type(iter_counter) :: ic

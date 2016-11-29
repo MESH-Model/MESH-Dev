@@ -1,6 +1,6 @@
 module SIMSTATS_config
 
-    use model_files_variabletypes
+    use model_files_variables
 
     implicit none
 

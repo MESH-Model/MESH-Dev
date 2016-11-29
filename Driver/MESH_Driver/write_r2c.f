@@ -51,10 +51,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !       attr_author     char(*)     Author of the file.
 !***********************************************************************
 
-      use sa_mesh_shared_variabletypes
       use sa_mesh_shared_variables
       use model_dates
-      use model_files_variabletypes
+      use model_files_variables
 
       implicit none
 
