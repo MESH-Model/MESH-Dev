@@ -128,29 +128,6 @@ module cropland_irrigation_init
 
         end do
 
-        !> Open output files.
-        if (ipid == 0) then
-
-            !> Daily.
-            if (btest(cifg%ts_flag, civ%fk%KDLY)) then
-                open(950, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation.csv')
-                write(950, '(a)') 'DAY,YEAR,' // 'ICU'
-            end if
-
-            !> Hourly.
-            if (btest(cifg%ts_flag, civ%fk%KHLY)) then
-                open(952, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation_Hourly.csv')
-                write(952, '(a)') 'DAY,YEAR,HOUR,' // 'ICU'
-            end if
-
-            !> Per time-step.
-            if (btest(cifg%ts_flag, civ%fk%KTS)) then
-                open(953, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation_ts.csv')
-                write(953, '(a)') 'DAY,YEAR,HOUR,MINS,' // 'ICU'
-            end if
-
-        end if
-
     end subroutine
 
 end module

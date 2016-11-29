@@ -68,6 +68,18 @@ module cropland_irrigation_variables
     !* civ: Instance of variables used by the cropland irrigation module.
     type(cropland_irrigation_variables_int), save :: civ
 
+    !> Variable type: cropland_irrigation_variables_vars
+    !>  Description: Internal states used by the cropland irrigation module.
+    !>
+    !> Variables:
+    !*  icu_mm: Irrigation demand at the end of the period. [mm].
+    type cropland_irrigation_aggregated_output
+        real(kind = 4), dimension(:), allocatable :: icu_na_mm, icu_aclass_mm, icu_frac_mm
+    end type
+
+    !* ciago: Instance of aggregated output from the cropland irrigation module.
+    type(cropland_irrigation_aggregated_output), save :: ciago
+
     !> Variable type: cropland_irrigation_flags
     !>  Description: Flags used by the cropland irrigation module.
     !>

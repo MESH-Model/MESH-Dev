@@ -19,6 +19,9 @@ module sa_mesh_run_between_grid
         use WF_ROUTE_config, only: WF_ROUTE_init
         use save_basin_output, only: run_save_basin_output_init
 
+        !> Cropland irrigation module.
+        use cropland_irrigation_between_grid, only: runci_between_grid_init
+
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
@@ -68,6 +71,9 @@ module sa_mesh_run_between_grid
         call SA_RTE_init(shd)
         call WF_ROUTE_init(shd, fls, stfl, rrls)
         call run_save_basin_output_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+
+        !> Cropland irrigation module (ICU).
+        call runci_between_grid_init(shd, fls)
 
     end subroutine
 
