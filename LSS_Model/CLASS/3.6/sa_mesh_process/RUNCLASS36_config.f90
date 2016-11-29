@@ -754,11 +754,6 @@ module RUNCLASS36_config
             call CLASSOUT_open_files(shd)
         end if
 
-        if (ipid == 0 .and. BASINSWEOUTFLAG > 0) then
-            open(85, file = './' // trim(fls%GENDIR_OUT) // '/basin_SCA_alldays.csv')
-            open(86, file = './' // trim(fls%GENDIR_OUT) // '/basin_SWE_alldays.csv')
-        end if !(BASINSWEOUTFLAG > 0) then
-
         !> ASSIGN VALUES OF LAT/LONG TO EACH SQUARE:
         !> NOTE FROM FRANK
         !> I got the equations to determine the actual length of a

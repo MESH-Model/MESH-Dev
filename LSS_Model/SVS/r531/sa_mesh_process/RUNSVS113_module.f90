@@ -12,6 +12,7 @@ module RUNSVS113_module
 
     subroutine RUNSVS113(shd, fls, ts, cm, wb, eb, sp)
 
+        use mpi_shared_variables
         use sa_mesh_shared_variables
         use model_files_variables
         use model_dates
@@ -42,7 +43,7 @@ module RUNSVS113_module
         integer datecmc_v, date_v, hour_v, istat, kount, bidon
         real(kind = 8) kdt
 
-        integer k, ki, kj
+        integer k, ki, kj, j
         real FRAC
 
         integer, external :: newdate
@@ -50,7 +51,7 @@ module RUNSVS113_module
         external svs, inicover_svs
 !        external inisoili_svs, phyopt_initdata, runsvs_init
 
-        !> Return if the process is not marked active.
+        !> Return if the process is not marked active or if not the head node.
         if (.not. RUNSVS113_flgs%PROCESS_ACTIVE) return
 
         !> Initialize common blocks, read options and configuration file.
@@ -163,26 +164,72 @@ module RUNSVS113_module
 !            end if
 !        end do
 
-        wb%PRE = 0.0
-        wb%ROFO = 0.0
-        wb%ROFS = 0.0
-        wb%ROFB = 0.0
-        do k = 0, NG - 1
+!-        wb%PRE = 0.0
+!-        wb%ROFO = 0.0
+!-        wb%ROFS = 0.0
+!-        wb%ROFB = 0.0
+!-        do k = 0, NG - 1
 
             !> Grab the Grid, GRU indices for the NML element.
-            ki = shd%lc%ILMOS(k + 1)
-            kj = shd%lc%JLMOS(k + 1)
+!-            ki = shd%lc%ILMOS(k + 1)
+!-            kj = shd%lc%JLMOS(k + 1)
 
             !> Calculate the contributing FRAC.
-            FRAC = shd%lc%ACLASS(ki, kj)*shd%FRAC(ki)
+!-            FRAC = shd%lc%ACLASS(ki, kj)*shd%FRAC(ki)
 
             !> Accumulate totals.
-            wb%PRE(ki) = wb%PRE(ki) + cm%dat(ck%RT)%GRD(ki)*FRAC*ic%dts
-            if (bus(runofftot + k) > 0.0) wb%ROFO(ki) = wb%ROFO(ki) + bus(runofftot + k)*FRAC
-            if (bus(latflw + k) > 0.0) wb%ROFS(ki) = wb%ROFS(ki) + bus(latflw + k)*FRAC
-            if (bus(watflow + 6*NG + k) > 0.0) wb%ROFB(ki) = wb%ROFB(ki) + bus(watflow + 6*NG + k)*FRAC
+!-            wb%PRE(ki) = wb%PRE(ki) + cm%dat(ck%RT)%GRD(ki)*FRAC*ic%dts
+!-            if (bus(runofftot + k) > 0.0) wb%ROFO(ki) = wb%ROFO(ki) + bus(runofftot + k)*FRAC
+!-            if (bus(latflw + k) > 0.0) wb%ROFS(ki) = wb%ROFS(ki) + bus(latflw + k)*FRAC
+!-            if (bus(watflow + 6*NG + k) > 0.0) wb%ROFB(ki) = wb%ROFB(ki) + bus(watflow + 6*NG + k)*FRAC
+!-        end do
+!-        wb%ROF = wb%ROFO + wb%ROFS + wb%ROFB
+
+        !> Transfer variables.
+        do k = 0, NG - 1
+            stas%cnpy%qac(k + 1) = bus(qsurf + k)
+            stas%cnpy%rcan(k + 1) = bus(wveg + k)
+!-            stas%cnpy%sncan(k + 1) =
+            stas%cnpy%tac(k + 1) = bus(tsurf + k)
+            stas%cnpy%tcan(k + 1) = (bus(tvege + k) + bus(tvege + NG + k) + bus(tsnowveg + k) + bus(tsnowveg + NG + k))/4.0
+!-            stas%cnpy%cmai(k + 1) =
+!-            stas%cnpy%gro(k + 1) =
+!-            stas%cnpy%pevp(k + 1) =
+            stas%sno%sno(k + 1) = bus(snoma + k)
+            stas%sno%albs(k + 1) = (bus(snoal + k) + bus(snval + k))/2.0
+!-            stas%sno%fsno(k + 1) =
+            stas%sno%rhos(k + 1) = ((bus(snoro + k) + bus(snvro + k))/2.0)*900.0
+            stas%sno%tsno(k + 1) = (bus(tsnow + k) + bus(tsnow + NG + k))/2.0
+            if (bus(snoma + k) > 0.0) then
+                stas%sno%wsno(k + 1) = bus(wsnow + k)
+            else
+                stas%sno%wsno(k + 1) = 0.0
+            end if
+!-            stas%sfc%tpnd(k + 1) =
+!-            stas%sfc%zpnd(k + 1) =
+!-            stas%sfc%pndw(k + 1) =
+            stas%sfc%evap(k + 1) = bus(etr + k)*(86400.0/ic%dts)
+            stas%sfc%qevp(k + 1) = bus(fv + k)
+            stas%sfc%hfs(k + 1) = bus(fc + k)
+            stas%sfc%rofo(k + 1) = max(0.0, bus(runofftot + k))/ic%dts
+!-            stas%sfc%tsfs(k + 1, :) =
+!-            stas%sl%tbas(k + 1) =
+            stas%sl%rofs(k + 1) = max(0.0, bus(latflw + k))/ic%dts
+            stas%sl%thic(k + 1, 1) = bus(isoil + k)
+!-            stas%sl%fzws(k + 1, :) =
+            stas%sl%thlq(k + 1, 1) = bus(wdsoil + k)
+            stas%sl%thlq(k + 1, 2) = bus(wdsoil + NG + k)
+            do j = 3, shd%lc%IGND
+                stas%sl%thlq(k + 1, j) = bus(wdsoil + j*NG + k)
+            end do
+!-            stas%sl%lqws(k + 1, :) =
+            stas%sl%tbar(k + 1, 1) = bus(tsoil + k)
+            do j = 2, shd%lc%IGND
+                stas%sl%tbar(k + 1, j) = bus(tsoil + NG + k)
+            end do
+!-            stas%sl%gflx(k + 1, :) =
+            stas%lzs%rofb(k + 1) = max(0.0, bus(watflow + 6*NG + k))/ic%dts
         end do
-        wb%ROF = wb%ROFO + wb%ROFS + wb%ROFB
 
             !> Read meteorological forcing data.
             !> Careful: at kount=0 we read data for kount=1 so we skip reading if kount=1.

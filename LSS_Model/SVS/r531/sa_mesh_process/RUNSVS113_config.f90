@@ -13,6 +13,7 @@ module RUNSVS113_config
 
     subroutine RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
 
+        use mpi_shared_variables
         use sa_mesh_shared_parameters
         use sa_mesh_shared_variables
         use model_files_variables
@@ -51,7 +52,7 @@ module RUNSVS113_config
         external svs, inicover_svs
 !        external inisoili_svs, phyopt_initdata, runsvs_init
 
-        !> Return if the process is not marked active.
+        !> Return if the process is not marked active or if not the head node.
         if (.not. RUNSVS113_flgs%PROCESS_ACTIVE) return
 
         !> Initialize common blocks, read options and configuration file.

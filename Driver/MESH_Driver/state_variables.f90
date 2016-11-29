@@ -72,12 +72,13 @@ module state_variables
     !> Variables:
     !*  sno: Mass of snow pack. [kg m-2].
     !*  albs: Snow albedo.
+    !*  fsno: Diagnosed fractional snow coverage. [ ].
     !*  rhos: Density of snow. [kg m-3].
     !*  tsno: Snowpack temperature. [K].
     !*  wsno: Liquid water content of snow pack. [kg m-2].
     type snow_balance
         integer(kind = 4) :: n
-        real(kind = 4), dimension(:), allocatable :: sno, albs, rhos, tsno, wsno
+        real(kind = 4), dimension(:), allocatable :: sno, albs, fsno, rhos, tsno, wsno
     end type
 
     !> Type: surface_interface

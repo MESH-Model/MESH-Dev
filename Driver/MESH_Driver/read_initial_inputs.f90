@@ -342,8 +342,8 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     !> Snow.
     stas%sno%n = NML
-    allocate(stas%sno%sno(NML), stas%sno%albs(NML), stas%sno%rhos(NML), stas%sno%tsno(NML), stas%sno%wsno(NML))
-    stas%sno%sno = 0.0; stas%sno%albs = 0.0; stas%sno%rhos = 0.0; stas%sno%tsno = 0.0; stas%sno%wsno = 0.0
+    allocate(stas%sno%sno(NML), stas%sno%albs(NML), stas%sno%fsno(NML), stas%sno%rhos(NML), stas%sno%tsno(NML), stas%sno%wsno(NML))
+    stas%sno%sno = 0.0; stas%sno%albs = 0.0; stas%sno%fsno = 0.0; stas%sno%rhos = 0.0; stas%sno%tsno = 0.0; stas%sno%wsno = 0.0
 
     !> Surface or at near surface.
     stas%sfc%n = NML
@@ -376,8 +376,8 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
              stasrow%cnpy%rcan(NTYPE), stasrow%cnpy%sncan(NTYPE), &
              stasrow%cnpy%cmai(NTYPE), stasrow%cnpy%gro(NTYPE), &
              stasrow%cnpy%pevp(NTYPE), stasrow%cnpy%evpb(NTYPE), stasrow%cnpy%arrd(NTYPE), &
-             stasrow%sno%sno(NTYPE), stasrow%sno%albs(NTYPE), stasrow%sno%rhos(NTYPE), stasrow%sno%tsno(NTYPE), &
-             stasrow%sno%wsno(NTYPE), &
+             stasrow%sno%sno(NTYPE), stasrow%sno%albs(NTYPE), stasrow%sno%fsno(NTYPE), stasrow%sno%rhos(NTYPE), &
+             stasrow%sno%tsno(NTYPE), stasrow%sno%wsno(NTYPE), &
              stasrow%sfc%tpnd(NTYPE), stasrow%sfc%zpnd(NTYPE), stasrow%sfc%tsfs(NTYPE, 4), &
              stasrow%sl%thic(NML, NSL), stasrow%sl%fzws(NML, NSL), stasrow%sl%thlq(NML, NSL), stasrow%sl%lqws(NML, NSL), &
              stasrow%sl%tbar(NML, NSL), stasrow%sl%tbas(NML), &
@@ -389,8 +389,8 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     stasrow%cnpy%rcan = 0.0; stasrow%cnpy%sncan = 0.0
     stasrow%cnpy%cmai = 0.0; stasrow%cnpy%gro = 0.0
     stasrow%cnpy%pevp = 0.0; stasrow%cnpy%evpb = 0.0; stasrow%cnpy%arrd = 0.0
-    stasrow%sno%sno = 0.0; stasrow%sno%albs = 0.0; stasrow%sno%rhos = 0.0; stasrow%sno%tsno = 0.0
-    stasrow%sno%wsno = 0.0
+    stasrow%sno%sno = 0.0; stasrow%sno%albs = 0.0; stasrow%sno%fsno = 0.0; stasrow%sno%rhos = 0.0
+    stasrow%sno%tsno = 0.0; stasrow%sno%wsno = 0.0
     stasrow%sfc%tpnd = 0.0; stasrow%sfc%zpnd = 0.0; stasrow%sfc%tsfs = 0.0
     stasrow%sl%thic = 0.0; stasrow%sl%fzws = 0.0; stasrow%sl%thlq = 0.0; stasrow%sl%lqws = 0.0
     stasrow%sl%tbar = 0.0; stasrow%sl%tbas = 0.0; stasrow%sl%delzw = 0.0; stasrow%sl%zbotw = 0.0; stasrow%sl%rofs = 0.0

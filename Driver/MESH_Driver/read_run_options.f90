@@ -14,6 +14,7 @@
 
         use RUNCLASS36_constants
         use RUNCLASS36_save_output
+        use RUNSVS113_variables
 
         use WF_ROUTE_config, only: WF_RTE_flgs
 
@@ -693,6 +694,30 @@
                                     exit
                                 case ('none')
                                     cifg%ts_flag = 0
+                                    exit
+                            end select
+                        end do
+                        cifg%PROCESS_ACTIVE = (cifg%ts_flag > 0)
+
+                    !> Cropland irrigation module.
+                    case ('RUNMODE')
+                        do j = 2, nargs
+                            select case (lowercase(out_args(j)))
+                                case ('runsvs')
+                                    RUNSVS113_flgs%PROCESS_ACTIVE = .true.
+                                    RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
+                                case ('runclass')
+                                    RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
+                                    RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                case ('default')
+                                    RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
+                                    RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                    WF_RTE_flgs%PROCESS_ACTIVE = .true.
+                                    exit
+                                case ('diagnostic')
+                                    RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
+                                    RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                    WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                     exit
                             end select
                         end do

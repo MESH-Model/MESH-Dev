@@ -9,10 +9,7 @@ module RUNCLASS36_module
 
     subroutine RUNCLASS36_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_flags
         use mpi_shared_variables
-        use mpi_module
-        use mpi_utilities
         use sa_mesh_shared_variables
         use model_files_variables
         use model_dates
@@ -40,23 +37,11 @@ module RUNCLASS36_module
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        !> istop: To stop all MPI process
-        !* inp: Number of active tasks.
-        !* ipid: Current process ID.
-        integer ipid_recv, itag, ierrcode, istop, u, invars, iilen, ii1, ii2
-        logical lstat
-
         integer NA, NTYPE, NML, IGND, k, ik, j, i
         real FRAC
 
         !* ierr: Diagnostic error/status return from various subroutines.
         integer :: ierr = 0
-
-        integer, dimension(:), allocatable :: irqst
-        integer, dimension(:, :), allocatable :: imstat
-
-        !> SCA variables
-        real TOTAL_AREA, basin_SCA, basin_SWE
 
         !> Return if the process is not marked active.
         if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
@@ -422,215 +407,6 @@ module RUNCLASS36_module
             call CLASSOUT_update_files(shd)
         end if
 
-        !> Gather variables from parallel nodes.
-!todo: move this.
-
-        !> Send/receive process.
-        itag = ic%ts_count*1000
-        invars = 15 + 4*IGND
-
-        !> Update the variable count per the active control flags.
-        if (SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) invars = invars + 10 + 4
-
-        !> BASEFLOWFLAG.
-        if (lzsp%BASEFLOWFLAG > 0) then
-            invars = invars + 1
-            if (lzsp%BASEFLOWFLAG == 1) then
-                invars = invars + 1
-            end if
-        end if
-
-        if (inp > 1 .and. ipid /= 0) then
-
-            !> Send data back to head-node.
-            if (allocated(irqst)) deallocate(irqst)
-            if (allocated(imstat)) deallocate(imstat)
-            allocate(irqst(invars), imstat(mpi_status_size, invars))
-            irqst = mpi_request_null
-
-            i = 1
-            call mpi_isend(cfi%PRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%QFS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%PET(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%ROF(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%ROFO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%ROFS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%ROFB(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cpv%SNCAN(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cpv%RCAN(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cpv%ZPND(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cpv%SNO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%FSNO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cpv%WSNO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%HFS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cdv%QEVP(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            do j = 1, IGND
-                call mpi_isend(cpv%THLQ(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%THIC(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cdv%GFLX(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%TBAR(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            end do
-
-            !> Send optional variables per the active control flags.
-            if (SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) then
-                call mpi_isend(cpv%ALBS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%CMAI(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%GRO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%QAC(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%RHOS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%TAC(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%TBAS(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%TCAN(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%TPND(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cpv%TSNO(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                do j = 1, 4
-                    call mpi_isend(cpv%TSFS(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                end do
-            end if !(SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) then
-
-            !> BASEFLOWFLAG.
-            if (lzsp%BASEFLOWFLAG > 0) then
-                call mpi_isend(Wrchrg(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                if (lzsp%BASEFLOWFLAG == 1) then
-                    call mpi_isend(Qb(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                end if
-            end if
-
-            lstat = .false.
-            do while (.not. lstat)
-                call mpi_testall(invars, irqst, lstat, imstat, ierr)
-            end do
-
-!            print *, ipid, ' done sending'
-
-        else if (inp > 1) then
-
-            !> Receive data from worker nodes.
-            if (allocated(irqst)) deallocate(irqst)
-            if (allocated(imstat)) deallocate(imstat)
-            allocate(irqst(invars), imstat(mpi_status_size, invars))
-
-            !> Receive and assign variables.
-            do u = 1, (inp - 1)
-
-!                print *, 'initiating irecv for:', u, ' with ', itag
-
-                irqst = mpi_request_null
-                imstat = 0
-
-                call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iilen)
-
-                i = 1
-                call mpi_irecv(cfi%PRE(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%QFS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%PET(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%ROF(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%ROFO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%ROFS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%ROFB(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cpv%SNCAN(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cpv%RCAN(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cpv%ZPND(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cpv%SNO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%FSNO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cpv%WSNO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%HFS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cdv%QEVP(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                do j = 1, IGND
-                    call mpi_irecv(cpv%THLQ(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%THIC(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cdv%GFLX(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%TBAR(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                end do
-
-                !> Send optional variables per the active control flags.
-                if (SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) then
-                    call mpi_irecv(cpv%ALBS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%CMAI(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%GRO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%QAC(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%RHOS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%TAC(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%TBAS(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%TCAN(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%TPND(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cpv%TSNO(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    do j = 1, 4
-                        call mpi_irecv(cpv%TSFS(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
-                        i = i + 1
-                    end do
-                end if !(SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) then
-
-                !> BASEFLOWFLAG.
-                if (lzsp%BASEFLOWFLAG > 0) then
-                    call mpi_irecv(Wrchrg(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    if (lzsp%BASEFLOWFLAG == 1) then
-                        call mpi_irecv(Qb(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    end if
-                end if
-
-                lstat = .false.
-                do while (.not. lstat)
-                    call mpi_testall(invars, irqst, lstat, imstat, ierr)
-                end do
-
-            end do !u = 1, (inp - 1)
-!            print *, 'done receiving'
-
-        end if !(inp > 1 .and. ipid /= 0) then
-
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
-
-        !> calculate and write the basin avg SCA similar to watclass3.0f5
-        !> Same code than in wf_ensim.f subrutine of watclass3.0f8
-        !> Especially for version MESH_Prototype 3.3.1.7b (not to be incorporated in future versions)
-        !> calculate and write the basin avg SWE using the similar fudge factor!!!
-        if (ipid == 0 .and. BASINSWEOUTFLAG > 0) then
-
-            !> BASIN_FRACTION is the basin snow cover
-            !> (portions of the grids outside the basin are not included)
-            !> for a given day - JDAY_NOW in the if statement
-!            if (BASIN_FRACTION(1) == -1) then
-!todo: FRAC is not actually the fraction of the grid square
-!within the basin, we should be using some other value, but I'm
-!not sure what.
-!todo: calculate frac and write document to send to someone else.
-!                do i = 1, NA ! NA = number of grid squares
-!                    BASIN_FRACTION(i) = shd%FRAC(i)
-!                end do
-!            end if
-
-            if (ic%now%hour == 12 .and. ic%now%mins == 0) then
-                basin_SCA = 0.0
-                basin_SWE = 0.0
-!                do i = 1, NA
-!                    if (BASIN_FRACTION(i) /= 0.0) then
-!                        basin_SCA = basin_SCA + FSNOGRD(i)/BASIN_FRACTION(i)
-!                        basin_SWE = basin_SWE + SNOGRD(i)/BASIN_FRACTION(i)
-!                    end if
-!                end do
-!                basin_SCA = basin_SCA/NA
-!                basin_SWE = basin_SWE/NA
-                TOTAL_AREA = wb%basin_area
-
-                !> BRUCE DAVISON - AUG 17, 2009 (see notes in my notebook for this day)
-                !> Fixed calculation of basin averages. Needs documenting and testing.
-                do k = il1, il2
-                    ik = shd%lc%ILMOS(k)
-                    FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-                    basin_SCA = basin_SCA + cdv%FSNO(k)*FRAC
-                    basin_SWE = basin_SWE + cpv%SNO(k)*FRAC
-                end do
-                basin_SCA = basin_SCA/TOTAL_AREA
-                basin_SWE = basin_SWE/TOTAL_AREA
-                if (BASINSWEOUTFLAG > 0) then
-                    write(85, "(i5,',', f10.3)") ic%now%jday, basin_SCA
-                    write(86, "(i5,',', f10.3)") ic%now%jday, basin_SWE
-                end if
-            end if
-
-        end if !(ipid == 0) then
-
 !-        if (ipid == 0) then
 
             !> Copy over state variables.
@@ -705,6 +481,7 @@ module RUNCLASS36_module
             stas%cnpy%pevp(il1:il2) = cdv%PET(il1:il2)
             stas%sno%sno(il1:il2) = cpv%SNO(il1:il2)
             stas%sno%albs(il1:il2) = cpv%ALBS(il1:il2)
+            stas%sno%fsno(il1:il2) = cdv%FSNO(il1:il2)
             stas%sno%rhos(il1:il2) = cpv%RHOS(il1:il2)
             stas%sno%tsno(il1:il2) = cpv%TSNO(il1:il2)
             where (cpv%SNO(il1:il2) > 0.0)
