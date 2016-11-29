@@ -788,27 +788,27 @@ module RUNCLASS36_config
         catv%ZDH = 2.0
 
         !> Initialize state prognostic variables.
-        wb%LQWS = 0.0
-        wb%FRWS = 0.0
-        wb%RCAN = 0.0
-        wb%SNCAN = 0.0
-        wb%SNO = 0.0
-        wb%WSNO = 0.0
-        wb%PNDW = 0.0
-        do k = il1, il2
-            ik = shd%lc%ILMOS(k)
-            FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-            if (FRAC > 0.0) then
-                wb%LQWS(ik, :) = wb%LQWS(ik, :) + cpv%THLQ(k, :)*RHOW*csfv%DELZW(k, :)*FRAC
-                wb%FRWS(ik, :) = wb%FRWS(ik, :) + cpv%THIC(k, :)*RHOICE*csfv%DELZW(k, :)*FRAC
-                wb%RCAN(ik) = wb%RCAN(ik) + cpv%RCAN(k)*FRAC
-                wb%SNCAN(ik) = wb%SNCAN(ik) + cpv%SNCAN(k)*FRAC
-                wb%SNO(ik) = wb%SNO(ik) + cpv%SNO(k)*FRAC
-                if (cpv%SNO(k) > 0.0) wb%WSNO(ik) = wb%WSNO(ik) + cpv%WSNO(k)*FRAC
-                wb%PNDW(ik) = wb%PNDW(ik) + cpv%ZPND(k)*RHOW*FRAC
-            end if
-        end do
-        wb%stg = wb%RCAN + wb%SNCAN + wb%SNO + wb%WSNO + wb%PNDW + sum(wb%LQWS, 2) + sum(wb%FRWS, 2)
+!-        wb%LQWS = 0.0
+!-        wb%FRWS = 0.0
+!-        wb%RCAN = 0.0
+!-        wb%SNCAN = 0.0
+!-        wb%SNO = 0.0
+!-        wb%WSNO = 0.0
+!-        wb%PNDW = 0.0
+!-        do k = il1, il2
+!-            ik = shd%lc%ILMOS(k)
+!-            FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
+!-            if (FRAC > 0.0) then
+!-                wb%LQWS(ik, :) = wb%LQWS(ik, :) + cpv%THLQ(k, :)*RHOW*csfv%DELZW(k, :)*FRAC
+!-                wb%FRWS(ik, :) = wb%FRWS(ik, :) + cpv%THIC(k, :)*RHOICE*csfv%DELZW(k, :)*FRAC
+!-                wb%RCAN(ik) = wb%RCAN(ik) + cpv%RCAN(k)*FRAC
+!-                wb%SNCAN(ik) = wb%SNCAN(ik) + cpv%SNCAN(k)*FRAC
+!-                wb%SNO(ik) = wb%SNO(ik) + cpv%SNO(k)*FRAC
+!-                if (cpv%SNO(k) > 0.0) wb%WSNO(ik) = wb%WSNO(ik) + cpv%WSNO(k)*FRAC
+!-                wb%PNDW(ik) = wb%PNDW(ik) + cpv%ZPND(k)*RHOW*FRAC
+!-            end if
+!-        end do
+!-        wb%stg = wb%RCAN + wb%SNCAN + wb%SNO + wb%WSNO + wb%PNDW + sum(wb%LQWS, 2) + sum(wb%FRWS, 2)
 
     end subroutine
 

@@ -6,12 +6,16 @@ module sa_mesh_run_within_grid
 
     subroutine run_within_grid_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
+        use mpi_shared_variables
         use sa_mesh_shared_variables
         use model_files_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
         use MODEL_OUTPUT
+
+!+todo: There's a dependency on CLASSBD.f (block data, though described below as module)
+        use RUNCLASS36_constants, only: RHOW, RHOICE
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -22,6 +26,41 @@ module sa_mesh_run_within_grid
         type(soil_statevars) :: sp
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
+
+        integer k, ki, kj, i1, i2
+        real FRAC
+
+        i1 = shd%lc%ILMOS(il1)
+        i2 = shd%lc%ILMOS(il2)
+
+        !> Initialize grid-based states.
+        do k = il1, il2
+
+            ki = shd%lc%ILMOS(k)
+            kj = shd%lc%JLMOS(k)
+
+            FRAC = shd%lc%ACLASS(ki, kj)*shd%FRAC(ki)
+
+            if (FRAC > 0.0) then
+                sp%TBAR(ki, :) = sp%TBAR(ki, :) + stas%sl%tbar(k, :)*shd%lc%ACLASS(ki, kj)
+                sp%THIC(ki, :) = sp%THIC(ki, :) + stas%sl%thic(k, :)*FRAC
+                wb%FRWS(ki, :) = wb%FRWS(ki, :) + stas%sl%thic(k, :)*stas%sl%delzw(k, :)*FRAC*RHOICE
+                sp%THLQ(ki, :) = sp%THLQ(ki, :) + stas%sl%thlq(k, :)*FRAC
+                wb%LQWS(ki, :) = wb%LQWS(ki, :) + stas%sl%thlq(k, :)*stas%sl%delzw(k, :)*FRAC*RHOW
+                wb%RCAN(ki) = wb%RCAN(ki) + stas%cnpy%rcan(k)*FRAC
+                wb%SNCAN(ki) = wb%SNCAN(ki) + stas%cnpy%sncan(k)*FRAC
+                wb%SNO(ki) = wb%SNO(ki) + stas%sno%sno(k)*FRAC
+                if (stas%sno%sno(k) > 0.0) then
+                    wb%WSNO(ki) = wb%WSNO(ki) + stas%sno%wsno(k)*FRAC
+                end if
+                wb%PNDW(ki) = wb%PNDW(ki) + stas%sfc%zpnd(k)*FRAC*RHOW
+            end if
+
+        end do
+
+        wb%STG(i1:i2) = &
+            wb%RCAN(i1:i2) + wb%SNCAN(i1:i2) + wb%SNO(i1:i2) + wb%WSNO(i1:i2) + wb%PNDW(i1:i2) + &
+            sum(wb%LQWS(i1:i2, :), 2) + sum(wb%FRWS(i1:i2, :), 2)
 
     end subroutine
 
@@ -55,6 +94,7 @@ module sa_mesh_run_within_grid
         i1 = shd%lc%ILMOS(il1)
         i2 = shd%lc%ILMOS(il2)
 
+        !> Update grid based states.
         do k = il1, il2
 
             ki = shd%lc%ILMOS(k)
@@ -83,7 +123,9 @@ module sa_mesh_run_within_grid
                 wb%RCAN(ki) = wb%RCAN(ki) + stas%cnpy%rcan(k)*FRAC
                 wb%SNCAN(ki) = wb%SNCAN(ki) + stas%cnpy%sncan(k)*FRAC
                 wb%SNO(ki) = wb%SNO(ki) + stas%sno%sno(k)*FRAC
-                wb%WSNO(ki) = wb%WSNO(ki) + stas%sno%wsno(k)*FRAC
+                if (stas%sno%sno(k) > 0.0) then
+                    wb%WSNO(ki) = wb%WSNO(ki) + stas%sno%wsno(k)*FRAC
+                end if
                 wb%PNDW(ki) = wb%PNDW(ki) + stas%sfc%zpnd(k)*FRAC*RHOW
             end if
 
