@@ -206,7 +206,7 @@ REAL  Q(ILG)
                SPRE(I) = MAX(CMIN(I), SPRE(I))
 
 !              --------------------------------------------------------
-!              REDUNDANT OPERATIONS
+!              TIME SAVING OPERATIONS THAT WOULD BE REPEATED OFTEN OTHERWISE
 !              --------------------------------------------------------
                BP1     = B(I) + 1.0
                IBP1    = 1.0 / BP1
