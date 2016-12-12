@@ -136,8 +136,10 @@ module WF_ROUTE_module
             WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + stas%chnl%qo(fms%stmg%rnk(i))
             WF_QHYD_AVG(i) = WF_QHYD(i) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
         end do
-        WF_QO2_ACC_MM = WF_QO2_ACC_MM + stas%chnl%qo/shd%DA/1000.0*ic%dts
-        WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + stas%chnl%s/shd%DA/1000.0
+        where (shd%DA > 0.0)
+            WF_QO2_ACC_MM = WF_QO2_ACC_MM + stas%chnl%qo/shd%DA/1000.0*ic%dts
+            WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + stas%chnl%s/shd%DA/1000.0
+        end where
 
         !> Update state variables for the driver.
         do i = 1, fms%rsvr%n

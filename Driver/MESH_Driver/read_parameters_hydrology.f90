@@ -528,7 +528,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> CMAX.
                         case ('cmax')
-                            if (IWF /= 2) then
+                            if (IWF /= 2 .or. IWF /= 3) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -540,7 +540,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> CMIN.
                         case ('cmin')
-                            if (IWF /= 2) then
+                            if (IWF /= 2 .or. IWF /= 3) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -552,7 +552,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> B.
                         case ('b')
-                            if (IWF /= 2) then
+                            if (IWF /= 2 .or. IWF /= 3) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -564,7 +564,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> K1.
                         case ('k1')
-                            if (IWF /= 2) then
+                            if (IWF /= 2 .or. IWF /= 3) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -576,7 +576,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> K2.
                         case ('k2')
-                            if (IWF /= 2) then
+                            if (IWF /= 2 .or. IWF /= 3) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -834,8 +834,8 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                 end if
 
                 !> Check the number of parameters.
-                if (IWF == 2 .and. n < 9) then
-                    print 8330, 9, 'PDMROF (IWF 2)'
+                if ((IWF == 2 .or. IWF == 3) .and. n < 9) then
+                    print 8330, 9, 'PDMROF or LATFLOW (IWF 2 or 3)'
                     stop
                 else if (FROZENSOILINFILFLAG == 1 .and. n < 4) then
                     print 8330, 4, 'FROZENSOILINFILFLAG'
@@ -867,7 +867,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                         !> FROZENSOILINFILFLAG == 1 (infiltration into frozen soils).
                         hp%FRZCROW(i, m) = DEPPARVAL(4, m)
 
-                        !> IWF == 2 (PDMROF).
+                        !> IWF == 2 (PDMROF) or IWF == 3 (LATFLOW).
                         hp%CMAXROW(i, m) = DEPPARVAL(5, m)
                         hp%CMINROW(i, m) = DEPPARVAL(6, m)
                         hp%BROW(i, m) = DEPPARVAL(7, m)

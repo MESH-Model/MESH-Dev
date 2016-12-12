@@ -273,14 +273,14 @@ C     loop through each soil layer
       do j = 1,ig
 
 C        ---------------------------------------------------------------------------------
-C        form vecotors for the layer - to be compatible with WATDRN arguments
-         delzwj   = delzw(:,j)
-         bij      = bi(:,j)
-         thporj   = thpor(:,j)
-
-C        ---------------------------------------------------------------------------------
 C        loop through each element
          do i = il1,il2
+
+C        ---------------------------------------------------------------------------------
+C        form vecotors for the layer - to be compatible with WATDRN arguments 
+           delzwj(i)   = delzw(i,j)
+           bij(i)      = bi(i,j)
+           thporj(i)   = thpor(i,j)
 
 C        ---------------------------------------------------------------------------------
 C        Find the top of each soil layer for the calculation of grkeff
@@ -316,13 +316,13 @@ c*       Integration of k across the layer -> kl
             ktop      = ksat(i)*exp(xlambda*ztop(i,j))
             kl        = ktop * exav(xlambda*delzw(i,j))
             grkeff(i) = kl*xslope(i)*2.0*dd(i)/(1+xslope(i)**2)
+            thpor_avail(i) = max(thlmin(i,j),thpor_avail(i))
          enddo
 
 C        ---------------------------------------------------------------------------------
 C        compute interflow from the layer (subflowj). Baseflow from the layer (basflwj) is
 C        also computed but is not used at present.
 C        ---------------------------------------------------------------------------------
-         thpor_avail = max(thlmin(:,j),thpor_avail)
          IF (WD3 == 1) THEN
              CALL WATDRN3 (ASAT_T0,ASAT_T1,KSAT,GRKEFF,DELT,
      1            SUBFLWJ,BASFLWJ,
@@ -362,6 +362,7 @@ C              -----------------------------------------------------------------
 C              limit the lateral flow not to exceed the available water in the layer
 C              ---------------------------------------------------------------------------
                didrn(i,j) = max(0.0,min(davail,didrn(i,j)))
+
 C              ---------------------------------------------------------------------------
 C              add the lateral flow to the runoff and to the subflow
 C              ---------------------------------------------------------------------------
@@ -370,6 +371,7 @@ C              -----------------------------------------------------------------
      1                         didrn(i,j))/(runoff(i)+didrn(i,j))
                   runoff(i)  = runoff(i)+didrn(i,j)
                   subflw(i)  = subflw(i)+fi(i)*didrn(i,j)
+
 C                 ------------------------------------------------------------------------
 C                 remove the lateral flow from the layer
 C                 ------------------------------------------------------------------------

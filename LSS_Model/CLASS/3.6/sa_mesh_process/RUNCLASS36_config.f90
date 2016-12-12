@@ -660,7 +660,7 @@ module RUNCLASS36_config
         do k = il1, il2
             ik = shd%lc%ILMOS(k)
             jk = shd%lc%JLMOS(k)
-            CMINPDM(k) = hp%CMAXROW(ik, jk)
+            CMINPDM(k) = hp%CMINROW(ik, jk)
             CMAXPDM(k) = hp%CMAXROW(ik, jk)
             BPDM(k) = hp%BROW(ik, jk)
             K1PDM(k) = hp%K1ROW(ik, jk)

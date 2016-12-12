@@ -26,7 +26,7 @@ module fm_variables
     !*  jx: Horizontal index of the grid-cell containing the location.
     !*  n: Rank or index of the grid-cell containing the location.
     type outlet_location
-        integer n
+        integer :: n = 0
         character(len=8), dimension(:), allocatable :: name
         real(kind = 4), dimension(:), allocatable :: y, x
         integer(kind = 4), dimension(:), allocatable :: iy, jx, rnk
