@@ -19,7 +19,7 @@ module model_files
         use model_files_variabletypes
         use model_files_variables
         use SIMSTATS_config, only: mtsfl, mtsk, init_metricsout_files
-        use WF_ROUTE_config, only: WF_RTE_fls, WF_RTE_flks, WF_ROUTE_init_fls
+        use WF_ROUTE_config
         use SA_RTE_module, only: SA_RTE_fls, SA_RTE_flkeys, SA_RTE_init_fls
 
         !> Input variables.
@@ -92,14 +92,10 @@ module model_files
         WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun = 22
         WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn = 'MESH_input_reservoir.txt'
         WF_RTE_fls%fl(WF_RTE_flks%resv_in)%iun = 21
-        WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%fn = 'MESH_output_streamflow.csv'
-        WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%iun = 70
-        WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%fn = 'MESH_output_streamflow_cumulative.csv'
-        WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun = 72
-        WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%fn = 'MESH_output_streamflow_all.csv'
-        WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun = 71
-        WF_RTE_fls%fl(WF_RTE_flks%stfl_bal)%fn = 'MESH_output_streamflow_balance.csv'
-        WF_RTE_fls%fl(WF_RTE_flks%stfl_bal)%iun = 73
+        WF_RTE_fouts%fl(WF_RTE_fstfloutks%KDLY)%fn = 'MESH_output_streamflow.csv'
+        WF_RTE_fouts%fl(WF_RTE_fstfloutks%KDLY)%iun = 70
+        WF_RTE_fouts%fl(WF_RTE_fstfloutks%KTS)%fn = 'MESH_output_streamflow_ts.csv'
+        WF_RTE_fouts%fl(WF_RTE_fstfloutks%KTS)%iun = 71
 
         !> For files used by Standalone RTE.
         if (.not. allocated(SA_RTE_fls%fl)) call SA_RTE_init_fls()

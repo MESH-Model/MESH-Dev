@@ -16,7 +16,7 @@
         use RUNCLASS36_save_output
         use RUNSVS113_variables
 
-        use WF_ROUTE_config, only: WF_RTE_flgs
+        use WF_ROUTE_config
 
         use baseflow_module, only: lzsp
 
@@ -206,10 +206,6 @@
         !> DEFAULT = NO INTERPOLATION
 !-        INTERPOLATIONFLAG = 0
 
-        !* If STREAMFLOWFLAG is 1, the user wants to output streamflow values for each
-        !* timestep. If STREAMFLOWFLAG is 0, the user will get the default daily file.
-!-        STREAMFLOWFLAG = 0
-
         !* If SUBBASINFLAG is 1, calculations will only be done for grid squares that are
         !* in the watersheds of the locations listed in the streamflow files.
         !* If SUBBASINFLAG is 0, calculations will be made for all grid squares.
@@ -265,16 +261,6 @@
         !>     0 = Create no output.
         !>     1 = Save the basin water and energy balance CSV files.
         BASINBALANCEOUTFLAG = 1
-
-        !> BASIN CSV-FORMAT STREAMFLOW OUTPUT FLAG
-        !> If enabled, saves the observed versus simulated streamflow output
-        !> file. The flag can also enable the cumulative and every time-step
-        !> streamflow files written by past model configurations.
-        !>     0 = Create no output.
-        !>     1 = Save the observed versus simulated streamflow output file.
-        !>     2 = Save the observed versus simulated, as well as the
-        !>         cumulative and every time-step streamflow files.
-!-        STREAMFLOWOUTFLAG = 2
 
         !> BASIN SWE OUTPUT FLAG
         !> If enabled, saves the SCA and SWE output files.
@@ -554,7 +540,11 @@
                     case ('NRSOILAYEREADFLAG')
                         call value(out_args(2), NRSOILAYEREADFLAG, ierr)
                     case ('STREAMFLOWFLAG')
-                        call value(out_args(2), WF_RTE_flgs%STREAMFLOWFLAG, ierr)
+                        call value(out_args(2), j, ierr)
+                        if (j == 1) then
+                            WF_RTE_flgs%STREAMFLOWOUTFLAG = WF_RTE_flgs%STREAMFLOWOUTFLAG + &
+                                radix(WF_RTE_fstfloutks%KTS)**WF_RTE_fstfloutks%KTS
+                        end if
                     case ('PREEMPTIONFLAG')
                         call value(out_args(2), mtsflg%PREEMPTIONFLAG, ierr)
 
@@ -666,7 +656,33 @@
                     case ('MODELINFOOUTFLAG')
                         call value(out_args(2), MODELINFOOUTFLAG, ierr)
                     case ('STREAMFLOWOUTFLAG')
-                        call value(out_args(2), WF_RTE_flgs%STREAMFLOWOUTFLAG, ierr)
+                        WF_RTE_flgs%STREAMFLOWOUTFLAG = 0
+                        do j = 2, nargs
+                            select case (lowercase(out_args(j)))
+                                case ('daily')
+                                    WF_RTE_flgs%STREAMFLOWOUTFLAG = WF_RTE_flgs%STREAMFLOWOUTFLAG + &
+                                        radix(WF_RTE_fstfloutks%KDLY)**WF_RTE_fstfloutks%KDLY
+                                case ('ts')
+                                    WF_RTE_flgs%STREAMFLOWOUTFLAG = WF_RTE_flgs%STREAMFLOWOUTFLAG + &
+                                        radix(WF_RTE_fstfloutks%KTS)**WF_RTE_fstfloutks%KTS
+                                case ('bal')
+                                    WF_RTE_flgs%fout_bal = .true.
+                                case ('acc')
+                                    WF_RTE_flgs%fout_acc = .true.
+                                case ('default')
+                                    WF_RTE_flgs%STREAMFLOWOUTFLAG = radix(WF_RTE_fstfloutks%KDLY)**WF_RTE_fstfloutks%KDLY
+                                    WF_RTE_flgs%fout_hyd = .true.
+                                    WF_RTE_flgs%fout_bal = .false.
+                                    WF_RTE_flgs%fout_acc = .false.
+                                    WF_RTE_flgs%fout_header = .true.
+                                    exit
+                                case ('no_header')
+                                    WF_RTE_flgs%fout_header = .false.
+                                case ('none')
+                                    WF_RTE_flgs%STREAMFLOWOUTFLAG = 0
+                                    exit
+                            end select
+                        end do
                     case ('BASINSWEOUTFLAG')
                         call value(out_args(2), BASINSWEOUTFLAG, ierr)
 
@@ -690,7 +706,7 @@
                                 case ('ts')
                                     cifg%ts_flag = cifg%ts_flag + radix(civ%fk%KTS)**civ%fk%KTS
                                 case ('default')
-                                    cifg%ts_flag = bit_size(civ%fk%KDLY)**civ%fk%KDLY
+                                    cifg%ts_flag = radix(civ%fk%KDLY)**civ%fk%KDLY
                                     exit
                                 case ('none')
                                     cifg%ts_flag = 0

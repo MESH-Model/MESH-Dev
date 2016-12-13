@@ -23,26 +23,30 @@ module WF_ROUTE_config
         !> Flag used to enable the module.
         logical :: PROCESS_ACTIVE = .true.
 
-        !* If STREAMFLOWFLAG is 1, the user wants to output streamflow values for each
-        !* timestep. If STREAMFLOWFLAG is 0, the user will get the default daily file.
-        integer :: STREAMFLOWFLAG = 0
+        !> Write output to file (radix of file out keys)**(key value).
+        !>  0 = Create no output.
+        !> >0 = Write output to file.
+        integer(kind = 4) :: STREAMFLOWOUTFLAG = 1
 
-        !> BASIN CSV-FORMAT STREAMFLOW OUTPUT FLAG
-        !>
-        !>  Combine values to activate a subset of the files:
-        !>     3 = 1 and 2
-        !>     7 = 1, 2, and 4
-        !>     5 = 1 and 4
-        !>
-        !> If enabled, saves the observed versus simulated streamflow output
-        !> file. The flag can also enable the cumulative and every time-step
-        !> streamflow files written by past model configurations.
-        !>     0 = Create no output.
-        !>     1 = Save the observed versus simulated streamflow output file.
-        !>     2 = Save the observed versus simulated, as well as the
-        !>         cumulative and every time-step streamflow files.
-        !>     4 = Save the streamflow channel water balance to file.
-        integer(kind=4) :: STREAMFLOWOUTFLAG = 3
+        !> Output file header flag.
+        !>  .true. = Print a header in output files (default).
+        !>  .falst. = Print no header in output files.
+        logical :: fout_header = .true.
+
+        !> Flag to write observed and simulated hydrographs to file.
+        !>  .true. = Write observed and simulated hydrographs to file (default).
+        !>  .falst. = Do not write hydrographs to file.
+        logical :: fout_hyd = .true.
+
+        !> Flag to write stream channel balance to file.
+        !>  .true. = Write streamflow channel balance to file.
+        !>  .falst. = Do not write streamflow channel balance to file (default).
+        logical :: fout_bal = .false.
+
+        !> Flag to write accumulated (cumulative) observed and simulated hydrographs to file.
+        !>  .true. = Write accumulated (cumulative) observed and simulated hydrographs to file.
+        !>  .falst. = Do not write accumulated (cumulative) hydrographs to file (default).
+        logical :: fout_acc = .false.
 
         !> Flag to control the reservoir release function used in
         !> WF_ROUTE.f.
@@ -70,6 +74,17 @@ module WF_ROUTE_config
     !> WF_RTE_flgs: Configuration flags for the module.
     type(WF_RTE_flags), save :: WF_RTE_flgs
 
+    !> Variable type: WF_RTE_fstfl_out_keys
+    !>  Description: Internal file keys used for output files.
+    !>
+    !> Variables:
+    !*  KDLY: Daily output
+    !*  KTS: Per time-step output
+    type WF_RTE_fstfl_out_keys
+        integer(kind = 4) :: KDLY = 0, KTS = 1
+        integer :: kmin = 0, kmax = 1
+    end type
+
     type WF_RTE_file_keys
 
         !> Input files.
@@ -78,21 +93,13 @@ module WF_ROUTE_config
         integer :: stfl_in = 1
         integer :: resv_in = 2
 
-        !> Output files.
-        !* stfl_daily: MESH_output_streamflow.csv
-        !* stfl_cumm: MESH_output_streamflow_cumulative.csv
-        !* stfl_ts: MESH_output_streamflow_all.csv
-        integer :: stfl_daily = 3
-        integer :: stfl_cumm = 4
-        integer :: stfl_bal = 6
-        integer :: stfl_ts = 5
-
     end type
 
     !> WF_RTE_fls: Stores information about files used by the module.
-    type(fl_ids), save :: WF_RTE_fls
+    type(fl_ids), save :: WF_RTE_fls, WF_RTE_fouts
 
     type(WF_RTE_file_keys), save :: WF_RTE_flks
+    type(WF_RTE_fstfl_out_keys), save :: WF_RTE_fstfloutks
 
     type WF_RTE_parameters
 
@@ -187,7 +194,9 @@ module WF_ROUTE_config
     subroutine WF_ROUTE_init_fls()
 
         !> Allocate file object.
-        allocate(WF_RTE_fls%fl(6))
+        allocate( &
+            WF_RTE_fls%fl(2), &
+            WF_RTE_fouts%fl(WF_RTE_fstfloutks%kmin:WF_RTE_fstfloutks%kmax))
 
     end subroutine
 
@@ -232,8 +241,7 @@ module WF_ROUTE_config
         !* iun: Unit number.
         real ry, rx
         integer iy, ix, l, i, j, ierr, iun
-
-        character*10 fn
+        character(len = 10) ffmti, fn
 
         !> Return if the process is inactive.
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
@@ -480,33 +488,32 @@ module WF_ROUTE_config
         !* JAN: The first time throught he loop, jan = 1. Jan will equal 2 after that.
         JAN = 1
 
-        !> Daily streamflow output file.
-        if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 0)) then
-            open(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%iun, &
-                 file = './' // trim(fls%GENDIR_OUT) // '/' // &
-                        trim(adjustl(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%fn)), &
-                 iostat = ierr)
-        end if
-
-        !> Per time-step and cumulative daily streamflow files.
-        if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 1)) then
-            if (WF_RTE_flgs%STREAMFLOWFLAG == 1) then
-                open(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun, &
-                     file = './' // trim(fls%GENDIR_OUT) // '/' // &
-                            adjustl(trim(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%fn)))
+        !> Open output files for streamflow.
+        do j = WF_RTE_fstfloutks%kmin, WF_RTE_fstfloutks%kmax
+            if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, j)) then
+                iun = WF_RTE_fouts%fl(j)%iun
+                open(iun, &
+                     file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(WF_RTE_fouts%fl(j)%fn)), &
+                     iostat = ierr)
+                if (WF_RTE_flgs%fout_header) then
+                    write(iun, 1010, advance = 'no') 'YEAR', 'DAY'
+                    if (j == WF_RTE_fstfloutks%KTS) write(iun, 1010, advance = 'no') 'HOUR', 'MINS'
+                    do i = 1, fms%stmg%n
+                        write(ffmti, '(i3)') i
+                        if (WF_RTE_flgs%fout_acc) then
+                            write(iun, 1010, advance = 'no') 'QOBSACC' // trim(adjustl(ffmti)), 'QSIMACC' // trim(adjustl(ffmti))
+                        end if
+                        if (WF_RTE_flgs%fout_hyd) then
+                            write(iun, 1010, advance = 'no') 'QOBS' // trim(adjustl(ffmti)), 'QSIM' // trim(adjustl(ffmti))
+                        end if
+                        if (WF_RTE_flgs%fout_bal) then
+                            write(iun, 1010, advance = 'no') 'RSIM' // trim(adjustl(ffmti)), 'CHSTG' // trim(adjustl(ffmti))
+                        end if
+                    end do
+                    write(iun, *)
+                end if
             end if
-            open(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun, &
-                 file = './' // trim(fls%GENDIR_OUT) // '/' // &
-                        adjustl(trim(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%fn)))
-        end if
-
-        !> Streamflow channel water balance output file.
-        if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 2)) then
-            open(WF_RTE_fls%fl(WF_RTE_flks%stfl_bal)%iun, &
-                 file = './' // trim(fls%GENDIR_OUT) // '/' // &
-                        trim(adjustl(WF_RTE_fls%fl(WF_RTE_flks%stfl_bal)%fn)), &
-                 iostat = ierr)
-        end if
+        end do
 
         !> Read the state of these variables.
         if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
@@ -552,6 +559,8 @@ module WF_ROUTE_config
                 'l', 'wf_r', &
                 'wf_qi1', 'wf_store1', 'wf_qi2', 'wf_store2', 'wf_qo2'
         end do
+
+1010    format(9999(g10.3, ','))
 
     end subroutine
 

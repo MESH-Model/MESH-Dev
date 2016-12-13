@@ -467,8 +467,6 @@ program RUNMESH
             write(58, *) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG
             write(58, *) 'SHDFILEFLAG          = ', SHDFILEFLAG
             write(58, *) 'SOILINIFLAG          = ', SOILINIFLAG
-!-            write(58, *) 'STREAMFLOWFLAG       = ', STREAMFLOWFLAG
-            write(58, *) 'RELFLG               = ', RELFLG
             write(58, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
 !-            write(58, *) 'INTERPOLATIONFLAG    = ', INTERPOLATIONFLAG
             write(58, *) 'SUBBASINFLAG         = ', SUBBASINFLAG

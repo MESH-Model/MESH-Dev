@@ -102,7 +102,7 @@ module WF_ROUTE_module
 !-        real WF_R1(M_C), WF_R2(M_C)
 
         !> Local variables.
-        integer l, i
+        integer l, i, iun
         logical writeout
 
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
@@ -166,9 +166,17 @@ module WF_ROUTE_module
         !> *********************************************************************
 
         !> Write output for per time-step streamflow output file.
-        if (WF_RTE_flgs%STREAMFLOWFLAG == 1 .and. btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 1)) then
-            write(WF_RTE_fls%fl(WF_RTE_flks%stfl_ts)%iun, 1002) &
-                ic%now%jday, ic%now%hour, ic%now%mins, (WF_QHYD(i), WF_QSYN(i), i = 1, fms%stmg%n)
+        if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, WF_RTE_fstfloutks%KTS)) then
+            iun = WF_RTE_fouts%fl(WF_RTE_fstfloutks%KTS)%iun
+            write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
+            do i = 1, fms%stmg%n
+!todo
+                if (WF_RTE_flgs%fout_acc) write(iun, 1010, advance = 'no') WF_NODATA_VALUE, WF_NODATA_VALUE
+                if (WF_RTE_flgs%fout_hyd) write(iun, 1010, advance = 'no') WF_QHYD(i), WF_QSYN(i)
+!todo
+                if (WF_RTE_flgs%fout_bal) write(iun, 1010, advance = 'no') WF_NODATA_VALUE, WF_NODATA_VALUE
+            end do
+            write(iun, *)
         end if
 
         !> Determine if this is the last time-step of the hour.
@@ -183,23 +191,30 @@ module WF_ROUTE_module
             end do
 
             !> Write output for daily streamflow output file.
-            if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 0)) then
-                write(WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%iun, 1001) &
-                    ic%now%jday, (WF_QHYD_AVG(i), WF_QSYN_AVG(i)/ic%ts_daily, i = 1, fms%stmg%n)
-            end if
-
-            !> Write output for cumulative daily streamflow output file.
-            if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 1)) then
-                write(WF_RTE_fls%fl(WF_RTE_flks%stfl_cumm)%iun, 1001) &
-                    ic%now%jday, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily, i = 1, fms%stmg%n)
+            if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, WF_RTE_fstfloutks%KDLY)) then
+                iun = WF_RTE_fouts%fl(WF_RTE_fstfloutks%KDLY)%iun
+                write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
+                do i = 1, fms%stmg%n
+                    if (WF_RTE_flgs%fout_acc) write(iun, 1010, advance = 'no') WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily
+                    if (WF_RTE_flgs%fout_hyd) write(iun, 1010, advance = 'no') WF_QHYD_AVG(i), WF_QSYN_AVG(i)/ic%ts_daily
+                    if (WF_RTE_flgs%fout_bal) write(iun, 1010, advance = 'no') &
+                        WF_QO2_ACC_MM(fms%stmg%rnk(i)), WF_STORE2_ACC_MM(fms%stmg%rnk(i))/ic%ts_count
+                end do
+                write(iun, *)
             end if
 
             !> Write output for streamflow channel water balance output file.
-            if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, 2)) then
-                write(WF_RTE_fls%fl(WF_RTE_flks%stfl_bal)%iun, 1001) &
-                    ic%now%jday, (WF_QO2_ACC_MM(fms%stmg%rnk(i)), &
-                                  WF_STORE2_ACC_MM(fms%stmg%rnk(i))/ic%ts_count, i = 1, fms%stmg%n)
-            end if
+!-            if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, WF_RTE_fstfloutks%KDLYBAL)) then
+!-                write(WF_RTE_fouts%fl(WF_RTE_fstfloutks%KDLYBAL)%iun, *) &
+!-                    ic%now%jday, (WF_QO2_ACC_MM(fms%stmg%rnk(i)), &
+!-                                  WF_STORE2_ACC_MM(fms%stmg%rnk(i))/ic%ts_count, i = 1, fms%stmg%n)
+!-            end if
+
+            !> Write output for cumulative daily streamflow output file.
+!-            if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, WF_RTE_fstfloutks%KDLYACC)) then
+!-                write(WF_RTE_fouts%fl(WF_RTE_fstfloutks%KDLYACC)%iun, *) &
+!-                    ic%now%jday, (WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily, i = 1, fms%stmg%n)
+!-            end if
 
 !-            WF_QSYN_AVG = 0.0
 
@@ -209,8 +224,7 @@ module WF_ROUTE_module
 
         end if !(writeout) then
 
-1001    format(1(i5, ','), f10.3, 9999(',', f10.3))
-1002    format(3(i5, ','), f10.3, 9999(',', f10.3))
+1010    format(9999(g10.3, ','))
 
     end subroutine
 
