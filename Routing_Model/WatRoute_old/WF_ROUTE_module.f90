@@ -154,27 +154,37 @@ module WF_ROUTE_module
             JAN = 2
         end if
 
-        do l = 1, fms%rsvr%n
-            i = fms%rsvr%rnk(l)
-            write(708+l,"(2(I6,','),7(G12.5,','))") l, i, &
-                stas%chnl%qi(i), wf_store1(i), wf_qi2(i), stas%chnl%s(i), stas%chnl%qo(i)
-        end do
-
         !> *********************************************************************
-        !> Write measured and simulated streamflow to file and screen
-        !> Also write daily summary (pre, evap, rof)
+        !> Write output to file.
         !> *********************************************************************
 
-        !> Write output for per time-step streamflow output file.
-        if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, WF_RTE_fstfloutks%KTS)) then
-            iun = WF_RTE_fouts%fl(WF_RTE_fstfloutks%KTS)%iun
+!-        do l = 1, fms%rsvr%n
+!-            i = fms%rsvr%rnk(l)
+!-            write(708+l,"(2(I6,','),7(G12.5,','))") l, i, &
+!-                stas%chnl%qi(i), wf_store1(i), wf_qi2(i), stas%chnl%s(i), stas%chnl%qo(i)
+!-        end do
+
+        !> Write per time-step output for reaches.
+        if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KTS)) then
+            do l = 1, fms%rsvr%n
+                iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun + l
+                write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
+                i = fms%rsvr%rnk(l)
+                write(iun, 1010, advance = 'no') l, i, stas%chnl%qi(i), wf_store1(i), wf_qi2(i), stas%chnl%s(i), stas%chnl%qo(i)
+                write(iun, *)
+            end do
+        end if
+
+        !> Write per time-step output for streamflow.
+        if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KTS)) then
+            iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun
             write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
             do i = 1, fms%stmg%n
 !todo
-                if (WF_RTE_flgs%fout_acc) write(iun, 1010, advance = 'no') WF_NODATA_VALUE, WF_NODATA_VALUE
-                if (WF_RTE_flgs%fout_hyd) write(iun, 1010, advance = 'no') WF_QHYD(i), WF_QSYN(i)
+                if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') WF_NODATA_VALUE, WF_NODATA_VALUE
+                if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') WF_QHYD(i), WF_QSYN(i)
 !todo
-                if (WF_RTE_flgs%fout_bal) write(iun, 1010, advance = 'no') WF_NODATA_VALUE, WF_NODATA_VALUE
+                if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') WF_NODATA_VALUE, WF_NODATA_VALUE
             end do
             write(iun, *)
         end if
@@ -190,14 +200,14 @@ module WF_ROUTE_module
                 WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + WF_QHYD_AVG(i)
             end do
 
-            !> Write output for daily streamflow output file.
-            if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, WF_RTE_fstfloutks%KDLY)) then
-                iun = WF_RTE_fouts%fl(WF_RTE_fstfloutks%KDLY)%iun
+            !> Write daily output for streamflow.
+            if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KDLY)) then
+                iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
                 do i = 1, fms%stmg%n
-                    if (WF_RTE_flgs%fout_acc) write(iun, 1010, advance = 'no') WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily
-                    if (WF_RTE_flgs%fout_hyd) write(iun, 1010, advance = 'no') WF_QHYD_AVG(i), WF_QSYN_AVG(i)/ic%ts_daily
-                    if (WF_RTE_flgs%fout_bal) write(iun, 1010, advance = 'no') &
+                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily
+                    if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') WF_QHYD_AVG(i), WF_QSYN_AVG(i)/ic%ts_daily
+                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') &
                         WF_QO2_ACC_MM(fms%stmg%rnk(i)), WF_STORE2_ACC_MM(fms%stmg%rnk(i))/ic%ts_count
                 end do
                 write(iun, *)

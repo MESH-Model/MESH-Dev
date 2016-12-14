@@ -92,10 +92,12 @@ module model_files
         WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun = 22
         WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn = 'MESH_input_reservoir.txt'
         WF_RTE_fls%fl(WF_RTE_flks%resv_in)%iun = 21
-        WF_RTE_fouts%fl(WF_RTE_fstfloutks%KDLY)%fn = 'MESH_output_streamflow.csv'
-        WF_RTE_fouts%fl(WF_RTE_fstfloutks%KDLY)%iun = 70
-        WF_RTE_fouts%fl(WF_RTE_fstfloutks%KTS)%fn = 'MESH_output_streamflow_ts.csv'
-        WF_RTE_fouts%fl(WF_RTE_fstfloutks%KTS)%iun = 71
+        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%fn = 'MESH_output_streamflow.csv'
+        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun = 70
+        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%fn = 'MESH_output_streamflow_ts.csv'
+        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun = 71
+        WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%fn = 'MESH_output_reach_ts.csv'
+        WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun = 708
 
         !> For files used by Standalone RTE.
         if (.not. allocated(SA_RTE_fls%fl)) call SA_RTE_init_fls()

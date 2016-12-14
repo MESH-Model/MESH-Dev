@@ -23,31 +23,6 @@ module WF_ROUTE_config
         !> Flag used to enable the module.
         logical :: PROCESS_ACTIVE = .true.
 
-        !> Write output to file (radix of file out keys)**(key value).
-        !>  0 = Create no output.
-        !> >0 = Write output to file.
-        integer(kind = 4) :: STREAMFLOWOUTFLAG = 1
-
-        !> Output file header flag.
-        !>  .true. = Print a header in output files (default).
-        !>  .falst. = Print no header in output files.
-        logical :: fout_header = .true.
-
-        !> Flag to write observed and simulated hydrographs to file.
-        !>  .true. = Write observed and simulated hydrographs to file (default).
-        !>  .falst. = Do not write hydrographs to file.
-        logical :: fout_hyd = .true.
-
-        !> Flag to write stream channel balance to file.
-        !>  .true. = Write streamflow channel balance to file.
-        !>  .falst. = Do not write streamflow channel balance to file (default).
-        logical :: fout_bal = .false.
-
-        !> Flag to write accumulated (cumulative) observed and simulated hydrographs to file.
-        !>  .true. = Write accumulated (cumulative) observed and simulated hydrographs to file.
-        !>  .falst. = Do not write accumulated (cumulative) hydrographs to file (default).
-        logical :: fout_acc = .false.
-
         !> Flag to control the reservoir release function used in
         !> WF_ROUTE.f.
         !>  2 = 2-parameter power release function.
@@ -74,15 +49,41 @@ module WF_ROUTE_config
     !> WF_RTE_flgs: Configuration flags for the module.
     type(WF_RTE_flags), save :: WF_RTE_flgs
 
-    !> Variable type: WF_RTE_fstfl_out_keys
-    !>  Description: Internal file keys used for output files.
+    !> Variable type: WF_RTE_fout_stfl
+    !>  Description: Internal file keys used for output files for streamflow.
     !>
     !> Variables:
     !*  KDLY: Daily output
     !*  KTS: Per time-step output
-    type WF_RTE_fstfl_out_keys
+    !*  freq: Time intervals of the output (daily, ts).
+    !*  fout_hyd: .true. to print observed and simulated values (default).
+    !*  fout_bal: .true. to print channel storage terms (optional).
+    !*  fout_acc: .true. to print accumulated (cumulative) observed and simulated values (optional).
+    !*  fout_header: .true. to print header (default).
+    !*  fls: Output file definitions.
+    type WF_RTE_fout_stfl
         integer(kind = 4) :: KDLY = 0, KTS = 1
         integer :: kmin = 0, kmax = 1
+        integer(kind = 4) :: freq = 1
+        logical :: fout_hyd = .true., fout_bal = .false., fout_acc = .false.
+        logical :: fout_header = .true.
+        type(fl_ids) :: fls
+    end type
+
+    !> Variable type: WF_RTE_fout_rsvr
+    !>  Description: Internal file keys used for output files for lakes and reservoirs.
+    !>
+    !> Variables:
+    !*  KTS: Per time-step output
+    !*  freq: Time intervals of the output (ts).
+    !*  fout_header: .true. to print header (default).
+    !*  fls: Output file definitions.
+    type WF_RTE_fout_rsvr
+        integer(kind = 4) :: KTS = 1
+        integer :: kmin = 1, kmax = 1
+        integer(kind = 4) :: freq = 0
+        logical :: fout_header = .true.
+        type(fl_ids) :: fls
     end type
 
     type WF_RTE_file_keys
@@ -96,10 +97,13 @@ module WF_ROUTE_config
     end type
 
     !> WF_RTE_fls: Stores information about files used by the module.
-    type(fl_ids), save :: WF_RTE_fls, WF_RTE_fouts
+    type(fl_ids), save :: WF_RTE_fls
 
     type(WF_RTE_file_keys), save :: WF_RTE_flks
-    type(WF_RTE_fstfl_out_keys), save :: WF_RTE_fstfloutks
+
+    !> Output files
+    type(WF_RTE_fout_stfl), save :: WF_RTE_fstflout
+    type(WF_RTE_fout_rsvr), save :: WF_RTE_frsvrout
 
     type WF_RTE_parameters
 
@@ -196,7 +200,8 @@ module WF_ROUTE_config
         !> Allocate file object.
         allocate( &
             WF_RTE_fls%fl(2), &
-            WF_RTE_fouts%fl(WF_RTE_fstfloutks%kmin:WF_RTE_fstfloutks%kmax))
+            WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%kmin:WF_RTE_fstflout%kmax), &
+            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%kmin:WF_RTE_frsvrout%kmax))
 
     end subroutine
 
@@ -212,6 +217,7 @@ module WF_ROUTE_config
         use model_files_variables
         use model_dates
         use model_output_variabletypes
+        use strings
 
         !> For: LOCATIONFLAG, STREAMFLOWOUTFLAG
         use FLAGS
@@ -240,8 +246,9 @@ module WF_ROUTE_config
         !* ierr: Error return from external calls.
         !* iun: Unit number.
         real ry, rx
-        integer iy, ix, l, i, j, ierr, iun
-        character(len = 10) ffmti, fn
+        integer iy, ix, i, j, ierr, iun
+        character(len = 4) ffmti
+        character(len = 500) fn
 
         !> Return if the process is inactive.
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
@@ -489,25 +496,26 @@ module WF_ROUTE_config
         JAN = 1
 
         !> Open output files for streamflow.
-        do j = WF_RTE_fstfloutks%kmin, WF_RTE_fstfloutks%kmax
-            if (btest(WF_RTE_flgs%STREAMFLOWOUTFLAG, j)) then
-                iun = WF_RTE_fouts%fl(j)%iun
+        do j = WF_RTE_fstflout%kmin, WF_RTE_fstflout%kmax
+            if (btest(WF_RTE_fstflout%freq, j)) then
+                iun = WF_RTE_fstflout%fls%fl(j)%iun
                 open(iun, &
-                     file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(WF_RTE_fouts%fl(j)%fn)), &
+                     file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(WF_RTE_fstflout%fls%fl(j)%fn)), &
+                     status = 'unknown', action = 'write', &
                      iostat = ierr)
-                if (WF_RTE_flgs%fout_header) then
+                if (WF_RTE_fstflout%fout_header) then
                     write(iun, 1010, advance = 'no') 'YEAR', 'DAY'
-                    if (j == WF_RTE_fstfloutks%KTS) write(iun, 1010, advance = 'no') 'HOUR', 'MINS'
+                    if (j == WF_RTE_fstflout%KTS) write(iun, 1010, advance = 'no') 'HOUR', 'MINS'
                     do i = 1, fms%stmg%n
                         write(ffmti, '(i3)') i
-                        if (WF_RTE_flgs%fout_acc) then
-                            write(iun, 1010, advance = 'no') 'QOBSACC' // trim(adjustl(ffmti)), 'QSIMACC' // trim(adjustl(ffmti))
+                        if (WF_RTE_fstflout%fout_acc) then
+                            write(iun, 1010, advance = 'no') 'QOMACC' // trim(adjustl(ffmti)), 'QOSACC' // trim(adjustl(ffmti))
                         end if
-                        if (WF_RTE_flgs%fout_hyd) then
-                            write(iun, 1010, advance = 'no') 'QOBS' // trim(adjustl(ffmti)), 'QSIM' // trim(adjustl(ffmti))
+                        if (WF_RTE_fstflout%fout_hyd) then
+                            write(iun, 1010, advance = 'no') 'QOMEAS' // trim(adjustl(ffmti)), 'QOSIM' // trim(adjustl(ffmti))
                         end if
-                        if (WF_RTE_flgs%fout_bal) then
-                            write(iun, 1010, advance = 'no') 'RSIM' // trim(adjustl(ffmti)), 'CHSTG' // trim(adjustl(ffmti))
+                        if (WF_RTE_fstflout%fout_bal) then
+                            write(iun, 1010, advance = 'no') 'RSIM' // trim(adjustl(ffmti)), 'STGCH' // trim(adjustl(ffmti))
                         end if
                     end do
                     write(iun, *)
@@ -546,18 +554,40 @@ module WF_ROUTE_config
 
         end if !(RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
 
-        do l = 1, NR
-            if(l.lt.10) then
-                write (fn, '(I1)') l
-            else
-                write (fn, '(I2)') l
-            endif
-            open(UNIT=708+l, &
-                 FILE='./' // trim(fls%GENDIR_OUT) // '/' // 'res_' // adjustl(trim(fn)) // '.csv', &
-                 status='unknown', action = 'write')
-            write(708+l,"(2(a6','),7(a12,','))") &
-                'l', 'wf_r', &
-                'wf_qi1', 'wf_store1', 'wf_qi2', 'wf_store2', 'wf_qo2'
+!-        do l = 1, NR
+!-            if(l.lt.10) then
+!-                write (fn, '(I1)') l
+!-            else
+!-                write (fn, '(I2)') l
+!-            endif
+!-            open(UNIT=708+l, &
+!-                 FILE='./' // trim(fls%GENDIR_OUT) // '/' // 'res_' // adjustl(trim(fn)) // '.csv', &
+!-                 status='unknown', action = 'write')
+!-            write(708+l,"(2(a6','),7(a12,','))") &
+!-                'l', 'wf_r', &
+!-                'wf_qi1', 'wf_store1', 'wf_qi2', 'wf_store2', 'wf_qo2'
+!-        end do
+
+        !> Open output files for reaches.
+        do j = WF_RTE_frsvrout%kmin, WF_RTE_frsvrout%kmax
+            if (btest(WF_RTE_frsvrout%freq, j)) then
+                do i = 1, fms%rsvr%n
+                    iun = WF_RTE_frsvrout%fls%fl(j)%iun + i
+                    write(ffmti, '(i3)') i
+                    fn = trim(adjustl(WF_RTE_frsvrout%fls%fl(j)%fn))
+                    call insertstr(fn, trim(adjustl(ffmti)), index(fn, 'reach') + len_trim('reach'))
+                    open(iun, &
+                         file = './' // trim(fls%GENDIR_OUT) // '/' // fn, &
+                         status = 'unknown', action = 'write', &
+                         iostat = ierr)
+                    if (WF_RTE_frsvrout%fout_header) then
+                        write(iun, 1010, advance = 'no') 'YEAR', 'DAY'
+                        if (j == WF_RTE_frsvrout%KTS) write(iun, 1010, advance = 'no') 'HOUR', 'MINS'
+                        write(iun, 1010, advance = 'no') 'REACH', 'RANK', 'QISIM0', 'STGCH0', 'QISIM', 'STGCH', 'QOSIM'
+                        write(iun, *)
+                    end if
+                end do
+            end if
         end do
 
 1010    format(9999(g10.3, ','))
