@@ -256,17 +256,17 @@
         !* If GGEOFLAG is GT 0,  READ UNIQUE VALUE FROM MESH_ggeo.INI FILE
         GGEOFLAG = 0
 
-        !> BASIN WATER AND ENERGY BALANCES OUTPUT FLAG
-        !> If enabled, saves the water and energy balance output files.
+        !> BASIN ENERGY BALANCE OUTPUT FLAG
+        !> If enabled, saves the energy balance output files.
         !>     0 = Create no output.
-        !>     1 = Save the basin water and energy balance CSV files.
-        BASINBALANCEOUTFLAG = 1
+        !>     1 = Save the basin energy balance CSV files.
+        BASINAVGEBFILEFLAG = 0
 
         !> BASIN SWE OUTPUT FLAG
         !> If enabled, saves the SCA and SWE output files.
         !>     0 = Create no output.
         !>     1 = Save the SCA and SWE output files.
-        BASINSWEOUTFLAG = 1
+        BASINSWEOUTFLAG = 0
 
         !> MODEL INFO OUTPUT FLAG
         !> If enabled, saves model configuration and run information to the
@@ -606,7 +606,26 @@
                     case ('GGEOFLAG')
                         call value(out_args(2), GGEOFLAG, ierr)
                     case ('BASINBALANCEOUTFLAG')
-                        call value(out_args(2), BASINBALANCEOUTFLAG, ierr)
+                        call value(out_args(2), BASINAVGEBFILEFLAG, ierr)
+                        BASINAVGWBFILEFLAG = BASINAVGEBFILEFLAG
+                        BASINAVGEVPFILEFLAG = BASINAVGEBFILEFLAG
+                    case ('BASINAVGEBFILEFLAG')
+                        BASINAVGEBFILEFLAG = 0
+                        do j = 2, nargs
+                            select case (lowercase(out_args(j)))
+                                case ('daily')
+                                    BASINAVGEBFILEFLAG = 1
+                                case ('all')
+                                    BASINAVGEBFILEFLAG = 1
+                                    exit
+                                case ('default')
+                                    BASINAVGEBFILEFLAG = 0
+                                    exit
+                                case ('none')
+                                    BASINAVGEBFILEFLAG = 0
+                                    exit
+                            end select
+                        end do
 
                     !> Time-averaged basin water balance output.
                     case ('BASINAVGWBFILEFLAG')
@@ -621,6 +640,12 @@
                                     BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 4
                                 case ('ts')
                                     BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 8
+                                case ('all')
+                                    BASINAVGWBFILEFLAG = 1
+                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 2
+                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 4
+                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 8
+                                    exit
                                 case ('default')
                                     BASINAVGWBFILEFLAG = 1
                                     exit
@@ -643,6 +668,12 @@
                                     BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 4
                                 case ('ts')
                                     BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 8
+                                case ('all')
+                                    BASINAVGEVPFILEFLAG = 1
+                                    BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 2
+                                    BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 4
+                                    BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 8
+                                    exit
                                 case ('default')
                                     BASINAVGEVPFILEFLAG = 1
                                     exit
@@ -734,6 +765,11 @@
                                     cifg%ts_flag = cifg%ts_flag + radix(civ%fk%KHLY)**civ%fk%KHLY
                                 case ('ts')
                                     cifg%ts_flag = cifg%ts_flag + radix(civ%fk%KTS)**civ%fk%KTS
+                                case ('all')
+                                    cifg%ts_flag = radix(civ%fk%KDLY)**civ%fk%KDLY
+                                    cifg%ts_flag = cifg%ts_flag + radix(civ%fk%KHLY)**civ%fk%KHLY
+                                    cifg%ts_flag = cifg%ts_flag + radix(civ%fk%KTS)**civ%fk%KTS
+                                    exit
                                 case ('default')
                                     cifg%ts_flag = radix(civ%fk%KDLY)**civ%fk%KDLY
                                     exit

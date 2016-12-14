@@ -26,20 +26,22 @@ module cropland_irrigation_between_grid
         !> Daily.
         if (btest(cifg%ts_flag, civ%fk%KDLY)) then
             open(950, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation.csv')
-            write(950, '(a)') 'DAY,YEAR,' // 'ICU'
+            write(950, 1010) 'YEAR', 'DAY', 'ICU'
         end if
 
         !> Hourly.
         if (btest(cifg%ts_flag, civ%fk%KHLY)) then
             open(952, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation_Hourly.csv')
-            write(952, '(a)') 'DAY,YEAR,HOUR,' // 'ICU'
+            write(952, 1010) 'YEAR', 'DAY', 'HOUR', 'ICU'
         end if
 
         !> Per time-step.
         if (btest(cifg%ts_flag, civ%fk%KTS)) then
             open(953, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation_ts.csv')
-            write(953, '(a)') 'DAY,YEAR,HOUR,MINS,' // 'ICU'
+            write(953, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'ICU'
         end if
+
+1010    format(9999(g10.3, ','))
 
     end subroutine
 
@@ -61,23 +63,22 @@ module cropland_irrigation_between_grid
         !> Daily.
         if (btest(cifg%ts_flag, civ%fk%KDLY) .and. ic%ts_daily == (3600.0/ic%dts)*24) then
             call runci_between_grid_process(shd, civ%fk%KDLY)
-            write(950, "(i4, ',', i5, ',', 999(e14.6, ','))") ic%now%jday, ic%now%year, &
-                ciago%icu_frac_mm(shd%NAA)
+            write(950, 1010) ic%now%year, ic%now%jday, ciago%icu_frac_mm(shd%NAA)
         end if
 
         !> Hourly.
         if (btest(cifg%ts_flag, civ%fk%KHLY) .and. ic%ts_hourly == (3600.0/ic%dts)) then
             call runci_between_grid_process(shd, civ%fk%KHLY)
-            write(952, "(i4, ',', i5, ',', i3, ',', 999(e14.6, ','))") ic%now%jday, ic%now%year, ic%now%hour, &
-                ciago%icu_frac_mm(shd%NAA)
+            write(952, 1010) ic%now%year, ic%now%jday, ic%now%hour, ciago%icu_frac_mm(shd%NAA)
         end if
 
         !> Per time-step.
         if (btest(cifg%ts_flag, civ%fk%KTS)) then
             call runci_between_grid_process(shd, civ%fk%KTS)
-            write(953, "(i4, ',', i5, ',', 2(i3, ','), 999(e14.6, ','))") ic%now%jday, ic%now%year, ic%now%hour, ic%now%mins, &
-                ciago%icu_frac_mm(shd%NAA)
+            write(953, 1010) ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, ciago%icu_frac_mm(shd%NAA)
         end if
+
+1010    format(9999(g10.3, ','))
 
     end subroutine
 

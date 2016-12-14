@@ -283,6 +283,16 @@ module WF_ROUTE_config
         WF_NORESV_CTRL = 0
         NR = fms%rsvr%n
 
+        !> Stop if no reservoirs have been defined but reaches have.
+        if (NR == 0 .and. sum(shd%IREACH) > 0) then
+            print *
+            print *, 'Reaches exist in MESH_drainage_database.r2c'
+            print *, 'No reservoirs are listed in ' // trim(adjustl(WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn))
+            print *, 'The number of reservoirs and reaches must match.'
+            print *, 'Please adjust either file and re-run MESH to continue.'
+            stop
+        end if
+
         if (NR > 0) then
 
             !> Allocate and initialize reservoir variables.
