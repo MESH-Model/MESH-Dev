@@ -234,7 +234,7 @@ module WF_ROUTE_module
 
         end if !(writeout) then
 
-1010    format(9999(g10.3, ','))
+1010    format(9999(g15.7e2, ','))
 
     end subroutine
 

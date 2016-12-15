@@ -543,20 +543,34 @@ module WF_ROUTE_config
 !todo: condition for ierr.
 
             !> Read inital values from the file.
-            read(iun) JAN
-            read(iun) wf_TimeCount
-            read(iun) WF_QHYD
-            read(iun) WF_QHYD_AVG
-            read(iun) WF_QHYD_CUM
-            read(iun) WF_QSYN
-            read(iun) WF_QSYN_AVG
-            read(iun) WF_QSYN_CUM
-            read(iun) stas%chnl%qo
-            read(iun) stas%chnl%s
-            read(iun) wf_qi2
             if (RESUMEFLAG == 4) then
+                read(iun) JAN
+                read(iun) wf_TimeCount
+                read(iun) WF_QHYD
+                read(iun) WF_QHYD_AVG
+                read(iun) WF_QHYD_CUM
+                read(iun) WF_QSYN
+                read(iun) WF_QSYN_AVG
+                read(iun) WF_QSYN_CUM
+                read(iun) stas%chnl%qo
+                read(iun) stas%chnl%s
+                read(iun) wf_qi2
                 read(iun) WF_QO2_ACC_MM
                 read(iun) WF_STORE2_ACC_MM
+            else
+                read(iun) JAN
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun)
+                read(iun) stas%chnl%qo
+                read(iun) stas%chnl%s
+                read(iun) wf_qi2
+                read(iun)
+                read(iun)
             end if
 
             !> Close the file to free the unit.
@@ -600,7 +614,7 @@ module WF_ROUTE_config
             end if
         end do
 
-1010    format(9999(g10.3, ','))
+1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
@@ -653,10 +667,8 @@ module WF_ROUTE_config
             write(iun) stas%chnl%qo
             write(iun) stas%chnl%s
             write(iun) wf_qi2
-            if (SAVERESUMEFLAG == 4) then
-                write(iun) WF_QO2_ACC_MM
-                write(iun) WF_STORE2_ACC_MM
-            end if
+            write(iun) WF_QO2_ACC_MM
+            write(iun) WF_STORE2_ACC_MM
 
             !> Close the file to free the unit.
             close(iun)

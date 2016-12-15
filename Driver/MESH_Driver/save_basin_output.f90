@@ -188,7 +188,7 @@ module save_basin_output
         end if
 
         !> Read initial variables values from file.
-        if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
+        if (RESUMEFLAG == 4) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
@@ -196,7 +196,7 @@ module save_basin_output
                  form = 'unformatted', access = 'sequential', iostat = ierr)
 !todo: condition for ierr.
 
-            !> Basin totals for the water balance.
+            !> Basin totals for the water balance (old accumulated).
             read(iun)
             read(iun)
             read(iun)
@@ -212,41 +212,8 @@ module save_basin_output
             read(iun)
             read(iun)
 
-            !> Accumulated totals for the basin.
-            if (RESUMEFLAG == 4) then
-                read(iun) bno%wb(IKEY_ACC)%PRE(shd%NAA)
-                read(iun) bno%wb(IKEY_ACC)%EVAP(shd%NAA)
-                read(iun) bno%wb(IKEY_ACC)%ROF(shd%NAA)
-                read(iun) bno%wb(IKEY_ACC)%ROFO(shd%NAA)
-                read(iun) bno%wb(IKEY_ACC)%ROFS(shd%NAA)
-                read(iun) bno%wb(IKEY_ACC)%ROFB(shd%NAA)
-                read(iun) bno%wb(IKEY_ACC)%RCAN(shd%NAA)
-                read(iun) bno%wb(IKEY_ACC)%SNCAN(shd%NAA)
-                read(iun) bno%wb(IKEY_ACC)%SNO(shd%NAA)
-                read(iun) bno%wb(IKEY_ACC)%WSNO(shd%NAA)
-                read(iun) bno%wb(IKEY_ACC)%PNDW(shd%NAA)
-                read(iun) bno%wb(IKEY_ACC)%LQWS(shd%NAA, :)
-                read(iun) bno%wb(IKEY_ACC)%FRWS(shd%NAA, :)
-                read(iun) bno%wb(IKEY_ACC)%STG_INI(shd%NAA)
-            else
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-            end if
-
-            !> Other accumulators for the water balance.
-            do ikey = 2, NKEY
+            !> Basin totals for the water balance (for all time-step intervals).
+            do ikey = 1, NKEY
                 read(iun) bno%wb(ikey)%PRE(shd%NAA)
                 read(iun) bno%wb(ikey)%EVAP(shd%NAA)
                 read(iun) bno%wb(ikey)%ROF(shd%NAA)
@@ -270,9 +237,9 @@ module save_basin_output
             !> Close the file to free the unit.
             close(iun)
 
-        end if !(RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
+        end if !(RESUMEFLAG == 4) then
 
-1010    format(9999(g10.3, ','))
+1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
@@ -350,7 +317,7 @@ module save_basin_output
         if (btest(BASINAVGWBFILEFLAG, 3)) call save_water_balance(shd, fls, 904, ic%dts, shd%NAA, IKEY_TSP)
         if (btest(BASINAVGEVPFILEFLAG, 3)) call update_evp(shd, fls, 913, ic%dts, IKEY_TSP)
 
-1010    format(9999(g10.3, ','))
+1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
@@ -383,7 +350,7 @@ module save_basin_output
 !-        if (BASINBALANCEOUTFLAG == 0) return
 
         !> Save the current state of the variables.
-        if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
+        if (SAVERESUMEFLAG == 4) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
@@ -432,7 +399,7 @@ module save_basin_output
             !> Close the file to free the unit.
             close(iun)
 
-        end if !(SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
+        end if !(SAVERESUMEFLAG == 4) then
 
     end subroutine
 
@@ -595,7 +562,7 @@ module save_basin_output
         bno%wb(ikdts)%LQWS = 0.0
         bno%wb(ikdts)%FRWS = 0.0
 
-1010    format(9999(g10.3, ','))
+1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
@@ -632,7 +599,7 @@ module save_basin_output
         end do
         write(fik, 1010) 'LQWS', 'FRWS', 'ALWS', 'STG', 'DSTG'
 
-1010    format(9999(g10.3, ','))
+1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
@@ -675,7 +642,7 @@ module save_basin_output
         bno%evpdts(ikdts)%EVPB = 0.0
         bno%evpdts(ikdts)%ARRD = 0.0
 
-1010    format(9999(g10.3, ','))
+1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
@@ -699,7 +666,7 @@ module save_basin_output
         !> Variables.
         write(fik, 1010) 'EVAP', 'PEVP', 'EVPB', 'ARRD'
 
-1010    format(9999(g10.3, ','))
+1010    format(9999(g15.7e2, ','))
 
     end subroutine
 

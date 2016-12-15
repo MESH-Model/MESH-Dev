@@ -41,7 +41,7 @@ module cropland_irrigation_between_grid
             write(953, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'ICU'
         end if
 
-1010    format(9999(g10.3, ','))
+1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
@@ -78,7 +78,7 @@ module cropland_irrigation_between_grid
             write(953, 1010) ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, ciago%icu_frac_mm(shd%NAA)
         end if
 
-1010    format(9999(g10.3, ','))
+1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
