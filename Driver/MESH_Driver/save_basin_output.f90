@@ -535,9 +535,9 @@ module save_basin_output
             bno%wb(ikdts)%SNCAN(ina)/dnar, bno%wb(ikdts)%RCAN(ina)/dnar, &
             bno%wb(ikdts)%SNO(ina)/dnar, bno%wb(ikdts)%WSNO(ina)/dnar, &
             bno%wb(ikdts)%PNDW(ina)/dnar, &
-            (bno%wb(ikdts)%LQWS(ina, j)/dnar, j = 1, NSL), &
-            (bno%wb(ikdts)%FRWS(ina, j)/dnar, j = 1, NSL), &
-            ((bno%wb(ikdts)%LQWS(ina, j) + bno%wb(ikdts)%FRWS(ina, j))/dnar, j = 1, NSL), &
+            (bno%wb(ikdts)%LQWS(ina, j)/dnar, &
+            bno%wb(ikdts)%FRWS(ina, j)/dnar, &
+            (bno%wb(ikdts)%LQWS(ina, j) + bno%wb(ikdts)%FRWS(ina, j))/dnar, j = 1, NSL), &
             sum(bno%wb(ikdts)%LQWS(ina, :))/dnar, &
             sum(bno%wb(ikdts)%FRWS(ina, :))/dnar, &
             (sum(bno%wb(ikdts)%LQWS(ina, :)) + sum(bno%wb(ikdts)%FRWS(ina, :)))/dnar, &
