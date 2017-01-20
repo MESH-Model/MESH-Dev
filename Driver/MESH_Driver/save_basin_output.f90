@@ -138,11 +138,13 @@ module save_basin_output
         do ikey = 1, NKEY
             bno%wb(ikey)%STG_INI = wb%RCAN + wb%SNCAN + wb%SNO + wb%WSNO + wb%PNDW + sum(wb%LQWS, 2) + sum(wb%FRWS, 2)
         end do
-        do i = 1, shd%NAA - 1
+        do i = 1, shd%NAA
             ii = shd%NEXT(i)
-            do ikey = 1, NKEY
-                bno%wb(ikey)%STG_INI(ii) = bno%wb(ikey)%STG_INI(ii) + bno%wb(ikey)%STG_INI(i)
-            end do
+            if (ii > 0) then
+                do ikey = 1, NKEY
+                    bno%wb(ikey)%STG_INI(ii) = bno%wb(ikey)%STG_INI(ii) + bno%wb(ikey)%STG_INI(i)
+                end do
+            end if
         end do
 
         !> Allocate and zero variables for accumulations.
@@ -439,21 +441,23 @@ module save_basin_output
         FRWS = wb%FRWS
 
         !> Aggregate through neighbouring cells.
-        do i = 1, shd%NAA - 1
+        do i = 1, shd%NAA
             ii = shd%NEXT(i)
-            PRE(ii) = PRE(ii) + PRE(i)
-            EVAP(ii) = EVAP(ii) + EVAP(i)
-            ROF(ii) = ROF(ii) + ROF(i)
-            ROFO(ii) = ROFO(ii) + ROFO(i)
-            ROFS(ii) = ROFS(ii) + ROFS(i)
-            ROFB(ii) = ROFB(ii) + ROFB(i)
-            RCAN(ii) = RCAN(ii) + RCAN(i)
-            SNCAN(ii) = SNCAN(ii) + SNCAN(i)
-            SNO(ii) = SNO(ii) + SNO(i)
-            WSNO(ii) = WSNO(ii) + WSNO(i)
-            PNDW(ii) = PNDW(ii) + PNDW(i)
-            LQWS(ii, :) = LQWS(ii, :) + LQWS(i, :)
-            FRWS(ii, :) = FRWS(ii, :) + FRWS(i, :)
+            if (ii > 0) then
+                PRE(ii) = PRE(ii) + PRE(i)
+                EVAP(ii) = EVAP(ii) + EVAP(i)
+                ROF(ii) = ROF(ii) + ROF(i)
+                ROFO(ii) = ROFO(ii) + ROFO(i)
+                ROFS(ii) = ROFS(ii) + ROFS(i)
+                ROFB(ii) = ROFB(ii) + ROFB(i)
+                RCAN(ii) = RCAN(ii) + RCAN(i)
+                SNCAN(ii) = SNCAN(ii) + SNCAN(i)
+                SNO(ii) = SNO(ii) + SNO(i)
+                WSNO(ii) = WSNO(ii) + WSNO(i)
+                PNDW(ii) = PNDW(ii) + PNDW(i)
+                LQWS(ii, :) = LQWS(ii, :) + LQWS(i, :)
+                FRWS(ii, :) = FRWS(ii, :) + FRWS(i, :)
+            end if
         end do
 
         !> Update run total.
