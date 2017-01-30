@@ -273,9 +273,37 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
                     end if
                 end if
+
             end do
         end if
     end do
+
+    !> Print information about tile configuration (with DIAGNOSEMODE).
+    if (ipid == 0 .and. ro%DIAGNOSEMODE > 1) then
+
+        !> Land tiles.
+        print 1210, 'land', 'NML', shd%lc%NML
+        if (shd%lc%NML > 0) then
+            print 1910, 'Index', 'Grid', 'GRU'
+            do k = 1, shd%lc%NML
+                print 1910, k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
+            end do
+        end if
+
+        !> Water tiles.
+        print 1210, 'water', 'NMW', shd%wc%NML
+        if (shd%wc%NML > 0) then
+            print 1910, 'Index', 'Grid', 'GRU'
+            do k = 1, shd%wc%NML
+                print 1910, k, shd%wc%ILMOS(k), shd%wc%JLMOS(k)
+            end do
+        end if
+
+    end if
+
+1210    format(/1x, 'Configuration of ', (a), ' tiles', &
+               /1x, 'Total number (', (a), '): ', g16.9)
+1910    format(3(g16.9))
 
     !> Store the number of active tile elements to initialize variables.
     NML = shd%lc%NML
