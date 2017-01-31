@@ -407,10 +407,10 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
              stasrow%sno%sno(NTYPE), stasrow%sno%albs(NTYPE), stasrow%sno%fsno(NTYPE), stasrow%sno%rhos(NTYPE), &
              stasrow%sno%tsno(NTYPE), stasrow%sno%wsno(NTYPE), &
              stasrow%sfc%tpnd(NTYPE), stasrow%sfc%zpnd(NTYPE), stasrow%sfc%tsfs(NTYPE, 4), &
-             stasrow%sl%thic(NML, NSL), stasrow%sl%fzws(NML, NSL), stasrow%sl%thlq(NML, NSL), stasrow%sl%lqws(NML, NSL), &
-             stasrow%sl%tbar(NML, NSL), stasrow%sl%tbas(NML), &
-             stasrow%sl%delzw(NML, NSL), stasrow%sl%zbotw(NML, NSL), stasrow%sl%rofs(NML), &
-             stasrow%sl%gflx(NML, NSL), stasrow%sl%ggeo(NML), &
+             stasrow%sl%thic(NTYPE, NSL), stasrow%sl%fzws(NTYPE, NSL), stasrow%sl%thlq(NTYPE, NSL), stasrow%sl%lqws(NTYPE, NSL), &
+             stasrow%sl%tbar(NTYPE, NSL), stasrow%sl%tbas(NTYPE), &
+             stasrow%sl%delzw(NTYPE, NSL), stasrow%sl%zbotw(NTYPE, NSL), stasrow%sl%rofs(NTYPE), &
+             stasrow%sl%gflx(NTYPE, NSL), stasrow%sl%ggeo(NTYPE), &
              stasrow%lzs%zlw(NTYPE), &
              stasrow%dzs%zlw(NTYPE))
     stasrow%cnpy%qac = 0.0; stasrow%cnpy%tac = 0.0; stasrow%cnpy%tcan = 0.0
