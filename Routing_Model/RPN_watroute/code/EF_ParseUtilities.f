@@ -36,7 +36,7 @@ C***********************************************************************
 
 	character*(*) line
 	character*(*) keyword, value
-	character*4096 localLine
+	character*10000 localLine
 	integer I, DQ, lineLen
 	logical rStat
 
@@ -102,7 +102,7 @@ C Return:	the number of words in the line
 C***********************************************************************
 
 	character*(*) line
-	character*4096 localLine
+	character*10000 localLine
 	integer I, DQ, lineLen
 	logical rStat
 

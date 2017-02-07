@@ -39,18 +39,26 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
 !       DLZ = LOWER ZONE OUTFLOW IN MM
 
-        dlz=flz2(n)*lzs(n)**pwr(n)
+        dlz=flz2(n)*max(lzs(n),0.0)**pwr(n)
 
-        if(dlz.gt.lzs(n))then
-          dlz=lzs(n)
-          lzs(n)=0.0
+        if (dlz .gt. 0.0) then
+          if(dlz.gt.lzs(n))then
+            dlz=lzs(n)
+            lzs(n)=0.0
+            write(*,*) 'WARNING: dlz is > lzs at point: ',xxx(n),yyy(n)
+            write(*,'(a23,a35)') 'Reduce flz and/or pwr: ',
+     *                 'passed to watroute in the shed file'
+          else
+            lzs(n)=lzs(n)-dlz
+          endif
         else
-          lzs(n)=lzs(n)-dlz
+          dlz = 0.0   ! lzs(n) remains unchanged and negative; water is conserved
         endif
 
 c	if(iopt.eq.2)print*,' checkpoint 5a in baseflow'
 
           qlz(n)=dlz*tdum*frac(n)
+          !qlz is in units of cms, not mm anymore
 
 	  leakage=leakage+qlz(n)
 !        qdrng=qdrng+rechrg(n)*tdum*frac(n)

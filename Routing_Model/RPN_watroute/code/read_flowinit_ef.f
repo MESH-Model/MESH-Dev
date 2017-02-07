@@ -74,19 +74,18 @@
         flnNum = 99
  
 ! Open the file
-        INQUIRE(FILE=trim(adjustl(fln(flnNum))),EXIST=exists)
+        INQUIRE(FILE=fln(flnNum),EXIST=exists)
         IF(exists)then
-           open(unit=unitNum,file=trim(adjustl(fln(flnNum))),
-     *     status='old',iostat=ios)
+           open(unit=unitNum,file=fln(flnNum),status='old',iostat=ios)
        if(ios.ne.0)then
-              print*,'Problems opening ',trim(fln(flnNum))
+              print*,'Problems opening ',fln(flnNum)
               print*
-              STOP ' Stopped in read_flowinit_ef'
+              STOP ' Stopped in read_swe_ef'
            endif
         else
-           print*,'ERROR: the SWE file: ',   trim(fln(flnNum))
+           print*,'ERROR: the SWE file: ',   fln(flnNum)
            print*,'is NOT found'
-           STOP ' Program STOPPED in read_flowinit_ef'
+           STOP ' Program STOPPED in read_swe_ef'
         endif
 
 ! Initialize default values
@@ -104,7 +103,7 @@
            read(UNIT=unitNum, FMT='((A))', iostat=ios) line   ! read a line
            if(ios .eq. -1)then
               write(6,'((A))') 'ERROR: Premature EndOfFile encountered'
-              STOP ' Stopped in read_flowinit_ef'
+              STOP ' Stopped in read_swe_ef'
            end if
 
            rStat = Detab(line)            ! replace tabs with spaces
@@ -123,9 +122,9 @@
                  iStat = ParseSWEParam(header,keyword,keyLen,
      &                                       subString)
                  if(iStat .lt. 0) then
-                    write(*,'(2(A))') 'ERROR parsing ',trim(fln(flnNum))
+                    write(*,'(2(A))') 'ERROR parsing ', fln(flnNum)
                     write(*,'(2(A))') '   in line: ',line               
-                    STOP ' Stopped in read_flowinit_ef'
+                    STOP ' Stopped in read_swe_ef'
                     return
                  else if(iStat .eq. 0) then
 !               write(*,'((A), (A))')  'Unrecognized keyword line: ',
@@ -166,7 +165,7 @@
      &   header%r2cp%xCount.ne.xcount.or.
      &   header%r2cp%yCount.ne.ycount) then
             print*
-            PRINT*,'Mismatch between ',trim(fln(flnNum))
+            PRINT*,'Mismatch between ',fln(flnNum)
             print*,'    and SHD files'
             print*,'Check files for origins, deltas and counts'
             print*,'Could be due to # significant digits in header' 
@@ -224,7 +223,7 @@
 ! Deallocate the attribute data now that global attributes have been set
         do ai=1,attCountLoc
            deallocate ( header%r2cp%ep%attList(ai)%val, STAT = error )
-         if (error.ne.0) STOP 'deallocation error in read_flowinit_ef()'
+           if (error.ne.0) STOP 'deallocation error in read_gsm_ef()' 
         end do
 
       close (unit=unitNum)
