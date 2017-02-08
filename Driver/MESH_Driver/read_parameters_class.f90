@@ -154,14 +154,6 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
         end do
     end do
 
-print *, stasrow%sl%tbar
-print *, stasrow%sl%thlq
-print *, stasrow%sl%thic
-print *, pmrow%slp%sand
-print *, pmrow%slp%clay
-print *, pmrow%slp%orgm
-stop
-
     return
 
 end subroutine
