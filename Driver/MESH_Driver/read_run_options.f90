@@ -12,6 +12,8 @@
 
         use SIMSTATS_config, only: mtsflg
 
+        use save_basin_output, only: BASINAVGWBFILEFLAG
+
         use RUNCLASS36_constants
         use RUNCLASS36_save_output
         use RUNSVS113_variables
@@ -40,7 +42,7 @@
         character(1) delim
 
         !> Temporary variables.
-        integer CONFLAGS, IROVAL, ierr, iun, j, i
+        integer CONFLAGS, IROVAL, ierr, iun, n, j, i
         character(20) IRONAME
         character(10) GENDIR_OUT
 
@@ -318,7 +320,8 @@
             do i = 1, CONFLAGS
 
                 !> Read and parse the entire line.
-                read(iun,'(A)') in_line
+                call readline(iun, in_line, ierr)
+                call compact(in_line)
                 call parse(in_line, delim, out_args, nargs)
                 if (.not. nargs > 0) then
                     print 9358, i
@@ -551,9 +554,13 @@
                     case ('INTERPOLATIONFLAG')
                         call value(out_args(2), IROVAL, ierr)
                         if (ierr == 0) then
-                            do j = 1, cm%nclim
-                                cm%dat(j)%ipflg = IROVAL
-                            end do
+                            cm%dat(ck%FB)%ipflg = IROVAL
+                            cm%dat(ck%FI)%ipflg = IROVAL
+                            cm%dat(ck%RT)%ipflg = IROVAL
+                            cm%dat(ck%TT)%ipflg = IROVAL
+                            cm%dat(ck%UV)%ipflg = IROVAL
+                            cm%dat(ck%P0)%ipflg = IROVAL
+                            cm%dat(ck%HU)%ipflg = IROVAL
                         end if
 
                     case ('SUBBASINFLAG')
@@ -607,7 +614,7 @@
                         call value(out_args(2), GGEOFLAG, ierr)
                     case ('BASINBALANCEOUTFLAG')
                         call value(out_args(2), BASINAVGEBFILEFLAG, ierr)
-                        BASINAVGWBFILEFLAG = BASINAVGEBFILEFLAG
+!                        BASINAVGWBFILEFLAG = BASINAVGEBFILEFLAG
                         BASINAVGEVPFILEFLAG = BASINAVGEBFILEFLAG
                     case ('BASINAVGEBFILEFLAG')
                         BASINAVGEBFILEFLAG = 0
@@ -629,31 +636,7 @@
 
                     !> Time-averaged basin water balance output.
                     case ('BASINAVGWBFILEFLAG')
-                        BASINAVGWBFILEFLAG = 0
-                        do j = 2, nargs
-                            select case (lowercase(out_args(j)))
-                                case ('daily')
-                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 1
-                                case ('monthly')
-                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 2
-                                case ('hourly')
-                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 4
-                                case ('ts')
-                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 8
-                                case ('all')
-                                    BASINAVGWBFILEFLAG = 1
-                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 2
-                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 4
-                                    BASINAVGWBFILEFLAG = BASINAVGWBFILEFLAG + 8
-                                    exit
-                                case ('default')
-                                    BASINAVGWBFILEFLAG = 1
-                                    exit
-                                case ('none')
-                                    BASINAVGWBFILEFLAG = 0
-                                    exit
-                            end select
-                        end do
+                        BASINAVGWBFILEFLAG = adjustl(in_line)
 
                     !> Time-averaged basin PEVP-EVAP and EVPB output.
                     case ('BASINAVGEVPFILEFLAG')
