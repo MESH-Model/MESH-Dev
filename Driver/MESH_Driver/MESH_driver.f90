@@ -124,9 +124,9 @@ program RUNMESH
     !* NA: Temporary store for the number of grid cells.
     !* NTYPE: Temporary store for the number of GRUs.
     !* NML: Temporary store for the number of active land elements (NA, NTYPE).
-    !* IGND: Temporary store for the number of soil layers.
+    !* NSL: Temporary store for the number of soil layers.
     !* iun: Temporary store for the unit number of a file.
-    integer NA, NTYPE, NML, IGND, iun, ik, jk
+    integer NA, NTYPE, NML, NSL, iun, ik, jk, ignd
     real FRAC
 
     !> INTEGER CONSTANTS.
@@ -163,7 +163,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = '1031'
+    character(24) :: VERSION = '1032'
     character(8) RELEASE
 !-    logical VER_OK
 
@@ -210,6 +210,12 @@ program RUNMESH
 
     !> Basin totals for the run.
     real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
+
+    !> End of run states for prognostic variables.
+    real, dimension(:, :), allocatable :: tcan, rcan, sncan, gro, zpnd, tpnd, sno, tsno, albs, rhos
+    real, dimension(:, :, :), allocatable :: tbar, thlq, thic
+    integer, dimension(:), allocatable :: kc
+    character cfmt*3, cfmtt*1000
 
     logical R2COUTPUT
     integer, parameter :: R2CFILEUNITSTART = 500
@@ -298,7 +304,7 @@ program RUNMESH
     !> Assign shed values to local variables.
     NA = shd%NA
     NTYPE = shd%lc%NTYPE
-    IGND = shd%lc%IGND
+    NSL = shd%lc%IGND
 
     !> Initialize output fields.
     call init_water_balance(wb_grd, shd)
@@ -447,7 +453,7 @@ program RUNMESH
     !> ******************************************************
 
         if (MODELINFOOUTFLAG > 0) then
-            write(58, "('Number of Soil Layers (IGND) = ', i5)") IGND
+            write(58, "('Number of Soil Layers (IGND) = ', i5)") NSL
             write(58, *)
             write(58, "('MESH_input_run_options.ini')")
             write(58, *)
@@ -540,12 +546,12 @@ program RUNMESH
 !                write(58, '(4f8.3, 8x, 4f8.3)') (cp%PSGAROW(i, m, j), j = 1, ICAN), (cp%PSGBROW(i, m, j), j = 1, ICAN)
 !                write(58, '(3f8.3, f8.4)') cp%DRNROW(i, m), cp%SDEPROW(i, m), cp%FAREROW(i, m), cp%DDROW(i, m)
 !                write(58, '(4e8.1, i8)') cp%XSLPROW(i, m), cp%XDROW(i, m), cp%MANNROW(i, m), cp%KSROW(i, m), cp%MIDROW(i, m)
-!                write(58, '(6f10.1)') (cp%SANDROW(i, m, j), j = 1, IGND)
-!                write(58, '(6f10.1)') (cp%CLAYROW(i, m, j), j = 1, IGND)
-!                write(58, '(6f10.1)') (cp%ORGMROW(i, m, j), j = 1, IGND)
-!                write(58, '(9f10.2)') (cp%TBARROW(i, m, j), j = 1, IGND), cp%TCANROW(i, m), cp%TSNOROW(i, m), cp%TPNDROW(i, m)
+!                write(58, '(6f10.1)') (cp%SANDROW(i, m, j), j = 1, NSL)
+!                write(58, '(6f10.1)') (cp%CLAYROW(i, m, j), j = 1, NSL)
+!                write(58, '(6f10.1)') (cp%ORGMROW(i, m, j), j = 1, NSL)
+!                write(58, '(9f10.2)') (cp%TBARROW(i, m, j), j = 1, NSL), cp%TCANROW(i, m), cp%TSNOROW(i, m), cp%TPNDROW(i, m)
 !                write(58, '(10f10.3)') &
-!                    (cp%THLQROW(i, m, j), j = 1, IGND), (cp%THICROW(i, m, j), j = 1, IGND), cp%ZPNDROW(i, m)
+!                    (cp%THLQROW(i, m, j), j = 1, NSL), (cp%THICROW(i, m, j), j = 1, NSL), cp%ZPNDROW(i, m)
 !                write(58, '(2f10.4, f10.2, f10.3, f10.4, f10.3, f10.3)') &
 !                    cp%RCANROW(i, m), cp%SCANROW(i, m), cp%SNOROW(i, m), cp%ALBSROW(i, m), cp%RHOSROW(i, m), cp%GROROW(i, m)
 !                write(58, *)
@@ -711,7 +717,7 @@ program RUNMESH
 !                     CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
 !END: PDMROF
 !                     shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, NA, NTYPE, &
-!                     NML, il1, il2, IGND, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
+!                     NML, il1, il2, NSL, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
 !                     cp%THICROW, cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, &
 !                     cp%TSNOROW, cp%RHOSROW, cp%SNOROW, cp%TCANROW, &
 !                     cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, cp%FCANROW, &
@@ -811,7 +817,7 @@ program RUNMESH
 
 !+        call resume_state_r2c(shd%lc%NML, NA, NTYPE, ic%ts_daily, &
 !+                              ic%now%mins, shd%lc%ACLASS, NR2C_R, GRD_R, GAT_R, GRDGAT_R, R2C_ATTRIBUTES_R, &
-!+                              NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
+!+                              NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, NSL, &
 !+                              cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
 !+                              cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
 !+                              cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
@@ -855,7 +861,7 @@ program RUNMESH
 !                    cp%RHOSROW, cp%SNOROW, cp%TCANROW, cp%RCANROW, cp%SCANROW, &
 !                    cp%GROROW, CMAIROW, TACROW, QACROW, WSNOROW, &
 !                    shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
-!                    NA, NTYPE, NML, il1, il2, IGND, ICAN, ICAN + 1, &
+!                    NA, NTYPE, NML, il1, il2, NSL, ICAN, ICAN + 1, &
 !                    cpv%TBAR, cpv%THLQ, cpv%THIC, cdv%GFLX, cpv%TSFS, &
 !                    cpv%TPND, cpv%ZPND, cpv%TBAS, cpv%ALBS, cpv%TSNO, &
 !                    cpv%RHOS, cpv%SNO, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
@@ -934,7 +940,7 @@ program RUNMESH
 !            HBLROW(ik, jk) = cdv%HBL(k)
 !180     continue
 
-!        do 190 l = 1, IGND
+!        do 190 l = 1, NSL
 !            do 190 k = il1, il2
 !                ik = shd%lc%ILMOS(k)
 !                jk = shd%lc%JLMOS(k)
@@ -1138,7 +1144,7 @@ program RUNMESH
 !                                    NR2C, NR2CFILES, R2CFILEUNITSTART, GRD, GAT, &
 !                                    GRDGAT, NR2CSTATES, R2C_ATTRIBUTES, FRAME_NO_NEW, ic%now%year, &
 !                                    ensim_MONTH, ensim_DAY, ic%now%hour, ic%now%mins, ICAN, &
-!                                    ICAN + 1, IGND, &
+!                                    ICAN + 1, NSL, &
 !                                    cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
 !                                    cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
 !                                    cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
@@ -1201,7 +1207,7 @@ program RUNMESH
 !-                    wb_grd%ROFO(ik) = wb_grd%ROFO(ik) + cdv%ROFO(k)*FRAC*ic%dts
 !-                    wb_grd%ROFS(ik) = wb_grd%ROFS(ik) + cdv%ROFS(k)*FRAC*ic%dts
 !-                    wb_grd%ROFB(ik) = wb_grd%ROFB(ik) + cdv%ROFB(k)*FRAC*ic%dts
-!-                    do j = 1, IGND
+!-                    do j = 1, NSL
 !-                        spv_grd%TBAR(ik, j) = spv_grd%TBAR(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
 !-                        spv_grd%THLQ(ik, j) = spv_grd%THLQ(ik, j) + cpv%THLQ(k, j)*FRAC
 !-                        wb_grd%LQWS(ik, j) = wb_grd%LQWS(ik, j) + cpv%THLQ(k, j)*csfv%DELZW(k, j)*FRAC*RHOW
@@ -1287,7 +1293,7 @@ program RUNMESH
                                          wb_acc%pndw, wb_acc%sno, wb_acc%wsno, &
                                          eb_acc%gflx, eb_acc%hfs, eb_acc%qevp, &
                                          spv_acc%thlq, spv_acc%thic, &
-                                         IGND, &
+                                         NSL, &
                                          ic%now%jday, ic%now%year)
                 end if
 
@@ -1442,7 +1448,7 @@ program RUNMESH
 
 !+        call SAVE_STATE_R2C(shd%lc%NML, NA, NTYPE, ic%ts_daily, &
 !+                            ic%now%mins, shd%lc%ACLASS, NR2C_S, GRD_S, GAT_S, GRDGAT_S, R2C_ATTRIBUTES_S, &
-!+                            NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, IGND, &
+!+                            NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, NSL, &
 !+                            cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
 !+                            cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
 !+                            cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
@@ -1563,9 +1569,265 @@ program RUNMESH
 
         print 5635
 
-        !> Write basin totals to file.
+        !> Write data to the output summary file.
         if (MODELINFOOUTFLAG > 0) then
 
+            !> CLASS states for prognostic variables.
+            NTYPE = shd%lc%NTYPE
+            NSL = shd%lc%IGND
+            allocate(tcan(3, NTYPE), rcan(3, NTYPE), sncan(3, NTYPE), gro(3, NTYPE), zpnd(3, NTYPE), tpnd(3, NTYPE), &
+                     sno(3, NTYPE), tsno(3, NTYPE), albs(3, NTYPE), rhos(3, NTYPE), &
+                     tbar(3, NTYPE, NSL), thlq(3, NTYPE, NSL), thic(3, NTYPE, NSL), kc(NTYPE))
+            tcan = 0.0; rcan = 0.0; sncan = 0.0; gro = 0.0; zpnd = 0.0; tpnd = 0.0
+            sno = 0.0; tsno = 0.0; albs = 0.0; rhos = 0.0
+            tbar = 0.0; thlq = 0.0; thic = 0.0; kc = 0
+            do k = 1, NML
+
+                !> Grab GRU number and increment the count of GRU tiles for averaging.
+                m = shd%lc%JLMOS(k)
+                kc(m) = kc(m) + 1
+
+                !> TCAN.
+                tcan(1, m) = tcan(1, m) + stas%cnpy%tcan(k)
+                if (tcan(2, m) == 0.0) then
+                    tcan(2, m) = stas%cnpy%tcan(k)
+                else
+                    tcan(2, m) = min(stas%cnpy%tcan(k), tcan(2, m))
+                end if
+                if (tcan(3, m) == 0.0) then
+                    tcan(3, m) = stas%cnpy%tcan(k)
+                else
+                    tcan(3, m) = max(stas%cnpy%tcan(k), tcan(3, m))
+                end if
+
+                !> RCAN.
+                rcan(1, m) = rcan(1, m) + stas%cnpy%rcan(k)
+                if (rcan(2, m) == 0.0) then
+                    rcan(2, m) = stas%cnpy%rcan(k)
+                else
+                    rcan(2, m) = min(stas%cnpy%rcan(k), rcan(2, m))
+                end if
+                if (rcan(3, m) == 0.0) then
+                    rcan(3, m) = stas%cnpy%rcan(k)
+                else
+                    rcan(3, m) = max(stas%cnpy%rcan(k), rcan(3, m))
+                end if
+
+                !> SNCAN.
+                sncan(1, m) = sncan(1, m) + stas%cnpy%sncan(k)
+                if (sncan(2, m) == 0.0) then
+                    sncan(2, m) = stas%cnpy%sncan(k)
+                else
+                    sncan(2, m) = min(stas%cnpy%sncan(k), sncan(2, m))
+                end if
+                if (sncan(3, m) == 0.0) then
+                    sncan(3, m) = stas%cnpy%sncan(k)
+                else
+                    sncan(3, m) = max(stas%cnpy%sncan(k), sncan(3, m))
+                end if
+
+                !> GRO.
+                gro(1, m) = gro(1, m) + stas%cnpy%gro(k)
+                if (gro(2, m) == 0.0) then
+                    gro(2, m) = stas%cnpy%gro(k)
+                else
+                    gro(2, m) = min(stas%cnpy%gro(k), gro(2, m))
+                end if
+                if (gro(3, m) == 0.0) then
+                    gro(3, m) = stas%cnpy%gro(k)
+                else
+                    gro(3, m) = max(stas%cnpy%gro(k), gro(3, m))
+                end if
+
+                !> ZPND.
+                zpnd(1, m) = zpnd(1, m) + stas%sfc%zpnd(k)
+                if (zpnd(2, m) == 0.0) then
+                    zpnd(2, m) = stas%sfc%zpnd(k)
+                else
+                    zpnd(2, m) = min(stas%sfc%zpnd(k), zpnd(2, m))
+                end if
+                if (zpnd(3, m) == 0.0) then
+                    zpnd(3, m) = stas%sfc%zpnd(k)
+                else
+                    zpnd(3, m) = max(stas%sfc%zpnd(k), zpnd(3, m))
+                end if
+
+                !> TPND.
+                tpnd(1, m) = tpnd(1, m) + stas%sfc%tpnd(k)
+                if (tpnd(2, m) == 0.0) then
+                    tpnd(2, m) = stas%sfc%tpnd(k)
+                else
+                    tpnd(2, m) = min(stas%sfc%tpnd(k), tpnd(2, m))
+                end if
+                if (tpnd(3, m) == 0.0) then
+                    tpnd(3, m) = stas%sfc%tpnd(k)
+                else
+                    tpnd(3, m) = max(stas%sfc%tpnd(k), tpnd(3, m))
+                end if
+
+                !> SNO.
+                sno(1, m) = sno(1, m) + stas%sno%sno(k)
+                if (sno(2, m) == 0.0) then
+                    sno(2, m) = stas%sno%sno(k)
+                else
+                    sno(2, m) = min(stas%sno%sno(k), sno(2, m))
+                end if
+                if (sno(3, m) == 0.0) then
+                    sno(3, m) = stas%sno%sno(k)
+                else
+                    sno(3, m) = max(stas%sno%sno(k), sno(3, m))
+                end if
+
+                !> TSNO.
+                tsno(1, m) = tsno(1, m) + stas%sno%tsno(k)
+                if (tsno(2, m) == 0.0) then
+                    tsno(2, m) = stas%sno%tsno(k)
+                else
+                    tsno(2, m) = min(stas%sno%tsno(k), tsno(2, m))
+                end if
+                if (tsno(3, m) == 0.0) then
+                    tsno(3, m) = stas%sno%tsno(k)
+                else
+                    tsno(3, m) = max(stas%sno%tsno(k), tsno(3, m))
+                end if
+
+                !> ALBS.
+                albs(1, m) = albs(1, m) + stas%sno%albs(k)
+                if (albs(2, m) == 0.0) then
+                    albs(2, m) = stas%sno%albs(k)
+                else
+                    albs(2, m) = min(stas%sno%albs(k), albs(2, m))
+                end if
+                if (albs(3, m) == 0.0) then
+                    albs(3, m) = stas%sno%albs(k)
+                else
+                    albs(3, m) = max(stas%sno%albs(k), albs(3, m))
+                end if
+
+                !> RHOS.
+                rhos(1, m) = rhos(1, m) + stas%sno%rhos(k)
+                if (rhos(2, m) == 0.0) then
+                    rhos(2, m) = stas%sno%rhos(k)
+                else
+                    rhos(2, m) = min(stas%sno%rhos(k), rhos(2, m))
+                end if
+                if (rhos(3, m) == 0.0) then
+                    rhos(3, m) = stas%sno%rhos(k)
+                else
+                    rhos(3, m) = max(stas%sno%rhos(k), rhos(3, m))
+                end if
+
+                !> TBAR.
+                tbar(1, m, :) = tbar(1, m, :) + stas%sl%tbar(k, :)
+
+                !> THLQ.
+                thlq(1, m, :) = thlq(1, m, :) + stas%sl%thlq(k, :)
+
+                !> THIC.
+                thic(1, m, :) = thic(1, m, :) + stas%sl%thic(k, :)
+
+                !> Soil layers.
+                do j = 1, NSL
+
+                    !> TBAR.
+                    if (tbar(2, m, j) == 0.0) then
+                        tbar(2, m, j) = stas%sl%tbar(k, j)
+                    else
+                        tbar(2, m, j) = min(stas%sl%tbar(k, j), tbar(2, m, j))
+                    end if
+                    if (tbar(3, m, j) == 0.0) then
+                        tbar(3, m, j) = stas%sl%tbar(k, j)
+                    else
+                        tbar(3, m, j) = max(stas%sl%tbar(k, j), tbar(3, m, j))
+                    end if
+
+                    !> THLQ.
+                    if (thlq(2, m, j) == 0.0) then
+                        thlq(2, m, j) = stas%sl%thlq(k, j)
+                    else
+                        thlq(2, m, j) = min(stas%sl%thlq(k, j), thlq(2, m, j))
+                    end if
+                    if (thlq(3, m, j) == 0.0) then
+                        thlq(3, m, j) = stas%sl%thlq(k, j)
+                    else
+                        thlq(3, m, j) = max(stas%sl%thlq(k, j), thlq(3, m, j))
+                    end if
+
+                    !> THIC.
+                    if (thic(2, m, j) == 0.0) then
+                        thic(2, m, j) = stas%sl%thic(k, j)
+                    else
+                        thic(2, m, j) = min(stas%sl%thic(k, j), thic(2, m, j))
+                    end if
+                    if (thic(3, m, j) == 0.0) then
+                        thic(3, m, j) = stas%sl%thic(k, j)
+                    else
+                        thic(3, m, j) = max(stas%sl%thic(k, j), thic(3, m, j))
+                    end if
+                end do
+
+            end do
+
+            !> Averaging.
+            tcan(1, m) = tcan(1, m)/kc(m)
+            rcan(1, m) = rcan(1, m)/kc(m)
+            sncan(1, m) = sncan(1, m)/kc(m)
+            gro(1, m) = gro(1, m)/kc(m)
+            zpnd(1, m) = zpnd(1, m)/kc(m)
+            if (zpnd(1, m) == 0.0) then
+                tpnd(:, m) = 273.16
+            else
+                tpnd(1, m) = tpnd(1, m)/kc(m)
+            end if
+            sno(1, m) = sno(1, m)/kc(m)
+            if (sno(1, m) == 0.0) then
+                tsno(:, m) = 273.16
+                albs(:, m) = 0.0
+                rhos(:, m) = 0.0
+            else
+                tsno(1, m) = tsno(1, m)/kc(m)
+                albs(1, m) = albs(1, m)/kc(m)
+                rhos(1, m) = rhos(1, m)/kc(m)
+            end if
+            tbar(1, m, :) = tbar(1, m, :)/kc(m)
+            thlq(1, m, :) = thlq(1, m, :)/kc(m)
+            thic(1, m, :) = thic(1, m, :)/kc(m)
+
+            !> Write to file.
+            if (NRSOILAYEREADFLAG > 3) then
+                ignd = min(NRSOILAYEREADFLAG, NSL)
+            else if (NRSOILAYEREADFLAG == 1) then
+                ignd = NSL
+            else
+                ignd = 3
+            end if
+            write(cfmt, '(i3)') ignd
+            write(58, *)
+            write(58, '(a)') 'End of run prognostic states'
+            write(58, '(3x, (a), i4)') 'Number of GRUs: ', NTYPE
+            do i = 1, 3
+                write(58, *)
+                select case (i)
+                    case (1); write(58, '(a)') 'Average values'
+                    case (2); write(58, '(a)') 'Minimum values'
+                    case (3); write(58, '(a)') 'Maximum values'
+                end select
+                do m = 1, NTYPE
+                    cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), 3(f10.3), " // &
+                            "12x, '!> TBAR(1:" // trim(adjustl(cfmt)) // ")/TCAN/TSNO/TPND')"
+                    write(58, cfmtt) ((tbar(i, m, j) - 273.16), j = 1, ignd), &
+                        (tcan(i, m) - 273.16), (tsno(i, m) - 273.16), (tpnd(i, m) - 273.16)
+                    cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), " // trim(adjustl(cfmt)) // "(f10.3), f10.3, " // &
+                            "2x, '!> THLQ(1:" // trim(adjustl(cfmt)) // ")/THIC(1:" // trim(adjustl(cfmt)) // ")/ZPND')"
+                    write(58, cfmtt) (thlq(i, m, j), j = 1, ignd), (thic(i, m, j), j = 1, ignd), zpnd(i, m)
+                    write(58, "(6(f10.3), 12x, '!> RCAN/SNCAN/SNO/ALBS/RHOS/GRO')") &
+                        rcan(i, m), sncan(i, m), sno(i, m), albs(i, m), rhos(i, m), gro(i, m)
+                end do
+            end do
+
+            !> Basin vertical water balance totals.
+            write(58, *)
+            write(58, '(a)') 'End of run totals'
             write(58, *)
             write(58, '(a, f11.3)') '  Total Precipitation         (mm) = ', TOTAL_PRE
             write(58, '(a, f11.3)') '  Total Evaporation           (mm) = ', TOTAL_EVAP
@@ -1575,6 +1837,8 @@ program RUNMESH
             write(58, '(a, f11.3)') '  Total Interflow             (mm) = ', TOTAL_ROFS
             write(58, '(a, f11.3)') '  Total Baseflow              (mm) = ', TOTAL_ROFB
             write(58, *)
+
+            !> Normal end of run message.
             write(58, *)
             write(58, '(a)') 'Program has terminated normally.'
             write(58, *)
