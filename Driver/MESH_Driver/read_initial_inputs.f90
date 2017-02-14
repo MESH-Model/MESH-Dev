@@ -48,6 +48,11 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 !> and READ the GRID OUTPUT DIRECTORIES.
     call READ_RUN_OPTIONS(ts, cm, fls)
 
+    !> Open status file.
+    if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
+        open(58, file = './' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
+    end if
+
 !> And Open and read in values from new_shd.r2c file
 !> *********************************************************************
 !> DRAINAGE DATABASE (BASIN SHD) (DRAINAGE_DATABASE.TXT):
@@ -278,24 +283,24 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         end if
     end do
 
-    !> Print information about tile configuration (with DIAGNOSEMODE).
-    if (ipid == 0 .and. ro%DIAGNOSEMODE > 1) then
+    !> Write information about tile configuration to file.
+    if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
 
         !> Land tiles.
-        print 1210, 'land', 'NML', shd%lc%NML
+        write(58, 1210) 'land', 'NML', shd%lc%NML
         if (shd%lc%NML > 0) then
-            print 1910, 'Index', 'Grid', 'GRU'
+            write(58, 1910) 'Index', 'Grid', 'GRU'
             do k = 1, shd%lc%NML
-                print 1910, k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
+                write(58, 1910) k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
             end do
         end if
 
         !> Water tiles.
-        print 1210, 'water', 'NMW', shd%wc%NML
+        write(58, 1210) 'water', 'NMW', shd%wc%NML
         if (shd%wc%NML > 0) then
-            print 1910, 'Index', 'Grid', 'GRU'
+            write(58, 1910) 'Index', 'Grid', 'GRU'
             do k = 1, shd%wc%NML
-                print 1910, k, shd%wc%ILMOS(k), shd%wc%JLMOS(k)
+                write(58, 1910) k, shd%wc%ILMOS(k), shd%wc%JLMOS(k)
             end do
         end if
 

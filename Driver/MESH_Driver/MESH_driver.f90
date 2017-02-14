@@ -163,7 +163,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = '1032'
+    character(24) :: VERSION = '1033'
     character(8) RELEASE
 !-    logical VER_OK
 
@@ -322,11 +322,6 @@ program RUNMESH
     end do
 
     if (ipid == 0) then
-
-        !> Open status file.
-        if (MODELINFOOUTFLAG > 0) then
-            open(58, file = './' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
-        end if
 
         !> Hourly output.
         call init_met_data(md_grd, shd)
@@ -1769,29 +1764,35 @@ program RUNMESH
             end do
 
             !> Averaging.
-            tcan(1, m) = tcan(1, m)/kc(m)
-            rcan(1, m) = rcan(1, m)/kc(m)
-            sncan(1, m) = sncan(1, m)/kc(m)
-            gro(1, m) = gro(1, m)/kc(m)
-            zpnd(1, m) = zpnd(1, m)/kc(m)
-            if (zpnd(1, m) == 0.0) then
-                tpnd(:, m) = 273.16
-            else
-                tpnd(1, m) = tpnd(1, m)/kc(m)
-            end if
-            sno(1, m) = sno(1, m)/kc(m)
-            if (sno(1, m) == 0.0) then
-                tsno(:, m) = 273.16
-                albs(:, m) = 0.0
-                rhos(:, m) = 0.0
-            else
-                tsno(1, m) = tsno(1, m)/kc(m)
-                albs(1, m) = albs(1, m)/kc(m)
-                rhos(1, m) = rhos(1, m)/kc(m)
-            end if
-            tbar(1, m, :) = tbar(1, m, :)/kc(m)
-            thlq(1, m, :) = thlq(1, m, :)/kc(m)
-            thic(1, m, :) = thic(1, m, :)/kc(m)
+            tcan(1, :) = tcan(1, :)/kc
+            rcan(1, :) = rcan(1, :)/kc
+            sncan(1, :) = sncan(1, :)/kc
+            gro(1, :) = gro(1, :)/kc
+            zpnd(1, :) = zpnd(1, :)/kc
+            where (zpnd(1, :) == 0.0)
+                tpnd(1, :) = 0.0
+            elsewhere
+                tpnd(1, :) = tpnd(1, :)/kc
+            end where
+            sno(1, :) = sno(1, :)/kc
+            where (sno(1, :) == 0.0)
+                tsno(1, :) = 0.0
+                albs(1, :) = 0.0
+                rhos(1, :) = 0.0
+            elsewhere
+                tsno(1, :) = tsno(1, :)/kc
+                albs(1, :) = albs(1, :)/kc
+                rhos(1, :) = rhos(1, :)/kc
+            end where
+!> These checks are necessary because some temperatures are zet to zero and not to TFREZ, if they're not used.
+            where (tpnd == 0.0) tpnd = 273.16
+            where (tcan == 0.0) tcan = 273.16
+            where (tsno == 0.0) tsno = 273.16
+            do j = 1, NSL
+                tbar(1, :, j) = tbar(1, :, j)/kc
+                thlq(1, :, j) = thlq(1, :, j)/kc
+                thic(1, :, j) = thic(1, :, j)/kc
+            end do
 
             !> Write to file.
             if (NRSOILAYEREADFLAG > 3) then
@@ -1813,14 +1814,15 @@ program RUNMESH
                     case (3); write(58, '(a)') 'Maximum values'
                 end select
                 do m = 1, NTYPE
+                    write(58, "(3x, 'GRU ', i3, ':')") m
                     cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), 3(f10.3), " // &
-                            "12x, '!> TBAR(1:" // trim(adjustl(cfmt)) // ")/TCAN/TSNO/TPND')"
+                            "2x, '!> TBAR(1:" // trim(adjustl(cfmt)) // ")/TCAN/TSNO/TPND')"
                     write(58, cfmtt) ((tbar(i, m, j) - 273.16), j = 1, ignd), &
                         (tcan(i, m) - 273.16), (tsno(i, m) - 273.16), (tpnd(i, m) - 273.16)
                     cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), " // trim(adjustl(cfmt)) // "(f10.3), f10.3, " // &
                             "2x, '!> THLQ(1:" // trim(adjustl(cfmt)) // ")/THIC(1:" // trim(adjustl(cfmt)) // ")/ZPND')"
                     write(58, cfmtt) (thlq(i, m, j), j = 1, ignd), (thic(i, m, j), j = 1, ignd), zpnd(i, m)
-                    write(58, "(6(f10.3), 12x, '!> RCAN/SNCAN/SNO/ALBS/RHOS/GRO')") &
+                    write(58, "(6(f10.3), 2x, '!> RCAN/SNCAN/SNO/ALBS/RHOS/GRO')") &
                         rcan(i, m), sncan(i, m), sno(i, m), albs(i, m), rhos(i, m), gro(i, m)
                 end do
             end do
