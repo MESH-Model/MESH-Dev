@@ -91,13 +91,6 @@ module SIMSTATS
         nw = ceiling(n / 7.0)
         allocate(obsw(nw), simw(nw), errw(nw), errwm(nw))
 
-        !> Apply the spin-up period (METRICSSPINUP).
-        if (METRICSINCLUDESPINUP == 1) then
-            ilf = 1
-        else
-            ilf = METRICSSPINUP
-        end if
-
         !> Zero output and interim calculation variables.
         bias = 0.0
         nsd = 0.0
@@ -116,6 +109,16 @@ module SIMSTATS
         errtp = 0
         lerrd = 0.0
         lerrdm = 0.0
+
+        !> Apply the spin-up period (METRICSSPINUP).
+        if (METRICSINCLUDESPINUP == 1) then
+            ilf = 1
+        else
+            ilf = METRICSSPINUP
+        end if
+
+        !> Return if METRICSSPINUP exceeds the length of the run.
+        if (METRICSSPINUP > ncal) return
 
         !> Calculate the weekly values for daily observed and simulated values.
         iw = 0
@@ -415,8 +418,8 @@ module SIMSTATS
         do j = 1, size(qobs, 2)
             call calc_stats(qobs(1:ncal, j), qsim(1:ncal, j), ncal, bias(j), nsd(j), lnsd(j), nsw(j), tpd(j))
         end do
-        if (mtsfl%fl(mtsk%out)%init .or. mtsfl%fl(mtsk%RMSE)%init) st_drms = calc_drms_value(0, ncal, qobs, qsim)
-        if (mtsfl%fl(mtsk%out)%init .or. mtsfl%fl(mtsk%RMSE)%init) st_abserr = calc_abserr_value(0, ncal, qobs, qsim)
+        if (mtsfl%fl(mtsk%out)%init .or. mtsfl%fl(mtsk%RMSE)%init) st_drms = calc_drms_value(METRICSSPINUP, ncal, qobs, qsim)
+        if (mtsfl%fl(mtsk%out)%init .or. mtsfl%fl(mtsk%RMSE)%init) st_abserr = calc_abserr_value(METRICSSPINUP, ncal, qobs, qsim)
 
         !> Results for Monte-Carlo style analysis are appended to results in an existing file.
         if (mtsfl%fl(mtsk%MC)%init) then

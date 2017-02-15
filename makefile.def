@@ -93,12 +93,8 @@ OBJECTS+=	calc_ET0.o \
 			cropland_irrigation_init.o cropland_irrigation_within_tile.o cropland_irrigation_between_grid.o
 
 #MESH Driver
-OBJECTS+=	GATHER.o read_initial_inputs.o \
-			read_parameters_class.o read_parameters_hydrology.o \
-			read_s_moisture_txt.o read_s_temperature_txt.o \
-			read_shed_ef.o read_soil_ini.o read_soil_levels.o \
-			resume_state.o resume_state_r2c.o R2C_DATA.o \
-			SORT.o save_basin_output.o save_state.o save_state_r2c.o \
+OBJECTS+=	GATHER.o resume_state.o resume_state_r2c.o R2C_DATA.o \
+			SORT.o save_state.o save_state_r2c.o \
 			SCATTER.o WRITE_R2C_HEADER.o write_r2c.o WRITE_R2C_DATA.o
  
 #CLASS
@@ -146,6 +142,15 @@ OBJECTS+=	tile_connector.o
 
 #Init field state variables for init cond for class
 OBJECTS+=	read_init_prog_variables_class.o save_init_prog_variables_class.o 	
+
+#Input files
+OBJECTS+=	read_initial_inputs.o \
+			read_parameters_class.o read_parameters_hydrology.o \
+			read_s_moisture_txt.o read_s_temperature_txt.o \
+			read_shed_ef.o read_soil_ini.o read_soil_levels.o
+
+#Output files
+OBJECTS+=	save_basin_output.o
 
 #MESH Driver
 OBJECTS+=	read_run_options.o \

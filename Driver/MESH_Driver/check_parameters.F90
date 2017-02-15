@@ -96,9 +96,12 @@ subroutine check_parameters(shd)
     !> River roughness factor.
     do i = 1, NRVR
         ir = ir + 1
-        parv(ir, 1) = wfp%r2(i)
-        parflag(ir, 2:NTYPE) = 0 !only wf_r2(1) is currently active
-        if (i > shd%NRVR) parflag(ir, 1) = 0 !only active wf_r2 values (by shed file)
+        if (i > shd%NRVR) then
+            parflag(ir, 1) = 0 !only active wf_r2 values (by shed file)
+        else
+            parv(ir, 1) = wfp%r2(i)
+            parflag(ir, 2:NTYPE) = 0 !only wf_r2(1) is currently active
+        end if
         write(parn(ir), '(a2, i1)') 'R2', i
     end do
 

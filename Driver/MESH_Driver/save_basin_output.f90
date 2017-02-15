@@ -1,14 +1,18 @@
 module save_basin_output
 
     !> For: type(energy_balance).
-    use MODEL_OUTPUT
+    use sa_mesh_shared_variables
+    use MODEL_OUTPUT, only: energy_balance
 
     implicit none
 
     !> String read from run_options.ini.
     character(len = 100) BASINAVGWBFILEFLAG
 
-    private update_water_balance, save_water_balance
+    private
+
+    public run_save_basin_output_init, run_save_basin_output, run_save_basin_output_finalize
+    public BASINAVGWBFILEFLAG
 
     !> Global types.
 
@@ -88,7 +92,7 @@ module save_basin_output
         type(reservoir_release) :: rrls
 
         !> Local variables.
-        integer NAA, NSL, ikey, n, ii, i, j, iun, ierr
+        integer NA, NSL, ikey, n, ii, i, j, iun, ierr
         character(len = 3) nc
 
         !> Return if basin output has been disabled.
@@ -96,18 +100,18 @@ module save_basin_output
         call parse_basin_output_flag(BASINAVGWBFILEFLAG, shd, bnoflg%wb)
 
         !> Grab values for common indices.
-        NAA = shd%NAA
+        NA = shd%NA
         NSL = shd%lc%IGND
 
         !> Allocate and zero variables for accumulations.
         allocate(bno%wb(NKEY))
         do ikey = 1, NKEY
-            allocate(bno%wb(ikey)%PRE(NAA), bno%wb(ikey)%EVAP(NAA), bno%wb(ikey)%ROF(NAA), &
-                     bno%wb(ikey)%ROFO(NAA), bno%wb(ikey)%ROFS(NAA), bno%wb(ikey)%ROFB(NAA), &
-                     bno%wb(ikey)%RCAN(NAA), bno%wb(ikey)%SNCAN(NAA), &
-                     bno%wb(ikey)%SNO(NAA), bno%wb(ikey)%WSNO(NAA), bno%wb(ikey)%PNDW(NAA), &
-                     bno%wb(ikey)%LQWS(NAA, NSL), bno%wb(ikey)%FRWS(NAA, NSL), &
-                     bno%wb(ikey)%STG_INI(NAA), bno%wb(ikey)%STG_FIN(NAA))
+            allocate(bno%wb(ikey)%PRE(NA), bno%wb(ikey)%EVAP(NA), bno%wb(ikey)%ROF(NA), &
+                     bno%wb(ikey)%ROFO(NA), bno%wb(ikey)%ROFS(NA), bno%wb(ikey)%ROFB(NA), &
+                     bno%wb(ikey)%RCAN(NA), bno%wb(ikey)%SNCAN(NA), &
+                     bno%wb(ikey)%SNO(NA), bno%wb(ikey)%WSNO(NA), bno%wb(ikey)%PNDW(NA), &
+                     bno%wb(ikey)%LQWS(NA, NSL), bno%wb(ikey)%FRWS(NA, NSL), &
+                     bno%wb(ikey)%STG_INI(NA), bno%wb(ikey)%STG_FIN(NA))
             bno%wb(ikey)%PRE = 0.0
             bno%wb(ikey)%EVAP = 0.0
             bno%wb(ikey)%ROF = 0.0
@@ -129,7 +133,7 @@ module save_basin_output
             open(fls%fl(mfk%f900)%iun, &
                  file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
                  iostat = ierr)
-            call save_water_balance_header(shd, fls, fls%fl(mfk%f900)%iun, 86400)
+            call write_water_balance_header(shd, fls, fls%fl(mfk%f900)%iun, 86400)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
@@ -138,7 +142,7 @@ module save_basin_output
                              file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Gauge' // &
                                     trim(adjustl(nc)) // '.csv', &
                              iostat = ierr)
-                        call save_water_balance_header(shd, fls, (fls%fl(mfk%f900)%iun*1000 + n), 86400)
+                        call write_water_balance_header(shd, fls, (fls%fl(mfk%f900)%iun*1000 + n), 86400)
                     end if
                 end do
             end if
@@ -147,7 +151,7 @@ module save_basin_output
         !> Monthly.
         if (btest(bnoflg%wb%t, 1)) then
             open(902, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Monthly.csv')
-            call save_water_balance_header(shd, fls, 902, 86400)
+            call write_water_balance_header(shd, fls, 902, 86400)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
@@ -156,7 +160,7 @@ module save_basin_output
                              file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Monthly_Gauge' // &
                                     trim(adjustl(nc)) // '.csv', &
                              iostat = ierr)
-                        call save_water_balance_header(shd, fls, (902*1000 + n), 86400)
+                        call write_water_balance_header(shd, fls, (902*1000 + n), 86400)
                     end if
                 end do
             end if
@@ -165,7 +169,7 @@ module save_basin_output
         !> Hourly.
         if (btest(bnoflg%wb%t, 2)) then
             open(903, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Hourly.csv')
-            call save_water_balance_header(shd, fls, 903, 3600)
+            call write_water_balance_header(shd, fls, 903, 3600)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
@@ -174,7 +178,7 @@ module save_basin_output
                              file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Hourly_Gauge' // &
                                     trim(adjustl(nc)) // '.csv', &
                              iostat = ierr)
-                        call save_water_balance_header(shd, fls, (903*1000 + n), 3600)
+                        call write_water_balance_header(shd, fls, (903*1000 + n), 3600)
                     end if
                 end do
             end if
@@ -183,7 +187,7 @@ module save_basin_output
         !> Per time-step.
         if (btest(bnoflg%wb%t, 3)) then
             open(904, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_ts.csv')
-            call save_water_balance_header(shd, fls, 904, ic%dts)
+            call write_water_balance_header(shd, fls, 904, ic%dts)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
@@ -192,7 +196,7 @@ module save_basin_output
                              file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_ts_Gauge' // &
                                     trim(adjustl(nc)) // '.csv', &
                              iostat = ierr)
-                        call save_water_balance_header(shd, fls, (904*1000 + n), ic%dts)
+                        call write_water_balance_header(shd, fls, (904*1000 + n), ic%dts)
                     end if
                 end do
             end if
@@ -338,7 +342,7 @@ module save_basin_output
 !-        if (BASINBALANCEOUTFLAG == 0) return
 
         !> Update the water balance.
-        call update_water_balance(shd, wb, shd%NAA, shd%lc%IGND)
+        call update_water_balance(shd, wb)
 
         !> For PEVP-EVAP and EVPB output
         bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(wb%EVAP)/wb%basin_area
@@ -351,11 +355,11 @@ module save_basin_output
 !todo: change this to pass the index of the file object.
             if (btest(bnoflg%wb%t, 2)) then
                 call save_water_balance(shd, 3600, IKEY_HLY)
-                call flush_water_balance(shd, fls, 903, 3600, shd%NAA, IKEY_HLY)
+                call write_water_balance(shd, fls, 903, 3600, shd%NAA, IKEY_HLY)
                 if (allocated(bnoflg%wb%ns)) then
                     do n = 1, size(bnoflg%wb%ns)
                         if (bnoflg%wb%ns(n) > 0) then
-                            call flush_water_balance(shd, fls, (903*1000 + n), 3600, fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                            call write_water_balance(shd, fls, (903*1000 + n), 3600, fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
                         end if
                     end do
                 end if
@@ -368,11 +372,11 @@ module save_basin_output
         if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
             if (btest(bnoflg%wb%t, 0)) then
                 call save_water_balance(shd, 86400, IKEY_DLY)
-                call flush_water_balance(shd, fls, fls%fl(mfk%f900)%iun, 86400, shd%NAA, IKEY_DLY)
+                call write_water_balance(shd, fls, fls%fl(mfk%f900)%iun, 86400, shd%NAA, IKEY_DLY)
                 if (allocated(bnoflg%wb%ns)) then
                     do n = 1, size(bnoflg%wb%ns)
                         if (bnoflg%wb%ns(n) > 0) then
-                            call flush_water_balance(shd, fls, (fls%fl(mfk%f900)%iun*1000 + n), 86400, &
+                            call write_water_balance(shd, fls, (fls%fl(mfk%f900)%iun*1000 + n), 86400, &
                                                      fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
                         end if
                     end do
@@ -399,11 +403,11 @@ module save_basin_output
                 call Julian2MonthDay(ic%now%jday, ic%now%year, nmth, ndy)
                 if (btest(bnoflg%wb%t, 1)) then
                     call save_water_balance(shd, (86400*ndy), IKEY_MLY)
-                    call flush_water_balance(shd, fls, 902, (86400*ndy), shd%NAA, IKEY_MLY)
+                    call write_water_balance(shd, fls, 902, (86400*ndy), shd%NAA, IKEY_MLY)
                     if (allocated(bnoflg%wb%ns)) then
                         do n = 1, size(bnoflg%wb%ns)
                             if (bnoflg%wb%ns(n) > 0) then
-                                call flush_water_balance(shd, fls, (902*1000 + n), (86400*ndy), &
+                                call write_water_balance(shd, fls, (902*1000 + n), (86400*ndy), &
                                                          fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
                             end if
                         end do
@@ -417,11 +421,11 @@ module save_basin_output
         !> Time-step (wb): IKEY_TSP
         if (btest(bnoflg%wb%t, 3)) then
             call save_water_balance(shd, ic%dts, IKEY_TSP)
-            call flush_water_balance(shd, fls, 904, ic%dts, shd%NAA, IKEY_TSP)
+            call write_water_balance(shd, fls, 904, ic%dts, shd%NAA, IKEY_TSP)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
-                        call flush_water_balance(shd, fls, (904*1000 + n), ic%dts, fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                        call write_water_balance(shd, fls, (904*1000 + n), ic%dts, fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
                     end if
                 end do
             end if
@@ -528,6 +532,8 @@ module save_basin_output
     !>
     subroutine parse_basin_output_flag(in_line, shd, flg)
 
+        use strings
+
         implicit none
 
         !> Variables.
@@ -632,23 +638,29 @@ module save_basin_output
 
     end subroutine
 
-    subroutine update_water_balance(shd, wb, naa, nsl)
+    subroutine update_water_balance(shd, wb)
 
         !> For 'shd' variable.
         use sa_mesh_shared_variables
 
         !> For 'wb' variable.
-        use model_output_variabletypes
-    
+        use MODEL_OUTPUT
+
         !> Input variables.
-        type(ShedGridParams), intent(in) :: shd
-        type(water_balance), intent(in) :: wb
-        integer, intent(in) :: naa, nsl
+        type(ShedGridParams) :: shd
+        type(water_balance) :: wb
 
         !> Local variables.
-        real, dimension(naa) :: PRE, EVAP, ROF, ROFO, ROFS, ROFB, RCAN, SNCAN, SNO, WSNO, PNDW
-        real, dimension(naa, nsl) :: LQWS, FRWS
-        integer ikey, ii, i
+        real, dimension(:), allocatable :: PRE, EVAP, ROF, ROFO, ROFS, ROFB, RCAN, SNCAN, SNO, WSNO, PNDW
+        real, dimension(:, :), allocatable :: LQWS, FRWS
+        integer NA, NSL, ikey, ii, i
+
+        !> Allocate temporary variables.
+        NA = shd%NA
+        NSL = shd%lc%IGND
+        allocate(PRE(NA), EVAP(NA), ROF(NA), ROFO(NA), ROFS(NA), ROFB(NA), &
+                 RCAN(NA), SNCAN(NA), SNO(NA), WSNO(NA), PNDW(NA), &
+                 LQWS(NA, NSL), FRWS(NA, NSL))
 
         !> Accumulate variables and aggregate through neighbouring cells.
         PRE = wb%PRE
@@ -707,6 +719,7 @@ module save_basin_output
     subroutine save_water_balance(shd, dts, ikdts)
 
         use sa_mesh_shared_variables
+        use model_dates
 
         !> Input variables.
         type(ShedGridParams) :: shd
@@ -740,7 +753,7 @@ module save_basin_output
 
     end subroutine
 
-    subroutine save_water_balance_header(shd, fls, fik, dts)
+    subroutine write_water_balance_header(shd, fls, fik, dts)
 
         use sa_mesh_shared_variables
         use model_files_variables
@@ -777,7 +790,7 @@ module save_basin_output
 
     end subroutine
 
-    subroutine flush_water_balance(shd, fls, fik, dts, ina, ikdts)
+    subroutine write_water_balance(shd, fls, fik, dts, ina, ikdts)
 
         use sa_mesh_shared_variables
         use model_files_variables

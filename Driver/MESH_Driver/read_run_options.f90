@@ -581,6 +581,7 @@
                         call value(out_args(2), METRICSFILTEROBSFLAG, ierr)
                     case ('METRICSSPINUP')
                         call value(out_args(2), METRICSSPINUP, ierr)
+                        METRICSSPINUP = max(METRICSSPINUP, 1)
                     case ('METRICSINCLUDESPINUP')
                         call value(out_args(2), METRICSINCLUDESPINUP, ierr)
                     case ('FROZENSOILINFILFLAG')

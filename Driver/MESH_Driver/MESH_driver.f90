@@ -163,7 +163,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = '1033'
+    character(24) :: VERSION = '1034'
     character(8) RELEASE
 !-    logical VER_OK
 
@@ -1495,6 +1495,10 @@ program RUNMESH
 
     if (len_trim(cstate) > 0) print *, trim(cstate)
 
+199 continue
+
+    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
+
     !> Call finalization routines.
     call run_within_tile_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
     call run_within_grid_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
@@ -1851,10 +1855,6 @@ program RUNMESH
         end if !(MODELINFOOUTFLAG > 0) then
 
     end if !(ipid == 0 ) then
-
-199 continue
-
-    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
 
 999     continue
 
