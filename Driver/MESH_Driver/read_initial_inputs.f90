@@ -257,7 +257,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     shd%lc%NML = 0
     shd%wc%NML = 0
     do i = 1, NA
-        if (-1.0 <= -0.5) then
+        if (shd%FRAC(i) > 0.0) then
             do m = 1, NTYPE
 
                 !> Only count active GRUs (with > 0.0 contributing fraction).
@@ -284,7 +284,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     end do
 
     !> Write information about tile configuration to file.
-    if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
+    if (ipid == 0 .and. MODELINFOOUTFLAG > 0 .and. ro%DIAGNOSEMODE > 0) then
 
         !> Land tiles.
         write(58, 1210) 'land', 'NML', shd%lc%NML
