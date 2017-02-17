@@ -163,7 +163,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = '1036'
+    character(24) :: VERSION = '1037'
     character(8) RELEASE
 !-    logical VER_OK
 
@@ -1601,10 +1601,9 @@ program RUNMESH
                 sncan(2, m) = minval(stas%cnpy%sncan, shd%lc%JLMOS(1:NML) == m)
                 sncan(3, m) = maxval(stas%cnpy%sncan, shd%lc%JLMOS(1:NML) == m)
                 sncan(1, m) = sum(stas%cnpy%sncan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                gro(2, m) = min(max(minval(stas%cnpy%gro, shd%lc%JLMOS(1:NML) == m), 0.0), 1.0)
-                gro(3, m) = min(max(maxval(stas%cnpy%gro, shd%lc%JLMOS(1:NML) == m), 0.0), 1.0)
-                gro(1, m) = sum(stas%cnpy%gro, shd%lc%JLMOS(1:NML) == m .and. &
-                                stas%cnpy%gro >= 0.0 .and. stas%cnpy%gro <= 1.0)/count(shd%lc%JLMOS(1:NML) == m)
+                gro(2, m) = minval(stas%cnpy%gro, shd%lc%JLMOS(1:NML) == m)
+                gro(3, m) = maxval(stas%cnpy%gro, shd%lc%JLMOS(1:NML) == m)
+                gro(1, m) = sum(stas%cnpy%gro, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
 
                 !> Ponded water at surface.
                 zpnd(2, m) = minval(stas%sfc%zpnd, shd%lc%JLMOS(1:NML) == m)
