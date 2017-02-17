@@ -7,7 +7,7 @@ module save_basin_output
     implicit none
 
     !> String read from run_options.ini.
-    character(len = 100) BASINAVGWBFILEFLAG
+    character(len = 100), save :: BASINAVGWBFILEFLAG = ''
 
     private
 
@@ -41,7 +41,7 @@ module save_basin_output
     end type
 
     type BasinOutputConfigFlag
-        integer :: t = 0
+        integer :: t = 1
         integer, dimension(:), allocatable :: n, ns, nr
     end type
 
@@ -97,7 +97,9 @@ module save_basin_output
 
         !> Return if basin output has been disabled.
 !-        if (BASINBALANCEOUTFLAG == 0) return
-        call parse_basin_output_flag(BASINAVGWBFILEFLAG, shd, bnoflg%wb)
+
+        !> Parse the water balance output file flag.
+        if (len_trim(BASINAVGWBFILEFLAG) > 0) call parse_basin_output_flag(BASINAVGWBFILEFLAG, shd, bnoflg%wb)
 
         !> Grab values for common indices.
         NA = shd%NA
