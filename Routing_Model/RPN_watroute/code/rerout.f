@@ -1165,7 +1165,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=2355580200  !m2   the surface are of the reach
+        reacharea=2355580200.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv6-zflow)
 
         if(firstpass.eq.'y')then
@@ -1185,7 +1185,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=5932740100  !m2   the surface are of the reach
+        reacharea=5932740100.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv7-zflow)
 
         if(firstpass.eq.'y')then
@@ -1206,7 +1206,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=178264190  !m2   the surface are of the reach
+        reacharea=178264190.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv8-zflow)
 
         if(firstpass.eq.'y')then
@@ -1227,7 +1227,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=310502720  !m2   the surface are of the reach
+        reacharea=310502720.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv9-zflow)
 
         if(firstpass.eq.'y')then
@@ -1248,7 +1248,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=382071010  !m2   the surface are of the reach
+        reacharea=382071010.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv10-zflow)
 
         if(firstpass.eq.'y')then
@@ -1268,7 +1268,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=474986940  !m2   the surface are of the reach
+        reacharea=474986940.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv11-zflow)
 
         if(firstpass.eq.'y')then
@@ -1288,7 +1288,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=2347653400  !m2   the surface are of the reach
+        reacharea=2347653400.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv12-zflow)
 
         if(firstpass.eq.'y')then
@@ -1309,7 +1309,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=2241550800  !m2   the surface are of the reach
+        reacharea=2241550800.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv30-zflow)
 
         if(firstpass.eq.'y')then
@@ -1330,7 +1330,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=491226180  !m2   the surface are of the reach
+        reacharea=491226180.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv34-zflow)
 
         if(firstpass.eq.'y')then
@@ -1351,7 +1351,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=612314180  !m2   the surface are of the reach
+        reacharea=612314180.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv38-zflow)
 
         if(firstpass.eq.'y')then
@@ -1372,7 +1372,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=536343650  !m2   the surface are of the reach
+        reacharea=536343650.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv39-zflow)
 
         if(firstpass.eq.'y')then
@@ -1393,7 +1393,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=1327299700  !m2   the surface are of the reach
+        reacharea=1327299700.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv41-zflow)
 
         if(firstpass.eq.'y')then
@@ -1413,7 +1413,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=4045317  !m2   the surface are of the reach
+        reacharea=4045317.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv49-zflow)
 
         if(firstpass.eq.'y')then
@@ -1433,7 +1433,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=9845152  !m2   the surface are of the reach
+        reacharea=9845152.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv50-zflow)
 
         if(firstpass.eq.'y')then
@@ -1454,7 +1454,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=28 446 400  !m2   the surface are of the reach
+        reacharea=28446400.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv51-zflow)
 
         if(firstpass.eq.'y')then
@@ -1475,7 +1475,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=9706787  !m2   the surface are of the reach
+        reacharea=9706787.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv52-zflow)
 
         if(firstpass.eq.'y')then
@@ -1497,7 +1497,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       storage curve = b1 * (store2 ** b2)
         zflow=0.0            !m
 
-        reacharea=1402187  !m2   the surface are of the reach
+        reacharea=1402187.0  !m2   the surface are of the reach
         levdiff = max(0.0, niv53-zflow)
 
         if(firstpass.eq.'y')then
@@ -1642,7 +1642,7 @@ c        dtmin=amin1(at,dtmin)
   502 format(' resv flow data extrapolated ',i5,' hours')
   504 format(' noresv,nrel,ktr/',3i5)
  1011 format(' ',3x,'  i  ires(i) jres(i)    b1(i)     b2(i)',
-     *	'    b3(i)     b4(i)')
+     *       '    b3(i)     b4(i)')
  1013 format(' ',3x,i3,2i8,5f10.5,a12/)
  4901 format(25i1)
  4902 format(3i5)

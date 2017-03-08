@@ -42,6 +42,7 @@ VPATH=	$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/src: \
 		$(DIR_REPO)/Routing_Model/WatRoute_old: \
 		$(DIR_REPO)/Routing_Model/RPN_watroute/sa_mesh_process: \
+		$(DIR_REPO)/Routing_Model/RPN_watroute/code: \
 		$(DIR_REPO)/Routing_Model/baseflow_module: \
 		$(DIR_REPO)/Blowing_Snow: \
 		$(DIR_REPO)/Tile_Connector/Basic: \
@@ -139,6 +140,11 @@ OBJECTS+=   PBSMrates.o PBSMrun.o ProbabilityThreshold.o \
 
 #Tile connector
 OBJECTS+=	tile_connector.o 
+
+#RTE
+OBJECTS+=	area_watflood.o \
+			rerout.o baseflow.o route.o \
+			rte_module.o
 
 #Init field state variables for init cond for class
 OBJECTS+=	read_init_prog_variables_class.o save_init_prog_variables_class.o 	

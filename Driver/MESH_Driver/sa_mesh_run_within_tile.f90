@@ -87,7 +87,7 @@ module sa_mesh_run_within_tile
 
 !+        call LZS_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        run_within_tile = WF_ROUTE_within_tile(shd, stfl, rrls)
+!        run_within_tile = WF_ROUTE_within_tile(shd, stfl, rrls)
         if (len_Trim(run_within_tile) > 0) return
 
         !> Cropland irrigation module (PEVP).

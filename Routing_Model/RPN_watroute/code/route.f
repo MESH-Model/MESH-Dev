@@ -79,7 +79,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       INTEGER :: spl_csv_flag
       REAL :: storetest1
       REAL ovD/0.01/  ! ovD is the slope of the overbanks (set to 1% but could be read using topographic information)
-      REAL maxic/1000/,conv,convthresh
+      REAL conv,convthresh
+      integer :: maxic = 1000
       REAL minwt/0.5/  ! damps the calculation of qo2; values ranges from 0 to 1; larger values damp more
       REAL wtstore/0.5/  ! damps the calculation of store2; values ranges from 0 to 1; larger values damp less
       REAL wtfact
@@ -671,7 +672,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
 	                    store2(n) = store2(n) - qo2remtemp * div * 2.
 	                    if (store2(n).lt.0.0) then
-	                        qo2rem(n) = (store2(n) + qo2remtemp * div * 2.) / div / 2.
+                    qo2rem(n) = (store2(n) + qo2remtemp*div*2.)/div/2.
 !				not impossible that store2 was -ve initially,
 !				so cap qo2rem
 				qo2rem(n) = max(qo2rem(n),0.0)
