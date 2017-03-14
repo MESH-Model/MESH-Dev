@@ -275,17 +275,21 @@ module RUNCLASS36_module
                         ITC, ITCG, ITG, NML, il1, il2, JLAT, ic%ts_count, ICAN, &
                         IGND, IZREF, ISLFD, NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI)
 
-            if (ic%now%jday == 1 .and. ic%ts_daily == 48) then
-       ! bruce davison - only increase NMELT if we don't start the run on January 1st, otherwise t0_ACC allocation is too large
-       ! and the model crashes if the compiler is checking for array bounds when t0_ACC is passed into CLASSW with size NMELT
-                if (ic%start%jday == 1 .and. ic%ts_count < 49) then
-                    continue ! NMELT should stay = 1
-                else
-                    NMELT = NMELT + 1
+            !> FROZENSOILINFILFLAG 1.
+            if (FROZENSOILINFILFLAG == 1) then
+
+                !> bruce davison - only increase NMELT if we don't start the run on January 1st, otherwise t0_ACC allocation is too large
+                !> and the model crashes if the compiler is checking for array bounds when t0_ACC is passed into CLASSW with size NMELT
+                if (ic%now%jday == 1 .and. ic%ts_daily == 48) then
+                    if (ic%start%jday == 1 .and. ic%ts_count < 49) then
+                        continue ! NMELT should stay = 1
+                    else
+                        NMELT = NMELT + 1
+                    end if
+                    CUMSNOWINFILCS = 0.0
+                    CUMSNOWINFILGS = 0.0
+                    INFILTYPE = 2
                 end if
-                CUMSNOWINFILCS = 0.0
-                CUMSNOWINFILGS = 0.0
-                INFILTYPE = 2
             end if
 
             !> WATER BUDGET CALCULATIONS.

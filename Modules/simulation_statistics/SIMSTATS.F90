@@ -6,9 +6,7 @@
 module SIMSTATS
 
     use SIMSTATS_config
-    use model_output_variabletypes
     use flags
-    use model_files
     use model_dates
 
     use simstats_nse, only: nse_calc
@@ -193,7 +191,10 @@ module SIMSTATS
     !>
     subroutine stats_init(fls, stfl)
 
-        !> Input variables.
+        use model_files_variables
+        use model_output_variabletypes
+
+    !> Input variables.
         type(fl_ids) :: fls
         type(streamflow_hydrograph) :: stfl
 
@@ -246,6 +247,9 @@ module SIMSTATS
     !> Description:
     !>
     subroutine stats_update_stfl_daily(fls, stfl)
+
+        use model_files_variables
+        use model_output_variabletypes
 
         !> Input variables.
         type(fl_ids) :: fls
@@ -386,6 +390,8 @@ module SIMSTATS
     !> Description: Write the metrics of the simulation to file.
     !>
     subroutine stats_write(fls)
+
+        use model_files_variables
 
         !> Input variables.
         type(fl_ids) :: fls

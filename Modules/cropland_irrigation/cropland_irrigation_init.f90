@@ -12,7 +12,7 @@ module cropland_irrigation_init
         use mpi_shared_variables
 
         !> For canopy fractions.
-        use sa_mesh_shared_parameters
+        use input_parameters
 
         !> For 'shd' type (basin information), 'ro%' (run options) for print options, and 'FCAN' (canopy fraction, ROW indexing).
         use sa_mesh_shared_variables
@@ -63,8 +63,8 @@ module cropland_irrigation_init
         if (ipid == 0) then
             ierr = 0
             do m = 1, shd%lc%NTYPE
-                if (pmrow%cp%fcan(m, 3) > 0.0) then
-                    print 9993, m, pmrow%cp%fcan(m, 3)
+                if (pm_gru%cp%fcan(m, 3) > 0.0) then
+                    print 9993, m, pm_gru%cp%fcan(m, 3)
                     if (ciprot%jdsow(m) <= 0) print 9995, 'jdsow'
                     if (ciprot%ldini(m) <= 0) then
                         print 9997, 'ldini', ciprot%ldini(m)

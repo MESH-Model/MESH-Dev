@@ -13,7 +13,7 @@ module cropland_irrigation_within_tile
         use mpi_utilities
         use mpi_flags
         use model_files_variables
-        use sa_mesh_shared_parameters
+        use input_parameters
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing

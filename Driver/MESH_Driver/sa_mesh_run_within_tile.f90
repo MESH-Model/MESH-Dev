@@ -6,7 +6,6 @@ module sa_mesh_run_within_tile
 
     subroutine run_within_tile_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use sa_mesh_shared_parameters
         use sa_mesh_shared_variables
         use model_files_variables
         use model_dates

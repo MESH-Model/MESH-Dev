@@ -3,6 +3,7 @@
         use mpi_flags
 
         use strings
+        use input_parameters
         use sa_mesh_shared_variables
         use model_files_variabletypes
         use model_files_variables
@@ -14,7 +15,8 @@
 
         use save_basin_output, only: BASINAVGWBFILEFLAG
 
-        use RUNCLASS36_constants
+!-        use RUNCLASS36_constants
+        use RUNCLASS36_variables
         use RUNCLASS36_save_output
         use RUNSVS113_variables
 
@@ -787,6 +789,10 @@
                             end select
                         end do
                         cifg%PROCESS_ACTIVE = (cifg%ts_flag > 0)
+
+                    !> INPUTPARAMSFORM
+                    case ('INPUTPARAMSFORM')
+                        INPUTPARAMSFORM = adjustl(in_line)
 
                     !> Unrecognized flag.
                     case default

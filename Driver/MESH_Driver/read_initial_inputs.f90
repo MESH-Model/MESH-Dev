@@ -2,19 +2,17 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     use mpi_shared_variables
     use mpi_utilities
-    use sa_mesh_shared_parameters
-    use sa_mesh_shared_variables
+!-    use input_parameters
+!-    use sa_mesh_shared_variables
     use sa_mesh_shared_output_variables
-    use model_files_variabletypes
     use model_files_variables
-    use model_dates
+!-    use model_dates
     use FLAGS
-    use climate_forcing
+    use climate_forcing_variabletypes
 
-    use RUNCLASS36_constants
-    use RUNCLASS36_variables
+!-    use RUNCLASS36_constants
+!-    use RUNCLASS36_variables
     use RUNCLASS36_save_output
-    use cropland_irrigation_variables, only: cip, ciprot, cifg
 
     implicit none
 
@@ -31,7 +29,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 !>  WF_QR, WF_QBASE, WF_QI2, WF_QO1, WF_QO2, WF_STORE1, WF_STORE2,
 !>  WF_QI1
 
-    character(8) RELEASE
+!    character(8) RELEASE
 
     !> The types that contain allocatable values
     type(ShedGridParams) :: shd
@@ -332,37 +330,37 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     NSL = shd%lc%IGND
 
     !> Initialize parameter values.
-    allocate(pm%tp%gc(NML), pm%tp%fare(NML), pm%tp%xslp(NML), pm%tp%mid(NML), &
-             pm%cp%fcan(NML, ICP1), pm%cp%z0or(NML, ICP1), pm%cp%lnz0(NML, ICP1), pm%cp%alvc(NML, ICP1), pm%cp%alic(NML, ICP1), &
-             pm%cp%lamx(NML, ICAN), pm%cp%lamn(NML, ICAN), pm%cp%cmas(NML, ICAN), pm%cp%root(NML, ICAN), pm%cp%rsmn(NML, ICAN), &
-             pm%cp%qa50(NML, ICAN), pm%cp%vpda(NML, ICAN), pm%cp%vpdb(NML, ICAN), pm%cp%psga(NML, ICAN), pm%cp%psgb(NML, ICAN), &
-             pm%sfp%zbld(NML), pm%sfp%zrfh(NML), pm%sfp%zrfm(NML), pm%sfp%zplg(NML), pm%snp%zsnl(NML), pm%snp%zpls(NML), &
-             pm%slp%sdep(NML), pm%slp%alwet(NML), pm%slp%aldry(NML), &
-             pm%slp%delz(NSL), pm%slp%zbot(NSL), &
-             pm%slp%sand(NML, NSL), pm%slp%clay(NML, NSL), pm%slp%orgm(NML, NSL), &
-             pm%slp%thpor(NML, NSL), pm%slp%thlret(NML, NSL), pm%slp%thlmin(NML, NSL), pm%slp%thlrat(NML, NSL), &
-             pm%slp%bi(NML, NSL), pm%slp%psisat(NML, NSL), pm%slp%psiwlt(NML, NSL), pm%slp%grksat(NML, NSL), &
-             pm%slp%thfc(NML, NSL), pm%slp%hcps(NML, NSL), pm%slp%tcs(NML, NSL), &
-             pm%hp%drn(NML), pm%hp%dd(NML), pm%hp%grkf(NML), pm%hp%mann(NML), pm%hp%ks(NML))
+!-    allocate(pm%tp%gc(NML), pm%tp%fare(NML), pm%tp%xslp(NML), pm%tp%mid(NML), &
+!-             pm%cp%fcan(NML, ICP1), pm%cp%z0or(NML, ICP1), pm%cp%lnz0(NML, ICP1), pm%cp%alvc(NML, ICP1), pm%cp%alic(NML, ICP1), &
+!-             pm%cp%lamx(NML, ICAN), pm%cp%lamn(NML, ICAN), pm%cp%cmas(NML, ICAN), pm%cp%root(NML, ICAN), pm%cp%rsmn(NML, ICAN), &
+!-             pm%cp%qa50(NML, ICAN), pm%cp%vpda(NML, ICAN), pm%cp%vpdb(NML, ICAN), pm%cp%psga(NML, ICAN), pm%cp%psgb(NML, ICAN), &
+!-             pm%sfp%zbld(NML), pm%sfp%zrfh(NML), pm%sfp%zrfm(NML), pm%sfp%zplg(NML), pm%snp%zsnl(NML), pm%snp%zpls(NML), &
+!-             pm%slp%sdep(NML), pm%slp%alwet(NML), pm%slp%aldry(NML), &
+!-             pm%slp%delz(NSL), pm%slp%zbot(NSL), &
+!-             pm%slp%sand(NML, NSL), pm%slp%clay(NML, NSL), pm%slp%orgm(NML, NSL), &
+!-             pm%slp%thpor(NML, NSL), pm%slp%thlret(NML, NSL), pm%slp%thlmin(NML, NSL), pm%slp%thlrat(NML, NSL), &
+!-             pm%slp%bi(NML, NSL), pm%slp%psisat(NML, NSL), pm%slp%psiwlt(NML, NSL), pm%slp%grksat(NML, NSL), &
+!-             pm%slp%thfc(NML, NSL), pm%slp%hcps(NML, NSL), pm%slp%tcs(NML, NSL), &
+!-             pm%hp%drn(NML), pm%hp%dd(NML), pm%hp%grkf(NML), pm%hp%mann(NML), pm%hp%ks(NML))
 
     !> Initialize parameter values for output ('ROW' indexing).
-    allocate(pmrow%tp%gc(1), pmrow%tp%fare(NTYPE), pmrow%tp%xslp(NTYPE), pmrow%tp%mid(NTYPE), &
-             pmrow%cp%fcan(NTYPE, ICP1), pmrow%cp%z0or(NTYPE, ICP1), pmrow%cp%lnz0(NTYPE, ICP1), &
-             pmrow%cp%alvc(NTYPE, ICP1), pmrow%cp%alic(NTYPE, ICP1), &
-             pmrow%cp%lamx(NTYPE, ICAN), pmrow%cp%lamn(NTYPE, ICAN), pmrow%cp%cmas(NTYPE, ICAN), &
-             pmrow%cp%root(NTYPE, ICAN), pmrow%cp%rsmn(NTYPE, ICAN), &
-             pmrow%cp%qa50(NTYPE, ICAN), pmrow%cp%vpda(NTYPE, ICAN), pmrow%cp%vpdb(NTYPE, ICAN), &
-             pmrow%cp%psga(NTYPE, ICAN), pmrow%cp%psgb(NTYPE, ICAN), &
-             pmrow%sfp%zbld(1), pmrow%sfp%zrfh(1), pmrow%sfp%zrfm(1), &
-             pmrow%sfp%zplg(NTYPE), pmrow%snp%zsnl(NTYPE), pmrow%snp%zpls(NTYPE), &
-             pmrow%slp%sdep(NTYPE), pmrow%slp%alwet(NTYPE), pmrow%slp%aldry(NTYPE), &
-             pmrow%slp%delz(NSL), pmrow%slp%zbot(NSL), &
-             pmrow%slp%sand(NTYPE, NSL), pmrow%slp%clay(NTYPE, NSL), pmrow%slp%orgm(NTYPE, NSL), &
-             pmrow%slp%thpor(NTYPE, NSL), pmrow%slp%thlret(NTYPE, NSL), pmrow%slp%thlmin(NTYPE, NSL), &
-             pmrow%slp%thlrat(NTYPE, NSL), &
-             pmrow%slp%bi(NTYPE, NSL), pmrow%slp%psisat(NTYPE, NSL), pmrow%slp%psiwlt(NTYPE, NSL), pmrow%slp%grksat(NTYPE, NSL), &
-             pmrow%slp%thfc(NTYPE, NSL), pmrow%slp%hcps(NTYPE, NSL), pmrow%slp%tcs(NTYPE, NSL), &
-             pmrow%hp%drn(NTYPE), pmrow%hp%dd(NTYPE), pmrow%hp%grkf(NTYPE), pmrow%hp%mann(NTYPE), pmrow%hp%ks(NTYPE))
+!-    allocate(pmrow%tp%gc(1), pmrow%tp%fare(NTYPE), pmrow%tp%xslp(NTYPE), pmrow%tp%mid(NTYPE), &
+!-             pmrow%cp%fcan(NTYPE, ICP1), pmrow%cp%z0or(NTYPE, ICP1), pmrow%cp%lnz0(NTYPE, ICP1), &
+!-             pmrow%cp%alvc(NTYPE, ICP1), pmrow%cp%alic(NTYPE, ICP1), &
+!-             pmrow%cp%lamx(NTYPE, ICAN), pmrow%cp%lamn(NTYPE, ICAN), pmrow%cp%cmas(NTYPE, ICAN), &
+!-             pmrow%cp%root(NTYPE, ICAN), pmrow%cp%rsmn(NTYPE, ICAN), &
+!-             pmrow%cp%qa50(NTYPE, ICAN), pmrow%cp%vpda(NTYPE, ICAN), pmrow%cp%vpdb(NTYPE, ICAN), &
+!-             pmrow%cp%psga(NTYPE, ICAN), pmrow%cp%psgb(NTYPE, ICAN), &
+!-             pmrow%sfp%zbld(1), pmrow%sfp%zrfh(1), pmrow%sfp%zrfm(1), &
+!-             pmrow%sfp%zplg(NTYPE), pmrow%snp%zsnl(NTYPE), pmrow%snp%zpls(NTYPE), &
+!-             pmrow%slp%sdep(NTYPE), pmrow%slp%alwet(NTYPE), pmrow%slp%aldry(NTYPE), &
+!-             pmrow%slp%delz(NSL), pmrow%slp%zbot(NSL), &
+!-             pmrow%slp%sand(NTYPE, NSL), pmrow%slp%clay(NTYPE, NSL), pmrow%slp%orgm(NTYPE, NSL), &
+!-             pmrow%slp%thpor(NTYPE, NSL), pmrow%slp%thlret(NTYPE, NSL), pmrow%slp%thlmin(NTYPE, NSL), &
+!-             pmrow%slp%thlrat(NTYPE, NSL), &
+!-             pmrow%slp%bi(NTYPE, NSL), pmrow%slp%psisat(NTYPE, NSL), pmrow%slp%psiwlt(NTYPE, NSL), pmrow%slp%grksat(NTYPE, NSL), &
+!-             pmrow%slp%thfc(NTYPE, NSL), pmrow%slp%hcps(NTYPE, NSL), pmrow%slp%tcs(NTYPE, NSL), &
+!-             pmrow%hp%drn(NTYPE), pmrow%hp%dd(NTYPE), pmrow%hp%grkf(NTYPE), pmrow%hp%mann(NTYPE), pmrow%hp%ks(NTYPE))
 
     !> Initialize states.
 
@@ -436,7 +434,8 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     call CLASSD
 
     !> Read parameters from file.
-    call READ_PARAMETERS_CLASS(shd, fls, cm)
+!-    call READ_PARAMETERS_CLASS(shd, fls, cm)
+    call read_parameters(fls, shd, cm, ierr)
 
     !> Distribute the values.
     do k = il1, il2
@@ -446,44 +445,44 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         m = shd%lc%JLMOS(k)
 
         !> Distribute the parameter values.
-        pm%sfp%zrfm(k) = pmrow%sfp%zrfm(1)
-        pm%sfp%zrfh(k) = pmrow%sfp%zrfh(1)
-        pm%sfp%zbld(k) = pmrow%sfp%zbld(1)
-        pm%tp%gc(k) = pmrow%tp%gc(1)
-        pm%tp%fare(k) = pmrow%tp%fare(m)
-        pm%tp%mid(k) = max(1, pmrow%tp%mid(m))
-        pm%cp%fcan(k, :) = pmrow%cp%fcan(m, :)
-        pm%cp%lnz0(k, :) = pmrow%cp%lnz0(m, :)
-        pm%cp%alvc(k, :) = pmrow%cp%alvc(m, :)
-        pm%cp%alic(k, :) = pmrow%cp%alic(m, :)
-        pm%cp%lamx(k, :) = pmrow%cp%lamx(m, :)
-        pm%cp%lamn(k, :) = pmrow%cp%lamn(m, :)
-        pm%cp%cmas(k, :) = pmrow%cp%cmas(m, :)
-        pm%cp%root(k, :) = pmrow%cp%root(m, :)
-        pm%cp%rsmn(k, :) = pmrow%cp%rsmn(m, :)
-        pm%cp%qa50(k, :) = pmrow%cp%qa50(m, :)
-        pm%cp%vpda(k, :) = pmrow%cp%vpda(m, :)
-        pm%cp%vpdb(k, :) = pmrow%cp%vpdb(m, :)
-        pm%cp%psga(k, :) = pmrow%cp%psga(m, :)
-        pm%cp%psgb(k, :) = pmrow%cp%psgb(m, :)
-        pm%slp%sdep(k) = pmrow%slp%sdep(m)
-        pm%hp%drn(k) = pmrow%hp%drn(m)
-        if (allocated(shd%SLOPE_INT)) then
-            pm%tp%xslp(k) = shd%SLOPE_INT(i) !taken from the drainage database.
-        else
-            pm%tp%xslp(k) = pmrow%tp%xslp(m) !taken by GRU from CLASS.ini
-        end if
-        if (allocated(shd%DRDN)) then
-            pm%hp%dd(k) = shd%DRDN(i) !taken from the drainage database.
-        else
-            pm%hp%dd(k) = pmrow%hp%dd(m)/1000.0 !taken from CLASS.ini and from km/km^2 to m/m^2 for WATROF.
-        end if
-        pm%hp%mann(k) = pmrow%hp%mann(m)
-        pm%hp%grkf(k) = pmrow%hp%grkf(m)
-        pm%hp%ks(k) = pmrow%hp%ks(m)
-        pm%slp%sand(k, :) = pmrow%slp%sand(m, :)
-        pm%slp%clay(k, :) = pmrow%slp%clay(m, :)
-        pm%slp%orgm(k, :) = pmrow%slp%orgm(m, :)
+!-        pm%sfp%zrfm(k) = pm_gru%sfp%zrfm(1)
+!-        pm%sfp%zrfh(k) = pm_gru%sfp%zrfh(1)
+!-        pm%sfp%zbld(k) = pm_gru%sfp%zbld(1)
+!-        pm%tp%gc(k) = pm_gru%tp%gc(1)
+!-        pm%tp%fare(k) = pm_gru%tp%fare(m)
+!-        pm%tp%mid(k) = max(1, pm_gru%tp%mid(m))
+!-        pm%cp%fcan(k, :) = pm_gru%cp%fcan(m, :)
+!-        pm%cp%lnz0(k, :) = pm_gru%cp%lnz0(m, :)
+!-        pm%cp%alvc(k, :) = pm_gru%cp%alvc(m, :)
+!-        pm%cp%alic(k, :) = pm_gru%cp%alic(m, :)
+!-        pm%cp%lamx(k, :) = pm_gru%cp%lamx(m, :)
+!-        pm%cp%lamn(k, :) = pm_gru%cp%lamn(m, :)
+!-        pm%cp%cmas(k, :) = pm_gru%cp%cmas(m, :)
+!-        pm%cp%root(k, :) = pm_gru%cp%root(m, :)
+!-        pm%cp%rsmn(k, :) = pm_gru%cp%rsmn(m, :)
+!-        pm%cp%qa50(k, :) = pm_gru%cp%qa50(m, :)
+!-        pm%cp%vpda(k, :) = pm_gru%cp%vpda(m, :)
+!-        pm%cp%vpdb(k, :) = pm_gru%cp%vpdb(m, :)
+!-        pm%cp%psga(k, :) = pm_gru%cp%psga(m, :)
+!-        pm%cp%psgb(k, :) = pm_gru%cp%psgb(m, :)
+!-        pm%slp%sdep(k) = pm_gru%slp%sdep(m)
+!-        pm%hp%drn(k) = pm_gru%hp%drn(m)
+!-        if (allocated(shd%SLOPE_INT)) then
+!-            pm%tp%xslp(k) = shd%SLOPE_INT(i) !taken from the drainage database.
+!-        else
+!-            pm%tp%xslp(k) = pm_gru%tp%xslp(m) !taken by GRU from CLASS.ini
+!-        end if
+!-        if (allocated(shd%DRDN)) then
+!-            pm%hp%dd(k) = shd%DRDN(i) !taken from the drainage database.
+!-        else
+!-            pm%hp%dd(k) = pm_gru%hp%dd(m)/1000.0 !taken from CLASS.ini and from km/km^2 to m/m^2 for WATROF.
+!-        end if
+!-        pm%hp%mann(k) = pm_gru%hp%mann(m)
+!-        pm%hp%grkf(k) = pm_gru%hp%grkf(m)
+!-        pm%hp%ks(k) = pm_gru%hp%ks(m)
+!-        pm%slp%sand(k, :) = pm_gru%slp%sand(m, :)
+!-        pm%slp%clay(k, :) = pm_gru%slp%clay(m, :)
+!-        pm%slp%orgm(k, :) = pm_gru%slp%orgm(m, :)
 
         !> Distribute the initial prognostic variable values.
         stas%cnpy%qac = 0.5e-2
@@ -597,61 +596,61 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
             stas%sl%tbar, &
             il1, il2)
 
-    !> Call to read from soil.ini.
-    call READ_SOIL_INI(shd, fls)
+!-    !> Call to read from soil.ini.
+!-    call READ_SOIL_INI(shd, fls)
 
     !> Allocate additional parameters.
-    allocate( &
-        hp%FRZCROW(NA, NTYPE), &
-        hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE), hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE), hp%K2ROW(NA, NTYPE), &
-        hp%fetchROW(NA, NTYPE), hp%HtROW(NA, NTYPE), hp%N_SROW(NA, NTYPE), hp%A_SROW(NA, NTYPE), hp%DistribROW(NA, NTYPE))
+!-    allocate( &
+!-        hp%FRZCROW(NA, NTYPE), &
+!-        hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE), hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE), hp%K2ROW(NA, NTYPE), &
+!-        hp%fetchROW(NA, NTYPE), hp%HtROW(NA, NTYPE), hp%N_SROW(NA, NTYPE), hp%A_SROW(NA, NTYPE), hp%DistribROW(NA, NTYPE))
 
-    NYEARS = ic%stop%year - ic%start%year + 1
-    allocate(t0_ACC(NYEARS))
-    t0_ACC = 0.0
+!-    NYEARS = ic%stop%year - ic%start%year + 1
+!-    allocate(t0_ACC(NYEARS))
+!-    t0_ACC = 0.0
 
     !> Allocate and initialize parameters for the cropland irrigation module.
-    if (cifg%PROCESS_ACTIVE) then
-        allocate( &
-            ciprot%jdsow(NTYPE), ciprot%ldini(NTYPE), ciprot%lddev(NTYPE), ciprot%ldmid(NTYPE), ciprot%ldlate(NTYPE), &
-            ciprot%Kcini(NTYPE), ciprot%Kcdev(NTYPE), ciprot%Kcmid(NTYPE), ciprot%Kclate(NTYPE))
-        ciprot%jdsow = 0; ciprot%ldini = 0; ciprot%lddev = 0; ciprot%ldmid = 0; ciprot%ldlate = 0
-        ciprot%Kcini = 0.0; ciprot%Kcdev = 0.0; ciprot%Kcmid = 0.0; ciprot%Kclate = 0.0
-        allocate( &
-            cip%jdsow(NML), cip%ldini(NML), cip%lddev(NML), cip%ldmid(NML), cip%ldlate(NML), &
-            cip%Kcini(NML), cip%Kcdev(NML), cip%Kcmid(NML), cip%Kclate(NML))
-        cip%jdsow = 0; cip%ldini = 0; cip%lddev = 0; cip%ldmid = 0; cip%ldlate = 0
-        cip%Kcini = 0.0; cip%Kcdev = 0.0; cip%Kcmid = 0.0; cip%Kclate = 0.0
-    end if
+!-    if (cifg%PROCESS_ACTIVE) then
+!-        allocate( &
+!-            ciprot%jdsow(NTYPE), ciprot%ldini(NTYPE), ciprot%lddev(NTYPE), ciprot%ldmid(NTYPE), ciprot%ldlate(NTYPE), &
+!-            ciprot%Kcini(NTYPE), ciprot%Kcdev(NTYPE), ciprot%Kcmid(NTYPE), ciprot%Kclate(NTYPE))
+!-        ciprot%jdsow = 0; ciprot%ldini = 0; ciprot%lddev = 0; ciprot%ldmid = 0; ciprot%ldlate = 0
+!-        ciprot%Kcini = 0.0; ciprot%Kcdev = 0.0; ciprot%Kcmid = 0.0; ciprot%Kclate = 0.0
+!-        allocate( &
+!-            cip%jdsow(NML), cip%ldini(NML), cip%lddev(NML), cip%ldmid(NML), cip%ldlate(NML), &
+!-            cip%Kcini(NML), cip%Kcdev(NML), cip%Kcmid(NML), cip%Kclate(NML))
+!-        cip%jdsow = 0; cip%ldini = 0; cip%lddev = 0; cip%ldmid = 0; cip%ldlate = 0
+!-        cip%Kcini = 0.0; cip%Kcdev = 0.0; cip%Kcmid = 0.0; cip%Kclate = 0.0
+!-    end if
 
     !> Read parameters from file.
-    call READ_PARAMETERS_HYDROLOGY(shd, fls)
+!-    call READ_PARAMETERS_HYDROLOGY(shd, fls)
 
     !> Distribute the values.
-    do k = il1, il2
+!-    do k = il1, il2
 
         !> Grab the indices of the grid cell and GRU.
-        i = shd%lc%ILMOS(k)
-        m = shd%lc%JLMOS(k)
+!-        i = shd%lc%ILMOS(k)
+!-        m = shd%lc%JLMOS(k)
 
         !> Distribute the parameter values.
-        pm%snp%zsnl(k) = pmrow%snp%zsnl(m)
-        pm%sfp%zplg(k) = pmrow%sfp%zplg(m)
-        pm%snp%zpls(k) = pmrow%snp%zpls(m)
+!-        pm%snp%zsnl(k) = pm_gru%snp%zsnl(m)
+!-        pm%sfp%zplg(k) = pm_gru%sfp%zplg(m)
+!-        pm%snp%zpls(k) = pm_gru%snp%zpls(m)
 
         !> Cropland irrigation module.
-        if (cifg%PROCESS_ACTIVE) then
-            cip%jdsow(k) = ciprot%jdsow(m)
-            cip%ldini(k) = ciprot%ldini(m)
-            cip%lddev(k) = ciprot%lddev(m)
-            cip%ldmid(k) = ciprot%ldmid(m)
-            cip%ldlate(k) = ciprot%ldlate(m)
-            cip%Kcini(k) = ciprot%Kcini(m)
-            cip%Kcdev(k) = ciprot%Kcdev(m)
-            cip%Kcmid(k) = ciprot%Kcmid(m)
-            cip%Kclate(k) = ciprot%Kclate(m)
-        end if
+!-        if (cifg%PROCESS_ACTIVE) then
+!-            cip%jdsow(k) = ciprot%jdsow(m)
+!-            cip%ldini(k) = ciprot%ldini(m)
+!-            cip%lddev(k) = ciprot%lddev(m)
+!-            cip%ldmid(k) = ciprot%ldmid(m)
+!-            cip%ldlate(k) = ciprot%ldlate(m)
+!-            cip%Kcini(k) = ciprot%Kcini(m)
+!-            cip%Kcdev(k) = ciprot%Kcdev(m)
+!-            cip%Kcmid(k) = ciprot%Kcmid(m)
+!-            cip%Kclate(k) = ciprot%Kclate(m)
+!-        end if
 
-    end do !k = il1, il2
+!-    end do !k = il1, il2
 
 end subroutine

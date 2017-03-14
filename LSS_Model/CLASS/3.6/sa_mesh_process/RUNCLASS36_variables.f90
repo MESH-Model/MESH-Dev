@@ -13,8 +13,20 @@ module RUNCLASS36_variables
 
     !> Temporary variables.
 !todo: remove these.
-!-    integer JLAT
 !-    real DEGLAT, DEGLON
+
+    !> Constants for output (read from file).
+    !* TITLE: PROJECT DESCRIPTOR (6 COLUMNS: 4 CHARACTER STRINGS)
+    !* NAME: AUTHOR, RESEARCHER (6 COLUMNS: 4 CHARACTER STRINGS)
+    !* PLACE: SITE LOCATION, BASIN (6 COLUMNS: 4 CHARACTER STRINGS)
+    character(4) TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, &
+        TITLE6, NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
+        PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
+
+    integer JLAT
+
+    integer IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
+        IALS, IALG, ITG, ITC, ITCG
 
     !> CLASS diagnostic output starting and stopping dates.
     !* JOUT1: DAILY-AVERAGED OUTPUT START DAY (JULIAN FROM YEAR START)
