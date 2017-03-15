@@ -312,7 +312,7 @@ module SIMSTATS
 
     subroutine stats_state_save(fls)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
 
         !> Input variables.
@@ -349,7 +349,7 @@ module SIMSTATS
 
     subroutine stats_state_resume(fls)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
 
         !> Input variables.

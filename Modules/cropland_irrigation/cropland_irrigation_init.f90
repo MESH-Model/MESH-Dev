@@ -9,13 +9,13 @@ module cropland_irrigation_init
     subroutine runci_init(shd, fls)
 
         !> For 'il1,il2' indexing and ipid (current node).
-        use mpi_shared_variables
-
-        !> For 'shd' type (basin information), 'ro%' (run options) for print options, and 'FCAN' (canopy fractions).
-        use sa_mesh_shared_variables
+        use mpi_module
 
         !> For 'fls%GENDIR_OUT'.
         use model_files_variables
+
+        !> For 'shd' type (basin information), 'ro%' (run options) for print options, and 'FCAN' (canopy fractions).
+        use sa_mesh_shared_variables
 
         !> For current date and counter.
         use model_dates

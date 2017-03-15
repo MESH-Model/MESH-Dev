@@ -108,8 +108,7 @@ module RUNCLASS36_config
 
     subroutine RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_shared_variables
-!-        use mpi_utilities
+        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
@@ -813,7 +812,7 @@ module RUNCLASS36_config
 
     subroutine RUNCLASS36_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates

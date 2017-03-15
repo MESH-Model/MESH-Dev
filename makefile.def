@@ -52,11 +52,17 @@ VPATH=	$(DIR_REPO)/Modules/strings: \
 # Object files needed to build SA_MESH
 # ======================================================================
 
+#MPI
+OBJECTS=	mpi_flags.o mpi_shared_variables.o mpi_utilities.o \
+			mpi_module.o
+
+#Strings
+OBJECTS+=	precmod.o stringmod.o
+
+#SA_MESH flags, parameters, and variables
+
 #Modules
-OBJECTS=	mpi_flags.o mpi_shared_variables.o mpi_module.o \
-			mpi_utilities.o \
-			precmod.o stringmod.o \
-			module_files_variabletypes.o module_files_variables.o \
+OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			module_dates.o \
 			EF_Module.o EF_ParseUtilities.o FLAGS.o \
 			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \

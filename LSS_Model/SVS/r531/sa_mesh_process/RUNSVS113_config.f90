@@ -13,7 +13,7 @@ module RUNSVS113_config
 
     subroutine RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates

@@ -7,7 +7,7 @@
 subroutine read_parameters(fls, shd, cm, ierr)
 
     use strings
-    use mpi_shared_variables
+    use mpi_module
     use model_files_variables
     use sa_mesh_shared_variables
     use FLAGS

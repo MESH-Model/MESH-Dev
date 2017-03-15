@@ -9,7 +9,7 @@ module RUNCLASS36_module
 
     subroutine RUNCLASS36_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates

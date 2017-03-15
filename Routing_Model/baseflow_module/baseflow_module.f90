@@ -48,9 +48,9 @@ module baseflow_module
 
     subroutine LZS_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -154,9 +154,9 @@ module baseflow_module
 
     subroutine LZS_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -216,7 +216,7 @@ module baseflow_module
 
     subroutine LZS_finalize(fls, shd)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates

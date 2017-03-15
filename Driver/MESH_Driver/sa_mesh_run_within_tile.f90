@@ -6,8 +6,8 @@ module sa_mesh_run_within_tile
 
     subroutine run_within_tile_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use sa_mesh_shared_variables
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -43,9 +43,9 @@ module sa_mesh_run_within_tile
 
     function run_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -107,10 +107,7 @@ module sa_mesh_run_within_tile
     subroutine run_within_tile_mpi(shd)
 
         !> For: MPI variables, barrier flag, il1:il2 parse utility
-        use mpi_flags
-        use mpi_shared_variables
         use mpi_module
-        use mpi_utilities
 
         !> For: Model states, 'ic'.
         use sa_mesh_shared_variables

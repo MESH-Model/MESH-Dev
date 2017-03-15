@@ -1,7 +1,6 @@
 subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
-    use mpi_shared_variables
-    use mpi_utilities
+    use mpi_module
     use model_files_variables
 !-    use input_parameters
 !-    use state_variables
