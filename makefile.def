@@ -149,6 +149,7 @@ OBJECTS+=	read_initial_inputs.o \
 			read_parameters_class.o read_parameters_hydrology.o \
 			read_parameters_r2c.o \
 			read_soil_ini.o \
+			read_initial_states.o \
 			read_s_moisture_txt.o read_s_temperature_txt.o \
 			module_files.o
 

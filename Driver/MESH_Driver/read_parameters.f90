@@ -1,17 +1,16 @@
 !>
 !> Description:
 !>  Subroutine to read input parameters from file. Parameters shared
-!>  by SA_MESH are accessible by module input_parameters. Other
+!>  by SA_MESH are accessible by sa_mesh_shared_variables module. Other
 !>  parameters are accessible by their respecitve process module(s).
 !>
 subroutine read_parameters(fls, shd, cm, ierr)
 
     use strings
     use mpi_shared_variables
-    use input_parameters
+    use model_files_variables
+    use sa_mesh_shared_variables
     use FLAGS
-    use model_files_variabletypes
-    use shd_variables
     use climate_forcing_variabletypes
 
     use RUNCLASS36_variables
@@ -49,9 +48,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !>
 
     !> Allocate instances of SA_MESH parameters.
-    if (.not. pm%inid) call pm_init(pm, 'tile', NML, NSL, 4, 5, ierr)
-    if (.not. pm_grid%inid) call pm_init(pm_grid, 'grid', NA, NSL, 4, 5, ierr)
-    if (.not. pm_gru%inid) call pm_init(pm_gru, 'gru', NTYPE, NSL, 4, 5, ierr)
+    call pm_init(pm, 'tile', NML, NSL, 4, 5, ierr)
+    call pm_init(pm_grid, 'grid', NA, NSL, 4, 5, ierr)
+    call pm_init(pm_gru, 'gru', NTYPE, NSL, 4, 5, ierr)
 
     !> WF_ROUTE (Watflood, 1988).
     if (WF_RTE_flgs%PROCESS_ACTIVE) then

@@ -6,6 +6,7 @@ module sa_mesh_shared_variables
     use control_variables
     use shd_variables
     use fm_variables
+    use input_parameters
     use state_variables
 
     implicit none
@@ -35,17 +36,17 @@ module sa_mesh_shared_variables
     !>  Contains variable types for states of variables in the model,
     !>  such as components of the water and energy balances, streamflow
     !>  channels, and reservoirs.
-    type states
-        type(river_flow) :: chnl
-        type(lake_flow) :: lk, rsvr
-        type(canopy) :: cnpy
-        type(snow_balance) :: sno
-        type(surface_interface) :: sfc
-        type(soil_layer) :: sl
-        type(deep_zone) :: lzs, dzs
-    end type
+!-    type states
+!-        type(river_flow) :: chnl
+!-        type(lake_flow) :: lk, rsvr
+!-        type(canopy) :: cnpy
+!-        type(snow_balance) :: sno
+!-        type(surface_interface) :: sfc
+!-        type(soil_layer) :: sl
+!-        type(deep_zone) :: lzs, dzs
+!-    end type
 
     !* stas: Collection of the state of variables in the current time-step.
-    type(states), save :: stas
+!-    type(states), save :: stas
 
 end module

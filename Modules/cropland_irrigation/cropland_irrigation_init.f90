@@ -11,12 +11,8 @@ module cropland_irrigation_init
         !> For 'il1,il2' indexing and ipid (current node).
         use mpi_shared_variables
 
-        !> For canopy fractions.
-        use input_parameters
-
-        !> For 'shd' type (basin information), 'ro%' (run options) for print options, and 'FCAN' (canopy fraction, ROW indexing).
+        !> For 'shd' type (basin information), 'ro%' (run options) for print options, and 'FCAN' (canopy fractions).
         use sa_mesh_shared_variables
-        use sa_mesh_shared_output_variables
 
         !> For 'fls%GENDIR_OUT'.
         use model_files_variables

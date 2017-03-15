@@ -3,10 +3,8 @@
         use mpi_flags
 
         use strings
-        use input_parameters
-        use sa_mesh_shared_variables
-        use model_files_variabletypes
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use FLAGS

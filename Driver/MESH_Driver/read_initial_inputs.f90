@@ -2,13 +2,14 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     use mpi_shared_variables
     use mpi_utilities
-!-    use input_parameters
-!-    use sa_mesh_shared_variables
-    use sa_mesh_shared_output_variables
     use model_files_variables
+!-    use input_parameters
+!-    use state_variables
+    use sa_mesh_shared_variables
+!-    use sa_mesh_shared_output_variables
 !-    use model_dates
     use FLAGS
-    use climate_forcing_variabletypes
+    use climate_forcing
 
 !-    use RUNCLASS36_constants
 !-    use RUNCLASS36_variables
@@ -365,69 +366,74 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> Initialize states.
 
     !> Canopy.
-    stas%cnpy%n = NML
-    allocate(stas%cnpy%qac(NML), stas%cnpy%rcan(NML), stas%cnpy%sncan(NML), stas%cnpy%tac(NML), stas%cnpy%tcan(NML), &
-             stas%cnpy%cmai(NML), stas%cnpy%gro(NML), stas%cnpy%pevp(NML), stas%cnpy%evpb(NML), stas%cnpy%arrd(NML))
-    stas%cnpy%qac = 0.0; stas%cnpy%rcan = 0.0; stas%cnpy%sncan = 0.0; stas%cnpy%tac = 0.0; stas%cnpy%tcan = 0.0
-    stas%cnpy%cmai = 0.0; stas%cnpy%gro = 0.0; stas%cnpy%pevp = 0.0; stas%cnpy%evpb = 0.0; stas%cnpy%arrd = 0.0
+!-    stas%cnpy%n = NML
+!-    allocate(stas%cnpy%qac(NML), stas%cnpy%rcan(NML), stas%cnpy%sncan(NML), stas%cnpy%tac(NML), stas%cnpy%tcan(NML), &
+!-             stas%cnpy%cmai(NML), stas%cnpy%gro(NML), stas%cnpy%pevp(NML), stas%cnpy%evpb(NML), stas%cnpy%arrd(NML))
+!-    stas%cnpy%qac = 0.0; stas%cnpy%rcan = 0.0; stas%cnpy%sncan = 0.0; stas%cnpy%tac = 0.0; stas%cnpy%tcan = 0.0
+!-    stas%cnpy%cmai = 0.0; stas%cnpy%gro = 0.0; stas%cnpy%pevp = 0.0; stas%cnpy%evpb = 0.0; stas%cnpy%arrd = 0.0
 
     !> Snow.
-    stas%sno%n = NML
-    allocate(stas%sno%sno(NML), stas%sno%albs(NML), stas%sno%fsno(NML), stas%sno%rhos(NML), stas%sno%tsno(NML), stas%sno%wsno(NML))
-    stas%sno%sno = 0.0; stas%sno%albs = 0.0; stas%sno%fsno = 0.0; stas%sno%rhos = 0.0; stas%sno%tsno = 0.0; stas%sno%wsno = 0.0
+!-    stas%sno%n = NML
+!-    allocate(stas%sno%sno(NML), stas%sno%albs(NML), stas%sno%fsno(NML), stas%sno%rhos(NML), stas%sno%tsno(NML), stas%sno%wsno(NML))
+!-    stas%sno%sno = 0.0; stas%sno%albs = 0.0; stas%sno%fsno = 0.0; stas%sno%rhos = 0.0; stas%sno%tsno = 0.0; stas%sno%wsno = 0.0
 
     !> Surface or at near surface.
-    stas%sfc%n = NML
-    allocate(stas%sfc%tpnd(NML), stas%sfc%zpnd(NML), stas%sfc%pndw(NML), stas%sfc%evap(NML), stas%sfc%qevp(NML), &
-             stas%sfc%hfs(NML), stas%sfc%rofo(NML), stas%sfc%tsfs(NML, 4))
-    stas%sfc%tpnd = 0.0; stas%sfc%zpnd = 0.0; stas%sfc%pndw = 0.0; stas%sfc%evap = 0.0; stas%sfc%qevp = 0.0
-    stas%sfc%hfs = 0.0; stas%sfc%rofo = 0.0; stas%sfc%tsfs = 0.0
+!-    stas%sfc%n = NML
+!-    allocate(stas%sfc%tpnd(NML), stas%sfc%zpnd(NML), stas%sfc%pndw(NML), stas%sfc%evap(NML), stas%sfc%qevp(NML), &
+!-             stas%sfc%hfs(NML), stas%sfc%rofo(NML), stas%sfc%tsfs(NML, 4))
+!-    stas%sfc%tpnd = 0.0; stas%sfc%zpnd = 0.0; stas%sfc%pndw = 0.0; stas%sfc%evap = 0.0; stas%sfc%qevp = 0.0
+!-    stas%sfc%hfs = 0.0; stas%sfc%rofo = 0.0; stas%sfc%tsfs = 0.0
 
     !> Soil layers.
-    stas%sl%n = NML
-    allocate(stas%sl%thic(NML, NSL), stas%sl%fzws(NML, NSL), stas%sl%thlq(NML, NSL), stas%sl%lqws(NML, NSL), &
-             stas%sl%tbar(NML, NSL), stas%sl%tbas(NML), stas%sl%delzw(NML, NSL), stas%sl%zbotw(NML, NSL), stas%sl%rofs(NML), &
-             stas%sl%gflx(NML, NSL), stas%sl%ggeo(NML))
-    stas%sl%thic = 0.0; stas%sl%fzws = 0.0; stas%sl%thlq = 0.0; stas%sl%lqws = 0.0
-    stas%sl%tbar = 0.0; stas%sl%tbas = 0.0; stas%sl%delzw = 0.0; stas%sl%zbotw = 0.0; stas%sl%rofs = 0.0
-    stas%sl%gflx = 0.0; stas%sl%ggeo = 0.0
+!-    stas%sl%n = NML
+!-    allocate(stas%sl%thic(NML, NSL), stas%sl%fzws(NML, NSL), stas%sl%thlq(NML, NSL), stas%sl%lqws(NML, NSL), &
+!-             stas%sl%tbar(NML, NSL), stas%sl%tbas(NML), stas%sl%delzw(NML, NSL), stas%sl%zbotw(NML, NSL), stas%sl%rofs(NML), &
+!-             stas%sl%gflx(NML, NSL), stas%sl%ggeo(NML))
+!-    stas%sl%thic = 0.0; stas%sl%fzws = 0.0; stas%sl%thlq = 0.0; stas%sl%lqws = 0.0
+!-    stas%sl%tbar = 0.0; stas%sl%tbas = 0.0; stas%sl%delzw = 0.0; stas%sl%zbotw = 0.0; stas%sl%rofs = 0.0
+!-    stas%sl%gflx = 0.0; stas%sl%ggeo = 0.0
 
     !> Lower zone storage.
-    stas%lzs%n = NML
-    allocate(stas%lzs%zlw(NML), stas%lzs%rofb(NML))
-    stas%lzs%zlw = 0.0; stas%lzs%rofb = 0.0
+!-    stas%lzs%n = NML
+!-    allocate(stas%lzs%zlw(NML), stas%lzs%rofb(NML))
+!-    stas%lzs%zlw = 0.0; stas%lzs%rofb = 0.0
 
     !> Deep zone storage.
-    stas%dzs%n = NML
-    allocate(stas%dzs%zlw(NML), stas%dzs%rofb(NML))
-    stas%dzs%zlw = 0.0; stas%dzs%rofb = 0.0
+!-    stas%dzs%n = NML
+!-    allocate(stas%dzs%zlw(NML), stas%dzs%rofb(NML))
+!-    stas%dzs%zlw = 0.0; stas%dzs%rofb = 0.0
 
     !> Initiate state variables for output ('ROW' indexing).
-    allocate(stasrow%cnpy%qac(NTYPE), stasrow%cnpy%tac(NTYPE), stasrow%cnpy%tcan(NTYPE), &
-             stasrow%cnpy%rcan(NTYPE), stasrow%cnpy%sncan(NTYPE), &
-             stasrow%cnpy%cmai(NTYPE), stasrow%cnpy%gro(NTYPE), &
-             stasrow%cnpy%pevp(NTYPE), stasrow%cnpy%evpb(NTYPE), stasrow%cnpy%arrd(NTYPE), &
-             stasrow%sno%sno(NTYPE), stasrow%sno%albs(NTYPE), stasrow%sno%fsno(NTYPE), stasrow%sno%rhos(NTYPE), &
-             stasrow%sno%tsno(NTYPE), stasrow%sno%wsno(NTYPE), &
-             stasrow%sfc%tpnd(NTYPE), stasrow%sfc%zpnd(NTYPE), stasrow%sfc%tsfs(NTYPE, 4), &
-             stasrow%sl%thic(NTYPE, NSL), stasrow%sl%fzws(NTYPE, NSL), stasrow%sl%thlq(NTYPE, NSL), stasrow%sl%lqws(NTYPE, NSL), &
-             stasrow%sl%tbar(NTYPE, NSL), stasrow%sl%tbas(NTYPE), &
-             stasrow%sl%delzw(NTYPE, NSL), stasrow%sl%zbotw(NTYPE, NSL), stasrow%sl%rofs(NTYPE), &
-             stasrow%sl%gflx(NTYPE, NSL), stasrow%sl%ggeo(NTYPE), &
-             stasrow%lzs%zlw(NTYPE), &
-             stasrow%dzs%zlw(NTYPE))
-    stasrow%cnpy%qac = 0.0; stasrow%cnpy%tac = 0.0; stasrow%cnpy%tcan = 0.0
-    stasrow%cnpy%rcan = 0.0; stasrow%cnpy%sncan = 0.0
-    stasrow%cnpy%cmai = 0.0; stasrow%cnpy%gro = 0.0
-    stasrow%cnpy%pevp = 0.0; stasrow%cnpy%evpb = 0.0; stasrow%cnpy%arrd = 0.0
-    stasrow%sno%sno = 0.0; stasrow%sno%albs = 0.0; stasrow%sno%fsno = 0.0; stasrow%sno%rhos = 0.0
-    stasrow%sno%tsno = 0.0; stasrow%sno%wsno = 0.0
-    stasrow%sfc%tpnd = 0.0; stasrow%sfc%zpnd = 0.0; stasrow%sfc%tsfs = 0.0
-    stasrow%sl%thic = 0.0; stasrow%sl%fzws = 0.0; stasrow%sl%thlq = 0.0; stasrow%sl%lqws = 0.0
-    stasrow%sl%tbar = 0.0; stasrow%sl%tbas = 0.0; stasrow%sl%delzw = 0.0; stasrow%sl%zbotw = 0.0; stasrow%sl%rofs = 0.0
-    stasrow%sl%gflx = 0.0; stasrow%sl%ggeo = 0.0
-    stasrow%lzs%zlw = 0.0
-    stasrow%dzs%zlw = 0.0
+!-    allocate(stasrow%cnpy%qac(NTYPE), stasrow%cnpy%tac(NTYPE), stasrow%cnpy%tcan(NTYPE), &
+!-             stasrow%cnpy%rcan(NTYPE), stasrow%cnpy%sncan(NTYPE), &
+!-             stasrow%cnpy%cmai(NTYPE), stasrow%cnpy%gro(NTYPE), &
+!-             stasrow%cnpy%pevp(NTYPE), stasrow%cnpy%evpb(NTYPE), stasrow%cnpy%arrd(NTYPE), &
+!-             stasrow%sno%sno(NTYPE), stasrow%sno%albs(NTYPE), stasrow%sno%fsno(NTYPE), stasrow%sno%rhos(NTYPE), &
+!-             stasrow%sno%tsno(NTYPE), stasrow%sno%wsno(NTYPE), &
+!-             stasrow%sfc%tpnd(NTYPE), stasrow%sfc%zpnd(NTYPE), stasrow%sfc%tsfs(NTYPE, 4), &
+!-             stasrow%sl%thic(NTYPE, NSL), stasrow%sl%fzws(NTYPE, NSL), stasrow%sl%thlq(NTYPE, NSL), stasrow%sl%lqws(NTYPE, NSL), &
+!-             stasrow%sl%tbar(NTYPE, NSL), stasrow%sl%tbas(NTYPE), &
+!-             stasrow%sl%delzw(NTYPE, NSL), stasrow%sl%zbotw(NTYPE, NSL), stasrow%sl%rofs(NTYPE), &
+!-             stasrow%sl%gflx(NTYPE, NSL), stasrow%sl%ggeo(NTYPE), &
+!-             stasrow%lzs%zlw(NTYPE), &
+!-             stasrow%dzs%zlw(NTYPE))
+!-    stasrow%cnpy%qac = 0.0; stasrow%cnpy%tac = 0.0; stasrow%cnpy%tcan = 0.0
+!-    stasrow%cnpy%rcan = 0.0; stasrow%cnpy%sncan = 0.0
+!-    stasrow%cnpy%cmai = 0.0; stasrow%cnpy%gro = 0.0
+!-    stasrow%cnpy%pevp = 0.0; stasrow%cnpy%evpb = 0.0; stasrow%cnpy%arrd = 0.0
+!-    stasrow%sno%sno = 0.0; stasrow%sno%albs = 0.0; stasrow%sno%fsno = 0.0; stasrow%sno%rhos = 0.0
+!-    stasrow%sno%tsno = 0.0; stasrow%sno%wsno = 0.0
+!-    stasrow%sfc%tpnd = 0.0; stasrow%sfc%zpnd = 0.0; stasrow%sfc%tsfs = 0.0
+!-    stasrow%sl%thic = 0.0; stasrow%sl%fzws = 0.0; stasrow%sl%thlq = 0.0; stasrow%sl%lqws = 0.0
+!-    stasrow%sl%tbar = 0.0; stasrow%sl%tbas = 0.0; stasrow%sl%delzw = 0.0; stasrow%sl%zbotw = 0.0; stasrow%sl%rofs = 0.0
+!-    stasrow%sl%gflx = 0.0; stasrow%sl%ggeo = 0.0
+!-    stasrow%lzs%zlw = 0.0
+!-    stasrow%dzs%zlw = 0.0
+
+    !> Allocate and initialize SA_MESH shared variables.
+    call stas_init(stas, 'tile', NML, NSL, ierr)
+    call stas_init(stas_grid, 'grid', NA, NSL, ierr)
+    call stas_init(stas_gru, 'gru', NTYPE, NSL, ierr)
 
     !> Call 'CLASSD' to initialize constants.
 !todo: replace this with a non-CLASS/generic version.
@@ -437,12 +443,15 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 !-    call READ_PARAMETERS_CLASS(shd, fls, cm)
     call read_parameters(fls, shd, cm, ierr)
 
+    !> Read variable states from file.
+    call read_initial_states(fls, shd, ierr)
+
     !> Distribute the values.
-    do k = il1, il2
+!-    do k = il1, il2
 
         !> Grab the indices of the grid cell and GRU.
-        i = shd%lc%ILMOS(k)
-        m = shd%lc%JLMOS(k)
+!-        i = shd%lc%ILMOS(k)
+!-        m = shd%lc%JLMOS(k)
 
         !> Distribute the parameter values.
 !-        pm%sfp%zrfm(k) = pm_gru%sfp%zrfm(1)
@@ -485,28 +494,28 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 !-        pm%slp%orgm(k, :) = pm_gru%slp%orgm(m, :)
 
         !> Distribute the initial prognostic variable values.
-        stas%cnpy%qac = 0.5e-2
-        stas%cnpy%tcan(k) = stasrow%cnpy%tcan(m) + TFREZ
-        stas%cnpy%tac(k) = stasrow%cnpy%tcan(m) + TFREZ
-        stas%sno%tsno(k) = stasrow%sno%tsno(m) + TFREZ
-        stas%sfc%tpnd(k) = stasrow%sfc%tpnd(m) + TFREZ
-        stas%sfc%zpnd(k) = stasrow%sfc%zpnd(m)
-        stas%cnpy%rcan(k) = stasrow%cnpy%rcan(m)
-        stas%cnpy%sncan(k) = stasrow%cnpy%sncan(m)
-        stas%sno%sno(k) = stasrow%sno%sno(m)
-        stas%sno%albs(k) = stasrow%sno%albs(m)
-        stas%sno%rhos(k) = stasrow%sno%rhos(m)
-        stas%cnpy%gro(k) = stasrow%cnpy%gro(m)
-        stas%sfc%tsfs(k, 1) = TFREZ
-        stas%sfc%tsfs(k, 2) = TFREZ
-        stas%sfc%tsfs(k, 3) = stasrow%sl%tbar(m, 1) + TFREZ
-        stas%sfc%tsfs(k, 4) = stasrow%sl%tbar(m, 1) + TFREZ
-        stas%sl%tbar(k, :) = stasrow%sl%tbar(m, :) + TFREZ
-        stas%sl%thlq(k, :) = stasrow%sl%thlq(m, :)
-        stas%sl%thic(k, :) = stasrow%sl%thic(m, :)
-        stas%sl%tbas(k) = stasrow%sl%tbar(m, NSL) + TFREZ
+!-        stas%cnpy%qac = 0.5e-2
+!-        stas%cnpy%tcan(k) = stas_gru%cnpy%tcan(m) + TFREZ
+!-        stas%cnpy%tac(k) = stas_gru%cnpy%tcan(m) + TFREZ
+!-        stas%sno%tsno(k) = stas_gru%sno%tsno(m) + TFREZ
+!-        stas%sfc%tpnd(k) = stas_gru%sfc%tpnd(m) + TFREZ
+!-        stas%sfc%zpnd(k) = stas_gru%sfc%zpnd(m)
+!-        stas%cnpy%rcan(k) = stas_gru%cnpy%rcan(m)
+!-        stas%cnpy%sncan(k) = stas_gru%cnpy%sncan(m)
+!-        stas%sno%sno(k) = stas_gru%sno%sno(m)
+!-        stas%sno%albs(k) = stas_gru%sno%albs(m)
+!-        stas%sno%rhos(k) = stas_gru%sno%rhos(m)
+!-        stas%cnpy%gro(k) = stas_gru%cnpy%gro(m)
+!-        stas%sfc%tsfs(k, 1) = TFREZ
+!-        stas%sfc%tsfs(k, 2) = TFREZ
+!-        stas%sfc%tsfs(k, 3) = stas_gru%sl%tbar(m, 1) + TFREZ
+!-        stas%sfc%tsfs(k, 4) = stas_gru%sl%tbar(m, 1) + TFREZ
+!-        stas%sl%tbar(k, :) = stas_gru%sl%tbar(m, :) + TFREZ
+!-        stas%sl%thlq(k, :) = stas_gru%sl%thlq(m, :)
+!-        stas%sl%thic(k, :) = stas_gru%sl%thic(m, :)
+!-        stas%sl%tbas(k) = stas_gru%sl%tbar(m, NSL) + TFREZ
 
-    end do !k = il1, il2
+!-    end do !k = il1, il2
 
     !> Check the grid output points.
 !todo: fix this.
@@ -587,14 +596,14 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
 !todo - test this piece of code and make sure we understand how it works.
 !todo - if we implement this, make it an option for the user to select GRU or grid initialization
-    call READ_S_MOISTURE_TXT( &
-            shd%yCount, shd%xCount, NA, NTYPE, NML, NSL, shd%yyy, shd%xxx, shd%lc%ILMOS, shd%lc%JLMOS, &
-            stas%sl%thlq, &
-            il1, il2)
-    call READ_S_TEMPERATURE_TXT(&
-            shd%yCount, shd%xCount, NA, NTYPE, NML, NSL, shd%yyy, shd%xxx, shd%lc%ILMOS, shd%lc%JLMOS, &
-            stas%sl%tbar, &
-            il1, il2)
+!-    call READ_S_MOISTURE_TXT( &
+!-            shd%yCount, shd%xCount, NA, NTYPE, NML, NSL, shd%yyy, shd%xxx, shd%lc%ILMOS, shd%lc%JLMOS, &
+!-            stas%sl%thlq, &
+!-            il1, il2)
+!-    call READ_S_TEMPERATURE_TXT(&
+!-            shd%yCount, shd%xCount, NA, NTYPE, NML, NSL, shd%yyy, shd%xxx, shd%lc%ILMOS, shd%lc%JLMOS, &
+!-            stas%sl%tbar, &
+!-            il1, il2)
 
 !-    !> Call to read from soil.ini.
 !-    call READ_SOIL_INI(shd, fls)

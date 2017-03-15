@@ -1,14 +1,10 @@
 subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
-    !> For: 'ShedGridParams' type, run option flags.
-    use shd_variables
-
-    !> Required for parameters ('ROW' indexing).
-    use input_parameters
-    use sa_mesh_shared_output_variables
-
     !> Required for file object and CLASS.ini file index.
     use model_files_variables
+
+    !> For the 'ShedGridParams' type, 'ro%' run options type, and SA_MESH parameters.
+    use sa_mesh_shared_variables
 
     !> Required for 'NRSOILAYEREADFLAG'.
     use FLAGS
@@ -62,7 +58,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     read(iun, 1000) TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6
     read(iun, 1000) NAME1, NAME2, NAME3, NAME4, NAME5, NAME6
     read(iun, 1000) PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
-    read(iun, *) DEGLAT, DEGLON, pm_gru%sfp%zrfm, pm_gru%sfp%zrfh, pm_gru%sfp%zbld, pm_gru%tp%gc, shd%wc%ILG, i, m
+    read(iun, *) DEGLAT, DEGLON, pm_gru%sfp%zrfm(1), pm_gru%sfp%zrfh(1), pm_gru%sfp%zbld(1), pm_gru%tp%gc(1), shd%wc%ILG, i, m
 
     !> Check that the number of GRUs matches the drainage database value.
     if (NTYPE /= m .and. NTYPE > 0) then
@@ -108,10 +104,10 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
         read(iun, *) (pm_gru%slp%sand(m, j), j = 1, ignd)
         read(iun, *) (pm_gru%slp%clay(m, j), j = 1, ignd)
         read(iun, *) (pm_gru%slp%orgm(m, j), j = 1, ignd)
-        read(iun, *) (stasrow%sl%tbar(m, j), j = 1, ignd), stasrow%cnpy%tcan(m), stasrow%sno%tsno(m), stasrow%sfc%tpnd(m)
-        read(iun, *) (stasrow%sl%thlq(m, j), j = 1, ignd), (stasrow%sl%thic(m, j), j = 1, ignd), stasrow%sfc%zpnd(m)
-        read(iun, *) stasrow%cnpy%rcan(m), stasrow%cnpy%sncan(m), stasrow%sno%sno(m), stasrow%sno%albs(m), stasrow%sno%rhos(m), &
-            stasrow%cnpy%gro(m)
+        read(iun, *) (stas_gru%sl%tbar(m, j), j = 1, ignd), stas_gru%cnpy%tcan(m), stas_gru%sno%tsno(m), stas_gru%sfc%tpnd(m)
+        read(iun, *) (stas_gru%sl%thlq(m, j), j = 1, ignd), (stas_gru%sl%thic(m, j), j = 1, ignd), stas_gru%sfc%zpnd(m)
+        read(iun, *) stas_gru%cnpy%rcan(m), stas_gru%cnpy%sncan(m), stas_gru%sno%sno(m), stas_gru%sno%albs(m), &
+            stas_gru%sno%rhos(m), stas_gru%cnpy%gro(m)
     end do
 
 !todo: Make sure these variables are documented properly (for CLASS output, not currently used)
@@ -139,9 +135,9 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
             !> Distribute parameters and initial states to lower layers whose values might not be defined.
             if (ignd > 0) then
-                stasrow%sl%tbar(m, j) = stasrow%sl%tbar(m, ignd) !note333 see read_s_temperature_txt.f for more TBAR information
-                stasrow%sl%thlq(m, j) = stasrow%sl%thlq(m, ignd) !note444 see read_s_moisture_txt.f for more THLQ information
-                stasrow%sl%thic(m, j) = stasrow%sl%thic(m, ignd)
+                stas_gru%sl%tbar(m, j) = stas_gru%sl%tbar(m, ignd) !note333 see read_s_temperature_txt.f for more TBAR information
+                stas_gru%sl%thlq(m, j) = stas_gru%sl%thlq(m, ignd) !note444 see read_s_moisture_txt.f for more THLQ information
+                stas_gru%sl%thic(m, j) = stas_gru%sl%thic(m, ignd)
                 pm_gru%slp%sand(m, j) = pm_gru%slp%sand(m, ignd)
                 pm_gru%slp%clay(m, j) = pm_gru%slp%clay(m, ignd)
                 pm_gru%slp%orgm(m, j) = pm_gru%slp%orgm(m, ignd)

@@ -5,6 +5,8 @@
 !>
 module input_parameters
 
+    implicit none
+
     !* INPUTPARAMSFORM: Determines how parameters are read from file.
     !>  Options:
     !>      - ini:  From CLASS.ini and Hydrology.ini (default).
@@ -152,7 +154,7 @@ module input_parameters
         type(soil_parameters) :: slp
         type(hydraulic_parameters) :: hp
         logical :: inid = .false.
-        character(len = 4) unit
+        character(len = 4) :: unit = ''
     end type
 
     !> SA_MESH shared input parameters.
@@ -174,6 +176,9 @@ module input_parameters
 
         !> Output variables.
         integer, intent(out), optional :: ierr
+
+        !> Return if the instance is already initialized.
+        if (pm%inid) return
 
         !> Allocate elements in the parameter type.
         allocate(pm%tp%gc(n), pm%tp%fare(n), pm%tp%xslp(n), pm%tp%mid(n), &

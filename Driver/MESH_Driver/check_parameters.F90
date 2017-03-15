@@ -31,11 +31,8 @@
 !>
 subroutine check_parameters(shd)
 
-    !> Required for 'ShedGridParams' type.
-    use shd_variables
-
-    !> Required for parameters ('ROW' indexing).
-    use input_parameters
+    !> Required for 'ShedGridParams' type and SA_MESH parameters.
+    use sa_mesh_shared_variables
 
     !> Required for 'FROZENSOILINFILFLAG' and 'SOILINIFLAG'
     use FLAGS

@@ -110,10 +110,8 @@ module RUNCLASS36_config
 
         use mpi_shared_variables
 !-        use mpi_utilities
-        use input_parameters
-        use sa_mesh_shared_variables
-!-        use sa_mesh_shared_output_variables
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes

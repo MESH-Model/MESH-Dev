@@ -14,9 +14,8 @@ module RUNSVS113_config
     subroutine RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
 
         use mpi_shared_variables
-        use input_parameters
-        use sa_mesh_shared_variables
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
