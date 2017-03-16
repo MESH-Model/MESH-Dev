@@ -38,25 +38,26 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     type(fl_ids):: fls
 
     !> Local variables.
-    integer NA, NTYPE, NML, NSL, ierr, k, n, i, m, j
+    integer NA, NAA, NTYPE, NML, NSL, ierr, k, n, i, m, j
+    character(len = 100), dimension(:), allocatable :: list_errors, list_warnings
 
-!> ====================================
-!> read the RUN_OPTIONS input file called "MESH_input_run_options.ini"
-!> and SET or RESET any CONTROL FLAGS
-!> and READ the GRID OUTPUT DIRECTORIES.
+    !>
+    !> RUN OPTIONS.
+    !>  Run options are read at the beginning of the run from
+    !>  MESH_input_run_options.ini.
+    !>
     call READ_RUN_OPTIONS(ts, cm, fls)
 
-    !> Open status file.
+    !> Open the status file after reading run options, in case MODELINFOOUTFLAG
+    !> has been set to zero.
     if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
         open(58, file = './' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
     end if
 
-!> And Open and read in values from new_shd.r2c file
-!> *********************************************************************
-!> DRAINAGE DATABASE (BASIN SHD) (DRAINAGE_DATABASE.TXT):
-!> IS NO LONGER USED.  DRAINAGE_DATABASE.TXT HAS BEEN REPLACED WITH
-!> THE BASIN SHD FILE.  READ_SHED_EF, FROM STAND-ALONE RTE.EXE
-!> (WATROUTE), IS CALLED TO READ THE NEW FILE.
+    !>
+    !> DRAINAGE DATABASE.
+    !>
+
     if (SHDFILEFLAG == 1) then
 
     open(fls%fl(mfk%f20)%iun, file=adjustl(trim(fls%fl(mfk%f20)%fn)), status='old', iostat=ierr)
@@ -216,23 +217,80 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     !> Assign shd values to local variables.
     NA = shd%NA
+    NAA = shd%NAA
     NTYPE = shd%lc%NTYPE
 
-    if (shd%xCount > 100) then
-        write(6, *) &
-            'WARNING: The width of the basin is very high. ', &
-            'This may negatively impact performance.'
+!    if (shd%xCount > 100) then
+!        write(6, *) &
+!            'WARNING: The width of the basin is very high. ', &
+!            'This may negatively impact performance.'
+!    end if
+!    if (shd%yCount > 100) then
+!        write(6, *) &
+!            'WARNING: The height of the basin is very high. ', &
+!            'This may negatively impact performance.'
+!    end if
+!    if (shd%lc%ILG > 1500) then
+!        write(6, *) &
+!            'WARNING: The number of grid squares in the basin', &
+!            ' is very high. This may negatively impact performance.'
+!    end if
+
+    !> Allocate temporary message variables.
+    allocate(list_errors(NAA*4), list_warnings(NAA*1))
+    list_errors = ''; list_warnings = ''
+
+    !> Check for values that will likely stop the model.
+    ierr = 0
+    if (any(shd%SLOPE_CHNL <= 0.0 .and. shd%NEXT > 0)) then
+        forall (n = 1:NAA, shd%SLOPE_CHNL(n) <= 0 .and. shd%NEXT(n) > 0) list_errors(n) = 'Invalid or negative channel slope'
+        ierr = radix(2)**1
     end if
-    if (shd%yCount > 100) then
-        write(6, *) &
-            'WARNING: The height of the basin is very high. ', &
-            'This may negatively impact performance.'
+    if (any(shd%CHNL_LEN <= 0.0 .and. shd%NEXT > 0)) then
+        forall (n = 1:NAA, shd%CHNL_LEN(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(2*n) = 'Invalid or negative channel length'
+        ierr = radix(2)**1
     end if
-    if (shd%lc%ILG > 1500) then
-        write(6, *) &
-            'WARNING: The number of grid squares in the basin', &
-            ' is very high. This may negatively impact performance.'
+!+    if (any(shd%SLOPE_INT <= 0.0 .and. shd%NEXT > 0)) then
+!+        forall (n = 1:NAA, shd%SLOPE_INT(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(n) = 'Invalid or negative interior slope'
+!+        ierr = radix(2)**1
+!+    end if
+    if (any(shd%AREA <= 0.0 .and. shd%NEXT > 0)) then
+        forall (n = 1:NAA, shd%AREA(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(3*n) = 'Invalid or negative grid area'
+        ierr = radix(2)**1
     end if
+    if (any(shd%DA <= 0.0 .and. shd%NEXT > 0)) then
+        forall (n = 1:NAA, shd%DA(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(4*n) = 'Invalid or negative drainage area'
+        ierr = radix(2)**1
+    end if
+
+    !> Check for values that might be incorrect, but are unlikely to stop the model.
+    forall (n = 1:NAA, shd%NEXT(n) <= n .and. shd%NEXT(n) > 0) list_warnings(n) = 'NEXT might be upstream of RANK'
+    if (any(len_trim(list_warnings) > 0)) ierr = ierr + radix(2)**2
+
+    !> Write error messages to screen.
+    if (btest(ierr, 1) .and. ipid == 0) then
+        print "(/1x, 'ERROR: Errors have been found in the drainage database: ', (a))", adjustl(trim(fls%fl(mfk%f20)%fn))
+        do i = 1, 4
+            do n = 1, NAA
+                if (len_trim(list_errors(i*n)) > 0) print "(3x, 'ERROR: ', (a), ' at RANK ', i8)", &
+                    adjustl(trim(list_errors(i*n))), n
+            end do
+        end do
+    end if
+
+    !> Write warning messages to screen.
+    if (btest(ierr, 2) .and. ipid == 0) then
+        print "(/1x, 'WARNING: Errors might exist in the drainage database: ', (a))", adjustl(trim(fls%fl(mfk%f20)%fn))
+        do n = 1, NAA
+            if (len_trim(list_warnings(n)) > 0) print "(3x, 'WARNING: ', (a), ' at RANK ', i8)", adjustl(trim(list_warnings(n))), n
+        end do
+    end if
+
+    !> Stop if the prior messages contain an error.
+    if (btest(ierr, 1)) stop
+
+    !> Deallocate temporary message variables.
+    deallocate(list_errors, list_warnings)
 
     !> Determine coordinates for intermediate grid locations.
     allocate(shd%ylat(NA), shd%xlng(NA))
