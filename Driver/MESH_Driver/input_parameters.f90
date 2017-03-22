@@ -12,7 +12,8 @@ module input_parameters
     !>      - ini:  From CLASS.ini and Hydrology.ini (default).
     !>      - csv:  From CSV by GRU.
     !>      - r2c:  From r2c by grid.
-    character(len = 80), save :: INPUTPARAMSFORM = 'INPUTPARAMSFORM ini'
+    character(len = 80), save :: INPUTPARAMSFORM = ''
+    integer, save :: INPUTPARAMSFORMFLAG = 1
 
     !> Type: Tile parameters.
     !>  Physiographic parameters of the file.

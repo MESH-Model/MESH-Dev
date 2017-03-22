@@ -780,8 +780,8 @@
                         end do
                         cifg%PROCESS_ACTIVE = (cifg%ts_flag > 0)
 
-                    !> INPUTPARAMSFORM
-                    case ('INPUTPARAMSFORM')
+                    !> INPUTPARAMSFORMFLAG
+                    case ('INPUTPARAMSFORMFLAG')
                         INPUTPARAMSFORM = adjustl(in_line)
 
                     !> Unrecognized flag.

@@ -34,7 +34,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     character(1) :: delim = ' '
 
     !> Local variables.
-    integer NA, NTYPE, NRVR, NML, NSL, k, i, m
+    integer NA, NTYPE, NRVR, NML, NSL, k, i
 
     !> Assign commonly used indices to local variables.
     NA = shd%NA
@@ -112,104 +112,110 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !> READ FROM FILE.
     !>
 
-    !> Parse the INPUTPARAMSFORM.
+    !> Parse the INPUTPARAMSFORM to get INPUTPARAMSFORMFLAG.
     call parse(INPUTPARAMSFORM, delim, out_args, nargs)
+    if (index(lowercase(INPUTPARAMSFORM), ' only ') > 0) INPUTPARAMSFORMFLAG = 0
+    if (index(lowercase(INPUTPARAMSFORM), ' ini ') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**0
+    if (index(lowercase(INPUTPARAMSFORM), ' r2c ') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**1
+    if (index(lowercase(INPUTPARAMSFORM), ' csv ') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**2
 
-    !> Read the parameter values.
-    select case (lowercase(out_args(1)))
+    !> Check for a bad value of INPUTPARAMSFORMFLAG.
+    if (INPUTPARAMSFORMFLAG == 0) then
+        if (ipid == 0) then
+            print "(1x, 'ERROR: Bad or unsupported input parameter file format.')"
+            print "(3x, 'Revise INPUTPARAMSFORMFLAG in ', (a), '.')", trim(adjustl(fls%fl(mfk%f53)%fn))
+        end if
+        stop
+    end if
 
-        !> r2c: From r2c by grid.
+    !> Read from the 'ini' files.
+    if (btest(INPUTPARAMSFORMFLAG, 0)) then
+        call READ_PARAMETERS_CLASS(shd, fls, cm)
+        call READ_PARAMETERS_HYDROLOGY(shd, fls)
+        call READ_SOIL_INI(shd, fls)
+    end if
 
-        !> csv: From CSV by GRU.
-
-        !> ini: From CLASS.ini and Hydrology.ini (default).
-        case default
-            call READ_PARAMETERS_CLASS(shd, fls, cm)
-            call READ_PARAMETERS_HYDROLOGY(shd, fls)
-            call READ_SOIL_INI(shd, fls)
-
-    end select
+    !> Read from the 'r2c' file.
+    if (btest(INPUTPARAMSFORMFLAG, 1)) then
+        call read_parameters_r2c(shd, 100, 'MESH_input_parameters.r2c')
+    end if
 
     !>
     !> DISTRIBUTE.
     !>
 
-    !> Distribute the values.
-    select case (lowercase(out_args(1)))
+    !> Constants.
+    pm%sfp%zrfm(il1:il2) = pm_gru%sfp%zrfm(1)
+    pm%sfp%zrfh(il1:il2) = pm_gru%sfp%zrfh(1)
+    pm%sfp%zbld(il1:il2) = pm_gru%sfp%zbld(1)
+    pm%tp%gc(il1:il2) = pm_gru%tp%gc(1)
 
-        !> From grid.
-        !>  r2c: From r2c by grid.
+    !> From GRU.
+    if (btest(INPUTPARAMSFORMFLAG, 0) .or. btest(INPUTPARAMSFORMFLAG, 2)) then
+        do k = il1, il2
 
-        !> From GRU.
-        !>  csv: From CSV by GRU.
-        !>  ini: From CLASS.ini and Hydrology.ini (default).
-        case default
+            !> GRU index.
+            i = shd%lc%JLMOS(k)
 
-            !> Distribute the parameter values to the tile (GAT) level.
-            do k = il1, il2
+            !> SA_MESH.
+            pm%tp%fare(k) = pm_gru%tp%fare(i)
+            pm%tp%mid(k) = max(1, pm_gru%tp%mid(i))
+            pm%cp%fcan(k, :) = pm_gru%cp%fcan(i, :)
+            pm%cp%lnz0(k, :) = pm_gru%cp%lnz0(i, :)
+            pm%cp%alvc(k, :) = pm_gru%cp%alvc(i, :)
+            pm%cp%alic(k, :) = pm_gru%cp%alic(i, :)
+            pm%cp%lamx(k, :) = pm_gru%cp%lamx(i, :)
+            pm%cp%lamn(k, :) = pm_gru%cp%lamn(i, :)
+            pm%cp%cmas(k, :) = pm_gru%cp%cmas(i, :)
+            pm%cp%root(k, :) = pm_gru%cp%root(i, :)
+            pm%cp%rsmn(k, :) = pm_gru%cp%rsmn(i, :)
+            pm%cp%qa50(k, :) = pm_gru%cp%qa50(i, :)
+            pm%cp%vpda(k, :) = pm_gru%cp%vpda(i, :)
+            pm%cp%vpdb(k, :) = pm_gru%cp%vpdb(i, :)
+            pm%cp%psga(k, :) = pm_gru%cp%psga(i, :)
+            pm%cp%psgb(k, :) = pm_gru%cp%psgb(i, :)
+            pm%slp%sdep(k) = pm_gru%slp%sdep(i)
+            pm%hp%drn(k) = pm_gru%hp%drn(i)
+            pm%tp%xslp(k) = pm_gru%tp%xslp(i)
+            pm%hp%dd(k) = pm_gru%hp%dd(i)/1000.0
+            pm%hp%mann(k) = pm_gru%hp%mann(i)
+            pm%hp%grkf(k) = pm_gru%hp%grkf(i)
+            pm%hp%ks(k) = pm_gru%hp%ks(i)
+            pm%slp%sand(k, :) = pm_gru%slp%sand(i, :)
+            pm%slp%clay(k, :) = pm_gru%slp%clay(i, :)
+            pm%slp%orgm(k, :) = pm_gru%slp%orgm(i, :)
+            pm%snp%zsnl(k) = pm_gru%snp%zsnl(i)
+            pm%sfp%zplg(k) = pm_gru%sfp%zplg(i)
+            pm%snp%zpls(k) = pm_gru%snp%zpls(i)
 
-                !> Grab the indices of the grid and GRU.
-                i = shd%lc%ILMOS(k)
-                m = shd%lc%JLMOS(k)
+            !> Cropland irrigation module.
+            if (cifg%PROCESS_ACTIVE) then
+                cip%jdsow(k) = ciprot%jdsow(i)
+                cip%ldini(k) = ciprot%ldini(i)
+                cip%lddev(k) = ciprot%lddev(i)
+                cip%ldmid(k) = ciprot%ldmid(i)
+                cip%ldlate(k) = ciprot%ldlate(i)
+                cip%Kcini(k) = ciprot%Kcini(i)
+                cip%Kcdev(k) = ciprot%Kcdev(i)
+                cip%Kcmid(k) = ciprot%Kcmid(i)
+                cip%Kclate(k) = ciprot%Kclate(i)
+            end if
 
-                !> SA_MESH.
-                pm%sfp%zrfm(k) = pm_gru%sfp%zrfm(1)
-                pm%sfp%zrfh(k) = pm_gru%sfp%zrfh(1)
-                pm%sfp%zbld(k) = pm_gru%sfp%zbld(1)
-                pm%tp%gc(k) = pm_gru%tp%gc(1)
-                pm%tp%fare(k) = pm_gru%tp%fare(m)
-                pm%tp%mid(k) = max(1, pm_gru%tp%mid(m))
-                pm%cp%fcan(k, :) = pm_gru%cp%fcan(m, :)
-                pm%cp%lnz0(k, :) = pm_gru%cp%lnz0(m, :)
-                pm%cp%alvc(k, :) = pm_gru%cp%alvc(m, :)
-                pm%cp%alic(k, :) = pm_gru%cp%alic(m, :)
-                pm%cp%lamx(k, :) = pm_gru%cp%lamx(m, :)
-                pm%cp%lamn(k, :) = pm_gru%cp%lamn(m, :)
-                pm%cp%cmas(k, :) = pm_gru%cp%cmas(m, :)
-                pm%cp%root(k, :) = pm_gru%cp%root(m, :)
-                pm%cp%rsmn(k, :) = pm_gru%cp%rsmn(m, :)
-                pm%cp%qa50(k, :) = pm_gru%cp%qa50(m, :)
-                pm%cp%vpda(k, :) = pm_gru%cp%vpda(m, :)
-                pm%cp%vpdb(k, :) = pm_gru%cp%vpdb(m, :)
-                pm%cp%psga(k, :) = pm_gru%cp%psga(m, :)
-                pm%cp%psgb(k, :) = pm_gru%cp%psgb(m, :)
-                pm%slp%sdep(k) = pm_gru%slp%sdep(m)
-                pm%hp%drn(k) = pm_gru%hp%drn(m)
-                if (allocated(shd%SLOPE_INT)) then
-                    pm%tp%xslp(k) = shd%SLOPE_INT(i) !taken from the drainage database.
-                else
-                    pm%tp%xslp(k) = pm_gru%tp%xslp(m) !taken by GRU from CLASS.ini
-                end if
-                if (allocated(shd%DRDN)) then
-                    pm%hp%dd(k) = shd%DRDN(i) !taken from the drainage database.
-                else
-                    pm%hp%dd(k) = pm_gru%hp%dd(m)/1000.0 !taken from CLASS.ini and from km/km^2 to m/m^2 for WATROF.
-                end if
-                pm%hp%mann(k) = pm_gru%hp%mann(m)
-                pm%hp%grkf(k) = pm_gru%hp%grkf(m)
-                pm%hp%ks(k) = pm_gru%hp%ks(m)
-                pm%slp%sand(k, :) = pm_gru%slp%sand(m, :)
-                pm%slp%clay(k, :) = pm_gru%slp%clay(m, :)
-                pm%slp%orgm(k, :) = pm_gru%slp%orgm(m, :)
-                pm%snp%zsnl(k) = pm_gru%snp%zsnl(m)
-                pm%sfp%zplg(k) = pm_gru%sfp%zplg(m)
-                pm%snp%zpls(k) = pm_gru%snp%zpls(m)
+        end do !k = il1, il2
+    end if
 
-                !> Cropland irrigation module.
-                if (cifg%PROCESS_ACTIVE) then
-                    cip%jdsow(k) = ciprot%jdsow(m)
-                    cip%ldini(k) = ciprot%ldini(m)
-                    cip%lddev(k) = ciprot%lddev(m)
-                    cip%ldmid(k) = ciprot%ldmid(m)
-                    cip%ldlate(k) = ciprot%ldlate(m)
-                    cip%Kcini(k) = ciprot%Kcini(m)
-                    cip%Kcdev(k) = ciprot%Kcdev(m)
-                    cip%Kcmid(k) = ciprot%Kcmid(m)
-                    cip%Kclate(k) = ciprot%Kclate(m)
-                end if
+    !> From grid.
+    if (btest(INPUTPARAMSFORMFLAG, 1)) then
+        do k = il1, il2
 
-            end do !k = il1, il2
+            !> Grid index.
+            i = shd%lc%ILMOS(k)
 
-    end select
+            !> SA_MESH.
+            pm%tp%xslp(k) = shd%SLOPE_INT(i)
+            pm%hp%dd(k) = shd%DRDN(i)
+
+        end do !k = il1, il2
+    end if
 
 end subroutine
