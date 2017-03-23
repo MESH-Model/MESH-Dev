@@ -313,6 +313,8 @@
 
                 !> Read and parse the entire line.
                 call readline(iun, in_line, ierr)
+                if (index(in_line, '#') > 2) in_line = in_line(1:index(in_line, '#') - 1)
+                if (index(in_line, '!') > 2) in_line = in_line(1:index(in_line, '!') - 1)
                 call compact(in_line)
                 call parse(in_line, delim, out_args, nargs)
                 if (.not. nargs > 0) then

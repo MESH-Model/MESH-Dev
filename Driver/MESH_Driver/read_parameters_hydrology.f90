@@ -172,7 +172,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), wfp%r2(j), ierr)
+                                    if (WF_RTE_flgs%PROCESS_ACTIVE) call value(out_args(j + 1), wfp%r2(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -183,7 +183,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), wfp%r1(j), ierr)
+                                    if (WF_RTE_flgs%PROCESS_ACTIVE) call value(out_args(j + 1), wfp%r1(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -194,7 +194,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), wfp%aa1(j), ierr)
+                                    if (WF_RTE_flgs%PROCESS_ACTIVE) call value(out_args(j + 1), wfp%aa1(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -205,7 +205,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), wfp%aa2(j), ierr)
+                                    if (WF_RTE_flgs%PROCESS_ACTIVE) call value(out_args(j + 1), wfp%aa2(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -216,7 +216,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), wfp%aa3(j), ierr)
+                                    if (WF_RTE_flgs%PROCESS_ACTIVE) call value(out_args(j + 1), wfp%aa3(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -227,7 +227,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), wfp%aa4(j), ierr)
+                                    if (WF_RTE_flgs%PROCESS_ACTIVE) call value(out_args(j + 1), wfp%aa4(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -243,7 +243,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
         !> Original format of the hydrology.ini file.
         case default
             call readline(iun, in_line, ierr)
-            read(in_line, *, iostat = ierr) (wfp%r2(j), j = 1, NRVR)
+            if (WF_RTE_flgs%PROCESS_ACTIVE) read(in_line, *, iostat = ierr) (wfp%r2(j), j = 1, NRVR)
             if (ierr /= 0) then
                 print 8110, NRVR
                 goto 998
@@ -253,9 +253,11 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
     !> Check values of the river channel roughness factor.
     do i = 1, NRVR
-        if (wfp%r2(i) <= 0.0) then
-            print 8110, NRVR
-            goto 998
+        if (WF_RTE_flgs%PROCESS_ACTIVE) then
+            if (wfp%r2(i) <= 0.0) then
+                print 8110, NRVR
+                goto 998
+            end if
         end if
     end do
 

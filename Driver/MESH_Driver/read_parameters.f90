@@ -45,6 +45,12 @@ subroutine read_parameters(fls, shd, cm, ierr)
     NSL = shd%lc%IGND
     NRVR = shd%NRVR
 
+!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+!TEMP
+    WF_RTE_flgs%PROCESS_ACTIVE = .false.
+    rteflg%PROCESS_ACTIVE = .true.
+!<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     !>
     !> ALLOCATE AND INITIALIZE VARIABLES.
     !>
@@ -133,10 +139,10 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
     !> Parse the INPUTPARAMSFORM to get INPUTPARAMSFORMFLAG.
     call parse(INPUTPARAMSFORM, delim, out_args, nargs)
-    if (index(lowercase(INPUTPARAMSFORM), ' only ') > 0) INPUTPARAMSFORMFLAG = 0
-    if (index(lowercase(INPUTPARAMSFORM), ' ini ') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**0
-    if (index(lowercase(INPUTPARAMSFORM), ' r2c ') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**1
-    if (index(lowercase(INPUTPARAMSFORM), ' csv ') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**2
+    if (index(lowercase(INPUTPARAMSFORM), 'only') > 0) INPUTPARAMSFORMFLAG = 0
+    if (index(lowercase(INPUTPARAMSFORM), 'ini') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**0
+    if (index(lowercase(INPUTPARAMSFORM), 'r2c') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**1
+    if (index(lowercase(INPUTPARAMSFORM), 'csv') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**2
 
     !> Check for a bad value of INPUTPARAMSFORMFLAG.
     if (INPUTPARAMSFORMFLAG == 0) then
@@ -223,8 +229,8 @@ subroutine read_parameters(fls, shd, cm, ierr)
         end do !k = il1, il2
     end if
 
-    !> From river class (IAK).
-    if (NRVR > 0 .and. ipid == 0) then
+    !> From river class (IAK) if not read by grid.
+    if (NRVR > 0 .and. .not. btest(INPUTPARAMSFORMFLAG, 1)) then
         do k = 1, NAA
 
             !> River class index (IAK).
@@ -254,8 +260,8 @@ subroutine read_parameters(fls, shd, cm, ierr)
             i = shd%lc%ILMOS(k)
 
             !> SA_MESH.
-            pm%tp%xslp(k) = shd%SLOPE_INT(i)
-            pm%hp%dd(k) = shd%DRDN(i)
+            if (allocated(shd%SLOPE_INT)) pm%tp%xslp(k) = shd%SLOPE_INT(i)
+            if (allocated(shd%DRDN)) pm%hp%dd(k) = shd%DRDN(i)
 
         end do !k = il1, il2
     end if
