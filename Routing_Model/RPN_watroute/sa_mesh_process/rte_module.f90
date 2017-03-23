@@ -13,6 +13,32 @@ module rte_module
     !*  convthreshusr: convergence level for channel routing.
     real(kind = 4) :: convthreshusr = 0.01
 
+    !> Input parameters.
+    type rte_params
+        real, dimension(:), allocatable :: flz, pwr, r1n, r2n, mndr, aa2, aa3, aa4, widep
+    end type
+
+    !> Instances of the input parameters.
+    !*  rtepm: Grid-based (GRD, NA/NAA).
+    !*  rtepm_iak: River class-based (IAK).
+    type(rte_params), save :: rtepm, rtepm_iak
+
+    !> Configuration flags.
+    type rte_flags
+        logical :: PROCESS_ACTIVE = .false.
+    end type
+
+    !> Instance of control flags.
+    type(rte_flags), save :: rteflg
+
+    !> Option flags.
+    type rte_options
+
+    end type
+
+    !> Instance of option flags.
+    type(rte_options), save :: rteops
+
     contains
 
     !>
@@ -24,7 +50,10 @@ module rte_module
         !> area_watflood: Shared variables used throughout rte code.
         use area_watflood
 
-        !> sa_mesh_shared_variables: Variables and types from SA_MESH.
+        !> mpi_module: Required for 'ipid'.
+        use mpi_module
+
+        !> sa_mesh_shared_variables: Variables, parameters, and types from SA_MESH.
         use sa_mesh_shared_variables
 
         !> model_output_variabletypes: Streamflow and reservoir output variables for SA_MESH.
@@ -40,6 +69,9 @@ module rte_module
         !> Local variables.
         integer n, l
         real ry, rx
+
+        !> Return if not the head node or if the process is not active.
+        if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
 
         !> Transfer grid properties.
         ycount = shd%yCount
@@ -101,8 +133,9 @@ module rte_module
         !> Allocate and assign parameter values.
         allocate(flz(na), flz2(na), pwr(na), r1n(na), r2n(na), rlake(na), &
                  mndr(na), aa2(na), aa3(na), aa4(na), theta(na), widep(na), kcond(na))
-        flz = 0.3e-07; flz2 = 0.0; pwr = 2.6; r1n = 0.3; r2n = 0.2; rlake = 0.0
-        mndr = 1.0; aa2 = 0.1; aa3 = 0.9; aa4 = 0.67; theta = -1.0; widep = 20.0; kcond = 0.1
+        flz = rtepm%flz; pwr = rtepm%pwr; r1n = rtepm%r1n; r2n = rtepm%r2n
+        mndr = rtepm%mndr; aa2 = rtepm%aa2; aa3 = rtepm%aa3; aa4 = rtepm%aa4; widep = rtepm%widep
+        flz2 = 0.0; rlake = 0.0; theta = 0.0; kcond = 0.0
 
         !> Adjust the calculated channel length by the degree of meandering.
         rl = rl*mndr
@@ -282,9 +315,17 @@ module rte_module
         !> area_watflood: Shared variables used throughout rte code.
         use area_watflood
 
-        use MODEL_OUTPUT
-        use model_output_variabletypes
+        !> mpi_module: Required for 'ipid'.
+        use mpi_module
+
+        !> sa_mesh_shared_variables: Variables, parameters, and types from SA_MESH.
         use sa_mesh_shared_variables
+
+        !> MODEL_OUTPUT: water_balance type for 'wb'.
+        use MODEL_OUTPUT
+
+        !> model_output_variabletypes: Streamflow and reservoir output variables for SA_MESH.
+        use model_output_variabletypes
 
         !> Basin properties from SA_MESH.
         type(ShedGridParams) :: shd
@@ -314,6 +355,9 @@ module rte_module
 
         !> Local variables not used.
         character(len = 14) date
+
+        !> Return if not the head node or if the process is not active.
+        if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
 
 !todo: move this
         if (mod(ic%now%hour, 24) == 0 .and. ic%now%mins == 0) then
@@ -448,8 +492,8 @@ module rte_module
         !> for the next time step.
 
 !EG_MOD prepare arrays for storing average flows
-        if (.not. allocated(avr_qo)) allocate(avr_qo(naa))
-        avr_qo(1:naa) = 0.0
+        if (.not. allocated(avr_qo)) allocate(avr_qo(na))
+        avr_qo = 0.0
 
         !> ROUTE ROUTES WATER THROUGH EACH SQUARE USING STORAGE ROUTING.
         !> rev. 9.3.11  Feb.  17/07  - NK: force hourly time steps for runoff
@@ -501,7 +545,7 @@ module rte_module
 
         !> Return average streamflow value to SA_MESH.
         do l = 1, no
-            stfl%qsyn(l) = avr_qo(fms%stmg%rnk(l))
+            stfl%qsyn(l) = qo2(fms%stmg%rnk(l))
         end do
 
 !todo: move this

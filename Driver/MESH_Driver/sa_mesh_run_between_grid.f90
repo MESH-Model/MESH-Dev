@@ -6,14 +6,14 @@ module sa_mesh_run_between_grid
 
     subroutine run_between_grid_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
+        use FLAGS
         use model_dates
         use climate_forcing
         use model_output_variabletypes
         use MODEL_OUTPUT
-        use flags
 
         use SA_RTE_module, only: SA_RTE_init
         use WF_ROUTE_config, only: WF_ROUTE_init
@@ -80,7 +80,7 @@ module sa_mesh_run_between_grid
         call SA_RTE_init(shd)
 
         !> Watflood, 1988.
-!        call WF_ROUTE_init(shd, fls, stfl, rrls)
+        call WF_ROUTE_init(shd, fls, stfl, rrls)
 
         !> RPN RTE.
         call run_rte_init(shd, stfl, rrls)
@@ -94,14 +94,14 @@ module sa_mesh_run_between_grid
 
     subroutine run_between_grid(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
+        use FLAGS
         use model_dates
         use climate_forcing
         use model_output_variabletypes
         use MODEL_OUTPUT
-        use flags
 
         use SA_RTE_module, only: SA_RTE
         use WF_ROUTE_module, only: WF_ROUTE_between_grid
@@ -184,7 +184,7 @@ module sa_mesh_run_between_grid
         call SA_RTE(shd, wb)
 
         !> Watflood, 1988.
-!        call WF_ROUTE_between_grid(shd, wb, stfl, rrls)
+        call WF_ROUTE_between_grid(shd, wb, stfl, rrls)
 
         !> RPN RTE.
         call run_rte_between_grid(shd, wb, stfl, rrls)
@@ -198,7 +198,7 @@ module sa_mesh_run_between_grid
 
     subroutine run_between_grid_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variabletypes
         use sa_mesh_shared_variables
         use model_dates
@@ -222,7 +222,7 @@ module sa_mesh_run_between_grid
         if (ipid /= 0) return
 
         !> Watflood, 1988.
-!        call WF_ROUTE_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
+        call WF_ROUTE_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
         call run_save_basin_output_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 

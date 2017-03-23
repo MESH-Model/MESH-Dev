@@ -173,12 +173,12 @@ C
             THFC(k, j) = 0.0
             PSIWLT(k, j) = 0.0
           else if (ISAND(k, j) == -2) then
-            THPOR(k, j) = THPORG(min(j, 3))
-            THLRET(k, j) = THRORG(min(j, 3))
-            THLMIN(k, j) = THMORG(min(j, 3))
-            BI(k, j) = BORG(min(j, 3))
-            PSISAT(k, j) = PSISORG(min(j, 3))
-            GRKSAT(k, j) = GRKSORG(min(j, 3))
+            THPOR(k, j) = THPORG(max(1,min(nint(ORGM(k, j)), 3)))
+            THLRET(k, j) = THRORG(max(1,min(nint(ORGM(k, j)), 3)))
+            THLMIN(k, j) = THMORG(max(1,min(nint(ORGM(k, j)), 3)))
+            BI(k, j) = BORG(max(1,min(nint(ORGM(k, j)), 3)))
+            PSISAT(k, j) = PSISORG(max(1,min(nint(ORGM(k, j)), 3)))
+            GRKSAT(k, j) = GRKSORG(max(1,min(nint(ORGM(k, j)), 3)))
             THLRAT(k, j) = 0.5**(1.0/(2.0*BI(k, j) + 3.0))
             HCPS(k, j) = HCPOM
             TCS(k, j) = TCOM

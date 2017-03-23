@@ -6,7 +6,7 @@ module RUNCLASS36_config
     implicit none
 
     !> LAND SURFACE DIAGNOSTIC VARIABLES.
-    real, dimension(:), allocatable :: SNOGRD
+!-    real, dimension(:), allocatable :: SNOGRD
 
     !>  CONSTANTS AND TEMPORARY VARIABLES.
     real FSDOWN1, FSDOWN2, FSDOWN3, RDAY, &
@@ -108,12 +108,9 @@ module RUNCLASS36_config
 
     subroutine RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_shared_variables
-!-        use mpi_utilities
-        use sa_mesh_shared_parameters
-        use sa_mesh_shared_variables
-        use sa_mesh_shared_output_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -203,32 +200,13 @@ module RUNCLASS36_config
         NML = shd%lc%NML
 
         !> ALLOCATE ALL VARIABLES
-        allocate(SNOGRD(NA))
+!-        allocate(SNOGRD(NA))
 
 1114 format(/1x, 'Error allocating ', a, ' variables.', &
             /1x, 'Check that these bounds are within an acceptable range.', /)
 1118 format(3x, a, ': ', i6)
 
-        !> LAND SURFACE PROGNOSTIC VARIABLES (CLASS.INI):
-        allocate(FRZCGAT(NML), stat = ierr)
-
-        !> PBSM PROGNOSTIC VARIABLES
-        allocate(DrySnowGAT(NML), SnowAgeGAT(NML), &
-                 TSNOdsGAT(NML), RHOSdsGAT(NML), &
-                 DriftGAT(NML), SublGAT(NML), DepositionGAT(NML), &
-                 ZSNOCS(NML), ZSNOGS(NML), &
-                 ZSNOWC(NML), ZSNOWG(NML), &
-                 HCPSCS(NML), HCPSGS(NML), &
-                 HCPSC(NML), HCPSG(NML), &
-                 TSNOWC(NML), TSNOWG(NML), &
-                 RHOSC(NML), RHOSG(NML), &
-                 XSNOWC(NML), XSNOWG(NML), &
-                 XSNOCS(NML), XSNOGS(NML), stat = ierr)
-
-        allocate(XDGAT(NML), &
-                 KSGAT(NML), &
-                 fetchGAT(NML), HtGAT(NML), N_SGAT(NML), A_SGAT(NML), &
-                 DistribGAT(NML), stat = ierr)
+        allocate(XDGAT(NML), KSGAT(NML), stat = ierr)
 
         if (ierr /= 0) then
             print 1114, 'canopy and soil info.'
@@ -608,24 +586,28 @@ module RUNCLASS36_config
 
         cdv%ITCT = 0
 
-        !> FROZENSOILINFILFLAG
+        !> FROZENSOILINFILFLAG 1.
+        allocate(FRZCGAT(NML), stat = ierr)
         allocate(INFILTYPE(NML), SI(NML), TSI(NML), &
                  SNOWMELTD(NML), SNOWMELTD_LAST(NML), SNOWINFIL(NML), &
                  CUMSNOWINFILCS(NML), MELTRUNOFF(NML), CUMSNOWINFILGS(NML))
-        NMELT = 1
-        INFILTYPE = 2 !> INITIALIZED WITH UNLIMITED INFILTRATION
-        SNOWMELTD = 0.0
-        SNOWINFIL = 0.0
-        CUMSNOWINFILCS = 0.0
-        CUMSNOWINFILGS = 0.0
-        MELTRUNOFF = 0.0
-        SI = 0.20
-        TSI = -0.10
-        do k = il2, il2
-            FRZCGAT(k) = hp%FRZCROW(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-        end do
+!todo: move to read_parameters
+        if (FROZENSOILINFILFLAG == 1) then
+            NMELT = 1
+            INFILTYPE = 2 !> INITIALIZED WITH UNLIMITED INFILTRATION
+            SNOWMELTD = 0.0
+            SNOWINFIL = 0.0
+            CUMSNOWINFILCS = 0.0
+            CUMSNOWINFILGS = 0.0
+            MELTRUNOFF = 0.0
+            SI = 0.20
+            TSI = -0.10
+            do k = il2, il2
+                FRZCGAT(k) = hp%FRZCROW(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end do
+        end if
 
-        !> PDMROF
+        !> IWF 2 (PDMROF) and IWF 3 (LATFLOW).
         allocate(CMINPDM(NML), CMAXPDM(NML), BPDM(NML), K1PDM(NML), &
                  K2PDM(NML), ZPNDPRECS(NML), ZPONDPREC(NML), ZPONDPREG(NML), &
                  ZPNDPREGS(NML), &
@@ -634,38 +616,41 @@ module RUNCLASS36_config
                  QM2CS(NML), QM2C(NML), QM2G(NML), QM2GS(NML), &
                  UMQ(NML), &
                  FSTRCS(NML), FSTRC(NML), FSTRG(NML), FSTRGS(NML))
-        ZPNDPRECS = 0.0
-        ZPONDPREC = 0.0
-        ZPONDPREG = 0.0
-        ZPNDPREGS = 0.0
-        ZPND = 0.0
-        UM1CS = 0.0
-        UM1C = 0.0
-        UM1G = 0.0
-        UM1GS = 0.0
-        QM1CS = 0.0
-        QM1C = 0.0
-        QM1G = 0.0
-        QM1GS = 0.0
-        QM2CS = 0.0
-        QM2C = 0.0
-        QM2G = 0.0
-        QM2GS = 0.0
-        UMQ = 0.0
-        FSTRCS = 0.0
-        FSTRC = 0.0
-        FSTRG = 0.0
-        FSTRGS = 0.0
-        FSTR = 0.0
-        do k = il1, il2
-            ik = shd%lc%ILMOS(k)
-            jk = shd%lc%JLMOS(k)
-            CMINPDM(k) = hp%CMINROW(ik, jk)
-            CMAXPDM(k) = hp%CMAXROW(ik, jk)
-            BPDM(k) = hp%BROW(ik, jk)
-            K1PDM(k) = hp%K1ROW(ik, jk)
-            K2PDM(k) = hp%K2ROW(ik, jk)
-        end do
+!todo: move to read_parameters
+        if (IWF == 2 .or. IWF == 3) then
+            ZPNDPRECS = 0.0
+            ZPONDPREC = 0.0
+            ZPONDPREG = 0.0
+            ZPNDPREGS = 0.0
+            ZPND = 0.0
+            UM1CS = 0.0
+            UM1C = 0.0
+            UM1G = 0.0
+            UM1GS = 0.0
+            QM1CS = 0.0
+            QM1C = 0.0
+            QM1G = 0.0
+            QM1GS = 0.0
+            QM2CS = 0.0
+            QM2C = 0.0
+            QM2G = 0.0
+            QM2GS = 0.0
+            UMQ = 0.0
+            FSTRCS = 0.0
+            FSTRC = 0.0
+            FSTRG = 0.0
+            FSTRGS = 0.0
+            FSTR = 0.0
+            do k = il1, il2
+                ik = shd%lc%ILMOS(k)
+                jk = shd%lc%JLMOS(k)
+                CMINPDM(k) = hp%CMINROW(ik, jk)
+                CMAXPDM(k) = hp%CMAXROW(ik, jk)
+                BPDM(k) = hp%BROW(ik, jk)
+                K1PDM(k) = hp%K1ROW(ik, jk)
+                K2PDM(k) = hp%K2ROW(ik, jk)
+            end do
+        end if
 
         !> Allocate variables for WATDRN3
         !> ******************************************************************
@@ -688,6 +673,21 @@ module RUNCLASS36_config
         !> Set initial SnowAge & DrySnow values for PBSM calculations
         !> (MK MacDonald, Sept 2010)
         !>**********************************************************************
+        allocate(DrySnowGAT(NML), SnowAgeGAT(NML), &
+                 TSNOdsGAT(NML), RHOSdsGAT(NML), &
+                 DriftGAT(NML), SublGAT(NML), DepositionGAT(NML), &
+                 ZSNOCS(NML), ZSNOGS(NML), &
+                 ZSNOWC(NML), ZSNOWG(NML), &
+                 HCPSCS(NML), HCPSGS(NML), &
+                 HCPSC(NML), HCPSG(NML), &
+                 TSNOWC(NML), TSNOWG(NML), &
+                 RHOSC(NML), RHOSG(NML), &
+                 XSNOWC(NML), XSNOWG(NML), &
+                 XSNOCS(NML), XSNOGS(NML), stat = ierr)
+        allocate(fetchGAT(NML), HtGAT(NML), N_SGAT(NML), A_SGAT(NML), &
+                 DistribGAT(NML), stat = ierr)
+        TSNOdsGAT = 0.0
+        RHOSdsGAT = 0.0
         if (PBSMFLAG == 1) then
             do k = il1, il2
                 if (cpv%SNO(k) <= 0.0) then
@@ -710,8 +710,6 @@ module RUNCLASS36_config
                 DistribGAT(k) = hp%DistribROW(ik, jk)
             end do
         end if !PBSMFLAG == 1
-        TSNOdsGAT = 0.0
-        RHOSdsGAT = 0.0
 
         !> *********************************************************************
         !> Call CLASSBG to set more CLASS variables
@@ -722,8 +720,8 @@ module RUNCLASS36_config
                      csfv%DELZW, csfv%ZBTW, csfv%ALGW, csfv%ALGD, &
                      csfv%SAND, csfv%CLAY, csfv%ORGM, shd%lc%sl%DELZ, shd%lc%sl%ZBOT, csfv%SDEP, &
                      csfv%ISND, csfv%IGDR, NML, il1, il2, NSL, ICTEMMOD, &
-                     pmrow%slp%thpor, pmrow%slp%thlret, pmrow%slp%thlmin, pmrow%slp%bi, &
-                     pmrow%slp%psisat, pmrow%slp%grksat, pmrow%slp%hcps, pmrow%slp%tcs, &
+                     pm_gru%slp%thpor, pm_gru%slp%thlret, pm_gru%slp%thlmin, pm_gru%slp%bi, &
+                     pm_gru%slp%psisat, pm_gru%slp%grksat, pm_gru%slp%hcps, pm_gru%slp%tcs, &
                      NA, NTYPE, shd%lc%ILG, shd%lc%ILMOS, shd%lc%JLMOS)
 
         pm%slp%alwet = csfv%ALGW
@@ -814,7 +812,7 @@ module RUNCLASS36_config
 
     subroutine RUNCLASS36_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates

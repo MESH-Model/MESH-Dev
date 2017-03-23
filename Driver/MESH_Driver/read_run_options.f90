@@ -1,31 +1,23 @@
     subroutine READ_RUN_OPTIONS(ts, cm, fls)
 
-        use mpi_flags
-
+        use mpi_module
         use strings
-        use sa_mesh_shared_variables
-        use model_files_variabletypes
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
+
         use FLAGS
-
-        use SIMSTATS_config, only: mtsflg
-
         use save_basin_output, only: BASINAVGWBFILEFLAG
-
-        use RUNCLASS36_constants
+!-        use RUNCLASS36_constants
+        use RUNCLASS36_variables
         use RUNCLASS36_save_output
         use RUNSVS113_variables
-
-        use WF_ROUTE_config
-
         use baseflow_module, only: lzsp
-
-        use SA_RTE_module, only: SA_RTE_flgs
-
-        !> Cropland irrigation module.
         use cropland_irrigation_variables
+        use WF_ROUTE_config
+        use SA_RTE_module, only: SA_RTE_flgs
+        use SIMSTATS_config, only: mtsflg
 
         implicit none
 
@@ -787,6 +779,10 @@
                             end select
                         end do
                         cifg%PROCESS_ACTIVE = (cifg%ts_flag > 0)
+
+                    !> INPUTPARAMSFORMFLAG
+                    case ('INPUTPARAMSFORMFLAG')
+                        INPUTPARAMSFORM = adjustl(in_line)
 
                     !> Unrecognized flag.
                     case default
