@@ -319,7 +319,7 @@ module rte_module
 
         strfw_option = 'streamflow_comparison'
         allocate(qhyd(1,999999)); qhyd = 0.0
-        open(54, file = './spl_rpn.rte.csv', action = 'write')
+        open(54, file = './BASINAVG1/spl_rpn.rte.csv', action = 'write')
 
 1010    format(9999(g15.7e2, ','))
 
@@ -385,9 +385,10 @@ module rte_module
         !> Accumulate runoff to the routing time-step.
         if (ic%ts_hourly == 1) then
             qr(1:naa) = 0.0
-            lzs(1:naa) = 0.0
         end if
         qr(1:naa) = qr(1:naa) + (wb%rofo(1:naa) + wb%rofs(1:naa))
+
+        !> Recharge accumulates perpetually.
         lzs(1:naa) = lzs(1:naa) + wb%rofb(1:naa)/shd%FRAC(1:NAA)
 
         !> Return if no the last time-step of the hour.
