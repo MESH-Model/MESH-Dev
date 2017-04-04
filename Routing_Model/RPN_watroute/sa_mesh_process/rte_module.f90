@@ -55,6 +55,7 @@ module rte_module
 
         !> sa_mesh_shared_variables: Variables, parameters, and types from SA_MESH.
         use sa_mesh_shared_variables
+        use FLAGS
 
         !> model_output_variabletypes: Streamflow and reservoir output variables for SA_MESH.
         use model_output_variabletypes
@@ -104,7 +105,7 @@ module rte_module
         next = shd%NEXT
         da = shd%DA
         bnkfll = shd%BNKFLL
-        slope = shd%SLOPE_CHNL
+        slope = sqrt(shd%SLOPE_CHNL)
 !+        elev = shd%ELEV
         rl = shd%CHNL_LEN
         ibn = shd%IAK
@@ -261,6 +262,9 @@ module rte_module
 
         end do !n = 1, naa
 
+        !> What class is the water class?
+        ii_water = ntype
+
 !todo: move this
         open(22, file = 'MESH_input_streamflow.txt', status = 'old', action = 'read')
         read(22, *)
@@ -280,10 +284,21 @@ module rte_module
         stfl%qsyn = 0.0
         do l = 1, no
             read(22, *) ry, rx, fms%stmg%name(l)
-            fms%stmg%y(l) = ry
-            fms%stmg%iy(l) = nint((ry - shd%yOrigin*60.0)/shd%GRDN)
-            fms%stmg%x(l) = rx
-            fms%stmg%jx(l) = nint((rx - shd%xOrigin*60.0)/shd%GRDE)
+!            fms%stmg%y(l) = ry
+!            fms%stmg%iy(l) = int((ry/60.0 - shd%yOrigin)/shd%yDelta) + 1
+!            fms%stmg%x(l) = rx
+!            fms%stmg%jx(l) = int((rx/60.0 - shd%xOrigin)/shd%xDelta) + 1
+            if (LOCATIONFLAG == 1) then
+                fms%stmg%y(l) = ry
+                fms%stmg%iy(l) = nint((ry - shd%yOrigin*60.0)/shd%GRDN)
+                fms%stmg%x(l) = rx
+                fms%stmg%jx(l) = nint((rx - shd%xOrigin*60.0)/shd%GRDE)
+            else
+                fms%stmg%y(l) = real(ry)
+                fms%stmg%iy(l) = int((real(ry) - real(shd%iyMin))/shd%GRDN + 1.0)
+                fms%stmg%x(l) = real(rx)
+                fms%stmg%jx(l) = int((real(rx) - real(shd%jxMin))/shd%GRDE + 1.0)
+            end if
             fms%stmg%rnk(l) = 0
             do n = 1, na
                 if (fms%stmg%jx(l) == shd%xxx(n) .and. fms%stmg%iy(l) == shd%yyy(n)) then
@@ -301,6 +316,10 @@ module rte_module
             write(70, 1010, advance = 'no') 'QOMEAS', 'QOSIM'
         end do
         write(70, *)
+
+        strfw_option = 'streamflow_comparison'
+        allocate(qhyd(1,999999)); qhyd = 0.0
+        open(54, file = './spl_rpn.rte.csv', action = 'write')
 
 1010    format(9999(g15.7e2, ','))
 
@@ -351,10 +370,9 @@ module rte_module
 
         !> Local variables.
         integer n, l
-        real, parameter :: rhow = 1.0e3
 
         !> Local variables not used.
-        character(len = 14) date
+        character(len = 14) :: date = ''
 
         !> Return if not the head node or if the process is not active.
         if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
@@ -364,21 +382,34 @@ module rte_module
             read(22, *) (stfl%qhyd(l), l = 1, no)
         end if
 
+        !> Accumulate runoff to the routing time-step.
+        if (ic%ts_hourly == 1) then
+            qr(1:naa) = 0.0
+            lzs(1:naa) = 0.0
+        end if
+        qr(1:naa) = qr(1:naa) + (wb%rofo(1:naa) + wb%rofs(1:naa))
+        lzs(1:naa) = lzs(1:naa) + wb%rofb(1:naa)/shd%FRAC(1:NAA)
+
+        !> Return if no the last time-step of the hour.
+        if ((mod(ic%ts_hourly, 3600/ic%dts) /= 0)) then
+            return
+        end if
+
         !> Increment counters.
         fhr = fhr + 1
 
-        !> What class is the water class?
-        ii_water = ntype
+        !> Date
+        year1 = ic%now%year
+        month_now = ic%now%month
+        day_now = ic%now%day
+        hour_now = ic%now%hour + 1
 
-        !> Convert runoff from [kg/m^2/s] to [cms].
-        qr(1:naa) = ((wb%rofo(1:naa) + wb%rofs(1:naa))/ic%dts)*(al**2)/rhow
-
-        !> Add recharge to lzs (mm).
-        lzs(1:naa) = lzs(1:naa) + wb%rofb(1:naa)
+        !> Convert surface runoff from [kg/m^2] to [cms].
+        qr(1:naa) = qr(1:naa)*1000.0*step2/3600.0
 
         !> Route the recharge thru the lower zone.
         do n = 1, naa
-            call baseflow(n, dlz, sdlz, ((1.0/ic%dts)*(al**2)/rhow))
+            call baseflow(n, dlz, sdlz, (1000.0*step2/3600.0))
         end do
 
         !> baseflow gives us qlz in flow units (cms), not in mm
@@ -500,7 +531,8 @@ module rte_module
         !> rev. 9.3.12  Feb.  20/07  - NK: changed dtmin & call to route
         do n = 1, no_dt
 
-            call route(sec_div, hr_div, dtmin, mindtmin, convthreshusr, ic%now%hour, n, real(ic%ts_count), date, exitstatus)
+            call route(sec_div, hr_div, dtmin, mindtmin, convthreshusr, (ic%count_hour + 1), n, real(ic%ts_count - 1), &
+                       date, exitstatus)
 
             if (exitstatus /= 0) then
                 if (dtmin <= mindtmin) then
