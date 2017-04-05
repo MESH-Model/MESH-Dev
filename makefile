@@ -36,6 +36,12 @@ LFLAG=-c -O2
 #LFLAG=-c -g
 
 # ======================================================================
+# Rules for MPI
+# ======================================================================
+# Comment the next line if compiling for MPI.
+OBJECTS:=	mpi_stub.o $(OBJECTS)
+
+# ======================================================================
 # Build SA_MESH executable and print message
 # ======================================================================
 all: ${OBJECTS}
@@ -44,15 +50,7 @@ all: ${OBJECTS}
 
 #static: ${OBJECTS}
 # For MinGW only (the Cygwin library cannot be statically linked to the binary):
-#	$(FC) -o sa_mesh_static -static-libgcc -static-libgfortran  $(OBJECTS)
-
-# ======================================================================
-# Rules for MPI
-# ======================================================================
-# Enable the next two lines if using a regular compiler.
-# Comment the next two lines if using the MPI compiler.
-mpi_module.o : mpi_stub.f90
-	$(FC) $(LFLAG) $< -o mpi_module.o
+#	$(FC) -o sa_mesh_static -static  $(OBJECTS)
 
 # ======================================================================
 # Rules for SVS

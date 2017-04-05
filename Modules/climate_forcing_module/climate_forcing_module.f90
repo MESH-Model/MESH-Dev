@@ -451,7 +451,7 @@ module climate_forcing
     subroutine climate_module_finalize(fls, shd, cm)
 
         !> Required for 'ipid' variable.
-        use mpi_shared_variables
+        use mpi_module
 
         !> Required for 'fls', 'mfk' variables.
         use model_files_variables

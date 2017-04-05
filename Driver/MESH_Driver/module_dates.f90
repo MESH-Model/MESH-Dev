@@ -225,7 +225,8 @@ module model_dates
         integer nr_days!, hours
 
         ts%freq = "D"
-        ts%nyears = ic%stop%year - ic%start%year + 1
+!todo: fix 'ts' or update it to deal with the scenario where the simulation start and/or stop dates are zeros
+        ts%nyears = max(ic%stop%year - ic%start%year + 1, 1)
         ts%nseason = 12
 
 !        ts%start_date = start_date

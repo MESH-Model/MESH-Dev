@@ -620,7 +620,7 @@ module WF_ROUTE_config
 
     subroutine WF_ROUTE_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
