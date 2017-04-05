@@ -528,7 +528,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> CMAX.
                         case ('cmax')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -540,7 +540,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> CMIN.
                         case ('cmin')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -552,7 +552,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> B.
                         case ('b')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -564,7 +564,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> K1.
                         case ('k1')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -576,7 +576,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> K2.
                         case ('k2')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE

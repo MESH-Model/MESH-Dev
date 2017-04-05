@@ -154,7 +154,7 @@
         !>  1 = read forcing data from .r2c
         !>  2 = read forcing data from .csv
         !>  3 = read forcing data from .seq binary sequential files
-        !>  3 = read forcing data from .seq ascii sequential files
+        !>  4 = read forcing data from .seq ascii sequential files
         !>  5 = read forcing data from load buffer in memory
 !-        BASINSHORTWAVEFLAG = 0
 !-        BASINLONGWAVEFLAG = 0
