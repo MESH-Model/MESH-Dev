@@ -172,7 +172,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    if (WF_RTE_flgs%PROCESS_ACTIVE) call value(out_args(j + 1), wfp%r2(j), ierr)
+                                    call value(out_args(j + 1), wfp%r2(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -183,7 +183,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    if (WF_RTE_flgs%PROCESS_ACTIVE) call value(out_args(j + 1), wfp%r1(j), ierr)
+                                    call value(out_args(j + 1), wfp%r1(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -194,7 +194,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    if (WF_RTE_flgs%PROCESS_ACTIVE) call value(out_args(j + 1), wfp%aa1(j), ierr)
+                                    call value(out_args(j + 1), wfp%aa1(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -205,7 +205,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    if (WF_RTE_flgs%PROCESS_ACTIVE) call value(out_args(j + 1), wfp%aa2(j), ierr)
+                                    call value(out_args(j + 1), wfp%aa2(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -216,7 +216,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    if (WF_RTE_flgs%PROCESS_ACTIVE) call value(out_args(j + 1), wfp%aa3(j), ierr)
+                                    call value(out_args(j + 1), wfp%aa3(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -227,7 +227,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    if (WF_RTE_flgs%PROCESS_ACTIVE) call value(out_args(j + 1), wfp%aa4(j), ierr)
+                                    call value(out_args(j + 1), wfp%aa4(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -545,7 +545,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> CMAX.
                         case ('cmax')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -557,7 +557,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> CMIN.
                         case ('cmin')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -569,7 +569,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> B.
                         case ('b')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -581,7 +581,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> K1.
                         case ('k1')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -593,7 +593,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> K2.
                         case ('k2')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE

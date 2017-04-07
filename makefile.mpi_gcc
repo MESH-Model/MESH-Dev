@@ -50,7 +50,7 @@ all: ${OBJECTS}
 
 #static: ${OBJECTS}
 # For MinGW only (the Cygwin library cannot be statically linked to the binary):
-#	$(FC) -o sa_mesh_static -static-libgcc -static-libgfortran  $(OBJECTS)
+#	$(FC) -o sa_mesh_static -static  $(OBJECTS)
 
 # ======================================================================
 # Rules for SVS
