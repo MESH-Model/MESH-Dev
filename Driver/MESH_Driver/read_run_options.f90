@@ -756,7 +756,7 @@
                         end do
                         cifg%PROCESS_ACTIVE = (cifg%ts_flag > 0)
 
-                    !> Cropland irrigation module.
+                    !> Run mode.
                     case ('RUNMODE')
                         do j = 2, nargs
                             select case (lowercase(out_args(j)))
@@ -778,7 +778,6 @@
                                     exit
                             end select
                         end do
-                        cifg%PROCESS_ACTIVE = (cifg%ts_flag > 0)
 
                     !> INPUTPARAMSFORMFLAG
                     case ('INPUTPARAMSFORMFLAG')
