@@ -90,6 +90,7 @@ module rte_module
         na = shd%NA
         naa = shd%NAA
         ntype = shd%lc%NTYPE + 1
+        no = fms%stmg%n
 
         !> Allocate and transfer grid variables.
         allocate(xxx(na), yyy(na), s(ycount, xcount), &
@@ -179,8 +180,10 @@ module rte_module
         qowet1 = 0.0; qowet2 = 0.0; wetarea = 0.0; chaarea = 0.0
         bin_precip = 0.0; wsat = 0.0; wetfrac = 0.0; qo2rem = 0.0
 
-        !> Allocate other variables.
-        allocate(nhyd(ycount, xcount))
+        !> Allocate and assign other variables.
+        allocate(nhyd(ycount, xcount), iflowgrid(no), nopt(no))
+        iflowgrid = fms%stmg%rnk
+        nopt = -1
 
         !> rev. 9.1.60  Jul.  27/04  - NK: reversed definitions for sl1 & sl2 Int. Slope
         do n = 1, naa
@@ -265,49 +268,12 @@ module rte_module
         !> What class is the water class?
         ii_water = ntype
 
-!todo: move this
-        open(22, file = 'MESH_input_streamflow.txt', status = 'old', action = 'read')
-        read(22, *)
-        read(22, *) fms%stmg%n
-        no = fms%stmg%n
-
-!todo: move this
         !> Allocate output variable for the driver.
+!todo: move this
         stfl%ns = no
-        allocate(fms%stmg%name(no), &
-                 fms%stmg%y(no), fms%stmg%x(no), &
-                 fms%stmg%iy(no), fms%stmg%jx(no), &
-                 fms%stmg%rnk(no), &
-                 stfl%qhyd(no), stfl%qsyn(no), &
-                 iflowgrid(no), nopt(no))
+        allocate(stfl%qhyd(no), stfl%qsyn(no))
         stfl%qhyd = 0.0
         stfl%qsyn = 0.0
-        do l = 1, no
-            read(22, *) ry, rx, fms%stmg%name(l)
-!            fms%stmg%y(l) = ry
-!            fms%stmg%iy(l) = int((ry/60.0 - shd%yOrigin)/shd%yDelta) + 1
-!            fms%stmg%x(l) = rx
-!            fms%stmg%jx(l) = int((rx/60.0 - shd%xOrigin)/shd%xDelta) + 1
-            if (LOCATIONFLAG == 1) then
-                fms%stmg%y(l) = ry
-                fms%stmg%iy(l) = nint((ry - shd%yOrigin*60.0)/shd%GRDN)
-                fms%stmg%x(l) = rx
-                fms%stmg%jx(l) = nint((rx - shd%xOrigin*60.0)/shd%GRDE)
-            else
-                fms%stmg%y(l) = real(ry)
-                fms%stmg%iy(l) = int((real(ry) - real(shd%iyMin))/shd%GRDN + 1.0)
-                fms%stmg%x(l) = real(rx)
-                fms%stmg%jx(l) = int((real(rx) - real(shd%jxMin))/shd%GRDE + 1.0)
-            end if
-            fms%stmg%rnk(l) = 0
-            do n = 1, na
-                if (fms%stmg%jx(l) == shd%xxx(n) .and. fms%stmg%iy(l) == shd%yyy(n)) then
-                    fms%stmg%rnk(l) = n
-                end if
-            end do
-        end do
-        iflowgrid = fms%stmg%rnk
-        nopt = -1
 
 !todo: move this
         open(70, file = './BASINAVG1/MESH_output_streamflow.rte.csv', status = 'unknown', action = 'write')

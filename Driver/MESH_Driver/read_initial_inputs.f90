@@ -301,6 +301,12 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
     end do
 
+    !>
+    !> READ BASIN STRUCTURES.
+    !>
+
+    call read_basin_structures(shd)
+
     !> Determine the number of active tile elements.
 !todo: fix this.
     shd%wc%ILG = shd%lc%ILG

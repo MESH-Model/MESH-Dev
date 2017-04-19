@@ -32,6 +32,11 @@ module fm_variables
         integer(kind = 4), dimension(:), allocatable :: iy, jx, rnk
     end type
 
+    type time_series
+        real(kind = 4), dimension(:, :), allocatable :: val
+        integer :: dts, iyear, ijday, imonth, iday, ihour, imins
+    end type
+
     !> Type: streamflow_gauge (extends: outlet_location)
     !>  Attributes of streamflow gauge locations.
     !>
@@ -39,6 +44,7 @@ module fm_variables
     !*  DA: Drainage area.
     type, extends(outlet_location) :: streamflow_gauge
         real(kind = 4), dimension(:), allocatable :: DA
+        type(time_series) qomeas
     end type
 
     !> Type: lake_outlet (extends: outlet_location)
