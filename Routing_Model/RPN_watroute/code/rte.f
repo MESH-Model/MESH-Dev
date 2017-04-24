@@ -190,7 +190,7 @@ c     call date_time(cday,time)
 !       filename(59)='net_lake_inflow.csv' !removed: net_lake values assume that reaches are in a chain
        filename(59)='gridflow.fst'
        filename(60)='rbm_input.fst'
-!       filename(61)= ! unused
+       filename(61)='flow_init.fst'
 !       filename(62)= ! unused
 !       filename(63)= ! unused
 !       filename(64)= ! unused

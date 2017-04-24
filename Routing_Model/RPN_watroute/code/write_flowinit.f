@@ -103,9 +103,11 @@
       write(99,3005)'#                                       '
       write(99,3008)':AttributeName 1 qi1          ' 
       write(99,3008)':AttributeName 2 qo1          '  
-      write(99,3008)':AttributeName 3 store1       '
-      write(99,3008)':AttributeName 4 over         ' 
-      write(99,3008)':AttributeName 5 lzs          ' 
+      write(99,3008)':AttributeName 3 qo1(sim)     '
+      write(99,3008)':AttributeName 4 qo1(rem)     '
+      write(99,3008)':AttributeName 5 store1       '
+      write(99,3008)':AttributeName 6 over         ' 
+      write(99,3008)':AttributeName 7 lzs          ' 
       write(99,3005)'#                                       '
       write(99,3001)':xCount             ',xcount
       write(99,3001)':yCount             ',ycount
@@ -156,6 +158,30 @@
         i=yyy(n)
         j=xxx(n)
         p(i,j)=qo2(n)
+      end do
+      do i=1,ycount
+        write(99,4009)(p(i,j),j=1,xcount)
+      end do
+
+!     Initial grid outflow (simulated) in m^3/s
+      k=k+1
+!       p(1,1)=float(k)
+      do n=1,naa
+        i=yyy(n)
+        j=xxx(n)
+        p(i,j)=qo2sim(n)
+      end do
+      do i=1,ycount
+        write(99,4009)(p(i,j),j=1,xcount)
+      end do
+
+!     Initial grid outflow (removed by diversion) in m^3/s
+      k=k+1
+!       p(1,1)=float(k)
+      do n=1,naa
+        i=yyy(n)
+        j=xxx(n)
+        p(i,j)=qo2rem(n)
       end do
       do i=1,ycount
         write(99,4009)(p(i,j),j=1,xcount)

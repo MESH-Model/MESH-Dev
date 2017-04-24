@@ -181,7 +181,8 @@ module rte_module
         bin_precip = 0.0; wsat = 0.0; wetfrac = 0.0; qo2rem = 0.0
 
         !> Allocate and assign other variables.
-        allocate(nhyd(ycount, xcount), iflowgrid(no), nopt(no))
+        allocate(store2_strt(naa), nhyd(ycount, xcount), iflowgrid(no), nopt(no))
+        store2_strt = 0.0
         iflowgrid = fms%stmg%rnk
         nopt = -1
 
@@ -323,7 +324,7 @@ module rte_module
         type(reservoir_release) :: rrls
 
         !> Local variables for dynamic time-stepping.
-        real(kind = 4) qi2_strt(naa), qo2_strt(naa), store2_strt(naa), route_dt, hr_div, sec_div, dtmin
+        real(kind = 4) qi2_strt(naa), qo2_strt(naa), route_dt, hr_div, sec_div, dtmin
         real tqi1, tqo1, tax, tqo2, tstore2, tstore1
         integer indexi, no_dtold
 
