@@ -16,6 +16,7 @@
         use baseflow_module, only: lzsp
         use cropland_irrigation_variables
         use WF_ROUTE_config
+        use rte_module
         use SA_RTE_module, only: SA_RTE_flgs
         use SIMSTATS_config, only: mtsflg
 
@@ -768,15 +769,26 @@
                                 case ('runclass')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                case ('nolss')
+                                    RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
+                                    RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                case ('runrte')
+                                    WF_RTE_flgs%PROCESS_ACTIVE = .false.
+                                    rteflg%PROCESS_ACTIVE = .true.
+                                case ('noroute')
+                                    WF_RTE_flgs%PROCESS_ACTIVE = .false.
+                                    rteflg%PROCESS_ACTIVE = .false.
                                 case ('default')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
                                     WF_RTE_flgs%PROCESS_ACTIVE = .true.
+                                    rteflg%PROCESS_ACTIVE = .false.
                                     exit
                                 case ('diagnostic')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
                                     WF_RTE_flgs%PROCESS_ACTIVE = .false.
+                                    rteflg%PROCESS_ACTIVE = .false.
                                     exit
                             end select
                         end do

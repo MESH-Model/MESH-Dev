@@ -45,12 +45,6 @@ subroutine read_parameters(fls, shd, cm, ierr)
     NSL = shd%lc%IGND
     NRVR = shd%NRVR
 
-!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-!TEMP
-    WF_RTE_flgs%PROCESS_ACTIVE = .false.
-    rteflg%PROCESS_ACTIVE = .true.
-!<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
     !>
     !> ALLOCATE AND INITIALIZE VARIABLES.
     !>
@@ -75,12 +69,12 @@ subroutine read_parameters(fls, shd, cm, ierr)
                  rtepm_iak%flz(NRVR), rtepm_iak%pwr(NRVR), &
                  rtepm_iak%aa2(NRVR), rtepm_iak%aa3(NRVR), rtepm_iak%aa4(NRVR), &
                  stat = ierr)
-        rtepm%r1n = 0.0; rtepm%r2n = 0.0; rtepm%mndr = 0.0; rtepm%widep = 0.0
-        rtepm%flz = 0.0; rtepm%pwr = 0.0
-        rtepm%aa2 = 0.0; rtepm%aa3 = 0.0; rtepm%aa4 = 0.0
-        rtepm_iak%r1n = 0.0; rtepm_iak%r2n = 0.0; rtepm_iak%mndr = 0.0; rtepm_iak%widep = 0.0
-        rtepm_iak%flz = 0.0; rtepm_iak%pwr = 0.0
-        rtepm_iak%aa2 = 0.0; rtepm_iak%aa3 = 0.0; rtepm_iak%aa4 = 0.0
+        rtepm%r1n = 0.0; rtepm%r2n = 0.0; rtepm%mndr = 1.0; rtepm%widep = 10.0
+        rtepm%flz = 1.0E-06; rtepm%pwr = 3.0
+        rtepm%aa2 = 1.1; rtepm%aa3 = 0.043; rtepm%aa4 = 1.0
+        rtepm_iak%r1n = 0.0; rtepm_iak%r2n = 0.0; rtepm_iak%mndr = 1.0; rtepm_iak%widep = 10.0
+        rtepm_iak%flz = 1.0E-06; rtepm_iak%pwr = 3.0
+        rtepm_iak%aa2 = 1.1; rtepm_iak%aa3 = 0.043; rtepm_iak%aa4 = 1.0
     end if
 
     !> FROZENSOILINFILFLAG 1.
