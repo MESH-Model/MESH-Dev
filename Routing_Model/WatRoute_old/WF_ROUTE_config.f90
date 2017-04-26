@@ -394,18 +394,18 @@ module WF_ROUTE_config
         !> *********************************************************************
 
         iun = WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun
-        open(iun, file = WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%fn, status = 'old', action = 'read')
-        read(iun, *)
-        read(iun, *) fms%stmg%n, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
+!        open(iun, file = WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%fn, status = 'old', action = 'read')
+!        read(iun, *)
+!        read(iun, *) fms%stmg%n, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
         NS = fms%stmg%n
 
         allocate(WF_QHYD(NS), WF_QHYD_AVG(NS), WF_QHYD_CUM(NS), &
                  WF_QSYN(NS), WF_QSYN_AVG(NS), WF_QSYN_CUM(NS))
 
         !> Allocate configuration variables for the driver.
-            allocate(fms%stmg%name(NS), &
-                     fms%stmg%y(NS), fms%stmg%x(NS), &
-                     fms%stmg%iy(NS), fms%stmg%jx(NS), fms%stmg%rnk(NS))
+!            allocate(fms%stmg%name(NS), &
+!                     fms%stmg%y(NS), fms%stmg%x(NS), &
+!                     fms%stmg%iy(NS), fms%stmg%jx(NS), fms%stmg%rnk(NS))
 
         !> Allocate output variable for the driver.
         stfl%ns = NS
@@ -413,41 +413,41 @@ module WF_ROUTE_config
         stfl%qhyd = 0.0
         stfl%qsyn = 0.0
 
-        do i = 1, NS
-            if (LOCATIONFLAG == 1) then
-                read(iun, *) ry, rx, fms%stmg%name(i)
-                fms%stmg%y(i) = ry
-                fms%stmg%iy(i) = nint((ry - shd%yOrigin*60.0)/shd%GRDN)
-                fms%stmg%x(i) = rx
-                fms%stmg%jx(i) = nint((rx - shd%xOrigin*60.0)/shd%GRDE)
-            else
-                read(iun, *) iy, ix, fms%stmg%name(i)
-                fms%stmg%y(i) = real(iy)
-                fms%stmg%iy(i) = int((real(iy) - real(shd%iyMin))/shd%GRDN + 1.0)
-                fms%stmg%x(i) = real(ix)
-                fms%stmg%jx(i) = int((real(ix) - real(shd%jxMin))/shd%GRDE + 1.0)
-            end if
-        end do
-        do i = 1, NS
-            fms%stmg%rnk(i) = 0
-            do j = 1, NA
-                if (fms%stmg%jx(i) == shd%xxx(j) .and. fms%stmg%iy(i) == shd%yyy(j)) then
-                    fms%stmg%rnk(i) = j
-                end if
-            end do
-            if (fms%stmg%rnk(i) == 0) then
-                print *, 'STREAMFLOW GAUGE: ', i, ' IS NOT IN THE BASIN'
-                print *, 'UP/DOWN', fms%stmg%iy(i), shd%iyMin, shd%yyy(j), shd%yCount
-                print *, 'LEFT/RIGHT', fms%stmg%jx(i), shd%jxMin, shd%xxx(j), shd%xCount
-                stop
-            end if
-        end do
+!        do i = 1, NS
+!            if (LOCATIONFLAG == 1) then
+!                read(iun, *) ry, rx, fms%stmg%name(i)
+!                fms%stmg%y(i) = ry
+!                fms%stmg%iy(i) = nint((ry - shd%yOrigin*60.0)/shd%GRDN)
+!                fms%stmg%x(i) = rx
+!                fms%stmg%jx(i) = nint((rx - shd%xOrigin*60.0)/shd%GRDE)
+!            else
+!                read(iun, *) iy, ix, fms%stmg%name(i)
+!                fms%stmg%y(i) = real(iy)
+!                fms%stmg%iy(i) = int((real(iy) - real(shd%iyMin))/shd%GRDN + 1.0)
+!                fms%stmg%x(i) = real(ix)
+!                fms%stmg%jx(i) = int((real(ix) - real(shd%jxMin))/shd%GRDE + 1.0)
+!            end if
+!        end do
+!        do i = 1, NS
+!            fms%stmg%rnk(i) = 0
+!            do j = 1, NA
+!                if (fms%stmg%jx(i) == shd%xxx(j) .and. fms%stmg%iy(i) == shd%yyy(j)) then
+!                    fms%stmg%rnk(i) = j
+!                end if
+!            end do
+!            if (fms%stmg%rnk(i) == 0) then
+!                print *, 'STREAMFLOW GAUGE: ', i, ' IS NOT IN THE BASIN'
+!                print *, 'UP/DOWN', fms%stmg%iy(i), shd%iyMin, shd%yyy(j), shd%yCount
+!                print *, 'LEFT/RIGHT', fms%stmg%jx(i), shd%jxMin, shd%xxx(j), shd%xCount
+!                stop
+!            end if
+!        end do
 
         if (ro%VERBOSEMODE > 0) then
-            print *, 'NUMBER OF STREAMFLOW GUAGES: ', NS
-            do i = 1, NS
-                print *, 'STREAMFLOW STATION: ', i, 'I: ', fms%stmg%iy(i), 'J: ', fms%stmg%jx(i)
-            end do
+!            print *, 'NUMBER OF STREAMFLOW GUAGES: ', NS
+!            do i = 1, NS
+!                print *, 'STREAMFLOW STATION: ', i, 'I: ', fms%stmg%iy(i), 'J: ', fms%stmg%jx(i)
+!            end do
             print *, 'NUMBER OF RESERVOIR STATIONS: ', NR
             if (NR > 0) then
                 do i = 1, NR
@@ -466,6 +466,10 @@ module WF_ROUTE_config
         !>MAM - The first stream flow record is used for flow initialization
         read(iun, *, iostat = ierr) (WF_QHYD(i), i = 1, NS)
         backspace(iun)
+
+        WF_START_YEAR = fms%stmg%qomeas%iyear
+        WF_START_DAY = fms%stmg%qomeas%ijday
+        WF_KT = fms%stmg%qomeas%dts
 
         ! fixed streamflow start time bug. add in function to enable the
         ! correct start time. Feb2009 aliu.

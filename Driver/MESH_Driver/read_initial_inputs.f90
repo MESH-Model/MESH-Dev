@@ -240,54 +240,34 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     allocate(list_errors(NAA*4), list_warnings(NAA*1))
     list_errors = ''; list_warnings = ''
 
-    !> Check for values that will likely stop the model.
-    ierr = 0
-    if (any(shd%SLOPE_CHNL <= 0.0 .and. shd%NEXT > 0)) then
-        forall (n = 1:NAA, shd%SLOPE_CHNL(n) <= 0 .and. shd%NEXT(n) > 0) list_errors(n) = 'Invalid or negative channel slope'
-        ierr = radix(2)**1
-    end if
-    if (any(shd%CHNL_LEN <= 0.0 .and. shd%NEXT > 0)) then
-        forall (n = 1:NAA, shd%CHNL_LEN(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(2*n) = 'Invalid or negative channel length'
-        ierr = radix(2)**1
-    end if
-!+    if (any(shd%SLOPE_INT <= 0.0 .and. shd%NEXT > 0)) then
-!+        forall (n = 1:NAA, shd%SLOPE_INT(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(n) = 'Invalid or negative interior slope'
-!+        ierr = radix(2)**1
-!+    end if
-    if (any(shd%AREA <= 0.0 .and. shd%NEXT > 0)) then
-        forall (n = 1:NAA, shd%AREA(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(3*n) = 'Invalid or negative grid area'
-        ierr = radix(2)**1
-    end if
-    if (any(shd%DA <= 0.0 .and. shd%NEXT > 0)) then
-        forall (n = 1:NAA, shd%DA(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(4*n) = 'Invalid or negative drainage area'
-        ierr = radix(2)**1
-    end if
-
     !> Check for values that might be incorrect, but are unlikely to stop the model.
     forall (n = 1:NAA, shd%NEXT(n) <= n .and. shd%NEXT(n) > 0) list_warnings(n) = 'NEXT might be upstream of RANK'
-    if (any(len_trim(list_warnings) > 0)) ierr = ierr + radix(2)**2
-
-    !> Write error messages to screen.
-    if (btest(ierr, 1) .and. ipid == 0) then
-        print "(/1x, 'ERROR: Errors have been found in the drainage database: ', (a))", adjustl(trim(fls%fl(mfk%f20)%fn))
-        do i = 1, 4
-            do n = 1, NAA
-                if (len_trim(list_errors(i*n)) > 0) print "(3x, 'ERROR: ', (a), ' at RANK ', i8)", &
-                    adjustl(trim(list_errors(i*n))), n
-            end do
-        end do
-    end if
 
     !> Write warning messages to screen.
-    if (btest(ierr, 2) .and. ipid == 0) then
+    if (any(len_trim(list_warnings) > 0) .and. ipid == 0) then
         print "(/1x, 'WARNING: Errors might exist in the drainage database: ', (a))", adjustl(trim(fls%fl(mfk%f20)%fn))
-        do n = 1, NAA
-            if (len_trim(list_warnings(n)) > 0) print "(3x, 'WARNING: ', (a), ' at RANK ', i8)", adjustl(trim(list_warnings(n))), n
+        do i = 1, size(list_warnings)
+            if (len_trim(list_warnings(n)) > 0) print "(3x, 'WARNING: ', (a), ' at RANK ', i8)", &
+                adjustl(trim(list_warnings(n))), (i - int(i/NAA)*NAA)
         end do
     end if
 
-    !> Stop if the prior messages contain an error.
-    if (btest(ierr, 1)) stop
+    !> Check for values that will likely stop the model.
+    forall (n = 1:NAA, shd%SLOPE_CHNL(n) <= 0 .and. shd%NEXT(n) > 0) list_errors(n) = 'Invalid or negative channel slope'
+    forall (n = 1:NAA, shd%CHNL_LEN(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(NAA + n) = 'Invalid or negative channel length'
+    forall (n = 1:NAA, shd%AREA(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(2*NAA + n) = 'Invalid or negative grid area'
+    forall (n = 1:NAA, shd%DA(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(3*NAA + n) = 'Invalid or negative drainage area'
+!+    forall (n = 1:NAA, shd%SLOPE_INT(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(4*NAA + n) = 'Invalid or negative interior slope'
+
+    !> Write error messages to screen.
+    if (any(len_trim(list_errors) > 0) .and. ipid == 0) then
+        print "(/1x, 'ERROR: Errors have been found in the drainage database: ', (a))", adjustl(trim(fls%fl(mfk%f20)%fn))
+        do i = 1, size(list_errors)
+            if (len_trim(list_errors(i)) > 0) print "(3x, 'ERROR: ', (a), ' at RANK ', i8)", &
+                adjustl(trim(list_errors(i))), (i - int(i/NAA)*NAA)
+        end do
+        stop
+    end if
 
     !> Deallocate temporary message variables.
     deallocate(list_errors, list_warnings)
@@ -300,6 +280,12 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         shd%ylat(i) = (shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0
         shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
     end do
+
+    !>
+    !> READ BASIN STRUCTURES.
+    !>
+
+    call read_basin_structures(shd)
 
     !> Determine the number of active tile elements.
 !todo: fix this.

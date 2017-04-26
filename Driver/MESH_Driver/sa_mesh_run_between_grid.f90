@@ -17,6 +17,7 @@ module sa_mesh_run_between_grid
 
         use SA_RTE_module, only: SA_RTE_init
         use WF_ROUTE_config, only: WF_ROUTE_init
+        use rte_module
         use save_basin_output, only: run_save_basin_output_init
 
         !> Cropland irrigation module.
@@ -77,7 +78,13 @@ module sa_mesh_run_between_grid
 
 !todo: switch
         call SA_RTE_init(shd)
+
+        !> Watflood, 1988.
         call WF_ROUTE_init(shd, fls, stfl, rrls)
+
+        !> RPN RTE.
+        call run_rte_init(shd, stfl, rrls)
+
         call run_save_basin_output_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         !> Cropland irrigation module (ICU).
@@ -98,6 +105,7 @@ module sa_mesh_run_between_grid
 
         use SA_RTE_module, only: SA_RTE
         use WF_ROUTE_module, only: WF_ROUTE_between_grid
+        use rte_module
         use save_basin_output, only: run_save_basin_output
 
         !> Cropland irrigation module.
@@ -174,7 +182,12 @@ module sa_mesh_run_between_grid
 
 !todo: Switch
         call SA_RTE(shd, wb)
+
+        !> Watflood, 1988.
         call WF_ROUTE_between_grid(shd, wb, stfl, rrls)
+
+        !> RPN RTE.
+        call run_rte_between_grid(shd, wb, stfl, rrls)
 
         !> Cropland irrigation module (ICU).
         call runci_between_grid(shd, fls, cm)
@@ -208,7 +221,9 @@ module sa_mesh_run_between_grid
         !> Return if not the head node.
         if (ipid /= 0) return
 
+        !> Watflood, 1988.
         call WF_ROUTE_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
+
         call run_save_basin_output_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
     end subroutine

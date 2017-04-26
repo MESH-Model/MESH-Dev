@@ -42,6 +42,7 @@ VPATH=	$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/src: \
 		$(DIR_REPO)/Routing_Model/WatRoute_old: \
 		$(DIR_REPO)/Routing_Model/RPN_watroute/sa_mesh_process: \
+		$(DIR_REPO)/Routing_Model/RPN_watroute/code: \
 		$(DIR_REPO)/Routing_Model/baseflow_module: \
 		$(DIR_REPO)/Blowing_Snow: \
 		$(DIR_REPO)/Tile_Connector/Basic: \
@@ -81,7 +82,7 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 OBJECTS+=	WF_ROUTE_config.o WF_ROUTE.o WF_ROUTE_module.o
 
 #baseflow_module
-OBJECTS+=	baseFlow.o baseflow_wfqlz.o baseflow3.o baseflow_module.o
+OBJECTS+=	baseFlow_luo2012.o baseflow_wfqlz.o baseflow3.o baseflow_module.o
 
 #SA_RTE (Standalone RPN ROUTE)
 OBJECTS+=	SA_RTE_module.o
@@ -145,6 +146,11 @@ OBJECTS+=   PBSMrates.o PBSMrun.o ProbabilityThreshold.o \
 #Tile connector
 OBJECTS+=	tile_connector.o 
 
+#RTE
+OBJECTS+=	area_watflood.o \
+			rerout.o baseflow.o route.o \
+			rte_module.o
+
 #Init field state variables for init cond for class
 OBJECTS+=	read_init_prog_variables_class.o save_init_prog_variables_class.o 	
 
@@ -154,6 +160,8 @@ OBJECTS+=	read_initial_inputs.o \
 			read_parameters.o \
 			read_parameters_class.o read_parameters_hydrology.o \
 			read_parameters_r2c.o \
+			read_basin_structures.o \
+			read_streamflow_txt.o read_streamflow_tb0.o \
 			read_soil_ini.o \
 			read_initial_states.o \
 			read_s_moisture_txt.o read_s_temperature_txt.o \

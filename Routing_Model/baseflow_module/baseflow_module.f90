@@ -196,7 +196,7 @@ module baseflow_module
 !+                ROFGAT = ROFGAT - ROFBGAT
 !+                Wseep = ROFBGAT*3600.0
 !+                do k = il1, il2
-!+                    call baseFlow(Wseep(k), dgw(k), Wrchrg(k), agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
+!+                    call baseFlow_luo2012(Wseep(k), dgw(k), Wrchrg(k), agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
 !+                    ROFBGAT(k) = Qb_new/3600.0
 !+                    Qb(k) = Qb_new
 !+                    Wrchrg(k) = Wrchrg_new

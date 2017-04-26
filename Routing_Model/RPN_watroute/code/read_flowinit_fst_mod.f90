@@ -11,6 +11,7 @@
 ! qo1 -> qo1, qo2
 ! qo1 (sim) -> qo2sim
 ! qo1 (rem) -> qo2rem
+! qo1 (remirr) -> qo2remirr
 ! stor[e1] -> store1, store2
 ! over -> over
 ! lzs -> lzs
@@ -112,6 +113,23 @@ subroutine read_flowinit_fst(unitNum,iflname,iyear,imonth,iday,ihour)
       found_data_end = .false. ! reset found_data_end, since it's a signal for rte_sub
    endif
    forall (jj = 1:ubound(xxx,1)) qo2rem(jj) = inarray(xxx(jj),yyy(jj))
+
+   ! Repeat this logic for qo2remirr
+   ! qo1 (removed by irrigation) gets stored in the global variable qo2remirr
+   ! qo1 (ip3=30: removed through irrigation), qo2remirr are the flow values removed at irrigation locations; 
+   ! they are stored to know how much was actually removed by irrigation 
+   call read_fst(unitNum,iflname,'0','qo1 ',iyear,imonth,iday,ihour,30,'            ')
+   if (found_data_end .eq. .true.) then
+      call read_fst(unitNum,iflname,'0','qo1 ',-1,-1,-1,-1,30,'            ')
+      if (date_error .eq. .false.) then
+         date_error = .true.
+         print *, 'Warning: the supplied date ', iyear*10000+imonth*100+iday, 'at hour', ihour
+         print *, 'was not found in the initial-conditions file "', iflname, '"'
+         stop
+      endif
+      found_data_end = .false. ! reset found_data_end, since it's a signal for rte_sub
+   endif
+   forall (jj = 1:ubound(xxx,1)) qo2remirr(jj) = inarray(xxx(jj),yyy(jj))
    
    ! And now for stor, originally store1 in the .r2c files
    call read_fst(unitNum,iflname,'0','stor',iyear,imonth,iday,ihour,0,'            ')

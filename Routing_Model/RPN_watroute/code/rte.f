@@ -109,9 +109,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
        elseif(buf.eq.'2')then
          iopt=2
        elseif(buf.eq.'3')then
-         iopt=2
+         iopt=3
        elseif(buf.eq.'4')then
-         iopt=2
+         iopt=4
        elseif(buf.eq.'9')then
 !       rev. 9.1.63  Sep.  29/04  - NK: Added iopt_start as an arg for quick filecheck
         iopt_start=99
@@ -190,7 +190,7 @@ c     call date_time(cday,time)
 !       filename(59)='net_lake_inflow.csv' !removed: net_lake values assume that reaches are in a chain
        filename(59)='gridflow.fst'
        filename(60)='rbm_input.fst'
-!       filename(61)= ! unused
+       filename(61)='flow_init.fst'
 !       filename(62)= ! unused
 !       filename(63)= ! unused
 !       filename(64)= ! unused

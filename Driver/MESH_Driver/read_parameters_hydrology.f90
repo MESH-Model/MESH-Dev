@@ -19,6 +19,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !> Required for the variables of various modules.
     use RUNCLASS36_variables
     use WF_ROUTE_config
+    use rte_module
     use baseflow_module
     use cropland_irrigation_variables
 
@@ -232,6 +233,105 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 end do
                             end if
 
+                        !> r1n (RTE).
+                        case ('r1n')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%r1n(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> r2n (RTE).
+                        case ('r2n')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%r2n(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> mndr (RTE).
+                        case ('mndr')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%mndr(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> widep (RTE).
+                        case ('widep')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%widep(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> flz (RTE).
+                        case ('flz')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%flz(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> pwr (RTE).
+                        case ('pwr')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%pwr(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> aa2 (RTE).
+                        case ('aa2')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%aa2(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> aa3 (RTE).
+                        case ('aa3')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%aa3(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> aa4 (RTE).
+                        case ('aa4')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%aa4(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
                         !> Unrecognized parameter name.
                         case default
                             goto 917
@@ -243,7 +343,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
         !> Original format of the hydrology.ini file.
         case default
             call readline(iun, in_line, ierr)
-            read(in_line, *, iostat = ierr) (wfp%r2(j), j = 1, NRVR)
+            if (WF_RTE_flgs%PROCESS_ACTIVE) read(in_line, *, iostat = ierr) (wfp%r2(j), j = 1, NRVR)
             if (ierr /= 0) then
                 print 8110, NRVR
                 goto 998
@@ -253,9 +353,11 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
     !> Check values of the river channel roughness factor.
     do i = 1, NRVR
-        if (wfp%r2(i) <= 0.0) then
-            print 8110, NRVR
-            goto 998
+        if (WF_RTE_flgs%PROCESS_ACTIVE) then
+            if (wfp%r2(i) <= 0.0) then
+                print 8110, NRVR
+                goto 998
+            end if
         end if
     end do
 

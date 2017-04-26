@@ -157,7 +157,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = '1037'
+    character(24) :: VERSION = '1063'
     character(8) RELEASE
 !-    logical VER_OK
 

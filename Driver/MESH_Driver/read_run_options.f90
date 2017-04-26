@@ -16,6 +16,7 @@
         use baseflow_module, only: lzsp
         use cropland_irrigation_variables
         use WF_ROUTE_config
+        use rte_module
         use SA_RTE_module, only: SA_RTE_flgs
         use SIMSTATS_config, only: mtsflg
 
@@ -313,6 +314,8 @@
 
                 !> Read and parse the entire line.
                 call readline(iun, in_line, ierr)
+                if (index(in_line, '#') > 2) in_line = in_line(1:index(in_line, '#') - 1)
+                if (index(in_line, '!') > 2) in_line = in_line(1:index(in_line, '!') - 1)
                 call compact(in_line)
                 call parse(in_line, delim, out_args, nargs)
                 if (.not. nargs > 0) then
@@ -766,15 +769,26 @@
                                 case ('runclass')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                case ('nolss')
+                                    RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
+                                    RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                case ('runrte')
+                                    WF_RTE_flgs%PROCESS_ACTIVE = .false.
+                                    rteflg%PROCESS_ACTIVE = .true.
+                                case ('noroute')
+                                    WF_RTE_flgs%PROCESS_ACTIVE = .false.
+                                    rteflg%PROCESS_ACTIVE = .false.
                                 case ('default')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
                                     WF_RTE_flgs%PROCESS_ACTIVE = .true.
+                                    rteflg%PROCESS_ACTIVE = .false.
                                     exit
                                 case ('diagnostic')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
                                     WF_RTE_flgs%PROCESS_ACTIVE = .false.
+                                    rteflg%PROCESS_ACTIVE = .false.
                                     exit
                             end select
                         end do

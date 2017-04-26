@@ -522,6 +522,7 @@ subroutine read_shed_fst(unitNum, iflname)
    ! remaining allocations are probably unnecessary.
 
    allocate(qi1(na), qi2(na), qo1(na), qo2(na), qo2sim(na), &
+            qo2rem(na), qo2remirr(na), &
             qr(na), d2(na), qda(na), cap(na), over(na), &
             qmax(na), res(na), sump(na), store1(na), &
             store2(na), att(na), qbase(na), nreach(maxval(ireach)), &
@@ -536,7 +537,7 @@ subroutine read_shed_fst(unitNum, iflname)
             hcha1(na), hcha2(na), hwet1(na), hwet2(na), qin(na), &
             qswevp(na), qswrain(na), qiwet1(na), qiwet2(na), &
             qowet1(na), qowet2(na), wetarea(na), chaarea(na), &
-            bin_precip(na), wsat(na), wetfrac(na), qo2rem(na))
+            bin_precip(na), wsat(na), wetfrac(na))
    
 contains 
    

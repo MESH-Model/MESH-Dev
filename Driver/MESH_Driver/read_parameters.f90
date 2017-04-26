@@ -15,6 +15,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
     use RUNCLASS36_variables
     use WF_ROUTE_config
+    use rte_module
     use baseflow_module
     use cropland_irrigation_variables
 
@@ -34,10 +35,11 @@ subroutine read_parameters(fls, shd, cm, ierr)
     character(1) :: delim = ' '
 
     !> Local variables.
-    integer NA, NTYPE, NRVR, NML, NSL, k, i
+    integer NA, NAA, NTYPE, NRVR, NML, NSL, k, i
 
     !> Assign commonly used indices to local variables.
     NA = shd%NA
+    NAA = shd%NAA
     NTYPE = shd%lc%NTYPE
     NML = shd%lc%NML
     NSL = shd%lc%IGND
@@ -56,6 +58,23 @@ subroutine read_parameters(fls, shd, cm, ierr)
     if (WF_RTE_flgs%PROCESS_ACTIVE) then
         allocate(wfp%r1(NRVR), wfp%r2(NRVR), wfp%aa1(NRVR), wfp%aa2(NRVR), wfp%aa3(NRVR), wfp%aa4(NRVR), stat = ierr)
         wfp%r1 = 2.0; wfp%r2 = 0.0; wfp%aa1 = 1.0; wfp%aa2 = 11.0; wfp%aa3 = 0.43; wfp%aa4 = 1.0
+    end if
+
+    !> RPN RTE (Watflood, 2007).
+    if (rteflg%PROCESS_ACTIVE) then
+        allocate(rtepm%r1n(NA), rtepm%r2n(NA), rtepm%mndr(NA), rtepm%widep(NA), &
+                 rtepm%flz(NA), rtepm%pwr(NA), &
+                 rtepm%aa2(NA), rtepm%aa3(NA), rtepm%aa4(NA), &
+                 rtepm_iak%r1n(NRVR), rtepm_iak%r2n(NRVR), rtepm_iak%mndr(NRVR), rtepm_iak%widep(NRVR), &
+                 rtepm_iak%flz(NRVR), rtepm_iak%pwr(NRVR), &
+                 rtepm_iak%aa2(NRVR), rtepm_iak%aa3(NRVR), rtepm_iak%aa4(NRVR), &
+                 stat = ierr)
+        rtepm%r1n = 0.0; rtepm%r2n = 0.0; rtepm%mndr = 1.0; rtepm%widep = 10.0
+        rtepm%flz = 1.0E-06; rtepm%pwr = 3.0
+        rtepm%aa2 = 1.1; rtepm%aa3 = 0.043; rtepm%aa4 = 1.0
+        rtepm_iak%r1n = 0.0; rtepm_iak%r2n = 0.0; rtepm_iak%mndr = 1.0; rtepm_iak%widep = 10.0
+        rtepm_iak%flz = 1.0E-06; rtepm_iak%pwr = 3.0
+        rtepm_iak%aa2 = 1.1; rtepm_iak%aa3 = 0.043; rtepm_iak%aa4 = 1.0
     end if
 
     !> FROZENSOILINFILFLAG 1.
@@ -114,10 +133,10 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
     !> Parse the INPUTPARAMSFORM to get INPUTPARAMSFORMFLAG.
     call parse(INPUTPARAMSFORM, delim, out_args, nargs)
-    if (index(lowercase(INPUTPARAMSFORM), ' only ') > 0) INPUTPARAMSFORMFLAG = 0
-    if (index(lowercase(INPUTPARAMSFORM), ' ini ') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**0
-    if (index(lowercase(INPUTPARAMSFORM), ' r2c ') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**1
-    if (index(lowercase(INPUTPARAMSFORM), ' csv ') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**2
+    if (index(lowercase(INPUTPARAMSFORM), 'only') > 0) INPUTPARAMSFORMFLAG = 0
+    if (index(lowercase(INPUTPARAMSFORM), 'ini') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**0
+    if (index(lowercase(INPUTPARAMSFORM), 'r2c') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**1
+    if (index(lowercase(INPUTPARAMSFORM), 'csv') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**2
 
     !> Check for a bad value of INPUTPARAMSFORMFLAG.
     if (INPUTPARAMSFORMFLAG == 0) then
@@ -204,6 +223,29 @@ subroutine read_parameters(fls, shd, cm, ierr)
         end do !k = il1, il2
     end if
 
+    !> From river class (IAK) if not read by grid.
+    if (NRVR > 0 .and. .not. btest(INPUTPARAMSFORMFLAG, 1)) then
+        do k = 1, NAA
+
+            !> River class index (IAK).
+            i = shd%IAK(k)
+
+            !> RPN RTE (Watflood, 2007).
+            if (rteflg%PROCESS_ACTIVE) then
+                rtepm%r1n(k) = rtepm_iak%r1n(i)
+                rtepm%r2n(k) = rtepm_iak%r2n(i)
+                rtepm%mndr(k) = rtepm_iak%mndr(i)
+                rtepm%widep(k) = rtepm_iak%widep(i)
+                rtepm%flz(k) = rtepm_iak%flz(i)
+                rtepm%pwr(k) = rtepm_iak%pwr(i)
+                rtepm%aa2(k) = rtepm_iak%aa2(i)
+                rtepm%aa3(k) = rtepm_iak%aa3(i)
+                rtepm%aa4(k) = rtepm_iak%aa4(i)
+            end if
+
+        end do !k = il1, il2
+    end if
+
     !> From grid.
     if (btest(INPUTPARAMSFORMFLAG, 1)) then
         do k = il1, il2
@@ -212,8 +254,8 @@ subroutine read_parameters(fls, shd, cm, ierr)
             i = shd%lc%ILMOS(k)
 
             !> SA_MESH.
-            pm%tp%xslp(k) = shd%SLOPE_INT(i)
-            pm%hp%dd(k) = shd%DRDN(i)
+            if (allocated(shd%SLOPE_INT)) pm%tp%xslp(k) = shd%SLOPE_INT(i)
+            if (allocated(shd%DRDN)) pm%hp%dd(k) = shd%DRDN(i)
 
         end do !k = il1, il2
     end if

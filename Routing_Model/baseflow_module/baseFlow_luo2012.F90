@@ -1,5 +1,5 @@
 !
-! File:   baseFlow.f90
+! File:   baseFlow_luo2012.F90
 ! Author: Luis Morales-Marin, GIWS
 !
 ! Created on June 29, 2015, 11:11 AM
@@ -50,7 +50,7 @@ END FUNCTION Qb_new
 !  Wrchrg: Amount of recharge entering the  aquifer (mm/hr).
 !  Qb: Total base flow (mm/hr)
 
-SUBROUTINE baseFlow(Wseep, dgw, Wrchrg_old,  agw, Qb_old, dt, Wrchrg, Qb)
+SUBROUTINE baseFlow_luo2012(Wseep, dgw, Wrchrg_old,  agw, Qb_old, dt, Wrchrg, Qb)
     IMPLICIT NONE
     
     REAL, INTENT(IN) 	:: Wseep, dgw, Wrchrg_old,  agw, Qb_old, dt
@@ -63,4 +63,4 @@ SUBROUTINE baseFlow(Wseep, dgw, Wrchrg_old,  agw, Qb_old, dt, Wrchrg, Qb)
     ! Base flow (mm/hr)
     Qb = Qb_new(agw, dt, Wrchrg, Qb_old)
     
-END SUBROUTINE baseFlow
+END SUBROUTINE baseFlow_luo2012

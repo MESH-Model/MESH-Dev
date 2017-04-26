@@ -17,6 +17,8 @@ subroutine read_parameters_r2c(shd, iun, fname)
     use sa_mesh_shared_variables
     use EF_Module
 
+    use rte_module
+
     implicit none
 
     !> Input variables.
@@ -121,18 +123,27 @@ subroutine read_parameters_r2c(shd, iun, fname)
 !-                case ('rank')
 !-                    print "(' RANK ', i8, ' AttList%Val ', i8)", n, int(header%r2cp%ep%attList(l)%val(i))
 
-                !> RTE (Watflood, 2008).
-                case ('flz')
-                case ('pwr')
+                !> RPN RTE (Watflood, 2007).
                 case ('r1n')
+                    if (rteflg%PROCESS_ACTIVE) rtepm%r1n(n) = header%r2cp%ep%attList(l)%val(i)
                 case ('r2n')
+                    if (rteflg%PROCESS_ACTIVE) rtepm%r2n(n) = header%r2cp%ep%attList(l)%val(i)
                 case ('mndr')
-                case ('aa2')
-                case ('aa3')
-                case ('aa4')
-                case ('theta')
+                    if (rteflg%PROCESS_ACTIVE) rtepm%mndr(n) = header%r2cp%ep%attList(l)%val(i)
                 case ('widep')
-                case ('kcond')
+                    if (rteflg%PROCESS_ACTIVE) rtepm%widep(n) = header%r2cp%ep%attList(l)%val(i)
+                case ('flz')
+                    if (rteflg%PROCESS_ACTIVE) rtepm%flz(n) = header%r2cp%ep%attList(l)%val(i)
+                case ('pwr')
+                    if (rteflg%PROCESS_ACTIVE) rtepm%pwr(n) = header%r2cp%ep%attList(l)%val(i)
+                case ('aa2')
+                    if (rteflg%PROCESS_ACTIVE) rtepm%aa2(n) = header%r2cp%ep%attList(l)%val(i)
+                case ('aa3')
+                    if (rteflg%PROCESS_ACTIVE) rtepm%aa3(n) = header%r2cp%ep%attList(l)%val(i)
+                case ('aa4')
+                    if (rteflg%PROCESS_ACTIVE) rtepm%aa4(n) = header%r2cp%ep%attList(l)%val(i)
+!                case ('theta')
+!                case ('kcond')
 
                 !> Unrecognized name.
                 case default
