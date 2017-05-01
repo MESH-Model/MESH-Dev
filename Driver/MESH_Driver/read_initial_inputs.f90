@@ -237,27 +237,27 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 !    end if
 
     !> Allocate temporary message variables.
-    allocate(list_errors(NAA*4), list_warnings(NAA*1))
+    allocate(list_errors(4*NAA), list_warnings(1*NAA))
     list_errors = ''; list_warnings = ''
 
     !> Check for values that might be incorrect, but are unlikely to stop the model.
-    forall (n = 1:NAA, shd%NEXT(n) <= n .and. shd%NEXT(n) > 0) list_warnings(n) = 'NEXT might be upstream of RANK'
+    forall (n = 1:NAA, shd%NEXT(n) <= n) list_warnings(n) = 'NEXT might be upstream of RANK'
 
     !> Write warning messages to screen.
     if (any(len_trim(list_warnings) > 0) .and. ipid == 0) then
         print "(/1x, 'WARNING: Errors might exist in the drainage database: ', (a))", adjustl(trim(fls%fl(mfk%f20)%fn))
         do i = 1, size(list_warnings)
-            if (len_trim(list_warnings(n)) > 0) print "(3x, 'WARNING: ', (a), ' at RANK ', i8)", &
-                adjustl(trim(list_warnings(n))), (i - int(i/NAA)*NAA)
+            if (len_trim(list_warnings(i)) > 0) print "(3x, 'WARNING: ', (a), ' at RANK ', i8)", &
+                adjustl(trim(list_warnings(i))), (i - int(i/NAA)*NAA)
         end do
     end if
 
     !> Check for values that will likely stop the model.
-    forall (n = 1:NAA, shd%SLOPE_CHNL(n) <= 0 .and. shd%NEXT(n) > 0) list_errors(n) = 'Invalid or negative channel slope'
-    forall (n = 1:NAA, shd%CHNL_LEN(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(NAA + n) = 'Invalid or negative channel length'
-    forall (n = 1:NAA, shd%AREA(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(2*NAA + n) = 'Invalid or negative grid area'
-    forall (n = 1:NAA, shd%DA(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(3*NAA + n) = 'Invalid or negative drainage area'
-!+    forall (n = 1:NAA, shd%SLOPE_INT(n) <= 0.0 .and. shd%NEXT(n) > 0) list_errors(4*NAA + n) = 'Invalid or negative interior slope'
+    forall (n = 1:NAA, shd%SLOPE_CHNL(n) <= 0) list_errors(n) = 'Invalid or negative channel slope'
+    forall (n = 1:NAA, shd%CHNL_LEN(n) <= 0.0) list_errors(NAA + n) = 'Invalid or negative channel length'
+    forall (n = 1:NAA, shd%AREA(n) <= 0.0) list_errors(2*NAA + n) = 'Invalid or negative grid area'
+    forall (n = 1:NAA, shd%DA(n) <= 0.0) list_errors(3*NAA + n) = 'Invalid or negative drainage area'
+!+    forall (n = 1:NAA, shd%SLOPE_INT(n) <= 0.0) list_errors(4*NAA + n) = 'Invalid or negative interior slope'
 
     !> Write error messages to screen.
     if (any(len_trim(list_errors) > 0) .and. ipid == 0) then

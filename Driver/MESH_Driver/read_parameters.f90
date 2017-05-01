@@ -246,6 +246,18 @@ subroutine read_parameters(fls, shd, cm, ierr)
         end do !k = il1, il2
     end if
 
+!todo: Formally change these to grid parameters, remove from shd
+    if (allocated(shd%SLOPE_INT)) then
+        do k = il1, il2
+            pm%tp%xslp(k) = shd%SLOPE_INT(shd%lc%ILMOS(k))
+        end do
+    end if
+    if (allocated(shd%DRDN)) then
+        do k = il1, il2
+            pm%hp%dd(k) = shd%DRDN(shd%lc%ILMOS(k))
+        end do
+    end if
+
     !> From grid.
     if (btest(INPUTPARAMSFORMFLAG, 1)) then
         do k = il1, il2
@@ -254,8 +266,8 @@ subroutine read_parameters(fls, shd, cm, ierr)
             i = shd%lc%ILMOS(k)
 
             !> SA_MESH.
-            if (allocated(shd%SLOPE_INT)) pm%tp%xslp(k) = shd%SLOPE_INT(i)
-            if (allocated(shd%DRDN)) pm%hp%dd(k) = shd%DRDN(i)
+!+            if (allocated(shd%SLOPE_INT)) pm%tp%xslp(k) = shd%SLOPE_INT(i)
+!+            if (allocated(shd%DRDN)) pm%hp%dd(k) = shd%DRDN(i)
 
         end do !k = il1, il2
     end if
