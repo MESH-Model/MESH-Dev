@@ -14,7 +14,7 @@ c
       parameter (no_hours=2000,no_grus=4700,no_grid=100)
 
 
-      integer ijunk,nch,i,j,n,o,hour,gru,imax,jmax
+      integer ijunk,nch,i,j,n,o,hour,gru,imax,jmax,val
       integer event,rhour,hourstep
 
       integer yy(no_grus),xx(no_grus)
@@ -36,6 +36,8 @@ c
       real value(no_grid,no_grid)
 
       character fln(600)*30,cjunk*30
+      character*80 tag
+      logical   equals
 c ******************************
 c get time step for the hour
 c ******************************
@@ -130,31 +132,25 @@ c read in data from shed file to get values to translate grid data to GRUs
       stop
       endif
 
-      read(31,*)  GRU
-      read(31,*) 
-      read(31,*) 
-      read(31,2005)jmax,imax
+c read shed file until EOF 
+	do while (.true.)
+		read (31,'(A)',end=999) tag
+		if (INDEX(tag,'xCount').gt.0) then
+			read (tag(8:80),'(i72)') jmax
+			print *,"xCount==",jmax
+		endif		
+		if (INDEX(tag,'yCount').gt.0) then
+			read (tag(8:80),'(i72)') imax
+			print *,"yCount==",imax
+		endif		
+	enddo
 
-      print *, 'Number of GRUs: ',GRU
-      print *, 'Grid Size: ', jmax,imax
-
-        do j=jmax,1,-1
-           read(31,*) !(junk(i,j),i=1,imax)
-        end do
-
-          do o=1,GRU
-            read(31,2000) yy(o),xx(o)
-c            ,da(n),bnkfll(n),
-c     *      slope(n),elev(n),ibn(n),irough(n),ichnl(n),next(n),
-c     *      ireach(n),frac(n),aclass(n,ntype+1),
-c     *      (aclass(n,ii),ii=1,ntype)         
-          end do
-
-      close(31)
+ 999  close(31)
 
  2000 format(5x,2i5,3f10.5,f7.0,5i5,17f5.2)
  2001 format(160i4)
  2005 format(12i5,2f5.0)
+ 2006 format(1x,a,1x,1i10)
 
 
       
