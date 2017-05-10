@@ -1,0 +1,26 @@
+# ======================================================================
+#				Include or header file for 
+#               Compile on Windows 
+#
+#               make
+# ======================================================================
+
+# ======================================================================
+# Directory of source code
+# ======================================================================
+DIR_REPO=/cygdrive/c/Data/MESH_code
+
+# ======================================================================
+# Include the following directories in the source file searching path
+# ======================================================================
+VPATH=	$(DIR_REPO)/Branches/MESH_CODE_TEAM/Princz/shed_merge_lcu: 
+
+# ======================================================================
+# Object files needed to build 
+# ======================================================================
+
+#Modules
+OBJECTS=	EF_Module.o EF_ParseUtilities.o 
+
+#Driver
+OBJECTS+=	shed_merge_lcu.o 
