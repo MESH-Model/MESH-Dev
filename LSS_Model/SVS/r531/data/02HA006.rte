@@ -1,5 +1,0 @@
-values of the three parameters controlling sasvs routing: time base of the Unit Hydrograph (should be close to lag time or time between heart of precip. event and time of peak flow), 
-and FLZ and PWR values controlling release rate from lower zone storage (LZS).
-    57.6                HU_decay or lag time | F10.3
- 7.0E-6                FLZ coefficient            | E10.2
-  3.7                    PWR coefficient           | F6.2
