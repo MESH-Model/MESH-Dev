@@ -1,0 +1,30 @@
+# ======================================================================
+#		Include or header file for redist_new_ch_par makefile
+#               Compile with gfortran compiler
+# ======================================================================
+
+# ======================================================================
+# Directory of source code
+# ======================================================================
+DIR_REPO=/home/gonzalo/MESH_Code/TRUNK
+
+# ======================================================================
+# Include the following directories in the source file searching path
+# ======================================================================
+VPATH=	$(DIR_REPO)/Routing_Model/RPN_watroute/code: \
+           $(DIR_REPO)/Pre_Process/redist_new_ch_par/code: \
+		
+
+# ======================================================================
+# Object files needed to build
+# ======================================================================
+
+#Modules
+MODULES=	area_watflood.mod ef_module.mod ef_parseutilities.mod 
+OBJECTS=	area_watflood.o EF_Module.o EF_ParseUtilities.o 
+
+#Watroute
+OBJECTS+=	rdevt.o read_shed_ef.o 
+
+#redist_new_ch_par
+OBJECTS+=	redist_new_ch_par.o
