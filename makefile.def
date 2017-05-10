@@ -1,0 +1,31 @@
+# ======================================================================
+#				Include or header file for 
+#               Compile 
+#
+#               make
+# ======================================================================
+
+# ======================================================================
+# Directory of source code
+# ======================================================================
+DIR_REPO=/cygdrive/c/Data/MESH_code
+
+# ======================================================================
+# Include the following directories in the source file searching path
+# ======================================================================
+VPATH=	$(DIR_REPO)/Branches/MESH_CODE_TEAM/Princz/storage_eval: \
+		$(DIR_REPO)/TRUNK/Modules:
+
+# ======================================================================
+# Object files needed to build 
+# ======================================================================
+
+#Requisites
+OBJECTS=	EF_ParseUtilities.o
+
+#Modules
+OBJECTS+=	legates_mae.o legates_mse.o \
+			krause_coeffd.o krause_coeffd_weighted.o krause_nse.o 
+
+#Program
+OBJECTS+=	storage_eval.o

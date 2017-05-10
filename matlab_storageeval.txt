@@ -1,0 +1,69 @@
+clear all
+cd('./')
+[numi, txt, all] = xlsread('Basin_average_water_balance.csv');
+[GWLS] =xlsread('GWL_storage.xls');   % storage from geological weighing lysimeter
+
+date_s=[];
+ystrt=2002;        % define your starting year
+for q=1:length(numi)
+   qdate=datenum(ystrt-1,12,31,0,0,0)+q;
+   date_s=[date_s ; qdate];
+end
+
+%%
+GWL=GWLS(1:96,2);
+Avg_storage=mean(numi(:,32));
+s_dev_mean=(numi(:,32)-Avg_storage);
+Data = [date_s, s_dev_mean(:,:)];
+xm = zeros(96,1); % Monthly average
+% [y,m] = datevec(date_s);
+D= [datevec(Data(:,1)),Data(:,2)];
+Sm = [];
+for j = 2002:2009
+for i = 1:12
+   S = mean(D((D(:,1) == j & D(:,2) ==i),7));
+   
+   Sm = [Sm;S];
+end
+ 
+end
+hold on
+plot((Sm),'k','LineWidth',2); plot(GWL(1:96,1),'b','LineWidth',2)
+totstorage=[Sm,GWL];      %combine colomn of simulated and observed total storage
+totstorage(any(isnan(totstorage),2),:)=[];
+
+% Calcualtes R square and weighted R Square
+numi=sum((totstorage(:,2)-mean(totstorage(:,2))).*(totstorage(:,1)-mean(totstorage(:,1))));
+deno=sqrt(sum((totstorage(:,2)-mean(totstorage(:,2))).^2))*sqrt(sum((totstorage(:,1)-mean(totstorage(:,1))).^2));
+rsq=(numi/deno)^2;
+intercept=((sum(totstorage(:,2))*sum(totstorage(:,1).^2))-(sum(totstorage(:,1))*sum(totstorage(:,1).*totstorage(:,2))))/ ...
+    ((length(totstorage(:,2))*(sum(totstorage(:,1).^2)))-((sum(totstorage(:,1))).^2));
+slope=((length(totstorage(:,2))*sum(totstorage(:,1).*totstorage(:,2)))-(sum(totstorage(:,1))*sum(totstorage(:,2))))/ ...
+    ((length(totstorage(:,2))*(sum(totstorage(:,1).^2)))-((sum(totstorage(:,1))).^2));
+weightc=slope;
+    if weightc <= 1
+        wrsq=rsq*abs(weightc);
+    else
+        wrsq=rsq/abs(weightc);
+    end
+
+% calculates index of agreement indexd
+numi1=sum((totstorage(:,2)-totstorage(:,1)).^2);
+deno1=sum((abs(totstorage(:,1)-mean(totstorage(:,2)))+abs(totstorage(:,2)-mean(totstorage(:,2)))).^2);
+indexd=1-(numi1/deno1);
+
+% calculates Nash-Sutcliffe efficiency E
+numi2=sum((totstorage(:,2)-totstorage(:,1)).^2);
+deno2=sum((totstorage(:,2)-mean(totstorage(:,2))).^2);
+E_eff=1-(numi2/deno2);
+MAE=(sum(abs(totstorage(:,2)-totstorage(:,1))))/length(totstorage(:,2));
+
+% write R square  
+fid=fopen('WRSQ.txt','w+');
+fprintf(fid, '%f', wrsq);
+fclose(fid);
+
+% Append weighted R square
+fid2=fopen('wrsqa.txt','a');
+fprintf(fid2, '%f \n', wrsq);
+fclose(fid2);
