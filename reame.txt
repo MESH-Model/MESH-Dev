@@ -1,0 +1,266 @@
+Notes to use R2CtoMESH.exe 
+Saul Marin - Nov 27, 2007
+Update: Feb 27, 2008
+1	Purpose
+R2CtoMESH is a simple application written in FORTRAN (compiled with Intel(R) Fortran Compiler V 10) and useful for reading the gridded ASCII "R2C" format data (ENSIM format?) and writing it to a binary file format that is reading for the standalone version of MESH (Meteorological data)
+2	Example of the R2C format file
+########################################                    
+:FileType r2c  ASCII  EnSim 1.0                             
+# DataType               2D Rect Cell                       
+:Application             EnSimHydrologic                    
+:Version                 2.1.23                             
+:WrittenBy               fst_2_r2c                          
+:CreationDate            2007-14-11 12: 2                   
+#---------------------------------------                    
+:Name                   PRH                                 
+:Projection         LATLONG                                 
+:Ellipsoid          GRS80                                   
+#                                                           
+:xOrigin                 -117.0000                          
+:yOrigin                   48.0000                          
+#                                                           
+:SourceFile                   precip_2004112500.fst         
+#                                                           
+:AttributeName 1  PRH                                       
+#                                                           
+:xCount                                 60                  
+:yCount                                 27                  
+:xDelta                       0.1999998                     
+:yDelta                       0.2000000                     
+#                                                           
+#                                                           
+:endHeader                                                  
+:Frame        1       1 "2004/11/25 01:00:00.000"           
+        0.00102        0.00114        0.00169        0.00226     ...
+        0.00113        0.00124        0.00163        0.00227     ...
+        0.00138        0.00161        0.00118        0.00096     ...
+           .              .              .              . 
+           .              .              .              .
+           .              .              .              .
+:EndFrame                                                   
+:Frame        2       2 "2004/11/25 02:00:00.000"           
+        0.00084        0.00102        0.00170        0.00236     ...
+        0.00096        0.00112        0.00168        0.00246     ...
+        0.00123        0.00156        0.00130        0.00128     ...
+           .              .              .              . 
+           .              .              .              .
+           .              .              .              .
+:EndFrame                                                   
+
+The file is organized as follows:
+a)	Header: “:Endheader” flag is used to identify the ends the of the header.
+b)	After the header there are “n” frames. Each frame contains the gridded data [longitude, latitude] associated with the time referenced at the beginning of the frame – right hand side of the “:Frame”  flag
+
+The application was written to find the end of header for the following combinations:
+?	EndHeader
+?	Endheader
+?	endheader
+?	ENDHEADER
+There could be more combinations, please review your R2C files 
+3	Input 
+Input information to the application has to be organized as follows:
+3.1.1	Files containing data file names
+For each meteorological variable, a file “varname.txt” that contains the data file names has to be created. Data files should be daily, monthly, or annually. For example a daily data file contains gridded information for one day. Gridded information should be in any time step, e.g., every half hour, hourly, every three hours, etc.
+
+NOTE: the associated time of the data files in the “varname.txt” files has to match. For example, assuming that there are two varname.txt files, let’s say “PRECI.TXT” and “HUMID.TXT”, if the data in the first data file in “PRECI.TXT” is a daily file with hourly precipitation starting in June 21, 2007, the first file in “HUMID.TXT” must be a daily data file with hourly humidity starting June 21, 2007.
+
+Do not forget that the “varname.txt” files should be created in an easy way opening a command prompt window, changing directory to the folder where the data files are and redirecting the output of the “DIR’ command to a file, e.g., “dir *xxx.r2c > output.txt” will write all files with the string “xxx.r2c” in their names to the “ouput.txt” file. Then, with a minimum effort the output file can be organized as required using an ASCII editor. 
+
+Example of one “varname.txt”: PRECIP.TXT  
+200705rain.r2c
+200706rain.r2c
+200707rain.r2c
+.
+.
+.
+3.1.2	 PARNAMES.TXT file
+Create a file named PARNAMES.TXT as follows
+Row 1:        a comment line
+Row 2:        hour at which information starts
+Row 3:        minute at which information starts; 0 or 30
+Row 4:        julian day at which information starts
+Row 5:        year at which information starts
+Row 6:        time-step. 1 for hourly; 2 for half hour
+Row 7:        a comment line
+Row 8:        number of varname.txt files
+Row 9:        number of longitude points for the gridded data
+Row 10:      number of latitude points for the gridded data
+Row 11:      a comment line
+Row 12:       “varname.txt” number 1
+Row 13:       “varname.txt” number 2
+.
+.
+.
+
+Example of PARNAMES.TXT  
+:::::::...    INITIAL DATE FOR DATA AT BIN FILE     ...:::::::
+0                        ! IHOUR_BIN-> initial hour
+0                        ! IMIN_BIN -> initial minute
+135                      ! IDAY_BIN -> initial day (Julian day)
+2007                     ! IYEAR_BIN-> initial year
+2                        ! ISTEP_BIN-> 1->hourly; 2-> half hourly
+:::::::... FILES AND GRID CHARACTERISTICS...::::::: 
+7                        ! NF    : NUMBER OF FILES
+60                       ! NLONG : NUMBER OF LOGITUDE POINTS (X)
+27                       ! NLAT  : NUMBER OF LATITUDE POINTS (Y)
+............FOR I=1,NF.........FREE FORMAT
+flux_FB.TXT              !FNF(1): Contains FILES WITH SHORT WAVE DATA
+flux_fi.TXT              !FNF(2): Contains FILES WITH LONG WAVE DATA 
+precip.TXT               !FNF(3): Contains FILES WITH RAIN DATA 
+temperature.TXT          !FNF(4): Contains FILES WITH TEMPERATURE DATA  
+wind_UD.TXT              !FNF(5): Contains FILES WITH WIND X DATA
+pression.TXT             !FNF(6): Contains FILES WITH PRESSION DATA
+humi_DQ.TXT              !FNF(7): Contains FILES WITH HUMIDITY DATA
+4	Output files – WATCLASS.BIN
+WATCLASS.BIN is a binary file read by the driver of the standalone version of MESH
+5	Folder three required for running R2CtoMESH.exe 
+a)	Create a folder (any name) and copy the following files inside:
+(a)	The executable file
+(b)	The PARNAMES.TXT file
+(c)	The “varname.txt” files
+b)	Create a subfolder called “R2C in the above folder. In this subfolder copy all the “R2C” files. 
+c)	Run the application from windows explorer or from a command prompt window
+6	Comments
+a)	Be aware that I added one register at the beginning of the “BIN”. Most of the Stand Alone versions of MESH do not read this register. Be sure to remove this register or to add a line of code in the Stand Alone Mesh version if required. This register contains the date at which information starts in the “BIN” file and the time-step used as follow: IHOUR_BIN, IMIN_BIN, IDAY_BIN, IYEAR_BIN, ISTEP_BIN.
+
+IYEAR_BIN: 	Initial year for data at the bin file
+IDAY_BIN: 	Initial day for data at the bin file
+IHOUR_BIN: 	Initial hour for data at the bin file
+IMIN_BIN: 	Initial minute for data at the bin file
+ISTEP_BIN: 	Time step; 1: hour, 2: half of hour 
+
+b)	Keep in mind that the way that the standalone version is reading the WATCLASS.BIN file is as follow:
+
+READ(51,END=999) ((r4ShrtGrid2D(i,j),j=1,wf_jmax),i=1,wf_imax)
+READ(51,END=999) ((r4LongGrid2D(i,j),j=1,wf_jmax),i=1,wf_imax)
+READ(51,END=999) ((r4RainGrid2D(i,j),j=1,wf_jmax),i=1,wf_imax)
+READ(51,END=999) ((r4TempGrid2D(i,j),j=1,wf_jmax),i=1,wf_imax)
+READ(51,END=999) ((r4WindGrid2D(i,j),j=1,wf_jmax),i=1,wf_imax)
+READ(51,END=999) ((r4PresGrid2D(i,j),j=1,wf_jmax),i=1,wf_imax)
+READ(51,END=999) ((r4HumdGrid2D(i,j),j=1,wf_jmax),i=1,wf_imax)
+
+It forces the order of the “varname.txt” files in “FILEMAMES.TXT”, e.g., the order must be:
+?	Short wave:	[W/m²] 
+?	Long wave:	[W/m²]
+?	Precipitation:	[mm/sec]
+?	Temperature:	[K]
+?	Wind:		[m/s]
+?	Pressure	[Pascal]
+?	Humidity	[g/g]
+
+c)	Be careful about the units. The application assumes that precipitation values correspond to the cumulative for the time step period in [mm] (that is the most common way to find precipitation). Therefore, the values of precipitation in the “BIN” file are in mm/time step. A changed in “MESH” code is required in order to meet the [mm/s] unit for precipitation.
+
+d)	The application has been tested for daily and monthly data. It is expected it works fine for annually data. However nobody knows. The code is enclosed so anybody may customize it or generalize it according to his/her requirements.
+
+e)	A matrix of four dimensions is used, two of these four dimensions are hardcode. The dimension of the variable to read the data files is a hardcode too, therefore if the period to convert is very long, or if there are many data files some modifications should be required   
+7	EXAMPLE
+It is included a short example using data for the SSRB in the MESH repository, folder:
+…\MESH\branches\marin\MESHFORCING\R2CMESH
+8	CODE
+          program R2C_mesh_data_conversion
+
+C    1. This program reads the gridded ASCII "R2C" format data - ENSIM format?
+C       and converts it to a binary file that is read by MESH (meteorological data)
+C    2. Please take a look a the definition of the variables in order 
+c       to determine if they are OK for the period to be converted
+C                                         S. Marin Nov 22, 2007
+C    3. February 27, 2008: a register containing the initial date for the data  
+c       in the BIN file is added to the binary file. S.M
+
+      IMPLICIT NONE
+c
+      REAL*4, ALLOCATABLE:: VALUE(:,:,:,:) 
+      INTEGER IHOUR_BIN,IMIN_BIN,IDAY_BIN,IYEAR_BIN,ISTEP_BIN
+      integer nf,nfiles,nlong,nlat,nt,it,ix,iy,i,j,ios
+      character*40 fln(3650,20),FNF(20)         !fln(nfiles,nf), fnf(nf)
+      character*20 header
+c     !value(nlat,nlong,nt,nf)
+
+c ******************************
+c READ FILES WITH NAMES OF THE DATAFILES
+c ******************************
+C  FNF(1): FILE CONTAINIG FILES WITH SHORT WAVE DATA  
+C  FNF(2): FILE CONTAINIG FILES WITH LONG WAVE DATA   
+C  FNF(3): FILE CONTAINIG FILES WITH RAIN DATA        
+C  FNF(4): FILE CONTAINIG FILES WITH TEMPERATURE DATA 
+C  FNF(5): FILE CONTAINIG FILES WITH WIND X DATA      
+C  FNF(6): FILE CONTAINIG FILES WITH PRESSION DATA    
+C  FNF(7): FILE CONTAINIG FILES WITH HUMIDITY DATA    
+C  ...
+      OPEN(UNIT=5,FILE='PARNAMES.TXT',STATUS='OLD',IOSTAT=IOS)
+      READ(5,*)           ! COMMENT LINE
+      READ(5,*)IHOUR_BIN  ! initial hour
+      READ(5,*)IMIN_BIN   ! initial minute
+      READ(5,*)IDAY_BIN   ! initial day (Julian day)
+      READ(5,*)IYEAR_BIN  ! initial year
+      READ(5,*)ISTEP_BIN  ! time-step 1: hourly; 2:half_hourly
+      READ(5,*)           ! COMMENT LINE
+      READ(5,*)NF         ! NUMBER OF FILES
+      READ(5,*)NLONG      ! NUMBER OF LOGITUDE POINTS (X)
+      READ(5,*)NLAT       ! NUMBER OF LATITUDE POINTS (Y)
+      READ(5,*)           ! COMMENT LINE
+      DO I=1,NF
+         READ(5,*)FNF(i) 
+      ENDDO 
+      CLOSE(5)
+c nt:# of timestep per file
+c nf:# number of varaibles to read (# of files)           
+      ALLOCATE(value(nlat,nlong,2000,7))             !value(nlat,nlong,nt,nf)
+
+c OPEN AND READ FILES WITH NAME OF THE DATAFILES
+c REMAINDER: In an open statement IOSTAT=ios, where ios is an integer variable
+c            which is set to zero if the statement is executed successfully
+c
+       DO J=1,NF
+         OPEN(UNIT=5,FILE=trim(FNF(J)),STATUS='OLD',IOSTAT=IOS)
+           i=0
+           DO WHILE (ios.eq.0)
+              i=i+1
+              read(5,*,iostat=ios)fln(i,j)
+           ENDDO
+           if(j.EQ.1)nfiles=i-1
+           if(i-1.lt.nfiles)nfiles=i-1
+         CLOSE(5)
+       ENDDO
+       PRINT*,'NUMBER OF FILES TO BE PRECESSED FOR EACH VARIABLE= ',NFILES
+c OPENING READING AND WRITTING DATA... TIME STEPS PER FILE
+      OPEN(10,file='watclass.bin',action='write',form='unformatted',access='sequential')
+       WRITE(10)IHOUR_BIN,IMIN_BIN,IDAY_BIN,IYEAR_BIN,ISTEP_BIN
+       DO I=1,NFILES
+       PRINT*,'PROCCESSING GROUP OF FILES ',I,'  OF ',NFILES
+          DO J=1,NF
+            OPEN(UNIT=15,FILE='.\R2C\'//trim(FLN(I,J)),STATUS='OLD',IOSTAT=IOS)
+            PRINT*,'READING FILE ......',fln(i,j)
+              header=''
+              do while((trim(header).ne.':EndHeader').and.
+     1                 (trim(header).ne.':Endheader').and.
+     2                 (trim(header).ne.':endHeader').and.
+     3                 (trim(header).ne.':endheader').and.
+     4                 (trim(header).ne.':ENDHEADER'))   !should be more options sorry!
+              read(15,*)header
+              end do
+              it=0  !index for number of times in each file
+                    !for example: monthly file - hourly data -->maximum 744 
+              DO WHILE (ios.eq.0)
+                 it=it+1
+                 read(15,*,iostat=ios)header
+                 do iy=1,nlat
+                    read(15,*,iostat=ios)(value(iy,ix,it,j),ix=1,nlong)
+                 enddo                    
+                 read(15,*,iostat=ios)header
+              ENDDO
+            CLOSE(15)
+            nt=it-1
+          ENDDO
+          do it=1,nt
+            do j=1,nf
+                WRITE(10)((value(iy,ix,it,j),ix=1,nlong),iy=1,nlat)
+            enddo
+          enddo   
+       ENDDO 
+       CLOSE (10)
+      pause
+      stop
+	end
+
+
