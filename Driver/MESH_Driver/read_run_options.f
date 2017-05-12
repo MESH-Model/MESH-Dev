@@ -308,7 +308,11 @@
 !>     1 = Save the model configuration and run information to the
 !>         echo_print.txt file.
       MODELINFOOUTFLAG = 1
-
+!> RESERVOIR FLAG TO HANDLED WICH KIND OF RESERVOIR DO WE APPLY
+!>  0 = Non Reservoir is present
+!>  1 = Standar Reservoir type that support Mesh
+!>  2 = Reservoir type based on LISFLOOD 
+      RESERVOIRFLAG = 0
 !> The above parameter values are defaults, to change to a different
 !> value, use the MESH_input_run_options.ini file
 
@@ -450,8 +454,8 @@
             ICTEMMOD = IROVAL
           ELSE IF (IRONAME == "PBSMFLAG") THEN
             PBSMFLAG = IROVAL
-	      ELSE IF (IRONAME == "LOCATIONFLAG") THEN
-	        LOCATIONFLAG = IROVAL
+	  ELSE IF (IRONAME == "LOCATIONFLAG") THEN
+	    LOCATIONFLAG = IROVAL
           ELSE IF (IRONAME == "OUTFIELDSFLAG") THEN
             OUTFIELDSFLAG = IROVAL
           ELSE IF (IRONAME == "GGEOFLAG") THEN
@@ -464,6 +468,8 @@
             STREAMFLOWOUTFLAG = IROVAL
           ELSE IF (IRONAME == "BASINSWEOUTFLAG") THEN
             BASINSWEOUTFLAG = IROVAL
+          ELSE IF (IRONAME == "RESERVOIRFLAG") THEN
+            RESERVOIRFLAG  = IROVAL
           ELSE
             !> Error when reading the input file
             WRITE(6, *) "The flag '", IRONAME, "' was found in the",

@@ -86,6 +86,7 @@ USE model_dates
 use simstats
 use model_files
 use strings
+use reservoir
 
 IMPLICIT NONE
 INTRINSIC MAXLOC
@@ -1000,7 +1001,7 @@ CALL READ_INITIAL_INPUTS( &
 
 !INITIALIZE IMIN2  
   IMIN2 = IMIN
-
+  
 !>
 !>***********************************************************************
 !> Forcing data time step should not be less than 30 min - there is no 
@@ -2761,6 +2762,11 @@ ENDIF
 wfo_seq=0
 
 !> End of ENSIM Changes
+
+!> Fuad Reservoir Flag Active
+if (RESERVOIRFLAG == 2)then
+  call init_reservoirs('coeff_reserv.txt')
+endif
 
 !> *********************************************************************
 !> Output information to screen

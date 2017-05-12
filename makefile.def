@@ -29,6 +29,7 @@ OBJECTS=	area_watflood.o EF_Module.o EF_ParseUtilities.o FLAGS.o module_dates.o 
 			precmod.o stringmod.o \
 			climate_forcing_module.o model_output.o module_files.o module_variables_shared.o \
 			calc_drms.o calc_abserr.o
+OBJECTS+=	module_reservoir.o RUNLISFLOOD_simulateReservoirs.o
 
 #IO
 OBJECTS+=	read_config_output.o \

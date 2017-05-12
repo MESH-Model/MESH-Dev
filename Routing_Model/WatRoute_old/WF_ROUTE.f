@@ -11,7 +11,7 @@
      s     wf_store1,wf_store2,
      +     DriverTimeStep,ROFGRD, NLAT, M_C,M_R,M_S, NLTEST,
      +     wf_s, jan,IDAY,IHOUR,IMIN)
-
+     
       integer wf_ntype,wf_iymin,wf_iymax,wf_jxmin,
      +wf_jxmax,wf_imax,wf_jmax, wf_naa, wf_na
       real wf_grdn,wf_grde
@@ -60,7 +60,7 @@ c     Local variables
       integer WF_MAX_TIME_SUBDIVISIONS ,WF_MAX_ITERATIONS
       integer wf_a1, wf_a2, wf_a3, wf_a4
       integer top(NLAT)
-
+      
       COMMON /CLASS1/ DELT,TFREZ
       COMMON /CLASS4/ HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,
      1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
@@ -310,7 +310,9 @@ c       modified statements
          if( wf_b1(wf_ireach(n)).gt.0 ) then
 c           Natural reservoir element
             l=wf_ireach(n)
-            wf_store2(n)=(wf_qo2(n)/wf_b1(l))**(1.0/wf_b2(l))
+            if( wf_b2(l).gt.0.0) then
+                wf_store2(n)=(wf_qo2(n)/wf_b1(l))**(1.0/wf_b2(l))
+            endif
 c         elseif( wf_res(n).gt.0 ) then
 c           Controlled reservoir
 c           WHAT SHOULD THIS BE?  Unclear from rerout, etc.
@@ -402,8 +404,31 @@ c     and proceed to the lowest.
 
           if( wf_ireach(i).gt.0 ) then ! We are in a Reservoir
                l=wf_ireach(i)
+             if (wf_b1(l).eq.1.0 .and. wf_b2(l).eq.0.0) then !Reservoir type based on LISFLOOD
+C Are we at the outlet
+              if(wf_r(l).eq.i) then
+C yes we are at the outlet
+C Call external code to get discharge and storage
+                  wf_qi1(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
+!            call get_reservoir(resrvs,i,irsv)
+!            call compute_reservoir(resrvs%rsvr(irsv),wf_qi1(i),
+!     +            tsCount%count_timestep,tsCount%now_month)
+!             wf_qo2(i)=resrvs%rsvr(irsv)%flowSIM(tsCount%count_timestep)
+!           wf_store2(i)=resrvs%rsvr(irsv)%stoSIM(tsCount%count_timestep)
+                  call RUNLISFLOOD_simulateReservoirs(
+     +                    IYEAR,IDAY,i,l,wf_qi1(i),div*2.0, !input
+     +                    wf_qo2(i),wf_store2(i))           !output
+                  wf_resstore(l)=0.0
+               else
+C no we are in the reservoir
+C accumulate flow to the outlet
+                  wf_resstore(l)=wf_resstore(l)+qadd(i)+wf_qi2(i)
+                  wf_qo2(i)=0.0
+	              wf_store2(i)=0.0
+              endif !are we at the outlet
+
 C are we in a natural or controlled reservoir?
-             if(l.gt.wf_noresv_ctrl) then !Natural reservoir routing
+             else if(l.gt.wf_noresv_ctrl) then !Natural reservoir routing
 C Are we at the outlet of a natural reservoir
               if(wf_r(l).eq.i) then
 C yes we are at the outlet, use the big storage term to determine wf_qo2
@@ -433,10 +458,10 @@ C yes we are at the outlet
                   wf_store2(i)=wf_store1(i)+(wf_qi1(i)+wf_qi2(i)-
      +wf_qo1(i)-wf_qo2(i))*div+qadd(i)*div*2.0
                else
-c no we are in the reservoir
-c don't really know what to do here, the flow doesn't really matter
-c as it will be overwritten later, just for something keep adding the
-c flow to the big reservoir stoage
+C no we are in the reservoir
+C don't really know what to do here, the flow doesn't really matter
+C as it will be overwritten later, just for something keep adding the
+C flow to the big reservoir stoage
                   wf_resstore(l)=wf_resstore(l)+qadd(i)+wf_qi2(i)
                   wf_qo2(i)=1.0
 	            wf_store2(i)=1000.0
