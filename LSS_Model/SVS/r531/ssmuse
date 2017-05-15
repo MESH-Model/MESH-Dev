@@ -1,0 +1,6 @@
+. s.ssmuse.dot dot
+. ssmuse-sh -d cmoe/base/20150217
+. ssmuse-sh -d cmoi/base/20130927
+. ssmuse-sh -d hpcs/201402/02/base -d hpcs/201402/02/intel13sp1u2
+. ssmuse-sh -d rpn/libs/15.2 -d rpn/utils/15.2
+ 

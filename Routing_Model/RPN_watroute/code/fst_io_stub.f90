@@ -8,16 +8,17 @@ module fst_io
 
    contains
 
-   subroutine read_fst(unitNum,iflname,header_only,var_name,iyear,imonth,iday,ihour)
-      integer :: unitNum, iyear, imonth, iday, ihour
+   subroutine read_fst(unitNum,iflname,header_only,var_name,iyear,imonth,iday,ihour,ip3,etiket)
+      integer :: unitNum, iyear, imonth, iday, ihour, ip3
       character iflname*(*)
       character*1 header_only
       character*4 var_name
+      character(len = 12) etiket
       STOP 'read_fst is not implemented in this build!'
    end subroutine
    
-   subroutine write_fst(unitNum,infname,var_name,iyear,imonth,iday,ihour)
-      integer :: unitNum, iyear, imonth, iday, ihour
+   subroutine write_fst(unitNum,infname,var_name,iyear,imonth,iday,ihour,ip31)
+      integer :: unitNum, iyear, imonth, iday, ihour, ip31
       character infname*(*)
       character*4 var_name
       STOP 'write_fst is not implemented in this build!'

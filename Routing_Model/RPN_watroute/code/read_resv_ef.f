@@ -55,8 +55,11 @@ C Parameter type definitions
 C Local variables
       character*1024 line, subString, tmpString
       character*128 keyword, value 
-      integer lineLen, keyLen, wordCount
+      integer lineLen, KeyLen, wordCount
       logical rStat, lineType, foundEndHeader, insideColMetaData
+      real*4,    dimension(:), allocatable :: yres,xres
+      integer*4, dimension(:), allocatable :: resindex
+      integer*4  noresvi
 
 C Set unit and fln number
       unitNum = 37
@@ -68,7 +71,7 @@ C Open the file
          open(unit=unitNum,file=trim(adjustl(fln(flnNum))),
      *     status='old',iostat=ios)
          if(ios.ne.0)then
-            print*,'Problems opening ',trim(fln(flnNum))
+            print*,'Problems opening ',fln(flnNum)
             print*
             STOP ' Stopped in read_resv_ef'
          endif
@@ -89,7 +92,6 @@ c            print*,'Reservoir release (rel) file ',fln(flnNum)
       endif
 
       if(iopt.eq.2)print*,'in read_resv_ef passed 70'
-
 
       if(noresv.ge.1)then
 
@@ -133,17 +135,21 @@ C Search for and read tb0 file header
                   insideColMetaData = .FALSE.
                else if(insideColMetaData) then
                   iStat = ParseResvColumnMetaData(colHeader,keyword,
-     &                 keyLen,subString)
+     &                 KeyLen,subString)
                   if(iStat .lt. 0) then
-                    write(*,'(2(A))') 'ERROR parsing ',trim(fln(flnNum))
+                     write(*,'(2(A))') 'ERROR parsing ', fln(flnNum)
                      write(*,'(2(A))') '   in line: ',line		
                      STOP ' Stopped in read_resv_ef'
                      return
                   endif
                else
-                iStat = ParseResvParam(header,keyword,keyLen,subString)
+                  iStat=ParseResvParam(header,keyword,KeyLen,subString)
+                  if (keyword(1:KeyLen) .eq. ':starttime') then
+                     read(subString( 9:10),'(i1)') relday1
+                     read(subString(12:13),'(i1)') relhour1
+                  endif
                   if(iStat .lt. 0) then
-                    write(*,'(2(A))') 'ERROR parsing ',trim(fln(flnNum))
+                     write(*,'(2(A))') 'ERROR parsing ', fln(flnNum)
                      write(*,'(2(A))') '   in line: ',line		
                      STOP ' Stopped in read_resv_ef'
                      return
@@ -220,7 +226,8 @@ c End of the loop if noresv.ge.1
          if(noresv.gt.0)then
             allocate(b1(noresv),b2(noresv),b3(noresv),
      *        b4(noresv),b5(noresv),ires(noresv),jres(noresv),
-     *        yres(noresv),xres(noresv), !nk 18/06/04
+     *        resindex(noresv),
+     *        yres(noresv),xres(noresv),poliflg(noresv), !nk 18/06/04
      *        resname(noresv),qrel(noresv,nrel_max),
      *        qdwpr(noresv,nrel_max),lake_elv(noresv,nrel_max),
      *        lake_stor(noresv,nrel_max),lake_outflow(noresv,nrel_max), 
@@ -233,7 +240,9 @@ c End of the loop if noresv.ge.1
      *       'Error with allocation in read_resv_ef @172'
          else
             allocate(b1(1),b2(1),b3(1),b4(1),b5(1),ires(1),jres(1),
-     *           resname(1),qrel(1,nrel),qdwpr(1,nrel),stat=iAllocate)
+     *           resindex(1),
+     *           resname(1),qrel(1,nrel),qdwpr(1,nrel),poliflg(1),
+     *           stat=iAllocate)
             if(iAllocate.ne.0) STOP
      *           'Error with allocation in read_resv_ef @178'
          endif
@@ -285,6 +294,11 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
          b3(i) = colHeader%colCoeff3(i) ! coefficient 3
          b4(i) = colHeader%colCoeff4(i) ! coefficient 4
          b5(i) = colHeader%colCoeff5(i) ! coefficient 5
+         if(b3(i).eq.0.0) then
+           poliflg(i)='n'
+         else
+           poliflg(i)='y'
+         endif
       end do
 
       else                      !   firstpass
@@ -293,7 +307,7 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
          if(iopt.eq.2)print*,'In read_resv_ef @ 258'
          if(noresv.ne.noresv_firstpass)then
             print*,'No of reservoirs has been changed in'
-            print*,'in file ',trim(fln(7))
+            print*,'in file ',fln(7)
             print*,'This is not permitted'
             print*
             stop 'Program aborted in rdresvo @ 264'
@@ -349,6 +363,11 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
                b3(i) = colHeader%colCoeff3(i) ! coefficient 3
                b4(i) = colHeader%colCoeff4(i) ! coefficient 4
                b5(i) = colHeader%colCoeff5(i) ! coefficient 5
+         if(b3(i).eq.0.0) then
+           poliflg(i)='n'
+         else
+           poliflg(i)='y'
+         endif
 	    endif
          end do
       endif                     ! firstpass
@@ -375,6 +394,11 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
          b3(i) = colHeader%colCoeff3(i) ! coefficient 3
          b4(i) = colHeader%colCoeff4(i) ! coefficient 4
          b5(i) = colHeader%colCoeff5(i) ! coefficient 5
+         if(b3(i).eq.0.0) then
+           poliflg(i)='n'
+         else
+           poliflg(i)='y'
+         endif
       end do
       deallocate(colHeader%tb0cmd%colName)
       deallocate(colHeader%tb0cmd%colLocX)
@@ -415,7 +439,7 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
              end do
            else                                                          ! r2c files
              jres(i)=int((xres(i)-xorigin)/xdelta)+1
-             ires(i)=int((yres(i)-yorigin)/xdelta)+1
+             ires(i)=int((yres(i)-yorigin)/ydelta)+1
            end if
          end do
          if(iopt.ge.1)then
@@ -433,6 +457,14 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
 !         REROUT IS CALLED.
 !         IF NATURAL CONTROL, FLOWS ARE SET TO -1.0 ABOVE
 
+!        D. Durnford: Determine the index of the vectorized array corresponding to each reservoir
+         do n=1,naa
+           do i=1,noresv
+             if(xxx(n).eq.jres(i) .and. yyy(n).eq.ires(i))
+     *          resindex(i) = n
+           end do
+         end do
+
 !         initialize releases
          do k=1,noresv
             do j=1,nrel
@@ -440,13 +472,15 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
             end do
          end do
 
+! D Durnford: reservoirs where releases are specified not calculated are listed first with all coefficients set to 0.
+! I think this line and section of code are right.
 ! original (it appears to be wrong - D. Deacu) 
-!          if(b1(1).eq.0.0)then
+         if(b1(1).eq.0.0)then
 ! use the line below for now: test b1 of lake Nipigon (D. Deacu)
 ! csubich (9/12) -- This block of code seems very specific and
 ! probably shouldn't exist; in the meantime, I'm only fixing
 ! the read-past-the-end-of-the-array if noresv isn't at least 6.
-         if (noresv.ge.6 .and. b1(6).eq.0.0) then
+!         if (noresv.ge.6 .and. b1(6).eq.0.0) then
 !           do j=ktr,nrel,ktr
 !     rev. 9.1.13  Mar.  23/02  - fixed resv. timing, moved to beginning of dt
             do j=1,nrel,ktr
@@ -458,22 +492,20 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
                   print*,' Trying to read releases'
                   print*,' ios= ',ios
                   if(ios.eq.-1)then
-                write(98,*)'End of file in fln= ',trim(fln(7))
-                write(98,*)'Possibly last line does not have a return'
-                  print*,'End of file in fln= ',trim(fln(7))
-                  print*,'Possibly last line does not have a return'
-                  print*
-               else
-                  print*
-                  STOP ' program aborted in read_resv_ef.for'
+                    print*,'End of file in fln= ',trim(fln(7))
+                    print*,'Possibly last line does not have a return'
+                    print*
+                  else
+                    print*
+                    STOP ' program aborted in read_resv_ef.for'
+                  endif
                endif
-            endif
-         end do
-      endif                     !  if(b1(1).eq.0.0)
-      if(iopt.ge.1)then
-         j=ktr
-         write(52,*)(qrel(k,j),k=1,noresv)
-      endif
+            end do
+         endif                  !  if(b1(1).eq.0.0)
+         if(iopt.ge.1)then
+            j=ktr
+            write(52,*)(qrel(k,j),k=1,noresv)
+         endif
       endif                     !  if(noresv.gt.0)
 
       if(iopt.eq.2)print*,'in read_resv_ef passed 187'
@@ -516,8 +548,13 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
 !     WE CAN'T HAVE -VE RELEASES WHEN WE START
       do k=1,noresv
 ! V. Fortin: changed ktr into 1
-!        if(qrel(k,ktr).lt.0.0)qrel(k,ktr)=0.001
-         if(qrel(k,1).lt.0.0) qrel(k,1)=0.001
+!!        if(qrel(k,ktr).lt.0.0)qrel(k,ktr)=0.001
+!         if(qrel(k,1).lt.0.0) qrel(k,1)=0.001
+! D. Durnford: when releases are being specified and an observed streamflow value
+! is missing for the first hour, a negative value is provided.
+! In that situation, the initializing value of qo2 is used.
+         if(qrel(k,1).lt.0.0 .and. b1(k).eq.0.0 .and. b2(k).eq.0.0)
+     *      qrel(k,1)=qo2(resindex(k))
       end do
 !   
 !     SET FUTURE RELEASES = LAST NON-NEGATIVE RELEASE
@@ -599,7 +636,7 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
  500  format(256f10.3)
  1011 format(' ',3x,'  i  ires(i) jres(i)    b1(i)     b2(i)',
      *     '    b3(i)     b4(i)')
- 1013 format(' ',3x,i3,2i8,5f10.5,a12/)
+ 1013 format(' ',3x,i3,2i8,5e12.3,a12/)
  6801 format('   read_resv_ef: reservoir no =',i3,' mhtot =',i5)
  6802 format('   ',256f8.2)
 

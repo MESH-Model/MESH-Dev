@@ -1,0 +1,554 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!! S/P HYDRO_SVS
+!
+#include "phy_macros_f.h"
+      SUBROUTINE HYDRO_SVS ( DT, &
+           WD,WF, WR, RAINRATE, EG, &   
+           ER, ETR,  LAI, D, DP, & 
+           WSAT, PSN, VEGH, VEGL,PSNVH, &
+           RSNOW, RSNOWV, URBFRAC, &    
+           FCD, WDT, WFT, WRT, RUNOFF, NL, BCOEF, KSAT,&
+           PSISAT,F, DRAINAF, GRKSAT, GRKEF, GRKEFF, WFCINT,&
+           LATFLW, LATFLAF, WFCDP, KHC, PSI, KSATC, SLOP,&
+           WSNV, WSN, N)
+!
+      implicit none
+#include <arch_specific.hf>
+!     
+      INTEGER N, KDP,K, NL
+      ! M_TO_MM : CONVERT METERS TO MM
+      REAL, PARAMETER :: M_TO_MM=1000.00
+      REAL DT, WR(N), RAINRATE(N)
+      REAL WF(N)
+      REAL EG(N)
+      REAL ER(N),ETR(N)
+      REAL LAI(N)
+      REAL WSAT(N,NL), PSN(N), VEGH(N), VEGL(N)
+      REAL PSNVH(N)
+      REAL RSNOW(N), RSNOWV(N), URBFRAC(N,26)
+      REAL WRT(N), WFT(N), RUNOFF(N)
+      REAL D(NL), DP, WD(N,NL), WDT(N,NL),FCD(N,NL)
+      
+      REAL DELZ(N,NL),DELZW(N,NL),F(N,NL+1), DRAINAF(N)
+      REAL WSATBND(N,NL),WDBND(N,NL),DWDDZ(N,NL),BBND(N,NL),KSATBND(N,NL),PSISATBND(N,NL),KHC(N,NL),PSI(N,NL)
+      REAL  KSAT(N,NL),PSISAT(N,NL),BCOEF(N,NL)  
+      REAL  GRKSAT(N,NL),GRKEFF(N,NL),WFCINT(N,NL),ASATFC(N,NL),WSATC(N,NL)
+      REAL  ASAT0(N,NL),ASAT1(N), LATFLW(N,NL),LATFLAF(N), GRKEF(N)
+      REAL  USB,FB,B,WFCDP(N),BASFLW(N),SATSFC(N),SUBFLW(N),KSATC(N,NL),SLOP(N),WSNV(N),WSN(N)
+!
+!Author
+!          S. Belair, M.Abrahamowicz, S.Z.Husain, N.Alavi, S.Zhang (June 2015) 
+!Revisions
+
+! 016       S. Zhang (May 2013)
+!           - Modified the calculation of volumetric water content in the 
+!             deep soil layers according to Boone (1999)
+!
+! 017       N. Alavi (April 2014)
+!           - New calculation for soil water content evolution, lateral flow, runoff, and baseflow
+! 018       E. Gaborit (Nov. 2015)
+!           - Modify runnoff for urban areas 
+!
+!Object
+!     Calculates the evolution of the soil water contents
+!     liquid water retained in the vegetation canopy (Wr).  
+!     Also determine the runoff, lateral flow and drainage using interflow parametrization for sloping train (based on Soulis 2000 and 2010)
+!
+!Arguments
+!
+!          - Input -
+! DT       timestep
+! WD(NL)   soil volumetric water content in soil layer (NL soil layers)
+! D(NL)    Depth of soil layer (NL soil layers) in METERS
+! DP       Permeable depth in METERS
+! WF       frozen soil water
+! WR       water content retained by the vegetation canopy
+! RAINRATE rain rate at the surface (m/s)
+! EG      evaporation rate (no fraction) over bare ground (1st soil layer)
+! ER       direct evaporation rate (no fraction) from veg. leaves
+! ETR      evapotranspiration rate (no faction) 
+! LAI      leaf area index
+! WSAT     volumetric water content at soil saturation
+! PSN      fraction of bare ground or low veg. covered by snow
+! VEGH     fraction of HIGH vegetation
+! VEGL     fraction of LOW vegetation
+! PSNVH    fraction of HIGH vegetation covered by snow
+! DWATERDT exchanged soil water between the frozen and liquid reservoirs
+! RSNOW    flow of liquid water through the snow pack - to the soil
+! RSNOWV   flow of liquid water through the snow-under-veg pack - to the soil
+! FCD(NL)  Root fraction within soil layer (NL soil layers)
+! PG       rainrate in mm/s
+! NL      Number of SOIL LAYERS
+! BCOEF    slope of the retention curve
+! KSAT     Vertical hydraulic conductivity at saturation (mm/s)
+! PSISAT   soil water suction at saturation
+! GRKSAT   horizontal hydraulic conductivite at saturation at the surface
+! GRKEF    parameter needed for watdrain to calculater lateral flow
+! ASAT_0  bulk saturation at the begining of time step (WD/WDSAT), required for watdrain
+! ASAT_1  bulk saturation at the end of timestep, required for watdrain
+! ASATFC  bulk saturation at field capacity, required for watdrain
+! WFCINT   volumetric water content at field capacity for interflow
+! URBFRAC  Fraction of urban cover
+!
+!           - Output -
+! WDT(NL)  new soil volumetric water content in soil layer (NL soil layers)
+! WFT      new frozen soil water
+! WRT      new water content retained by the vegetation canopy
+! RUNOFF   surface runoff in mm (or kg/m2)
+! WD       soil volumetric water content
+! F        water flux between soil layers (in meters, converted to mm at the end )
+! DRAINAF  accumulation of base drainage (in kg/m2 = mm)
+
+! WFCDP    volumetric water content at field capacity as a function of thickness of the permeable depth
+! LATFLW   lateral flow (interflow) (in meters in calculation, converted to mm at the end)
+! LATFLAF  Accum. of lateral flow at all soil levels and over time (kg/m2 = mm) 
+!
+!
+#include "isbapar.cdk"
+#include "surfacepar.cdk"
+include "thermoconsts.inc"
+!
+      INTEGER I
+!
+!
+!
+!***********************************************************************
+!     AUTOMATIC ARRAYS
+!***********************************************************************
+!
+      AUTOMATIC ( RR      , REAL , (N) )
+      AUTOMATIC ( WRMAX   , REAL , (N) )
+      AUTOMATIC ( PG      , REAL , (N) )
+      AUTOMATIC ( RVEG    , REAL , (N) )
+!
+!***********************************************************************
+!
+!
+include "dintern.inc"
+include "fintern.inc"
+!
+!
+!-------------------------------------
+
+!   1.        EVOLUTION OF THE EQUVALENT WATER CONTENT Wr
+!      
+      DO I=1,N
+!
+!                   Rainrate (in mm/s). 
+!   
+        RR(I) = M_TO_MM * RAINRATE(I)
+!
+      END DO
+!     
+!                                  Remove evaporation from canopy reservoir
+!                                  Then add precipitation. Careful: rain falls
+!                                  on canopy only if there is no snow under the
+!                                  vegetation. If there is snow on the ground,
+!                                  all rain goes directly to the snowpack and no
+!                                  liquid water remains in the vegetation
+!
+      DO I=1,N
+!
+         WRMAX(I) = 0.2*LAI(I)
+
+         IF (WSNV(I).GE.CRITSNOW)THEN
+!                                  There is snow on the ground, remove evaporation
+!                                  then drain all liquid water from the vegetation
+            WRT(I) = WR(I) - DT * ER(I)
+!                                  Liquid water in vegetation becomes runoff
+            RVEG(I) = MAX(0.0,WRT(I)/DT) ! Runoff mult. by dt later on, so water balance maintained..
+            WRT(I) = 0.0
+         ELSE
+!                                  Remove P-E from liquid water in vegetation
+!                                  Sanity check: WRT must be positive
+!                                  since ER is limited to WR/DT+RR in ebudget
+            WRT(I) = MAX(0., WR(I) - DT * (ER(I) -  RR(I)))
+!                                  Compute canopy drip
+!                                  if Wr > Wrmax, there is runoff
+            RVEG(I) = MAX(0., (WRT(I) - WRMAX(I)) / DT ) 
+!
+!                                  Wr must be smaller than Wrmax
+!                                  after runoff is removed
+!
+            WRT(I) = MIN(WRT(I), WRMAX(I))
+         END IF
+!
+     END DO
+!
+!                                  Compute precipitation reaching the ground PG
+!                                  as a weighted average of RVEG and RR
+!                                  if there is no snow on bare ground,
+!                                  otherwise PG is just from RVEG since RR goes
+!                                  through the snowpack
+!                                   
+
+     DO I=1,N
+!   
+        IF (WSN(I).GE.CRITSNOW)THEN
+           PG(I) = (VEGL(I) + VEGH(I)) * RVEG(I)
+        ELSE
+           PG(I) = (VEGL(I) + VEGH(I)) * RVEG(I) & 
+                + (1. - VEGL(I) - VEGH(I) ) * (1. - PSN(I)) * RR(I)
+        ENDIF
+!
+     END DO
+!
+!
+     
+!
+!        2.     ADD EFFECT OF SNOWPACK RUNOFF 
+!               ------------------------------------------
+!
+!                               Include the effect of runoff from the
+!                               snowpack as a source for water reaching
+!                               the ground
+!
+      DO I=1,N
+        PG(I) = PG(I) + (1.-VEGH(I)) * RSNOW(I) &   
+                           +    VEGH(I) * RSNOWV(I)
+      END DO
+
+!
+!
+!        3.     CALCULATE THE REQUIRED PARAMETERS FOR NEW HYDRLOGY ROUTINE 
+!               ------------------------------------------
+
+!                                 Calculating thickness of each soil layer, DELZ 
+      DO I=1,N
+
+         DELZ(I,1)=D(1)
+         DO K=2,NL
+            DELZ(I,K)=D(K)-D(K-1)
+         ENDDO
+         
+      ENDDO
+     
+!            Depth of permeable soil,DP, is set above.
+!            The true DP value is set to the closest soil layer interface depth;
+!            KDP is the index of the soil layer whose bottom depth is equal to 
+!            the true permeable soil depth  
+  
+      IF (D(1).GE.DP) Then
+         KDP=1
+      ELSE
+         DO K=2,NL
+          IF (D(K).GE.DP) Then
+            IF ((D(K)-DP).GT.(DP-D(K-1))) Then
+               KDP=K-1
+               DP=D(K-1)
+               EXIT
+            ELSE
+               KDP=K
+               DP=D(K)
+               EXIT
+            END IF
+          END IF
+         END DO
+         IF (DP.GT.D(NL)) Then
+             KDP=NL
+             DP=D(NL)
+         END IF
+      END IF
+
+      DO K=1,NL
+         DO I=1,N 
+
+             DELZW(I,K)=DELZ(I,K)
+
+         END DO
+      END DO
+
+      DO K=1,NL
+         DO I=1,N
+            
+            !Adjust ksat and wsat for presence of ice
+            KSATC(I,K)=KSAT(I,K)*(1.0-MAX(0.0,MIN((WSAT(I,K)-CRITWATER)/WSAT(I,K),&
+               WF(I)/WSAT(I,K))))**2.
+            WSATC(I,K)= MAX((WSAT(I,K)-WF(I)-0.00001),CRITWATER)
+
+            ! Calculate parameters needed for WATDRAIN
+            ASAT0 (I,K) = WD(I,K) / WSATC(I,K)
+            ASATFC(I,K) = WFCINT(I,K)/ WSAT(I,K)
+
+         END DO
+      END DO
+      
+      DO K=1,KDP
+         DO I=1,N
+            ! Horizontal soil hydraulic conductivity decays with depth
+            GRKSAT (I,K) = 10.*EXP(5.*(DP-D(K))/DP)*KSATC(I,K)
+            GRKEFF (I,K) = GRKEF(I)*GRKSAT(I,K) 
+         END DO
+      END DO
+      
+! If KDP is equal to NL then this section below is not used.
+      DO K=KDP+1,NL
+         DO I=1,N
+            ! set Horizontal soil hydraulic conductivity for layers below KDP to the KDP one
+            GRKSAT (I,K) = GRKSAT(I,KDP)
+            GRKEFF (I,K) = GRKEF(I)*GRKSAT(I,K)
+         END DO
+      END DO
+
+!        4.      CALCULATE SURFACE RUNOFF
+!              ------------------------------------------
+            !Call watdrain to calculate runoff
+ 
+      CALL WATDRN(DELZW(:,1),BCOEF(:,1),WSATC(:,1),GRKSAT(:,1),GRKEFF(:,1),ASATFC(:,1),ASAT0(:,1),ASAT1,SUBFLW,BASFLW,SATSFC,N,1,N,DT)
+              
+      DO I=1,N
+             !use ksat to calculate runoff (mm/s)
+             RUNOFF(I) = MAX( (SATSFC(I)*PG(I)+(1-SATSFC(I))*MAX(PG(I)-KSATC(I,1)*1000.,0.0)) , 0.0 )             
+             ! assuming that 33% of urban cover is totally impervious (RUNOFF = PG over impervious surface)
+             RUNOFF(I) = RUNOFF(I) * (1. - URBFRAC(I,21)*0.33) + PG(I) * URBFRAC(I,21)*0.33        
+             ! remove runoff from the ampount of water reaching the ground
+             PG(I) = PG(I) - RUNOFF(I)              ! (mm/s)
+             RUNOFF(I) = RUNOFF(I)*DT
+      END DO
+ 
+!        5.      CALCULATE BASEFLOW AT THE BOTTOM OF THE PERMEABLE AND LAST LAYERS
+!              -----------------------------------------
+
+! BASE FLOW for the permeable layer KDP
+! Compute wfc as a function of thickness of the permeable depth (DP) base on Soulis et al. (2012)
+
+      DO I=1,N
+         B=BCOEF(I,KDP)
+         USB = 1./B
+         FB = (B**USB)/(B-1.) * ((3.*B+2.)**(1.-USB)-(2.*B+2.)**(1.-USB))  
+         WFCDP(I) = WSATC(I,KDP)*FB*(PSISAT(I,KDP)/DP)**USB
+      END DO
+      
+!Call WATDRAIN to calculate baseflow
+
+      CALL WATDRN(DELZW(:,KDP),BCOEF(:,KDP),WSATC(:,KDP),KSATC(:,KDP),&
+        GRKEFF(:,KDP),ASATFC(:,KDP),ASAT0(:,KDP),ASAT1,SUBFLW,BASFLW,SATSFC,N,1,N,DT)
+
+      DO I=1,N
+
+         IF(WD(I,KDP).GT.WFCDP(I)) THEN  
+            !baseflow only happens when soil water contant of last layer exceeds field capacity
+            F(I,KDP+1)=BASFLW(I)
+         ELSE 
+            F(I,KDP+1)=0.0
+         END IF
+         
+      END DO
+
+! BASE FLOW FOR THE LAST LAYER NL
+! Compute wfc as a function of thickness of the total depth D(NL) base on Soulis et al. (2012)
+
+      DO I=1,N
+             B=BCOEF(I,NL)
+             USB = 1./B
+             FB = (B**USB)/(B-1.) * ((3.*B+2.)**(1.-USB)-(2.*B+2.)**(1.-USB))
+             WFCDP(I) = WSATC(I,NL)*FB*(PSISAT(I,NL)/D(NL))**USB
+      END DO
+
+!Call WATDRAIN to calculate baseflow
+
+      CALL WATDRN(DELZW(:,NL),BCOEF(:,NL),WSATC(:,NL),KSATC(:,NL),&
+            GRKEFF(:,NL),ASATFC(:,NL),ASAT0(:,NL),ASAT1,SUBFLW,BASFLW,SATSFC,N,1,N,DT)
+
+      DO I=1,N
+
+             IF(WD(I,NL).GT.WFCDP(I)) THEN
+                !baseflow only happens when soil water contant of last layer exceeds field capacity
+                F(I,NL+1)=BASFLW(I)
+             ELSE
+                F(I,NL+1)=0.0
+             END IF
+         
+      END DO
+      
+
+ !        6.      CALCULATE NEW SOIL WATER CONTENT FOR EACH LAYER
+!              -----------------------------------------
+!
+! Compute water fluxes between soil layers based on Richards equation 
+      
+      DO I=1,N
+
+             DO K=1,NL
+                    LATFLW(I,K)=0.0
+             END DO
+             
+             F(I,1)=(PG(I)-(1.-VEGL(I)-VEGH(I))*(1-PSN(I))* EG(I))*DT/1000.
+
+      END DO
+                   
+!Compute vertical water fluxes between soil layers, find KSAT, PSISAT, K AND PSI at the boundaries     
+! do it for all layers except KDP and NL (water flux is computed from watdrain, see above).
+       
+      DO K=1,NL-1
+      
+            IF (K.NE.KDP) THEN
+                 DO I=1,N
+                       !wsat at soil boundaries        
+                        WSATBND(I,K)=(WSATC(I,K)+WSATC(I,K+1))/2.
+                       !WD at soil boundaries  
+                        WDBND(I,K)=MAX((WD(I,K)+WD(I,K+1))/2.0,0.04)          
+                      !gradient of soil water content          
+                        DWDDZ(I,K)=(WD(I,K+1)-WDBND(I,K))/DELZW(I,K+1)+ &
+                             (WDBND(I,K)-WD(I,K))/DELZW(I,K)
+                       !b-coefficient at the boundaries
+                        BBND(I,K)=(BCOEF(I,K)+BCOEF(I,K+1))/2.
+                        !ksat at soil boundaries
+                        KSATBND(I,K)=KSATC(I,K)*KSATC(I,K+1)*(DELZW(I,K)+&
+                             DELZW(I,K+1))/(KSATC(I,K)*DELZW(I,K+1)+KSATC(I,K+1)*DELZW(I,K))
+                        !psisat at soil boundaries
+                        PSISATBND(I,K)=PSISAT(I,K)**(DELZW(I,K)/(DELZW(I,K)+&
+                             DELZW(I,K+1)))*PSISAT(I,K+1)**(DELZW(I,K+1)/(DELZW(I,K)+DELZW(I,K+1)))
+                        !soil hydraulic conductivity at soil boundaries 
+                        KHC(I,K)= MIN(KSATBND(I,K)*(WDBND(I,K)/WSATBND(I,K))**(2.*BBND(I,K)+3.0),&
+                          KSATBND(I,K))
+                       !soil water potential at the soil boundries
+                        PSI(I,K)= MAX(PSISATBND(I,K)*(WDBND(I,K)/WSATBND(I,K))**(-BBND(I,K)),&
+                          PSISATBND(I,K))
+                       !vertical flux of water between soil layers      
+                        F(I,K+1)=KHC(I,K)*DT*(-BBND(I,K)*PSI(I,K)*DWDDZ(I,K)/WDBND(I,K)+1.0)                 
+                 END DO
+            END IF
+            
+      END DO
+      
+!   Update soil liquid water content based on calculated water fluxes and evapotranspiration 
+      DO I=1,N 
+     
+             WDT(I,1)=WD(I,1)+(F(I,1)-F(I,2))/DELZW(I,1) &
+                  -DT*((VEGL(I)*(1.-PSN(I))+VEGH(I)*(1.-PSNVH(I)))*FCD(I,1)*ETR(I))/(1000.*DELZW(I,1))   
+         
+             DO K=2,NL
+                    WDT(I,K)=WD(I,K)+(F(I,K)-F(I,K+1))/DELZW(I,K) & 
+                     -DT*((VEGL(I)*(1.-PSN(I))+VEGH(I)*(1.-PSNVH(I)))*(FCD(I,K)-FCD(I,K-1))*ETR(I))/(1000.*DELZW(I,K))
+             END DO
+
+      END DO
+
+! ChecK if the calculated WDT is between critical water (0.01) and wsat
+!if WDT is less than CRITWATER get water from the next layer
+!if WDT is more than saturation, add eccess water to lateral flow or water flow (F)
+     
+      DO K=1,NL
+         DO I=1,N
+    
+               IF (WDT(I,K).LT.CRITWATER)  THEN
+               
+                      ! if we are in the last soil layer, soil water content of the layer below cannot be updated
+                      IF(K.NE.NL) WDT(I,K+1)=WDT(I,K+1)-(CRITWATER-WDT(I,K))*DELZW(I,K)/DELZW(I,K+1)
+                      F(I,K+1)=F(I,K+1)-(CRITWATER-WDT(I,K))*DELZW(I,K)
+                      WDT(I,K)=CRITWATER
+
+               ELSEIF (WDT(I,K).GT.WSATC(I,K))  THEN
+               
+                      IF (K.LT.KDP.OR.K.GT.KDP) THEN
+                                    ! excess water removal via downward flux
+                                    F(I,K+1)=F(I,K+1)+(WDT(I,K)-WSATC(I,K))*DELZW(I,K)
+                                    ! if we are in the last soil layer, soil water content of the layer below cannot be updated
+                                    IF(K.NE.NL) WDT(I,K+1)=WDT(I,K+1)+(WDT(I,K)-WSATC(I,K))*DELZW(I,K)/DELZW(I,K+1)
+                      ELSEIF (K.EQ.KDP) THEN
+                                    ! excess water removal via lateral flow
+                                    LATFLW(I,K)=(WDT(I,K)-WSATC(I,K))*DELZW(I,K)
+                      END IF
+                      WDT(I,K)=WSATC(I,K)  
+                      
+               END IF
+            
+         END DO
+      END DO
+
+!        7.      CALCULATE LATERAL FLOW
+!              -----------------------------------------
+!calculate parameter needed for WATDRAIN based on new WDT 
+      DO K=1,NL
+         DO I=1,N
+            ASAT0(I,K) = WDT(I,K) / WSATC(I,K)     
+         END DO
+      END DO
+      
+!Call WATDRAIN to calculate SUBFLW from each layer 
+
+      DO K=1,NL
+    
+         CALL WATDRN(DELZW(:,K),BCOEF(:,K),WSATC(:,K),GRKSAT(:,K),GRKEFF(:,K),ASATFC(:,K),ASAT0(:,K),ASAT1,SUBFLW,BASFLW,SATSFC,N,1,N,DT)
+          
+         DO I=1,N
+         
+            IF(WDT(I,K).GT.WFCINT(I,K))THEN
+                SUBFLW (I) = MAX(0.,MIN(WDT(I,K)*DELZW(I,K),SUBFLW(I)))
+                LATFLW (I,K) = LATFLW(I,K)+SUBFLW(I)
+                WDT(I,K)  = WDT(I,K)-SUBFLW(I)/DELZW(I,K)
+            ENDIF
+       
+         END DO
+      END DO
+
+!---------------------------------------------------
+
+!        8.     TIME-EVOLUTION OF THE FROZEN SOIL WATER
+!               ---------------------------------------
+!
+      DO I=1,N
+!        TODO
+         WFT(I) = 0.0
+      END DO
+!
+!---------------------------------------------------
+ !
+!--------------------------------------------------
+! SET MINIMUM VALUES OF SOIL WATER AND MAKES SURE FROZEN SOIL WATER NON-NEGATIVE
+      DO I=1,N
+
+          DO K=1,NL
+            WDT(I,K) = MAX(WDT(I,K),CRITWATER)
+            IF (WDT(I,K)+WFT(I).LT.CRITWATER) THEN
+               WDT(I,K) = CRITWATER
+               WFT(I) = 0.0
+            END IF
+         ENDDO
+
+         WFT(I) = MAX( WFT(I), 0.0   )   
+      END DO
+!--------------------------------------------------------
+!--------------------------------------------------
+! CALCULATE DIAGNOSTICS, CONVERT UNITS, AND ACCUMULATORS 
+
+      DO I=1,N
+
+         DO K=1,NL
+            ! CONVERT TO MM
+            LATFLW (I,K) = LATFLW(I,K) * M_TO_MM
+         END DO
+         
+         DO K=1,KDP                   
+            !  Accumulation of lateral runoff over time and all soil layers
+            LATFLAF(I) = LATFLAF(I) + LATFLW(I,K)
+         ENDDO
+
+         DO K=1,NL+1
+            ! CONVERT TO MM
+            F(I,K) = F(I,K) * M_TO_MM           
+         ENDDO
+
+         ! Accumulation of drainage (base flow)
+         ! Drainage is the vertical flow across the bottom of the lowermost layer: level = # layers + 1     
+          DRAINAF(I) = DRAINAF(I) + F(I,KDP+1)
+          
+      END DO
+      
+RETURN
+END

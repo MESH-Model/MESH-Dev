@@ -1,0 +1,16 @@
+!
+      integer mulmax, surfesptot
+      parameter (mulmax = 64)
+      integer agg      (maxvarsurf)
+      integer mul      (maxvarsurf)
+      integer niveaux  (maxvarsurf)
+      integer mosaik   (maxvarsurf)
+      integer ptdebut  (maxvarsurf)
+      integer quel_bus (maxvarsurf)
+      integer statut   (maxvarsurf,0:mulmax)
+      integer tsrad_i, z0_i, z0t_i
+!
+      common /dimsurf/ agg, mul, niveaux, mosaik, ptdebut
+      common /dimsurf/ quel_bus, statut
+      common /dimsurf/ surfesptot,tsrad_i,z0_i,z0t_i
+!

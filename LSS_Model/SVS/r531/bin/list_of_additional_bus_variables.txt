@@ -1,0 +1,2 @@
+ runofftotaf; runofftotaf  ;TRAF;accumulated total surface runoff               ;5 
+ accevap; accevap ; ACWF; accumulation of evapotranspiration flux; 1

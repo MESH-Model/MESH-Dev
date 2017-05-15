@@ -1,0 +1,6 @@
+The source code found in this directory originates from the svs_v1.1.3_cleanup of SPS.
+
+This subroutine was modified in order to use lookup tables for LAI:
+inicover_svs.ftn90
+
+TODO: generalize SVS code so that it can use either climatological LAI or prescribed LAI values.

@@ -1,0 +1,272 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** S/P VEGI_SVS
+!
+#include "phy_macros_f.h"
+      SUBROUTINE VEGI_SVS ( RG, T, TVEG, HU, PS, &
+           WD , D, RGL, & 
+           LAI, LAIH, RSMIN, GAMMA, WWILT, WFC, &   
+           SUNCOS, DRZ, NL, RS, SKYVIEW, VTR, &    
+           FCD, N  )
+!
+      implicit none
+#include <arch_specific.hf>
+!
+      INTEGER N , NL
+      REAL D(NL), WD(N,NL), FCD(N, NL)
+      REAL RG(N), T(N), HU(N), PS(N), TVEG(N)
+      REAL SUNCOS(N), LAIH(N)
+      REAL RGL(N), LAI(N), RSMIN(N), GAMMA(N), WWILT(N,NL)
+      REAL WFC(N,NL), RS(N), SKYVIEW(N), VTR(N), DRZ(N)
+     
+  
+      REAL D50p
+!
+!Author
+!          S. Belair, M.Abrahamowicz,S.Z.Husain (June 2015)
+!Revisions
+! 001      Name (date) - Comment
+!
+!Object
+!
+!          Calculates the surface stomatal resistance Rs,
+!          and vegetation sky view factor and transmissivity
+!
+!
+!Arguments
+!
+!
+!          - Input -
+! RG       solar radiation
+! T        low-level temperature of air
+! TVEG     skin (surface) temperature of vegetation
+! HU       low-level specific humidity of air
+! PS       surface pressure
+! RGL      AVERAGE constant for the calculation of the stomatal resistance
+! LAI      AVERAGE Leaf area index
+! LAIH     Leaf area index for high vegetation only
+! RSMIN    AVERAGE minimum stomatal resistance
+! GAMMA    other constant for RS (AVERAGED)
+! WWILT    volumetric water content at the wilting point
+! WFC      volumetric water content at the field capacity
+! SUNCOS   cosinus of solar angle at LOCAL hour
+! DRZ      root-zone depth (rooting depth)
+! WD(NL)   soil volumetric water content in soil layer (NL soil layers)
+! D(NL)    Depth of soil layer (NL soil layers)
+! NL      Number of SOIL LAYER
+!      
+!          - Output -
+! RS       Surface or stomatal resistance
+! SKYVIEW  Sky view factor for tall/high vegetation
+! VTR      (HIGH) Vegetation transmissivity 
+! FCD(NL)  Root fraction within soil layer (NL soil layers)
+!
+include "thermoconsts.inc"
+!
+      INTEGER I, K
+      REAL CSHAPE
+     
+!
+!
+!
+!***********************************************************************
+!     AUTOMATIC ARRAYS
+!***********************************************************************
+!
+      AUTOMATIC (  F       , REAL , (N))
+      AUTOMATIC (  F1      , REAL , (N))
+      AUTOMATIC (  F2      , REAL , (N))
+      AUTOMATIC (  F3      , REAL , (N))
+      AUTOMATIC (  F4      , REAL , (N))
+      AUTOMATIC (  QSAT    , REAL , (N))
+      AUTOMATIC (  EXTINCT , REAL , (N))
+      AUTOMATIC (  WRZ     , REAL , (N))
+!
+!***********************************************************************
+!
+include "dintern.inc"
+include "fintern.inc"
+!
+!
+!
+!
+!
+!*       1.     THE 'ZF1' FACTOR
+!               ---------------
+!                      This factor measures the influence
+!                      of the photosynthetically active radiation
+!
+!
+      DO I=1,N
+         F(I)  = 0.55*2.*RG(I) / (RGL(I)+1.E-6) /  &
+             ( LAI(I)+1.E-6 )
+         F1(I) = ( F(I) + RSMIN(I)/5000. ) / ( 1. + F(I) )
+      END DO
+!
+!
+!
+!
+!*       2.     THE 'ZF2' FACTOR
+!               ----------------
+!                      This factor takes into account the effect
+!                      of the water stress on the surface
+!                      resistance
+!
+!                      NOTE that W2 (liquid portion of soil water) is
+!                      used here instead of W2+WF.  Thus, when soil water
+!                      freezes (W2 --> 0), ZF2 becomes small and the
+!                      surface increases increases (no transpiration when
+!                      soils are frozen).
+!
+!           Calculation of root-zone soil moisture
+!
+!                 First, fractions of roots comprised above SVS's
+!                 1cm, 5cm, 10cm and D2 (FC1,FC2,FC3,FCD2) depths are computed      
+!                 
+!                 Shape parameter CSHAPE
+      DO I=1,N
+         ! calculate depth at which have 50% of roots
+         D50p=min(50.,75.*DRZ(I))
+         ! Shape parameter CSHAPE
+         CSHAPE=LOG10(0.05/0.95)/LOG10((100*DRZ(I))/D50p)
+!                 Root fractions at different depths
+!                 The equation has depths in cm                 
+
+         DO K=1,NL-1
+          FCD(I,K) = 1./ (1.+ (D(K)*100./50.)**CSHAPE) 
+         ENDDO
+         FCD(I,NL)=1.
+!
+!                 Root-zone  soil moisture is WRZ
+!
+         WRZ(I)= FCD(I,1) * WD(I,1)
+         DO K=2,NL
+            WRZ(I) = WRZ(I) + ( FCD(I,K) - FCD(I,K-1) )  * WD(I,K)
+         ENDDO
+
+      END DO
+
+!
+      DO I=1,N
+!
+!
+!            For humid soils, this factor does not
+!            increase the stomatal resistance
+!
+        IF (WRZ(I).GE.WFC(I,1)) F2(I) = 1.0
+!
+!
+!            The stomatal resistance should be large
+!            when the soil is very dry
+!
+        IF (WRZ(I).LT.WFC(I,1).AND.WRZ(I).LE.WWILT(I,1)) F2(I) = 1.E-5
+!
+!
+!            For intermediate soils:
+!
+        IF (WRZ(I).LT.WFC(I,1).AND.WRZ(I).GT.WWILT(I,1)) &  
+                 F2(I) = ( WRZ(I)-WWILT(I,1) ) /  &
+                         ( WFC(I,1)-WWILT(I,1) + 1.E-6 )
+
+        IF (F2(I).LT.1.E-5) F2(I)=1.E-5
+!
+      END DO
+
+!
+!
+!
+!*       3.     THE 'ZF3' FACTOR
+!               ----------------
+!                           This factor represents the effect of
+!                           vapor pressure deficit of the atmosphere.
+!                           For very humid air, the stomatal resistance
+!                           is small, whereas it increases as the
+!                           air becomes drier.
+!
+!
+      DO I=1,N
+!
+       QSAT(I) = FOQST( TVEG(I), PS(I) )
+!
+       F3(I) = MAX( 1. - GAMMA(I)*( QSAT(I) - HU(I) )*1000. , 1.E-3 )
+!
+      END DO
+!
+!
+!
+!*       4.     THE 'ZF4' FACTOR
+!               ----------------
+!                  This factor introduces an air temperature
+!                  dependance on the surface stomatal resistance
+!
+      DO I=1,N
+        F4(I) = MAX( 1.0 - 0.0016*(298.15-T(I))**2, 1.E-3 )
+      END DO
+!
+!
+!*       5.     THE SURFACE STOMATAL RESISTANCE
+!               -------------------------------
+!
+      DO I=1,N
+        RS(I) = RSMIN(I) / ( LAI(I)+1.E-6 ) & 
+                   / F1(I) / F2(I) / F3(I) / F4(I)
+!
+        RS(I) = MIN( RS(I),5000.  )
+        RS(I) = MAX( RS(I), 1.E-4 )
+      END DO
+!
+!
+!*       6.     TRANSMISSIVITY OF CANOPY (HIGH VEG ONLY)
+!               ----------------------------------------
+!
+!
+      DO I=1,N
+!                 Calculate the extinction coefficient... 
+!                 the constant 0.5 is a first approximation
+!                 based on Sicart et al. (2004), the calculation
+!                 of the coefficient of extinction could/should
+!                 be refined according to vegetation type
+!
+         EXTINCT(I)   =  0.5  / SUNCOS(I)
+!
+!                 Calculate the transmissivity
+!
+         VTR(I) = EXP( -1.0 * EXTINCT(I) * LAIH(I) )
+!
+      END DO
+!
+!
+!
+!*       7.     SKYVIEW FACTOR (HIGH VEG ONLY)
+!               ------------------------------
+!
+!
+      DO I=1,N
+!                 According to Verseghy et al. (1993), the skyview
+!                 factor for NEEDLELEAF is exp(-0.5*LAI) and
+!                 exp(-1.5*LAI) for BROADLEAF (and exp(-0.8*LAI) for 
+!                 crops). Here as a first approximation, we take the
+!                 skyview factor for tall/high vegetation to be exp(-1*LAI).
+!
+         SKYVIEW(I) = EXP( -1.0 * LAIH(I) )
+!
+      END DO
+!
+!
+!
+!
+      RETURN
+      END

@@ -32,7 +32,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !  t	        - time increment in seconds
 !  thr		- time increment in hours
 !  time		- time from the beginning of the event in hours
-!  totaltime	- time from beginning in hours
+!  jz		- UTC hour
 !  mz		- the integer value of the hour
 !		  smallest time interval allowed will be a66 seconds (param file)
 !  dtmin	- found in 'route' and is equal to the smallest travel
@@ -63,12 +63,60 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       ! While a grand rewrite would be nice, the simplest thing to do
       ! would be to rewrite the array of start-days-of-months based on
       ! whether this is a leap year.
-      if (mod(year,4) .eq. 0) then ! Leap year
-      DATA ju_mon/1, 32, 61, 92,122,153,183,214,245,275,306,336,
-     *          367,398,426,457,487,518,548,579,610,640,671,701/
+      if (mod(year1,4) .eq. 0) then ! Leap year
+      !DATA ju_mon/1, 32, 61, 92,122,153,183,214,245,275,306,336,
+      !*          367,398,426,457,487,518,548,579,610,640,671,701/
+        ju_mon(1)  = 1
+        ju_mon(2)  = 32
+        ju_mon(3)  = 61
+        ju_mon(4)  = 92
+        ju_mon(5)  = 122
+        ju_mon(6)  = 153
+        ju_mon(7)  = 183
+        ju_mon(8)  = 214
+        ju_mon(9)  = 245
+        ju_mon(10) = 275
+        ju_mon(11) = 306
+        ju_mon(12) = 336
+        ju_mon(13) = 367
+        ju_mon(14) = 398
+        ju_mon(15) = 426
+        ju_mon(16) = 457
+        ju_mon(17) = 487
+        ju_mon(18) = 518
+        ju_mon(19) = 548
+        ju_mon(20) = 579
+        ju_mon(21) = 610
+        ju_mon(22) = 640
+        ju_mon(23) = 671
+        ju_mon(24) = 701
       else 
-      DATA ju_mon/1, 32, 60, 91,121,152,182,213,244,274,305,335,
-     *          366,397,425,456,486,517,547,578,609,639,670,700/
+      !DATA ju_mon/1, 32, 60, 91,121,152,182,213,244,274,305,335,
+      !*          366,397,425,456,486,517,547,578,609,639,670,700/
+        ju_mon(1)  = 1
+        ju_mon(2)  = 32
+        ju_mon(3)  = 60
+        ju_mon(4)  = 91
+        ju_mon(5)  = 121
+        ju_mon(6)  = 152
+        ju_mon(7)  = 182
+        ju_mon(8)  = 213
+        ju_mon(9)  = 244
+        ju_mon(10) = 274
+        ju_mon(11) = 305
+        ju_mon(12) = 335
+        ju_mon(13) = 366
+        ju_mon(14) = 397
+        ju_mon(15) = 425
+        ju_mon(16) = 456
+        ju_mon(17) = 486
+        ju_mon(18) = 517
+        ju_mon(19) = 547
+        ju_mon(20) = 578
+        ju_mon(21) = 609
+        ju_mon(22) = 639
+        ju_mon(23) = 670
+        ju_mon(24) = 700
       end if
 ! these are the original values I don't know what they are trying to do?? Frank April 2002
 c    *          366,397,435,456,486,517,565,578,280,639,672,700/
@@ -110,7 +158,6 @@ c         if(id.eq.1)t=3600.0
          clock=0.0
 
 c      time=t/3600.
-c      totaltime=totaltime+1.0
 
          dtmax=3600.0
          if(snwflg.eq.'y')then
@@ -132,6 +179,7 @@ c      totaltime=totaltime+1.0
 c         ju=ju_mon(mo1)+jz/24
 
          ju=ju_mon(mo1)+day1-1    ! changed May4/07  nk
+
          ju=max(ju,1)
 
          month_now=mo1
@@ -228,7 +276,7 @@ c         ju=ju_mon(mo1)+jz/24
               hour_now=24
           endif
 
-!      print*,ju,mo,ju_mon(mo1),mo1,day_now,hour_now
+!      print*,ju,mo,ju_mon(mo),mo,day_now,hour_now
 
 !         now done in sub
 

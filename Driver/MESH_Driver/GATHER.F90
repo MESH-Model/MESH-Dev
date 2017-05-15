@@ -1,15 +1,23 @@
-SUBROUTINE GATHER(NA,NML,ILG,ILMOS,GRD,GAT)
+!>
+!> Description: Distributes from GRD to GAT form.
+!>
+subroutine GATHER(shd, iilen, ii1, ii2, GRD, GAT)
 
-!SIMPLE VERSION OF THE CLASSG SUBROUTINE.
-    
-    INTEGER NA,NML,ILG
-    INTEGER ILMOS(ILG)
-    REAL    GRD(NA),GAT(ILG)
-    
-    INTEGER K
-    
-    DO K = 1,NML
-       GAT(K) = GRD(ILMOS(K))
-   ENDDO
+    use sa_mesh_shared_variables
 
-END SUBROUTINE
+    !> Input variables.
+    type(ShedGridParams), intent(in) :: shd
+    integer, intent(in) :: iilen, ii1, ii2
+    real, intent(in), dimension(shd%NA) :: GRD
+
+    !> Output variables.
+    real, dimension(iilen) :: GAT
+
+    !> Local variables.
+    integer k
+
+    do k = ii1, ii2
+        GAT(k) = GRD(shd%lc%ILMOS(k))
+    end do
+
+end subroutine

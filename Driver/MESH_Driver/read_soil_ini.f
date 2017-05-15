@@ -1,12 +1,18 @@
-      SUBROUTINE READ_SOIL_INI(NMTEST, IGND, NTYPE, NA, sv)
-      USE MESH_INPUT_MODULE
-	  USE FLAGS
-!> local variables
-      INTEGER :: SOIL_IOS, M, I, J
-!> read in variables
-      INTEGER :: NMTEST, IGND
-      INTEGER*4 :: NA, NTYPE
-      TYPE(SoilValues) :: sv
+      subroutine READ_SOIL_INI(shd, fls)
+
+      use sa_mesh_shared_variables
+      use sa_mesh_shared_output_variables
+      use model_files_variables
+
+!todo: remove this
+	  use FLAGS
+
+      !> Input variables.
+      type(ShedGridParams) :: shd
+      type(fl_ids) :: fls
+
+      !> Local variables.
+      integer NTYPE, NSL, ierr, iun, m, j
 
 !> *********************************************************************
 !>  Open and read in values from soil.ini file
@@ -15,109 +21,106 @@
 !>  Read in the soil parameters that used to be calculated from %sand, %clay
 !> *********************************************************************
 
-      IF (SOILINIFLAG /= 5) RETURN
+      if (SOILINIFLAG /= 5) return
 
-      OPEN(UNIT=23,file='soil.ini',status='old',iostat=SOIL_IOS)
-!> CHECK TO SEE IF THERE IS A new_soil.ini FILE
+      iun = fls%fl(mfk%f54)%iun
+      open(iun, file=adjustl(trim(fls%fl(mfk%f54)%fn)), status='old',
+     &     action='read', iostat=ierr)
 
-!todo - change this so it's an option in one of the ini files
-!> when SOIL_IOS is 0, the file opened successfully.
-      IF(soil_ios/=0)THEN 
-        PRINT*,"ERROR: The soil.ini file was not found."
-        PRINT*,"You can set SOILINIFLAG to ",
-     *   	   "values less than 5 and MESH will use soil percentages ",
-     *	       "from MESH_parameters_CLASS.ini file."
-        PRINT*,"Below is what MESH will do if the sum of soil ",
-     *         "percentages is greater than 100%:"
-		PRINT*,"For SOILINIFLAG set to 1 - ",
-     1  		"MESH will use the soil percentages as specified"
-		PRINT*,"For SOILINIFLAG set to 2 - ",
-     2	        "MESH will adjust soil percentages in favor of sand"
-		PRINT*,"For SOILINIFLAG set to 3 - ",
-     3	        "MESH will adjust soil percentages in favor of clay"
-		PRINT*,"For SOILINIFLAG set to 4 - ",
-     4	        "MESH will proportionally adjust the soil percentages"
-		STOP
-      ELSE
-        PRINT*,'The soil.ini file was found'
-        PRINT*,'CLASSBHYD.f will be used'
-        PRINT*,'-----------------------------------'
-        READ (23,*)
-        READ (23,*) (sv%wc_thpor (1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thpor (1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thpor (1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thlret(1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thlret(1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thlret(1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thlmin(1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thlmin(1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_thlmin(1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_bi    (1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_bi    (1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_bi    (1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_psisat(1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_psisat(1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_psisat(1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_grksat(1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_grksat(1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_grksat(1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_hcps  (1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_hcps  (1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_hcps  (1,m,3),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_tcs   (1,m,1),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_tcs   (1,m,2),m=1,NMTEST)
-        READ (23,*)
-        READ (23,*) (sv%wc_tcs   (1,m,3),m=1,NMTEST)
+      !> Check to see if the file exists.
+      if (ierr /= 0) then
+        print *, 'ERROR: The soil.ini file was not found.'
+        print *, 'You can set SOILINIFLAG to ',
+     &   	     'values less than 5 and MESH will ',
+     &           'use soil percentages ',
+     &	         'from MESH_parameters_CLASS.ini file.'
+        print *, 'Below is what MESH will do if the sum of soil ',
+     &           'percentages is greater than 100%:'
+		print *, 'For SOILINIFLAG set to 1 - ',
+     &  		 'MESH will use the soil percentages as specified'
+		print *, 'For SOILINIFLAG set to 2 - ',
+     &	         'MESH will adjust soil percentages in favor of sand'
+		print *, 'For SOILINIFLAG set to 3 - ',
+     &	         'MESH will adjust soil percentages in favor of clay'
+		print *, 'For SOILINIFLAG set to 4 - ',
+     &	         'MESH will proportionally adjust the soil percentages'
+		stop
+      end if
 
-        DO I=1,NA
-          DO M=1,NMTEST
-            DO J=1,3
-              sv%wc_thpor (I,M,J) = sv%wc_thpor(1,M,J)
-              sv%wc_thlret(I,M,J) = sv%wc_thlret(1,M,J)
-              sv%wc_thlmin(I,M,J) = sv%wc_thlmin(1,M,J)
-              sv%wc_bi    (I,M,J) = sv%wc_bi(1,M,J)
-              sv%wc_psisat(I,M,J) = sv%wc_psisat(1,M,J)
-              sv%wc_grksat(I,M,J) = sv%wc_grksat(1,M,J)
-              sv%wc_hcps  (I,M,J) = sv%wc_hcps(1,M,J)
-              sv%wc_tcs   (I,M,J) = sv%wc_tcs(1,M,J)
-            END DO
-            DO J=4,IGND
-              sv%wc_thpor (I,M,J) = sv%wc_thpor(I,M,3)
-              sv%wc_thlret(I,M,J) = sv%wc_thlret(I,M,3)
-              sv%wc_thlmin(I,M,J) = sv%wc_thlmin(I,M,3)
-              sv%wc_bi    (I,M,J) = sv%wc_bi(I,M,3)
-              sv%wc_psisat(I,M,J) = sv%wc_psisat(I,M,3)
-              sv%wc_grksat(I,M,J) = sv%wc_grksat(I,M,3)
-              sv%wc_hcps  (I,M,J) = sv%wc_hcps(I,M,3) 
-              sv%wc_tcs   (I,M,J) = sv%wc_tcs(I,M,3)
-            END DO
-          END DO
-        END DO
-      ENDIF
+      if (ro%VERBOSEMODE > 0) then
+        print *, 'The soil.ini file was found'
+        print *, 'CLASSBHYD.f will be used'
+      end if
 
-      CLOSE(unit=23)
+      NTYPE = shd%lc%NTYPE
+      NSL = shd%lc%IGND
 
-      RETURN
-      END SUBROUTINE READ_SOIL_INI
+      !> Read variables from the file.
+      read(iun, *)
+      read(iun, *) (pmrow%slp%thpor(m, 1), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%thpor(m, 2), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%thpor(m, 3), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%thlret(m, 1), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%thlret(m, 2), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%thlret(m, 3), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%thlmin(m, 1), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%thlmin(m, 2), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%thlmin(m, 3), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%bi(m, 1), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%bi(m, 2), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%bi(m, 3), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%psisat(m, 1), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%psisat(m, 2), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%psisat(m, 3), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%grksat(m, 1), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%grksat(m, 2), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%grksat(m, 3), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%hcps(m, 1), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%hcps(m, 2), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%hcps(m, 3), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%tcs(m, 1), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%tcs(m, 2), m = 1, NTYPE)
+      read(iun, *)
+      read(iun, *) (pmrow%slp%tcs(m, 3), m = 1, NTYPE)
+
+      close(iun)
+
+      !> Distribute the variables.
+      do m = 1, NTYPE
+        do j = 4, IGND
+          pmrow%slp%thpor(m, j) = pmrow%slp%thpor(m, 3)
+          pmrow%slp%thlret(m, j) = pmrow%slp%thlret(m, 3)
+          pmrow%slp%thlmin(m, j) = pmrow%slp%thlmin(m, 3)
+          pmrow%slp%bi(m, j) = pmrow%slp%bi(m, 3)
+          pmrow%slp%psisat(m, j) = pmrow%slp%psisat(m, 3)
+          pmrow%slp%grksat(m, j) = pmrow%slp%grksat(m, 3)
+          pmrow%slp%hcps(m, j) = pmrow%slp%hcps(m, 3)
+          pmrow%slp%tcs(m, j) = pmrow%slp%tcs(m, 3)
+        end do
+      end do
+
+      return
+
+      end subroutine

@@ -1,0 +1,79 @@
+# ======================================================================
+#
+#				Include or header file for  makefile
+#
+# ======================================================================
+
+# ======================================================================
+# Directory of source code
+# ======================================================================
+
+# Update the DIR_REPO variable as appropriate.
+# For Cygwin:
+#DIR_REPO=/cygdrive/c/sample_path
+
+# For MinGW:
+#DIR_REPO=C:\sample_path
+
+# For Linux:
+#DIR_REPO=/home/sample_path
+
+# To build from the current directory:
+DIR_REPO=.
+
+# ======================================================================
+# PATHS
+# ======================================================================
+PHY=$(DIR_REPO)/rpnphy_5.5.0-rc2_all
+CHANGES2PHY=$(DIR_REPO)/changes_to_rpnphy
+SVS=$(DIR_REPO)/svs_v1.1.3_cleanup_mesh
+RUNSVS=$(DIR_REPO)/src
+
+# ======================================================================
+# Include the following directories in the source file searching path
+# ======================================================================
+VPATH=	$(DIR_REPO)/: \
+		$(SVS)/: \
+		$(DIR_REPO)/rmnlib_013/: \
+		$(CHANGES2PHY)/: \
+		$(PHY)/: \
+		$(RUNSVS)/: \
+		$(RUNSVS)/strings/:
+
+# ======================================================================
+# Object files needed to build 
+# ======================================================================
+
+#
+OBJECTS=	datec.o moduledate.o 
+
+#
+OBJECTS+=	precmod.o stringmod.o 
+
+#
+OBJECTS+=	runsvs_mod_sa_mesh.o runsvs_utils.o \
+			runsvs_io_mesh.o runsvs_init_mesh.o runsvs_class_mesh_inputs.o 
+
+#
+OBJECTS+=	inicover_svs.o inisoili_svs.o 
+
+#
+OBJECTS+=	svs.o soili_svs.o \
+			aggveghigh.o aggveglow.o \
+			veglowhigh.o vegi_svs.o drag_svs.o \
+			snow_alone.o snow_veg.o ebudget_svs.o \
+			hydro_svs.o phtsyn_svs.o update_svs.o 
+ 
+#
+#OBJECTS+=	WATDRN.o 
+OBJECTS+=	RUNSVSDRN.o 
+
+#
+OBJECTS+=	phy_debu_data.o 
+
+#
+OBJECTS+=   vscos.o vssin.o vslog.o 
+
+#
+OBJECTS+=	aggcovernat.o juliand.o suncos1.o prelim1.o interpveg.o flxsurf.o \
+			compz0.o sf_heat.o sf_momentum.o sf_pblheight.o diasurf2.o phyopt_initdata.o 

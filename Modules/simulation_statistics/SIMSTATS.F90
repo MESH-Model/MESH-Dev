@@ -1,0 +1,487 @@
+!>
+!> Description:
+!> MAM - FOR AUTOCALIBRATION USING PRE-EMPTION - A MAXIMUM OF 1 YEAR (365 DAYS)
+!> DAILY STREAM FLOW IS SUPPOSED TO BE USED FOR AUTOCALIBRATION PURPOSE.
+!>
+module SIMSTATS
+
+    use SIMSTATS_config
+    use model_output_variabletypes
+    use flags
+    use model_files
+    use model_dates
+
+    use simstats_nse, only: nse_calc
+    use simstats_sae, only: sae_calc
+    use simstats_saesrt, only: saesrt_calc
+    use calc_drms
+    use calc_abserr
+
+    implicit none
+
+    private
+    public mtsflg, stats_init, stats_update_stfl_daily, stats_write, fbest, ftest
+
+!    integer, parameter :: dp=kind(0.d0)
+
+    !* NCAL:    ACTUAL NUMBER OF CALIBRATION DATA
+    !* COUNTER: COUNTER FOR THE NUMBER OF PRE-EMPTION STARTS
+    !* EXISTS:  LOGICAL TO CHECK IF "pre_emption_value.txt" FILE EXISTS
+    !* SAE:     SUM OF ABSOLUTE VALUE OF ERRORS (DEVIATIONS BETWEEN OBSERVED
+    !*          AND SIMULATED STREAM FLOWS)
+    !* SAESRT:  SUM OF ABSOLUTE VALUE OF ERRORS (DEVIATIONS BETWEEN SORTED OBSERVED
+    !*          AND SORTED SIMULATED STREAM FLOWS)
+    !* NSE:     MEAN NASH-SUTCLIFFE EFFIECIENCY INDEX OF DAILY FLOWS
+    !* FBEST:   SAE AT PREVIOUS TIME STEP TRIAL
+    !* FTEST:   SAE AT CURRENT TIME STEP TRIAL
+    !* QOBS:    OBSERVED DAILY STREAM FLOW
+    !* QSIM:    SIMULATED DAILY STREAM FLOW
+
+    integer ncal, ns
+    real fbest, ftest
+    real, dimension(:, :), allocatable :: qobs, qsim
+
+    !> STATISTICS FOR MONTE CARLO SIMULATION
+    real, dimension(:), allocatable :: bias, nsd, lnsd, nsw, tpd, tpw
+
+    type(model_output_drms) :: st_drms
+    type(model_output_abserr) :: st_abserr
+
+    contains
+
+    !>
+    !> January 25, 2012 - M.A. Mekonnen
+    !>
+    !> The function computes model efficiency coefficients.
+    !>
+    !>  OBS     - Observed values
+    !>  SIM     - Simulated values
+    !>  N       - Number of days
+    !>  NS      - Number of stations
+    !>  NMIN    - Minimum number of days for model spin-up
+    !>  SAE     - Absolute value error
+    !>  MAE     - Mean absolute value error
+    !>  RMSE    - Root mean squared error
+    !>  BIAS    -
+    !>  NSD     - Nash-Sutcliffe coefficient
+    !>  LNSD    - Nash-Sutcliffe coefficient (with the natural logarithm of runoff)
+    !>
+    subroutine calc_stats(obs, sim, n, bias, nsd, lnsd, nsw, tpd)
+
+        !> Input variables.
+        real, intent(in), dimension(:) :: obs, sim
+        integer n
+
+        !> Output variables.
+        real bias, nsd, lnsd, nsw, tpd, tpw
+
+        !> Local variables.
+        !* ilf: Number of days left out in the calculation of metrics (METRICSSPINUP).
+        integer ipo(1), ips(1), nad, naw, nw, iw, ilf, j, i
+        real lerrd(n), lerrdm(n), errd(n), errdm(n), errtp, obsdm, obswm, lobsdm, ltol
+        real, dimension(:), allocatable :: obsw, simw, errw, errwm
+
+        !> Intrinsic functions.
+        intrinsic ceiling, maxloc, sum, count, min, max, log, abs
+
+        !> Tolerance for low-flow values.
+        ltol = 0.0001
+
+        !> Determine the number of weeks in the simulation.
+        nw = ceiling(n / 7.0)
+        allocate(obsw(nw), simw(nw), errw(nw), errwm(nw))
+
+        !> Zero output and interim calculation variables.
+        bias = 0.0
+        nsd = 0.0
+        lnsd = 0.0
+        nsw = 0.0
+        tpd = 0.0
+        tpw  = 0.0
+        obsdm = 0.0
+        obsw = 0.0
+        simw = 0.0
+        obswm = 0.0
+        errd = 0.0
+        errdm = 0.0
+        errw  = 0.0
+        errwm = 0.0
+        errtp = 0
+        lerrd = 0.0
+        lerrdm = 0.0
+
+        !> Apply the spin-up period (METRICSSPINUP).
+        if (METRICSINCLUDESPINUP == 1) then
+            ilf = 1
+        else
+            ilf = METRICSSPINUP
+        end if
+
+        !> Return if METRICSSPINUP exceeds the length of the run.
+        if (METRICSSPINUP > ncal) return
+
+        !> Calculate the weekly values for daily observed and simulated values.
+        iw = 0
+        do i = ilf, ncal, 7
+            iw = iw + 1
+            j = min(i + 6, n)
+            obsw(iw) = sum(obs(i:j))
+            simw(iw) = sum(sim(i:j))
+        end do
+
+        !> Calculate the mean of the observed values.
+        nad = count(obs(ilf:ncal) >= 0.0)
+        obsdm = sum(obs(ilf:ncal), mask = obs(ilf:ncal) >= 0.0)/nad
+        lobsdm = sum(log(obs(ilf:ncal) + ltol), mask = obs(ilf:ncal) >= 0.0)/nad
+
+        !> Calculate the mean of the weekly values.
+        naw = count(obsw(1:nw) >= 0.0)
+        obswm = sum(obsw(1:nw), mask = obsw(1:nw) >= 0.0)/naw
+
+        !> Calculate the error terms for observed values greater than zero.
+        where(obs(ilf:ncal) >= 0.0)
+            errd(ilf:ncal) = obs(ilf:ncal) - sim(ilf:ncal)
+            errdm(ilf:ncal) = obs(ilf:ncal) - obsdm
+            lerrd(ilf:ncal) = log(obs(ilf:ncal) + ltol) - log(sim(ilf:ncal) + ltol)
+            lerrdm(ilf:ncal) = log(obs(ilf:ncal) + ltol) - lobsdm
+        end where
+
+        !> Calculate the errors for the weekly values.
+        where(obsw(1:nw) >= 0.0)
+            errw(1:nw) = obsw(1:nw) - simw(1:nw)
+            errwm(1:nw) = obsw(1:nw) - obswm
+        end where
+
+        !> Calculate the statistical coefficients.
+        bias = sum(errd(ilf:ncal))/(obsdm*nad)
+        nsd = 1.0 - sum(errd**2)/sum(errdm**2)
+        lnsd = 1.0 - sum(lerrd**2)/sum(lerrdm**2)
+        nsw = 1.0 - sum(errw**2)/sum(errwm**2)
+
+        !> Calculate the time to peak value.
+        errtp = 0.0
+        do i = ilf, ncal, 365
+            j = min(i + 364, n)
+            if(obs(max(i, j - 182)) > 0.0) then
+                ipo = maxloc(obs(i:j))
+                ips = maxloc(sim(i:j))
+                errtp = ipo(1) - ips(1)
+            else
+                errtp = 0.0
+            end if
+            tpd = tpd + abs(errtp)
+        end do
+
+        !> Calculate the time to peak for the weekly values.
+        errtp = 0.0
+        do i = 1, nw, 52
+            j = min(i + 51,nw)
+            if (obsw(max(i, j - 25)) > 0.0) then
+                ipo = maxloc(obsw(i:j))
+                ips = maxloc(simw(i:j))
+                errtp = ipo(1) - ips(1)
+            else
+                errtp = 0.0
+            end if
+            tpw = tpw + abs(errtp)
+        end do
+
+    end subroutine
+
+    !>
+    !> Description:
+    !>
+    subroutine stats_init(fls, stfl)
+
+        !> Input variables.
+        type(fl_ids) :: fls
+        type(streamflow_hydrograph) :: stfl
+
+        !> Local variables.
+        logical exists
+        integer iun, ierr
+
+        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
+
+!todo: replace unit number with variable.
+        write(6, *) '================================================='
+        write(6, *)
+        write(6, *) '     SA_MESH IS RUNNING IN AUTOCALIBRATION MODE'
+
+!todo: separate out pre-emption.
+        if (mtsflg%PREEMPTIONFLAG >= 1) write(6, *) '                USING PRE-EMPTION'
+
+        write(6, *)
+        write(6, *) '================================================='
+        write(6, *)
+
+!todo: split into stats_state_resume().
+        if (mtsflg%PREEMPTIONFLAG >= 1) then
+            fbest = +1.0e+10
+            inquire(file = trim(adjustl(mtsfl%fl(mtsk%PE)%fn)), exist = exists)
+            if (exists) then
+                iun = mtsfl%fl(mtsk%PE)%iun
+                open(iun, file = trim(adjustl(mtsfl%fl(mtsk%PE)%fn)), status = 'old', action = 'read', iostat = ierr)
+                if (ierr == 0) read(iun, *) fbest
+                close(iun)
+            end if
+        end if
+
+        ncal = 0
+        ns = stfl%ns
+
+        allocate(qobs(leap_year(ic%now%year), ns), qsim(leap_year(ic%now%year), ns))
+        allocate(bias(ns), nsd(ns), lnsd(ns), nsw(ns), tpd(ns), tpw(ns))
+
+        qobs = 0.0
+        qsim = 0.0
+
+        if (RESUMEFLAG == 4) then
+            call stats_state_resume(fls)
+        end if
+
+    end subroutine
+
+    !>
+    !> Description:
+    !>
+    subroutine stats_update_stfl_daily(fls, stfl)
+
+        !> Input variables.
+        type(fl_ids) :: fls
+        type(streamflow_hydrograph) :: stfl
+
+        integer isz
+        real, dimension(:, :), allocatable :: tmp
+
+        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
+
+        ncal = ncal + 1
+
+        if (ncal > size(qobs, 1)) then
+
+            isz = size(qobs, 1)
+            allocate(tmp(size(qobs, 1), ns))
+            tmp = qobs
+            deallocate(qobs)
+            isz = isz + leap_year(ic%now%year)
+            allocate(qobs(isz, ns))
+            qobs = 0.0
+            qobs(1:(ncal - 1), :) = tmp(1:(ncal - 1), :)
+            tmp = 0.0
+            tmp = qsim
+            deallocate(qsim)
+            isz = isz + leap_year(ic%now%year)
+            allocate(qsim(isz, ns))
+            qsim = 0.0
+            qsim(1:(ncal - 1), :) = tmp(1:(ncal - 1), :)
+            deallocate(tmp)
+
+        end if
+
+        qobs(ncal, :) = stfl%qhyd
+        qsim(ncal, :) = stfl%qsyn
+
+        if (objfnflag == 0) then
+            ftest = sae_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
+        elseif (objfnflag == 1) then
+            ftest = saesrt_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
+        elseif (objfnflag == 2) then
+            write(6, *) &
+                'THE SAEMSRT (OBJECTIVE FUNCTION = 2) IS NOT ', &
+                'CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE'
+        elseif (objfnflag == 3) then
+            write(6, *) &
+                'THE NSE (OBJECTIVE FUNCTION = 3) IS NOT ', &
+                'CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE' , &
+                'TRY NEGNSE (OBJECTIVE FUNCTION = 4)'
+        elseif (objfnflag == 4) then
+            ftest = nse_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
+            ftest = -1.0 * ftest
+        end if
+
+!        if (mtsflg%AUTOCALIBRATIONFLAG >= 1 .and. mtsflg%PREEMPTIONFLAG == 1) then
+!            if (FTEST > FBEST) goto 199
+!        end if
+
+    end subroutine
+
+    subroutine stats_state_save(fls)
+
+        use mpi_shared_variables
+        use model_files_variables
+
+        !> Input variables.
+        type(fl_ids) :: fls
+
+        !> Local variables.
+        integer j, iun, ierr
+
+        !> Return if AUTOCALIBRATIONFLAG has not been enabled.
+        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
+
+        !> Only the serial or head node should write this file.
+        if (ipid /= 0) return
+
+        !> Open the file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.simstats', status = 'replace', action = 'write', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+        !> Write the values of the variables to file.
+        write(iun) ncal
+        write(iun) ns
+        write(iun) fbest, ftest
+        do j = 1, ns
+            write(iun) qobs(1:ncal, j)
+            write(iun) qsim(1:ncal, j)
+        end do
+
+        !> Close the file to free the unit.
+        close(iun)
+
+    end subroutine
+
+    subroutine stats_state_resume(fls)
+
+        use mpi_shared_variables
+        use model_files_variables
+
+        !> Input variables.
+        type(fl_ids) :: fls
+
+        !> Local variables.
+        integer j, iun, ierr
+
+        !> Return if AUTOCALIBRATIONFLAG has not been enabled.
+        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
+
+        !> Only the serial or head node should write this file.
+        if (ipid /= 0) return
+
+        !> Open the file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.simstats', status = 'old', action = 'read', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+        !> Read the values of the variables from file.
+        read(iun) ncal
+        read(iun) ns
+        read(iun) fbest, ftest
+        if (allocated(qobs)) deallocate(qobs, qsim)
+        allocate(qobs(ncal, ns), qsim(ncal, ns))
+        do j = 1, ns
+            read(iun) qobs(1:ncal, j)
+            read(iun) qsim(1:ncal, j)
+        end do
+
+        !> Close the file to free the unit.
+        close(iun)
+
+    end subroutine
+
+    !>
+    !> Description: Write the metrics of the simulation to file.
+    !>
+    subroutine stats_write(fls)
+
+        !> Input variables.
+        type(fl_ids) :: fls
+
+        !> Local variables.
+        logical exists
+        integer j, iun
+
+        if (SAVERESUMEFLAG == 4) then
+            call stats_state_save(fls)
+            return
+        end if
+
+        !> Return if autocalibration and metrics are not enabled.
+        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
+
+        !> Check if the array to keep file information for the metrics is allocated.
+        if (.not. allocated(mtsfl%fl)) call init_metricsout_files()
+
+        !> Write the output function for pre-emption.
+        if (mtsfl%fl(mtsk%fo)%init) then
+            iun = mtsfl%fl(mtsk%fo)%iun
+            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%fo)%fn)))
+            if (mtsflg%PREEMPTIONFLAG >= 1) ftest = ftest*ic%count_jday/ncal
+            write(iun, "(9999(g15.7e2, ' '))") ftest
+            close(iun)
+        end if
+
+        !> Calculate the metrics of the simulation.
+        do j = 1, size(qobs, 2)
+            call calc_stats(qobs(1:ncal, j), qsim(1:ncal, j), ncal, bias(j), nsd(j), lnsd(j), nsw(j), tpd(j))
+        end do
+        if (mtsfl%fl(mtsk%out)%init .or. mtsfl%fl(mtsk%RMSE)%init) st_drms = calc_drms_value(METRICSSPINUP, ncal, qobs, qsim)
+        if (mtsfl%fl(mtsk%out)%init .or. mtsfl%fl(mtsk%RMSE)%init) st_abserr = calc_abserr_value(METRICSSPINUP, ncal, qobs, qsim)
+
+        !> Results for Monte-Carlo style analysis are appended to results in an existing file.
+        if (mtsfl%fl(mtsk%MC)%init) then
+            inquire(file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)), exist = exists)
+            iun = mtsfl%fl(mtsk%MC)%iun
+            if (exists) then
+                open(iun, file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)), position = 'append', status = 'old')
+            else
+                open(iun, file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)))
+                write(iun, "(9999(g15.7e2, ' '))") "BIAS ", "NSD ", "NSW ", "TPD "
+            end if
+            write(iun, "(9999(g15.7e2, ' '))") (bias(j), nsd(j), nsw(j), int(tpd(j)), j = 1, size(qobs, 2))
+            close(iun)
+        end if
+
+        !> Write Nash-Sutcliffe coefficient of daily streamflow values.
+!todo: there's probably a better way to store a set of multiple statistics in one file.
+        if (mtsfl%fl(mtsk%NSE)%init) then
+            iun = mtsfl%fl(mtsk%NSE)%iun
+            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%NSE)%fn)))
+            write(iun, "(9999(g15.7e2, ' '))") (nsd(j), j = 1, size(qobs, 2)), sum(nsd)/size(qobs, 2)
+            close(iun)
+        end if
+
+        !> Write Nash-Sutcliffe coefficient of weekly streamflow values.
+        if (mtsfl%fl(mtsk%NSW)%init) then
+            iun = mtsfl%fl(mtsk%NSW)%iun
+            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%NSW)%fn)))
+            write(iun, "(9999(g15.7e2, ' '))") (nsw(j), j = 1, size(qobs, 2))
+            close(iun)
+        end if
+
+        !> Write daily root mean squared error.
+        if (mtsfl%fl(mtsk%RMSE)%init) then
+            iun = mtsfl%fl(mtsk%RMSE)%iun
+            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%RMSE)%fn)))
+            write(iun, "(9999(g15.7e2, ' '))") st_drms%value_gauge, st_drms%value_gauge_avg
+            close(iun)
+        end if
+
+        !> Write mean absolute error.
+        if (mtsfl%fl(mtsk%ABSE)%init) then
+            iun = mtsfl%fl(mtsk%ABSE)%iun
+            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%ABSE)%fn)))
+            write(iun, "(9999(g15.7e2, ' '))") st_abserr%value_gauge, st_abserr%value_gauge_avg
+            close(iun)
+        end if
+
+        !> Write the summary of the metrics to file.
+        if (mtsfl%fl(mtsk%out)%init) then
+            iun = mtsfl%fl(mtsk%out)%iun
+            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%out)%fn)))
+            write(iun, "(9999(g15.7e2, ' '))") &
+                "Gauge", "MAE", "RMSE", "BIAS", "AbsBIAS", "NSD", "NegNSD", "lnNSD", "NeglnNSD", "TPD"
+            do j = 1, size(qobs, 2)
+                write(iun, "(9999(g15.7e2, ' '))") &
+                    j, st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), abs(bias(j)), &
+                    nsd(j), (-1.0*nsd(j)), lnsd(j), (-1.0*lnsd(j)), int(tpd(j))
+            end do
+            close(iun)
+        end if
+
+    end subroutine
+
+end module

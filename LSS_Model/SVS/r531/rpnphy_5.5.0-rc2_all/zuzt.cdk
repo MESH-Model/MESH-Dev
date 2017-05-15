@@ -1,0 +1,3 @@
+      real zu,zt
+      data zu,zt/ 10.,1.5 /
+      save zu,zt

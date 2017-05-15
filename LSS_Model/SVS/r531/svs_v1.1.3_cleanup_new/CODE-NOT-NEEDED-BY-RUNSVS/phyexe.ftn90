@@ -1,0 +1,258 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** s/p phyexe
+Subroutine phyexe ( e   ,   d,    f,    v, &
+                    esiz,dsiz, fsiz, vsiz, &
+                    trnch, kount, ni, nk )
+!
+  Implicit None
+#include <arch_specific.hf>
+!
+  Integer esiz,dsiz,fsiz,vsiz,trnch,kount,ni,nk
+  Real e(esiz), d(dsiz), f(fsiz), v(vsiz)
+!
+!
+!author
+!          L. Spacek (oct 2011) 
+!
+!revisions
+! 001      L. Spacek (oct 2011) - Complete remake
+!
+!object
+!          this is the main interface subroutine for the
+!          cmc/rpn unified physics
+!
+!arguments
+!
+!          - input -
+! e        entry    input field
+! d        dynamics input field
+!
+!          - input/output -
+! f        historic variables for the physics
+!
+!          - output -
+! v        physics tendencies and other output fields from the physics
+!
+!          - input -
+! esiz     dimension of e
+! dsiz     dimension of d
+! fsiz     dimension of f
+! vsiz     dimension of v
+! dt       timestep (sec.)
+! trnch    slice number
+! kount    timestep number
+! icpu     cpu number executing slice "trnch"
+! n        horizontal running length
+! nk       vertical dimension
+!
+!notes
+!          phy_exe is called by all the models that use the cmc/rpn
+!          common physics library. it returns tendencies to the
+!          dynamics.
+!
+!implicites
+!
+#include "phy_macros_f.h"
+#include "phybus.cdk"
+#include "workspc.cdk"
+#include "options.cdk"
+#include "tables.cdk"
+!
+!modules
+!
+  External tendency3,lin_phyexe1,climphs4,inichamp2
+  External radiation
+  External surface,metox1,gwd7,thespan
+  External boundary_layer1,boundary_layer_modlevs1,shallconv3,precipitation
+  External ens_ptp1,calcdiag,extdiag,chm_exe
+  integer icpu
+  Real dt, cdt1, rcdt1
+!
+  Real, Dimension(espwork) :: work
+  Real, Dimension(ni*nk)   :: uplus0,vplus0,wplus0,tplus0,huplus0,qcplus0
+  Real, Dimension(ni,nk)   :: seloc,ficebl
+!
+!----------------------------------------------------------------
+!
+!     options de la physique
+!     ----------------------
+!
+!     iconvec :  convection
+!
+!                0 = 'nil'
+!                1 = 'sec'
+!                3 = 'oldkuo'
+!                6 = 'kfc'
+!               13 = 'bechtold'
+!
+!     ifluvert : couche limite
+!
+!               -1 = 'surface'
+!                0 = 'nil'
+!                1 = 'physimp'
+!                2 = 'clef'
+!                3 = 'moistke'
+!
+!     igwdrag  : gravity wave drag
+!
+!                0 = 'nil'
+!                1 = 'gwd86'
+!
+!     iradia   : radiation
+!
+!                0 = 'nil'
+!                2 = 'newrad'
+!                3 = 'cccmarad'
+!
+!     ischmsol : svat (transferts energetiques entre le sol,
+!                      la vegetation et l'atmosphere)
+!
+!                1 = 'fcrest'
+!                2 = 'class'
+!                3 = 'isba'
+!                4 = 'svs'
+!
+!     ishlcvt  : convection restreinte (2 valeurs)
+!
+!        1)      0 = 'nil'
+!                2 = 'conres'
+!
+!        2)      0 = 'nil'
+!                1 = 'ktrsnt'
+!                2 = 'ktrsnt_mg'
+!                3 = 'bechtold'
+!
+!     istcond  : grid-scale condensation
+!
+!                0 = 'nil'
+!                1 = 'conds'
+!                3 = 'newsund'
+!                4 = 'consun'
+!                9 = 'excrig'    !kong-yau
+!               10 = 'my_sm'     !milbrandt-yau, single-moment (optimized)
+!               12 = 'my_dm'     !milbrandt-yau, double-moment (optimized)
+!
+!     ilongmel  : longueur de melange
+!
+!                0 = 'blac62'
+!                1 = 'boujo'
+!
+!     ikfcpcp   : conservation de l'eau dans kfcp
+!
+!                0 = 'ori' ! code original
+!                1 = 'conspcpn'
+!
+!     ipcptype  : diagnostique de type de precipitations
+!
+!                0 = 'nil'
+!                1 = 'bourge'   ! methode de bourgouin etendue
+!                2 = 'bourge3d' ! 3-D extension of Bourgouin's method
+!
+!-------------------------------------------------------------
+!
+   icpu = 1
+   dt   = delt
+
+   Call phystepinit ( uplus0,vplus0,wplus0,tplus0,huplus0,qcplus0, &
+                      v,d,seloc,dt,cdt1,rcdt1,vsiz,dsiz,           &
+                      kount,trnch,icpu,ni,nk )
+
+!     symplified physics
+
+  If(lin_kph.Eq.1) Then
+     Call lin_phyexe1 (e,   d,   f,   v,    &
+                       esiz,dsiz,fsiz,vsiz, &
+                       dt,trnch,kount,icpu,ni,nk)
+     Return
+  Endif
+
+!     climate utility
+
+  If (inincr .And. kount > 0 ) Call climphs4 (f,fsiz,kount,ni)
+
+!     surface initialization
+
+  Call inichamp2 (e, esiz, f, fsiz, &
+                  v, vsiz, d, dsiz, &
+                  kount, trnch, cdt1, ni, nk)
+
+  Call radiation (d,dsiz,f,fsiz,v,vsiz,seloc,work,espwork,&
+                  ni,nk,kount,trnch,icpu)
+
+!     surface processes
+
+  Call surface (d, dsiz, f, fsiz, v, vsiz,   &
+                work, espwork, seloc, trnch, &
+                kount, dt, ni, ni, nk, icpu )
+
+!     stratospheric mehtane oxidation
+
+  Call metox2 (d, v, f, dsiz, vsiz, fsiz, ni, nk)
+
+!     gravity wave drag
+
+  Call gwd7 (d, f, v, dsiz, fsiz, vsiz, std_p_prof, &
+             cdt1, kount, trnch, ni, ni, nk-1, icpu )
+
+!     apply radiation tendecies
+
+  If (iradia.Ge.1) Call apply_tendencies (d,v,f,tplus,trad,ni,nk-1)
+!       Call thespan(d(tplus),d(tplus),v(trad),0.,cdt1,ni,nk,nk-1,5)
+
+!     turbulence
+
+  Call turbulence1 ( d,   f,   v, dsiz, fsiz, vsiz  , &
+                     ficebl, seloc, cdt1,             &
+                     kount, trnch, icpu, ni, nk )
+
+!     shallow convection
+
+  Call shallconv3( d, dsiz, f, fsiz, v, vsiz, kount, trnch, &
+                   cdt1, ni, nk                  )
+
+!     convection/condensation
+
+  Call precipitation( d, dsiz, f, fsiz, v, vsiz, &
+                      dt, ni, nk,                &
+                      kount, trnch, icpu )
+
+  Call prep_cw (f, fsiz, d, dsiz, v, vsiz, &
+                qcplus0, ficebl,           &
+                kount, trnch, icpu, ni, nk)
+
+!     tendencies
+
+  Call tendency4 ( uplus0,vplus0,wplus0,tplus0,huplus0,qcplus0, &
+                   v,d,rcdt1,vsiz,dsiz,kount,ni,nk )
+
+!     stochastic perturbations
+
+  Call ens_ptp1 (d,v,f,dsiz,fsiz,vsiz,ni,nk,kount)
+
+!     diagnostics
+
+  Call calcdiag (d,f,v,dsiz,fsiz,vsiz,dt,trnch,kount,ni,nk)
+
+  Call extdiag  (d,f,v,dsiz,fsiz,vsiz,trnch,icpu,ni,nk)
+
+!     chemistry
+
+  Call chm_exe (e,d,f,v,esiz,dsiz,fsiz,vsiz,dt,trnch,kount,icpu,ni,nk)
+!
+!----------------------------------------------------------------
+!
+End Subroutine phyexe

@@ -1,16 +1,23 @@
-SUBROUTINE SCATTER(NTYPE,NA,NML,ILMOS,JLMOS,ACLASS,GRD,GAT)
+!>
+!> Description: Distributes from GAT to GRD form.
+!>
+subroutine SCATTER(shd, iilen, ii1, ii2, GAT, GRD)
 
-!DISTRIBUTES GAT TO GRD FORMAT FOR (CSV) FORCING DATA.
+    use sa_mesh_shared_variables
 
-INTEGER :: NTYPE,NA,NML
-INTEGER :: ILMOS(NML),JLMOS(NML)
-REAL :: GRD(NA),GAT(NML),ACLASS(NA,NTYPE)
+    !> Input variables.
+    type(LandGridParams), intent(in) :: shd
+    integer, intent(in) :: iilen, ii1, ii2
+    real, dimension(iilen), intent(in) :: GAT
 
-INTEGER I,J,K
+    !> Output variables.
+    real, dimension(shd%NA) :: GRD
 
-GRD=0.
-DO K=1,NML
-    GRD(ILMOS(K))=GRD(ILMOS(K))+ACLASS(ILMOS(K),JLMOS(K))*GAT(K)
-ENDDO
+    integer k
 
-END SUBROUTINE
+    GRD = 0.0
+    do k = ii1, ii2
+        GRD(shd%lc%ILMOS(k)) = GRD(shd%lc%ILMOS(k)) + shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*GAT(k)
+    end do
+
+end subroutine

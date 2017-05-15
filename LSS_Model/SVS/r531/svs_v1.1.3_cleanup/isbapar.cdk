@@ -1,0 +1,7 @@
+!
+!
+      REAL ansmax, rhomin, rhosdef, todry, wcrn, lai0
+!
+      COMMON /ISBAPAR / ansmax, rhomin, rhosdef, todry, wcrn, lai0
+!
+!

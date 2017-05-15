@@ -90,19 +90,19 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 ! unit=269  fln(39)- point soil moisture  .psm 
 ! unit=270  fln(40)- water quality data file  .wqd
 ! unit=271  fln(41)- routing parameter file  bsnm_ch_par.r2c
-! unit=272  fln(42)-  
+! unit=272  fln(42)- diversion data (yyyymmdd.div)
 ! unit=273  fln(43)- 
 ! unit=274  fln(44)- 
 ! unit=275  fln(45)- 
 ! unit=276  fln(46)- 
 ! filenames 100-199 reserved for event file names
 
-! unit=501  infln(3 )- reach1_lvl.txt
-! unit=502  infln(4 )- reach2_lvl.txt
-! unit=503  infln(5 )- reach3_lvl.txt
-! unit=504  infln(6 )- reach4_lvl.txt
-! unit=505  infln(7 )- reach5_lvl.txt
-! unit=506  infln(8 )- reach6_lvl.txt ! TO MAXIMUM OF 15 REACHES: DYNAMICALLY PROCESSED
+! unit=501  infln(5 )- reach1_lvl.txt
+! unit=502  infln(6 )- reach2_lvl.txt
+! unit=503  infln(7 )- reach3_lvl.txt
+! unit=504  infln(8 )- reach4_lvl.txt
+! unit=505  infln(9 )- reach5_lvl.txt
+! unit=506  infln(10 )- reach6_lvl.txt ! TO MAXIMUM OF 45 REACHES: DYNAMICALLY PROCESSED
 
 !   o - nhg     int      number of hours of rain gauge data
 !   o - nhf     int      number of hours of flow data
@@ -132,6 +132,13 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 ! 16 trcflg   - use the tracer module
 ! 17 frcflg   - use isotope fractionation
 ! 18 fstflg   - use fst-based runoff/recharge (csubich)
+! 19 chnlflg  - use spatially-varying CHNL field (D. Durnford)
+! 20 mndrflg  - use spatially-varying MNDR field (D. Durnford)
+! 21 r1nflg   - use spatially- and temporally-varying Manning's coefficient for floodplain flow (R1N) (D. Durnford)
+! 22 r2nflg   - use spatially- and temporally-varying Manning's coefficient for river channel flow (R2N) (D. Durnford)
+! 23 rlakeflg - use spatially-varying rlake coefficient to adjust (multiply) R1N and R2N coefficients (E. Gaborit)
+! 24 nocrashflg - repeatedly reduces qo1 by .75 and resets store2 to store1 when dtmin=mindtmin to ensure the model doesn't crash (D. Durnford)
+! 25(19) rbmflg   - create input fields for RBM stream temperature model (dbourdin)
 !
 !***********************************************************************
 
@@ -159,7 +166,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
        if(iopt.eq.2)print*,' In rdevt, passed location  300'
 c      write(98,1300)fln(99)
-       if(iopt.eq.2)print*,' opening file name ',fln(99)
+       if(iopt.eq.2)print*,' opening file name ',trim(fln(99))
 !     OPEN THE EVENT FILE:
 
 
@@ -167,20 +174,20 @@ c      write(98,1300)fln(99)
 
       IF(exists)THEN
       open(unit=99,file=fln(99),iostat=ios)
-        if(iopt.ge.1)print*,'Opened event file ',fln(99)
+        if(iopt.ge.1)print*,'Opened event file ',trim(fln(99))
         if(iopt.eq.2)print*,' In rdevt, passed location  30001'
         if(ios.ne.0)then
           write(*,99921)fln(99)
           write(98,99921)fln(99)
-99921     format(' error opening unit 99, file name= ',a)
+99921     format(' error opening unit 99, file name= ',a999)
           print*, 'iostat= ',ios
           print*  
           STOP ' program terminated in rdevt'
         endif
       else
-        print*,'Attempting to open the file ',fln(99)
+        print*,'Attempting to open the file ',trim(fln(99))
         print*,'but it is not found (in this location)'
-          print*,'Possible cause: Not in proper working directory'
+          print*,'Possibel cause: Not in proper working directory'
         print*
         stop 'Program aborted in rdevt @ 159'
       endif
@@ -284,6 +291,58 @@ c          read(99,*,iostat=ios)junk,frcid1flg
         else
            fstflg='n'
         endif
+! D. Durnford: added channel flag for spatially-varying CHNL field
+        if(fstflg == 'y') then
+           read(99,*,iostat=ios)junk,chnlflg
+           if(iopt .eq. 2 .or. ios .ne. 0) print *, junk, chnlflg
+        else
+           chnlflg='n'
+        endif
+! D. Durnford: added meander flag for spatially-varying MNDR field
+        if(fstflg == 'y') then
+           read(99,*,iostat=ios)junk,mndrflg
+           if(iopt .eq. 2 .or. ios .ne. 0) print *, junk, mndrflg
+        else
+           mndrflg='n'
+        endif
+! D. Durnford: added r1n flag for spatially- and temporally-varying Manning's coefficient for floodplain flow (R1N)
+        if(fstflg == 'y') then
+           read(99,*,iostat=ios)junk,r1nflg
+           if(iopt .eq. 2 .or. ios .ne. 0) print *, junk, r1nflg
+        else
+           r1nflg='n'
+        endif
+! D. Durnford: added r2n flag for spatially- and temporally-varying Manning's coefficient for river channel flow (R2N)
+        if(fstflg == 'y') then
+           read(99,*,iostat=ios)junk,r2nflg
+           if(iopt .eq. 2 .or. ios .ne. 0) print *, junk, r2nflg
+        else
+           r2nflg='n'
+        endif
+
+! E. Gaborit: added rlake flag for spatially-varying rlake multiplicative coefficient to adjust Manning coeffs for presence of lakes
+        if(fstflg == 'y') then
+           read(99,*,iostat=ios)junk,rlakeflg
+           if(iopt .eq. 2 .or. ios .ne. 0) print *, junk, rlakeflg
+        else
+           rlakeflg='n'
+        endif
+
+! D. Durnford: added nocrash flag to prevent the model from crashing.  Water is not conserved.
+        if(fstflg == 'y') then
+           read(99,*,iostat=ios)junk,nocrashflg
+           if(iopt .eq. 2 .or. ios .ne. 0) print *, junk, nocrashflg
+        else
+           nocrashflg='n'
+        endif
+
+! dbourdin: added rbmflag for RBM stream temperature model inputs
+        if(fstflg == 'y') then
+           read(99,*,iostat=ios)junk,rbmflg
+           if(iopt .eq. 2 .or. ios .ne. 0) print *, junk, rbmflg
+        else
+           rbmflg='n'
+        endif
 
 !       turn these off for opt
         if(numa.ne.0)then
@@ -317,11 +376,15 @@ c          read(99,*,iostat=ios)junk,frcid1flg
         read(99,*,iostat=ios)junk,nhf         
         if(iopt.eq.2.or.ios.ne.0)print*,junk,nhf
           if(id.eq.1)then
-            deltat_report=1    ! default
+            deltat_report_discharge=1    ! default
             if(evt_version.ge.9.7)then
 !           can't be the same as ireport used for write_wfo
-              read(99,*,iostat=ios)junk,deltat_report 
-            if(iopt.eq.2.or.ios.ne.0)print*,junk,deltat_report
+              read(99,*,iostat=ios)junk,deltat_report_discharge
+            if(iopt.eq.2.or.ios.ne.0)print*,junk,
+     *                               deltat_report_discharge
+              read(99,*,iostat=ios)junk,deltat_report_flowICs
+            if(iopt.eq.2.or.ios.ne.0)print*,junk,
+     *                               deltat_report_flowICs
             endif
           endif
         read(99,*,iostat=ios)junk               ! #
@@ -337,7 +400,7 @@ c          read(99,*,iostat=ios)junk,frcid1flg
         write(51,*)':smrflg                       ',smrflg         
         write(51,*)':esimflg                      ',resinflg   
         write(51,*)':tbcflg                       ',tbcflg         
-        write(51,*)':esumflg                      ',resumflg         
+        write(51,*)':resumflg                      ',resumflg         
         write(51,*)':contflg                      ',contflg         
         write(51,*)':routeflg                     ',routeflg         
 !        write(51,*)':routeflg                     ',routeid1flg         
@@ -355,6 +418,12 @@ c          read(99,*,iostat=ios)junk,frcid1flg
 !        write(51,*)':frcflg                       ',frcid1flg  
         write(51,*)':initflg                      ',initflg    
         write(51,*)':fstflg                       ',fstflg
+        write(51,*)':chnlflg                      ',chnlflg
+        write(51,*)':mndrflg                      ',mndrflg
+        write(51,*)':r1nflg                       ',r1nflg
+        write(51,*)':r2nflg                       ',r2nflg
+        write(51,*)':rlakeflg                     ',rlakeflg
+        write(51,*)':rbmflg                       ',rbmflg
         write(51,*)'#                             '        
         write(51,*)':intSoilMoisture              ',(smc5(i),i=1,5)         
         write(51,*)':rainConvFactor               ',conv         
@@ -407,37 +476,37 @@ c        end do
 !     _shd.r2c    
         i=1
         read(99,99005,iostat=ios)junk,fln(i)
-        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
         write(51,1030)i+30,i,trim(fln(i))
 !     .par    
         i=2
         read(99,99005,iostat=ios)junk,fln(i)
-        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
         write(51,1030)i+30,i,trim(fln(i))
 !     ch_par.r2c  
 !     rev. 9.3.11  Feb.  28/07  - NK: ch_par added / event file ver = 9.5
         if(evt_version.ge.9.5)then
             i=41
           read(99,99005,iostat=ios)junk,fln(i)
-          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
           write(51,1030)i+230,i,trim(fln(i))
           endif
 !     .pdl   
         i=3
         read(99,99005,iostat=ios)junk,fln(i)
-        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
         write(51,1030)i+30,i,trim(fln(i))
 
 
         i=13          ! .sdc
         read(99,99005,iostat=ios)junk,fln(i)
-        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
         write(51,1030)i+30,i,trim(fln(i))
 !     rev. 9.1.78  Mar.  15/05  - NK: added WQD file to event file
         if(evt_version.ge.9.3)then
           i=40          ! .wqd      
           read(99,99005,iostat=ios)junk,fln(i)
-          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
           write(51,1030)i+250,i,trim(fln(i))
         endif
 
@@ -450,26 +519,26 @@ c        end do
         if(evt_version.ge.9.2)then
           i=39          ! .psm      
           read(99,99005,iostat=ios)junk,fln(i)
-          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
           write(51,1030)i+250,i,trim(fln(i))
         endif
 
         i=5          ! .rag                  
         read(99,99005,iostat=ios)junk,fln(i)
-        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
         write(51,1030)i+30,i,trim(fln(i))
         i=14          ! .tag        
         read(99,99005,iostat=ios)junk,fln(i)
-        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
         write(51,1030)i+30,i,trim(fln(i))
         i=20          ! .pnr        
         read(99,99005,iostat=ios)junk,fln(i)
-        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
         write(51,1030)i+30,i,trim(fln(i))
 
         do i=26,30    ! .prh .pws .plw .psw .ppr        
           read(99,99005,iostat=ios)junk,fln(i)
-          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
           write(51,1030)i+250,i,trim(fln(i))
         end do
 
@@ -478,8 +547,8 @@ c        end do
 
         do i=6,7          ! .str .rel           nk 05/11/16
           read(99,99005,iostat=ios)junk,fln(i)
-          write(*,'(a31,i4,a)') junk,i,trim(fln(i))
-          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+!          write(*,'(a31,i4,a)') junk,i,trim(fln(i))
+          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
           write(51,1030)i+30,i,trim(fln(i))
         end do
 
@@ -487,7 +556,7 @@ c        end do
         if(evt_version.ge.9.2)then
           i=8             ! .rin          
           read(99,99005,iostat=ios)junk,fln(i)
-          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
           write(51,1030)i+30,i,trim(fln(i))
         else
           i=8             ! .snw   old format .snw file
@@ -497,7 +566,7 @@ c        end do
         if(evt_version.ge.9.2)then
           i=35          ! .crs      
           read(99,99005,iostat=ios)junk,fln(i)
-          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
           write(51,1030)i+250,i,trim(fln(i))
         endif
 
@@ -505,53 +574,60 @@ c        end do
         if(iopt.eq.2.or.ios.ne.0)print*,junk
           i=9          !  .rad       
           read(99,99005,iostat=ios)junk,fln(i)
-          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
           write(51,1030)i+30,i,trim(fln(i))
 
         do i=11,12      ! .scn .clt   
           read(99,99005,iostat=ios)junk,fln(i)
-          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
           write(51,1030)i+30,i,trim(fln(i))
         end do
 
         if(evt_version.ge.9.2)then 
           do i=36,38    ! .swe .gsm .lzs     
             read(99,99005,iostat=ios)junk,fln(i)
-            if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+            if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
             write(51,1030)i+250,i,trim(fln(i))
           end do
         endif
         i=10          ! .met        
         read(99,99005,iostat=ios)junk,fln(i)
-        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
         write(51,1030)i+30,i,trim(fln(i))
         i=34          ! .snw        
         read(99,99005,iostat=ios)junk,fln(i)
-        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
         write(51,1030)i+250,i,trim(fln(i))
         i=15          ! .tem        
         read(99,99005,iostat=ios)junk,fln(i)
-        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
         write(51,1030)i+30,i,trim(fln(i))
         i=19          ! .gnr        
         read(99,99005,iostat=ios)junk,fln(i)
-        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
         write(51,1030)i+30,i,trim(fln(i))
 
         do i=21,25         ! .grh .gws .glw .gsw .gpr
           read(99,99005,iostat=ios)junk,fln(i)
-          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
           write(51,1030)i+250,i,trim(fln(i))
         end do
 
         do i=31,33          ! .rff .rch .lkg        
           read(99,99005,iostat=ios)junk,fln(i)
-          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',fln(i)
+          if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
           write(51,1030)i+250,i,trim(fln(i))
         end do
 
+        do i=1,8            ! Empty lines reserved for files
           read(99,*,iostat=ios)junk                 ! #
-        if(iopt.eq.2.or.ios.ne.0)print*,junk
+          if(iopt.eq.2.or.ios.ne.0)print*,junk
+        end do
+        i=42             ! .div
+        read(99,99005,iostat=ios)junk,fln(i)
+        if(iopt.eq.2.or.ios.ne.0)print*,junk,i,'   ',trim(fln(i))
+        write(51,1030)i+250,i,trim(fln(i))
+!        write(*,1030)i+250,i,trim(fln(i))
 
 !       read the addtional event files
 !       nch = No of CHained events
@@ -583,11 +659,11 @@ c        end do
               print*
               stop 'Program abortedin rdevt @ 460'
             endif
-            if(iopt.eq.2)print*,100+n,n,fln(100+n)
+            if(iopt.eq.2)print*,100+n,n,trim(fln(100+n))
           end do
         endif
 
-            if(iopt.ge.1)print*,'Reached end of ',fln(99)
+            if(iopt.ge.1)print*,'Reached end of ',trim(fln(99))
 
 !        if(iopt.eq.2.or.ios.ne.0)print*,junk
 
@@ -843,7 +919,7 @@ c          frcflg=frcid1flg
  1100 format(26x,6f5.2)
  1110 format(26x,6f5.2)
  1200 format(26x,3i5)
- 1300 format(a)
+ 1300 format(a999)
  6080 format(a14)
  6081 format(i4)
 
@@ -851,7 +927,7 @@ c          frcflg=frcid1flg
 99002 format(a30,a1)
 99003 format(a30,f12.2)
 99004 format(a30,i10)
-99005 format(a30,a)
+99005 format(a30,a999)
 
       END SUBROUTINE rdevt
 

@@ -36,6 +36,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !     rev. 9.4.01  Apr.  17/07  - NK: added deltat_report for gridflow.r2c
 !     D. Durnford Dec 2013
 !     -- concentrated the output file units to make space for up to 15 reaches
+! Eliminated those output file names since need more than 15 reaches and didn't need the output files
+! Max number of reaches is now 45
 !     -- eliminated the writing of outfiles_rte.new containing the default input file names
 !     -- added the reading in of the input file names
 
@@ -79,14 +81,14 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       REAL(4)    :: errold(5),err(5),chng(5),best(5)
       REAL(4)    :: optlow,ddtemp,cc1,cc2,crit,best1
       real(4)    :: optlast
+      REAL(4)    :: dtminusr,mindtmin,convthreshusr
       integer*2  :: ntest
 !vfo
       integer iargc
 !      EXTERNAL iargc
 
       integer   :: ios2,iswitch
-!      character :: my_fmt5001*30
-      character :: fend*3
+      character :: my_fmt5001*30,fend*3
 
       DATA ntest/43814/qstr/'optionsss'/nchr/9/
       DATA iallcnt/0/
@@ -128,6 +130,28 @@ c     call date_time(cday,time)
 !     WAS CHANGED WHEN TODD NEFF's EVAPORATION WAS ADDED
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!
+!     READ IN THE MAXIMUM VALUE OF THE TIME STEP
+      write(*,'(a35,a39)') 'maximum/minimum time step (s) and ',
+     *           'convergence level for channel routing?'
+      read (*,*,IOSTAT=status) dtminusr,mindtmin,convthreshusr
+      if (status > 0) then
+	write(*,*) 'the values specified for maxtimestep, ',
+     * 'mintimestep, and/or conv. threshold may be inappropriate;',
+     * ' check watroute.cfg file in your experiment'
+        stop
+      else if (status < 0) then
+        write(*,*) 'the number of arguments passed to',  
+     *   '  watroute is wrong: it should be 3;',
+     * ' check watroute.cfg file in your experiment' 
+        stop
+      end if
+
+      write(*,'(a31,a22,2f7.2,a2)') 'The maximum and minimum values ',
+     *  'of the time step are: ',dtminusr,mindtmin,' s'
+      write(*,'(a29,a26,f10.6)') 'The level of convergence for ',
+     *  'channel routing is set at ',convthreshusr
+      write(*,*) ''
+
 !     ALSO USED IN SHED: UNIT 9 FOR FLN(6)
 
       translateflg='n'  ! used on translate.for if 'y'
@@ -155,53 +179,53 @@ c     call date_time(cday,time)
 !vfo
        filename(51)='rte.txt'      !program information
        filename(52)='res.txt'      !reservoir data
-       filename(53)='route.txt'      !routing data
-       filename(54)='spl_rpn.csv'      !paired observed/computed 
+       filename(53)='route.txt'    !routing data
+       filename(54)='spl_rpn.csv'  !paired observed/computed 
        filename(55)='wetland.csv'  !wetland info
        filename(56)='gridflow.r2c' 
-       fln(56)=filename(56)                  ! write_r2c used fln()
+       fln(56)=filename(56)        ! write_r2c used fln()
        filename(57)='resin.txt'    !lake inflow obs/computed
        filename(58)='lake_sd.csv'  !  reservoir storage output
 !dch
 !       filename(59)='net_lake_inflow.csv' !removed: net_lake values assume that reaches are in a chain
        filename(59)='gridflow.fst'
-!       filename(60)= ! unused
+       filename(60)='rbm_input.fst'
 !       filename(61)= ! unused
 !       filename(62)= ! unused
 !       filename(63)= ! unused
-       filename(64)='qi_reach1.txt'
-       filename(65)='qi_reach2.txt'
-       filename(66)='qi_reach3.txt'
-       filename(67)='qi_reach4.txt'
-       filename(68)='qi_reach5.txt'
-       filename(69)='qi_reach6.txt'
-       filename(70)='qi_reach7.txt'
-       filename(71)='qi_reach8.txt'
-       filename(72)='qi_reach9.txt'
-       filename(73)='qi_reach10.txt'
-       filename(74)='qi_reach11.txt'
-       filename(75)='qi_reach12.txt'
-       filename(76)='qi_reach13.txt'
-       filename(77)='qi_reach14.txt'
-       filename(78)='qi_reach15.txt'
-       filename(79)='moy_qi.txt'
+!       filename(64)= ! unused
+!       filename(65)= ! unused
+!       filename(66)= ! unused
+!       filename(67)= ! unused
+!       filename(68)= ! unused
+!       filename(69)= ! unused
+!       filename(70)= ! unused
+!       filename(71)= ! unused
+!       filename(72)= ! unused
+!       filename(73)= ! unused
+!       filename(74)= ! unused
+!       filename(75)= ! unused
+!       filename(76)= ! unused
+!       filename(77)= ! unused
+!       filename(78)= ! unused
+!       filename(79)= ! unused
 !       filename(80)= ! unused
-       filename(81)='qr_reach1.txt'
-       filename(82)='qr_reach2.txt'
-       filename(83)='qr_reach3.txt'
-       filename(84)='qr_reach4.txt'
-       filename(85)='qr_reach5.txt'
-       filename(86)='qr_reach6.txt'
-       filename(87)='qr_reach7.txt'
-       filename(88)='qr_reach8.txt'
-       filename(89)='qr_reach9.txt'
-       filename(90)='qr_reach10.txt'
-       filename(91)='qr_reach11.txt'
-       filename(92)='qr_reach12.txt'
-       filename(93)='qr_reach13.txt'
-       filename(94)='qr_reach14.txt'
-       filename(95)='qr_reach15.txt'
-       filename(96)='moy_qr.txt'
+!       filename(81)= ! unused
+!       filename(82)= ! unused
+!       filename(83)= ! unused
+!       filename(84)= ! unused
+!       filename(85)= ! unused
+!       filename(86)= ! unused
+!       filename(87)= ! unused
+!       filename(88)= ! unused
+!       filename(89)= ! unused
+!       filename(90)= ! unused
+!       filename(91)= ! unused
+!       filename(92)= ! unused
+!       filename(93)= ! unused
+!       filename(94)= ! unused
+!       filename(95)= ! unused
+!       filename(96)= ! unused
 !       filename(97)= ! unused
        filename(98)='rte_info.txt'
        filename(99)='scratch5'                       ! reserved as scratch file
@@ -228,23 +252,6 @@ c      endif
       id=1              !not used like this now  nk Apr. 8/03
       ni=1
 
-      i=51
-      open(unit=i,file=filename(i),access='sequential',
-     *    recl=2096,status='unknown',iostat=ios)
-!       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if(ios.ne.0)call io_warning(i,filename(i),ios)
-!       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-      call date_and_time(cday,time)
-      write(51,*)
-      write(51,6016)time(1:2),time(3:4),time(5:6)
-      write(51,6017)cday(1:4),cday(5:6),cday(7:8)
-      write(51,*)
-      write(51,5003)i,filename(i)
-
-!      write(51,5002)
-!      write(51,1030)(i,i,filename(i),i=51,100)
-
 ! THE OUTFILES.TXT FILE READS THE NAMES OF ALL THE OUTPUT FILES
       ioflg=0 ! # of output files listed in outfiles_rte.txt
       INQUIRE(FILE='outfiles_rte.txt',EXIST=exists)
@@ -254,14 +261,22 @@ c      endif
         if(ios.eq.0)then
 !         AN OUTFILES.TXT FILE EXISTS AND WE'LL READ IT:
           print*,'reading outfile names from outfiles_rte.txt'
-!          write(51, '( "(a", i3, ")" )' )  len(outfln)
+          write(my_fmt5001, '( "(a", i3, ")" )' )  len(outfln)
           do i=51,100
-            read(99,5001,iostat=ios)outfln(i)
+            read(99,my_fmt5001,iostat=ios)outfln(i)
+            if ( i .eq. 51) then
+!              if(ioflg.gt.1)then
+              filename(i)=outfln(i)
+!              endif
+              open(unit=51,file=filename(51),status='unknown',
+     *             iostat=ios)
+              write(51,*)'Outfile names from fln: outfiles_rte.txt' 
+            end if
             write(51,'(a)') trim(outfln(i))
 !            write(51,my_fmt5001) outfln(i)
             if(ios.ne.0)then 
               print*,'Problems on unit 99'
-              print*,'Warning: error reading file name outfiles_rte.txt'
+              print*,'Warning: error reading file name outfiles.txt'
               print*,'possible cause: existing file is read-only'
               print*,'or end of file is reached - need 50 lines'
               print*,'iostat code =',ios
@@ -273,11 +288,11 @@ c      endif
           close(unit=99)
           fln(56)=outfln(56)               ! gridflow.r2c:  write_r2c used fln()
         else
-          print*,'Error opening outfiles_rte.txt'
+          print*,'Error opening outfiles.txt'
           print*,'Continuing using default output files'
         endif 
       else
-       print*,'outfiles_rte.txt file not found, defaults used'
+       print*,'outfiles.txt file not found, defaults used'
        print*
       endif
 
@@ -313,19 +328,20 @@ c      endif
 
 ! Read in the names of input files
 !       filename(1)='event.evt'
-!       filename(2)= ! unused IMPORTANT: LEAVE IT UNUSED
-!       filename(3)='reach1_lvl.txt'
-!       filename(4)='reach2_lvl.txt'
-!       filename(5)='reach3_lvl.txt'
-!       filename(6)='reach4_lvl.txt'
-!       filename(7)='reach5_lvl.txt'
-!       filename(8)='reach6_lvl.txt'
-!       filename(9)='reach7_lvl.txt'
-!       filename(10)='reach8_lvl.txt'
-!       filename(11)='reach9_lvl.txt'  ! MAX 15 REACHES PERMITTED
-!       filename(Nreaches+3)= ! unused IMPORTANT: LEAVE IT UNUSED
-!       filename(Nreaches+4) 'flow_init.fst' ! The filename index of flow_init_fst is estabished in rte_sub.f as a function of Nreaches
-!       filename(Nreaches+5 to 50)= ! unused: can be used
+!       filename(2) 'flow_init.fst'  ! The filename index of flow_init.fst  is estabished in rte_sub.f    as a function of Nreaches
+!       filename(3) 'sfcmod2wat.fst' ! The filename index of sfcmod2wat.fst is estabished in read_fst.f90 as a function of Nreaches
+!       filename(4)= ! unused IMPORTANT: LEAVE IT UNUSED
+!       filename(5)='reach1_lvl.txt'
+!       filename(6)='reach2_lvl.txt'
+!       filename(7)='reach3_lvl.txt'
+!       filename(8)='reach4_lvl.txt'
+!       filename(9)='reach5_lvl.txt'
+!       filename(10)='reach6_lvl.txt'
+!       filename(11)='reach7_lvl.txt'
+!       filename(12)='reach8_lvl.txt'
+!       filename(13)='reach9_lvl.txt'         ! MAX 45 REACHES PERMITTED
+!       filename(Nreaches+5)=                 ! unused IMPORTANT: LEAVE IT UNUSED
+!       filename(Nreaches+6 to 50)=           ! unused: CAN BE USED
 
       INQUIRE(FILE='infiles_rte.txt',EXIST=exists)
       if(exists)then
@@ -336,19 +352,19 @@ c      endif
           print*,'reading infile names from infiles_rte.txt'
           iswitch = 0
           do i=1,50
-            read(99,5001,iostat=ios)infln(i)
+            read(99,my_fmt5001,iostat=ios)infln(i)
             if(ios.eq.0)then 
-              if (iswitch.eq.0 .and. len_trim(infln(i)).le.2) then
+              if (iswitch.eq.0 .and. len(trim(infln(i))).le.2) then
                 Nreaches = 0
                 iswitch = 1
-              else if (iswitch.eq.1 .and. len_trim(infln(i)).gt.2) then
+              else if (iswitch.eq.1 .and. len(trim(infln(i))).gt.2) then
                 Nreaches = Nreaches + 1
-              else if (iswitch.eq.1 .and. len_trim(infln(i)).le.2) then
-                iswitch = 2
+              else if (iswitch.eq.1 .and. len(trim(infln(i))).le.2) then
+!                iswitch = 2                       !bug: if 2 consecutive lines empty (::) Nreaches  not calculated!
               end if 
             else
               print*,'Problems on unit 99'
-              print*,'Warning: error reading file name infiles_rte.txt'
+              print*,'Warning: error reading file name infiles.txt'
               print*,'possible cause: end of file is reached'
               print*,' - need 50 lines'
               print*,'iostat code =',ios
@@ -364,15 +380,30 @@ c      endif
           end if
           close(unit=99)
         else
-          print*,'Error opening infiles_rte.txt'
-          print*,'Continuing using default input files'
-        endif
+           stop 'Unable to read infiles_rte.txt'
+        end if
       else
-       print*,'infiles_rte.txt file not found, defaults used'
-       print*
+         stop 'Unable to find infiles_rte.txt'
       end if
 
-      if (len_trim(infln(1)) .gt. 2) then
+      i=51
+      open(unit=i,file=filename(i),access='sequential',
+     *    status='unknown',iostat=ios)
+!       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      if(ios.ne.0)call io_warning(i,filename(i),ios)
+!       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      call date_and_time(cday,time)
+      write(51,*)
+      write(51,6016)time(1:2),time(3:4),time(5:6)
+      write(51,6017)cday(1:4),cday(5:6),cday(7:8)
+      write(51,*)
+      write(51,5003)i,filename(i)
+
+!      write(51,5002)
+!      write(51,1030)(i,i,filename(i),i=51,100)
+
+      if (len(infln(1)) .gt. 2) then
         fln(99)=infln(1)
       else
         fln(99)='event/event.evt'
@@ -399,9 +430,9 @@ c      endif
 
       write(51,5002)
       do i=52,100
-        if(ioflg.gt.1 .and. len_trim(outfln(i)).gt.2)then
+        if(ioflg.gt.1 .and. len(trim(outfln(i))).gt.2)then
           filename(i)=outfln(i)
-          fend = outfln(i)(len_trim(outfln(i))-2:len_trim(outfln(i)))
+          fend = outfln(i)(len(trim(outfln(i)))-2:len(trim(outfln(i))))
           if (fend /= 'fst') then
             if (i .eq. 54) then
               inquire(file=filename(i),exist=exists)
@@ -477,9 +508,10 @@ c      endif
 
       if(iopt.eq.2)print*, ' In options: 4 - before call sub'
 
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      call sub(e1,smc5,scale,icase,smok,optlow,igrdshft)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      call sub(e1,smc5,scale,icase,smok,optlow,igrdshft,
+     *         dtminusr,mindtmin,convthreshusr)
+!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       nnn=nnn+1
 
       if(iopt.eq.2)print*,'in spl9 @1'
@@ -489,8 +521,8 @@ c      endif
 ! FORMATS
 
  1000 format(' ',2(' ',a))
- 1030 format(' ','Unit no. =',i3,' file no',i3,' = ',a)
- 5001 format(a)
+ 1030 format(' ','Unit no. =',i3,' file no',i3,' = ',a999)
+ 5001 format(a999)
  5002 format(/' output files')
  5003 format(' opened unit'i5,' file name ',a)
  5005 format(' Files opened:')
@@ -498,7 +530,7 @@ c      endif
  6016 format('  runtime    ',2(a2,':'),a2)
  6017 format('  rundate  ',a4,'-',a2,'-',a2)
 99001 format('  0.0')
-99002 format(a)
+99002 format(a999)
 
       END PROGRAM rte     
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -511,11 +543,12 @@ c      endif
       use area_watflood
 
       integer  :: unit_number,ios
-      character*30  :: file_name
+      character*999  :: file_name
 
       print*,'Problems on unit',unit_number
       print*,'Warning:'
-      print*,' error in opening file name  ',file_name
+      print*,' error in opening file name:'
+      write(*,'(x,a)') trim(file_name)
       print*,'possible cause: existing file is read-only'
       print*,'or folder does not exist    <<<'
       print*,'or file does not exist      <<<'

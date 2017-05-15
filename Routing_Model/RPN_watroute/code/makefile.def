@@ -1,6 +1,6 @@
 # ======================================================================
 #		Include or header file for watroute makefile
-#               Compile with gfortran compiler
+#               Compile on Linux gfortran compiler
 # ======================================================================
 
 # ======================================================================
@@ -13,27 +13,11 @@
 # alternately a set of stubs) is conditional, and the logic is included
 # in the makefile proper.
 
-# ======================================================================
-# Directory of source code
-# ======================================================================
-DIR_REPO=C:\SA_MESH\TRUNK
-
-# ======================================================================
-# Include the following directories in the source file searching path
-# ======================================================================
-VPATH=	$(DIR_REPO)\Routing_Model\RPN_watroute\code; \
-
 #Modules
-MODULES=	area_watflood.mod ef_module.mod ef_parseutilities.mod 
-
-# The gfortran compiler does not have rmnlib available, so fst-I/O 
-# cannot be built.  Instead, build and link in a stub module that errors
-# helpfully if called.
-FST_OBJECTS=	fst_io_stub.o 
-
+MODULES= area_watflood.mod ef_module.mod ef_parseutilities.mod fst_io.mod 
 #watroute
-OBJECTS=	area_watflood.o EF_Module.o EF_ParseUtilities.o
+OBJECTS= area_watflood.o EF_Module.o EF_ParseUtilities.o
 OBJECTS+=	baseflow.o rdevt.o read_flow_ef.o read_flowinit_ef.o \
-		read_r2c.o read_resv_ef.o read_shed_ef.o rerout.o \
+		read_r2c.o read_resv_ef.o read_div_ef.o read_shed_ef.o rerout.o \
 		route.o rte.o rte_sub.o timer.o \
 		write_flowinit.o write_r2c.o 

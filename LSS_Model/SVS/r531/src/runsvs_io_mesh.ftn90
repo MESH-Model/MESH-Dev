@@ -1,0 +1,355 @@
+MODULE runsvs_io
+USE runsvs_mod
+USE runsvs_utils
+	INTEGER, PARAMETER :: fid_ini = 50
+	INTEGER, PARAMETER :: fid_met = 51
+	INTEGER, PARAMETER :: fid_out = 52
+CONTAINS
+!
+SUBROUTINE open_files(inifile,metfile,outfile)
+!
+CHARACTER (LEN=*) inifile
+CHARACTER (LEN=*) metfile
+CHARACTER (LEN=*) outfile
+!
+IF(xCount*yCount.NE.NG)THEN
+        PRINT*,"ERROR: ROW SIZE OF ",NG," DOES NOT MATCH GRID SIZE OF ",xCount,"x",yCount
+        STOP
+END IF
+!
+OPEN(UNIT=fid_ini,FILE=TRIM(inifile),IOSTAT=istat,STATUS='OLD',ACTION='READ')
+OPEN(UNIT=fid_met,FILE=TRIM(metfile),IOSTAT=istat,STATUS='OLD',ACTION='READ')
+OPEN(UNIT=fid_out,FILE=TRIM(outfile),IOSTAT=istat)
+!
+END SUBROUTINE open_files
+!
+SUBROUTINE close_files
+IMPLICIT NONE
+!
+CLOSE(fid_ini)
+CLOSE(fid_met)
+CLOSE(fid_out)
+!
+END SUBROUTINE close_files
+!
+SUBROUTINE read_ini_file(bus,bussiz)
+!
+IMPLICIT NONE
+#include "thermoconsts.inc"
+!
+INTEGER bussiz
+REAL bus(bussiz)
+!
+INTEGER i,j
+REAL sum
+!
+! CLASS INI parameters
+!
+REAL deglat,deglon,zrfmgrd,zrfhgrd,zbldgrd,gcgrd
+INTEGER ilw,nltest,nmtest
+REAL fcanrow(5),lamxrow(4)
+REAL lnz0row(5),lamnrow(4)
+REAL alvcrow(5),cmasrow(4)
+REAL alicrow(5),rootrow(4)
+REAL rsmnrow(4),qa50row(4)
+REAL vpdarow(4),vpdbrow(4)
+REAL psgarow(4),psgbrow(4)
+REAL drnrow,sdeprow,farerow,ddrow
+REAL xslprow,grkfrow,mannrow,wfcirow
+INTEGER midrow
+REAL sandrow(3)
+REAL clayrow(3)
+REAL orgmrow(3)
+REAL tbarrow(3),tcanrow,tsnorow,tpndrow
+REAL thlqrow(3),thicrow(3),zpndrow
+REAL rcanrow,scanrow,snorow,albsrow,rhosrow,grorow
+!
+! Read CLASS-style INI file
+!
+! Read and ignore header 
+DO i=1,3
+	READ(fid_ini,*)
+END DO
+!
+! Read parameters
+READ(fid_ini,'(5F10.2,F7.1,3I5)') deglat,deglon,zrfmgrd,zrfhgrd,zbldgrd,gcgrd,ilw,nltest,nmtest
+READ(fid_ini,'(9F8.3)')           (fcanrow(i),i=1,5),(lamxrow(i),i=1,4)
+READ(fid_ini,'(9F8.3)')           (lnz0row(i),i=1,5),(lamnrow(i),i=1,4)
+READ(fid_ini,'(9F8.3)')           (alvcrow(i),i=1,5),(cmasrow(i),i=1,4)
+READ(fid_ini,'(9F8.3)')           (alicrow(i),i=1,5),(rootrow(i),i=1,4)
+READ(fid_ini,'(4F8.3,8X,4F8.3)')  (rsmnrow(i),i=1,4),(qa50row(i),i=1,4)
+READ(fid_ini,'(4F8.3,8X,4F8.3)')  (vpdarow(i),i=1,4),(vpdbrow(i),i=1,4)
+READ(fid_ini,'(4F8.3,8X,4F8.3)')  (psgarow(i),i=1,4),(psgbrow(i),i=1,4)
+READ(fid_ini,'(4F8.3)')           drnrow,sdeprow,farerow,ddrow
+READ(fid_ini,'(4E8.1,I8)')        xslprow,grkfrow,mannrow,wfcirow,midrow
+READ(fid_ini,'(3F10.1)')          (sandrow(i),i=1,3)
+READ(fid_ini,'(3F10.1)')          (clayrow(i),i=1,3)
+READ(fid_ini,'(3F10.1)')          (orgmrow(i),i=1,3)
+READ(fid_ini,'(6F10.2)')          (tbarrow(i),i=1,3),tcanrow,tsnorow,tpndrow
+READ(fid_ini,'(7F10.3)')          (thlqrow(i),i=1,3),(thicrow(i),i=1,3),zpndrow
+READ(fid_ini,'(2F10.4,F10.2,F10.3,F10.4,F10.3)') rcanrow,scanrow,snorow,albsrow,rhosrow,grorow
+!
+! Parse INI file
+DO i=0,NG-1
+	!
+	! Basic configuration
+	!
+	! Convert lat,lon to radian
+	bus(dlat+i)=deglat*PI/180.
+	bus(dlon+i)=deglon*PI/180.
+	! Map CLASS parameters to SVS parameters
+	IF(observed_forcing)THEN
+		bus(zusl+i)=zrfmgrd  ! height of wind forcing
+        	bus(ztsl+i)=zrfhgrd  ! height of temperature forcing
+	END IF
+	!
+	! Parameters
+	!
+	bus(vegf+3*NG+i)=fcanrow(1)  ! needleleaf evergreen
+	bus(vegf+6*NG+i)=fcanrow(2)  ! broadleaf deciduous
+	bus(vegf+14*NG+i)=fcanrow(3) ! crops
+	bus(vegf+13*NG+i)=fcanrow(4) ! grass
+	bus(vegf+20*NG+i)=fcanrow(5) ! urban
+	bus(slop+i)=xslprow          ! subgrid-scale slope
+	bus(draindens+i)=ddrow*0.001 ! drainage density (km/km2 converted to m/m2)
+	bus(rootdp+i)=sdeprow        ! max depth of root zone
+	! Compute weighted average of log z0 wrt vegetation
+	! (used for momentum only - local z0 used for temperature/humidity)
+	bus(z0+i)=0.
+	sum=0.
+	DO j=1,5
+		bus(z0+i)=bus(z0+i)+fcanrow(j)*lnz0row(j)
+		sum=sum+fcanrow(j)
+	END DO
+	IF(sum.GT.0.)THEN
+		bus(z0+i)=bus(z0+i)/sum
+	END IF
+	bus(z0+i)=EXP(bus(z0+i))
+	! Map soil texture
+	! CLASS layer <-> SVS layer
+	!       1             1-2
+	!       2              3
+	!       3             4-7
+	! For soil texture we ignore negative numbers
+	! which signal special soils (organic/impermeable/glaciers)
+	bus(sand+i)=MAX(sandrow(1),0.)
+	bus(sand+NG+i)=MAX(sandrow(1),0.)
+	bus(sand+2*NG+i)=MAX(sandrow(2),0.)
+	bus(clay+i)=MAX(clayrow(1),0.)
+	bus(clay+NG+i)=MAX(clayrow(1),0.)
+	bus(clay+2*NG+i)=MAX(clayrow(2),0.)
+	DO j=3,6
+		bus(sand+j*NG+i)=MAX(sandrow(3),0.)
+		bus(clay+j*NG+i)=MAX(clayrow(3),0.)
+	END DO
+	!
+	! State variables
+	!
+        ! Map soil soil moisture
+        ! CLASS layer <-> SVS layer
+        !       1             1-2
+        !       2              3
+        !       3             4-7
+        bus(wdsoil+i)=thlqrow(1)
+        bus(wdsoil+NG+i)=thlqrow(2)
+        bus(wdsoil+2*NG+i)=thlqrow(3)
+        DO j=3,6
+                bus(wdsoil+j*NG+i)=thlqrow(3)
+        END DO
+	! Map soil temperature
+	! CLASS layer <-> SVS layer
+	!       1	       1
+	!       2              2
+	bus(tsoil+i)=tbarrow(1)+tcdk
+	bus(tsoil+NG+i)=tbarrow(2)+tcdk
+	bus(tground+i)=tbarrow(1)+tcdk
+	bus(tground+NG+i)=tbarrow(2)+tcdk
+	! Map vegetation temperature
+	DO j=0,1
+		bus(tvege+j*NG+i)=tcanrow+tcdk
+		bus(tsnowveg+j*NG+i)=tcanrow+tcdk
+	END DO
+	! Map snow properties
+        DO j=0,1
+                bus(tsnow+j*NG+i)=tsnorow+tcdk
+        END DO
+	bus(snoro+i)=rhosrow/900. ! density (kg/m3) to relative density wrt ice
+	bus(snvro+i)=rhosrow/900.
+	bus(snoal+i)=albsrow
+	bus(snval+i)=albsrow
+END DO
+!
+! Summarize what we just did
+PRINT*,"--------------------------------"
+PRINT*,"CLASS INI file read successfully"
+PRINT*,"--------------------------------"
+PRINT*,"LOCATION: (",deglat,",",deglon,")"
+PRINT*,"VEGETATION COVER:"
+PRINT*,"% NEEDLELEAF:     ",bus(vegf+3)*100
+PRINT*,"% BROADLEAF:      ",bus(vegf+6)*100
+PRINT*,"% CROPS:          ",bus(vegf+14)*100
+PRINT*,"% GRASS:          ",bus(vegf+13)*100
+PRINT*,"% URBAN:          ",bus(vegf+20)*100
+PRINT*,"ROUGHNESS LENGTH: ",bus(z0)
+PRINT*,"SLOPE:            ",bus(slop)
+PRINT*,"DRAIN.DENSITY     ",bus(draindens)
+PRINT*,"ROOT DEPTH:       ",bus(rootdp)
+PRINT*,"% SAND:           ",bus(sand),bus(sand+NG),bus(sand+2*NG)
+PRINT*,"% CLAY:           ",bus(clay),bus(clay+NG),bus(clay+2*NG)
+PRINT*,"--------------------------------"
+PRINT*,"SOIL MOISTURE:    ",bus(wdsoil),bus(wdsoil+NG),bus(wdsoil+2*NG)
+PRINT*,"SOIL TEMPERATURE: ",bus(tsoil),bus(tsoil+NG)
+PRINT*,"VEGETATION TEMP.: ",bus(tvege),bus(tvege+NG)
+PRINT*,"SNOW TEMPERATURE: ",bus(tsnow),bus(tsnow+NG)
+PRINT*,"SNOW DENSITY:     ",bus(snoro),bus(snvro)
+PRINT*,"SNOW ALBEDO:      ",bus(snoal),bus(snval)
+PRINT*,"--------------------------------"
+!
+RETURN
+END SUBROUTINE read_ini_file
+!
+SUBROUTINE date2string(date,hour,datestr)
+!
+IMPLICIT NONE
+!
+INTEGER date,hour
+CHARACTER (LEN=*) datestr
+!
+INTEGER iyear,imonth,iday,ihour,imin,isec,ims
+!
+iyear=date/10000
+imonth=(date-iyear*10000)/100
+iday=date-iyear*10000-imonth*100
+!
+ihour=hour/1000000
+imin=(hour-ihour*1000000)/10000
+isec=(hour-ihour*1000000-imin*10000)/100
+ims=(hour-ihour*1000000-imin*10000-isec*100)*10
+!
+WRITE(datestr,100)iyear,imonth,iday,ihour,imin,isec,ims
+!
+RETURN
+!
+100 FORMAT('"',I4.4,'/',I2.2,'/',I2.2,' ',I2.2,':',I2.2,':',I2.2,'.',I3.3,'"')
+!
+END SUBROUTINE date2string
+!
+SUBROUTINE string2datehour(datestr,date,hour)
+!
+IMPLICIT NONE
+!
+INTEGER date,hour
+CHARACTER (LEN=*) datestr
+!
+INTEGER iyear,imonth,iday,ihour,imin,isec,ims
+!
+READ(datestr,100)iyear,imonth,iday,ihour,imin,isec,ims
+!
+date=iyear*10000+imonth*100+iday
+hour=ihour*1000000+imin*10000+isec*100+ims/10
+!
+RETURN
+!
+!100 FORMAT('"',I4.4,'/',I2.2,'/',I2.2,' ',I2.2,':',I2.2,':',I2.2,'.',I3.3,'"')
+100 FORMAT(1X,I4.4,1X,I2.2,1X,I2.2,1X,I2.2,1X,I2.2,1X,I2.2,1X,I3.3,1X)
+!
+END SUBROUTINE string2datehour
+
+SUBROUTINE read_met_file(date_v,hour_v,date_f,hour_f,bus,bussiz)
+USE strings
+IMPLICIT NONE
+!
+#include "thermoconsts.inc"
+!
+INTEGER date_v,hour_v,date_f,hour_f,bussiz
+REAL bus(bussiz)
+!
+INTEGER i,j
+REAL fb(NG),fi(NG),pr(NG),ta(NG),qa(NG),uv(NG),p0(NG)
+!
+CHARACTER (LEN=10000) line
+CHARACTER (LEN=100) args(100)
+CHARACTER (LEN=25) datestr,dateframe
+INTEGER iostat, nargs, idateframe, ihourframe
+!
+CALL date2string(date_v,hour_v,datestr)
+DO
+	READ(fid_met,'(A)',IOSTAT=iostat) line
+	IF(iostat.NE.0)THEN
+		PRINT*,"Error reading MET file for ",date_v,hour_v
+		CALL close_files
+		STOP
+	ELSE
+		CALL parse(TRIM(line),' ',args,nargs)
+		IF(TRIM(args(1)).EQ.':Frame')THEN
+			dateframe=TRIM(args(4))//' '//TRIM(args(5))
+			CALL string2datehour(dateframe,date_f,hour_f)
+			IF((date_f.GE.date_v.AND.hour_f.GE.hour_v).OR.(date_f.GT.date_v))THEN
+				EXIT
+			END IF
+		END IF
+	END IF
+END DO
+!
+DO j=1,yCount
+	READ(fid_met,'(A)') line
+	CALL parse(TRIM(line),' ',args,nargs)
+	DO i=1,xCount
+		READ(args(i+0*xCount),*)fb(i+(j-1)*xCount)
+	END DO
+        DO i=1,xCount
+                READ(args(i+1*xCount),*)fi(i+(j-1)*xCount)
+        END DO
+        DO i=1,xCount
+                READ(args(i+2*xCount),*)pr(i+(j-1)*xCount)
+        END DO
+        DO i=1,xCount
+                READ(args(i+3*xCount),*)ta(i+(j-1)*xCount)
+        END DO
+        DO i=1,xCount
+                READ(args(i+4*xCount),*)qa(i+(j-1)*xCount)
+        END DO
+        DO i=1,xCount
+                READ(args(i+5*xCount),*)uv(i+(j-1)*xCount)
+        END DO
+        DO i=1,xCount
+                READ(args(i+6*xCount),*)p0(i+(j-1)*xCount)
+        END DO
+END DO
+!
+DO i=0,NG-1
+	IF(ta(i+1).GT.tcdk)THEN
+		bus(rainrate+i)=pr(i+1)/1000.
+		bus(snowrate+i)=0.
+	ELSE
+		bus(rainrate+i)=0.
+		bus(snowrate+i)=pr(i+1)/1000.
+	END IF
+	bus(flusolis+i)=fb(i+1)
+	bus(fdsi+i)=fi(i+1)
+	bus(tmoins+i)=ta(i+1)
+	bus(humoins+i)=qa(i+1)
+	bus(umoins+i)=uv(i+1)
+	bus(vmoins+i)=0.
+	bus(pmoins+i)=p0(i+1)
+END DO
+RETURN
+END SUBROUTINE read_met_file
+!
+SUBROUTINE write_out_file(date,hour,bus,bussiz)
+!
+IMPLICIT NONE
+!
+INTEGER bussiz,date,hour
+REAL bus(bussiz)
+!
+INTEGER i,j
+IF(date-(date/100)*100.EQ.1.AND.hour.EQ.0)PRINT*,"Simulation completed up to: ", date
+DO i=0,NG-1
+	bus(runofftotaf+i)=bus(runofftotaf+i)+bus(runofftot+i)
+	IF(hour.EQ.0)WRITE(fid_out,'(I8,A1,I8.8,I5,10(F10.4))') date,'.',hour,i+1,(bus(wdsoil+j*NG+i),j=0,6), bus(runofftotaf+i), bus(latflaf+i), bus(drainaf+i)
+END DO
+RETURN
+END SUBROUTINE write_out_file
+!
+END MODULE runsvs_io

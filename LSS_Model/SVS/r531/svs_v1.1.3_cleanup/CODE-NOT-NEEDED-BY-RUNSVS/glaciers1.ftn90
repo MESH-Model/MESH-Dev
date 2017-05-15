@@ -1,0 +1,633 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** S/P GLACIERS1
+!
+#include "phy_macros_f.h"
+      SUBROUTINE GLACIERS1 ( BUS, BUSSIZ, &
+                             PTSURF, PTSURFSIZ, &
+                             TRNCH, KOUNT, &
+                             N, M, NK )
+!
+!
+      implicit none
+#include <arch_specific.hf>
+!
+      INTEGER BUSSIZ, KOUNT, TRNCH, N, M, NK
+      INTEGER PTSURFSIZ
+      INTEGER PTSURF(PTSURFSIZ)
+      REAL BUS(BUSSIZ)
+!
+!Author
+!          J. Mailhot (April 1999)
+!
+!
+!Revisions
+! 001      B. Bilodeau and S. Belair (April 1999)
+!          Adapt to the new SURFACE module
+! 002      B. Bilodeau (Nov 2000) - New comdeck sfcbus.cdk
+! 003      B. Bilodeau (Jan 2001) - Automatic arrays
+! 004      J. Mailhot (Sprint 2001) - Deep temperature becomes
+!                a predictive level
+! 005      B. Bilodeau (Aug 2001) - LOCBUS
+! 006      J.-F. Mahfouf (Spring 2003) - add implicit
+!                boundary condition option for vert. diff.
+! 007      B. Bilodeau (May 2005) - New comdeck fintern
+! 008      S. Valcke (Apr 2005) - In coupling mode, use flux from coupler
+! 009      A. Plante (apr 2005) - limitation of snow depth to 10 cm.
+! 010      A-M. Leduc (Oct 2005)- add LIMSNODP swith
+! 011      M. Faucher (Summer 2006) - If OWFLUX. is .true. in coupling mode,
+!                fluxes over ocean are taken from ocean model.
+! 012      Francois Lemay (Oct 2007) - Utilisation du Z0M glacier lu en entree
+!                                      Nouvelle formule pour Z0H
+! 013      M. Desgane (Apr 2009) - Remove coupling block
+! 014      J. Toviessi (Jul 2009) - added radslope modifications
+! 015      M. Abrahamowicz  (May 2013) - replace call to flxsurf3 by call to flxsurf4, with optz0=0 (neutral change)
+!
+!Object
+!          Calculate the surface temperature (and specific humidity) and
+!          the surface fluxes of heat, moisture, and momentum over
+!          continental glaciers and ice sheets.
+!
+!
+!Arguments
+!
+!               - Input/Output -
+! BUS           bus of surface variables
+!
+!               - Input -
+! BUSSIZ        size of the surface bus
+! PTSURF        surface pointers
+! PTSURFSIZ     dimension of ptsurf
+! KOUNT         number of timestep
+! DELT          timestep
+! N             running length
+! M             horizontal dimension
+! NK            vertical dimension
+! ICEMELT       switch to control snow melting
+!
+!
+!Notes
+!          One-dimensional thermodynamic model to treat glaciers and ice sheets:
+!          - includes snow cover on the top of ice, heat conduction through snow and ice,
+!            thermal inertia of snow and ice layers, and penetrating solar radiation
+!          - includes a parameterization of albedo, conductivity and heat capacity
+!
+!Note:     - this subroutine expects snow depth in metre ************************
+!
+!*
+!
+include "thermoconsts.inc"
+!
+      INTEGER I, J
+      REAL DAY, DEEPFRAC
+!
+!
+      REAL CON1,CON2,CON3,CON4,CON5,CON6
+      REAL CON7,CON8,CON9,CON10,CON11,CON12
+      SAVE CON1,CON2,CON3,CON4,CON5,CON6
+      SAVE CON7,CON8,CON9,CON10,CON11,CON12
+      REAL FI0,CONDFI,TMELICE,TMELSNO
+      SAVE FI0,CONDFI,TMELICE,TMELSNO
+      REAL ALBDI,ALBMI,ALBDS,ALBMS,COEFEXT,EMISICE,EMISNOW
+      SAVE ALBDI,ALBMI,ALBDS,ALBMS,COEFEXT,EMISICE,EMISNOW
+      REAL ROICE,ROSNOW(2)
+      SAVE ROICE,ROSNOW
+      REAL HCAPI,HFICE,VHFICE,VHFSNO
+      SAVE HCAPI,HFICE,VHFICE,VHFSNO
+      REAL HCAPS,KSDS,KSMS
+      SAVE HCAPS,KSDS,KSMS
+      REAL Z0GLA
+      SAVE Z0GLA
+!
+!
+!
+!
+!MODULES
+!
+      EXTERNAL FLXSURF4
+!
+!
+!******************************************************
+!     AUTOMATIC ARRAYS
+!******************************************************
+!
+      AUTOMATIC ( DQSAT , REAL , (N) )
+      AUTOMATIC ( EMIST , REAL , (N) )
+      AUTOMATIC ( RHOA  , REAL , (N) )
+      AUTOMATIC ( A     , REAL , (N) )
+      AUTOMATIC ( B     , REAL , (N) )
+      AUTOMATIC ( C     , REAL , (N) )
+      AUTOMATIC ( C2    , REAL , (N) )
+      AUTOMATIC ( CT    , REAL , (N) )
+      AUTOMATIC ( T2    , REAL , (N) )
+      AUTOMATIC ( SCR1  , REAL , (N) )
+      AUTOMATIC ( SCR2  , REAL , (N) )
+      AUTOMATIC ( SCR3  , REAL , (N) )
+      AUTOMATIC ( SCR4  , REAL , (N) )
+      AUTOMATIC ( SCR5  , REAL , (N) )
+      AUTOMATIC ( SCR6  , REAL , (N) )
+      AUTOMATIC ( SCR7  , REAL , (N) )
+      AUTOMATIC ( SCR8  , REAL , (N) )
+      AUTOMATIC ( SCR9  , REAL , (N) )
+      AUTOMATIC ( SCR10 , REAL , (N) )
+      AUTOMATIC ( SCR11 , REAL , (N) )
+      AUTOMATIC ( VMOD  , REAL , (N) )
+      AUTOMATIC ( ZTN   , REAL , (N) )
+      AUTOMATIC ( ZUN   , REAL , (N) )
+      AUTOMATIC ( ZSNODP_M, REAL , (N) )
+!
+!******************************************************
+!
+      REAL GAMAZA
+!
+      REAL AL, ALBSFC, CMU, CTU, FC_GLAC
+      REAL FC_CPL, FV_CPL, MC_CPL
+      REAL FSOL, FV_GLAC
+      REAL HICE, HST_GLAC, HU, ILMO_GLAC
+      REAL PS, QSICE, TH, SNORATE, TDEEP, TS, TT, UU, VV
+      REAL MELT_WATER
+      REAL Z0H, Z0M
+      REAL ZALFAQ, ZALFAT, ZDLAT, ZFCOR, ZFDSI
+      REAL ZFTEMP, ZFVAP, ZQDIAG, ZSNODP, ZTDIAG
+      REAL ZTSURF, ZTSRAD, ZUDIAG, ZVDIAG
+      REAL ZFRV, ZZUSL, ZZTSL
+!
+      POINTER (IALBSFC     , ALBSFC     (1) )
+      POINTER (ICMU        , CMU        (1) )
+      POINTER (ICTU        , CTU        (1) )
+      POINTER (IFC_CPL     , FC_CPL     (1) )
+      POINTER (IFV_CPL     , FV_CPL     (1) )
+      POINTER (IMC_CPL     , MC_CPL     (1) )
+      POINTER (IFC_GLAC    , FC_GLAC    (1) )
+      POINTER (IFSOL       , FSOL       (1) )
+      POINTER (IFV_GLAC    , FV_GLAC    (1) )
+      POINTER (IHICE       , HICE       (1) )
+      POINTER (IHST_GLAC   , HST_GLAC   (1) )
+      POINTER (IHU         , HU         (1) )
+      POINTER (IILMO_GLAC  , ILMO_GLAC  (1) )
+      POINTER (IMELT_WATER , MELT_WATER (1) )
+      POINTER (IPS         , PS         (1) )
+      POINTER (IQSICE      , QSICE      (1) )
+      POINTER (ISNORATE    , SNORATE    (1) )
+      POINTER (ITDEEP      , TDEEP      (1) )
+      POINTER (ITH         , TH         (1) )
+      POINTER (ITS         , TS         (1) )
+      POINTER (ITT         , TT         (1) )
+      POINTER (IUU         , UU         (1) )
+      POINTER (IVV         , VV         (1) )
+      POINTER (IZ0H        , Z0H        (1) )
+      POINTER (IZ0M        , Z0M        (1) )
+      POINTER (IZALFAQ     , ZALFAQ     (1) )
+      POINTER (IZALFAT     , ZALFAT     (1) )
+      POINTER (IZDLAT      , ZDLAT      (1) )
+      POINTER (IZFCOR      , ZFCOR      (1) )
+      POINTER (IZFDSI      , ZFDSI      (1) )
+      POINTER (IZFTEMP     , ZFTEMP     (1) )
+      POINTER (IZFVAP      , ZFVAP      (1) )
+      POINTER (IZQDIAG     , ZQDIAG     (1) )
+      POINTER (IZSNODP     , ZSNODP     (1) )
+      POINTER (IZTDIAG     , ZTDIAG     (1) )
+      POINTER (IZTSURF     , ZTSURF     (1) )
+      POINTER (IZTSRAD     , ZTSRAD     (1) )
+      POINTER (IZUDIAG     , ZUDIAG     (1) )
+      POINTER (IZVDIAG     , ZVDIAG     (1) )
+      POINTER (IZFRV       , ZFRV       (1) )
+      POINTER (IZZUSL      , ZZUSL      (1) )
+      POINTER (IZZTSL      , ZZTSL      (1) )
+!
+#include "zuzt.cdk"
+!
+#include "vamin.cdk"
+      SAVE VAMIN
+#include "snoh0.cdk"
+      SAVE SNOH0
+!
+!
+      DATA  CON1     , CON2   , CON3  , CON4    / &
+            2.845E-6 , 2.7E-4 , 233.0 , 0.2   /
+      DATA  CON5     , CON6   , CON7  , CON8  / &
+            92.88    , 7.364  , 3.2   , 14.24 /
+      DATA  CON9     , CON10 , CON11 , CON12 / &
+            19.39    , 0.1   , 0.44  , 0.075 /
+      DATA  FI0   ,  CONDFI   / &
+            0.17  ,  2.034    /
+      DATA  TMELICE , TMELSNO  /  273.05 , 273.15  /
+      DATA  ALBDI   ,  ALBMI ,  ALBDS  ,  ALBMS / &
+            0.57    ,  0.50  ,  0.83   ,  0.77  /
+      DATA  COEFEXT / &
+            1.5     /
+      DATA  EMISICE , EMISNOW / 0.99 , 0.99 /
+      DATA  ROICE  / &
+            913.0  /
+      DATA  ROSNOW  / 330.0 , 450.0 /
+      DATA  HCAPI    , HFICE,   VHFICE   , VHFSNO   / &
+            2.062E+3 , 3.34E+5, 2.679E+8 , 1.097E+8 /
+      DATA  HCAPS   , KSDS  , KSMS   / &
+            2.04E+3 , 0.325 , 0.665 /
+      DATA  Z0GLA  / 3.0E-4 /
+!
+!
+!
+      INTEGER K, PTR, X
+!
+#include "locbus.cdk"
+      INTEGER INDX_SFC, SURFLEN
+      PARAMETER (INDX_SFC = INDX_GLACIER)
+      INTEGER QUELNIVO(MAXVARSURF)
+!
+#include "options.cdk"
+!
+#include "sfcbus.cdk"
+!
+include "dintern.inc"
+include "fintern.inc"
+#include "xptsurf.cdk"
+!
+!
+      SURFLEN = M
+!
+!------------------------------------------------------------------------
+!
+      DAY = 86400.
+!                               Fraction of diurnal temperature cycle
+!                               (determines depth of deep in-glacier temperature)
+      DEEPFRAC = EXP(-1.0)
+!
+!     EQUIVALENCES
+!
+      INIT_LOCBUS()
+!
+!     Syntax of macro locbus (must be typed in CAPITAL letters):
+!     locbus (pointer, array_name_in_the_bus, level)
+!     If level=0, array chosen automatically as follows:
+!        1) level =  1 if array has  1 level only (e.g. TSURF )
+!        2) level = nk if array has nk levels     (e.g. TMOINS)
+!        3) level = indx_sfc if array has a level for each surface type (e.g. FC)
+!        4) level has to be specified by user if array has more than one level
+!           that all "belong" to the same surface type (e.g. TSOIL)
+!
+      LOCBUS (IALBSFC    , ALVIS    ,  0 )
+      LOCBUS (ICMU       , BM       ,  0 )
+      LOCBUS (ICTU       , BT       ,  0 )
+      LOCBUS (IFC_CPL    , FCCPL    ,  0 )
+      LOCBUS (IFV_CPL    , FVCPL    ,  0 )
+      LOCBUS (IMC_CPL    , MCCPL    ,  0 )
+      LOCBUS (IFC_GLAC   , FC       ,  0 )
+      IF (RADSLOPE)  THEN
+         LOCBUS (IFSOL      , FLUSLOP  ,  0 )
+      ELSE
+         LOCBUS (IFSOL      , FLUSOLIS ,  0 )
+      ENDIF
+      LOCBUS (IFV_GLAC   , FV       ,  0 )
+      LOCBUS (IHST_GLAC  , HST      ,  0 )
+      LOCBUS (IHU        , HUMOINS  ,  0 )
+      LOCBUS (IILMO_GLAC , ILMO     ,  0 )
+      LOCBUS (IMELT_WATER, RUNOFFTOT,  0 )
+      LOCBUS (IPS        , PMOINS   ,  0 )
+      LOCBUS (IQSICE     , QSURF    ,  0 )
+      LOCBUS (ISNORATE   , SNOWRATE ,  0 )
+      LOCBUS (ITDEEP     , TGLACIER ,  2 )
+      LOCBUS (ITH        , THETAA   ,  0 )
+      LOCBUS (ITS        , TGLACIER ,  1 )
+      LOCBUS (ITT        , TMOINS   ,  0 )
+      LOCBUS (IUU        , UMOINS   ,  0 )
+      LOCBUS (IVV        , VMOINS   ,  0 )
+      LOCBUS (IZ0H       , Z0T      ,  2 )
+      LOCBUS (IZ0M       , Z0       ,  2 )
+      LOCBUS (IZALFAQ    , ALFAQ    ,  0 )
+      LOCBUS (IZALFAT    , ALFAT    ,  0 )
+      LOCBUS (IZDLAT     , DLAT     ,  0 )
+      LOCBUS (IZFCOR     , FCOR     ,  0 )
+      LOCBUS (IZFDSI     , FDSI     ,  0 )
+      LOCBUS (IZFTEMP    , FTEMP    ,  0 )
+      LOCBUS (IZFVAP     , FVAP     ,  0 )
+      LOCBUS (IZSNODP    , SNODP    ,  0 )
+      LOCBUS (IZTSURF    , TSURF    ,  0 )
+      LOCBUS (IZTSRAD    , TSRAD    ,  0 )
+      LOCBUS (IZUDIAG    , UDIAG    ,  0 )
+      LOCBUS (IZVDIAG    , VDIAG    ,  0 )
+      LOCBUS (IZTDIAG    , TDIAG    ,  0 )
+      LOCBUS (IZQDIAG    , QDIAG    ,  0 )
+      LOCBUS (IZFRV      , FRV      ,  0 )
+      LOCBUS (IZZUSL     , ZUSL     ,  0 )
+      LOCBUS (IZZTSL     , ZTSL     ,  0 )
+!
+      do i=1,n
+         zun(i) = zu
+         ztn(i) = zt
+      end do
+!
+!
+!*     1.     Preliminaries
+!      --------------------
+!
+      DO I=1,N
+!
+!
+!                           Air density near the surface
+!
+        RHOA(I) = PS(I)/(RGASD*TT(I)*(1.0+DELTA*HU(I)))
+!
+!                           - in-glacier temperature
+!
+        T2(I) = TDEEP(I)
+!
+!                           Thermal roughness length for
+!                           the ice surface
+!
+
+        Z0H(I) = MAX(   0.2 * Z0M(I)  ,  Z0GLA   )
+        Z0H(I) = MIN(    Z0H(I)  ,  0.2   )
+
+!
+        VMOD  (I) = SQRT( MAX( VAMIN,(UU(I)**2 + VV(I)**2)))
+!
+!                           Saturated specific humidity above
+!                           ice surface
+!
+        QSICE(I) = FOQST( TS(I), PS(I) )
+        DQSAT(I) = FODQS ( QSICE(I), TS(I) )
+!
+!       Damp snow depth with h0*tanh(ff/h0)
+
+      IF (LIMSNODP) THEN
+        ZSNODP_M(I) = SNOH0*TANH(ZSNODP(I)/SNOH0)
+      ELSE
+       ZSNODP_M(I)=ZSNODP(I)
+      ENDIF
+
+      END DO
+!
+!       2.     Calculate the drag and heat coefficients
+!       -----------------------------------------------
+!
+!
+! call flxsurf4 with optz0=0 i.e., no call to compz0
+!
+      CALL FLXSURF4( CMU, CTU, SCR1, ZFTEMP, ZFVAP, &
+                     ILMO_GLAC, ZFRV, ZFCOR, TH, HU, &
+                     ZZUSL, ZZTSL, VMOD, TS, QSICE, HST_GLAC, &
+                     Z0M, Z0H,SCR2, SCR3, SCR4, SCR5, N, 0 )
+!
+!
+!
+!
+!       3.     Parameterizations (albedo, emissivity, conductivity,...)
+!       ---------------------------------------------------------------
+!
+!
+!
+!
+!                           surface albedo (function of surface
+!                           type and temperature)
+
+!
+      DO I=1,N
+!
+        IF( TS(I) .LT. TMELSNO ) THEN
+          SCR2(I) = ALBDS
+        ELSE
+          SCR2(I) = ALBMS
+        ENDIF
+!
+        IF( TS(I) .LT. TMELICE ) THEN
+          SCR3(I) = ALBDI
+        ELSE
+          SCR3(I) = ALBMI
+        ENDIF
+!
+        IF( ZSNODP(I) .GT. CON10 ) THEN
+          ALBSFC(I) = SCR2(I)
+        ELSE
+          ALBSFC(I) = MIN( SCR2(I) , SCR3(I)+ZSNODP(I)* &
+                          (SCR2(I)-SCR3(I))/CON10 )
+        ENDIF
+!
+      END DO
+!
+!                               conductivity and capacity (function of surface temperature)
+      DO I=1,N
+!                                            snow layer
+        IF( TS(I) .LT. TMELSNO ) THEN
+          SCR2(I) = ROSNOW(1)*HCAPS
+          SCR4(I) = KSDS
+        ELSE
+          SCR2(I) = ROSNOW(2)*HCAPS
+          SCR4(I) = KSMS
+        ENDIF
+!                                            ice layer
+        SCR3(I) = ROICE*HCAPI
+        SCR5(I) = CONDFI
+!                                            depths D1 and D2
+        SCR7(I) = -SQRT((SCR4(I)/SCR2(I))*DAY/PI)*ALOG(DEEPFRAC)
+        SCR8(I) = -SQRT((SCR5(I)/SCR3(I))*DAY/PI)*ALOG(DEEPFRAC)
+!                                            equivalent ice depth and
+!                                            limit if Tp is in snow layer
+        IF( ZSNODP_M(I) .LT. SCR7(I) ) THEN
+          SCR6(I) = SCR8(I)*( 1. -ZSNODP_M(I)/SCR7(I) )
+          SCR10(I) = ZSNODP_M(I)
+        ELSE
+          SCR6(I) = 0.0
+          SCR10(I) = SCR7(I)
+        ENDIF
+!                                            compute K/H
+        SCR11(I) = SCR4(I)/( SCR10(I) + SCR6(I)*SCR4(I)/SCR5(I) )
+!
+      END DO
+!
+      DO I=1,N
+!                               heat capacity of combined snow/ice layers H*C
+        SCR5(I) = 0.5*( SCR10(I)*SCR2(I)*( 1.+SCR11(I)*SCR6(I)/SCR5(I) ) &
+                + SCR3(I)*SCR11(I)*SCR6(I)**2/SCR5(I) )
+        CT(I) = 1./SCR5(I)
+        C2(I) = CT(I)*SCR11(I)
+!
+      END DO
+!
+!                               emissivity and penetration of solar radiation
+!                               (function of surface type snow/ice)
+      DO I=1,N
+!
+        IF( ZSNODP(I) .GT. CON10 ) THEN
+          EMIST(I) = EMISNOW
+          SCR1(I) = 1.0
+        ELSE
+          EMIST(I) = EMISICE
+          SCR1(I) = 1.0 - FI0
+          SCR1(I) = MIN( 1.0 , SCR1(I)+ZSNODP(I)* &
+                        (1.0-SCR1(I))/CON10 )
+        ENDIF
+!
+        SCR2(I) = 1.-EXP(-COEFEXT*SCR6(I))
+!
+      END DO
+!
+!                                              terms A, B, and C for the
+!                                              calculation of TS at time 'T+DT'
+      DO I=1,N
+!
+        A(I) = CT(I) * ( 4. * EMIST(I) * STEFAN * TS(I)**3 &
+           +  RHOA(I) * CTU(I) * (DQSAT(I) * (CHLC+CHLF) + CPD) ) &
+           + C2(I)
+!
+        B(I) = CT(I) * ( 3. * EMIST(I) * STEFAN  * TS(I)**3 &
+           + RHOA(I) * CTU(I) * DQSAT(I) * (CHLC+CHLF) )
+!
+        C(I) = C2(I) * T2(I) + CT(I) * &
+           (  RHOA(I)*CTU(I) * (CPD*TH(I) - (CHLC+CHLF)*(QSICE(I)-HU(I))) &
+           +  FSOL(I)*(1.-ALBSFC(I)) * (SCR1(I)+(1.-SCR1(I))*SCR2(I)) &
+           + EMIST(I)*ZFDSI(I) )
+!
+      END DO
+!
+!
+!       4.     Calculate the surface temperature from
+!              force-restore equation at the snow or ice surface
+!       -----------------------------------------------------------------
+!
+!                                       Energy balance for surface temperature
+!  d TS / dt = -2*HA/(C*H)-2*K(TS-TP)/(C*H*H)
+!                                       after linearization
+!  d TS / dt = - A * TS+ + B * TS- + C
+!                                       and deep temperature
+!  d TP / dt = - ( TP+ -  TS+ ) / DAY
+!                                       can be solved analytically
+        DO I=1,N
+           TS(I) = TS(I) + ( TS(I)*(B(I)-A(I)) + C(I) ) &
+                 * ( 1.-EXP(-DELT*A(I)) ) / A(I)
+           TDEEP(I) = (TDEEP(I)+TS(I)*DELT/DAY)/(1.0+DELT/DAY)
+        END DO
+!
+!
+      DO I=1,N
+!                                              prevent surface and deep temperatures
+!                                              from exceeding melting temperature
+        IF( ZSNODP(I) .GT. 0.0 ) THEN
+          SCR4(I) = TMELSNO
+        ELSE
+          SCR4(I) = TMELICE
+        ENDIF
+!
+        TS(I) = MIN ( TS(I) , SCR4(I) )
+        TDEEP(I) = MIN ( TDEEP(I) , SCR4(I) )
+!
+!                               saturated specific humidity at
+!                               surface
+!
+        QSICE(I) = FOQST( TS(I), PS(I) )
+!
+      END DO
+!
+      CALL DIASURF2(ZUDIAG, ZVDIAG, ZTDIAG, ZQDIAG, &
+                    N, UU, VV, TS, QSICE, &
+                    Z0M, Z0H, ILMO_GLAC, ZZUSL, &
+                    HST_GLAC, ZFRV, ZFTEMP, ZFVAP, &
+                    ZUN, ZTN, ZDLAT)
+
+!
+!
+!       5.     Melting and growth
+!       -------------------------
+!                                              melting of snow at the surface
+!                                              accumulation of snow fall
+      IF(ICEMELT) THEN
+!
+        DO I=1,N
+!
+!                               recompute surface albedo with new TS
+!
+          IF( TS(I) .LT. TMELSNO ) THEN
+            SCR2(I) = ALBDS
+          ELSE
+            SCR2(I) = ALBMS
+          ENDIF
+!
+          IF( TS(I) .LT. TMELICE ) THEN
+            SCR3(I) = ALBDI
+          ELSE
+            SCR3(I) = ALBMI
+          ENDIF
+!
+          IF( ZSNODP(I) .GT. CON10 ) THEN
+            ALBSFC(I) = SCR2(I)
+          ELSE
+            ALBSFC(I) = MIN( SCR2(I) , SCR3(I)+ZSNODP(I)* &
+                           (SCR2(I)-SCR3(I))/CON10 )
+          ENDIF
+!
+!                               compute K/H * (TB - TS)
+          SCR11(I) = SCR11(I)*( TDEEP(I) - TS(I) )
+!
+!                               compute HA = H + LE + FWnet + FLnet
+          SCR5(I) = RHOA(I)*CTU(I)* &
+                    ( CPD*(TS(I)-TH(I))+(CHLC+CHLF)*(QSICE(I)-HU(I)) ) &
+                   - FSOL(I)*(1.-ALBSFC(I))*SCR1(I) &
+                   + EMIST(I)*( STEFAN*TS(I)**4 - ZFDSI(I) )
+!
+          SCR3(I) = SCR5(I) - SCR11(I)
+!
+!                               criteria for melting at the surface
+          MELT_WATER(I) = 0.0
+          IF( TS(I).GE.SCR4(I) .AND. &
+              SCR5(I).LE.0.0 .AND. SCR3(I).LT.0.0 ) THEN
+!
+!                               melt available snow...
+            ZSNODP(I) = MAX( 0.0, ZSNODP(I) + DELT*SCR3(I)/VHFSNO )
+!                               (in units of water equivalent - kg/m2 or mm)
+            MELT_WATER(I) = - DELT*SCR3(I)/HFICE
+!
+          ENDIF
+!                               add snow fall (units changed from
+!                               water equivalent to snow equivalent)
+          IF( TS(I).LT.TMELICE ) THEN
+            ZSNODP(I) = ZSNODP(I) + DELT*SNORATE(I)*(1000./ROSNOW(1))
+          ENDIF
+!
+        END DO
+!
+      ENDIF
+!
+!
+!       6.     The fluxes
+!       -----------------
+!
+!VDIR NODEP
+      DO I=1,N
+!
+        ZTSURF    (I) = TS (I)
+        ZTSRAD    (I) = TS (I)
+!
+        ZALFAT    (I) = - CTU(I) * ( TS   (I)-TH(I) )
+        ZALFAQ    (I) = - CTU(I) * ( QSICE(I)-HU(I) )
+        IF (.NOT.IMPFLX) CTU (I) = 0.
+        RHOA      (I) = PS(I)/(RGASD * ZTDIAG(I)*(1.+DELTA*ZQDIAG(I)))
+        FC_GLAC(I)    = -CPD *RHOA(I)*ZALFAT(I)
+        FV_GLAC(I)    = -(CHLC+CHLF)*RHOA(I)*ZALFAQ(I)
+!
+        IF (IMPFLX) THEN
+          ZALFAT    (I) = - CTU(I) *  TS(I)
+          ZALFAQ    (I) = - CTU(I) *  QSICE(I)
+        ENDIF
+!***
+!
+      END DO
+!
+!     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
+      CALL FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_GLACIER, &
+                     SURFLEN)
+!
+      RETURN
+      END

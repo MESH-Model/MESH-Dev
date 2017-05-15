@@ -1,0 +1,16 @@
+! Initilisation of constants in the common SURFCON. It is shared
+! by subroutines slfun_tq and slfun_uv, which can be called outside
+! the model by INTERP1D, the 1D interpolation package from RMNLIB.
+!
+! Note: some of the constants may be reinitialised at runtime using a namelist
+!
+      AS    = 12.
+      ASX   = 5.
+      CI    = 40.
+      BS    = 1.0
+      BETA  = 1.0
+      FACTN = 1.2
+      HMIN  = 30.
+      ANGMAX= 0.85
+      RAC3  = SQRT(3.)
+!

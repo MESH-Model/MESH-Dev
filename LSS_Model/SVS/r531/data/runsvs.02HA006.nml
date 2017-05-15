@@ -1,0 +1,17 @@
+&RUNSVS_OPT
+	nt=280080
+	dateo=20060601,
+	houro=12000000,
+	dt=600,
+	sigma_u=0.995,
+	sigma_t=0.995,
+	observed_forcing=.FALSE.,
+	inifile='data/02HA006.ini',
+        geofile='data/02HA006.geo',
+	metfile='data/02HA006.met',
+        interpfile='data/02HA006.intrp',
+	outfile='data/02HA006.out',
+        rtefile='data/02HA006.rte',
+	xCount=5,
+	yCount=2
+/

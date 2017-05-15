@@ -25,9 +25,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
       character*10 :: program_name
 
-      integer*4 :: maxr,event_hours
+      integer*4 :: maxr,event_hours,iswitchrerout,fhr
 
-      real*4 :: por,sqlz,slzinflw,leakage,dacheck,totaltime
+      real*4 :: por,sqlz,slzinflw,leakage,dacheck
 
       character*1, dimension(:), allocatable :: glacier_flag
 
@@ -40,8 +40,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *                    fake,fakefs,frac,
      *                    grid_area,lake_area,channel_area,
      *                    lzs,netflow,over,pot,potfs,psmear,punused,
-     *                    qi1,qi2,qo1,qo2,qold2,qda,qr,qlz,qbase,qmax,
-     *                    qstream,qstrm,qdrng,qdrngfs,
+     *                    qi1,qi2,qo1,qo2,qo2sim,qo2rem,qda,qr,qlz,
+     *                    qbase,qmax,qstream,qstrm,qdrng,qdrngfs,
      *                    qdrng2,qdrngfs2,
      *                    rechrg,rl,
      *                    sl1,slope,sl2,sq1,sq1fs,sqint,sqintfs,
@@ -50,7 +50,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *                    sump,sumrff,sumqint,sumqintfs,
      *                    sumq1,sumq1fs,sumrechrg,
      *                    totd1,totuzs,totsnw,totchnl,totgrid,
-     *                    x4,x5
+     *                    x4,x5,avr_qo
                    
 !     note:  frac is to be replaced by grid_area
 
@@ -115,12 +115,17 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *                  modelflg,shdflg,wfo_open_flg,trcflg,frcflg,
      *                  newevtflg,manningflg,translateflg,flowfillflg,
      *                  outfileflg,initflg,
-     *                  fstflg !csubich
+     *                  fstflg,chnlflg,mndrflg,r1nflg,r2nflg,rlakeflg,
+     *                  nocrashflg,rbmflg
         character(1) :: ssmc_firstpass
 !        character(1), dimension(:), allocatable :: glacier_flag
 !       these things taken out of some argument lists  nk 05/10/04
         integer      :: yr1,year1,mo1,day1,hour1
 	  integer      :: year_now,month_now,day_now,hour_now,no_dt
+! D. Durnford: enable the streamflow, release file input files to start at date, times other than 01/01
+! and the model run to start at an hour other than 00 UTC
+	  integer      :: strday1,strhour1,relday1,relhour1,
+     *                    divday1,divhour1
 	  character(2) :: yy2,mm2,dd2,hh2
         character(4) :: yyyy4, nostr
 
@@ -155,7 +160,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
         real            :: xorigin_temp,yorigin_temp,
      *                     xdelta_temp,ydelta_temp
         integer         :: xcount_temp,ycount_temp,deltat_temp,
-     *	               deltat_report
+     *	               deltat_report_discharge,deltat_report_flowICs
 
 !       please note that coordsys and datum are used elsewhere.
 
@@ -221,7 +226,7 @@ ccccc      MODULE area4
      *            theta_o,widep_o,kcond_o
 
 !     rev. 9.2.11  Sep.  11/05  - NK: added Manning's n  r1n & r2n
-      real*4,    dimension(:), allocatable :: r1n,r2n, 
+      real*4,    dimension(:), allocatable :: r1n,r2n,rlake, 
      *                           r2nlow,r2nhgh,r2ndlt
 
       real*4,    dimension(:,:), allocatable :: h,fpetmo 
@@ -236,7 +241,7 @@ ccccc      END MODULE area4
 
 ccccc      MODULE area5
 
-        real*4,  dimension(:,:), allocatable :: qrel,qinfl,qdwpr,
+        real*4,  dimension(:,:), allocatable :: qrel,qinfl,qdwpr,qdiv,
      *                     lake_stor,lake_outflow,lake_inflow,lake_elv,
      *                     del_stor
 !     *                     del_stor,net_lake_inflow,net_lake_outflow
@@ -245,17 +250,23 @@ ccccc      MODULE area5
 ! dch
         real*4, DIMENSION(:), ALLOCATABLE :: reach_last
 
-        real*4,    dimension(:), allocatable :: b1,b2,b3,b4,b5,ppsum,
-     *                                          yres,xres
+        real*4,    dimension(:), allocatable :: b1,b2,b3,b4,b5,ppsum
 
-        integer*4, dimension(:), allocatable :: ires,jres,nnsum,nopti
+        integer*4, dimension(:), allocatable :: ires,jres,nnsum
+        integer*4  noresv,local,mhto,index,nrel,ktr
 
-        integer*4  noresv,local,mhto,index,nrel,noresvi,mhtoi,nreli,ktr
+        real*4,    dimension(:), allocatable :: val1div
+        integer*4, dimension(:), allocatable :: val2div, divstrindex,
+     *                                          divendindex
+     *                                     
+        integer*4  val2divyes,nodiv
 
 	character*12, dimension(:), allocatable :: resname,resnamei
+
+	character*12, dimension(:), allocatable :: divname
         character(10) :: starttime1,startdate1
         character(50) :: strfw_option
-        character*1 :: poliflg
+        character*1, dimension(:), allocatable :: poliflg
         logical :: first_run
 
 ccccc      END MODULE area5
@@ -389,7 +400,7 @@ ccccc      MODULE area12
         character(3) :: filetype
         character(1) :: chars(99) 
         integer(4)   :: filename_length
-        integer      :: Nreaches,Nreachesmax=15
+        integer      :: Nreaches,Nreachesmax=45
 
 !        DATA Nreachesmax/15/
 

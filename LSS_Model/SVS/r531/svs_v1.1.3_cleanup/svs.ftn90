@@ -1,0 +1,582 @@
+
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!** S/P SVS
+!
+#include "phy_macros_f.h"
+  SUBROUTINE SVS (BUS, BUSSIZ, & 
+       PTSURF, PTSURFSIZ, &  
+       DT, KOUNT, TRNCH,&  
+       N, M, NK)
+    !
+#ifdef RUNSVS
+USE runsvs_mod
+#endif
+    implicit none
+#include <arch_specific.hf>
+!
+      INTEGER BUSSIZ, VSIZ, N, NK, KOUNT, TRNCH
+      REAL BUS(BUSSIZ), DT
+      INTEGER PTSURFSIZ
+      INTEGER PTSURF(PTSURFSIZ)
+!
+!Author
+!          S. Belair (January 1997), M. Abrahamowicz, S.Z. Husain (2012) 
+!Revisions
+!
+! 001      Rewrite ISBA into SVS (multi-budget, multi-layer isba)
+!              Add sea ice surface
+!Object
+!          Multitasking of the surface scheme SVS
+!
+!Arguments
+!
+!               - Input/Output -
+! BUS           bus of surface variables
+!
+!               - Input -
+! BUSSIZ        size of the surface bus
+! PTSURF        surface pointers
+! PTSURFSIZ     dimension of ptsurf
+! KOUNT         number of timestep
+! TRNCH         row number
+! DT            timestep
+! N             running length
+! M             horizontal dimension
+! NK            vertical dimension
+!
+!
+!*
+!
+      INTEGER I
+!
+      integer fsolis
+!
+!
+      integer ptr, x
+!
+      integer k,j,ik,m
+!
+#include "locbus.cdk"
+      INTEGER INDX_SFC, SURFLEN
+      PARAMETER (INDX_SFC = INDX_SOIL)
+      INTEGER QUELNIVO(MAXVARSURF)
+!
+include "thermoconsts.inc"
+!
+#include "clefcon.cdk"
+!
+#include "options.cdk"
+!
+#ifndef RUNSVS
+#include "sfcbus.cdk"
+#endif
+! to get NCLASS variable
+#include "nclassvg.cdk"
+!MODULES
+      EXTERNAL SUNCOS1
+      EXTERNAL JULIAND
+      EXTERNAL PRELIM1
+      EXTERNAL SOILI_SVS
+      EXTERNAL VEGI_SVS
+      EXTERNAL PHTSYN_SVS
+      EXTERNAL DRAG_SVS
+      EXTERNAL SNOW_ALONE
+      EXTERNAL SNOW_VEG
+      EXTERNAL EBUDGET_SVS
+      EXTERNAL HYDRO_SVS
+      EXTERNAL UPDATE_SVS
+!
+!
+#include "zuzt.cdk"
+!
+
+!******************************************************
+!     AUTOMATIC ARRAYS
+!******************************************************
+!
+      AUTOMATIC ( SUNCOSA  , REAL , (N) )
+      AUTOMATIC ( SUNOTHER1, REAL , (N) )  
+      AUTOMATIC ( SUNOTHER2, REAL , (N) )  
+      AUTOMATIC ( SUNOTHER3, REAL , (N) )  
+      AUTOMATIC ( SUNOTHER4, REAL , (N) )  
+      AUTOMATIC ( VMOD     , REAL , (N) )
+      AUTOMATIC ( VDIR     , REAL , (N) )
+      AUTOMATIC ( TVA      , REAL , (N) )
+      AUTOMATIC ( RHOA     , REAL , (N) )
+      AUTOMATIC ( CG       , REAL , (N) )
+      AUTOMATIC ( DEL      , REAL , (N) )  
+      AUTOMATIC ( WFT      , REAL , (N) )
+      AUTOMATIC ( WRT      , REAL , (N) )      
+      AUTOMATIC ( LEFF     , REAL , (N) )
+      AUTOMATIC ( DWATERDT , REAL , (N) )
+      AUTOMATIC ( ZTN      , REAL , (N) )
+      AUTOMATIC ( ZUN      , REAL , (N) )
+      AUTOMATIC ( CVP      , REAL , (N) )
+      AUTOMATIC ( CVPA     , REAL , (N) )
+      AUTOMATIC ( ALVA     , REAL , (N) )
+      AUTOMATIC ( EVA      , REAL , (N) )
+      AUTOMATIC ( RGLA     , REAL , (N) )
+      AUTOMATIC ( STOMRA   , REAL , (N) )
+      AUTOMATIC ( GAMVA    , REAL , (N) )                     
+      AUTOMATIC ( HRSURF   , REAL , (N) )
+      AUTOMATIC ( TRAD     , REAL , (N) )
+      AUTOMATIC ( STOM_RS  , REAL , (N) )
+      AUTOMATIC ( LESNOFRAC, REAL , (N) )
+      AUTOMATIC ( ESNOFRAC , REAL , (N) )
+      AUTOMATIC ( LESVNOFRAC,REAL , (N) )
+      AUTOMATIC ( ESVNOFRAC, REAL , (N) )
+!
+!******************************************************
+!
+      REAL RHO
+!
+      REAL ALVIS_SOL, CMU, CTU
+      REAL FC_SOL, FV_SOL
+      REAL FC_CPL, FV_CPL, MC_CPL
+      REAL HST_SOL, ILMO_SOL
+      REAL PS, QS, TS
+      REAL Z0H, Z0M
+      REAL ZALFAQ, ZALFAT, ZTSURF, ZTSRAD
+      REAL HZ, HZ0, JULIEN, JULIAND      
+!
+      POINTER (IALVIS_SOL , ALVIS_SOL  (1) )
+      POINTER (ICMU       , CMU        (1) )
+      POINTER (ICTU       , CTU        (1) )
+#ifndef RUNSVS
+      POINTER (IFC_CPL    , FC_CPL     (1) )
+      POINTER (IFV_CPL    , FV_CPL     (1) )
+      POINTER (IMC_CPL    , MC_CPL     (1) )
+#endif
+      POINTER (IFC_SOL    , FC_SOL     (1) )
+      POINTER (IFV_SOL    , FV_SOL     (1) )
+      POINTER (IHST_SOL   , HST_SOL    (1) )
+      POINTER (IILMO_SOL  , ILMO_SOL   (1) )
+      POINTER (IPS        , PS         (1) )
+      POINTER (IQS        , QS         (1) )
+      POINTER (ITS        , TS         (1) )
+      POINTER (IZ0H       , Z0H        (1) )
+      POINTER (IZ0M       , Z0M        (1) )
+      POINTER (IZALFAQ    , ZALFAQ     (1) )
+      POINTER (IZALFAT    , ZALFAT     (1) )
+      POINTER (IZTSURF    , ZTSURF     (1) )
+      POINTER (IZTSRAD    , ZTSRAD     (1) )
+!
+!
+      INTEGER , PARAMETER :: NL=7
+
+      REAL, DIMENSION(:), ALLOCATABLE ::  D
+      REAL, DIMENSION(:,:), ALLOCATABLE :: WDT
+
+      LOGICAL  :: USE_PHOTO
+
+!---------------------------------------------------------
+!  ROUGNESS
+!
+
+!  GENERAL COMMENT:
+!   want z0m *with orography* at resolution coarser than 3km... 
+!  and local only at higher resolution. Makes sure that the local z0 
+!  calculated based on veg. height database, and NOT
+!  on look-up table (values are quite weak...)
+!
+!     Conversion factor to convert from momemtum roughness to thermal roughness
+      REAL, PARAMETER :: Z0M_TO_Z0H = 0.2
+!
+!     Thermal roughness for snow
+      REAL, PARAMETER :: Z0HSNOW = 0.010
+!
+!     Momentum roughness for bare ground 
+      REAL, PARAMETER :: Z0MBG = 0.05
+!---------------------------------------------------------
+!
+#include "xptsurf.cdk"
+
+
+      ALLOCATE(D(NL))
+      ALLOCATE(WDT(N,NL))      
+
+!
+!     In the offline mode the t-step 0 is (correctly) not performed
+      IF (IFLUVERT.EQ.-1.AND.KOUNT.EQ.0) RETURN
+!
+      SURFLEN = M
+!
+!
+!     EQUIVALENCES
+!
+      INIT_LOCBUS()
+!
+!     Syntax of macro locbus (must be typed in CAPITAL letters):
+!     locbus (pointer, array_name_in_the_bus, level)
+!     If level=0, array chosen automatically as follows:
+!        1) level =  1 if array has  1 level only (e.g. TSURF )
+!        2) level = nk if array has nk levels     (e.g. TMOINS)
+!        3) level = indx_sfc if array has a level for each surface type (e.g. FC)
+!        4) level has to be specified by user if array has more than one level
+!           that all "belong" to the same surface type (e.g. TSOIL)
+!
+      LOCBUS (IALVIS_SOL , ALVIS  ,  0 )
+      LOCBUS (ICMU       , BM     ,  0 )
+      LOCBUS (ICTU       , BT     ,  0 )
+#ifndef RUNSVS
+      LOCBUS (IFC_CPL    , FCCPL  ,  0 )
+      LOCBUS (IFV_CPL    , FVCPL  ,  0 )
+      LOCBUS (IMC_CPL    , MCCPL  ,  0 )
+#endif
+      LOCBUS (IFC_SOL    , FC     ,  0 )
+      LOCBUS (IFV_SOL    , FV     ,  0 )
+      LOCBUS (IHST_SOL   , HST    ,  0 )
+      LOCBUS (IILMO_SOL  , ILMO   ,  0 )
+      LOCBUS (IPS        , PMOINS ,  0 )
+      LOCBUS (IQS        , QSURF  ,  0 )
+      LOCBUS (ITS        , TSOIL  ,  1 )
+      LOCBUS (IZ0H       , Z0T    ,  0 )
+      LOCBUS (IZ0M       , Z0     ,  0 )
+      LOCBUS (IZALFAT    , ALFAT  ,  0 )
+      LOCBUS (IZTSURF    , TSURF  ,  0 )
+      LOCBUS (IZTSRAD    , TSRAD  ,  0 )
+!
+      IF (RADSLOPE) THEN
+         FSOLIS = FLUSLOP
+!        BUS(x(FSOLIS,1,1)) now identical to BUS(x(FLUSLOP,1,1))
+      ELSE
+         FSOLIS = FLUSOLIS
+!        BUS(x(FSOLIS,1,1)) now identical to BUS(x(FLUSOLIS,1,1))
+      ENDIF
+!
+
+
+      ! OPTION TO USE PHOTOSYNTHESIS CODE FOR STOMATAL RESISTANCE
+      USE_PHOTO=.FALSE.
+ 
+
+
+
+      DO I=1,N
+         ZUN(I) = ZU
+         ZTN(I) = ZT
+      END DO
+!     CALCULATE GREENWICH HOUR
+      HZ0 = DATE(5) + float(DATE(6))/360000.0 
+!
+      HZ = AMOD ( HZ0+(FLOAT(KOUNT)*DT)/3600. , 24. )
+!
+!                     Determine the current julian day
+!
+      JULIEN = JULIAND( DT, KOUNT, DATE )
+!
+!     Get cosinus of solar angle at LOCAL HOUR
+! 
+! 
+      CALL SUNCOS1(SUNCOSA,SUNOTHER1,SUNOTHER2,SUNOTHER3,SUNOTHER4, N, & 
+           BUS(X(DLAT,1,1)), BUS(X(DLON,1,1)),  &
+           HZ, JULIEN, DATE, .false.)
+
+
+
+! Depth of deep soil layers in METERS       
+!       Depth of the first deep layer 
+      D(1)=0.05
+!       Depth of the second deep layer
+      D(2)=0.1
+!       Depth of the third deep layer 
+      D(3)=0.17
+!       Depth of the fourth deep layer 
+      D(4)=0.28
+!       Depth of the fifth deep layer 
+      D(5)=0.5
+!       Depth of the sixth deep layer 
+      D(6)=0.8
+!       Depth of the seventh deep layer 
+      D(7)=1.4
+        
+!
+!******************************************************************
+!                  SVS SUBROUTINES START HERE
+!******************************************************************
+!
+!     
+!
+      CALL PRELIM1( BUS(X(TMOINS,1,NK)),  &
+           BUS(X(UMOINS ,1,NK)), BUS(X(VMOINS,1,NK)),  &
+           BUS(X(HUMOINS,1,NK)), BUS(X(PMOINS,1,1 )),  &
+           VMOD, VDIR, TVA, RHOA, N )
+!
+!
+
+      CALL SOILI_SVS( BUS(X(WDSOIL ,1,1)), &
+           BUS(X(ISOIL  ,1,1)), &  
+           BUS(X(SNOMA  ,1,1)), BUS(X(SNVMA  ,1,1)), &   
+           BUS(X(SNORO  ,1,1)), BUS(X(SNVRO  ,1,1)), &  
+           BUS(X(VEGH   ,1,1)), &  
+           BUS(X(VEGL   ,1,1)), BUS(X(CGSAT  ,1,1)), &  
+           BUS(X(WSAT   ,1,1)), BUS(X(WWILT  ,1,1)), &  
+           BUS(X(BCOEF  ,1,1)), &  
+           BUS(X(CVH    ,1,1)), BUS(X(CVL    ,1,1)), &  
+           BUS(X(ALVH   ,1,1)), BUS(X(ALVL   ,1,1)), &   
+           BUS(X(EMISVH ,1,1)), BUS(X(EMISVL ,1,1)), &              
+           BUS(X(RGLVH  ,1,1)), BUS(X(RGLVL  ,1,1)), &  
+           BUS(X(STOMRVH,1,1)), BUS(X(STOMRVL,1,1)), &  
+           BUS(X(GAMVH  ,1,1)), BUS(X(GAMVL  ,1,1)), &           
+           BUS(X(LAIVH  ,1,1)), BUS(X(LAIVL  ,1,1)),  & 
+           BUS(X(Z0MVH  ,1,1)),   &
+           BUS(X(Z0MVL  ,1,1)), BUS(X(z0,1,indx_soil)), &  
+           BUS(X(CLAY   ,1,1)), BUS(X(SAND   ,1,1)), &  
+           BUS(X(DECIDUOUS,1,1)),BUS(X(EVERGREEN,1,1)), &  
+           BUS(X(LAIDECI,1,1)),   &
+           Z0HSNOW, Z0MBG, Z0M_TO_Z0H, CG, CVP, &
+           BUS(X(PSNGRVL,1,1)),  &  
+           BUS(X(Z0T  ,1,indx_soil)),  & 
+           BUS(X(ALGR,1,1)),BUS(X(EMISGR,1,1)), &  
+           BUS(X(PSNVH  ,1,1)), BUS(X(PSNVHA ,1,1)), &  
+           ALVA, BUS(X(LAIVA  ,1,1)), CVPA, EVA,BUS(X(Z0HA ,1,1)), RGLA, STOMRA,   &
+           GAMVA, N, NL)
+!
+!     
+
+
+      CALL VEGI_SVS ( bus(x(fsolis,1,1)),   &
+           bus(x(tmoins ,1,nk)), bus(x(TVEGE   ,1,1)),   &  
+           bus(x(humoins,1,nk)), bus(x(pmoins  ,1,1)),   &  
+           BUS(X(WDSOIL ,1,1)),  D, &
+           RGLA                ,  &   
+           bus(x(LAIVA  ,1,1))     , bus(x(LAIVH   ,1,1)),   &  
+           STOMRA,     &
+           GAMVA, bus(x(WWILT   ,1,1)),      &
+           bus(x(WFC     ,1,1)), SUNCOSA,     &
+           bus(x(ROOTDP     ,1,1)), NL, bus(x(RST     ,1,1)),     &
+           bus(x(SKYVIEW ,1,1)), bus(x(VEGTRANS,1,1)),   &   
+           bus(x(frootd   ,1,1)), N)
+  
+      IF( USE_PHOTO ) THEN
+         DO I=1,N
+            STOM_RS(I) =  bus(x(RCCTEM,I,1))
+         END DO
+      ELSE
+         DO I=1,N
+            STOM_RS(I) = bus(x(RST,I,1))
+         END DO
+      ENDIF
+
+
+!
+      CALL DRAG_SVS ( bus(x(TGROUND,1,1)), bus(x(TVEGE,1,1)),  &   
+           bus(x(WDSOIL ,1,1)) ,  &   
+           bus(x(WVEG   ,1,1)), bus(x(thetaa,1,1)),  &   
+           VMOD, bus(x(humoins,1,nk)),     &
+           bus(x(pmoins ,1,1)), STOM_RS,   &  
+           bus(x(z0    ,1,indx_soil)), bus(x(WFC,1,1)),      &
+           bus(x(LAIVA,1,1)), bus(x(zusl,1,1)), bus(x(ztsl,1,1)),    & 
+           bus(x(FCOR,1,1)),bus(x(Z0HA ,1,1)),Z0MBG,  Z0M_TO_Z0H,  &  
+           bus(x(RESAGR,1,1)), bus(x(RESAVG,1,1)), NL, &    
+           bus(x(HUSURF,1,1)),   &  
+           HRSURF,      &
+           bus(x(HV,1,1)), DEL,     &
+           N )  
+!
+!
+      CALL SNOW_ALONE ( bus(x(TSNOW,1,1)), bus(x(TSNOW,1,2)),  &     
+                     bus(x(SNORO,1,1)),    &   
+                     bus(x(SNOAL,1,1)), bus(x(WSNOW,1,1)),  &     
+                     bus(x(SNODP,1,indx_soil)),   &   
+                     bus(x(SNOMA,1,1)),   &   
+                     bus(x(PMOINS,1,1)), VMOD, RHOA,   &    
+                     bus(x(THETAA,1,1)),   &   
+                     bus(x(FSOLIS,1,1)), bus(x(FDSI,1,1)),  &    
+                     bus(x(HUMOINS,1,nk)), bus(x(RAINRATE,1,1)),  &      
+                     bus(x(SNOWRATE,1,1)),  BUS(x(TMOINS,1,NK)),  &     
+                     bus(x(TDIAG,1,1)),     &   
+                     bus(x(UDIAG,1,1)), bus(x(VDIAG,1,1)),  &     
+                     bus(x(MELTS,1,1)), bus(x(MELTSR,1,1)),   &    
+                     bus(x(RNETSA,1,1)), bus(x(HFLUXSA,1,1)),  &     
+                     LESNOFRAC, ESNOFRAC,   &      
+                     bus(x(RSNOWSA,1,1)), bus(x(SNODEN,1,1)),   &    
+                     DT, bus(x(Z0,1,indx_soil)), Z0HSNOW, bus(x(FCOR,1,1)),  &     
+                     bus(x(zusl,1,1)), bus(x(ztsl,1,1)), bus(x(PSNGRVL ,1,1)), N)     
+!    
+!
+      CALL SNOW_VEG ( bus(x(TSNOWVEG  ,1,1)), bus(x(TSNOWVEG,1,2)),  &  
+                     bus(x(SNVRO     ,1,1)),   & 
+                     bus(x(SNVAL     ,1,1)), bus(x(WSNV    ,1,1)),   & 
+                     bus(x(SNVDP     ,1,1)),    &
+                     bus(x(SNVMA     ,1,1)),    &
+                     bus(x(PMOINS    ,1,1)), VMOD, RHOA,   &  
+                     bus(x(THETAA    ,1,1)),    &
+                     bus(x(FSOLIS    ,1,1)), bus(x(FDSI    ,1,1)),  &  
+                     bus(x(HUMOINS   ,1,nk)),bus(x(RAINRATE,1,1)),  &  
+                     bus(x(SNOWRATE  ,1,1)), bus(x(TMOINS  ,1,NK)),  &  
+                     bus(x(TDIAG     ,1,1)),     &
+                     bus(x(UDIAG     ,1,1)), bus(x(VDIAG   ,1,1)),   & 
+                     bus(x(SKYVIEW   ,1,1)), bus(x(VEGTRANS,1,1)),   & 
+                     bus(x(TVEGE     ,1,2)),    &
+                     bus(x(WVEG      ,1,1)), &
+                     bus(x(RNETSV    ,1,1)), bus(x(HFLUXSV ,1,1)),  &  
+                     LESVNOFRAC            , ESVNOFRAC,     & 
+                     bus(x(RSNOWSV   ,1,1)), bus(x(SNVDEN  ,1,1)),  &  
+                     DT,    &
+                     bus(x(Z0,1,indx_soil)),  Z0HSNOW, &
+                     bus(x(FCOR   ,1,1)),   & 
+                     bus(x(zusl,1,1)), bus(x(ztsl,1,1)), bus(x(PSNVHA ,1,1)), N)
+
+!
+      CALL EBUDGET_SVS(BUS(X(TMOINS     ,1,NK)), bus(x(TSOIL,1,1)),  &  
+                  bus(x(TSOIL      ,1,2)) , bus(x(TSA ,1,1)),  &  
+                  bus(x(WDSOIL     ,1,1)) , bus(x(ISOIL,1,1)),  &   
+                  bus(x(TGROUND    ,1,1)) , bus(x(TGROUND,1,2)),   & 
+                  bus(x(TVEGE      ,1,1)) , bus(x(TVEGE,1,2)),   &   
+                  DT                     , VMOD,   &   
+                  bus(x(FSOLIS     ,1,1)) ,ALVA ,bus(x(laiva,1,1)),GAMVA ,     & 
+                  BUS(X(ALGR,1,1))        , BUS(X(EMISGR,1,1)),    & 
+                  bus(x(FDSI       ,1,1)) , bus(x(thetaa,1,1)),    &   
+                  bus(x(FCOR       ,1,1)) , bus(x(zusl,1,1)),    &  
+                  bus(x(ztsl       ,1,1)) , bus(x(humoins    ,1,nk)), &
+                  bus(x(pmoins,1,1)), RHOA,bus(x(Z0,1,indx_soil)) , bus(x(Z0T,1,indx_soil)),&
+                  HRSURF,       & 
+                  bus(x(HV         ,1,1)) , DEL, STOM_RS ,& 
+                  CG,CVPA,EVA,bus(x(PSNGRVL    ,1,1)) ,    &    
+                  D(2) ,                      bus(x(WSAT ,1,1)),    &   
+                  bus(x(RESAGR,1,1)), bus(x(RESAVG,1,1)),   &        
+                  bus(x(RNETSA     ,1,1)) , bus(x(HFLUXSA,1,1)),   &   
+                  LESNOFRAC               , ESNOFRAC,   &   
+                  bus(x(SNOAL      ,1,1)) ,    &  
+                  bus(x(TSNOW      ,1,2)) , bus(x(TSNOW   ,1,1)),    &  
+                  bus(x(RNETSV     ,1,1)) , bus(x(HFLUXSV ,1,1)),   &   
+                  LESVNOFRAC              , ESVNOFRAC,    &    
+                  bus(x(SNVAL      ,1,1)) ,    &  
+                  bus(x(TSNOWVEG   ,1,2)) , bus(x(TSNOWVEG,1,1)),   &   
+                  bus(x(VEGH       ,1,1)) , bus(x(VEGL   ,1,1)),   &   
+                  bus(x(PSNVH      ,1,1)) ,    &   
+                  bus(X(PSNVHA     ,1,1)),  bus(x(SKYVIEW   ,1,1)),   &   
+                  bus(x(RAINRATE,1,1)),bus(x(WVEG   ,1,1)),bus(x(WSNV    ,1,1)),&
+                  NL,bus(x(ALVIS,1,indx_soil)),     & 
+                  bus(x(RNET_S     ,1,1)),    &   
+                  bus(x(FC  ,1,indx_soil)), bus(x(FV  ,1,indx_soil)),   &    
+                  bus(x(LEG        ,1,1)) , bus(x(LEV  ,1,1)),    &   
+                  bus(x(LES        ,1,1)) , bus(x(LESV   ,1,1)),    &  
+                  bus(x(LER        ,1,1)) , bus(x(LETR       ,1,1)) ,   &  
+                  bus(x(EG         ,1,1)) ,   &    
+                  bus(x(ER         ,1,1)) , bus(x(ETR    ,1,1)),    &  
+                  bus(x(FL         ,1,1)),  bus(x(EFLUX      ,1,1)) ,    &  
+                  bus(x(BM         ,1,1)) , bus(x(FQ   ,1,1)),    &  
+                  bus(x(bt, 1,indx_soil)) ,    &  
+                  LEFF                    , DWATERDT,     & 
+                  bus(x(FTEMP,1,indx_soil)), BUS(X(FVAP,1,indx_soil)),   &   
+                  bus(x(qsurf,1,indx_soil)), bus(x(frv ,1,indx_soil)),   &   
+                  bus(x(ALFAT      ,1,1)) , bus(x(ALFAQ      ,1,1)) ,    &  
+                  bus(x(ilmo  ,1,indx_soil)), bus(x(hst  ,1,indx_soil)), &   
+                  TRAD, N )
+!
+!
+      CALL HYDRO_SVS ( DT,      & 
+           BUS(X(WDSOIL ,1,1)), bus(x(ISOIL  ,1,1)), &
+           bus(x(WVEG   ,1,1)), bus(x(rainrate,1,1)),&
+           bus(x(EG     ,1,1)), bus(x(ER     ,1,1)), &
+           bus(x(ETR    ,1,1)) ,bus(x(LAIVA   ,1,1)) , D, &
+           bus(x(WSAT   ,1,1)), &
+           bus(x(PSNGRVL ,1,1)), bus(x(VEGH   ,1,1)),&
+           bus(x(VEGL   ,1,1)), bus(x(PSNVH   ,1,1)),&
+           bus(x(RSNOWSA ,1,1)), bus(x(RSNOWSV,1,1)),&
+           bus(x(frootd ,1,1)), WDT,  WFT, WRT, &
+           bus(x(runofftot ,1,indx_soil)), &
+           NL, bus(x(bcoef  ,1,1)),&
+           bus(x(ksat   ,1,1)), bus(x(psisat  ,1,1)), &
+           bus(x(watflow  ,1,1)), bus(x(drainaf  ,1,1)),&
+           bus(x(grksat,1,1)), bus(x(grkef ,1,1)),&
+           bus(x(grkeff ,1,1)),  bus(x(wfcint    ,1,1)),&
+           bus(x(latflw   ,1,1)), bus(x(latflaf   ,1,1)), &
+           bus(x(wfcdp, 1,1)),&
+           bus(x(khc, 1, 1 )),&
+           bus(x(psi ,1 , 1)), bus(x(ksatc ,1 , 1)),&
+           bus(x(slop, 1, 1)),bus(x(WSNV    ,1,1)),&
+           bus(x(WSNOW,1,1)),N)
+!
+
+
+      IF( USE_PHOTO ) THEN
+
+
+         CALL PHTSYN_SVS ( BUS(X(LAICTEM,1,1))  , BUS(x(VEGF   ,1,1)), &
+                        BUS(X(TVEGE  ,1,1))  , BUS(X(PMOINS ,1,1)), &
+                        BUS(X(RESAVG ,1,1))  , BUS(X(HUMOINS,1,1)), &
+                        BUS(X(RNET_S ,1,1))  , BUS(X(WDSOIL ,1,1)), &
+                        BUS(X(FROOTD ,1,1))  , SUNCOSA            , &
+                        BUS(X(WFC    ,1,1))  , BUS(X(WWILT  ,1,1)), &
+                        NL,    &
+                        BUS(X(RCCTEM ,1,1))  , BUS(X(CO2I1  ,1,1)), &
+                        NCLASS, N)
+
+      ENDIF
+!
+      CALL UPDATE_SVS ( WDT, WFT, WRT, D, NL , &
+                       bus(x(WDSOIL, 1,1)),  bus(x(ISOIL, 1,1)), &
+                       bus(x(WVEG  , 1,1)),  bus(x(WDM  , 1,1)), &
+                       N )
+!
+      call diasurf2(bus(x(udiag ,1,1        )),  &  
+                   bus(x(vdiag ,1,1        )),  &  
+                   bus(x(tdiag ,1,1        )),  &  
+                   bus(x(qdiag ,1,1        )),   & 
+                   n,    &
+                   bus(x(umoins,1,nk       )),   & 
+                   bus(x(vmoins,1,nk       )),   & 
+                   bus(x(tsa   ,1,1        )),  &  
+                   bus(x(qsurf ,1,indx_soil)),  &  
+                   bus(x(z0    ,1,indx_soil)),  &  
+                   bus(x(z0t   ,1,indx_soil)),  &  
+                   bus(x(ilmo  ,1,indx_soil)),  &  
+                   bus(x(zusl  ,1,1        )),   & 
+                   bus(x(hst   ,1,indx_soil)),  &  
+                   bus(x(frv   ,1,indx_soil)),  &  
+                   bus(x(ftemp ,1,indx_soil)),  &  
+                   bus(x(fvap  ,1,indx_soil)),   & 
+                   zun, ztn,    &
+                   bus(x(dlat  ,1,1        ))   & 
+                  )
+!
+!
+  999 continue
+!VDIR NODEP
+
+      do i=1,n
+!
+!
+        ZTSURF   (I) = bus(x(tsa  ,i,1        ))
+        ZTSRAD   (I) = TRAD(i)
+!
+!       CALCULATE LAND-ATMOSPHERE OUTCOMING WATER FLUX
+        BUS(X(WFLUX,I,1)) = RHOA(I)*BUS(X(EFLUX,I,1))
+
+!
+        IF (.NOT.IMPFLX) CTU (I) = 0.
+!
+      end do
+#ifndef RUNSVS
+!
+!     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
+      CALL FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_SOIL,  &  
+                    SURFLEN )
+#endif
+!
+
+
+
+      DEALLOCATE(D)
+      DEALLOCATE(WDT)
+
+
+      RETURN
+      END

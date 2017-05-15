@@ -1,0 +1,9 @@
+       INTEGER    NCLASSURB, NCLASS
+!      NUMBER OF URBAN CLASSES
+       PARAMETER (NCLASSURB=12)
+!      NUMBER OF CLASSES FOR NATURAL COVERS
+       PARAMETER (NCLASS=26)
+!
+       INTEGER class_urb
+!      Class "urban"
+       PARAMETER (class_urb=21)

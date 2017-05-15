@@ -1,0 +1,68 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**
+function sf_momentum(F_z,F_ilmo,F_h,F_deriv) result(F_nfm)
+  implicit none
+#include <arch_specific.hf>
+#include "surfcon.cdk"
+  !@objective Compute stability function for momentum and its derivative.
+  !@arguments
+  real, intent(in) :: F_z                 !height (m)
+  real, intent(in) :: F_ilmo              !inverse of Monin-Obukhov length (1/m)
+  real, intent(in) :: F_h                 !height of the PBL (m)
+  real, intent(out) :: F_deriv            !derivative of stability function w.r.t. log(F_ilmo)
+  real :: F_nfm                           !primitive of stability function (excluding neutral term)
+  !@author  A. Zadra, 2011-10
+  !@revisions
+  !  2011-10, A. Zadra; original code
+  !@description
+  !   Fusion of stability functions for momemtum based on PSI and FMI,
+  !   also outputing the derivative w.r.t. the log(ILMO).
+  !   Stable branch: based on Delage 1997, BLM 82, 23-48
+  !   Unstable branch: based on Delage & Girard 1992, BLM 58, 19-31
+  !**
+
+  REAL hi,a,b,c,d
+  !
+  if (F_ilmo.ge.0.) then
+     !------ stable branch
+     hi = 1./F_h
+     d  = 4*as*beta*F_ilmo
+     c  = d*hi - hi**2
+     b  = d - 2*hi
+     a  = SQRT(1 + b*F_z - c*F_z**2)
+     !
+     F_nfm = 0.5*( a - F_z*hi - LOG(1+b*F_z*0.5+a) &
+          - b/(2*SQRT(c))*ASIN((b-2*c*F_z)/d) )
+     !
+     F_deriv = 0.5*( 1/(2*a)*((d*F_z-b*hi/c)*(1-F_z*hi) &
+          - d*F_z*(1-F_z*hi+a)/(1+0.5*b*F_z+a)) &
+          -(d**2*hi/(4*c**1.5))*ASIN((b-2*c*F_z)/d) )
+     !
+  else
+     !------ unstable branch
+     a =(1-ci*F_z*beta*F_ilmo)**(0.16666666)
+     !
+     F_nfm = - LOG( (a+1)**2*SQRT(a**2-a+1)*(a**2+a+1)**1.5 ) &
+          +rac3*ATAN((a**2-1)/(rac3*a))
+     !
+     F_deriv = (1./ a) - 1
+     !
+  endif
+
+  !
+  return
+end function sf_momentum

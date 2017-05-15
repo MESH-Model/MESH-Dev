@@ -86,12 +86,11 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 ! 1400   format(' opening fln(',i3,'):',a999,'---')
 !        write(*,*)
 
-        open(unit=un,file=trim(adjustl(fln(fn))),status='unknown',
-     *  iostat=ios)
-	  print*,' un fn et fln(fn) ',un,fn,trim(fln(fn)) !ido
-	  print*,'Opened unit=',un,'filename',trim(fln(fn))
+        open(unit=un,file=fln(fn),status='unknown',iostat=ios)
+	  print*,' un fn et fln(fn) ',un,fn,fln(fn) !ido
+	  print*,'Opened unit=',un,'filename',fln(fn)
 	  if(ios.ne.0)then
-	    print*,'Error opening ',trim(fln(fn)),' on unit=',un
+	    print*,'Error opening ',fln(fn),' on unit=',un
 	    print*,'ios = ',ios
 	    print*
 	    stop 'in write_r2c @ 83'
@@ -256,8 +255,8 @@ c	  endif
 
       if(frame_no.eq.no_frames.and.class_no.eq.no_classes)then
         close(unit=un,status='keep')
-        write(51,*)'Closed unit ',un,' Filename=  ',trim(fln(fn))
-        write(*,*)'Closed unit ',un,' Filename=  ',trim(fln(fn))
+        write(51,*)'Closed unit ',un,' Filename=  ',fln(fn)
+        write(*,*)'Closed unit ',un,' Filename=  ',fln(fn)
 	endif
 
       return
@@ -270,7 +269,8 @@ c	  endif
 1304  format(9999(1x,f7.4))
 1305  format(9999(1x,f8.5))
 1306  format(9999(1x,f9.6))
-1307  format(9999(1x,e12.6))
+1307  format(9999(1x,e13.6))
+!1307  format(9999(1x,e12.6))  ! the intel compiler + 15.1 libraries recommended that the field width >= # decimal digits+7
 1308  format(9999(1x,e10.3))
  3000 format(a10,i5)
  3001 format(a20,i16)
