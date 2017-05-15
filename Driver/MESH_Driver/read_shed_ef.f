@@ -415,6 +415,10 @@ CDAN      print*,'avant calling program flg,328'
 !          else if (attribName(1:attLen) == 'kcond') then
 !            allocate(kcond(na), stat=iAllocate)
           else if (attribName(1:attLen) == 'gridarea') then
+
+            if (allocated (shd%AREA)) deallocate (shd%AREA)
+            if (allocated (shd%FRAC)) deallocate (shd%FRAC)
+
             allocate(shd%AREA(shd%NA), stat=ierr)
             allocate(shd%FRAC(shd%NA), stat=ierr)
           end if

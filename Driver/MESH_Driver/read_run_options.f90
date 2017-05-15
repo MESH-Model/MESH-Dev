@@ -847,6 +847,12 @@
             read(iun, *)
             read(iun, *)
             read(iun, *)
+
+            if (allocated(op%DIR_OUT)) deallocate (op%DIR_OUT)
+            if (allocated(op%N_OUT)) deallocate (op%N_OUT)
+            if (allocated(op%II_OUT)) deallocate (op%II_OUT)
+            if (allocated(op%K_OUT)) deallocate (op%K_OUT)
+
             allocate(op%DIR_OUT(1), op%N_OUT(1), op%II_OUT(1), op%K_OUT(1))
         end if !(WF_NUM_POINTS > 0)
 
@@ -858,12 +864,12 @@
 !-                do j = i + 1, WF_NUM_POINTS
 !-                    if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
 !-                        print *
-!-	                    print *, 'Output for Grid ', op%N_OUT(i), ' and GRU ', &
+!-                      print *, 'Output for Grid ', op%N_OUT(i), ' and GRU ', &
 !-                            op%II_OUT(i), ' is repeated in grid output point: ', j
 !-                        print *, 'Please adjust this grid output ', &
 !-                            'point in MESH_input_run_options.ini.'
-!-	                    stop
-!-	                end if
+!-                      stop
+!-                  end if
 !-                end do
 !-            else
 !-                open(17, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/fort.17', status = 'unknown', iostat = ierr)
@@ -881,7 +887,7 @@
 !-            end if
 !-        end do
 
-	    !> Output folder for basin/high-level model output.
+        !> Output folder for basin/high-level model output.
         read(iun, *)
         read(iun, *)
         read(iun, '(a10)') GENDIR_OUT

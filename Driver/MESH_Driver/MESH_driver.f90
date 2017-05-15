@@ -1,6 +1,26 @@
-program RUNMESH
+program MESH_Assimilate
 
-!>       MESH DRIVER
+!> =====================================================================
+!> Modified by: Ala Bahrami
+!> I have applied these modification as a part of my Ph.D thesis in order to implement
+!> The MESH Data Assimilation(MESH_DA) structure.
+!>
+!> Bahrami, 21/03/2017 - Adding using land_force_perturb, forcepert_types, file_variables modules
+!>                     - Adding local variables tt, N_t, n2
+!>                     - Adding three forcing data perturbation fields precip_pert, sw_pert, lw_pert
+!>                     - Adding reading input variables of the Input2.ini file
+!>                     - Adding ensemble loop
+!>                     - Adding the section of Initialize random_fields variables
+!>                     - Adding the section of generate random fields for initialization
+!>                     - Adding the section of assigning variables related to perturbation fields
+!>                     - Adding the section of perturbing input forcing data for every time step
+!>                          by considering the spatial-temporal and cross correlation.
+!>                     - Modifying the gridded data variables for output
+!>                     - Adding closure of opened-forcing data for every ensemble loop
+!>          03/05/2017 - Deallocate all variables which were been allocated before
+!> =====================================================================
+
+!>       MESH_Assimilate
 !>
 !>       NOV 2015 - DGP. Moved incrementing the counters to
 !>                  after routing has finished. This impacts when daily
@@ -113,6 +133,12 @@ program RUNMESH
     use SIMSTATS
     use model_files
 
+    !> Ala Bahrami added this
+    !> Random fields.
+    use land_force_perturb
+    use forcepert_types
+    use file_variables
+
     implicit none
 
     !* ierr: Diagnostic error/status return from various subroutines.
@@ -170,6 +196,17 @@ program RUNMESH
     !* INDEPPAR: NUMBER OF GRU-INDEPENDENT VARIABLES
     !* DEPPAR: NUMBER OF GRU-DEPENDENT VARIABLES
     integer i, j, k, l, m, u
+
+    !> Added by Ala Bahrami
+    !> Variables for forcing data.
+    integer tt, N_t, n2
+
+    !> Added by Ala Bahrami
+    !> Perturbation_GAT.
+    real, dimension(:, :), allocatable :: precip_pert
+    real, dimension(:, :), allocatable :: sw_pert
+    real, dimension(:, :), allocatable :: lw_pert
+
 !-    integer INDEPPAR, DEPPAR
 
     integer FRAME_NO_NEW
@@ -201,12 +238,16 @@ program RUNMESH
     type(dates_model) :: ts
     type(INFO_OUT) :: ifo
     type(CLIM_INFO) :: cm
+    type(CLIM_INFO) :: cm_pert
     type(met_data) :: md_grd
     type(water_balance) :: wb_grd, wb_acc
     type(energy_balance) :: eb_grd, eb_acc
     type(soil_statevars) :: spv_grd, spv_acc
     type(streamflow_hydrograph) :: stfl
     type(reservoir_release) :: rrls
+
+    !> Forcing parameter for perturbation.
+    type(forcepert_param_type), dimension(:), allocatable :: forcepert_param
 
     !> Basin totals for the run.
     real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
@@ -239,6 +280,7 @@ program RUNMESH
 !so, make them local variables inside each read subroutine.
     RELEASE = '1.4'
 
+    !> Launching the program.
     call cpu_time(startprog)
 
     !> Initialize MPI.
@@ -263,6 +305,35 @@ program RUNMESH
 
     !> Reset verbose flag for worker nodes.
     if (ipid > 0) ro%VERBOSEMODE = 0
+
+    !> Added by Ala Bahrami
+    !> Reading the input_file random_fields.
+!todo: I should implement this part inside the MESH, READ_INITIAL_INPUTS
+
+    open (10, file = 'Input2.ini')
+    read(10, *) dx
+    read(10, *) dy
+    read(10, *) N_x
+    read(10, *) N_y
+    read(10, *) lambda_x
+    read(10, *) lambda_y
+    read(10, *) variance
+    read(10, *) RSEEDCONST
+    read(10, *) NRANDSEED2
+    read(10, *) N_forcepert
+    read(10, *) N_ens
+    read(10, *) dtstep
+    read(10, *) tcorr
+    close (10)
+
+    !> Added by Ala Bahrami
+    !> Starting main ensemble loop.
+
+    !> *********************************************************************
+    !> Start of the ensemble loop.
+    !> *********************************************************************
+
+    do tt = 1, N_ens
 
 !TODO: UPDATE THIS (RELEASE(*)) WITH VERSION CHANGE
     if (ro%VERBOSEMODE > 0) print 951, trim(RELEASE), trim(VERSION)
@@ -291,12 +362,20 @@ program RUNMESH
         end if
         call Init_fls(fls, trim(adjustl(fl_listMesh)))
     else
+
+        !> File handled for variable in/out names
+        !> At the moment only class, hydro parameters and some outputs
 !todo: Call this anyway, make loading values from file an alternate subroutine of module_files
         call Init_fls(fls)
     end if !(narg > 0) then
 
 !-    call counter_init()
 
+    !> Reading the initial inputs
+    !> Here mostly the shd file is read and all parameters related to it are
+    !> assigned. Soil layers and the other state variables are initialized.
+    !> The starting of forcing data (cm%start_date) is read in READ_PARAMETERS_CLASS
+    !> inside read_intial_inputs
     call READ_INITIAL_INPUTS(shd, &
                              ts, cm, &
                              fls)
@@ -305,6 +384,46 @@ program RUNMESH
     NA = shd%NA
     NTYPE = shd%lc%NTYPE
     NSL = shd%lc%IGND
+
+    !> Added by Ala Bahrami
+    !> Initialize random_fields variables.
+    call assemble_forcepert_param(N_x, N_y, N_forcepert, forcepert_param)
+
+    !> Deallocate the random_fields variables if they are been allocated before.
+    if (allocated(ens_id)) deallocate (ens_id)
+    if (allocated(Forcepert_rseed)) deallocate (Forcepert_rseed)
+    if (allocated(Forcepert_ntrmdt)) deallocate (Forcepert_ntrmdt)
+    if (allocated(Forcepert)) deallocate (Forcepert)
+    if (allocated(Forcepert_vect)) deallocate (Forcepert_vect)
+
+    !> Allocating the the random_fields variables.
+    allocate(ens_id(N_ens))
+    allocate(Forcepert_rseed(NRANDSEED2, N_ens))
+    allocate(Forcepert_ntrmdt(N_forcepert, N_x, N_y, N_ens))
+    allocate(Forcepert(N_forcepert, N_x, N_y, N_ens))
+
+    !> Allocate and initialize Forcepert_vect.
+    allocate (Forcepert_vect(N_forcepert, NA, N_ens))
+    Forcepert_ntrmdt = 0.0
+    Forcepert = 0.0
+
+    initialize = .true.
+
+    do n = 1, N_ens
+        ens_id(n) = n
+    end do
+
+    !> Addded by Ala Bahrami
+    !> Generate random fields for initialization
+    call get_forcepert( &
+       N_forcepert, N_ens, N_x, N_y, &
+       dx, dy, dtstep, &
+       initialize, &
+       forcepert_param, &
+       ens_id, &
+       Forcepert_rseed, &
+       Forcepert_ntrmdt, &
+       Forcepert)
 
     !> Initialize output fields.
     call init_water_balance(wb_grd, shd)
@@ -953,6 +1072,7 @@ program RUNMESH
 !230     continue
 !+    end if !(RESUMEFLAG == 2) then
 
+    !> Initialize accumulation variables.
     if (ipid == 0) then
 
         !> Initialize accumulation variables.
@@ -1019,6 +1139,27 @@ program RUNMESH
 
     if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls, stfl)
 
+    !> Added by Ala Bahrami
+    !> Assigning variable related to perturbation fields
+
+    !> Settinng initialize of random_fields.
+    initialize = .false.
+
+    n2 = 1
+
+    !> Number of forcing data which are read.
+    N_t = (ic%stop%jday - ic%start%jday )*48
+
+!    NML = shd%lc%NML
+
+    if (allocated(precip_pert)) deallocate(precip_pert)
+    if (allocated(sw_pert)) deallocate(sw_pert)
+    if (allocated(lw_pert)) deallocate(lw_pert)
+
+    allocate(precip_pert(NML, 1))
+    allocate(sw_pert(NML, 1))
+    allocate(lw_pert(NML, 1))
+
     !> *********************************************************************
     !> End of Initialization
     !> *********************************************************************
@@ -1037,8 +1178,11 @@ program RUNMESH
     !> *********************************************************************
 
     !> MAM - Initialize ENDDATE and ENDDATA
-!-    ENDDATE = .false.
+    !> Here MESH runs based on time step (30 min) until ENDDATE becomes .TRUE..
+!todo: I should implement for N_ens by using a loop and change the number of basin average outputs.
+    ENDDATE = .false.
 !-    ENDDATA = .false.
+    RUNSTATE = 0
 
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
@@ -1059,8 +1203,60 @@ program RUNMESH
 
         if (RUNSTATE /= 0) exit
 
+!todo: write a program to read a forcing data for every time (30 min)
         !> Load or update climate forcing input.
+        !> Three main functions in the climate_forcing_module_io:
+        !>   open_data: Open the climate forcing input file
+        !>   update_data: load data for the climate forcing variable from file
+        !>   load_data: Load data for the climate forcing variable.
+        !> The order of reading forcing data are as follow:
+        !>   cm%dat(ck%FB)%fname = 'basin_shortwave'
+        !>   cm%dat(ck%FI)%fname = 'basin_longwave'
+        !>   cm%dat(ck%RT)%fname = 'basin_rain'
+        !>   cm%dat(ck%TT)%fname = 'basin_temperature'
+        !>   cm%dat(ck%UV)%fname = 'basin_wind'
+        !>   cm%dat(ck%P0)%fname = 'basin_pres'
+        !>   cm%dat(ck%HU)%fname = 'basin_humidity'
         ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
+
+        !> Added by Ala Bahrami
+        !> Perturbing the input forcing data for every time step by considering
+        !> the spatial-temporal and cross correlaiton
+        call get_forcepert( &
+            N_forcepert, N_ens, N_x, N_y, &
+            dx, dy, dtstep, &
+            initialize, &
+            forcepert_param, &
+            ens_id, &
+            Forcepert_rseed, &
+            Forcepert_ntrmdt, &
+            Forcepert)
+
+        !> Extracting Forcepert based on Rank
+        !> Note: I have modified the shd%yyy to be consitent with MATLAB code
+        !> and the direction is considered up to down
+        do i = 1, NA
+            Forcepert_vect(:, i, :) = Forcepert(:,(shd%yCount - shd%yyy(i) + 1), shd%xxx(i), :)
+        end do
+        cm_pert = cm
+
+        !> Convert from the Gridded value to GRU
+        do k = 1, NML
+
+            !> Get the perturbation.
+            precip_pert(k, 1) = Forcepert_vect(1, (shd%lc%ILMOS(k)), tt)
+            sw_pert(k, 1) = Forcepert_vect(2, (shd%lc%ILMOS(k)), tt)
+            lw_pert(k, 1) = Forcepert_vect(3, (shd%lc%ILMOS(k)), tt)
+
+            !> Apply the perturbation to the value.
+!todo: Replace hard-coded indices with keys.
+            cm_pert%dat(3)%GAT(k) = cm%dat(3)%GAT(k)*precip_pert(k, 1)
+            cm_pert%dat(1)%GAT(k) = cm%dat(1)%GAT(k)*sw_pert(k, 1)
+            cm_pert%dat(2)%GAT(k) = cm%dat(2)%GAT(k) + lw_pert(k, 1)
+        end do
+
+        !> End of perturbation for every time step (30 min).
+
         if (ENDDATA) then
             RUNSTATE = 1
             cycle
@@ -1116,13 +1312,13 @@ program RUNMESH
             wb_grd%STG = 0.0
         end if
 
-        cstate = run_within_tile(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+        cstate = run_within_tile(shd, fls, ts, cm_pert, wb_grd, eb_grd, spv_grd, stfl, rrls)
         if (len_trim(cstate) > 0) then
             RUNSTATE = 1
             cycle
         end if
 
-        call run_within_grid(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+        call run_within_grid(shd, fls, ts, cm_pert, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.
@@ -1180,15 +1376,15 @@ program RUNMESH
             !> CALCULATE GRID CELL AVERAGE DIAGNOSTIC FIELDS.
 
             !> Grid data for output.
-            md_grd%fsdown = cm%dat(ck%FB)%GRD
-            md_grd%fsvh = cm%dat(ck%FB)%GRD/2.0
-            md_grd%fsih = cm%dat(ck%FB)%GRD/2.0
-            md_grd%fdl = cm%dat(ck%FI)%GRD
-            md_grd%ul = cm%dat(ck%UV)%GRD
-            md_grd%ta = cm%dat(ck%TT)%GRD
-            md_grd%qa = cm%dat(ck%HU)%GRD
-            md_grd%pres = cm%dat(ck%P0)%GRD
-            md_grd%pre = cm%dat(ck%RT)%GRD
+            md_grd%fsdown = cm_pert%dat(ck%FB)%GRD
+            md_grd%fsvh = cm_pert%dat(ck%FB)%GRD/2.0
+            md_grd%fsih = cm_pert%dat(ck%FB)%GRD/2.0
+            md_grd%fdl = cm_pert%dat(ck%FI)%GRD
+            md_grd%ul = cm_pert%dat(ck%UV)%GRD
+            md_grd%ta = cm_pert%dat(ck%TT)%GRD
+            md_grd%qa = cm_pert%dat(ck%HU)%GRD
+            md_grd%pres = cm_pert%dat(ck%P0)%GRD
+            md_grd%pre = cm_pert%dat(ck%RT)%GRD
 
 !-            do k = il1, il2
 !-                ik = shd%lc%ILMOS(k)
@@ -1296,7 +1492,7 @@ program RUNMESH
 
         end if !(ipid == 0) then
 
-        if (ipid == 0) call run_between_grid(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+        if (ipid == 0) call run_between_grid(shd, fls, ts, cm_pert, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
         if (ipid == 0) then
 
@@ -1574,6 +1770,23 @@ program RUNMESH
             !> CLASS states for prognostic variables.
             NTYPE = shd%lc%NTYPE
             NSL = shd%lc%IGND
+
+            !> deallocate the CLASS states if they were allocated before.
+            if (allocated(tcan)) deallocate(tcan)
+            if (allocated(rcan)) deallocate(rcan)
+            if (allocated(sncan)) deallocate(sncan)
+            if (allocated(gro)) deallocate(gro)
+            if (allocated(zpnd)) deallocate(zpnd)
+            if (allocated(tpnd)) deallocate(tpnd)
+            if (allocated(sno)) deallocate(sno)
+            if (allocated(tsno)) deallocate(tsno)
+            if (allocated(albs)) deallocate(albs)
+            if (allocated(rhos)) deallocate(rhos)
+            if (allocated(tbar)) deallocate(tbar)
+            if (allocated(thlq)) deallocate(thlq)
+            if (allocated(thic)) deallocate(thic)
+            if (allocated(kc)) deallocate(kc)
+
             allocate(tcan(3, NTYPE), rcan(3, NTYPE), sncan(3, NTYPE), gro(3, NTYPE), zpnd(3, NTYPE), tpnd(3, NTYPE), &
                      sno(3, NTYPE), tsno(3, NTYPE), albs(3, NTYPE), rhos(3, NTYPE), &
                      tbar(3, NTYPE, NSL), thlq(3, NTYPE, NSL), thic(3, NTYPE, NSL), kc(NTYPE))
@@ -1723,6 +1936,12 @@ program RUNMESH
                /1x, 'THE REMAINING RECORDS SHOULD CONTAIN 3 COLUMNS FOR EACH VARIABLE WITH', &
                /1x, 'INTEGER VALUES OF EITHER 0 OR 1,', &
                /1x, 'AND 3 COLUMNS CONTAINING INFORMATION ABOUT THE VARIABLES.', /)
+
+    !> *********************************************************************
+    !> Start of the ensemble loop.
+    !> *********************************************************************
+
+    end do
 
     call mpi_finalize(ierr)
 

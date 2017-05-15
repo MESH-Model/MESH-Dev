@@ -105,6 +105,8 @@ module save_basin_output
         NA = shd%NA
         NSL = shd%lc%IGND
 
+        if (allocated(bno%wb)) deallocate(bno%wb)
+
         !> Allocate and zero variables for accumulations.
         allocate(bno%wb(NKEY))
         do ikey = 1, NKEY
@@ -217,6 +219,8 @@ module save_basin_output
             end if
         end do
 
+        if (allocated(bno%evpdts)) deallocate (bno%evpdts)
+
         !> Allocate and zero variables for accumulations.
         allocate(bno%evpdts(NKEY))
         bno%evpdts(:)%EVAP = 0.0
@@ -247,6 +251,10 @@ module save_basin_output
             open(913, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_ts.csv')
             call update_evp_header(shd, fls, 913, ic%dts)
         end if
+
+        if (allocated(eb_out%HFS)) deallocate (eb_out%HFS)
+        if (allocated(eb_out%QEVP)) deallocate (eb_out%QEVP)
+        if (allocated(eb_out%GFLX)) deallocate (eb_out%GFLX)
 
         !> Allocate and zero variables for accumulations.
         allocate(eb_out%HFS(2:2), eb_out%QEVP(2:2), eb_out%GFLX(2:2, NSL))

@@ -236,6 +236,9 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
             ' is very high. This may negatively impact performance.'
     end if
 
+    if (allocated (shd%ylat)) deallocate (shd%ylat)
+    if (allocated (shd%xlng)) deallocate (shd%xlng)
+
     !> Determine coordinates for intermediate grid locations.
     allocate(shd%ylat(NA), shd%xlng(NA))
     do i = 1, NA
@@ -248,6 +251,12 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> Determine the number of active tile elements.
 !todo: fix this.
     shd%wc%ILG = shd%lc%ILG
+
+    if (allocated(shd%lc%ILMOS)) deallocate(shd%lc%ILMOS)
+    if (allocated(shd%lc%JLMOS)) deallocate(shd%lc%JLMOS)
+    if (allocated(shd%wc%ILMOS)) deallocate(shd%wc%ILMOS)
+    if (allocated(shd%wc%JLMOS)) deallocate(shd%wc%JLMOS)
+
     allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), &
              shd%wc%ILMOS(shd%wc%ILG), shd%wc%JLMOS(shd%wc%ILG))
 
@@ -331,6 +340,56 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> Store the number of soil layers to initialize variables.
     NSL = shd%lc%IGND
 
+    if (allocated(pm%tp%gc)) deallocate (pm%tp%gc)
+    if (allocated(pm%tp%fare)) deallocate (pm%tp%fare)
+    if (allocated(pm%tp%xslp)) deallocate (pm%tp%xslp)
+    if (allocated(pm%tp%mid)) deallocate (pm%tp%mid)
+    if (allocated(pm%cp%fcan)) deallocate ( pm%cp%fcan)
+    if (allocated(pm%cp%z0or)) deallocate (pm%cp%z0or)
+    if (allocated(pm%cp%lnz0)) deallocate (pm%cp%lnz0)
+    if (allocated(pm%cp%alvc)) deallocate (pm%cp%alvc)
+    if (allocated(pm%cp%alic)) deallocate (pm%cp%alic)
+    if (allocated(pm%cp%lamx)) deallocate (pm%cp%lamx)
+    if (allocated(pm%cp%lamn)) deallocate (pm%cp%lamn)
+    if (allocated(pm%cp%cmas)) deallocate (pm%cp%cmas)
+    if (allocated(pm%cp%root)) deallocate (pm%cp%root)
+    if (allocated(pm%cp%rsmn)) deallocate (pm%cp%rsmn)
+    if (allocated(pm%cp%qa50)) deallocate (pm%cp%qa50)
+    if (allocated(pm%cp%vpda)) deallocate (pm%cp%vpda)
+    if (allocated(pm%cp%vpdb)) deallocate (pm%cp%vpdb)
+    if (allocated(pm%cp%psga)) deallocate (pm%cp%psga)
+    if (allocated(pm%cp%psgb)) deallocate (pm%cp%psgb)
+    if (allocated(pm%sfp%zbld)) deallocate (pm%sfp%zbld)
+    if (allocated(pm%sfp%zrfh)) deallocate (pm%sfp%zrfh)
+    if (allocated(pm%sfp%zrfm)) deallocate (pm%sfp%zrfm)
+    if (allocated(pm%sfp%zplg)) deallocate (pm%sfp%zplg)
+    if (allocated(pm%snp%zsnl)) deallocate (pm%snp%zsnl)
+    if (allocated(pm%snp%zpls)) deallocate (pm%snp%zpls)
+    if (allocated(pm%slp%sdep)) deallocate (pm%slp%sdep)
+    if (allocated(pm%slp%alwet)) deallocate (pm%slp%alwet)
+    if (allocated(pm%slp%aldry)) deallocate (pm%slp%aldry)
+    if (allocated(pm%slp%delz)) deallocate (pm%slp%delz)
+    if (allocated(pm%slp%zbot)) deallocate (pm%slp%zbot)
+    if (allocated(pm%slp%sand)) deallocate (pm%slp%sand)
+    if (allocated(pm%slp%clay)) deallocate (pm%slp%clay)
+    if (allocated(pm%slp%orgm)) deallocate (pm%slp%orgm)
+    if (allocated(pm%slp%thpor)) deallocate (pm%slp%thpor)
+    if (allocated(pm%slp%thlret)) deallocate (pm%slp%thlret)
+    if (allocated(pm%slp%thlmin)) deallocate (pm%slp%thlmin)
+    if (allocated(pm%slp%thlrat)) deallocate (pm%slp%thlrat)
+    if (allocated(pm%slp%bi)) deallocate (pm%slp%bi)
+    if (allocated(pm%slp%psisat)) deallocate (pm%slp%psisat)
+    if (allocated(pm%slp%psiwlt)) deallocate (pm%slp%psiwlt)
+    if (allocated(pm%slp%grksat)) deallocate (pm%slp%grksat)
+    if (allocated(pm%slp%thfc)) deallocate (pm%slp%thfc)
+    if (allocated(pm%slp%hcps)) deallocate (pm%slp%hcps)
+    if (allocated(pm%slp%tcs)) deallocate (pm%slp%tcs)
+    if (allocated(pm%hp%drn)) deallocate (pm%hp%drn)
+    if (allocated(pm%hp%dd)) deallocate (pm%hp%dd)
+    if (allocated(pm%hp%grkf)) deallocate (pm%hp%grkf)
+    if (allocated(pm%hp%mann)) deallocate (pm%hp%mann)
+    if (allocated(pm%hp%ks)) deallocate (pm%hp%ks)
+
     !> Initialize parameter values.
     allocate(pm%tp%gc(NML), pm%tp%fare(NML), pm%tp%xslp(NML), pm%tp%mid(NML), &
              pm%cp%fcan(NML, ICP1), pm%cp%z0or(NML, ICP1), pm%cp%lnz0(NML, ICP1), pm%cp%alvc(NML, ICP1), pm%cp%alic(NML, ICP1), &
@@ -344,6 +403,56 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
              pm%slp%bi(NML, NSL), pm%slp%psisat(NML, NSL), pm%slp%psiwlt(NML, NSL), pm%slp%grksat(NML, NSL), &
              pm%slp%thfc(NML, NSL), pm%slp%hcps(NML, NSL), pm%slp%tcs(NML, NSL), &
              pm%hp%drn(NML), pm%hp%dd(NML), pm%hp%grkf(NML), pm%hp%mann(NML), pm%hp%ks(NML))
+
+    if (allocated (pmrow%tp%gc)) deallocate (pmrow%tp%gc)
+    if (allocated (pmrow%tp%fare)) deallocate (pmrow%tp%fare)
+    if (allocated (pmrow%tp%xslp)) deallocate (pmrow%tp%xslp)
+    if (allocated (pmrow%tp%mid)) deallocate (pmrow%tp%mid)
+    if (allocated (pmrow%cp%fcan)) deallocate (pmrow%cp%fcan)
+    if (allocated (pmrow%cp%z0or)) deallocate (pmrow%cp%z0or)
+    if (allocated (pmrow%cp%lnz0)) deallocate (pmrow%cp%lnz0)
+    if (allocated (pmrow%cp%alvc)) deallocate (pmrow%cp%alvc)
+    if (allocated (pmrow%cp%alic)) deallocate (pmrow%cp%alic)
+    if (allocated (pmrow%cp%lamx)) deallocate (pmrow%cp%lamx)
+    if (allocated (pmrow%cp%lamn)) deallocate (pmrow%cp%lamn)
+    if (allocated (pmrow%cp%cmas)) deallocate (pmrow%cp%cmas)
+    if (allocated (pmrow%cp%root)) deallocate (pmrow%cp%root)
+    if (allocated (pmrow%cp%rsmn)) deallocate (pmrow%cp%rsmn)
+    if (allocated (pmrow%cp%qa50)) deallocate (pmrow%cp%qa50)
+    if (allocated (pmrow%cp%vpda)) deallocate (pmrow%cp%vpda)
+    if (allocated (pmrow%cp%vpdb)) deallocate (pmrow%cp%vpdb)
+    if (allocated (pmrow%cp%psga)) deallocate (pmrow%cp%psga)
+    if (allocated (pmrow%cp%psgb)) deallocate (pmrow%cp%psgb)
+    if (allocated (pmrow%sfp%zbld)) deallocate (pmrow%sfp%zbld)
+    if (allocated (pmrow%sfp%zrfh)) deallocate (pmrow%sfp%zrfh)
+    if (allocated (pmrow%sfp%zrfm)) deallocate (pmrow%sfp%zrfm)
+    if (allocated (pmrow%sfp%zplg)) deallocate (pmrow%sfp%zplg)
+    if (allocated (pmrow%snp%zsnl)) deallocate (pmrow%snp%zsnl)
+    if (allocated (pmrow%snp%zpls)) deallocate (pmrow%snp%zpls)
+    if (allocated (pmrow%slp%sdep)) deallocate (pmrow%slp%sdep)
+    if (allocated (pmrow%slp%alwet)) deallocate (pmrow%slp%alwet)
+    if (allocated (pmrow%slp%aldry)) deallocate (pmrow%slp%aldry)
+    if (allocated (pmrow%slp%delz)) deallocate (pmrow%slp%delz)
+    if (allocated (pmrow%slp%zbot)) deallocate (pmrow%slp%zbot)
+    if (allocated (pmrow%slp%sand)) deallocate (pmrow%slp%sand)
+    if (allocated (pmrow%slp%clay)) deallocate (pmrow%slp%clay)
+    if (allocated (pmrow%slp%orgm)) deallocate (pmrow%slp%orgm)
+    if (allocated (pmrow%slp%thpor)) deallocate (pmrow%slp%thpor)
+    if (allocated (pmrow%slp%thlret)) deallocate (pmrow%slp%thlret)
+    if (allocated (pmrow%slp%thlmin)) deallocate (pmrow%slp%thlmin)
+    if (allocated (pmrow%slp%thlrat)) deallocate (pmrow%slp%thlrat)
+    if (allocated (pmrow%slp%bi)) deallocate (pmrow%slp%bi)
+    if (allocated (pmrow%slp%psisat)) deallocate (pmrow%slp%psisat)
+    if (allocated (pmrow%slp%psiwlt)) deallocate (pmrow%slp%psiwlt)
+    if (allocated (pmrow%slp%grksat)) deallocate (pmrow%slp%grksat)
+    if (allocated (pmrow%slp%thfc)) deallocate (pmrow%slp%thfc)
+    if (allocated (pmrow%slp%hcps)) deallocate (pmrow%slp%hcps)
+    if (allocated (pmrow%slp%tcs)) deallocate (pmrow%slp%tcs)
+    if (allocated (pmrow%hp%drn)) deallocate (pmrow%hp%drn)
+    if (allocated (pmrow%hp%dd)) deallocate (pmrow%hp%dd)
+    if (allocated (pmrow%hp%grkf)) deallocate (pmrow%hp%grkf)
+    if (allocated (pmrow%hp%mann)) deallocate (pmrow%hp%mann)
+    if (allocated (pmrow%hp%ks)) deallocate (pmrow%hp%ks)
 
     !> Initialize parameter values for output ('ROW' indexing).
     allocate(pmrow%tp%gc(1), pmrow%tp%fare(NTYPE), pmrow%tp%xslp(NTYPE), pmrow%tp%mid(NTYPE), &
@@ -364,6 +473,17 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
              pmrow%slp%thfc(NTYPE, NSL), pmrow%slp%hcps(NTYPE, NSL), pmrow%slp%tcs(NTYPE, NSL), &
              pmrow%hp%drn(NTYPE), pmrow%hp%dd(NTYPE), pmrow%hp%grkf(NTYPE), pmrow%hp%mann(NTYPE), pmrow%hp%ks(NTYPE))
 
+    if (allocated (stas%cnpy%qac)) deallocate (stas%cnpy%qac)
+    if (allocated (stas%cnpy%rcan)) deallocate (stas%cnpy%rcan)
+    if (allocated (stas%cnpy%sncan)) deallocate (stas%cnpy%sncan)
+    if (allocated (stas%cnpy%tac)) deallocate (stas%cnpy%tac)
+    if (allocated (stas%cnpy%tcan)) deallocate (stas%cnpy%tcan)
+    if (allocated (stas%cnpy%cmai)) deallocate (stas%cnpy%cmai)
+    if (allocated (stas%cnpy%gro)) deallocate (stas%cnpy%gro)
+    if (allocated (stas%cnpy%pevp)) deallocate (stas%cnpy%pevp)
+    if (allocated (stas%cnpy%evpb)) deallocate (stas%cnpy%evpb)
+    if (allocated (stas%cnpy%arrd)) deallocate (stas%cnpy%arrd)
+
     !> Initialize states.
 
     !> Canopy.
@@ -373,10 +493,26 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     stas%cnpy%qac = 0.0; stas%cnpy%rcan = 0.0; stas%cnpy%sncan = 0.0; stas%cnpy%tac = 0.0; stas%cnpy%tcan = 0.0
     stas%cnpy%cmai = 0.0; stas%cnpy%gro = 0.0; stas%cnpy%pevp = 0.0; stas%cnpy%evpb = 0.0; stas%cnpy%arrd = 0.0
 
+    if (allocated (stas%sno%sno)) deallocate (stas%sno%sno)
+    if (allocated (stas%sno%albs)) deallocate (stas%sno%albs)
+    if (allocated (stas%sno%fsno)) deallocate (stas%sno%fsno)
+    if (allocated (stas%sno%rhos)) deallocate (stas%sno%rhos)
+    if (allocated (stas%sno%tsno)) deallocate (stas%sno%tsno)
+    if (allocated (stas%sno%wsno)) deallocate (stas%sno%wsno)
+
     !> Snow.
     stas%sno%n = NML
     allocate(stas%sno%sno(NML), stas%sno%albs(NML), stas%sno%fsno(NML), stas%sno%rhos(NML), stas%sno%tsno(NML), stas%sno%wsno(NML))
     stas%sno%sno = 0.0; stas%sno%albs = 0.0; stas%sno%fsno = 0.0; stas%sno%rhos = 0.0; stas%sno%tsno = 0.0; stas%sno%wsno = 0.0
+
+    if (allocated (stas%sfc%tpnd)) deallocate (stas%sfc%tpnd)
+    if (allocated (stas%sfc%zpnd)) deallocate (stas%sfc%zpnd)
+    if (allocated (stas%sfc%pndw)) deallocate (stas%sfc%pndw)
+    if (allocated (stas%sfc%evap)) deallocate (stas%sfc%evap)
+    if (allocated (stas%sfc%qevp)) deallocate (stas%sfc%qevp)
+    if (allocated (stas%sfc%hfs)) deallocate (stas%sfc%hfs)
+    if (allocated (stas%sfc%rofo)) deallocate (stas%sfc%rofo)
+    if (allocated (stas%sfc%tsfs)) deallocate (stas%sfc%tsfs)
 
     !> Surface or at near surface.
     stas%sfc%n = NML
@@ -384,6 +520,18 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
              stas%sfc%hfs(NML), stas%sfc%rofo(NML), stas%sfc%tsfs(NML, 4))
     stas%sfc%tpnd = 0.0; stas%sfc%zpnd = 0.0; stas%sfc%pndw = 0.0; stas%sfc%evap = 0.0; stas%sfc%qevp = 0.0
     stas%sfc%hfs = 0.0; stas%sfc%rofo = 0.0; stas%sfc%tsfs = 0.0
+
+    if (allocated (stas%sl%thic)) deallocate (stas%sl%thic)
+    if (allocated (stas%sl%fzws)) deallocate (stas%sl%fzws)
+    if (allocated (stas%sl%thlq)) deallocate (stas%sl%thlq)
+    if (allocated (stas%sl%lqws)) deallocate (stas%sl%lqws)
+    if (allocated (stas%sl%tbar)) deallocate (stas%sl%tbar)
+    if (allocated (stas%sl%tbas)) deallocate (stas%sl%tbas)
+    if (allocated (stas%sl%delzw)) deallocate (stas%sl%delzw)
+    if (allocated (stas%sl%zbotw)) deallocate (stas%sl%zbotw)
+    if (allocated (stas%sl%rofs)) deallocate (stas%sl%rofs)
+    if (allocated (stas%sl%gflx)) deallocate (stas%sl%gflx)
+    if (allocated (stas%sl%ggeo)) deallocate (stas%sl%ggeo)
 
     !> Soil layers.
     stas%sl%n = NML
@@ -394,15 +542,54 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     stas%sl%tbar = 0.0; stas%sl%tbas = 0.0; stas%sl%delzw = 0.0; stas%sl%zbotw = 0.0; stas%sl%rofs = 0.0
     stas%sl%gflx = 0.0; stas%sl%ggeo = 0.0
 
+    if (allocated (stas%lzs%zlw)) deallocate (stas%lzs%zlw)
+    if (allocated (stas%lzs%rofb)) deallocate (stas%lzs%rofb)
+
     !> Lower zone storage.
     stas%lzs%n = NML
     allocate(stas%lzs%zlw(NML), stas%lzs%rofb(NML))
     stas%lzs%zlw = 0.0; stas%lzs%rofb = 0.0
 
+    if (allocated (stas%dzs%zlw)) deallocate (stas%dzs%zlw)
+    if (allocated (stas%dzs%rofb)) deallocate (stas%dzs%rofb)
+
     !> Deep zone storage.
     stas%dzs%n = NML
     allocate(stas%dzs%zlw(NML), stas%dzs%rofb(NML))
     stas%dzs%zlw = 0.0; stas%dzs%rofb = 0.0
+
+    if (allocated (stasrow%cnpy%qac)) deallocate (stasrow%cnpy%qac)
+    if (allocated (stasrow%cnpy%tac)) deallocate (stasrow%cnpy%tac)
+    if (allocated (stasrow%cnpy%tcan)) deallocate (stasrow%cnpy%tcan)
+    if (allocated (stasrow%cnpy%rcan)) deallocate (stasrow%cnpy%rcan)
+    if (allocated (stasrow%cnpy%sncan)) deallocate (stasrow%cnpy%sncan)
+    if (allocated (stasrow%cnpy%cmai)) deallocate (stasrow%cnpy%cmai)
+    if (allocated (stasrow%cnpy%gro)) deallocate (stasrow%cnpy%gro)
+    if (allocated (stasrow%cnpy%pevp)) deallocate (stasrow%cnpy%pevp)
+    if (allocated (stasrow%cnpy%evpb)) deallocate (stasrow%cnpy%evpb)
+    if (allocated (stasrow%cnpy%arrd)) deallocate (stasrow%cnpy%arrd)
+    if (allocated (stasrow%sno%sno)) deallocate (stasrow%sno%sno)
+    if (allocated (stasrow%sno%albs)) deallocate (stasrow%sno%albs)
+    if (allocated (stasrow%sno%fsno)) deallocate (stasrow%sno%fsno)
+    if (allocated (stasrow%sno%rhos)) deallocate (stasrow%sno%rhos)
+    if (allocated (stasrow%sno%tsno)) deallocate (stasrow%sno%tsno)
+    if (allocated (stasrow%sno%wsno)) deallocate (stasrow%sno%wsno)
+    if (allocated (stasrow%sfc%tpnd)) deallocate (stasrow%sfc%tpnd)
+    if (allocated (stasrow%sfc%zpnd)) deallocate (stasrow%sfc%zpnd)
+    if (allocated (stasrow%sfc%tsfs)) deallocate (stasrow%sfc%tsfs)
+    if (allocated (stasrow%sl%thic)) deallocate (stasrow%sl%thic)
+    if (allocated (stasrow%sl%fzws)) deallocate (stasrow%sl%fzws)
+    if (allocated (stasrow%sl%thlq)) deallocate (stasrow%sl%thlq)
+    if (allocated (stasrow%sl%lqws)) deallocate (stasrow%sl%lqws)
+    if (allocated (stasrow%sl%tbar)) deallocate (stasrow%sl%tbar)
+    if (allocated (stasrow%sl%tbas)) deallocate (stasrow%sl%tbas)
+    if (allocated (stasrow%sl%delzw)) deallocate (stasrow%sl%delzw)
+    if (allocated (stasrow%sl%zbotw)) deallocate (stasrow%sl%zbotw)
+    if (allocated (stasrow%sl%rofs)) deallocate (stasrow%sl%rofs)
+    if (allocated (stasrow%sl%gflx)) deallocate (stasrow%sl%gflx)
+    if (allocated (stasrow%sl%ggeo)) deallocate (stasrow%sl%ggeo)
+    if (allocated (stasrow%lzs%zlw)) deallocate (stasrow%lzs%zlw)
+    if (allocated (stasrow%dzs%zlw)) deallocate (stasrow%dzs%zlw)
 
     !> Initiate state variables for output ('ROW' indexing).
     allocate(stasrow%cnpy%qac(NTYPE), stasrow%cnpy%tac(NTYPE), stasrow%cnpy%tcan(NTYPE), &
@@ -600,6 +787,18 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> Call to read from soil.ini.
     call READ_SOIL_INI(shd, fls)
 
+    if (allocated (hp%FRZCROW)) deallocate (hp%FRZCROW)
+    if (allocated (hp%CMAXROW)) deallocate (hp%CMAXROW)
+    if (allocated (hp%CMINROW)) deallocate (hp%CMINROW)
+    if (allocated (hp%BROW)) deallocate (hp%BROW)
+    if (allocated (hp%K1ROW)) deallocate (hp%K1ROW)
+    if (allocated (hp%K2ROW)) deallocate (hp%K2ROW)
+    if (allocated (hp%fetchROW)) deallocate (hp%fetchROW)
+    if (allocated (hp%HtROW)) deallocate (hp%HtROW)
+    if (allocated (hp%N_SROW)) deallocate (hp%N_SROW)
+    if (allocated (hp%A_SROW)) deallocate (hp%A_SROW)
+    if (allocated (hp%DistribROW)) deallocate (hp%DistribROW)
+
     !> Allocate additional parameters.
     allocate( &
         hp%FRZCROW(NA, NTYPE), &
@@ -607,6 +806,9 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         hp%fetchROW(NA, NTYPE), hp%HtROW(NA, NTYPE), hp%N_SROW(NA, NTYPE), hp%A_SROW(NA, NTYPE), hp%DistribROW(NA, NTYPE))
 
     NYEARS = ic%stop%year - ic%start%year + 1
+
+    if (allocated (t0_ACC)) deallocate (t0_ACC)
+
     allocate(t0_ACC(NYEARS))
     t0_ACC = 0.0
 

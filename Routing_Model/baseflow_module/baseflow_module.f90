@@ -110,6 +110,13 @@ module baseflow_module
         !> Initialize and distribute BASEFLOWFLAG initial values and parameterization.
         select case (lzsp%BASEFLOWFLAG)
             case (1)
+
+                if (allocated(dgw)) deallocate (dgw)
+                if (allocated(agw)) deallocate (agw)
+                if (allocated(Wseep)) deallocate (Wseep)
+                if (allocated(Wrchrg)) deallocate (Wrchrg)
+                if (allocated(Qb)) deallocate (Qb)
+
                 allocate(dgw(NML), agw(NML), Wseep(NML), Wrchrg(NML), Qb(NML))
                 Wseep = 0.0
                 Wrchrg = lzsp%WrchrgIni

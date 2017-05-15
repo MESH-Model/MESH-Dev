@@ -35,11 +35,14 @@ LFLAG=-c -O2
 #LFLAG=-c -O3 -ffast-math
 #LFLAG=-c -g
 
+# Libraries for Random_fields
+LIBS = -lfftw3
+
 # ======================================================================
 # Build SA_MESH executable and print message
 # ======================================================================
 all: ${OBJECTS}
-	$(FC) -o sa_mesh  $(OBJECTS)
+	$(FC) -o sa_mesh  $(OBJECTS) $(LIBS)
 #	$(FC) -o mpi_sa_mesh  $(OBJECTS)
 
 #static: ${OBJECTS}

@@ -81,6 +81,10 @@ module climate_forcing
         call open_config(cm)
 
         !> Initialize climate variables.
+        !> Here print the number of days (stop - start) which forcing data are read
+        !> this number is print to console as NRS
+        !> Name of forcing data are printed in console by calling open_data
+
         do vid = 1, cm%nclim
 
             !> Check if the file is in the legacy binary format.
@@ -141,6 +145,10 @@ module climate_forcing
 
             !> Set the unit number and allocate the default number of source files.
             cm%dat(vid)%fiun = cm%basefileunit + vid
+
+            if (allocated(cm%dat(vid)%GRD)) deallocate (cm%dat(vid)%GRD)
+            if (allocated(cm%dat(vid)%GAT)) deallocate (cm%dat(vid)%GAT)
+            if (allocated(cm%dat(vid)%GRU)) deallocate (cm%dat(vid)%GRU)
 
             !> Allocate the gridded series.
             allocate(cm%dat(vid)%GRD(shd%NA), cm%dat(vid)%GAT(shd%lc%NML), cm%dat(vid)%GRU(shd%lc%NTYPE))
@@ -506,6 +514,12 @@ module climate_forcing
             close(iun)
 
         end if !(SAVERESUMEFLAG == 4) then
+
+        !> Added by Ala Bahrami
+        !> Closing forcing files after one ensemble loop.
+        do vid = 1, cm%nclim
+            close(cm%dat(vid)%fiun)
+        end do
 
     end subroutine
 

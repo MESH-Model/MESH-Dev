@@ -37,6 +37,7 @@ VPATH=	$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/Modules/climate_forcing_module: \
 		$(DIR_REPO)/Modules/simulation_statistics: \
 		$(DIR_REPO)/Modules/cropland_irrigation: \
+		$(DIR_REPO)/Modules/Random_fields: \
 		$(DIR_REPO)/Driver/MESH_Driver: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/sa_mesh_process: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/src: \
@@ -71,6 +72,13 @@ OBJECTS=	mpi_flags.o mpi_shared_variables.o mpi_module.o \
 			climate_forcing_module_io.o climate_forcing_module.o \
 			SIMSTATS_config.o cropland_irrigation_variables.o model_output.o \
 			calc_drms.o calc_abserr.o
+
+#Random_fields
+OBJECTS+=	forcepert_types.o\
+			file_variables.o \
+			random_fields_nr_ran2.o\
+			random_fields2.o \
+			land_force_perturb.o
 
 #WF_ROUTE
 OBJECTS+=	WF_ROUTE_config.o WF_ROUTE.o WF_ROUTE_module.o

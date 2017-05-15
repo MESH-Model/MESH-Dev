@@ -35,6 +35,8 @@ module model_files
         logical exists
         character*500 str1, str2, phtfl
 
+        if (allocated (flg%fl)) deallocate (flg%fl)
+
         !> Allocate the array that stores file information.
         allocate(flg%fl(14))
 

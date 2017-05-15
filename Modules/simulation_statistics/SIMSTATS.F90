@@ -230,6 +230,15 @@ module SIMSTATS
         ncal = 0
         ns = stfl%ns
 
+        if (allocated(qobs)) deallocate (qobs)
+        if (allocated(qsim)) deallocate (qsim)
+        if (allocated(bias)) deallocate (bias)
+        if (allocated(nsd)) deallocate (nsd)
+        if (allocated(lnsd)) deallocate (lnsd)
+        if (allocated(nsw)) deallocate (nsw)
+        if (allocated(tpd)) deallocate (tpd)
+        if (allocated(tpw)) deallocate (tpw)
+
         allocate(qobs(leap_year(ic%now%year), ns), qsim(leap_year(ic%now%year), ns))
         allocate(bias(ns), nsd(ns), lnsd(ns), nsw(ns), tpd(ns), tpw(ns))
 

@@ -9,7 +9,7 @@ module model_output
     use strings
     use model_files_variables
     use flags
-    
+
     implicit none
 
     !>
@@ -127,13 +127,13 @@ module model_output
 
         real, dimension(:, :), allocatable :: &
             hfs, qevp
-            
+
         real,dimension(:,:,:),allocatable :: &
             gflx
-            
+
         contains
 
-!        procedure :: init => init_energy_balance_series           
+!        procedure :: init => init_energy_balance_series
 
     end type !energy_balance_series
 
@@ -142,13 +142,13 @@ module model_output
 
         real, dimension(:), allocatable :: &
             hfs, qevp
-            
+
         real,dimension(:,:),allocatable :: &
             gflx
-            
+
         contains
 
-!        procedure :: init => init_energy_balance            
+!        procedure :: init => init_energy_balance
 
     end type !energy_balance
 
@@ -166,7 +166,7 @@ module model_output
 !        procedure :: init => init_soil_statevars_series
 
     end type
-    
+
     type soil_statevars
 
         real, dimension(:, :), allocatable :: &
@@ -176,7 +176,7 @@ module model_output
 
 !        procedure :: init => init_soil_statevars
 
-    end type    
+    end type
 
     type wr_output_series
 
@@ -205,7 +205,7 @@ module model_output
         character*20 :: out_fmt, out_seq, out_acc
         logical :: opt_printdate = .false.
 
-        ! Grid cells where data is request       
+        ! Grid cells where data is request
         integer, dimension(:), allocatable :: i_grds
 
         contains
@@ -242,7 +242,7 @@ module model_output
     !* gflx: Heat conduction (1: grid, 2: soil layer).
     !* thlq: Fractional liquid water content (1: grid, 2: soil layer).
     !* thic: Fractional frozen water (ice) content (1: grid, 2: soil layer).
-!    type out_inter_resp_ts 
+!    type out_inter_resp_ts
 !
 !        !Rank ID
 !        integer,dimension(:),allocatable :: i_grds
@@ -257,7 +257,7 @@ module model_output
 !
 !        contains
 !
-!        procedure :: init => init_inter_resp_ts       
+!        procedure :: init => init_inter_resp_ts
 !
 !    end type
 
@@ -288,11 +288,11 @@ module model_output
         !real, dimension(:,:), allocatable :: wsno_y, wsno_m, wsno_s ! Water stored in the snowpack
         type(water_balance_series) :: wbt_y, wbt_m, wbt_s, wbt_d, wbt_h
         type(water_balance) :: wd_ts
-        
+
         type(energy_balance_series) :: engt_y, engt_m, engt_s, engt_d, engt_h
         type(energy_balance) :: eng_ts
-        
-        
+
+
         type(soil_statevars_series) :: spt_y, spt_m, spt_s, spt_d, spt_h
         type(soil_statevars) :: sp_ts
         !type(soil_parameters_series) :: spt_y, spt_m, spt_s, spt_d, spt_h
@@ -303,8 +303,8 @@ module model_output
         type(met_data) :: md_ts
 
         type(wr_output_series) :: wroutt_h
-        
-        
+
+
 
         contains
 
@@ -369,6 +369,16 @@ module model_output
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
 
+        if (allocated(md%fsdown)) deallocate(md%fsdown)
+        if (allocated(md%fsvh)) deallocate(md%fsvh)
+        if (allocated(md%fsih)) deallocate(md%fsih)
+        if (allocated(md%fdl)) deallocate(md%fdl)
+        if (allocated(md%ul)) deallocate(md%ul)
+        if (allocated(md%ta)) deallocate(md%ta)
+        if (allocated(md%qa)) deallocate(md%qa)
+        if (allocated(md%pres)) deallocate(md%pres)
+        if (allocated(md%pre)) deallocate(md%pre)
+
         !> Allocate the arrays.
         allocate( &
             md%fsdown(shd%NA), md%fsvh(shd%NA), md%fsih(shd%NA), md%fdl(shd%NA), md%ul(shd%NA), &
@@ -405,7 +415,7 @@ module model_output
 
         !> Set nargs to the size of the array.
         vo%nargs = size(args)
-        
+
         !> Allocate args and copy the input args to the array.
         allocate(vo%args(vo%nargs))
         vo%args = args
@@ -467,7 +477,7 @@ module model_output
                         do j = 1, ngrds
                             call value(vo%args(i+j),vo%i_grds(j),ios)
                         enddo
-                        
+
                     !> Method of accumulation.
                     case ("cum", "avg", "max", "min")
                           vo%out_acc = vo%args(i)
@@ -476,7 +486,7 @@ module model_output
                         print *, trim(vo%args(i)) // " (Line ", i, ") is an unrecognized argument for output."
 
                 end select !case (vo%args(i))
-                
+
             end if
         end do !i = 1, vo%nargs
 
@@ -588,6 +598,26 @@ module model_output
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
 
+        if (allocated(wb%pre)) deallocate(wb%pre)
+        if (allocated(wb%evap)) deallocate(wb%evap)
+        if (allocated(wb%pevp)) deallocate(wb%pevp)
+        if (allocated(wb%evpb)) deallocate(wb%evpb)
+        if (allocated(wb%arrd)) deallocate(wb%arrd)
+        if (allocated(wb%rof)) deallocate(wb%rof)
+        if (allocated(wb%rofo)) deallocate(wb%rofo)
+        if (allocated(wb%rofs)) deallocate(wb%rofs)
+        if (allocated(wb%rofb)) deallocate(wb%rofb)
+        if (allocated(wb%rcan)) deallocate(wb%rcan)
+        if (allocated(wb%sncan)) deallocate(wb%sncan)
+        if (allocated(wb%pndw)) deallocate(wb%pndw)
+        if (allocated(wb%sno)) deallocate(wb%sno)
+        if (allocated(wb%wsno)) deallocate(wb%wsno)
+        if (allocated(wb%stg)) deallocate(wb%stg)
+        if (allocated(wb%dstg)) deallocate(wb%dstg)
+        if (allocated(wb%grid_area)) deallocate(wb%grid_area)
+        if (allocated(wb%lqws)) deallocate(wb%lqws)
+        if (allocated(wb%frws)) deallocate(wb%frws)
+
         !> Allocate arrays using basin info.
         allocate( &
             wb%pre(shd%NA), wb%evap(shd%NA), wb%pevp(shd%NA), wb%evpb(shd%NA), wb%arrd(shd%NA), &
@@ -621,7 +651,7 @@ module model_output
         wb%basin_area = 0.0
 
     end subroutine !init_water_balance
-    
+
     subroutine init_energy_balance(eb, shd)
 
         !> Type variable.
@@ -629,6 +659,10 @@ module model_output
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
+
+        if (allocated(eb%hfs))  deallocate(eb%hfs)
+        if (allocated(eb%qevp)) deallocate(eb%qevp)
+        if (allocated(eb%gflx)) deallocate(eb%gflx)
 
         !> Allocate arrays using basin info.
         allocate( &
@@ -641,7 +675,7 @@ module model_output
 
 
     end subroutine !init_energy_balance
-    
+
     subroutine init_energy_balance_series(engt, shd,nts)
 
         !> Type variable.
@@ -663,7 +697,7 @@ module model_output
         engt%gflx  = 0.0
 
 
-    end subroutine !init_energy_balance_series    
+    end subroutine !init_energy_balance_series
 
 !    subroutine deallocate_water_balance(wb)
 
@@ -689,7 +723,7 @@ module model_output
 !        if (allocated(wb%frws)) deallocate(wb%frws)
 
 !    end subroutine !deallocate_water_balance
-    
+
     subroutine init_soil_statevars(sv, shd)
 
         !> Type variable.
@@ -697,6 +731,10 @@ module model_output
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
+
+        if (allocated(sv%tbar)) deallocate(sv%tbar)
+        if (allocated(sv%thic)) deallocate(sv%thic)
+        if (allocated(sv%thlq)) deallocate(sv%thlq)
 
         !> Allocate arrays using basin info.
         allocate( &
@@ -710,7 +748,7 @@ module model_output
         sv%thlq = 0.0
 
 
-    end subroutine !init_soil_statevars  
+    end subroutine !init_soil_statevars
 
     subroutine init_soil_statevars_series(sp, shd, nts)
 
@@ -732,8 +770,8 @@ module model_output
         sp%thlq = 0.0
 
     end subroutine !init_soil_parameters
-      
-    
+
+
 
     subroutine init_wr_output_series(wroutt, shd, nts)
 
@@ -953,13 +991,13 @@ module model_output
 
         !Internals
         integer :: ios, i, j, k, istat, nargs
-        
+
         character*50 :: vId
         !character*20 :: args(:)
-        
+
         character*850 :: line
-        
-        character(len=20):: str 
+
+        character(len=20):: str
         character(len=1) :: delims
         integer, parameter :: StrMax=20, Nmax = 100
         character(len=StrMax), dimension(Nmax) :: argsLine
@@ -987,19 +1025,19 @@ module model_output
 
         !> Initialize variable.
         call init_out_flds(shd, ts, vr)
-        
+
         do i = 1, ifo%nr_out
 
             !> Read configuration information from file.
             !read(909, *) (ifo%ids_var_out(i, j), j = 1, 6)
             read(909,'(A)') line
-                     
+
             call parse(line,delims,argsLine,nargs)
             !ifo%varOut(i) = lowercase(argsLine(1))
             ifo%var_out(i)%name = argsLine(1)
             !read(909, *) ifo%var_out(i)%name, nargs
 !            if (allocated(args)) deallocate(args)
-!            allocate(args(nargs))    
+!            allocate(args(nargs))
 !            do j = 1, nargs
 !                args(j) = argsLine(j)
 !            enddo
@@ -1449,9 +1487,9 @@ module model_output
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
                         vr%spt_s%tbar(iss, :, :) = vr%spt_s%tbar(iss, :, :) + tbar
-                        
+
                     if (ifo%var_out(i)%out_d) &
-                        vr%spt_d%tbar(id, :, :) = vr%spt_d%tbar(id, : , :) + tbar                        
+                        vr%spt_d%tbar(id, :, :) = vr%spt_d%tbar(id, : , :) + tbar
 
                 case ('LQWS')
 
@@ -1477,9 +1515,9 @@ module model_output
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
                         vr%wbt_s%frws(iss, :, :) = vr%wbt_s%frws(iss, :, :) + frws
-                        
+
                     if (ifo%var_out(i)%out_d) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%wbt_d%frws(id, :, :) = vr%wbt_d%frws(id, :, :) + frws                        
+                        vr%wbt_d%frws(id, :, :) = vr%wbt_d%frws(id, :, :) + frws
 
                 case ('RCAN')
 
@@ -1564,18 +1602,18 @@ module model_output
 
                 case ('GFLX', 'HeatConduction')
 
-                    if (ifo%var_out(i)%out_y) & 
+                    if (ifo%var_out(i)%out_y) &
                         vr%engt_y%gflx(iy, :, :) = vr%engt_y%gflx(iy, :, :) + gflx
 
-                    if (ifo%var_out(i)%out_m) & 
+                    if (ifo%var_out(i)%out_m) &
                         vr%engt_m%gflx(im, :, :) = vr%engt_m%gflx(im, :, :) + gflx
 
-                    if (ifo%var_out(i)%out_s) & 
-                        vr%engt_s%gflx(iss, :, :) = vr%engt_s%gflx(iss, :, :) + gflx                    
-                        
-                    if (ifo%var_out(i)%out_d) & 
-                        vr%engt_d%gflx(id, :, :) = vr%engt_d%gflx(id, :, :) + gflx                         
-                        
+                    if (ifo%var_out(i)%out_s) &
+                        vr%engt_s%gflx(iss, :, :) = vr%engt_s%gflx(iss, :, :) + gflx
+
+                    if (ifo%var_out(i)%out_d) &
+                        vr%engt_d%gflx(id, :, :) = vr%engt_d%gflx(id, :, :) + gflx
+
                case ('HFS', 'SensibleHeat')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
@@ -1585,9 +1623,9 @@ module model_output
                         vr%engt_m%hfs(im, :) = vr%engt_m%hfs(im, :) + hfs
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
-                        vr%engt_s%hfs(iss, :) = vr%engt_s%hfs(iss, :) + hfs                         
+                        vr%engt_s%hfs(iss, :) = vr%engt_s%hfs(iss, :) + hfs
 
-                    if (ifo%var_out(i)%out_d)& 
+                    if (ifo%var_out(i)%out_d)&
                         vr%engt_d%hfs(id, :) = vr%engt_d%hfs(id, :) + hfs
 
                case ('QEVP', 'LatentHeat')
@@ -1628,7 +1666,7 @@ module model_output
 
                     if (ifo%var_out(i)%out_s) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
                         vr%spt_s%thic(iss, :, :) = vr%spt_s%thic(iss, :, :) + thic
-                        
+
                     if (ifo%var_out(i)%out_d) & !trim(adjustl(ifo%ids_var_out(i, 4))) == 'S') &
                         vr%spt_d%thic(id, :, :) = vr%spt_d%thic(id, :, :) + thic
 
@@ -1818,13 +1856,13 @@ module model_output
                             call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls, j)
                         end do
                     end if
-                   
+
                     if (ifo%var_out(i)%out_d) then
                         do j = 1, shd%lc%IGND
                             call WriteFields_i(vr, ts, ifo, i, "D", shd, ts%nr_days, fls, j)
                         end do
-                    end if     
-                    
+                    end if
+
                 case ('THLQ')
 
                     if (ifo%var_out(i)%out_y) then
@@ -1844,12 +1882,12 @@ module model_output
                             call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls, j)
                         end do
                     end if
-                   
+
                     if (ifo%var_out(i)%out_d) then
                         do j = 1, shd%lc%IGND
                             call WriteFields_i(vr, ts, ifo, i, "D", shd, ts%nr_days, fls, j)
                         end do
-                    end if         
+                    end if
 
              case ('THIC')
 
@@ -1870,13 +1908,13 @@ module model_output
                             call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls, j)
                         end do
                     end if
-                   
+
                     if (ifo%var_out(i)%out_d) then
                         do j = 1, shd%lc%IGND
                             call WriteFields_i(vr, ts, ifo, i, "D", shd, ts%nr_days, fls, j)
                         end do
-                    end if                      
-                    
+                    end if
+
                 case ('GFLX', 'HeatConduction')
 
                     if (ifo%var_out(i)%out_y) then
@@ -1896,7 +1934,7 @@ module model_output
                             call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls, j)
                         end do
                     end if
-                   
+
                     if (ifo%var_out(i)%out_d) then
                         do j = 1, shd%lc%IGND
                             call WriteFields_i(vr, ts, ifo, i, "D", shd, ts%nr_days, fls, j)
@@ -1928,7 +1966,7 @@ module model_output
                             call WriteFields_i(vr, ts, ifo, i, "D", shd, ts%nr_days, fls, j)
                         end do
                     end if
-                    
+
                 case ('QEVP','LatentHeat')
 
                     if (ifo%var_out(i)%out_y) then
@@ -1979,7 +2017,7 @@ module model_output
                         do j = 1, shd%lc%IGND
                             call WriteFields_i(vr, ts, ifo, i, "D", shd, ts%nr_days, fls, j)
                         end do
-                    end if                    
+                    end if
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -2008,12 +2046,12 @@ module model_output
                             call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls, j)
                         end do
                     end if
-                    
+
                     if (ifo%var_out(i)%out_d) then
                         do j = 1, shd%lc%IGND
                             call WriteFields_i(vr, ts, ifo, i, "D", shd, ts%nr_days, fls, j)
                         end do
-                    end if                    
+                    end if
 
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
@@ -2156,7 +2194,7 @@ module model_output
         type(info_out), intent(in) :: ifo
         type(ShedGridParams), intent(in) :: shd
         type (fl_ids), intent(in) :: fls
-        
+
         integer, intent(in) :: indx
         integer, intent(in) :: nt
         character*1, intent(in) :: freq
@@ -2301,13 +2339,13 @@ module model_output
                         fld(:, i) = vr%spt_s%tbar(i, :, igndx)
                     end do
                 end if
-                
+
                 if (trim(adjustl(freq)) == "D") then
                     do i = 1, nt
                         fld(:, i) = vr%spt_d%tbar(i, :, igndx)
                     end do
-                end if      
-                
+                end if
+
             case ('THLQ')
 
                 if (trim(adjustl(freq)) == 'Y') then
@@ -2327,13 +2365,13 @@ module model_output
                         fld(:, i) = vr%spt_s%thlq(i, :, igndx)
                     end do
                 end if
-                
+
                 if (trim(adjustl(freq)) == "D") then
                     do i = 1, nt
                         fld(:, i) = vr%spt_d%thlq(i, :, igndx)
                     end do
-                end if    
-                
+                end if
+
             case ('THIC')
 
                 if (trim(adjustl(freq)) == 'Y') then
@@ -2353,13 +2391,13 @@ module model_output
                         fld(:, i) = vr%spt_s%thic(i, :, igndx)
                     end do
                 end if
-                
+
                 if (trim(adjustl(freq)) == "D") then
                     do i = 1, nt
                         fld(:, i) = vr%spt_d%thic(i, :, igndx)
                     end do
-                end if                  
-                
+                end if
+
             case ('GFLX')
 
                 if (trim(adjustl(freq)) == 'Y') then
@@ -2379,13 +2417,13 @@ module model_output
                         fld(:, i) = vr%engt_s%gflx(i, :, igndx)
                     end do
                 end if
-                
+
                 if (trim(adjustl(freq)) == "D") then
                     do i = 1, nt
                         fld(:, i) = vr%engt_d%gflx(i, :, igndx)
                     end do
-                end if         
-                
+                end if
+
             case ('HFS')
 
                 if (trim(adjustl(freq)) == 'Y') then
@@ -2410,8 +2448,8 @@ module model_output
                     do i = 1, nt
                         fld(:, i) = vr%engt_d%hfs(i, :)
                     end do
-                end if        
-                
+                end if
+
             case ('QEVP')
 
                 if (trim(adjustl(freq)) == 'Y') then
@@ -2436,7 +2474,7 @@ module model_output
                     do i = 1, nt
                         fld(:, i) = vr%engt_d%qevp(i, :)
                     end do
-                end if                  
+                end if
 
             case ('LQWS')
 
@@ -2714,7 +2752,7 @@ module model_output
 
             case('r2c')
                 call WriteR2C(fld, indx, ifo, shd, freq2, dates)
-                
+
             case('tsi')
                 call WriteTsi(fld, indx, ifo, freq2, dates, fls)
 
@@ -2734,9 +2772,9 @@ if (allocated(dates)) &
 
     end subroutine WriteFields_i
 
-!>******************************************************************************    
+!>******************************************************************************
     subroutine WriteTsi(fld, indx, info, freq, dates, fls)
-        
+
         !Inputs
         real fld(:, :)
         integer indx

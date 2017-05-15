@@ -138,6 +138,14 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
     !> Initialize variables.
     NRVR = shd%NRVR
+
+    if (allocated (wfp%r1)) deallocate (wfp%r1)
+    if (allocated (wfp%r2)) deallocate (wfp%r2)
+    if (allocated (wfp%aa1)) deallocate (wfp%aa1)
+    if (allocated (wfp%aa2)) deallocate (wfp%aa2)
+    if (allocated (wfp%aa3)) deallocate (wfp%aa3)
+    if (allocated (wfp%aa4)) deallocate (wfp%aa4)
+
     allocate(wfp%r1(NRVR), wfp%r2(NRVR), &
              wfp%aa1(NRVR), wfp%aa2(NRVR), wfp%aa3(NRVR), wfp%aa4(NRVR))
     wfp%r1 = 2.0
@@ -441,6 +449,9 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 9270    format(//3x, 'Unrecognized GRU independent parameter: ', (a))
 9280    format(//3x, 'GRU independent parameter ', i3, ' contains no values. NARGS =', i2)
 9290    format(/1x, 'ERROR: Reading GRU independent parameter', i3)
+
+    if (allocated (lzsp%dgwsh)) deallocate (lzsp%dgwsh)
+    if (allocated (lzsp%agwsh)) deallocate (lzsp%agwsh)
 
     !>
     !> GRU dependent parameters.

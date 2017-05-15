@@ -10,10 +10,11 @@
       type(fl_ids) :: fls
 
       !> Local variables.
-      integer :: IGND = 0, ierr, iun, i
+      integer :: IGND, ierr, iun, i
       real DELZ_TEST, ZBOT_TEST
 
       !> Determine the value of IGND from MESH_input_soil_levels.txt
+      IGND = 0
       shd%lc%IGND = 0
 
       !> Open soil levels file and check for IOSTAT errors.
@@ -47,6 +48,9 @@
 !todo: put in a warning that at least 3 layers are needed.
 
       rewind(iun)
+
+      if (allocated (shd%lc%sl%DELZ)) deallocate (shd%lc%sl%DELZ)
+      if (allocated (shd%lc%sl%ZBOT)) deallocate (shd%lc%sl%ZBOT)
 
       allocate(shd%lc%sl%DELZ(IGND), shd%lc%sl%ZBOT(IGND))
       if (ro%DIAGNOSEMODE > 0) print 1011

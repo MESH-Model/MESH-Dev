@@ -49,6 +49,11 @@ module sa_mesh_run_between_grid
 
         !> Stream channel.
         stas%chnl%n = NA
+
+        if (allocated(stas%chnl%qi)) deallocate (stas%chnl%qi)
+        if (allocated(stas%chnl%qo)) deallocate (stas%chnl%qo)
+        if (allocated(stas%chnl%s)) deallocate (stas%chnl%s)
+
         allocate(stas%chnl%qi(1:NA), stas%chnl%qo(1:NA), stas%chnl%s(1:NA))
         stas%chnl%qi(1:NA) = 0.0
         stas%chnl%qo(1:NA) = 0.0

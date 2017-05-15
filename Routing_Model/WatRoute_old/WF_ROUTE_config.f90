@@ -197,6 +197,10 @@ module WF_ROUTE_config
     !>
     subroutine WF_ROUTE_init_fls()
 
+        if (allocated(WF_RTE_fls%fl)) deallocate(WF_RTE_fls%fl)
+        if (allocated(WF_RTE_fstflout%fls%fl)) deallocate(WF_RTE_fstflout%fls%fl)
+        if (allocated(WF_RTE_frsvrout%fls%fl)) deallocate(WF_RTE_frsvrout%fls%fl)
+
         !> Allocate file object.
         allocate( &
             WF_RTE_fls%fl(2), &
@@ -256,6 +260,15 @@ module WF_ROUTE_config
         NA = shd%NA
         WF_NAA = NA - shd%NAA
 
+        if (allocated(WF_NHYD)) deallocate (WF_NHYD)
+        if (allocated(WF_QR)) deallocate (WF_QR)
+        if (allocated(WF_QBASE)) deallocate (WF_QBASE)
+        if (allocated(WF_QI2)) deallocate (WF_QI2)
+        if (allocated(WF_QO1)) deallocate (WF_QO1)
+        if (allocated(WF_STORE1)) deallocate (WF_STORE1)
+        if (allocated(WF_QO2_ACC_MM)) deallocate (WF_QO2_ACC_MM)
+        if (allocated(WF_STORE2_ACC_MM)) deallocate (WF_STORE2_ACC_MM)
+
         allocate(WF_NHYD(NA), WF_QR(NA), &
                  WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), &
                  WF_STORE1(NA), &
@@ -295,6 +308,15 @@ module WF_ROUTE_config
 
         if (NR > 0) then
 
+            if (allocated(WF_RES)) deallocate (WF_RES)
+            if (allocated(WF_B1)) deallocate (WF_B1)
+            if (allocated(WF_B2)) deallocate (WF_B2)
+            if (allocated(WF_B3)) deallocate (WF_B3)
+            if (allocated(WF_B4)) deallocate (WF_B4)
+            if (allocated(WF_B5)) deallocate (WF_B5)
+            if (allocated(WF_QREL)) deallocate (WF_QREL)
+            if (allocated(WF_RESSTORE)) deallocate (WF_RESSTORE)
+
             !> Allocate and initialize reservoir variables.
             allocate(WF_RES(NR), &
                      WF_B1(NR), WF_B2(NR), WF_B3(NR), WF_B4(NR), WF_B5(NR), &
@@ -307,11 +329,24 @@ module WF_ROUTE_config
             WF_B4 = 0.0
             WF_B5 = 0.0
 
+            if (allocated(fms%rsvr%name)) deallocate (fms%rsvr%name)
+            if (allocated(fms%rsvr%y)) deallocate (fms%rsvr%y)
+            if (allocated(fms%rsvr%x)) deallocate (fms%rsvr%x)
+            if (allocated(fms%rsvr%iy)) deallocate (fms%rsvr%iy)
+            if (allocated(fms%rsvr%jx)) deallocate (fms%rsvr%jx)
+            if (allocated(fms%rsvr%rnk)) deallocate (fms%rsvr%rnk)
+            if (allocated(fms%rsvr%cfn)) deallocate (fms%rsvr%cfn)
+
             !> Allocate configuration variables for the driver.
             allocate(fms%rsvr%name(NR), &
                      fms%rsvr%y(NR), fms%rsvr%x(NR), &
                      fms%rsvr%iy(NR), fms%rsvr%jx(NR), fms%rsvr%rnk(NR), &
                      fms%rsvr%cfn(NR))
+
+            if (allocated(stas%rsvr%qi)) deallocate(stas%rsvr%qi)
+            if (allocated(stas%rsvr%qo)) deallocate(stas%rsvr%qo)
+            if (allocated(stas%rsvr%s)) deallocate(stas%rsvr%s)
+            if (allocated(stas%rsvr%ab)) deallocate(stas%rsvr%ab)
 
             !> Allocate state variables for the driver.
             allocate(stas%rsvr%qi(NR), stas%rsvr%qo(NR), stas%rsvr%s(NR), stas%rsvr%ab(NR))
@@ -319,6 +354,10 @@ module WF_ROUTE_config
             stas%rsvr%qo = 0.0
             stas%rsvr%s = 0.0
             stas%rsvr%ab = 0.0
+
+            if (allocated(rrls%rls)) deallocate (rrls%rls)
+            if (allocated(rrls%store)) deallocate (rrls%store)
+            if (allocated(rrls%abst)) deallocate (rrls%abst)
 
             !> Allocate output variable for the driver.
             rrls%nr = NR
@@ -399,13 +438,30 @@ module WF_ROUTE_config
         read(iun, *) fms%stmg%n, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
         NS = fms%stmg%n
 
+        if (allocated(WF_QHYD)) deallocate(WF_QHYD)
+        if (allocated(WF_QHYD_AVG)) deallocate(WF_QHYD_AVG)
+        if (allocated(WF_QHYD_CUM)) deallocate(WF_QHYD_CUM)
+        if (allocated(WF_QSYN)) deallocate(WF_QSYN)
+        if (allocated(WF_QSYN_AVG)) deallocate(WF_QSYN_AVG)
+        if (allocated(WF_QSYN_CUM)) deallocate(WF_QSYN_CUM)
+
         allocate(WF_QHYD(NS), WF_QHYD_AVG(NS), WF_QHYD_CUM(NS), &
                  WF_QSYN(NS), WF_QSYN_AVG(NS), WF_QSYN_CUM(NS))
+
+        if (allocated(fms%stmg%name)) deallocate (fms%stmg%name)
+        if (allocated(fms%stmg%y)) deallocate (fms%stmg%y)
+        if (allocated(fms%stmg%x)) deallocate (fms%stmg%x)
+        if (allocated(fms%stmg%iy)) deallocate (fms%stmg%iy)
+        if (allocated(fms%stmg%jx)) deallocate (fms%stmg%jx)
+        if (allocated(fms%stmg%rnk)) deallocate (fms%stmg%rnk)
 
         !> Allocate configuration variables for the driver.
             allocate(fms%stmg%name(NS), &
                      fms%stmg%y(NS), fms%stmg%x(NS), &
                      fms%stmg%iy(NS), fms%stmg%jx(NS), fms%stmg%rnk(NS))
+
+        if (allocated(stfl%qhyd)) deallocate(stfl%qhyd)
+        if (allocated(stfl%qsyn)) deallocate(stfl%qsyn)
 
         !> Allocate output variable for the driver.
         stfl%ns = NS
@@ -674,6 +730,9 @@ module WF_ROUTE_config
             close(iun)
 
         end if !(SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
+
+        close(WF_RTE_fls%fl(WF_RTE_flks%resv_in)%iun)
+        close(WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun)
 
     end subroutine
 
