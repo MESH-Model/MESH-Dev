@@ -26,6 +26,7 @@ module RUNCLASS36_module
         !> For BASEFLOWFLAG.
 !todo: Isolate this.
         use baseflow_module
+        use PBSM_module
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -120,10 +121,12 @@ module RUNCLASS36_module
             cpv%THLQ(il1:il2, :) = stas%sl%thlq(il1:il2, :)
             cpv%TBAR(il1:il2, :) = stas%sl%tbar(il1:il2, :)
 
-            !> Were initialized in CLASSG and so have been extracted.
-            DriftGAT = 0.0 !DriftROW (ILMOS(k), JLMOS(k))
-            SublGAT = 0.0 !SublROW (ILMOS(k), JLMOS(k))
-            DepositionGAT = 0.0
+            !> Initialize diagnostic variables for PBSM.
+            if (pbsm%PROCESS_ACTIVE) then
+                pbsm%vs%Drift(il1:il2) = 0.0
+                pbsm%vs%Subl(il1:il2) = 0.0
+                pbsm%vs%Deposition(il1:il2) = 0.0
+            end if
 
             !> INITIALIZATION OF DIAGNOSTIC VARIABLES SPLIT OUT OF CLASSG
             !> FOR CONSISTENCY WITH GCM APPLICATIONS.
@@ -208,7 +211,7 @@ module RUNCLASS36_module
                         csfv%HCPS, csfv%THP, csfv%DELZW, cpv%TBAR, cpv%ZPND, cpv%TPND, &
                         shd%lc%sl%DELZ, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                         il1, il2, NML, IGND, ic%ts_count, &
-                        DriftGAT, SublGAT)
+                        pbsm%vs%Drift, pbsm%vs%Subl)
 
             !> ALBEDO AND TRANSMISSIVITY CALCULATIONS; GENERAL VEGETATION
             !> CHARACTERISTICS.
@@ -334,27 +337,23 @@ module RUNCLASS36_module
                         QM1CS, QM1C, QM1G, QM1GS, &
                         QM2CS, QM2C, QM2G, QM2GS, UMQ, &
                         FSTRCS, FSTRC, FSTRG, FSTRGS, &
+                        pbsm%PROCESS_ACTIVE, &
                         ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
                         HCPSCS, HCPSGS, HCPSC, HCPSG, &
                         TSNOWC, TSNOWG, RHOSC, RHOSG, &
                         XSNOWC, XSNOWG, XSNOCS, XSNOGS)
 
-            !> SINGLE COLUMN BLOWING SNOW CALCULATIONS.
-!+            if (PBSMFLAG == 1) then
-!+                call PBSMrun(ZSNOW, cpv%WSNO, cpv%SNO, cpv%RHOS, cpv%TSNO, cdv%HTCS, &
-!+                             ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
-!+                             HCPSCS, HCPSGS, HCPSC, HCPSG, &
-!+                             TSNOWC, TSNOWG, TSNOCS, TSNOGS, &
-!+                             RHOSC, RHOSG, RHOSCS, RHOSGS,&
-!+                             XSNOWC, XSNOWG, XSNOCS, XSNOGS, &
-!+                             WSNOCS, WSNOGS, &
-!+                             cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, &
-!+                             fetchGAT, N_SGAT, A_SGAT, HtGAT, &
-!+                             cdv%SFCT, cdv%SFCU, cdv%SFCQ, cfi%PRES, cfi%PRE, &
-!+                             DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
-!+                             TSNOdsGAT, &
-!+                             NML, il1, il2, ic%ts_count, catv%ZRFM, ZOMLCS, ZOMLNS)
-!+            end if
+            !> Single column blowing snow calculations (PBSM).
+            call PBSM_within_tile( &
+                ZSNOW, cpv%WSNO, cpv%SNO, cpv%RHOS, cpv%TSNO, cdv%HTCS, &
+                TSNOCS, TSNOGS, &
+                RHOSCS, RHOSGS,&
+                WSNOCS, WSNOGS, &
+                cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, &
+                cdv%SFCT, cdv%SFCU, cdv%SFCQ, &
+                catv%ZRFM, ZOMLCS, ZOMLNS, &
+                NML, &
+                shd, fls, cm)
 
             call CLASSZ(1, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
@@ -368,16 +367,19 @@ module RUNCLASS36_module
                         csfv%HCPS, csfv%THP, csfv%DELZW, cpv%TBAR, cpv%ZPND, cpv%TPND, &
                         shd%lc%sl%DELZ, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                         il1, il2, NML, IGND, ic%ts_count, &
-                        DriftGAT, SublGAT)
+                        pbsm%vs%Drift, pbsm%vs%Subl)
 
-            !> Redistribute blowing snow mass between GRUs.
-!todo: This has a dependency on cp%GCGRD.
-!+            call REDISTRIB_SNOW(NML, 1, NA, NTYPE, NML, cpv%TSNO, ZSNOW, &
-!+                                cpv%RHOS, cpv%SNO, TSNOCS, ZSNOCS, HCPSCS, RHOSCS, TSNOGS, &
-!+                                ZSNOGS, HCPSGS, RHOSGS, TSNOWC, ZSNOWC, HCPSC, RHOSC, TSNOWG, &
-!+                                ZSNOWG, HCPSG, RHOSG, cp%GCGRD, shd%lc%ILMOS, DriftGAT, csfv%FARE, &
-!+                                TSNOdsGAT, DistribGAT, WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, DepositionGAT, &
-!+                                cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, ic%ts_count)
+            !> Distribution of blowing snow mass between tiles (PBSM).
+            call PBSM_within_grid( &
+                cpv%TSNO, ZSNOW, &
+                cpv%RHOS, cpv%SNO, TSNOCS, RHOSCS, TSNOGS, &
+                RHOSGS, &
+                catv%GC, csfv%FARE, &
+                WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
+                cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, &
+                NML, &
+                shd, fls, cm)
+
             cdv%ROF = cdv%ROF - UMQ
 
             !> BASEFLOWFLAG

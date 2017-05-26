@@ -97,6 +97,11 @@ OBJECTS+=	cropland_irrigation_variables.o \
 			cropland_irrigation_init.o cropland_irrigation_within_tile.o cropland_irrigation_between_grid.o \
 			calc_ET0.o
 
+#PBSM (blowing snow)
+OBJECTS+=	PBSMrates.o PBSMrun.o ProbabilityThreshold.o \
+			REDISTRIB_SNOW.o SUM.o \
+			PBSM_module.o
+
 #MESH Driver
 #OBJECTS+=	GATHER.o resume_state.o resume_state_r2c.o R2C_DATA.o \
 #			save_state.o save_state_r2c.o \
@@ -138,10 +143,6 @@ OBJECTS+=	RUNSVS113_config.o RUNSVS113_module.o
 
 #WATDRN3
 OBJECTS+=	WATDRN3.o WATDRN3B.o
-
-#Blowing snow
-OBJECTS+=   PBSMrates.o PBSMrun.o ProbabilityThreshold.o \
-            REDISTRIB_SNOW.o SUM.o
 
 #Tile connector
 OBJECTS+=	tile_connector.o 

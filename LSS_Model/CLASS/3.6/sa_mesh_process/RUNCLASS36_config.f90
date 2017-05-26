@@ -119,6 +119,8 @@ module RUNCLASS36_config
         !> For CLASS output.
         use RUNCLASS36_save_output
 
+        use PBSM_module
+
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(dates_model) :: ts
@@ -442,6 +444,24 @@ module RUNCLASS36_config
             GGEOGRD(1) = 0.0
         end if
 
+        !> Initialize PBSM or allocate and initialize variables used in CLASS even if PBSM is not enabled.
+        if (pbsm%PROCESS_ACTIVE) then
+            call PBSM_init(shd, fls, cm)
+        else
+
+            !> Variables used in CLASSZ.
+            allocate(pbsm%vs%Drift(NML), pbsm%vs%Subl(NML))
+            pbsm%vs%Drift = 0.0; pbsm%vs%Subl = 0.0
+
+            !> Variables used in CLASSW.
+            !> These are initialized in WPREP.
+            allocate(ZSNOCS(NML), ZSNOGS(NML), ZSNOWC(NML), ZSNOWG(NML), &
+                     HCPSCS(NML), HCPSGS(NML), HCPSC(NML), HCPSG(NML), &
+                     TSNOWC(NML), TSNOWG(NML), &
+                     RHOSC(NML), RHOSG(NML), &
+                     XSNOWC(NML), XSNOWG(NML), XSNOCS(NML), XSNOGS(NML))
+        end if
+
         !> Resume the state of prognostic variables from file.
         select case (RESUMEFLAG)
 
@@ -668,48 +688,6 @@ module RUNCLASS36_config
 !-                      NA, NTYPE, NSL, &
 !-                      BTC, BCAP, DCOEFF, BFCAP, BFCOEFF, BFMIN, BQMAX, &
 !-                      cp%SANDROW, cp%CLAYROW)
-
-        !>**********************************************************************
-        !> Set initial SnowAge & DrySnow values for PBSM calculations
-        !> (MK MacDonald, Sept 2010)
-        !>**********************************************************************
-        allocate(DrySnowGAT(NML), SnowAgeGAT(NML), &
-                 TSNOdsGAT(NML), RHOSdsGAT(NML), &
-                 DriftGAT(NML), SublGAT(NML), DepositionGAT(NML), &
-                 ZSNOCS(NML), ZSNOGS(NML), &
-                 ZSNOWC(NML), ZSNOWG(NML), &
-                 HCPSCS(NML), HCPSGS(NML), &
-                 HCPSC(NML), HCPSG(NML), &
-                 TSNOWC(NML), TSNOWG(NML), &
-                 RHOSC(NML), RHOSG(NML), &
-                 XSNOWC(NML), XSNOWG(NML), &
-                 XSNOCS(NML), XSNOGS(NML), stat = ierr)
-        allocate(fetchGAT(NML), HtGAT(NML), N_SGAT(NML), A_SGAT(NML), &
-                 DistribGAT(NML), stat = ierr)
-        TSNOdsGAT = 0.0
-        RHOSdsGAT = 0.0
-        if (PBSMFLAG == 1) then
-            do k = il1, il2
-                if (cpv%SNO(k) <= 0.0) then
-                    DrySnowGAT(k) = 0.0 !1 = snowpack is dry (i.e. cold)
-                    SnowAgeGAT(k) = 0.0 !hours since last snowfall
-                    if (cm%dat(ck%TT)%GAT(k) >= TFREZ) then
-                        DrySnowGAT(k) = 0.0
-                        SnowAgeGAT(k) = 48.0 !assume 48 hours since last snowfall
-                    else
-                        DrySnowGAT(k) = 1.0
-                        SnowAgeGAT(k) = 48.0
-                    end if
-                end if
-                ik = shd%lc%ILMOS(k)
-                jk = shd%lc%JLMOS(k)
-                fetchGAT(k) = hp%fetchROW(ik, jk)
-                HtGAT(k) = hp%HtROW(ik, jk)
-                N_SGAT(k) = hp%N_SROW(ik, jk)
-                A_SGAT(k) = hp%A_SROW(ik, jk)
-                DistribGAT(k) = hp%DistribROW(ik, jk)
-            end do
-        end if !PBSMFLAG == 1
 
         !> *********************************************************************
         !> Call CLASSBG to set more CLASS variables

@@ -64,32 +64,6 @@ module RUNCLASS36_variables
     real, dimension(:, :), allocatable :: BTC, BCAP, DCOEFF, BFCAP, &
         BFCOEFF, BFMIN, BQMAX
 
-    !>PBSM parameters.
-!todo: isolate PBSM from CLASS code.
-    !* fetch: fetch distance (m)
-    !* Ht: vegetation height (m)
-    !* N_S: vegetation density (number/m^2)
-    !* A_S: vegetation width (m)
-    !* Distrib: Inter-GRU snow redistribution factor
-    real, dimension(:), allocatable :: &
-        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT
-
-    !> PBSM variables.
-    !* DrySnow: 0 = air temperature above 0 degC
-    !*          1 = air temperature below 0 degC
-    !* SnowAge: hours since last snowfall
-    !* Drift: blowing snow transport (kg/m^2)
-    !* Subl: blowing snow sublimation (kg/m^2)
-    real, dimension(:), allocatable :: DrySnowGAT, SnowAgeGAT, &
-        TSNOdsGAT, RHOSdsGAT, DriftGAT, SublGAT, DepositionGAT
-    real, dimension(:, :), allocatable :: DrySnowROW, SnowAgeROW, &
-        TSNOdsROW, RHOSdsROW, DriftROW, SublROW, DepositionROW
-
-    !> PBSM internal/local variables.
-    real, dimension(:), allocatable :: ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
-        HCPSCS, HCPSGS, HCPSC, HCPSG, TSNOWC, TSNOWG, &
-        RHOSC, RHOSG, XSNOWC, XSNOWG, XSNOCS, XSNOGS
-
     !> FROZENSOILINIFLAG variables.
 !todo: isolate from CLASS code if possible.
     integer NMELT, NYEARS
@@ -231,8 +205,7 @@ module RUNCLASS36_variables
         real, dimension(:,:), allocatable :: &
 !-            ZSNLROW, ZPLSROW, ZPLGROW, &
             FRZCROW, &
-            CMAXROW, CMINROW, BROW, K1ROW, K2ROW, &
-            fetchROW, HtROW, N_SROW, A_SROW, DistribROW
+            CMAXROW, CMINROW, BROW, K1ROW, K2ROW
     end type
 
     !> Type: RUNCLASS36_Flags

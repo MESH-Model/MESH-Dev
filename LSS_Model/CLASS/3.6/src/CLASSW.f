@@ -42,10 +42,11 @@
      3                  QM1CS,     QM1C,      QM1G,      QM1GS, 
      4                  QM2CS,     QM2C,      QM2G,      QM2GS,  UMQ,
      5                  FSTRCS,    FSTRC,     FSTRG,     FSTRGS,
-     6                  ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG,
-     7                  HCPSCS,HCPSGS,HCPSC,HCPSG,
-     8                  TSNOWC,TSNOWG,RHOSC,RHOSG,
-     9                  XSNOWC,XSNOWG,XSNOCS,XSNOGS)
+     +                  PBSMFLAG,
+     1                  ZSNOCS,ZSNOGS,ZSNOWC,ZSNOWG,
+     2                  HCPSCS,HCPSGS,HCPSC,HCPSG,
+     3                  TSNOWC,TSNOWG,RHOSC,RHOSG,
+     4                  XSNOWC,XSNOWG,XSNOCS,XSNOGS)
 C                                                                        
 C     * DEC 09/11 - M.MEKONNEN. FOR PDMROF.
 C     * OCT 18/11 - M.LAZARE.   PASS IN IGDR THROUGH CALLS TO
@@ -54,6 +55,8 @@ C     *                         IN CLASSB - ONE CONSISTENT
 C     *                         CALCULATION).                                                                          
 C     * JUN 03/11 - D.PRINCZ.   FOR RIC'S WATDRN3.
 C     * APR 04/11 - D.VERSEGHY. ADD DELZ TO GRINFL CALL.
+C     * OCT 01/10 - M.MACDONALD.ONLY PERFORM VANISHINGLY SMALL SNOW
+C                               CALCULATIONS IF PBSM NOT BEING USED (MESH OPTION)
 C     * DEC 07/09 - D.VERSEGHY. ADD RADD AND SADD TO WPREP CALL.
 C     * JAN 06/09 - D.VERSEGHY. INCREASE LIMITING SNOW AMOUNT.
 C     * FEB 25/08 - D.VERSEGHY. MODIFICATIONS REFLECTING CHANGES
@@ -310,6 +313,10 @@ C     * PDMROF
      5     UMQ      (ILG),
      6     FSTRCS   (ILG),    FSTRC(ILG),    FSTRG(ILG),   FSTRGS(ILG),
      *     CSTRCS(ILG), CSTRC(ILG), CSTRG(ILG), CSTRGS(ILG)
+C
+C     * PBSM
+C
+      logical, intent(in) :: PBSMFLAG
 
       UMQ   = 0.0
       UMQCS = 0.0
@@ -880,7 +887,7 @@ C
               SNO(I)=ZSNOW(I)*RHOSNO(I)                                       
               IF(SNO(I).LT.0.0) SNO(I)=0.0
 
-             IF (PBSMFLAG==0) THEN
+             IF (.not. PBSMFLAG) THEN
               IF(SNO(I).LT.1.0E-2 .AND. SNO(I).GT.0.0) THEN
                   TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+TSNOW(I)*(SNO(I)+
      1                WSNOW(I))/DELT)/(OVRFLW(I)+(SNO(I)+WSNOW(I))/
@@ -899,7 +906,7 @@ C
                   SNO(I)=0.0                            
                   WSNOW(I)=0.0
               ENDIF
-             ENDIF !PBSMFLAG=0
+             ENDIF !.not. PBSMFLAG
           ELSE                                                                
               TSNOW(I)=0.0                                                    
               RHOSNO(I)=0.0                                                   

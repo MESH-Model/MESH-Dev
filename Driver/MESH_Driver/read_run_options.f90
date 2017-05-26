@@ -19,6 +19,7 @@
         use rte_module
         use SA_RTE_module, only: SA_RTE_flgs
         use SIMSTATS_config, only: mtsflg
+        use PBSM_module
 
         implicit none
 
@@ -233,10 +234,6 @@
         !* If WD3BKFC is 0, BULK_FC (WATROF)=0.
         !* If WD3BKFC is 1, BULK_FC remains unchanged in WATROF.
         WD3BKFC = 1
-
-        !* set PBSMFLAG = 0 so by default blowing snow calculations are not made
-        !* 1 =  blowing snow transport, sublimation & inter-GRU redistribution calculations are made
-        PBSMFLAG = 0
 
         !* If LOCATIONFLAG is 0, gauge coordinates are read using 2I5 (Minutes) {Default}
         !* If LOCATIONFLAG is 1, gauge coordinates for BOTH MESH_input_streamflow.txt AND
@@ -600,8 +597,11 @@
                         call value(out_args(2), WD3BKFC, ierr)
                     case ('ICTEMMOD')
                         call value(out_args(2), ICTEMMOD, ierr)
+
+                    !> PBSM (blowing snow).
                     case ('PBSMFLAG')
-                        call value(out_args(2), PBSMFLAG, ierr)
+                        call PBSM_parse_flag(in_line)
+
                     case ('LOCATIONFLAG')
                         call value(out_args(2), LOCATIONFLAG, ierr)
                     case ('OUTFIELDSFLAG')
