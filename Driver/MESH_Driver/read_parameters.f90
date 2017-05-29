@@ -18,6 +18,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     use rte_module
     use baseflow_module
     use cropland_irrigation_variables
+    use PBSM_module
 
     implicit none
 
@@ -77,6 +78,19 @@ subroutine read_parameters(fls, shd, cm, ierr)
         rtepm_iak%aa2 = 1.1; rtepm_iak%aa3 = 0.043; rtepm_iak%aa4 = 1.0
     end if
 
+    !> PBSM (blowing snow).
+    if (pbsm%PROCESS_ACTIVE) then
+        allocate( &
+            pbsm%pm_gru%fetch(NTYPE), pbsm%pm_gru%Ht(NTYPE), pbsm%pm_gru%N_S(NTYPE), pbsm%pm_gru%A_S(NTYPE), &
+            pbsm%pm_gru%Distrib(NTYPE), &
+            pbsm%pm_grid%fetch(NA), pbsm%pm_grid%Ht(NA), pbsm%pm_grid%N_S(NA), pbsm%pm_grid%A_S(NA), pbsm%pm_grid%Distrib(NA), &
+            pbsm%pm%fetch(NML), pbsm%pm%Ht(NML), pbsm%pm%N_S(NML), pbsm%pm%A_S(NML), pbsm%pm%Distrib(NML))
+        pbsm%pm_gru%fetch = 0.0; pbsm%pm_gru%Ht = 0.0; pbsm%pm_gru%N_S = 0.0; pbsm%pm_gru%A_S = 0.0
+        pbsm%pm_gru%Distrib = 0.0
+        pbsm%pm_grid%fetch = 0.0; pbsm%pm_grid%Ht = 0.0; pbsm%pm_grid%N_S = 0.0; pbsm%pm_grid%A_S = 0.0; pbsm%pm_grid%Distrib = 0.0
+        pbsm%pm%fetch = 0.0; pbsm%pm%Ht = 0.0; pbsm%pm%N_S = 0.0; pbsm%pm%A_S = 0.0; pbsm%pm%Distrib = 0.0
+    end if
+
     !> FROZENSOILINFILFLAG 1.
     if (FROZENSOILINFILFLAG == 1) then
         allocate(hp%FRZCROW(NA, NTYPE), stat = ierr)
@@ -91,14 +105,6 @@ subroutine read_parameters(fls, shd, cm, ierr)
         allocate( &
             hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE), hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE), hp%K2ROW(NA, NTYPE), stat = ierr)
         hp%CMAXROW = 0.0; hp%CMINROW = 0.0; hp%BROW = 0.0; hp%K1ROW = 0.0; hp%K2ROW = 0.0
-    end if
-
-    !> PBSMFLAG 1.
-    if (PBSMFLAG == 1) then
-        allocate( &
-            hp%fetchROW(NA, NTYPE), hp%HtROW(NA, NTYPE), hp%N_SROW(NA, NTYPE), hp%A_SROW(NA, NTYPE), hp%DistribROW(NA, NTYPE), &
-            stat = ierr)
-        hp%fetchROW = 0.0; hp%HtROW = 0.0; hp%N_SROW = 0.0; hp%A_SROW = 0.0; hp%DistribROW = 0.0
     end if
 
     !> BASEFLOWFLAG 1 (Luo, 2012).
@@ -220,6 +226,15 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 cip%Kclate(k) = ciprot%Kclate(i)
             end if
 
+            !> PBSM (blowing snow).
+            if (pbsm%PROCESS_ACTIVE) then
+                pbsm%pm%fetch(k) = pbsm%pm_gru%fetch(i)
+                pbsm%pm%Ht(k) = pbsm%pm_gru%Ht(i)
+                pbsm%pm%N_S(k) = pbsm%pm_gru%N_S(i)
+                pbsm%pm%A_S(k) = pbsm%pm_gru%A_S(i)
+                pbsm%pm%Distrib(k) = pbsm%pm_gru%Distrib(i)
+            end if
+
         end do !k = il1, il2
     end if
 
@@ -268,6 +283,15 @@ subroutine read_parameters(fls, shd, cm, ierr)
             !> SA_MESH.
 !+            if (allocated(shd%SLOPE_INT)) pm%tp%xslp(k) = shd%SLOPE_INT(i)
 !+            if (allocated(shd%DRDN)) pm%hp%dd(k) = shd%DRDN(i)
+
+            !> PBSM (blowing snow).
+            if (pbsm%PROCESS_ACTIVE) then
+                pbsm%pm%fetch(k) = pbsm%pm_grid%fetch(i)
+                pbsm%pm%Ht(k) = pbsm%pm_grid%Ht(i)
+                pbsm%pm%N_S(k) = pbsm%pm_grid%N_S(i)
+                pbsm%pm%A_S(k) = pbsm%pm_grid%A_S(i)
+                pbsm%pm%Distrib(k) = pbsm%pm_grid%Distrib(i)
+            end if
 
         end do !k = il1, il2
     end if

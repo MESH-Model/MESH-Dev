@@ -13,7 +13,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !> For the 'ShedGridParams' type, 'ro%' run options type, and SA_MESH parameters.
     use sa_mesh_shared_variables
 
-    !> Required for 'FROZENSOILINFILFLAG' and 'PBSMFLAG'.
+    !> Required for 'FROZENSOILINFILFLAG'.
     use FLAGS
 
     !> Required for the variables of various modules.
@@ -22,6 +22,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     use rte_module
     use baseflow_module
     use cropland_irrigation_variables
+    use PBSM_module
 
     implicit none
 
@@ -703,65 +704,60 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 end do
                             end if
 
-                        !> PBSMFLAG == 1 (blowing snow model).
+                        !> PBSM (blowing snow).
 
                         !> fetch.
                         case ('fetch')
-                            if (PBSMFLAG == 0) then
+                            if (.not. pbsm%PROCESS_ACTIVE) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), hp%fetchROW(1, j), ierr)
+                                    call value(out_args(j + 1), pbsm%pm_gru%fetch(j), ierr)
                                     if (ierr /= 0) goto 931
-                                    hp%fetchROW(:, j) = hp%fetchROW(1, j)
                                 end do
                             end if
 
                         !> Ht.
                         case ('ht')
-                            if (PBSMFLAG == 0) then
+                            if (.not. pbsm%PROCESS_ACTIVE) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), hp%HtROW(1, j), ierr)
+                                    call value(out_args(j + 1), pbsm%pm_gru%Ht(j), ierr)
                                     if (ierr /= 0) goto 931
-                                    hp%HtROW(:, j) = hp%HtROW(1, j)
                                 end do
                             end if
 
                         !> N_S.
                         case ('n_s')
-                            if (PBSMFLAG == 0) then
+                            if (.not. pbsm%PROCESS_ACTIVE) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), hp%N_SROW(1, j), ierr)
+                                    call value(out_args(j + 1), pbsm%pm_gru%N_S(j), ierr)
                                     if (ierr /= 0) goto 931
-                                    hp%N_SROW(:, j) = hp%N_SROW(1, j)
                                 end do
                             end if
 
                         !> A_S.
                         case ('a_s')
-                            if (PBSMFLAG == 0) then
+                            if (.not. pbsm%PROCESS_ACTIVE) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), hp%A_SROW(1, j), ierr)
+                                    call value(out_args(j + 1), pbsm%pm_gru%A_S(j), ierr)
                                     if (ierr /= 0) goto 931
-                                    hp%A_SROW(:, j) = hp%A_SROW(1, j)
                                 end do
                             end if
 
                         !> Distrib.
                         case ('distrib')
-                            if (PBSMFLAG == 0) then
+                            if (.not. pbsm%PROCESS_ACTIVE) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), hp%DistribROW(1, j), ierr)
+                                    call value(out_args(j + 1), pbsm%pm_gru%Distrib(j), ierr)
                                     if (ierr /= 0) goto 931
-                                    hp%DistribROW(:, j) = hp%DistribROW(1, j)
                                 end do
                             end if
 
@@ -976,6 +972,15 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                 pm_gru%snp%zpls = DEPPARVAL(2, :)
                 pm_gru%sfp%zplg = DEPPARVAL(3, :)
 
+                !> PBSM (blowing snow).
+                if (pbsm%PROCESS_ACTIVE) then
+                    pbsm%pm_gru%fetch = DEPPARVAL(10, :)
+                    pbsm%pm_gru%Ht = DEPPARVAL(11, :)
+                    pbsm%pm_gru%N_S = DEPPARVAL(12, :)
+                    pbsm%pm_gru%A_S = DEPPARVAL(13, :)
+                    pbsm%pm_gru%Distrib = DEPPARVAL(14, :)
+                end if
+
                 !> Distribute the parameters.
 !todo: change this to il2, il2
                 do i = 1, NA
@@ -998,13 +1003,8 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                         !> Count for active flags (read from run options).
                         j = 9
 
-                        !> PBSMFLAG == 1 (blowing snow model).
-                        if (PBSMFLAG == 1) then
-                            hp%fetchROW(i, m) = DEPPARVAL(10, m)
-                            hp%HtROW(i, m) = DEPPARVAL(11, m)
-                            hp%N_SROW(i, m) = DEPPARVAL(12, m)
-                            hp%A_SROW(i, m) = DEPPARVAL(13, m)
-                            hp%DistribROW(i, m) = DEPPARVAL(14, m)
+                        !> PBSM (blowing snow).
+                        if (pbsm%PROCESS_ACTIVE) then
                             j = j + 5
                         end if
 

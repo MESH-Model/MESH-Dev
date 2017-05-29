@@ -2,13 +2,9 @@
      1                  SUBFLW,TSUBFL,RUNOFF,TRUNOF,FI,ZPLIM,
      2                  XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARW,
      3                  DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                  ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
-*ADDED FOR WATDRN3
-     6                  NA,NTYPE,ILMOS,JLMOS,
-     7                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+     4                  ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
                       
 
-C     * JUN 03/11 - D.PRINCZ. FOR RIC'S WATDRN3. ADDED USE FLAGS.
 C     * MAR 03/10 - M.A.MEKONNEN/B.DAVISON/M.MACDONALD
 C     *             RE-WRITTEN FOR TWO REASONS:
 C     *             -TO USE VINCENT'S VERSION OF WATDRN; 
@@ -72,8 +68,6 @@ C     MANNING_N   - MANNING'S ROUGHNESS COEFFICIENT
 C     DD          - DRAINAGE DENSITY
 C     ASAT_T0     - BULK SATURATION AT INITIAL TIME
 C     ASAT_T1     - BULK SATURATION AT FINAL TIME
-
-      USE FLAGS
 C                              
       IMPLICIT NONE
 C
@@ -119,14 +113,6 @@ C     * INTERNAL SCALARS AND VECTORS
       
       INTEGER IWF,IG,ILG,IL1,IL2,I,J
       real exav
-
-C     * WATDRN3
-      INTEGER :: NA,NTYPE
-C
-      INTEGER, DIMENSION(ILG) :: ILMOS,JLMOS
-C
-      REAL, DIMENSION(NTYPE,IG) :: BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,
-     1  BFMIN,BQMAX
       
 C-----------------------------------------------------------------------------------------
 C     coefficients
@@ -258,27 +244,14 @@ C        -----------------------------------------------------------------------
 C        compute interflow from the layer (subflowj). Baseflow from the layer (basflwj) is
 C        also computed but is not used at present.
 C        ---------------------------------------------------------------------------------
-         IF (WD3 == 1) THEN
-             CALL WATDRN3 (ASAT_T0,ASAT_T1,KSAT,GRKEFF,DELT,
-     1            SUBFLWJ,BASFLWJ,
-     2            IG,NA,NTYPE,ILG,IL1,IL2,ILMOS,JLMOS,
-     3            BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
-         ELSE
-             call watdrn (delzwj,bij,thpor_avail,ksat,grkeff,asat_t0,
-     1            asat_t1,subflwj,basflwj,satfc,
-     2            ilg,il1,il2,delt)
-         ENDIF
+         call watdrn (delzwj,bij,thpor_avail,ksat,grkeff,asat_t0,
+     1                asat_t1,subflwj,basflwj,satfc,
+     2                ilg,il1,il2,delt)
 
 C        ---------------------------------------------------------------------------------
 C        loop through each element  
 
-	   do i = il1,il2
-
-C           ------------------------------------------------------------------------------
-C           For WATDRN3, reset BULK_FC
-            IF (WD3BKFC == 0) THEN
-            	BULK_FC(I,J)=0.
-            ENDIF
+         do i = il1,il2
 
 C           -----------------------------------------------------------------------------
 C           allow lateral flow if liquid water content is greater than 
@@ -291,7 +264,7 @@ C              -----------------------------------------------------------------
 C              compute davail: volume of available water in a soil layer per land 
 C                              area [m^3/m^2]
 C              ---------------------------------------------------------------------------
-	         davail = thliq_avail(i)*delzw(i,j)
+               davail = thliq_avail(i)*delzw(i,j)
 
 C              ---------------------------------------------------------------------------
 C              limit the lateral flow not to exceed the available water in the layer

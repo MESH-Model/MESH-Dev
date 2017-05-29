@@ -18,6 +18,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
     use EF_Module
 
     use rte_module
+    use PBSM_module
 
     implicit none
 
@@ -144,6 +145,18 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     if (rteflg%PROCESS_ACTIVE) rtepm%aa4(n) = header%r2cp%ep%attList(l)%val(i)
 !                case ('theta')
 !                case ('kcond')
+
+                !> PBSM (blowing snow).
+                case ('fetch')
+                    if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%fetch(n) = header%r2cp%ep%attList(l)%val(i)
+                case ('ht')
+                    if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Ht(n) = header%r2cp%ep%attList(l)%val(i)
+                case ('n_s')
+                    if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%N_S(n) = header%r2cp%ep%attList(l)%val(i)
+                case ('a_s')
+                    if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%A_S(n) = header%r2cp%ep%attList(l)%val(i)
+                case ('distrib')
+                    if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Distrib(n) = header%r2cp%ep%attList(l)%val(i)
 
                 !> Unrecognized name.
                 case default

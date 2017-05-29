@@ -19,6 +19,7 @@
         use rte_module
         use SA_RTE_module, only: SA_RTE_flgs
         use SIMSTATS_config, only: mtsflg
+        use PBSM_module
 
         implicit none
 
@@ -216,27 +217,6 @@
         !* If FROZENSOILINFILFLAG is 1, snow melt is partitioned to frozen soil infiltration
         !* and direct runoff based on the parameteric equation developed by Gray et al, 2001.
         FROZENSOILINFILFLAG = 0
-
-        !* If WD3 is 0, existing WATDRN is used.
-        !* If WD3 is 1, WATDRN by Ric (May, 2011) is used.
-        WD3 = 0
-
-        !* If WD3NEWFILE is 0, an existing "soil_out.txt" for MAPLE is used.
-        !* If WD3NEWFILE is 1, "soil_out.txt" for MAPLE is created or overwritten.
-        WD3NEWFILE = 1
-
-        !* If WD3FLOW is 0, SUBFLW=SUBFLW,BASFLW=BASFLW.
-        !* If WD3FLOW is 1, SUBFLW=SUBFLW+BASFLW,BASFLW=0.
-        !* If WD3FLOW is 2, SUBFLW=SUBFLW,BASFLW=0.
-        WD3FLOW = 0
-
-        !* If WD3BKFC is 0, BULK_FC (WATROF)=0.
-        !* If WD3BKFC is 1, BULK_FC remains unchanged in WATROF.
-        WD3BKFC = 1
-
-        !* set PBSMFLAG = 0 so by default blowing snow calculations are not made
-        !* 1 =  blowing snow transport, sublimation & inter-GRU redistribution calculations are made
-        PBSMFLAG = 0
 
         !* If LOCATIONFLAG is 0, gauge coordinates are read using 2I5 (Minutes) {Default}
         !* If LOCATIONFLAG is 1, gauge coordinates for BOTH MESH_input_streamflow.txt AND
@@ -590,18 +570,13 @@
 !+                    case ('PRINTLKGR2CFILEFLAG')
 !+                        call value(out_args(2), SA_RTE_flgs%PRINTLKGR2CFILEFLAG, ierr)
 !+                        SA_RTE_flgs%PROCESS_ACTIVE = .true.
-                    case ('WD3')
-                        call value(out_args(2), WD3, ierr)
-                    case ('WD3NEWFILE')
-                        call value(out_args(2), WD3NEWFILE, ierr)
-                    case ('WD3FLOW')
-                        call value(out_args(2), WD3FLOW, ierr)
-                    case ('WD3BKFC')
-                        call value(out_args(2), WD3BKFC, ierr)
                     case ('ICTEMMOD')
                         call value(out_args(2), ICTEMMOD, ierr)
+
+                    !> PBSM (blowing snow).
                     case ('PBSMFLAG')
-                        call value(out_args(2), PBSMFLAG, ierr)
+                        call PBSM_parse_flag(in_line)
+
                     case ('LOCATIONFLAG')
                         call value(out_args(2), LOCATIONFLAG, ierr)
                     case ('OUTFIELDSFLAG')
