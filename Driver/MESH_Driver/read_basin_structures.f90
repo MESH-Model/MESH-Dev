@@ -61,9 +61,9 @@ subroutine read_basin_structures(shd)
     if (ipid == 0 .and. ro%VERBOSEMODE > 0) then
         print "(3x, 'Number of streamflow gauges: ', i3)", NS
         if (ro%DIAGNOSEMODE > 0) then
-            print 1020, 'GAUGE', 'IY', 'JX'
+            print 1020, 'GAUGE', 'IY', 'JX', 'RANK'
             do l = 1, NS
-                print 1020, l, fms%stmg%iy(l), fms%stmg%jx(l)
+                print 1020, l, fms%stmg%iy(l), fms%stmg%jx(l), fms%stmg%rnk(l)
             end do
         end if
     end if

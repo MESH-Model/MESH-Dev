@@ -34,12 +34,6 @@ module sa_mesh_run_between_grid
         type(reservoir_release) :: rrls
 
         !> Local variables.
-        !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
-        !* WF_START_DAY OBSERVED STREAMFLOW START DAY
-        !* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
-!-        integer WF_START_YEAR, WF_START_DAY, WF_START_HOUR
-!-        integer JDAY_IND_STRM, JDAY_IND1, JDAY_IND2
-!-        real I_G, J_G
         integer NA
 
         !> Return if not the head node or if grid processes are not active.
@@ -136,34 +130,10 @@ module sa_mesh_run_between_grid
         !> calculate and write the basin avg SWE using the similar fudge factor!!!
         if (BASINSWEOUTFLAG > 0) then
 
-            !> BASIN_FRACTION is the basin snow cover
-            !> (portions of the grids outside the basin are not included)
-            !> for a given day - JDAY_NOW in the if statement
-!            if (BASIN_FRACTION(1) == -1) then
-!todo: FRAC is not actually the fraction of the grid square
-!within the basin, we should be using some other value, but I'm
-!not sure what.
-!todo: calculate frac and write document to send to someone else.
-!                do i = 1, NA ! NA = number of grid squares
-!                    BASIN_FRACTION(i) = shd%FRAC(i)
-!                end do
-!            end if
-
             if (ic%now%hour == 12 .and. ic%now%mins == 0) then
                 basin_SCA = 0.0
                 basin_SWE = 0.0
-!                do i = 1, NA
-!                    if (BASIN_FRACTION(i) /= 0.0) then
-!                        basin_SCA = basin_SCA + FSNOGRD(i)/BASIN_FRACTION(i)
-!                        basin_SWE = basin_SWE + SNOGRD(i)/BASIN_FRACTION(i)
-!                    end if
-!                end do
-!                basin_SCA = basin_SCA/NA
-!                basin_SWE = basin_SWE/NA
                 TOTAL_AREA = wb%basin_area
-
-                !> BRUCE DAVISON - AUG 17, 2009 (see notes in my notebook for this day)
-                !> Fixed calculation of basin averages. Needs documenting and testing.
                 do k = 1, shd%lc%NML
                     ki = shd%lc%ILMOS(k)
                     FRAC = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%FRAC(shd%lc%ILMOS(k))

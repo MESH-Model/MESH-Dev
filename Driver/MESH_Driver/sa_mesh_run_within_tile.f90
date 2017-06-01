@@ -123,7 +123,6 @@ module sa_mesh_run_within_tile
         use FLAGS
 
         !> For BASEFLOWFLAG.
-!todo: Isolate this.
         use baseflow_module
 
         !> Input variables.
@@ -164,10 +163,8 @@ module sa_mesh_run_within_tile
             irqst = mpi_request_null
 
             i = 1
-!-            call mpi_isend(cfi%PRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(stas%sfc%evap(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(stas%cnpy%pevp(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-!-            call mpi_isend(cdv%ROF(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(stas%sfc%rofo(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(stas%sl%rofs(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(stas%lzs%rofb(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
@@ -217,8 +214,6 @@ module sa_mesh_run_within_tile
                 call mpi_testall(invars, irqst, lstat, imstat, ierr)
             end do
 
-!            print *, ipid, ' done sending'
-
         else if (inp > 1) then
 
             !> Receive data from worker nodes.
@@ -237,10 +232,8 @@ module sa_mesh_run_within_tile
                 call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iilen)
 
                 i = 1
-!-                call mpi_irecv(cfi%PRE(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(stas%sfc%evap(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(stas%cnpy%pevp(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-!-                call mpi_irecv(cdv%ROF(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(stas%sfc%rofo(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(stas%sl%rofs(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(stas%lzs%rofb(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
@@ -295,7 +288,6 @@ module sa_mesh_run_within_tile
                 end do
 
             end do !u = 1, (inp - 1)
-!            print *, 'done receiving'
 
         end if !(inp > 1 .and. ipid /= 0) then
 

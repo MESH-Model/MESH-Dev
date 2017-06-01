@@ -202,6 +202,9 @@ module SIMSTATS
         logical exists
         integer iun, ierr
 
+!todo: fix hack for when routing is disabled.
+        if (.not. allocated(stfl%qhyd)) mtsflg%AUTOCALIBRATIONFLAG = 0
+
         if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
 !todo: replace unit number with variable.

@@ -14,7 +14,7 @@ module sa_mesh_run_within_grid
         use model_output_variabletypes
         use MODEL_OUTPUT
 
-!+todo: There's a dependency on CLASSBD.f (block data, though described below as module)
+!+todo: There's a dependency on CLASSBD.f.
         use RUNCLASS36_constants, only: RHOW, RHOICE
 
         type(ShedGridParams) :: shd
@@ -77,7 +77,7 @@ module sa_mesh_run_within_grid
         use model_output_variabletypes
         use MODEL_OUTPUT
 
-!+todo: There's a dependency on CLASSBD.f (block data, though described below as module)
+!+todo: There's a dependency on CLASSBD.f.
         use RUNCLASS36_constants, only: RHOW, RHOICE
 
         type(ShedGridParams) :: shd

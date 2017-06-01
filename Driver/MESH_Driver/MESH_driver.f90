@@ -123,17 +123,7 @@ program RUNMESH
     integer NA, NTYPE, NML, NSL, iun, ik, jk, ignd
     real FRAC
 
-    !> INTEGER CONSTANTS.
-!todo: Fix this (e.g., replace M_C with NRVR; move to process_WF_ROUTE).
-!-    integer, parameter :: M_C = 5
-
-!todo clean up commets and arrange variables a bit better
-
-    !> FOR ROUTING
-!todo: Fix this (e.g., replace M_C with NRVR; move to process_WF_ROUTE).
-    !* WF_R1: MANNING'S N FOR RIVER CHANNEL
-    !* WF_R2: OPTIMIZED RIVER ROUGHNESS FACTOR
-!-    real WF_R1(M_C), WF_R2(M_C)
+!todo: clean up comments and arrange variables a bit better
 
 !> START ENSIM == FOR ENSIM == FOR ENSIM == FOR ENSIM ==
     character(10) wf_landclassname(10)
@@ -156,21 +146,16 @@ program RUNMESH
 
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
-    !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = '1037'
+    character(24) :: VERSION = '1079'
     character(8) RELEASE
-!-    logical VER_OK
 
-    !* INDEPPAR: NUMBER OF GRU-INDEPENDENT VARIABLES
-    !* DEPPAR: NUMBER OF GRU-DEPENDENT VARIABLES
     integer i, j, k, l, m, u
-!-    integer INDEPPAR, DEPPAR
 
     integer FRAME_NO_NEW
 
     !> MAM - logical variables to control simulation runs:
     character(100) cstate
-    logical :: ENDDATE = .false., ENDDATA = .false.
+    logical ENDDATE, ENDDATA
     integer :: RUNSTATE = 0
 
     !>  For cacluating the subbasin grids
@@ -459,13 +444,11 @@ program RUNMESH
             write(58, *) 'BASINWINDFLAG        = ', cm%dat(ck%UV)%ffmt
             write(58, *) 'BASINPRESFLAG        = ', cm%dat(ck%P0)%ffmt
             write(58, *) 'BASINHUMIDITYFLAG    = ', cm%dat(ck%HU)%ffmt
-!-            write(58, *) 'HOURLYFLAG           = ', HOURLYFLAG
             write(58, *) 'RESUMEFLAG           = ', RESUMEFLAG
             write(58, *) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG
             write(58, *) 'SHDFILEFLAG          = ', SHDFILEFLAG
             write(58, *) 'SOILINIFLAG          = ', SOILINIFLAG
             write(58, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
-!-            write(58, *) 'INTERPOLATIONFLAG    = ', INTERPOLATIONFLAG
             write(58, *) 'SUBBASINFLAG         = ', SUBBASINFLAG
             write(58, *) 'R2COUTPUTFLAG        = ', R2COUTPUTFLAG
             write(58, *) 'OBJFNFLAG            = ', OBJFNFLAG
@@ -483,13 +466,6 @@ program RUNMESH
 !            write(58, *)
 !            write(58, "('MESH_parameters_hydrology.ini')")
 !            write(58, *)
-!todo: fix this.
-!-            write(58, "('Option flags:')")
-!-            if (OPTFLAGS > 0) then
-!-                do i = 1, OPTFLAGS
-!-                    write(58, '(a11, i2, a19)') 'PARAMETER ', i, ' NOT CURRENTLY USED'
-!-                end do
-!-            end if
 !            write(58, "('River roughnesses:')")
 !todo: change this to use NRVR.
 !            write(58, '(5f6.3)') (WF_R2(i), i = 1, 5)
@@ -1033,9 +1009,9 @@ program RUNMESH
     !> Start of main loop that is run each half hour
     !> *********************************************************************
 
-    !> MAM - Initialize ENDDATE and ENDDATA
-!-    ENDDATE = .false.
-!-    ENDDATA = .false.
+    !> MAM - Initialize ENDDATE and ENDDATA.
+    ENDDATE = .false.
+    ENDDATA = .false.
 
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
@@ -1192,36 +1168,7 @@ program RUNMESH
                 md_grd%pre = cm%dat(ck%RT)%GRD
             end if
 
-!-            do k = il1, il2
-!-                ik = shd%lc%ILMOS(k)
-!-                FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-!-                if (FRAC > 0.0) then
-!-                    wb_grd%PRE(ik) = wb_grd%PRE(ik) + cfi%PRE(k)*FRAC*ic%dts
-!-                    eb_grd%QEVP(ik) = eb_grd%QEVP(ik) + cdv%QEVP(k)*FRAC
-!-                    wb_grd%EVAP(ik) = wb_grd%EVAP(ik) + cdv%QFS(k)*FRAC*ic%dts
-!-                    eb_grd%HFS(ik)  = eb_grd%HFS(ik) + cdv%HFS(k)*FRAC
-!-                    wb_grd%ROF(ik) = wb_grd%ROF(ik) + cdv%ROF(k)*FRAC*ic%dts
-!-                    wb_grd%ROFO(ik) = wb_grd%ROFO(ik) + cdv%ROFO(k)*FRAC*ic%dts
-!-                    wb_grd%ROFS(ik) = wb_grd%ROFS(ik) + cdv%ROFS(k)*FRAC*ic%dts
-!-                    wb_grd%ROFB(ik) = wb_grd%ROFB(ik) + cdv%ROFB(k)*FRAC*ic%dts
-!-                    do j = 1, NSL
-!-                        spv_grd%TBAR(ik, j) = spv_grd%TBAR(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
-!-                        spv_grd%THLQ(ik, j) = spv_grd%THLQ(ik, j) + cpv%THLQ(k, j)*FRAC
-!-                        wb_grd%LQWS(ik, j) = wb_grd%LQWS(ik, j) + cpv%THLQ(k, j)*csfv%DELZW(k, j)*FRAC*RHOW
-!-                        spv_grd%THIC(ik, j) = spv_grd%THIC(ik, j) + cpv%THIC(k, j)*FRAC
-!-                        wb_grd%FRWS(ik, j) = wb_grd%FRWS(ik, j) + cpv%THIC(k, j)*csfv%DELZW(k, j)*FRAC*RHOICE
-!-                        eb_grd%GFLX(ik, j) = eb_grd%GFLX(ik, j) + cdv%GFLX(k, j)*FRAC
-!-                    end do
-!-                    wb_grd%RCAN(ik) = wb_grd%RCAN(ik) + cpv%RCAN(k)*FRAC
-!-                    wb_grd%SNCAN(ik) = wb_grd%SNCAN(ik) + cpv%SNCAN(k)*FRAC
-!-                    wb_grd%SNO(ik) = wb_grd%SNO(ik) + cpv%SNO(k)*FRAC
-!-                    if (cpv%SNO(k) > 0.0) then
-!-                        wb_grd%WSNO(ik) = wb_grd%WSNO(ik) + cpv%WSNO(k)*FRAC
-!-                    end if
-!-                    wb_grd%PNDW(ik) = wb_grd%PNDW(ik) + cpv%ZPND(k)*FRAC*RHOW
-!-                end if
-!-            end do !k = il1, il2
-
+!todo: How does this fit with what's in 'within_grid'?
             wb_grd%DSTG = wb_grd%RCAN + wb_grd%SNCAN + wb_grd%SNO + wb_grd%WSNO + wb_grd%PNDW + &
                 sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2) - wb_grd%STG
             wb_grd%STG = wb_grd%DSTG + wb_grd%STG
@@ -1312,8 +1259,6 @@ program RUNMESH
                             write(6, '(f10.3)', advance = 'no') stfl%qsyn(j)
                         end do
                     end if
-!todo: restore this or replace with basin total.
-!                    j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
                     j = shd%NAA
                     if (printoutwb) write(6, '(3(f10.3))', advance = 'no') wb_acc%pre(j), wb_acc%evap(j), wb_acc%rof(j)
                     write(6, *)
@@ -1329,36 +1274,6 @@ program RUNMESH
         end if !(ipid == 0) then
 
 5176    format(2i5, 999(f10.3))
-
-        !> Update time counters and return to beginning of main loop
-!-        ic%now%mins = ic%now%mins + ic%dtmins ! increment the current time by 30 minutes
-!-        if (ic%now%mins == 60) then
-!-            ic%now%mins = 0
-!-            ic%now%hour = ic%now%hour + 1
-!-            if (ic%now%hour == 24) then
-!-                ic%now%hour = 0
-!-                ic%now%jday = ic%now%jday + 1
-!-                if (ic%now%jday >= 366) then
-!-                    if (mod(ic%now%year, 400) == 0) then !LEAP YEAR
-!-                        if (ic%now%jday == 367) then
-!-                            ic%now%jday = 1
-!-                            ic%now%year = ic%now%year + 1
-!-                        end if
-!-                    else if (mod(ic%now%year, 100) == 0) then !NOT A LEAP YEAR
-!-                        ic%now%jday = 1
-!-                        ic%now%year = ic%now%year + 1
-!-                    else if (mod(ic%now%year, 4) == 0) then !LEAP YEAR
-!-                        if (ic%now%jday == 367) then
-!-                            ic%now%jday = 1
-!-                            ic%now%year = ic%now%year + 1
-!-                        end if
-!-                    else !NOT A LEAP YEAR
-!-                        ic%now%jday = 1
-!-                        ic%now%year = ic%now%year + 1
-!-                    end if
-!-                end if
-!-            end if
-!-        end if
 
         !> Update the current time-step and counter.
         call counter_update()
