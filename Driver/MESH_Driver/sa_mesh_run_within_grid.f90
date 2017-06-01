@@ -30,6 +30,9 @@ module sa_mesh_run_within_grid
         integer k, ki, kj, i1, i2
         real FRAC
 
+        !> Return if tile and grid processes are not active.
+        if (.not. ro%RUNTILE) return
+
         i1 = shd%lc%ILMOS(il1)
         i2 = shd%lc%ILMOS(il2)
 
@@ -89,6 +92,9 @@ module sa_mesh_run_within_grid
 
         integer k, ki, kj, i1, i2
         real FRAC
+
+        !> Return if tile and grid processes are not active.
+        if (.not. ro%RUNTILE) return
 
         i1 = shd%lc%ILMOS(il1)
         i2 = shd%lc%ILMOS(il2)
@@ -155,6 +161,9 @@ module sa_mesh_run_within_grid
         type(soil_statevars) :: sv
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
+
+        !> Return if tile and grid processes are not active.
+        if (.not. ro%RUNTILE .and. .not. ro%RUNGRID) return
 
     end subroutine
 

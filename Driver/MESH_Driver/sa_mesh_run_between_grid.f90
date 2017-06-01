@@ -42,8 +42,8 @@ module sa_mesh_run_between_grid
 !-        real I_G, J_G
         integer NA
 
-        !> Return if not the head node.
-        if (ipid /= 0) return
+        !> Return if not the head node or if grid processes are not active.
+        if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
         !> Initialiation of states.
         NA = shd%NA
@@ -127,8 +127,8 @@ module sa_mesh_run_between_grid
         !> SCA variables
         real TOTAL_AREA, FRAC, basin_SCA, basin_SWE
 
-        !> Return if not the head node.
-        if (ipid /= 0) return
+        !> Return if not the head node or if grid processes are not active.
+        if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
         !> calculate and write the basin avg SCA similar to watclass3.0f5
         !> Same code than in wf_ensim.f subrutine of watclass3.0f8
@@ -218,8 +218,8 @@ module sa_mesh_run_between_grid
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
-        !> Return if not the head node.
-        if (ipid /= 0) return
+        !> Return if not the head node or if grid processes are not active.
+        if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
         !> Watflood, 1988.
         call WF_ROUTE_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)

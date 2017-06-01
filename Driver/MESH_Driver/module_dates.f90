@@ -483,4 +483,32 @@ module model_dates
 
     end subroutine !GetIndicesDATES
 
+    !> Description: Determines day of year by month, day of month, and
+    !>  year.
+    integer function get_jday(month, day, year)
+
+        !> Input variables.
+        integer, intent(in) :: month, day, year
+
+        !> Local variables.
+        integer days(11)
+
+        !> Assign an array checking if 'year' is a leap year.
+        if (leap_year(year) == 366) then
+            days = [31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
+        else
+            days = [31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
+        end if
+
+        !> Solve and return the day of year
+        if (month == 1) then
+            get_jday = day
+        else
+            get_jday = days(month - 1) + day
+        end if
+
+        return
+
+    end function
+
 end module !model_dates

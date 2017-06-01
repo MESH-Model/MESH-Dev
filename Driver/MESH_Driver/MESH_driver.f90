@@ -342,7 +342,8 @@ program RUNMESH
 
     !> MAM - Check for parameter values - all parameters should lie within the
     !> specified ranges in the "minmax_parameters.txt" file.
-    call check_parameters(shd)
+!todo: fix or remove this.
+!    call check_parameters(shd)
 
     !> ALLOCATE ALL VARIABLES
 
@@ -417,10 +418,12 @@ program RUNMESH
 !>  End of subbasin section
 !> **********************************************************************
 
-    ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
-    if (ENDDATA) then
-        RUNSTATE = 1
-        goto 997
+    if (ro%RUNCLIM) then
+        ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
+        if (ENDDATA) then
+            RUNSTATE = 1
+            goto 997
+        end if
     end if
 
     !> Initialize output fields.
@@ -1054,10 +1057,12 @@ program RUNMESH
         if (RUNSTATE /= 0) exit
 
         !> Load or update climate forcing input.
-        ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
-        if (ENDDATA) then
-            RUNSTATE = 1
-            cycle
+        if (ro%RUNCLIM) then
+            ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
+            if (ENDDATA) then
+                RUNSTATE = 1
+                cycle
+            end if
         end if
 
         !> Reset variables that accumulate on the daily time-step.
@@ -1111,10 +1116,11 @@ program RUNMESH
         end if
 
         cstate = run_within_tile(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
-        if (len_trim(cstate) > 0) then
-            RUNSTATE = 1
-            cycle
-        end if
+        cstate = ''
+!        if (len_trim(cstate) > 0) then
+!            RUNSTATE = 1
+!            cycle
+!        end if
 
         call run_within_grid(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
@@ -1174,15 +1180,17 @@ program RUNMESH
             !> CALCULATE GRID CELL AVERAGE DIAGNOSTIC FIELDS.
 
             !> Grid data for output.
-            md_grd%fsdown = cm%dat(ck%FB)%GRD
-            md_grd%fsvh = cm%dat(ck%FB)%GRD/2.0
-            md_grd%fsih = cm%dat(ck%FB)%GRD/2.0
-            md_grd%fdl = cm%dat(ck%FI)%GRD
-            md_grd%ul = cm%dat(ck%UV)%GRD
-            md_grd%ta = cm%dat(ck%TT)%GRD
-            md_grd%qa = cm%dat(ck%HU)%GRD
-            md_grd%pres = cm%dat(ck%P0)%GRD
-            md_grd%pre = cm%dat(ck%RT)%GRD
+            if (ro%RUNCLIM) then
+                md_grd%fsdown = cm%dat(ck%FB)%GRD
+                md_grd%fsvh = cm%dat(ck%FB)%GRD/2.0
+                md_grd%fsih = cm%dat(ck%FB)%GRD/2.0
+                md_grd%fdl = cm%dat(ck%FI)%GRD
+                md_grd%ul = cm%dat(ck%UV)%GRD
+                md_grd%ta = cm%dat(ck%TT)%GRD
+                md_grd%qa = cm%dat(ck%HU)%GRD
+                md_grd%pres = cm%dat(ck%P0)%GRD
+                md_grd%pre = cm%dat(ck%RT)%GRD
+            end if
 
 !-            do k = il1, il2
 !-                ik = shd%lc%ILMOS(k)
@@ -1253,8 +1261,7 @@ program RUNMESH
             wb_acc%PNDW = wb_acc%PNDW + wb_grd%PNDW
 
             !> CALCULATE AND PRINT DAILY AVERAGES.
-            if (ic%ts_daily == 48) then !48 is the last half-hour period of the day
-                                        !when they're numbered 1-48
+            if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
 
                 eb_acc%QEVP = eb_acc%QEVP/real(ic%ts_daily)
                 eb_acc%HFS = eb_acc%HFS/real(ic%ts_daily)
@@ -1286,7 +1293,7 @@ program RUNMESH
                                          ic%now%jday, ic%now%year)
                 end if
 
-            end if !(ic%ts_daily == 48) then
+            end if
 
         end if !(ipid == 0) then
 
@@ -1295,8 +1302,7 @@ program RUNMESH
         if (ipid == 0) then
 
             !> Write output to the console.
-            if (ic%ts_daily == 48) then !48 is the last half-hour period of the day
-                                        !when they're numbered 1-48
+            if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
 
                 if (ro%VERBOSEMODE > 0) then
                     write(6, '(2i5)', advance = 'no') ic%now%year, ic%now%jday
@@ -1319,7 +1325,7 @@ program RUNMESH
                     end if
                 end if
 
-            end if !(ic%ts_daily == 48) then
+            end if
         end if !(ipid == 0) then
 
 5176    format(2i5, 999(f10.3))

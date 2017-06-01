@@ -45,4 +45,6 @@
       INTEGER MODELINFOOUTFLAG
       INTEGER :: BASINSWEOUTFLAG = 0
 
+    character(len = 4) :: STREAMFLOWFILEFLAG = ''
+
       END

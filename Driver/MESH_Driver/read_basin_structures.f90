@@ -11,7 +11,9 @@
 !>
 subroutine read_basin_structures(shd)
 
+    use mpi_module
     use sa_mesh_shared_variables
+    use FLAGS
 
     implicit none
 
@@ -22,8 +24,16 @@ subroutine read_basin_structures(shd)
     integer NS, l, n
 
     !> Read streamflow gauge location from file.
-!todo: switch
-    call read_streamflow_txt(shd, 22, 'MESH_input_streamflow.txt')
+    select case (STREAMFLOWFILEFLAG)
+        case ('tb0')
+            call read_streamflow_tb0(shd, 22, 'MESH_input_streamflow.tb0')
+        case default
+            call read_streamflow_txt(shd, 22, 'MESH_input_streamflow.txt')
+    end select
+
+    !> Find the x-y cell coordinate of the gauge location.
+    fms%stmg%iy = int((fms%stmg%y - shd%yOrigin)/shd%yDelta) + 1
+    fms%stmg%jx = int((fms%stmg%x - shd%xOrigin)/shd%xDelta) + 1
 
     !> Find the RANK of the gauge location.
     NS = fms%stmg%n
@@ -36,17 +46,19 @@ subroutine read_basin_structures(shd)
 
     !> Print an error if any gauge location has no RANK.
     if (minval(fms%stmg%rnk) == 0) then
-        print 1010, 'Streamflow gauge(s) are outside the basin'
-        print 1020, repeat('-', 16), repeat('-', 16), repeat ('-', 16), repeat('-', 16), repeat ('-', 16)
-        print 1020, 'GAUGE', 'Y', 'IY', 'X', 'JX'
-        print 1020, repeat('-', 16), repeat('-', 16), repeat ('-', 16), repeat('-', 16), repeat ('-', 16)
-        do l = 1, NS
-            if (fms%stmg%rnk(l) == 0) print 1020, l, fms%stmg%y(l), fms%stmg%iy(l), fms%stmg%x(l), fms%stmg%jx(l)
-        end do
+        if (ipid == 0) then
+            print 1010, 'Streamflow gauge(s) are outside the basin'
+            print 1020, repeat('-', 16), repeat('-', 16), repeat ('-', 16), repeat('-', 16), repeat ('-', 16)
+            print 1020, 'GAUGE', 'Y', 'IY', 'X', 'JX'
+            print 1020, repeat('-', 16), repeat('-', 16), repeat ('-', 16), repeat('-', 16), repeat ('-', 16)
+            do l = 1, NS
+                if (fms%stmg%rnk(l) == 0) print 1020, l, fms%stmg%y(l), fms%stmg%iy(l), fms%stmg%x(l), fms%stmg%jx(l)
+            end do
+        end if
         stop
     end if
 
-    if (ro%VERBOSEMODE > 0) then
+    if (ipid == 0 .and. ro%VERBOSEMODE > 0) then
         print "(3x, 'Number of streamflow gauges: ', i3)", NS
         if (ro%DIAGNOSEMODE > 0) then
             print 1020, 'GAUGE', 'IY', 'JX'

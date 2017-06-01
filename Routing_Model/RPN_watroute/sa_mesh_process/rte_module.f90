@@ -39,6 +39,73 @@ module rte_module
     !> Instance of option flags.
     type(rte_options), save :: rteops
 
+!temp: Override for reservoirs.
+    real*4, dimension(41), save :: &
+        txres = [-94.4023, -99.5073, -98.6413, -98.2293, -97.96, -103.2813, -106.6653, -103.1543, -102.0133, &
+                -102.1563, -101.3253, -102.5953, -104.9733, -101.3223, -93.1563, -93.1643, -93.19, -92.3253, &
+                -92.8773, -90.6553, -94.1583, -95.2743, -100.64, -99.6533, -99.6583, -100.4933, -100.0553, &
+                -99.3413, -95.4263, -100.0533, -98.3693, -97.2443, -97.1143, -95.9953, -94.5693, -98.3861, &
+                -114.2987, -113.726, -116.2663, -115.5586, -114.7135], &
+        tyres = [50.0672, 52.1942, 51.5042, 52.0382, 54.34, 53.8252, 51.3092, 55.0952, 54.7202, &
+                54.2002, 54.7332, 55.2842, 51.1212, 51.1182, 51.2982, 50.0472, 48.75, 48.5902, &
+                50.7642, 50.2402, 50.3742, 50.5942, 52.55, 51.8362, 51.5192, 54.3672, 54.0202, &
+                53.3002, 52.0282, 55.6262, 55.2782, 54.8982, 55.4552, 56.3552, 56.5402, 50.0207, &
+                52.179, 49.667, 52.3686, 53.0867, 51.286], &
+        tb1 = [6.60E-07, -7.11E-07, 2.34E-16, 9.38E-08, 2.52E-07, 1.00E-12, 1.00E-12, 1.00E-12, 5.00E-12, &
+              1.00E-12, 1.00E-12, 1.00E-12, 1.00E-12, 1.00E-13, 2.00E-12, 2.00E-11, 1.00E-13, 5.00E-14, &
+              5.00E-12, 5.00E-11, 1.00E-11, 1.00E-12, 5.00E-14, 1.00E-14, 5.84E-11, 1.00E-11, 1.00E-11, &
+              1.00E-12, 1.00E-13, 1.00E-12, 1.00E-12, 1.00E-12, 1.00E-12, 1.00E-12, 1.00E-12, 1.00E-12, &
+              1.00E-14, 1.00E-14, 1.00E-14, 1.00E-14, 1.00E-13], &
+        tb2 = [-7.17E-17, 9.85E-16, 1.87E+00, 2.41E-16, -4.52E-18, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, &
+              1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, &
+              1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.50E+00, 1.75E+00, 1.75E+00, &
+              1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, 1.75E+00, &
+              1.75, 1.75, 1.75, 1.75, 1.75], &
+        tb3 = [6.20E-26, -5.72E-26, 0.00E+00, -5.19E-26, 7.57E-29, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0., 0., 0., 0., 0.], &
+        tb4 = [0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0., 0., 0., 0., 0.], &
+        tb5 = [0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0., 0., 0., 0., 0.], &
+        tb6 = [3.77E+09, 3.02E+08, 4.32E+09, 3.66E+08, 2.55E+10, 2.00E+08, 3.38E+08, 5.80E+08, 3.95E+08, &
+              4.72E+08, 3.95E+08, 3.73E+08, 2.28E+08, 4.53E+07, 8.81E+08, 3.67E+08, 3.14E+08, 1.30E+08, &
+              1.59E+09, 2.29E+08, 2.01E+08, 4.80E+08, 2.27E+08, 4.78E+09, 3.84E+08, 4.84E+08, 1.30E+09, &
+              2.65E+09, 2.89E+08, 1.37E+08, 2.20E+08, 6.03E+08, 6.08E+08, 3.32E+08, 3.63E+08, 1.00E+08, &
+              4045317.0, 9845152.0, 28446400.0, 9706787.0, 1402187.0], &
+        tb7 = [0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, &
+              0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00, 0.00E+00], &
+        treach_lvl = [0.1487, 3.1492, 0.9953, 2.5466, 0.4902, 0.6911, 0.2040, 0.0597, 0.0523, &
+                      0.3640, 0.0372, 0.1196, 0.0329, 3.0731, 0.0172, 0.0173, 1.7519, 4.3001, &
+                      0.0318, 0.0091, 0.2257, 0.6183, 1.0078, 0.3733, 0.0766, 0.0098, 0.0071, &
+                      0.0763, 1.1034, 0.1580, 0.1959, 0.0379, 1.0591, 2.3362, 2.1364, 0.4671, &
+                      104.9194, 47.5771, 25.3200, 70.3827, 59.3044]
+
+!temp: Override for diversions.
+    character*12, dimension(4), save :: &
+        tdivname = ['06EC002', 'irrigat', '05LL019', '05QB005']
+    real*4, dimension(4), save :: &
+        txstrdiv = [-999.0000, -107.4900, -98.4045, -999.0000], &
+        tystrdiv = [-999.0000, 52.0640, 50.0134, -999.0000], &
+        txenddiv = [-98.9810, -999.9900, -98.3956, -91.3572], &
+        tyenddiv = [56.6906, -999.9900, 50.2219, 50.9251]
+    integer*4, dimension(4), save :: &
+        tval1div = [1.0, 0.5, 1.0, 1.0], &
+        tval2div = [3, 2, 1, 3], &
+        tval3div = [0, 11, 0, 0], &
+        tval4div = [0, 11, 0, 0]
+
     contains
 
     !>
@@ -70,6 +137,15 @@ module rte_module
         !> Local variables.
         integer n, l
         real ry, rx
+
+!temp: for overrides
+        real, dimension(:, :), allocatable :: datarr
+        integer j, i
+        character(len = 40) in_line
+        integer, dimension(4) :: jstrdiv, istrdiv, jenddiv, ienddiv
+        integer, dimension(:), allocatable :: &
+            totirrigpts, iminirr, imaxirr, jminirr, jmaxirr
+        integer irindex, irpt
 
         !> Return if not the head node or if the process is not active.
         if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
@@ -113,6 +189,7 @@ module rte_module
 !+        sl1 = shd%SLOPE_INT
         ichnl = shd%ICHNL
         ireach = shd%IREACH
+        Nreaches = maxval(shd%IREACH)
         grid_area = shd%AREA
         frac = shd%FRAC
         aclass = shd%lc%ACLASS
@@ -162,7 +239,9 @@ module rte_module
                  hcha1(na), hcha2(na), hwet1(na), hwet2(na), qin(na), &
                  qswevp(na), qswrain(na), qiwet1(na), qiwet2(na), &
                  qowet1(na), qowet2(na), wetarea(na), chaarea(na), &
-                 bin_precip(na), wsat(na), wetfrac(na), qo2rem(na))
+                 bin_precip(na), wsat(na), wetfrac(na), qo2rem(na), &
+!tied to irr
+                 qo2remirr(na))
         qi1 = 0.0; qi2 = 0.0; qo1 = 0.0; qo2 = 0.0; qo2sim = 0.0
         qr = 0.0; d2 = 0.0; qda = 0.0; cap = 0.0; over = 0.0
         qmax = 0.0; res = 0; sump = 0.0; store1 = 0.0
@@ -179,6 +258,7 @@ module rte_module
         qswevp = 0.0; qswrain = 0.0; qiwet1 = 0.0; qiwet2 = 0.0
         qowet1 = 0.0; qowet2 = 0.0; wetarea = 0.0; chaarea = 0.0
         bin_precip = 0.0; wsat = 0.0; wetfrac = 0.0; qo2rem = 0.0
+        qo2remirr = 0.0
 
         !> Allocate and assign other variables.
         allocate(store2_strt(naa), nhyd(ycount, xcount), iflowgrid(no), nopt(no))
@@ -269,6 +349,262 @@ module rte_module
         !> What class is the water class?
         ii_water = ntype
 
+!temp: override for initial states
+        allocate(datarr(shd%xCount, shd%yCount))
+
+        datarr = 0.0
+        open(600, file = 'QI1_012.grid')
+        do i = 1, shd%yCount
+            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+        end do
+        close(600)
+        do n = 1, naa
+            qi1(n) = datarr(shd%xxx(n), shd%yyy(n))
+        end do
+        qi2 = qi1
+        datarr = 0.0
+        open(600, file = 'QO1_012.grid')
+        do i = 1, shd%yCount
+            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+        end do
+        close(600)
+        do n = 1, naa
+            qo1(n) = datarr(shd%xxx(n), shd%yyy(n))
+        end do
+        qo2 = qo1
+        datarr = 0.0
+        open(600, file = 'STOR_012.grid')
+        do i = 1, shd%yCount
+            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+        end do
+        close(600)
+        do n = 1, naa
+            store1(n) = datarr(shd%xxx(n), shd%yyy(n))
+        end do
+        store2 = store1
+
+        datarr = 0.0
+        open(600, file = 'OVER_012.grid')
+        do i = 1, shd%yCount
+            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+        end do
+        close(600)
+        do n = 1, naa
+            over(n) = datarr(shd%xxx(n), shd%yyy(n))
+        end do
+        datarr = 0.0
+        open(600, file = 'LZS_012.grid')
+        do i = 1, shd%yCount
+            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+        end do
+        close(600)
+        do n = 1, naa
+            lzs(n) = datarr(shd%xxx(n), shd%yyy(n))
+        end do
+
+        datarr = 0.0
+        open(600, file = 'QO1_012_10.grid')
+        do i = 1, shd%yCount
+            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+        end do
+        close(600)
+        do n = 1, naa
+            qo2sim(n) = datarr(shd%xxx(n), shd%yyy(n))
+        end do
+        datarr = 0.0
+        open(600, file = 'QO1_012_20.grid')
+        do i = 1, shd%yCount
+            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+        end do
+        close(600)
+        do n = 1, naa
+            qo2rem(n) = datarr(shd%xxx(n), shd%yyy(n))
+        end do
+        datarr = 0.0
+        open(600, file = 'QO1_012_30.grid')
+        do i = 1, shd%yCount
+            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+        end do
+        close(600)
+        do n = 1, naa
+            qo2remirr(n) = datarr(shd%xxx(n), shd%yyy(n))
+        end do
+
+        deallocate(datarr)
+
+        resumflg = 'y'
+
+!temp: override to read from file
+        open(602, file = 'RFF.grid')
+        open(603, file = 'RCH.grid')
+
+!temp: override for reservoirs.
+        noresv = 41
+        if (noresv /= Nreaches) then
+            print *, 'no of reaches calculated from the reservoir release file:', noresv
+            print *, 'no of reaches calculated from infiles_rte.txt:', Nreaches
+            stop
+        end if
+        print *, 'Number of reservoir outlets: ', noresv
+
+        allocate( &
+            b1(noresv), b2(noresv), b3(noresv), &
+            b4(noresv), b5(noresv), ires(noresv), jres(noresv), &
+            b6(noresv), b7(noresv), &
+!            yres(noresv), xres(noresv), poliflg(noresv), &
+            resname(noresv), &
+            qrel(noresv, 999999), &
+            qdwpr(noresv, 999999), lake_elv(noresv, 999999), &
+            lake_inflow(noresv, 999999), &
+!tied to val2divyes == 1
+            resindex(noresv), &
+!tied to fhr
+            lake_stor(noresv, 999999), lake_outflow(noresv, 999999), &
+            del_stor(noresv, 999999))
+        resname = ''
+        b1 = tb1
+        b2 = tb2
+        b3 = tb3
+        b4 = tb4
+        b5 = tb5
+        b6 = tb6
+        b7 = tb7
+        jres = int((txres - xorigin)/xdelta) + 1
+        ires = int((tyres - yorigin)/ydelta) + 1
+        do n = 1, naa
+            do l = 1, noresv
+                if (xxx(n) == jres(l) .and. yyy(n) == ires(l)) resindex(l) = n
+           end do
+        end do
+!        do l = 1, noresv
+!            print *, 'RESV ', l, jres(l), ires(l), resindex(l)
+!        end do
+        allocate(reach_last(noresv))
+        reach_last = treach_lvl
+
+!temp: Override for diversions.
+        nodiv = 4
+        allocate( &
+            val1div(nodiv), val2div(nodiv), val3div(nodiv), val4div(nodiv), &
+            divstrindex(nodiv), divendindex(nodiv), divname(nodiv), qdiv(nodiv, 999999))
+        val1div = 0.0; val2div = 0; val3div = 0; val4div = 0
+        istrdiv = 0; jstrdiv = 0
+        ienddiv = 0; jenddiv = 0
+        divstrindex = 0; divendindex = 0; divname = ''; qdiv = 0.0
+        divname = tdivname
+        val1div = tval1div
+        val2div = tval2div
+        if (any(val2div > 0)) val2divyes = 1
+        val3div = tval3div
+        val4div = tval4div
+        jstrdiv = int((txstrdiv - xorigin)/xdelta) + 1
+        istrdiv = int((tystrdiv - yorigin)/ydelta) + 1
+        jenddiv = int((txenddiv - xorigin)/xdelta) + 1
+        ienddiv = int((tyenddiv - yorigin)/ydelta) + 1
+        divstrindex = -1 ! Points outside the watershed: reset the index value to -1.
+        divendindex = -1
+        do l = 1, nodiv
+            do n = 1, naa
+                if (xxx(n) == jstrdiv(l) .and. yyy(n) == istrdiv(l)) then
+                    divstrindex(l) = n
+                end if
+                if (xxx(n) == jenddiv(l) .and. yyy(n) == ienddiv(l)) then
+                    divendindex(l) = n
+                end if
+            end do
+            if ((val2div(l) == 1 .and. divstrindex(l) == -1) .or. (val2div(l) == 1 .and. divendindex(l) == -1)) then
+                print *, 'Error for station ', l, ': incompatibility between value2 and location of stations.'
+                print *, 'Check lat-lon of this station.'
+                print *, 'DIVR ', l, ' type ', val2div(l), ' START ', divstrindex(l), ' END', divendindex(l)
+                stop
+            end if
+            if ((val2div(l) == 2 .and. divstrindex(l) == -1) .or. (val2div(l) == 2 .and. divendindex(l) /= -1)) then
+                print *, 'Error for station ', l, ': incompatibility between value2 and location of stations.'
+                print *, 'Check lat-lon of this station.'
+                print *, 'DIVR ', l, ' type ', val2div(l), ' START ', divstrindex(l), ' END', divendindex(l)
+                stop
+            end if
+            if ((val2div(l) == 3 .and. divendindex(l) == -1) .or. (val2div(l) == 3 .and. divstrindex(l) /= -1)) then
+                print *, 'Error for station ', l, ': incompatibility between value2 and location of stations.'
+                print *, 'Check lat-lon of this station.'
+                print *, 'DIVR ', l, ' type ', val2div(l), ' START ', divstrindex(l), ' END', divendindex(l)
+                stop
+            end if
+!            print *, 'DIVR ', l, ' type ', val2div(l), ' START ', divstrindex(l), ' END ', divendindex(l)
+        end do
+
+!temp: Override for irrigation.
+        nodivirrig = 0                          ! The number of irrigation regions
+        maxirrigpts = 0                         ! The largest number of points in an individual irrigation region
+        do l = 1, nodiv                         ! Determine how many regions are to be irrigated
+            if (divname(l)(1:5) == 'irrig' .or. divname(l)(1:5) == 'Irrig') then
+                if (val2div(l) /= 2) then
+                    print *, 'Irrigation station must be type 2 diversion'
+                    print *, 'DIVR ', l, ' type ', val2div(l)
+                    stop
+                end if
+                nodivirrig = nodivirrig + 1         ! The maximum number of points to be irrigated
+                maxirrigpts = max(maxirrigpts, (val3div(l) + 1)*(val4div(l) + 1)) ! Add an extra point in each direction: needed if value3 or value4 is an even number
+            end if
+        end do
+        if (nodivirrig > 0) then
+            !   irrigindx: the indices (1-naa) of points to be irrigated
+            !   qdivirrig: the volume (m3/s) of water to be removed from the irrigated point in the simulation timestep
+            allocate( &
+                totirrigpts(nodivirrig), &
+                iminirr(nodivirrig), imaxirr(nodivirrig), &
+                jminirr(nodivirrig), jmaxirr(nodivirrig), &
+                irrigindx(nodivirrig, maxirrigpts), &
+                qdivirrig(nodivirrig, 999999))
+            irrigindx = -1
+            qdivirrig = 0
+
+            ! Determine the grid points in which water is to be lost due to irrigation
+            irindex = 0
+            do l = 1, nodiv
+                if (divname(l)(1:5) == 'irrig' .or. divname(l)(1:5) == 'Irrig') then
+                    irindex = irindex + 1
+                    iminirr(irindex) = max(istrdiv(l) - val4div(l)/2, 0)  ! Define the rectangle from the provided values
+                    imaxirr(irindex) = min(istrdiv(l) + val4div(l)/2, ycount)
+                    jminirr(irindex) = max(jstrdiv(l) - val3div(l)/2, 0)
+                    jmaxirr(irindex) = min(jstrdiv(l) + val3div(l)/2, xcount)
+                    irpt = 0
+                    do i = iminirr(irindex), imaxirr(irindex) ! Determine the number of points in this rectangle that are also in the watershed
+                        do j = jminirr(irindex), jmaxirr(irindex)
+                            do n = 1, naa
+                                if(xxx(n) == j .and. yyy(n) == i) then
+                                    irpt = irpt + 1
+                                    irrigindx(irindex, irpt) = n
+                                    exit
+                                end if
+                            end do
+                        end do
+                    end do
+                    totirrigpts(irindex) = irpt
+                end if
+            end do
+        end if
+        open(67, file = '20121201_div.tb0')
+        in_line = ''
+        do while (in_line /= ':EndHeader')
+            read(67, '(a)') in_line
+        end do
+        if (nodiv > 0) then
+            do i = 1, (30*24 + 13)
+                read(67, *) (qdiv(l, 1), l = 1, nodiv)
+            end do
+            backspace(67)
+            if (val2divyes == 1) then
+                irindex = 0
+                do l = 1, nodiv ! Loop through the diversion names searching for an irrigation area
+                    if (divname(l)(1:5) == 'irrig' .or. divname(l)(1:5) == 'Irrig') then
+                        irindex = irindex + 1
+                        qdivirrig(irindex, 1) = qdiv(l, 1)/totirrigpts(irindex)
+                    end if
+                end do
+            end if
+        end if
+
         !> Allocate output variable for the driver.
 !todo: move this
         stfl%ns = no
@@ -276,17 +612,62 @@ module rte_module
         stfl%qhyd = 0.0
         stfl%qsyn = 0.0
 
-!todo: move this
-        open(70, file = './BASINAVG1/MESH_output_streamflow.rte.csv', status = 'unknown', action = 'write')
-        write(70, 1010, advance = 'no') 'YEAR', 'DAY'
-        do l = 1, fms%stmg%n
-            write(70, 1010, advance = 'no') 'QOMEAS', 'QOSIM'
+        open(68, file = '20121201_str.tb0')
+        in_line = ''
+        do while (in_line /= ':EndHeader')
+            read(68, '(a)') in_line
         end do
-        write(70, *)
+        do i = 1, (30*24 + 13)
+            read(68, *) (stfl%qhyd(l), l = 1, no)
+        end do
+        backspace(68)
 
         strfw_option = 'streamflow_comparison'
-        allocate(qhyd(1,999999)); qhyd = 0.0
-        open(54, file = './BASINAVG1/spl_rpn.rte.csv', action = 'write')
+!todo: fix this.
+        allocate(qhyd(no, 999999)); qhyd = 0.0
+        open(54, file = './spl_rpn.rte.csv', action = 'write')
+        write(54, '(a)') 'Observed and simulated streamflows (m^3/s)'
+        write(54, '(a)') 'Station,,,,05GG001 ,,05HG001 ,,05KD003 ,,05KJ001 ,,05KL001 ,,05MH005 ,,05MJ001 ,,05OC001 ,,' // &
+                         '05OC012 ,,05OJ005 ,,05PF063 ,,05PF068 ,,05PF069 ,,05UE005 ,,05UF006 ,,05UF007 ,,05LM001 ,,05PE020 ,,' // &
+                         '05LH005 ,,05UB008 ,,05AJ001 ,,05AA024 ,,05AB021 ,,05AD007 ,,05AE027 ,,05AG006 ,,05BA001 ,,05BB001 ,,' // &
+                         '05BE004 ,,05BH004 ,,05BH008 ,,05BL024 ,,05BL024 ,,05BM002 ,,05BM004 ,,05BM004 ,,05BN012 ,,05CA009 ,,' // &
+                         '05CA009 ,,05CC002 ,,05CC007 ,,05CE001 ,,05CK004 ,,05DA009 ,,05DB006 ,,05DC001 ,,05DC010 ,,05DC011 ,,' // &
+                         '05DD005 ,,05DD007 ,,05DF001 ,,05EA001 ,,05EE007 ,,05EE009 ,,05EF001 ,,05FA001 ,,05FC001 ,,05FE004 ,,' // &
+                         '05HD036 ,,05HD039 ,,05KE010 ,'
+        write(54, '(a)') 'Longitude,,,,-105.631,,-106.504,,-103.157,,-101.068,, -99.231,, -98.749,, -97.265,, -97.074,,' // &
+                         ' -97.045,, -96.724,, -95.430,, -95.856,, -96.037,, -96.576,, -94.493,, -94.229,, -98.537,, -94.603,,' // &
+                         ' -99.379,, -97.976,,-111.056,,-113.860,,-113.578,,-112.876,,-113.302,,-111.755,,-116.112,,-115.546,,' // &
+                         '-114.992,,-114.001,,-114.001,,-113.714,,-113.714,,-113.582,,-112.452,,-112.452,,-111.468,,-115.010,,' // &
+                         '-115.010,,-113.716,,-114.139,,-112.602,,-110.205,,-116.530,,-114.702,,-114.844,,-116.329,,-115.990,,' // &
+                         '-115.407,,-116.674,,-113.584,,-113.300,,-110.481,,-111.888,,-109.500,,-113.575,,-112.310,,-109.931,,' // &
+                         '-108.367,,-107.524,,-104.575,'
+        write(54, '(a)') 'Latitude,,,,  53.384,,  52.321,,  53.883,,  54.018,,  53.268,,  49.879,,  50.049,,  49.189,,' // &
+                         '  49.734,,  50.326,,  50.405,,  50.578,,  50.748,,  56.146,,  56.561,,  56.578,,  51.824,,  50.198,,' // &
+                         '  52.001,,  54.351,,  50.204,,  49.668,,  50.201,,  49.843,,  48.949,,  50.032,,  51.654,,  51.289,,' // &
+                         '  51.288,,  51.290,,  51.290,,  50.930,,  50.930,,  50.926,,  50.932,,  50.932,,  50.211,,  51.812,,' // &
+                         '  51.812,,  52.376,,  52.374,,  51.650,,  51.106,,  52.013,,  52.375,,  52.556,,  52.194,,  52.369,,' // &
+                         '  53.088,,  52.915,,  53.632,,  53.990,,  53.632,,  53.454,,  53.812,,  52.912,,  52.917,,  53.092,,' // &
+                         '  49.846,,  50.574,,  53.991,'
+        write(54, '(a)') 'Xcoord_grid,      86,,      80,,     104,,     119,,     132,,     135,,     146,,     147,,' // &
+                         '     147,,     150,,     159,,     156,,     155,,     151,,     166,,     167,,     137,,     165,,' // &
+                         '     131,,     141,,      48,,      28,,      30,,      35,,      32,,      43,,      12,,      16,,' // &
+                         '      20,,      27,,      27,,      29,,      29,,      30,,      38,,      38,,      45,,      20,,' // &
+                         '      20,,      29,,      26,,      37,,      54,,       9,,      22,,      21,,      10,,      13,,' // &
+                         '      17,,       8,,      30,,      32,,      52,,      42,,      59,,      30,,      39,,      56,,' // &
+                         '      67,,      73,,      94,'
+        write(54, '(a)') 'Ycoord_grid,,,,      47,,      41,,      49,,      50,,      46,,      27,,      28,,      23,,' // &
+                         '      26,,      30,,      30,,      31,,      32,,      62,,      64,,      64,,      38,,      29,,' // &
+                         '      39,,      52,,      29,,      26,,      29,,      27,,      22,,      28,,      37,,      35,,' // &
+                         '      35,,      35,,      35,,      33,,      33,,      33,,      33,,      33,,      29,,      38,,' // &
+                         '      38,,      41,,      41,,      37,,      34,,      39,,      41,,      42,,      40,,      41,,' // &
+                         '      45,,      44,,      48,,      50,,      48,,      47,,      49,,      44,,      44,,      45,,' // &
+                         '      27,,      31,,      50,'
+        write(54, '(a)') 'YEAR,MONTH,DAY,HOUR,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,' // &
+                         'SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,' // &
+                         'OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,' // &
+                         'SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,' // &
+                         'OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,' // &
+                         'OBS,SIM,OBS,SIM'
 
 1010    format(9999(g15.7e2, ','))
 
@@ -338,6 +719,10 @@ module rte_module
         !> Local variables.
         integer n, l
 
+!temp: override to read from file
+        real, dimension(:, :, :), allocatable :: datarr
+        integer j, i
+
         !> Local variables not used.
         character(len = 14) :: date = ''
 
@@ -345,8 +730,11 @@ module rte_module
         if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
 
 !todo: move this
-        if (mod(ic%now%hour, 24) == 0 .and. ic%now%mins == 0) then
-            read(22, *) (stfl%qhyd(l), l = 1, no)
+!        if (ic%ts_daily == 1) then
+!            read(22, *) (stfl%qhyd(l), l = 1, no)
+!        end if
+        if ((mod(ic%ts_hourly, 3600/ic%dts) == 0)) then
+            read(68, *) (stfl%qhyd(l), l = 1, no)
         end if
 
         !> Accumulate runoff to the routing time-step.
@@ -363,8 +751,34 @@ module rte_module
             return
         end if
 
+!temp: override to read from file
+        allocate(datarr(shd%xCount, shd%yCount, 2))
+        read(602, *)
+        read(603, *)
+        do i = 1, shd%yCount
+            read(602, *) (datarr(j, i, 1), j = 1, shd%xCount)
+            read(603, *) (datarr(j, i, 2), j = 1, shd%xCount)
+        end do
+        do n = 1, naa
+
+            !> Pass all values of surface runoff (RFF) within a reach and positive values elsewhere to qr.
+            !> Remember negative values of RFF outside of reaches and add to lzs.
+            if (ireach(n) <= 0 .and. datarr(shd%xxx(n), shd%yyy(n), 1) < 0.0) then
+                qr(n) = 0.0
+                lzs(n) = datarr(shd%xxx(n), shd%yyy(n), 2) + datarr(shd%xxx(n), shd%yyy(n), 1)
+            else
+                qr(n) = datarr(shd%xxx(n), shd%yyy(n), 1)
+                lzs(n) = datarr(shd%xxx(n), shd%yyy(n), 2)
+            end if
+        end do
+
         !> Increment counters.
         fhr = fhr + 1
+
+        !> Diversion data.
+        if (nodiv > 0) then
+            read(67, *) (qdiv(l, fhr), l = 1, nodiv)
+        end if
 
         !> Date
         year1 = ic%now%year
@@ -388,6 +802,7 @@ module rte_module
         qi2_strt(1:naa) = qi2(1:naa)
         qo2_strt(1:naa) = qo2(1:naa)
         store2_strt(1:naa) = store2(1:naa)
+        qhyd(:, fhr) = stfl%qhyd
 
         !> If flow insertion, use simulated instead of flow inserted value at gauge location.
         if (trim(strfw_option) == 'streamflow_insertion') then
@@ -547,15 +962,6 @@ module rte_module
         do l = 1, no
             stfl%qsyn(l) = qo2(fms%stmg%rnk(l))
         end do
-
-!todo: move this
-        if ((mod(ic%ts_daily, 3600/ic%dts*24) == 0)) then
-            write(70, 1010, advance = 'no') ic%now%year, ic%now%jday
-            do l = 1, fms%stmg%n
-                write(70, 1010, advance = 'no') stfl%qhyd(l), stfl%qsyn(l)
-            end do
-            write(70, *)
-        end if
 
 1010    format(9999(g15.7e2, ','))
 

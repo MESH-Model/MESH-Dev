@@ -11,6 +11,7 @@
 !>
 subroutine read_streamflow_txt(shd, iun, fname)
 
+    use mpi_module
     use sa_mesh_shared_variables
 
     implicit none
@@ -34,7 +35,7 @@ subroutine read_streamflow_txt(shd, iun, fname)
     !*  -   n(n): Rank or index of the grid-cell containing the location.
     !*  -   DA(n): Drainage area.
 
-    if (ro%DIAGNOSEMODE > 0) print 1000, fname
+    if (ro%VERBOSEMODE > 0) print 1000, fname
     open(iun, file = fname, status = 'old', action = 'read', err = 997)
     read(iun, *, err = 999)
     read(iun, *, err = 999) &
@@ -52,17 +53,17 @@ subroutine read_streamflow_txt(shd, iun, fname)
     do l = 1, NS
         read(iun, *, err = 999) fms%stmg%y(l), fms%stmg%x(l), fms%stmg%name(l)
         fms%stmg%y(l) = fms%stmg%y(l)/60.0
-        fms%stmg%iy(l) = int((fms%stmg%y(l) - shd%yOrigin)/shd%yDelta) + 1
+!        fms%stmg%iy(l) = int((fms%stmg%y(l) - shd%yOrigin)/shd%yDelta) + 1
         fms%stmg%x(l) = fms%stmg%x(l)/60.0
-        fms%stmg%jx(l) = int((fms%stmg%x(l) - shd%xOrigin)/shd%xDelta) + 1
+!        fms%stmg%jx(l) = int((fms%stmg%x(l) - shd%xOrigin)/shd%xDelta) + 1
     end do
 
     return
 
     !> File errors.
-997 if (ro%VERBOSEMODE > 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", fname
-998 if (ro%VERBOSEMODE > 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", fname
-999 if (ro%VERBOSEMODE > 0) print "(3x, 'ERROR reading from ', (a), '.')", fname
+997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", fname
+998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", fname
+999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", fname
 
     stop
 

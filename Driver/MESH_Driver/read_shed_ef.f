@@ -746,7 +746,6 @@ c endif
 
 !     Checking data:
 
-      nrvr1 = 0
       do n = 1, shd%NA
 !       moved this to flowinit at one point but then it got
 !       recalculated with each iteration when optimizing.
@@ -764,8 +763,8 @@ c endif
 !CRAIG THOMPSON ADDED THIS
 !        sl2(n) = sqrt(sl1(n))     ! used for overland flow routing (runof6)
 !       check to see how many basins/river classes there are:
-        nrvr1 = max(nrvr1, shd%IAK(n))
       end do
+      if (allocated(shd%IAK)) nrvr1 = maxval(shd%IAK)
 
 c      if( nrvr.ne.nrvr1)then
 c!      if(nrvr.lt.nrvr1)then
@@ -778,7 +777,7 @@ c        pause ' program paused in rd_shed_ef'
 c      endif
 c
 
-      if (shd%NRVR /= nrvr1) then
+      if (shd%NRVR /= nrvr1 .and. nrvr1 /= 0) then
         if (ro%VERBOSEMODE > 0) print 803, shd%NRVR, nrvr1
         shd%NRVR = nrvr1
       end if

@@ -30,6 +30,9 @@ module sa_mesh_run_within_tile
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
+        !> Return if tile processes are not active.
+        if (.not. ro%RUNTILE) return
+
         call RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         call RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
@@ -68,6 +71,9 @@ module sa_mesh_run_within_tile
         type(soil_statevars) :: sp
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
+
+        !> Return if tile processes are not active.
+        if (.not. ro%RUNTILE) return
 
         stas%cnpy%pevp(il1:il2) = 0.0
         stas%sfc%evap(il1:il2) = 0.0
@@ -128,6 +134,9 @@ module sa_mesh_run_within_tile
         logical lstat
         integer, dimension(:), allocatable :: irqst
         integer, dimension(:, :), allocatable :: imstat
+
+        !> Return if tile processes are not active.
+        if (.not. ro%RUNTILE) return
 
         !> Gather variables from parallel nodes.
 
@@ -314,6 +323,9 @@ module sa_mesh_run_within_tile
         type(soil_statevars) :: sv
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
+
+        !> Return if tile processes are not active.
+        if (.not. ro%RUNTILE) return
 
         call RUNCLASS36_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
