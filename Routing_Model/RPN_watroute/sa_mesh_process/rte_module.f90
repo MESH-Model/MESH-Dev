@@ -95,6 +95,7 @@ module rte_module
 !temp: Override for diversions.
     character*12, dimension(4), save :: &
         tdivname = ['06EC002', 'irrigat', '05LL019', '05QB005']
+    real, dimension(:), allocatable, save :: qdiv2
     real*4, dimension(4), save :: &
         txstrdiv = [-999.0000, -107.4900, -98.4045, -999.0000], &
         tystrdiv = [-999.0000, 52.0640, 50.0134, -999.0000], &
@@ -105,6 +106,9 @@ module rte_module
         tval2div = [3, 2, 1, 3], &
         tval3div = [0, 11, 0, 0], &
         tval4div = [0, 11, 0, 0]
+
+!temp: Override for irrigation
+    integer, dimension(:), allocatable :: totirrigpts
 
     contains
 
@@ -143,8 +147,7 @@ module rte_module
         integer j, i
         character(len = 40) in_line
         integer, dimension(4) :: jstrdiv, istrdiv, jenddiv, ienddiv
-        integer, dimension(:), allocatable :: &
-            totirrigpts, iminirr, imaxirr, jminirr, jmaxirr
+        integer, dimension(:), allocatable :: iminirr, imaxirr, jminirr, jmaxirr
         integer irindex, irpt
 
         !> Return if not the head node or if the process is not active.
@@ -215,6 +218,32 @@ module rte_module
         flz = rtepm%flz; pwr = rtepm%pwr; r1n = rtepm%r1n; r2n = rtepm%r2n
         mndr = rtepm%mndr; aa2 = rtepm%aa2; aa3 = rtepm%aa3; aa4 = rtepm%aa4; widep = rtepm%widep
         flz2 = 0.0; rlake = 0.0; theta = 0.0; kcond = 0.0
+
+!temp: Override
+        flz = 3.0e-8; pwr = 2.6
+        aa2 = 0.1; aa3 = 0.9; aa4 = 0.67
+        widep = 20.0
+        naa = 5980
+        allocate(datarr(shd%xCount, shd%yCount))
+        datarr = 0.0
+        open(600, file = 'r1n_running_avg.grid')
+        do i = 1, shd%yCount
+            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+        end do
+        close(600)
+        do n = 1, naa
+            r1n(n) = datarr(shd%xxx(n), shd%yyy(n))
+        end do
+        datarr = 0.0
+        open(600, file = 'r2n_running_avg.grid')
+        do i = 1, shd%yCount
+            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+        end do
+        close(600)
+        do n = 1, naa
+            r2n(n) = datarr(shd%xxx(n), shd%yyy(n))
+        end do
+        deallocate(datarr)
 
         !> Adjust the calculated channel length by the degree of meandering.
         rl = rl*mndr
@@ -486,7 +515,7 @@ module rte_module
         nodiv = 4
         allocate( &
             val1div(nodiv), val2div(nodiv), val3div(nodiv), val4div(nodiv), &
-            divstrindex(nodiv), divendindex(nodiv), divname(nodiv), qdiv(nodiv, 999999))
+            divstrindex(nodiv), divendindex(nodiv), divname(nodiv), qdiv(nodiv, 999999), qdiv2(nodiv))
         val1div = 0.0; val2div = 0; val3div = 0; val4div = 0
         istrdiv = 0; jstrdiv = 0
         ienddiv = 0; jenddiv = 0
@@ -594,15 +623,14 @@ module rte_module
                 read(67, *) (qdiv(l, 1), l = 1, nodiv)
             end do
             backspace(67)
-            if (val2divyes == 1) then
-                irindex = 0
-                do l = 1, nodiv ! Loop through the diversion names searching for an irrigation area
-                    if (divname(l)(1:5) == 'irrig' .or. divname(l)(1:5) == 'Irrig') then
-                        irindex = irindex + 1
-                        qdivirrig(irindex, 1) = qdiv(l, 1)/totirrigpts(irindex)
-                    end if
-                end do
-            end if
+            do l = 1, nodiv ! Loop through the diversion names searching for an irrigation area
+                if (qdiv(l, 1) < 0.0 .and. val2div(l) == 3) then
+                    print *, 'Diversion is type 3 (diversion starts outside of watershed).'
+                    print *, 'The diversion value cannot be negative for type 3.'
+                    print *, 'DIVR ', l, ' type ', val2div(l), ' qdiv ', qdiv(l, 1)
+                    stop
+                end if
+            end do
         end if
 
         !> Allocate output variable for the driver.
@@ -721,7 +749,7 @@ module rte_module
 
 !temp: override to read from file
         real, dimension(:, :, :), allocatable :: datarr
-        integer j, i
+        integer j, i, irindex
 
         !> Local variables not used.
         character(len = 14) :: date = ''
@@ -765,10 +793,10 @@ module rte_module
             !> Remember negative values of RFF outside of reaches and add to lzs.
             if (ireach(n) <= 0 .and. datarr(shd%xxx(n), shd%yyy(n), 1) < 0.0) then
                 qr(n) = 0.0
-                lzs(n) = datarr(shd%xxx(n), shd%yyy(n), 2) + datarr(shd%xxx(n), shd%yyy(n), 1)
+                lzs(n) = lzs(n) + datarr(shd%xxx(n), shd%yyy(n), 2) + datarr(shd%xxx(n), shd%yyy(n), 1)
             else
                 qr(n) = datarr(shd%xxx(n), shd%yyy(n), 1)
-                lzs(n) = datarr(shd%xxx(n), shd%yyy(n), 2)
+                lzs(n) = lzs(n) + datarr(shd%xxx(n), shd%yyy(n), 2)
             end if
         end do
 
@@ -777,7 +805,23 @@ module rte_module
 
         !> Diversion data.
         if (nodiv > 0) then
-            read(67, *) (qdiv(l, fhr), l = 1, nodiv)
+            read(67, *) (qdiv2(l), l = 1, nodiv)
+            do l = 1, nodiv
+                if (qdiv2(l) < 0.0 .and. val2div(l) == 3) then
+                    print *, 'Diversion is type 3 (diversion starts outside of watershed).'
+                    print *, 'The diversion value cannot be negative for type 3.'
+                    print *, 'DIVR ', l, ' type ', val2div(l), ' qdiv ', qdiv2(l)
+                    stop
+                else if (qdiv2(l) < 0.0) then
+                    qdiv2(l) = 0.0
+                end if
+                irindex = 0
+                if (divname(l)(1:5) == 'irrig' .or. divname(l)(1:5) == 'Irrig') then
+                    irindex = irindex + 1
+                    qdivirrig(irindex, 1) = qdiv(l, 1)/totirrigpts(irindex)
+                end if
+            end do
+            qdiv(:, fhr) = qdiv2
         end if
 
         !> Date
