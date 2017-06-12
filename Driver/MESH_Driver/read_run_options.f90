@@ -716,16 +716,18 @@
                         WF_RTE_frsvrout%freq = 0
                         do j = 2, nargs
                             select case (lowercase(out_args(j)))
+                                case ('daily')
+                                    WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KDLY)**WF_RTE_frsvrout%KDLY
                                 case ('ts')
                                     WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
                                 case ('default')
                                     WF_RTE_frsvrout%freq = 0
-                                    WF_RTE_frsvrout%fout_header = .true.
                                     exit
                                 case ('no_header')
                                     WF_RTE_frsvrout%fout_header = .false.
                                 case ('all')
-                                    WF_RTE_frsvrout%freq = radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
+                                    WF_RTE_frsvrout%freq = radix(WF_RTE_frsvrout%KDLY)**WF_RTE_frsvrout%KDLY
+									WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
                                     exit
                                 case ('none')
                                     WF_RTE_frsvrout%freq = 0

@@ -74,13 +74,14 @@ module WF_ROUTE_config
     !>  Description: Internal file keys used for output files for lakes and reservoirs.
     !>
     !> Variables:
+    !*  KDLY: Daily output
     !*  KTS: Per time-step output
-    !*  freq: Time intervals of the output (ts).
+    !*  freq: Time intervals of the output (daily, ts).
     !*  fout_header: .true. to print header (default).
     !*  fls: Output file definitions.
     type WF_RTE_fout_rsvr
-        integer(kind = 4) :: KTS = 1
-        integer :: kmin = 1, kmax = 1
+        integer(kind = 4) :: KDLY = 0, KTS = 1
+        integer :: kmin = 0, kmax = 1
         integer(kind = 4) :: freq = 0
         logical :: fout_header = .true.
         type(fl_ids) :: fls
@@ -152,6 +153,7 @@ module WF_ROUTE_config
 !-    integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
     real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
     real, dimension(:), allocatable :: WF_QSYN, WF_QSYN_AVG, WF_QSYN_CUM
+    real, dimension(:), allocatable :: WF_RQISIM0_AVG, WF_RSTGCH0_AVG, WF_RQISIM_AVG, WF_RSTGCH_AVG, WF_RQOSIM_AVG
 !-    character(8), dimension(:), allocatable :: WF_GAGE
 !-    real, dimension(:), allocatable :: WF_A1, WF_A2, WF_A3, WF_A4
 
@@ -306,6 +308,10 @@ module WF_ROUTE_config
             WF_B3 = 0.0
             WF_B4 = 0.0
             WF_B5 = 0.0
+
+            !> For reach output file.
+            allocate(WF_RQISIM0_AVG(NR), WF_RSTGCH0_AVG(NR), WF_RQISIM_AVG(NR), WF_RSTGCH_AVG(NR), WF_RQOSIM_AVG(NR))
+            WF_RQISIM0_AVG = 0.0; WF_RSTGCH0_AVG = 0.0; WF_RQISIM_AVG = 0.0; WF_RSTGCH_AVG = 0.0; WF_RQOSIM_AVG = 0.0
 
             !> Allocate configuration variables for the driver.
             allocate(fms%rsvr%name(NR), &
@@ -591,6 +597,9 @@ module WF_ROUTE_config
 !-                'l', 'wf_r', &
 !-                'wf_qi1', 'wf_store1', 'wf_qi2', 'wf_store2', 'wf_qo2'
 !-        end do
+
+        !> Reset 'REACHOUTFLAG' if no reservoirs.
+        if (NR == 0) WF_RTE_frsvrout%freq = 0
 
         !> Open output files for reaches.
         do j = WF_RTE_frsvrout%kmin, WF_RTE_frsvrout%kmax

@@ -109,6 +109,9 @@ module WF_ROUTE_module
 
         if (ic%ts_daily == 1) then
             WF_QSYN_AVG = 0.0
+            if (WF_RTE_frsvrout%freq /= 0) then
+            	WF_RQISIM0_AVG = 0.0; WF_RSTGCH0_AVG = 0.0; WF_RQISIM_AVG = 0.0; WF_RSTGCH_AVG = 0.0; WF_RQOSIM_AVG = 0.0
+            end if
         end if
 
         !> shd%NAA is the total number of grids.
@@ -147,6 +150,15 @@ module WF_ROUTE_module
             stas%rsvr%qo(i) = stas%chnl%qo(fms%rsvr%rnk(i))
             stas%rsvr%s(i) = stas%chnl%s(fms%rsvr%rnk(i))
         end do
+
+        !> For reach output file.
+        if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KDLY)) then
+            WF_RQISIM0_AVG = WF_RQISIM0_AVG + stas%chnl%qi(fms%rsvr%rnk(:))
+            WF_RSTGCH0_AVG = WF_RSTGCH0_AVG + wf_store1(fms%rsvr%rnk(:))
+            WF_RQISIM_AVG = WF_RQISIM_AVG + wf_qi2(fms%rsvr%rnk(:))
+            WF_RSTGCH_AVG = WF_RSTGCH_AVG + stas%chnl%s(fms%rsvr%rnk(:))
+            WF_RQOSIM_AVG = WF_RQOSIM_AVG + stas%chnl%qo(fms%rsvr%rnk(:))
+        end if
 
         !> this is done so that INIT_STORE is not recalculated for
         !> each iteration when wf_route is not used
@@ -227,6 +239,23 @@ module WF_ROUTE_module
 !-            end if
 
 !-            WF_QSYN_AVG = 0.0
+
+            !> For reach output file.
+            if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KDLY)) then
+                WF_RQISIM0_AVG = WF_RQISIM0_AVG/ic%ts_daily
+                WF_RSTGCH0_AVG = WF_RSTGCH0_AVG/ic%ts_daily
+                WF_RQISIM_AVG = WF_RQISIM_AVG/ic%ts_daily
+                WF_RSTGCH_AVG = WF_RSTGCH_AVG/ic%ts_daily
+                WF_RQOSIM_AVG = WF_RQOSIM_AVG/ic%ts_daily
+                do l = 1, fms%rsvr%n
+                    iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun + l
+                    write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
+                    i = fms%rsvr%rnk(l)
+                    write(iun, 1010, advance = 'no') l, i, &
+                        WF_RQISIM0_AVG(l), WF_RSTGCH0_AVG(l), WF_RQISIM_AVG(l), WF_RSTGCH_AVG(l), WF_RQOSIM_AVG(l)
+                    write(iun, *)
+                end do
+            end if
 
             !> Assign to the output variables.
             stfl%qhyd = WF_QHYD_AVG

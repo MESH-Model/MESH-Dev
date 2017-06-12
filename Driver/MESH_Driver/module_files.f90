@@ -96,6 +96,8 @@ module model_files
         WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun = 70
         WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%fn = 'MESH_output_streamflow_ts.csv'
         WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun = 71
+        WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%fn = 'MESH_output_reach.csv'
+        WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun = 748
         WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%fn = 'MESH_output_reach_ts.csv'
         WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun = 708
 
