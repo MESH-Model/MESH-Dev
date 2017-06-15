@@ -198,12 +198,6 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
     end do
 
-    !>
-    !> READ BASIN STRUCTURES.
-    !>
-
-    call read_basin_structures(shd)
-
     !> If no land surface scheme active.
     if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE .and. .not. RUNSVS113_flgs%PROCESS_ACTIVE) then
         shd%lc%NTYPE = 1
@@ -386,5 +380,11 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     call julian2monthday(ic%now%jday, ic%now%year, ic%now%month, ic%now%day)
     ic%now%hour = ic%start%hour
     ic%now%mins = ic%start%mins
+
+    !>
+    !> READ BASIN STRUCTURES.
+    !>
+
+    call read_basin_structures(shd)
 
 end subroutine

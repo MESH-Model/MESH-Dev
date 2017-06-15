@@ -145,9 +145,6 @@ module WF_ROUTE_config
     !* WF_A2: Channel fitting parameter for average bankfull capacity (default: 11.0).
     !* WF_A3: Channel fitting parameter for average bankfull capacity (default: 0.43).
     !* WF_A4: Channel fitting parameter for average bankfull capacity (default: 1.0).
-    !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
-    !* WF_START_DAY OBSERVED STREAMFLOW START DAY
-    !* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
     integer WF_NAA, WF_NL, WF_MHRD, WF_KT
 !-    integer, dimension(:), allocatable :: WF_IY, WF_JX, WF_S
     real, dimension(:), allocatable :: WF_QHYD, WF_QHYD_AVG, WF_QHYD_CUM
@@ -231,7 +228,7 @@ module WF_ROUTE_config
         !* WF_START_YEAR OBSERVED STREAMFLOW START YEAR
         !* WF_START_DAY OBSERVED STREAMFLOW START DAY
         !* WF_START_HOUR OBSERVED STREAMFLOW START HOUR
-        integer WF_START_YEAR, WF_START_DAY, WF_START_HOUR, JDAY_IND_STRM, JDAY_IND1, JDAY_IND2
+!-        integer WF_START_YEAR, WF_START_DAY, WF_START_HOUR, JDAY_IND_STRM, JDAY_IND1, JDAY_IND2
 
         !> Temporary variables for frequently accessed terms.
         !* NA: Number of grid cells.
@@ -394,18 +391,18 @@ module WF_ROUTE_config
         !> *********************************************************************
 
         iun = WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun
-!        open(iun, file = WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%fn, status = 'old', action = 'read')
-!        read(iun, *)
-!        read(iun, *) fms%stmg%n, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
+!-        open(iun, file = WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%fn, status = 'old', action = 'read')
+!-        read(iun, *)
+!-        read(iun, *) fms%stmg%n, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
         NS = fms%stmg%n
 
         allocate(WF_QHYD(NS), WF_QHYD_AVG(NS), WF_QHYD_CUM(NS), &
                  WF_QSYN(NS), WF_QSYN_AVG(NS), WF_QSYN_CUM(NS))
 
         !> Allocate configuration variables for the driver.
-!            allocate(fms%stmg%name(NS), &
-!                     fms%stmg%y(NS), fms%stmg%x(NS), &
-!                     fms%stmg%iy(NS), fms%stmg%jx(NS), fms%stmg%rnk(NS))
+!-            allocate(fms%stmg%name(NS), &
+!-                     fms%stmg%y(NS), fms%stmg%x(NS), &
+!-                     fms%stmg%iy(NS), fms%stmg%jx(NS), fms%stmg%rnk(NS))
 
         !> Allocate output variable for the driver.
         stfl%ns = NS
@@ -413,41 +410,41 @@ module WF_ROUTE_config
         stfl%qhyd = 0.0
         stfl%qsyn = 0.0
 
-!        do i = 1, NS
-!            if (LOCATIONFLAG == 1) then
-!                read(iun, *) ry, rx, fms%stmg%name(i)
-!                fms%stmg%y(i) = ry
-!                fms%stmg%iy(i) = nint((ry - shd%yOrigin*60.0)/shd%GRDN)
-!                fms%stmg%x(i) = rx
-!                fms%stmg%jx(i) = nint((rx - shd%xOrigin*60.0)/shd%GRDE)
-!            else
-!                read(iun, *) iy, ix, fms%stmg%name(i)
-!                fms%stmg%y(i) = real(iy)
-!                fms%stmg%iy(i) = int((real(iy) - real(shd%iyMin))/shd%GRDN + 1.0)
-!                fms%stmg%x(i) = real(ix)
-!                fms%stmg%jx(i) = int((real(ix) - real(shd%jxMin))/shd%GRDE + 1.0)
-!            end if
-!        end do
-!        do i = 1, NS
-!            fms%stmg%rnk(i) = 0
-!            do j = 1, NA
-!                if (fms%stmg%jx(i) == shd%xxx(j) .and. fms%stmg%iy(i) == shd%yyy(j)) then
-!                    fms%stmg%rnk(i) = j
-!                end if
-!            end do
-!            if (fms%stmg%rnk(i) == 0) then
-!                print *, 'STREAMFLOW GAUGE: ', i, ' IS NOT IN THE BASIN'
-!                print *, 'UP/DOWN', fms%stmg%iy(i), shd%iyMin, shd%yyy(j), shd%yCount
-!                print *, 'LEFT/RIGHT', fms%stmg%jx(i), shd%jxMin, shd%xxx(j), shd%xCount
-!                stop
-!            end if
-!        end do
+!-        do i = 1, NS
+!-            if (LOCATIONFLAG == 1) then
+!-                read(iun, *) ry, rx, fms%stmg%name(i)
+!-                fms%stmg%y(i) = ry
+!-                fms%stmg%iy(i) = nint((ry - shd%yOrigin*60.0)/shd%GRDN)
+!-                fms%stmg%x(i) = rx
+!-                fms%stmg%jx(i) = nint((rx - shd%xOrigin*60.0)/shd%GRDE)
+!-            else
+!-                read(iun, *) iy, ix, fms%stmg%name(i)
+!-                fms%stmg%y(i) = real(iy)
+!-                fms%stmg%iy(i) = int((real(iy) - real(shd%iyMin))/shd%GRDN + 1.0)
+!-                fms%stmg%x(i) = real(ix)
+!-                fms%stmg%jx(i) = int((real(ix) - real(shd%jxMin))/shd%GRDE + 1.0)
+!-            end if
+!-        end do
+!-        do i = 1, NS
+!-            fms%stmg%rnk(i) = 0
+!-            do j = 1, NA
+!-                if (fms%stmg%jx(i) == shd%xxx(j) .and. fms%stmg%iy(i) == shd%yyy(j)) then
+!-                    fms%stmg%rnk(i) = j
+!-                end if
+!-            end do
+!-            if (fms%stmg%rnk(i) == 0) then
+!-                print *, 'STREAMFLOW GAUGE: ', i, ' IS NOT IN THE BASIN'
+!-                print *, 'UP/DOWN', fms%stmg%iy(i), shd%iyMin, shd%yyy(j), shd%yCount
+!-                print *, 'LEFT/RIGHT', fms%stmg%jx(i), shd%jxMin, shd%xxx(j), shd%xCount
+!-                stop
+!-            end if
+!-        end do
 
         if (ro%VERBOSEMODE > 0) then
-!            print *, 'NUMBER OF STREAMFLOW GUAGES: ', NS
-!            do i = 1, NS
-!                print *, 'STREAMFLOW STATION: ', i, 'I: ', fms%stmg%iy(i), 'J: ', fms%stmg%jx(i)
-!            end do
+!-            print *, 'NUMBER OF STREAMFLOW GUAGES: ', NS
+!-            do i = 1, NS
+!-                print *, 'STREAMFLOW STATION: ', i, 'I: ', fms%stmg%iy(i), 'J: ', fms%stmg%jx(i)
+!-            end do
             print *, 'NUMBER OF RESERVOIR STATIONS: ', NR
             if (NR > 0) then
                 do i = 1, NR
@@ -464,43 +461,45 @@ module WF_ROUTE_config
         WF_QHYD_CUM = 0.0
 
         !>MAM - The first stream flow record is used for flow initialization
-        read(iun, *, iostat = ierr) (WF_QHYD(i), i = 1, NS)
-        backspace(iun)
+!-        read(iun, *, iostat = ierr) (WF_QHYD(i), i = 1, NS)
+!-        backspace(iun)
+        do i = 1, fms%stmg%n
+            WF_QHYD(i) = stas_grid%chnl%qo(fms%stmg%rnk(i))
+        end do
 
-        WF_START_YEAR = fms%stmg%qomeas%iyear
-        WF_START_DAY = fms%stmg%qomeas%ijday
+!-        WF_START_YEAR = fms%stmg%qomeas%iyear
+!-        WF_START_DAY = fms%stmg%qomeas%ijday
         WF_KT = fms%stmg%qomeas%dts
 
         ! fixed streamflow start time bug. add in function to enable the
         ! correct start time. Feb2009 aliu.
-        call Julian_Day_ID(WF_START_YEAR, WF_START_DAY, JDAY_IND1)
-        call Julian_Day_ID(ic%start%year, ic%start%jday, JDAY_IND2)
-!        print *, WF_START_YEAR, WF_START_DAY, JDAY_IND1
-        if (ic%start%year == 0) then
-            JDAY_IND2 = JDAY_IND1
-        end if
-        if (JDAY_IND2 < JDAY_IND1) then
-            print *, 'ERROR: Simulation start date too early, check ', &
-                ' MESH_input_streamflow.txt, The start date in ', &
-                ' MESH_input_run_options.ini may be out of range'
-            stop
-        end if
-        JDAY_IND_STRM = (JDAY_IND2 - JDAY_IND1)*24/WF_KT
+!-        call Julian_Day_ID(WF_START_YEAR, WF_START_DAY, JDAY_IND1)
+!-        call Julian_Day_ID(ic%start%year, ic%start%jday, JDAY_IND2)
+!-        print *, WF_START_YEAR, WF_START_DAY, JDAY_IND1
+!-        if (ic%start%year == 0) then
+!-            JDAY_IND2 = JDAY_IND1
+!-        end if
+!-        if (JDAY_IND2 < JDAY_IND1) then
+!-            print *, 'ERROR: Simulation start date too early, check ', &
+!-                ' MESH_input_streamflow.txt, The start date in ', &
+!-                ' MESH_input_run_options.ini may be out of range'
+!-            stop
+!-        end if
+!-        JDAY_IND_STRM = (JDAY_IND2 - JDAY_IND1)*24/WF_KT
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !skip the unused streamflow records in streamflow.txt .
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        print *, 'Skipping', JDAY_IND_STRM, 'Registers in streamflow file'
-        do j = 1, JDAY_IND_STRM
-            read(iun, *, iostat = ierr)
-            if (ierr /= 0) then
-                print *, 'WARNING: end of file reached when reading ', &
-                    ' MESH_input_streamflow.txt, The start date in ', &
-                    ' MESH_input_run_options.ini may be out of range'
-!-                stop
-                exit
-            end if
-        end do
+!-        print *, 'Skipping', JDAY_IND_STRM, 'Registers in streamflow file'
+!-        do j = 1, JDAY_IND_STRM
+!-            read(iun, *, iostat = ierr)
+!-            if (ierr /= 0) then
+!-                print *, 'WARNING: end of file reached when reading ', &
+!-                    ' MESH_input_streamflow.txt, The start date in ', &
+!-                    ' MESH_input_run_options.ini may be out of range'
+!-                exit
+!-            end if
+!-        end do
         !> leave unit open and read new streamflow each hour
 
         WF_ROUTETIMESTEP = 900
@@ -556,8 +555,8 @@ module WF_ROUTE_config
                 read(iun) WF_QSYN
                 read(iun) WF_QSYN_AVG
                 read(iun) WF_QSYN_CUM
-                read(iun) stas%chnl%qo
-                read(iun) stas%chnl%s
+                read(iun) stas_grid%chnl%qo
+                read(iun) stas_grid%chnl%s
                 read(iun) wf_qi2
                 read(iun) WF_QO2_ACC_MM
                 read(iun) WF_STORE2_ACC_MM
@@ -570,8 +569,8 @@ module WF_ROUTE_config
                 read(iun)
                 read(iun)
                 read(iun)
-                read(iun) stas%chnl%qo
-                read(iun) stas%chnl%s
+                read(iun) stas_grid%chnl%qo
+                read(iun) stas_grid%chnl%s
                 read(iun) wf_qi2
                 read(iun)
                 read(iun)
@@ -668,8 +667,8 @@ module WF_ROUTE_config
             write(iun) WF_QSYN
             write(iun) WF_QSYN_AVG
             write(iun) WF_QSYN_CUM
-            write(iun) stas%chnl%qo
-            write(iun) stas%chnl%s
+            write(iun) stas_grid%chnl%qo
+            write(iun) stas_grid%chnl%s
             write(iun) wf_qi2
             write(iun) WF_QO2_ACC_MM
             write(iun) WF_STORE2_ACC_MM

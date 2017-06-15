@@ -43,11 +43,11 @@ module sa_mesh_run_between_grid
         NA = shd%NA
 
         !> Stream channel.
-        stas%chnl%n = NA
-        allocate(stas%chnl%qi(1:NA), stas%chnl%qo(1:NA), stas%chnl%s(1:NA))
-        stas%chnl%qi(1:NA) = 0.0
-        stas%chnl%qo(1:NA) = 0.0
-        stas%chnl%s(1:NA) = 0.0
+!-        stas%chnl%n = NA
+!-        allocate(stas%chnl%qi(1:NA), stas%chnl%qo(1:NA), stas%chnl%s(1:NA))
+!-        stas%chnl%qi(1:NA) = 0.0
+!-        stas%chnl%qo(1:NA) = 0.0
+!-        stas%chnl%s(1:NA) = 0.0
 
         !> Lake.
 !+        stas%lk%n = NLK
