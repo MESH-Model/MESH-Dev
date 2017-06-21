@@ -12,8 +12,7 @@ module climate_forcing_constants
     type climate_forcing_file_keys
 
         !* nn: Count of available climate forcing variable keys.
-!        integer :: nn = 14
-        integer :: nn = 7
+        integer :: nn = 9
 
         !* FB: Incoming solar radiation [W m-2].
         !>       CLASS ordinarily requires that the forcing incoming
@@ -27,18 +26,18 @@ module climate_forcing_constants
         !* FSV: Visible shortwave radiation incident on a horizontal
         !*      surface (FSVH) [W m-2].
         integer :: FB = 1
-!        integer :: FSI = 10
-!        integer :: FSV = 11
+!        integer :: FSI
+!        integer :: FSV
 
         !* FI: Downwelling longwave sky radiation [W m-2].
         integer :: FI = 2
 
         !* FN: Fractional cloud cover (FCLO) [-].
-!        integer :: FN = 12
+!        integer :: FN
 
         !* PR: Surface precipitation rate [m].
         !* RT: Total precipitation rate [kg m-2 s-1]
-!        integer :: PR = 14
+!        integer :: PR
         integer :: RT = 3
 
         !* TT: Air temperature at reference height [K]
@@ -52,16 +51,20 @@ module climate_forcing_constants
         !>       to it, and the other to zero.
         !* UV: Wind speed [m s-1]
         !* WD: Wind direction [deg].
-!        integer :: UU = 8
-!        integer :: VV = 9
+!        integer :: UU
+!        integer :: VV
         integer :: UV = 5
-!        integer :: WD = 13
+!        integer :: WD
 
         !* P0: Surface air pressure [Pa].
         integer :: P0 = 6
 
         !* HU: Specific humidity at reference height [kg kg-1]
         integer :: HU = 7
+
+        !* N0: Runoff. [mm].
+        !* O1: Recharge. [mm].
+        integer :: N0 = 8, O1 = 9
 
     end type
 

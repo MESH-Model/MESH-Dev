@@ -274,21 +274,22 @@ module WF_ROUTE_config
         !>  Open and read in values from MESH_input_reservoir.txt file
         !> *************************************************************
 
-        iun = WF_RTE_fls%fl(WF_RTE_flks%resv_in)%iun
-        open(iun, file = WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn, status = 'old', action = 'read')
-        read(iun, '(3i5)') fms%rsvr%n, WF_NREL, WF_KTR
+!-        iun = WF_RTE_fls%fl(WF_RTE_flks%resv_in)%iun
+!-        open(iun, file = WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn, status = 'old', action = 'read')
+!-        read(iun, '(3i5)') fms%rsvr%n, WF_NREL, WF_KTR
         WF_NORESV_CTRL = 0
         NR = fms%rsvr%n
+        WF_KTR = fms%rsvr%qorls%dts
 
         !> Stop if no reservoirs have been defined but reaches have.
-        if (NR == 0 .and. maxval(shd%IREACH) > 0) then
-            print *
-            print *, 'Reaches exist in MESH_drainage_database.r2c'
-            print *, 'No reservoirs are listed in ' // trim(adjustl(WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn))
-            print *, 'The number of reservoirs and reaches must match.'
-            print *, 'Please adjust either file and re-run MESH to continue.'
-            stop
-        end if
+!-        if (NR == 0 .and. maxval(shd%IREACH) > 0) then
+!-            print *
+!-            print *, 'Reaches exist in MESH_drainage_database.r2c'
+!-            print *, 'No reservoirs are listed in ' // trim(adjustl(WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn))
+!-            print *, 'The number of reservoirs and reaches must match.'
+!-            print *, 'Please adjust either file and re-run MESH to continue.'
+!-            stop
+!-        end if
 
         if (NR > 0) then
 
@@ -298,24 +299,24 @@ module WF_ROUTE_config
                      WF_QREL(NR), WF_RESSTORE(NR))
             WF_QREL = 0.0
             WF_RESSTORE = 0.0
-            WF_B1 = 0.0
-            WF_B2 = 0.0
-            WF_B3 = 0.0
-            WF_B4 = 0.0
-            WF_B5 = 0.0
+            WF_B1 = fms%rsvr%b1
+            WF_B2 = fms%rsvr%b2
+            WF_B3 = fms%rsvr%b3
+            WF_B4 = fms%rsvr%b4
+            WF_B5 = fms%rsvr%b5
 
             !> Allocate configuration variables for the driver.
-            allocate(fms%rsvr%name(NR), &
-                     fms%rsvr%y(NR), fms%rsvr%x(NR), &
-                     fms%rsvr%iy(NR), fms%rsvr%jx(NR), fms%rsvr%rnk(NR), &
-                     fms%rsvr%cfn(NR))
+!-            allocate(fms%rsvr%name(NR), &
+!-                     fms%rsvr%y(NR), fms%rsvr%x(NR), &
+!-                     fms%rsvr%iy(NR), fms%rsvr%jx(NR), fms%rsvr%rnk(NR), &
+!-                     fms%rsvr%cfn(NR))
 
             !> Allocate state variables for the driver.
-            allocate(stas%rsvr%qi(NR), stas%rsvr%qo(NR), stas%rsvr%s(NR), stas%rsvr%ab(NR))
-            stas%rsvr%qi = 0.0
-            stas%rsvr%qo = 0.0
-            stas%rsvr%s = 0.0
-            stas%rsvr%ab = 0.0
+!-            allocate(stas%rsvr%qi(NR), stas%rsvr%qo(NR), stas%rsvr%s(NR), stas%rsvr%ab(NR))
+!-            stas%rsvr%qi = 0.0
+!-            stas%rsvr%qo = 0.0
+!-            stas%rsvr%s = 0.0
+!-            stas%rsvr%ab = 0.0
 
             !> Allocate output variable for the driver.
             rrls%nr = NR
@@ -326,32 +327,32 @@ module WF_ROUTE_config
 
             do i = 1, NR
                 ! KCK Added to allow higher precision gauge sites
-                if (LOCATIONFLAG == 1) then
-                    if (WF_RTE_flgs%RESVRELSWFB == 5) then
-                        read(iun, '(2f7.1, 5g10.3, a7, i2)') ry, rx, &
-                            WF_B1(i), WF_B2(i), WF_B3(i), WF_B4(i), WF_B5(i), &
-                            fms%rsvr%name(i), WF_RES(i)
-                    else
-                        read(iun, '(2f7.1, 2g10.3, 25x, a12, i2)') ry, rx, WF_B1(i), WF_B2(i), fms%rsvr%name(i), WF_RES(i)
-                    end if
-                    fms%rsvr%y(i) = ry
-                    fms%rsvr%iy(i) = nint((ry - shd%yOrigin*60.0)/shd%GRDN)
-                    fms%rsvr%x(i) = rx
-                    fms%rsvr%jx(i) = nint((rx - shd%xOrigin*60.0)/shd%GRDE)
-                else
-                    if (WF_RTE_flgs%RESVRELSWFB == 5) then
-                        read(iun, '(2i5, 5g10.3, a7, i2)') iy, ix, &
-                            WF_B1(i), WF_B2(i), WF_B3(i), WF_B4(i), WF_B5(i), &
-                            fms%rsvr%name(i), WF_RES(i)
-                    else
-                        read(iun, '(2i5, 2g10.3, 25x, a12, i2)') &
-                            iy, ix, WF_B1(i), WF_B2(i), fms%rsvr%name(i), WF_RES(i)
-                    end if
-                    fms%rsvr%y(i) = real(iy)
-                    fms%rsvr%iy(i) = int((real(iy) - real(shd%iyMin))/shd%GRDN + 1.0)
-                    fms%rsvr%x(i) = real(ix)
-                    fms%rsvr%jx(i) = int((real(ix) - real(shd%jxMin))/shd%GRDE + 1.0)
-                end if
+!-                if (LOCATIONFLAG == 1) then
+!-                    if (WF_RTE_flgs%RESVRELSWFB == 5) then
+!-                        read(iun, '(2f7.1, 5g10.3, a7, i2)') ry, rx, &
+!-                            WF_B1(i), WF_B2(i), WF_B3(i), WF_B4(i), WF_B5(i), &
+!-                            fms%rsvr%name(i), WF_RES(i)
+!-                    else
+!-                        read(iun, '(2f7.1, 2g10.3, 25x, a12, i2)') ry, rx, WF_B1(i), WF_B2(i), fms%rsvr%name(i), WF_RES(i)
+!-                    end if
+!-                    fms%rsvr%y(i) = ry
+!-                    fms%rsvr%iy(i) = nint((ry - shd%yOrigin*60.0)/shd%GRDN)
+!-                    fms%rsvr%x(i) = rx
+!-                    fms%rsvr%jx(i) = nint((rx - shd%xOrigin*60.0)/shd%GRDE)
+!-                else
+!-                    if (WF_RTE_flgs%RESVRELSWFB == 5) then
+!-                        read(iun, '(2i5, 5g10.3, a7, i2)') iy, ix, &
+!-                            WF_B1(i), WF_B2(i), WF_B3(i), WF_B4(i), WF_B5(i), &
+!-                            fms%rsvr%name(i), WF_RES(i)
+!-                    else
+!-                        read(iun, '(2i5, 2g10.3, 25x, a12, i2)') &
+!-                            iy, ix, WF_B1(i), WF_B2(i), fms%rsvr%name(i), WF_RES(i)
+!-                    end if
+!-                    fms%rsvr%y(i) = real(iy)
+!-                    fms%rsvr%iy(i) = int((real(iy) - real(shd%iyMin))/shd%GRDN + 1.0)
+!-                    fms%rsvr%x(i) = real(ix)
+!-                    fms%rsvr%jx(i) = int((real(ix) - real(shd%jxMin))/shd%GRDE + 1.0)
+!-                end if
                 if (WF_B3(i) > 0.0) then
                     fms%rsvr%cfn(i) = 3
                 else if (WF_B1(i) > 0.0) then
@@ -360,25 +361,25 @@ module WF_ROUTE_config
                     fms%rsvr%cfn(i) = 1
                 end if
                 !> check if point is in watershed and in river reaches
-                fms%rsvr%rnk(i) = 0
-                do j = 1, NA
-                    if (fms%rsvr%iy(i) == shd%yyy(j) .and. fms%rsvr%jx(i) == shd%xxx(j)) then
-                        fms%rsvr%rnk(i) = j
-                    end if
-                end do
-                if (fms%rsvr%rnk(i) == 0) then
-                    print *, 'Reservoir Station: ', i, ' is not in the basin'
-                    print *, 'Up/Down Coordinate: ', fms%rsvr%iy(i), shd%iyMin
-                    print *, 'Left/Right Coordinate: ', fms%rsvr%jx(i), shd%jxMin
-                    stop
-                end if
-                if (shd%IREACH(fms%rsvr%rnk(i)) /= i) then
-                    print *, 'Reservoir Station: ', i, ' is not in the correct reach'
-                    print *, 'Up/Down Coordinate: ', fms%rsvr%iy(i)
-                    print *, 'Left/Right Coordinate: ', fms%rsvr%jx(i)
-                    print *, 'IREACH value at station: ', shd%IREACH(fms%rsvr%rnk(i))
-                    stop
-                end if
+!-                fms%rsvr%rnk(i) = 0
+!-                do j = 1, NA
+!-                    if (fms%rsvr%iy(i) == shd%yyy(j) .and. fms%rsvr%jx(i) == shd%xxx(j)) then
+!-                        fms%rsvr%rnk(i) = j
+!-                    end if
+!-                end do
+!-                if (fms%rsvr%rnk(i) == 0) then
+!-                    print *, 'Reservoir Station: ', i, ' is not in the basin'
+!-                    print *, 'Up/Down Coordinate: ', fms%rsvr%iy(i), shd%iyMin
+!-                    print *, 'Left/Right Coordinate: ', fms%rsvr%jx(i), shd%jxMin
+!-                    stop
+!-                end if
+!-                if (shd%IREACH(fms%rsvr%rnk(i)) /= i) then
+!-                    print *, 'Reservoir Station: ', i, ' is not in the correct reach'
+!-                    print *, 'Up/Down Coordinate: ', fms%rsvr%iy(i)
+!-                    print *, 'Left/Right Coordinate: ', fms%rsvr%jx(i)
+!-                    print *, 'IREACH value at station: ', shd%IREACH(fms%rsvr%rnk(i))
+!-                    stop
+!-                end if
                 if (WF_B1(i) == 0.0) then
                     WF_NORESV_CTRL = WF_NORESV_CTRL + 1
                 end if
@@ -390,7 +391,7 @@ module WF_ROUTE_config
         !> Open and read in values from MESH_input_streamflow.txt file
         !> *********************************************************************
 
-        iun = WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun
+!-        iun = WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun
 !-        open(iun, file = WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%fn, status = 'old', action = 'read')
 !-        read(iun, *)
 !-        read(iun, *) fms%stmg%n, WF_NL, WF_MHRD, WF_KT, WF_START_YEAR, WF_START_DAY, WF_START_HOUR
@@ -440,18 +441,18 @@ module WF_ROUTE_config
 !-            end if
 !-        end do
 
-        if (ro%VERBOSEMODE > 0) then
+!-        if (ro%VERBOSEMODE > 0) then
 !-            print *, 'NUMBER OF STREAMFLOW GUAGES: ', NS
 !-            do i = 1, NS
 !-                print *, 'STREAMFLOW STATION: ', i, 'I: ', fms%stmg%iy(i), 'J: ', fms%stmg%jx(i)
 !-            end do
-            print *, 'NUMBER OF RESERVOIR STATIONS: ', NR
-            if (NR > 0) then
-                do i = 1, NR
-                    print *, 'RESERVOIR STATION: ', i, 'I: ', fms%rsvr%iy(i), 'J: ', fms%rsvr%jx(i)
-                end do
-            end if
-        end if !(ro%VERBOSEMODE > 0) then
+!-            print *, 'NUMBER OF RESERVOIR STATIONS: ', NR
+!-            if (NR > 0) then
+!-                do i = 1, NR
+!-                    print *, 'RESERVOIR STATION: ', i, 'I: ', fms%rsvr%iy(i), 'J: ', fms%rsvr%jx(i)
+!-                end do
+!-            end if
+!-        end if !(ro%VERBOSEMODE > 0) then
 
         !> ric     initialise smoothed variables
         WF_QSYN = 0.0

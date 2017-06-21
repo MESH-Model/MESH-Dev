@@ -143,9 +143,9 @@ module WF_ROUTE_module
 
         !> Update state variables for the driver.
         do i = 1, fms%rsvr%n
-            stas%rsvr%qi(i) = stas_grid%chnl%qi(fms%rsvr%rnk(i))
-            stas%rsvr%qo(i) = stas_grid%chnl%qo(fms%rsvr%rnk(i))
-            stas%rsvr%s(i) = stas_grid%chnl%s(fms%rsvr%rnk(i))
+            stas_grid%rsvr%qi(i) = stas_grid%chnl%qi(fms%rsvr%rnk(i))
+            stas_grid%rsvr%qo(i) = stas_grid%chnl%qo(fms%rsvr%rnk(i))
+            stas_grid%rsvr%s(i) = stas_grid%chnl%s(fms%rsvr%rnk(i))
         end do
 
         !> this is done so that INIT_STORE is not recalculated for

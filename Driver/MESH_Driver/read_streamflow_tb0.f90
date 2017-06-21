@@ -121,7 +121,8 @@ subroutine read_streamflow_tb0(shd, iun, fname)
     allocate(fms%stmg%name(NS), &
              fms%stmg%y(NS), fms%stmg%x(NS), &
              fms%stmg%iy(NS), fms%stmg%jx(NS), fms%stmg%rnk(NS), &
-             fms%stmg%DA(NS), stat = ierr)
+             fms%stmg%DA(NS), &
+             stat = ierr)
     if (ierr /= 0) goto 998
     fms%stmg%qomeas%dts = header%tb0p%deltaT
     fms%stmg%name = colHeader%tb0cmd%colName

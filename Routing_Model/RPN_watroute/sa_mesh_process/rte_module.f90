@@ -640,6 +640,45 @@ module rte_module
         stfl%qhyd = 0.0
         stfl%qsyn = 0.0
 
+!        if (fms%rsvr%n > 0) then
+!            ktr = fms%rsvr%qorls%dts
+!            noresv = fms%rsvr%n
+!            Nreaches = noresv
+!            allocate(&
+!                b1(noresv), b2(noresv), b3(noresv), &
+!                b4(noresv), b5(noresv), ires(noresv), jres(noresv), &
+!                resindex(noresv), b6(noresv), b7(noresv), &
+!                poliflg(noresv), &
+!                resname(noresv), qrel(noresv, 1), &
+!                reach_last(Nreaches), &
+!                qdwpr(noresv, 1), lake_elv(noresv, 1), &
+!                lake_stor(noresv, 1), lake_outflow(noresv, 1), &
+!                del_stor(noresv, 1), lake_inflow(noresv, 1) )!, &
+!!                qstream_sum(noresv, 1), strloss_sum(noresv, 1))
+!            b1 = 0.0; b2 = 0.0; b3 = 0.0
+!            b4 = 0.0; b5 = 0.0; ires = 0.0; jres = 0.0
+!            resindex = 0.0; b6 = 0.0; b7 = 0.0
+!            poliflg ='y'
+!            resname = ''; qrel = 0.0
+!            reach_last = 0.0
+!            qdwpr = 0.0; lake_elv = 0.0
+!            lake_stor = 0.0; lake_outflow = 0.0
+!            del_stor = 0.0; lake_inflow = 0.0
+!!            qstream_sum = 0.0; strloss_sum = 0.0
+!            resname = fms%rsvr%name
+!            b1 = fms%rsvr%b(:, 1)
+!            b2 = fms%rsvr%b(:, 2)
+!            b3 = 0.0 !fms%rsvr%b(:, 3)
+!            b4 = 0.0 !fms%rsvr%b(:, 4)
+!            b5 = 0.0 !fms%rsvr%b(:, 5)
+!            b6 = 1.0e+08
+!            b7 = 0.0
+!            where (b3 == 0.0) poliflg = 'n'
+!            jres = fms%rsvr%jx
+!            ires = fms%rsvr%iy
+!            resindex = fms%rsvr%rnk
+!        end if
+
         open(68, file = '20121201_str.tb0')
         in_line = ''
         do while (in_line /= ':EndHeader')
