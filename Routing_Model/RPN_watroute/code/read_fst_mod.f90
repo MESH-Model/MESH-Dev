@@ -308,7 +308,7 @@ subroutine read_fst(unitNum,iflname,header_only,var_name,iyear,imonth,iday,ihour
                     -1, & ! Select any vertical level
                     -1, & ! Hour is ip2 only unreliably
                     -1, & ! ip3 is unused by this code
-                    'X', & ! Variable type
+                    'C', & ! Variable type
                     'S2WI') ! Variable name
      if (key .le. 0 ) then
         print *, 'Could not find S2WI (fstinf) in: ', flname
@@ -329,7 +329,7 @@ subroutine read_fst(unitNum,iflname,header_only,var_name,iyear,imonth,iday,ihour
                     -1, & ! Select any vertical level
                     -1, & ! Hour is ip2 only unreliably
                     -1, & ! ip3 is unused by this code
-                    'X', & ! Variable type
+                    'C', & ! Variable type
                     'S2WJ') ! Variable name
      if (key < 0) then
        print *, 'Mapping info y direction not found in: ', flname

@@ -39,6 +39,24 @@ module rte_module
     !> Instance of option flags.
     type(rte_options), save :: rteops
 
+!temp: Override for diversions.
+    real, dimension(:), allocatable, save :: qdiv2
+!    character*12, dimension(4), save :: &
+!        tdivname = ['06EC002', 'irrigat', '05LL019', '05QB005']
+!    real*4, dimension(4), save :: &
+!        txstrdiv = [-999.0000, -107.4900, -98.4045, -999.0000], &
+!        tystrdiv = [-999.0000, 52.0640, 50.0134, -999.0000], &
+!        txenddiv = [-98.9810, -999.9900, -98.3956, -91.3572], &
+!        tyenddiv = [56.6906, -999.9900, 50.2219, 50.9251]
+!    integer*4, dimension(4), save :: &
+!        tval1div = [1.0, 0.5, 1.0, 1.0], &
+!        tval2div = [3, 2, 1, 3], &
+!        tval3div = [0, 11, 0, 0], &
+!        tval4div = [0, 11, 0, 0]
+
+!temp: Override for irrigation
+    integer, dimension(:), allocatable :: totirrigpts
+
     contains
 
     !>
@@ -70,6 +88,15 @@ module rte_module
         !> Local variables.
         integer n, l
         real ry, rx
+
+!temp: for overrides
+        real, dimension(:, :), allocatable :: datarr
+        integer j, i
+        character(len = 40) in_line
+        character(len = 4) ffmti
+        integer, dimension(4) :: jstrdiv, istrdiv, jenddiv, ienddiv
+        integer, dimension(:), allocatable :: iminirr, imaxirr, jminirr, jmaxirr
+        integer irindex, irpt
 
         !> Return if not the head node or if the process is not active.
         if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
@@ -113,24 +140,11 @@ module rte_module
 !+        sl1 = shd%SLOPE_INT
         ichnl = shd%ICHNL
         ireach = shd%IREACH
+        Nreaches = maxval(shd%IREACH)
         grid_area = shd%AREA
         frac = shd%FRAC
         aclass = shd%lc%ACLASS
         glacier_flag = 'n'
-
-!todo: useful checks higher in the code.
-        if (minval(slope) < 0) then
-            print *, 'Invalid channel slope variable (negative slopes)'
-            stop
-        end if
-        if (minval(rl) < 0) then
-            print *, 'Invalid channel length variable'
-            stop
-        end if
-!+        if (minval(sl1) < 0) then
-!+            print *, 'Invalid minimum interior slope'
-!+            stop
-!+        end if
 
         !> Allocate and assign parameter values.
         allocate(flz(na), flz2(na), pwr(na), r1n(na), r2n(na), rlake(na), &
@@ -138,6 +152,32 @@ module rte_module
         flz = rtepm%flz; pwr = rtepm%pwr; r1n = rtepm%r1n; r2n = rtepm%r2n
         mndr = rtepm%mndr; aa2 = rtepm%aa2; aa3 = rtepm%aa3; aa4 = rtepm%aa4; widep = rtepm%widep
         flz2 = 0.0; rlake = 0.0; theta = 0.0; kcond = 0.0
+
+!temp: Override
+!        flz = 3.0e-8; pwr = 2.6
+!        aa2 = 0.1; aa3 = 0.9; aa4 = 0.67
+!        widep = 20.0
+!        naa = 5980
+!        allocate(datarr(shd%xCount, shd%yCount))
+!        datarr = 0.0
+!        open(600, file = 'r1n_running_avg.grid')
+!        do i = 1, shd%yCount
+!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+!        end do
+!        close(600)
+!        do n = 1, naa
+!            r1n(n) = datarr(shd%xxx(n), shd%yyy(n))
+!        end do
+!        datarr = 0.0
+!        open(600, file = 'r2n_running_avg.grid')
+!        do i = 1, shd%yCount
+!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+!        end do
+!        close(600)
+!        do n = 1, naa
+!            r2n(n) = datarr(shd%xxx(n), shd%yyy(n))
+!        end do
+!        deallocate(datarr)
 
         !> Adjust the calculated channel length by the degree of meandering.
         rl = rl*mndr
@@ -162,7 +202,9 @@ module rte_module
                  hcha1(na), hcha2(na), hwet1(na), hwet2(na), qin(na), &
                  qswevp(na), qswrain(na), qiwet1(na), qiwet2(na), &
                  qowet1(na), qowet2(na), wetarea(na), chaarea(na), &
-                 bin_precip(na), wsat(na), wetfrac(na), qo2rem(na))
+                 bin_precip(na), wsat(na), wetfrac(na), qo2rem(na), &
+!tied to irr
+                 qo2remirr(na))
         qi1 = 0.0; qi2 = 0.0; qo1 = 0.0; qo2 = 0.0; qo2sim = 0.0
         qr = 0.0; d2 = 0.0; qda = 0.0; cap = 0.0; over = 0.0
         qmax = 0.0; res = 0; sump = 0.0; store1 = 0.0
@@ -179,6 +221,7 @@ module rte_module
         qswevp = 0.0; qswrain = 0.0; qiwet1 = 0.0; qiwet2 = 0.0
         qowet1 = 0.0; qowet2 = 0.0; wetarea = 0.0; chaarea = 0.0
         bin_precip = 0.0; wsat = 0.0; wetfrac = 0.0; qo2rem = 0.0
+        qo2remirr = 0.0
 
         !> Allocate and assign other variables.
         allocate(store2_strt(naa), nhyd(ycount, xcount), iflowgrid(no), nopt(no))
@@ -269,6 +312,263 @@ module rte_module
         !> What class is the water class?
         ii_water = ntype
 
+!temp: override for initial states
+!        allocate(datarr(shd%xCount, shd%yCount))
+
+!        datarr = 0.0
+!        open(600, file = 'QI1_012.grid')
+!        do i = 1, shd%yCount
+!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+!        end do
+!        close(600)
+!        do n = 1, naa
+!            qi1(n) = datarr(shd%xxx(n), shd%yyy(n))
+!        end do
+!        qi2 = qi1
+!        datarr = 0.0
+!        open(600, file = 'QO1_012.grid')
+!        do i = 1, shd%yCount
+!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+!        end do
+!        close(600)
+!        do n = 1, naa
+!            qo1(n) = datarr(shd%xxx(n), shd%yyy(n))
+!        end do
+!        qo2 = qo1
+!        datarr = 0.0
+!        open(600, file = 'STOR_012.grid')
+!        do i = 1, shd%yCount
+!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+!        end do
+!        close(600)
+!        do n = 1, naa
+!            store1(n) = datarr(shd%xxx(n), shd%yyy(n))
+!        end do
+!        store2 = store1
+
+!        datarr = 0.0
+!        open(600, file = 'OVER_012.grid')
+!        do i = 1, shd%yCount
+!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+!        end do
+!        close(600)
+!        do n = 1, naa
+!            over(n) = datarr(shd%xxx(n), shd%yyy(n))
+!        end do
+!        datarr = 0.0
+!        open(600, file = 'LZS_012.grid')
+!        do i = 1, shd%yCount
+!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+!        end do
+!        close(600)
+!        do n = 1, naa
+!            lzs(n) = datarr(shd%xxx(n), shd%yyy(n))
+!        end do
+
+!        datarr = 0.0
+!        open(600, file = 'QO1_012_10.grid')
+!        do i = 1, shd%yCount
+!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+!        end do
+!        close(600)
+!        do n = 1, naa
+!            qo2sim(n) = datarr(shd%xxx(n), shd%yyy(n))
+!        end do
+!        datarr = 0.0
+!        open(600, file = 'QO1_012_20.grid')
+!        do i = 1, shd%yCount
+!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+!        end do
+!        close(600)
+!        do n = 1, naa
+!            qo2rem(n) = datarr(shd%xxx(n), shd%yyy(n))
+!        end do
+!        datarr = 0.0
+!        open(600, file = 'QO1_012_30.grid')
+!        do i = 1, shd%yCount
+!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
+!        end do
+!        close(600)
+!        do n = 1, naa
+!            qo2remirr(n) = datarr(shd%xxx(n), shd%yyy(n))
+!        end do
+
+!        deallocate(datarr)
+
+!        resumflg = 'y'
+
+!temp: override to read from file
+!        open(602, file = 'RFF.grid')
+!        open(603, file = 'RCH.grid')
+
+        ! Reservoirs.
+        noresv = fms%rsvr%n
+        Nreaches = noresv
+        if (fms%rsvr%n > 0) then
+            ktr = fms%rsvr%qorls%dts
+            allocate( &
+                b1(noresv), b2(noresv), b3(noresv), &
+                b4(noresv), b5(noresv), ires(noresv), jres(noresv), &
+                b6(noresv), b7(noresv), &
+!                yres(noresv), xres(noresv), poliflg(noresv), &
+                resname(noresv), &
+                qrel(noresv, 999999), &
+                qdwpr(noresv, 999999), lake_elv(noresv, 999999), &
+                lake_inflow(noresv, 999999), &
+    !tied to val2divyes == 1
+                resindex(noresv), &
+    !tied to fhr
+                lake_stor(noresv, 999999), lake_outflow(noresv, 999999), &
+                del_stor(noresv, 999999))
+!                qstream_sum(noresv, 999999), strloss_sum(noresv, 999999))
+            qrel = 0.0
+            qdwpr = 0.0; lake_elv = 0.0
+            lake_inflow = 0.0
+!tied to fhr
+            lake_stor = 0.0; lake_outflow = 0.0
+            del_stor = 0.0
+!            qstream_sum = 0.0; strloss_sum = 0.0
+            resname = fms%rsvr%name
+            b1 = fms%rsvr%b1
+            b2 = fms%rsvr%b2
+            b3 = fms%rsvr%b3
+            b4 = fms%rsvr%b4
+            b5 = fms%rsvr%b5
+            b6 = fms%rsvr%lvlz0
+            b7 = fms%rsvr%area
+!            where (b3 == 0.0)
+!                poliflg = 'n'
+!            elsewhere
+!                poliflg = 'y'
+!            end where
+            jres = int((fms%rsvr%x - xorigin)/xdelta) + 1
+            ires = int((fms%rsvr%y - yorigin)/ydelta) + 1
+            resindex = fms%rsvr%rnk
+            allocate(reach_last(noresv))
+            reach_last = 0.0
+        end if
+
+!temp: Override for diversions.
+!        nodiv = 4
+!        allocate( &
+!            val1div(nodiv), val2div(nodiv), val3div(nodiv), val4div(nodiv), &
+!            divstrindex(nodiv), divendindex(nodiv), divname(nodiv), qdiv(nodiv, 999999), qdiv2(nodiv))
+!        val1div = 0.0; val2div = 0; val3div = 0; val4div = 0
+!        istrdiv = 0; jstrdiv = 0
+!        ienddiv = 0; jenddiv = 0
+!        divstrindex = 0; divendindex = 0; divname = ''; qdiv = 0.0
+!        divname = tdivname
+!        val1div = tval1div
+!        val2div = tval2div
+!        if (any(val2div > 0)) val2divyes = 1
+!        val3div = tval3div
+!        val4div = tval4div
+!        jstrdiv = int((txstrdiv - xorigin)/xdelta) + 1
+!        istrdiv = int((tystrdiv - yorigin)/ydelta) + 1
+!        jenddiv = int((txenddiv - xorigin)/xdelta) + 1
+!        ienddiv = int((tyenddiv - yorigin)/ydelta) + 1
+!        divstrindex = -1 ! Points outside the watershed: reset the index value to -1.
+!        divendindex = -1
+!        do l = 1, nodiv
+!            do n = 1, naa
+!                if (xxx(n) == jstrdiv(l) .and. yyy(n) == istrdiv(l)) then
+!                    divstrindex(l) = n
+!                end if
+!                if (xxx(n) == jenddiv(l) .and. yyy(n) == ienddiv(l)) then
+!                    divendindex(l) = n
+!                end if
+!            end do
+!            if ((val2div(l) == 1 .and. divstrindex(l) == -1) .or. (val2div(l) == 1 .and. divendindex(l) == -1)) then
+!                print *, 'Error for station ', l, ': incompatibility between value2 and location of stations.'
+!                print *, 'Check lat-lon of this station.'
+!                print *, 'DIVR ', l, ' type ', val2div(l), ' START ', divstrindex(l), ' END', divendindex(l)
+!                stop
+!            end if
+!            if ((val2div(l) == 2 .and. divstrindex(l) == -1) .or. (val2div(l) == 2 .and. divendindex(l) /= -1)) then
+!                print *, 'Error for station ', l, ': incompatibility between value2 and location of stations.'
+!                print *, 'Check lat-lon of this station.'
+!                print *, 'DIVR ', l, ' type ', val2div(l), ' START ', divstrindex(l), ' END', divendindex(l)
+!                stop
+!            end if
+!            if ((val2div(l) == 3 .and. divendindex(l) == -1) .or. (val2div(l) == 3 .and. divstrindex(l) /= -1)) then
+!                print *, 'Error for station ', l, ': incompatibility between value2 and location of stations.'
+!                print *, 'Check lat-lon of this station.'
+!                print *, 'DIVR ', l, ' type ', val2div(l), ' START ', divstrindex(l), ' END', divendindex(l)
+!                stop
+!            end if
+!        end do
+
+!temp: Override for irrigation.
+!        nodivirrig = 0                          ! The number of irrigation regions
+!        maxirrigpts = 0                         ! The largest number of points in an individual irrigation region
+!        do l = 1, nodiv                         ! Determine how many regions are to be irrigated
+!            if (divname(l)(1:5) == 'irrig' .or. divname(l)(1:5) == 'Irrig') then
+!                if (val2div(l) /= 2) then
+!                    print *, 'Irrigation station must be type 2 diversion'
+!                    print *, 'DIVR ', l, ' type ', val2div(l)
+!                    stop
+!                end if
+!                nodivirrig = nodivirrig + 1         ! The maximum number of points to be irrigated
+!                maxirrigpts = max(maxirrigpts, (val3div(l) + 1)*(val4div(l) + 1)) ! Add an extra point in each direction: needed if value3 or value4 is an even number
+!            end if
+!        end do
+!        if (nodivirrig > 0) then
+!            !   irrigindx: the indices (1-naa) of points to be irrigated
+!            !   qdivirrig: the volume (m3/s) of water to be removed from the irrigated point in the simulation timestep
+!            allocate( &
+!                totirrigpts(nodivirrig), &
+!                iminirr(nodivirrig), imaxirr(nodivirrig), &
+!                jminirr(nodivirrig), jmaxirr(nodivirrig), &
+!                irrigindx(nodivirrig, maxirrigpts), &
+!                qdivirrig(nodivirrig, 999999))
+!            irrigindx = -1
+!            qdivirrig = 0
+!
+!            ! Determine the grid points in which water is to be lost due to irrigation
+!            irindex = 0
+!            do l = 1, nodiv
+!                if (divname(l)(1:5) == 'irrig' .or. divname(l)(1:5) == 'Irrig') then
+!                    irindex = irindex + 1
+!                    iminirr(irindex) = max(istrdiv(l) - val4div(l)/2, 0)  ! Define the rectangle from the provided values
+!                    imaxirr(irindex) = min(istrdiv(l) + val4div(l)/2, ycount)
+!                    jminirr(irindex) = max(jstrdiv(l) - val3div(l)/2, 0)
+!                    jmaxirr(irindex) = min(jstrdiv(l) + val3div(l)/2, xcount)
+!                    irpt = 0
+!                    do i = iminirr(irindex), imaxirr(irindex) ! Determine the number of points in this rectangle that are also in the watershed
+!                        do j = jminirr(irindex), jmaxirr(irindex)
+!                            do n = 1, naa
+!                                if(xxx(n) == j .and. yyy(n) == i) then
+!                                    irpt = irpt + 1
+!                                    irrigindx(irindex, irpt) = n
+!                                    exit
+!                                end if
+!                            end do
+!                        end do
+!                    end do
+!                    totirrigpts(irindex) = irpt
+!                end if
+!            end do
+!        end if
+!        open(67, file = '20121201_div.tb0')
+!        in_line = ''
+!        do while (in_line /= ':EndHeader')
+!            read(67, '(a)') in_line
+!        end do
+!        if (nodiv > 0) then
+!            do i = 1, (30*24 + 13)
+!                read(67, *) (qdiv(l, 1), l = 1, nodiv)
+!            end do
+!            backspace(67)
+!            do l = 1, nodiv ! Loop through the diversion names searching for an irrigation area
+!                if (qdiv(l, 1) < 0.0 .and. val2div(l) == 3) then
+!                    print *, 'Diversion is type 3 (diversion starts outside of watershed).'
+!                    print *, 'The diversion value cannot be negative for type 3.'
+!                    print *, 'DIVR ', l, ' type ', val2div(l), ' qdiv ', qdiv(l, 1)
+!                    stop
+!                end if
+!            end do
+!        end if
+
         !> Allocate output variable for the driver.
 !todo: move this
         stfl%ns = no
@@ -276,17 +576,62 @@ module rte_module
         stfl%qhyd = 0.0
         stfl%qsyn = 0.0
 
-!todo: move this
-        open(70, file = './BASINAVG1/MESH_output_streamflow.rte.csv', status = 'unknown', action = 'write')
+!        strfw_option = 'streamflow_comparison'
+!todo: fix this.
+        allocate(qhyd(no, 999999)); qhyd = 0.0
+!        open(54, file = './spl_rpn.rte.csv', action = 'write')
+!        write(54, '(a)') 'Observed and simulated streamflows (m^3/s)'
+!        write(54, '(a)') 'Station,,,,05GG001 ,,05HG001 ,,05KD003 ,,05KJ001 ,,05KL001 ,,05MH005 ,,05MJ001 ,,05OC001 ,,' // &
+!                         '05OC012 ,,05OJ005 ,,05PF063 ,,05PF068 ,,05PF069 ,,05UE005 ,,05UF006 ,,05UF007 ,,05LM001 ,,05PE020 ,,' // &
+!                         '05LH005 ,,05UB008 ,,05AJ001 ,,05AA024 ,,05AB021 ,,05AD007 ,,05AE027 ,,05AG006 ,,05BA001 ,,05BB001 ,,' // &
+!                         '05BE004 ,,05BH004 ,,05BH008 ,,05BL024 ,,05BL024 ,,05BM002 ,,05BM004 ,,05BM004 ,,05BN012 ,,05CA009 ,,' // &
+!                         '05CA009 ,,05CC002 ,,05CC007 ,,05CE001 ,,05CK004 ,,05DA009 ,,05DB006 ,,05DC001 ,,05DC010 ,,05DC011 ,,' // &
+!                         '05DD005 ,,05DD007 ,,05DF001 ,,05EA001 ,,05EE007 ,,05EE009 ,,05EF001 ,,05FA001 ,,05FC001 ,,05FE004 ,,' // &
+!                         '05HD036 ,,05HD039 ,,05KE010 ,'
+!        write(54, '(a)') 'Longitude,,,,-105.631,,-106.504,,-103.157,,-101.068,, -99.231,, -98.749,, -97.265,, -97.074,,' // &
+!                         ' -97.045,, -96.724,, -95.430,, -95.856,, -96.037,, -96.576,, -94.493,, -94.229,, -98.537,, -94.603,,' // &
+!                         ' -99.379,, -97.976,,-111.056,,-113.860,,-113.578,,-112.876,,-113.302,,-111.755,,-116.112,,-115.546,,' // &
+!                         '-114.992,,-114.001,,-114.001,,-113.714,,-113.714,,-113.582,,-112.452,,-112.452,,-111.468,,-115.010,,' // &
+!                         '-115.010,,-113.716,,-114.139,,-112.602,,-110.205,,-116.530,,-114.702,,-114.844,,-116.329,,-115.990,,' // &
+!                         '-115.407,,-116.674,,-113.584,,-113.300,,-110.481,,-111.888,,-109.500,,-113.575,,-112.310,,-109.931,,' // &
+!                         '-108.367,,-107.524,,-104.575,'
+!        write(54, '(a)') 'Latitude,,,,  53.384,,  52.321,,  53.883,,  54.018,,  53.268,,  49.879,,  50.049,,  49.189,,' // &
+!                         '  49.734,,  50.326,,  50.405,,  50.578,,  50.748,,  56.146,,  56.561,,  56.578,,  51.824,,  50.198,,' // &
+!                         '  52.001,,  54.351,,  50.204,,  49.668,,  50.201,,  49.843,,  48.949,,  50.032,,  51.654,,  51.289,,' // &
+!                         '  51.288,,  51.290,,  51.290,,  50.930,,  50.930,,  50.926,,  50.932,,  50.932,,  50.211,,  51.812,,' // &
+!                         '  51.812,,  52.376,,  52.374,,  51.650,,  51.106,,  52.013,,  52.375,,  52.556,,  52.194,,  52.369,,' // &
+!                         '  53.088,,  52.915,,  53.632,,  53.990,,  53.632,,  53.454,,  53.812,,  52.912,,  52.917,,  53.092,,' // &
+!                         '  49.846,,  50.574,,  53.991,'
+!        write(54, '(a)') 'Xcoord_grid,      86,,      80,,     104,,     119,,     132,,     135,,     146,,     147,,' // &
+!                         '     147,,     150,,     159,,     156,,     155,,     151,,     166,,     167,,     137,,     165,,' // &
+!                         '     131,,     141,,      48,,      28,,      30,,      35,,      32,,      43,,      12,,      16,,' // &
+!                         '      20,,      27,,      27,,      29,,      29,,      30,,      38,,      38,,      45,,      20,,' // &
+!                         '      20,,      29,,      26,,      37,,      54,,       9,,      22,,      21,,      10,,      13,,' // &
+!                         '      17,,       8,,      30,,      32,,      52,,      42,,      59,,      30,,      39,,      56,,' // &
+!                         '      67,,      73,,      94,'
+!        write(54, '(a)') 'Ycoord_grid,,,,      47,,      41,,      49,,      50,,      46,,      27,,      28,,      23,,' // &
+!                         '      26,,      30,,      30,,      31,,      32,,      62,,      64,,      64,,      38,,      29,,' // &
+!                         '      39,,      52,,      29,,      26,,      29,,      27,,      22,,      28,,      37,,      35,,' // &
+!                         '      35,,      35,,      35,,      33,,      33,,      33,,      33,,      33,,      29,,      38,,' // &
+!                         '      38,,      41,,      41,,      37,,      34,,      39,,      41,,      42,,      40,,      41,,' // &
+!                         '      45,,      44,,      48,,      50,,      48,,      47,,      49,,      44,,      44,,      45,,' // &
+!                         '      27,,      31,,      50,'
+!        write(54, '(a)') 'YEAR,MONTH,DAY,HOUR,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,' // &
+!                         'SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,' // &
+!                         'OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,' // &
+!                         'SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,' // &
+!                         'OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,' // &
+!                         'OBS,SIM,OBS,SIM'
+
+        !> Open output files for streamflow.
+!todo: move this.
+        open(70, file = 'MESH_output_streamflow.csv', status = 'unknown', action = 'write')
         write(70, 1010, advance = 'no') 'YEAR', 'DAY'
         do l = 1, fms%stmg%n
-            write(70, 1010, advance = 'no') 'QOMEAS', 'QOSIM'
+            write(ffmti, '(i3)') l
+            write(70, 1010, advance = 'no') 'QOMEAS' // trim(adjustl(ffmti)), 'QOSIM' // trim(adjustl(ffmti))
         end do
         write(70, *)
-
-        strfw_option = 'streamflow_comparison'
-        allocate(qhyd(1,999999)); qhyd = 0.0
-        open(54, file = './BASINAVG1/spl_rpn.rte.csv', action = 'write')
 
 1010    format(9999(g15.7e2, ','))
 
@@ -338,6 +683,10 @@ module rte_module
         !> Local variables.
         integer n, l
 
+!temp: override to read from file
+        real, dimension(:, :, :), allocatable :: datarr
+        integer j, i, irindex
+
         !> Local variables not used.
         character(len = 14) :: date = ''
 
@@ -345,8 +694,11 @@ module rte_module
         if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
 
 !todo: move this
-        if (mod(ic%now%hour, 24) == 0 .and. ic%now%mins == 0) then
-            read(22, *) (stfl%qhyd(l), l = 1, no)
+        if (mod(ic%now%hour, fms%stmg%qomeas%dts) == 0 .and. ic%now%mins == 0) then
+            read(22, *) (stas_grid%chnl%qo(fms%stmg%rnk(l)), l = 1, fms%stmg%n)
+            do l = 1, fms%stmg%n
+                stfl%qhyd(l) = stas_grid%chnl%qo(fms%stmg%rnk(l))
+            end do
         end if
 
         !> Accumulate runoff to the routing time-step.
@@ -363,8 +715,50 @@ module rte_module
             return
         end if
 
+!temp: override to read from file
+!        allocate(datarr(shd%xCount, shd%yCount, 2))
+!        read(602, *)
+!        read(603, *)
+!        do i = 1, shd%yCount
+!            read(602, *) (datarr(j, i, 1), j = 1, shd%xCount)
+!            read(603, *) (datarr(j, i, 2), j = 1, shd%xCount)
+!        end do
+!        do n = 1, naa
+
+            !> Pass all values of surface runoff (RFF) within a reach and positive values elsewhere to qr.
+            !> Remember negative values of RFF outside of reaches and add to lzs.
+!            if (ireach(n) <= 0 .and. datarr(shd%xxx(n), shd%yyy(n), 1) < 0.0) then
+!                qr(n) = 0.0
+!                lzs(n) = lzs(n) + datarr(shd%xxx(n), shd%yyy(n), 2) + datarr(shd%xxx(n), shd%yyy(n), 1)
+!            else
+!                qr(n) = datarr(shd%xxx(n), shd%yyy(n), 1)
+!                lzs(n) = lzs(n) + datarr(shd%xxx(n), shd%yyy(n), 2)
+!            end if
+!        end do
+
         !> Increment counters.
         fhr = fhr + 1
+
+        !> Diversion data.
+        if (nodiv > 0) then
+            read(67, *) (qdiv2(l), l = 1, nodiv)
+            do l = 1, nodiv
+                if (qdiv2(l) < 0.0 .and. val2div(l) == 3) then
+                    print *, 'Diversion is type 3 (diversion starts outside of watershed).'
+                    print *, 'The diversion value cannot be negative for type 3.'
+                    print *, 'DIVR ', l, ' type ', val2div(l), ' qdiv ', qdiv2(l)
+                    stop
+                else if (qdiv2(l) < 0.0) then
+                    qdiv2(l) = 0.0
+                end if
+                irindex = 0
+                if (divname(l)(1:5) == 'irrig' .or. divname(l)(1:5) == 'Irrig') then
+                    irindex = irindex + 1
+                    qdivirrig(irindex, 1) = qdiv(l, 1)/totirrigpts(irindex)
+                end if
+            end do
+            qdiv(:, fhr) = qdiv2
+        end if
 
         !> Date
         year1 = ic%now%year
@@ -388,6 +782,7 @@ module rte_module
         qi2_strt(1:naa) = qi2(1:naa)
         qo2_strt(1:naa) = qo2(1:naa)
         store2_strt(1:naa) = store2(1:naa)
+        qhyd(:, fhr) = stfl%qhyd
 
         !> If flow insertion, use simulated instead of flow inserted value at gauge location.
         if (trim(strfw_option) == 'streamflow_insertion') then
@@ -543,18 +938,26 @@ module rte_module
 !        day_last = day_now
 !        hour_last = hour_now
 
+        !> Accumulate.
+        if (ic%ts_daily == 1) qo2sim = 0.0
+        qo2sim = qo2sim + qo2
+        if (mod(ic%ts_daily, 3600/ic%dts*24) == 0) qo2sim = qo2sim/24
+
         !> Return average streamflow value to SA_MESH.
-        do l = 1, no
-            stfl%qsyn(l) = qo2(fms%stmg%rnk(l))
+!todo: preserve per time-step value.
+        do l = 1, fms%stmg%n
+            stfl%qsyn(l) = qo2sim(fms%stmg%rnk(l))
         end do
 
-!todo: move this
-        if ((mod(ic%ts_daily, 3600/ic%dts*24) == 0)) then
+        !> This occurs the last time-step of the day.
+!todo: move this.
+        if (mod(ic%ts_daily, 3600/ic%dts*24) == 0) then
+
+            !> Write daily output for streamflow.
             write(70, 1010, advance = 'no') ic%now%year, ic%now%jday
-            do l = 1, fms%stmg%n
-                write(70, 1010, advance = 'no') stfl%qhyd(l), stfl%qsyn(l)
-            end do
+            write(70, 1010, advance = 'no') (stfl%qhyd(l), stfl%qsyn(l), l = 1, fms%stmg%n)
             write(70, *)
+
         end if
 
 1010    format(9999(g15.7e2, ','))

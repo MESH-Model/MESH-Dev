@@ -52,8 +52,10 @@ module fm_variables
     !>
     !> Attributes:
     !*  cfn: Type of release curve function.
+    !*  b: Coefficients.
     type, extends(outlet_location) :: lake_outlet
         integer(kind = 4), dimension(:), allocatable :: cfn
+        real(kind = 4), dimension(:), allocatable :: b1, b2, b3, b4, b5, lvlz0, area
     end type
 
     !> Type: reservoir_outlet (extends: lake_outlet)
@@ -61,7 +63,7 @@ module fm_variables
     !>
     !> Attributes:
     type, extends(lake_outlet) :: reservoir_outlet
-
+        type(time_series) qorls
     end type
 
     !> Type: abstraction_point (extends: outlet_location)

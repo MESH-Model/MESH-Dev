@@ -244,6 +244,12 @@ module state_variables
             !> Deep zone storage.
             stas%dzs%zlw(n), stas%dzs%rofb(n), &
 
+            !> Stream channel.
+            stas%chnl%qi(n), stas%chnl%qo(n), stas%chnl%s(n), &
+
+            !> Reservoirs.
+            stas%rsvr%qi(n), stas%rsvr%qo(n), stas%rsvr%s(n), stas%rsvr%ab(n), &
+
             stat = ierr)
 
         !> Mark that the variable has been initialized.
@@ -277,6 +283,12 @@ module state_variables
 
             !> Deep zone storage.
             stas%dzs%zlw = 0.0; stas%dzs%rofb = 0.0
+
+            !> Stream channel.
+            stas%chnl%qi = 0.0; stas%chnl%qo = 0.0; stas%chnl%s = 0.0
+
+            !> Reservoirs.
+            stas%rsvr%qi = 0.0; stas%rsvr%qo = 0.0; stas%rsvr%s = 0.0; stas%rsvr%ab = 0.0
 
         end if
 

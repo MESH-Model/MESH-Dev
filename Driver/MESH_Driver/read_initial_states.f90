@@ -13,8 +13,9 @@ subroutine read_initial_states(fls, shd, ierr)
     use sa_mesh_shared_variables
     use FLAGS
 
-    !> Required for TFREZ
     use RUNCLASS36_constants
+    use RUNCLASS36_variables
+    use RUNSVS113_variables
 
     implicit none
 
@@ -50,27 +51,33 @@ subroutine read_initial_states(fls, shd, ierr)
         i = shd%lc%ILMOS(k)
         m = shd%lc%JLMOS(k)
 
-        !> SA_MESH.
-        stas%cnpy%qac = 0.5e-2
-        stas%cnpy%tcan(k) = stas_gru%cnpy%tcan(m) + TFREZ
-        stas%cnpy%tac(k) = stas_gru%cnpy%tcan(m) + TFREZ
-        stas%sno%tsno(k) = stas_gru%sno%tsno(m) + TFREZ
-        stas%sfc%tpnd(k) = stas_gru%sfc%tpnd(m) + TFREZ
-        stas%sfc%zpnd(k) = stas_gru%sfc%zpnd(m)
-        stas%cnpy%rcan(k) = stas_gru%cnpy%rcan(m)
-        stas%cnpy%sncan(k) = stas_gru%cnpy%sncan(m)
-        stas%sno%sno(k) = stas_gru%sno%sno(m)
-        stas%sno%albs(k) = stas_gru%sno%albs(m)
-        stas%sno%rhos(k) = stas_gru%sno%rhos(m)
-        stas%cnpy%gro(k) = stas_gru%cnpy%gro(m)
-        stas%sfc%tsfs(k, 1) = TFREZ
-        stas%sfc%tsfs(k, 2) = TFREZ
-        stas%sfc%tsfs(k, 3) = stas_gru%sl%tbar(m, 1) + TFREZ
-        stas%sfc%tsfs(k, 4) = stas_gru%sl%tbar(m, 1) + TFREZ
-        stas%sl%tbar(k, :) = stas_gru%sl%tbar(m, :) + TFREZ
-        stas%sl%thlq(k, :) = stas_gru%sl%thlq(m, :)
-        stas%sl%thic(k, :) = stas_gru%sl%thic(m, :)
-        stas%sl%tbas(k) = stas_gru%sl%tbar(m, NSL) + TFREZ
+        !> RUNCLASS36 and RUNSVS113.
+        if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+            stas%cnpy%tcan(k) = stas_gru%cnpy%tcan(m) + TFREZ
+            stas%sno%tsno(k) = stas_gru%sno%tsno(m) + TFREZ
+            stas%sno%rhos(k) = stas_gru%sno%rhos(m)
+            stas%sno%albs(k) = stas_gru%sno%albs(m)
+            stas%sl%tbar(k, :) = stas_gru%sl%tbar(m, :) + TFREZ
+            stas%sl%thlq(k, :) = stas_gru%sl%thlq(m, :)
+        end if
+
+        !> RUNCLASS36.
+        if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+            stas%cnpy%tac(k) = stas_gru%cnpy%tcan(m) + TFREZ
+            stas%cnpy%qac = 0.5e-2
+            stas%sfc%tpnd(k) = stas_gru%sfc%tpnd(m) + TFREZ
+            stas%sfc%zpnd(k) = stas_gru%sfc%zpnd(m)
+            stas%cnpy%rcan(k) = stas_gru%cnpy%rcan(m)
+            stas%cnpy%sncan(k) = stas_gru%cnpy%sncan(m)
+            stas%sno%sno(k) = stas_gru%sno%sno(m)
+            stas%cnpy%gro(k) = stas_gru%cnpy%gro(m)
+            stas%sfc%tsfs(k, 1) = TFREZ
+            stas%sfc%tsfs(k, 2) = TFREZ
+            stas%sfc%tsfs(k, 3) = stas_gru%sl%tbar(m, 1) + TFREZ
+            stas%sfc%tsfs(k, 4) = stas_gru%sl%tbar(m, 1) + TFREZ
+            stas%sl%tbas(k) = stas_gru%sl%tbar(m, NSL) + TFREZ
+            stas%sl%thic(k, :) = stas_gru%sl%thic(m, :)
+        end if
 
     end do !k = il1, il2
 

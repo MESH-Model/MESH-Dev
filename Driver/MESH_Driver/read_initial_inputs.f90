@@ -7,6 +7,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     use climate_forcing
 
     use RUNCLASS36_save_output
+    use RUNSVS113_variables
 
     implicit none
 
@@ -45,7 +46,6 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
             print *, 'Reading Drainage Database from MESH_drainage_database.r2c'
             call READ_SHED_EF(fls, mfk%f20, shd)
             write(6, *) ' READ: SUCCESSFUL, FILE: CLOSED'
-            shd%lc%ILG = shd%NA*shd%lc%NTYPE
         else
             print *, 'ERROR with event.evt or new_shd.r2c'
             stop
@@ -132,7 +132,6 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> Assign shd values to local variables.
     NA = shd%NA
     NAA = shd%NAA
-    NTYPE = shd%lc%NTYPE
 
     !> Allocate temporary message variables.
     allocate(list_errors(4*NAA), list_warnings(1*NAA))
@@ -199,15 +198,22 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
     end do
 
-    !>
-    !> READ BASIN STRUCTURES.
-    !>
+    !> If no land surface scheme active.
+    if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE .and. .not. RUNSVS113_flgs%PROCESS_ACTIVE) then
+        shd%lc%NTYPE = 1
+        if (allocated(shd%lc%ACLASS)) deallocate(shd%lc%ACLASS)
+        allocate(shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1))
+        shd%lc%ACLASS(:, shd%lc%NTYPE) = 1.0
+        shd%lc%ACLASS(:, shd%lc%NTYPE + 1) = 0.0
+    end if
 
-    call read_basin_structures(shd)
+    !> Compute the maximum number of tile elements.
+    shd%lc%ILG = shd%NA*shd%lc%NTYPE
+    shd%wc%ILG = shd%NA*shd%lc%NTYPE
 
     !> Determine the number of active tile elements.
 !todo: fix this.
-    shd%wc%ILG = shd%lc%ILG
+    NTYPE = shd%lc%NTYPE
     allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), &
              shd%wc%ILMOS(shd%wc%ILG), shd%wc%JLMOS(shd%wc%ILG))
 
@@ -221,22 +227,23 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
             do m = 1, NTYPE
 
                 !> Only count active GRUs (with > 0.0 contributing fraction).
+!todo: fix this.
                 if (shd%lc%ACLASS(i, m) > 0.0) then
-                    if (shd%IAK(i) > 0) then
+!                    if (shd%IAK(i) > 0) then
 
                         !> Land.
                         shd%lc%NML = shd%lc%NML + 1
                         shd%lc%ILMOS(shd%lc%NML) = i
                         shd%lc%JLMOS(shd%lc%NML) = m
 
-                    else
+!                    else
 
                         !> Water.
-                        shd%wc%NML = shd%wc%NML + 1
-                        shd%wc%ILMOS(shd%wc%NML) = i
-                        shd%wc%JLMOS(shd%wc%NML) = m
+!                        shd%wc%NML = shd%wc%NML + 1
+!                        shd%wc%ILMOS(shd%wc%NML) = i
+!                        shd%wc%JLMOS(shd%wc%NML) = m
 
-                    end if
+!                    end if
                 end if
 
             end do
@@ -373,5 +380,11 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     call julian2monthday(ic%now%jday, ic%now%year, ic%now%month, ic%now%day)
     ic%now%hour = ic%start%hour
     ic%now%mins = ic%start%mins
+
+    !>
+    !> READ BASIN STRUCTURES.
+    !>
+
+    call read_basin_structures(shd)
 
 end subroutine

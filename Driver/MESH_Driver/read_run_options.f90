@@ -510,6 +510,12 @@
                                 end if
                             end if
                         end do
+                    case ('BASINRUNOFFFLAG')
+                    case ('BASINRECHARGEFLAG')
+                    case ('STREAMFLOWFILEFLAG')
+                        STREAMFLOWFILEFLAG = adjustl(lowercase(out_args(2)))
+                    case ('RESERVOIRFILEFLAG')
+                        RESERVOIRFILEFLAG = adjustl(lowercase(out_args(2)))
 
                     case ('SHDFILEFLAG')
                         call value(out_args(2), SHDFILEFLAG, ierr)
@@ -705,8 +711,8 @@
                         call value(out_args(2), lzsp%BASEFLOWFLAG, ierr)
 
                     !> Reservoir Release function flag (Number of WF_B coefficients).
-                    case ('RESVRELSWFB')
-                        call value(out_args(2), WF_RTE_flgs%RESVRELSWFB, ierr)
+!?                    case ('RESVRELSWFB')
+!?                        call value(out_args(2), WF_RTE_flgs%RESVRELSWFB, ierr)
 
                     !> Cropland irrigation module.
                     case ('CROPLANDIRRIGATION')
@@ -747,12 +753,18 @@
                                 case ('nolss')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                    ro%RUNCLIM = .false.
+                                    ro%RUNBALWB = .false.
+                                    ro%RUNBALEB = .false.
+                                    ro%RUNTILE = .false.
                                 case ('runrte')
                                     WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                     rteflg%PROCESS_ACTIVE = .true.
                                 case ('noroute')
                                     WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                     rteflg%PROCESS_ACTIVE = .false.
+                                    ro%RUNCHNL = .false.
+                                    ro%RUNGRID = .false.
                                 case ('default')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
@@ -764,6 +776,8 @@
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
                                     WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                     rteflg%PROCESS_ACTIVE = .false.
+                                    ro%RUNTILE = .false.
+                                    ro%RUNGRID = .false.
                                     exit
                             end select
                         end do

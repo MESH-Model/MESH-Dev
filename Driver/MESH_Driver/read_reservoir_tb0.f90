@@ -1,15 +1,15 @@
 !>
 !> Description:
-!>  Subroutine to read streamflow gauge information from
-!>  MESH_input_streamflow.tb0. Adapted from read_flow_ef.f.
+!>  Subroutine to read reservoir outlet information from
+!>  MESH_input_reservoir.tb0. Adapted from read_resv_ef.f.
 !>
 !> Input:
 !*  shd: Basin shed object, containing information about the grid
 !*      definition read from MESH_drainage_database.r2c.
 !*  iun: Unit of the input file (default: 100).
-!*  fname: Full path to the file (default: './MESH_input_streamflow.tb0').
+!*  fname: Full path to the file (default: './MESH_input_reservoir.tb0').
 !>
-subroutine read_streamflow_tb0(shd, iun, fname)
+subroutine read_reservoir_tb0(shd, iun, fname)
 
     use strings
     use mpi_module
@@ -25,22 +25,22 @@ subroutine read_streamflow_tb0(shd, iun, fname)
     character(len = *) :: fname
 
     !> EnSim variables.
-    type(FlowParam) :: header
-    type(FlowColumnMetaData) :: colHeader
+    type(ResvParam) :: header
+    type(ResvColumnMetaData) :: colHeader
     character(len = 10000) in_line, subString
     character(len = 128) keyword
     integer KeyLen, wordCount
     logical foundEndHeader, insideColMetaData
 
     !> Local variables.
-    integer NS, l, ierr
+    integer NR, l, ierr
 
     !> Open the file.
     if (ro%VERBOSEMODE > 0) print 1000, trim(adjustl(fname))
     open(iun, file = fname, status = 'old', action = 'read', err = 997)
 
     !> Read and parse the header.
-    call InitFlowParam(header)
+    call InitResvParam(header)
     foundEndHeader = .false.
     insideColMetaData = .false.
     in_line(1:1) = '#'
@@ -71,14 +71,14 @@ subroutine read_streamflow_tb0(shd, iun, fname)
             else if (keyword(1:KeyLen) == ':endcolumnmetadata') then
                 insideColMetaData = .false.
             else if (insideColMetaData) then
-                ierr = ParseFlowColumnMetaData(colHeader, keyword, keyLen, subString)
+                ierr = ParseResvColumnMetaData(colHeader, keyword, keyLen, subString)
                 if (ierr < 0) then
                     if (ipid == 0) print "(1x, 'ERROR: Error parsing an attribute of the header in ', (a), ':'/, (a))", &
                         trim(adjustl(fname)), trim(adjustl(in_line))
                     stop
                 end if
             else
-                ierr = ParseFlowParam(header, keyword, keyLen, subString)
+                ierr = ParseResvParam(header, keyword, keyLen, subString)
                 if (ierr < 0) then
                     if (ipid == 0) print "(1x, 'ERROR: Error parsing an attribute of the header in ', (a), ':'/, (a))", &
                         trim(adjustl(fname)), trim(adjustl(in_line))
@@ -86,11 +86,11 @@ subroutine read_streamflow_tb0(shd, iun, fname)
                 else if (keyword(1:KeyLen) == ':starttime') then
 
                     !> Start date of measured/observed values.
-                    call value(subString(1:4), fms%stmg%qomeas%iyear, ierr)
-                    call value(subString(6:7), fms%stmg%qomeas%imonth, ierr)
-                    call value(subString(9:10), fms%stmg%qomeas%iday, ierr)
-                    fms%stmg%qomeas%ijday = get_jday(fms%stmg%qomeas%imonth, fms%stmg%qomeas%iday, fms%stmg%qomeas%iyear)
-                    call value(subString(12:13), fms%stmg%qomeas%ihour, ierr)
+                    call value(subString(1:4), fms%rsvr%qorls%iyear, ierr)
+                    call value(subString(6:7), fms%rsvr%qorls%imonth, ierr)
+                    call value(subString(9:10), fms%rsvr%qorls%iday, ierr)
+                    fms%rsvr%qorls%ijday = get_jday(fms%rsvr%qorls%imonth, fms%rsvr%qorls%iday, fms%rsvr%qorls%iyear)
+                    call value(subString(12:13), fms%rsvr%qorls%ihour, ierr)
                 else if (ierr == 0) then
                     if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) then
                         print "(1x, 'WARNING: Unrecognized attribute of header in ', (a), ': ', (a))", &
@@ -102,12 +102,14 @@ subroutine read_streamflow_tb0(shd, iun, fname)
     end do
 
     !> Return if no gauge locations are defined.
-    fms%stmg%n = colHeader%tb0cmd%colCount
-    NS = fms%stmg%n
-    if (NS == 0) return
+    fms%rsvr%n = colHeader%tb0cmd%colCount
+    NR = fms%rsvr%n
 
-    !> Streamflow attributes pulled from 'fms':
-    !*  stmg: Streamflow gauge structure
+    !> Return if there are no reservoirs.
+    if (NR == 0) return
+
+    !> Reservoir attributes pulled from 'fms':
+    !*  rsvr: Reservoir outlet structure
     !*  -   n: Number of elements dimensioned.
     !*  -   name(n): ID printed to output files.
     !*  -   y(n): Y-coordinate of outlet location.
@@ -115,19 +117,34 @@ subroutine read_streamflow_tb0(shd, iun, fname)
     !*  -   iy(n): Vertical index of the grid-cell containing the location.
     !*  -   jx(n): Horizontal index of the grid-cell containing the location.
     !*  -   n(n): Rank or index of the grid-cell containing the location.
-    !*  -   DA(n): Drainage area.
+    !*  -   cfn(n): Type of release curve function.
+    !*  -   b(n, :): Release curve coefficients.
 
-    !> Allocate and assign attributes for the driver.
-    allocate(fms%stmg%name(NS), &
-             fms%stmg%y(NS), fms%stmg%x(NS), &
-             fms%stmg%iy(NS), fms%stmg%jx(NS), fms%stmg%rnk(NS), &
-             fms%stmg%DA(NS), &
+    !> Allocate configuration variables for the driver.
+    allocate(fms%rsvr%name(NR), &
+             fms%rsvr%y(NR), fms%rsvr%x(NR), &
+             fms%rsvr%iy(NR), fms%rsvr%jx(NR), fms%rsvr%rnk(NR), &
+             fms%rsvr%cfn(NR), &
+             fms%rsvr%b1(NR), fms%rsvr%b2(NR), fms%rsvr%b3(NR), fms%rsvr%b4(NR), fms%rsvr%b5(NR), &
+             fms%rsvr%lvlz0(NR), fms%rsvr%area(NR), &
              stat = ierr)
     if (ierr /= 0) goto 998
-    fms%stmg%qomeas%dts = header%tb0p%deltaT
-    fms%stmg%name = colHeader%tb0cmd%colName
-    fms%stmg%y = colHeader%tb0cmd%colLocY
-    fms%stmg%x = colHeader%tb0cmd%colLocX
+    fms%rsvr%name = ''; fms%rsvr%cfn = 0
+    fms%rsvr%b1 = 0.0; fms%rsvr%b2 = 0.0; fms%rsvr%b3 = 0.0; fms%rsvr%b4 = 0.0; fms%rsvr%b5 = 0.0
+    fms%rsvr%lvlz0 = 0.0; fms%rsvr%area = 0.0
+
+    !> Transfer values from the tb0 header, including ones which may optionally be omitted from the file.
+    fms%rsvr%qorls%dts = header%tb0p%deltaT
+    if (allocated(colHeader%tb0cmd%colName)) fms%rsvr%name = colHeader%tb0cmd%colName
+    fms%rsvr%y = colHeader%tb0cmd%colLocY
+    fms%rsvr%x = colHeader%tb0cmd%colLocX
+    if (allocated(colHeader%colCoeff1)) fms%rsvr%b1 = colHeader%colCoeff1
+    if (allocated(colHeader%colCoeff2)) fms%rsvr%b2 = colHeader%colCoeff2
+    if (allocated(colHeader%colCoeff3)) fms%rsvr%b3 = colHeader%colCoeff3
+    if (allocated(colHeader%colCoeff4)) fms%rsvr%b4 = colHeader%colCoeff4
+    if (allocated(colHeader%colCoeff5)) fms%rsvr%b5 = colHeader%colCoeff5
+    if (allocated(colHeader%colCoeff6)) fms%rsvr%lvlz0 = colHeader%colCoeff6
+    if (allocated(colHeader%colCoeff7)) fms%rsvr%area = colHeader%colCoeff7
 
     !> Position the file to the first record.
     rewind iun

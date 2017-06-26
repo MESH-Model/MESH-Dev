@@ -14,6 +14,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     use climate_forcing_variabletypes
 
     use RUNCLASS36_variables
+    use RUNSVS113_variables
     use WF_ROUTE_config
     use rte_module
     use baseflow_module
@@ -71,10 +72,10 @@ subroutine read_parameters(fls, shd, cm, ierr)
                  rtepm_iak%aa2(NRVR), rtepm_iak%aa3(NRVR), rtepm_iak%aa4(NRVR), &
                  stat = ierr)
         rtepm%r1n = 0.0; rtepm%r2n = 0.0; rtepm%mndr = 1.0; rtepm%widep = 10.0
-        rtepm%flz = 1.0E-06; rtepm%pwr = 3.0
+        rtepm%flz = 1.0; rtepm%pwr = 1.0
         rtepm%aa2 = 1.1; rtepm%aa3 = 0.043; rtepm%aa4 = 1.0
         rtepm_iak%r1n = 0.0; rtepm_iak%r2n = 0.0; rtepm_iak%mndr = 1.0; rtepm_iak%widep = 10.0
-        rtepm_iak%flz = 1.0E-06; rtepm_iak%pwr = 3.0
+        rtepm_iak%flz = 1.0; rtepm_iak%pwr = 1.0
         rtepm_iak%aa2 = 1.1; rtepm_iak%aa3 = 0.043; rtepm_iak%aa4 = 1.0
     end if
 
@@ -162,7 +163,12 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
     !> Read from the 'r2c' file.
     if (btest(INPUTPARAMSFORMFLAG, 1)) then
-        call read_parameters_r2c(shd, 100, 'MESH_input_parameters.r2c')
+        call read_parameters_r2c(shd, 100, 'MESH_parameters.r2c')
+    end if
+
+    !> Read from the 'csv' file.
+    if (btest(INPUTPARAMSFORMFLAG, 2)) then
+        call read_parameters_csv(shd, 100, 'MESH_parameters.csv')
     end if
 
     !>
@@ -170,10 +176,20 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !>
 
     !> Constants.
-    pm%sfp%zrfm(il1:il2) = pm_gru%sfp%zrfm(1)
-    pm%sfp%zrfh(il1:il2) = pm_gru%sfp%zrfh(1)
-    pm%sfp%zbld(il1:il2) = pm_gru%sfp%zbld(1)
-    pm%tp%gc(il1:il2) = pm_gru%tp%gc(1)
+
+    !> RUNCLASS36 and RUNSVS113.
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+        pm%sfp%zrfm(il1:il2) = pm_gru%sfp%zrfm(1)
+        pm%sfp%zrfh(il1:il2) = pm_gru%sfp%zrfh(1)
+    end if
+
+    !> RUNCLASS36.
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+        pm%sfp%zbld(il1:il2) = pm_gru%sfp%zbld(1)
+        pm%tp%gc(il1:il2) = pm_gru%tp%gc(1)
+    end if
+
+    !> Parameters.
 
     !> From GRU.
     if (btest(INPUTPARAMSFORMFLAG, 0) .or. btest(INPUTPARAMSFORMFLAG, 2)) then
@@ -182,36 +198,42 @@ subroutine read_parameters(fls, shd, cm, ierr)
             !> GRU index.
             i = shd%lc%JLMOS(k)
 
-            !> SA_MESH.
-            pm%tp%fare(k) = pm_gru%tp%fare(i)
-            pm%tp%mid(k) = max(1, pm_gru%tp%mid(i))
-            pm%cp%fcan(k, :) = pm_gru%cp%fcan(i, :)
-            pm%cp%lnz0(k, :) = pm_gru%cp%lnz0(i, :)
-            pm%cp%alvc(k, :) = pm_gru%cp%alvc(i, :)
-            pm%cp%alic(k, :) = pm_gru%cp%alic(i, :)
-            pm%cp%lamx(k, :) = pm_gru%cp%lamx(i, :)
-            pm%cp%lamn(k, :) = pm_gru%cp%lamn(i, :)
-            pm%cp%cmas(k, :) = pm_gru%cp%cmas(i, :)
-            pm%cp%root(k, :) = pm_gru%cp%root(i, :)
-            pm%cp%rsmn(k, :) = pm_gru%cp%rsmn(i, :)
-            pm%cp%qa50(k, :) = pm_gru%cp%qa50(i, :)
-            pm%cp%vpda(k, :) = pm_gru%cp%vpda(i, :)
-            pm%cp%vpdb(k, :) = pm_gru%cp%vpdb(i, :)
-            pm%cp%psga(k, :) = pm_gru%cp%psga(i, :)
-            pm%cp%psgb(k, :) = pm_gru%cp%psgb(i, :)
-            pm%slp%sdep(k) = pm_gru%slp%sdep(i)
-            pm%hp%drn(k) = pm_gru%hp%drn(i)
-            pm%tp%xslp(k) = pm_gru%tp%xslp(i)
-            pm%hp%dd(k) = pm_gru%hp%dd(i)/1000.0
-            pm%hp%mann(k) = pm_gru%hp%mann(i)
-            pm%hp%grkf(k) = pm_gru%hp%grkf(i)
-            pm%hp%ks(k) = pm_gru%hp%ks(i)
-            pm%slp%sand(k, :) = pm_gru%slp%sand(i, :)
-            pm%slp%clay(k, :) = pm_gru%slp%clay(i, :)
-            pm%slp%orgm(k, :) = pm_gru%slp%orgm(i, :)
-            pm%snp%zsnl(k) = pm_gru%snp%zsnl(i)
-            pm%sfp%zplg(k) = pm_gru%sfp%zplg(i)
-            pm%snp%zpls(k) = pm_gru%snp%zpls(i)
+            !> RUNCLASS36 and RUNSVS113.
+            if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                pm%cp%fcan(k, :) = pm_gru%cp%fcan(i, :)
+                pm%cp%lnz0(k, :) = pm_gru%cp%lnz0(i, :)
+                pm%slp%sdep(k) = pm_gru%slp%sdep(i)
+                pm%tp%xslp(k) = pm_gru%tp%xslp(i)
+                pm%hp%dd(k) = pm_gru%hp%dd(i)/1000.0
+                pm%slp%sand(k, :) = pm_gru%slp%sand(i, :)
+                pm%slp%clay(k, :) = pm_gru%slp%clay(i, :)
+            end if
+
+            !> RUNCLASS36.
+            if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+                pm%tp%fare(k) = pm_gru%tp%fare(i)
+                pm%tp%mid(k) = max(1, pm_gru%tp%mid(i))
+                pm%cp%alvc(k, :) = pm_gru%cp%alvc(i, :)
+                pm%cp%alic(k, :) = pm_gru%cp%alic(i, :)
+                pm%cp%lamx(k, :) = pm_gru%cp%lamx(i, :)
+                pm%cp%lamn(k, :) = pm_gru%cp%lamn(i, :)
+                pm%cp%cmas(k, :) = pm_gru%cp%cmas(i, :)
+                pm%cp%root(k, :) = pm_gru%cp%root(i, :)
+                pm%cp%rsmn(k, :) = pm_gru%cp%rsmn(i, :)
+                pm%cp%qa50(k, :) = pm_gru%cp%qa50(i, :)
+                pm%cp%vpda(k, :) = pm_gru%cp%vpda(i, :)
+                pm%cp%vpdb(k, :) = pm_gru%cp%vpdb(i, :)
+                pm%cp%psga(k, :) = pm_gru%cp%psga(i, :)
+                pm%cp%psgb(k, :) = pm_gru%cp%psgb(i, :)
+                pm%hp%drn(k) = pm_gru%hp%drn(i)
+                pm%hp%mann(k) = pm_gru%hp%mann(i)
+                pm%hp%grkf(k) = pm_gru%hp%grkf(i)
+                pm%hp%ks(k) = pm_gru%hp%ks(i)
+                pm%slp%orgm(k, :) = pm_gru%slp%orgm(i, :)
+                pm%snp%zsnl(k) = pm_gru%snp%zsnl(i)
+                pm%sfp%zplg(k) = pm_gru%sfp%zplg(i)
+                pm%snp%zpls(k) = pm_gru%snp%zpls(i)
+            end if
 
             !> Cropland irrigation module.
             if (cifg%PROCESS_ACTIVE) then
@@ -262,15 +284,18 @@ subroutine read_parameters(fls, shd, cm, ierr)
     end if
 
 !todo: Formally change these to grid parameters, remove from shd
-    if (allocated(shd%SLOPE_INT)) then
-        do k = il1, il2
-            pm%tp%xslp(k) = shd%SLOPE_INT(shd%lc%ILMOS(k))
-        end do
-    end if
-    if (allocated(shd%DRDN)) then
-        do k = il1, il2
-            pm%hp%dd(k) = shd%DRDN(shd%lc%ILMOS(k))
-        end do
+    !> RUNCLASS36 and RUNSVS113.
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+        if (allocated(shd%SLOPE_INT)) then
+            do k = il1, il2
+                pm%tp%xslp(k) = shd%SLOPE_INT(shd%lc%ILMOS(k))
+            end do
+        end if
+        if (allocated(shd%DRDN)) then
+            do k = il1, il2
+                pm%hp%dd(k) = shd%DRDN(shd%lc%ILMOS(k))
+            end do
+        end if
     end if
 
     !> From grid.
@@ -280,17 +305,30 @@ subroutine read_parameters(fls, shd, cm, ierr)
             !> Grid index.
             i = shd%lc%ILMOS(k)
 
-            !> SA_MESH.
-!+            if (allocated(shd%SLOPE_INT)) pm%tp%xslp(k) = shd%SLOPE_INT(i)
-!+            if (allocated(shd%DRDN)) pm%hp%dd(k) = shd%DRDN(i)
+            !> RUNCLASS36 and RUNSVS113.
+            if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                if (any(pm_grid%cp%fcan(i, :) /= 0.0)) pm%cp%fcan(k, :) = pm_grid%cp%fcan(i, :)
+                if (any(pm_grid%cp%lnz0(i, :) /= 0.0)) pm%cp%lnz0(k, :) = pm_grid%cp%lnz0(i, :)
+                if (pm_grid%slp%sdep(i) /= 0.0) pm%slp%sdep(k) = pm_grid%slp%sdep(i)
+                if (pm_grid%tp%xslp(i) /= 0.0) pm%tp%xslp(k) = pm_grid%tp%xslp(i)
+                if (pm_grid%hp%dd(i) /= 0.0) pm%hp%dd(k) = pm_grid%hp%dd(i)
+                if (any(pm_grid%slp%sand(i, :) /= 0.0)) pm%slp%sand(k, :) = pm_grid%slp%sand(i, :)
+                if (any(pm_grid%slp%clay(i, :) /= 0.0)) pm%slp%clay(k, :) = pm_grid%slp%clay(i, :)
+            end if
+
+            !> RUNCLASS36 and RUNSVS113.
+!+            if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+!+                if (allocated(shd%SLOPE_INT)) pm%tp%xslp(k) = shd%SLOPE_INT(i)
+!+                if (allocated(shd%DRDN)) pm%hp%dd(k) = shd%DRDN(i)
+!+            end if
 
             !> PBSM (blowing snow).
             if (pbsm%PROCESS_ACTIVE) then
-                pbsm%pm%fetch(k) = pbsm%pm_grid%fetch(i)
-                pbsm%pm%Ht(k) = pbsm%pm_grid%Ht(i)
-                pbsm%pm%N_S(k) = pbsm%pm_grid%N_S(i)
-                pbsm%pm%A_S(k) = pbsm%pm_grid%A_S(i)
-                pbsm%pm%Distrib(k) = pbsm%pm_grid%Distrib(i)
+                if (pbsm%pm_grid%fetch(i) /= 0.0) pbsm%pm%fetch(k) = pbsm%pm_grid%fetch(i)
+                if (pbsm%pm_grid%Ht(i) /= 0.0) pbsm%pm%Ht(k) = pbsm%pm_grid%Ht(i)
+                if (pbsm%pm_grid%N_S(i) /= 0.0) pbsm%pm%N_S(k) = pbsm%pm_grid%N_S(i)
+                if (pbsm%pm_grid%A_S(i) /= 0.0) pbsm%pm%A_S(k) = pbsm%pm_grid%A_S(i)
+                if (pbsm%pm_grid%Distrib(i) /= 0.0) pbsm%pm%Distrib(k) = pbsm%pm_grid%Distrib(i)
             end if
 
         end do !k = il1, il2

@@ -92,7 +92,7 @@ module climate_forcing_variabletypes
         !* dat: Climate variables.
         integer :: nclim = 7
         type(counter_date) :: start_date
-        type(clim_series) :: dat(7)
+        type(clim_series) :: dat(9)
 
     end type !clim_info
 

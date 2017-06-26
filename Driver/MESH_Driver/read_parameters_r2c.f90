@@ -17,6 +17,8 @@ subroutine read_parameters_r2c(shd, iun, fname)
     use sa_mesh_shared_variables
     use EF_Module
 
+    use RUNCLASS36_variables
+    use RUNSVS113_variables
     use rte_module
     use PBSM_module
 
@@ -27,22 +29,18 @@ subroutine read_parameters_r2c(shd, iun, fname)
     integer :: iun
     character(len = *) :: fname
 
-    !> Local variables.
-    integer ierr
-
-    !> Local variables copied and modified from read_shed_ef.f.
+    !> EnSim variables.
     type(ShedParam) :: header
-    character(len = 1000) line, subString
+    character(len = 1000) in_line, subString
     character(len = 128) keyword
     integer keyLen, wordCount
     logical foundEndHeader
-    integer n, l, i
 
-    !> Initialization copied from read_shed_ef.f.
-    call InitShedParam(header)
-    foundEndHeader = .false.
+    !> Location variables.
+    integer ierr, n, l, i
 
     !> Open the file and read the header.
+    if (ro%VERBOSEMODE > 0) print 1000, fname
     open(iun, file = trim(adjustl(fname)), status = 'old', iostat = ierr)
     if (ierr /= 0) then
         if (ipid == 0) then
@@ -52,24 +50,26 @@ subroutine read_parameters_r2c(shd, iun, fname)
         stop
     end if
 
-    !> Copied and modified from read_shed_ef.f.
-    line(1:1) = '#'
-    do while ((.not. foundEndHeader) .and. ((line(1:1) == '#') .or. (line(1:1) == ':') .or. (len_trim(line) == 0)))
+    !> Read and parse the header.
+    call InitShedParam(header)
+    foundEndHeader = .false.
+    in_line(1:1) = '#'
+    do while ((.not. foundEndHeader) .and. ((in_line(1:1) == '#') .or. (in_line(1:1) == ':') .or. (len_trim(in_line) == 0)))
 
         !> Read the line.
-        read(iun, "((a))", iostat = ierr) line
+        read(iun, "((a))", iostat = ierr) in_line
         if (ierr == -1) then
             if (ipid == 0) print "(/1x, 'ERROR: Premature end of file (EOF) encountered in: ', (a))", trim(adjustl(fname))
             stop
         end if
 
-        !> Replace tabs with spaces, get rid of leading whitespace, and determine length of words in the line
-        call compact(line)
-        line = adjustl(line)
+        !> Replace tabs with spaces and get rid of leading whitespace.
+        call compact(in_line)
+        in_line = adjustl(in_line)
 
         !> Parse attributes (lines that start with ':').
-        if (line(1:1) == ':') then
-            wordCount = SplitLine(line, keyword, subString)
+        if (in_line(1:1) == ':') then
+            wordCount = SplitLine(in_line, keyword, subString)
             keyword = lowercase(keyword)
             KeyLen = len_trim(keyword)
 
@@ -80,7 +80,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                 ierr = ParseShedParam(header, keyword, keyLen, subString)
                 if (ierr < 0) then
                     if (ipid == 0) print "(1x, 'ERROR: Error parsing an attribute of the header in ', (a), ':'/, (a))", &
-                        trim(adjustl(fname)), trim(adjustl(line))
+                        trim(adjustl(fname)), trim(adjustl(in_line))
                     stop
                 else if (ierr == 0) then
                     if (ipid == 0) print "(1x, 'WARNING: Unrecognized attribute of header in ', (a), ': ', (a))", &
@@ -123,6 +123,92 @@ subroutine read_parameters_r2c(shd, iun, fname)
                 !> SA_MESH parameters.
 !-                case ('rank')
 !-                    print "(' RANK ', i8, ' AttList%Val ', i8)", n, int(header%r2cp%ep%attList(l)%val(i))
+
+                !> RUNCLASS36 and RUNSVS113.
+                case ('fcan nl')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%cp%fcan(n, 1) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('fcan bl')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%cp%fcan(n, 2) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('fcan cr')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%cp%fcan(n, 3) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('fcan gr')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%cp%fcan(n, 4) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('fcan ur')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%cp%fcan(n, 5) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('lnz0 nl')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%cp%lnz0(n, 1) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('lnz0 bl')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%cp%lnz0(n, 2) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('lnz0 cr')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%cp%lnz0(n, 3) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('lnz0 gr')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%cp%lnz0(n, 4) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('lnz0 ur')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%cp%lnz0(n, 5) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('sdep')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%slp%sdep(n) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('xslp')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%tp%xslp(n) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('dd')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%hp%dd(n) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('sand')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%slp%sand(n, :) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('sand 1')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%slp%sand(n, 1) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('sand 2')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%slp%sand(n, 2) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('sand 3')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%slp%sand(n, 3) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('clay')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%slp%clay(n, :) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('clay 1')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%slp%clay(n, 1) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('clay 2')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%slp%clay(n, 2) = header%r2cp%ep%attList(l)%val(i)
+                    end if
+                case ('clay 3')
+                    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                        pm_grid%slp%clay(n, 3) = header%r2cp%ep%attList(l)%val(i)
+                    end if
 
                 !> RPN RTE (Watflood, 2007).
                 case ('r1n')
@@ -172,6 +258,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
     !> Close the file to free the unit.
     close(iun)
 
+1000    format(1x, 'READING: ', (a))
 1110    format(3x, g16.9, 1x, g16.9)
 
 end subroutine

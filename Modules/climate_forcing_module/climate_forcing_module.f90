@@ -76,6 +76,8 @@ module climate_forcing
         cm%dat(ck%UV)%fname = 'basin_wind'
         cm%dat(ck%P0)%fname = 'basin_pres'
         cm%dat(ck%HU)%fname = 'basin_humidity'
+        cm%dat(ck%N0)%fname = 'WR_runoff'
+        cm%dat(ck%O1)%fname = 'WR_recharge'
 
         !> Read from file to override default configuration.
         call open_config(cm)
