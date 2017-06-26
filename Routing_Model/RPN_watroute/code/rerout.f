@@ -306,7 +306,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
         levdiff = max(0.0, niv(l)-zflow)
 
         if(firstpass.eq.'y'.and.resumflg.eq.'y')then
-          store1(n)=levdiff*reacharea
+          if (reacharea > 0.0) store1(n)=levdiff*reacharea
           store2(n)=store1(n)
           store2_strt(n)=store2(n)
         endif
@@ -327,7 +327,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
         lake_inflow(l,fhr)=qi2(n)
 
-        niv(l)=store1(n)/reacharea+zflow
+        if (reacharea > 0.0) niv(l)=store1(n)/reacharea+zflow
         lake_elv(l,fhr)=niv(l)
 
 

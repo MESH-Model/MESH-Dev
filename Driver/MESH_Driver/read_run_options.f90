@@ -514,6 +514,8 @@
                     case ('BASINRECHARGEFLAG')
                     case ('STREAMFLOWFILEFLAG')
                         STREAMFLOWFILEFLAG = adjustl(lowercase(out_args(2)))
+                    case ('RESERVOIRFILEFLAG')
+                        RESERVOIRFILEFLAG = adjustl(lowercase(out_args(2)))
 
                     case ('SHDFILEFLAG')
                         call value(out_args(2), SHDFILEFLAG, ierr)
@@ -709,8 +711,8 @@
                         call value(out_args(2), lzsp%BASEFLOWFLAG, ierr)
 
                     !> Reservoir Release function flag (Number of WF_B coefficients).
-                    case ('RESVRELSWFB')
-                        call value(out_args(2), WF_RTE_flgs%RESVRELSWFB, ierr)
+!?                    case ('RESVRELSWFB')
+!?                        call value(out_args(2), WF_RTE_flgs%RESVRELSWFB, ierr)
 
                     !> Cropland irrigation module.
                     case ('CROPLANDIRRIGATION')

@@ -27,7 +27,7 @@ module WF_ROUTE_config
         !> WF_ROUTE.f.
         !>  2 = 2-parameter power release function.
         !>  5 = 5-parameter polynomial release function.
-        integer :: RESVRELSWFB = 2
+!?        integer :: RESVRELSWFB = 2
 
         !> Channel length 'rl' flag for WF_ROUTE.f.
 !todo: Verify units if read from shed file.

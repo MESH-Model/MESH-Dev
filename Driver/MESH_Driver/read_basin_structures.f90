@@ -128,9 +128,14 @@ subroutine read_basin_structures(shd)
     fname = 'MESH_input_reservoir'
 
     !> Read location from file.
-!todo: switch
-    fname = trim(adjustl(fname)) // '.txt'
-    call read_reservoir_txt(shd, iun, fname, 2)
+    select case (RESERVOIRFILEFLAG)
+        case ('tb0')
+            fname = trim(adjustl(fname)) // '.tb0'
+            call read_reservoir_tb0(shd, iun, fname)
+        case default
+            fname = trim(adjustl(fname)) // '.txt'
+            call read_reservoir_txt(shd, iun, fname, 2)
+    end select
 
     !> If locations exist.
     NR = fms%rsvr%n
