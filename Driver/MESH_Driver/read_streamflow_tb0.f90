@@ -118,16 +118,12 @@ subroutine read_streamflow_tb0(shd, iun, fname)
     !*  -   DA(n): Drainage area.
 
     !> Allocate and assign attributes for the driver.
-    allocate(fms%stmg%name(NS), &
-             fms%stmg%y(NS), fms%stmg%x(NS), &
-             fms%stmg%iy(NS), fms%stmg%jx(NS), fms%stmg%rnk(NS), &
-             fms%stmg%DA(NS), &
-             stat = ierr)
+    call allocate_streamflow_gauge_location(fms%stmg, NS, ierr)
     if (ierr /= 0) goto 998
     fms%stmg%qomeas%dts = header%tb0p%deltaT
-    fms%stmg%name = colHeader%tb0cmd%colName
-    fms%stmg%y = colHeader%tb0cmd%colLocY
-    fms%stmg%x = colHeader%tb0cmd%colLocX
+    fms%stmg%meta%name = colHeader%tb0cmd%colName
+    fms%stmg%meta%y = colHeader%tb0cmd%colLocY
+    fms%stmg%meta%x = colHeader%tb0cmd%colLocX
 
     !> Position the file to the first record.
     rewind iun

@@ -18,6 +18,7 @@ module model_files
 
         use model_files_variabletypes
         use model_files_variables
+        use sa_mesh_shared_variables
         use SIMSTATS_config, only: mtsfl, mtsk, init_metricsout_files
         use WF_ROUTE_config
         use SA_RTE_module, only: SA_RTE_fls, SA_RTE_flkeys, SA_RTE_init_fls
@@ -63,6 +64,12 @@ module model_files
         flg%fl(mfk%f900)%fn = 'Basin_average_water_balance.csv'
         flg%fl(mfk%f900)%iun = 900
 
+        fms%stmg%qomeas%fls%fname = 'MESH_input_streamflow'
+        fms%stmg%qomeas%fls%iun = 22
+
+        fms%rsvr%qorls%fls%fname = 'MESH_input_reservoir'
+        fms%rsvr%qorls%fls%iun = 21
+
 !todo: remove this
         flg%fl(mfk%f70)%fn = 'MESH_output_streamflow.csv'
         flg%fl(mfk%f70)%iun = 70
@@ -88,10 +95,10 @@ module model_files
 
         !> For files used by WF_ROUTE.
         if (.not. allocated(WF_RTE_fls%fl)) call WF_ROUTE_init_fls()
-        WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%fn = 'MESH_input_streamflow.txt'
-        WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun = 22
-        WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn = 'MESH_input_reservoir.txt'
-        WF_RTE_fls%fl(WF_RTE_flks%resv_in)%iun = 21
+!-        WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%fn = 'MESH_input_streamflow.txt'
+!-        WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun = 22
+!-        WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn = 'MESH_input_reservoir.txt'
+!-        WF_RTE_fls%fl(WF_RTE_flks%resv_in)%iun = 21
         WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%fn = 'MESH_output_streamflow.csv'
         WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun = 70
         WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%fn = 'MESH_output_streamflow_ts.csv'

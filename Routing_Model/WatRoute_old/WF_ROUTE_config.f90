@@ -299,11 +299,11 @@ module WF_ROUTE_config
                      WF_QREL(NR), WF_RESSTORE(NR))
             WF_QREL = 0.0
             WF_RESSTORE = 0.0
-            WF_B1 = fms%rsvr%b1
-            WF_B2 = fms%rsvr%b2
-            WF_B3 = fms%rsvr%b3
-            WF_B4 = fms%rsvr%b4
-            WF_B5 = fms%rsvr%b5
+            WF_B1 = fms%rsvr%rls%b1
+            WF_B2 = fms%rsvr%rls%b2
+            WF_B3 = fms%rsvr%rls%b3
+            WF_B4 = fms%rsvr%rls%b4
+            WF_B5 = fms%rsvr%rls%b5
 
             !> Allocate configuration variables for the driver.
 !-            allocate(fms%rsvr%name(NR), &
@@ -354,11 +354,11 @@ module WF_ROUTE_config
 !-                    fms%rsvr%jx(i) = int((real(ix) - real(shd%jxMin))/shd%GRDE + 1.0)
 !-                end if
                 if (WF_B3(i) > 0.0) then
-                    fms%rsvr%cfn(i) = 3
+                    fms%rsvr%rls%cfn(i) = 3
                 else if (WF_B1(i) > 0.0) then
-                    fms%rsvr%cfn(i) = 2
+                    fms%rsvr%rls%cfn(i) = 2
                 else
-                    fms%rsvr%cfn(i) = 1
+                    fms%rsvr%rls%cfn(i) = 1
                 end if
                 !> check if point is in watershed and in river reaches
 !-                fms%rsvr%rnk(i) = 0
@@ -464,9 +464,7 @@ module WF_ROUTE_config
         !>MAM - The first stream flow record is used for flow initialization
 !-        read(iun, *, iostat = ierr) (WF_QHYD(i), i = 1, NS)
 !-        backspace(iun)
-        do i = 1, fms%stmg%n
-            WF_QHYD(i) = stas_grid%chnl%qo(fms%stmg%rnk(i))
-        end do
+        WF_QHYD = fms%stmg%qomeas%val
 
 !-        WF_START_YEAR = fms%stmg%qomeas%iyear
 !-        WF_START_DAY = fms%stmg%qomeas%ijday

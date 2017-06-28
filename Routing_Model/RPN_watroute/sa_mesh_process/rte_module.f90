@@ -226,7 +226,7 @@ module rte_module
         !> Allocate and assign other variables.
         allocate(store2_strt(naa), nhyd(ycount, xcount), iflowgrid(no), nopt(no))
         store2_strt = 0.0
-        iflowgrid = fms%stmg%rnk
+        iflowgrid = fms%stmg%meta%rnk
         nopt = -1
 
         !> rev. 9.1.60  Jul.  27/04  - NK: reversed definitions for sl1 & sl2 Int. Slope
@@ -428,22 +428,22 @@ module rte_module
             lake_stor = 0.0; lake_outflow = 0.0
             del_stor = 0.0
 !            qstream_sum = 0.0; strloss_sum = 0.0
-            resname = fms%rsvr%name
-            b1 = fms%rsvr%b1
-            b2 = fms%rsvr%b2
-            b3 = fms%rsvr%b3
-            b4 = fms%rsvr%b4
-            b5 = fms%rsvr%b5
-            b6 = fms%rsvr%lvlz0
-            b7 = fms%rsvr%area
+            resname = fms%rsvr%meta%name
+            b1 = fms%rsvr%rls%b1
+            b2 = fms%rsvr%rls%b2
+            b3 = fms%rsvr%rls%b3
+            b4 = fms%rsvr%rls%b4
+            b5 = fms%rsvr%rls%b5
+            b6 = fms%rsvr%rls%lvlz0
+            b7 = fms%rsvr%rls%area
 !            where (b3 == 0.0)
 !                poliflg = 'n'
 !            elsewhere
 !                poliflg = 'y'
 !            end where
-            jres = int((fms%rsvr%x - xorigin)/xdelta) + 1
-            ires = int((fms%rsvr%y - yorigin)/ydelta) + 1
-            resindex = fms%rsvr%rnk
+            jres = fms%rsvr%meta%jx
+            ires = fms%rsvr%meta%iy
+            resindex = fms%rsvr%meta%rnk
             allocate(reach_last(noresv))
             reach_last = 0.0
         end if
@@ -695,10 +695,8 @@ module rte_module
 
 !todo: move this
         if (mod(ic%now%hour, fms%stmg%qomeas%dts) == 0 .and. ic%now%mins == 0) then
-            read(22, *) (stas_grid%chnl%qo(fms%stmg%rnk(l)), l = 1, fms%stmg%n)
-            do l = 1, fms%stmg%n
-                stfl%qhyd(l) = stas_grid%chnl%qo(fms%stmg%rnk(l))
-            end do
+            read(22, *) (fms%stmg%qomeas%val(l), l = 1, fms%stmg%n)
+            stfl%qhyd = fms%stmg%qomeas%val
         end if
 
         !> Accumulate runoff to the routing time-step.
@@ -787,7 +785,7 @@ module rte_module
         !> If flow insertion, use simulated instead of flow inserted value at gauge location.
         if (trim(strfw_option) == 'streamflow_insertion') then
             do l = 1, no
-                n = fms%stmg%rnk(l)
+                n = fms%stmg%meta%rnk(l)
                 qo2_strt(n) = qo2sim(n)
             end do
         end if
@@ -946,7 +944,7 @@ module rte_module
         !> Return average streamflow value to SA_MESH.
 !todo: preserve per time-step value.
         do l = 1, fms%stmg%n
-            stfl%qsyn(l) = qo2sim(fms%stmg%rnk(l))
+            stfl%qsyn(l) = qo2sim(fms%stmg%meta%rnk(l))
         end do
 
         !> This occurs the last time-step of the day.

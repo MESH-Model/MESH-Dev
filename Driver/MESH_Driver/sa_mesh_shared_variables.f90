@@ -19,12 +19,11 @@ module sa_mesh_shared_variables
     !> Description:
     !>  Contains structures or 'forms' in the model, such
     !>  as landmark locations like streamflow gauge, irrigation demand,
-    !>  lake, and reservoir locations.
+    !>  and lake and reservoir locations.
     type forms
-        type(streamflow_gauge) stmg
-        type(lake_outlet) lk
-        type(reservoir_outlet) rsvr
-        type(abstraction_point) absp
+        type(streamflow_gauge_location) stmg
+        type(reservoir_outlet_location) rsvr
+        type(abstraction_point_location) absp
     end type
 
     !* fms: Collection of structures in the basin.

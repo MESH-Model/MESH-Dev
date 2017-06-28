@@ -121,30 +121,21 @@ subroutine read_reservoir_tb0(shd, iun, fname)
     !*  -   b(n, :): Release curve coefficients.
 
     !> Allocate configuration variables for the driver.
-    allocate(fms%rsvr%name(NR), &
-             fms%rsvr%y(NR), fms%rsvr%x(NR), &
-             fms%rsvr%iy(NR), fms%rsvr%jx(NR), fms%rsvr%rnk(NR), &
-             fms%rsvr%cfn(NR), &
-             fms%rsvr%b1(NR), fms%rsvr%b2(NR), fms%rsvr%b3(NR), fms%rsvr%b4(NR), fms%rsvr%b5(NR), &
-             fms%rsvr%lvlz0(NR), fms%rsvr%area(NR), &
-             stat = ierr)
+    call allocate_reservoir_outlet_location(fms%rsvr, NR, ierr)
     if (ierr /= 0) goto 998
-    fms%rsvr%name = ''; fms%rsvr%cfn = 0
-    fms%rsvr%b1 = 0.0; fms%rsvr%b2 = 0.0; fms%rsvr%b3 = 0.0; fms%rsvr%b4 = 0.0; fms%rsvr%b5 = 0.0
-    fms%rsvr%lvlz0 = 0.0; fms%rsvr%area = 0.0
 
     !> Transfer values from the tb0 header, including ones which may optionally be omitted from the file.
     fms%rsvr%qorls%dts = header%tb0p%deltaT
-    if (allocated(colHeader%tb0cmd%colName)) fms%rsvr%name = colHeader%tb0cmd%colName
-    fms%rsvr%y = colHeader%tb0cmd%colLocY
-    fms%rsvr%x = colHeader%tb0cmd%colLocX
-    if (allocated(colHeader%colCoeff1)) fms%rsvr%b1 = colHeader%colCoeff1
-    if (allocated(colHeader%colCoeff2)) fms%rsvr%b2 = colHeader%colCoeff2
-    if (allocated(colHeader%colCoeff3)) fms%rsvr%b3 = colHeader%colCoeff3
-    if (allocated(colHeader%colCoeff4)) fms%rsvr%b4 = colHeader%colCoeff4
-    if (allocated(colHeader%colCoeff5)) fms%rsvr%b5 = colHeader%colCoeff5
-    if (allocated(colHeader%colCoeff6)) fms%rsvr%lvlz0 = colHeader%colCoeff6
-    if (allocated(colHeader%colCoeff7)) fms%rsvr%area = colHeader%colCoeff7
+    if (allocated(colHeader%tb0cmd%colName)) fms%rsvr%meta%name = colHeader%tb0cmd%colName
+    fms%rsvr%meta%y = colHeader%tb0cmd%colLocY
+    fms%rsvr%meta%x = colHeader%tb0cmd%colLocX
+    if (allocated(colHeader%colCoeff1)) fms%rsvr%rls%b1 = colHeader%colCoeff1
+    if (allocated(colHeader%colCoeff2)) fms%rsvr%rls%b2 = colHeader%colCoeff2
+    if (allocated(colHeader%colCoeff3)) fms%rsvr%rls%b3 = colHeader%colCoeff3
+    if (allocated(colHeader%colCoeff4)) fms%rsvr%rls%b4 = colHeader%colCoeff4
+    if (allocated(colHeader%colCoeff5)) fms%rsvr%rls%b5 = colHeader%colCoeff5
+    if (allocated(colHeader%colCoeff6)) fms%rsvr%rls%lvlz0 = colHeader%colCoeff6
+    if (allocated(colHeader%colCoeff7)) fms%rsvr%rls%area = colHeader%colCoeff7
 
     !> Position the file to the first record.
     rewind iun

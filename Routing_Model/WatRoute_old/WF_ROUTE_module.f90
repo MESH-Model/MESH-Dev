@@ -121,19 +121,19 @@ module WF_ROUTE_module
                       shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
                       shd%CHNL_LEN, &
                       WF_RTE_flgs%RLFLAG, WF_RTE_flgs%CAPFLAG, &
-                      fms%stmg%n, WF_NL, WF_MHRD, WF_KT, fms%stmg%iy, fms%stmg%jx, &
-                      WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, fms%rsvr%rnk, &
-                      fms%rsvr%n, WF_NREL, WF_KTR, fms%rsvr%iy, fms%rsvr%jx, fms%rsvr%name, &
+                      fms%stmg%n, WF_NL, WF_MHRD, WF_KT, fms%stmg%meta%iy, fms%stmg%meta%jx, &
+                      WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, fms%rsvr%meta%rnk, &
+                      fms%rsvr%n, WF_NREL, WF_KTR, fms%rsvr%meta%iy, fms%rsvr%meta%jx, fms%rsvr%meta%name, &
                       WF_B1, WF_B2, WF_B3, WF_B4, WF_B5, WF_QREL, WF_QR, &
                       WF_TIMECOUNT, WF_NHYD, WF_QBASE, stas_grid%chnl%qi, WF_QI2, WF_QO1, stas_grid%chnl%qo, &
                       wfp%aa1, wfp%aa2, wfp%aa3, wfp%aa4, &
                       WF_STORE1, stas_grid%chnl%s, &
                       ic%dts, (wb%rof/ic%dts), shd%NA, shd%NRVR, fms%rsvr%n, fms%stmg%n, shd%NA, &
-                      fms%stmg%rnk, JAN, ic%now%jday, ic%now%hour, ic%now%mins)
+                      fms%stmg%meta%rnk, JAN, ic%now%jday, ic%now%hour, ic%now%mins)
         do i = 1, fms%stmg%n
-            WF_QSYN(i) = stas_grid%chnl%qo(fms%stmg%rnk(i))
-            WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + stas_grid%chnl%qo(fms%stmg%rnk(i))
-            WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + stas_grid%chnl%qo(fms%stmg%rnk(i))
+            WF_QSYN(i) = stas_grid%chnl%qo(fms%stmg%meta%rnk(i))
+            WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + stas_grid%chnl%qo(fms%stmg%meta%rnk(i))
+            WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + stas_grid%chnl%qo(fms%stmg%meta%rnk(i))
             WF_QHYD_AVG(i) = WF_QHYD(i) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
         end do
         where (shd%DA > 0.0)
@@ -143,9 +143,9 @@ module WF_ROUTE_module
 
         !> Update state variables for the driver.
         do i = 1, fms%rsvr%n
-            stas_grid%rsvr%qi(i) = stas_grid%chnl%qi(fms%rsvr%rnk(i))
-            stas_grid%rsvr%qo(i) = stas_grid%chnl%qo(fms%rsvr%rnk(i))
-            stas_grid%rsvr%s(i) = stas_grid%chnl%s(fms%rsvr%rnk(i))
+            stas_grid%rsvr%qi(i) = stas_grid%chnl%qi(fms%rsvr%meta%rnk(i))
+            stas_grid%rsvr%qo(i) = stas_grid%chnl%qo(fms%rsvr%meta%rnk(i))
+            stas_grid%rsvr%s(i) = stas_grid%chnl%s(fms%rsvr%meta%rnk(i))
         end do
 
         !> this is done so that INIT_STORE is not recalculated for
@@ -169,7 +169,7 @@ module WF_ROUTE_module
             do l = 1, fms%rsvr%n
                 iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun + l
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
-                i = fms%rsvr%rnk(l)
+                i = fms%rsvr%meta%rnk(l)
                 write(iun, 1010, advance = 'no') &
                     l, i, stas_grid%chnl%qi(i), wf_store1(i), wf_qi2(i), stas_grid%chnl%s(i), stas_grid%chnl%qo(i)
                 write(iun, *)
@@ -209,7 +209,7 @@ module WF_ROUTE_module
                     if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') WF_QHYD_CUM(i), WF_QSYN_CUM(i)/ic%ts_daily
                     if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') WF_QHYD_AVG(i), WF_QSYN_AVG(i)/ic%ts_daily
                     if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') &
-                        WF_QO2_ACC_MM(fms%stmg%rnk(i)), WF_STORE2_ACC_MM(fms%stmg%rnk(i))/ic%ts_count
+                        WF_QO2_ACC_MM(fms%stmg%meta%rnk(i)), WF_STORE2_ACC_MM(fms%stmg%meta%rnk(i))/ic%ts_count
                 end do
                 write(iun, *)
             end if

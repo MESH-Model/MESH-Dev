@@ -45,23 +45,16 @@ subroutine read_reservoir_txt(shd, iun, fname, nb)
     if (NR == 0) return
 
     !> Allocate configuration variables for the driver.
-    allocate(fms%rsvr%name(NR), &
-             fms%rsvr%y(NR), fms%rsvr%x(NR), &
-             fms%rsvr%iy(NR), fms%rsvr%jx(NR), fms%rsvr%rnk(NR), &
-             fms%rsvr%cfn(NR), &
-             fms%rsvr%b1(NR), fms%rsvr%b2(NR), fms%rsvr%b3(NR), fms%rsvr%b4(NR), fms%rsvr%b5(NR), &
-             fms%rsvr%lvlz0(NR), fms%rsvr%area(NR), &
-             stat = ierr)
+    call allocate_reservoir_outlet_location(fms%rsvr, NR, ierr)
     if (ierr /= 0) goto 998
-    fms%rsvr%cfn = 0
-    fms%rsvr%b1 = 0.0; fms%rsvr%b2 = 0.0; fms%rsvr%b3 = 0.0; fms%rsvr%b4 = 0.0; fms%rsvr%b5 = 0.0
 
     !> Read information.
     do l = 1, NR
-        read(iun, *, err = 999) fms%rsvr%y(l), fms%rsvr%x(l), fms%rsvr%b1(l), fms%rsvr%b2(l), fms%rsvr%name(l)
-        fms%rsvr%y(l) = fms%rsvr%y(l)/60.0
-        fms%rsvr%x(l) = fms%rsvr%x(l)/60.0
+        read(iun, *, err = 999) &
+            fms%rsvr%meta%y(l), fms%rsvr%meta%x(l), fms%rsvr%rls%b1(l), fms%rsvr%rls%b2(l), fms%rsvr%meta%name(l)
     end do
+    fms%rsvr%meta%y = fms%rsvr%meta%y/60.0
+    fms%rsvr%meta%x = fms%rsvr%meta%x/60.0
 
     return
 

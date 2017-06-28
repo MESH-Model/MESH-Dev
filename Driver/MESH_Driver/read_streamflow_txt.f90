@@ -46,20 +46,15 @@ subroutine read_streamflow_txt(shd, iun, fname)
     if (NS == 0) return
 
     !> Allocate configuration variables for the driver.
-    allocate(fms%stmg%name(NS), &
-             fms%stmg%y(NS), fms%stmg%x(NS), &
-             fms%stmg%iy(NS), fms%stmg%jx(NS), fms%stmg%rnk(NS), &
-             fms%stmg%DA(NS), &
-             stat = ierr)
+    call allocate_streamflow_gauge_location(fms%stmg, NS, ierr)
     if (ierr /= 0) goto 998
-    fms%stmg%DA = 0.0;
 
     !> Read gauge location and name.
     do l = 1, NS
-        read(iun, *, err = 999) fms%stmg%y(l), fms%stmg%x(l), fms%stmg%name(l)
-        fms%stmg%y(l) = fms%stmg%y(l)/60.0
-        fms%stmg%x(l) = fms%stmg%x(l)/60.0
+        read(iun, *, err = 999) fms%stmg%meta%y(l), fms%stmg%meta%x(l), fms%stmg%meta%name(l)
     end do
+    fms%stmg%meta%y = fms%stmg%meta%y/60.0
+    fms%stmg%meta%x = fms%stmg%meta%x/60.0
 
     return
 

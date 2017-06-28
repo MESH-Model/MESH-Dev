@@ -59,7 +59,8 @@ OBJECTS=	mpi_flags.o mpi_shared_variables.o mpi_utilities.o \
 			mpi_module.o
 
 #Strings
-OBJECTS+=	precmod.o stringmod.o
+OBJECTS+=	precmod.o stringmod.o \
+			txt_io.o
 
 #SA_MESH flags, parameters, and variables
 
