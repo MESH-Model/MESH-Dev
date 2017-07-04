@@ -4,36 +4,32 @@ module WF_ROUTE_module
 
     implicit none
 
-    private
-
-    public WF_ROUTE_within_tile, WF_ROUTE_between_grid
-
     contains
 
-    function WF_ROUTE_within_tile(shd, stfl, rrls)
+!-    function WF_ROUTE_within_tile(shd, stfl, rrls)
 
-        use mpi_module
-        use sa_mesh_shared_variables
-        use model_dates
-        use MODEL_OUTPUT
-        use model_output_variabletypes
+!-        use mpi_module
+!-        use sa_mesh_shared_variables
+!-        use model_dates
+!-        use MODEL_OUTPUT
+!-        use model_output_variabletypes
 
-        character(100) WF_ROUTE_within_tile
+!-        character(100) WF_ROUTE_within_tile
 
-        type(ShedGridParams), intent(in) :: shd
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
+!-        type(ShedGridParams), intent(in) :: shd
+!-        type(streamflow_hydrograph) :: stfl
+!-        type(reservoir_release) :: rrls
 
         !> Local variables.
-        integer i, ierr
+!-        integer i, ierr
 
-        WF_ROUTE_within_tile = ''
+!-        WF_ROUTE_within_tile = ''
 
         !> WF_ROUTE only runs in serial. If ipid /= 0 then the model is
         !> likely running in parallel. This subroutine returns if ipid
         !> of the current process /= 0 or if the process has been marked
         !> inactive.
-        if (.not. WF_RTE_flgs%PROCESS_ACTIVE .or. ipid /= 0) return
+!-        if (.not. WF_RTE_flgs%PROCESS_ACTIVE .or. ipid /= 0) return
 
         !> *************************************************************
         !> Read in current reservoir release value
@@ -45,25 +41,25 @@ module WF_ROUTE_module
         !> there might not be any data in wf_qrel, wf_qhyd
         !> make sure we have a controlled reservoir (if not the mod(HOUR_NOW, wf_ktr)
         !> may give an error. Frank S Jun 2007
-        if (WF_NORESV_CTRL > 0) then
-            if (mod(ic%now%hour, WF_KTR) == 0 .and. ic%now%mins == 0) then
+!-        if (WF_NORESV_CTRL > 0) then
+!-            if (mod(ic%now%hour, WF_KTR) == 0 .and. ic%now%mins == 0) then
             !>        READ in current reservoir value
-                read(21, '(100f10.3)', iostat = ierr) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
-                if (ierr /= 0) then
-                    WF_ROUTE_within_tile = 'ran out of reservoir data before met data'
-                    return
-                end if
-            else
-                if (JAN == 1 .and. WF_NORESV_CTRL > 0) then
-                    read(21, '(100f10.3)', iostat = ierr) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
-                    rewind 21
-                    read(21, *)
-                    do i = 1, fms%rsvr%n
-                        read(21, *)
-                    end do
-                end if
-            end if
-        end if
+!-                read(21, '(100f10.3)', iostat = ierr) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
+!-                if (ierr /= 0) then
+!-                    WF_ROUTE_within_tile = 'ran out of reservoir data before met data'
+!-                    return
+!-                end if
+!-            else
+!-                if (JAN == 1 .and. WF_NORESV_CTRL > 0) then
+!-                    read(21, '(100f10.3)', iostat = ierr) (WF_QREL(i), i = 1, WF_NORESV_CTRL)
+!-                    rewind 21
+!-                    read(21, *)
+!-                    do i = 1, fms%rsvr%n
+!-                        read(21, *)
+!-                    end do
+!-                end if
+!-            end if
+!-        end if
 
         ! **************************************************************
         !> Read in current streamflow value
@@ -71,19 +67,19 @@ module WF_ROUTE_module
 
         !> only read in current value if we are on the correct time step
         !> also read in the first value if this is the first time through
-        if (mod(ic%now%hour, WF_KT) == 0 .and. ic%now%mins == 0) then
+!-        if (mod(ic%now%hour, WF_KT) == 0 .and. ic%now%mins == 0) then
             !>       read in current streamflow value
-            read(22, *, iostat = ierr) (WF_QHYD(i), i = 1, fms%stmg%n)
-            if (ierr /= 0) then
+!-            read(22, *, iostat = ierr) (WF_QHYD(i), i = 1, fms%stmg%n)
+!-            if (ierr /= 0) then
 !-                WF_ROUTE_within_tile = 'ran out of streamflow data before met data'
 !-                return
-                WF_QHYD = WF_NODATA_VALUE
-            end if
-        end if
+!-                WF_QHYD = WF_NODATA_VALUE
+!-            end if
+!-        end if
 
-        return
+!-        return
 
-    end function
+!-    end function
 
     subroutine WF_ROUTE_between_grid(shd, wb, stfl, rrls)
 
@@ -110,6 +106,9 @@ module WF_ROUTE_module
         if (ic%ts_daily == 1) then
             WF_QSYN_AVG = 0.0
         end if
+
+        if (fms%rsvr%n > 0) WF_QREL = fms%rsvr%qorls%val
+        if (fms%stmg%n > 0) WF_QHYD = fms%stmg%qomeas%val
 
         !> shd%NAA is the total number of grids.
         !> shd%NA is the total number of grids in the basin.

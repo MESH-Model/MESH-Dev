@@ -39,31 +39,8 @@ module sa_mesh_run_between_grid
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
-        !> Initialiation of states.
-        NA = shd%NA
-
-        !> Stream channel.
-!-        stas%chnl%n = NA
-!-        allocate(stas%chnl%qi(1:NA), stas%chnl%qo(1:NA), stas%chnl%s(1:NA))
-!-        stas%chnl%qi(1:NA) = 0.0
-!-        stas%chnl%qo(1:NA) = 0.0
-!-        stas%chnl%s(1:NA) = 0.0
-
-        !> Lake.
-!+        stas%lk%n = NLK
-!+        allocate(stas%lk%ab(1:NLK), stas%lk%qi(1:NLK), stas%lk%qo(1:NLK), stas%lk%s(1:NLK))
-!+        stas%lk%ab(1:NLK) = 0.0
-!+        stas%lk%qi(1:NLK) = 0.0
-!+        stas%lk%qo(1:NLK) = 0.0
-!+        stas%lk%s(1:NLK) = 0.0
-
-        !> Reservoir.
-!+        stas%rsvr%n = NRSVR
-!+        allocate(stas%rsvr%ab(1:NRSVR), stas%rsvr%qi(1:NRSVR), stas%rsvr%qo(1:NRSVR), stas%rsvr%s(1:NRSVR))
-!+        stas%rsvr%ab(1:NRSVR) = 0.0
-!+        stas%rsvr%qi(1:NRSVR) = 0.0
-!+        stas%rsvr%qo(1:NRSVR) = 0.0
-!+        stas%rsvr%s(1:NRSVR) = 0.0
+        !> Initialize basin structures.
+        call read_basin_structures(shd)
 
         if (BASINSWEOUTFLAG > 0) then
             open(85, file = './' // trim(fls%GENDIR_OUT) // '/basin_SCA_alldays.csv')
@@ -77,7 +54,7 @@ module sa_mesh_run_between_grid
         call WF_ROUTE_init(shd, fls, stfl, rrls)
 
         !> RPN RTE.
-        call run_rte_init(shd, stfl, rrls)
+        call run_rte_init(fls, shd, stfl, rrls)
 
         call run_save_basin_output_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
@@ -93,6 +70,7 @@ module sa_mesh_run_between_grid
         use sa_mesh_shared_variables
         use FLAGS
         use model_dates
+        use txt_io
         use climate_forcing
         use model_output_variabletypes
         use MODEL_OUTPUT
@@ -116,13 +94,46 @@ module sa_mesh_run_between_grid
         type(reservoir_release) :: rrls
 
         !> Local variables.
-        integer k, ki
+        integer k, ki, ierr
 
         !> SCA variables
         real TOTAL_AREA, FRAC, basin_SCA, basin_SWE
 
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
+
+        !> Read in reservoir release values if such a type of reservoir has been defined.
+        if (fms%rsvr%n > 0) then
+            if (count(fms%rsvr%rls%b1 == 0.0) > 0) then
+
+                !> The minimum time-stepping of the reservoir file is hourly.
+                if (mod(ic%now%hour, fms%rsvr%qorls%dts) == 0 .and. ic%now%mins == 0) then
+                    ierr = read_records_txt(fms%rsvr%qorls%fls%iun, fms%rsvr%qorls%val)
+
+                    !> Stop if no releases exist.
+                    if (ierr /= 0) then
+                        print "(3x, 'ERROR: End of file reached when reading from ', (a), '.')", &
+                            trim(adjustl(fms%rsvr%qorls%fls%fname))
+                        stop
+                    end if
+                end if
+            end if
+        end if
+
+        !> Read in observed streamflow from file for comparison and metrics.
+        if (fms%stmg%n > 0) then
+
+            !> The minimum time-stepping of the streamflow file is hourly.
+            if (mod(ic%now%hour, fms%stmg%qomeas%dts) == 0 .and. ic%now%mins == 0) then
+                ierr = read_records_txt(fms%stmg%qomeas%fls%iun, fms%stmg%qomeas%val)
+
+                !> Assign a dummy value if no flow record exists.
+                if (ierr /= 0) then
+                    fms%stmg%qomeas%val = -1.0
+                end if
+            end if
+            stfl%qhyd = fms%stmg%qomeas%val
+        end if
 
         !> calculate and write the basin avg SCA similar to watclass3.0f5
         !> Same code than in wf_ensim.f subrutine of watclass3.0f8
@@ -157,7 +168,7 @@ module sa_mesh_run_between_grid
         call WF_ROUTE_between_grid(shd, wb, stfl, rrls)
 
         !> RPN RTE.
-        call run_rte_between_grid(shd, wb, stfl, rrls)
+        call run_rte_between_grid(fls, shd, wb, stfl, rrls)
 
         !> Cropland irrigation module (ICU).
         call runci_between_grid(shd, fls, cm)

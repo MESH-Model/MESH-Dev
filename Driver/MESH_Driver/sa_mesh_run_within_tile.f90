@@ -57,7 +57,7 @@ module sa_mesh_run_within_tile
         use cropland_irrigation_within_tile, only: runci_within_tile
         use RUNCLASS36_module, only: RUNCLASS36_within_tile
         use RUNSVS113_module, only: RUNSVS113
-        use WF_ROUTE_module, only: WF_ROUTE_within_tile
+!-        use WF_ROUTE_module, only: WF_ROUTE_within_tile
         use baseflow_module
 
         character(100) run_within_tile
@@ -92,8 +92,8 @@ module sa_mesh_run_within_tile
 
 !+        call LZS_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        run_within_tile = WF_ROUTE_within_tile(shd, stfl, rrls)
-        if (len_Trim(run_within_tile) > 0) return
+!-        run_within_tile = WF_ROUTE_within_tile(shd, stfl, rrls)
+!-        if (len_Trim(run_within_tile) > 0) return
 
         !> Cropland irrigation module (PEVP).
         call runci_within_tile(shd, fls, cm)

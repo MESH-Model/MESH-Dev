@@ -146,7 +146,7 @@ program RUNMESH
 
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
-    character(24) :: VERSION = '1087'
+    character(24) :: VERSION = '1089'
     character(8) RELEASE
 
     integer i, j, k, l, m, u
@@ -420,8 +420,8 @@ program RUNMESH
 
     !> Determine what output will print to the console.
     printoutwb = (allocated(wb_acc%pre) .and. allocated(wb_acc%evap) .and. allocated(wb_acc%rof))
-    printoutstfl = allocated(stfl%qsyn)
-    printoutqhyd = (allocated(stfl%qhyd) .and. allocated(stfl%qsyn))
+    printoutstfl = (fms%stmg%n > 0)
+    printoutqhyd = (fms%stmg%n > 0)
 
     if (ipid == 0) then
 
@@ -1254,8 +1254,8 @@ program RUNMESH
                 if (ro%VERBOSEMODE > 0) then
                     write(6, '(2i5)', advance = 'no') ic%now%year, ic%now%jday
                     if (printoutstfl) then
-                        do j = 1, stfl%ns
-                            if (printoutqhyd) write(6, '(f10.3)', advance = 'no') stfl%qhyd(j)
+                        do j = 1, fms%stmg%n
+                            if (printoutqhyd) write(6, '(f10.3)', advance = 'no') fms%stmg%qomeas%val(j)
                             write(6, '(f10.3)', advance = 'no') stfl%qsyn(j)
                         end do
                     end if

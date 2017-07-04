@@ -94,7 +94,7 @@ module model_files
         mtsfl%fl(mtsk%PE)%fn   = 'pre_emption_value.txt'
 
         !> For files used by WF_ROUTE.
-        if (.not. allocated(WF_RTE_fls%fl)) call WF_ROUTE_init_fls()
+        if (.not. allocated(WF_RTE_fstflout%fls%fl)) call WF_ROUTE_init_fls()
 !-        WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%fn = 'MESH_input_streamflow.txt'
 !-        WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun = 22
 !-        WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn = 'MESH_input_reservoir.txt'

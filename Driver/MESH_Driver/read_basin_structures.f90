@@ -216,28 +216,39 @@ subroutine read_basin_structures(shd)
             end if
         end do
 
-        !> Skips records to present in file.
-        call Julian_Day_ID(fms%rsvr%qorls%iyear, fms%rsvr%qorls%ijday, ijday1)
-        call Julian_Day_ID(ic%start%year, ic%start%jday, ijday2)
-        if (ijday2 < ijday1) then
-            if (ipid == 0) then
-                print 9994, trim(adjustl(fname)), trim(adjustl(fname)), &
-                    fms%rsvr%qorls%iyear, fms%rsvr%qorls%ijday, ic%start%year, ic%start%jday
-            end if
-        end if
-        iskip = (ijday2 - ijday1)*24/fms%rsvr%qorls%dts
-        if (iskip > 0) then
-            if (ipid == 0) print 9993, iskip
-            ierr = read_records_txt(iun, fms%rsvr%qorls%val, iskip)
-            if (ierr /= 0) then
-                if (ipid == 0) print 9995, trim(adjustl(fname))
-            end if
-        end if
+        !> Initialize reservoir release values if such a type of reservoir has been defined.
+        if (count(fms%rsvr%rls%b1 == 0.0) > 0) then
 
-        !> Read the first record, then reposition to the first record.
-        ierr = read_records_txt(iun, fms%rsvr%qorls%val)
-        if (ierr /= 0) fms%rsvr%qorls%val = 0.0
-        backspace(iun)
+            !> Skips records to present in file.
+            call Julian_Day_ID(fms%rsvr%qorls%iyear, fms%rsvr%qorls%ijday, ijday1)
+            call Julian_Day_ID(ic%start%year, ic%start%jday, ijday2)
+            if (ijday2 < ijday1) then
+                if (ipid == 0) then
+                    print 9994, trim(adjustl(fname)), trim(adjustl(fname)), &
+                        fms%rsvr%qorls%iyear, fms%rsvr%qorls%ijday, ic%start%year, ic%start%jday
+                end if
+            end if
+            iskip = (ijday2 - ijday1)*24/fms%rsvr%qorls%dts
+            if (iskip > 0) then
+                if (ipid == 0) print 9993, iskip
+                ierr = read_records_txt(iun, fms%rsvr%qorls%val, iskip)
+                if (ierr /= 0) then
+                    if (ipid == 0) print 9995, trim(adjustl(fname))
+                end if
+            end if
+
+            !> Read the first record, then reposition to the first record.
+            ierr = read_records_txt(iun, fms%rsvr%qorls%val)
+
+            !> Stop if no releases exist.
+            if (ierr /= 0) then
+                print 9990, trim(adjustl(fname))
+                stop
+            end if
+
+            !> Reposition to the first record in the file.
+            backspace(iun)
+        end if
     end if
 
     !> Print a summary of locations to file.
@@ -269,6 +280,7 @@ subroutine read_basin_structures(shd)
 9991    format( &
             /3x, 'ERROR: Reservoir ', i4, ' is not in the correct reach.', &
             /8x, 'REACH at RANK ', i8, ' is ', i4, ' but should be ', i4)
+9990    format(3x, 'ERROR: End of file reached when reading from ', (a), '.')
 
     !> Stop if there have been configuration errors.
     if (istop /= 0) stop

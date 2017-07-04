@@ -97,9 +97,9 @@ module WF_ROUTE_config
     end type
 
     !> WF_RTE_fls: Stores information about files used by the module.
-    type(fl_ids), save :: WF_RTE_fls
+!-    type(fl_ids), save :: WF_RTE_fls
 
-    type(WF_RTE_file_keys), save :: WF_RTE_flks
+!-    type(WF_RTE_file_keys), save :: WF_RTE_flks
 
     !> Output files
     type(WF_RTE_fout_stfl), save :: WF_RTE_fstflout
@@ -179,7 +179,7 @@ module WF_ROUTE_config
 !-    integer DRIVERTIMESTEP
 
     !* WF_NODATA_VALUE: No data value for when the streamflow record does not exist.
-    real :: WF_NODATA_VALUE = -999.0
+    real :: WF_NODATA_VALUE = -1.0
 
     real, dimension(:), allocatable :: WF_QO2_ACC_MM, WF_STORE2_ACC_MM
 
@@ -196,7 +196,7 @@ module WF_ROUTE_config
 
         !> Allocate file object.
         allocate( &
-            WF_RTE_fls%fl(2), &
+!-            WF_RTE_fls%fl(2), &
             WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%kmin:WF_RTE_fstflout%kmax), &
             WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%kmin:WF_RTE_frsvrout%kmax))
 
@@ -297,7 +297,7 @@ module WF_ROUTE_config
             allocate(WF_RES(NR), &
                      WF_B1(NR), WF_B2(NR), WF_B3(NR), WF_B4(NR), WF_B5(NR), &
                      WF_QREL(NR), WF_RESSTORE(NR))
-            WF_QREL = 0.0
+            WF_QREL = fms%rsvr%qorls%val
             WF_RESSTORE = 0.0
             WF_B1 = fms%rsvr%rls%b1
             WF_B2 = fms%rsvr%rls%b2

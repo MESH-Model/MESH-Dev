@@ -63,7 +63,7 @@ module rte_module
     !> _init() adapted from read_shed_fst_mod.f90.
     !>
 
-    subroutine run_rte_init(shd, stfl, rrls)
+    subroutine run_rte_init(fls, shd, stfl, rrls)
 
         !> area_watflood: Shared variables used throughout rte code.
         use area_watflood
@@ -72,11 +72,14 @@ module rte_module
         use mpi_module
 
         !> sa_mesh_shared_variables: Variables, parameters, and types from SA_MESH.
+        use model_files_variables
         use sa_mesh_shared_variables
         use FLAGS
 
         !> model_output_variabletypes: Streamflow and reservoir output variables for SA_MESH.
         use model_output_variabletypes
+
+        type(fl_ids) :: fls
 
         !> Basin properties from SA_MESH.
         type(ShedGridParams) :: shd
@@ -421,7 +424,7 @@ module rte_module
                 lake_stor(noresv, 999999), lake_outflow(noresv, 999999), &
                 del_stor(noresv, 999999))
 !                qstream_sum(noresv, 999999), strloss_sum(noresv, 999999))
-            qrel = 0.0
+            qrel(:, 1) = fms%rsvr%qorls%val
             qdwpr = 0.0; lake_elv = 0.0
             lake_inflow = 0.0
 !tied to fhr
@@ -625,7 +628,7 @@ module rte_module
 
         !> Open output files for streamflow.
 !todo: move this.
-        open(70, file = 'MESH_output_streamflow.csv', status = 'unknown', action = 'write')
+        open(70, file = './' // trim(fls%GENDIR_OUT) // '/' // 'MESH_output_streamflow.csv', status = 'unknown', action = 'write')
         write(70, 1010, advance = 'no') 'YEAR', 'DAY'
         do l = 1, fms%stmg%n
             write(ffmti, '(i3)') l
@@ -641,7 +644,7 @@ module rte_module
     !> _between_grid() adapted from rte_sub.f.
     !>
 
-    subroutine run_rte_between_grid(shd, wb, stfl, rrls)
+    subroutine run_rte_between_grid(fls, shd, wb, stfl, rrls)
 
         !> area_watflood: Shared variables used throughout rte code.
         use area_watflood
@@ -650,6 +653,7 @@ module rte_module
         use mpi_module
 
         !> sa_mesh_shared_variables: Variables, parameters, and types from SA_MESH.
+        use model_files_variables
         use sa_mesh_shared_variables
 
         !> MODEL_OUTPUT: water_balance type for 'wb'.
@@ -657,6 +661,8 @@ module rte_module
 
         !> model_output_variabletypes: Streamflow and reservoir output variables for SA_MESH.
         use model_output_variabletypes
+
+        type(fl_ids) :: fls
 
         !> Basin properties from SA_MESH.
         type(ShedGridParams) :: shd
@@ -694,10 +700,10 @@ module rte_module
         if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
 
 !todo: move this
-        if (mod(ic%now%hour, fms%stmg%qomeas%dts) == 0 .and. ic%now%mins == 0) then
-            read(22, *) (fms%stmg%qomeas%val(l), l = 1, fms%stmg%n)
-            stfl%qhyd = fms%stmg%qomeas%val
-        end if
+!-        if (mod(ic%now%hour, fms%stmg%qomeas%dts) == 0 .and. ic%now%mins == 0) then
+!-            read(22, *) (fms%stmg%qomeas%val(l), l = 1, fms%stmg%n)
+!-            stfl%qhyd = fms%stmg%qomeas%val
+!-        end if
 
         !> Accumulate runoff to the routing time-step.
         if (ic%ts_hourly == 1) then
@@ -780,7 +786,8 @@ module rte_module
         qi2_strt(1:naa) = qi2(1:naa)
         qo2_strt(1:naa) = qo2(1:naa)
         store2_strt(1:naa) = store2(1:naa)
-        qhyd(:, fhr) = stfl%qhyd
+        if (fms%stmg%n > 0) qhyd(:, fhr) = fms%stmg%qomeas%val
+        if (fms%rsvr%n > 0) qrel(:, fhr) = fms%rsvr%qorls%val
 
         !> If flow insertion, use simulated instead of flow inserted value at gauge location.
         if (trim(strfw_option) == 'streamflow_insertion') then
