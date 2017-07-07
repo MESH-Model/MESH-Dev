@@ -37,7 +37,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     character(1) :: delim = ' '
 
     !> Local variables.
-    integer NA, NAA, NTYPE, NRVR, NML, NSL, k, i
+    integer NA, NAA, NTYPE, NRVR, NML, NSL, k, i, n
 
     !> Assign commonly used indices to local variables.
     NA = shd%NA
@@ -74,9 +74,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
         rtepm%r1n = 0.0; rtepm%r2n = 0.0; rtepm%mndr = 1.0; rtepm%widep = 10.0
         rtepm%flz = 1.0; rtepm%pwr = 1.0
         rtepm%aa2 = 1.1; rtepm%aa3 = 0.043; rtepm%aa4 = 1.0
-        rtepm_iak%r1n = 0.0; rtepm_iak%r2n = 0.0; rtepm_iak%mndr = 1.0; rtepm_iak%widep = 10.0
-        rtepm_iak%flz = 1.0; rtepm_iak%pwr = 1.0
-        rtepm_iak%aa2 = 1.1; rtepm_iak%aa3 = 0.043; rtepm_iak%aa4 = 1.0
+        rtepm_iak%r1n = 0.0; rtepm_iak%r2n = 0.0; rtepm_iak%mndr = 0.0; rtepm_iak%widep = 0.0
+        rtepm_iak%flz = 0.0; rtepm_iak%pwr = 0.0
+        rtepm_iak%aa2 = 0.0; rtepm_iak%aa3 = 0.0; rtepm_iak%aa4 = 0.0
     end if
 
     !> PBSM (blowing snow).
@@ -138,12 +138,20 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !> READ FROM FILE.
     !>
 
-    !> Parse the INPUTPARAMSFORM to get INPUTPARAMSFORMFLAG.
+    !> Parse the INPUTPARAMSFORM control flag to get INPUTPARAMSFORMFLAG.
+    !> Default behaviour is to read the 'ini' format files.
+    INPUTPARAMSFORMFLAG = radix(INPUTPARAMSFORMFLAG)**0
     call parse(INPUTPARAMSFORM, delim, out_args, nargs)
-    if (index(lowercase(INPUTPARAMSFORM), 'only') > 0) INPUTPARAMSFORMFLAG = 0
-    if (index(lowercase(INPUTPARAMSFORM), 'ini') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**0
-    if (index(lowercase(INPUTPARAMSFORM), 'r2c') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**1
-    if (index(lowercase(INPUTPARAMSFORM), 'csv') > 0) INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(2)**2
+    do n = 2, nargs
+        select case (out_args(n))
+            case ('only')
+                INPUTPARAMSFORMFLAG = 0
+            case ('r2c')
+                INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**1
+            case ('csv')
+                INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**2
+        end select
+    end do
 
     !> Check for a bad value of INPUTPARAMSFORMFLAG.
     if (INPUTPARAMSFORMFLAG == 0) then
@@ -261,7 +269,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     end if
 
     !> From river class (IAK) if not read by grid.
-    if (NRVR > 0 .and. .not. btest(INPUTPARAMSFORMFLAG, 1)) then
+    if (NRVR > 0) then
         do k = 1, NAA
 
             !> River class index (IAK).
@@ -269,15 +277,15 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
             !> RPN RTE (Watflood, 2007).
             if (rteflg%PROCESS_ACTIVE) then
-                rtepm%r1n(k) = rtepm_iak%r1n(i)
-                rtepm%r2n(k) = rtepm_iak%r2n(i)
-                rtepm%mndr(k) = rtepm_iak%mndr(i)
-                rtepm%widep(k) = rtepm_iak%widep(i)
-                rtepm%flz(k) = rtepm_iak%flz(i)
-                rtepm%pwr(k) = rtepm_iak%pwr(i)
-                rtepm%aa2(k) = rtepm_iak%aa2(i)
-                rtepm%aa3(k) = rtepm_iak%aa3(i)
-                rtepm%aa4(k) = rtepm_iak%aa4(i)
+                if (rtepm_iak%r1n(i) /= 0.0) rtepm%r1n(k) = rtepm_iak%r1n(i)
+                if (rtepm_iak%r2n(i) /= 0.0) rtepm%r2n(k) = rtepm_iak%r2n(i)
+                if (rtepm_iak%mndr(i) /= 0.0) rtepm%mndr(k) = rtepm_iak%mndr(i)
+                if (rtepm_iak%widep(i) /= 0.0) rtepm%widep(k) = rtepm_iak%widep(i)
+                if (rtepm_iak%flz(i) /= 0.0) rtepm%flz(k) = rtepm_iak%flz(i)
+                if (rtepm_iak%pwr(i) /= 0.0) rtepm%pwr(k) = rtepm_iak%pwr(i)
+                if (rtepm_iak%aa2(i) /= 0.0) rtepm%aa2(k) = rtepm_iak%aa2(i)
+                if (rtepm_iak%aa3(i) /= 0.0) rtepm%aa3(k) = rtepm_iak%aa3(i)
+                if (rtepm_iak%aa4(i) /= 0.0) rtepm%aa4(k) = rtepm_iak%aa4(i)
             end if
 
         end do !k = il1, il2

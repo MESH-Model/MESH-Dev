@@ -10,15 +10,13 @@ module RUNSVS113_module
 
     contains
 
-    subroutine RUNSVS113(shd, fls, ts, cm, wb, eb, sp)
+    subroutine RUNSVS113(shd, fls, cm)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
-        use model_output_variabletypes
-        use MODEL_OUTPUT
 
         use RUNSVS_mod
         use runsvs_utils
@@ -26,11 +24,7 @@ module RUNSVS113_module
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(dates_model) :: ts
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sp
 
 #include "options.cdk"
 #include "isbapar.cdk"
@@ -163,27 +157,6 @@ module RUNSVS113_module
 !                    (bus(wdsoil + j*NG + k), j = 0, 6), bus(runofftotaf + k), bus(latflaf + k), bus(drainaf + k)
 !            end if
 !        end do
-
-!-        wb%PRE = 0.0
-!-        wb%ROFO = 0.0
-!-        wb%ROFS = 0.0
-!-        wb%ROFB = 0.0
-!-        do k = 0, NG - 1
-
-            !> Grab the Grid, GRU indices for the NML element.
-!-            ki = shd%lc%ILMOS(k + 1)
-!-            kj = shd%lc%JLMOS(k + 1)
-
-            !> Calculate the contributing FRAC.
-!-            FRAC = shd%lc%ACLASS(ki, kj)*shd%FRAC(ki)
-
-            !> Accumulate totals.
-!-            wb%PRE(ki) = wb%PRE(ki) + cm%dat(ck%RT)%GRD(ki)*FRAC*ic%dts
-!-            if (bus(runofftot + k) > 0.0) wb%ROFO(ki) = wb%ROFO(ki) + bus(runofftot + k)*FRAC
-!-            if (bus(latflw + k) > 0.0) wb%ROFS(ki) = wb%ROFS(ki) + bus(latflw + k)*FRAC
-!-            if (bus(watflow + 6*NG + k) > 0.0) wb%ROFB(ki) = wb%ROFB(ki) + bus(watflow + 6*NG + k)*FRAC
-!-        end do
-!-        wb%ROF = wb%ROFO + wb%ROFS + wb%ROFB
 
         !> Transfer variables.
         do k = 0, NG - 1

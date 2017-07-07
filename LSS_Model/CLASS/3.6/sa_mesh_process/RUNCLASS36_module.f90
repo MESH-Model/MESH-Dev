@@ -7,7 +7,7 @@ module RUNCLASS36_module
 
     contains
 
-    subroutine RUNCLASS36_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+    subroutine RUNCLASS36_within_tile(shd, fls, cm)
 
         use mpi_module
         use model_files_variables
@@ -30,13 +30,7 @@ module RUNCLASS36_module
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(dates_model) :: ts
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sp
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         integer NA, NTYPE, NML, IGND, k, ik, j, i
         real FRAC

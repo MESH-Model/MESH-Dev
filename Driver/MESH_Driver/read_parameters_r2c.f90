@@ -176,6 +176,11 @@ subroutine read_parameters_r2c(shd, iun, fname)
                 case ('dd')
                     if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
                         pm_grid%hp%dd(n) = header%r2cp%ep%attList(l)%val(i)
+
+                        !> Unit conversion if units are km km-2.
+                        if (index(lowercase(header%r2cp%ep%attList(l)%units), 'km') > 0) then
+                            pm_grid%hp%dd(n) = pm_grid%hp%dd(n)/1000.0
+                        end if
                     end if
                 case ('sand')
                     if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then

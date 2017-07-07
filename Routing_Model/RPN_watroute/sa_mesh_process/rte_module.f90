@@ -944,14 +944,14 @@ module rte_module
 !        hour_last = hour_now
 
         !> Accumulate.
-        if (ic%ts_daily == 1) qo2sim = 0.0
-        qo2sim = qo2sim + qo2
-        if (mod(ic%ts_daily, 3600/ic%dts*24) == 0) qo2sim = qo2sim/24
+!-        if (ic%ts_daily == 1) qo2sim = 0.0
+!-        qo2sim = qo2sim + qo2
+!-        if (mod(ic%ts_daily, 3600/ic%dts*24) == 0) qo2sim = qo2sim/24
 
         !> Return average streamflow value to SA_MESH.
 !todo: preserve per time-step value.
         do l = 1, fms%stmg%n
-            stfl%qsyn(l) = qo2sim(fms%stmg%meta%rnk(l))
+            stfl%qsyn(l) = avr_qo(fms%stmg%meta%rnk(l))
         end do
 
         !> This occurs the last time-step of the day.

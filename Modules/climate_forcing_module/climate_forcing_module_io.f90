@@ -108,6 +108,20 @@ module climate_forcing_io
                 if (ierr /= 0) goto 999
                 cm%dat(vid)%blocktype = cbk%GRD
 
+            !> CLASS format MET file.
+            case (6)
+                if (vid /= ck%MET) return
+                cm%dat(vid)%fname = 'basin_forcing'
+                cm%dat(vid)%fpath = 'basin_forcing.met'
+                cm%dat(vid)%blocktype = cbk%GRD
+                open(cm%dat(vid)%fiun, &
+                     file = trim(adjustl(cm%dat(vid)%fpath)), &
+                     status = 'old', &
+                     action = 'read', &
+                     form = 'formatted', &
+                     iostat = ierr)
+                if (ierr /= 0) goto 999
+
             !> Unknown file format.
             case default
                 if (ro%VERBOSEMODE > 0) print 198, cm%dat(vid)%id_var, cm%dat(vid)%ffmt
@@ -247,6 +261,19 @@ module climate_forcing_io
                 !> ASCII format.
                 case (4)
                     read(cm%dat(vid)%fiun, *, end = 999) (cm%dat(vid)%blocks(i, t), i = 1, shd%NA)
+
+                !> CLASS format MET file.
+                case (6)
+                    if (vid /= ck%MET) return
+                    if (storedata) then
+                        read(cm%dat(vid)%fiun, *, end = 999) i, i, i, i, &
+                            cm%dat(ck%FB)%blocks(1, t), cm%dat(ck%FI)%blocks(1, t), cm%dat(ck%RT)%blocks(1, t), &
+                            cm%dat(ck%TT)%blocks(1, t), cm%dat(ck%HU)%blocks(1, t), cm%dat(ck%UV)%blocks(1, t), &
+                            cm%dat(ck%P0)%blocks(1, t)
+                        cm%dat(ck%TT)%blocks(1, t) = cm%dat(ck%TT)%blocks(1, t) + 273.16
+                    else
+                        read(cm%dat(vid)%fiun, *, end = 999)
+                    end if
 
                 !> Unknown file format.
                 case default
