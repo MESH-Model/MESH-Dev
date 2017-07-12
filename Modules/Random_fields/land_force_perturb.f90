@@ -727,9 +727,9 @@ module land_force_perturb
         !   typ=1: multiplicative and lognormal, mean=1
 
         ! Ala Bahrami changed this
-        ! real,    parameter :: std_pcp  = .3
+        ! real,    parameter :: std_pcp  = .3, 0.5
         integer, parameter :: typ_pcp  = 1
-        real,    parameter :: std_pcp  = .5
+        real,    parameter :: std_pcp  = .3
 
         ! Ala Bahrami changed this
         !real,    parameter :: std_sw    = .15
@@ -738,9 +738,9 @@ module land_force_perturb
 
         ! Ala Bahrami changed this
         ! integer, parameter :: typ_lw    = 1
-        ! real,    parameter :: std_lw    = .15
+        ! real,    parameter :: std_lw    = .15, 40
         integer, parameter :: typ_lw    = 0
-        real,    parameter :: std_lw    = 40
+        real,    parameter :: std_lw    = 30
 
         ! correlation coefficients -1 <= rho <= 1
 

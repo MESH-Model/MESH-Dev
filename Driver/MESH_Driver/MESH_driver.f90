@@ -327,6 +327,43 @@ program MESH_Assimilate
     close (10)
 
     !> Added by Ala Bahrami
+    !> Initialize random_fields variables.
+    call assemble_forcepert_param(N_x, N_y, N_forcepert, forcepert_param)
+
+    !> Deallocate the random_fields variables if they are been allocated before.
+    if (allocated(ens_id)) deallocate (ens_id)
+    if (allocated(Forcepert_rseed)) deallocate (Forcepert_rseed)
+    if (allocated(Forcepert_ntrmdt)) deallocate (Forcepert_ntrmdt)
+    if (allocated(Forcepert)) deallocate (Forcepert)
+
+    !> Allocating the the random_fields variables.
+    allocate(ens_id(N_ens))
+    allocate(Forcepert_rseed(NRANDSEED2, N_ens))
+    allocate(Forcepert_ntrmdt(N_forcepert, N_x, N_y, N_ens))
+    allocate(Forcepert(N_forcepert, N_x, N_y, N_ens))
+
+    Forcepert_ntrmdt = 0.0
+    Forcepert = 0.0
+
+    initialize = .true.
+
+    do n = 1, N_ens
+        ens_id(n) = n
+    end do
+
+    !> Addded by Ala Bahrami
+    !> Generate random fields for initialization
+    call get_forcepert( &
+       N_forcepert, N_ens, N_x, N_y, &
+       dx, dy, dtstep, &
+       initialize, &
+       forcepert_param, &
+       ens_id, &
+       Forcepert_rseed, &
+       Forcepert_ntrmdt, &
+       Forcepert)
+
+    !> Added by Ala Bahrami
     !> Starting main ensemble loop.
 
     !> *********************************************************************
@@ -387,43 +424,43 @@ program MESH_Assimilate
 
     !> Added by Ala Bahrami
     !> Initialize random_fields variables.
-    call assemble_forcepert_param(N_x, N_y, N_forcepert, forcepert_param)
+!-    call assemble_forcepert_param(N_x, N_y, N_forcepert, forcepert_param)
 
     !> Deallocate the random_fields variables if they are been allocated before.
-    if (allocated(ens_id)) deallocate (ens_id)
-    if (allocated(Forcepert_rseed)) deallocate (Forcepert_rseed)
-    if (allocated(Forcepert_ntrmdt)) deallocate (Forcepert_ntrmdt)
-    if (allocated(Forcepert)) deallocate (Forcepert)
+!-    if (allocated(ens_id)) deallocate (ens_id)
+!-    if (allocated(Forcepert_rseed)) deallocate (Forcepert_rseed)
+!-    if (allocated(Forcepert_ntrmdt)) deallocate (Forcepert_ntrmdt)
+!-    if (allocated(Forcepert)) deallocate (Forcepert)
     if (allocated(Forcepert_vect)) deallocate (Forcepert_vect)
 
     !> Allocating the the random_fields variables.
-    allocate(ens_id(N_ens))
-    allocate(Forcepert_rseed(NRANDSEED2, N_ens))
-    allocate(Forcepert_ntrmdt(N_forcepert, N_x, N_y, N_ens))
-    allocate(Forcepert(N_forcepert, N_x, N_y, N_ens))
+!-    allocate(ens_id(N_ens))
+!-    allocate(Forcepert_rseed(NRANDSEED2, N_ens))
+!-    allocate(Forcepert_ntrmdt(N_forcepert, N_x, N_y, N_ens))
+!-    allocate(Forcepert(N_forcepert, N_x, N_y, N_ens))
 
     !> Allocate and initialize Forcepert_vect.
     allocate (Forcepert_vect(N_forcepert, NA, N_ens))
-    Forcepert_ntrmdt = 0.0
-    Forcepert = 0.0
+!-    Forcepert_ntrmdt = 0.0
+!-    Forcepert = 0.0
 
-    initialize = .true.
+!-    initialize = .true.
 
-    do n = 1, N_ens
-        ens_id(n) = n
-    end do
+!-    do n = 1, N_ens
+!-        ens_id(n) = n
+!-    end do
 
     !> Addded by Ala Bahrami
     !> Generate random fields for initialization
-    call get_forcepert( &
-       N_forcepert, N_ens, N_x, N_y, &
-       dx, dy, dtstep, &
-       initialize, &
-       forcepert_param, &
-       ens_id, &
-       Forcepert_rseed, &
-       Forcepert_ntrmdt, &
-       Forcepert)
+!-    call get_forcepert( &
+!-       N_forcepert, N_ens, N_x, N_y, &
+!-       dx, dy, dtstep, &
+!-       initialize, &
+!-       forcepert_param, &
+!-       ens_id, &
+!-       Forcepert_rseed, &
+!-       Forcepert_ntrmdt, &
+!-       Forcepert)
 
     !> Initialize output fields.
     call init_water_balance(wb_grd, shd)
