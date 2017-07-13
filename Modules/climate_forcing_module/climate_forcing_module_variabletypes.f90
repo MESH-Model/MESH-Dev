@@ -90,9 +90,9 @@ module climate_forcing_variabletypes
         !* nclim: Number of climate variables.
         !* start_date: Starting date of the data (general).
         !* dat: Climate variables.
-        integer :: nclim = 7
+        integer :: nclim = 10
         type(counter_date) :: start_date
-        type(clim_series) :: dat(9)
+        type(clim_series) :: dat(10)
 
     end type !clim_info
 

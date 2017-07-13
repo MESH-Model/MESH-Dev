@@ -74,15 +74,14 @@ module RUNCLASS36_config
 
     contains
 
-    subroutine RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+    subroutine RUNCLASS36_init(shd, fls, cm)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
-        use model_output_variabletypes
-        use MODEL_OUTPUT
+        use FLAGS
 
         !> For CLASS output.
         use RUNCLASS36_save_output
@@ -91,13 +90,7 @@ module RUNCLASS36_config
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(dates_model) :: ts
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sp
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         integer NA, NTYPE, NML, NSL, l, k, ik, jk, m, j, i, iun, ierr
         real FRAC
@@ -617,24 +610,18 @@ module RUNCLASS36_config
 
     end subroutine
 
-    subroutine RUNCLASS36_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
+    subroutine RUNCLASS36_finalize(fls, shd, cm)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
-        use model_output_variabletypes
-        use MODEL_OUTPUT
+        use FLAGS
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sv
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> For SAVERESUMEFLAG 3
         real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &

@@ -370,6 +370,22 @@
 
                     !> BASIN FORCING DATA OPTIONS
                     !> Basin forcing data.
+                    case ('BASINFORCINGFLAG')
+                        do j = 2, nargs
+                            select case (lowercase(out_args(j)))
+                                case ('met')
+                                    cm%dat(ck%FB)%factive = .false.
+                                    cm%dat(ck%FI)%factive = .false.
+                                    cm%dat(ck%RT)%factive = .false.
+                                    cm%dat(ck%TT)%factive = .false.
+                                    cm%dat(ck%UV)%factive = .false.
+                                    cm%dat(ck%P0)%factive = .false.
+                                    cm%dat(ck%HU)%factive = .false.
+                                    cm%dat(ck%MET)%ffmt = 6
+                                    cm%dat(ck%MET)%factive = .true.
+                                    exit
+                            end select
+                        end do
                     case ('BASINSHORTWAVEFLAG')
                         call value(out_args(2), cm%dat(ck%FB)%ffmt, ierr)
                         if (ierr == 0) cm%dat(ck%FB)%factive = .true.
@@ -784,7 +800,7 @@
 
                     !> INPUTPARAMSFORMFLAG
                     case ('INPUTPARAMSFORMFLAG')
-                        INPUTPARAMSFORM = adjustl(in_line)
+                        INPUTPARAMSFORM = adjustl(lowercase(in_line))
 
                     !> Unrecognized flag.
                     case default
