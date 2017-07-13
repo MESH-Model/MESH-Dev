@@ -14,15 +14,12 @@ module model_dates
         integer, dimension(:), allocatable :: daysINyears   !nr days in years
         integer, dimension(:), allocatable :: daysINmonths  !nr days in months
         integer, dimension(:), allocatable :: daysINseasons !nr days in Seasons
-!        integer start_date(4), end_date(4)                  !start_date,end_date
         character freq                                      !frequency
-!        integer timestep                                    !model time-step
         integer nyears                                      !number oof years
         integer nseason                                     !12 months
         integer nmonths                                     !number of months
         integer nr_days                                     !number of days
         integer nr_timeStep                                 !total number of time steps
-!        integer nr_timeStepClimF                            !total number of climate forcing time steps
 
     end type !dates_model
 
@@ -68,20 +65,6 @@ module model_dates
         integer :: ts_daily = 1, ts_hourly = 1, ts_halfhourly = 1, ts_count = 1
 
     end type
-
-    !* TIME_STEP_NOW: Current time-step in minutes.
-    !* TIME_STEP_MINS: Time-step of the model in minutes.
-    !* TIME_STEP_DELT: Time-step of the model in seconds.
-!-    integer YEAR_NOW, JDAY_NOW, HOUR_NOW, MINS_NOW
-!-    integer TIME_STEP_NOW
-!-    integer :: TIME_STEP_MINS = 30, TIME_STEP_DELT = 1800
-
-    !* YEAR_START: Year at the start of the simulation.
-    !* JDAY_START: Julian day at the start of the simulation.
-    !* HOUR_START: Hour at the start of the simulation.
-    !* MINS_START: Minute (in 30-min. increment; either 0 or 30) at the start of the simulation.
-!-    integer YEAR_START, JDAY_START, HOUR_START, MINS_START
-!-    integer YEAR_STOP, JDAY_STOP, HOUR_STOP, MINS_STOP
 
     type(counter), save :: ic
 
@@ -190,13 +173,13 @@ module model_dates
             end if
         end if
 
-        !debug: Print the now.
-        !print *, "now: Y JD M D HR"
-        !print *, ic%now_year, ic%now_jday, ic%now_month, ic%now_day, ic%now_hour
+!debug: Print the now.
+!print *, "now: Y JD M D HR"
+!print *, ic%now_year, ic%now_jday, ic%now_month, ic%now_day, ic%now_hour
 
-        !debug: Print count.
-        !print *, "count: Y JD M D HR"
-        !print *, ic%count_year, ic%count_jday, ic%count_month, ic%count_day, ic%count_hour
+!debug: Print count.
+!print *, "count: Y JD M D HR"
+!print *, ic%count_year, ic%count_jday, ic%count_month, ic%count_day, ic%count_hour
 
         !> Update time-step counters.
         ic%ts_daily = ic%ts_daily + 1
@@ -211,10 +194,6 @@ module model_dates
     !> *****************************************************************
     subroutine get_dates(ts)
 
-        !> Input
-!        integer, intent(in) :: start_date(4), end_date(4) !Year,julianday,hour,min
-!        integer, intent(in) :: stepclim                   !HOURLYFLAG
-
         !> Input/Output
         type(dates_model) :: ts
 
@@ -225,11 +204,9 @@ module model_dates
         integer nr_days!, hours
 
         ts%freq = "D"
-        ts%nyears = ic%stop%year - ic%start%year + 1
+!todo: fix 'ts' or update it to deal with the scenario where the simulation start and/or stop dates are zeros
+        ts%nyears = max(ic%stop%year - ic%start%year + 1, 1)
         ts%nseason = 12
-
-!        ts%start_date = start_date
-!        ts%end_date = end_date
 
         iyear = ic%start%year
         fyear = ic%stop%year
@@ -239,7 +216,6 @@ module model_dates
         if (allocated (ts%years)) deallocate (ts%years)
         if (allocated (ts%daysINyears)) deallocate (ts%daysINyears)
         if (allocated (ts%daysINseasons)) deallocate (ts%daysINseasons)
-
         allocate(days_inyear(ts%nyears))
         allocate(ts%years(ts%nyears))
         allocate(ts%daysINyears(ts%nyears))
@@ -262,13 +238,9 @@ module model_dates
         ts%nr_days = nr_days
 
         if (allocated(ts%dates)) deallocate (ts%dates)
-
         allocate(ts%dates(nr_days, 4))
 
         ts%nr_timeStep = ts%nr_days*48
-
-!        hours= stepclim/30
-!        ts%nr_timeStepClimF = ts%nr_days*48/hours
 
         year = ic%start%year
         jday = ic%start%jday
@@ -435,7 +407,6 @@ module model_dates
         ts%nmonths = n_months
 
         if (allocated(ts%mnthyears)) deallocate (ts%mnthyears)
-
         allocate(ts%mnthyears(n_months, 2))
 
         mth = ts%dates(1, 2)
@@ -452,7 +423,6 @@ module model_dates
         end do
 
         if (allocated (ts%daysInmonths)) deallocate (ts%daysInmonths)
-
         allocate(ts%daysInmonths(ts%nmonths))
 
     end subroutine !get_nr_months
@@ -494,5 +464,33 @@ module model_dates
         end do
 
     end subroutine !GetIndicesDATES
+
+    !> Description: Determines day of year by month, day of month, and
+    !>  year.
+    integer function get_jday(month, day, year)
+
+        !> Input variables.
+        integer, intent(in) :: month, day, year
+
+        !> Local variables.
+        integer days(11)
+
+        !> Assign an array checking if 'year' is a leap year.
+        if (leap_year(year) == 366) then
+            days = [31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
+        else
+            days = [31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
+        end if
+
+        !> Solve and return the day of year
+        if (month == 1) then
+            get_jday = day
+        else
+            get_jday = days(month - 1) + day
+        end if
+
+        return
+
+    end function
 
 end module !model_dates

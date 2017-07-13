@@ -73,9 +73,9 @@ module save_basin_output
 
     subroutine run_save_basin_output_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
+        use model_files_variables
         use sa_mesh_shared_variables
         use FLAGS
-        use model_files_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -105,9 +105,18 @@ module save_basin_output
         NA = shd%NA
         NSL = shd%lc%IGND
 
-        if (allocated(bno%wb)) deallocate(bno%wb)
-
         !> Allocate and zero variables for accumulations.
+        if (allocated(bno%wb)) then
+            do ikey = 1, NKEY
+                deallocate(bno%wb(ikey)%PRE, bno%wb(ikey)%EVAP, bno%wb(ikey)%ROF, &
+                           bno%wb(ikey)%ROFO, bno%wb(ikey)%ROFS, bno%wb(ikey)%ROFB, &
+                           bno%wb(ikey)%RCAN, bno%wb(ikey)%SNCAN, &
+                           bno%wb(ikey)%SNO, bno%wb(ikey)%WSNO, bno%wb(ikey)%PNDW, &
+                           bno%wb(ikey)%LQWS, bno%wb(ikey)%FRWS, &
+                           bno%wb(ikey)%STG_INI, bno%wb(ikey)%STG_FIN)
+            end do
+            deallocate(bno%wb)
+        end if
         allocate(bno%wb(NKEY))
         do ikey = 1, NKEY
             allocate(bno%wb(ikey)%PRE(NA), bno%wb(ikey)%EVAP(NA), bno%wb(ikey)%ROF(NA), &
@@ -219,9 +228,8 @@ module save_basin_output
             end if
         end do
 
-        if (allocated(bno%evpdts)) deallocate (bno%evpdts)
-
         !> Allocate and zero variables for accumulations.
+        if (allocated(bno%evpdts)) deallocate (bno%evpdts)
         allocate(bno%evpdts(NKEY))
         bno%evpdts(:)%EVAP = 0.0
         bno%evpdts(:)%PEVP = 0.0
@@ -252,11 +260,8 @@ module save_basin_output
             call update_evp_header(shd, fls, 913, ic%dts)
         end if
 
-        if (allocated(eb_out%HFS)) deallocate (eb_out%HFS)
-        if (allocated(eb_out%QEVP)) deallocate (eb_out%QEVP)
-        if (allocated(eb_out%GFLX)) deallocate (eb_out%GFLX)
-
         !> Allocate and zero variables for accumulations.
+        if (allocated(eb_out%HFS)) deallocate (eb_out%HFS, eb_out%QEVP, eb_out%GFLX)
         allocate(eb_out%HFS(2:2), eb_out%QEVP(2:2), eb_out%GFLX(2:2, NSL))
         eb_out%QEVP = 0.0
         eb_out%HFS = 0.0
@@ -325,9 +330,9 @@ module save_basin_output
 
     subroutine run_save_basin_output(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
+        use model_files_variables
         use sa_mesh_shared_variables
         use FLAGS
-        use model_files_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -369,7 +374,7 @@ module save_basin_output
                 if (allocated(bnoflg%wb%ns)) then
                     do n = 1, size(bnoflg%wb%ns)
                         if (bnoflg%wb%ns(n) > 0) then
-                            call write_water_balance(shd, fls, (903*1000 + n), 3600, fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                            call write_water_balance(shd, fls, (903*1000 + n), 3600, fms%stmg%meta%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
                         end if
                     end do
                 end if
@@ -387,7 +392,7 @@ module save_basin_output
                     do n = 1, size(bnoflg%wb%ns)
                         if (bnoflg%wb%ns(n) > 0) then
                             call write_water_balance(shd, fls, (fls%fl(mfk%f900)%iun*1000 + n), 86400, &
-                                                     fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                                                     fms%stmg%meta%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
                         end if
                     end do
                 end if
@@ -418,7 +423,7 @@ module save_basin_output
                         do n = 1, size(bnoflg%wb%ns)
                             if (bnoflg%wb%ns(n) > 0) then
                                 call write_water_balance(shd, fls, (902*1000 + n), (86400*ndy), &
-                                                         fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                                                         fms%stmg%meta%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
                             end if
                         end do
                     end if
@@ -435,7 +440,7 @@ module save_basin_output
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
-                        call write_water_balance(shd, fls, (904*1000 + n), ic%dts, fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                        call write_water_balance(shd, fls, (904*1000 + n), ic%dts, fms%stmg%meta%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
                     end if
                 end do
             end if
@@ -449,7 +454,7 @@ module save_basin_output
 
     subroutine run_save_basin_output_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
@@ -765,8 +770,8 @@ module save_basin_output
 
     subroutine write_water_balance_header(shd, fls, fik, dts)
 
-        use sa_mesh_shared_variables
         use model_files_variables
+        use sa_mesh_shared_variables
 
         !> Input variables.
         type(ShedGridParams) :: shd
@@ -802,8 +807,8 @@ module save_basin_output
 
     subroutine write_water_balance(shd, fls, fik, dts, ina, ikdts)
 
-        use sa_mesh_shared_variables
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
 
         !> Input variables.
@@ -880,8 +885,8 @@ module save_basin_output
 
     subroutine update_evp(shd, fls, fik, dts, ikdts)
 
-        use sa_mesh_shared_variables
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
 
         !> Input variables.
@@ -923,8 +928,8 @@ module save_basin_output
 
     subroutine update_evp_header(shd, fls, fik, dts)
 
-        use sa_mesh_shared_variables
         use model_files_variables
+        use sa_mesh_shared_variables
 
         !> Input variables.
         type(ShedGridParams) :: shd

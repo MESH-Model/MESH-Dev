@@ -884,7 +884,7 @@ c      endif
       if(.NOT.allocated(qi1))then
         allocate(qi1(na),qi2(na),qo1(na),qo2(na),qo2sim(na),qr(na),
      *  d2(na),qda(na),cap(na),over(na),
-     *  qmax(na),res(na),qo2rem(na),
+     *  qmax(na),res(na),qo2rem(na),qo2remirr(na),
      *  sump(na),store1(na),store2(na),att(na),
      *  qbase(na),nreach(30), 
      *  rf(na,ntype+1),rffs(na,ntype+1),

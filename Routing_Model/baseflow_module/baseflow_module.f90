@@ -46,27 +46,19 @@ module baseflow_module
 
     contains
 
-    subroutine LZS_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+    subroutine LZS_init(shd, fls, cm)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
-        use model_output_variabletypes
-        use MODEL_OUTPUT
 
         use FLAGS
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(dates_model) :: ts
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sp
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         integer NA, NTYPE, NML, k, m, j, i, ierr
         integer :: iun = 58
@@ -110,13 +102,11 @@ module baseflow_module
         !> Initialize and distribute BASEFLOWFLAG initial values and parameterization.
         select case (lzsp%BASEFLOWFLAG)
             case (1)
-
                 if (allocated(dgw)) deallocate (dgw)
                 if (allocated(agw)) deallocate (agw)
                 if (allocated(Wseep)) deallocate (Wseep)
                 if (allocated(Wrchrg)) deallocate (Wrchrg)
                 if (allocated(Qb)) deallocate (Qb)
-
                 allocate(dgw(NML), agw(NML), Wseep(NML), Wrchrg(NML), Qb(NML))
                 Wseep = 0.0
                 Wrchrg = lzsp%WrchrgIni
@@ -126,6 +116,10 @@ module baseflow_module
                     agw(k) = lzsp%agwsh(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
                 end do
             case (2)
+                if (allocated(WF_LZFPWR)) deallocate (WF_LZFPWR)
+                if (allocated(WF_LZFA)) deallocate (WF_LZFA)
+                if (allocated(Wseep)) deallocate (Wseep)
+                if (allocated(Wrchrg)) deallocate (Wrchrg)
                 allocate(WF_LZFPWR(NML), WF_LZFA(NML), Wseep(NML), Wrchrg(NML), Qb(NML))
                 Wseep = 0.0
                 Wrchrg = lzsp%WrchrgIni
@@ -159,25 +153,17 @@ module baseflow_module
 
     end subroutine
 
-    subroutine LZS_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+    subroutine LZS_within_tile(shd, fls, cm)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
-        use model_output_variabletypes
-        use MODEL_OUTPUT
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(dates_model) :: ts
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sp
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         integer NA, NTYPE, NML, k, m, j, i, iun, ierr
 
@@ -203,7 +189,7 @@ module baseflow_module
 !+                ROFGAT = ROFGAT - ROFBGAT
 !+                Wseep = ROFBGAT*3600.0
 !+                do k = il1, il2
-!+                    call baseFlow(Wseep(k), dgw(k), Wrchrg(k), agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
+!+                    call baseFlow_luo2012(Wseep(k), dgw(k), Wrchrg(k), agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
 !+                    ROFBGAT(k) = Qb_new/3600.0
 !+                    Qb(k) = Qb_new
 !+                    Wrchrg(k) = Wrchrg_new
@@ -223,7 +209,7 @@ module baseflow_module
 
     subroutine LZS_finalize(fls, shd)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates

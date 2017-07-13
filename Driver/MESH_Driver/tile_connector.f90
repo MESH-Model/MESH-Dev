@@ -10,7 +10,7 @@ subroutine tile_connector(shd, grd, r2c, accumulate)
     implicit none
 
     !> Input variables.
-    type(GridParams), intent(in) :: shd
+    type(ShedGridParams), intent(in) :: shd
     real, dimension(shd%NA), intent(in) :: grd
     logical, optional :: accumulate
 
@@ -26,8 +26,8 @@ subroutine tile_connector(shd, grd, r2c, accumulate)
     end if
 
     !> Distribute the GRD values to the R2C grid.
-    do i = 1, shd%NA
-        r2c(shd%yyy(i), shd%xxx(i)) = r2c(shd%yyy(i), shd%xxx(i)) + grd(i)
+    do i = 1, shd%NAA
+        r2c(shd%yyy(i), shd%xxx(i)) = r2c(shd%yyy(i), shd%xxx(i)) + grd(i)/shd%FRAC(i)
     end do
 
 end subroutine

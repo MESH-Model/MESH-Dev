@@ -11,16 +11,12 @@ module RUNSVS113_config
 
     contains
 
-    subroutine RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
+    subroutine RUNSVS113_init(shd, fls, cm)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_parameters
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
-        use model_dates
+        use sa_mesh_shared_variables
         use climate_forcing
-        use model_output_variabletypes
-        use MODEL_OUTPUT
 
         use RUNSVS_mod
         use runsvs_utils
@@ -28,11 +24,7 @@ module RUNSVS113_config
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(dates_model) :: ts
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sp
 
 #include "options.cdk"
 #include "isbapar.cdk"

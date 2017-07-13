@@ -130,8 +130,8 @@ C Search for and read tb0 file header
             else
                iStat = ParseFlowParam(header,keyword,KeyLen,subString)
                if (keyword(1:KeyLen) .eq. ':starttime') then
-                  read(subString( 9:10),'(i1)') strday1
-                  read(subString(12:13),'(i1)') strhour1
+                  read(subString( 9:10),'(i2)') strday1
+                  read(subString(12:13),'(i2)') strhour1
                end if
                if(iStat .lt. 0) then
                   write(*,'(2(A))') 'ERROR parsing ', fln(flnNum)

@@ -3,11 +3,8 @@
      2                  XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARW,
      3                  DELZW,THPOR,THLMIN,BI,DIDRN,
      4                  ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
-C-----ADDED FOR WATDRN3-----------------------------------------------------------------
-     6                  NA,NTYPE,ILMOS,JLMOS,
-     7                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX,
 C-------kam----for PDM------------------------------------------------------------
-     8                  ZPNDPRE,ZPOND,FSTR,CMIN,CMAX,B,CSTR,UMQ)
+     5                  ZPNDPRE,ZPOND,FSTR,CMIN,CMAX,B,CSTR,UMQ)
 
 C-----kam-------------------------------------------------------------------------------
 C     Previously developed overlandflow generation algorithm WATROF used
@@ -31,8 +28,8 @@ C     2. MOORE (2007). THE PDM RAINFALL-RUNOFF MODEL,
 C          HYDROLOGY AND EARTH SYSTEM SCIENCES, VOL. 11, PP. 483-499
 
 C-----Log-----------------------------------------------------------------------
-C     * AUG 01/15 - Kam.: PDM concept in WATROF algorithm to iclude interflow and baseflow component in PDMROF algorithm
-C     * JUN 03/11 - D.PRINCZ. FOR RIC'S WATDRN3. ADDED USE FLAGS.
+C     * AUG 01/15 - Kam.: PDM concept in WATROF algorithm to include
+C     *             interflow and baseflow component in PDMROF algorithm
 C     * MAR 03/10 - M.A.MEKONNEN/B.DAVISON/M.MACDONALD
 C     *             RE-WRITTEN FOR TWO REASONS:
 C     *             -TO USE VINCENT'S VERSION OF WATDRN; 
@@ -95,9 +92,6 @@ C     CSTR        - CRITICAL PONDING DEPTH FOR A GIVEN STORAGE [M]
 C     FSTR        - DISTRIBUTION FUNCTION VALUE AT CRITICAL PONDING DEPTH [] (THIS IS THE CONTRIBUTING AREA FRACTION)
 C     U           - DIRECT RUNOFF BETWEEN TIME T AND T + DELTAT [M]
 C     Q           - OVERLAND FLOW (ROUTED DIRECT RUNOFF) BETWEEN TIME T AND T + DELTAT [M]
-
-
-      USE FLAGS
 C                              
       IMPLICIT NONE
 C
@@ -142,14 +136,6 @@ C     * INTERNAL SCALARS AND VECTORS
      +     ztop(ilg,ig)
       
       INTEGER IWF,IG,ILG,IL1,IL2,I,J
-
-C     * WATDRN3
-      INTEGER :: NA,NTYPE
-C
-      INTEGER, DIMENSION(ILG) :: ILMOS,JLMOS
-C
-      REAL, DIMENSION(NTYPE,IG) :: BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,
-     1  BFMIN,BQMAX
 
 C-----kam------- Added variable for PDM------------------------------------
       REAL FSTR(ILG),CMIN(ILG),CMAX(ILG)
@@ -323,27 +309,14 @@ C        -----------------------------------------------------------------------
 C        compute interflow from the layer (subflowj). Baseflow from the layer (basflwj) is
 C        also computed but is not used at present.
 C        ---------------------------------------------------------------------------------
-         IF (WD3 == 1) THEN
-             CALL WATDRN3 (ASAT_T0,ASAT_T1,KSAT,GRKEFF,DELT,
-     1            SUBFLWJ,BASFLWJ,
-     2            IG,NA,NTYPE,ILG,IL1,IL2,ILMOS,JLMOS,
-     3            BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
-         ELSE
-             call watdrn (delzwj,bij,thpor_avail,ksat,grkeff,asat_t0,
-     1            asat_t1,subflwj,basflwj,satfc,
-     2            ilg,il1,il2,delt)
-         ENDIF
+         call watdrn (delzwj,bij,thpor_avail,ksat,grkeff,asat_t0,
+     1                asat_t1,subflwj,basflwj,satfc,
+     2                ilg,il1,il2,delt)
 
 C        ---------------------------------------------------------------------------------
 C        loop through each element
 
-	   do i = il1,il2
-
-C           ------------------------------------------------------------------------------
-C           For WATDRN3, reset BULK_FC
-            IF (WD3BKFC == 0) THEN
-            	BULK_FC(I,J)=0.
-            ENDIF
+         do i = il1,il2
 
 C           -----------------------------------------------------------------------------
 C           allow lateral flow if liquid water content is greater than
@@ -356,7 +329,7 @@ C              -----------------------------------------------------------------
 C              compute davail: volume of available water in a soil layer per land
 C                              area [m^3/m^2]
 C              ---------------------------------------------------------------------------
-	         davail = thliq_avail(i)*delzw(i,j)
+               davail = thliq_avail(i)*delzw(i,j)
 
 C              ---------------------------------------------------------------------------
 C              limit the lateral flow not to exceed the available water in the layer

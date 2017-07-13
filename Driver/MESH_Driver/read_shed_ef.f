@@ -148,6 +148,9 @@ C Local variables
       integer ai, vi, xi, yi, attLen, error, rank
       real val
 
+      !> Return if this has already been done
+      if (shd%NA > 0) return
+
 !Dan Princz changed this
 CDAN      print*,'avant call initshedparam'
 !      if (IOPT == 2) print *, 'avant call initshedparam'
@@ -219,8 +222,10 @@ C// Added by Dave
      &           (len_trim(line) == 0)))
         read(fls%fl(indx)%iun, fmt='((A))', iostat=ierr) line ! read a line
         if (ierr == -1) then
+        if (ro%VERBOSEMODE > 0) then
           write(6,'((A))') 'ERROR: Premature EndOfFile encountered'
-          stop ' Stopped in read_shed_ef'
+        end if
+          stop
         end if
 
 c      print*,line
@@ -239,10 +244,12 @@ c      pause
           else
             ierr = ParseShedParam(header, keyword, keyLen, subString)
             if (ierr < 0) then
+            if (ro%VERBOSEMODE > 0) then
               write(*, '(2(A))') 'ERROR parsing ',
      *          adjustl(trim(fls%fl(indx)%fn))
               write(*, '(2(A))') '   in line: ', line
-              stop ' Stopped in read_shed_ef'
+            end if
+              stop
               return
             else if (ierr == 0) then
 C     write(*,'((A), (A))')  'Unrecognized keyword line: ',
@@ -415,10 +422,6 @@ CDAN      print*,'avant calling program flg,328'
 !          else if (attribName(1:attLen) == 'kcond') then
 !            allocate(kcond(na), stat=iAllocate)
           else if (attribName(1:attLen) == 'gridarea') then
-
-            if (allocated (shd%AREA)) deallocate (shd%AREA)
-            if (allocated (shd%FRAC)) deallocate (shd%FRAC)
-
             allocate(shd%AREA(shd%NA), stat=ierr)
             allocate(shd%FRAC(shd%NA), stat=ierr)
           end if
@@ -750,26 +753,25 @@ c endif
 
 !     Checking data:
 
-      nrvr1 = 0
-      do n = 1, shd%NA
+!      do n = 1, shd%NA
 !       moved this to flowinit at one point but then it got
 !       recalculated with each iteration when optimizing.
 !       A serious snafu resulting in the convergence problem on opt.
-        if (shd%SLOPE_CHNL(n) < 0.0) then
-          print *, 'In read_shed_ef reading the file :',
-     *      adjustl(trim(fls%fl(indx)%fn))
-          print *, 'The slope in grid no ', n, ' is ', shd%SLOPE_CHNL(n)
-          print *, 'Please check the elevations in the map file'
-          print *, 'or change the slope value in the shd file'
-          print *, 'The former is recommended as the permanent solution'
-          print *
-          stop 'Program aborted in read_shed_ef @ 756'
-        end if
+!        if (shd%SLOPE_CHNL(n) < 0.0) then
+!          print *, 'In read_shed_ef reading the file :',
+!     *      adjustl(trim(fls%fl(indx)%fn))
+!          print *, 'The slope in grid no ', n, ' is ', shd%SLOPE_CHNL(n)
+!          print *, 'Please check the elevations in the map file'
+!          print *, 'or change the slope value in the shd file'
+!          print *, 'The former is recommended as the permanent solution'
+!          print *
+!          stop 'Program aborted in read_shed_ef @ 756'
+!        end if
 !CRAIG THOMPSON ADDED THIS
 !        sl2(n) = sqrt(sl1(n))     ! used for overland flow routing (runof6)
 !       check to see how many basins/river classes there are:
-        nrvr1 = max(nrvr1, shd%IAK(n))
-      end do
+!      end do
+      if (allocated(shd%IAK)) nrvr1 = maxval(shd%IAK)
 
 c      if( nrvr.ne.nrvr1)then
 c!      if(nrvr.lt.nrvr1)then
@@ -782,7 +784,7 @@ c        pause ' program paused in rd_shed_ef'
 c      endif
 c
 
-      if (shd%NRVR /= nrvr1) then
+      if (shd%NRVR /= nrvr1 .and. nrvr1 /= 0) then
         if (ro%VERBOSEMODE > 0) print 803, shd%NRVR, nrvr1
         shd%NRVR = nrvr1
       end if
