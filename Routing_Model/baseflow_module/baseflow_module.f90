@@ -46,19 +46,27 @@ module baseflow_module
 
     contains
 
-    subroutine LZS_init(shd, fls, cm)
+    subroutine LZS_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
+        use model_output_variabletypes
+        use MODEL_OUTPUT
 
         use FLAGS
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
+        type(dates_model) :: ts
         type(clim_info) :: cm
+        type(water_balance) :: wb
+        type(energy_balance) :: eb
+        type(soil_statevars) :: sp
+        type(streamflow_hydrograph) :: stfl
+        type(reservoir_release) :: rrls
 
         integer NA, NTYPE, NML, k, m, j, i, ierr
         integer :: iun = 58
@@ -144,17 +152,25 @@ module baseflow_module
 
     end subroutine
 
-    subroutine LZS_within_tile(shd, fls, cm)
+    subroutine LZS_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
+        use model_output_variabletypes
+        use MODEL_OUTPUT
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
+        type(dates_model) :: ts
         type(clim_info) :: cm
+        type(water_balance) :: wb
+        type(energy_balance) :: eb
+        type(soil_statevars) :: sp
+        type(streamflow_hydrograph) :: stfl
+        type(reservoir_release) :: rrls
 
         integer NA, NTYPE, NML, k, m, j, i, iun, ierr
 

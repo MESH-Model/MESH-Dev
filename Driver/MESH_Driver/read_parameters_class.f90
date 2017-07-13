@@ -152,12 +152,6 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
         end do
     end do
 
-    !> Assign DEGLAT and DEGLON if running a point run where no shed file exists.
-    if (SHDFILEFLAG == 2) then
-        shd%ylat = DEGLAT
-        shd%xlng = DEGLON
-    end if
-
     return
 
 end subroutine

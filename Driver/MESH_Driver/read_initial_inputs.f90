@@ -43,13 +43,9 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     open(fls%fl(mfk%f20)%iun, file=adjustl(trim(fls%fl(mfk%f20)%fn)), status='old', iostat=ierr)
         if (ierr == 0) then
             close(fls%fl(mfk%f20)%iun)
-            if (ro%VERBOSEMODE > 0) then
-                print *, 'Reading Drainage Database from MESH_drainage_database.r2c'
-            end if
+            print *, 'Reading Drainage Database from MESH_drainage_database.r2c'
             call READ_SHED_EF(fls, mfk%f20, shd)
-            if (ro%VERBOSEMODE > 0) then
-                print *, ' READ: SUCCESSFUL, FILE: CLOSED'
-            end if
+            write(6, *) ' READ: SUCCESSFUL, FILE: CLOSED'
         else
             print *, 'ERROR with event.evt or new_shd.r2c'
             stop
@@ -131,34 +127,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
 !        close(20)
 
-    !> Point run with no routing.
-    else if (SHDFILEFLAG == 2) then
-
-        !> Assign no projection or grid properties.
-        shd%CoordSys%Proj = 'none'; shd%CoordSys%Ellips = 'none'; shd%CoordSys%Zone = 'none'
-        shd%xOrigin = 0.0; shd%xDelta = 1.0; shd%xCount = 1; shd%jxMin = 0; shd%jxMax = 1; shd%GRDE = 1.0
-        shd%yOrigin = 0.0; shd%yDelta = 1.0; shd%yCount = 1; shd%iyMin = 0; shd%iyMax = 1; shd%GRDN = 1.0
-        shd%AL = 1.0
-        shd%NA = 1; shd%NAA = 1; shd%lc%NTYPE = 1; shd%NRVR = 0
-
-        !> Allocate and initialize grid variables.
-        allocate( &
-            shd%xxx(shd%NA), shd%yyy(shd%NA), &
-            shd%NEXT(shd%NA), &
-            shd%SLOPE_INT(shd%NA), &
-            shd%AREA(shd%NA), shd%FRAC(shd%NA), &
-            shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1), stat=ierr)
-        shd%xxx = 1; shd%yyy = 1
-        shd%NEXT = 0
-        shd%SLOPE_INT = 1.0E-5
-        shd%AREA = 1.0; shd%FRAC=shd%AREA/shd%AL/shd%AL
-        shd%lc%ACLASS(:, shd%lc%NTYPE) = 1.0; shd%lc%ACLASS(:, shd%lc%NTYPE + 1) = 0.0
-
-        !> Force 'RUNMODE noroute' (overrides the run option).
-        ro%RUNCHNL = .false.
-        ro%RUNGRID = .false.
-
-    end if
+    end if ! IF SHDFILE...
 
     !> Assign shd values to local variables.
     NA = shd%NA
@@ -169,9 +138,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     list_errors = ''; list_warnings = ''
 
     !> Check for values that might be incorrect, but are unlikely to stop the model.
-    if (ro%RUNCHNL) then
-        forall (n = 1:NAA, shd%NEXT(n) <= n) list_warnings(n) = 'NEXT might be upstream of RANK'
-    end if
+    forall (n = 1:NAA, shd%NEXT(n) <= n) list_warnings(n) = 'NEXT might be upstream of RANK'
 
     !> Write warning messages to screen.
     if (any(len_trim(list_warnings) > 0) .and. ipid == 0) then
@@ -183,13 +150,11 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     end if
 
     !> Check for values that will likely stop the model.
-    if (ro%RUNCHNL) then
-        forall (n = 1:NAA, shd%SLOPE_CHNL(n) <= 0) list_errors(n) = 'Invalid or negative channel slope'
-        forall (n = 1:NAA, shd%CHNL_LEN(n) <= 0.0) list_errors(NAA + n) = 'Invalid or negative channel length'
-        forall (n = 1:NAA, shd%AREA(n) <= 0.0) list_errors(2*NAA + n) = 'Invalid or negative grid area'
-        forall (n = 1:NAA, shd%DA(n) <= 0.0) list_errors(3*NAA + n) = 'Invalid or negative drainage area'
-    end if
-!+   forall (n = 1:NAA, shd%SLOPE_INT(n) <= 0.0) list_errors(4*NAA + n) = 'Invalid or negative interior slope'
+    forall (n = 1:NAA, shd%SLOPE_CHNL(n) <= 0) list_errors(n) = 'Invalid or negative channel slope'
+    forall (n = 1:NAA, shd%CHNL_LEN(n) <= 0.0) list_errors(NAA + n) = 'Invalid or negative channel length'
+    forall (n = 1:NAA, shd%AREA(n) <= 0.0) list_errors(2*NAA + n) = 'Invalid or negative grid area'
+    forall (n = 1:NAA, shd%DA(n) <= 0.0) list_errors(3*NAA + n) = 'Invalid or negative drainage area'
+!+    forall (n = 1:NAA, shd%SLOPE_INT(n) <= 0.0) list_errors(4*NAA + n) = 'Invalid or negative interior slope'
 
     !> Write error messages to screen.
     if (any(len_trim(list_errors) > 0) .and. ipid == 0) then
@@ -316,8 +281,8 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     NML = shd%lc%NML
 
     !> Calculate the operational indices in the current node.
-    call mpi_split_nml(inp, izero, ipid, NML, shd%lc%ILMOS, il1, il2, iln)
-    if (ro%DIAGNOSEMODE > 0) print 1062, ipid, NML, iln, il1, il2
+    call mpi_split_nml(inp, izero, ipid, NML, shd%lc%ILMOS, il1, il2, ilen)
+    if (ro%DIAGNOSEMODE > 0) print 1062, ipid, NML, ilen, il1, il2
 
 1062    format(/1x, 'Configuration and distribution of the domain', &
                /3x, 'Current process: ', i10, &
@@ -326,15 +291,9 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
                /3x, 'Starting index: ', i10, &
                /3x, 'Stopping index: ', i10, /)
 
-    !> Assign grid-based indices.
-    i1 = shd%lc%ILMOS(il1)
-    i2 = shd%lc%ILMOS(il2)
-
     !> Open and read in soil depths from file.
     call READ_SOIL_LEVELS(shd, fls)
-    if (ro%VERBOSEMODE > 0) then
-        print *, 'IGND = ', shd%lc%IGND
-    end if
+    print *, 'IGND = ', shd%lc%IGND
 
     !> Store the number of soil layers to initialize variables.
     NSL = shd%lc%IGND

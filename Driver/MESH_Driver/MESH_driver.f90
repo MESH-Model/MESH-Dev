@@ -146,7 +146,7 @@ program RUNMESH
 
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
-    character(24) :: VERSION = '1090'
+    character(24) :: VERSION = '1089'
     character(8) RELEASE
 
     integer i, j, k, l, m, u
@@ -320,8 +320,8 @@ program RUNMESH
 
     end if !(ipid == 0) then
 
-    call run_within_tile_init(shd, fls, cm)
-    call run_within_grid_init(shd, fls, cm)
+    call run_within_tile_init(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    call run_within_grid_init(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
     NML = shd%lc%NML
 
@@ -953,22 +953,6 @@ program RUNMESH
 
     end if !(ipid == 0) then
 
-    !> Calculate initial water balance for output.
-    if (ipid == 0) then
-        do j = 1, shd%lc%IGND
-            wb_grd%LQWS(:, j) = stas_grid%sl%lqws(:, j)*shd%FRAC
-            wb_grd%FRWS(:, j) = stas_grid%sl%fzws(:, j)*shd%FRAC
-        end do
-        wb_grd%RCAN = stas_grid%cnpy%rcan*shd%FRAC
-        wb_grd%SNCAN = stas_grid%cnpy%sncan*shd%FRAC
-        wb_grd%SNO = stas_grid%sno%sno*shd%FRAC
-        wb_grd%WSNO = stas_grid%sno%wsno*shd%FRAC
-        wb_grd%PNDW = stas_grid%sfc%pndw*shd%FRAC
-        wb_grd%STG = &
-            wb_grd%RCAN + wb_grd%SNCAN + wb_grd%SNO + wb_grd%WSNO + wb_grd%PNDW + &
-            sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2)
-    end if
-
     !> Calculate initial storage.
     if (ipid == 0) then
         STG_INI = sum(wb_grd%stg)/wb_grd%basin_area
@@ -1080,52 +1064,41 @@ program RUNMESH
             wb_acc%PNDW = 0.0
         end if
 
-        cstate = run_within_tile(shd, fls, cm)
+        !> Reset variables.
+        if (ipid == 0) then
+            wb_grd%PRE = 0.0
+            eb_grd%QEVP = 0.0
+            wb_grd%EVAP = 0.0
+            wb_grd%pevp = 0.0
+            wb_grd%evpb = 0.0
+            eb_grd%HFS = 0.0
+            wb_grd%ROF = 0.0
+            wb_grd%ROFO = 0.0
+            wb_grd%ROFS =  0.0
+            wb_grd%ROFB = 0.0
+            spv_grd%TBAR = 0.0
+            spv_grd%THLQ = 0.0
+            wb_grd%LQWS = 0.0
+            spv_grd%THIC = 0.0
+            wb_grd%FRWS = 0.0
+            eb_grd%GFLX = 0.0
+            wb_grd%RCAN = 0.0
+            wb_grd%SNCAN = 0.0
+            wb_grd%SNO = 0.0
+            wb_grd%WSNO = 0.0
+            wb_grd%PNDW = 0.0
+            wb_grd%DSTG = wb_grd%STG
+            wb_grd%STG = 0.0
+        end if
+
+        cstate = run_within_tile(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
         cstate = ''
 !        if (len_trim(cstate) > 0) then
 !            RUNSTATE = 1
 !            cycle
 !        end if
 
-        call run_within_grid(shd, fls, cm)
-
-        !> Initialize grid-based accumulators for output.
-        if (ipid == 0) then
-            wb_grd%PRE = 0.0
-            wb_grd%ROF = 0.0
-        end if
-
-        !> Aggregate grid-based accumulators for output.
-        if (ipid == 0) then
-            wb_grd%PRE = cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
-            eb_grd%QEVP = stas_grid%sfc%qevp*shd%FRAC
-            wb_grd%EVAP = stas_grid%sfc%evap*shd%FRAC*ic%dts
-            wb_grd%PEVP = stas_grid%cnpy%pevp*shd%FRAC*ic%dts
-            wb_grd%EVPB = stas_grid%cnpy%evpb*shd%FRAC
-            eb_grd%HFS = stas_grid%sfc%hfs*shd%FRAC
-            wb_grd%ROF = (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
-            wb_grd%ROFO = stas_grid%sfc%rofo*shd%FRAC*ic%dts
-            wb_grd%ROFS =  stas_grid%sl%rofs*shd%FRAC*ic%dts
-            wb_grd%ROFB = (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
-            spv_grd%TBAR = stas_grid%sl%tbar
-            do j = 1, shd%lc%IGND
-                spv_grd%THLQ(:, j) = stas_grid%sl%thlq(:, j)*shd%FRAC
-                wb_grd%LQWS(:, j) = stas_grid%sl%lqws(:, j)*shd%FRAC
-                spv_grd%THIC(:, j) = stas_grid%sl%thic(:, j)*shd%FRAC
-                wb_grd%FRWS(:, j) = stas_grid%sl%fzws(:, j)*shd%FRAC
-                eb_grd%GFLX(:, j) = stas_grid%sl%gflx(:, j)*shd%FRAC
-            end do
-            wb_grd%RCAN = stas_grid%cnpy%rcan*shd%FRAC
-            wb_grd%SNCAN = stas_grid%cnpy%sncan*shd%FRAC
-            wb_grd%SNO = stas_grid%sno%sno*shd%FRAC
-            wb_grd%WSNO = stas_grid%sno%wsno*shd%FRAC
-            wb_grd%PNDW = stas_grid%sfc%pndw*shd%FRAC
-            wb_grd%DSTG = &
-                wb_grd%RCAN + wb_grd%SNCAN + wb_grd%SNO + wb_grd%WSNO + wb_grd%PNDW + &
-                sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2) - &
-                wb_grd%STG
-            wb_grd%STG = wb_grd%DSTG + wb_grd%STG
-        end if
+        call run_within_grid(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.
@@ -1194,6 +1167,11 @@ program RUNMESH
                 md_grd%pres = cm%dat(ck%P0)%GRD
                 md_grd%pre = cm%dat(ck%RT)%GRD
             end if
+
+!todo: How does this fit with what's in 'within_grid'?
+            wb_grd%DSTG = wb_grd%RCAN + wb_grd%SNCAN + wb_grd%SNO + wb_grd%WSNO + wb_grd%PNDW + &
+                sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2) - wb_grd%STG
+            wb_grd%STG = wb_grd%DSTG + wb_grd%STG
 
             !> Update output data.
             if (OUTFIELDSFLAG == 1) call updatefieldsout_temp(shd, ts, ifo, &
@@ -1437,8 +1415,8 @@ program RUNMESH
     if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
 
     !> Call finalization routines.
-    call run_within_tile_finalize(fls, shd, cm)
-    call run_within_grid_finalize(fls, shd, cm)
+    call run_within_tile_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    call run_within_grid_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
     call climate_module_finalize(fls, shd, cm)
 
     if (ipid == 0) then

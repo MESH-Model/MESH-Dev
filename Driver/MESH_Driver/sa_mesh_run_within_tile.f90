@@ -4,12 +4,14 @@ module sa_mesh_run_within_tile
 
     contains
 
-    subroutine run_within_tile_init(shd, fls, cm)
+    subroutine run_within_tile_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
+        use model_output_variabletypes
+        use MODEL_OUTPUT
 
         use RUNCLASS36_config
         use RUNSVS113_config
@@ -20,29 +22,37 @@ module sa_mesh_run_within_tile
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
+        type(dates_model) :: ts
         type(clim_info) :: cm
+        type(water_balance) :: wb
+        type(energy_balance) :: eb
+        type(soil_statevars) :: sp
+        type(streamflow_hydrograph) :: stfl
+        type(reservoir_release) :: rrls
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
-        call RUNCLASS36_init(shd, fls, cm)
+        call RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        call RUNSVS113_init(shd, fls, cm)
+        call RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
 
-        call LZS_init(shd, fls, cm)
+        call LZS_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         !> Cropland irrigation module.
         call runci_init(shd, fls)
 
     end subroutine
 
-    function run_within_tile(shd, fls, cm)
+    function run_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
+        use model_output_variabletypes
+        use MODEL_OUTPUT
 
         use cropland_irrigation_within_tile, only: runci_within_tile
         use RUNCLASS36_module, only: RUNCLASS36_within_tile
@@ -54,7 +64,13 @@ module sa_mesh_run_within_tile
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
+        type(dates_model) :: ts
         type(clim_info) :: cm
+        type(water_balance) :: wb
+        type(energy_balance) :: eb
+        type(soil_statevars) :: sp
+        type(streamflow_hydrograph) :: stfl
+        type(reservoir_release) :: rrls
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
@@ -70,11 +86,14 @@ module sa_mesh_run_within_tile
 
         run_within_tile = ''
 
-        call RUNCLASS36_within_tile(shd, fls, cm)
+        call RUNCLASS36_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        call RUNSVS113(shd, fls, cm)
+        call RUNSVS113(shd, fls, ts, cm, wb, eb, sp)
 
-!+        call LZS_within_tile(shd, fls, cm)
+!+        call LZS_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+
+!-        run_within_tile = WF_ROUTE_within_tile(shd, stfl, rrls)
+!-        if (len_Trim(run_within_tile) > 0) return
 
         !> Cropland irrigation module (PEVP).
         call runci_within_tile(shd, fls, cm)
@@ -110,7 +129,7 @@ module sa_mesh_run_within_tile
         type(ShedGridParams) :: shd
 
         !> Local variables.
-        integer ipid_recv, itag, ierrcode, istop, i, j, u, invars, ilen, iiln, ii1, ii2, ierr
+        integer ipid_recv, itag, ierrcode, istop, i, j, u, invars, iilen, ii1, ii2, ierr
         logical lstat
         integer, dimension(:), allocatable :: irqst
         integer, dimension(:, :), allocatable :: imstat
@@ -119,9 +138,6 @@ module sa_mesh_run_within_tile
         if (.not. ro%RUNTILE) return
 
         !> Gather variables from parallel nodes.
-
-        !> Calculate the total number of active elements in the sequence.
-        ilen = (il2 - il1) + 1
 
         !> Send/receive process.
         itag = ic%ts_count*1000
@@ -213,59 +229,56 @@ module sa_mesh_run_within_tile
                 irqst = mpi_request_null
                 imstat = 0
 
-                call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iiln)
-
-                !> Calculate the total number of active elements in the sequence.
-                ilen = (il2 - il1) + 1
+                call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iilen)
 
                 i = 1
-                call mpi_irecv(stas%sfc%evap(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%cnpy%pevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sfc%rofo(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sl%rofs(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%lzs%rofb(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%cnpy%sncan(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%cnpy%rcan(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sfc%zpnd(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sno%sno(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sno%fsno(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sno%wsno(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sfc%hfs(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sfc%qevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%sfc%evap(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%cnpy%pevp(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%sfc%rofo(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%sl%rofs(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%lzs%rofb(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%cnpy%sncan(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%cnpy%rcan(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%sfc%zpnd(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%sno%sno(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%sno%fsno(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%sno%wsno(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%sfc%hfs(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%sfc%qevp(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 do j = 1, shd%lc%IGND
-                    call mpi_irecv(stas%sl%thlq(ii1:ii2, j), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    call mpi_irecv(stas%sl%thlq(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
-                    call mpi_irecv(stas%sl%thic(ii1:ii2, j), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    call mpi_irecv(stas%sl%thic(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
-                    call mpi_irecv(stas%sl%gflx(ii1:ii2, j), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    call mpi_irecv(stas%sl%gflx(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
-                    call mpi_irecv(stas%sl%tbar(ii1:ii2, j), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    call mpi_irecv(stas%sl%tbar(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
                 end do
 
                 !> Send optional variables per the active control flags.
                 if (SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) then
-                    call mpi_irecv(stas%sno%albs(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%cnpy%cmai(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%cnpy%gro(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%cnpy%qac(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%sno%rhos(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%cnpy%tac(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%sl%tbas(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%cnpy%tcan(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%sfc%tpnd(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%sno%tsno(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(stas%sno%albs(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(stas%cnpy%cmai(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(stas%cnpy%gro(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(stas%cnpy%qac(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(stas%sno%rhos(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(stas%cnpy%tac(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(stas%sl%tbas(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(stas%cnpy%tcan(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(stas%sfc%tpnd(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(stas%sno%tsno(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                     do j = 1, 4
-                        call mpi_irecv(stas%sfc%tsfs(ii1:ii2, j), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                        call mpi_irecv(stas%sfc%tsfs(ii1:ii2, j), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
                         i = i + 1
                     end do
                 end if !(SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) then
 
                 !> BASEFLOWFLAG.
                 if (lzsp%BASEFLOWFLAG > 0) then
-                    call mpi_irecv(Wrchrg(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(Wrchrg(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                     if (lzsp%BASEFLOWFLAG == 1) then
-                        call mpi_irecv(Qb(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                        call mpi_irecv(Qb(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                     end if
                 end if
 
@@ -282,12 +295,14 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
-    subroutine run_within_tile_finalize(fls, shd, cm)
+    subroutine run_within_tile_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
         use model_files_variabletypes
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
+        use model_output_variabletypes
+        use MODEL_OUTPUT
 
         use RUNCLASS36_config, only: RUNCLASS36_finalize
         use baseflow_module
@@ -295,11 +310,16 @@ module sa_mesh_run_within_tile
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
+        type(water_balance) :: wb
+        type(energy_balance) :: eb
+        type(soil_statevars) :: sv
+        type(streamflow_hydrograph) :: stfl
+        type(reservoir_release) :: rrls
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
-        call RUNCLASS36_finalize(fls, shd, cm)
+        call RUNCLASS36_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
         call LZS_finalize(fls, shd)
 

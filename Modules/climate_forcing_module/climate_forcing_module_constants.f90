@@ -11,6 +11,9 @@ module climate_forcing_constants
 
     type climate_forcing_file_keys
 
+        !* nn: Count of available climate forcing variable keys.
+        integer :: nn = 9
+
         !* FB: Incoming solar radiation [W m-2].
         !>       CLASS ordinarily requires that the forcing incoming
         !>       shortwave radiation be partitioned into
@@ -62,9 +65,6 @@ module climate_forcing_constants
         !* N0: Runoff. [mm].
         !* O1: Recharge. [mm].
         integer :: N0 = 8, O1 = 9
-
-        !* MET: CLASS format MET file.
-        integer :: MET = 10
 
     end type
 
