@@ -214,7 +214,11 @@ module RUNSVS113_module
             stas%sfc%rofo(k + 1) = max(0.0, bus(runofftot + k))/ic%dts
 !-            stas%sfc%tsfs(k + 1, :) =
 !-            stas%sl%tbas(k + 1) =
-            stas%sl%rofs(k + 1) = max(0.0, bus(latflw + k))/ic%dts
+!EG_MOD add lateral flow from all layers
+            stas%sl%rofs(k + 1) = 0.0
+            do j = 0, 6
+                stas%sl%rofs(k + 1) = stas%sl%rofs(k + 1) + max(0.0, bus(latflw + j*NG + k))/ic%dts
+            end do
             stas%sl%thic(k + 1, 1) = bus(isoil + k)
 !-            stas%sl%fzws(k + 1, :) =
             stas%sl%thlq(k + 1, 1) = bus(wdsoil + k)
