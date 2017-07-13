@@ -2,36 +2,32 @@
      1                  SUBFLW,TSUBFL,RUNOFF,TRUNOF,FI,ZPLIM,
      2                  XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARW,
      3                  DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                  ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
-*ADDED FOR WATDRN3
-     6                  NA,NTYPE,ILMOS,JLMOS,
-     7                  BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
-                      
+     4                  ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
 
-C     * JUN 03/11 - D.PRINCZ. FOR RIC'S WATDRN3. ADDED USE FLAGS.
+
 C     * MAR 03/10 - M.A.MEKONNEN/B.DAVISON/M.MACDONALD
 C     *             RE-WRITTEN FOR TWO REASONS:
-C     *             -TO USE VINCENT'S VERSION OF WATDRN; 
+C     *             -TO USE VINCENT'S VERSION OF WATDRN;
 C     *             -TO INCLUDE MORE COMMENTS.
 C     * SEP 16/06 - R.SOULIS/F.SEGLENIEKS/A.PIETRONIRO/B.DAVISON.
 C     *             MODIFICATIONS TO OVERLAND FLOW.
 C     * SEP 15/05 - D.VERSEGHY. REMOVE HARD CODING OF IG=3.
 C     * MAR 30/05 - D.VERSEGHY. ADDITIONAL FIELDS.
 C     * NOV 03/04 - D.VERSEGHY. ADD "IMPLICIT NONE" COMMAND.
-C     * AUG 02/02 - R.SOULIS/D.VERSEGHY. UPDATES DEVELOPED AT 
+C     * AUG 02/02 - R.SOULIS/D.VERSEGHY. UPDATES DEVELOPED AT
 C     *             WATERLOO.
-C     * DEC 10/01 - R.SOULIS/K.SNELGROVE/T.WHIDDEN/D.VERSEGHY 
+C     * DEC 10/01 - R.SOULIS/K.SNELGROVE/T.WHIDDEN/D.VERSEGHY
 C     *             WATFLOOD ROUTINE TO CALCULATE OVERLAND FLOW AND
 C     *             INTERFLOW COMPONENTS OF SURFACE RUNOFF.
 C
 
 C------------------ADDITIONAL CLARIFICATION-----------------------------------------------
-C     
+C
 C     FOR A SLOPING ELEMENT, WATROF COMPUTES:
 C         1. OVERLAND FLOW AT THE SURFACE BASED ON THE AVAILABLE PONDING DEPTH;
-C         2. LATERAL FLOW FROM EACH LAYER BASED ON THE AVAILABLE WATER IN EACH SOIL LAYER. 
-C          
-C     THE BASE FLOW FROM EACH LAYER IS ALSO COMPUTED BUT IT IS NOT USED AT PRESENT. SO, 
+C         2. LATERAL FLOW FROM EACH LAYER BASED ON THE AVAILABLE WATER IN EACH SOIL LAYER.
+C
+C     THE BASE FLOW FROM EACH LAYER IS ALSO COMPUTED BUT IT IS NOT USED AT PRESENT. SO,
 C     THE TOTAL BASEFLOW REMAINS THE SAME AS THE ONE CALCULATED IN CLASS.
 C
 C-----------------------------------------------------------------------------------------
@@ -72,9 +68,7 @@ C     MANNING_N   - MANNING'S ROUGHNESS COEFFICIENT
 C     DD          - DRAINAGE DENSITY
 C     ASAT_T0     - BULK SATURATION AT INITIAL TIME
 C     ASAT_T1     - BULK SATURATION AT FINAL TIME
-
-      USE FLAGS
-C                              
+C
       IMPLICIT NONE
 C
 C
@@ -82,18 +76,18 @@ C     * INPUT/OUTPUT ARRAYS.
 C
       REAL  THLIQ (ILG,IG),  THICE (ILG,IG)
 C
-      REAL  ZPOND (ILG),     TPOND (ILG),     OVRFLW(ILG),   
-     1      TOVRFL(ILG),     SUBFLW(ILG),     
+      REAL  ZPOND (ILG),     TPOND (ILG),     OVRFLW(ILG),
+     1      TOVRFL(ILG),     SUBFLW(ILG),
      2      RUNOFF(ILG),     TRUNOF(ILG)
 C
 C     * INPUT ARRAYS.
 C
       REAL  FI    (ILG),    ZPLIM (ILG),     XSLOPE(ILG),
      1      xdrainh(ILG),    ksat(ILG),       TBARW (ILG,IG)
-C 
+C
 C     * SOIL INFORMATION ARRAYS.
 C
-      REAL  DELZW (ILG,IG), THPOR (ILG,IG),  THLMIN(ILG,IG),   
+      REAL  DELZW (ILG,IG), THPOR (ILG,IG),  THLMIN(ILG,IG),
      1      BI    (ILG,IG)
 
       INTEGER                ISAND (ILG,IG)
@@ -108,7 +102,7 @@ C
       REAL DELT,TFREZ
 C
       COMMON /CLASS1/ DELT,TFREZ
-      
+
 C     * INTERNAL SCALARS AND VECTORS
       REAL VEL_T0(ILG),NUC_DOVER(ILG),MANNING_N(ILG),DD(ILG),
      1     GRKEFF(ILG),ASAT_T0(ILG),ASAT_T1(ILG),DELZWJ(ILG),
@@ -116,34 +110,26 @@ C     * INTERNAL SCALARS AND VECTORS
      3     DAVAIL,DTOT,SUBFLWJ(ILG),TSUBFL(ILG),THLIQ_AVAIL(ILG),
      4     THPOR_AVAIL(ilg),BASFLWJ(ILG),XLAMBDA,ktop,kl,h0,c1,c2,
      +     ztop(ilg,ig)
-      
+
       INTEGER IWF,IG,ILG,IL1,IL2,I,J
       real exav
 
-C     * WATDRN3
-      INTEGER :: NA,NTYPE
-C
-      INTEGER, DIMENSION(ILG) :: ILMOS,JLMOS
-C
-      REAL, DIMENSION(NTYPE,IG) :: BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,
-     1  BFMIN,BQMAX
-      
 C-----------------------------------------------------------------------------------------
 C     coefficients
       c1 = 2.0/3.0
       c2 = 1.5 !3.0/2.0
 
 C-----------------------------------------------------------------------------------------
-C     parameter - will be used to compute xdrainh (the fractional change in horizontal 
+C     parameter - will be used to compute xdrainh (the fractional change in horizontal
 C     conductivity in a depth change h0) in Vincent's new formula.
       h0 = 1.0
 
 C-----------------------------------------------------------------------------------------
-C     skip if using flat class 
+C     skip if using flat class
       if(iwf.eq.0)return
-      
+
 C-----------------------------------------------------------------------------------------
-C     loop through each element  
+C     loop through each element
 
       do i = il1,il2
 
@@ -158,14 +144,14 @@ C           --------------------------------------------------------------------
             dover(i) = zpond(i)-zplim(i)
 
 C           ------------------------------------------------------------------------------
-C           calculate the flow velocity at the beginning of the timestep 
+C           calculate the flow velocity at the beginning of the timestep
 C           (based on kinematic wave velocity) - eqn (1) in notes on overland flow
 C           ------------------------------------------------------------------------------
             vel_t0(i) = (dover(i)**c1)*sqrt(xslope(i))/(manning_n(i))
 
 C           ------------------------------------------------------------------------------
-C           calculate a normalized unconstrained overland flow to avoid numerical 
-C           problems with a division of small dover(i) values. 
+C           calculate a normalized unconstrained overland flow to avoid numerical
+C           problems with a division of small dover(i) values.
 c           eqn (29) in notes on overland flow
 C           ------------------------------------------------------------------------------
             nuc_dover(i) = -2*dd(i)*vel_t0(i)*delt
@@ -204,24 +190,24 @@ C-------------------------------------------------------------------------------
       ztop        = 0.0
 
 C-----------------------------------------------------------------------------------------
-C     loop through each soil layer 
+C     loop through each soil layer
       do j = 1,ig
-         
+
 C        ---------------------------------------------------------------------------------
-C        loop through each element  
+C        loop through each element
          do i = il1,il2
 
 C        ---------------------------------------------------------------------------------
-C        form vecotors for the layer - to be compatible with WATDRN arguments 
+C        form vecotors for the layer - to be compatible with WATDRN arguments
            delzwj(i)   = delzw(i,j)
            bij(i)      = bi(i,j)
            thporj(i)   = thpor(i,j)
 
 C        ---------------------------------------------------------------------------------
-C        Find the top of each soil layer for the calculation of grkeff  
-           if(j .lt. ig)ztop(i,j+1) = ztop(i,j) - delzw(i,j) 
-           if(fi(i) .gt. 0.0 .and. isand(i,j) .ge. -2 .and. 
-     1         delzw(i,j) .gt. 0.0)then 
+C        Find the top of each soil layer for the calculation of grkeff
+           if(j .lt. ig)ztop(i,j+1) = ztop(i,j) - delzw(i,j)
+           if(fi(i) .gt. 0.0 .and. isand(i,j) .ge. -2 .and.
+     1         delzw(i,j) .gt. 0.0)then
 
 C              ---------------------------------------------------------------------------
 C              determine available liquidwater in layer
@@ -233,7 +219,7 @@ C              determine available porosity
 C              ---------------------------------------------------------------------------
                thpor_avail(i)    = max(thliq(i,j),thlmin(i,j),
      1                              thpor(i,j)-thice(i,j))
- 
+
 C              ---------------------------------------------------------------------------
 C              saturation defined as liquid water content over available porosity
 C              ---------------------------------------------------------------------------
@@ -241,7 +227,7 @@ C              -----------------------------------------------------------------
             endif
 
 C           ------------------------------------------------------------------------------
-C           grkeff - average value of the parameter controlling the time scale of 
+C           grkeff - average value of the parameter controlling the time scale of
 C                    interflow process - kl * (tile slope / tile length) (1/s)
 C           Note: this formula is not the same as the one in Fhydro2_VF_20100226.f
 C                 and needs to be confirmed by Vincent.
@@ -258,40 +244,27 @@ C        -----------------------------------------------------------------------
 C        compute interflow from the layer (subflowj). Baseflow from the layer (basflwj) is
 C        also computed but is not used at present.
 C        ---------------------------------------------------------------------------------
-         IF (WD3 == 1) THEN
-             CALL WATDRN3 (ASAT_T0,ASAT_T1,KSAT,GRKEFF,DELT,
-     1            SUBFLWJ,BASFLWJ,
-     2            IG,NA,NTYPE,ILG,IL1,IL2,ILMOS,JLMOS,
-     3            BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
-         ELSE
-             call watdrn (delzwj,bij,thpor_avail,ksat,grkeff,asat_t0,
-     1            asat_t1,subflwj,basflwj,satfc,
-     2            ilg,il1,il2,delt)
-         ENDIF
+         call watdrn (delzwj,bij,thpor_avail,ksat,grkeff,asat_t0,
+     1                asat_t1,subflwj,basflwj,satfc,
+     2                ilg,il1,il2,delt)
 
 C        ---------------------------------------------------------------------------------
-C        loop through each element  
+C        loop through each element
 
-	   do i = il1,il2
-
-C           ------------------------------------------------------------------------------
-C           For WATDRN3, reset BULK_FC
-            IF (WD3BKFC == 0) THEN
-            	BULK_FC(I,J)=0.
-            ENDIF
+         do i = il1,il2
 
 C           -----------------------------------------------------------------------------
-C           allow lateral flow if liquid water content is greater than 
+C           allow lateral flow if liquid water content is greater than
 c           bulk field capacity.
 C           -----------------------------------------------------------------------------
             if(thliq_avail(i).gt.0.0.and.thliq(i,j).ge.bulk_fc(i,j))then
                didrn(i,j) = subflwj(i)
 
 C              ---------------------------------------------------------------------------
-C              compute davail: volume of available water in a soil layer per land 
+C              compute davail: volume of available water in a soil layer per land
 C                              area [m^3/m^2]
 C              ---------------------------------------------------------------------------
-	         davail = thliq_avail(i)*delzw(i,j)
+               davail = thliq_avail(i)*delzw(i,j)
 
 C              ---------------------------------------------------------------------------
 C              limit the lateral flow not to exceed the available water in the layer
@@ -315,10 +288,10 @@ C                 --------------------------------------------------------------
             endif
          enddo
       enddo
-      
+
       return
       end
-      
+
 c**********************************************************************
 c
 c     function exav(x)

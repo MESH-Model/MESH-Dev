@@ -2,19 +2,6 @@ module RUNCLASS36_variables
 
     implicit none
 
-    !* HOURLY_START_*: Start day/year for recording hourly averaged data
-    !* HOURLY_STOP_*: Stop day/year for recording hourly averaged data
-    !* DAILY_START_*: Start day/year for recording daily averaged data
-    !* DAILY_STOP_*: Stop day/year for recording daily averaged data
-!-    integer HOURLY_START_DAY, HOURLY_STOP_DAY, DAILY_START_DAY, &
-!-        DAILY_STOP_DAY
-!-    integer HOURLY_START_YEAR, HOURLY_STOP_YEAR, DAILY_START_YEAR, &
-!-        DAILY_STOP_YEAR
-
-    !> Temporary variables.
-!todo: remove these.
-!-    real DEGLAT, DEGLON
-
     !> Constants for output (read from file).
     !* TITLE: PROJECT DESCRIPTOR (6 COLUMNS: 4 CHARACTER STRINGS)
     !* NAME: AUTHOR, RESEARCHER (6 COLUMNS: 4 CHARACTER STRINGS)
@@ -60,35 +47,6 @@ module RUNCLASS36_variables
     !* DD (DDEN): Drainage density.
     !* MANN (WFSF): Manning's n.
     real, dimension(:), allocatable :: DDGAT, MANNGAT
-!todo: remove these.
-    real, dimension(:, :), allocatable :: BTC, BCAP, DCOEFF, BFCAP, &
-        BFCOEFF, BFMIN, BQMAX
-
-    !>PBSM parameters.
-!todo: isolate PBSM from CLASS code.
-    !* fetch: fetch distance (m)
-    !* Ht: vegetation height (m)
-    !* N_S: vegetation density (number/m^2)
-    !* A_S: vegetation width (m)
-    !* Distrib: Inter-GRU snow redistribution factor
-    real, dimension(:), allocatable :: &
-        fetchGAT, HtGAT, N_SGAT, A_SGAT, DistribGAT
-
-    !> PBSM variables.
-    !* DrySnow: 0 = air temperature above 0 degC
-    !*          1 = air temperature below 0 degC
-    !* SnowAge: hours since last snowfall
-    !* Drift: blowing snow transport (kg/m^2)
-    !* Subl: blowing snow sublimation (kg/m^2)
-    real, dimension(:), allocatable :: DrySnowGAT, SnowAgeGAT, &
-        TSNOdsGAT, RHOSdsGAT, DriftGAT, SublGAT, DepositionGAT
-    real, dimension(:, :), allocatable :: DrySnowROW, SnowAgeROW, &
-        TSNOdsROW, RHOSdsROW, DriftROW, SublROW, DepositionROW
-
-    !> PBSM internal/local variables.
-    real, dimension(:), allocatable :: ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
-        HCPSCS, HCPSGS, HCPSC, HCPSG, TSNOWC, TSNOWG, &
-        RHOSC, RHOSG, XSNOWC, XSNOWG, XSNOCS, XSNOGS
 
     !> FROZENSOILINIFLAG variables.
 !todo: isolate from CLASS code if possible.
@@ -182,57 +140,11 @@ module RUNCLASS36_variables
             TBAR, THAL, THIC, THLQ, TCAN, TSNO, UV, WSNO, WTBL
     end type
 
-!> variables for reading parameters_class.ini
-!-    type ClassParameters
-
-        !> Atmospheric and grid-constant variables.
-!-        real, dimension(:), allocatable :: &
-!-            ZRFMGRD, ZRFHGRD, ZBLDGRD, GCGRD
-
-        !> Vegetation canopy.
-!-        real, dimension(:, :, :), allocatable :: &
-!-            FCANROW, LNZ0ROW, ALVCROW, ALICROW, PAMXROW, PAMNROW, &
-!-            CMASROW, ROOTROW, RSMNROW, QA50ROW, VPDAROW, VPDBROW, &
-!-            PSGAROW, PSGBROW
-
-        !> Soil texture (for default hydraulic parameters).
-!-        real, dimension(:, :, :), allocatable :: &
-!-            SANDROW, CLAYROW, ORGMROW
-
-        !> Hydraulic parameters.
-!WATROF: DDROW
-!WATROF: MANNROW
-!-        real, dimension(:, :), allocatable :: &
-!-            DRNROW, XSLPROW, XDROW, SDEPROW, DDROW, MANNROW
-
-        !> Land-surface variables.
-!-        integer, dimension(:, :), allocatable :: MIDROW
-!-        real, dimension(:, :), allocatable :: FAREROW
-
-        !> Initial prognostic variables.
-!-        real, dimension(:, :), allocatable :: &
-!-            TCANROW, TSNOROW, TPNDROW, ZPNDROW, RCANROW, SCANROW, &
-!-            SNOROW, ALBSROW, RHOSROW, GROROW, KSROW
-!-        real, dimension(:, :, :), allocatable :: &
-!-            TBARROW, THLQROW, THICROW
-!-    end type
-
-    !> For hydraulic parameters read from soil.ini.
-!-    type SoilValues
-!-        real, dimension(:, :), allocatable :: &
-!-            wc_algwet, wc_algdry
-!-        real, dimension(:, :, :), allocatable :: &
-!-            wc_thpor, wc_thlret, &
-!-            wc_thlmin, wc_bi, wc_psisat, wc_grksat, wc_hcps, wc_tcs
-!-    end type
-
 !todo: Move this?
     type HydrologyParameters
         real, dimension(:,:), allocatable :: &
-!-            ZSNLROW, ZPLSROW, ZPLGROW, &
             FRZCROW, &
-            CMAXROW, CMINROW, BROW, K1ROW, K2ROW, &
-            fetchROW, HtROW, N_SROW, A_SROW, DistribROW
+            CMAXROW, CMINROW, BROW, K1ROW, K2ROW
     end type
 
     !> Type: RUNCLASS36_Flags
@@ -241,8 +153,6 @@ module RUNCLASS36_variables
         logical :: PROCESS_ACTIVE = .true.
     end type
 
-!-    type(ClassParameters), save :: cp
-!-    type(SoilValues), save :: sv
 !todo: may need to move these.
     type(HydrologyParameters), save :: hp
     type(RUNCLASS36_flags), save :: RUNCLASS36_flgs

@@ -19,6 +19,7 @@
         use rte_module
         use SA_RTE_module, only: SA_RTE_flgs
         use SIMSTATS_config, only: mtsflg
+        use PBSM_module
 
         implicit none
 
@@ -217,27 +218,6 @@
         !* and direct runoff based on the parameteric equation developed by Gray et al, 2001.
         FROZENSOILINFILFLAG = 0
 
-        !* If WD3 is 0, existing WATDRN is used.
-        !* If WD3 is 1, WATDRN by Ric (May, 2011) is used.
-        WD3 = 0
-
-        !* If WD3NEWFILE is 0, an existing "soil_out.txt" for MAPLE is used.
-        !* If WD3NEWFILE is 1, "soil_out.txt" for MAPLE is created or overwritten.
-        WD3NEWFILE = 1
-
-        !* If WD3FLOW is 0, SUBFLW=SUBFLW,BASFLW=BASFLW.
-        !* If WD3FLOW is 1, SUBFLW=SUBFLW+BASFLW,BASFLW=0.
-        !* If WD3FLOW is 2, SUBFLW=SUBFLW,BASFLW=0.
-        WD3FLOW = 0
-
-        !* If WD3BKFC is 0, BULK_FC (WATROF)=0.
-        !* If WD3BKFC is 1, BULK_FC remains unchanged in WATROF.
-        WD3BKFC = 1
-
-        !* set PBSMFLAG = 0 so by default blowing snow calculations are not made
-        !* 1 =  blowing snow transport, sublimation & inter-GRU redistribution calculations are made
-        PBSMFLAG = 0
-
         !* If LOCATIONFLAG is 0, gauge coordinates are read using 2I5 (Minutes) {Default}
         !* If LOCATIONFLAG is 1, gauge coordinates for BOTH MESH_input_streamflow.txt AND
         !*                       MESH_input_reservoir.txt are read using 2F7.1 (Minutes with 1 decimal)
@@ -390,6 +370,22 @@
 
                     !> BASIN FORCING DATA OPTIONS
                     !> Basin forcing data.
+                    case ('BASINFORCINGFLAG')
+                        do j = 2, nargs
+                            select case (lowercase(out_args(j)))
+                                case ('met')
+                                    cm%dat(ck%FB)%factive = .false.
+                                    cm%dat(ck%FI)%factive = .false.
+                                    cm%dat(ck%RT)%factive = .false.
+                                    cm%dat(ck%TT)%factive = .false.
+                                    cm%dat(ck%UV)%factive = .false.
+                                    cm%dat(ck%P0)%factive = .false.
+                                    cm%dat(ck%HU)%factive = .false.
+                                    cm%dat(ck%MET)%ffmt = 6
+                                    cm%dat(ck%MET)%factive = .true.
+                                    exit
+                            end select
+                        end do
                     case ('BASINSHORTWAVEFLAG')
                         call value(out_args(2), cm%dat(ck%FB)%ffmt, ierr)
                         if (ierr == 0) cm%dat(ck%FB)%factive = .true.
@@ -530,6 +526,12 @@
                                 end if
                             end if
                         end do
+                    case ('BASINRUNOFFFLAG')
+                    case ('BASINRECHARGEFLAG')
+                    case ('STREAMFLOWFILEFLAG')
+                        STREAMFLOWFILEFLAG = adjustl(lowercase(out_args(2)))
+                    case ('RESERVOIRFILEFLAG')
+                        RESERVOIRFILEFLAG = adjustl(lowercase(out_args(2)))
 
                     case ('SHDFILEFLAG')
                         call value(out_args(2), SHDFILEFLAG, ierr)
@@ -590,18 +592,13 @@
 !+                    case ('PRINTLKGR2CFILEFLAG')
 !+                        call value(out_args(2), SA_RTE_flgs%PRINTLKGR2CFILEFLAG, ierr)
 !+                        SA_RTE_flgs%PROCESS_ACTIVE = .true.
-                    case ('WD3')
-                        call value(out_args(2), WD3, ierr)
-                    case ('WD3NEWFILE')
-                        call value(out_args(2), WD3NEWFILE, ierr)
-                    case ('WD3FLOW')
-                        call value(out_args(2), WD3FLOW, ierr)
-                    case ('WD3BKFC')
-                        call value(out_args(2), WD3BKFC, ierr)
                     case ('ICTEMMOD')
                         call value(out_args(2), ICTEMMOD, ierr)
+
+                    !> PBSM (blowing snow).
                     case ('PBSMFLAG')
-                        call value(out_args(2), PBSMFLAG, ierr)
+                        call PBSM_parse_flag(in_line)
+
                     case ('LOCATIONFLAG')
                         call value(out_args(2), LOCATIONFLAG, ierr)
                     case ('OUTFIELDSFLAG')
@@ -730,8 +727,8 @@
                         call value(out_args(2), lzsp%BASEFLOWFLAG, ierr)
 
                     !> Reservoir Release function flag (Number of WF_B coefficients).
-                    case ('RESVRELSWFB')
-                        call value(out_args(2), WF_RTE_flgs%RESVRELSWFB, ierr)
+!?                    case ('RESVRELSWFB')
+!?                        call value(out_args(2), WF_RTE_flgs%RESVRELSWFB, ierr)
 
                     !> Cropland irrigation module.
                     case ('CROPLANDIRRIGATION')
@@ -772,12 +769,18 @@
                                 case ('nolss')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                    ro%RUNCLIM = .false.
+                                    ro%RUNBALWB = .false.
+                                    ro%RUNBALEB = .false.
+                                    ro%RUNTILE = .false.
                                 case ('runrte')
                                     WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                     rteflg%PROCESS_ACTIVE = .true.
                                 case ('noroute')
                                     WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                     rteflg%PROCESS_ACTIVE = .false.
+                                    ro%RUNCHNL = .false.
+                                    ro%RUNGRID = .false.
                                 case ('default')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
@@ -789,13 +792,15 @@
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
                                     WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                     rteflg%PROCESS_ACTIVE = .false.
+                                    ro%RUNTILE = .false.
+                                    ro%RUNGRID = .false.
                                     exit
                             end select
                         end do
 
                     !> INPUTPARAMSFORMFLAG
                     case ('INPUTPARAMSFORMFLAG')
-                        INPUTPARAMSFORM = adjustl(in_line)
+                        INPUTPARAMSFORM = adjustl(lowercase(in_line))
 
                     !> Unrecognized flag.
                     case default
@@ -867,12 +872,12 @@
 !-                do j = i + 1, WF_NUM_POINTS
 !-                    if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
 !-                        print *
-!-	                    print *, 'Output for Grid ', op%N_OUT(i), ' and GRU ', &
+!-                      print *, 'Output for Grid ', op%N_OUT(i), ' and GRU ', &
 !-                            op%II_OUT(i), ' is repeated in grid output point: ', j
 !-                        print *, 'Please adjust this grid output ', &
 !-                            'point in MESH_input_run_options.ini.'
-!-	                    stop
-!-	                end if
+!-                      stop
+!-                  end if
 !-                end do
 !-            else
 !-                open(17, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/fort.17', status = 'unknown', iostat = ierr)
@@ -890,7 +895,7 @@
 !-            end if
 !-        end do
 
-	    !> Output folder for basin/high-level model output.
+        !> Output folder for basin/high-level model output.
         read(iun, *)
         read(iun, *)
         read(iun, '(a10)') GENDIR_OUT

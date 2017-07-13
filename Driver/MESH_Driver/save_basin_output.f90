@@ -361,7 +361,7 @@ module save_basin_output
                 if (allocated(bnoflg%wb%ns)) then
                     do n = 1, size(bnoflg%wb%ns)
                         if (bnoflg%wb%ns(n) > 0) then
-                            call write_water_balance(shd, fls, (903*1000 + n), 3600, fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                            call write_water_balance(shd, fls, (903*1000 + n), 3600, fms%stmg%meta%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
                         end if
                     end do
                 end if
@@ -379,7 +379,7 @@ module save_basin_output
                     do n = 1, size(bnoflg%wb%ns)
                         if (bnoflg%wb%ns(n) > 0) then
                             call write_water_balance(shd, fls, (fls%fl(mfk%f900)%iun*1000 + n), 86400, &
-                                                     fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                                                     fms%stmg%meta%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
                         end if
                     end do
                 end if
@@ -410,7 +410,7 @@ module save_basin_output
                         do n = 1, size(bnoflg%wb%ns)
                             if (bnoflg%wb%ns(n) > 0) then
                                 call write_water_balance(shd, fls, (902*1000 + n), (86400*ndy), &
-                                                         fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                                                         fms%stmg%meta%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
                             end if
                         end do
                     end if
@@ -427,7 +427,7 @@ module save_basin_output
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
-                        call write_water_balance(shd, fls, (904*1000 + n), ic%dts, fms%stmg%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                        call write_water_balance(shd, fls, (904*1000 + n), ic%dts, fms%stmg%meta%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
                     end if
                 end do
             end if

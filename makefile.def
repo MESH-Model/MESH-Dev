@@ -37,6 +37,7 @@ VPATH=	$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/Modules/climate_forcing_module: \
 		$(DIR_REPO)/Modules/simulation_statistics: \
 		$(DIR_REPO)/Modules/cropland_irrigation: \
+		$(DIR_REPO)/Modules/io_modules: \
 		$(DIR_REPO)/Driver/MESH_Driver: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/sa_mesh_process: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/src: \
@@ -58,7 +59,8 @@ OBJECTS=	mpi_flags.o mpi_shared_variables.o mpi_utilities.o \
 			mpi_module.o
 
 #Strings
-OBJECTS+=	precmod.o stringmod.o
+OBJECTS+=	precmod.o stringmod.o \
+			txt_io.o
 
 #SA_MESH flags, parameters, and variables
 
@@ -66,6 +68,7 @@ OBJECTS+=	precmod.o stringmod.o
 OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			module_dates.o \
 			EF_Module.o EF_ParseUtilities.o FLAGS.o \
+			parse_utilities.o \
 			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
 			control_variables.o \
 			shd_variables.o fm_variables.o input_parameters.o state_variables.o \
@@ -76,13 +79,13 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			RUNCLASS36_constants.o RUNCLASS36_variables.o RUNCLASS36_save_output.o \
 			climate_forcing_module_config.o \
 			climate_forcing_module_io.o climate_forcing_module.o \
-			model_output.o \
+			model_output.o
 
 #WF_ROUTE
 OBJECTS+=	WF_ROUTE_config.o WF_ROUTE.o WF_ROUTE_module.o
 
 #baseflow_module
-OBJECTS+=	baseFlow_luo2012.o baseflow_wfqlz.o baseflow3.o baseflow_module.o
+OBJECTS+=	baseFlow_luo2012.o baseflow_wfqlz.o baseflow_module.o
 
 #SA_RTE (Standalone RPN ROUTE)
 OBJECTS+=	SA_RTE_module.o
@@ -96,6 +99,11 @@ OBJECTS+=	SIMSTATS_config.o \
 OBJECTS+=	cropland_irrigation_variables.o \
 			cropland_irrigation_init.o cropland_irrigation_within_tile.o cropland_irrigation_between_grid.o \
 			calc_ET0.o
+
+#PBSM (blowing snow)
+OBJECTS+=	PBSMrates.o PBSMrun.o ProbabilityThreshold.o \
+			REDISTRIB_SNOW.o SUM.o \
+			PBSM_module.o
 
 #MESH Driver
 #OBJECTS+=	GATHER.o resume_state.o resume_state_r2c.o R2C_DATA.o \
@@ -136,13 +144,6 @@ OBJECTS+=	aggcovernat.o juliand.o suncos1.o prelim1.o interpveg.o flxsurf.o \
 			compz0.o sf_heat.o sf_momentum.o sf_pblheight.o diasurf2.o phyopt_initdata.o
 OBJECTS+=	RUNSVS113_config.o RUNSVS113_module.o
 
-#WATDRN3
-OBJECTS+=	WATDRN3.o WATDRN3B.o
-
-#Blowing snow
-OBJECTS+=   PBSMrates.o PBSMrun.o ProbabilityThreshold.o \
-            REDISTRIB_SNOW.o SUM.o
-
 #Tile connector
 OBJECTS+=	tile_connector.o 
 
@@ -158,10 +159,9 @@ OBJECTS+=	read_init_prog_variables_class.o save_init_prog_variables_class.o
 OBJECTS+=	read_initial_inputs.o \
 			read_shed_ef.o read_soil_levels.o \
 			read_parameters.o \
-			read_parameters_class.o read_parameters_hydrology.o \
-			read_parameters_r2c.o \
+			read_parameters_class.o read_parameters_hydrology.o read_parameters_r2c.o read_parameters_csv.o \
 			read_basin_structures.o \
-			read_streamflow_txt.o read_streamflow_tb0.o \
+			read_streamflow_txt.o read_streamflow_tb0.o read_reservoir_txt.o read_reservoir_tb0.o \
 			read_soil_ini.o \
 			read_initial_states.o \
 			read_s_moisture_txt.o read_s_temperature_txt.o \

@@ -45,7 +45,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
             'Ensure that the file exists and restart the program.'
         stop
     else if (ro%VERBOSEMODE > 0) then
-        write(6, '(a)', advance = 'no') 'READING: MESH_parameters_CLASS.ini '
+        write(6, "(1x, 'READING: ', (a))", advance = 'no') trim(adjustl(fls%fl(mfk%f50)%fn))
     end if
 
     NA = shd%NA
@@ -151,6 +151,12 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
             end if
         end do
     end do
+
+    !> Assign DEGLAT and DEGLON if running a point run where no shed file exists.
+    if (SHDFILEFLAG == 2) then
+        shd%ylat = DEGLAT
+        shd%xlng = DEGLON
+    end if
 
     return
 

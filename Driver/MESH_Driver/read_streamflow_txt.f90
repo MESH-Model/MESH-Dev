@@ -11,6 +11,7 @@
 !>
 subroutine read_streamflow_txt(shd, iun, fname)
 
+    use mpi_module
     use sa_mesh_shared_variables
 
     implicit none
@@ -34,35 +35,33 @@ subroutine read_streamflow_txt(shd, iun, fname)
     !*  -   n(n): Rank or index of the grid-cell containing the location.
     !*  -   DA(n): Drainage area.
 
-    if (ro%DIAGNOSEMODE > 0) print 1000, fname
+    if (ro%VERBOSEMODE > 0) print 1000, trim(adjustl(fname))
     open(iun, file = fname, status = 'old', action = 'read', err = 997)
     read(iun, *, err = 999)
     read(iun, *, err = 999) &
         fms%stmg%n, NS, NS, fms%stmg%qomeas%dts, fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday, fms%stmg%qomeas%ihour
     NS = fms%stmg%n
 
+    !> Return if there are no gauge locations.
+    if (NS == 0) return
+
     !> Allocate configuration variables for the driver.
-    allocate(fms%stmg%name(NS), &
-             fms%stmg%y(NS), fms%stmg%x(NS), &
-             fms%stmg%iy(NS), fms%stmg%jx(NS), fms%stmg%rnk(NS), &
-             fms%stmg%DA(NS), stat = ierr)
+    call allocate_streamflow_gauge_location(fms%stmg, NS, ierr)
     if (ierr /= 0) goto 998
 
     !> Read gauge location and name.
     do l = 1, NS
-        read(iun, *, err = 999) fms%stmg%y(l), fms%stmg%x(l), fms%stmg%name(l)
-        fms%stmg%y(l) = fms%stmg%y(l)/60.0
-        fms%stmg%iy(l) = int((fms%stmg%y(l) - shd%yOrigin)/shd%yDelta) + 1
-        fms%stmg%x(l) = fms%stmg%x(l)/60.0
-        fms%stmg%jx(l) = int((fms%stmg%x(l) - shd%xOrigin)/shd%xDelta) + 1
+        read(iun, *, err = 999) fms%stmg%meta%y(l), fms%stmg%meta%x(l), fms%stmg%meta%name(l)
     end do
+    fms%stmg%meta%y = fms%stmg%meta%y/60.0
+    fms%stmg%meta%x = fms%stmg%meta%x/60.0
 
     return
 
     !> File errors.
-997 if (ro%VERBOSEMODE > 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", fname
-998 if (ro%VERBOSEMODE > 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", fname
-999 if (ro%VERBOSEMODE > 0) print "(3x, 'ERROR reading from ', (a), '.')", fname
+997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(adjustl(fname))
+998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(adjustl(fname))
+999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(adjustl(fname))
 
     stop
 

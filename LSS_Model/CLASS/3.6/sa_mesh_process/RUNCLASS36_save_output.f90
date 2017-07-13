@@ -242,7 +242,7 @@ module RUNCLASS36_save_output
 
         type(ShedGridParams), intent(in) :: shd
 
-!* I_OUT: OUTPUT GRID SQUARE TEMPORARY STORE
+        !* I_OUT: OUTPUT GRID SQUARE TEMPORARY STORE
         integer DELT, IGND, I_OUT
         real ALTOT, FSSTAR, FLSTAR, QH, QE, BEG, SNOMLT, ZSN, TCN, TSN, TPN, GTOUT
         real ZPND, FSTR

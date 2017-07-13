@@ -5,39 +5,21 @@ module RUNCLASS36_config
 
     implicit none
 
-    !> LAND SURFACE DIAGNOSTIC VARIABLES.
-!-    real, dimension(:), allocatable :: SNOGRD
-
     !>  CONSTANTS AND TEMPORARY VARIABLES.
     real FSDOWN1, FSDOWN2, FSDOWN3, RDAY, &
         DECL, HOUR, COSZ
 
     integer NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI
-!    real, dimension(:, :), allocatable :: TBASROW, &
-!        CMAIROW, TACROW, QACROW, WSNOROW
     real, dimension(:), allocatable :: &
         FRZCGAT
-!    real, dimension(:, :, :), allocatable :: TSFSROW
 
     !> CANOPY AND SOIL INFORMATION (CLASS):
     !> THE LENGTH OF THESE ARRAYS IS DETERMINED BY THE NUMBER
     !> OF SOIL LAYERS (3) AND THE NUMBER OF BROAD VEGETATION
     !> CATEGORIES (4, OR 5 INCLUDING URBAN AREAS).
     !* ALL: DEFINITIONS IN CLASS DOCUMENTATION (CLASS.INI)
-!    real, dimension(:, :, :), allocatable :: &
-!        PAIDROW, HGTDROW, ACVDROW, ACIDROW
-!    real, dimension(:, :, :), allocatable :: THPROW, THRROW, THMROW, &
-!        BIROW, PSISROW, GRKSROW, THRAROW, HCPSROW, TCSROW, THFCROW, &
-!        PSIWROW, DLZWROW, ZBTWROW
-!    real, dimension(:, :), allocatable :: &
-!        WFSFROW, ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
-!        AGIDROW
     real, dimension(:), allocatable :: XDGAT, &
         KSGAT
-
-!    integer, dimension(:, :, :), allocatable :: ISNDROW, IORG
-!    integer, dimension(:,:), allocatable :: IGDRROW
-!-    integer, dimension(:), allocatable :: IGDRGAT
 
     !> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
     real, dimension(:), allocatable :: ZDMGRD, &
@@ -48,16 +30,6 @@ module RUNCLASS36_config
         RPREGRD, SPREGRD, VMODGRD
 
     !> LAND SURFACE DIAGNOSTIC VARIABLES:
-!    real, dimension(:, :), allocatable :: CDHROW, CDMROW, HFSROW, &
-!        TFXROW, QEVPROW, QFSROW, QFXROW, PETROW, GAROW, EFROW, GTROW, &
-!        QGROW, TSFROW, ALVSROW, ALIRROW, FSNOROW, SFCTROW, SFCUROW, &
-!        SFCVROW, SFCQROW, FSGVROW, FSGSROW, FSGGROW, FLGVROW, FLGSROW, &
-!        FLGGROW, HFSCROW, HFSSROW, HFSGROW, HEVCROW, HEVSROW, HEVGROW, &
-!        HMFCROW, HMFNROW, HTCCROW, HTCSROW, PCFCROW, PCLCROW, PCPNROW, &
-!        PCPGROW, QFGROW, QFNROW, QFCLROW, QFCFROW, ROFROW, ROFOROW, &
-!        ROFSROW, ROFBROW, ROFCROW, ROFNROW, ROVGROW, WTRCROW, WTRSROW, &
-!        WTRGROW, DRROW, WTABROW, ILMOROW, UEROW, HBLROW, TROFROW, &
-!        TROOROW, TROSROW, TROBROW
     real, dimension(:), allocatable :: &
         SFRHGAT, &
         QLWOGAT, FTEMP, &
@@ -72,11 +44,7 @@ module RUNCLASS36_config
         ROFSGRD, ROFBGRD, ROFCGRD, ROFNGRD, ROVGGRD, WTRCGRD, WTRSGRD, &
         WTRGGRD, DRGRD, WTABGRD, ILMOGRD, UEGRD, HBLGRD
 
-!    real, dimension(:, :, :), allocatable :: HMFGROW, HTCROW, QFCROW, &
-!        GFLXROW
     real, dimension(:, :), allocatable :: HMFGGRD, HTCGRD, QFCGRD, GFLXGRD
-!    integer, dimension(:, :, :, :), allocatable :: ITCTROW
-!    integer, dimension(:, :, :), allocatable :: ITCTGAT
 
     !> CROSS-CLASS VARIABLES (CLASS):
     !> ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
@@ -106,28 +74,23 @@ module RUNCLASS36_config
 
     contains
 
-    subroutine RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+    subroutine RUNCLASS36_init(shd, fls, cm)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
-        use model_output_variabletypes
-        use MODEL_OUTPUT
+        use FLAGS
 
         !> For CLASS output.
         use RUNCLASS36_save_output
 
+        use PBSM_module
+
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(dates_model) :: ts
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sp
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         integer NA, NTYPE, NML, NSL, l, k, ik, jk, m, j, i, iun, ierr
         real FRAC
@@ -144,63 +107,9 @@ module RUNCLASS36_config
         NA = shd%NA
         NTYPE = shd%lc%NTYPE
         NSL = shd%lc%IGND
-
-        !> MAM - Check for parameter values - all parameters should lie within the
-        !> specified ranges in the "minmax_parameters.txt" file.
-!        call check_parameters(shd)
-
-        !> CLASS requires that each GRU for each grid square has its own parameter value,
-        !> for MESH the value read in from the parameter file is assumed to be valid for
-        !> all grid squares in the study area - Frank Seglenieks Aug 2007
-        !> bjd - This would be a good spot for setting pre-distributed values
-!-        cp%GCGRD(:) = cp%GCGRD(1)
-!-        do m = 1, NTYPE
-!-            cp%MIDROW(:, m) = cp%MIDROW(1, m)
-!-        end do
-
-        !> Set value of FAREROW:
-!todo - flag this as an issue to explore later and hide basin average code
-!todo - document the problem
-!        TOTAL_AREA = 0.0
-!-        cp%FAREROW = 0.0
-!-        do i = 1, NA
-!-            do m = 1, NTYPE
-!-                cp%FAREROW(i, m) = shd%lc%ACLASS(i, m)*shd%FRAC(i)
-!                TOTAL_AREA = TOTAL_AREA + cp%FAREROW(i, m)
-!FUTUREDO: Bruce, FRAC is calculated by EnSim
-! using Dan Princz's instructions for EnSim
-! FRAC can be greater than 1.00
-! So, we cannot use FAREROW in place of BASIN_FRACTION
-!-            end do
-!-        end do
-
-        !> The following are used to read from soil.ini:
-        !> wc_thpor, wc_thlret, wc_thlmin, wc_bi, wc_psisat,
-        !> wc_grksat, wc_hcps, wc_tcs, wc_algwet, wc_algdry
-!-        allocate(sv%wc_algwet(NA, NTYPE), sv%wc_algdry(NA, NTYPE))
-!-        allocate(sv%wc_thpor(NA, NTYPE, NSL), sv%wc_thlret(NA, NTYPE, NSL), sv%wc_thlmin(NA, NTYPE, NSL), &
-!-                 sv%wc_bi(NA, NTYPE, NSL), sv%wc_psisat(NA, NTYPE, NSL), sv%wc_grksat(NA, NTYPE, NSL), &
-!-                 sv%wc_hcps(NA, NTYPE, NSL), sv%wc_tcs(NA, NTYPE, NSL))
-
-        !> Zero everything we just allocated.
-!-        sv%wc_algwet = 0.0
-!-        sv%wc_algdry = 0.0
-!-        sv%wc_thpor = 0.0
-!-        sv%wc_thlret = 0.0
-!-        sv%wc_thlmin = 0.0
-!-        sv%wc_bi = 0.0
-!-        sv%wc_psisat = 0.0
-!-        sv%wc_grksat = 0.0
-!-        sv%wc_hcps = 0.0
-!-        sv%wc_tcs = 0.0
-
-        !> Call to read from soil.ini.
-!-        call READ_SOIL_INI(shd, fls)
-
         NML = shd%lc%NML
 
         !> ALLOCATE ALL VARIABLES
-!-        allocate(SNOGRD(NA))
 
 1114 format(/1x, 'Error allocating ', a, ' variables.', &
             /1x, 'Check that these bounds are within an acceptable range.', /)
@@ -364,28 +273,6 @@ module RUNCLASS36_config
             stop
         end if
 
-        !> Copy the starting date of input forcing data from CLASS.ini
-        !> to the climate variable.
-!-        do i = 1, cm%nclim
-!-            cm%dat(i)%start_date%year = IYEAR
-!-            cm%dat(i)%start_date%jday = IDAY
-!-            cm%dat(i)%start_date%hour = IHOUR
-!-            cm%dat(i)%start_date%mins = IMIN
-!-        end do
-
-        !> Set the starting date to that of the forcing data if none is
-        !> provided and intialize the current time-step.
-!-        if (YEAR_START == 0 .and. JDAY_START == 0 .and. MINS_START == 0 .and. HOUR_START == 0) then
-!-            YEAR_START = IYEAR
-!-            JDAY_START = IDAY
-!-            HOUR_START = IHOUR
-!-            MINS_START = IMIN
-!-        end if
-!-        YEAR_NOW = YEAR_START
-!-        JDAY_NOW = JDAY_START
-!-        HOUR_NOW = HOUR_START
-!-        MINS_NOW = MINS_START
-
         !> Forcing input.
         allocate(cfi%FDL(NML), cfi%FSIH(NML), cfi%FSVH(NML), cfi%PRE(NML), cfi%PRES(NML), cfi%QA(NML), cfi%TA(NML), cfi%UL(NML), &
                  cfi%VL(NML), cfi%VMOD(NML))
@@ -440,6 +327,24 @@ module RUNCLASS36_config
             close(iun)
         else
             GGEOGRD(1) = 0.0
+        end if
+
+        !> Initialize PBSM or allocate and initialize variables used in CLASS even if PBSM is not enabled.
+        if (pbsm%PROCESS_ACTIVE) then
+            call PBSM_init(shd, fls, cm)
+        else
+
+            !> Variables used in CLASSZ.
+            allocate(pbsm%vs%Drift(NML), pbsm%vs%Subl(NML))
+            pbsm%vs%Drift = 0.0; pbsm%vs%Subl = 0.0
+
+            !> Variables used in CLASSW.
+            !> These are initialized in WPREP.
+            allocate(ZSNOCS(NML), ZSNOGS(NML), ZSNOWC(NML), ZSNOWG(NML), &
+                     HCPSCS(NML), HCPSGS(NML), HCPSC(NML), HCPSG(NML), &
+                     TSNOWC(NML), TSNOWG(NML), &
+                     RHOSC(NML), RHOSG(NML), &
+                     XSNOWC(NML), XSNOWG(NML), XSNOCS(NML), XSNOGS(NML))
         end if
 
         !> Resume the state of prognostic variables from file.
@@ -652,65 +557,6 @@ module RUNCLASS36_config
             end do
         end if
 
-        !> Allocate variables for WATDRN3
-        !> ******************************************************************
-        !> DGP - June 3, 2011: Now that variables are shared, moved from WD3
-        !> flag to ensure allocation.
-!-        allocate(BTC(NTYPE, NSL), BCAP(NTYPE, NSL), DCOEFF(NTYPE, NSL), &
-!-                 BFCAP(NTYPE, NSL), BFCOEFF(NTYPE, NSL), BFMIN(NTYPE, NSL), &
-!-                 BQMAX(NTYPE, NSL), stat = ierr)
-!-        if (ierr /= 0) print *, 'Error allocating on WD3 for new WATDRN.'
-
-        !> Call WATDRN3B to set WATDRN (Ric) variables
-        !> ******************************************************************
-        !> DGP - May 5, 2011: Added.
-!-        call WATDRN3B(PSISROW, THPROW, GRKSROW, BIROW, cp%XSLPROW, cp%DDROW, &
-!-                      NA, NTYPE, NSL, &
-!-                      BTC, BCAP, DCOEFF, BFCAP, BFCOEFF, BFMIN, BQMAX, &
-!-                      cp%SANDROW, cp%CLAYROW)
-
-        !>**********************************************************************
-        !> Set initial SnowAge & DrySnow values for PBSM calculations
-        !> (MK MacDonald, Sept 2010)
-        !>**********************************************************************
-        allocate(DrySnowGAT(NML), SnowAgeGAT(NML), &
-                 TSNOdsGAT(NML), RHOSdsGAT(NML), &
-                 DriftGAT(NML), SublGAT(NML), DepositionGAT(NML), &
-                 ZSNOCS(NML), ZSNOGS(NML), &
-                 ZSNOWC(NML), ZSNOWG(NML), &
-                 HCPSCS(NML), HCPSGS(NML), &
-                 HCPSC(NML), HCPSG(NML), &
-                 TSNOWC(NML), TSNOWG(NML), &
-                 RHOSC(NML), RHOSG(NML), &
-                 XSNOWC(NML), XSNOWG(NML), &
-                 XSNOCS(NML), XSNOGS(NML), stat = ierr)
-        allocate(fetchGAT(NML), HtGAT(NML), N_SGAT(NML), A_SGAT(NML), &
-                 DistribGAT(NML), stat = ierr)
-        TSNOdsGAT = 0.0
-        RHOSdsGAT = 0.0
-        if (PBSMFLAG == 1) then
-            do k = il1, il2
-                if (cpv%SNO(k) <= 0.0) then
-                    DrySnowGAT(k) = 0.0 !1 = snowpack is dry (i.e. cold)
-                    SnowAgeGAT(k) = 0.0 !hours since last snowfall
-                    if (cm%dat(ck%TT)%GAT(k) >= TFREZ) then
-                        DrySnowGAT(k) = 0.0
-                        SnowAgeGAT(k) = 48.0 !assume 48 hours since last snowfall
-                    else
-                        DrySnowGAT(k) = 1.0
-                        SnowAgeGAT(k) = 48.0
-                    end if
-                end if
-                ik = shd%lc%ILMOS(k)
-                jk = shd%lc%JLMOS(k)
-                fetchGAT(k) = hp%fetchROW(ik, jk)
-                HtGAT(k) = hp%HtROW(ik, jk)
-                N_SGAT(k) = hp%N_SROW(ik, jk)
-                A_SGAT(k) = hp%A_SROW(ik, jk)
-                DistribGAT(k) = hp%DistribROW(ik, jk)
-            end do
-        end if !PBSMFLAG == 1
-
         !> *********************************************************************
         !> Call CLASSBG to set more CLASS variables
         !> *********************************************************************
@@ -752,31 +598,8 @@ module RUNCLASS36_config
             call CLASSOUT_open_files(shd)
         end if
 
-        !> ASSIGN VALUES OF LAT/LONG TO EACH SQUARE:
-        !> NOTE FROM FRANK
-        !> I got the equations to determine the actual length of a
-        !> degree of latitude and longitude from this paper, thank you
-        !> Geoff Kite (I have attached it):
-        !> http://www.agu.org/pubs/crossref/1994/94WR00231.shtml
-        !> This chunk of code is a way to put the actual values of
-        !> longitude and latitude for each cell in a large basin.
-        !> The original CLASS code just put in the same value for each cell.
-        !> The problem is that the class.ini file only has a single value
-        !> of long and lat (as it was only designed for a point).  So in order
-        !> to get the values across the basin I assumed that the single value
-        !> from the class.ini file is in the centre of the basin and then use
-        !> information from the watflow.shd file to figure out the long/lat
-        !> varies across the basin.  However, the watflod.shd file only gives
-        !> information in kilometers not degrees of long/lat so I had
-        !> to use the formulas from the above paper to go between the two.
-        !> The only value of DEGLAT is the one read in from the class.ini file,
-        !> after that Diana uses RADJGRD (the value of latitude in radians) so
-        !> after DEGLAT is used to calculate RADJGRD is it no longer used.  This
-        !> is how it was in the original CLASS code.
         do k = il1, il2
             ik = shd%lc%ILMOS(k)
-            !LATLENGTH = shd%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
-            !LONGLENGTH = shd%AL/1000.0/(111.4172*cos((DEGLAT*PI/180.0)) - 0.094*cos(3*(DEGLAT*PI/180.0)) + 0.0002*cos(5*(DEGLAT*PI/180.0)))
             catv%RADJ(k) = shd%ylat(ik)*PI/180.0
             catv%DLON(k) = shd%xlng(ik)
         end do
@@ -785,49 +608,20 @@ module RUNCLASS36_config
         catv%ZDM = 10.0
         catv%ZDH = 2.0
 
-        !> Initialize state prognostic variables.
-!-        wb%LQWS = 0.0
-!-        wb%FRWS = 0.0
-!-        wb%RCAN = 0.0
-!-        wb%SNCAN = 0.0
-!-        wb%SNO = 0.0
-!-        wb%WSNO = 0.0
-!-        wb%PNDW = 0.0
-!-        do k = il1, il2
-!-            ik = shd%lc%ILMOS(k)
-!-            FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-!-            if (FRAC > 0.0) then
-!-                wb%LQWS(ik, :) = wb%LQWS(ik, :) + cpv%THLQ(k, :)*RHOW*csfv%DELZW(k, :)*FRAC
-!-                wb%FRWS(ik, :) = wb%FRWS(ik, :) + cpv%THIC(k, :)*RHOICE*csfv%DELZW(k, :)*FRAC
-!-                wb%RCAN(ik) = wb%RCAN(ik) + cpv%RCAN(k)*FRAC
-!-                wb%SNCAN(ik) = wb%SNCAN(ik) + cpv%SNCAN(k)*FRAC
-!-                wb%SNO(ik) = wb%SNO(ik) + cpv%SNO(k)*FRAC
-!-                if (cpv%SNO(k) > 0.0) wb%WSNO(ik) = wb%WSNO(ik) + cpv%WSNO(k)*FRAC
-!-                wb%PNDW(ik) = wb%PNDW(ik) + cpv%ZPND(k)*RHOW*FRAC
-!-            end if
-!-        end do
-!-        wb%stg = wb%RCAN + wb%SNCAN + wb%SNO + wb%WSNO + wb%PNDW + sum(wb%LQWS, 2) + sum(wb%FRWS, 2)
-
     end subroutine
 
-    subroutine RUNCLASS36_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
+    subroutine RUNCLASS36_finalize(fls, shd, cm)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
-        use model_output_variabletypes
-        use MODEL_OUTPUT
+        use FLAGS
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sv
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> For SAVERESUMEFLAG 3
         real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &

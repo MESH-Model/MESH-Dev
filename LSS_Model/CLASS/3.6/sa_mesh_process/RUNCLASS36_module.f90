@@ -7,7 +7,7 @@ module RUNCLASS36_module
 
     contains
 
-    subroutine RUNCLASS36_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+    subroutine RUNCLASS36_within_tile(shd, fls, cm)
 
         use mpi_module
         use model_files_variables
@@ -26,16 +26,11 @@ module RUNCLASS36_module
         !> For BASEFLOWFLAG.
 !todo: Isolate this.
         use baseflow_module
+        use PBSM_module
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(dates_model) :: ts
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sp
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         integer NA, NTYPE, NML, IGND, k, ik, j, i
         real FRAC
@@ -55,12 +50,8 @@ module RUNCLASS36_module
         NML = shd%lc%NML
         IGND = shd%lc%IGND
 
-!* N: is only used for debugging purposes.
-!> N is incremented at the beginning of each loop. so you can tell which
-!> iteration of the loop you are on by what the value of N is.
-!> N is printed out with each of the error messages in CLASSZ.
-!> N is replaced with ic%ts_count
-!        N = N + 1
+        !> N is only used for debugging purposes.
+        !> N = ic%ts_count
 
         if (ipid /= 0 .or. izero == 0) then
 
@@ -87,16 +78,13 @@ module RUNCLASS36_module
             HOUR = (real(ic%now%hour) + real(ic%now%mins)/60.0)*PI/12.0 - PI
 
             do k = il1, il2
-!                ik = shd%lc%ILMOS(k)
                 COSZ = sin(catv%RADJ(k))*sin(DECL) + cos(catv%RADJ(k))*cos(DECL)*cos(HOUR)
                 catv%CSZ(k) = sign(max(abs(COSZ), 1.0e-3), COSZ)
-!                CSZGRD(ik) = catv%CSZ(k)
                 if (cfi%PRE(k) > 0.0) then
                     catv%FCLO(k) = 1.0
                 else
                     catv%FCLO(k) = max(0.0, min(1.0 - 0.9*COSZ, 1.0))
                 end if
-!-                FCLOGRD(ik) = catv%FCLO(k)
             end do
 
             !> Grab states.
@@ -120,10 +108,12 @@ module RUNCLASS36_module
             cpv%THLQ(il1:il2, :) = stas%sl%thlq(il1:il2, :)
             cpv%TBAR(il1:il2, :) = stas%sl%tbar(il1:il2, :)
 
-            !> Were initialized in CLASSG and so have been extracted.
-            DriftGAT = 0.0 !DriftROW (ILMOS(k), JLMOS(k))
-            SublGAT = 0.0 !SublROW (ILMOS(k), JLMOS(k))
-            DepositionGAT = 0.0
+            !> Initialize diagnostic variables for PBSM.
+            if (pbsm%PROCESS_ACTIVE) then
+                pbsm%vs%Drift(il1:il2) = 0.0
+                pbsm%vs%Subl(il1:il2) = 0.0
+                pbsm%vs%Deposition(il1:il2) = 0.0
+            end if
 
             !> INITIALIZATION OF DIAGNOSTIC VARIABLES SPLIT OUT OF CLASSG
             !> FOR CONSISTENCY WITH GCM APPLICATIONS.
@@ -208,7 +198,7 @@ module RUNCLASS36_module
                         csfv%HCPS, csfv%THP, csfv%DELZW, cpv%TBAR, cpv%ZPND, cpv%TPND, &
                         shd%lc%sl%DELZ, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                         il1, il2, NML, IGND, ic%ts_count, &
-                        DriftGAT, SublGAT)
+                        pbsm%vs%Drift, pbsm%vs%Subl)
 
             !> ALBEDO AND TRANSMISSIVITY CALCULATIONS; GENERAL VEGETATION
             !> CHARACTERISTICS.
@@ -325,8 +315,6 @@ module RUNCLASS36_module
                         t0_ACC(NMELT), SI, TSI, INFILTYPE, SNOWMELTD, SNOWMELTD_LAST, &
                         MELTRUNOFF, SNOWINFIL, CUMSNOWINFILCS, CUMSNOWINFILGS, &
                         SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, &
-                        NA, NTYPE, shd%lc%ILMOS, shd%lc%JLMOS, &
-                        BTC, BCAP, DCOEFF, BFCAP, BFCOEFF, BFMIN, BQMAX, &
 !FOR PDMROF
                         CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
                         ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &
@@ -334,27 +322,23 @@ module RUNCLASS36_module
                         QM1CS, QM1C, QM1G, QM1GS, &
                         QM2CS, QM2C, QM2G, QM2GS, UMQ, &
                         FSTRCS, FSTRC, FSTRG, FSTRGS, &
+                        pbsm%PROCESS_ACTIVE, &
                         ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
                         HCPSCS, HCPSGS, HCPSC, HCPSG, &
                         TSNOWC, TSNOWG, RHOSC, RHOSG, &
                         XSNOWC, XSNOWG, XSNOCS, XSNOGS)
 
-            !> SINGLE COLUMN BLOWING SNOW CALCULATIONS.
-!+            if (PBSMFLAG == 1) then
-!+                call PBSMrun(ZSNOW, cpv%WSNO, cpv%SNO, cpv%RHOS, cpv%TSNO, cdv%HTCS, &
-!+                             ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
-!+                             HCPSCS, HCPSGS, HCPSC, HCPSG, &
-!+                             TSNOWC, TSNOWG, TSNOCS, TSNOGS, &
-!+                             RHOSC, RHOSG, RHOSCS, RHOSGS,&
-!+                             XSNOWC, XSNOWG, XSNOCS, XSNOGS, &
-!+                             WSNOCS, WSNOGS, &
-!+                             cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, &
-!+                             fetchGAT, N_SGAT, A_SGAT, HtGAT, &
-!+                             cdv%SFCT, cdv%SFCU, cdv%SFCQ, cfi%PRES, cfi%PRE, &
-!+                             DrySnowGAT, SnowAgeGAT, DriftGAT, SublGAT, &
-!+                             TSNOdsGAT, &
-!+                             NML, il1, il2, ic%ts_count, catv%ZRFM, ZOMLCS, ZOMLNS)
-!+            end if
+            !> Single column blowing snow calculations (PBSM).
+            call PBSM_within_tile( &
+                ZSNOW, cpv%WSNO, cpv%SNO, cpv%RHOS, cpv%TSNO, cdv%HTCS, &
+                TSNOCS, TSNOGS, &
+                RHOSCS, RHOSGS,&
+                WSNOCS, WSNOGS, &
+                cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, &
+                cdv%SFCT, cdv%SFCU, cdv%SFCQ, &
+                catv%ZRFM, ZOMLCS, ZOMLNS, &
+                NML, &
+                shd, fls, cm)
 
             call CLASSZ(1, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
@@ -368,16 +352,19 @@ module RUNCLASS36_module
                         csfv%HCPS, csfv%THP, csfv%DELZW, cpv%TBAR, cpv%ZPND, cpv%TPND, &
                         shd%lc%sl%DELZ, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                         il1, il2, NML, IGND, ic%ts_count, &
-                        DriftGAT, SublGAT)
+                        pbsm%vs%Drift, pbsm%vs%Subl)
 
-            !> Redistribute blowing snow mass between GRUs.
-!todo: This has a dependency on cp%GCGRD.
-!+            call REDISTRIB_SNOW(NML, 1, NA, NTYPE, NML, cpv%TSNO, ZSNOW, &
-!+                                cpv%RHOS, cpv%SNO, TSNOCS, ZSNOCS, HCPSCS, RHOSCS, TSNOGS, &
-!+                                ZSNOGS, HCPSGS, RHOSGS, TSNOWC, ZSNOWC, HCPSC, RHOSC, TSNOWG, &
-!+                                ZSNOWG, HCPSG, RHOSG, cp%GCGRD, shd%lc%ILMOS, DriftGAT, csfv%FARE, &
-!+                                TSNOdsGAT, DistribGAT, WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, DepositionGAT, &
-!+                                cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, ic%ts_count)
+            !> Distribution of blowing snow mass between tiles (PBSM).
+            call PBSM_within_grid( &
+                cpv%TSNO, ZSNOW, &
+                cpv%RHOS, cpv%SNO, TSNOCS, RHOSCS, TSNOGS, &
+                RHOSGS, &
+                catv%GC, csfv%FARE, &
+                WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
+                cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, &
+                NML, &
+                shd, fls, cm)
+
             cdv%ROF = cdv%ROF - UMQ
 
             !> BASEFLOWFLAG
@@ -411,107 +398,42 @@ module RUNCLASS36_module
             call CLASSOUT_update_files(shd)
         end if
 
-!-        if (ipid == 0) then
-
-            !> Copy over state variables.
-!-            stas%cnpy%qac = cpv%QAC
-!-            stas%cnpy%rcan = cpv%RCAN
-!-            stas%cnpy%sncan = cpv%SNCAN
-!-            stas%cnpy%tac = cpv%TAC
-!-            stas%cnpy%tcan = cpv%TCAN
-!-            stas%cnpy%cmai = cpv%CMAI
-!-            stas%cnpy%gro = cpv%GRO
-!-            stas%sno%sno = cpv%SNO
-!-            stas%sno%albs = cpv%ALBS
-!-            stas%sno%rhos = cpv%RHOS
-!-            stas%sno%tsno = cpv%TSNO
-!-            stas%sno%wsno = cpv%WSNO
-!-            stas%sfc%tpnd = cpv%TPND
-!-            stas%sfc%zpnd = cpv%ZPND
-!-            stas%sfc%tsfs = cpv%TSFS
-!-            stas%sl%tbas = cpv%TBAS
-!-            stas%sl%thic = cpv%THIC
-!-            stas%sl%fzws = cpv%THIC*csfv%DELZW*RHOICE
-!-            stas%sl%thlq = cpv%THLQ
-!-            stas%sl%lqws = cpv%THLQ*csfv%DELZW*RHOW
-!-            stas%sl%tbar = cpv%TBAR
-!-            stas%cnpy%evp = cdv%QFS
-!-            stas%cnpy%pevp = cdv%PET
-
-!-            do k = il1, il2
-!-                ik = shd%lc%ILMOS(k)
-!-                FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-!-                if (FRAC > 0.0) then
-!-                    wb%PRE(ik) = wb%PRE(ik) + cfi%PRE(k)*FRAC*ic%dts
-!-                    eb%QEVP(ik) = eb%QEVP(ik) + cdv%QEVP(k)*FRAC
-!-                    wb%EVAP(ik) = wb%EVAP(ik) + cdv%QFS(k)*FRAC*ic%dts
-!-                    eb%HFS(ik)  = eb%HFS(ik) + cdv%HFS(k)*FRAC
-!-                    wb%ROF(ik) = wb%ROF(ik) + cdv%ROF(k)*FRAC*ic%dts
-!-                    wb%ROFO(ik) = wb%ROFO(ik) + cdv%ROFO(k)*FRAC*ic%dts
-!-                    wb%ROFS(ik) = wb%ROFS(ik) + cdv%ROFS(k)*FRAC*ic%dts
-!-                    wb%ROFB(ik) = wb%ROFB(ik) + cdv%ROFB(k)*FRAC*ic%dts
-!-                    do j = 1, IGND
-!-                        sp%TBAR(ik, j) = sp%TBAR(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
-!-                        sp%THLQ(ik, j) = sp%THLQ(ik, j) + cpv%THLQ(k, j)*FRAC
-!-                        wb%LQWS(ik, j) = wb%LQWS(ik, j) + cpv%THLQ(k, j)*csfv%DELZW(k, j)*FRAC*RHOW
-!-                        sp%THIC(ik, j) = sp%THIC(ik, j) + cpv%THIC(k, j)*FRAC
-!-                        wb%FRWS(ik, j) = wb%FRWS(ik, j) + cpv%THIC(k, j)*csfv%DELZW(k, j)*FRAC*RHOICE
-!-                        eb%GFLX(ik, j) = eb%GFLX(ik, j) + cdv%GFLX(k, j)*FRAC
-!-                    end do
-!-                    wb%RCAN(ik) = wb%RCAN(ik) + cpv%RCAN(k)*FRAC
-!-                    wb%SNCAN(ik) = wb%SNCAN(ik) + cpv%SNCAN(k)*FRAC
-!-                    wb%SNO(ik) = wb%SNO(ik) + cpv%SNO(k)*FRAC
-!-                    if (cpv%SNO(k) > 0.0) then
-!-                        wb%WSNO(ik) = wb%WSNO(ik) + cpv%WSNO(k)*FRAC
-!-                    end if
-!-                    wb%PNDW(ik) = wb%PNDW(ik) + cpv%ZPND(k)*FRAC*RHOW
-!-                end if
-!-            end do !k = il1, il2
-
-!-            wb%DSTG = wb%RCAN + wb%SNCAN + wb%SNO + wb%WSNO + wb%PNDW + &
-!-                sum(wb%LQWS, 2) + sum(wb%FRWS, 2) - wb%STG
-!-            wb%STG = wb%DSTG + wb%STG
-
-!-        else
-
-            !> Copy over state variables.
-            stas%cnpy%qac(il1:il2) = cpv%QAC(il1:il2)
-            stas%cnpy%rcan(il1:il2) = cpv%RCAN(il1:il2)
-            stas%cnpy%sncan(il1:il2) = cpv%SNCAN(il1:il2)
-            stas%cnpy%tac(il1:il2) = cpv%TAC(il1:il2)
-            stas%cnpy%tcan(il1:il2) = cpv%TCAN(il1:il2)
-            stas%cnpy%cmai(il1:il2) = cpv%CMAI(il1:il2)
-            stas%cnpy%gro(il1:il2) = cpv%GRO(il1:il2)
-            stas%cnpy%pevp(il1:il2) = cdv%PET(il1:il2)
-            stas%sno%sno(il1:il2) = cpv%SNO(il1:il2)
-            stas%sno%albs(il1:il2) = cpv%ALBS(il1:il2)
-            stas%sno%fsno(il1:il2) = cdv%FSNO(il1:il2)
-            stas%sno%rhos(il1:il2) = cpv%RHOS(il1:il2)
-            stas%sno%tsno(il1:il2) = cpv%TSNO(il1:il2)
-            where (cpv%SNO(il1:il2) > 0.0)
-                stas%sno%wsno(il1:il2) = cpv%WSNO(il1:il2)
-            elsewhere
-                stas%sno%wsno(il1:il2) = 0.0
-            end where
-            stas%sfc%tpnd(il1:il2) = cpv%TPND(il1:il2)
-            stas%sfc%zpnd(il1:il2) = cpv%ZPND(il1:il2)
-            stas%sfc%pndw(il1:il2) = cpv%ZPND(il1:il2)*RHOW
-            stas%sfc%evap(il1:il2) = cdv%QFS(il1:il2)
-            stas%sfc%qevp(il1:il2) = cdv%QEVP(il1:il2)
-            stas%sfc%hfs(il1:il2) = cdv%HFS(il1:il2)
-            stas%sfc%rofo(il1:il2) = cdv%ROFO(il1:il2)
-            stas%sfc%tsfs(il1:il2, :) = cpv%TSFS(il1:il2, :)
-            stas%sl%tbas(il1:il2) = cpv%TBAS(il1:il2)
-            stas%sl%rofs(il1:il2) = cdv%ROFS(il1:il2)
-            stas%sl%thic(il1:il2, :) = cpv%THIC(il1:il2, :)
-            stas%sl%fzws(il1:il2, :) = cpv%THIC(il1:il2, :)*csfv%DELZW(il1:il2, :)*RHOICE
-            stas%sl%thlq(il1:il2, :) = cpv%THLQ(il1:il2, :)
-            stas%sl%lqws(il1:il2, :) = cpv%THLQ(il1:il2, :)*csfv%DELZW(il1:il2, :)*RHOW
-            stas%sl%tbar(il1:il2, :) = cpv%TBAR(il1:il2, :)
-            stas%sl%gflx(il1:il2, :) = cdv%GFLX(il1:il2, :)
-            stas%lzs%rofb(il1:il2) = cdv%ROFB(il1:il2)
-
-!-        end if
+        !> Copy over state variables.
+        stas%cnpy%qac(il1:il2) = cpv%QAC(il1:il2)
+        stas%cnpy%rcan(il1:il2) = cpv%RCAN(il1:il2)
+        stas%cnpy%sncan(il1:il2) = cpv%SNCAN(il1:il2)
+        stas%cnpy%tac(il1:il2) = cpv%TAC(il1:il2)
+        stas%cnpy%tcan(il1:il2) = cpv%TCAN(il1:il2)
+        stas%cnpy%cmai(il1:il2) = cpv%CMAI(il1:il2)
+        stas%cnpy%gro(il1:il2) = cpv%GRO(il1:il2)
+        stas%cnpy%pevp(il1:il2) = cdv%PET(il1:il2)
+        stas%sno%sno(il1:il2) = cpv%SNO(il1:il2)
+        stas%sno%albs(il1:il2) = cpv%ALBS(il1:il2)
+        stas%sno%fsno(il1:il2) = cdv%FSNO(il1:il2)
+        stas%sno%rhos(il1:il2) = cpv%RHOS(il1:il2)
+        stas%sno%tsno(il1:il2) = cpv%TSNO(il1:il2)
+        where (cpv%SNO(il1:il2) > 0.0)
+            stas%sno%wsno(il1:il2) = cpv%WSNO(il1:il2)
+        elsewhere
+            stas%sno%wsno(il1:il2) = 0.0
+        end where
+        stas%sfc%tpnd(il1:il2) = cpv%TPND(il1:il2)
+        stas%sfc%zpnd(il1:il2) = cpv%ZPND(il1:il2)
+        stas%sfc%pndw(il1:il2) = cpv%ZPND(il1:il2)*RHOW
+        stas%sfc%evap(il1:il2) = cdv%QFS(il1:il2)
+        stas%sfc%qevp(il1:il2) = cdv%QEVP(il1:il2)
+        stas%sfc%hfs(il1:il2) = cdv%HFS(il1:il2)
+        stas%sfc%rofo(il1:il2) = cdv%ROFO(il1:il2)
+        stas%sfc%tsfs(il1:il2, :) = cpv%TSFS(il1:il2, :)
+        stas%sl%tbas(il1:il2) = cpv%TBAS(il1:il2)
+        stas%sl%rofs(il1:il2) = cdv%ROFS(il1:il2)
+        stas%sl%thic(il1:il2, :) = cpv%THIC(il1:il2, :)
+        stas%sl%fzws(il1:il2, :) = cpv%THIC(il1:il2, :)*csfv%DELZW(il1:il2, :)*RHOICE
+        stas%sl%thlq(il1:il2, :) = cpv%THLQ(il1:il2, :)
+        stas%sl%lqws(il1:il2, :) = cpv%THLQ(il1:il2, :)*csfv%DELZW(il1:il2, :)*RHOW
+        stas%sl%tbar(il1:il2, :) = cpv%TBAR(il1:il2, :)
+        stas%sl%gflx(il1:il2, :) = cdv%GFLX(il1:il2, :)
+        stas%lzs%rofb(il1:il2) = cdv%ROFB(il1:il2)
 
     end subroutine
 
