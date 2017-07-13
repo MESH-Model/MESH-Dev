@@ -4,32 +4,24 @@
 !>
 subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
-    !> For: 'ShedGridParams' type, run option flags.
-    use sa_mesh_shared_variables
-
-    !> Required for parameters ('ROW' indexing).
-    use sa_mesh_shared_output_variables
-
     !> Required for line operations and string conversion.
     use strings
 
     !> Required for file object and hydrology.ini file index.
     use model_files_variables
 
+    !> For the 'ShedGridParams' type, 'ro%' run options type, and SA_MESH parameters.
+    use sa_mesh_shared_variables
+
     !> Required for 'FROZENSOILINFILFLAG' and 'PBSMFLAG'.
     use FLAGS
 
-    !> Required for IWF.
-    use RUNCLASS36_constants
-
-    !> Required for 'hp' (contains FROZENSOILINFIL, PDMROF, and PBSM parameters).
-!todo: remove this.
+    !> Required for the variables of various modules.
     use RUNCLASS36_variables
-
-    !> Variables of various modules.
-    use WF_ROUTE_config, only: wfp
-    use baseflow_module, only: lzsp
-    use cropland_irrigation_variables, only: ciprot, cifg
+    use WF_ROUTE_config
+    use rte_module
+    use baseflow_module
+    use cropland_irrigation_variables
 
     implicit none
 
@@ -138,14 +130,14 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
     !> Initialize variables.
     NRVR = shd%NRVR
-    allocate(wfp%r1(NRVR), wfp%r2(NRVR), &
-             wfp%aa1(NRVR), wfp%aa2(NRVR), wfp%aa3(NRVR), wfp%aa4(NRVR))
-    wfp%r1 = 2.0
-    wfp%r2 = 0.0
-    wfp%aa1 = 1.0
-    wfp%aa2 = 11.0
-    wfp%aa3 = 0.43
-    wfp%aa4 = 1.0
+!-    allocate(wfp%r1(NRVR), wfp%r2(NRVR), &
+!-             wfp%aa1(NRVR), wfp%aa2(NRVR), wfp%aa3(NRVR), wfp%aa4(NRVR))
+!-    wfp%r1 = 2.0
+!-    wfp%r2 = 0.0
+!-    wfp%aa1 = 1.0
+!-    wfp%aa2 = 11.0
+!-    wfp%aa3 = 0.43
+!-    wfp%aa4 = 1.0
 
     !> Read variables from file.
     call readline(iun, in_line, ierr)
@@ -177,45 +169,168 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> WF_R2 (r2).
                         case ('wf_r2')
-                            do j = 1, NRVR
-                                call value(out_args(j + 1), wfp%r2(j), ierr)
-                                if (ierr /= 0) goto 911
-                            end do
+                            if (.not. WF_RTE_flgs%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), wfp%r2(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
 
                         !> WF_R1 (r1).
                         case ('wf_r1')
-                            do j = 1, NRVR
-                                call value(out_args(j + 1), wfp%r1(j), ierr)
-                                if (ierr /= 0) goto 911
-                            end do
+                            if (.not. WF_RTE_flgs%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), wfp%r1(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
 
                         !> WF_A1 (aa1).
                         case ('wf_a1')
-                            do j = 1, NRVR
-                                call value(out_args(j + 1), wfp%aa1(j), ierr)
-                                if (ierr /= 0) goto 911
-                            end do
+                            if (.not. WF_RTE_flgs%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), wfp%aa1(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
 
                         !> WF_A2 (aa2).
                         case ('wf_a2')
-                            do j = 1, NRVR
-                                call value(out_args(j + 1), wfp%aa2(j), ierr)
-                                if (ierr /= 0) goto 911
-                            end do
+                            if (.not. WF_RTE_flgs%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), wfp%aa2(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
 
                         !> WF_A3 (aa3).
                         case ('wf_a3')
-                            do j = 1, NRVR
-                                call value(out_args(j + 1), wfp%aa3(j), ierr)
-                                if (ierr /= 0) goto 911
-                            end do
+                            if (.not. WF_RTE_flgs%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), wfp%aa3(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
 
                         !> WF_A4 (aa4).
                         case ('wf_a4')
-                            do j = 1, NRVR
-                                call value(out_args(j + 1), wfp%aa4(j), ierr)
-                                if (ierr /= 0) goto 911
-                            end do
+                            if (.not. WF_RTE_flgs%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), wfp%aa4(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> r1n (RTE).
+                        case ('r1n')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%r1n(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> r2n (RTE).
+                        case ('r2n')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%r2n(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> mndr (RTE).
+                        case ('mndr')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%mndr(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> widep (RTE).
+                        case ('widep')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%widep(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> flz (RTE).
+                        case ('flz')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%flz(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> pwr (RTE).
+                        case ('pwr')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%pwr(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> aa2 (RTE).
+                        case ('aa2')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%aa2(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> aa3 (RTE).
+                        case ('aa3')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%aa3(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
+
+                        !> aa4 (RTE).
+                        case ('aa4')
+                            if (.not. rteflg%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                do j = 1, NRVR
+                                    call value(out_args(j + 1), rtepm_iak%aa4(j), ierr)
+                                    if (ierr /= 0) goto 911
+                                end do
+                            end if
 
                         !> Unrecognized parameter name.
                         case default
@@ -228,7 +343,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
         !> Original format of the hydrology.ini file.
         case default
             call readline(iun, in_line, ierr)
-            read(in_line, *, iostat = ierr) (wfp%r2(j), j = 1, NRVR)
+            if (WF_RTE_flgs%PROCESS_ACTIVE) read(in_line, *, iostat = ierr) (wfp%r2(j), j = 1, NRVR)
             if (ierr /= 0) then
                 print 8110, NRVR
                 goto 998
@@ -238,9 +353,11 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
     !> Check values of the river channel roughness factor.
     do i = 1, NRVR
-        if (wfp%r2(i) <= 0.0) then
-            print 8110, NRVR
-            goto 998
+        if (WF_RTE_flgs%PROCESS_ACTIVE) then
+            if (wfp%r2(i) <= 0.0) then
+                print 8110, NRVR
+                goto 998
+            end if
         end if
     end do
 
@@ -447,14 +564,14 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !>
 
     !> Allocate variables.
-    if (lzsp%BASEFLOWFLAG > 0) then
-        select case (lzsp%BASEFLOWFLAG)
-            case (1)
-                allocate(lzsp%dgwsh(NA, NTYPE), lzsp%agwsh(NA, NTYPE))
-            case (2)
-                allocate(lzsp%WF_LZFA(NA, NTYPE), lzsp%WF_LZFPWR(NA, NTYPE))
-        end select
-    end if
+!-    if (lzsp%BASEFLOWFLAG > 0) then
+!-        select case (lzsp%BASEFLOWFLAG)
+!-            case (1)
+!-                allocate(lzsp%dgwsh(NA, NTYPE), lzsp%agwsh(NA, NTYPE))
+!-            case (2)
+!-                allocate(lzsp%WF_LZFA(NA, NTYPE), lzsp%WF_LZFPWR(NA, NTYPE))
+!-        end select
+!-    end if
 
     !> Read variables from file.
     call readline(iun, in_line, ierr)
@@ -492,21 +609,21 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                         !> ZSNL.
                         case ('zsnl')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), pmrow%snp%zsnl(j), ierr)
+                                call value(out_args(j + 1), pm_gru%snp%zsnl(j), ierr)
                                 if (ierr /= 0) goto 931
                             end do
 
                         !> ZPLS.
                         case ('zpls')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), pmrow%snp%zpls(j), ierr)
+                                call value(out_args(j + 1), pm_gru%snp%zpls(j), ierr)
                                 if (ierr /= 0) goto 931
                             end do
 
                         !> ZPLG.
                         case ('zplg')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), pmrow%sfp%zplg(j), ierr)
+                                call value(out_args(j + 1), pm_gru%sfp%zplg(j), ierr)
                                 if (ierr /= 0) goto 931
                             end do
 
@@ -528,7 +645,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> CMAX.
                         case ('cmax')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -540,7 +657,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> CMIN.
                         case ('cmin')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -552,7 +669,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> B.
                         case ('b')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -564,7 +681,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> K1.
                         case ('k1')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -576,7 +693,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> K2.
                         case ('k2')
-                            if (IWF /= 2 .or. IWF /= 3) then
+                            if (.not. (IWF == 2 .or. IWF == 3)) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -855,9 +972,9 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                 end do
 
                 !> Distribute CLASS ponding limits.
-                pmrow%snp%zsnl = DEPPARVAL(1, :)
-                pmrow%snp%zpls = DEPPARVAL(2, :)
-                pmrow%sfp%zplg = DEPPARVAL(3, :)
+                pm_gru%snp%zsnl = DEPPARVAL(1, :)
+                pm_gru%snp%zpls = DEPPARVAL(2, :)
+                pm_gru%sfp%zplg = DEPPARVAL(3, :)
 
                 !> Distribute the parameters.
 !todo: change this to il2, il2
@@ -865,14 +982,18 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                     do m = 1, NTYPE
 
                         !> FROZENSOILINFILFLAG == 1 (infiltration into frozen soils).
-                        hp%FRZCROW(i, m) = DEPPARVAL(4, m)
+                        if (FROZENSOILINFILFLAG == 1) then
+                            hp%FRZCROW(i, m) = DEPPARVAL(4, m)
+                        end if
 
                         !> IWF == 2 (PDMROF) or IWF == 3 (LATFLOW).
-                        hp%CMAXROW(i, m) = DEPPARVAL(5, m)
-                        hp%CMINROW(i, m) = DEPPARVAL(6, m)
-                        hp%BROW(i, m) = DEPPARVAL(7, m)
-                        hp%K1ROW(i, m) = DEPPARVAL(8, m)
-                        hp%K2ROW(i, m) = DEPPARVAL(9, m)
+                        if (IWF == 2 .or. IWF == 3) then
+                            hp%CMAXROW(i, m) = DEPPARVAL(5, m)
+                            hp%CMINROW(i, m) = DEPPARVAL(6, m)
+                            hp%BROW(i, m) = DEPPARVAL(7, m)
+                            hp%K1ROW(i, m) = DEPPARVAL(8, m)
+                            hp%K2ROW(i, m) = DEPPARVAL(9, m)
+                        end if
 
                         !> Count for active flags (read from run options).
                         j = 9
@@ -887,19 +1008,20 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                             j = j + 5
                         end if
 
-                        !> BASEFLOWFLAG > 0 (lower zone storage).
-                        if (lzsp%BASEFLOWFLAG > 0) then
-                            select case (lzsp%BASEFLOWFLAG)
-                                case (1)
-                                    lzsp%dgwsh(i, m) = DEPPARVAL(j + 1, m)
-                                    lzsp%agwsh(i, m) = DEPPARVAL(j + 2, m)
-                                    j = j + 2
-                                case (2)
-                                    lzsp%WF_LZFPWR(i, m) = DEPPARVAL(j + 1, m)
-                                    lzsp%WF_LZFA(i, m) = DEPPARVAL(j + 2, m)
-                                    j = j + 2
-                            end select
+                        !> BASEFLOWFLAG 1 (Luo, 2012).
+                        if (lzsp%BASEFLOWFLAG == 1) then
+                            lzsp%dgwsh(i, m) = DEPPARVAL(j + 1, m)
+                            lzsp%agwsh(i, m) = DEPPARVAL(j + 2, m)
+                            j = j + 2
                         end if
+
+                        !> BASEFLOWFLAG 2 (Watflood manual).
+                        if (lzsp%BASEFLOWFLAG == 2) then
+                            lzsp%WF_LZFPWR(i, m) = DEPPARVAL(j + 1, m)
+                            lzsp%WF_LZFA(i, m) = DEPPARVAL(j + 2, m)
+                            j = j + 2
+                        end if
+
                     end do
                 end do
 

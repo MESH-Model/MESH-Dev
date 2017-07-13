@@ -1,31 +1,24 @@
     subroutine READ_RUN_OPTIONS(ts, cm, fls)
 
-        use mpi_flags
-
+        use mpi_module
         use strings
-        use sa_mesh_shared_variables
-        use model_files_variabletypes
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
+
         use FLAGS
-
-        use SIMSTATS_config, only: mtsflg
-
         use save_basin_output, only: BASINAVGWBFILEFLAG
-
-        use RUNCLASS36_constants
+!-        use RUNCLASS36_constants
+        use RUNCLASS36_variables
         use RUNCLASS36_save_output
         use RUNSVS113_variables
-
-        use WF_ROUTE_config
-
         use baseflow_module, only: lzsp
-
-        use SA_RTE_module, only: SA_RTE_flgs
-
-        !> Cropland irrigation module.
         use cropland_irrigation_variables
+        use WF_ROUTE_config
+        use rte_module
+        use SA_RTE_module, only: SA_RTE_flgs
+        use SIMSTATS_config, only: mtsflg
 
         implicit none
 
@@ -154,7 +147,7 @@
         !>  1 = read forcing data from .r2c
         !>  2 = read forcing data from .csv
         !>  3 = read forcing data from .seq binary sequential files
-        !>  3 = read forcing data from .seq ascii sequential files
+        !>  4 = read forcing data from .seq ascii sequential files
         !>  5 = read forcing data from load buffer in memory
 !-        BASINSHORTWAVEFLAG = 0
 !-        BASINLONGWAVEFLAG = 0
@@ -321,6 +314,8 @@
 
                 !> Read and parse the entire line.
                 call readline(iun, in_line, ierr)
+                if (index(in_line, '#') > 2) in_line = in_line(1:index(in_line, '#') - 1)
+                if (index(in_line, '!') > 2) in_line = in_line(1:index(in_line, '!') - 1)
                 call compact(in_line)
                 call parse(in_line, delim, out_args, nargs)
                 if (.not. nargs > 0) then
@@ -764,7 +759,7 @@
                         end do
                         cifg%PROCESS_ACTIVE = (cifg%ts_flag > 0)
 
-                    !> Cropland irrigation module.
+                    !> Run mode.
                     case ('RUNMODE')
                         do j = 2, nargs
                             select case (lowercase(out_args(j)))
@@ -774,19 +769,33 @@
                                 case ('runclass')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                case ('nolss')
+                                    RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
+                                    RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                case ('runrte')
+                                    WF_RTE_flgs%PROCESS_ACTIVE = .false.
+                                    rteflg%PROCESS_ACTIVE = .true.
+                                case ('noroute')
+                                    WF_RTE_flgs%PROCESS_ACTIVE = .false.
+                                    rteflg%PROCESS_ACTIVE = .false.
                                 case ('default')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
                                     WF_RTE_flgs%PROCESS_ACTIVE = .true.
+                                    rteflg%PROCESS_ACTIVE = .false.
                                     exit
                                 case ('diagnostic')
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
                                     WF_RTE_flgs%PROCESS_ACTIVE = .false.
+                                    rteflg%PROCESS_ACTIVE = .false.
                                     exit
                             end select
                         end do
-                        cifg%PROCESS_ACTIVE = (cifg%ts_flag > 0)
+
+                    !> INPUTPARAMSFORMFLAG
+                    case ('INPUTPARAMSFORMFLAG')
+                        INPUTPARAMSFORM = adjustl(in_line)
 
                     !> Unrecognized flag.
                     case default

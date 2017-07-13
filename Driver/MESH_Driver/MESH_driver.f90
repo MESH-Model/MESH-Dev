@@ -94,24 +94,18 @@ program RUNMESH
 !>  -the symbol "!futuredo" refers to places where the developers
 !>  would like to work on with a low priority.
 
-    use sa_mesh_shared_variables
-
-    use FLAGS
-
-    use mpi_flags
-    use mpi_shared_variables
     use mpi_module
-
+    use model_files
+    use sa_mesh_shared_variables
+    use FLAGS
     use sa_mesh_run_within_tile
     use sa_mesh_run_within_grid
     use sa_mesh_run_between_grid
-
-    use MODEL_OUTPUT
-    use model_output_variabletypes
-    use climate_forcing
     use model_dates
+    use climate_forcing
+    use model_output_variabletypes
+    use MODEL_OUTPUT
     use SIMSTATS
-    use model_files
 
     implicit none
 
@@ -163,7 +157,7 @@ program RUNMESH
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
     !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = '1037'
+    character(24) :: VERSION = '1064'
     character(8) RELEASE
 !-    logical VER_OK
 

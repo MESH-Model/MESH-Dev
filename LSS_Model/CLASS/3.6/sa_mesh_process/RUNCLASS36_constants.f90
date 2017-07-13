@@ -8,20 +8,10 @@ module RUNCLASS36_constants
     !* ICTEM: Number of CTEM vegetation categories (1: not using CTEM).
     integer, parameter :: ICAN = 4, ICP1 = ICAN + 1, ICTEM = 1
 
-    !> Constants for output (read from file).
-    !* TITLE: PROJECT DESCRIPTOR (6 COLUMNS: 4 CHARACTER STRINGS)
-    !* NAME: AUTHOR, RESEARCHER (6 COLUMNS: 4 CHARACTER STRINGS)
-    !* PLACE: SITE LOCATION, BASIN (6 COLUMNS: 4 CHARACTER STRINGS)
-    character(4) TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, &
-        TITLE6, NAME1, NAME2, NAME3, NAME4, NAME5, NAME6, &
-        PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
-
-    integer JLAT
-
     !> Control flags.
     !* ALL: DESCRIPTIONS ARE WRITTEN WHERE RUN_OPTIONS.INI IS READ
-    integer IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
-        IALS, IALG, ITG, ITC, ITCG
+!-    integer IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
+!-        IALS, IALG, ITG, ITC, ITCG
     integer ICTEMMOD
 
     !> Flags for WATROF.

@@ -62,6 +62,15 @@ subroutine write_flowinit_fst(unitNum, flname, iyear, imonth, iday, ihour)
    forall (jj=1:ubound(qo1,1)) outarray(yyy(jj),xxx(jj))=qo2rem(jj)
    call write_fst(unitNum,flname,'qo1 ',iyear,imonth,iday,ihour,20)
 
+   ! Initial grid diverted flow (removed): qo2remirr
+    do i=1,ycount          ! Reinitialize the output array
+      do j=1,xcount
+        outarray(i,j)=0.0
+      end do
+    end do
+   forall (jj=1:ubound(qo1,1)) outarray(yyy(jj),xxx(jj))=qo2remirr(jj)
+   call write_fst(unitNum,flname,'qo1 ',iyear,imonth,iday,ihour,30)
+
    ! Grid channel storage: store1 -> 'stor'
     do i=1,ycount          ! Reinitialize the output array
       do j=1,xcount

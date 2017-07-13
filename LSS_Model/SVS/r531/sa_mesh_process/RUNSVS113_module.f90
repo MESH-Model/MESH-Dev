@@ -12,9 +12,9 @@ module RUNSVS113_module
 
     subroutine RUNSVS113(shd, fls, ts, cm, wb, eb, sp)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -208,7 +208,7 @@ module RUNSVS113_module
 !-            stas%sfc%tpnd(k + 1) =
 !-            stas%sfc%zpnd(k + 1) =
 !-            stas%sfc%pndw(k + 1) =
-            stas%sfc%evap(k + 1) = bus(etr + k)*(86400.0/ic%dts)
+            stas%sfc%evap(k + 1) = bus(fvap + k)
             stas%sfc%qevp(k + 1) = bus(fv + k)
             stas%sfc%hfs(k + 1) = bus(fc + k)
             stas%sfc%rofo(k + 1) = max(0.0, bus(runofftot + k))/ic%dts

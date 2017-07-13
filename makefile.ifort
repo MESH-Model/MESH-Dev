@@ -20,12 +20,12 @@ include makefile.def
 #   FC=ifort for Intel compiler (Intel Visual Compiler or plato.usask.ca)
 # ALSO UPDATE FTN90PP PRECOMPILER FOR SVS.
 #FC=gfortran
-#FC=ifort
+FC=ifort
 
 # MPI compilers for parallel computing
 #   FC=mpifort for OpenMPI wrapper with either GNU or Intel compiler (Cygwin or plato.usask.ca)
 # COMMENT MPI STUB IF USING AN MPI COMPILER.
-FC=mpifort
+#FC=mpifort
 
 # Flags for compiling, profiling, and debugging - comment as necessary
 #   -O2: Default optimization.
@@ -39,14 +39,14 @@ LFLAG=-c -O2
 # Rules for MPI
 # ======================================================================
 # Comment the next line if compiling for MPI.
-#OBJECTS:=	mpi_stub.o $(OBJECTS)
+OBJECTS:=	mpi_stub.o $(OBJECTS)
 
 # ======================================================================
 # Build SA_MESH executable and print message
 # ======================================================================
 all: ${OBJECTS}
-#	$(FC) -o sa_mesh  $(OBJECTS)
-	$(FC) -o mpi_sa_mesh  $(OBJECTS)
+	$(FC) -o sa_mesh  $(OBJECTS)
+#	$(FC) -o mpi_sa_mesh  $(OBJECTS)
 
 #static: ${OBJECTS}
 # For MinGW only (the Cygwin library cannot be statically linked to the binary):
@@ -112,6 +112,6 @@ clean:
 # ======================================================================
 veryclean:
 # 'rm' for Cygwin, 'del' for MinGW - comment as necessary
-#	rm *.mod *.o sa_mesh
-	rm *.mod *.o mpi_sa_mesh
+	rm *.mod *.o sa_mesh
+#	rm *.mod *.o mpi_sa_mesh
 #	del *.mod *.o sa_mesh.exe

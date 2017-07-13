@@ -70,6 +70,11 @@
            totfract = totfract + fcover(i,type)
 !
         END DO
+
+        !  ADD half of URBAN class (21)
+        type=21
+        totfract = totfract + 0.5 * fcover(i,type)
+
 !
         IF (totfract.GE.PETIT) THEN
 
@@ -85,6 +90,21 @@
             endif
             aggf(i) = aggf(i) + fcover(i,type)* table_val
           END DO
+
+          !   ADD  HALF of URBAN CLASS (=21)
+          type=21
+!
+          if (lat(i).ge.0.0) then
+!              northern hemisphere
+             table_val = tablen(type)
+          else
+!              southern hemisphere
+             table_val = tables(type)
+          endif
+          aggf(i) = aggf(i) + 0.5 * fcover(i,type)* table_val
+
+! -----------       FINAL AGGREGATED VALUE
+
           aggf(i) = aggf(i) / totfract
 
         END IF

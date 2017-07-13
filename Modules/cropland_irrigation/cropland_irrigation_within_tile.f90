@@ -9,11 +9,7 @@ module cropland_irrigation_within_tile
     subroutine runci_within_tile(shd, fls, cm)
 
         use mpi_module
-        use mpi_shared_variables
-        use mpi_utilities
-        use mpi_flags
         use model_files_variables
-        use sa_mesh_shared_parameters
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing

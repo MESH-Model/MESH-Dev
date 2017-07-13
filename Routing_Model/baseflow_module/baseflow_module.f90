@@ -48,9 +48,9 @@ module baseflow_module
 
     subroutine LZS_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -154,9 +154,9 @@ module baseflow_module
 
     subroutine LZS_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -196,7 +196,7 @@ module baseflow_module
 !+                ROFGAT = ROFGAT - ROFBGAT
 !+                Wseep = ROFBGAT*3600.0
 !+                do k = il1, il2
-!+                    call baseFlow(Wseep(k), dgw(k), Wrchrg(k), agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
+!+                    call baseFlow_luo2012(Wseep(k), dgw(k), Wrchrg(k), agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
 !+                    ROFBGAT(k) = Qb_new/3600.0
 !+                    Qb(k) = Qb_new
 !+                    Wrchrg(k) = Wrchrg_new
@@ -216,7 +216,7 @@ module baseflow_module
 
     subroutine LZS_finalize(fls, shd)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use model_dates

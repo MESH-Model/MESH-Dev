@@ -58,7 +58,6 @@ C Local variables
       integer lineLen, KeyLen, wordCount
       logical rStat, lineType, foundEndHeader, insideColMetaData
       real*4,    dimension(:), allocatable :: yres,xres
-      integer*4, dimension(:), allocatable :: resindex
       integer*4  noresvi
 
 C Set unit and fln number
@@ -145,8 +144,8 @@ C Search for and read tb0 file header
                else
                   iStat=ParseResvParam(header,keyword,KeyLen,subString)
                   if (keyword(1:KeyLen) .eq. ':starttime') then
-                     read(subString( 9:10),'(i1)') relday1
-                     read(subString(12:13),'(i1)') relhour1
+                     read(subString( 9:10),'(i2)') relday1
+                     read(subString(12:13),'(i2)') relhour1
                   endif
                   if(iStat .lt. 0) then
                      write(*,'(2(A))') 'ERROR parsing ', fln(flnNum)
@@ -226,7 +225,7 @@ c End of the loop if noresv.ge.1
          if(noresv.gt.0)then
             allocate(b1(noresv),b2(noresv),b3(noresv),
      *        b4(noresv),b5(noresv),ires(noresv),jres(noresv),
-     *        resindex(noresv),
+     *        resindex(noresv),b6(noresv),b7(noresv),
      *        yres(noresv),xres(noresv),poliflg(noresv), !nk 18/06/04
      *        resname(noresv),qrel(noresv,nrel_max),
      *        qdwpr(noresv,nrel_max),lake_elv(noresv,nrel_max),
@@ -240,7 +239,7 @@ c End of the loop if noresv.ge.1
      *       'Error with allocation in read_resv_ef @172'
          else
             allocate(b1(1),b2(1),b3(1),b4(1),b5(1),ires(1),jres(1),
-     *           resindex(1),
+     *           resindex(1),b6(1),b7(1),
      *           resname(1),qrel(1,nrel),qdwpr(1,nrel),poliflg(1),
      *           stat=iAllocate)
             if(iAllocate.ne.0) STOP
@@ -294,6 +293,8 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
          b3(i) = colHeader%colCoeff3(i) ! coefficient 3
          b4(i) = colHeader%colCoeff4(i) ! coefficient 4
          b5(i) = colHeader%colCoeff5(i) ! coefficient 5
+         b6(i) = colHeader%colCoeff6(i) ! coefficient 6
+         b7(i) = colHeader%colCoeff7(i) ! coefficient 7
          if(b3(i).eq.0.0) then
            poliflg(i)='n'
          else
@@ -363,6 +364,8 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
                b3(i) = colHeader%colCoeff3(i) ! coefficient 3
                b4(i) = colHeader%colCoeff4(i) ! coefficient 4
                b5(i) = colHeader%colCoeff5(i) ! coefficient 5
+               b6(i) = colHeader%colCoeff6(i) ! coefficient 6
+               b7(i) = colHeader%colCoeff7(i) ! coefficient 7
          if(b3(i).eq.0.0) then
            poliflg(i)='n'
          else
@@ -394,6 +397,8 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
          b3(i) = colHeader%colCoeff3(i) ! coefficient 3
          b4(i) = colHeader%colCoeff4(i) ! coefficient 4
          b5(i) = colHeader%colCoeff5(i) ! coefficient 5
+         b6(i) = colHeader%colCoeff6(i) ! coefficient 6
+         b7(i) = colHeader%colCoeff7(i) ! coefficient 7
          if(b3(i).eq.0.0) then
            poliflg(i)='n'
          else
@@ -445,7 +450,8 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
          if(iopt.ge.1)then
             write(52,1011)
             write(52,1013)(i,ires(i),jres(i),
-     *           b1(i),b2(i),b3(i),b4(i),b5(i),resname(i),i=1,noresv)
+     *           b1(i),b2(i),b3(i),b4(i),b5(i),
+     *           b6(i),b7(i),resname(i),i=1,noresv)
          endif
 
 !         THE ORDER OF READING THE COORDINATES OF THE RESERVOIRS
@@ -523,10 +529,12 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
          if(iopt.ge.1)then
             write(52,1011)
             write(52,1013)(i,ires(i),jres(i),
-     *           b1(i),b2(i),b3(i),b4(i),b5(i),resname(i),i=1,noresv)
+     *           b1(i),b2(i),b3(i),b4(i),b5(i),
+     *           b6(i),b7(i),resname(i),i=1,noresv)
             write(52,1011)
             write(52,1013)(i,ires(i),jres(i),
-     *           b1(i),b2(i),b3(i),b4(i),b5(i),resname(i),i=1,noresv)
+     *           b1(i),b2(i),b3(i),b4(i),b5(i),
+     *           b6(i),b7(i),resname(i),i=1,noresv)
          endif
 
 !       THE ORDER OF READING THE COORDINATES OF THE RESERVOIRS
@@ -636,7 +644,7 @@ d     print*,'inbsnflg allocated for ',no,' + ',noresv
  500  format(256f10.3)
  1011 format(' ',3x,'  i  ires(i) jres(i)    b1(i)     b2(i)',
      *     '    b3(i)     b4(i)')
- 1013 format(' ',3x,i3,2i8,5e12.3,a12/)
+ 1013 format(' ',3x,i3,2i8,7e12.3,a12/)
  6801 format('   read_resv_ef: reservoir no =',i3,' mhtot =',i5)
  6802 format('   ',256f8.2)
 

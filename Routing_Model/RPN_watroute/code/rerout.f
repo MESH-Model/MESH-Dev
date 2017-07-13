@@ -52,18 +52,10 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       integer  :: dayrad(12)
       real*4   :: old,hold,wt,dtmin,at,div,thr
       real*4   :: sup,mhu,stc,eri,ont,cha,mean_elv,delta_elv
-      real*4   :: niv1,niv2,niv3,niv4,niv5,niv13,niv14,niv15,niv16
-      real*4   :: niv17,niv18,niv19,niv20,niv21,niv22,niv23,niv24,niv25
-      real*4   :: niv26,niv27,niv28,niv29,niv31,niv32,niv33,niv35,niv36
-      real*4   :: niv37,niv40,niv42,niv43,niv44,niv45,niv46,niv47,niv48
-      real*4   :: niv49,niv50,niv51,niv52,niv53
-      real*4   :: niv6,niv7,niv8,niv9,niv10,niv11,niv12,niv30,niv34
-      real*4   :: niv38,niv39,niv41
-
 !      real*4   :: sup_init,mhu_init,stc_init,eri_init,ont_init
 !      real*4   :: cha_init
       real*4   :: zflow,reacharea,sfactor,levdiff
-      real*4   :: retard_factor(12,59)  ! ice-weed retardation for reaches where lake elevation is calculated
+      real*4   :: retard_factor(12,6)  ! ice-weed retardation for reaches where lake elevation is calculated
 !     rev. 9.1.55  Jun.  12/04  - NK: write new str files to strfw\newfmt folder.
       LOGICAL exists
       character(20) :: junk
@@ -74,6 +66,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
       integer  :: iAllocate
       real*4, dimension(:), allocatable :: reach_init
+      real*4, dimension(:), allocatable :: niv
 
 !     SAVES THE LOCAL VARIABLES FROM ONE RUN TO NEXT
       SAVE
@@ -84,59 +77,6 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      * 650.,510.,110.,0.,0.,0.,0.,0.,0.,0.,0.,140.,
      * 110.,140.,80.,140.,0.,60.,230.,140.,80.,60.,0.,0.,
      * 170.,300.,150.,0.,0.,0.,0.,0.,0.,0.,0.,10.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-     * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
      * 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0./
 
 !     Initial water elevations
@@ -145,6 +85,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 
       if (iswitchrerout .eq. 0) then
         allocate(reach_init(Nreaches),stat=iAllocate)
+        allocate(niv(Nreaches),stat=iAllocate)
         iswitchrerout = 1
       end if
       if (iAllocate.ne.0) STOP 
@@ -180,65 +121,13 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 ! 3) the scaling factor (not the exponent) from the stage-discharge curve (used in qo2): sfactor, m2/s
 ! 4) Coeff2 in ..._REL.tb0, which is the exponent from the stage-discharge curve is called here b2(l)
         if(firstpass.eq.'y')then
+          niv(i) = reach_init(i)
           if(resname(i).eq.'Superior     ') sup = reach_init(i)
           if(resname(i).eq.'Huron        ') mhu = reach_init(i)
           if(resname(i).eq.'StClair      ') stc = reach_init(i)
           if(resname(i).eq.'Erie         ') eri = reach_init(i)
           if(resname(i).eq.'Ontario      ') ont = reach_init(i)
           if(resname(i).eq.'Champlain    ') cha = reach_init(i)
-	  if(resname(i).eq.'lac1         ') niv1 = reach_init(i)
-          if(resname(i).eq.'lac2         ') niv2 = reach_init(i)
-          if(resname(i).eq.'lac3         ') niv3 = reach_init(i)
-          if(resname(i).eq.'lac4         ') niv4 = reach_init(i)
-          if(resname(i).eq.'lac5         ') niv5 = reach_init(i)
-          if(resname(i).eq.'lac13        ') niv13 = reach_init(i)
-          if(resname(i).eq.'lac14        ') niv14 = reach_init(i)
-          if(resname(i).eq.'lac15        ') niv15 = reach_init(i)
-          if(resname(i).eq.'lac16        ') niv16 = reach_init(i)
-          if(resname(i).eq.'lac17        ') niv17 = reach_init(i)
-          if(resname(i).eq.'lac18        ') niv18 = reach_init(i)
-          if(resname(i).eq.'lac19        ') niv19 = reach_init(i)
-          if(resname(i).eq.'lac20        ') niv20 = reach_init(i)
-          if(resname(i).eq.'lac21        ') niv21 = reach_init(i)
-          if(resname(i).eq.'lac22        ') niv22 = reach_init(i)
-          if(resname(i).eq.'lac23        ') niv23 = reach_init(i)
-          if(resname(i).eq.'lac24        ') niv24 = reach_init(i)
-          if(resname(i).eq.'lac25        ') niv25 = reach_init(i)
-          if(resname(i).eq.'lac26        ') niv26 = reach_init(i)
-          if(resname(i).eq.'lac27        ') niv27 = reach_init(i)
-          if(resname(i).eq.'lac28        ') niv28 = reach_init(i)
-          if(resname(i).eq.'lac29        ') niv29 = reach_init(i)
-          if(resname(i).eq.'lac31        ') niv31 = reach_init(i)
-          if(resname(i).eq.'lac32        ') niv32 = reach_init(i)
-          if(resname(i).eq.'lac33        ') niv33 = reach_init(i)
-          if(resname(i).eq.'lac35        ') niv35 = reach_init(i)
-          if(resname(i).eq.'lac36        ') niv36 = reach_init(i)
-          if(resname(i).eq.'lac37        ') niv37 = reach_init(i)
-          if(resname(i).eq.'lac40        ') niv40 = reach_init(i)
-          if(resname(i).eq.'lac42        ') niv42 = reach_init(i)
-          if(resname(i).eq.'lac43        ') niv43 = reach_init(i)
-          if(resname(i).eq.'lac44        ') niv44 = reach_init(i)
-          if(resname(i).eq.'lac45        ') niv45 = reach_init(i)
-          if(resname(i).eq.'lac46        ') niv46 = reach_init(i)
-          if(resname(i).eq.'lac47        ') niv47 = reach_init(i)
-          if(resname(i).eq.'lac48        ') niv48 = reach_init(i)
-          if(resname(i).eq.'lac49        ') niv49 = reach_init(i)
-          if(resname(i).eq.'lac50        ') niv50 = reach_init(i)
-          if(resname(i).eq.'lac51        ') niv51 = reach_init(i)
-          if(resname(i).eq.'lac52        ') niv52 = reach_init(i)
-          if(resname(i).eq.'lac53        ') niv53 = reach_init(i)
-          if(resname(i).eq.'lac6         ') niv6 = reach_init(i)
-          if(resname(i).eq.'lac7         ') niv7 = reach_init(i)
-          if(resname(i).eq.'lac8         ') niv8 = reach_init(i)
-          if(resname(i).eq.'lac9         ') niv9 = reach_init(i)
-          if(resname(i).eq.'lac10        ') niv10 = reach_init(i)
-          if(resname(i).eq.'lac11        ') niv11 = reach_init(i)
-          if(resname(i).eq.'lac12        ') niv12 = reach_init(i)
-          if(resname(i).eq.'lac30        ') niv30 = reach_init(i)
-          if(resname(i).eq.'lac34        ') niv34 = reach_init(i)
-          if(resname(i).eq.'lac38        ') niv38 = reach_init(i)
-          if(resname(i).eq.'lac39        ') niv39 = reach_init(i)
-          if(resname(i).eq.'lac41        ') niv41 = reach_init(i)
 
 ! Initialize values for the current time step: are getting strange numbers for reaches other than those above; should remain at zero
           lake_elv(i,fhr)   = 0.0
@@ -408,1156 +297,85 @@ c     *      183.2,175.98,174.8,174.01,74.61/
         lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
 
-
-      elseif(resname(l).eq.'lac1         ')then
-!        write(*,*)'lac 1 detected'
-!       Lake of the Woods
-        zflow=0.0            !m    the level at and below which outflow from $
-        reacharea=3.7689795e+09  !m2   the surface are of the reach
-
-        levdiff = max(0.0, niv1-zflow)
-        if(firstpass.eq.'y')then
-!         initialize storage       
-!         storage = live storage
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        
-        qo2(n)=max(0.0, b1(l)*store2(n)+b2(l)*store2(n)**2.+
-     *    b3(l)*store2(n)**3.)
-!        qo2(n)=max(0.0, b1(l)*store2(n)**b2(l))
-
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        niv1=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv1
-        lake_inflow(l,fhr)=qi2(n)
-
-
-      elseif(resname(l).eq.'lac2         ')then
-!       storage curve = b1 store2 + b2 store2**2 + b3 store2 **3
-        zflow=0.0            !m    the level at and below which outflow from $
-        reacharea=3.018121e+08  !m2   the surface are of the reach
-
-        levdiff = max(0.0, niv2-zflow)
-        if(firstpass.eq.'y')then
-!         initialize storage
-!         storage = live storage
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0, b1(l)*store2(n)+b2(l)*store2(n)**2+
-     *    b3(l)*store2(n)**3)
-
-
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        niv2=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv2
-        lake_inflow(l,fhr)=qi2(n)
-
-      elseif(resname(l).eq.'lac3         ')then
-!       Lake Manitoba
-        zflow=0.0            !m    the level at and below which outflow from $
-        reacharea=4.3185418e+09  !m2   the surface are of the reach
-
-        levdiff = max(0.0, niv3-zflow)
-        if(firstpass.eq.'y')then
-!         initialize storage
-!         storage = live storage
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-!        qo2(n)=max(0.0, b1(l)*store2(n)+b2(l)*store2(n)**2.+
-!     *    b3(l)*store2(n)**3.+b4(l)*store2(n)**4.)
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-
-        niv3=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv3
-        lake_inflow(l,fhr)=qi2(n)
-
-      elseif(resname(l).eq.'lac4         ')then
-!       storage curve = b1 store2 + b2 store2**2 + b3 store2 **3
-        zflow=0.0            !m    the level at and below which outflow from $
-        reacharea=3.6616595e+08  !m2   the surface are of the reach
-
-        levdiff = max(0.0, niv4-zflow)
-        if(firstpass.eq.'y')then
-!         initialize storage
-!         storage = live storage
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0, b1(l)*store2(n)+b2(l)*store2(n)**2.
-     *   +b3(l)*store2(n)**3.)
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        niv4=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv4
-        lake_inflow(l,fhr)=qi2(n)
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac5         ')then
-!       Lake Winnipeg
-        zflow=0.0            !m   
-
-        reacharea=2.5470077e+10  !m2   the surface are of the reach
-        levdiff = max(0.0, niv5-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0, b1(l)*store2(n)+b2(l)*store2(n)**2.+
-     *    b3(l)*store2(n)**3.)
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv5=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv5
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac13        ')then
-!        write(*,*) '!!!!!!!!!!!!!!'
-!        write(*,*) 'lac13 detected'
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=2.0033869e+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv13-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv13=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv13
-
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac14        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=3.3813504000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv14-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv14=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv14
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac15        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=5.7984742000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv15-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv15=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv15
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac16        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=3.9528128000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv16-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv16=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv16
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac17        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=4.7186259000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv17-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv17=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv17
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac18        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=3.9551802000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv18-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv18=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv18
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac19        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=3.7348154000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv19-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv19=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv19
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac20        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=2.2799864000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv20-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv20=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv20
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac21        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=4.5307276000E+07  !m2   the surface are of the reach
-        levdiff = max(0.0, niv21-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv21=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv21
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac22        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=8.8087674000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv22-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv22=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv22
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac23        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=3.6749344000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv23-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv23=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv23
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac24        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=3.1371667000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv24-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv24=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv24
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac25        ')then
-!        write(*,*)'lac 25 detected'
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=1.3E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv25-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv25=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv25
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac26        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=1.5873316000E+09  !m2   the surface are of the reach
-        levdiff = max(0.0, niv26-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv26=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv26
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac27        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=2.2885949000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv27-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv27=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv27
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac28        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=2.0086298000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv28-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv28=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv28
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac29        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=4.7986202000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv29-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv29=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv29
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac31        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=2.2685586000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv31-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv31=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv31
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac32        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=4.7782589000E+09  !m2   the surface are of the reach
-        levdiff = max(0.0, niv32-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-
-!        qo2(n)=max(0.0, b1(l)*store2(n)+b2(l)*store2(n)**2.+
-!     *    b3(l)*store2(n)**3.)
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv32=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv32
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac33        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=3.8397754000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv33-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv33=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv33
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac35        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=4.8399878000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv35-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv35=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv35
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac36        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=1.2973901000E+09  !m2   the surface are of the reach
-        levdiff = max(0.0, niv36-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv36=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv36
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac37        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=2.6510861000E+09  !m2   the surface are of the reach
-        levdiff = max(0.0, niv37-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv37=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv37
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac40        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=2.8865472000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv40-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv40=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv40
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac42        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=1.3745501000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv42-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv42=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv42
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac43        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=2.2040310000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv43-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv43=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv43
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac44        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=6.0306246000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv44-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv44=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv44
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac45        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=6.0756134000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv45-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv45=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv45
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac46        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=3.3212134000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv46-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv46=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv46
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac47        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=3.6306611000E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv47-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv47=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv47
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac48        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=1.0E+08  !m2   the surface are of the reach
-        levdiff = max(0.0, niv48-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv48=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv48
-
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac6         ')then
-!        write(*,*) '!!!!!!!!!!lac6 detected'
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=2355580200  !m2   the surface are of the reach
-        levdiff = max(0.0, niv6-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv6=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv6
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac7         ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=5932740100  !m2   the surface are of the reach
-        levdiff = max(0.0, niv7-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv7=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv7
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac8         ')then
-!        write(*,*) '!!!!!!!!!!lac8 detected'
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=178264190  !m2   the surface are of the reach
-        levdiff = max(0.0, niv8-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv8=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv8
-
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac9         ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=310502720  !m2   the surface are of the reach
-        levdiff = max(0.0, niv9-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv9=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv9
-
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac10        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=382071010  !m2   the surface are of the reach
-        levdiff = max(0.0, niv10-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv10=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv10
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac11        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=474986940  !m2   the surface are of the reach
-        levdiff = max(0.0, niv11-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv11=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv11
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac12        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=2347653400  !m2   the surface are of the reach
-        levdiff = max(0.0, niv12-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv12=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv12
-
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac30        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=2241550800  !m2   the surface are of the reach
-        levdiff = max(0.0, niv30-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv30=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv30
-
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac34        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=491226180  !m2   the surface are of the reach
-        levdiff = max(0.0, niv34-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv34=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv34
-
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac38        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=612314180  !m2   the surface are of the reach
-        levdiff = max(0.0, niv38-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv38=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv38
-
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac39        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=536343650  !m2   the surface are of the reach
-        levdiff = max(0.0, niv39-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv39=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv39
-
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac41        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=1327299700  !m2   the surface are of the reach
-        levdiff = max(0.0, niv41-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv41=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv41
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac49        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=4045317  !m2   the surface are of the reach
-        levdiff = max(0.0, niv49-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv49=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv49
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac50        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=9845152  !m2   the surface are of the reach
-        levdiff = max(0.0, niv50-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv50=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv50
-
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac51        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=28 446 400  !m2   the surface are of the reach
-        levdiff = max(0.0, niv51-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv51=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv51
-
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac52        ')then
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=9706787  !m2   the surface are of the reach
-        levdiff = max(0.0, niv52-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv52=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv52
-
-
-!!!!!!!!!!
-!!!!!!!!!!
-      elseif(resname(l).eq.'lac53        ')then
-!        write(*,*)'lac53 detected'
-!       storage curve = b1 * (store2 ** b2)
-        zflow=0.0            !m
-
-        reacharea=1402187  !m2   the surface are of the reach
-        levdiff = max(0.0, niv53-zflow)
-
-        if(firstpass.eq.'y')then
-          store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-        endif
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        niv53=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv53
-
-
-
-!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!  CASES FOR RESERVOIRS NOT MANUALLY DEFINED 
-
       elseif(b1(l).ne.0.0)then
+
+!!!!!!!! NEW WAY: lake area and 0-flow level are read from reservoir template file
+
+        zflow=b7(l)            !m
+        reacharea=b6(l)        !m2   the surface area of the reach
+        levdiff = max(0.0, niv(l)-zflow)
+
+        if(firstpass.eq.'y'.and.resumflg.eq.'y')then
+          store1(n)=levdiff*reacharea
+          store2(n)=store1(n)
+          store2_strt(n)=store2(n)
+        endif
+
+
+        if(store2(n).gt.0.0)then
+	   if(b3(l).eq.0.0)then
+        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
+           else
+              qo2(n)=max(0.0,store2(n)*(b1(l)+store2(n)*
+     *        (b2(l)+store2(n)*
+     *        (b3(l)+store2(n)*(b4(l)+b5(l)*store2(n))))))
+           end if
+        else
+           qo2(n) = 0.0
+        end if
+
+        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
+        lake_inflow(l,fhr)=qi2(n)
+
+        niv(l)=store1(n)/reacharea+zflow
+        lake_elv(l,fhr)=niv(l)
+
+
+!!!!!!!! OLD WAY
+
 !       natural lake or uncontrolled reservoir routing:
 ! NOTE:  the lake level is not calculated for reaches other than the Great Lakes and Lake Champlain;
 !        the lake level will be written in output files as zero-valued
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        if(store2(n).gt.0.0)then
-          if(b3(l).eq.0.0)then
-            qo2(n)=b1(l)*store2(n)**b2(l)
-          else
-            old=qo1(n)
-            hold=1.0e+25
-            do ic=1,20 
-              if(abs(hold-store2(n)).gt.0.003*hold)then
+!        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
+!        if(store2(n).gt.0.0)then
+!          if(b3(l).eq.0.0)then
+!            qo2(n)=b1(l)*store2(n)**b2(l)
+!          else
+!            old=qo1(n)
+!            hold=1.0e+25
+!            do ic=1,20 
+!              if(abs(hold-store2(n)).gt.0.003*hold)then
 !               rev  9.1.03  July  24/01  - added polinomial 
-                qo2(n)=store2(n)*(b1(l)+store2(n)*(b2(l)+store2(n)*
-     *             (b3(l)+store2(n)*(b4(l)+b5(l)*store2(n)))))
-      
-                wt=amax1(0.5,float(ic)/21.0)
-                qo2(n)=(1.0-wt)*qo2(n)+wt*old
-                old=qo2(n)
-                hold=store2(n)
-                store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-              else
-                go to 26
-              endif   ! hold-store
-            end do    !ic=1,20
-26          continue  ! sorry about that
-          end if      ! flow distribution type
-        else  ! Let store2 remain negative to conserve water and shut off the outflow
-          if(store2(n).lt.0.0) write(98,9801)l,n,store2(n)
-          qo2(n)=0.0
-        end if       ! store2.gt.0.0
-        if(store2(n).le.0.0)then
-          qo2(n)=0.0
-          write(52,6804)n,l
-        endif
-	lake_inflow(l,fhr)=qi2(n)
+!                qo2(n)=store2(n)*(b1(l)+store2(n)*(b2(l)+store2(n)*
+!     *             (b3(l)+store2(n)*(b4(l)+b5(l)*store2(n)))))
+!      
+!                wt=amax1(0.5,float(ic)/21.0)
+!                qo2(n)=(1.0-wt)*qo2(n)+wt*old
+!                old=qo2(n)
+!                hold=store2(n)
+!                store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
+!              else
+!                go to 26
+!              endif   ! hold-store
+!            end do    !ic=1,20
+!26          continue  ! sorry about that
+!          end if      ! flow distribution type
+!        else  ! Let store2 remain negative to conserve water and shut off the outflow
+!          if(store2(n).lt.0.0) write(98,9801)l,n,store2(n)
+!          qo2(n)=0.0
+!        end if       ! store2.gt.0.0
+!        if(store2(n).le.0.0)then
+!          qo2(n)=0.0
+!          write(52,6804)n,l
+!        endif
+!	lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
-        if(iopt.ge.2)then
-          write(52,6004)
-     *           qi1(n),qi2(n),store1(n),store2(n),qo1(n),qo2(n)
-        endif
+!        if(iopt.ge.2)then
+!          write(52,6004)
+!     *           qi1(n),qi2(n),store1(n),store2(n),qo1(n),qo2(n)
+!        endif
+      
+! END OLD OR NEW WAY FOR HANDLING RESERVOIRS
         
 !       CALCULATE THE DETENTION TIME
 !        if(qo1(n).gt.0.001) at=store2(n)/qo1(n)
@@ -1642,7 +460,7 @@ c        dtmin=amin1(at,dtmin)
   502 format(' resv flow data extrapolated ',i5,' hours')
   504 format(' noresv,nrel,ktr/',3i5)
  1011 format(' ',3x,'  i  ires(i) jres(i)    b1(i)     b2(i)',
-     *	'    b3(i)     b4(i)')
+     *       '    b3(i)     b4(i)')
  1013 format(' ',3x,i3,2i8,5f10.5,a12/)
  4901 format(25i1)
  4902 format(3i5)

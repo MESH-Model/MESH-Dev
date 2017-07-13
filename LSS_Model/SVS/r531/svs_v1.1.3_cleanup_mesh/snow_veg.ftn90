@@ -25,7 +25,7 @@
       REAL HU(N), RAINRATE(N), SNOWRATE(N), T(N), T2M(N)
       REAL U10M(N), V10M(N)
       REAL RNET(N), HFLUX(N), LE(N), EFLUX(N), RSNOW(N)
-      REAL RHOSNO(N), WR(N)
+      REAL RHOSNO(N), WR(N), TAVG(N)
       REAL DT, Z0HSNOW, Z0(N), FCOR(N), ZUSL(N), ZTSL(N),PSNVHA(N)
 
 !
@@ -118,9 +118,9 @@ include "thermoconsts.inc"
 !
       REAL LAMI, CI, DAY
       REAL EMISSN, RAIN1, RAIN2, MLTRAIN 
-      REAL CRMIN, CRMAX, TAUHOUR, RHOE
+      REAL CRMIN, CRMAX, TAUHOUR, RHOE, MYOMEGA
       REAL RSNOW_DAY, RHOICE, ANSMIN, EMISONE
-      REAL FWOOD
+      REAL FWOOD, MAX_EFLUX
 !
       REAL PETIT
       DATA PETIT/1.E-7/
@@ -184,10 +184,15 @@ include "thermoconsts.inc"
       REAL RHOSLT     (N)  
       REAL WSX        (N)  
       REAL RVRUN      (N)  
+      REAL KDIFFU     (N)
+      REAL DAMPD      (N)
+      REAL BCOEF      (N)
+      REAL DMELT      (N)     
+
 !                removed it from output
 !                might need to add it back ?    
       REAL DSNOWDT    (N)   
-      REAL RVEGVH     (N) 
+!      REAL RVEGVH     (N) 
 !
 include "dintern.inc"
 include "fintern.inc"
@@ -212,6 +217,7 @@ include "fintern.inc"
       TAUHOUR = 3600.
       RHOICE  = 0.9
       ANSMIN  = 0.5
+      MYOMEGA   = ( 2*PI )/ DAY
 !
       RAIN1   = 2.8e-8
       RAIN2   = 2.8e-7
@@ -265,6 +271,9 @@ include "fintern.inc"
  
 
         ZCS(I) = 2.0 * SQRT( PI/(LAMS(I)* 1000. * RHOSL(I)*CI*DAY ))
+
+        KDIFFU(I) =  LAMS(I) / ( CI * 1000. *RHOSL(I))
+
       END DO
 !
 !        2.     SPECIFIC HUMIDITY AT SNOW SURFACE
@@ -363,16 +372,32 @@ include "fintern.inc"
       DO I=1,N
          TSNST(I) = ( TSNS(I)*B(I) + C(I) ) / A(I)
       ENDDO
-!
-!
-!!       5.     MELTING AND FREEZING TENDENCIES OF SNOW
-!               ---------------------------------------
-!
-!                             Common portion of the MELTS and FREEZS
-!                             equations
-!
+
       DO I=1,N
-        WORK(I) = (TSNST(I)-TRPL) / ( ZCS(I)*CHLF*DT )
+        TSNDT(I) = (TSND(I) + DT*TSNST(I)/DAY) / (1.+DT/DAY)
+      END DO
+
+!
+!
+!!       6.     MELTING AND FREEZING TENDENCIES OF SNOW
+!               ---------------------------------------
+
+      DO I=1,N
+
+         DAMPD(I) = SQRT(  2 * KDIFFU(I) / MYOMEGA  )
+         IF(SNODP(I).GT.0.0) THEN
+            DMELT(I) = MIN(DAMPD(I),SNODP(I))
+            BCOEF(I) = ( 1. - exp( - DMELT(I)/DAMPD(I) ) ) * DAMPD(I) / DMELT(I)
+            !BCOEF(I) = ( 1. - exp( - SNODP(I)/DAMPD(I) ) ) * DAMPD(I) / SNODP(I)
+         ELSE
+            BCOEF(I) = 0.0
+         ENDIF
+
+         TAVG(I) = BCOEF(I) * TSNST(I) + (1-BCOEF(I)) * TSNDT(I)
+!
+!                         Common portion of the MELTS and FREEZS
+!
+         WORK(I) = (TAVG(I)-TRPL) / ( ZCS(I)*CHLF*DT )
       END DO
 !
 !
@@ -389,7 +414,13 @@ include "fintern.inc"
           RHOMAX(I) = 0.001 * RHOMAX(I)
         ELSE
 !                         have melting
-          MELTS(I)  = MIN( WORK(I) , WS(I)/DT )
+
+          if(snodp(i).gt.0.0 )then
+              MELTS(I)  = MIN( WORK(I) , WS(I)*(DMELT(I)/SNODP(I))/DT )
+          else
+              MELTS(I)  = 0.0
+          endif 
+
           FREEZS(I) = 0.0
           RHOMAX(I) = 600. - 20.47 / (SNODP(I)+PETIT) * & 
                            ( 1.-EXP(-SNODP(I)/0.0673))
@@ -450,6 +481,7 @@ include "fintern.inc"
 !
 !                              make sure don't exceed triple pt.
         TSNST(I) = MIN ( TSNST(I) , TRPL )
+        TSNDT(I) = MIN ( TSNDT(I) , TRPL )
 !        
       END DO      
 !
@@ -485,14 +517,17 @@ include "fintern.inc"
 !       IMPOSE MAXIMUM on EFLUX, based on available liquid water after melt/freez of reservoir... make sure latent heat consistent with this...
 !
         EFLUX(I) = (ZQSATT(I) - HU(I)) / RESA(I)
-!        EFLUX(I)=  MIN( EFLUX(I), & 
-!               (  (WS(I) + DSNOWDT(I)) / DT + SR(I) )  / RHOA(I) / PSNVHA(I) )
-        
+
+        if(PSNVHA(I).gt.0.0) then
+           MAX_EFLUX=(  (WS(I) + DSNOWDT(I)) / DT + SR(I) )  / RHOA(I) / PSNVHA(I)
+        else
+           MAX_EFLUX=0.0
+        endif
+
+        EFLUX(I)=  MIN( EFLUX(I),MAX_EFLUX )
+
         LE(I)    =  RHOA(I) * (CHLC+CHLF) * EFLUX(I)
-   
-
-
-!
+   !
       END DO
 !
 !
@@ -519,19 +554,11 @@ include "fintern.inc"
 !              
         IF(WS(I).ge.CRITSNOW.or.SR(I).gt.0.0) THEN
            WST(I) = WS(I) - DT * (RHOA(I)*PSNVHA(I)*EFLUX(I) - SR(I)) + DSNOWDT(I)
+           WST(I) = MAX(WST(I), 0.0)
         ELSE
            WST(I) = 0.0
         ENDIF
-        IF(WST(I).LT.0.0) WST(I)  = 0.0
       END DO
-!
-!!       9.     DEEP SNOW TEMPERATURE (TSND) AT TIME 'T+DT'
-!               ------------------------------------------
-!
-      DO I=1,N
-        TSNDT(I) = (TSND(I) + DT*TSNST(I)/DAY) / (1.+DT/DAY)
-      END DO
-!
 !
 !
 !
@@ -603,30 +630,25 @@ include "fintern.inc"
 !
 !                                       when there is freezing
 !
-        IF (WST(I).GT.0.0.AND.DSNOWDT(I).LT.0.0) & 
+        IF (WST(I).GT.0.0.AND.DSNOWDT(I).LT.0.0) THEN 
                ALPHAST(I) = (ALPHAS(I)-ANSMIN)*EXP(-0.01*DT/3600.) &  
                           +  ANSMIN & 
                           +  SR(I)*DT/WCRN*(ANSMAX-ANSMIN)
 !
 !                                        when there is melting
 !
-        IF (WST(I).GT.0.0.AND.DSNOWDT(I).GE.0.0) & 
+        ELSE IF (WST(I).GT.0.0.AND.DSNOWDT(I).GE.0.0) THEN 
                ALPHAST(I) = ALPHAS(I) - TODRY*DT/DAY &   
                           + SR(I)*DT/WCRN*(ANSMAX-ANSMIN)
-!
-!
-      END DO
-!
-!                                       limits of the albedo
-!
-      DO I=1,N
-!
-        IF (WST(I).GT.0.0) THEN
-          ALPHAST(I) = MIN( ANSMAX, ALPHAST(I) )
-          ALPHAST(I) = MAX( ANSMIN, ALPHAST(I) )
+
         ELSE
-          ALPHAST(I) = ANSMAX
-        END IF
+
+               ALPHAST(I) = ANSMAX
+!
+        ENDIF
+
+        ALPHAST(I) = MAX( ANSMIN, ALPHAST(I) )
+        ALPHAST(I) = MIN( ANSMAX, ALPHAST(I) )
 !
       END DO
 !
@@ -660,10 +682,13 @@ include "fintern.inc"
 !                           A) decrease due to fresh new snow
 !
       DO I=1,N
+        WSX(I)   = MAX( WST(I),SR(I)*DT)
         IF (WST(I).GT.0.0) THEN
-          WSX(I)   = MAX( WST(I),SR(I)*DT)
+          
           RHOSLT(I) = ( (WSX(I)-SR(I)*DT) * RHOSL(I)&  
                         + (SR(I)*DT) * RHOSFALL(I)) / WSX(I)
+        ELSE
+          RHOSLT(I) = RHOSDEF
         END IF
       END DO
 !
@@ -684,21 +709,10 @@ include "fintern.inc"
         IF (WST(I).GT.0.0) THEN
           RHOSLT(I) = ( WST(I)*RHOSLT(I) + FREEZS(I)*DT*RHOICE ) & 
                         / ( WST(I)+FREEZS(I)*DT )
-        END IF
-      END DO
-!
-!                          Lower limit for the snow density
-!
-      DO I=1,N
-        IF (WST(I).GT.0.0) THEN
           RHOSLT(I) = MIN( RHOICE, RHOSLT(I) )
           RHOSLT(I) = MAX( RHOMIN, RHOSLT(I) )
-        ELSE
-          RHOSLT(I) = RHOSDEF
         END IF
       END DO
-!
-!
 !
 !                          Calculate snow depth based on snow density
 !
@@ -737,6 +751,7 @@ include "fintern.inc"
           RHOSNO(I)   = RHOSLT(I)*RAUW
           TSNS(I)     = 300.0
           TSND(I)     = 300.0
+          TAVG(I)     = 300.0
           WL(I)       = 0.0
           WS(I)       = 0.0
           SNODP(I)    = 0.0

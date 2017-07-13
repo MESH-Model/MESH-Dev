@@ -9,9 +9,9 @@ module RUNCLASS36_module
 
     subroutine RUNCLASS36_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
         use model_output_variabletypes
@@ -275,17 +275,21 @@ module RUNCLASS36_module
                         ITC, ITCG, ITG, NML, il1, il2, JLAT, ic%ts_count, ICAN, &
                         IGND, IZREF, ISLFD, NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI)
 
-            if (ic%now%jday == 1 .and. ic%ts_daily == 48) then
-       ! bruce davison - only increase NMELT if we don't start the run on January 1st, otherwise t0_ACC allocation is too large
-       ! and the model crashes if the compiler is checking for array bounds when t0_ACC is passed into CLASSW with size NMELT
-                if (ic%start%jday == 1 .and. ic%ts_count < 49) then
-                    continue ! NMELT should stay = 1
-                else
-                    NMELT = NMELT + 1
+            !> FROZENSOILINFILFLAG 1.
+            if (FROZENSOILINFILFLAG == 1) then
+
+                !> bruce davison - only increase NMELT if we don't start the run on January 1st, otherwise t0_ACC allocation is too large
+                !> and the model crashes if the compiler is checking for array bounds when t0_ACC is passed into CLASSW with size NMELT
+                if (ic%now%jday == 1 .and. ic%ts_daily == 48) then
+                    if (ic%start%jday == 1 .and. ic%ts_count < 49) then
+                        continue ! NMELT should stay = 1
+                    else
+                        NMELT = NMELT + 1
+                    end if
+                    CUMSNOWINFILCS = 0.0
+                    CUMSNOWINFILGS = 0.0
+                    INFILTYPE = 2
                 end if
-                CUMSNOWINFILCS = 0.0
-                CUMSNOWINFILGS = 0.0
-                INFILTYPE = 2
             end if
 
             !> WATER BUDGET CALCULATIONS.
@@ -383,7 +387,7 @@ module RUNCLASS36_module
                         cdv%ROF = cdv%ROF - cdv%ROFB
                         Wseep = cdv%ROFB*3600.0
                         do k = il1, il2
-                            call baseFlow(Wseep(k), dgw(k), Wrchrg(k), agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
+                            call baseFlow_luo2012(Wseep(k), dgw(k), Wrchrg(k), agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
                             cdv%ROFB(k) = Qb_new/3600.0
                             Qb(k) = Qb_new
                             Wrchrg(k) = Wrchrg_new

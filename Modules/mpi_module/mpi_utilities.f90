@@ -1,15 +1,39 @@
+!>
+!> MPI-related utilities.
+!>
 module mpi_utilities
+
+    implicit none
 
     contains
 
+    !> Description:
+    !>  Determine il1:il2 indices and ilen based on the number of active nodes
+    !>  and tiles in the setup for the given node. The subroutine will nudge
+    !>  il1 and il2 so that no grid is split between separate nodes.
+    !>
+    !> Variables:
+    !*  inp: Number of nodes (including head node).
+    !*  izero: If to include the head node in tile iterations when multiple nodes are used
+    !       (default: 0 = reserve head node for between grid processes and book-keeping).
+    !*  ipid: Zero-based index of active/current/this node (default: 0 = head node).
+    !*  NML: Number of active files in the setup.
+    !*  ILMOS: NML-to-Grid lookup table.
+    !>
+    !> Returns:
+    !*  il1: First index to be used in tile iterations on this node.
+    !*  il2: Last index to be used in tile iterations on this node.
+    !*  ilen: Total number of indices active on this node.
     subroutine mpi_split_nml(inp, izero, ipid, &
-                         NML, ILMOS, &
-                         il1, il2, ilen)
+                             NML, ILMOS, &
+                             il1, il2, ilen)
 
+        !> Input variables.
         integer, intent(in) :: inp, izero, ipid
         integer, intent(in) :: NML
         integer, intent(in), dimension(:) :: ILMOS
 
+        !> Output variables
         integer, intent(out) :: il1, il2, ilen
 
         !> Calculate an initial lower index.
@@ -45,6 +69,6 @@ module mpi_utilities
         !> Calculate the total number of active elements in the sequence.
         ilen = (il2 - il1) + 1
 
-    end subroutine !mpi_split_nml
+    end subroutine
 
-end module !mpi_utilities
+end module
