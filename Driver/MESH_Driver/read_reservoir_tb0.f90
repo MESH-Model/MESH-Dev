@@ -134,8 +134,8 @@ subroutine read_reservoir_tb0(shd, iun, fname)
     if (allocated(colHeader%colCoeff3)) fms%rsvr%rls%b3 = colHeader%colCoeff3
     if (allocated(colHeader%colCoeff4)) fms%rsvr%rls%b4 = colHeader%colCoeff4
     if (allocated(colHeader%colCoeff5)) fms%rsvr%rls%b5 = colHeader%colCoeff5
-    if (allocated(colHeader%colCoeff6)) fms%rsvr%rls%lvlz0 = colHeader%colCoeff6
-    if (allocated(colHeader%colCoeff7)) fms%rsvr%rls%area = colHeader%colCoeff7
+    if (allocated(colHeader%colCoeff6)) fms%rsvr%rls%area = colHeader%colCoeff6
+    if (allocated(colHeader%colCoeff7)) fms%rsvr%rls%lvlz0 = colHeader%colCoeff7
 
     !> Position the file to the first record.
     rewind iun

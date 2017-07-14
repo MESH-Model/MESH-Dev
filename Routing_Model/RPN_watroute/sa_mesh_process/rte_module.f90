@@ -437,8 +437,8 @@ module rte_module
             b3 = fms%rsvr%rls%b3
             b4 = fms%rsvr%rls%b4
             b5 = fms%rsvr%rls%b5
-            b6 = fms%rsvr%rls%lvlz0
-            b7 = fms%rsvr%rls%area
+            b6 = fms%rsvr%rls%area
+            b7 = fms%rsvr%rls%lvlz0
 !            where (b3 == 0.0)
 !                poliflg = 'n'
 !            elsewhere
