@@ -165,7 +165,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     NAA = shd%NAA
 
     !> Allocate temporary message variables.
-    allocate(list_errors(4*NAA), list_warnings(1*NAA))
+    allocate(list_errors(6*NAA), list_warnings(1*NAA))
     list_errors = ''; list_warnings = ''
 
     !> Check for values that might be incorrect, but are unlikely to stop the model.
@@ -189,6 +189,8 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         forall (n = 1:NAA, shd%AREA(n) <= 0.0) list_errors(2*NAA + n) = 'Invalid or negative grid area'
         forall (n = 1:NAA, shd%DA(n) <= 0.0) list_errors(3*NAA + n) = 'Invalid or negative drainage area'
     end if
+    forall (n = 1:NA, shd%xxx(n) == 0) list_errors(4*NAA + n) = 'Invalid x-direction placement'
+    forall (n = 1:NA, shd%yyy(n) == 0) list_errors(5*NAA + n) = 'Invalid y-direction placement'
 !+   forall (n = 1:NAA, shd%SLOPE_INT(n) <= 0.0) list_errors(4*NAA + n) = 'Invalid or negative interior slope'
 
     !> Write error messages to screen.
