@@ -295,15 +295,15 @@ module climate_forcing
 
             !> Stop if the state file does not contain the same number of climate variables.
             read(iun) ierr
-            if (ierr /= cm%nclim) then
+            if (ierr /= 7) then
                 print *, 'Incompatible ranking in climate state file: ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat'
                 print *, ' Number of clim. variables read: ', ierr
-                print *, ' Number of clim. variabels expected: ', cm%nclim
+                print *, ' Number of clim. variabels expected: ', 7
                 stop
             end if
 
             !> Loop through variables in the climate forcing object and populate their state from file.
-            do vid = 1, cm%nclim
+            do vid = 1, 7
 
                 !> Read the state of the climate variable (in case reading into memory).
                 read(iun) cm%dat(vid)%blocks
@@ -324,7 +324,7 @@ module climate_forcing
                     end if
                 end if
 
-            end do !vid = 1, cm%nclim
+            end do !vid = 1, 7
 
             !> Close the file to free the unit.
             close(iun)
@@ -565,10 +565,10 @@ module climate_forcing
 !todo: condition for ierr.
 
             !> Write the current number of climate variables.
-            write(iun) cm%nclim
+            write(iun) 7
 
             !> Loop through variables in the climate forcing object and write the current state to file.
-            do vid = 1, cm%nclim
+            do vid = 1, 7
 
                 !> Save the state of the climate variable (in case reading into memory).
                 write(iun) cm%dat(vid)%blocks
@@ -583,7 +583,7 @@ module climate_forcing
                     write(iun) cm%dat(vid)%ipdat
                 end if
 
-            end do !vid = 1, cm%nclim
+            end do !vid = 1, 7
 
             !> Close the file to free the unit.
             close(iun)

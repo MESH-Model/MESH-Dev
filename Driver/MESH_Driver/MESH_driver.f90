@@ -146,7 +146,7 @@ program RUNMESH
 
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
-    character(24) :: VERSION = '1102'
+    character(24) :: VERSION = '1104'
     character(8) RELEASE
 
     integer i, j, k, l, m, u
@@ -345,6 +345,22 @@ program RUNMESH
 !+        print 1118, 'Total tile elements', NML
 !+        stop
 !+    end if
+
+    !> Calculate initial water balance for output.
+    if (ipid == 0) then
+        do j = 1, shd%lc%IGND
+            wb_grd%LQWS(:, j) = stas_grid%sl%lqws(:, j)*shd%FRAC
+            wb_grd%FRWS(:, j) = stas_grid%sl%fzws(:, j)*shd%FRAC
+        end do
+        wb_grd%RCAN = stas_grid%cnpy%rcan*shd%FRAC
+        wb_grd%SNCAN = stas_grid%cnpy%sncan*shd%FRAC
+        wb_grd%SNO = stas_grid%sno%sno*shd%FRAC
+        wb_grd%WSNO = stas_grid%sno%wsno*shd%FRAC
+        wb_grd%PNDW = stas_grid%sfc%pndw*shd%FRAC
+        wb_grd%STG = &
+            wb_grd%RCAN + wb_grd%SNCAN + wb_grd%SNO + wb_grd%WSNO + wb_grd%PNDW + &
+            sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2)
+    end if
 
     if (ipid == 0) call run_between_grid_init(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
@@ -952,22 +968,6 @@ program RUNMESH
         wb_acc%DSTG = 0.0
 
     end if !(ipid == 0) then
-
-    !> Calculate initial water balance for output.
-    if (ipid == 0) then
-        do j = 1, shd%lc%IGND
-            wb_grd%LQWS(:, j) = stas_grid%sl%lqws(:, j)*shd%FRAC
-            wb_grd%FRWS(:, j) = stas_grid%sl%fzws(:, j)*shd%FRAC
-        end do
-        wb_grd%RCAN = stas_grid%cnpy%rcan*shd%FRAC
-        wb_grd%SNCAN = stas_grid%cnpy%sncan*shd%FRAC
-        wb_grd%SNO = stas_grid%sno%sno*shd%FRAC
-        wb_grd%WSNO = stas_grid%sno%wsno*shd%FRAC
-        wb_grd%PNDW = stas_grid%sfc%pndw*shd%FRAC
-        wb_grd%STG = &
-            wb_grd%RCAN + wb_grd%SNCAN + wb_grd%SNO + wb_grd%WSNO + wb_grd%PNDW + &
-            sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2)
-    end if
 
     !> Calculate initial storage.
     if (ipid == 0) then
