@@ -146,7 +146,7 @@ program RUNMESH
 
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
-    character(24) :: VERSION = '1104'
+    character(24) :: VERSION = '1105'
     character(8) RELEASE
 
     integer i, j, k, l, m, u
@@ -291,14 +291,14 @@ program RUNMESH
     call init_soil_statevars(spv_grd, shd)
 
     !> Calculate the grid and basin fractional areas.
-    wb_grd%grid_area = 0.0
-    wb_grd%basin_area = 0.0
-    do i = 1, NA
-        do m = 1, NTYPE
-            wb_grd%grid_area(i) = wb_grd%grid_area(i) + shd%lc%ACLASS(i, m)*shd%FRAC(i)
-        end do
-        wb_grd%basin_area = wb_grd%basin_area + wb_grd%grid_area(i)
-    end do
+    wb_grd%grid_area = shd%FRAC
+    wb_grd%basin_area = sum(shd%FRAC)
+!-    do i = 1, NA
+!-        do m = 1, NTYPE
+!-            wb_grd%grid_area(i) = wb_grd%grid_area(i) + shd%lc%ACLASS(i, m)*shd%FRAC(i)
+!-        end do
+!-        wb_grd%basin_area = wb_grd%basin_area + wb_grd%grid_area(i)
+!-    end do
 
     if (ipid == 0) then
 
@@ -359,7 +359,8 @@ program RUNMESH
         wb_grd%PNDW = stas_grid%sfc%pndw*shd%FRAC
         wb_grd%STG = &
             wb_grd%RCAN + wb_grd%SNCAN + wb_grd%SNO + wb_grd%WSNO + wb_grd%PNDW + &
-            sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2)
+            sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2) + &
+            stas_grid%lzs%lqws*shd%FRAC + stas_grid%dzs%lqws*shd%FRAC
     end if
 
     if (ipid == 0) call run_between_grid_init(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
@@ -1122,7 +1123,8 @@ program RUNMESH
             wb_grd%PNDW = stas_grid%sfc%pndw*shd%FRAC
             wb_grd%DSTG = &
                 wb_grd%RCAN + wb_grd%SNCAN + wb_grd%SNO + wb_grd%WSNO + wb_grd%PNDW + &
-                sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2) - &
+                sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2) + &
+                stas_grid%lzs%lqws*shd%FRAC + stas_grid%dzs%lqws*shd%FRAC - &
                 wb_grd%STG
             wb_grd%STG = wb_grd%DSTG + wb_grd%STG
         end if

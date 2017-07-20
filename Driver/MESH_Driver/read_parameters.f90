@@ -65,17 +65,13 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !> RPN RTE (Watflood, 2007).
     if (rteflg%PROCESS_ACTIVE) then
         allocate(rtepm%r1n(NA), rtepm%r2n(NA), rtepm%mndr(NA), rtepm%widep(NA), &
-                 rtepm%flz(NA), rtepm%pwr(NA), &
                  rtepm%aa2(NA), rtepm%aa3(NA), rtepm%aa4(NA), &
                  rtepm_iak%r1n(NRVR), rtepm_iak%r2n(NRVR), rtepm_iak%mndr(NRVR), rtepm_iak%widep(NRVR), &
-                 rtepm_iak%flz(NRVR), rtepm_iak%pwr(NRVR), &
                  rtepm_iak%aa2(NRVR), rtepm_iak%aa3(NRVR), rtepm_iak%aa4(NRVR), &
                  stat = ierr)
         rtepm%r1n = 0.0; rtepm%r2n = 0.0; rtepm%mndr = 1.0; rtepm%widep = 10.0
-        rtepm%flz = 1.0; rtepm%pwr = 1.0
         rtepm%aa2 = 1.1; rtepm%aa3 = 0.043; rtepm%aa4 = 1.0
         rtepm_iak%r1n = 0.0; rtepm_iak%r2n = 0.0; rtepm_iak%mndr = 0.0; rtepm_iak%widep = 0.0
-        rtepm_iak%flz = 0.0; rtepm_iak%pwr = 0.0
         rtepm_iak%aa2 = 0.0; rtepm_iak%aa3 = 0.0; rtepm_iak%aa4 = 0.0
     end if
 
@@ -109,15 +105,19 @@ subroutine read_parameters(fls, shd, cm, ierr)
     end if
 
     !> BASEFLOWFLAG 1 (Luo, 2012).
-    if (lzsp%BASEFLOWFLAG == 1) then
-        allocate(lzsp%dgwsh(NA, NTYPE), lzsp%agwsh(NA, NTYPE))
-        lzsp%dgwsh = 0.0; lzsp%agwsh = 0.0
+    if (bflm%BASEFLOWFLAG == 1) then
+        allocate(bflm%pm%dgw(NML), bflm%pm%agw(NML), bflm%pm_gru%dgw(NTYPE), bflm%pm_gru%agw(NTYPE))
+        bflm%pm%dgw = 0.0; bflm%pm%agw = 0.0; bflm%pm_gru%dgw = 0.0; bflm%pm_gru%agw = 0.0
     end if
 
-    !> BASEFLOWFLAG 2 (Watflood manual).
-    if (lzsp%BASEFLOWFLAG == 2) then
-        allocate(lzsp%WF_LZFA(NA, NTYPE), lzsp%WF_LZFPWR(NA, NTYPE))
-        lzsp%WF_LZFA = 0.0; lzsp%WF_LZFPWR = 0.0
+    !> BASEFLOWFLAG == 2 (lower zone storage).
+    if (bflm%BASEFLOWFLAG == 2) then
+        allocate(bflm%pm%pwr(NML), bflm%pm%flz(NML), &
+                 bflm%pm_iak%pwr(NRVR), bflm%pm_iak%flz(NRVR), bflm%pm_gru%pwr(NTYPE), bflm%pm_gru%flz(NTYPE), &
+                 bflm%pm_grid%pwr(NA), bflm%pm_grid%flz(NA))
+        bflm%pm%pwr = 0.0; bflm%pm%flz = 0.0
+        bflm%pm_iak%pwr = 0.0; bflm%pm_iak%flz = 0.0; bflm%pm_gru%pwr = 0.0; bflm%pm_gru%flz = 0.0
+        bflm%pm_grid%pwr = 0.0; bflm%pm_grid%flz = 0.0
     end if
 
     !> Cropland irrigation module (CROPLANDIRRIGATION > 0).
@@ -243,6 +243,18 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 pm%snp%zpls(k) = pm_gru%snp%zpls(i)
             end if
 
+            !> BASEFLOWFLAG 1 (Luo, 2012).
+            if (bflm%BASEFLOWFLAG == 1) then
+                bflm%pm%dgw(k) = bflm%pm_gru%dgw(i)
+                bflm%pm%agw(k) = bflm%pm_gru%agw(i)
+            end if
+
+            !> BASEFLOWFLAG == 2 (lower zone storage).
+            if (bflm%BASEFLOWFLAG == 2) then
+                bflm%pm%pwr(k) = bflm%pm_gru%pwr(i)
+                bflm%pm%flz(k) = bflm%pm_gru%flz(i)
+            end if
+
             !> Cropland irrigation module.
             if (cifg%PROCESS_ACTIVE) then
                 cip%jdsow(k) = ciprot%jdsow(i)
@@ -275,17 +287,33 @@ subroutine read_parameters(fls, shd, cm, ierr)
             !> River class index (IAK).
             i = shd%IAK(k)
 
+            !> BASEFLOWFLAG == 2 (lower zone storage).
+            if (bflm%BASEFLOWFLAG == 2) then
+                if (bflm%pm_iak%pwr(i) /= 0.0) bflm%pm_grid%pwr(k) = bflm%pm_iak%pwr(i)
+                if (bflm%pm_iak%flz(i) /= 0.0) bflm%pm_grid%flz(k) = bflm%pm_iak%flz(i)
+            end if
+
             !> RPN RTE (Watflood, 2007).
             if (rteflg%PROCESS_ACTIVE) then
                 if (rtepm_iak%r1n(i) /= 0.0) rtepm%r1n(k) = rtepm_iak%r1n(i)
                 if (rtepm_iak%r2n(i) /= 0.0) rtepm%r2n(k) = rtepm_iak%r2n(i)
                 if (rtepm_iak%mndr(i) /= 0.0) rtepm%mndr(k) = rtepm_iak%mndr(i)
                 if (rtepm_iak%widep(i) /= 0.0) rtepm%widep(k) = rtepm_iak%widep(i)
-                if (rtepm_iak%flz(i) /= 0.0) rtepm%flz(k) = rtepm_iak%flz(i)
-                if (rtepm_iak%pwr(i) /= 0.0) rtepm%pwr(k) = rtepm_iak%pwr(i)
                 if (rtepm_iak%aa2(i) /= 0.0) rtepm%aa2(k) = rtepm_iak%aa2(i)
                 if (rtepm_iak%aa3(i) /= 0.0) rtepm%aa3(k) = rtepm_iak%aa3(i)
                 if (rtepm_iak%aa4(i) /= 0.0) rtepm%aa4(k) = rtepm_iak%aa4(i)
+            end if
+
+        end do !k = 1, NAA
+        do k = il1, il2
+
+            !> Grid index.
+            i = shd%lc%ILMOS(k)
+
+            !> BASEFLOWFLAG == 2 (lower zone storage).
+            if (bflm%BASEFLOWFLAG == 2) then
+                if (bflm%pm_iak%pwr(shd%IAK(i)) /= 0.0) bflm%pm%pwr(k) = bflm%pm_iak%pwr(shd%IAK(i))
+                if (bflm%pm_iak%flz(shd%IAK(i)) /= 0.0) bflm%pm%flz(k) = bflm%pm_iak%flz(shd%IAK(i))
             end if
 
         end do !k = il1, il2
@@ -324,11 +352,11 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 if (any(pm_grid%slp%clay(i, :) /= 0.0)) pm%slp%clay(k, :) = pm_grid%slp%clay(i, :)
             end if
 
-            !> RUNCLASS36 and RUNSVS113.
-!+            if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
-!+                if (allocated(shd%SLOPE_INT)) pm%tp%xslp(k) = shd%SLOPE_INT(i)
-!+                if (allocated(shd%DRDN)) pm%hp%dd(k) = shd%DRDN(i)
-!+            end if
+            !> BASEFLOWFLAG == 2 (lower zone storage).
+            if (bflm%BASEFLOWFLAG == 2) then
+                if (bflm%pm_grid%pwr(i) /= 0.0) bflm%pm%pwr(k) = bflm%pm_grid%pwr(i)
+                if (bflm%pm_grid%flz(i) /= 0.0) bflm%pm%flz(k) = bflm%pm_grid%flz(i)
+            end if
 
             !> PBSM (blowing snow).
             if (pbsm%PROCESS_ACTIVE) then

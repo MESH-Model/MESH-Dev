@@ -101,7 +101,7 @@ module state_variables
     !*  zpnd: Depth of ponded water on surface. [m].
     !*  pndw: Ponded water storage on the surface. [kg m-2].
     !*  evap: Evapotranspiration. [kg m-2].
-    !*  rofo: Overland component of total runoff. [kg m-2].
+    !*  rofo: Overland component of total runoff. [kg m-2 s-1].
     type surface_interface
         integer(kind = 4) :: n
         real(kind = 4), dimension(:), allocatable :: tpnd, zpnd, pndw, evap, qevp, hfs, rofo
@@ -123,7 +123,7 @@ module state_variables
     !*  tbas: Temperature of bedrock in third soil layer. [K].
     !*  delzw: Thickness of permeable part of soil layer. [m].
     !*  zbotw: Depth of bottom of permeable part of soil layer. [m].
-    !*  rofs: Interflow component of total runoff. [kg m-2].
+    !*  rofs: Interflow component of total runoff. [kg m-2 s-1].
     !*  gflx: Heat conduction between soil layers. [W m-2].
     !*  ggeo: Geothermal heat flux. [W m-2].
     type soil_layer
@@ -139,11 +139,11 @@ module state_variables
     !*  n: Number of elements dimensioned.
     !>
     !> Variables:
-    !*  zlw: Depth of water. [m].
-    !*  rofb: Baseflow component of total runoff. [kg m-2].
+    !*  lqws: Depth of water. [kg m-2].
+    !*  rofb: Baseflow component of total runoff. [kg m-2 s-1].
     type deep_zone
         integer(kind = 4) :: n
-        real(kind = 4), dimension(:), allocatable :: zlw, rofb
+        real(kind = 4), dimension(:), allocatable :: lqws, rofb
     end type
 
     !> Type: storage_state
@@ -239,10 +239,10 @@ module state_variables
             stas%sl%gflx(n, nsl), stas%sl%ggeo(n), &
 
             !> Lower zone storage.
-            stas%lzs%zlw(n), stas%lzs%rofb(n), &
+            stas%lzs%lqws(n), stas%lzs%rofb(n), &
 
             !> Deep zone storage.
-            stas%dzs%zlw(n), stas%dzs%rofb(n), &
+            stas%dzs%lqws(n), stas%dzs%rofb(n), &
 
             !> Stream channel.
             stas%chnl%qi(n), stas%chnl%qo(n), stas%chnl%s(n), &
@@ -279,10 +279,10 @@ module state_variables
             stas%sl%gflx = 0.0; stas%sl%ggeo = 0.0
 
             !> Lower zone storage.
-            stas%lzs%zlw = 0.0; stas%lzs%rofb = 0.0
+            stas%lzs%lqws = 0.0; stas%lzs%rofb = 0.0
 
             !> Deep zone storage.
-            stas%dzs%zlw = 0.0; stas%dzs%rofb = 0.0
+            stas%dzs%lqws = 0.0; stas%dzs%rofb = 0.0
 
             !> Stream channel.
             stas%chnl%qi = 0.0; stas%chnl%qo = 0.0; stas%chnl%s = 0.0

@@ -8,15 +8,13 @@ module sa_mesh_run_within_tile
 
         use model_files_variables
         use sa_mesh_shared_variables
-        use model_dates
         use climate_forcing
 
+        !> Required for calls to processes.
         use RUNCLASS36_config
         use RUNSVS113_config
         use baseflow_module
-
-        !> Cropland irrigation module.
-        use cropland_irrigation_init, only: runci_init
+        use cropland_irrigation_init
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -25,30 +23,28 @@ module sa_mesh_run_within_tile
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
+        !> Call processes.
         call RUNCLASS36_init(shd, fls, cm)
-
         call RUNSVS113_init(shd, fls, cm)
-
-        call LZS_init(shd, fls, cm)
-
-        !> Cropland irrigation module.
+        call bflm_init(fls, shd, cm)
         call runci_init(shd, fls)
 
     end subroutine
 
     function run_within_tile(shd, fls, cm)
 
-        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
-        use model_dates
         use climate_forcing
 
-        use cropland_irrigation_within_tile, only: runci_within_tile
-        use RUNCLASS36_module, only: RUNCLASS36_within_tile
-        use RUNSVS113_module, only: RUNSVS113
-!-        use WF_ROUTE_module, only: WF_ROUTE_within_tile
+        !> Required for 'il1:il2' indices.
+        use mpi_module
+
+        !> Required for calls to processes.
+        use RUNCLASS36_module
+        use RUNSVS113_module
         use baseflow_module
+        use cropland_irrigation_within_tile
 
         character(100) run_within_tile
 
@@ -67,16 +63,14 @@ module sa_mesh_run_within_tile
         stas%sfc%rofo(il1:il2) = 0.0
         stas%sl%rofs(il1:il2) = 0.0
         stas%lzs%rofb(il1:il2) = 0.0
+        stas%dzs%rofb(il1:il2) = 0.0
 
         run_within_tile = ''
 
+        !> Call processes.
         call RUNCLASS36_within_tile(shd, fls, cm)
-
         call RUNSVS113(shd, fls, cm)
-
-!+        call LZS_within_tile(shd, fls, cm)
-
-        !> Cropland irrigation module (PEVP).
+        call bflm_within_tile(fls, shd, cm)
         call runci_within_tile(shd, fls, cm)
 
         !> MPI exchange.
@@ -125,17 +119,14 @@ module sa_mesh_run_within_tile
 
         !> Send/receive process.
         itag = ic%ts_count*1000
-        invars = 13 + 4*shd%lc%IGND
+        invars = 16 + 4*shd%lc%IGND
 
         !> Update the variable count per the active control flags.
         if (SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) invars = invars + 10 + 4
 
         !> BASEFLOWFLAG.
-        if (lzsp%BASEFLOWFLAG > 0) then
+        if (bflm%BASEFLOWFLAG == 1) then
             invars = invars + 1
-            if (lzsp%BASEFLOWFLAG == 1) then
-                invars = invars + 1
-            end if
         end if
 
         if (inp > 1 .and. ipid /= 0) then
@@ -152,6 +143,9 @@ module sa_mesh_run_within_tile
             call mpi_isend(stas%sfc%rofo(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(stas%sl%rofs(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(stas%lzs%rofb(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(stas%lzs%lqws(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(stas%dzs%rofb(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(stas%dzs%lqws(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(stas%cnpy%sncan(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(stas%cnpy%rcan(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(stas%sfc%zpnd(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
@@ -186,11 +180,8 @@ module sa_mesh_run_within_tile
             end if !(SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) then
 
             !> BASEFLOWFLAG.
-            if (lzsp%BASEFLOWFLAG > 0) then
-                call mpi_isend(Wrchrg(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                if (lzsp%BASEFLOWFLAG == 1) then
-                    call mpi_isend(Qb(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                end if
+            if (bflm%BASEFLOWFLAG == 1) then
+                call mpi_isend(Qb(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             end if
 
             lstat = .false.
@@ -224,6 +215,9 @@ module sa_mesh_run_within_tile
                 call mpi_irecv(stas%sfc%rofo(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(stas%sl%rofs(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(stas%lzs%rofb(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%lzs%lqws(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%dzs%rofb(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(stas%dzs%lqws(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(stas%cnpy%sncan(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(stas%cnpy%rcan(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(stas%sfc%zpnd(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
@@ -262,11 +256,8 @@ module sa_mesh_run_within_tile
                 end if !(SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) then
 
                 !> BASEFLOWFLAG.
-                if (lzsp%BASEFLOWFLAG > 0) then
-                    call mpi_irecv(Wrchrg(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    if (lzsp%BASEFLOWFLAG == 1) then
-                        call mpi_irecv(Qb(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    end if
+                if (bflm%BASEFLOWFLAG == 1) then
+                    call mpi_irecv(Qb(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end if
 
                 lstat = .false.
@@ -286,10 +277,10 @@ module sa_mesh_run_within_tile
 
         use model_files_variabletypes
         use sa_mesh_shared_variables
-        use model_dates
         use climate_forcing
 
-        use RUNCLASS36_config, only: RUNCLASS36_finalize
+        !> Required for calls to processes.
+        use RUNCLASS36_config
         use baseflow_module
 
         type(fl_ids) :: fls
@@ -299,9 +290,9 @@ module sa_mesh_run_within_tile
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
+        !> Call processes.
         call RUNCLASS36_finalize(fls, shd, cm)
-
-        call LZS_finalize(fls, shd)
+        call bflm_finalize(fls, shd, cm)
 
     end subroutine
 

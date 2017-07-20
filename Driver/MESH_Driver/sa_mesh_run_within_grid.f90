@@ -6,11 +6,12 @@ module sa_mesh_run_within_grid
 
     subroutine run_within_grid_init(shd, fls, cm)
 
-        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
-        use model_dates
         use climate_forcing
+
+        !> Required for 'il1:il2' and 'i1:i2' indexing.
+        use mpi_module
 
 !+todo: There's a dependency on CLASSBD.f.
         use RUNCLASS36_constants, only: RHOW, RHOICE
@@ -37,6 +38,8 @@ module sa_mesh_run_within_grid
         stas_grid%sno%wsno(i1:i2) = 0.0
         stas_grid%sfc%zpnd(i1:i2) = 0.0
         stas_grid%sfc%pndw(i1:i2) = 0.0
+        stas_grid%lzs%lqws(i1:i2) = 0.0
+        stas_grid%dzs%lqws(i1:i2) = 0.0
 
         !> Aggregate grid-based accumulators.
         do k = il1, il2
@@ -55,6 +58,8 @@ module sa_mesh_run_within_grid
                 stas_grid%sno%wsno(ki) = stas_grid%sno%wsno(ki) + stas%sno%wsno(k)*frac
             end if
             stas_grid%sfc%zpnd(ki) = stas_grid%sfc%zpnd(ki) + stas%sfc%zpnd(k)*frac
+            stas_grid%lzs%lqws(ki) = stas_grid%lzs%lqws(ki) + stas%lzs%lqws(k)*frac
+            stas_grid%dzs%lqws(ki) = stas_grid%dzs%lqws(ki) + stas%dzs%lqws(k)*frac
         end do
         stas_grid%sfc%pndw(i1:i2) = stas_grid%sfc%zpnd(i1:i2)*RHOW
 
@@ -62,14 +67,18 @@ module sa_mesh_run_within_grid
 
     subroutine run_within_grid(shd, fls, cm)
 
-        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
-        use model_dates
         use climate_forcing
+
+        !> Required for 'il1:il2' and 'i1:i2' indexing.
+        use mpi_module
 
 !+todo: There's a dependency on CLASSBD.f.
         use RUNCLASS36_constants, only: RHOW, RHOICE
+
+        !> Required for calls to processes.
+        use baseflow_module
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -86,7 +95,9 @@ module sa_mesh_run_within_grid
         stas_grid%sfc%rofo(i1:i2) = 0.0
         stas_grid%sl%rofs(i1:i2) = 0.0
         stas_grid%lzs%rofb(i1:i2) = 0.0
+        stas_grid%lzs%lqws(i1:i2) = 0.0
         stas_grid%dzs%rofb(i1:i2) = 0.0
+        stas_grid%dzs%lqws(i1:i2) = 0.0
         stas_grid%cnpy%pevp(i1:i2) = 0.0
         stas_grid%cnpy%evpb(i1:i2) = 0.0
         stas_grid%cnpy%arrd(i1:i2) = 0.0
@@ -114,7 +125,9 @@ module sa_mesh_run_within_grid
             stas_grid%sfc%rofo(ki) = stas_grid%sfc%rofo(ki) + stas%sfc%rofo(k)*frac
             stas_grid%sl%rofs(ki) = stas_grid%sl%rofs(ki) + stas%sl%rofs(k)*frac
             stas_grid%lzs%rofb(ki) = stas_grid%lzs%rofb(ki) + stas%lzs%rofb(k)*frac
+            stas_grid%lzs%lqws(ki) = stas_grid%lzs%lqws(ki) + stas%lzs%lqws(k)*frac
             stas_grid%dzs%rofb(ki) = stas_grid%dzs%rofb(ki) + stas%dzs%rofb(k)*frac
+            stas_grid%dzs%lqws(ki) = stas_grid%dzs%lqws(ki) + stas%dzs%lqws(k)*frac
             stas_grid%cnpy%pevp(ki) = stas_grid%cnpy%pevp(ki) + stas%cnpy%pevp(k)*frac
             stas_grid%cnpy%evpb(ki) = stas_grid%cnpy%evpb(ki) + stas%cnpy%evpb(k)*frac
             stas_grid%cnpy%arrd(ki) = stas_grid%cnpy%arrd(ki) + stas%cnpy%arrd(k)*frac
@@ -136,13 +149,15 @@ module sa_mesh_run_within_grid
         end do
         stas_grid%sfc%pndw(i1:i2) = stas_grid%sfc%zpnd(i1:i2)*RHOW
 
+        !> Call processes.
+        call bflm_within_grid(fls, shd, cm)
+
     end subroutine
 
     subroutine run_within_grid_finalize(fls, shd, cm)
 
         use model_files_variables
         use sa_mesh_shared_variables
-        use model_dates
         use climate_forcing
 
         type(fl_ids) :: fls

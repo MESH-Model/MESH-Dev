@@ -19,6 +19,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
 
     use RUNCLASS36_variables
     use RUNSVS113_variables
+    use baseflow_module
     use rte_module
     use PBSM_module
 
@@ -148,6 +149,12 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     end if
                 end if
 
+            !> BASEFLOWFLAG == 2 (lower zone storage).
+            case ('pwr')
+                if (bflm%BASEFLOWFLAG == 2) bflm%pm_grid%pwr = ffield
+            case ('flz')
+                if (bflm%BASEFLOWFLAG == 2) bflm%pm_grid%flz = ffield
+
             !> RPN RTE (Watflood, 2007).
             case ('r1n')
                 if (rteflg%PROCESS_ACTIVE) rtepm%r1n = ffield
@@ -157,10 +164,6 @@ subroutine read_parameters_r2c(shd, iun, fname)
                 if (rteflg%PROCESS_ACTIVE) rtepm%mndr = ffield
             case ('widep')
                 if (rteflg%PROCESS_ACTIVE) rtepm%widep = ffield
-            case ('flz')
-                if (rteflg%PROCESS_ACTIVE) rtepm%flz = ffield
-            case ('pwr')
-                if (rteflg%PROCESS_ACTIVE) rtepm%pwr = ffield
             case ('aa2')
                 if (rteflg%PROCESS_ACTIVE) rtepm%aa2 = ffield
             case ('aa3')

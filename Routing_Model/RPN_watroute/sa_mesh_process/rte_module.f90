@@ -15,7 +15,7 @@ module rte_module
 
     !> Input parameters.
     type rte_params
-        real, dimension(:), allocatable :: flz, pwr, r1n, r2n, mndr, aa2, aa3, aa4, widep
+        real, dimension(:), allocatable :: r1n, r2n, mndr, aa2, aa3, aa4, widep
     end type
 
     !> Instances of the input parameters.
@@ -150,14 +150,13 @@ module rte_module
         glacier_flag = 'n'
 
         !> Allocate and assign parameter values.
-        allocate(flz(na), flz2(na), pwr(na), r1n(na), r2n(na), rlake(na), &
+        allocate(r1n(na), r2n(na), rlake(na), &
                  mndr(na), aa2(na), aa3(na), aa4(na), theta(na), widep(na), kcond(na))
-        flz = rtepm%flz; pwr = rtepm%pwr; r1n = rtepm%r1n; r2n = rtepm%r2n
+        r1n = rtepm%r1n; r2n = rtepm%r2n
         mndr = rtepm%mndr; aa2 = rtepm%aa2; aa3 = rtepm%aa3; aa4 = rtepm%aa4; widep = rtepm%widep
-        flz2 = 0.0; rlake = 0.0; theta = 0.0; kcond = 0.0
+        rlake = 0.0; theta = 0.0; kcond = 0.0
 
 !temp: Override
-!        flz = 3.0e-8; pwr = 2.6
 !        aa2 = 0.1; aa3 = 0.9; aa4 = 0.67
 !        widep = 20.0
 !        naa = 5980
@@ -196,8 +195,8 @@ module rte_module
                  store2(na), att(na), qbase(na), nreach(maxval(ireach)), &
                  totd1(na), totuzs(na), totsnw(na), qstream(na), &
                  totchnl(na), totgrid(na), netflow(na), storinit(na), &
-                 lzs(na), sumrechrg(na), sumrff(na), rechrg(na), &
-                 qlz(na), qdrng(na), qdrngfs(na), qstrm(na), sumq1(na), &
+                 sumrechrg(na), sumrff(na), rechrg(na), &
+                 qdrng(na), qdrngfs(na), qstrm(na), sumq1(na), &
                  sumqint(na), sumq1fs(na), sumqintfs(na), strloss(na), &
                  qdrng2(na), qdrngfs2(na), wetwid(na), chawid(na), &
                  chadep(na), wstore1(na), wstore2(na), wcap(na), &
@@ -214,8 +213,8 @@ module rte_module
         store2 = 0.0; att = 0.0; qbase = 0.0; nreach = 0
         totd1 = 0.0; totuzs = 0.0; totsnw = 0.0; qstream = 0.0
         totchnl = 0.0; totgrid = 0.0; netflow = 0.0; storinit = 0.0
-        lzs = 0.0; sumrechrg = 0.0; sumrff = 0.0; rechrg = 0.0
-        qlz = 0.0; qdrng = 0.0; qdrngfs = 0.0; qstrm = 0.0; sumq1 = 0.0
+        sumrechrg = 0.0; sumrff = 0.0; rechrg = 0.0
+        qdrng = 0.0; qdrngfs = 0.0; qstrm = 0.0; sumq1 = 0.0
         sumqint = 0.0; sumq1fs = 0.0; sumqintfs = 0.0; strloss = 0.0
         qdrng2 = 0.0; qdrngfs2 = 0.0; wetwid = 0.0; chawid = 0.0
         chadep = 0.0; wstore1 = 0.0; wstore2 = 0.0; wcap = 0.0
@@ -279,7 +278,6 @@ module rte_module
             !> compute an effective channel depth.
             chadep(n) = sqrt(chaxa(n)/widep(n))
             chawid(n) = chaxa(n)/chadep(n)
-            flz2(n) = 1.0 - (1.0 - flz(n))
 
             !> Fix suggested by Frank Seglenieks, based on changes made
             !> to WATFLOOD ca. 2007: if we keep track of biome types
@@ -679,9 +677,6 @@ module rte_module
         real tqi1, tqo1, tax, tqo2, tstore2, tstore1
         integer indexi, no_dtold
 
-        !> Local variables for the call to baseflow.
-        real(kind = 4) sdlz, dlz
-
         !> Local diagnostic variables.
 !        integer year_last, month_last, day_last, hour_last
         integer :: exitstatus = 0
@@ -709,13 +704,10 @@ module rte_module
         if (ic%ts_hourly == 1) then
             qr(1:naa) = 0.0
         end if
-        qr(1:naa) = qr(1:naa) + (wb%rofo(1:naa) + wb%rofs(1:naa))
-
-        !> Recharge accumulates perpetually.
-        lzs(1:naa) = lzs(1:naa) + wb%rofb(1:naa)/shd%FRAC(1:NAA)
+        qr(1:naa) = qr(1:naa) + (wb%rofo(1:naa) + wb%rofs(1:naa) + wb%rofb(1:naa))
 
         !> Return if no the last time-step of the hour.
-        if ((mod(ic%ts_hourly, 3600/ic%dts) /= 0)) then
+        if (mod(ic%ts_hourly, 3600/ic%dts) /= 0) then
             return
         end if
 
@@ -772,15 +764,6 @@ module rte_module
 
         !> Convert surface runoff from [kg/m^2] to [cms].
         qr(1:naa) = qr(1:naa)*1000.0*step2/3600.0
-
-        !> Route the recharge thru the lower zone.
-        do n = 1, naa
-            call baseflow(n, dlz, sdlz, (1000.0*step2/3600.0))
-        end do
-
-        !> baseflow gives us qlz in flow units (cms), not in mm
-        !> so there is no need to convert before adding to qr.
-        qr(1:naa) = qr(1:naa) + qlz(1:naa)
 
         !> Remember the input values from the start of the time step.
         qi2_strt(1:naa) = qi2(1:naa)

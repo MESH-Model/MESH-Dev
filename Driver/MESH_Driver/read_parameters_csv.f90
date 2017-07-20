@@ -17,6 +17,7 @@ subroutine read_parameters_csv(shd, iun, fname)
     use mpi_module
     use sa_mesh_shared_variables
 
+    use baseflow_module
     use rte_module
 
     implicit none
@@ -69,6 +70,22 @@ subroutine read_parameters_csv(shd, iun, fname)
         iconvert = 0
         select case (lowercase(args(1)))
 
+            !> BASEFLOWFLAG == 2 (lower zone storage).
+            case ('pwr')
+                if (.not. bflm%BASEFLOWFLAG /= 2) then
+                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
+                    cycle
+                else
+                    call assign_parameters(bflm%pm_iak%pwr, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
+                end if
+            case ('flz')
+                if (.not. bflm%BASEFLOWFLAG /= 2) then
+                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
+                    cycle
+                else
+                    call assign_parameters(bflm%pm_iak%flz, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
+                end if
+
             !> RPN RTE (Watflood, 2007).
             case ('r2n')
                 if (.not. rteflg%PROCESS_ACTIVE) then
@@ -83,20 +100,6 @@ subroutine read_parameters_csv(shd, iun, fname)
                     cycle
                 else
                     call assign_parameters(rtepm_iak%r1n, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
-                end if
-            case ('flz')
-                if (.not. rteflg%PROCESS_ACTIVE) then
-                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
-                    cycle
-                else
-                    call assign_parameters(rtepm_iak%flz, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
-                end if
-            case ('pwr')
-                if (.not. rteflg%PROCESS_ACTIVE) then
-                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
-                    cycle
-                else
-                    call assign_parameters(rtepm_iak%pwr, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
                 end if
             case ('mndr')
                 if (.not. rteflg%PROCESS_ACTIVE) then

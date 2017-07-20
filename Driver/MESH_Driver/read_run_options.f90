@@ -13,7 +13,7 @@
         use RUNCLASS36_variables
         use RUNCLASS36_save_output
         use RUNSVS113_variables
-        use baseflow_module, only: lzsp
+        use baseflow_module
         use cropland_irrigation_variables
         use WF_ROUTE_config
         use rte_module
@@ -724,7 +724,7 @@
 
                     !> BASEFLOW routing.
                     case ('BASEFLOWFLAG')
-                        call value(out_args(2), lzsp%BASEFLOWFLAG, ierr)
+                        call bflm_parse_flag(in_line)
 
                     !> Reservoir Release function flag (Number of WF_B coefficients).
 !?                    case ('RESVRELSWFB')

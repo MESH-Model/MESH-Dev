@@ -56,7 +56,7 @@ module sa_mesh_run_between_grid
         !> RPN RTE.
         call run_rte_init(fls, shd, stfl, rrls)
 
-        call run_save_basin_output_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+        call run_save_basin_output_init(fls, shd, cm)
 
         !> Cropland irrigation module (ICU).
         call runci_between_grid_init(shd, fls)
@@ -173,7 +173,7 @@ module sa_mesh_run_between_grid
         !> Cropland irrigation module (ICU).
         call runci_between_grid(shd, fls, cm)
 
-        call run_save_basin_output(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+        call run_save_basin_output(fls, shd, cm)
 
     end subroutine
 
@@ -205,7 +205,7 @@ module sa_mesh_run_between_grid
         !> Watflood, 1988.
         call WF_ROUTE_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
 
-        call run_save_basin_output_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
+        call run_save_basin_output_finalize(fls, shd, cm)
 
     end subroutine
 
