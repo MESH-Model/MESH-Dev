@@ -133,9 +133,9 @@ subroutine read_basin_structures(shd)
         print 9997, 'streamflow gauges', fms%stmg%n
         if (fms%stmg%n > 0 .and. ro%DIAGNOSEMODE > 0) then
 !todo: Change to write to summary file.
-            print 1020, 'GAUGE', 'IY', 'JX', 'RANK'
+            print 1020, 'GAUGE', 'IY', 'JX', 'DA (km/km2)', 'RANK'
             do l = 1, fms%stmg%n
-                print 1020, l, fms%stmg%meta%iy(l), fms%stmg%meta%jx(l), fms%stmg%meta%rnk(l)
+                print 1020, l, fms%stmg%meta%iy(l), fms%stmg%meta%jx(l), shd%DA(fms%stmg%meta%rnk(l)), fms%stmg%meta%rnk(l)
             end do
         end if
     end if

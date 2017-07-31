@@ -17,6 +17,7 @@ module rte_module
     type rte_params
         real, dimension(:), allocatable :: r1n, r2n, mndr, aa2, aa3, aa4, widep
     end type
+    real, dimension(:), allocatable :: avr_qo2
 
     !> Instances of the input parameters.
     !*  rtepm: Grid-based (GRD, NA/NAA).
@@ -26,6 +27,7 @@ module rte_module
     !> Configuration flags.
     type rte_flags
         logical :: PROCESS_ACTIVE = .false.
+        integer :: cap_shd = 0
     end type
 
     !> Instance of control flags.
@@ -240,9 +242,12 @@ module rte_module
             !> CAP IS THE VOLUME OF WATER IN A REACH FOR THE MEAN ANNUAL FLOW.
 !            widep = a11
 
+            !> Set 'chaxa' to the bankfull area, or else
             !> Compute the channel cross-sectional area based on a rather
             !> complicated fitting formula.  aa2/3/4 are tunable parameters.
-            if (aa4(n) > 0.0) then
+            if (rteflg%cap_shd == 1) then
+                chaxa(n) = bnkfll(n)
+            else if (aa4(n) > 0.0) then
                 chaxa(n) = (aa2(n) + aa3(n)*da(n)**aa4(n))
             else
 
@@ -445,8 +450,16 @@ module rte_module
             jres = fms%rsvr%meta%jx
             ires = fms%rsvr%meta%iy
             resindex = fms%rsvr%meta%rnk
+
+            !> Initial reservoir storage.
             allocate(reach_last(noresv))
-            reach_last = 0.0
+            do l = 1, noresv
+                reach_last(l) = lake_elv(l, 1)
+                n = resindex(l)
+                if (b6(l) > 0.0) store1(n) = max(0.0, reach_last(l) - b7(l))*b6(l)
+                store2(n) = store1(n)
+            end do
+
         end if
 
 !temp: Override for diversions.
@@ -875,6 +888,7 @@ module rte_module
 
 !EG_MOD prepare arrays for storing average flows
         if (.not. allocated(avr_qo)) allocate(avr_qo(na))
+        if (.not. allocated(avr_qo2)) allocate(avr_qo2(na))
         avr_qo = 0.0
 
         !> ROUTE ROUTES WATER THROUGH EACH SQUARE USING STORAGE ROUTING.
@@ -927,21 +941,24 @@ module rte_module
 !        hour_last = hour_now
 
         !> Accumulate.
-!-        if (ic%ts_daily == 1) qo2sim = 0.0
-!-        qo2sim = qo2sim + qo2
-!-        if (mod(ic%ts_daily, 3600/ic%dts*24) == 0) qo2sim = qo2sim/24
+        avr_qo2 = avr_qo2 + avr_qo
 
-        !> Return average streamflow value to SA_MESH.
+        !> Return the daily average value of streamflow value to SA_MESH in the last time-step of the day.
 !todo: preserve per time-step value.
-        do l = 1, fms%stmg%n
-            stfl%qsyn(l) = avr_qo(fms%stmg%meta%rnk(l))
-        end do
-
-        !> This occurs the last time-step of the day.
-!todo: move this.
         if (mod(ic%ts_daily, 3600/ic%dts*24) == 0) then
+            avr_qo2 = avr_qo2/24.0
+            do l = 1, fms%stmg%n
+                stfl%qsyn(l) = avr_qo2(fms%stmg%meta%rnk(l))
+            end do
+            avr_qo2 = 0.0
+
+            !> Preserve last reach state.
+            do l = 1, noresv
+               reach_last(l) = lake_elv(l, fhr)
+            end do
 
             !> Write daily output for streamflow.
+!todo: move this
             write(70, 1010, advance = 'no') ic%now%year, ic%now%jday
             write(70, 1010, advance = 'no') (stfl%qhyd(l), stfl%qsyn(l), l = 1, fms%stmg%n)
             write(70, *)

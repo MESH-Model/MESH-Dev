@@ -122,6 +122,29 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     if (n > 0) then
         do i = 1, n
             call readline(iun, in_line, ierr)
+            if (index(in_line, '#') > 2) in_line = in_line(1:index(in_line, '#') - 1)
+            if (index(in_line, '!') > 2) in_line = in_line(1:index(in_line, '!') - 1)
+            call compact(in_line)
+            call parse(in_line, delim, out_args, nargs)
+            if (nargs < 2) cycle
+            select case (lowercase(out_args(1)))
+                case ('wf_route')
+                    do j = 2, nargs
+                        select case (lowercase(out_args(j)))
+                            case ('rl_shd')
+                                WF_RTE_flgs%RLFLAG = 1
+                            case ('cap_shd')
+                                WF_RTE_flgs%CAPFLAG = 1
+                        end select
+                    end do
+                case ('rte')
+                    do j = 2, nargs
+                        select case (lowercase(out_args(j)))
+                            case ('cap_shd')
+                                rteflg%cap_shd = 1
+                        end select
+                    end do
+            end select
         end do
     end if
 
