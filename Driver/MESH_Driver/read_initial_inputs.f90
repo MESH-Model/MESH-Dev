@@ -40,20 +40,20 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     if (SHDFILEFLAG == 1) then
 
-    open(fls%fl(mfk%f20)%iun, file=adjustl(trim(fls%fl(mfk%f20)%fn)), status='old', iostat=ierr)
-        if (ierr == 0) then
-            close(fls%fl(mfk%f20)%iun)
-            if (ro%VERBOSEMODE > 0) then
-                print *, 'Reading Drainage Database from MESH_drainage_database.r2c'
+        open(fls%fl(mfk%f20)%iun, file=adjustl(trim(fls%fl(mfk%f20)%fn)), status='old', iostat=ierr)
+            if (ierr == 0) then
+                close(fls%fl(mfk%f20)%iun)
+                if (ro%VERBOSEMODE > 0) then
+                    print *, 'Reading Drainage Database from MESH_drainage_database.r2c'
+                end if
+                call READ_SHED_EF(fls, mfk%f20, shd)
+                if (ro%VERBOSEMODE > 0) then
+                    print *, ' READ: SUCCESSFUL, FILE: CLOSED'
+                end if
+            else
+                print "(1x, 'ERROR: Opening ', (a))", adjustl(trim(fls%fl(mfk%f20)%fn))
+                stop
             end if
-            call READ_SHED_EF(fls, mfk%f20, shd)
-            if (ro%VERBOSEMODE > 0) then
-                print *, ' READ: SUCCESSFUL, FILE: CLOSED'
-            end if
-        else
-            print *, 'ERROR with event.evt or new_shd.r2c'
-            stop
-        end if
 
     else if (SHDFILEFLAG == 0) then
 
@@ -159,6 +159,20 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         ro%RUNGRID = .false.
 
     end if
+
+    !> Check maximum number of cells and outlets, and print a warning if an adjustment is made
+    if (shd%NA /= maxval(shd%NEXT)) then
+        print 172
+        shd%NA = maxval(shd%NEXT)
+    end if
+    if (shd%NAA /= (maxval(shd%NEXT) - count(shd%NEXT == 0))) then
+        print 173
+        shd%NAA = maxval(shd%NEXT) - count(shd%NEXT == 0)
+    end if
+
+172     format(1x, 'WARNING: Total number of grid adjusted to maximum of RANK. Consider adjusting the input files.')
+173     format(1x, 'WARNING: The number of outlets is adjusted to the number of grids where NEXT is zero.', &
+               /3x, 'Consider adjusting the input files.')
 
     !> Assign shd values to local variables.
     NA = shd%NA

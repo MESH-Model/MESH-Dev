@@ -80,30 +80,30 @@ subroutine read_parameters_r2c(shd, iun, fname)
             case ('fcan')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
                     select case (adjustl(tlvl))
-                        case ('fcan nl')
+                        case ('nl')
                             pm_grid%cp%fcan(:, 1) = ffield
-                        case ('fcan bl')
+                        case ('bl')
                             pm_grid%cp%fcan(:, 2) = ffield
-                        case ('fcan cr')
+                        case ('cr')
                             pm_grid%cp%fcan(:, 3) = ffield
-                        case ('fcan gr')
+                        case ('gr')
                             pm_grid%cp%fcan(:, 4) = ffield
-                        case ('fcan ur')
+                        case ('ur')
                             pm_grid%cp%fcan(:, 5) = ffield
                     end select
                 end if
-            case ('lnz0 nl')
+            case ('lnz0')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
                     select case (adjustl(tlvl))
-                        case ('lnz0 nl')
+                        case ('nl')
                             pm_grid%cp%lnz0(:, 1) = ffield
-                        case ('lnz0 bl')
+                        case ('bl')
                             pm_grid%cp%lnz0(:, 2) = ffield
-                        case ('lnz0 cr')
+                        case ('cr')
                             pm_grid%cp%lnz0(:, 3) = ffield
-                        case ('lnz0 gr')
+                        case ('gr')
                             pm_grid%cp%lnz0(:, 4) = ffield
-                        case ('lnz0 ur')
+                        case ('ur')
                             pm_grid%cp%lnz0(:, 5) = ffield
                     end select
                 end if
@@ -133,7 +133,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%sand(:, ilvl) = ffield
                     else
-                        print 1130, adjustl(fname), adjustl(vattr(iattr)%attr)
+                        print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
                     end if
                 end if
             case ('clay')
@@ -145,7 +145,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%clay(:, ilvl) = ffield
                     else
-                        print 1130, adjustl(fname), adjustl(vattr(iattr)%attr)
+                        print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
                     end if
                 end if
 
@@ -193,7 +193,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
 
             !> Print a warning if the variable name is not recognized.
             case default
-                if (verbose) print 1120, adjustl(fname), adjustl(vattr(iattr)%attr)
+                if (verbose) print 1120, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
 
         end select
     end do
