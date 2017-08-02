@@ -1,7 +1,7 @@
       SUBROUTINE WATDRN(
-     1    delzw,bcoef,thpora,grksat,grkeff,asat0,
+     1    delzw,bcoef,thpora,grksat,grkeff,asat0,iwf,
      2    asat1,subflw,basflw,satsfc,
-     3    ilg,il1,il2,delt)
+     3    ilg,il1,il2,wfk,delt)
 c
 c     * December 4, 2009, Vincent Fortin
 c
@@ -114,6 +114,7 @@ c     Input parameters
       INTEGER ilg         ! Size of arrays
       INTEGER il1         ! index of first grid point to process
       INTEGER il2         ! index of last grid point to process
+      INTEGER wfk         ! IWF of parent call (e.g., WATROF, LATFLOW)
       REAL    delt        ! duration of the time step (s)
 *
 c     Input arrays
@@ -128,6 +129,7 @@ c     Input arrays
                           ! controlling the time scale of interflow process
                           ! ksat * (tile slope / tile length) (1/s)
       REAL    asat0(ilg)  ! bulk saturation at initial time
+      INTEGER iwf(ilg)    ! IWF flag (runs if == wfk)
 *
 c     Output arrays
       REAL    asat1(ilg)  ! bulk saturation at the end of the time step
@@ -149,6 +151,9 @@ c     Work arrays
 c     Local variables
       INTEGER i           ! Array index
 *
+c     return if no nml is expected to run in this cycle
+      IF (.NOT. any(iwf == wfk)) RETURN
+*
 c**********************************************************************
 c     STEP 0: Initialize a few things before we start
 c             - output variables
@@ -156,6 +161,8 @@ c             - functions of the input parameters
 c**********************************************************************
 *
       DO i=il1,il2
+c        cycle if not using watrof or latflow
+         IF (iwf(i) /= wfk) CYCLE
 c        c and c factors
          c(i)    = 2.*bcoef(i)+3.
          cm1(i)  = c(i)-1.
@@ -177,11 +184,15 @@ c             Also estimate fraction of surface that is saturated
 c**********************************************************************
 *
       DO i=il1,il2
+c        cycle if not using watrof or latflow
+         IF (iwf(i) /= wfk) CYCLE
 c        determine time at which seepage face becomes unsaturated
          tc(i) = thpora(i)/(c(i)*grkeff(i))
       ENDDO
 *
       DO i=il1,il2
+c        cycle if not using watrof or latflow
+         IF (iwf(i) /= wfk) CYCLE
 c        find theoretical start of recession (t0) from bulk saturation
 c        and at the same time estimate baseflow based on rate at t0
          IF (satspf(i)) THEN
@@ -205,6 +216,8 @@ c           the fraction of the surface that is saturated at t0 is zero
       ENDDO
 *
       DO i=il1,il2
+c        cycle if not using watrof or latflow
+         IF (iwf(i) /= wfk) CYCLE
 c        Compute baseflow in m from normalized baseflow rate
          basflw(i) = grksat(i)*basflw(i)*delt
       ENDDO
@@ -214,6 +227,8 @@ c     STEP 2: Find theoretical time t1 at the end of the time step
 c**********************************************************************
 *
       DO i=il1,il2
+c        cycle if not using watrof or latflow
+         IF (iwf(i) /= wfk) CYCLE
          IF (satspf(i)) THEN
 c           Assess if seepage face will still be saturated at the
 c           end of the time step
@@ -238,6 +253,8 @@ c             and interflow amount
 c**********************************************************************
 *
       DO i=il1,il2
+c        cycle if not using watrof or latflow
+         IF (iwf(i) /= wfk) CYCLE
          IF (satspf(i)) THEN
 c           saturated seepage face at the end of the time step
             asat1(i) = 1.-ratiot(i)/c(i)
@@ -248,6 +265,8 @@ c           unsaturated seepage face at the end of the time step
       ENDDO
 *
       DO i=il1,il2
+c        cycle if not using watrof or latflow
+         IF (iwf(i) /= wfk) CYCLE
 c        Sanity check: bulk saturation should not increase with time
          asat1(i) = MIN(asat00(i),asat1(i))
 c        Obtain interflow from the difference in bulk saturation

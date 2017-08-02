@@ -135,7 +135,8 @@ C     * INTERNAL SCALARS AND VECTORS
      4     THPOR_AVAIL(ilg),BASFLWJ(ILG),XLAMBDA,ktop,kl,h0,c1,c2,
      +     ztop(ilg,ig)
       
-      INTEGER IWF,IG,ILG,IL1,IL2,I,J
+      INTEGER IG,ILG,IL1,IL2,I,J
+      INTEGER IWF(ILG)
 
 C-----kam------- Added variable for PDM------------------------------------
       REAL FSTR(ILG),CMIN(ILG),CMAX(ILG)
@@ -153,9 +154,10 @@ C     conductivity in a depth change h0) in Vincent's new formula.
 
 C-----kam---Initialization UMQ------------------------------------------
       UMQ = 0.0
+
 C-----------------------------------------------------------------------------------------
-C     skip if using flat class 
-      if(iwf.eq.0)return
+C     Return if no nml is expected to run in this cycle
+      if(.not. any(iwf == 3)) return
 
 C ----INITIALIZE WORKING VARIABLES - RUNOFF GENERATION-----
       U         = 0.0
@@ -168,6 +170,10 @@ C ----INITIALIZE WORKING VARIABLES - RUNOFF GENERATION-----
       SUM_FSTR = 0.0
 
       do i = IL1,IL2
+
+C-----------------------------------------------------------------------------------------
+C     Cycle if using flat class
+      if(iwf(i) /= 3) cycle
 
       if(fi(I) .gt. 0.0)then
                  B(i) = max(0.0, B(i))
@@ -263,6 +269,10 @@ C        loop through each element
          do i = il1,il2
 
 C        ---------------------------------------------------------------------------------
+C        cycle if not using latflow
+         if(iwf(i) /= 3) cycle
+
+C        ---------------------------------------------------------------------------------
 C        form vecotors for the layer - to be compatible with WATDRN arguments 
            delzwj(i)   = delzw(i,j)
            bij(i)      = bi(i,j)
@@ -309,14 +319,18 @@ C        -----------------------------------------------------------------------
 C        compute interflow from the layer (subflowj). Baseflow from the layer (basflwj) is
 C        also computed but is not used at present.
 C        ---------------------------------------------------------------------------------
-         call watdrn (delzwj,bij,thpor_avail,ksat,grkeff,asat_t0,
+         call watdrn (delzwj,bij,thpor_avail,ksat,grkeff,asat_t0,iwf,
      1                asat_t1,subflwj,basflwj,satfc,
-     2                ilg,il1,il2,delt)
+     2                ilg,il1,il2,3,delt)
 
 C        ---------------------------------------------------------------------------------
 C        loop through each element
 
          do i = il1,il2
+
+C           ------------------------------------------------------------------------------
+C           cycle if not using latflow
+            if(iwf(i) /= 3) cycle
 
 C           -----------------------------------------------------------------------------
 C           allow lateral flow if liquid water content is greater than

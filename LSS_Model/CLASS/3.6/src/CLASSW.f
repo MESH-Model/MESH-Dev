@@ -55,6 +55,7 @@ C     * OCT 01/10 - M.MACDONALD.ONLY PERFORM VANISHINGLY SMALL SNOW
 C                               CALCULATIONS IF PBSM NOT BEING USED (MESH OPTION)
 C     * DEC 07/09 - D.VERSEGHY. ADD RADD AND SADD TO WPREP CALL.
 C     * JAN 06/09 - D.VERSEGHY. INCREASE LIMITING SNOW AMOUNT.
+C     * JUN    08 - C.THOMPSON. ADDED CALLS TO WATROF.
 C     * FEB 25/08 - D.VERSEGHY. MODIFICATIONS REFLECTING CHANGES
 C     *                         ELSEWHERE IN CODE.
 C     * MAR 23/06 - D.VERSEGHY. CHANGES TO ADD MODELLING OF WSNOW;
@@ -127,12 +128,14 @@ C                               CLASS VERSION 2.0 (WITH CANOPY).
 C     * APR 11/89 - D.VERSEGHY. LAND SURFACE WATER BUDGET CALCULATIONS.
 C                                                                                 
       USE FLAGS
+C
       IMPLICIT NONE
-
+C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IWF,ILG,IL1,IL2,JL,IC,IG,IGP1,IGP2,I,J,NLANDCS,NLANDGS,
+      INTEGER ILG,IL1,IL2,JL,IC,IG,IGP1,IGP2,I,J,NLANDCS,NLANDGS,
      1        NLANDC,NLANDG,NLANDI,IPTBAD,JPTBAD,KPTBAD,LPTBAD,N
+      INTEGER IWF(ILG)
 C
 C     * MAIN OUTPUT FIELDS.
 C                                                                                  
@@ -416,28 +419,23 @@ C
      4                BI,PSISAT,GRKSCS,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IGDR,
      6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
-          IF(IWF == 2)THEN
-             CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FCS,
-     1                   ZPNDPRECS,ZPNDCS, FSTRCS, TPNDCS,
-     2                   OVRFLW,   TOVRFL, RUNFCS, TRNFCS,  TFREZ,
-     3                   CMIN,     CMAX,   B,      K1,      K2,
-     4                   UM1CS,  QM1CS,  QM2CS,   UMQCS,    DELT)
-          ELSE IF (IWF == 3) THEN
-            CALL LATFLOW(THLQCS,THICCS,TPNDCS,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,RUNFCS,TRNFCS,FCS,ZPLMCS,
-     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBRWCS,
-     3                DELZW,THPOR,THLMIN,BI,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
-     5                ZPNDPRECS,ZPNDCS,FSTRCS,CMIN,CMAX,B,CSTRCS,UMQCS)
-          ELSE
-
-!Craig Thompson added call to watrof, june 2008.
-          CALL WATROF(THLQCS,THICCS,ZPNDCS,TPNDCS,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,RUNFCS,TRNFCS,FCS,ZPLMCS,
-     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBRWCS,
-     3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
-          ENDIF
+          CALL PDMROF(IWF, ILG, IL1, IL2, FCS,
+     1                ZPNDPRECS, ZPNDCS, FSTRCS, TPNDCS,
+     2                OVRFLW, TOVRFL, RUNFCS, TRNFCS, TFREZ,
+     3                CMIN, CMAX, B, K1, K2,
+     4                UM1CS, QM1CS, QM2CS, UMQCS, DELT)
+          CALL LATFLOW(THLQCS, THICCS, TPNDCS, OVRFLW, TOVRFL,
+     1                 SUBFLW, TSUBFL, RUNFCS, TRNFCS, FCS, ZPLMCS,
+     2                 XSLOPE, XDRAINH, MANNING_N, DD, KSAT, TBRWCS,
+     3                 DELZW, THPOR, THLMIN, BI, DIDRN,
+     4                 ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC,
+     5                 ZPNDPRECS, ZPNDCS, FSTRCS, CMIN, CMAX, B,
+     6                 CSTRCS, UMQCS)
+          CALL WATROF(THLQCS, THICCS, ZPNDCS, TPNDCS, OVRFLW, TOVRFL,
+     1                SUBFLW, TSUBFL, RUNFCS, TRNFCS, FCS, ZPLMCS,
+     2                XSLOPE, XDRAINH, MANNING_N, DD, KSAT, TBRWCS,
+     3                DELZW, THPOR, THLMIN, BI, DODRN, DOVER, DIDRN,
+     4                ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC)
           CALL TMCALC(TBARCS,THLQCS,THICCS,HCPCS,TPNDCS,ZPNDCS,
      1                TSNOCS,ZSNOCS,ALBSCS,RHOSCS,HCPSCS,TBASCS,
      2                OVRFLW,TOVRFL,RUNFCS,TRNFCS,HMFG,HTC,HTCS,
@@ -519,28 +517,23 @@ C
      4                BI,PSISAT,GRKSGS,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IGDR,
      6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
-          IF(IWF == 2)THEN
-             CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FGS,
-     1                   ZPNDPREGS,ZPNDGS, FSTRGS, TPNDGS,
-     2                   OVRFLW,   TOVRFL, RUNFGS, TRNFGS,  TFREZ,
-     3                   CMIN,     CMAX,   B,      K1,      K2,
-     4                   UM1GS,  QM1GS,  QM2GS,   UMQGS,    DELT)
-          ELSE IF (IWF == 3) THEN
-            CALL LATFLOW(THLQGS,THICGS,TPNDGS,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,RUNFGS,TRNFGS,FGS,ZPLMGS,
-     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBRWGS,
-     3                DELZW,THPOR,THLMIN,BI,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
-     5                ZPNDPREGS,ZPNDGS,FSTRGS,CMIN,CMAX,B,CSTRGS,UMQGS)
-          ELSE
-
-!Craig Thompson added call to watrof, june 2008.
-          CALL WATROF(THLQGS,THICGS,ZPNDGS,TPNDGS,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,RUNFGS,TRNFGS,FGS,ZPLMGS,
-     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBRWGS,
-     3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
-          ENDIF
+          CALL PDMROF(IWF, ILG, IL1, IL2, FGS,
+     1                ZPNDPREGS, ZPNDGS, FSTRGS, TPNDGS,
+     2                OVRFLW, TOVRFL, RUNFGS, TRNFGS, TFREZ,
+     3                CMIN, CMAX, B, K1, K2,
+     4                UM1GS, QM1GS, QM2GS, UMQGS, DELT)
+          CALL LATFLOW(THLQGS, THICGS, TPNDGS, OVRFLW, TOVRFL,
+     1                 SUBFLW, TSUBFL, RUNFGS, TRNFGS, FGS, ZPLMGS,
+     2                 XSLOPE, XDRAINH, MANNING_N, DD, KSAT, TBRWGS,
+     3                 DELZW, THPOR, THLMIN, BI, DIDRN,
+     4                 ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC,
+     5                 ZPNDPREGS, ZPNDGS, FSTRGS, CMIN, CMAX, B,
+     6                 CSTRGS, UMQGS)
+          CALL WATROF(THLQGS, THICGS, ZPNDGS, TPNDGS, OVRFLW, TOVRFL,
+     1                SUBFLW, TSUBFL, RUNFGS, TRNFGS, FGS, ZPLMGS,
+     2                XSLOPE, XDRAINH, MANNING_N, DD, KSAT, TBRWGS,
+     3                DELZW, THPOR, THLMIN, BI, DODRN, DOVER, DIDRN,
+     4                ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC)
           CALL TMCALC(TBARGS,THLQGS,THICGS,HCPGS,TPNDGS,ZPNDGS,
      1                TSNOGS,ZSNOGS,ALBSGS,RHOSGS,HCPSGS,TBASGS,
      2                OVRFLW,TOVRFL,RUNFGS,TRNFGS,HMFG,HTC,HTCS,
@@ -608,28 +601,23 @@ C
      4                BI,PSISAT,GRKSC,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IGDR,
      6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
-          IF(IWF == 2)THEN
-             CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FC,
-     1                   ZPONDPREC,ZPONDC, FSTRC, TPONDC,
-     2                   OVRFLW,   TOVRFL, RUNFC, TRUNFC,  TFREZ,
-     3                   CMIN,     CMAX,   B,      K1,      K2,
-     4                   UM1C,     QM1C,   QM2C,   UMQC,    DELT)
-          ELSE IF (IWF == 3) THEN
-            CALL LATFLOW(THLQCO,THICCO,ZPONDC,TPONDC,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,RUNFC,TRUNFC,FC,ZPLIMC,
-     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARWC,
-     3                DELZW,THPOR,THLMIN,BI,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
-     5                ZPONDPREC,ZPONDC,FSTRC,CMIN,CMAX,B,CSTRC,UMQC)
-          ELSE
-
-!Craig Thompson added call to watrof, june 2008.
-          CALL WATROF(THLQCO,THICCO,ZPONDC,TPONDC,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,RUNFC,TRUNFC,FC,ZPLIMC,
-     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARWC,
-     3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
-          ENDIF
+          CALL PDMROF(IWF, ILG, IL1, IL2, FC,
+     1                ZPONDPREC, ZPONDC, FSTRC, TPONDC,
+     2                OVRFLW, TOVRFL, RUNFC, TRUNFC, TFREZ,
+     3                CMIN, CMAX, B, K1, K2,
+     4                UM1C, QM1C, QM2C, UMQC, DELT)
+          CALL LATFLOW(THLQCO, THICCO, ZPONDC, TPONDC, OVRFLW, TOVRFL,
+     1                 SUBFLW, TSUBFL, RUNFC, TRUNFC, FC, ZPLIMC,
+     2                 XSLOPE, XDRAINH, MANNING_N, DD, KSAT, TBARWC,
+     3                 DELZW, THPOR, THLMIN, BI, DIDRN,
+     4                 ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC,
+     5                 ZPONDPREC, ZPONDC, FSTRC, CMIN, CMAX, B,
+     6                 CSTRC, UMQC)
+          CALL WATROF(THLQCO, THICCO, ZPONDC, TPONDC, OVRFLW, TOVRFL,
+     1                SUBFLW, TSUBFL, RUNFC, TRUNFC, FC, ZPLIMC,
+     2                XSLOPE, XDRAINH, MANNING_N, DD, KSAT, TBARWC,
+     3                DELZW, THPOR, THLMIN, BI, DODRN, DOVER, DIDRN,
+     4                ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC)
           CALL TMCALC(TBARC,THLQCO,THICCO,HCPCO,TPONDC,ZPONDC,
      1                TSNOWC,ZSNOWC,ALBSC,RHOSC,HCPSC,TBASC,
      2                OVRFLW,TOVRFL,RUNFC,TRUNFC,HMFG,HTC,HTCS,
@@ -691,28 +679,23 @@ C
      4                BI,PSISAT,GRKSG,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IGDR,
      6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
-          IF(IWF == 2)THEN
-             CALL PDMROF(IWF,      ILG,    IL1,    IL2,     FG,
-     1                   ZPONDPREG,ZPONDG, FSTRG, TPONDG,
-     2                   OVRFLW,   TOVRFL, RUNFG, TRUNFG,  TFREZ,
-     3                   CMIN,     CMAX,   B,      K1,      K2,
-     4                   UM1G,     QM1G,   QM2G,   UMQG,    DELT)
-          ELSE IF (IWF == 3) THEN
-            CALL LATFLOW(THLQGO,THICGO,ZPONDG,TPONDG,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,RUNFG,TRUNFG,FG,ZPLIMG,
-     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARWG,
-     3                DELZW,THPOR,THLMIN,BI,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
-     5         ZPONDPREG,ZPONDG,FSTRG,CMIN,CMAX,B,CSTRG,UMQG)
-          ELSE
-
-!Craig Thompson added call to watrof, june 2008.
-          CALL WATROF(THLQGO,THICGO,ZPONDG,TPONDG,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,RUNFG,TRUNFG,FG,ZPLIMG,
-     2                XSLOPE,XDRAINH,MANNING_N,DD,KSAT,TBARWG,
-     3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
-          ENDIF
+          CALL PDMROF(IWF, ILG, IL1, IL2, FG,
+     1                ZPONDPREG, ZPONDG, FSTRG, TPONDG,
+     2                OVRFLW, TOVRFL, RUNFG, TRUNFG, TFREZ,
+     3                CMIN, CMAX, B, K1, K2,
+     4                UM1G, QM1G, QM2G, UMQG, DELT)
+          CALL LATFLOW(THLQGO, THICGO, ZPONDG, TPONDG, OVRFLW, TOVRFL,
+     1                 SUBFLW, TSUBFL, RUNFG, TRUNFG, FG, ZPLIMG,
+     2                 XSLOPE, XDRAINH, MANNING_N, DD, KSAT, TBARWG,
+     3                 DELZW, THPOR, THLMIN, BI, DIDRN,
+     4                 ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC,
+     5                 ZPONDPREG, ZPONDG, FSTRG, CMIN, CMAX, B,
+     6                 CSTRG, UMQG)
+          CALL WATROF(THLQGO, THICGO, ZPONDG, TPONDG, OVRFLW, TOVRFL,
+     1                SUBFLW, TSUBFL, RUNFG, TRUNFG, FG, ZPLIMG,
+     2                XSLOPE, XDRAINH, MANNING_N, DD, KSAT, TBARWG,
+     3                DELZW, THPOR, THLMIN, BI, DODRN, DOVER, DIDRN,
+     4                ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC)
           CALL TMCALC(TBARG,THLQGO,THICGO,HCPGO,TPONDG,ZPONDG,
      1                TSNOWG,ZSNOWG,ALBSG,RHOSG,HCPSG,TBASG,
      2                OVRFLW,TOVRFL,RUNFG,TRUNFG,HMFG,HTC,HTCS,

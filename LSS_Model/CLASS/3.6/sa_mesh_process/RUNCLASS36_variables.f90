@@ -12,7 +12,7 @@ module RUNCLASS36_variables
 
     integer JLAT
 
-    integer IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
+    integer IDISP, IZREF, ISLFD, IPCP, IPAI, IHGT, IALC, &
         IALS, IALG, ITG, ITC, ITCG
 
     !> CLASS diagnostic output starting and stopping dates.
@@ -89,8 +89,9 @@ module RUNCLASS36_variables
 
         !> Dimension: NML
         real, dimension(:), allocatable :: &
-            AGID, AGVD, ALGD, ALGW, ASID, ASVD, DRN, FARE, GRKF, MID, &
+            AGID, AGVD, ALGD, ALGW, ASID, ASVD, DRN, FARE, GRKF, &
             SDEP, WFCI, WFSF, XSLP, ZPLG, ZPLS, ZSNL
+        integer, dimension(:), allocatable :: MID, IWF
 
         !> Dimension: NML, IGND
         integer, dimension(:), allocatable :: IGDR
@@ -149,8 +150,10 @@ module RUNCLASS36_variables
 
     !> Type: RUNCLASS36_Flags
     !* PROCESS_ACTIVE: Flag to enable CLASS.
+    !* INTERFLOWFLAG: IWF flag (global).
     type RUNCLASS36_flags
         logical :: PROCESS_ACTIVE = .true.
+        integer :: INTERFLOWFLAG = 1
     end type
 
 !todo: may need to move these.

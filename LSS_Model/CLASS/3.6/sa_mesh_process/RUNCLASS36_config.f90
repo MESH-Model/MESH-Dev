@@ -286,8 +286,8 @@ module RUNCLASS36_config
 
         !> Land-surface variables.
         allocate(csfv%AGID(NML), csfv%AGVD(NML), csfv%ALGD(NML), csfv%ALGW(NML), csfv%ASID(NML), csfv%ASVD(NML), csfv%DRN(NML), &
-                 csfv%FARE(NML), csfv%GRKF(NML), csfv%MID(NML), csfv%SDEP(NML), csfv%WFCI(NML), csfv%WFSF(NML), csfv%XSLP(NML), &
-                 csfv%ZPLG(NML), csfv%ZPLS(NML), csfv%ZSNL(NML))
+                 csfv%FARE(NML), csfv%GRKF(NML), csfv%MID(NML), csfv%IWF(NML), csfv%SDEP(NML), csfv%WFCI(NML), csfv%WFSF(NML), &
+                 csfv%XSLP(NML), csfv%ZPLG(NML), csfv%ZPLS(NML), csfv%ZSNL(NML))
         allocate(csfv%IGDR(NML))
         allocate(csfv%IORG(NML, NSL), csfv%ISND(NML, NSL))
         allocate(csfv%BI(NML, NSL), csfv%CLAY(NML, NSL), csfv%DELZW(NML, NSL), csfv%GRKS(NML, NSL), csfv%HCPS(NML, NSL), &
@@ -442,6 +442,7 @@ module RUNCLASS36_config
         catv%GC = pm%tp%gc
         csfv%FARE = pm%tp%fare
         csfv%MID = pm%tp%mid
+        csfv%IWF = pm%tp%iwf
         csfv%FCAN = pm%cp%fcan
         csfv%LNZ0 = pm%cp%lnz0
         csfv%ALVC = pm%cp%alvc
@@ -522,7 +523,7 @@ module RUNCLASS36_config
                  UMQ(NML), &
                  FSTRCS(NML), FSTRC(NML), FSTRG(NML), FSTRGS(NML))
 !todo: move to read_parameters
-        if (IWF == 2 .or. IWF == 3) then
+        if (any(csfv%IWF == 2) .or. any(csfv%IWF == 3)) then
             ZPNDPRECS = 0.0
             ZPONDPREC = 0.0
             ZPONDPREG = 0.0

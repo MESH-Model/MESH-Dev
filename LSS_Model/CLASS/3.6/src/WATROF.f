@@ -111,7 +111,9 @@ C     * INTERNAL SCALARS AND VECTORS
      4     THPOR_AVAIL(ilg),BASFLWJ(ILG),XLAMBDA,ktop,kl,h0,c1,c2,
      +     ztop(ilg,ig)
 
-      INTEGER IWF,IG,ILG,IL1,IL2,I,J
+      INTEGER IG,ILG,IL1,IL2,I,J
+      INTEGER IWF(ILG)
+
       real exav
 
 C-----------------------------------------------------------------------------------------
@@ -125,13 +127,17 @@ C     conductivity in a depth change h0) in Vincent's new formula.
       h0 = 1.0
 
 C-----------------------------------------------------------------------------------------
-C     skip if using flat class
-      if(iwf.eq.0)return
+C     return if no nml is expected to run in this cycle
+      if(.not. any(iwf == 1)) return
 
 C-----------------------------------------------------------------------------------------
 C     loop through each element
 
       do i = il1,il2
+
+C-----------------------------------------------------------------------------------------
+C        skip if using flat class
+         if (iwf(i) /= 1) cycle
 
 C        ---------------------------------------------------------------------------------
 C        compute overland flow and add to runoff and to the overall overland flow
@@ -198,6 +204,10 @@ C        loop through each element
          do i = il1,il2
 
 C        ---------------------------------------------------------------------------------
+C        skip if not using watrof
+           if (iwf(i) /= 1) cycle
+
+C        ---------------------------------------------------------------------------------
 C        form vecotors for the layer - to be compatible with WATDRN arguments
            delzwj(i)   = delzw(i,j)
            bij(i)      = bi(i,j)
@@ -244,14 +254,18 @@ C        -----------------------------------------------------------------------
 C        compute interflow from the layer (subflowj). Baseflow from the layer (basflwj) is
 C        also computed but is not used at present.
 C        ---------------------------------------------------------------------------------
-         call watdrn (delzwj,bij,thpor_avail,ksat,grkeff,asat_t0,
+         call watdrn (delzwj,bij,thpor_avail,ksat,grkeff,asat_t0,iwf,
      1                asat_t1,subflwj,basflwj,satfc,
-     2                ilg,il1,il2,delt)
+     2                ilg,il1,il2,1,delt)
 
 C        ---------------------------------------------------------------------------------
 C        loop through each element
 
          do i = il1,il2
+
+C           ------------------------------------------------------------------------------
+C           skip if not using watrof
+            if (iwf(i) /= 1) cycle
 
 C           -----------------------------------------------------------------------------
 C           allow lateral flow if liquid water content is greater than

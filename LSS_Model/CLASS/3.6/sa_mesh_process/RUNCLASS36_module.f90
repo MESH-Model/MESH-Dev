@@ -229,7 +229,7 @@ module RUNCLASS36_module
                         AILCG, AILCGS, FCANC, FCANCS, &
                         ic%now%jday, NML, il1, il2, &
                         JLAT, ic%ts_count, ICAN, ICAN + 1, IGND, IDISP, IZREF, &
-                        IWF, IPAI, IHGT, IALC, IALS, IALG)
+                        csfv%IWF, IPAI, IHGT, IALC, IALS, IALG)
 
             !> SURFACE TEMPERATURE AND FLUX CALCULATIONS.
             call CLASST(TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
@@ -306,7 +306,7 @@ module RUNCLASS36_module
                         csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, csfv%GRKS, &
                         csfv%THRA, csfv%THFC, csfv%DRN, csfv%HCPS, shd%lc%sl%DELZ, &
                         csfv%DELZW, csfv%ZBTW, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
-                        csfv%ISND, csfv%IGDR, IWF, NML, il1, il2, ic%ts_count, &
+                        csfv%ISND, csfv%IGDR, csfv%IWF, NML, il1, il2, ic%ts_count, &
                         JLAT, ICAN, IGND, IGND + 1, IGND + 2, &
                         NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
                         MANNGAT, DDGAT, ic%ts_daily, &

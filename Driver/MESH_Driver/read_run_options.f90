@@ -94,7 +94,7 @@
         !>    * IF IWF = 2, SAME AS IWF = 0 EXCEPT THAT OVERLAND FLOW IS
         !>    * MODELLED AS FILL AND SPILL PROCESS FROM A SERIES OF POTHOLES.
         !>    * DEFAULT VALUE IS 1.
-        IWF = 1
+        RUNCLASS36_flgs%INTERFLOWFLAG = 1
 
         !>    * IF IPAI, IHGT, IALC, IALS AND IALG ARE ZERO, THE VALUES OF
         !>    * LEAF ARE INDEX, VEGETATION HEIGHT, CANOPY ALBEDO, SNOW ALBEDO
@@ -325,7 +325,7 @@
                     case ('ITG')
                         call value(out_args(2), ITG, ierr)
                     case ('IWF')
-                        call value(out_args(2), IWF, ierr)
+                        call value(out_args(2), RUNCLASS36_flgs%INTERFLOWFLAG, ierr)
                     case ('IPAI')
                         call value(out_args(2), IPAI, ierr)
                     case ('IHGT')
