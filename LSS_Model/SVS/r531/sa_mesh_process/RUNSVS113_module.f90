@@ -184,8 +184,7 @@ module RUNSVS113_module
             stas%sfc%evap(k + 1) = bus(fvap + k)
             stas%sfc%qevp(k + 1) = bus(fv + k)
             stas%sfc%hfs(k + 1) = bus(fc + k)
-!EG_MOD: use runofftot of level 5 instead, because it includes runoff over all surface types
-            stas%sfc%rofo(k + 1) = max(0.0, bus(runofftot + 4*NG + k))/ic%dts
+            stas%sfc%rofo(k + 1) = max(0.0, bus(runofftot + k))/ic%dts
 !-            stas%sfc%tsfs(k + 1, :) =
 !-            stas%sl%tbas(k + 1) =
 !EG_MOD add lateral flow from all layers
