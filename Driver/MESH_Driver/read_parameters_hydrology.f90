@@ -655,11 +655,18 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 end do
                             end if
 
+                        !> IWF.
+                        case ('iwf')
+                            do j = 1, NTYPE
+                                call value(out_args(j + 1), pm_gru%tp%iwf(j), ierr)
+                                if (ierr /= 0) goto 931
+                            end do
+
                         !> IWF == 2 (PDMROF).
 
                         !> CMAX.
                         case ('cmax')
-                            if (.not. (any(pm%tp%iwf == 2) .or. any(pm%tp%iwf == 3))) then
+                            if (.not. (any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3))) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -671,7 +678,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> CMIN.
                         case ('cmin')
-                            if (.not. (any(pm%tp%iwf == 2) .or. any(pm%tp%iwf == 3))) then
+                            if (.not. (any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3))) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -683,7 +690,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> B.
                         case ('b')
-                            if (.not. (any(pm%tp%iwf == 2) .or. any(pm%tp%iwf == 3))) then
+                            if (.not. (any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3))) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -695,7 +702,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> K1.
                         case ('k1')
-                            if (.not. (any(pm%tp%iwf == 2) .or. any(pm%tp%iwf == 3))) then
+                            if (.not. (any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3))) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -707,7 +714,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> K2.
                         case ('k2')
-                            if (.not. (any(pm%tp%iwf == 2) .or. any(pm%tp%iwf == 3))) then
+                            if (.not. (any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3))) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -956,7 +963,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                 end if
 
                 !> Check the number of parameters.
-                if ((any(pm%tp%iwf == 2) .or. any(pm%tp%iwf == 3)) .and. n < 9) then
+                if ((any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3)) .and. n < 9) then
                     print 8330, 9, 'PDMROF or LATFLOW (IWF 2 or 3)'
                     stop
                 else if (FROZENSOILINFILFLAG == 1 .and. n < 4) then
@@ -1001,7 +1008,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                         end if
 
                         !> IWF == 2 (PDMROF) or IWF == 3 (LATFLOW).
-                        if (any(pm%tp%iwf == 2) .or. any(pm%tp%iwf == 3)) then
+                        if (any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3)) then
                             hp%CMAXROW(i, m) = DEPPARVAL(5, m)
                             hp%CMINROW(i, m) = DEPPARVAL(6, m)
                             hp%BROW(i, m) = DEPPARVAL(7, m)

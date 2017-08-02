@@ -58,8 +58,8 @@ module RUNCLASS36_variables
 
     !> PDMROF.
 !todo: isolate PDMROF from CLASS code
-    real ZPND, FSTR
-    real, dimension(:), allocatable   :: CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
+    real, dimension(:), allocatable :: &
+        CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
         ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &
         UM1CS, UM1C, UM1G, UM1GS, &
         QM1CS, QM1C, QM1G, QM1GS, &

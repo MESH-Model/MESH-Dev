@@ -149,6 +149,12 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     end if
                 end if
 
+            !> RUNCLASS36.
+            case ('iwf')
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+                    pm_grid%tp%iwf = ffield
+                end if
+
             !> BASEFLOWFLAG == 2 (lower zone storage).
             case ('pwr')
                 if (bflm%BASEFLOWFLAG == 2) bflm%pm_grid%pwr = ffield

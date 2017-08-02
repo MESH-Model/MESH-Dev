@@ -514,39 +514,21 @@ module RUNCLASS36_config
         end if
 
         !> IWF 2 (PDMROF) and IWF 3 (LATFLOW).
-        allocate(CMINPDM(NML), CMAXPDM(NML), BPDM(NML), K1PDM(NML), &
-                 K2PDM(NML), ZPNDPRECS(NML), ZPONDPREC(NML), ZPONDPREG(NML), &
-                 ZPNDPREGS(NML), &
-                 UM1CS(NML), UM1C(NML), UM1G(NML), UM1GS(NML), &
-                 QM1CS(NML), QM1C(NML), QM1G(NML), QM1GS(NML), &
-                 QM2CS(NML), QM2C(NML), QM2G(NML), QM2GS(NML), &
-                 UMQ(NML), &
-                 FSTRCS(NML), FSTRC(NML), FSTRG(NML), FSTRGS(NML))
-!todo: move to read_parameters
+        allocate(&
+            CMINPDM(NML), CMAXPDM(NML), BPDM(NML), K1PDM(NML), K2PDM(NML), &
+            ZPNDPRECS(NML), ZPONDPREC(NML), ZPONDPREG(NML), ZPNDPREGS(NML), &
+            UM1CS(NML), UM1C(NML), UM1G(NML), UM1GS(NML), &
+            QM1CS(NML), QM1C(NML), QM1G(NML), QM1GS(NML), &
+            QM2CS(NML), QM2C(NML), QM2G(NML), QM2GS(NML), &
+            UMQ(NML), &
+            FSTRCS(NML), FSTRC(NML), FSTRG(NML), FSTRGS(NML))
+        ZPNDPRECS = 0.0; ZPONDPREC = 0.0; ZPONDPREG = 0.0; ZPNDPREGS = 0.0
+        UM1CS = 0.0; UM1C = 0.0; UM1G = 0.0; UM1GS = 0.0
+        QM1CS = 0.0; QM1C = 0.0; QM1G = 0.0; QM1GS = 0.0
+        QM2CS = 0.0; QM2C = 0.0; QM2G = 0.0; QM2GS = 0.0
+        UMQ = 0.0
+        FSTRCS = 0.0; FSTRC = 0.0; FSTRG = 0.0; FSTRGS = 0.0
         if (any(csfv%IWF == 2) .or. any(csfv%IWF == 3)) then
-            ZPNDPRECS = 0.0
-            ZPONDPREC = 0.0
-            ZPONDPREG = 0.0
-            ZPNDPREGS = 0.0
-            ZPND = 0.0
-            UM1CS = 0.0
-            UM1C = 0.0
-            UM1G = 0.0
-            UM1GS = 0.0
-            QM1CS = 0.0
-            QM1C = 0.0
-            QM1G = 0.0
-            QM1GS = 0.0
-            QM2CS = 0.0
-            QM2C = 0.0
-            QM2G = 0.0
-            QM2GS = 0.0
-            UMQ = 0.0
-            FSTRCS = 0.0
-            FSTRC = 0.0
-            FSTRG = 0.0
-            FSTRGS = 0.0
-            FSTR = 0.0
             do k = il1, il2
                 ik = shd%lc%ILMOS(k)
                 jk = shd%lc%JLMOS(k)

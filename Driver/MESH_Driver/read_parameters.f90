@@ -56,9 +56,12 @@ subroutine read_parameters(fls, shd, cm, ierr)
     call pm_init(pm_grid, 'grid', NA, NSL, 4, 5, ierr)
     call pm_init(pm_gru, 'gru', NTYPE, NSL, 4, 5, ierr)
 
-    !> CLASS interflow flag.
+    !> RUNCLASS36 (interflow flag).
     if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-        pm%tp%iwf(il1:il2) = RUNCLASS36_flgs%INTERFLOWFLAG
+        pm_gru%tp%iwf = RUNCLASS36_flgs%INTERFLOWFLAG
+        allocate( &
+            hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE), hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE), hp%K2ROW(NA, NTYPE), stat = ierr)
+        hp%CMAXROW = 0.0; hp%CMINROW = 0.0; hp%BROW = 0.0; hp%K1ROW = 0.0; hp%K2ROW = 0.0
     end if
 
     !> WF_ROUTE (Watflood, 1988).
@@ -101,14 +104,6 @@ subroutine read_parameters(fls, shd, cm, ierr)
         allocate(t0_ACC(NYEARS))
         t0_ACC = 0.0
     end if
-
-    !> IWF 2 (PDMROF) and IWF 3 (LATFLOW).
-!temp: in case IWF is overwritten in hydrology.ini or parameters.csv
-!    if (any(pm%tp%iwf == 2) .or. any(pm%tp%iwf == 3)) then
-        allocate( &
-            hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE), hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE), hp%K2ROW(NA, NTYPE), stat = ierr)
-        hp%CMAXROW = 0.0; hp%CMINROW = 0.0; hp%BROW = 0.0; hp%K1ROW = 0.0; hp%K2ROW = 0.0
-!    end if
 
     !> BASEFLOWFLAG 1 (Luo, 2012).
     if (bflm%BASEFLOWFLAG == 1) then
@@ -227,7 +222,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
             if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
                 pm%tp%fare(k) = pm_gru%tp%fare(i)
                 pm%tp%mid(k) = max(1, pm_gru%tp%mid(i))
-                if (pm_gru%tp%iwf(i) /= -1) pm%tp%iwf(k) = pm_gru%tp%iwf(i)
+                pm%tp%iwf(k) = pm_gru%tp%iwf(i)
                 pm%cp%alvc(k, :) = pm_gru%cp%alvc(i, :)
                 pm%cp%alic(k, :) = pm_gru%cp%alic(i, :)
                 pm%cp%lamx(k, :) = pm_gru%cp%lamx(i, :)
