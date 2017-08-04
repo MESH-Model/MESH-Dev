@@ -119,6 +119,10 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 	TYPE(TB0Param) tb0p
 	END TYPE ResvinParam
 	
+	TYPE DivParam
+	TYPE(TB0Param) tb0p
+	END TYPE DivParam
+	
 	TYPE TB0ColumnMetaData
 	INTEGER colCount
 	CHARACTER(64), DIMENSION(:), ALLOCATABLE :: colName
@@ -150,6 +154,14 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 	TYPE(TB0ColumnMetaData) tb0cmd
 	REAL, DIMENSION(:), ALLOCATABLE :: colValue1
 	END TYPE ResvinColumnMetaData
+	
+	TYPE DivColumnMetaData
+	TYPE(TB0ColumnMetaData) tb0cmd
+	REAL   , DIMENSION(:), ALLOCATABLE :: colLocX1
+	REAL   , DIMENSION(:), ALLOCATABLE :: colLocY1
+	REAL   , DIMENSION(:), ALLOCATABLE :: colValue1
+	INTEGER, DIMENSION(:), ALLOCATABLE :: colValue2
+	END TYPE DivColumnMetaData
 
 
 
@@ -282,6 +294,11 @@ C		TYPE(FlowColumn), DIMENSION(:), ALLOCATABLE :: flowCols
 	CALL InitTB0Param(resvinp%tb0p)
 	END SUBROUTINE InitResvinParam
 	
+	SUBROUTINE InitDivParam(divp)
+	TYPE(DivParam), INTENT(INOUT) :: divp
+	CALL InitTB0Param(divp%tb0p)
+	END SUBROUTINE InitDivParam
+	
 	SUBROUTINE InitTB0ColumnMetaData(tb0Cols)
 	TYPE(TB0ColumnMetaData), INTENT(INOUT) :: tb0Cols
 	tb0Cols%colCount = 0
@@ -301,6 +318,11 @@ C		TYPE(FlowColumn), DIMENSION(:), ALLOCATABLE :: flowCols
 	TYPE(ResvColumnMetaData), INTENT(INOUT) :: resvincmd
 	CALL InitTB0ColumnMetaData(resvincmd%tb0cmd)
 	END SUBROUTINE InitResvinColumnMetaData
+	
+	SUBROUTINE InitDivColumnMetaData(divcmd)
+	TYPE(DivColumnMetaData), INTENT(INOUT) :: divcmd
+	CALL InitTB0ColumnMetaData(divcmd%tb0cmd)
+	END SUBROUTINE InitDivColumnMetaData
 	
 	INTEGER FUNCTION TimeSpanHours(timeStamp1, timeStamp2)
 	TYPE(TimeStamp), INTENT(INOUT) :: timeStamp1, timeStamp2 
@@ -348,7 +370,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 
 	if(keyword(1:keyLen) .eq. ':sourcefilename')then
@@ -450,7 +472,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 
 	ParseRainParam = ParseR2CParam(header%r2cp, keyword,
@@ -475,7 +497,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 
 	ParseTempParam = ParseR2CParam(header%r2cp, keyword,
@@ -504,7 +526,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 
 	ParseGSMParam = ParseR2CParam(header%r2cp, keyword,
@@ -530,7 +552,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 
 	if(keyword(1:KeyLen) .eq. ':initheatdeficit')then
@@ -570,7 +592,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 
 	ParseR2CParam = 0 
@@ -699,7 +721,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 
 	ParseCoordSysParam = 0 
@@ -751,7 +773,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 
 	ParseCoordSysParamTB0 = 0 
@@ -806,7 +828,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 	logical rstat
 
@@ -948,7 +970,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 	logical rstat
 	
@@ -1092,7 +1114,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 	
 	ParseFrameLine = 0
@@ -1186,8 +1208,11 @@ C
 	TYPE(TimeStamp), INTENT(INOUT) :: tStamp 
 	CHARACTER*(*), INTENT(INOUT) :: string
 	character*128  value
-	character*4096 tmpString, localLine
-	integer lineLen, rStat
+		character*4096 tmpString, localLine
+!       integer lineLen, rStat		
+        integer lineLen
+! Dan Princz Changed rStat To logical from integer
+		logical rStat
 	integer slash, space, colon, point 
 	
 
@@ -1300,7 +1325,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 	
 	ParseTB0Param = 0 
@@ -1357,7 +1382,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 
 	if(keyword(1:KeyLen) .eq. ':routingdeltat')then
@@ -1403,7 +1428,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 
 C		if(keyword(1:KeyLen) .eq. ':routingdeltat')then
@@ -1441,7 +1466,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount
 
 C		if(keyword(1:KeyLen) .eq. ':deltat')then
@@ -1467,6 +1492,44 @@ C		end if
 
 C*******************************************************************
 C
+C
+C		Return Value
+C		-1 = Problem
+C		0 = keyword not foung in Type
+C               1 = Successfully assigned
+C
+C
+	INTEGER FUNCTION ParseDivParam(header, keyword,
+     &                                 keyLen, subString)
+	TYPE(DivParam), INTENT(INOUT) :: header 
+	INTEGER, INTENT(IN) :: keyLen
+	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
+	character*128  value
+	character*10000 tmpString
+	integer lineLen, wordCount
+
+C		if(keyword(1:KeyLen) .eq. ':routingdeltat')then
+C			if(SplitLine(subString, value, tmpString) .eq. 0)then
+C				ParseDivParam = -1
+C			else
+C				read(value, *) 	header%routingDeltaT
+C				ParseDivParam = 1
+C			end if
+C			return
+C		end if
+
+! if we're here, then keyword not assigned yet
+! let's look to the parent blocks
+
+	ParseDivParam = ParseTB0Param(header%tb0p, keyword,
+     &                                 keyLen, subString)
+	return
+
+	END FUNCTION ParseDivParam
+
+
+C*******************************************************************
+C
 C		Return Value
 C		-1 = Problem
 C		0 = keyword not foung in Type
@@ -1478,7 +1541,7 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
 	integer lineLen, wordCount,n, ideallocate
 	
 	tmpString = subString
@@ -1607,8 +1670,6 @@ c			enddo
 	
 	END FUNCTION ParseTB0ColumnMetaData
 	
-
-
 C*******************************************************************
 C
 C		Return Value
@@ -1622,7 +1683,8 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096  tmpString
+	character*10000  tmpString
+C	character*10000  tmpString
 	integer lineLen, wordCount,n, ideallocate
 
 	tmpString = subString
@@ -1768,7 +1830,8 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
+C	character*10000 tmpString
 	integer lineLen, wordCount,n, ideallocate
 
 	tmpString = subString
@@ -1904,7 +1967,8 @@ C
 	INTEGER, INTENT(IN) :: keyLen
 	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
 	character*128  value
-	character*4096 tmpString
+	character*10000 tmpString
+C	character*10000 tmpString
 	integer lineLen, wordCount,n, ideallocate
 
 	tmpString = subString
@@ -1941,6 +2005,121 @@ C			enddo
 
 	END FUNCTION ParseResvinColumnMetaData
 
+
+C*******************************************************************
+C
+C		Return Value
+C		-1 = Problem
+C		0 = keyword not foung in Type
+C               1 = Successfully assigned
+C
+	INTEGER FUNCTION ParseDivColumnMetaData(header, keyword,
+     &                                          keyLen, subString)
+	TYPE(DivColumnMetaData), INTENT(INOUT) :: header 
+	INTEGER, INTENT(IN) :: keyLen
+	CHARACTER*(*), INTENT(INOUT) :: keyword, subString
+	character*128  value
+	character*10000 tmpString
+C	character*10000 tmpString
+	integer lineLen, wordCount,n, ideallocate
+
+	tmpString = subString
+	
+	if(keyword(1:KeyLen) .eq. ':columnlocationx1')then
+	   wordCount = CountWords(tmpString)
+	   if(wordCount.le. 0)then
+	      ParseDivColumnMetaData = -1
+	      return
+	   end if
+	   
+	   header%tb0cmd%colCount = wordCount
+	   if(.NOT.allocated(header%colLocX1)) then
+	      allocate(header%colLocX1(wordCount))
+	   end if
+	   read(tmpString,*)(header%colLocX1(n),n=1,wordCount)
+
+C just checking
+C			do n=1,wordCount
+C				print*,header%colValue2(n)
+C			enddo
+
+	   ParseDivColumnMetaData = 1
+	   return
+
+	else if(keyword(1:KeyLen) .eq. ':columnlocationy1')then
+	   wordCount = CountWords(tmpString)
+	   if(wordCount.le. 0)then
+	      ParseDivColumnMetaData = -1
+	      return
+	   end if
+	   
+	   header%tb0cmd%colCount = wordCount
+	   if(.NOT.allocated(header%colLocY1)) then
+	      allocate(header%colLocY1(wordCount))
+	   end if
+	   read(tmpString,*)(header%colLocY1(n),n=1,wordCount)
+
+C just checking
+C			do n=1,wordCount
+C				print*,header%colValue2(n)
+C			enddo
+
+	   ParseDivColumnMetaData = 1
+	   return
+
+	else if(keyword(1:KeyLen) .eq. ':value1')then
+	   wordCount = CountWords(tmpString)
+	   if(wordCount.le. 0)then
+	      ParseDivColumnMetaData = -1
+	      return
+	   end if
+	   
+	   header%tb0cmd%colCount = wordCount
+	   if(.NOT.allocated(header%colValue1)) then
+	      allocate(header%colValue1(wordCount))
+	   end if
+	   read(tmpString,*)(header%colValue1(n),n=1,wordCount)
+
+C just checking
+C			do n=1,wordCount
+C				print*,header%colValue1(n)
+C			enddo
+
+	   ParseDivColumnMetaData = 1
+	   return
+	   
+	else if(keyword(1:KeyLen) .eq. ':value2')then
+	   wordCount = CountWords(tmpString)
+	   if(wordCount.le. 0)then
+	      ParseDivColumnMetaData = -1
+	      return
+	   end if
+	   
+	   header%tb0cmd%colCount = wordCount
+	   if(.NOT.allocated(header%colValue2)) then
+	      allocate(header%colValue2(wordCount))
+	   end if
+	   read(tmpString,*)(header%colValue2(n),n=1,wordCount)
+
+C just checking
+C			do n=1,wordCount
+C				print*,header%colValue2(n)
+C			enddo
+
+	   ParseDivColumnMetaData = 1
+	   return
+
+	   
+	end if
+
+! if we're here, then keyword not assigned yet
+! let's look to the parent blocks
+
+	ParseDivColumnMetaData  = ParseTB0ColumnMetaData(header%tb0cmd, 
+     &                            keyword, keyLen, subString)
+	return
+
+	END FUNCTION ParseDivColumnMetaData
 
 
 C*******************************************************************
@@ -2056,7 +2235,8 @@ C
 	SUBROUTINE GoToStartOfData(unitNum)
 	INTEGER unitNum, ios, lineLen, wordCount, keyLen
 	logical rstat, foundEndHeader
-	character*4096 line, subString
+	character*10000 tmpString
+	character*10000 line, subString
 	character*128 keyword
 
 	foundEndHeader = .false.

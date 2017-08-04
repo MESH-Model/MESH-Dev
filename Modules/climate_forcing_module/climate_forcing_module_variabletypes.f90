@@ -36,7 +36,7 @@ module climate_forcing_variabletypes
         !* fopen: Returns .true. if an input file for the variable has been opened.
         character(20) :: id_var
         logical :: factive = .false.
-        integer :: ffmt = 0
+        integer :: ffmt = 1
         character(200) :: fname = ''
         character(200) :: fpath = ''
         integer fiun

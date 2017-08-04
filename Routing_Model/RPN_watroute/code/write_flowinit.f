@@ -38,7 +38,7 @@
 
 !     write the init file for watroute in r2c format
 
-!      inquire(FILE='flow_init.r2c',EXIST=exists)
+      inquire(FILE='flow_init.r2c',EXIST=exists)
 
 !      if(exists)then
 !        print*
@@ -56,8 +56,8 @@
 !        if you actually want a new flow_init.r2c, delete the
 !        existing on on the calling program
 
-!        fln(99)='flow_init.r2c'
-        open(99,file=trim(adjustl(fln(99))),status='unknown',iostat=ios)
+        fln(99)='flow_init.r2c'
+        open(99,file='flow_init.r2c',status='unknown',iostat=ios)
         if(ios.ne.0)then
           print*,' Problems opening the flow_init.r2c file '
           print*
@@ -87,7 +87,7 @@
 3010  format(a20,a4,'/',a2,'/',a2,2x,a2,':',a2)
       write(99,3005)'#                                       '
       write(99,3005)'#---------------------------------------'
-      write(99,3020)':SourceFileName     ',trim(adjustl(fln(6)))
+      write(99,3020)':SourceFileName     ',fln(6)
       write(99,3005)'#                                       '
       write(99,3004)':Projection         ',coordsys1
         if(coordsys1.eq.'UTM       ')then
@@ -124,7 +124,7 @@
  3007 format(a14,i5,a6,i5)
  3008 format(a30)
 ! 3012 format(a9)
- 3020 format(a20,a)
+ 3020 format(a20,a999)
 
       if(iopt.eq.2)print*, 'in write_flowinit at 1302'
 
@@ -143,7 +143,7 @@
       do n=1,naa
         i=yyy(n)
         j=xxx(n)
-        p(i,j)=qi1(n)
+        p(i,j)=qi2(n)
       end do
       do i=1,ycount
         write(99,4009)(p(i,j),j=1,xcount)
@@ -155,7 +155,7 @@
       do n=1,naa
         i=yyy(n)
         j=xxx(n)
-        p(i,j)=qo1(n)
+        p(i,j)=qo2(n)
       end do
       do i=1,ycount
         write(99,4009)(p(i,j),j=1,xcount)
@@ -167,7 +167,7 @@
       do n=1,naa
         i=yyy(n)
         j=xxx(n)
-        p(i,j)=store1(n)
+        p(i,j)=store2(n)
       end do
       do i=1,ycount
         write(99,4009)(p(i,j),j=1,xcount)
@@ -200,7 +200,7 @@
       close(unit=99,status='keep')
 
       print*
-      print*,trim(fln(99)),' written in working directory'
+      print*,fln(99),' written in working directory'
       print*
 
  4003 format(999(' ',i5))

@@ -40,7 +40,7 @@ C***********************************************************************
 
 	character*(*) line
 	character*(*) keyword, value
-	character*4096 localLine
+	character*10000 localLine
 	integer I, DQ, lineLen
 	logical rStat
 
@@ -62,9 +62,9 @@ C***********************************************************************
 C Deal with possibility of quotes (strings)
 	if(localLine(1:1) .eq. '"')then
 		DQ = INDEX(localLine(2:lineLen),'"')+1
-		localLine(1:1) = CHAR(32) !replace first occurance of quote with a space
+		localLine(1:1) = CHAR(32) !replace first occurrence of quote with a space
 		if(DQ.GT.1) then
-			localLine(DQ:DQ) = CHAR(32) !replace 2nd occurance of quote with a space
+			localLine(DQ:DQ) = CHAR(32) !replace 2nd occurrence of quote with a space
 				
 C			localLine = ADJUSTL(localLine)			! get rid of leading spaces
 C			lineLen = LEN_TRIM(localLine)
@@ -106,7 +106,7 @@ C Return:	the number of words in the line
 C***********************************************************************
 
 	character*(*) line
-	character*4096 localLine
+	character*10000 localLine
 	integer I, DQ, lineLen
 	logical rStat
 

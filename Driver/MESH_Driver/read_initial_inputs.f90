@@ -48,6 +48,11 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 !> and READ the GRID OUTPUT DIRECTORIES.
     call READ_RUN_OPTIONS(ts, cm, fls)
 
+    !> Open status file.
+    if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
+        open(58, file = './' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
+    end if
+
 !> And Open and read in values from new_shd.r2c file
 !> *********************************************************************
 !> DRAINAGE DATABASE (BASIN SHD) (DRAINAGE_DATABASE.TXT):
@@ -252,7 +257,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     shd%lc%NML = 0
     shd%wc%NML = 0
     do i = 1, NA
-        if (-1.0 <= -0.5) then
+        if (shd%FRAC(i) > 0.0) then
             do m = 1, NTYPE
 
                 !> Only count active GRUs (with > 0.0 contributing fraction).
@@ -273,9 +278,37 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
                     end if
                 end if
+
             end do
         end if
     end do
+
+    !> Write information about tile configuration to file.
+    if (ipid == 0 .and. MODELINFOOUTFLAG > 0 .and. ro%DIAGNOSEMODE > 0) then
+
+        !> Land tiles.
+        write(58, 1210) 'land', 'NML', shd%lc%NML
+        if (shd%lc%NML > 0) then
+            write(58, 1910) 'Index', 'Grid', 'GRU'
+            do k = 1, shd%lc%NML
+                write(58, 1910) k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
+            end do
+        end if
+
+        !> Water tiles.
+        write(58, 1210) 'water', 'NMW', shd%wc%NML
+        if (shd%wc%NML > 0) then
+            write(58, 1910) 'Index', 'Grid', 'GRU'
+            do k = 1, shd%wc%NML
+                write(58, 1910) k, shd%wc%ILMOS(k), shd%wc%JLMOS(k)
+            end do
+        end if
+
+    end if
+
+1210    format(/1x, 'Configuration of ', (a), ' tiles', &
+               /1x, 'Total number (', (a), '): ', g16.9)
+1910    format(3(g16.9))
 
     !> Store the number of active tile elements to initialize variables.
     NML = shd%lc%NML
@@ -379,10 +412,10 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
              stasrow%sno%sno(NTYPE), stasrow%sno%albs(NTYPE), stasrow%sno%fsno(NTYPE), stasrow%sno%rhos(NTYPE), &
              stasrow%sno%tsno(NTYPE), stasrow%sno%wsno(NTYPE), &
              stasrow%sfc%tpnd(NTYPE), stasrow%sfc%zpnd(NTYPE), stasrow%sfc%tsfs(NTYPE, 4), &
-             stasrow%sl%thic(NML, NSL), stasrow%sl%fzws(NML, NSL), stasrow%sl%thlq(NML, NSL), stasrow%sl%lqws(NML, NSL), &
-             stasrow%sl%tbar(NML, NSL), stasrow%sl%tbas(NML), &
-             stasrow%sl%delzw(NML, NSL), stasrow%sl%zbotw(NML, NSL), stasrow%sl%rofs(NML), &
-             stasrow%sl%gflx(NML, NSL), stasrow%sl%ggeo(NML), &
+             stasrow%sl%thic(NTYPE, NSL), stasrow%sl%fzws(NTYPE, NSL), stasrow%sl%thlq(NTYPE, NSL), stasrow%sl%lqws(NTYPE, NSL), &
+             stasrow%sl%tbar(NTYPE, NSL), stasrow%sl%tbas(NTYPE), &
+             stasrow%sl%delzw(NTYPE, NSL), stasrow%sl%zbotw(NTYPE, NSL), stasrow%sl%rofs(NTYPE), &
+             stasrow%sl%gflx(NTYPE, NSL), stasrow%sl%ggeo(NTYPE), &
              stasrow%lzs%zlw(NTYPE), &
              stasrow%dzs%zlw(NTYPE))
     stasrow%cnpy%qac = 0.0; stasrow%cnpy%tac = 0.0; stasrow%cnpy%tcan = 0.0

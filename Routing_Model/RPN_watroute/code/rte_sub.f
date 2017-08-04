@@ -13,7 +13,8 @@ C
 C    You should have received a copy of the GNU Lesser General Public License
 C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
-      SUBROUTINE sub(e1,smc5,scale,icase,smok,optlow,igrdshft)
+      SUBROUTINE sub(e1,smc5,scale,icase,smok,optlow,igrdshft,
+     *               dtminusr,mindtmin,convthreshusr)
 
 !***********************************************************************
 !       copyright (c) by Nick Kouwen 1987-2007
@@ -69,8 +70,16 @@ C/////////////////////////
       CHARACTER(10) :: coordsys
       REAL          :: a66,areasum,areaclass(99)
       REAL          :: ha,fpw,kdn,nratio
-!     *                 somme82,somme83,somme84,somme85,somme86,
-!     *                 somme92,somme93,somme94,somme95,somme96
+      REAL          :: dtminusr,dtminfrac,mindtmin,dtminprev
+      REAL          :: convthreshusr,minrough,maxrough
+      REAL(4)       :: qi1_strt(naa),qi2_strt(naa),qo2_strt(naa),
+     *                 store2_strt(naa),over_strt(naa),qo1_strt(naa),
+     *                 store1_strt(naa)
+      REAL          :: tqi1,tqo1,tax,tqo2,tstore2,tstore1
+      REAL(4)       :: timeprev
+      INTEGER       :: indexi,maxindex,exitstatus,no_dtold,jzprev,nnaa
+      INTEGER       :: month_prev,month_next
+      INTEGER       :: year_last,month_last,day_last,hour_last
 
       DATA ntest/20492/qstr/'watflood.wfo'/nchr/18/
       DATA iallcnt1/0/
@@ -88,25 +97,20 @@ C/////////////////////////
       INTEGER :: wfo_write_timestamp
 !>>>>>>>>>>>>>
 
-      integer :: fnumstr_qi,fnumstr_qr,fnum
-      real*4, dimension(:), allocatable :: reach_lvl,somme_qi,somme_qr
+      real*4, dimension(:), allocatable :: reach_lvl
+      real*4, dimension(:), allocatable :: RFFneg
 
       allocate(reach_lvl(Nreaches),reach_last(Nreaches),
-     *         somme_qi(Nreaches),somme_qr(Nreaches),stat=iAllocate)
+     *         RFFneg(naa),stat=iAllocate)
       if (iAllocate.ne.0) STOP 
+
+!      mindtmin = 30.0
 
 c input/lake_levs/reach1_lvl.txt
       do i=1,Nreaches
-        open(unit=500+i,file=infln(2+i),status='old')
+        open(unit=500+i,file=infln(4+i),status='old')
         read(500+i,*) reach_lvl(i)
         reach_last(i)=reach_lvl(i)
-!        lake_elv(i,1)=reach_lvl(i)
-
-!        if(resname(i).eq.'Superior     ') sup_last = reach_lvl(i)  ! Read from the reservoir release file
-!        if(resname(i).eq.'Huron        ') mhu_last = reach_lvl(i)
-!        if(resname(i).eq.'StClair      ') stc_last = reach_lvl(i)
-!        if(resname(i).eq.'Erie         ') eri_last = reach_lvl(i)
-!        if(resname(i).eq.'Ontario      ') ont_last = reach_lvl(i)
       end do
 
       if(iopt.eq.2)print*,' In sub after definitions'
@@ -125,11 +129,13 @@ c input/lake_levs/reach1_lvl.txt
       jan=1
       m=1
       tot1=0.0
-      totaltime=0.0                ! used for ensim time series
+      fhr=0                  ! simulation's forecast hour
 
 !     These values used to come from read_flow_ef 
       irdt=1     ! initial gues for routing time step in hours 
       kt=1       ! kt=data timestep in hours. 
+
+      iswitchrerout = 0  ! so initialize reach_init in rerout only once
 
 !     Section added to allow for lengthened routing time step for large grids
       if(irdt.gt.kt)then
@@ -164,13 +170,16 @@ c input/lake_levs/reach1_lvl.txt
         qstream(n)=0.0
         strloss(n)=0.0
 !        rh(n)=.50   ! moved to rdtemp 28/12/04 nk
+        RFFneg(n) = 0.0 ! negative values of surface runoff outside of reaches
       end do
       
       juold=0
 
-      allocate(outarray(ycount,xcount),stat=iAllocate)
-      if(iAllocate.ne.0) STOP
-     *    'Error with allocation of ensim arrays in sub'      
+      if (.NOT.allocated(outarray)) then
+        allocate(outarray(ycount,xcount),stat=iAllocate)
+        if(iAllocate.ne.0) STOP
+     *    'Error with allocation of ensim arrays in sub'
+      end if      
 
 !     Initialize all grids for write_r2c
       do i=1,ycount
@@ -324,7 +333,7 @@ c input/lake_levs/reach1_lvl.txt
         chawid(n)=chaxa(n)/chadep(n)
         flz2(n)=1.0-(1.0-flz(n))
 
-        ! Fix suggested by Frank Saglenkis, based on changes made
+        ! Fix suggested by Frank Seglenieks, based on changes made
         ! to WATFLOOD ca. 2007: if we keep track of biome types
         ! and a grid cell has more water fraction than channel
         ! area, then the channel area calculation must have been
@@ -345,6 +354,7 @@ c input/lake_levs/reach1_lvl.txt
           chaarea(n) = grid_area(n)*aclass(n,ntype)
           chawid(n) = chaarea(n)/rl(n) ! New width using the same effective depth
           cap(n) = chaarea(n)*chadep(n)
+
           ! Leave chaxa untouched for now, this may be a mistake.
           ! csubich -- experimental: update chaxa appropriately also
           chaxa(n) = cap(n)/rl(n) ! Capacity divided by length
@@ -366,8 +376,8 @@ c          call flowinit()
 !          replaced  Oct. 9/06  nk
 !          initialize channel flows & storages
 !       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if (len_trim(infln(4+Nreaches)) .gt. 2) then
-        fln(99)=infln(4+Nreaches)  ! The filename index of flow_init.fst varies with the number of reaches processed
+      if (len(infln(2)) .gt. 2) then
+        fln(99)=infln(2)
       else
         fln(99)='flow_init.r2c'
       end if
@@ -388,6 +398,7 @@ c     *                         year1,month1,day1,hour1)
 !     rev. 9.2.07  Jul.  29/05  - NK: soilinit moved from runoff to sub 
 
       tdum=1000.*step2/3600.   !cms/mm conversion
+      !mm/hr * tdum = mm/hr*(m/1000mm * 1000m/km * 1000m/km)*(km*km*hr/s) = cms
 
 !     what class is the water class?
       ii_water=ntype
@@ -477,6 +488,14 @@ c     *                         year1,month1,day1,hour1)
 
         if(iopt.eq.2)print*,'In sub - back from read_resv_ef'
 
+        if(iopt.eq.2)print*,'In sub - gone to read_div_ef'
+
+!       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        call read_div_ef()  !EnSim compatible tb0 file
+!       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        if(iopt.eq.2)print*,'In sub - back from read_div_ef'
+
 !       WATROUTE START  WATROUTE START  WATROUTE START  WATROUTE START
 
 !       read the headers (open files also) :
@@ -487,14 +506,14 @@ c     *                         year1,month1,day1,hour1)
 !         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           if (fstflg .eq. 'y') then
             call read_fst(261,fln(31),'1','RFF ',
-     *                    year1,month_now,day_now,-1)
+     *                    year1,month_now,day_now,-1,-1,'            ')
           else 
             call read_r2c(261,31,'1')
           endif
           if(xcount.ne.xcount_temp.or.ycount.ne.ycount_temp)then
             print*,'runoff grid size does not match the shed grid'
-            print*
-            stop 'Program aborted in sub @ 371'
+            print*,'WARNING: the runoff grid will be interpolated'
+!            stop 'Program aborted in rte_sub @ 371'
           endif
 
           if(modelflg.eq.'r')then
@@ -503,14 +522,15 @@ c     *                         year1,month1,day1,hour1)
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             if (fstflg .eq. 'y') then
               call read_fst(262,fln(32),'1','RCH ',
-     *                      year1,month_now,day_now,-1)
+     *                      year1,month_now,day_now,-1,-1,
+     *                      '            ')
             else 
               call read_r2c(262,32,'1')
             endif
             if(xcount.ne.xcount_temp.or.ycount.ne.ycount_temp)then
               print*,'recharge grid size does not match the shed grid'
-              print*
-              stop 'Program aborted in sub @ 379'
+              print*,'WARNING: the recharge grid will be interpolated'
+!              stop 'Program aborted in sub @ 379'
             endif
 
           elseif(modelflg.eq.'l')then
@@ -555,17 +575,6 @@ c     *                         year1,month1,day1,hour1)
 !           
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-        a6=900.    ! minimum time step (in par file)
-        ! Christopher Subich (9/12): A minimum time step of 900s
-        ! is too large for some tested grids, so inclulde here a
-        ! sample (smaller) value that happened to work on one
-        ! grid that I used.  This is commented out to preserve
-        ! compatibility with other users.
-        !a6=45.00
-        a66=a6
-
-!       so we have to just go to the endof the yyyymmdd_rff.r2c file and quit
-
         found_data_end=.false.
 
         DO WHILE(.NOT.found_data_end)
@@ -573,7 +582,7 @@ c     *                         year1,month1,day1,hour1)
 !         the -1 is because time starts at 0.0
 
           time=time+1.000
-          totaltime=totaltime+1.0
+          fhr=fhr + 1  
 
           if(iopt.eq.2)print*,'Gone to timer'
 
@@ -581,9 +590,9 @@ c     *                         year1,month1,day1,hour1)
           call timer(iz,jz,mz,clock,time,t,thr,dtmin,dtmax,div,m,
      *               ju,a66)
 !         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+! DD WE DON'T USE THE VALUE OF DTMIN ANYMORE WITH THE DYNAMIC TIME STEP: CALCULATED JUST ABOVE THE CALL TO route.f
 
           if(iopt.eq.2)print*,'Back from timer - time=',time
-          print*,'time=',time,' hours'
 
           if(iz.lt.jz)then 
 
@@ -597,6 +606,131 @@ c     *                         year1,month1,day1,hour1)
 !       WATROUTE input  WATROUTE input  WATROUTE input  WATROUTE input
 
             if(iz.lt.jz)then
+
+!             Establish the day's value of r1n if using temporally-varying fields
+!             Read in and vectorize the input arrays:
+!             read_fst uses the transpose of the array, from
+!             the point of view of code built for read_r2c
+              if (r1nflg .eq. 'y') then
+                call read_fst(31,fln(1),'0','R1N ',0,0,0,-1,month_now,
+     *                        'VARIABLE    ')
+                do n=1,naa
+                  i=yyy(n)
+                  j=xxx(n)
+                  r1n(n) = inarray(j,i)
+                end do
+
+!               Calculate the 31-day running average of r1n to avoid shocking
+!               the system with abrupt changes between months if day_now isn't 15
+                if (day_now .lt. 15) then                             ! 1st half of the month: consider the value of the previous month
+                  if (month_now .eq. 1) then                          ! Roll the month back by one
+                    month_prev = 12
+                  else
+                    month_prev = month_now - 1
+                  end if
+                  call read_fst(31,fln(1),'0','R1N ',0,0,0,-1,
+     *                   month_prev,'VARIABLE    ')
+                  do n=1,naa
+                    i=yyy(n)
+                    j=xxx(n)
+                    r1n(n) = 1./31. * (inarray(j,i)*real(31-15-day_now)
+     *                               + r1n(n)      *real(   15+day_now))
+                  end do
+
+                else if (day_now .gt. 15) then                        ! 2nd half of the month: consider the value of the following month
+                  if (month_now .eq. 12) then                         ! Roll the month forwards by one
+                    month_next = 1
+                  else
+                    month_next = month_now + 1
+                  end if
+                  call read_fst(31,fln(1),'0','R1N ',0,0,0,-1,
+     *                   month_next,'VARIABLE    ')
+                  do n=1,naa
+                    i=yyy(n)
+                    j=xxx(n)
+                    r1n(n) = 1./31. * (inarray(j,i)*real(  -15+day_now)
+     *                               + r1n(n)      *real(31+15-day_now))
+                  end do
+                end if
+
+                if (fhr.eq.1 .or. hour_now.eq.1) then            ! Generate some statistics: 1st hour processed or start of new day
+                  minrough = 1.0E9
+                  maxrough = 0.0
+                  do n=1,naa
+                    if (r1n(n).gt.maxrough) maxrough = r1n(n)
+                    if (r1n(n).lt.minrough) minrough = r1n(n)
+                  end do
+                  write(*,'(a15,a16,2f8.3,3i6)') 'min/max r1n on ',
+     *              'year/month/day: ',minrough,maxrough,year1,
+     *              month_now,day_now
+                end if
+              endif
+
+!             Establish the day's value of r2n if using temporally-varying fields
+!             Read in and vectorize the input arrays:
+!             read_fst uses the transpose of the array, from
+!             the point of view of code built for read_r2c
+              if (r2nflg .eq. 'y') then
+                call read_fst(31,fln(1),'0','R2N ',0,0,0,-1,month_now,
+     *                        'VARIABLE    ')
+                do n=1,naa
+                  i=yyy(n)
+                  j=xxx(n)
+                  r2n(n) = inarray(j,i)
+                end do
+
+!               Calculate the 31-day running average of r2n to avoid shocking
+!               the system with abrupt changes between months if day_now isn't 15
+                if (day_now .lt. 15) then                             ! 1st half of the month: consider the value of the previous month
+                  if (month_now .eq. 1) then                          ! Roll the month back by one
+                    month_prev = 12
+                  else
+                    month_prev = month_now - 1
+                  end if
+                  call read_fst(31,fln(1),'0','R2N ',0,0,0,-1,
+     *                   month_prev,'VARIABLE    ')
+                  do n=1,naa
+                    i=yyy(n)
+                    j=xxx(n)
+                    r2n(n) = 1./31. * (inarray(j,i)*real(31-15-day_now)
+     *                               + r2n(n)      *real(   15+day_now))
+                  end do
+
+                else if (day_now .gt. 15) then                        ! 2nd half of the month: consider the value of the following month
+                  if (month_now .eq. 12) then                         ! Roll the month forwards by one
+                    month_next = 1
+                  else
+                    month_next = month_now + 1
+                  end if
+                  call read_fst(31,fln(1),'0','R2N ',0,0,0,-1,
+     *                   month_next,'VARIABLE    ')
+                  do n=1,naa
+                    i=yyy(n)
+                    j=xxx(n)
+                    r2n(n) = 1./31. * (inarray(j,i)*real(  -15+day_now)
+     *                               + r2n(n)      *real(31+15-day_now))
+                  end do
+                end if
+
+                if (fhr.eq.1 .or. hour_now.eq.1) then            ! Generate some statistics: 1st hour processed or start of new day
+                  minrough = 1.0E9
+                  maxrough = 0.0
+                  do n=1,naa
+                    if (r2n(n).gt.maxrough) maxrough = r2n(n)
+                    if (r2n(n).lt.minrough) minrough = r2n(n)
+                  end do
+                  write(*,'(a15,a16,2f8.3,3i6)') 'min/max r2n on ',
+     *              'year/month/day: ',minrough,maxrough,year1,
+     *              month_now,day_now
+                end if
+              endif
+
+              if (rlakeflg .eq. 'y') then
+                do n=1,naa
+                  r2n(n) = r2n(n) * rlake(n)
+                  r1n(n) = r1n(n) * rlake(n)
+                end do
+              endif
       
 !             WATROUTE only <<<<<< !!!!!!
 !             the headers have been read above.
@@ -604,7 +738,9 @@ c     *                         year1,month1,day1,hour1)
 !             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
               if (fstflg .eq. 'y') then
                 call read_fst(261,fln(31),'0','RFF ',
-     *                 year1,month_now,day_now,hour_now)
+     *                 year1,month_now,day_now,hour_now,-1,
+     *                 '            ')
+
                 if (found_data_end) then
                   exit
                 endif
@@ -618,8 +754,17 @@ c     *                         year1,month1,day1,hour1)
                 j=xxx(n)
                 ! read_fst uses the transpose of the array, from
                 ! the point of view of code built for read_r2c
+                ! When processing standard format files:
+                ! Pass all values of surface runoff (RFF) within a reach and positive values elsewhere to qr
+                ! Remember negative values of RFF outside of reaches and add to lzs
                 if (fstflg .eq. 'y') then
-                  qr(n)=inarray(j,i)*tdum*frac(n)
+                  if (ireach(n).le.0 .and. inarray(j,i).lt.0.0) then
+                    qr(n)=0.0
+                    RFFneg(n) = inarray(j,i)
+                  else
+                    qr(n)=inarray(j,i)*tdum*frac(n)
+                    RFFneg(n) = 0.0
+                  end if
                 else 
                   qr(n)=inarray(i,j)*tdum*frac(n)
                 endif
@@ -630,7 +775,8 @@ c     *                         year1,month1,day1,hour1)
 !               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 if (fstflg .eq. 'y') then
                   call read_fst(262,fln(32),'0','RCH ',
-     *                 year1, month_now, day_now, hour_now)
+     *                 year1, month_now, day_now, hour_now,-1,
+     *                 '            ')
                   if (found_data_end) then
                     exit
                   endif
@@ -639,12 +785,12 @@ c     *                         year1,month1,day1,hour1)
                 endif
 !               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !               vectorize & convert mm to flow
-!               recharge is added to lzs
+!               recharge is added to lzs (mm)
                 do n=1,naa
                   i=yyy(n)
                   j=xxx(n)
                   if (fstflg .eq. 'y') then
-                    lzs(n)=lzs(n)+inarray(j,i)
+                    lzs(n)=lzs(n)+inarray(j,i)+RFFneg(n)
                   else
                     lzs(n)=lzs(n)+inarray(i,j)
                   endif
@@ -652,10 +798,14 @@ c     *                         year1,month1,day1,hour1)
 !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                   call baseflow(n,dlz,sdlz,tdum)
 !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!                 baseflow gives us qlz in flow units (cms), not in mm
+!                 so there is no need to convert before adding to qr
                   qr(n)=qr(n)+qlz(n)
                 end do
               endif
 
+!             note that if we are reading qlz directly, it will be
+!             in mm, and will require conversion
               if(modelflg.eq.'l')then
 !               read qlz = groundwater flow (leakage/baseflow)
 !               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -692,67 +842,152 @@ c     *                         year1,month1,day1,hour1)
 !         rev. 9.3.11  Feb.  17/07  - NK: force hourly time steps for runoff
 !         rev. 9.3.12  Feb.  20/07  - NK: changed dtmin & call to route
 
-          dtmin=900.0
-          !dtmin=45.00 ! csubich -- set small minimum time step
+!         Calculate a dynamic dtmin by doing a quick and dirty routing
+!         This helps to ensure that the routing solutions inside the route function
+!         are able to converge to a solution
+!         We are assuming that the channels are not overflowing, so if it turns out that
+!         there is overbank flow/storage, then route may have to iterate a bit longer to 
+!         find the solution even if dtmin is relatively small
+
+!         Remember the input values from the start of the time step
+          do n=1,naa
+            qi2_strt(n) = qi2(n)
+            qo2_strt(n) = qo2(n)
+            store2_strt(n) = store2(n)
+
+!           if flow insertion, use simulated instead of possibly inserted flow value at gauge location
+            if (trim(strfw_option)=='streamflow_insertion') then
+            do l=1,no
+              if(iflowgrid(l).eq.n)then
+                qo2_strt(n) = qo2sim(n)
+              end if
+            end do
+            end if
+
+          end do
+
+!DD  Override the value calculated above by timer.f (fixed for all hours)
+
+          dtmin = dtminusr  ! specified by the user and read in by rte.f
+          dtminfrac = 0.75
+          maxindex = 50   ! Permit more loops in this version of the routing loop since qo2 has no weighting applied
+          do n=1,naa
+            tqo1 = qo2(n)
+
+!           if flow insertion, rely on simulated instead of possibly inserted flow value at gauge location to estimate required time-step                     
+            if (trim(strfw_option)=='streamflow_insertion') then
+            do l=1,no
+              if(iflowgrid(l).eq.n)then
+                tqo1 = qo2sim(n)
+              end if
+            end do
+            end if
+!      tqo1 = 0.0
+
+            tqi1 = qi2(n)
+15          indexi = 0
+            if (dtmin .le. mindtmin) exit
+            no_dt=max(int(3599./dtmin)+1,1)
+            route_dt=3600.0/float(no_dt)
+            sec_div=route_dt/2.0
+            tax=store1(n)/rl(n)
+!      tqo2=0.0
+            tqo2=max(tax,0.0)**1.67*slope(n)/chawid(n)**0.667/r2n(n)
+            !Use qi2 = 0.0 below to really constrain dtmin by keeping store2 low
+            !We don't want to set qi2 to zero though because it is used in route
+            !so we just use a hard-coded 0.0 in this equation
+!16          tstore2=store1(n)
+16          tstore2=store1(n)+(tqi1+0.0-tqo1-tqo2)*sec_div
+            !Now check to see if this qo2 is large enough that it will cause problems
+            !in the next time step when it is put into qo1. 
+            !This has been known to happen when there is a sudden reduction in qi2 compared to qi1
+!            tstore1=tstore2
+            tstore1=tstore2+(-tqo2)*sec_div 
+            !If qo2 is so large that it's emptying the grid cell's storage in one time
+            !step, then we need to reduce the size of the time step to prevent that from
+            !happening. This is analogous to meeting the CFL condition in advection solvers.
+            !However, if store1 was very small, then small or even slightly negative store2 
+            !might be a legitimate solution (i.e. the cell has actually dried up). So we'll let that go.
+            !Note that we also need to reduce the time step if we anticipate that qo1 will be too large
+            !in our next forecast/analysis time.
+            if (tstore2 .lt. 0.0 .or. tstore1 .lt. 0.0) then
+!      write(*,*) 'DD0', xxx(n), yyy(n)
+              tqo2 = tqo2 / 2.0 ! Keep making qo2 smaller untill store2 becomes positive
+              indexi = indexi + 1
+              if (indexi .gt. maxindex) then
+                dtmin = dtmin*dtminfrac !reduce the time step by a factor of dtminfrac (default=0.75, set above)
+                GO TO 15
+              end if
+              GO TO 16          ! Redo the store2 calculation within the same iteration
+!              write(*,*) "In cell ",n," need to reduce time step from ",
+!     *          dtmin, " to ", dtmin*dtminfrac
+            end if
+          end do     
+
+          ! Re-specifying dtmin as dtminusr cancels the effect of the code immediately above
+          ! However, if the iteration loop in route is unstable, dtmin still decreases
+!      write(*,*) 'DD1 dtmin calculated: ',dtmin
+          dtmin = dtminusr  ! specified by the user and read in by rte.f
+
+17        dtmin = max(mindtmin,dtmin) !Let the time step be as small as mindtmin
           no_dt=max(int(3599./dtmin)+1,1)
+          dtmin = 3600.0/real(no_dt)
           route_dt=3600.0/float(no_dt)
           sec_div=route_dt/2.0
           hr_div=sec_div/3600.
-
-!dch
-!          dtmin=3600.0
+          exitstatus = 0
+          a6 = dtmin   ! Override the value declared above (fixed for all hours)
+          a66 = dtmin  ! Override the value declared above (fixed for all hours)
+          write(*,5004) fhr,dtmin,no_dt
 
 !         The value of dtmin has been used to determine how many
 !         times route is called. Route will determine a new dtmin
 !         for the next time step.
 
+!         EG_MOD prepare arrays for storing average flows
+
+          if (.NOT.allocated(avr_qo)) allocate(avr_qo(naa))
+          do nnaa=1,naa
+            avr_qo(nnaa)=0.0
+          end do
+
           do n=1,no_dt
 
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            call route(sec_div,hr_div,dtmin,jz,n,time,date)
+            call route(sec_div,hr_div,dtmin,mindtmin,convthreshusr,jz,n,
+     *                 time,date,exitstatus)
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-! Chris Subich email of 20140219:
-! qi2 is the channel-based inflow at the end (?) of the timestep
-! qi1 is the inflow at the beginning of the timestep
-! qr is the combination of incoming runoff ('RFF') and baseflow (computed by the 'baseflow' subroutine after including the input 'RCH' recharge)
-! the outflow variables ('qo')
-            if (n.eq.no_dt) then
-
-              do i=1,Nreaches
-                somme_qi(i) = 0.0
-                somme_qr(i) = 0.0
-              end do
-
-              do m=1,naa
-                fnumstr_qi = 64
-                fnumstr_qr = 81
-                if (ireach(m) .eq. 0) then
-                  do i=1,Nreaches
-                    if (ireach(next(m)) .eq. i) then
-                      somme_qi(i) = somme_qi(i) + qi2(m)
-                      fnum = fnumstr_qi + i - 1
-                      write(fnum,8003) m,xxx(m),yyy(m),qi2(m),    ! loop # (i.e. hour?),x-coord?,y-coord?,inflow?,reach #
-     *                                   ireach(next(m))
-                    end if
-                  end do
-                else
-                  do i=1,Nreaches
-                    if (ireach(m) .eq. i) then
-                      somme_qr(i) = somme_qr(i) + qr(m)
-                      fnum = fnumstr_qr + i - 1
-                      write(fnum,8003) m,xxx(m),yyy(m),qr(m),ireach(m)
-                    end if
-                  end do
-                end if
-              end do ! do m=1,naa
-
-              fnum = fnumstr_qi + Nreachesmax
-              write(fnum,8003) (somme_qi(i),i=1,Nreaches)
-              fnum = fnumstr_qr + Nreachesmax
-              write(fnum,8003) (somme_qr(i),i=1,Nreaches)
-
-            endif !if (n.eq.no_dt)
+            if (exitstatus .ne. 0) then
+              if (dtmin .le. mindtmin) then
+                write(*,'(a15,a43,f6.1)') 'route yields a ',
+     *            'negative store2 value at dtmin = mindtmin: ',
+     *            mindtmin
+                write(*,'(a25,a50)') 'It''s likely that qo1 is ',
+     *            'so large that store2 is negative even with qo2=0.0'
+                write(*,'(a29,a50,a50)')'If this run was started from ',
+     *            'shed2flowinit utility, then try lowering the QI, ',
+     *            'QO, and STORE ratios until this error is resolved'
+                write(*,*) 'Else rerun with a smaller value of dtmin'
+                stop
+              else
+                dtmin = dtmin*dtminfrac !reduce the time step by a factor of dtminfrac (default=0.75, set above)
+                no_dtold = no_dt
+                no_dt=max(int(3599./dtmin)+1,1)
+                do while (no_dt .le. no_dtold) ! Reduce dtmin sufficiently to decrease no_dt
+                  dtmin = dtmin*dtminfrac !reduce the time step by a factor of dtminfrac (default=0.75, set above)
+                  no_dtold = no_dt
+                  no_dt=max(int(3599./dtmin)+1,1)
+                end do
+                dtmin = 3600./real(no_dt)
+                do nnaa=1,naa  ! Restore the input values from the start of the time step
+                  qi2(nnaa) = qi2_strt(nnaa)
+                  qo2(nnaa) = qo2_strt(nnaa)
+                  store2(nnaa) = store2_strt(nnaa)                  
+                end do
+                GO TO 17
+              end if
+            end if
 
 
           end do  ! do n=1,no_dt
@@ -764,28 +999,29 @@ c     *                         year1,month1,day1,hour1)
 !          if(resname(1).eq.'Superior')then
 !           output - for GLAKE
             if(noresv.gt.0)then
-              write(58,8001)(lake_elv(l,jz),lake_stor(l,jz),
-     *                       lake_inflow(l,jz),
-     *                       lake_outflow(l,jz),
-     *                       del_stor(l,jz),l=1,noresv)
-!     *                       lake_inflow(l,jz),net_lake_inflow(l,jz),
-!     *                       lake_outflow(l,jz),net_lake_outflow(l,jz),
-!              write(59,8002)(net_lake_inflow(l,jz),l=1,noresv)
+              write(58,8001)(lake_elv(l,fhr),lake_stor(l,fhr),
+     *                       lake_inflow(l,fhr),
+     *                       lake_outflow(l,fhr),
+     *                       del_stor(l,fhr),l=1,noresv)
             endif
 !          endif
 
-!         write to r2c file every hour
+!         write to r2c file at the frequency specified by deltat_report_discharge in event.evt
 !         take out conditional will write each time route is called
 !         need to fix time stamp for frame header if this is done
 !         rev. 9.4.01  Apr.  17/07  - NK: added deltat_report for gridflow.r2c
-!         deltat_report is read from the event file
 
-          if(mod(jz,deltat_report).eq.0)then
+          if(mod(fhr,deltat_report_discharge).eq.0)then
+            do i=1,ycount          ! Reinitialize the output array
+              do j=1,xcount
+                outarray(i,j)=0.0
+              end do
+            end do
 
-            do n=1,naa
+            do n=1,naa             ! Fill the output array with the values to be written
               i=yyy(n)
               j=xxx(n)
-              outarray(i,j)=qo2(n)
+              outarray(i,j)=avr_qo(n)
             end do     
 
 !           trick to keep file open - it's closed after id loop below
@@ -795,20 +1031,151 @@ c     *                         year1,month1,day1,hour1)
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             if (fstflg .eq. 'y') then
               call write_fst(59,filename(59),'DISC',
-     *                       year1,month_now,day_now,hour_now)
+     *                       year1,month_now,day_now,hour_now,0)
             else
               call write_r2c(56,56,no_frames,1,frame_no,1,8) 
             endif
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-          endif !if(mod(jz,deltat_report).eq.0)
+!           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if (fstflg .eq. 'y') then
+              do i=1,ycount          ! Reinitialize the output array
+                do j=1,xcount
+                  outarray(i,j)=0.0
+                end do
+              end do
+
+              do n=1,naa             ! Fill the output array with the values to be written
+                i=yyy(n)
+                j=xxx(n)
+                outarray(i,j)=over(n)
+              end do     
+              call write_fst(59,filename(59),'OVER',
+     *                       year1,month_now,day_now,hour_now,0)
+            else
+              call write_r2c(56,56,no_frames,1,frame_no,1,8) 
+            endif
+!           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+            if (rbmflg .eq. 'y') then
+              call write_fst(60,filename(60),'DISC',
+     *                       year1,month_now,day_now,hour_now,0)
+              ! write_fst uses the outarray field up above
+              ! now refill outarray with qi2
+              do i=1,ycount          ! Reinitialize the output array
+                do j=1,xcount
+                  outarray(i,j)=0.0
+                end do
+              end do
+
+              do n=1,naa
+                i=yyy(n)
+                j=xxx(n)
+                outarray(i,j)=qi2(n)
+              end do     
+              call write_fst(60,filename(60),'INFL',
+     *                       year1,month_now,day_now,hour_now,0)
+
+              ! now refill outarray with qdiff
+              do i=1,ycount          ! Reinitialize the output array
+                do j=1,xcount
+                  outarray(i,j)=0.0
+                end do
+              end do
+
+              do n=1,naa
+                i=yyy(n)
+                j=xxx(n)
+                outarray(i,j)=qo2(n)-qi2(n)
+              end do     
+              call write_fst(60,filename(60),'QDIF',
+     *                       year1,month_now,day_now,hour_now,0)
+
+              ! now refill outarray with chadep
+              do i=1,ycount          ! Reinitialize the output array
+                do j=1,xcount
+                  outarray(i,j)=0.0
+                end do
+              end do
+
+              do n=1,naa
+                i=yyy(n)
+                j=xxx(n)
+                outarray(i,j)=chadep(n)    
+              end do     
+              call write_fst(60,filename(60),'DEPT',
+     *                       year1,month_now,day_now,hour_now,0)
+
+              ! now refill outarray with chawid
+              do i=1,ycount          ! Reinitialize the output array
+                do j=1,xcount
+                  outarray(i,j)=0.0
+                end do
+              end do
+
+              do n=1,naa
+                i=yyy(n)
+                j=xxx(n)
+                outarray(i,j)=chawid(n)
+              end do     
+              call write_fst(60,filename(60),'WIDT',
+     *                       year1,month_now,day_now,hour_now,0)
+
+              ! now refill outarray with stream speed 
+              do i=1,ycount          ! Reinitialize the output array
+                do j=1,xcount
+                  outarray(i,j)=0.0
+                end do
+              end do
+
+              do n=1,naa
+                i=yyy(n)
+                j=xxx(n)
+                !take stream speed to be average flow (m3/s) divided by channel x-sec area (m2)
+                outarray(i,j)=0.5*(qo2(n)+qi2(n))/(chadep(n)*chawid(n))
+              end do     
+              call write_fst(60,filename(60),'VELO',
+     *                       year1,month_now,day_now,hour_now,0)
+            endif
+!           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+          endif !if(mod(fhr,deltat_report_discharge).eq.0)
+
+!     write flowinit to resume routing at the frequency specified by deltat_report_flowICs in event.evt
+! D. Durnford moved the writing out of flow ICs and lake levels from below the end of the time loop: need them at least every 6 hours
+! D. Durnford limiting the writing out of flow ICs and lake levels to every deltat_report_flowICs hours
+          author='rte.exe'
+
+          if(mod(fhr,deltat_report_flowICs).eq.0)then
+!           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if (fstflg .eq. 'y') then
+              fln(99)=infln(2)
+              call write_flowinit_fst(611,fln(99),
+     *                       year1,month_now,day_now,hour_now)
+            else
+              call write_flowinit()
+            endif
+!           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  
+            do i=1,Nreaches
+!!              write(58,8001)(lake_elv(l,fhr),lake_stor(l,fhr),
+              write(500+i,'(f8.2)') lake_elv(i,fhr)
+            end do
+
+          endif !if(mod(fhr,deltat_report_flowICs).eq.0)
 
    82     m=m+1
 
+! D. Durnford remember the last processed date/time in case need to output flow ICs after the time loop 
+          year_last  = year1
+          month_last = month_now
+          day_last   = day_now
+          hour_last  = hour_now
    
 ! DD
-!      if (time .eq. 3) found_data_end=.TRUE.
+!      if (time .eq. 2) found_data_end=.TRUE.   ! Uncomment this line to run only, e.g., 2 time steps.  Useful when debugging.
         END DO    ! DO WHILE(.NOT.found_data_end) 
+
 
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
 !
@@ -816,17 +1183,26 @@ c     *                         year1,month1,day1,hour1)
 !
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
 
-        write(*,5003)id,ni,jz
-  
-        do i=1,Nreaches
-          reach_last(i)=lake_elv(i,24)
-          write(500+i,*) reach_last(i)
-!          if(resname(i).eq.'Superior     ') sup_last = lake_elv(i,24)  ! Read from the reservoir release file
-!          if(resname(i).eq.'Huron        ') mhu_last = lake_elv(i,24)
-!          if(resname(i).eq.'StClair      ') stc_last = lake_elv(i,24)
-!          if(resname(i).eq.'Erie         ') eri_last = lake_elv(i,24)
-!          if(resname(i).eq.'Ontario      ') ont_last = lake_elv(i,24)
-        end do
+! D. Durnford output the flow ICs at the end of the run if they haven't already been output
+        if(mod(real(fhr-1),real(deltat_report_flowICs)) .ne. 0) then
+!         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          if (fstflg .eq. 'y') then
+            fln(99)=infln(2)
+            call write_flowinit_fst(611,fln(99),
+     *                     year_last,month_last,day_last,hour_last)
+          else
+            call write_flowinit()
+          endif
+!         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+          do i=1,Nreaches
+            if (reach_lvl(i) .le. 1.0) lake_elv(i,fhr-1) = 0.0
+            write(500+i,'(f8.2)') lake_elv(i,fhr-1)
+          end do
+
+        endif !if(mod(fhr-1,real(deltat_report_flowICs)) .ne. 0)
+
+        write(*,5003)id,ni,fhr
 
 !       close files:
         print*
@@ -857,34 +1233,27 @@ c     *                         year1,month1,day1,hour1)
 !      print*,'Output file',fln(56)
 !      print*,'written in the working directory'
 
-!     write flowinit to resume routing
+!     EG_MOD moved close instruction initially located after RETURN
+!     statement below inside of it
+      do i=1,Nreaches
+        close(unit=500+i)
+      end do      
 
-      author='rte.exe'
+!     EG_MOD deallocate arrays
+      deallocate(reach_lvl,reach_last,RFFneg)
 
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if (fstflg .eq. 'y') then
-        fln(99)=infln(Nreaches+4)
-        ! Write out flowinit with hour_now-1, because the hour
-        ! was incremented by the timer routine -before- we saw
-        ! that the run was complete/no more recharge/runoff.
-        call write_flowinit_fst(611,fln(99),
-     *                  year1,month_now,day_now,hour_now-1)
-!        call write_flowinit_fst(611,'flow_init.fst',
-!     *                  year1,month_now,day_now,hour_now-1)
-      else
-        call write_flowinit()
-      endif
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
       RETURN
 
 ! FORMATS
 
-      do i=1,Nreaches
-        close(unit=500+i)
-      end do
+!      do i=1,Nreaches
+!        close(unit=500+i)
+!      end do
 
  5003 format('+',1x,'id=',i3,'/',i3,' mz=',i5)
+ 5004 format('Processing hour ',i5,' Calling ROUTE with ',
+     *  'dtmin = ',f6.1,'s. Number of loops in this hour = ',i6)
  8001 format(g14.6,999(',',g14.6))
  8002 format(g14.6,999(',',g14.6))
  8003 format(g14.6,999(' ',g14.6))

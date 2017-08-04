@@ -29,7 +29,7 @@ module mpi_utilities
 
         !> Bump the index to include the entire grid so that the GRUs and/or
         !> tiles of the grid are not broken across nodes.
-        if (ipid < (inp - 1)) then
+        if (ipid < (inp - 1) .and. ipid /= 0) then
             do while (ILMOS(il2) == ILMOS(il2 + 1) .and. il2 < NML)
                 il2 = il2 + 1
             end do

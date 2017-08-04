@@ -57,8 +57,8 @@ C Parameter type definitions
 
 C Local variables
       character*128 keyword, value
-      character*4096 line, subString, tmpString
-      integer lineLen, keyLen, wordCount, ii, jj
+      character*10000 line, subString
+      integer lineLen, KeyLen, wordCount, ii, jj
       real    xstrpos
       logical rStat, lineType, foundEndHeader, insideColMetaData
 
@@ -72,7 +72,7 @@ C Open the file
          open(unit=unitNum,file=trim(adjustl(fln(flnNum))),
      *     status='old',iostat=ios)
          if(ios.ne.0)then
-            print*,'Problems opening ',trim(fln(flnNum))
+            print*,'Problems opening ',fln(flnNum)
             print*
             STOP ' Stopped in read_flow_ef'
          endif
@@ -119,29 +119,30 @@ C Search for and read tb0 file header
             else if(keyword(1:KeyLen) .eq. ':endcolumnmetadata')then
                insideColMetaData = .FALSE.
             else if(insideColMetaData) then
-c               print *,'ddeacu: keyword', keyword
                iStat = ParseFlowColumnMetaData(colHeader,keyword,
-     &                                         keyLen,subString)
+     &                                         KeyLen,subString)
                if(iStat .lt. 0) then
-                  write(*,'(2(A))') 'ERROR parsing ', trim(fln(flnNum))
-                  write(*,'(2(A))') '   in line: ',line			
+                  write(*,'(2(A))') 'ERROR parsing ', fln(flnNum)
+                  write(*,'(2(A))') '   in line: ',line
                   STOP ' Stopped in read_flow_ef'
                   return
                endif
             else
-               iStat = ParseFlowParam(header,keyword,keyLen,subString)
+               iStat = ParseFlowParam(header,keyword,KeyLen,subString)
+               if (keyword(1:KeyLen) .eq. ':starttime') then
+                  read(subString( 9:10),'(i1)') strday1
+                  read(subString(12:13),'(i1)') strhour1
+               end if
                if(iStat .lt. 0) then
-                  write(*,'(2(A))') 'ERROR parsing ', trim(fln(flnNum))
-                  write(*,'(2(A))') '   in line: ',line			
+                  write(*,'(2(A))') 'ERROR parsing ', fln(flnNum)
+                  write(*,'(2(A))') '   in line: ',line
                   STOP ' Stopped in read_flow_ef'
                   return
                else if(iStat .eq. 0) then
-C     write(*,'((A), (A))')  'Unrecognized keyword line: ',
-C     &		line
                endif
             end if
          end if
-      end do	
+      end do
 C***************************************
 C	Finished reading the header
 C***************************************
@@ -210,10 +211,10 @@ c      endif
 !         check to see memory allocated is adequate      
          if(no.ne.no_old)then
             print*,'No of streamflow stations has been changed in'
-            print*,'in file ',trim(fln(6))
+            print*,'in file ',fln(6)
             print*,'This is not permitted'
             print*
-            stop 'Program aborted in read_flow_ef @ 172'
+            stop 'Program aborted in rdstr @ 172'
          endif
          if(nl.gt.nl_max)then
             nl_max=nl
@@ -225,7 +226,7 @@ c      endif
             if (iDeallocate.ne.0) then
                print*,'Error with deallocation of qhyd & qsyn'
                print*
-               stop 'Program aborted in read_flow_ef @ 180'
+               stop 'Program aborted in rdstr @ 180'
             endif
             allocate(qhyd(no,nl),qsyn(no,nl),
      *           qhyd_dly(no,nl/24),qsyn_dly(no,nl/24),
@@ -352,7 +353,7 @@ c		do j=1,nl,kt
             endif
             write(*,206)(qhyd(l,j),l=1,no)
             print*
-            stop 'Program aborted in read_flow_ef @ 368'
+            stop 'Program aborted in strfw @ 368'
          endif
 
 !     rev. 9.1.10  Jan.  29/02  - flow nudging added for nopt(l)=2
@@ -473,9 +474,9 @@ c		do j=1,nl,kt
 !     moved from sub
       close(unit=unitNum,status='keep',iostat=ios)
       if(ios.ne.0)then
-         print*,'Problem closing unit 36 fln=',trim(fln(6))
+         print*,'Problem closing unit 36 fln=',fln(6)
          print*
-         stop ' program aborted in read_flow_ef @ 623'
+         stop ' program aborted in rdflow @ 623'
       endif
 
 
@@ -499,7 +500,7 @@ c		do j=1,nl,kt
  5001 format(/' echo converted hydrographs:')
  5004 format(a20,a10)
  5005 format(a20,i5)
- 6226 format(' error encountered opening unit=37 fln=',a/)
+ 6226 format(' error encountered opening unit=37 fln=',a999/)
 
       END SUBROUTINE read_flow_ef
 

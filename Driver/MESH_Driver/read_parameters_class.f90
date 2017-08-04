@@ -84,7 +84,9 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     JLAT = nint(DEGLAT)
 
     !> Determine the number of layers for soil parameters to read from file.
-    if (NRSOILAYEREADFLAG == 1) then
+    if (NRSOILAYEREADFLAG > 3) then
+        ignd = min(NRSOILAYEREADFLAG, NSL)
+    else if (NRSOILAYEREADFLAG == 1) then
         ignd = NSL
     else
         ignd = 3
@@ -123,28 +125,32 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
     !> Distribute soil variables to additional layers.
 !todo: Change this so that soil.ini can take more than 3 layers.
+    if (NRSOILAYEREADFLAG > 3) then
+        ignd = min(NRSOILAYEREADFLAG, NSL)
+    else if (NRSOILAYEREADFLAG == 1) then
+        ignd = 0
+    else
+        ignd = 3
+    end if
     do j = 4, NSL
         do m = 1, NTYPE
-            if (NRSOILAYEREADFLAG == 0) then
-                stasrow%sl%tbar(m, j) = stasrow%sl%tbar(m, 3) !note333 see read_s_temperature_txt.f for more TBAR information
-                stasrow%sl%thlq(m, j) = stasrow%sl%thlq(m, 3) !note444 see read_s_moisture_txt.f for more THLQ information
-                stasrow%sl%thic(m, j) = stasrow%sl%thic(m, 3)
-                if (pmrow%slp%sdep(m) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pmrow%slp%sand(m, 3) > -2.5) then
-                    pmrow%slp%sand(m, j) = -3.0
-                    pmrow%slp%clay(m, j) = -3.0
-                    pmrow%slp%orgm(m, j) = -3.0
-                else
-                    pmrow%slp%sand(m, j) = pmrow%slp%sand(m, 3)
-                    pmrow%slp%clay(m, j) = pmrow%slp%clay(m, 3)
-                    pmrow%slp%orgm(m, j) = pmrow%slp%orgm(m, 3)
-                end if
-            else
-                if (pmrow%slp%sdep(m) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pmrow%slp%sand(m, j) > -2.5) then
-                    pmrow%slp%sand(m, j) = -3.0
-                    pmrow%slp%clay(m, j) = -3.0
-                    pmrow%slp%orgm(m, j) = -3.0
-                end if
+
+            !> Distribute parameters and initial states to lower layers whose values might not be defined.
+            if (ignd > 0) then
+                stasrow%sl%tbar(m, j) = stasrow%sl%tbar(m, ignd) !note333 see read_s_temperature_txt.f for more TBAR information
+                stasrow%sl%thlq(m, j) = stasrow%sl%thlq(m, ignd) !note444 see read_s_moisture_txt.f for more THLQ information
+                stasrow%sl%thic(m, j) = stasrow%sl%thic(m, ignd)
+                pmrow%slp%sand(m, j) = pmrow%slp%sand(m, ignd)
+                pmrow%slp%clay(m, j) = pmrow%slp%clay(m, ignd)
+                pmrow%slp%orgm(m, j) = pmrow%slp%orgm(m, ignd)
             end if !if (NRSOILAYEREADFLAG == 0) then
+
+            !> Impermeable soils.
+            if (pmrow%slp%sdep(m) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pmrow%slp%sand(m, j) > -2.5) then
+                pmrow%slp%sand(m, j) = -3.0
+                pmrow%slp%clay(m, j) = -3.0
+                pmrow%slp%orgm(m, j) = -3.0
+            end if
         end do
     end do
 
