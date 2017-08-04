@@ -131,6 +131,7 @@ module sa_mesh_run_within_tile
 !                    IRDMND(k) = (IRDMND(k)*(1000.0/ic%dts)) - cm%dat(ck%RT)%GAT(k)
                     IRDMND(k) = IRDMND(k)*(1000.0/ic%dts) ! convert into mm/sec
                     IRAVAI(k) = max(IRDMND(k) - cm%dat(ck%RT)%GAT(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
+                    IRAVAI(k) = min(stas%chnl%s(shd%lc%ILMOS(k))*0.95/shd%AREA(shd%lc%ILMOS(k))*1000.0/ic%dts, IRAVAI(k)) ! adjust to the maximum water available from channel storage (m3 to mm)
                     OLDPRE(k) = cm%dat(ck%RT)%GAT(k)
                     cm%dat(ck%RT)%GAT(k) = cm%dat(ck%RT)%GAT(k) + IRAVAI(k) ! add irrigation water into precipitation
                     NEWPRE(k) = cm%dat(ck%RT)%GAT(k)
