@@ -2,10 +2,16 @@ module sa_mesh_run_within_tile
 
     implicit none
 
+!>>>irrigation
+    real, save :: IRTOT
+    real, dimension(:), allocatable, save :: IRSUM, IRALL, NEWPRE, OLDPRE, IRCAL
+    real, dimension(:, :), allocatable, save :: IR, CHECK, LQSUM
+
     contains
 
     subroutine run_within_tile_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
+        use mpi_shared_variables
         use sa_mesh_shared_parameters
         use sa_mesh_shared_variables
         use model_files_variables
@@ -31,6 +37,17 @@ module sa_mesh_run_within_tile
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
+        integer NML, NSL
+        NML = shd%lc%NML
+        NSL = shd%lc%IGND
+
+        !> Irrigation
+        allocate(IRSUM(NML), IRALL(NML), NEWPRE(NML), OLDPRE(NML), IRCAL(NML))
+        allocate(IR(NML, NSL), CHECK(NML, NSL), LQSUM(NML, NSL))
+        if (ipid == 0) open(unit = 1981, file = "irrigation.csv")
+       write(1981, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRCAL', 'IRSUM', 'IRTOT', 'OLDPRE', 'NEWPRE'
+!       if (ipid == 0) open(unit = 1950, file = "irrigation2.txt")
+
         call RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         call RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
@@ -40,12 +57,15 @@ module sa_mesh_run_within_tile
         !> Cropland irrigation module.
         call runci_init(shd, fls)
 
+1010    format(9999(g15.7e2, ','))
+
     end subroutine
 
     function run_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
         use mpi_shared_variables
         use sa_mesh_shared_variables
+        use sa_mesh_shared_parameters
         use model_files_variables
         use model_dates
         use climate_forcing
@@ -70,6 +90,8 @@ module sa_mesh_run_within_tile
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
+        integer k, j
+
         stas%cnpy%pevp(il1:il2) = 0.0
         stas%sfc%evap(il1:il2) = 0.0
         stas%cnpy%evpb(il1:il2) = 0.0
@@ -80,6 +102,71 @@ module sa_mesh_run_within_tile
         stas%lzs%rofb(il1:il2) = 0.0
 
         run_within_tile = ''
+
+!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> irrigation uing soil moisture
+    if (ipid /= 0 .or. izero == 0) then
+!csfv%THFC(,) = field capacity
+!csfv%GRKS(,) = Hydraulic conductivity of soil at saturation Ksat
+!cpv%THLQ(,) or THLIQC = Liquid water content of soil layers under vegetation
+!cpv%THIC(k, j)
+!csfv%DELZW (,) or shd%lc%sl%DELZ permeable or soil layer thickness
+!cfi%PRE or catv%RPRE,  wb%EVAP or cdv%QFS
+!csfv%FCAN(,) Tile in grid/GRU
+!FROOT(,) Fraction of water-accessing vegetation roots in soil layer
+             IRSUM = 0.0
+             IR = 0.0
+             CHECK = 0.0
+             LQSUM = 0.0
+             IRALL = 0.0
+             IRTOT = 0.0
+             NEWPRE = 0.0
+             OLDPRE = 0.0
+             IRCAL = 0.0
+
+             do k = il1, il2 !GRU -> loop for timestep
+                IRALL(k) = 0.0   !initialization for each time step
+                if (pm%tp%mid(k) == 9) then ! check irrDist GRU
+!               ik = shd%lc%ILMOS(k) ! complete grid/all GRU
+!                    do j = 1, shd%lc%IGND ! loop for each Soil layers
+                     do j = 1, 3 ! loop for each Soil layers
+                       CHECK(k,j) = 0.5*pm%slp%thfc(k,j) ! calculate 50% of field capacity
+                       LQSUM(k,j) =  stas%sl%thlq(k, j) + stas%sl%thic(k, j) ! sum liquid and ice water content in soil
+!                       LQSUM(k,j) =  stas%sl%thlq(k, j)
+                        if (LQSUM(k,j) < CHECK(k,j))then ! check if sum of soil moisture is less than 50% of FC
+                         IR(k,j) = (pm%slp%thfc(k,j) - LQSUM(k,j)) * stas%sl%delzw(k, j) ! calculate irrigation water for each permeable soil depth
+!                        write(*, "('THFC, LQSUM, DELZW, IR, SoilLayer',4f8.4,i3)")csfv%THFC(k,j), LQSUM(k,j), csfv%DELZW(k, j), IR(k,j), j
+                        else
+                         IR(k,j) = 0.0
+                        end if
+                       IRALL(k) = IRALL(k) + IR(k,j) ! sum of complete soil depth
+                    end do !soil layer
+!                IRCAL(k) = (IRALL(k)*(1000.0/ic%dts)) - cm%dat(ck%RT)%GAT(k)
+                IRCAL(k) = (IRALL(k)*(1000.0/ic%dts)) ! convert into mm/sec
+                IRSUM(k) = max(IRCAL(k)- cm%dat(ck%RT)%GAT(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
+                OLDPRE(k) = cm%dat(ck%RT)%GAT(k)
+                cm%dat(ck%RT)%GAT(k) = cm%dat(ck%RT)%GAT(k) + IRSUM(k) ! add irrigation water into precipitation
+                NEWPRE(k) = cm%dat(ck%RT)%GAT(k)
+               end if ! check Crop GRU tile
+!              IRTOT = sum(IRSUM)
+              if (IRCAL(k) > 0.0) then
+!               !do k = il1, il2
+                !abstraction(shd%lc%ILMOS(k)) = abstraction(shd%lc%ILMOS(k)) + (IRCAL(k)*0.000001) ! convert to m3
+                !end do
+              end if
+             end do ! GRU tile
+!            write(1981, "('IRCAL, IRSUM,IRTOT, OLDPRE, NEWPRE',5f12.8)")sum(IRCAL),sum(IRSUM),IRTOT,sum(OLDPRE),sum(NEWPRE)
+
+!            close(1981)
+
+            !! if (ic%now%hour == 0) then
+            !!  it's a new day
+            !! else if (ic%now%hour == 23) then
+            !!  it's the end of the day
+            !! end if
+
+        end if
+
+!>>>>>>>>>>>>>>>>>>>>>>>> CALL to CLASS
 
         call RUNCLASS36_within_tile(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
@@ -96,12 +183,26 @@ module sa_mesh_run_within_tile
         !> MPI exchange.
         call run_within_tile_mpi(shd)
 
+        if (ipid == 0) then
+               IRTOT = sum(IRSUM)
+               write(1981, 1010) &
+                    ic%now%year,ic%now%jday,ic%now%hour,ic%now%mins, &
+                    sum(IRCAL),sum(IRSUM),IRTOT,sum(OLDPRE),sum(NEWPRE)
+!        if (sum(IRSUM) > 0.0) then
+!              print "('IRCAL, IRSUM,IRTOT, OLDPRE, NEWPRE',4i4,5f12.8)", &
+!                   ic%now%year,ic%now%jday,ic%now%hour,ic%now%mins, &
+!                   sum(IRCAL),sum(IRSUM),IRTOT,sum(OLDPRE),sum(NEWPRE)
+!        end if
+        end if
+
         where (stas%cnpy%pevp(il1:il2) /= 0.0)
             stas%cnpy%evpb(il1:il2) = stas%sfc%evap(il1:il2)/stas%cnpy%pevp(il1:il2)
             stas%cnpy%arrd(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)/stas%cnpy%pevp(il1:il2)
         end where
 
         return
+
+1010    format(9999(g15.7e2, ','))
 
     end function
 
@@ -149,6 +250,10 @@ module sa_mesh_run_within_tile
                 invars = invars + 1
             end if
         end if
+
+!>>>>>>>>>>>>>>>>>>>>>>>>> IRRIGATION NUMBER OF PARAMETERS FOR SEND/RECV <<<<<<<<<<<<< MPI
+        invars = invars + 4
+!<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         if (inp > 1 .and. ipid /= 0) then
 
@@ -206,6 +311,13 @@ module sa_mesh_run_within_tile
                     call mpi_isend(Qb(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end if
             end if
+
+!>>>>>>>>>>>>>>>>>>>>>>>>> IRRIGATION PARAMETER LIST FOR SEND <<<<<<<<<<<<< MPI
+            call mpi_isend(IRCAL(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(IRSUM(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(OLDPRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(NEWPRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!<<<<<<<<<<<<<<<<<<<<<<<<<<
 
             lstat = .false.
             do while (.not. lstat)
@@ -283,6 +395,13 @@ module sa_mesh_run_within_tile
                         call mpi_irecv(Qb(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                     end if
                 end if
+
+!>>>>>>>>>>>>>>>>>>>>>>>>> IRRIGATION PARAMETER LIST FOR RECV <<<<<<<<<<<<< MPI
+                call mpi_irecv(IRCAL(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(IRSUM(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(OLDPRE(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(NEWPRE(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!<<<<<<<<<<<<<<<<<<<<<<<<<<
 
                 lstat = .false.
                 do while (.not. lstat)
