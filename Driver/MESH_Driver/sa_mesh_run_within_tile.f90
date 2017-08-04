@@ -44,9 +44,11 @@ module sa_mesh_run_within_tile
         !> Irrigation
         allocate(IRSUM(NML), IRALL(NML), NEWPRE(NML), OLDPRE(NML), IRCAL(NML))
         allocate(IR(NML, NSL), CHECK(NML, NSL), LQSUM(NML, NSL))
-        if (ipid == 0) open(unit = 1981, file = "irrigation.csv")
-       write(1981, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRCAL', 'IRSUM', 'IRTOT', 'OLDPRE', 'NEWPRE'
-!       if (ipid == 0) open(unit = 1950, file = "irrigation2.txt")
+        if (ipid == 0) then
+            open(unit = 1981, file = "irrigation.csv")
+            write(1981, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRCAL', 'IRSUM', 'IRTOT', 'OLDPRE', 'NEWPRE'
+!            open(unit = 1950, file = "irrigation2.txt")
+        end if
 
         call RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
 
@@ -181,7 +183,7 @@ module sa_mesh_run_within_tile
         call runci_within_tile(shd, fls, cm)
 
         !> MPI exchange.
-        call run_within_tile_mpi(shd)
+        call run_within_tile_mpi(shd, cm)
 
         if (ipid == 0) then
                IRTOT = sum(IRSUM)
@@ -206,7 +208,7 @@ module sa_mesh_run_within_tile
 
     end function
 
-    subroutine run_within_tile_mpi(shd)
+    subroutine run_within_tile_mpi(shd, cm)
 
         !> For: MPI variables, barrier flag, il1:il2 parse utility
         use mpi_flags
@@ -214,9 +216,10 @@ module sa_mesh_run_within_tile
         use mpi_module
         use mpi_utilities
 
-        !> For: Model states, 'ic'.
+        !> For: Model states, 'ic', 'cm'.
         use sa_mesh_shared_variables
         use model_dates
+        use climate_forcing
 
         !> For: SAVERESUMEFLAG, RESUMEFLAG.
         use FLAGS
@@ -227,6 +230,7 @@ module sa_mesh_run_within_tile
 
         !> Input variables.
         type(ShedGridParams) :: shd
+        type(clim_info) :: cm
 
         !> Local variables.
         integer ipid_recv, itag, ierrcode, istop, i, j, u, invars, iilen, ii1, ii2, ierr
@@ -252,7 +256,7 @@ module sa_mesh_run_within_tile
         end if
 
 !>>>>>>>>>>>>>>>>>>>>>>>>> IRRIGATION NUMBER OF PARAMETERS FOR SEND/RECV <<<<<<<<<<<<< MPI
-        invars = invars + 4
+        invars = invars + 5
 !<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         if (inp > 1 .and. ipid /= 0) then
@@ -316,6 +320,7 @@ module sa_mesh_run_within_tile
             call mpi_isend(IRCAL(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(IRSUM(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(OLDPRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            call mpi_isend(cm%dat(ck%RT)%GAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             call mpi_isend(NEWPRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
 !<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -400,6 +405,7 @@ module sa_mesh_run_within_tile
                 call mpi_irecv(IRCAL(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(IRSUM(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(OLDPRE(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_irecv(cm%dat(ck%RT)%GAT(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 call mpi_irecv(NEWPRE(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
 !<<<<<<<<<<<<<<<<<<<<<<<<<<
 
