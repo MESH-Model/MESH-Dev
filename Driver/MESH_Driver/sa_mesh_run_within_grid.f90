@@ -281,11 +281,9 @@ module sa_mesh_run_within_grid
                 imstat = 0
 
                 call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iin)
-                ii1 = shd%lc%ILMOS(ii1)
-                ii2 = shd%lc%ILMOS(ii2)
+                ii1 = 1
+                ii2 = shd%NAA
                 iin = (ii2 - ii1) + 1
-
-!                print *, ipid, ' sending ' , ii1, ' to ', ii2, ', to ', u, ' on ', itag
 
                 i = 1
 !>>>irrigation
@@ -297,8 +295,6 @@ module sa_mesh_run_within_grid
                     call mpi_testall(invars, irqst, lstat, imstat, ierr)
                 end do
 
-!                print *, ipid, ' done sending to ', u
-
             end do !u = 1, (inp - 1)
 
         else if (inp > 1) then
@@ -309,11 +305,9 @@ module sa_mesh_run_within_grid
             allocate(irqst(invars), imstat(mpi_status_size, invars))
             irqst = mpi_request_null
 
-            ii1 = shd%lc%ILMOS(il1)
-            ii2 = shd%lc%ILMOS(il2)
+            ii1 = 1
+            ii2 = shd%NAA
             iin = (ii2 - ii1) + 1
-
-!            print *, ipid, ' receiving ' , ii1, ' to ', ii2, ', from ', 0, ' on ', itag
 
             i = 1
 !>>>irrigation
@@ -324,8 +318,6 @@ module sa_mesh_run_within_grid
             do while (.not. lstat)
                 call mpi_testall(invars, irqst, lstat, imstat, ierr)
             end do
-
-!            print *, ipid, ' done receiving from ', 0
 
         end if !(inp > 1 .and. ipid /= 0) then
 

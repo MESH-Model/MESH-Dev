@@ -3,7 +3,17 @@ module sa_mesh_run_within_tile
     implicit none
 
 !>>>irrigation
-    real, dimension(:), allocatable, save :: IRDMND, IRAVAI, NEWPRE, OLDPRE
+    !*  MINFSTG: Fraction of storage to leave in the channel, not accessible for irrigation. [--].
+    !*  MINTHFC: Fraction of field capacity used to determine irrigation demand. [--].
+    real, save :: MINFSTG = 0.05
+    real, save :: MINTHFC = 0.5
+    !*  IRDMND: Calculated irrigation demand. [kg m-2 s-1].
+    !*  IRAVAI: Water available for irrigation. [kg m-2 s-1].
+    !*  OLDPRE: Diagnostic variable of precipitation before adding water for irrigation. [kg m-2 s-1].
+    !*  NEWPRE: Diagnostic variable of precipitation after adding water for irrigation. [kg m-2 s-1].
+    real, dimension(:), allocatable, save :: IRDMND, IRAVAI, OLDPRE, NEWPRE
+    !*  ABSP: RANK of the abstraction point; zero if water should be abstracted from the containing grid. [--].
+    integer, dimension(:), allocatable, save :: ABSP
 !<<<irrigation
 
     contains
@@ -37,16 +47,28 @@ module sa_mesh_run_within_tile
         type(reservoir_release) :: rrls
 
 !>>>irrigation
-        integer NML
+        integer NML, k
 !<<<irrigation
 
 !>>>irrigation
         NML = shd%lc%NML
-        allocate(IRDMND(NML), IRAVAI(NML), OLDPRE(NML), NEWPRE(NML))
+        allocate(IRDMND(NML), IRAVAI(NML), OLDPRE(NML), NEWPRE(NML), ABSP(NML))
+        ABSP = 0 ! set default to abstract water from containing grid
+!todo: remove hard-coding.
+        forall(k = 702:730, pm%tp%mid(k) == 9) ABSP(k) = 142 ! district 1
+        forall(k = 731:810, pm%tp%mid(k) == 9) ABSP(k) = 181 ! district 2
+        forall(k = 811:827, pm%tp%mid(k) == 9) ABSP(k) = 180 ! district 3
         if (ipid == 0) then
-            open(unit = 1981, file = "irrigation.csv")
+            open(unit = 1981, file = "irrigation.csv") ! open file for output
             write(1981, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRDMND', 'IRAVAI', 'IRTOT', 'OLDPRE', 'NEWPRE'
+            open(unit = 1982, file = "irrigation_1.csv") ! open file for output
+            write(1982, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRDMND', 'IRAVAI', 'IRTOT', 'OLDPRE', 'NEWPRE'
+            open(unit = 1983, file = "irrigation_2.csv") ! open file for output
+            write(1983, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRDMND', 'IRAVAI', 'IRTOT', 'OLDPRE', 'NEWPRE'
+            open(unit = 1984, file = "irrigation_3.csv") ! open file for output
+            write(1984, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRDMND', 'IRAVAI', 'IRTOT', 'OLDPRE', 'NEWPRE'
         end if
+1010    format(9999(g15.7e2, ','))
 !<<<irrigation
 
         call RUNCLASS36_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
@@ -57,8 +79,6 @@ module sa_mesh_run_within_tile
 
         !> Cropland irrigation module.
         call runci_init(shd, fls)
-
-1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
@@ -92,7 +112,7 @@ module sa_mesh_run_within_tile
         type(reservoir_release) :: rrls
 
 !>>>irrigation
-        integer k, j
+        integer n, k, j
         real ir, lqsum, check
 !<<<irrigation
 
@@ -110,14 +130,14 @@ module sa_mesh_run_within_tile
 !>>>irrigation (using soil moisture)
         if (ipid /= 0 .or. izero == 0) then
             IRAVAI = 0.0
-            NEWPRE = 0.0
             OLDPRE = 0.0
+            NEWPRE = 0.0
             do k = il1, il2 !GRU -> loop for timestep
                 IRDMND(k) = 0.0   !initialization for each time step
                 if (pm%tp%mid(k) == 9) then ! check irrDist GRU
 !                    do j = 1, shd%lc%IGND ! loop for each Soil layers
                     do j = 1, 3 ! loop for each Soil layers
-                        check = 0.5*pm%slp%thfc(k, j) ! calculate 50% of field capacity
+                        check = MINTHFC*pm%slp%thfc(k, j) ! calculate 50% of field capacity
                         lqsum =  stas%sl%thlq(k, j) + stas%sl%thic(k, j) ! sum liquid and ice water content in soil
 !                        lqsum =  stas%sl%thlq(k, j)
                         if (lqsum < check)then ! check if sum of soil moisture is less than 50% of FC
@@ -131,16 +151,13 @@ module sa_mesh_run_within_tile
 !                    IRDMND(k) = (IRDMND(k)*(1000.0/ic%dts)) - cm%dat(ck%RT)%GAT(k)
                     IRDMND(k) = IRDMND(k)*(1000.0/ic%dts) ! convert into mm/sec
                     IRAVAI(k) = max(IRDMND(k) - cm%dat(ck%RT)%GAT(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
-                    IRAVAI(k) = min(stas%chnl%s(shd%lc%ILMOS(k))*0.95/shd%AREA(shd%lc%ILMOS(k))*1000.0/ic%dts, IRAVAI(k)) ! adjust to the maximum water available from channel storage (m3 to mm)
+                    n = ABSP(k) !RANK of channel to pull abstraction
+                    if (n == 0) n = shd%lc%ILMOS(k) ! pull from own cell if no abstraction point defined
+                    IRAVAI(k) = min(stas%chnl%s(n)*(1.0 - MINFSTG)/shd%AREA(n)*1000.0/ic%dts, IRAVAI(k)) ! adjust to the maximum water available from channel storage (m3 to mm)
                     OLDPRE(k) = cm%dat(ck%RT)%GAT(k)
                     cm%dat(ck%RT)%GAT(k) = cm%dat(ck%RT)%GAT(k) + IRAVAI(k) ! add irrigation water into precipitation
                     NEWPRE(k) = cm%dat(ck%RT)%GAT(k)
                 end if ! check Crop GRU tile
-!               if (IRDMND(k) > 0.0) then
-!                   do k = il1, il2
-!                       abstraction(shd%lc%ILMOS(k)) = abstraction(shd%lc%ILMOS(k)) + (IRDMND(k)*0.000001) ! convert to m3
-!                   end do
-!               end if
             end do ! GRU tile
         end if
 !<<<irrigation
@@ -170,6 +187,15 @@ module sa_mesh_run_within_tile
 !                    ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
 !                    sum(IRDMND), sum(IRAVAI), sum(IRAVAI), sum(OLDPRE), sum(NEWPRE)
 !            end if
+            write(1982, 1010) &
+                ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
+                sum(IRDMND(702:730)), sum(IRAVAI(702:730)), sum(IRAVAI(702:730)), sum(OLDPRE(702:730)), sum(NEWPRE(702:730))
+            write(1983, 1010) &
+                ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
+                sum(IRDMND(731:810)), sum(IRAVAI(731:810)), sum(IRAVAI(731:810)), sum(OLDPRE(731:810)), sum(NEWPRE(731:810))
+            write(1984, 1010) &
+                ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
+                sum(IRDMND(811:827)), sum(IRAVAI(811:827)), sum(IRAVAI(811:827)), sum(OLDPRE(811:827)), sum(NEWPRE(811:827))
         end if
 !<<<irrigation
 
