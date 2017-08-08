@@ -142,6 +142,8 @@ module sa_mesh_run_within_tile
                     OLDPRE(k) = cm%dat(ck%RT)%GAT(k)
                     cm%dat(ck%RT)%GAT(k) = cm%dat(ck%RT)%GAT(k) + IRAVAI(k) ! add irrigation water into precipitation
                     NEWPRE(k) = cm%dat(ck%RT)%GAT(k)
+                    stas_grid%chnl%s(n) = stas_grid%chnl%s(n) - &
+                        (IRAVAI(k)*ic%dts/1000.0)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%AREA(n)
                 end if ! check Crop GRU tile
             end do ! GRU tile
         end if
