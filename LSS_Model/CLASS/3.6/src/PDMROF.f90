@@ -120,9 +120,10 @@ SUBROUTINE PDMROF (IWF,    ILG,    IL1,    IL2,    FI,       &
 IMPLICIT NONE
 
 !     * INPUT SCALARS
-INTEGER IWF, ILG, IL1, IL2
+INTEGER ILG, IL1, IL2
 
 !     * INPUT ARRAYS
+INTEGER IWF(ILG)
 REAL  FI(ILG), CMIN(ILG), CMAX(ILG), B(ILG), K1(ILG), K2(ILG)
 REAL  TFREZ,   DELT,      DELTHR,    KMIN,   K1M,     K2M
 
@@ -148,8 +149,9 @@ REAL  Q(ILG)
 !----------------------------------------------------------------------
       UMQ       = 0.0
 
-!     SKIP IF USING FLAT CLASS
-      IF(IWF .EQ. 0)RETURN
+!----------------------------------------------------------------------
+!     RETURN IF NO NML IS EXPECTED TO RUN IN THIS CYCLE
+      IF(.NOT. ANY(IWF == 2)) RETURN
 
 !     DELT VALUE IN HOUR
       DELTHR = DELT / 3600.0
@@ -178,6 +180,9 @@ REAL  Q(ILG)
 !----------------------------------------------------------------------
 !     LOOP THROUGH EACH ACTIVE ELEMENT
       DO I = IL1, IL2
+
+!        CYCLE IF NOT USING PDMROF
+         IF(IWF(I) /= 2) CYCLE
 
 !        --------------------------------------------------------------
 !        DO THE COMPUTATION IF VEGETATION CATEGORY EXISTS IN THE TILE

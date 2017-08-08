@@ -303,6 +303,20 @@ include "thermoconsts.inc"
       D(6)=0.8
 !       Depth of the seventh deep layer 
       D(7)=1.4
+
+      IF(KOUNT.EQ.1) then
+         ! at KOUNT eq. 0 have RETURN, so can't use kount=1
+         DO I=1,N
+!           Make sure rootdp does not exceed permeable depth
+            bus(x(ROOTDP,I,1))=min( bus(x(ROOTDP,I,1)) , D(7) )
+!           also initialize tsoil(2) --- an almost diagnostic in SVS
+            bus(x(TSOIL,I,2))=bus(x(TGROUND,I,2))
+         END DO
+      ENDIF
+
+
+
+
         
 !
 !******************************************************************

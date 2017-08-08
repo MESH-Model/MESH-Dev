@@ -310,6 +310,8 @@ include "thermoconsts.inc"
           PSNGRVL(I) = (  (1-VEGH(I) -VEGL(I)) * PSNGROUND(I) +  VEGL(I) * PSNLOWVEG(I) ) / ( 1 - VEGH(I) )
        ELSE
           PSNGRVL(I) = 0.0
+          PSNGROUND(I)  = 0.0
+          PSNLOWVEG(I) = 0.0
        ENDIF
        
 !

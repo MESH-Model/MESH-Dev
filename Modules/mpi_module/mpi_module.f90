@@ -4,6 +4,12 @@
 !>
 module mpi_module
 
+    !> Generic MPI library.
     use mpi
+
+    !> Includes flags, variables, and utilities.
+    use mpi_flags
+    use mpi_shared_variables
+    use mpi_utilities
 
 end module !mpi_module

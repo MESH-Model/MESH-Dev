@@ -10,15 +10,13 @@ module RUNSVS113_module
 
     contains
 
-    subroutine RUNSVS113(shd, fls, ts, cm, wb, eb, sp)
+    subroutine RUNSVS113(shd, fls, cm)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
+        use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
-        use model_output_variabletypes
-        use MODEL_OUTPUT
 
         use RUNSVS_mod
         use runsvs_utils
@@ -26,11 +24,7 @@ module RUNSVS113_module
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(dates_model) :: ts
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sp
 
 #include "options.cdk"
 #include "isbapar.cdk"
@@ -164,27 +158,6 @@ module RUNSVS113_module
 !            end if
 !        end do
 
-!-        wb%PRE = 0.0
-!-        wb%ROFO = 0.0
-!-        wb%ROFS = 0.0
-!-        wb%ROFB = 0.0
-!-        do k = 0, NG - 1
-
-            !> Grab the Grid, GRU indices for the NML element.
-!-            ki = shd%lc%ILMOS(k + 1)
-!-            kj = shd%lc%JLMOS(k + 1)
-
-            !> Calculate the contributing FRAC.
-!-            FRAC = shd%lc%ACLASS(ki, kj)*shd%FRAC(ki)
-
-            !> Accumulate totals.
-!-            wb%PRE(ki) = wb%PRE(ki) + cm%dat(ck%RT)%GRD(ki)*FRAC*ic%dts
-!-            if (bus(runofftot + k) > 0.0) wb%ROFO(ki) = wb%ROFO(ki) + bus(runofftot + k)*FRAC
-!-            if (bus(latflw + k) > 0.0) wb%ROFS(ki) = wb%ROFS(ki) + bus(latflw + k)*FRAC
-!-            if (bus(watflow + 6*NG + k) > 0.0) wb%ROFB(ki) = wb%ROFB(ki) + bus(watflow + 6*NG + k)*FRAC
-!-        end do
-!-        wb%ROF = wb%ROFO + wb%ROFS + wb%ROFB
-
         !> Transfer variables.
         do k = 0, NG - 1
             stas%cnpy%qac(k + 1) = bus(qsurf + k)
@@ -208,13 +181,17 @@ module RUNSVS113_module
 !-            stas%sfc%tpnd(k + 1) =
 !-            stas%sfc%zpnd(k + 1) =
 !-            stas%sfc%pndw(k + 1) =
-            stas%sfc%evap(k + 1) = bus(etr + k)*(86400.0/ic%dts)
+            stas%sfc%evap(k + 1) = bus(fvap + k)
             stas%sfc%qevp(k + 1) = bus(fv + k)
             stas%sfc%hfs(k + 1) = bus(fc + k)
             stas%sfc%rofo(k + 1) = max(0.0, bus(runofftot + k))/ic%dts
 !-            stas%sfc%tsfs(k + 1, :) =
 !-            stas%sl%tbas(k + 1) =
-            stas%sl%rofs(k + 1) = max(0.0, bus(latflw + k))/ic%dts
+!EG_MOD add lateral flow from all layers
+            stas%sl%rofs(k + 1) = 0.0
+            do j = 0, 6
+                stas%sl%rofs(k + 1) = stas%sl%rofs(k + 1) + max(0.0, bus(latflw + j*NG + k))/ic%dts
+            end do
             stas%sl%thic(k + 1, 1) = bus(isoil + k)
 !-            stas%sl%fzws(k + 1, :) =
             stas%sl%thlq(k + 1, 1) = bus(wdsoil + k)

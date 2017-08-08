@@ -106,6 +106,20 @@
             endif
             high(i) = high(i) + fcover(i,type)* table_val
           END DO
+
+          !   ADD URBAN CLASS (=21), SPLIT I evenly between HIGH AND LOW VEG
+          type=21
+! 
+          if (lat(i).ge.0.0) then
+!              northern hemisphere
+             table_val = tablen(type)
+          else
+!              southern hemisphere
+             table_val = tables(type)
+          endif
+          low(i)  = low(i)  + 0.5 * fcover(i,type)* table_val
+          high(i) = high(i) + 0.5 * fcover(i,type)* table_val
+
 !
           low(i)  = low(i)  / totfract
           high(i) = high(i) / totfract
@@ -120,14 +134,20 @@
 !              northern hemisphere
               deci(i) = (fcover(i,6) * tablen(6)  &
                       +  fcover(i,7) * tablen(7)  & 
-                      +  0.5 * fcover(i,25) * tablen(25)) /high(i)
+                      +  fcover(i,8) * tables(8)  &
+                      +  fcover(i,9) * tables(9)  &
+                      +  0.5 * fcover(i,25) * tables(25) &
+                      +  0.5 * fcover(i,26) * tables(26) ) /high(i)
 !        
               ever(i) = 1.0 - deci(i)
            else
 !              southern hemisphere
               deci(i) = (fcover(i,6) * tables(6)  &  
                            +  fcover(i,7) * tables(7)  &  
-                           +  0.5 * fcover(i,25) * tables(25)) /high(i)
+                           +  fcover(i,8) * tables(8)  &
+                      +  fcover(i,9) * tables(9)  &
+                      +  0.5 * fcover(i,25) * tables(25) &
+                      +  0.5 * fcover(i,26) * tables(26) ) /high(i)
            
 
               ever(i) = 1.0 - deci(i)

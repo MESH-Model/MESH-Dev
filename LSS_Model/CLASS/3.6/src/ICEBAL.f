@@ -46,7 +46,8 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,N
+      INTEGER IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,N
+      INTEGER IWF(ILG)
 C
 C     * INPUT/OUTPUT FIELDS.
 C                                                                                 
@@ -107,7 +108,7 @@ C
                  HTC (I,1)=HTC(I,1)+FI(I)*(TR(I)+TFREZ)*HCPW*
      1                     RADD/DELT
               ENDIF                                                                       
-              IF(IWF.EQ.0 .AND. (ZPOND(I)-ZPLIM(I)).GT.1.0E-8) THEN
+              IF(IWF(I).EQ.0 .AND. (ZPOND(I)-ZPLIM(I)).GT.1.0E-8) THEN
                   TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TPOND(I)+TFREZ)*
      1                   (ZPOND(I)-ZPLIM(I)))/(RUNOFF(I)+ZPOND(I)-
      2                   ZPLIM(I))

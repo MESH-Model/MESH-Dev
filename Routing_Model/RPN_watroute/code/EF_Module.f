@@ -148,6 +148,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 	REAL, DIMENSION(:), ALLOCATABLE :: colCoeff3
 	REAL, DIMENSION(:), ALLOCATABLE :: colCoeff4
 	REAL, DIMENSION(:), ALLOCATABLE :: colCoeff5
+        REAL, DIMENSION(:), ALLOCATABLE :: colCoeff6
+        REAL, DIMENSION(:), ALLOCATABLE :: colCoeff7
 	END TYPE ResvColumnMetaData
 	
 	TYPE ResvinColumnMetaData
@@ -161,6 +163,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 	REAL   , DIMENSION(:), ALLOCATABLE :: colLocY1
 	REAL   , DIMENSION(:), ALLOCATABLE :: colValue1
 	INTEGER, DIMENSION(:), ALLOCATABLE :: colValue2
+	INTEGER, DIMENSION(:), ALLOCATABLE :: colValue3
+	INTEGER, DIMENSION(:), ALLOCATABLE :: colValue4
 	END TYPE DivColumnMetaData
 
 
@@ -1208,8 +1212,8 @@ C
 	TYPE(TimeStamp), INTENT(INOUT) :: tStamp 
 	CHARACTER*(*), INTENT(INOUT) :: string
 	character*128  value
-		character*4096 tmpString, localLine
-!       integer lineLen, rStat		
+	character*10000 tmpString, localLine
+!	integer lineLen, rStat		
         integer lineLen
 ! Dan Princz Changed rStat To logical from integer
 		logical rStat
@@ -1561,10 +1565,6 @@ C
 	   
 	   read(tmpString,*)(header%colLocX(n),n=1,wordCount)
 
-c      just checking
-c 			do n=1,wordCount
-c				print*,header%colLocX(n)
-c 			enddo
 
 	   ParseTB0ColumnMetaData = 1
 	   return
@@ -1584,10 +1584,6 @@ c 			enddo
 	   
 	   read(tmpString,*)(header%colLocY(n),n=1,wordCount)
 	   
-C just checking
-c			do n=1,wordCount
-c				print*,header%colLocY(n)
-c			enddo
 
 	   ParseTB0ColumnMetaData = 1
 			
@@ -1608,10 +1604,6 @@ c			enddo
 	   
 	   read(tmpString,*)(header%colName(n),n=1,wordCount)
 	   
-C just checking
-c			do n=1,wordCount
-c				print*,header%colName(n)
-c			enddo
 
 	   ParseTB0ColumnMetaData = 1
 	   return
@@ -1632,10 +1624,6 @@ c	else if(keyword(1:KeyLen) .eq. ':columnType')then
 	   
 	   read(tmpString,*)(header%colType(n),n=1,wordCount)
 	   
-C just checking
-c			do n=1,wordCount
-c				print*,header%colType(n)
-c			enddo
 
 	   ParseTB0ColumnMetaData = 1
 	   return
@@ -1655,11 +1643,6 @@ c			enddo
 	   allocate(header%colUnits(wordCount))
 	   
 	   read(tmpString,*)(header%colUnits(n),n=1,wordCount)
-
-C just checking
-c			do n=1,wordCount
-c				print*,header%colUnits(n)
-c			enddo
 
 	   ParseTB0ColumnMetaData = 1
 	   return
@@ -1704,11 +1687,6 @@ C	character*10000  tmpString
 	   
 	   read(tmpString,*)(header%colCoeff1(n),n=1,wordCount)
 
-C just checking
-C			do n=1,wordCount
-C				print*,header%colCoeff1(n)
-C			enddo
-
 	   ParseFlowColumnMetaData = 1
 	   return
 	   
@@ -1727,11 +1705,6 @@ C			enddo
 			
 	   read(tmpString,*)(header%colCoeff2(n),n=1,wordCount)
 
-C just checking
-C			do n=1,wordCount
-C				print*,header%colCoeff2(n)
-C			enddo
-
 	   ParseFlowColumnMetaData = 1
 	   return
 
@@ -1748,11 +1721,6 @@ C			enddo
 	   end if
 	   allocate(header%colCoeff3(wordCount))
 	   read(tmpString,*)(header%colCoeff3(n),n=1,wordCount)
-
-C just checking
-c			do n=1,wordCount
-c				print*,header%colCoeff3(n)
-c			enddo
 
 	   ParseFlowColumnMetaData = 1
 	   return
@@ -1771,10 +1739,6 @@ c			enddo
 	   
 	   read(tmpString,*)(header%colCoeff4(n),n=1,wordCount)
 			
-C just checking
-C			do n=1,wordCount
-C				print*,header%colCoeff4(n)
-C			enddo
 
 	   ParseFlowColumnMetaData = 1
 	   return
@@ -1794,10 +1758,6 @@ C			enddo
 
 	   read(tmpString,*)(header%colValue1(n),n=1,wordCount)
 	   
-C just checking
-C			do n=1,wordCount
-C				print*,header%colValue1(n)
-C			enddo
 
 	   ParseFlowColumnMetaData = 1
 	   return
@@ -1849,11 +1809,6 @@ C	character*10000 tmpString
 	   end if
 	   read(tmpString,*)(header%colCoeff1(n),n=1,wordCount)
 
-C just checking
-C			do n=1,wordCount
-C				print*,header%colCoeff1(n)
-C			enddo
-
 	   ParseResvColumnMetaData = 1
 	   return
 	   
@@ -1871,11 +1826,6 @@ C			enddo
 	   
 	   read(tmpString,*)(header%colCoeff2(n),n=1,wordCount)
 
-C just checking
-C			do n=1,wordCount
-C				print*,header%colCoeff2(n)
-C			enddo
-
 	   ParseResvColumnMetaData = 1
 	   return
 
@@ -1892,11 +1842,6 @@ C			enddo
 	   
 	   read(tmpString,*)(header%colCoeff3(n),n=1,wordCount)
 
-C just checking
-c			do n=1,wordCount
-c				print*,header%colCoeff3(n)
-c			enddo
-
 	   ParseResvColumnMetaData = 1
 	   return
 	else if(keyword(1:KeyLen) .eq. ':coeff4')then
@@ -1911,11 +1856,6 @@ c			enddo
 	   allocate(header%colCoeff4(wordCount))
 	   
 	   read(tmpString,*)(header%colCoeff4(n),n=1,wordCount)
-
-C just checking
-C			do n=1,wordCount
-C				print*,header%colCoeff4(n)
-C			enddo
 
 	   ParseResvColumnMetaData = 1
 	   return
@@ -1933,14 +1873,40 @@ C			enddo
 
 	   read(tmpString,*)(header%colCoeff5(n),n=1,wordCount)
 
-C just checking
-C			do n=1,wordCount
-C				print*,header%colCoeff5(n)
-C			enddo
+	   ParseResvColumnMetaData = 1
+	   return
+	   
+        else if(keyword(1:KeyLen) .eq. ':coeff6')then
+           wordCount = CountWords(tmpString)
+           if(wordCount.le. 0)then
+              ParseResvColumnMetaData = -1
+              return
+           end if
+
+           header%tb0cmd%colCount = wordCount
+           deallocate(header%colCoeff6,stat=ideallocate)
+           allocate(header%colCoeff6(wordCount))
+
+           read(tmpString,*)(header%colCoeff6(n),n=1,wordCount)
 
 	   ParseResvColumnMetaData = 1
 	   return
 	   
+        else if(keyword(1:KeyLen) .eq. ':coeff7')then
+           wordCount = CountWords(tmpString)
+           if(wordCount.le. 0)then
+              ParseResvColumnMetaData = -1
+              return
+           end if
+
+           header%tb0cmd%colCount = wordCount
+           deallocate(header%colCoeff7,stat=ideallocate)
+           allocate(header%colCoeff7(wordCount))
+
+           read(tmpString,*)(header%colCoeff7(n),n=1,wordCount)
+
+           ParseResvColumnMetaData = 1
+           return
 	   
 	end if
 
@@ -1986,10 +1952,6 @@ C	character*10000 tmpString
 
 	   read(tmpString,*)(header%colValue1(n),n=1,wordCount)
 	   
-C just checking
-C			do n=1,wordCount
-C				print*,header%colValue1(n)
-C			enddo
 
 	   ParseResvinColumnMetaData = 1
 	   return
@@ -2038,11 +2000,6 @@ C	character*10000 tmpString
 	   end if
 	   read(tmpString,*)(header%colLocX1(n),n=1,wordCount)
 
-C just checking
-C			do n=1,wordCount
-C				print*,header%colValue2(n)
-C			enddo
-
 	   ParseDivColumnMetaData = 1
 	   return
 
@@ -2059,11 +2016,6 @@ C			enddo
 	   end if
 	   read(tmpString,*)(header%colLocY1(n),n=1,wordCount)
 
-C just checking
-C			do n=1,wordCount
-C				print*,header%colValue2(n)
-C			enddo
-
 	   ParseDivColumnMetaData = 1
 	   return
 
@@ -2075,15 +2027,14 @@ C			enddo
 	   end if
 	   
 	   header%tb0cmd%colCount = wordCount
-	   if(.NOT.allocated(header%colValue1)) then
-	      allocate(header%colValue1(wordCount))
+	   if(allocated(header%colValue1)) then
+	      deallocate(header%colValue1,stat=ideallocate)
 	   end if
+	      allocate(header%colValue1(wordCount))
+!	   if(.NOT.allocated(header%colValue1)) then
+!	      allocate(header%colValue1(wordCount))
+!	   end if
 	   read(tmpString,*)(header%colValue1(n),n=1,wordCount)
-
-C just checking
-C			do n=1,wordCount
-C				print*,header%colValue1(n)
-C			enddo
 
 	   ParseDivColumnMetaData = 1
 	   return
@@ -2096,15 +2047,54 @@ C			enddo
 	   end if
 	   
 	   header%tb0cmd%colCount = wordCount
-	   if(.NOT.allocated(header%colValue2)) then
-	      allocate(header%colValue2(wordCount))
+	   if(allocated(header%colValue2)) then
+	      deallocate(header%colValue2,stat=ideallocate)
 	   end if
+	      allocate(header%colValue2(wordCount))
+!	   if(.NOT.allocated(header%colValue2)) then
+!	      allocate(header%colValue2(wordCount))
+!	   end if
 	   read(tmpString,*)(header%colValue2(n),n=1,wordCount)
 
-C just checking
-C			do n=1,wordCount
-C				print*,header%colValue2(n)
-C			enddo
+	   ParseDivColumnMetaData = 1
+	   return
+
+	else if(keyword(1:KeyLen) .eq. ':value3')then
+	   wordCount = CountWords(tmpString)
+	   if(wordCount.le. 0)then
+	      ParseDivColumnMetaData = -1
+	      return
+	   end if
+	   
+	   header%tb0cmd%colCount = wordCount
+	   if(allocated(header%colValue3)) then
+	      deallocate(header%colValue3,stat=ideallocate)
+	   end if
+	   allocate(header%colValue3(wordCount))
+!	   if(.NOT.allocated(header%colValue3)) then
+!	      allocate(header%colValue3(wordCount))
+!	   end if
+	   read(tmpString,*)(header%colValue3(n),n=1,wordCount)
+
+	   ParseDivColumnMetaData = 1
+	   return
+
+	else if(keyword(1:KeyLen) .eq. ':value4')then
+	   wordCount = CountWords(tmpString)
+	   if(wordCount.le. 0)then
+	      ParseDivColumnMetaData = -1
+	      return
+	   end if
+
+	   header%tb0cmd%colCount = wordCount
+	   if(allocated(header%colValue4)) then
+	      deallocate(header%colValue4,stat=ideallocate)
+	   end if
+	   allocate(header%colValue4(wordCount))
+!	   if(.NOT.allocated(header%colValue4)) then
+!	      allocate(header%colValue4(wordCount))
+!	   end if
+	   read(tmpString,*)(header%colValue4(n),n=1,wordCount)
 
 	   ParseDivColumnMetaData = 1
 	   return

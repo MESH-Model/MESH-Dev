@@ -32,7 +32,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       character*1, dimension(:), allocatable :: glacier_flag
 
       integer*4, dimension(:), allocatable :: next,ibn,ichnl,irough,
-     *                       ireach,nreach,res,xxx,yyy
+     *                       ireach,nreach,res,xxx,yyy,resindex
      *                                       
 
       real*4, dimension(:), allocatable :: 
@@ -40,13 +40,14 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *                    fake,fakefs,frac,
      *                    grid_area,lake_area,channel_area,
      *                    lzs,netflow,over,pot,potfs,psmear,punused,
-     *                    qi1,qi2,qo1,qo2,qo2sim,qo2rem,qda,qr,qlz,
+     *                    qi1,qi2,qo1,qo2,qo2sim,qo2rem,qo2remirr,
+     *                    qda,qr,qlz,
      *                    qbase,qmax,qstream,qstrm,qdrng,qdrngfs,
      *                    qdrng2,qdrngfs2,
      *                    rechrg,rl,
      *                    sl1,slope,sl2,sq1,sq1fs,sqint,sqintfs,
      *                    store1,store2,storinit,sr,strloss,
-     *                    sdrng,sdrngfs,sexcess,
+     *                    sdrng,sdrngfs,sexcess,store2_strt,
      *                    sump,sumrff,sumqint,sumqintfs,
      *                    sumq1,sumq1fs,sumrechrg,
      *                    totd1,totuzs,totsnw,totchnl,totgrid,
@@ -241,7 +242,7 @@ ccccc      END MODULE area4
 
 ccccc      MODULE area5
 
-        real*4,  dimension(:,:), allocatable :: qrel,qinfl,qdwpr,qdiv,
+        real*4,  dimension(:,:), allocatable :: qrel,qinfl,qdwpr,
      *                     lake_stor,lake_outflow,lake_inflow,lake_elv,
      *                     del_stor
 !     *                     del_stor,net_lake_inflow,net_lake_outflow
@@ -250,16 +251,19 @@ ccccc      MODULE area5
 ! dch
         real*4, DIMENSION(:), ALLOCATABLE :: reach_last
 
-        real*4,    dimension(:), allocatable :: b1,b2,b3,b4,b5,ppsum
+        real*4,    dimension(:), allocatable :: b1,b2,b3,b4,b5,b6,b7
+        real*4,    dimension(:), allocatable :: ppsum
 
         integer*4, dimension(:), allocatable :: ires,jres,nnsum
         integer*4  noresv,local,mhto,index,nrel,ktr
 
         real*4,    dimension(:), allocatable :: val1div
-        integer*4, dimension(:), allocatable :: val2div, divstrindex,
-     *                                          divendindex
-     *                                     
-        integer*4  val2divyes,nodiv
+        integer*4, dimension(:), allocatable :: val2div,val3div,val4div,
+     *    divstrindex,divendindex
+        integer*4, dimension(:,:), allocatable :: irrigindx
+        real*4,    dimension(:,:), allocatable :: qdiv,qdivirrig
+
+        integer*4  val2divyes,nodiv,nodivirrig,maxirrigpts
 
 	character*12, dimension(:), allocatable :: resname,resnamei
 

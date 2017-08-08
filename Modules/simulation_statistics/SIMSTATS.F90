@@ -6,9 +6,7 @@
 module SIMSTATS
 
     use SIMSTATS_config
-    use model_output_variabletypes
     use flags
-    use model_files
     use model_dates
 
     use simstats_nse, only: nse_calc
@@ -193,13 +191,19 @@ module SIMSTATS
     !>
     subroutine stats_init(fls, stfl)
 
-        !> Input variables.
+        use model_files_variables
+        use model_output_variabletypes
+
+    !> Input variables.
         type(fl_ids) :: fls
         type(streamflow_hydrograph) :: stfl
 
         !> Local variables.
         logical exists
         integer iun, ierr
+
+!todo: fix hack for when routing is disabled.
+        if (.not. allocated(stfl%qhyd)) mtsflg%AUTOCALIBRATIONFLAG = 0
 
         if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
@@ -246,6 +250,9 @@ module SIMSTATS
     !> Description:
     !>
     subroutine stats_update_stfl_daily(fls, stfl)
+
+        use model_files_variables
+        use model_output_variabletypes
 
         !> Input variables.
         type(fl_ids) :: fls
@@ -308,7 +315,7 @@ module SIMSTATS
 
     subroutine stats_state_save(fls)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
 
         !> Input variables.
@@ -345,7 +352,7 @@ module SIMSTATS
 
     subroutine stats_state_resume(fls)
 
-        use mpi_shared_variables
+        use mpi_module
         use model_files_variables
 
         !> Input variables.
@@ -386,6 +393,8 @@ module SIMSTATS
     !> Description: Write the metrics of the simulation to file.
     !>
     subroutine stats_write(fls)
+
+        use model_files_variables
 
         !> Input variables.
         type(fl_ids) :: fls

@@ -5,15 +5,15 @@
 !>
 module sa_mesh_shared_output_variables
 
-    use sa_mesh_shared_parameters
-    use sa_mesh_shared_variables
+!    use sa_mesh_shared_parameters
+!    use sa_mesh_shared_variables
 
     implicit none
 
     !* pmrow: Input parameters stored in 'ROW' format.
-    type(parameters), save :: pmrow
+!-    type(parameters), save :: pmrow
 
     !* stasrow: State variables in the current time-step stored in 'ROW' format.
-    type(states), save :: stasrow
+!-    type(states), save :: stasrow
 
 end module

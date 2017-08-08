@@ -9,11 +9,7 @@ module cropland_irrigation_within_tile
     subroutine runci_within_tile(shd, fls, cm)
 
         use mpi_module
-        use mpi_shared_variables
-        use mpi_utilities
-        use mpi_flags
         use model_files_variables
-        use sa_mesh_shared_parameters
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
@@ -25,7 +21,7 @@ module cropland_irrigation_within_tile
         real, external :: calc_ET0
 
         !> For MPI exchange.
-        integer ipid_recv, itag, ierrcode, istop, u, invars, iilen, ii1, ii2, ierr
+        integer ipid_recv, itag, ierrcode, istop, u, invars, iiln, ii1, ii2, ierr
         integer, dimension(:), allocatable :: irqst
         integer, dimension(:, :), allocatable :: imstat
         logical lstat
@@ -192,12 +188,12 @@ module cropland_irrigation_within_tile
             irqst = mpi_request_null
             i = 1
             do ikey = civ%fk%kmin, civ%fk%kmax
-                call mpi_isend(civ%vars(ikey)%icu_mm(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
+                call mpi_isend(civ%vars(ikey)%icu_mm(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
                 i = i + 1
-                call mpi_isend(civ%vars(ikey)%lqws2_mm(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
+                call mpi_isend(civ%vars(ikey)%lqws2_mm(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
                 i = i + 1
 !todo: remove pevp (global var)
-                call mpi_isend(stas%cnpy%pevp(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(stas%cnpy%pevp(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             end do
             lstat = .false.
             do while (.not. lstat)
@@ -215,15 +211,15 @@ module cropland_irrigation_within_tile
             do u = 1, (inp - 1)
                 irqst = mpi_request_null
                 imstat = 0
-                call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iilen)
+                call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iiln)
                 i = 1
                 do ikey = civ%fk%kmin, civ%fk%kmax
-                    call mpi_irecv(civ%vars(ikey)%icu_mm(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    call mpi_irecv(civ%vars(ikey)%icu_mm(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
-                    call mpi_irecv(civ%vars(ikey)%lqws2_mm(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    call mpi_irecv(civ%vars(ikey)%lqws2_mm(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
 !todo: remove pevp (global var)
-                    call mpi_irecv(stas%cnpy%pevp(ii1:ii2), iilen, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(stas%cnpy%pevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end do
                 lstat = .false.
                 do while (.not. lstat)

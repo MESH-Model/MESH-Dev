@@ -142,9 +142,6 @@ module shd_variables
         !* wc: Information about contributing water bodies.
         type(ContribElemsParams) :: wc
 
-        !> RANK: Rank of the grid by order of elevation and streamflow direction. [-]
-        integer, dimension(:), allocatable :: RANK
-
         !> NEXT: Rank of the grid that is immediately downstream of this grid. [-]
         integer, dimension(:), allocatable :: NEXT
 

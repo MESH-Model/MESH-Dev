@@ -310,7 +310,7 @@ c        Cap is the volume of water in a reach for the mean annual flow
          rl=wf_al*wf_a1(ii)
          if (wf_RLFLAG == 1) rl = wf_CHNL_LEN(n)
          cap=(wf_a2(ii)+wf_a3(ii)*wf_da(n)**wf_a4(ii))*rl
-         if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)
+         if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)*rl
          qch=(cap/rl)**1.33*SQRT(wf_channelSlope(n))/wf_r2(ii)
 
          over=0.0
@@ -531,7 +531,7 @@ c                          for the mean annual flow
                            if (wf_RLFLAG == 1) rl = wf_CHNL_LEN(i)
                            cap=
      +(wf_a2(ii)+wf_a3(ii)*wf_da(i)**wf_a4(ii))*rl
-                           if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)
+                           if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)*rl
                            over=(wf_store2(i)-cap)/rl
                            if( over.le.0.0 ) then
 c                             Channel flow only

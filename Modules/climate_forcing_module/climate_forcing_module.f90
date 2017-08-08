@@ -76,12 +76,49 @@ module climate_forcing
         cm%dat(ck%UV)%fname = 'basin_wind'
         cm%dat(ck%P0)%fname = 'basin_pres'
         cm%dat(ck%HU)%fname = 'basin_humidity'
+        cm%dat(ck%N0)%fname = 'WR_runoff'
+        cm%dat(ck%O1)%fname = 'WR_recharge'
 
         !> Read from file to override default configuration.
         call open_config(cm)
 
+        !> Preparation for CLASS format MET file.
+        if (cm%dat(ck%MET)%factive) then
+            if (.not. cm%dat(ck%FB)%factive) then
+                allocate(cm%dat(ck%FB)%GRD(shd%NA), cm%dat(ck%FB)%GAT(shd%lc%NML), cm%dat(ck%FB)%GRU(shd%lc%NTYPE))
+                allocate(cm%dat(ck%FB)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
+            end if
+            if (.not. cm%dat(ck%FI)%factive) then
+                allocate(cm%dat(ck%FI)%GRD(shd%NA), cm%dat(ck%FI)%GAT(shd%lc%NML), cm%dat(ck%FI)%GRU(shd%lc%NTYPE))
+                allocate(cm%dat(ck%FI)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
+            end if
+            if (.not. cm%dat(ck%RT)%factive) then
+                allocate(cm%dat(ck%RT)%GRD(shd%NA), cm%dat(ck%RT)%GAT(shd%lc%NML), cm%dat(ck%RT)%GRU(shd%lc%NTYPE))
+                allocate(cm%dat(ck%RT)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
+            end if
+            if (.not. cm%dat(ck%TT)%factive) then
+                allocate(cm%dat(ck%TT)%GRD(shd%NA), cm%dat(ck%TT)%GAT(shd%lc%NML), cm%dat(ck%TT)%GRU(shd%lc%NTYPE))
+                allocate(cm%dat(ck%TT)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
+            end if
+            if (.not. cm%dat(ck%UV)%factive) then
+                allocate(cm%dat(ck%UV)%GRD(shd%NA), cm%dat(ck%UV)%GAT(shd%lc%NML), cm%dat(ck%UV)%GRU(shd%lc%NTYPE))
+                allocate(cm%dat(ck%UV)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
+            end if
+            if (.not. cm%dat(ck%P0)%factive) then
+                allocate(cm%dat(ck%P0)%GRD(shd%NA), cm%dat(ck%P0)%GAT(shd%lc%NML), cm%dat(ck%P0)%GRU(shd%lc%NTYPE))
+                allocate(cm%dat(ck%P0)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
+            end if
+            if (.not. cm%dat(ck%HU)%factive) then
+                allocate(cm%dat(ck%HU)%GRD(shd%NA), cm%dat(ck%HU)%GAT(shd%lc%NML), cm%dat(ck%HU)%GRU(shd%lc%NTYPE))
+                allocate(cm%dat(ck%HU)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
+            end if
+        end if
+
         !> Initialize climate variables.
         do vid = 1, cm%nclim
+
+            !> Cycle if the variable is not active.
+            if (.not. cm%dat(vid)%factive) cycle
 
             !> Check if the file is in the legacy binary format.
             if (cm%dat(vid)%ffmt == 0) then
@@ -199,21 +236,22 @@ module climate_forcing
             !nrs = JDAY_IND_MET*ISTEP_START*24 + nhy*ISTEP_START + nmy/30  !aLIU
             JDAY_IND_MET = Jday_IND2 - Jday_IND3
             nrs = JDAY_IND_MET*ISTEP_START + nhy*ISTEP_START/24 + nmy/30
-            if (ro%VERBOSEMODE > 0) print *, 'NRS=', nrs
+!-            if (ro%VERBOSEMODE > 0) print *, 'NRS=', nrs
             ! FIX BUG IN JULIAN DAY CALCULATION FOR NRS ---ALIU FEB2009
             if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%mins == 0 .and. ic%start%hour == 0) then
                 nrs = 0
             elseif (nrs < 0) then
-                print *, 'Desired start date is before the start of the ', &
-                    'data in MESH_input_forcing.bin'
-                print *, 'Please adjust the start date in ', &
-                    'MESH_input_run_options.ini'
+                print *, 'The start date in MESH_input_run_options.ini occurs before' // &
+                    ' the first record of the meteorological input data.'
+                print *, 'Change the start date in MESH_input_run_options.ini to occur on or after the first record of these data.'
                 stop
             end if
 
             !> the following code is used to skip entries at the start
             !> of the bin file
-            if (ro%VERBOSEMODE > 0) print *, 'Skipping', nrs, 'Registers in bin file'
+            if (nrs > 0 .and. ro%VERBOSEMODE > 0) then
+                print "(3x, 'Skipping ', i8, ' registers in ', (a), '.')", nrs, trim(adjustl(cm%dat(vid)%fpath))
+            end if
 
             !> Preserve the last record skipped with INTERPOLATIONFLAG 2.
 !?            if (INTERPOLATIONFLAG == 2) nrs = nrs - 1
@@ -257,15 +295,15 @@ module climate_forcing
 
             !> Stop if the state file does not contain the same number of climate variables.
             read(iun) ierr
-            if (ierr /= cm%nclim) then
+            if (ierr /= 7) then
                 print *, 'Incompatible ranking in climate state file: ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat'
                 print *, ' Number of clim. variables read: ', ierr
-                print *, ' Number of clim. variabels expected: ', cm%nclim
+                print *, ' Number of clim. variabels expected: ', 7
                 stop
             end if
 
             !> Loop through variables in the climate forcing object and populate their state from file.
-            do vid = 1, cm%nclim
+            do vid = 1, 7
 
                 !> Read the state of the climate variable (in case reading into memory).
                 read(iun) cm%dat(vid)%blocks
@@ -286,7 +324,7 @@ module climate_forcing
                     end if
                 end if
 
-            end do !vid = 1, cm%nclim
+            end do !vid = 1, 7
 
             !> Close the file to free the unit.
             close(iun)
@@ -442,6 +480,51 @@ module climate_forcing
 
         end do !vid = 1, cm%nclim
 
+        !> Distribute data from CLASS format MET file for variables not already active.
+        if (cm%dat(ck%MET)%factive) then
+            do vid = 1, 7
+
+                !> Cycle if variable active (e.g., read from different file).
+                if (cm%dat(vid)%factive) cycle
+
+                !> Extract data from the climate variable.
+                select case (cm%dat(vid)%blocktype)
+
+                    !> Block type: GRD (Grid).
+                    case (1)
+                        cm%dat(vid)%GRD = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
+                        do k = ii1, ii2
+                            cm%dat(vid)%GAT(k) = cm%dat(vid)%GRD(shd%lc%ILMOS(k))
+                        end do
+                        do k = ii1, ii2
+                            cm%dat(vid)%GRU(shd%lc%JLMOS(k)) = cm%dat(vid)%GAT(k)
+                        end do
+
+                    !> Block type: GRU.
+                    case (2)
+                        cm%dat(vid)%GRU = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
+                        cm%dat(vid)%GRD = 0.0
+                        do k = ii1, ii2
+                            j = shd%lc%JLMOS(k)
+                            i = shd%lc%ILMOS(k)
+                            cm%dat(vid)%GAT(k) = cm%dat(vid)%GRU(j)
+                            cm%dat(vid)%GRD(i) = cm%dat(vid)%GRD(i) + shd%lc%ACLASS(i, j)*cm%dat(vid)%GRU(j)
+                        end do
+
+                    !> Block type: GAT (Land element).
+                    case (3)
+                        cm%dat(vid)%GAT = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
+                        cm%dat(vid)%GRD = 0.0
+                        do k = ii1, ii2
+                            j = shd%lc%JLMOS(k)
+                            i = shd%lc%ILMOS(k)
+                            cm%dat(vid)%GRD(i) = cm%dat(vid)%GRD(i) + shd%lc%ACLASS(i, j)*cm%dat(vid)%GAT(k)
+                            cm%dat(vid)%GRU(j) = cm%dat(vid)%GAT(k)
+                        end do
+                end select
+            end do
+        end if
+
         return
 
 999     ENDDATA = .true.
@@ -451,7 +534,7 @@ module climate_forcing
     subroutine climate_module_finalize(fls, shd, cm)
 
         !> Required for 'ipid' variable.
-        use mpi_shared_variables
+        use mpi_module
 
         !> Required for 'fls', 'mfk' variables.
         use model_files_variables
@@ -482,10 +565,10 @@ module climate_forcing
 !todo: condition for ierr.
 
             !> Write the current number of climate variables.
-            write(iun) cm%nclim
+            write(iun) 7
 
             !> Loop through variables in the climate forcing object and write the current state to file.
-            do vid = 1, cm%nclim
+            do vid = 1, 7
 
                 !> Save the state of the climate variable (in case reading into memory).
                 write(iun) cm%dat(vid)%blocks
@@ -500,7 +583,7 @@ module climate_forcing
                     write(iun) cm%dat(vid)%ipdat
                 end if
 
-            end do !vid = 1, cm%nclim
+            end do !vid = 1, 7
 
             !> Close the file to free the unit.
             close(iun)

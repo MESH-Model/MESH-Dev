@@ -60,8 +60,8 @@ C Local variables
       real*4,    dimension(:), allocatable :: xstrdiv,ystrdiv,
      *                                        xenddiv,yenddiv
       integer*4, dimension(:), allocatable :: istrdiv,jstrdiv,
-     *                                        ienddiv,jenddiv
-      integer*4  ndiv
+     *  ienddiv,jenddiv,totirrigpts,iminirr,imaxirr,jminirr,jmaxirr
+      integer*4  ndiv,irindex,irpt
 
 C Set unit and fln number
       unitNum = 292
@@ -150,8 +150,8 @@ C Search for and read tb0 file header
                else
                   iStat=ParseDivParam(header,keyword,KeyLen,subString)
                   if (keyword(1:KeyLen) .eq. ':starttime') then
-                     read(subString( 9:10),'(i1)') divday1
-                     read(subString(12:13),'(i1)') divhour1
+                     read(subString( 9:10),'(i2)') divday1
+                     read(subString(12:13),'(i2)') divhour1
                   endif
                   if(iStat .lt. 0) then
                      write(*,'(2(A))') 'ERROR parsing ', fln(flnNum)
@@ -215,6 +215,7 @@ C        Scan lines of data
 !            as given in the event file is used!!!!!!!!!1
          if(nodiv.gt.0)then
             allocate(val1div(nodiv),val2div(nodiv),
+     *        val3div(nodiv),val4div(nodiv),
      *        ystrdiv(nodiv),xstrdiv(nodiv),
      *        istrdiv(nodiv),jstrdiv(nodiv),
      *        yenddiv(nodiv),xenddiv(nodiv),
@@ -226,6 +227,7 @@ C        Scan lines of data
      *        'Error with allocation in read_div_ef @172'
          else
             allocate(val1div(1),val2div(1),
+     *           val3div(1),val4div(1),
      *           ystrdiv(1),xstrdiv(1),istrdiv(1),jstrdiv(1),
      *           yenddiv(1),xenddiv(1),ienddiv(1),jenddiv(1),
      *           divstrindex(1),divendindex(1),divname(1),qdiv(1,ndiv),
@@ -251,6 +253,8 @@ C        Scan lines of data
      *            colHeader%colValue2(i).gt.0) then
                   val1div(i) = colHeader%colValue1(i) ! value 1
                   val2div(i) = colHeader%colValue2(i) ! value 2
+                  val3div(i) = colHeader%colValue3(i) ! value 3
+                  val4div(i) = colHeader%colValue4(i) ! value 4
                endif
             else
                if(colHeader%colValue1(i).gt.0.0) ! The div.tb0 file does not contain Value2
@@ -306,6 +310,8 @@ C        Scan lines of data
      *            colHeader%colValue2(i).gt.0) then
                   val1div(i) = colHeader%colValue1(i) ! value 1
                   val2div(i) = colHeader%colValue2(i) ! value 2
+                  val3div(i) = colHeader%colValue3(i) ! value 3
+                  val4div(i) = colHeader%colValue4(i) ! value 4
                endif
             else
                if(colHeader%colValue1(i).gt.0.0) ! The div.tb0 file does not contain Value2
@@ -334,6 +340,8 @@ C        Scan lines of data
      *         colHeader%colValue2(i).gt.0) then
                val1div(i) = colHeader%colValue1(i) ! value 1
                val2div(i) = colHeader%colValue2(i) ! value 2
+               val3div(i) = colHeader%colValue3(i) ! value 3
+               val4div(i) = colHeader%colValue4(i) ! value 4
             endif
          else
             if(colHeader%colValue1(i).gt.0.0) ! The div.tb0 file does not contain Value2
@@ -349,6 +357,8 @@ C        Scan lines of data
       deallocate(colHeader%colValue1)
       if(val2divyes.eq.1) then              ! The div.tb0 file contains Value2
          deallocate(colHeader%colValue2)
+         deallocate(colHeader%colValue3)
+         deallocate(colHeader%colValue4)
       end if
 
       if(iopt.eq.2)print*,'in read_div_ef passed 353'
@@ -437,6 +447,7 @@ C        Scan lines of data
             if (jenddiv(i).eq.0 .and. ienddiv(i).eq.0)
      *         divendindex(i) = -1
 
+            if(val2divyes.eq.1) then          ! The div.tb0 file contains Value2
 	    if (val2div(i).eq.1.and.divstrindex(i).eq.-1.or.
      *      val2div(i).eq.1.and.divendindex(i).eq.-1) then
 		PRINT*, 'Error for station ',i,': incompatibility 
@@ -458,36 +469,105 @@ C        Scan lines of data
                 PRINT*, 'check lat-lon of this station and wiki page'
                 STOP
             endif
-
+            endif
          end do
 
-!        Report the values defining the diversion's end points
-!         write(*,'(a56,a48,a12)')
-!     *     'Diversion name, i,j coords at start, i,j coords at end, ',
-!     *     'Value1, Value2, n index values at start and end ',
-!     *     'of diversion'
-         do i=1,nodiv
-            write(*,'(a15,4i8,f6.2,i3,2i12)') divname(i),istrdiv(i),
-     *      jstrdiv(i),ienddiv(i),jenddiv(i),val1div(i),val2div(i),
-     *      divstrindex(i),divendindex(i)
+!        Prepare to represent irrigation
+         if(val2divyes .eq. 1) then                   ! The div.tb0 file contains Value2
+            nodivirrig = 0                            ! The number of irrigation regions
+            maxirrigpts = 0                           ! The largest number of points in an individual irrigation region
+            do i=1,nodiv                              ! Determine how many regions are to be irrigated
+               if (divname(i)(1:5).eq.'irrig'
+     *        .or. divname(i)(1:5).eq.'Irrig') then   ! Irrigation is to  be represented
+                  if(val2div(i).ne.2)then
+                    PRINT*,'Irrigation station must be type 2 diversion'
+                    PRINT*,'check div file and wiki page'
+                    stop
+                  endif
+                  nodivirrig = nodivirrig + 1                   ! The maximum number of points to be irrigated 
+                  maxirrigpts =max(maxirrigpts,                 ! is from the largest specified irrigation region
+     *                         (val3div(i)+1) * (val4div(i)+1)) ! Add an extra point in each direction: needed if value3 or value4 is an even number
+               end if
+            end do
+
+            ! Initialize arrays:
+            !   irrigindx: the indices (1-naa) of points to be irrigated
+            !   qdivirrig: the volume (m3/s) of water to be removed from the irrigated point in the simulation timestep
+            allocate(totirrigpts(nodivirrig),
+     *        iminirr(nodivirrig),imaxirr(nodivirrig),
+     *        jminirr(nodivirrig),jmaxirr(nodivirrig),
+     *        irrigindx(nodivirrig,maxirrigpts),
+     *        qdivirrig(nodivirrig,ndiv_max),
+     *        stat=iAllocate)
+            if(iAllocate.ne.0) STOP
+     *        'Error with allocation in read_div_ef @484'
+            do i=1,nodivirrig                         ! Initialize the arrays with a negative number indicating they're inactive
+               do n=1,maxirrigpts
+                  irrigindx(i,n) = -1
+               end do
+               do k=1,ndiv_max
+                  qdivirrig(i,k) = 0
+               end do
          end do
 
-         if(iopt.ge.1)then
+            ! Determine the grid points in which water is to be lost due to irrigation
+            irindex = 0
+            do i=1,nodiv                              ! Determine how many regions are to be irrigated
+               if (divname(i)(1:5).eq.'irrig'
+     *        .or. divname(i)(1:5).eq.'Irrig') then   ! Irrigation is to  be represented
+                  irindex = irindex + 1
+
+                  ! Define the rectangle from the provided values
+                  iminirr(irindex) = max(istrdiv(i) - val4div(i)/2, 0)
+                  imaxirr(irindex) = min(istrdiv(i) + val4div(i)/2, 
+     *                                                  size(latgrid))
+                  jminirr(irindex) = max(jstrdiv(i) - val3div(i)/2, 0)
+                  jmaxirr(irindex) = min(jstrdiv(i) + val3div(i)/2,
+     *                                                  size(longrid))
+
+                  ! Determine the number of points in this rectangle that are also in the watershed
+                  irpt = 0
+                  do ii=iminirr(irindex),imaxirr(irindex)
+                     do jj=jminirr(irindex),jmaxirr(irindex)
+                        do n=1,naa
+                           if(xxx(n).eq.jj .and. yyy(n).eq.(ii)) then
+                              irpt = irpt + 1
+                              irrigindx(irindex,irpt) = n
+                              exit
+                           end if
+                        end do
+                     end do
+                  end do
+                  totirrigpts(irindex) = irpt
+               end if
+         end do
+         end if
+
+!        Report on values being used for diversions
+         irindex = 0
             do i=1,nodiv
                if(val2divyes.eq.1) then          ! The div.tb0 file contains Value2
                   write(52,1010)
                   write(52,1011) i,divname(i),istrdiv(i),jstrdiv(i),
      *                ienddiv(i),jenddiv(i),val1div(i),val2div(i),
-     *                val2divyes,
+     *            val3div(i),val4div(i),val2divyes,
      *                divstrindex(i), divendindex(i)
-               else
+               if (divname(i)(1:5).eq.'irrig'
+     *        .or. divname(i)(1:5).eq.'Irrig') then   ! Irrigation is to  be represented
+                  irindex = irindex + 1
                   write(52,1012)
-                  write(52,1013) i,divname(i),istrdiv(i),jstrdiv(i),
+                  write(52,1013) irindex,
+     *               iminirr(irindex),imaxirr(irindex),
+     *               jminirr(irindex),jmaxirr(irindex),
+     *               totirrigpts(irindex)
+               end if
+               else
+               write(52,1014)
+               write(52,1015) i,divname(i),istrdiv(i),jstrdiv(i),
      *                ienddiv(i),jenddiv(i),val1div(i),
      *                divstrindex(i), divendindex(i)
                end if
             end do
-         end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -525,6 +605,7 @@ C        Scan lines of data
             j=ktr
             write(52,*)(qdiv(k,j),k=1,nodiv)
          endif
+
       endif                     !  if(nodiv.gt.0)
 
       if(iopt.eq.2)print*,'in read_div_ef passed 469'
@@ -588,6 +669,23 @@ C        Scan lines of data
                end if
             end do
          end do
+
+         ! Divide the flow to be diverted from the irrigation region
+         ! between the points within the defined region that are in the watershed
+         if(val2divyes .eq. 1) then                   ! The div.tb0 file contains Value2
+            irindex = 0
+            do i=1,nodiv                              ! Loop through the diversion names searching for an irrigation area
+               if (divname(i)(1:5).eq.'irrig'
+     *        .or. divname(i)(1:5).eq.'Irrig') then   ! Irrigation is to  be represented
+                  irindex = irindex + 1
+                  do j=1,ndiv                         ! Loop through the simulation hours
+                     qdivirrig(irindex,j)
+     *                 = qdiv(i,j) / totirrigpts(irindex)
+                  end do
+               end if
+            end do
+         endif
+
       endif                     ! if(nodiv.gt.0)
 
       if(iopt.ge.2)then
@@ -600,12 +698,6 @@ C        Scan lines of data
 
       close(unit=unitNum,status='keep')
 
-!      DO j=1,ndiv
-!         WRITE(*,*) j, (qdiv(k,j), k=1,nodiv)
-!      END DO
-      
-! 191  FORMAT('hour:',1X,I4,1X,'qdiv:',7(2X,E10.4))
-
  999  RETURN                    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----
 
 ! FORMATS
@@ -613,12 +705,16 @@ C        Scan lines of data
  500  format(256f10.3)
  1010 format(' ',3x,'i  divname(i)  istrdiv(i)  jstrdiv(i)  ',
      *       'ienddiv(i)  jenddiv(i)  val1div(i)  val2div(i)'  ,
+     *       'val3div(i)  val4div(i)'  ,
      *       'val2divyes  divstrindex(i)  divendindex(i)')
- 1011 format(' ',3x,i3,a15,4i8,f12.4,2i3,2i8)
- 1012 format(' ',3x,'i  divname(i)  istrdiv(i)  jstrdiv(i)  ',
+ 1011 format(' ',3x,i3,a15,4i8,f12.4,4i5,2i8)
+ 1012 format(' ',3x,'irindex  iminirr(irindex)  jminirr(irindex)  ',
+     *       'jminirr(irindex)  jmaxirr(irindex)  totirrigpts(irindex)')
+ 1013 format(' ',3x,i3,5i8)
+ 1014 format(' ',3x,'i  divname(i)  istrdiv(i)  jstrdiv(i)  ',
      *       'ienddiv(i)  jenddiv(i)  val1div(i)  divstrindex(i)  ',
      *       'divendindex(i)')
- 1013 format(' ',3x,i3,a15,4i8,f12.4,2i8)
+ 1015 format(' ',3x,i3,a15,4i8,f12.4,2i8)
  6801 format('   read_div_ef: reservoir no =',i3,' mhtot =',i5)
  6802 format('   ',256f8.2)
 
