@@ -119,12 +119,12 @@ module sa_mesh_run_within_tile
             NEWPRE = 0.0
             do k = il1, il2 !GRU -> loop for timestep
                 IRDMND(k) = 0.0   !initialization for each time step
-                if (pm%tp%mid(k) == 9) then ! check irrDist GRU
+                if (pm%tp%mid(k) == 9 .and. sum(stas%sl%thic(k, :)) == 0.0) then ! check irrDist GRU and no ice
 !                    do j = 1, shd%lc%IGND ! loop for each Soil layers
                     do j = 1, 3 ! loop for each Soil layers
                         check = MINTHFC*pm%slp%thfc(k, j) ! calculate 50% of field capacity
-                        lqsum =  stas%sl%thlq(k, j) + stas%sl%thic(k, j) ! sum liquid and ice water content in soil
-!                        lqsum =  stas%sl%thlq(k, j)
+!                        lqsum =  stas%sl%thlq(k, j) + stas%sl%thic(k, j) ! sum liquid and ice water content in soil
+                        lqsum =  stas%sl%thlq(k, j)
                         if (lqsum < check)then ! check if sum of soil moisture is less than 50% of FC
                             ir = (pm%slp%thfc(k, j) - lqsum)*stas%sl%delzw(k, j) ! calculate irrigation water for each permeable soil depth
 !print "('THFC, LQSUM, DELZW, IR, SoilLayer', 4f8.4, i3)", csfv%THFC(k, j), lqsum, csfv%DELZW(k, j), ir, j
