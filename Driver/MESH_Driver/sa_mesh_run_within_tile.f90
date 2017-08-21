@@ -12,8 +12,6 @@ module sa_mesh_run_within_tile
     !*  OLDPRE: Diagnostic variable of precipitation before adding water for irrigation. [kg m-2 s-1].
     !*  NEWPRE: Diagnostic variable of precipitation after adding water for irrigation. [kg m-2 s-1].
     real, dimension(:), allocatable, save :: IRDMND, IRAVAI, OLDPRE, NEWPRE
-    !*  ABSP: RANK of the abstraction point; zero if water should be abstracted from the containing grid. [--].
-    integer, dimension(:), allocatable, save :: ABSP
 !<<<irrigation
 
     contains
@@ -35,32 +33,11 @@ module sa_mesh_run_within_tile
         type(fl_ids) :: fls
         type(clim_info) :: cm
 
-!>>>irrigation
-        integer NML, k
-!<<<irrigation
-
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
 !>>>irrigation
-        NML = shd%lc%NML
-        allocate(IRDMND(NML), IRAVAI(NML), OLDPRE(NML), NEWPRE(NML), ABSP(NML))
-        ABSP = 0 ! set default to abstract water from containing grid
-!todo: remove hard-coding.
-        forall(k = 702:730, pm%tp%mid(k) == 9) ABSP(k) = 142 ! district 1
-        forall(k = 731:810, pm%tp%mid(k) == 9) ABSP(k) = 181 ! district 2
-        forall(k = 811:827, pm%tp%mid(k) == 9) ABSP(k) = 180 ! district 3
-        if (ipid == 0) then
-            open(unit = 1981, file = "irrigation.csv") ! open file for output
-            write(1981, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRDMND', 'IRAVAI', 'IRTOT', 'OLDPRE', 'NEWPRE'
-            open(unit = 1982, file = "irrigation_1.csv") ! open file for output
-            write(1982, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRDMND', 'IRAVAI', 'IRTOT', 'OLDPRE', 'NEWPRE'
-            open(unit = 1983, file = "irrigation_2.csv") ! open file for output
-            write(1983, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRDMND', 'IRAVAI', 'IRTOT', 'OLDPRE', 'NEWPRE'
-            open(unit = 1984, file = "irrigation_3.csv") ! open file for output
-            write(1984, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRDMND', 'IRAVAI', 'IRTOT', 'OLDPRE', 'NEWPRE'
-        end if
-1010    format(9999(g15.7e2, ','))
+        allocate(IRDMND(shd%lc%NML), IRAVAI(shd%lc%NML), OLDPRE(shd%lc%NML), NEWPRE(shd%lc%NML))
 !<<<irrigation
 
         !> Call processes.
@@ -93,8 +70,12 @@ module sa_mesh_run_within_tile
         type(clim_info) :: cm
 
 !>>>irrigation
-        integer n, k, j
+        integer n, l, k, j
         real ir, lqsum, check
+        real, dimension(:), allocatable :: SUMIRDMND, SUMIRAVAI, SUMOLDPRE, SUMNEWPRE
+        integer iun
+        character(len = 3) ffmti
+        character(len = 200) fn
 !<<<irrigation
 
         !> Return if tile processes are not active.
@@ -136,8 +117,11 @@ module sa_mesh_run_within_tile
 !                    IRDMND(k) = (IRDMND(k)*(1000.0/ic%dts)) - cm%dat(ck%RT)%GAT(k)
                     IRDMND(k) = IRDMND(k)*(1000.0/ic%dts) ! convert into mm/sec
                     IRAVAI(k) = max(IRDMND(k) - cm%dat(ck%RT)%GAT(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
-                    n = ABSP(k) !RANK of channel to pull abstraction
-                    if (n == 0) n = shd%lc%ILMOS(k) ! pull from own cell if no abstraction point defined
+                    if (pm%tp%iabsp(k) > 0) then
+                        n = fms%absp%meta%rnk(pm%tp%iabsp(k)) !RANK of channel to pull abstraction
+                    else
+                        n = shd%lc%ILMOS(k) ! pull from own cell if no abstraction point defined
+                    end if
                     IRAVAI(k) = min(stas_grid%chnl%s(n)*(1.0 - MINFSTG)/shd%AREA(n)*1000.0/ic%dts, IRAVAI(k)) ! adjust to the maximum water available from channel storage (m3 to mm)
                     OLDPRE(k) = cm%dat(ck%RT)%GAT(k)
                     cm%dat(ck%RT)%GAT(k) = cm%dat(ck%RT)%GAT(k) + IRAVAI(k) ! add irrigation water into precipitation
@@ -160,23 +144,39 @@ module sa_mesh_run_within_tile
 
 !>>>irrigation
         if (ipid == 0) then
+            if (.not. allocated(SUMIRDMND)) allocate(SUMIRDMND(fms%absp%n))
+            if (.not. allocated(SUMIRAVAI)) allocate(SUMIRAVAI(fms%absp%n))
+            if (.not. allocated(SUMOLDPRE)) allocate(SUMOLDPRE(fms%absp%n))
+            if (.not. allocated(SUMNEWPRE)) allocate(SUMNEWPRE(fms%absp%n))
+            if (ic%ts_count == 1) then ! first time (can't put in within_tile_init because structures are read after in between_grid_init).
+                open(unit = 1981, file = "irrigation.csv") ! open file for output
+                write(1981, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRDMND', 'IRAVAI', 'IRTOT', 'OLDPRE', 'NEWPRE'
+                do l = 1, fms%absp%n
+                    iun = 1981 + l
+                    write(ffmti, '(i3)') l
+                    fn = 'irrigation_' // trim(adjustl(ffmti)) // '.csv'
+                    open(unit = iun, file = fn)
+                    write(iun, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRDMND', 'IRAVAI', 'IRTOT', 'OLDPRE', 'NEWPRE'
+                end do
+            end if
             write(1981, 1010) &
                 ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
                 sum(IRDMND), sum(IRAVAI), sum(IRAVAI), sum(OLDPRE), sum(NEWPRE)
-!            if (sum(IRAVAI) > 0.0) then
-!                print "('IRDMND, IRAVAI, IRTOT, OLDPRE, NEWPRE', 4i4, 5f12.8)", &
-!                    ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
-!                    sum(IRDMND), sum(IRAVAI), sum(IRAVAI), sum(OLDPRE), sum(NEWPRE)
-!            end if
-            write(1982, 1010) &
-                ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
-                sum(IRDMND(702:730)), sum(IRAVAI(702:730)), sum(IRAVAI(702:730)), sum(OLDPRE(702:730)), sum(NEWPRE(702:730))
-            write(1983, 1010) &
-                ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
-                sum(IRDMND(731:810)), sum(IRAVAI(731:810)), sum(IRAVAI(731:810)), sum(OLDPRE(731:810)), sum(NEWPRE(731:810))
-            write(1984, 1010) &
-                ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
-                sum(IRDMND(811:827)), sum(IRAVAI(811:827)), sum(IRAVAI(811:827)), sum(OLDPRE(811:827)), sum(NEWPRE(811:827))
+            SUMIRDMND = 0.0; SUMIRAVAI = 0.0; SUMOLDPRE = 0.0; SUMNEWPRE = 0.0
+            do k = 1, shd%lc%NML
+                if (pm%tp%iabsp(k) > 0) then
+                    SUMIRDMND(pm%tp%iabsp(k)) = SUMIRDMND(pm%tp%iabsp(k)) + IRDMND(k)
+                    SUMIRAVAI(pm%tp%iabsp(k)) = SUMIRAVAI(pm%tp%iabsp(k)) + IRAVAI(k)
+                    SUMOLDPRE(pm%tp%iabsp(k)) = SUMOLDPRE(pm%tp%iabsp(k)) + OLDPRE(k)
+                    SUMNEWPRE(pm%tp%iabsp(k)) = SUMNEWPRE(pm%tp%iabsp(k)) + NEWPRE(k)
+                end if
+            end do
+            do l = 1, fms%absp%n
+                iun = 1981 + l
+                write(iun, 1010) &
+                    ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
+                    SUMIRDMND(l), SUMIRAVAI(l), SUMIRAVAI(l), SUMOLDPRE(l), SUMNEWPRE(l)
+            end do
         end if
 1010    format(9999(g15.7e2, ','))
 !<<<irrigation
