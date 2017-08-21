@@ -54,7 +54,7 @@ subroutine read_streamflow_tb0(shd, iun, fname)
     call get_keyword_value(iun, fname, vkeyword, nkeyword, ':ColumnLocationY', fms%stmg%meta%y, fms%stmg%n, ierr, verbose)
     call get_keyword_value(iun, fname, vkeyword, nkeyword, ':ColumnLocationX', fms%stmg%meta%x, fms%stmg%n, ierr, verbose)
 
-    !> Grab the start time.
+    !> Get the start time of the first record in the file.
     call parse_starttime( &
         iun, fname, vkeyword, nkeyword, &
         fms%stmg%qomeas%iyear, fms%stmg%qomeas%imonth, fms%stmg%qomeas%iday, fms%stmg%qomeas%ihour, fms%stmg%qomeas%imins, &

@@ -25,7 +25,7 @@ module input_parameters
     !*  mid: Mosaic type of the tile. [--].
     type tile_parameters
         real(kind = 4), dimension(:), allocatable :: gc, fare, xslp
-        integer(kind = 4), dimension(:), allocatable :: mid, iwf
+        integer(kind = 4), dimension(:), allocatable :: mid, iwf, iabsp
     end type
 
     !> Type: Canopy parameters.
@@ -159,7 +159,7 @@ module input_parameters
         if (pm%inid) return
 
         !> Allocate elements in the parameter type.
-        allocate(pm%tp%gc(n), pm%tp%fare(n), pm%tp%xslp(n), pm%tp%mid(n), pm%tp%iwf(n), &
+        allocate(pm%tp%gc(n), pm%tp%fare(n), pm%tp%xslp(n), pm%tp%mid(n), pm%tp%iwf(n), pm%tp%iabsp(n), &
                  pm%cp%fcan(n, ncan1), pm%cp%z0or(n, ncan1), pm%cp%lnz0(n, ncan1), pm%cp%alvc(n, ncan1), pm%cp%alic(n, ncan1), &
                  pm%cp%lamx(n, ncan), pm%cp%lamn(n, ncan), pm%cp%cmas(n, ncan), pm%cp%root(n, ncan), pm%cp%rsmn(n, ncan), &
                  pm%cp%qa50(n, ncan), pm%cp%vpda(n, ncan), pm%cp%vpdb(n, ncan), pm%cp%psga(n, ncan), pm%cp%psgb(n, ncan), &
@@ -176,7 +176,7 @@ module input_parameters
 
         !> Initialize elements in the parameter type.
         if (pm%inid) then
-            pm%tp%gc = 0.0; pm%tp%fare = 0.0; pm%tp%xslp = 0.0; pm%tp%mid = 0; pm%tp%iwf = -1
+            pm%tp%gc = 0.0; pm%tp%fare = 0.0; pm%tp%xslp = 0.0; pm%tp%mid = 0; pm%tp%iwf = -1; pm%tp%iabsp = 0
             pm%cp%fcan = 0.0; pm%cp%z0or = 0.0; pm%cp%lnz0 = 0.0; pm%cp%alvc = 0.0; pm%cp%alic = 0.0
             pm%cp%lamx = 0.0; pm%cp%lamn = 0.0; pm%cp%cmas = 0.0; pm%cp%root = 0.0; pm%cp%rsmn = 0.0
             pm%cp%qa50 = 0.0; pm%cp%vpda = 0.0; pm%cp%vpdb = 0.0; pm%cp%psga = 0.0; pm%cp%psgb = 0.0

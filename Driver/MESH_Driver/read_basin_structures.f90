@@ -11,9 +11,9 @@
 !>
 subroutine read_basin_structures(shd)
 
+    use strings
     use mpi_module
     use sa_mesh_shared_variables
-    use FLAGS
     use model_dates
     use txt_io
 
@@ -47,7 +47,7 @@ subroutine read_basin_structures(shd)
         fms%stmg%qomeas%imins = ic%start%mins
 
         !> Read from file.
-        select case (STREAMFLOWFILEFLAG)
+        select case (lowercase(fms%stmg%qomeas%fls%ffmt))
             case ('tb0')
                 fname = trim(adjustl(fname)) // '.tb0'
                 call read_streamflow_tb0(shd, iun, fname)
@@ -158,7 +158,7 @@ subroutine read_basin_structures(shd)
         fms%rsvr%qorls%imins = ic%start%mins
 
         !> Read from file.
-        select case (RESERVOIRFILEFLAG)
+        select case (lowercase(fms%rsvr%qorls%fls%ffmt))
             case ('tb0')
                 fname = trim(adjustl(fname)) // '.tb0'
                 call read_reservoir_tb0(shd, iun, fname)
@@ -263,6 +263,87 @@ subroutine read_basin_structures(shd)
         end if
     end if
 
+    !>
+    !> ABSTRACTION POINT LOCATION.
+    !>
+
+    !> File unit and name.
+    fname = fms%absp%sabst%fls%fname
+    iun = fms%absp%sabst%fls%iun
+
+    !> Read location from file if reaches exist.
+    if (any(pm%tp%iabsp > 0)) then
+
+        !> Initialize time-series.
+        fms%absp%sabst%iyear = ic%start%year
+        fms%absp%sabst%ijday = ic%start%jday
+        fms%absp%sabst%ihour = ic%start%hour
+        fms%absp%sabst%imins = ic%start%mins
+
+        !> Read from file.
+        select case (lowercase(fms%absp%sabst%fls%ffmt))
+            case ('tb0')
+                fname = trim(adjustl(fname)) // '.tb0'
+                call read_abstractionpoint_tb0(shd, iun, fname)
+            case default
+                fname = trim(adjustl(fname)) // '.txt'
+                call read_abstractionpoint_txt(shd, iun, fname)
+        end select
+    else
+        fms%absp%n = 0
+    end if
+
+    !> Print an error if no reservoirs are defined but reaches exist from the drainage database file.
+    if (fms%absp%n == 0 .and. maxval(pm%tp%iabsp) > 0) then
+        if (ipid == 0) print 9989, trim(adjustl(fname))
+        istop = 1
+    end if
+
+    !> If locations exist.
+    r = fms%absp%n
+    if (r > 0) then
+
+        !> Find the x-y cell coordinate of the location.
+        fms%absp%meta%iy = int((fms%absp%meta%y - shd%yOrigin)/shd%yDelta) + 1
+        fms%absp%meta%jx = int((fms%absp%meta%x - shd%xOrigin)/shd%xDelta) + 1
+
+        !> Find the RANK of the location.
+        fms%absp%meta%rnk = 0
+        do l = 1, r
+            do n = 1, shd%NAA
+                if (fms%absp%meta%jx(l) == shd%xxx(n) .and. fms%absp%meta%iy(l) == shd%yyy(n)) fms%absp%meta%rnk(l) = n
+            end do
+        end do
+
+        !> Print an error if any location has no RANK (is outside the basin).
+        if (minval(fms%absp%meta%rnk) == 0) then
+            if (ipid == 0) then
+                print 1010, 'Abstraction location(s) are outside the basin'
+                print 1020, repeat('-', 16), repeat('-', 16), repeat ('-', 16), repeat('-', 16), repeat ('-', 16)
+                print 1020, 'ABST. POINT', 'Y', 'IY', 'X', 'JX'
+                print 1020, repeat('-', 16), repeat('-', 16), repeat ('-', 16), repeat('-', 16), repeat ('-', 16)
+                do l = 1, r
+                    if (fms%absp%meta%rnk(l) == 0) then
+                        print 1020, l, fms%absp%meta%y(l), fms%absp%meta%iy(l), fms%absp%meta%x(l), fms%absp%meta%jx(l)
+                    end if
+                end do
+            end if
+            istop = 1
+        end if
+    end if
+
+    !> Print a summary of locations to file.
+    if (ipid == 0 .and. ro%VERBOSEMODE > 0) then
+        print 9997, 'abstraction points', fms%absp%n
+        if (fms%absp%n > 0 .and. ro%DIAGNOSEMODE > 0) then
+!todo: Change to write to summary file.
+            print 1020, 'ABST. POINT', 'IY', 'JX', 'RANK'
+            do l = 1, fms%absp%n
+                print 1020, l, fms%absp%meta%iy(l), fms%absp%meta%jx(l), fms%absp%meta%rnk(l)
+            end do
+        end if
+    end if
+
 9997    format(3x, 'Number of ', (a), ': ', i5)
 9996    format( &
             /3x, 'WARNING: The record at the simulation start date in ', (a), ' is zero.', &
@@ -281,6 +362,7 @@ subroutine read_basin_structures(shd)
             /3x, 'ERROR: Reservoir ', i4, ' is not in the correct reach.', &
             /8x, 'REACH at RANK ', i8, ' is ', i4, ' but should be ', i4)
 9990    format(3x, 'ERROR: End of file reached when reading from ', (a), '.')
+9989    format(/3x, 'ERROR: Abstraction points are mapped in the basin but no locations are listed in ', (a), '.')
 
     !> Stop if there have been configuration errors.
     if (istop /= 0) stop

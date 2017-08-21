@@ -270,6 +270,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 cip%Kclate(k) = ciprot%Kclate(i)
             end if
 
+            !> Abstraction point location.
+            if (any(pm_gru%tp%iabsp /= 0)) pm%tp%iabsp(k) = pm_gru%tp%iabsp(i)
+
             !> PBSM (blowing snow).
             if (pbsm%PROCESS_ACTIVE) then
                 pbsm%pm%fetch(k) = pbsm%pm_gru%fetch(i)
@@ -358,6 +361,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
             if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
                 if (pm_grid%tp%iwf(i) /= -1) pm%tp%iwf(k) = pm_grid%tp%iwf(i)
             end if
+
+            !> Abstraction point location.
+            if (pm_grid%tp%iabsp(i) /= 0) pm%tp%iabsp(k) = pm_grid%tp%iabsp(i)
 
             !> BASEFLOWFLAG == 2 (lower zone storage).
             if (bflm%BASEFLOWFLAG == 2) then

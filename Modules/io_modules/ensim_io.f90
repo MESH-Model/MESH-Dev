@@ -2,7 +2,7 @@ module ensim_io
 
     implicit none
 
-    integer, parameter :: MAX_WORDS = 200, MAX_WORD_LENGTH = 20, MAX_LINE_LENGTH = 1000
+    integer, parameter :: MAX_WORDS = 500, MAX_WORD_LENGTH = 50, MAX_LINE_LENGTH = 5000
 
     interface get_keyword_value
         module procedure get_keyword_value_cfield
@@ -111,8 +111,8 @@ module ensim_io
         do while (ierr == 0)
             call read_ensim_line(iun, line, ierr)
             if (ierr /= 0) exit
-            if (line(1:1) == ':' .and. index(line, ' ') > 0) nkeyword = nkeyword + 1
             if (is_header(line)) exit
+            if (line(1:1) == ':') nkeyword = nkeyword + 1
         end do
         if (ierr /= 0) goto 999
         rewind(iun)
@@ -124,7 +124,8 @@ module ensim_io
         do while (ierr == 0)
             call read_ensim_line(iun, line, ierr)
             if (ierr /= 0) exit
-            if (line(1:1) == ':' .and. index(line, ' ') > 0) then
+            if (is_header(line)) exit
+            if (line(1:1) == ':') then
                 n = n + 1
                 call parse(line, ' ', args, nargs)
                 vkeyword(n)%keyword = args(1)
@@ -134,7 +135,6 @@ module ensim_io
                     vkeyword(n)%words = args(2:nargs)
                 end if
             end if
-            if (is_header(line)) exit
         end do
         if (ierr /= 0) goto 999
 
@@ -178,13 +178,13 @@ module ensim_io
             if (ierr /= 0) cycle
             select case (lowercase(vkeyword(n)%keyword))
                 case (':attributename')
-                    vattr(j)%attr = ''
-                    do i = 2, size(vkeyword(n)%words)
+                    vattr(j)%attr = vkeyword(n)%words(2)
+                    do i = 3, size(vkeyword(n)%words)
                         vattr(j)%attr = trim(adjustl(vattr(j)%attr)) // ' ' // trim(adjustl(vkeyword(n)%words(i)))
                     end do
                 case (':attributeunits')
-                    vattr(j)%units = ''
-                    do i = 2, size(vkeyword(n)%words)
+                    vattr(j)%units = vkeyword(n)%words(2)
+                    do i = 3, size(vkeyword(n)%words)
                         vattr(j)%units = trim(adjustl(vattr(j)%units)) // ' ' // trim(adjustl(vkeyword(n)%words(i)))
                     end do
             end select

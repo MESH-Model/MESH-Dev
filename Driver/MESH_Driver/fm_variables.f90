@@ -19,10 +19,12 @@ module fm_variables
     !*  iun: File unit (default: 100).
     !*  fname: File name (default: '' to avoid random characters).
     !*  lopen: Status of file opened, .true. if the file is open and attached 'iun'; .false. otherwise.
+    !*  ffmt: File format (e.g., 'txt', 'tb0').
     type fm_config_file
         integer :: iun = 100
         character(len = 50) :: fname = ''
         logical :: lopen = .false.
+        character(len = 8) :: ffmt = ''
     end type
 
     !> Type: outlet_location
@@ -91,7 +93,6 @@ module fm_variables
     !> Indices:
     !*  n: Number of locations dimensioned.
     !>
-    !> Attributes:
     type reservoir_outlet_location
         integer :: n = 0
         type(outlet_location) meta
@@ -106,12 +107,31 @@ module fm_variables
     !*  n: Number of locations dimensioned.
     !>
     !> Attributes:
-    !*  rr: Index of the reservoir for abstraction.
+    !*  s: Storage available. [m3].
+    !*  smin: Minimum storage to keep in the channel. [m3].
+    !*  fsmin: Fraction of storage to keep in the channel (e.g., if 'smin' is not used). [--].
+    !*  zlvl0: Minimum level to keep in the channel (e.g., if storage is not used). [m].
     type abstraction_point_location
         integer :: n = 0
         type(outlet_location) meta
-        integer(kind = 4), dimension(:), allocatable :: rr
+        real(kind = 4), dimension(:), allocatable :: s, smin, fsmin, zlvl0
+        type(time_series) sabst
     end type
+
+    !> Type: forms
+    !>
+    !> Description:
+    !>  Contains structures or 'forms' in the model, such
+    !>  as landmark locations like streamflow gauge, irrigation demand,
+    !>  and lake and reservoir locations.
+    type forms
+        type(streamflow_gauge_location) stmg
+        type(reservoir_outlet_location) rsvr
+        type(abstraction_point_location) absp
+    end type
+
+    !* fms: Collection of structures in the basin.
+    type(forms), save :: fms
 
     contains
 
@@ -173,8 +193,10 @@ module fm_variables
         absp%n = n
         call allocate_outlet_location(absp%meta, n, ierr)
         if (ierr /= 0) return
-        allocate(absp%rr(n), stat = ierr)
-        if (ierr == 0) absp%rr = 0
+        allocate(absp%s(n), absp%smin(n), absp%fsmin(n), absp%zlvl0(n), stat = ierr)
+        if (ierr /= 0) return
+        absp%s = 0.0; absp%smin = 0.0; absp%fsmin = 0.0; absp%zlvl0 = 0.0
+        call allocate_time_series(absp%sabst, n, ierr)
     end subroutine
 
 end module

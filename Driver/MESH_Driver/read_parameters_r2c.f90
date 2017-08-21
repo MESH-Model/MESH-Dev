@@ -155,6 +155,10 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     pm_grid%tp%iwf = ffield
                 end if
 
+            !> Abstraction point location.
+            case ('iabsp')
+                pm_grid%tp%iabsp = ffield
+
             !> BASEFLOWFLAG == 2 (lower zone storage).
             case ('pwr')
                 if (bflm%BASEFLOWFLAG == 2) bflm%pm_grid%pwr = ffield

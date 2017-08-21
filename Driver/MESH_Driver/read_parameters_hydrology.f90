@@ -930,6 +930,13 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 end do
                             end if
 
+                        !> Abstraction point location.
+                        case ('iabsp')
+                            do j = 1, NTYPE
+                                call value(out_args(j + 1), pm_gru%tp%iabsp(j), ierr)
+                                if (ierr /= 0) goto 931
+                            end do
+
                         !> Unrecognized parameter name.
                         case default
                             goto 937

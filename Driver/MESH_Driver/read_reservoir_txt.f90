@@ -59,9 +59,9 @@ subroutine read_reservoir_txt(shd, iun, fname, nb)
     return
 
     !> File errors.
-997 if (ro%VERBOSEMODE > 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(adjustl(fname))
-998 if (ro%VERBOSEMODE > 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(adjustl(fname))
-999 if (ro%VERBOSEMODE > 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(adjustl(fname))
+997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(adjustl(fname))
+998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(adjustl(fname))
+999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(adjustl(fname))
 
     stop
 
