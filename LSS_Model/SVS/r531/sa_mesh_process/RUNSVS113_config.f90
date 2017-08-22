@@ -11,16 +11,12 @@ module RUNSVS113_config
 
     contains
 
-    subroutine RUNSVS113_init(shd, fls, ts, cm, wb, eb, sp)
+    subroutine RUNSVS113_init(shd, fls, cm)
 
-        use mpi_shared_variables
-        use sa_mesh_shared_parameters
-        use sa_mesh_shared_variables
+        use mpi_module
         use model_files_variables
-        use model_dates
+        use sa_mesh_shared_variables
         use climate_forcing
-        use model_output_variabletypes
-        use MODEL_OUTPUT
 
         use RUNSVS_mod
         use runsvs_utils
@@ -28,11 +24,7 @@ module RUNSVS113_config
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(dates_model) :: ts
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sp
 
 #include "options.cdk"
 #include "isbapar.cdk"
@@ -138,10 +130,18 @@ module RUNSVS113_config
             bus(z0 + k) = exp(bus(z0 + k))
 
             !> Map soil texture.
-            !> CLASS layer  <->  SVS layer
+            !> IGND == 3 (CLASS traditional)
             !>       1              1-2
             !>       2               3
             !>       3              4-7
+            !> IGND >= 5
+            !> CLASS layer  <->  SVS layer
+            !>       1              1-2
+            !>       2              3-4
+            !>       3              5
+            !>       4              6
+            !>       5              7
+
             !> For soil texture we ignore negative numbers
             !> which signal special soils (organic/impermeable/glaciers).
             bus(sand + k) = max(pm%slp%sand(k + 1, 1), 0.0)
@@ -150,10 +150,21 @@ module RUNSVS113_config
             bus(clay + k) = max(pm%slp%clay(k + 1, 1), 0.0)
             bus(clay + NG + k) = max(pm%slp%clay(k + 1, 1), 0.0)
             bus(clay + 2*NG + k) = max(pm%slp%clay(k + 1, 2), 0.0)
-            do j = 3, 6
-                bus(sand + j*NG + k) = max(pm%slp%sand(k + 1, 3), 0.0)
-                bus(clay + j*NG + k) = max(pm%slp%clay(k + 1, 3), 0.0)
-            end do
+            if (shd%lc%IGND >= 5) then
+                bus(sand + 3*NG + k) = max(pm%slp%sand(k + 1, 2), 0.0)
+                bus(sand + 4*NG + k) = max(pm%slp%sand(k + 1, 3), 0.0)
+                bus(sand + 5*NG + k) = max(pm%slp%sand(k + 1, 4), 0.0)
+                bus(sand + 6*NG + k) = max(pm%slp%sand(k + 1, 5), 0.0)
+                bus(clay + 3*NG + k) = max(pm%slp%clay(k + 1, 2), 0.0)
+                bus(clay + 4*NG + k) = max(pm%slp%clay(k + 1, 3), 0.0)
+                bus(clay + 5*NG + k) = max(pm%slp%clay(k + 1, 4), 0.0)
+                bus(clay + 6*NG + k) = max(pm%slp%clay(k + 1, 5), 0.0)
+            else
+                do j = 3, 6
+                    bus(sand + j*NG + k) = max(pm%slp%sand(k + 1, 3), 0.0)
+                    bus(clay + j*NG + k) = max(pm%slp%clay(k + 1, 3), 0.0)
+                end do
+            end if
 
             !> State variables.
 

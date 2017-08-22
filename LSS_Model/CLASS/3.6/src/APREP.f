@@ -126,8 +126,9 @@ C
 C                                                                                 
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ILG,IL1,IL2,JL,IC,ICP1,IG,IDAY,IDISP,IZREF,IWF,
+      INTEGER ILG,IL1,IL2,JL,IC,ICP1,IG,IDAY,IDISP,IZREF,
      1        IPAI,IHGT,I,J,K,IN,NL
+      INTEGER IWF(ILG)
 C                                                                                 
 C     * OUTPUT ARRAYS USED ELSEWHERE IN CLASS.                                    
 C                                                                                 
@@ -467,7 +468,7 @@ C
           IF(ABS(1.0-FCS(I)-FGS(I)-FC(I)-FG(I)).GT.1.0E-5) 
      1                                   CALL XIT('APREP',-1)
 C
-          IF(IWF.EQ.0) THEN
+          IF(IWF(I).EQ.0) THEN
               IF(ISAND(I,1).EQ.-4) THEN
                   ZPLIMG(I)=0.001
               ELSEIF(ISAND(I,1).EQ.-3) THEN

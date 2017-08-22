@@ -77,7 +77,7 @@
 include "thermoconsts.inc"
 !
       INTEGER I, K
-      REAL CSHAPE
+      REAL CSHAPE, f2_k(nl)
      
 !
 !
@@ -139,51 +139,73 @@ include "fintern.inc"
 !                 Shape parameter CSHAPE
       DO I=1,N
          ! calculate depth at which have 50% of roots
-         D50p=min(50.,75.*DRZ(I))
+!         D50p=min(50.,75.*DRZ(I))
+         D50p = 21.* DRZ(I)
          ! Shape parameter CSHAPE
-         CSHAPE=LOG10(0.05/0.95)/LOG10((100*DRZ(I))/D50p)
+!         CSHAPE=LOG10(0.05/0.95)/LOG10((100*DRZ(I))/D50p)
+         CSHAPE=LOG10(0.05/0.95)/LOG10((95.*DRZ(I))/D50p)
 !                 Root fractions at different depths
 !                 The equation has depths in cm                 
 
          DO K=1,NL-1
-          FCD(I,K) = 1./ (1.+ (D(K)*100./50.)**CSHAPE) 
+!          FCD(I,K) = 1./ (1.+ (D(K)*100./50.)**CSHAPE) 
+           FCD(I,K) = 1./ (1.+ (D(K)*100./D50p)**CSHAPE)
+           FCD(I,K) = min(FCD(I,K),1.0)         
          ENDDO
          FCD(I,NL)=1.
 !
 !                 Root-zone  soil moisture is WRZ
 !
-         WRZ(I)= FCD(I,1) * WD(I,1)
+!         WRZ(I)= FCD(I,1) * WD(I,1)
+!         DO K=2,NL
+!            WRZ(I) = WRZ(I) + ( FCD(I,K) - FCD(I,K-1) )  * WD(I,K)
+!         ENDDO
+
+
+         !                 Calculate f2 -- weighted mean using root fraction above
+!                 1.E-5 (dry soil--> large resistance) < f2 < 1.0 (humid soil --> no imp$
+
+         ! f2 for each layer
+         DO K=1,NL
+
+            f2_k(k) =  min( 1.0,  max( 1.E-5  ,  &
+                 max( wd(i,k) - wwilt(i,k) , 0.0) / (wfc(i,k) - wwilt(i,k)) ) )
+         ENDDO
+
+         ! root fraction weighted mean
+         f2(i) = f2_k(1) * FCD(I,1)
+
          DO K=2,NL
-            WRZ(I) = WRZ(I) + ( FCD(I,K) - FCD(I,K-1) )  * WD(I,K)
+            f2(i) = f2(i) +   f2_k(k) *  ( FCD(I,K) - FCD(I,K-1) )
          ENDDO
 
       END DO
 
 !
-      DO I=1,N
+!      DO I=1,N
 !
 !
 !            For humid soils, this factor does not
 !            increase the stomatal resistance
 !
-        IF (WRZ(I).GE.WFC(I,1)) F2(I) = 1.0
+!        IF (WRZ(I).GE.WFC(I,1)) F2(I) = 1.0
 !
 !
 !            The stomatal resistance should be large
 !            when the soil is very dry
 !
-        IF (WRZ(I).LT.WFC(I,1).AND.WRZ(I).LE.WWILT(I,1)) F2(I) = 1.E-5
+!        IF (WRZ(I).LT.WFC(I,1).AND.WRZ(I).LE.WWILT(I,1)) F2(I) = 1.E-5
 !
 !
 !            For intermediate soils:
 !
-        IF (WRZ(I).LT.WFC(I,1).AND.WRZ(I).GT.WWILT(I,1)) &  
-                 F2(I) = ( WRZ(I)-WWILT(I,1) ) /  &
-                         ( WFC(I,1)-WWILT(I,1) + 1.E-6 )
-
-        IF (F2(I).LT.1.E-5) F2(I)=1.E-5
+!        IF (WRZ(I).LT.WFC(I,1).AND.WRZ(I).GT.WWILT(I,1)) &  
+!                 F2(I) = ( WRZ(I)-WWILT(I,1) ) /  &
+!                         ( WFC(I,1)-WWILT(I,1) + 1.E-6 )
 !
-      END DO
+!        IF (F2(I).LT.1.E-5) F2(I)=1.E-5
+!
+!      END DO
 
 !
 !

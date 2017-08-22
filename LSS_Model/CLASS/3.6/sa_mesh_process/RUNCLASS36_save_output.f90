@@ -6,12 +6,8 @@ module RUNCLASS36_save_output
     implicit none
 
     !> GRID OUTPUT POINTS
-    !* BNAM: TEMPORARY HOLD FOR OUTPUT DIRECTORY (12 CHARACTER STRING)
-!    character(12) BNAM
     !* WF_NUM_POINTS: NUMBER OF GRID OUTPUTS
-    !* I_OUT: OUTPUT GRID SQUARE TEMPORARY STORE
     integer WF_NUM_POINTS
-!    integer I_OUT
 
     type OutputPoints
 
@@ -27,11 +23,12 @@ module RUNCLASS36_save_output
         real, dimension(:), allocatable :: &
             PREACC, GTACC, QEVPACC, EVAPACC, HFSACC, HMFNACC, &
             ROFACC, ROFOACC, ROFSACC, ROFBACC, WTBLACC, ALVSACC, ALIRACC, &
-            RHOSACC, TSNOACC, WSNOACC, SNOARE, TCANACC, CANARE, SNOACC, &
+            RHOSACC, TSNOACC, WSNOACC, TCANACC, SNOACC, &
             RCANACC, SCANACC, GROACC, FSINACC, FLINACC, FLUTACC, &
             TAACC, UVACC, PRESACC, QAACC
         real, dimension(:, :), allocatable :: &
             TBARACC, THLQACC, THICACC, THALACC, GFLXACC
+        integer, dimension(:), allocatable :: ISNOACC, ICANACC, IALACC
     end type !CLASSOUT_VARS
 
     type(OutputPoints), save :: op
@@ -41,15 +38,12 @@ module RUNCLASS36_save_output
 
     subroutine CLASSOUT_open_files(shd)
 
-        use mpi_shared_variables
+        use mpi_module
         use sa_mesh_shared_variables
 
         type(ShedGridParams) :: shd
 
-        !* BNAM: TEMPORARY HOLD FOR OUTPUT DIRECTORY (12 CHARACTER STRING)
-        !* I_OUT: OUTPUT GRID SQUARE TEMPORARY STORE
-        character(12) BNAM
-        integer IGND, I_OUT
+        integer IGND
         character(20) IGND_CHAR
         character(2000) FMT
         integer k, j, i
@@ -90,73 +84,52 @@ module RUNCLASS36_save_output
 
             !> Allocate the CLASS output variables.
             IGND = shd%lc%IGND
-            allocate(co%PREACC(WF_NUM_POINTS), co%GTACC(WF_NUM_POINTS), co%QEVPACC(WF_NUM_POINTS), co%EVAPACC(WF_NUM_POINTS), &
-                     co%HFSACC(WF_NUM_POINTS), co%HMFNACC(WF_NUM_POINTS), &
-                     co%ROFACC(WF_NUM_POINTS), co%ROFOACC(WF_NUM_POINTS), co%ROFSACC(WF_NUM_POINTS), co%ROFBACC(WF_NUM_POINTS), &
-                     co%WTBLACC(WF_NUM_POINTS), co%ALVSACC(WF_NUM_POINTS), co%ALIRACC(WF_NUM_POINTS), &
-                     co%RHOSACC(WF_NUM_POINTS), co%TSNOACC(WF_NUM_POINTS), co%WSNOACC(WF_NUM_POINTS), co%SNOARE(WF_NUM_POINTS), &
-                     co%TCANACC(WF_NUM_POINTS), co%CANARE(WF_NUM_POINTS), co%SNOACC(WF_NUM_POINTS), &
-                     co%RCANACC(WF_NUM_POINTS), co%SCANACC(WF_NUM_POINTS), co%GROACC(WF_NUM_POINTS), co%FSINACC(WF_NUM_POINTS), &
-                     co%FLINACC(WF_NUM_POINTS), co%FLUTACC(WF_NUM_POINTS), &
-                     co%TAACC(WF_NUM_POINTS), co%UVACC(WF_NUM_POINTS), co%PRESACC(WF_NUM_POINTS), co%QAACC(WF_NUM_POINTS))
-            allocate(co%TBARACC(WF_NUM_POINTS, IGND), co%THLQACC(WF_NUM_POINTS, IGND), &
-                     co%THICACC(WF_NUM_POINTS, IGND), &
-                     co%THALACC(WF_NUM_POINTS, IGND), co%GFLXACC(WF_NUM_POINTS, IGND))
+            allocate( &
+                co%PREACC(WF_NUM_POINTS), co%GTACC(WF_NUM_POINTS), co%QEVPACC(WF_NUM_POINTS), co%EVAPACC(WF_NUM_POINTS), &
+                co%HFSACC(WF_NUM_POINTS), co%HMFNACC(WF_NUM_POINTS), &
+                co%ROFACC(WF_NUM_POINTS), co%ROFOACC(WF_NUM_POINTS), co%ROFSACC(WF_NUM_POINTS), co%ROFBACC(WF_NUM_POINTS), &
+                co%WTBLACC(WF_NUM_POINTS), co%ALVSACC(WF_NUM_POINTS), co%ALIRACC(WF_NUM_POINTS), &
+                co%RHOSACC(WF_NUM_POINTS), co%TSNOACC(WF_NUM_POINTS), co%WSNOACC(WF_NUM_POINTS), &
+                co%TCANACC(WF_NUM_POINTS), co%SNOACC(WF_NUM_POINTS), &
+                co%RCANACC(WF_NUM_POINTS), co%SCANACC(WF_NUM_POINTS), co%GROACC(WF_NUM_POINTS), co%FSINACC(WF_NUM_POINTS), &
+                co%FLINACC(WF_NUM_POINTS), co%FLUTACC(WF_NUM_POINTS), &
+                co%TAACC(WF_NUM_POINTS), co%UVACC(WF_NUM_POINTS), co%PRESACC(WF_NUM_POINTS), co%QAACC(WF_NUM_POINTS), &
+                co%TBARACC(WF_NUM_POINTS, IGND), co%THLQACC(WF_NUM_POINTS, IGND), &
+                co%THICACC(WF_NUM_POINTS, IGND), &
+                co%THALACC(WF_NUM_POINTS, IGND), co%GFLXACC(WF_NUM_POINTS, IGND), &
+                co%ISNOACC(WF_NUM_POINTS), co%ICANACC(WF_NUM_POINTS), co%IALACC(WF_NUM_POINTS))
 
             !> Initialize the CLASS output variables.
-            co%PREACC = 0.0
-            co%GTACC = 0.0
-            co%QEVPACC = 0.0
-            co%EVAPACC = 0.0
-            co%HFSACC = 0.0
-            co%HMFNACC = 0.0
-            co%ROFACC = 0.0
-            co%ROFOACC = 0.0
-            co%ROFSACC = 0.0
-            co%ROFBACC = 0.0
-            co%WTBLACC = 0.0
-            co%TBARACC = 0.0
-            co%THLQACC = 0.0
+            co%PREACC = 0.0; co%GTACC = 0.0; co%QEVPACC = 0.0; co%EVAPACC = 0.0
+            co%HFSACC = 0.0; co%HMFNACC = 0.0
+            co%ROFACC = 0.0; co%ROFOACC = 0.0; co%ROFSACC = 0.0; co%ROFBACC = 0.0
+            co%WTBLACC = 0.0; co%ALVSACC = 0.0; co%ALIRACC = 0.0
+            co%RHOSACC = 0.0; co%TSNOACC = 0.0; co%WSNOACC = 0.0
+            co%TCANACC = 0.0; co%SNOACC = 0.0
+            co%RCANACC = 0.0; co%SCANACC = 0.0; co%GROACC = 0.0; co%FSINACC = 0.0
+            co%FLINACC = 0.0; co%FLUTACC = 0.0
+            co%TAACC = 0.0; co%UVACC = 0.0; co%PRESACC = 0.0; co%QAACC = 0.0
+            co%TBARACC = 0.0; co%THLQACC = 0.0
             co%THICACC = 0.0
-            co%THALACC = 0.0
-            co%GFLXACC = 0.0
-            co%ALVSACC = 0.0
-            co%ALIRACC = 0.0
-            co%RHOSACC = 0.0
-            co%TSNOACC = 0.0
-            co%WSNOACC = 0.0
-            co%SNOARE = 0.0
-            co%TCANACC = 0.0
-            co%CANARE = 0.0
-            co%SNOACC = 0.0
-            co%RCANACC = 0.0
-            co%SCANACC = 0.0
-            co%GROACC = 0.0
-            co%FSINACC = 0.0
-            co%FLINACC = 0.0
-            co%FLUTACC = 0.0
-            co%TAACC = 0.0
-            co%UVACC = 0.0
-            co%PRESACC = 0.0
-            co%QAACC = 0.0
+            co%THALACC = 0.0; co%GFLXACC = 0.0
+            co%ISNOACC = 0; co%ICANACC = 0; co%IALACC = 0
 
             !> Open the files if the GAT-index of the output point resides on this node.
             do i = 1, WF_NUM_POINTS
                 if ((ipid /= 0 .or. izero == 0) .and. (op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2)) then
 
                     !> Open the files in the appropriate directory.
-                    BNAM = op%DIR_OUT(i)
                     j = 1
-                    open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF1.csv'); j = j + 1
-                    open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF2.csv'); j = j + 1
-                    open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF3.csv'); j = j + 1
-                    open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF4.csv'); j = j + 1
-                    open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF5.csv'); j = j + 1
-                    open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF6.csv'); j = j + 1
-                    open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF7.csv'); j = j + 1
-                    open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF8.csv'); j = j + 1
-                    open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/CLASSOF9.csv'); j = j + 1
-                    open(150 + i*10 + j, file = './' // trim(adjustl(BNAM)) // '/GRU_water_balance.csv')
+                    open(150 + i*10 + j, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/CLASSOF1.csv'); j = j + 1
+                    open(150 + i*10 + j, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/CLASSOF2.csv'); j = j + 1
+                    open(150 + i*10 + j, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/CLASSOF3.csv'); j = j + 1
+                    open(150 + i*10 + j, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/CLASSOF4.csv'); j = j + 1
+                    open(150 + i*10 + j, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/CLASSOF5.csv'); j = j + 1
+                    open(150 + i*10 + j, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/CLASSOF6.csv'); j = j + 1
+                    open(150 + i*10 + j, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/CLASSOF7.csv'); j = j + 1
+                    open(150 + i*10 + j, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/CLASSOF8.csv'); j = j + 1
+                    open(150 + i*10 + j, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/CLASSOF9.csv'); j = j + 1
+                    open(150 + i*10 + j, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/GRU_water_balance.csv')
 
                     !> Write project header information.
                     do j = 1, 9
@@ -263,16 +236,15 @@ module RUNCLASS36_save_output
 
     subroutine CLASSOUT_update_files(shd)
 
-        use mpi_shared_variables
+        use mpi_module
         use sa_mesh_shared_variables
         use model_dates
 
         type(ShedGridParams), intent(in) :: shd
 
-!* I_OUT: OUTPUT GRID SQUARE TEMPORARY STORE
+        !* I_OUT: OUTPUT GRID SQUARE TEMPORARY STORE
         integer DELT, IGND, I_OUT
         real ALTOT, FSSTAR, FLSTAR, QH, QE, BEG, SNOMLT, ZSN, TCN, TSN, TPN, GTOUT
-        real FARE, LCC
         real ZPND, FSTR
         character(20) IGND_CHAR
         integer NSUM, k, j, i
@@ -289,14 +261,16 @@ module RUNCLASS36_save_output
         do i = 1, WF_NUM_POINTS
             if ((ipid /= 0 .or. izero == 0) .and. (op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2)) then
 
-                !> Update variables.
+                !> Grab the identity of the tile.
                 k = op%K_OUT(i)
-                if (2.0*cfi%FSVH(k) > 0.0) then
+
+                !> Update output variables.
+                if ((cfi%FSVH(k) + cfi%FSIH(k)) > 0.0) then
                     ALTOT = (cdv%ALVS(k) + cdv%ALIR(k))/2.0
                 else
                     ALTOT = 0.0
                 end if
-                FSSTAR = 2.0*cfi%FSVH(k)*(1.0 - ALTOT)
+                FSSTAR = (cfi%FSVH(k) + cfi%FSIH(k))*(1.0 - ALTOT)
                 FLSTAR = cfi%FDL(k) - SBC*cdv%GTE(k)**4
                 QH = cdv%HFS(k)
                 QE = cdv%QEVP(k)
@@ -335,7 +309,7 @@ module RUNCLASS36_save_output
                       "(i2,',', i3,',', i5,',', i6,',', 9(f8.2,','), 2(f7.3,','), e11.3,',', f8.2,',', 3(f12.4,','))") &
                     ic%now%hour, ic%now%mins, ic%now%jday, ic%now%year, FSSTAR, FLSTAR, QH, &
                     QE, SNOMLT, BEG, GTOUT, cpv%SNO(k), &
-                    cpv%RHOS(k), cpv%WSNO(k), ALTOT, cdv%ROF(k), &
+                    cpv%RHOS(k), cpv%WSNO(k), ALTOT, cdv%ROF(k)*DELT, &
                     TPN, cpv%ZPND(k), ZPND, FSTR
                 write(150 + i*10 + 5, "(i2,',', i3,',', i5,',', i6,',', " // trim(adjustl(IGND_CHAR)) // &
                       "(f7.2,',', 2(f6.3,',')), f8.2,',', 2(f8.4,','), f8.2,',', f8.3,',')") &
@@ -345,7 +319,7 @@ module RUNCLASS36_save_output
                     cpv%RCAN(k), cpv%SNCAN(k), TSN, ZSN
                 write(150 + i*10 + 6, &
                       "(i2,',', i3,',', i5,',', 2(f10.2,','), f12.6,',', f10.2,',', f8.2,',', f10.2,',', f15.9,',')") &
-                    ic%now%hour, ic%now%mins, ic%now%jday, 2.0*cfi%FSVH(k), cfi%FDL(k), &
+                    ic%now%hour, ic%now%mins, ic%now%jday, cfi%FSVH(k) + cfi%FSIH(k), cfi%FDL(k), &
                     cfi%PRE(k), cfi%TA(k) - TFREZ, cfi%VMOD(k), cfi%PRES(k), &
                     cfi%QA(k)
                 write(150 + i*10 + 7, "(999(e11.4,','))") &
@@ -376,63 +350,57 @@ module RUNCLASS36_save_output
                     cpv%ZPND(k)*RHOW, (cpv%THLQ(k, j)*RHOW*csfv%DELZW(k, j), j = 1, IGND), &
                     (cpv%THIC(k, j)*RHOICE*csfv%DELZW(k, j), j = 1, IGND)
 
-                !> Calculate accumulated grid variables.
-                do k = il1, il2
-                    if (shd%lc%ILMOS(k) == op%N_OUT(i)) then
-
-                        FARE = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%FRAC(shd%lc%ILMOS(k))
-                        LCC = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-
-                        co%PREACC(i) = co%PREACC(i) + cfi%PRE(k)*FARE*DELT
-                        co%GTACC(i) = co%GTACC(i) + cdv%GTE(k)*FARE
-                        co%QEVPACC(i) = co%QEVPACC(i) + cdv%QEVP(k)*FARE
-                        co%EVAPACC(i) = co%EVAPACC(i) + cdv%QFS(k)*FARE*DELT
-                        co%HFSACC(i) = co%HFSACC(i) + cdv%HFS(k)*FARE
-                        co%HMFNACC(i) = co%HMFNACC(i) + cdv%HMFN(k)*FARE
-                        co%ROFACC(i) = co%ROFACC(i) + cdv%ROF(k)*FARE*DELT
-                        co%ROFOACC(i) = co%ROFOACC(i) + cdv%ROFO(k)*FARE*DELT
-                        co%ROFSACC(i) = co%ROFSACC(i) + cdv%ROFS(k)*FARE*DELT
-                        co%ROFBACC(i) = co%ROFBACC(i) + cdv%ROFB(k)*FARE*DELT
-                        co%WTBLACC(i) = co%WTBLACC(i) + cdv%WTAB(k)*FARE
-                        do j = 1, IGND
-                            co%TBARACC(i, j) = co%TBARACC(i, j) + cpv%TBAR(k, j)*LCC
-                            co%THLQACC(i, j) = co%THLQACC(i, j) + cpv%THLQ(k, j)*FARE
-                            co%THICACC(i, j) = co%THICACC(i, j) + cpv%THIC(k, j)*FARE
-                            co%THALACC(i, j) = co%THALACC(i, j) + (cpv%THLQ(k, j) + cpv%THIC(k, j))*FARE
-                            co%GFLXACC(i, j) = co%GFLXACC(i, j) + cdv%GFLX(k, j)*FARE
-                        end do
-                        co%ALVSACC(i) = co%ALVSACC(i) + cdv%ALVS(k)*cfi%FSVH(k)*FARE
-                        co%ALIRACC(i) = co%ALIRACC(i) + cdv%ALIR(k)*cfi%FSIH(k)*FARE
-                        if (cpv%SNO(k) > 0.0) then
-                            co%RHOSACC(i) = co%RHOSACC(i) + cpv%RHOS(k)*FARE
-                            co%TSNOACC(i) = co%TSNOACC(i) + cpv%TSNO(k)*FARE
-                            co%WSNOACC(i) = co%WSNOACC(i) + cpv%WSNO(k)*FARE
-                            co%SNOARE(i) = co%SNOARE(i) + FARE
-                        end if
-                        if (cpv%TCAN(k) > 0.5) then
-                            co%TCANACC(i) = co%TCANACC(i) + cpv%TCAN(k)*FARE
-                            co%CANARE(i) = co%CANARE(i) + FARE
-                        end if
-                        co%SNOACC(i) = co%SNOACC(i) + cpv%SNO(k)*FARE
-                        co%RCANACC(i) = co%RCANACC(i) + cpv%RCAN(k)*FARE
-                        co%SCANACC(i) = co%SCANACC(i) + cpv%SNCAN(k)*FARE
-                        co%GROACC(i) = co%GROACC(i) + cpv%GRO(k)*FARE
-                        co%FSINACC(i) = co%FSINACC(i) + 2.0*cfi%FSVH(k)*FARE
-                        co%FLINACC(i) = co%FLINACC(i) + cfi%FDL(k)*FARE
-                        co%FLUTACC(i) = co%FLUTACC(i) + SBC*cdv%GTE(k)**4*FARE
-                        co%TAACC(i) = co%TAACC(i) + cfi%TA(k)*FARE
-                        co%UVACC(i) = co%UVACC(i) + cfi%VMOD(k)*FARE
-                        co%PRESACC(i) = co%PRESACC(i) + cfi%PRES(k)*FARE
-                        co%QAACC(i) = co%QAACC(i) + cfi%QA(k)*FARE
-                    end if
+                !> Accumulate variables for daily output.
+                co%PREACC(i) = co%PREACC(i) + cfi%PRE(k)*DELT
+                co%GTACC(i) = co%GTACC(i) + cdv%GTE(k)
+                co%QEVPACC(i) = co%QEVPACC(i) + cdv%QEVP(k)
+                co%EVAPACC(i) = co%EVAPACC(i) + cdv%QFS(k)*DELT
+                co%HFSACC(i) = co%HFSACC(i) + cdv%HFS(k)
+                co%HMFNACC(i) = co%HMFNACC(i) + cdv%HMFN(k)
+                co%ROFACC(i) = co%ROFACC(i) + cdv%ROF(k)*DELT
+                co%ROFOACC(i) = co%ROFOACC(i) + cdv%ROFO(k)*DELT
+                co%ROFSACC(i) = co%ROFSACC(i) + cdv%ROFS(k)*DELT
+                co%ROFBACC(i) = co%ROFBACC(i) + cdv%ROFB(k)*DELT
+                co%WTBLACC(i) = co%WTBLACC(i) + cdv%WTAB(k)
+                do j = 1, IGND
+                    co%TBARACC(i, j) = co%TBARACC(i, j) + cpv%TBAR(k, j)
+                    co%THLQACC(i, j) = co%THLQACC(i, j) + cpv%THLQ(k, j)
+                    co%THICACC(i, j) = co%THICACC(i, j) + cpv%THIC(k, j)
+                    co%THALACC(i, j) = co%THALACC(i, j) + cpv%THLQ(k, j) + cpv%THIC(k, j)
+                    co%GFLXACC(i, j) = co%GFLXACC(i, j) + cdv%GFLX(k, j)
                 end do
+                if ((cfi%FSVH(k) + cfi%FSIH(k)) > 0.0) then
+                    co%ALVSACC(i) = co%ALVSACC(i) + cdv%ALVS(k)
+                    co%ALIRACC(i) = co%ALIRACC(i) + cdv%ALIR(k)
+                    co%IALACC(i) = co%IALACC(i) + 1
+                end if
+                if (cpv%SNO(k) > 0.0) then
+                    co%RHOSACC(i) = co%RHOSACC(i) + cpv%RHOS(k)
+                    co%TSNOACC(i) = co%TSNOACC(i) + cpv%TSNO(k)
+                    co%WSNOACC(i) = co%WSNOACC(i) + cpv%WSNO(k)
+                    co%ISNOACC(i) = co%ISNOACC(i) + 1
+                end if
+                if (cpv%TCAN(k) > 0.5) then
+                    co%TCANACC(i) = co%TCANACC(i) + cpv%TCAN(k)
+                    co%ICANACC(i) = co%ICANACC(i) + 1
+                end if
+                co%SNOACC(i) = co%SNOACC(i) + cpv%SNO(k)
+                co%RCANACC(i) = co%RCANACC(i) + cpv%RCAN(k)
+                co%SCANACC(i) = co%SCANACC(i) + cpv%SNCAN(k)
+                co%GROACC(i) = co%GROACC(i) + cpv%GRO(k)
+                co%FSINACC(i) = co%FSINACC(i) + cfi%FSVH(k) + cfi%FSIH(k)
+                co%FLINACC(i) = co%FLINACC(i) + cfi%FDL(k)
+                co%FLUTACC(i) = co%FLUTACC(i) + SBC*cdv%GTE(k)**4
+                co%TAACC(i) = co%TAACC(i) + cfi%TA(k)
+                co%UVACC(i) = co%UVACC(i) + cfi%VMOD(k)
+                co%PRESACC(i) = co%PRESACC(i) + cfi%PRES(k)
+                co%QAACC(i) = co%QAACC(i) + cfi%QA(k)
 
-                !> Write to the CLASSOF* output files for daily output.
+                !> Write daily output if in the last time-step of the day.
                 if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
 
+                    !> Calculate the average of variables that should not accumulate.
                     NSUM = ic%ts_daily
-
-                    !> Calculate grid averages.
                     co%GTACC(i) = co%GTACC(i)/real(NSUM)
                     co%QEVPACC(i) = co%QEVPACC(i)/real(NSUM)
                     co%HFSACC(i) = co%HFSACC(i)/real(NSUM)
@@ -442,22 +410,19 @@ module RUNCLASS36_save_output
                     co%THLQACC(i, :) = co%THLQACC(i, :)/real(NSUM)
                     co%THICACC(i, :) = co%THICACC(i, :)/real(NSUM)
                     co%THALACC(i, :) = co%THALACC(i, :)/real(NSUM)
-                    if (co%FSINACC(i) > 0.0) then
-                        co%ALVSACC(i) = co%ALVSACC(i)/(co%FSINACC(i)*0.5)
-                        co%ALIRACC(i) = co%ALIRACC(i)/(co%FSINACC(i)*0.5)
-                    else
-                        co%ALVSACC(i) = 0.0
-                        co%ALIRACC(i) = 0.0
-                    end if
-                    if (co%SNOARE(i) > 0.0) then
-                        co%RHOSACC(i) = co%RHOSACC(i)/co%SNOARE(i)
-                        co%TSNOACC(i) = co%TSNOACC(i)/co%SNOARE(i)
-                        co%WSNOACC(i) = co%WSNOACC(i)/co%SNOARE(i)
-                    end if
-                    if (co%CANARE(i) > 0.0) then
-                        co%TCANACC(i) = co%TCANACC(i)/co%CANARE(i)
+                    if (co%IALACC(i) > 0) then
+                        co%ALVSACC(i) = co%ALVSACC(i)/real(co%IALACC(i))
+                        co%ALIRACC(i) = co%ALIRACC(i)/real(co%IALACC(i))
                     end if
                     co%SNOACC(i) = co%SNOACC(i)/real(NSUM)
+                    if (co%ISNOACC(i) > 0) then
+                        co%RHOSACC(i) = co%RHOSACC(i)/real(co%ISNOACC(i))
+                        co%TSNOACC(i) = co%TSNOACC(i)/real(co%ISNOACC(i))
+                        co%WSNOACC(i) = co%WSNOACC(i)/real(co%ISNOACC(i))
+                    end if
+                    if (co%ICANACC(i) > 0) then
+                        co%TCANACC(i) = co%TCANACC(i)/real(co%ICANACC(i))
+                    end if
                     co%RCANACC(i) = co%RCANACC(i)/real(NSUM)
                     co%SCANACC(i) = co%SCANACC(i)/real(NSUM)
                     co%GROACC(i) = co%GROACC(i)/real(NSUM)
@@ -496,6 +461,14 @@ module RUNCLASS36_save_output
                         GTOUT = 0.0
                     end if
 
+                    !> Variables that accumulate.
+!                    co%PREACC(i) = co%PREACC(i)
+!                    co%EVAPACC(i) = co%EVAPACC(i)
+!                    co%ROFACC(i) = co%ROFACC(i)
+!                    co%ROFOACC(i) = co%ROFOACC(i)
+!                    co%ROFSACC(i) = co%ROFSACC(i)
+!                    co%ROFBACC(i) = co%ROFBACC(i)
+
                     !> Write to the CLASSOF* output files for daily accumulated output.
                     write(150 + i*10 + 1, "(i4,',', i5,',', 9(f8.2,','), 2(f8.3,','), 999(f12.4,','))") &
                         ic%now%jday, ic%now%year, FSSTAR, FLSTAR, QH, QE, SNOMLT, &
@@ -514,42 +487,21 @@ module RUNCLASS36_save_output
                         co%QAACC(i), co%PREACC(i), co%EVAPACC(i)
 
                     !> Reset the CLASS output variables.
-                    co%PREACC = 0.0
-                    co%GTACC = 0.0
-                    co%QEVPACC = 0.0
-                    co%EVAPACC = 0.0
-                    co%HFSACC = 0.0
-                    co%HMFNACC = 0.0
-                    co%ROFACC = 0.0
-                    co%ROFOACC = 0.0
-                    co%ROFSACC = 0.0
-                    co%ROFBACC = 0.0
-                    co%WTBLACC = 0.0
-                    co%TBARACC = 0.0
-                    co%THLQACC = 0.0
-                    co%THICACC = 0.0
-                    co%THALACC = 0.0
-                    co%GFLXACC = 0.0
-                    co%ALVSACC = 0.0
-                    co%ALIRACC = 0.0
-                    co%RHOSACC = 0.0
-                    co%TSNOACC = 0.0
-                    co%WSNOACC = 0.0
-                    co%SNOARE = 0.0
-                    co%TCANACC = 0.0
-                    co%CANARE = 0.0
-                    co%SNOACC = 0.0
-                    co%RCANACC = 0.0
-                    co%SCANACC = 0.0
-                    co%GROACC = 0.0
-                    co%FSINACC = 0.0
-                    co%FLINACC = 0.0
-                    co%FLUTACC = 0.0
-                    co%TAACC = 0.0
-                    co%UVACC = 0.0
-                    co%PRESACC = 0.0
-                    co%QAACC = 0.0
-                end if !(NCOUNT == 48) then
+                    co%PREACC(i) = 0.0; co%GTACC(i) = 0.0; co%QEVPACC(i) = 0.0; co%EVAPACC(i) = 0.0
+                    co%HFSACC(i) = 0.0; co%HMFNACC(i) = 0.0
+                    co%ROFACC(i) = 0.0; co%ROFOACC(i) = 0.0; co%ROFSACC(i) = 0.0; co%ROFBACC(i) = 0.0
+                    co%WTBLACC(i) = 0.0; co%ALVSACC(i) = 0.0; co%ALIRACC(i) = 0.0
+                    co%RHOSACC(i) = 0.0; co%TSNOACC(i) = 0.0; co%WSNOACC(i) = 0.0
+                    co%TCANACC(i) = 0.0; co%SNOACC(i) = 0.0
+                    co%RCANACC(i) = 0.0; co%SCANACC(i) = 0.0; co%GROACC(i) = 0.0; co%FSINACC(i) = 0.0
+                    co%FLINACC(i) = 0.0; co%FLUTACC(i) = 0.0
+                    co%TAACC(i) = 0.0; co%UVACC(i) = 0.0; co%PRESACC(i) = 0.0; co%QAACC(i) = 0.0
+                    co%TBARACC(i, :) = 0.0; co%THLQACC(i, :) = 0.0
+                    co%THICACC(i, :) = 0.0
+                    co%THALACC(i, :) = 0.0; co%GFLXACC(i, :) = 0.0
+                    co%ISNOACC(i) = 0; co%ICANACC(i) = 0; co%IALACC(i) = 0
+
+                end if !(mod(ic%ts_daily, 86400/ic%dts) == 0) then
             end if !(op%K_OUT(k) >= il1 .and. op%K_OUT(k) <= il2) then
         end do !i = 1, WF_NUM_POINTS
 

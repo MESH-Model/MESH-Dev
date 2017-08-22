@@ -1,8 +1,8 @@
 !>
-subroutine staged_reservoir_release(iyear, iday, rank, ireach, qi1, dt, qo2, store2)
+subroutine staged_reservoir_release(iyear, ijday, rank, ireach, qi1, dt, qo2, store2)
 
     use reservoir
-    use EF_MODULE
+    use model_dates
 
     implicit none
 
@@ -10,7 +10,7 @@ subroutine staged_reservoir_release(iyear, iday, rank, ireach, qi1, dt, qo2, sto
     !*  rank: Rank of the cell. [--].
     !*  ireach: ID of the reservoir/reach outlet. [--].
     !*  qi1: Inflow at the beginning of the current time-step. [m3 s-1].
-    integer, intent(in) :: iyear, iday, rank, ireach
+    integer, intent(in) :: iyear, ijday, rank, ireach
     real, intent(in) :: qi1
     real, intent(in) :: dt
 
@@ -20,9 +20,9 @@ subroutine staged_reservoir_release(iyear, iday, rank, ireach, qi1, dt, qo2, sto
     real, intent(out) :: qo2, store2
 
     !> Local variables.
-    integer irsv, imonth
+    integer irsv, imonth, iday
 
-    call FIND_MONTH(iday, iyear, imonth)
+    call Julian2MonthDay(ijday, iyear, imonth, iday)
     call get_reservoir(rank, irsv)
     call compute_reservoir(resrvs%rsvr(irsv), qi1, 2, dt, imonth)
     qo2 = resrvs%rsvr(irsv)%flowSIM(2)

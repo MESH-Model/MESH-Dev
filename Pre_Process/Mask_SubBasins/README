@@ -1,7 +1,0 @@
-Instruction to compile fortran modules to be used as modules in python
-In Windows
-C:\Python27\Scripts\python C:\Python27\Scripts\f2py.py -c --fcompiler=gnu95 --compiler=mingw32 -m nameModule nameMoudel.f90
-nameModule has to be changed for the names of the fortran subroutines
-
-In linux
-$f2py.py -c -m nameModule nameMoudel.f90

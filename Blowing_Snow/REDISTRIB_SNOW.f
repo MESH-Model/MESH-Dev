@@ -1,36 +1,44 @@
-      SUBROUTINE REDISTRIB_SNOW(ILG,IL1,IL2,NMOS,NML,TSNOW,ZSNOW,
+      SUBROUTINE REDISTRIB_SNOW(NA,NTYPE,ILG,NML,IL1,IL2,TSNOW,ZSNOW,
      1     RHOSNO,SNO,TSNOCS,ZSNOCS,HCPSCS,RHOSCS,TSNOGS,
      2     ZSNOGS,HCPSGS,RHOSGS,TSNOWC,ZSNOWC,HCPSC,RHOSC,TSNOWG,
-     3     ZSNOWG,HCPSG,RHOSG,GCGRD,GRID_SQUARE,Drift,FARE,
+     3     ZSNOWG,HCPSG,RHOSG,GC,GRID_SQUARE,Drift,FARE,
      4     TSNOWds,distrib,WSNOCS,WSNOGS,FCS,FGS,FC,FG,Deposition,
      5     TOVRFL,OVRFLW,TRUNOF,RUNOFF,ROFN,PCPG,HTCS,WSNOW,N)
 C
+C     * MAY 2017 - D.PRINCZ. Changed order of initial variables in
+C     *                      subroutine call because not all should be
+C     *                      allocated to ILG or NML. Most variables
+C     *                      should be allocated to NML. ILMOS/GRID_SQUARE
+C     *                      should be allocated to ILG.
+C     *                      Also changed GC to use the NML/GAT
+C     *                      variant instead of the GRD variant.
+C     *
       IMPLICIT NONE
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER ILG,IL1,IL2,K,I,NML,J,nn,jj,GRUsInGS,NMOS,N
+      INTEGER NA,NTYPE,ILG,NML,IL1,IL2,K,I,J,nn,jj,GRUsInGS,N
 C
 C     * INPUT/OUTPUT ARRAYS.
 C
-      REAL TSNOW(ILG),ZSNOW(ILG),RHOSNO(ILG),
-     1     SNO(ILG),TSNOCS(ILG),ZSNOCS(ILG),
-     2     HCPSCS(ILG),RHOSCS(ILG),TSNOGS(ILG),ZSNOGS(ILG),
-     3     HCPSGS(ILG),RHOSGS(ILG),TSNOWC(ILG),ZSNOWC(ILG),
-     4     HCPSC(ILG),RHOSC(ILG),TSNOWG(ILG),ZSNOWG(ILG),
-     5     HCPSG(ILG),RHOSG(ILG),TOVRFL(ILG),OVRFLW(ILG),TRUNOF(ILG),
-     6     RUNOFF(ILG),ROFN(ILG),PCPG(ILG),HTCS(ILG),WSNOW(ILG)
+      REAL TSNOW(NML),ZSNOW(NML),RHOSNO(NML),
+     1     SNO(NML),TSNOCS(NML),ZSNOCS(NML),
+     2     HCPSCS(NML),RHOSCS(NML),TSNOGS(NML),ZSNOGS(NML),
+     3     HCPSGS(NML),RHOSGS(NML),TSNOWC(NML),ZSNOWC(NML),
+     4     HCPSC(NML),RHOSC(NML),TSNOWG(NML),ZSNOWG(NML),
+     5     HCPSG(NML),RHOSG(NML),TOVRFL(NML),OVRFLW(NML),TRUNOF(NML),
+     6     RUNOFF(NML),ROFN(NML),PCPG(NML),HTCS(NML),WSNOW(NML)
 C
 C     * INPUT ARRAYS.
 C
-      REAL GCGRD(ILG),Drift(ILG),
-     1     FARE(ILG),TSNOWds(ILG),distrib(ILG),WSNOCS(ILG),
-     2     WSNOGS(ILG),FCS(ILG),FGS(ILG),FC(ILG),FG(ILG),
-     3     DistribLoss(ILG)
+      REAL GC(NML),Drift(NML),
+     1     FARE(NML),TSNOWds(NML),distrib(NML),WSNOCS(NML),
+     2     WSNOGS(NML),FCS(NML),FGS(NML),FC(NML),FG(NML),
+     3     DistribLoss(NML)
       INTEGER GRID_SQUARE(ILG)
 C
 C     * OUTPUT ARRAYS
-      REAL Deposition(ILG)
+      REAL Deposition(NML)
 C
 C     * TEMPORARY VARIABLES.
 C
@@ -53,12 +61,11 @@ C
 C--------------------------------------------------------------
 C
  !> distribute drift amongst GRUs within grid squares
-      PrevNumTiles=0
+      PrevNumTiles=IL1-1
 
       !> Set grid square drift mass, temperature, density
       !  as weighted average of GRus in grid square
-      DO 100 I=IL1,IL2 !LOOP GRID SQUARES(IL2=NA)
-        IF(GCGRD(I).LE.-0.5) THEN
+      DO 100 I=GRID_SQUARE(IL1),GRID_SQUARE(IL2) !LOOP GRID SQUARES
           TSNOWSumDrift=TFREZ 
           RHOSNOSumDrift=300.!mm 0.0
           HCPSNOSumDrift=HCPICE*RHOSNOSumDrift/RHOICE
@@ -69,7 +76,8 @@ C
           XSNOGS=0.0
           XSNOWC=0.0
           XSNOWG=0.0
-          DO 200 K=1,NML !LOOP land-based GRUs x grid squares(NML)
+          DO 200 K=IL1,IL2 !LOOP land-based GRUs x grid squares
+           IF(GC(K).LE.-0.5) THEN
             IF(GRID_SQUARE(K).EQ.I) THEN
              HTCS(K)=0.
              IF(Drift(K).GT.0.) THEN
@@ -87,8 +95,8 @@ C
              ENDIF !(Drift(K).GT.0.)
             GRUsInGS=GRUsInGS+1 !number of GRUs in grid square
             ENDIF !(GRID_SQUARE(K).EQ.I)
+           ENDIF
   200     CONTINUE  
-        ENDIF
 
         total=0.0
 
@@ -292,7 +300,7 @@ C
         PrevNumTiles=PrevNumTiles+GRUsInGS
   100 CONTINUE
   
-      DO 600 K=1,NML !LOOP TILES(NML)
+      DO 600 K=IL1,IL2 !LOOP TILES
         !DEAL WITH VANISHINGLY SMALL SNOWPACK (ANALOGUOUS TO WHAT WAS DONE IN CLASSW)
          IF(SNO(K).LT.1.0E-2 .AND. SNO(K).GT.0.0) THEN
           TOVRFL(K)=(TOVRFL(K)*OVRFLW(K)+TSNOW(K)*(SNO(K)+

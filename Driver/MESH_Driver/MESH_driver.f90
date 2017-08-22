@@ -94,24 +94,18 @@ program RUNMESH
 !>  -the symbol "!futuredo" refers to places where the developers
 !>  would like to work on with a low priority.
 
-    use sa_mesh_shared_variables
-
-    use FLAGS
-
-    use mpi_flags
-    use mpi_shared_variables
     use mpi_module
-
+    use model_files
+    use sa_mesh_shared_variables
+    use FLAGS
     use sa_mesh_run_within_tile
     use sa_mesh_run_within_grid
     use sa_mesh_run_between_grid
-
-    use MODEL_OUTPUT
-    use model_output_variabletypes
-    use climate_forcing
     use model_dates
+    use climate_forcing
+    use model_output_variabletypes
+    use MODEL_OUTPUT
     use SIMSTATS
-    use model_files
 
     implicit none
 
@@ -129,17 +123,7 @@ program RUNMESH
     integer NA, NTYPE, NML, NSL, iun, ik, jk, ignd
     real FRAC
 
-    !> INTEGER CONSTANTS.
-!todo: Fix this (e.g., replace M_C with NRVR; move to process_WF_ROUTE).
-!-    integer, parameter :: M_C = 5
-
-!todo clean up commets and arrange variables a bit better
-
-    !> FOR ROUTING
-!todo: Fix this (e.g., replace M_C with NRVR; move to process_WF_ROUTE).
-    !* WF_R1: MANNING'S N FOR RIVER CHANNEL
-    !* WF_R2: OPTIMIZED RIVER ROUGHNESS FACTOR
-!-    real WF_R1(M_C), WF_R2(M_C)
+!todo: clean up comments and arrange variables a bit better
 
 !> START ENSIM == FOR ENSIM == FOR ENSIM == FOR ENSIM ==
     character(10) wf_landclassname(10)
@@ -162,21 +146,16 @@ program RUNMESH
 
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
-    !* VER_OK: IF INPUT FILES ARE CORRECT VERSION FOR PROGRAM
-    character(24) :: VERSION = '1037'
+    character(24) :: VERSION = '1126'
     character(8) RELEASE
-!-    logical VER_OK
 
-    !* INDEPPAR: NUMBER OF GRU-INDEPENDENT VARIABLES
-    !* DEPPAR: NUMBER OF GRU-DEPENDENT VARIABLES
     integer i, j, k, l, m, u
-!-    integer INDEPPAR, DEPPAR
 
     integer FRAME_NO_NEW
 
     !> MAM - logical variables to control simulation runs:
     character(100) cstate
-    logical :: ENDDATE = .false., ENDDATA = .false.
+    logical ENDDATE, ENDDATA
     integer :: RUNSTATE = 0
 
     !>  For cacluating the subbasin grids
@@ -312,14 +291,14 @@ program RUNMESH
     call init_soil_statevars(spv_grd, shd)
 
     !> Calculate the grid and basin fractional areas.
-    wb_grd%grid_area = 0.0
-    wb_grd%basin_area = 0.0
-    do i = 1, NA
-        do m = 1, NTYPE
-            wb_grd%grid_area(i) = wb_grd%grid_area(i) + shd%lc%ACLASS(i, m)*shd%FRAC(i)
-        end do
-        wb_grd%basin_area = wb_grd%basin_area + wb_grd%grid_area(i)
-    end do
+    wb_grd%grid_area = shd%FRAC
+    wb_grd%basin_area = sum(shd%FRAC)
+!-    do i = 1, NA
+!-        do m = 1, NTYPE
+!-            wb_grd%grid_area(i) = wb_grd%grid_area(i) + shd%lc%ACLASS(i, m)*shd%FRAC(i)
+!-        end do
+!-        wb_grd%basin_area = wb_grd%basin_area + wb_grd%grid_area(i)
+!-    end do
 
     if (ipid == 0) then
 
@@ -341,14 +320,15 @@ program RUNMESH
 
     end if !(ipid == 0) then
 
-    call run_within_tile_init(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
-    call run_within_grid_init(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    call run_within_tile_init(shd, fls, cm)
+    call run_within_grid_init(shd, fls, cm)
 
     NML = shd%lc%NML
 
     !> MAM - Check for parameter values - all parameters should lie within the
     !> specified ranges in the "minmax_parameters.txt" file.
-    call check_parameters(shd)
+!todo: fix or remove this.
+!    call check_parameters(shd)
 
     !> ALLOCATE ALL VARIABLES
 
@@ -365,6 +345,23 @@ program RUNMESH
 !+        print 1118, 'Total tile elements', NML
 !+        stop
 !+    end if
+
+    !> Calculate initial water balance for output.
+    if (ipid == 0) then
+        do j = 1, shd%lc%IGND
+            wb_grd%LQWS(:, j) = stas_grid%sl%lqws(:, j)*shd%FRAC
+            wb_grd%FRWS(:, j) = stas_grid%sl%fzws(:, j)*shd%FRAC
+        end do
+        wb_grd%RCAN = stas_grid%cnpy%rcan*shd%FRAC
+        wb_grd%SNCAN = stas_grid%cnpy%sncan*shd%FRAC
+        wb_grd%SNO = stas_grid%sno%sno*shd%FRAC
+        wb_grd%WSNO = stas_grid%sno%wsno*shd%FRAC
+        wb_grd%PNDW = stas_grid%sfc%pndw*shd%FRAC
+        wb_grd%STG = &
+            wb_grd%RCAN + wb_grd%SNCAN + wb_grd%SNO + wb_grd%WSNO + wb_grd%PNDW + &
+            sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2) + &
+            stas_grid%lzs%lqws*shd%FRAC + stas_grid%dzs%lqws*shd%FRAC
+    end if
 
     if (ipid == 0) call run_between_grid_init(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
@@ -423,10 +420,12 @@ program RUNMESH
 !>  End of subbasin section
 !> **********************************************************************
 
-    ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
-    if (ENDDATA) then
-        RUNSTATE = 1
-        goto 997
+    if (ro%RUNCLIM) then
+        ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
+        if (ENDDATA) then
+            RUNSTATE = 1
+            goto 997
+        end if
     end if
 
     !> Initialize output fields.
@@ -438,8 +437,8 @@ program RUNMESH
 
     !> Determine what output will print to the console.
     printoutwb = (allocated(wb_acc%pre) .and. allocated(wb_acc%evap) .and. allocated(wb_acc%rof))
-    printoutstfl = allocated(stfl%qsyn)
-    printoutqhyd = (allocated(stfl%qhyd) .and. allocated(stfl%qsyn))
+    printoutstfl = (fms%stmg%n > 0)
+    printoutqhyd = (fms%stmg%n > 0)
 
     if (ipid == 0) then
 
@@ -462,13 +461,11 @@ program RUNMESH
             write(58, *) 'BASINWINDFLAG        = ', cm%dat(ck%UV)%ffmt
             write(58, *) 'BASINPRESFLAG        = ', cm%dat(ck%P0)%ffmt
             write(58, *) 'BASINHUMIDITYFLAG    = ', cm%dat(ck%HU)%ffmt
-!-            write(58, *) 'HOURLYFLAG           = ', HOURLYFLAG
             write(58, *) 'RESUMEFLAG           = ', RESUMEFLAG
             write(58, *) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG
             write(58, *) 'SHDFILEFLAG          = ', SHDFILEFLAG
             write(58, *) 'SOILINIFLAG          = ', SOILINIFLAG
             write(58, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
-!-            write(58, *) 'INTERPOLATIONFLAG    = ', INTERPOLATIONFLAG
             write(58, *) 'SUBBASINFLAG         = ', SUBBASINFLAG
             write(58, *) 'R2COUTPUTFLAG        = ', R2COUTPUTFLAG
             write(58, *) 'OBJFNFLAG            = ', OBJFNFLAG
@@ -486,13 +483,6 @@ program RUNMESH
 !            write(58, *)
 !            write(58, "('MESH_parameters_hydrology.ini')")
 !            write(58, *)
-!todo: fix this.
-!-            write(58, "('Option flags:')")
-!-            if (OPTFLAGS > 0) then
-!-                do i = 1, OPTFLAGS
-!-                    write(58, '(a11, i2, a19)') 'PARAMETER ', i, ' NOT CURRENTLY USED'
-!-                end do
-!-            end if
 !            write(58, "('River roughnesses:')")
 !todo: change this to use NRVR.
 !            write(58, '(5f6.3)') (WF_R2(i), i = 1, 5)
@@ -1036,9 +1026,9 @@ program RUNMESH
     !> Start of main loop that is run each half hour
     !> *********************************************************************
 
-    !> MAM - Initialize ENDDATE and ENDDATA
-!-    ENDDATE = .false.
-!-    ENDDATA = .false.
+    !> MAM - Initialize ENDDATE and ENDDATA.
+    ENDDATE = .false.
+    ENDDATA = .false.
 
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
@@ -1060,10 +1050,12 @@ program RUNMESH
         if (RUNSTATE /= 0) exit
 
         !> Load or update climate forcing input.
-        ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
-        if (ENDDATA) then
-            RUNSTATE = 1
-            cycle
+        if (ro%RUNCLIM) then
+            ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
+            if (ENDDATA) then
+                RUNSTATE = 1
+                cycle
+            end if
         end if
 
         !> Reset variables that accumulate on the daily time-step.
@@ -1089,40 +1081,53 @@ program RUNMESH
             wb_acc%PNDW = 0.0
         end if
 
-        !> Reset variables.
+        cstate = run_within_tile(shd, fls, cm)
+        cstate = ''
+!        if (len_trim(cstate) > 0) then
+!            RUNSTATE = 1
+!            cycle
+!        end if
+
+        call run_within_grid(shd, fls, cm)
+
+        !> Initialize grid-based accumulators for output.
         if (ipid == 0) then
             wb_grd%PRE = 0.0
-            eb_grd%QEVP = 0.0
-            wb_grd%EVAP = 0.0
-            wb_grd%pevp = 0.0
-            wb_grd%evpb = 0.0
-            eb_grd%HFS = 0.0
             wb_grd%ROF = 0.0
-            wb_grd%ROFO = 0.0
-            wb_grd%ROFS =  0.0
-            wb_grd%ROFB = 0.0
-            spv_grd%TBAR = 0.0
-            spv_grd%THLQ = 0.0
-            wb_grd%LQWS = 0.0
-            spv_grd%THIC = 0.0
-            wb_grd%FRWS = 0.0
-            eb_grd%GFLX = 0.0
-            wb_grd%RCAN = 0.0
-            wb_grd%SNCAN = 0.0
-            wb_grd%SNO = 0.0
-            wb_grd%WSNO = 0.0
-            wb_grd%PNDW = 0.0
-            wb_grd%DSTG = wb_grd%STG
-            wb_grd%STG = 0.0
         end if
 
-        cstate = run_within_tile(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
-        if (len_trim(cstate) > 0) then
-            RUNSTATE = 1
-            cycle
+        !> Aggregate grid-based accumulators for output.
+        if (ipid == 0) then
+            wb_grd%PRE = cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
+            eb_grd%QEVP = stas_grid%sfc%qevp*shd%FRAC
+            wb_grd%EVAP = stas_grid%sfc%evap*shd%FRAC*ic%dts
+            wb_grd%PEVP = stas_grid%cnpy%pevp*shd%FRAC*ic%dts
+            wb_grd%EVPB = stas_grid%cnpy%evpb*shd%FRAC
+            eb_grd%HFS = stas_grid%sfc%hfs*shd%FRAC
+            wb_grd%ROF = (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
+            wb_grd%ROFO = stas_grid%sfc%rofo*shd%FRAC*ic%dts
+            wb_grd%ROFS =  stas_grid%sl%rofs*shd%FRAC*ic%dts
+            wb_grd%ROFB = (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
+            spv_grd%TBAR = stas_grid%sl%tbar
+            do j = 1, shd%lc%IGND
+                spv_grd%THLQ(:, j) = stas_grid%sl%thlq(:, j)*shd%FRAC
+                wb_grd%LQWS(:, j) = stas_grid%sl%lqws(:, j)*shd%FRAC
+                spv_grd%THIC(:, j) = stas_grid%sl%thic(:, j)*shd%FRAC
+                wb_grd%FRWS(:, j) = stas_grid%sl%fzws(:, j)*shd%FRAC
+                eb_grd%GFLX(:, j) = stas_grid%sl%gflx(:, j)*shd%FRAC
+            end do
+            wb_grd%RCAN = stas_grid%cnpy%rcan*shd%FRAC
+            wb_grd%SNCAN = stas_grid%cnpy%sncan*shd%FRAC
+            wb_grd%SNO = stas_grid%sno%sno*shd%FRAC
+            wb_grd%WSNO = stas_grid%sno%wsno*shd%FRAC
+            wb_grd%PNDW = stas_grid%sfc%pndw*shd%FRAC
+            wb_grd%DSTG = &
+                wb_grd%RCAN + wb_grd%SNCAN + wb_grd%SNO + wb_grd%WSNO + wb_grd%PNDW + &
+                sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2) + &
+                stas_grid%lzs%lqws*shd%FRAC + stas_grid%dzs%lqws*shd%FRAC - &
+                wb_grd%STG
+            wb_grd%STG = wb_grd%DSTG + wb_grd%STG
         end if
-
-        call run_within_grid(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.
@@ -1180,49 +1185,17 @@ program RUNMESH
             !> CALCULATE GRID CELL AVERAGE DIAGNOSTIC FIELDS.
 
             !> Grid data for output.
-            md_grd%fsdown = cm%dat(ck%FB)%GRD
-            md_grd%fsvh = cm%dat(ck%FB)%GRD/2.0
-            md_grd%fsih = cm%dat(ck%FB)%GRD/2.0
-            md_grd%fdl = cm%dat(ck%FI)%GRD
-            md_grd%ul = cm%dat(ck%UV)%GRD
-            md_grd%ta = cm%dat(ck%TT)%GRD
-            md_grd%qa = cm%dat(ck%HU)%GRD
-            md_grd%pres = cm%dat(ck%P0)%GRD
-            md_grd%pre = cm%dat(ck%RT)%GRD
-
-!-            do k = il1, il2
-!-                ik = shd%lc%ILMOS(k)
-!-                FRAC = shd%lc%ACLASS(ik, shd%lc%JLMOS(k))*shd%FRAC(ik)
-!-                if (FRAC > 0.0) then
-!-                    wb_grd%PRE(ik) = wb_grd%PRE(ik) + cfi%PRE(k)*FRAC*ic%dts
-!-                    eb_grd%QEVP(ik) = eb_grd%QEVP(ik) + cdv%QEVP(k)*FRAC
-!-                    wb_grd%EVAP(ik) = wb_grd%EVAP(ik) + cdv%QFS(k)*FRAC*ic%dts
-!-                    eb_grd%HFS(ik)  = eb_grd%HFS(ik) + cdv%HFS(k)*FRAC
-!-                    wb_grd%ROF(ik) = wb_grd%ROF(ik) + cdv%ROF(k)*FRAC*ic%dts
-!-                    wb_grd%ROFO(ik) = wb_grd%ROFO(ik) + cdv%ROFO(k)*FRAC*ic%dts
-!-                    wb_grd%ROFS(ik) = wb_grd%ROFS(ik) + cdv%ROFS(k)*FRAC*ic%dts
-!-                    wb_grd%ROFB(ik) = wb_grd%ROFB(ik) + cdv%ROFB(k)*FRAC*ic%dts
-!-                    do j = 1, NSL
-!-                        spv_grd%TBAR(ik, j) = spv_grd%TBAR(ik, j) + cpv%TBAR(k, j)*shd%lc%ACLASS(ik, shd%lc%JLMOS(k))
-!-                        spv_grd%THLQ(ik, j) = spv_grd%THLQ(ik, j) + cpv%THLQ(k, j)*FRAC
-!-                        wb_grd%LQWS(ik, j) = wb_grd%LQWS(ik, j) + cpv%THLQ(k, j)*csfv%DELZW(k, j)*FRAC*RHOW
-!-                        spv_grd%THIC(ik, j) = spv_grd%THIC(ik, j) + cpv%THIC(k, j)*FRAC
-!-                        wb_grd%FRWS(ik, j) = wb_grd%FRWS(ik, j) + cpv%THIC(k, j)*csfv%DELZW(k, j)*FRAC*RHOICE
-!-                        eb_grd%GFLX(ik, j) = eb_grd%GFLX(ik, j) + cdv%GFLX(k, j)*FRAC
-!-                    end do
-!-                    wb_grd%RCAN(ik) = wb_grd%RCAN(ik) + cpv%RCAN(k)*FRAC
-!-                    wb_grd%SNCAN(ik) = wb_grd%SNCAN(ik) + cpv%SNCAN(k)*FRAC
-!-                    wb_grd%SNO(ik) = wb_grd%SNO(ik) + cpv%SNO(k)*FRAC
-!-                    if (cpv%SNO(k) > 0.0) then
-!-                        wb_grd%WSNO(ik) = wb_grd%WSNO(ik) + cpv%WSNO(k)*FRAC
-!-                    end if
-!-                    wb_grd%PNDW(ik) = wb_grd%PNDW(ik) + cpv%ZPND(k)*FRAC*RHOW
-!-                end if
-!-            end do !k = il1, il2
-
-            wb_grd%DSTG = wb_grd%RCAN + wb_grd%SNCAN + wb_grd%SNO + wb_grd%WSNO + wb_grd%PNDW + &
-                sum(wb_grd%LQWS, 2) + sum(wb_grd%FRWS, 2) - wb_grd%STG
-            wb_grd%STG = wb_grd%DSTG + wb_grd%STG
+            if (ro%RUNCLIM) then
+                md_grd%fsdown = cm%dat(ck%FB)%GRD
+                md_grd%fsvh = cm%dat(ck%FB)%GRD/2.0
+                md_grd%fsih = cm%dat(ck%FB)%GRD/2.0
+                md_grd%fdl = cm%dat(ck%FI)%GRD
+                md_grd%ul = cm%dat(ck%UV)%GRD
+                md_grd%ta = cm%dat(ck%TT)%GRD
+                md_grd%qa = cm%dat(ck%HU)%GRD
+                md_grd%pres = cm%dat(ck%P0)%GRD
+                md_grd%pre = cm%dat(ck%RT)%GRD
+            end if
 
             !> Update output data.
             if (OUTFIELDSFLAG == 1) call updatefieldsout_temp(shd, ts, ifo, &
@@ -1259,8 +1232,7 @@ program RUNMESH
             wb_acc%PNDW = wb_acc%PNDW + wb_grd%PNDW
 
             !> CALCULATE AND PRINT DAILY AVERAGES.
-            if (ic%ts_daily == 48) then !48 is the last half-hour period of the day
-                                        !when they're numbered 1-48
+            if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
 
                 eb_acc%QEVP = eb_acc%QEVP/real(ic%ts_daily)
                 eb_acc%HFS = eb_acc%HFS/real(ic%ts_daily)
@@ -1292,7 +1264,7 @@ program RUNMESH
                                          ic%now%jday, ic%now%year)
                 end if
 
-            end if !(ic%ts_daily == 48) then
+            end if
 
         end if !(ipid == 0) then
 
@@ -1301,19 +1273,16 @@ program RUNMESH
         if (ipid == 0) then
 
             !> Write output to the console.
-            if (ic%ts_daily == 48) then !48 is the last half-hour period of the day
-                                        !when they're numbered 1-48
+            if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
 
                 if (ro%VERBOSEMODE > 0) then
                     write(6, '(2i5)', advance = 'no') ic%now%year, ic%now%jday
                     if (printoutstfl) then
-                        do j = 1, stfl%ns
-                            if (printoutqhyd) write(6, '(f10.3)', advance = 'no') stfl%qhyd(j)
+                        do j = 1, fms%stmg%n
+                            if (printoutqhyd) write(6, '(f10.3)', advance = 'no') fms%stmg%qomeas%val(j)
                             write(6, '(f10.3)', advance = 'no') stfl%qsyn(j)
                         end do
                     end if
-!todo: restore this or replace with basin total.
-!                    j = ceiling(real(NA)/2); if (WF_NUM_POINTS > 0) j = op%N_OUT(1)
                     j = shd%NAA
                     if (printoutwb) write(6, '(3(f10.3))', advance = 'no') wb_acc%pre(j), wb_acc%evap(j), wb_acc%rof(j)
                     write(6, *)
@@ -1325,40 +1294,10 @@ program RUNMESH
                     end if
                 end if
 
-            end if !(ic%ts_daily == 48) then
+            end if
         end if !(ipid == 0) then
 
 5176    format(2i5, 999(f10.3))
-
-        !> Update time counters and return to beginning of main loop
-!-        ic%now%mins = ic%now%mins + ic%dtmins ! increment the current time by 30 minutes
-!-        if (ic%now%mins == 60) then
-!-            ic%now%mins = 0
-!-            ic%now%hour = ic%now%hour + 1
-!-            if (ic%now%hour == 24) then
-!-                ic%now%hour = 0
-!-                ic%now%jday = ic%now%jday + 1
-!-                if (ic%now%jday >= 366) then
-!-                    if (mod(ic%now%year, 400) == 0) then !LEAP YEAR
-!-                        if (ic%now%jday == 367) then
-!-                            ic%now%jday = 1
-!-                            ic%now%year = ic%now%year + 1
-!-                        end if
-!-                    else if (mod(ic%now%year, 100) == 0) then !NOT A LEAP YEAR
-!-                        ic%now%jday = 1
-!-                        ic%now%year = ic%now%year + 1
-!-                    else if (mod(ic%now%year, 4) == 0) then !LEAP YEAR
-!-                        if (ic%now%jday == 367) then
-!-                            ic%now%jday = 1
-!-                            ic%now%year = ic%now%year + 1
-!-                        end if
-!-                    else !NOT A LEAP YEAR
-!-                        ic%now%jday = 1
-!-                        ic%now%year = ic%now%year + 1
-!-                    end if
-!-                end if
-!-            end if
-!-        end if
 
         !> Update the current time-step and counter.
         call counter_update()
@@ -1500,8 +1439,8 @@ program RUNMESH
     if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
 
     !> Call finalization routines.
-    call run_within_tile_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
-    call run_within_grid_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    call run_within_tile_finalize(fls, shd, cm)
+    call run_within_grid_finalize(fls, shd, cm)
     call climate_module_finalize(fls, shd, cm)
 
     if (ipid == 0) then

@@ -161,6 +161,8 @@ include "fintern.inc"
 !                                  liquid water remains in the vegetation
 !
       DO I=1,N
+ 
+         WRMAX(I) = 0.2*LAI(I)
 !
          IF (WSNV(I).GE.CRITSNOW)THEN
 !                                  There is snow on the ground, remove evaporation
@@ -176,7 +178,7 @@ include "fintern.inc"
             WRT(I) = MAX(0., WR(I) - DT * (ER(I) -  RR(I)))
 !                                  Compute canopy drip
 !                                  if Wr > Wrmax, there is runoff
-            WRMAX(I) = 0.2*LAI(I)
+          
             RVEG(I) = MAX(0., (WRT(I) - WRMAX(I)) / DT ) 
 !
 !                                  Wr must be smaller than Wrmax
@@ -403,9 +405,8 @@ include "fintern.inc"
                   F(I,K+1)=F(I,K+1)+(CRITWATER-WDT(I,K))*DELZW(I,K)
                   WDT(I,K)=CRITWATER
                ELSEIF (WDT(I,K).GT.WSATC(I,K))  THEN
-                  LATFLW(I,K)=(SLOP(I)*GRKSAT(I,K)/(KSATC(I,K)+SLOP(I)*GRKSAT(I,K)))*(WDT(I,K)-WSATC(I,K))*DELZW(I,K)
-                  WDT(I,K+1)=WDT(I,K+1)+(WDT(I,K)-WSATC(I,K))*DELZW(I,K)/DELZW(I,K+1)-LATFLW(I,K)/DELZW(I,K+1)
-                  F(I,K+1)=F(I,K+1)+(WDT(I,K)-WSATC(I,K))*DELZW(I,K)-LATFLW(I,K)
+                  WDT(I,K+1)=WDT(I,K+1)+(WDT(I,K)-WSATC(I,K))*DELZW(I,K)/DELZW(I,K+1)
+                  F(I,K+1)=F(I,K+1)+(WDT(I,K)-WSATC(I,K))*DELZW(I,K)
                   WDT(I,K)=WSATC(I,K)       
              
                END IF
@@ -417,8 +418,7 @@ include "fintern.inc"
                   F(I,KDP+1)=F(I,KDP+1)-(CRITWATER-WDT(I,KDP))*DELZW(I,KDP)
                   WDT(I,KDP)=CRITWATER
                ELSEIF(WDT(I,KDP).GT.WSATC(I,KDP)) THEN
-                  LATFLW(I,KDP)=(SLOP(I)*GRKSAT(I,KDP)/(KSATC(I,KDP)+SLOP(I)*GRKSAT(I,KDP)))*(WDT(I,KDP)-WSATC(I,KDP))*DELZW(I,KDP)
-                  F(I,KDP+1)=F(I,KDP+1)+(WDT(I,KDP)-WSATC(I,KDP))*DELZW(I,KDP)-LATFLW(I,KDP)
+                  LATFLW(I,KDP)=(WDT(I,KDP)-WSATC(I,KDP))*DELZW(I,KDP)
                   WDT(I,KDP)=WSATC(I,KDP)
                END IF
             END IF

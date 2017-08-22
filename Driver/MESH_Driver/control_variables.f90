@@ -20,9 +20,19 @@ module control_variables
         !*   DIAGNOSEMODE = 1: Write additional diagnostic output to the console.
         integer :: DIAGNOSEMODE = 0
 
-        !* RUNMODE: Flag to enable or disable process modules.
-        !*  (Value parsed in read_run_options.f90).
-        integer :: RUNMODE = 0
+        !> RUNFLAGS: Flags to enable or disable processes (default all: .true.).
+        !*  RUNCLIM: Read meteorological forcing input.
+        !*  RUNCHNL: Run channel flow balance and output.
+        !*  RUNBALWB: Run water balance and output.
+        !*  RUNBALEB: Run energy balance and output.
+        !*  RUNTILE: Run tile processes (e.g., LSS).
+        !*  RUNGRID: Run grid processes (e.g., multi-point run).
+        logical :: RUNCLIM = .true.
+        logical :: RUNCHNL = .true.
+        logical :: RUNBALWB = .true.
+        logical :: RUNBALEB = .true.
+        logical :: RUNTILE = .true.
+        logical :: RUNGRID = .true.
 
     end type !run_options
 

@@ -105,7 +105,7 @@ module SA_RTE_module
         if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
             call tile_connector(shd, (wb%rofo + wb%rofs), RFF, .true.)
             if (writeout) then
-                call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, ic, (frame_now + 1), 0, frame_now, 0, 6, RFF)
+                call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, (frame_now + 1), 0, frame_now, 0, 6, RFF)
                 RFF = 0.0
             end if
         end if
@@ -114,7 +114,7 @@ module SA_RTE_module
         if (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1) then
             call tile_connector(shd, wb%rofb, RCH, .true.)
             if (writeout) then
-                call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, ic, (frame_now + 1), 0, frame_now, 0, 6, RCH)
+                call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, (frame_now + 1), 0, frame_now, 0, 6, RCH)
                 RCH = 0.0
             end if
         end if
@@ -185,7 +185,7 @@ module SA_RTE_module
         !> present these are hard-coded or set using VARIABLEFILESFLAG).
         !> For: Runoff (MODELFLG = (r, l, i)).
         if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
-            call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, ic, &
+            call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, &
                            0, 0, 0, 0, 0, &
                            RFF, &
 !todo: replace source with LSS flag
@@ -195,7 +195,7 @@ module SA_RTE_module
 
         !> For: Recharge (MODELFLG = r).
         if (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1) then
-            call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, ic, &
+            call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, &
                            0, 0, 0, 0, 0, &
                            RCH, &
 !todo: replace source with LSS flag

@@ -61,7 +61,8 @@ C/////////////////////////
      *                 icase,iz,jz,nchr,mz,ju,mon,
      *                 iwest,ieast,isouth,inorth,nocolumns,nno,k,
      *                 nu,igrdshft,minsnwflg,oldjan,flgevp22,
-     *                 noresv1,nj,npick,n_trick,no_frames,frame_no
+     *                 noresv1,nj,npick,n_trick,no_frames,frame_no,
+     *                 rr1,rr2,hour_offset_div,repirr,repn
       CHARACTER(128):: qstr
       CHARACTER(10) :: ctime
       CHARACTER(8)  :: cday
@@ -72,9 +73,7 @@ C/////////////////////////
       REAL          :: ha,fpw,kdn,nratio
       REAL          :: dtminusr,dtminfrac,mindtmin,dtminprev
       REAL          :: convthreshusr,minrough,maxrough
-      REAL(4)       :: qi1_strt(naa),qi2_strt(naa),qo2_strt(naa),
-     *                 store2_strt(naa),over_strt(naa),qo1_strt(naa),
-     *                 store1_strt(naa)
+      REAL(4)       :: qi2_strt(naa),qo2_strt(naa)
       REAL          :: tqi1,tqo1,tax,tqo2,tstore2,tstore1
       REAL(4)       :: timeprev
       INTEGER       :: indexi,maxindex,exitstatus,no_dtold,jzprev,nnaa
@@ -787,6 +786,7 @@ c     *                         year1,month1,day1,hour1)
 !               vectorize & convert mm to flow
 !               recharge is added to lzs (mm)
                 do n=1,naa
+                  qo2remirr(n) = 0.0
                   i=yyy(n)
                   j=xxx(n)
                   if (fstflg .eq. 'y') then
@@ -794,6 +794,7 @@ c     *                         year1,month1,day1,hour1)
                   else
                     lzs(n)=lzs(n)+inarray(i,j)
                   endif
+
 !                 route the recharge thru the lz:
 !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                   call baseflow(n,dlz,sdlz,tdum)
@@ -802,6 +803,31 @@ c     *                         year1,month1,day1,hour1)
 !                 so there is no need to convert before adding to qr
                   qr(n)=qr(n)+qlz(n)
                 end do
+
+!               remove water from lzs in case of irrigation
+                if(val2divyes .eq. 1) then
+                  if(nodivirrig .gt. 0) then
+                    hour_offset_div = 24*(day1-divday1)+(hour1-divhour1)
+                    repirr=0
+                    do rr1=1,nodiv
+                      if (divname(rr1)(1:5).eq.'irrig'
+     *                .or. divname(rr1)(1:5).eq.'Irrig') then
+                        repirr=repirr+1                   
+		        do rr2=1,maxirrigpts
+                          repn=irrigindx(repirr,rr2)
+                          if (ireach(repn).le.0) then
+		            lzs(repn)=lzs(repn)-
+     *                      qdivirrig(repirr,hour_offset_div+fhr)/
+     *                      frac(repn)/tdum*val1div(rr1)
+                            qo2remirr(repn) = qdivirrig(repirr,
+     *                      hour_offset_div+fhr)* val1div(rr1)
+                          endif
+     		        enddo
+                      endif
+                    enddo
+		  endif
+                endif
+
               endif
 
 !             note that if we are reading qlz directly, it will be
@@ -813,10 +839,39 @@ c     *                         year1,month1,day1,hour1)
 !               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !               vectorize & convert mm to flow
                 do n=1,naa
+                  qo2remirr(n) = 0.0
                   i=yyy(n)
                   j=xxx(n)
                   qr(n)=qr(n)+inarray(i,j)*tdum*frac(n)
                 end do
+
+!               remove water from input flow in case of irrigation
+                if(val2divyes .eq. 1) then
+                  if(nodivirrig .gt. 0) then
+                    hour_offset_div = 24*(day1-divday1)+(hour1-divhour1)
+                    repirr=0
+                    do rr1=1,nodiv
+                      if (divname(rr1)(1:5).eq.'irrig'
+     *                .or. divname(rr1)(1:5).eq.'Irrig') then
+                        repirr=repirr+1
+                        do rr2=1,maxirrigpts
+                          repn = irrigindx(repirr,rr2)
+                          if (ireach(repn).le.0) then
+                            qr(repn) = qr(repn) -
+     *                      qdivirrig(repirr,hour_offset_div+fhr)*
+     *                      val1div(rr1)
+                            qo2remirr(repn) = min(qdivirrig(repirr,
+     *                      hour_offset_div+fhr)* val1div(rr1),
+     *                      qdivirrig(repirr,hour_offset_div+fhr)
+     *                      * val1div(rr1) + qr(repn))
+                            qr(repn) = max(qr(repn),0.0)
+                          endif
+                        enddo
+                      endif
+                    enddo
+                  endif
+                endif
+
               endif
 
             endif ! if(iz.lt.jz)then : 2nd time 
@@ -850,6 +905,13 @@ c     *                         year1,month1,day1,hour1)
 !         find the solution even if dtmin is relatively small
 
 !         Remember the input values from the start of the time step
+!         only store2_strt is a global variable and may need to be allocated
+!         store2_strt is global because it may be overwritten in rerout.f 
+!         based on reservoir area and level instead of channel storage from flow_init
+          if(.NOT.allocated(store2_strt)) then
+              allocate(store2_strt(naa))
+          end if
+
           do n=1,naa
             qi2_strt(n) = qi2(n)
             qo2_strt(n) = qo2(n)
@@ -863,6 +925,31 @@ c     *                         year1,month1,day1,hour1)
               end if
             end do
             end if
+
+!           if diversions, use simulated instead of possibly modified flow
+	    repirr=0
+            do l=1,nodiv
+              if (val2divyes.eq.1) then
+                if (divname(l)(1:5).eq.'irrig'
+     *          .or. divname(l)(1:5).eq.'Irrig') then
+                  repirr=repirr+1
+                  do rr2=1,maxirrigpts
+                    repn = irrigindx(repirr,rr2)
+                    if (repn.eq.n) then
+                      qo2_strt(repn)=qo2sim(repn)
+                    endif
+                  enddo
+                else
+                  if (divstrindex(l).eq.n.or.divendindex(l).eq.n) then
+                    qo2_strt(n) = qo2sim(n)
+                  endif
+                endif
+              else
+                if (divstrindex(l).eq.n.or.divendindex(l).eq.n) then
+                  qo2_strt(n) = qo2sim(n)
+                endif
+              endif
+            enddo
 
           end do
 
@@ -882,6 +969,32 @@ c     *                         year1,month1,day1,hour1)
               end if
             end do
             end if
+
+!           if diversions, rely on simulated instead of possibly modified flow to estimate time-step
+	    repirr=0
+            do l=1,nodiv
+              if (val2divyes.eq.1) then
+                if (divname(l)(1:5).eq.'irrig'
+     *          .or. divname(l)(1:5).eq.'Irrig') then
+                  repirr=repirr+1
+                  do rr2=1,maxirrigpts
+                    repn = irrigindx(repirr,rr2)
+                    if (repn.eq.n) then
+                      tqo1=qo2sim(repn)
+                    endif
+                  enddo
+                else
+                  if (divstrindex(l).eq.n.or.divendindex(l).eq.n) then
+                    tqo1 = qo2sim(n)
+                  endif
+                endif
+              else
+                if (divstrindex(l).eq.n.or.divendindex(l).eq.n) then
+                  tqo1 = qo2sim(n)
+                endif
+              endif
+            enddo
+
 !      tqo1 = 0.0
 
             tqi1 = qi2(n)
@@ -1149,7 +1262,8 @@ c     *                         year1,month1,day1,hour1)
           if(mod(fhr,deltat_report_flowICs).eq.0)then
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             if (fstflg .eq. 'y') then
-              fln(99)=infln(2)
+              fln(99)=filename(61)
+!              fln(99)=infln(2)
               call write_flowinit_fst(611,fln(99),
      *                       year1,month_now,day_now,hour_now)
             else
@@ -1159,7 +1273,7 @@ c     *                         year1,month1,day1,hour1)
   
             do i=1,Nreaches
 !!              write(58,8001)(lake_elv(l,fhr),lake_stor(l,fhr),
-              write(500+i,'(f8.2)') lake_elv(i,fhr)
+              write(500+i,'(f9.4)') lake_elv(i,fhr)
             end do
 
           endif !if(mod(fhr,deltat_report_flowICs).eq.0)
@@ -1187,7 +1301,8 @@ c     *                         year1,month1,day1,hour1)
         if(mod(real(fhr-1),real(deltat_report_flowICs)) .ne. 0) then
 !         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           if (fstflg .eq. 'y') then
-            fln(99)=infln(2)
+!            fln(99)=infln(2)
+             fln(99)=filename(61)
             call write_flowinit_fst(611,fln(99),
      *                     year_last,month_last,day_last,hour_last)
           else
@@ -1197,7 +1312,7 @@ c     *                         year1,month1,day1,hour1)
  
           do i=1,Nreaches
             if (reach_lvl(i) .le. 1.0) lake_elv(i,fhr-1) = 0.0
-            write(500+i,'(f8.2)') lake_elv(i,fhr-1)
+            write(500+i,'(f9.4)') lake_elv(i,fhr-1)
           end do
 
         endif !if(mod(fhr-1,real(deltat_report_flowICs)) .ne. 0)

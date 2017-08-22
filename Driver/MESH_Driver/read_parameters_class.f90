@@ -1,18 +1,16 @@
 subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
-    !> For: 'ShedGridParams' type, run option flags.
-    use sa_mesh_shared_variables
-
-    !> Required for parameters ('ROW' indexing).
-    use sa_mesh_shared_output_variables
-
     !> Required for file object and CLASS.ini file index.
     use model_files_variables
+
+    !> For the 'ShedGridParams' type, 'ro%' run options type, and SA_MESH parameters.
+    use sa_mesh_shared_variables
 
     !> Required for 'NRSOILAYEREADFLAG'.
     use FLAGS
 
     use RUNCLASS36_constants
+    use RUNCLASS36_variables
 
     !> Used for starting date of climate forcing data.
     use climate_forcing
@@ -47,7 +45,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
             'Ensure that the file exists and restart the program.'
         stop
     else if (ro%VERBOSEMODE > 0) then
-        write(6, '(a)', advance = 'no') 'READING: MESH_parameters_CLASS.ini '
+        write(6, "(1x, 'READING: ', (a))", advance = 'no') trim(adjustl(fls%fl(mfk%f50)%fn))
     end if
 
     NA = shd%NA
@@ -60,7 +58,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     read(iun, 1000) TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6
     read(iun, 1000) NAME1, NAME2, NAME3, NAME4, NAME5, NAME6
     read(iun, 1000) PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
-    read(iun, *) DEGLAT, DEGLON, pmrow%sfp%zrfm, pmrow%sfp%zrfh, pmrow%sfp%zbld, pmrow%tp%gc, shd%wc%ILG, i, m
+    read(iun, *) DEGLAT, DEGLON, pm_gru%sfp%zrfm(1), pm_gru%sfp%zrfh(1), pm_gru%sfp%zbld(1), pm_gru%tp%gc(1), shd%wc%ILG, i, m
 
     !> Check that the number of GRUs matches the drainage database value.
     if (NTYPE /= m .and. NTYPE > 0) then
@@ -94,22 +92,22 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
     !> Populate temporary variables from file.
     do m = 1, NTYPE
-        read(iun, *) (pmrow%cp%fcan(m, j), j = 1, ICP1), (pmrow%cp%lamx(m, j), j = 1, ICAN)
-        read(iun, *) (pmrow%cp%lnz0(m, j), j = 1, ICP1), (pmrow%cp%lamn(m, j), j = 1, ICAN)
-        read(iun, *) (pmrow%cp%alvc(m, j), j = 1, ICP1), (pmrow%cp%cmas(m, j), j = 1, ICAN)
-        read(iun, *) (pmrow%cp%alic(m, j), j = 1, ICP1), (pmrow%cp%root(m, j), j = 1, ICAN)
-        read(iun, *) (pmrow%cp%rsmn(m, j), j = 1, ICAN), (pmrow%cp%qa50(m, j), j = 1, ICAN)
-        read(iun, *) (pmrow%cp%vpda(m, j), j = 1, ICAN), (pmrow%cp%vpdb(m, j), j = 1, ICAN)
-        read(iun, *) (pmrow%cp%psga(m, j), j = 1, ICAN), (pmrow%cp%psgb(m, j), j = 1, ICAN)
-        read(iun, *) pmrow%hp%drn(m), pmrow%slp%sdep(m), pmrow%tp%fare(m), pmrow%hp%dd(m)
-        read(iun, *) pmrow%tp%xslp(m), pmrow%hp%grkf(m), pmrow%hp%mann(m), pmrow%hp%ks(m), pmrow%tp%mid(m)
-        read(iun, *) (pmrow%slp%sand(m, j), j = 1, ignd)
-        read(iun, *) (pmrow%slp%clay(m, j), j = 1, ignd)
-        read(iun, *) (pmrow%slp%orgm(m, j), j = 1, ignd)
-        read(iun, *) (stasrow%sl%tbar(m, j), j = 1, ignd), stasrow%cnpy%tcan(m), stasrow%sno%tsno(m), stasrow%sfc%tpnd(m)
-        read(iun, *) (stasrow%sl%thlq(m, j), j = 1, ignd), (stasrow%sl%thic(m, j), j = 1, ignd), stasrow%sfc%zpnd(m)
-        read(iun, *) stasrow%cnpy%rcan(m), stasrow%cnpy%sncan(m), stasrow%sno%sno(m), stasrow%sno%albs(m), stasrow%sno%rhos(m), &
-            stasrow%cnpy%gro(m)
+        read(iun, *) (pm_gru%cp%fcan(m, j), j = 1, ICP1), (pm_gru%cp%lamx(m, j), j = 1, ICAN)
+        read(iun, *) (pm_gru%cp%lnz0(m, j), j = 1, ICP1), (pm_gru%cp%lamn(m, j), j = 1, ICAN)
+        read(iun, *) (pm_gru%cp%alvc(m, j), j = 1, ICP1), (pm_gru%cp%cmas(m, j), j = 1, ICAN)
+        read(iun, *) (pm_gru%cp%alic(m, j), j = 1, ICP1), (pm_gru%cp%root(m, j), j = 1, ICAN)
+        read(iun, *) (pm_gru%cp%rsmn(m, j), j = 1, ICAN), (pm_gru%cp%qa50(m, j), j = 1, ICAN)
+        read(iun, *) (pm_gru%cp%vpda(m, j), j = 1, ICAN), (pm_gru%cp%vpdb(m, j), j = 1, ICAN)
+        read(iun, *) (pm_gru%cp%psga(m, j), j = 1, ICAN), (pm_gru%cp%psgb(m, j), j = 1, ICAN)
+        read(iun, *) pm_gru%hp%drn(m), pm_gru%slp%sdep(m), pm_gru%tp%fare(m), pm_gru%hp%dd(m)
+        read(iun, *) pm_gru%tp%xslp(m), pm_gru%hp%grkf(m), pm_gru%hp%mann(m), pm_gru%hp%ks(m), pm_gru%tp%mid(m)
+        read(iun, *) (pm_gru%slp%sand(m, j), j = 1, ignd)
+        read(iun, *) (pm_gru%slp%clay(m, j), j = 1, ignd)
+        read(iun, *) (pm_gru%slp%orgm(m, j), j = 1, ignd)
+        read(iun, *) (stas_gru%sl%tbar(m, j), j = 1, ignd), stas_gru%cnpy%tcan(m), stas_gru%sno%tsno(m), stas_gru%sfc%tpnd(m)
+        read(iun, *) (stas_gru%sl%thlq(m, j), j = 1, ignd), (stas_gru%sl%thic(m, j), j = 1, ignd), stas_gru%sfc%zpnd(m)
+        read(iun, *) stas_gru%cnpy%rcan(m), stas_gru%cnpy%sncan(m), stas_gru%sno%sno(m), stas_gru%sno%albs(m), &
+            stas_gru%sno%rhos(m), stas_gru%cnpy%gro(m)
     end do
 
 !todo: Make sure these variables are documented properly (for CLASS output, not currently used)
@@ -137,22 +135,28 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
             !> Distribute parameters and initial states to lower layers whose values might not be defined.
             if (ignd > 0) then
-                stasrow%sl%tbar(m, j) = stasrow%sl%tbar(m, ignd) !note333 see read_s_temperature_txt.f for more TBAR information
-                stasrow%sl%thlq(m, j) = stasrow%sl%thlq(m, ignd) !note444 see read_s_moisture_txt.f for more THLQ information
-                stasrow%sl%thic(m, j) = stasrow%sl%thic(m, ignd)
-                pmrow%slp%sand(m, j) = pmrow%slp%sand(m, ignd)
-                pmrow%slp%clay(m, j) = pmrow%slp%clay(m, ignd)
-                pmrow%slp%orgm(m, j) = pmrow%slp%orgm(m, ignd)
+                stas_gru%sl%tbar(m, j) = stas_gru%sl%tbar(m, ignd) !note333 see read_s_temperature_txt.f for more TBAR information
+                stas_gru%sl%thlq(m, j) = stas_gru%sl%thlq(m, ignd) !note444 see read_s_moisture_txt.f for more THLQ information
+                stas_gru%sl%thic(m, j) = stas_gru%sl%thic(m, ignd)
+                pm_gru%slp%sand(m, j) = pm_gru%slp%sand(m, ignd)
+                pm_gru%slp%clay(m, j) = pm_gru%slp%clay(m, ignd)
+                pm_gru%slp%orgm(m, j) = pm_gru%slp%orgm(m, ignd)
             end if !if (NRSOILAYEREADFLAG == 0) then
 
             !> Impermeable soils.
-            if (pmrow%slp%sdep(m) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pmrow%slp%sand(m, j) > -2.5) then
-                pmrow%slp%sand(m, j) = -3.0
-                pmrow%slp%clay(m, j) = -3.0
-                pmrow%slp%orgm(m, j) = -3.0
+            if (pm_gru%slp%sdep(m) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pm_gru%slp%sand(m, j) > -2.5) then
+                pm_gru%slp%sand(m, j) = -3.0
+                pm_gru%slp%clay(m, j) = -3.0
+                pm_gru%slp%orgm(m, j) = -3.0
             end if
         end do
     end do
+
+    !> Assign DEGLAT and DEGLON if running a point run where no shed file exists.
+    if (SHDFILEFLAG == 2) then
+        shd%ylat = DEGLAT
+        shd%xlng = DEGLON
+    end if
 
     return
 
