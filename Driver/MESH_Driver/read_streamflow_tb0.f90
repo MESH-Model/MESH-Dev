@@ -69,12 +69,10 @@ subroutine read_streamflow_tb0(shd, iun, fname)
     return
 
     !> File errors.
-997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(adjustl(fname))
-998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(adjustl(fname))
-999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(adjustl(fname))
+997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(fname)
+998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(fname)
+999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(fname)
 
     stop
-
-1000    format(1x, 'READING: ', (a))
 
 end subroutine

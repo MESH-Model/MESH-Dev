@@ -36,7 +36,7 @@ subroutine read_reservoir_txt(shd, iun, fname, nb)
     !*  -   cfn(n): Type of release curve function.
     !*  -   b(n, :): Release curve coefficients.
 
-    if (ro%VERBOSEMODE > 0) print 1000, trim(adjustl(fname))
+    if (ro%VERBOSEMODE > 0) print 1000, trim(fname)
     open(iun, file = fname, status = 'old', action = 'read', err = 997)
     read(iun, *, err = 999) fms%rsvr%n, NR, fms%rsvr%qorls%dts
     NR = fms%rsvr%n
@@ -59,9 +59,9 @@ subroutine read_reservoir_txt(shd, iun, fname, nb)
     return
 
     !> File errors.
-997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(adjustl(fname))
-998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(adjustl(fname))
-999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(adjustl(fname))
+997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(fname)
+998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(fname)
+999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(fname)
 
     stop
 

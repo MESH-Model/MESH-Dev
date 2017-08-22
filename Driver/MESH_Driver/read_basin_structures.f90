@@ -129,9 +129,9 @@ subroutine read_basin_structures(shd)
     end if
 
     !> Print a summary of locations to file.
-    if (ipid == 0 .and. ro%VERBOSEMODE > 0) then
-        print 9997, 'streamflow gauges', fms%stmg%n
-        if (fms%stmg%n > 0 .and. ro%DIAGNOSEMODE > 0) then
+    if (ipid == 0 .and. fms%stmg%n > 0) then
+        if (ro%VERBOSEMODE > 0) print 9997, 'streamflow gauges', fms%stmg%n
+        if (ro%DIAGNOSEMODE > 0) then
 !todo: Change to write to summary file.
             print 1020, 'GAUGE', 'IY', 'JX', 'DA (km/km2)', 'RANK'
             do l = 1, fms%stmg%n
@@ -252,9 +252,9 @@ subroutine read_basin_structures(shd)
     end if
 
     !> Print a summary of locations to file.
-    if (ipid == 0 .and. ro%VERBOSEMODE > 0) then
-        print 9997, 'reservoir outlets', fms%rsvr%n
-        if (fms%rsvr%n > 0 .and. ro%DIAGNOSEMODE > 0) then
+    if (ipid == 0 .and. fms%rsvr%n > 0) then
+        if (ro%VERBOSEMODE > 0) print 9997, 'reservoir outlets', fms%rsvr%n
+        if (ro%DIAGNOSEMODE > 0) then
 !todo: Change to write to summary file.
             print 1020, 'OUTLET', 'IY', 'JX', 'RANK'
             do l = 1, fms%rsvr%n
@@ -333,9 +333,9 @@ subroutine read_basin_structures(shd)
     end if
 
     !> Print a summary of locations to file.
-    if (ipid == 0 .and. ro%VERBOSEMODE > 0) then
-        print 9997, 'abstraction points', fms%absp%n
-        if (fms%absp%n > 0 .and. ro%DIAGNOSEMODE > 0) then
+    if (ipid == 0 .and. fms%absp%n > 0) then
+        if (ro%VERBOSEMODE > 0) print 9997, 'abstraction points', fms%absp%n
+        if (ro%DIAGNOSEMODE > 0) then
 !todo: Change to write to summary file.
             print 1020, 'ABST. POINT', 'IY', 'JX', 'RANK'
             do l = 1, fms%absp%n

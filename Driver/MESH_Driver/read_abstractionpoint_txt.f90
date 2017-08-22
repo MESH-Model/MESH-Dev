@@ -29,7 +29,7 @@ subroutine read_abstractionpoint_txt(shd, iun, fname)
     verbose = (ro%VERBOSEMODE > 0)
 
     !> Open the file and read the number of locations to read from file.
-    if (verbose) print 1000, trim(adjustl(fname))
+    if (verbose) print 1000, trim(fname)
     open(iun, file = fname, status = 'old', action = 'read', err = 997)
     read(iun, *, err = 999) fms%absp%n
 
@@ -50,9 +50,9 @@ subroutine read_abstractionpoint_txt(shd, iun, fname)
     return
 
     !> File errors.
-997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(adjustl(fname))
-998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(adjustl(fname))
-999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(adjustl(fname))
+997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(fname)
+998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(fname)
+999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(fname)
 
     stop
 

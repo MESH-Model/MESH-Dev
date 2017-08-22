@@ -3,8 +3,10 @@ module sa_mesh_run_within_tile
     implicit none
 
 !>>>irrigation
+    !*  MINSTG: Minimum storage to leave in the channel, not accessible for irrigation. [m3].
     !*  MINFSTG: Fraction of storage to leave in the channel, not accessible for irrigation. [--].
     !*  MINTHFC: Fraction of field capacity used to determine irrigation demand. [--].
+    real, save :: MINSTG = 0.0
     real, save :: MINFSTG = 0.05
     real, save :: MINTHFC = 0.5
     !*  IRDMND: Calculated irrigation demand. [kg m-2 s-1].
@@ -71,7 +73,7 @@ module sa_mesh_run_within_tile
 
 !>>>irrigation
         integer n, l, k, j
-        real ir, lqsum, check
+        real smin, fsmin, ir, lqsum, check
         real, dimension(:), allocatable :: SUMIRDMND, SUMIRAVAI, SUMOLDPRE, SUMNEWPRE
         integer iun
         character(len = 3) ffmti
@@ -119,10 +121,14 @@ module sa_mesh_run_within_tile
                     IRAVAI(k) = max(IRDMND(k) - cm%dat(ck%RT)%GAT(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
                     if (pm%tp%iabsp(k) > 0) then
                         n = fms%absp%meta%rnk(pm%tp%iabsp(k)) !RANK of channel to pull abstraction
+                        fsmin = fms%absp%fsmin(pm%tp%iabsp(k)) ! if read from tb0 file
+                        smin = fms%absp%smin(pm%tp%iabsp(k)) ! if read from tb0 file
                     else
                         n = shd%lc%ILMOS(k) ! pull from own cell if no abstraction point defined
+                        fsmin = MINFSTG
+                        smin = MINSTG
                     end if
-                    IRAVAI(k) = min(stas_grid%chnl%s(n)*(1.0 - MINFSTG)/shd%AREA(n)*1000.0/ic%dts, IRAVAI(k)) ! adjust to the maximum water available from channel storage (m3 to mm)
+                    IRAVAI(k) = min(max(stas_grid%chnl%s(n) - smin, 0.0)*(1.0 - fsmin)/shd%AREA(n)*1000.0/ic%dts, IRAVAI(k)) ! adjust to the maximum water available from channel storage (m3 to mm)
                     OLDPRE(k) = cm%dat(ck%RT)%GAT(k)
                     cm%dat(ck%RT)%GAT(k) = cm%dat(ck%RT)%GAT(k) + IRAVAI(k) ! add irrigation water into precipitation
                     NEWPRE(k) = cm%dat(ck%RT)%GAT(k)

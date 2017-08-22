@@ -43,13 +43,13 @@ module ensim_io
         logical, intent(in) :: verbose
         integer, intent(out) :: ierr
 
-        if (verbose) print 1000, fname
+        if (verbose) print 1000, trim(fname)
         open(iun, file = adjustl(fname), status = 'old', iostat = ierr)
         if (ierr /= 0) goto 999
 
         return
 
-999     if (verbose) print 1110, adjustl(fname)
+999     if (verbose) print 1110, trim(fname)
         stop
 
 1000    format(1x, 'READING: ', (a))
@@ -222,7 +222,7 @@ module ensim_io
         end do
         return
 
-999     if (verbose) print 1110, adjustl(cname), adjustl(fname)
+999     if (verbose) print 1110, trim(cname), trim(fname)
         return
 
 1110    format(3x, 'WARNING: Mismatch in the number of values expected for ', (a), ' in: ', (a), &
@@ -276,10 +276,10 @@ module ensim_io
         return
 
 998     ffield = 0.0
-        if (verbose) print 1130, adjustl(cname), adjustl(fname)
+        if (verbose) print 1130, trim(cname), trim(fname)
         return
 
-999     if (verbose) print 1110, adjustl(cname), adjustl(fname)
+999     if (verbose) print 1110, trim(cname), trim(fname)
         return
 
 1110    format(3x, 'WARNING: Mismatch in the number of values expected for ', (a), ' in: ', (a), &
@@ -419,7 +419,7 @@ module ensim_io
 
         return
 
-999     if (verbose) print 1110, adjustl(fname)
+999     if (verbose) print 1110, trim(fname)
         stop
 
 1110    format(/1x, 'ERROR: Reached end of file before closing the header in ', (a), /)
@@ -501,7 +501,7 @@ module ensim_io
 
         return
 
-999     if (verbose) print 1120, iattr, adjustl(fname)
+999     if (verbose) print 1120, iattr, trim(fname)
         stop
 
 1110    format(3x, 999(g16.9))
@@ -558,7 +558,7 @@ module ensim_io
                     else
                         ierr = 1
                     end if
-                    if (ierr /= 0 .and. verbose) print 1110, trim(adjustl(fname)), year, month, day
+                    if (ierr /= 0 .and. verbose) print 1110, trim(fname), year, month, day
 
                     !> Scan for a time signature (e.g., 24:00:00.000; 24:00:00; 24:00).
                     !> In the case of multiple keywords, assume a date preceeds the time.
@@ -576,7 +576,7 @@ module ensim_io
                     else
                         ierr = 1
                     end if
-                    if (ierr /= 0 .and. verbose) print 1120, trim(adjustl(fname)), hour, mins
+                    if (ierr /= 0 .and. verbose) print 1120, trim(fname), hour, mins
 
             end select
         end do
