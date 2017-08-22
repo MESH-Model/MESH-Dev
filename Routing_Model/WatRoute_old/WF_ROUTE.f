@@ -459,7 +459,7 @@ C Are we at the outlet
 C yes we are at the outlet
 C Call external code to get discharge and storage
                   wf_qi1(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
-                  call RUNLISFLOOD_simulateReservoirs(
+                  call staged_reservoir_release(
      +                    IYEAR,IDAY,i,l,wf_qi1(i),div*2.0, !input
      +                    wf_qo2(i),wf_store2(i))           !output
                   wf_resstore(l)=0.0
