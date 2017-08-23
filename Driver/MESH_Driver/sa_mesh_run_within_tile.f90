@@ -39,7 +39,9 @@ module sa_mesh_run_within_tile
         if (.not. ro%RUNTILE) return
 
 !>>>irrigation
-        allocate(IRDMND(shd%lc%NML), IRAVAI(shd%lc%NML), OLDPRE(shd%lc%NML), NEWPRE(shd%lc%NML))
+        if (any(pm%tp%mid == 9)) then
+            allocate(IRDMND(shd%lc%NML), IRAVAI(shd%lc%NML), OLDPRE(shd%lc%NML), NEWPRE(shd%lc%NML))
+        end if
 !<<<irrigation
 
         !> Call processes.
@@ -96,7 +98,7 @@ module sa_mesh_run_within_tile
         run_within_tile = ''
 
 !>>>irrigation (using soil moisture)
-        if (ipid /= 0 .or. izero == 0) then
+        if (ipid /= 0 .or. izero == 0 .and. any(pm%tp%mid == 9)) then
             IRAVAI = 0.0
             OLDPRE = 0.0
             NEWPRE = 0.0
@@ -149,7 +151,7 @@ module sa_mesh_run_within_tile
         call run_within_tile_mpi(shd, cm)
 
 !>>>irrigation
-        if (ipid == 0) then
+        if (ipid == 0 .and. any(pm%tp%mid == 9)) then
             if (.not. allocated(SUMIRDMND)) allocate(SUMIRDMND(fms%absp%n))
             if (.not. allocated(SUMIRAVAI)) allocate(SUMIRAVAI(fms%absp%n))
             if (.not. allocated(SUMOLDPRE)) allocate(SUMOLDPRE(fms%absp%n))
@@ -243,7 +245,9 @@ module sa_mesh_run_within_tile
         end if
 
 !>>>irrigation
-        invars = invars + 5
+        if (any(pm%tp%mid == 9)) then
+            invars = invars + 5
+        end if
 !<<<irrigation
 
         if (inp > 1 .and. ipid /= 0) then
@@ -302,11 +306,13 @@ module sa_mesh_run_within_tile
             end if
 
 !>>>irrigation
-            call mpi_isend(IRDMND(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(IRAVAI(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(OLDPRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(cm%dat(ck%RT)%GAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(NEWPRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            if (any(pm%tp%mid == 9)) then
+                call mpi_isend(IRDMND(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(IRAVAI(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(OLDPRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cm%dat(ck%RT)%GAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(NEWPRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            end if
 !<<<irrigation
 
             lstat = .false.
@@ -386,11 +392,14 @@ module sa_mesh_run_within_tile
                 end if
 
 !>>>irrigation
-                call mpi_irecv(IRDMND(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(IRAVAI(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(OLDPRE(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(cm%dat(ck%RT)%GAT(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(NEWPRE(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                if (any(pm%tp%mid == 9)) then
+                    call mpi_irecv(IRDMND(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(IRAVAI(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(OLDPRE(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cm%dat(ck%RT)%GAT(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    i = i + 1
+                    call mpi_irecv(NEWPRE(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                end if
 !<<<irrigation
 
                 lstat = .false.
