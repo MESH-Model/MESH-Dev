@@ -41,6 +41,7 @@ VPATH=	$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/Driver/MESH_Driver: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/sa_mesh_process: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/src: \
+		$(DIR_REPO)/LSS_Model/irrigation: \
 		$(DIR_REPO)/Routing_Model/WatRoute_old: \
 		$(DIR_REPO)/Routing_Model/RPN_watroute/sa_mesh_process: \
 		$(DIR_REPO)/Routing_Model/RPN_watroute/code: \
@@ -98,7 +99,8 @@ OBJECTS+=	SIMSTATS_config.o \
 #cropland_irrigation
 OBJECTS+=	cropland_irrigation_variables.o \
 			cropland_irrigation_init.o cropland_irrigation_within_tile.o cropland_irrigation_between_grid.o \
-			calc_ET0.o
+			calc_ET0.o \
+			irrigation_module.o
 
 #PBSM (blowing snow)
 OBJECTS+=	PBSMrates.o PBSMrun.o ProbabilityThreshold.o \

@@ -19,6 +19,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
 
     use RUNCLASS36_variables
     use RUNSVS113_variables
+    use irrigation_module
     use baseflow_module
     use rte_module
     use PBSM_module
@@ -154,6 +155,16 @@ subroutine read_parameters_r2c(shd, iun, fname)
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
                     pm_grid%tp%iwf = ffield
                 end if
+
+            !> Irrigation module.
+            case ('irflg')
+                irrm%pm_grid%irflg = ffield
+            case ('irt1')
+                irrm%pm_grid%t1 = ffield
+            case ('irt2')
+                irrm%pm_grid%t2 = ffield
+            case ('irthlmin')
+                irrm%pm_grid%thlmin = ffield
 
             !> Abstraction point location.
             case ('iabsp')

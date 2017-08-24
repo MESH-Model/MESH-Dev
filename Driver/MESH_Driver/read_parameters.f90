@@ -15,6 +15,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
     use RUNCLASS36_variables
     use RUNSVS113_variables
+    use irrigation_module
     use WF_ROUTE_config
     use rte_module
     use baseflow_module
@@ -63,6 +64,11 @@ subroutine read_parameters(fls, shd, cm, ierr)
             hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE), hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE), hp%K2ROW(NA, NTYPE), stat = ierr)
         hp%CMAXROW = 0.0; hp%CMINROW = 0.0; hp%BROW = 0.0; hp%K1ROW = 0.0; hp%K2ROW = 0.0
     end if
+
+    !> Irrigation module.
+    call irrigation_parameters_allocate(irrm%pm, NML, ierr)
+    call irrigation_parameters_allocate(irrm%pm_grid, NA, ierr)
+    call irrigation_parameters_allocate(irrm%pm_gru, NTYPE, ierr)
 
     !> WF_ROUTE (Watflood, 1988).
     if (WF_RTE_flgs%PROCESS_ACTIVE) then
@@ -245,6 +251,12 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 pm%snp%zpls(k) = pm_gru%snp%zpls(i)
             end if
 
+            !> Irrigation module.
+            if (irrm%pm_gru%irflg(i) /= 0) irrm%pm%irflg(k) = irrm%pm_gru%irflg(i)
+            if (irrm%pm_gru%t1(i) /= 0) irrm%pm%t1(k) = irrm%pm_gru%t1(i)
+            if (irrm%pm_gru%t2(i) /= 0) irrm%pm%t2(k) = irrm%pm_gru%t2(i)
+            if (irrm%pm_gru%thlmin(i) /= 0) irrm%pm%thlmin(k) = irrm%pm_gru%thlmin(i)
+
             !> BASEFLOWFLAG 1 (Luo, 2012).
             if (bflm%BASEFLOWFLAG == 1) then
                 bflm%pm%dgw(k) = bflm%pm_gru%dgw(i)
@@ -271,7 +283,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
             end if
 
             !> Abstraction point location.
-            if (any(pm_gru%tp%iabsp /= 0)) pm%tp%iabsp(k) = pm_gru%tp%iabsp(i)
+            if (pm_gru%tp%iabsp(i) /= 0) pm%tp%iabsp(k) = pm_gru%tp%iabsp(i)
 
             !> PBSM (blowing snow).
             if (pbsm%PROCESS_ACTIVE) then
@@ -361,6 +373,12 @@ subroutine read_parameters(fls, shd, cm, ierr)
             if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
                 if (pm_grid%tp%iwf(i) /= -1) pm%tp%iwf(k) = pm_grid%tp%iwf(i)
             end if
+
+            !> Irrigation module.
+            if (irrm%pm_grid%irflg(i) /= 0) irrm%pm%irflg(k) = irrm%pm_grid%irflg(i)
+            if (irrm%pm_grid%t1(i) /= 0) irrm%pm%t1(k) = irrm%pm_grid%t1(i)
+            if (irrm%pm_grid%t2(i) /= 0) irrm%pm%t2(k) = irrm%pm_grid%t2(i)
+            if (irrm%pm_grid%thlmin(i) /= 0) irrm%pm%thlmin(k) = irrm%pm_grid%thlmin(i)
 
             !> Abstraction point location.
             if (pm_grid%tp%iabsp(i) /= 0) pm%tp%iabsp(k) = pm_grid%tp%iabsp(i)
