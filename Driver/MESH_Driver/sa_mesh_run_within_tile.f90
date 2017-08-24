@@ -100,10 +100,10 @@ module sa_mesh_run_within_tile
         run_within_tile = ''
 
 !>>>irrigation (using soil moisture)
-        if (ipid /= 0 .or. izero == 0 .and. irrm%PROCESS_ACTIVE) then
-            IRAVAI = 0.0
-            OLDPRE = 0.0
-            NEWPRE = 0.0
+        if ((ipid /= 0 .or. izero == 0) .and. irrm%PROCESS_ACTIVE) then
+            IRAVAI(il1:il2) = 0.0
+            OLDPRE(il1:il2) = 0.0
+            NEWPRE(il1:il2) = 0.0
             do k = il1, il2 !GRU -> loop for timestep
                 IRDMND(k) = 0.0   !initialization for each time step
                 if (irrm%pm%irflg(k) == 1 .and. sum(stas%sl%thic(k, :)) == 0.0) then
@@ -134,13 +134,15 @@ module sa_mesh_run_within_tile
                         fsmin = MINFSTG
                         smin = MINSTG
                     end if
-                    IRAVAI(k) = min(max(stas_grid%chnl%s(n) - smin, 0.0)*(1.0 - fsmin)/shd%AREA(n)*1000.0/ic%dts, IRAVAI(k)) ! adjust to the maximum water available from channel storage (m3 to mm)
+                    if (ro%RUNGRID) then
+                        IRAVAI(k) = min(max(stas_grid%chnl%s(n) - smin, 0.0)*(1.0 - fsmin)/shd%AREA(n)*1000.0/ic%dts, IRAVAI(k)) ! adjust to the maximum water available from channel storage (m3 to mm)
+                        stas_grid%chnl%s(n) = stas_grid%chnl%s(n) - &
+                            (IRAVAI(k)*ic%dts/1000.0)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%AREA(n)
+                    end if
                     OLDPRE(k) = cm%dat(ck%RT)%GAT(k)
                     cm%dat(ck%RT)%GAT(k) = cm%dat(ck%RT)%GAT(k) + IRAVAI(k) ! add irrigation water into precipitation
                     NEWPRE(k) = cm%dat(ck%RT)%GAT(k)
                     irrm%va%dmnd(k) = irrm%va%dmnd(k) - IRAVAI(k)
-                    stas_grid%chnl%s(n) = stas_grid%chnl%s(n) - &
-                        (IRAVAI(k)*ic%dts/1000.0)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%AREA(n)
                 end if ! check Crop GRU tile
             end do ! GRU tile
         end if

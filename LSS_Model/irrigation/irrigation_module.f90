@@ -57,8 +57,6 @@ module irrigation_module
 
         integer ierr
 
-        irrm%PROCESS_ACTIVE = any(irrm%pm%irflg == 1)
-
         !> Return if the irrigation module is not active.
         if (.not. irrm%PROCESS_ACTIVE) then
 

@@ -204,6 +204,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
         pm%tp%gc(il1:il2) = pm_gru%tp%gc(1)
     end if
 
+    !> Irrigation module.
+    irrm%PROCESS_ACTIVE = (any(irrm%pm_grid%irflg /= 1) .or. any(irrm%pm_gru%irflg /= 1))
+
     !> Parameters.
 
     !> From GRU.
