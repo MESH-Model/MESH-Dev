@@ -15,10 +15,15 @@ module sa_mesh_run_within_tile
         use RUNSVS113_config
         use baseflow_module
         use cropland_irrigation_init
+        use RUNLAKE_config
+        use RUNLAKE_module
+        use RUNLAKE_variables
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(clim_info) :: cm
+
+        integer m, i
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
@@ -28,6 +33,26 @@ module sa_mesh_run_within_tile
         call RUNSVS113_init(shd, fls, cm)
         call bflm_init(fls, shd, cm)
         call runci_init(shd, fls)
+
+        call RUNLAKE_init
+
+        call gatherLakeTileParam(shd%NA)
+        shd%wc%ILG = NMW
+        allocate(shd%wc%ILMOS(NMW), shd%wc%JLMOS(NMW))
+
+        !> Count the number of tiles that are land 'lc' or water 'wc' and
+        !> store the respective ID's of the grid and GRU in the 'ILMOS' and
+        !> 'JLMOS' variables.
+        NMW = 0
+        do i = 1, shd%NA
+          do m = 1, NTYPEL
+            if (lakeTileParam(m)%FARE(i) > 0.0) then
+                            NMW = NMW + 1
+                            shd%wc%ILMOS(NMW) = i
+                            shd%wc%JLMOS(NMW) = m
+            end if
+          end do
+        end do
 
     end subroutine
 
@@ -45,6 +70,7 @@ module sa_mesh_run_within_tile
         use RUNSVS113_module
         use baseflow_module
         use cropland_irrigation_within_tile
+        use RUNLAKE_module ! included by LAM, 12-JUL-2017
 
         character(100) run_within_tile
 
@@ -72,6 +98,7 @@ module sa_mesh_run_within_tile
         call RUNSVS113(shd, fls, cm)
         call bflm_within_tile(fls, shd, cm)
         call runci_within_tile(shd, fls, cm)
+        call RUNLAKE_within_tile(shd, cm)
 
         !> MPI exchange.
         call run_within_tile_mpi(shd)

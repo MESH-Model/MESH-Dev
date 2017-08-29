@@ -8,6 +8,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     use RUNCLASS36_save_output
     use RUNSVS113_variables
+    use RUNLAKE_module ! included by LAM, 12-JUL-2017
 
     implicit none
 
@@ -265,14 +266,15 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> Determine the number of active tile elements.
 !todo: fix this.
     NTYPE = shd%lc%NTYPE
-    allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), &
-             shd%wc%ILMOS(shd%wc%ILG), shd%wc%JLMOS(shd%wc%ILG))
+!    allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), &
+!             shd%wc%ILMOS(shd%wc%ILG), shd%wc%JLMOS(shd%wc%ILG))
+    allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG))
 
     !> Count the number of tiles that are land 'lc' or water 'wc' and
     !> store the respective ID's of the grid and GRU in the 'ILMOS' and
     !> 'JLMOS' variables.
     shd%lc%NML = 0
-    shd%wc%NML = 0
+!    shd%wc%NML = 0
     do i = 1, NA
         if (shd%FRAC(i) > 0.0) then
             do m = 1, NTYPE
@@ -366,6 +368,8 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     !> Read parameters from file.
     call read_parameters(fls, shd, cm, ierr)
+
+    call READ_LAKE_PROPORTION(shd) ! included by LAM, 12-JUL-2017
 
     !> Read variable states from file.
     call read_initial_states(fls, shd, ierr)

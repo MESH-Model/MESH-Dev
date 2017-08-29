@@ -20,6 +20,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     use baseflow_module
     use cropland_irrigation_variables
     use PBSM_module
+    use RUNLAKE_module ! included by LAM, 12-JUL-2017
 
     implicit none
 
@@ -179,6 +180,8 @@ subroutine read_parameters(fls, shd, cm, ierr)
     if (btest(INPUTPARAMSFORMFLAG, 2)) then
         call read_parameters_csv(shd, 100, 'MESH_parameters.csv')
     end if
+
+    call READ_PARAMETERS_LAKE ! included by LAM, 12-JUL-2017
 
     !>
     !> DISTRIBUTE.

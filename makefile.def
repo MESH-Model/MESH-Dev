@@ -46,6 +46,8 @@ VPATH=	$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/Routing_Model/RPN_watroute/code: \
 		$(DIR_REPO)/Routing_Model/baseflow_module: \
 		$(DIR_REPO)/Blowing_Snow: \
+		$(DIR_REPO)/Routing_Model/1DLAKE/v2/sa_mesh_process: \
+		$(DIR_REPO)/Routing_Model/1DLAKE/v2/src: \
 		$(DIR_REPO)/Tile_Connector/Basic: \
 		$(DIR_REPO)/LSS_Model/SVS/r531/sa_mesh_process: \
 		$(PHY): $(CHANGES2PHY): $(SVS): $(RMNLIB): $(RUNSVS): $(RUNSVS)/strings: 
@@ -122,6 +124,12 @@ OBJECTS+=	RUNCLASS36_config.o APREP.o CANADD.o CANALB.o CLASSBG.o CANVAP.o \
 			TSOLVC.o TSOLVE.o TSPOST.o TSPREP.o TWCALC.o WATDRN.o WATROF.o \
 			WEND.o WFILL.o WFLOW.o WPREP.o XIT.o \
 			SCREENRH.o PDMROF.o LATFLOW.o RUNCLASS36_module.o
+
+#1DLAKE
+OBJECTS+=	RUNLAKE_constants.o RUNLAKE_variables.o RUNLAKE_config.o \
+			DRCOEFL.o EQNST.o FREECONV.o LKTRANS.o MIXLYR.o \
+			TLSPOST.o TLSPREP.o TSOLVL.o \
+			CLASSL.o RUNLAKE_module.o
 
 # SVS
 OBJECTS+=	datec.o moduledate.o

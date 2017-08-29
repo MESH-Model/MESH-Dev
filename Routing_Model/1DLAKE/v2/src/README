@@ -1,0 +1,129 @@
+call CLASSL(HLAKGAT, LLAKGAT, BLAKGAT, NLAKGAT, TLAKGAT, &
+			T0LAK, HDPTH, LKICEH, SNICEH, ROFICEH, &
+			SNOLGAT,RHOSLGAT,TSNOLGAT,ALBSLGAT,WSNOLGAT, &
+			CDHGAT,CDMGAT,QSENLGAT,TFXLGAT,QEVPLGAT,QFSLGAT,QFXLGAT, &
+			PETLGAT, EFLGAT, GTLGAT, QGLGAT, DRLGAT, &
+			SFTLGAT,SFULGAT,SFVLGAT,SFQLGAT,SFHLGAT,QLWOLGAT,ALVLGAT,ALILGAT, &
+			FSGLGAT, FLGLGAT, HFSLGAT, HEVLGAT, HMFLGAT, HTCLGAT, &
+			FSGSLGAT, FLGSLGAT, HFSSLGAT, HEVSLGAT, HMFNLGAT, HTCSLGAT, &
+			PCPLGAT,PCPNLGAT,QFLGAT,QFNLGAT,ROFNLGAT,FICEGAT,FLSGAT,G0SLGAT, &
+			EXPW, DTEMP, TKELAK, DELU, GRED, RHOMIX, &
+			FSVHGAT, FSIHGAT, FDLGAT, ULGAT, VLGAT, TAGAT, QAGAT, &
+			RHOAGAT, PADRLGAT, PRESGAT, CSZGAT, ZRFMGAT, ZRFHGAT, &
+			ZDMLGAT,ZDHLGAT,RPCPLGAT,TRPCLGAT,SPCPLGAT,TSPCLGAT,RHSILGAT, &
+			RADJLGAT,ASVLGAT,ASILGAT,FSDBLGAT, FSFBLGAT, FSSBLGAT, REFLGAT, BCSNLGAT, &
+			ILG, JL1, JL2, NLAT, NLAKMAX, ISLFD, IZREF, ITG, &
+			IALS, NBS, ISNOALB, IGL, IRSTRT, N, IYEAR, IDAY, IHOUR, IMIN, TSED )
+
+HLAKGAT -> RUNLAKE_variables DiagVar HLAK inp
+LLAKGAT -> RUNLAKE_variables DiagVar LLAK inp
+BLAKGAT -> RUNLAKE_variables DiagVar BLAK inp
+NLAKGAT -> RUNLAKE_variables DiagVar NLAK inp
+TLAKGAT -> RUNLAKE_variables DiagVar TLAK inp/out
+T0LAK ->  RUNLAKE_variables PronosVar T0 inp/out
+HDPTH ->  RUNLAKE_variables PronosVar HDPTH inp/out
+LKICEH ->  RUNLAKE_variables PronosVar LKICEH inp/out
+SNICEH ->  RUNLAKE_variables PronosVar SNICEH
+ROFICEH ->  RUNLAKE_variables PronosVar ROFICEH
+SNOLGAT ->  RUNLAKE_variables DiagVar SNO
+RHOSLGAT ->  RUNLAKE_variables DiagVar RHOSNO
+TSNOLGAT ->  RUNLAKE_variables DiagVar TSNOW
+ALBSLGAT ->  RUNLAKE_variables DiagVar ALBSNO
+WSNOLGAT ->  RUNLAKE_variables DiagVar WSNOW
+CDHGAT -> RUNLAKE_variables CHECK!!!!!! CDH out
+CDMGAT -> RUNLAKE_variables CHECK!!!!!! CDM out
+QSENLGAT ->  RUNLAKE_variables DiagVar  QSENS out
+TFXLGAT, ->  RUNLAKE_variables DiagVar TFLUX out
+QEVPLGAT, -> RUNLAKE_variables DiagVar QEVAP out
+QFSLGAT, -> RUNLAKE_variables DiagVar EVAP out
+QFXLGAT, -> RUNLAKE_variables DiagVar QFLUX out
+PETLGAT -> RUNLAKE_variables DiagVar EVPPOT out
+EFLGAT -> RUNLAKE_variables DiagVar EVAPB out
+GTLGAT -> RUNLAKE_variables DiagVar GT out
+QGLGAT -> RUNLAKE_variables DiagVar QSURF out
+DRLGAT -> RUNLAKE_variables DiagVar DRAG out
+SFTLGAT, -> RUNLAKE_variables DiagVar ST out
+SFULGAT, ->  RUNLAKE_variables DiagVar SU out
+SFVLGAT, -> RUNLAKE_variables DiagVar SV out
+SFQLGAT, -> RUNLAKE_variables DiagVar SQ out
+SFHLGAT, -> RUNLAKE_variables DiagVar SH out
+QLWOLGAT, -> RUNLAKE_variables DiagVar QLWAVG out
+ALVLGAT, -> RUNLAKE_variables DiagVar ALVS out
+ALILGAT -> RUNLAKE_variables DiagVar ALIR out
+FSGLGAT -> RUNLAKE_variables DiagVar FSGL out
+FLGLGAT -> RUNLAKE_variables DiagVar FLGL out
+HFSLGAT -> RUNLAKE_variables DiagVar HFSL out
+HEVLGAT -> RUNLAKE_variables DiagVar HEVL out
+HMFLGAT -> RUNLAKE_variables DiagVar HMFL out
+HTCLGAT -> RUNLAKE_variables DiagVar HTCL out
+FSGSLGAT -> RUNLAKE_variables DiagVar FSGS out
+FLGSLGAT -> RUNLAKE_variables DiagVar FLGS out
+HFSSLGAT -> RUNLAKE_variables DiagVar HFSS out
+HEVSLGAT -> RUNLAKE_variables DiagVar HEVS out
+HMFNLGAT -> RUNLAKE_variables DiagVar HMFN out
+HTCSLGAT -> RUNLAKE_variables DiagVar HTCS out
+PCPLGAT -> RUNLAKE_variables DiagVar PCPL out
+PCPNLGAT -> RUNLAKE_variables DiagVar PCPN out
+QFLGAT, -> RUNLAKE_variables DiagVar QFL out
+QFNLGAT, -> RUNLAKE_variables DiagVar QFN out
+ROFNLGAT, -> RUNLAKE_variables DiagVar ROFN out
+FICEGAT, -> RUNLAKE_variables DiagVar FICE inter
+FLSGAT, -> RUNLAKE_variables DiagVar FLS inter
+G0SLGAT -> RUNLAKE_variables  DiagVar GZEROSL  inter
+EXPW -> RUNLAKE_variables DiagVar EXPW out
+DTEMP -> RUNLAKE_variables DiagVar DTEMP out
+TKELAK -> RUNLAKE_variables DiagVar TKE out
+DELU, -> RUNLAKE_variables DiagVar DELU out
+GRED, -> RUNLAKE_variables DiagVar GRED out
+RHOMIX, -> RUNLAKE_variables DiagVar RHOMIX out
+
+FSVHGAT, -> RUNLAKE_variables AtInputVar QSWINV inp
+FSIHGAT, -> RUNLAKE_variables AtInputVar QSWINI inp
+FDLGAT, -> RUNLAKE_variables AtInputVar QLWIN inp
+ULGAT, -> RUNLAKE_variables AtInputVar UWIND inp
+VLGAT, -> RUNLAKE_variables AtInputVar  VWIND inp
+TAGAT, -> RUNLAKE_variables AtInputVar TA inp
+QAGAT, -> RUNLAKE_variables AtInputVar QA inp
+RHOAGAT, -> RUNLAKE_variables AtInputVar RHOAIR inp
+PADRLGAT, -> RUNLAKE_variables AtInputVar PADRY inp
+PRESGAT, -> RUNLAKE_variables AtInputVar PRES inp
+CSZGAT, -> RUNLAKE_variables AtInputVar CSZ inp
+ZRFMGAT, -> RUNLAKE_variables AtInputVar ZREFM inp
+ZRFHGAT, -> RUNLAKE_variables AtInputVar ZREFH inp
+
+ZDMLGAT, -> RUNLAKE_variables LakeTileVar ZDIAGM inp
+ZDHLGAT, -> RUNLAKE_variables LakeTileVar ZDIAGH inp
+
+RPCPLGAT, -> RUNLAKE_variables AtInputVar R inp
+TRPCLGAT, -> RUNLAKE_variables AtInputVar TR inp
+SPCPLGAT, -> RUNLAKE_variables AtInputVar S inp
+TSPCLGAT, -> RUNLAKE_variables AtInputVar TS inp
+RHSILGAT, -> RUNLAKE_variables AtInputVar RHOSNI inp
+RADJLGAT, -> RUNLAKE_variables AtInputVar RADJ inp
+
+ASVLGAT, -> RUNLAKE_variables LakeTileVar ASVDAT inp
+ASILGAT, -> RUNLAKE_variables LakeTileVar ASIDAT inp
+FSDBLGAT, -> RUNLAKE_variables DiagVar FSDB inp
+FSFBLGAT, -> RUNLAKE_variables DiagVar FSFB inp
+FSSBLGAT, -> RUNLAKE_variables DiagVar FSSB inp
+REFLGAT, -> RUNLAKE_variables LakeTileVar  REFSN inp
+BCSNLGAT, -> RUNLAKE_variables LakeTileVar BCSN inp
+ILG, -> RUNLAKE_variables Constant ILG
+JL1, -> RUNLAKE_variables IL1
+JL2, -> RUNLAKE_variables IL2
+NLAT, -> RUNLAKE_variables Constant JL
+NLAKMAX, -> RUNLAKE_variables Constant NLAKMAX
+ISLFD, -> Got externally ISLFD
+IZREF, -> Got externally IZREF
+ITG, & -> Got externally ITG
+IALS -> Got externally IALS
+NBS, -> RUNLAKE_variables Constant NBS
+ISNOALB, -> RUNLAKE_variables Constant  ISNOALB inp
+IGL, -> RUNLAKE_variables Constant IGL inp
+IRSTRT, RUNLAKE_variables Constant IRSTRT inp
+N, -> RUNLAKE_variables NSTEP inp
+IYEAR,  -> RUNLAKE_variables IYEAR inp
+IDAY, -> RUNLAKE_variables IDAY inp
+IHOUR, -> RUNLAKE_variables IHOUR inp
+IMIN, -> RUNLAKE_variables IMIN inp
+TSED -> RUNLAKE_variables	PronosVar TSED out
