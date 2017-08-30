@@ -334,8 +334,8 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     NML = shd%lc%NML
 
     !> Calculate the operational indices in the current node.
-    call mpi_split_nml(inp, izero, ipid, NML, shd%lc%ILMOS, il1, il2, iln)
-    if (ro%DIAGNOSEMODE > 0) print 1062, ipid, NML, iln, il1, il2
+    call mpi_split_nml(inp, izero, ipid, NML, shd%lc%ILMOS, il1, il2)
+    if (ro%DIAGNOSEMODE > 0) print 1062, ipid, NML, ((il2 - il1) + 1), il1, il2
 
 1062    format(/1x, 'Configuration and distribution of the domain', &
                /3x, 'Current process: ', i10, &

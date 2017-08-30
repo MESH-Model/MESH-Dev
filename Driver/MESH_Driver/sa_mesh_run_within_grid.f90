@@ -151,28 +151,30 @@ module sa_mesh_run_within_grid
         stas_grid%sfc%pndw(i1:i2) = stas_grid%sfc%zpnd(i1:i2)*RHOW
 
         !> Update grid based states.
-        do k = 1, NMW
+        if (iw1 > 0 .and. iw2 <= shd%wc%NML) then
+            do k = iw1, iw2
 
-            ki = shd%wc%ILMOS(k)
-            kj = shd%wc%JLMOS(k)
+                ki = shd%wc%ILMOS(k)
+                kj = shd%wc%JLMOS(k)
 
-            FRAC = lm%pm_nlak%FRAC(kj, ki)               !new code (1105)
+                FRAC = lm%pm_nlak%FRAC(kj, ki)               !new code (1105)
 
-            if (FRAC > 0.0) then
-                stas_grid%sfc%evap(ki) = stas_grid%sfc%evap(ki) + ldvi%QFSL(k)*FRAC
-                if (lfv%PCPR(k)*FRAC > ldvi%QFSL(k)*FRAC) then
-                    stas_grid%sfc%rofo(ki) = stas_grid%sfc%rofo(ki) + lfv%PCPR(k)*FRAC-ldvi%QFSL(k)*FRAC
+                if (FRAC > 0.0) then
+                    stas_grid%sfc%evap(ki) = stas_grid%sfc%evap(ki) + ldvi%QFSL(k)*FRAC
+                    if (lfv%PCPR(k)*FRAC > ldvi%QFSL(k)*FRAC) then
+                        stas_grid%sfc%rofo(ki) = stas_grid%sfc%rofo(ki) + lfv%PCPR(k)*FRAC-ldvi%QFSL(k)*FRAC
+                    end if
+                    stas_grid%sfc%qevp(ki) = stas_grid%sfc%qevp(ki) + ldvi%QEVPL(k)*FRAC
+                    stas_grid%sfc%hfs(ki)  = stas_grid%sfc%hfs(ki) + ldvi%HFSL(k)*FRAC
+
+                    stas_grid%sno%sno(ki) = stas_grid%sno%sno(ki) + ldvi%SNOL(k)*FRAC
+                    if (ldvi%SNOL(k)*FRAC > 0.0) then
+                        stas_grid%sno%wsno(ki) = stas_grid%sno%wsno(ki) + ldvi%WSNOL(k)*FRAC
+                    end if
                 end if
-                stas_grid%sfc%qevp(ki) = stas_grid%sfc%qevp(ki) + ldvi%QEVPL(k)*FRAC
-                stas_grid%sfc%hfs(ki)  = stas_grid%sfc%hfs(ki) + ldvi%HFSL(k)*FRAC
 
-                stas_grid%sno%sno(ki) = stas_grid%sno%sno(ki) + ldvi%SNOL(k)*FRAC
-                if (ldvi%SNOL(k)*FRAC > 0.0) then
-                    stas_grid%sno%wsno(ki) = stas_grid%sno%wsno(ki) + ldvi%WSNOL(k)*FRAC
-                end if
-            end if
-
-        end do
+            end do
+        end if
 
         !> Call processes.
         call bflm_within_grid(fls, shd, cm)

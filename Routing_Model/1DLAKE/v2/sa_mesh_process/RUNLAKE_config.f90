@@ -6,18 +6,24 @@ module RUNLAKE_config
 
     contains
 
-    subroutine RUNLAKE_init()
+    subroutine RUNLAKE_init(shd)
+
+        use sa_mesh_shared_variables
 
         use RUNCLASS36_variables
 
         implicit none
 
+        !> Input variables.
+        type(ShedGridParams) :: shd
+
         !> Local variables.
-        integer NBS, NLYRMAX, i
+        integer NMW, NBS, NLYRMAX, i
 
         !> Local variables.
         NBS = lm%op%NBS
         NLYRMAX = lm%op%NLYRMAX
+        NMW = shd%wc%NML
 
         !> Option flags.
         lm%op%ISLFD = ISLFD
@@ -86,7 +92,7 @@ module RUNLAKE_config
             ldvi%QFSL(NMW), ldvi%QFXL(NMW), ldvi%SNOL(NMW), ldvi%RHOSL(NMW), &
             ldvi%TSNOL(NMW), ldvi%ALBSL(NMW), ldvi%WSNOL(NMW))
 
-        call OPEN_LAKE_OUTPUT_FILES()
+!        call OPEN_LAKE_OUTPUT_FILES()
 
     end subroutine
 

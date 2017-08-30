@@ -14,15 +14,19 @@ module mpi_shared_variables
     !       (default: 0 = reserve head node for between grid processes and book-keeping).
     integer izero
 
-    !> Tile-based indices.
-    !*  il1: First index to be used in tile iterations on this node.
-    !*  il2: Last index to be used in tile iterations on this node.
-    !*  ilen: Total number of tile-based indices active on this node.
-    integer il1, il2, iln
-
     !* Grid-based indices.
     !*  i1: First index to be used in grid iterations on this node.
     !*  i2: Last index to be used in grid iterations on this node.
     integer i1, i2
+
+    !> Land tile-based indices.
+    !*  il1: First index to be used in tile iterations on this node.
+    !*  il2: Last index to be used in tile iterations on this node.
+    integer il1, il2
+
+    !> Water tile-based indices.
+    !*  iw1: First index to be used in tile iterations on this node.
+    !*  iw2: Last index to be used in tile iterations on this node.
+    integer iw1, iw2
 
 end module

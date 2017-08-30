@@ -54,7 +54,7 @@ module RUNLAKE_variables
             CSZ, RADJ
     end type
 
-    integer :: NMW
+!    integer :: NMW
 
     !> Lake tile parameters.
     character(len = 10) LAKEOUTDIR

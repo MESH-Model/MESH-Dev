@@ -17,6 +17,14 @@ module RUNLAKE_module
         real, dimension(:), allocatable :: TLAK(:, :)
 
         iun = 100
+        open(iun, file = adjustl(trim('MESH_LAKE_proportion.ini')), status = 'old', iostat = ierr)
+        if (ierr == 0) then
+            close(100)
+        else
+            return
+        end if
+
+        iun = 100
         open(iun, file = trim(adjustl('MESH_parameters_LAKE.ini')), status = 'old', action = 'read', iostat = ierr)
 
         !> Check for errors from opening the file.
@@ -88,10 +96,10 @@ module RUNLAKE_module
             end do
 
             !> Count the number of lake tiles in all cells.
-            NMW = 0
+            shd%wc%NML = 0
             do k = 1, lm%NTILE
                 do i = 1, shd%NAA
-                    if (lm%pm_nlak%FRAC(k, i) > 0.0) NMW = NMW + 1
+                    if (lm%pm_nlak%FRAC(k, i) > 0.0) shd%wc%NML = shd%wc%NML + 1
                 end do
             end do
 
@@ -99,8 +107,8 @@ module RUNLAKE_module
             print *, 'READ: SUCCESSFUL, FILE: CLOSED'
             close(iun)
         else
-            print *, 'ERROR with MESH_LAKE_proportion.ini'
-            stop
+            print *, 'ERROR or no file present: MESH_LAKE_proportion.ini'
+            print *, 'Continuing with no lakes.'
         end if
 !        print *, NMW
 
@@ -116,22 +124,22 @@ module RUNLAKE_module
         type(ShedGridParams) :: shd
 
         !> Local variables.
-        integer i1, k, i
+        integer k, m, i
 
-        i1 = 1
+        k = 1
         do i = 1, shd%NAA
-            do k = 1, lm%NTILE
-                if (lm%pm_nlak%FRAC(k, i) > 0.0) then
+            do m = 1, lm%NTILE
+                if (lm%pm_nlak%FRAC(m, i) > 0.0) then
 
                     !> Parameters and initial states.
-                    lm%pm%HLAK(i1) = lm%pm_nlak%HLAK(k)
-                    lm%pm%LLAK(i1) = lm%pm_nlak%LLAK(k)
-                    lm%pm%BLAK(i1) = lm%pm_nlak%BLAK(k)
-                    lm%pm%NLAK(i1) = lm%pm_nlak%NLAK(k)
-                    lm%pm%TLAK(i1, :) = lm%pm_nlak%TLAK(k, :)
+                    lm%pm%HLAK(k) = lm%pm_nlak%HLAK(m)
+                    lm%pm%LLAK(k) = lm%pm_nlak%LLAK(m)
+                    lm%pm%BLAK(k) = lm%pm_nlak%BLAK(m)
+                    lm%pm%NLAK(k) = lm%pm_nlak%NLAK(m)
+                    lm%pm%TLAK(k, :) = lm%pm_nlak%TLAK(m, :)
 
                     !> NMW.
-                    i1 = i1 + 1
+                    k = k + 1
 
                 end if
             end do
@@ -141,6 +149,7 @@ module RUNLAKE_module
 
     subroutine gatherLakeTileVars(shd, cm)
 
+        use mpi_module
         use sa_mesh_shared_variables
         use climate_forcing
 
@@ -154,39 +163,44 @@ module RUNLAKE_module
 
         !> Local variables.
         real RDAY, DECL, HOUR, COSZ
-        integer i1, k, i
+        integer k, m, i
 
-        i1 = 1
+        !> Return if no water tiles are active.
+        if (.not. (iw1 > 0 .and. iw2 <= shd%wc%NML)) return
+
+        k = 1
         do i = 1, shd%NAA
-            do k = 1, lm%NTILE
-                if (lm%pm_nlak%FRAC(k, i) > 0.0) then
+            do m = 1, lm%NTILE
+                if (lm%pm_nlak%FRAC(m, i) > 0.0) then
 
                     !> Climate forcing and inputs.
-                    lfv%QSWINV(i1) = cm%dat(ck%FB)%GRD(i)/2.0
-                    lfv%QSWINI(i1) = cm%dat(ck%FB)%GRD(i)/2.0
-                    lfv%QLWIN(i1) = cm%dat(ck%FI)%GRD(i)
-                    lfv%PCPR(i1) = cm%dat(ck%RT)%GRD(i)
-                    lfv%TA(i1) = cm%dat(ck%TT)%GRD(i)
-                    lfv%UWIND(i1) = cm%dat(ck%UV)%GRD(i)
-                    lfv%VWIND(i1) = 0.0
-                    lfv%PRES(i1) = cm%dat(ck%P0)%GRD(i)
-                    lfv%QA(i1) = cm%dat(ck%HU)%GRD(i)
-                    lfv%RPRE(i1) = 0.
-                    lfv%SPRE(i1) = 0.
-                    lfv%RADJ(i1) = shd%ylat(i)*PI/180.0
+                    lfv%QSWINV(k) = cm%dat(ck%FB)%GRD(i)/2.0
+                    lfv%QSWINI(k) = cm%dat(ck%FB)%GRD(i)/2.0
+                    lfv%QLWIN(k) = cm%dat(ck%FI)%GRD(i)
+                    lfv%PCPR(k) = cm%dat(ck%RT)%GRD(i)
+                    lfv%TA(k) = cm%dat(ck%TT)%GRD(i)
+                    lfv%UWIND(k) = cm%dat(ck%UV)%GRD(i)
+                    lfv%VWIND(k) = 0.0
+                    lfv%PRES(k) = cm%dat(ck%P0)%GRD(i)
+                    lfv%QA(k) = cm%dat(ck%HU)%GRD(i)
+                    lfv%RPRE(k) = 0.
+                    lfv%SPRE(k) = 0.
+                    lfv%RADJ(k) = shd%ylat(i)*PI/180.0
 
                     !> Reference heights.
-                    ZDM(i1) = 10.0
-                    ZDH(i1) = 2.0
+                    ZDM(k) = 10.0
+                    ZDH(k) = 2.0
 
                     !> NMW.
-                    i1 = i1 + 1
+                    k = k + 1
 
                 end if
             end do
         end do
-        lfv%ZREFM = pm%sfp%zrfm(1)
-        lfv%ZREFH = pm%sfp%zrfh(1)
+
+        !> Pull reference heights from land tile variables.
+        lfv%ZREFM = pm%sfp%zrfm(il1)
+        lfv%ZREFH = pm%sfp%zrfh(il2)
 
         !> CLASSL contains its own check of VMIN.
 !        lfv%VMOD = max(VMIN, lfv%UWIND)
@@ -200,7 +214,7 @@ module RUNLAKE_module
         RDAY = real(ic%now%jday) + (real(ic%now%hour) + real(ic%now%mins)/60.0)/24.0
         DECL = sin(2.0*PI*(284.0 + RDAY)/365.0)*23.45*PI/180.0
         HOUR = (real(ic%now%hour) + real(ic%now%mins)/60.0)*PI/12.0 - PI
-        do k = 1, NMW
+        do k = iw1, iw2
             COSZ = sin(lfv%RADJ(k))*sin(DECL) + cos(lfv%RADJ(k))*cos(DECL)*cos(HOUR)
             lfv%CSZ(k) = sign(max(abs(COSZ), 1.0e-3), COSZ)
         end do
@@ -209,6 +223,7 @@ module RUNLAKE_module
 
     subroutine checkEnergyBalance(n, energyBalSwitch, deltL)
 
+        use mpi_module
         use RUNCLASS36_constants
         use model_dates
 
@@ -228,7 +243,7 @@ module RUNLAKE_module
 
         !> Check energy balance.
         RHOIW = RHOICE/RHOW
-        do i = 1, NMW
+        do i = iw1, iw2
             ICEBOT = RHOIW*lpv%LKICEH(i)
             ICETOP = lpv%LKICEH(i) - ICEBOT
             if (ICEBOT >= DELSKIN) then
@@ -264,14 +279,17 @@ module RUNLAKE_module
                     ldv%CTLSTP(i) = ldv%CTLSTP(i) + HCAP*lm%pm%TLAK(i, j)*DELZLK
                 end if
             end do
+            if (trim(energyBalSwitch) == 'after') then
+                ldv%CTLSTP(i) = ldv%CTLSTP(i)/DELT
+                QSUML = ldv%FSGL(i) + ldv%FLGL(i) - ldv%HFSL(i) - ldv%HEVL(i) - ldv%HMFL(i)
+            end if
         end do
 
         !> Write output to file.
         if (trim(energyBalSwitch) == 'after') then
-            ldv%CTLSTP(NMW) = ldv%CTLSTP(NMW)/DELT
-            QSUML = ldv%FSGL(NMW) + ldv%FLGL(NMW) - ldv%HFSL(NMW) - ldv%HEVL(NMW) - ldv%HMFL(NMW)
-            write(79, 6019) &
-                ic%now%year, ic%now%jday, ic%now%hour, (ic%now%mins + deltL), (QSUML - ldv%CTLSTP(NMW)), QSUML, ldv%CTLSTP(NMW)
+!            QSUML = ldv%FSGL(NMW) + ldv%FLGL(NMW) - ldv%HFSL(NMW) - ldv%HEVL(NMW) - ldv%HMFL(NMW)
+!            write(79, 6019) &
+!                ic%now%year, ic%now%jday, ic%now%hour, (ic%now%mins + deltL), (QSUML - ldv%CTLSTP(NMW)), QSUML, ldv%CTLSTP(NMW)
         end if
 
 6019    format(i4, 1x, 3(i3, 1x), 2f8.2, g10.3)
@@ -280,6 +298,7 @@ module RUNLAKE_module
 
     subroutine RUNLAKE_within_tile(shd, cm)
 
+        use mpi_module
         use sa_mesh_shared_variables
         use climate_forcing
 
@@ -297,6 +316,9 @@ module RUNLAKE_module
         integer i, nlakeIter
 
         integer :: IGL = 1, IRSTRT = 0
+
+        !> Return if no water tiles are active.
+        if (.not. (iw1 > 0 .and. iw2 <= shd%wc%NML)) return
 
         !> Determine number of iterations.
         DELT_CLASS = DELT
@@ -374,7 +396,7 @@ module RUNLAKE_module
             call CLASSI(lfv%VPD, lfv%TADP, lfv%PADRY, lfv%RHOAIR, lfv%RHOSNI, &
                         lfv%RPCP, lfv%TRPCP, lfv%SPCP, lfv%TSPCP, lfv%TA, lfv%QA, &
                         lfv%PCPR, lfv%RPRE, lfv%SPRE, lfv%PRES, &
-                        lm%op%IPCP, NMW, 1, NMW)
+                        lm%op%IPCP, shd%wc%NML, iw1, iw2)
 
             ! Check energy balance before
             energyBalSwitch = 'before'
@@ -448,7 +470,7 @@ module RUNLAKE_module
                         lfv%RHOAIR, lfv%PADRY, lfv%PRES, lfv%CSZ, lfv%ZREFM, lfv%ZREFH, &
                         ZDM, ZDH, lfv%RPCP, lfv%TRPCP, lfv%SPCP, lfv%TSPCP, lfv%RHOSNI, &
                         lfv%RADJ, ASVL, ASIL, ldv%FSDBL, ldv%FSFBL, ldv%FSSBL, REFL, BCSNL, &
-                        NMW, 1, NMW, NMW, lm%op%NLYRMAX, lm%op%ISLFD, lm%op%IZREF, lm%op%ITG, &
+                        shd%wc%NML, iw1, iw2, 0, lm%op%NLYRMAX, lm%op%ISLFD, lm%op%IZREF, lm%op%ITG, &
                         lm%op%IALS, lm%op%NBS, lm%op%ISNOALB, IGL, IRSTRT, ic%ts_count, &
                         ic%now%year, ic%now%jday, ic%now%hour, (ic%now%mins + nint(DELT)*(i - 1)), lpv%TSED)
 
@@ -584,6 +606,7 @@ module RUNLAKE_module
 
     subroutine RUNLAKE_within_grid(shd, cm)
 
+        use mpi_module
         use sa_mesh_shared_variables
         use climate_forcing
 
@@ -592,6 +615,9 @@ module RUNLAKE_module
         !> Input variables.
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
+
+        !> Return if no water tiles are active.
+        if (.not. (iw1 > 0 .and. iw2 <= shd%wc%NML)) return
 
     end subroutine
 

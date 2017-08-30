@@ -8,7 +8,7 @@ module mpi_utilities
     contains
 
     !> Description:
-    !>  Determine il1:il2 indices and ilen based on the number of active nodes
+    !>  Determine il1:il2 indices based on the number of active nodes
     !>  and tiles in the setup for the given node. The subroutine will nudge
     !>  il1 and il2 so that no grid is split between separate nodes.
     !>
@@ -17,16 +17,15 @@ module mpi_utilities
     !*  izero: If to include the head node in tile iterations when multiple nodes are used
     !       (default: 0 = reserve head node for between grid processes and book-keeping).
     !*  ipid: Zero-based index of active/current/this node (default: 0 = head node).
-    !*  NML: Number of active files in the setup.
+    !*  NML: Number of active land tiles in the setup.
     !*  ILMOS: NML-to-Grid lookup table.
     !>
     !> Returns:
-    !*  il1: First index to be used in tile iterations on this node.
-    !*  il2: Last index to be used in tile iterations on this node.
-    !*  ilen: Total number of indices active on this node.
+    !*  il1: First index to be used in land tile based iterations on this node.
+    !*  il2: Last index to be used in land tile based iterations on this node.
     subroutine mpi_split_nml(inp, izero, ipid, &
                              NML, ILMOS, &
-                             il1, il2, ilen)
+                             il1, il2)
 
         !> Input variables.
         integer, intent(in) :: inp, izero, ipid
@@ -34,7 +33,7 @@ module mpi_utilities
         integer, intent(in), dimension(:) :: ILMOS
 
         !> Output variables
-        integer, intent(out) :: il1, il2, ilen
+        integer, intent(out) :: il1, il2
 
         !> Calculate an initial lower index.
         il1 = max(min(ceiling(NML/real(inp - izero))*(ipid - izero) + 1, NML), 0)
@@ -66,8 +65,64 @@ module mpi_utilities
             il2 = NML
         end if
 
-        !> Calculate the total number of active elements in the sequence.
-        ilen = (il2 - il1) + 1
+    end subroutine
+
+    !> Description:
+    !>  Determine iw1:iw2 indices based on the number of active nodes
+    !>  and tiles in the setup for the given node. The subroutine will base
+    !>  the start and stop indices based on il1 and il2 so that no grid is split
+    !>  between separate nodes.
+    !>
+    !> Variables:
+    !*  inp: Number of nodes (including head node).
+    !*  izero: If to include the head node in tile iterations when multiple nodes are used
+    !       (default: 0 = reserve head node for between grid processes and book-keeping).
+    !*  ipid: Zero-based index of active/current/this node (default: 0 = head node).
+    !*  NML: Number of active land tiles in the setup.
+    !*  NMW: Number of active water tiles in the setup.
+    !*  ILMOS: NML-to-Grid lookup table.
+    !*  il1: First index to be used in land tile based iterations on this node.
+    !*  il2: Last index to be used in land tile based iterations on this node.
+    !*  IWMOS: NMW-to-Grid lookup table.
+    !>
+    !> Returns:
+    !*  iw1: First index to be used in water tile based iterations on this node.
+    !*  iw2: Last index to be used in water tile based iterations on this node.
+    subroutine mpi_split_nmw(inp, izero, ipid, &
+                             NML, NMW, ILMOS, il1, il2, IWMOS, &
+                             iw1, iw2)
+
+        !> Input variables.
+        integer, intent(in) :: NML, NMW, il1, il2, inp, izero, ipid
+        integer, intent(in), dimension(:) :: ILMOS, IWMOS
+
+        !> Output variables
+        integer, intent(out) :: iw1, iw2
+
+        !> Local variables.
+        integer i1, i2, i
+
+        !> Return if no land or water tiles are active.
+        if (NMW == 0 .or. NML == 0) then
+            iw1 = 0
+            iw2 = 0
+            return
+        end if
+
+        !> Get the grid indices of the land tile based indices.
+        i1 = ILMOS(il1)
+        i2 = ILMOS(il2)
+
+        !> Get the start and stop indices for water tiles.
+        iw1 = 0
+        iw2 = 0
+        do i = 1, NMW
+            if (IWMOS(i) < i1) cycle
+            if ((IWMOS(i) >= i1 .and. IWMOS(i) <= i2) .and. iw1 == 0) iw1 = i
+            if (IWMOS(i) <= i2) iw2 = i
+            if (IWMOS(i) > i2) exit
+        end do
+        if (iw2 == 0) iw2 = iw1
 
     end subroutine
 
