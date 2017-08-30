@@ -80,7 +80,6 @@ module sa_mesh_run_within_grid
         !> Required for calls to processes.
         use baseflow_module
         use RUNLAKE_module
-        use RUNLAKE_variables
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -157,12 +156,12 @@ module sa_mesh_run_within_grid
             ki = shd%wc%ILMOS(k)
             kj = shd%wc%JLMOS(k)
 
-            FRAC = lakeTileParam(kj)%FARE(ki)               !new code (1105)
+            FRAC = lm%pm_nlak%FRAC(kj, ki)               !new code (1105)
 
             if (FRAC > 0.0) then
                 stas_grid%sfc%evap(ki) = stas_grid%sfc%evap(ki) + ldvi%QFSL(k)*FRAC
-                if (cfiL%PRE(k)*FRAC > ldvi%QFSL(k)*FRAC) then
-                    stas_grid%sfc%rofo(ki) = stas_grid%sfc%rofo(ki) + cfiL%PRE(k)*FRAC-ldvi%QFSL(k)*FRAC
+                if (lfv%PCPR(k)*FRAC > ldvi%QFSL(k)*FRAC) then
+                    stas_grid%sfc%rofo(ki) = stas_grid%sfc%rofo(ki) + lfv%PCPR(k)*FRAC-ldvi%QFSL(k)*FRAC
                 end if
                 stas_grid%sfc%qevp(ki) = stas_grid%sfc%qevp(ki) + ldvi%QEVPL(k)*FRAC
                 stas_grid%sfc%hfs(ki)  = stas_grid%sfc%hfs(ki) + ldvi%HFSL(k)*FRAC

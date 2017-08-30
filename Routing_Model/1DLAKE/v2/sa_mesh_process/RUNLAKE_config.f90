@@ -1,39 +1,49 @@
 module RUNLAKE_config
 
+    use RUNLAKE_variables
+
     implicit none
 
     contains
 
     subroutine RUNLAKE_init()
 
-        use RUNLAKE_variables
+        use RUNCLASS36_variables
 
         implicit none
 
-        !> Forcing input.
-        allocate( &
-            cfiL%FDL(NMW), cfiL%FSIH(NMW), cfiL%FSVH(NMW), cfiL%PRE(NMW), &
-            cfiL%PRES(NMW), cfiL%QA(NMW), cfiL%TA(NMW), cfiL%UL(NMW), cfiL%VL(NMW))
+        !> Local variables.
+        integer NBS, NLYRMAX, i
 
+        !> Local variables.
+        NBS = lm%op%NBS
+        NLYRMAX = lm%op%NLYRMAX
 
-        !> Atmospheric variables.
+        !> Option flags.
+        lm%op%ISLFD = ISLFD
+        lm%op%IZREF = IZREF
+        lm%op%ITG = ITG
+        lm%op%IPCP = IPCP
+        lm%op%IALS = IALS
+
+        !> Driving variables.
         allocate( &
-            catvL%CSZ(NMW), catvL%PADR(NMW), catvL%RADJ(NMW), &
-            catvL%RHOA(NMW), catvL%RHSI(NMW), catvL%RPCP(NMW), catvL%SPCP(NMW), &
-            catvL%TADP(NMW), catvL%TRPC(NMW), catvL%TSPC(NMW), catvL%VPD(NMW), &
-            catvL%ZDH(NMW),  catvL%ZDM(NMW), catvL%ZRFH(NMW), catvL%ZRFM(NMW), &
-            catvL%RPRE(NMW), catvL%SPRE(NMW))
+            lfv%QSWINV(NMW), lfv%QSWINI(NMW), lfv%QLWIN(NMW), lfv%PRES(NMW), &
+            lfv%ZREFH(NMW), lfv%QA(NMW), lfv%TA(NMW), lfv%ZREFM(NMW), lfv%UWIND(NMW), lfv%VWIND(NMW), &
+            lfv%RHOAIR(NMW), lfv%TADP(NMW), lfv%PADRY(NMW), lfv%VPD(NMW), lfv%RHOSNI(NMW), &
+            lfv%RPRE(NMW), lfv%SPRE(NMW), &
+            lfv%PCPR(NMW), lfv%RPCP(NMW), lfv%TRPCP(NMW), lfv%SPCP(NMW), lfv%TSPCP(NMW), &
+            lfv%CSZ(NMW), lfv%RADJ(NMW))
+        lfv%RPRE = 0.0; lfv%SPRE = 0.0
 
         !> Diagnostic variables.
-        allocate(cdvL%CDH(NMW), cdvL%CDM(NMW))
+        allocate(ZDH(NMW), ZDM(NMW), CDH(NMW), CDM(NMW))
 
         !> Lake tile parameters.
         allocate( &
-            ltp%HLAKGAT(NMW), ltp%LLAKGAT(NMW), ltp%BLAKGAT(NMW),&
-            ltp%NLAKGAT(NMW), ltp%TLAKGAT(NMW,NLAKMAX))
+            lm%pm%HLAK(NMW), lm%pm%LLAK(NMW), lm%pm%BLAK(NMW), lm%pm%NLAK(NMW), lm%pm%TLAK(NMW, NLYRMAX))
         allocate( &
-            ASVLGAT(NMW), ASILGAT(NMW), BCSNLGAT(NMW), REFLGAT(NMW), &
-            ZDMLGAT(NMW), ZDHLGAT(NMW))
+            ASVL(NMW), ASIL(NMW), BCSNL(NMW), REFL(NMW))
 
         !> Lake prognostic variables.
         allocate( &
@@ -84,6 +94,7 @@ module RUNLAKE_config
 
         use mpi_module
         use RUNLAKE_variables
+        use RUNCLASS36_variables
 
         implicit none
 

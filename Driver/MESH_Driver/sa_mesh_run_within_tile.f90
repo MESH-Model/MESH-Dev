@@ -17,7 +17,6 @@ module sa_mesh_run_within_tile
         use cropland_irrigation_init
         use RUNLAKE_config
         use RUNLAKE_module
-        use RUNLAKE_variables
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -36,7 +35,7 @@ module sa_mesh_run_within_tile
 
         call RUNLAKE_init
 
-        call gatherLakeTileParam(shd%NA)
+        call gatherLakeTileParam(shd)
         shd%wc%ILG = NMW
         allocate(shd%wc%ILMOS(NMW), shd%wc%JLMOS(NMW))
 
@@ -44,9 +43,9 @@ module sa_mesh_run_within_tile
         !> store the respective ID's of the grid and GRU in the 'ILMOS' and
         !> 'JLMOS' variables.
         NMW = 0
-        do i = 1, shd%NA
-          do m = 1, NTYPEL
-            if (lakeTileParam(m)%FARE(i) > 0.0) then
+        do i = 1, shd%NAA
+          do m = 1, lm%NTILE
+            if (lm%pm_nlak%FRAC(m, i) > 0.0) then
                             NMW = NMW + 1
                             shd%wc%ILMOS(NMW) = i
                             shd%wc%JLMOS(NMW) = m

@@ -1,17 +1,20 @@
 module RUNLAKE_module
 
+    use RUNLAKE_variables
+
     implicit none
 
     contains
 
     subroutine READ_PARAMETERS_LAKE()
 
-        use RUNLAKE_variables
+        use RUNCLASS36_constants
 
         implicit none
 
         !> Local variables.
         integer j, i, iun, ierr
+        real, dimension(:), allocatable :: TLAK(:, :)
 
         iun = 100
         open(iun, file = trim(adjustl('MESH_parameters_LAKE.ini')), status = 'old', action = 'read', iostat = ierr)
@@ -27,16 +30,31 @@ module RUNLAKE_module
             print *, 'READING: MESH_parameters_LAKE.ini '
         end if
 
-        read(iun, *) NTYPEL, DELT_L
-        allocate(lakeTileParam(NTYPEL))
+        read(iun, *) lm%NTILE, lm%op%DTS
+        call RUNLAKE_parameters_allocate(lm%pm_nlak, lm%NTILE, ierr)
+        if (ierr /= 0) then
+            print *, 'Error allocating lake model variables.'
+            stop
+        end if
         read(iun, *) LAKEOUTDIR
-        do i = 1, NTYPEL
-            read(iun, *) lakeTileParam(i)%lakeTile                                           ! TITLE
-            read(iun, *) lakeTileParam(i)%HLAK, lakeTileParam(i)%LLAK, lakeTileParam(i)%BLAK ! HLAK, LLAK, BLAK
-            lakeTileParam(i)%NLAK = lakeTileParam(i)%HLAK/DELZLK
-            allocate(lakeTileParam(i)%TLAK(lakeTileParam(i)%NLAK))
-            read(iun, *) (lakeTileParam(i)%TLAK(j), j = 1, lakeTileParam(i)%NLAK)            ! TLAK
-            where(lakeTileParam(i)%TLAK < 200.0) lakeTileParam(i)%TLAK = lakeTileParam(i)%TLAK + TFREZ
+        do i = 1, lm%NTILE
+            read(iun, *)                                                            ! TITLE
+            read(iun, *) lm%pm_nlak%HLAK(i), lm%pm_nlak%LLAK(i), lm%pm_nlak%BLAK(i) ! HLAK, LLAK, BLAK
+            lm%pm_nlak%NLAK(i) = lm%pm_nlak%HLAK(i)/DELZLK
+            lm%op%NLYRMAX = max(lm%pm_nlak%NLAK(i), lm%op%NLYRMAX)
+            if (lm%op%NLYRMAX > size(lm%pm_nlak%TLAK, 2)) then
+                allocate(TLAK(lm%NTILE, lm%op%NLYRMAX))
+                TLAK = 0.0
+                if (allocated(lm%pm_nlak%TLAK)) then
+                    TLAK(:, 1:size(lm%pm_nlak%TLAK, 2)) = lm%pm_nlak%TLAK(:, 1:size(lm%pm_nlak%TLAK, 2))
+                    deallocate(lm%pm_nlak%TLAK)
+                end if
+                allocate(lm%pm_nlak%TLAK(lm%NTILE, lm%op%NLYRMAX))
+                lm%pm_nlak%TLAK = TLAK
+                deallocate(TLAK)
+            end if
+            read(iun, *) (lm%pm_nlak%TLAK(i, j), j = 1, lm%pm_nlak%NLAK(i))         ! TLAK
+            where(lm%pm_nlak%TLAK(i, :) < 200.0) lm%pm_nlak%TLAK(i, :) = lm%pm_nlak%TLAK(i, :) + TFREZ
         end do
         close(100)
 
@@ -44,7 +62,6 @@ module RUNLAKE_module
 
     subroutine READ_LAKE_PROPORTION(shd)
 
-        use RUNLAKE_variables
         use sa_mesh_shared_variables
 
         implicit none
@@ -60,22 +77,21 @@ module RUNLAKE_module
         open(iun, file = adjustl(trim('MESH_LAKE_proportion.ini')), status = 'old', iostat = ierr)
         if (ierr == 0) then
 
-            allocate(dummy(shd%yCount, shd%xCount))
-            do k = 1, NTYPEL
+            allocate(lm%pm_nlak%FRAC(lm%NTILE, shd%NAA), dummy(shd%yCount, shd%xCount))
+            do k = 1, lm%NTILE
                 do i = 1, shd%yCount
                     read(iun, *) dummy(i, :)
                 end do
-                allocate(lakeTileParam(k)%FARE(shd%NA))
-                do i = 1, shd%NA
-                    lakeTileParam(k)%FARE(i) = dummy(shd%yyy(i), shd%xxx(i))
+                do i = 1, shd%NAA
+                    lm%pm_nlak%FRAC(k, i) = dummy(shd%yyy(i), shd%xxx(i))
                 end do
             end do
 
             !> Count the number of lake tiles in all cells.
             NMW = 0
-            do k = 1, NTYPEL
-                do i = 1, shd%NA
-                    if (lakeTileParam(k)%FARE(i) > 0.0) NMW = NMW + 1
+            do k = 1, lm%NTILE
+                do i = 1, shd%NAA
+                    if (lm%pm_nlak%FRAC(k, i) > 0.0) NMW = NMW + 1
                 end do
             end do
 
@@ -86,33 +102,33 @@ module RUNLAKE_module
             print *, 'ERROR with MESH_LAKE_proportion.ini'
             stop
         end if
-!        print*, NMW
+!        print *, NMW
 
     end subroutine
 
-    subroutine gatherLakeTileParam(NA)
+    subroutine gatherLakeTileParam(shd)
 
-        use RUNLAKE_variables
+        use sa_mesh_shared_variables
 
         implicit none
 
         !> Input variables.
-        integer, intent(in) :: NA
+        type(ShedGridParams) :: shd
 
         !> Local variables.
         integer i1, k, i
 
         i1 = 1
-        do i = 1, NA
-            do k = 1, NTYPEL
-                if (lakeTileParam(k)%FARE(i) > 0.0) then
+        do i = 1, shd%NAA
+            do k = 1, lm%NTILE
+                if (lm%pm_nlak%FRAC(k, i) > 0.0) then
 
                     !> Parameters and initial states.
-                    ltp%HLAKGAT(i1) = lakeTileParam(k)%HLAK
-                    ltp%LLAKGAT(i1) = lakeTileParam(k)%LLAK
-                    ltp%BLAKGAT(i1) = lakeTileParam(k)%BLAK
-                    ltp%NLAKGAT(i1) = lakeTileParam(k)%NLAK
-                    ltp%TLAKGAT(i1, 1:lakeTileParam(k)%NLAK) = lakeTileParam(k)%TLAK(:)
+                    lm%pm%HLAK(i1) = lm%pm_nlak%HLAK(k)
+                    lm%pm%LLAK(i1) = lm%pm_nlak%LLAK(k)
+                    lm%pm%BLAK(i1) = lm%pm_nlak%BLAK(k)
+                    lm%pm%NLAK(i1) = lm%pm_nlak%NLAK(k)
+                    lm%pm%TLAK(i1, :) = lm%pm_nlak%TLAK(k, :)
 
                     !> NMW.
                     i1 = i1 + 1
@@ -125,9 +141,10 @@ module RUNLAKE_module
 
     subroutine gatherLakeTileVars(shd, cm)
 
-        use RUNLAKE_variables
         use sa_mesh_shared_variables
         use climate_forcing
+
+        use RUNCLASS36_constants
 
         implicit none
 
@@ -140,27 +157,27 @@ module RUNLAKE_module
         integer i1, k, i
 
         i1 = 1
-        do i = 1, shd%NA
-            do k = 1, NTYPEL
-                if ( lakeTileParam(k)%FARE(i) > 0.0 ) then
+        do i = 1, shd%NAA
+            do k = 1, lm%NTILE
+                if (lm%pm_nlak%FRAC(k, i) > 0.0) then
 
                     !> Climate forcing and inputs.
-                    cfiL%FSVH(i1) = cm%dat(ck%FB)%GRD(i)/2.0
-                    cfiL%FSIH(i1) = cm%dat(ck%FB)%GRD(i)/2.0
-                    cfiL%FDL(i1) = cm%dat(ck%FI)%GRD(i)
-                    cfiL%PRE(i1) = cm%dat(ck%RT)%GRD(i)
-                    cfiL%TA(i1) = cm%dat(ck%TT)%GRD(i)
-                    cfiL%UL(i1) = cm%dat(ck%UV)%GRD(i)
-                    cfiL%VL(i1) = 0.0
-                    cfiL%PRES(i1) = cm%dat(ck%P0)%GRD(i)
-                    cfiL%QA(i1) = cm%dat(ck%HU)%GRD(i)
-                    catvL%RPRE(i1) = 0.
-                    catvL%SPRE(i1) = 0.
-                    catvL%RADJ(i1) = shd%ylat(i)*PI/180.0
+                    lfv%QSWINV(i1) = cm%dat(ck%FB)%GRD(i)/2.0
+                    lfv%QSWINI(i1) = cm%dat(ck%FB)%GRD(i)/2.0
+                    lfv%QLWIN(i1) = cm%dat(ck%FI)%GRD(i)
+                    lfv%PCPR(i1) = cm%dat(ck%RT)%GRD(i)
+                    lfv%TA(i1) = cm%dat(ck%TT)%GRD(i)
+                    lfv%UWIND(i1) = cm%dat(ck%UV)%GRD(i)
+                    lfv%VWIND(i1) = 0.0
+                    lfv%PRES(i1) = cm%dat(ck%P0)%GRD(i)
+                    lfv%QA(i1) = cm%dat(ck%HU)%GRD(i)
+                    lfv%RPRE(i1) = 0.
+                    lfv%SPRE(i1) = 0.
+                    lfv%RADJ(i1) = shd%ylat(i)*PI/180.0
 
                     !> Reference heights.
-                    catvL%ZDM(i1) = 10.0
-                    catvL%ZDH(i1) = 2.0
+                    ZDM(i1) = 10.0
+                    ZDH(i1) = 2.0
 
                     !> NMW.
                     i1 = i1 + 1
@@ -168,11 +185,11 @@ module RUNLAKE_module
                 end if
             end do
         end do
-        catvL%ZRFM = pm%sfp%zrfm(1)
-        catvL%ZRFH = pm%sfp%zrfh(1)
+        lfv%ZREFM = pm%sfp%zrfm(1)
+        lfv%ZREFH = pm%sfp%zrfh(1)
 
         !> CLASSL contains its own check of VMIN.
-!        cfiL%VMOD = max(VMIN, cfiL%UL)
+!        lfv%VMOD = max(VMIN, lfv%UWIND)
 
         !> This estimates the fractional cloud cover (FCLOGRD) by the basis
         !> of the solar zenith angle and the occurrence of precipitation.
@@ -184,15 +201,15 @@ module RUNLAKE_module
         DECL = sin(2.0*PI*(284.0 + RDAY)/365.0)*23.45*PI/180.0
         HOUR = (real(ic%now%hour) + real(ic%now%mins)/60.0)*PI/12.0 - PI
         do k = 1, NMW
-            COSZ = sin(catvL%RADJ(k))*sin(DECL) + cos(catvL%RADJ(k))*cos(DECL)*cos(HOUR)
-            catvL%CSZ(k) = sign(max(abs(COSZ), 1.0e-3), COSZ)
+            COSZ = sin(lfv%RADJ(k))*sin(DECL) + cos(lfv%RADJ(k))*cos(DECL)*cos(HOUR)
+            lfv%CSZ(k) = sign(max(abs(COSZ), 1.0e-3), COSZ)
         end do
 
     end subroutine
 
     subroutine checkEnergyBalance(n, energyBalSwitch, deltL)
 
-        use RUNLAKE_variables
+        use RUNCLASS36_constants
         use model_dates
 
         implicit none
@@ -225,12 +242,12 @@ module RUNLAKE_module
                 ldv%CTLSTP(i) = ldv%CTLSTP(i) + HCAP*lpv%T0LAK(i)*DELSKIN
             else
                 if (n == 1) then
-                    ldv%CTLSTP(i) = -HCAP*ltp%TLAKGAT(i, 1)*DELSKIN
+                    ldv%CTLSTP(i) = -HCAP*lm%pm%TLAK(i, 1)*DELSKIN
                 else
                     ldv%CTLSTP(i) = -HCAP*lpv%T0LAK(i)*DELSKIN
                 end if
             end if
-            do j = 1, ltp%NLAKGAT(i)
+            do j = 1, lm%pm%NLAK(i)
                 ZTOP = DELSKIN + DELZLK*(j - 1)
                 ZBOT = DELSKIN + DELZLK*j
                 if (ICEBOT >= ZBOT) then
@@ -241,27 +258,32 @@ module RUNLAKE_module
                     Z = ICEBOT - ZTOP
                     HCAP = (Z*HCPICE + (DELZLK - Z)*HCPW)/DELZLK
                 end if
-                ldv%CTLSTP(i) = ldv%CTLSTP(i) - HCAP*ltp%TLAKGAT(i, j)*DELZLK
+                if (trim(energyBalSwitch) == 'after') then
+                    ldv%CTLSTP(i) = ldv%CTLSTP(i) - HCAP*lm%pm%TLAK(i, j)*DELZLK
+                else
+                    ldv%CTLSTP(i) = ldv%CTLSTP(i) + HCAP*lm%pm%TLAK(i, j)*DELZLK
+                end if
             end do
         end do
 
         !> Write output to file.
         if (trim(energyBalSwitch) == 'after') then
-            ldv%CTLSTP(i) = ldv%CTLSTP(i)/DELT
-            QSUML = ldv%FSGL(i) + ldv%FLGL(i) - ldv%HFSL(i) - ldv%HEVL(i) - ldv%HMFL(i)
+            ldv%CTLSTP(NMW) = ldv%CTLSTP(NMW)/DELT
+            QSUML = ldv%FSGL(NMW) + ldv%FLGL(NMW) - ldv%HFSL(NMW) - ldv%HEVL(NMW) - ldv%HMFL(NMW)
             write(79, 6019) &
-                ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins+deltL, (QSUML - ldv%CTLSTP(i)), QSUML
+                ic%now%year, ic%now%jday, ic%now%hour, (ic%now%mins + deltL), (QSUML - ldv%CTLSTP(NMW)), QSUML, ldv%CTLSTP(NMW)
         end if
 
-6019    format(i4, 1x, 3(i3, 1x), 2f8.2)
+6019    format(i4, 1x, 3(i3, 1x), 2f8.2, g10.3)
 
     end subroutine
 
     subroutine RUNLAKE_within_tile(shd, cm)
 
-        use RUNLAKE_variables
         use sa_mesh_shared_variables
         use climate_forcing
+
+        use RUNCLASS36_constants
 
         implicit none
 
@@ -274,13 +296,15 @@ module RUNLAKE_module
         real DELT_CLASS
         integer i, nlakeIter
 
+        integer :: IGL = 1, IRSTRT = 0
+
         !> Determine number of iterations.
         DELT_CLASS = DELT
-        if (DELT_L >= 30.0) then
+        if (lm%op%DTS >= 30.0) then
             nlakeIter = 1
             DELT = 30.0
         else
-            nlakeIter = 30.0/DELT_L
+            nlakeIter = 30.0/lm%op%DTS
             DELT = nint(30.0/nlakeIter)
         end if
 !        print *, 'nlakeIter = ', nlakeIter
@@ -347,21 +371,21 @@ module RUNLAKE_module
 
             call gatherLakeTileVars(shd, cm)
 
-            call CLASSI(catvL%VPD, catvL%TADP, catvL%PADR, catvL%RHOA, catvL%RHSI, &
-                        catvL%RPCP, catvL%TRPC, catvL%SPCP, catvL%TSPC, cfiL%TA, cfiL%QA, &
-                        cfiL%PRE, catvL%RPRE, catvL%SPRE, cfiL%PRES, &
-                        IPCP, NMW, 1, NMW)
+            call CLASSI(lfv%VPD, lfv%TADP, lfv%PADRY, lfv%RHOAIR, lfv%RHOSNI, &
+                        lfv%RPCP, lfv%TRPCP, lfv%SPCP, lfv%TSPCP, lfv%TA, lfv%QA, &
+                        lfv%PCPR, lfv%RPRE, lfv%SPRE, lfv%PRES, &
+                        lm%op%IPCP, NMW, 1, NMW)
 
             ! Check energy balance before
             energyBalSwitch = 'before'
             call checkEnergyBalance(ic%ts_count, energyBalSwitch, (nint(DELT)*(i - 1)))
 !            print *, ldv%CTLSTP(:)
 !            print *, ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
-!            print *, NMW, 1, NMW, shd%NA, NLAKMAX, ISLFD, IZREF, ITG
+!            print *, NMW, 1, NMW, shd%NAA, NLAKMAX, ISLFD, IZREF, ITG
 !            print *, DELT
 
-            cdvL%CDH = 0.0
-            cdvL%CDM = 0.0
+            CDH = 0.0
+            CDM = 0.0
             ldv%SNOL = 0.0
             ldv%RHOSL = 0.0
             ldv%TSNOL = 0.0
@@ -410,22 +434,22 @@ module RUNLAKE_module
             ldv%FSSBL = 0.0
 
             !> Lake model.
-            call CLASSL(ltp%HLAKGAT, ltp%LLAKGAT, ltp%BLAKGAT, ltp%NLAKGAT, ltp%TLAKGAT, &
+            call CLASSL(lm%pm%HLAK, lm%pm%LLAK, lm%pm%BLAK, lm%pm%NLAK, lm%pm%TLAK, &
                         lpv%T0LAK, lpv%HDPTH, lpv%LKICEH, lpv%SNICEH, lpv%ROFICEH, &
                         ldv%SNOL, ldv%RHOSL, ldv%TSNOL, ldv%ALBSL, ldv%WSNOL, &
-                        cdvL%CDH, cdvL%CDM, ldv%QSENL, ldv%TFXL, ldv%QEVPL, ldv%QFSL, ldv%QFXL, &
+                        CDH, CDM, ldv%QSENL, ldv%TFXL, ldv%QEVPL, ldv%QFSL, ldv%QFXL, &
                         ldv%PETL, ldv%EFL, ldv%GTL, ldv%QGL, ldv%DRL, &
                         ldv%SFTL, ldv%SFUL, ldv%SFVL, ldv%SFQL, ldv%SFHL, ldv%QLWOL, ldv%ALVL, ldv%ALIL, &
                         ldv%FSGL, ldv%FLGL, ldv%HFSL, ldv%HEVL, ldv%HMFL, ldv%HTCL, &
                         ldv%FSGSL, ldv%FLGSL, ldv%HFSSL, ldv%HEVSL, ldv%HMFNL, ldv%HTCSL, &
                         ldv%PCPL, ldv%PCPNL, ldv%QFL, ldv%QFNL, ldv%ROFNL, ldv%FICE, ldv%FLS, ldv%G0SL, &
                         lpv%EXPW, lpv%DTEMP, lpv%TKELAK, lpv%DELU, lpv%GRED, lpv%RHOMIX, &
-                        cfiL%FSVH, cfiL%FSIH, cfiL%FDL, cfiL%UL, cfiL%VL, cfiL%TA, cfiL%QA, &
-                        catvL%RHOA, catvL%PADR, cfiL%PRES, catvL%CSZ, catvL%ZRFM, catvL%ZRFH, &
-                        catvL%ZDM, catvL%ZDH, catvL%RPCP, catvL%TRPC, catvL%SPCP, catvL%TSPC, catvL%RHSI, &
-                        catvL%RADJ, ASVLGAT, ASILGAT, ldv%FSDBL, ldv%FSFBL, ldv%FSSBL, REFLGAT, BCSNLGAT, &
-                        NMW, 1, NMW, NMW, NLAKMAX, ISLFD, IZREF, ITG, &
-                        IALS, NBS, ISNOALB, IGL, IRSTRT, ic%ts_count, &
+                        lfv%QSWINV, lfv%QSWINI, lfv%QLWIN, lfv%UWIND, lfv%VWIND, lfv%TA, lfv%QA, &
+                        lfv%RHOAIR, lfv%PADRY, lfv%PRES, lfv%CSZ, lfv%ZREFM, lfv%ZREFH, &
+                        ZDM, ZDH, lfv%RPCP, lfv%TRPCP, lfv%SPCP, lfv%TSPCP, lfv%RHOSNI, &
+                        lfv%RADJ, ASVL, ASIL, ldv%FSDBL, ldv%FSFBL, ldv%FSSBL, REFL, BCSNL, &
+                        NMW, 1, NMW, NMW, lm%op%NLYRMAX, lm%op%ISLFD, lm%op%IZREF, lm%op%ITG, &
+                        lm%op%IALS, lm%op%NBS, lm%op%ISNOALB, IGL, IRSTRT, ic%ts_count, &
                         ic%now%year, ic%now%jday, ic%now%hour, (ic%now%mins + nint(DELT)*(i - 1)), lpv%TSED)
 
             !> Check energy balance after.
@@ -560,7 +584,6 @@ module RUNLAKE_module
 
     subroutine RUNLAKE_within_grid(shd, cm)
 
-        use RUNLAKE_variables
         use sa_mesh_shared_variables
         use climate_forcing
 
