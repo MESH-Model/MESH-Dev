@@ -6,20 +6,20 @@ module reservoir! Variable declarations
     implicit none
 
     type reservoir_f
-        integer :: id                              !# Reservoir id
+        integer :: id                              !# Reservoir ID
         integer :: rank                            !# Rank value to identify the grid cell as a reservoir
-        integer :: modeltype                       !# Model type reservoir LISFLOOD model
-        real    :: lat                             !# Lat
-        real    :: long                            !# Lon
-        real    :: SMAX                            !# Max Reservoir capacity
-        real    :: flowO1                          !# Initial discharge
-        real    :: Intstor1                        !# Initial storage
-        real    :: dsto(12)                        !# Monthly min storage 12 values one per month
-        real    :: nsto(12)                        !# Monthly normal upper storage
-        real    :: ndsto(12)                       !# Monthly upper storage
-        real    :: Qmin(12)                        !# Monthly Min release
-        real    :: Qnor(12)                        !# Monthly normal upper release
-        real    :: Qnd(12)                         !# Monthly upper release
+        integer :: modeltype                       !# Model type (reservoir storage zone release)
+        real    :: lat                             !# Lat location of the reservoir (decimal degrees)
+        real    :: long                            !# Lon location of the reservoir (decimal degrees)
+        real    :: SMAX                            !# Max reservoir capacity (m3)
+        real    :: flowO1                          !# Initial discharge (m3 s-1)
+        real    :: Intstor1                        !# Initial storage (m3)
+        real    :: dsto(12)                        !# Monthly min storage 12 values one per month (m3)
+        real    :: nsto(12)                        !# Monthly normal upper storage (m3)
+        real    :: ndsto(12)                       !# Monthly upper storage (m3)
+        real    :: Qmin(12)                        !# Monthly min release (m3 s-1)
+        real    :: Qnor(12)                        !# Monthly normal upper release (m3 s-1)
+        real    :: Qnd(12)                         !# Monthly upper release (m3 s-1)
         real    :: stoSIM(2)                       !# storage time series of the reservoir
         real    :: flowSIM(2)                      !# storage time series of the reservoir
     end type
@@ -122,9 +122,9 @@ module reservoir! Variable declarations
                                       DT*(flowIn - resrv%flowSIM(t-1))
 
         FU = resrv%stoSIM(t)/resrv%SMAX
-        LC = resrv%dsto(mId)*1000000.0/resrv%SMAX
-        LN = resrv%nsto(mId)*1000000.0/resrv%SMAX
-        LF = resrv%ndsto(mId)*1000000.0/resrv%SMAX
+        LC = resrv%dsto(mId)/resrv%SMAX
+        LN = resrv%nsto(mId)/resrv%SMAX
+        LF = resrv%ndsto(mId)/resrv%SMAX
 
         if (FU <= LC) then
 
