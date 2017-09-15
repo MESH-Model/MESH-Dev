@@ -41,7 +41,7 @@ module sa_mesh_run_between_grid
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
         !> Initialize basin structures.
-        call read_basin_structures(shd)
+!-        call read_basin_structures(shd)
 
         if (BASINSWEOUTFLAG > 0) then
             open(85, file = './' // trim(fls%GENDIR_OUT) // '/basin_SCA_alldays.csv')

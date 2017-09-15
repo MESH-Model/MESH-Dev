@@ -18,6 +18,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
     !> Required for the variables of various modules.
     use RUNCLASS36_variables
+    use irrigation_module
     use WF_ROUTE_config
     use rte_module
     use baseflow_module
@@ -929,6 +930,35 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
+
+                        !> Irrigation module.
+                        case ('irflg')
+                            do j = 1, NTYPE
+                                call value(out_args(j + 1), irrm%pm_gru%irflg(j), ierr)
+                                if (ierr /= 0) goto 931
+                            end do
+                        case ('irt1')
+                            do j = 1, NTYPE
+                                call value(out_args(j + 1), irrm%pm_gru%t1(j), ierr)
+                                if (ierr /= 0) goto 931
+                            end do
+                        case ('irt2')
+                            do j = 1, NTYPE
+                                call value(out_args(j + 1), irrm%pm_gru%t2(j), ierr)
+                                if (ierr /= 0) goto 931
+                            end do
+                        case ('irthlmin')
+                            do j = 1, NTYPE
+                                call value(out_args(j + 1), irrm%pm_gru%thlmin(j), ierr)
+                                if (ierr /= 0) goto 931
+                            end do
+
+                        !> Abstraction point location.
+                        case ('iabsp')
+                            do j = 1, NTYPE
+                                call value(out_args(j + 1), pm_gru%tp%iabsp(j), ierr)
+                                if (ierr /= 0) goto 931
+                            end do
 
                         !> Unrecognized parameter name.
                         case default

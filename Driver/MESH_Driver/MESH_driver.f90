@@ -1081,6 +1081,11 @@ program RUNMESH
             wb_acc%PNDW = 0.0
         end if
 
+!>>>irrigation
+        !> Distribute grid states (e.g., channel storage) to worker nodes.
+        call run_within_grid_mpi_irecv(shd, cm)
+!<<<irrigation
+
         cstate = run_within_tile(shd, fls, cm)
         cstate = ''
 !        if (len_trim(cstate) > 0) then
@@ -1089,6 +1094,11 @@ program RUNMESH
 !        end if
 
         call run_within_grid(shd, fls, cm)
+
+!>>>irrigation
+        !> Update grid states (e.g., channel storage) from worker nodes.
+        call run_within_grid_mpi_isend(shd, cm)
+!<<<irrigation
 
         !> Initialize grid-based accumulators for output.
         if (ipid == 0) then

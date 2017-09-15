@@ -35,7 +35,4 @@
 !> FEB 8/17 -GSA- Reservoir
       INTEGER RESERVOIRFLAG
 
-    character(len = 4) :: STREAMFLOWFILEFLAG = ''
-    character(len = 4) :: RESERVOIRFILEFLAG = ''
-
       END

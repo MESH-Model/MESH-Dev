@@ -444,6 +444,6 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> READ BASIN STRUCTURES.
     !>
 
-!-    call read_basin_structures(shd)
+    if (ro%RUNGRID) call read_basin_structures(shd)
 
 end subroutine

@@ -2,10 +2,23 @@ module sa_mesh_run_within_tile
 
     implicit none
 
+!>>>irrigation
+    !*  MINSTG: Minimum storage to leave in the channel, not accessible for irrigation. [m3].
+    !*  MINFSTG: Fraction of storage to leave in the channel, not accessible for irrigation. [--].
+    real, save :: MINSTG = 0.0
+    real, save :: MINFSTG = 0.05
+    !*  IRDMND: Calculated irrigation demand. [kg m-2 s-1].
+    !*  IRAVAI: Water available for irrigation. [kg m-2 s-1].
+    !*  OLDPRE: Diagnostic variable of precipitation before adding water for irrigation. [kg m-2 s-1].
+    !*  NEWPRE: Diagnostic variable of precipitation after adding water for irrigation. [kg m-2 s-1].
+    real, dimension(:), allocatable, save :: IRDMND, IRAVAI, OLDPRE, NEWPRE
+!<<<irrigation
+
     contains
 
     subroutine run_within_tile_init(shd, fls, cm)
 
+        use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use climate_forcing
@@ -13,6 +26,7 @@ module sa_mesh_run_within_tile
         !> Required for calls to processes.
         use RUNCLASS36_config
         use RUNSVS113_config
+        use irrigation_module
         use baseflow_module
         use cropland_irrigation_init
 
@@ -26,8 +40,15 @@ module sa_mesh_run_within_tile
         !> Call processes.
         call RUNCLASS36_init(shd, fls, cm)
         call RUNSVS113_init(shd, fls, cm)
+        call irrigation_init(fls, shd, cm)
         call bflm_init(fls, shd, cm)
         call runci_init(shd, fls)
+
+!>>>irrigation
+        if (irrm%PROCESS_ACTIVE) then
+            allocate(IRDMND(shd%lc%NML), IRAVAI(shd%lc%NML), OLDPRE(shd%lc%NML), NEWPRE(shd%lc%NML))
+        end if
+!<<<irrigation
 
     end subroutine
 
@@ -43,6 +64,7 @@ module sa_mesh_run_within_tile
         !> Required for calls to processes.
         use RUNCLASS36_module
         use RUNSVS113_module
+        use irrigation_module
         use baseflow_module
         use cropland_irrigation_within_tile
 
@@ -51,6 +73,16 @@ module sa_mesh_run_within_tile
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(clim_info) :: cm
+
+!>>>irrigation
+        integer n, l, k, j
+        real smin, fsmin, ir, lqsum, check
+        logical iractive
+        real, dimension(:), allocatable :: SUMIRDMND, SUMIRAVAI, SUMOLDPRE, SUMNEWPRE
+        integer iun
+        character(len = 3) ffmti
+        character(len = 200) fn
+!<<<irrigation
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
@@ -67,6 +99,55 @@ module sa_mesh_run_within_tile
 
         run_within_tile = ''
 
+!>>>irrigation (using soil moisture)
+        if ((ipid /= 0 .or. izero == 0) .and. irrm%PROCESS_ACTIVE) then
+            IRAVAI(il1:il2) = 0.0
+            OLDPRE(il1:il2) = 0.0
+            NEWPRE(il1:il2) = 0.0
+            do k = il1, il2 !GRU -> loop for timestep
+                IRDMND(k) = 0.0   !initialization for each time step
+                if (irrm%pm%irflg(k) == 1 .and. sum(stas%sl%thic(k, :)) == 0.0) then
+                    iractive = (ic%now%hour >= irrm%pm%t1(k) .and. ic%now%hour < irrm%pm%t2(k))
+                    if (.not. iractive) cycle
+                    if (irrm%pm%t1(k) == 0 .or. (ic%now%hour == irrm%pm%t1(k) .and. ic%ts_hourly == 1)) then ! calculate at beginning of irrigation period
+!                        do j = 1, shd%lc%IGND ! loop for each Soil layers
+                        do j = 1, 3 ! loop for each Soil layers
+                            check = irrm%pm%thlmin(k)*pm%slp%thfc(k, j) ! calculate 50% of field capacity
+                            lqsum =  stas%sl%thlq(k, j)
+                            if (lqsum < check)then ! check if sum of soil moisture is less than 50% of FC
+                                ir = (pm%slp%thfc(k, j) - lqsum)*stas%sl%delzw(k, j) ! calculate irrigation water to field capacity for each permeable soil depth
+                            else
+                                ir = 0.0
+                            end if
+                            IRDMND(k) = IRDMND(k) + ir ! sum of complete soil depth
+                        end do !soil layer
+                        IRDMND(k) = IRDMND(k)*(1000.0/ic%dts) ! convert into mm/sec
+                        irrm%va%dmnd(k) = IRDMND(k)
+                    end if
+                    IRAVAI(k) = max(irrm%va%dmnd(k) - cm%dat(ck%RT)%GAT(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
+                    if (pm%tp%iabsp(k) > 0) then
+                        n = fms%absp%meta%rnk(pm%tp%iabsp(k)) !RANK of channel to pull abstraction
+                        fsmin = fms%absp%fsmin(pm%tp%iabsp(k)) ! if read from tb0 file
+                        smin = fms%absp%smin(pm%tp%iabsp(k)) ! if read from tb0 file
+                    else
+                        n = shd%lc%ILMOS(k) ! pull from own cell if no abstraction point defined
+                        fsmin = MINFSTG
+                        smin = MINSTG
+                    end if
+                    if (ro%RUNGRID) then
+                        IRAVAI(k) = min(max(stas_grid%chnl%s(n) - smin, 0.0)*(1.0 - fsmin)/shd%AREA(n)*1000.0/ic%dts, IRAVAI(k)) ! adjust to the maximum water available from channel storage (m3 to mm)
+                        stas_grid%chnl%s(n) = stas_grid%chnl%s(n) - &
+                            (IRAVAI(k)*ic%dts/1000.0)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%AREA(n)
+                    end if
+                    OLDPRE(k) = cm%dat(ck%RT)%GAT(k)
+                    cm%dat(ck%RT)%GAT(k) = cm%dat(ck%RT)%GAT(k) + IRAVAI(k) ! add irrigation water into precipitation
+                    NEWPRE(k) = cm%dat(ck%RT)%GAT(k)
+                    irrm%va%dmnd(k) = irrm%va%dmnd(k) - IRAVAI(k)
+                end if ! check Crop GRU tile
+            end do ! GRU tile
+        end if
+!<<<irrigation
+
         !> Call processes.
         call RUNCLASS36_within_tile(shd, fls, cm)
         call RUNSVS113(shd, fls, cm)
@@ -74,7 +155,46 @@ module sa_mesh_run_within_tile
         call runci_within_tile(shd, fls, cm)
 
         !> MPI exchange.
-        call run_within_tile_mpi(shd)
+        call run_within_tile_mpi(shd, cm)
+
+!>>>irrigation
+        if (ipid == 0 .and. irrm%PROCESS_ACTIVE) then
+            if (.not. allocated(SUMIRDMND)) allocate(SUMIRDMND(fms%absp%n))
+            if (.not. allocated(SUMIRAVAI)) allocate(SUMIRAVAI(fms%absp%n))
+            if (.not. allocated(SUMOLDPRE)) allocate(SUMOLDPRE(fms%absp%n))
+            if (.not. allocated(SUMNEWPRE)) allocate(SUMNEWPRE(fms%absp%n))
+            if (ic%ts_count == 1) then ! first time (can't put in within_tile_init because structures are read after in between_grid_init).
+                open(unit = 1981, file = "irrigation.csv") ! open file for output
+                write(1981, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRDMND', 'IRAVAI', 'IRTOT', 'OLDPRE', 'NEWPRE'
+                do l = 1, fms%absp%n
+                    iun = 1981 + l
+                    write(ffmti, '(i3)') l
+                    fn = 'irrigation_' // trim(adjustl(ffmti)) // '.csv'
+                    open(unit = iun, file = fn)
+                    write(iun, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'IRDMND', 'IRAVAI', 'IRTOT', 'OLDPRE', 'NEWPRE'
+                end do
+            end if
+            write(1981, 1010) &
+                ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
+                sum(IRDMND), sum(IRAVAI), sum(IRAVAI), sum(OLDPRE), sum(NEWPRE)
+            SUMIRDMND = 0.0; SUMIRAVAI = 0.0; SUMOLDPRE = 0.0; SUMNEWPRE = 0.0
+            do k = 1, shd%lc%NML
+                if (pm%tp%iabsp(k) > 0) then
+                    SUMIRDMND(pm%tp%iabsp(k)) = SUMIRDMND(pm%tp%iabsp(k)) + IRDMND(k)
+                    SUMIRAVAI(pm%tp%iabsp(k)) = SUMIRAVAI(pm%tp%iabsp(k)) + IRAVAI(k)
+                    SUMOLDPRE(pm%tp%iabsp(k)) = SUMOLDPRE(pm%tp%iabsp(k)) + OLDPRE(k)
+                    SUMNEWPRE(pm%tp%iabsp(k)) = SUMNEWPRE(pm%tp%iabsp(k)) + NEWPRE(k)
+                end if
+            end do
+            do l = 1, fms%absp%n
+                iun = 1981 + l
+                write(iun, 1010) &
+                    ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
+                    SUMIRDMND(l), SUMIRAVAI(l), SUMIRAVAI(l), SUMOLDPRE(l), SUMNEWPRE(l)
+            end do
+        end if
+1010    format(9999(g15.7e2, ','))
+!<<<irrigation
 
         where (stas%cnpy%pevp(il1:il2) /= 0.0)
             stas%cnpy%evpb(il1:il2) = stas%sfc%evap(il1:il2)/stas%cnpy%pevp(il1:il2)
@@ -85,23 +205,28 @@ module sa_mesh_run_within_tile
 
     end function
 
-    subroutine run_within_tile_mpi(shd)
+    subroutine run_within_tile_mpi(shd, cm)
 
         !> For: MPI variables, barrier flag, il1:il2 parse utility
         use mpi_module
 
-        !> For: Model states, 'ic'.
+        !> For: Model states, 'ic', 'cm'.
         use sa_mesh_shared_variables
         use model_dates
+        use climate_forcing
 
         !> For: SAVERESUMEFLAG, RESUMEFLAG.
         use FLAGS
+
+        !> For irrigation module.
+        use irrigation_module
 
         !> For BASEFLOWFLAG.
         use baseflow_module
 
         !> Input variables.
         type(ShedGridParams) :: shd
+        type(clim_info) :: cm
 
         !> Local variables.
         integer ipid_recv, itag, ierrcode, istop, i, j, u, invars, ilen, iiln, ii1, ii2, ierr
@@ -128,6 +253,12 @@ module sa_mesh_run_within_tile
         if (bflm%BASEFLOWFLAG == 1) then
             invars = invars + 1
         end if
+
+!>>>irrigation
+        if (irrm%PROCESS_ACTIVE) then
+            invars = invars + 5
+        end if
+!<<<irrigation
 
         if (inp > 1 .and. ipid /= 0) then
 
@@ -183,6 +314,16 @@ module sa_mesh_run_within_tile
             if (bflm%BASEFLOWFLAG == 1) then
                 call mpi_isend(Qb(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             end if
+
+!>>>irrigation
+            if (irrm%PROCESS_ACTIVE) then
+                call mpi_isend(IRDMND(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(IRAVAI(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(OLDPRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(cm%dat(ck%RT)%GAT(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(NEWPRE(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            end if
+!<<<irrigation
 
             lstat = .false.
             do while (.not. lstat)
@@ -259,6 +400,17 @@ module sa_mesh_run_within_tile
                 if (bflm%BASEFLOWFLAG == 1) then
                     call mpi_irecv(Qb(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end if
+
+!>>>irrigation
+                if (irrm%PROCESS_ACTIVE) then
+                    call mpi_irecv(IRDMND(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(IRAVAI(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(OLDPRE(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(cm%dat(ck%RT)%GAT(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    i = i + 1
+                    call mpi_irecv(NEWPRE(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                end if
+!<<<irrigation
 
                 lstat = .false.
                 do while (.not. lstat)

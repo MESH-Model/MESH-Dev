@@ -534,10 +534,13 @@
                         end do
                     case ('BASINRUNOFFFLAG')
                     case ('BASINRECHARGEFLAG')
+
                     case ('STREAMFLOWFILEFLAG')
-                        STREAMFLOWFILEFLAG = adjustl(lowercase(out_args(2)))
+                        fms%stmg%qomeas%fls%ffmt = adjustl(out_args(2))
                     case ('RESERVOIRFILEFLAG')
-                        RESERVOIRFILEFLAG = adjustl(lowercase(out_args(2)))
+                        fms%rsvr%qorls%fls%ffmt = adjustl(out_args(2))
+                    case ('ABSTPOINTFILEFLAG')
+                        fms%absp%sabst%fls%ffmt = adjustl(out_args(2))
 
                     case ('SHDFILEFLAG')
                         call value(out_args(2), SHDFILEFLAG, ierr)

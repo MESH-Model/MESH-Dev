@@ -66,9 +66,13 @@ module model_files
 
         fms%stmg%qomeas%fls%fname = 'MESH_input_streamflow'
         fms%stmg%qomeas%fls%iun = 22
-
+        fms%stmg%qomeas%fls%ffmt = 'txt'
         fms%rsvr%qorls%fls%fname = 'MESH_input_reservoir'
         fms%rsvr%qorls%fls%iun = 21
+        fms%rsvr%qorls%fls%ffmt = 'txt'
+        fms%absp%sabst%fls%fname = 'MESH_input_abstractionpoint'
+        fms%absp%sabst%fls%iun = 24
+        fms%absp%sabst%fls%ffmt = 'txt'
 
 !todo: remove this
         flg%fl(mfk%f70)%fn = 'MESH_output_streamflow.csv'
