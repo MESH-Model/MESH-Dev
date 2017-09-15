@@ -106,7 +106,7 @@ module WF_ROUTE_module
         if (ic%ts_daily == 1) then
             WF_QSYN_AVG = 0.0
             if (WF_RTE_frsvrout%freq /= 0) then
-            	WF_RQISIM0_AVG = 0.0; WF_RSTGCH0_AVG = 0.0; WF_RQISIM_AVG = 0.0; WF_RSTGCH_AVG = 0.0; WF_RQOSIM_AVG = 0.0
+                WF_RQISIM0_AVG = 0.0; WF_RSTGCH0_AVG = 0.0; WF_RQISIM_AVG = 0.0; WF_RSTGCH_AVG = 0.0; WF_RQOSIM_AVG = 0.0
             end if
         end if
 
@@ -152,11 +152,11 @@ module WF_ROUTE_module
 
         !> For reach output file.
         if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KDLY)) then
-            WF_RQISIM0_AVG = WF_RQISIM0_AVG + stas%chnl%qi(fms%rsvr%meta%rnk(:))
+            WF_RQISIM0_AVG = WF_RQISIM0_AVG + stas_grid%chnl%qi(fms%rsvr%meta%rnk(:))
             WF_RSTGCH0_AVG = WF_RSTGCH0_AVG + wf_store1(fms%rsvr%meta%rnk(:))
             WF_RQISIM_AVG = WF_RQISIM_AVG + wf_qi2(fms%rsvr%meta%rnk(:))
-            WF_RSTGCH_AVG = WF_RSTGCH_AVG + stas%chnl%s(fms%rsvr%meta%rnk(:))
-            WF_RQOSIM_AVG = WF_RQOSIM_AVG + stas%chnl%qo(fms%rsvr%meta%rnk(:))
+            WF_RSTGCH_AVG = WF_RSTGCH_AVG + stas_grid%chnl%s(fms%rsvr%meta%rnk(:))
+            WF_RQOSIM_AVG = WF_RQOSIM_AVG + stas_grid%chnl%qo(fms%rsvr%meta%rnk(:))
         end if
 
         !> this is done so that INIT_STORE is not recalculated for
@@ -172,7 +172,7 @@ module WF_ROUTE_module
 !-        do l = 1, fms%rsvr%n
 !-            i = fms%rsvr%rnk(l)
 !-            write(708+l,"(2(I6,','),7(G12.5,','))") l, i, &
-!-                stas%chnl%qi(i), wf_store1(i), wf_qi2(i), stas%chnl%s(i), stas%chnl%qo(i)
+!-                stas_grid%chnl%qi(i), wf_store1(i), wf_qi2(i), stas_grid%chnl%s(i), stas_grid%chnl%qo(i)
 !-        end do
 
         !> Write per time-step output for reaches.
