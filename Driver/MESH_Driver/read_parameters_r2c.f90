@@ -116,7 +116,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
                     pm_grid%tp%xslp = ffield
                 end if
-            case ('dd')
+            case ('dd', 'dden')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
                     pm_grid%hp%dd = ffield
 

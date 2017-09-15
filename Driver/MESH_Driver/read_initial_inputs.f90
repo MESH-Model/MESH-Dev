@@ -160,14 +160,16 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     end if
 
-    !> Check maximum number of cells and outlets, and print a warning if an adjustment is made
-    if (shd%NA /= maxval(shd%NEXT)) then
-        print 172
-        shd%NA = maxval(shd%NEXT)
-    end if
-    if (shd%NAA /= (maxval(shd%NEXT) - count(shd%NEXT == 0))) then
-        print 173
-        shd%NAA = maxval(shd%NEXT) - count(shd%NEXT == 0)
+    !> Check maximum number of cells and outlets, and print a warning if an adjustment is made.
+    if (ro%RUNCHNL) then
+        if (shd%NA /= maxval(shd%NEXT)) then
+            print 172
+            shd%NA = maxval(shd%NEXT)
+        end if
+        if (shd%NAA /= (maxval(shd%NEXT) - count(shd%NEXT == 0))) then
+            print 173
+            shd%NAA = maxval(shd%NEXT) - count(shd%NEXT == 0)
+        end if
     end if
 
 172     format(1x, 'WARNING: Total number of grid adjusted to maximum of RANK. Consider adjusting the input files.')

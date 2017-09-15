@@ -219,6 +219,11 @@ subroutine read_basin_structures(shd)
         !> Initialize reservoir release values if such a type of reservoir has been defined.
         if (count(fms%rsvr%rls%b1 == 0.0) > 0) then
 
+            !> Re-allocate release values to the number of controlled reservoirs.
+            deallocate(fms%rsvr%qorls%val)
+            allocate(fms%rsvr%qorls%val(count(fms%rsvr%rls%b1 == 0.0)))
+            fms%rsvr%qorls%val = 0.0
+
             !> Skips records to present in file.
             call Julian_Day_ID(fms%rsvr%qorls%iyear, fms%rsvr%qorls%ijday, ijday1)
             call Julian_Day_ID(ic%start%year, ic%start%jday, ijday2)
