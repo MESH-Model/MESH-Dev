@@ -205,7 +205,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     end if
 
     !> Irrigation module.
-    irrm%PROCESS_ACTIVE = (any(irrm%pm_grid%irflg /= 1) .or. any(irrm%pm_gru%irflg /= 1))
+    irrm%PROCESS_ACTIVE = (any(irrm%pm_grid%irflg == 1) .or. any(irrm%pm_gru%irflg == 1))
 
     !> Parameters.
 
