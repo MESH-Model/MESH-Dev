@@ -12,6 +12,10 @@ module model_output
 
     implicit none
 
+!>>>>> permafrost_active_layer
+    real, allocatable :: TBAR_dly(:, :, :), ALD_dly(:, :), TMAX_ann(:, :, :), TMIN_ann(:, :, :), ALD_ann(:, :), ZOD_ann(:, :)
+!<<<<< permafrost_active_layer
+
     !>
     !> *****************************************************************************
     !> Although it may seen redundant, data types for groups are created
@@ -534,6 +538,14 @@ module model_output
 
         !> Per time-step:
         call init_met_data(vr%md_ts, shd)
+
+!>>>>> permafrost_active_layer
+        allocate( &
+            TBAR_dly(ts%nr_days, shd%NA, shd%lc%IGND), ALD_dly(ts%nr_days, shd%NA), &
+            TMAX_ann(ts%nyears, shd%NA, shd%lc%IGND), TMIN_ann(ts%nyears, shd%NA, shd%lc%IGND), &
+            ALD_ann(ts%nyears, shd%NA), ZOD_ann(ts%nyears, shd%NA))
+        TBAR_dly = 0.0; ALD_dly = -1.0; TMAX_ann = 0.0; TMIN_ann = 1000.0; ALD_ann = -1.0; ZOD_ann = -1.0
+!<<<<< permafrost_active_layer
 
     end subroutine !init_out_flds
 
@@ -1450,6 +1462,11 @@ module model_output
                     if (ifo%var_out(i)%out_d) &
                         vr%spt_d%tbar(id, :, :) = vr%spt_d%tbar(id, : , :) + tbar
 
+!>>>>> permafrost_active_layer
+                case ('ALD', 'ZOD')
+                    TBAR_dly(id, : , :) = TBAR_dly(id, : , :) + tbar
+!<<<<< permafrost_active_layer
+
                 case ('LQWS')
 
                     if (ifo%var_out(i)%out_y) & !trim(adjustl(ifo%ids_var_out(i, 2))) == 'Y') &
@@ -1644,6 +1661,10 @@ module model_output
         !>  output balance's fields in selected format
         !>------------------------------------------------------------------------------
 
+!>>>>> permafrost_active_layer
+        use permafrost_active_layer
+!<<<<< permafrost_active_layer
+
         !Inputs
         type(ShedGridParams), intent(in) :: shd
         type(fl_ids), intent(in) :: fls
@@ -1655,7 +1676,7 @@ module model_output
         !Files
 
         !Internals
-        integer i, j
+        integer k, i, j
         character*50 vId
         character*5 freq
         logical writeout
@@ -1821,6 +1842,28 @@ module model_output
                             call WriteFields_i(vr, ts, ifo, i, "D", shd, ts%nr_days, fls, j)
                         end do
                     end if
+
+!>>>>> permafrost_active_layer
+                case ('ALD', 'ZOD')
+                    TBAR_dly = TBAR_dly/(86400.0/ic%dts) !daily average temperature
+                    do j = 1, ts%nr_days
+                        call active_layer_depth( &
+                            TBAR_dly(j, :, :), shd%lc%sl%ZBOT, &
+                            ALD_dly(j, :), &
+                            shd%lc%IGND, shd%NA, 1, shd%NA)
+                        k = (ts%dates(j, 1) - ic%start%year) + 1
+                        ALD_ann(k, :) = max(ALD_ann(k, :), ALD_dly(j, :))
+                        TMAX_ann(k, :, :) = max(TMAX_ann(k, :, :), TBAR_dly(j, :, :))
+                        TMIN_ann(k, :, :) = min(TMIN_ann(k, :, :), TBAR_dly(j, :, :))
+                    end do
+                    do k = 1, ts%nyears
+                        call zero_oscillation_depth( &
+                            TMAX_ann(k, :, :), TMIN_ann(k, :, :), shd%lc%sl%ZBOT, 0.1, &
+                            ZOD_ann(k, :), &
+                            shd%lc%IGND, shd%NA, 1, shd%NA)
+                    end do
+                    call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
+!<<<<< permafrost_active_layer
 
                 case ('THLQ')
 
@@ -2304,6 +2347,17 @@ module model_output
                         fld(:, i) = vr%spt_d%tbar(i, :, igndx)
                     end do
                 end if
+
+!>>>>> permafrost_active_layer
+            case ('ALD')
+                do i = 1, nt
+                    fld(:, i) = ALD_ann(i, :)
+                end do
+            case ('ZOD')
+                do i = 1, nt
+                    fld(:, i) = ZOD_ann(i, :)
+                end do
+!<<<<< permafrost_active_layer
 
             case ('THLQ')
 
