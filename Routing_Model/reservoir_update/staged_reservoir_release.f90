@@ -20,11 +20,12 @@ subroutine staged_reservoir_release(iyear, ijday, rank, ireach, qi1, dt, qo2, st
     real, intent(out) :: qo2, store2
 
     !> Local variables.
-    integer irsv, imonth, iday
+!    integer irsv, imonth, iday
+    integer irsv
 
-    call Julian2MonthDay(ijday, iyear, imonth, iday)
+!    call Julian2MonthDay(ijday, iyear, imonth, iday)
     call get_reservoir(rank, irsv)
-    call compute_reservoir(resrvs%rsvr(irsv), qi1, 2, dt, imonth)
+    call compute_reservoir(resrvs%rsvr(irsv), qi1, 2, dt, ic%now%month)
     qo2 = resrvs%rsvr(irsv)%flowSIM(2)
     store2 = resrvs%rsvr(irsv)%stoSIM(2)
 
