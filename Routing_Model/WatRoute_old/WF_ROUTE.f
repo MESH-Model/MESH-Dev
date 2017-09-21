@@ -476,7 +476,7 @@ C storage reservoir and give fake value to outflow and storage
 c                  wf_resstore(l)=wf_resstore(l)+qadd(i)*div
                   wf_resstore(l)=wf_resstore(l)+qadd(i)+wf_qi2(i)
                   wf_qo2(i)=0.0
-                  wf_store2(i)=1000.0
+                  wf_store2(i)=0.0
 
               endif !if(wf_ires(l).eq.wf_yy(i).and.wf_jres(l).eq.wf_xx(i)) then
 
@@ -500,8 +500,8 @@ c don't really know what to do here, the flow doesn't really matter
 c as it will be overwritten later, just for something keep adding the
 c flow to the big reservoir stoage
                   wf_resstore(l)=wf_resstore(l)+qadd(i)+wf_qi2(i)
-                  wf_qo2(i)=1.0
-                  wf_store2(i)=1000.0
+                  wf_qo2(i)=0.0
+                  wf_store2(i)=0.0
 
                endif !are we at the outlet of controlled reservoir
 
