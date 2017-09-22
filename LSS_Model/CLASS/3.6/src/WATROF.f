@@ -117,6 +117,10 @@ C     * INTERNAL SCALARS AND VECTORS
       real exav
 
 C-----------------------------------------------------------------------------------------
+C     return if no nml is expected to run in this cycle
+      if(.not. any(iwf == 1)) return
+
+C-----------------------------------------------------------------------------------------
 C     coefficients
       c1 = 2.0/3.0
       c2 = 1.5 !3.0/2.0
@@ -125,10 +129,6 @@ C-------------------------------------------------------------------------------
 C     parameter - will be used to compute xdrainh (the fractional change in horizontal
 C     conductivity in a depth change h0) in Vincent's new formula.
       h0 = 1.0
-
-C-----------------------------------------------------------------------------------------
-C     return if no nml is expected to run in this cycle
-      if(.not. any(iwf == 1)) return
 
 C-----------------------------------------------------------------------------------------
 C     loop through each element
