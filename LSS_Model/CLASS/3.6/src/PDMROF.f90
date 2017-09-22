@@ -147,11 +147,11 @@ REAL  K2MK1,     DELTK1,  DELTK2,  DEL1STR, DEL2STR, DEL1STRM1,        &
 REAL  Q(ILG)
 
 !----------------------------------------------------------------------
-      UMQ       = 0.0
-
-!----------------------------------------------------------------------
 !     RETURN IF NO NML IS EXPECTED TO RUN IN THIS CYCLE
       IF(.NOT. ANY(IWF == 2)) RETURN
+
+!----------------------------------------------------------------------
+      UMQ       = 0.0
 
 !     DELT VALUE IN HOUR
       DELTHR = DELT / 3600.0
