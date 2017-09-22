@@ -143,6 +143,10 @@ C-----kam------- Added variable for PDM------------------------------------
       REAL U(ILG),Q(ILG),B(ILG),CSTR(ILG), UMQ(ILG)
       REAL CMXMCMN,SMXMCMN,BP1,IBP1,SMAX,RNET,SUM_FSTR,T_FSTR
 
+C-----------------------------------------------------------------------------------------
+C     Return if no nml is expected to run in this cycle
+      if(.not. any(iwf == 3)) return
+
 C-----coefficients-------------------------------------------------------------------------
       c1 = 2.0/3.0
       c2 = 1.5 !3.0/2.0
@@ -154,10 +158,6 @@ C     conductivity in a depth change h0) in Vincent's new formula.
 
 C-----kam---Initialization UMQ------------------------------------------
       UMQ = 0.0
-
-C-----------------------------------------------------------------------------------------
-C     Return if no nml is expected to run in this cycle
-      if(.not. any(iwf == 3)) return
 
 C ----INITIALIZE WORKING VARIABLES - RUNOFF GENERATION-----
       U         = 0.0
