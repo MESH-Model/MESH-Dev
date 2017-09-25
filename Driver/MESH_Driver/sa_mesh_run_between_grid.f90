@@ -4,16 +4,14 @@ module sa_mesh_run_between_grid
 
     contains
 
-    subroutine run_between_grid_init(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+    subroutine run_between_grid_init(shd, fls, cm, stfl, rrls)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use FLAGS
-        use model_dates
         use climate_forcing
         use model_output_variabletypes
-        use MODEL_OUTPUT
 
         use SA_RTE_module, only: SA_RTE_init
         use WF_ROUTE_config, only: WF_ROUTE_init
@@ -25,11 +23,7 @@ module sa_mesh_run_between_grid
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(dates_model) :: ts
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sp
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
@@ -63,17 +57,15 @@ module sa_mesh_run_between_grid
 
     end subroutine
 
-    subroutine run_between_grid(shd, fls, ts, cm, wb, eb, sp, stfl, rrls)
+    subroutine run_between_grid(shd, fls, cm, stfl, rrls)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
         use FLAGS
-        use model_dates
         use txt_io
         use climate_forcing
         use model_output_variabletypes
-        use MODEL_OUTPUT
 
         use SA_RTE_module, only: SA_RTE
         use WF_ROUTE_module, only: WF_ROUTE_between_grid
@@ -85,11 +77,7 @@ module sa_mesh_run_between_grid
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(dates_model) :: ts
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sp
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
@@ -144,7 +132,7 @@ module sa_mesh_run_between_grid
             if (ic%now%hour == 12 .and. ic%now%mins == 0) then
                 basin_SCA = 0.0
                 basin_SWE = 0.0
-                TOTAL_AREA = wb%basin_area
+                TOTAL_AREA = sum(shd%FRAC)
                 do k = 1, shd%lc%NML
                     ki = shd%lc%ILMOS(k)
                     FRAC = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%FRAC(shd%lc%ILMOS(k))
@@ -162,13 +150,13 @@ module sa_mesh_run_between_grid
         end if !(ipid == 0) then
 
 !todo: Switch
-        call SA_RTE(shd, wb)
+        call SA_RTE(shd)
 
         !> Watflood, 1988.
-        call WF_ROUTE_between_grid(shd, wb, stfl, rrls)
+        call WF_ROUTE_between_grid(shd, stfl, rrls)
 
         !> RPN RTE.
-        call run_rte_between_grid(fls, shd, wb, stfl, rrls)
+        call run_rte_between_grid(fls, shd, stfl, rrls)
 
         !> Cropland irrigation module (ICU).
         call runci_between_grid(shd, fls, cm)
@@ -177,7 +165,7 @@ module sa_mesh_run_between_grid
 
     end subroutine
 
-    subroutine run_between_grid_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
+    subroutine run_between_grid_finalize(fls, shd, cm, stfl, rrls)
 
         use mpi_module
         use model_files_variabletypes
@@ -185,7 +173,6 @@ module sa_mesh_run_between_grid
         use model_dates
         use climate_forcing
         use model_output_variabletypes
-        use MODEL_OUTPUT
 
         use WF_ROUTE_config, only: WF_ROUTE_finalize
         use save_basin_output, only: run_save_basin_output_finalize
@@ -193,9 +180,6 @@ module sa_mesh_run_between_grid
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sv
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
@@ -203,7 +187,7 @@ module sa_mesh_run_between_grid
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
         !> Watflood, 1988.
-        call WF_ROUTE_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
+        call WF_ROUTE_finalize(fls, shd, stfl, rrls)
 
         call run_save_basin_output_finalize(fls, shd, cm)
 

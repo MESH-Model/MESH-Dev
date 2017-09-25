@@ -363,7 +363,7 @@ program RUNMESH
             stas_grid%lzs%lqws*shd%FRAC + stas_grid%dzs%lqws*shd%FRAC
     end if
 
-    if (ipid == 0) call run_between_grid_init(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+    if (ipid == 0) call run_between_grid_init(shd, fls, cm, stfl, rrls)
 
 !> **********************************************************************
 !>  Start of section to only run on squares that make up the watersheds
@@ -1268,7 +1268,7 @@ program RUNMESH
 
         end if !(ipid == 0) then
 
-        if (ipid == 0) call run_between_grid(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+        if (ipid == 0) call run_between_grid(shd, fls, cm, stfl, rrls)
 
         if (ipid == 0) then
 
@@ -1446,7 +1446,7 @@ program RUNMESH
     if (ipid == 0) then
 
         !> Call finalization routines.
-        call run_between_grid_finalize(fls, shd, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
+        call run_between_grid_finalize(fls, shd, cm, stfl, rrls)
 
         !> Save the current state of the model for SAVERESUMEFLAG.
         if (SAVERESUMEFLAG == 4) then

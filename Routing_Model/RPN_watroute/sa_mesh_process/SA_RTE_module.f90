@@ -62,7 +62,7 @@ module SA_RTE_module
     !>              compatible with the old RPN RTE code.
 !todo: these can be removed at some point, as they've been added
 !todo: as flags as a part of the model_output module.
-    subroutine SA_RTE(shd, wb)
+    subroutine SA_RTE(shd)
 
         !> For: type(ShedGridParams) :: shd; cops
         use sa_mesh_shared_variables
@@ -71,14 +71,9 @@ module SA_RTE_module
         !* ic: Active counter.
         use model_dates
 
-        !> For: type(water_balance) :: wb
-        use MODEL_OUTPUT
-
         !> Input variables.
         !* shd: Basin and watershed information.
-        !* wb: Water balance at the current time-step.
         type(ShedGridParams), intent(in) :: shd
-        type(water_balance), intent(in) :: wb
 
         !> Local variables.
         logical writeout
@@ -103,7 +98,7 @@ module SA_RTE_module
 
         !> For: Runoff (RFF).
         if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
-            call tile_connector(shd, (wb%rofo + wb%rofs), RFF, .true.)
+            call tile_connector(shd, (stas_grid%sfc%rofo + stas_grid%sl%rofs)*shd%FRAC*ic%dts, RFF, .true.)
             if (writeout) then
                 call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, (frame_now + 1), 0, frame_now, 0, 6, RFF)
                 RFF = 0.0
@@ -112,7 +107,7 @@ module SA_RTE_module
 
         !> For: Recharge (RCH).
         if (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1) then
-            call tile_connector(shd, wb%rofb, RCH, .true.)
+            call tile_connector(shd, (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts, RCH, .true.)
             if (writeout) then
                 call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, (frame_now + 1), 0, frame_now, 0, 6, RCH)
                 RCH = 0.0

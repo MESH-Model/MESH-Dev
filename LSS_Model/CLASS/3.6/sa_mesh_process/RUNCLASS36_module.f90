@@ -15,13 +15,14 @@ module RUNCLASS36_module
         use model_dates
         use climate_forcing
         use model_output_variabletypes
-        use MODEL_OUTPUT
 
         !> For internal variables.
         use RUNCLASS36_config
 
         !> For CLASS output.
         use RUNCLASS36_save_output
+
+        use FLAGS
 
         !> For PBSM.
         use PBSM_module
