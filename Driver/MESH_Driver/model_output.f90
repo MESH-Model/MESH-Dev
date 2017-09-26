@@ -1227,7 +1227,7 @@ module model_output
                             (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + &
                              stas_grid%sfc%pndw + &
                              sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
-                             stas_grid%lzs%lqws*shd%FRAC + stas_grid%dzs%lqws*shd%FRAC)*shd%FRAC
+                             stas_grid%lzs%lqws + stas_grid%dzs%lqws)*shd%FRAC
                         call check_write_var_out(shd, ifo, i, vr%wbt_h%stg, freq, writeout, 882119, .true.)
                     end if
 
