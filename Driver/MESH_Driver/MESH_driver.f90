@@ -182,8 +182,8 @@ program RUNMESH
     type(CLIM_INFO) :: cm
     type(met_data) :: md_grd
     type(water_balance) :: wb_grd, wb_acc
-    type(energy_balance) :: eb_grd, eb_acc
-    type(soil_statevars) :: spv_grd, spv_acc
+    type(energy_balance) :: eb_acc
+    type(soil_statevars) :: spv_acc
     type(streamflow_hydrograph) :: stfl
     type(reservoir_release) :: rrls
 
@@ -287,8 +287,6 @@ program RUNMESH
 
     !> Initialize output fields.
     call init_water_balance(wb_grd, shd)
-    call init_energy_balance(eb_grd, shd)
-    call init_soil_statevars(spv_grd, shd)
 
     !> Calculate the grid and basin fractional areas.
     wb_grd%grid_area = shd%FRAC
@@ -1099,22 +1097,16 @@ program RUNMESH
         !> Aggregate grid-based accumulators for output.
         if (ipid == 0) then
             wb_grd%PRE = cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
-            eb_grd%QEVP = stas_grid%sfc%qevp*shd%FRAC
             wb_grd%EVAP = stas_grid%sfc%evap*shd%FRAC*ic%dts
             wb_grd%PEVP = stas_grid%cnpy%pevp*shd%FRAC*ic%dts
             wb_grd%EVPB = stas_grid%cnpy%evpb*shd%FRAC
-            eb_grd%HFS = stas_grid%sfc%hfs*shd%FRAC
             wb_grd%ROF = (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
             wb_grd%ROFO = stas_grid%sfc%rofo*shd%FRAC*ic%dts
             wb_grd%ROFS =  stas_grid%sl%rofs*shd%FRAC*ic%dts
             wb_grd%ROFB = (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
-            spv_grd%TBAR = stas_grid%sl%tbar
             do j = 1, shd%lc%IGND
-                spv_grd%THLQ(:, j) = stas_grid%sl%thlq(:, j)*shd%FRAC
                 wb_grd%LQWS(:, j) = stas_grid%sl%lqws(:, j)*shd%FRAC
-                spv_grd%THIC(:, j) = stas_grid%sl%thic(:, j)*shd%FRAC
                 wb_grd%FRWS(:, j) = stas_grid%sl%fzws(:, j)*shd%FRAC
-                eb_grd%GFLX(:, j) = stas_grid%sl%gflx(:, j)*shd%FRAC
             end do
             wb_grd%RCAN = stas_grid%cnpy%rcan*shd%FRAC
             wb_grd%SNCAN = stas_grid%cnpy%sncan*shd%FRAC
@@ -1203,33 +1195,37 @@ program RUNMESH
                                                               vr)
 
             !> Basin totals for the run.
-            TOTAL_PRE = TOTAL_PRE + sum(wb_grd%PRE)
-            TOTAL_EVAP = TOTAL_EVAP + sum(wb_grd%EVAP)
-            TOTAL_ROF = TOTAL_ROF + sum(wb_grd%ROF)
-            TOTAL_ROFO = TOTAL_ROFO + sum(wb_grd%ROFO)
-            TOTAL_ROFS = TOTAL_ROFS + sum(wb_grd%ROFS)
-            TOTAL_ROFB = TOTAL_ROFB + sum(wb_grd%ROFB)
+            TOTAL_PRE = TOTAL_PRE + sum(cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts)
+            TOTAL_EVAP = TOTAL_EVAP + sum(stas_grid%sfc%evap*shd%FRAC*ic%dts)
+            TOTAL_ROF = TOTAL_ROF + &
+                sum((stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts)
+            TOTAL_ROFO = TOTAL_ROFO + sum(stas_grid%sfc%rofo*shd%FRAC*ic%dts)
+            TOTAL_ROFS = TOTAL_ROFS + sum(stas_grid%sl%rofs*shd%FRAC*ic%dts)
+            TOTAL_ROFB = TOTAL_ROFB + sum((stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts)
 
             !> ACCUMULATE OUTPUT DATA FOR DIURNALLY AVERAGED FIELDS.
-            wb_acc%PRE = wb_acc%PRE + wb_grd%PRE
-            eb_acc%QEVP = eb_acc%QEVP + eb_grd%QEVP
-            wb_acc%EVAP = wb_acc%EVAP + wb_grd%EVAP
-            eb_acc%HFS  = eb_acc%HFS + eb_grd%HFS
-            wb_acc%ROF = wb_acc%ROF + wb_grd%ROF
-            wb_acc%ROFO = wb_acc%ROFO + wb_grd%ROFO
-            wb_acc%ROFS = wb_acc%ROFS + wb_grd%ROFS
-            wb_acc%ROFB = wb_acc%ROFB + wb_grd%ROFB
-            spv_acc%TBAR = spv_acc%TBAR + spv_grd%TBAR
-            spv_acc%THLQ = spv_acc%THLQ + spv_grd%THLQ
-            wb_acc%LQWS = wb_acc%LQWS + wb_grd%LQWS
-            spv_acc%THIC = spv_acc%THIC + spv_grd%THIC
-            wb_acc%FRWS = wb_acc%FRWS + wb_grd%FRWS
-            eb_acc%GFLX = eb_acc%GFLX + eb_grd%GFLX
-            wb_acc%RCAN = wb_acc%RCAN + wb_grd%RCAN
-            wb_acc%SNCAN = wb_acc%SNCAN + wb_grd%SNCAN
-            wb_acc%SNO = wb_acc%SNO + wb_grd%SNO
-            wb_acc%WSNO = wb_acc%WSNO + wb_grd%WSNO
-            wb_acc%PNDW = wb_acc%PNDW + wb_grd%PNDW
+            wb_acc%PRE = wb_acc%PRE + cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
+            eb_acc%QEVP = eb_acc%QEVP + stas_grid%sfc%qevp*shd%FRAC
+            wb_acc%EVAP = wb_acc%EVAP + stas_grid%sfc%evap*shd%FRAC*ic%dts
+            eb_acc%HFS  = eb_acc%HFS + stas_grid%sfc%hfs*shd%FRAC
+            wb_acc%ROF = wb_acc%ROF + &
+                (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
+            wb_acc%ROFO = wb_acc%ROFO + stas_grid%sfc%rofo*shd%FRAC*ic%dts
+            wb_acc%ROFS = wb_acc%ROFS + stas_grid%sl%rofs*shd%FRAC*ic%dts
+            wb_acc%ROFB = wb_acc%ROFB + (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
+            spv_acc%TBAR = spv_acc%TBAR + stas_grid%sl%tbar
+            do j = 1, shd%lc%IGND
+                spv_acc%THLQ(:, j) = spv_acc%THLQ(:, j) + stas_grid%sl%thlq(:, j)*shd%FRAC
+                wb_acc%LQWS(:, j) = wb_acc%LQWS(:, j) + stas_grid%sl%lqws(:, j)*shd%FRAC
+                spv_acc%THIC(:, j) = spv_acc%THIC(:, j) + stas_grid%sl%thic(:, j)*shd%FRAC
+                wb_acc%FRWS(:, j) = wb_acc%FRWS(:, j) + stas_grid%sl%fzws(:, j)*shd%FRAC
+                eb_acc%GFLX(:, j) = eb_acc%GFLX(:, j) + stas_grid%sl%gflx(:, j)*shd%FRAC
+            end do
+            wb_acc%RCAN = wb_acc%RCAN + stas_grid%cnpy%rcan*shd%FRAC
+            wb_acc%SNCAN = wb_acc%SNCAN + stas_grid%cnpy%sncan*shd%FRAC
+            wb_acc%SNO = wb_acc%SNO + stas_grid%sno%sno*shd%FRAC
+            wb_acc%WSNO = wb_acc%WSNO + stas_grid%sno%wsno*shd%FRAC
+            wb_acc%PNDW = wb_acc%PNDW + stas_grid%sfc%pndw*shd%FRAC
 
             !> CALCULATE AND PRINT DAILY AVERAGES.
             if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
