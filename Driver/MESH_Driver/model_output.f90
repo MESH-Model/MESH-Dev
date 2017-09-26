@@ -1052,16 +1052,17 @@ module model_output
 
     end subroutine Init_out
 
-    subroutine updatefieldsout_temp(shd, ts, ifo, &
-                                    md, wb, &
+    subroutine updatefieldsout_temp(shd, ifo, cm, &
                                     vr)
+
+        use sa_mesh_shared_variables
+        use model_dates
+        use climate_forcing
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
-        type(dates_model), intent(in) :: ts
         type(info_out), intent(in) :: ifo
-        type(met_data) :: md
-        type(water_balance) :: wb
+        type(clim_info) :: cm
 
         !> Input-output variables.
         type(out_flds) :: vr
@@ -1081,63 +1082,63 @@ module model_output
                 case ("FSDOWN")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%mdt_h%fsdown(ic%ts_hourly, :) = md%fsdown
+                        vr%mdt_h%fsdown(ic%ts_hourly, :) = cm%dat(ck%FB)%GRD
                         call check_write_var_out(shd, ifo, i, vr%mdt_h%fsdown, freq, writeout, 882101, .true.)
                     end if
 
                 case ("FSVH")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%mdt_h%fsvh(ic%ts_hourly, :) = md%fsvh
+                        vr%mdt_h%fsvh(ic%ts_hourly, :) = cm%dat(ck%FB)%GRD/2.0
                         call check_write_var_out(shd, ifo, i, vr%mdt_h%fsvh, freq, writeout, 882102, .true.)
                     end if
 
                 case ("FSIH")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%mdt_h%fsih(ic%ts_hourly, :) = md%fsih
+                        vr%mdt_h%fsih(ic%ts_hourly, :) = cm%dat(ck%FB)%GRD/2.0
                         call check_write_var_out(shd, ifo, i, vr%mdt_h%fsih, freq, writeout, 882103, .true.)
                     end if
 
                 case ("FDL")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%mdt_h%fdl(ic%ts_hourly, :) = md%fdl
+                        vr%mdt_h%fdl(ic%ts_hourly, :) = cm%dat(ck%FI)%GRD
                         call check_write_var_out(shd, ifo, i, vr%mdt_h%fdl, freq, writeout, 882104, .true.)
                     end if
 
                 case ("UL")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%mdt_h%ul(ic%ts_hourly, :) = md%ul
+                        vr%mdt_h%ul(ic%ts_hourly, :) = cm%dat(ck%UV)%GRD
                         call check_write_var_out(shd, ifo, i, vr%mdt_h%ul, freq, writeout, 882105, .true.)
                     end if
 
                 case ("TA")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%mdt_h%ta(ic%ts_hourly, :) = md%ta
+                        vr%mdt_h%ta(ic%ts_hourly, :) = cm%dat(ck%TT)%GRD
                         call check_write_var_out(shd, ifo, i, vr%mdt_h%ta, freq, writeout, 882106, .true.)
                     end if
 
                 case ("QA")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%mdt_h%qa(ic%ts_hourly, :) = md%qa
+                        vr%mdt_h%qa(ic%ts_hourly, :) = cm%dat(ck%HU)%GRD
                         call check_write_var_out(shd, ifo, i, vr%mdt_h%qa, freq, writeout, 882107, .true.)
                     end if
 
                 case ("PRES")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%mdt_h%pres(ic%ts_hourly, :) = md%pres
+                        vr%mdt_h%pres(ic%ts_hourly, :) = cm%dat(ck%P0)%GRD
                         call check_write_var_out(shd, ifo, i, vr%mdt_h%pres, freq, writeout, 882108, .true.)
                     end if
 
                 case ("PRE")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%mdt_h%pre(ic%ts_hourly, :) = md%pre
+                        vr%mdt_h%pre(ic%ts_hourly, :) = cm%dat(ck%RT)%GRD
                         call check_write_var_out(shd, ifo, i, vr%mdt_h%pre, freq, writeout, 882109, .true.)
                     end if
 
@@ -1145,21 +1146,22 @@ module model_output
                 case ("PREC")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%wbt_h%pre(ic%ts_hourly, :) = wb%pre
+                        vr%wbt_h%pre(ic%ts_hourly, :) = cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
                         call check_write_var_out(shd, ifo, i, vr%wbt_h%pre, freq, writeout, 882122, .true.)
                     end if
 
                 case ("EVAP")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%wbt_h%evap(ic%ts_hourly, :) = wb%evap
+                        vr%wbt_h%evap(ic%ts_hourly, :) = stas_grid%sfc%evap*shd%FRAC*ic%dts
                         call check_write_var_out(shd, ifo, i, vr%wbt_h%evap, freq, writeout, 882110, .true.)
                     end if
 
                 case ("ROF")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%wbt_h%rof(ic%ts_hourly, :) = wb%rof
+                        vr%wbt_h%rof(ic%ts_hourly, :) = &
+                            (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
                         call check_write_var_out(shd, ifo, i, vr%wbt_h%rof, freq, writeout, 882111, .true.)
                     end if
 
@@ -1167,7 +1169,7 @@ module model_output
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         do j = 1, shd%lc%IGND
-                            vr%wbt_h%lqws(ic%ts_hourly, :, j) = wb%lqws(:, j)
+                            vr%wbt_h%lqws(ic%ts_hourly, :, j) = stas_grid%sl%lqws(:, j)*shd%FRAC
                             call check_write_var_out(shd, ifo, i, vr%wbt_h%lqws(:, :, j), freq, writeout, &
                                 (882112 + (100000000*j)), .true., j)
                         end do
@@ -1177,7 +1179,7 @@ module model_output
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
                         do j = 1, shd%lc%IGND
-                            vr%wbt_h%frws(ic%ts_hourly, :, j) = wb%frws(:, j)
+                            vr%wbt_h%frws(ic%ts_hourly, :, j) = stas_grid%sl%fzws(:, j)*shd%FRAC
                             call check_write_var_out(shd, ifo, i, vr%wbt_h%frws(:, :, j), freq, writeout, &
                                 (882113 + (100000000*j)), .true., j)
                         end do
@@ -1186,56 +1188,60 @@ module model_output
                 case ("RCAN")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%wbt_h%rcan(ic%ts_hourly, :) = wb%rcan
+                        vr%wbt_h%rcan(ic%ts_hourly, :) = stas_grid%cnpy%rcan*shd%FRAC
                         call check_write_var_out(shd, ifo, i, vr%wbt_h%rcan, freq, writeout, 882114, .true.)
                     end if
 
                 case ("SNCAN")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%wbt_h%sncan(ic%ts_hourly, :) = wb%sncan
+                        vr%wbt_h%sncan(ic%ts_hourly, :) = stas_grid%cnpy%sncan*shd%FRAC
                         call check_write_var_out(shd, ifo, i, vr%wbt_h%sncan, freq, writeout, 882115, .true.)
                     end if
 
                 case ("PNDW")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%wbt_h%pndw(ic%ts_hourly, :) = wb%pndw
+                        vr%wbt_h%pndw(ic%ts_hourly, :) = stas_grid%sfc%pndw*shd%FRAC
                         call check_write_var_out(shd, ifo, i, vr%wbt_h%pndw, freq, writeout, 882116, .true.)
                     end if
 
                 case ("SNO")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%wbt_h%sno(ic%ts_hourly, :) = wb%sno
+                        vr%wbt_h%sno(ic%ts_hourly, :) = stas_grid%sno%sno*shd%FRAC
                         call check_write_var_out(shd, ifo, i, vr%wbt_h%sno, freq, writeout, 882117, .true.)
                     end if
 
                 case ("WSNO")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%wbt_h%wsno(ic%ts_hourly, :) = wb%wsno
+                        vr%wbt_h%wsno(ic%ts_hourly, :) = stas_grid%sno%wsno*shd%FRAC
                         call check_write_var_out(shd, ifo, i, vr%wbt_h%wsno, freq, writeout, 882118, .true.)
                     end if
 
                 case ("STG")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%wbt_h%stg(ic%ts_hourly, :) = wb%stg
+                        vr%wbt_h%stg(ic%ts_hourly, :) = &
+                            (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + &
+                             stas_grid%sfc%pndw + &
+                             sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
+                             stas_grid%lzs%lqws*shd%FRAC + stas_grid%dzs%lqws*shd%FRAC)*shd%FRAC
                         call check_write_var_out(shd, ifo, i, vr%wbt_h%stg, freq, writeout, 882119, .true.)
                     end if
 
                 case ("WR_RUNOFF")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%wroutt_h%rof(ic%ts_hourly, :) = wb%rofo + wb%rofs
+                        vr%wroutt_h%rof(ic%ts_hourly, :) = (stas_grid%sfc%rofo + stas_grid%sl%rofs)*ic%dts
                         call check_write_var_out(shd, ifo, i, vr%wroutt_h%rof, freq, writeout, 882120, .true.)
                     end if
 
                 case ("WR_RECHARGE")
                     if (ifo%var_out(i)%out_h) then
                         freq = "H"
-                        vr%wroutt_h%rchg(ic%ts_hourly, :) = wb%rofb
+                        vr%wroutt_h%rchg(ic%ts_hourly, :) = (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*ic%dts
                         call check_write_var_out(shd, ifo, i, vr%wroutt_h%rchg, freq, writeout, 882121, .true.)
                     end if
 
