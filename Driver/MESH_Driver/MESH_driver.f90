@@ -181,8 +181,6 @@ program RUNMESH
     type(INFO_OUT) :: ifo
     type(CLIM_INFO) :: cm
     type(water_balance) :: wb_acc
-    type(energy_balance) :: eb_acc
-    type(soil_statevars) :: spv_acc
     type(streamflow_hydrograph) :: stfl
     type(reservoir_release) :: rrls
 
@@ -287,8 +285,6 @@ program RUNMESH
     if (ipid == 0) then
 
         !> Daily average grid values.
-        call init_energy_balance(eb_acc, shd)
-        call init_soil_statevars(spv_acc, shd)
         call init_water_balance(wb_acc, shd)
 
         !> Basin totals for the run.
@@ -911,19 +907,13 @@ program RUNMESH
 
         !> Initialize accumulation variables.
         wb_acc%PRE = 0.0
-        eb_acc%QEVP = 0.0
         wb_acc%EVAP = 0.0
-        eb_acc%HFS = 0.0
         wb_acc%ROF = 0.0
         wb_acc%ROFO = 0.0
         wb_acc%ROFS = 0.0
         wb_acc%ROFB = 0.0
-        spv_acc%TBAR = 0.0
-        spv_acc%THLQ = 0.0
         wb_acc%LQWS = 0.0
-        spv_acc%THIC = 0.0
         wb_acc%FRWS = 0.0
-        eb_acc%GFLX = 0.0
         wb_acc%RCAN = 0.0
         wb_acc%SNCAN = 0.0
         wb_acc%SNO = 0.0
@@ -1028,19 +1018,13 @@ program RUNMESH
         !> Reset variables that accumulate on the daily time-step.
         if (ipid == 0 .and. ic%ts_daily == 1) then
             wb_acc%PRE = 0.0
-            eb_acc%QEVP = 0.0
             wb_acc%EVAP = 0.0
-            eb_acc%HFS = 0.0
             wb_acc%ROF = 0.0
             wb_acc%ROFO = 0.0
             wb_acc%ROFS =  0.0
             wb_acc%ROFB = 0.0
-            spv_acc%TBAR = 0.0
-            spv_acc%THLQ = 0.0
             wb_acc%LQWS = 0.0
-            spv_acc%THIC = 0.0
             wb_acc%FRWS = 0.0
-            eb_acc%GFLX = 0.0
             wb_acc%RCAN = 0.0
             wb_acc%SNCAN = 0.0
             wb_acc%SNO = 0.0
@@ -1113,8 +1097,7 @@ program RUNMESH
             !> CALCULATE GRID CELL AVERAGE DIAGNOSTIC FIELDS.
 
             !> Update output data.
-            if (OUTFIELDSFLAG == 1) call updatefieldsout_temp(shd, ifo, cm, &
-                                                              vr)
+            if (OUTFIELDSFLAG == 1) call updatefieldsout_temp(shd, ifo, cm, vr)
 
             !> Basin totals for the run.
             TOTAL_PRE = TOTAL_PRE + sum(cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts)
@@ -1127,21 +1110,15 @@ program RUNMESH
 
             !> ACCUMULATE OUTPUT DATA FOR DIURNALLY AVERAGED FIELDS.
             wb_acc%PRE = wb_acc%PRE + cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
-            eb_acc%QEVP = eb_acc%QEVP + stas_grid%sfc%qevp*shd%FRAC
             wb_acc%EVAP = wb_acc%EVAP + stas_grid%sfc%evap*shd%FRAC*ic%dts
-            eb_acc%HFS  = eb_acc%HFS + stas_grid%sfc%hfs*shd%FRAC
             wb_acc%ROF = wb_acc%ROF + &
                 (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
             wb_acc%ROFO = wb_acc%ROFO + stas_grid%sfc%rofo*shd%FRAC*ic%dts
             wb_acc%ROFS = wb_acc%ROFS + stas_grid%sl%rofs*shd%FRAC*ic%dts
             wb_acc%ROFB = wb_acc%ROFB + (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
-            spv_acc%TBAR = spv_acc%TBAR + stas_grid%sl%tbar
             do j = 1, shd%lc%IGND
-                spv_acc%THLQ(:, j) = spv_acc%THLQ(:, j) + stas_grid%sl%thlq(:, j)*shd%FRAC
                 wb_acc%LQWS(:, j) = wb_acc%LQWS(:, j) + stas_grid%sl%lqws(:, j)*shd%FRAC
-                spv_acc%THIC(:, j) = spv_acc%THIC(:, j) + stas_grid%sl%thic(:, j)*shd%FRAC
                 wb_acc%FRWS(:, j) = wb_acc%FRWS(:, j) + stas_grid%sl%fzws(:, j)*shd%FRAC
-                eb_acc%GFLX(:, j) = eb_acc%GFLX(:, j) + stas_grid%sl%gflx(:, j)*shd%FRAC
             end do
             wb_acc%RCAN = wb_acc%RCAN + stas_grid%cnpy%rcan*shd%FRAC
             wb_acc%SNCAN = wb_acc%SNCAN + stas_grid%cnpy%sncan*shd%FRAC
@@ -1152,14 +1129,8 @@ program RUNMESH
             !> CALCULATE AND PRINT DAILY AVERAGES.
             if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
 
-                eb_acc%QEVP = eb_acc%QEVP/real(ic%ts_daily)
-                eb_acc%HFS = eb_acc%HFS/real(ic%ts_daily)
-                spv_acc%TBAR = spv_acc%TBAR/real(ic%ts_daily)
-                spv_acc%THLQ = spv_acc%THLQ/real(ic%ts_daily)
                 wb_acc%LQWS = wb_acc%LQWS/real(ic%ts_daily)
-                spv_acc%THIC = spv_acc%THIC/real(ic%ts_daily)
                 wb_acc%FRWS = wb_acc%FRWS/real(ic%ts_daily)
-                eb_acc%GFLX = eb_acc%GFLX/real(ic%ts_daily)
                 wb_acc%RCAN = wb_acc%RCAN/real(ic%ts_daily)
                 wb_acc%SNCAN = wb_acc%SNCAN/real(ic%ts_daily)
                 wb_acc%SNO = wb_acc%SNO/real(ic%ts_daily)
@@ -1174,19 +1145,9 @@ program RUNMESH
                     wb_acc%STG
                 wb_acc%STG = wb_acc%DSTG + wb_acc%STG
 
-                if (OUTFIELDSFLAG == 1) then
-                    call UpdateFIELDSOUT(vr, ts, ifo, &
-                                         wb_acc%pre, wb_acc%evap, wb_acc%rof, wb_acc%dstg, &
-                                         spv_acc%tbar, wb_acc%lqws, wb_acc%frws, &
-                                         wb_acc%rcan, wb_acc%sncan, &
-                                         wb_acc%pndw, wb_acc%sno, wb_acc%wsno, &
-                                         eb_acc%gflx, eb_acc%hfs, eb_acc%qevp, &
-                                         spv_acc%thlq, spv_acc%thic, &
-                                         NSL, &
-                                         ic%now%jday, ic%now%year)
-                end if
-
             end if
+
+            if (OUTFIELDSFLAG == 1) call UpdateFIELDSOUT(fls, shd, ts, cm, ifo, vr)
 
         end if !(ipid == 0) then
 
