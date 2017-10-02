@@ -896,169 +896,6 @@ module model_output
 
     end subroutine
 
-    subroutine updatefieldsout_temp(shd, ifo, cm, vr)
-
-        use sa_mesh_shared_variables
-        use model_dates
-        use climate_forcing
-
-        !> Input variables.
-        type(ShedGridParams), intent(in) :: shd
-        type(info_out), intent(in) :: ifo
-        type(clim_info) :: cm
-
-        !> Input-output variables.
-        type(out_flds) :: vr
-
-        !> Local variables.
-        integer j
-
-        !> Update output fields.
-
-        !> FSDOWN.
-        if (allocated(vr%mdt_h%fsdown)) then
-            vr%mdt_h%fsdown(ic%ts_hourly, :) = cm%dat(ck%FB)%GRD
-            call check_write_var_out(shd, ifo, vr%mdt_h%fsdown, 882101, .true.)
-        end if
-
-        !> FSVH.
-        if (allocated(vr%mdt_h%fsvh)) then
-            vr%mdt_h%fsvh(ic%ts_hourly, :) = cm%dat(ck%FB)%GRD/2.0
-            call check_write_var_out(shd, ifo, vr%mdt_h%fsvh, 882102, .true.)
-        end if
-
-        !> FSIH.
-        if (allocated(vr%mdt_h%fsih)) then
-            vr%mdt_h%fsih(ic%ts_hourly, :) = cm%dat(ck%FB)%GRD/2.0
-            call check_write_var_out(shd, ifo, vr%mdt_h%fsih, 882103, .true.)
-        end if
-
-        !> FDL.
-        if (allocated(vr%mdt_h%fdl)) then
-            vr%mdt_h%fdl(ic%ts_hourly, :) = cm%dat(ck%FI)%GRD
-            call check_write_var_out(shd, ifo, vr%mdt_h%fdl, 882104, .true.)
-        end if
-
-        !> UL.
-        if (allocated(vr%mdt_h%ul)) then
-            vr%mdt_h%ul(ic%ts_hourly, :) = cm%dat(ck%UV)%GRD
-            call check_write_var_out(shd, ifo, vr%mdt_h%ul, 882105, .true.)
-        end if
-
-        !> TA.
-        if (allocated(vr%mdt_h%ta)) then
-            vr%mdt_h%ta(ic%ts_hourly, :) = cm%dat(ck%TT)%GRD
-            call check_write_var_out(shd, ifo, vr%mdt_h%ta, 882106, .true.)
-        end if
-
-        !> QA.
-        if (allocated(vr%mdt_h%qa)) then
-            vr%mdt_h%qa(ic%ts_hourly, :) = cm%dat(ck%HU)%GRD
-            call check_write_var_out(shd, ifo, vr%mdt_h%qa, 882107, .true.)
-        end if
-
-        !> PRES.
-        if (allocated(vr%mdt_h%pres)) then
-            vr%mdt_h%pres(ic%ts_hourly, :) = cm%dat(ck%P0)%GRD
-            call check_write_var_out(shd, ifo, vr%mdt_h%pres, 882108, .true.)
-        end if
-
-        !> PRE.
-        if (allocated(vr%mdt_h%pre)) then
-            vr%mdt_h%pre(ic%ts_hourly, :) = cm%dat(ck%RT)%GRD
-            call check_write_var_out(shd, ifo, vr%mdt_h%pre, 882109, .true.)
-        end if
-
-!todo: Better way of storing variables in different formats (e.g., PRE [mm s-1] vs PREC [mm]).
-        !> PREC.
-        if (allocated(vr%wbt_h%pre)) then
-            vr%wbt_h%pre(ic%ts_hourly, :) = cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
-            call check_write_var_out(shd, ifo, vr%wbt_h%pre, 882122, .true.)
-        end if
-
-        !> EVAP.
-        if (allocated(vr%wbt_h%evap)) then
-            vr%wbt_h%evap(ic%ts_hourly, :) = stas_grid%sfc%evap*shd%FRAC*ic%dts
-            call check_write_var_out(shd, ifo, vr%wbt_h%evap, 882110, .true.)
-        end if
-
-        !> ROF.
-        if (allocated(vr%wbt_h%rof)) then
-            vr%wbt_h%rof(ic%ts_hourly, :) = &
-                (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
-            call check_write_var_out(shd, ifo, vr%wbt_h%rof, 882111, .true.)
-        end if
-
-        !> LQWS.
-        if (allocated(vr%wbt_h%lqws)) then
-            do j = 1, shd%lc%IGND
-                vr%wbt_h%lqws(ic%ts_hourly, :, j) = stas_grid%sl%lqws(:, j)*shd%FRAC
-                call check_write_var_out(shd, ifo, vr%wbt_h%lqws(:, :, j), (882112 + (100000000*j)), .true., j)
-            end do
-        end if
-
-        !> FRWS.
-        if (allocated(vr%wbt_h%frws)) then
-            do j = 1, shd%lc%IGND
-                vr%wbt_h%frws(ic%ts_hourly, :, j) = stas_grid%sl%fzws(:, j)*shd%FRAC
-                call check_write_var_out(shd, ifo, vr%wbt_h%frws(:, :, j), (882113 + (100000000*j)), .true., j)
-            end do
-        end if
-
-        !> RCAN.
-        if (allocated(vr%wbt_h%rcan)) then
-            vr%wbt_h%rcan(ic%ts_hourly, :) = stas_grid%cnpy%rcan*shd%FRAC
-            call check_write_var_out(shd, ifo, vr%wbt_h%rcan, 882114, .true.)
-        end if
-
-        !> SNCAN.
-        if (allocated(vr%wbt_h%sncan)) then
-            vr%wbt_h%sncan(ic%ts_hourly, :) = stas_grid%cnpy%sncan*shd%FRAC
-            call check_write_var_out(shd, ifo, vr%wbt_h%sncan, 882115, .true.)
-        end if
-
-        !> PNDW.
-        if (allocated(vr%wbt_h%pndw)) then
-            vr%wbt_h%pndw(ic%ts_hourly, :) = stas_grid%sfc%pndw*shd%FRAC
-            call check_write_var_out(shd, ifo, vr%wbt_h%pndw, 882116, .true.)
-        end if
-
-        !> SNO.
-        if (allocated(vr%wbt_h%sno)) then
-            vr%wbt_h%sno(ic%ts_hourly, :) = stas_grid%sno%sno*shd%FRAC
-            call check_write_var_out(shd, ifo, vr%wbt_h%sno, 882117, .true.)
-        end if
-
-        !> WSNO.
-        if (allocated(vr%wbt_h%wsno)) then
-            vr%wbt_h%wsno(ic%ts_hourly, :) = stas_grid%sno%wsno*shd%FRAC
-            call check_write_var_out(shd, ifo, vr%wbt_h%wsno, 882118, .true.)
-        end if
-
-        !> STG.
-        if (allocated(vr%wbt_h%stg)) then
-            vr%wbt_h%stg(ic%ts_hourly, :) = &
-                (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + &
-                 stas_grid%sfc%pndw + &
-                 sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
-                 stas_grid%lzs%lqws + stas_grid%dzs%lqws)*shd%FRAC
-            call check_write_var_out(shd, ifo, vr%wbt_h%stg, 882119, .true.)
-        end if
-
-        !> WR_RUNOFF.
-        if (allocated(vr%wroutt_h%rof)) then
-            vr%wroutt_h%rof(ic%ts_hourly, :) = (stas_grid%sfc%rofo + stas_grid%sl%rofs)*ic%dts
-            call check_write_var_out(shd, ifo, vr%wroutt_h%rof, 882120, .true.)
-        end if
-
-        !> WR_RECHARGE.
-        if (allocated(vr%wroutt_h%rchg)) then
-            vr%wroutt_h%rchg(ic%ts_hourly, :) = (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*ic%dts
-            call check_write_var_out(shd, ifo, vr%wroutt_h%rchg, 882121, .true.)
-        end if
-
-    end subroutine
-
     subroutine check_write_var_out(shd, ifo, fld_in, file_unit, keep_file_open, igndx)
 
         !> Input variables.
@@ -1173,17 +1010,80 @@ module model_output
 
         call GetIndicesDATES(ic%now%jday, ic%now%year, iy, im, iss, id, ts)
 
+        !> FSDOWN.
+        if (allocated(vr%mdt_h%fsdown)) then
+            vr%mdt_h%fsdown(ic%ts_hourly, :) = cm%dat(ck%FB)%GRD
+            call check_write_var_out(shd, ifo, vr%mdt_h%fsdown, 882101, .true.)
+        end if
+
+        !> FSVH.
+        if (allocated(vr%mdt_h%fsvh)) then
+            vr%mdt_h%fsvh(ic%ts_hourly, :) = cm%dat(ck%FB)%GRD/2.0
+            call check_write_var_out(shd, ifo, vr%mdt_h%fsvh, 882102, .true.)
+        end if
+
+        !> FSIH.
+        if (allocated(vr%mdt_h%fsih)) then
+            vr%mdt_h%fsih(ic%ts_hourly, :) = cm%dat(ck%FB)%GRD/2.0
+            call check_write_var_out(shd, ifo, vr%mdt_h%fsih, 882103, .true.)
+        end if
+
+        !> FDL.
+        if (allocated(vr%mdt_h%fdl)) then
+            vr%mdt_h%fdl(ic%ts_hourly, :) = cm%dat(ck%FI)%GRD
+            call check_write_var_out(shd, ifo, vr%mdt_h%fdl, 882104, .true.)
+        end if
+
+        !> UL.
+        if (allocated(vr%mdt_h%ul)) then
+            vr%mdt_h%ul(ic%ts_hourly, :) = cm%dat(ck%UV)%GRD
+            call check_write_var_out(shd, ifo, vr%mdt_h%ul, 882105, .true.)
+        end if
+
+        !> TA.
+        if (allocated(vr%mdt_h%ta)) then
+            vr%mdt_h%ta(ic%ts_hourly, :) = cm%dat(ck%TT)%GRD
+            call check_write_var_out(shd, ifo, vr%mdt_h%ta, 882106, .true.)
+        end if
+
+        !> QA.
+        if (allocated(vr%mdt_h%qa)) then
+            vr%mdt_h%qa(ic%ts_hourly, :) = cm%dat(ck%HU)%GRD
+            call check_write_var_out(shd, ifo, vr%mdt_h%qa, 882107, .true.)
+        end if
+
+        !> PRES.
+        if (allocated(vr%mdt_h%pres)) then
+            vr%mdt_h%pres(ic%ts_hourly, :) = cm%dat(ck%P0)%GRD
+            call check_write_var_out(shd, ifo, vr%mdt_h%pres, 882108, .true.)
+        end if
+
+        !> PRE.
+        if (allocated(vr%mdt_h%pre)) then
+            vr%mdt_h%pre(ic%ts_hourly, :) = cm%dat(ck%RT)%GRD
+            call check_write_var_out(shd, ifo, vr%mdt_h%pre, 882109, .true.)
+        end if
+
         !> PREC; Rainfall; Rain; Precipitation.
+!todo: Better way of storing variables in different formats (e.g., PRE [mm s-1] vs PREC [mm]).
         if (allocated(vr%wbt_y%pre)) vr%wbt_y%pre(iy, :) = vr%wbt_y%pre(iy, :) + cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
         if (allocated(vr%wbt_m%pre)) vr%wbt_m%pre(im, :) = vr%wbt_m%pre(im, :) + cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
         if (allocated(vr%wbt_s%pre)) vr%wbt_s%pre(iss, :) = vr%wbt_s%pre(iss, :) + cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
         if (allocated(vr%wbt_d%pre)) vr%wbt_d%pre(id, :) = vr%wbt_d%pre(id, :) + cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
+        if (allocated(vr%wbt_h%pre)) then
+            vr%wbt_h%pre(ic%ts_hourly, :) = cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
+            call check_write_var_out(shd, ifo, vr%wbt_h%pre, 882122, .true.)
+        end if
 
         !> EVAP; Evapotranspiration.
         if (allocated(vr%wbt_y%evap)) vr%wbt_y%evap(iy, :) = vr%wbt_y%evap(iy, :) + stas_grid%sfc%evap*shd%FRAC*ic%dts
         if (allocated(vr%wbt_m%evap)) vr%wbt_m%evap(im, :) = vr%wbt_m%evap(im, :) + stas_grid%sfc%evap*shd%FRAC*ic%dts
         if (allocated(vr%wbt_s%evap)) vr%wbt_s%evap(iss, :) = vr%wbt_s%evap(iss, :) + stas_grid%sfc%evap*shd%FRAC*ic%dts
         if (allocated(vr%wbt_d%evap)) vr%wbt_d%evap(id, :) = vr%wbt_d%evap(id, :) + stas_grid%sfc%evap*shd%FRAC*ic%dts
+        if (allocated(vr%wbt_h%evap)) then
+            vr%wbt_h%evap(ic%ts_hourly, :) = stas_grid%sfc%evap*shd%FRAC*ic%dts
+            call check_write_var_out(shd, ifo, vr%wbt_h%evap, 882110, .true.)
+        end if
 
         !> Runoff; ROF.
         if (allocated(vr%wbt_y%rof)) vr%wbt_y%rof(iy, :) = vr%wbt_y%rof(iy, :) + &
@@ -1194,31 +1094,56 @@ module model_output
             (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
         if (allocated(vr%wbt_d%rof)) vr%wbt_d%rof(id, :) = vr%wbt_d%rof(id, :) + &
             (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
+        if (allocated(vr%wbt_h%rof)) then
+            vr%wbt_h%rof(ic%ts_hourly, :) = &
+                (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
+            call check_write_var_out(shd, ifo, vr%wbt_h%rof, 882111, .true.)
+        end if
 
         !> RCAN.
         if (allocated(vr%wbt_y%rcan)) vr%wbt_y%rcan(iy, :) = vr%wbt_y%rcan(iy, :) + stas_grid%cnpy%rcan*shd%FRAC
         if (allocated(vr%wbt_m%rcan)) vr%wbt_m%rcan(im, :) = vr%wbt_m%rcan(im, :) + stas_grid%cnpy%rcan*shd%FRAC
         if (allocated(vr%wbt_s%rcan)) vr%wbt_s%rcan(iss, :) = vr%wbt_s%rcan(iss, :) + stas_grid%cnpy%rcan*shd%FRAC
+        if (allocated(vr%wbt_h%rcan)) then
+            vr%wbt_h%rcan(ic%ts_hourly, :) = stas_grid%cnpy%rcan*shd%FRAC
+            call check_write_var_out(shd, ifo, vr%wbt_h%rcan, 882114, .true.)
+        end if
 
         !> SCAN; SNCAN.
         if (allocated(vr%wbt_y%sncan)) vr%wbt_y%sncan(iy, :) = vr%wbt_y%sncan(iy, :) + stas_grid%cnpy%sncan*shd%FRAC
         if (allocated(vr%wbt_m%sncan)) vr%wbt_m%sncan(im, :) = vr%wbt_m%sncan(im, :) + stas_grid%cnpy%sncan*shd%FRAC
         if (allocated(vr%wbt_s%sncan)) vr%wbt_s%sncan(iss, :) = vr%wbt_s%sncan(iss, :) + stas_grid%cnpy%sncan*shd%FRAC
+        if (allocated(vr%wbt_h%sncan)) then
+            vr%wbt_h%sncan(ic%ts_hourly, :) = stas_grid%cnpy%sncan*shd%FRAC
+            call check_write_var_out(shd, ifo, vr%wbt_h%sncan, 882115, .true.)
+        end if
 
         !> PNDW.
         if (allocated(vr%wbt_y%pndw)) vr%wbt_y%pndw(iy, :) = vr%wbt_y%pndw(iy, :) + stas_grid%sfc%pndw*shd%FRAC
         if (allocated(vr%wbt_m%pndw)) vr%wbt_m%pndw(im, :) = vr%wbt_m%pndw(im, :) + stas_grid%sfc%pndw*shd%FRAC
         if (allocated(vr%wbt_s%pndw)) vr%wbt_s%pndw(iss, :) = vr%wbt_s%pndw(iss, :) + stas_grid%sfc%pndw*shd%FRAC
+        if (allocated(vr%wbt_h%pndw)) then
+            vr%wbt_h%pndw(ic%ts_hourly, :) = stas_grid%sfc%pndw*shd%FRAC
+            call check_write_var_out(shd, ifo, vr%wbt_h%pndw, 882116, .true.)
+        end if
 
         !> SNO.
         if (allocated(vr%wbt_y%sno)) vr%wbt_y%sno(iy, :) = vr%wbt_y%sno(iy, :) + stas_grid%sno%sno*shd%FRAC
         if (allocated(vr%wbt_m%sno)) vr%wbt_m%sno(im, :) = vr%wbt_m%sno(im, :) + stas_grid%sno%sno*shd%FRAC
         if (allocated(vr%wbt_s%sno)) vr%wbt_s%sno(iss, :) = vr%wbt_s%sno(iss, :) + stas_grid%sno%sno*shd%FRAC
+        if (allocated(vr%wbt_h%sno)) then
+            vr%wbt_h%sno(ic%ts_hourly, :) = stas_grid%sno%sno*shd%FRAC
+            call check_write_var_out(shd, ifo, vr%wbt_h%sno, 882117, .true.)
+        end if
 
         !> WSNO.
         if (allocated(vr%wbt_y%wsno)) vr%wbt_y%wsno(iy, :) = vr%wbt_y%wsno(iy, :) + stas_grid%sno%wsno*shd%FRAC
         if (allocated(vr%wbt_m%wsno)) vr%wbt_m%wsno(im, :) = vr%wbt_m%wsno(im, :) + stas_grid%sno%wsno*shd%FRAC
         if (allocated(vr%wbt_s%wsno)) vr%wbt_s%wsno(iss, :) = vr%wbt_s%wsno(iss, :) + stas_grid%sno%wsno*shd%FRAC
+        if (allocated(vr%wbt_h%wsno)) then
+            vr%wbt_h%wsno(ic%ts_hourly, :) = stas_grid%sno%wsno*shd%FRAC
+            call check_write_var_out(shd, ifo, vr%wbt_h%wsno, 882118, .true.)
+        end if
 
         !> HFS; SensibleHeat.
         if (allocated(vr%engt_y%hfs)) vr%engt_y%hfs(iy, :) = vr%engt_y%hfs(iy, :) + stas_grid%sfc%hfs*shd%FRAC
@@ -1240,12 +1165,20 @@ module model_output
             if (allocated(vr%wbt_m%lqws)) vr%wbt_m%lqws(im, :, j) = vr%wbt_m%lqws(im, :, j) + stas_grid%sl%lqws(:, j)*shd%FRAC
             if (allocated(vr%wbt_s%lqws)) vr%wbt_s%lqws(iss, :, j) = vr%wbt_s%lqws(iss, :, j) + stas_grid%sl%lqws(:, j)*shd%FRAC
             if (allocated(vr%wbt_d%lqws)) vr%wbt_d%lqws(id, :, j) = vr%wbt_d%lqws(id, :, j) + stas_grid%sl%lqws(:, j)*shd%FRAC
+            if (allocated(vr%wbt_h%lqws)) then
+                vr%wbt_h%lqws(ic%ts_hourly, :, j) = stas_grid%sl%lqws(:, j)*shd%FRAC
+                call check_write_var_out(shd, ifo, vr%wbt_h%lqws(:, :, j), (882112 + (100000000*j)), .true., j)
+            end if
 
             !> FRWS.
             if (allocated(vr%wbt_y%frws)) vr%wbt_y%frws(iy, :, j) = vr%wbt_y%frws(iy, :, j) + stas_grid%sl%fzws(:, j)*shd%FRAC
             if (allocated(vr%wbt_m%frws)) vr%wbt_m%frws(im, :, j) = vr%wbt_m%frws(im, :, j) + stas_grid%sl%fzws(:, j)*shd%FRAC
             if (allocated(vr%wbt_s%frws)) vr%wbt_s%frws(iss, :, j) = vr%wbt_s%frws(iss, :, j) + stas_grid%sl%fzws(:, j)*shd%FRAC
             if (allocated(vr%wbt_d%frws)) vr%wbt_d%frws(id, :, j) = vr%wbt_d%frws(id, :, j) + stas_grid%sl%fzws(:, j)*shd%FRAC
+            if (allocated(vr%wbt_h%frws)) then
+                vr%wbt_h%frws(ic%ts_hourly, :, j) = stas_grid%sl%fzws(:, j)*shd%FRAC
+                call check_write_var_out(shd, ifo, vr%wbt_h%frws(:, :, j), (882113 + (100000000*j)), .true., j)
+            end if
 
             !> GFLX; HeatConduction.
             if (allocated(vr%engt_y%gflx)) vr%engt_y%gflx(iy, :, j) = vr%engt_y%gflx(iy, :, j) + stas_grid%sl%gflx(:, j)*shd%FRAC
@@ -1301,6 +1234,26 @@ module model_output
                  sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
                  stas_grid%lzs%lqws + stas_grid%dzs%lqws)*shd%FRAC - vr%wbt_d%stg(id, :)
             vr%wbt_d%stg(id, :) = vr%wbt_d%dstg(id, :) + vr%wbt_d%stg(id, :)
+        end if
+        if (allocated(vr%wbt_h%stg)) then
+            vr%wbt_h%stg(ic%ts_hourly, :) = &
+                (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + &
+                 stas_grid%sfc%pndw + &
+                 sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
+                 stas_grid%lzs%lqws + stas_grid%dzs%lqws)*shd%FRAC
+            call check_write_var_out(shd, ifo, vr%wbt_h%stg, 882119, .true.)
+        end if
+
+        !> WR_RUNOFF.
+        if (allocated(vr%wroutt_h%rof)) then
+            vr%wroutt_h%rof(ic%ts_hourly, :) = (stas_grid%sfc%rofo + stas_grid%sl%rofs)*ic%dts
+            call check_write_var_out(shd, ifo, vr%wroutt_h%rof, 882120, .true.)
+        end if
+
+        !> WR_RECHARGE.
+        if (allocated(vr%wroutt_h%rchg)) then
+            vr%wroutt_h%rchg(ic%ts_hourly, :) = (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*ic%dts
+            call check_write_var_out(shd, ifo, vr%wroutt_h%rchg, 882121, .true.)
         end if
 
     end subroutine

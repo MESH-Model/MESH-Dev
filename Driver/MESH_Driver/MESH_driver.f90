@@ -180,12 +180,12 @@ program RUNMESH
     type(dates_model) :: ts
     type(INFO_OUT) :: ifo
     type(CLIM_INFO) :: cm
-    type(water_balance) :: wb_acc
     type(streamflow_hydrograph) :: stfl
     type(reservoir_release) :: rrls
 
     !> Basin totals for the run.
     real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
+    real DAILY_PRE, DAILY_EVAP, DAILY_ROF
 
     !> End of run states for prognostic variables.
     real, dimension(:, :), allocatable :: tcan, rcan, sncan, gro, zpnd, tpnd, sno, tsno, albs, rhos
@@ -284,9 +284,6 @@ program RUNMESH
 
     if (ipid == 0) then
 
-        !> Daily average grid values.
-        call init_water_balance(wb_acc, shd)
-
         !> Basin totals for the run.
         TOTAL_PRE = 0.0
         TOTAL_EVAP = 0.0
@@ -294,6 +291,9 @@ program RUNMESH
         TOTAL_ROFO = 0.0
         TOTAL_ROFS = 0.0
         TOTAL_ROFB = 0.0
+        DAILY_PRE = 0.0
+        DAILY_EVAP = 0.0
+        DAILY_ROF = 0.0
 
     end if !(ipid == 0) then
 
@@ -396,7 +396,7 @@ program RUNMESH
     FRAME_NO_NEW = 1
 
     !> Determine what output will print to the console.
-    printoutwb = (allocated(wb_acc%pre) .and. allocated(wb_acc%evap) .and. allocated(wb_acc%rof))
+    printoutwb = ro%RUNBALWB
     printoutstfl = (fms%stmg%n > 0)
     printoutqhyd = (fms%stmg%n > 0)
 
@@ -903,27 +903,6 @@ program RUNMESH
 !230     continue
 !+    end if !(RESUMEFLAG == 2) then
 
-    if (ipid == 0) then
-
-        !> Initialize accumulation variables.
-        wb_acc%PRE = 0.0
-        wb_acc%EVAP = 0.0
-        wb_acc%ROF = 0.0
-        wb_acc%ROFO = 0.0
-        wb_acc%ROFS = 0.0
-        wb_acc%ROFB = 0.0
-        wb_acc%LQWS = 0.0
-        wb_acc%FRWS = 0.0
-        wb_acc%RCAN = 0.0
-        wb_acc%SNCAN = 0.0
-        wb_acc%SNO = 0.0
-        wb_acc%WSNO = 0.0
-        wb_acc%PNDW = 0.0
-        wb_acc%STG = 0.0
-        wb_acc%DSTG = 0.0
-
-    end if !(ipid == 0) then
-
     !> Calculate initial storage.
     if (ipid == 0) then
         STG_INI = sum( &
@@ -1017,19 +996,9 @@ program RUNMESH
 
         !> Reset variables that accumulate on the daily time-step.
         if (ipid == 0 .and. ic%ts_daily == 1) then
-            wb_acc%PRE = 0.0
-            wb_acc%EVAP = 0.0
-            wb_acc%ROF = 0.0
-            wb_acc%ROFO = 0.0
-            wb_acc%ROFS =  0.0
-            wb_acc%ROFB = 0.0
-            wb_acc%LQWS = 0.0
-            wb_acc%FRWS = 0.0
-            wb_acc%RCAN = 0.0
-            wb_acc%SNCAN = 0.0
-            wb_acc%SNO = 0.0
-            wb_acc%WSNO = 0.0
-            wb_acc%PNDW = 0.0
+            DAILY_PRE = 0.0
+            DAILY_EVAP = 0.0
+            DAILY_ROF = 0.0
         end if
 
         cstate = run_within_tile(shd, fls, cm)
@@ -1040,6 +1009,8 @@ program RUNMESH
 !        end if
 
         call run_within_grid(shd, fls, cm)
+
+        if (ipid == 0) call run_between_grid(shd, fls, cm, stfl, rrls)
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.
@@ -1094,12 +1065,7 @@ program RUNMESH
                 FRAME_NO_NEW = FRAME_NO_NEW + 1 !UPDATE COUNTERS
             end if
 
-            !> CALCULATE GRID CELL AVERAGE DIAGNOSTIC FIELDS.
-
-            !> Update output data.
-            if (OUTFIELDSFLAG == 1) call updatefieldsout_temp(shd, ifo, cm, vr)
-
-            !> Basin totals for the run.
+            !> Accumulated basin totals for end of run output.
             TOTAL_PRE = TOTAL_PRE + sum(cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts)
             TOTAL_EVAP = TOTAL_EVAP + sum(stas_grid%sfc%evap*shd%FRAC*ic%dts)
             TOTAL_ROF = TOTAL_ROF + &
@@ -1108,50 +1074,16 @@ program RUNMESH
             TOTAL_ROFS = TOTAL_ROFS + sum(stas_grid%sl%rofs*shd%FRAC*ic%dts)
             TOTAL_ROFB = TOTAL_ROFB + sum((stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts)
 
-            !> ACCUMULATE OUTPUT DATA FOR DIURNALLY AVERAGED FIELDS.
-            wb_acc%PRE = wb_acc%PRE + cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts
-            wb_acc%EVAP = wb_acc%EVAP + stas_grid%sfc%evap*shd%FRAC*ic%dts
-            wb_acc%ROF = wb_acc%ROF + &
-                (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
-            wb_acc%ROFO = wb_acc%ROFO + stas_grid%sfc%rofo*shd%FRAC*ic%dts
-            wb_acc%ROFS = wb_acc%ROFS + stas_grid%sl%rofs*shd%FRAC*ic%dts
-            wb_acc%ROFB = wb_acc%ROFB + (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts
-            do j = 1, shd%lc%IGND
-                wb_acc%LQWS(:, j) = wb_acc%LQWS(:, j) + stas_grid%sl%lqws(:, j)*shd%FRAC
-                wb_acc%FRWS(:, j) = wb_acc%FRWS(:, j) + stas_grid%sl%fzws(:, j)*shd%FRAC
-            end do
-            wb_acc%RCAN = wb_acc%RCAN + stas_grid%cnpy%rcan*shd%FRAC
-            wb_acc%SNCAN = wb_acc%SNCAN + stas_grid%cnpy%sncan*shd%FRAC
-            wb_acc%SNO = wb_acc%SNO + stas_grid%sno%sno*shd%FRAC
-            wb_acc%WSNO = wb_acc%WSNO + stas_grid%sno%wsno*shd%FRAC
-            wb_acc%PNDW = wb_acc%PNDW + stas_grid%sfc%pndw*shd%FRAC
+            !> Daily basin output to print to screen.
+            DAILY_PRE = DAILY_PRE + sum(cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts)
+            DAILY_EVAP = DAILY_EVAP + sum(stas_grid%sfc%evap*shd%FRAC*ic%dts)
+            DAILY_ROF = DAILY_ROF + &
+                sum((stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts)
 
-            !> CALCULATE AND PRINT DAILY AVERAGES.
-            if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
-
-                wb_acc%LQWS = wb_acc%LQWS/real(ic%ts_daily)
-                wb_acc%FRWS = wb_acc%FRWS/real(ic%ts_daily)
-                wb_acc%RCAN = wb_acc%RCAN/real(ic%ts_daily)
-                wb_acc%SNCAN = wb_acc%SNCAN/real(ic%ts_daily)
-                wb_acc%SNO = wb_acc%SNO/real(ic%ts_daily)
-                wb_acc%WSNO = wb_acc%WSNO/real(ic%ts_daily)
-                wb_acc%PNDW = wb_acc%PNDW/real(ic%ts_daily)
-
-                !> Calculate storage terms.
-                wb_acc%DSTG = &
-                    (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + stas_grid%sfc%pndw + &
-                     sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
-                     stas_grid%lzs%lqws + stas_grid%dzs%lqws)*shd%FRAC - &
-                    wb_acc%STG
-                wb_acc%STG = wb_acc%DSTG + wb_acc%STG
-
-            end if
-
+            !> Update data for other outputs.
             if (OUTFIELDSFLAG == 1) call UpdateFIELDSOUT(fls, shd, ts, cm, ifo, vr)
 
         end if !(ipid == 0) then
-
-        if (ipid == 0) call run_between_grid(shd, fls, cm, stfl, rrls)
 
         if (ipid == 0) then
 
@@ -1166,8 +1098,10 @@ program RUNMESH
                             write(6, '(f10.3)', advance = 'no') stfl%qsyn(j)
                         end do
                     end if
-                    j = shd%NAA
-                    if (printoutwb) write(6, '(3(f10.3))', advance = 'no') wb_acc%pre(j), wb_acc%evap(j), wb_acc%rof(j)
+                    if (printoutwb) then
+                        write(6, '(3(f10.3))', advance = 'no') &
+                            DAILY_PRE/sum(shd%FRAC), DAILY_EVAP/sum(shd%FRAC), DAILY_ROF/sum(shd%FRAC)
+                    end if
                     write(6, *)
                 end if !(ro%VERBOSEMODE > 0) then
                 if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
