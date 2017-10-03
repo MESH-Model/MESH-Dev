@@ -415,6 +415,7 @@ module model_output
                     end if
 
                 case ('PREC', 'Rainfall', 'Rain', 'Precipitation')
+                    ifo%var_out(i)%name = 'PREC'
                     if (ifo%var_out(i)%out_y) then
                         if (.not. allocated(vr%wbt_y%pre)) allocate(vr%wbt_y%pre(nts_y, nmax))
                         vr%wbt_y%pre = 0.0
@@ -438,6 +439,7 @@ module model_output
                     end if
 
                 case ('EVAP', 'Evapotranspiration')
+                    ifo%var_out(i)%name = 'EVAP'
                     if (ifo%var_out(i)%out_y) then
                         if (.not. allocated(vr%wbt_y%evap)) allocate(vr%wbt_y%evap(nts_y, nmax))
                         vr%wbt_y%evap = 0.0
@@ -461,6 +463,7 @@ module model_output
                     end if
 
                 case ('Runoff', 'ROF')
+                    ifo%var_out(i)%name = 'ROF'
                     if (ifo%var_out(i)%out_y) then
                         if (.not. allocated(vr%wbt_y%rof)) allocate(vr%wbt_y%rof(nts_y, nmax))
                         vr%wbt_y%rof = 0.0
@@ -484,6 +487,7 @@ module model_output
                     end if
 
                 case ('TempSoil', 'Temperature_soil_layers', 'TBAR')
+                    ifo%var_out(i)%name = 'TBAR'
                     if (ifo%var_out(i)%out_y) then
                         if (.not. allocated(vr%spt_y%tbar)) allocate(vr%spt_y%tbar(nts_y, nmax, jmax))
                         vr%spt_y%tbar = 0.0
@@ -567,6 +571,7 @@ module model_output
                     end if
 
                 case ('SCAN', 'SNCAN')
+                    ifo%var_out(i)%name = 'SNCAN'
                     if (ifo%var_out(i)%out_y) then
                         if (.not. allocated(vr%wbt_y%sncan)) allocate(vr%wbt_y%sncan(nts_y, nmax))
                         vr%wbt_y%sncan = 0.0
@@ -642,26 +647,32 @@ module model_output
                         ifo%var_out(i)%iun = 882118
                     end if
 
-                case ('STG')
+                case ('STG', 'DSTG')
+                    ifo%var_out(i)%name = 'STG'
                     if (ifo%var_out(i)%out_y) then
+                        if (.not. allocated(vr%wbt_y%dstg)) allocate(vr%wbt_y%dstg(nts_y, nmax))
                         if (.not. allocated(vr%wbt_y%stg)) allocate(vr%wbt_y%stg(nts_y, nmax))
-                        vr%wbt_y%stg = 0.0
+                        vr%wbt_y%dstg = 0.0; vr%wbt_y%stg = 0.0
                     end if
                     if (ifo%var_out(i)%out_m) then
+                        if (.not. allocated(vr%wbt_m%dstg)) allocate(vr%wbt_m%dstg(nts_m, nmax))
                         if (.not. allocated(vr%wbt_m%stg)) allocate(vr%wbt_m%stg(nts_m, nmax))
-                        vr%wbt_m%stg = 0.0
+                        vr%wbt_m%dstg = 0.0; vr%wbt_m%stg = 0.0
                     end if
                     if (ifo%var_out(i)%out_s) then
+                        if (.not. allocated(vr%wbt_s%dstg)) allocate(vr%wbt_s%dstg(nts_s, nmax))
                         if (.not. allocated(vr%wbt_s%stg)) allocate(vr%wbt_s%stg(nts_s, nmax))
-                        vr%wbt_s%stg = 0.0
+                        vr%wbt_s%dstg = 0.0; vr%wbt_s%stg = 0.0
                     end if
                     if (ifo%var_out(i)%out_h) then
+                        if (.not. allocated(vr%wbt_h%dstg)) allocate(vr%wbt_h%dstg(nts_h, nmax))
                         if (.not. allocated(vr%wbt_h%stg)) allocate(vr%wbt_h%stg(nts_h, nmax))
-                        vr%wbt_h%stg = 0.0
+                        vr%wbt_h%dstg = 0.0; vr%wbt_h%stg = 0.0
                         ifo%var_out(i)%iun = 882119
                     end if
 
                 case ('GFLX', 'HeatConduction')
+                    ifo%var_out(i)%name = 'GFLX'
                     if (ifo%var_out(i)%out_y) then
                         if (.not. allocated(vr%engt_y%gflx)) allocate(vr%engt_y%gflx(nts_y, nmax, jmax))
                         vr%engt_y%gflx = 0.0
@@ -680,6 +691,7 @@ module model_output
                     end if
 
                case ('HFS', 'SensibleHeat')
+                    ifo%var_out(i)%name = 'HFS'
                     if (ifo%var_out(i)%out_y) then
                         if (.not. allocated(vr%engt_y%hfs)) allocate(vr%engt_y%hfs(nts_y, nmax))
                         vr%engt_y%hfs = 0.0
@@ -697,7 +709,8 @@ module model_output
                         vr%engt_d%hfs = 0.0
                     end if
 
-               case ('QEVP', 'LatentHeat')
+                case ('QEVP', 'LatentHeat')
+                    ifo%var_out(i)%name = 'QEVP'
                     if (ifo%var_out(i)%out_y) then
                         if (.not. allocated(vr%engt_y%qevp)) allocate(vr%engt_y%qevp(nts_y, nmax))
                         vr%engt_y%qevp = 0.0
