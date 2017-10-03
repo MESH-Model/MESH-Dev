@@ -655,7 +655,7 @@ module rte_module
     !> _between_grid() adapted from rte_sub.f.
     !>
 
-    subroutine run_rte_between_grid(fls, shd, wb, stfl, rrls)
+    subroutine run_rte_between_grid(fls, shd, stfl, rrls)
 
         !> area_watflood: Shared variables used throughout rte code.
         use area_watflood
@@ -667,19 +667,16 @@ module rte_module
         use model_files_variables
         use sa_mesh_shared_variables
 
-        !> MODEL_OUTPUT: water_balance type for 'wb'.
-        use MODEL_OUTPUT
-
         !> model_output_variabletypes: Streamflow and reservoir output variables for SA_MESH.
         use model_output_variabletypes
+
+        !> model_dates: for 'ic' counter.
+        use model_dates
 
         type(fl_ids) :: fls
 
         !> Basin properties from SA_MESH.
         type(ShedGridParams) :: shd
-
-        !> Water balance from SA_MESH (includes runoff).
-        type(water_balance) :: wb
 
         !> Streamflow and reservoir output variables for SA_MESH.
         type(streamflow_hydrograph) :: stfl
@@ -717,7 +714,8 @@ module rte_module
         if (ic%ts_hourly == 1) then
             qr(1:naa) = 0.0
         end if
-        qr(1:naa) = qr(1:naa) + (wb%rofo(1:naa) + wb%rofs(1:naa) + wb%rofb(1:naa))
+        qr(1:naa) = qr(1:naa) + (stas_grid%sfc%rofo(1:naa) + stas_grid%sl%rofs(1:naa))*shd%FRAC(1:naa)*ic%dts
+        qr(1:naa) = qr(1:naa) + (stas_grid%lzs%rofb(1:naa) + stas_grid%dzs%rofb(1:naa))*shd%FRAC(1:naa)*ic%dts
 
         !> Return if no the last time-step of the hour.
         if (mod(ic%ts_hourly, 3600/ic%dts) /= 0) then

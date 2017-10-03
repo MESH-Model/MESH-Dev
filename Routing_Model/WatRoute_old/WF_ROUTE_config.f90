@@ -620,22 +620,17 @@ module WF_ROUTE_config
 
     end subroutine
 
-    subroutine WF_ROUTE_finalize(fls, shd, cm, wb, eb, sv, stfl, rrls)
+    subroutine WF_ROUTE_finalize(fls, shd, stfl, rrls)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
-        use model_dates
-        use climate_forcing
         use model_output_variabletypes
-        use MODEL_OUTPUT
+
+        use FLAGS
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(clim_info) :: cm
-        type(water_balance) :: wb
-        type(energy_balance) :: eb
-        type(soil_statevars) :: sv
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 

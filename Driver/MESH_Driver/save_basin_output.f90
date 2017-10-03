@@ -1,8 +1,5 @@
 module save_basin_output
 
-    !> For: type(energy_balance).
-    use MODEL_OUTPUT, only: energy_balance
-
     implicit none
 
     !> String read from run_options.ini.
@@ -32,11 +29,17 @@ module save_basin_output
         real EVAP, PEVP, EVPB, ARRD
     end type
 
+    !> For energy balance.
+    type BasinEnergyBalance
+        real QEVP, HFS
+    end type
+
     !> Basin output.
 
     type BasinOutput
         type(BasinWaterStorage), dimension(:), allocatable :: wb
         type(BasinEvp), dimension(:), allocatable :: evpdts
+        type(BasinEnergyBalance), dimension(:), allocatable :: eb
     end type
 
     type BasinOutputConfigFlag
@@ -63,8 +66,6 @@ module save_basin_output
     !* IKEY_HLY: Hourly average.
     !*(IKEY_SSL: Seasonal average.)
     integer, private :: IKEY_ACC = 1, IKEY_DLY = 2, IKEY_MLY = 3, IKEY_HLY = 4, IKEY_TSP = 5, NKEY = 5
-
-    type(energy_balance) :: eb_out
 
     contains
 
@@ -246,9 +247,9 @@ module save_basin_output
         end if
 
         !> Allocate and zero variables for accumulations.
-        allocate(eb_out%HFS(2:2), eb_out%QEVP(2:2), eb_out%GFLX(2:2, NSL))
-        eb_out%QEVP = 0.0
-        eb_out%HFS = 0.0
+        allocate(bno%eb(2:2))
+        bno%eb(:)%QEVP = 0.0
+        bno%eb(:)%HFS = 0.0
 
         !> Open CSV output files for the energy balance and write the header.
         if (BASINAVGEBFILEFLAG > 0) then
@@ -300,8 +301,8 @@ module save_basin_output
             end do
 
             !> Energy balance.
-            read(iun) eb_out%QEVP
-            read(iun) eb_out%HFS
+            read(iun) bno%eb(2)%QEVP
+            read(iun) bno%eb(2)%HFS
 
             !> Close the file to free the unit.
             close(iun)
@@ -379,7 +380,7 @@ module save_basin_output
             !> Energy balance.
             dnar = sum(shd%FRAC)
             if (BASINAVGEBFILEFLAG > 0) then
-                write(901, 1010) ic%now%year, ic%now%jday, eb_out%HFS(IKEY_DLY)/dnar, eb_out%QEVP(IKEY_DLY)/dnar
+                write(901, 1010) ic%now%year, ic%now%jday, bno%eb(2)%HFS/dnar, bno%eb(2)%QEVP/dnar
             end if
         end if
 
@@ -493,8 +494,8 @@ module save_basin_output
             end do
 
             !> Energy balance.
-            write(iun) eb_out%QEVP
-            write(iun) eb_out%HFS
+            write(iun) bno%eb(2)%QEVP
+            write(iun) bno%eb(2)%HFS
 
             !> Other accumulators for the water balance.
             do i = 1, NKEY
