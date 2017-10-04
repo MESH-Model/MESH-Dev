@@ -78,7 +78,7 @@ module permafrost_active_layer
                     ALD(i) = ZBOT(j)
                     exit
                 else if (TBAR(i, j - 1) > TFREZ .and. TBAR(i, j) <= TFREZ) then
-                    ALD(i) = (ZBOT(j) - ZBOT(j - 1))/(TBAR(i, j - 1) - TBAR(i, j))*(TBAR(i, j - 1) - 0.0) + ZBOT(j - 1)
+                    ALD(i) = (ZBOT(j) - ZBOT(j - 1))/(TBAR(i, j - 1) - TBAR(i, j))*(TBAR(i, j - 1) - TFREZ) + ZBOT(j - 1)
                     exit
                 end if
             end do

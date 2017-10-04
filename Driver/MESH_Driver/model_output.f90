@@ -11,7 +11,8 @@ module model_output
     implicit none
 
 !>>>>> permafrost_active_layer
-    real, allocatable :: TBAR_dly(:, :, :), ALD_dly(:, :), TMAX_ann(:, :, :), TMIN_ann(:, :, :), ALD_ann(:, :), ZOD_ann(:, :)
+    real, allocatable :: TBAR_dly(:, :, :), ALD_dly(:, :), TMAX_ann(:, :, :), TMIN_ann(:, :, :), ALD_ann(:, :), ZOD_ann(:, :, :)
+    real, allocatable :: ZOD_TTOL(:)
 !<<<<< permafrost_active_layer
 
     !>
@@ -213,7 +214,7 @@ module model_output
         integer nargs
 
         !> Local variables.
-        integer ngrds, ngrus, ntiles, j, i, ierr
+        integer n, j, i, ierr
         character(len = 20) opts
 
         !> Set nargs to the size of the array.
@@ -270,36 +271,65 @@ module model_output
                     !> Output format. Time series in grids
                     case('tsi')
                         vo%out_fmt = opts
-                        ngrds = nargs - i
-                        allocate(vo%i_grds(ngrds))
-                        do j = 1, ngrds
-                            if (is_letter(args(i + j))) exit
-                            call value(args(i + j), vo%i_grds(j), ierr)
-                        enddo
+                        n = 0
+                        do j = i + 1, nargs
+                            if (is_letter(args(j))) exit
+                            n = n + 1
+                        end do
+                        if (n > 0) then
+                            allocate(vo%i_grds(n))
+                            do j = 1, n
+                                call value(args(i + j), vo%i_grds(j), ierr)
+                            end do
+                        end if
 
                     !> Output format. Time series in tiles
                     case('tsk')
                         vo%out_fmt = opts
-                        ntiles = nargs - i
-                        allocate(vo%k_tiles(ntiles))
-                        do j = 1, ntiles
-                            if (is_letter(args(i + j))) exit
-                            call value(args(i + j), vo%k_tiles(j), ierr)
-                        enddo
+                        n = 0
+                        do j = i + 1, nargs
+                            if (is_letter(args(j))) exit
+                            n = n + 1
+                        end do
+                        if (n > 0) then
+                            allocate(vo%k_tiles(n))
+                            do j = 1, n
+                                call value(args(i + j), vo%k_tiles(j), ierr)
+                            end do
+                        end if
 
                     !> Output format. Time series of GRUs
                     case('gru')
                         vo%out_fmt = 'r2c'
-                        ngrus = nargs - i
-                        allocate(vo%m_grus(ngrus))
-                        do j = 1, ngrus
-                            if (is_letter(args(i + j))) exit
-                            call value(args(i + j), vo%m_grus(j), ierr)
-                        enddo
+                        n = 0
+                        do j = i + 1, nargs
+                            if (is_letter(args(j))) exit
+                            n = n + 1
+                        end do
+                        if (n > 0) then
+                            allocate(vo%m_grus(n))
+                            do j = 1, n
+                                call value(args(i + j), vo%m_grus(j), ierr)
+                            end do
+                        end if
 
                     !> Method of accumulation.
                     case ('cum', 'avg', 'max', 'min')
-                          vo%out_acc = opts
+                        vo%out_acc = opts
+
+                    !> TTOL for ZOD
+                    case ('ttol')
+                        n = 0
+                        do j = i + 1, nargs
+                            if (is_letter(args(j))) exit
+                            n = n + 1
+                        end do
+                        if (n > 0) then
+                            allocate(ZOD_TTOL(n))
+                            do j = 1, n
+                                call value(args(i + j), ZOD_TTOL(j), ierr)
+                            end do
+                        end if
 
                     case default
                         print 1010, trim(args(i)), trim(vo%name)
@@ -769,14 +799,19 @@ module model_output
                     end if
 
 !>>>>> permafrost_active_layer
-                    case ('ALD', 'ZOD', 'TMAX', 'TMIN')
+                case ('ALD', 'ZOD', 'TMAX', 'TMIN')
+                    if (ifo%var_out(i)%out_y) then
                         if (.not. allocated(TBAR_dly)) allocate(TBAR_dly(nts_d, nmax, jmax))
                         if (.not. allocated(ALD_dly)) allocate(ALD_dly(nts_d, nmax))
                         if (.not. allocated(TMAX_ann)) allocate(TMAX_ann(nts_y, nmax, jmax))
                         if (.not. allocated(TMIN_ann)) allocate(TMIN_ann(nts_y, nmax, jmax))
                         if (.not. allocated(ALD_ann)) allocate(ALD_ann(nts_y, nmax))
-                        if (.not. allocated(ZOD_ann)) allocate(ZOD_ann(nts_y, nmax))
+                        if (.not. allocated(ZOD_TTOL)) then
+                            allocate(ZOD_TTOL(1)); ZOD_TTOL = 0.0
+                        end if
+                        if (.not. allocated(ZOD_ann)) allocate(ZOD_ann(nts_y, nmax, size(ZOD_TTOL)))
                         TBAR_dly = 0.0; ALD_dly = -1.0; TMAX_ann = 0.0; TMIN_ann = 1000.0; ALD_ann = -1.0; ZOD_ann = -1.0
+                    end if
 !<<<<< permafrost_active_layer
 
             end select
@@ -1326,7 +1361,7 @@ module model_output
         type(out_flds), intent(in) :: vr
 
         !Internals
-        integer i, j
+        integer k, j, i
         character(len = 20) vId
 
         do i = 1, ifo%nr_out
@@ -1413,23 +1448,33 @@ module model_output
 
 !>>>>> permafrost_active_layer
                 case ('ALD')
-                    call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
+                    if (ifo%var_out(i)%out_y) then
+                        call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
+                    end if
                 case ('ZOD')
-                    do j = 1, ts%nyears
-                        call zero_oscillation_depth( &
-                            TMAX_ann(j, :, :), TMIN_ann(j, :, :), shd%lc%sl%ZBOT, 0.1, &
-                            ZOD_ann(j, :), &
-                            shd%lc%IGND, shd%NA, 1, shd%NA)
-                    end do
-                    call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
+                    if (ifo%var_out(i)%out_y) then
+                        do j = 1, size(ZOD_TTOL)
+                            do k = 1, ts%nyears
+                                call zero_oscillation_depth( &
+                                    TMAX_ann(k, :, :), TMIN_ann(k, :, :), shd%lc%sl%ZBOT, ZOD_TTOL(j), &
+                                    ZOD_ann(k, :, j), &
+                                    shd%lc%IGND, shd%NA, 1, shd%NA)
+                            end do
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
+                        end do
+                    end if
                 case ('TMAX')
-                    do j = 1, shd%lc%IGND
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nr_days, fls, j)
-                    end do
+                    if (ifo%var_out(i)%out_y) then
+                        do j = 1, shd%lc%IGND
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
+                        end do
+                    end if
                 case ('TMIN')
-                    do j = 1, shd%lc%IGND
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nr_days, fls, j)
-                    end do
+                    if (ifo%var_out(i)%out_y) then
+                        do j = 1, shd%lc%IGND
+                            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
+                        end do
+                    end if
 !<<<<< permafrost_active_layer
 
                 case ('THLQ')
@@ -1777,21 +1822,29 @@ module model_output
 
 !>>>>> permafrost_active_layer
             case ('ALD')
-                do i = 1, nt
-                    fld(:, i) = ALD_ann(i, :)
-                end do
+                if (trim(adjustl(freq)) == 'Y') then
+                    do i = 1, nt
+                        fld(:, i) = ALD_ann(i, :)
+                    end do
+                end if
             case ('ZOD')
-                do i = 1, nt
-                    fld(:, i) = ZOD_ann(i, :)
-                end do
+                if (trim(adjustl(freq)) == 'Y') then
+                    do i = 1, nt
+                        fld(:, i) = ZOD_ann(i, :, igndx)
+                    end do
+                end if
             case ('TMAX')
-                do i = 1, nt
-                    fld(:, i) = TMAX_ann(i, :, igndx)
-                end do
+                if (trim(adjustl(freq)) == 'Y') then
+                    do i = 1, nt
+                        fld(:, i) = TMAX_ann(i, :, igndx)
+                    end do
+                end if
             case ('TMIN')
-                do i = 1, nt
-                    fld(:, i) = TMIN_ann(i, :, igndx)
-                end do
+                if (trim(adjustl(freq)) == 'Y') then
+                    do i = 1, nt
+                        fld(:, i) = TMIN_ann(i, :, igndx)
+                    end do
+                end if
 !<<<<< permafrost_active_layer
 
             case ('THLQ')
