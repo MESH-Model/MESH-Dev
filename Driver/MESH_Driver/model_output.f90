@@ -325,6 +325,7 @@ module model_output
                             n = n + 1
                         end do
                         if (n > 0) then
+                            if (allocated(ZOD_TTOL)) deallocate(ZOD_TTOL)
                             allocate(ZOD_TTOL(n))
                             do j = 1, n
                                 call value(args(i + j), ZOD_TTOL(j), ierr)
@@ -812,6 +813,7 @@ module model_output
                         if (.not. allocated(ZOD_ann)) allocate(ZOD_ann(nts_y, nmax, size(ZOD_TTOL)))
                         TBAR_dly = 0.0; ALD_dly = -1.0; TMAX_ann = 0.0; TMIN_ann = 1000.0; ALD_ann = -1.0; ZOD_ann = -1.0
                     end if
+                    ifo%var_out(i)%out_acc = 'unknown'
 !<<<<< permafrost_active_layer
 
             end select
