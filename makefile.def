@@ -37,6 +37,7 @@ VPATH=	$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/Modules/climate_forcing_module: \
 		$(DIR_REPO)/Modules/simulation_statistics: \
 		$(DIR_REPO)/Modules/cropland_irrigation: \
+		$(DIR_REPO)/Modules/permafrost_active_layer: \
 		$(DIR_REPO)/Modules/io_modules: \
 		$(DIR_REPO)/Driver/MESH_Driver: \
 		$(DIR_REPO)/LSS_Model/CLASS/3.6/sa_mesh_process: \
@@ -63,6 +64,9 @@ OBJECTS+=	precmod.o stringmod.o \
 			txt_io.o ensim_io.o
 
 #SA_MESH flags, parameters, and variables
+
+#permafrost_active_layer
+OBJECTS+=	permafrost_active_layer.o
 
 #Modules
 OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
