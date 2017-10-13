@@ -12,8 +12,9 @@ module irrigation_module
     end type
 
     !*  dmnd: Calculated irrigation demand. [kg m-2 s-1].
+    !*  avail: Water available for irrigation. [kg m-2 s-1].
     type irrigation_variables
-        real, dimension(:), allocatable :: dmnd
+        real, dimension(:), allocatable :: dmnd, avail
     end type
 
     type irrigation_container
@@ -66,8 +67,8 @@ module irrigation_module
         end if
 
         !> Allocate and initialize variables.
-        allocate(irrm%va%dmnd(shd%lc%NML))
-        irrm%va%dmnd = 0.0
+        allocate(irrm%va%dmnd(shd%lc%NML), irrm%va%avail(shd%lc%NML))
+        irrm%va%dmnd = 0.0; irrm%va%avail = 0.0
 
         !> Deallocate non-NML based parameters allocated in other parts of the code.
         call irrigation_parameters_deallocate(irrm%pm_grid, ierr)
