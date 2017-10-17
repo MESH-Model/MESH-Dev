@@ -1,0 +1,759 @@
+MODULE runsvs_io
+USE runsvs_mod
+USE runsvs_utils
+    INTEGER, PARAMETER :: fid_ini = 50
+    INTEGER, PARAMETER :: fid_geo = 51
+    INTEGER, PARAMETER :: fid_rte = 52
+    INTEGER, PARAMETER :: fid_met = 53
+    INTEGER, PARAMETER :: fid_intrp = 54
+    INTEGER, PARAMETER :: fid_out = 55
+CONTAINS
+!
+!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!
+!
+SUBROUTINE open_files(outfile,metfile)
+!
+INTEGER istat
+CHARACTER (LEN=*) outfile
+CHARACTER (LEN=*) metfile
+!
+IF(xCount*yCount.NE.NG)THEN
+        PRINT*,"ERROR: ROW SIZE OF ",NG," DOES NOT MATCH GRID SIZE OF ",xCount,"x",yCount
+        STOP
+END IF
+OPEN(UNIT=fid_out,FILE=TRIM(outfile),IOSTAT=istat)
+OPEN(UNIT=fid_met,FILE=TRIM(metfile),IOSTAT=istat,STATUS='OLD',READONLY)
+!
+END SUBROUTINE open_files
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+SUBROUTINE close_files
+IMPLICIT NONE
+!
+CLOSE(fid_out)
+CLOSE(fid_met)
+!
+END SUBROUTINE close_files
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+SUBROUTINE read_interp_file(bus,bussiz,interpfile,nbpoints,wght,wghtsum,wshdarea)
+!
+!read the weights to attribute to each pixel when computing the watershed discharge average
+!and read the watershed area in square meters
+!
+INTEGER bussiz
+REAL bus(bussiz)
+INTEGER istat,nbpoints,xplace,yplace,i
+REAL wshdarea,wght(NG),usls,indice
+CHARACTER (LEN=*) interpfile
+!
+OPEN(UNIT=fid_intrp,FILE=TRIM(interpfile),IOSTAT=istat,STATUS='OLD',READONLY)
+read(fid_intrp,'(I4)')nbpoints
+read(fid_intrp,'(f30.15)')wshdarea
+DO i=1,nbpoints
+READ(fid_intrp,'(I4)')xplace
+READ(fid_intrp,'(I4)')yplace
+indice=xplace+(yplace-1)*xcount
+READ(fid_intrp,'(I1,f20.17)')usls,wght(indice)
+END DO
+DO i=0,NG-1
+    wghtsum=wghtsum+wght(i+1)
+END DO
+CLOSE(fid_intrp)
+!
+END SUBROUTINE read_interp_file
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+SUBROUTINE read_rte_file(bus,bussiz,rtefile,HU_decay,FLZ,PWR)
+!
+!read the routing and LZS parameters
+!
+INTEGER bussiz
+REAL bus(bussiz)
+REAL HU_decay,FLZ,PWR
+CHARACTER (LEN=*) rtefile
+!
+OPEN(UNIT=fid_rte,FILE=TRIM(rtefile),IOSTAT=istat,STATUS='OLD',READONLY)
+READ(fid_rte,*)
+READ(fid_rte,*)
+READ(fid_rte,'(f10.3)')HU_decay
+READ(fid_rte,'(e10.2)')FLZ
+READ(fid_rte,'(f6.2)')PWR
+CLOSE(fid_rte)
+!
+END SUBROUTINE read_rte_file
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+SUBROUTINE read_ini_file(bus,bussiz,inifile,maxrootdp)
+!
+! read state initial variables; WARNING: in stand-alone SVS, state variables are initialized with constant variables all over the domain;
+! this has to be changed to be able to stop and restart a simulation from a given point in time (copy method for geophys. info if changing this).
+! However, no need to so at this point given the very fast and robust behavior of the model: only DO NOT forget to use at least a 1-year spin-up period.
+!
+IMPLICIT NONE
+#include "thermoconsts.inc"
+!
+INTEGER bussiz
+REAL bus(bussiz)
+INTEGER i,j
+INTEGER istat
+REAL sum
+REAL deglat,deglon,degres,zrfmgrd,zrfhgrd
+REAL maxrootdp,ddrow
+REAL xslprow
+REAL tbarrow(3),tcanrow,tsnorow
+REAL thlqrow(11)
+REAL canwatfrac
+REAL albsrow,rhosrow
+CHARACTER (LEN=*) inifile
+
+IF(xCount*yCount.NE.NG)THEN
+        PRINT*,"ERROR: ROW SIZE OF ",NG," DOES NOT MATCH GRID SIZE OF ",xCount,"x",yCount
+        STOP
+END IF
+!
+OPEN(UNIT=fid_ini,FILE=TRIM(inifile),IOSTAT=istat,STATUS='OLD',READONLY)
+!
+! Read and ignore header 
+DO i=1,2
+	READ(fid_ini,*)
+END DO
+!
+! Read parameters
+READ(fid_ini,'(2F9.4,F7.4)') deglat,deglon,degres
+READ(fid_ini,'(2F7.2)') zrfmgrd,zrfhgrd
+READ(fid_ini,'(5F10.2)') (tbarrow(i),i=1,3),tcanrow,tsnorow
+READ(fid_ini,'(11F7.4)') (thlqrow(i),i=1,11)
+READ(fid_ini,'(F6.3)') canwatfrac
+READ(fid_ini,'(F10.3,F10.4)') albsrow,rhosrow
+!
+! Parse INI file
+DO j=0,ycount-1
+    DO i=0,xcount-1
+	bus(dlat+i+j*xcount)=(deglat+(j*degres))*PI/180.
+	bus(dlon+i+j*xcount)=(deglon+(i*degres))*PI/180.
+    END DO
+END DO
+!   
+DO i=0,NG-1
+	!
+	! Map CLASS parameters to SVS parameters
+	IF(observed_forcing)THEN
+		bus(zusl+i)=zrfmgrd  ! height of wind forcing
+       bus(ztsl+i)=zrfhgrd  ! height of temperature forcing
+	END IF
+	!
+	! State variables
+	!
+        ! Map soil soil moisture
+        ! CLASS layer <-> SVS layer
+        !       1             1-2
+        !       2              3
+        !       3             4-7
+        DO j=0,10
+                bus(wdsoil+j*NG+i)=thlqrow(j+1)
+        END DO
+    ! water intitally retained in the canopy (fraction of max. capacity)
+    bus(wveg+i)=canwatfrac
+	! Map soil temperature
+	! CLASS layer <-> SVS layer
+	!       1	       1
+	!       2              2
+	bus(tsoil+i)=tbarrow(1)+tcdk
+	bus(tsoil+NG+i)=tbarrow(2)+tcdk
+	bus(tground+i)=tbarrow(1)+tcdk
+	bus(tground+NG+i)=tbarrow(2)+tcdk
+	! Map vegetation temperature
+	DO j=0,1
+		bus(tvege+j*NG+i)=tcanrow+tcdk
+		bus(tsnowveg+j*NG+i)=tcanrow+tcdk
+	END DO
+	! Map snow properties
+        DO j=0,1
+                bus(tsnow+j*NG+i)=tsnorow+tcdk
+        END DO
+	bus(snoro+i)=rhosrow/900. ! density (kg/m3) to relative density wrt ice
+	bus(snvro+i)=rhosrow/900.
+	bus(snoal+i)=albsrow
+	bus(snval+i)=albsrow
+END DO
+!
+! Summarize what we just did
+PRINT*,"--------------------------------"
+PRINT*,"CLASS INI file read successfully"
+PRINT*,"--------------------------------"
+PRINT*,"COORDINATES OF LOWER LEFT PIXEL:   LAT, LON = ",deglat,deglon
+PRINT*,"GRID RESOLUTION (degrees)   ",degres
+PRINT*,"height of observed wind forcing  (m)",zrfmgrd
+PRINT*,"height of observed temperature forcing (m) ",zrfhgrd
+PRINT*,"--------------------------------"
+PRINT*,"SOIL init. MOISTURE content for the 11 layers :    ",(bus(wdsoil+j*NG),j=0,10)
+PRINT*,"SOIL TEMPERATURE (K): ",bus(tsoil)
+PRINT*,"VEGETATION TEMP. (K): ",bus(tvege)
+PRINT*,"SNOW TEMPERATURE (K): ",bus(tsnow)
+PRINT*,"SNOW DENSITY (relative to density of ice):   ",bus(snoro)
+PRINT*,"SNOW ALBEDO:      ",bus(snoal)
+PRINT*,"--------------------------------"
+!
+CLOSE(fid_ini)
+RETURN
+END SUBROUTINE read_ini_file
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+SUBROUTINE read_geo_file(bus,bussiz,geofile)
+!
+!read info from a geophysical file in r2c (txt) format to read spatially-varying geophysical fields.
+!
+USE strings
+IMPLICIT NONE
+#include "thermoconsts.inc"
+!
+INTEGER bussiz
+REAL bus(bussiz)
+!
+INTEGER i,j,l,numb
+INTEGER istat
+REAL vegefrac(NG*26)
+REAL sandrow(NG*11)
+REAL clayrow(NG*11)
+REAL roughlen(NG)
+REAL subslope(NG)
+REAL draden(NG)
+REAL totfrac
+!
+CHARACTER (LEN=500) line
+CHARACTER (LEN=30) args(50)
+INTEGER iostat, nargs, n2skip
+!
+! Read SVS-style geophys. file
+!
+CHARACTER (LEN=*) geofile
+IF(xCount*yCount.NE.NG)THEN
+        PRINT*,"ERROR: ROW SIZE OF ",NG," DOES NOT MATCH GRID SIZE OF ",xCount,"x",yCount
+        STOP
+END IF
+!
+OPEN(UNIT=fid_geo,FILE=TRIM(geofile),IOSTAT=istat,STATUS='OLD',READONLY)
+!
+READ(fid_geo,'(A)',IOSTAT=iostat) line
+IF(iostat.NE.0)THEN
+	PRINT*,"Error reading GEOPHYS. file"
+	STOP
+END IF
+!
+! Read and ignore header 
+DO i=1,32
+	READ(fid_geo,*)
+END DO
+!
+! Read parameters
+!
+! Skip n2skip unused records in geophys. r2c file
+n2skip=1
+DO numb=1,n2skip
+    DO j=1,yCount
+        READ(fid_geo,*)
+    END DO
+    ! Read and ignore "Frame:" lines
+    DO i=1,2
+        READ(fid_geo,*)
+    END DO
+END DO
+!
+! vegetation_fraction
+DO l=1,26
+    DO j=1,yCount
+        READ(fid_geo,'(A)') line
+        CALL parse(TRIM(line),' ',args,nargs)
+        DO i=1,xCount
+            READ(args(i),*)vegefrac((l-1)*NG+i+(j-1)*xCount)
+        END DO
+    END DO
+    ! Read and ignore "Frame:" lines
+    DO i=1,2
+        READ(fid_geo,*)
+    END DO
+END DO
+
+!
+! Skip n2skip unused records in geophys. r2c file
+n2skip=7
+DO numb=1,n2skip
+    DO j=1,yCount
+        READ(fid_geo,*)
+    END DO
+    ! Read and ignore "Frame:" lines
+    DO i=1,2
+        READ(fid_geo,*)
+    END DO
+END DO
+!
+! roughness length
+DO j=1,yCount
+    READ(fid_geo,'(A)') line
+    CALL parse(TRIM(line),' ',args,nargs)
+    DO i=1,xCount
+        READ(args(i),*)roughlen(i+(j-1)*xCount)
+    END DO
+END DO
+! Read and ignore "Frame:" lines
+DO i=1,2
+    READ(fid_geo,*)
+END DO
+!
+! Skip n2skip unused records in geophys. r2c file
+n2skip=4
+DO numb=1,n2skip
+    DO j=1,yCount
+        READ(fid_geo,*)
+    END DO
+    ! Read and ignore "Frame:" lines
+    DO i=1,2
+        READ(fid_geo,*)
+    END DO
+END DO
+!
+! slope
+DO j=1,yCount
+    READ(fid_geo,'(A)') line
+    CALL parse(TRIM(line),' ',args,nargs)
+    DO i=1,xCount
+        READ(args(i),*)subslope(i+(j-1)*xCount)
+    END DO
+END DO
+! Read and ignore "Frame:" lines
+DO i=1,2
+    READ(fid_geo,*)
+END DO
+!
+! Skip n2skip unused records in geophys. r2c file
+n2skip=0
+DO numb=1,n2skip
+    DO j=1,yCount
+        READ(fid_geo,*)
+    END DO
+    ! Read and ignore "Frame:" lines
+    DO i=1,2
+        READ(fid_geo,*)
+    END DO
+END DO
+!
+! drainage density
+DO j=1,yCount
+    READ(fid_geo,'(A)') line
+    CALL parse(TRIM(line),' ',args,nargs)
+    DO i=1,xCount
+        READ(args(i),*)draden(i+(j-1)*xCount)
+    END DO
+END DO
+! Read and ignore "Frame:" lines
+DO i=1,2
+    READ(fid_geo,*)
+END DO
+!
+! Skip n2skip unused records in geophys. r2c file
+n2skip=1
+DO numb=1,n2skip
+    DO j=1,yCount
+        READ(fid_geo,*)
+    END DO
+    ! Read and ignore "Frame:" lines
+    DO i=1,2
+        READ(fid_geo,*)
+    END DO
+END DO
+!
+! sand content
+DO l=1,7
+    DO j=1,yCount
+        READ(fid_geo,'(A)') line
+        CALL parse(TRIM(line),' ',args,nargs)
+        DO i=1,xCount
+            READ(args(i),*)sandrow((l-1)*NG+i+(j-1)*xCount)
+        END DO
+    END DO
+    ! Read and ignore "Frame:" lines
+    DO i=1,2
+        READ(fid_geo,*)
+    END DO
+END DO
+!
+! clay content
+DO l=1,7
+    DO j=1,yCount
+        READ(fid_geo,'(A)') line
+        CALL parse(TRIM(line),' ',args,nargs)
+        DO i=1,xCount
+            READ(args(i),*)clayrow((l-1)*NG+i+(j-1)*xCount)
+        END DO
+    END DO
+    ! Read and ignore "Frame:" lines
+    DO i=1,2
+        READ(fid_geo,'(A)',IOSTAT=iostat) line
+        IF(iostat.NE.0)THEN
+        ! rien
+        END IF
+    END DO
+END DO
+!
+! Parse GEO file
+DO i=0,NG-1
+    !
+	! Parameters
+	!
+    DO l=0,25
+        bus(vegf+l*NG+i)=vegefrac(l*NG+i+1) ! vegetation fraction
+    END DO
+! set inland water cover to 0 to mimic SPS filtered mask
+    totfrac = 0.
+    bus(vegf+2*NG+i)= 0.0
+    DO l=0,25
+        totfrac = totfrac + bus(vegf+l*NG+i)
+    END DO
+    IF(totfrac.NE.0.)THEN
+         DO l=0,25
+       	  bus(vegf+l*NG+i) = bus(vegf+l*NG+i) / totfrac
+   	 END DO
+! in case of a pixel comletely covered with water, 100% of forest is assumed instead;
+! no attention should be payed to this pixel results
+    ELSE
+         bus(vegf+6*NG+i) = 1.0
+    END IF
+
+    bus(z0+i)=roughlen(i+1)
+    bus(z0+i)= max(bus(z0+i),0.1)
+    bus(draindens+i)=draden(i+1)
+    bus(draindens+i)=max(bus(draindens+i),0.1E-03)
+    bus(slop+i)=subslope(i+1)
+    bus(slop+i)=max(bus(slop+i),0.001)
+    !
+	! Map soil texture
+	! For soil texture we ignore negative numbers
+	! which signal special soils (organic/impermeable/glaciers)
+    DO l=0,6
+        bus(sand+l*NG+i)=MAX(sandrow(l*NG+i+1),1.) ! sand content
+        bus(clay+l*NG+i)=MAX(clayrow(l*NG+i+1),1.) ! clay content
+    END DO
+    DO l=7,10
+        bus(sand+l*NG+i)=MAX(sandrow(6*NG+i+1),1.) ! sand content
+        bus(clay+l*NG+i)=MAX(clayrow(6*NG+i+1),1.) ! clay content
+    END DO
+END DO
+!
+! Summarize what we just did
+PRINT*,"--------------------------------"
+PRINT*,"CLASS GEO file read successfully"
+PRINT*,"roughness length (Cressman) for lower left point of the domain :", bus(z0)
+PRINT*,"slope for lower left point of the domain (m/m) :  ",bus(slop)
+PRINT*,"drainage density for lower left point of the domain (m/m2):  ",bus(draindens)
+PRINT*,"clay content for 11 layers and lower left point of the domain (%):  ",(bus(clay+j*NG),j=0,10)
+PRINT*,"sand content for 11 layers and lower left point of the domain (%):  ",(bus(sand+j*NG),j=0,10)
+PRINT*,"veg. frac. for 26 classes and upper right point of the domain (%):  ",(bus(vegf+j*NG+NG-1),j=0,25)
+!
+CLOSE(fid_geo)
+RETURN
+END SUBROUTINE read_geo_file
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+SUBROUTINE date2string(date,hour,datestr)
+!
+IMPLICIT NONE
+!
+INTEGER date,hour
+CHARACTER (LEN=*) datestr
+!
+INTEGER iyear,imonth,iday,ihour,imin,isec,ims
+!
+iyear=date/10000
+imonth=(date-iyear*10000)/100
+iday=date-iyear*10000-imonth*100
+!
+ihour=hour/1000000
+imin=(hour-ihour*1000000)/10000
+isec=(hour-ihour*1000000-imin*10000)/100
+ims=(hour-ihour*1000000-imin*10000-isec*100)*10
+!
+WRITE(datestr,100)iyear,imonth,iday,ihour,imin,isec,ims
+!
+RETURN
+!
+100 FORMAT('"',I4.4,'/',I2.2,'/',I2.2,' ',I2.2,':',I2.2,':',I2.2,'.',I3.3,'"')
+!
+END SUBROUTINE date2string
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+SUBROUTINE string2datehour(datestr,date,hour)
+!
+IMPLICIT NONE
+!
+INTEGER date,hour
+CHARACTER (LEN=*) datestr
+!
+INTEGER iyear,imonth,iday,ihour,imin,isec,ims
+!
+READ(datestr,100)iyear,imonth,iday,ihour,imin,isec,ims
+!
+date=iyear*10000+imonth*100+iday
+hour=ihour*1000000+imin*10000+isec*100+ims/10
+!
+RETURN
+!
+100 FORMAT('"',I4.4,'/',I2.2,'/',I2.2,' ',I2.2,':',I2.2,':',I2.2,'.',I3.3,'"')
+!
+END SUBROUTINE string2datehour
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+SUBROUTINE read_met_file(date_v,hour_v,date_f,hour_f,bus,bussiz)
+USE strings
+IMPLICIT NONE
+!
+#include "thermoconsts.inc"
+!
+INTEGER date_v,hour_v,date_f,hour_f,bussiz
+REAL bus(bussiz)
+!
+INTEGER i,j
+INTEGER istat
+REAL fb(NG),fi(NG),pr(NG),ta(NG),qa(NG),uu(NG),vv(NG),p0(NG)
+! NOTE: no need to input vegh abd vegl because they are calculated in veglowhigh script,
+! but cases for vegh and vegl below may be useful for future reading of lai from met file
+!REAL hvegfr(NG),lvegfr(NG)
+!
+! predefined size of metfile line may have to be increased for big domains
+CHARACTER (LEN=2000) line
+CHARACTER (LEN=15) args(200)
+CHARACTER (LEN=25) datestr,dateframe
+INTEGER iostat, nargs, idateframe, ihourframe
+!
+IF(xCount*yCount.NE.NG)THEN
+        PRINT*,"ERROR: ROW SIZE OF ",NG," DOES NOT MATCH GRID SIZE OF ",xCount,"x",yCount
+        STOP
+END IF
+!
+CALL date2string(date_v,hour_v,datestr)
+DO
+	READ(fid_met,'(A)',IOSTAT=iostat) line
+	IF(iostat.NE.0)THEN
+		PRINT*,"Error reading MET file for ",date_v,hour_v
+		STOP
+	ELSE
+		CALL parse(TRIM(line),' ',args,nargs)
+		IF(TRIM(args(1)).EQ.':Frame')THEN
+			dateframe=TRIM(args(4))//' '//TRIM(args(5))
+			CALL string2datehour(dateframe,date_f,hour_f)
+			IF((date_f.EQ.date_v.AND.hour_f.GE.hour_v).OR.date_f.GT.date_v)THEN
+				EXIT
+			END IF
+		END IF
+	END IF
+END DO
+!
+DO j=1,yCount
+	READ(fid_met,'(A)') line
+	CALL parse(TRIM(line),' ',args,nargs)
+	DO i=1,xCount
+		READ(args(i+0*xCount),*)fb(i+(j-1)*xCount)
+	END DO
+        DO i=1,xCount
+                READ(args(i+1*xCount),*)fi(i+(j-1)*xCount)
+        END DO
+        DO i=1,xCount
+                READ(args(i+2*xCount),*)pr(i+(j-1)*xCount)
+        END DO
+        DO i=1,xCount
+                READ(args(i+3*xCount),*)ta(i+(j-1)*xCount)
+        END DO
+        DO i=1,xCount
+                READ(args(i+4*xCount),*)qa(i+(j-1)*xCount)
+        END DO
+        DO i=1,xCount
+                READ(args(i+5*xCount),*)uu(i+(j-1)*xCount)
+        END DO
+        DO i=1,xCount
+                READ(args(i+6*xCount),*)vv(i+(j-1)*xCount)
+        END DO
+        DO i=1,xCount
+                READ(args(i+7*xCount),*)p0(i+(j-1)*xCount)
+        END DO
+! comment out following lines if reading vegh and vegl from meteorological file (LAI may be added there too)
+!        DO i=1,xCount
+!                READ(args(i+8*xCount),*)hvegfr(i+(j-1)*xCount)
+!        END DO
+!        DO i=1,xCount
+!                READ(args(i+9*xCount),*)lvegfr(i+(j-1)*xCount)
+!        END DO
+END DO
+!
+DO i=0,NG-1
+    ! the separation of precipitation into snow and rain may be ajusted below; set to zero degree Celsius for now.
+	IF(ta(i).GT.273.15)THEN
+		bus(rainrate+i)=pr(i+1)
+		bus(snowrate+i)=0.
+	ELSE
+		bus(rainrate+i)=0.
+		bus(snowrate+i)=pr(i+1)
+	END IF
+	bus(flusolis+i)=fb(i+1)
+	bus(fdsi+i)=fi(i+1)
+	bus(tmoins+i)=ta(i+1)
+	bus(humoins+i)=qa(i+1)
+	bus(umoins+i)=uu(i+1)
+	bus(vmoins+i)=vv(i+1)
+	bus(pmoins+i)=p0(i+1)
+!    bus(vegh+i)=hvegfr(i+1)
+!    bus(vegl+i)=lvegfr(i+1)
+END DO
+RETURN
+END SUBROUTINE read_met_file
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+SUBROUTINE write_out_file(date,hour,bus,bussiz,deltat,oldrunofftot,oldlatfl,olddrain,accprecip,lowzostor,\
+wght,wghtsum,wshdarea,avgtotdisc,HU,prod_HU,FLZ,PWR,avgtdiag)
+!
+IMPLICIT NONE
+!
+INTEGER bussiz,date,hour
+REAL hour2,deltat
+REAL bus(bussiz)
+REAL oldrunofftot(NG),oldlatfl(NG),olddrain(NG)
+REAL accprecip(NG),lowzostor(NG),discharge
+REAL outlzs(NG),disch(NG),avgtdiag(NG)
+REAL FLZ,PWR
+REAL wght(NG),wshdarea,wghtsum,avgtotdisc
+REAL totdisc,indice, HU(800), prod_HU(640000)
+!
+INTEGER i,j,l,niveau
+!
+! values of FLZ and PWR below, which control rate of lower zone storage release flow, may be adjusted
+!FLZ=2.0E-7
+!PWR=2.9
+!
+hour2=hour/1000000.
+IF(hour2.EQ.0)PRINT*,"Simulation completed up to: ", date
+!
+DO i=0,NG-1
+! the first two accumulator variables below are not computed inside svs but here; maybe to change
+bus(runofftotaf+i)=bus(runofftotaf+i)+bus(runofftot+i)
+bus(accevap+i)=bus(accevap+i)+bus(wflux+i)*deltat
+accprecip(i+1)=accprecip(i+1)+(bus(rainrate+i)+bus(snowrate+i))*1000*deltat
+END DO
+
+!  if at the end of an hourly time-step, compute the watershed total discharge during this hour using the Unit Hydrograph theory 
+DO l=0,23
+    ! compute discharge flow (total surface runoff + LZS contribution) in mm for each pixel
+    IF(hour2.EQ.l)THEN
+        totdisc=0.
+        DO i=0,NG-1
+            ! compute release from LZS
+            lowzostor(i+1)=lowzostor(i+1)+bus(drainaf+i)-olddrain(i+1)
+            outlzs(i+1)=FLZ*max(lowzostor(i+1),0.0)**PWR
+            IF(outlzs(i+1).GT.lowzostor(i+1))THEN
+                outlzs(i+1)=lowzostor(i+1)
+            END IF
+            outlzs(i+1)=max(outlzs(i+1),0.0)
+            ! update LZS
+            lowzostor(i+1)=lowzostor(i+1)-outlzs(i+1)
+            ! compute pixel hourly total discharge in mm
+            disch(i+1)=outlzs(i+1)+bus(runofftotaf+i)-oldrunofftot(i+1)+bus(latflaf+i)-oldlatfl(i+1)
+            ! update memory variables for future hourly computations
+            oldrunofftot(i+1)=bus(runofftotaf+i)
+            oldlatfl(i+1)=bus(latflaf+i)
+            olddrain(i+1)=bus(drainaf+i)
+            !
+            !compute watershed total discharge using data from interp file (in mm)
+            totdisc=totdisc+disch(i+1)*wght(i+1)
+            ! accumulate temp. to compute daily average temperature
+            avgtdiag(i+1) = avgtdiag(i+1) + bus(tdiag+i)
+        END DO
+        !conversion of mm to cms
+        totdisc=totdisc/wghtsum*wshdarea/3600000.
+
+        !computation of watershed discharge based on Unit Hydrograph theory
+        DO j=1,799
+            DO i=1,800
+                prod_HU((j-1)*800+i)=prod_HU(j*800+i)
+            END DO
+        END DO
+        DO i=1,800
+            prod_HU(799*800+i)=totdisc*HU(i)
+        END DO
+        discharge=0.
+        DO i=1,800
+            discharge=discharge+prod_HU((800-i)*800+i)
+        END DO
+        
+        ! accumulate hourly discharge for daily average computation
+        avgtotdisc=avgtotdisc+discharge
+        
+    END IF
+END DO
+
+! write state variables and average daily outflow if at the end of the 24-hour period
+IF(hour2.EQ.12)THEN
+    avgtotdisc=avgtotdisc/24.
+    DO I=0,NG-1
+	avgtdiag(i+1) = avgtdiag(i+1) / 24.
+    END DO
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' DDIS ',0,(avgtotdisc,i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' TRAF ',60268832,(bus(runofftotaf+i),i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' ALAT ',0,(bus(latflaf+i),i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' O1   ',0,(bus(drainaf+i),i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' PR   ',0,(accprecip(i+1),i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' AHFL ',0,(bus(accevap+i),i=0,NG-1)
+
+    !reset accumulator and memory variables
+    DO i=0,NG-1
+        bus(runofftotaf+i)=0.
+        bus(latflaf+i)=0.
+        bus(drainaf+i)=0.
+        accprecip(i+1)=0.
+        bus(accevap+i)=0.
+        oldrunofftot(i+1)=0.
+        oldlatfl(i+1)=0.
+        olddrain(i+1)=0.
+        avgtotdisc=0.
+    END DO
+    ! write state variables and average daily outflow
+    
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' VEGH ',0,(bus(vegh+i),i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' VEGL ',0,(bus(vegl+i),i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' I2   ',0,(bus(isoil+i),i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' I3   ',0,(bus(wveg+i),i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' I4   ',0,(bus(wsnow+i),i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' I5   ',0,(bus(snoma+i),i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' SVM  ',0,(bus(snvma+i),i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' WSNV ',0,(bus(wsnv+i),i=0,NG-1)
+    DO j=0,10
+       niveau=(598+j)*100000+68832
+       WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' I1D  ',niveau,(bus(wdsoil+j*NG+i),i=0,NG-1)
+    END DO
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(F10.4))') date,'.',hour,' ATJ  ',0,(avgtdiag(i+1),i=0,NG-1)
+    WRITE(fid_out,'(I8,A1,I8.8,A6,I9,999(E10.2))') date,'.',hour,' LZS  ',0,(lowzostor(i+1),i=0,NG-1)
+    DO i=0,NG-1
+       avgtdiag(i+1) = 0.
+    END DO
+END IF
+
+RETURN
+END SUBROUTINE write_out_file
+!
+END MODULE runsvs_io

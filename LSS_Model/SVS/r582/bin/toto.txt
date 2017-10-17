@@ -1,0 +1,10 @@
+
+contains
+
+subroutine svs_bus_init(NGRIDCELLS)
+
+  implicit none
+
+  integer NGRIDCELLS
+
+  NG = NGRIDCELLS

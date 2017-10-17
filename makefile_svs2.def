@@ -1,0 +1,189 @@
+# ======================================================================
+#
+#				Include or header file for SA_MESH makefile
+#
+# ======================================================================
+
+# ======================================================================
+# Directory of source code
+# ======================================================================
+
+# Update the DIR_REPO variable as appropriate.
+# For Cygwin:
+#DIR_REPO=/cygdrive/c/sample_path
+
+# For MinGW:
+#DIR_REPO=C:\sample_path
+
+# For Linux:
+#DIR_REPO=/home/sample_path
+
+# To build from the current directory:
+DIR_REPO=.
+
+# Paths for SVS
+PHY=$(DIR_REPO)/LSS_Model/SVS/r582/rpnphy_5.8.3_all
+CHANGES2PHY=$(DIR_REPO)/LSS_Model/SVS/r582/changes_to_rpnphy
+RMNLIB=$(DIR_REPO)/LSS_Model/SVS/r582/rmnlib_013
+SVS=$(DIR_REPO)/LSS_Model/SVS/r582/svs_2.0_GEM_v5.8
+RUNSVS=$(DIR_REPO)/LSS_Model/SVS/r582/src
+
+# ======================================================================
+# Include the following directories in the source file searching path
+# ======================================================================
+VPATH=	$(DIR_REPO)/Modules/strings: \
+		$(DIR_REPO)/Modules/ensim_files: \
+		$(DIR_REPO)/Modules/mpi_module: \
+		$(DIR_REPO)/Modules/climate_forcing_module: \
+		$(DIR_REPO)/Modules/simulation_statistics: \
+		$(DIR_REPO)/Modules/cropland_irrigation: \
+		$(DIR_REPO)/Modules/io_modules: \
+		$(DIR_REPO)/Driver/MESH_Driver: \
+		$(DIR_REPO)/LSS_Model/CLASS/3.6/sa_mesh_process: \
+		$(DIR_REPO)/LSS_Model/CLASS/3.6/src: \
+		$(DIR_REPO)/Routing_Model/WatRoute_old: \
+		$(DIR_REPO)/Routing_Model/RPN_watroute/sa_mesh_process: \
+		$(DIR_REPO)/Routing_Model/RPN_watroute/code: \
+		$(DIR_REPO)/Routing_Model/baseflow_module: \
+		$(DIR_REPO)/Blowing_Snow: \
+		$(DIR_REPO)/Tile_Connector/Basic: \
+		$(DIR_REPO)/LSS_Model/SVS/r582/sa_mesh_process_svs2: \
+		$(PHY): $(CHANGES2PHY): $(SVS): $(RMNLIB): $(RUNSVS): $(RUNSVS)/strings: 
+
+# ======================================================================
+# Object files needed to build SA_MESH
+# ======================================================================
+
+#MPI
+OBJECTS=	mpi_flags.o mpi_shared_variables.o mpi_utilities.o \
+			mpi_module.o
+
+#Strings
+OBJECTS+=	precmod.o stringmod.o \
+			txt_io.o ensim_io.o
+
+#SA_MESH flags, parameters, and variables
+
+#Modules
+OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
+			module_dates.o \
+			EF_Module.o EF_ParseUtilities.o FLAGS.o \
+			parse_utilities.o \
+			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
+			control_variables.o \
+			shd_variables.o fm_variables.o input_parameters.o state_variables.o \
+			output_variables.o \
+			variablename_constants.o parametername_constants.o \
+			sa_mesh_shared_variables.o \
+			sa_mesh_shared_output_variables.o \
+			RUNCLASS36_constants.o RUNCLASS36_variables.o RUNCLASS36_save_output.o \
+			climate_forcing_module_config.o \
+			climate_forcing_module_io.o climate_forcing_module.o \
+			model_output.o
+
+#WF_ROUTE
+OBJECTS+=	WF_ROUTE_config.o WF_ROUTE.o WF_ROUTE_module.o
+
+#baseflow_module
+OBJECTS+=	baseFlow_luo2012.o baseflow_wfqlz.o baseflow_module.o
+
+#SA_RTE (Standalone RPN ROUTE)
+OBJECTS+=	SA_RTE_module.o
+
+#SIMSTATS
+OBJECTS+=	SIMSTATS_config.o \
+			NSE.o SAE.o SORT.o SAESRT.o calc_drms.o calc_abserr.o \
+			SIMSTATS.o
+
+#cropland_irrigation
+OBJECTS+=	cropland_irrigation_variables.o \
+			cropland_irrigation_init.o cropland_irrigation_within_tile.o cropland_irrigation_between_grid.o \
+			calc_ET0.o
+
+#PBSM (blowing snow)
+OBJECTS+=	PBSMrates.o PBSMrun.o ProbabilityThreshold.o \
+			REDISTRIB_SNOW.o SUM.o \
+			PBSM_module.o
+
+#MESH Driver
+#OBJECTS+=	GATHER.o resume_state.o resume_state_r2c.o R2C_DATA.o \
+#			save_state.o save_state_r2c.o \
+#			SCATTER.o WRITE_R2C_DATA.o
+
+#CLASS
+OBJECTS+=	Julian_Day_ID.o check_parameters.o 
+OBJECTS+=	RUNCLASS36_config.o APREP.o CANADD.o CANALB.o CLASSBG.o CANVAP.o \
+			CGROW.o CHKWAT.o CLASSA.o  CLASSB.o CLASSBD.o \
+			CLASSD.o CLASSG.o CLASSI.o CLASSS.o CLASST.o CLASSW.o \
+			CLASSZ.o CWCALC.o DIASURFZ.o DRCOEF.o FLXSURFZ.o FROZEN.o \
+			GATPREP.o GRALB.o GRDRAN.o GRINFL.o ICEBAL.o \
+			SLDIAG.o SNINFL.o SNINFLM.o SNOADD.o SNOALBA.o SNOALBW.o SNOVAP.o \
+			SUBCAN.o TFREEZ.o TMCALC.o TMELT.o TNPOST.o TNPREP.o TPREP.o \
+			TSOLVC.o TSOLVE.o TSPOST.o TSPREP.o TWCALC.o WATDRN.o WATROF.o \
+			WEND.o WFILL.o WFLOW.o WPREP.o XIT.o \
+			SCREENRH.o PDMROF.o LATFLOW.o RUNCLASS36_module.o
+
+# SVS
+OBJECTS+=	datec.o moduledate.o
+#OBJECTS+=	precmod.o stringmod.o
+OBJECTS+=	RUNSVS113_variables.o \
+			runsvs2_mod_sa_mesh.o runsvs_utils.o \
+			runsvs_io_mesh.o runsvs_init_mesh.o
+#			runsvs_class_mesh_inputs.o
+OBJECTS+=	sfclayer_mod.o
+OBJECTS+=	sfc_options.o svs_configs.o
+OBJECTS+=	inicover_svs.o inisoili_svs.o
+OBJECTS+=	modd_csts_snowes.o modd_snowes_par.o \
+                modd_snow_metamo.o  modd_surf_par.o
+OBJECTS+=	svs.o soili_svs.o soil_fluxes.o \
+			aggveghigh.o aggveglow.o \
+                        agg_phases.o phase_changes.o \
+			veglowhigh.o vegi_svs.o drag_svs.o \
+			ini_csts_snowes.o tridiag_ground_snowes.o \
+			ebudget_svs.o mode_thermos_snow.o \
+			surface_aero_cond_snowes.o surface_cd_snowes.o            
+OBJECTS+=		surface_ri_snowes.o \
+			mode_snowes.o snowes.o snowes_svs.o \
+			hydro_svs.o phtsyn_svs.o update_svs.o
+#OBJECTS+=	WATDRN.o
+#OBJECTS+=	RUNSVSDRN.o
+OBJECTS+=	runsvsdrn.o
+OBJECTS+=	phy_options.o
+OBJECTS+=   vscos.o vssin.o vslog.o
+OBJECTS+=	aggcovernat.o juliand.o suncos1.o interpveg.o \
+		compz0.o difuvd2.o 
+
+OBJECTS+=	RUNSVS113_config.o RUNSVS113_module.o
+
+#Tile connector
+OBJECTS+=	tile_connector.o 
+
+#RTE
+OBJECTS+=	area_watflood.o rerout.o route.o \
+			rte_module.o
+
+#Init field state variables for init cond for class
+OBJECTS+=	read_init_prog_variables_class.o save_init_prog_variables_class.o 	
+
+#Input files
+OBJECTS+=	read_initial_inputs.o \
+			read_shed_ef.o read_soil_levels.o \
+			read_parameters.o \
+			read_parameters_class.o read_parameters_hydrology.o read_parameters_r2c.o read_parameters_csv.o \
+			read_basin_structures.o \
+			read_streamflow_txt.o read_streamflow_tb0.o read_reservoir_txt.o read_reservoir_tb0.o \
+			read_soil_ini.o \
+			read_initial_states.o \
+			read_s_moisture_txt.o read_s_temperature_txt.o \
+			module_files.o
+
+#Output files
+#OBJECTS+=	read_config_output.o \
+#			write_output.o write_output_r2c.o write_output_seq.o
+OBJECTS+=	WRITE_R2C_HEADER.o write_r2c.o \
+			save_basin_output.o
+
+#MESH Driver
+OBJECTS+=	read_run_options.o \
+			sa_mesh_run_within_tile.o sa_mesh_run_within_grid.o sa_mesh_run_between_grid.o \
+			MESH_driver.o

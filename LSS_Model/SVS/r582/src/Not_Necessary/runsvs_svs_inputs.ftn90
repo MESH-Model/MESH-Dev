@@ -1,0 +1,136 @@
+PROGRAM runsvs
+!
+USE runsvs_mod
+USE runsvs_utils
+USE runsvs_io
+!
+IMPLICIT NONE
+!
+#include "options.cdk"
+#include "isbapar.cdk"
+#include "surfcon.cdk"
+#include "thermoconsts.inc"
+!
+INTEGER, PARAMETER :: bussiz = runsvs_busdim
+REAL bus(bussiz), maxrootdp
+INTEGER datecmc_o, datecmc_v, date_v, hour_v, date_f, hour_f, kount, istat, bidon, nbpoints
+REAL*8 kdt
+!
+! variables related to the watershed discharge
+REAL oldrunofftot(NG),oldlatfl(NG),olddrain(NG)
+REAL lowzostor(NG),avgtotdisc, avgtdiag(NG)
+REAL wght(NG),wghtsum,wshdarea
+!
+! variables of the Unit Hydrograph (up to 800 hourly time steps for now)
+INTEGER step_HU(800)
+REAL HU_temp(800), HU(800), prod_HU(640000), HU_decay, FLZ, PWR
+REAL accprecip(NG)
+!
+INTEGER newdate, incdatr, i
+EXTERNAL svs, inicover_svs, inisoili_svs, phyopt_initdata, runsvs_init
+!
+
+! Initialize accumulators, memory and state variables
+DO i=0,NG-1
+    oldrunofftot(i+1)=0.
+    oldlatfl(i+1)=0.
+    olddrain(i+1)=0.
+    lowzostor(i+1)=100.
+    accprecip(i+1)=0.
+    wght(i+1)=0.
+END DO
+wghtsum=0.
+avgtotdisc=0.
+avgtdiag=0.
+
+! Initialize common blocks, read options and configuration file
+bus=0.
+delt=dt
+#include "surfcon_ini.cdk"
+CALL phyopt_initdata 
+READ(*,NML=RUNSVS_OPT)
+
+! read the weights associated to each pixel of the domain for computation of watershed averages
+! they are taken from the interp file created from Milena's script "OGR_interp_*.tcl" 
+CALL read_interp_file(bus,bussiz,interpfile,nbpoints,wght,wghtsum,wshdarea)
+
+! Initialize Unit Hydrograph coordinates and production of Unit Hydrograph
+DO i=1,800
+    step_HU(i)=i
+    HU_temp(i)=1.
+    HU(i)=0.
+END DO
+DO i=1,640000
+    prod_HU(i)=0.0
+END DO
+
+! define HU based on HU_decay (lag time in hours = time between heart of precip. event and peak of the flow)
+HU_decay=0.
+FLZ=0.
+PWR=0.
+
+! initialize maximum root depth value (read in runsvs_io_svs from .ini file)
+maxrootdp = 0.
+
+CALL read_rte_file(bus,bussiz,rtefile,HU_decay,FLZ,PWR)
+PRINT*,"routing parameters UH_basetime, FLZ and PWR =",HU_decay,FLZ,PWR
+
+! this Unit Hydrograph is taken from GR4H, see thesis of Mathevet (2005), ENGREF, at page 361
+! the final Unit Hydrograph has a total duration of two times the lag time.
+DO i=1,800
+    IF(step_HU(i).LE.HU_decay)THEN
+        HU_temp(i)=0.5*(step_HU(i)/HU_decay)**1.25
+    ELSE IF((step_HU(i).GT.HU_decay).AND.(step_HU(i).LE.2*HU_decay))THEN
+        HU_temp(i)=1-0.5*(2-step_HU(i)/HU_decay)**1.25
+    ENDIF
+    IF(i.EQ.1)THEN
+        HU(i)=HU_temp(i)-0.
+    ELSE
+        HU(i)=HU_temp(i)-HU_temp(i-1)
+    ENDIF
+END DO
+
+! open meteorological (forcing) and output file which remain opened during simulation
+CALL open_files(outfile,metfile)
+
+! read the initialization file for initial state values
+CALL read_ini_file(bus,bussiz,inifile, maxrootdp) 
+
+! read geophysical information
+CALL read_geo_file(bus,bussiz,geofile) 
+!
+! Time loop
+istat = newdate(datecmc_o,dateo,houro,3)! Convert start date/hour to CMC datestamp
+DO kount=0,nt
+!	Determine time stamps of current date
+        kdt = kount*(dt*1.0D0) / 3600.0D0
+        istat = incdatr(datecmc_v,datecmc_o,kdt)	! Compute date valid
+        istat = newdate(datecmc_v,date,bidon,-4)	! Convert to old style
+        istat = newdate(datecmc_v,date_v,hour_v,-3)	! Convert to printable
+        
+!       Read meteorological forcing data
+!       Careful: at kount=0 we read data for kount=1 so we skip reading if kount=1
+        IF(kount.EQ.0.OR.(kount.NE.1.AND.date_f.EQ.date_v.AND.&
+                  hour_f.LT.hour_v))THEN
+                CALL read_met_file(date_v,hour_v,date_f,hour_f,bus,bussiz)
+                CALL compvirttemp(sigma_t,bus,bussiz)
+                IF(.NOT.observed_forcing)CALL surflayerheight(sigma_u,sigma_t,bus,bussiz)
+        END IF
+!	Initialize parameters and state variables at kount=0
+	IF(kount.EQ.0)THEN
+		CALL inisoili_svs(bus,bussiz,NG)   ! Initialize surface parameters
+		CALL runsvs_init(bus,bussiz)       ! Initialize state variables
+	END IF
+!	Update vegetation parameters as a function of julian day
+	CALL inicover_svs(bus,bussiz,kount,NG)
+!	Integrate SVS for one time step
+    CALL svs(bus,bussiz,bidon,1,dt,kount,1,NG,NG,1)
+!	Write outputs (currently in ASCII format)
+	CALL write_out_file(date_v,hour_v,bus,bussiz,dt,accprecip,oldrunofftot,oldlatfl,olddrain,lowzostor,\
+    wght,wghtsum,wshdarea,avgtotdisc,HU,prod_HU,FLZ,PWR,avgtdiag)
+END DO
+!
+! Wrap up
+CALL close_files
+!
+END PROGRAM runsvs

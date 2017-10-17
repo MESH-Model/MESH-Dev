@@ -1,0 +1,73 @@
+PROGRAM runsvs
+!
+USE runsvs_mod
+USE runsvs_utils
+USE runsvs_io
+!
+IMPLICIT NONE
+!
+#include "options.cdk"
+#include "isbapar.cdk"
+#include "surfcon.cdk"
+#include "thermoconsts.inc"
+!
+!INTEGER, PARAMETER :: bussiz = runsvs_busdim
+!REAL bus(bussiz)
+INTEGER bussiz
+REAL, dimension(:), allocatable :: bus
+INTEGER datecmc_o, datecmc_v, date_v, hour_v, date_f, hour_f, kount, istat, bidon
+REAL*8 kdt
+!
+INTEGER newdate, incdatr
+EXTERNAL svs, inicover_svs, inisoili_svs, phyopt_initdata, runsvs_init
+!
+! Initialize common blocks, read options and configuration file
+READ(*,NML=RUNSVS_OPT)
+call svs_bus_init(xCount*yCount)
+bussiz = runsvs_busdim
+allocate(bus(bussiz))
+bus=0.
+delt=dt
+#include "surfcon_ini.cdk"
+CALL phyopt_initdata 
+!READ(*,NML=RUNSVS_OPT)
+CALL open_files(inifile,metfile,outfile)
+CALL read_ini_file(bus,bussiz)  ! Read CLASS-style INI file
+!
+! Time loop
+istat = newdate(datecmc_o,dateo,houro,3)! Convert start date/hour to CMC datestamp
+DO kount=0,nt
+!	Determine time stamps of current date
+        kdt = kount*(dt*1.0D0) / 3600.0D0
+        istat = incdatr(datecmc_v,datecmc_o,kdt)	! Compute date valid
+        istat = newdate(datecmc_v,date,bidon,-4)	! Convert to old style
+	istat = newdate(datecmc_v,date_v,hour_v,-3)	! Convert to printable
+!       Read meteorological forcing data
+!       Careful: at kount=0 we read data for kount=1 so we skip reading if kount=1
+        IF(kount.EQ.0)THEN
+                CALL read_met_file(date_v,hour_v,date_f,hour_f,bus,bussiz)
+                CALL compvirttemp(sigma_t,bus,bussiz)
+                IF(.NOT.observed_forcing)CALL surflayerheight(sigma_u,sigma_t,bus,bussiz)
+        END IF
+!	Initialize parameters and state variables at kount=0
+	IF(kount.EQ.0)THEN
+		CALL inisoili_svs(bus,bussiz,NG)   ! Initialize surface parameters
+		CALL runsvs_init(bus,bussiz)       ! Initialize state variables
+	END IF
+!	Update vegetation parameters as a function of julian day
+	CALL inicover_svs(bus,bussiz,kount,NG)
+!	Integrate SVS for one time step
+        CALL svs(bus,bussiz,bidon,1,dt,kount,1,NG,NG,1)
+!	Write outputs (currently in ASCII format)
+	CALL write_out_file(date_v,hour_v,bus,bussiz)
+        IF(date_f.LT.date_v.OR.hour_f.LT.hour_v)THEN
+                CALL read_met_file(date_v,hour_v,date_f,hour_f,bus,bussiz)
+                CALL compvirttemp(sigma_t,bus,bussiz)
+                IF(.NOT.observed_forcing)CALL surflayerheight(sigma_u,sigma_t,bus,bussiz)
+        END IF
+END DO
+!
+! Wrap up
+CALL close_files
+!
+END PROGRAM runsvs

@@ -7,7 +7,13 @@
 # ======================================================================
 # Include definition file
 # ======================================================================
-include makefile.def
+#For the old version of SVS 1, uncomment the instruction below
+#include makefile.def
+#FOR SVS 1, uncomment the instruction below
+#include makefile_svs1.def
+#FOR SVS 2, uncomment the instruction below
+include makefile_svs2.def
+
 
 # ======================================================================
 # Declaring variables
@@ -70,7 +76,15 @@ FTN90PPOPT=-Tf
 %.o: %.ftn90
 	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) $(FTN90PPOPT)$<
 
-runsvs_mod.o: runsvs_mod_sa_mesh.ftn90
+%.o: %.F90
+	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) $(FTN90PPOPT)$<
+
+#For the old version of SVS 1, uncomment the instruction below
+#runsvs_mod.o: runsvs_mod_sa_mesh.ftn90
+#FOR SVS 1, uncomment the instruction below
+#runsvs_mod.o: runsvs1_mod_sa_mesh.ftn90
+#FOR SVS 2, uncomment the instruction below
+runsvs_mod.o: runsvs2_mod_sa_mesh.ftn90
 	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) -o runsvs_mod.o $(FTN90PPOPT)$<
 
 RUNSVS113_variables.o: RUNSVS113_variables.f90
@@ -87,8 +101,8 @@ RUNSVS113_module.o: RUNSVS113_module.f90
 # ======================================================================
 %.o: %.f
 	$(FC) $(LFLAG) $<
-%.o: %.F90
-	$(FC) $(LFLAG) $<
+#%.o: %.F90
+#	$(FC) $(LFLAG) $<
 %.o: %.f90
 	$(FC) $(LFLAG) $<
 %.o: %.for

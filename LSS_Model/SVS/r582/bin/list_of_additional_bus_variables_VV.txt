@@ -1,0 +1,4 @@
+ tmoins ; PW_TT:M      ;T8  ;temperature at t-dt                            ;1    
+ thetaa ; thetaa       ;N1  ;first-level pot. temp.                         ;1    
+ ztsl ; ztsl         ;ZH  ;temperature level at top of surface layer      ;1                    
+ zusl ; zusl         ;ZU  ;wind level at top of surface layer             ;1      
