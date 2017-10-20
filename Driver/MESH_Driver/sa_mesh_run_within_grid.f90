@@ -157,12 +157,9 @@ module sa_mesh_run_within_grid
     subroutine run_within_grid_mpi_isend(shd, cm)
 
         !> For: MPI variables, barrier flag, il1:il2 parse utility
-        use mpi_flags
-        use mpi_shared_variables
         use mpi_module
-        use mpi_utilities
 
-        !> For: Model states, 'ic', 'cm'.
+        !> Process modules (required for variables).
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
@@ -172,69 +169,62 @@ module sa_mesh_run_within_grid
         type(clim_info) :: cm
 
         !> Local variables.
-        integer ipid_recv, itag, ierrcode, istop, i, j, u, invars, iin, ii1, ii2, ierr
+        integer ipid_recv, nvars, itag, ierrcode, istop, i, j, u, iin, ii1, ii2, ierr
         logical lstat
-        integer, dimension(:), allocatable :: irqst
-        integer, dimension(:, :), allocatable :: imstat
+        integer, allocatable :: irqst(:), imstat(:, :)
 
-        !> Gather variables from parallel nodes.
+        !> Return if grid processes are not active.
+        if (.not. ro%RUNTILE) return
 
-        !> Send/receive process.
-        itag = ic%ts_count*1000
-        invars = 0
+        !> Count the number of active variables included in the exchange.
+        nvars = 1
 
-!>>>irrigation
-        invars = invars + 1
-!<<<irrigation
+        !> Exchange variables.
+        if (allocated(irqst)) deallocate(irqst)
+        if (allocated(imstat)) deallocate(imstat)
+        allocate(irqst(nvars), imstat(mpi_status_size, nvars))
+        itag = ic%ts_count*1000 + 200
 
         if (inp > 1 .and. ipid /= 0) then
 
             !> Send data back to head-node.
-            if (allocated(irqst)) deallocate(irqst)
-            if (allocated(imstat)) deallocate(imstat)
-            allocate(irqst(invars), imstat(mpi_status_size, invars))
-            irqst = mpi_request_null
-
+            !> Grab indices and reset exchange variables.
             ii1 = shd%lc%ILMOS(il1)
             ii2 = shd%lc%ILMOS(il2)
             iin = (ii2 - ii1) + 1
 
             i = 1
-!>>>irrigation
-            call mpi_isend(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-!<<<irrigation
+            irqst = mpi_request_null
 
+            call mpi_isend(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+
+            !> Wait until the exchange completes.
             lstat = .false.
             do while (.not. lstat)
-                call mpi_testall(invars, irqst, lstat, imstat, ierr)
+                call mpi_testall(nvars, irqst, lstat, imstat, ierr)
             end do
 
         else if (inp > 1) then
 
             !> Receive data from worker nodes.
-            if (allocated(irqst)) deallocate(irqst)
-            if (allocated(imstat)) deallocate(imstat)
-            allocate(irqst(invars), imstat(mpi_status_size, invars))
-
-            !> Receive and assign variables.
             do u = 1, (inp - 1)
 
-                irqst = mpi_request_null
-                imstat = 0
-
+                !> Grab indices and reset exchange variables.
                 call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iin)
                 ii1 = shd%lc%ILMOS(ii1)
                 ii2 = shd%lc%ILMOS(ii2)
                 iin = (ii2 - ii1) + 1
 
                 i = 1
-!>>>irrigation
-                call mpi_irecv(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-!<<<irrigation
+                irqst = mpi_request_null
+                imstat = 0
 
+                call mpi_irecv(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+
+                !> Wait until the exchange completes.
                 lstat = .false.
                 do while (.not. lstat)
-                    call mpi_testall(invars, irqst, lstat, imstat, ierr)
+                    call mpi_testall(nvars, irqst, lstat, imstat, ierr)
                 end do
 
             end do !u = 1, (inp - 1)
@@ -248,12 +238,9 @@ module sa_mesh_run_within_grid
     subroutine run_within_grid_mpi_irecv(shd, cm)
 
         !> For: MPI variables, barrier flag, il1:il2 parse utility
-        use mpi_flags
-        use mpi_shared_variables
         use mpi_module
-        use mpi_utilities
 
-        !> For: Model states, 'ic', 'cm'.
+        !> Process modules (required for variables).
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
@@ -263,47 +250,43 @@ module sa_mesh_run_within_grid
         type(clim_info) :: cm
 
         !> Local variables.
-        integer ipid_recv, itag, ierrcode, istop, i, j, u, invars, iin, ii1, ii2, ierr
+        integer ipid_recv, nvars, itag, ierrcode, istop, i, j, u, iin, ii1, ii2, ierr
         logical lstat
-        integer, dimension(:), allocatable :: irqst
-        integer, dimension(:, :), allocatable :: imstat
+        integer, allocatable :: irqst(:), imstat(:, :)
 
-        !> Gather variables from parallel nodes.
+        !> Return if grid processes are not active.
+        if (.not. ro%RUNTILE) return
 
-        !> Send/receive process.
-        itag = ic%ts_count*1000
-        invars = 0
+        !> Count the number of active variables included in the exchange.
+        nvars = 1
 
-!>>>irrigation
-        invars = invars + 1
-!<<<irrigation
+        !> Exchange variables.
+        if (allocated(irqst)) deallocate(irqst)
+        if (allocated(imstat)) deallocate(imstat)
+        allocate(irqst(nvars), imstat(mpi_status_size, nvars))
+        itag = ic%ts_count*1000 + 400
 
         if (inp > 1 .and. ipid == 0) then
 
             !> Send data to worker nodes.
-            if (allocated(irqst)) deallocate(irqst)
-            if (allocated(imstat)) deallocate(imstat)
-            allocate(irqst(invars), imstat(mpi_status_size, invars))
-
-            !> Receive and assign variables.
             do u = 1, (inp - 1)
 
-                irqst = mpi_request_null
-                imstat = 0
-
+                !> Grab indices and reset exchange variables.
                 call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iin)
                 ii1 = 1
-                ii2 = shd%NAA
+                ii2 = shd%NA
                 iin = (ii2 - ii1) + 1
 
                 i = 1
-!>>>irrigation
-                call mpi_isend(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-!<<<irrigation
+                irqst = mpi_request_null
+                imstat = 0
 
+                call mpi_isend(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+
+                !> Wait until the exchange completes.
                 lstat = .false.
                 do while (.not. lstat)
-                    call mpi_testall(invars, irqst, lstat, imstat, ierr)
+                    call mpi_testall(nvars, irqst, lstat, imstat, ierr)
                 end do
 
             end do !u = 1, (inp - 1)
@@ -311,23 +294,20 @@ module sa_mesh_run_within_grid
         else if (inp > 1) then
 
             !> Receive data from head-node.
-            if (allocated(irqst)) deallocate(irqst)
-            if (allocated(imstat)) deallocate(imstat)
-            allocate(irqst(invars), imstat(mpi_status_size, invars))
-            irqst = mpi_request_null
-
+            !> Grab indices and reset exchange variables.
             ii1 = 1
-            ii2 = shd%NAA
+            ii2 = shd%NA
             iin = (ii2 - ii1) + 1
 
             i = 1
-!>>>irrigation
-            call mpi_irecv(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-!<<<irrigation
+            irqst = mpi_request_null
 
+            call mpi_irecv(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+
+            !> Wait until the exchange completes.
             lstat = .false.
             do while (.not. lstat)
-                call mpi_testall(invars, irqst, lstat, imstat, ierr)
+                call mpi_testall(nvars, irqst, lstat, imstat, ierr)
             end do
 
         end if !(inp > 1 .and. ipid /= 0) then
@@ -347,7 +327,7 @@ module sa_mesh_run_within_grid
         type(clim_info) :: cm
 
         !> Return if tile and grid processes are not active.
-        if (.not. ro%RUNTILE .and. .not. ro%RUNGRID) return
+        if (.not. ro%RUNTILE) return
 
     end subroutine
 
