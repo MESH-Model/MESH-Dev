@@ -287,7 +287,7 @@ module sa_mesh_run_between_grid
             if (ic%ts_count == 1) then !first time-step
                 qo_div_dly = 0.0; qa_div_dly = 0.0
                 do l = 1, n_div
-                    iun = 1976 + l
+                    iun = 2080 + l
                     write(ffmti, '(i4)') l
                     fn = 'MESH_output_diversion' // trim(adjustl(ffmti)) // '.csv'
                     open(unit = iun, file = fn)
@@ -300,7 +300,7 @@ module sa_mesh_run_between_grid
                 qo_div_dly = qo_div_dly/(ic%dts*ic%ts_daily) !m3/s flow
                 qa_div_dly = qa_div_dly/(ic%dts*ic%ts_daily) !m3/s flow
                 do l = 1, n_div
-                    iun = 1976 + l
+                    iun = 2080 + l
                     write(iun, 1010) ic%now%year, ic%now%jday, qo_div_dly(l), qa_div_dly(l)
                 end do
                 qo_div_dly = 0.0

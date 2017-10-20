@@ -14,6 +14,8 @@ module reservoir! Variable declarations
         real    :: SMAX                            !# Max reservoir capacity (m3)
         real    :: flowO1                          !# Initial discharge (m3 s-1)
         real    :: Intstor1                        !# Initial storage (m3)
+        real    :: qmaxmax                         !# Downstream channel capacity
+        real    :: RXN                             !# Random term variance or range
         real    :: dsto(12)                        !# Monthly min storage 12 values one per month (m3)
         real    :: nsto(12)                        !# Monthly normal upper storage (m3)
         real    :: ndsto(12)                       !# Monthly upper storage (m3)
@@ -64,6 +66,8 @@ module reservoir! Variable declarations
             read(75,*) resrvs%rsvr(i)%SMAX
             read(75,*) resrvs%rsvr(i)%flowO1
             read(75,*) resrvs%rsvr(i)%Intstor1
+            read(75,*) resrvs%rsvr(i)%qmaxmax
+            read(75,*) resrvs%rsvr(i)%RXN
 
             read(75,*) (resrvs%rsvr(i)%dsto(j)   , j= 1,12)
             read(75,*) (resrvs%rsvr(i)%nsto(j)   , j= 1,12)
@@ -115,7 +119,11 @@ module reservoir! Variable declarations
 
         !internals
         integer  :: irsv
-        real     :: FU, LC, LN, LF
+        real     :: FU, LC, LN, LF, RX
+        real     :: rnd
+        !> get random number
+        call random_number(rnd)
+        !rnd sould be between 0.0 and 1.0
 
         ! Water Balance computation S_t-S_t-1 = I - O
         resrv%stoSIM(t) = resrv%stoSIM(t-1) + &
@@ -125,25 +133,26 @@ module reservoir! Variable declarations
         LC = resrv%dsto(mId)/resrv%SMAX
         LN = resrv%nsto(mId)/resrv%SMAX
         LF = resrv%ndsto(mId)/resrv%SMAX
+        RX = 2*resrv%RXN*rnd + resrv%RXN
 
         if (FU <= LC) then
 
-            resrv%flowSIM(t) = min(resrv%Qmin(mId),(FU*resrv%SMAX/DT))
+            resrv%flowSIM(t) = max((min(resrv%Qmin(mId),(FU*resrv%SMAX/DT))+RX),0.0)
 
         else if (FU > LC .and. FU <= LN) then
 
-            resrv%flowSIM(t) = resrv%Qmin(mId) + &
-                (resrv%Qnor(mId) - resrv%Qmin(mId))*((FU-LC)/(LN-LC))
+            resrv%flowSIM(t) = max((resrv%Qmin(mId) + &
+                (resrv%Qnor(mId) - resrv%Qmin(mId))*((FU-LC)/(LN-LC)) + RX),0.0)
 
         else if (FU > LN .and. FU <= LF) then
 
-            resrv%flowSIM(t) = resrv%Qnor(mId) + &
+            resrv%flowSIM(t) = max((resrv%Qnor(mId) + &
                                            ((FU-LN)/(LF-LN))*max((flowIn-resrv%Qnor(mId)), &
-                                           (resrv%Qnd(mId)-resrv%Qnor(mId)))
+                                           (resrv%Qnd(mId)-resrv%Qnor(mId))) + RX),0.0)
 
         else
 
-            resrv%flowSIM(t) = max(((FU-LF)*resrv%SMAX/DT),resrv%Qnd(mId))
+            resrv%flowSIM(t) = max((min(max(((FU-LF)*resrv%SMAX/DT),resrv%Qnd(mId)),resrv%qmaxmax) + RX),0.0)
 
         end if
 
