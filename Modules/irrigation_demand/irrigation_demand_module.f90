@@ -215,15 +215,15 @@ module irrigation_module
         do k = 1, shd%lc%NML
             if (irrm%va%avail(k) > 0.0) then
                 if (pm%tp%iabsp(k) > 0 .and. pm%tp%iabsp(k) <= fms%absp%n) then
-                    SUMIRDMND(pm%tp%iabsp(k)) = SUMIRDMND(pm%tp%iabsp(k)) + irrm%va%dmnd(k) + irrm%va%avail(k)
-                    SUMIRAVAI(pm%tp%iabsp(k)) = SUMIRAVAI(pm%tp%iabsp(k)) + irrm%va%avail(k)
-                    SUMOLDPRE(pm%tp%iabsp(k)) = SUMOLDPRE(pm%tp%iabsp(k)) + cm%dat(ck%RT)%GAT(k) - irrm%va%avail(k)
-                    SUMNEWPRE(pm%tp%iabsp(k)) = SUMNEWPRE(pm%tp%iabsp(k)) + cm%dat(ck%RT)%GAT(k)
+                    SUMIRDMND(pm%tp%iabsp(k)) = SUMIRDMND(pm%tp%iabsp(k)) + (irrm%va%dmnd(k) + irrm%va%avail(k))*ic%dts
+                    SUMIRAVAI(pm%tp%iabsp(k)) = SUMIRAVAI(pm%tp%iabsp(k)) + irrm%va%avail(k)*ic%dts
+                    SUMOLDPRE(pm%tp%iabsp(k)) = SUMOLDPRE(pm%tp%iabsp(k)) + (cm%dat(ck%RT)%GAT(k) - irrm%va%avail(k))*ic%dts
+                    SUMNEWPRE(pm%tp%iabsp(k)) = SUMNEWPRE(pm%tp%iabsp(k)) + cm%dat(ck%RT)%GAT(k)*ic%dts
                 end if
-                SUMIRDMND(0) = SUMIRDMND(0) + irrm%va%dmnd(k) + irrm%va%avail(k)
-                SUMIRAVAI(0) = SUMIRAVAI(0) + irrm%va%avail(k)
-                SUMOLDPRE(0) = SUMOLDPRE(0) + cm%dat(ck%RT)%GAT(k) - irrm%va%avail(k)
-                SUMNEWPRE(0) = SUMNEWPRE(0) + cm%dat(ck%RT)%GAT(k)
+                SUMIRDMND(0) = SUMIRDMND(0) + (irrm%va%dmnd(k) + irrm%va%avail(k))*ic%dts
+                SUMIRAVAI(0) = SUMIRAVAI(0) + irrm%va%avail(k)*ic%dts
+                SUMOLDPRE(0) = SUMOLDPRE(0) + (cm%dat(ck%RT)%GAT(k) - irrm%va%avail(k))*ic%dts
+                SUMNEWPRE(0) = SUMNEWPRE(0) + cm%dat(ck%RT)%GAT(k)*ic%dts
             end if
         end do
 
