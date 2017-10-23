@@ -327,8 +327,8 @@ integer ptr, x, j, k
             PZ0HNAT(I)= Z0HSNOW
             PZ0(I)    = Z0HSNOW/Z0M_TO_Z0H
             do J=1,NL_SVS
-               PTG(I,J)  = bus(x(TPSOIL,I,J))
-               PTG_V(I,J)  = bus(x(TPSOILV,I,J))
+!               PTG(I,J)  = bus(x(TPSOIL,I,J))
+!               PTG_V(I,J)  = bus(x(TPSOILV,I,J))
                PD_G(I,J)=DL_SVS(J)
                if(J.eq.1) then
                   PDZG(i,j) = DL_SVS(J)
@@ -477,9 +477,10 @@ integer ptr, x, j, k
                          bus(x(SNOMA_ES,1,1)), bus(x(TSNOW,1,1)), bus(x(WSNOW_ES,1,1)),    &
                          bus(x(SNODEN_ES,1,1)), bus(x(SNOAL,1,1)),bus(x(SNOAGE_ES,1,1)),    &
                          bus(x(SNOGRAN1_ES,1,1)), bus(x(SNOGRAN2_ES,1,1)), PSSA,   &
-                         PTG,  PCT, PSOILHCAPZ, PSOILCONDZ,                        &
+                         bus(x(TPSOIL    ,1,1)),  PCT, PSOILHCAPZ, PSOILCONDZ,                        &
                          bus(x(PMOINS    ,1,1)),bus(x(TMOINS  ,1,NK)),zfsolis,     &
-                         BUS(X(HUMOINS,1,NK)), VMOD, bus(x(FDSI,1,1)),         &
+                         BUS(X(HUMOINS,1,NK)), VMOD, bus(x (DLAT,1,1)), bus(x (DLON,1,1)), & 
+                         bus(x(FDSI,1,1)),         &
                          PRR_SI, PSR_SI,                                       &
                          RHOA, bus(x(zusl,1,1)),  bus(x(ztsl,1,1)),             &
 !                        bus(x(Z0,1,indx_soil)),bus(x(Z0,1,indx_soil)),&
@@ -504,9 +505,10 @@ integer ptr, x, j, k
                          bus(x(SNOMA_ESV,1,1)), bus(x(TSNOWVEG,1,1)), bus(x(WSNOW_ESV,1,1)),               &
                          bus(x(SNODEN_ESV,1,1)), bus(x(SNVAL,1,1)),bus(x(SNOAGE_ESV,1,1)),    &
                          bus(x(SNOGRAN1_ESV,1,1)), bus(x(SNOGRAN2_ESV,1,1)), PSSAV,   &
-                         PTG_V,  PCT, PSOILHCAPZ, PSOILCONDZ,                              &
+                         bus(x(TPSOILV,1,1)),  PCT, PSOILHCAPZ, PSOILCONDZ,                              &
                          bus(x(PMOINS    ,1,1)),bus(x(TMOINS  ,1,NK)),PRG_VEG,    &
-                         BUS(X(HUMOINS,1,NK)), VMOD, PRAT_VEG,                     &
+                         BUS(X(HUMOINS,1,NK)), VMOD, bus(x (DLAT,1,1)), bus(x (DLON,1,1)),&
+                         PRAT_VEG, &   
                          PRR_SI, PSR_SI,                                       &
                          RHOA, bus(x(zusl,1,1)),  bus(x(ztsl,1,1)),             &
 !                        bus(x(Z0,1,indx_soil)),bus(x(Z0,1,indx_soil)),          &

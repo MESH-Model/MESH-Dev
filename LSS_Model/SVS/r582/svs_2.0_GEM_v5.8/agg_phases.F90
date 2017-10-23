@@ -74,6 +74,9 @@ include "thermoconsts.inc"
       REAL RHOW
       DATA RHOW  / 1000. /          ! (kg m-3)     Water density
 
+      EXCES = 0.
+
+
       DO I=1,N
          DO K=1,NL_SVS  
 
@@ -85,8 +88,8 @@ include "thermoconsts.inc"
             
             IF(WFT(I,K)>0.0.AND.WFT(I,K)<1.0E-6)THEN
                WDTT  (I,K) = WDTT(I,K) + WFT(I,K)
-               EXCES(I,K) = EXCES(I,K) + WFT(I,K)
-               WFT  (I,K) = 0.0
+               EXCES(I,K)  = EXCES(I,K) + WFT(I,K)
+               WFT  (I,K)  = 0.0
                TPSOIL (I,K) = TPSOIL(I,K) - EXCES(I,K)*CHLF*RHOW/CAP(I,K) 
                TPSOILV (I,K) = TPSOILV(I,K) - EXCES(I,K)*CHLF*RHOW/CAP(I,K) 
             ENDIF

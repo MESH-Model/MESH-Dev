@@ -3,7 +3,8 @@ SUBROUTINE SNOWES_SVS(   PTSTEP,                                                
                          PSNOWSWE, PSNOWTEMP, PSNOWLIQ, PSNOWRHO, PSNOWALB,PSNOWAGE,     &
                          PSNOWGRAN1, PSNOWGRAN2, PSSA,                                   &
                          PTG,  PCT, PSOILHCAPZ, PSOILCONDZ,                              &
-                         PPS, PTA, PSW_RAD, PQA, PVMOD, PLW_RAD, PRR, PSR,               &
+                         PPS, PTA, PSW_RAD, PQA, PVMOD, PLAT, PLON,                      &
+                         PLW_RAD, PRR, PSR,                                              &
                          PRHOA, PUREF,                                                   &
                          PZREF, PZ0NAT, PZ0EFF, PZ0HNAT, PALB, PD_G, PDZG,               &
                          PTHRUFAL, PGRNDFLUX,PRNSNOW, PHSNOW, PGFLUXSNOW, PHPSNOW,       &
@@ -119,7 +120,7 @@ REAL, DIMENSION(N), INTENT(IN)      :: PZREF, PUREF,  PRHOA, PZ0NAT, PZ0EFF, PZ0
 !                                      PRHOA     = air density
 !                                      PALB      = soil/vegetation albedo
 !
-REAL, DIMENSION(N), INTENT(IN)      :: PPSN
+REAL, DIMENSION(N), INTENT(IN)      :: PPSN, PLAT, PLON
 !                                      PPSN     = Snow cover fraction (total) 
 !
 REAL, DIMENSION(N,NL), INTENT(INOUT) :: PTG
@@ -290,8 +291,6 @@ LOGICAL     :: LSNOWDRIFT, LSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation d
 ! ajout_EB pour prendre en compte angle zenithal du soleil dans LRAD
 ! puis plus tard dans LALB
 REAL, DIMENSION(SIZE(PTA))      :: ZZENITH    ! solar zenith angle
-REAL, DIMENSION(SIZE(PTA))      :: ZLAT
-REAL, DIMENSION(SIZE(PTA))      :: ZLON
 
 !###########################################################################################
 !########  END      Temporary variables during phasing with SVS
@@ -385,8 +384,6 @@ ZSNOWHMASS(:)  = 0.0
 ! Zenith angle is only useful for albedo computation in polar environment (high latitute)
 
 ZZENITH(:) = XPI/2.
-ZLAT(:)    = XPI/2.
-ZLON(:)    = XPI/2.
 
 !
 !###########################################################################################
@@ -581,7 +578,7 @@ ZLON(:)    = XPI/2.
       DO JJ=1,SIZE(PSNOWSWE,1)
          IF(PSNOWSWE(JJ,JWRK)>0.0.AND.PSNOWTEMP(JJ,JWRK)<ZCHECK_TEMP)THEN
             WRITE(*,*) 'Suspicious low temperature :',PSNOWTEMP(JJ,JWRK)
-            WRITE(*,*) 'At point and location      :',JJ,'LAT=',ZLAT(JJ),'LON=',ZLON(JJ)
+            WRITE(*,*) 'At point and location      :',JJ,'LAT=',PLAT(JJ),'LON=',PLON(JJ)
             WRITE(*,*) 'At snow level / total layer:',JWRK,'/',INLVLS
             WRITE(*,*) 'SNOW MASS BUDGET (kg/m2/s) :',ZSNOW_MASS_BUDGET(JJ)
             WRITE(*,*) 'SWE BY LAYER      (kg/m2)  :',PSNOWSWE (JJ,1:INLVLS)
@@ -767,8 +764,8 @@ DO JJ=1,KSIZE1
    ZP_PET_B_COEF(JJ) = ZPET_B_COEF(JI)
    ZP_PEQ_B_COEF(JJ) = ZPEQ_B_COEF(JI)
    !
-   ZP_LAT  (JJ)      = ZLAT(JI)
-   ZP_LON  (JJ)      = ZLON(JI)
+   ZP_LAT  (JJ)      = PLAT(JI)
+   ZP_LON  (JJ)      = PLON(JI)
    ZP_ZENITH(JJ)     = ZZENITH  (JI)
 !
    ZP_GRNDFLUX    (JJ) = PGRNDFLUX    (JI)
