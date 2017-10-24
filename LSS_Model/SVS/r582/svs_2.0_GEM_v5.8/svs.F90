@@ -487,7 +487,7 @@ integer ptr, x, j, k
                          PZ0,PZ0,&
                          PZ0HNAT, BUS(X(ALGR,1,1)), PD_G, PDZG,                          &
                          bus(x(PTHRUFAL,1,1)), PGRNDFLUX,PRNSNOW, PHSNOW, PGFLUXSNOW, PHPSNOW,       &
-                         PLESES, PLELES, PEVAP,bus(x(PSNVHA ,1,1)) , N, NSL, NL_SVS)
+                         PLESES, PLELES, PEVAP,bus(x(PSNGRVL ,1,1)) , N, NSL, NL_SVS)
 !
 !
 !     Prepare radiation for snow under high veg --> Impact of vegetation on incoming SW and LW 
@@ -515,7 +515,7 @@ integer ptr, x, j, k
                          PZ0,PZ0,&
                          PZ0HNAT, BUS(X(ALGR,1,1)), PD_G, PDZG,               &
                          bus(x(PTHRUFAL_V,1,1)), PGRNDFLUX_V,PRNSNOW_V, PHSNOW_V, PGFLUXSNOW_V, PHPSNOW_V,       &
-                         PLESES_V, PLELES_V, PEVAP_V,BUS(X(PSNGRVL,1,1)) , N, NSL, NL_SVS)
+                         PLESES_V, PLELES_V, PEVAP_V,BUS(X(PSNVHA,1,1)) , N, NSL, NL_SVS)
 
 
 !
