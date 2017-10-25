@@ -58,6 +58,8 @@ module sa_mesh_run_within_tile
         type(fl_ids) :: fls
         type(clim_info) :: cm
 
+        integer n, k
+
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
@@ -75,24 +77,29 @@ module sa_mesh_run_within_tile
 
         !> Call processes.
         call irrigation_within_tile(fls, shd, cm)
+
+        !> MPI exchange.
+        call run_within_tile_mpi_irecv(shd, cm)
+
+        !> Call processes.
         call RUNCLASS36_within_tile(shd, fls, cm)
         call RUNSVS113(shd, fls, cm)
         call bflm_within_tile(fls, shd, cm)
         call runci_within_tile(shd, fls, cm)
+
+        !> MPI exchange.
+        call run_within_tile_mpi_isend(shd, cm)
 
         where (stas%cnpy%pevp(il1:il2) /= 0.0)
             stas%cnpy%evpb(il1:il2) = stas%sfc%evap(il1:il2)/stas%cnpy%pevp(il1:il2)
             stas%cnpy%arrd(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)/stas%cnpy%pevp(il1:il2)
         end where
 
-        !> MPI exchange.
-        call run_within_tile_mpi(shd, cm)
-
         call irrigation_write_output(fls, shd, cm)
 
     end function
 
-    subroutine run_within_tile_mpi(shd, cm)
+    subroutine run_within_tile_mpi_isend(shd, cm)
 
         !> For: MPI variables, barrier flag, il1:il2 parse utility
         use mpi_module
@@ -121,7 +128,7 @@ module sa_mesh_run_within_tile
         nvars = 16 + 4*shd%lc%IGND
         if (SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) nvars = nvars + 10 + 4
         if (bflm%BASEFLOWFLAG == 1) nvars = nvars + 1
-        if (irrm%PROCESS_ACTIVE) nvars = nvars + 3
+!        if (irrm%PROCESS_ACTIVE) nvars = nvars + 3
 
         !> Exchange variables.
         if (allocated(irqst)) deallocate(irqst)
@@ -183,11 +190,11 @@ module sa_mesh_run_within_tile
             end if
 
             !> Irrigation demand.
-            if (irrm%PROCESS_ACTIVE) then
-                call mpi_isend(irrm%va%dmnd(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(irrm%va%avail(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(cm%dat(ck%RT)%GAT(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            end if
+!            if (irrm%PROCESS_ACTIVE) then
+!                call mpi_isend(irrm%va%dmnd(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!                call mpi_isend(irrm%va%avail(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!                call mpi_isend(cm%dat(ck%RT)%GAT(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!            end if
 
             !> Wait until the exchange completes.
             lstat = .false.
@@ -253,10 +260,77 @@ module sa_mesh_run_within_tile
                 end if
 
                 !> Irrigation demand.
+!                if (irrm%PROCESS_ACTIVE) then
+!                    call mpi_irecv(irrm%va%dmnd(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!                    call mpi_irecv(irrm%va%avail(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!                    call mpi_irecv(cm%dat(ck%RT)%GAT(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+!                    i = i + 1
+!                end if
+
+                !> Wait until the exchange completes.
+                lstat = .false.
+                do while (.not. lstat)
+                    call mpi_testall(nvars, irqst, lstat, imstat, ierr)
+                end do
+
+            end do !u = 1, (inp - 1)
+
+        end if !(inp > 1 .and. ipid /= 0) then
+
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
+
+    end subroutine
+
+    subroutine run_within_tile_mpi_irecv(shd, cm)
+
+        !> For: MPI variables, barrier flag, il1:il2 parse utility
+        use mpi_module
+
+        !> Process modules (required for variables).
+        use sa_mesh_shared_variables
+        use model_dates
+        use climate_forcing
+        use irrigation_module
+
+        !> Input variables.
+        type(ShedGridParams) :: shd
+        type(clim_info) :: cm
+
+        !> Local variables.
+        integer ipid_recv, nvars, itag, ierrcode, istop, i, j, u, iin, ii1, ii2, ierr
+        logical lstat
+        integer, allocatable :: irqst(:), imstat(:, :)
+
+        !> Return if grid processes are not active.
+        if (.not. ro%RUNTILE) return
+
+        !> Count the number of active variables included in the exchange.
+        nvars = 0
+        if (irrm%PROCESS_ACTIVE) nvars = nvars + 1
+        if (nvars == 0) return
+
+        !> Exchange variables.
+        if (allocated(irqst)) deallocate(irqst)
+        if (allocated(imstat)) deallocate(imstat)
+        allocate(irqst(nvars), imstat(mpi_status_size, nvars))
+        itag = ic%ts_count*1000 + 400
+
+        ii1 = 1
+        ii2 = shd%lc%NML
+        iin = shd%lc%NML
+
+        if (inp > 1 .and. ipid == 0) then
+
+            !> Send data to worker nodes.
+            do u = 1, (inp - 1)
+
+                !> Reset exchange variables.
+                i = 1
+                irqst = mpi_request_null
+                imstat = 0
+
                 if (irrm%PROCESS_ACTIVE) then
-                    call mpi_irecv(irrm%va%dmnd(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(irrm%va%avail(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(cm%dat(ck%RT)%GAT(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    call mpi_isend(cm%dat(ck%RT)%GAT(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
                 end if
 
@@ -267,6 +341,23 @@ module sa_mesh_run_within_tile
                 end do
 
             end do !u = 1, (inp - 1)
+
+        else if (inp > 1) then
+
+            !> Receive data from head-node.
+            !> Reset exchange variables.
+            i = 1
+            irqst = mpi_request_null
+
+            if (irrm%PROCESS_ACTIVE) then
+                call mpi_irecv(cm%dat(ck%RT)%GAT(ii1:ii2), iin, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+            end if
+
+            !> Wait until the exchange completes.
+            lstat = .false.
+            do while (.not. lstat)
+                call mpi_testall(nvars, irqst, lstat, imstat, ierr)
+            end do
 
         end if !(inp > 1 .and. ipid /= 0) then
 

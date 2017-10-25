@@ -107,9 +107,9 @@ module irrigation_module
         real :: MINFSTG = 0.05
 
         !> Return if the irrigation module is not active.
-        if (.not. irrm%PROCESS_ACTIVE) return
+        if (.not. irrm%PROCESS_ACTIVE .or. ipid /= 0) return
 
-        if (ipid /= 0 .or. izero == 0) then
+!        if (ipid /= 0 .or. izero == 0) then
             irrm%va%avail(il1:il2) = 0.0
             do k = il1, il2 !GRU -> loop for timestep
                 IRDMND(k) = 0.0   !initialization for each time step
@@ -132,16 +132,16 @@ module irrigation_module
                         irrm%va%dmnd(k) = IRDMND(k)
                     end if
                     irrm%va%avail(k) = max(irrm%va%dmnd(k) - cm%dat(ck%RT)%GAT(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
-                    if (pm%tp%iabsp(k) > 0 .and. pm%tp%iabsp(k) <= fms%absp%n) then
-                        n = fms%absp%meta%rnk(pm%tp%iabsp(k)) !RANK of channel to pull abstraction
-                        fsmin = fms%absp%fsmin(pm%tp%iabsp(k)) ! if read from tb0 file
-                        smin = fms%absp%smin(pm%tp%iabsp(k)) ! if read from tb0 file
-                    else
-                        n = shd%lc%ILMOS(k) ! pull from own cell if no abstraction point defined
-                        fsmin = MINFSTG
-                        smin = MINSTG
-                    end if
                     if (ro%RUNGRID) then
+                        if (pm%tp%iabsp(k) > 0 .and. pm%tp%iabsp(k) <= fms%absp%n) then
+                            n = fms%absp%meta%rnk(pm%tp%iabsp(k)) !RANK of channel to pull abstraction
+                            fsmin = fms%absp%fsmin(pm%tp%iabsp(k)) ! if read from tb0 file
+                            smin = fms%absp%smin(pm%tp%iabsp(k)) ! if read from tb0 file
+                        else
+                            n = shd%lc%ILMOS(k) ! pull from own cell if no abstraction point defined
+                            fsmin = MINFSTG
+                            smin = MINSTG
+                        end if
                         irrm%va%avail(k) = min(max(stas_grid%chnl%s(n) - smin, 0.0)*(1.0 - fsmin)/shd%AREA(n)*1000.0/ic%dts, &
                             irrm%va%avail(k)) ! adjust to the maximum water available from channel storage (m3 to mm)
                         stas_grid%chnl%s(n) = stas_grid%chnl%s(n) - &
@@ -151,7 +151,7 @@ module irrigation_module
                     irrm%va%dmnd(k) = irrm%va%dmnd(k) - irrm%va%avail(k)
                 end if
             end do
-        end if
+!        end if
 
     end subroutine
 

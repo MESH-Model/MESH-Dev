@@ -177,7 +177,8 @@ module sa_mesh_run_within_grid
         if (.not. ro%RUNTILE) return
 
         !> Count the number of active variables included in the exchange.
-        nvars = 1
+        nvars = 0
+        if (nvars == 0) return
 
         !> Exchange variables.
         if (allocated(irqst)) deallocate(irqst)
@@ -196,7 +197,7 @@ module sa_mesh_run_within_grid
             i = 1
             irqst = mpi_request_null
 
-            call mpi_isend(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!            call mpi_isend(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
 
             !> Wait until the exchange completes.
             lstat = .false.
@@ -219,7 +220,7 @@ module sa_mesh_run_within_grid
                 irqst = mpi_request_null
                 imstat = 0
 
-                call mpi_irecv(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!                call mpi_irecv(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
 
                 !> Wait until the exchange completes.
                 lstat = .false.
@@ -258,7 +259,10 @@ module sa_mesh_run_within_grid
         if (.not. ro%RUNTILE) return
 
         !> Count the number of active variables included in the exchange.
+!        nvars = 0
+!        if (fms%absp%n > 0) nvars = nvars + 1
         nvars = 1
+        if (nvars == 0) return
 
         !> Exchange variables.
         if (allocated(irqst)) deallocate(irqst)
@@ -281,7 +285,9 @@ module sa_mesh_run_within_grid
                 irqst = mpi_request_null
                 imstat = 0
 
-                call mpi_isend(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!                if (fms%absp%n > 0) then
+                    call mpi_isend(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!                end if
 
                 !> Wait until the exchange completes.
                 lstat = .false.
@@ -302,7 +308,9 @@ module sa_mesh_run_within_grid
             i = 1
             irqst = mpi_request_null
 
-            call mpi_irecv(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!            if (fms%absp%n > 0) then
+                call mpi_irecv(stas_grid%chnl%s(ii1:ii2), iin, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!            end if
 
             !> Wait until the exchange completes.
             lstat = .false.
