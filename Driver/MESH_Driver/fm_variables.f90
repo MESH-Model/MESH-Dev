@@ -12,6 +12,8 @@
 !>
 module fm_variables
 
+    implicit none
+
     !> Type: outlet_location
     !>  Attributes of an outlet location.
     !>

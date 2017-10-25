@@ -722,7 +722,7 @@
                                     WF_RTE_frsvrout%fout_header = .false.
                                 case ('all')
                                     WF_RTE_frsvrout%freq = radix(WF_RTE_frsvrout%KDLY)**WF_RTE_frsvrout%KDLY
-									WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
+                                    WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
                                     exit
                                 case ('none')
                                     WF_RTE_frsvrout%freq = 0
