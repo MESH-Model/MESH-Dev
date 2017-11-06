@@ -3,12 +3,12 @@ module save_basin_output
     implicit none
 
     !> String read from run_options.ini.
-    character(len = 100), save :: BASINAVGWBFILEFLAG = ''
+    character(len = 100), save :: BASINAVGWBFILEFLAG = '', BASINAVGEBFILEFLAG = ''
 
     private
 
     public run_save_basin_output_init, run_save_basin_output, run_save_basin_output_finalize
-    public BASINAVGWBFILEFLAG
+    public BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG
 
     !> Global types.
 
@@ -30,8 +30,33 @@ module save_basin_output
     end type
 
     !> For energy balance.
+    !*  ALVS: Visible albedo of the surface. [--].
+    !*  ALIR: Near-IR albedo of the surface. [--].
+    !*  FSNET: Net shortwave radiation at the surface. [W m-2].
+    !*  GTE: Effective black-body temperature at the surface. [K].
+    !*  FLNET: Net longwave radiation at the surface. [W m-2].
+    !*  HFS: Sensible heat flux at the surface. [W m-2].
+    !*  QEVAP: Latent heat flux at the surface. [W m-2].
+    !*  GZERO: Heat flux into the soil at the surface. [W m-2].
+    !*  TPOND: Temperature of ponded water. [K].
+    !*  CMAS: Current mass of vegetation canopy. [kg m-2].
+    !*  TCAN: Vegetation canopy temperature. [K].
+    !*  TSNOW: Snowpack temperature. [K].
+    !*  TBAR: Temperature of soil layers. [K].
+    !*  BAL0: Balance at the beginning of the time-step. [W m-2].
+    !*  BAL1: Balance at the end of the time-step. [W m-2].
     type BasinEnergyBalance
-        real QEVP, HFS
+        integer, dimension(:), allocatable :: &
+            IFS, IPOND, ICAN, ISNOW
+        real, dimension(:), allocatable :: &
+            FSIN, FLIN, FLUT, &
+            HFS, QEVAP, GZERO, &
+            ALVS, ALIR, GTE, &
+            TPOND, &
+            CMAS, TCAN, &
+            TSNOW
+        real, dimension(:, :), allocatable :: TBAR
+        real, dimension(:), allocatable :: BAL0, BAL1
     end type
 
     !> Basin output.
@@ -48,7 +73,7 @@ module save_basin_output
     end type
 
     type BasinOutputConfig
-        type(BasinOutputConfigFlag) :: wb
+        type(BasinOutputConfigFlag) wb, eb
     end type
 
     !> Local type instances.
@@ -89,15 +114,16 @@ module save_basin_output
         !> Return if basin output has been disabled.
 !-        if (BASINBALANCEOUTFLAG == 0) return
 
-        !> Parse the water balance output file flag.
+        !> Parse output file flags.
         if (len_trim(BASINAVGWBFILEFLAG) > 0) call parse_basin_output_flag(shd, BASINAVGWBFILEFLAG, bnoflg%wb)
+        if (len_trim(BASINAVGEBFILEFLAG) > 0) call parse_basin_output_flag(shd, BASINAVGEBFILEFLAG, bnoflg%eb)
 
         !> Grab values for common indices.
         NA = shd%NA
         NSL = shd%lc%IGND
 
         !> Allocate and zero variables for accumulations.
-        allocate(bno%wb(NKEY))
+        allocate(bno%wb(NKEY), bno%eb(NKEY))
         do ikey = 1, NKEY
             allocate(bno%wb(ikey)%PRE(NA), bno%wb(ikey)%EVAP(NA), bno%wb(ikey)%ROF(NA), &
                      bno%wb(ikey)%ROFO(NA), bno%wb(ikey)%ROFS(NA), bno%wb(ikey)%ROFB(NA), &
@@ -122,6 +148,25 @@ module save_basin_output
             bno%wb(ikey)%LZS = 0.0
             bno%wb(ikey)%DZS = 0.0
             bno%wb(ikey)%STG_INI = 0.0
+            allocate( &
+                bno%eb(ikey)%IFS(NA), bno%eb(ikey)%IPOND(NA), bno%eb(ikey)%ICAN(NA), bno%eb(ikey)%ISNOW(NA), &
+                bno%eb(ikey)%FSIN(NA), bno%eb(ikey)%FLIN(NA), bno%eb(ikey)%FLUT(NA), &
+                bno%eb(ikey)%HFS(NA), bno%eb(ikey)%QEVAP(NA), bno%eb(ikey)%GZERO(NA), &
+                bno%eb(ikey)%ALVS(NA), bno%eb(ikey)%ALIR(NA), bno%eb(ikey)%GTE(NA), &
+                bno%eb(ikey)%TPOND(NA), &
+                bno%eb(ikey)%CMAS(NA), bno%eb(ikey)%TCAN(NA), &
+                bno%eb(ikey)%TSNOW(NA), &
+                bno%eb(ikey)%TBAR(NA, NSL), &
+                bno%eb(ikey)%BAL0(NA), bno%eb(ikey)%BAL1(NA))
+            bno%eb(ikey)%IFS = 0; bno%eb(ikey)%IPOND = 0; bno%eb(ikey)%ICAN = 0; bno%eb(ikey)%ISNOW = 0
+            bno%eb(ikey)%FSIN = 0.0; bno%eb(ikey)%FLIN = 0.0; bno%eb(ikey)%FLUT = 0.0
+            bno%eb(ikey)%HFS = 0.0; bno%eb(ikey)%QEVAP = 0.0; bno%eb(ikey)%GZERO = 0.0
+            bno%eb(ikey)%ALVS = 0.0; bno%eb(ikey)%ALIR = 0.0; bno%eb(ikey)%GTE = 0.0
+            bno%eb(ikey)%TPOND = 0.0
+            bno%eb(ikey)%CMAS = 0.0; bno%eb(ikey)%TCAN = 0.0
+            bno%eb(ikey)%TSNOW = 0.0
+            bno%eb(ikey)%TBAR = 0.0
+            bno%eb(ikey)%BAL0 = 0.0; bno%eb(ikey)%BAL1 = 0.0
         end do
 
         !> Daily.
@@ -143,6 +188,10 @@ module save_basin_output
                 end do
             end if
         end if
+        if (btest(bnoflg%eb%t, 0)) then
+            open(901, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance.csv')
+            call write_energy_balance_header(fls, shd, 901, 86400)
+        end if
 
         !> Monthly.
         if (btest(bnoflg%wb%t, 1)) then
@@ -160,6 +209,10 @@ module save_basin_output
                     end if
                 end do
             end if
+        end if
+        if (btest(bnoflg%eb%t, 1)) then
+            open(905, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance_Monthly.csv')
+            call write_energy_balance_header(fls, shd, 905, 86400)
         end if
 
         !> Hourly.
@@ -179,6 +232,10 @@ module save_basin_output
                 end do
             end if
         end if
+        if (btest(bnoflg%eb%t, 2)) then
+            open(906, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance_Hourly.csv')
+            call write_energy_balance_header(fls, shd, 906, 3600)
+        end if
 
         !> Per time-step.
         if (btest(bnoflg%wb%t, 3)) then
@@ -196,6 +253,10 @@ module save_basin_output
                     end if
                 end do
             end if
+        end if
+        if (btest(bnoflg%eb%t, 3)) then
+            open(907, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance_ts.csv')
+            call write_energy_balance_header(fls, shd, 907, ic%dts)
         end if
 
         !> Calculate initial storage and aggregate through neighbouring cells.
@@ -246,17 +307,6 @@ module save_basin_output
             call update_evp_header(fls, shd, 913, ic%dts)
         end if
 
-        !> Allocate and zero variables for accumulations.
-        allocate(bno%eb(2:2))
-        bno%eb(:)%QEVP = 0.0
-        bno%eb(:)%HFS = 0.0
-
-        !> Open CSV output files for the energy balance and write the header.
-        if (BASINAVGEBFILEFLAG > 0) then
-            open(901, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance.csv')
-            write(901, 1010) 'YEAR', 'DAY', 'HFS', 'QEVP'
-        end if
-
         !> Read initial variables values from file.
         if (RESUMEFLAG == 4) then
 
@@ -301,8 +351,8 @@ module save_basin_output
             end do
 
             !> Energy balance.
-            read(iun) bno%eb(2)%QEVP
-            read(iun) bno%eb(2)%HFS
+!            read(iun) bno%eb%QEVP
+!            read(iun) bno%eb%HFS
 
             !> Close the file to free the unit.
             close(iun)
@@ -342,7 +392,10 @@ module save_basin_output
         bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(stas_grid%cnpy%evpb*shd%FRAC)/sum(shd%FRAC)
         bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(stas_grid%cnpy%arrd*shd%FRAC)/sum(shd%FRAC)
 
-        !> Hourly (wb): IKEY_HLY
+        !> Update the energy balance.
+        call update_energy_balance(shd, cm)
+
+        !> Hourly: IKEY_HLY
         if (mod(ic%ts_hourly, 3600/ic%dts) == 0) then
 !todo: change this to pass the index of the file object.
             if (btest(bnoflg%wb%t, 2)) then
@@ -358,9 +411,14 @@ module save_basin_output
                 call reset_water_balance(IKEY_HLY)
             end if
             if (btest(BASINAVGEVPFILEFLAG, 2)) call update_evp(fls, shd, 912, 3600, IKEY_HLY)
+            if (btest(bnoflg%eb%t, 2)) then
+                call save_energy_balance(shd, 3600, IKEY_HLY)
+                call write_energy_balance(fls, shd, 906, 3600, shd%NAA, IKEY_HLY)
+                call reset_energy_balance(IKEY_HLY)
+            end if
         end if
 
-        !> Daily (wb, eb): IKEY_DLY
+        !> Daily: IKEY_DLY
         if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
             if (btest(bnoflg%wb%t, 0)) then
                 call save_water_balance(shd, 86400, IKEY_DLY)
@@ -376,15 +434,14 @@ module save_basin_output
                 call reset_water_balance(IKEY_DLY)
             end if
             if (btest(BASINAVGEVPFILEFLAG, 0)) call update_evp(fls, shd, 910, 86400, IKEY_DLY)
-
-            !> Energy balance.
-            dnar = sum(shd%FRAC)
-            if (BASINAVGEBFILEFLAG > 0) then
-                write(901, 1010) ic%now%year, ic%now%jday, bno%eb(2)%HFS/dnar, bno%eb(2)%QEVP/dnar
+            if (btest(bnoflg%eb%t, 0)) then
+                call save_energy_balance(shd, 86400, IKEY_DLY)
+                call write_energy_balance(fls, shd, 901, 86400, shd%NAA, IKEY_DLY)
+                call reset_energy_balance(IKEY_DLY)
             end if
         end if
 
-        !> Monthly (wb): IKEY_MLY
+        !> Monthly: IKEY_MLY
         if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
 
             !> Determine the next day in the month.
@@ -407,10 +464,15 @@ module save_basin_output
                     call reset_water_balance(IKEY_MLY)
                 end if
                 if (btest(BASINAVGEVPFILEFLAG, 1)) call update_evp(fls, shd, 911, (86400*ndy), IKEY_MLY)
+                if (btest(bnoflg%eb%t, 1)) then
+                    call save_energy_balance(shd, (86400*ndy), IKEY_MLY)
+                    call write_energy_balance(fls, shd, 905, (86400*ndy), shd%NAA, IKEY_MLY)
+                    call reset_energy_balance(IKEY_MLY)
+                end if
             end if
         end if
 
-        !> Time-step (wb): IKEY_TSP
+        !> Time-step: IKEY_TSP
         if (btest(bnoflg%wb%t, 3)) then
             call save_water_balance(shd, ic%dts, IKEY_TSP)
             call write_water_balance(fls, shd, 904, ic%dts, shd%NAA, IKEY_TSP)
@@ -424,6 +486,11 @@ module save_basin_output
             call reset_water_balance(IKEY_TSP)
         end if
         if (btest(BASINAVGEVPFILEFLAG, 3)) call update_evp(fls, shd, 913, ic%dts, IKEY_TSP)
+        if (btest(bnoflg%eb%t, 3)) then
+            call save_energy_balance(shd, ic%dts, IKEY_TSP)
+            call write_energy_balance(fls, shd, 907, ic%dts, shd%NAA, IKEY_TSP)
+            call reset_energy_balance(IKEY_TSP)
+        end if
 
 1010    format(9999(g15.7e2, ','))
 
@@ -494,8 +561,8 @@ module save_basin_output
             end do
 
             !> Energy balance.
-            write(iun) bno%eb(2)%QEVP
-            write(iun) bno%eb(2)%HFS
+            write(iun) !bno%eb(2)%QEVP
+            write(iun) !bno%eb(2)%HFS
 
             !> Other accumulators for the water balance.
             do i = 1, NKEY
@@ -940,6 +1007,206 @@ module save_basin_output
         write(fik, 1010) 'EVAP', 'PEVP', 'EVPB', 'ARRD'
 
 1010    format(9999(g15.7e2, ','))
+
+    end subroutine
+
+    subroutine update_energy_balance(shd, cm)
+
+        !> For 'shd' variable type and 'stas_grid' variables.
+        use sa_mesh_shared_variables
+
+        !> For 'cm' variable type.
+        use climate_forcing
+
+        !> For 'ic' variable.
+        use model_dates
+
+        !> Input variables.
+        type(ShedGridParams) :: shd
+        type(clim_info) :: cm
+
+        !> Local variables.
+        integer ikey
+        real :: TFREZ = 273.16
+
+        !> Update totals.
+        do ikey = 1, NKEY
+
+            !> Time-averaged variables.
+            where (cm%dat(ck%FB)%GRD > 0.0)
+                bno%eb(ikey)%ALVS = bno%eb(ikey)%ALVS + stas_grid%sfc%alvs
+                bno%eb(ikey)%ALIR = bno%eb(ikey)%ALIR + stas_grid%sfc%alir
+                bno%eb(ikey)%IFS = bno%eb(ikey)%IFS + 1
+            end where
+            bno%eb(ikey)%GTE = bno%eb(ikey)%GTE + stas_grid%sfc%gte - TFREZ
+            where (stas_grid%sfc%zpnd > 0.0)
+                bno%eb(ikey)%TPOND = bno%eb(ikey)%TPOND + stas_grid%sfc%tpnd - TFREZ
+                bno%eb(ikey)%IPOND = bno%eb(ikey)%IPOND + 1
+            end where
+            bno%eb(ikey)%CMAS = bno%eb(ikey)%CMAS + stas_grid%cnpy%cmai
+            where (stas_grid%cnpy%tcan > 0.0)
+                bno%eb(ikey)%TCAN = bno%eb(ikey)%TCAN + stas_grid%cnpy%tcan - TFREZ
+                bno%eb(ikey)%ICAN = bno%eb(ikey)%ICAN + 1
+            end where
+            where (stas_grid%sno%sno > 0.0)
+                bno%eb(ikey)%TSNOW = bno%eb(ikey)%TSNOW + stas_grid%sno%tsno - TFREZ
+                bno%eb(ikey)%ISNOW = bno%eb(ikey)%ISNOW + 1
+            end where
+            bno%eb(ikey)%TBAR = bno%eb(ikey)%TBAR + stas_grid%sl%tbar - TFREZ
+
+            !> Accumulated fluxes.
+            bno%eb(ikey)%FSIN = bno%eb(ikey)%FSIN + cm%dat(ck%FB)%GRD*ic%dts
+            bno%eb(ikey)%FLIN = bno%eb(ikey)%FLIN + cm%dat(ck%FI)%GRD*ic%dts
+            bno%eb(ikey)%FLUT = bno%eb(ikey)%FLUT + (5.66796E-8*stas_grid%sfc%gte**4)*ic%dts
+            bno%eb(ikey)%HFS = bno%eb(ikey)%HFS + stas_grid%sfc%hfs*ic%dts
+            bno%eb(ikey)%QEVAP = bno%eb(ikey)%QEVAP + stas_grid%sfc%qevp*ic%dts
+            bno%eb(ikey)%GZERO = bno%eb(ikey)%GZERO + stas_grid%sfc%gzero*ic%dts
+
+        end do
+
+    end subroutine
+
+    subroutine save_energy_balance(shd, dts, ikdts)
+
+        use sa_mesh_shared_variables
+        use model_dates
+
+        !> Input variables.
+        type(ShedGridParams) :: shd
+        integer dts, ikdts
+
+        !> Local variables.
+        real dnts
+
+        !> Denominator for time-step averaged variables.
+        dnts = real(dts/ic%dts)
+
+        !> Time-averaged storage components.
+        where (bno%eb(ikdts)%IFS > 0)
+            bno%eb(ikdts)%ALVS = bno%eb(ikdts)%ALVS/bno%eb(ikdts)%IFS
+            bno%eb(ikdts)%ALIR = bno%eb(ikdts)%ALIR/bno%eb(ikdts)%IFS
+        end where
+        bno%eb(ikdts)%GTE = bno%eb(ikdts)%GTE/dnts
+        bno%eb(ikdts)%QEVAP = bno%eb(ikdts)%QEVAP/dnts
+        where (bno%eb(ikdts)%IPOND > 0) bno%eb(ikdts)%TPOND = bno%eb(ikdts)%TPOND/bno%eb(ikdts)%IPOND
+        bno%eb(ikdts)%CMAS = bno%eb(ikdts)%CMAS/dnts
+        where (bno%eb(ikdts)%ICAN > 0) bno%eb(ikdts)%TCAN = bno%eb(ikdts)%TCAN/bno%eb(ikdts)%ICAN
+        where (bno%eb(ikdts)%ISNOW > 0) bno%eb(ikdts)%TSNOW = bno%eb(ikdts)%TSNOW/bno%eb(ikdts)%ISNOW
+        bno%eb(ikdts)%TBAR = bno%eb(ikdts)%TBAR/dnts
+
+        !> Denominator for accumulated fluxes.
+        dnts = real(dts*ic%dts)
+
+        !> Conversion of energy fluxes back to rates.
+        !> W m-2 = J m-2 s-1 (period)
+        bno%eb(ikdts)%FSIN = bno%eb(ikdts)%FSIN/dnts
+        bno%eb(ikdts)%FLIN = bno%eb(ikdts)%FLIN/dnts
+        bno%eb(ikdts)%FLUT = bno%eb(ikdts)%FLUT/dnts
+        bno%eb(ikdts)%HFS = bno%eb(ikdts)%HFS/dnts
+        bno%eb(ikdts)%QEVAP = bno%eb(ikdts)%QEVAP/dnts
+        bno%eb(ikdts)%GZERO = bno%eb(ikdts)%GZERO/dnts
+
+    end subroutine
+
+    subroutine write_energy_balance_header(fls, shd, fik, dts)
+
+        use model_files_variables
+        use sa_mesh_shared_variables
+
+        !> Input variables.
+        type(fl_ids) :: fls
+        type(ShedGridParams) :: shd
+!todo: change this to the unit attribute of the file object.
+        integer fik
+        integer dts
+
+        !> Local variables.
+        integer j
+        character(len = 3) ffmti
+
+        !> Time-step information.
+        write(fik, 1010, advance = 'no') 'YEAR', 'DAY'
+        if (dts < 86400) write(fik, 1010, advance = 'no') 'HOUR'
+        if (dts < 3600) write(fik, 1010, advance = 'no') 'MINS'
+
+        !> Variables.
+        write(fik, 1010, advance = 'no') &
+            'FSNET', 'FLNET', 'HFS', 'QEVAP', 'GZERO', 'ALVS', 'ALIR', 'GTE', 'TPOND', 'CMAS', 'TCAN', 'TSNOW'
+        do j = 1, shd%lc%IGND
+            write(ffmti, '(i3)') j
+            write(fik, 1010, advance = 'no') 'TBAR' // trim(adjustl(ffmti))
+        end do
+        write(fik, 1010)
+
+1010    format(9999(g15.7e2, ','))
+
+    end subroutine
+
+    subroutine write_energy_balance(fls, shd, fik, dts, ina, ikdts)
+
+        use model_files_variables
+        use sa_mesh_shared_variables
+        use model_dates
+
+        !> Input variables.
+        type(fl_ids) :: fls
+        type(ShedGridParams) :: shd
+!todo: change this to the unit attribute of the file object.
+        integer fik
+        integer dts, ina, ikdts
+
+        !> Local variables.
+        integer j
+        real frac
+
+        !> Make sure the cell is inside the basin.
+        ina = min(ina, shd%NAA)
+        frac = shd%AREA(ina)/(shd%AL**2)
+
+        !> Write the time-stamp for the period.
+        write(fik, 1010, advance = 'no') ic%now%year
+        write(fik, 1010, advance = 'no') ic%now%jday
+        if (dts < 86400) write(fik, 1010, advance = 'no') ic%now%hour
+        if (dts < 3600) write(fik, 1010, advance = 'no') ic%now%mins
+
+        !> Calculate balance for the period.
+        bno%eb(ikdts)%BAL1 = ( &
+            bno%eb(ikdts)%FSIN(ina)*(1.0 - (bno%eb(ikdts)%ALVS(ina) + bno%eb(ikdts)%ALIR(ina))/2.0) + &
+            bno%eb(ikdts)%FLIN(ina) - bno%eb(ikdts)%FLUT(ina) - &
+            bno%eb(ikdts)%HFS(ina) - bno%eb(ikdts)%QEVAP(ina) - bno%eb(ikdts)%GZERO(ina))*frac
+
+        !> Write the water balance to file.
+        write(fik, 1010) &
+            bno%eb(ikdts)%FSIN(ina)*(1.0 - (bno%eb(ikdts)%ALVS(ina) + bno%eb(ikdts)%ALIR(ina))/2.0)*frac, &
+            (bno%eb(ikdts)%FLIN(ina) - bno%eb(ikdts)%FLUT(ina))*frac, &
+            bno%eb(ikdts)%HFS(ina)*frac, bno%eb(ikdts)%QEVAP(ina)*frac, bno%eb(ikdts)%GZERO(ina)*frac, &
+            bno%eb(ikdts)%ALVS(ina), bno%eb(ikdts)%ALIR(ina), bno%eb(ikdts)%GTE(ina), &
+            bno%eb(ikdts)%TPOND(ina), &
+            bno%eb(ikdts)%CMAS(ina)*frac, bno%eb(ikdts)%TCAN(ina), &
+            bno%eb(ikdts)%TSNOW(ina), &
+            (bno%eb(ikdts)%TBAR(ina, j), j = 1, shd%lc%IGND)
+
+1010    format(9999(g15.7e2, ','))
+
+    end subroutine
+
+    subroutine reset_energy_balance(ikdts)
+
+        !> Input variables.
+        integer ikdts
+
+        !> Save the previous balance value.
+        bno%eb(ikdts)%BAL0 = bno%eb(ikdts)%BAL1
+
+        !> Reset the accumulation for time-averaged output.
+        bno%eb(ikdts)%IFS = 0; bno%eb(ikdts)%IPOND = 0; bno%eb(ikdts)%ICAN = 0; bno%eb(ikdts)%ISNOW = 0
+        bno%eb(ikdts)%FSIN = 0.0; bno%eb(ikdts)%FLIN = 0.0; bno%eb(ikdts)%FLUT = 0.0
+        bno%eb(ikdts)%HFS = 0.0; bno%eb(ikdts)%QEVAP = 0.0; bno%eb(ikdts)%GZERO = 0.0
+        bno%eb(ikdts)%ALVS = 0.0; bno%eb(ikdts)%ALIR = 0.0; bno%eb(ikdts)%GTE = 0.0
+        bno%eb(ikdts)%TPOND = 0.0
+        bno%eb(ikdts)%CMAS = 0.0; bno%eb(ikdts)%TCAN = 0.0
+        bno%eb(ikdts)%TSNOW = 0.0
+        bno%eb(ikdts)%TBAR = 0.0
 
     end subroutine
 

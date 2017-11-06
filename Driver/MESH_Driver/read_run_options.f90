@@ -8,7 +8,7 @@
         use climate_forcing
 
         use FLAGS
-        use save_basin_output, only: BASINAVGWBFILEFLAG
+        use save_basin_output, only: BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG
 !-        use RUNCLASS36_constants
         use RUNCLASS36_variables
         use RUNCLASS36_save_output
@@ -230,12 +230,6 @@
         !> FLAGS FOR GEOTHERMAL FLUX FOR THE BOTTOM OF THE LAST SOIL LAYER
         !* If GGEOFLAG is GT 0,  READ UNIQUE VALUE FROM MESH_ggeo.INI FILE
         GGEOFLAG = 0
-
-        !> BASIN ENERGY BALANCE OUTPUT FLAG
-        !> If enabled, saves the energy balance output files.
-        !>     0 = Create no output.
-        !>     1 = Save the basin energy balance CSV files.
-        BASINAVGEBFILEFLAG = 0
 
         !> BASIN SWE OUTPUT FLAG
         !> If enabled, saves the SCA and SWE output files.
@@ -605,29 +599,14 @@
                         call value(out_args(2), OUTFIELDSFLAG, ierr)
                     case ('GGEOFLAG')
                         call value(out_args(2), GGEOFLAG, ierr)
-                    case ('BASINBALANCEOUTFLAG')
-                        call value(out_args(2), BASINAVGEBFILEFLAG, ierr)
-!                        BASINAVGWBFILEFLAG = BASINAVGEBFILEFLAG
-                        BASINAVGEVPFILEFLAG = BASINAVGEBFILEFLAG
-                    case ('BASINAVGEBFILEFLAG')
-                        BASINAVGEBFILEFLAG = 0
-                        do j = 2, nargs
-                            select case (lowercase(out_args(j)))
-                                case ('daily')
-                                    BASINAVGEBFILEFLAG = 1
-                                case ('all')
-                                    BASINAVGEBFILEFLAG = 1
-                                    exit
-                                case ('default')
-                                    BASINAVGEBFILEFLAG = 0
-                                    exit
-                                case ('none')
-                                    BASINAVGEBFILEFLAG = 0
-                                    exit
-                            end select
-                        end do
 
-                    !> Time-averaged basin water balance output.
+                    !> Basin output files.
+                    case ('BASINBALANCEOUTFLAG')
+                        BASINAVGEBFILEFLAG = 'none'
+                        BASINAVGWBFILEFLAG = 'none'
+                        BASINAVGEVPFILEFLAG = 0
+                    case ('BASINAVGEBFILEFLAG')
+                        BASINAVGEBFILEFLAG = adjustl(in_line)
                     case ('BASINAVGWBFILEFLAG')
                         BASINAVGWBFILEFLAG = adjustl(in_line)
 
