@@ -32,17 +32,18 @@ module save_basin_output
     !> For energy balance.
     !*  ALVS: Visible albedo of the surface. [--].
     !*  ALIR: Near-IR albedo of the surface. [--].
-    !*  FSNET: Net shortwave radiation at the surface. [W m-2].
-    !*  GTE: Effective black-body temperature at the surface. [K].
-    !*  FLNET: Net longwave radiation at the surface. [W m-2].
-    !*  HFS: Sensible heat flux at the surface. [W m-2].
-    !*  QEVAP: Latent heat flux at the surface. [W m-2].
-    !*  GZERO: Heat flux into the soil at the surface. [W m-2].
-    !*  TPOND: Temperature of ponded water. [K].
+    !*  FSNET: Net shortwave radiation at the surface. [J m-2 during acc.; W m-2 output].
+    !*  GTE: Effective black-body temperature at the surface. [dC].
+    !*  FLNET: Net longwave radiation at the surface. [J m-2 during acc.; W m-2 output].
+    !*  HFS: Sensible heat flux at the surface. [J m-2 during acc.; W m-2 output].
+    !*  QEVAP: Latent heat flux at the surface. [J m-2 during acc.; W m-2 output].
+    !*  GZERO: Heat flux into the soil at the surface. [J m-2 during acc.; W m-2 output].
+    !*  TA: Air temperature. [dC].
+    !*  TPOND: Temperature of ponded water. [dC].
     !*  CMAS: Current mass of vegetation canopy. [kg m-2].
-    !*  TCAN: Vegetation canopy temperature. [K].
-    !*  TSNOW: Snowpack temperature. [K].
-    !*  TBAR: Temperature of soil layers. [K].
+    !*  TCAN: Vegetation canopy temperature. [dC].
+    !*  TSNOW: Snowpack temperature. [dC].
+    !*  TBAR: Temperature of soil layers. [dC].
     !*  BAL0: Balance at the beginning of the time-step. [W m-2].
     !*  BAL1: Balance at the end of the time-step. [W m-2].
     type BasinEnergyBalance
@@ -51,7 +52,7 @@ module save_basin_output
         real, dimension(:), allocatable :: &
             FSIN, FLIN, FLUT, &
             HFS, QEVAP, GZERO, &
-            ALVS, ALIR, GTE, &
+            TA, ALVS, ALIR, GTE, &
             TPOND, &
             CMAS, TCAN, &
             TSNOW
@@ -152,7 +153,7 @@ module save_basin_output
                 bno%eb(ikey)%IFS(NA), bno%eb(ikey)%IPOND(NA), bno%eb(ikey)%ICAN(NA), bno%eb(ikey)%ISNOW(NA), &
                 bno%eb(ikey)%FSIN(NA), bno%eb(ikey)%FLIN(NA), bno%eb(ikey)%FLUT(NA), &
                 bno%eb(ikey)%HFS(NA), bno%eb(ikey)%QEVAP(NA), bno%eb(ikey)%GZERO(NA), &
-                bno%eb(ikey)%ALVS(NA), bno%eb(ikey)%ALIR(NA), bno%eb(ikey)%GTE(NA), &
+                bno%eb(ikey)%TA(NA), bno%eb(ikey)%ALVS(NA), bno%eb(ikey)%ALIR(NA), bno%eb(ikey)%GTE(NA), &
                 bno%eb(ikey)%TPOND(NA), &
                 bno%eb(ikey)%CMAS(NA), bno%eb(ikey)%TCAN(NA), &
                 bno%eb(ikey)%TSNOW(NA), &
@@ -161,7 +162,7 @@ module save_basin_output
             bno%eb(ikey)%IFS = 0; bno%eb(ikey)%IPOND = 0; bno%eb(ikey)%ICAN = 0; bno%eb(ikey)%ISNOW = 0
             bno%eb(ikey)%FSIN = 0.0; bno%eb(ikey)%FLIN = 0.0; bno%eb(ikey)%FLUT = 0.0
             bno%eb(ikey)%HFS = 0.0; bno%eb(ikey)%QEVAP = 0.0; bno%eb(ikey)%GZERO = 0.0
-            bno%eb(ikey)%ALVS = 0.0; bno%eb(ikey)%ALIR = 0.0; bno%eb(ikey)%GTE = 0.0
+            bno%eb(ikey)%TA = 0.0; bno%eb(ikey)%ALVS = 0.0; bno%eb(ikey)%ALIR = 0.0; bno%eb(ikey)%GTE = 0.0
             bno%eb(ikey)%TPOND = 0.0
             bno%eb(ikey)%CMAS = 0.0; bno%eb(ikey)%TCAN = 0.0
             bno%eb(ikey)%TSNOW = 0.0
@@ -1026,42 +1027,118 @@ module save_basin_output
         type(clim_info) :: cm
 
         !> Local variables.
-        integer ikey
+        real, dimension(:), allocatable :: &
+            IFS, IPOND, ICAN, ISNOW, &
+            FSIN, FLIN, FLUT, HFS, QEVAP, GZERO, TA, ALVS, ALIR, GTE, &
+            TPOND, CMAS, TCAN, TSNOW
+        real, allocatable :: TBAR(:, :)
+        integer ikey, n, s, ii, i, j
         real :: TFREZ = 273.16
+
+        !> Prepare local variables for accumulation.
+        n = shd%NA
+        s = shd%lc%IGND
+        allocate( &
+            IFS(n), IPOND(n), ICAN(n), ISNOW(n), &
+            FSIN(n), FLIN(n), FLUT(n), HFS(n), QEVAP(n), GZERO(n), TA(n), ALVS(n), ALIR(n), GTE(n), &
+            TPOND(n), CMAS(n), TCAN(n), TSNOW(n), TBAR(n, s))
+        IFS = 0; IPOND = 0; ICAN = 0; ISNOW = 0
+        FSIN = 0.0; FLIN = 0.0; FLUT = 0.0; HFS = 0.0; QEVAP = 0.0; GZERO = 0.0
+        TA = 0.0; ALVS = 0.0; ALIR = 0.0; GTE = 0.0
+        TPOND = 0.0; CMAS = 0.0; TCAN = 0.0; TSNOW = 0.0; TBAR = 0.0
+
+        !> Time-averaged variables and averaging counters.
+        where (cm%dat(ck%FB)%GRD > 0.0)
+            ALVS = stas_grid%sfc%alvs*shd%FRAC
+            ALIR = stas_grid%sfc%alir*shd%FRAC
+            IFS = 1
+        end where
+        GTE = (stas_grid%sfc%gte - TFREZ)*shd%FRAC
+        where (stas_grid%sfc%zpnd > 0.0)
+            TPOND = (stas_grid%sfc%tpnd - TFREZ)*shd%FRAC
+            IPOND = 1
+        end where
+        CMAS = stas_grid%cnpy%cmai*shd%FRAC
+        where (stas_grid%cnpy%tcan > 0.0)
+            TCAN = (stas_grid%cnpy%tcan - TFREZ)*shd%FRAC
+            ICAN = 1
+        end where
+        where (stas_grid%sno%sno > 0.0)
+            TSNOW = (stas_grid%sno%tsno - TFREZ)*shd%FRAC
+            ISNOW = 1
+        end where
+        do j = 1, shd%lc%IGND
+            TBAR(:, j) = (stas_grid%sl%tbar(:, j) - TFREZ)*shd%FRAC
+        end do
+        TA = (cm%dat(ck%TT)%GRD - TFREZ)*shd%FRAC
+
+        !> Accumulated fluxes.
+        !> Converted from (W m-2 = J m-2 s-1) to J m-2 for accumulation.
+        FSIN = cm%dat(ck%FB)%GRD*ic%dts*shd%FRAC
+        FLIN = cm%dat(ck%FI)%GRD*ic%dts*shd%FRAC
+        FLUT = (5.66796E-8*stas_grid%sfc%gte**4)*ic%dts*shd%FRAC
+        HFS = stas_grid%sfc%hfs*ic%dts*shd%FRAC
+        QEVAP = stas_grid%sfc%qevp*ic%dts*shd%FRAC
+        GZERO = stas_grid%sfc%gzero*ic%dts*shd%FRAC
+
+        !> Propagate through basin cells (by flow direction).
+        !> Variables are weighted by FRAC during accumulation.
+        do i = 1, shd%NAA
+            ii = shd%NEXT(i)
+            if (ii > 0) then
+
+                !> Time-averaged variables.
+                ALVS(ii) = ALVS(ii) + ALVS(i)
+                ALIR(ii) = ALIR(ii) + ALIR(i)
+                GTE(ii) = GTE(ii) + GTE(i)
+                TPOND(ii) = TPOND(ii) + TPOND(i)
+                CMAS(ii) = CMAS(ii) + CMAS(i)
+                TCAN(ii) = TCAN(ii) + TCAN(i)
+                TSNOW(ii) = TSNOW(ii) + TSNOW(i)
+                TBAR(ii, :) = TBAR(ii, :) + TBAR(i, :)
+                TA(ii) = TA(ii) + TA(i)
+
+                !> Counter for time-averaging is either on (1) if any cell has contributed or off (0).
+                IFS(ii) = max(IFS(ii), IFS(i))
+                IPOND(ii) = max(IPOND(ii), IPOND(i))
+                ICAN(ii) = max(ICAN(ii), ICAN(i))
+                ISNOW(ii) = max(ISNOW(ii), ISNOW(i))
+
+                !> Accumulated fluxes.
+                FSIN(ii) = FSIN(ii) + FSIN(i)
+                FLIN(ii) = FLIN(ii) + FLIN(i)
+                FLUT(ii) = FLUT(ii) + FLUT(i)
+                HFS(ii) = HFS(ii) + HFS(i)
+                QEVAP(ii) = QEVAP(ii) + QEVAP(i)
+                GZERO(ii) = GZERO(ii) + GZERO(i)
+            end if
+        end do
 
         !> Update totals.
         do ikey = 1, NKEY
 
-            !> Time-averaged variables.
-            where (cm%dat(ck%FB)%GRD > 0.0)
-                bno%eb(ikey)%ALVS = bno%eb(ikey)%ALVS + stas_grid%sfc%alvs
-                bno%eb(ikey)%ALIR = bno%eb(ikey)%ALIR + stas_grid%sfc%alir
-                bno%eb(ikey)%IFS = bno%eb(ikey)%IFS + 1
-            end where
-            bno%eb(ikey)%GTE = bno%eb(ikey)%GTE + stas_grid%sfc%gte - TFREZ
-            where (stas_grid%sfc%zpnd > 0.0)
-                bno%eb(ikey)%TPOND = bno%eb(ikey)%TPOND + stas_grid%sfc%tpnd - TFREZ
-                bno%eb(ikey)%IPOND = bno%eb(ikey)%IPOND + 1
-            end where
-            bno%eb(ikey)%CMAS = bno%eb(ikey)%CMAS + stas_grid%cnpy%cmai
-            where (stas_grid%cnpy%tcan > 0.0)
-                bno%eb(ikey)%TCAN = bno%eb(ikey)%TCAN + stas_grid%cnpy%tcan - TFREZ
-                bno%eb(ikey)%ICAN = bno%eb(ikey)%ICAN + 1
-            end where
-            where (stas_grid%sno%sno > 0.0)
-                bno%eb(ikey)%TSNOW = bno%eb(ikey)%TSNOW + stas_grid%sno%tsno - TFREZ
-                bno%eb(ikey)%ISNOW = bno%eb(ikey)%ISNOW + 1
-            end where
-            bno%eb(ikey)%TBAR = bno%eb(ikey)%TBAR + stas_grid%sl%tbar - TFREZ
+            !> Time-averaged variables and averaging counters.
+            bno%eb(ikey)%ALVS = bno%eb(ikey)%ALVS + ALVS
+            bno%eb(ikey)%ALIR = bno%eb(ikey)%ALIR + ALIR
+            bno%eb(ikey)%IFS = bno%eb(ikey)%IFS + IFS
+            bno%eb(ikey)%GTE = bno%eb(ikey)%GTE + GTE
+            bno%eb(ikey)%TPOND = bno%eb(ikey)%TPOND + TPOND
+            bno%eb(ikey)%IPOND = bno%eb(ikey)%IPOND + IPOND
+            bno%eb(ikey)%CMAS = bno%eb(ikey)%CMAS + CMAS
+            bno%eb(ikey)%TCAN = bno%eb(ikey)%TCAN + TCAN
+            bno%eb(ikey)%ICAN = bno%eb(ikey)%ICAN + ICAN
+            bno%eb(ikey)%TSNOW = bno%eb(ikey)%TSNOW + TSNOW
+            bno%eb(ikey)%ISNOW = bno%eb(ikey)%ISNOW + ISNOW
+            bno%eb(ikey)%TBAR = bno%eb(ikey)%TBAR + TBAR
+            bno%eb(ikey)%TA = bno%eb(ikey)%TA + TA
 
             !> Accumulated fluxes.
-            bno%eb(ikey)%FSIN = bno%eb(ikey)%FSIN + cm%dat(ck%FB)%GRD*ic%dts
-            bno%eb(ikey)%FLIN = bno%eb(ikey)%FLIN + cm%dat(ck%FI)%GRD*ic%dts
-            bno%eb(ikey)%FLUT = bno%eb(ikey)%FLUT + (5.66796E-8*stas_grid%sfc%gte**4)*ic%dts
-            bno%eb(ikey)%HFS = bno%eb(ikey)%HFS + stas_grid%sfc%hfs*ic%dts
-            bno%eb(ikey)%QEVAP = bno%eb(ikey)%QEVAP + stas_grid%sfc%qevp*ic%dts
-            bno%eb(ikey)%GZERO = bno%eb(ikey)%GZERO + stas_grid%sfc%gzero*ic%dts
-
+            bno%eb(ikey)%FSIN = bno%eb(ikey)%FSIN + FSIN
+            bno%eb(ikey)%FLIN = bno%eb(ikey)%FLIN + FLIN
+            bno%eb(ikey)%FLUT = bno%eb(ikey)%FLUT + FLUT
+            bno%eb(ikey)%HFS = bno%eb(ikey)%HFS + HFS
+            bno%eb(ikey)%QEVAP = bno%eb(ikey)%QEVAP + QEVAP
+            bno%eb(ikey)%GZERO = bno%eb(ikey)%GZERO + GZERO
         end do
 
     end subroutine
@@ -1078,27 +1155,29 @@ module save_basin_output
         !> Local variables.
         real dnts
 
-        !> Denominator for time-step averaged variables.
+        !> Number of elapsed time-steps for time-averaged variables.
+        !> (dts: total seconds elapsed, s-1)/(ic%dts: seconds in time-step, s-1) = time-steps elapsed.
         dnts = real(dts/ic%dts)
 
-        !> Time-averaged storage components.
+        !> Time-averaged variables.
         where (bno%eb(ikdts)%IFS > 0)
             bno%eb(ikdts)%ALVS = bno%eb(ikdts)%ALVS/bno%eb(ikdts)%IFS
             bno%eb(ikdts)%ALIR = bno%eb(ikdts)%ALIR/bno%eb(ikdts)%IFS
         end where
         bno%eb(ikdts)%GTE = bno%eb(ikdts)%GTE/dnts
-        bno%eb(ikdts)%QEVAP = bno%eb(ikdts)%QEVAP/dnts
         where (bno%eb(ikdts)%IPOND > 0) bno%eb(ikdts)%TPOND = bno%eb(ikdts)%TPOND/bno%eb(ikdts)%IPOND
         bno%eb(ikdts)%CMAS = bno%eb(ikdts)%CMAS/dnts
         where (bno%eb(ikdts)%ICAN > 0) bno%eb(ikdts)%TCAN = bno%eb(ikdts)%TCAN/bno%eb(ikdts)%ICAN
         where (bno%eb(ikdts)%ISNOW > 0) bno%eb(ikdts)%TSNOW = bno%eb(ikdts)%TSNOW/bno%eb(ikdts)%ISNOW
         bno%eb(ikdts)%TBAR = bno%eb(ikdts)%TBAR/dnts
+        bno%eb(ikdts)%TA = bno%eb(ikdts)%TA/dnts
 
-        !> Denominator for accumulated fluxes.
-        dnts = real(dts*ic%dts)
+        !> Number of seconds elapsed for accumulated fluxes.
+        !> dts: total seconds elapsed, s-1.
+        dnts = real(dts)
 
         !> Conversion of energy fluxes back to rates.
-        !> W m-2 = J m-2 s-1 (period)
+        !> Output (W m-2) = (Accumulation, J m-2)/(seconds elapsed, s-1).
         bno%eb(ikdts)%FSIN = bno%eb(ikdts)%FSIN/dnts
         bno%eb(ikdts)%FLIN = bno%eb(ikdts)%FLIN/dnts
         bno%eb(ikdts)%FLUT = bno%eb(ikdts)%FLUT/dnts
@@ -1129,9 +1208,11 @@ module save_basin_output
         if (dts < 86400) write(fik, 1010, advance = 'no') 'HOUR'
         if (dts < 3600) write(fik, 1010, advance = 'no') 'MINS'
 
-        !> Variables.
+        !> Variable names.
         write(fik, 1010, advance = 'no') &
-            'FSNET', 'FLNET', 'HFS', 'QEVAP', 'GZERO', 'ALVS', 'ALIR', 'GTE', 'TPOND', 'CMAS', 'TCAN', 'TSNOW'
+            'FSNET', 'FLNET', 'HFS', 'QEVAP', 'GZERO', &
+            'FSIN', 'FLIN', 'TA', &
+            'ALVS', 'ALIR', 'GTE', 'TPOND', 'CMAS', 'TCAN', 'TSNOW'
         do j = 1, shd%lc%IGND
             write(ffmti, '(i3)') j
             write(fik, 1010, advance = 'no') 'TBAR' // trim(adjustl(ffmti))
@@ -1161,7 +1242,10 @@ module save_basin_output
 
         !> Make sure the cell is inside the basin.
         ina = min(ina, shd%NAA)
-        frac = shd%AREA(ina)/(shd%AL**2)
+
+        !> Use 'frac' to normalize the accumulated weighting by contributing FRAC.
+        !> Using DA to calculate 'frac' already accounts for grid FRAC accumulated by flow direction.
+        frac = shd%DA(ina)/((shd%AL/1000.0)**2)
 
         !> Write the time-stamp for the period.
         write(fik, 1010, advance = 'no') ic%now%year
@@ -1169,22 +1253,23 @@ module save_basin_output
         if (dts < 86400) write(fik, 1010, advance = 'no') ic%now%hour
         if (dts < 3600) write(fik, 1010, advance = 'no') ic%now%mins
 
-        !> Calculate balance for the period.
+        !> Calculate a balance for the period.
         bno%eb(ikdts)%BAL1 = ( &
             bno%eb(ikdts)%FSIN(ina)*(1.0 - (bno%eb(ikdts)%ALVS(ina) + bno%eb(ikdts)%ALIR(ina))/2.0) + &
             bno%eb(ikdts)%FLIN(ina) - bno%eb(ikdts)%FLUT(ina) - &
-            bno%eb(ikdts)%HFS(ina) - bno%eb(ikdts)%QEVAP(ina) - bno%eb(ikdts)%GZERO(ina))*frac
+            bno%eb(ikdts)%HFS(ina) - bno%eb(ikdts)%QEVAP(ina) - bno%eb(ikdts)%GZERO(ina))/frac
 
-        !> Write the water balance to file.
+        !> Write the variables to file.
         write(fik, 1010) &
-            bno%eb(ikdts)%FSIN(ina)*(1.0 - (bno%eb(ikdts)%ALVS(ina) + bno%eb(ikdts)%ALIR(ina))/2.0)*frac, &
-            (bno%eb(ikdts)%FLIN(ina) - bno%eb(ikdts)%FLUT(ina))*frac, &
-            bno%eb(ikdts)%HFS(ina)*frac, bno%eb(ikdts)%QEVAP(ina)*frac, bno%eb(ikdts)%GZERO(ina)*frac, &
-            bno%eb(ikdts)%ALVS(ina), bno%eb(ikdts)%ALIR(ina), bno%eb(ikdts)%GTE(ina), &
-            bno%eb(ikdts)%TPOND(ina), &
-            bno%eb(ikdts)%CMAS(ina)*frac, bno%eb(ikdts)%TCAN(ina), &
-            bno%eb(ikdts)%TSNOW(ina), &
-            (bno%eb(ikdts)%TBAR(ina, j), j = 1, shd%lc%IGND)
+            bno%eb(ikdts)%FSIN(ina)*(1.0 - (bno%eb(ikdts)%ALVS(ina) + bno%eb(ikdts)%ALIR(ina))/2.0)/frac, &
+            (bno%eb(ikdts)%FLIN(ina) - bno%eb(ikdts)%FLUT(ina))/frac, &
+            bno%eb(ikdts)%HFS(ina)/frac, bno%eb(ikdts)%QEVAP(ina)/frac, bno%eb(ikdts)%GZERO(ina)/frac, &
+            bno%eb(ikdts)%FSIN(ina)/frac, bno%eb(ikdts)%FLIN(ina)/frac, bno%eb(ikdts)%TA(ina)/frac, &
+            bno%eb(ikdts)%ALVS(ina)/frac, bno%eb(ikdts)%ALIR(ina)/frac, bno%eb(ikdts)%GTE(ina)/frac, &
+            bno%eb(ikdts)%TPOND(ina)/frac, &
+            bno%eb(ikdts)%CMAS(ina)/frac, bno%eb(ikdts)%TCAN(ina)/frac, &
+            bno%eb(ikdts)%TSNOW(ina)/frac, &
+            (bno%eb(ikdts)%TBAR(ina, j)/frac, j = 1, shd%lc%IGND)
 
 1010    format(9999(g15.7e2, ','))
 
@@ -1195,14 +1280,14 @@ module save_basin_output
         !> Input variables.
         integer ikdts
 
-        !> Save the previous balance value.
+        !> Preserve the previous balance value.
         bno%eb(ikdts)%BAL0 = bno%eb(ikdts)%BAL1
 
-        !> Reset the accumulation for time-averaged output.
+        !> Reset accumulated variables.
         bno%eb(ikdts)%IFS = 0; bno%eb(ikdts)%IPOND = 0; bno%eb(ikdts)%ICAN = 0; bno%eb(ikdts)%ISNOW = 0
         bno%eb(ikdts)%FSIN = 0.0; bno%eb(ikdts)%FLIN = 0.0; bno%eb(ikdts)%FLUT = 0.0
         bno%eb(ikdts)%HFS = 0.0; bno%eb(ikdts)%QEVAP = 0.0; bno%eb(ikdts)%GZERO = 0.0
-        bno%eb(ikdts)%ALVS = 0.0; bno%eb(ikdts)%ALIR = 0.0; bno%eb(ikdts)%GTE = 0.0
+        bno%eb(ikdts)%TA = 0.0; bno%eb(ikdts)%ALVS = 0.0; bno%eb(ikdts)%ALIR = 0.0; bno%eb(ikdts)%GTE = 0.0
         bno%eb(ikdts)%TPOND = 0.0
         bno%eb(ikdts)%CMAS = 0.0; bno%eb(ikdts)%TCAN = 0.0
         bno%eb(ikdts)%TSNOW = 0.0
