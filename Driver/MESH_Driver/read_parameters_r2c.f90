@@ -153,16 +153,22 @@ subroutine read_parameters_r2c(shd, iun, fname)
             !> RUNCLASS36.
             case ('iwf')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-                    pm_grid%tp%iwf = ffield
+                    pm_grid%tp%iwf = int(ffield)
                 end if
 
             !> Irrigation module.
             case ('irflg')
-                irrm%pm_grid%irflg = ffield
+                irrm%pm_grid%irflg = int(ffield)
             case ('irt1')
-                irrm%pm_grid%t1 = ffield
+                irrm%pm_grid%t1 = int(ffield)
             case ('irt2')
-                irrm%pm_grid%t2 = ffield
+                irrm%pm_grid%t2 = int(ffield)
+            case ('irijday1')
+                irrm%pm_grid%ijday1 = int(ffield)
+            case ('irijday2')
+                irrm%pm_grid%ijday2 = int(ffield)
+            case ('irignd')
+                irrm%pm_grid%ignd = int(ffield)
             case ('irthlmin')
                 irrm%pm_grid%thlmin = ffield
 

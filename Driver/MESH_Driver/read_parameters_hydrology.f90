@@ -947,6 +947,21 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 call value(out_args(j + 1), irrm%pm_gru%t2(j), ierr)
                                 if (ierr /= 0) goto 931
                             end do
+                        case ('irijday1')
+                            do j = 1, NTYPE
+                                call value(out_args(j + 1), irrm%pm_gru%ijday1(j), ierr)
+                                if (ierr /= 0) goto 931
+                            end do
+                        case ('irijday2')
+                            do j = 1, NTYPE
+                                call value(out_args(j + 1), irrm%pm_gru%ijday2(j), ierr)
+                                if (ierr /= 0) goto 931
+                            end do
+                        case ('irignd')
+                            do j = 1, NTYPE
+                                call value(out_args(j + 1), irrm%pm_gru%ignd(j), ierr)
+                                if (ierr /= 0) goto 931
+                            end do
                         case ('irthlmin')
                             do j = 1, NTYPE
                                 call value(out_args(j + 1), irrm%pm_gru%thlmin(j), ierr)

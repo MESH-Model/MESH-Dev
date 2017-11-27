@@ -258,6 +258,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
             if (irrm%pm_gru%irflg(i) /= 0) irrm%pm%irflg(k) = irrm%pm_gru%irflg(i)
             if (irrm%pm_gru%t1(i) /= 0) irrm%pm%t1(k) = irrm%pm_gru%t1(i)
             if (irrm%pm_gru%t2(i) /= 0) irrm%pm%t2(k) = irrm%pm_gru%t2(i)
+            if (irrm%pm_gru%ijday1(i) /= 0) irrm%pm%ijday1(k) = irrm%pm_gru%ijday1(i)
+            if (irrm%pm_gru%ijday2(i) /= 0) irrm%pm%ijday2(k) = irrm%pm_gru%ijday2(i)
+            if (irrm%pm_gru%ignd(i) /= 0) irrm%pm%ignd(k) = irrm%pm_gru%ignd(i)
             if (irrm%pm_gru%thlmin(i) /= 0) irrm%pm%thlmin(k) = irrm%pm_gru%thlmin(i)
 
             !> BASEFLOWFLAG 1 (Luo, 2012).
@@ -381,6 +384,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
             if (irrm%pm_grid%irflg(i) /= 0) irrm%pm%irflg(k) = irrm%pm_grid%irflg(i)
             if (irrm%pm_grid%t1(i) /= 0) irrm%pm%t1(k) = irrm%pm_grid%t1(i)
             if (irrm%pm_grid%t2(i) /= 0) irrm%pm%t2(k) = irrm%pm_grid%t2(i)
+            if (irrm%pm_grid%ijday1(i) /= 0) irrm%pm%ijday1(k) = irrm%pm_grid%ijday1(i)
+            if (irrm%pm_grid%ijday2(i) /= 0) irrm%pm%ijday2(k) = irrm%pm_grid%ijday2(i)
+            if (irrm%pm_grid%ignd(i) /= 0) irrm%pm%ignd(k) = irrm%pm_grid%ignd(i)
             if (irrm%pm_grid%thlmin(i) /= 0) irrm%pm%thlmin(k) = irrm%pm_grid%thlmin(i)
 
             !> Abstraction point location.

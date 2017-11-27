@@ -6,8 +6,11 @@ module irrigation_module
     !*  thlmin: Fraction of field capacity used to determine irrigation demand (default: 0.5). [--].
     !*  t1: Start hour in day for irrigation (default: 0 -- from beginning of day). [h].
     !*  t2: Stop hour in day for irrigation (default: 24 -- to end of day). [h].
+    !*  ijday1: First day of cropping season (default: 0 -- by presence of ice in soil). [day of year].
+    !*  ijday2: Last day of cropping season (default: 367 -- by presence of ice in soil). [day of year].
+    !*  ignd: Last layer to include in demand calculation (default: min(3, NSL)). [--].
     type irrigation_parameters
-        integer, dimension(:), allocatable :: irflg, t1, t2
+        integer, dimension(:), allocatable :: irflg, t1, t2, ijday1, ijday2, ignd
         real, dimension(:), allocatable :: thlmin
     end type
 
@@ -36,8 +39,8 @@ module irrigation_module
         type(irrigation_parameters) pm
         integer n, ierr
 
-        allocate(pm%irflg(n), pm%t1(n), pm%t2(n), pm%thlmin(n), stat = ierr)
-        pm%irflg = 0; pm%t1 = 0; pm%t2 = 0; pm%thlmin = 0.0
+        allocate(pm%irflg(n), pm%t1(n), pm%t2(n), pm%ijday1(n), pm%ijday2(n), pm%ignd(n), pm%thlmin(n), stat = ierr)
+        pm%irflg = 0; pm%t1 = 0; pm%t2 = 0; pm%ijday1 = 0; pm%ijday2 = 0; pm%ignd = 0; pm%thlmin = 0.0
 
     end subroutine
 
@@ -46,7 +49,7 @@ module irrigation_module
         type(irrigation_parameters) pm
         integer ierr
 
-        deallocate(pm%irflg, pm%t1, pm%t2, pm%thlmin, stat = ierr)
+        deallocate(pm%irflg, pm%t1, pm%t2, pm%ijday1, pm%ijday2, pm%ignd, pm%thlmin, stat = ierr)
 
     end subroutine
 
@@ -83,6 +86,9 @@ module irrigation_module
         if (all(irrm%pm%thlmin == 0.0)) irrm%pm%thlmin = 0.5
         if (all(irrm%pm%t1 == 0)) irrm%pm%t1 = 0
         if (all(irrm%pm%t2 == 0)) irrm%pm%t2 = 24
+        if (all(irrm%pm%ijday1 == 0)) irrm%pm%ijday1 = 0
+        if (all(irrm%pm%ijday2 == 0)) irrm%pm%ijday2 = 367
+        if (all(irrm%pm%ignd == 0)) irrm%pm%ignd = min(3, shd%lc%IGND)
 
     end subroutine
 
@@ -113,12 +119,12 @@ module irrigation_module
             irrm%va%avail(il1:il2) = 0.0
             do k = il1, il2 !GRU -> loop for timestep
                 IRDMND(k) = 0.0   !initialization for each time step
-                if (irrm%pm%irflg(k) == 1 .and. sum(stas%sl%thic(k, :)) == 0.0) then
+                if (irrm%pm%irflg(k) == 1 .and. sum(stas%sl%thic(k, :)) == 0.0 .and. &
+                    (ic%now%jday >= irrm%pm%ijday1(k) .and. ic%now%jday <= irrm%pm%ijday2(k))) then
                     iractive = (ic%now%hour >= irrm%pm%t1(k) .and. ic%now%hour < irrm%pm%t2(k))
                     if (.not. iractive) cycle
                     if (irrm%pm%t1(k) == 0 .or. (ic%now%hour == irrm%pm%t1(k) .and. ic%ts_hourly == 1)) then ! calculate at beginning of irrigation period
-!                        do j = 1, shd%lc%IGND ! loop for each Soil layers
-                        do j = 1, 3 ! loop for each Soil layers
+                        do j = 1, irrm%pm%ignd(k) ! loop for each Soil layers
                             check = irrm%pm%thlmin(k)*pm%slp%thfc(k, j) ! calculate 50% of field capacity
                             lqsum =  stas%sl%thlq(k, j)
                             if (lqsum < check)then ! check if sum of soil moisture is less than 50% of FC
