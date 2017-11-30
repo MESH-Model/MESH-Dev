@@ -331,6 +331,11 @@ module model_output
 !-    !todo: Move this to somewhere more appropriate, perhaps as model_info.
 !-    type(iter_counter), public :: public_ic
 
+    !!!!!!!!!!!!--LAM Aug-2017
+    ! to write outout files from SA_RTE
+    type(fl_ids), save :: SA_RTE_fls_out
+    !!!!!!!!!!!!--LAM Aug-2017
+
     contains
 
     subroutine init_met_data_series(mdt, shd, nts)

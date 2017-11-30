@@ -751,5 +751,8 @@ c           phi, already in areatr
 
 ccccc      end module areawq
 
+c     !!!!!!!!!!!!--LAM Aug-2017
+      integer :: no_frames, frame_no
+c     !!!!!!!!!!!!--LAM Aug-2017
 
       end module area_watflood
