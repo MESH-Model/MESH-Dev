@@ -663,41 +663,49 @@ module rte_module
         no_frames = 0
         fstflg = 'n'
         rbmflg = 'y'
+        sedflg = 'y'
         if (.NOT.allocated(outarray)) then
             allocate(outarray(ycount,xcount),stat=iAllocate)
             if(iAllocate.ne.0) STOP 'Error with allocation of ensim arrays in sub'
         end if
 
-!        allocate(fln(999), filename(999),stat=iAllocate)
-!        if (iAllocate.ne.0) STOP 'Warning: error with allocation of area12a arrays in spl9'
-!        do i=51,100
-!            filename(i)='..'
-!        end do
-!        !filename(56)='gridflow.r2c'
-!        filename(59)='gridflow.fst'
-!        filename(60)='rbm_input.fst'
-!        filename(61)='flow_init.fst'
-
-        allocate(SA_RTE_fls_out%fl(2))
+        allocate(SA_RTE_fls_out%fl(3))
         SA_RTE_fls_out%fl(1)%fn = 'gridflow.r2c'
         SA_RTE_fls_out%fl(1)%iun = 59
         SA_RTE_fls_out%fl(2)%fn = 'rbm_input.r2c'
         SA_RTE_fls_out%fl(2)%iun = 60
+        SA_RTE_fls_out%fl(3)%fn = 'sed_input.r2c'
+        SA_RTE_fls_out%fl(3)%iun = 61
 
-        ! Write the header
-        !call write_r2c(56,56,0,1,0,1,1)
-!        call write_r2c( &
-!            SA_RTE_fls_out, 1, shd, &
-!            0, 1, 0, 1, 1, &
-!            outarray, &
-!            '', '', '', 'MESH_DRIVER', 'MESH_DRIVER')
-        call write_r2c( &
-            SA_RTE_fls_out, 2, shd, &
-            1, 6, 0, 1, 1, &
-            outarray, &
-            '', '', '', 'MESH_DRIVER', 'MESH_DRIVER')
+        !> RBM
+        !*  1.  Average flow (discharge) (m3 s-1). Note: avg_qo is averaged over the time-step.
+        !*  2.  Inflow (m3 s-1).
+        !*  3.  Flow difference (m3 s-1).
+        !*  4.  Channel depth (m).
+        !*  5.  Channel width (m).
+        !*  6.  Stream velocity (m s-1). Take stream speed to be average flow (m3 s-1) divided by channel x-sec area (m2) (from rte_sub.f).
+        if (rbmflg == 'y') then
+            call write_r2c(SA_RTE_fls_out, 2, shd, 1, 6, 0, 1, 1, outarray, '', '', '', 'MESH_DRIVER', 'MESH_DRIVER')
+        end if
 
-        !fln(56)=filename(56)
+        !> SED
+        !*  1.  Average flow (discharge) (m3 s-1). Note: avg_qo is averaged over the time-step.
+        !*  2.  Channel depth (m).
+        !*  3.  Channel width (m).
+        !*  4.  Channel length (m).
+        !*  5.  Channel slope (m m-1). slope = sqrt(SLOPE_CHNL)
+        !*  6.  Stream velocity (m s-1). Take stream speed to be average flow (m3 s-1) divided by channel x-sec area (m2) (from rte_sub.f).
+        !*  7.  Precipitation (mm h-1).
+        !*  8.  Evapotranspiration (m s-1).
+        !*  9.  Overland water depth (mm).
+        !*  10. Surface slope (m m-1). SLOPE_INT isn't used in CLASS, so average slope from tiles in cell?
+        !*  11. Cell width (m).
+!        !*  12. Overland flow velocity (m s-1).
+!        !*  13. Overland flow discharge (m3 s-1). discharge = waterdepth*1.0E-3*flowwidth*flowvelocity
+        if (sedflg == 'y') then
+!            call write_r2c(SA_RTE_fls_out, 3, shd, 1, 13, 0, 1, 1, outarray, '', '', '', 'MESH_DRIVER', 'MESH_DRIVER')
+            call write_r2c(SA_RTE_fls_out, 3, shd, 1, 11, 0, 1, 1, outarray, '', '', '', 'MESH_DRIVER', 'MESH_DRIVER')
+        end if
         !!!!!!!!!!!!--LAM Aug-2017
 
     end subroutine
@@ -750,7 +758,7 @@ module rte_module
 
 !temp: override to read from file
         real, dimension(:, :, :), allocatable :: datarr
-        integer j, i, irindex
+        integer k, j, i, irindex
 
         !> Local variables not used.
         character(len = 14) :: date = ''
@@ -997,160 +1005,159 @@ module rte_module
             frame_no = frame_no + 1
             no_frames = frame_no + 1
 
-            do i = 1, ycount          ! Reinitialize the output array
-                do j = 1, xcount
-                    outarray(i, j) = 0.0
-                end do
-            end do
-            do n = 1, naa             ! Fill the output array with the values to be written
-                i = yyy(n)
-                j = xxx(n)
-                outarray(i, j) = avr_qo(n)
-            end do
-!            if (fstflg .eq. 'y') then
-!                call write_fst( &
-!                    59, filename(59), 'DISC', &
-!                    year1, month_now, day_now, hour_now, 0)
-!            else
-!                call write_r2c_old(56, 56, no_frames, 1, frame_no, 1, 8)
-!                call write_r2c( &
-!                    SA_RTE_fls_out, 1, shd, &
-!                    no_frames, 1, frame_no, 1, 8, &
-!                    outarray, &
-!                    '', '', '', '', '')
-!            end if
+            if (rbmflg == 'y' .or. sedflg == 'y') then
 
-            do i = 1, ycount          ! Reinitialize the output array
-                do j = 1, xcount
-                    outarray(i, j) = 0.0
-                end do
-            end do
-            do n = 1, naa             ! Fill the output array with the values to be written
-                i = yyy(n)
-                j = xxx(n)
-                outarray(i, j) = over(n)
-            end do
-!            if (fstflg .eq. 'y') then
-!                call write_fst( &
-!                    59, filename(59), 'OVER', &
-!                    year1, month_now, day_now, hour_now, 0)
-!            else
-!                call write_r2c_old(56, 56, no_frames, 1, frame_no, 1, 8)
-!                call write_r2c( &
-!                    SA_RTE_fls_out, 1, shd, &
-!                    no_frames, 1, frame_no, 1, 8, &
-!                    outarray, &
-!                    '', '', '', '', '')
-!            end if
-
-            if (rbmflg .eq. 'y') then
-
-                !> Average flow (discharge).
+                !> Average flow (discharge) (m3 s-1).
                 !> Note: avg_qo is averaged over the time-step.
-                do i = 1, ycount
-                    do j = 1, xcount
-                        outarray(i, j) = 0.0
-                    end do
-                end do
+                outarray = 0.0
                 do n = 1, naa
-                    i = yyy(n)
-                    j = xxx(n)
-                    outarray(i, j) = avr_qo(n)
+                    outarray(yyy(n), xxx(n)) = avr_qo(n)
                 end do
-                call write_r2c( &
-                    SA_RTE_fls_out, 2, shd, &
-                    no_frames, 1, frame_no, 1, 8, &
-                    outarray, &
-                    '', '', '', '', '')
+                if (rbmflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 2, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
+                if (sedflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
 
-                !> Inflow.
-                do i = 1, ycount
-                    do j = 1, xcount
-                        outarray(i, j) = 0.0
-                    end do
-                end do
+                !> Inflow (m3 s-1).
+                outarray = 0.0
                 do n = 1, naa
-                    i = yyy(n)
-                    j = xxx(n)
-                    outarray(i, j) = qi2(n)
+                    outarray(yyy(n), xxx(n)) = qi2(n)
                 end do
-                call write_r2c( &
-                    SA_RTE_fls_out, 2, shd, &
-                    no_frames, 1, frame_no, 1, 8, &
-                    outarray, &
-                    '', '', '', '', '')
+                if (rbmflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 2, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
 
-                !> Flow difference.
-                do i = 1, ycount
-                    do j = 1, xcount
-                        outarray(i, j) = 0.0
-                    end do
-                end do
+                !> Flow difference (m3 s-1).
+                outarray = 0.0
                 do n = 1, naa
-                    i = yyy(n)
-                    j = xxx(n)
-                    outarray(i, j) = qo2(n) - qi2(n)
+                    outarray(yyy(n), xxx(n)) = qo2(n) - qi2(n)
                 end do
-                call write_r2c( &
-                    SA_RTE_fls_out, 2, shd, &
-                    no_frames, 1, frame_no, 1, 8, &
-                    outarray, &
-                    '', '', '', '', '')
+                if (rbmflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 2, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
 
-                !> Channel depth.
-                do i = 1, ycount
-                    do j = 1, xcount
-                        outarray(i, j) = 0.0
-                    end do
-                end do
+                !> Channel depth (m).
+                outarray = 0.0
                 do n = 1, naa
-                    i = yyy(n)
-                    j = xxx(n)
-                    outarray(i, j) = chadep(n)
+                    outarray(yyy(n), xxx(n)) = chadep(n)
                 end do
-                call write_r2c( &
-                    SA_RTE_fls_out, 2, shd, &
-                    no_frames, 1, frame_no, 1, 8, &
-                    outarray, &
-                    '', '', '', '', '')
+                if (rbmflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 2, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
+                if (sedflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
 
-                !> Channel width.
-                do i = 1, ycount
-                    do j = 1, xcount
-                        outarray(i, j) = 0.0
-                    end do
-                end do
+                !> Channel width (m).
+                outarray = 0.0
                 do n = 1, naa
-                    i = yyy(n)
-                    j = xxx(n)
-                    outarray(i, j) = chawid(n)
+                    outarray(yyy(n), xxx(n)) = chawid(n)
                 end do
-                call write_r2c( &
-                    SA_RTE_fls_out, 2, shd, &
-                    no_frames, 1, frame_no, 1, 8, &
-                    outarray, &
-                    '', '', '', '', '')
+                if (rbmflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 2, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
+                if (sedflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
 
-                !> Stream velocity.
-                !> Take stream speed to be average flow (m3/s) divided by channel x-sec area (m2)
+                !> Channel length (m).
+                outarray = 0.0
+                do n = 1, naa
+                    outarray(yyy(n), xxx(n)) = shd%CHNL_LEN(n)
+                end do
+                if (sedflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
+
+                !> Channel slope (m m-1).
+                !> slope = sqrt(SLOPE_CHNL)
+                outarray = 0.0
+                do n = 1, naa
+                    outarray(yyy(n), xxx(n)) = slope(n)
+                end do
+                if (sedflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
+
+                !> Stream velocity (m s-1).
+                !> Take stream speed to be average flow (m3 s-1) divided by channel x-sec area (m2)
                 !> (from rte_sub.f).
-                do i = 1, ycount
-                    do j = 1, xcount
-                        outarray(i, j) = 0.0
-                    end do
-                end do
+                outarray = 0.0
                 do n = 1, naa
-                    i = yyy(n)
-                    j = xxx(n)
-                    outarray(i, j) = 0.5*(qo2(n) + qi2(n))/(chadep(n)*chawid(n))
+                    outarray(yyy(n), xxx(n)) = 0.5*(qo2(n) + qi2(n))/(chadep(n)*chawid(n))
                 end do
-                call write_r2c( &
-                    SA_RTE_fls_out, 2, shd, &
-                    no_frames, 1, frame_no, 1, 8, &
-                    outarray, &
-                    '', '', '', '', '')
+                if (rbmflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 2, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
+                if (sedflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
 
-            end if !(rbmflg .eq. 'y')
+                !> Precipitation (mm h-1).
+                outarray = 0.0
+                do n = 1, naa
+                    outarray(yyy(n), xxx(n)) = wb%pre(n)
+                end do
+                if (sedflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
+
+                !> Evapotranspiration (m s-1).
+                outarray = 0.0
+                do n = 1, naa
+                    outarray(yyy(n), xxx(n)) = wb%evap(n)/1000.0/3600.0
+                end do
+                if (sedflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
+
+                !> Overland water depth (mm).
+                outarray = 0.0
+                do n = 1, naa
+                    outarray(yyy(n), xxx(n)) = wb%rofo(n)
+                end do
+                if (sedflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
+
+                !> Surface slope (m m-1).
+                !> SLOPE_INT isn't used in CLASS, so average slope from tiles in cell?
+                outarray = 0.0
+                do k = 1, shd%lc%NML
+                    if (shd%lc%ILMOS(k) < shd%NA) then
+                        i = yyy(shd%lc%ILMOS(k))
+                        j = xxx(shd%lc%ILMOS(k))
+                        outarray(i, j) = outarray(i, j) + pm%tp%xslp(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+                    end if
+                end do
+                if (sedflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
+
+                !> Cell width (m).
+                outarray = 0.0
+                do n = 1, shd%NAA
+                    outarray(yyy(n), xxx(n)) = shd%AL
+                end do
+                if (sedflg == 'y') then
+                    call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
+                end if
+
+                !> Overland flow velocity (m s-1).
+                if (sedflg == 'y') then
+
+                end if
+
+                !> Overland flow discharge (m3 s-1).
+                !> discharge = waterdepth*1.0E-3*flowwidth*flowvelocity
+                if (sedflg == 'y') then
+
+                end if
+
+            end if
+
         end if !(mod(fhr, deltat_report_discharge) == 0)
         !!!!!!!!!!!!--LAM Aug-2017
 
