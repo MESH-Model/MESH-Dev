@@ -15,13 +15,14 @@ module RUNCLASS36_module
         use model_dates
         use climate_forcing
         use model_output_variabletypes
-        use MODEL_OUTPUT
 
         !> For internal variables.
         use RUNCLASS36_config
 
         !> For CLASS output.
         use RUNCLASS36_save_output
+
+        use FLAGS
 
         !> For PBSM.
         use PBSM_module
@@ -373,31 +374,36 @@ module RUNCLASS36_module
         end if
 
         !> Copy over state variables.
-        stas%cnpy%qac(il1:il2) = cpv%QAC(il1:il2)
         stas%cnpy%rcan(il1:il2) = cpv%RCAN(il1:il2)
         stas%cnpy%sncan(il1:il2) = cpv%SNCAN(il1:il2)
+        stas%cnpy%cmai(il1:il2) = cpv%CMAI(il1:il2)
         stas%cnpy%tac(il1:il2) = cpv%TAC(il1:il2)
         stas%cnpy%tcan(il1:il2) = cpv%TCAN(il1:il2)
-        stas%cnpy%cmai(il1:il2) = cpv%CMAI(il1:il2)
+        stas%cnpy%qac(il1:il2) = cpv%QAC(il1:il2)
         stas%cnpy%gro(il1:il2) = cpv%GRO(il1:il2)
         stas%cnpy%pevp(il1:il2) = cdv%PET(il1:il2)
         stas%sno%sno(il1:il2) = cpv%SNO(il1:il2)
         stas%sno%albs(il1:il2) = cpv%ALBS(il1:il2)
         stas%sno%fsno(il1:il2) = cdv%FSNO(il1:il2)
         stas%sno%rhos(il1:il2) = cpv%RHOS(il1:il2)
-        stas%sno%tsno(il1:il2) = cpv%TSNO(il1:il2)
         where (cpv%SNO(il1:il2) > 0.0)
+            stas%sno%tsno(il1:il2) = cpv%TSNO(il1:il2)
             stas%sno%wsno(il1:il2) = cpv%WSNO(il1:il2)
         elsewhere
+            stas%sno%tsno(il1:il2) = 0.0
             stas%sno%wsno(il1:il2) = 0.0
         end where
+        stas%sfc%alvs(il1:il2) = cdv%ALVS(il1:il2)
+        stas%sfc%alir(il1:il2) = cdv%ALIR(il1:il2)
+        stas%sfc%gte(il1:il2) = cdv%GTE(il1:il2)
         stas%sfc%tpnd(il1:il2) = cpv%TPND(il1:il2)
         stas%sfc%zpnd(il1:il2) = cpv%ZPND(il1:il2)
         stas%sfc%pndw(il1:il2) = cpv%ZPND(il1:il2)*RHOW
         stas%sfc%evap(il1:il2) = cdv%QFS(il1:il2)
+        stas%sfc%rofo(il1:il2) = cdv%ROFO(il1:il2)
         stas%sfc%qevp(il1:il2) = cdv%QEVP(il1:il2)
         stas%sfc%hfs(il1:il2) = cdv%HFS(il1:il2)
-        stas%sfc%rofo(il1:il2) = cdv%ROFO(il1:il2)
+        stas%sfc%gzero(il1:il2) = cdv%GFLX(il1:il2, 1)
         stas%sfc%tsfs(il1:il2, :) = cpv%TSFS(il1:il2, :)
         stas%sl%tbas(il1:il2) = cpv%TBAS(il1:il2)
         stas%sl%rofs(il1:il2) = cdv%ROFS(il1:il2)

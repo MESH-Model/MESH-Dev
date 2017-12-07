@@ -81,15 +81,13 @@ module WF_ROUTE_module
 
 !-    end function
 
-    subroutine WF_ROUTE_between_grid(shd, wb, stfl, rrls)
+    subroutine WF_ROUTE_between_grid(shd, stfl, rrls)
 
         use sa_mesh_shared_variables
         use model_dates
-        use MODEL_OUTPUT
         use model_output_variabletypes
 
         type(ShedGridParams), intent(in) :: shd
-        type(water_balance), intent(in) :: wb
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
@@ -127,7 +125,8 @@ module WF_ROUTE_module
                       WF_TIMECOUNT, WF_NHYD, WF_QBASE, stas_grid%chnl%qi, WF_QI2, WF_QO1, stas_grid%chnl%qo, &
                       wfp%aa1, wfp%aa2, wfp%aa3, wfp%aa4, &
                       WF_STORE1, stas_grid%chnl%s, &
-                      ic%dts, (wb%rof/ic%dts), shd%NA, shd%NRVR, fms%rsvr%n, fms%stmg%n, shd%NA, &
+                      ic%dts, (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC, &
+                      shd%NA, shd%NRVR, fms%rsvr%n, fms%stmg%n, shd%NA, &
                       fms%stmg%meta%rnk, JAN, ic%now%jday, ic%now%hour, ic%now%mins)
         do i = 1, fms%stmg%n
             WF_QSYN(i) = stas_grid%chnl%qo(fms%stmg%meta%rnk(i))

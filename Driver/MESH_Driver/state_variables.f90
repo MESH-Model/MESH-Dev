@@ -60,7 +60,10 @@ module state_variables
     !*  evpb: Evaporation efficiency (EVP to PEVP) of the canopy. [--].
     !*  arrd: Arridity index (PRE to PEVP). [--].
     type canopy
-        real(kind = 4), dimension(:), allocatable :: qac, rcan, sncan, tac, tcan, cmai, gro, pevp, evpb, arrd
+        real(kind = 4), dimension(:), allocatable :: &
+            rcan, sncan, &
+            cmai, tac, tcan, qac, gro, &
+            pevp, evpb, arrd
     end type
 
     !> Type: snow_balance
@@ -74,21 +77,33 @@ module state_variables
     !*  tsno: Snowpack temperature. [K].
     !*  wsno: Liquid water content of snow pack. [kg m-2].
     type snow_balance
-        real(kind = 4), dimension(:), allocatable :: sno, albs, fsno, rhos, tsno, wsno
+        real(kind = 4), dimension(:), allocatable :: &
+            sno, albs, fsno, rhos, &
+            tsno, wsno
     end type
 
     !> Type: surface_interface
     !>  States at the interface between the atmosphere and soil profile.
     !>
     !> Variables:
+    !*  alvs: Visible albedo of the surface. [--].
+    !*  alir: Near-IR albedo of the surface. [--].
+    !*  gte: Effective black-body temperature at the surface. [K].
     !*  tsfs: Ground surface temperature over subarea. [K].
     !*  tpnd: Temperature of ponded water. [K].
     !*  zpnd: Depth of ponded water on surface. [m].
     !*  pndw: Ponded water storage on the surface. [kg m-2].
     !*  evap: Evapotranspiration. [kg m-2].
+    !*  qevp: Latent heat flux at the surface. [W m-2].
+    !*  hfs: Sensible heat flux at the surface. [W m-2].
+    !*  gzero: Heat flux into the soil at the surface. [W m-2].
     !*  rofo: Overland component of total runoff. [kg m-2 s-1].
     type surface_interface
-        real(kind = 4), dimension(:), allocatable :: tpnd, zpnd, pndw, evap, qevp, hfs, rofo
+        real(kind = 4), dimension(:), allocatable :: &
+            alvs, alir, gte, &
+            tpnd, zpnd, pndw, evap, &
+            rofo, &
+            qevp, hfs, gzero
         real(kind = 4), dimension(:, :), allocatable :: tsfs
     end type
 
@@ -195,15 +210,20 @@ module state_variables
         allocate( &
 
             !> Canopy.
-            stas%cnpy%qac(n), stas%cnpy%rcan(n), stas%cnpy%sncan(n), stas%cnpy%tac(n), stas%cnpy%tcan(n), &
-            stas%cnpy%cmai(n), stas%cnpy%gro(n), stas%cnpy%pevp(n), stas%cnpy%evpb(n), stas%cnpy%arrd(n), &
+            stas%cnpy%rcan(n), stas%cnpy%sncan(n), &
+            stas%cnpy%cmai(n), stas%cnpy%tac(n), stas%cnpy%tcan(n), stas%cnpy%qac(n), stas%cnpy%gro(n), &
+            stas%cnpy%pevp(n), stas%cnpy%evpb(n), stas%cnpy%arrd(n), &
 
             !> Snow.
-            stas%sno%sno(n), stas%sno%albs(n), stas%sno%fsno(n), stas%sno%rhos(n), stas%sno%tsno(n), stas%sno%wsno(n), &
+            stas%sno%sno(n), stas%sno%albs(n), stas%sno%fsno(n), stas%sno%rhos(n), &
+            stas%sno%tsno(n), stas%sno%wsno(n), &
 
             !> Surface or at near surface.
-            stas%sfc%tpnd(n), stas%sfc%zpnd(n), stas%sfc%pndw(n), stas%sfc%evap(n), stas%sfc%qevp(n), &
-            stas%sfc%hfs(n), stas%sfc%rofo(n), stas%sfc%tsfs(n, 4), &
+            stas%sfc%alvs(n), stas%sfc%alir(n), stas%sfc%gte(n), &
+            stas%sfc%tpnd(n), stas%sfc%zpnd(n), stas%sfc%pndw(n), stas%sfc%evap(n), &
+            stas%sfc%rofo(n), &
+            stas%sfc%qevp(n), stas%sfc%hfs(n), stas%sfc%gzero(n), &
+            stas%sfc%tsfs(n, 4), &
 
             !> Soil layers.
             stas%sl%thic(n, nsl), stas%sl%fzws(n, nsl), stas%sl%thlq(n, nsl), stas%sl%lqws(n, nsl), &
@@ -234,16 +254,20 @@ module state_variables
         if (stas%inid) then
 
             !> Canopy.
-            stas%cnpy%qac = 0.0; stas%cnpy%rcan = 0.0; stas%cnpy%sncan = 0.0; stas%cnpy%tac = 0.0; stas%cnpy%tcan = 0.0
-            stas%cnpy%cmai = 0.0; stas%cnpy%gro = 0.0; stas%cnpy%pevp = 0.0; stas%cnpy%evpb = 0.0; stas%cnpy%arrd = 0.0
+            stas%cnpy%rcan = 0.0; stas%cnpy%sncan = 0.0
+            stas%cnpy%cmai = 0.0; stas%cnpy%tac = 0.0; stas%cnpy%tcan = 0.0; stas%cnpy%qac = 0.0; stas%cnpy%gro = 0.0
+            stas%cnpy%pevp = 0.0; stas%cnpy%evpb = 0.0; stas%cnpy%arrd = 0.0
 
             !> Snow.
-            stas%sno%sno = 0.0; stas%sno%albs = 0.0; stas%sno%fsno = 0.0; stas%sno%rhos = 0.0; stas%sno%tsno = 0.0
-            stas%sno%wsno = 0.0
+            stas%sno%sno = 0.0; stas%sno%albs = 0.0; stas%sno%fsno = 0.0; stas%sno%rhos = 0.0
+            stas%sno%tsno = 0.0; stas%sno%wsno = 0.0
 
             !> Surface or at near surface.
-            stas%sfc%tpnd = 0.0; stas%sfc%zpnd = 0.0; stas%sfc%pndw = 0.0; stas%sfc%evap = 0.0; stas%sfc%qevp = 0.0
-            stas%sfc%hfs = 0.0; stas%sfc%rofo = 0.0; stas%sfc%tsfs = 0.0
+            stas%sfc%alvs = 0.0; stas%sfc%alir = 0.0; stas%sfc%gte = 0.0
+            stas%sfc%tpnd = 0.0; stas%sfc%zpnd = 0.0; stas%sfc%pndw = 0.0; stas%sfc%evap = 0.0
+            stas%sfc%rofo = 0.0
+            stas%sfc%qevp = 0.0; stas%sfc%hfs = 0.0; stas%sfc%gzero = 0.0
+            stas%sfc%tsfs = 0.0
 
             !> Soil layers.
             stas%sl%thic = 0.0; stas%sl%fzws = 0.0; stas%sl%thlq = 0.0; stas%sl%lqws = 0.0

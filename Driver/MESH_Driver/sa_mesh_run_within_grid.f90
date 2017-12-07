@@ -101,8 +101,14 @@ module sa_mesh_run_within_grid
         stas_grid%cnpy%pevp(i1:i2) = 0.0
         stas_grid%cnpy%evpb(i1:i2) = 0.0
         stas_grid%cnpy%arrd(i1:i2) = 0.0
+        stas_grid%cnpy%cmai(i1:i2) = 0.0
+        stas_grid%cnpy%tcan(i1:i2) = 0.0
+        stas_grid%sfc%alvs(i1:i2) = 0.0
+        stas_grid%sfc%alir(i1:i2) = 0.0
+        stas_grid%sfc%gte(i1:i2) = 0.0
         stas_grid%sfc%qevp(i1:i2) = 0.0
-        stas_grid%sfc%hfs(i1:i2)  = 0.0
+        stas_grid%sfc%hfs(i1:i2) = 0.0
+        stas_grid%sfc%gzero(i1:i2) = 0.0
         stas_grid%sl%tbar(i1:i2, :) = 0.0
         stas_grid%sl%thic(i1:i2, :) = 0.0
         stas_grid%sl%fzws(i1:i2, :) = 0.0
@@ -112,9 +118,11 @@ module sa_mesh_run_within_grid
         stas_grid%cnpy%rcan(i1:i2) = 0.0
         stas_grid%cnpy%sncan(i1:i2) = 0.0
         stas_grid%sno%sno(i1:i2) = 0.0
+        stas_grid%sno%tsno(i1:i2)  = 0.0
         stas_grid%sno%wsno(i1:i2) = 0.0
         stas_grid%sfc%zpnd(i1:i2) = 0.0
         stas_grid%sfc%pndw(i1:i2) = 0.0
+        stas_grid%sfc%tpnd(i1:i2) = 0.0
 
         !> Aggregate grid-based accumulators.
         do k = il1, il2
@@ -131,8 +139,14 @@ module sa_mesh_run_within_grid
             stas_grid%cnpy%pevp(ki) = stas_grid%cnpy%pevp(ki) + stas%cnpy%pevp(k)*frac
             stas_grid%cnpy%evpb(ki) = stas_grid%cnpy%evpb(ki) + stas%cnpy%evpb(k)*frac
             stas_grid%cnpy%arrd(ki) = stas_grid%cnpy%arrd(ki) + stas%cnpy%arrd(k)*frac
+            stas_grid%cnpy%cmai(ki) = stas_grid%cnpy%cmai(ki) + stas%cnpy%cmai(k)*frac
+            stas_grid%cnpy%tcan(ki) = stas_grid%cnpy%tcan(ki) + stas%cnpy%tcan(k)*frac
+            stas_grid%sfc%alvs(ki) = stas_grid%sfc%alvs(ki) + stas%sfc%alvs(k)*frac
+            stas_grid%sfc%alir(ki) = stas_grid%sfc%alir(ki) + stas%sfc%alir(k)*frac
+            stas_grid%sfc%gte(ki) = stas_grid%sfc%gte(ki) + stas%sfc%gte(k)*frac
             stas_grid%sfc%qevp(ki) = stas_grid%sfc%qevp(ki) + stas%sfc%qevp(k)*frac
-            stas_grid%sfc%hfs(ki)  = stas_grid%sfc%hfs(ki) + stas%sfc%hfs(k)*frac
+            stas_grid%sfc%hfs(ki) = stas_grid%sfc%hfs(ki) + stas%sfc%hfs(k)*frac
+            stas_grid%sfc%gzero(ki) = stas_grid%sfc%gzero(ki) + stas%sfc%gzero(k)*frac
             stas_grid%sl%tbar(ki, :) = stas_grid%sl%tbar(ki, :) + stas%sl%tbar(k, :)*frac
             stas_grid%sl%thic(ki, :) = stas_grid%sl%thic(ki, :) + stas%sl%thic(k, :)*frac
             stas_grid%sl%fzws(ki, :) = stas_grid%sl%fzws(ki, :) + stas%sl%thic(k, :)*stas%sl%delzw(k, :)*frac*RHOICE
@@ -142,12 +156,20 @@ module sa_mesh_run_within_grid
             stas_grid%cnpy%rcan(ki) = stas_grid%cnpy%rcan(ki) + stas%cnpy%rcan(k)*frac
             stas_grid%cnpy%sncan(ki) = stas_grid%cnpy%sncan(ki) + stas%cnpy%sncan(k)*frac
             stas_grid%sno%sno(ki) = stas_grid%sno%sno(ki) + stas%sno%sno(k)*frac
-            if (stas%sno%sno(k) > 0.0) then
-                stas_grid%sno%wsno(ki) = stas_grid%sno%wsno(ki) + stas%sno%wsno(k)*frac
-            end if
+            stas_grid%sno%tsno(ki) = stas_grid%sno%tsno(ki) + stas%sno%tsno(k)*frac
+            stas_grid%sno%wsno(ki) = stas_grid%sno%wsno(ki) + stas%sno%wsno(k)*frac
             stas_grid%sfc%zpnd(ki) = stas_grid%sfc%zpnd(ki) + stas%sfc%zpnd(k)*frac
+            stas_grid%sfc%pndw(ki) = stas_grid%sfc%pndw(ki) + stas%sfc%zpnd(k)*frac*RHOW
+            stas_grid%sfc%tpnd(ki) = stas_grid%sfc%tpnd(ki) + stas%sfc%tpnd(k)*frac
         end do
-        stas_grid%sfc%pndw(i1:i2) = stas_grid%sfc%zpnd(i1:i2)*RHOW
+        where (.not. stas_grid%sno%sno(i1:i2) > 0.0)
+            stas_grid%sno%tsno(i1:i2) = 0.0
+            stas_grid%sno%wsno(i1:i2) = 0.0
+        end where
+        where (.not. stas_grid%sfc%zpnd(i1:i2) > 0.0)
+            stas_grid%sfc%pndw(i1:i2) = 0.0
+            stas_grid%sfc%tpnd(i1:i2) = 0.0
+        end where
 
         !> Call processes.
         call bflm_within_grid(fls, shd, cm)
