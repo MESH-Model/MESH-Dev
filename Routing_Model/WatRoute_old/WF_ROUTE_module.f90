@@ -122,7 +122,7 @@ module WF_ROUTE_module
                       WF_QHYD, WF_RES, WF_RESSTORE, WF_NORESV_CTRL, fms%rsvr%meta%rnk, &
                       fms%rsvr%n, WF_NREL, WF_KTR, fms%rsvr%meta%iy, fms%rsvr%meta%jx, fms%rsvr%meta%name, &
                       WF_B1, WF_B2, WF_B3, WF_B4, WF_B5, WF_QREL, WF_QR, &
-                      WF_TIMECOUNT, WF_NHYD, WF_QBASE, stas_grid%chnl%qi, WF_QI2, WF_QO1, stas_grid%chnl%qo, &
+                      WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, stas_grid%chnl%qi, WF_QO1, stas_grid%chnl%qo, &
                       wfp%aa1, wfp%aa2, wfp%aa3, wfp%aa4, &
                       WF_STORE1, stas_grid%chnl%s, &
                       ic%dts, (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC, &
@@ -159,7 +159,7 @@ module WF_ROUTE_module
 !-        do l = 1, fms%rsvr%n
 !-            i = fms%rsvr%rnk(l)
 !-            write(708+l,"(2(I6,','),7(G12.5,','))") l, i, &
-!-                stas%chnl%qi(i), wf_store1(i), wf_qi2(i), stas%chnl%s(i), stas%chnl%qo(i)
+!-                wf_qi1(i), wf_store1(i), stas_grid%chnl%qi(i), stas%chnl%s(i), stas%chnl%qo(i)
 !-        end do
 
         !> Write per time-step output for reaches.
@@ -169,7 +169,7 @@ module WF_ROUTE_module
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
                 i = fms%rsvr%meta%rnk(l)
                 write(iun, 1010, advance = 'no') &
-                    l, i, stas_grid%chnl%qi(i), wf_store1(i), wf_qi2(i), stas_grid%chnl%s(i), stas_grid%chnl%qo(i)
+                    l, i, wf_qi1(i), wf_store1(i), stas_grid%chnl%qi(i), stas_grid%chnl%s(i), stas_grid%chnl%qo(i)
                 write(iun, *)
             end do
         end if

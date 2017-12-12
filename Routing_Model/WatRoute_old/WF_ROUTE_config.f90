@@ -166,9 +166,9 @@ module WF_ROUTE_config
     !* WF_R2: OPTIMIZED RIVER ROUGHNESS FACTOR
     !* WF_QO2: SIMULATED STREAMFLOW VALUE
 !-    real WF_R1(M_C), WF_R2(M_C)
-    real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI2, &
+    real, dimension(:), allocatable :: WF_NHYD, WF_QBASE, WF_QI1, &
         WF_QO1, WF_QR, WF_STORE1
-!-    real, dimension(:), allocatable :: WF_QI1, WF_QO2, WF_STORE2
+!-    real, dimension(:), allocatable :: WF_QI2, WF_QO2, WF_STORE2
 
     !> RESERVOIR MEASUREMENTS:
     !* WR_NREL: NUMBER OF DATA POINTS
@@ -254,19 +254,19 @@ module WF_ROUTE_config
         WF_NAA = NA - shd%NAA
 
         allocate(WF_NHYD(NA), WF_QR(NA), &
-                 WF_QBASE(NA), WF_QI2(NA), WF_QO1(NA), &
+                 WF_QBASE(NA), WF_QI1(NA), WF_QO1(NA), &
                  WF_STORE1(NA), &
                  WF_QO2_ACC_MM(NA), WF_STORE2_ACC_MM(NA))
 
         WF_NHYD = 0.0
         WF_QBASE = 0.0
-        WF_QI2 = 0.0
+!-        WF_QI2 = 0.0
         WF_QO1 = 0.0
 !-        WF_QO2 = 0.0
         WF_QR = 0.0
         WF_STORE1 = 0.0
 !-        WF_STORE2 = 0.0
-!-        WF_QI1 = 0.0
+        WF_QI1 = 0.0
         WF_QO2_ACC_MM = 0.0
         WF_STORE2_ACC_MM = 0.0
 
@@ -556,7 +556,7 @@ module WF_ROUTE_config
                 read(iun) WF_QSYN_CUM
                 read(iun) stas_grid%chnl%qo
                 read(iun) stas_grid%chnl%s
-                read(iun) wf_qi2
+                read(iun) stas_grid%chnl%qi
                 read(iun) WF_QO2_ACC_MM
                 read(iun) WF_STORE2_ACC_MM
             else
@@ -570,7 +570,7 @@ module WF_ROUTE_config
                 read(iun)
                 read(iun) stas_grid%chnl%qo
                 read(iun) stas_grid%chnl%s
-                read(iun) wf_qi2
+                read(iun) stas_grid%chnl%qi
                 read(iun)
                 read(iun)
             end if
@@ -663,7 +663,7 @@ module WF_ROUTE_config
             write(iun) WF_QSYN_CUM
             write(iun) stas_grid%chnl%qo
             write(iun) stas_grid%chnl%s
-            write(iun) wf_qi2
+            write(iun) stas_grid%chnl%qi
             write(iun) WF_QO2_ACC_MM
             write(iun) WF_STORE2_ACC_MM
 

@@ -457,8 +457,8 @@ C Are we at the outlet of a natural reservoir
               if(wf_r(l).eq.i) then
 C yes we are at the outlet, use the big storage term to determine wf_qo2
 
-                  wf_qi1(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
-                  wf_store2(i)=wf_store2(i)+wf_qi1(i)
+                  wf_qi2(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
+                  wf_store2(i)=wf_store2(i)+wf_qi2(i)
                 if (wf_b3(l) == 0.0) then
                   wf_qo2(i)=wf_b1(l)*wf_store2(i)**wf_b2(l)
                 else
@@ -485,15 +485,12 @@ C are we at the outlet of the controlled reservoir
               if(wf_r(l).eq.i) then
 C yes we are at the outlet
                   wf_qo2(i)=wf_qrel(l)
-                  wf_qi1(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
+                  wf_qi2(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
                   if( wf_qo2(i).lt.0.0 ) wf_qo2(i)=wf_qo2(i)
-                  wf_store2(i)=wf_store2(i)+wf_qi1(i)-wf_qo2(i)
+                  wf_store2(i)=wf_store2(i)+wf_qi2(i)-wf_qo2(i)
                   wf_resstore(l)=0.0
 c                  wf_store2(i)=wf_store1(i)+(wf_qi1(i)+wf_qi2(i)-
 c     +wf_qo1(i)-wf_qo2(i))*div+qadd(i)*div*2.0
-C           write(708+l,'(2(I6,A1),7(G12.5,A1))') l, z, wf_r(l), z,
-C      +     wf_resstore(l), z, qadd(i), z, wf_qi2(i), z,
-C      +      wf_qi1(i), z, wf_store1(i), z, wf_store2(i), z, wf_qo2(i),z
                else
 c no we are in the reservoir
 c don't really know what to do here, the flow doesn't really matter
