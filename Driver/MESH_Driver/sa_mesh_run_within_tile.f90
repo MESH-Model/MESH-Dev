@@ -90,186 +90,186 @@ module sa_mesh_run_within_tile
         !> For: MPI variables, barrier flag, il1:il2 parse utility
         use mpi_module
 
-        !> For: Model states, 'ic'.
+        !> Process modules (required for variables).
         use sa_mesh_shared_variables
         use model_dates
-
-        !> For: SAVERESUMEFLAG, RESUMEFLAG.
-        use FLAGS
-
-        !> For BASEFLOWFLAG.
+        use RUNCLASS36_variables
+        use RUNSVS113_variables
         use baseflow_module
 
         !> Input variables.
         type(ShedGridParams) :: shd
 
         !> Local variables.
-        integer ipid_recv, itag, ierrcode, istop, i, j, u, invars, ilen, iiln, ii1, ii2, ierr
+        integer ipid_recv, nvars, t, ierrcode, istop, i, j, u, iin, ii1, ii2, z
         logical lstat
-        integer, dimension(:), allocatable :: irqst
-        integer, dimension(:, :), allocatable :: imstat
+        integer, allocatable :: irqst(:), imstat(:, :)
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
-        !> Gather variables from parallel nodes.
+        !> Count the number of active variables included in the exchange.
+        nvars = 0
+        if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) nvars = nvars + 15 + 3*shd%lc%IGND
+        if (RUNCLASS36_flgs%PROCESS_ACTIVE) nvars = nvars + 12 + 1*shd%lc%IGND + 4
+        if (bflm%BASEFLOWFLAG == 1) nvars = nvars + 1
+        if (bflm%BASEFLOWFLAG == 1 .or. bflm%BASEFLOWFLAG == 2) nvars = nvars + 1 !3 with DZS (not active)
+        if (nvars == 0) return
 
-        !> Calculate the total number of active elements in the sequence.
-        ilen = (il2 - il1) + 1
-
-        !> Send/receive process.
-        itag = ic%ts_count*1000
-        invars = 16 + 4*shd%lc%IGND
-
-        !> Update the variable count per the active control flags.
-        if (SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) invars = invars + 10 + 4
-
-        !> BASEFLOWFLAG.
-        if (bflm%BASEFLOWFLAG == 1) then
-            invars = invars + 1
-        end if
+        !> Exchange variables.
+        if (allocated(irqst)) deallocate(irqst)
+        if (allocated(imstat)) deallocate(imstat)
+        allocate(irqst(nvars), imstat(mpi_status_size, nvars))
+        t = ic%ts_count*1000
 
         if (inp > 1 .and. ipid /= 0) then
 
             !> Send data back to head-node.
-            if (allocated(irqst)) deallocate(irqst)
-            if (allocated(imstat)) deallocate(imstat)
-            allocate(irqst(invars), imstat(mpi_status_size, invars))
+            !> Grab indices and reset exchange variables.
+            ii1 = il1; ii2 = il2; iin = iln
+            i = 1
             irqst = mpi_request_null
 
-            i = 1
-            call mpi_isend(stas%sfc%evap(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%cnpy%pevp(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%sfc%rofo(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%sl%rofs(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%lzs%rofb(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%lzs%lqws(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%dzs%rofb(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%dzs%lqws(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%cnpy%sncan(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%cnpy%rcan(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%sfc%zpnd(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%sno%sno(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%sno%fsno(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%sno%wsno(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%sfc%hfs(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            call mpi_isend(stas%sfc%qevp(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            do j = 1, shd%lc%IGND
-                call mpi_isend(stas%sl%thlq(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(stas%sl%thic(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(stas%sl%gflx(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(stas%sl%tbar(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-            end do
-
-            !> Send optional variables per the active control flags.
-            if (SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) then
-                call mpi_isend(stas%sno%albs(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(stas%cnpy%cmai(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(stas%cnpy%gro(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(stas%cnpy%qac(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(stas%sno%rhos(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(stas%cnpy%tac(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(stas%sl%tbas(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(stas%cnpy%tcan(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(stas%sfc%tpnd(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_isend(stas%sno%tsno(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                do j = 1, 4
-                    call mpi_isend(stas%sfc%tsfs(il1:il2, j), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
-                    i = i + 1
+            !> RUNCLASS36 and RUNSVS113.
+            if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                call mpi_isend(stas%cnpy%qac(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%cnpy%rcan(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%cnpy%tac(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%cnpy%tcan(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sno%sno(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sno%albs(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sno%rhos(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sno%wsno(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sno%tsno(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sfc%evap(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sfc%qevp(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sfc%hfs(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sfc%rofo(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sl%rofs(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%lzs%rofb(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                do j = 1, shd%lc%IGND
+                    call mpi_isend(stas%sl%thlq(ii1:ii2, j), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_isend(stas%sl%thic(ii1:ii2, j), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_isend(stas%sl%tbar(ii1:ii2, j), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
                 end do
-            end if !(SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) then
+            end if
+
+            !> RUNCLASS36.
+            if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+                call mpi_isend(stas%cnpy%cmai(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%cnpy%sncan(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%cnpy%pevp(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%cnpy%gro(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sfc%tpnd(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sfc%zpnd(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sfc%alvs(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sfc%alir(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sfc%gte(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sfc%gzero(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sno%fsno(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(stas%sl%tbas(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                do j = 1, shd%lc%IGND
+                    call mpi_isend(stas%sl%gflx(ii1:ii2, j), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                end do
+                do j = 1, 4
+                    call mpi_isend(stas%sfc%tsfs(ii1:ii2, j), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                end do
+            end if
 
             !> BASEFLOWFLAG.
             if (bflm%BASEFLOWFLAG == 1) then
-                call mpi_isend(Qb(il1:il2), ilen, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(Qb(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+            end if
+            if (bflm%BASEFLOWFLAG == 1 .or. bflm%BASEFLOWFLAG == 2) then
+                call mpi_isend(stas%lzs%lqws(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+!                call mpi_isend(stas%dzs%rofb(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+!                call mpi_isend(stas%dzs%lqws(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
             end if
 
+            !> Wait until the exchange completes.
             lstat = .false.
             do while (.not. lstat)
-                call mpi_testall(invars, irqst, lstat, imstat, ierr)
+                call mpi_testall(nvars, irqst, lstat, imstat, z)
             end do
 
         else if (inp > 1) then
 
             !> Receive data from worker nodes.
-            if (allocated(irqst)) deallocate(irqst)
-            if (allocated(imstat)) deallocate(imstat)
-            allocate(irqst(invars), imstat(mpi_status_size, invars))
-
-            !> Receive and assign variables.
             do u = 1, (inp - 1)
 
-!                print *, 'initiating irecv for:', u, ' with ', itag
-
+                !> Grab indices and reset exchange variables.
+                call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iin)
+                i = 1
                 irqst = mpi_request_null
                 imstat = 0
 
-                call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iiln)
-
-                !> Calculate the total number of active elements in the sequence.
-                ilen = (il2 - il1) + 1
-
-                i = 1
-                call mpi_irecv(stas%sfc%evap(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%cnpy%pevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sfc%rofo(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sl%rofs(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%lzs%rofb(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%lzs%lqws(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%dzs%rofb(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%dzs%lqws(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%cnpy%sncan(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%cnpy%rcan(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sfc%zpnd(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sno%sno(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sno%fsno(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sno%wsno(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sfc%hfs(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                call mpi_irecv(stas%sfc%qevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                do j = 1, shd%lc%IGND
-                    call mpi_irecv(stas%sl%thlq(ii1:ii2, j), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
-                    i = i + 1
-                    call mpi_irecv(stas%sl%thic(ii1:ii2, j), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
-                    i = i + 1
-                    call mpi_irecv(stas%sl%gflx(ii1:ii2, j), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
-                    i = i + 1
-                    call mpi_irecv(stas%sl%tbar(ii1:ii2, j), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
-                    i = i + 1
-                end do
-
-                !> Send optional variables per the active control flags.
-                if (SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) then
-                    call mpi_irecv(stas%sno%albs(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%cnpy%cmai(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%cnpy%gro(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%cnpy%qac(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%sno%rhos(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%cnpy%tac(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%sl%tbas(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%cnpy%tcan(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%sfc%tpnd(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    call mpi_irecv(stas%sno%tsno(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
-                    do j = 1, 4
-                        call mpi_irecv(stas%sfc%tsfs(ii1:ii2, j), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
-                        i = i + 1
+                !> RUNCLASS36 and RUNSVS113.
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                    call mpi_irecv(stas%cnpy%qac(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%cnpy%rcan(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%cnpy%tac(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%cnpy%tcan(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sno%sno(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sno%albs(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sno%rhos(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sno%wsno(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sno%tsno(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sfc%evap(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sfc%qevp(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sfc%hfs(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sfc%rofo(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sl%rofs(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%lzs%rofb(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    do j = 1, shd%lc%IGND
+                        call mpi_irecv(stas%sl%thlq(ii1:ii2, j), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                        call mpi_irecv(stas%sl%thic(ii1:ii2, j), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                        call mpi_irecv(stas%sl%tbar(ii1:ii2, j), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
                     end do
-                end if !(SAVERESUMEFLAG >= 3 .and. SAVERESUMEFLAG <= 5) then
+                end if
+
+                !> RUNCLASS36.
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+                    call mpi_irecv(stas%cnpy%cmai(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%cnpy%sncan(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%cnpy%pevp(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%cnpy%gro(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sfc%tpnd(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sfc%zpnd(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sfc%alvs(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sfc%alir(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sfc%gte(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sfc%gzero(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sno%fsno(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call mpi_irecv(stas%sl%tbas(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    do j = 1, shd%lc%IGND
+                        call mpi_irecv(stas%sl%gflx(ii1:ii2, j), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    end do
+                    do j = 1, 4
+                        call mpi_irecv(stas%sfc%tsfs(ii1:ii2, j), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    end do
+                end if
 
                 !> BASEFLOWFLAG.
                 if (bflm%BASEFLOWFLAG == 1) then
-                    call mpi_irecv(Qb(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(Qb(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                end if
+                if (bflm%BASEFLOWFLAG == 1 .or. bflm%BASEFLOWFLAG == 2) then
+                    call mpi_irecv(stas%lzs%lqws(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+!                    call mpi_irecv(stas%dzs%rofb(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+!                    call mpi_irecv(stas%dzs%lqws(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
                 end if
 
+                !> Wait until the exchange completes.
                 lstat = .false.
                 do while (.not. lstat)
-                    call mpi_testall(invars, irqst, lstat, imstat, ierr)
+                    call mpi_testall(nvars, irqst, lstat, imstat, z)
                 end do
 
             end do !u = 1, (inp - 1)
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
 
     end subroutine
 
