@@ -28,7 +28,7 @@ module irrigation_module
         logical :: PROCESS_ACTIVE = .false.
     end type
 
-    real, dimension(:), allocatable, save :: IRDMND
+    real, dimension(:), allocatable, save :: IRDMND_TILE, IRDMND_GRID, AVAIL_GRID
 
     type(irrigation_container), save :: irrm
 
@@ -76,7 +76,7 @@ module irrigation_module
         !> Allocate and initialize variables.
         allocate(irrm%va%dmnd(shd%lc%NML), irrm%va%avail(shd%lc%NML))
         irrm%va%dmnd = 0.0; irrm%va%avail = 0.0
-        allocate(IRDMND(shd%lc%NML))
+        allocate(IRDMND_TILE(shd%lc%NML), IRDMND_GRID(shd%NA), AVAIL_GRID(shd%NA))
 
         !> Deallocate non-NML based parameters allocated in other parts of the code.
         call irrigation_parameters_deallocate(irrm%pm_grid, ierr)
@@ -103,61 +103,112 @@ module irrigation_module
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
 
-        integer n, k, j
+        integer n, l, k, j
         real smin, fsmin, ir, lqsum, check
         logical iractive
 
         !*  MINSTG: Minimum storage to leave in the channel, not accessible for irrigation. [m3].
         !*  MINFSTG: Fraction of storage to leave in the channel, not accessible for irrigation. [--].
-        real :: MINSTG = 0.0
-        real :: MINFSTG = 0.05
+!        real :: MINSTG = 0.0
+!        real :: MINFSTG = 0.05
 
         !> Return if the irrigation module is not active.
         if (.not. irrm%PROCESS_ACTIVE .or. ipid /= 0) return
 
-!        if (ipid /= 0 .or. izero == 0) then
-            irrm%va%avail(il1:il2) = 0.0
-            do k = il1, il2 !GRU -> loop for timestep
-                IRDMND(k) = 0.0   !initialization for each time step
-                if (irrm%pm%irflg(k) == 1 .and. sum(stas%sl%thic(k, :)) == 0.0 .and. &
-                    (ic%now%jday >= irrm%pm%ijday1(k) .and. ic%now%jday <= irrm%pm%ijday2(k))) then
-                    iractive = (ic%now%hour >= irrm%pm%t1(k) .and. ic%now%hour < irrm%pm%t2(k))
-                    if (.not. iractive) cycle
-                    if (irrm%pm%t1(k) == 0 .or. (ic%now%hour == irrm%pm%t1(k) .and. ic%ts_hourly == 1)) then ! calculate at beginning of irrigation period
-                        do j = 1, irrm%pm%ignd(k) ! loop for each Soil layers
-                            check = irrm%pm%thlmin(k)*pm%slp%thfc(k, j) ! calculate 50% of field capacity
-                            lqsum =  stas%sl%thlq(k, j)
-                            if (lqsum < check)then ! check if sum of soil moisture is less than 50% of FC
-                                ir = (pm%slp%thfc(k, j) - lqsum)*stas%sl%delzw(k, j) ! calculate irrigation water to field capacity for each permeable soil depth
-                            else
-                                ir = 0.0
-                            end if
-                            IRDMND(k) = IRDMND(k) + ir ! sum of complete soil depth
-                        end do !soil layer
-                        IRDMND(k) = IRDMND(k)*(1000.0/ic%dts) ! convert into mm/sec
-                        irrm%va%dmnd(k) = IRDMND(k)
-                    end if
-                    irrm%va%avail(k) = max(irrm%va%dmnd(k) - cm%dat(ck%RT)%GAT(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
-                    if (ro%RUNGRID) then
-                        if (pm%tp%iabsp(k) > 0 .and. pm%tp%iabsp(k) <= fms%absp%n) then
-                            n = fms%absp%meta%rnk(pm%tp%iabsp(k)) !RANK of channel to pull abstraction
-                            fsmin = fms%absp%fsmin(pm%tp%iabsp(k)) ! if read from tb0 file
-                            smin = fms%absp%smin(pm%tp%iabsp(k)) ! if read from tb0 file
+        !> Calculate demand.
+        IRDMND_GRID = 0.0
+        do k = 1, shd%lc%NML !GRU -> loop for timestep
+
+            !> Calculate demand for tile.
+            IRDMND_TILE(k) = 0.0   !initialization for each time step
+            if (irrm%pm%irflg(k) == 1 .and. sum(stas%sl%thic(k, :)) == 0.0 .and. &
+                (ic%now%jday >= irrm%pm%ijday1(k) .and. ic%now%jday <= irrm%pm%ijday2(k))) then
+                iractive = (ic%now%hour >= irrm%pm%t1(k) .and. ic%now%hour < irrm%pm%t2(k))
+                if (.not. iractive) cycle
+                if (irrm%pm%t1(k) == 0 .or. (ic%now%hour == irrm%pm%t1(k) .and. ic%ts_hourly == 1)) then ! calculate at beginning of irrigation period
+                    do j = 1, irrm%pm%ignd(k) ! loop for each Soil layers
+                        check = irrm%pm%thlmin(k)*pm%slp%thfc(k, j) ! calculate 50% of field capacity
+                        lqsum =  stas%sl%thlq(k, j)
+                        if (lqsum < check)then ! check if sum of soil moisture is less than 50% of FC
+                            ir = (pm%slp%thfc(k, j) - lqsum)*stas%sl%delzw(k, j) ! calculate irrigation water to field capacity for each permeable soil depth
                         else
-                            n = shd%lc%ILMOS(k) ! pull from own cell if no abstraction point defined
-                            fsmin = MINFSTG
-                            smin = MINSTG
+                            ir = 0.0
                         end if
-                        irrm%va%avail(k) = min(max(stas_grid%chnl%s(n) - smin, 0.0)*(1.0 - fsmin)/shd%AREA(n)*1000.0/ic%dts, &
-                            irrm%va%avail(k)) ! adjust to the maximum water available from channel storage (m3 to mm)
-                        stas_grid%chnl%s(n) = stas_grid%chnl%s(n) - &
-                            (irrm%va%avail(k)*ic%dts/1000.0)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%AREA(n)
-                    end if
-                    cm%dat(ck%RT)%GAT(k) = cm%dat(ck%RT)%GAT(k) + irrm%va%avail(k) ! add irrigation water into precipitation
-                    irrm%va%dmnd(k) = irrm%va%dmnd(k) - irrm%va%avail(k)
+                        IRDMND_TILE(k) = IRDMND_TILE(k) + ir ! sum of complete soil depth
+                    end do !soil layer
+                    IRDMND_TILE(k) = IRDMND_TILE(k)*(1000.0/ic%dts) ! convert into mm/sec
+                    irrm%va%dmnd(k) = IRDMND_TILE(k)
                 end if
+                irrm%va%dmnd(k) = max(irrm%va%dmnd(k) - cm%dat(ck%RT)%GAT(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
+            end if
+
+            !> Pool demand for irrigation districts.
+            if (ro%RUNGRID .and. irrm%va%dmnd(k) > 0.0) then
+
+                !> Determine abstraction point source.
+                if (pm%tp%iabsp(k) > 0 .and. pm%tp%iabsp(k) <= fms%absp%n) then
+
+                    !> Discrict, pulls from an abstraction point.
+                    n = fms%absp%meta%rnk(pm%tp%iabsp(k))
+                else
+
+                    !> Grid, tile pulls from its own cell.
+                    n = shd%lc%ILMOS(k)
+                end if
+                IRDMND_GRID(n) = IRDMND_GRID(n) + &
+                    (irrm%va%dmnd(k)/1000.0*ic%dts)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%AREA(shd%lc%ILMOS(k)) ! m3
+            end if
+        end do
+
+        !> Determine the available water in each grid.
+        if (ro%RUNGRID .and. fms%absp%n > 0) then
+
+            !> Minimum of available water and demand.
+            AVAIL_GRID = min(stas_grid%chnl%s, IRDMND_GRID) ! m3
+
+            !> Apply conditions at abstraction points.
+            do l = 1, fms%absp%n
+                n = fms%absp%meta%rnk(l)
+                AVAIL_GRID(n) = min(max(stas_grid%chnl%s(n) - fms%absp%smin(l), 0.0)*(1.0 - fms%absp%fsmin(l)), IRDMND_GRID(n))
             end do
-!        end if
+
+            !> Update storage.
+            where (AVAIL_GRID > 0.0) stas_grid%chnl%s = stas_grid%chnl%s - AVAIL_GRID
+        end if
+
+        !> Abstraction.
+        irrm%va%avail = 0.0
+        do k = 1, shd%lc%NML
+            if (irrm%va%dmnd(k) > 0.0) then
+
+                !> If only running over tiles, assume all demand is available.
+                irrm%va%avail(k) = irrm%va%dmnd(k)
+
+                !> If running over grids, check demand against available storage.
+                if (ro%RUNGRID) then
+
+                    !> Determine abstraction point source.
+                    if (pm%tp%iabsp(k) > 0 .and. pm%tp%iabsp(k) <= fms%absp%n) then
+
+                        !> Discrict, pulls from an abstraction point.
+                        n = fms%absp%meta%rnk(pm%tp%iabsp(k))
+                    else
+
+                        !> Grid, tile pulls from its own cell.
+                        n = shd%lc%ILMOS(k)
+                    end if
+
+                    !> Determine available storage in each grid.
+                    irrm%va%avail(k) = irrm%va%dmnd(k)*(AVAIL_GRID(n)/IRDMND_GRID(n))
+                end if
+
+                !> Apply the abstraction to precipitation.
+                cm%dat(ck%RT)%GAT(k) = cm%dat(ck%RT)%GAT(k) + irrm%va%avail(k)
+
+                !> Preserve demand gone unsatisfied.
+                irrm%va%dmnd(k) = irrm%va%dmnd(k) - irrm%va%avail(k)
+            end if
+        end do
 
     end subroutine
 
