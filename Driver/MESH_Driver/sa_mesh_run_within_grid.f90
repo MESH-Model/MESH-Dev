@@ -10,58 +10,15 @@ module sa_mesh_run_within_grid
         use sa_mesh_shared_variables
         use climate_forcing
 
-        !> Required for 'il1:il2' and 'i1:i2' indexing.
-        use mpi_module
-
-!+todo: There's a dependency on CLASSBD.f.
-        use RUNCLASS36_constants, only: RHOW, RHOICE
-
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(clim_info) :: cm
 
-        integer k, ki, kj
-        real frac
-
         !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return
 
-        !> Initialize grid-based accumulators.
-        stas_grid%sl%tbar(i1:i2, :) = 0.0
-        stas_grid%sl%thic(i1:i2, :) = 0.0
-        stas_grid%sl%fzws(i1:i2, :) = 0.0
-        stas_grid%sl%thlq(i1:i2, :) = 0.0
-        stas_grid%sl%lqws(i1:i2, :) = 0.0
-        stas_grid%cnpy%rcan(i1:i2) = 0.0
-        stas_grid%cnpy%sncan(i1:i2) = 0.0
-        stas_grid%sno%sno(i1:i2) = 0.0
-        stas_grid%sno%wsno(i1:i2) = 0.0
-        stas_grid%sfc%zpnd(i1:i2) = 0.0
-        stas_grid%sfc%pndw(i1:i2) = 0.0
-        stas_grid%lzs%lqws(i1:i2) = 0.0
-        stas_grid%dzs%lqws(i1:i2) = 0.0
-
-        !> Aggregate grid-based accumulators.
-        do k = il1, il2
-            ki = shd%lc%ILMOS(k)
-            kj = shd%lc%JLMOS(k)
-            frac = shd%lc%ACLASS(ki, kj)
-            stas_grid%sl%tbar(ki, :) = stas_grid%sl%tbar(ki, :) + stas%sl%tbar(k, :)*frac
-            stas_grid%sl%thic(ki, :) = stas_grid%sl%thic(ki, :) + stas%sl%thic(k, :)*frac
-            stas_grid%sl%fzws(ki, :) = stas_grid%sl%fzws(ki, :) + stas%sl%thic(k, :)*frac*stas%sl%delzw(k, :)*RHOICE
-            stas_grid%sl%thlq(ki, :) = stas_grid%sl%thlq(ki, :) + stas%sl%thlq(k, :)*frac
-            stas_grid%sl%lqws(ki, :) = stas_grid%sl%lqws(ki, :) + stas%sl%thlq(k, :)*frac*stas%sl%delzw(k, :)*RHOW
-            stas_grid%cnpy%rcan(ki) = stas_grid%cnpy%rcan(ki) + stas%cnpy%rcan(k)*frac
-            stas_grid%cnpy%sncan(ki) = stas_grid%cnpy%sncan(ki) + stas%cnpy%sncan(k)*frac
-            stas_grid%sno%sno(ki) = stas_grid%sno%sno(ki) + stas%sno%sno(k)*frac
-            if (stas%sno%sno(k) > 0.0) then
-                stas_grid%sno%wsno(ki) = stas_grid%sno%wsno(ki) + stas%sno%wsno(k)*frac
-            end if
-            stas_grid%sfc%zpnd(ki) = stas_grid%sfc%zpnd(ki) + stas%sfc%zpnd(k)*frac
-            stas_grid%lzs%lqws(ki) = stas_grid%lzs%lqws(ki) + stas%lzs%lqws(k)*frac
-            stas_grid%dzs%lqws(ki) = stas_grid%dzs%lqws(ki) + stas%dzs%lqws(k)*frac
-        end do
-        stas_grid%sfc%pndw(i1:i2) = stas_grid%sfc%zpnd(i1:i2)*RHOW
+        !> Update variables.
+        call run_within_grid_stas_update(shd, cm)
 
     end subroutine
 
@@ -71,12 +28,6 @@ module sa_mesh_run_within_grid
         use sa_mesh_shared_variables
         use climate_forcing
 
-        !> Required for 'il1:il2' and 'i1:i2' indexing.
-        use mpi_module
-
-!+todo: There's a dependency on CLASSBD.f.
-        use RUNCLASS36_constants, only: RHOW, RHOICE
-
         !> Required for calls to processes.
         use baseflow_module
 
@@ -84,13 +35,38 @@ module sa_mesh_run_within_grid
         type(fl_ids) :: fls
         type(clim_info) :: cm
 
+        !> Return if tile and grid processes are not active.
+        if (.not. ro%RUNTILE) return
+
+        !> Update variables.
+        call run_within_grid_stas_update(shd, cm)
+
+        !> Call processes.
+        call bflm_within_grid(fls, shd, cm)
+
+    end subroutine
+
+    subroutine run_within_grid_stas_update(shd, cm)
+
+        use sa_mesh_shared_variables
+        use climate_forcing
+
+        !> Required for 'il1:il2' and 'i1:i2' indexing.
+        use mpi_module
+
+!+todo: There's a dependency on CLASSBD.f.
+        use RUNCLASS36_constants, only: RHOW, RHOICE
+
+        type(ShedGridParams) :: shd
+        type(clim_info) :: cm
+
         integer k, ki, kj
-        real frac
+        real fcan(i1:i2), fsno(i1:i2), fpnd(i1:i2), frac
 
         !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return
 
-        !> Initialize grid-based accumulators.
+        !> Initialize variables.
         stas_grid%sfc%evap(i1:i2) = 0.0
         stas_grid%sfc%rofo(i1:i2) = 0.0
         stas_grid%sl%rofs(i1:i2) = 0.0
@@ -124,7 +100,10 @@ module sa_mesh_run_within_grid
         stas_grid%sfc%pndw(i1:i2) = 0.0
         stas_grid%sfc%tpnd(i1:i2) = 0.0
 
-        !> Aggregate grid-based accumulators.
+        !> Update variables.
+        fcan(i1:i2) = 0.0
+        fsno(i1:i2) = 0.0
+        fpnd(i1:i2) = 0.0
         do k = il1, il2
             ki = shd%lc%ILMOS(k)
             kj = shd%lc%JLMOS(k)
@@ -140,7 +119,10 @@ module sa_mesh_run_within_grid
             stas_grid%cnpy%evpb(ki) = stas_grid%cnpy%evpb(ki) + stas%cnpy%evpb(k)*frac
             stas_grid%cnpy%arrd(ki) = stas_grid%cnpy%arrd(ki) + stas%cnpy%arrd(k)*frac
             stas_grid%cnpy%cmai(ki) = stas_grid%cnpy%cmai(ki) + stas%cnpy%cmai(k)*frac
-            stas_grid%cnpy%tcan(ki) = stas_grid%cnpy%tcan(ki) + stas%cnpy%tcan(k)*frac
+            if (stas%cnpy%tcan(k) > 0.0) then
+                stas_grid%cnpy%tcan(ki) = stas_grid%cnpy%tcan(ki) + stas%cnpy%tcan(k)*frac
+                fcan(ki) = fcan(ki) + frac
+            end if
             stas_grid%sfc%alvs(ki) = stas_grid%sfc%alvs(ki) + stas%sfc%alvs(k)*frac
             stas_grid%sfc%alir(ki) = stas_grid%sfc%alir(ki) + stas%sfc%alir(k)*frac
             stas_grid%sfc%gte(ki) = stas_grid%sfc%gte(ki) + stas%sfc%gte(k)*frac
@@ -156,23 +138,34 @@ module sa_mesh_run_within_grid
             stas_grid%cnpy%rcan(ki) = stas_grid%cnpy%rcan(ki) + stas%cnpy%rcan(k)*frac
             stas_grid%cnpy%sncan(ki) = stas_grid%cnpy%sncan(ki) + stas%cnpy%sncan(k)*frac
             stas_grid%sno%sno(ki) = stas_grid%sno%sno(ki) + stas%sno%sno(k)*frac
-            stas_grid%sno%tsno(ki) = stas_grid%sno%tsno(ki) + stas%sno%tsno(k)*frac
-            stas_grid%sno%wsno(ki) = stas_grid%sno%wsno(ki) + stas%sno%wsno(k)*frac
+            if (stas%sno%sno(k) > 0.0) then
+                stas_grid%sno%wsno(ki) = stas_grid%sno%wsno(ki) + stas%sno%wsno(k)*frac
+                stas_grid%sno%tsno(ki) = stas_grid%sno%tsno(ki) + stas%sno%tsno(k)*frac
+                fsno(ki) = fsno(ki) + frac
+            end if
             stas_grid%sfc%zpnd(ki) = stas_grid%sfc%zpnd(ki) + stas%sfc%zpnd(k)*frac
-            stas_grid%sfc%pndw(ki) = stas_grid%sfc%pndw(ki) + stas%sfc%zpnd(k)*frac*RHOW
-            stas_grid%sfc%tpnd(ki) = stas_grid%sfc%tpnd(ki) + stas%sfc%tpnd(k)*frac
+            if (stas%sfc%zpnd(k) > 0.0) then
+                stas_grid%sfc%tpnd(ki) = stas_grid%sfc%tpnd(ki) + stas%sfc%tpnd(k)*frac
+                fpnd(ki) = fpnd(ki) + frac
+            end if
         end do
-        where (.not. stas_grid%sno%sno(i1:i2) > 0.0)
-            stas_grid%sno%tsno(i1:i2) = 0.0
-            stas_grid%sno%wsno(i1:i2) = 0.0
+        where (stas_grid%sfc%evap(i1:i2) > 0.0 .and. stas_grid%cnpy%pevp(i1:i2) /= 0.0)
+            stas_grid%cnpy%evpb(i1:i2) = stas_grid%sfc%evap(i1:i2)/stas_grid%cnpy%pevp(i1:i2)
         end where
-        where (.not. stas_grid%sfc%zpnd(i1:i2) > 0.0)
-            stas_grid%sfc%pndw(i1:i2) = 0.0
-            stas_grid%sfc%tpnd(i1:i2) = 0.0
+        if (allocated(cm%dat(ck%RT)%GRD)) then
+            where (stas_grid%cnpy%pevp(i1:i2) /= 0.0)
+                stas_grid%cnpy%arrd(i1:i2) = cm%dat(ck%RT)%GRD(i1:i2)/stas_grid%cnpy%pevp(i1:i2)
+            end where
+        end if
+        where (stas_grid%sfc%alvs(i1:i2) > 0.0 .and. stas_grid%sfc%alir(i1:i2) > 0.0)
+            stas_grid%sfc%albt(i1:i2) = (stas_grid%sfc%alvs(i1:i2) + stas_grid%sfc%alir(i1:i2))/2.0
         end where
-
-        !> Call processes.
-        call bflm_within_grid(fls, shd, cm)
+        stas_grid%sfc%pndw(i1:i2) = stas_grid%sfc%zpnd(i1:i2)*RHOW
+        where (fcan(i1:i2) > 0.0) stas_grid%cnpy%tcan(i1:i2) = stas_grid%cnpy%tcan(i1:i2)/fcan(i1:i2)
+        where (fsno(i1:i2) > 0.0)
+            stas_grid%sno%tsno(i1:i2) = stas_grid%sno%tsno(i1:i2)/fsno(i1:i2)
+        end where
+        where (fpnd(i1:i2) > 0.0) stas_grid%sfc%tpnd(i1:i2) = stas_grid%sfc%tpnd(i1:i2)/fpnd(i1:i2)
 
     end subroutine
 
@@ -187,7 +180,7 @@ module sa_mesh_run_within_grid
         type(clim_info) :: cm
 
         !> Return if tile and grid processes are not active.
-        if (.not. ro%RUNTILE .and. .not. ro%RUNGRID) return
+        if (.not. ro%RUNTILE) return
 
     end subroutine
 

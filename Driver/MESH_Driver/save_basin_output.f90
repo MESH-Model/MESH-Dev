@@ -31,8 +31,7 @@ module save_basin_output
 
     !> For energy balance.
     !*  FSIN: Incoming shortwave radiation at the surface. [J m-2 during acc.; W m-2 output].
-    !*  ALVS: Visible albedo of the surface. [--].
-    !*  ALIR: Near-infrared albedo of the surface. [--].
+    !*  ALBT: Total albedo of the surface (visible and near-infrared). [--].
     !*  FSOUT: Outgoing shortwave radiation at the surface. [J m-2 during acc.; W m-2 output].
     !*  FLIN: Incoming longwave radiation at the surface. [J m-2 during acc.; W m-2 output].
     !*  GTE: Effective black-body temperature at the surface. [dC].
@@ -52,7 +51,7 @@ module save_basin_output
         integer, dimension(:), allocatable :: &
             IFS, IPOND, ICAN, ISNOW
         real, dimension(:), allocatable :: &
-            FSIN, ALVS, ALIR, FSOUT, FLIN, GTE, FLOUT, QH, QE, GZERO, &
+            FSIN, ALBT, FSOUT, FLIN, GTE, FLOUT, QH, QE, GZERO, &
             TA, TCAN, CMAS, TSNOW, TPOND
         real, dimension(:, :), allocatable :: TBAR
         real, dimension(:), allocatable :: BAL0, BAL1
@@ -149,7 +148,7 @@ module save_basin_output
             bno%wb(ikey)%STG_INI = 0.0
             allocate( &
                 bno%eb(ikey)%IFS(NA), bno%eb(ikey)%ICAN(NA), bno%eb(ikey)%ISNOW(NA), bno%eb(ikey)%IPOND(NA), &
-                bno%eb(ikey)%FSIN(NA), bno%eb(ikey)%ALVS(NA), bno%eb(ikey)%ALIR(NA), bno%eb(ikey)%FSOUT(NA), &
+                bno%eb(ikey)%FSIN(NA), bno%eb(ikey)%ALBT(NA), bno%eb(ikey)%FSOUT(NA), &
                 bno%eb(ikey)%FLIN(NA), bno%eb(ikey)%GTE(NA), bno%eb(ikey)%FLOUT(NA), &
                 bno%eb(ikey)%QH(NA), bno%eb(ikey)%QE(NA), &
                 bno%eb(ikey)%GZERO(NA), &
@@ -158,7 +157,7 @@ module save_basin_output
                 bno%eb(ikey)%TBAR(NA, NSL), &
                 bno%eb(ikey)%BAL0(NA), bno%eb(ikey)%BAL1(NA))
             bno%eb(ikey)%IFS = 0; bno%eb(ikey)%ICAN = 0; bno%eb(ikey)%ISNOW = 0; bno%eb(ikey)%IPOND = 0
-            bno%eb(ikey)%FSIN = 0.0; bno%eb(ikey)%ALVS = 0.0; bno%eb(ikey)%ALIR = 0.0; bno%eb(ikey)%FSOUT = 0.0
+            bno%eb(ikey)%FSIN = 0.0; bno%eb(ikey)%ALBT = 0.0; bno%eb(ikey)%FSOUT = 0.0
             bno%eb(ikey)%FLIN = 0.0; bno%eb(ikey)%GTE = 0.0; bno%eb(ikey)%FLOUT = 0.0
             bno%eb(ikey)%QH = 0.0; bno%eb(ikey)%QE = 0.0
             bno%eb(ikey)%GZERO = 0.0
@@ -1025,9 +1024,10 @@ module save_basin_output
         type(clim_info) :: cm
 
         !> Local variables.
+        integer, dimension(:), allocatable :: &
+            IFS, ICAN, ISNOW, IPOND
         real, dimension(:), allocatable :: &
-            IFS, ICAN, ISNOW, IPOND, &
-            FSIN, ALVS, ALIR, FSOUT, FLIN, GTE, FLOUT, QH, QE, GZERO, &
+            FSIN, ALBT, FSOUT, FLIN, GTE, FLOUT, QH, QE, GZERO, &
             TA, TCAN, CMAS, TSNOW, TPOND
         real, allocatable :: TBAR(:, :)
         integer ikey, n, s, ii, i, j
@@ -1038,20 +1038,19 @@ module save_basin_output
         s = shd%lc%IGND
         allocate( &
             IFS(n), ICAN(n), ISNOW(n), IPOND(n), &
-            FSIN(n), ALVS(n), ALIR(n), FSOUT(n), FLIN(n), GTE(n), FLOUT(n), QH(n), QE(n), GZERO(n), &
+            FSIN(n), ALBT(n), FSOUT(n), FLIN(n), GTE(n), FLOUT(n), QH(n), QE(n), GZERO(n), &
             TA(n), TCAN(n), CMAS(n), TSNOW(n), TPOND(n), TBAR(n, s))
         IFS = 0; ICAN = 0; ISNOW = 0; IPOND = 0
-        FSIN = 0.0; ALVS = 0.0; ALIR = 0.0; FSOUT = 0.0; FLIN = 0.0; GTE = 0.0; FLOUT = 0.0; QH = 0.0; QE = 0.0; GZERO = 0.0
+        FSIN = 0.0; ALBT = 0.0; FSOUT = 0.0; FLIN = 0.0; GTE = 0.0; FLOUT = 0.0; QH = 0.0; QE = 0.0; GZERO = 0.0
         TA = 0.0; TCAN = 0.0; CMAS = 0.0; TSNOW = 0.0; TPOND = 0.0; TBAR = 0.0
 
         !> Time-averaged variables and averaging counters.
         where (cm%dat(ck%FB)%GRD > 0.0)
-            ALVS = stas_grid%sfc%alvs*shd%FRAC
-            ALIR = stas_grid%sfc%alir*shd%FRAC
+            ALBT = stas_grid%sfc%albt*shd%FRAC
             IFS = 1
         end where
-        GTE = (stas_grid%sfc%gte - TFREZ)*shd%FRAC
-        TA = (cm%dat(ck%TT)%GRD - TFREZ)*shd%FRAC
+        where (stas_grid%sfc%gte > 0.0) GTE = (stas_grid%sfc%gte - TFREZ)*shd%FRAC
+        where (cm%dat(ck%TT)%GRD > 0.0) TA = (cm%dat(ck%TT)%GRD - TFREZ)*shd%FRAC
         where (stas_grid%cnpy%tcan > 0.0)
             TCAN = (stas_grid%cnpy%tcan - TFREZ)*shd%FRAC
             ICAN = 1
@@ -1066,15 +1065,17 @@ module save_basin_output
             IPOND = 1
         end where
         do j = 1, shd%lc%IGND
-            TBAR(:, j) = (stas_grid%sl%tbar(:, j) - TFREZ)*shd%FRAC
+            where (stas_grid%sl%tbar(:, j) > 0.0) TBAR(:, j) = (stas_grid%sl%tbar(:, j) - TFREZ)*shd%FRAC
         end do
 
         !> Accumulated fluxes.
         !> Converted from (W m-2 = J m-2 s-1) to J m-2 for accumulation.
         FSIN = cm%dat(ck%FB)%GRD*ic%dts*shd%FRAC
-        FSOUT = (cm%dat(ck%FB)%GRD*(1.0 - (ALVS + ALIR)/2.0))*ic%dts*shd%FRAC
+        where (ALBT > 0.0)
+            FSOUT = (cm%dat(ck%FB)%GRD*(1.0 - stas_grid%sfc%albt))*ic%dts*shd%FRAC
+        end where
         FLIN = cm%dat(ck%FI)%GRD*ic%dts*shd%FRAC
-        FLOUT = (5.66796E-8*stas_grid%sfc%gte**4)*ic%dts*shd%FRAC
+        where (stas_grid%sfc%gte > 0.0) FLOUT = (5.66796E-8*stas_grid%sfc%gte**4)*ic%dts*shd%FRAC
         QH = stas_grid%sfc%hfs*ic%dts*shd%FRAC
         QE = stas_grid%sfc%qevp*ic%dts*shd%FRAC
         GZERO = stas_grid%sfc%gzero*ic%dts*shd%FRAC
@@ -1086,8 +1087,7 @@ module save_basin_output
             if (ii > 0) then
 
                 !> Time-averaged variables.
-                ALVS(ii) = ALVS(ii) + ALVS(i)
-                ALIR(ii) = ALIR(ii) + ALIR(i)
+                ALBT(ii) = ALBT(ii) + ALBT(i)
                 GTE(ii) = GTE(ii) + GTE(i)
                 TA(ii) = TA(ii) + TA(i)
                 TCAN(ii) = TCAN(ii) + TCAN(i)
@@ -1117,8 +1117,7 @@ module save_basin_output
         do ikey = 1, NKEY
 
             !> Time-averaged variables and averaging counters.
-            bno%eb(ikey)%ALVS = bno%eb(ikey)%ALVS + ALVS
-            bno%eb(ikey)%ALIR = bno%eb(ikey)%ALIR + ALIR
+            bno%eb(ikey)%ALBT = bno%eb(ikey)%ALBT + ALBT
             bno%eb(ikey)%IFS = bno%eb(ikey)%IFS + IFS
             bno%eb(ikey)%GTE = bno%eb(ikey)%GTE + GTE
             bno%eb(ikey)%TA = bno%eb(ikey)%TA + TA
@@ -1161,8 +1160,7 @@ module save_basin_output
 
         !> Time-averaged variables.
         where (bno%eb(ikdts)%IFS > 0)
-            bno%eb(ikdts)%ALVS = bno%eb(ikdts)%ALVS/bno%eb(ikdts)%IFS
-            bno%eb(ikdts)%ALIR = bno%eb(ikdts)%ALIR/bno%eb(ikdts)%IFS
+            bno%eb(ikdts)%ALBT = bno%eb(ikdts)%ALBT/bno%eb(ikdts)%IFS
         end where
         bno%eb(ikdts)%GTE = bno%eb(ikdts)%GTE/dnts
         bno%eb(ikdts)%TA = bno%eb(ikdts)%TA/dnts
@@ -1211,7 +1209,7 @@ module save_basin_output
 
         !> Variable names.
         write(fik, 1010, advance = 'no') &
-            'FSIN', 'FSOUT', 'ALVS', 'ALIR', 'FLIN', 'FLOUT', 'GTE', 'QH', 'QE', 'GZERO', &
+            'FSIN', 'FSOUT', 'ALBT', 'FLIN', 'FLOUT', 'GTE', 'QH', 'QE', 'GZERO', &
             'TA', 'TCAN', 'CMAS', 'TSNOW', 'TPOND'
         do j = 1, shd%lc%IGND
             write(ffmti, '(i3)') j
@@ -1262,7 +1260,7 @@ module save_basin_output
         !> Write the variables to file.
         write(fik, 1010) &
             bno%eb(ikdts)%FSIN(ina)/frac, bno%eb(ikdts)%FSOUT(ina)/frac, &
-            bno%eb(ikdts)%ALVS(ina)/frac, bno%eb(ikdts)%ALIR(ina)/frac, &
+            bno%eb(ikdts)%ALBT(ina)/frac, &
             bno%eb(ikdts)%FLIN(ina)/frac, bno%eb(ikdts)%FLOUT(ina)/frac, bno%eb(ikdts)%GTE(ina)/frac, &
             bno%eb(ikdts)%QH(ina)/frac, bno%eb(ikdts)%QE(ina)/frac, &
             bno%eb(ikdts)%GZERO(ina)/frac, &
@@ -1284,7 +1282,7 @@ module save_basin_output
 
         !> Reset accumulated variables.
         bno%eb(ikdts)%IFS = 0; bno%eb(ikdts)%ICAN = 0; bno%eb(ikdts)%ISNOW = 0; bno%eb(ikdts)%IPOND = 0
-        bno%eb(ikdts)%FSIN = 0.0; bno%eb(ikdts)%ALVS = 0.0; bno%eb(ikdts)%ALIR = 0.0; bno%eb(ikdts)%FSOUT = 0.0
+        bno%eb(ikdts)%FSIN = 0.0; bno%eb(ikdts)%ALBT = 0.0; bno%eb(ikdts)%FSOUT = 0.0
         bno%eb(ikdts)%FLIN = 0.0; bno%eb(ikdts)%GTE = 0.0; bno%eb(ikdts)%FLOUT = 0.0
         bno%eb(ikdts)%QH = 0.0; bno%eb(ikdts)%QE = 0.0
         bno%eb(ikdts)%GZERO = 0.0

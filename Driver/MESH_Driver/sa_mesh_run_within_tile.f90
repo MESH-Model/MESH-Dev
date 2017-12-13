@@ -29,6 +29,9 @@ module sa_mesh_run_within_tile
         call bflm_init(fls, shd, cm)
         call runci_init(shd, fls)
 
+        !> Update variables.
+        call run_within_tile_stas_update(shd, cm)
+
     end subroutine
 
     function run_within_tile(shd, fls, cm)
@@ -36,9 +39,6 @@ module sa_mesh_run_within_tile
         use model_files_variables
         use sa_mesh_shared_variables
         use climate_forcing
-
-        !> Required for 'il1:il2' indices.
-        use mpi_module
 
         !> Required for calls to processes.
         use RUNCLASS36_module
@@ -55,16 +55,6 @@ module sa_mesh_run_within_tile
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
-        stas%cnpy%pevp(il1:il2) = 0.0
-        stas%sfc%evap(il1:il2) = 0.0
-        stas%cnpy%evpb(il1:il2) = 0.0
-        stas%sfc%qevp(il1:il2) = 0.0
-        stas%sfc%hfs(il1:il2) = 0.0
-        stas%sfc%rofo(il1:il2) = 0.0
-        stas%sl%rofs(il1:il2) = 0.0
-        stas%lzs%rofb(il1:il2) = 0.0
-        stas%dzs%rofb(il1:il2) = 0.0
-
         run_within_tile = ''
 
         !> Call processes.
@@ -76,12 +66,8 @@ module sa_mesh_run_within_tile
         !> MPI exchange.
         call run_within_tile_mpi(shd)
 
-        where (stas%cnpy%pevp(il1:il2) /= 0.0)
-            stas%cnpy%evpb(il1:il2) = stas%sfc%evap(il1:il2)/stas%cnpy%pevp(il1:il2)
-            stas%cnpy%arrd(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)/stas%cnpy%pevp(il1:il2)
-        end where
-
-        return
+        !> Update variables.
+        call run_within_tile_stas_update(shd, cm)
 
     end function
 
@@ -270,6 +256,52 @@ module sa_mesh_run_within_tile
         end if !(inp > 1 .and. ipid /= 0) then
 
         if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+
+    end subroutine
+
+    subroutine run_within_tile_stas_update(shd, cm)
+
+        use sa_mesh_shared_variables
+        use climate_forcing
+
+        !> Required for 'il1:il2' indices.
+        use mpi_module
+
+!+todo: There's a dependency on CLASSBD.f.
+        use RUNCLASS36_constants, only: RHOW, RHOICE
+
+        type(ShedGridParams) :: shd
+        type(clim_info) :: cm
+
+        !> Return if tile processes are not active.
+        if (.not. ro%RUNTILE) return
+
+        !> Update variables.
+        stas%sl%fzws(il1:il2, :) = stas%sl%thic(il1:il2, :)*stas%sl%delzw(il1:il2, :)*RHOICE
+        stas%sl%lqws(il1:il2, :) = stas%sl%thlq(il1:il2, :)*stas%sl%delzw(il1:il2, :)*RHOW
+        where (stas%sfc%evap(il1:il2) > 0.0 .and. stas%cnpy%pevp(il1:il2) /= 0.0)
+            stas%cnpy%evpb(il1:il2) = stas%sfc%evap(il1:il2)/stas%cnpy%pevp(il1:il2)
+        elsewhere
+            stas%cnpy%evpb(il1:il2) = 0.0
+        end where
+        if (allocated(cm%dat(ck%RT)%GAT)) then
+            where (stas%cnpy%pevp(il1:il2) /= 0.0)
+                stas%cnpy%arrd(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)/stas%cnpy%pevp(il1:il2)
+            elsewhere
+                stas%cnpy%arrd(il1:il2) = 0.0
+            end where
+        end if
+        where (stas%sfc%alvs(il1:il2) > 0.0 .and. stas%sfc%alir(il1:il2) > 0.0)
+            stas%sfc%albt(il1:il2) = (stas%sfc%alvs(il1:il2) + stas%sfc%alir(il1:il2))/2.0
+        elsewhere
+            stas%sfc%albt(il1:il2) = 0.0
+        end where
+        stas%sfc%pndw(il1:il2) = stas%sfc%zpnd(il1:il2)*RHOW
+        where (stas%sno%sno(il1:il2) == 0.0)
+            stas%sno%wsno(il1:il2) = 0.0
+            stas%sno%tsno(il1:il2) = 0.0
+        end where
+        where (stas%sfc%zpnd(il1:il2) == 0.0) stas%sfc%tpnd(il1:il2) = 0.0
 
     end subroutine
 

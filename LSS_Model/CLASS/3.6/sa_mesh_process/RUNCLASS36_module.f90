@@ -386,19 +386,13 @@ module RUNCLASS36_module
         stas%sno%albs(il1:il2) = cpv%ALBS(il1:il2)
         stas%sno%fsno(il1:il2) = cdv%FSNO(il1:il2)
         stas%sno%rhos(il1:il2) = cpv%RHOS(il1:il2)
-        where (cpv%SNO(il1:il2) > 0.0)
-            stas%sno%tsno(il1:il2) = cpv%TSNO(il1:il2)
-            stas%sno%wsno(il1:il2) = cpv%WSNO(il1:il2)
-        elsewhere
-            stas%sno%tsno(il1:il2) = 0.0
-            stas%sno%wsno(il1:il2) = 0.0
-        end where
+        stas%sno%tsno(il1:il2) = cpv%TSNO(il1:il2)
+        stas%sno%wsno(il1:il2) = cpv%WSNO(il1:il2)
         stas%sfc%alvs(il1:il2) = cdv%ALVS(il1:il2)
         stas%sfc%alir(il1:il2) = cdv%ALIR(il1:il2)
         stas%sfc%gte(il1:il2) = cdv%GTE(il1:il2)
         stas%sfc%tpnd(il1:il2) = cpv%TPND(il1:il2)
         stas%sfc%zpnd(il1:il2) = cpv%ZPND(il1:il2)
-        stas%sfc%pndw(il1:il2) = cpv%ZPND(il1:il2)*RHOW
         stas%sfc%evap(il1:il2) = cdv%QFS(il1:il2)
         stas%sfc%rofo(il1:il2) = cdv%ROFO(il1:il2)
         stas%sfc%qevp(il1:il2) = cdv%QEVP(il1:il2)
@@ -408,9 +402,7 @@ module RUNCLASS36_module
         stas%sl%tbas(il1:il2) = cpv%TBAS(il1:il2)
         stas%sl%rofs(il1:il2) = cdv%ROFS(il1:il2)
         stas%sl%thic(il1:il2, :) = cpv%THIC(il1:il2, :)
-        stas%sl%fzws(il1:il2, :) = cpv%THIC(il1:il2, :)*csfv%DELZW(il1:il2, :)*RHOICE
         stas%sl%thlq(il1:il2, :) = cpv%THLQ(il1:il2, :)
-        stas%sl%lqws(il1:il2, :) = cpv%THLQ(il1:il2, :)*csfv%DELZW(il1:il2, :)*RHOW
         stas%sl%tbar(il1:il2, :) = cpv%TBAR(il1:il2, :)
         stas%sl%gflx(il1:il2, :) = cdv%GFLX(il1:il2, :)
         stas%lzs%rofb(il1:il2) = cdv%ROFB(il1:il2)

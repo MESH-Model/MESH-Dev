@@ -86,8 +86,9 @@ module state_variables
     !>  States at the interface between the atmosphere and soil profile.
     !>
     !> Variables:
+    !*  albt: Total albedo of the surface (visible and near-infrared). [--].
     !*  alvs: Visible albedo of the surface. [--].
-    !*  alir: Near-IR albedo of the surface. [--].
+    !*  alir: Near-infrared albedo of the surface. [--].
     !*  gte: Effective black-body temperature at the surface. [K].
     !*  tsfs: Ground surface temperature over subarea. [K].
     !*  tpnd: Temperature of ponded water. [K].
@@ -100,7 +101,7 @@ module state_variables
     !*  rofo: Overland component of total runoff. [kg m-2 s-1].
     type surface_interface
         real(kind = 4), dimension(:), allocatable :: &
-            alvs, alir, gte, &
+            albt, alvs, alir, gte, &
             tpnd, zpnd, pndw, evap, &
             rofo, &
             qevp, hfs, gzero
@@ -219,7 +220,7 @@ module state_variables
             stas%sno%tsno(n), stas%sno%wsno(n), &
 
             !> Surface or at near surface.
-            stas%sfc%alvs(n), stas%sfc%alir(n), stas%sfc%gte(n), &
+            stas%sfc%albt(n), stas%sfc%alvs(n), stas%sfc%alir(n), stas%sfc%gte(n), &
             stas%sfc%tpnd(n), stas%sfc%zpnd(n), stas%sfc%pndw(n), stas%sfc%evap(n), &
             stas%sfc%rofo(n), &
             stas%sfc%qevp(n), stas%sfc%hfs(n), stas%sfc%gzero(n), &
@@ -263,7 +264,7 @@ module state_variables
             stas%sno%tsno = 0.0; stas%sno%wsno = 0.0
 
             !> Surface or at near surface.
-            stas%sfc%alvs = 0.0; stas%sfc%alir = 0.0; stas%sfc%gte = 0.0
+            stas%sfc%albt = 0.0; stas%sfc%alvs = 0.0; stas%sfc%alir = 0.0; stas%sfc%gte = 0.0
             stas%sfc%tpnd = 0.0; stas%sfc%zpnd = 0.0; stas%sfc%pndw = 0.0; stas%sfc%evap = 0.0
             stas%sfc%rofo = 0.0
             stas%sfc%qevp = 0.0; stas%sfc%hfs = 0.0; stas%sfc%gzero = 0.0
