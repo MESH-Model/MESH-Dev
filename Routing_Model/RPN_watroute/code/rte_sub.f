@@ -450,33 +450,34 @@ c     *                         year1,month1,day1,hour1)
 
         call getarg(1,strfw_option)
 
-        if (trim(strfw_option)=='streamflow_insertion' .or. 
-     *      trim(strfw_option)=='streamflow_comparison' ) then 
-          if(iopt.eq.2)print*,'In sub - gone to read_flow_ef'
-!         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          call read_flow_ef()  !EnSim compatible tb0 file
-!         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+! Y. Shin  
+!       read_flow_ef() is executed even when strfw_option is none 
+        if(iopt.eq.2)print*,'In sub - gone to read_flow_ef'
+!       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        call read_flow_ef()  !EnSim compatible tb0 file
+!       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
-!         'read_flow_ef' may reset kt and irdt;
-!         temporary solution: set irdt=kt (D. Deacu)
+!       'read_flow_ef' may reset kt and irdt;
+!       temporary solution: set irdt=kt (D. Deacu)
 !
-          if (kt.eq.1) then
-            if(irdt.ne.kt) irdt=1
-          else
-            print *, 'kt:', kt, 'irdt:', irdt
-            stop 'Program aborted in sub after the call to read_flow_ef'
-          endif
-          if (trim(strfw_option)=='streamflow_insertion') then
-            print *,'This is a run with streamflow insertion.'
-          elseif (trim(strfw_option)=='streamflow_comparison') then
-            print *,'This is a run without streamflow insertion.'
-            print *,'  However, observed streamflows are read in and'
-            print *,'  and then written out alongside flows simulated '
-            print *,'  at the stations for comparison purposes.'
-          end if
+        if (kt.eq.1) then
+          if(irdt.ne.kt) irdt=1
         else
-          print*,'This is a run WITHOUT streamflow insertion.'
-          print*,'No values are read in from the streamflow files.'
+          print *, 'kt:', kt, 'irdt:', irdt
+          stop 'Program aborted in sub after the call to read_flow_ef'
+        endif
+        if (trim(strfw_option)=='streamflow_insertion') then
+          print *,'This is a run with streamflow insertion.'
+        elseif (trim(strfw_option)=='streamflow_comparison') then
+          print *,'This is a run without streamflow insertion.'
+          print *,'  However, observed streamflows are read in and'
+          print *,'  and then written out alongside flows simulated '
+          print *,'  at the stations for comparison purposes.'
+        else
+          print *,'This is a run without any strfw_option.'
+          print *,'  However, observed streamflows, which are set'
+          print *,'  to -1, are read in and then written out alongside'
+          print *,'  flows simulated at the stations for future use.'
         endif
 
         if(iopt.eq.2)print*,'In sub - gone to read_resv_ef'

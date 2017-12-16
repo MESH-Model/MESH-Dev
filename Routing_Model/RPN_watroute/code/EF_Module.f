@@ -1213,10 +1213,10 @@ C
 	CHARACTER*(*), INTENT(INOUT) :: string
 	character*128  value
 	character*10000 tmpString, localLine
-!	integer lineLen, rStat		
-        integer lineLen
+!	integer lineLen, rStat
+	integer lineLen
 ! Dan Princz Changed rStat To logical from integer
-		logical rStat
+	logical rStat
 	integer slash, space, colon, point 
 	
 
@@ -1889,9 +1889,9 @@ C	character*10000 tmpString
 
            read(tmpString,*)(header%colCoeff6(n),n=1,wordCount)
 
-	   ParseResvColumnMetaData = 1
-	   return
-	   
+           ParseResvColumnMetaData = 1
+           return
+
         else if(keyword(1:KeyLen) .eq. ':coeff7')then
            wordCount = CountWords(tmpString)
            if(wordCount.le. 0)then
@@ -2030,7 +2030,7 @@ C	character*10000 tmpString
 	   if(allocated(header%colValue1)) then
 	      deallocate(header%colValue1,stat=ideallocate)
 	   end if
-	      allocate(header%colValue1(wordCount))
+	   allocate(header%colValue1(wordCount))
 !	   if(.NOT.allocated(header%colValue1)) then
 !	      allocate(header%colValue1(wordCount))
 !	   end if
@@ -2050,7 +2050,7 @@ C	character*10000 tmpString
 	   if(allocated(header%colValue2)) then
 	      deallocate(header%colValue2,stat=ideallocate)
 	   end if
-	      allocate(header%colValue2(wordCount))
+	   allocate(header%colValue2(wordCount))
 !	   if(.NOT.allocated(header%colValue2)) then
 !	      allocate(header%colValue2(wordCount))
 !	   end if
@@ -2085,7 +2085,7 @@ C	character*10000 tmpString
 	      ParseDivColumnMetaData = -1
 	      return
 	   end if
-
+	   
 	   header%tb0cmd%colCount = wordCount
 	   if(allocated(header%colValue4)) then
 	      deallocate(header%colValue4,stat=ideallocate)

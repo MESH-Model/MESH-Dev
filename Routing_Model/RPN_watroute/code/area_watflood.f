@@ -117,7 +117,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *                  newevtflg,manningflg,translateflg,flowfillflg,
      *                  outfileflg,initflg,
      *                  fstflg,chnlflg,mndrflg,r1nflg,r2nflg,rlakeflg,
-     *                  nocrashflg,rbmflg
+     *                  nocrashflg,rbmflg,splrpnflg
         character(1) :: ssmc_firstpass
 !        character(1), dimension(:), allocatable :: glacier_flag
 !       these things taken out of some argument lists  nk 05/10/04

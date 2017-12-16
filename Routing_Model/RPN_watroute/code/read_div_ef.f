@@ -259,7 +259,7 @@ C        Scan lines of data
             else
                if(colHeader%colValue1(i).gt.0.0) ! The div.tb0 file does not contain Value2
      *            val1div(i) = colHeader%colValue1(i) ! value 1 only
-	    endif
+            endif
          end do
 
       else                      ! i.e., if not firstpass='y'
@@ -448,27 +448,27 @@ C        Scan lines of data
      *         divendindex(i) = -1
 
             if(val2divyes.eq.1) then          ! The div.tb0 file contains Value2
-	    if (val2div(i).eq.1.and.divstrindex(i).eq.-1.or.
-     *      val2div(i).eq.1.and.divendindex(i).eq.-1) then
-		PRINT*, 'Error for station ',i,': incompatibility 
-     *          between value2 and location of stations'
-		PRINT*, 'check lat-lon of this station and wiki page'
-		STOP
-	    endif
-	    if (val2div(i).eq.2.and.divstrindex(i).eq.-1.or.
-     *      val2div(i).eq.2.and.divendindex(i).ne.-1) then
-                PRINT*, 'Error for station ',i,': incompatibility
-     *          between value2 and location of stations'
-                PRINT*, 'check lat-lon of this station and wiki page'
-                STOP
-            endif
-	    if (val2div(i).eq.3.and.divendindex(i).eq.-1.or.
-     *      val2div(i).eq.3.and.divstrindex(i).ne.-1) then
-                PRINT*, 'Error for station ',i,': incompatibility
-     *          between value2 and location of stations'
-                PRINT*, 'check lat-lon of this station and wiki page'
-                STOP
-            endif
+	       if (val2div(i).eq.1.and.divstrindex(i).eq.-1.or.
+     *         val2div(i).eq.1.and.divendindex(i).eq.-1) then
+	   	PRINT*, 'Error for station ',i,': incompatibility 
+     *             between value2 and location of stations'
+	   	PRINT*, 'check lat-lon of this station and wiki page'
+	   	STOP
+	       endif
+	       if (val2div(i).eq.2.and.divstrindex(i).eq.-1.or.
+     *         val2div(i).eq.2.and.divendindex(i).ne.-1) then
+                   PRINT*, 'Error for station ',i,': incompatibility
+     *             between value2 and location of stations'
+                   PRINT*, 'check lat-lon of this station and wiki page'
+                   STOP
+               endif
+	       if (val2div(i).eq.3.and.divendindex(i).eq.-1.or.
+     *         val2div(i).eq.3.and.divstrindex(i).ne.-1) then
+                   PRINT*, 'Error for station ',i,': incompatibility
+     *             between value2 and location of stations'
+                   PRINT*, 'check lat-lon of this station and wiki page'
+                   STOP
+               endif
             endif
          end do
 
@@ -508,7 +508,7 @@ C        Scan lines of data
                do k=1,ndiv_max
                   qdivirrig(i,k) = 0
                end do
-         end do
+            end do
 
             ! Determine the grid points in which water is to be lost due to irrigation
             irindex = 0
@@ -540,18 +540,18 @@ C        Scan lines of data
                   end do
                   totirrigpts(irindex) = irpt
                end if
-         end do
+            end do
          end if
-
+         
 !        Report on values being used for diversions
          irindex = 0
-            do i=1,nodiv
-               if(val2divyes.eq.1) then          ! The div.tb0 file contains Value2
-                  write(52,1010)
-                  write(52,1011) i,divname(i),istrdiv(i),jstrdiv(i),
-     *                ienddiv(i),jenddiv(i),val1div(i),val2div(i),
+         do i=1,nodiv
+            if(val2divyes.eq.1) then          ! The div.tb0 file contains Value2
+               write(52,1010)
+               write(52,1011) i,divname(i),istrdiv(i),jstrdiv(i),
+     *            ienddiv(i),jenddiv(i),val1div(i),val2div(i),
      *            val3div(i),val4div(i),val2divyes,
-     *                divstrindex(i), divendindex(i)
+     *            divstrindex(i), divendindex(i)
                if (divname(i)(1:5).eq.'irrig'
      *        .or. divname(i)(1:5).eq.'Irrig') then   ! Irrigation is to  be represented
                   irindex = irindex + 1
@@ -561,13 +561,13 @@ C        Scan lines of data
      *               jminirr(irindex),jmaxirr(irindex),
      *               totirrigpts(irindex)
                end if
-               else
+            else
                write(52,1014)
                write(52,1015) i,divname(i),istrdiv(i),jstrdiv(i),
-     *                ienddiv(i),jenddiv(i),val1div(i),
-     *                divstrindex(i), divendindex(i)
-               end if
-            end do
+     *            ienddiv(i),jenddiv(i),val1div(i),
+     *            divstrindex(i), divendindex(i)
+            end if
+         end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!
 
