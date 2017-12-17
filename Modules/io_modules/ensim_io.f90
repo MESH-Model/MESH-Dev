@@ -2,7 +2,16 @@ module ensim_io
 
     implicit none
 
-    integer, parameter :: MAX_WORDS = 200, MAX_WORD_LENGTH = 20, MAX_LINE_LENGTH = 1000
+    integer, parameter :: MAX_WORDS = 500, MAX_WORD_LENGTH = 50, MAX_LINE_LENGTH = 5000
+
+    interface get_keyword_value
+        module procedure get_keyword_value_cfield
+        module procedure get_keyword_value_ffield
+        module procedure get_keyword_value_ifield
+        module procedure get_keyword_value_cvalue
+        module procedure get_keyword_value_fvalue
+        module procedure get_keyword_value_ivalue
+    end interface
 
     interface r2c_to_rank
         module procedure r2c_to_rank_ffield
@@ -34,13 +43,13 @@ module ensim_io
         logical, intent(in) :: verbose
         integer, intent(out) :: ierr
 
-        if (verbose) print 1000, fname
+        if (verbose) print 1000, trim(fname)
         open(iun, file = adjustl(fname), status = 'old', iostat = ierr)
         if (ierr /= 0) goto 999
 
         return
 
-999     if (verbose) print 1110, adjustl(fname)
+999     if (verbose) print 1110, trim(fname)
         stop
 
 1000    format(1x, 'READING: ', (a))
@@ -102,8 +111,8 @@ module ensim_io
         do while (ierr == 0)
             call read_ensim_line(iun, line, ierr)
             if (ierr /= 0) exit
-            if (line(1:1) == ':' .and. index(line, ' ') > 0) nkeyword = nkeyword + 1
             if (is_header(line)) exit
+            if (line(1:1) == ':') nkeyword = nkeyword + 1
         end do
         if (ierr /= 0) goto 999
         rewind(iun)
@@ -115,7 +124,8 @@ module ensim_io
         do while (ierr == 0)
             call read_ensim_line(iun, line, ierr)
             if (ierr /= 0) exit
-            if (line(1:1) == ':' .and. index(line, ' ') > 0) then
+            if (is_header(line)) exit
+            if (line(1:1) == ':') then
                 n = n + 1
                 call parse(line, ' ', args, nargs)
                 vkeyword(n)%keyword = args(1)
@@ -125,7 +135,6 @@ module ensim_io
                     vkeyword(n)%words = args(2:nargs)
                 end if
             end if
-            if (is_header(line)) exit
         end do
         if (ierr /= 0) goto 999
 
@@ -169,13 +178,13 @@ module ensim_io
             if (ierr /= 0) cycle
             select case (lowercase(vkeyword(n)%keyword))
                 case (':attributename')
-                    vattr(j)%attr = ''
-                    do i = 2, size(vkeyword(n)%words)
+                    vattr(j)%attr = vkeyword(n)%words(2)
+                    do i = 3, size(vkeyword(n)%words)
                         vattr(j)%attr = trim(adjustl(vattr(j)%attr)) // ' ' // trim(adjustl(vkeyword(n)%words(i)))
                     end do
                 case (':attributeunits')
-                    vattr(j)%units = ''
-                    do i = 2, size(vkeyword(n)%words)
+                    vattr(j)%units = vkeyword(n)%words(2)
+                    do i = 3, size(vkeyword(n)%words)
                         vattr(j)%units = trim(adjustl(vattr(j)%units)) // ' ' // trim(adjustl(vkeyword(n)%words(i)))
                     end do
             end select
@@ -186,6 +195,151 @@ module ensim_io
 999     nattr = 0
         if (allocated(vattr)) deallocate(vattr)
         return
+
+    end subroutine
+
+    subroutine get_keyword_value_cfield(iun, fname, vkeyword, nkeyword, cname, cfield, ncol, ierr, verbose)
+
+        use strings
+
+        character(len = *), intent(in) :: fname, cname
+        integer, intent(in) :: iun, nkeyword, ncol
+        type(ensim_keyword), dimension(nkeyword), intent(in) :: vkeyword
+        integer, intent(out) :: ierr
+        logical, intent(in) :: verbose
+        character(len = *), dimension(ncol), intent(out) :: cfield
+
+        integer n, jz
+
+        ierr = 0
+        do n = 1, nkeyword
+            if (lowercase(vkeyword(n)%keyword) == lowercase(cname)) then
+                jz = min(ncol, size(vkeyword(n)%words))
+                cfield(1:jz) = vkeyword(n)%words(1:jz)
+                if (size(vkeyword(n)%words) /= ncol) goto 999
+                exit
+            end if
+        end do
+        return
+
+999     if (verbose) print 1110, trim(cname), trim(fname)
+        return
+
+1110    format(3x, 'WARNING: Mismatch in the number of values expected for ', (a), ' in: ', (a), &
+               /8x, 'Number of values: ', i4, &
+               /8x, 'Number of values expected: ', i4)
+1120    format(3x, 'ERROR: Could not allocate variables for ', (a), ' in ', (a))
+
+    end subroutine
+
+    subroutine get_keyword_value_cvalue(iun, fname, vkeyword, nkeyword, cname, cvalue, ierr, verbose)
+
+        character(len = *), intent(in) :: fname, cname
+        integer, intent(in) :: iun, nkeyword
+        type(ensim_keyword), dimension(nkeyword), intent(in) :: vkeyword
+        integer, intent(out) :: ierr
+        logical, intent(in) :: verbose
+        character(len = *), intent(out) :: cvalue
+
+        character(len = len(cvalue)), dimension(1) :: cfield
+        call get_keyword_value_cfield(iun, fname, vkeyword, nkeyword, cname, cfield, 1, ierr, verbose)
+
+        cvalue = cfield(1)
+
+    end subroutine
+
+    subroutine get_keyword_value_ffield(iun, fname, vkeyword, nkeyword, cname, ffield, ncol, ierr, verbose)
+
+        use strings
+
+        character(len = *), intent(in) :: fname, cname
+        integer, intent(in) :: iun, nkeyword, ncol
+        type(ensim_keyword), dimension(nkeyword), intent(in) :: vkeyword
+        integer, intent(out) :: ierr
+        logical, intent(in) :: verbose
+        real, dimension(ncol), intent(out) :: ffield
+
+        integer n, jz, j
+
+        ierr = 0
+        do n = 1, nkeyword
+            if (lowercase(vkeyword(n)%keyword) == lowercase(cname)) then
+                jz = min(ncol, size(vkeyword(n)%words))
+                do j = 1, jz
+                    call value(vkeyword(n)%words(j), ffield(j), ierr)
+                    if (ierr /= 0) goto 998
+                end do
+                if (size(vkeyword(n)%words) /= ncol) goto 999
+                exit
+            end if
+        end do
+        return
+
+998     ffield = 0.0
+        if (verbose) print 1130, trim(cname), trim(fname)
+        return
+
+999     if (verbose) print 1110, trim(cname), trim(fname)
+        return
+
+1110    format(3x, 'WARNING: Mismatch in the number of values expected for ', (a), ' in: ', (a), &
+               /8x, 'Number of values: ', i4, &
+               /8x, 'Number of values expected: ', i4)
+1120    format(3x, 'ERROR: Could not allocate variables for ', (a), ' in ', (a))
+1130    format(3x, 'WARNING: Bad data encountered for ', (a), ' in ', (a))
+
+    end subroutine
+
+    subroutine get_keyword_value_fvalue(iun, fname, vkeyword, nkeyword, cname, fvalue, ierr, verbose)
+
+        character(len = *), intent(in) :: fname, cname
+        integer, intent(in) :: iun, nkeyword
+        type(ensim_keyword), dimension(nkeyword), intent(in) :: vkeyword
+        integer, intent(out) :: ierr
+        logical, intent(in) :: verbose
+        real, intent(out) :: fvalue
+
+        real, dimension(1) :: ffield
+
+        call get_keyword_value_ffield(iun, fname, vkeyword, nkeyword, cname, ffield, 1, ierr, verbose)
+
+        fvalue = ffield(1)
+
+    end subroutine
+
+    subroutine get_keyword_value_ifield(iun, fname, vkeyword, nkeyword, cname, ifield, ncol, ierr, verbose)
+
+        use strings
+
+        character(len = *), intent(in) :: fname, cname
+        integer, intent(in) :: iun, nkeyword, ncol
+        type(ensim_keyword), dimension(nkeyword), intent(in) :: vkeyword
+        integer, intent(out) :: ierr
+        logical, intent(in) :: verbose
+        integer, dimension(ncol), intent(out) :: ifield
+
+        real, dimension(ncol) :: ffield
+
+        call get_keyword_value_ffield(iun, fname, vkeyword, nkeyword, cname, ffield, ncol, ierr, verbose)
+
+        ifield = int(ffield)
+
+    end subroutine
+
+    subroutine get_keyword_value_ivalue(iun, fname, vkeyword, nkeyword, cname, ivalue, ierr, verbose)
+
+        character(len = *), intent(in) :: fname, cname
+        integer, intent(in) :: iun, nkeyword
+        type(ensim_keyword), dimension(nkeyword), intent(in) :: vkeyword
+        integer, intent(out) :: ierr
+        logical, intent(in) :: verbose
+        integer, intent(out) :: ivalue
+
+        integer, dimension(1) :: ifield
+
+        call get_keyword_value_ifield(iun, fname, vkeyword, nkeyword, cname, ifield, 1, ierr, verbose)
+
+        ivalue = ifield(1)
 
     end subroutine
 
@@ -242,6 +396,33 @@ module ensim_io
 1120    format(/1x, 'ERROR: Mismatch in spatial attributes between: ', &
                /3x, 'File 1: ', (a), &
                /3x, 'File 2: ', (a)/)
+
+    end subroutine
+
+    subroutine advance_past_header(iun, fname, verbose, ierr)
+
+        character(len = *), intent(in) :: fname
+        integer, intent(in) :: iun
+        logical, intent(in) :: verbose
+        integer, intent(out) :: ierr
+
+        character(len = MAX_LINE_LENGTH) line
+
+        rewind(iun)
+        ierr = 0
+        do while (ierr == 0)
+            call read_ensim_line(iun, line, ierr)
+            if (ierr /= 0) exit
+            if (is_header(line)) exit
+        end do
+        if (ierr /= 0) goto 999
+
+        return
+
+999     if (verbose) print 1110, trim(fname)
+        stop
+
+1110    format(/1x, 'ERROR: Reached end of file before closing the header in ', (a), /)
 
     end subroutine
 
@@ -320,7 +501,7 @@ module ensim_io
 
         return
 
-999     if (verbose) print 1120, iattr, adjustl(fname)
+999     if (verbose) print 1120, iattr, trim(fname)
         stop
 
 1110    format(3x, 999(g16.9))
@@ -341,6 +522,108 @@ module ensim_io
         call r2c_to_rank_ffield(iun, fname, vattr, nattr, iattr, xxx, yyy, na, ffield, nfield, verbose)
 
         ifield = int(ffield)
+
+    end subroutine
+
+    subroutine parse_starttime(iun, fname, vkeyword, nkeyword, year, month, day, hour, mins, ierr, verbose)
+
+        use strings
+
+        character(len = *), intent(in) :: fname
+        integer, intent(in) :: iun, nkeyword
+        type(ensim_keyword), dimension(nkeyword), intent(in) :: vkeyword
+        integer, intent(out) :: year, month, day, hour, mins, ierr
+        logical, intent(in) :: verbose
+
+        character(len = MAX_WORD_LENGTH) ctmp
+        integer n, j
+
+        !> Initially set the values to zero.
+        year = 0; month = 0; day = 0; hour = 0; mins = 0
+
+        !> Find start time in the list of attributes.
+        do n = 1, nkeyword
+            select case(lowercase(vkeyword(n)%keyword))
+
+                !> 'starttime' contains a date and/or time; in some cases, 'startdate' is used instead.
+                case (':starttime', ':startdate')
+
+                    !> Scan for a date signature (e.g., 2003/01/31).
+                    ctmp = adjustl(vkeyword(n)%words(1))
+                    ierr = 0
+                    if (index(ctmp, '/') > 1 .and. index(ctmp, '/') /= index(ctmp, '/', back = .true.)) then
+                        call value(ctmp(1:(index(ctmp, '/') - 1)), year, ierr)
+                        if (ierr == 0) call value(ctmp((index(ctmp, '/') + 1):(index(ctmp, '/', back = .true.) - 1)), month, ierr)
+                        if (ierr == 0) call value(ctmp((index(ctmp, '/', back = .true.) + 1):len(ctmp)), day, ierr)
+                    else
+                        ierr = 1
+                    end if
+                    if (ierr /= 0 .and. verbose) print 1110, trim(fname), year, month, day
+
+                    !> Scan for a time signature (e.g., 24:00:00.000; 24:00:00; 24:00).
+                    !> In the case of multiple keywords, assume a date preceeds the time.
+                    if (size(vkeyword(n)%words) > 1) then
+                        ctmp = adjustl(vkeyword(n)%words(2))
+                    else if (size(vkeyword(n)%words) == 1) then
+                        ctmp = adjustl(vkeyword(n)%words(1))
+                    end if
+                    ierr = 0
+                    if (index(ctmp, ':') > 1) then
+                        call value(ctmp(1:(index(ctmp, ':') - 1)), hour, ierr)
+                        if (ierr == 0 .and. index(ctmp, ':') /= index(ctmp, ':', back = .true.)) then
+                            call value(ctmp((index(ctmp, ':') + 1):(index(ctmp, ':', back = .true.) - 1)), mins, ierr)
+                        end if
+                    else
+                        ierr = 1
+                    end if
+                    if (ierr /= 0 .and. verbose) print 1120, trim(fname), hour, mins
+
+            end select
+        end do
+
+        return
+
+1110    format(3x, 'WARNING: Invalid or missing date in the start time in ', (a), ': ', i4, '/', i2, '/', i2)
+1120    format(3x, 'WARNING: Invalid or missing time in the start time in ', (a), ': ', i2, ':', i2)
+
+    end subroutine
+
+    subroutine count_columns_tb0(iun, fname, vkeyword, nkeyword, ncol, ierr)
+
+        use strings
+
+        character(len = *), intent(in) :: fname
+        integer, intent(in) :: iun, nkeyword
+        type(ensim_keyword), dimension(nkeyword), intent(in) :: vkeyword
+        integer, intent(out) :: ncol, ierr
+
+        integer n
+        logical in_section
+
+        ierr = 0
+        in_section = .false.
+        ncol = 0
+        do n = 1, nkeyword
+            if (lowercase(vkeyword(n)%keyword) == ':columnmetadata') then
+                in_section = .true.
+            else if (lowercase(vkeyword(n)%keyword) == ':endcolumnmetadata') then
+                in_section = .false.
+                exit
+            else if (in_section) then
+                if (ncol > 0 .and. size(vkeyword(n)%words) /= ncol) then
+                    ierr = 1
+                    exit
+                else
+                    ncol = size(vkeyword(n)%words)
+                end if
+            end if
+        end do
+        if (ierr /= 0) goto 999
+
+        return
+
+999     ncol = 0
+        return
 
     end subroutine
 

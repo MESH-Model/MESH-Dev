@@ -66,13 +66,12 @@ module model_files
 
         fms%stmg%qomeas%fls%fname = 'MESH_input_streamflow'
         fms%stmg%qomeas%fls%iun = 22
-
-        fms%rsvr%qorls%fls%fname = 'MESH_input_reservoir'
-        fms%rsvr%qorls%fls%iun = 21
-
-!todo: remove this
-        flg%fl(mfk%f70)%fn = 'MESH_output_streamflow.csv'
-        flg%fl(mfk%f70)%iun = 70
+        fms%stmg%qomeas%fls%ffmt = 'txt'
+        fms%stmg%qomeas%readmode = 'subset'
+        fms%rsvr%rlsmeas%fls%fname = 'MESH_input_reservoir'
+        fms%rsvr%rlsmeas%fls%iun = 21
+        fms%rsvr%rlsmeas%fls%ffmt = 'txt'
+        fms%rsvr%rlsmeas%readmode = 'subset'
 
         flg%fl(mfk%out_response)%fn = ''
         flg%fl(mfk%out_response)%iun = 444
@@ -92,19 +91,6 @@ module model_files
         mtsfl%fl(mtsk%ABSE)%fn = 'abserr.txt'
         mtsfl%fl(mtsk%out)%fn  = 'Metrics_Out.txt'
         mtsfl%fl(mtsk%PE)%fn   = 'pre_emption_value.txt'
-
-        !> For files used by WF_ROUTE.
-        if (.not. allocated(WF_RTE_fstflout%fls%fl)) call WF_ROUTE_init_fls()
-!-        WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%fn = 'MESH_input_streamflow.txt'
-!-        WF_RTE_fls%fl(WF_RTE_flks%stfl_in)%iun = 22
-!-        WF_RTE_fls%fl(WF_RTE_flks%resv_in)%fn = 'MESH_input_reservoir.txt'
-!-        WF_RTE_fls%fl(WF_RTE_flks%resv_in)%iun = 21
-        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%fn = 'MESH_output_streamflow.csv'
-        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun = 70
-        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%fn = 'MESH_output_streamflow_ts.csv'
-        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun = 71
-        WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%fn = 'MESH_output_reach_ts.csv'
-        WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun = 708
 
         !> For files used by Standalone RTE.
         if (.not. allocated(SA_RTE_fls%fl)) call SA_RTE_init_fls()
@@ -165,9 +151,7 @@ module model_files
                 else if (trim(adjustl(str1)) == 'stream_flow') then
                     phtfl = trim(adjustl(flg%pthOut)) // trim(adjustl(str2))
 !todo: update this
-                    flg%fl(mfk%f70)%fn = phtfl
-!                    WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%fn = phtfl
-!                    WF_RTE_fls%fl(WF_RTE_flks%stfl_daily)%isInit = .true.
+!                    flg%fl(mfk%f70)%fn = phtfl
 
                 else if (trim(adjustl(str1)) == 'ggeo_flux') then
                     phtfl = trim(adjustl(flg%pthIn)) // trim(adjustl(str2))

@@ -1001,6 +1001,9 @@ program RUNMESH
             DAILY_ROF = 0.0
         end if
 
+        !> Distribute grid states (e.g., channel storage) to worker nodes.
+        call run_within_grid_mpi_irecv(shd, cm)
+
         cstate = run_within_tile(shd, fls, cm)
         cstate = ''
 !        if (len_trim(cstate) > 0) then
@@ -1009,6 +1012,9 @@ program RUNMESH
 !        end if
 
         call run_within_grid(shd, fls, cm)
+
+        !> Update grid states (e.g., channel storage) from worker nodes.
+        call run_within_grid_mpi_isend(shd, cm)
 
         if (ipid == 0) call run_between_grid(shd, fls, cm, stfl, rrls)
 

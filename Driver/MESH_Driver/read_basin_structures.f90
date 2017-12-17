@@ -11,9 +11,9 @@
 !>
 subroutine read_basin_structures(shd)
 
+    use strings
     use mpi_module
     use sa_mesh_shared_variables
-    use FLAGS
     use model_dates
     use txt_io
 
@@ -47,7 +47,7 @@ subroutine read_basin_structures(shd)
         fms%stmg%qomeas%imins = ic%start%mins
 
         !> Read from file.
-        select case (STREAMFLOWFILEFLAG)
+        select case (lowercase(fms%stmg%qomeas%fls%ffmt))
             case ('tb0')
                 fname = trim(adjustl(fname)) // '.tb0'
                 call read_streamflow_tb0(shd, iun, fname)
@@ -129,9 +129,9 @@ subroutine read_basin_structures(shd)
     end if
 
     !> Print a summary of locations to file.
-    if (ipid == 0 .and. ro%VERBOSEMODE > 0) then
-        print 9997, 'streamflow gauges', fms%stmg%n
-        if (fms%stmg%n > 0 .and. ro%DIAGNOSEMODE > 0) then
+    if (ipid == 0 .and. fms%stmg%n > 0) then
+        if (ro%VERBOSEMODE > 0) print 9997, 'streamflow gauges', fms%stmg%n
+        if (ro%DIAGNOSEMODE > 0) then
 !todo: Change to write to summary file.
             print 1020, 'GAUGE', 'IY', 'JX', 'DA (km/km2)', 'RANK'
             do l = 1, fms%stmg%n
@@ -145,20 +145,20 @@ subroutine read_basin_structures(shd)
     !>
 
     !> File unit and name.
-    fname = fms%rsvr%qorls%fls%fname
-    iun = fms%rsvr%qorls%fls%iun
+    fname = fms%rsvr%rlsmeas%fls%fname
+    iun = fms%rsvr%rlsmeas%fls%iun
 
     !> Read location from file if reaches exist.
     if (any(shd%IREACH > 0)) then
 
         !> Initialize time-series.
-        fms%rsvr%qorls%iyear = ic%start%year
-        fms%rsvr%qorls%ijday = ic%start%jday
-        fms%rsvr%qorls%ihour = ic%start%hour
-        fms%rsvr%qorls%imins = ic%start%mins
+        fms%rsvr%rlsmeas%iyear = ic%start%year
+        fms%rsvr%rlsmeas%ijday = ic%start%jday
+        fms%rsvr%rlsmeas%ihour = ic%start%hour
+        fms%rsvr%rlsmeas%imins = ic%start%mins
 
         !> Read from file.
-        select case (RESERVOIRFILEFLAG)
+        select case (lowercase(fms%rsvr%rlsmeas%fls%ffmt))
             case ('tb0')
                 fname = trim(adjustl(fname)) // '.tb0'
                 call read_reservoir_tb0(shd, iun, fname)
@@ -220,30 +220,32 @@ subroutine read_basin_structures(shd)
         if (count(fms%rsvr%rls%b1 == 0.0) > 0) then
 
             !> Re-allocate release values to the number of controlled reservoirs.
-            deallocate(fms%rsvr%qorls%val)
-            allocate(fms%rsvr%qorls%val(count(fms%rsvr%rls%b1 == 0.0)))
-            fms%rsvr%qorls%val = 0.0
+            if (fms%rsvr%rlsmeas%readmode /= 'n') then
+                deallocate(fms%rsvr%rlsmeas%val)
+                allocate(fms%rsvr%rlsmeas%val(count(fms%rsvr%rls%b1 == 0.0)))
+                fms%rsvr%rlsmeas%val = 0.0
+            end if
 
             !> Skips records to present in file.
-            call Julian_Day_ID(fms%rsvr%qorls%iyear, fms%rsvr%qorls%ijday, ijday1)
+            call Julian_Day_ID(fms%rsvr%rlsmeas%iyear, fms%rsvr%rlsmeas%ijday, ijday1)
             call Julian_Day_ID(ic%start%year, ic%start%jday, ijday2)
             if (ijday2 < ijday1) then
                 if (ipid == 0) then
                     print 9994, trim(adjustl(fname)), trim(adjustl(fname)), &
-                        fms%rsvr%qorls%iyear, fms%rsvr%qorls%ijday, ic%start%year, ic%start%jday
+                        fms%rsvr%rlsmeas%iyear, fms%rsvr%rlsmeas%ijday, ic%start%year, ic%start%jday
                 end if
             end if
-            iskip = (ijday2 - ijday1)*24/fms%rsvr%qorls%dts
+            iskip = (ijday2 - ijday1)*24/fms%rsvr%rlsmeas%dts
             if (iskip > 0) then
                 if (ipid == 0) print 9993, iskip
-                ierr = read_records_txt(iun, fms%rsvr%qorls%val, iskip)
+                ierr = read_records_txt(iun, fms%rsvr%rlsmeas%val, iskip)
                 if (ierr /= 0) then
                     if (ipid == 0) print 9995, trim(adjustl(fname))
                 end if
             end if
 
             !> Read the first record, then reposition to the first record.
-            ierr = read_records_txt(iun, fms%rsvr%qorls%val)
+            ierr = read_records_txt(iun, fms%rsvr%rlsmeas%val)
 
             !> Stop if no releases exist.
             if (ierr /= 0) then
@@ -257,9 +259,9 @@ subroutine read_basin_structures(shd)
     end if
 
     !> Print a summary of locations to file.
-    if (ipid == 0 .and. ro%VERBOSEMODE > 0) then
-        print 9997, 'reservoir outlets', fms%rsvr%n
-        if (fms%rsvr%n > 0 .and. ro%DIAGNOSEMODE > 0) then
+    if (ipid == 0 .and. fms%rsvr%n > 0) then
+        if (ro%VERBOSEMODE > 0) print 9997, 'reservoir outlets', fms%rsvr%n
+        if (ro%DIAGNOSEMODE > 0) then
 !todo: Change to write to summary file.
             print 1020, 'OUTLET', 'IY', 'JX', 'RANK'
             do l = 1, fms%rsvr%n

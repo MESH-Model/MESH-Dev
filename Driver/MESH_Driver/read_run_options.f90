@@ -8,8 +8,8 @@
         use climate_forcing
 
         use FLAGS
-        use save_basin_output, only: BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG
-!-        use RUNCLASS36_constants
+        use save_basin_output, only: &
+            BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
         use RUNCLASS36_variables
         use RUNCLASS36_save_output
         use RUNSVS113_variables
@@ -522,10 +522,11 @@
                         end do
                     case ('BASINRUNOFFFLAG')
                     case ('BASINRECHARGEFLAG')
+
                     case ('STREAMFLOWFILEFLAG')
-                        STREAMFLOWFILEFLAG = adjustl(lowercase(out_args(2)))
+                        fms%stmg%qomeas%fls%ffmt = adjustl(out_args(2))
                     case ('RESERVOIRFILEFLAG')
-                        RESERVOIRFILEFLAG = adjustl(lowercase(out_args(2)))
+                        fms%rsvr%rlsmeas%fls%ffmt = adjustl(out_args(2))
 
                     case ('SHDFILEFLAG')
                         call value(out_args(2), SHDFILEFLAG, ierr)
@@ -533,11 +534,6 @@
                         call value(out_args(2), SOILINIFLAG, ierr)
                     case ('NRSOILAYEREADFLAG')
                         call value(out_args(2), NRSOILAYEREADFLAG, ierr)
-                    case ('STREAMFLOWFLAG')
-                        call value(out_args(2), j, ierr)
-                        if (j == 1) then
-                            WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KTS)**WF_RTE_fstflout%KTS
-                        end if
                     case ('PREEMPTIONFLAG')
                         call value(out_args(2), mtsflg%PREEMPTIONFLAG, ierr)
 
@@ -609,6 +605,10 @@
                         BASINAVGEBFILEFLAG = adjustl(in_line)
                     case ('BASINAVGWBFILEFLAG')
                         BASINAVGWBFILEFLAG = adjustl(in_line)
+                    case ('STREAMFLOWOUTFLAG')
+                        STREAMFLOWOUTFLAG = adjustl(in_line)
+                    case ('REACHOUTFLAG')
+                        REACHOUTFLAG = adjustl(in_line)
 
                     !> Time-averaged basin PEVP-EVAP and EVPB output.
                     case ('BASINAVGEVPFILEFLAG')
@@ -640,63 +640,6 @@
 
                     case ('MODELINFOOUTFLAG')
                         call value(out_args(2), MODELINFOOUTFLAG, ierr)
-
-                    !> Streamflow output files.
-                    case ('STREAMFLOWOUTFLAG')
-                        WF_RTE_fstflout%freq = 0
-                        do j = 2, nargs
-                            select case (lowercase(out_args(j)))
-                                case ('daily')
-                                    WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
-                                case ('ts')
-                                    WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KTS)**WF_RTE_fstflout%KTS
-                                case ('bal')
-                                    WF_RTE_fstflout%fout_bal = .true.
-                                case ('acc')
-                                    WF_RTE_fstflout%fout_acc = .true.
-                                case ('default')
-                                    WF_RTE_fstflout%freq = radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
-                                    WF_RTE_fstflout%fout_hyd = .true.
-                                    WF_RTE_fstflout%fout_bal = .false.
-                                    WF_RTE_fstflout%fout_acc = .false.
-                                    WF_RTE_fstflout%fout_header = .true.
-                                    exit
-                                case ('no_header')
-                                    WF_RTE_fstflout%fout_header = .false.
-                                case ('all')
-                                    WF_RTE_fstflout%freq = radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
-                                    WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KTS)**WF_RTE_fstflout%KTS
-                                    WF_RTE_fstflout%fout_hyd = .true.
-                                    WF_RTE_fstflout%fout_bal = .true.
-                                    WF_RTE_fstflout%fout_acc = .true.
-                                    exit
-                                case ('none')
-                                    WF_RTE_fstflout%freq = 0
-                                    exit
-                            end select
-                        end do
-
-                    !> Reservoir output files.
-                    case ('REACHOUTFLAG')
-                        WF_RTE_frsvrout%freq = 0
-                        do j = 2, nargs
-                            select case (lowercase(out_args(j)))
-                                case ('ts')
-                                    WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
-                                case ('default')
-                                    WF_RTE_frsvrout%freq = 0
-                                    WF_RTE_frsvrout%fout_header = .true.
-                                    exit
-                                case ('no_header')
-                                    WF_RTE_frsvrout%fout_header = .false.
-                                case ('all')
-                                    WF_RTE_frsvrout%freq = radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
-                                    exit
-                                case ('none')
-                                    WF_RTE_frsvrout%freq = 0
-                                    exit
-                            end select
-                        end do
 
                     case ('BASINSWEOUTFLAG')
                         call value(out_args(2), BASINSWEOUTFLAG, ierr)

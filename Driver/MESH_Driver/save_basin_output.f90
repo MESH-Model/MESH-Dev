@@ -3,12 +3,13 @@ module save_basin_output
     implicit none
 
     !> String read from run_options.ini.
-    character(len = 100), save :: BASINAVGWBFILEFLAG = '', BASINAVGEBFILEFLAG = ''
+    character(len = 100), save :: &
+        BASINAVGWBFILEFLAG = '', BASINAVGEBFILEFLAG = '', STREAMFLOWOUTFLAG = '', REACHOUTFLAG = ''
 
     private
 
     public run_save_basin_output_init, run_save_basin_output, run_save_basin_output_finalize
-    public BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG
+    public BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
 
     !> Global types.
 

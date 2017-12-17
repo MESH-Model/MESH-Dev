@@ -31,7 +31,4 @@
       INTEGER MODELINFOOUTFLAG
       INTEGER :: BASINSWEOUTFLAG = 0
 
-    character(len = 4) :: STREAMFLOWFILEFLAG = ''
-    character(len = 4) :: RESERVOIRFILEFLAG = ''
-
       END

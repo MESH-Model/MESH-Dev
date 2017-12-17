@@ -361,6 +361,7 @@ CDAN      print*,'avant calling program flg,328'
         allocate(s(shd%yCount, shd%xCount),
 !     *    dummy(shd%yCount, shd%xCount),
      *    shd%xxx(shd%NA), shd%yyy(shd%NA),
+     *    shd%RNKGRD(shd%yCount, shd%xCount),
 !     *    flz2(na), pwr2(na),
 !     *    sl2(na),
      *    shd%IROUGH(shd%NA),
@@ -470,6 +471,7 @@ C  do yi=yCount,1,-1
           end do
         end if
       end do
+      shd%RNKGRD = s
 !      end if
 
 !C// Copy attribute data (not classes yet) over to global attributes

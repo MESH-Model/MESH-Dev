@@ -110,6 +110,8 @@ module shd_variables
         !* xlng: Longitude of the grid in the x-direction. [-]
         real, dimension(:), allocatable :: xlng
 
+        integer, dimension(:, :), allocatable :: RNKGRD
+
     end type
 
     !> This type extends GridParams so it includes all the same

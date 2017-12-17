@@ -57,6 +57,9 @@ module sa_mesh_run_within_tile
 
         run_within_tile = ''
 
+        !> MPI exchange.
+        call run_within_tile_mpi_irecv(shd, cm)
+
         !> Call processes.
         call RUNCLASS36_within_tile(shd, fls, cm)
         call RUNSVS113(shd, fls, cm)
@@ -64,30 +67,32 @@ module sa_mesh_run_within_tile
         call runci_within_tile(shd, fls, cm)
 
         !> MPI exchange.
-        call run_within_tile_mpi(shd)
+        call run_within_tile_mpi_isend(shd, cm)
 
         !> Update variables.
         call run_within_tile_stas_update(shd, cm)
 
     end function
 
-    subroutine run_within_tile_mpi(shd)
+    subroutine run_within_tile_mpi_isend(shd, cm)
 
-        !> For: MPI variables, barrier flag, il1:il2 parse utility
+        !> For: MPI variables, barrier flag, il1:il2 parse utility.
         use mpi_module
 
         !> Process modules (required for variables).
         use sa_mesh_shared_variables
         use model_dates
+        use climate_forcing
         use RUNCLASS36_variables
         use RUNSVS113_variables
         use baseflow_module
 
         !> Input variables.
         type(ShedGridParams) :: shd
+        type(clim_info) :: cm
 
         !> Local variables.
-        integer ipid_recv, nvars, t, ierrcode, istop, i, j, u, iin, ii1, ii2, z
+        integer nvars, t, i, j, u, ii1, ii2, iin, z
         logical lstat
         integer, allocatable :: irqst(:), imstat(:, :)
 
@@ -111,8 +116,10 @@ module sa_mesh_run_within_tile
         if (inp > 1 .and. ipid /= 0) then
 
             !> Send data back to head-node.
-            !> Grab indices and reset exchange variables.
+            !> Assign the indices.
             ii1 = il1; ii2 = il2; iin = iln
+
+            !> Reset the exchange variables.
             i = 1
             irqst = mpi_request_null
 
@@ -183,8 +190,10 @@ module sa_mesh_run_within_tile
             !> Receive data from worker nodes.
             do u = 1, (inp - 1)
 
-                !> Grab indices and reset exchange variables.
+                !> Get and assign the indices.
                 call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iin)
+
+                !> Reset the exchange variables.
                 i = 1
                 irqst = mpi_request_null
                 imstat = 0
@@ -245,6 +254,7 @@ module sa_mesh_run_within_tile
 !                    call mpi_irecv(stas%dzs%lqws(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
                 end if
 
+
                 !> Wait until the exchange completes.
                 lstat = .false.
                 do while (.not. lstat)
@@ -252,6 +262,80 @@ module sa_mesh_run_within_tile
                 end do
 
             end do !u = 1, (inp - 1)
+
+        end if !(inp > 1 .and. ipid /= 0) then
+
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+
+    end subroutine
+
+    subroutine run_within_tile_mpi_irecv(shd, cm)
+
+        !> For: MPI variables, barrier flag, il1:il2 parse utility.
+        use mpi_module
+
+        !> Process modules (required for variables).
+        use sa_mesh_shared_variables
+        use model_dates
+        use climate_forcing
+
+        !> Input variables.
+        type(ShedGridParams) :: shd
+        type(clim_info) :: cm
+
+        !> Local variables.
+        integer nvars, t, i, j, u, ii1, ii2, iin, z
+        logical lstat
+        integer, allocatable :: irqst(:), imstat(:, :)
+
+        !> Return if grid processes are not active.
+        if (.not. ro%RUNTILE) return
+
+        !> Count the number of active variables included in the exchange.
+        nvars = 0
+        if (nvars == 0) return
+
+        !> Exchange variables.
+        if (allocated(irqst)) deallocate(irqst)
+        if (allocated(imstat)) deallocate(imstat)
+        allocate(irqst(nvars), imstat(mpi_status_size, nvars))
+        t = ic%ts_count*1000 + 400
+
+        !> Assign the indices.
+        ii1 = 1
+        ii2 = shd%lc%NML
+        iin = shd%lc%NML
+
+        if (inp > 1 .and. ipid == 0) then
+
+            !> Send data to worker nodes.
+            do u = 1, (inp - 1)
+
+                !> Reset the exchange variables.
+                i = 1
+                irqst = mpi_request_null
+                imstat = 0
+
+                !> Wait until the exchange completes.
+                lstat = .false.
+                do while (.not. lstat)
+                    call mpi_testall(nvars, irqst, lstat, imstat, z)
+                end do
+
+            end do !u = 1, (inp - 1)
+
+        else if (inp > 1) then
+
+            !> Receive data from head-node.
+            !> Reset the exchange variables.
+            i = 1
+            irqst = mpi_request_null
+
+            !> Wait until the exchange completes.
+            lstat = .false.
+            do while (.not. lstat)
+                call mpi_testall(nvars, irqst, lstat, imstat, z)
+            end do
 
         end if !(inp > 1 .and. ipid /= 0) then
 
