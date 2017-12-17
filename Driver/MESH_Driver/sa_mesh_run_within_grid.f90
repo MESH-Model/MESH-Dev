@@ -144,12 +144,13 @@ module sa_mesh_run_within_grid
         integer nvars, t, i, j, u, ii1, ii2, iin, z
         logical lstat
         integer, allocatable :: irqst(:), imstat(:, :)
+        real, dimension(:), allocatable :: chnl
 
         !> Return if grid processes are not active.
         if (.not. ro%RUNTILE) return
 
         !> Count the number of active variables included in the exchange.
-        nvars = 0
+        nvars = 1
         if (nvars == 0) return
 
         !> Exchange variables.
@@ -163,6 +164,9 @@ module sa_mesh_run_within_grid
         ii2 = shd%NA
         iin = (ii2 - ii1) + 1
 
+        !> Allocate temporary arrays.
+        allocate(chnl(iin)) !3*iin if diversion/abstraction
+
         if (inp > 1 .and. ipid == 0) then
 
             !> Send data to worker nodes.
@@ -172,6 +176,13 @@ module sa_mesh_run_within_grid
                 i = 1
                 irqst = mpi_request_null
                 imstat = 0
+
+                !> Channel routing.
+                chnl((1 + iin*0):(iin*1)) = stas_grid%chnl%s(ii1:ii2)
+!                chnl((1 + iin*1):(iin*2)) = stas_grid%chnl%div(ii1:ii2)
+!                chnl((1 + iin*2):(iin*3)) = stas_grid%chnl%ab(ii1:ii2)
+                call mpi_isend(chnl, size(chnl), mpi_real, u, t + i, mpi_comm_world, irqst(i), z)
+                i = i + 1
 
                 !> Wait until the exchange completes.
                 lstat = .false.
@@ -188,13 +199,26 @@ module sa_mesh_run_within_grid
             i = 1
             irqst = mpi_request_null
 
+            !> Receive variables.
+            call mpi_irecv(chnl, size(chnl), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+
             !> Wait until the exchange completes.
             lstat = .false.
             do while (.not. lstat)
                 call mpi_testall(nvars, irqst, lstat, imstat, z)
             end do
 
+            !> Assign variables.
+
+            !> Channel routing.
+            stas_grid%chnl%s(ii1:ii2) = chnl((1 + iin*0):(iin*1))
+!            stas_grid%chnl%div(ii1:ii2) = chnl((1 + iin*1):(iin*2))
+!            stas_grid%chnl%ab(ii1:ii2) = chnl((1 + iin*2):(iin*3))
+
         end if !(inp > 1 .and. ipid /= 0) then
+
+        !> Deallocate temporary arrays.
+        deallocate(chnl)
 
         if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
 

@@ -83,28 +83,24 @@ module sa_mesh_run_within_tile
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
-        use RUNCLASS36_variables
-        use RUNSVS113_variables
-        use baseflow_module
+        use baseflow_module, only: bflm, Qb
 
         !> Input variables.
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
 
         !> Local variables.
-        integer nvars, t, i, j, u, ii1, ii2, iin, z
+        integer nvars, t, i, j, u, s, ii1, ii2, iin, z
         logical lstat
         integer, allocatable :: irqst(:), imstat(:, :)
+        real, dimension(:), allocatable :: cnpy, sno, sfc, sl, lzs, dzs
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
         !> Count the number of active variables included in the exchange.
-        nvars = 0
-        if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) nvars = nvars + 15 + 3*shd%lc%IGND
-        if (RUNCLASS36_flgs%PROCESS_ACTIVE) nvars = nvars + 12 + 1*shd%lc%IGND + 4
+        nvars = 6
         if (bflm%BASEFLOWFLAG == 1) nvars = nvars + 1
-        if (bflm%BASEFLOWFLAG == 1 .or. bflm%BASEFLOWFLAG == 2) nvars = nvars + 1 !3 with DZS (not active)
         if (nvars == 0) return
 
         !> Exchange variables.
@@ -112,6 +108,9 @@ module sa_mesh_run_within_tile
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(mpi_status_size, nvars))
         t = ic%ts_count*1000
+
+        !> Other variables
+        s = shd%lc%IGND
 
         if (inp > 1 .and. ipid /= 0) then
 
@@ -123,60 +122,80 @@ module sa_mesh_run_within_tile
             i = 1
             irqst = mpi_request_null
 
-            !> RUNCLASS36 and RUNSVS113.
-            if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
-                call mpi_isend(stas%cnpy%qac(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%cnpy%rcan(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%cnpy%tac(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%cnpy%tcan(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sno%sno(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sno%albs(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sno%rhos(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sno%wsno(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sno%tsno(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sfc%evap(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sfc%qevp(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sfc%hfs(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sfc%rofo(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sl%rofs(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%lzs%rofb(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                do j = 1, shd%lc%IGND
-                    call mpi_isend(stas%sl%thlq(ii1:ii2, j), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_isend(stas%sl%thic(ii1:ii2, j), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_isend(stas%sl%tbar(ii1:ii2, j), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                end do
-            end if
+            !> Canopy.
+            allocate(cnpy(8*iin))
+            cnpy((1 + iin*0):(iin*1)) = stas%cnpy%rcan(ii1:ii2)
+            cnpy((1 + iin*1):(iin*2)) = stas%cnpy%sncan(ii1:ii2)
+            cnpy((1 + iin*2):(iin*3)) = stas%cnpy%cmai(ii1:ii2)
+            cnpy((1 + iin*3):(iin*4)) = stas%cnpy%tac(ii1:ii2)
+            cnpy((1 + iin*4):(iin*5)) = stas%cnpy%tcan(ii1:ii2)
+            cnpy((1 + iin*5):(iin*6)) = stas%cnpy%qac(ii1:ii2)
+            cnpy((1 + iin*6):(iin*7)) = stas%cnpy%gro(ii1:ii2)
+            cnpy((1 + iin*7):(iin*8)) = stas%cnpy%pevp(ii1:ii2)
+            call mpi_isend(cnpy, size(cnpy), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+            i = i + 1
 
-            !> RUNCLASS36.
-            if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-                call mpi_isend(stas%cnpy%cmai(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%cnpy%sncan(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%cnpy%pevp(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%cnpy%gro(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sfc%tpnd(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sfc%zpnd(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sfc%alvs(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sfc%alir(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sfc%gte(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sfc%gzero(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sno%fsno(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_isend(stas%sl%tbas(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                do j = 1, shd%lc%IGND
-                    call mpi_isend(stas%sl%gflx(ii1:ii2, j), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                end do
-                do j = 1, 4
-                    call mpi_isend(stas%sfc%tsfs(ii1:ii2, j), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                end do
-            end if
+            !> Snow.
+            allocate(sno(6*iin))
+            sno((1 + iin*0):(iin*1)) = stas%sno%sno(ii1:ii2)
+            sno((1 + iin*1):(iin*2)) = stas%sno%albs(ii1:ii2)
+            sno((1 + iin*2):(iin*3)) = stas%sno%fsno(ii1:ii2)
+            sno((1 + iin*3):(iin*4)) = stas%sno%rhos(ii1:ii2)
+            sno((1 + iin*4):(iin*5)) = stas%sno%tsno(ii1:ii2)
+            sno((1 + iin*5):(iin*6)) = stas%sno%wsno(ii1:ii2)
+            call mpi_isend(sno, size(sno), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+            i = i + 1
+
+            !> Surface or at near surface.
+            allocate(sfc((11 + 4)*iin))
+            sfc((1 + iin*0):(iin*1)) = stas%sfc%albt(ii1:ii2)
+            sfc((1 + iin*1):(iin*2)) = stas%sfc%alvs(ii1:ii2)
+            sfc((1 + iin*2):(iin*3)) = stas%sfc%alir(ii1:ii2)
+            sfc((1 + iin*3):(iin*4)) = stas%sfc%gte(ii1:ii2)
+            sfc((1 + iin*4):(iin*5)) = stas%sfc%zpnd(ii1:ii2)
+            sfc((1 + iin*5):(iin*6)) = stas%sfc%tpnd(ii1:ii2)
+            sfc((1 + iin*6):(iin*7)) = stas%sfc%evap(ii1:ii2)
+            sfc((1 + iin*7):(iin*8)) = stas%sfc%rofo(ii1:ii2)
+            sfc((1 + iin*8):(iin*9)) = stas%sfc%qevp(ii1:ii2)
+            sfc((1 + iin*9):(iin*10)) = stas%sfc%hfs(ii1:ii2)
+            sfc((1 + iin*10):(iin*11)) = stas%sfc%gzero(ii1:ii2)
+            do j = 0, 3
+                sfc((1 + iin*(11 + j)):(iin*(12 + j))) = stas%sfc%tsfs(ii1:ii2, j + 1)
+            end do
+            call mpi_isend(sfc, size(sfc), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+            i = i + 1
+
+            !> Soil layers.
+            allocate(sl((2 + 4*s)*iin))
+            sl((1 + iin*0):(iin*1)) = stas%sl%tbas(ii1:ii2)
+            sl((1 + iin*1):(iin*2)) = stas%sl%rofs(ii1:ii2)
+            do j = 0, s - 1
+                sl((1 + iin*(2 + j*4)):(iin*(3 + j*4))) = stas%sl%thic(ii1:ii2, j + 1)
+                sl((1 + iin*(3 + j*4)):(iin*(4 + j*4))) = stas%sl%thlq(ii1:ii2, j + 1)
+                sl((1 + iin*(4 + j*4)):(iin*(5 + j*4))) = stas%sl%tbar(ii1:ii2, j + 1)
+                sl((1 + iin*(5 + j*4)):(iin*(6 + j*4))) = stas%sl%gflx(ii1:ii2, j + 1)
+            end do
+            call mpi_isend(sl, size(sl), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+            i = i + 1
+
+            !> Lower zone storage.
+            allocate(lzs(2*iin))
+            lzs((1 + iin*0):(iin*1)) = stas%lzs%lqws(ii1:ii2)
+            lzs((1 + iin*1):(iin*2)) = stas%lzs%rofb(ii1:ii2)
+            call mpi_isend(lzs, size(lzs), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+            i = i + 1
+
+            !> Deep zone storage.
+            allocate(dzs(2*iin))
+            dzs((1 + iin*0):(iin*1)) = stas%dzs%lqws(ii1:ii2)
+            dzs((1 + iin*1):(iin*2)) = stas%dzs%rofb(ii1:ii2)
+            call mpi_isend(dzs, size(dzs), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+            i = i + 1
 
             !> BASEFLOWFLAG.
             if (bflm%BASEFLOWFLAG == 1) then
-                call mpi_isend(Qb(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-            end if
-            if (bflm%BASEFLOWFLAG == 1 .or. bflm%BASEFLOWFLAG == 2) then
-                call mpi_isend(stas%lzs%lqws(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-!                call mpi_isend(stas%dzs%rofb(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-!                call mpi_isend(stas%dzs%lqws(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_isend(Qb(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+                i = i + 1
             end if
 
             !> Wait until the exchange completes.
@@ -184,6 +203,9 @@ module sa_mesh_run_within_tile
             do while (.not. lstat)
                 call mpi_testall(nvars, irqst, lstat, imstat, z)
             end do
+
+            !> Deallocate temporary arrays.
+            deallocate(cnpy, sno, sfc, sl, lzs, dzs)
 
         else if (inp > 1) then
 
@@ -193,73 +215,94 @@ module sa_mesh_run_within_tile
                 !> Get and assign the indices.
                 call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iin)
 
+                !> Allocate temporary arrays.
+                allocate(cnpy(8*iin))
+                allocate(sno(6*iin))
+                allocate(sfc((11 + 4)*iin))
+                allocate(sl((2 + 4*s)*iin))
+                allocate(lzs(2*iin))
+                allocate(dzs(2*iin))
+
                 !> Reset the exchange variables.
                 i = 1
                 irqst = mpi_request_null
                 imstat = 0
 
-                !> RUNCLASS36 and RUNSVS113.
-                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
-                    call mpi_irecv(stas%cnpy%qac(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%cnpy%rcan(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%cnpy%tac(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%cnpy%tcan(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sno%sno(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sno%albs(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sno%rhos(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sno%wsno(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sno%tsno(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sfc%evap(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sfc%qevp(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sfc%hfs(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sfc%rofo(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sl%rofs(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%lzs%rofb(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    do j = 1, shd%lc%IGND
-                        call mpi_irecv(stas%sl%thlq(ii1:ii2, j), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                        call mpi_irecv(stas%sl%thic(ii1:ii2, j), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                        call mpi_irecv(stas%sl%tbar(ii1:ii2, j), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    end do
-                end if
-
-                !> RUNCLASS36.
-                if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-                    call mpi_irecv(stas%cnpy%cmai(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%cnpy%sncan(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%cnpy%pevp(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%cnpy%gro(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sfc%tpnd(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sfc%zpnd(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sfc%alvs(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sfc%alir(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sfc%gte(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sfc%gzero(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sno%fsno(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    call mpi_irecv(stas%sl%tbas(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    do j = 1, shd%lc%IGND
-                        call mpi_irecv(stas%sl%gflx(ii1:ii2, j), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    end do
-                    do j = 1, 4
-                        call mpi_irecv(stas%sfc%tsfs(ii1:ii2, j), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                    end do
-                end if
+                !> Receive variables.
+                call mpi_irecv(cnpy, size(cnpy), mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_irecv(sno, size(sno), mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_irecv(sfc, size(sfc), mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_irecv(sl, size(sl), mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_irecv(lzs, size(lzs), mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_irecv(dzs, size(dzs), mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
 
                 !> BASEFLOWFLAG.
                 if (bflm%BASEFLOWFLAG == 1) then
                     call mpi_irecv(Qb(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
                 end if
-                if (bflm%BASEFLOWFLAG == 1 .or. bflm%BASEFLOWFLAG == 2) then
-                    call mpi_irecv(stas%lzs%lqws(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-!                    call mpi_irecv(stas%dzs%rofb(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-!                    call mpi_irecv(stas%dzs%lqws(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                end if
-
 
                 !> Wait until the exchange completes.
                 lstat = .false.
                 do while (.not. lstat)
                     call mpi_testall(nvars, irqst, lstat, imstat, z)
                 end do
+
+                !> Assign variables.
+
+                !> Canopy.
+                stas%cnpy%rcan(ii1:ii2) = cnpy((1 + iin*0):(iin*1))
+                stas%cnpy%sncan(ii1:ii2) = cnpy((1 + iin*1):(iin*2))
+                stas%cnpy%cmai(ii1:ii2) = cnpy((1 + iin*2):(iin*3))
+                stas%cnpy%tac(ii1:ii2) = cnpy((1 + iin*3):(iin*4))
+                stas%cnpy%tcan(ii1:ii2) = cnpy((1 + iin*4):(iin*5))
+                stas%cnpy%qac(ii1:ii2) = cnpy((1 + iin*5):(iin*6))
+                stas%cnpy%gro(ii1:ii2) = cnpy((1 + iin*6):(iin*7))
+                stas%cnpy%pevp(ii1:ii2) = cnpy((1 + iin*7):(iin*8))
+
+                !> Snow.
+                stas%sno%sno(ii1:ii2) = sno((1 + iin*0):(iin*1))
+                stas%sno%albs(ii1:ii2) = sno((1 + iin*1):(iin*2))
+                stas%sno%fsno(ii1:ii2) = sno((1 + iin*2):(iin*3))
+                stas%sno%rhos(ii1:ii2) = sno((1 + iin*3):(iin*4))
+                stas%sno%tsno(ii1:ii2) = sno((1 + iin*4):(iin*5))
+                stas%sno%wsno(ii1:ii2) = sno((1 + iin*5):(iin*6))
+
+                !> Surface or at near surface.
+                stas%sfc%albt(ii1:ii2) = sfc((1 + iin*0):(iin*1))
+                stas%sfc%alvs(ii1:ii2) = sfc((1 + iin*1):(iin*2))
+                stas%sfc%alir(ii1:ii2) = sfc((1 + iin*2):(iin*3))
+                stas%sfc%gte(ii1:ii2) = sfc((1 + iin*3):(iin*4))
+                stas%sfc%zpnd(ii1:ii2) = sfc((1 + iin*4):(iin*5))
+                stas%sfc%tpnd(ii1:ii2) = sfc((1 + iin*5):(iin*6))
+                stas%sfc%evap(ii1:ii2) = sfc((1 + iin*6):(iin*7))
+                stas%sfc%rofo(ii1:ii2) = sfc((1 + iin*7):(iin*8))
+                stas%sfc%qevp(ii1:ii2) = sfc((1 + iin*8):(iin*9))
+                stas%sfc%hfs(ii1:ii2) = sfc((1 + iin*9):(iin*10))
+                stas%sfc%gzero(ii1:ii2) = sfc((1 + iin*10):(iin*11))
+                do j = 0, 3
+                    stas%sfc%tsfs(ii1:ii2, j + 1) = sfc((1 + iin*(11 + j)):(iin*(12 + j)))
+                end do
+
+                !> Soil layers.
+                stas%sl%tbas(ii1:ii2) = sl((1 + iin*0):(iin*1))
+                stas%sl%rofs(ii1:ii2) = sl((1 + iin*1):(iin*2))
+                do j = 0, s - 1
+                    stas%sl%thic(ii1:ii2, j + 1) = sl((1 + iin*(2 + j*4)):(iin*(3 + j*4)))
+                    stas%sl%thlq(ii1:ii2, j + 1) = sl((1 + iin*(3 + j*4)):(iin*(4 + j*4)))
+                    stas%sl%tbar(ii1:ii2, j + 1) = sl((1 + iin*(4 + j*4)):(iin*(5 + j*4)))
+                    stas%sl%gflx(ii1:ii2, j + 1) = sl((1 + iin*(5 + j*4)):(iin*(6 + j*4)))
+                end do
+
+                !> Lower zone storage.
+                stas%lzs%lqws(ii1:ii2) = lzs((1 + iin*0):(iin*1))
+                stas%lzs%rofb(ii1:ii2) = lzs((1 + iin*1):(iin*2))
+
+                !> Deep zone storage.
+                stas%dzs%lqws(ii1:ii2) = dzs((1 + iin*0):(iin*1))
+                stas%dzs%rofb(ii1:ii2) = dzs((1 + iin*1):(iin*2))
+
+                !> Deallocate temporary arrays.
+                deallocate(cnpy, sno, sfc, sl, lzs, dzs)
 
             end do !u = 1, (inp - 1)
 
