@@ -1053,10 +1053,10 @@ module save_basin_output
         where (stas_grid%sfc%gte > 0.0) GTE = (stas_grid%sfc%gte - TFREZ)*shd%FRAC
         where (cm%dat(ck%TT)%GRD > 0.0) TA = (cm%dat(ck%TT)%GRD - TFREZ)*shd%FRAC
         where (stas_grid%cnpy%tcan > 0.0)
+            CMAS = stas_grid%cnpy%cmai*shd%FRAC
             TCAN = (stas_grid%cnpy%tcan - TFREZ)*shd%FRAC
             ICAN = 1
         end where
-        CMAS = stas_grid%cnpy%cmai*shd%FRAC
         where (stas_grid%sno%sno > 0.0)
             TSNOW = (stas_grid%sno%tsno - TFREZ)*shd%FRAC
             ISNOW = 1
@@ -1165,8 +1165,10 @@ module save_basin_output
         end where
         bno%eb(ikdts)%GTE = bno%eb(ikdts)%GTE/dnts
         bno%eb(ikdts)%TA = bno%eb(ikdts)%TA/dnts
-        where (bno%eb(ikdts)%ICAN > 0) bno%eb(ikdts)%TCAN = bno%eb(ikdts)%TCAN/bno%eb(ikdts)%ICAN
-        bno%eb(ikdts)%CMAS = bno%eb(ikdts)%CMAS/dnts
+        where (bno%eb(ikdts)%ICAN > 0)
+            bno%eb(ikdts)%CMAS = bno%eb(ikdts)%CMAS/bno%eb(ikdts)%ICAN
+            bno%eb(ikdts)%TCAN = bno%eb(ikdts)%TCAN/bno%eb(ikdts)%ICAN
+        end where
         where (bno%eb(ikdts)%ISNOW > 0) bno%eb(ikdts)%TSNOW = bno%eb(ikdts)%TSNOW/bno%eb(ikdts)%ISNOW
         where (bno%eb(ikdts)%IPOND > 0) bno%eb(ikdts)%TPOND = bno%eb(ikdts)%TPOND/bno%eb(ikdts)%IPOND
         bno%eb(ikdts)%TBAR = bno%eb(ikdts)%TBAR/dnts

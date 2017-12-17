@@ -233,6 +233,7 @@ module sa_mesh_run_within_grid
         stas_grid%cnpy%arrd(i1:i2) = 0.0
         stas_grid%cnpy%cmai(i1:i2) = 0.0
         stas_grid%cnpy%tcan(i1:i2) = 0.0
+        stas_grid%cnpy%gro(i1:i2) = 0.0
         stas_grid%sfc%alvs(i1:i2) = 0.0
         stas_grid%sfc%alir(i1:i2) = 0.0
         stas_grid%sfc%gte(i1:i2) = 0.0
@@ -272,9 +273,10 @@ module sa_mesh_run_within_grid
             stas_grid%cnpy%pevp(ki) = stas_grid%cnpy%pevp(ki) + stas%cnpy%pevp(k)*frac
             stas_grid%cnpy%evpb(ki) = stas_grid%cnpy%evpb(ki) + stas%cnpy%evpb(k)*frac
             stas_grid%cnpy%arrd(ki) = stas_grid%cnpy%arrd(ki) + stas%cnpy%arrd(k)*frac
-            stas_grid%cnpy%cmai(ki) = stas_grid%cnpy%cmai(ki) + stas%cnpy%cmai(k)*frac
             if (stas%cnpy%tcan(k) > 0.0) then
+                stas_grid%cnpy%cmai(ki) = stas_grid%cnpy%cmai(ki) + stas%cnpy%cmai(k)*frac
                 stas_grid%cnpy%tcan(ki) = stas_grid%cnpy%tcan(ki) + stas%cnpy%tcan(k)*frac
+                stas_grid%cnpy%gro(ki) = stas_grid%cnpy%gro(ki) + stas%cnpy%gro(k)*frac
                 fcan(ki) = fcan(ki) + frac
             end if
             stas_grid%sfc%alvs(ki) = stas_grid%sfc%alvs(ki) + stas%sfc%alvs(k)*frac
@@ -315,7 +317,11 @@ module sa_mesh_run_within_grid
             stas_grid%sfc%albt(i1:i2) = (stas_grid%sfc%alvs(i1:i2) + stas_grid%sfc%alir(i1:i2))/2.0
         end where
         stas_grid%sfc%pndw(i1:i2) = stas_grid%sfc%zpnd(i1:i2)*RHOW
-        where (fcan(i1:i2) > 0.0) stas_grid%cnpy%tcan(i1:i2) = stas_grid%cnpy%tcan(i1:i2)/fcan(i1:i2)
+        where (fcan(i1:i2) > 0.0)
+            stas_grid%cnpy%cmai(i1:i2) = stas_grid%cnpy%cmai(i1:i2)/fcan(i1:i2)
+            stas_grid%cnpy%tcan(i1:i2) = stas_grid%cnpy%tcan(i1:i2)/fcan(i1:i2)
+            stas_grid%cnpy%gro(i1:i2) = stas_grid%cnpy%gro(i1:i2)/fcan(i1:i2)
+        end where
         where (fsno(i1:i2) > 0.0)
             stas_grid%sno%tsno(i1:i2) = stas_grid%sno%tsno(i1:i2)/fsno(i1:i2)
         end where
