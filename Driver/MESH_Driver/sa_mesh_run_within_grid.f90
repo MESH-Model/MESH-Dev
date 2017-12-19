@@ -150,7 +150,7 @@ module sa_mesh_run_within_grid
         if (.not. ro%RUNTILE) return
 
         !> Count the number of active variables included in the exchange.
-        nvars = 1
+        nvars = 0
         if (nvars == 0) return
 
         !> Exchange variables.
@@ -178,11 +178,11 @@ module sa_mesh_run_within_grid
                 imstat = 0
 
                 !> Channel routing.
-                chnl((1 + iin*0):(iin*1)) = stas_grid%chnl%s(ii1:ii2)
+!                chnl((1 + iin*0):(iin*1)) = stas_grid%chnl%s(ii1:ii2)
 !                chnl((1 + iin*1):(iin*2)) = stas_grid%chnl%div(ii1:ii2)
 !                chnl((1 + iin*2):(iin*3)) = stas_grid%chnl%ab(ii1:ii2)
-                call mpi_isend(chnl, size(chnl), mpi_real, u, t + i, mpi_comm_world, irqst(i), z)
-                i = i + 1
+!                call mpi_isend(chnl, size(chnl), mpi_real, u, t + i, mpi_comm_world, irqst(i), z)
+!                i = i + 1
 
                 !> Wait until the exchange completes.
                 lstat = .false.
@@ -200,7 +200,7 @@ module sa_mesh_run_within_grid
             irqst = mpi_request_null
 
             !> Receive variables.
-            call mpi_irecv(chnl, size(chnl), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+!            call mpi_irecv(chnl, size(chnl), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
 
             !> Wait until the exchange completes.
             lstat = .false.
@@ -211,7 +211,7 @@ module sa_mesh_run_within_grid
             !> Assign variables.
 
             !> Channel routing.
-            stas_grid%chnl%s(ii1:ii2) = chnl((1 + iin*0):(iin*1))
+!            stas_grid%chnl%s(ii1:ii2) = chnl((1 + iin*0):(iin*1))
 !            stas_grid%chnl%div(ii1:ii2) = chnl((1 + iin*1):(iin*2))
 !            stas_grid%chnl%ab(ii1:ii2) = chnl((1 + iin*2):(iin*3))
 

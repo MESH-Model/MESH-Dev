@@ -440,6 +440,7 @@ module sa_mesh_run_within_tile
 
         !> Required for calls to processes.
         use RUNCLASS36_config
+        use RUNSVS113_config
         use baseflow_module
 
         type(fl_ids) :: fls
@@ -451,6 +452,7 @@ module sa_mesh_run_within_tile
 
         !> Call processes.
         call RUNCLASS36_finalize(fls, shd, cm)
+        call RUNSVS113_finalize(shd, fls, cm)
         call bflm_finalize(fls, shd, cm)
 
     end subroutine

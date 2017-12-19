@@ -70,13 +70,12 @@ module sa_mesh_run_between_grid
         use model_output_variabletypes
         use strings
 
-        use SA_RTE_module, only: SA_RTE_init
+        !> Required for calls to processes.
+        use SA_RTE_module
         use WF_ROUTE_config
         use rte_module
         use save_basin_output
-
-        !> Cropland irrigation module.
-        use cropland_irrigation_between_grid, only: runci_between_grid_init
+        use cropland_irrigation_between_grid
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -281,18 +280,11 @@ module sa_mesh_run_between_grid
             end do
         end if
 
-!todo: switch
+        !> Call processes.
         call SA_RTE_init(shd)
-
-        !> Watflood, 1988.
         call WF_ROUTE_init(fls, shd, stfl, rrls)
-
-        !> RPN RTE.
         call run_rte_init(fls, shd, stfl, rrls)
-
         call run_save_basin_output_init(fls, shd, cm)
-
-        !> Cropland irrigation module (ICU).
         call runci_between_grid_init(shd, fls)
 
 1010    format(9999(g15.7e2, ','))
@@ -309,12 +301,11 @@ module sa_mesh_run_between_grid
         use climate_forcing
         use model_output_variabletypes
 
-        use SA_RTE_module, only: SA_RTE
+        !> Required for calls to processes.
+        use SA_RTE_module
         use WF_ROUTE_module
         use rte_module
         use save_basin_output, only: run_save_basin_output
-
-        !> Cropland irrigation module.
         use cropland_irrigation_between_grid, only: runci_between_grid
 
         type(ShedGridParams) :: shd
@@ -395,18 +386,11 @@ module sa_mesh_run_between_grid
 
         end if !(ipid == 0) then
 
-!todo: Switch
+        !> Call processes.
         call SA_RTE(shd)
-
-        !> Watflood, 1988.
         call WF_ROUTE_between_grid(fls, shd, stfl, rrls)
-
-        !> RPN RTE.
         call run_rte_between_grid(fls, shd, stfl, rrls)
-
-        !> Cropland irrigation module (ICU).
         call runci_between_grid(shd, fls, cm)
-
         call run_save_basin_output(fls, shd, cm)
 
         if (ic%ts_daily == 1) then
@@ -555,7 +539,9 @@ module sa_mesh_run_between_grid
         use climate_forcing
         use model_output_variabletypes
 
+        !> Required for calls to processes.
         use WF_ROUTE_config, only: WF_ROUTE_finalize
+        use rte_module, only: run_rte_finalize
         use save_basin_output, only: run_save_basin_output_finalize
 
         type(fl_ids) :: fls
@@ -567,9 +553,9 @@ module sa_mesh_run_between_grid
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
-        !> Watflood, 1988.
+        !> Call processes.
         call WF_ROUTE_finalize(fls, shd, stfl, rrls)
-
+        call run_rte_finalize(fls, shd, stfl, rrls)
         call run_save_basin_output_finalize(fls, shd, cm)
 
     end subroutine

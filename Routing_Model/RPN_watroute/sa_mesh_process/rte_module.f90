@@ -90,7 +90,7 @@ module rte_module
         type(reservoir_release) :: rrls
 
         !> Local variables.
-        integer n, l
+        integer n, l, ierr, iun
 
 !temp: for overrides
 !        integer, dimension(4) :: jstrdiv, istrdiv, jenddiv, ienddiv
@@ -351,8 +351,6 @@ module rte_module
 
             !> Initial reservoir storage.
             allocate(reach_last(noresv))
-            reach_last = lake_elv(:, 1)
-
         end if
 
         !> Streamflow gauge locations.
@@ -381,17 +379,6 @@ module rte_module
             call flowinit()
             if (fms%stmg%n > 0) deallocate(iy, jx, nlow, nxtbasin, area)
             deallocate(nbasin, r, p, inbsnflg)
-            stas_grid%chnl%qi = qi2
-            stas_grid%chnl%s = store2
-            stas_grid%chnl%qo = qo2
-            do l = 1, noresv
-                stas_fms%rsvr%zlvl(l) = lake_elv(l, 1)
-                reach_last(l) = lake_elv(l, 1)
-                stas_fms%rsvr%qi(l) = stas_grid%chnl%qi(fms%rsvr%meta%rnk(l))
-                stas_fms%rsvr%s(l) = stas_grid%chnl%s(fms%rsvr%meta%rnk(l))
-                stas_fms%rsvr%qo(l) = stas_grid%chnl%qo(fms%rsvr%meta%rnk(l))
-            end do
-
         end if
 
 !temp: Override for diversions.
@@ -515,6 +502,51 @@ module rte_module
 !            end do
 !        end if
 
+        !> Read the state of these variables.
+        if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
+
+            !> Open the resume file.
+            iun = fls%fl(mfk%f883)%iun
+            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.rte', status = 'old', action = 'read', &
+                 form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+            !> Read inital values from the file.
+            if (RESUMEFLAG == 4) then
+                read(iun) fhr
+                read(iun) qo2
+                read(iun) store2
+                read(iun) qi2
+                if (fms%rsvr%n > 0) then
+                    read(iun) lake_elv(:, fhr)
+                else
+                    read(iun)
+                end if
+            else
+                read(iun)
+                read(iun) qo2
+                read(iun) store2
+                read(iun) qi2
+                read(iun)
+            end if
+
+            !> Close the file to free the unit.
+            close(iun)
+
+        end if
+
+        !> Update MESH variables.
+        stas_grid%chnl%qi = qi2
+        stas_grid%chnl%s = store2
+        stas_grid%chnl%qo = qo2
+        do l = 1, noresv
+            stas_fms%rsvr%zlvl(l) = lake_elv(l, 1)
+            reach_last(l) = lake_elv(l, 1)
+            stas_fms%rsvr%qi(l) = stas_grid%chnl%qi(fms%rsvr%meta%rnk(l))
+            stas_fms%rsvr%s(l) = stas_grid%chnl%s(fms%rsvr%meta%rnk(l))
+            stas_fms%rsvr%qo(l) = stas_grid%chnl%qo(fms%rsvr%meta%rnk(l))
+        end do
+
     end subroutine
 
     !>
@@ -604,10 +636,10 @@ module rte_module
         end if
 
         !> Date
-        year1 = ic%now%year
-        month_now = ic%now%month
-        day_now = ic%now%day
-        hour_now = ic%now%hour + 1
+!        year1 = ic%now%year
+!        month_now = ic%now%month
+!        day_now = ic%now%day
+!        hour_now = ic%now%hour + 1
 
         !> Convert surface runoff from [kg/m^2] to [cms].
         qr(1:naa) = qr(1:naa)*1000.0*step2/3600.0
@@ -798,6 +830,64 @@ module rte_module
             stas_fms%rsvr%qi = stas_grid%chnl%qi(fms%rsvr%meta%rnk(:))
             stas_fms%rsvr%zlvl = lake_elv(:, fhr)
             reach_last = lake_elv(:, fhr)
+        end if
+
+    end subroutine
+
+    subroutine run_rte_finalize(fls, shd, stfl, rrls)
+
+        !> area_watflood: Shared variables used throughout rte code.
+        use area_watflood
+
+        !> mpi_module: Required for 'ipid'.
+        use mpi_module
+
+        !> sa_mesh_shared_variables: Variables, parameters, and types from SA_MESH.
+        use model_files_variables
+        use sa_mesh_shared_variables
+        use FLAGS
+
+        !> model_output_variabletypes: Streamflow and reservoir output variables for SA_MESH.
+        use model_output_variabletypes
+
+        type(fl_ids) :: fls
+
+        !> Basin properties from SA_MESH.
+        type(ShedGridParams) :: shd
+
+        !> Streamflow and reservoir output variables for SA_MESH.
+        type(streamflow_hydrograph) :: stfl
+        type(reservoir_release) :: rrls
+
+        !> Local variables.
+        integer ierr, iun
+
+        !> Return if not the head node or if the process is not active.
+        if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
+
+        !> Save the state of these variables.
+        if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
+
+            !> Open the resume file.
+            iun = fls%fl(mfk%f883)%iun
+            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.rte', status = 'replace', action = 'write', &
+                 form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+            !> Write the current state of these variables to the file.
+            write(iun) fhr
+            write(iun) qo2
+            write(iun) store2
+            write(iun) qi2
+            if (fms%rsvr%n > 0) then
+                write(iun) lake_elv(:, fhr)
+            else
+                write(iun)
+            end if
+
+            !> Close the file to free the unit.
+            close(iun)
+
         end if
 
     end subroutine
