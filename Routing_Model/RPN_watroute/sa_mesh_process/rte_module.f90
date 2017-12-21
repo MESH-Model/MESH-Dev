@@ -77,9 +77,6 @@ module rte_module
         use sa_mesh_shared_variables
         use FLAGS
 
-        !> model_output_variabletypes: Streamflow and reservoir output variables for SA_MESH.
-        use model_output_variabletypes
-
         type(fl_ids) :: fls
 
         !> Basin properties from SA_MESH.
@@ -565,9 +562,6 @@ module rte_module
         use model_files_variables
         use sa_mesh_shared_variables
 
-        !> model_output_variabletypes: Streamflow and reservoir output variables for SA_MESH.
-        use model_output_variabletypes
-
         !> model_dates: for 'ic' counter.
         use model_dates
 
@@ -846,9 +840,6 @@ module rte_module
         use model_files_variables
         use sa_mesh_shared_variables
         use FLAGS
-
-        !> model_output_variabletypes: Streamflow and reservoir output variables for SA_MESH.
-        use model_output_variabletypes
 
         type(fl_ids) :: fls
 

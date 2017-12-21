@@ -3,6 +3,8 @@
 !>
 module control_variables
 
+    implicit none
+
     !> *****************************************************************
     !> Description: Variable type to store generic run options. These
     !> run options are not tied to any one part, module, or process
@@ -49,5 +51,8 @@ module control_variables
         character(500) :: PROCESS_ACTIVE = 'CLASS,WF_WATROUTE'
 
     end type
+
+    type(run_options), save :: ro
+    type(control_options), save :: cops
 
 end module

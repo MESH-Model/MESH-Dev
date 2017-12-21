@@ -561,7 +561,7 @@ module ensim_io
                     if (ierr /= 0 .and. verbose) print 1110, trim(fname), year, month, day
 
                     !> Scan for a time signature (e.g., 24:00:00.000; 24:00:00; 24:00).
-                    !> In the case of multiple keywords, assume a date preceeds the time.
+                    !> In the case of multiple keywords, assume a date precedes the time.
                     if (size(vkeyword(n)%words) > 1) then
                         ctmp = adjustl(vkeyword(n)%words(2))
                     else if (size(vkeyword(n)%words) == 1) then

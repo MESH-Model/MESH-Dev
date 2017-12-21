@@ -67,7 +67,6 @@ module sa_mesh_run_between_grid
         use sa_mesh_shared_variables
         use FLAGS
         use climate_forcing
-        use model_output_variabletypes
         use strings
 
         !> Required for calls to processes.
@@ -299,7 +298,6 @@ module sa_mesh_run_between_grid
         use FLAGS
         use txt_io
         use climate_forcing
-        use model_output_variabletypes
 
         !> Required for calls to processes.
         use SA_RTE_module
@@ -396,6 +394,7 @@ module sa_mesh_run_between_grid
         if (ic%ts_daily == 1) then
             WF_QSYN_AVG = 0.0
         end if
+
         if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0) then
 
             do i = 1, fms%stmg%n
@@ -537,7 +536,6 @@ module sa_mesh_run_between_grid
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
-        use model_output_variabletypes
 
         !> Required for calls to processes.
         use WF_ROUTE_config, only: WF_ROUTE_finalize

@@ -117,7 +117,6 @@ module WF_ROUTE_config
 
         use model_files_variables
         use sa_mesh_shared_variables
-        use model_output_variabletypes
         use model_dates
         use FLAGS
 
@@ -255,7 +254,6 @@ module WF_ROUTE_config
         use mpi_module
         use model_files_variables
         use sa_mesh_shared_variables
-        use model_output_variabletypes
         use FLAGS
 
         type(fl_ids) :: fls

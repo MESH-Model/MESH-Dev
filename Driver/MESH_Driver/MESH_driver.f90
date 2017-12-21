@@ -103,7 +103,6 @@ program RUNMESH
     use sa_mesh_run_between_grid
     use model_dates
     use climate_forcing
-    use model_output_variabletypes
     use MODEL_OUTPUT
     use SIMSTATS
 
@@ -146,7 +145,7 @@ program RUNMESH
 
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
-    character(24) :: VERSION = '1221'
+    character(24) :: VERSION = '1223'
     character(8) RELEASE
 
     integer i, j, k, l, m, u

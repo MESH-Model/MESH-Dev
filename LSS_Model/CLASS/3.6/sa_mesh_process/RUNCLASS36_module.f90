@@ -14,7 +14,6 @@ module RUNCLASS36_module
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
-        use model_output_variabletypes
 
         !> For internal variables.
         use RUNCLASS36_config
