@@ -123,15 +123,14 @@ module sa_mesh_run_within_tile
             irqst = mpi_request_null
 
             !> Canopy.
-            allocate(cnpy(8*iin))
+            allocate(cnpy(7*iin))
             cnpy((1 + iin*0):(iin*1)) = stas%cnpy%rcan(ii1:ii2)
             cnpy((1 + iin*1):(iin*2)) = stas%cnpy%sncan(ii1:ii2)
-            cnpy((1 + iin*2):(iin*3)) = stas%cnpy%cmai(ii1:ii2)
+            cnpy((1 + iin*2):(iin*3)) = stas%cnpy%cmas(ii1:ii2)
             cnpy((1 + iin*3):(iin*4)) = stas%cnpy%tac(ii1:ii2)
             cnpy((1 + iin*4):(iin*5)) = stas%cnpy%tcan(ii1:ii2)
             cnpy((1 + iin*5):(iin*6)) = stas%cnpy%qac(ii1:ii2)
             cnpy((1 + iin*6):(iin*7)) = stas%cnpy%gro(ii1:ii2)
-            cnpy((1 + iin*7):(iin*8)) = stas%cnpy%pevp(ii1:ii2)
             call mpi_isend(cnpy, size(cnpy), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
             i = i + 1
 
@@ -141,26 +140,27 @@ module sa_mesh_run_within_tile
             sno((1 + iin*1):(iin*2)) = stas%sno%albs(ii1:ii2)
             sno((1 + iin*2):(iin*3)) = stas%sno%fsno(ii1:ii2)
             sno((1 + iin*3):(iin*4)) = stas%sno%rhos(ii1:ii2)
-            sno((1 + iin*4):(iin*5)) = stas%sno%tsno(ii1:ii2)
-            sno((1 + iin*5):(iin*6)) = stas%sno%wsno(ii1:ii2)
+            sno((1 + iin*4):(iin*5)) = stas%sno%wsno(ii1:ii2)
+            sno((1 + iin*5):(iin*6)) = stas%sno%tsno(ii1:ii2)
             call mpi_isend(sno, size(sno), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
             i = i + 1
 
             !> Surface or at near surface.
-            allocate(sfc((11 + 4)*iin))
+            allocate(sfc((12 + 4)*iin))
             sfc((1 + iin*0):(iin*1)) = stas%sfc%albt(ii1:ii2)
             sfc((1 + iin*1):(iin*2)) = stas%sfc%alvs(ii1:ii2)
             sfc((1 + iin*2):(iin*3)) = stas%sfc%alir(ii1:ii2)
             sfc((1 + iin*3):(iin*4)) = stas%sfc%gte(ii1:ii2)
             sfc((1 + iin*4):(iin*5)) = stas%sfc%zpnd(ii1:ii2)
             sfc((1 + iin*5):(iin*6)) = stas%sfc%tpnd(ii1:ii2)
-            sfc((1 + iin*6):(iin*7)) = stas%sfc%evap(ii1:ii2)
-            sfc((1 + iin*7):(iin*8)) = stas%sfc%rofo(ii1:ii2)
-            sfc((1 + iin*8):(iin*9)) = stas%sfc%qevp(ii1:ii2)
-            sfc((1 + iin*9):(iin*10)) = stas%sfc%hfs(ii1:ii2)
-            sfc((1 + iin*10):(iin*11)) = stas%sfc%gzero(ii1:ii2)
+            sfc((1 + iin*6):(iin*7)) = stas%sfc%pevp(ii1:ii2)
+            sfc((1 + iin*7):(iin*8)) = stas%sfc%evap(ii1:ii2)
+            sfc((1 + iin*8):(iin*9)) = stas%sfc%rofo(ii1:ii2)
+            sfc((1 + iin*9):(iin*10)) = stas%sfc%qevp(ii1:ii2)
+            sfc((1 + iin*10):(iin*11)) = stas%sfc%hfs(ii1:ii2)
+            sfc((1 + iin*11):(iin*12)) = stas%sfc%gzero(ii1:ii2)
             do j = 0, 3
-                sfc((1 + iin*(11 + j)):(iin*(12 + j))) = stas%sfc%tsfs(ii1:ii2, j + 1)
+                sfc((1 + iin*(12 + j)):(iin*(13 + j))) = stas%sfc%tsfs(ii1:ii2, j + 1)
             end do
             call mpi_isend(sfc, size(sfc), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
             i = i + 1
@@ -180,14 +180,14 @@ module sa_mesh_run_within_tile
 
             !> Lower zone storage.
             allocate(lzs(2*iin))
-            lzs((1 + iin*0):(iin*1)) = stas%lzs%lqws(ii1:ii2)
+            lzs((1 + iin*0):(iin*1)) = stas%lzs%ws(ii1:ii2)
             lzs((1 + iin*1):(iin*2)) = stas%lzs%rofb(ii1:ii2)
             call mpi_isend(lzs, size(lzs), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
             i = i + 1
 
             !> Deep zone storage.
             allocate(dzs(2*iin))
-            dzs((1 + iin*0):(iin*1)) = stas%dzs%lqws(ii1:ii2)
+            dzs((1 + iin*0):(iin*1)) = stas%dzs%ws(ii1:ii2)
             dzs((1 + iin*1):(iin*2)) = stas%dzs%rofb(ii1:ii2)
             call mpi_isend(dzs, size(dzs), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
             i = i + 1
@@ -216,9 +216,9 @@ module sa_mesh_run_within_tile
                 call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iin)
 
                 !> Allocate temporary arrays.
-                allocate(cnpy(8*iin))
+                allocate(cnpy(7*iin))
                 allocate(sno(6*iin))
-                allocate(sfc((11 + 4)*iin))
+                allocate(sfc((12 + 4)*iin))
                 allocate(sl((2 + 4*s)*iin))
                 allocate(lzs(2*iin))
                 allocate(dzs(2*iin))
@@ -252,20 +252,19 @@ module sa_mesh_run_within_tile
                 !> Canopy.
                 stas%cnpy%rcan(ii1:ii2) = cnpy((1 + iin*0):(iin*1))
                 stas%cnpy%sncan(ii1:ii2) = cnpy((1 + iin*1):(iin*2))
-                stas%cnpy%cmai(ii1:ii2) = cnpy((1 + iin*2):(iin*3))
+                stas%cnpy%cmas(ii1:ii2) = cnpy((1 + iin*2):(iin*3))
                 stas%cnpy%tac(ii1:ii2) = cnpy((1 + iin*3):(iin*4))
                 stas%cnpy%tcan(ii1:ii2) = cnpy((1 + iin*4):(iin*5))
                 stas%cnpy%qac(ii1:ii2) = cnpy((1 + iin*5):(iin*6))
                 stas%cnpy%gro(ii1:ii2) = cnpy((1 + iin*6):(iin*7))
-                stas%cnpy%pevp(ii1:ii2) = cnpy((1 + iin*7):(iin*8))
 
                 !> Snow.
                 stas%sno%sno(ii1:ii2) = sno((1 + iin*0):(iin*1))
                 stas%sno%albs(ii1:ii2) = sno((1 + iin*1):(iin*2))
                 stas%sno%fsno(ii1:ii2) = sno((1 + iin*2):(iin*3))
                 stas%sno%rhos(ii1:ii2) = sno((1 + iin*3):(iin*4))
-                stas%sno%tsno(ii1:ii2) = sno((1 + iin*4):(iin*5))
-                stas%sno%wsno(ii1:ii2) = sno((1 + iin*5):(iin*6))
+                stas%sno%wsno(ii1:ii2) = sno((1 + iin*4):(iin*5))
+                stas%sno%tsno(ii1:ii2) = sno((1 + iin*5):(iin*6))
 
                 !> Surface or at near surface.
                 stas%sfc%albt(ii1:ii2) = sfc((1 + iin*0):(iin*1))
@@ -274,13 +273,14 @@ module sa_mesh_run_within_tile
                 stas%sfc%gte(ii1:ii2) = sfc((1 + iin*3):(iin*4))
                 stas%sfc%zpnd(ii1:ii2) = sfc((1 + iin*4):(iin*5))
                 stas%sfc%tpnd(ii1:ii2) = sfc((1 + iin*5):(iin*6))
-                stas%sfc%evap(ii1:ii2) = sfc((1 + iin*6):(iin*7))
-                stas%sfc%rofo(ii1:ii2) = sfc((1 + iin*7):(iin*8))
-                stas%sfc%qevp(ii1:ii2) = sfc((1 + iin*8):(iin*9))
-                stas%sfc%hfs(ii1:ii2) = sfc((1 + iin*9):(iin*10))
-                stas%sfc%gzero(ii1:ii2) = sfc((1 + iin*10):(iin*11))
+                stas%sfc%pevp(ii1:ii2) = sfc((1 + iin*6):(iin*7))
+                stas%sfc%evap(ii1:ii2) = sfc((1 + iin*7):(iin*8))
+                stas%sfc%rofo(ii1:ii2) = sfc((1 + iin*8):(iin*9))
+                stas%sfc%qevp(ii1:ii2) = sfc((1 + iin*9):(iin*10))
+                stas%sfc%hfs(ii1:ii2) = sfc((1 + iin*10):(iin*11))
+                stas%sfc%gzero(ii1:ii2) = sfc((1 + iin*11):(iin*12))
                 do j = 0, 3
-                    stas%sfc%tsfs(ii1:ii2, j + 1) = sfc((1 + iin*(11 + j)):(iin*(12 + j)))
+                    stas%sfc%tsfs(ii1:ii2, j + 1) = sfc((1 + iin*(12 + j)):(iin*(13 + j)))
                 end do
 
                 !> Soil layers.
@@ -294,11 +294,11 @@ module sa_mesh_run_within_tile
                 end do
 
                 !> Lower zone storage.
-                stas%lzs%lqws(ii1:ii2) = lzs((1 + iin*0):(iin*1))
+                stas%lzs%ws(ii1:ii2) = lzs((1 + iin*0):(iin*1))
                 stas%lzs%rofb(ii1:ii2) = lzs((1 + iin*1):(iin*2))
 
                 !> Deep zone storage.
-                stas%dzs%lqws(ii1:ii2) = dzs((1 + iin*0):(iin*1))
+                stas%dzs%ws(ii1:ii2) = dzs((1 + iin*0):(iin*1))
                 stas%dzs%rofb(ii1:ii2) = dzs((1 + iin*1):(iin*2))
 
                 !> Deallocate temporary arrays.
@@ -404,31 +404,31 @@ module sa_mesh_run_within_tile
         if (.not. ro%RUNTILE) return
 
         !> Update variables.
-        stas%sl%fzws(il1:il2, :) = stas%sl%thic(il1:il2, :)*stas%sl%delzw(il1:il2, :)*RHOICE
-        stas%sl%lqws(il1:il2, :) = stas%sl%thlq(il1:il2, :)*stas%sl%delzw(il1:il2, :)*RHOW
-        where (stas%sfc%evap(il1:il2) > 0.0 .and. stas%cnpy%pevp(il1:il2) /= 0.0)
-            stas%cnpy%evpb(il1:il2) = stas%sfc%evap(il1:il2)/stas%cnpy%pevp(il1:il2)
-        elsewhere
-            stas%cnpy%evpb(il1:il2) = 0.0
+        where (stas%sno%sno(il1:il2) == 0.0)
+            stas%sno%wsno(il1:il2) = 0.0
+            stas%sno%tsno(il1:il2) = 0.0
         end where
-        if (allocated(cm%dat(ck%RT)%GAT)) then
-            where (stas%cnpy%pevp(il1:il2) /= 0.0)
-                stas%cnpy%arrd(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)/stas%cnpy%pevp(il1:il2)
-            elsewhere
-                stas%cnpy%arrd(il1:il2) = 0.0
-            end where
-        end if
         where (stas%sfc%alvs(il1:il2) > 0.0 .and. stas%sfc%alir(il1:il2) > 0.0)
             stas%sfc%albt(il1:il2) = (stas%sfc%alvs(il1:il2) + stas%sfc%alir(il1:il2))/2.0
         elsewhere
             stas%sfc%albt(il1:il2) = 0.0
         end where
         stas%sfc%pndw(il1:il2) = stas%sfc%zpnd(il1:il2)*RHOW
-        where (stas%sno%sno(il1:il2) == 0.0)
-            stas%sno%wsno(il1:il2) = 0.0
-            stas%sno%tsno(il1:il2) = 0.0
-        end where
         where (stas%sfc%zpnd(il1:il2) == 0.0) stas%sfc%tpnd(il1:il2) = 0.0
+        where (stas%sfc%evap(il1:il2) > 0.0 .and. stas%sfc%pevp(il1:il2) /= 0.0)
+            stas%sfc%evpb(il1:il2) = stas%sfc%evap(il1:il2)/stas%sfc%pevp(il1:il2)
+        elsewhere
+            stas%sfc%evpb(il1:il2) = 0.0
+        end where
+        if (allocated(cm%dat(ck%RT)%GAT)) then
+            where (stas%sfc%pevp(il1:il2) /= 0.0)
+                stas%sfc%arrd(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)/stas%sfc%pevp(il1:il2)
+            elsewhere
+                stas%sfc%arrd(il1:il2) = 0.0
+            end where
+        end if
+        stas%sl%fzws(il1:il2, :) = stas%sl%thic(il1:il2, :)*stas%sl%delzw(il1:il2, :)*RHOICE
+        stas%sl%lqws(il1:il2, :) = stas%sl%thlq(il1:il2, :)*stas%sl%delzw(il1:il2, :)*RHOW
 
     end subroutine
 

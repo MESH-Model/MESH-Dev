@@ -35,7 +35,7 @@ module WF_ROUTE_module
                       WF_B1, WF_B2, WF_B3, WF_B4, WF_B5, fms%rsvr%rlsmeas%val, WF_QR, &
                       WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, stas_grid%chnl%qi, WF_QO1, stas_grid%chnl%qo, &
                       wfp%aa1, wfp%aa2, wfp%aa3, wfp%aa4, &
-                      WF_STORE1, stas_grid%chnl%s, &
+                      WF_STORE1, stas_grid%chnl%stg, &
                       ic%dts, &
                       (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC, &
                       shd%NA, shd%NRVR, fms%rsvr%n, fms%stmg%n, shd%NA, &
@@ -49,11 +49,11 @@ module WF_ROUTE_module
 
         !> Update SA_MESH variables.
 
-        !> For reservoirs in WF_ROUTE, storage is an accumulation of flow over time and does not translate to the 's' variable.
+        !> For reservoirs in WF_ROUTE, storage is an accumulation of flow over time and does not translate to the 'stg' variable.
         if (fms%rsvr%n > 0) then
             stas_fms%rsvr%qo = stas_grid%chnl%qo(fms%rsvr%meta%rnk(:))
             stas_fms%rsvr%qi = stas_grid%chnl%qi(fms%rsvr%meta%rnk(:))
-            stas_fms%rsvr%s = -1.0
+            stas_fms%rsvr%stg = -1.0
             stas_fms%rsvr%zlvl = 0.0
         end if
 

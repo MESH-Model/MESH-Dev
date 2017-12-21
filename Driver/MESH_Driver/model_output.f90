@@ -1274,28 +1274,28 @@ module model_output
             vr%wbt_y%dstg(iy, :) = &
                 (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + stas_grid%sfc%pndw + &
                  sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
-                 stas_grid%lzs%lqws + stas_grid%dzs%lqws)*shd%FRAC - vr%wbt_y%stg(iy, :)
+                 stas_grid%lzs%ws + stas_grid%dzs%ws)*shd%FRAC - vr%wbt_y%stg(iy, :)
             vr%wbt_y%stg(iy, :) = vr%wbt_y%dstg(iy, :) + vr%wbt_y%stg(iy, :)
         end if
         if (allocated(vr%wbt_m%dstg) .and. allocated(vr%wbt_m%stg)) then
             vr%wbt_m%dstg(im, :) = &
                 (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + stas_grid%sfc%pndw + &
                  sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
-                 stas_grid%lzs%lqws + stas_grid%dzs%lqws)*shd%FRAC - vr%wbt_m%stg(im, :)
+                 stas_grid%lzs%ws + stas_grid%dzs%ws)*shd%FRAC - vr%wbt_m%stg(im, :)
             vr%wbt_m%stg(im, :) = vr%wbt_m%dstg(im, :) + vr%wbt_m%stg(im, :)
         end if
         if (allocated(vr%wbt_s%dstg) .and. allocated(vr%wbt_s%stg)) then
             vr%wbt_s%dstg(iss, :) = &
                 (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + stas_grid%sfc%pndw + &
                  sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
-                 stas_grid%lzs%lqws + stas_grid%dzs%lqws)*shd%FRAC - vr%wbt_s%stg(iss, :)
+                 stas_grid%lzs%ws + stas_grid%dzs%ws)*shd%FRAC - vr%wbt_s%stg(iss, :)
             vr%wbt_s%stg(iss, :) = vr%wbt_s%dstg(iss, :) + vr%wbt_s%stg(iss, :)
         end if
         if (allocated(vr%wbt_d%dstg) .and. allocated(vr%wbt_d%stg)) then
             vr%wbt_d%dstg(id, :) = &
                 (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + stas_grid%sfc%pndw + &
                  sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
-                 stas_grid%lzs%lqws + stas_grid%dzs%lqws)*shd%FRAC - vr%wbt_d%stg(id, :)
+                 stas_grid%lzs%ws + stas_grid%dzs%ws)*shd%FRAC - vr%wbt_d%stg(id, :)
             vr%wbt_d%stg(id, :) = vr%wbt_d%dstg(id, :) + vr%wbt_d%stg(id, :)
         end if
         if (allocated(vr%wbt_h%stg)) then
@@ -1303,7 +1303,7 @@ module model_output
                 (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + &
                  stas_grid%sfc%pndw + &
                  sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
-                 stas_grid%lzs%lqws + stas_grid%dzs%lqws)*shd%FRAC
+                 stas_grid%lzs%ws + stas_grid%dzs%ws)*shd%FRAC
             call check_write_var_out(shd, ifo, 'STG', vr%wbt_h%stg, 882119, .true.)
         end if
 

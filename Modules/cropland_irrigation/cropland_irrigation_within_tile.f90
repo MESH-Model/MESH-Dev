@@ -42,7 +42,7 @@ module cropland_irrigation_within_tile
                 ki = shd%lc%ILMOS(k)
 
                 !> Calc 'calc_ET0' (PEVP).
-                stas%cnpy%pevp(k) = calc_ET0( &
+                stas%sfc%pevp(k) = calc_ET0( &
                     cm%dat(ck%TT)%GAT(k), cm%dat(ck%UV)%GAT(k), cm%dat(ck%HU)%GAT(k), cm%dat(ck%P0)%GAT(k), cm%dat(ck%FB)%GAT(k), &
                     shd%ylat(ki), shd%xlng(ki), shd%ELEV(ki), &
                     pm%sfp%zrfm(k), &
@@ -117,7 +117,7 @@ module cropland_irrigation_within_tile
                         !> Accumulate states for the present period.
                         do ikey = civ%fk%kmin, civ%fk%kmax
                             civ%vars(ikey)%pre_mm(k) = civ%vars(ikey)%pre_mm(k) + cm%dat(ck%RT)%GAT(k)*pm%cp%fcan(k, 3)*ic%dts
-                            civ%vars(ikey)%pevp_mm(k) = civ%vars(ikey)%pevp_mm(k) + stas%cnpy%pevp(k)*pm%cp%fcan(k, 3)*ic%dts
+                            civ%vars(ikey)%pevp_mm(k) = civ%vars(ikey)%pevp_mm(k) + stas%sfc%pevp(k)*pm%cp%fcan(k, 3)*ic%dts
                             civ%vars(ikey)%lqws1_mm(k) = civ%vars(ikey)%lqws1_mm(k) + sum(stas%sl%lqws(k, :))*pm%cp%fcan(k, 3)
                         end do
 
@@ -193,7 +193,7 @@ module cropland_irrigation_within_tile
                 call mpi_isend(civ%vars(ikey)%lqws2_mm(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
                 i = i + 1
 !todo: remove pevp (global var)
-                call mpi_isend(stas%cnpy%pevp(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(stas%sfc%pevp(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             end do
             lstat = .false.
             do while (.not. lstat)
@@ -219,7 +219,7 @@ module cropland_irrigation_within_tile
                     call mpi_irecv(civ%vars(ikey)%lqws2_mm(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
 !todo: remove pevp (global var)
-                    call mpi_irecv(stas%cnpy%pevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(stas%sfc%pevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end do
                 lstat = .false.
                 do while (.not. lstat)

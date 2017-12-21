@@ -222,7 +222,7 @@ module WF_ROUTE_config
                 read(iun)
                 read(iun)
                 read(iun) stas_grid%chnl%qo
-                read(iun) stas_grid%chnl%s
+                read(iun) stas_grid%chnl%stg
                 read(iun) stas_grid%chnl%qi
                 read(iun)
                 read(iun)
@@ -236,7 +236,7 @@ module WF_ROUTE_config
                 read(iun)
                 read(iun)
                 read(iun) stas_grid%chnl%qo
-                read(iun) stas_grid%chnl%s
+                read(iun) stas_grid%chnl%stg
                 read(iun) stas_grid%chnl%qi
                 read(iun)
                 read(iun)
@@ -289,7 +289,7 @@ module WF_ROUTE_config
             write(iun)
             write(iun)
             write(iun) stas_grid%chnl%qo
-            write(iun) stas_grid%chnl%s
+            write(iun) stas_grid%chnl%stg
             write(iun) stas_grid%chnl%qi
             write(iun)
             write(iun)

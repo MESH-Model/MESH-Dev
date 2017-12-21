@@ -534,13 +534,13 @@ module rte_module
 
         !> Update MESH variables.
         stas_grid%chnl%qi = qi2
-        stas_grid%chnl%s = store2
+        stas_grid%chnl%stg = store2
         stas_grid%chnl%qo = qo2
         do l = 1, noresv
             stas_fms%rsvr%zlvl(l) = lake_elv(l, 1)
             reach_last(l) = lake_elv(l, 1)
             stas_fms%rsvr%qi(l) = stas_grid%chnl%qi(fms%rsvr%meta%rnk(l))
-            stas_fms%rsvr%s(l) = stas_grid%chnl%s(fms%rsvr%meta%rnk(l))
+            stas_fms%rsvr%stg(l) = stas_grid%chnl%stg(fms%rsvr%meta%rnk(l))
             stas_fms%rsvr%qo(l) = stas_grid%chnl%qo(fms%rsvr%meta%rnk(l))
         end do
 
@@ -639,7 +639,7 @@ module rte_module
         qr(1:naa) = qr(1:naa)*1000.0*step2/3600.0
 
         !> Update from SA_MESH variables.
-        store2 = stas_grid%chnl%s
+        store2 = stas_grid%chnl%stg
 
         !> Remember the input values from the start of the time step.
         qi2_strt(1:naa) = qi2(1:naa)
@@ -816,11 +816,11 @@ module rte_module
 
         !> Update SA_MESH variables.
         stas_grid%chnl%qi = stas_grid%chnl%qi/no_dt
-        stas_grid%chnl%s = store2
+        stas_grid%chnl%stg = store2
         stas_grid%chnl%qo = stas_grid%chnl%qo/no_dt !same as avr_qo
         if (fms%rsvr%n > 0) then
             stas_fms%rsvr%qo = stas_grid%chnl%qo(fms%rsvr%meta%rnk(:))
-            stas_fms%rsvr%s = stas_grid%chnl%s(fms%rsvr%meta%rnk(:))
+            stas_fms%rsvr%stg = stas_grid%chnl%stg(fms%rsvr%meta%rnk(:))
             stas_fms%rsvr%qi = stas_grid%chnl%qi(fms%rsvr%meta%rnk(:))
             stas_fms%rsvr%zlvl = lake_elv(:, fhr)
             reach_last = lake_elv(:, fhr)

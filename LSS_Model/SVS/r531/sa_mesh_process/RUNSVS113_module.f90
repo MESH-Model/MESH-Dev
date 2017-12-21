@@ -163,27 +163,27 @@ module RUNSVS113_module
 
         !> Transfer variables.
         do k = 0, NG - 1
-            stas%cnpy%qac(il1 + k) = bus(qsurf + k)
             stas%cnpy%rcan(il1 + k) = bus(wveg + k)
 !-            stas%cnpy%sncan(il1 + k) =
+!-            stas%cnpy%cmas(il1 + k) =
             stas%cnpy%tac(il1 + k) = bus(tsurf + k)
             stas%cnpy%tcan(il1 + k) = (bus(tvege + k) + bus(tvege + NG + k) + bus(tsnowveg + k) + bus(tsnowveg + NG + k))/4.0
-!-            stas%cnpy%cmai(il1 + k) =
+            stas%cnpy%qac(il1 + k) = bus(qsurf + k)
 !-            stas%cnpy%gro(il1 + k) =
-!-            stas%cnpy%pevp(il1 + k) =
             stas%sno%sno(il1 + k) = bus(snoma + k)
             stas%sno%albs(il1 + k) = (bus(snoal + k) + bus(snval + k))/2.0
 !-            stas%sno%fsno(il1 + k) =
             stas%sno%rhos(il1 + k) = ((bus(snoro + k) + bus(snvro + k))/2.0)*900.0
-            stas%sno%tsno(il1 + k) = (bus(tsnow + k) + bus(tsnow + NG + k))/2.0
             if (bus(snoma + k) > 0.0) then
                 stas%sno%wsno(il1 + k) = bus(wsnow + k)
+                stas%sno%tsno(il1 + k) = (bus(tsnow + k) + bus(tsnow + NG + k))/2.0
             else
                 stas%sno%wsno(il1 + k) = 0.0
+                stas%sno%tsno(il1 + k) = 0.0
             end if
-!-            stas%sfc%tpnd(il1 + k) =
 !-            stas%sfc%zpnd(il1 + k) =
-!-            stas%sfc%pndw(il1 + k) =
+!-            stas%sfc%tpnd(il1 + k) =
+!-            stas%sfc%pevp(il1 + k) =
             stas%sfc%evap(il1 + k) = bus(fvap + k)
             stas%sfc%qevp(il1 + k) = bus(fv + k)
             stas%sfc%hfs(il1 + k) = bus(fc + k)
@@ -196,13 +196,11 @@ module RUNSVS113_module
                 stas%sl%rofs(il1 + k) = stas%sl%rofs(il1 + k) + max(0.0, bus(latflw + j*NG + k))/ic%dts
             end do
             stas%sl%thic(il1 + k, 1) = bus(isoil + k)
-!-            stas%sl%fzws(il1 + k, :) =
             stas%sl%thlq(il1 + k, 1) = bus(wdsoil + k)
             stas%sl%thlq(il1 + k, 2) = bus(wdsoil + NG + k)
             do j = 3, shd%lc%IGND
                 stas%sl%thlq(il1 + k, j) = bus(wdsoil + j*NG + k)
             end do
-!-            stas%sl%lqws(il1 + k, :) =
             stas%sl%tbar(il1 + k, 1) = bus(tsoil + k)
             do j = 2, shd%lc%IGND
                 stas%sl%tbar(il1 + k, j) = bus(tsoil + NG + k)

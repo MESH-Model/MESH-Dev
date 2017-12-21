@@ -145,7 +145,7 @@ program RUNMESH
 
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
-    character(24) :: VERSION = '1224'
+    character(24) :: VERSION = '1225'
     character(8) RELEASE
 
     integer i, j, k, l, m, u
@@ -907,7 +907,7 @@ program RUNMESH
         STG_INI = sum( &
             (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + stas_grid%sfc%pndw + &
              sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
-             stas_grid%lzs%lqws + stas_grid%dzs%lqws)*shd%FRAC)/sum(shd%FRAC)
+             stas_grid%lzs%ws + stas_grid%dzs%ws)*shd%FRAC)/sum(shd%FRAC)
     end if !(ipid == 0) then
 
     !> Read in existing basin states for RESUMEFLAG.
@@ -1301,7 +1301,7 @@ program RUNMESH
         STG_FIN = sum( &
             (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + stas_grid%sfc%pndw + &
              sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
-             stas_grid%lzs%lqws + stas_grid%dzs%lqws)*shd%FRAC)/sum(shd%FRAC)
+             stas_grid%lzs%ws + stas_grid%dzs%ws)*shd%FRAC)/sum(shd%FRAC)
 
         !> Basin totals for the run.
         TOTAL_PRE = TOTAL_PRE/sum(shd%FRAC)

@@ -411,7 +411,7 @@ module sa_mesh_run_between_grid
             end do
             where (shd%DA > 0.0)
                 WF_QO2_ACC_MM = WF_QO2_ACC_MM + stas_grid%chnl%qo/shd%DA/1000.0*RTE_TS
-                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + stas_grid%chnl%s/shd%DA/1000.0
+                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + stas_grid%chnl%stg/shd%DA/1000.0
             elsewhere
                 WF_QO2_ACC_MM = WF_NODATA_VALUE
                 WF_STORE2_ACC_MM = WF_NODATA_VALUE
@@ -419,8 +419,8 @@ module sa_mesh_run_between_grid
 
             if (fms%rsvr%n > 0) then
                 if (all(stas_fms%rsvr%zlvl == 0.0)) then
-                    where (stas_fms%rsvr%s > 0.0 .and. fms%rsvr%rls%area > 0.0)
-                        stas_fms%rsvr%zlvl = stas_fms%rsvr%s/fms%rsvr%rls%area
+                    where (stas_fms%rsvr%stg > 0.0 .and. fms%rsvr%rls%area > 0.0)
+                        stas_fms%rsvr%zlvl = stas_fms%rsvr%stg/fms%rsvr%rls%area
                         lake_elv_avg = lake_elv_avg + stas_fms%rsvr%zlvl
                     elsewhere
                         stas_fms%rsvr%zlvl = WF_NODATA_VALUE
@@ -430,10 +430,10 @@ module sa_mesh_run_between_grid
                     lake_elv_avg = lake_elv_avg + stas_fms%rsvr%zlvl
                 end if
                 reach_qi_avg = reach_qi_avg + stas_fms%rsvr%qi
-                if (all(stas_fms%rsvr%s == WF_NODATA_VALUE)) then
+                if (all(stas_fms%rsvr%stg == WF_NODATA_VALUE)) then
                     reach_s_avg = WF_NODATA_VALUE
                 else
-                    reach_s_avg = reach_s_avg + stas_fms%rsvr%s
+                    reach_s_avg = reach_s_avg + stas_fms%rsvr%stg
                 end if
                 reach_qo_avg = reach_qo_avg + stas_fms%rsvr%qo
             end if
@@ -443,7 +443,7 @@ module sa_mesh_run_between_grid
                 do l = 1, fms%rsvr%n
                     iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun + l
                     write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
-                    write(iun, 1010, advance = 'no') stas_fms%rsvr%qi(l), stas_fms%rsvr%s(l), stas_fms%rsvr%qo(l)
+                    write(iun, 1010, advance = 'no') stas_fms%rsvr%qi(l), stas_fms%rsvr%stg(l), stas_fms%rsvr%qo(l)
                     write(iun, *)
                 end do
             end if

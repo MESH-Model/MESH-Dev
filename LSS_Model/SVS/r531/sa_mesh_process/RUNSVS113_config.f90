@@ -144,7 +144,7 @@ module RUNSVS113_config
 
                     !> Assign values.
                     stas%sno%albs(k) = ALBSROW(ki, kj)
-                    stas%cnpy%cmai(k) = CMAIROW(ki, kj)
+                    stas%cnpy%cmas(k) = CMAIROW(ki, kj)
                     stas%cnpy%gro(k) = GROROW(ki, kj)
                     stas%cnpy%qac(k) = QACROW(ki, kj)
                     stas%cnpy%rcan(k) = RCANROW(ki, kj)
@@ -459,7 +459,7 @@ module RUNSVS113_config
 
                     !> Assign values.
                     ALBSROW(ki, kj) = stas%sno%albs(k)
-                    CMAIROW(ki, kj) = stas%cnpy%cmai(k)
+                    CMAIROW(ki, kj) = stas%cnpy%cmas(k)
                     GROROW(ki, kj) = stas%cnpy%gro(k)
                     QACROW(ki, kj) = stas%cnpy%qac(k)
                     RCANROW(ki, kj) = stas%cnpy%rcan(k)

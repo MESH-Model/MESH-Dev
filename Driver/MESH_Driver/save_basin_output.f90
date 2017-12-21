@@ -264,7 +264,7 @@ module save_basin_output
                 stas_grid%cnpy%rcan*shd%FRAC + stas_grid%cnpy%sncan*shd%FRAC + &
                 stas_grid%sno%sno*shd%FRAC + stas_grid%sno%wsno*shd%FRAC + stas_grid%sfc%pndw*shd%FRAC + &
                 sum(stas_grid%sl%lqws, 2)*shd%FRAC + sum(stas_grid%sl%fzws, 2)*shd%FRAC + &
-                stas_grid%lzs%lqws*shd%FRAC + stas_grid%dzs%lqws*shd%FRAC
+                stas_grid%lzs%ws*shd%FRAC + stas_grid%dzs%ws*shd%FRAC
         end do
         do i = 1, shd%NAA
             ii = shd%NEXT(i)
@@ -387,9 +387,9 @@ module save_basin_output
 
         !> For PEVP-EVAP and EVPB output
         bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(stas_grid%sfc%evap*shd%FRAC*ic%dts)/sum(shd%FRAC)
-        bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(stas_grid%cnpy%pevp*shd%FRAC*ic%dts)/sum(shd%FRAC)
-        bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(stas_grid%cnpy%evpb*shd%FRAC)/sum(shd%FRAC)
-        bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(stas_grid%cnpy%arrd*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(stas_grid%sfc%pevp*shd%FRAC*ic%dts)/sum(shd%FRAC)
+        bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(stas_grid%sfc%evpb*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(stas_grid%sfc%arrd*shd%FRAC)/sum(shd%FRAC)
 
         !> Update the energy balance.
         call update_energy_balance(shd, cm)
@@ -739,8 +739,8 @@ module save_basin_output
             LQWS(:, j) = stas_grid%sl%lqws(:, j)*shd%FRAC
             FRWS(:, j) = stas_grid%sl%fzws(:, j)*shd%FRAC
         end do
-        LZS = stas_grid%lzs%lqws*shd%FRAC
-        DZS = stas_grid%dzs%lqws*shd%FRAC
+        LZS = stas_grid%lzs%ws*shd%FRAC
+        DZS = stas_grid%dzs%ws*shd%FRAC
 
         !> Aggregate through neighbouring cells.
         do i = 1, shd%NAA
@@ -1053,7 +1053,7 @@ module save_basin_output
         where (stas_grid%sfc%gte > 0.0) GTE = (stas_grid%sfc%gte - TFREZ)*shd%FRAC
         where (cm%dat(ck%TT)%GRD > 0.0) TA = (cm%dat(ck%TT)%GRD - TFREZ)*shd%FRAC
         where (stas_grid%cnpy%tcan > 0.0)
-            CMAS = stas_grid%cnpy%cmai*shd%FRAC
+            CMAS = stas_grid%cnpy%cmas*shd%FRAC
             TCAN = (stas_grid%cnpy%tcan - TFREZ)*shd%FRAC
             ICAN = 1
         end where

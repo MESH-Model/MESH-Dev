@@ -130,19 +130,19 @@ module baseflow_module
         end if
 
         !> Allocate and initialize local variables.
-        stas%lzs%lqws = bflm%vs%WrchrgIni
-        stas_grid%lzs%lqws = bflm%vs%WrchrgIni
+        stas%lzs%ws = bflm%vs%WrchrgIni
+        stas_grid%lzs%ws = bflm%vs%WrchrgIni
         select case (bflm%BASEFLOWFLAG)
             case (1)
                 allocate(Wseep(NML), Wrchrg(NML), Qb(NML))
                 Wseep = 0.0
-                Wrchrg = stas%lzs%lqws
+                Wrchrg = stas%lzs%ws
                 Qb = bflm%vs%QbIni
             case (2)
                 if (bflm%BUCKETFLAG == 1) then
                     allocate(dlz(NA), lzs(NA))
                     dlz = 0.0
-                    lzs = stas_grid%lzs%lqws
+                    lzs = stas_grid%lzs%ws
                     bflm%pm_grid%flz = 1.0 - (1.0 - bflm%pm_grid%flz)
                 end if
             case default
@@ -156,14 +156,14 @@ module baseflow_module
                     iun = fls%fl(mfk%f883)%iun
                     open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012', status = 'old', action = 'read', &
                         form = 'unformatted', access = 'sequential', iostat = ierr)
-                    read(iun) stas%lzs%lqws
+                    read(iun) stas%lzs%ws
                     read(iun) Qb
                     close(iun)
                 case (2)
                     iun = fls%fl(mfk%f883)%iun
                     open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz', status = 'old', action = 'read', &
                         form = 'unformatted', access = 'sequential', iostat = ierr)
-                    read(iun) stas%lzs%lqws
+                    read(iun) stas%lzs%ws
                     close(iun)
             end select
         end if
@@ -196,15 +196,15 @@ module baseflow_module
         select case (bflm%BASEFLOWFLAG)
             case (1)
                 Wseep(il1:il2) = stas%lzs%rofb(il1:il2)*3600.0
-                Wrchrg(il1:il2) = stas%lzs%lqws(il1:il2)
+                Wrchrg(il1:il2) = stas%lzs%ws(il1:il2)
                 do k = il1, il2
                     call baseFlow_luo2012(Wseep(k), bflm%pm%dgw(k), Wrchrg(k), bflm%pm%agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
                     stas%lzs%rofb(k) = Qb_new/3600.0
                     Qb(k) = Qb_new
-                    stas%lzs%lqws(k) = Wrchrg_new
+                    stas%lzs%ws(k) = Wrchrg_new
                 end do
             case (2)
-                stas%lzs%lqws(il1:il2) = stas%lzs%lqws(il1:il2) + stas%lzs%rofb(il1:il2)*ic%dts
+                stas%lzs%ws(il1:il2) = stas%lzs%ws(il1:il2) + stas%lzs%rofb(il1:il2)*ic%dts
         end select
 
     end subroutine
@@ -230,15 +230,15 @@ module baseflow_module
         select case (bflm%BASEFLOWFLAG)
             case (2)
                 if ((bflm%dts - ic%dts*ic%ts_hourly) == 0) then
-                    lzs(i1:i2) = stas_grid%lzs%lqws(i1:i2)
+                    lzs(i1:i2) = stas_grid%lzs%ws(i1:i2)
                     call baseflow_wfqlz(bflm%pm_grid%flz, bflm%pm_grid%pwr, lzs, dlz, shd%NA, i1, i2)
                     dlz(i1:i2) = max(min(dlz(i1:i2), lzs(i1:i2)), 0.0)/real(bflm%dts/ic%dts)
                 end if
                 stas_grid%lzs%rofb(i1:i2) = dlz(i1:i2)/real(ic%dts)
-                stas_grid%lzs%lqws(i1:i2) = stas_grid%lzs%lqws(i1:i2) - stas_grid%lzs%rofb(i1:i2)*ic%dts
+                stas_grid%lzs%ws(i1:i2) = stas_grid%lzs%ws(i1:i2) - stas_grid%lzs%rofb(i1:i2)*ic%dts
                 do k = il1, il2
                     stas%lzs%rofb(k) = stas_grid%lzs%rofb(shd%lc%ILMOS(k))
-                    stas%lzs%lqws(k) = stas_grid%lzs%lqws(shd%lc%ILMOS(k))
+                    stas%lzs%ws(k) = stas_grid%lzs%ws(shd%lc%ILMOS(k))
                 end do
         end select
 
@@ -274,14 +274,14 @@ module baseflow_module
                     iun = fls%fl(mfk%f883)%iun
                     open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012', status = 'replace', &
                         action = 'write', form = 'unformatted', access = 'sequential', iostat = ierr)
-                    write(iun) stas%lzs%lqws
+                    write(iun) stas%lzs%ws
                     write(iun) Qb
                     close(iun)
                 case (2)
                     iun = fls%fl(mfk%f883)%iun
                     open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz', status = 'replace', &
                         action = 'write', form = 'unformatted', access = 'sequential', iostat = ierr)
-                    write(iun) stas%lzs%lqws
+                    write(iun) stas%lzs%ws
                     close(iun)
             end select
         end if
