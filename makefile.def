@@ -79,7 +79,6 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			output_variables.o \
 			variablename_constants.o parametername_constants.o \
 			sa_mesh_shared_variables.o \
-			sa_mesh_shared_output_variables.o \
 			RUNCLASS36_constants.o RUNCLASS36_variables.o RUNCLASS36_save_output.o \
 			climate_forcing_module_config.o \
 			climate_forcing_module_io.o climate_forcing_module.o \

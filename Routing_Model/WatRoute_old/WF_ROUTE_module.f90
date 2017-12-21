@@ -26,7 +26,7 @@ module WF_ROUTE_module
                       shd%NA, WF_NAA, shd%lc%NTYPE, shd%yCount, shd%xCount, shd%iyMin, &
                       shd%iyMax, shd%jxMin, shd%jxMax, shd%yyy, shd%xxx, shd%IAK, shd%IROUGH, &
                       shd%ICHNL, shd%NEXT, shd%IREACH, shd%AL, shd%GRDN, shd%GRDE, &
-                      shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, shd%ELEV, shd%FRAC, &
+                      shd%DA, shd%BNKFLL, shd%SLOPE_CHNL, int(shd%ELEV), shd%FRAC, &
                       shd%CHNL_LEN, &
                       WF_RTE_flgs%RLFLAG, WF_RTE_flgs%CAPFLAG, &
                       fms%stmg%n, WF_NL, WF_MHRD, WF_KT, fms%stmg%meta%iy, fms%stmg%meta%jx, &

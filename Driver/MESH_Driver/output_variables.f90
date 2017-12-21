@@ -1,5 +1,7 @@
 module output_variables
 
+    implicit none
+
     !> Description: Type-set to store a single-record of hydrograph
     !>              values for multiple gauges or to store a
     !>              time-series of hydrograph values for a single
