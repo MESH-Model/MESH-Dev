@@ -78,6 +78,8 @@ module climate_forcing
         cm%dat(ck%HU)%fname = 'basin_humidity'
         cm%dat(ck%N0)%fname = 'WR_runoff'
         cm%dat(ck%O1)%fname = 'WR_recharge'
+        cm%dat(ck%RR)%fname = 'basin_rainfall'
+        cm%dat(ck%SR)%fname = 'basin_snowfall'
 
         !> Read from file to override default configuration.
         call open_config(cm)
@@ -95,6 +97,10 @@ module climate_forcing
             if (.not. cm%dat(ck%RT)%factive) then
                 allocate(cm%dat(ck%RT)%GRD(shd%NA), cm%dat(ck%RT)%GAT(shd%lc%NML), cm%dat(ck%RT)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%RT)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
+                allocate(cm%dat(ck%RR)%GRD(shd%NA), cm%dat(ck%RR)%GAT(shd%lc%NML), cm%dat(ck%RR)%GRU(shd%lc%NTYPE))
+                allocate(cm%dat(ck%RR)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
+                allocate(cm%dat(ck%SR)%GRD(shd%NA), cm%dat(ck%SR)%GAT(shd%lc%NML), cm%dat(ck%SR)%GRU(shd%lc%NTYPE))
+                allocate(cm%dat(ck%SR)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%TT)%factive) then
                 allocate(cm%dat(ck%TT)%GRD(shd%NA), cm%dat(ck%TT)%GAT(shd%lc%NML), cm%dat(ck%TT)%GRU(shd%lc%NTYPE))
@@ -304,6 +310,7 @@ module climate_forcing
 
             !> Loop through variables in the climate forcing object and populate their state from file.
             do vid = 1, 7
+            !do vid = 1, 9
 
                 !> Read the state of the climate variable (in case reading into memory).
                 read(iun) cm%dat(vid)%blocks
@@ -382,6 +389,7 @@ module climate_forcing
         ENDDATA = .false.
 
         !> Loop through variables in the climate forcing object.
+
         do vid = 1, cm%nclim
 
             !> Update data if the climate variable is active.
@@ -482,7 +490,8 @@ module climate_forcing
 
         !> Distribute data from CLASS format MET file for variables not already active.
         if (cm%dat(ck%MET)%factive) then
-            do vid = 1, 7
+            !do vid = 1, 7
+            do vid = 1, 9
 
                 !> Cycle if variable active (e.g., read from different file).
                 if (cm%dat(vid)%factive) cycle
@@ -566,8 +575,10 @@ module climate_forcing
 
             !> Write the current number of climate variables.
             write(iun) 7
+            !write(iun) 9
 
             !> Loop through variables in the climate forcing object and write the current state to file.
+            !do vid = 1, 9
             do vid = 1, 7
 
                 !> Save the state of the climate variable (in case reading into memory).

@@ -59,12 +59,23 @@ module climate_forcing_constants
         !* HU: Specific humidity at reference height [kg kg-1]
         integer :: HU = 7
 
+        !* RR: Rain precipitation rate [kg m-2 s-1]
+        !* SR: Snow precipitation rate [kg m-2 s-1]
+        integer :: RR = 8
+        integer :: SR = 9
+
+
         !* N0: Runoff. [mm].
         !* O1: Recharge. [mm].
-        integer :: N0 = 8, O1 = 9
+        integer :: N0 =10, O1 =11
 
+        !* RR: Rain precipitation rate [kg m-2 s-1]
+        !* SR: Snow precipitation rate [kg m-2 s-1]
+!        integer :: RR = 10
+!        integer :: SR = 11
         !* MET: CLASS format MET file.
-        integer :: MET = 10
+        integer :: MET = 12
+
 
     end type
 

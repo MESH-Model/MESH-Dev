@@ -113,6 +113,8 @@ module climate_forcing_config
                     case ('fb'); vid = ck%FB
                     case ('fi'); vid = ck%FI
                     case ('rt'); vid = ck%RT
+!                    case ('rr'); vid = ck%RR
+!                    case ('sr'); vid = ck%SR
                     case ('tt'); vid = ck%TT
                     case ('uv'); vid = ck%UV
                     case ('p0'); vid = ck%P0

@@ -44,8 +44,10 @@ module climate_forcing_io
         !> Return if the variable is not marked active.
         if (.not. cm%dat(vid)%factive) return
 
+
         !> Open file depending on the format type of the climate data.
         select case (cm%dat(vid)%ffmt)
+
 
             !> ASCII R2C format.
             case (1)
@@ -266,14 +268,21 @@ module climate_forcing_io
                 case (6)
                     if (vid /= ck%MET) return
                     if (storedata) then
-                        read(cm%dat(vid)%fiun, *, end = 999) i, i, i, i, &
-                            cm%dat(ck%FB)%blocks(1, t), cm%dat(ck%FI)%blocks(1, t), cm%dat(ck%RT)%blocks(1, t), &
+!                        read(cm%dat(vid)%fiun, *, end = 999) i, i, i, i, &
+!                           cm%dat(ck%FB)%blocks(1, t), cm%dat(ck%FI)%blocks(1, t), cm%dat(ck%RT)%blocks(1, t), &
+!                            cm%dat(ck%TT)%blocks(1, t), cm%dat(ck%HU)%blocks(1, t), cm%dat(ck%UV)%blocks(1, t), &
+!                            cm%dat(ck%P0)%blocks(1, t)
+
+                       read(cm%dat(vid)%fiun, *, end = 999) i, i, i, i, &
+                          cm%dat(ck%FB)%blocks(1, t), cm%dat(ck%FI)%blocks(1, t), cm%dat(ck%RT)%blocks(1, t), &
                             cm%dat(ck%TT)%blocks(1, t), cm%dat(ck%HU)%blocks(1, t), cm%dat(ck%UV)%blocks(1, t), &
-                            cm%dat(ck%P0)%blocks(1, t)
+                           cm%dat(ck%P0)%blocks(1, t),cm%dat(ck%RR)%blocks(1, t), cm%dat(ck%SR)%blocks(1, t)
                         cm%dat(ck%TT)%blocks(1, t) = cm%dat(ck%TT)%blocks(1, t) + 273.16
+
                     else
                         read(cm%dat(vid)%fiun, *, end = 999)
                     end if
+
 
                 !> Unknown file format.
                 case default
