@@ -446,6 +446,46 @@
                                 end if
                             end if
                         end do
+! RR
+!                        call value(out_args(2), cm%dat(ck%RR)%ffmt, ierr)
+!                        if (ierr == 0) cm%dat(ck%RR)%factive = .true.
+!                        cm%dat(ck%RR)%id_var = 'RR'
+!                        if (cm%dat(ck%RR)%ffmt == 5) then
+!                            call value(out_args(3), cm%dat(ck%RR)%ffmt, ierr)
+!                            call value(out_args(4), cm%dat(ck%RR)%nblocks, ierr)
+!                        end if
+!                        do j = 3, nargs
+!                            if (len_trim(out_args(j)) > 3) then
+!                                if (out_args(j)(1:3) == 'hf=') then
+!                                    call value(out_args(j)(4:), cm%dat(ck%RR)%hf, ierr)
+!                                end if
+!                            end if
+!                            if (len_trim(out_args(j)) > 4) then
+!                                if (out_args(j)(1:4) == 'nts=') then
+!                                    call value(out_args(j)(5:), cm%dat(ck%RR)%nblocks, ierr)
+!                                end if
+!                            end if
+!                        end do
+!  ! SR
+!                        call value(out_args(2), cm%dat(ck%SR)%ffmt, ierr)
+!                        if (ierr == 0) cm%dat(ck%SR)%factive = .true.
+!                        cm%dat(ck%SR)%id_var = 'SR'
+!                        if (cm%dat(ck%SR)%ffmt == 5) then
+!                            call value(out_args(3), cm%dat(ck%SR)%ffmt, ierr)
+!                            call value(out_args(4), cm%dat(ck%SR)%nblocks, ierr)
+!                        end if
+!                        do j = 3, nargs
+!                            if (len_trim(out_args(j)) > 3) then
+!                                if (out_args(j)(1:3) == 'hf=') then
+!                                    call value(out_args(j)(4:), cm%dat(ck%SR)%hf, ierr)
+!                                end if
+!                            end if
+!                            if (len_trim(out_args(j)) > 4) then
+!                                if (out_args(j)(1:4) == 'nts=') then
+!                                    call value(out_args(j)(5:), cm%dat(ck%SR)%nblocks, ierr)
+!                                end if
+!                            end if
+!                        end do
                     case ('BASINTEMPERATUREFLAG')
                         call value(out_args(2), cm%dat(ck%TT)%ffmt, ierr)
                         if (ierr == 0) cm%dat(ck%TT)%factive = .true.
@@ -554,6 +594,8 @@
                             cm%dat(ck%FB)%ipflg = IROVAL
                             cm%dat(ck%FI)%ipflg = IROVAL
                             cm%dat(ck%RT)%ipflg = IROVAL
+ !                           cm%dat(ck%SR)%ipflg = IROVAL
+ !                           cm%dat(ck%RR)%ipflg = IROVAL
                             cm%dat(ck%TT)%ipflg = IROVAL
                             cm%dat(ck%UV)%ipflg = IROVAL
                             cm%dat(ck%P0)%ipflg = IROVAL
