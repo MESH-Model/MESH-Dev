@@ -340,6 +340,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
     if (btest(INPUTPARAMSFORMFLAG, 1)) then
         do k = il1, il2
 
+            !> Omit GRU's with mosaic ID >= 100 from being assigned grid-based values (special condition).
+            if (pm%tp%mid(k) >= 100) cycle
+
             !> Grid index.
             i = shd%lc%ILMOS(k)
 
