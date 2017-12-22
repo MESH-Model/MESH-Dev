@@ -10,10 +10,10 @@
                    HRSURF, HV, DEL, RS, & 
                    CG,CVP, EMIS, PSNG, &  
                    RESAGR, RESAVG,  &
-                   RNETSN, HFLUXSN, LESNOFRAC, ESNOFRAC, & 
+                   RNETSN, HFLUXSN, LESLNOFRAC,LESSNOFRAC, ESNOFRAC, & 
                    ALPHAS, &  
                    TSNS, & 
-                   RNETSV, HFLUXSV, LESVNOFRAC, ESVNOFRAC,  &
+                   RNETSV, HFLUXSV, LESLVNOFRAC,LESSVNOFRAC, ESVNOFRAC,  &
                    ALPHASV, & 
                    TSVS, & 
                    VEGH, VEGL, VGHEIGHT,  &
@@ -68,8 +68,8 @@
       REAL LEFF(N), DWATERDT(N), ZQS(N), FRV(N)
       REAL EG(N), HRSURF(N)
       REAL RESAGR(N), RESAVG(N)
-      REAL RNETSN(N), HFLUXSN(N), LESNOFRAC(N), ESNOFRAC(N)
-      REAL RNETSV(N), HFLUXSV(N), LESVNOFRAC(N), ESVNOFRAC(N)
+      REAL RNETSN(N), HFLUXSN(N), LESLNOFRAC(N), LESSNOFRAC(N),ESNOFRAC(N)
+      REAL RNETSV(N), HFLUXSV(N), LESLVNOFRAC(N), LESSVNOFRAC(N), ESVNOFRAC(N)
       REAL ALPHASV(N), ALFAT(N), ALFAQ(N), LESV(N)
       REAL VEGH(N), VEGL(N), PSNVH(N), PSNVHA(N)
       REAL ILMO(N), HST(N), TRAD(N)
@@ -169,15 +169,17 @@
 !
 ! RNETSN    net radiation over snow 
 ! HFLUXSN   sensible heat flux over snow 
-! ESNOFRAC  water vapor flux from the snow surface
-! LESNOFRAC latent heat flux from the snow surface 
+! ESNOFRAC  water vapor flux from the snow surface (kg/m2/s)
+! LESLNOFRAC latent heat flux of evaporation from the snow surface (W/m2)
+! LESSNOFRAC latent heat flux of sublimation from the snow surface (W/m2)
 ! ALPHAS    albedo of snow
 ! TSNS      surface (skin) snow temperature at time t+dt (update in snow_alone.ftn)
 !
 ! RNETSV    net radiation over snow-under-vegetation
 ! HFLUXSV   sensible heat flux over snow-under-vegetation
-! ESVNOFRAC water vapor flux from the snow-under-vegetation
-! LESVNOFRAC latent heat flux from the snow-under-vegetation 
+! ESVNOFRAC water vapor flux from the snow-under-vegetation  (kg/m2/s)
+! LESLVNOFRAC latent heat flux of evaporation from the snow-under-vegetation (W/m2)
+! LESSVNOFRAC latent heat flux of sublimation from the snow-under-vegetation (W/m2)
 ! ALPHASV   albedo of snow-under-veg
 ! TSVS      surface (skin) snow-under-veg temperature at time t+dt (update in snow_alone.ftn)
 !
@@ -394,9 +396,6 @@ include "fintern.inc"
        END DO
        DELZZ(NL_SVS) = DZ(NL_SVS)
 !
-
-
-
        DO K=2,NL_SVS-1
 
           DO I=1,N
@@ -485,7 +484,6 @@ include "fintern.inc"
 
        END DO
 !
-
 !                             matrix inversion
 !
 !
@@ -1006,13 +1004,13 @@ include "fintern.inc"
 !                                            Calculate latent heat snow weighted
 !                                            by grid-cell snow-coverage fraction
 !       
-        LES(I)  = (1. - VEGH(I)) * PSNG(I) *  LESNOFRAC(I)
-        ESF(I)  = (1. - VEGH(I)) * PSNG(I) *  ESNOFRAC(I)
+        LES(I)  = (1. - VEGH(I)) * PSNG(I) *  (LESLNOFRAC(I) + LESSNOFRAC(I))
+        ESF(I)  = (1. - VEGH(I)) * PSNG(I) *  ESNOFRAC(I)/RHOA(I)  ! ESF in m/s
 !
 !                                            Same for snow-under-vegetation
 !
-        LESV(I) =  VEGH(I) * PSNVHA(I)  *  LESVNOFRAC(I)
-        ESVF(I)  =  VEGH(I) * PSNVHA(I) *  ESVNOFRAC(I)
+        LESV(I) =  VEGH(I) * PSNVHA(I)  *  (LESLVNOFRAC(I) + LESSVNOFRAC(I))
+        ESVF(I)  =  VEGH(I) * PSNVHA(I) *  ESVNOFRAC(I)/RHOA(I)   ! ESVF in m/s
 !
 !                                            Total latent heat of evaporation
 !                                            (Including snow contribution)

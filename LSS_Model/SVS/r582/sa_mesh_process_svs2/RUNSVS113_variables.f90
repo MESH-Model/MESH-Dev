@@ -14,7 +14,6 @@ module RUNSVS113_variables
 !    real :: sigma_t = 0.995    ! Sigma level of scalar forcings
 !    integer xcount  ! Number of columns in the grid
 !    integer ycount  ! Number of lines in the grid
-!    logical :: observed_forcing = .false.
 !    character(len = 255) :: inifile = ''
 !    character(len = 255) :: interpfile = ''
 !    character(len = 255) :: geofile = ''
@@ -31,8 +30,10 @@ module RUNSVS113_variables
 !    integer kount
 !    real(kind = 8) kdt
 
+
 !>>>svs_output
-    integer :: iout_dly = 151, iout_hly = 152, iout_ts = 153 !150+N is output unit number for CLASS output; should be able to recycle its use
+    integer :: iout_dly = 151, iout_hly = 152, iout_hly_soil=154 
+    integer :: iout_ts = 154 !150+N is output unit number for CLASS output; should be able to recycle its use
     real preacc_dly, preacc_hly
 !<<<svs_output
 

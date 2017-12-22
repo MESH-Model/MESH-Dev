@@ -32,11 +32,7 @@ module RUNSVS113_config
 !#include "surfcon.cdk"
 #include "thermoconsts.inc"
 
-!        integer, parameter :: bussiz = runsvs_busdim
-!        real bus(bussiz)
-!        integer datecmc_o
-!        integer datecmc_v, date_v, hour_v, date_f, hour_f, istat, kount, bidon
-!        real(kind = 8) kdt
+
         integer k, ki, kj, j
         real sumfcanz0
 
@@ -48,21 +44,9 @@ module RUNSVS113_config
         !> Return if the process is not marked active or if not the head node.
         if (.not. RUNSVS113_flgs%PROCESS_ACTIVE) return
 
-        !> Initialize common blocks, read options and configuration file.
-!        read(*, nml = RUNSVS_OPT)
-!        nt = 169440
-!        dateo = 20020101
-!        houro = 07000000
-!        dt = 1800
         sigma_u = 0.995
         sigma_t = 0.995
-        observed_forcing = .false.
-!        inifile = '/cygdrive/c/Data/dprincz/OneDrive/Workspace/Data/MESH_Code/1_Main/TRUNK/LSS_Model/SVS/r531/data/02BA003.ini'
-!        metfile = '/cygdrive/c/Data/dprincz/OneDrive/Workspace/Data/MESH_Code/1_Main/TRUNK/LSS_Model/SVS/r531/data/02BA003.met'
-!        outfile = &
-!            '/cygdrive/c/Data/dprincz/OneDrive/Workspace/Data/MESH_Code/1_Main/TRUNK/LSS_Model/SVS/r531/data/02BA003_sa_mesh.out'
-!        xcount = 5
-!        ycount = 7
+        observed_forcing = .true.
 
 !        call svs_bus_init(xcount*ycount)
         call svs_bus_init(shd%lc%NML)
@@ -71,15 +55,6 @@ module RUNSVS113_config
         bus = 0.0
 !        delt = dt
 
-!#include "surfcon_ini.cdk"
-       ! call phy_options()
-!        call open_files(inifile, metfile, outfile)
-!        open(fid_out, file = outfile)
-
-        !> Read CLASS-style INI file.
-!        call read_ini_file(bus, bussiz)
-
-        write(*,*) 'IGND',shd%lc%IGND
         !> Parse CLASS variables to bus.
         do k = 0, NG - 1
 
@@ -98,6 +73,10 @@ module RUNSVS113_config
                 bus(zusl + k) = pm%sfp%zrfm(k + 1)
                 bus(ztsl + k) = pm%sfp%zrfh(k + 1)
             end if
+
+            write(*,*) 'Obs Forc',observed_forcing
+            write(*,*) 'Hauteur Level SVS', bus(zusl + k), bus(zusl + k)
+            write(*,*) 'Hauteur Level Class', pm%sfp%zrfm(k + 1), pm%sfp%zrfh(k + 1)
 
             !> Parameters.
             !* vegf+   3*NG: Needleleaf evergreen.
@@ -182,18 +161,12 @@ module RUNSVS113_config
             end do
 
             ! Ajout VV pour gel dans le sol
+            ! Sol non gele initialement.
             do j = 0, 6
                bus(isoil + j*NG + k) = 0.
             end do
 
-            !> Map soil temperature.
-            !> CLASS layer  <->  SVS layer
-            !>       1               1
-            !>       2               2
-            !bus(tsoil + k) = stas%sl%tbar(k + 1, 1)! + tcdk
-            !bus(tsoil + NG + k) = stas%sl%tbar(k + 1, 2)! + tcdk
-            !bus(tground + k) = stas%sl%tbar(k + 1, 1)! + tcdk
-            !bus(tground + NG + k) = stas%sl%tbar(k + 1, 2)! + tcdk
+
 
             !> Map soil temperature. 
             !> VVI for SVS 2 
@@ -229,7 +202,7 @@ module RUNSVS113_config
             !> Map vegetation temperature.
             do j = 0, 1
                 bus(tvege + j*NG + k) = stas%cnpy%tcan(k + 1)! + tcdk
-                bus(tsnowveg + j*NG + k) = stas%cnpy%tcan(k + 1)! + tcdk
+                bus(tsnowveg + j*NG + k) = stas%sno%tsno(k + 1)! + tcdk
             end do
 
             !> Map snow properties.
@@ -276,72 +249,33 @@ module RUNSVS113_config
             print *
         end if
 
-        !> Time loop.
+	!> Initialize surface parameters.
+	call inisoili_svs(bus, bussiz, NG)
+	!call inisoili_svs(NG, 1)
 
-        !> Convert start date/hour to CMC datestamp.
-!        istat = newdate(datecmc_o, dateo, houro, 3)
-!        kount = 0
-!        do kount = 0, nt
+	!> Initialize state variables.
+	call runsvs_init(bus, bussiz)
 
-            !> Determine time stamps of current date.
-!            kdt = kount*(dt*1.0D0)/3600.0D0
-
-            !> Compute date valid.
-!            call incdatr(datecmc_v, datecmc_o, kdt)
-
-            !> Convert to old style.
-!            istat = newdate(datecmc_v, date, bidon, -4)
-
-            !> Convert to printable.
-!            istat = newdate(datecmc_v, date_v, hour_v, -3)
-
-            !> Read meteorological forcing data.
-            !> Careful: at kount=0 we read data for kount=1 so we skip reading if kount=1.
-!            if (kount == 0 .or. (kount /= 1 .and. (date_f < date_v .or. hour_f < hour_v))) then
-!                call read_met_file(date_v, hour_v, date_f, hour_f, bus, bussiz)
-!                call compvirttemp(sigma_t, bus, bussiz)
-!                if (.not. observed_forcing) call surflayerheight(sigma_u, sigma_t, bus, bussiz)
-!            end if
-
-            !> Initialize parameters and state variables at kount=0.
-!            if (kount == 0) then
-
-                !> Initialize surface parameters.
-                write(*,*) 'Avant inisoili'
-                call inisoili_svs(bus, bussiz, NG)
-                write(*,*) 'Apres inisoili'
-                !call inisoili_svs(NG, 1)
-
-                !> Initialize state variables.
-                call runsvs_init(bus, bussiz)
-                write(*,*) 'OK pour RUN config'
-
-!            end if
-
-            !> Update vegetation parameters as a function of julian day.
-!            call inicover_svs(bus, bussiz, kount, NG)
-
-            !> Integrate SVS for one time step.
-!            call svs(bus, bussiz, bidon, 1, dt, kount, 1, NG, NG, 1)
-
-            !> Write outputs (currently in ASCII format).
-!            call write_out_file(date_v, hour_v, bus, bussiz)
-
-!        end do
 !>>>svs_output
     !> Daily.
-    open(iout_dly, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs_out.csv', status = 'unknown', action = 'write')
-    write(iout_dly, 1010) 'YEAR', 'DAY', 'PRE', 'PRATE'
+!    open(iout_dly, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs_out.csv', status = 'unknown', action = 'write')
+!    write(iout_dly, 1010) 'YEAR', 'DAY', 'PRE', 'PRATE'
     preacc_dly = 0.0 !reset accumulators
 
     !> Hourly.
-    open(iout_hly, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs_out_hourly.csv', status = 'unknown', action = 'write')
-    write(iout_hly, 1010) 'YEAR', 'DAY', 'HOUR', 'PRE'
+!    open(iout_hly, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs_out_hourly.csv', status = 'unknown', action = 'write')
+!    write(iout_hly, 1010) 'YEAR', 'DAY', 'HOUR', 'PRE'
+
+    open(iout_hly, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs2_out_snow_hourly.csv', status = 'unknown', action = 'write')
+    write(iout_hly, 1010) 'YEAR', 'DAY', 'HOUR', 'SWE', 'SD','SNALB'
     preacc_hly = 0.0 !reset accumulators
 
+    open(iout_hly_soil, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs2_out_tsoil_hourly.csv', status = 'unknown', action = 'write')
+    write(iout_hly_soil, 1010) 'YEAR', 'DAY', 'HOUR', 'TG1', 'TG2','TG3','TG4','TG5','TG6','TG7'
+
     !> Time-step.
-    open(iout_ts, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs_out_ts.csv', status = 'unknown', action = 'write')
-    write(iout_ts, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'RPCP', 'SPCP'
+  !  open(iout_ts, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs_out_ts.csv', status = 'unknown', action = 'write')
+  !  write(iout_ts, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'RPCP', 'SPCP'
 
 1010    format(9999(g15.7e2, ','))
 !<<<svs_output

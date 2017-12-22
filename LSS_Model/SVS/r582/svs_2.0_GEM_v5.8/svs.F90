@@ -282,6 +282,7 @@ integer ptr, x, j, k
          do I=1,N
 !           Make sure rootdp does not exceed permeable depth
             bus(x(ROOTDP,I,1))=min( bus(x(ROOTDP,I,1)) , DL_SVS(KDP) )
+	    bus(x(ROOTDP,I,1))=max( bus(x(ROOTDP,I,1)) , 0.5 )
          end do
 
        ! ---------------- FOR SNOW ES --------------------         
@@ -559,11 +560,11 @@ integer ptr, x, j, k
                   CG,CVPA,EVA,bus(x(PSNGRVL    ,1,1)) ,    &    
                   bus(x(RESAGR,1,1)), bus(x(RESAVG,1,1)),   &        
                   PRNSNOW, PHSNOW,    &   
-                  PLELES, PEVAP,      &
+                  PLELES,PLESES, PEVAP,      &
                   bus(x(SNOAL   ,1,1)) ,    &
                   bus(x(TSNOW      ,1,1)) ,    &  
                   PRNSNOW_V, PHSNOW_V, &
-                  PLELES_V, PEVAP_V,   &
+                  PLELES_V,PLESES_V, PEVAP_V,   &
                   bus(x(SNVAL  ,1,1)) ,    &
                   bus(x(TSNOWVEG   ,1,1)) ,   &   
                   bus(x(VEGH       ,1,1)) , bus(x(VEGL   ,1,1)) , bus(x(VGHEIGHT   ,1,1)),  &   
@@ -667,7 +668,6 @@ integer ptr, x, j, k
                        N )
 !
 !
-
       CALL UPDATE_SVS ( WSOILTT, ISOILT, WVEGT, &
                        bus(x(latflw  ,1,1)), bus(x(watflow ,1,1)),  &
                        bus(x(WSOIL   ,1,1)), bus(x(ISOIL   ,1,1)),  &

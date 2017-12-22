@@ -237,6 +237,7 @@ integer ptr, x, j, k
          DO I=1,N
 !           Make sure rootdp does not exceed permeable depth
             bus(x(ROOTDP,I,1))=min( bus(x(ROOTDP,I,1)) , DL_SVS(KDP) )
+!	    bus(x(ROOTDP,I,1))=max( bus(x(ROOTDP,I,1)) , 0.5 )
          END DO
 
       ENDIF
@@ -547,6 +548,21 @@ integer ptr, x, j, k
 !
         bus(x(tsurf  ,i,1        )) = bus(x(tsa  ,i,1        ))
         bus(x(tsrad  ,i,1        )) = TRAD(i)
+
+	! coherence check on snow mass and depth
+          if ( bus(x(snoma,i,1)).lt.0.01.or.bus(x(snodpl,i,1)).eq.0.0) then
+                bus(x(snoma,i,1)) = 0.0
+                bus(x(snodpl,i,1)) = 0.0
+                bus(x(wsnow,i,1)) = 0.0
+          end if
+          bus(x(snoro,i,1)) = min(max(100.,bus(x(snoden,i,1)))/RAUW,0.9)
+          if ( bus(x(snvma,i,1)).lt.0.01.or.bus(x(snvdp,i,1)).eq.0.0) then
+                bus(x(snvma,i,1)) = 0.0
+                bus(x(snvdp,i,1)) = 0.0
+                bus(x(wsnv,i,1)) = 0.0
+          end if
+          bus(x(snvro,i,1)) = min(max(100.,bus(x(snvden,i,1)))/RAUW,0.9)
+
 !
 !       CALCULATE LAND-ATMOSPHERE OUTCOMING WATER FLUX
         BUS(x(WFLUX,I,1)) = RHOA(I)*BUS(x(EFLUX,I,1))

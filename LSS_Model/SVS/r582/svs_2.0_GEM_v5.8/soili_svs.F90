@@ -298,7 +298,9 @@ include "isbapar.cdk"
 !                        average snow cover fraction of bare ground and low veg
 
           PSNGRVL(I) = (  (1-VEGH(I) -VEGL(I)) * PSNGROUND(I) +  VEGL(I) * PSNLOWVEG(I) ) / ( 1 - VEGH(I) )
+
        ELSE
+
           PSNGRVL(I) = 0.0
           PSNGROUND(I)  = 0.0
           PSNLOWVEG(I) = 0.0
@@ -337,6 +339,8 @@ include "isbapar.cdk"
 
         ENDIF
 !        
+      !write(*,*) VEGH(I),VEGL(I)
+      !write(*,*) PSNGROUND(I),PSNLOWVEG(I), PSNGRVL(I),PSNVH(I), PSNVHA(I)
       END DO
 !
 !
