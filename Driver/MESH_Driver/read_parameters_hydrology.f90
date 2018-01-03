@@ -7,6 +7,9 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !> Required for line operations and string conversion.
     use strings
 
+    !> Required for 'ipid'.
+    use mpi_module
+
     !> Required for file object and hydrology.ini file index.
     use model_files_variables
 
@@ -61,7 +64,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     open(iun, file = trim(adjustl(fls%fl(mfk%f23)%fn)), status = 'old', action = 'read', iostat = ierr)
 
     !> Check for errors opening the file.
-    if (ierr /= 0) then
+    if (ierr /= 0 .and. ipid == 0) then
         print 9999, trim(adjustl(fls%fl(mfk%f23)%fn))
         stop
     end if
@@ -84,7 +87,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 !+        end if
 
         !> Wrong file version.
-!-        if (.not. VER_OK) then
+!-        if (.not. VER_OK .and. ipid == 0) then
 !-            print *
 !-            if (len(trim(adjustl(FILE_VER))) > 0) then
 !-                print *, ' File version: ', FILE_VER
@@ -112,7 +115,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !>
 
     !> Warn parameter warnings will stop the model with DIAGNOSEMODE active.
-    if (FILE_VER == '2.0' .and. ro%DIAGNOSEMODE > 0) print 9899
+    if (FILE_VER == '2.0' .and. ro%DIAGNOSEMODE > 0 .and. ipid == 0) print 9899
 
     !> Option flags.
     call readline(iun, in_line, ierr)
@@ -375,7 +378,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
         case default
             call readline(iun, in_line, ierr)
             if (WF_RTE_flgs%PROCESS_ACTIVE) read(in_line, *, iostat = ierr) (wfp%r2(j), j = 1, NRVR)
-            if (ierr /= 0) then
+            if (ierr /= 0 .and. ipid == 0) then
                 print 8110, NRVR
                 goto 998
             end if
@@ -385,7 +388,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !> Check values of the river channel roughness factor.
     do i = 1, NRVR
         if (WF_RTE_flgs%PROCESS_ACTIVE) then
-            if (wfp%r2(i) <= 0.0) then
+            if (wfp%r2(i) <= 0.0 .and. ipid == 0) then
                 print 8110, NRVR
                 goto 998
             end if
@@ -482,7 +485,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                             else
                                 do j = 1, NYEARS
                                     call value(out_args(j + 1), t0_ACC(j), ierr)
-                                    if (ierr /= 0) then
+                                    if (ierr /= 0 .and. ipid == 0) then
                                         print 8220, NYEARS
                                         goto 922
                                     end if
@@ -517,7 +520,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                     !> Print warning message for unused variables.
                     ikeystate = ikeystate + ikey
-                    if (ikey > 0 .and. ro%DIAGNOSEMODE > 0) print 9898, trim(adjustl(out_args(1)))
+                    if (ikey > 0 .and. ro%DIAGNOSEMODE > 0 .and. ipid == 0) print 9898, trim(adjustl(out_args(1)))
 
                 end do
 
@@ -545,7 +548,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                         do i = 1, NYEARS
                             t0_ACC(i) = INDEPPARVAL(i + 4)
                         end do
-                    else
+                    else if (ipid == 0) then
                         print 8210
                         print 8220, NYEARS
                         goto 998
@@ -945,7 +948,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                     !> Print warning message for unused variables.
                     ikeystate = ikeystate + ikey
-                    if (ikey > 0 .and. ro%DIAGNOSEMODE > 0) print 9898, trim(adjustl(out_args(1)))
+                    if (ikey > 0 .and. ro%DIAGNOSEMODE > 0 .and. ipid == 0) print 9898, trim(adjustl(out_args(1)))
 
                 end do
 
@@ -964,19 +967,19 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
             if (n > 0) then
 
                 !> Check that GRU count matches the GRU count from the shd file.
-                if (i /= NTYPE) then
+                if (i /= NTYPE .and. ipid == 0) then
                     print 8310, i, NTYPE
                     stop
                 end if
 
                 !> Check the number of parameters.
-                if ((any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3)) .and. n < 9) then
+                if ((any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3)) .and. n < 9 .and. ipid == 0) then
                     print 8330, 9, 'PDMROF or LATFLOW (IWF 2 or 3)'
                     stop
-                else if (FROZENSOILINFILFLAG == 1 .and. n < 4) then
+                else if (FROZENSOILINFILFLAG == 1 .and. n < 4 .and. ipid == 0) then
                     print 8330, 4, 'FROZENSOILINFILFLAG'
                     stop
-                else if (n < 3) then
+                else if (n < 3 .and. ipid == 0) then
                     print 8320, 3
                     stop
                 end if
@@ -1079,9 +1082,6 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !>
     !> CLOSE FILE
     !>
-
-    !> Stop if print warning exist in DIAGNOSEMODE.
-    if (ikeystate > 0 .and. ro%DIAGNOSEMODE > 0) stop
 
 9898    format(3x, "WARNING: The parameter '", (a), "' is active but not used.")
 9899    format(//3x, "WARNING: Parameter warnings will stop the model with DIAGNOSEMODE active.")

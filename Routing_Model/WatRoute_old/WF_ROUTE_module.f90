@@ -47,14 +47,12 @@ module WF_ROUTE_module
             JAN = 2
         end if
 
-        !> Update SA_MESH variables.
-
-        !> For reservoirs in WF_ROUTE, storage is an accumulation of flow over time and does not translate to the 'stg' variable.
+        !> Update SA_MESH output variables.
+        !> Override the output variable because 'storage' for reservoirs is an accumulation of flow
+        !> and does not translate to the 'stgch' variable.
+        out%ts%stgch = stas_grid%chnl%stg
         if (fms%rsvr%n > 0) then
-            stas_fms%rsvr%qo = stas_grid%chnl%qo(fms%rsvr%meta%rnk(:))
-            stas_fms%rsvr%qi = stas_grid%chnl%qi(fms%rsvr%meta%rnk(:))
-            stas_fms%rsvr%stg = -1.0
-            stas_fms%rsvr%zlvl = 0.0
+            out%ts%stgch(fms%rsvr%meta%rnk(:)) = out%NO_DATA
         end if
 
     end subroutine

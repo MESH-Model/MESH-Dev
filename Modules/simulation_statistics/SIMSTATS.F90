@@ -189,21 +189,19 @@ module SIMSTATS
     !>
     !> Description:
     !>
-    subroutine stats_init(fls, stfl)
+    subroutine stats_init(fls)
 
         use sa_mesh_shared_variables
         use model_files_variables
 
     !> Input variables.
         type(fl_ids) :: fls
-        type(streamflow_hydrograph) :: stfl
 
         !> Local variables.
         logical exists
         integer iun, ierr
 
-!todo: fix hack for when routing is disabled.
-        if (.not. allocated(stfl%qhyd)) mtsflg%AUTOCALIBRATIONFLAG = 0
+        if (fms%stmg%n == 0) mtsflg%AUTOCALIBRATIONFLAG = 0
 
         if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
@@ -232,7 +230,7 @@ module SIMSTATS
         end if
 
         ncal = 0
-        ns = stfl%ns
+        ns = fms%stmg%n
 
         allocate(qobs(leap_year(ic%now%year), ns), qsim(leap_year(ic%now%year), ns))
         allocate(bias(ns), nsd(ns), lnsd(ns), nsw(ns), tpd(ns), tpw(ns))
@@ -249,14 +247,13 @@ module SIMSTATS
     !>
     !> Description:
     !>
-    subroutine stats_update_stfl_daily(fls, stfl)
+    subroutine stats_update_stfl_daily(fls)
 
         use sa_mesh_shared_variables
         use model_files_variables
 
         !> Input variables.
         type(fl_ids) :: fls
-        type(streamflow_hydrograph) :: stfl
 
         integer isz
         real, dimension(:, :), allocatable :: tmp
@@ -286,8 +283,8 @@ module SIMSTATS
 
         end if
 
-        qobs(ncal, :) = stfl%qhyd
-        qsim(ncal, :) = stfl%qsyn
+        qobs(ncal, :) = fms%stmg%qomeas%val
+        qsim(ncal, :) = out%dly%qo(fms%stmg%meta%rnk(:))
 
         if (objfnflag == 0) then
             ftest = sae_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)

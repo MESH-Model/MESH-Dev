@@ -45,18 +45,12 @@ module sa_mesh_run_between_grid
     type(WF_RTE_fout_stfl), save :: WF_RTE_fstflout
     type(WF_RTE_fout_rsvr), save :: WF_RTE_frsvrout
 
-    real, dimension(:), allocatable :: WF_QHYD_AVG, WF_QHYD_CUM
-    real, dimension(:), allocatable :: WF_QSYN_AVG, WF_QSYN_CUM
-
-    !* WF_NODATA_VALUE: No data value for when the streamflow record does not exist.
-    real :: WF_NODATA_VALUE = -1.0
+    real, dimension(:), allocatable :: WF_QHYD_CUM
 
 !todo: Move to ro%?
     integer RTE_TS
 
-    real, dimension(:), allocatable :: WF_QO2_ACC_MM, WF_STORE2_ACC_MM
-
-    real, dimension(:), allocatable :: lake_elv_avg, reach_qi_avg, reach_s_avg, reach_qo_avg
+    real, dimension(:), allocatable :: WF_QO2_ACC, WF_QO2_ACC_MM, WF_STORE2_ACC_MM
 
     contains
 
@@ -116,7 +110,8 @@ module sa_mesh_run_between_grid
         WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%fn = 'MESH_output_streamflow_ts.csv'
         WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun = 71
 
-        allocate(WF_QO2_ACC_MM(NA), WF_STORE2_ACC_MM(NA))
+        allocate(WF_QO2_ACC(NA), WF_QO2_ACC_MM(NA), WF_STORE2_ACC_MM(NA))
+        WF_QO2_ACC = 0.0
         WF_QO2_ACC_MM = 0.0
         WF_STORE2_ACC_MM = 0.0
 
@@ -126,18 +121,8 @@ module sa_mesh_run_between_grid
             WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun = 708
             WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%fn = 'MESH_output_reach_ts.csv'
             WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun = 708+NR
-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%fn = 'MESH_output_reach_ts.csv'
-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%iun = 708+(NR*2)
-
-            !> Allocate output variable for the driver.
-            rrls%nr = NR
-            allocate(rrls%rls(NR), rrls%store(NR), rrls%abst(NR))
-            rrls%rls = 0.0
-            rrls%store = 0.0
-            rrls%abst = 0.0
-
-            allocate(lake_elv_avg(NR), reach_qi_avg(NR), reach_s_avg(NR), reach_qo_avg(NR))
-            lake_elv_avg = 0.0; reach_qi_avg = 0.0; reach_s_avg = 0.0; reach_qo_avg = 0.0
+!            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%fn = 'MESH_output_reach_Hourly.csv'
+!            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%iun = 708+(NR*2)
 
             if (len_trim(REACHOUTFLAG) == 0) REACHOUTFLAG = 'REACHOUTFLAG default'
             call parse(REACHOUTFLAG, ' ', out_args, nargs)
@@ -169,6 +154,8 @@ module sa_mesh_run_between_grid
 
             !> Open output files for reaches.
             do j = WF_RTE_frsvrout%kmin, WF_RTE_frsvrout%kmax
+!temp: Code missing to write hourly values
+                if (j == WF_RTE_frsvrout%KHLY) cycle
                 if (btest(WF_RTE_frsvrout%freq, j)) then
                     do i = 1, fms%rsvr%n
                         iun = WF_RTE_frsvrout%fls%fl(j)%iun + i
@@ -202,18 +189,8 @@ module sa_mesh_run_between_grid
         end if
 
         if (NS > 0) then
-            allocate(WF_QHYD_AVG(NS), WF_QHYD_CUM(NS), &
-                     WF_QSYN_AVG(NS), WF_QSYN_CUM(NS))
-            WF_QSYN_AVG = 0.0
-            WF_QHYD_AVG = 0.0
-            WF_QSYN_CUM = 0.0
+            allocate(WF_QHYD_CUM(NS))
             WF_QHYD_CUM = 0.0
-
-            !> Allocate output variable for the driver.
-            stfl%ns = NS
-            allocate(stfl%qhyd(NS), stfl%qsyn(NS))
-            stfl%qhyd = 0.0
-            stfl%qsyn = 0.0
 
             if (len_trim(STREAMFLOWOUTFLAG) == 0) STREAMFLOWOUTFLAG = 'STREAMFLOWOUTFLAG default'
             call parse(STREAMFLOWOUTFLAG, ' ', out_args, nargs)
@@ -279,6 +256,15 @@ module sa_mesh_run_between_grid
             end do
         end if
 
+        !> Initialize output variables.
+        call output_variables_init(shd)
+
+        !> Allocate grid-based output variables.
+        call output_variables_allocate(out%dly%qi, shd%NA)
+        call output_variables_allocate(out%dly%stgch, shd%NA)
+        call output_variables_allocate(out%dly%qo, shd%NA)
+        call output_variables_allocate(out%dly%zlvl, shd%NA)
+
         !> Call processes.
         call SA_RTE_init(shd)
         call WF_ROUTE_init(fls, shd, stfl, rrls)
@@ -325,6 +311,9 @@ module sa_mesh_run_between_grid
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
+        !> Reset output variables.
+        call output_variables_reset()
+
         !> Read in reservoir release values if such a type of reservoir has been defined.
         if (fms%rsvr%n > 0) then
             if (count(fms%rsvr%rls%b1 == 0.0) > 0) then
@@ -352,10 +341,9 @@ module sa_mesh_run_between_grid
 
                 !> Assign a dummy value if no flow record exists.
                 if (ierr /= 0) then
-                    fms%stmg%qomeas%val = -1.0
+                    fms%stmg%qomeas%val = out%NO_DATA
                 end if
             end if
-            stfl%qhyd = fms%stmg%qomeas%val
         end if
 
         !> calculate and write the basin avg SCA similar to watclass3.0f5
@@ -391,73 +379,48 @@ module sa_mesh_run_between_grid
         call runci_between_grid(shd, fls, cm)
         call run_save_basin_output(fls, shd, cm)
 
-        if (ic%ts_daily == 1) then
-            WF_QSYN_AVG = 0.0
-        end if
+        !> Update output variables.
+        call output_variables_update()
 
         if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0) then
 
-            do i = 1, fms%stmg%n
-                stas_fms%stmg%qo(i) = stas_grid%chnl%qo(fms%stmg%meta%rnk(i))
-                if (stas_fms%stmg%qo(i) > 0.0) then
-                    WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + stas_grid%chnl%qo(fms%stmg%meta%rnk(i))
-                    WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + stas_grid%chnl%qo(fms%stmg%meta%rnk(i))
-                    WF_QHYD_AVG(i) = fms%stmg%qomeas%val(i) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
-                else
-                    WF_QSYN_AVG(i) = WF_NODATA_VALUE
-                    WF_QSYN_CUM(i) = WF_NODATA_VALUE
-                    WF_QHYD_AVG(i) = WF_NODATA_VALUE
-                end if
-            end do
             where (shd%DA > 0.0)
                 WF_QO2_ACC_MM = WF_QO2_ACC_MM + stas_grid%chnl%qo/shd%DA/1000.0*RTE_TS
                 WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + stas_grid%chnl%stg/shd%DA/1000.0
             elsewhere
-                WF_QO2_ACC_MM = WF_NODATA_VALUE
-                WF_STORE2_ACC_MM = WF_NODATA_VALUE
+                WF_QO2_ACC_MM = out%NO_DATA
+                WF_STORE2_ACC_MM = out%NO_DATA
             end where
 
-            if (fms%rsvr%n > 0) then
-                if (all(stas_fms%rsvr%zlvl == 0.0)) then
-                    where (stas_fms%rsvr%stg > 0.0 .and. fms%rsvr%rls%area > 0.0)
-                        stas_fms%rsvr%zlvl = stas_fms%rsvr%stg/fms%rsvr%rls%area
-                        lake_elv_avg = lake_elv_avg + stas_fms%rsvr%zlvl
-                    elsewhere
-                        stas_fms%rsvr%zlvl = WF_NODATA_VALUE
-                        lake_elv_avg = WF_NODATA_VALUE
-                    end where
-                else
-                    lake_elv_avg = lake_elv_avg + stas_fms%rsvr%zlvl
-                end if
-                reach_qi_avg = reach_qi_avg + stas_fms%rsvr%qi
-                if (all(stas_fms%rsvr%stg == WF_NODATA_VALUE)) then
-                    reach_s_avg = WF_NODATA_VALUE
-                else
-                    reach_s_avg = reach_s_avg + stas_fms%rsvr%stg
-                end if
-                reach_qo_avg = reach_qo_avg + stas_fms%rsvr%qo
-            end if
-
             !> Write per time-step output for reaches.
+            !> Divide by number of time-steps in routing time-step to resolve issues when RTE_TS > ic%dts.
             if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KTS)) then
                 do l = 1, fms%rsvr%n
                     iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun + l
                     write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
-                    write(iun, 1010, advance = 'no') stas_fms%rsvr%qi(l), stas_fms%rsvr%stg(l), stas_fms%rsvr%qo(l)
+                    write(iun, 1010, advance = 'no') &
+                        out%ts%qi(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
+                        out%ts%stgch(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
+                        out%ts%qo(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts)
                     write(iun, *)
                 end do
             end if
 
             !> Write per time-step output for streamflow.
+            !> Divide by number of time-steps in routing time-step to resolve issues when RTE_TS > ic%dts.
             if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KTS)) then
                 iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
                 do i = 1, fms%stmg%n
 !todo
-                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') WF_NODATA_VALUE, WF_NODATA_VALUE
-                    if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') fms%stmg%qomeas%val(i), stas_fms%stmg%qo(i)
+                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
+                    if (WF_RTE_fstflout%fout_hyd) then
+                        write(iun, 1010, advance = 'no') &
+                            fms%stmg%qomeas%val(i), &
+                            out%ts%qo(fms%stmg%meta%rnk(i))/real(RTE_TS/ic%dts)
+                    end if
 !todo
-                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') WF_NODATA_VALUE, WF_NODATA_VALUE
+                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
                 end do
                 write(iun, *)
             end if
@@ -471,58 +434,50 @@ module sa_mesh_run_between_grid
         if (writeout) then
 
             if (fms%rsvr%n > 0) then
-                where (lake_elv_avg /= -1.0) lake_elv_avg = lake_elv_avg/real(ic%ts_daily/(RTE_TS/ic%dts))
+                where (out%dly%stgch(fms%rsvr%meta%rnk(:)) > 0.0 .and. fms%rsvr%rls%area > 0.0)
+                    out%dly%zlvl(fms%rsvr%meta%rnk(:)) = out%dly%stgch(fms%rsvr%meta%rnk(:))/fms%rsvr%rls%area
+                elsewhere
+                    out%dly%zlvl(fms%rsvr%meta%rnk(:)) = out%NO_DATA
+                end where
                 iun = 707
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
-                write(iun, 1010, advance = 'no') (lake_elv_avg(l), l = 1, fms%rsvr%n)
+                write(iun, 1010, advance = 'no') (out%dly%zlvl(fms%rsvr%meta%rnk(l)), l = 1, fms%rsvr%n)
                 write(iun, *)
-                lake_elv_avg = 0.0
-                reach_qi_avg = reach_qi_avg/real(ic%ts_daily/(RTE_TS/ic%dts))
-                where (reach_s_avg /= -1.0) reach_s_avg = reach_s_avg/real(ic%ts_daily/(RTE_TS/ic%dts))
-                reach_qo_avg = reach_qo_avg/real(ic%ts_daily/(RTE_TS/ic%dts))
                 if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KDLY)) then
                     do l = 1, fms%rsvr%n
                         iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun + l
                         write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
-                        write(iun, 1010, advance = 'no') reach_qi_avg(l), reach_s_avg(l), reach_qo_avg(l)
+                        write(iun, 1010, advance = 'no') &
+                            out%dly%qi(fms%rsvr%meta%rnk(l)), out%dly%stgch(fms%rsvr%meta%rnk(l)), out%dly%qo(fms%rsvr%meta%rnk(l))
                         write(iun, *)
                     end do
                 end if
-                reach_qi_avg = 0.0
-                reach_s_avg = 0.0
-                reach_qo_avg = 0.0
             end if
 
             do i = 1, fms%stmg%n
-                if (WF_QHYD_AVG(i) /= WF_QHYD_AVG(i)) then
-                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + WF_QHYD_AVG(i)
+                if (fms%stmg%qomeas%val(i) /= fms%stmg%qomeas%val(i)) then
+                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + fms%stmg%qomeas%val(i)
                 else
-                    WF_QHYD_CUM(i) = WF_NODATA_VALUE
+                    WF_QHYD_CUM(i) = out%NO_DATA
                 end if
             end do
 
             !> Write daily output for streamflow.
             if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KDLY)) then
-                where (WF_QSYN_CUM /= WF_NODATA_VALUE) WF_QSYN_CUM = WF_QSYN_CUM/real(ic%ts_daily/(RTE_TS/ic%dts))
-                where (WF_QSYN_AVG /= WF_NODATA_VALUE) WF_QSYN_AVG = WF_QSYN_AVG/real(ic%ts_daily/(RTE_TS/ic%dts))
-                where (WF_STORE2_ACC_MM /= WF_NODATA_VALUE) WF_STORE2_ACC_MM = WF_STORE2_ACC_MM/ic%ts_count
+                WF_QO2_ACC = WF_QO2_ACC + out%dly%qo
+                where (WF_STORE2_ACC_MM /= out%NO_DATA) WF_STORE2_ACC_MM = WF_STORE2_ACC_MM/ic%ts_count
                 iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
                 do i = 1, fms%stmg%n
                     if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') &
-                        WF_QHYD_CUM(i), WF_QSYN_CUM(i)
+                        WF_QHYD_CUM(i), WF_QO2_ACC(fms%stmg%meta%rnk(i))
                     if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') &
-                        WF_QHYD_AVG(i), WF_QSYN_AVG(i)
+                        fms%stmg%qomeas%val(i), out%dly%qo(fms%stmg%meta%rnk(i))
                     if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') &
                         WF_QO2_ACC_MM(fms%stmg%meta%rnk(i)), WF_STORE2_ACC_MM(fms%stmg%meta%rnk(i))
                 end do
                 write(iun, *)
             end if
-
-            !> Assign to the output variables.
-            stfl%qhyd = WF_QHYD_AVG
-            stfl%qsyn = WF_QSYN_AVG
-
         end if
 
 1010    format(9999(g15.7e2, ','))

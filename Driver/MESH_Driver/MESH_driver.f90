@@ -145,7 +145,7 @@ program RUNMESH
 
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
-    character(24) :: VERSION = '1231'
+    character(24) :: VERSION = '1232'
     character(8) RELEASE
 
     integer i, j, k, l, m, u
@@ -932,8 +932,8 @@ program RUNMESH
             read(iun) STG_INI
 
             !> Daily streamflow values.
-            read(iun) stfl%qhyd
-            read(iun) stfl%qsyn
+            read(iun) fms%stmg%qomeas%val
+            read(iun) out%dly%qo(fms%stmg%meta%rnk(:))
 
         end if
 
@@ -942,7 +942,7 @@ program RUNMESH
 
     end if !(RESUMEFLAG == 4) then
 
-    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls, stfl)
+    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls)
 
     !> *********************************************************************
     !> End of Initialization
@@ -1100,7 +1100,7 @@ program RUNMESH
                     if (printoutstfl) then
                         do j = 1, fms%stmg%n
                             if (printoutqhyd) write(6, '(f10.3)', advance = 'no') fms%stmg%qomeas%val(j)
-                            write(6, '(f10.3)', advance = 'no') stfl%qsyn(j)
+                            write(6, '(f10.3)', advance = 'no') out%dly%qo(fms%stmg%meta%rnk(j))
                         end do
                     end if
                     if (printoutwb) then
@@ -1110,7 +1110,7 @@ program RUNMESH
                     write(6, *)
                 end if !(ro%VERBOSEMODE > 0) then
                 if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
-                    call stats_update_stfl_daily(fls, stfl)
+                    call stats_update_stfl_daily(fls)
                     if (mtsflg%PREEMPTIONFLAG > 1) then
                         if (FTEST > FBEST) goto 199
                     end if
@@ -1289,8 +1289,8 @@ program RUNMESH
             write(iun) STG_INI
 
             !> Daily streamflow values.
-            write(iun) stfl%qhyd
-            write(iun) stfl%qsyn
+            write(iun) fms%stmg%qomeas%val
+            write(iun) out%dly%qo(fms%stmg%meta%rnk(:))
 
             !> Close the file to free the unit.
             close(iun)

@@ -1,5 +1,8 @@
 subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
+    !> Required for 'ipid'.
+    use mpi_module
+
     !> Required for file object and CLASS.ini file index.
     use model_files_variables
 
@@ -38,7 +41,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
          iostat = ierr)
 
     !> Check for errors from opening the file.
-    if (ierr /= 0) then
+    if (ierr /= 0 .and. ipid == 0) then
         print *
         print *, &
             'MESH_parameters_CLASS.ini could not be opened.', &
@@ -61,7 +64,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     read(iun, *) DEGLAT, DEGLON, pm_gru%sfp%zrfm(1), pm_gru%sfp%zrfh(1), pm_gru%sfp%zbld(1), pm_gru%tp%gc(1), shd%wc%ILG, i, m
 
     !> Check that the number of GRUs matches the drainage database value.
-    if (NTYPE /= m .and. NTYPE > 0) then
+    if (NTYPE /= m .and. NTYPE > 0 .and. ipid == 0) then
         print *
         print *, 'GRUs from MESH_parameters_CLASS.ini: ', m
         print *, 'GRUs from basin watershed file: ', NTYPE
@@ -70,7 +73,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     end if
 
     !> Check that the number of grid cells matches the drainage database value.
-    if (i /= NA) then
+    if (i /= NA .and. ipid == 0) then
         print *
         print *, &
             'ERROR: The number of grid squares in the class ', &

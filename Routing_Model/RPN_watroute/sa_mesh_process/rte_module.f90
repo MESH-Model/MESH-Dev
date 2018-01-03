@@ -532,17 +532,19 @@ module rte_module
 
         end if
 
-        !> Update MESH variables.
+        !> Update SA_MESH output variables.
+        out%ts%qi = qi2
+        out%ts%stgch = store2
+        out%ts%qo = qo2
+        if (fms%rsvr%n > 0) then
+            reach_last = lake_elv(:, 1)
+        end if
+
+        !> Update SA_MESH variables.
+        !> Used by other processes and/or for resume file.
         stas_grid%chnl%qi = qi2
         stas_grid%chnl%stg = store2
         stas_grid%chnl%qo = qo2
-        do l = 1, noresv
-            stas_fms%rsvr%zlvl(l) = lake_elv(l, 1)
-            reach_last(l) = lake_elv(l, 1)
-            stas_fms%rsvr%qi(l) = stas_grid%chnl%qi(fms%rsvr%meta%rnk(l))
-            stas_fms%rsvr%stg(l) = stas_grid%chnl%stg(fms%rsvr%meta%rnk(l))
-            stas_fms%rsvr%qo(l) = stas_grid%chnl%qo(fms%rsvr%meta%rnk(l))
-        end do
 
     end subroutine
 
@@ -600,6 +602,12 @@ module rte_module
         qr(1:naa) = qr(1:naa) + (stas_grid%sfc%rofo(1:naa) + stas_grid%sl%rofs(1:naa))*shd%FRAC(1:naa)*ic%dts
         qr(1:naa) = qr(1:naa) + (stas_grid%lzs%rofb(1:naa) + stas_grid%dzs%rofb(1:naa))*shd%FRAC(1:naa)*ic%dts
 
+        !> Reset SA_MESH output variables (for averaging).
+        !> Setting these to zero also prevents updating from the state variables upon return.
+        out%ts%qi = 0.0
+        out%ts%stgch = 0.0
+        out%ts%qo = 0.0
+
         !> Return if no the last time-step of the hour.
         if (mod(ic%ts_hourly, 3600/ic%dts) /= 0) then
             return
@@ -639,7 +647,9 @@ module rte_module
         qr(1:naa) = qr(1:naa)*1000.0*step2/3600.0
 
         !> Update from SA_MESH variables.
+        qi2 = stas_grid%chnl%qi
         store2 = stas_grid%chnl%stg
+        qo2 = stas_grid%chnl%qo
 
         !> Remember the input values from the start of the time step.
         qi2_strt(1:naa) = qi2(1:naa)
@@ -758,8 +768,6 @@ module rte_module
         !> Prepare arrays for storing output (averaged over the routing time-step).
         if (.not. allocated(avr_qo)) allocate(avr_qo(na))
         avr_qo = 0.0
-        stas_grid%chnl%qi = 0.0
-        stas_grid%chnl%qo = 0.0
 
         !> ROUTE ROUTES WATER THROUGH EACH SQUARE USING STORAGE ROUTING.
         !> rev. 9.3.11  Feb.  17/07  - NK: force hourly time steps for runoff
@@ -802,9 +810,10 @@ module rte_module
                 end if
             end if
 
-            !> Update variables for storing average values.
-            stas_grid%chnl%qi = stas_grid%chnl%qi + qi2
-            stas_grid%chnl%qo = stas_grid%chnl%qo + qo2
+            !> Update MESH output variables (for averaging).
+            out%ts%qi = out%ts%qi + qi2
+            out%ts%stgch = out%ts%stgch + store2
+            out%ts%qo = out%ts%qo + qo2
 
         end do !n = 1, no_dt
 
@@ -814,15 +823,19 @@ module rte_module
 !        day_last = day_now
 !        hour_last = hour_now
 
+        !> Update SA_MESH output variables.
+        !> Output variables are updated at every model time-step; multiply averages
+        !> by the number of model time-steps in the routing time-step
+        out%ts%qi = out%ts%qi/no_dt*(3600/ic%dts)
+        out%ts%stgch = out%ts%stgch/no_dt*(3600/ic%dts)
+        out%ts%qo = out%ts%qo/no_dt*(3600/ic%dts) !same as avr_qo
+
         !> Update SA_MESH variables.
-        stas_grid%chnl%qi = stas_grid%chnl%qi/no_dt
+        !> Used by other processes and/or for resume file.
+        stas_grid%chnl%qi = qi2
         stas_grid%chnl%stg = store2
-        stas_grid%chnl%qo = stas_grid%chnl%qo/no_dt !same as avr_qo
+        stas_grid%chnl%qo = qo2
         if (fms%rsvr%n > 0) then
-            stas_fms%rsvr%qo = stas_grid%chnl%qo(fms%rsvr%meta%rnk(:))
-            stas_fms%rsvr%stg = stas_grid%chnl%stg(fms%rsvr%meta%rnk(:))
-            stas_fms%rsvr%qi = stas_grid%chnl%qi(fms%rsvr%meta%rnk(:))
-            stas_fms%rsvr%zlvl = lake_elv(:, fhr)
             reach_last = lake_elv(:, fhr)
         end if
 

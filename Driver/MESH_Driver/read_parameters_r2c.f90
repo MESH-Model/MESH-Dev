@@ -132,7 +132,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         end do
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%sand(:, ilvl) = ffield
-                    else
+                    else if (verbose) then
                         print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
                     end if
                 end if
@@ -144,7 +144,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         end do
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%clay(:, ilvl) = ffield
-                    else
+                    else if (verbose) then
                         print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
                     end if
                 end if
@@ -156,7 +156,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         end do
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%orgm(:, ilvl) = ffield
-                    else
+                    else if (verbose) then
                         print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
                     end if
                 end if
