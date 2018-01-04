@@ -2,25 +2,40 @@ module output_variables
 
     implicit none
 
+    !> Description: Interface for 'output_variables_allocate'.
+    !>  Allocates variables for storing output based on components
+    !>  that are active in the model.
     interface output_variables_allocate
         module procedure output_variables_allocate_real_1d
         module procedure output_variables_allocate_real_2d
         module procedure output_variables_allocate_int_1d
     end interface
 
+    !> Description: Interface for 'output_variables_update_field'.
+    !>  Updates aggregated fields from per time-step output variables
+    !>  based on components that are active in the model.
     interface output_variables_update_field
         module procedure output_variables_update_field_real_1d
         module procedure output_variables_update_field_real_2d
         module procedure output_variables_update_field_int_1d
     end interface
 
+    !> Keys for identifying output variable group.
+    !*  PTS: Per model time-step.
+    !*  TOT: Total (e.g., accumulated).
+    !*  DLY: Daily.
+    !*  HLY: Hourly.
+    !*  MLY: Monthly.
+    !*  YLY: Yearly.
+    integer, parameter :: TKPTS = 5
+    integer, parameter :: TKTOT = 1
     integer, parameter :: TKDLY = 2
     integer, parameter :: TKHLY = 4
-    integer, parameter :: TKPTS = 5
     integer, parameter :: TKMLY = 3
     integer, parameter :: TKYLY = 6
-    integer, parameter :: TKTOT = 1
 
+    !> Description:
+    !>  Group containing output variables.
     type output_variables_group
 
         !> Meteorological forcing.
@@ -90,16 +105,39 @@ module output_variables
         integer freq
     end type
 
+    !> Description:
+    !>  Container for output variable groups and NO_DATA variables.
+    !>
+    !> Members:
+    !*  NO_DATA: No data value (type: real).
+    !*  NO_DATA_INT: No data value (type: integer).
+    !*  ts: Per time-step.
+    !*  tot: Total (e.g., accumulated).
+    !*  dly: Daily.
+    !*  hly: Hourly.
+    !*  mly: Monthly.
+    !*  yly: Yearly.
     type output_variables_container
         type(output_variables_group) ts, dly, hly, mly, yly, tot
         integer :: NO_DATA_INT = -1
         real :: NO_DATA = -1.0
     end type
 
+    !*  out: Instance of container for output variable groups.
     type(output_variables_container), save :: out
 
     contains
 
+    !> Description:
+    !>  Allocate single dimension vector of type real to 'n'.
+    !>  Initializes 'field' to zero unless already allocated.
+    !>
+    !> Input:
+    !*  n: dimension to allocate 'field'.
+    !>
+    !> Input/output:
+    !*  field: Variable to allocate; returns if allocated.
+    !>
     subroutine output_variables_allocate_real_1d(field, n)
         integer n
         real, allocatable :: field(:)
@@ -108,6 +146,17 @@ module output_variables
         field = 0.0
     end subroutine
 
+    !> Description:
+    !>  Allocate two dimension array of type real to 'n' and 'j'.
+    !>  Initializes 'field' to zero unless already allocated.
+    !>
+    !> Input:
+    !*  n: dimension to allocate 'field' in the first dimension.
+    !*  j: dimension to allocate 'field' in the second dimension.
+    !>
+    !> Input/output:
+    !*  field: Variable to allocate; returns if allocated.
+    !>
     subroutine output_variables_allocate_real_2d(field, n, j)
         integer n, j
         real, allocatable :: field(:, :)
@@ -116,6 +165,16 @@ module output_variables
         field = 0.0
     end subroutine
 
+    !> Description:
+    !>  Allocate single dimension vector of type integer to 'n'.
+    !>  Initializes 'field' to zero unless already allocated.
+    !>
+    !> Input:
+    !*  n: dimension to allocate 'field'.
+    !>
+    !> Input/output:
+    !*  field: Variable to allocate; returns if allocated.
+    !>
     subroutine output_variables_allocate_int_1d(field, n)
         integer n
         integer, allocatable :: field(:)
@@ -124,15 +183,23 @@ module output_variables
         field = 0
     end subroutine
 
+    !> Description:
+    !>  Allocate and initialize per time-step output variables. Assigns
+    !>  frequency keys to the respective output variable groups.
     subroutine output_variables_init(shd)
 
+        !> 'shd_variables' required for indices from 'shd'.
+        !> 'control_variables' required to check for active modelling components.
         use shd_variables
         use control_variables
 
+        !> Input variables.
         type(ShedGridParams) :: shd
 
+        !> Local variables.
         integer na, nml, s
 
+        !> Indices for allocation.
         na = shd%NA
         nml = shd%lc%NML
         s = shd%lc%IGND
@@ -208,6 +275,7 @@ module output_variables
             allocate(out%ts%zlvl(na))
         end if
 
+        !> Assign frequency keys.
         out%dly%freq = TKDLY
         out%hly%freq = TKHLY
         out%ts%freq = TKPTS
@@ -217,6 +285,13 @@ module output_variables
 
     end subroutine
 
+    !> Description:
+    !>  Update 'field' from 'val' using the provided function 'fn'.
+    !>  Reset 'field' if the first time-step of the period ('its' == 1).
+    !>  Calculate an average provided the 'avg' function ('fn' == 'avg')
+    !>  if the last time-step of period ('dnts' > 0).
+    !>  Assign the NO_DATA value at indices where 'val' contains the
+    !>  NO_DATA value.
     subroutine output_variables_update_field_real_1d(field, val, its, dnts, fn)
         integer its, dnts
         real, dimension(:) :: field, val
@@ -238,6 +313,13 @@ module output_variables
         where (val == out%NO_DATA) field = out%NO_DATA
     end subroutine
 
+    !> Description:
+    !>  Update 'field' from 'val' using the provided function 'fn'.
+    !>  Reset 'field' if the first time-step of the period ('its' == 1).
+    !>  Calculate an average provided the 'avg' function ('fn' == 'avg')
+    !>  if the last time-step of period ('dnts' > 0).
+    !>  Assign the NO_DATA value at indices where 'val' contains the
+    !>  NO_DATA value.
     subroutine output_variables_update_field_real_2d(field, val, its, dnts, fn)
         integer its, dnts
         real, dimension(:, :) :: field, val
@@ -259,6 +341,13 @@ module output_variables
         where (val == out%NO_DATA) field = out%NO_DATA
     end subroutine
 
+    !> Description:
+    !>  Update 'field' from 'val' using the provided function 'fn'.
+    !>  Reset 'field' if the first time-step of the period ('its' == 1).
+    !>  Calculate an average provided the 'avg' function ('fn' == 'avg')
+    !>  if the last time-step of period ('dnts' > 0).
+    !>  Assign the NO_DATA value at indices where 'val' contains the
+    !>  NO_DATA value.
     subroutine output_variables_update_field_int_1d(field, val, its, fn)
         integer its
         integer, dimension(:) :: field, val
@@ -278,33 +367,47 @@ module output_variables
     end subroutine
 
     !> Description:
-    !>  Update the provided output variable from the per time-step variable.
+    !>  Update the output variable from the per time-step values.
     !>  Only fields allocated are updated.
     subroutine output_variables_update_series(vars)
 
+        !> 'model_dates' required for 'ic' variable (counter and time-stepping).
         use model_dates
 
+        !> Input/output variable.
         type(output_variables_group) vars
 
+        !> Local variables.
         integer its, dnts
 
-        !> Determine if in the last time-step of the period.
+        !> Determine the current time-step in the period.
+        !> Assign values to pass to the update routine.
         dnts = 0
         its = 0
         select case (vars%freq)
+
+            !> Daily.
             case (TKDLY)
                 if (mod(ic%ts_daily, 3600/ic%dts*24) == 0) dnts = ic%ts_daily
                 its = ic%ts_daily
+
+            !> Hourly.
             case (TKHLY)
                 if (mod(ic%ts_hourly, 3600/ic%dts) == 0) dnts = ic%ts_hourly
                 its = ic%ts_hourly
+
+            !> Monthly.
             case (TKMLY)
+
+            !> Yearly.
             case (TKYLY)
+
+            !> Total (e.g., accumulated).
             case (TKTOT)
                 dnts = ic%ts_count
-
         end select
 
+        !> Channels and routing.
         if (allocated(vars%rff)) call output_variables_update_field(vars%rff, out%ts%rff, its, dnts, 'sum')
         if (allocated(vars%rchg)) call output_variables_update_field(vars%rchg, out%ts%rchg, its, dnts, 'sum')
         if (allocated(vars%qi)) call output_variables_update_field(vars%qi, out%ts%qi, its, dnts, 'avg')
@@ -315,10 +418,14 @@ module output_variables
     end subroutine
 
     !> Description:
-    !>  Update output variables of higher time frequency from the
-    !>  per time-step output variables.
+    !>  Update per time-step variables if not already updated by other
+    !>  routines (e.g., if all values still equal the NO_DATA value).
+    !>  Then update output variables of higher time frequencies from the
+    !>  per time-step values.
     subroutine output_variables_update()
 
+        !> 'control_variables' required to check for active modelling components.
+        !> 'state_variables' required for 'stas' variable.
         use control_variables
         use state_variables
 
@@ -330,7 +437,7 @@ module output_variables
 !            if (all(out%ts%zlvl == out%NO_DATA)) out%ts%zlvl = stas_grid%chnl%zlvl
         end if
 
-        !> Update larger time frequencies using the 'per time-step' series.
+        !> Update other time frequencies from the per time-step values.
         call output_variables_update_series(out%dly)
         call output_variables_update_series(out%hly)
         call output_variables_update_series(out%mly)
@@ -340,12 +447,10 @@ module output_variables
     end subroutine
 
     !> Description:
-    !>  Reset output variables. Variables are initialized to NO_DATA value.
-    !>  When the update routine is called, only those variables where all values
-    !>  are equal to NO_DATA are updated, in case subroutines themselves
-    !>  have updated the output variables.
+    !>  Reset output variables. Variables are set to the NO_DATA value.
     subroutine output_variables_reset()
 
+        !> 'control_variables' required to check for active modelling components.
         use control_variables
 
         !> Meteorological forcing.
