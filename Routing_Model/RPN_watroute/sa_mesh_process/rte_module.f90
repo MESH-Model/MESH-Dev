@@ -64,7 +64,7 @@ module rte_module
     !> _init() adapted from read_shed_fst_mod.f90.
     !>
 
-    subroutine run_rte_init(fls, shd, stfl, rrls)
+    subroutine run_rte_init(fls, shd)
 
         !> area_watflood: Shared variables used throughout rte code.
         use area_watflood
@@ -81,10 +81,6 @@ module rte_module
 
         !> Basin properties from SA_MESH.
         type(ShedGridParams) :: shd
-
-        !> Streamflow and reservoir output variables for SA_MESH.
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> Local variables.
         integer n, l, ierr, iun
@@ -552,7 +548,7 @@ module rte_module
     !> _between_grid() adapted from rte_sub.f.
     !>
 
-    subroutine run_rte_between_grid(fls, shd, stfl, rrls)
+    subroutine run_rte_between_grid(fls, shd)
 
         !> area_watflood: Shared variables used throughout rte code.
         use area_watflood
@@ -571,10 +567,6 @@ module rte_module
 
         !> Basin properties from SA_MESH.
         type(ShedGridParams) :: shd
-
-        !> Streamflow and reservoir output variables for SA_MESH.
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> Local variables for dynamic time-stepping.
         real(kind = 4) qi2_strt(naa), qo2_strt(naa), route_dt, hr_div, sec_div, dtmin
@@ -841,7 +833,7 @@ module rte_module
 
     end subroutine
 
-    subroutine run_rte_finalize(fls, shd, stfl, rrls)
+    subroutine run_rte_finalize(fls, shd)
 
         !> area_watflood: Shared variables used throughout rte code.
         use area_watflood
@@ -858,10 +850,6 @@ module rte_module
 
         !> Basin properties from SA_MESH.
         type(ShedGridParams) :: shd
-
-        !> Streamflow and reservoir output variables for SA_MESH.
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> Local variables.
         integer ierr, iun

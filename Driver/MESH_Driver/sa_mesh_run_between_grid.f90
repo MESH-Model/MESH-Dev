@@ -54,7 +54,7 @@ module sa_mesh_run_between_grid
 
     contains
 
-    subroutine run_between_grid_init(shd, fls, cm, stfl, rrls)
+    subroutine run_between_grid_init(shd, fls, cm)
 
         use mpi_module
         use model_files_variables
@@ -73,8 +73,6 @@ module sa_mesh_run_between_grid
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(clim_info) :: cm
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> Local variables.
         integer, parameter :: MaxLenField = 20, MaxArgs = 20, MaxLenLine = 100
@@ -267,8 +265,8 @@ module sa_mesh_run_between_grid
 
         !> Call processes.
         call SA_RTE_init(shd)
-        call WF_ROUTE_init(fls, shd, stfl, rrls)
-        call run_rte_init(fls, shd, stfl, rrls)
+        call WF_ROUTE_init(fls, shd)
+        call run_rte_init(fls, shd)
         call run_save_basin_output_init(fls, shd, cm)
         call runci_between_grid_init(shd, fls)
 
@@ -276,7 +274,7 @@ module sa_mesh_run_between_grid
 
     end subroutine
 
-    subroutine run_between_grid(shd, fls, cm, stfl, rrls)
+    subroutine run_between_grid(shd, fls, cm)
 
         use mpi_module
         use model_files_variables
@@ -295,8 +293,6 @@ module sa_mesh_run_between_grid
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(clim_info) :: cm
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> Local variables.
         integer k, ki, ierr
@@ -374,8 +370,8 @@ module sa_mesh_run_between_grid
 
         !> Call processes.
         call SA_RTE(shd)
-        call WF_ROUTE_between_grid(fls, shd, stfl, rrls)
-        call run_rte_between_grid(fls, shd, stfl, rrls)
+        call WF_ROUTE_between_grid(fls, shd)
+        call run_rte_between_grid(fls, shd)
         call runci_between_grid(shd, fls, cm)
         call run_save_basin_output(fls, shd, cm)
 
@@ -484,7 +480,7 @@ module sa_mesh_run_between_grid
 
     end subroutine
 
-    subroutine run_between_grid_finalize(fls, shd, cm, stfl, rrls)
+    subroutine run_between_grid_finalize(fls, shd, cm)
 
         use mpi_module
         use model_files_variabletypes
@@ -500,15 +496,13 @@ module sa_mesh_run_between_grid
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
         !> Call processes.
-        call WF_ROUTE_finalize(fls, shd, stfl, rrls)
-        call run_rte_finalize(fls, shd, stfl, rrls)
+        call WF_ROUTE_finalize(fls, shd)
+        call run_rte_finalize(fls, shd)
         call run_save_basin_output_finalize(fls, shd, cm)
 
     end subroutine

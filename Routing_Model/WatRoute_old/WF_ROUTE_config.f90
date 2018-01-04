@@ -113,7 +113,7 @@ module WF_ROUTE_config
     !>              the output files, in preparation for running the
     !>              WF_ROUTE process.
     !>
-    subroutine WF_ROUTE_init(fls, shd, stfl, rrls)
+    subroutine WF_ROUTE_init(fls, shd)
 
         use model_files_variables
         use sa_mesh_shared_variables
@@ -122,8 +122,6 @@ module WF_ROUTE_config
 
         type(fl_ids) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> Temporary variables for frequently accessed terms.
         !* NA: Number of grid cells.
@@ -249,7 +247,7 @@ module WF_ROUTE_config
 
     end subroutine
 
-    subroutine WF_ROUTE_finalize(fls, shd, stfl, rrls)
+    subroutine WF_ROUTE_finalize(fls, shd)
 
         use mpi_module
         use model_files_variables
@@ -258,8 +256,6 @@ module WF_ROUTE_config
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> Local variables.
         integer ierr, iun

@@ -6,7 +6,7 @@ module WF_ROUTE_module
 
     contains
 
-    subroutine WF_ROUTE_between_grid(fls, shd, stfl, rrls)
+    subroutine WF_ROUTE_between_grid(fls, shd)
 
         use model_files_variables
         use sa_mesh_shared_variables
@@ -14,8 +14,6 @@ module WF_ROUTE_module
 
         type(fl_ids) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
 

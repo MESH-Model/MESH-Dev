@@ -179,8 +179,6 @@ program RUNMESH
     type(dates_model) :: ts
     type(INFO_OUT) :: ifo
     type(CLIM_INFO) :: cm
-    type(streamflow_hydrograph) :: stfl
-    type(reservoir_release) :: rrls
 
     !> Basin totals for the run.
     real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
@@ -322,7 +320,7 @@ program RUNMESH
 !+        stop
 !+    end if
 
-    if (ipid == 0) call run_between_grid_init(shd, fls, cm, stfl, rrls)
+    if (ipid == 0) call run_between_grid_init(shd, fls, cm)
 
 !> **********************************************************************
 !>  Start of section to only run on squares that make up the watersheds
@@ -1015,7 +1013,7 @@ program RUNMESH
         !> Update grid states (e.g., channel storage) from worker nodes.
         call run_within_grid_mpi_isend(shd, cm)
 
-        if (ipid == 0) call run_between_grid(shd, fls, cm, stfl, rrls)
+        if (ipid == 0) call run_between_grid(shd, fls, cm)
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.
@@ -1268,7 +1266,7 @@ program RUNMESH
     if (ipid == 0) then
 
         !> Call finalization routines.
-        call run_between_grid_finalize(fls, shd, cm, stfl, rrls)
+        call run_between_grid_finalize(fls, shd, cm)
 
         !> Save the current state of the model for SAVERESUMEFLAG.
         if (SAVERESUMEFLAG == 4) then
