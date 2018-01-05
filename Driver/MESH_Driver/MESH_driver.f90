@@ -931,7 +931,7 @@ program RUNMESH
 
             !> Daily streamflow values.
             read(iun) fms%stmg%qomeas%val
-            read(iun) out%dly%qo(fms%stmg%meta%rnk(:))
+            read(iun) out%grid%dly%qo(fms%stmg%meta%rnk(:))
 
         end if
 
@@ -1098,7 +1098,7 @@ program RUNMESH
                     if (printoutstfl) then
                         do j = 1, fms%stmg%n
                             if (printoutqhyd) write(6, '(f10.3)', advance = 'no') fms%stmg%qomeas%val(j)
-                            write(6, '(f10.3)', advance = 'no') out%dly%qo(fms%stmg%meta%rnk(j))
+                            write(6, '(f10.3)', advance = 'no') out%grid%dly%qo(fms%stmg%meta%rnk(j))
                         end do
                     end if
                     if (printoutwb) then
@@ -1288,7 +1288,7 @@ program RUNMESH
 
             !> Daily streamflow values.
             write(iun) fms%stmg%qomeas%val
-            write(iun) out%dly%qo(fms%stmg%meta%rnk(:))
+            write(iun) out%grid%dly%qo(fms%stmg%meta%rnk(:))
 
             !> Close the file to free the unit.
             close(iun)

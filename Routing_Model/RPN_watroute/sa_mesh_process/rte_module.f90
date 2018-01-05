@@ -529,9 +529,9 @@ module rte_module
         end if
 
         !> Update SA_MESH output variables.
-        out%ts%qi = qi2
-        out%ts%stgch = store2
-        out%ts%qo = qo2
+        out%grid%ts%qi = qi2
+        out%grid%ts%stgch = store2
+        out%grid%ts%qo = qo2
         if (fms%rsvr%n > 0) then
             reach_last = lake_elv(:, 1)
         end if
@@ -596,9 +596,9 @@ module rte_module
 
         !> Reset SA_MESH output variables (for averaging).
         !> Setting these to zero also prevents updating from the state variables upon return.
-        out%ts%qi = 0.0
-        out%ts%stgch = 0.0
-        out%ts%qo = 0.0
+        out%grid%ts%qi = 0.0
+        out%grid%ts%stgch = 0.0
+        out%grid%ts%qo = 0.0
 
         !> Return if no the last time-step of the hour.
         if (mod(ic%ts_hourly, 3600/ic%dts) /= 0) then
@@ -803,9 +803,9 @@ module rte_module
             end if
 
             !> Update MESH output variables (for averaging).
-            out%ts%qi = out%ts%qi + qi2
-            out%ts%stgch = out%ts%stgch + store2
-            out%ts%qo = out%ts%qo + qo2
+            out%grid%ts%qi = out%grid%ts%qi + qi2
+            out%grid%ts%stgch = out%grid%ts%stgch + store2
+            out%grid%ts%qo = out%grid%ts%qo + qo2
 
         end do !n = 1, no_dt
 
@@ -818,9 +818,9 @@ module rte_module
         !> Update SA_MESH output variables.
         !> Output variables are updated at every model time-step; multiply averages
         !> by the number of model time-steps in the routing time-step
-        out%ts%qi = out%ts%qi/no_dt*(3600/ic%dts)
-        out%ts%stgch = out%ts%stgch/no_dt*(3600/ic%dts)
-        out%ts%qo = out%ts%qo/no_dt*(3600/ic%dts) !same as avr_qo
+        out%grid%ts%qi = out%grid%ts%qi/no_dt*(3600/ic%dts)
+        out%grid%ts%stgch = out%grid%ts%stgch/no_dt*(3600/ic%dts)
+        out%grid%ts%qo = out%grid%ts%qo/no_dt*(3600/ic%dts) !same as avr_qo
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.

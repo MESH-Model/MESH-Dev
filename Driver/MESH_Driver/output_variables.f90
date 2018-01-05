@@ -20,7 +20,7 @@ module output_variables
         module procedure output_variables_update_field_int_1d
     end interface
 
-    !> Keys for identifying output variable group.
+    !> Keys for identifying output time-series.
     !*  PTS: Per model time-step.
     !*  TOT: Total (e.g., accumulated).
     !*  DLY: Daily.
@@ -69,7 +69,7 @@ module output_variables
         real, dimension(:, :), allocatable :: thlq
         real, dimension(:, :), allocatable :: lqws
         real, dimension(:, :), allocatable :: thic
-        real, dimension(:, :), allocatable :: frws
+        real, dimension(:, :), allocatable :: fzws
         real, dimension(:, :), allocatable :: alws
         real, dimension(:), allocatable :: stgw
 
@@ -78,6 +78,8 @@ module output_variables
         real, dimension(:), allocatable :: tcan
         real, dimension(:), allocatable :: tsno
         real, dimension(:), allocatable :: tpnd
+        real, dimension(:), allocatable :: alvs
+        real, dimension(:), allocatable :: alir
         real, dimension(:), allocatable :: albt
         real, dimension(:), allocatable :: fsout
         real, dimension(:), allocatable :: flout
@@ -106,24 +108,35 @@ module output_variables
     end type
 
     !> Description:
-    !>  Container for output variable groups and NO_DATA variables.
+    !>  Group container for output variable series.
     !>
     !> Members:
-    !*  NO_DATA: No data value (type: real).
-    !*  NO_DATA_INT: No data value (type: integer).
     !*  ts: Per time-step.
     !*  tot: Total (e.g., accumulated).
     !*  dly: Daily.
     !*  hly: Hourly.
     !*  mly: Monthly.
     !*  yly: Yearly.
+    type output_variables_group_container
+        type(output_variables_group) ts, tot, dly, hly, mly, yly
+    end type
+
+    !> Description:
+    !>  Container for output objects including 'tile' and 'grid'
+    !>  groups and NO_DATA values.
+    !>
+    !> Members:
+    !*  grid: Instance of group for grid-based output.
+    !*  tile: Instance of group for tile-based output.
+    !*  NO_DATA: No data value (type: real).
+    !*  NO_DATA_INT: No data value (type: integer).
     type output_variables_container
-        type(output_variables_group) ts, dly, hly, mly, yly, tot
+        type(output_variables_group_container) grid, tile
         integer :: NO_DATA_INT = -1
         real :: NO_DATA = -1.0
     end type
 
-    !*  out: Instance of container for output variable groups.
+    !*  out: Instance of output variables.
     type(output_variables_container), save :: out
 
     contains
@@ -184,8 +197,114 @@ module output_variables
     end subroutine
 
     !> Description:
-    !>  Allocate and initialize per time-step output variables. Assigns
-    !>  frequency keys to the respective output variable groups.
+    !>  Allocate and initialize the per time-step output variables of
+    !>  the provided group. Assign frequency keys to the time-series.
+    subroutine output_variables_init_group(shd, group, n)
+
+        !> 'shd_variables' required for indices from 'shd'.
+        !> 'control_variables' required to check for active modelling components.
+        use shd_variables
+        use control_variables
+
+        !> Input variables.
+        type(ShedGridParams) :: shd
+        integer n
+
+        !> Input/output variables.
+        type(output_variables_group_container) group
+
+        !> Local variables.
+        integer s
+
+        !> Indices for allocation.
+        s = shd%lc%IGND
+
+        !> Meteorological forcing.
+        if (ro%RUNCLIM) then
+            allocate(group%ts%pre(n))
+            allocate(group%ts%fsin(n))
+            allocate(group%ts%flin(n))
+            allocate(group%ts%ta(n))
+            allocate(group%ts%qa(n))
+            allocate(group%ts%pres(n))
+            allocate(group%ts%uv(n))
+        end if
+
+        !> Water balance.
+        if (ro%RUNBALWB) then
+            allocate(group%ts%evap(n))
+            allocate(group%ts%pevp(n))
+            allocate(group%ts%evpb(n))
+            allocate(group%ts%arrd(n))
+            allocate(group%ts%rof(n))
+            allocate(group%ts%rofo(n))
+            allocate(group%ts%rofs(n))
+            allocate(group%ts%rofb(n))
+            allocate(group%ts%rcan(n))
+            allocate(group%ts%sncan(n))
+            allocate(group%ts%gro(n))
+            allocate(group%ts%sno(n))
+            allocate(group%ts%fsno(n))
+            allocate(group%ts%wsno(n))
+            allocate(group%ts%zpnd(n))
+            allocate(group%ts%pndw(n))
+            allocate(group%ts%lzs(n))
+            allocate(group%ts%dzs(n))
+            allocate(group%ts%thlq(n, s))
+            allocate(group%ts%lqws(n, s))
+            allocate(group%ts%thic(n, s))
+            allocate(group%ts%fzws(n, s))
+            allocate(group%ts%alws(n, s))
+            allocate(group%ts%stgw(n))
+        end if
+
+        !> Energy balance.
+        if (ro%RUNBALEB) then
+            allocate(group%ts%cmas(n))
+            allocate(group%ts%tcan(n))
+            allocate(group%ts%tsno(n))
+            allocate(group%ts%tpnd(n))
+            allocate(group%ts%alvs(n))
+            allocate(group%ts%alir(n))
+            allocate(group%ts%albt(n))
+            allocate(group%ts%fsout(n))
+            allocate(group%ts%flout(n))
+            allocate(group%ts%gte(n))
+            allocate(group%ts%qh(n))
+            allocate(group%ts%qe(n))
+            allocate(group%ts%gzero(n))
+            allocate(group%ts%gflx(n, s))
+            allocate(group%ts%tbar(n, s))
+            allocate(group%ts%tmax(n, s))
+            allocate(group%ts%tmin(n, s))
+            allocate(group%ts%ald(n))
+            allocate(group%ts%zod(n, 1))
+            allocate(group%ts%stge(n))
+        end if
+
+        !> Channels and routing.
+        if (ro%RUNCHNL) then
+            allocate(group%ts%rff(n))
+            allocate(group%ts%rchg(n))
+            allocate(group%ts%qi(n))
+            allocate(group%ts%stgch(n))
+            allocate(group%ts%qo(n))
+            allocate(group%ts%zlvl(n))
+        end if
+
+        !> Assign frequency keys.
+        group%dly%freq = TKDLY
+        group%hly%freq = TKHLY
+        group%ts%freq = TKPTS
+        group%mly%freq = TKMLY
+        group%yly%freq = TKYLY
+        group%tot%freq = TKTOT
+
+    end subroutine
+
+    !> Description:
+    !>  Allocate and initialize the per time-step output variables of
+    !>  all groups. Assign frequency keys to the time-series.
     subroutine output_variables_init(shd)
 
         !> 'shd_variables' required for indices from 'shd'.
@@ -196,92 +315,11 @@ module output_variables
         !> Input variables.
         type(ShedGridParams) :: shd
 
-        !> Local variables.
-        integer na, nml, s
+        !> Tile-based.
+        if (ro%RUNTILE) call output_variables_init_group(shd, out%tile, shd%lc%NML)
 
-        !> Indices for allocation.
-        na = shd%NA
-        nml = shd%lc%NML
-        s = shd%lc%IGND
-
-        !> Meteorological forcing.
-        if (ro%RUNCLIM) then
-            allocate(out%ts%pre(nml))
-            allocate(out%ts%fsin(nml))
-            allocate(out%ts%flin(nml))
-            allocate(out%ts%ta(nml))
-            allocate(out%ts%qa(nml))
-            allocate(out%ts%pres(nml))
-            allocate(out%ts%uv(nml))
-        end if
-
-        !> Water balance.
-        if (ro%RUNBALWB) then
-            allocate(out%ts%evap(nml))
-            allocate(out%ts%pevp(nml))
-            allocate(out%ts%evpb(nml))
-            allocate(out%ts%arrd(nml))
-            allocate(out%ts%rof(nml))
-            allocate(out%ts%rofo(nml))
-            allocate(out%ts%rofs(nml))
-            allocate(out%ts%rofb(nml))
-            allocate(out%ts%rcan(nml))
-            allocate(out%ts%sncan(nml))
-            allocate(out%ts%gro(nml))
-            allocate(out%ts%sno(nml))
-            allocate(out%ts%fsno(nml))
-            allocate(out%ts%wsno(nml))
-            allocate(out%ts%zpnd(nml))
-            allocate(out%ts%pndw(nml))
-            allocate(out%ts%lzs(nml))
-            allocate(out%ts%dzs(nml))
-            allocate(out%ts%thlq(nml, s))
-            allocate(out%ts%lqws(nml, s))
-            allocate(out%ts%thic(nml, s))
-            allocate(out%ts%frws(nml, s))
-            allocate(out%ts%alws(nml, s))
-            allocate(out%ts%stgw(nml))
-        end if
-
-        !> Energy balance.
-        if (ro%RUNBALEB) then
-            allocate(out%ts%cmas(nml))
-            allocate(out%ts%tcan(nml))
-            allocate(out%ts%tsno(nml))
-            allocate(out%ts%tpnd(nml))
-            allocate(out%ts%albt(nml))
-            allocate(out%ts%fsout(nml))
-            allocate(out%ts%flout(nml))
-            allocate(out%ts%gte(nml))
-            allocate(out%ts%qh(nml))
-            allocate(out%ts%qe(nml))
-            allocate(out%ts%gzero(nml))
-            allocate(out%ts%gflx(nml, s))
-            allocate(out%ts%tbar(nml, s))
-            allocate(out%ts%tmax(nml, s))
-            allocate(out%ts%tmin(nml, s))
-            allocate(out%ts%ald(nml))
-            allocate(out%ts%zod(nml, 1))
-            allocate(out%ts%stge(nml))
-        end if
-
-        !> Channels and routing.
-        if (ro%RUNCHNL) then
-            allocate(out%ts%rff(na))
-            allocate(out%ts%rchg(na))
-            allocate(out%ts%qi(na))
-            allocate(out%ts%stgch(na))
-            allocate(out%ts%qo(na))
-            allocate(out%ts%zlvl(na))
-        end if
-
-        !> Assign frequency keys.
-        out%dly%freq = TKDLY
-        out%hly%freq = TKHLY
-        out%ts%freq = TKPTS
-        out%mly%freq = TKMLY
-        out%yly%freq = TKYLY
-        out%tot%freq = TKTOT
+        !> Grid-based.
+        if (ro%RUNGRID) call output_variables_init_group(shd, out%grid, shd%NA)
 
     end subroutine
 
@@ -363,19 +401,20 @@ module output_variables
             case default
                 field = val
         end select
-        where (val == out%NO_DATA) field = out%NO_DATA_INT
+        where (val == out%NO_DATA_INT) field = out%NO_DATA_INT
     end subroutine
 
     !> Description:
     !>  Update the output variable from the per time-step values.
     !>  Only fields allocated are updated.
-    subroutine output_variables_update_series(vars)
+    subroutine output_variables_update_series(series, group)
 
         !> 'model_dates' required for 'ic' variable (counter and time-stepping).
         use model_dates
 
-        !> Input/output variable.
-        type(output_variables_group) vars
+        !> Input/output variables.
+        type(output_variables_group) series
+        type(output_variables_group_container) group
 
         !> Local variables.
         integer its, dnts
@@ -384,7 +423,7 @@ module output_variables
         !> Assign values to pass to the update routine.
         dnts = 0
         its = 0
-        select case (vars%freq)
+        select case (series%freq)
 
             !> Daily.
             case (TKDLY)
@@ -408,121 +447,165 @@ module output_variables
         end select
 
         !> Channels and routing.
-        if (allocated(vars%rff)) call output_variables_update_field(vars%rff, out%ts%rff, its, dnts, 'sum')
-        if (allocated(vars%rchg)) call output_variables_update_field(vars%rchg, out%ts%rchg, its, dnts, 'sum')
-        if (allocated(vars%qi)) call output_variables_update_field(vars%qi, out%ts%qi, its, dnts, 'avg')
-        if (allocated(vars%stgch)) call output_variables_update_field(vars%stgch, out%ts%stgch, its, dnts, 'avg')
-        if (allocated(vars%qo)) call output_variables_update_field(vars%qo, out%ts%qo, its, dnts, 'avg')
-!        if (allocated(vars%zlvl)) call output_variables_update_field(vars%zlvl, out%ts%zlvl, its, dnts, 'avg')
+        if (allocated(series%rff)) call output_variables_update_field(series%rff, group%ts%rff, its, dnts, 'sum')
+        if (allocated(series%rchg)) call output_variables_update_field(series%rchg, group%ts%rchg, its, dnts, 'sum')
+        if (allocated(series%qi)) call output_variables_update_field(series%qi, group%ts%qi, its, dnts, 'avg')
+        if (allocated(series%stgch)) call output_variables_update_field(series%stgch, group%ts%stgch, its, dnts, 'avg')
+        if (allocated(series%qo)) call output_variables_update_field(series%qo, group%ts%qo, its, dnts, 'avg')
+!        if (allocated(series%zlvl)) call output_variables_update_field(series%zlvl, group%ts%zlvl, its, dnts, 'avg')
 
     end subroutine
 
     !> Description:
     !>  Update per time-step variables if not already updated by other
-    !>  routines (e.g., if all values still equal the NO_DATA value).
-    !>  Then update output variables of higher time frequencies from the
-    !>  per time-step values.
-    subroutine output_variables_update()
+    !>  routines (e.g., if all values still equal the NO_DATA value) of
+    !>  all groups. Update output variables of higher time frequencies
+    !>  (from the per time-step series).
+    subroutine output_variables_update(shd, cm)
 
+        !> 'shd_variables' required for indices from 'shd'.
         !> 'control_variables' required to check for active modelling components.
+        !> 'climate_forcing' required for the 'cm' variable.
         !> 'state_variables' required for 'stas' variable.
+        use shd_variables
         use control_variables
+        use climate_forcing
         use state_variables
+
+        !> Input variables.
+        type(ShedGridParams) :: shd
+        type(clim_info) :: cm
+
+        !> Tile-based.
+        if (ro%RUNTILE) then
+            call output_variables_update_series(out%tile%dly, out%tile)
+            call output_variables_update_series(out%tile%hly, out%tile)
+            call output_variables_update_series(out%tile%mly, out%tile)
+            call output_variables_update_series(out%tile%yly, out%tile)
+            call output_variables_update_series(out%tile%tot, out%tile)
+        end if
 
         !> Channels and routing.
         if (ro%RUNCHNL) then
-            if (all(out%ts%qi == out%NO_DATA)) out%ts%qi = stas_grid%chnl%qi
-            if (all(out%ts%stgch == out%NO_DATA)) out%ts%stgch = stas_grid%chnl%stg
-            if (all(out%ts%qo == out%NO_DATA)) out%ts%qo = stas_grid%chnl%qo
-!            if (all(out%ts%zlvl == out%NO_DATA)) out%ts%zlvl = stas_grid%chnl%zlvl
+            if (all(out%grid%ts%qi == out%NO_DATA)) out%grid%ts%qi = stas_grid%chnl%qi
+            if (all(out%grid%ts%stgch == out%NO_DATA)) out%grid%ts%stgch = stas_grid%chnl%stg
+            if (all(out%grid%ts%qo == out%NO_DATA)) out%grid%ts%qo = stas_grid%chnl%qo
+!            if (all(out%grid%ts%zlvl == out%NO_DATA)) out%grid%ts%zlvl = stas_grid%chnl%zlvl
         end if
 
-        !> Update other time frequencies from the per time-step values.
-        call output_variables_update_series(out%dly)
-        call output_variables_update_series(out%hly)
-        call output_variables_update_series(out%mly)
-        call output_variables_update_series(out%yly)
-        call output_variables_update_series(out%tot)
+        !> Grid-based.
+        if (ro%RUNGRID) then
+            call output_variables_update_series(out%grid%dly, out%grid)
+            call output_variables_update_series(out%grid%hly, out%grid)
+            call output_variables_update_series(out%grid%mly, out%grid)
+            call output_variables_update_series(out%grid%yly, out%grid)
+            call output_variables_update_series(out%grid%tot, out%grid)
+        end if
 
     end subroutine
 
     !> Description:
-    !>  Reset output variables. Variables are set to the NO_DATA value.
+    !>  Reset output variables of the provided group. Set variables to
+    !>  'val' (e.g., NO_DATA value).
+    subroutine output_variables_reset_group(group, val)
+
+        !> 'control_variables' required to check for active modelling components.
+        use control_variables
+
+        !> Input variables.
+        real val
+
+        !> Input/output variables.
+        type(output_variables_group_container) group
+
+        !> Meteorological forcing.
+        if (ro%RUNCLIM) then
+            group%ts%pre = val
+            group%ts%fsin = val
+            group%ts%flin = val
+            group%ts%ta = val
+            group%ts%qa = val
+            group%ts%pres = val
+            group%ts%uv = val
+        end if
+
+        !> Water balance.
+        if (ro%RUNBALWB) then
+            group%ts%evap = val
+            group%ts%pevp = val
+            group%ts%evpb = val
+            group%ts%arrd = val
+            group%ts%rof = val
+            group%ts%rofo = val
+            group%ts%rofs = val
+            group%ts%rofb = val
+            group%ts%rcan = val
+            group%ts%sncan = val
+            group%ts%gro = val
+            group%ts%sno = val
+            group%ts%fsno = val
+            group%ts%wsno = val
+            group%ts%zpnd = val
+            group%ts%pndw = val
+            group%ts%lzs = val
+            group%ts%dzs = val
+            group%ts%thlq = val
+            group%ts%lqws = val
+            group%ts%thic = val
+            group%ts%fzws = val
+            group%ts%alws = val
+            group%ts%stgw = val
+        end if
+
+        !> Energy balance.
+        if (ro%RUNBALEB) then
+            group%ts%cmas = val
+            group%ts%tcan = val
+            group%ts%tsno = val
+            group%ts%tpnd = val
+            group%ts%alvs = val
+            group%ts%alir = val
+            group%ts%albt = val
+            group%ts%fsout = val
+            group%ts%flout = val
+            group%ts%gte = val
+            group%ts%qh = val
+            group%ts%qe = val
+            group%ts%gzero = val
+            group%ts%gflx = val
+            group%ts%tbar = val
+            group%ts%tmax = val
+            group%ts%tmin = val
+            group%ts%ald = val
+            group%ts%zod = val
+            group%ts%stge = val
+        end if
+
+        !> Channels and routing.
+        if (ro%RUNCHNL) then
+            group%ts%rff = val
+            group%ts%rchg = val
+            group%ts%qi = val
+            group%ts%stgch = val
+            group%ts%qo = val
+            group%ts%zlvl = val
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  Reset output variables of all groups. Set variables to the
+    !>  NO_DATA value.
     subroutine output_variables_reset()
 
         !> 'control_variables' required to check for active modelling components.
         use control_variables
 
-        !> Meteorological forcing.
-        if (ro%RUNCLIM) then
-            out%ts%pre = out%NO_DATA
-            out%ts%fsin = out%NO_DATA
-            out%ts%flin = out%NO_DATA
-            out%ts%ta = out%NO_DATA
-            out%ts%qa = out%NO_DATA
-            out%ts%pres = out%NO_DATA
-            out%ts%uv = out%NO_DATA
-        end if
+        !> Tile-based.
+        if (ro%RUNTILE) call output_variables_reset_group(out%tile, out%NO_DATA)
 
-        !> Water balance.
-        if (ro%RUNBALWB) then
-            out%ts%evap = out%NO_DATA
-            out%ts%pevp = out%NO_DATA
-            out%ts%evpb = out%NO_DATA
-            out%ts%arrd = out%NO_DATA
-            out%ts%rof = out%NO_DATA
-            out%ts%rofo = out%NO_DATA
-            out%ts%rofs = out%NO_DATA
-            out%ts%rofb = out%NO_DATA
-            out%ts%rcan = out%NO_DATA
-            out%ts%sncan = out%NO_DATA
-            out%ts%gro = out%NO_DATA
-            out%ts%sno = out%NO_DATA
-            out%ts%fsno = out%NO_DATA
-            out%ts%wsno = out%NO_DATA
-            out%ts%zpnd = out%NO_DATA
-            out%ts%pndw = out%NO_DATA
-            out%ts%lzs = out%NO_DATA
-            out%ts%dzs = out%NO_DATA
-            out%ts%thlq = out%NO_DATA
-            out%ts%lqws = out%NO_DATA
-            out%ts%thic = out%NO_DATA
-            out%ts%frws = out%NO_DATA
-            out%ts%alws = out%NO_DATA
-            out%ts%stgw = out%NO_DATA
-        end if
-
-        !> Energy balance.
-        if (ro%RUNBALEB) then
-            out%ts%cmas = out%NO_DATA
-            out%ts%tcan = out%NO_DATA
-            out%ts%tsno = out%NO_DATA
-            out%ts%tpnd = out%NO_DATA
-            out%ts%albt = out%NO_DATA
-            out%ts%fsout = out%NO_DATA
-            out%ts%flout = out%NO_DATA
-            out%ts%gte = out%NO_DATA
-            out%ts%qh = out%NO_DATA
-            out%ts%qe = out%NO_DATA
-            out%ts%gzero = out%NO_DATA
-            out%ts%gflx = out%NO_DATA
-            out%ts%tbar = out%NO_DATA
-            out%ts%tmax = out%NO_DATA
-            out%ts%tmin = out%NO_DATA
-            out%ts%ald = out%NO_DATA
-            out%ts%zod = out%NO_DATA
-            out%ts%stge = out%NO_DATA
-        end if
-
-        !> Channels and routing.
-        if (ro%RUNCHNL) then
-            out%ts%rff = out%NO_DATA
-            out%ts%rchg = out%NO_DATA
-            out%ts%qi = out%NO_DATA
-            out%ts%stgch = out%NO_DATA
-            out%ts%qo = out%NO_DATA
-            out%ts%zlvl = out%NO_DATA
-        end if
+        !> Grid-based.
+        if (ro%RUNGRID) call output_variables_reset_group(out%grid, out%NO_DATA)
 
     end subroutine
 
