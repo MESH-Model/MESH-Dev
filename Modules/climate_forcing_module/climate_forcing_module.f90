@@ -37,7 +37,8 @@ module climate_forcing
         use model_files_variables
 
         !> Required for 'shd', 'ro' variables.
-        use sa_mesh_shared_variables
+        use shd_variables
+        use control_variables
 
         !> Required for 'RESUMEFLAG'.
         use FLAGS
@@ -355,8 +356,9 @@ module climate_forcing
         !> Required for 'fls' variable.
         use model_files_variables
 
-        !> Required for 'shd' variable.
-        use sa_mesh_shared_variables
+        !> Required for 'shd', 'ro' variables.
+        use shd_variables
+        use control_variables
 
         !> Required for 'ic' variable.
         use model_dates
@@ -539,8 +541,9 @@ module climate_forcing
         !> Required for 'fls', 'mfk' variables.
         use model_files_variables
 
-        !> Required for 'shd' variable.
-        use sa_mesh_shared_variables
+        !> Required for 'shd', 'ro' variables.
+        use shd_variables
+        use control_variables
 
         !> Required for 'SAVERESUMEFLAG'.
         use FLAGS

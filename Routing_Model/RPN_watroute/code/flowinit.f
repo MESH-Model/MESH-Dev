@@ -1386,7 +1386,7 @@ c         Copied over from runof6.for (thr=1):  AKB July 11, 2002
          if(b1(k).gt.0.0)then
             if(lake_area(k).gt.0.0.and.lake_elv(k,kt).gt.0.0)then
                store1(n)=lake_elv(k,kt)*lake_area(k)
-            elseif(b6(k).gt.0.0)then
+            elseif(b6(k).gt.0.0.and.lake_elv(k,kt).gt.0.0)then
                store1(n)=max(0.0,lake_elv(k,kt)-b7(k))*b6(k)
             elseif(b3(k).eq.0.0)then
                store1(n)=(qo2(n)/b1(k))**(1.0/b2(k))

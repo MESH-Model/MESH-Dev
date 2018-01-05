@@ -23,7 +23,9 @@ module climate_forcing_io
     !>
     function open_data(shd, cm, vid) result(ENDDATA)
 
-        use sa_mesh_shared_variables
+        !> For: 'ShedGridParams' type, 'ro' run options for VERBOSEMODE.
+        use shd_variables
+        use control_variables
 
         !> Input variables.
         type(ShedGridParams) :: shd
@@ -194,7 +196,8 @@ module climate_forcing_io
     function load_data(shd, cm, vid, skip_data) result(ENDDATA)
 
         !> For: 'ShedGridParams' type, 'ro' run options for VERBOSEMODE.
-        use sa_mesh_shared_variables
+        use shd_variables
+        use control_variables
 
         !> Input variables.
         type(ShedGridParams) :: shd
@@ -306,8 +309,9 @@ module climate_forcing_io
     !>
     function update_data(shd, cm, vid, skip_data) result(ENDDATA)
 
-        !> For: 'ShedGridParams' type.
-        use sa_mesh_shared_variables
+        !> For: 'ShedGridParams' type, 'ro' run options for VERBOSEMODE.
+        use shd_variables
+        use control_variables
 
         !> Input variables.
         type(ShedGridParams) :: shd

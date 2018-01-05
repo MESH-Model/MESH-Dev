@@ -232,9 +232,6 @@ module sa_mesh_run_within_grid
         !> Required for 'il1:il2' and 'i1:i2' indexing.
         use mpi_module
 
-!+todo: There's a dependency on CLASSBD.f.
-        use RUNCLASS36_constants, only: RHOW, RHOICE
-
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
 
@@ -253,6 +250,7 @@ module sa_mesh_run_within_grid
         stas_grid%sno%sno(i1:i2) = 0.0
         stas_grid%sno%wsno(i1:i2) = 0.0
         stas_grid%sno%tsno(i1:i2)  = 0.0
+        stas_grid%sfc%albt(i1:i2) = 0.0
         stas_grid%sfc%alvs(i1:i2) = 0.0
         stas_grid%sfc%alir(i1:i2) = 0.0
         stas_grid%sfc%gte(i1:i2) = 0.0
@@ -301,11 +299,13 @@ module sa_mesh_run_within_grid
                 stas_grid%sno%tsno(ki) = stas_grid%sno%tsno(ki) + stas%sno%tsno(k)*frac
                 fsno(ki) = fsno(ki) + frac
             end if
+            stas_grid%sfc%albt(ki) = stas_grid%sfc%albt(ki) + stas%sfc%albt(k)*frac
             stas_grid%sfc%alvs(ki) = stas_grid%sfc%alvs(ki) + stas%sfc%alvs(k)*frac
             stas_grid%sfc%alir(ki) = stas_grid%sfc%alir(ki) + stas%sfc%alir(k)*frac
             stas_grid%sfc%gte(ki) = stas_grid%sfc%gte(ki) + stas%sfc%gte(k)*frac
             stas_grid%sfc%zpnd(ki) = stas_grid%sfc%zpnd(ki) + stas%sfc%zpnd(k)*frac
             if (stas%sfc%zpnd(k) > 0.0) then
+                stas_grid%sfc%pndw(ki) = stas_grid%sfc%pndw(ki) + stas%sfc%pndw(k)*frac
                 stas_grid%sfc%tpnd(ki) = stas_grid%sfc%tpnd(ki) + stas%sfc%tpnd(k)*frac
                 fpnd(ki) = fpnd(ki) + frac
             end if
@@ -319,9 +319,9 @@ module sa_mesh_run_within_grid
             stas_grid%sfc%gzero(ki) = stas_grid%sfc%gzero(ki) + stas%sfc%gzero(k)*frac
             stas_grid%sl%rofs(ki) = stas_grid%sl%rofs(ki) + stas%sl%rofs(k)*frac
             stas_grid%sl%thic(ki, :) = stas_grid%sl%thic(ki, :) + stas%sl%thic(k, :)*frac
-            stas_grid%sl%fzws(ki, :) = stas_grid%sl%fzws(ki, :) + stas%sl%thic(k, :)*stas%sl%delzw(k, :)*frac*RHOICE
+            stas_grid%sl%fzws(ki, :) = stas_grid%sl%fzws(ki, :) + stas%sl%fzws(k, :)*frac
             stas_grid%sl%thlq(ki, :) = stas_grid%sl%thlq(ki, :) + stas%sl%thlq(k, :)*frac
-            stas_grid%sl%lqws(ki, :) = stas_grid%sl%lqws(ki, :) + stas%sl%thlq(k, :)*stas%sl%delzw(k, :)*frac*RHOW
+            stas_grid%sl%lqws(ki, :) = stas_grid%sl%lqws(ki, :) + stas%sl%lqws(k, :)*frac
             stas_grid%sl%tbar(ki, :) = stas_grid%sl%tbar(ki, :) + stas%sl%tbar(k, :)*frac
             stas_grid%sl%gflx(ki, :) = stas_grid%sl%gflx(ki, :) + stas%sl%gflx(k, :)*frac
             stas_grid%lzs%ws(ki) = stas_grid%lzs%ws(ki) + stas%lzs%ws(k)*frac
@@ -337,19 +337,7 @@ module sa_mesh_run_within_grid
         where (fsno(i1:i2) > 0.0)
             stas_grid%sno%tsno(i1:i2) = stas_grid%sno%tsno(i1:i2)/fsno(i1:i2)
         end where
-        where (stas_grid%sfc%alvs(i1:i2) > 0.0 .and. stas_grid%sfc%alir(i1:i2) > 0.0)
-            stas_grid%sfc%albt(i1:i2) = (stas_grid%sfc%alvs(i1:i2) + stas_grid%sfc%alir(i1:i2))/2.0
-        end where
-        stas_grid%sfc%pndw(i1:i2) = stas_grid%sfc%zpnd(i1:i2)*RHOW
         where (fpnd(i1:i2) > 0.0) stas_grid%sfc%tpnd(i1:i2) = stas_grid%sfc%tpnd(i1:i2)/fpnd(i1:i2)
-        where (stas_grid%sfc%evap(i1:i2) > 0.0 .and. stas_grid%sfc%pevp(i1:i2) /= 0.0)
-            stas_grid%sfc%evpb(i1:i2) = stas_grid%sfc%evap(i1:i2)/stas_grid%sfc%pevp(i1:i2)
-        end where
-        if (allocated(cm%dat(ck%RT)%GRD)) then
-            where (stas_grid%sfc%pevp(i1:i2) /= 0.0)
-                stas_grid%sfc%arrd(i1:i2) = cm%dat(ck%RT)%GRD(i1:i2)/stas_grid%sfc%pevp(i1:i2)
-            end where
-        end if
 
     end subroutine
 

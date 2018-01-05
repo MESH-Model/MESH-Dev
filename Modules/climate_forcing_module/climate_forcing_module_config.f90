@@ -15,7 +15,7 @@ module climate_forcing_config
 
         use strings
         use EF_ParseUtilities
-        use sa_mesh_shared_variables
+        use control_variables
 
         type(clim_info) :: cm
 

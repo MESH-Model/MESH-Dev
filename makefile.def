@@ -76,12 +76,12 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
 			control_variables.o \
 			shd_variables.o fm_variables.o input_parameters.o state_variables.o \
+			RUNCLASS36_constants.o RUNCLASS36_variables.o \
+			climate_forcing_module_config.o \
+			climate_forcing_module_io.o climate_forcing_module.o \
 			output_variables.o \
 			variablename_constants.o parametername_constants.o \
 			sa_mesh_shared_variables.o \
-			RUNCLASS36_constants.o RUNCLASS36_variables.o RUNCLASS36_save_output.o \
-			climate_forcing_module_config.o \
-			climate_forcing_module_io.o climate_forcing_module.o \
 			model_output.o
 
 #WF_ROUTE
@@ -115,16 +115,17 @@ OBJECTS+=	PBSMrates.o PBSMrun.o ProbabilityThreshold.o \
 
 #CLASS
 OBJECTS+=	Julian_Day_ID.o check_parameters.o 
-OBJECTS+=	RUNCLASS36_config.o APREP.o CANADD.o CANALB.o CLASSBG.o CANVAP.o \
+OBJECTS+=	APREP.o CANADD.o CANALB.o CLASSBG.o CANVAP.o \
 			CGROW.o CHKWAT.o CLASSA.o  CLASSB.o CLASSBD.o \
 			CLASSD.o CLASSG.o CLASSI.o CLASSS.o CLASST.o CLASSW.o \
 			CLASSZ.o CWCALC.o DIASURFZ.o DRCOEF.o FLXSURFZ.o FROZEN.o \
 			GATPREP.o GRALB.o GRDRAN.o GRINFL.o ICEBAL.o \
 			SLDIAG.o SNINFL.o SNINFLM.o SNOADD.o SNOALBA.o SNOALBW.o SNOVAP.o \
 			SUBCAN.o TFREEZ.o TMCALC.o TMELT.o TNPOST.o TNPREP.o TPREP.o \
-			TSOLVC.o TSOLVE.o TSPOST.o TSPREP.o TWCALC.o WATDRN.o WATROF.o \
-			WEND.o WFILL.o WFLOW.o WPREP.o XIT.o \
-			SCREENRH.o PDMROF.o LATFLOW.o RUNCLASS36_module.o
+			TSOLVC.o TSOLVE.o TSPOST.o TSPREP.o TWCALC.o \
+			WEND.o WFILL.o WFLOW.o WPREP.o XIT.o SCREENRH.o \
+			WATDRN.o WATROF.o PDMROF.o LATFLOW.o \
+			RUNCLASS36_save_output.o RUNCLASS36_config.o RUNCLASS36_module.o
 
 # SVS
 OBJECTS+=	datec.o moduledate.o
