@@ -60,6 +60,9 @@ module sa_mesh_run_within_tile
         !> MPI exchange.
         call run_within_tile_mpi_irecv(shd, cm)
 
+        !> Reset variables non-prognostic variables.
+        call run_within_tile_stas_reset()
+
         !> Call processes.
         call RUNCLASS36_within_tile(shd, fls, cm)
         call RUNSVS113(shd, fls, cm)
@@ -386,6 +389,32 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
+    subroutine run_within_tile_stas_reset()
+
+        use sa_mesh_shared_variables
+
+        !> Required for 'il1:il2' indices.
+        use mpi_module
+
+        !> Reset variables non-prognostic variables.
+        stas%sno%fsno(il1:il2) = 0.0
+        stas%sfc%albt(il1:il2) = 0.0
+        stas%sfc%alvs(il1:il2) = 0.0
+        stas%sfc%alir(il1:il2) = 0.0
+        stas%sfc%gte(il1:il2) = 0.0
+        stas%sfc%pevp(il1:il2) = 0.0
+        stas%sfc%evap(il1:il2) = 0.0
+        stas%sfc%rofo(il1:il2) = 0.0
+        stas%sfc%qevp(il1:il2) = 0.0
+        stas%sfc%hfs(il1:il2) = 0.0
+        stas%sfc%gzero(il1:il2) = 0.0
+        stas%sl%rofs(il1:il2) = 0.0
+        stas%sl%gflx(il1:il2, :) = 0.0
+        stas%lzs%rofb(il1:il2) = 0.0
+        stas%dzs%rofb(il1:il2) = 0.0
+
+    end subroutine
+
     subroutine run_within_tile_stas_update(shd, cm)
 
         use sa_mesh_shared_variables
@@ -408,11 +437,13 @@ module sa_mesh_run_within_tile
             stas%sno%wsno(il1:il2) = 0.0
             stas%sno%tsno(il1:il2) = 0.0
         end where
-        where (stas%sfc%alvs(il1:il2) > 0.0 .and. stas%sfc%alir(il1:il2) > 0.0)
-            stas%sfc%albt(il1:il2) = (stas%sfc%alvs(il1:il2) + stas%sfc%alir(il1:il2))/2.0
-        elsewhere
-            stas%sfc%albt(il1:il2) = 0.0
-        end where
+        if (all(stas%sfc%albt(il1:il2) == 0.0)) then
+            where (stas%sfc%alvs(il1:il2) > 0.0 .and. stas%sfc%alir(il1:il2) > 0.0)
+                stas%sfc%albt(il1:il2) = (stas%sfc%alvs(il1:il2) + stas%sfc%alir(il1:il2))/2.0
+            elsewhere
+                stas%sfc%albt(il1:il2) = 0.0
+            end where
+        end if
         stas%sfc%pndw(il1:il2) = stas%sfc%zpnd(il1:il2)*RHOW
         where (stas%sfc%zpnd(il1:il2) == 0.0) stas%sfc%tpnd(il1:il2) = 0.0
         where (stas%sfc%evap(il1:il2) > 0.0 .and. stas%sfc%pevp(il1:il2) /= 0.0)
