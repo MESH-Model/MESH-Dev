@@ -1019,7 +1019,7 @@ module model_output
                 !> Update freq to include soil layer (if applicable).
                 if (present(igndx)) then
                     write(st, '(i10)') igndx
-                    freq = freq // '_' // trim(adjustl(st))
+                    freq = trim(adjustl(freq)) // '_' // trim(adjustl(st))
                 else
                     freq = freq
                 end if
