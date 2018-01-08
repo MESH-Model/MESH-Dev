@@ -605,8 +605,8 @@ module output_variables
             !> Channels and routing.
             !> 'stas_grid' variables are allocated by group so 'allocated' status is assumed.
             if (ro%RUNCHNL) then
-                rff(i) = rff(i) + (stas_grid%sfc%rofo(k) + stas_grid%sl%rofs(k))*fgru
-                rchg(i) = rchg(i) + (stas_grid%lzs%rofb(k) + stas_grid%dzs%rofb(k))*fgru
+                rff(i) = rff(i) + (stas%sfc%rofo(k) + stas%sl%rofs(k))*fgru
+                rchg(i) = rchg(i) + (stas%lzs%rofb(k) + stas%dzs%rofb(k))*fgru
             end if
         end do
 
