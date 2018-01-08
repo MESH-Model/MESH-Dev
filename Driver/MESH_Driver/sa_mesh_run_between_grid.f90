@@ -255,7 +255,7 @@ module sa_mesh_run_between_grid
         end if
 
         !> Initialize output variables.
-        call output_variables_init(shd)
+        call output_variables_init(shd, cm)
 
         !> Allocate grid-based output variables.
         call output_variables_allocate(out%grid%dly%qi, shd%NA)
@@ -267,8 +267,10 @@ module sa_mesh_run_between_grid
         call SA_RTE_init(shd)
         call WF_ROUTE_init(fls, shd)
         call run_rte_init(fls, shd)
-        call run_save_basin_output_init(fls, shd, cm)
         call runci_between_grid_init(shd, fls)
+
+        !> Output.
+        call run_save_basin_output_init(fls, shd, cm)
 
 1010    format(9999(g15.7e2, ','))
 
@@ -373,7 +375,6 @@ module sa_mesh_run_between_grid
         call WF_ROUTE_between_grid(fls, shd)
         call run_rte_between_grid(fls, shd)
         call runci_between_grid(shd, fls, cm)
-        call run_save_basin_output(fls, shd, cm)
 
         !> Update output variables.
         call output_variables_update(shd, cm)
@@ -477,6 +478,9 @@ module sa_mesh_run_between_grid
                 write(iun, *)
             end if
         end if
+
+        !> Output.
+        call run_save_basin_output(fls, shd, cm)
 
 1010    format(9999(g15.7e2, ','))
 

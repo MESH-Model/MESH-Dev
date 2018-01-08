@@ -903,9 +903,9 @@ program RUNMESH
     !> Calculate initial storage.
     if (ipid == 0) then
         STG_INI = sum( &
-            (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + stas_grid%sfc%pndw + &
-             sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
-             stas_grid%lzs%ws + stas_grid%dzs%ws)*shd%FRAC)/sum(shd%FRAC)
+            (out%grid%ts%rcan + out%grid%ts%sncan + out%grid%ts%sno + out%grid%ts%wsno + out%grid%ts%pndw + &
+             sum(out%grid%ts%lqws, 2) + sum(out%grid%ts%fzws, 2) + &
+             out%grid%ts%lzs + out%grid%ts%dzs)*shd%FRAC)/sum(shd%FRAC)
     end if !(ipid == 0) then
 
     !> Read in existing basin states for RESUMEFLAG.
@@ -1069,19 +1069,17 @@ program RUNMESH
             end if
 
             !> Accumulated basin totals for end of run output.
-            TOTAL_PRE = TOTAL_PRE + sum(cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts)
-            TOTAL_EVAP = TOTAL_EVAP + sum(stas_grid%sfc%evap*shd%FRAC*ic%dts)
-            TOTAL_ROF = TOTAL_ROF + &
-                sum((stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts)
-            TOTAL_ROFO = TOTAL_ROFO + sum(stas_grid%sfc%rofo*shd%FRAC*ic%dts)
-            TOTAL_ROFS = TOTAL_ROFS + sum(stas_grid%sl%rofs*shd%FRAC*ic%dts)
-            TOTAL_ROFB = TOTAL_ROFB + sum((stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts)
+            TOTAL_PRE = TOTAL_PRE + sum(out%grid%ts%pre*shd%FRAC*ic%dts)
+            TOTAL_EVAP = TOTAL_EVAP + sum(out%grid%ts%evap*shd%FRAC*ic%dts)
+            TOTAL_ROF = TOTAL_ROF + sum(out%grid%ts%rof*shd%FRAC*ic%dts)
+            TOTAL_ROFO = TOTAL_ROFO + sum(out%grid%ts%rofo*shd%FRAC*ic%dts)
+            TOTAL_ROFS = TOTAL_ROFS + sum(out%grid%ts%rofs*shd%FRAC*ic%dts)
+            TOTAL_ROFB = TOTAL_ROFB + sum(out%grid%ts%rofb*shd%FRAC*ic%dts)
 
             !> Daily basin output to print to screen.
-            DAILY_PRE = DAILY_PRE + sum(cm%dat(ck%RT)%GRD*shd%FRAC*ic%dts)
-            DAILY_EVAP = DAILY_EVAP + sum(stas_grid%sfc%evap*shd%FRAC*ic%dts)
-            DAILY_ROF = DAILY_ROF + &
-                sum((stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts)
+            DAILY_PRE = DAILY_PRE + sum(out%grid%ts%pre*shd%FRAC*ic%dts)
+            DAILY_EVAP = DAILY_EVAP + sum(out%grid%ts%evap*shd%FRAC*ic%dts)
+            DAILY_ROF = DAILY_ROF + sum(out%grid%ts%rof*shd%FRAC*ic%dts)
 
             !> Update data for other outputs.
             if (OUTFIELDSFLAG == 1) call UpdateFIELDSOUT(fls, shd, ts, cm, ifo, vr)
@@ -1297,9 +1295,9 @@ program RUNMESH
 
         !> Calculate final storage for the run.
         STG_FIN = sum( &
-            (stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + stas_grid%sfc%pndw + &
-             sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
-             stas_grid%lzs%ws + stas_grid%dzs%ws)*shd%FRAC)/sum(shd%FRAC)
+            (out%grid%ts%rcan + out%grid%ts%sncan + out%grid%ts%sno + out%grid%ts%wsno + out%grid%ts%pndw + &
+             sum(out%grid%ts%lqws, 2) + sum(out%grid%ts%fzws, 2) + &
+             out%grid%ts%lzs + out%grid%ts%dzs)*shd%FRAC)/sum(shd%FRAC)
 
         !> Basin totals for the run.
         TOTAL_PRE = TOTAL_PRE/sum(shd%FRAC)
