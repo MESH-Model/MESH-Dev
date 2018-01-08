@@ -579,9 +579,9 @@ module output_variables
                 lzs(i) = lzs(i) + stas%lzs%ws(k)*fgru
                 dzs(i) = dzs(i) + stas%dzs%ws(k)*fgru
                 thlq(i, :) = thlq(i, :) + stas%sl%thlq(k, :)*fgru
-                lqws(i, :) = lqws(i, :) + stas%sl%thlq(k, :)*stas%sl%delzw(k, :)*RHOW
+                lqws(i, :) = lqws(i, :) + stas%sl%thlq(k, :)*stas%sl%delzw(k, :)*RHOW*fgru
                 thic(i, :) = thic(i, :) + stas%sl%thic(k, :)*fgru
-                fzws(i, :) = fzws(i, :) + stas%sl%thic(k, :)*stas%sl%delzw(k, :)*RHOICE
+                fzws(i, :) = fzws(i, :) + stas%sl%thic(k, :)*stas%sl%delzw(k, :)*RHOICE*fgru
             end if
 
             !> Energy balance.
