@@ -370,6 +370,10 @@ module sa_mesh_run_between_grid
 
         end if !(ipid == 0) then
 
+        !> Update variables.
+        stas_grid%chnl%rff = (stas_grid%sfc%rofo + stas_grid%sl%rofs)*ic%dts
+        stas_grid%chnl%rchg = (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*ic%dts
+
         !> Call processes.
         call SA_RTE(shd)
         call WF_ROUTE_between_grid(fls, shd)

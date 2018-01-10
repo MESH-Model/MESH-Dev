@@ -591,8 +591,8 @@ module rte_module
         if (ic%ts_hourly == 1) then
             qr(1:naa) = 0.0
         end if
-        qr(1:naa) = qr(1:naa) + (stas_grid%sfc%rofo(1:naa) + stas_grid%sl%rofs(1:naa))*shd%FRAC(1:naa)*ic%dts
-        qr(1:naa) = qr(1:naa) + (stas_grid%lzs%rofb(1:naa) + stas_grid%dzs%rofb(1:naa))*shd%FRAC(1:naa)*ic%dts
+        qr(1:naa) = qr(1:naa) + stas_grid%chnl%rff(1:naa)*shd%FRAC(1:naa)
+        qr(1:naa) = qr(1:naa) + stas_grid%chnl%rchg(1:naa)*shd%FRAC(1:naa)
 
         !> Reset SA_MESH output variables (for averaging).
         !> Setting these to zero also prevents updating from the state variables upon return.
