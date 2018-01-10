@@ -362,84 +362,84 @@ module output_variables
         !> Climate variables are not allocated by group so must check 'allocated' status.
         if (ro%RUNCLIM) then
             if (allocated(cm%dat(ck%RT)%GAT)) then
-                where (out%tile%ts%pre == nv) out%tile%ts%pre = cm%dat(ck%RT)%GAT
+                if (all(out%tile%ts%pre == nv)) out%tile%ts%pre = cm%dat(ck%RT)%GAT
             end if
             if (allocated(cm%dat(ck%FB)%GAT)) then
-                where (out%tile%ts%fsin == nv) out%tile%ts%fsin = cm%dat(ck%FB)%GAT
+                if (all(out%tile%ts%fsin == nv)) out%tile%ts%fsin = cm%dat(ck%FB)%GAT
             end if
             if (allocated(cm%dat(ck%FI)%GAT)) then
-                where (out%tile%ts%flin == nv) out%tile%ts%flin = cm%dat(ck%FI)%GAT
+                if (all(out%tile%ts%flin == nv)) out%tile%ts%flin = cm%dat(ck%FI)%GAT
             end if
             if (allocated(cm%dat(ck%TT)%GAT)) then
-                where (out%tile%ts%ta == nv) out%tile%ts%ta = cm%dat(ck%TT)%GAT
+                if (all(out%tile%ts%ta == nv)) out%tile%ts%ta = cm%dat(ck%TT)%GAT
             end if
             if (allocated(cm%dat(ck%HU)%GAT)) then
-                where (out%tile%ts%qa == nv) out%tile%ts%qa = cm%dat(ck%HU)%GAT
+                if (all(out%tile%ts%qa == nv)) out%tile%ts%qa = cm%dat(ck%HU)%GAT
             end if
             if (allocated(cm%dat(ck%P0)%GAT)) then
-                where (out%tile%ts%pres == nv) out%tile%ts%pres = cm%dat(ck%P0)%GAT
+                if (all(out%tile%ts%pres == nv)) out%tile%ts%pres = cm%dat(ck%P0)%GAT
             end if
             if (allocated(cm%dat(ck%UV)%GAT)) then
-                where (out%tile%ts%uv == nv) out%tile%ts%uv = cm%dat(ck%UV)%GAT
+                if (all(out%tile%ts%uv == nv)) out%tile%ts%uv = cm%dat(ck%UV)%GAT
             end if
         end if
 
         !> Water balance.
         !> 'stas' variables are allocated by group so 'allocated' status is assumed.
         if (ro%RUNBALWB) then
-            where (out%tile%ts%evap == nv) out%tile%ts%evap = stas%sfc%evap
-            where (out%tile%ts%pevp == nv) out%tile%ts%pevp = stas%sfc%pevp
-            where (out%tile%ts%evpb == nv) out%tile%ts%evpb = stas%sfc%evpb
-            where (out%tile%ts%arrd == nv) out%tile%ts%arrd = stas%sfc%arrd
-            where (out%tile%ts%rof == nv)
+            if (all(out%tile%ts%evap == nv)) out%tile%ts%evap = stas%sfc%evap
+            if (all(out%tile%ts%pevp == nv)) out%tile%ts%pevp = stas%sfc%pevp
+            if (all(out%tile%ts%evpb == nv)) out%tile%ts%evpb = stas%sfc%evpb
+            if (all(out%tile%ts%arrd == nv)) out%tile%ts%arrd = stas%sfc%arrd
+            if (all(out%tile%ts%rof == nv)) then
                 out%tile%ts%rof = (stas%sfc%rofo + stas%sl%rofs + stas%lzs%rofb + stas%dzs%rofb)
-            end where
-            where (out%tile%ts%rofo == nv) out%tile%ts%rofo = stas%sfc%rofo
-            where (out%tile%ts%rofs == nv) out%tile%ts%rofs = stas%sl%rofs
-            where (out%tile%ts%rofb == nv) out%tile%ts%rofb = (stas%lzs%rofb + stas%dzs%rofb)
-            where (out%tile%ts%rcan == nv) out%tile%ts%rcan = stas%cnpy%rcan
-            where (out%tile%ts%sncan == nv) out%tile%ts%sncan = stas%cnpy%sncan
-            where (out%tile%ts%gro == nv) out%tile%ts%gro = stas%cnpy%gro
-            where (out%tile%ts%sno == nv) out%tile%ts%sno = stas%sno%sno
-            where (out%tile%ts%fsno == nv) out%tile%ts%fsno = stas%sno%fsno
-            where (out%tile%ts%wsno == nv) out%tile%ts%wsno = stas%sno%wsno
-            where (out%tile%ts%zpnd == nv) out%tile%ts%zpnd = stas%sfc%zpnd
-            where (out%tile%ts%pndw == nv) out%tile%ts%pndw = stas%sfc%zpnd*RHOW
-            where (out%tile%ts%lzs == nv) out%tile%ts%lzs = stas%lzs%ws
-            where (out%tile%ts%dzs == nv) out%tile%ts%dzs = stas%dzs%ws
-            where (out%tile%ts%thlq == nv) out%tile%ts%thlq = stas%sl%thlq
-            where (out%tile%ts%lqws == nv) out%tile%ts%lqws = stas%sl%thlq*stas%sl%delzw*RHOW
-            where (out%tile%ts%thic == nv) out%tile%ts%thic = stas%sl%thic
-            where (out%tile%ts%fzws == nv) out%tile%ts%fzws = stas%sl%thic*stas%sl%delzw*RHOICE
-            where (out%tile%ts%alws == nv) out%tile%ts%alws = (stas%sl%thlq*RHOW + stas%sl%thic*RHOICE)*stas%sl%delzw
-!            where (out%tile%ts%stgw == nv) out%tile%ts%stgw =
+            end if
+            if (all(out%tile%ts%rofo == nv)) out%tile%ts%rofo = stas%sfc%rofo
+            if (all(out%tile%ts%rofs == nv)) out%tile%ts%rofs = stas%sl%rofs
+            if (all(out%tile%ts%rofb == nv)) out%tile%ts%rofb = (stas%lzs%rofb + stas%dzs%rofb)
+            if (all(out%tile%ts%rcan == nv)) out%tile%ts%rcan = stas%cnpy%rcan
+            if (all(out%tile%ts%sncan == nv)) out%tile%ts%sncan = stas%cnpy%sncan
+            if (all(out%tile%ts%gro == nv)) out%tile%ts%gro = stas%cnpy%gro
+            if (all(out%tile%ts%sno == nv)) out%tile%ts%sno = stas%sno%sno
+            if (all(out%tile%ts%fsno == nv)) out%tile%ts%fsno = stas%sno%fsno
+            if (all(out%tile%ts%wsno == nv)) out%tile%ts%wsno = stas%sno%wsno
+            if (all(out%tile%ts%zpnd == nv)) out%tile%ts%zpnd = stas%sfc%zpnd
+            if (all(out%tile%ts%pndw == nv)) out%tile%ts%pndw = stas%sfc%zpnd*RHOW
+            if (all(out%tile%ts%lzs == nv)) out%tile%ts%lzs = stas%lzs%ws
+            if (all(out%tile%ts%dzs == nv)) out%tile%ts%dzs = stas%dzs%ws
+            if (all(out%tile%ts%thlq == nv)) out%tile%ts%thlq = stas%sl%thlq
+            if (all(out%tile%ts%lqws == nv)) out%tile%ts%lqws = stas%sl%thlq*stas%sl%delzw*RHOW
+            if (all(out%tile%ts%thic == nv)) out%tile%ts%thic = stas%sl%thic
+            if (all(out%tile%ts%fzws == nv)) out%tile%ts%fzws = stas%sl%thic*stas%sl%delzw*RHOICE
+            if (all(out%tile%ts%alws == nv)) out%tile%ts%alws = (stas%sl%thlq*RHOW + stas%sl%thic*RHOICE)*stas%sl%delzw
+!            if (all(out%tile%ts%stgw == nv)) out%tile%ts%stgw =
         end if
 
         !> Energy balance.
         !> 'stas' variables are allocated by group so 'allocated' status is assumed.
         if (ro%RUNBALEB) then
-            where (out%tile%ts%cmas == nv) out%tile%ts%cmas = stas%cnpy%cmas
-            where (out%tile%ts%tcan == nv) out%tile%ts%tcan = stas%cnpy%tcan
-            where (out%tile%ts%tsno == nv) out%tile%ts%tsno = stas%sno%tsno
-            where (out%tile%ts%tpnd == nv) out%tile%ts%tpnd = stas%sfc%tpnd
-            where (out%tile%ts%albt == nv) out%tile%ts%albt = stas%sfc%albt
-            where (out%tile%ts%alvs == nv) out%tile%ts%alvs = stas%sfc%alvs
-            where (out%tile%ts%alir == nv) out%tile%ts%alir = stas%sfc%alir
+            if (all(out%tile%ts%cmas == nv)) out%tile%ts%cmas = stas%cnpy%cmas
+            if (all(out%tile%ts%tcan == nv)) out%tile%ts%tcan = stas%cnpy%tcan
+            if (all(out%tile%ts%tsno == nv)) out%tile%ts%tsno = stas%sno%tsno
+            if (all(out%tile%ts%tpnd == nv)) out%tile%ts%tpnd = stas%sfc%tpnd
+            if (all(out%tile%ts%albt == nv)) out%tile%ts%albt = stas%sfc%albt
+            if (all(out%tile%ts%alvs == nv)) out%tile%ts%alvs = stas%sfc%alvs
+            if (all(out%tile%ts%alir == nv)) out%tile%ts%alir = stas%sfc%alir
             if (allocated(cm%dat(ck%FB)%GAT)) then
-                where (out%tile%ts%fsout == nv) out%tile%ts%fsout = cm%dat(ck%FB)%GAT*(1.0 - stas%sfc%albt)
+                if (all(out%tile%ts%fsout == nv)) out%tile%ts%fsout = cm%dat(ck%FB)%GAT*(1.0 - stas%sfc%albt)
             end if
-            where (out%tile%ts%gte == nv) out%tile%ts%gte = stas%sfc%gte
-            where (out%tile%ts%flout == nv) out%tile%ts%flout = 5.66796E-8*stas%sfc%gte**4
-            where (out%tile%ts%qh == nv) out%tile%ts%qh = stas%sfc%hfs
-            where (out%tile%ts%qe == nv) out%tile%ts%qe = stas%sfc%qevp
-            where (out%tile%ts%gzero == nv) out%tile%ts%gzero = stas%sfc%gzero
-            where (out%tile%ts%gflx == nv) out%tile%ts%gflx = stas%sl%gflx
-            where (out%tile%ts%tbar == nv) out%tile%ts%tbar = stas%sl%tbar
-            where (out%tile%ts%tmax == nv) out%tile%ts%tmax = max(out%tile%ts%tmax, stas%sl%tbar)
-            where (out%tile%ts%tmin == nv) out%tile%ts%tmin = min(out%tile%ts%tmin, stas%sl%tbar)
-!            where (out%tile%ts%ald == nv) out%tile%ts%ald =
-!            where (out%tile%ts%zod == nv) out%tile%ts%zod =
-!            where (out%tile%ts%stge == nv) out%tile%ts%stge =
+            if (all(out%tile%ts%gte == nv)) out%tile%ts%gte = stas%sfc%gte
+            if (all(out%tile%ts%flout == nv)) out%tile%ts%flout = 5.66796E-8*stas%sfc%gte**4
+            if (all(out%tile%ts%qh == nv)) out%tile%ts%qh = stas%sfc%hfs
+            if (all(out%tile%ts%qe == nv)) out%tile%ts%qe = stas%sfc%qevp
+            if (all(out%tile%ts%gzero == nv)) out%tile%ts%gzero = stas%sfc%gzero
+            if (all(out%tile%ts%gflx == nv)) out%tile%ts%gflx = stas%sl%gflx
+            if (all(out%tile%ts%tbar == nv)) out%tile%ts%tbar = stas%sl%tbar
+            if (all(out%tile%ts%tmax == nv)) out%tile%ts%tmax = max(out%tile%ts%tmax, stas%sl%tbar)
+            if (all(out%tile%ts%tmin == nv)) out%tile%ts%tmin = min(out%tile%ts%tmin, stas%sl%tbar)
+!            if (all(out%tile%ts%ald == nv)) out%tile%ts%ald =
+!            if (all(out%tile%ts%zod == nv)) out%tile%ts%zod =
+!            if (all(out%tile%ts%stge == nv)) out%tile%ts%stge =
         end if
 
     end subroutine
@@ -553,9 +553,9 @@ module output_variables
 
             !> Counters for partial averaging.
             if (ro%RUNBALWB .or. ro%RUNBALEB) then
-                fcnpy(i) = fcnpy(i) + fgru
-                fsncov(i) = fsncov(i) + fgru
-                fzpnd(i) = fzpnd(i) + fgru
+                if (stas%cnpy%tcan(k) > 0.0) fcnpy(i) = fcnpy(i) + fgru
+                if (stas%sno%sno(k) > 0.0) fsncov(i) = fsncov(i) + fgru
+                if (stas%sfc%zpnd(k) > 0.0) fzpnd(i) = fzpnd(i) + fgru
             end if
 
             !> Water balance.
@@ -571,10 +571,10 @@ module output_variables
                 rofb(i) = rofb(i) + (stas%lzs%rofb(k) + stas%dzs%rofb(k))*fgru
                 rcan(i) = rcan(i) + stas%cnpy%rcan(k)*fgru
                 sncan(i) = sncan(i) + stas%cnpy%sncan(k)*fgru
-                gro(i) = gro(i) + stas%cnpy%gro(k)*fgru
+                if (stas%cnpy%tcan(k) > 0.0) gro(i) = gro(i) + stas%cnpy%gro(k)*fgru
                 sno(i) = sno(i) + stas%sno%sno(k)*fgru
                 fsno(i) = fsno(i) + stas%sno%fsno(k)*fgru
-                wsno(i) = wsno(i) + stas%sno%wsno(k)*fgru
+                if (stas%sno%sno(k) > 0.0) wsno(i) = wsno(i) + stas%sno%wsno(k)*fgru
                 zpnd(i) = zpnd(i) + stas%sfc%zpnd(k)*fgru
                 lzs(i) = lzs(i) + stas%lzs%ws(k)*fgru
                 dzs(i) = dzs(i) + stas%dzs%ws(k)*fgru
@@ -587,10 +587,10 @@ module output_variables
             !> Energy balance.
             !> 'stas' variables are allocated by group so 'allocated' status is assumed.
             if (ro%RUNBALEB) then
-                cmas(i) = cmas(i) + stas%cnpy%cmas(k)*fgru
-                tcan(i) = tcan(i) + stas%cnpy%tcan(k)*fgru
-                tsno(i) = tsno(i) + stas%sno%tsno(k)*fgru
-                tpnd(i) = tpnd(i) + stas%sfc%tpnd(k)*fgru
+                if (stas%cnpy%tcan(k) > 0.0) cmas(i) = cmas(i) + stas%cnpy%cmas(k)*fgru
+                if (stas%cnpy%tcan(k) > 0.0) tcan(i) = tcan(i) + stas%cnpy%tcan(k)*fgru
+                if (stas%sno%sno(k) > 0.0) tsno(i) = tsno(i) + stas%sno%tsno(k)*fgru
+                if (stas%sfc%zpnd(k) > 0.0) tpnd(i) = tpnd(i) + stas%sfc%tpnd(k)*fgru
                 albt(i) = albt(i) + stas%sfc%albt(k)*fgru
                 alvs(i) = alvs(i) + stas%sfc%alvs(k)*fgru
                 alir(i) = alir(i) + stas%sfc%alir(k)*fgru
@@ -610,82 +610,95 @@ module output_variables
             end if
         end do
 
+        !> Partial averages.
+        if (ro%RUNBALWB .or. ro%RUNBALEB) then
+            where (fcnpy > 0.0)
+                cmas = cmas/fcnpy
+                tcan = tcan/fcnpy
+                gro = gro/fcnpy
+            end where
+            where (fsncov > 0.0)
+                tsno = tsno/fsncov
+            end where
+            where (fzpnd > 0.0) tpnd = tpnd/fzpnd
+        end if
+
         !> Assign back to output variables.
 
         !> Meteorological forcing.
         if (ro%RUNCLIM) then
-            where (out%grid%ts%pre == nv) out%grid%ts%pre = pre
-            where (out%grid%ts%fsin == nv) out%grid%ts%fsin = fsin
-            where (out%grid%ts%flin == nv) out%grid%ts%flin = flin
-            where (out%grid%ts%ta == nv) out%grid%ts%ta = ta
-            where (out%grid%ts%qa == nv) out%grid%ts%qa = qa
-            where (out%grid%ts%pres == nv) out%grid%ts%pres = pres
-            where (out%grid%ts%uv == nv) out%grid%ts%uv = uv
+            if (all(out%grid%ts%pre == nv)) out%grid%ts%pre = pre
+            if (all(out%grid%ts%fsin == nv)) out%grid%ts%fsin = fsin
+            if (all(out%grid%ts%flin == nv)) out%grid%ts%flin = flin
+            if (all(out%grid%ts%ta == nv)) out%grid%ts%ta = ta
+            if (all(out%grid%ts%qa == nv)) out%grid%ts%qa = qa
+            if (all(out%grid%ts%pres == nv)) out%grid%ts%pres = pres
+            if (all(out%grid%ts%uv == nv)) out%grid%ts%uv = uv
         end if
 
         !> Water balance.
         if (ro%RUNBALWB) then
-            where (out%grid%ts%evap == nv) out%grid%ts%evap = evap
-            where (out%grid%ts%pevp == nv) out%grid%ts%pevp = pevp
-            where (out%grid%ts%evpb == nv) out%grid%ts%evpb = evpb
-            where (out%grid%ts%arrd == nv) out%grid%ts%arrd = arrd
-            where (out%grid%ts%rof == nv) out%grid%ts%rof = rof
-            where (out%grid%ts%rofo == nv) out%grid%ts%rofo = rofo
-            where (out%grid%ts%rofs == nv) out%grid%ts%rofs = rofs
-            where (out%grid%ts%rofb == nv) out%grid%ts%rofb = rofb
-            where (out%grid%ts%rcan == nv) out%grid%ts%rcan = rcan
-            where (out%grid%ts%sncan == nv) out%grid%ts%sncan = sncan
-            where (out%grid%ts%gro == nv .and. fcnpy > 0.0) out%grid%ts%gro = gro/fcnpy
-            where (out%grid%ts%sno == nv) out%grid%ts%sno = sno
-            where (out%grid%ts%fsno == nv) out%grid%ts%fsno = fsno
-            where (out%grid%ts%wsno == nv) out%grid%ts%wsno = wsno
-            where (out%grid%ts%zpnd == nv) out%grid%ts%zpnd = zpnd
-            where (out%grid%ts%pndw == nv) out%grid%ts%pndw = zpnd*RHOW
-            where (out%grid%ts%lzs == nv) out%grid%ts%lzs = lzs
-            where (out%grid%ts%dzs == nv) out%grid%ts%dzs = dzs
-            where (out%grid%ts%thlq == nv) out%grid%ts%thlq = thlq
-            where (out%grid%ts%lqws == nv) out%grid%ts%lqws = lqws
-            where (out%grid%ts%thic == nv) out%grid%ts%thic = thic
-            where (out%grid%ts%fzws == nv) out%grid%ts%fzws = fzws
-            where (out%grid%ts%alws == nv) out%grid%ts%alws = lqws + fzws
-!            where (out%grid%ts%stgw == nv) out%grid%ts%stgw =
+            if (all(out%grid%ts%evap == nv)) out%grid%ts%evap = evap
+            if (all(out%grid%ts%pevp == nv)) out%grid%ts%pevp = pevp
+            if (all(out%grid%ts%evpb == nv)) out%grid%ts%evpb = evpb
+            if (all(out%grid%ts%arrd == nv)) out%grid%ts%arrd = arrd
+            if (all(out%grid%ts%rof == nv)) out%grid%ts%rof = rof
+            if (all(out%grid%ts%rofo == nv)) out%grid%ts%rofo = rofo
+            if (all(out%grid%ts%rofs == nv)) out%grid%ts%rofs = rofs
+            if (all(out%grid%ts%rofb == nv)) out%grid%ts%rofb = rofb
+            if (all(out%grid%ts%rcan == nv)) out%grid%ts%rcan = rcan
+            if (all(out%grid%ts%sncan == nv)) out%grid%ts%sncan = sncan
+            if (all(out%grid%ts%gro == nv)) out%grid%ts%gro = gro
+            if (all(out%grid%ts%sno == nv)) out%grid%ts%sno = sno
+            if (all(out%grid%ts%fsno == nv)) out%grid%ts%fsno = fsno
+            if (all(out%grid%ts%wsno == nv)) out%grid%ts%wsno = wsno
+            if (all(out%grid%ts%zpnd == nv)) out%grid%ts%zpnd = zpnd
+            if (all(out%grid%ts%pndw == nv)) out%grid%ts%pndw = zpnd*RHOW
+            if (all(out%grid%ts%lzs == nv)) out%grid%ts%lzs = lzs
+            if (all(out%grid%ts%dzs == nv)) out%grid%ts%dzs = dzs
+            if (all(out%grid%ts%thlq == nv)) out%grid%ts%thlq = thlq
+            if (all(out%grid%ts%lqws == nv)) out%grid%ts%lqws = lqws
+            if (all(out%grid%ts%thic == nv)) out%grid%ts%thic = thic
+            if (all(out%grid%ts%fzws == nv)) out%grid%ts%fzws = fzws
+            if (all(out%grid%ts%alws == nv)) out%grid%ts%alws = lqws + fzws
+!            if (all(out%grid%ts%stgw == nv)) out%grid%ts%stgw =
         end if
 
         !> Energy balance.
         if (ro%RUNBALEB) then
-            where (out%grid%ts%cmas == nv .and. fcnpy > 0.0) out%grid%ts%cmas = cmas/fcnpy
-            where (out%grid%ts%tcan == nv .and. fcnpy > 0.0) out%grid%ts%tcan = tcan/fcnpy
-            where (out%grid%ts%tsno == nv .and. fsncov > 0.0) out%grid%ts%tsno = tsno/fsncov
-            where (out%grid%ts%tpnd == nv .and. fzpnd > 0.0) out%grid%ts%tpnd = tpnd/fzpnd
-            where (out%grid%ts%albt == nv) out%grid%ts%albt = albt
-            where (out%grid%ts%alvs == nv) out%grid%ts%alvs = alvs
-            where (out%grid%ts%alir == nv) out%grid%ts%alir = alir
+            if (all(out%grid%ts%cmas == nv)) out%grid%ts%cmas = cmas
+            if (all(out%grid%ts%tcan == nv)) out%grid%ts%tcan = tcan
+            if (all(out%grid%ts%tsno == nv)) out%grid%ts%tsno = tsno
+            if (all(out%grid%ts%tpnd == nv)) out%grid%ts%tpnd = tpnd
+            if (all(out%grid%ts%albt == nv)) out%grid%ts%albt = albt
+            if (all(out%grid%ts%alvs == nv)) out%grid%ts%alvs = alvs
+            if (all(out%grid%ts%alir == nv)) out%grid%ts%alir = alir
             if (allocated(fsin)) then
-                where (out%grid%ts%fsout == nv) out%grid%ts%fsout = fsin*(1.0 - albt)
+                if (all(out%grid%ts%fsout == nv)) out%grid%ts%fsout = fsin*(1.0 - albt)
             end if
-            where (out%grid%ts%gte == nv) out%grid%ts%gte = gte
-            where (out%grid%ts%flout == nv) out%grid%ts%flout = 5.66796E-8*gte**4
-            where (out%grid%ts%qh == nv) out%grid%ts%qh = qh
-            where (out%grid%ts%qe == nv) out%grid%ts%qe = qe
-            where (out%grid%ts%gzero == nv) out%grid%ts%gzero = gzero
-            where (out%grid%ts%gflx == nv) out%grid%ts%gflx = gflx
-            where (out%grid%ts%tbar == nv) out%grid%ts%tbar = tbar
-!            where (out%grid%ts%tmax == nv) out%grid%ts%tmax =
-!            where (out%grid%ts%tmin == nv) out%grid%ts%tmin =
-!            where (out%grid%ts%ald == nv) out%grid%ts%ald =
-!            where (out%grid%ts%zod == nv) out%grid%ts%zod =
-!            where (out%grid%ts%stge == nv) out%grid%ts%stge =
+            if (all(out%grid%ts%gte == nv)) out%grid%ts%gte = gte
+            if (all(out%grid%ts%flout == nv)) out%grid%ts%flout = 5.66796E-8*gte**4
+            if (all(out%grid%ts%qh == nv)) out%grid%ts%qh = qh
+            if (all(out%grid%ts%qe == nv)) out%grid%ts%qe = qe
+            if (all(out%grid%ts%gzero == nv)) out%grid%ts%gzero = gzero
+            if (all(out%grid%ts%gflx == nv)) out%grid%ts%gflx = gflx
+            if (all(out%grid%ts%tbar == nv)) out%grid%ts%tbar = tbar
+!            if (all(out%grid%ts%tmax == nv)) out%grid%ts%tmax =
+!            if (all(out%grid%ts%tmin == nv)) out%grid%ts%tmin =
+!            if (all(out%grid%ts%ald == nv)) out%grid%ts%ald =
+!            if (all(out%grid%ts%zod == nv)) out%grid%ts%zod =
+!            if (all(out%grid%ts%stge == nv)) out%grid%ts%stge =
         end if
 
         !> Channels and routing.
         !> 'stas_grid' variables are allocated by group so 'allocated' status is assumed.
         if (ro%RUNCHNL) then
-            where (out%grid%ts%rff == nv) out%grid%ts%rff = rff
-            where (out%grid%ts%rchg == nv) out%grid%ts%rchg = rchg
-            where (out%grid%ts%qi == nv) out%grid%ts%qi = stas_grid%chnl%qi
-            where (out%grid%ts%stgch == nv) out%grid%ts%stgch = stas_grid%chnl%stg
-            where (out%grid%ts%qo == nv) out%grid%ts%qo = stas_grid%chnl%qo
-!            where (out%grid%ts%zlvl == nv) out%grid%ts%zlvl = stas_grid%chnl%zlvl
+            if (all(out%grid%ts%rff == nv)) out%grid%ts%rff = rff
+            if (all(out%grid%ts%rchg == nv)) out%grid%ts%rchg = rchg
+            if (all(out%grid%ts%qi == nv)) out%grid%ts%qi = stas_grid%chnl%qi
+            if (all(out%grid%ts%stgch == nv)) out%grid%ts%stgch = stas_grid%chnl%stg
+            if (all(out%grid%ts%qo == nv)) out%grid%ts%qo = stas_grid%chnl%qo
+!            if (all(out%grid%ts%zlvl == nv)) out%grid%ts%zlvl = stas_grid%chnl%zlvl
         end if
 
     end subroutine
