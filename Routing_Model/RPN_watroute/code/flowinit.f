@@ -1396,7 +1396,7 @@ c         Copied over from runof6.for (thr=1):  AKB July 11, 2002
                do while(trialq.lt.qo2(n))
                   store1(n)=2.0*store1(n)
                   trialq=store1(n)*(b1(k)+store1(n)*(b2(k)+store1(n)*
-     *               (b3(k)+store1(n)*(b4(l)+b5(k)*store1(n)))))
+     *               (b3(k)+store1(n)*(b4(k)+b5(k)*store1(n)))))
                enddo
             endif
             store2(n)=store1(n)
