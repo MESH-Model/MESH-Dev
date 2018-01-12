@@ -269,6 +269,31 @@ module sa_mesh_run_between_grid
         call run_rte_init(fls, shd)
         call runci_between_grid_init(shd, fls)
 
+        !> Allocate grid-based accumulated output.
+        call output_variables_allocate(out%grid%tot%pre, shd%NA)
+        call output_variables_allocate(out%grid%tot%evap, shd%NA)
+        call output_variables_allocate(out%grid%tot%rof, shd%NA)
+        call output_variables_allocate(out%grid%tot%rofo, shd%NA)
+        call output_variables_allocate(out%grid%tot%rofs, shd%NA)
+        call output_variables_allocate(out%grid%tot%rofb, shd%NA)
+
+        !> Allocate grid-based daily output.
+        call output_variables_allocate(out%grid%dly%pre, shd%NA)
+        call output_variables_allocate(out%grid%dly%evap, shd%NA)
+        call output_variables_allocate(out%grid%dly%rof, shd%NA)
+        call output_variables_allocate(out%grid%dly%rofo, shd%NA)
+        call output_variables_allocate(out%grid%dly%rofs, shd%NA)
+        call output_variables_allocate(out%grid%dly%rofb, shd%NA)
+        call output_variables_allocate(out%grid%dly%rcan, shd%NA)
+        call output_variables_allocate(out%grid%dly%sncan, shd%NA)
+        call output_variables_allocate(out%grid%dly%sno, shd%NA)
+        call output_variables_allocate(out%grid%dly%wsno, shd%NA)
+        call output_variables_allocate(out%grid%dly%pndw, shd%NA)
+        call output_variables_allocate(out%grid%dly%lzs, shd%NA)
+        call output_variables_allocate(out%grid%dly%dzs, shd%NA)
+        call output_variables_allocate(out%grid%dly%lqws, shd%NA, shd%lc%IGND)
+        call output_variables_allocate(out%grid%dly%fzws, shd%NA, shd%lc%IGND)
+
         !> Output.
         call run_save_basin_output_init(fls, shd, cm)
 
