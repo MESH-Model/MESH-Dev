@@ -1068,19 +1068,6 @@ program RUNMESH
                 FRAME_NO_NEW = FRAME_NO_NEW + 1 !UPDATE COUNTERS
             end if
 
-            !> Accumulated basin totals for end of run output.
-            TOTAL_PRE = TOTAL_PRE + sum(out%grid%ts%pre*shd%FRAC*ic%dts)
-            TOTAL_EVAP = TOTAL_EVAP + sum(out%grid%ts%evap*shd%FRAC*ic%dts)
-            TOTAL_ROF = TOTAL_ROF + sum(out%grid%ts%rof*shd%FRAC*ic%dts)
-            TOTAL_ROFO = TOTAL_ROFO + sum(out%grid%ts%rofo*shd%FRAC*ic%dts)
-            TOTAL_ROFS = TOTAL_ROFS + sum(out%grid%ts%rofs*shd%FRAC*ic%dts)
-            TOTAL_ROFB = TOTAL_ROFB + sum(out%grid%ts%rofb*shd%FRAC*ic%dts)
-
-            !> Daily basin output to print to screen.
-            DAILY_PRE = DAILY_PRE + sum(out%grid%ts%pre*shd%FRAC*ic%dts)
-            DAILY_EVAP = DAILY_EVAP + sum(out%grid%ts%evap*shd%FRAC*ic%dts)
-            DAILY_ROF = DAILY_ROF + sum(out%grid%ts%rof*shd%FRAC*ic%dts)
-
             !> Update data for other outputs.
             if (OUTFIELDSFLAG == 1) call UpdateFIELDSOUT(fls, shd, ts, cm, ifo, vr)
 
@@ -1090,6 +1077,11 @@ program RUNMESH
 
             !> Write output to the console.
             if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
+
+                !> Accumulated outputs (including non-zero value read from resume file).
+                DAILY_PRE = DAILY_PRE + sum(out%grid%dly%pre*shd%FRAC)*ic%dts
+                DAILY_EVAP = DAILY_EVAP + sum(out%grid%dly%evap*shd%FRAC)*ic%dts
+                DAILY_ROF = DAILY_ROF + sum(out%grid%dly%rof*shd%FRAC)*ic%dts
 
                 if (ro%VERBOSEMODE > 0) then
                     write(6, '(2i5)', advance = 'no') ic%now%year, ic%now%jday
@@ -1265,6 +1257,14 @@ program RUNMESH
 
         !> Call finalization routines.
         call run_between_grid_finalize(fls, shd, cm)
+
+        !> Accumulated outputs (including non-zero value read from resume file).
+        TOTAL_PRE = TOTAL_PRE + sum(out%grid%tot%pre*shd%FRAC)*ic%dts
+        TOTAL_EVAP = TOTAL_EVAP + sum(out%grid%tot%evap*shd%FRAC)*ic%dts
+        TOTAL_ROF = TOTAL_ROF + sum(out%grid%tot%rof*shd%FRAC)*ic%dts
+        TOTAL_ROFO = TOTAL_ROFO + sum(out%grid%tot%rofo*shd%FRAC)*ic%dts
+        TOTAL_ROFS = TOTAL_ROFS + sum(out%grid%tot%rofs*shd%FRAC)*ic%dts
+        TOTAL_ROFB = TOTAL_ROFB + sum(out%grid%tot%rofb*shd%FRAC)*ic%dts
 
         !> Save the current state of the model for SAVERESUMEFLAG.
         if (SAVERESUMEFLAG == 4) then
