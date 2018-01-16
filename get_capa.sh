@@ -10,7 +10,7 @@ set -aex
 
 # Working directories
 # The home directory is an absolute path; other directories build from this path
-home_dir='/fs/home/fs1/eccc/oth/nlab_west/aql000/my_proj_hall2/MESH_Forecast'
+home_dir='/net/san/pnrscience1/data/GEM_MESH/MESH_Forecast2'
 awk_file_path=$home_dir/scripts
 grib_file_path=$home_dir/GRIB
 temp_file_path=$home_dir/TempFiles
@@ -20,7 +20,7 @@ run_file_path=$home_dir/capa_hindcasts
 remote_location_CaPA=http://dd.weatheroffice.gc.ca/analysis/precip/rdpa/grib2/polar_stereographic/06
 
 # Programs
-bin_wgrib2=/fs/ssm/eccc/cmo/cmoi/apps/wgrib2/2.05-ipolate/ubuntu-14.04-amd64-64/bin/wgrib2
+bin_wgrib2=/apps/share/bin/wgrib2
 
 # Variable names (to name output files)
 namess[1]='rain' #(CaPA)

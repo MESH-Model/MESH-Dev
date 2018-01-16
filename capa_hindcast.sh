@@ -7,7 +7,7 @@
 #            2) ./capa_hindcast.sh 7 ; --> creat last 7 days forecast forcing files for short run
 #            3) ./capa_hindcast.sh 7 20171205 ; --> assume process day is 2017 dec 05, and creat 7-day forecast forcing files
  
-option=$1 # if option =1, program will add foceing data to the longrun forcing fiel, otherwise  will create a new forcing file with headers. 
+option=$1 # if option =1, program will add foceing data to the longrun forcing file, otherwise  will create a new forcing file with headers. 
 
 if [ $# -eq 0 ]; then 
 daysback=1
@@ -21,14 +21,14 @@ fi
 
 # define paths and other variables
 # use ABSOLUTE paths
-home_dir='/fs/home/fs1/eccc/oth/nlab_west/aql000/my_proj_hall2/MESH_Forecast/'
+home_dir='/net/san/pnrscience1/data/GEM_MESH/MESH_Forecast2/'
 remote_location='http://dd.weatheroffice.gc.ca/model_gem_regional/10km/grib2'
 awk_file_path=$home_dir'scripts/'
 grib_file_path=$home_dir'GRIB/'
 temp_file_path=$home_dir'TempFiles/'
 gem_file_path=$home_dir'gem_forecasts/'
 capa_file_path=$home_dir'capa_hindcasts/'
-bin_wgrib2=/fs/ssm/eccc/cmo/cmoi/apps/wgrib2/2.05-ipolate/ubuntu-14.04-amd64-64/bin/wgrib2
+bin_wgrib2=/apps/share/bin/wgrib
 
 
 namess[1]="humidity"
@@ -67,12 +67,12 @@ dtnow=$(date  -u +%Y%m%d)
 else
 dtnow=$2 
 fi
-echo "This is the day you are at  " $dtnow
 
-dt=$(date -d  "$dtnow -${n}day" -u +%Y%m%d)
-yest=$(date -d  "$dt -1day " -u +%Y%m%d)
-endt=$(date -d  "$dt 1day" -u +%Y%m%d)
-echo "n= " $n
+dt=$(date -d  "$dtnow -${n} day" -u +%Y%m%d)
+yest=$(date -d  "$dt -1 day " -u +%Y%m%d)
+endt=$(date -d  "$dt 1 day" -u +%Y%m%d)
+echo "n= " $n $dt $yest $endt
+
     # DOWNLOAD the GEM grib2 files from remote_location
 # LOOP over the basins/watersheds
 for basin in ${!lats[*]}
@@ -88,10 +88,11 @@ do
  else
   model_file_path=$capa_file_path$watershed'/SaMESHRunShort'
  fi
+   x="\n"
   input_file_path_gem=$gem_file_path$watershed'/'$yest'16_to_'$endt'16/'
   input_file_path_capa=$capa_file_path$watershed'/'$yest'16_to_'$(date -d "$endt -1day" -u +%Y%m%d)'16/'
   output_file_path_capa=$capa_file_path$watershed'/'$(date -d "$endt -1day" -u +%Y%m%d)'16_to_'$(date -d "$endt" -u +%Y%m%d)'16/'
-   echo $input_file_path_capa $output_file_path_capa $model_file_path
+   echo -ne $input_file_path_capa $x$input_file_path_gem $x$output_file_path_capa $x$model_file_path $x
    
       # ------------------- GEM -------------------------------
     # LOOP over each variable on the saved grib2 files to create the GEM forcing files
@@ -116,9 +117,9 @@ do
                  file=$input_file_path_gem'basin_'$names'.r2c'
                  if [ -f $file ]; then
                    cat $input_file_path_gem'basin_'$names'.r2c' | sed -e '1,/endHeader/d' > 1.output
-		   cat 1.output >> $model_file_path'/basin_'$names'.r2c'
+		   cat 1.output |sed -e '/:Frame    25  25/,$d' >> $model_file_path'/basin_'$names'.r2c'
 		 else
-                   echo $file "not exist; check if data on the datamart are ready."
+                   echo $file "not exist; check if the data on ECCC datamart are ready."
 	         sleep 12000 
 		 fi
        else
@@ -127,27 +128,28 @@ do
 	            cat $input_file_path_capa'/basin_'$names'.r2c' | sed -e '1,/endHeader/d' >> $model_file_path'/basin_'$names'.r2c'
 		  
 	         else
-	         echo $file "not exist; check if data on the datamart are ready."
+	         echo $file "not exist; check if the data on ECCC datamart are ready."
 	         sleep 12000    
                  fi
         # MOVE the newly created forcing files into the run folder 
       fi
       done
-
-
 done
+# copy initial states files to model directory and modify model run time
  if ((n==$1)); then 
+ echo "This is the day you are at  " $dtnow
+ rm $model_file_path/int*.*
  cp $input_file_path_capa/int*.* $model_file_path
  cp $model_file_path/MESH_input_run_options.ini $model_file_path/MESH_input_run_options.ini.orj
  cp $model_file_path/MESH_parameters_CLASS.ini $model_file_path/MESH_parameters_CLASS.ini.orj
- python -t  $awk_file_path/modify_runtime.py  $(date -d  $yest -u +%Y) $(date -d  $yest -u +%m) $(date -d  $yest -u +%d)  16 $n
+ python -t  ${awk_file_path}modify_runtime.py  $(date -d  $yest -u +%Y) $(date -d  $yest -u +%m) $(date -d  $yest -u +%d)  16 $n
  fi
  
 done
 
 if [ $# -gt 0 ]; then
 cd $model_file_path
-./mpi_sa_mesh
+./sa_mesh_static 
 if [ -d "$output_file_path_capa" ]; then
 echo $output_file_path_capa " exists"
 cp $model_file_path/int*.* $output_file_path_capa

@@ -9,14 +9,14 @@
 
 # define paths and other variables
 # use ABSOLUTE paths
-home_dir='/fs/home/fs1/eccc/oth/nlab_west/aql000/my_proj_hall2/MESH_Forecast/'
+home_dir='/net/san/pnrscience1/data/GEM_MESH/MESH_Forecast2/'
 remote_location='http://dd.weatheroffice.gc.ca/model_gem_regional/10km/grib2'
 awk_file_path=$home_dir'scripts/'
 grib_file_path=$home_dir'GRIB/'
 temp_file_path=$home_dir'TempFiles/'
 gem_file_path=$home_dir'gem_forecasts/'
 capa_file_path=$home_dir'capa_hindcasts/'
-bin_wgrib2=/fs/ssm/eccc/cmo/cmoi/apps/wgrib2/2.05-ipolate/ubuntu-14.04-amd64-64/bin/wgrib2
+bin_wgrib2=/apps/share/bin/wgrib
 
 watersheds[1]='05KJ001'
 stations[1]='05KJ001'
@@ -57,13 +57,14 @@ do
  cp $model_file_path/MESH_input_run_options.ini $model_file_path/MESH_input_run_options.ini.orj
  cp $model_file_path/MESH_parameters_CLASS.ini $model_file_path/MESH_parameters_CLASS.ini.orj
  n=2
+ echo $(date -d  $yest -u +%Y) $(date -d  $yest -u +%m) $(date -d  $yest -u +%d) 16 $n $model_file_path
  python -t  $awk_file_path/modify_runtime_gem.py  $(date -d  $yest -u +%Y) $(date -d  $yest -u +%m) $(date -d  $yest -u +%d)  16 $n $model_file_path
 echo "this is great!" $model_file_path
 done
 
 if [ $# -gt 0 ]; then
 cd $model_file_path
-./mpi_sa_mesh
+./sa_mesh_static 
 fi
 cd $model_file_path/BASINAVG1/
 sed -n '2, $ p' MESH_output_streamflow_ts.csv > 1.output
