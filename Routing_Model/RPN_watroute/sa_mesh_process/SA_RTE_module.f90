@@ -93,7 +93,7 @@ module SA_RTE_module
         !> usually known, so is set to (frame_now + 1).
 
         !> Determine if this is the last time-step of the hour.
-        writeout = (mod(ic%ts_hourly, 3600/ic%dts) == 0)
+        writeout = (ic%now%hour /= ic%next%hour)
 !-        print *, ic%now_jday, ic%now_hour, ic%now_mins, writeout
 
         !> For: Runoff (RFF).

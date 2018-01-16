@@ -600,10 +600,8 @@ module rte_module
         out%grid%ts%stgch = 0.0
         out%grid%ts%qo = 0.0
 
-        !> Return if no the last time-step of the hour.
-        if (mod(ic%ts_hourly, 3600/ic%dts) /= 0) then
-            return
-        end if
+        !> Return if not the last time-step of the hour.
+        if (ic%now%hour == ic%next%hour) return
 
         !> Increment counters.
         fhr = fhr + 1

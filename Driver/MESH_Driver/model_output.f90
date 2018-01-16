@@ -928,7 +928,7 @@ module model_output
             if (.not. ifo%var_out(i)%name == fldId) cycle
 
             !> Hourly.
-            if (ifo%var_out(i)%out_h .and. (mod(ic%ts_hourly, 3600/ic%dts) == 0)) then
+            if (ifo%var_out(i)%out_h .and. ic%now%hour /= ic%next%hour) then
 
                 !> Ready output.
                 allocate(fld_out(size(fld_in), 1))
@@ -1259,7 +1259,7 @@ module model_output
             TBAR_dly(id, : , :) = TBAR_dly(id, : , :) + out%grid%ts%tbar
 
             !> Last time-step of the day.
-            if (ic%ts_daily == 24*3600/ic%dts) then
+            if (ic%now%day /= ic%next%day) then
                 TBAR_dly(id, : , :) = TBAR_dly(id, : , :)/ic%ts_daily !daily average temperature
                 call active_layer_depth(TBAR_dly(id, :, :), shd%lc%sl%ZBOT, ALD_dly(id, :), shd%lc%IGND, shd%NA, 1, shd%NA)
                 ALD_ann(iy, :) = max(ALD_ann(iy, :), ALD_dly(id, :))

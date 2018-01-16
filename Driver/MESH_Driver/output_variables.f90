@@ -671,19 +671,23 @@ module output_variables
 
             !> Daily.
             case (TKDLY)
-                if (mod(ic%ts_daily, 3600/ic%dts*24) == 0) dnts = ic%ts_daily
+                if (ic%now%day /= ic%next%day) dnts = ic%ts_daily
                 its = ic%ts_daily
 
             !> Hourly.
             case (TKHLY)
-                if (mod(ic%ts_hourly, 3600/ic%dts) == 0) dnts = ic%ts_hourly
+                if (ic%now%hour /= ic%next%hour) dnts = ic%ts_hourly
                 its = ic%ts_hourly
 
             !> Monthly.
             case (TKMLY)
+                if (ic%now%month /= ic%next%month) dnts = ic%ts_monthly
+                its = ic%ts_monthly
 
             !> Yearly.
             case (TKYLY)
+                if (ic%now%year /= ic%next%year) dnts = ic%ts_yearly
+                its = ic%ts_yearly
 
             !> Total (e.g., accumulated).
             case (TKTOT)

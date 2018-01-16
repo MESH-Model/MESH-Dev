@@ -75,39 +75,27 @@ module model_dates
 
     contains
 
-!-    subroutine counter_init()
+    subroutine counter_init()
 
-        !> Update now counters.
-!-        ic%now%year = 0
-!-        ic%now%jday = 0
-!-        ic%now%month = 0
-!-        ic%now%day = 0
-!-        ic%now%hour = 0
-!-        ic%now%mins = 0
+        !> Set the 'next' counter to 'now'.
+        ic%next%year = ic%now%year
+        ic%next%jday = ic%now%jday
+        ic%next%month = ic%now%month
+        ic%next%day = ic%now%day
+        ic%next%hour = ic%now%hour
+        ic%next%mins = ic%now%mins
 
-        !> Update time-step.
-!-        ic%dts = 1800
-!-        ic%dtmins = 30
+        !> Increment the 'next' counter.
+        call counter_increment(ic%next)
 
-        !> Initialize counters.
-!-        ic%count_year = 0
-!-        ic%count_month = 0
-!-        ic%count_jday = 0
-!-        ic%count_hour = 0
-!-        ic%count_mins = 0
-!-        ic%ts_daily = 1
-!-        ic%ts_hourly = 1
-!-        ic%ts_halfhourly = 1
-!-        ic%ts_count = 1
-
-!-    end subroutine
+    end subroutine
 
     subroutine counter_increment(ic_date)
 
         !> Input/output variables.
         type(counter_date) ic_date
 
-        !> Increment the current time-step.
+        !> Increment the current time-step and update the date (YEAR/JDAY/HOUR/MINS).
         ic_date%mins = ic_date%mins + ic%dtmins ! increment the current time by 30 minutes
         if (ic_date%mins == 60) then
             ic_date%mins = 0
@@ -136,6 +124,9 @@ module model_dates
                 end if
             end if
         end if
+
+        !> Update remaining fields of the date (MONTH/DAY).
+        call julian2monthday(ic_date%jday, ic_date%year, ic_date%month, ic_date%day)
 
     end subroutine
 
@@ -167,9 +158,6 @@ module model_dates
             ic%ts_daily = 0
             ic%iter%day = ic%iter%jday
         end if
-
-        !> Determine the current month and day.
-        call julian2monthday(ic%now%jday, ic%now%year, ic%now%month, ic%now%day)
 
         !> Month; day in month counter.
         if (old_month /= ic%now%month) then
@@ -207,7 +195,7 @@ module model_dates
         ic%ts_halfhourly = ic%ts_halfhourly + 1
         ic%ts_count = ic%ts_count + 1
 
-        !> Update and increment the 'next' counter.
+        !> Set the 'next' counter to 'now'.
         ic%next%year = ic%now%year
         ic%next%jday = ic%now%jday
         ic%next%month = ic%now%month
@@ -215,7 +203,7 @@ module model_dates
         ic%next%hour = ic%now%hour
         ic%next%mins = ic%now%mins
 
-        !> Incremend the 'next' counter.
+        !> Increment the 'next' counter.
         call counter_increment(ic%next)
 
     end subroutine

@@ -326,7 +326,6 @@ module sa_mesh_run_between_grid
 
         !> Local variables.
         integer l, i, iun
-        logical writeout
 
         !> SCA variables
         real TOTAL_AREA, FRAC, basin_SCA, basin_SWE
@@ -453,11 +452,8 @@ module sa_mesh_run_between_grid
 
         end if
 
-        !> Determine if this is the last time-step of the hour in the day.
-        writeout = (mod(ic%ts_daily, 3600/ic%dts*24) == 0)
-
         !> This occurs the last time-step of the day.
-        if (writeout) then
+        if (ic%now%day /= ic%next%day) then
 
             if (fms%rsvr%n > 0) then
                 where (out%grid%dly%stgch(fms%rsvr%meta%rnk(:)) > 0.0 .and. fms%rsvr%rls%area > 0.0)

@@ -395,7 +395,7 @@ module save_basin_output
         call update_energy_balance(shd, cm)
 
         !> Hourly: IKEY_HLY
-        if (mod(ic%ts_hourly, 3600/ic%dts) == 0) then
+        if (ic%now%hour /= ic%next%hour) then
 !todo: change this to pass the index of the file object.
             if (btest(bnoflg%wb%t, 2)) then
                 call save_water_balance(shd, 3600, IKEY_HLY)
@@ -418,7 +418,7 @@ module save_basin_output
         end if
 
         !> Daily: IKEY_DLY
-        if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
+        if (ic%now%day /= ic%next%day) then
             if (btest(bnoflg%wb%t, 0)) then
                 call save_water_balance(shd, 86400, IKEY_DLY)
                 call write_water_balance(fls, shd, fls%fl(mfk%f900)%iun, 86400, shd%NAA, IKEY_DLY)
@@ -441,7 +441,7 @@ module save_basin_output
         end if
 
         !> Monthly: IKEY_MLY
-        if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
+        if (ic%now%month /= ic%next%month) then
 
             !> Determine the next day in the month.
             call Julian2MonthDay((ic%now%jday + 1), ic%now%year, nmth, ndy)

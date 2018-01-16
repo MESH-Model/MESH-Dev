@@ -397,7 +397,7 @@ module RUNCLASS36_save_output
                 co%QAACC(i) = co%QAACC(i) + cfi%QA(k)
 
                 !> Write daily output if in the last time-step of the day.
-                if (mod(ic%ts_daily, 86400/ic%dts) == 0) then
+                if (ic%now%day /= ic%next%day) then
 
                     !> Calculate the average of variables that should not accumulate.
                     NSUM = ic%ts_daily

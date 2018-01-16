@@ -145,7 +145,7 @@ program RUNMESH
 
     !* VERSION: MESH_DRIVER VERSION
     !* RELEASE: PROGRAM RELEASE VERSIONS
-    character(24) :: VERSION = '1249'
+    character(24) :: VERSION = '1253'
     character(8) RELEASE
 
     integer i, j, k, l, m, u
@@ -939,6 +939,9 @@ program RUNMESH
         close(iun)
 
     end if !(RESUMEFLAG == 4) then
+
+    !> Update 'next' counter.
+    call counter_init()
 
     if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls)
 
