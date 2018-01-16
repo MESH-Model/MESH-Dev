@@ -948,7 +948,7 @@ module model_output
 !                        fld_out(:, 1) = sum(fld_in, 1)
 
 !                end select
-                frame_no = ic%count_hour + 1
+                frame_no = ic%iter%hour + 1
                 freq = 'H'
 
                 !> Reset array.

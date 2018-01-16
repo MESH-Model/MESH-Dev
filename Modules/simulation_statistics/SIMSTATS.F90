@@ -415,7 +415,7 @@ module SIMSTATS
         if (mtsfl%fl(mtsk%fo)%init) then
             iun = mtsfl%fl(mtsk%fo)%iun
             open(iun, file = trim(adjustl(mtsfl%fl(mtsk%fo)%fn)))
-            if (mtsflg%PREEMPTIONFLAG >= 1) ftest = ftest*ic%count_jday/ncal
+            if (mtsflg%PREEMPTIONFLAG >= 1) ftest = ftest*ic%iter%jday/ncal
             write(iun, "(9999(g15.7e2, ' '))") ftest
             close(iun)
         end if

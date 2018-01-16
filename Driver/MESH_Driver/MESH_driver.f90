@@ -919,7 +919,7 @@ program RUNMESH
 
         !> Time-stepping information.
         read(iun) ic%now%year, ic%now%jday, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins
-        read(iun) ic%count_year, ic%count_jday, ic%count_month, ic%count_jday, ic%count_hour, ic%count_mins
+        read(iun) ic%iter%year, ic%iter%jday, ic%iter%month, ic%iter%jday, ic%iter%hour, ic%iter%mins
         read(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
 
         !> Read states for the driver (for the head node or in serial).
@@ -1277,7 +1277,7 @@ program RUNMESH
 
             !> Time-stepping information.
             write(iun) ic%now%year, ic%now%jday, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins
-            write(iun) ic%count_year, ic%count_jday, ic%count_month, ic%count_jday, ic%count_hour, ic%count_mins
+            write(iun) ic%iter%year, ic%iter%jday, ic%iter%month, ic%iter%jday, ic%iter%hour, ic%iter%mins
             write(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
 
             !> Water balance totals.

@@ -766,7 +766,7 @@ module rte_module
         !> rev. 9.3.12  Feb.  20/07  - NK: changed dtmin & call to route
         do n = 1, no_dt
 
-            call route(sec_div, hr_div, dtmin, mindtmin, convthreshusr, (ic%count_hour + 1), n, real(ic%ts_count - 1), &
+            call route(sec_div, hr_div, dtmin, mindtmin, convthreshusr, (ic%iter%hour + 1), n, real(ic%ts_count - 1), &
                        date, exitstatus)
 
             if (exitstatus /= 0) then
