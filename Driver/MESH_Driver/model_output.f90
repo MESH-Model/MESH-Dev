@@ -353,7 +353,7 @@ module model_output
 
                     !> Seasonal (monthly average).
                     case ('s')
-                        call output_file_parse_options(shd, field%s, ts%nseason, args)
+                        call output_file_parse_options(shd, field%s, 12, args)
 
                     !> Daily.
                     case ('d')
@@ -361,11 +361,11 @@ module model_output
 
                     !> Hourly.
                     case ('h')
-                        call output_file_parse_options(shd, field%h, max(1, 3600/ic%dts), args)
+                        call output_file_parse_options(shd, field%h, ts%nr_days*24, args)
 
                     !> Per time-step.
                     case ('ts')
-                        call output_file_parse_options(shd, field%ts, 1, args)
+                        call output_file_parse_options(shd, field%ts, ts%nr_days*24*(3600/ic%dts), args)
 
                     !> Weight by fractional area.
                     case ('frac')
@@ -397,9 +397,9 @@ module model_output
         if (flds%in_mem) then
             allocate(flds%dates%y(6, ts%nyears))
             allocate(flds%dates%m(6, ts%nmonths))
-            allocate(flds%dates%s(6, ts%nseason))
+            allocate(flds%dates%s(6, 12))
             allocate(flds%dates%d(6, ts%nr_days))
-            allocate(flds%dates%h(6, max(1, 3600/ic%dts)))
+            allocate(flds%dates%h(6, ts%nr_days*24))
         else
             allocate(flds%dates%y(6, 1))
             allocate(flds%dates%m(6, 1))
@@ -778,13 +778,17 @@ module model_output
         !> Input/output variables.
         integer dates(:, :)
 
-        !> Update time-step.
+        !> Save the time-step using 'next' date.
         dates(1, t) = iter
         dates(2, t) = ic%next%year
         dates(3, t) = ic%next%month
         dates(4, t) = ic%next%day
         dates(5, t) = ic%next%hour
         dates(6, t) = ic%next%mins
+
+        !> Check 'hour' for the 24th hour.
+        !> Output is written 01-24h while the model runs 00-23h.
+        if (dates(5, t) == 0) dates(5, t) = 24
 
     end subroutine
 
@@ -1317,37 +1321,37 @@ module model_output
         !> RFF.
         if (flds%rff%y%active .and. out_y) then
             call update_output_variable(flds%rff%y, out%grid%yly%rff*ic%dts, t_y)
-            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rff%y, 'WF_RUNOFF', 'Y', flds%dates%y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rff%y, 'WR_RUNOFF', 'Y', flds%dates%y)
         end if
         if (flds%rff%m%active .and. out_m) then
             call update_output_variable(flds%rff%m, out%grid%mly%rff*ic%dts, t_m)
-            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rff%m, 'WF_RUNOFF', 'M', flds%dates%m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rff%m, 'WR_RUNOFF', 'M', flds%dates%m)
         end if
         if (flds%rff%d%active .and. out_d) then
             call update_output_variable(flds%rff%d, out%grid%dly%rff*ic%dts, t_d)
-            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rff%d, 'WF_RUNOFF', 'D', flds%dates%d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rff%d, 'WR_RUNOFF', 'D', flds%dates%d)
         end if
         if (flds%rff%h%active .and. out_h) then
             call update_output_variable(flds%rff%h, out%grid%hly%rff*ic%dts, t_h)
-            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rff%h, 'WF_RUNOFF', 'H', flds%dates%h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rff%h, 'WR_RUNOFF', 'H', flds%dates%h)
         end if
 
         !> RCHG.
         if (flds%rchg%y%active .and. out_y) then
             call update_output_variable(flds%rchg%y, out%grid%yly%rchg*ic%dts, t_y)
-            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rchg%y, 'WF_RECHARGE', 'Y', flds%dates%y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rchg%y, 'WR_RECHARGE', 'Y', flds%dates%y)
         end if
         if (flds%rchg%m%active .and. out_m) then
             call update_output_variable(flds%rchg%m, out%grid%mly%rchg*ic%dts, t_m)
-            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rchg%m, 'WF_RECHARGE', 'M', flds%dates%m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rchg%m, 'WR_RECHARGE', 'M', flds%dates%m)
         end if
         if (flds%rchg%d%active .and. out_d) then
             call update_output_variable(flds%rchg%d, out%grid%dly%rchg*ic%dts, t_d)
-            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rchg%d, 'WF_RECHARGE', 'D', flds%dates%d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rchg%d, 'WR_RECHARGE', 'D', flds%dates%d)
         end if
         if (flds%rchg%h%active .and. out_h) then
             call update_output_variable(flds%rchg%h, out%grid%hly%rchg*ic%dts, t_h)
-            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rchg%h, 'WF_RECHARGE', 'H', flds%dates%h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rchg%h, 'WR_RECHARGE', 'H', flds%dates%h)
         end if
 
     end subroutine
