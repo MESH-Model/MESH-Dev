@@ -1,9 +1,5 @@
 module model_output
 
-    !>******************************************************************************
-    !>  Athor: Gonzalo Sapriza Azuri
-    !>******************************************************************************
-
     use sa_mesh_shared_variables
     use model_dates
     use model_files_variables
@@ -13,255 +9,281 @@ module model_output
     real, allocatable :: TBAR_dly(:, :, :), ALD_dly(:, :), TMAX_ann(:, :, :), TMIN_ann(:, :, :), ALD_ann(:, :), ZOD_ann(:, :, :)
     real, allocatable :: ZOD_TTOL(:)
 
+    !> Description:
+    !>  Data type for output file information for a specific format.
     !>
-    !> *****************************************************************************
-    !> Although it may seen redundant, data types for groups are created
-    !> to include the time-series dim, if applicable, because of the way
-    !> arrays are stored in Fortran. Storing group(t)%vars(i) can have significant
-    !> overhead when compared to group_vars(t, i).
-    !> *****************************************************************************
+    !> Variables:
+    !*  active: .true. if the file is active (default: .false.).
+    !*  iun: Unit of the file (must be unique; default: -1).
+    !*  path: Path or file name (default: none).
+    type output_file_format
+        logical :: active = .false.
+        integer :: iun = -1
+        character(len = 1000) :: path = ''
+    end type
+
+    !> Description:
+    !>  Data type for output file format information.
     !>
+    !> Variables:
+    !*  active: .true. if output is active (default: .false.).
+    !*  delim: Field delimiter in supported formats (default: space-delimited).
+    !*  print_date: Option to print the leading date stamp in supported formats (default: .false.).
+    !*  order: Print order of elements in the field in supported formats (default: 'gridorder').
+    !*  grids, tiles, grus: Indices of the specific grids/tiles/GRUs for output in supported formats (text format).
+    !*  dat: Output data (1: Tile or grid index; 2: Index in series).
+    !*  seq, r2c, txt, csv: File information for outputs in various formats.
+    type output_file
+        logical :: active = .false.
+        character(len = 20) :: delim = '', order = 'unknown'
+        logical :: print_date = .false.
+        integer, dimension(:), allocatable :: grids, tiles, grus
+        real, dimension(:, :), allocatable :: dat
+        type(output_file_format) seq, r2c, txt, csv
+    end type
 
+    !> Description:
+    !>  Data type for storing series of output.
     !>
-    !> *****************************************************************************
-    !> Water balance output data
-    !> *****************************************************************************
-    !* pre: Precipitation [kg m-2]
-    !* evap: Evaporation (water lost by evapotranspiration and sublimation, both rain and snow components) [kg m-2]
-    !* rof: Runoff (combination of overland-, subsurface-, and base-flows) [kg m-2]
-    !* rofo: Overland flow component of runoff [kg m-2]
-    !* rofs: Subsurface flow component of runoff [kg m-2]
-    !* rofb: Baseflow component of runoff [kg m-2]
-    !* rcan: Rainfall intercepted by the canopy [kg m-2]
-    !* sncan: Snowfall intercepted by the canopy [kg m-2]
-    !* pndw: Water ponded at the surface of the soil [kg m-2]
-    !* sno: Snowpack at the surface of the soil [kg m-2]
-    !* wsno: Water stored in the snowpack [kg m-2]
-    !* stg: Water stored in the system [kg m-2]
-    !* dstg: Difference of water stored in the system compared to the previous time-step of the element [kg m-2]
-    !* grid_area: Fractional area of the grid-square [m2 m-2]
-    !* lqws: Water stored in the soil matrix [kg m-2]
-    !* frws: Frozen water (ice) stored in the soil matrix [kg m-2]
-    !* basin_area: Total fractional area of the basin [m2 m-2]
-    !> *****************************************************************************
+    !> Variables:
+!todo: change to .false. for default.
+    !*  apply_frac: .true. to multiply grid values by fractional area of cell (default: .true.).
+    !*  y, m, s, d, h, ts: Output files of the variable at various time intervals.
+    type output_series
+        logical :: apply_frac = .true.
+        type(output_file) y, m, s, d, h, ts
+    end type
+
+    !> Description:
+    !>  Data type for storing series of dates.
     !>
-
-    !> Data type to store components of the water balance in time and space.
-    !* (1: time, 2: space) or (1: time, 2: space, 3: soil layer)
-    type water_balance_series
-        real, dimension(:, :), allocatable :: &
-            pre, evap, pevp, evpb, arrd, rof, &
-            rofo, rofs, rofb, &
-            rcan, sncan, pndw, sno, wsno, &
-            stg, dstg, grid_area
-        real, dimension(:, :, :), allocatable :: lqws, frws
-        real :: basin_area
+    !> Variables:
+    !*  y, m, s, d, h, ts: Arrays of dates at various time intervals.
+    type output_dates
+        integer, dimension(:, :), allocatable :: y, m, s, d, h
+        integer, dimension(:), allocatable :: ts
     end type
 
-    !> Data type to store components of the water balance in time or space.
-    !* (1: time or space) or (1: time or space, 2: soil layer)
-    type water_balance
-        real, dimension(:), allocatable :: &
-            pre, evap, pevp, evpb, arrd, rof, &
-            rofo, rofs, rofb, &
-            rcan, sncan, pndw, sno, wsno, &
-            stg, dstg, grid_area
-        real, dimension(:, :), allocatable :: lqws, frws
-        real :: basin_area
+    !> Description:
+    !>  Data type for storing series for output.
+    !>
+    !> Variables:
+    !*  dates: Array to store frame count and date (1: Frame count and date; 2: Index in series).
+    !*  iun: Base file unit (increments as fields are activated for output).
+    !*  in_mem: .true. to store in memory; .false. to write output continuously during the run (default: .false.).
+    type output_series_container
+        type(output_dates) dates
+        integer :: iun = 882100
+        logical :: in_mem = .false.
+        type(output_series) &
+            pre, fsin, fsvh, fsih, fsdr, fsdf, flin, ta, qa, pres, uu, vv, uv, wdir, &
+            prec, evap, pevp, evpb, arrd, rof, rofo, rofs, rofb, &
+            rcan, sncan, gro, sno, fsno, wsno, zpnd, pndw, lzs, dzs, stgw, &
+            cmas, tcan, tsno, tpnd, &
+            alvs, alir, albt, fsout, flout, gte, qh, qe, gzero, stge, &
+            ald, zod, &
+            rff, rchg, qi, stgch, qo, zlvl
+        type(output_series), dimension(:), allocatable :: &
+            thlq, lqws, thic, fzws, alws, &
+            gflx, tbar, tmax, tmin
     end type
 
-    !> Data type to store components of the energy balance in time and space.
-    type energy_balance_series
-        real, dimension(:, :), allocatable :: hfs, qevp
-        real,dimension(:,:,:),allocatable :: gflx
-    end type
-
-    !> Data type to store components of the energy balance in time or space.
-    type energy_balance
-        real, dimension(:), allocatable :: hfs, qevp
-        real,dimension(:,:),allocatable :: gflx
-    end type
-
-    !> Data type to store soil parameters.
-    !* tbar: Temperature of the soil layer (1: grid, 2: soil layer).
-    !* thic: Fractional (frozen water) ice-content stored in the soil layer (1: grid, 2: soil layer).
-    !* thlq: Fractional water-content stored in the soil layer (1: grid, 2: soil layer).
-    type soil_statevars_series
-        real, dimension(:, :,:), allocatable :: tbar, thic, thlq
-    end type
-
-    type soil_statevars
-        real, dimension(:, :), allocatable :: tbar, thic, thlq
-    end type
-
-    !> Data type to store the output format and data handling for an output variable.
-    !* name: Name of the variable.
-    !* nargs: Number of arguments in the argument array.
-    !* args: Argument array containing flags for handling the output of the variable (1: Arguments)
-    !* out_*: Output is written if .TRUE.; *: time interval (e.g., 'Y', 'M', 'S', etc.).
-    !* out_fmt: Format of the output (e.g., 'r2c', 'seq', etc.).
-    !* out_acc: Method of accumulation (e.g., if accumulated, averaged, etc., over the time period).
-    type data_var_out
-
-        !> Meta information.
-        character(len = 20) name
-        integer iun
-        logical out_y, out_m, out_s, out_d, out_h
-        character(len = 20) out_fmt, out_seq, out_acc
-        logical :: opt_printdate = .false.
-
-        !> Indices for specific output.
-        integer, dimension(:), allocatable :: i_grds, k_tiles, m_grus
-
-    end type
-
-    !>******************************************************************************
-    !> This type contains the fields outputs
-    !* *_y: Yearly value
-    !* *_m: Monthly value
-    !* *_s: Seasonal value
-    !* *_d: Daily value
-    !* wb*: Water balance (1: time-based index)
-    !* sp*: Soil parameter (1: time-based index)
-    type out_flds
-
-        type(water_balance_series) :: wbt_y, wbt_m, wbt_s, wbt_d
-
-        type(energy_balance_series) :: engt_y, engt_m, engt_s, engt_d
-
-        type(soil_statevars_series) :: spt_y, spt_m, spt_s, spt_d
-
-    end type
-
-    !>******************************************************************************
-    !* flIn: File that contains the input information of the variables that we want to init and the frequency.
-    !* pthOut: path out.
-    !* ids_var_out: Array that contains the IDs of the files and frequency (e.g., 'PREPC', 'Y', 'M', 'S', 'cum', 'seq').
-    !* nr_out: Number of output variables.
-    type info_out
-        character(len = 450) flIn, pthOut
-        integer :: nr_out = 0
-        type(data_var_out), dimension(:), allocatable :: var_out
-    end type
+    !*  flds: Instance of series for output.
+    type(output_series_container), save :: flds
 
     contains
 
-    subroutine data_var_out_allocate_args(vo, args)
-
-        use strings
-
-        !> Type variable.
-        type(data_var_out) :: vo
+!>>>>temporarily_here
+    !> Description:
+    !>  Open an existing text or CSV format file for input (the routine
+    !>  implements the 'read' action). Stop the program if the routine
+    !>  fails.
+    subroutine open_txt_input(iun, fname, verbose, ierr)
 
         !> Input variables.
-        character(len = 20), dimension(:), intent(in) :: args
-        integer nargs
+        !*  iun: Unit of the file (stream persists).
+        !*  fname: Name of the file.
+        !*  verbose: .true. to print messages to the screen.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname
+        logical, intent(in) :: verbose
+
+        !> Output variables.
+        !*  ierr: Returns '0' if the routine is successful; program stops otherwise.
+        integer, intent(out) :: ierr
+
+        !> Open the file.
+        !> Print status to the screen if verbose.
+        if (verbose) print 1000, trim(fname)
+        open(iun, file = adjustl(fname), status = 'old', action = 'read', iostat = ierr)
+        if (ierr /= 0) goto 999
+
+        !> Return if the file successfully opened.
+        return
+
+        !> Stop if the routine failed.
+999     if (verbose) print 1110, trim(fname)
+        stop
+
+1000    format(1x, 'READING: ', (a))
+1110    format(/1x, 'ERROR: Error opening ', (a), &
+               /3x, 'Check that the file exists or use an alternate format of file.'/)
+
+    end subroutine
+
+    !> Description:
+    !>  Return the first line of data from a text or CSV format file.
+    !>  The routine skips lines that lead with '#' or '!', and clip the
+    !>  line to the first instance of '#' or '!' if one exists. The
+    !>  returned line is de-tabbed and compacted of excess whitespace.
+    subroutine read_txt_line(iun, line, ierr)
+
+        !> Required for the 'compact' function.
+        use strings
+
+        !> Input variables.
+        !*  iun: Unit of the file (of persistent stream).
+        integer, intent(in) :: iun
+
+        !> Output variables.
+        !*  line: First data line read from file.
+        !*  ierr: Returns '0' if the routine is successful.
+        character(len = *), intent(out) :: line
+        integer, intent(out) :: ierr
+
+        !> Loop until the first line of data is read.
+        !> Skip blank lines and lines that lead with '#' or '!'.
+        !> Clip the line to the first instance of '#' or '!' if one exists.
+        line = ''
+        do while (ierr == 0)
+            read(iun, '(a)', iostat = ierr) line
+            if (ierr /= 0) exit
+            if (len_trim(line) == 0) cycle
+            if (line(1:1) == '#' .or. line(1:1) == '!') cycle
+            if (index(line, '#') > 2) line = line(1:index(line, '#') - 1)
+            if (index(line, '!') > 2) line = line(1:index(line, '!') - 1)
+            call compact(line)
+            if (len_trim(line) > 0) exit
+        end do
+
+        !> Return when a line that satisfies the constraints is read.
+        return
+
+    end subroutine
+!<<<<<temporarily_here
+
+    subroutine output_file_parse_indices(shd, file, args, indices, startindex, ierr)
+
+        !> Required for 'is_letter' and 'value' functions.
+        use strings
+
+        !> Input/output variables.
+        type(ShedGridParams), intent(in) :: shd
+        type(output_file) file
+
+        !> Input variables.
+        character(len = *), dimension(:), intent(in) :: args
+        integer startindex
+
+        !> Output variables.
+        integer, dimension(:), allocatable, intent(out) :: indices
+        integer, intent(out) :: ierr
 
         !> Local variables.
-        integer n, j, i, ierr
-        character(len = 20) opts
+        integer n, j
 
-        !> Set nargs to the size of the array.
+        !> Count the number of indices.
+        n = 0
+        do j = startindex + 1, size(args)
+            if (is_letter(args(j))) exit
+            n = n + 1
+        end do
+
+        !> Allocate the vector and store the indices.
+        ierr = 0
+        if (n > 0) then
+            allocate(indices(n))
+            do j = 1, n
+                call value(args(startindex + j), indices(j), ierr)
+            end do
+        end if
+
+    end subroutine
+
+    subroutine output_file_parse_options(shd, file, t, args)
+
+        !> Required for 'is_letter', 'lowercase', and 'value' functions.
+        use strings
+
+        !> Input/output variables.
+        type(ShedGridParams), intent(in) :: shd
+        type(output_file) file
+
+        !> Input variables.
+        integer, intent(in) :: t
+        character(len = *), dimension(:), intent(in) :: args
+
+        !> Local variables.
+        integer nargs, n, j, i, ierr
+        character(len = len(args)) opts
+
+        !> Mark the field as active.
+        file%active = .true.
+
+        !> Condition output based on 'args' flags.
         nargs = size(args)
-
-        !> Reset variables.
-        vo%out_y   = .false.
-        vo%out_m   = .false.
-        vo%out_s   = .false.
-        vo%out_d   = .false.
-        vo%out_h   = .false.
-        vo%out_fmt = 'unknown'
-        vo%out_seq = 'gridorder'
-        vo%out_acc = 'unknown'
-
-        !> Assign variables according to the args.
-        do i = 1, nargs
-            if (is_letter(args(i)))then
+        do i = 2, nargs
+            if (is_letter(args(i))) then
                 opts = lowercase(args(i))
                 select case (opts)
 
-                    !> Yearly output.
-                    case ('y')
-                        vo%out_y = .true.
+                    !> Already read; skip to avoid 'REMARK' below.
+                    case ('y', 'm', 's', 'd', 'h', 'ts')
+                        cycle
 
-                    !> Monthly output.
-                    case ('m')
-                        vo%out_m = .true.
-
-                    !> Seasonal output.
-                    case ('s')
-                        vo%out_s = .true.
-
-                    !> Daily output.
-                    case ('d')
-                        vo%out_d = .true.
-
-                    !> Hourly:
-                    case ('h')
-                        vo%out_h = .true.
-
-                    !> Output format.
-                    case ('r2c', 'seq', 'binseq', 'txt', 'csv')
-                        vo%out_fmt = opts
+                    !> Generic output formats.
+                    case ('r2c')
+                        file%r2c%active = .true.
+                        flds%iun = flds%iun + 1
+                        file%r2c%iun = flds%iun
+                    case ('seq', 'binseq')
+                        file%seq%active = .true.
+                        flds%iun = flds%iun + 1
+                        file%seq%iun = flds%iun
+                    case ('txt')
+                        file%txt%active = .true.
+                        file%delim = ''
+                    case ('csv')
+                        file%txt%active = .true.
+                        file%delim = ','
 
                     !> Order of the selection being saved.
                     case ('gridorder', 'shedorder')
-                        vo%out_seq = opts
+                        file%order = opts
 
-                    !> Print date-stamp prior to the record.
+                    !> Print leading date-stamp.
                     case ('printdate')
-                        vo%opt_printdate = .true.
+                        file%print_date = .true.
 
-                    !> Output format. Time series in grids
+                    !> Specialized output (grid, tile, and GRU point output).
                     case('tsi')
-                        vo%out_fmt = opts
-                        n = 0
-                        do j = i + 1, nargs
-                            if (is_letter(args(j))) exit
-                            n = n + 1
-                        end do
-                        if (n > 0) then
-                            allocate(vo%i_grds(n))
-                            do j = 1, n
-                                call value(args(i + j), vo%i_grds(j), ierr)
-                            end do
-                        end if
-
-                    !> Output format. Time series in tiles
+                        file%txt%active = .true.
+                        file%order = opts
+                        call output_file_parse_indices(shd, file, args, file%grids, i, ierr)
                     case('tsk')
-                        vo%out_fmt = opts
-                        n = 0
-                        do j = i + 1, nargs
-                            if (is_letter(args(j))) exit
-                            n = n + 1
-                        end do
-                        if (n > 0) then
-                            allocate(vo%k_tiles(n))
-                            do j = 1, n
-                                call value(args(i + j), vo%k_tiles(j), ierr)
-                            end do
-                        end if
-
-                    !> Output format. Time series of GRUs
+                        file%txt%active = .true.
+                        file%order = opts
+                        call output_file_parse_indices(shd, file, args, file%tiles, i, ierr)
                     case('gru')
-                        vo%out_fmt = 'r2c'
-                        n = 0
-                        do j = i + 1, nargs
-                            if (is_letter(args(j))) exit
-                            n = n + 1
-                        end do
-                        if (n > 0) then
-                            allocate(vo%m_grus(n))
-                            do j = 1, n
-                                call value(args(i + j), vo%m_grus(j), ierr)
-                            end do
-                        end if
+                        file%txt%active = .true.
+                        file%order = opts
+                        call output_file_parse_indices(shd, file, args, file%grus, i, ierr)
 
-                    !> Method of accumulation.
-                    case ('cum', 'avg', 'max', 'min')
-                        vo%out_acc = opts
+                    !> Function.
+                    case ('cum', 'acc', 'avg', 'max', 'min')
+                        cycle
 
-                    !> TTOL for ZOD
+                    !> TTOL for ZOD.
                     case ('ttol')
                         n = 0
                         do j = i + 1, nargs
@@ -277,2307 +299,1274 @@ module model_output
                         end if
 
                     case default
-                        print 1010, trim(args(i)), trim(vo%name)
-
+                        if (ro%DIAGNOSEMODE > 0) print 1010, trim(args(i)), trim(args(1))
                 end select
             end if
         end do
 
-1010    format('REMARK: ', (a), ' (Variable ', (a), ') is an unrecognized argument for output.')
+        !> Update options for output in 'txt' format.
+        if (file%txt%active) then
+            flds%iun = flds%iun + 1
+            file%txt%iun = flds%iun
+        end if
+
+        !> Allocate output variable.
+        if (.not. allocated(file%dat)) then
+            if (flds%in_mem) then
+                allocate(file%dat(shd%NA, t))
+            else
+                allocate(file%dat(shd%NA, 1))
+            end if
+            file%dat = 0.0
+        end if
+
+1010    format(3x, 'REMARK: ', (a), ' (Variable ', (a), ') is an unrecognized argument for output.')
 
     end subroutine
 
-    subroutine init_out_flds(shd, ts, ifo, vr)
+    subroutine output_file_parse_freq(shd, ts, field, args)
 
-        !> Type variable.
-        type(info_out) :: ifo
-        type(out_flds) :: vr
+        !> Required for 'is_letter' and 'lowercase' functions.
+        use strings
+
+        !> Input/output variables.
+        type(ShedGridParams), intent(in) :: shd
+        type(output_series) field
+        type(dates_model), intent(in) :: ts
 
         !> Input variables.
+        integer i
+        character(len = *), intent(in) :: args(:)
+
+        !> Activate output based on 'args' flags.
+        do i = 2, size(args)
+            if (is_letter(args(i)))then
+                select case (lowercase(args(i)))
+
+                    !> Yearly.
+                    case ('y')
+                        call output_file_parse_options(shd, field%y, ts%nyears, args)
+
+                    !> Monthly.
+                    case ('m')
+                        call output_file_parse_options(shd, field%m, ts%nmonths, args)
+
+                    !> Seasonal (monthly average).
+                    case ('s')
+                        call output_file_parse_options(shd, field%s, ts%nseason, args)
+
+                    !> Daily.
+                    case ('d')
+                        call output_file_parse_options(shd, field%d, ts%nr_days, args)
+
+                    !> Hourly.
+                    case ('h')
+                        call output_file_parse_options(shd, field%h, max(1, 3600/ic%dts), args)
+
+                    !> Per time-step.
+                    case ('ts')
+                        call output_file_parse_options(shd, field%ts, 1, args)
+
+                    !> Weight by fractional area.
+                    case ('frac')
+                        field%apply_frac = .true.
+                end select
+            end if
+        end do
+
+    end subroutine
+
+    subroutine init_out(fls, shd, ts)
+
+        !> 'control_variables' required for 'ro' options.
+        !> 'strings' required for 'is_letter' function.
+        use control_variables
+        use strings
+
+        !> Input/output variables.
+        type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
         type(dates_model), intent(in) :: ts
 
         !> Local variables.
-        integer nts_y, nts_m, nts_s, nts_d, nts_h
-        integer nmax, jmax, j, i
+        integer iun, n, j, nargs, ierr
+        character(len = 20) args(50)
+        character(len = 1000) line
 
-        !> Time-steps.
-        nts_y = ts%nyears
-        nts_m = ts%nmonths
-        nts_s = ts%nseason
-        nts_d = ts%nr_days
-        nts_h = max(1, 3600/ic%dts)
+        !> Allocate output variable for time-stamps based on switch to store variables in-memory.
+        if (flds%in_mem) then
+            allocate(flds%dates%y(6, ts%nyears))
+            allocate(flds%dates%m(6, ts%nmonths))
+            allocate(flds%dates%s(6, ts%nseason))
+            allocate(flds%dates%d(6, ts%nr_days))
+            allocate(flds%dates%h(6, max(1, 3600/ic%dts)))
+        else
+            allocate(flds%dates%y(6, 1))
+            allocate(flds%dates%m(6, 1))
+            allocate(flds%dates%s(6, 1))
+            allocate(flds%dates%d(6, 1))
+            allocate(flds%dates%h(6, 1))
+        end if
+        allocate(flds%dates%ts(6))
 
-        !> Elements.
-        nmax = shd%NA
-        jmax = shd%lc%IGND
+        !> Open output fields configuration file.
+        iun = 100
+        call open_txt_input(iun, 'outputs_balance.txt', .true., ierr)
 
-        !> Allocate and initialize variables.
-        do i = 1, ifo%nr_out
-            select case (ifo%var_out(i)%name)
+        !> Allocate and initialize output fields.
+        n = 0
+        do while (ierr == 0)
 
-                case ('FSDOWN')
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%mdt_h%fsdown)) allocate(vr%mdt_h%fsdown(nts_h, nmax))
-!                        vr%mdt_h%fsdown = 0.0
-                        call output_variables_allocate(out%grid%hly%fsin, shd%NA)
-                        ifo%var_out(i)%iun = 882101
-                    end if
+            !> Read the line.
+            call read_txt_line(iun, line, ierr)
 
+            !> Check for output field signature: character string followed by at least one space.
+            if (len_trim(line) == 0 .or. scan(line, ' ') == 0) cycle
+            if (.not. is_letter(line(1:index(line, ' ') - 1))) cycle
+
+            !> Split the line.
+            call parse(line, ' ', args, nargs)
+
+            !> Output field.
+            if (ro%DIAGNOSEMODE > 0) print 1000, trim(args(1))
+            select case (args(1))
+
+                !> Meteorological forcing.
+                case ('FSDOWN', 'FSIN')
+                    call output_file_parse_freq(shd, ts, flds%fsin, args)
+                    if (flds%fsin%y%active) call output_variables_allocate(out%grid%yly%fsin, shd%NA)
+                    if (flds%fsin%m%active) call output_variables_allocate(out%grid%mly%fsin, shd%NA)
+                    if (flds%fsin%d%active) call output_variables_allocate(out%grid%dly%fsin, shd%NA)
+                    if (flds%fsin%h%active) call output_variables_allocate(out%grid%hly%fsin, shd%NA)
                 case ('FSVH')
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%mdt_h%fsvh)) allocate(vr%mdt_h%fsvh(nts_h, nmax))
-!                        vr%mdt_h%fsvh = 0.0
-                        call output_variables_allocate(out%grid%hly%fsin, shd%NA)
-                        ifo%var_out(i)%iun = 882102
-                    end if
-
+                    call output_file_parse_freq(shd, ts, flds%fsvh, args)
+                    if (flds%fsvh%y%active) call output_variables_allocate(out%grid%yly%fsin, shd%NA)
+                    if (flds%fsvh%m%active) call output_variables_allocate(out%grid%mly%fsin, shd%NA)
+                    if (flds%fsvh%d%active) call output_variables_allocate(out%grid%dly%fsin, shd%NA)
+                    if (flds%fsvh%h%active) call output_variables_allocate(out%grid%hly%fsin, shd%NA)
                 case ('FSIH')
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%mdt_h%fsih)) allocate(vr%mdt_h%fsih(nts_h, nmax))
-!                        vr%mdt_h%fsih = 0.0
-                        call output_variables_allocate(out%grid%hly%fsin, shd%NA)
-                        ifo%var_out(i)%iun = 882103
-                    end if
-
-                case ('FDL')
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%mdt_h%fdl)) allocate(vr%mdt_h%fdl(nts_h, nmax))
-!                        vr%mdt_h%fdl = 0.0
-                        call output_variables_allocate(out%grid%hly%flin, shd%NA)
-                        ifo%var_out(i)%iun = 882104
-                    end if
-
-                case ('UL')
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%mdt_h%ul)) allocate(vr%mdt_h%ul(nts_h, nmax))
-!                        vr%mdt_h%ul = 0.0
-                        call output_variables_allocate(out%grid%hly%uv, shd%NA)
-                        ifo%var_out(i)%iun = 882105
-                    end if
-
+                    call output_file_parse_freq(shd, ts, flds%fsih, args)
+                    if (flds%fsih%y%active) call output_variables_allocate(out%grid%yly%fsin, shd%NA)
+                    if (flds%fsih%m%active) call output_variables_allocate(out%grid%mly%fsin, shd%NA)
+                    if (flds%fsih%d%active) call output_variables_allocate(out%grid%dly%fsin, shd%NA)
+                    if (flds%fsih%h%active) call output_variables_allocate(out%grid%hly%fsin, shd%NA)
+                case ('FDL', 'FLIN')
+                    call output_file_parse_freq(shd, ts, flds%flin, args)
+                    if (flds%flin%y%active) call output_variables_allocate(out%grid%yly%flin, shd%NA)
+                    if (flds%flin%m%active) call output_variables_allocate(out%grid%mly%flin, shd%NA)
+                    if (flds%flin%d%active) call output_variables_allocate(out%grid%dly%flin, shd%NA)
+                    if (flds%flin%h%active) call output_variables_allocate(out%grid%hly%flin, shd%NA)
+                case ('UL', 'UV')
+                    call output_file_parse_freq(shd, ts, flds%uv, args)
+                    if (flds%uv%y%active) call output_variables_allocate(out%grid%yly%uv, shd%NA)
+                    if (flds%uv%m%active) call output_variables_allocate(out%grid%mly%uv, shd%NA)
+                    if (flds%uv%d%active) call output_variables_allocate(out%grid%dly%uv, shd%NA)
+                    if (flds%uv%h%active) call output_variables_allocate(out%grid%hly%uv, shd%NA)
                 case ('TA')
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%mdt_h%ta)) allocate(vr%mdt_h%ta(nts_h, nmax))
-!                        vr%mdt_h%ta = 0.0
-                        call output_variables_allocate(out%grid%hly%ta, shd%NA)
-                        ifo%var_out(i)%iun = 882106
-                    end if
-
-                case ('QA')
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%mdt_h%qa)) allocate(vr%mdt_h%qa(nts_h, nmax))
-!                        vr%mdt_h%qa = 0.0
-                        call output_variables_allocate(out%grid%hly%qa, shd%NA)
-                        ifo%var_out(i)%iun = 882107
-                    end if
-
+                    call output_file_parse_freq(shd, ts, flds%ta, args)
+                    if (flds%ta%y%active) call output_variables_allocate(out%grid%yly%ta, shd%NA)
+                    if (flds%ta%m%active) call output_variables_allocate(out%grid%mly%ta, shd%NA)
+                    if (flds%ta%d%active) call output_variables_allocate(out%grid%dly%ta, shd%NA)
+                    if (flds%ta%h%active) call output_variables_allocate(out%grid%hly%ta, shd%NA)
+                case ('QA', 'HU')
+                    call output_file_parse_freq(shd, ts, flds%qa, args)
+                    if (flds%qa%y%active) call output_variables_allocate(out%grid%yly%qa, shd%NA)
+                    if (flds%qa%m%active) call output_variables_allocate(out%grid%mly%qa, shd%NA)
+                    if (flds%qa%d%active) call output_variables_allocate(out%grid%dly%qa, shd%NA)
+                    if (flds%qa%h%active) call output_variables_allocate(out%grid%hly%qa, shd%NA)
                 case ('PRES')
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%mdt_h%pres)) allocate(vr%mdt_h%pres(nts_h, nmax))
-!                        vr%mdt_h%pres = 0.0
-                        call output_variables_allocate(out%grid%hly%pres, shd%NA)
-                        ifo%var_out(i)%iun = 882108
-                    end if
-
+                    call output_file_parse_freq(shd, ts, flds%pres, args)
+                    if (flds%pres%y%active) call output_variables_allocate(out%grid%yly%pres, shd%NA)
+                    if (flds%pres%m%active) call output_variables_allocate(out%grid%mly%pres, shd%NA)
+                    if (flds%pres%d%active) call output_variables_allocate(out%grid%dly%pres, shd%NA)
+                    if (flds%pres%h%active) call output_variables_allocate(out%grid%hly%pres, shd%NA)
                 case ('PRE')
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%mdt_h%pre)) allocate(vr%mdt_h%pre(nts_h, nmax))
-!                        vr%mdt_h%pre = 0.0
-                        call output_variables_allocate(out%grid%hly%pre, shd%NA)
-                        ifo%var_out(i)%iun = 882109
-                    end if
+                    call output_file_parse_freq(shd, ts, flds%pre, args)
+                    if (flds%pre%y%active) call output_variables_allocate(out%grid%yly%pre, shd%NA)
+                    if (flds%pre%m%active) call output_variables_allocate(out%grid%mly%pre, shd%NA)
+                    if (flds%pre%d%active) call output_variables_allocate(out%grid%dly%pre, shd%NA)
+                    if (flds%pre%h%active) call output_variables_allocate(out%grid%hly%pre, shd%NA)
 
-                case ('WR_RUNOFF')
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wroutt_h%rof)) allocate(vr%wroutt_h%rof(nts_h, nmax))
-!                        vr%wroutt_h%rof = 0.0
-                        call output_variables_allocate(out%grid%hly%rff, shd%NA)
-                        ifo%var_out(i)%iun = 882120
-                    end if
-
-                case ('WR_RECHARGE')
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wroutt_h%rchg)) allocate(vr%wroutt_h%rchg(nts_h, nmax))
-!                        vr%wroutt_h%rchg = 0.0
-                        call output_variables_allocate(out%grid%hly%rchg, shd%NA)
-                        ifo%var_out(i)%iun = 882121
-                    end if
-
+                !> Water balance.
                 case ('PREC', 'Rainfall', 'Rain', 'Precipitation')
-                    ifo%var_out(i)%name = 'PREC'
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%wbt_y%pre)) allocate(vr%wbt_y%pre(nts_y, nmax))
-                        vr%wbt_y%pre = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%wbt_m%pre)) allocate(vr%wbt_m%pre(nts_m, nmax))
-                        vr%wbt_m%pre = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%wbt_s%pre)) allocate(vr%wbt_s%pre(nts_s, nmax))
-                        vr%wbt_s%pre = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        if (.not. allocated(vr%wbt_d%pre)) allocate(vr%wbt_d%pre(nts_d, nmax))
-                        vr%wbt_d%pre = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wbt_h%pre)) allocate(vr%wbt_h%pre(nts_h, nmax))
-!                        vr%wbt_h%pre = 0.0
-                        call output_variables_allocate(out%grid%hly%pre, shd%NA)
-                        ifo%var_out(i)%iun = 882122
-                    end if
-
+                    call output_file_parse_freq(shd, ts, flds%prec, args)
+                    if (flds%prec%y%active) call output_variables_allocate(out%grid%yly%pre, shd%NA)
+                    if (flds%prec%m%active) call output_variables_allocate(out%grid%mly%pre, shd%NA)
+                    if (flds%prec%d%active) call output_variables_allocate(out%grid%dly%pre, shd%NA)
+                    if (flds%prec%h%active) call output_variables_allocate(out%grid%hly%pre, shd%NA)
                 case ('EVAP', 'Evapotranspiration')
-                    ifo%var_out(i)%name = 'EVAP'
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%wbt_y%evap)) allocate(vr%wbt_y%evap(nts_y, nmax))
-                        vr%wbt_y%evap = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%wbt_m%evap)) allocate(vr%wbt_m%evap(nts_m, nmax))
-                        vr%wbt_m%evap = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%wbt_s%evap)) allocate(vr%wbt_s%evap(nts_s, nmax))
-                        vr%wbt_s%evap = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        if (.not. allocated(vr%wbt_d%evap)) allocate(vr%wbt_d%evap(nts_d, nmax))
-                        vr%wbt_d%evap = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wbt_h%evap)) allocate(vr%wbt_h%evap(nts_h, nmax))
-!                        vr%wbt_h%evap = 0.0
-                        call output_variables_allocate(out%grid%hly%evap, shd%NA)
-                        ifo%var_out(i)%iun = 882110
-                    end if
-
+                    call output_file_parse_freq(shd, ts, flds%evap, args)
+                    if (flds%evap%y%active) call output_variables_allocate(out%grid%yly%evap, shd%NA)
+                    if (flds%evap%m%active) call output_variables_allocate(out%grid%mly%evap, shd%NA)
+                    if (flds%evap%d%active) call output_variables_allocate(out%grid%dly%evap, shd%NA)
+                    if (flds%evap%h%active) call output_variables_allocate(out%grid%hly%evap, shd%NA)
                 case ('Runoff', 'ROF')
-                    ifo%var_out(i)%name = 'ROF'
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%wbt_y%rof)) allocate(vr%wbt_y%rof(nts_y, nmax))
-                        vr%wbt_y%rof = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%wbt_m%rof)) allocate(vr%wbt_m%rof(nts_m, nmax))
-                        vr%wbt_m%rof = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%wbt_s%rof)) allocate(vr%wbt_s%rof(nts_s, nmax))
-                        vr%wbt_s%rof = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        if (.not. allocated(vr%wbt_d%rof)) allocate(vr%wbt_d%rof(nts_d, nmax))
-                        vr%wbt_d%rof = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wbt_h%rof)) allocate(vr%wbt_h%rof(nts_h, nmax))
-!                        vr%wbt_h%rof = 0.0
-                        call output_variables_allocate(out%grid%hly%rof, shd%NA)
-                        ifo%var_out(i)%iun = 882111
-                    end if
-
-                case ('TempSoil', 'Temperature_soil_layers', 'TBAR')
-                    ifo%var_out(i)%name = 'TBAR'
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%spt_y%tbar)) allocate(vr%spt_y%tbar(nts_y, nmax, jmax))
-                        vr%spt_y%tbar = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%spt_m%tbar)) allocate(vr%spt_m%tbar(nts_m, nmax, jmax))
-                        vr%spt_m%tbar = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%spt_s%tbar)) allocate(vr%spt_s%tbar(nts_s, nmax, jmax))
-                        vr%spt_s%tbar = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        if (.not. allocated(vr%spt_d%tbar)) allocate(vr%spt_d%tbar(nts_d, nmax, jmax))
-                        vr%spt_d%tbar = 0.0
-                    end if
-
-                case ('LQWS')
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%wbt_y%lqws)) allocate(vr%wbt_y%lqws(nts_y, nmax, jmax))
-                        vr%wbt_y%lqws = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%wbt_m%lqws)) allocate(vr%wbt_m%lqws(nts_m, nmax, jmax))
-                        vr%wbt_m%lqws = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%wbt_s%lqws)) allocate(vr%wbt_s%lqws(nts_s, nmax, jmax))
-                        vr%wbt_s%lqws = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        if (.not. allocated(vr%wbt_d%lqws)) allocate(vr%wbt_d%lqws(nts_d, nmax, jmax))
-                        vr%wbt_d%lqws = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wbt_h%lqws)) allocate(vr%wbt_h%lqws(nts_h, nmax, jmax))
-!                        vr%wbt_h%lqws = 0.0
-                        call output_variables_allocate(out%grid%hly%lqws, shd%NA, shd%lc%IGND)
-                        ifo%var_out(i)%iun = 882112
-                    end if
-
-                case ('FRWS')
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%wbt_y%frws)) allocate(vr%wbt_y%frws(nts_y, nmax, jmax))
-                        vr%wbt_y%frws = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%wbt_m%frws)) allocate(vr%wbt_m%frws(nts_m, nmax, jmax))
-                        vr%wbt_m%frws = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%wbt_s%frws)) allocate(vr%wbt_s%frws(nts_s, nmax, jmax))
-                        vr%wbt_s%frws = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        if (.not. allocated(vr%wbt_d%frws)) allocate(vr%wbt_d%frws(nts_d, nmax, jmax))
-                        vr%wbt_d%frws = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wbt_h%frws)) allocate(vr%wbt_h%frws(nts_h, nmax, jmax))
-!                        vr%wbt_h%frws = 0.0
-                        call output_variables_allocate(out%grid%hly%fzws, shd%NA, shd%lc%IGND)
-                        ifo%var_out(i)%iun = 882113
-                    end if
-
+                    call output_file_parse_freq(shd, ts, flds%rof, args)
+                    if (flds%rof%y%active) call output_variables_allocate(out%grid%yly%rof, shd%NA)
+                    if (flds%rof%m%active) call output_variables_allocate(out%grid%mly%rof, shd%NA)
+                    if (flds%rof%d%active) call output_variables_allocate(out%grid%dly%rof, shd%NA)
+                    if (flds%rof%h%active) call output_variables_allocate(out%grid%hly%rof, shd%NA)
                 case ('RCAN')
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%wbt_y%rcan)) allocate(vr%wbt_y%rcan(nts_y, nmax))
-                        vr%wbt_y%rcan = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%wbt_m%rcan)) allocate(vr%wbt_m%rcan(nts_m, nmax))
-                        vr%wbt_m%rcan = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%wbt_s%rcan)) allocate(vr%wbt_s%rcan(nts_s, nmax))
-                        vr%wbt_s%rcan = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wbt_h%rcan)) allocate(vr%wbt_h%rcan(nts_h, nmax))
-!                        vr%wbt_h%rcan = 0.0
-                        call output_variables_allocate(out%grid%hly%rcan, shd%NA)
-                        ifo%var_out(i)%iun = 882114
-                    end if
-
+                    call output_file_parse_freq(shd, ts, flds%rcan, args)
+                    if (flds%rcan%y%active) call output_variables_allocate(out%grid%yly%rcan, shd%NA)
+                    if (flds%rcan%m%active) call output_variables_allocate(out%grid%mly%rcan, shd%NA)
+                    if (flds%rcan%d%active) call output_variables_allocate(out%grid%dly%rcan, shd%NA)
+                    if (flds%rcan%h%active) call output_variables_allocate(out%grid%hly%rcan, shd%NA)
                 case ('SCAN', 'SNCAN')
-                    ifo%var_out(i)%name = 'SNCAN'
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%wbt_y%sncan)) allocate(vr%wbt_y%sncan(nts_y, nmax))
-                        vr%wbt_y%sncan = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%wbt_m%sncan)) allocate(vr%wbt_m%sncan(nts_m, nmax))
-                        vr%wbt_m%sncan = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%wbt_s%sncan)) allocate(vr%wbt_s%sncan(nts_s, nmax))
-                        vr%wbt_s%sncan = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wbt_h%sncan)) allocate(vr%wbt_h%sncan(nts_h, nmax))
-!                        vr%wbt_h%sncan = 0.0
-                        call output_variables_allocate(out%grid%hly%sncan, shd%NA)
-                        ifo%var_out(i)%iun = 882115
-                    end if
-
+                    call output_file_parse_freq(shd, ts, flds%sncan, args)
+                    if (flds%sncan%y%active) call output_variables_allocate(out%grid%yly%sncan, shd%NA)
+                    if (flds%sncan%m%active) call output_variables_allocate(out%grid%mly%sncan, shd%NA)
+                    if (flds%sncan%d%active) call output_variables_allocate(out%grid%dly%sncan, shd%NA)
+                    if (flds%sncan%h%active) call output_variables_allocate(out%grid%hly%sncan, shd%NA)
                 case ('PNDW')
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%wbt_y%pndw)) allocate(vr%wbt_y%pndw(nts_y, nmax))
-                        vr%wbt_y%pndw = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%wbt_m%pndw)) allocate(vr%wbt_m%pndw(nts_m, nmax))
-                        vr%wbt_m%pndw = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%wbt_s%pndw)) allocate(vr%wbt_s%pndw(nts_s, nmax))
-                        vr%wbt_s%pndw = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wbt_h%pndw)) allocate(vr%wbt_h%pndw(nts_h, nmax))
-!                        vr%wbt_h%pndw = 0.0
-                        call output_variables_allocate(out%grid%hly%pndw, shd%NA)
-                        ifo%var_out(i)%iun = 882116
-                    end if
-
+                    call output_file_parse_freq(shd, ts, flds%pndw, args)
+                    if (flds%pndw%y%active) call output_variables_allocate(out%grid%yly%pndw, shd%NA)
+                    if (flds%pndw%m%active) call output_variables_allocate(out%grid%mly%pndw, shd%NA)
+                    if (flds%pndw%d%active) call output_variables_allocate(out%grid%dly%pndw, shd%NA)
+                    if (flds%pndw%h%active) call output_variables_allocate(out%grid%hly%pndw, shd%NA)
                 case ('SNO')
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%wbt_y%sno)) allocate(vr%wbt_y%sno(nts_y, nmax))
-                        vr%wbt_y%sno = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%wbt_m%sno)) allocate(vr%wbt_m%sno(nts_m, nmax))
-                        vr%wbt_m%sno = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%wbt_s%sno)) allocate(vr%wbt_s%sno(nts_s, nmax))
-                        vr%wbt_s%sno = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wbt_h%sno)) allocate(vr%wbt_h%sno(nts_h, nmax))
-!                        vr%wbt_h%sno = 0.0
-                        call output_variables_allocate(out%grid%hly%sno, shd%NA)
-                        ifo%var_out(i)%iun = 882117
-                    end if
-
+                    call output_file_parse_freq(shd, ts, flds%sno, args)
+                    if (flds%sno%y%active) call output_variables_allocate(out%grid%yly%sno, shd%NA)
+                    if (flds%sno%m%active) call output_variables_allocate(out%grid%mly%sno, shd%NA)
+                    if (flds%sno%d%active) call output_variables_allocate(out%grid%dly%sno, shd%NA)
+                    if (flds%sno%h%active) call output_variables_allocate(out%grid%hly%sno, shd%NA)
                 case ('WSNO')
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%wbt_y%wsno)) allocate(vr%wbt_y%wsno(nts_y, nmax))
-                        vr%wbt_y%wsno = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%wbt_m%wsno)) allocate(vr%wbt_m%wsno(nts_m, nmax))
-                        vr%wbt_m%wsno = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%wbt_s%wsno)) allocate(vr%wbt_s%wsno(nts_s, nmax))
-                        vr%wbt_s%wsno = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wbt_h%wsno)) allocate(vr%wbt_h%wsno(nts_h, nmax))
-!                        vr%wbt_h%wsno = 0.0
-                        call output_variables_allocate(out%grid%hly%wsno, shd%NA)
-                        ifo%var_out(i)%iun = 882118
-                    end if
-
-                case ('STG', 'DSTG')
-                    ifo%var_out(i)%name = 'STG'
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%wbt_y%dstg)) allocate(vr%wbt_y%dstg(nts_y, nmax))
-                        if (.not. allocated(vr%wbt_y%stg)) allocate(vr%wbt_y%stg(nts_y, nmax))
-                        vr%wbt_y%dstg = 0.0; vr%wbt_y%stg = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%wbt_m%dstg)) allocate(vr%wbt_m%dstg(nts_m, nmax))
-                        if (.not. allocated(vr%wbt_m%stg)) allocate(vr%wbt_m%stg(nts_m, nmax))
-                        vr%wbt_m%dstg = 0.0; vr%wbt_m%stg = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%wbt_s%dstg)) allocate(vr%wbt_s%dstg(nts_s, nmax))
-                        if (.not. allocated(vr%wbt_s%stg)) allocate(vr%wbt_s%stg(nts_s, nmax))
-                        vr%wbt_s%dstg = 0.0; vr%wbt_s%stg = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-!                        if (.not. allocated(vr%wbt_h%dstg)) allocate(vr%wbt_h%dstg(nts_h, nmax))
-!                        if (.not. allocated(vr%wbt_h%stg)) allocate(vr%wbt_h%stg(nts_h, nmax))
-!                        vr%wbt_h%dstg = 0.0; vr%wbt_h%stg = 0.0
-                        call output_variables_allocate(out%grid%hly%stgw, shd%NA)
-                        ifo%var_out(i)%iun = 882119
-                    end if
-
-                case ('GFLX', 'HeatConduction')
-                    ifo%var_out(i)%name = 'GFLX'
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%engt_y%gflx)) allocate(vr%engt_y%gflx(nts_y, nmax, jmax))
-                        vr%engt_y%gflx = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%engt_m%gflx)) allocate(vr%engt_m%gflx(nts_m, nmax, jmax))
-                        vr%engt_m%gflx = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%engt_s%gflx)) allocate(vr%engt_s%gflx(nts_s, nmax, jmax))
-                        vr%engt_s%gflx = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        if (.not. allocated(vr%engt_d%gflx)) allocate(vr%engt_d%gflx(nts_d, nmax, jmax))
-                        vr%engt_d%gflx = 0.0
-                    end if
-
-               case ('HFS', 'SensibleHeat')
-                    ifo%var_out(i)%name = 'HFS'
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%engt_y%hfs)) allocate(vr%engt_y%hfs(nts_y, nmax))
-                        vr%engt_y%hfs = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%engt_m%hfs)) allocate(vr%engt_m%hfs(nts_m, nmax))
-                        vr%engt_m%hfs = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%engt_s%hfs)) allocate(vr%engt_s%hfs(nts_s, nmax))
-                        vr%engt_s%hfs = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        if (.not. allocated(vr%engt_d%hfs)) allocate(vr%engt_d%hfs(nts_d, nmax))
-                        vr%engt_d%hfs = 0.0
-                    end if
-
-                case ('QEVP', 'LatentHeat')
-                    ifo%var_out(i)%name = 'QEVP'
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%engt_y%qevp)) allocate(vr%engt_y%qevp(nts_y, nmax))
-                        vr%engt_y%qevp = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%engt_m%qevp)) allocate(vr%engt_m%qevp(nts_m, nmax))
-                        vr%engt_m%qevp = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%engt_s%qevp)) allocate(vr%engt_s%qevp(nts_s, nmax))
-                        vr%engt_s%qevp = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        if (.not. allocated(vr%engt_d%qevp)) allocate(vr%engt_d%qevp(nts_d, nmax))
-                        vr%engt_d%qevp = 0.0
-                    end if
-
+                    call output_file_parse_freq(shd, ts, flds%wsno, args)
+                    if (flds%wsno%y%active) call output_variables_allocate(out%grid%yly%wsno, shd%NA)
+                    if (flds%wsno%m%active) call output_variables_allocate(out%grid%mly%wsno, shd%NA)
+                    if (flds%wsno%d%active) call output_variables_allocate(out%grid%dly%wsno, shd%NA)
+                    if (flds%wsno%h%active) call output_variables_allocate(out%grid%hly%wsno, shd%NA)
+                case ('STG', 'DSTG', 'STGW')
+                    call output_file_parse_freq(shd, ts, flds%stgw, args)
+                    if (flds%stgw%y%active) call output_variables_allocate(out%grid%yly%stgw, shd%NA)
+                    if (flds%stgw%m%active) call output_variables_allocate(out%grid%mly%stgw, shd%NA)
+                    if (flds%stgw%d%active) call output_variables_allocate(out%grid%dly%stgw, shd%NA)
+                    if (flds%stgw%h%active) call output_variables_allocate(out%grid%hly%stgw, shd%NA)
                 case ('THLQ')
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%spt_y%thlq)) allocate(vr%spt_y%thlq(nts_y, nmax, jmax))
-                        vr%spt_y%thlq = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%spt_m%thlq)) allocate(vr%spt_m%thlq(nts_m, nmax, jmax))
-                        vr%spt_m%thlq = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%spt_s%thlq)) allocate(vr%spt_s%thlq(nts_s, nmax, jmax))
-                        vr%spt_s%thlq = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        if (.not. allocated(vr%spt_d%thlq)) allocate(vr%spt_d%thlq(nts_d, nmax, jmax))
-                        vr%spt_d%thlq = 0.0
-                    end if
-
+                    if (.not. allocated(flds%thlq)) allocate(flds%thlq(shd%lc%IGND))
+                    do j = 1, shd%lc%IGND
+                        call output_file_parse_freq(shd, ts, flds%thlq(j), args)
+                    end do
+                    if (flds%thlq(1)%y%active) call output_variables_allocate(out%grid%yly%thlq, shd%NA, shd%lc%IGND)
+                    if (flds%thlq(1)%m%active) call output_variables_allocate(out%grid%mly%thlq, shd%NA, shd%lc%IGND)
+                    if (flds%thlq(1)%d%active) call output_variables_allocate(out%grid%dly%thlq, shd%NA, shd%lc%IGND)
+                    if (flds%thlq(1)%h%active) call output_variables_allocate(out%grid%hly%thlq, shd%NA, shd%lc%IGND)
+                case ('LQWS')
+                    if (.not. allocated(flds%lqws)) allocate(flds%lqws(shd%lc%IGND))
+                    do j = 1, shd%lc%IGND
+                        call output_file_parse_freq(shd, ts, flds%lqws(j), args)
+                    end do
+                    if (flds%lqws(1)%y%active) call output_variables_allocate(out%grid%yly%lqws, shd%NA, shd%lc%IGND)
+                    if (flds%lqws(1)%m%active) call output_variables_allocate(out%grid%mly%lqws, shd%NA, shd%lc%IGND)
+                    if (flds%lqws(1)%d%active) call output_variables_allocate(out%grid%dly%lqws, shd%NA, shd%lc%IGND)
+                    if (flds%lqws(1)%h%active) call output_variables_allocate(out%grid%hly%lqws, shd%NA, shd%lc%IGND)
                 case ('THIC')
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(vr%spt_y%thic)) allocate(vr%spt_y%thic(nts_y, nmax, jmax))
-                        vr%spt_y%thic = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        if (.not. allocated(vr%spt_m%thic)) allocate(vr%spt_m%thic(nts_m, nmax, jmax))
-                        vr%spt_m%thic = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        if (.not. allocated(vr%spt_s%thic)) allocate(vr%spt_s%thic(nts_s, nmax, jmax))
-                        vr%spt_s%thic = 0.0
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        if (.not. allocated(vr%spt_d%thic)) allocate(vr%spt_d%thic(nts_d, nmax, jmax))
-                        vr%spt_d%thic = 0.0
-                    end if
+                    if (.not. allocated(flds%thic)) allocate(flds%thic(shd%lc%IGND))
+                    do j = 1, shd%lc%IGND
+                        call output_file_parse_freq(shd, ts, flds%thic(j), args)
+                    end do
+                    if (flds%thic(1)%y%active) call output_variables_allocate(out%grid%yly%thic, shd%NA, shd%lc%IGND)
+                    if (flds%thic(1)%m%active) call output_variables_allocate(out%grid%mly%thic, shd%NA, shd%lc%IGND)
+                    if (flds%thic(1)%d%active) call output_variables_allocate(out%grid%dly%thic, shd%NA, shd%lc%IGND)
+                    if (flds%thic(1)%h%active) call output_variables_allocate(out%grid%hly%thic, shd%NA, shd%lc%IGND)
+                case ('FRWS', 'FZWS')
+                    if (.not. allocated(flds%fzws)) allocate(flds%fzws(shd%lc%IGND))
+                    do j = 1, shd%lc%IGND
+                        call output_file_parse_freq(shd, ts, flds%fzws(j), args)
+                    end do
+                    if (flds%fzws(1)%y%active) call output_variables_allocate(out%grid%yly%fzws, shd%NA, shd%lc%IGND)
+                    if (flds%fzws(1)%m%active) call output_variables_allocate(out%grid%mly%fzws, shd%NA, shd%lc%IGND)
+                    if (flds%fzws(1)%d%active) call output_variables_allocate(out%grid%dly%fzws, shd%NA, shd%lc%IGND)
+                    if (flds%fzws(1)%h%active) call output_variables_allocate(out%grid%hly%fzws, shd%NA, shd%lc%IGND)
 
-                case ('ALD', 'ZOD', 'TMAX', 'TMIN')
-                    if (ifo%var_out(i)%out_y) then
-                        if (.not. allocated(TBAR_dly)) allocate(TBAR_dly(nts_d, nmax, jmax))
-                        if (.not. allocated(ALD_dly)) allocate(ALD_dly(nts_d, nmax))
-                        if (.not. allocated(TMAX_ann)) allocate(TMAX_ann(nts_y, nmax, jmax))
-                        if (.not. allocated(TMIN_ann)) allocate(TMIN_ann(nts_y, nmax, jmax))
-                        if (.not. allocated(ALD_ann)) allocate(ALD_ann(nts_y, nmax))
-                        if (.not. allocated(ZOD_TTOL)) then
-                            allocate(ZOD_TTOL(1)); ZOD_TTOL = 0.0
-                        end if
-                        if (.not. allocated(ZOD_ann)) allocate(ZOD_ann(nts_y, nmax, size(ZOD_TTOL)))
-                        TBAR_dly = 0.0; ALD_dly = -1.0; TMAX_ann = 0.0; TMIN_ann = 1000.0; ALD_ann = -1.0; ZOD_ann = -1.0
-                    end if
-                    ifo%var_out(i)%out_acc = 'unknown'
+                !> Energy balance.
+                case ('GFLX', 'HeatConduction')
+                    if (.not. allocated(flds%gflx)) allocate(flds%gflx(shd%lc%IGND))
+                    do j = 1, shd%lc%IGND
+                        call output_file_parse_freq(shd, ts, flds%gflx(j), args)
+                    end do
+                    if (flds%gflx(1)%y%active) call output_variables_allocate(out%grid%yly%gflx, shd%NA, shd%lc%IGND)
+                    if (flds%gflx(1)%m%active) call output_variables_allocate(out%grid%mly%gflx, shd%NA, shd%lc%IGND)
+                    if (flds%gflx(1)%d%active) call output_variables_allocate(out%grid%dly%gflx, shd%NA, shd%lc%IGND)
+                    if (flds%gflx(1)%h%active) call output_variables_allocate(out%grid%hly%gflx, shd%NA, shd%lc%IGND)
+                case ('HFS', 'SensibleHeat', 'QH')
+                    call output_file_parse_freq(shd, ts, flds%qh, args)
+                    if (flds%qh%y%active) call output_variables_allocate(out%grid%yly%qh, shd%NA)
+                    if (flds%qh%m%active) call output_variables_allocate(out%grid%mly%qh, shd%NA)
+                    if (flds%qh%d%active) call output_variables_allocate(out%grid%dly%qh, shd%NA)
+                    if (flds%qh%h%active) call output_variables_allocate(out%grid%hly%qh, shd%NA)
+                case ('QEVP', 'LatentHeat', 'QE')
+                    call output_file_parse_freq(shd, ts, flds%qe, args)
+                    if (flds%qe%y%active) call output_variables_allocate(out%grid%yly%qe, shd%NA)
+                    if (flds%qe%m%active) call output_variables_allocate(out%grid%mly%qe, shd%NA)
+                    if (flds%qe%d%active) call output_variables_allocate(out%grid%dly%qe, shd%NA)
+                    if (flds%qe%h%active) call output_variables_allocate(out%grid%hly%qe, shd%NA)
+                case ('TempSoil', 'Temperature_soil_layers', 'TBAR')
+                    if (.not. allocated(flds%tbar)) allocate(flds%tbar(shd%lc%IGND))
+                    do j = 1, shd%lc%IGND
+                        call output_file_parse_freq(shd, ts, flds%tbar(j), args)
+                    end do
+                    if (flds%tbar(1)%y%active) call output_variables_allocate(out%grid%yly%tbar, shd%NA, shd%lc%IGND)
+                    if (flds%tbar(1)%m%active) call output_variables_allocate(out%grid%mly%tbar, shd%NA, shd%lc%IGND)
+                    if (flds%tbar(1)%d%active) call output_variables_allocate(out%grid%dly%tbar, shd%NA, shd%lc%IGND)
+                    if (flds%tbar(1)%h%active) call output_variables_allocate(out%grid%hly%tbar, shd%NA, shd%lc%IGND)
 
+                case ('ZOD', 'TMAX', 'TMIN', 'ALD')
+!                    call output_file_parse_freq(shd, ts, flds%ald, args)
+!                    flds%ald%m%active = .false.
+!                    flds%ald%s%active = .false.
+!                    flds%ald%d%active = .false.
+!                    flds%ald%h%active = .false.
+!                    flds%ald%ts%active = .false.
+!                    call output_field_allocate(shd, ts, flds%ald)
+!                    if (flds%ald%y%active) then
+!                        call output_variables_allocate(out%grid%dly%tbar, shd%NA)
+!                        if (.not. allocated(TBAR_dly)) allocate(TBAR_dly(nts_d, shd%NA, shd%lc%IGND))
+!                        if (.not. allocated(ALD_dly)) allocate(ALD_dly(nts_d, shd%NA))
+!                        if (.not. allocated(TMAX_ann)) allocate(TMAX_ann(nts_y, shd%NA, shd%lc%IGND))
+!                        if (.not. allocated(TMIN_ann)) allocate(TMIN_ann(nts_y, shd%NA, shd%lc%IGND))
+!                        if (.not. allocated(ALD_ann)) allocate(ALD_ann(nts_y, shd%NA))
+!                        if (.not. allocated(ZOD_TTOL)) then
+!                            allocate(ZOD_TTOL(1)); ZOD_TTOL = 0.0
+!                        end if
+!                        if (.not. allocated(ZOD_ann)) allocate(ZOD_ann(nts_y, shd%NA, size(ZOD_TTOL)))
+!                        TBAR_dly = 0.0; ALD_dly = -1.0; TMAX_ann = 0.0; TMIN_ann = 1000.0; ALD_ann = -1.0; ZOD_ann = -1.0
+!                    end if
+
+                !> Channels and routing.
+                case ('WR_RUNOFF', 'RFF')
+                    call output_file_parse_freq(shd, ts, flds%rff, args)
+                    if (flds%rff%y%active) call output_variables_allocate(out%grid%yly%rff, shd%NA)
+                    if (flds%rff%m%active) call output_variables_allocate(out%grid%mly%rff, shd%NA)
+                    if (flds%rff%d%active) call output_variables_allocate(out%grid%dly%rff, shd%NA)
+                    if (flds%rff%h%active) call output_variables_allocate(out%grid%hly%rff, shd%NA)
+                case ('WR_RECHARGE', 'RCHG')
+                    call output_file_parse_freq(shd, ts, flds%rchg, args)
+                    if (flds%rchg%y%active) call output_variables_allocate(out%grid%yly%rchg, shd%NA)
+                    if (flds%rchg%m%active) call output_variables_allocate(out%grid%mly%rchg, shd%NA)
+                    if (flds%rchg%d%active) call output_variables_allocate(out%grid%dly%rchg, shd%NA)
+                    if (flds%rchg%h%active) call output_variables_allocate(out%grid%hly%rchg, shd%NA)
+
+                case default
+                    n = n - 1
+                    print 1010, trim(args(1))
             end select
+            n = n + 1
         end do
+        close(iun)
+        print 1110, n
+
+1000    format(3x, 'Reading output variable: ', (a))
+1010    format(3x, 'REMARK: Variable ', (a), ' is not recognized for output.')
+1110    format(3x, 'Output variables: ', i3)
 
     end subroutine
 
-    subroutine init_water_balance(wb, shd)
-
-        !> Type variable.
-        type(water_balance) :: wb
-
-        !> Input variables.
-        type(ShedGridParams), intent(in) :: shd
-
-        !> Allocate arrays using basin info.
-        allocate( &
-            wb%pre(shd%NA), wb%evap(shd%NA), wb%pevp(shd%NA), wb%evpb(shd%NA), wb%arrd(shd%NA), &
-            wb%rof(shd%NA), wb%rofo(shd%NA), wb%rofs(shd%NA), wb%rofb(shd%NA), &
-            wb%rcan(shd%NA), wb%sncan(shd%NA), &
-            wb%pndw(shd%NA), wb%sno(shd%NA), wb%wsno(shd%NA), &
-            wb%stg(shd%NA), wb%dstg(shd%NA), wb%grid_area(shd%NA), &
-            wb%lqws(shd%NA, shd%lc%IGND), wb%frws(shd%NA, shd%lc%IGND))
-
-        !> Explicitly set all variables to 0.0.
-        wb%pre = 0.0; wb%evap = 0.0; wb%pevp = 0.0; wb%evpb = 0.0; wb%arrd = 0.0
-        wb%rof = 0.0; wb%rofo = 0.0; wb%rofs = 0.0; wb%rofb = 0.0
-        wb%rcan = 0.0; wb%sncan = 0.0
-        wb%pndw = 0.0; wb%sno = 0.0; wb%wsno = 0.0
-        wb%stg = 0.0; wb%dstg = 0.0; wb%grid_area = 0.0
-        wb%lqws = 0.0; wb%frws = 0.0
-        wb%basin_area = 0.0
-
-    end subroutine
-
-    subroutine init_energy_balance(eb, shd)
-
-        !> Type variable.
-        type(energy_balance) :: eb
-
-        !> Input variables.
-        type(ShedGridParams), intent(in) :: shd
-
-        !> Allocate arrays using basin info.
-        allocate(eb%hfs(shd%NA), eb%qevp(shd%NA), eb%gflx(shd%NA, shd%lc%IGND))
-
-        !> Explicitly set all variables to 0.0.
-        eb%hfs = 0.0; eb%qevp = 0.0; eb%gflx = 0.0
-
-    end subroutine
-
-    subroutine init_soil_statevars(sv, shd)
-
-        !> Type variable.
-        type(soil_statevars) :: sv
-
-        !> Input variables.
-        type(ShedGridParams), intent(in) :: shd
-
-        !> Allocate arrays using basin info.
-        allocate(sv%tbar(shd%NA, shd%lc%IGND), sv%thic(shd%NA, shd%lc%IGND), sv%thlq(shd%NA, shd%lc%IGND))
-
-        !> Explicitly set all variables to 0.0.
-        sv%tbar = 0.0; sv%thic = 0.0; sv%thlq = 0.0
-
-    end subroutine
-
-    subroutine init_out(shd, ts, ifo, vr)
-
-        !>------------------------------------------------------------------------------
-        !>  Description: Read Output balance file
-        !>------------------------------------------------------------------------------
-
-        use strings
-
-        !Inputs
-        type(ShedGridParams) :: shd
-
-        !Inputs-Output
-        type(dates_model) :: ts
-        type(info_out) :: ifo
-        type(out_flds) :: vr
-
-        !Internals
-        integer :: ios, i, j, k, istat, nargs
-
-        character(len = 20) vId
-        character(len = 850) line
-
-        character(len = 20) str
-        character delims
-        integer, parameter :: StrMax = 20, Nmax = 100
-        character(len = StrMax), dimension(Nmax) :: argsLine
-
-        open(unit = 909, file = 'outputs_balance.txt', status = 'old', action = 'read', iostat = ios)
-
-        ifo%flIn = 'outputs_balance.txt'
-        delims = ' '
-        read(909, *) ifo%pthOut
-        read(909, *) ifo%nr_out
-
-        allocate(ifo%var_out(ifo%nr_out), stat = istat)
-        if (istat /= 0) print *, 'Error allocating output variable array from file.'
-
-        do i = 1, ifo%nr_out
-
-            !> Read configuration information from file.
-            call readline(909, line, ios)
-            if (index(line, '#') > 2) line = line(1:index(line, '#') - 1)
-            if (index(line, '!') > 2) line = line(1:index(line, '!') - 1)
-            call compact(line)
-
-            call parse(line,delims,argsLine,nargs)
-            ifo%var_out(i)%name = argsLine(1)
-
-            call data_var_out_allocate_args(ifo%var_out(i), argsLine(2:nargs))
-
-        end do
-
-        close(unit = 909)
-
-        !> Initialize variable.
-        call init_out_flds(shd, ts, ifo, vr)
-
-    end subroutine
-
-    subroutine check_write_var_out(shd, ifo, fldId, fld_in, file_unit, keep_file_open, igndx)
-
-        !> Input variables.
-        type(info_out), intent(in) :: ifo
-        character(len = *), intent(in) :: fldId
-        real, dimension(:), intent(in) :: fld_in
-        type(ShedGridParams), intent(in) :: shd
-        integer, intent(in) :: file_unit
-        logical :: keep_file_open
-        integer, intent(in), optional :: igndx
-
-        !> Local variables.
-        real, dimension(:, :), allocatable :: fld_out
-        integer, dimension(:, :), allocatable :: dates
-        character(len = 10) freq, st
-        integer frame_no, i
-
-        !> Loop through the output variables.
-        do i = 1, ifo%nr_out
-
-            !> Cycle fields.
-            if (.not. ifo%var_out(i)%name == fldId) cycle
-
-            !> Hourly.
-            if (ifo%var_out(i)%out_h .and. ic%now%hour /= ic%next%hour) then
-
-                !> Ready output.
-                allocate(fld_out(size(fld_in), 1))
-                fld_out(:, 1) = fld_in
-!                select case (ifo%var_out(i)%out_acc)
-
-!                    case ('avg')
-!                        fld_out(:, 1) = sum(fld_in, 1) / size(fld_in, 1)
-
-!                    case ('max')
-!                        fld_out(:, 1) = maxval(fld_in, 1)
-
-!                    case ('min')
-!                        fld_out(:, 1) = minval(fld_in, 1)
-
-!                    case default
-!                        fld_out(:, 1) = sum(fld_in, 1)
-
-!                end select
-                frame_no = ic%iter%hour + 1
-                freq = 'H'
-
-                !> Reset array.
-!                fld_in = 0.0
-
-                !> Allocate and set dates variable to current time-step.
-                allocate(dates(1, 5))
-                dates(1, 1) = ic%now%year
-                dates(1, 2) = ic%now%month
-                dates(1, 3) = ic%now%day
-                dates(1, 4) = ic%now%jday
-!todo: Flag to write 0-23 or 1-24.
-                dates(1, 5) = ic%now%hour + 1
-
-            end if
-
-            !> fld will have been allocated if a supported frequency was selected.
-            if (allocated(fld_out)) then
-
-                !> Update freq to include soil layer (if applicable).
-                if (present(igndx)) then
-                    write(st, '(i10)') igndx
-                    freq = trim(adjustl(freq)) // '_' // trim(adjustl(st))
-                else
-                    freq = freq
-                end if
-
-                !> Print the output.
-                select case (ifo%var_out(i)%out_fmt)
-
-                    case ('r2c')
-                        call WriteR2C(fld_out, i, ifo, shd, freq, dates, file_unit, keep_file_open, frame_no)
-
-                    case ('txt')
-                        call WriteTxt(fld_out, i, ifo, shd, freq, dates, file_unit, keep_file_open, frame_no)
-
-                    case ('csv')
-                        call WriteCSV(fld_out, i, ifo, shd, freq, dates, file_unit, keep_file_open, frame_no)
-
-                end select
-
-                !> De-allocate the temporary fld and dates variables.
-                deallocate(fld_out, dates)
-
-            end if
-
-        end do
-
-    end subroutine
-
-    subroutine UpdateFIELDSOUT(fls, shd, ts, cm, ifo, vr)
-
-        use model_files_variables
-        use climate_forcing
+    subroutine UpdateFIELDSOUT(fls, shd)
 
         use permafrost_active_layer
 
-        !>------------------------------------------------------------------------------
-        !>  Description: Update values in each time step
-        !>------------------------------------------------------------------------------
+        type(fl_ids) fls
+        type(ShedGridParams) shd
 
-        !Inputs
-        type(fl_ids) :: fls
-        type(ShedGridParams) :: shd
-        type(dates_model) :: ts
-        type(clim_info) :: cm
-        type(info_out) :: ifo
+        call update_output_variables(fls, shd)
 
-        !Inputs-Output
-        type(out_flds) :: vr
+!        if (flds%ald%y%active .and. ic%now%day /= ic%next%day) then
+!            TBAR_dly(ic%iter%day, : , :) = out%grid%dly%tbar
+!            call active_layer_depth( &
+!                TBAR_dly(ic%iter%day, :, :), shd%lc%sl%ZBOT, &
+!                ALD_dly(ic%iter%day, :), &
+!                shd%lc%IGND, shd%NA, 1, shd%NA)
+!            ALD_ann(ic%iter%year, :) = max(ALD_ann(ic%iter%year, :), ALD_dly(id, :))
+!            TMAX_ann(ic%iter%year, :, :) = max(TMAX_ann(ic%iter%year, :, :), TBAR_dly(ic%iter%day, :, :))
+!            TMIN_ann(ic%iter%year, :, :) = min(TMIN_ann(ic%iter%year, :, :), TBAR_dly(ic%iter%day, :, :))
+!        end if
 
-        !Internals
-        integer iy, im, iss, id, j, i
+    end subroutine
 
-        call GetIndicesDATES(ic%now%jday, ic%now%year, iy, im, iss, id, ts)
+    subroutine Write_Outputs(fls, shd)
 
-        !> FSDOWN.
-        if (allocated(out%grid%hly%fsin)) then
-!            vr%mdt_h%fsdown(ic%ts_hourly, :) = out%grid%ts%fsin
-            call check_write_var_out(shd, ifo, 'FSDOWN', out%grid%hly%fsin, 882101, .true.)
+        use permafrost_active_layer
+
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+
+        integer k, j
+
+        if (flds%ald%y%active .and. ic%now%year /= ic%next%year) then
+
+            !> ALD.
+!            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
+
+            !> ZOD.
+!            do j = 1, size(ZOD_TTOL)
+!                do k = 1, ts%nyears
+!                    call zero_oscillation_depth( &
+!                        TMAX_ann(k, :, :), TMIN_ann(k, :, :), shd%lc%sl%ZBOT, ZOD_TTOL(j), &
+!                        ZOD_ann(k, :, j), &
+!                        shd%lc%IGND, shd%NA, 1, shd%NA)
+!                end do
+!                call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
+!            end do
+
+            !> TMAX.
+!            do j = 1, shd%lc%IGND
+!                call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
+!            end do
+
+            !> TMIN.
+!            do j = 1, shd%lc%IGND
+!                call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
+!            end do
+        end if
+
+    end subroutine
+
+    subroutine flush_output(fls, shd, file, field_name, freq, dates, igndx)
+
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        type(output_file), intent(in) :: file
+        character(len = *), intent(in) :: field_name, freq
+        integer, intent(in) :: dates(:, :)
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: igndx
+
+        !> Local variables.
+        character(len = 25) str
+
+        !> Append 'igndx' if provided.
+        if (present(igndx)) then
+            write(str, '(i10)') igndx
+            str = trim(adjustl(field_name)) // '_' // trim(adjustl(freq)) // '_' // trim(adjustl(str))
+        else
+            str = trim(adjustl(field_name)) // '_' // trim(adjustl(freq))
+        end if
+
+        !> Write output.
+        if (file%seq%active) call write_seq(fls, shd, file, str, dates, file%seq)
+        if (file%r2c%active) call write_r2c(fls, shd, file, str, dates, file%r2c)
+        if (file%txt%active) call write_txt(fls, shd, file, str, dates, file%txt)
+
+    end subroutine
+
+    !> Description:
+    !>  Update the output series using the 'out_var' variable.
+    subroutine update_output_variable(file, out_var, t)
+
+        !> Input variables.
+        real, dimension(:), intent(in) :: out_var
+        integer, intent(in) :: t
+
+        !> Input/output variables.
+        type(output_file) file
+
+        !> Transfer variable.
+        file%dat(:, t) = out_var
+
+    end subroutine
+
+    !> Description:
+    !>  Update the 'dates' variable from the 'ic' counter.
+    subroutine update_output_dates(dates, iter, t)
+
+        !> Input variables.
+        integer, intent(in) :: iter, t
+
+        !> Input/output variables.
+        integer dates(:, :)
+
+        !> Update time-step.
+        dates(1, t) = iter
+        dates(2, t) = ic%next%year
+        dates(3, t) = ic%next%month
+        dates(4, t) = ic%next%day
+        dates(5, t) = ic%next%hour
+        dates(6, t) = ic%next%mins
+
+    end subroutine
+
+    subroutine update_output_variables(fls, shd)
+
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Local variables.
+        integer t_y, t_m, t_d, t_h, j
+        logical out_y, out_m, out_s, out_d, out_h, out_ts
+
+        !> Set local variables.
+        out_y = (ic%now%year /= ic%next%year)
+        out_m = (ic%now%month /= ic%next%month)
+        out_s = .false.
+        out_d = (ic%now%day /= ic%next%day)
+        out_h = (ic%now%hour /= ic%next%hour)
+        out_ts = .true.
+
+        !> Update time-steps.
+        if (out_y) then
+            if (flds%in_mem) then
+                t_y = ic%iter%year
+            else
+                t_y = 1
+            end if
+            call update_output_dates(flds%dates%y, ic%iter%year, t_y)
+        end if
+        if (out_m) then
+            if (flds%in_mem) then
+                t_m = ic%iter%month
+            else
+                t_m = 1
+            end if
+            call update_output_dates(flds%dates%m, ic%iter%month, t_m)
+        end if
+        if (out_d) then
+            if (flds%in_mem) then
+                t_d = ic%iter%day
+            else
+                t_d = 1
+            end if
+            call update_output_dates(flds%dates%d, ic%iter%day, t_d)
+        end if
+        if (out_h) then
+            if (flds%in_mem) then
+                t_h = ic%iter%hour
+            else
+                t_h = 1
+            end if
+            call update_output_dates(flds%dates%h, ic%iter%hour, t_h)
+        end if
+
+        !> FSIN.
+        if (flds%fsin%y%active .and. out_y) then
+            call update_output_variable(flds%fsin%y, out%grid%yly%fsin, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%fsin%y, 'FSDOWN', 'Y', flds%dates%y)
+        end if
+        if (flds%fsin%m%active .and. out_m) then
+            call update_output_variable(flds%fsin%m, out%grid%mly%fsin, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%fsin%m, 'FSDOWN', 'M', flds%dates%m)
+        end if
+        if (flds%fsin%d%active .and. out_d) then
+            call update_output_variable(flds%fsin%d, out%grid%dly%fsin, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%fsin%d, 'FSDOWN', 'D', flds%dates%d)
+        end if
+        if (flds%fsin%h%active .and. out_h) then
+            call update_output_variable(flds%fsin%h, out%grid%hly%fsin, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%fsin%h, 'FSDOWN', 'H', flds%dates%h)
         end if
 
         !> FSVH.
-        if (allocated(out%grid%hly%fsin)) then
-!            vr%mdt_h%fsvh(ic%ts_hourly, :) = out%grid%ts%fsin/2.0
-            call check_write_var_out(shd, ifo, 'FSVH', out%grid%hly%fsin/2.0, 882102, .true.)
+        if (flds%fsvh%y%active .and. out_y) then
+            call update_output_variable(flds%fsvh%y, out%grid%yly%fsin/2.0, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%fsvh%y, 'FSVH', 'Y', flds%dates%y)
+        end if
+        if (flds%fsvh%m%active .and. out_m) then
+            call update_output_variable(flds%fsvh%m, out%grid%mly%fsin/2.0, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%fsvh%m, 'FSVH', 'M', flds%dates%m)
+        end if
+        if (flds%fsvh%d%active .and. out_d) then
+            call update_output_variable(flds%fsvh%d, out%grid%dly%fsin/2.0, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%fsvh%d, 'FSVH', 'D', flds%dates%d)
+        end if
+        if (flds%fsvh%h%active .and. out_h) then
+            call update_output_variable(flds%fsvh%h, out%grid%hly%fsin/2.0, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%fsvh%h, 'FSVH', 'H', flds%dates%h)
         end if
 
         !> FSIH.
-        if (allocated(out%grid%hly%fsin)) then
-!            vr%mdt_h%fsih(ic%ts_hourly, :) = out%grid%ts%fsin/2.0
-            call check_write_var_out(shd, ifo, 'FSIH', out%grid%hly%fsin/2.0, 882103, .true.)
+        if (flds%fsih%y%active .and. out_y) then
+            call update_output_variable(flds%fsih%y, out%grid%yly%fsin/2.0, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%fsih%y, 'FSIH', 'Y', flds%dates%y)
+        end if
+        if (flds%fsih%m%active .and. out_m) then
+            call update_output_variable(flds%fsih%m, out%grid%mly%fsin/2.0, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%fsih%m, 'FSIH', 'M', flds%dates%m)
+        end if
+        if (flds%fsih%d%active .and. out_d) then
+            call update_output_variable(flds%fsih%d, out%grid%dly%fsin/2.0, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%fsih%d, 'FSIH', 'D', flds%dates%d)
+        end if
+        if (flds%fsih%h%active .and. out_h) then
+            call update_output_variable(flds%fsih%h, out%grid%hly%fsin/2.0, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%fsih%h, 'FSIH', 'H', flds%dates%h)
         end if
 
-        !> FDL.
-        if (allocated(out%grid%hly%flin)) then
-!            vr%mdt_h%fdl(ic%ts_hourly, :) = out%grid%ts%flin
-            call check_write_var_out(shd, ifo, 'FDL', out%grid%hly%flin, 882104, .true.)
+        !> FLIN.
+        if (flds%flin%y%active .and. out_y) then
+            call update_output_variable(flds%flin%y, out%grid%yly%flin, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%flin%y, 'FDL', 'Y', flds%dates%y)
+        end if
+        if (flds%flin%m%active .and. out_m) then
+            call update_output_variable(flds%flin%m, out%grid%mly%flin, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%flin%m, 'FDL', 'M', flds%dates%m)
+        end if
+        if (flds%flin%d%active .and. out_d) then
+            call update_output_variable(flds%flin%d, out%grid%dly%flin, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%flin%d, 'FDL', 'D', flds%dates%d)
+        end if
+        if (flds%flin%h%active .and. out_h) then
+            call update_output_variable(flds%flin%h, out%grid%hly%flin, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%flin%h, 'FDL', 'H', flds%dates%h)
         end if
 
-        !> UL.
-        if (allocated(out%grid%hly%uv)) then
-!            vr%mdt_h%ul(ic%ts_hourly, :) = out%grid%ts%uv
-            call check_write_var_out(shd, ifo, 'UL', out%grid%hly%uv, 882105, .true.)
+        !> UV.
+        if (flds%uv%y%active .and. out_y) then
+            call update_output_variable(flds%uv%y, out%grid%yly%uv, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%uv%y, 'UL', 'Y', flds%dates%y)
+        end if
+        if (flds%uv%m%active .and. out_m) then
+            call update_output_variable(flds%uv%m, out%grid%mly%uv, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%uv%m, 'UL', 'M', flds%dates%m)
+        end if
+        if (flds%uv%d%active .and. out_d) then
+            call update_output_variable(flds%uv%d, out%grid%dly%uv, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%uv%d, 'UL', 'D', flds%dates%d)
+        end if
+        if (flds%uv%h%active .and. out_h) then
+            call update_output_variable(flds%uv%h, out%grid%hly%uv, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%uv%h, 'UL', 'H', flds%dates%h)
         end if
 
         !> TA.
-        if (allocated(out%grid%hly%ta)) then
-!            vr%mdt_h%ta(ic%ts_hourly, :) = out%grid%ts%ta
-            call check_write_var_out(shd, ifo, 'TA', out%grid%hly%ta, 882106, .true.)
+        if (flds%ta%y%active .and. out_y) then
+            call update_output_variable(flds%ta%y, out%grid%yly%ta, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%ta%y, 'TA', 'Y', flds%dates%y)
+        end if
+        if (flds%ta%m%active .and. out_m) then
+            call update_output_variable(flds%ta%m, out%grid%mly%ta, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%ta%m, 'TA', 'M', flds%dates%m)
+        end if
+        if (flds%ta%d%active .and. out_d) then
+            call update_output_variable(flds%ta%d, out%grid%dly%ta, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%ta%d, 'TA', 'D', flds%dates%d)
+        end if
+        if (flds%ta%h%active .and. out_h) then
+            call update_output_variable(flds%ta%h, out%grid%hly%ta, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%ta%h, 'TA', 'H', flds%dates%h)
         end if
 
         !> QA.
-        if (allocated(out%grid%hly%qa)) then
-!            vr%mdt_h%qa(ic%ts_hourly, :) = out%grid%ts%qa
-            call check_write_var_out(shd, ifo, 'QA', out%grid%hly%qa, 882107, .true.)
+        if (flds%qa%y%active .and. out_y) then
+            call update_output_variable(flds%qa%y, out%grid%yly%qa, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%qa%y, 'QA', 'Y', flds%dates%y)
+        end if
+        if (flds%qa%m%active .and. out_m) then
+            call update_output_variable(flds%qa%m, out%grid%mly%qa, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%qa%m, 'QA', 'M', flds%dates%m)
+        end if
+        if (flds%qa%d%active .and. out_d) then
+            call update_output_variable(flds%qa%d, out%grid%dly%qa, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%qa%d, 'QA', 'D', flds%dates%d)
+        end if
+        if (flds%qa%h%active .and. out_h) then
+            call update_output_variable(flds%qa%h, out%grid%hly%qa, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%qa%h, 'QA', 'H', flds%dates%h)
         end if
 
         !> PRES.
-        if (allocated(out%grid%hly%pres)) then
-!            vr%mdt_h%pres(ic%ts_hourly, :) = out%grid%ts%pres
-            call check_write_var_out(shd, ifo, 'PRES', out%grid%hly%pres, 882108, .true.)
+        if (flds%pres%y%active .and. out_y) then
+            call update_output_variable(flds%pres%y, out%grid%yly%pres, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%pres%y, 'PRES', 'Y', flds%dates%y)
+        end if
+        if (flds%pres%m%active .and. out_m) then
+            call update_output_variable(flds%pres%m, out%grid%mly%pres, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%pres%m, 'PRES', 'M', flds%dates%m)
+        end if
+        if (flds%pres%d%active .and. out_d) then
+            call update_output_variable(flds%pres%d, out%grid%dly%pres, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%pres%d, 'PRES', 'D', flds%dates%d)
+        end if
+        if (flds%pres%h%active .and. out_h) then
+            call update_output_variable(flds%pres%h, out%grid%hly%pres, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%pres%h, 'PRES', 'H', flds%dates%h)
         end if
 
         !> PRE.
-        if (allocated(out%grid%hly%pre)) then
-!            vr%mdt_h%pre(ic%ts_hourly, :) = out%grid%ts%pre
-            call check_write_var_out(shd, ifo, 'PRE', out%grid%hly%pre, 882109, .true.)
+        if (flds%pre%y%active .and. out_y) then
+            call update_output_variable(flds%pre%y, out%grid%yly%pre, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%pre%y, 'PRE', 'Y', flds%dates%y)
+        end if
+        if (flds%pre%m%active .and. out_m) then
+            call update_output_variable(flds%pre%m, out%grid%mly%pre, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%pre%m, 'PRE', 'M', flds%dates%m)
+        end if
+        if (flds%pre%d%active .and. out_d) then
+            call update_output_variable(flds%pre%d, out%grid%dly%pre, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%pre%d, 'PRE', 'D', flds%dates%d)
+        end if
+        if (flds%pre%h%active .and. out_h) then
+            call update_output_variable(flds%pre%h, out%grid%hly%pre, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%pre%h, 'PRE', 'H', flds%dates%h)
         end if
 
-        !> PREC; Rainfall; Rain; Precipitation.
-        if (allocated(vr%wbt_y%pre)) vr%wbt_y%pre(iy, :) = vr%wbt_y%pre(iy, :) + out%grid%ts%pre*shd%FRAC*ic%dts
-        if (allocated(vr%wbt_m%pre)) vr%wbt_m%pre(im, :) = vr%wbt_m%pre(im, :) + out%grid%ts%pre*shd%FRAC*ic%dts
-        if (allocated(vr%wbt_s%pre)) vr%wbt_s%pre(iss, :) = vr%wbt_s%pre(iss, :) + out%grid%ts%pre*shd%FRAC*ic%dts
-        if (allocated(vr%wbt_d%pre)) vr%wbt_d%pre(id, :) = vr%wbt_d%pre(id, :) + out%grid%ts%pre*shd%FRAC*ic%dts
-        if (allocated(out%grid%hly%pre)) then
-!            vr%wbt_h%pre(ic%ts_hourly, :) = out%grid%ts%pre*shd%FRAC*ic%dts
-            call check_write_var_out(shd, ifo, 'PREC', out%grid%hly%pre*shd%FRAC*ic%dts, 882122, .true.)
+        !> PREC.
+        if (flds%prec%y%active .and. out_y) then
+            call update_output_variable(flds%prec%y, out%grid%yly%pre*ic%dts*shd%FRAC, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%prec%y, 'PREC', 'Y', flds%dates%y)
+        end if
+        if (flds%prec%m%active .and. out_m) then
+            call update_output_variable(flds%prec%m, out%grid%mly%pre*ic%dts*shd%FRAC, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%prec%m, 'PREC', 'M', flds%dates%m)
+        end if
+        if (flds%prec%d%active .and. out_d) then
+            call update_output_variable(flds%prec%d, out%grid%dly%pre*ic%dts*shd%FRAC, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%prec%d, 'PREC', 'D', flds%dates%d)
+        end if
+        if (flds%prec%h%active .and. out_h) then
+            call update_output_variable(flds%prec%h, out%grid%hly%pre*ic%dts*shd%FRAC, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%prec%h, 'PREC', 'H', flds%dates%h)
         end if
 
-        !> EVAP; Evapotranspiration.
-        if (allocated(vr%wbt_y%evap)) vr%wbt_y%evap(iy, :) = vr%wbt_y%evap(iy, :) + out%grid%ts%evap*shd%FRAC*ic%dts
-        if (allocated(vr%wbt_m%evap)) vr%wbt_m%evap(im, :) = vr%wbt_m%evap(im, :) + out%grid%ts%evap*shd%FRAC*ic%dts
-        if (allocated(vr%wbt_s%evap)) vr%wbt_s%evap(iss, :) = vr%wbt_s%evap(iss, :) + out%grid%ts%evap*shd%FRAC*ic%dts
-        if (allocated(vr%wbt_d%evap)) vr%wbt_d%evap(id, :) = vr%wbt_d%evap(id, :) + out%grid%ts%evap*shd%FRAC*ic%dts
-        if (allocated(out%grid%hly%evap)) then
-!            vr%wbt_h%evap(ic%ts_hourly, :) = out%grid%ts%evap*shd%FRAC*ic%dts
-            call check_write_var_out(shd, ifo, 'EVAP', out%grid%hly%evap*shd%FRAC*ic%dts, 882110, .true.)
+        !> EVAP.
+        if (flds%evap%y%active .and. out_y) then
+            call update_output_variable(flds%evap%y, out%grid%yly%evap*ic%dts*shd%FRAC, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%evap%y, 'EVAP', 'Y', flds%dates%y)
+        end if
+        if (flds%evap%m%active .and. out_m) then
+            call update_output_variable(flds%evap%m, out%grid%mly%evap*ic%dts*shd%FRAC, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%evap%m, 'EVAP', 'M', flds%dates%m)
+        end if
+        if (flds%evap%d%active .and. out_d) then
+            call update_output_variable(flds%evap%d, out%grid%dly%evap*ic%dts*shd%FRAC, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%evap%d, 'EVAP', 'D', flds%dates%d)
+        end if
+        if (flds%evap%h%active .and. out_h) then
+            call update_output_variable(flds%evap%h, out%grid%hly%evap*ic%dts*shd%FRAC, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%evap%h, 'EVAP', 'H', flds%dates%h)
         end if
 
-        !> Runoff; ROF.
-        if (allocated(vr%wbt_y%rof)) vr%wbt_y%rof(iy, :) = vr%wbt_y%rof(iy, :) + out%grid%ts%rof*shd%FRAC*ic%dts
-        if (allocated(vr%wbt_m%rof)) vr%wbt_m%rof(im, :) = vr%wbt_m%rof(im, :) + out%grid%ts%rof*shd%FRAC*ic%dts
-        if (allocated(vr%wbt_s%rof)) vr%wbt_s%rof(iss, :) = vr%wbt_s%rof(iss, :) + out%grid%ts%rof*shd%FRAC*ic%dts
-        if (allocated(vr%wbt_d%rof)) vr%wbt_d%rof(id, :) = vr%wbt_d%rof(id, :) + out%grid%ts%rof*shd%FRAC*ic%dts
-        if (allocated(out%grid%hly%rof)) then
-!            vr%wbt_h%rof(ic%ts_hourly, :) = out%grid%ts%rof*shd%FRAC*ic%dts
-            call check_write_var_out(shd, ifo, 'ROF', out%grid%hly%rof*shd%FRAC*ic%dts, 882111, .true.)
+        !> ROF.
+        if (flds%rof%y%active .and. out_y) then
+            call update_output_variable(flds%rof%y, out%grid%yly%rof*ic%dts*shd%FRAC, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rof%y, 'ROF', 'Y', flds%dates%y)
+        end if
+        if (flds%rof%m%active .and. out_m) then
+            call update_output_variable(flds%rof%m, out%grid%mly%rof*ic%dts*shd%FRAC, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rof%m, 'ROF', 'M', flds%dates%m)
+        end if
+        if (flds%rof%d%active .and. out_d) then
+            call update_output_variable(flds%rof%d, out%grid%dly%rof*ic%dts*shd%FRAC, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rof%d, 'ROF', 'D', flds%dates%d)
+        end if
+        if (flds%rof%h%active .and. out_h) then
+            call update_output_variable(flds%rof%h, out%grid%hly%rof*ic%dts*shd%FRAC, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rof%h, 'ROF', 'H', flds%dates%h)
         end if
 
         !> RCAN.
-        if (allocated(vr%wbt_y%rcan)) vr%wbt_y%rcan(iy, :) = vr%wbt_y%rcan(iy, :) + out%grid%ts%rcan*shd%FRAC
-        if (allocated(vr%wbt_m%rcan)) vr%wbt_m%rcan(im, :) = vr%wbt_m%rcan(im, :) + out%grid%ts%rcan*shd%FRAC
-        if (allocated(vr%wbt_s%rcan)) vr%wbt_s%rcan(iss, :) = vr%wbt_s%rcan(iss, :) + out%grid%ts%rcan*shd%FRAC
-        if (allocated(out%grid%hly%rcan)) then
-!            vr%wbt_h%rcan(ic%ts_hourly, :) = out%grid%ts%rcan*shd%FRAC
-            call check_write_var_out(shd, ifo, 'RCAN', out%grid%hly%rcan*shd%FRAC, 882114, .true.)
+        if (flds%rcan%y%active .and. out_y) then
+            call update_output_variable(flds%rcan%y, out%grid%yly%rcan*shd%FRAC, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rcan%y, 'RCAN', 'Y', flds%dates%y)
+        end if
+        if (flds%rcan%m%active .and. out_m) then
+            call update_output_variable(flds%rcan%m, out%grid%mly%rcan*shd%FRAC, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rcan%m, 'RCAN', 'M', flds%dates%m)
+        end if
+        if (flds%rcan%d%active .and. out_d) then
+            call update_output_variable(flds%rcan%d, out%grid%dly%rcan*shd%FRAC, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rcan%d, 'RCAN', 'D', flds%dates%d)
+        end if
+        if (flds%rcan%h%active .and. out_h) then
+            call update_output_variable(flds%rcan%h, out%grid%hly%rcan*shd%FRAC, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rcan%h, 'RCAN', 'H', flds%dates%h)
         end if
 
-        !> SCAN; SNCAN.
-        if (allocated(vr%wbt_y%sncan)) vr%wbt_y%sncan(iy, :) = vr%wbt_y%sncan(iy, :) + out%grid%ts%sncan*shd%FRAC
-        if (allocated(vr%wbt_m%sncan)) vr%wbt_m%sncan(im, :) = vr%wbt_m%sncan(im, :) + out%grid%ts%sncan*shd%FRAC
-        if (allocated(vr%wbt_s%sncan)) vr%wbt_s%sncan(iss, :) = vr%wbt_s%sncan(iss, :) + out%grid%ts%sncan*shd%FRAC
-        if (allocated(out%grid%hly%sncan)) then
-!            vr%wbt_h%sncan(ic%ts_hourly, :) = out%grid%ts%sncan*shd%FRAC
-            call check_write_var_out(shd, ifo, 'SNCAN', out%grid%hly%sncan*shd%FRAC, 882115, .true.)
+        !> SNCAN.
+        if (flds%sncan%y%active .and. out_y) then
+            call update_output_variable(flds%sncan%y, out%grid%yly%sncan*shd%FRAC, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%sncan%y, 'SNCAN', 'Y', flds%dates%y)
+        end if
+        if (flds%sncan%m%active .and. out_m) then
+            call update_output_variable(flds%sncan%m, out%grid%mly%sncan*shd%FRAC, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%sncan%m, 'SNCAN', 'M', flds%dates%m)
+        end if
+        if (flds%sncan%d%active .and. out_d) then
+            call update_output_variable(flds%sncan%d, out%grid%dly%sncan*shd%FRAC, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%sncan%d, 'SNCAN', 'D', flds%dates%d)
+        end if
+        if (flds%sncan%h%active .and. out_h) then
+            call update_output_variable(flds%sncan%h, out%grid%hly%sncan*shd%FRAC, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%sncan%h, 'SNCAN', 'H', flds%dates%h)
         end if
 
         !> PNDW.
-        if (allocated(vr%wbt_y%pndw)) vr%wbt_y%pndw(iy, :) = vr%wbt_y%pndw(iy, :) + out%grid%ts%pndw*shd%FRAC
-        if (allocated(vr%wbt_m%pndw)) vr%wbt_m%pndw(im, :) = vr%wbt_m%pndw(im, :) + out%grid%ts%pndw*shd%FRAC
-        if (allocated(vr%wbt_s%pndw)) vr%wbt_s%pndw(iss, :) = vr%wbt_s%pndw(iss, :) + out%grid%ts%pndw*shd%FRAC
-        if (allocated(out%grid%hly%pndw)) then
-!            vr%wbt_h%pndw(ic%ts_hourly, :) = out%grid%ts%pndw*shd%FRAC
-            call check_write_var_out(shd, ifo, 'PNDW', out%grid%hly%pndw*shd%FRAC, 882116, .true.)
+        if (flds%pndw%y%active .and. out_y) then
+            call update_output_variable(flds%pndw%y, out%grid%yly%pndw*shd%FRAC, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%pndw%y, 'PNDW', 'Y', flds%dates%y)
+        end if
+        if (flds%pndw%m%active .and. out_m) then
+            call update_output_variable(flds%pndw%m, out%grid%mly%pndw*shd%FRAC, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%pndw%m, 'PNDW', 'M', flds%dates%m)
+        end if
+        if (flds%pndw%d%active .and. out_d) then
+            call update_output_variable(flds%pndw%d, out%grid%dly%pndw*shd%FRAC, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%pndw%d, 'PNDW', 'D', flds%dates%d)
+        end if
+        if (flds%pndw%h%active .and. out_h) then
+            call update_output_variable(flds%pndw%h, out%grid%hly%pndw*shd%FRAC, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%pndw%h, 'PNDW', 'H', flds%dates%h)
         end if
 
         !> SNO.
-        if (allocated(vr%wbt_y%sno)) vr%wbt_y%sno(iy, :) = vr%wbt_y%sno(iy, :) + out%grid%ts%sno*shd%FRAC
-        if (allocated(vr%wbt_m%sno)) vr%wbt_m%sno(im, :) = vr%wbt_m%sno(im, :) + out%grid%ts%sno*shd%FRAC
-        if (allocated(vr%wbt_s%sno)) vr%wbt_s%sno(iss, :) = vr%wbt_s%sno(iss, :) + out%grid%ts%sno*shd%FRAC
-        if (allocated(out%grid%hly%sno)) then
-!            vr%wbt_h%sno(ic%ts_hourly, :) = out%grid%ts%sno*shd%FRAC
-            call check_write_var_out(shd, ifo, 'SNO', out%grid%hly%sno*shd%FRAC, 882117, .true.)
+        if (flds%sno%y%active .and. out_y) then
+            call update_output_variable(flds%sno%y, out%grid%yly%sno*shd%FRAC, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%sno%y, 'SNO', 'Y', flds%dates%y)
+        end if
+        if (flds%sno%m%active .and. out_m) then
+            call update_output_variable(flds%sno%m, out%grid%mly%sno*shd%FRAC, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%sno%m, 'SNO', 'M', flds%dates%m)
+        end if
+        if (flds%sno%d%active .and. out_d) then
+            call update_output_variable(flds%sno%d, out%grid%dly%sno*shd%FRAC, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%sno%d, 'SNO', 'D', flds%dates%d)
+        end if
+        if (flds%sno%h%active .and. out_h) then
+            call update_output_variable(flds%sno%h, out%grid%hly%sno*shd%FRAC, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%sno%h, 'SNO', 'H', flds%dates%h)
         end if
 
         !> WSNO.
-        if (allocated(vr%wbt_y%wsno)) vr%wbt_y%wsno(iy, :) = vr%wbt_y%wsno(iy, :) + out%grid%ts%wsno*shd%FRAC
-        if (allocated(vr%wbt_m%wsno)) vr%wbt_m%wsno(im, :) = vr%wbt_m%wsno(im, :) + out%grid%ts%wsno*shd%FRAC
-        if (allocated(vr%wbt_s%wsno)) vr%wbt_s%wsno(iss, :) = vr%wbt_s%wsno(iss, :) + out%grid%ts%wsno*shd%FRAC
-        if (allocated(out%grid%hly%wsno)) then
-!            vr%wbt_h%wsno(ic%ts_hourly, :) = out%grid%ts%wsno*shd%FRAC
-            call check_write_var_out(shd, ifo, 'WSNO', out%grid%hly%wsno*shd%FRAC, 882118, .true.)
+        if (flds%wsno%y%active .and. out_y) then
+            call update_output_variable(flds%wsno%y, out%grid%yly%wsno*shd%FRAC, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%wsno%y, 'WSNO', 'Y', flds%dates%y)
+        end if
+        if (flds%wsno%m%active .and. out_m) then
+            call update_output_variable(flds%wsno%m, out%grid%mly%wsno*shd%FRAC, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%wsno%m, 'WSNO', 'M', flds%dates%m)
+        end if
+        if (flds%wsno%d%active .and. out_d) then
+            call update_output_variable(flds%wsno%d, out%grid%dly%wsno*shd%FRAC, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%wsno%d, 'WSNO', 'D', flds%dates%d)
+        end if
+        if (flds%wsno%h%active .and. out_h) then
+            call update_output_variable(flds%wsno%h, out%grid%hly%wsno*shd%FRAC, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%wsno%h, 'WSNO', 'H', flds%dates%h)
         end if
 
-        !> HFS; SensibleHeat.
-        if (allocated(vr%engt_y%hfs)) vr%engt_y%hfs(iy, :) = vr%engt_y%hfs(iy, :) + out%grid%ts%qh*shd%FRAC
-        if (allocated(vr%engt_m%hfs)) vr%engt_m%hfs(im, :) = vr%engt_m%hfs(im, :) + out%grid%ts%qh*shd%FRAC
-        if (allocated(vr%engt_s%hfs)) vr%engt_s%hfs(iss, :) = vr%engt_s%hfs(iss, :) + out%grid%ts%qh*shd%FRAC
-        if (allocated(vr%engt_d%hfs)) vr%engt_d%hfs(id, :) = vr%engt_d%hfs(id, :) + out%grid%ts%qh*shd%FRAC
+        !> STGW.
+        if (flds%stgw%y%active .and. out_y) then
+            call update_output_variable(flds%stgw%y, out%grid%yly%stgw*shd%FRAC, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%stgw%y, 'STG', 'Y', flds%dates%y)
+        end if
+        if (flds%stgw%m%active .and. out_m) then
+            call update_output_variable(flds%stgw%m, out%grid%mly%stgw*shd%FRAC, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%stgw%m, 'STG', 'M', flds%dates%m)
+        end if
+        if (flds%stgw%d%active .and. out_d) then
+            call update_output_variable(flds%stgw%d, out%grid%dly%stgw*shd%FRAC, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%stgw%d, 'STG', 'D', flds%dates%d)
+        end if
+        if (flds%stgw%h%active .and. out_h) then
+            call update_output_variable(flds%stgw%h, out%grid%hly%stgw*shd%FRAC, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%stgw%h, 'STG', 'H', flds%dates%h)
+        end if
 
-        !> QEVP; LatentHeat.
-        if (allocated(vr%engt_y%qevp)) vr%engt_y%qevp(iy, :) = vr%engt_y%qevp(iy, :) + out%grid%ts%qe*shd%FRAC
-        if (allocated(vr%engt_m%qevp)) vr%engt_m%qevp(im, :) = vr%engt_m%qevp(im, :) + out%grid%ts%qe*shd%FRAC
-        if (allocated(vr%engt_s%qevp)) vr%engt_s%qevp(iss, :) = vr%engt_s%qevp(iss, :) + out%grid%ts%qe*shd%FRAC
-        if (allocated(vr%engt_d%qevp)) vr%engt_d%qevp(id, :) = vr%engt_d%qevp(id, :) + out%grid%ts%qe*shd%FRAC
+        !> QH.
+        if (flds%qh%y%active .and. out_y) then
+            call update_output_variable(flds%qh%y, out%grid%yly%qh*shd%FRAC, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%qh%y, 'HFS', 'Y', flds%dates%y)
+        end if
+        if (flds%qh%m%active .and. out_m) then
+            call update_output_variable(flds%qh%m, out%grid%mly%qh*shd%FRAC, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%qh%m, 'HFS', 'M', flds%dates%m)
+        end if
+        if (flds%qh%d%active .and. out_d) then
+            call update_output_variable(flds%qh%d, out%grid%dly%qh*shd%FRAC, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%qh%d, 'HFS', 'D', flds%dates%d)
+        end if
+        if (flds%qh%h%active .and. out_h) then
+            call update_output_variable(flds%qh%h, out%grid%hly%qh*shd%FRAC, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%qh%h, 'HFS', 'H', flds%dates%h)
+        end if
 
-        !> Variables with soil layers.
+        !> QE.
+        if (flds%qe%y%active .and. out_y) then
+            call update_output_variable(flds%qe%y, out%grid%yly%qe*shd%FRAC, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%qe%y, 'QEVP', 'Y', flds%dates%y)
+        end if
+        if (flds%qe%m%active .and. out_m) then
+            call update_output_variable(flds%qe%m, out%grid%mly%qe*shd%FRAC, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%qe%m, 'QEVP', 'M', flds%dates%m)
+        end if
+        if (flds%qe%d%active .and. out_d) then
+            call update_output_variable(flds%qe%d, out%grid%dly%qe*shd%FRAC, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%qe%d, 'QEVP', 'D', flds%dates%d)
+        end if
+        if (flds%qe%h%active .and. out_h) then
+            call update_output_variable(flds%qe%h, out%grid%hly%qe*shd%FRAC, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%qe%h, 'QEVP', 'H', flds%dates%h)
+        end if
+
+        !> Variables with multiple layers.
         do j = 1, shd%lc%IGND
 
-            !> LQWS.
-            if (allocated(vr%wbt_y%lqws)) vr%wbt_y%lqws(iy, :, j) = vr%wbt_y%lqws(iy, :, j) + out%grid%ts%lqws(:, j)*shd%FRAC
-            if (allocated(vr%wbt_m%lqws)) vr%wbt_m%lqws(im, :, j) = vr%wbt_m%lqws(im, :, j) + out%grid%ts%lqws(:, j)*shd%FRAC
-            if (allocated(vr%wbt_s%lqws)) vr%wbt_s%lqws(iss, :, j) = vr%wbt_s%lqws(iss, :, j) + out%grid%ts%lqws(:, j)*shd%FRAC
-            if (allocated(vr%wbt_d%lqws)) vr%wbt_d%lqws(id, :, j) = vr%wbt_d%lqws(id, :, j) + out%grid%ts%lqws(:, j)*shd%FRAC
-            if (allocated(out%grid%hly%lqws)) then
-!                vr%wbt_h%lqws(ic%ts_hourly, :, j) = out%grid%ts%lqws(:, j)*shd%FRAC
-                call check_write_var_out(shd, ifo, 'LQWS', out%grid%hly%lqws(:, j)*shd%FRAC, (882112 + (100000000*j)), .true., j)
-            end if
-
-            !> FRWS.
-            if (allocated(vr%wbt_y%frws)) vr%wbt_y%frws(iy, :, j) = vr%wbt_y%frws(iy, :, j) + out%grid%ts%fzws(:, j)*shd%FRAC
-            if (allocated(vr%wbt_m%frws)) vr%wbt_m%frws(im, :, j) = vr%wbt_m%frws(im, :, j) + out%grid%ts%fzws(:, j)*shd%FRAC
-            if (allocated(vr%wbt_s%frws)) vr%wbt_s%frws(iss, :, j) = vr%wbt_s%frws(iss, :, j) + out%grid%ts%fzws(:, j)*shd%FRAC
-            if (allocated(vr%wbt_d%frws)) vr%wbt_d%frws(id, :, j) = vr%wbt_d%frws(id, :, j) + out%grid%ts%fzws(:, j)*shd%FRAC
-            if (allocated(out%grid%hly%fzws)) then
-!                vr%wbt_h%frws(ic%ts_hourly, :, j) = out%grid%ts%fzws(:, j)*shd%FRAC
-                call check_write_var_out(shd, ifo, 'FRWS', out%grid%hly%fzws(:, j)*shd%FRAC, (882113 + (100000000*j)), .true., j)
-            end if
-
-            !> GFLX; HeatConduction.
-            if (allocated(vr%engt_y%gflx)) vr%engt_y%gflx(iy, :, j) = vr%engt_y%gflx(iy, :, j) + out%grid%ts%gflx(:, j)*shd%FRAC
-            if (allocated(vr%engt_m%gflx)) vr%engt_m%gflx(im, :, j) = vr%engt_m%gflx(im, :, j) + out%grid%ts%gflx(:, j)*shd%FRAC
-            if (allocated(vr%engt_s%gflx)) vr%engt_s%gflx(iss, :, j) = vr%engt_s%gflx(iss, :, j) + out%grid%ts%gflx(:, j)*shd%FRAC
-            if (allocated(vr%engt_d%gflx)) vr%engt_d%gflx(id, :, j) = vr%engt_d%gflx(id, :, j) + out%grid%ts%gflx(:, j)*shd%FRAC
-
             !> THLQ.
-            if (allocated(vr%spt_y%thlq)) vr%spt_y%thlq(iy, :, j) = vr%spt_y%thlq(iy, :, j) + out%grid%ts%thlq(:, j)*shd%FRAC
-            if (allocated(vr%spt_m%thlq)) vr%spt_m%thlq(im, :, j) = vr%spt_m%thlq(im, :, j) + out%grid%ts%thlq(:, j)*shd%FRAC
-            if (allocated(vr%spt_s%thlq)) vr%spt_s%thlq(iss, :, j) = vr%spt_s%thlq(iss, :, j) + out%grid%ts%thlq(:, j)*shd%FRAC
-            if (allocated(vr%spt_d%thlq)) vr%spt_d%thlq(id, :, j) = vr%spt_d%thlq(id, :, j) + out%grid%ts%thlq(:, j)*shd%FRAC
+            if (flds%thlq(j)%y%active .and. out_y) then
+                call update_output_variable(flds%thlq(j)%y, out%grid%yly%thlq(:, j)*shd%FRAC, t_y)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%thlq(j)%y, 'THLQ', 'Y', flds%dates%y, j)
+            end if
+            if (flds%thlq(j)%m%active .and. out_m) then
+                call update_output_variable(flds%thlq(j)%m, out%grid%mly%thlq(:, j)*shd%FRAC, t_m)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%thlq(j)%m, 'THLQ', 'M', flds%dates%m, j)
+            end if
+            if (flds%thlq(j)%d%active .and. out_d) then
+                call update_output_variable(flds%thlq(j)%d, out%grid%dly%thlq(:, j)*shd%FRAC, t_d)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%thlq(j)%d, 'THLQ', 'D', flds%dates%d, j)
+            end if
+            if (flds%thlq(j)%h%active .and. out_h) then
+                call update_output_variable(flds%thlq(j)%h, out%grid%hly%thlq(:, j)*shd%FRAC, t_h)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%thlq(j)%h, 'THLQ', 'H', flds%dates%h, j)
+            end if
+
+            !> LQWS.
+            if (flds%lqws(j)%y%active .and. out_y) then
+                call update_output_variable(flds%lqws(j)%y, out%grid%yly%lqws(:, j)*shd%FRAC, t_y)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%lqws(j)%y, 'LQWS', 'Y', flds%dates%y, j)
+            end if
+            if (flds%lqws(j)%m%active .and. out_m) then
+                call update_output_variable(flds%lqws(j)%m, out%grid%mly%lqws(:, j)*shd%FRAC, t_m)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%lqws(j)%m, 'LQWS', 'M', flds%dates%m, j)
+            end if
+            if (flds%lqws(j)%d%active .and. out_d) then
+                call update_output_variable(flds%lqws(j)%d, out%grid%dly%lqws(:, j)*shd%FRAC, t_d)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%lqws(j)%d, 'LQWS', 'D', flds%dates%d, j)
+            end if
+            if (flds%lqws(j)%h%active .and. out_h) then
+                call update_output_variable(flds%lqws(j)%h, out%grid%hly%lqws(:, j)*shd%FRAC, t_h)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%lqws(j)%h, 'LQWS', 'H', flds%dates%h, j)
+            end if
 
             !> THIC.
-            if (allocated(vr%spt_y%thic)) vr%spt_y%thic(iy, :, j) = vr%spt_y%thic(iy, :, j) + out%grid%ts%thic(:, j)*shd%FRAC
-            if (allocated(vr%spt_m%thic)) vr%spt_m%thic(im, :, j) = vr%spt_m%thic(im, :, j) + out%grid%ts%thic(:, j)*shd%FRAC
-            if (allocated(vr%spt_s%thic)) vr%spt_s%thic(iss, :, j) = vr%spt_s%thic(iss, :, j) + out%grid%ts%thic(:, j)*shd%FRAC
-            if (allocated(vr%spt_d%thic)) vr%spt_d%thic(id, :, j) = vr%spt_d%thic(id, :, j) + out%grid%ts%thic(:, j)*shd%FRAC
+            if (flds%thic(j)%y%active .and. out_y) then
+                call update_output_variable(flds%thic(j)%y, out%grid%yly%thic(:, j)*shd%FRAC, t_y)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%thic(j)%y, 'THIC', 'Y', flds%dates%y, j)
+            end if
+            if (flds%thic(j)%m%active .and. out_m) then
+                call update_output_variable(flds%thic(j)%m, out%grid%mly%thic(:, j)*shd%FRAC, t_m)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%thic(j)%m, 'THIC', 'M', flds%dates%m, j)
+            end if
+            if (flds%thic(j)%d%active .and. out_d) then
+                call update_output_variable(flds%thic(j)%d, out%grid%dly%thic(:, j)*shd%FRAC, t_d)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%thic(j)%d, 'THIC', 'D', flds%dates%d, j)
+            end if
+            if (flds%thic(j)%h%active .and. out_h) then
+                call update_output_variable(flds%thic(j)%h, out%grid%hly%thic(:, j)*shd%FRAC, t_h)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%thic(j)%h, 'THIC', 'H', flds%dates%h, j)
+            end if
 
+            !> FZWS.
+            if (flds%fzws(j)%y%active .and. out_y) then
+                call update_output_variable(flds%fzws(j)%y, out%grid%yly%fzws(:, j)*shd%FRAC, t_y)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%fzws(j)%y, 'FRWS', 'Y', flds%dates%y, j)
+            end if
+            if (flds%fzws(j)%m%active .and. out_m) then
+                call update_output_variable(flds%fzws(j)%m, out%grid%mly%fzws(:, j)*shd%FRAC, t_m)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%fzws(j)%m, 'FRWS', 'M', flds%dates%m, j)
+            end if
+            if (flds%fzws(j)%d%active .and. out_d) then
+                call update_output_variable(flds%fzws(j)%d, out%grid%dly%fzws(:, j)*shd%FRAC, t_d)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%fzws(j)%d, 'FRWS', 'D', flds%dates%d, j)
+            end if
+            if (flds%fzws(j)%h%active .and. out_h) then
+                call update_output_variable(flds%fzws(j)%h, out%grid%hly%fzws(:, j)*shd%FRAC, t_h)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%fzws(j)%h, 'FRWS', 'H', flds%dates%h, j)
+            end if
+
+            !> GFLX.
+            if (flds%gflx(j)%y%active .and. out_y) then
+                call update_output_variable(flds%gflx(j)%y, out%grid%yly%gflx(:, j)*shd%FRAC, t_y)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%gflx(j)%y, 'GFLX', 'Y', flds%dates%y, j)
+            end if
+            if (flds%gflx(j)%m%active .and. out_m) then
+                call update_output_variable(flds%gflx(j)%m, out%grid%mly%gflx(:, j)*shd%FRAC, t_m)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%gflx(j)%m, 'GFLX', 'M', flds%dates%m, j)
+            end if
+            if (flds%gflx(j)%d%active .and. out_d) then
+                call update_output_variable(flds%gflx(j)%d, out%grid%dly%gflx(:, j)*shd%FRAC, t_d)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%gflx(j)%d, 'GFLX', 'D', flds%dates%d, j)
+            end if
+            if (flds%gflx(j)%h%active .and. out_h) then
+                call update_output_variable(flds%gflx(j)%h, out%grid%hly%gflx(:, j)*shd%FRAC, t_h)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%gflx(j)%h, 'GFLX', 'H', flds%dates%h, j)
+            end if
+
+            !> TBAR.
+            if (flds%tbar(j)%y%active .and. out_y) then
+                call update_output_variable(flds%tbar(j)%y, out%grid%yly%tbar(:, j), t_y)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%tbar(j)%y, 'TBAR', 'Y', flds%dates%y, j)
+            end if
+            if (flds%tbar(j)%m%active .and. out_m) then
+                call update_output_variable(flds%tbar(j)%m, out%grid%mly%tbar(:, j), t_m)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%tbar(j)%m, 'TBAR', 'M', flds%dates%m, j)
+            end if
+            if (flds%tbar(j)%d%active .and. out_d) then
+                call update_output_variable(flds%tbar(j)%d, out%grid%dly%tbar(:, j), t_d)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%tbar(j)%d, 'TBAR', 'D', flds%dates%d, j)
+            end if
+            if (flds%tbar(j)%h%active .and. out_h) then
+                call update_output_variable(flds%tbar(j)%h, out%grid%hly%tbar(:, j), t_h)
+                if (.not. flds%in_mem) call flush_output(fls, shd, flds%tbar(j)%h, 'TBAR', 'H', flds%dates%h, j)
+            end if
         end do
 
-        !> TempSoil; Temperature_soil_layers; TBAR.
-        if (allocated(vr%spt_y%tbar)) vr%spt_y%tbar(iy, :, :) = vr%spt_y%tbar(iy, :, :) + out%grid%ts%tbar
-        if (allocated(vr%spt_m%tbar)) vr%spt_m%tbar(im, :, :) = vr%spt_m%tbar(im, :, :) + out%grid%ts%tbar
-        if (allocated(vr%spt_s%tbar)) vr%spt_s%tbar(iss, :, :) = vr%spt_s%tbar(iss, :, :) + out%grid%ts%tbar
-        if (allocated(vr%spt_d%tbar)) vr%spt_d%tbar(id, :, :) = vr%spt_d%tbar(id, : , :) + out%grid%ts%tbar
+        !> ZOD, TMAX, TMIN, ALD.
 
-        !> DSTG; STG.
-        if (allocated(vr%wbt_y%dstg) .and. allocated(vr%wbt_y%stg)) then
-            vr%wbt_y%dstg(iy, :) = &
-                (out%grid%ts%rcan + out%grid%ts%sncan + out%grid%ts%sno + out%grid%ts%wsno + out%grid%ts%pndw + &
-                 sum(out%grid%ts%lqws, 2) + sum(out%grid%ts%fzws, 2) + &
-                 out%grid%ts%lzs + out%grid%ts%dzs)*shd%FRAC - vr%wbt_y%stg(iy, :)
-            vr%wbt_y%stg(iy, :) = vr%wbt_y%dstg(iy, :) + vr%wbt_y%stg(iy, :)
+        !> RFF.
+        if (flds%rff%y%active .and. out_y) then
+            call update_output_variable(flds%rff%y, out%grid%yly%rff*ic%dts, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rff%y, 'WF_RUNOFF', 'Y', flds%dates%y)
         end if
-        if (allocated(vr%wbt_m%dstg) .and. allocated(vr%wbt_m%stg)) then
-            vr%wbt_m%dstg(im, :) = &
-                (out%grid%ts%rcan + out%grid%ts%sncan + out%grid%ts%sno + out%grid%ts%wsno + out%grid%ts%pndw + &
-                 sum(out%grid%ts%lqws, 2) + sum(out%grid%ts%fzws, 2) + &
-                 out%grid%ts%lzs + out%grid%ts%dzs)*shd%FRAC - vr%wbt_m%stg(im, :)
-            vr%wbt_m%stg(im, :) = vr%wbt_m%dstg(im, :) + vr%wbt_m%stg(im, :)
+        if (flds%rff%m%active .and. out_m) then
+            call update_output_variable(flds%rff%m, out%grid%mly%rff*ic%dts, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rff%m, 'WF_RUNOFF', 'M', flds%dates%m)
         end if
-        if (allocated(vr%wbt_s%dstg) .and. allocated(vr%wbt_s%stg)) then
-            vr%wbt_s%dstg(iss, :) = &
-                (out%grid%ts%rcan + out%grid%ts%sncan + out%grid%ts%sno + out%grid%ts%wsno + out%grid%ts%pndw + &
-                 sum(out%grid%ts%lqws, 2) + sum(out%grid%ts%fzws, 2) + &
-                 out%grid%ts%lzs + out%grid%ts%dzs)*shd%FRAC - vr%wbt_s%stg(iss, :)
-            vr%wbt_s%stg(iss, :) = vr%wbt_s%dstg(iss, :) + vr%wbt_s%stg(iss, :)
+        if (flds%rff%d%active .and. out_d) then
+            call update_output_variable(flds%rff%d, out%grid%dly%rff*ic%dts, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rff%d, 'WF_RUNOFF', 'D', flds%dates%d)
         end if
-        if (allocated(vr%wbt_d%dstg) .and. allocated(vr%wbt_d%stg)) then
-            vr%wbt_d%dstg(id, :) = &
-                (out%grid%ts%rcan + out%grid%ts%sncan + out%grid%ts%sno + out%grid%ts%wsno + out%grid%ts%pndw + &
-                 sum(out%grid%ts%lqws, 2) + sum(out%grid%ts%fzws, 2) + &
-                 out%grid%ts%lzs + out%grid%ts%dzs)*shd%FRAC - vr%wbt_d%stg(id, :)
-            vr%wbt_d%stg(id, :) = vr%wbt_d%dstg(id, :) + vr%wbt_d%stg(id, :)
-        end if
-        if (allocated(out%grid%hly%stgw)) then
-!            vr%wbt_h%stg(ic%ts_hourly, :) = &
-            out%grid%hly%stgw = &
-                (out%grid%ts%rcan + out%grid%ts%sncan + out%grid%ts%sno + out%grid%ts%wsno + out%grid%ts%pndw + &
-                 sum(out%grid%ts%lqws, 2) + sum(out%grid%ts%fzws, 2) + &
-                 out%grid%ts%lzs + out%grid%ts%dzs)*shd%FRAC
-            call check_write_var_out(shd, ifo, 'STG', out%grid%hly%stgw, 882119, .true.)
+        if (flds%rff%h%active .and. out_h) then
+            call update_output_variable(flds%rff%h, out%grid%hly%rff*ic%dts, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rff%h, 'WF_RUNOFF', 'H', flds%dates%h)
         end if
 
-        if (allocated(TBAR_dly)) then
-
-            !> Accumulate TBAR at every time-step.
-            TBAR_dly(id, : , :) = TBAR_dly(id, : , :) + out%grid%ts%tbar
-
-            !> Last time-step of the day.
-            if (ic%now%day /= ic%next%day) then
-                TBAR_dly(id, : , :) = TBAR_dly(id, : , :)/ic%ts_daily !daily average temperature
-                call active_layer_depth(TBAR_dly(id, :, :), shd%lc%sl%ZBOT, ALD_dly(id, :), shd%lc%IGND, shd%NA, 1, shd%NA)
-                ALD_ann(iy, :) = max(ALD_ann(iy, :), ALD_dly(id, :))
-                TMAX_ann(iy, :, :) = max(TMAX_ann(iy, :, :), TBAR_dly(id, :, :))
-                TMIN_ann(iy, :, :) = min(TMIN_ann(iy, :, :), TBAR_dly(id, :, :))
-            end if
+        !> RCHG.
+        if (flds%rchg%y%active .and. out_y) then
+            call update_output_variable(flds%rchg%y, out%grid%yly%rchg*ic%dts, t_y)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rchg%y, 'WF_RECHARGE', 'Y', flds%dates%y)
         end if
-
-        !> WR_RUNOFF.
-        if (allocated(out%grid%hly%rof)) then
-!            vr%wroutt_h%rof(ic%ts_hourly, :) = out%grid%ts%rff*ic%dts
-            call check_write_var_out(shd, ifo, 'WR_RUNOFF', out%grid%hly%rff*ic%dts, 882120, .true.)
+        if (flds%rchg%m%active .and. out_m) then
+            call update_output_variable(flds%rchg%m, out%grid%mly%rchg*ic%dts, t_m)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rchg%m, 'WF_RECHARGE', 'M', flds%dates%m)
         end if
-
-        !> WR_RECHARGE.
-        if (allocated(out%grid%hly%rchg)) then
-!            vr%wroutt_h%rchg(ic%ts_hourly, :) = out%grid%ts%rchg*ic%dts
-            call check_write_var_out(shd, ifo, 'WR_RECHARGE', out%grid%hly%rchg*ic%dts, 882121, .true.)
+        if (flds%rchg%d%active .and. out_d) then
+            call update_output_variable(flds%rchg%d, out%grid%dly%rchg*ic%dts, t_d)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rchg%d, 'WF_RECHARGE', 'D', flds%dates%d)
+        end if
+        if (flds%rchg%h%active .and. out_h) then
+            call update_output_variable(flds%rchg%h, out%grid%hly%rchg*ic%dts, t_h)
+            if (.not. flds%in_mem) call flush_output(fls, shd, flds%rchg%h, 'WF_RECHARGE', 'H', flds%dates%h)
         end if
 
     end subroutine
 
-    subroutine Write_Outputs(shd, fls, ts, ifo, vr)
+    subroutine write_seq(fls, shd, file, field_name, dates, file_fmt)
 
-        !>------------------------------------------------------------------------------
-        !>  Description: Loop over the variablaes to write
-        !>  output balance's fields in selected format
-        !>------------------------------------------------------------------------------
-
-        use permafrost_active_layer
-
-        !Inputs
-        type(ShedGridParams), intent(in) :: shd
+        !> Input variables.
         type(fl_ids), intent(in) :: fls
-        type(dates_model), intent(in) :: ts
-        type(info_out), intent(in) :: ifo
-        type(out_flds), intent(in) :: vr
-
-        !Internals
-        integer k, j, i
-        character(len = 20) vId
-
-        do i = 1, ifo%nr_out
-
-            vId = trim(adjustl(ifo%var_out(i)%name))
-
-            select case (vId)
-
-                case ('FSDOWN')
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%fsin, 882101, .false.)
-
-                case ('FSVH')
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%fsin/2.0, 882102, .false.)
-
-                case ('FSIH')
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%fsin/2.0, 882103, .false.)
-
-                case ('FDL')
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%flin, 882104, .false.)
-
-                case ('UL')
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%uv, 882105, .false.)
-
-                case ('TA')
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%ta, 882106, .false.)
-
-                case ('QA')
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%qa, 882107, .false.)
-
-                case ('PRES')
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%pres, 882108, .false.)
-
-                case ('PRE')
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%pre, 882109, .false.)
-
-                case ('PREC', 'Rainfall', 'Rain', 'Precipitation')
-                    if (ifo%var_out(i)%out_y) call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    if (ifo%var_out(i)%out_m) call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls)
-                    if (ifo%var_out(i)%out_s) call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls)
-                    if (ifo%var_out(i)%out_d) call WriteFields_i(vr, ts, ifo, i, 'D', shd, ts%nr_days, fls)
-                    if (ifo%var_out(i)%out_h) then
-                        call check_write_var_out(shd, ifo, vId, out%grid%hly%pre*shd%FRAC*ic%dts, 882122, .false.)
-                    end if
-
-                case ('EVAP', 'Evapotranspiration')
-                    if (ifo%var_out(i)%out_y) call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    if (ifo%var_out(i)%out_m) call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls)
-                    if (ifo%var_out(i)%out_s) call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls)
-                    if (ifo%var_out(i)%out_d) call WriteFields_i(vr, ts, ifo, i, 'D', shd, ts%nr_days, fls)
-                    if (ifo%var_out(i)%out_h) then
-                        call check_write_var_out(shd, ifo, vId, out%grid%hly%evap*shd%FRAC*ic%dts, 882110, .false.)
-                    end if
-
-                case ('Runoff', 'ROF')
-                    if (ifo%var_out(i)%out_y) call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    if (ifo%var_out(i)%out_m) call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls)
-                    if (ifo%var_out(i)%out_s) call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls)
-                    if (ifo%var_out(i)%out_d) call WriteFields_i(vr, ts, ifo, i, 'D', shd, ts%nr_days, fls)
-                    if (ifo%var_out(i)%out_h) then
-                        call check_write_var_out(shd, ifo, vId, out%grid%hly%rof*shd%FRAC*ic%dts, 882111, .false.)
-                    end if
-
-                case ('DeltaStorage', 'DSTG')
-                    if (ifo%var_out(i)%out_y) call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    if (ifo%var_out(i)%out_m) call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls)
-                    if (ifo%var_out(i)%out_s) call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls)
-                    if (ifo%var_out(i)%out_d) call WriteFields_i(vr, ts, ifo, i, 'D', shd, ts%nr_days, fls)
-
-                case ('TempSoil', 'Temperature_soil_layers', 'TBAR')
-                    if (ifo%var_out(i)%out_y) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'D', shd, ts%nr_days, fls, j)
-                        end do
-                    end if
-
-                case ('ALD')
-                    if (ifo%var_out(i)%out_y) then
-                        call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    end if
-                case ('ZOD')
-                    if (ifo%var_out(i)%out_y) then
-                        do j = 1, size(ZOD_TTOL)
-                            do k = 1, ts%nyears
-                                call zero_oscillation_depth( &
-                                    TMAX_ann(k, :, :), TMIN_ann(k, :, :), shd%lc%sl%ZBOT, ZOD_TTOL(j), &
-                                    ZOD_ann(k, :, j), &
-                                    shd%lc%IGND, shd%NA, 1, shd%NA)
-                            end do
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
-                        end do
-                    end if
-                case ('TMAX')
-                    if (ifo%var_out(i)%out_y) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
-                        end do
-                    end if
-                case ('TMIN')
-                    if (ifo%var_out(i)%out_y) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
-                        end do
-                    end if
-
-                case ('THLQ')
-                    if (ifo%var_out(i)%out_y) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'D', shd, ts%nr_days, fls, j)
-                        end do
-                    end if
-
-                case ('THIC')
-                    if (ifo%var_out(i)%out_y) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'D', shd, ts%nr_days, fls, j)
-                        end do
-                    end if
-
-                case ('GFLX', 'HeatConduction')
-                    if (ifo%var_out(i)%out_y) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'D', shd, ts%nr_days, fls, j)
-                        end do
-                    end if
-
-                case ('HFS','SensibleHeat')
-                    if (ifo%var_out(i)%out_y) call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    if (ifo%var_out(i)%out_m) call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls)
-                    if (ifo%var_out(i)%out_s) call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls)
-                    if (ifo%var_out(i)%out_d) call WriteFields_i(vr, ts, ifo, i, 'D', shd, ts%nr_days, fls)
-
-                case ('QEVP','LatentHeat')
-                    if (ifo%var_out(i)%out_y) call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    if (ifo%var_out(i)%out_m) call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls)
-                    if (ifo%var_out(i)%out_s) call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls)
-                    if (ifo%var_out(i)%out_d) call WriteFields_i(vr, ts, ifo, i, 'D', shd, ts%nr_days, fls)
-
-                case ('LQWS')
-                    if (ifo%var_out(i)%out_y) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'D', shd, ts%nr_days, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-                        do j = 1, shd%lc%IGND
-                            call check_write_var_out(shd, ifo, vId, &
-                                out%grid%hly%lqws(:, j)*shd%FRAC, (882112 + (100000000*j)), .false., j)
-                        end do
-                    end if
-
-                case ('FRWS')
-                    if (ifo%var_out(i)%out_y) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_m) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_s) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_d) then
-                        do j = 1, shd%lc%IGND
-                            call WriteFields_i(vr, ts, ifo, i, 'D', shd, ts%nr_days, fls, j)
-                        end do
-                    end if
-                    if (ifo%var_out(i)%out_h) then
-                        do j = 1, shd%lc%IGND
-                            call check_write_var_out(shd, ifo, vId, &
-                                out%grid%hly%fzws(:, j)*shd%FRAC, (882113 + (100000000*j)), .false., j)
-                        end do
-                    end if
-
-                case ('RCAN')
-                    if (ifo%var_out(i)%out_y) call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    if (ifo%var_out(i)%out_m) call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls)
-                    if (ifo%var_out(i)%out_s) call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls)
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%rcan*shd%FRAC, 882114, .false.)
-
-                case ('SCAN', 'SNCAN')
-                    if (ifo%var_out(i)%out_y) call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    if (ifo%var_out(i)%out_m) call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls)
-                    if (ifo%var_out(i)%out_s) call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls)
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%sncan*shd%FRAC, 882115, .false.)
-
-                case ('PNDW')
-                    if (ifo%var_out(i)%out_y) call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    if (ifo%var_out(i)%out_m) call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls)
-                    if (ifo%var_out(i)%out_s) call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls)
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%pndw*shd%FRAC, 882116, .false.)
-
-                case ('SNO')
-                    if (ifo%var_out(i)%out_y) call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    if (ifo%var_out(i)%out_m) call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls)
-                    if (ifo%var_out(i)%out_s) call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls)
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%sno*shd%FRAC, 882117, .false.)
-
-                case ('WSNO')
-                    if (ifo%var_out(i)%out_y) call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    if (ifo%var_out(i)%out_m) call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls)
-                    if (ifo%var_out(i)%out_s) call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls)
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%wsno*shd%FRAC, 882118, .false.)
-
-                case ('STG')
-                    if (ifo%var_out(i)%out_y) call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-                    if (ifo%var_out(i)%out_m) call WriteFields_i(vr, ts, ifo, i, 'M', shd, ts%nmonths, fls)
-                    if (ifo%var_out(i)%out_s) call WriteFields_i(vr, ts, ifo, i, 'S', shd, ts%nseason, fls)
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%stgw, 882119, .false.)
-
-                case ('WR_RUNOFF')
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%rff*ic%dts, 882120, .false.)
-
-                case ('WR_RECHARGE')
-                    if (ifo%var_out(i)%out_h) call check_write_var_out(shd, ifo, vId, out%grid%hly%rchg*ic%dts, 882121, .false.)
-
-                end select
-            end do
-
-    end subroutine
-
-    subroutine WriteFields_i(vr, ts, ifo, indx, freq, shd, nt, fls, igndx)
-
-        !>------------------------------------------------------------------------------
-        !>  Description: Loop over the variables to write
-        !>  output balance's fields in selected format
-        !>------------------------------------------------------------------------------
-
-        !Inputs
-        type(out_flds), intent(in) :: vr
-        type(dates_model), intent(in) :: ts
-        type(info_out), intent(in) :: ifo
         type(ShedGridParams), intent(in) :: shd
-        type (fl_ids), intent(in) :: fls
-
-        integer, intent(in) :: indx
-        integer, intent(in) :: nt
-        character(len = *), intent(in) :: freq
-
-        integer, intent(in), optional :: igndx
-
-        !Internals
-        integer i, nr
-        character(len = 20) vId, tfunc
-        integer, dimension(:), allocatable :: days
-        character(len = 10) freq2, st
-        real :: fld(shd%NA, nt)
-
-        integer, dimension(:, :), allocatable :: dates
-
-        vId = trim(adjustl(ifo%var_out(indx)%out_fmt))
-        tfunc = trim(adjustl(ifo%var_out(indx)%out_acc))
-
-        select case (ifo%var_out(indx)%name)
-
-            case ('PREC', 'Rainfall', 'Rain', 'Precipitation')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_y%pre(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_m%pre(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_s%pre(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'D') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_d%pre(i, :)
-                    end do
-                end if
-
-            case ('EVAP', 'Evapotranspiration')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_y%evap(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_m%evap(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_s%evap(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'D') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_d%evap(i, :)
-                    end do
-                end if
-
-            case ('Runoff', 'ROF')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_y%rof(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_m%rof(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_s%rof(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'D') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_d%rof(i, :)
-                    end do
-                end if
-
-            case ('DeltaStorage', 'DSTG')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_y%dstg(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_m%dstg(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_s%dstg(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'D') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_d%dstg(i, :)
-                    end do
-                end if
-
-            case ('TempSoil', 'Temperature_soil_layers', 'TBAR')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%spt_y%tbar(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%spt_m%tbar(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%spt_s%tbar(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'D') then
-                    do i = 1, nt
-                        fld(:, i) = vr%spt_d%tbar(i, :, igndx)
-                    end do
-                end if
-
-            case ('ALD')
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = ALD_ann(i, :)
-                    end do
-                end if
-            case ('ZOD')
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = ZOD_ann(i, :, igndx)
-                    end do
-                end if
-            case ('TMAX')
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = TMAX_ann(i, :, igndx)
-                    end do
-                end if
-            case ('TMIN')
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = TMIN_ann(i, :, igndx)
-                    end do
-                end if
-
-            case ('THLQ')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%spt_y%thlq(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%spt_m%thlq(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%spt_s%thlq(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'D') then
-                    do i = 1, nt
-                        fld(:, i) = vr%spt_d%thlq(i, :, igndx)
-                    end do
-                end if
-
-            case ('THIC')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%spt_y%thic(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%spt_m%thic(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%spt_s%thic(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'D') then
-                    do i = 1, nt
-                        fld(:, i) = vr%spt_d%thic(i, :, igndx)
-                    end do
-                end if
-
-            case ('GFLX')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%engt_y%gflx(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%engt_m%gflx(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%engt_s%gflx(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'D') then
-                    do i = 1, nt
-                        fld(:, i) = vr%engt_d%gflx(i, :, igndx)
-                    end do
-                end if
-
-            case ('HFS')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%engt_y%hfs(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%engt_m%hfs(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%engt_s%hfs(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'D') then
-                    do i = 1, nt
-                        fld(:, i) = vr%engt_d%hfs(i, :)
-                    end do
-                end if
-
-            case ('QEVP')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%engt_y%qevp(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%engt_m%qevp(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%engt_s%qevp(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'D') then
-                    do i = 1, nt
-                        fld(:, i) = vr%engt_d%qevp(i, :)
-                    end do
-                end if
-
-            case ('LQWS')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_y%lqws(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_m%lqws(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_s%lqws(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'D') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_d%lqws(i, :, igndx)
-                    end do
-                end if
-
-            case ('FRWS')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_y%frws(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_m%frws(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_s%frws(i, :, igndx)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'D') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_d%frws(i, :, igndx)
-                    end do
-                end if
-
-            case ('RCAN')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_y%rcan(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_m%rcan(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_s%rcan(i, :)
-                    end do
-                end if
-
-            case ('SCAN', 'SNCAN')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_y%sncan(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_m%sncan(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_s%sncan(i, :)
-                    end do
-                end if
-
-            case ('PNDW')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_y%pndw(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_m%pndw(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_s%pndw(i, :)
-                    end do
-                end if
-
-            case ('SNO')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_y%sno(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_m%sno(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_s%sno(i, :)
-                    end do
-                end if
-
-            case ('WSNO')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_y%wsno(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_m%wsno(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_s%wsno(i, :)
-                    end do
-                end if
-
-            case ('STG')
-
-                if (trim(adjustl(freq)) == 'Y') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_y%stg(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'M') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_m%stg(i, :)
-                    end do
-                end if
-
-                if (trim(adjustl(freq)) == 'S') then
-                    do i = 1, nt
-                        fld(:, i) = vr%wbt_s%stg(i, :)
-                    end do
-                end if
-
-            case default
-                print *, "Output of variable '" // trim(adjustl(ifo%var_out(indx)%name)) // "' is not implemented yet."
-
-        end select
-
-        if (tfunc == 'avg') then
-
-            allocate(days(nt))
-
-            select case (freq)
-
-                case ('Y')
-                    days = (86400/ic%dts)*ts%daysINyears
-
-                case ('M')
-                    days = (86400/ic%dts)*ts%daysINmonths
-
-                case ('S')
-                    days = (86400/ic%dts)*ts%daysINseasons
-
-                case default
-                    days = (86400/ic%dts)
-
-            end select
-
-            do i = 1, nt
-                fld(:, i) = fld(:, i)/days(i)
-            end do
-
-            deallocate(days)
-
-        end if
-
-        select case (freq)
-
-            case ('Y')
-                allocate(dates(ts%nyears, 2))
-                dates(:, 1) = ts%years
-                dates(:, 2) = 1
-
-            case ('M')
-                allocate(dates(ts%nmonths, 2))
-                dates = ts%mnthyears
-
-            case ('S')
-                allocate(dates(ts%nseason, 2))
-                do i = 1, 12
-                    dates(i, 1) = ts%years(1)
-                    dates(i, 2) = i
-                end do
-
-            case ('D')
-                allocate(dates(ts%nr_days, 3))
-                do i = 1, ts%nr_days
-                    dates(i, 1) = ts%dates(i, 1)
-                    dates(i, 2) = ts%dates(i, 2)
-                    dates(i, 3) = ts%dates(i, 3)
-                end do
-
-        end select
-
-        if (present(igndx)) then
-            write(st, '(i10)') igndx
-            freq2 = freq // '_' // trim(adjustl(st))
-        else
-            freq2 = freq
-        end if
-        select case (vId)
-
-            case('seq', 'binseq')
-                call WriteSeq(fld, indx, ifo, freq2, dates)
-
-            case('r2c')
-                call WriteR2C(fld, indx, ifo, shd, freq2, dates)
-
-            case('tsi')
-                call WriteTsi(fld, indx, ifo, freq2, dates, fls)
-
-            case ('txt')
-                call WriteTxt(fld, indx, ifo, shd, freq2, dates)
-
-            case ('csv')
-                call WriteCSV(fld, indx, ifo, shd, freq2, dates)
-
-            case default
-                print *, "Output as file format '" // trim(adjustl(vId)) // "' is not implemented yet."
-
-        end select
-
-        if (allocated(dates)) deallocate(dates)
-
-    end subroutine
-
-    subroutine WriteTsi(fld, indx, info, freq, dates, fls)
-
-        !Inputs
-        real fld(:, :)
-        integer indx
-        character(len = *), intent(in) :: freq
-        integer dates(:, :)
-        type(info_out) :: info
-        type(fl_ids) :: fls
-
-        !Internal
-        character(len = 450) flOut
-        integer ios, i, j
-        integer nt, unitfl
-
-        if (len_trim(adjustl(fls%fl(mfk%out_response)%fn)) > 0) then
-            flOut = trim(adjustl(fls%pthOut)) // &
-                    trim(adjustl(info%var_out(indx)%name)) // &
-                    '_' // trim(adjustl(freq)) // '_' // &
-                    trim(adjustl(fls%fl(mfk%out_response)%fn)) // '.ts'
-        else
-            flOut = trim(adjustl(info%pthOut)) // &
-                    trim(adjustl(info%var_out(indx)%name)) // &
-                    '_' // trim(adjustl(freq)) // '.ts'
-        end if
-
-        unitfl = fls%fl(mfk%out_response)%iun
-        open(unit = unitfl, file = flOut, status = 'replace', &
-             form = 'formatted', action = 'write', &
-             iostat = ios)
-
-        nt = size(dates(:, 1))
-
-        do i = 1, nt
-            write(unitfl, *) (fld(info%var_out(indx)%i_grds(j), i), j = 1, size(info%var_out(indx)%i_grds))
-        end do
-
-        close(unitfl)
-
-    end subroutine
-
-    subroutine WriteSeq(fld, indx, info, freq, dates)
-
-        !>------------------------------------------------------------------------------
-        !>  Description: Write bin sequential file
-        !>------------------------------------------------------------------------------
-
-        !Inputs
-        real fld(:, :)
-        integer indx
-        character(len = *), intent(in) :: freq
-        integer dates(:, :)
-        type(info_out) :: info
-
-        !Internal
-        character(len = 450) flOut
-        integer ios, i
-        integer nt
-
-        flOut = trim(adjustl(info%pthOut)) // &
-                trim(adjustl(info%var_out(indx)%name)) // &
-                '_' // trim(adjustl(freq)) // '.seq'
-
-        open(unit = 882, file = flOut, status = 'replace', &
-             form = 'unformatted', action = 'write', access = 'sequential', &
-             iostat = ios)
-
-        nt = size(dates(:, 1))
-
-        do i = 1, nt
-            write(882) i
-            write(882) fld(:, i)
-        end do
-
-        close(882)
-
-    end subroutine
-
-    subroutine WriteR2C(fld, indx, info, shd, freq, dates, file_unit, keep_file_open, frame_no)
-
-        !>------------------------------------------------------------------------------
-        !>  Description: Write r2c file
-        !>------------------------------------------------------------------------------
-
-        !Inputs
-        real fld(:, :)
-        integer indx
-        type(info_out) :: info
-        type(ShedGridParams), intent(in) :: shd
-        character(len = *), intent(in) :: freq
-        integer, allocatable :: dates(:, :)
-        integer, optional :: file_unit
-        logical, optional :: keep_file_open
-        integer, optional :: frame_no
-
-        !Internal
-        character(len = 450) flOut
-        integer ios, i, un, nfr
-        integer na1, nt, j, t, k
-        real, dimension(:, :), allocatable :: data_aux
-        character(len = 10) ctime
-        character(len = 8) cday
-        logical opened_status, close_file
-
-        flOut = trim(adjustl(info%pthOut)) // trim(adjustl(info%var_out(indx)%name)) // '_' // trim(adjustl(freq)) // '.r2c'
-
-        if (present(file_unit)) then
-            un = file_unit
-        else
-            un = 882
-        end if
-
-        inquire(un, opened = opened_status)
-
+        type(output_file), intent(in) :: file
+        character(len = *), intent(in) :: field_name
+        integer, intent(in) :: dates(:, :)
+        type(output_file_format), intent(in) :: file_fmt
+
+        !> Local variables.
+        integer iun, t, ierr
+        logical opened_status
+
+        !> Check if the file is opened.
+        iun = file_fmt%iun
+        inquire(iun, opened = opened_status)
+
+        !> Open the file (if not opened).
         if (.not. opened_status) then
+            open( &
+                iun, file = trim(adjustl(fls%GENDIR_OUT)) // '/' // trim(adjustl(field_name)) // '.seq', &
+                status = 'replace', form = 'unformatted', action = 'write', access = 'sequential', &
+                iostat = ierr)
+        end if
 
-            open(un, file = trim(adjustl(flOut)), status = 'replace', &
-                 form = 'formatted', action = 'write', &
-                 iostat = ios)
+        !> Write series.
+        do t = 1, size(file%dat, 2)
 
-            write(un, 3005) '########################################'
-            write(un, 3005) ':FileType r2c  ASCII  EnSim 1.0         '
-            write(un, 3005) '#                                       '
-            write(un, 3005) '# DataType               2D Rect Cell   '
-            write(un, 3005) '#                                       '
-            write(un, 3005) ':Application               MeshOutput   '
-            write(un, 3005) ':Version                 1.0.00         '
-            write(un, 3005) ':WrittenBy          MESH_DRIVER         '
-            call date_and_time(cday, ctime)
-            write(un, 3010) ':CreationDate       ', cday(1:4), cday(5:6), cday(7:8), ctime(1:2), ctime(3:4)
-            write(un, 3005) '#                                       '
-            write(un, 3005) '#---------------------------------------'
-            write(un, 3005) '#                                       '
-            write(un, 3020) ':Name               ', info%var_out(indx)%name
-            write(un, 3005) '#                                       '
-            write(un, 3004) ':Projection         ', shd%CoordSys%Proj
+            !> Write frame number (N) and time-stamp.
+            !> Extended format for 'seq': N N yyyy MM dd HH mm ss SSS
+            write(iun) dates(1, t), dates(1, t), dates(2, t), dates(3, t), dates(4, t), dates(5, t), dates(6, t)
+
+            !> Write data.
+            write(iun) file%dat(:, t)
+        end do
+
+    end subroutine
+
+    subroutine write_r2c(fls, shd, file, field_name, dates, file_fmt)
+
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        type(output_file), intent(in) :: file
+        character(len = *), intent(in) :: field_name
+        integer, intent(in) :: dates(:, :)
+        type(output_file_format), intent(in) :: file_fmt
+
+        !> Local variables.
+        integer iun, t, j, i, ierr
+        real, dimension(shd%yCount, shd%xCount) :: data_aux
+        logical opened_status
+        character(len = 10) str10
+        character(len = 8) str8
+
+        !> Check if the file is opened.
+        iun = file_fmt%iun
+        inquire(iun, opened = opened_status)
+
+        !> Open the file (if not opened) and write 'r2c' header.
+        if (.not. opened_status) then
+            open( &
+                iun, file = trim(adjustl(fls%GENDIR_OUT)) // '/' // trim(adjustl(field_name)) // '.r2c', &
+                status = 'replace', form = 'formatted', action = 'write', &
+                iostat = ierr)
+            write(iun, 3005) '########################################'
+            write(iun, 3005) ':FileType r2c  ASCII  EnSim 1.0         '
+            write(iun, 3005) '#                                       '
+            write(iun, 3005) '# DataType               2D Rect Cell   '
+            write(iun, 3005) '#                                       '
+            write(iun, 3005) ':Application               MeshOutput   '
+            write(iun, 3005) ':Version                 1.0.00         '
+            write(iun, 3005) ':WrittenBy          MESH_DRIVER         '
+            call date_and_time(str8, str10)
+            write(iun, 3010) ':CreationDate       ', str8(1:4), str8(5:6), str8(7:8), str10(1:2), str10(3:4)
+            write(iun, 3005) '#                                       '
+            write(iun, 3005) '#---------------------------------------'
+            write(iun, 3005) '#                                       '
+            i = len_trim(field_name)
+            if (index(field_name, '_') > 1) i = index(field_name, '_') - 1
+            write(iun, 3002) ':Name               ', field_name(1:i)
+            write(iun, 3005) '#                                       '
+            write(iun, 3004) ':Projection         ', shd%CoordSys%Proj
             if (shd%CoordSys%Proj == 'LATLONG   ') &
-                write(un, 3004) ':Ellipsoid          ', shd%CoordSys%Ellips
+                write(iun, 3004) ':Ellipsoid          ', shd%CoordSys%Ellips
             if (shd%CoordSys%Proj == 'UTM       ') then
-                write(un, 3004) ':Ellipsoid          ', shd%CoordSys%Ellips
-                write(un, 3004) ':Zone               ', shd%CoordSys%Zone
+                write(iun, 3004) ':Ellipsoid          ', shd%CoordSys%Ellips
+                write(iun, 3004) ':Zone               ', shd%CoordSys%Zone
             end if
-            write(un, 3005) '#                                       '
-            write(un, 3003) ':xOrigin            ', shd%xOrigin
-            write(un, 3003) ':yOrigin            ', shd%yOrigin
-            write(un, 3005) '#                                       '
-            write(un, 3005) ':SourceFile            MESH_DRIVER      '
-            write(un, 3005) '#                                       '
-            write(un, 3020) ':AttributeName      ', info%var_out(indx)%name
-            write(un, 3020) ':AttributeUnits     ', ''
-            write(un, 3005) '#                                       '
-            write(un, 3001) ':xCount             ', shd%xCount
-            write(un, 3001) ':yCount             ', shd%yCount
-            write(un, 3003) ':xDelta             ', shd%xDelta
-            write(un, 3003) ':yDelta             ', shd%yDelta
-            write(un, 3005) '#                                       '
-            write(un, 3005) '#                                       '
-            write(un, 3005) ':endHeader                              '
-
+            write(iun, 3005) '#                                       '
+            write(iun, 3003) ':xOrigin            ', shd%xOrigin
+            write(iun, 3003) ':yOrigin            ', shd%yOrigin
+            write(iun, 3005) '#                                       '
+            write(iun, 3005) ':SourceFile            MESH_DRIVER      '
+            write(iun, 3005) '#                                       '
+            write(iun, 3002) ':AttributeName      ', field_name(1:i)
+            write(iun, 3002) ':AttributeUnits     ', ''
+            write(iun, 3005) '#                                       '
+            write(iun, 3001) ':xCount             ', shd%xCount
+            write(iun, 3001) ':yCount             ', shd%yCount
+            write(iun, 3003) ':xDelta             ', shd%xDelta
+            write(iun, 3003) ':yDelta             ', shd%yDelta
+            write(iun, 3005) '#                                       '
+            write(iun, 3005) '#                                       '
+            write(iun, 3005) ':endHeader                              '
         end if
 
-        if (allocated(dates)) then
+        !> Write series.
+        do t = 1, size(file%dat, 2)
 
-            nt = size(dates(:, 1))
-
-            do t = 1, nt
-
-                if (present(frame_no)) then
-                    nfr = frame_no
-                else
-                    nfr = t
-                end if
-
-                if (size(dates, 2) == 5) then
-                    write(un, 9000) ':Frame', nfr, nfr, dates(t, 1), dates(t, 2), dates(t, 3), dates(t, 5), 0
-                elseif (size(dates, 2) == 3) then
-                    write(un, 9000) ':Frame', nfr, nfr, dates(t, 1), dates(t, 2), dates(t, 3), 0, 0
-                else
-                    write(un, 9000) ':Frame', nfr, nfr, dates(t, 1), dates(t, 2), 1, 0, 0
-                end if
-
-                allocate(data_aux(shd%yCount, shd%xCount))
-                data_aux = 0.0
-
-                do k = 1, shd%NA
-                    data_aux(shd%yyy(k), shd%xxx(k)) = fld(k, t)
-                end do
-
-                do j = 1, shd%yCount
-                    write(un, '(999(e12.6,2x))') (data_aux(j, i), i = 1, shd%xCount)
-                end do
-
-                write(un, '(a)') ':EndFrame'
-
-                deallocate(data_aux)
-
+            !> Transfer data to temporary variable.
+            data_aux = 0.0
+            do i = 1, shd%NA
+                data_aux(shd%yyy(i), shd%xxx(i)) = file%dat(i, t)
             end do
 
-        end if
+            !> Write frame number and time-stamp.
+            !> Standard format for 'r2c': "yyyy/MM/dd HH:mm:ss.SSS"
+            write(iun, 9000) dates(1, t), dates(1, t), dates(2, t), dates(3, t), dates(4, t), dates(5, t), dates(6, t)
 
-        if (present(keep_file_open)) then
-            close_file = .not. keep_file_open
-        else
-            close_file = .true.
-        end if
+            !> Write data.
+            do j = 1, shd%yCount
+                write(iun, 9001) (data_aux(j, i), i = 1, shd%xCount)
+            end do
 
-        if (close_file) close(un)
+            !> Write end frame.
+            write(iun, 9002)
+        end do
 
-3000    format(a10, i5)
-3001    format(a20, i16)
-3002    format(2a20)
-3003    format(a20, f16.7)
-3004    format(a20, a10, 2x, a10)
-3005    format(a40)
-3006    format(a3, a10)
-3007    format(a14, i5, a6, i5)
+3001    format((a), i8)
+3002    format((a), 3x, (a))
+3003    format((a), f16.7)
+3004    format((a), 1x, (a))
+3005    format((a))
 3010    format(a20, a4, '-', a2, '-', a2, 2x, a2, ':', a2)
-3012    format(a9)
-3020    format(a20, a40)
-9000    format(a6, 2i10, 3x, """", i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ":00.000""")
+9000    format(':Frame', 2i10, 3x, """", i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ":00.000""")
+9001    format(999(e12.6, ' '))
+9002    format(':EndFrame')
 
     end subroutine
 
-    !> Subroute: WriteTxt
-    !> Write the output to file in text format.
-    subroutine WriteTxt(fld, indx, info, shd, freq, dates, file_unit, keep_file_open, frame_no)
+    subroutine write_txt(fls, shd, file, field_name, dates, file_fmt)
 
-        !Inputs
-        real fld(:, :)
-        integer indx
-        type(info_out) :: info
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        character(len = *), intent(in) :: freq
-        integer, allocatable :: dates(:, :)
-        integer, optional :: file_unit
-        logical, optional :: keep_file_open
-        integer, optional :: frame_no
+        type(output_file), intent(in) :: file
+        character(len = *), intent(in) :: field_name
+        integer, intent(in) :: dates(:, :)
+        type(output_file_format), intent(in) :: file_fmt
 
-        !Internal
-        character(len = 450) flOut
-        integer ios, i, un, nfr
-        integer na1, nt, j, t, k
-        real, dimension(:, :), allocatable :: data_aux
-        character(len = 10) ctime
-        character(len = 8) cday
-        logical opened_status, close_file
+        !> Local variables.
+        integer iun, t, j, i, ierr
+        real, dimension(shd%yCount, shd%xCount) :: data_aux
+        logical opened_status
+        character(len = 25) str
 
-        flOut = trim(adjustl(info%pthOut)) // trim(adjustl(info%var_out(indx)%name)) // '_' // trim(adjustl(freq)) // '.txt'
+        !> Check if the file is opened.
+        iun = file_fmt%iun
+        inquire(iun, opened = opened_status)
 
-        if (present(file_unit)) then
-            un = file_unit
-        else
-            un = 882
-        end if
-
-        inquire(un, opened = opened_status)
+        !> Open the file (if not opened).
         if (.not. opened_status) then
-            open(un, file = trim(adjustl(flOut)), status = 'replace', form = 'formatted', action = 'write')
-        end if !(.not. opened_status) then
-
-        if (allocated(dates)) then
-
-            do t = 1, size(dates(:, 1))
-
-                if (info%var_out(indx)%opt_printdate) then
-                    if (size(dates, 2) == 5) then
-                        write(un, 9000, advance = 'no') dates(t, 1), dates(t, 2), dates(t, 3), dates(t, 5), 0
-                    elseif (size(dates, 2) == 3) then
-                        write(un, 9000, advance = 'no') dates(t, 1), dates(t, 2), dates(t, 3), 0, 0
-                    else
-                        write(un, 9000, advance = 'no') dates(t, 1), dates(t, 2), 1, 0, 0
-                    end if
-                end if
-
-                select case (info%var_out(indx)%out_seq)
-
-                    case ('gridorder')
-                        write(un, 9001) fld(:, t)
-
-                    case ('shedorder')
-                        allocate(data_aux(shd%yCount, shd%xCount))
-                        data_aux = 0.0
-                        do k = 1, shd%NA
-                            data_aux(shd%yyy(k), shd%xxx(k)) = fld(k, t)
-                        end do
-                        do j = 1, (shd%yCount - 1)
-                            write(un, 9001, advance = 'no') (data_aux(j, i), i = 1, shd%xCount)
-                        end do
-                        write(un, 9001) (data_aux(shd%yCount, i), i = 1, shd%xCount)
-                        deallocate(data_aux)
-
-                end select
-
-            end do
-
+            open( &
+                iun, file = trim(adjustl(fls%GENDIR_OUT)) // '/' // trim(adjustl(field_name)) // '.txt', &
+                status = 'replace', form = 'formatted', action = 'write', &
+                iostat = ierr)
         end if
 
-        if (present(keep_file_open)) then
-            close_file = .not. keep_file_open
-        else
-            close_file = .true.
-        end if
+        !> Assign the delimiter.
+        select case (file%delim)
+            case (',')
+                write(str, '(a)') "(9999(e12.6, ','))"
+            case default
+                write(str, '(a)') "(9999(e12.6, ' '))"
+        end select
 
-        if (close_file) close(un)
+        !> Write series.
+        do t = 1, size(file%dat, 2)
+
+            !> Lead line with date (optional).
+            if (file%print_date) then
+                write(iun, 9000, advance = 'no') dates(2, t), dates(3, t), dates(4, t), dates(5, t), dates(6, t)
+            end if
+
+            !> Determine order of cells for output.
+            select case (file%order)
+
+                !> Write for specific grids.
+                case ('tsi')
+                    write(iun, str) (file%dat(file%grids(i), t), i = 1, size(file%grids))
+
+                !> Write by order of 'r2c' grid (e.g., by shd%yCount, then by shd%xCount in a single line).
+                case ('shedorder')
+
+                    !> Transfer data to temporary array.
+                    data_aux = 0.0
+                    do i = 1, shd%NA
+                        data_aux(shd%yyy(i), shd%xxx(i)) = file%dat(i, t)
+                    end do
+
+                    !> Write data (in a single line).
+                    do j = 1, shd%yCount
+                        write(iun, str, advance = 'no') (data_aux(j, i), i = 1, shd%xCount)
+                    end do
+                    write(iun, *)
+
+                !> Write by order of RANK (e.g., 1:shd%NA).
+                case default
+                    write(iun, str) file%dat(:, t)
+            end select
+        end do
 
 9000    format("""", i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ":00.000""", 2x)
-9001    format(999(e12.6, 2x))
-
-    end subroutine
-
-    !> Subroute: WriteCSV
-    !> Write the output to file in CSV format.
-    subroutine WriteCSV(fld, indx, info, shd, freq, dates, file_unit, keep_file_open, frame_no)
-
-        !Inputs
-        real fld(:, :)
-        integer indx
-        type(info_out) :: info
-        type(ShedGridParams), intent(in) :: shd
-        character(len = *), intent(in) :: freq
-        integer, allocatable :: dates(:, :)
-        integer, optional :: file_unit
-        logical, optional :: keep_file_open
-        integer, optional :: frame_no
-
-        !Internal
-        character(len = 450) flOut
-        integer ios, i, un, nfr
-        integer na1, nt, j, t, k
-        real, dimension(:, :), allocatable :: data_aux
-        character(len = 10) ctime
-        character(len = 8) cday
-        logical opened_status, close_file
-
-        flOut = trim(adjustl(info%pthOut)) // trim(adjustl(info%var_out(indx)%name)) // '_' // trim(adjustl(freq)) // '.csv'
-
-        if (present(file_unit)) then
-            un = file_unit
-        else
-            un = 882
-        end if
-
-        inquire(un, opened = opened_status)
-        if (.not. opened_status) then
-            open(un, file = trim(adjustl(flOut)), status = 'replace', form = 'formatted', action = 'write')
-        end if
-
-        if (allocated(dates)) then
-
-            do t = 1, size(dates(:, 1))
-
-                if (info%var_out(indx)%opt_printdate) then
-                    if (size(dates, 2) == 5) then
-                        write(un, 9000, advance = 'no') dates(t, 1), dates(t, 2), dates(t, 3), dates(t, 5), 0
-                    elseif (size(dates, 2) == 3) then
-                        write(un, 9000, advance = 'no') dates(t, 1), dates(t, 2), dates(t, 3), 0, 0
-                    else
-                        write(un, 9000, advance = 'no') dates(t, 1), dates(t, 2), 1, 0, 0
-                    end if
-                end if
-
-                select case (info%var_out(indx)%out_seq)
-
-                    case ('gridorder')
-                        write(un, 9001) fld(:, t)
-
-                    case ('shedorder')
-                        allocate(data_aux(shd%yCount, shd%xCount))
-                        data_aux = 0.0
-                        do k = 1, shd%NA
-                            data_aux(shd%yyy(k), shd%xxx(k)) = fld(k, t)
-                        end do
-                        do j = 1, (shd%yCount - 1)
-                            write(un, 9001, advance = 'no') (data_aux(j, i), i = 1, shd%xCount)
-                        end do
-                        write(un, 9001) (data_aux(shd%yCount, i), i = 1, shd%xCount)
-                        deallocate(data_aux)
-
-                end select
-
-            end do
-
-        end if
-
-        if (present(keep_file_open)) then
-            close_file = .not. keep_file_open
-        else
-            close_file = .true.
-        end if
-
-        if (close_file) close(un)
-
-9000    format("""", i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ":00.000""", ',')
-9001    format(999(e12.6, ','))
 
     end subroutine
 

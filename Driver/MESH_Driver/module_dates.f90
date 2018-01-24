@@ -88,6 +88,14 @@ module model_dates
         !> Increment the 'next' counter.
         call counter_increment(ic%next)
 
+        !> Initialize 'iter' counter from 1.
+        ic%iter%year = 1
+        ic%iter%jday = 1
+        ic%iter%month = 1
+        ic%iter%day = 1
+        ic%iter%hour = 1
+        ic%iter%mins = 1
+
     end subroutine
 
     subroutine counter_increment(ic_date)

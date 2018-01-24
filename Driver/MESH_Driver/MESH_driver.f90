@@ -172,12 +172,7 @@ program RUNMESH
     !*               console if enabled.
     logical printoutstfl, printoutqhyd
 
-    !>THESE ARE THTE TYPES DEFINED IN MODEL_OUTPUT.F95 NEED TO WRITE OUTPUT FIELD ACCUMULATED
-    !> OR AVERAGE FOR THE WATER BALANCE AND SOME OTHER STATES VARIABLES
-!todo: clean-up.
-    type(OUT_FLDS) :: VR
     type(dates_model) :: ts
-    type(INFO_OUT) :: ifo
     type(CLIM_INFO) :: cm
 
     !> Basin totals for the run.
@@ -387,7 +382,7 @@ program RUNMESH
 
     !> Initialize output fields.
     if (ipid == 0) then
-        if (OUTFIELDSFLAG == 1) call init_out(shd, ts, ifo, vr)
+        if (OUTFIELDSFLAG == 1) call init_out(fls, shd, ts)
     end if !(ipid == 0) then
 
     FRAME_NO_NEW = 1
@@ -1072,7 +1067,7 @@ program RUNMESH
             end if
 
             !> Update data for other outputs.
-            if (OUTFIELDSFLAG == 1) call UpdateFIELDSOUT(fls, shd, ts, cm, ifo, vr)
+            if (OUTFIELDSFLAG == 1) call UpdateFIELDSOUT(fls, shd)
 
         end if !(ipid == 0) then
 
@@ -1234,7 +1229,7 @@ program RUNMESH
 !+                            shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
 !+    end if !(SAVERESUMEFLAG == 2) then
 
-    if (OUTFIELDSFLAG == 1) call write_outputs(shd, fls, ts, ifo, vr)
+    if (OUTFIELDSFLAG == 1) call Write_Outputs(fls, shd)
 
     !> *********************************************************************
     !> Run is now over, print final results to the screen and close files
