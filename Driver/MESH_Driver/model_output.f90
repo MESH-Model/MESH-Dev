@@ -46,11 +46,10 @@ module model_output
     !>  Data type for storing series of output.
     !>
     !> Variables:
-!todo: change to .false. for default.
-    !*  apply_frac: .true. to multiply grid values by fractional area of cell (default: .true.).
+    !*  apply_frac: .true. to multiply grid values by fractional area of cell (default: .false.).
     !*  y, m, s, d, h, ts: Output files of the variable at various time intervals.
     type output_series
-        logical :: apply_frac = .true.
+        logical :: apply_frac = .false.
         type(output_file) y, m, s, d, h, ts
     end type
 
@@ -368,7 +367,7 @@ module model_output
                         call output_file_parse_options(shd, field%ts, ts%nr_days*24*(3600/ic%dts), args)
 
                     !> Weight by fractional area.
-                    case ('frac')
+                    case ('frac', 'apply_frac')
                         field%apply_frac = .true.
                 end select
             end if
@@ -801,6 +800,7 @@ module model_output
         !> Local variables.
         integer t_y, t_m, t_d, t_h, j
         logical out_y, out_m, out_s, out_d, out_h, out_ts
+        real frac(shd%NA)
 
         !> Set local variables.
         out_y = (ic%now%year /= ic%next%year)
@@ -1007,200 +1007,255 @@ module model_output
         end if
 
         !> PREC.
+        if (flds%prec%apply_frac) then
+            frac = shd%FRAC
+        else
+            frac = 1.0
+        end if
         if (flds%prec%y%active .and. out_y) then
-            call update_output_variable(flds%prec%y, out%grid%yly%pre*ic%dts*shd%FRAC, t_y)
+            call update_output_variable(flds%prec%y, out%grid%yly%pre*ic%dts*frac, t_y)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%prec%y, 'PREC', 'Y', flds%dates%y)
         end if
         if (flds%prec%m%active .and. out_m) then
-            call update_output_variable(flds%prec%m, out%grid%mly%pre*ic%dts*shd%FRAC, t_m)
+            call update_output_variable(flds%prec%m, out%grid%mly%pre*ic%dts*frac, t_m)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%prec%m, 'PREC', 'M', flds%dates%m)
         end if
         if (flds%prec%d%active .and. out_d) then
-            call update_output_variable(flds%prec%d, out%grid%dly%pre*ic%dts*shd%FRAC, t_d)
+            call update_output_variable(flds%prec%d, out%grid%dly%pre*ic%dts*frac, t_d)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%prec%d, 'PREC', 'D', flds%dates%d)
         end if
         if (flds%prec%h%active .and. out_h) then
-            call update_output_variable(flds%prec%h, out%grid%hly%pre*ic%dts*shd%FRAC, t_h)
+            call update_output_variable(flds%prec%h, out%grid%hly%pre*ic%dts*frac, t_h)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%prec%h, 'PREC', 'H', flds%dates%h)
         end if
 
         !> EVAP.
+        if (flds%evap%apply_frac) then
+            frac = frac
+        else
+            frac = 1.0
+        end if
         if (flds%evap%y%active .and. out_y) then
-            call update_output_variable(flds%evap%y, out%grid%yly%evap*ic%dts*shd%FRAC, t_y)
+            call update_output_variable(flds%evap%y, out%grid%yly%evap*ic%dts*frac, t_y)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%evap%y, 'EVAP', 'Y', flds%dates%y)
         end if
         if (flds%evap%m%active .and. out_m) then
-            call update_output_variable(flds%evap%m, out%grid%mly%evap*ic%dts*shd%FRAC, t_m)
+            call update_output_variable(flds%evap%m, out%grid%mly%evap*ic%dts*frac, t_m)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%evap%m, 'EVAP', 'M', flds%dates%m)
         end if
         if (flds%evap%d%active .and. out_d) then
-            call update_output_variable(flds%evap%d, out%grid%dly%evap*ic%dts*shd%FRAC, t_d)
+            call update_output_variable(flds%evap%d, out%grid%dly%evap*ic%dts*frac, t_d)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%evap%d, 'EVAP', 'D', flds%dates%d)
         end if
         if (flds%evap%h%active .and. out_h) then
-            call update_output_variable(flds%evap%h, out%grid%hly%evap*ic%dts*shd%FRAC, t_h)
+            call update_output_variable(flds%evap%h, out%grid%hly%evap*ic%dts*frac, t_h)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%evap%h, 'EVAP', 'H', flds%dates%h)
         end if
 
         !> ROF.
+        if (flds%rof%apply_frac) then
+            frac = shd%FRAC
+        else
+            frac = 1.0
+        end if
         if (flds%rof%y%active .and. out_y) then
-            call update_output_variable(flds%rof%y, out%grid%yly%rof*ic%dts*shd%FRAC, t_y)
+            call update_output_variable(flds%rof%y, out%grid%yly%rof*ic%dts*frac, t_y)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%rof%y, 'ROF', 'Y', flds%dates%y)
         end if
         if (flds%rof%m%active .and. out_m) then
-            call update_output_variable(flds%rof%m, out%grid%mly%rof*ic%dts*shd%FRAC, t_m)
+            call update_output_variable(flds%rof%m, out%grid%mly%rof*ic%dts*frac, t_m)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%rof%m, 'ROF', 'M', flds%dates%m)
         end if
         if (flds%rof%d%active .and. out_d) then
-            call update_output_variable(flds%rof%d, out%grid%dly%rof*ic%dts*shd%FRAC, t_d)
+            call update_output_variable(flds%rof%d, out%grid%dly%rof*ic%dts*frac, t_d)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%rof%d, 'ROF', 'D', flds%dates%d)
         end if
         if (flds%rof%h%active .and. out_h) then
-            call update_output_variable(flds%rof%h, out%grid%hly%rof*ic%dts*shd%FRAC, t_h)
+            call update_output_variable(flds%rof%h, out%grid%hly%rof*ic%dts*frac, t_h)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%rof%h, 'ROF', 'H', flds%dates%h)
         end if
 
         !> RCAN.
+        if (flds%rcan%apply_frac) then
+            frac = shd%FRAC
+        else
+            frac = 1.0
+        end if
         if (flds%rcan%y%active .and. out_y) then
-            call update_output_variable(flds%rcan%y, out%grid%yly%rcan*shd%FRAC, t_y)
+            call update_output_variable(flds%rcan%y, out%grid%yly%rcan*frac, t_y)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%rcan%y, 'RCAN', 'Y', flds%dates%y)
         end if
         if (flds%rcan%m%active .and. out_m) then
-            call update_output_variable(flds%rcan%m, out%grid%mly%rcan*shd%FRAC, t_m)
+            call update_output_variable(flds%rcan%m, out%grid%mly%rcan*frac, t_m)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%rcan%m, 'RCAN', 'M', flds%dates%m)
         end if
         if (flds%rcan%d%active .and. out_d) then
-            call update_output_variable(flds%rcan%d, out%grid%dly%rcan*shd%FRAC, t_d)
+            call update_output_variable(flds%rcan%d, out%grid%dly%rcan*frac, t_d)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%rcan%d, 'RCAN', 'D', flds%dates%d)
         end if
         if (flds%rcan%h%active .and. out_h) then
-            call update_output_variable(flds%rcan%h, out%grid%hly%rcan*shd%FRAC, t_h)
+            call update_output_variable(flds%rcan%h, out%grid%hly%rcan*frac, t_h)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%rcan%h, 'RCAN', 'H', flds%dates%h)
         end if
 
         !> SNCAN.
+        if (flds%sncan%apply_frac) then
+            frac = shd%FRAC
+        else
+            frac = 1.0
+        end if
         if (flds%sncan%y%active .and. out_y) then
-            call update_output_variable(flds%sncan%y, out%grid%yly%sncan*shd%FRAC, t_y)
+            call update_output_variable(flds%sncan%y, out%grid%yly%sncan*frac, t_y)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%sncan%y, 'SNCAN', 'Y', flds%dates%y)
         end if
         if (flds%sncan%m%active .and. out_m) then
-            call update_output_variable(flds%sncan%m, out%grid%mly%sncan*shd%FRAC, t_m)
+            call update_output_variable(flds%sncan%m, out%grid%mly%sncan*frac, t_m)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%sncan%m, 'SNCAN', 'M', flds%dates%m)
         end if
         if (flds%sncan%d%active .and. out_d) then
-            call update_output_variable(flds%sncan%d, out%grid%dly%sncan*shd%FRAC, t_d)
+            call update_output_variable(flds%sncan%d, out%grid%dly%sncan*frac, t_d)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%sncan%d, 'SNCAN', 'D', flds%dates%d)
         end if
         if (flds%sncan%h%active .and. out_h) then
-            call update_output_variable(flds%sncan%h, out%grid%hly%sncan*shd%FRAC, t_h)
+            call update_output_variable(flds%sncan%h, out%grid%hly%sncan*frac, t_h)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%sncan%h, 'SNCAN', 'H', flds%dates%h)
         end if
 
         !> PNDW.
+        if (flds%pndw%apply_frac) then
+            frac = shd%FRAC
+        else
+            frac = 1.0
+        end if
         if (flds%pndw%y%active .and. out_y) then
-            call update_output_variable(flds%pndw%y, out%grid%yly%pndw*shd%FRAC, t_y)
+            call update_output_variable(flds%pndw%y, out%grid%yly%pndw*frac, t_y)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%pndw%y, 'PNDW', 'Y', flds%dates%y)
         end if
         if (flds%pndw%m%active .and. out_m) then
-            call update_output_variable(flds%pndw%m, out%grid%mly%pndw*shd%FRAC, t_m)
+            call update_output_variable(flds%pndw%m, out%grid%mly%pndw*frac, t_m)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%pndw%m, 'PNDW', 'M', flds%dates%m)
         end if
         if (flds%pndw%d%active .and. out_d) then
-            call update_output_variable(flds%pndw%d, out%grid%dly%pndw*shd%FRAC, t_d)
+            call update_output_variable(flds%pndw%d, out%grid%dly%pndw*frac, t_d)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%pndw%d, 'PNDW', 'D', flds%dates%d)
         end if
         if (flds%pndw%h%active .and. out_h) then
-            call update_output_variable(flds%pndw%h, out%grid%hly%pndw*shd%FRAC, t_h)
+            call update_output_variable(flds%pndw%h, out%grid%hly%pndw*frac, t_h)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%pndw%h, 'PNDW', 'H', flds%dates%h)
         end if
 
         !> SNO.
+        if (flds%sno%apply_frac) then
+            frac = shd%FRAC
+        else
+            frac = 1.0
+        end if
         if (flds%sno%y%active .and. out_y) then
-            call update_output_variable(flds%sno%y, out%grid%yly%sno*shd%FRAC, t_y)
+            call update_output_variable(flds%sno%y, out%grid%yly%sno*frac, t_y)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%sno%y, 'SNO', 'Y', flds%dates%y)
         end if
         if (flds%sno%m%active .and. out_m) then
-            call update_output_variable(flds%sno%m, out%grid%mly%sno*shd%FRAC, t_m)
+            call update_output_variable(flds%sno%m, out%grid%mly%sno*frac, t_m)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%sno%m, 'SNO', 'M', flds%dates%m)
         end if
         if (flds%sno%d%active .and. out_d) then
-            call update_output_variable(flds%sno%d, out%grid%dly%sno*shd%FRAC, t_d)
+            call update_output_variable(flds%sno%d, out%grid%dly%sno*frac, t_d)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%sno%d, 'SNO', 'D', flds%dates%d)
         end if
         if (flds%sno%h%active .and. out_h) then
-            call update_output_variable(flds%sno%h, out%grid%hly%sno*shd%FRAC, t_h)
+            call update_output_variable(flds%sno%h, out%grid%hly%sno*frac, t_h)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%sno%h, 'SNO', 'H', flds%dates%h)
         end if
 
         !> WSNO.
+        if (flds%wsno%apply_frac) then
+            frac = shd%FRAC
+        else
+            frac = 1.0
+        end if
         if (flds%wsno%y%active .and. out_y) then
-            call update_output_variable(flds%wsno%y, out%grid%yly%wsno*shd%FRAC, t_y)
+            call update_output_variable(flds%wsno%y, out%grid%yly%wsno*frac, t_y)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%wsno%y, 'WSNO', 'Y', flds%dates%y)
         end if
         if (flds%wsno%m%active .and. out_m) then
-            call update_output_variable(flds%wsno%m, out%grid%mly%wsno*shd%FRAC, t_m)
+            call update_output_variable(flds%wsno%m, out%grid%mly%wsno*frac, t_m)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%wsno%m, 'WSNO', 'M', flds%dates%m)
         end if
         if (flds%wsno%d%active .and. out_d) then
-            call update_output_variable(flds%wsno%d, out%grid%dly%wsno*shd%FRAC, t_d)
+            call update_output_variable(flds%wsno%d, out%grid%dly%wsno*frac, t_d)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%wsno%d, 'WSNO', 'D', flds%dates%d)
         end if
         if (flds%wsno%h%active .and. out_h) then
-            call update_output_variable(flds%wsno%h, out%grid%hly%wsno*shd%FRAC, t_h)
+            call update_output_variable(flds%wsno%h, out%grid%hly%wsno*frac, t_h)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%wsno%h, 'WSNO', 'H', flds%dates%h)
         end if
 
         !> STGW.
+        if (flds%stgw%apply_frac) then
+            frac = shd%FRAC
+        else
+            frac = 1.0
+        end if
         if (flds%stgw%y%active .and. out_y) then
-            call update_output_variable(flds%stgw%y, out%grid%yly%stgw*shd%FRAC, t_y)
+            call update_output_variable(flds%stgw%y, out%grid%yly%stgw*frac, t_y)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%stgw%y, 'STG', 'Y', flds%dates%y)
         end if
         if (flds%stgw%m%active .and. out_m) then
-            call update_output_variable(flds%stgw%m, out%grid%mly%stgw*shd%FRAC, t_m)
+            call update_output_variable(flds%stgw%m, out%grid%mly%stgw*frac, t_m)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%stgw%m, 'STG', 'M', flds%dates%m)
         end if
         if (flds%stgw%d%active .and. out_d) then
-            call update_output_variable(flds%stgw%d, out%grid%dly%stgw*shd%FRAC, t_d)
+            call update_output_variable(flds%stgw%d, out%grid%dly%stgw*frac, t_d)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%stgw%d, 'STG', 'D', flds%dates%d)
         end if
         if (flds%stgw%h%active .and. out_h) then
-            call update_output_variable(flds%stgw%h, out%grid%hly%stgw*shd%FRAC, t_h)
+            call update_output_variable(flds%stgw%h, out%grid%hly%stgw*frac, t_h)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%stgw%h, 'STG', 'H', flds%dates%h)
         end if
 
         !> QH.
+        if (flds%qh%apply_frac) then
+            frac = shd%FRAC
+        else
+            frac = 1.0
+        end if
         if (flds%qh%y%active .and. out_y) then
-            call update_output_variable(flds%qh%y, out%grid%yly%qh*shd%FRAC, t_y)
+            call update_output_variable(flds%qh%y, out%grid%yly%qh*frac, t_y)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%qh%y, 'HFS', 'Y', flds%dates%y)
         end if
         if (flds%qh%m%active .and. out_m) then
-            call update_output_variable(flds%qh%m, out%grid%mly%qh*shd%FRAC, t_m)
+            call update_output_variable(flds%qh%m, out%grid%mly%qh*frac, t_m)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%qh%m, 'HFS', 'M', flds%dates%m)
         end if
         if (flds%qh%d%active .and. out_d) then
-            call update_output_variable(flds%qh%d, out%grid%dly%qh*shd%FRAC, t_d)
+            call update_output_variable(flds%qh%d, out%grid%dly%qh*frac, t_d)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%qh%d, 'HFS', 'D', flds%dates%d)
         end if
         if (flds%qh%h%active .and. out_h) then
-            call update_output_variable(flds%qh%h, out%grid%hly%qh*shd%FRAC, t_h)
+            call update_output_variable(flds%qh%h, out%grid%hly%qh*frac, t_h)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%qh%h, 'HFS', 'H', flds%dates%h)
         end if
 
         !> QE.
+        if (flds%qe%apply_frac) then
+            frac = shd%FRAC
+        else
+            frac = 1.0
+        end if
         if (flds%qe%y%active .and. out_y) then
-            call update_output_variable(flds%qe%y, out%grid%yly%qe*shd%FRAC, t_y)
+            call update_output_variable(flds%qe%y, out%grid%yly%qe*frac, t_y)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%qe%y, 'QEVP', 'Y', flds%dates%y)
         end if
         if (flds%qe%m%active .and. out_m) then
-            call update_output_variable(flds%qe%m, out%grid%mly%qe*shd%FRAC, t_m)
+            call update_output_variable(flds%qe%m, out%grid%mly%qe*frac, t_m)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%qe%m, 'QEVP', 'M', flds%dates%m)
         end if
         if (flds%qe%d%active .and. out_d) then
-            call update_output_variable(flds%qe%d, out%grid%dly%qe*shd%FRAC, t_d)
+            call update_output_variable(flds%qe%d, out%grid%dly%qe*frac, t_d)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%qe%d, 'QEVP', 'D', flds%dates%d)
         end if
         if (flds%qe%h%active .and. out_h) then
-            call update_output_variable(flds%qe%h, out%grid%hly%qe*shd%FRAC, t_h)
+            call update_output_variable(flds%qe%h, out%grid%hly%qe*frac, t_h)
             if (.not. flds%in_mem) call flush_output(fls, shd, flds%qe%h, 'QEVP', 'H', flds%dates%h)
         end if
 
@@ -1208,92 +1263,117 @@ module model_output
         do j = 1, shd%lc%IGND
 
             !> THLQ.
+            if (flds%thlq(j)%apply_frac) then
+                frac = shd%FRAC
+            else
+                frac = 1.0
+            end if
             if (flds%thlq(j)%y%active .and. out_y) then
-                call update_output_variable(flds%thlq(j)%y, out%grid%yly%thlq(:, j)*shd%FRAC, t_y)
+                call update_output_variable(flds%thlq(j)%y, out%grid%yly%thlq(:, j)*frac, t_y)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%thlq(j)%y, 'THLQ', 'Y', flds%dates%y, j)
             end if
             if (flds%thlq(j)%m%active .and. out_m) then
-                call update_output_variable(flds%thlq(j)%m, out%grid%mly%thlq(:, j)*shd%FRAC, t_m)
+                call update_output_variable(flds%thlq(j)%m, out%grid%mly%thlq(:, j)*frac, t_m)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%thlq(j)%m, 'THLQ', 'M', flds%dates%m, j)
             end if
             if (flds%thlq(j)%d%active .and. out_d) then
-                call update_output_variable(flds%thlq(j)%d, out%grid%dly%thlq(:, j)*shd%FRAC, t_d)
+                call update_output_variable(flds%thlq(j)%d, out%grid%dly%thlq(:, j)*frac, t_d)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%thlq(j)%d, 'THLQ', 'D', flds%dates%d, j)
             end if
             if (flds%thlq(j)%h%active .and. out_h) then
-                call update_output_variable(flds%thlq(j)%h, out%grid%hly%thlq(:, j)*shd%FRAC, t_h)
+                call update_output_variable(flds%thlq(j)%h, out%grid%hly%thlq(:, j)*frac, t_h)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%thlq(j)%h, 'THLQ', 'H', flds%dates%h, j)
             end if
 
             !> LQWS.
+            if (flds%lqws(j)%apply_frac) then
+                frac = shd%FRAC
+            else
+                frac = 1.0
+            end if
             if (flds%lqws(j)%y%active .and. out_y) then
-                call update_output_variable(flds%lqws(j)%y, out%grid%yly%lqws(:, j)*shd%FRAC, t_y)
+                call update_output_variable(flds%lqws(j)%y, out%grid%yly%lqws(:, j)*frac, t_y)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%lqws(j)%y, 'LQWS', 'Y', flds%dates%y, j)
             end if
             if (flds%lqws(j)%m%active .and. out_m) then
-                call update_output_variable(flds%lqws(j)%m, out%grid%mly%lqws(:, j)*shd%FRAC, t_m)
+                call update_output_variable(flds%lqws(j)%m, out%grid%mly%lqws(:, j)*frac, t_m)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%lqws(j)%m, 'LQWS', 'M', flds%dates%m, j)
             end if
             if (flds%lqws(j)%d%active .and. out_d) then
-                call update_output_variable(flds%lqws(j)%d, out%grid%dly%lqws(:, j)*shd%FRAC, t_d)
+                call update_output_variable(flds%lqws(j)%d, out%grid%dly%lqws(:, j)*frac, t_d)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%lqws(j)%d, 'LQWS', 'D', flds%dates%d, j)
             end if
             if (flds%lqws(j)%h%active .and. out_h) then
-                call update_output_variable(flds%lqws(j)%h, out%grid%hly%lqws(:, j)*shd%FRAC, t_h)
+                call update_output_variable(flds%lqws(j)%h, out%grid%hly%lqws(:, j)*frac, t_h)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%lqws(j)%h, 'LQWS', 'H', flds%dates%h, j)
             end if
 
             !> THIC.
+            if (flds%thic(j)%apply_frac) then
+                frac = shd%FRAC
+            else
+                frac = 1.0
+            end if
             if (flds%thic(j)%y%active .and. out_y) then
-                call update_output_variable(flds%thic(j)%y, out%grid%yly%thic(:, j)*shd%FRAC, t_y)
+                call update_output_variable(flds%thic(j)%y, out%grid%yly%thic(:, j)*frac, t_y)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%thic(j)%y, 'THIC', 'Y', flds%dates%y, j)
             end if
             if (flds%thic(j)%m%active .and. out_m) then
-                call update_output_variable(flds%thic(j)%m, out%grid%mly%thic(:, j)*shd%FRAC, t_m)
+                call update_output_variable(flds%thic(j)%m, out%grid%mly%thic(:, j)*frac, t_m)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%thic(j)%m, 'THIC', 'M', flds%dates%m, j)
             end if
             if (flds%thic(j)%d%active .and. out_d) then
-                call update_output_variable(flds%thic(j)%d, out%grid%dly%thic(:, j)*shd%FRAC, t_d)
+                call update_output_variable(flds%thic(j)%d, out%grid%dly%thic(:, j)*frac, t_d)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%thic(j)%d, 'THIC', 'D', flds%dates%d, j)
             end if
             if (flds%thic(j)%h%active .and. out_h) then
-                call update_output_variable(flds%thic(j)%h, out%grid%hly%thic(:, j)*shd%FRAC, t_h)
+                call update_output_variable(flds%thic(j)%h, out%grid%hly%thic(:, j)*frac, t_h)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%thic(j)%h, 'THIC', 'H', flds%dates%h, j)
             end if
 
             !> FZWS.
+            if (flds%fzws(j)%apply_frac) then
+                frac = shd%FRAC
+            else
+                frac = 1.0
+            end if
             if (flds%fzws(j)%y%active .and. out_y) then
-                call update_output_variable(flds%fzws(j)%y, out%grid%yly%fzws(:, j)*shd%FRAC, t_y)
+                call update_output_variable(flds%fzws(j)%y, out%grid%yly%fzws(:, j)*frac, t_y)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%fzws(j)%y, 'FRWS', 'Y', flds%dates%y, j)
             end if
             if (flds%fzws(j)%m%active .and. out_m) then
-                call update_output_variable(flds%fzws(j)%m, out%grid%mly%fzws(:, j)*shd%FRAC, t_m)
+                call update_output_variable(flds%fzws(j)%m, out%grid%mly%fzws(:, j)*frac, t_m)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%fzws(j)%m, 'FRWS', 'M', flds%dates%m, j)
             end if
             if (flds%fzws(j)%d%active .and. out_d) then
-                call update_output_variable(flds%fzws(j)%d, out%grid%dly%fzws(:, j)*shd%FRAC, t_d)
+                call update_output_variable(flds%fzws(j)%d, out%grid%dly%fzws(:, j)*frac, t_d)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%fzws(j)%d, 'FRWS', 'D', flds%dates%d, j)
             end if
             if (flds%fzws(j)%h%active .and. out_h) then
-                call update_output_variable(flds%fzws(j)%h, out%grid%hly%fzws(:, j)*shd%FRAC, t_h)
+                call update_output_variable(flds%fzws(j)%h, out%grid%hly%fzws(:, j)*frac, t_h)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%fzws(j)%h, 'FRWS', 'H', flds%dates%h, j)
             end if
 
             !> GFLX.
+            if (flds%gflx(j)%apply_frac) then
+                frac = shd%FRAC
+            else
+                frac = 1.0
+            end if
             if (flds%gflx(j)%y%active .and. out_y) then
-                call update_output_variable(flds%gflx(j)%y, out%grid%yly%gflx(:, j)*shd%FRAC, t_y)
+                call update_output_variable(flds%gflx(j)%y, out%grid%yly%gflx(:, j)*frac, t_y)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%gflx(j)%y, 'GFLX', 'Y', flds%dates%y, j)
             end if
             if (flds%gflx(j)%m%active .and. out_m) then
-                call update_output_variable(flds%gflx(j)%m, out%grid%mly%gflx(:, j)*shd%FRAC, t_m)
+                call update_output_variable(flds%gflx(j)%m, out%grid%mly%gflx(:, j)*frac, t_m)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%gflx(j)%m, 'GFLX', 'M', flds%dates%m, j)
             end if
             if (flds%gflx(j)%d%active .and. out_d) then
-                call update_output_variable(flds%gflx(j)%d, out%grid%dly%gflx(:, j)*shd%FRAC, t_d)
+                call update_output_variable(flds%gflx(j)%d, out%grid%dly%gflx(:, j)*frac, t_d)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%gflx(j)%d, 'GFLX', 'D', flds%dates%d, j)
             end if
             if (flds%gflx(j)%h%active .and. out_h) then
-                call update_output_variable(flds%gflx(j)%h, out%grid%hly%gflx(:, j)*shd%FRAC, t_h)
+                call update_output_variable(flds%gflx(j)%h, out%grid%hly%gflx(:, j)*frac, t_h)
                 if (.not. flds%in_mem) call flush_output(fls, shd, flds%gflx(j)%h, 'GFLX', 'H', flds%dates%h, j)
             end if
 
