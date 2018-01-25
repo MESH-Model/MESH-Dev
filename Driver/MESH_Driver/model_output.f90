@@ -3,6 +3,7 @@ module model_output
     use sa_mesh_shared_variables
     use model_dates
     use model_files_variables
+    use variablename_constants
 
     implicit none
 
@@ -46,9 +47,11 @@ module model_output
     !>  Data type for output.
     !>
     !> Variables:
+    !*  name: Variable name (default: none).
     !*  apply_frac: .true. to multiply grid values by fractional cell area (default: .false.).
     !*  y, m, s, d, h, ts: Output files of the variable at various time intervals.
     type output_field
+        character(len = 10) :: name = ''
         logical :: apply_frac = .false.
         type(output_file) y, m, s, d, h, ts
     end type
@@ -77,9 +80,9 @@ module model_output
         type(output_field) &
             pre, fsin, fsvh, fsih, fsdr, fsdf, flin, ta, qa, pres, uu, vv, uv, wdir, &
             prec, gro, evap, pevp, evpb, arrd, rof, rofo, rofs, rofb, &
-            rcan, sncan, sno, fsno, wsno, zpnd, pndw, lzs, dzs, stgw, &
+            rcan, sncan, sno, fsno, wsno, zpnd, pndw, lzs, dzs, stgw, dstgw, &
             cmas, tcan, tsno, tpnd, &
-            alvs, alir, albt, fsout, flout, gte, qh, qe, gzero, stge, &
+            alvs, alir, albt, fsout, flout, gte, qh, qe, gzero, stge, dstge, &
             ald, zod, &
             rff, rchg, qi, stgch, qo, zlvl
         type(output_field), dimension(:), allocatable :: &
@@ -499,94 +502,124 @@ module model_output
             select case (args(1))
 
                 !> Meteorological forcing.
-                case ('FSIN', 'FSDOWN')
+                case (VN_FSIN, 'FSDOWN')
+                    flds%fsin%name = VN_FSIN
                     if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%fsin, out%grid%fsin, args, nargs)
-                case ('FSVH')
+                case (VN_FSVH)
+                    flds%fsvh%name = VN_FSVH
                     if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%fsvh, out%grid%fsvh, args, nargs)
-                case ('FSIH')
+                case (VN_FSIH)
+                    flds%fsih%name = VN_FSIH
                     if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%fsih, out%grid%fsih, args, nargs)
-                case ('FLIN', 'FDL')
+                case (VN_FLIN, 'FDL')
+                    flds%flin%name = VN_FLIN
                     if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%flin, out%grid%flin, args, nargs)
-                case ('UV', 'UL')
+                case (VN_UV, 'UL')
+                    flds%uv%name = VN_UV
                     if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%uv, out%grid%uv, args, nargs)
-                case ('TA')
+                case (VN_TA)
+                    flds%ta%name = VN_TA
                     if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%ta, out%grid%ta, args, nargs)
-                case ('QA', 'HU')
+                case (VN_QA, 'HU')
+                    flds%qa%name = VN_QA
                     if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%qa, out%grid%qa, args, nargs)
-                case ('PRES')
+                case (VN_PRES)
+                    flds%pres%name = VN_PRES
                     if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%pres, out%grid%pres, args, nargs)
-                case ('PRE')
+                case (VN_PRE)
+                    flds%pre%name = VN_PRE
                     if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%pre, out%grid%pre, args, nargs)
 
                 !> Water balance.
-                case ('PREC', 'Rainfall', 'Rain', 'Precipitation')
+                case (VN_PREC, 'Rainfall', 'Rain', 'Precipitation')
+                    flds%prec%name = VN_PREC
                     if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%prec, out%grid%pre, args, nargs)
-                case ('EVAP', 'Evapotranspiration')
+                case (VN_EVAP, 'Evapotranspiration')
+                    flds%evap%name = VN_EVAP
                     if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%evap, out%grid%evap, args, nargs)
-                case ('ROF', 'Runoff')
+                case (VN_ROF, 'Runoff')
+                    flds%rof%name = VN_ROF
                     if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%rof, out%grid%rof, args, nargs)
-                case ('RCAN')
+                case (VN_RCAN)
+                    flds%rcan%name = VN_RCAN
                     if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%rcan, out%grid%rcan, args, nargs)
-                case ('SNCAN', 'SCAN')
+                case (VN_SNCAN, 'SCAN')
+                    flds%sncan%name = VN_SNCAN
                     if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%sncan, out%grid%sncan, args, nargs)
-                case ('PNDW')
+                case (VN_PNDW)
+                    flds%pndw%name = VN_PNDW
                     if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%pndw, out%grid%pndw, args, nargs)
-                case ('SNO')
+                case (VN_SNO)
+                    flds%sno%name = VN_SNO
                     if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%sno, out%grid%sno, args, nargs)
-                case ('WSNO')
+                case (VN_WSNO)
+                    flds%wsno%name = VN_WSNO
                     if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%wsno, out%grid%wsno, args, nargs)
-                case ('STGW', 'STG', 'DSTG')
+                case (VN_STGW, 'STG')
+                    flds%stgw%name = VN_STGW
                     if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%stgw, out%grid%stgw, args, nargs)
-                case ('THLQ')
+                case (VN_DSTGW, 'DSTG')
+                    flds%dstgw%name = VN_DSTGW
+                case (VN_THLQ)
                     if (ro%RUNBALWB) then
                         if (.not. allocated(flds%thlq)) allocate(flds%thlq(shd%lc%IGND))
                         do j = 1, shd%lc%IGND
+                        flds%thlq(j)%name = VN_THLQ
                             call output_field_init(fls, shd, ts, flds%thlq(j), out%grid%thlq(j), args, nargs, j)
                         end do
                     end if
-                case ('LQWS')
+                case (VN_LQWS)
                     if (ro%RUNBALWB) then
                         if (.not. allocated(flds%lqws)) allocate(flds%lqws(shd%lc%IGND))
                         do j = 1, shd%lc%IGND
+                        flds%lqws(j)%name = VN_LQWS
                             call output_field_init(fls, shd, ts, flds%lqws(j), out%grid%lqws(j), args, nargs, j)
                         end do
                     end if
-                case ('THIC')
+                case (VN_THIC)
                     if (ro%RUNBALWB) then
                         if (.not. allocated(flds%thic)) allocate(flds%thic(shd%lc%IGND))
                         do j = 1, shd%lc%IGND
+                        flds%thic(j)%name = VN_THIC
                             call output_field_init(fls, shd, ts, flds%thic(j), out%grid%thic(j), args, nargs, j)
                         end do
                     end if
-                case ('FZWS', 'FRWS')
+                case (VN_FZWS, 'FRWS')
                     if (ro%RUNBALWB) then
                         if (.not. allocated(flds%fzws)) allocate(flds%fzws(shd%lc%IGND))
                         do j = 1, shd%lc%IGND
+                        flds%fzws(j)%name = VN_FZWS
                             call output_field_init(fls, shd, ts, flds%fzws(j), out%grid%fzws(j), args, nargs, j)
                         end do
                     end if
 
                 !> Energy balance.
-                case ('QH', 'HFS', 'SensibleHeat')
+                case (VN_QH, 'HFS', 'SensibleHeat')
+                    flds%qh%name = VN_QH
                     if (ro%RUNBALEB) call output_field_init(fls, shd, ts, flds%qh, out%grid%qh, args, nargs)
-                case ('QE', 'QEVP', 'LatentHeat')
+                case (VN_QE, 'QEVP', 'LatentHeat')
+                    flds%qe%name = VN_QE
                     if (ro%RUNBALEB) call output_field_init(fls, shd, ts, flds%qe, out%grid%qe, args, nargs)
-                case ('GFLX', 'HeatConduction')
+                case (VN_GFLX, 'HeatConduction')
                     if (ro%RUNBALEB) then
                         if (.not. allocated(flds%gflx)) allocate(flds%gflx(shd%lc%IGND))
                         do j = 1, shd%lc%IGND
+                        flds%gflx(j)%name = VN_GFLX
                             call output_field_init(fls, shd, ts, flds%gflx(j), out%grid%gflx(j), args, nargs, j)
                         end do
                     end if
-                case ('TBAR', 'TempSoil', 'Temperature_soil_layers')
+                case (VN_TBAR, 'TempSoil', 'Temperature_soil_layers')
                     if (ro%RUNBALEB) then
                         if (.not. allocated(flds%tbar)) allocate(flds%tbar(shd%lc%IGND))
                         do j = 1, shd%lc%IGND
+                        flds%tbar(j)%name = VN_TBAR
                             call output_field_init(fls, shd, ts, flds%tbar(j), out%grid%tbar(j), args, nargs, j)
                         end do
                     end if
 
-                case ('ZOD', 'TMAX', 'TMIN', 'ALD')
+                case ('ZOD', 'TMAX', 'TMIN')
+                case (VN_ALD)
+!                    flds%ald%name = VN_ALD
 !                    call output_field_init(fls, shd, ts, flds%ald, out%grid%ald, args, nargs)
 !                    flds%ald%m%active = .false.
 !                    flds%ald%s%active = .false.
@@ -609,9 +642,11 @@ module model_output
 !                    end if
 
                 !> Channels and routing.
-                case ('RFF', 'WR_RUNOFF')
+                case (VN_RFF, 'WR_RUNOFF')
+                    flds%rff%name = VN_RFF
                     if (ro%RUNCHNL) call output_field_init(fls, shd, ts, flds%rff, out%grid%rff, args, nargs)
-                case ('RCHG', 'WR_RECHARGE')
+                case (VN_RCHG, 'WR_RECHARGE')
+                    flds%rchg%name = VN_RCHG
                     if (ro%RUNCHNL) call output_field_init(fls, shd, ts, flds%rchg, out%grid%rchg, args, nargs)
 
                 case default
@@ -689,33 +724,19 @@ module model_output
 
     end subroutine
 
-    subroutine flush_output(fls, shd, file, field_name, freq, dates, igndx)
+    subroutine flush_output(fls, shd, field, file, dates)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
+        type(output_field), intent(in) :: field
         type(output_file), intent(in) :: file
-        character(len = *), intent(in) :: field_name, freq
         integer, intent(in) :: dates(:, :)
 
-        !> Input variables (optional).
-        integer, intent(in), optional :: igndx
-
-        !> Local variables.
-        character(len = 25) str
-
-        !> Append 'igndx' if provided.
-        if (present(igndx)) then
-            write(str, '(i10)') igndx
-            str = trim(adjustl(field_name)) // '_' // trim(adjustl(freq)) // '_' // trim(adjustl(str))
-        else
-            str = trim(adjustl(field_name)) // '_' // trim(adjustl(freq))
-        end if
-
         !> Write output.
-        if (file%seq%active) call write_seq(fls, shd, file, str, dates, file%seq)
-        if (file%r2c%active) call write_r2c(fls, shd, file, str, dates, file%r2c)
-        if (file%txt%active) call write_txt(fls, shd, file, str, dates, file%txt)
+        if (file%seq%active) call write_seq(fls, shd, field, file, dates)
+        if (file%r2c%active) call write_r2c(fls, shd, field, file, dates)
+        if (file%txt%active) call write_txt(fls, shd, field, file, dates)
 
     end subroutine
 
@@ -736,16 +757,14 @@ module model_output
 
     end subroutine
 
-    subroutine update_output_field(fls, shd, field, out_var, field_name, cfactorm, cfactora, igndx)
+    subroutine update_output_field(fls, shd, field, out_var, cfactorm, cfactora)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
         type(output_variables_field), intent(in) :: out_var
-        character(len = *), intent(in) :: field_name
 
         !> Input variables (optional).
-        integer, intent(in), optional :: igndx
         real, intent(in), optional :: cfactorm, cfactora
 
         !> Input/output variables.
@@ -781,52 +800,28 @@ module model_output
         if (field%y%active .and. ic%now%year /= ic%next%year) then
             if (flds%in_mem) t = ic%iter%year
             call update_output_variable(field%y, (m*out_var%y + a)*frac, t, ic%ts_yearly, 0, 'val')
-            if (.not. flds%in_mem) then
-                if (present(igndx)) then
-                    call flush_output(fls, shd, field%y, field_name, 'Y', flds%dates%y, igndx)
-                else
-                    call flush_output(fls, shd, field%y, field_name, 'Y', flds%dates%y)
-                end if
-            end if
+            if (.not. flds%in_mem) call flush_output(fls, shd, field, field%y, flds%dates%y)
         end if
 
         !> Monthly.
         if (field%m%active .and. ic%now%month /= ic%next%month) then
             if (flds%in_mem) t = ic%iter%month
             call update_output_variable(field%m, (m*out_var%m + a)*frac, t, ic%ts_monthly, 0, 'val')
-            if (.not. flds%in_mem) then
-                if (present(igndx)) then
-                    call flush_output(fls, shd, field%m, field_name, 'M', flds%dates%m, igndx)
-                else
-                    call flush_output(fls, shd, field%m, field_name, 'M', flds%dates%m)
-                end if
-            end if
+            if (.not. flds%in_mem) call flush_output(fls, shd, field, field%m, flds%dates%m)
         end if
 
         !> Daily.
         if (field%d%active .and. ic%now%day /= ic%next%day) then
             if (flds%in_mem) t = ic%iter%day
             call update_output_variable(field%d, (m*out_var%d + a)*frac, t, ic%ts_daily, 0, 'val')
-            if (.not. flds%in_mem) then
-                if (present(igndx)) then
-                    call flush_output(fls, shd, field%d, field_name, 'D', flds%dates%d, igndx)
-                else
-                    call flush_output(fls, shd, field%d, field_name, 'D', flds%dates%d)
-                end if
-            end if
+            if (.not. flds%in_mem) call flush_output(fls, shd, field, field%d, flds%dates%d)
         end if
 
         !> Seasonal.
         if (field%h%active .and. ic%now%hour /= ic%next%hour) then
             if (flds%in_mem) t = ic%iter%hour
             call update_output_variable(field%h, (m*out_var%h + a)*frac, t, ic%ts_hourly, 0, 'val')
-            if (.not. flds%in_mem) then
-                if (present(igndx)) then
-                    call flush_output(fls, shd, field%h, field_name, 'H', flds%dates%h, igndx)
-                else
-                    call flush_output(fls, shd, field%h, field_name, 'H', flds%dates%h)
-                end if
-            end if
+            if (.not. flds%in_mem) call flush_output(fls, shd, field, field%h, flds%dates%h)
         end if
 
     end subroutine
@@ -885,59 +880,59 @@ module model_output
         end if
 
         !> Update variables.
-        call update_output_field(fls, shd, flds%fsin, out%grid%fsin, 'FSDOWN')
-        call update_output_field(fls, shd, flds%fsvh, out%grid%fsin, 'FSVH', 0.5)
-        call update_output_field(fls, shd, flds%fsih, out%grid%fsin, 'FSIH', 0.5)
-        call update_output_field(fls, shd, flds%flin, out%grid%flin, 'FDL')
-        call update_output_field(fls, shd, flds%uv, out%grid%uv, 'UL')
-        call update_output_field(fls, shd, flds%ta, out%grid%ta, 'TA')
-        call update_output_field(fls, shd, flds%qa, out%grid%qa, 'QA')
-        call update_output_field(fls, shd, flds%pres, out%grid%pres, 'PRES')
-        call update_output_field(fls, shd, flds%pre, out%grid%pre, 'PRE')
-        call update_output_field(fls, shd, flds%prec, out%grid%pre, 'PREC', real(ic%dts))
-        call update_output_field(fls, shd, flds%evap, out%grid%evap, 'EVAP', real(ic%dts))
-        call update_output_field(fls, shd, flds%rof, out%grid%rof, 'ROF', real(ic%dts))
-        call update_output_field(fls, shd, flds%rcan, out%grid%rcan, 'RCAN')
-        call update_output_field(fls, shd, flds%sncan, out%grid%sncan, 'SNCAN')
-        call update_output_field(fls, shd, flds%pndw, out%grid%pndw, 'PNDW')
-        call update_output_field(fls, shd, flds%sno, out%grid%sno, 'SNO')
-        call update_output_field(fls, shd, flds%wsno, out%grid%wsno, 'WSNO')
-        call update_output_field(fls, shd, flds%stgw, out%grid%stgw, 'STG')
-        call update_output_field(fls, shd, flds%qh, out%grid%qh, 'HFS')
-        call update_output_field(fls, shd, flds%qe, out%grid%qe, 'QEVP')
-        call update_output_field(fls, shd, flds%rff, out%grid%rff,  'WR_RUNOFF', real(ic%dts))
-        call update_output_field(fls, shd, flds%rchg, out%grid%rchg, 'WR_RECHARGE', real(ic%dts))
+        call update_output_field(fls, shd, flds%fsin, out%grid%fsin)
+        call update_output_field(fls, shd, flds%fsvh, out%grid%fsin, 0.5)
+        call update_output_field(fls, shd, flds%fsih, out%grid%fsin, 0.5)
+        call update_output_field(fls, shd, flds%flin, out%grid%flin)
+        call update_output_field(fls, shd, flds%uv, out%grid%uv)
+        call update_output_field(fls, shd, flds%ta, out%grid%ta)
+        call update_output_field(fls, shd, flds%qa, out%grid%qa)
+        call update_output_field(fls, shd, flds%pres, out%grid%pres)
+        call update_output_field(fls, shd, flds%pre, out%grid%pre)
+        call update_output_field(fls, shd, flds%prec, out%grid%pre, real(ic%dts))
+        call update_output_field(fls, shd, flds%evap, out%grid%evap, real(ic%dts))
+        call update_output_field(fls, shd, flds%rof, out%grid%rof, real(ic%dts))
+        call update_output_field(fls, shd, flds%rcan, out%grid%rcan)
+        call update_output_field(fls, shd, flds%sncan, out%grid%sncan)
+        call update_output_field(fls, shd, flds%pndw, out%grid%pndw)
+        call update_output_field(fls, shd, flds%sno, out%grid%sno)
+        call update_output_field(fls, shd, flds%wsno, out%grid%wsno)
+        call update_output_field(fls, shd, flds%stgw, out%grid%stgw)
+        call update_output_field(fls, shd, flds%qh, out%grid%qh)
+        call update_output_field(fls, shd, flds%qe, out%grid%qe)
+        call update_output_field(fls, shd, flds%rff, out%grid%rff, real(ic%dts))
+        call update_output_field(fls, shd, flds%rchg, out%grid%rchg, real(ic%dts))
 
         !> Variables with multiple layers.
         !> Must check if the multi-layer variable is allocated.
         if (allocated(flds%thlq)) then
             do j = 1, shd%lc%IGND
-                call update_output_field(fls, shd, flds%thlq(j), out%grid%thlq(j), 'THLQ', 1.0, 0.0, j)
+                call update_output_field(fls, shd, flds%thlq(j), out%grid%thlq(j))
             end do
         end if
         if (allocated(flds%lqws)) then
             do j = 1, shd%lc%IGND
-                call update_output_field(fls, shd, flds%lqws(j), out%grid%lqws(j), 'LQWS', 1.0, 0.0, j)
+                call update_output_field(fls, shd, flds%lqws(j), out%grid%lqws(j))
             end do
         end if
         if (allocated(flds%thic)) then
             do j = 1, shd%lc%IGND
-                call update_output_field(fls, shd, flds%thic(j), out%grid%thic(j), 'THIC', 1.0, 0.0, j)
+                call update_output_field(fls, shd, flds%thic(j), out%grid%thic(j))
             end do
         end if
         if (allocated(flds%fzws)) then
             do j = 1, shd%lc%IGND
-                call update_output_field(fls, shd, flds%fzws(j), out%grid%fzws(j), 'FRWS', 1.0, 0.0, j)
+                call update_output_field(fls, shd, flds%fzws(j), out%grid%fzws(j))
             end do
         end if
         if (allocated(flds%gflx)) then
             do j = 1, shd%lc%IGND
-                call update_output_field(fls, shd, flds%gflx(j), out%grid%gflx(j), 'GFLX', 1.0, 0.0, j)
+                call update_output_field(fls, shd, flds%gflx(j), out%grid%gflx(j))
             end do
         end if
         if (allocated(flds%tbar)) then
             do j = 1, shd%lc%IGND
-                call update_output_field(fls, shd, flds%tbar(j), out%grid%tbar(j), 'TBAR', 1.0, 0.0, j)
+                call update_output_field(fls, shd, flds%tbar(j), out%grid%tbar(j))
             end do
         end if
 
@@ -945,28 +940,27 @@ module model_output
 
     end subroutine
 
-    subroutine write_seq(fls, shd, file, field_name, dates, file_fmt)
+    subroutine write_seq(fls, shd, field, file, dates)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
+        type(output_field), intent(in) :: field
         type(output_file), intent(in) :: file
-        character(len = *), intent(in) :: field_name
         integer, intent(in) :: dates(:, :)
-        type(output_file_format), intent(in) :: file_fmt
 
         !> Local variables.
         integer iun, t, ierr
         logical opened_status
 
         !> Check if the file is opened.
-        iun = file_fmt%iun
+        iun = file%seq%iun
         inquire(iun, opened = opened_status)
 
         !> Open the file (if not opened).
         if (.not. opened_status) then
             open( &
-                iun, file = file_fmt%path, &
+                iun, file = file%seq%path, &
                 status = 'replace', form = 'unformatted', action = 'write', access = 'sequential', &
                 iostat = ierr)
         end if
@@ -984,15 +978,14 @@ module model_output
 
     end subroutine
 
-    subroutine write_r2c(fls, shd, file, field_name, dates, file_fmt)
+    subroutine write_r2c(fls, shd, field, file, dates)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
+        type(output_field), intent(in) :: field
         type(output_file), intent(in) :: file
-        character(len = *), intent(in) :: field_name
         integer, intent(in) :: dates(:, :)
-        type(output_file_format), intent(in) :: file_fmt
 
         !> Local variables.
         integer iun, t, j, i, ierr
@@ -1002,13 +995,13 @@ module model_output
         character(len = 8) str8
 
         !> Check if the file is opened.
-        iun = file_fmt%iun
+        iun = file%r2c%iun
         inquire(iun, opened = opened_status)
 
         !> Open the file (if not opened) and write 'r2c' header.
         if (.not. opened_status) then
             open( &
-                iun, file = file_fmt%path, &
+                iun, file = file%r2c%path, &
                 status = 'replace', form = 'formatted', action = 'write', &
                 iostat = ierr)
             write(iun, 3005) '########################################'
@@ -1024,9 +1017,7 @@ module model_output
             write(iun, 3005) '#                                       '
             write(iun, 3005) '#---------------------------------------'
             write(iun, 3005) '#                                       '
-            i = len_trim(field_name)
-            if (index(field_name, '_') > 1) i = index(field_name, '_') - 1
-            write(iun, 3002) ':Name               ', field_name(1:i)
+            write(iun, 3002) ':Name               ', trim(field%name)
             write(iun, 3005) '#                                       '
             write(iun, 3004) ':Projection         ', shd%CoordSys%Proj
             if (shd%CoordSys%Proj == 'LATLONG   ') &
@@ -1041,7 +1032,7 @@ module model_output
             write(iun, 3005) '#                                       '
             write(iun, 3005) ':SourceFile            MESH_DRIVER      '
             write(iun, 3005) '#                                       '
-            write(iun, 3002) ':AttributeName      ', field_name(1:i)
+            write(iun, 3002) ':AttributeName      ', trim(field%name)
             write(iun, 3002) ':AttributeUnits     ', ''
             write(iun, 3005) '#                                       '
             write(iun, 3001) ':xCount             ', shd%xCount
@@ -1087,15 +1078,14 @@ module model_output
 
     end subroutine
 
-    subroutine write_txt(fls, shd, file, field_name, dates, file_fmt)
+    subroutine write_txt(fls, shd, field, file, dates)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
+        type(output_field), intent(in) :: field
         type(output_file), intent(in) :: file
-        character(len = *), intent(in) :: field_name
         integer, intent(in) :: dates(:, :)
-        type(output_file_format), intent(in) :: file_fmt
 
         !> Local variables.
         integer iun, t, j, i, ierr
@@ -1104,13 +1094,13 @@ module model_output
         character(len = 25) str
 
         !> Check if the file is opened.
-        iun = file_fmt%iun
+        iun = file%txt%iun
         inquire(iun, opened = opened_status)
 
         !> Open the file (if not opened).
         if (.not. opened_status) then
             open( &
-                iun, file = file_fmt%path, &
+                iun, file = file%txt%path, &
                 status = 'replace', form = 'formatted', action = 'write', &
                 iostat = ierr)
         end if
