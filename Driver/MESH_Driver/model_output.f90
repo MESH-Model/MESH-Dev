@@ -176,13 +176,13 @@ module model_output
         !> Required for 'is_letter' and 'value' functions.
         use strings
 
-        !> Input/output variables.
-        type(ShedGridParams), intent(in) :: shd
-        type(output_file) file
-
         !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
         character(len = *), dimension(:), intent(in) :: args
         integer, intent(in) :: nargs, startindex
+
+        !> Input/output variables.
+        type(output_file) file
 
         !> Output variables.
         integer, dimension(:), allocatable, intent(out) :: indices
@@ -209,18 +209,18 @@ module model_output
 
     end subroutine
 
-    subroutine output_file_parse_options(shd, file, t, args, nargs)
+    subroutine output_file_parse_options(shd, file, file_path, t, args, nargs)
 
         !> Required for 'is_letter', 'lowercase', and 'value' functions.
         use strings
 
-        !> Input/output variables.
-        type(ShedGridParams), intent(in) :: shd
-        type(output_file) file
-
         !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+        character(len = *), intent(in) :: file_path, args(:)
         integer, intent(in) :: t, nargs
-        character(len = *), dimension(:), intent(in) :: args
+
+        !> Input/output variables.
+        type(output_file) file
 
         !> Local variables.
         integer n, j, i, ierr
@@ -244,16 +244,20 @@ module model_output
                         file%r2c%active = .true.
                         flds%iun = flds%iun + 1
                         file%r2c%iun = flds%iun
+                        file%r2c%path = trim(file_path) // '.r2c'
                     case ('seq', 'binseq')
                         file%seq%active = .true.
                         flds%iun = flds%iun + 1
                         file%seq%iun = flds%iun
+                        file%seq%path = trim(file_path) // '.seq'
                     case ('txt')
                         file%txt%active = .true.
                         file%delim = ''
+                        file%txt%path = trim(file_path) // '.txt'
                     case ('csv')
                         file%txt%active = .true.
                         file%delim = ','
+                        file%txt%path = trim(file_path) // '.csv'
 
                     !> Order of the selection being saved.
                     case ('gridorder', 'shedorder')
@@ -268,6 +272,7 @@ module model_output
                         file%txt%active = .true.
                         file%order = opts
                         call output_file_parse_indices(shd, file, args, nargs, file%grids, i, ierr)
+                        file%txt%path = trim(file_path) // '.ts'
                     case('tsk')
                         file%txt%active = .true.
                         file%order = opts
@@ -322,22 +327,34 @@ module model_output
 
     end subroutine
 
-    subroutine output_file_parse_freq(shd, ts, field, args, nargs)
+    subroutine output_file_parse_freq(fls, shd, ts, field, args, nargs, igndx)
 
         !> Required for 'is_letter' and 'lowercase' functions.
         use strings
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        type(dates_model), intent(in) :: ts
+        integer, intent(in) :: nargs, igndx
+        character(len = *), intent(in) :: args(:)
 
         !> Input/output variables.
-        type(ShedGridParams), intent(in) :: shd
         type(output_field) field
-        type(dates_model), intent(in) :: ts
-
-        !> Input variables.
-        integer, intent(in) :: nargs
-        character(len = *), intent(in) :: args(:)
 
         !> Local variables.
         integer i
+        character(len = 500) file_path
+        character(len = 10) str
+
+        !> Generic beginning of file path.
+        file_path = trim(adjustl(fls%GENDIR_OUT)) // '/' // trim(adjustl(args(1)))
+
+        !> Check for optional 'igndx' variable.
+        if (igndx > 0) then
+            write(str, '(i10)') igndx
+            str = '_' // trim(adjustl(str))
+        else
+            str = ''
+        end if
 
         !> Activate output based on 'args' flags.
         do i = 2, nargs
@@ -346,27 +363,39 @@ module model_output
 
                     !> Yearly.
                     case ('y')
-                        call output_file_parse_options(shd, field%y, ts%nyears, args, nargs)
+                        call output_file_parse_options( &
+                            shd, field%y, trim(adjustl(file_path)) // '_Y' // adjustl(str), &
+                            ts%nyears, args, nargs)
 
                     !> Monthly.
                     case ('m')
-                        call output_file_parse_options(shd, field%m, ts%nmonths, args, nargs)
+                        call output_file_parse_options( &
+                            shd, field%m, trim(adjustl(file_path)) // '_M' // adjustl(str), &
+                            ts%nmonths, args, nargs)
 
                     !> Seasonal (monthly average).
                     case ('s')
-                        call output_file_parse_options(shd, field%s, 12, args, nargs)
+                        call output_file_parse_options( &
+                            shd, field%s, trim(adjustl(file_path)) // '_S' // adjustl(str), &
+                            12, args, nargs)
 
                     !> Daily.
                     case ('d')
-                        call output_file_parse_options(shd, field%d, ts%nr_days, args, nargs)
+                        call output_file_parse_options( &
+                            shd, field%d, trim(adjustl(file_path)) // '_D' // adjustl(str), &
+                            ts%nr_days, args, nargs)
 
                     !> Hourly.
                     case ('h')
-                        call output_file_parse_options(shd, field%h, ts%nr_days*24, args, nargs)
+                        call output_file_parse_options( &
+                            shd, field%h, trim(adjustl(file_path)) // '_H' // adjustl(str), &
+                            ts%nr_days*24, args, nargs)
 
                     !> Per time-step.
                     case ('ts')
-                        call output_file_parse_options(shd, field%ts, ts%nr_days*24*(3600/ic%dts), args, nargs)
+                        call output_file_parse_options( &
+                            shd, field%ts, trim(adjustl(file_path)) // '_TS' // adjustl(str), &
+                            ts%nr_days*24*(3600/ic%dts), args, nargs)
 
                     !> Option to apply fractional cell area.
                     case ('frac', 'apply_frac')
@@ -377,6 +406,43 @@ module model_output
 
     end subroutine
 
+    subroutine output_field_init(fls, shd, ts, field, out_var, args, nargs, igndx)
+
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        type(dates_model), intent(in) :: ts
+        integer, intent(in) :: nargs
+        character(len = *), intent(in) :: args(:)
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: igndx
+
+        !> Input/output variables.
+        type(output_field) field
+        type(output_variables_field) out_var
+
+        !> Local variables.
+        integer j
+
+        !> Layer for file path (optional).
+        if (present(igndx)) then
+            j = igndx
+        else
+            j = out%NO_DATA
+        end if
+
+        !> Parse arguments and initialize field.
+        call output_file_parse_freq(fls, shd, ts, field, args, nargs, j)
+
+        !> Activate output variables for output at specified time intervals.
+        if (field%y%active) call output_variables_allocate(out_var%y, shd%NA)
+        if (field%m%active) call output_variables_allocate(out_var%m, shd%NA)
+        if (field%d%active) call output_variables_allocate(out_var%d, shd%NA)
+        if (field%h%active) call output_variables_allocate(out_var%h, shd%NA)
+
+    end subroutine
+
     subroutine init_out(fls, shd, ts)
 
         !> 'control_variables' required for 'ro' options.
@@ -384,7 +450,7 @@ module model_output
         use control_variables
         use strings
 
-        !> Input/output variables.
+        !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
         type(dates_model), intent(in) :: ts
@@ -433,187 +499,95 @@ module model_output
             select case (args(1))
 
                 !> Meteorological forcing.
-                case ('FSDOWN', 'FSIN')
-                    call output_file_parse_freq(shd, ts, flds%fsin, args, nargs)
-                    if (flds%fsin%y%active) call output_variables_allocate(out%grid%fsin%y, shd%NA)
-                    if (flds%fsin%m%active) call output_variables_allocate(out%grid%fsin%m, shd%NA)
-                    if (flds%fsin%d%active) call output_variables_allocate(out%grid%fsin%d, shd%NA)
-                    if (flds%fsin%h%active) call output_variables_allocate(out%grid%fsin%h, shd%NA)
+                case ('FSIN', 'FSDOWN')
+                    if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%fsin, out%grid%fsin, args, nargs)
                 case ('FSVH')
-                    call output_file_parse_freq(shd, ts, flds%fsvh, args, nargs)
-                    if (flds%fsvh%y%active) call output_variables_allocate(out%grid%fsin%y, shd%NA)
-                    if (flds%fsvh%m%active) call output_variables_allocate(out%grid%fsin%m, shd%NA)
-                    if (flds%fsvh%d%active) call output_variables_allocate(out%grid%fsin%d, shd%NA)
-                    if (flds%fsvh%h%active) call output_variables_allocate(out%grid%fsin%h, shd%NA)
+                    if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%fsvh, out%grid%fsvh, args, nargs)
                 case ('FSIH')
-                    call output_file_parse_freq(shd, ts, flds%fsih, args, nargs)
-                    if (flds%fsih%y%active) call output_variables_allocate(out%grid%fsin%y, shd%NA)
-                    if (flds%fsih%m%active) call output_variables_allocate(out%grid%fsin%m, shd%NA)
-                    if (flds%fsih%d%active) call output_variables_allocate(out%grid%fsin%d, shd%NA)
-                    if (flds%fsih%h%active) call output_variables_allocate(out%grid%fsin%h, shd%NA)
-                case ('FDL', 'FLIN')
-                    call output_file_parse_freq(shd, ts, flds%flin, args, nargs)
-                    if (flds%flin%y%active) call output_variables_allocate(out%grid%flin%y, shd%NA)
-                    if (flds%flin%m%active) call output_variables_allocate(out%grid%flin%m, shd%NA)
-                    if (flds%flin%d%active) call output_variables_allocate(out%grid%flin%d, shd%NA)
-                    if (flds%flin%h%active) call output_variables_allocate(out%grid%flin%h, shd%NA)
-                case ('UL', 'UV')
-                    call output_file_parse_freq(shd, ts, flds%uv, args, nargs)
-                    if (flds%uv%y%active) call output_variables_allocate(out%grid%uv%y, shd%NA)
-                    if (flds%uv%m%active) call output_variables_allocate(out%grid%uv%m, shd%NA)
-                    if (flds%uv%d%active) call output_variables_allocate(out%grid%uv%d, shd%NA)
-                    if (flds%uv%h%active) call output_variables_allocate(out%grid%uv%h, shd%NA)
+                    if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%fsih, out%grid%fsih, args, nargs)
+                case ('FLIN', 'FDL')
+                    if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%flin, out%grid%flin, args, nargs)
+                case ('UV', 'UL')
+                    if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%uv, out%grid%uv, args, nargs)
                 case ('TA')
-                    call output_file_parse_freq(shd, ts, flds%ta, args, nargs)
-                    if (flds%ta%y%active) call output_variables_allocate(out%grid%ta%y, shd%NA)
-                    if (flds%ta%m%active) call output_variables_allocate(out%grid%ta%m, shd%NA)
-                    if (flds%ta%d%active) call output_variables_allocate(out%grid%ta%d, shd%NA)
-                    if (flds%ta%h%active) call output_variables_allocate(out%grid%ta%h, shd%NA)
+                    if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%ta, out%grid%ta, args, nargs)
                 case ('QA', 'HU')
-                    call output_file_parse_freq(shd, ts, flds%qa, args, nargs)
-                    if (flds%qa%y%active) call output_variables_allocate(out%grid%qa%y, shd%NA)
-                    if (flds%qa%m%active) call output_variables_allocate(out%grid%qa%m, shd%NA)
-                    if (flds%qa%d%active) call output_variables_allocate(out%grid%qa%d, shd%NA)
-                    if (flds%qa%h%active) call output_variables_allocate(out%grid%qa%h, shd%NA)
+                    if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%qa, out%grid%qa, args, nargs)
                 case ('PRES')
-                    call output_file_parse_freq(shd, ts, flds%pres, args, nargs)
-                    if (flds%pres%y%active) call output_variables_allocate(out%grid%pres%y, shd%NA)
-                    if (flds%pres%m%active) call output_variables_allocate(out%grid%pres%m, shd%NA)
-                    if (flds%pres%d%active) call output_variables_allocate(out%grid%pres%d, shd%NA)
-                    if (flds%pres%h%active) call output_variables_allocate(out%grid%pres%h, shd%NA)
+                    if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%pres, out%grid%pres, args, nargs)
                 case ('PRE')
-                    call output_file_parse_freq(shd, ts, flds%pre, args, nargs)
-                    if (flds%pre%y%active) call output_variables_allocate(out%grid%pre%y, shd%NA)
-                    if (flds%pre%m%active) call output_variables_allocate(out%grid%pre%m, shd%NA)
-                    if (flds%pre%d%active) call output_variables_allocate(out%grid%pre%d, shd%NA)
-                    if (flds%pre%h%active) call output_variables_allocate(out%grid%pre%h, shd%NA)
+                    if (ro%RUNCLIM) call output_field_init(fls, shd, ts, flds%pre, out%grid%pre, args, nargs)
 
                 !> Water balance.
                 case ('PREC', 'Rainfall', 'Rain', 'Precipitation')
-                    call output_file_parse_freq(shd, ts, flds%prec, args, nargs)
-                    if (flds%prec%y%active) call output_variables_allocate(out%grid%pre%y, shd%NA)
-                    if (flds%prec%m%active) call output_variables_allocate(out%grid%pre%m, shd%NA)
-                    if (flds%prec%d%active) call output_variables_allocate(out%grid%pre%d, shd%NA)
-                    if (flds%prec%h%active) call output_variables_allocate(out%grid%pre%h, shd%NA)
+                    if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%prec, out%grid%pre, args, nargs)
                 case ('EVAP', 'Evapotranspiration')
-                    call output_file_parse_freq(shd, ts, flds%evap, args, nargs)
-                    if (flds%evap%y%active) call output_variables_allocate(out%grid%evap%y, shd%NA)
-                    if (flds%evap%m%active) call output_variables_allocate(out%grid%evap%m, shd%NA)
-                    if (flds%evap%d%active) call output_variables_allocate(out%grid%evap%d, shd%NA)
-                    if (flds%evap%h%active) call output_variables_allocate(out%grid%evap%h, shd%NA)
-                case ('Runoff', 'ROF')
-                    call output_file_parse_freq(shd, ts, flds%rof, args, nargs)
-                    if (flds%rof%y%active) call output_variables_allocate(out%grid%rof%y, shd%NA)
-                    if (flds%rof%m%active) call output_variables_allocate(out%grid%rof%m, shd%NA)
-                    if (flds%rof%d%active) call output_variables_allocate(out%grid%rof%d, shd%NA)
-                    if (flds%rof%h%active) call output_variables_allocate(out%grid%rof%h, shd%NA)
+                    if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%evap, out%grid%evap, args, nargs)
+                case ('ROF', 'Runoff')
+                    if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%rof, out%grid%rof, args, nargs)
                 case ('RCAN')
-                    call output_file_parse_freq(shd, ts, flds%rcan, args, nargs)
-                    if (flds%rcan%y%active) call output_variables_allocate(out%grid%rcan%y, shd%NA)
-                    if (flds%rcan%m%active) call output_variables_allocate(out%grid%rcan%m, shd%NA)
-                    if (flds%rcan%d%active) call output_variables_allocate(out%grid%rcan%d, shd%NA)
-                    if (flds%rcan%h%active) call output_variables_allocate(out%grid%rcan%h, shd%NA)
-                case ('SCAN', 'SNCAN')
-                    call output_file_parse_freq(shd, ts, flds%sncan, args, nargs)
-                    if (flds%sncan%y%active) call output_variables_allocate(out%grid%sncan%y, shd%NA)
-                    if (flds%sncan%m%active) call output_variables_allocate(out%grid%sncan%m, shd%NA)
-                    if (flds%sncan%d%active) call output_variables_allocate(out%grid%sncan%d, shd%NA)
-                    if (flds%sncan%h%active) call output_variables_allocate(out%grid%sncan%h, shd%NA)
+                    if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%rcan, out%grid%rcan, args, nargs)
+                case ('SNCAN', 'SCAN')
+                    if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%sncan, out%grid%sncan, args, nargs)
                 case ('PNDW')
-                    call output_file_parse_freq(shd, ts, flds%pndw, args, nargs)
-                    if (flds%pndw%y%active) call output_variables_allocate(out%grid%pndw%y, shd%NA)
-                    if (flds%pndw%m%active) call output_variables_allocate(out%grid%pndw%m, shd%NA)
-                    if (flds%pndw%d%active) call output_variables_allocate(out%grid%pndw%d, shd%NA)
-                    if (flds%pndw%h%active) call output_variables_allocate(out%grid%pndw%h, shd%NA)
+                    if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%pndw, out%grid%pndw, args, nargs)
                 case ('SNO')
-                    call output_file_parse_freq(shd, ts, flds%sno, args, nargs)
-                    if (flds%sno%y%active) call output_variables_allocate(out%grid%sno%y, shd%NA)
-                    if (flds%sno%m%active) call output_variables_allocate(out%grid%sno%m, shd%NA)
-                    if (flds%sno%d%active) call output_variables_allocate(out%grid%sno%d, shd%NA)
-                    if (flds%sno%h%active) call output_variables_allocate(out%grid%sno%h, shd%NA)
+                    if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%sno, out%grid%sno, args, nargs)
                 case ('WSNO')
-                    call output_file_parse_freq(shd, ts, flds%wsno, args, nargs)
-                    if (flds%wsno%y%active) call output_variables_allocate(out%grid%wsno%y, shd%NA)
-                    if (flds%wsno%m%active) call output_variables_allocate(out%grid%wsno%m, shd%NA)
-                    if (flds%wsno%d%active) call output_variables_allocate(out%grid%wsno%d, shd%NA)
-                    if (flds%wsno%h%active) call output_variables_allocate(out%grid%wsno%h, shd%NA)
-                case ('STG', 'DSTG', 'STGW')
-                    call output_file_parse_freq(shd, ts, flds%stgw, args, nargs)
-                    if (flds%stgw%y%active) call output_variables_allocate(out%grid%stgw%y, shd%NA)
-                    if (flds%stgw%m%active) call output_variables_allocate(out%grid%stgw%m, shd%NA)
-                    if (flds%stgw%d%active) call output_variables_allocate(out%grid%stgw%d, shd%NA)
-                    if (flds%stgw%h%active) call output_variables_allocate(out%grid%stgw%h, shd%NA)
+                    if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%wsno, out%grid%wsno, args, nargs)
+                case ('STGW', 'STG', 'DSTG')
+                    if (ro%RUNBALWB) call output_field_init(fls, shd, ts, flds%stgw, out%grid%stgw, args, nargs)
                 case ('THLQ')
-                    if (.not. allocated(flds%thlq)) allocate(flds%thlq(shd%lc%IGND))
-                    do j = 1, shd%lc%IGND
-                        call output_file_parse_freq(shd, ts, flds%thlq(j), args, nargs)
-                        if (flds%thlq(j)%y%active) call output_variables_allocate(out%grid%thlq(j)%y, shd%NA)
-                        if (flds%thlq(j)%m%active) call output_variables_allocate(out%grid%thlq(j)%m, shd%NA)
-                        if (flds%thlq(j)%d%active) call output_variables_allocate(out%grid%thlq(j)%d, shd%NA)
-                        if (flds%thlq(j)%h%active) call output_variables_allocate(out%grid%thlq(j)%h, shd%NA)
-                    end do
+                    if (ro%RUNBALWB) then
+                        if (.not. allocated(flds%thlq)) allocate(flds%thlq(shd%lc%IGND))
+                        do j = 1, shd%lc%IGND
+                            call output_field_init(fls, shd, ts, flds%thlq(j), out%grid%thlq(j), args, nargs, j)
+                        end do
+                    end if
                 case ('LQWS')
-                    if (.not. allocated(flds%lqws)) allocate(flds%lqws(shd%lc%IGND))
-                    do j = 1, shd%lc%IGND
-                        call output_file_parse_freq(shd, ts, flds%lqws(j), args, nargs)
-                        if (flds%lqws(j)%y%active) call output_variables_allocate(out%grid%lqws(j)%y, shd%NA)
-                        if (flds%lqws(j)%m%active) call output_variables_allocate(out%grid%lqws(j)%m, shd%NA)
-                        if (flds%lqws(j)%d%active) call output_variables_allocate(out%grid%lqws(j)%d, shd%NA)
-                        if (flds%lqws(j)%h%active) call output_variables_allocate(out%grid%lqws(j)%h, shd%NA)
-                    end do
+                    if (ro%RUNBALWB) then
+                        if (.not. allocated(flds%lqws)) allocate(flds%lqws(shd%lc%IGND))
+                        do j = 1, shd%lc%IGND
+                            call output_field_init(fls, shd, ts, flds%lqws(j), out%grid%lqws(j), args, nargs, j)
+                        end do
+                    end if
                 case ('THIC')
-                    if (.not. allocated(flds%thic)) allocate(flds%thic(shd%lc%IGND))
-                    do j = 1, shd%lc%IGND
-                        call output_file_parse_freq(shd, ts, flds%thic(j), args, nargs)
-                        if (flds%thic(j)%y%active) call output_variables_allocate(out%grid%thic(j)%y, shd%NA)
-                        if (flds%thic(j)%m%active) call output_variables_allocate(out%grid%thic(j)%m, shd%NA)
-                        if (flds%thic(j)%d%active) call output_variables_allocate(out%grid%thic(j)%d, shd%NA)
-                        if (flds%thic(j)%h%active) call output_variables_allocate(out%grid%thic(j)%h, shd%NA)
-                    end do
-                case ('FRWS', 'FZWS')
-                    if (.not. allocated(flds%fzws)) allocate(flds%fzws(shd%lc%IGND))
-                    do j = 1, shd%lc%IGND
-                        call output_file_parse_freq(shd, ts, flds%fzws(j), args, nargs)
-                        if (flds%fzws(j)%y%active) call output_variables_allocate(out%grid%fzws(j)%y, shd%NA)
-                        if (flds%fzws(j)%m%active) call output_variables_allocate(out%grid%fzws(j)%m, shd%NA)
-                        if (flds%fzws(j)%d%active) call output_variables_allocate(out%grid%fzws(j)%d, shd%NA)
-                        if (flds%fzws(j)%h%active) call output_variables_allocate(out%grid%fzws(j)%h, shd%NA)
-                    end do
+                    if (ro%RUNBALWB) then
+                        if (.not. allocated(flds%thic)) allocate(flds%thic(shd%lc%IGND))
+                        do j = 1, shd%lc%IGND
+                            call output_field_init(fls, shd, ts, flds%thic(j), out%grid%thic(j), args, nargs, j)
+                        end do
+                    end if
+                case ('FZWS', 'FRWS')
+                    if (ro%RUNBALWB) then
+                        if (.not. allocated(flds%fzws)) allocate(flds%fzws(shd%lc%IGND))
+                        do j = 1, shd%lc%IGND
+                            call output_field_init(fls, shd, ts, flds%fzws(j), out%grid%fzws(j), args, nargs, j)
+                        end do
+                    end if
 
                 !> Energy balance.
-                case ('HFS', 'SensibleHeat', 'QH')
-                    call output_file_parse_freq(shd, ts, flds%qh, args, nargs)
-                    if (flds%qh%y%active) call output_variables_allocate(out%grid%qh%y, shd%NA)
-                    if (flds%qh%m%active) call output_variables_allocate(out%grid%qh%m, shd%NA)
-                    if (flds%qh%d%active) call output_variables_allocate(out%grid%qh%d, shd%NA)
-                    if (flds%qh%h%active) call output_variables_allocate(out%grid%qh%h, shd%NA)
-                case ('QEVP', 'LatentHeat', 'QE')
-                    call output_file_parse_freq(shd, ts, flds%qe, args, nargs)
-                    if (flds%qe%y%active) call output_variables_allocate(out%grid%qe%y, shd%NA)
-                    if (flds%qe%m%active) call output_variables_allocate(out%grid%qe%m, shd%NA)
-                    if (flds%qe%d%active) call output_variables_allocate(out%grid%qe%d, shd%NA)
-                    if (flds%qe%h%active) call output_variables_allocate(out%grid%qe%h, shd%NA)
+                case ('QH', 'HFS', 'SensibleHeat')
+                    if (ro%RUNBALEB) call output_field_init(fls, shd, ts, flds%qh, out%grid%qh, args, nargs)
+                case ('QE', 'QEVP', 'LatentHeat')
+                    if (ro%RUNBALEB) call output_field_init(fls, shd, ts, flds%qe, out%grid%qe, args, nargs)
                 case ('GFLX', 'HeatConduction')
-                    if (.not. allocated(flds%gflx)) allocate(flds%gflx(shd%lc%IGND))
-                    do j = 1, shd%lc%IGND
-                        call output_file_parse_freq(shd, ts, flds%gflx(j), args, nargs)
-                        if (flds%gflx(j)%y%active) call output_variables_allocate(out%grid%gflx(j)%y, shd%NA)
-                        if (flds%gflx(j)%m%active) call output_variables_allocate(out%grid%gflx(j)%m, shd%NA)
-                        if (flds%gflx(j)%d%active) call output_variables_allocate(out%grid%gflx(j)%d, shd%NA)
-                        if (flds%gflx(j)%h%active) call output_variables_allocate(out%grid%gflx(j)%h, shd%NA)
-                    end do
-                case ('TempSoil', 'Temperature_soil_layers', 'TBAR')
-                    if (.not. allocated(flds%tbar)) allocate(flds%tbar(shd%lc%IGND))
-                    do j = 1, shd%lc%IGND
-                        call output_file_parse_freq(shd, ts, flds%tbar(j), args, nargs)
-                        if (flds%tbar(j)%y%active) call output_variables_allocate(out%grid%tbar(j)%y, shd%NA)
-                        if (flds%tbar(j)%m%active) call output_variables_allocate(out%grid%tbar(j)%m, shd%NA)
-                        if (flds%tbar(j)%d%active) call output_variables_allocate(out%grid%tbar(j)%d, shd%NA)
-                        if (flds%tbar(j)%h%active) call output_variables_allocate(out%grid%tbar(j)%h, shd%NA)
-                    end do
+                    if (ro%RUNBALEB) then
+                        if (.not. allocated(flds%gflx)) allocate(flds%gflx(shd%lc%IGND))
+                        do j = 1, shd%lc%IGND
+                            call output_field_init(fls, shd, ts, flds%gflx(j), out%grid%gflx(j), args, nargs, j)
+                        end do
+                    end if
+                case ('TBAR', 'TempSoil', 'Temperature_soil_layers')
+                    if (ro%RUNBALEB) then
+                        if (.not. allocated(flds%tbar)) allocate(flds%tbar(shd%lc%IGND))
+                        do j = 1, shd%lc%IGND
+                            call output_field_init(fls, shd, ts, flds%tbar(j), out%grid%tbar(j), args, nargs, j)
+                        end do
+                    end if
 
                 case ('ZOD', 'TMAX', 'TMIN', 'ALD')
-!                    call output_file_parse_freq(shd, ts, flds%ald, args, nargs)
+!                    call output_field_init(fls, shd, ts, flds%ald, out%grid%ald, args, nargs)
 !                    flds%ald%m%active = .false.
 !                    flds%ald%s%active = .false.
 !                    flds%ald%d%active = .false.
@@ -635,18 +609,10 @@ module model_output
 !                    end if
 
                 !> Channels and routing.
-                case ('WR_RUNOFF', 'RFF')
-                    call output_file_parse_freq(shd, ts, flds%rff, args, nargs)
-                    if (flds%rff%y%active) call output_variables_allocate(out%grid%rff%y, shd%NA)
-                    if (flds%rff%m%active) call output_variables_allocate(out%grid%rff%m, shd%NA)
-                    if (flds%rff%d%active) call output_variables_allocate(out%grid%rff%d, shd%NA)
-                    if (flds%rff%h%active) call output_variables_allocate(out%grid%rff%h, shd%NA)
-                case ('WR_RECHARGE', 'RCHG')
-                    call output_file_parse_freq(shd, ts, flds%rchg, args, nargs)
-                    if (flds%rchg%y%active) call output_variables_allocate(out%grid%rchg%y, shd%NA)
-                    if (flds%rchg%m%active) call output_variables_allocate(out%grid%rchg%m, shd%NA)
-                    if (flds%rchg%d%active) call output_variables_allocate(out%grid%rchg%d, shd%NA)
-                    if (flds%rchg%h%active) call output_variables_allocate(out%grid%rchg%h, shd%NA)
+                case ('RFF', 'WR_RUNOFF')
+                    if (ro%RUNCHNL) call output_field_init(fls, shd, ts, flds%rff, out%grid%rff, args, nargs)
+                case ('RCHG', 'WR_RECHARGE')
+                    if (ro%RUNCHNL) call output_field_init(fls, shd, ts, flds%rchg, out%grid%rchg, args, nargs)
 
                 case default
                     n = n - 1
@@ -1000,7 +966,7 @@ module model_output
         !> Open the file (if not opened).
         if (.not. opened_status) then
             open( &
-                iun, file = trim(adjustl(fls%GENDIR_OUT)) // '/' // trim(adjustl(field_name)) // '.seq', &
+                iun, file = file_fmt%path, &
                 status = 'replace', form = 'unformatted', action = 'write', access = 'sequential', &
                 iostat = ierr)
         end if
@@ -1042,7 +1008,7 @@ module model_output
         !> Open the file (if not opened) and write 'r2c' header.
         if (.not. opened_status) then
             open( &
-                iun, file = trim(adjustl(fls%GENDIR_OUT)) // '/' // trim(adjustl(field_name)) // '.r2c', &
+                iun, file = file_fmt%path, &
                 status = 'replace', form = 'formatted', action = 'write', &
                 iostat = ierr)
             write(iun, 3005) '########################################'
@@ -1144,7 +1110,7 @@ module model_output
         !> Open the file (if not opened).
         if (.not. opened_status) then
             open( &
-                iun, file = trim(adjustl(fls%GENDIR_OUT)) // '/' // trim(adjustl(field_name)) // '.txt', &
+                iun, file = file_fmt%path, &
                 status = 'replace', form = 'formatted', action = 'write', &
                 iostat = ierr)
         end if

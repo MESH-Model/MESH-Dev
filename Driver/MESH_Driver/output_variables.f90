@@ -515,8 +515,10 @@ module output_variables
     !>  Update output variables for output at larger time intervals.
     subroutine output_variables_update_group(shd, group)
 
+        !> 'control_variables' required to check for active modelling components.
         !> 'shd_variables' required for 'shd'.
         use shd_variables
+        use control_variables
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
@@ -528,69 +530,77 @@ module output_variables
         integer j
 
         !> Meteorological forcing.
-        call output_variables_update_field(group%pre, 'sum')
-        call output_variables_update_field(group%fsin, 'avg')
-        call output_variables_update_field(group%flin, 'avg')
-        call output_variables_update_field(group%ta, 'avg')
-        call output_variables_update_field(group%qa, 'avg')
-        call output_variables_update_field(group%pres, 'avg')
-        call output_variables_update_field(group%uv, 'avg')
+        if (ro%RUNCLIM) then
+            call output_variables_update_field(group%pre, 'sum')
+            call output_variables_update_field(group%fsin, 'avg')
+            call output_variables_update_field(group%flin, 'avg')
+            call output_variables_update_field(group%ta, 'avg')
+            call output_variables_update_field(group%qa, 'avg')
+            call output_variables_update_field(group%pres, 'avg')
+            call output_variables_update_field(group%uv, 'avg')
+        end if
 
         !> Water balance.
-        call output_variables_update_field(group%gro, 'avg')
-        call output_variables_update_field(group%evap, 'sum')
-        call output_variables_update_field(group%pevp, 'sum')
-!        call output_variables_update_field(group%evpb, 'avg')
-!        call output_variables_update_field(group%arrd, 'avg')
-        call output_variables_update_field(group%rof, 'sum')
-        call output_variables_update_field(group%rofo, 'sum')
-        call output_variables_update_field(group%rofs, 'sum')
-        call output_variables_update_field(group%rofb, 'sum')
-        call output_variables_update_field(group%rcan, 'sum')
-        call output_variables_update_field(group%sncan, 'sum')
-        call output_variables_update_field(group%sno, 'sum')
-        call output_variables_update_field(group%fsno, 'sum')
-        call output_variables_update_field(group%wsno, 'sum')
-        call output_variables_update_field(group%zpnd, 'avg')
-        call output_variables_update_field(group%pndw, 'sum')
-        call output_variables_update_field(group%lzs, 'sum')
-        call output_variables_update_field(group%dzs, 'sum')
-        call output_variables_update_field(group%stgw, 'val')
-        do j = 1, shd%lc%IGND
-            call output_variables_update_field(group%thlq(j), 'avg')
-            call output_variables_update_field(group%lqws(j), 'sum')
-            call output_variables_update_field(group%thic(j), 'avg')
-            call output_variables_update_field(group%fzws(j), 'sum')
-            call output_variables_update_field(group%alws(j), 'sum')
-        end do
+        if (ro%RUNBALWB) then
+            call output_variables_update_field(group%gro, 'avg')
+            call output_variables_update_field(group%evap, 'sum')
+            call output_variables_update_field(group%pevp, 'sum')
+!            call output_variables_update_field(group%evpb, 'avg')
+!            call output_variables_update_field(group%arrd, 'avg')
+            call output_variables_update_field(group%rof, 'sum')
+            call output_variables_update_field(group%rofo, 'sum')
+            call output_variables_update_field(group%rofs, 'sum')
+            call output_variables_update_field(group%rofb, 'sum')
+            call output_variables_update_field(group%rcan, 'sum')
+            call output_variables_update_field(group%sncan, 'sum')
+            call output_variables_update_field(group%sno, 'sum')
+            call output_variables_update_field(group%fsno, 'sum')
+            call output_variables_update_field(group%wsno, 'sum')
+            call output_variables_update_field(group%zpnd, 'avg')
+            call output_variables_update_field(group%pndw, 'sum')
+            call output_variables_update_field(group%lzs, 'sum')
+            call output_variables_update_field(group%dzs, 'sum')
+            call output_variables_update_field(group%stgw, 'val')
+            do j = 1, shd%lc%IGND
+                call output_variables_update_field(group%thlq(j), 'avg')
+                call output_variables_update_field(group%lqws(j), 'sum')
+                call output_variables_update_field(group%thic(j), 'avg')
+                call output_variables_update_field(group%fzws(j), 'sum')
+                call output_variables_update_field(group%alws(j), 'sum')
+            end do
+        end if
 
         !> Energy balance.
-        call output_variables_update_field(group%cmas, 'sum')
-        call output_variables_update_field(group%tcan, 'avg')
-        call output_variables_update_field(group%tsno, 'avg')
-        call output_variables_update_field(group%tpnd, 'avg')
-        call output_variables_update_field(group%albt, 'avg')
-        call output_variables_update_field(group%alvs, 'avg')
-        call output_variables_update_field(group%alir, 'avg')
-        call output_variables_update_field(group%fsout, 'avg')
-        call output_variables_update_field(group%gte, 'avg')
-        call output_variables_update_field(group%flout, 'avg')
-        call output_variables_update_field(group%qh, 'avg')
-        call output_variables_update_field(group%qe, 'avg')
-        call output_variables_update_field(group%gzero, 'avg')
-        call output_variables_update_field(group%stge, 'val')
-        do j = 1, shd%lc%IGND
-            call output_variables_update_field(group%gflx(j), 'avg')
-            call output_variables_update_field(group%tbar(j), 'avg')
-        end do
+        if (ro%RUNBALEB) then
+            call output_variables_update_field(group%cmas, 'sum')
+            call output_variables_update_field(group%tcan, 'avg')
+            call output_variables_update_field(group%tsno, 'avg')
+            call output_variables_update_field(group%tpnd, 'avg')
+            call output_variables_update_field(group%albt, 'avg')
+            call output_variables_update_field(group%alvs, 'avg')
+            call output_variables_update_field(group%alir, 'avg')
+            call output_variables_update_field(group%fsout, 'avg')
+            call output_variables_update_field(group%gte, 'avg')
+            call output_variables_update_field(group%flout, 'avg')
+            call output_variables_update_field(group%qh, 'avg')
+            call output_variables_update_field(group%qe, 'avg')
+            call output_variables_update_field(group%gzero, 'avg')
+            call output_variables_update_field(group%stge, 'val')
+            do j = 1, shd%lc%IGND
+                call output_variables_update_field(group%gflx(j), 'avg')
+                call output_variables_update_field(group%tbar(j), 'avg')
+            end do
+        end if
 
         !> Channels and routing.
-        call output_variables_update_field(group%rff, 'sum')
-        call output_variables_update_field(group%rchg, 'sum')
-        call output_variables_update_field(group%qi, 'avg')
-        call output_variables_update_field(group%stgch, 'avg')
-        call output_variables_update_field(group%qo, 'avg')
-!        call output_variables_update_field(group%zlvl, 'avg')
+        if (ro%RUNCHNL) then
+            call output_variables_update_field(group%rff, 'sum')
+            call output_variables_update_field(group%rchg, 'sum')
+            call output_variables_update_field(group%qi, 'avg')
+            call output_variables_update_field(group%stgch, 'avg')
+            call output_variables_update_field(group%qo, 'avg')
+!            call output_variables_update_field(group%zlvl, 'avg')
+        end if
 
     end subroutine
 
