@@ -258,10 +258,10 @@ module sa_mesh_run_between_grid
         call output_variables_init(shd, cm)
 
         !> Allocate grid-based output variables.
-        call output_variables_allocate(out%grid%dly%qi, shd%NA)
-        call output_variables_allocate(out%grid%dly%stgch, shd%NA)
-        call output_variables_allocate(out%grid%dly%qo, shd%NA)
-        call output_variables_allocate(out%grid%dly%zlvl, shd%NA)
+        call output_variables_allocate(out%grid%qi%d, shd%NA)
+        call output_variables_allocate(out%grid%stgch%d, shd%NA)
+        call output_variables_allocate(out%grid%qo%d, shd%NA)
+        call output_variables_allocate(out%grid%zlvl%d, shd%NA)
 
         !> Call processes.
         call SA_RTE_init(shd)
@@ -270,29 +270,31 @@ module sa_mesh_run_between_grid
         call runci_between_grid_init(shd, fls)
 
         !> Allocate grid-based accumulated output.
-        call output_variables_allocate(out%grid%tot%pre, shd%NA)
-        call output_variables_allocate(out%grid%tot%evap, shd%NA)
-        call output_variables_allocate(out%grid%tot%rof, shd%NA)
-        call output_variables_allocate(out%grid%tot%rofo, shd%NA)
-        call output_variables_allocate(out%grid%tot%rofs, shd%NA)
-        call output_variables_allocate(out%grid%tot%rofb, shd%NA)
+        call output_variables_allocate(out%grid%pre%tot, shd%NA)
+        call output_variables_allocate(out%grid%evap%tot, shd%NA)
+        call output_variables_allocate(out%grid%rof%tot, shd%NA)
+        call output_variables_allocate(out%grid%rofo%tot, shd%NA)
+        call output_variables_allocate(out%grid%rofs%tot, shd%NA)
+        call output_variables_allocate(out%grid%rofb%tot, shd%NA)
 
         !> Allocate grid-based daily output.
-        call output_variables_allocate(out%grid%dly%pre, shd%NA)
-        call output_variables_allocate(out%grid%dly%evap, shd%NA)
-        call output_variables_allocate(out%grid%dly%rof, shd%NA)
-        call output_variables_allocate(out%grid%dly%rofo, shd%NA)
-        call output_variables_allocate(out%grid%dly%rofs, shd%NA)
-        call output_variables_allocate(out%grid%dly%rofb, shd%NA)
-        call output_variables_allocate(out%grid%dly%rcan, shd%NA)
-        call output_variables_allocate(out%grid%dly%sncan, shd%NA)
-        call output_variables_allocate(out%grid%dly%sno, shd%NA)
-        call output_variables_allocate(out%grid%dly%wsno, shd%NA)
-        call output_variables_allocate(out%grid%dly%pndw, shd%NA)
-        call output_variables_allocate(out%grid%dly%lzs, shd%NA)
-        call output_variables_allocate(out%grid%dly%dzs, shd%NA)
-        call output_variables_allocate(out%grid%dly%lqws, shd%NA, shd%lc%IGND)
-        call output_variables_allocate(out%grid%dly%fzws, shd%NA, shd%lc%IGND)
+        call output_variables_allocate(out%grid%pre%d, shd%NA)
+        call output_variables_allocate(out%grid%evap%d, shd%NA)
+        call output_variables_allocate(out%grid%rof%d, shd%NA)
+        call output_variables_allocate(out%grid%rofo%d, shd%NA)
+        call output_variables_allocate(out%grid%rofs%d, shd%NA)
+        call output_variables_allocate(out%grid%rofb%d, shd%NA)
+        call output_variables_allocate(out%grid%rcan%d, shd%NA)
+        call output_variables_allocate(out%grid%sncan%d, shd%NA)
+        call output_variables_allocate(out%grid%sno%d, shd%NA)
+        call output_variables_allocate(out%grid%wsno%d, shd%NA)
+        call output_variables_allocate(out%grid%pndw%d, shd%NA)
+        call output_variables_allocate(out%grid%lzs%d, shd%NA)
+        call output_variables_allocate(out%grid%dzs%d, shd%NA)
+        do j = 1, shd%lc%IGND
+            call output_variables_allocate(out%grid%lqws(j)%d, shd%NA)
+            call output_variables_allocate(out%grid%fzws(j)%d, shd%NA)
+        end do
 
         !> Output.
         call run_save_basin_output_init(fls, shd, cm)
@@ -334,7 +336,7 @@ module sa_mesh_run_between_grid
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
         !> Reset output variables.
-        call output_variables_reset()
+        call output_variables_reset(shd, cm)
 
         !> Read in reservoir release values if such a type of reservoir has been defined.
         if (fms%rsvr%n > 0) then
@@ -424,9 +426,9 @@ module sa_mesh_run_between_grid
                     iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun + l
                     write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
                     write(iun, 1010, advance = 'no') &
-                        out%grid%ts%qi(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
-                        out%grid%ts%stgch(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
-                        out%grid%ts%qo(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts)
+                        out%grid%qi%ts(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
+                        out%grid%stgch%ts(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
+                        out%grid%qo%ts(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts)
                     write(iun, *)
                 end do
             end if
@@ -442,7 +444,7 @@ module sa_mesh_run_between_grid
                     if (WF_RTE_fstflout%fout_hyd) then
                         write(iun, 1010, advance = 'no') &
                             fms%stmg%qomeas%val(i), &
-                            out%grid%ts%qo(fms%stmg%meta%rnk(i))/real(RTE_TS/ic%dts)
+                            out%grid%qo%ts(fms%stmg%meta%rnk(i))/real(RTE_TS/ic%dts)
                     end if
 !todo
                     if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
@@ -456,23 +458,23 @@ module sa_mesh_run_between_grid
         if (ic%now%day /= ic%next%day) then
 
             if (fms%rsvr%n > 0) then
-                where (out%grid%dly%stgch(fms%rsvr%meta%rnk(:)) > 0.0 .and. fms%rsvr%rls%area > 0.0)
-                    out%grid%dly%zlvl(fms%rsvr%meta%rnk(:)) = out%grid%dly%stgch(fms%rsvr%meta%rnk(:))/fms%rsvr%rls%area
+                where (out%grid%stgch%d(fms%rsvr%meta%rnk(:)) > 0.0 .and. fms%rsvr%rls%area > 0.0)
+                    out%grid%zlvl%d(fms%rsvr%meta%rnk(:)) = out%grid%stgch%d(fms%rsvr%meta%rnk(:))/fms%rsvr%rls%area
                 elsewhere
-                    out%grid%dly%zlvl(fms%rsvr%meta%rnk(:)) = out%NO_DATA
+                    out%grid%zlvl%d(fms%rsvr%meta%rnk(:)) = out%NO_DATA
                 end where
                 iun = 707
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
-                write(iun, 1010, advance = 'no') (out%grid%dly%zlvl(fms%rsvr%meta%rnk(l)), l = 1, fms%rsvr%n)
+                write(iun, 1010, advance = 'no') (out%grid%zlvl%d(fms%rsvr%meta%rnk(l)), l = 1, fms%rsvr%n)
                 write(iun, *)
                 if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KDLY)) then
                     do l = 1, fms%rsvr%n
                         iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun + l
                         write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
                         write(iun, 1010, advance = 'no') &
-                            out%grid%dly%qi(fms%rsvr%meta%rnk(l)), &
-                            out%grid%dly%stgch(fms%rsvr%meta%rnk(l)), &
-                            out%grid%dly%qo(fms%rsvr%meta%rnk(l))
+                            out%grid%qi%d(fms%rsvr%meta%rnk(l)), &
+                            out%grid%stgch%d(fms%rsvr%meta%rnk(l)), &
+                            out%grid%qo%d(fms%rsvr%meta%rnk(l))
                         write(iun, *)
                     end do
                 end if
@@ -488,7 +490,7 @@ module sa_mesh_run_between_grid
 
             !> Write daily output for streamflow.
             if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KDLY)) then
-                WF_QO2_ACC = WF_QO2_ACC + out%grid%dly%qo
+                WF_QO2_ACC = WF_QO2_ACC + out%grid%qo%d
                 where (WF_STORE2_ACC_MM /= out%NO_DATA) WF_STORE2_ACC_MM = WF_STORE2_ACC_MM/ic%ts_count
                 iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
@@ -496,7 +498,7 @@ module sa_mesh_run_between_grid
                     if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') &
                         WF_QHYD_CUM(i), WF_QO2_ACC(fms%stmg%meta%rnk(i))
                     if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') &
-                        fms%stmg%qomeas%val(i), out%grid%dly%qo(fms%stmg%meta%rnk(i))
+                        fms%stmg%qomeas%val(i), out%grid%qo%d(fms%stmg%meta%rnk(i))
                     if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') &
                         WF_QO2_ACC_MM(fms%stmg%meta%rnk(i)), WF_STORE2_ACC_MM(fms%stmg%meta%rnk(i))
                 end do

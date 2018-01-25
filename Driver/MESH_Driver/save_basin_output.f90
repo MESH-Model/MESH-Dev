@@ -261,10 +261,13 @@ module save_basin_output
         !> Calculate initial storage and aggregate through neighbouring cells.
         do ikey = 1, NKEY
             bno%wb(ikey)%STG_INI = &
-                out%grid%ts%rcan*shd%FRAC + out%grid%ts%sncan*shd%FRAC + &
-                out%grid%ts%sno*shd%FRAC + out%grid%ts%wsno*shd%FRAC + out%grid%ts%pndw*shd%FRAC + &
-                sum(out%grid%ts%lqws, 2)*shd%FRAC + sum(out%grid%ts%fzws, 2)*shd%FRAC + &
-                out%grid%ts%lzs*shd%FRAC + out%grid%ts%dzs*shd%FRAC
+                out%grid%rcan%ts*shd%FRAC + out%grid%sncan%ts*shd%FRAC + &
+                out%grid%sno%ts*shd%FRAC + out%grid%wsno%ts*shd%FRAC + out%grid%pndw%ts*shd%FRAC + &
+                out%grid%lzs%ts*shd%FRAC + out%grid%dzs%ts*shd%FRAC
+            do j = 1, shd%lc%IGND
+                bno%wb(ikey)%STG_INI = bno%wb(ikey)%STG_INI + &
+                    out%grid%lqws(j)%ts*shd%FRAC + out%grid%fzws(j)%ts*shd%FRAC
+            end do
         end do
         do i = 1, shd%NAA
             ii = shd%NEXT(i)
@@ -386,10 +389,10 @@ module save_basin_output
         call update_water_balance(shd, cm)
 
         !> For PEVP-EVAP and EVPB output
-        bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%grid%ts%evap*shd%FRAC*ic%dts)/sum(shd%FRAC)
-        bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(out%grid%ts%pevp*shd%FRAC*ic%dts)/sum(shd%FRAC)
-        bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(out%grid%ts%evpb*shd%FRAC)/sum(shd%FRAC)
-        bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(out%grid%ts%arrd*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%grid%evap%ts*ic%dts*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(out%grid%pevp%ts*ic%dts*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(out%grid%evpb%ts*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(out%grid%arrd%ts*shd%FRAC)/sum(shd%FRAC)
 
         !> Update the energy balance.
         call update_energy_balance(shd, cm)
@@ -724,23 +727,23 @@ module save_basin_output
                  LQWS(NA, NSL), FRWS(NA, NSL), LZS(NA), DZS(NA))
 
         !> Accumulate variables and aggregate through neighbouring cells.
-        PRE = out%grid%ts%pre*shd%FRAC*ic%dts
-        EVAP = out%grid%ts%evap*shd%FRAC*ic%dts
-        ROF = out%grid%ts%rof*shd%FRAC*ic%dts
-        ROFO = out%grid%ts%rofo*shd%FRAC*ic%dts
-        ROFS = out%grid%ts%rofs*shd%FRAC*ic%dts
-        ROFB = out%grid%ts%rofb*shd%FRAC*ic%dts
-        RCAN = out%grid%ts%rcan*shd%FRAC
-        SNCAN = out%grid%ts%sncan*shd%FRAC
-        SNO = out%grid%ts%sno*shd%FRAC
-        WSNO = out%grid%ts%wsno*shd%FRAC
-        PNDW = out%grid%ts%pndw*shd%FRAC
+        PRE = out%grid%pre%ts*ic%dts*shd%FRAC
+        EVAP = out%grid%evap%ts*ic%dts*shd%FRAC
+        ROF = out%grid%rof%ts*ic%dts*shd%FRAC
+        ROFO = out%grid%rofo%ts*ic%dts*shd%FRAC
+        ROFS = out%grid%rofs%ts*ic%dts*shd%FRAC
+        ROFB = out%grid%rofb%ts*ic%dts*shd%FRAC
+        RCAN = out%grid%rcan%ts*shd%FRAC
+        SNCAN = out%grid%sncan%ts*shd%FRAC
+        SNO = out%grid%sno%ts*shd%FRAC
+        WSNO = out%grid%wsno%ts*shd%FRAC
+        PNDW = out%grid%pndw%ts*shd%FRAC
         do j = 1, shd%lc%IGND
-            LQWS(:, j) = out%grid%ts%lqws(:, j)*shd%FRAC
-            FRWS(:, j) = out%grid%ts%fzws(:, j)*shd%FRAC
+            LQWS(:, j) = out%grid%lqws(j)%ts*shd%FRAC
+            FRWS(:, j) = out%grid%fzws(j)%ts*shd%FRAC
         end do
-        LZS = out%grid%ts%lzs*shd%FRAC
-        DZS = out%grid%ts%dzs*shd%FRAC
+        LZS = out%grid%lzs%ts*shd%FRAC
+        DZS = out%grid%dzs%ts*shd%FRAC
 
         !> Aggregate through neighbouring cells.
         do i = 1, shd%NAA
@@ -1046,40 +1049,40 @@ module save_basin_output
         TA = 0.0; TCAN = 0.0; CMAS = 0.0; TSNOW = 0.0; TPOND = 0.0; TBAR = 0.0
 
         !> Time-averaged variables and averaging counters.
-        where (out%grid%ts%fsin > 0.0)
-            ALBT = out%grid%ts%albt*shd%FRAC
+        where (out%grid%fsin%ts > 0.0)
+            ALBT = out%grid%albt%ts*shd%FRAC
             IFS = 1
         end where
-        where (out%grid%ts%gte > 0.0) GTE = (out%grid%ts%gte - TFREZ)*shd%FRAC
-        where (out%grid%ts%ta > 0.0) TA = (out%grid%ts%ta - TFREZ)*shd%FRAC
-        where (out%grid%ts%tcan > 0.0)
-            CMAS = out%grid%ts%cmas*shd%FRAC
-            TCAN = (out%grid%ts%tcan - TFREZ)*shd%FRAC
+        where (out%grid%gte%ts > 0.0) GTE = (out%grid%gte%ts - TFREZ)*shd%FRAC
+        where (out%grid%ta%ts > 0.0) TA = (out%grid%ta%ts - TFREZ)*shd%FRAC
+        where (out%grid%tcan%ts > 0.0)
+            CMAS = out%grid%cmas%ts*shd%FRAC
+            TCAN = (out%grid%tcan%ts - TFREZ)*shd%FRAC
             ICAN = 1
         end where
-        where (out%grid%ts%sno > 0.0)
-            TSNOW = (out%grid%ts%tsno - TFREZ)*shd%FRAC
+        where (out%grid%sno%ts > 0.0)
+            TSNOW = (out%grid%tsno%ts - TFREZ)*shd%FRAC
             ISNOW = 1
         end where
-        where (out%grid%ts%zpnd > 0.0)
-            TPOND = (out%grid%ts%tpnd - TFREZ)*shd%FRAC
+        where (out%grid%zpnd%ts > 0.0)
+            TPOND = (out%grid%tpnd%ts - TFREZ)*shd%FRAC
             IPOND = 1
         end where
         do j = 1, shd%lc%IGND
-            where (out%grid%ts%tbar(:, j) > 0.0) TBAR(:, j) = (out%grid%ts%tbar(:, j) - TFREZ)*shd%FRAC
+            where (out%grid%tbar(j)%ts > 0.0) TBAR(:, j) = (out%grid%tbar(j)%ts - TFREZ)*shd%FRAC
         end do
 
         !> Accumulated fluxes.
         !> Converted from (W m-2 = J m-2 s-1) to J m-2 for accumulation.
-        FSIN = out%grid%ts%fsin*ic%dts*shd%FRAC
+        FSIN = out%grid%fsin%ts*ic%dts*shd%FRAC
         where (ALBT > 0.0)
-            FSOUT = out%grid%ts%fsout*ic%dts*shd%FRAC
+            FSOUT = out%grid%fsout%ts*ic%dts*shd%FRAC
         end where
-        FLIN = out%grid%ts%flin*ic%dts*shd%FRAC
-        where (out%grid%ts%gte > 0.0) FLOUT = out%grid%ts%flout*ic%dts*shd%FRAC
-        QH = out%grid%ts%qh*ic%dts*shd%FRAC
-        QE = out%grid%ts%qe*ic%dts*shd%FRAC
-        GZERO = out%grid%ts%gzero*ic%dts*shd%FRAC
+        FLIN = out%grid%flin%ts*ic%dts*shd%FRAC
+        where (out%grid%gte%ts > 0.0) FLOUT = out%grid%flout%ts*ic%dts*shd%FRAC
+        QH = out%grid%qh%ts*ic%dts*shd%FRAC
+        QE = out%grid%qe%ts*ic%dts*shd%FRAC
+        GZERO = out%grid%gzero%ts*ic%dts*shd%FRAC
 
         !> Propagate through basin cells (by flow direction).
         !> Variables are weighted by FRAC during accumulation.

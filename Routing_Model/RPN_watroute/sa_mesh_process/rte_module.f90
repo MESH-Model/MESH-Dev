@@ -529,9 +529,9 @@ module rte_module
         end if
 
         !> Update SA_MESH output variables.
-        out%grid%ts%qi = qi2
-        out%grid%ts%stgch = store2
-        out%grid%ts%qo = qo2
+        out%grid%qi%ts = qi2
+        out%grid%stgch%ts = store2
+        out%grid%qo%ts = qo2
         if (fms%rsvr%n > 0) then
             reach_last = lake_elv(:, 1)
         end if
@@ -596,9 +596,9 @@ module rte_module
 
         !> Reset SA_MESH output variables (for averaging).
         !> Setting these to zero also prevents updating from the state variables upon return.
-        out%grid%ts%qi = 0.0
-        out%grid%ts%stgch = 0.0
-        out%grid%ts%qo = 0.0
+        out%grid%qi%ts = 0.0
+        out%grid%stgch%ts = 0.0
+        out%grid%qo%ts = 0.0
 
         !> Return if not the last time-step of the hour.
         if (ic%now%hour == ic%next%hour) return
@@ -801,9 +801,9 @@ module rte_module
             end if
 
             !> Update MESH output variables (for averaging).
-            out%grid%ts%qi = out%grid%ts%qi + qi2
-            out%grid%ts%stgch = out%grid%ts%stgch + store2
-            out%grid%ts%qo = out%grid%ts%qo + qo2
+            out%grid%qi%ts = out%grid%qi%ts + qi2
+            out%grid%stgch%ts = out%grid%stgch%ts + store2
+            out%grid%qo%ts = out%grid%qo%ts + qo2
 
         end do !n = 1, no_dt
 
@@ -816,9 +816,9 @@ module rte_module
         !> Update SA_MESH output variables.
         !> Output variables are updated at every model time-step; multiply averages
         !> by the number of model time-steps in the routing time-step
-        out%grid%ts%qi = out%grid%ts%qi/no_dt*(3600/ic%dts)
-        out%grid%ts%stgch = out%grid%ts%stgch/no_dt*(3600/ic%dts)
-        out%grid%ts%qo = out%grid%ts%qo/no_dt*(3600/ic%dts) !same as avr_qo
+        out%grid%qi%ts = out%grid%qi%ts/no_dt*(3600/ic%dts)
+        out%grid%stgch%ts = out%grid%stgch%ts/no_dt*(3600/ic%dts)
+        out%grid%qo%ts = out%grid%qo%ts/no_dt*(3600/ic%dts) !same as avr_qo
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.

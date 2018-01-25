@@ -898,9 +898,12 @@ program RUNMESH
     !> Calculate initial storage.
     if (ipid == 0) then
         STG_INI = sum( &
-            (out%grid%ts%rcan + out%grid%ts%sncan + out%grid%ts%sno + out%grid%ts%wsno + out%grid%ts%pndw + &
-             sum(out%grid%ts%lqws, 2) + sum(out%grid%ts%fzws, 2) + &
-             out%grid%ts%lzs + out%grid%ts%dzs)*shd%FRAC)/sum(shd%FRAC)
+            (out%grid%rcan%ts + out%grid%sncan%ts + out%grid%sno%ts + out%grid%wsno%ts + out%grid%pndw%ts + &
+             out%grid%lzs%ts + out%grid%dzs%ts)*shd%FRAC)
+        do j = 1, shd%lc%IGND
+            STG_INI = STG_INI + sum((out%grid%lqws(j)%ts + out%grid%fzws(j)%ts)*shd%FRAC)
+        end do
+        STG_INI = STG_INI/sum(shd%FRAC)
     end if !(ipid == 0) then
 
     !> Read in existing basin states for RESUMEFLAG.
@@ -926,7 +929,7 @@ program RUNMESH
 
             !> Daily streamflow values.
             read(iun) fms%stmg%qomeas%val
-            read(iun) out%grid%dly%qo(fms%stmg%meta%rnk(:))
+            read(iun) out%grid%qo%d(fms%stmg%meta%rnk(:))
 
         end if
 
@@ -1077,16 +1080,16 @@ program RUNMESH
             if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
 
                 !> Accumulated outputs (including non-zero value read from resume file).
-                DAILY_PRE = DAILY_PRE + sum(out%grid%dly%pre*shd%FRAC)*ic%dts
-                DAILY_EVAP = DAILY_EVAP + sum(out%grid%dly%evap*shd%FRAC)*ic%dts
-                DAILY_ROF = DAILY_ROF + sum(out%grid%dly%rof*shd%FRAC)*ic%dts
+                DAILY_PRE = DAILY_PRE + sum(out%grid%pre%d*shd%FRAC)*ic%dts
+                DAILY_EVAP = DAILY_EVAP + sum(out%grid%evap%d*shd%FRAC)*ic%dts
+                DAILY_ROF = DAILY_ROF + sum(out%grid%rof%d*shd%FRAC)*ic%dts
 
                 if (ro%VERBOSEMODE > 0) then
                     write(6, '(2i5)', advance = 'no') ic%now%year, ic%now%jday
                     if (printoutstfl) then
                         do j = 1, fms%stmg%n
                             if (printoutqhyd) write(6, '(f10.3)', advance = 'no') fms%stmg%qomeas%val(j)
-                            write(6, '(f10.3)', advance = 'no') out%grid%dly%qo(fms%stmg%meta%rnk(j))
+                            write(6, '(f10.3)', advance = 'no') out%grid%qo%d(fms%stmg%meta%rnk(j))
                         end do
                     end if
                     if (printoutwb) then
@@ -1257,12 +1260,12 @@ program RUNMESH
         call run_between_grid_finalize(fls, shd, cm)
 
         !> Accumulated outputs (including non-zero value read from resume file).
-        TOTAL_PRE = TOTAL_PRE + sum(out%grid%tot%pre*shd%FRAC)*ic%dts
-        TOTAL_EVAP = TOTAL_EVAP + sum(out%grid%tot%evap*shd%FRAC)*ic%dts
-        TOTAL_ROF = TOTAL_ROF + sum(out%grid%tot%rof*shd%FRAC)*ic%dts
-        TOTAL_ROFO = TOTAL_ROFO + sum(out%grid%tot%rofo*shd%FRAC)*ic%dts
-        TOTAL_ROFS = TOTAL_ROFS + sum(out%grid%tot%rofs*shd%FRAC)*ic%dts
-        TOTAL_ROFB = TOTAL_ROFB + sum(out%grid%tot%rofb*shd%FRAC)*ic%dts
+        TOTAL_PRE = TOTAL_PRE + sum(out%grid%pre%tot*shd%FRAC)*ic%dts
+        TOTAL_EVAP = TOTAL_EVAP + sum(out%grid%evap%tot*shd%FRAC)*ic%dts
+        TOTAL_ROF = TOTAL_ROF + sum(out%grid%rof%tot*shd%FRAC)*ic%dts
+        TOTAL_ROFO = TOTAL_ROFO + sum(out%grid%rofo%tot*shd%FRAC)*ic%dts
+        TOTAL_ROFS = TOTAL_ROFS + sum(out%grid%rofs%tot*shd%FRAC)*ic%dts
+        TOTAL_ROFB = TOTAL_ROFB + sum(out%grid%rofb%tot*shd%FRAC)*ic%dts
 
         !> Save the current state of the model for SAVERESUMEFLAG.
         if (SAVERESUMEFLAG == 4) then
@@ -1284,7 +1287,7 @@ program RUNMESH
 
             !> Daily streamflow values.
             write(iun) fms%stmg%qomeas%val
-            write(iun) out%grid%dly%qo(fms%stmg%meta%rnk(:))
+            write(iun) out%grid%qo%d(fms%stmg%meta%rnk(:))
 
             !> Close the file to free the unit.
             close(iun)
@@ -1293,9 +1296,12 @@ program RUNMESH
 
         !> Calculate final storage for the run.
         STG_FIN = sum( &
-            (out%grid%ts%rcan + out%grid%ts%sncan + out%grid%ts%sno + out%grid%ts%wsno + out%grid%ts%pndw + &
-             sum(out%grid%ts%lqws, 2) + sum(out%grid%ts%fzws, 2) + &
-             out%grid%ts%lzs + out%grid%ts%dzs)*shd%FRAC)/sum(shd%FRAC)
+            (out%grid%rcan%ts + out%grid%sncan%ts + out%grid%sno%ts + out%grid%wsno%ts + out%grid%pndw%ts + &
+             out%grid%lzs%ts + out%grid%dzs%ts)*shd%FRAC)
+        do j = 1, shd%lc%IGND
+            STG_FIN = STG_FIN + sum((out%grid%lqws(j)%ts + out%grid%fzws(j)%ts)*shd%FRAC)
+        end do
+        STG_FIN = STG_FIN/sum(shd%FRAC)
 
         !> Basin totals for the run.
         TOTAL_PRE = TOTAL_PRE/sum(shd%FRAC)

@@ -284,7 +284,7 @@ module SIMSTATS
         end if
 
         qobs(ncal, :) = fms%stmg%qomeas%val
-        qsim(ncal, :) = out%grid%dly%qo(fms%stmg%meta%rnk(:))
+        qsim(ncal, :) = out%grid%qo%d(fms%stmg%meta%rnk(:))
 
         if (objfnflag == 0) then
             ftest = sae_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
