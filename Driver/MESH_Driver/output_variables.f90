@@ -2,33 +2,19 @@ module output_variables
 
     implicit none
 
-    !> Keys for identifying output time-series.
-    !*  PTS: Per model time-step.
-    !*  TOT: Total (e.g., accumulated).
-    !*  DLY: Daily.
-    !*  HLY: Hourly.
-    !*  MLY: Monthly.
-    !*  YLY: Yearly.
-    integer, parameter :: TKPTS = 5
-    integer, parameter :: TKTOT = 1
-    integer, parameter :: TKDLY = 2
-    integer, parameter :: TKHLY = 4
-    integer, parameter :: TKMLY = 3
-    integer, parameter :: TKYLY = 6
-
     !> Description:
-    !>  Data type for storing data.
+    !>  Data type for storing data for output at various time intervals.
     !>
     !> Variables:
-    !*  y, m, d, h, ts: Arrays of the variable at various time intervals.
-    type output_variables_group
+    !*  y, m, d, h, ts: Data at various time intervals.
+    type output_variables_series
         real, dimension(:), allocatable :: tot, y, m, d, h, ts
     end type
 
     !> Description:
-    !>  Group container for output variable series.
-    type output_variables_group_container
-        type(output_variables_group) &
+    !>  Container for storing a single group of output variables.
+    type output_variables_group
+        type(output_variables_series) &
             pre, fsin, fsvh, fsih, fsdr, fsdf, flin, ta, qa, pres, uu, vv, uv, wdir, &
             gro, evap, pevp, evpb, arrd, rof, rofo, rofs, rofb, &
             rcan, sncan, sno, fsno, wsno, zpnd, pndw, lzs, dzs, stgw, &
@@ -36,22 +22,21 @@ module output_variables
             alvs, alir, albt, fsout, flout, gte, qh, qe, gzero, stge, &
             ald, zod, &
             rff, rchg, qi, stgch, qo, zlvl
-        type(output_variables_group), dimension(:), allocatable :: &
+        type(output_variables_series), dimension(:), allocatable :: &
             thlq, lqws, thic, fzws, alws, &
             gflx, tbar
     end type
 
     !> Description:
-    !>  Container for output objects including 'tile' and 'grid'
-    !>  groups and NO_DATA values.
+    !>  Container for output variables and NO_DATA values.
     !>
     !> Variables:
-    !*  grid: Instance of group for grid-based output.
-    !*  tile: Instance of group for tile-based output.
+    !*  grid: Output variables of grids.
+    !*  tile: Output variables of tiles.
     !*  NO_DATA: No data value (type: real).
     !*  NO_DATA_INT: No data value (type: integer).
     type output_variables_container
-        type(output_variables_group_container) grid, tile
+        type(output_variables_group) grid, tile
         integer :: NO_DATA_INT = -1
         real :: NO_DATA = -1.0
     end type
@@ -62,7 +47,8 @@ module output_variables
     contains
 
     !> Description:
-    !>  Allocate and initialize group.
+    !>  Allocate and initialize data variable. 'field' is allocated to
+    !>  dimension 'n' and set to the NO_DATA value.
     subroutine output_variables_allocate(field, n)
 
         !> Input/output variables.
@@ -78,11 +64,10 @@ module output_variables
     end subroutine
 
     !> Description:
-    !>  Allocate and initialize the per time-step output variables of
-    !>  the provided group. Assign frequency keys to the time-series.
+    !>  Allocate output variables.
     subroutine output_variables_init_group(shd, group, n)
 
-        !> 'shd_variables' required for indices from 'shd'.
+        !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
         use shd_variables
         use control_variables
@@ -92,13 +77,10 @@ module output_variables
         integer, intent(in) :: n
 
         !> Input/output variables.
-        type(output_variables_group_container) group
+        type(output_variables_group) group
 
         !> Local variables.
-        integer j, s
-
-        !> Indices for allocation.
-        s = shd%lc%IGND
+        integer j
 
         !> Meteorological forcing.
         if (ro%RUNCLIM) then
@@ -132,12 +114,12 @@ module output_variables
             allocate(group%lzs%ts(n))
             allocate(group%dzs%ts(n))
             allocate(group%stgw%ts(n))
-            allocate(group%thlq(s))
-            allocate(group%lqws(s))
-            allocate(group%thic(s))
-            allocate(group%fzws(s))
-            allocate(group%alws(s))
-            do j = 1, s
+            allocate(group%thlq(shd%lc%IGND))
+            allocate(group%lqws(shd%lc%IGND))
+            allocate(group%thic(shd%lc%IGND))
+            allocate(group%fzws(shd%lc%IGND))
+            allocate(group%alws(shd%lc%IGND))
+            do j = 1, shd%lc%IGND
                 allocate(group%thlq(j)%ts(n))
                 allocate(group%lqws(j)%ts(n))
                 allocate(group%thic(j)%ts(n))
@@ -162,9 +144,9 @@ module output_variables
             allocate(group%qe%ts(n))
             allocate(group%gzero%ts(n))
             allocate(group%stge%ts(n))
-            allocate(group%gflx(s))
-            allocate(group%tbar(s))
-            do j = 1, s
+            allocate(group%gflx(shd%lc%IGND))
+            allocate(group%tbar(shd%lc%IGND))
+            do j = 1, shd%lc%IGND
                 allocate(group%gflx(j)%ts(n))
                 allocate(group%tbar(j)%ts(n))
             end do
@@ -183,20 +165,19 @@ module output_variables
     end subroutine
 
     !> Description:
-    !>  Allocate and initialize the per time-step output variables of
-    !>  all groups. Assign frequency keys to the time-series.
+    !>  Allocate and initialize output variables.
     subroutine output_variables_init(shd, cm)
 
-        !> 'shd_variables' required for indices from 'shd'.
+        !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
-        !> 'climate_forcing' required for the 'cm' variable.
+        !> 'climate_forcing' required for 'cm'.
         use shd_variables
         use control_variables
         use climate_forcing
 
         !> Input variables.
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        type(ShedGridParams), intent(in) :: shd
+        type(clim_info), intent(in) :: cm
 
         !> Tile-based.
         if (ro%RUNTILE) then
@@ -215,13 +196,13 @@ module output_variables
     end subroutine
 
     !> Description:
-    !>  Update per time-step output variables for tile variables.
+    !>  Update 'tile' output variables from current model states.
     subroutine output_variables_update_tile(shd, cm)
 
-        !> 'shd_variables' required for indices from 'shd'.
+        !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
-        !> 'state_variables' required for the 'stas' variable.
-        !> 'climate_forcing' required for the 'cm' variable.
+        !> 'state_variables' required for 'stas'.
+        !> 'climate_forcing' required for 'cm'.
         use shd_variables
         use control_variables
         use state_variables
@@ -321,25 +302,21 @@ module output_variables
     end subroutine
 
     !> Description:
-    !>  Update per time-step output variables for grid variables.
-    !>  Aggregate from tile to grid where necessary.
-    !>  Temporary arrays are used because resetting the output variable
-    !>  breaks the check against the NO_DATA value (for the case when
-    !>  the variable has been updated by other routines).
+    !>  Update 'grid' output variables from current model states.
     subroutine output_variables_update_grid(shd, cm)
 
-        !> 'shd_variables' required for indices from 'shd'.
+        !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
-        !> 'state_variables' required for the 'stas' variable.
-        !> 'climate_forcing' required for the 'cm' variable.
+        !> 'state_variables' required for 'stas'.
+        !> 'climate_forcing' required for 'cm'.
         use shd_variables
         use control_variables
         use state_variables
         use climate_forcing
 
         !> Input variables.
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        type(ShedGridParams), intent(in) :: shd
+        type(clim_info), intent(in) :: cm
 
         !> Local variables.
         integer j
@@ -442,11 +419,13 @@ module output_variables
     end subroutine
 
     !> Description:
-    !>  Update 'field' from 'val' using the provided function 'fn'.
-    !>  Reset 'field' if the first time-step of the period ('its' == 1).
+    !>  Update the 'field' value (of a time interval) from 'val'.
+    !>  Reset 'field' if 'its' equals '1' (first time-step of the time
+    !>  interval.
     !>  Calculate an average provided the 'avg' function ('fn' == 'avg')
-    !>  if the last time-step of period ('dnts' > 0).
-    !>  Assign the NO_DATA value at indices where 'val' contains the
+    !>  and 'dnts' > 0 (assigned in the last time-step of the time
+    !>  interval).
+    !>  Assign the NO_DATA value at indices where 'val' equals the
     !>  NO_DATA value.
     subroutine output_variables_update_field(field, val, its, dnts, fn)
         integer its, dnts
@@ -470,186 +449,182 @@ module output_variables
     end subroutine
 
     !> Description:
-    !>  Update the output variable for other time intervals.
-    !>  Only fields allocated are updated.
-    subroutine output_variables_update_group(group, fn)
+    !>  Update output variables for output at larger time intervals
+    !>  (if active).
+    subroutine output_variables_update_series(series, fn)
 
-        !> 'model_dates' required for 'ic' variable (counter and time-stepping).
+        !> 'model_dates' required for 'ic' (counter and time-stepping).
         use model_dates
 
         !> Input/output variables.
-        type(output_variables_group) group
+        type(output_variables_series) series
         character(len = *) fn
 
         !> Local variables.
         integer dnts
 
         !> Totals (e.g., accumulated).
-        if (allocated(group%tot)) then
+        if (allocated(series%tot)) then
             dnts = 0
-            call output_variables_update_field(group%tot, group%ts, ic%ts_count, dnts, fn)
+            call output_variables_update_field(series%tot, series%ts, ic%ts_count, dnts, fn)
         end if
 
         !> Yearly.
-        if (allocated(group%y)) then
+        if (allocated(series%y)) then
             if (ic%now%year /= ic%next%year) then
                 dnts = ic%ts_yearly
             else
                 dnts = 0
             end if
-            call output_variables_update_field(group%y, group%ts, ic%ts_yearly, dnts, fn)
+            call output_variables_update_field(series%y, series%ts, ic%ts_yearly, dnts, fn)
         end if
 
         !> Monthly.
-        if (allocated(group%m)) then
+        if (allocated(series%m)) then
             if (ic%now%month /= ic%next%month) then
                 dnts = ic%ts_monthly
             else
                 dnts = 0
             end if
-            call output_variables_update_field(group%m, group%ts, ic%ts_monthly, dnts, fn)
+            call output_variables_update_field(series%m, series%ts, ic%ts_monthly, dnts, fn)
         end if
 
         !> Daily.
-        if (allocated(group%d)) then
+        if (allocated(series%d)) then
             if (ic%now%day /= ic%next%day) then
                 dnts = ic%ts_daily
             else
                 dnts = 0
             end if
-            call output_variables_update_field(group%d, group%ts, ic%ts_daily, dnts, fn)
+            call output_variables_update_field(series%d, series%ts, ic%ts_daily, dnts, fn)
         end if
 
         !> Hourly.
-        if (allocated(group%h)) then
+        if (allocated(series%h)) then
             if (ic%now%hour /= ic%next%hour) then
                 dnts = ic%ts_hourly
             else
                 dnts = 0
             end if
-            call output_variables_update_field(group%h, group%ts, ic%ts_hourly, dnts, fn)
+            call output_variables_update_field(series%h, series%ts, ic%ts_hourly, dnts, fn)
         end if
 
     end subroutine
 
     !> Description:
-    !>  Update the output variables.
-    subroutine output_variables_update_series(shd, series)
+    !>  Update output variables for output at larger time intervals.
+    subroutine output_variables_update_group(shd, group)
 
-        !> 'shd_variables' required for indices from 'shd'.
+        !> 'shd_variables' required for 'shd'.
         use shd_variables
 
         !> Input variables.
-        type(ShedGridParams) :: shd
+        type(ShedGridParams), intent(in) :: shd
 
         !> Input/output variables.
-        type(output_variables_group_container) series
+        type(output_variables_group) group
 
         !> Local variables.
         integer j
 
         !> Meteorological forcing.
-        call output_variables_update_group(series%pre, 'sum')
-        call output_variables_update_group(series%fsin, 'avg')
-        call output_variables_update_group(series%flin, 'avg')
-        call output_variables_update_group(series%ta, 'avg')
-        call output_variables_update_group(series%qa, 'avg')
-        call output_variables_update_group(series%pres, 'avg')
-        call output_variables_update_group(series%uv, 'avg')
+        call output_variables_update_series(group%pre, 'sum')
+        call output_variables_update_series(group%fsin, 'avg')
+        call output_variables_update_series(group%flin, 'avg')
+        call output_variables_update_series(group%ta, 'avg')
+        call output_variables_update_series(group%qa, 'avg')
+        call output_variables_update_series(group%pres, 'avg')
+        call output_variables_update_series(group%uv, 'avg')
 
         !> Water balance.
-        call output_variables_update_group(series%gro, 'avg')
-        call output_variables_update_group(series%evap, 'sum')
-        call output_variables_update_group(series%pevp, 'sum')
-!        call output_variables_update_group(series%evpb, 'avg')
-!        call output_variables_update_group(series%arrd, 'avg')
-        call output_variables_update_group(series%rof, 'sum')
-        call output_variables_update_group(series%rofo, 'sum')
-        call output_variables_update_group(series%rofs, 'sum')
-        call output_variables_update_group(series%rofb, 'sum')
-        call output_variables_update_group(series%rcan, 'sum')
-        call output_variables_update_group(series%sncan, 'sum')
-        call output_variables_update_group(series%sno, 'sum')
-        call output_variables_update_group(series%fsno, 'sum')
-        call output_variables_update_group(series%wsno, 'sum')
-        call output_variables_update_group(series%zpnd, 'avg')
-        call output_variables_update_group(series%pndw, 'sum')
-        call output_variables_update_group(series%lzs, 'sum')
-        call output_variables_update_group(series%dzs, 'sum')
-        call output_variables_update_group(series%stgw, 'val')
+        call output_variables_update_series(group%gro, 'avg')
+        call output_variables_update_series(group%evap, 'sum')
+        call output_variables_update_series(group%pevp, 'sum')
+!        call output_variables_update_series(group%evpb, 'avg')
+!        call output_variables_update_series(group%arrd, 'avg')
+        call output_variables_update_series(group%rof, 'sum')
+        call output_variables_update_series(group%rofo, 'sum')
+        call output_variables_update_series(group%rofs, 'sum')
+        call output_variables_update_series(group%rofb, 'sum')
+        call output_variables_update_series(group%rcan, 'sum')
+        call output_variables_update_series(group%sncan, 'sum')
+        call output_variables_update_series(group%sno, 'sum')
+        call output_variables_update_series(group%fsno, 'sum')
+        call output_variables_update_series(group%wsno, 'sum')
+        call output_variables_update_series(group%zpnd, 'avg')
+        call output_variables_update_series(group%pndw, 'sum')
+        call output_variables_update_series(group%lzs, 'sum')
+        call output_variables_update_series(group%dzs, 'sum')
+        call output_variables_update_series(group%stgw, 'val')
         do j = 1, shd%lc%IGND
-            call output_variables_update_group(series%thlq(j), 'avg')
-            call output_variables_update_group(series%lqws(j), 'sum')
-            call output_variables_update_group(series%thic(j), 'avg')
-            call output_variables_update_group(series%fzws(j), 'sum')
-            call output_variables_update_group(series%alws(j), 'sum')
+            call output_variables_update_series(group%thlq(j), 'avg')
+            call output_variables_update_series(group%lqws(j), 'sum')
+            call output_variables_update_series(group%thic(j), 'avg')
+            call output_variables_update_series(group%fzws(j), 'sum')
+            call output_variables_update_series(group%alws(j), 'sum')
         end do
 
         !> Energy balance.
-        call output_variables_update_group(series%cmas, 'sum')
-        call output_variables_update_group(series%tcan, 'avg')
-        call output_variables_update_group(series%tsno, 'avg')
-        call output_variables_update_group(series%tpnd, 'avg')
-        call output_variables_update_group(series%albt, 'avg')
-        call output_variables_update_group(series%alvs, 'avg')
-        call output_variables_update_group(series%alir, 'avg')
-        call output_variables_update_group(series%fsout, 'avg')
-        call output_variables_update_group(series%gte, 'avg')
-        call output_variables_update_group(series%flout, 'avg')
-        call output_variables_update_group(series%qh, 'avg')
-        call output_variables_update_group(series%qe, 'avg')
-        call output_variables_update_group(series%gzero, 'avg')
-        call output_variables_update_group(series%stge, 'val')
+        call output_variables_update_series(group%cmas, 'sum')
+        call output_variables_update_series(group%tcan, 'avg')
+        call output_variables_update_series(group%tsno, 'avg')
+        call output_variables_update_series(group%tpnd, 'avg')
+        call output_variables_update_series(group%albt, 'avg')
+        call output_variables_update_series(group%alvs, 'avg')
+        call output_variables_update_series(group%alir, 'avg')
+        call output_variables_update_series(group%fsout, 'avg')
+        call output_variables_update_series(group%gte, 'avg')
+        call output_variables_update_series(group%flout, 'avg')
+        call output_variables_update_series(group%qh, 'avg')
+        call output_variables_update_series(group%qe, 'avg')
+        call output_variables_update_series(group%gzero, 'avg')
+        call output_variables_update_series(group%stge, 'val')
         do j = 1, shd%lc%IGND
-            call output_variables_update_group(series%gflx(j), 'avg')
-            call output_variables_update_group(series%tbar(j), 'avg')
+            call output_variables_update_series(group%gflx(j), 'avg')
+            call output_variables_update_series(group%tbar(j), 'avg')
         end do
 
         !> Channels and routing.
-        call output_variables_update_group(series%rff, 'sum')
-        call output_variables_update_group(series%rchg, 'sum')
-        call output_variables_update_group(series%qi, 'avg')
-        call output_variables_update_group(series%stgch, 'avg')
-        call output_variables_update_group(series%qo, 'avg')
-!        call output_variables_update_group(series%zlvl, 'avg')
+        call output_variables_update_series(group%rff, 'sum')
+        call output_variables_update_series(group%rchg, 'sum')
+        call output_variables_update_series(group%qi, 'avg')
+        call output_variables_update_series(group%stgch, 'avg')
+        call output_variables_update_series(group%qo, 'avg')
+!        call output_variables_update_series(group%zlvl, 'avg')
 
     end subroutine
 
     !> Description:
-    !>  Update per time-step variables if not already updated by other
-    !>  routines (e.g., if all values still equal the NO_DATA value) of
-    !>  all groups. Update output variables of higher time frequencies
-    !>  (from the per time-step series).
+    !>  Update output variables from current model states.
     subroutine output_variables_update(shd, cm)
 
-        !> 'shd_variables' required for indices from 'shd'.
+        !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
-        !> 'climate_forcing' required for the 'cm' variable.
+        !> 'climate_forcing' required for 'cm'.
         use shd_variables
         use control_variables
         use climate_forcing
 
         !> Input variables.
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        type(ShedGridParams), intent(in) :: shd
+        type(clim_info), intent(in) :: cm
 
         !> Tile-based.
         if (ro%RUNTILE) then
             call output_variables_update_tile(shd, cm)
-            call output_variables_update_series(shd, out%tile)
+            call output_variables_update_group(shd, out%tile)
         end if
 
         !> Grid-based.
         if (ro%RUNGRID) then
             call output_variables_update_grid(shd, cm)
-            call output_variables_update_series(shd, out%grid)
+            call output_variables_update_group(shd, out%grid)
         end if
 
     end subroutine
 
     !> Description:
-    !>  Reset output variables of the provided group. Set variables to
-    !>  the NO_DATA value.
+    !>  Reset output variables to the default NO_DATA value.
     subroutine output_variables_reset_group(shd, group)
 
         !> 'shd_variables' required for indices from 'shd'.
@@ -659,7 +634,7 @@ module output_variables
 
         !> Input/output variables.
         type(ShedGridParams), intent(in) :: shd
-        type(output_variables_group_container) group
+        type(output_variables_group) group
 
         !> Local variables.
         integer j
@@ -740,20 +715,19 @@ module output_variables
     end subroutine
 
     !> Description:
-    !>  Reset output variables of all groups. Set variables to the
-    !>  NO_DATA value.
+    !>  Reset output variables to the default NO_DATA value.
     subroutine output_variables_reset(shd, cm)
 
-        !> 'shd_variables' required for indices from 'shd'.
+        !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
-        !> 'climate_forcing' required for the 'cm' variable.
+        !> 'climate_forcing' required for 'cm'.
         use shd_variables
         use control_variables
         use climate_forcing
 
         !> Input variables.
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        type(ShedGridParams), intent(in) :: shd
+        type(clim_info), intent(in) :: cm
 
         !> Tile-based.
         if (ro%RUNTILE) call output_variables_reset_group(shd, out%tile)
