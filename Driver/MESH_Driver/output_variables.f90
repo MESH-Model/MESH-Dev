@@ -7,14 +7,14 @@ module output_variables
     !>
     !> Variables:
     !*  y, m, d, h, ts: Data at various time intervals.
-    type output_variables_series
+    type output_variables_field
         real, dimension(:), allocatable :: tot, y, m, d, h, ts
     end type
 
     !> Description:
     !>  Container for storing a single group of output variables.
     type output_variables_group
-        type(output_variables_series) &
+        type(output_variables_field) &
             pre, fsin, fsvh, fsih, fsdr, fsdf, flin, ta, qa, pres, uu, vv, uv, wdir, &
             gro, evap, pevp, evpb, arrd, rof, rofo, rofs, rofb, &
             rcan, sncan, sno, fsno, wsno, zpnd, pndw, lzs, dzs, stgw, &
@@ -22,7 +22,7 @@ module output_variables
             alvs, alir, albt, fsout, flout, gte, qh, qe, gzero, stge, &
             ald, zod, &
             rff, rchg, qi, stgch, qo, zlvl
-        type(output_variables_series), dimension(:), allocatable :: &
+        type(output_variables_field), dimension(:), allocatable :: &
             thlq, lqws, thic, fzws, alws, &
             gflx, tbar
     end type
@@ -419,94 +419,94 @@ module output_variables
     end subroutine
 
     !> Description:
-    !>  Update the 'field' value (of a time interval) from 'val'.
-    !>  Reset 'field' if 'its' equals '1' (first time-step of the time
+    !>  Update the 'dat' value (of a time interval) from 'val'.
+    !>  Reset 'dat' if 'its' equals '1' (first time-step of the time
     !>  interval.
     !>  Calculate an average provided the 'avg' function ('fn' == 'avg')
     !>  and 'dnts' > 0 (assigned in the last time-step of the time
     !>  interval).
     !>  Assign the NO_DATA value at indices where 'val' equals the
     !>  NO_DATA value.
-    subroutine output_variables_update_field(field, val, its, dnts, fn)
+    subroutine output_variables_update_values(dat, val, its, dnts, fn)
         integer its, dnts
-        real, dimension(:) :: field, val
+        real, dimension(:) :: dat, val
         character(len = *) fn
-        if (its == 1) field = 0.0
+        if (its == 1) dat = 0.0
         select case (fn)
             case ('sum')
-                field = field + val
+                dat = dat + val
             case ('avg')
-                field = field + val
-                if (dnts > 0) field = field/dnts
+                dat = dat + val
+                if (dnts > 0) dat = dat/dnts
             case ('max')
-                field = max(field, val)
+                dat = max(dat, val)
             case ('min')
-                field = min(field, val)
+                dat = min(dat, val)
             case default
-                field = val
+                dat = val
         end select
-        where (val == out%NO_DATA) field = out%NO_DATA
+        where (val == out%NO_DATA) dat = out%NO_DATA
     end subroutine
 
     !> Description:
     !>  Update output variables for output at larger time intervals
     !>  (if active).
-    subroutine output_variables_update_series(series, fn)
+    subroutine output_variables_update_field(field, fn)
 
         !> 'model_dates' required for 'ic' (counter and time-stepping).
         use model_dates
 
         !> Input/output variables.
-        type(output_variables_series) series
+        type(output_variables_field) field
         character(len = *) fn
 
         !> Local variables.
         integer dnts
 
         !> Totals (e.g., accumulated).
-        if (allocated(series%tot)) then
+        if (allocated(field%tot)) then
             dnts = 0
-            call output_variables_update_field(series%tot, series%ts, ic%ts_count, dnts, fn)
+            call output_variables_update_values(field%tot, field%ts, ic%ts_count, dnts, fn)
         end if
 
         !> Yearly.
-        if (allocated(series%y)) then
+        if (allocated(field%y)) then
             if (ic%now%year /= ic%next%year) then
                 dnts = ic%ts_yearly
             else
                 dnts = 0
             end if
-            call output_variables_update_field(series%y, series%ts, ic%ts_yearly, dnts, fn)
+            call output_variables_update_values(field%y, field%ts, ic%ts_yearly, dnts, fn)
         end if
 
         !> Monthly.
-        if (allocated(series%m)) then
+        if (allocated(field%m)) then
             if (ic%now%month /= ic%next%month) then
                 dnts = ic%ts_monthly
             else
                 dnts = 0
             end if
-            call output_variables_update_field(series%m, series%ts, ic%ts_monthly, dnts, fn)
+            call output_variables_update_values(field%m, field%ts, ic%ts_monthly, dnts, fn)
         end if
 
         !> Daily.
-        if (allocated(series%d)) then
+        if (allocated(field%d)) then
             if (ic%now%day /= ic%next%day) then
                 dnts = ic%ts_daily
             else
                 dnts = 0
             end if
-            call output_variables_update_field(series%d, series%ts, ic%ts_daily, dnts, fn)
+            call output_variables_update_values(field%d, field%ts, ic%ts_daily, dnts, fn)
         end if
 
         !> Hourly.
-        if (allocated(series%h)) then
+        if (allocated(field%h)) then
             if (ic%now%hour /= ic%next%hour) then
                 dnts = ic%ts_hourly
             else
                 dnts = 0
             end if
-            call output_variables_update_field(series%h, series%ts, ic%ts_hourly, dnts, fn)
+            call output_variables_update_values(field%h, field%ts, ic%ts_hourly, dnts, fn)
         end if
 
     end subroutine
@@ -528,69 +528,69 @@ module output_variables
         integer j
 
         !> Meteorological forcing.
-        call output_variables_update_series(group%pre, 'sum')
-        call output_variables_update_series(group%fsin, 'avg')
-        call output_variables_update_series(group%flin, 'avg')
-        call output_variables_update_series(group%ta, 'avg')
-        call output_variables_update_series(group%qa, 'avg')
-        call output_variables_update_series(group%pres, 'avg')
-        call output_variables_update_series(group%uv, 'avg')
+        call output_variables_update_field(group%pre, 'sum')
+        call output_variables_update_field(group%fsin, 'avg')
+        call output_variables_update_field(group%flin, 'avg')
+        call output_variables_update_field(group%ta, 'avg')
+        call output_variables_update_field(group%qa, 'avg')
+        call output_variables_update_field(group%pres, 'avg')
+        call output_variables_update_field(group%uv, 'avg')
 
         !> Water balance.
-        call output_variables_update_series(group%gro, 'avg')
-        call output_variables_update_series(group%evap, 'sum')
-        call output_variables_update_series(group%pevp, 'sum')
-!        call output_variables_update_series(group%evpb, 'avg')
-!        call output_variables_update_series(group%arrd, 'avg')
-        call output_variables_update_series(group%rof, 'sum')
-        call output_variables_update_series(group%rofo, 'sum')
-        call output_variables_update_series(group%rofs, 'sum')
-        call output_variables_update_series(group%rofb, 'sum')
-        call output_variables_update_series(group%rcan, 'sum')
-        call output_variables_update_series(group%sncan, 'sum')
-        call output_variables_update_series(group%sno, 'sum')
-        call output_variables_update_series(group%fsno, 'sum')
-        call output_variables_update_series(group%wsno, 'sum')
-        call output_variables_update_series(group%zpnd, 'avg')
-        call output_variables_update_series(group%pndw, 'sum')
-        call output_variables_update_series(group%lzs, 'sum')
-        call output_variables_update_series(group%dzs, 'sum')
-        call output_variables_update_series(group%stgw, 'val')
+        call output_variables_update_field(group%gro, 'avg')
+        call output_variables_update_field(group%evap, 'sum')
+        call output_variables_update_field(group%pevp, 'sum')
+!        call output_variables_update_field(group%evpb, 'avg')
+!        call output_variables_update_field(group%arrd, 'avg')
+        call output_variables_update_field(group%rof, 'sum')
+        call output_variables_update_field(group%rofo, 'sum')
+        call output_variables_update_field(group%rofs, 'sum')
+        call output_variables_update_field(group%rofb, 'sum')
+        call output_variables_update_field(group%rcan, 'sum')
+        call output_variables_update_field(group%sncan, 'sum')
+        call output_variables_update_field(group%sno, 'sum')
+        call output_variables_update_field(group%fsno, 'sum')
+        call output_variables_update_field(group%wsno, 'sum')
+        call output_variables_update_field(group%zpnd, 'avg')
+        call output_variables_update_field(group%pndw, 'sum')
+        call output_variables_update_field(group%lzs, 'sum')
+        call output_variables_update_field(group%dzs, 'sum')
+        call output_variables_update_field(group%stgw, 'val')
         do j = 1, shd%lc%IGND
-            call output_variables_update_series(group%thlq(j), 'avg')
-            call output_variables_update_series(group%lqws(j), 'sum')
-            call output_variables_update_series(group%thic(j), 'avg')
-            call output_variables_update_series(group%fzws(j), 'sum')
-            call output_variables_update_series(group%alws(j), 'sum')
+            call output_variables_update_field(group%thlq(j), 'avg')
+            call output_variables_update_field(group%lqws(j), 'sum')
+            call output_variables_update_field(group%thic(j), 'avg')
+            call output_variables_update_field(group%fzws(j), 'sum')
+            call output_variables_update_field(group%alws(j), 'sum')
         end do
 
         !> Energy balance.
-        call output_variables_update_series(group%cmas, 'sum')
-        call output_variables_update_series(group%tcan, 'avg')
-        call output_variables_update_series(group%tsno, 'avg')
-        call output_variables_update_series(group%tpnd, 'avg')
-        call output_variables_update_series(group%albt, 'avg')
-        call output_variables_update_series(group%alvs, 'avg')
-        call output_variables_update_series(group%alir, 'avg')
-        call output_variables_update_series(group%fsout, 'avg')
-        call output_variables_update_series(group%gte, 'avg')
-        call output_variables_update_series(group%flout, 'avg')
-        call output_variables_update_series(group%qh, 'avg')
-        call output_variables_update_series(group%qe, 'avg')
-        call output_variables_update_series(group%gzero, 'avg')
-        call output_variables_update_series(group%stge, 'val')
+        call output_variables_update_field(group%cmas, 'sum')
+        call output_variables_update_field(group%tcan, 'avg')
+        call output_variables_update_field(group%tsno, 'avg')
+        call output_variables_update_field(group%tpnd, 'avg')
+        call output_variables_update_field(group%albt, 'avg')
+        call output_variables_update_field(group%alvs, 'avg')
+        call output_variables_update_field(group%alir, 'avg')
+        call output_variables_update_field(group%fsout, 'avg')
+        call output_variables_update_field(group%gte, 'avg')
+        call output_variables_update_field(group%flout, 'avg')
+        call output_variables_update_field(group%qh, 'avg')
+        call output_variables_update_field(group%qe, 'avg')
+        call output_variables_update_field(group%gzero, 'avg')
+        call output_variables_update_field(group%stge, 'val')
         do j = 1, shd%lc%IGND
-            call output_variables_update_series(group%gflx(j), 'avg')
-            call output_variables_update_series(group%tbar(j), 'avg')
+            call output_variables_update_field(group%gflx(j), 'avg')
+            call output_variables_update_field(group%tbar(j), 'avg')
         end do
 
         !> Channels and routing.
-        call output_variables_update_series(group%rff, 'sum')
-        call output_variables_update_series(group%rchg, 'sum')
-        call output_variables_update_series(group%qi, 'avg')
-        call output_variables_update_series(group%stgch, 'avg')
-        call output_variables_update_series(group%qo, 'avg')
-!        call output_variables_update_series(group%zlvl, 'avg')
+        call output_variables_update_field(group%rff, 'sum')
+        call output_variables_update_field(group%rchg, 'sum')
+        call output_variables_update_field(group%qi, 'avg')
+        call output_variables_update_field(group%stgch, 'avg')
+        call output_variables_update_field(group%qo, 'avg')
+!        call output_variables_update_field(group%zlvl, 'avg')
 
     end subroutine
 
