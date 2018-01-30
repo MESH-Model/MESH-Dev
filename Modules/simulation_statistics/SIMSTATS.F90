@@ -255,34 +255,39 @@ module SIMSTATS
         !> Input variables.
         type(fl_ids) :: fls
 
-        integer isz
+        !> Local variables.
         real, dimension(:, :), allocatable :: tmp
 
         if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
+        !> Increment number of simulated days run.
         ncal = ncal + 1
 
+        !> Expand array 
         if (ncal > size(qobs, 1)) then
 
-            isz = size(qobs, 1)
-            allocate(tmp(size(qobs, 1), ns))
-            tmp = qobs
-            deallocate(qobs)
-            isz = isz + leap_year(ic%now%year)
-            allocate(qobs(isz, ns))
-            qobs = 0.0
-            qobs(1:(ncal - 1), :) = tmp(1:(ncal - 1), :)
-            tmp = 0.0
-            tmp = qsim
-            deallocate(qsim)
-            isz = isz + leap_year(ic%now%year)
-            allocate(qsim(isz, ns))
-            qsim = 0.0
-            qsim(1:(ncal - 1), :) = tmp(1:(ncal - 1), :)
-            deallocate(tmp)
+            !> Allocate temporary array.
+            allocate(tmp(size(qobs, 1) + leap_year(ic%now%year), ns))
 
+            !> Copy and expand 'qobs'.
+            tmp = 0.0
+            tmp(1:size(qobs, 1), :) = qobs
+            deallocate(qobs)
+            allocate(qobs(size(tmp, 1), ns))
+            qobs = tmp
+
+            !> Copy and expand 'qsim'.
+            tmp = 0.0
+            tmp(1:size(qsim, 1), :) = qsim
+            deallocate(qsim)
+            allocate(qsim(size(tmp, 1), ns))
+            qsim = tmp
+
+            !> Deallocate temporary array.
+            deallocate(tmp)
         end if
 
+        !> Copy measured and simulated values to local arrays.
         qobs(ncal, :) = fms%stmg%qomeas%val
         qsim(ncal, :) = out%grid%qo%d(fms%stmg%meta%rnk(:))
 
