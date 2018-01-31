@@ -61,9 +61,11 @@ module model_output
     !>
     !> Variables:
     !*  y, m, s, d, h, ts: Arrays of dates at various time intervals.
+    !*  iter_s: Iteration for seasonal counter (from beginning of run instead of calendar year).
     type output_dates
         integer, dimension(:, :), allocatable :: y, m, s, d, h
         integer, dimension(:), allocatable :: ts
+        integer iter_s(12)
     end type
 
     !> Description:
@@ -318,11 +320,7 @@ module model_output
 
         !> Allocate output variable.
         if (.not. allocated(file%dat)) then
-            if (flds%in_mem) then
-                allocate(file%dat(shd%NA, t))
-            else
-                allocate(file%dat(shd%NA, 1))
-            end if
+            allocate(file%dat(shd%NA, t))
             file%dat = 0.0
         end if
 
@@ -344,7 +342,7 @@ module model_output
         type(output_field) field
 
         !> Local variables.
-        integer i
+        integer t, i
         character(len = 500) file_path
         character(len = 10) str
 
@@ -362,43 +360,53 @@ module model_output
         !> Activate output based on 'args' flags.
         do i = 2, nargs
             if (is_letter(args(i)))then
+
+                !> Set 't = 1' if not storing values in memory.
+                t = 1
+
+                !> Parse options.
                 select case (lowercase(args(i)))
 
                     !> Yearly.
                     case ('y')
+                        if (flds%in_mem) t = ts%nyears
                         call output_file_parse_options( &
                             shd, field%y, trim(adjustl(file_path)) // '_Y' // adjustl(str), &
-                            ts%nyears, args, nargs)
+                            t, args, nargs)
 
                     !> Monthly.
                     case ('m')
+                        if (flds%in_mem) t = ts%nmonths
                         call output_file_parse_options( &
                             shd, field%m, trim(adjustl(file_path)) // '_M' // adjustl(str), &
-                            ts%nmonths, args, nargs)
+                            t, args, nargs)
 
-                    !> Seasonal (monthly average).
+                    !> Daily.
+                    case ('d')
+                        if (flds%in_mem) t = ts%nr_days
+                        call output_file_parse_options( &
+                            shd, field%d, trim(adjustl(file_path)) // '_D' // adjustl(str), &
+                            t, args, nargs)
+
+                    !> Hourly.
+                    case ('h')
+                        if (flds%in_mem) t = ts%nr_days*24
+                        call output_file_parse_options( &
+                            shd, field%h, trim(adjustl(file_path)) // '_H' // adjustl(str), &
+                            t, args, nargs)
+
+                    !> Per time-step.
+                    case ('ts')
+                        if (flds%in_mem) t = ts%nr_days*24*(3600/ic%dts)
+                        call output_file_parse_options( &
+                            shd, field%ts, trim(adjustl(file_path)) // '_TS' // adjustl(str), &
+                            t, args, nargs)
+
+                    !> Seasonally (monthly average).
                     case ('s')
                         call output_file_parse_options( &
                             shd, field%s, trim(adjustl(file_path)) // '_S' // adjustl(str), &
                             12, args, nargs)
-
-                    !> Daily.
-                    case ('d')
-                        call output_file_parse_options( &
-                            shd, field%d, trim(adjustl(file_path)) // '_D' // adjustl(str), &
-                            ts%nr_days, args, nargs)
-
-                    !> Hourly.
-                    case ('h')
-                        call output_file_parse_options( &
-                            shd, field%h, trim(adjustl(file_path)) // '_H' // adjustl(str), &
-                            ts%nr_days*24, args, nargs)
-
-                    !> Per time-step.
-                    case ('ts')
-                        call output_file_parse_options( &
-                            shd, field%ts, trim(adjustl(file_path)) // '_TS' // adjustl(str), &
-                            ts%nr_days*24*(3600/ic%dts), args, nargs)
 
                     !> Option to apply fractional cell area.
                     case ('frac', 'apply_frac')
@@ -441,6 +449,7 @@ module model_output
         !> Activate output variables for output at specified time intervals.
         if (field%y%active) call output_variables_allocate(out_var%y, shd%NA)
         if (field%m%active) call output_variables_allocate(out_var%m, shd%NA)
+        if (field%s%active) call output_variables_allocate(out_var%m, shd%NA)
         if (field%d%active) call output_variables_allocate(out_var%d, shd%NA)
         if (field%h%active) call output_variables_allocate(out_var%h, shd%NA)
 
@@ -467,17 +476,17 @@ module model_output
         if (flds%in_mem) then
             allocate(flds%dates%y(6, ts%nyears))
             allocate(flds%dates%m(6, ts%nmonths))
-            allocate(flds%dates%s(6, 12))
             allocate(flds%dates%d(6, ts%nr_days))
             allocate(flds%dates%h(6, ts%nr_days*24))
         else
             allocate(flds%dates%y(6, 1))
             allocate(flds%dates%m(6, 1))
-            allocate(flds%dates%s(6, 1))
             allocate(flds%dates%d(6, 1))
             allocate(flds%dates%h(6, 1))
         end if
         allocate(flds%dates%ts(6))
+        allocate(flds%dates%s(6, 12))
+        flds%dates%iter_s = 0
 
         !> Open output fields configuration file.
         iun = 100
@@ -742,18 +751,18 @@ module model_output
 
     !> Description:
     !>  Update the output field from the 'out_var' variable.
-    subroutine update_output_variable(file, out_var, t, its, dnts, fn)
+    subroutine update_output_variable(file, out_var, t, fn)
 
         !> Input variables.
         real, dimension(:), intent(in) :: out_var
-        integer, intent(in) :: t, its, dnts
+        integer, intent(in) :: t
         character(len = *), intent(in) :: fn
 
         !> Input/output variables.
         type(output_file) file
 
         !> Update value.
-        call output_variables_update_values(file%dat(:, t), out_var, its, dnts, fn)
+        call output_variables_update_values(file%dat(:, t), out_var, 0, 0, fn)
 
     end subroutine
 
@@ -771,8 +780,8 @@ module model_output
         type(output_field) field
 
         !> Local variables.
-        integer t
-        real frac(shd%NA), m, a
+        integer t, j
+        real frac(shd%NA), s(shd%NA), m, a
 
         !> Optional factors.
         if (present(cfactorm)) then
@@ -799,54 +808,74 @@ module model_output
         !> Yearly.
         if (field%y%active .and. ic%now%year /= ic%next%year) then
             if (flds%in_mem) t = ic%iter%year
-            call update_output_variable(field%y, (m*out_var%y + a)*frac, t, ic%ts_yearly, 0, 'val')
+            call update_output_variable(field%y, (m*out_var%y + a)*frac, t, 'val')
             if (.not. flds%in_mem) call flush_output(fls, shd, field, field%y, flds%dates%y)
         end if
 
         !> Monthly.
         if (field%m%active .and. ic%now%month /= ic%next%month) then
             if (flds%in_mem) t = ic%iter%month
-            call update_output_variable(field%m, (m*out_var%m + a)*frac, t, ic%ts_monthly, 0, 'val')
+            call update_output_variable(field%m, (m*out_var%m + a)*frac, t, 'val')
             if (.not. flds%in_mem) call flush_output(fls, shd, field, field%m, flds%dates%m)
         end if
 
         !> Daily.
         if (field%d%active .and. ic%now%day /= ic%next%day) then
             if (flds%in_mem) t = ic%iter%day
-            call update_output_variable(field%d, (m*out_var%d + a)*frac, t, ic%ts_daily, 0, 'val')
+            call update_output_variable(field%d, (m*out_var%d + a)*frac, t, 'val')
             if (.not. flds%in_mem) call flush_output(fls, shd, field, field%d, flds%dates%d)
         end if
 
-        !> Seasonal.
+        !> Hourly.
         if (field%h%active .and. ic%now%hour /= ic%next%hour) then
             if (flds%in_mem) t = ic%iter%hour
-            call update_output_variable(field%h, (m*out_var%h + a)*frac, t, ic%ts_hourly, 0, 'val')
+            call update_output_variable(field%h, (m*out_var%h + a)*frac, t, 'val')
             if (.not. flds%in_mem) call flush_output(fls, shd, field, field%h, flds%dates%h)
+        end if
+
+        !> Seasonally.
+        if (field%s%active .and. ic%now%month /= ic%next%month) then
+
+            !> Update variable from monthly value.
+            t = ic%now%month
+            field%s%dat(:, t) = field%s%dat(:, t)*max(flds%dates%iter_s(t) - 1, 1)
+            call update_output_variable(field%s, (m*out_var%m + a)*frac, t, 'sum')
+            field%s%dat(:, t) = field%s%dat(:, t)/flds%dates%iter_s(t)
+
+            !> Overwrite existing output (for average output).
+            if (.not. flds%in_mem) then
+                call flush_output(fls, shd, field, field%s, flds%dates%s)
+                if (field%s%seq%active) close(field%s%seq%iun)
+                if (field%s%r2c%active) close(field%s%r2c%iun)
+                if (field%s%txt%active) close(field%s%txt%iun)
+            end if
         end if
 
     end subroutine
 
     !> Description:
     !>  Update the 'dates' variable from the 'ic' counter.
-    subroutine update_output_dates(dates, iter, t)
+    subroutine update_output_dates(dates, t, iter, year, month, day, hour, mins)
 
         !> Input variables.
-        integer, intent(in) :: iter, t
+        integer, intent(in) :: t, iter
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: year, month, day, hour, mins
 
         !> Input/output variables.
         integer dates(:, :)
 
-        !> Save the time-step using 'next' date.
-        dates(1, t) = iter
-        dates(2, t) = ic%next%year
-        dates(3, t) = ic%next%month
-        dates(4, t) = ic%next%day
-        dates(5, t) = ic%next%hour
-        dates(6, t) = ic%next%mins
+        !> Initialize the vector to zero (for missing fields).
+        dates(:, t) = 0
 
-        !> Check 'hour' for the 24th hour.
-        !> Output is written 01-24h while the model runs 00-23h.
-        if (dates(5, t) == 0) dates(5, t) = 24
+        !> Save the time-step using 'now' date.
+        dates(1, t) = iter
+        if (present(year)) dates(2, t) = year
+        if (present(month)) dates(3, t) = month
+        if (present(day)) dates(4, t) = day
+        if (present(hour)) dates(5, t) = hour
+        if (present(mins)) dates(6, t) = mins
 
     end subroutine
 
@@ -859,24 +888,34 @@ module model_output
         !> Local variables.
         integer t, j
 
-        !> Update time-steps.
+        !> Update times for output.
+        !> Increment the hour to print 01-24 instead of 00-23.
         !> Set 't = 1' if not storing values in memory.
         t = 1
         if (ic%now%year /= ic%next%year) then
             if (flds%in_mem) t = ic%iter%year
-            call update_output_dates(flds%dates%y, ic%iter%year, t)
+            call update_output_dates(flds%dates%y, t, ic%iter%year, ic%now%year, 1, 1)
         end if
         if (ic%now%month /= ic%next%month) then
             if (flds%in_mem) t = ic%iter%month
-            call update_output_dates(flds%dates%m, ic%iter%month, t)
+            call update_output_dates(flds%dates%m, t, ic%iter%month, ic%now%year, ic%now%month, 1)
         end if
         if (ic%now%day /= ic%next%day) then
             if (flds%in_mem) t = ic%iter%day
-            call update_output_dates(flds%dates%d, ic%iter%day, t)
+            call update_output_dates(flds%dates%d, t, ic%iter%day, ic%now%year, ic%now%month, ic%now%day)
         end if
+
         if (ic%now%hour /= ic%next%hour) then
             if (flds%in_mem) t = ic%iter%hour
-            call update_output_dates(flds%dates%h, ic%iter%hour, t)
+            call update_output_dates(flds%dates%h, t, ic%iter%hour, ic%now%year, ic%now%month, ic%now%day, ic%now%hour)
+        end if
+
+        !> Seasonally.
+        !> Iterate counter for current month.
+        if (ic%now%month /= ic%next%month) then
+            t = ic%now%month
+            call update_output_dates(flds%dates%s, t, t, ic%now%year, ic%now%month, 1)
+            flds%dates%iter_s(t) = flds%dates%iter_s(t) + 1
         end if
 
         !> Update variables.

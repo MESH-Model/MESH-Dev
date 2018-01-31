@@ -428,10 +428,20 @@ module output_variables
     !>  Assign the NO_DATA value at indices where 'val' equals the
     !>  NO_DATA value.
     subroutine output_variables_update_values(dat, val, its, dnts, fn)
-        integer its, dnts
-        real, dimension(:) :: dat, val
-        character(len = *) fn
+
+        !> Input variables.
+        integer, intent(in) :: its, dnts
+        real, dimension(:), intent(in) :: val
+        character(len = *), intent(in) :: fn
+
+        !> Input/output variables.
+        real, dimension(:) :: dat
+
+        !> Reset the variable if this is the first time-step in the series.
         if (its == 1) dat = 0.0
+
+        !> Apply the 'fn' function.
+        !> The default case is to set 'dat' to 'val'.
         select case (fn)
             case ('sum')
                 dat = dat + val
@@ -445,7 +455,10 @@ module output_variables
             case default
                 dat = val
         end select
+
+        !> Assign the 'NO_DATA' value where 'NO_DATA' existed in 'val'.
         where (val == out%NO_DATA) dat = out%NO_DATA
+
     end subroutine
 
     !> Description:
