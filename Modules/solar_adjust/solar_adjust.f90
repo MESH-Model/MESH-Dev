@@ -108,14 +108,18 @@ program Solar_Adjust
         z = cos(slope*DEGtoRAD) ! components of cos(x^s)
 
         !> Time-stepping (for integral).
-        RADxxMIN = 2.0*pi/CalcFreq
-        MINS_int = 24.0*60.0/CalcFreq
+!        RADxxMIN = 2.0*pi/CalcFreq
+        MINS_int = 24*60/CalcFreq
 
         !> Time-stepping (for inclination in day).
-        Hr_Ang = -pi*(1.0 + Time_Offset/12.0)
+!replaced with calculation, if left to iterate then the minimal time-step for subroutine would have to be daily
+!        Hr_Ang = -pi*(1.0 + Time_Offset/12.0)
 
 !temp: loop
         do k = 1, nsteps ! hourly loop over the study period
+
+            !> Time-stepping (for inclination in day).
+            Hr_Ang = -pi*(1.0 + Time_Offset/12.0) + (2.0*pi)*rsrd_dtmin/(24*60)*now_hour
 
             !> Calculate geometry.
 !replaced with now_day            Day = dd ! day of the calendar year
@@ -178,7 +182,7 @@ program Solar_Adjust
                         end where
 !                    end do
 !                end do
-                Hr_Ang = Hr_Ang + RADxxMIN
+                Hr_Ang = Hr_Ang + 2.0*pi/CalcFreq
             end do
 
             !> Convert units.
@@ -212,7 +216,8 @@ program Solar_Adjust
                 end if
 
                 !> Time-stepping (for inclination in day).
-                Hr_Ang = -pi*(1.0 + Time_Offset/12.0)
+!replaced with calculation, if left to iterate then the minimal time-step for subroutine would have to be daily
+!                Hr_Ang = -pi*(1.0 + Time_Offset/12.0)
             end if
 !        end do
 
