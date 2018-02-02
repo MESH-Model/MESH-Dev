@@ -19,6 +19,14 @@ program Solar_Adjust
     real, dimension(:), allocatable :: ELEV, YLAT, SLOPE, ASPECT
     integer :: syyyy = 2004, sdd = 245, shh = 0 ! Start times
 
+    !> Parameters.
+    !*  Trans: Mean transmissivity of the atmosphere.
+    !*  Time_Offset: Solar time offset from local time.
+    !*  CalcFreq: Iterations per day (must divide the day into equal increments of minutes). [--].
+    real :: Trans = 0.818
+    real :: Time_Offset = 0.67
+    integer :: CalcFreq = 288
+
     !> Input/output variables.
     !* rsrd_dtmin: Time-step of radiation data. [minutes].
     !* rsrd: Incoming shortwave radiation (input).
@@ -79,6 +87,7 @@ program Solar_Adjust
         !> Call routine to calculate adjusted radiation value.
         call calc_rsrd_adjusted( &
             elev, ylat, slope, aspect, nvals, &
+            Trans, Time_Offset, CalcFreq, &
             rsrd_dtmin, &
             rsrd, rsrd_direct, rsrd_diffuse, rsrd_adjusted, &
             now_year, now_day, now_hour)

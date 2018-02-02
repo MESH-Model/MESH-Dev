@@ -19,12 +19,18 @@
 !*  now_jday: Present day in year. [--].
 !*  now_hour: Present hour in day (00-23). [--].
 !>
+!> Parameters (options):
+!*  Trans: Mean transmissivity of the atmosphere.
+!*  Time_Offset: Solar time offset from local time.
+!*  CalcFreq: Iterations per day (must divide the day into equal increments of minutes). [--].
+!>
 !> Returns:
 !*  rsrd_adjusted: Adjusted incoming shortwave radiation. [W m-2].
 !*  rsrd_direct: Direct component of adjusted radiation. [W m-2].
 !*  rsrd_diffuse: Diffuse component of adjusted radiation. [W m-2].
 subroutine calc_rsrd_adjusted( &
     elev, ylat, slope, aspect, nvals, &
+    Trans, Time_Offset, CalcFreq, &
     rsrd_dtmin, &
     rsrd, rsrd_direct, rsrd_diffuse, rsrd_adjusted, &
     now_year, now_jday, now_hour)
@@ -37,11 +43,11 @@ subroutine calc_rsrd_adjusted( &
     real, parameter :: DEGtoRAD365 = 2.0*pi/365.0
 
     !> Parameters.
-    !* Trans: Mean transmissivity of the atmosphere.
-    !* Time_Offset: Solar time offset from local time.
-    real :: Trans = 0.818
-    real :: Time_Offset = 0.67
-    integer :: CalcFreq = 288
+    !*  Trans: Mean transmissivity of the atmosphere.
+    !*  Time_Offset: Solar time offset from local time.
+    !*  CalcFreq: Iterations per day (must divide the day into equal increments of minutes). [--].
+    real, intent(in) :: Trans, Time_Offset
+    integer, intent(in) :: CalcFreq
 
     !> Input variables.
     !*  nvals: Number of elements in the vector (e.g., 1:grids, 1:tiles, etc.). [--].
@@ -143,9 +149,9 @@ subroutine calc_rsrd_adjusted( &
     end do
 
     !> Convert units.
-    Qdirect = (1000000.0/3600.0)*Sum_Idir ! clear-sky direct radiation on slope (MJ/m^2.int to W/m^2)
-    Qdiffuse = (1000000.0/3600.0)*Sum_Diff ! clear-sky diffuse radiation on slope (MJ/m^2.int to W/m^2)
-    Qflat = (1000000.0/3600.0)*(Sum_Flatd + Sum_Flatf) ! clear-sky 'Qdirect + Qdiffuse' on horizontal surface (MJ/m^2.int to W/m^2)
+    Qdirect = (1000000.0/(rsrd_dtmin*60.0))*Sum_Idir ! clear-sky direct radiation on slope (MJ/m^2.int to W/m^2)
+    Qdiffuse = (1000000.0/(rsrd_dtmin*60.0))*Sum_Diff ! clear-sky diffuse radiation on slope (MJ/m^2.int to W/m^2)
+    Qflat = (1000000.0/(rsrd_dtmin*60.0))*(Sum_Flatd + Sum_Flatf) ! clear-sky 'Qdirect + Qdiffuse' on horizontal surface (MJ/m^2.int to W/m^2)
 
     !> CRHM radiation correction for slope (the slope module of CHRM).
     Qsi = rsrd ! GEM sortwave radiation input for MESH
