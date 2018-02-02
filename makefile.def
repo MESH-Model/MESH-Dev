@@ -37,6 +37,7 @@ VPATH=	$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/Modules/climate_forcing_module: \
 		$(DIR_REPO)/Modules/simulation_statistics: \
 		$(DIR_REPO)/Modules/cropland_irrigation: \
+		$(DIR_REPO)/Modules/solar_adjust: \
 		$(DIR_REPO)/Modules/permafrost_active_layer: \
 		$(DIR_REPO)/Modules/io_modules: \
 		$(DIR_REPO)/Driver/MESH_Driver: \
