@@ -119,6 +119,7 @@ module RUNSVS113_module
        ! Update vegetation parameters as a function of julian day.
         call inicover_svs(bus, bussiz, kount, NG)
 
+  !      write(*,*) kount,'Call svs'
         !> Integrate SVS for one time step.
         call svs(bus, bussiz, bidon, 1, dt, kount, 1, NG, NG, 1)
 
@@ -138,7 +139,7 @@ module RUNSVS113_module
                 stas%sno%wsno(k + 1) = 0.0
             end if
 
-            stas%sfc%evap(k + 1) = bus(fvap + k)
+            stas%sfc%evap(k + 1) = bus(wflux + k)
             stas%sfc%qevp(k + 1) = bus(fv + k)
             stas%sfc%hfs(k + 1) = bus(fc + k)
             stas%sfc%rofo(k + 1) = max(0.0, bus(runofftot + k))/ic%dts
@@ -160,10 +161,8 @@ module RUNSVS113_module
             do j = 2, shd%lc%IGND
                 stas%sl%tbar(k + 1, j) = bus(tsoil + NG + k)
             end do
-!-            stas%sl%gflx(k + 1, :) =
-            stas%lzs%rofb(k + 1) = max(0.0, bus(watflow + 6*NG + k))/ic%dts
+            stas%lzs%rofb(k + 1) = max(0.0, bus(watflow + KDP*NG + k))/ic%dts
         end do
-
 
 !>>>svs_output
     !> Daily.
@@ -177,7 +176,18 @@ module RUNSVS113_module
 
 
     !> Hourly.
-    preacc_hly = preacc_hly + sum(bus(rainrate:(rainrate + NG - 1)))*ic%dts + sum(bus(snowrate:(snowrate + NG - 1)))*ic%dts !sum of all 'var' in bus?; depth
+    preacc_hly = preacc_hly + 1000.*sum(bus(rainrate:(rainrate + NG - 1)))*ic%dts + 1000.*sum(bus(snowrate:(snowrate + NG - 1)))*ic%dts !sum of all 'var' in bus?; depth
+    preacc_tot = preacc_tot + 1000.*sum(bus(rainrate:(rainrate + NG - 1)))*ic%dts + 1000.*sum(bus(snowrate:(snowrate + NG - 1)))*ic%dts !sum of all 'var' in bus?; depth
+    runoff_acc = runoff_acc + bus(runofftot)
+    
+    wsoil_tot = 0.
+    isoil_tot = 0.
+    do j = 0, shd%lc%IGND
+         wsoil_tot  = wsoil_tot+ 1000.*bus(wsoil + j*NG)*delz(j+1) ! mm
+         isoil_tot  = isoil_tot+ 1000.*bus(isoil + j*NG)*delz(j+1) ! mm
+    end do
+
+
     if (ic%ts_hourly == 3600/ic%dts) then !last time-step of hour
 
 !       write(iout_hly, 1010) ic%now%year, ic%now%jday, ic%now%hour, preacc_hly 
@@ -188,7 +198,32 @@ module RUNSVS113_module
         write(iout_hly_soil, 1010) ic%now%year, ic%now%jday, ic%now%hour, bus(tsoil), bus(tsoil+1),bus(tsoil+2), &
                         bus(tsoil+3), bus(tsoil+4),bus(tsoil+5),bus(tsoil+6)  !daily acc.
 
+        write(iout_hly_wsoil, 1010) ic%now%year, ic%now%jday, ic%now%hour, bus(wsoil), bus(wsoil+1),bus(wsoil+2), &
+                        bus(wsoil+3), bus(wsoil+4),bus(wsoil+5),bus(wsoil+6)  !daily acc.
+
+        write(iout_hly_isoil, 1010) ic%now%year, ic%now%jday, ic%now%hour, bus(isoil), bus(isoil+1),bus(isoil+2), &
+                        bus(isoil+3), bus(isoil+4),bus(isoil+5),bus(isoil+6)  !daily acc.
+
+        write(iout_wat_bal, 1010) ic%now%year, ic%now%jday, ic%now%hour, preacc_tot, bus(accevap),bus(latflaf), &
+                        bus(drainaf),runoff_acc,wsoil_tot,isoil_tot,bus(snoma),bus(snvma),bus(wveg),bus(vegh),bus(vegl)
+
     end if
+
+   if (kount == 0) then
+       wsoil_ini = wsoil_tot
+   end if
+
+    bal_in_out = preacc_tot-bus(accevap)-bus(drainaf)-runoff_acc-bus(latflaf)
+    stock = (1-bus(vegh))*bus(snoma)+bus(vegh)*bus(snvma)+wsoil_tot-wsoil_ini+isoil_tot+bus(wveg)*(bus(vegl)+bus(vegh))
+ 
+    bal_tot = bal_in_out-stock
+
+
+    if((abs(bal_tot-bal_pre))>0.1) then
+       write(*,*) 'Inbalance ',bal_tot,bal_tot-bal_pre
+     end if
+
+    bal_pre = bal_tot
 
     !> Time-step.
   !  write(iout_ts, 1010) ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &

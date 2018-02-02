@@ -33,7 +33,9 @@ module RUNSVS113_variables
 
 !>>>svs_output
     integer :: iout_dly = 151, iout_hly = 152, iout_ts = 153 !150+N is output unit number for CLASS output; should be able to recycle its use
-    real preacc_dly, preacc_hly
+    integer :: iout_wat_bal = 157
+    real preacc_dly, preacc_hly,preacc_tot,runoff_acc,wsoil_tot,isoil_tot
+    real bal_in_out,stock,bal_tot,bal_pre,wsoil_ini
 !<<<svs_output
 
 

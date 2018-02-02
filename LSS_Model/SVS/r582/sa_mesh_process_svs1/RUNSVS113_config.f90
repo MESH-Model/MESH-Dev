@@ -233,10 +233,14 @@ module RUNSVS113_config
     preacc_dly = 0.0 !reset accumulators
 
     !> Hourly.
-    open(iout_hly, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs1_out_hourly.csv', status = 'unknown', action = 'write')
-    write(iout_hly, 1010) 'YEAR', 'DAY', 'HOUR', 'SWE', 'SD','SNALB'
+    open(iout_hly, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs1_temp_hourly.csv', status = 'unknown', action = 'write')
+    write(iout_hly, 1010) 'YEAR', 'DAY', 'HOUR', 'SWE', 'SD','SNALB','TSN1','TSN2','TSNAVG', 'RAINRATE', 'SNOWRATE', 'WSN'
 !    write(iout_hly, 1010) 'YEAR', 'DAY', 'HOUR', 'PRE'
     preacc_hly = 0.0 !reset accumulators
+
+    open(iout_wat_bal, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs1_out_watbal_hourly.csv', status = 'unknown', action = 'write')
+    write(iout_wat_bal, 1010) 'YEAR', 'DAY', 'HOUR', 'PCP_ACC','EVP_ACC','LATF_ACC','DRAI_ACC','RUNO_ACC','WSOIL_TOT','ISOIL_TOT','SWE','SWE_VEG','WSN','WSN_VEG','WVEG','VEGH','VEGL'
+
 
     !> Time-step.
 !    open(iout_ts, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs_out_ts.csv', status = 'unknown', action = 'write')

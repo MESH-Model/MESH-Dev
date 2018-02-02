@@ -138,6 +138,10 @@ module sfc_options
    logical           :: owflux      = .false.
    namelist /surface_cfgs/ owflux
 
+   !# read-in land surface emissivity if .true.
+   logical           :: read_emis     = .false.
+   namelist /surface_cfgs/ read_emis
+
    !# Takes into account effect of ocean salinity on saturation specific
    !# humidity at ocean surface (boundary condition for LH flux calculation)
    logical           :: salty_qsat  = .false.

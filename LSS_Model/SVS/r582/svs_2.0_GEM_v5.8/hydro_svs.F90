@@ -15,14 +15,16 @@
 !-------------------------------------- LICENCE END --------------------------------------
 SUBROUTINE HYDRO_SVS ( DT, &
      EG, ER, ETR, RR, RSNOW, RSNOWV, &
+     EVAPCOR,EVAPCOR_V,  &
      IMPERVU, VEGL, VEGH, PSN, PSNVH, ACROOT, WRMAX, &
      WSAT, KSAT, PSISAT, BCOEF, FBCOF, WFCINT, GRKEF, &
-     SNM, SVM, WR, WRT, WD, WDT, WF, &
+     SNDP, SVDP, WR, WRT, WD, WDT, WF, &
      KSATC, KHC, PSI, GRKSAT, WFCDP, &
      F, LATFLW, RUNOFF, N)
   !
   use sfc_options
   use svs_configs
+  USE MODD_SNOWES_PAR, ONLY : XSNOWDMIN
   implicit none
 #include <arch_specific.hf>
 
@@ -41,7 +43,8 @@ SUBROUTINE HYDRO_SVS ( DT, &
   real, dimension(n)        :: psn, psnvh, vegh, vegl
   real, dimension(n,nl_svs) :: bcoef, fbcof, acroot, ksat
   real, dimension(n,nl_svs) :: psisat, wfcint, wsat
-  real, dimension(n)        :: grkef, rsnow, rsnowv, wrmax, snm, svm 
+  real, dimension(n)        :: grkef, rsnow, rsnowv, wrmax, sndp, svdp 
+  real, dimension(n)        :: evapcor, evapcor_v
   ! prognostic vars (I/0)
   real, dimension(n)        :: wr, wrt
   real, dimension(n,nl_svs) :: wd , wdt, wf
@@ -119,8 +122,8 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !
   !          --- Prognostic variables of SVS not modified by HYDRO_SVS ---
   !
-  ! SNM           snow water equivalent (SWE) for bare ground and low veg snow [kg/m2]
-  ! SVM           snow water equivalent (SWE) for snow under high veg [kg/m2]
+  ! SNDP           snow depth for bare ground and low veg snow [m]
+  ! SVDP           snow depth for snow under high veg [m]
   !
   !          - INPUT/OUTPUT  -
   !
@@ -165,6 +168,8 @@ SUBROUTINE HYDRO_SVS ( DT, &
   real, dimension(n,nl_svs)   :: etr_grid
   real, dimension(n)          :: asat1, basflw, satsfc, subflw , pg, rveg
 
+  real, dimension(n)          :: wrt_vl,wrt_vh,rveg_vl,rveg_vh
+
   ! For the Runge-Kutta method
   real, dimension(n,nl_svs)   :: wd_rk, dwd_rk1, dwd_rk2, dwd_rk3, dwd_rk4
   real, dimension(n,nl_svs+1) :: f_rk
@@ -193,53 +198,99 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !                                  all rain goes directly to the snowpack and no
   !                                  liquid water remains in the vegetation
   !
+
   DO I=1,N
      !
+    IF(VEGH(I)>0.) THEN
 
-     IF (SVM(I).GE.CRITSNOWMASS)THEN
+     IF (SVDP(I).GE. XSNOWDMIN)THEN
         !                                  There is snow on the ground, remove evaporation
         !                                  then drain all liquid water from the vegetation
-        WRT(I) = WR(I) - DT * ER(I)
+        WRT_VH(I) = WR(I) - DT * ER(I)
         !                                  Liquid water in vegetation becomes runoff
-        RVEG(I) = MAX(0.0,WRT(I)/DT) ! Runoff mult. by dt later on, so water balance maintained..
-        WRT(I) = 0.0
+        RVEG_VH(I) = MAX(0.0,WRT_VH(I)/DT) ! Runoff mult. by dt later on, so water balance maintained..
+        WRT_VH(I) = 0.0
 
      ELSE
         !                                  Remove P-E from liquid water in vegetation
         !                                  Sanity check: WRT must be positive
         !                                  since ER is limited to WR/DT+RR in ebudget
-        WRT(I) = MAX(0., WR(I) - DT * (ER(I) -  RR(I)))
+        WRT_VH(I) = MAX(0., WR(I) - DT * (ER(I) -  RR(I)))
         !                                  Compute canopy drip
         !                                  if Wr > Wrmax, there is runoff
-        RVEG(I) = MAX(0., (WRT(I) - WRMAX(I)) / DT ) 
+        RVEG_VH(I) = MAX(0., (WRT_VH(I) - WRMAX(I)) / DT ) 
         !
         !                                  Wr must be smaller than Wrmax
         !                                  after runoff is removed
         !
-        WRT(I) = MIN(WRT(I), WRMAX(I))
+        WRT_VH(I) = MIN(WRT_VH(I), WRMAX(I))
      END IF
+
+    ELSE
+        WRT_VH(I) = 0.0
+        RVEG_VH(I) = 0.
+    ENDIF
      !
+
+    IF(VEGL(I)>0.) THEN
+
+     IF (SNDP(I).GE.XSNOWDMIN)THEN
+        !                                  There is snow on the ground, remove evaporation
+        !                                  then drain all liquid water from the vegetation
+        WRT_VL(I) = WR(I) - DT * ER(I)
+        !                                  Liquid water in vegetation becomes runoff
+        RVEG_VL(I) = MAX(0.0,WRT_VL(I)/DT) ! Runoff mult. by dt later on, so water balance maintained..
+        WRT_VL(I) = 0.0
+
+     ELSE
+        !                                  Remove P-E from liquid water in vegetation
+        !                                  Sanity check: WRT must be positive
+        !                                  since ER is limited to WR/DT+RR in ebudget
+        WRT_VL(I) = MAX(0., WR(I) - DT * (ER(I) -  RR(I)))
+        !                                  Compute canopy drip
+        !                                  if Wr > Wrmax, there is runoff
+        RVEG_VL(I) = MAX(0., (WRT_VL(I) - WRMAX(I)) / DT ) 
+        !
+        !                                  Wr must be smaller than Wrmax
+        !                                  after runoff is removed
+        !
+        WRT_VL(I) = MIN(WRT_VL(I), WRMAX(I))
+     END IF
+    ELSE
+        WRT_VL(I) = 0.0
+        RVEG_VL(I) = 0.
+    ENDIF
+
+    IF ( (VEGH(I) + VEGL(I)) .GT. 0.0 ) THEN
+       WRT(I) = (VEGL(I)*WRT_VL(I)+VEGH(I)*WRT_VH(I))/(VEGL(I)+VEGH(I))
+    ELSE
+       WRT(I) = 0.0
+    ENDIF
+
   END DO
-  !
+
   !                                  Compute precipitation reaching the ground PG
   !                                  as a weighted average of RVEG and RR
   !                                  if there is no snow on bare ground,
   !                                  otherwise PG is just from RVEG since RR goes
   !                                  through the snowpack
   !                                   
+  !
   DO I=1,N
-     !   
-     IF (SNM(I).GE.CRITSNOWMASS)THEN
-        PG(I) = (VEGL(I) + VEGH(I)) * RVEG(I)
-     ELSE
-        PG(I) = (VEGL(I) + VEGH(I)) * RVEG(I) & 
+     !  
+     IF(1.-VEGH(I)>0.) THEN
+      IF (SNDP(I).GE.XSNOWDMIN)THEN
+          PG(I) = VEGL(I)*RVEG_VL(I) + VEGH(I) * RVEG_VH(I)
+      ELSE
+          PG(I) = VEGL(I)*RVEG_VL(I) + VEGH(I) * RVEG_VH(I)  &
              + (1. - VEGL(I) - VEGH(I) ) * (1. - PSN(I)) * RR(I)
-     ENDIF
+      ENDIF
+    ELSE
+         PG(I) =  VEGH(I) * RVEG_VH(I)
+    ENDIF
      !
   END DO
   !
-  !
-
   !
   !        2.     ADD EFFECT OF SNOWPACK RUNOFF 
   !               ------------------------------------------

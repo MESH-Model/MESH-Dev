@@ -273,6 +273,15 @@ module RUNSVS113_config
     open(iout_hly_soil, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs2_out_tsoil_hourly.csv', status = 'unknown', action = 'write')
     write(iout_hly_soil, 1010) 'YEAR', 'DAY', 'HOUR', 'TG1', 'TG2','TG3','TG4','TG5','TG6','TG7'
 
+    open(iout_hly_wsoil, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs2_out_wsoil_hourly.csv', status = 'unknown', action = 'write')
+    write(iout_hly_wsoil, 1010) 'YEAR', 'DAY', 'HOUR', 'WG1', 'WG2','WG3','WG4','WG5','WG6','WG7'
+
+    open(iout_hly_isoil, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs2_out_isoil_hourly.csv', status = 'unknown', action = 'write')
+    write(iout_hly_isoil, 1010) 'YEAR', 'DAY', 'HOUR', 'IG1', 'IG2','IG3','IG4','IG5','IG6','IG7'
+
+    open(iout_wat_bal, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs2_out_watbal_hourly.csv', status = 'unknown', action = 'write')
+    write(iout_wat_bal, 1010) 'YEAR', 'DAY', 'HOUR', 'PCP_ACC','EVP_ACC','LATF_ACC','DRAI_ACC','RUNO_ACC','WSOIL_TOT','ISOIL_TOT','SWE','SWE_VEG','WVEG','VEGH','VEGL'
+
     !> Time-step.
   !  open(iout_ts, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs_out_ts.csv', status = 'unknown', action = 'write')
   !  write(iout_ts, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'RPCP', 'SPCP'

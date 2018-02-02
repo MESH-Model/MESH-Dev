@@ -126,7 +126,7 @@ include "isbapar.cdk"
 
 
       real, dimension(n) :: lams, zcs, zqs, ctu, zqsat, zdqsat, zqsatt, &
-           rora, a, b, c, tsnst, tsndt, work, melts, freezs, rhomax, fmltrain, &
+           rora, a, b, c, tsnst, tsndt, work, workt2, melts, meltst2, freezs, rhomax, fmltrain, &
            smt, wlt, alphast, rhosfall, rhoslt, smx, rvrun, kdiffu, &
            dampd, z0h, bcoef, dmelt, dsnowdt, ftemp, wlmax, resa
 include "dintern.inc"
@@ -195,12 +195,12 @@ include "fintern.inc"
 !
 !
       DO I=1,N
-!                          First calculate the conductivity of snow
+!                          First calculate the conductivity of snow (Yen,1981)
         LAMS(I) = LAMI * RHOSL(I)**1.88
 !
 !                          Heat capacity
 !
-        ZCS(I) = 2.0 * SQRT( PI/(LAMS(I)* 1000. * RHOSL(I)*CICE*DAY ))
+        ZCS(I) = 2.0 * SQRT( PI/(LAMS(I)*RAUW*RHOSL(I)*CICE*DAY))
 !                          
 !                          Thermal diffusivity (You et al., 2014)
         KDIFFU(I) =  LAMS(I) / ( CICE * RAUW*RHOSL(I)) 
@@ -331,13 +331,13 @@ include "fintern.inc"
 !                           
          DAMPD(I) = SQRT(  2 * KDIFFU(I) / MYOMEGA  )
 !                             
-!                             Average snow pack temp. 
+!                             Average snow pack temp. for "superficial/damping" layer
 !        
          IF(SNODP(I).GT.0.0) THEN  
             DMELT(I) = MIN(DAMPD(I),SNODP(I))
             BCOEF(I) = ( 1. - exp( - DMELT(I)/DAMPD(I) ) ) * DAMPD(I) / DMELT(I)
-            !BCOEF(I) = ( 1. - exp( - SNODP(I)/DAMPD(I) ) ) * DAMPD(I) / SNODP(I)
          ELSE
+            DMELT(I) = 0.0
             BCOEF(I) = 0.0
          ENDIF
 
@@ -346,6 +346,7 @@ include "fintern.inc"
 !                         Common portion of the MELTS and FREEZS
 !  
          WORK(I) = (TAVG(I)-TRPL) / ( ZCS(I)*CHLF*DT )
+         WORKT2(I) = (TSNDT(I)-TRPL) / ( ZCS(I)*CHLF*DT )
       END DO
 !
 !
@@ -354,29 +355,43 @@ include "fintern.inc"
 !
       DO I=1,N
         IF (WORK(I).LT.0.) THEN
-!                         have freezing
+!                        have freezing --- don't allow freezing for now ---
           MELTS(I)  = 0.0
-          FREEZS(I) = MIN( -WORK(I), WL(I)/DT )
-          RHOMAX(I) = 450. - 20.47 / (SNODP(I)+PETIT) * & 
-                           ( 1.-EXP(-SNODP(I)/0.0673))
-          RHOMAX(I) = 0.001 * RHOMAX(I)
-        ELSE 
-!                         have melting
-
+          FREEZS(I) = 0.0
+          !FREEZS(I) = MIN( -WORK(I), WL(I)/DT )
+          !RHOMAX(I) = 450. - 20.47 / (SNODP(I)+PETIT) *  & 
+          !  ( 1.-EXP(-SNODP(I)/0.0673))
+          !RHOMAX(I) = 0.001 * RHOMAX(I)
+          RHOMAX(I) = 0.3
+        ELSE
+!                        have melting
            if(snodp(i).gt.0.0 )then
               MELTS(I)  = MIN( WORK(I) , SM(I)*(DMELT(I)/SNODP(I))/DT )
            else
               MELTS(I)  = 0.0
            endif
 
+           FREEZS(I) = 0.0
+           ! RHOMAX(I) = 600. - 20.47 / (SNODP(I)+PETIT) *  & 
+           !( 1.-EXP(-SNODP(I)/0.0673))
+           !RHOMAX(I) = 0.001 * RHOMAX(I)
 
-
-          FREEZS(I) = 0.0
-          RHOMAX(I) = 600. - 20.47 / (SNODP(I)+PETIT) * & 
-                           ( 1.-EXP(-SNODP(I)/0.0673))
-          RHOMAX(I) = 0.001 * RHOMAX(I)
+           RHOMAX(I) = 0.6
         END IF
+
+        if(workt2(i).gt.0.0.and.snodp(i).gt.0.0.and.dmelt(i).lt.snodp(i)) then
+
+            MELTSt2(I)  = MIN( WORKt2(I) , SM(I)*(((SNODP(I)-DMELT(I))/SNODP(I))/DT ))
+            MELTS(i)= melts(i)+meltst2(i)
+        else
+
+           meltst2(i) = 0.0
+        endif
+
       END DO
+
+
+     
 
 !
 !
@@ -392,7 +407,7 @@ include "fintern.inc"
 !
 !                                It is hypothesized that the temperature
 !                                of falling water is the same as that
-!                                of air at the lowest atmospheric level.
+!                                of air at diag. level.
 !
       DO I=1,N
         IF (RR(I).LT.RAIN1) THEN
@@ -405,12 +420,15 @@ include "fintern.inc"
       END DO
 !
       DO I=1,N
-        IF (T(I).GT.TRPL.AND.SM(I).GT.0.0.AND.RR(I).GT.0.) THEN
-          MLTRAIN = ( T(I)-TRPL ) / ( 2.*ZCS(I)*CHLF*DT )
-          MELTS(I) = MELTS(I) + FMLTRAIN(I) * MLTRAIN
-          ! Make sure do not melt more than ws/dt
-          MELTS(I) = MIN( MELTS(I), SM(I)/DT )
-       END IF
+         
+         IF (T2M(I).GT.TRPL.AND.SM(I).GT.0.0.AND.RR(I).GT.0.) THEN
+            MLTRAIN = ( T2M(I)-TRPL ) / ( 2.*ZCS(I)*CHLF*DT )
+
+            
+            MELTS(I) = MELTS(I) + FMLTRAIN(I) * MLTRAIN
+            MELTS(I) = MIN( MELTS(I), SM(I)/DT)
+          
+        END IF
       END DO  
 
 !
@@ -428,25 +446,21 @@ include "fintern.inc"
 !               ------------------------------------------
 !
 !
-!                              new temperature Tsns(t) melting/freezing
-!                              apply all the energy to TSNS because applying it to TSND seems to cause problems
+!                              new temperature Tsns(t)  & tsnd(t) after melting/freezing
 !
       DO I=1,N
-
-         TSNST(I) = TSNST(I) +   ZCS(I) * CHLF * (FREEZS(I)-MELTS(I)) * DT
-!!$!                              new temperature Tsns(t) and Tsnd(t) after melting/freezing
-!!$!                              here re-distribute energy using same weights as the ones used
-!!$!                              to calc. avg snowpack temp.  -- TO BE TESTED ??
-!!$
-!!$        TSNST(I) = TSNST(I) +      BCOEF(I)  * ZCS(I) * CHLF * (FREEZS(I)-MELTS(I)) * DT
-!!$        TSNDT(I) = TSNDT(I) + (1 - BCOEF(I)) * ZCS(I) * CHLF * (FREEZS(I)-MELTS(I)) * DT
-
+         TSNST(I) = TSNST(I) +   ZCS(I) * CHLF * (FREEZS(I)-(MELTS(I)-MELTST2(I))) * DT
+         TSNDT(I) = TSNDT(I) +   ZCS(I) * CHLF * (                   -MELTST2(I) ) * DT
+         
+!      ALLOW TEMP. TO GO ABOVE ZERO TO TRY TO CONSERVE ENERGY WITH FORCE-RESTORE
 !
-!                              make sure don't exceed triple pt.
-        TSNST(I) = MIN ( TSNST(I) , TRPL )
-        TSNDT(I) = MIN ( TSNDT(I) , TRPL )
-!        
+!       Make sure don't exceed triple pt.                             
+!     
+       ! TSNST(I) = MIN( TSNST(I) , TRPL )
+        !TSNDT(I) = MIN( TSNDT(I) , TRPL )
+!
       END DO      
+
 !
 !
 !

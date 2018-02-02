@@ -17,7 +17,7 @@
                    ALPHASV, & 
                    TSVS, & 
                    VEGH, VEGL, PSNVH,PSNVHA,SKYVIEW, & 
-                   RR,WR,SVM, &
+                   RR,WR,SNM,SVM, &
                    ALBT, & 
                    RNET, HFLUX, LE, LEG, LEV, LES,LESV, & 
                    LER, LETR, EG, ER, ETR, GFLUX, EFLUX, & 
@@ -59,7 +59,7 @@
       REAL ALFAT(N), ALFAQ(N), LESV(N)
       REAL VEGH(N), VEGL(N), PSNVH(N), PSNVHA(N)
       REAL SKYVIEW(N), ILMO(N), HST(N), TRAD(N)
-      REAL WR(N),RR(N),SVM(N)
+      REAL WR(N),RR(N),SNM(N),SVM(N)
 !
 !Author
 !          S. Belair (January 1997)
@@ -647,10 +647,42 @@ include "fintern.inc"
 !  EV is limited to WR/DT+RR+ETR to avoid negative WR in hydro_svs when direct evaporation exceeds rainrate
 !  When snow is present, rain falls through vegetation to snow bank... so is not considered in evaporation... This is to conserve water budget.
 
-        IF (SVM(I).GE.CRITSNOWMASS)THEN
-            EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
-        ELSE
-            EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)))
+        IF(VEGH(I)==0.)  THEN ! No high veg covers the grid
+            IF(VEGL(I)>0.) THEN ! Presence of low veg
+              IF (SNM(I).GE.CRITSNOWMASS)THEN
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
+              ELSE
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)))
+              ENDIF
+            ENDIF
+        ELSE IF(1-VEGH(I)>0.) THEN   ! High veg does not fully cover the grid
+            IF(VEGL(I)>0.) THEN ! Presence of low veg
+              IF (SVM(I).GE.CRITSNOWMASS) THEN
+                  IF(SNM(I).GE.CRITSNOWMASS) THEN
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
+                  ELSE 
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)*VEGL(I)/(VEGL(I)+VEGH(I))))
+                  ENDIF
+              ELSE
+                  IF(SNM(I).GE.CRITSNOWMASS) THEN
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)*VEGH(I)/(VEGL(I)+VEGH(I))))
+                  ELSE 
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)))
+                  ENDIF
+              ENDIF
+            ELSE ! No low veg
+              IF (SVM(I).GE.CRITSNOWMASS)THEN
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
+              ELSE
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)))
+              ENDIF
+            ENDIF
+        ELSE ! High veg fully covers the grid
+              IF (SVM(I).GE.CRITSNOWMASS)THEN
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
+              ELSE
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)))
+              ENDIF  
         ENDIF
 !                                            Water vapor flux from vegetation
         EVF(I) =  WTA(I,indx_svs_vg)  * EV(I)/RHOA(I)

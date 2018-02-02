@@ -237,7 +237,6 @@ integer ptr, x, j, k
          DO I=1,N
 !           Make sure rootdp does not exceed permeable depth
             bus(x(ROOTDP,I,1))=min( bus(x(ROOTDP,I,1)) , DL_SVS(KDP) )
-!	    bus(x(ROOTDP,I,1))=max( bus(x(ROOTDP,I,1)) , 0.5 )
          END DO
 
       ENDIF
@@ -282,7 +281,8 @@ integer ptr, x, j, k
            BUS(x(BCOEF  ,1,1)), &  
            BUS(x(CVH    ,1,1)), BUS(x(CVL    ,1,1)), &  
            BUS(x(ALVH   ,1,1)), BUS(x(ALVL   ,1,1)), &   
-           BUS(x(EMISVH ,1,1)), BUS(x(EMISVL ,1,1)), &              
+           BUS(x(EMISVH ,1,1)), BUS(x(EMISVL ,1,1)), &  
+           BUS(x(EMISTG ,1,1)), &
            BUS(x(RGLVH  ,1,1)), BUS(x(RGLVL  ,1,1)), &  
            BUS(x(STOMRVH,1,1)), BUS(x(STOMRVL,1,1)), &  
            BUS(x(GAMVH  ,1,1)), BUS(x(GAMVL  ,1,1)), &           
@@ -456,7 +456,8 @@ integer ptr, x, j, k
                   bus(x(VEGH       ,1,1)) , bus(x(VEGL   ,1,1)),   &   
                   bus(x(PSNVH      ,1,1)) ,    &   
                   bus(x(PSNVHA     ,1,1)),  bus(x(SKYVIEW   ,1,1)),   &   
-                  rainrate_mm,bus(x(WVEG   ,1,1)),bus(x(snvma,1,1)),&
+                  rainrate_mm,bus(x(WVEG   ,1,1)),bus(x(snoma,1,1)),&
+                  bus(x(snvma,1,1)),&
                   bus(x(ALVIS,1,indx_soil)),     & 
                   bus(x(RNET_S     ,1,1)),    &   
                   bus(x(FC  ,1,indx_soil)), bus(x(FV  ,1,indx_soil)),   &    
@@ -548,21 +549,6 @@ integer ptr, x, j, k
 !
         bus(x(tsurf  ,i,1        )) = bus(x(tsa  ,i,1        ))
         bus(x(tsrad  ,i,1        )) = TRAD(i)
-
-	! coherence check on snow mass and depth
-          if ( bus(x(snoma,i,1)).lt.0.01.or.bus(x(snodpl,i,1)).eq.0.0) then
-                bus(x(snoma,i,1)) = 0.0
-                bus(x(snodpl,i,1)) = 0.0
-                bus(x(wsnow,i,1)) = 0.0
-          end if
-          bus(x(snoro,i,1)) = min(max(100.,bus(x(snoden,i,1)))/RAUW,0.9)
-          if ( bus(x(snvma,i,1)).lt.0.01.or.bus(x(snvdp,i,1)).eq.0.0) then
-                bus(x(snvma,i,1)) = 0.0
-                bus(x(snvdp,i,1)) = 0.0
-                bus(x(wsnv,i,1)) = 0.0
-          end if
-          bus(x(snvro,i,1)) = min(max(100.,bus(x(snvden,i,1)))/RAUW,0.9)
-
 !
 !       CALCULATE LAND-ATMOSPHERE OUTCOMING WATER FLUX
         BUS(x(WFLUX,I,1)) = RHOA(I)*BUS(x(EFLUX,I,1))

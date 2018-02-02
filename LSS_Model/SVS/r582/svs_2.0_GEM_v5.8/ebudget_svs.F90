@@ -19,7 +19,7 @@
                    VEGH, VEGL, VGHEIGHT,  &
                    PSNVH,PSNVHA,SKYVIEW,SKYVIEWA, & 
                    CONDSLD, CONDDRY, CAP, SOILCOND, &
-                   RR,WR,SVM, &
+                   RR,WR,SNDP,SVDP, &
                    VTRA,ALBT, & 
                    RNET, HFLUX, LE, LEG, LEV, LES,LESV,LEGV, & 
                    LER, LETR, EG, ER, ETR, GFLUX, EFLUX, & 
@@ -39,7 +39,7 @@
       use sfclayer_mod, only: sl_sfclayer,SL_OK
       use sfc_options
       use svs_configs
-      use modd_snowES_par,   only: XEMISSN
+      use modd_snowES_par,   only: XEMISSN,XSNOWDMIN
       implicit none
 #include <arch_specific.hf>
 !
@@ -74,7 +74,7 @@
       REAL VEGH(N), VEGL(N), PSNVH(N), PSNVHA(N)
       REAL ILMO(N), HST(N), TRAD(N)
       REAL SKYVIEW(N), SKYVIEWA(N), VTRA(N)
-      REAL WR(N),RR(N),SVM(N)
+      REAL WR(N),RR(N),SVDP(N),SNDP(N)
       REAL VGHEIGHT(N), CAP(N,NL_SVS)
       REAL CONDSLD(N,NL_SVS), CONDDRY(N,NL_SVS), SOILCOND(N,NL_SVS)
 
@@ -191,7 +191,8 @@
 ! SKYVIEW  Sky view factor for tall/high vegetation
 ! RR       Liquid precipitation rate at the surface in [mm/s]
 ! WR       Water retained by vegetation
-! SVM      snow water equivalent (SWE) for snow under high veg [kg/m2]
+! SVDP     snow depth for snow under high veg [m]
+! SNDP     snow depth for snow under low veg and ground [m]
 !
 !           - Output -
 ! ALBT      total surface albedo (snow + vegetation + bare ground)
@@ -980,15 +981,50 @@ include "fintern.inc"
 !  When snow is present, rain falls through vegetation to snow bank... so is not considered in evaporation...
 !  This is to conserve water budget.
 
-        IF (SVM(I).GE.CRITSNOWMASS)THEN
-            EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
-        ELSE
-            EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)))
+
+        IF(VEGH(I)==0.)  THEN ! No high veg cover the grid
+            IF(VEGL(I)>0.) THEN ! Presence of low veg
+              IF (SNDP(I).GE.XSNOWDMIN)THEN
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
+              ELSE
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)))
+              ENDIF
+            ENDIF
+        ELSE IF(1-VEGH(I)>0.) THEN   ! High veg does not fully cover the grid
+            IF(VEGL(I)>0.) THEN ! Presence of low veg
+              IF (SVDP(I).GE.XSNOWDMIN) THEN
+                  IF(SNDP(I).GE.XSNOWDMIN) THEN
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
+                  ELSE 
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)*VEGL(I)/(VEGL(I)+VEGH(I))))
+                  ENDIF
+              ELSE
+                  IF(SNDP(I).GE.XSNOWDMIN) THEN
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)*VEGH(I)/(VEGL(I)+VEGH(I))))
+                  ELSE 
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)))
+                  ENDIF
+              ENDIF
+            ELSE ! No low veg
+              IF (SVDP(I).GE.XSNOWDMIN)THEN
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
+              ELSE
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)))
+              ENDIF
+            ENDIF
+        ELSE ! High veg fully covers the grid
+              IF (SVDP(I).GE.XSNOWDMIN)THEN
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
+              ELSE
+                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)))
+              ENDIF  
         ENDIF
+
 
 !                                            Water vapor flux from vegetation
 
         EVF(I) =  (VEGH(I) * (1. - PSNVHA(I)) + VEGL(I) * (1. - PSNG(I))) * EV(I)/RHOA(I)
+
 
 !                                            Latent heat of evaporation from vegetation
         LEV(I) = RHOA(I) * CHLC*EVF(I)

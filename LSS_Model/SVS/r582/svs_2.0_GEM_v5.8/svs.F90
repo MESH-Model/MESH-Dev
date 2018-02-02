@@ -144,10 +144,10 @@ integer ptr, x, j, k
    real,dimension(n) :: pct, pz0hnat, pz0
 !   real,dimension(n) :: pthrufal, pgrndflux, prnsnow, phsnow, pgfluxsnow, phpsnow
    real,dimension(n) :: pgrndflux, prnsnow, phsnow, pgfluxsnow, phpsnow
-   real,dimension(n) :: pleses, pleles, pevap
+   real,dimension(n) :: pleses, pleles, pevap,pevapcor
 !   real,dimension(n) :: pthrufal_v, pgrndflux_v, prnsnow_v, phsnow_v, pgfluxsnow_v, phpsnow_v
    real,dimension(n) :: pgrndflux_v, prnsnow_v, phsnow_v, pgfluxsnow_v, phpsnow_v
-   real,dimension(n) :: pleses_v, pleles_v, pevap_v
+   real,dimension(n) :: pleses_v, pleles_v, pevap_v,pevapcor_v
 
    real,dimension(n) :: psr_si, prr_si
    real,dimension(n) :: prg_veg    ! Surface incoming shortwave radiation under high vegetation
@@ -282,7 +282,7 @@ integer ptr, x, j, k
          do I=1,N
 !           Make sure rootdp does not exceed permeable depth
             bus(x(ROOTDP,I,1))=min( bus(x(ROOTDP,I,1)) , DL_SVS(KDP) )
-	    bus(x(ROOTDP,I,1))=max( bus(x(ROOTDP,I,1)) , 0.5 )
+	    bus(x(ROOTDP,I,1))=max( bus(x(ROOTDP,I,1)) , 0.5 ) ! In coherence in GEM_HYDRO
          end do
 
        ! ---------------- FOR SNOW ES --------------------         
@@ -298,6 +298,9 @@ integer ptr, x, j, k
             PLESES(I)=0.0
             PLELES(I)=0.0
             PEVAP(I)=0.0
+            PEVAPCOR(I)=0.0
+
+
             
 !            PTHRUFAL_V(I)=0.0
             bus(x(PTHRUFAL_V,I,1))=0.0
@@ -309,6 +312,8 @@ integer ptr, x, j, k
             PLESES_V(I)=0.0
             PLELES_V(I)=0.0
             PEVAP_V(I)=0.0
+            PEVAPCOR_V(I)=0.0
+
          enddo
          PSSA(:,:)=0.0
          PSSAV(:,:)=0.0
@@ -487,7 +492,7 @@ integer ptr, x, j, k
 !                        bus(x(Z0,1,indx_soil)),bus(x(Z0,1,indx_soil)),&
                          PZ0,PZ0,&
                          PZ0HNAT, BUS(X(ALGR,1,1)), PD_G, PDZG,                          &
-                         bus(x(PTHRUFAL,1,1)), PGRNDFLUX,PRNSNOW, PHSNOW, PGFLUXSNOW, PHPSNOW,       &
+                         bus(x(PTHRUFAL,1,1)), PGRNDFLUX,PEVAPCOR, PRNSNOW, PHSNOW, PGFLUXSNOW, PHPSNOW,       &
                          PLESES, PLELES, PEVAP,bus(x(PSNGRVL ,1,1)) , N, NSL, NL_SVS)
 !
 !
@@ -515,7 +520,7 @@ integer ptr, x, j, k
 !                        bus(x(Z0,1,indx_soil)),bus(x(Z0,1,indx_soil)),          &
                          PZ0,PZ0,&
                          PZ0HNAT, BUS(X(ALGR,1,1)), PD_G, PDZG,               &
-                         bus(x(PTHRUFAL_V,1,1)), PGRNDFLUX_V,PRNSNOW_V, PHSNOW_V, PGFLUXSNOW_V, PHPSNOW_V,       &
+                         bus(x(PTHRUFAL_V,1,1)), PGRNDFLUX_V,PEVAPCOR_V,PRNSNOW_V, PHSNOW_V, PGFLUXSNOW_V, PHPSNOW_V,       &
                          PLESES_V, PLELES_V, PEVAP_V,BUS(X(PSNVHA,1,1)) , N, NSL, NL_SVS)
 
 
@@ -571,7 +576,7 @@ integer ptr, x, j, k
                   bus(x(PSNVH      ,1,1)) , bus(X(PSNVHA     ,1,1)),   &
                   bus(x(SKYVIEW    ,1,1)) , bus(x(SKYVIEWA   ,1,1)),   & 
                   bus(x(CONDSLD    ,1,1)) , bus(x(CONDDRY   ,1,1)), PSOILHCAPZ, PSOILCONDZ, &   
-                  rainrate_mm,bus(x(WVEG   ,1,1)),bus(x(snvma,1,1)),&
+                  rainrate_mm,bus(x(WVEG   ,1,1)),bus(x(snodpl,1,1)),bus(x(snvdp,1,1)),&
                   bus(x(VEGTRANSA  ,1,1)) , bus(x(ALVIS,1,indx_soil)),     & 
                   bus(x(RNET_S     ,1,1)),    &   
                   bus(x(FC  ,1,indx_soil)), bus(x(FV  ,1,indx_soil)),   &    
@@ -600,12 +605,12 @@ integer ptr, x, j, k
                   bus(x(TNEIGE ,1,1)),bus(x(TIRGV ,1,1)),bus(x(TIRVG ,1,1)),bus(x(TFIGV ,1,1)),bus(x(TRGVG ,1,1)),RPP, &
                   bus(x(grflux ,1,1)),bus(x(Z0HA ,1,1)),bus(x(RESAGRV ,1,1)) )
 !
-!
 
       CALL HYDRO_SVS ( DT,      & 
            bus(x(eg      ,1,1)), bus(x(er      ,1,1)),&
            bus(x(etr     ,1,1)), rainrate_mm         ,&
            bus(x(PTHRUFAL,1,1)), bus(x(PTHRUFAL_V,1,1)),&
+           pevapcor            , pevapcor_v           ,&
            bus(x(impervu ,1,1)), bus(x(vegl    ,1,1)),&
            bus(x(vegh    ,1,1)), bus(x(psngrvl ,1,1)),&
            bus(x(psnvha  ,1,1)), bus(x(acroot  ,1,1)),&
@@ -613,7 +618,7 @@ integer ptr, x, j, k
            bus(x(ksat    ,1,1)), bus(x(psisat  ,1,1)),&
            bus(x(bcoef   ,1,1)), bus(x(fbcof   ,1,1)),&
            bus(x(wfcint  ,1,1)), bus(x(grkef   ,1,1)),&
-           bus(x(snoma   ,1,1)), bus(x(snvma   ,1,1)),&
+           bus(x(snodpl   ,1,1)), bus(x(snvdp   ,1,1)),&
            bus(x(wveg    ,1,1)), wvegt               ,&
            bus(x(wsoil   ,1,1)), wsoilt              ,&
            bus(x(isoil   ,1,1))                      ,&

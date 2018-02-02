@@ -7,7 +7,7 @@ SUBROUTINE SNOWES_SVS(   PTSTEP,                                                
                          PLW_RAD, PRR, PSR,                                              &
                          PRHOA, PUREF,                                                   &
                          PZREF, PZ0NAT, PZ0EFF, PZ0HNAT, PALB, PD_G, PDZG,               &
-                         PTHRUFAL, PGRNDFLUX,PRNSNOW, PHSNOW, PGFLUXSNOW, PHPSNOW,       &
+                         PTHRUFAL, PGRNDFLUX,PEVAPCOR,PRNSNOW, PHSNOW, PGFLUXSNOW, PHPSNOW,     &
                          PLESES, PLELES, PEVAP,PPSN , N , NSL, NL)
 !     ######################################################################################
 !
@@ -69,7 +69,6 @@ USE MODD_SNOWES_PAR,   ONLY : XRHOSMAX_ES, XSNOWDMIN, XRHOSMIN_ES, XEMISSN, XUND
 
 USE SNOWES_MOD , ONLY: SNOWES
 !
-!
 !USE MODI_SNOWES
 !USE MODI_SNOWCRO
 !
@@ -122,6 +121,8 @@ REAL, DIMENSION(N), INTENT(IN)      :: PZREF, PUREF,  PRHOA, PZ0NAT, PZ0EFF, PZ0
 !
 REAL, DIMENSION(N), INTENT(IN)      :: PPSN, PLAT, PLON
 !                                      PPSN     = Snow cover fraction (total) 
+!                                      PLAT     = Latitude 
+!                                      PLON     = Longitude 
 !
 REAL, DIMENSION(N,NL), INTENT(INOUT) :: PTG
 !                                      PTG       = Soil temperature profile (K)
@@ -163,10 +164,15 @@ REAL, DIMENSION(N), INTENT(OUT)     :: PGFLUXSNOW
 !                                      PGFLUXSNOW    = net heat flux from snow (W/m2)
 !
 !
-REAL, DIMENSION(N), INTENT(OUT)     :: PTHRUFAL 
+REAL, DIMENSION(N), INTENT(OUT)     :: PTHRUFAL, PEVAPCOR
 !                                      PTHRUFAL  = rate that liquid water leaves snow pack: 
 !                                                  paritioned into soil infiltration/runoff 
 !                                                  by ISBA [kg/(m2 s)]
+!                                      PEVAPCOR  = evaporation/sublimation correction term:
+!                                                  extract any evaporation exceeding the
+!                                                  actual snow cover (as snow vanishes)
+!                                                  and apply it as a surface soil water
+!                                                  sink. [kg/(m2 s)]
 !
 CHARACTER(3)                        :: HSNOWMETAMO
                                          !-----------------------
@@ -190,7 +196,7 @@ INTEGER                             :: INLVLG   ! number of ground layers
 !
 REAL, DIMENSION(SIZE(PTA))          :: ZRRSNOW, ZSOILCOND, ZSNOW, ZSNOWFALL,  &
                                        ZSNOWABLAT_DELTA, ZSNOWSWE_1D, ZSNOWD, & 
-                                       ZSNOWH, ZSNOWH1, ZGRNDFLUXN, ZPSN,     &
+                                       ZSNOWH, ZSNOWH1, ZGRNDFLUXN, ZPSN,ZPSN2,   &
                                        ZSOILCOR, ZSNOWSWE_OUT, ZTHRUFAL,      &
                                        ZSNOW_MASS_BUDGET
 !                                      ZSOILCOND    = soil thermal conductivity [W/(m K)]
@@ -207,6 +213,7 @@ REAL, DIMENSION(SIZE(PTA))          :: ZRRSNOW, ZSOILCOND, ZSNOW, ZSNOWFALL,  &
 !                                      ZSNOWH1      = snow surface layer heat content (J m-2)
 !                                      ZGRNDFLUXN   = corrected snow-ground flux (if snow fully ablated during timestep)
 !                                      ZPSN         = snow fraction working array
+!                                      ZPSN2         = snow fraction working array
 !                                      ZSOILCOR = for vanishingy thin snow cover,
 !                                                 allow any excess evaporation
 !                                                 to be extracted from the soil
@@ -245,15 +252,9 @@ REAL, DIMENSION(SIZE(PTA),SIZE(PSNOWSWE,2))     :: ZSNOWHEAT, ZSNOWDZ, ZSCAP
 !                                      ZSNOWDZ   = Snow layer(s) thickness (m)
 !                                      ZSCAP      = Snow layer(s) heat capacity [J/(K m3)]
 !
-REAL, DIMENSION(SIZE(PTA))  :: ZFLSN_COR, ZEVAPCOR, ZSNOWHMASS, ZGSFCSNOW,               &
+REAL, DIMENSION(SIZE(PTA))  :: ZFLSN_COR, ZSNOWHMASS, ZGSFCSNOW,               &
                                        ZDELHEATG, ZDELHEATG_SFC
 !                                      PFLSN_COR = soil/snow correction heat flux (W/m2) (not MEB)
-
-!                                      PEVAPCOR  = evaporation/sublimation correction term:
-!                                                  extract any evaporation exceeding the
-!                                                  actual snow cover (as snow vanishes)
-!                                                  and apply it as a surface soil water
-!                                                  sink. [kg/(m2 s)]
 !                                      PSNOWHMASS = heat content change due to mass
 !                                                   changes in snowpack (J/m2): for budget
 !                                                   calculations only.
@@ -311,6 +312,7 @@ LOGICAL, DIMENSION(SIZE(PTA))      :: LREMOVE_SNOW
 !               ---------------------
 !
 PTHRUFAL(:)    = 0.0
+PEVAPCOR(:)    = 0.0
 ZSRSFC(:)      = PSR(:)         ! these are snow and rain rates passed to ISBA,
 ZRRSFC(:)      = PRR(:)         ! so initialize here if SNOWES not used:
 !
@@ -377,7 +379,6 @@ ZDIRCOSZW(:) = 1.
 
 ! Correction flux
 ZFLSN_COR(:)   = 0.0
-ZEVAPCOR(:)    = 0.0
 
 ZSNOWHMASS(:)  = 0.0
 
@@ -417,11 +418,13 @@ ZZENITH(:) = XPI/2.
    ZSRSFC(:)=0.0
 !
    DO JJ=1,SIZE(PSR)
-      ZRRSNOW(JJ)        = PPSN(JJ)*PRR(JJ)
+!      ZRRSNOW(JJ)        = PPSN(JJ)*PRR(JJ)
+      ZRRSNOW(JJ)        = PRR(JJ)
       ZRRSFC(JJ)         = PRR(JJ) - ZRRSNOW(JJ)
       ZSNOWFALL(JJ)      = PSR(JJ)*PTSTEP/XRHOSMAX_ES    ! maximum possible snowfall depth (m)
    ENDDO
 !
+
 ! Calculate preliminary snow depth (m)
 
    ZSNOW(:)=0.
@@ -460,6 +463,7 @@ ZZENITH(:) = XPI/2.
 !  
    IF (ISIZE_SNOW>0) CALL CALL_MODEL(ISIZE_SNOW,INLVLS,INLVLG,NMASK)
 !
+
 ! ===============================================================
 !
 ! Remove trace amounts of snow and reinitialize snow prognostic variables
@@ -476,13 +480,29 @@ ZZENITH(:) = XPI/2.
       ENDDO
    END DO
 !
-   LREMOVE_SNOW(:)=(ZSNOWD(:)<XSNOWDMIN*1.1)
-!
-!
+
+ !LREMOVE_SNOW(:)=(ZSNOWD(:)<XSNOWDMIN*1.1)
+ LREMOVE_SNOW(:)=(ZSNOWD(:)<XSNOWDMIN)
+! LREMOVE_SNOW(:)=((ZSNOW(:) >= XSNOWDMIN .OR. ZSNOWFALL(:) >= XSNOWDMIN) .AND. ZSNOWD(:)<XSNOWDMIN*1.1)
+
+
 !    To Conserve mass in ISBA without MEB, 
 !    EVAP must be weignted by the snow fraction
 !    in the calulation of THRUFAL
-     ZPSN(:)=PPSN(:)
+   ZPSN(:)=PPSN(:)
+
+!DO JJ=1,SIZE(PSNOWSWE,1)
+!   IF (ZSNOW(JJ) >= XSNOWDMIN .OR. ZSNOWFALL(JJ) >= XSNOWDMIN) THEN
+!       ZPSN(JJ)=PPSN(JJ)
+!       ZPSN2(JJ)=1.
+!       IF(LREMOVE_SNOW(JJ)) THEN
+!         write(*,*)  'Activation Remove Snow',ZRRSNOW(JJ),ZSNOWSWE_1D(JJ)/PTSTEP,PEVAP(JJ)*ZPSN(JJ)
+!       ENDIF
+!   ELSE
+!       ZPSN(JJ)=PPSN(JJ)
+!       ZPSN2(JJ)=0.
+!ENDIF
+!END DO
 !
    ZSNOWABLAT_DELTA(:) = 0.0
    ZTHRUFAL        (:) = PTHRUFAL(:)
@@ -493,15 +513,17 @@ ZZENITH(:) = XPI/2.
       PLESES(:)           = MIN(PLESES(:), XLSTT*(ZSNOWSWE_1D(:)/PTSTEP + PSR(:)))
       PLELES(:)           = 0.0
       PEVAP(:)            = PLESES(:)/XLSTT
-      PTHRUFAL(:)         = MAX(0.0, ZSNOWSWE_1D(:)/PTSTEP + PSR(:) - PEVAP(:)*ZPSN(:) + ZRRSNOW(:)) ! kg m-2 s-1
-      ZTHRUFAL(:)         = MAX(0.0, ZSNOWSWE_1D(:)/PTSTEP + PSR(:) - PEVAP(:)         + ZRRSNOW(:)) ! kg m-2 s-1
+      PTHRUFAL(:)         = MAX(0.0, ZSNOWSWE_1D(:)/PTSTEP + PSR(:) - PEVAP(:)*ZPSN(:))! + ZPSN2(:)*ZRRSNOW(:)) ! kg m-2 s-1
+      !PTHRUFAL(:)         = MAX(0.0, ZSNOWSWE_1D(:)/PTSTEP + PSR(:) - PEVAP(:)*ZPSN(:) + ZRRSNOW(:)) ! kg m-2 s-1
+      ZTHRUFAL(:)         = MAX(0.0, ZSNOWSWE_1D(:)/PTSTEP + PSR(:) - PEVAP(:))         !+ ZPSN2(:)*ZRRSNOW(:)) ! kg m-2 s-1
+      !ZTHRUFAL(:)         = MAX(0.0, ZSNOWSWE_1D(:)/PTSTEP + PSR(:) - PEVAP(:)         + ZRRSNOW(:)) ! kg m-2 s-1
       ZSRSFC(:)           = 0.0
       ZRRSFC(:)           = ZRRSFC(:)
       ZSNOWABLAT_DELTA(:) = 1.0
       !PSNOWALB(:)         = XUNDEF
       ! Change VV for SVS
       PSNOWALB(:)         = 0.1
-      ZEVAPCOR(:)         = 0.0
+      PEVAPCOR(:)         = 0.0
       ZSOILCOR(:)         = 0.0
       PGFLUXSNOW(:)       = PRNSNOW(:) - PHSNOW(:) - PLESES(:) - PLELES(:)
       ZSNOWHMASS(:)       = -PSR(:)*(XLMTT*PTSTEP)
@@ -560,15 +582,23 @@ ZZENITH(:) = XPI/2.
 !
    ZSNOW_MASS_BUDGET(:) = (ZSNOWSWE_1D(:)-ZSNOWSWE_OUT(:))/PTSTEP + PSR     (:)+ZRRSNOW (:) &
                                                                   - PEVAP   (:)-ZTHRUFAL(:) &
-                                                                  + ZEVAPCOR(:)+ZSOILCOR(:)
+                                                                  + PEVAPCOR(:)+ZSOILCOR(:)
 !
 !
+!IF(PEVAPCOR(1)>0.) write(*,*)  'EVAPCOR POS SVS_ES2', PEVAPCOR(1)
+!IF(PEVAPCOR(1)<0.) write(*,*)  'EVAPCOR NEG SVS_ES2', PEVAPCOR(1)
+
 !  ===============================================================
 !
 !  To Conserve mass in ISBA, the latent heat flux part of 
 !  the EVAPCOR term must be weignted by the snow fraction 
 !
-   ZEVAPCOR (:) = ZEVAPCOR(:)*ZPSN(:) + ZSOILCOR(:)
+   PEVAPCOR (:) = PEVAPCOR(:)*ZPSN(:) + ZSOILCOR(:)
+
+!IF(PEVAPCOR(1)>0.) write(*,*)  'EVAPCOR POS SVS_ES', PEVAPCOR(1)
+!IF(PEVAPCOR(1)<0.) write(*,*)  'EVAPCOR NEG SVS_ES', PEVAPCOR(1)
+
+
 !
 ! ===============================================================
 !
@@ -904,7 +934,7 @@ DO JJ=1,KSIZE1
   ZDELHEATG_SFC(JI)   = ZP_DELHEATG_SFC(JJ)
   PSNOWALB     (JI)   = ZP_SNOWALB     (JJ)
   PTHRUFAL     (JI)   = ZP_THRUFAL     (JJ)
-  ZEVAPCOR     (JI)   = ZP_EVAPCOR     (JJ)
+  PEVAPCOR     (JI)   = ZP_EVAPCOR     (JJ)
   ZSOILCOR     (JI)   = ZP_SOILCOR     (JJ)
   ZRI          (JI)   = ZP_RI          (JJ)
   ZQS          (JI)   = ZP_QS          (JJ)

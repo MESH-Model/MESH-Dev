@@ -18,7 +18,7 @@
            VEGH, VEGL, &  
            CGSAT, WSAT, WWILT, BCOEF, & 
            CVH, CVL, ALVH, ALVL,  & 
-           EMISVH, EMISVL, RGLVH , RGLVL, STOMRVH, STOMRVL,  & 
+           EMISVH, EMISVL, ETG, RGLVH , RGLVL, STOMRVH, STOMRVL,  & 
            GAMVH,GAMVL, &  
            LAIVH, LAIVL, &   
            Z0MVH, Z0MVL, Z0, CLAY, SAND, DECI, EVER,LAID,  &  
@@ -29,6 +29,7 @@
            GAMVA, N )
 !
         use svs_configs
+        use sfc_options, only: read_emis
      implicit none
 #include <arch_specific.hf>
 !
@@ -47,7 +48,7 @@
       REAL EMGR(N), PSNVH(N), PSNVHA(N),  LAIVH(N)
       REAL ALVA(N), LAIVA(N), CVPA(N), EVA(N)
       REAL LAIVL(N), CVH(N), CVL(N), ALVL(N), ALVH(N)
-      REAL EMISVH(N), EMISVL(N), Z0MVL(N), RGLVH(N), RGLVL(N)
+      REAL EMISVH(N), EMISVL(N), ETG(N), Z0MVL(N), RGLVH(N), RGLVL(N)
       REAL Z0HA(N), RGLA(N), STOMRA(N), STOMRVH(N), STOMRVL(N)
       REAL GAMVL(N), GAMVH(N), GAMVA(N)
       
@@ -142,6 +143,9 @@
 ! CVL      heat capacity of LOW  vegetation
 ! EMISVH   emissivity of HIGH vegetation
 ! EMISVL   emissivity of LOW  vegetation
+! ETG      emissivity of land surface (no snow) READ AT ENTRY, 
+!          USED TO STAMP ALL NO SNOW EMISSIVITIES. IF NOT READ, 
+!          VARIABLE SET TO ZERO !!!!
 ! RGLVH    param. stomatal resistance for HIGH vegetation
 ! RGLVL    param. stomatal resistance for LOW  vegetation
 ! STOMRVH  minim. stomatal resistance for HIGH vegetation
@@ -195,7 +199,7 @@ include "isbapar.cdk"
       DATA PETIT/1.E-7/
 
       real, dimension(n) :: a, b, cnoleaf, cva, laivp, lams, lamsv, &
-           psnground, psnlowveg, zcs, zcsv
+           psnground, psnlowveg, zcs, zcsv, z0_snow_low, z0_snow_high
 
 !
 !***********************************************************************
@@ -278,67 +282,32 @@ include "isbapar.cdk"
 !
       DO I=1,N
 
-!          IF((1-VEGH(I)).GT.0.0) THEN
-         
-! !
-! !                        fraction of ground covered by snow
-        
-!           PSNGROUND(I)  = MIN( SNM(I) / WCRN,  1.0)
-
-! !                        fraction of low veg. covered by snow 
-
-!           PSNLOWVEG(I)  = MIN ( SNM(I) / (SNM(I)+RHOS(I)*5000.*Z0MVL(I)), 1.0)
-
-! !                        average snow cover fraction of bare ground and low veg
-
-!           PSNGRVL(I) = (  (1-VEGH(I) -VEGL(I)) * PSNGROUND(I) +  VEGL(I) * PSNLOWVEG(I) ) / ( 1 - VEGH(I) )
-!        ELSE
-!           PSNGRVL(I) = 0.0
-!           PSNGROUND(I)  = 0.0
-!           PSNLOWVEG(I) = 0.0
-!        ENDIF
 
 !                        average snow cover fraction of bare ground and low veg
          IF(SNM(I).GT.CRITSNOWMASS ) THEN
-            PSNGRVL(I) = MIN( SNM(I) / WCRN,  1.0)
+
+            ! use z0=0.03m for bare ground, 0.1m for low veg
+             z0_snow_low(i) = exp (  (  (1-VEGH(I) -VEGL(I)) * log( 0.03) &
+                                  +  VEGL(I) * log(0.1) ) / ( 1 - VEGH(I) ) )
+             
+
+             PSNGRVL(I) = MIN( SNM(I) / (SNM(I) + RHOS(I)* 5000.* z0_snow_low(i) ) , 1.0)
+
          ELSE
-            PSNGRVL(I) = 0.0 
+
+            PSNGRVL(I) = 0.0
+           
          ENDIF
             
        
-!
-!
-!
-!                        fraction of HIGH vegetation covered
-!                        by snow (need the if, as variables for high vegetation
-!                        only defined if high vegetation is present)
-! !
-!         IF(VEGH(I).GT.0.0) THEN
 
-! !
-! !                       SNOW FRACTION AS SEEN FROM THE GROUND
-! !
-!            PSNVH(I) = MIN( SVM(I) / (SVM(I)+RHOSV(I)*5000.*Z0MVH(I)), 1.0)
-! !
-! !                       SNOW FRACTION AS SEEN FROM THE SPACE
-! !                       NEED TO ACCOUNT FOR SHIELDING OF LEAVES/TREES
-! !             
-! !
-!            PSNVHA(I) = (EVER(I) * 0.2 + DECI(I) * MAX(LAI0 - LAID(I), 0.2)) * PSNVH(I)
-
-! !
-!         ELSE
-!            PSNVH(I)  = 0.0
-!            PSNVHA(I) = 0.0
-
-!         ENDIF
 
          IF(SVM(I).GT.CRITSNOWMASS ) THEN
 !
 !                       SNOW FRACTION AS SEEN FROM THE GROUND
 !
 
-            PSNVH(I)  = MIN( SVM(I) / WCRN,  1.0)
+            PSNVH(I)  =  MIN( SVM(I) / (SVM(I)+ RHOSV(I)*5000.*0.1 ), 1.0)
 !                       SNOW FRACTION AS SEEN FROM THE SPACE
 !                       NEED TO ACCOUNT FOR SHIELDING OF LEAVES/TREES
 !
@@ -393,10 +362,6 @@ include "isbapar.cdk"
             ALVA(I) = ( VEGH(I) * ALVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * ALVL(I)) &     
                               / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I)))
 !
-!                        EMISSIVITY
-!
-            EVA(I) = ( VEGH(I) * EMISVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * EMISVL(I)) &     
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I)))
 ! 
 !                        PARAMETER STOMATAL RESISTANCE
 !
@@ -430,7 +395,6 @@ include "isbapar.cdk"
             LAIVP(I) = 1.E-6
             CVA(I)   = 1.E-6
             ALVA(I)  = 1.E-6
-            EVA(I)   = 1.E-6
             RGLA(I)  = 1.E-6
             Z0HA(I) = Z0M_TO_Z0H * Z0(I)  
             STOMRA(I)= 1.E-6
@@ -548,24 +512,61 @@ include "isbapar.cdk"
          IF(B(I).gt.1.0) B(I)=1.0
 !
       END DO
-!
-!                      Compute soil albedo & emissivity 
-!
+
+!                      Compute soil albedo
       DO I=1,N
 !
          ALGR(I)      = ADRYCLAY * ( 1. - A(I) ) * ( 1. - B(I) ) & 
                       + ADRYSAND *        A(I)   * ( 1. - B(I) ) &   
                       + AWETCLAY * ( 1. - A(I) ) *        B(I)  &   
                       + AWETSAND *        A(I)   *        B(I)   
+
+      ENDDO
+
 !
-         EMGR(I)       = EDRYCLAY * ( 1. - A(I) ) * ( 1. - B(I) )  &  
-                       + EDRYSAND *        A(I)   * ( 1. - B(I) ) &   
-                       + EWETCLAY * ( 1. - A(I) ) *        B(I) &    
-                       + EWETSAND *        A(I)   *       B(I) 
+!      
+!         9.     NO-SNOW EMISSIVITIES
+!               ---------------------------------------                     Compute soil albedo & emissivity 
 !
-      END DO
+!               If use "read-in"  emissivity, then stamp all emissivities with "read at entry value", 
+!               otherwise calculate individual emissivities
+
+
+      if ( read_emis ) then
+
+         DO I = 1, N
+            EMISVH(I)        = ETG(I)
+            EMISVL(I)        = ETG(I)
+            EMGR  (I)        = ETG(I)
+            EVA   (I)        = ETG(I)
+         ENDDO
+  
+      else
+
+         DO I = 1, N
 !
+!                      AGGREGATED VEG. EMISSIVITY  (VEGETATION NOT COVERED BY SNOW)
 !
+            IF((VEGH(I)+VEGL(I)*(1-PSNGRVL(I))).GT.0.0)  THEN
+               EVA(I) = ( VEGH(I) * EMISVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * EMISVL(I)) &     
+                    / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I)))
 !
+            ELSE
+               EVA(I) = 1.E-6
+            ENDIF
+!
+!                      BARE GROUND EMISSIVITY
+!
+            EMGR(I)       = EDRYCLAY * ( 1. - A(I) ) * ( 1. - B(I) )  &  
+                          + EDRYSAND *        A(I)   * ( 1. - B(I) ) &   
+                          + EWETCLAY * ( 1. - A(I) ) *        B(I) &    
+                          + EWETSAND *        A(I)   *       B(I) 
+            !
+
+         ENDDO
+
+      endif
+
+
       RETURN
       END

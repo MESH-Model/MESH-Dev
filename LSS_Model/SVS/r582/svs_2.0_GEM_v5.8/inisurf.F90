@@ -599,7 +599,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
 
                ! DDeacu: Ensure that slope is positive and set its minimum value             
                if ( zmg(i).gt.critmask ) then
-                  zslop(i)  = max( abs( zslopen(i) ) , 5.e-03 )
+                  zslop(i)  = min(max( abs( zslopen(i) ) , 5.e-03 ),1.0)
                else
                   zslop(i)  = abs( zslopen(i) )
                endif
