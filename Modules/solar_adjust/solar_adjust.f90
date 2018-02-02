@@ -3,7 +3,8 @@
 !>  Garnier and Ohmura (1970) to adjust for slope and aspect.
 !>
 !> Author: Zelalem Tesemma (of Solar_Adjust.m; last updated Jan 30, 2018)
-!> Converted to Fortran: Feb 2, 2018 (exact)
+!> Converted to Fortran: Feb 1, 2018 (exact)
+!> Fortran code optimized/consolidated: Feb 2, 2018.
 program Solar_Adjust
 
     implicit none
@@ -12,40 +13,113 @@ program Solar_Adjust
     integer, parameter :: FSIN_IUN = 200, FSDIRECT_IUN = 500, FSDIFFUSE_IUN = 501
 
     !> Input variables.
-    integer NROWS, NCOLS, NSTEPS
-    real, dimension(:, :), allocatable :: ELEV, ylat, SLOPE, ASPECT
+    integer NVALS, NSTEPS
+    real, dimension(:), allocatable :: ELEV, YLAT, SLOPE, ASPECT
+    integer :: syyyy = 2004, sdd = 245, shh = 0 ! Start times
+
+    !> Input/output variables.
+    !* rsrd_dtmin: Time-step of radiation data. [minutes].
+    !* rsrd: Incoming shortwave radiation (input).
+    !* rsrd_adjusted: Adjusted incoming shortwave radiation.
+    !* rsrd_direct: Direct component of adjusted radiation.
+    !* rsrd_diffuse: Diffuse component of adjusted radiation.
+    integer :: rsrd_dtmin = 60
+    real, dimension(:), allocatable :: rsrd
+    real, dimension(:), allocatable :: &
+        rsrd_direct, rsrd_diffuse, rsrd_adjusted
 
     !> Local variables.
-    integer m, n
+    integer k, m, n
+    integer now_year, now_day, now_hour
+    integer ierr
 
-    !> Input files.
+    !> Read indices from the 'index' file.
+    !> 'nvals' is the product of the number of rows and colums read from the 'index' file.
     open(100, file = 'index.txt', status = 'old', action = 'read')
-    read(100, *) nrows, ncols, nsteps
+    read(100, *) m, n, nsteps
     close(100)
-    allocate(elev(nrows, ncols), ylat(nrows, ncols), slope(nrows, ncols), aspect(nrows, ncols))
+    nvals = m*n
+
+    !> Allocate variables.
+    allocate( &
+        elev(nvals), ylat(nvals), slope(nvals), aspect(nvals), &
+        rsrd(nvals), &
+        rsrd_direct(nvals), rsrd_diffuse(nvals), rsrd_adjusted(nvals))
+
+    !> Read elevation and latitude inputs.
     open(100, file = 'Grid_elev.txt', status = 'old', action = 'read')
-    read(100, *) ((elev(m, n), n = 1, ncols), m = 1, nrows)
+    read(100, *) (elev(n), n = 1, nvals)
     close(100)
     open(100, file = 'Grid_lat.txt', status = 'old', action = 'read')
-    read(100, *) ((ylat(m, n), n = 1, ncols), m = 1, nrows)
+    read(100, *) (ylat(n), n = 1, nvals)
     close(100)
 
     !> Optional input variables.
+    !> Set to zero for now.
     slope = 0.0
     aspect = 0.0
 
-    !> Input files (persistent).
+    !> Open persistent files to read/write input/output radiation.
     open(FSIN_IUN, file = 'rsrd.txt', status = 'old', action = 'read')
-
-    !> Output files (persistent).
     open(FSDIRECT_IUN, file = 'rsrd_direct_new.txt', action = 'write')
     open(FSDIFFUSE_IUN, file = 'rsrd_diffuse_new.txt', action = 'write')
 
-    call calc_correction(elev, ylat, slope, aspect, nrows, ncols, nsteps)
+    !> Set current time.
+    now_year = syyyy; now_day = sdd; now_hour = shh
+
+    !> Loop until forced exist (e.g., by end of input data).
+    do while (.true.)
+
+        !> Read incoming shortwave radiation (input).
+        read(FSIN_IUN, *, iostat = ierr) (rsrd(n), n = 1, nvals)
+        if (ierr /= 0) exit
+
+        !> Call routine to calculate adjusted radiation value.
+        call calc_correction( &
+            elev, ylat, slope, aspect, nvals, & !nsteps,
+            rsrd_dtmin, &
+            rsrd, rsrd_direct, rsrd_diffuse, rsrd_adjusted, &
+            now_year, now_day, now_hour)
+
+        !> Write output.
+        write(FSDIRECT_IUN, '(9999(f10.3, 1x))') (rsrd_direct(n), n = 1, nvals)
+        write(FSDIFFUSE_IUN, '(9999(f10.3, 1x))') (rsrd_diffuse(n), n = 1, nvals)
+
+        !> Increment the time.
+        now_hour = now_hour + 1
+        if (now_hour > 23) then
+            print *, now_year, now_day
+            now_day = now_day + 1; now_hour = 0
+            if (now_day >= 366) then
+                if (mod(now_year, 400) == 0) then !LEAP YEAR
+                    if (now_day == 367) then
+                        now_day = 1
+                        now_year = now_year + 1
+                    end if
+                else if (mod(now_year, 100) == 0) then !NOT A LEAP YEAR
+                    now_day = 1
+                    now_year = now_year + 1
+                else if (mod(now_year, 4) == 0) then !LEAP YEAR
+                    if (now_day == 367) then
+                        now_day = 1
+                        now_year = now_year + 1
+                    end if
+                else !NOT A LEAP YEAR
+                    now_day = 1
+                    now_year = now_year + 1
+                end if
+            end if
+        end if
+
+    end do
 
     contains
 
-    subroutine calc_correction(elev, ylat, slope, aspect, nrows, ncols, nsteps)
+    subroutine calc_correction( &
+        elev, ylat, slope, aspect, nvals, & !nsteps,
+        rsrd_dtmin, &
+        rsrd, rsrd_direct, rsrd_diffuse, rsrd_adjusted, &
+        now_year, now_day, now_hour)
 
         !> Constants and conversion factors.
         real, parameter :: pi = 3.141592653589793
@@ -60,16 +134,16 @@ program Solar_Adjust
         integer :: CalcFreq = 288
 
         !> Input variables.
-        real, dimension(:, :), intent(in) :: elev ! elevation grid (m)
-        real, dimension(:, :), intent(in) :: ylat ! latitude of the elevation grid
-        real, dimension(:, :), intent(in) :: slope
-        real, dimension(:, :), intent(in) :: aspect
+        real, dimension(:), intent(in) :: elev ! elevation grid (m)
+        real, dimension(:), intent(in) :: ylat ! latitude of the elevation grid
+        real, dimension(:), intent(in) :: slope
+        real, dimension(:), intent(in) :: aspect
 
 !temp
-        integer, intent(in) :: nrows, ncols, nsteps
-        integer k, m, n
-        integer :: syyyy = 2004, sdd = 245, shh = 0 ! Start times
-        integer now_year, now_day, now_hour
+        integer, intent(in) :: nvals !, nsteps
+!        integer k, m, n
+!        integer :: syyyy = 2004, sdd = 245, shh = 0 ! Start times
+        integer, intent(in) :: now_year, now_day, now_hour
 
         !> Input/output variables.
 !temp: dimensions
@@ -78,27 +152,27 @@ program Solar_Adjust
         !* rsrd_adjusted: Adjusted incoming shortwave radiation.
         !* rsrd_direct: Direct component of adjusted radiation.
         !* rsrd_diffuse: Diffuse component of adjusted radiation.
-        integer :: rsrd_dtmin
-        real, dimension(nrows, ncols, nsteps) :: rsrd
-        real, dimension(nrows, ncols, nsteps) :: &
+        integer, intent(in) :: rsrd_dtmin
+        real, dimension(nvals), intent(in) :: rsrd
+        real, dimension(nvals), intent(out) :: &
             rsrd_direct, rsrd_diffuse, rsrd_adjusted
 
         !> Working variables.
 !replaced with now_day        integer Day
         integer MINS_int
         real RADxxMIN, Hr_Ang, Dec, Rad_vec, Sol, Cdec, Sdec
-        real, dimension(nrows, ncols) :: &
+        real, dimension(nvals) :: &
             Clat, Slat, x, y, z, t1, t2, t10, t20, &
             Czen, ACzen, oam, diff, &
             Iterr, cosxs0, cosxsL, Idir, Idiff, Sum_Idir, Sum_Diff, Sum_Flatd, Sum_Flatf
-        real, dimension(nrows, ncols, nsteps) :: Qsi, Qdirect, Qdiffuse, Qflat
+        real, dimension(nvals) :: Qsi, Qdirect, Qdiffuse, Qflat
 
         !> Local variables.
         integer kk
 
 !temp
-        now_year = syyyy; now_day = sdd; now_hour = shh
-        rsrd_dtmin = 60
+!        now_year = syyyy; now_day = sdd; now_hour = shh
+!        rsrd_dtmin = 60
 
         !> Constant over time.
         Clat = cos(ylat*DEGtoRAD)
@@ -116,7 +190,7 @@ program Solar_Adjust
 !        Hr_Ang = -pi*(1.0 + Time_Offset/12.0)
 
 !temp: loop
-        do k = 1, nsteps ! hourly loop over the study period
+!        do k = 1, nsteps ! hourly loop over the study period
 
             !> Time-stepping (for inclination in day).
             Hr_Ang = -pi*(1.0 + Time_Offset/12.0) + (2.0*pi)*rsrd_dtmin/(24*60)*now_hour
@@ -186,64 +260,65 @@ program Solar_Adjust
             end do
 
             !> Convert units.
-            Qdirect(:, :, k) = (1000000.0/3600.0)*Sum_Idir ! clear-sky direct radiation on slope (MJ/m^2.int to W/m^2)
-            Qdiffuse(:, :, k) = (1000000.0/3600.0)*Sum_Diff ! clear-sky diffuse radiation on slope (MJ/m^2.int to W/m^2)
-            Qflat(:, :, k)= (1000000.0/3600.0)*(Sum_Flatd + Sum_Flatf) ! clear-sky 'Qdirect + Qdiffuse' on horizontal surface (MJ/m^2.int to W/m^2)
+            Qdirect = (1000000.0/3600.0)*Sum_Idir ! clear-sky direct radiation on slope (MJ/m^2.int to W/m^2)
+            Qdiffuse = (1000000.0/3600.0)*Sum_Diff ! clear-sky diffuse radiation on slope (MJ/m^2.int to W/m^2)
+            Qflat = (1000000.0/3600.0)*(Sum_Flatd + Sum_Flatf) ! clear-sky 'Qdirect + Qdiffuse' on horizontal surface (MJ/m^2.int to W/m^2)
 
             !> Increment time-step information.
-            now_hour = now_hour + 1
-            if (now_hour > 23) then
-                print *, now_year, now_day
-                now_day = now_day + 1; now_hour = 0
-                if (now_day >= 366) then
-                    if (mod(now_year, 400) == 0) then !LEAP YEAR
-                        if (now_day == 367) then
-                            now_day = 1
-                            now_year = now_year + 1
-                        end if
-                    else if (mod(now_year, 100) == 0) then !NOT A LEAP YEAR
-                        now_day = 1
-                        now_year = now_year + 1
-                    else if (mod(now_year, 4) == 0) then !LEAP YEAR
-                        if (now_day == 367) then
-                            now_day = 1
-                            now_year = now_year + 1
-                        end if
-                    else !NOT A LEAP YEAR
-                        now_day = 1
-                        now_year = now_year + 1
-                    end if
-                end if
+!            now_hour = now_hour + 1
+!            if (now_hour > 23) then
+!                print *, now_year, now_day
+!                now_day = now_day + 1; now_hour = 0
+!                if (now_day >= 366) then
+!                    if (mod(now_year, 400) == 0) then !LEAP YEAR
+!                        if (now_day == 367) then
+!                            now_day = 1
+!                            now_year = now_year + 1
+!                        end if
+!                    else if (mod(now_year, 100) == 0) then !NOT A LEAP YEAR
+!                        now_day = 1
+!                        now_year = now_year + 1
+!                    else if (mod(now_year, 4) == 0) then !LEAP YEAR
+!                        if (now_day == 367) then
+!                            now_day = 1
+!                            now_year = now_year + 1
+!                        end if
+!                    else !NOT A LEAP YEAR
+!                        now_day = 1
+!                        now_year = now_year + 1
+!                    end if
+!                end if
 
                 !> Time-stepping (for inclination in day).
 !replaced with calculation, if left to iterate then the minimal time-step for subroutine would have to be daily
 !                Hr_Ang = -pi*(1.0 + Time_Offset/12.0)
-            end if
+!            end if
 !        end do
 
 !temp
-            read(FSIN_IUN, *) ((rsrd(m, n, k), n = 1, ncols), m = 1, nrows)
+!            read(FSIN_IUN, *) ((rsrd(m, n, k), n = 1, nvals)
 
         !> CRHM radiation correction for slope (the slope module of CHRM)
         Qsi = rsrd ! GEM sortwave radiation input for MESH
 !        do k = 1, nsteps
 !            do m = 1, nrows
 !                do n = 1, ncols
-                    where (Qflat(:, :, k) > 1.0)
-                        rsrd_direct(:, :, k) = (Qsi(:, :, k)/Qflat(:, :, k))*Qdirect(:, :, k)
-                        rsrd_diffuse(:, :, k) = (Qsi(:, :, k)/Qflat(:, :, k))*Qdiffuse(:, :, k)
+                    where (Qflat > 1.0)
+                        rsrd_direct = (Qsi/Qflat)*Qdirect
+                        rsrd_diffuse = (Qsi/Qflat)*Qdiffuse
                     elsewhere
-                        rsrd_direct(:, :, k) = 0.0
-                        rsrd_diffuse(:, :, k) = 0.0
+                        rsrd_direct = 0.0
+                        rsrd_diffuse = 0.0
                     end where
 !                end do
 !            end do
+        rsrd_adjusted = rsrd_direct + rsrd_diffuse
 
 !temp
-            write(FSDIRECT_IUN, '(9999(f10.3, 1x))') ((rsrd_direct(m, n, k), n = 1, ncols), m = 1, nrows)
-            write(FSDIFFUSE_IUN, '(9999(f10.3, 1x))') ((rsrd_diffuse(m, n, k), n = 1, ncols), m = 1, nrows)
+!            write(FSDIRECT_IUN, '(9999(f10.3, 1x))') ((rsrd_direct(m, n, k), n = 1, nvals)
+!            write(FSDIFFUSE_IUN, '(9999(f10.3, 1x))') ((rsrd_diffuse(m, n, k), n = 1, nvals)
 
-        end do
+!        end do
 
     end subroutine
 
