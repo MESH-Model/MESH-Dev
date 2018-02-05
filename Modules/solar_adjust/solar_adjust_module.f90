@@ -39,15 +39,41 @@ module solar_adjust_module
 
     !> Description:
     !>  Type for 'solar_adjust' parameters and variables.
+    !>
+    !> Variables:
+    !*  pm: Parameters and options.
+    !*  vs: Variables.
+    !*  PROCESS_ACTIVE: .true. to enable 'Solar_Adjust; .false. otherwise (default: .false.).
     type solar_adjust_container
         type(solar_adjust_parameters) pm
         type(solar_adjust_variables) vs
+        logical :: PROCESS_ACTIVE = .false.
+        character(len = 1000) :: RUNOPTIONSFLAG = ''
     end type
 
     !* fsadj: Instance of 'solar_adjust' parameters and variables.
     type(solar_adjust_container), save :: rsrd_adj
 
     contains
+
+    subroutine solar_adjust_parse_options(flg)
+
+        !> Input variables.
+        character(len = *), intent(in) :: flg
+
+        !> Local variables.
+
+        !> Assume if the flag is populated that the routine is enabled.
+        !> Disabled if the 'off' keyword provided.
+        if (len_trim(flg) > 0) then
+            rsrd_adj%PROCESS_ACTIVE = .true.
+        else
+            return
+        end if
+
+        !> Parse and check the keywords.
+
+    end subroutine
 
     subroutine solar_adjust_init(fls, shd, cm)
 
@@ -68,6 +94,12 @@ module solar_adjust_module
 
         !> Local variables.
         integer k
+
+        !> Parse options.
+        call solar_adjust_parse_options(rsrd_adj%RUNOPTIONSFLAG)
+
+        !> Return if module is not enabled.
+        if (.not. rsrd_adj%PROCESS_ACTIVE) return
 
         !> Allocate variables.
         allocate( &
@@ -106,7 +138,11 @@ module solar_adjust_module
         type(clim_info) :: cm
 
         !> Local variables.
+        integer k
         real, dimension(il1:il2) :: rsrd_direct, rsrd_diffuse, rsrd_adjusted
+
+        !> Return if module is not enabled.
+        if (.not. rsrd_adj%PROCESS_ACTIVE) return
 
         !> Call routine to calculate adjusted radiation value.
         call calc_rsrd_adjusted( &
@@ -119,7 +155,13 @@ module solar_adjust_module
             ic%now%year, ic%now%jday, ic%now%hour)
 
         !> Update radiation.
+        !> Must update 'GRD' separately for output (e.g., energy_balance.csv).
         cm%dat(ck%FB)%GAT(il1:il2) = rsrd_adjusted(il1:il2)
+        cm%dat(ck%FB)%GRD = 0.0
+        do k = il1, il2
+            cm%dat(ck%FB)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%FB)%GRD(shd%lc%ILMOS(k)) + &
+                rsrd_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+        end do
 
         !> Update output variables.
 

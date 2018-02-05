@@ -20,6 +20,7 @@
         use SA_RTE_module, only: SA_RTE_flgs
         use SIMSTATS_config, only: mtsflg
         use PBSM_module
+        use solar_adjust_module
 
         implicit none
 
@@ -723,6 +724,10 @@
                     !> INPUTPARAMSFORMFLAG
                     case ('INPUTPARAMSFORMFLAG')
                         INPUTPARAMSFORM = adjustl(lowercase(in_line))
+
+                    !> Modules.
+                    case('SOLARADJUSTFLAG')
+                        rsrd_adj%RUNOPTIONSFLAG = adjustl(lowercase(in_line))
 
                     !> Unrecognized flag.
                     case default
