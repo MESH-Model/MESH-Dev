@@ -15,6 +15,7 @@ module sa_mesh_run_within_tile
         use RUNSVS113_config
         use baseflow_module
         use cropland_irrigation_init
+        use solar_adjust_module
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -24,6 +25,7 @@ module sa_mesh_run_within_tile
         if (.not. ro%RUNTILE) return
 
         !> Call processes.
+        call solar_adjust_init(fls, shd, cm)
         call RUNCLASS36_init(shd, fls, cm)
         call RUNSVS113_init(shd, fls, cm)
         call bflm_init(fls, shd, cm)
@@ -45,6 +47,7 @@ module sa_mesh_run_within_tile
         use RUNSVS113_module
         use baseflow_module
         use cropland_irrigation_within_tile
+        use solar_adjust_module
 
         character(100) run_within_tile
 
@@ -64,6 +67,7 @@ module sa_mesh_run_within_tile
         call run_within_tile_stas_reset()
 
         !> Call processes.
+        call solar_adjust_within_tile(fls, shd, cm)
         call RUNCLASS36_within_tile(shd, fls, cm)
         call RUNSVS113(shd, fls, cm)
         call bflm_within_tile(fls, shd, cm)

@@ -104,6 +104,9 @@ OBJECTS+=	cropland_irrigation_variables.o \
 			cropland_irrigation_init.o cropland_irrigation_within_tile.o cropland_irrigation_between_grid.o \
 			calc_ET0.o
 
+#calc_rsrd_adjusted
+OBJECTS+=	solar_adjust.o solar_adjust_module.o
+
 #PBSM (blowing snow)
 OBJECTS+=	PBSMrates.o PBSMrun.o ProbabilityThreshold.o \
 			REDISTRIB_SNOW.o SUM.o \

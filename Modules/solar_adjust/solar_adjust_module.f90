@@ -6,122 +6,123 @@
 !> Author: Zelalem Tesemma (of Solar_Adjust.m; last updated Jan 30, 2018)
 !> Converted to Fortran: Feb 1, 2018 (exact)
 !> Fortran code optimized/consolidated; subroutine isolated
-!>  ('program' component replaced by 'solar_adjust_module'): Feb 2, 2018.
-program Solar_Adjust
+!>  ('program' component replaced by 'solar_adjust_module';
+!>      'solar_adjust_module' coupled with MESH): Feb 2, 2018.
+module solar_adjust_module
 
     implicit none
 
-    !> File units.
-    integer, parameter :: FSIN_IUN = 200, FSDIRECT_IUN = 500, FSDIFFUSE_IUN = 501
-
-    !> Input variables.
-    integer NVALS, NSTEPS
-    real, dimension(:), allocatable :: ELEV, YLAT, SLOPE, ASPECT
-    integer :: syyyy = 2004, sdd = 245, shh = 0 ! Start times
-
-    !> Parameters.
+    !> Description:
+    !>  Type for parameters (options).
+    !>
+    !> Variables:
     !*  Trans: Mean transmissivity of the atmosphere.
     !*  Time_Offset: Solar time offset from local time.
     !*  CalcFreq: Iterations per day (must divide the day into equal increments of minutes). [--].
-    real :: Trans = 0.818
-    real :: Time_Offset = 0.67
-    integer :: CalcFreq = 288
+    type solar_adjust_parameters
+        real :: Trans = 0.818
+        real :: Time_Offset = 0.67
+        integer :: CalcFreq = 288
+    end type
 
-    !> Input/output variables.
-    !* rsrd_dtmin: Time-step of radiation data. [minutes].
-    !* rsrd: Incoming shortwave radiation (input).
-    !* rsrd_adjusted: Adjusted incoming shortwave radiation.
-    !* rsrd_direct: Direct component of adjusted radiation.
-    !* rsrd_diffuse: Diffuse component of adjusted radiation.
-    integer :: rsrd_dtmin = 60
-    real, dimension(:), allocatable :: rsrd
-    real, dimension(:), allocatable :: &
-        rsrd_direct, rsrd_diffuse, rsrd_adjusted
+    !> Description:
+    !>  Type for variables/constants.
+    !>
+    !> Variables:
+    !*  elev: Elevation. [m].
+    !*  ylat: Latitude. [degrees].
+    !*  slope: Slope of surface. [--].
+    !*  aspect: Aspect of surface.
+    type solar_adjust_variables
+        real, dimension(:), allocatable :: elev, ylat, slope, aspect
+    end type
 
-    !> Local variables.
-    integer k, m, n
-    integer now_year, now_day, now_hour
-    integer ierr
+    !> Description:
+    !>  Type for 'solar_adjust' parameters and variables.
+    type solar_adjust_container
+        type(solar_adjust_parameters) pm
+        type(solar_adjust_variables) vs
+    end type
 
-    !> Read indices from the 'index' file.
-    !> 'nvals' is the product of the number of rows and colums read from the 'index' file.
-    open(100, file = 'index.txt', status = 'old', action = 'read')
-    read(100, *) m, n, nsteps
-    close(100)
-    nvals = m*n
+    !* fsadj: Instance of 'solar_adjust' parameters and variables.
+    type(solar_adjust_container), save :: rsrd_adj
 
-    !> Allocate variables.
-    allocate( &
-        elev(nvals), ylat(nvals), slope(nvals), aspect(nvals), &
-        rsrd(nvals), &
-        rsrd_direct(nvals), rsrd_diffuse(nvals), rsrd_adjusted(nvals))
+    contains
 
-    !> Read elevation and latitude inputs.
-    open(100, file = 'Grid_elev.txt', status = 'old', action = 'read')
-    read(100, *) (elev(n), n = 1, nvals)
-    close(100)
-    open(100, file = 'Grid_lat.txt', status = 'old', action = 'read')
-    read(100, *) (ylat(n), n = 1, nvals)
-    close(100)
+    subroutine solar_adjust_init(fls, shd, cm)
 
-    !> Optional input variables.
-    !> Set to zero for now.
-    slope = 0.0
-    aspect = 0.0
+        !> Required for MESH variables.
+        use model_files_variables
+        use sa_mesh_shared_variables
+        use climate_forcing
 
-    !> Open persistent files to read/write input/output radiation.
-    open(FSIN_IUN, file = 'rsrd.txt', status = 'old', action = 'read')
-    open(FSDIRECT_IUN, file = 'rsrd_direct_new.txt', action = 'write')
-    open(FSDIFFUSE_IUN, file = 'rsrd_diffuse_new.txt', action = 'write')
+        !> Required for 'il1', 'il2', and 'iln'.
+        !> Because 'il1' and 'il2' are not passed to the subroutine, the
+        !> subset of the stride is used here instead.
+        use mpi_module
 
-    !> Set current time.
-    now_year = syyyy; now_day = sdd; now_hour = shh
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        type(clim_info), intent(in) :: cm
 
-    !> Loop until forced exist (e.g., by end of input data).
-    do while (.true.)
+        !> Local variables.
+        integer k
 
-        !> Read incoming shortwave radiation (input).
-        read(FSIN_IUN, *, iostat = ierr) (rsrd(n), n = 1, nvals)
-        if (ierr /= 0) exit
+        !> Allocate variables.
+        allocate( &
+            rsrd_adj%vs%elev(il1:il2), rsrd_adj%vs%ylat(il1:il2), rsrd_adj%vs%slope(il1:il2), &
+            rsrd_adj%vs%aspect(il1:il2))
+        rsrd_adj%vs%slope = 0.0
+        rsrd_adj%vs%aspect = 0.0
+
+        !> Assign values.
+        do k = il1, il2
+            rsrd_adj%vs%elev(k) = shd%ELEV(shd%lc%ILMOS(k))
+            rsrd_adj%vs%ylat(k) = shd%YLAT(shd%lc%ILMOS(k))
+        end do
+
+        !> Write summary to file.
+
+    end subroutine
+
+    subroutine solar_adjust_within_tile(fls, shd, cm)
+
+        !> Required for MESH variables.
+        use model_files_variables
+        use sa_mesh_shared_variables
+        use climate_forcing
+
+        !> Required for 'il1', 'il2', and 'iln'.
+        !> Because 'il1' and 'il2' are not passed to subroutine, the
+        !> subset of the stride is used here instead.
+        use mpi_module
+
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Input/output variables.
+        type(clim_info) :: cm
+
+        !> Local variables.
+        real, dimension(il1:il2) :: rsrd_direct, rsrd_diffuse, rsrd_adjusted
 
         !> Call routine to calculate adjusted radiation value.
         call calc_rsrd_adjusted( &
-            elev, ylat, slope, aspect, nvals, &
-            Trans, Time_Offset, CalcFreq, &
-            rsrd_dtmin, &
-            rsrd, rsrd_direct, rsrd_diffuse, rsrd_adjusted, &
-            now_year, now_day, now_hour)
+            rsrd_adj%vs%elev(il1:il2), rsrd_adj%vs%ylat(il1:il2), &
+            rsrd_adj%vs%slope(il1:il2), rsrd_adj%vs%aspect(il1:il2), iln, &
+            rsrd_adj%pm%Trans, rsrd_adj%pm%Time_Offset, rsrd_adj%pm%CalcFreq, &
+            cm%dat(ck%FB)%hf, &
+            cm%dat(ck%FB)%GAT(il1:il2), &
+            rsrd_direct(il1:il2), rsrd_diffuse(il1:il2), rsrd_adjusted(il1:il2), &
+            ic%now%year, ic%now%jday, ic%now%hour)
 
-        !> Write output.
-        write(FSDIRECT_IUN, '(9999(f10.3, 1x))') (rsrd_direct(n), n = 1, nvals)
-        write(FSDIFFUSE_IUN, '(9999(f10.3, 1x))') (rsrd_diffuse(n), n = 1, nvals)
+        !> Update radiation.
+        cm%dat(ck%FB)%GAT(il1:il2) = rsrd_adjusted(il1:il2)
 
-        !> Increment the time.
-        now_hour = now_hour + 1
-        if (now_hour > 23) then
-            print *, now_year, now_day
-            now_day = now_day + 1; now_hour = 0
-            if (now_day >= 366) then
-                if (mod(now_year, 400) == 0) then !LEAP YEAR
-                    if (now_day == 367) then
-                        now_day = 1
-                        now_year = now_year + 1
-                    end if
-                else if (mod(now_year, 100) == 0) then !NOT A LEAP YEAR
-                    now_day = 1
-                    now_year = now_year + 1
-                else if (mod(now_year, 4) == 0) then !LEAP YEAR
-                    if (now_day == 367) then
-                        now_day = 1
-                        now_year = now_year + 1
-                    end if
-                else !NOT A LEAP YEAR
-                    now_day = 1
-                    now_year = now_year + 1
-                end if
-            end if
-        end if
+        !> Update output variables.
 
-    end do
+    end subroutine
 
-end program
+end module
