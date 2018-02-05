@@ -56,12 +56,61 @@ module solar_adjust_module
 
     contains
 
-    subroutine solar_adjust_parse_options(flg)
+    subroutine solar_adjust_extract_value(arg, ierr)
+
+        !> Required for the 'parse', 'lowercase', and 'value' functions.
+        use strings
+
+        !> Input variables.
+        character(len = *), intent(in) :: arg
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        integer nargs
+        character(len = len(arg)) args(50)
+
+        !> Status.
+        ierr = 0
+
+        !> Return argument contains no '=' (designates option).
+        if (scan(arg, '=') == 0) return
+
+        !> Parse the option (using '=').
+        !> Return if there is no value assigned to the option.
+        call parse(arg, '=', args, nargs)
+        if (nargs <= 1) return
+
+        !> Assign the value.
+        select case (lowercase(args(1)))
+            case ('trans')
+                call value(args(2), rsrd_adj%pm%Trans, ierr)
+            case ('time_offset')
+                call value(args(2), rsrd_adj%pm%Time_Offset, ierr)
+            case ('calcfreq')
+                call value(args(2), rsrd_adj%pm%CalcFreq, ierr)
+        end select
+
+    end subroutine
+
+    subroutine solar_adjust_parse_options(flg, ierr)
+
+        !> Required for the 'parse' and 'lowercase' functions.
+        use strings
 
         !> Input variables.
         character(len = *), intent(in) :: flg
 
+        !> Output variables.
+        integer, intent(out) :: ierr
+
         !> Local variables.
+        integer i, nargs
+        character(len = 20) args(20)
+
+        !> Status.
+        ierr = 0
 
         !> Assume if the flag is populated that the routine is enabled.
         !> Disabled if the 'off' keyword provided.
@@ -72,15 +121,33 @@ module solar_adjust_module
         end if
 
         !> Parse and check the keywords.
+        call parse(flg, ' ', args, nargs)
+        do i = 1, nargs
+
+            !> Exit if any of the keywords have disabled the routine.
+            if (.not. rsrd_adj%PROCESS_ACTIVE) return
+            select case (lowercase(args(i)))
+
+                !> 'off' disables the routine.
+                case ('off')
+                    rsrd_adj%PROCESS_ACTIVE = .false.
+                    exit
+
+                !> Options.
+                case default
+                    call solar_adjust_extract_value(args(i), ierr)
+            end select
+        end do
 
     end subroutine
 
     subroutine solar_adjust_init(fls, shd, cm)
 
-        !> Required for MESH variables.
+        !> Required for MESH variables and options.
         use model_files_variables
         use sa_mesh_shared_variables
         use climate_forcing
+        use FLAGS
 
         !> Required for 'il1', 'il2', and 'iln'.
         !> Because 'il1' and 'il2' are not passed to the subroutine, the
@@ -93,13 +160,34 @@ module solar_adjust_module
         type(clim_info), intent(in) :: cm
 
         !> Local variables.
-        integer k
+        integer k, ierr
+        integer :: iun = 58
+        logical print_out, write_out
 
         !> Parse options.
-        call solar_adjust_parse_options(rsrd_adj%RUNOPTIONSFLAG)
+        call solar_adjust_parse_options(rsrd_adj%RUNOPTIONSFLAG, ierr)
 
         !> Return if module is not enabled.
         if (.not. rsrd_adj%PROCESS_ACTIVE) return
+
+        !> Print summary and remark that the process is active.
+        !> Print configuration information to file if 'DIAGNOSEMODE' is active.
+        print_out = (ro%VERBOSEMODE > 0)
+        write_out = (ro%VERBOSEMODE > 0 .and. MODELINFOOUTFLAG > 0)
+        if (write_out) write(iun, 1100)
+        if (write_out .and. ro%DIAGNOSEMODE > 0) then
+            write(iun, 1110) 'Trans', rsrd_adj%pm%Trans
+            write(iun, 1110) 'Time_Offset', rsrd_adj%pm%Time_Offset
+            write(iun, 1110) 'CalcFreq', rsrd_adj%pm%CalcFreq
+            write(iun, *)
+        end if
+
+        !> Check values, print error messages for invalid values.
+        if (mod(24*60, rsrd_adj%pm%CalcFreq) /= 0) then
+            if (print_out) print 1120, rsrd_adj%pm%CalcFreq
+            if (write_out) write(iun, 1120) rsrd_adj%pm%CalcFreq
+            stop
+        end if
 
         !> Allocate variables.
         allocate( &
@@ -114,7 +202,13 @@ module solar_adjust_module
             rsrd_adj%vs%ylat(k) = shd%YLAT(shd%lc%ILMOS(k))
         end do
 
-        !> Write summary to file.
+        !> Format statements.
+1100    format(1x, "SOLAR_ADJUST is ACTIVE.")
+1110    format(999(1x, g16.9))
+1120    format( &
+            /1x, "ERROR: CalcFreq must evenly divide into minutes in the day.", &
+            /3x, "1440 mod ", i4, " /= 0")
+1130    format(3x, (a))
 
     end subroutine
 
