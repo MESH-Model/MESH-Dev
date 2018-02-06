@@ -38,21 +38,6 @@ module control_variables
 
     end type !run_options
 
-    !> *****************************************************************
-    !> Description: Variable type to store control options. These
-    !> options control the structure of the model.
-    !> *****************************************************************
-    type control_options
-
-        !* PROCESS_ACTIVE: Active processes in the model (not case sensitive), comma-separated.
-        !*   CLASS: CLASS 3.6 (default).
-        !*   WF_WATROUTE: Original routing routine (default).
-        !*   SA_RTE: Offline routing module.
-        character(500) :: PROCESS_ACTIVE = 'CLASS,WF_WATROUTE'
-
-    end type
-
     type(run_options), save :: ro
-    type(control_options), save :: cops
 
 end module
