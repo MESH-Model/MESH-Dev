@@ -1,6 +1,5 @@
 module RUNSVS113_config
 
-    use sa_mesh_shared_variables
     use RUNSVS113_variables
 
     implicit none
@@ -15,7 +14,7 @@ module RUNSVS113_config
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use climate_forcing
         use FLAGS
 
@@ -401,7 +400,7 @@ module RUNSVS113_config
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use climate_forcing
         use FLAGS
 

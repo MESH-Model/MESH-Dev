@@ -96,7 +96,7 @@ program RUNMESH
 
     use mpi_module
     use model_files
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
     use FLAGS
     use sa_mesh_run_within_tile
     use sa_mesh_run_within_grid

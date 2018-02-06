@@ -58,7 +58,7 @@ module sa_mesh_run_between_grid
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use FLAGS
         use climate_forcing
         use strings
@@ -307,7 +307,7 @@ module sa_mesh_run_between_grid
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use FLAGS
         use txt_io
         use climate_forcing
@@ -517,7 +517,7 @@ module sa_mesh_run_between_grid
 
         use mpi_module
         use model_files_variabletypes
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use model_dates
         use climate_forcing
 

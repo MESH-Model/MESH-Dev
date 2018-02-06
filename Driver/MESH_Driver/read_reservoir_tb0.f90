@@ -14,7 +14,7 @@ subroutine read_reservoir_tb0(shd, iun, fname)
     use strings
     use mpi_module
     use model_dates
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
     use ensim_io
 
     implicit none

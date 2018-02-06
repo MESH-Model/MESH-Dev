@@ -1,7 +1,7 @@
 !>
 !> Description:
 !>  Subroutine to read input parameters from file. Parameters shared
-!>  by SA_MESH are accessible by sa_mesh_shared_variables module. Other
+!>  by SA_MESH are accessible by 'sa_mesh_variables'. Other
 !>  parameters are accessible by their respecitve process module(s).
 !>
 subroutine read_parameters(fls, shd, cm, ierr)
@@ -9,7 +9,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     use strings
     use mpi_module
     use model_files_variables
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
     use FLAGS
     use climate_forcing_variabletypes
 

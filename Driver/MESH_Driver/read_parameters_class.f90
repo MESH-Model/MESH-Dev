@@ -6,8 +6,8 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     !> Required for file object and CLASS.ini file index.
     use model_files_variables
 
-    !> For the 'ShedGridParams' type, 'ro%' run options type, and SA_MESH parameters.
-    use sa_mesh_shared_variables
+    !> For the 'ShedGridParams' type and SA_MESH parameters.
+    use sa_mesh_variables
 
     !> Required for 'NRSOILAYEREADFLAG'.
     use FLAGS

@@ -1,7 +1,7 @@
 !>
 !> Module for storing variables shared throughout the driver.
 !>
-module sa_mesh_shared_variables
+module sa_mesh_variables
 
     use control_variables
     use shd_variables

@@ -5,7 +5,7 @@
 !>  lake, and reservoir locations.
 !>
 !> Instances of these types are accessible by the
-!> 'sa_mesh_shared_variables' module: fms%
+!> 'sa_mesh_variables' module: fms%
 !>
 !> Types:
 !*  outlet_location: Location of an outlet location.

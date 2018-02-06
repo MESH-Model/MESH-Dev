@@ -13,8 +13,8 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !> Required for file object and hydrology.ini file index.
     use model_files_variables
 
-    !> For the 'ShedGridParams' type, 'ro%' run options type, and SA_MESH parameters.
-    use sa_mesh_shared_variables
+    !> For the 'ShedGridParams' type and SA_MESH parameters.
+    use sa_mesh_variables
 
     !> Required for 'FROZENSOILINFILFLAG'.
     use FLAGS

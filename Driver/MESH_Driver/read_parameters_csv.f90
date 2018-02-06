@@ -2,7 +2,7 @@
 !> Description:
 !>  Subroutine to read parameters from file, in delimited format.
 !>  Parameter values are saved directly to the shared parameter object
-!>  at the GRU and NRVR levels, accessible by sa_mesh_shared_variables.
+!>  at the GRU and NRVR levels, accessible by 'sa_mesh_variables'.
 !>
 !> Input:
 !*  shd: Basin shed object, containing information about the grid
@@ -15,7 +15,7 @@ subroutine read_parameters_csv(shd, iun, fname)
     use strings
     use parse_utilities
     use mpi_module
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
 
     use baseflow_module
     use rte_module

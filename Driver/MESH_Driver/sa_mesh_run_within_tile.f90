@@ -7,7 +7,7 @@ module sa_mesh_run_within_tile
     subroutine run_within_tile_init(shd, fls, cm)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use climate_forcing
 
         !> Required for calls to processes.
@@ -37,7 +37,7 @@ module sa_mesh_run_within_tile
     function run_within_tile(shd, fls, cm)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use climate_forcing
 
         !> Required for calls to processes.
@@ -83,7 +83,7 @@ module sa_mesh_run_within_tile
         use mpi_module
 
         !> Process modules (required for variables).
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use model_dates
         use climate_forcing
         use baseflow_module, only: bflm, Qb
@@ -321,7 +321,7 @@ module sa_mesh_run_within_tile
         use mpi_module
 
         !> Process modules (required for variables).
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use model_dates
         use climate_forcing
 
@@ -391,7 +391,7 @@ module sa_mesh_run_within_tile
 
     subroutine run_within_tile_stas_reset()
 
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
 
         !> Required for 'il1:il2' indices.
         use mpi_module
@@ -417,7 +417,7 @@ module sa_mesh_run_within_tile
 
     subroutine run_within_tile_stas_update(shd, cm)
 
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use climate_forcing
 
         !> Required for 'il1:il2' indices.
@@ -466,7 +466,7 @@ module sa_mesh_run_within_tile
     subroutine run_within_tile_finalize(fls, shd, cm)
 
         use model_files_variabletypes
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use climate_forcing
 
         !> Required for calls to processes.

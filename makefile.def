@@ -82,7 +82,7 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			climate_forcing_module_config.o \
 			climate_forcing_module_io.o climate_forcing_module.o \
 			output_variables.o \
-			sa_mesh_shared_variables.o \
+			sa_mesh_variables.o \
 			model_output.o
 
 #WF_ROUTE

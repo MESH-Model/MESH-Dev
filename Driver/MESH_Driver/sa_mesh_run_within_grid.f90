@@ -7,7 +7,7 @@ module sa_mesh_run_within_grid
     subroutine run_within_grid_init(shd, fls, cm)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use climate_forcing
 
         type(ShedGridParams) :: shd
@@ -25,7 +25,7 @@ module sa_mesh_run_within_grid
     subroutine run_within_grid(shd, fls, cm)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use climate_forcing
 
         !> Required for calls to processes.
@@ -52,7 +52,7 @@ module sa_mesh_run_within_grid
         use mpi_module
 
         !> Process modules (required for variables).
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use model_dates
         use climate_forcing
 
@@ -132,7 +132,7 @@ module sa_mesh_run_within_grid
         use mpi_module
 
         !> Process modules (required for variables).
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use model_dates
         use climate_forcing
 
@@ -226,7 +226,7 @@ module sa_mesh_run_within_grid
 
     subroutine run_within_grid_stas_update(shd, cm)
 
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use climate_forcing
 
         !> Required for 'il1:il2' and 'i1:i2' indexing.
@@ -344,7 +344,7 @@ module sa_mesh_run_within_grid
     subroutine run_within_grid_finalize(fls, shd, cm)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use climate_forcing
 
         type(fl_ids) :: fls

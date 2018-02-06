@@ -3,7 +3,7 @@
         use mpi_module
         use strings
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use model_dates
         use climate_forcing
 

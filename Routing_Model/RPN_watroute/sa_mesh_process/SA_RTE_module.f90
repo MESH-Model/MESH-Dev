@@ -64,8 +64,8 @@ module SA_RTE_module
 !todo: as flags as a part of the model_output module.
     subroutine SA_RTE(shd)
 
-        !> For: type(ShedGridParams) :: shd; cops
-        use sa_mesh_shared_variables
+        !> For: type(ShedGridParams) :: shd
+        use sa_mesh_variables
 
         !> For: type(iter_counter) :: ic
         !* ic: Active counter.
@@ -129,7 +129,7 @@ module SA_RTE_module
     subroutine SA_RTE_init(shd)
 
         !> For: type(ShedGridParams) :: shd, ro%, cops%
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
 
         !> For: type(iter_counter) :: ic
         use model_dates

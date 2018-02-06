@@ -78,7 +78,7 @@ module RUNCLASS36_config
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use model_dates
         use climate_forcing
         use FLAGS
@@ -597,7 +597,7 @@ module RUNCLASS36_config
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use model_dates
         use climate_forcing
         use FLAGS

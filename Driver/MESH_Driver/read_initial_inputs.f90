@@ -1,7 +1,7 @@
 subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     use mpi_module
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
     use model_files_variables
     use FLAGS
     use climate_forcing

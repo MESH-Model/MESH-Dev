@@ -55,7 +55,7 @@ C***********************************************************************!
 
 !***********************************************************************
 
-      use sa_mesh_shared_variables
+      use sa_mesh_variables
       use model_files_variables
       use strings
 

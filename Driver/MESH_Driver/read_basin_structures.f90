@@ -2,8 +2,8 @@
 !> Description:
 !>  Subroutine to read structure locations and configurations from
 !>  file. Structures shared by SA_MESH are accessible by
-!>  sa_mesh_shared_variables module. Other structures are accessible
-!>  by their respecitve process module(s).
+!>  'sa_mesh_variables'. Other structures are accessible by their
+!>  respecitve process module(s).
 !>
 !> Input:
 !*  shd: Basin shed object, containing information about the grid
@@ -13,7 +13,7 @@ subroutine read_basin_structures(shd)
 
     use strings
     use mpi_module
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
     use model_dates
     use txt_io
 

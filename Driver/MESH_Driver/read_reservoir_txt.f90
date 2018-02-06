@@ -12,7 +12,7 @@
 subroutine read_reservoir_txt(shd, iun, fname, nb)
 
     use mpi_module
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
 
     implicit none
 

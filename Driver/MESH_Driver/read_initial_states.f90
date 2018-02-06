@@ -1,7 +1,7 @@
 !>
 !> Description:
 !>  Subroutine to read initial states of variables from file. Variables
-!>  shared by SA_MESH are accessible by sa_mesh_shared_variables module.
+!>  shared by SA_MESH are accessible by 'sa_mesh_variables'.
 !>  Other variables are accessible by their respecitve process
 !>  module(s).
 !>
@@ -10,7 +10,7 @@ subroutine read_initial_states(fls, shd, ierr)
     use strings
     use mpi_module
     use model_files_variables
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
     use FLAGS
 
     use RUNCLASS36_constants

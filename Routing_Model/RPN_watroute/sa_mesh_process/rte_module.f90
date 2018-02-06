@@ -72,9 +72,9 @@ module rte_module
         !> mpi_module: Required for 'ipid'.
         use mpi_module
 
-        !> sa_mesh_shared_variables: Variables, parameters, and types from SA_MESH.
+        !> sa_mesh_variables: Variables, parameters, and types from SA_MESH.
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use FLAGS
 
         type(fl_ids) :: fls
@@ -556,9 +556,9 @@ module rte_module
         !> mpi_module: Required for 'ipid'.
         use mpi_module
 
-        !> sa_mesh_shared_variables: Variables, parameters, and types from SA_MESH.
+        !> sa_mesh_variables: Variables, parameters, and types from SA_MESH.
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
 
         !> model_dates: for 'ic' counter.
         use model_dates
@@ -839,9 +839,9 @@ module rte_module
         !> mpi_module: Required for 'ipid'.
         use mpi_module
 
-        !> sa_mesh_shared_variables: Variables, parameters, and types from SA_MESH.
+        !> sa_mesh_variables: Variables, parameters, and types from SA_MESH.
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use FLAGS
 
         type(fl_ids) :: fls

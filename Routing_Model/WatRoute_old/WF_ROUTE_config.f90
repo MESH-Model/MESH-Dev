@@ -116,7 +116,7 @@ module WF_ROUTE_config
     subroutine WF_ROUTE_init(fls, shd)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use model_dates
         use FLAGS
 
@@ -251,7 +251,7 @@ module WF_ROUTE_config
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use FLAGS
 
         type(fl_ids) :: fls

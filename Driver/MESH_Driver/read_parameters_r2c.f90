@@ -2,7 +2,7 @@
 !> Description:
 !>  Subroutine to read parameters from file, in r2c format. Parameter
 !>  values are saved directly to the shared parameter object at the
-!>  grid level, accessible by sa_mesh_shared_variables.
+!>  grid level, accessible by 'sa_mesh_variables'.
 !>
 !> Input:
 !*  shd: Basin shed object, containing information about the grid
@@ -14,7 +14,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
 
     use strings
     use mpi_module
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
     use ensim_io
 
     use RUNCLASS36_variables
