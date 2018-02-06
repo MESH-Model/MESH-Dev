@@ -47,17 +47,21 @@ module sa_mesh_utilities
             f = '(1x, (a))'
         end if
 
-        !> Print to screen.
-        if (VERBOSEMODE) write(ECHO_SCN_IUN, f) message
+        !> Write to output.
+        if (VERBOSEMODE) then
 
-        !> Print to summary file.
-        if (ECHOTXTMODE) write(ECHO_TXT_IUN, f) message
+            !> Print to screen.
+            write(ECHO_SCN_IUN, f) message
+
+            !> Print to file.
+            if (ECHOTXTMODE) write(ECHO_TXT_IUN, f) message
+        end if
 
     end subroutine
 
     !> Description:
     !>  Print the provided message to screen and to the summary file.
-    !>  Lead the message with "WARNING :".
+    !>  Lead the message with "WARNING:".
     subroutine print_warning(message)
 
         !> Input variables.
@@ -65,6 +69,19 @@ module sa_mesh_utilities
 
         !> Flush the message.
         call print_message(message, "(1x, 'WARNING: ', (a))")
+
+    end subroutine
+
+    !> Description:
+    !>  Print the provided message to screen and to the summary file.
+    !>  Lead the message with "REMARK:".
+    subroutine print_remark(message)
+
+        !> Input variables.
+        character(len = *), intent(in) :: message
+
+        !> Flush the message.
+        call print_message(message, "(1x, 'REMARK: ', (a))")
 
     end subroutine
 
