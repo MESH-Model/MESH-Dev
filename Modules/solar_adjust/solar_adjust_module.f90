@@ -19,10 +19,14 @@ module solar_adjust_module
     !*  Trans: Mean transmissivity of the atmosphere.
     !*  Time_Offset: Solar time offset from local time.
     !*  CalcFreq: Iterations per day (must divide the day into equal increments of minutes). [--].
+    !*  elev: Elevation. [m].
+    !*  slope: Slope of surface (1: grid; 2: GRU). [degrees].
+    !*  aspect: Aspect of surface (1: grid; 2: GRU). [degrees].
     type solar_adjust_parameters
         real :: Trans = 0.818
         real :: Time_Offset = 0.67
         integer :: CalcFreq = 288
+        real, dimension(:, :), allocatable :: elev, slope, aspect
     end type
 
     !> Description:
@@ -31,8 +35,8 @@ module solar_adjust_module
     !> Variables:
     !*  elev: Elevation. [m].
     !*  ylat: Latitude. [degrees].
-    !*  slope: Slope of surface. [--].
-    !*  aspect: Aspect of surface.
+    !*  slope: Slope of surface. [degrees].
+    !*  aspect: Aspect of surface. [degrees].
     type solar_adjust_variables
         real, dimension(:), allocatable :: elev, ylat, slope, aspect
     end type
@@ -168,7 +172,41 @@ module solar_adjust_module
         call solar_adjust_parse_options(rsrd_adj%RUNOPTIONSFLAG, ierr)
 
         !> Return if module is not enabled.
-        if (.not. rsrd_adj%PROCESS_ACTIVE) return
+        if (.not. rsrd_adj%PROCESS_ACTIVE) then
+            if (allocated(rsrd_adj%pm%slope)) deallocate(rsrd_adj%pm%slope)
+            if (allocated(rsrd_adj%pm%aspect)) deallocate(rsrd_adj%pm%aspect)
+            return
+        end if
+
+        !> Allocate variables.
+        allocate( &
+            rsrd_adj%vs%elev(il1:il2), rsrd_adj%vs%ylat(il1:il2), rsrd_adj%vs%slope(il1:il2), &
+            rsrd_adj%vs%aspect(il1:il2))
+        rsrd_adj%vs%slope = 0.0
+        rsrd_adj%vs%aspect = 0.0
+
+        !> Assign values.
+        do k = il1, il2
+
+            !> Pull generic values from drainage_database.r2c
+            rsrd_adj%vs%elev(k) = shd%ELEV(shd%lc%ILMOS(k))
+            rsrd_adj%vs%ylat(k) = shd%YLAT(shd%lc%ILMOS(k))
+
+            !> Overwrite with values provided by GRU (e.g., parameters.r2c).
+            if (allocated(rsrd_adj%pm%slope)) then
+                rsrd_adj%vs%slope(k) = rsrd_adj%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
+            if (allocated(rsrd_adj%pm%aspect)) then
+                rsrd_adj%vs%aspect(k) = rsrd_adj%pm%aspect(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
+            if (allocated(rsrd_adj%pm%elev)) then
+                rsrd_adj%vs%elev(k) = rsrd_adj%pm%elev(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
+        end do
+
+        !> De-allocate 'ROW' based fields (from parameters file).
+        if (allocated(rsrd_adj%pm%slope)) deallocate(rsrd_adj%pm%slope)
+        if (allocated(rsrd_adj%pm%aspect)) deallocate(rsrd_adj%pm%aspect)
 
         !> Print summary and remark that the process is active.
         !> Print configuration information to file if 'DIAGNOSEMODE' is active.
@@ -183,32 +221,37 @@ module solar_adjust_module
         end if
 
         !> Check values, print error messages for invalid values.
+        !> The check is of 'GAT'-based variables, for which all tiles should have valid values.
+        ierr = 0
         if (mod(24*60, rsrd_adj%pm%CalcFreq) /= 0) then
             if (print_out) print 1120, rsrd_adj%pm%CalcFreq
             if (write_out) write(iun, 1120) rsrd_adj%pm%CalcFreq
-            stop
+            ierr = 1
         end if
-
-        !> Allocate variables.
-        allocate( &
-            rsrd_adj%vs%elev(il1:il2), rsrd_adj%vs%ylat(il1:il2), rsrd_adj%vs%slope(il1:il2), &
-            rsrd_adj%vs%aspect(il1:il2))
-        rsrd_adj%vs%slope = 0.0
-        rsrd_adj%vs%aspect = 0.0
-
-        !> Assign values.
-        do k = il1, il2
-            rsrd_adj%vs%elev(k) = shd%ELEV(shd%lc%ILMOS(k))
-            rsrd_adj%vs%ylat(k) = shd%YLAT(shd%lc%ILMOS(k))
-        end do
+        if (any(rsrd_adj%vs%elev < 0.0)) then
+            if (print_out) print 1130, 'ELEVATION'
+            if (write_out) write(iun, 1130) 'ELEVATION'
+            ierr = 1
+        end if
+        if (any(rsrd_adj%vs%slope < 0.0)) then
+            if (print_out) print 1130, 'SLOPE'
+            if (write_out) write(iun, 1130) 'SLOPE'
+            ierr = 1
+        end if
+        if (any(rsrd_adj%vs%aspect < 0.0)) then
+            if (print_out) print 1130, 'ASPECT'
+            if (write_out) write(iun, 1130) 'ASPECT'
+            ierr = 1
+        end if
+        if (ierr /= 0) stop
 
         !> Format statements.
 1100    format(1x, "SOLAR_ADJUST is ACTIVE.")
 1110    format(999(1x, g16.9))
 1120    format( &
-            /1x, "ERROR: CalcFreq must evenly divide into minutes in the day.", &
+            1x, "ERROR: CalcFreq must evenly divide into minutes in the day.", &
             /3x, "1440 mod ", i4, " /= 0")
-1130    format(3x, (a))
+1130    format(1x, "ERROR: Values of ", (a), " are less than zero.")
 
     end subroutine
 

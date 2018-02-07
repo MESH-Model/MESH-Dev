@@ -22,6 +22,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
     use baseflow_module
     use rte_module
     use PBSM_module
+    use solar_adjust_module
 
     implicit none
 
@@ -202,6 +203,41 @@ subroutine read_parameters_r2c(shd, iun, fname)
                 if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%A_S = ffield
             case ('distrib')
                 if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Distrib = ffield
+
+            !> Solar_Adjust.
+            case ('slope')
+                if (.not. allocated(rsrd_adj%pm%slope)) allocate(rsrd_adj%pm%slope(shd%NA, shd%lc%NTYPE))
+                if (ilvl == 0) then
+                    do ilvl = 1, shd%lc%NTYPE
+                        rsrd_adj%pm%slope(:, ilvl) = ffield
+                    end do
+                else if (ilvl <= shd%lc%NTYPE) then
+                    rsrd_adj%pm%slope(:, ilvl) = ffield
+                else if (verbose) then
+                    print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
+                end if
+            case ('aspect')
+                if (.not. allocated(rsrd_adj%pm%aspect)) allocate(rsrd_adj%pm%aspect(shd%NA, shd%lc%NTYPE))
+                if (ilvl == 0) then
+                    do ilvl = 1, shd%lc%NTYPE
+                        rsrd_adj%pm%aspect(:, ilvl) = ffield
+                    end do
+                else if (ilvl <= shd%lc%NTYPE) then
+                    rsrd_adj%pm%aspect(:, ilvl) = ffield
+                else if (verbose) then
+                    print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
+                end if
+            case ('elevation')
+                if (.not. allocated(rsrd_adj%pm%elev)) allocate(rsrd_adj%pm%elev(shd%NA, shd%lc%NTYPE))
+                if (ilvl == 0) then
+                    do ilvl = 1, shd%lc%NTYPE
+                        rsrd_adj%pm%elev(:, ilvl) = ffield
+                    end do
+                else if (ilvl <= shd%lc%NTYPE) then
+                    rsrd_adj%pm%elev(:, ilvl) = ffield
+                else if (verbose) then
+                    print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
+                end if
 
             !> Print a warning if the variable name is not recognized.
             case default
