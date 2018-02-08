@@ -207,13 +207,13 @@ program RUNMESH
     call mpi_init(ierr)
     if (ierr /= mpi_success) then
         call print_warning('Failed to initialize MPI.')
-        write(line, 1000) 'Error status:', ierr
+        write(line, 1002) 'Error status:', ierr
         call print_message_detail(line)
         call print_message('Calling MPI abort...')
         call mpi_abort(mpi_comm_world, ierrcode, ierr)
-        write(line, 1000) 'Error code:', ierrcode
+        write(line, 1002) 'Error code:', ierrcode
         call print_message_detail(line)
-        write(line, 1000) 'Error status:', ierr
+        write(line, 1002) 'Error status:', ierr
         call print_message_detail(line)
     end if
 
@@ -232,10 +232,13 @@ program RUNMESH
     !> Reset verbose flag for worker nodes.
     if (ipid > 0) VERBOSEMODE = .false.
 
-!TODO: UPDATE THIS (RELEASE(*)) WITH VERSION CHANGE
+    !> Open the status file.
+    call open_summary_file('./' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
+
+    !> Write MESH version to screen.
     write(line, "('MESH ', (a), ' ---  (', (a), ')')") trim(RELEASE), trim(VERSION)
-    call print_screen(line)
-    call print_screen('')
+    call print_message(line)
+    call print_message('')
 
     !> Check if any command line arguments are found.
     narg = command_argument_count()
@@ -264,6 +267,9 @@ program RUNMESH
     call READ_INITIAL_INPUTS(shd, &
                              ts, cm, &
                              fls)
+
+    !> Check to see if output to the status file is disabled.
+    if (.not. ECHOTXTMODE) close(ECHO_TXT_IUN, status = 'delete')
 
     !> Assign shed values to local variables.
     NA = shd%NA
@@ -383,7 +389,6 @@ program RUNMESH
     !> ******************************************************
 
         if (ECHOTXTMODE) then
-            write(ECHO_TXT_IUN, "('Number of Soil Layers (IGND) = ', i5)") NSL
             write(ECHO_TXT_IUN, *)
             write(ECHO_TXT_IUN, "('MESH_input_run_options.ini')")
             write(ECHO_TXT_IUN, *)
@@ -567,7 +572,9 @@ program RUNMESH
         call print_message_detail(line)
         write(line, 1002) 'Number of GRUs:', NTYPE
         call print_message_detail(line)
-        write(line, 1002) 'Number of tiles:', shd%lc%NML
+        write(line, 1002) 'Number of land-based tiles:', shd%lc%NML
+        call print_message_detail(line)
+        write(line, 1002) 'Number of soil layers:', shd%lc%IGND
         call print_message_detail(line)
         write(line, 1002) 'Number of river classes:', shd%NRVR
         call print_message_detail(line)
@@ -1074,7 +1081,7 @@ program RUNMESH
                 DAILY_ROF = DAILY_ROF + sum(out%grid%rof%d*shd%FRAC)*ic%dts
 
                 if (VERBOSEMODE) then
-                    write(line, '(2i4)') ic%now%year, ic%now%jday
+                    write(line, '(i5, i4)') ic%now%year, ic%now%jday
                     if (fms%stmg%n > 0) then
                         do j = 1, fms%stmg%n
                             if (fms%stmg%n > 0) write(line, '((a), f10.3)') trim(line), fms%stmg%qomeas%val(j)

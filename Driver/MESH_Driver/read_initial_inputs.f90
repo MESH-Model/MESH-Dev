@@ -29,10 +29,6 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !>
     call READ_RUN_OPTIONS(ts, cm, fls)
 
-    !> Open the status file after reading run options in case output
-    !> to the summary file is disabled.
-    call open_summary_file('./' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
-
     !>
     !> DRAINAGE DATABASE.
     !>
@@ -349,9 +345,6 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     !> Open and read in soil depths from file.
     call READ_SOIL_LEVELS(shd, fls)
-    if (VERBOSEMODE) then
-        print *, 'IGND = ', shd%lc%IGND
-    end if
 
     !> Store the number of soil layers to initialize variables.
     NSL = shd%lc%IGND
