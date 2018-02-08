@@ -3,59 +3,117 @@ module sa_mesh_utilities
     implicit none
 
     !> Flags.
-    !*  VERBOSEMODE: .true. to print messages to screen; .false. otherwise (default: .true.).
-    !*  DIAGNOSEMODE: .true. to print diagnostic and excess information to screen; .false. otherwise (default: .false.).
-    !*  ECHOTXTMODE: .true. to print message to summary file; .false. otherwise (default: .true.).
+    !* VERBOSEMODE: .true. to print messages to screen; .false. otherwise (default: .true.).
+    !* DIAGNOSEMODE: .true. to print diagnostic and excess information to screen; .false. otherwise (default: .false.).
+    !* ECHOTXTMODE: .true. to print message to summary file; .false. otherwise (default: .true.).
     logical :: VERBOSEMODE = .true.
     logical :: DIAGNOSEMODE = .false.
     logical :: ECHOTXTMODE = .true.
 
-    !> Constants.
-    !*  ECHO_SCN_IUN: Unit of screen (for print).
-    !*  ECHO_TXT_IUN: Unit of summary file (for write).
+    !> File units.
+    !* ECHO_SCN_IUN: Unit of screen (for print).
+    !* ECHO_TXT_IUN: Unit of summary file (for write).
     integer, parameter :: ECHO_SCN_IUN = 6, ECHO_TXT_IUN = 58
 
     !> String constants.
-    !*  DEFAULT_LINE_LENGTH: Default length of a single line.
-    !*  DEFAULT_FIELD_LENGTH: Default length of a field (e.g., in a line).
+    !* DEFAULT_LINE_LENGTH: Default length of a single line.
+    !* DEFAULT_FIELD_LENGTH: Default length of a field (e.g., in a line).
+    !* PAD_1: Padding of '1x'.
+    !* PAD_3: Padding of '3x'.
+    !* PAD_NONE: No padding.
     integer, parameter :: DEFAULT_LINE_LENGTH = 1000
     integer, parameter :: DEFAULT_FIELD_LENGTH = 20
+    integer, parameter :: PAD_1 = 1
+    integer, parameter :: PAD_3 = 3
+    integer, parameter :: PAD_NONE = 0
 
     contains
 
     !> Description:
-    !>  Print the provided message to screen and to the summary file.
+    !>  Returns a default character format statement provided a level.
+    !>
+    !> Variables:
+    !*  level: Offset from the leading edge of the line (optional; default: 1x).
+    !>
+    !> Returns:
+    !*  f: Character format statement.
+    function get_format(level) result(f)
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: level
+
+        !> Output variables.
+        character(len = DEFAULT_LINE_LENGTH) f
+
+        !> Format statement based on 'level'.
+        if (present(level)) then
+            if (level == 0) then
+                f = '((a))'
+            else
+                write(f, '(i4)') level
+                f = '(' // trim(adjustl(f)) // 'x, (a))'
+            end if
+        else
+            f = '(1x, (a))'
+        end if
+
+    end function
+
+    !> Description:
+    !>  Print the provided message to screen only.
     !>
     !> Variables:
     !>  message: Message to output.
-    !>  fmt: Format for output.
-    subroutine print_message(message, fmt)
+    !>  level: Offset from the leading edge of the line.
+    subroutine print_screen(message, level)
+
+        !> Input variables.
+        character(len = *), intent(in) :: message
+        integer, intent(in), optional :: level
+
+        !> Print to screen.
+        if (VERBOSEMODE) write(ECHO_SCN_IUN, get_format(level)) trim(message)
+
+    end subroutine
+
+    !> Description:
+    !>  Print the provided message to the summary file only.
+    !>
+    !> Variables:
+    !>  message: Message to output.
+    !>  level: Offset from the leading edge of the line.
+    subroutine print_summary_file(message, level)
+
+        !> Input variables.
+        character(len = *), intent(in) :: message
+        integer, intent(in), optional :: level
+
+        !> Print to the summary file.
+        if (VERBOSEMODE .and. ECHOTXTMODE) write(ECHO_TXT_IUN, get_format(level)) trim(message)
+
+    end subroutine
+
+    !> Description:
+    !>  Print the provided message to screen and to the summary file.
+    !>  Level specifies an offset in spacing relative to the leading
+    !>  edge of the line.
+    !>
+    !> Variables:
+    !>  message: Message to output.
+    !>  level: Offset from the leading edge of the line.
+    subroutine print_message(message, level)
 
         !> Input variables.
         character(len = *), intent(in) :: message
 
         !> Input variables (optional).
-        character(len = *), intent(in), optional :: fmt
+        integer, intent(in), optional :: level
 
-        !> Local variables.
-        character(len = DEFAULT_LINE_LENGTH) f
+        !> Print to screen.
+        call print_screen(message, level)
 
-        !> Format statement.
-        if (present(fmt)) then
-            f = adjustl(fmt)
-        else
-            f = '(1x, (a))'
-        end if
-
-        !> Write to output.
-        if (VERBOSEMODE) then
-
-            !> Print to screen.
-            write(ECHO_SCN_IUN, f) message
-
-            !> Print to file.
-            if (ECHOTXTMODE) write(ECHO_TXT_IUN, f) message
-        end if
+        !> Print to the summary file.
+        call print_summary_file(message, level)
 
     end subroutine
 
@@ -68,7 +126,7 @@ module sa_mesh_utilities
         character(len = *), intent(in) :: message
 
         !> Flush the message.
-        call print_message(message, "(1x, 'WARNING: ', (a))")
+        call print_message('WARNING: ' // trim(adjustl(message)))
 
     end subroutine
 
@@ -81,7 +139,7 @@ module sa_mesh_utilities
         character(len = *), intent(in) :: message
 
         !> Flush the message.
-        call print_message(message, "(1x, 'REMARK: ', (a))")
+        call print_message('REMARK: ' // trim(adjustl(message)))
 
     end subroutine
 
@@ -107,7 +165,7 @@ module sa_mesh_utilities
         character(len = *), intent(in) :: message
 
         !> Flush the message.
-        call print_message(message, "(1x, 'ERROR: ', (a))")
+        call print_message('ERROR: ' // trim(adjustl(message)))
 
     end subroutine
 
@@ -120,7 +178,7 @@ module sa_mesh_utilities
         character(len = *), intent(in) :: message
 
         !> Flush the message.
-        call print_message(message, "(3x, (a))")
+        call print_message(message, PAD_3)
 
     end subroutine
 
