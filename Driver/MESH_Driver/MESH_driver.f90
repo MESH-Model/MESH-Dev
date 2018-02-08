@@ -400,99 +400,99 @@ program RUNMESH
     !> ******************************************************
 
         if (MODELINFOOUTFLAG > 0) then
-            write(58, "('Number of Soil Layers (IGND) = ', i5)") NSL
-            write(58, *)
-            write(58, "('MESH_input_run_options.ini')")
-            write(58, *)
-            write(58, "('Configuration flags - specified by user or default values')")
+            write(ECHO_TXT_IUN, "('Number of Soil Layers (IGND) = ', i5)") NSL
+            write(ECHO_TXT_IUN, *)
+            write(ECHO_TXT_IUN, "('MESH_input_run_options.ini')")
+            write(ECHO_TXT_IUN, *)
+            write(ECHO_TXT_IUN, "('Configuration flags - specified by user or default values')")
 
 !todo: this list should be updated (dgp: 2015-01-09)
-            write(58, *) 'BASINSHORTWAVEFLAG   = ', cm%dat(ck%FB)%ffmt
-            write(58, *) 'BASINLONGWAVEFLAG    = ', cm%dat(ck%FI)%ffmt
-            write(58, *) 'BASINRAINFLAG        = ', cm%dat(ck%RT)%ffmt
-            write(58, *) 'BASINTEMPERATUREFLAG = ', cm%dat(ck%TT)%ffmt
-            write(58, *) 'BASINWINDFLAG        = ', cm%dat(ck%UV)%ffmt
-            write(58, *) 'BASINPRESFLAG        = ', cm%dat(ck%P0)%ffmt
-            write(58, *) 'BASINHUMIDITYFLAG    = ', cm%dat(ck%HU)%ffmt
-            write(58, *) 'RESUMEFLAG           = ', RESUMEFLAG
-            write(58, *) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG
-            write(58, *) 'SHDFILEFLAG          = ', SHDFILEFLAG
-            write(58, *) 'SOILINIFLAG          = ', SOILINIFLAG
-            write(58, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
-            write(58, *) 'SUBBASINFLAG         = ', SUBBASINFLAG
-            write(58, *) 'R2COUTPUTFLAG        = ', R2COUTPUTFLAG
-            write(58, *) 'OBJFNFLAG            = ', OBJFNFLAG
-            write(58, *) 'AUTOCALIBRATIONFLAG  = ', mtsflg%AUTOCALIBRATIONFLAG
-            write(58, *) 'WINDOWSIZEFLAG       = ', WINDOWSIZEFLAG
-            write(58, *) 'WINDOWSPACINGFLAG    = ', WINDOWSPACINGFLAG
-            write(58, *) 'FROZENSOILINFILFLAG  = ', FROZENSOILINFILFLAG
-            write(58, *) 'LOCATIONFLAG         = ', LOCATIONFLAG
+            write(ECHO_TXT_IUN, *) 'BASINSHORTWAVEFLAG   = ', cm%dat(ck%FB)%ffmt
+            write(ECHO_TXT_IUN, *) 'BASINLONGWAVEFLAG    = ', cm%dat(ck%FI)%ffmt
+            write(ECHO_TXT_IUN, *) 'BASINRAINFLAG        = ', cm%dat(ck%RT)%ffmt
+            write(ECHO_TXT_IUN, *) 'BASINTEMPERATUREFLAG = ', cm%dat(ck%TT)%ffmt
+            write(ECHO_TXT_IUN, *) 'BASINWINDFLAG        = ', cm%dat(ck%UV)%ffmt
+            write(ECHO_TXT_IUN, *) 'BASINPRESFLAG        = ', cm%dat(ck%P0)%ffmt
+            write(ECHO_TXT_IUN, *) 'BASINHUMIDITYFLAG    = ', cm%dat(ck%HU)%ffmt
+            write(ECHO_TXT_IUN, *) 'RESUMEFLAG           = ', RESUMEFLAG
+            write(ECHO_TXT_IUN, *) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG
+            write(ECHO_TXT_IUN, *) 'SHDFILEFLAG          = ', SHDFILEFLAG
+            write(ECHO_TXT_IUN, *) 'SOILINIFLAG          = ', SOILINIFLAG
+            write(ECHO_TXT_IUN, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
+            write(ECHO_TXT_IUN, *) 'SUBBASINFLAG         = ', SUBBASINFLAG
+            write(ECHO_TXT_IUN, *) 'R2COUTPUTFLAG        = ', R2COUTPUTFLAG
+            write(ECHO_TXT_IUN, *) 'OBJFNFLAG            = ', OBJFNFLAG
+            write(ECHO_TXT_IUN, *) 'AUTOCALIBRATIONFLAG  = ', mtsflg%AUTOCALIBRATIONFLAG
+            write(ECHO_TXT_IUN, *) 'WINDOWSIZEFLAG       = ', WINDOWSIZEFLAG
+            write(ECHO_TXT_IUN, *) 'WINDOWSPACINGFLAG    = ', WINDOWSPACINGFLAG
+            write(ECHO_TXT_IUN, *) 'FROZENSOILINFILFLAG  = ', FROZENSOILINFILFLAG
+            write(ECHO_TXT_IUN, *) 'LOCATIONFLAG         = ', LOCATIONFLAG
 
 !todo: restore this.
-!+            write(58, "('WF_NUM_POINTS: ', i5)") WF_NUM_POINTS
-!+            write(58, "('Out directory:', 5a10)") (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
-!+            write(58, "('Grid number:  ', 5i10)") (op%N_OUT(i), i = 1, WF_NUM_POINTS)
-!+            write(58, "('Land class:   ', 5i10)") (op%II_OUT(i), i = 1, WF_NUM_POINTS)
-!            write(58, *)
-!            write(58, "('MESH_parameters_hydrology.ini')")
-!            write(58, *)
-!            write(58, "('River roughnesses:')")
+!+            write(ECHO_TXT_IUN, "('WF_NUM_POINTS: ', i5)") WF_NUM_POINTS
+!+            write(ECHO_TXT_IUN, "('Out directory:', 5a10)") (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
+!+            write(ECHO_TXT_IUN, "('Grid number:  ', 5i10)") (op%N_OUT(i), i = 1, WF_NUM_POINTS)
+!+            write(ECHO_TXT_IUN, "('Land class:   ', 5i10)") (op%II_OUT(i), i = 1, WF_NUM_POINTS)
+!            write(ECHO_TXT_IUN, *)
+!            write(ECHO_TXT_IUN, "('MESH_parameters_hydrology.ini')")
+!            write(ECHO_TXT_IUN, *)
+!            write(ECHO_TXT_IUN, "('River roughnesses:')")
 !todo: change this to use NRVR.
-!            write(58, '(5f6.3)') (WF_R2(i), i = 1, 5)
-!            write(58, "('Land class independent hydrologic parameters:')")
+!            write(ECHO_TXT_IUN, '(5f6.3)') (WF_R2(i), i = 1, 5)
+!            write(ECHO_TXT_IUN, "('Land class independent hydrologic parameters:')")
 !            if (FROZENSOILINFILFLAG == 1) then
-!                write(58, *) 'SOIL_POR_MAX = ', SOIL_POR_MAX
-!                write(58, *) 'SOIL_DEPTH   = ', SOIL_DEPTH
-!                write(58, *) 'S0           = ', S0
-!                write(58, *) 'T_ICE_LENS   = ', T_ICE_LENS
+!                write(ECHO_TXT_IUN, *) 'SOIL_POR_MAX = ', SOIL_POR_MAX
+!                write(ECHO_TXT_IUN, *) 'SOIL_DEPTH   = ', SOIL_DEPTH
+!                write(ECHO_TXT_IUN, *) 'S0           = ', S0
+!                write(ECHO_TXT_IUN, *) 'T_ICE_LENS   = ', T_ICE_LENS
 !                do i = 5, INDEPPAR
 !                    j = i - 4
-!                    write(58, '(a38, i2, a3, f6.2)') 'OPPORTUNITY TIME FOR SIMULATION YEAR ', j, ' = ', t0_ACC(j)
+!                    write(ECHO_TXT_IUN, '(a38, i2, a3, f6.2)') 'OPPORTUNITY TIME FOR SIMULATION YEAR ', j, ' = ', t0_ACC(j)
 !                end do
 !            else
 !                do i = 1, INDEPPAR
-!                    write(58, '(a36, i2, a19)') 'FROZEN SOIL INFILTRATION PARAMETER ', i, ' READ BUT NOT USED'
+!                    write(ECHO_TXT_IUN, '(a36, i2, a19)') 'FROZEN SOIL INFILTRATION PARAMETER ', i, ' READ BUT NOT USED'
 !                end do
 !            end if !(FROZENSOILINFILFLAG == 1) then
-!            write(58, "('Land class dependent hydrologic parameters:')")
+!            write(ECHO_TXT_IUN, "('Land class dependent hydrologic parameters:')")
 !            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZSNLROW'", NTYPE
-!            write(58, NMTESTFORMAT) (hp%ZSNLROW(1, m), m = 1, NTYPE)
+!            write(ECHO_TXT_IUN, NMTESTFORMAT) (hp%ZSNLROW(1, m), m = 1, NTYPE)
 !            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZPLSROW'", NTYPE
-!            write(58, NMTESTFORMAT) (hp%ZPLSROW(1, m), m = 1, NTYPE)
+!            write(ECHO_TXT_IUN, NMTESTFORMAT) (hp%ZPLSROW(1, m), m = 1, NTYPE)
 !            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZPLGROW'", NTYPE
-!            write(58, NMTESTFORMAT) (hp%ZPLGROW(1, m), m = 1, NTYPE)
+!            write(ECHO_TXT_IUN, NMTESTFORMAT) (hp%ZPLGROW(1, m), m = 1, NTYPE)
 !            if (DEPPAR >= 4) then
 !                write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('FRZCROW'", NTYPE
-!                write(58, NMTESTFORMAT) (hp%FRZCROW(1, m), m = 1, NTYPE)
+!                write(ECHO_TXT_IUN, NMTESTFORMAT) (hp%FRZCROW(1, m), m = 1, NTYPE)
 !            end if
-!            write(58, *)
-!            write(58, "('MESH_parameters_CLASS.ini')")
-!            write(58, *)
-!            write(58, '(2x, 6a4)') TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6
-!            write(58, '(2x, 6a4)') NAME1, NAME2, NAME3, NAME4, NAME5, NAME6
-!            write(58, '(2x, 6a4)') PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
+!            write(ECHO_TXT_IUN, *)
+!            write(ECHO_TXT_IUN, "('MESH_parameters_CLASS.ini')")
+!            write(ECHO_TXT_IUN, *)
+!            write(ECHO_TXT_IUN, '(2x, 6a4)') TITLE1, TITLE2, TITLE3, TITLE4, TITLE5, TITLE6
+!            write(ECHO_TXT_IUN, '(2x, 6a4)') NAME1, NAME2, NAME3, NAME4, NAME5, NAME6
+!            write(ECHO_TXT_IUN, '(2x, 6a4)') PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
 !            i = 1
-!            write(58, '(5f10.2, f7.1, 3i5)') &
+!            write(ECHO_TXT_IUN, '(5f10.2, f7.1, 3i5)') &
 !                DEGLAT, DEGLON, cp%ZRFMGRD(i), cp%ZRFHGRD(i), cp%ZBLDGRD(i), cp%GCGRD(i), shd%wc%ILG, NA, NTYPE
 !            do m = 1, NTYPE
-!                write(58, '(9f8.3)') (cp%FCANROW(i, m, j), j = 1, ICAN + 1), (cp%PAMXROW(i, m, j), j = 1, ICAN)
-!                write(58, '(9f8.3)') (cp%LNZ0ROW(i, m, j), j = 1, ICAN + 1), (cp%PAMNROW(i, m, j), j = 1, ICAN)
-!                write(58, '(9f8.3)') (cp%ALVCROW(i, m, j), j = 1, ICAN + 1), (cp%CMASROW(i, m, j), j = 1, ICAN)
-!                write(58, '(9f8.3)') (cp%ALICROW(i, m, j), j = 1, ICAN + 1), (cp%ROOTROW(i, m, j), j = 1, ICAN)
-!                write(58, '(4f8.3, 8x, 4f8.3)') (cp%RSMNROW(i, m, j), j = 1, ICAN), (cp%QA50ROW(i, m, j), j = 1, ICAN)
-!                write(58, '(4f8.3, 8x, 4f8.3)') (cp%VPDAROW(i, m, j), j = 1, ICAN), (cp%VPDBROW(i, m, j), j = 1, ICAN)
-!                write(58, '(4f8.3, 8x, 4f8.3)') (cp%PSGAROW(i, m, j), j = 1, ICAN), (cp%PSGBROW(i, m, j), j = 1, ICAN)
-!                write(58, '(3f8.3, f8.4)') cp%DRNROW(i, m), cp%SDEPROW(i, m), cp%FAREROW(i, m), cp%DDROW(i, m)
-!                write(58, '(4e8.1, i8)') cp%XSLPROW(i, m), cp%XDROW(i, m), cp%MANNROW(i, m), cp%KSROW(i, m), cp%MIDROW(i, m)
-!                write(58, '(6f10.1)') (cp%SANDROW(i, m, j), j = 1, NSL)
-!                write(58, '(6f10.1)') (cp%CLAYROW(i, m, j), j = 1, NSL)
-!                write(58, '(6f10.1)') (cp%ORGMROW(i, m, j), j = 1, NSL)
-!                write(58, '(9f10.2)') (cp%TBARROW(i, m, j), j = 1, NSL), cp%TCANROW(i, m), cp%TSNOROW(i, m), cp%TPNDROW(i, m)
-!                write(58, '(10f10.3)') &
+!                write(ECHO_TXT_IUN, '(9f8.3)') (cp%FCANROW(i, m, j), j = 1, ICAN + 1), (cp%PAMXROW(i, m, j), j = 1, ICAN)
+!                write(ECHO_TXT_IUN, '(9f8.3)') (cp%LNZ0ROW(i, m, j), j = 1, ICAN + 1), (cp%PAMNROW(i, m, j), j = 1, ICAN)
+!                write(ECHO_TXT_IUN, '(9f8.3)') (cp%ALVCROW(i, m, j), j = 1, ICAN + 1), (cp%CMASROW(i, m, j), j = 1, ICAN)
+!                write(ECHO_TXT_IUN, '(9f8.3)') (cp%ALICROW(i, m, j), j = 1, ICAN + 1), (cp%ROOTROW(i, m, j), j = 1, ICAN)
+!                write(ECHO_TXT_IUN, '(4f8.3, 8x, 4f8.3)') (cp%RSMNROW(i, m, j), j = 1, ICAN), (cp%QA50ROW(i, m, j), j = 1, ICAN)
+!                write(ECHO_TXT_IUN, '(4f8.3, 8x, 4f8.3)') (cp%VPDAROW(i, m, j), j = 1, ICAN), (cp%VPDBROW(i, m, j), j = 1, ICAN)
+!                write(ECHO_TXT_IUN, '(4f8.3, 8x, 4f8.3)') (cp%PSGAROW(i, m, j), j = 1, ICAN), (cp%PSGBROW(i, m, j), j = 1, ICAN)
+!                write(ECHO_TXT_IUN, '(3f8.3, f8.4)') cp%DRNROW(i, m), cp%SDEPROW(i, m), cp%FAREROW(i, m), cp%DDROW(i, m)
+!                write(ECHO_TXT_IUN, '(4e8.1, i8)') cp%XSLPROW(i, m), cp%XDROW(i, m), cp%MANNROW(i, m), cp%KSROW(i, m), cp%MIDROW(i, m)
+!                write(ECHO_TXT_IUN, '(6f10.1)') (cp%SANDROW(i, m, j), j = 1, NSL)
+!                write(ECHO_TXT_IUN, '(6f10.1)') (cp%CLAYROW(i, m, j), j = 1, NSL)
+!                write(ECHO_TXT_IUN, '(6f10.1)') (cp%ORGMROW(i, m, j), j = 1, NSL)
+!                write(ECHO_TXT_IUN, '(9f10.2)') (cp%TBARROW(i, m, j), j = 1, NSL), cp%TCANROW(i, m), cp%TSNOROW(i, m), cp%TPNDROW(i, m)
+!                write(ECHO_TXT_IUN, '(10f10.3)') &
 !                    (cp%THLQROW(i, m, j), j = 1, NSL), (cp%THICROW(i, m, j), j = 1, NSL), cp%ZPNDROW(i, m)
-!                write(58, '(2f10.4, f10.2, f10.3, f10.4, f10.3, f10.3)') &
+!                write(ECHO_TXT_IUN, '(2f10.4, f10.2, f10.3, f10.4, f10.3, f10.3)') &
 !                    cp%RCANROW(i, m), cp%SCANROW(i, m), cp%SNOROW(i, m), cp%ALBSROW(i, m), cp%RHOSROW(i, m), cp%GROROW(i, m)
-!                write(58, *)
+!                write(ECHO_TXT_IUN, *)
 !            end do !m = 1, NTYPE
         end if !(MODELINFOOUTFLAG > 0) then
     end if !(ipid == 0) then
@@ -1429,50 +1429,50 @@ program RUNMESH
                 ignd = 3
             end if
             write(cfmt, '(i3)') ignd
-            write(58, *)
-            write(58, '(a)') 'End of run prognostic states'
-            write(58, '(3x, (a), i4)') 'Number of GRUs: ', NTYPE
+            write(ECHO_TXT_IUN, *)
+            write(ECHO_TXT_IUN, '(a)') 'End of run prognostic states'
+            write(ECHO_TXT_IUN, '(3x, (a), i4)') 'Number of GRUs: ', NTYPE
             do i = 1, 3
-                write(58, *)
+                write(ECHO_TXT_IUN, *)
                 select case (i)
-                    case (1); write(58, '(a)') 'Average values'
-                    case (2); write(58, '(a)') 'Minimum values'
-                    case (3); write(58, '(a)') 'Maximum values'
+                    case (1); write(ECHO_TXT_IUN, '(a)') 'Average values'
+                    case (2); write(ECHO_TXT_IUN, '(a)') 'Minimum values'
+                    case (3); write(ECHO_TXT_IUN, '(a)') 'Maximum values'
                 end select
                 do m = 1, NTYPE
-                    write(58, "(3x, 'GRU ', i3, ':')") m
+                    write(ECHO_TXT_IUN, "(3x, 'GRU ', i3, ':')") m
                     cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), 3(f10.3), " // &
                             "2x, '!> TBAR(1:" // trim(adjustl(cfmt)) // ")/TCAN/TSNO/TPND')"
-                    write(58, cfmtt) ((tbar(i, m, j) - 273.16), j = 1, ignd), &
+                    write(ECHO_TXT_IUN, cfmtt) ((tbar(i, m, j) - 273.16), j = 1, ignd), &
                         (tcan(i, m) - 273.16), (tsno(i, m) - 273.16), (tpnd(i, m) - 273.16)
                     cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), " // trim(adjustl(cfmt)) // "(f10.3), f10.3, " // &
                             "2x, '!> THLQ(1:" // trim(adjustl(cfmt)) // ")/THIC(1:" // trim(adjustl(cfmt)) // ")/ZPND')"
-                    write(58, cfmtt) (thlq(i, m, j), j = 1, ignd), (thic(i, m, j), j = 1, ignd), zpnd(i, m)
-                    write(58, "(6(f10.3), 2x, '!> RCAN/SNCAN/SNO/ALBS/RHOS/GRO')") &
+                    write(ECHO_TXT_IUN, cfmtt) (thlq(i, m, j), j = 1, ignd), (thic(i, m, j), j = 1, ignd), zpnd(i, m)
+                    write(ECHO_TXT_IUN, "(6(f10.3), 2x, '!> RCAN/SNCAN/SNO/ALBS/RHOS/GRO')") &
                         rcan(i, m), sncan(i, m), sno(i, m), albs(i, m), rhos(i, m), gro(i, m)
                 end do
             end do
 
             !> Basin vertical water balance totals.
-            write(58, *)
-            write(58, '(a)') 'End of run totals'
-            write(58, *)
-            write(58, '(a, f11.3)') '  Total Precipitation         (mm) = ', TOTAL_PRE
-            write(58, '(a, f11.3)') '  Total Evaporation           (mm) = ', TOTAL_EVAP
-            write(58, '(a, f11.3)') '  Total Runoff                (mm) = ', TOTAL_ROF
-            write(58, '(a, 3f11.3)') '  Storage(Change/Init/Final)  (mm) = ', (STG_FIN - STG_INI), STG_INI, STG_FIN
-            write(58, '(a, f11.3)') '  Total Overland flow         (mm) = ', TOTAL_ROFO
-            write(58, '(a, f11.3)') '  Total Interflow             (mm) = ', TOTAL_ROFS
-            write(58, '(a, f11.3)') '  Total Baseflow              (mm) = ', TOTAL_ROFB
-            write(58, *)
+            write(ECHO_TXT_IUN, *)
+            write(ECHO_TXT_IUN, '(a)') 'End of run totals'
+            write(ECHO_TXT_IUN, *)
+            write(ECHO_TXT_IUN, '(a, f11.3)') '  Total Precipitation         (mm) = ', TOTAL_PRE
+            write(ECHO_TXT_IUN, '(a, f11.3)') '  Total Evaporation           (mm) = ', TOTAL_EVAP
+            write(ECHO_TXT_IUN, '(a, f11.3)') '  Total Runoff                (mm) = ', TOTAL_ROF
+            write(ECHO_TXT_IUN, '(a, 3f11.3)') '  Storage(Change/Init/Final)  (mm) = ', (STG_FIN - STG_INI), STG_INI, STG_FIN
+            write(ECHO_TXT_IUN, '(a, f11.3)') '  Total Overland flow         (mm) = ', TOTAL_ROFO
+            write(ECHO_TXT_IUN, '(a, f11.3)') '  Total Interflow             (mm) = ', TOTAL_ROFS
+            write(ECHO_TXT_IUN, '(a, f11.3)') '  Total Baseflow              (mm) = ', TOTAL_ROFB
+            write(ECHO_TXT_IUN, *)
 
             !> Normal end of run message.
-            write(58, *)
-            write(58, '(a)') 'Program has terminated normally.'
-            write(58, *)
+            write(ECHO_TXT_IUN, *)
+            write(ECHO_TXT_IUN, '(a)') 'Program has terminated normally.'
+            write(ECHO_TXT_IUN, *)
 
             call cpu_time(endprog)
-            write(58, "('Time = ', e14.6, ' seconds.')") (endprog - startprog)
+            write(ECHO_TXT_IUN, "('Time = ', e14.6, ' seconds.')") (endprog - startprog)
 
         end if !(MODELINFOOUTFLAG > 0) then
 

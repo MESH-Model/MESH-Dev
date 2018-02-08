@@ -66,8 +66,7 @@ module baseflow_module
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
 
-        integer NA, NML, NTYPE, NRVR, n, i, ierr
-        integer :: iun = 58
+        integer NA, NML, NTYPE, NRVR, iun, n, i, ierr
         character(len = 200) BASEFLOWFLAG
 
         !> Return if BASEFLOWFLAG is not active
@@ -80,6 +79,7 @@ module baseflow_module
 
         !> Summarize current BASEFLOWFLAG configuration to file.
         if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
+            iun = ECHO_TXT_IUN
             write(BASEFLOWFLAG, '(i8)') bflm%dts/60
             BASEFLOWFLAG = 'hf=' // adjustl(BASEFLOWFLAG)
             select case (bflm%BUCKETFLAG)

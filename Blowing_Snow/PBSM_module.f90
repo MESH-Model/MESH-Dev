@@ -81,6 +81,7 @@ module PBSM_module
         use mpi_module
         use model_files_variables
         use sa_mesh_variables
+        use sa_mesh_utilities
         use model_dates
         use climate_forcing
 
@@ -131,16 +132,16 @@ module PBSM_module
         !> Write summary to output file.
 !todo: proper file unit.
         if (ipid == 0) then
-            write(58, 1000) 'PBSM (blowing snow) component ACTIVE.'
-            write(58, 1110) 'PBSMFLAG', 'on'
-            write(58, 1010) 'GRUs ->', (m, m = 1, shd%lc%NTYPE)
-            write(58, 1010) repeat('-', 17), (repeat('-', 16), m = 1, shd%lc%NTYPE)
-            write(58, 1110) 'fetch', (pbsm%pm_gru%fetch(m), m = 1, shd%lc%NTYPE)
-            write(58, 1110) 'Ht', (pbsm%pm_gru%Ht(m), m = 1, shd%lc%NTYPE)
-            write(58, 1110) 'N_S', (pbsm%pm_gru%N_S(m), m = 1, shd%lc%NTYPE)
-            write(58, 1110) 'A_S', (pbsm%pm_gru%A_S(m), m = 1, shd%lc%NTYPE)
-            write(58, 1110) 'Distrib', (pbsm%pm_gru%Distrib(m), m = 1, shd%lc%NTYPE)
-            write(58, 1000)
+            write(ECHO_TXT_IUN, 1000) 'PBSM (blowing snow) component ACTIVE.'
+            write(ECHO_TXT_IUN, 1110) 'PBSMFLAG', 'on'
+            write(ECHO_TXT_IUN, 1010) 'GRUs ->', (m, m = 1, shd%lc%NTYPE)
+            write(ECHO_TXT_IUN, 1010) repeat('-', 17), (repeat('-', 16), m = 1, shd%lc%NTYPE)
+            write(ECHO_TXT_IUN, 1110) 'fetch', (pbsm%pm_gru%fetch(m), m = 1, shd%lc%NTYPE)
+            write(ECHO_TXT_IUN, 1110) 'Ht', (pbsm%pm_gru%Ht(m), m = 1, shd%lc%NTYPE)
+            write(ECHO_TXT_IUN, 1110) 'N_S', (pbsm%pm_gru%N_S(m), m = 1, shd%lc%NTYPE)
+            write(ECHO_TXT_IUN, 1110) 'A_S', (pbsm%pm_gru%A_S(m), m = 1, shd%lc%NTYPE)
+            write(ECHO_TXT_IUN, 1110) 'Distrib', (pbsm%pm_gru%Distrib(m), m = 1, shd%lc%NTYPE)
+            write(ECHO_TXT_IUN, 1000)
         end if
 
 1000    format('!> ', (a))

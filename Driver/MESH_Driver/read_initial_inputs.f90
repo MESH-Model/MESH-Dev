@@ -32,7 +32,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> Open the status file after reading run options, in case MODELINFOOUTFLAG
     !> has been set to zero.
     if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
-        open(58, file = './' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
+        open(ECHO_TXT_IUN, file = './' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
     end if
 
     !>
@@ -308,20 +308,20 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     if (ipid == 0 .and. MODELINFOOUTFLAG > 0 .and. DIAGNOSEMODE) then
 
         !> Land tiles.
-        write(58, 1210) 'land', 'NML', shd%lc%NML
+        write(ECHO_TXT_IUN, 1210) 'land', 'NML', shd%lc%NML
         if (shd%lc%NML > 0) then
-            write(58, 1910) 'Index', 'Grid', 'GRU'
+            write(ECHO_TXT_IUN, 1910) 'Index', 'Grid', 'GRU'
             do k = 1, shd%lc%NML
-                write(58, 1910) k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
+                write(ECHO_TXT_IUN, 1910) k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
             end do
         end if
 
         !> Water tiles.
-        write(58, 1210) 'water', 'NMW', shd%wc%NML
+        write(ECHO_TXT_IUN, 1210) 'water', 'NMW', shd%wc%NML
         if (shd%wc%NML > 0) then
-            write(58, 1910) 'Index', 'Grid', 'GRU'
+            write(ECHO_TXT_IUN, 1910) 'Index', 'Grid', 'GRU'
             do k = 1, shd%wc%NML
-                write(58, 1910) k, shd%wc%ILMOS(k), shd%wc%JLMOS(k)
+                write(ECHO_TXT_IUN, 1910) k, shd%wc%ILMOS(k), shd%wc%JLMOS(k)
             end do
         end if
 
