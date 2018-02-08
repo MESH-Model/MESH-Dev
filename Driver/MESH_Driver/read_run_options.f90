@@ -4,6 +4,7 @@
         use strings
         use model_files_variables
         use sa_mesh_variables
+        use sa_mesh_utilities
         use model_dates
         use climate_forcing
 
@@ -269,7 +270,7 @@
                 'MESH_input_run_options.ini could not be opened.', &
                 'Ensure that the file exists and restart the program.'
             stop
-        else if (ro%VERBOSEMODE > 0) then
+        else if (VERBOSEMODE) then
             write(6, '(a)', advance = 'no') 'READING: MESH_input_run_options.ini '
         end if
 
@@ -354,9 +355,11 @@
 
                     !> CONSOLE OUTPUT OPTIONS
                     case ('VERBOSEMODE')
-                        call value(out_args(2), ro%VERBOSEMODE, ierr)
+                        call value(out_args(2), IROVAL, ierr)
+                        VERBOSEMODE = (IROVAL == 1)
                     case ('DIAGNOSEMODE')
-                        call value(out_args(2), ro%DIAGNOSEMODE, ierr)
+                        call value(out_args(2), IROVAL, ierr)
+                        DIAGNOSEMODE = (IROVAL == 1)
 
                     !> MPI OPTIONS
                     case ('MPIUSEBARRIER')
@@ -834,7 +837,7 @@
 
         !> Close the file.
         close(iun)
-        if (ro%VERBOSEMODE > 0) print *, 'READ: SUCCESSFUL, FILE: CLOSED'
+        if (VERBOSEMODE) print *, 'READ: SUCCESSFUL, FILE: CLOSED'
 
         return
 

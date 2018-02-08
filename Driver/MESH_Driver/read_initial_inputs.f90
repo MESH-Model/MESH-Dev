@@ -2,6 +2,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     use mpi_module
     use sa_mesh_variables
+    use sa_mesh_utilities
     use model_files_variables
     use FLAGS
     use climate_forcing
@@ -43,11 +44,11 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         open(fls%fl(mfk%f20)%iun, file=adjustl(trim(fls%fl(mfk%f20)%fn)), status='old', iostat=ierr)
             if (ierr == 0) then
                 close(fls%fl(mfk%f20)%iun)
-                if (ro%VERBOSEMODE > 0) then
+                if (VERBOSEMODE) then
                     print *, 'Reading Drainage Database from MESH_drainage_database.r2c'
                 end if
                 call READ_SHED_EF(fls, mfk%f20, shd)
-                if (ro%VERBOSEMODE > 0) then
+                if (VERBOSEMODE) then
                     print *, ' READ: SUCCESSFUL, FILE: CLOSED'
                 end if
             else
@@ -304,7 +305,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     end do
 
     !> Write information about tile configuration to file.
-    if (ipid == 0 .and. MODELINFOOUTFLAG > 0 .and. ro%DIAGNOSEMODE > 0) then
+    if (ipid == 0 .and. MODELINFOOUTFLAG > 0 .and. DIAGNOSEMODE) then
 
         !> Land tiles.
         write(58, 1210) 'land', 'NML', shd%lc%NML
@@ -335,7 +336,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     !> Calculate the operational indices in the current node.
     call mpi_split_nml(inp, izero, ipid, NML, shd%lc%ILMOS, il1, il2, iln)
-    if (ro%DIAGNOSEMODE > 0) print 1062, ipid, NML, iln, il1, il2
+    if (DIAGNOSEMODE) print 1062, ipid, NML, iln, il1, il2
 
 1062    format(/1x, 'Configuration and distribution of the domain', &
                /3x, 'Current process: ', i10, &
@@ -350,7 +351,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     !> Open and read in soil depths from file.
     call READ_SOIL_LEVELS(shd, fls)
-    if (ro%VERBOSEMODE > 0) then
+    if (VERBOSEMODE) then
         print *, 'IGND = ', shd%lc%IGND
     end if
 

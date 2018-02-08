@@ -56,6 +56,7 @@ module baseflow_module
         use mpi_module
         use model_files_variables
         use sa_mesh_variables
+        use sa_mesh_utilities
         use model_dates
         use climate_forcing
 
@@ -92,7 +93,7 @@ module baseflow_module
                 case (1)
                     BASEFLOWFLAG = 'BASEFLOWFLAG  luo_2012 ' // adjustl(BASEFLOWFLAG)
                     write(iun, 1130) BASEFLOWFLAG
-                    if (ro%DIAGNOSEMODE > 0) then
+                    if (DIAGNOSEMODE) then
                         write(iun, 1110) 'WRCHRG_INI', bflm%vs%WrchrgIni
                         write(iun, 1110) 'QB_INI', bflm%vs%QbIni
                         write(iun, 1110) 'DGWSH', (bflm%pm_gru%dgw(i), i = 1, NTYPE)
@@ -101,7 +102,7 @@ module baseflow_module
                 case (2)
                     BASEFLOWFLAG = 'BASEFLOWFLAG  wf_lzs ' // adjustl(BASEFLOWFLAG)
                     write(iun, 1130) BASEFLOWFLAG
-                    if (ro%DIAGNOSEMODE > 0) then
+                    if (DIAGNOSEMODE) then
                         if (any(bflm%pm_gru%pwr /= 0.0)) then
                             write(iun, 1110) 'pwr_gru', (bflm%pm_gru%pwr(i), i = 1, NTYPE)
                         else if (any(bflm%pm_iak%pwr /= 0.0)) then
@@ -124,7 +125,7 @@ module baseflow_module
         end if
 
         !> Summarize current BASEFLOWFLAG configuration to screen.
-        if (ro%VERBOSEMODE > 0) then
+        if (VERBOSEMODE) then
             print 1100
             print *
         end if

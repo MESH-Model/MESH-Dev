@@ -2,6 +2,7 @@
 
       use model_files_variables
       use sa_mesh_variables
+      use sa_mesh_utilities
 
 !todo: remove this
 	  use FLAGS
@@ -46,7 +47,7 @@
 		stop
       end if
 
-      if (ro%VERBOSEMODE > 0) then
+      if (VERBOSEMODE) then
         print *, 'The soil.ini file was found'
         print *, 'CLASSBHYD.f will be used'
       end if

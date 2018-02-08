@@ -32,13 +32,12 @@ module climate_forcing
     !>
     function climate_module_init(fls, shd, ii1, ii2, cm) result(ENDDATA)
 
-
         !> Required for 'fls', 'mfk' variables.
         use model_files_variables
 
-        !> Required for 'shd', 'ro' variables.
+        !> Required for 'shd' variable.
         use shd_variables
-        use control_variables
+        use sa_mesh_utilities
 
         !> Required for 'RESUMEFLAG'.
         use FLAGS
@@ -237,7 +236,7 @@ module climate_forcing
             !nrs = JDAY_IND_MET*ISTEP_START*24 + nhy*ISTEP_START + nmy/30  !aLIU
             JDAY_IND_MET = Jday_IND2 - Jday_IND3
             nrs = JDAY_IND_MET*ISTEP_START + nhy*ISTEP_START/24 + nmy/30
-!-            if (ro%VERBOSEMODE > 0) print *, 'NRS=', nrs
+!-            if (VERBOSEMODE) print *, 'NRS=', nrs
             ! FIX BUG IN JULIAN DAY CALCULATION FOR NRS ---ALIU FEB2009
             if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%mins == 0 .and. ic%start%hour == 0) then
                 nrs = 0
@@ -250,7 +249,7 @@ module climate_forcing
 
             !> the following code is used to skip entries at the start
             !> of the bin file
-            if (nrs > 0 .and. ro%VERBOSEMODE > 0) then
+            if (nrs > 0 .and. VERBOSEMODE) then
                 print "(3x, 'Skipping ', i8, ' registers in ', (a), '.')", nrs, trim(adjustl(cm%dat(vid)%fpath))
             end if
 
@@ -356,9 +355,8 @@ module climate_forcing
         !> Required for 'fls' variable.
         use model_files_variables
 
-        !> Required for 'shd', 'ro' variables.
+        !> Required for 'shd' variable.
         use shd_variables
-        use control_variables
 
         !> Required for 'ic' variable.
         use model_dates
@@ -541,9 +539,8 @@ module climate_forcing
         !> Required for 'fls', 'mfk' variables.
         use model_files_variables
 
-        !> Required for 'shd', 'ro' variables.
+        !> Required for 'shd' variable.
         use shd_variables
-        use control_variables
 
         !> Required for 'SAVERESUMEFLAG'.
         use FLAGS

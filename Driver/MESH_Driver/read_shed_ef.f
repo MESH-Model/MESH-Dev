@@ -56,6 +56,7 @@ C***********************************************************************!
 !***********************************************************************
 
       use sa_mesh_variables
+      use sa_mesh_utilities
       use model_files_variables
       use strings
 
@@ -219,7 +220,7 @@ C// Added by Dave
      &           (len_trim(line) == 0)))
         read(fls%fl(indx)%iun, fmt='((A))', iostat=ierr) line ! read a line
         if (ierr == -1) then
-        if (ro%VERBOSEMODE > 0) then
+        if (VERBOSEMODE) then
           write(6,'((A))') 'ERROR: Premature EndOfFile encountered'
         end if
           stop
@@ -241,7 +242,7 @@ c      pause
           else
             ierr = ParseShedParam(header, keyword, keyLen, subString)
             if (ierr < 0) then
-            if (ro%VERBOSEMODE > 0) then
+            if (VERBOSEMODE) then
               write(*, '(2(A))') 'ERROR parsing ',
      *          adjustl(trim(fls%fl(indx)%fn))
               write(*, '(2(A))') '   in line: ', line
@@ -731,14 +732,14 @@ c endif
         end do
         if (sumclass /= 1.0) then
 !          igridflg = 1
-          if (ro%DIAGNOSEMODE > 0) then
+          if (DIAGNOSEMODE) then
             print 9023, n, shd%yyy(n), shd%xxx(n), sumclass
           end if
           do ii = 1, shd%lc%NTYPE + 1
             if (sumclass > 0.0) then
               shd%lc%ACLASS(n, ii) = shd%lc%ACLASS(n, ii)/sumclass
             else
-              if (ro%DIAGNOSEMODE > 0) then
+              if (DIAGNOSEMODE) then
                 print 9024, n, shd%yyy(n), shd%xxx(n)
               end if
             end if
@@ -784,7 +785,7 @@ c      endif
 c
 
       if (shd%NRVR /= nrvr1 .and. nrvr1 /= 0) then
-        if (ro%VERBOSEMODE > 0) print 803, shd%NRVR, nrvr1
+        if (VERBOSEMODE) print 803, shd%NRVR, nrvr1
         shd%NRVR = nrvr1
       end if
 

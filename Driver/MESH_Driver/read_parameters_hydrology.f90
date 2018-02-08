@@ -15,6 +15,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
     !> For the 'ShedGridParams' type and SA_MESH parameters.
     use sa_mesh_variables
+    use sa_mesh_utilities
 
     !> Required for 'FROZENSOILINFILFLAG'.
     use FLAGS
@@ -58,7 +59,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     NA = shd%NA
     NTYPE = shd%lc%NTYPE
 
-    if (ro%VERBOSEMODE > 0) write(6, 9997, advance = 'no') trim(adjustl(fls%fl(mfk%f23)%fn))
+    if (VERBOSEMODE) write(6, 9997, advance = 'no') trim(adjustl(fls%fl(mfk%f23)%fn))
 
     iun = fls%fl(mfk%f23)%iun
     open(iun, file = trim(adjustl(fls%fl(mfk%f23)%fn)), status = 'old', action = 'read', iostat = ierr)
@@ -115,7 +116,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !>
 
     !> Warn parameter warnings will stop the model with DIAGNOSEMODE active.
-    if (FILE_VER == '2.0' .and. ro%DIAGNOSEMODE > 0 .and. ipid == 0) print 9899
+    if (FILE_VER == '2.0' .and. DIAGNOSEMODE .and. ipid == 0) print 9899
 
     !> Option flags.
     call readline(iun, in_line, ierr)
@@ -520,7 +521,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                     !> Print warning message for unused variables.
                     ikeystate = ikeystate + ikey
-                    if (ikey > 0 .and. ro%DIAGNOSEMODE > 0 .and. ipid == 0) print 9898, trim(adjustl(out_args(1)))
+                    if (ikey > 0 .and. DIAGNOSEMODE .and. ipid == 0) print 9898, trim(adjustl(out_args(1)))
 
                 end do
 
@@ -948,7 +949,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                     !> Print warning message for unused variables.
                     ikeystate = ikeystate + ikey
-                    if (ikey > 0 .and. ro%DIAGNOSEMODE > 0 .and. ipid == 0) print 9898, trim(adjustl(out_args(1)))
+                    if (ikey > 0 .and. DIAGNOSEMODE .and. ipid == 0) print 9898, trim(adjustl(out_args(1)))
 
                 end do
 
@@ -1088,7 +1089,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
     !> Close the file.
     close(iun)
-    if (ro%VERBOSEMODE > 0) print 9998
+    if (VERBOSEMODE) print 9998
 
 9997    format(/1x, 'READING: ', (a), ' ')
 9998    format('READ: SUCCESSFUL, FILE: CLOSED')

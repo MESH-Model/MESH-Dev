@@ -13,6 +13,7 @@ subroutine read_streamflow_txt(shd, iun, fname)
 
     use mpi_module
     use sa_mesh_variables
+    use sa_mesh_utilities
 
     implicit none
 
@@ -35,7 +36,7 @@ subroutine read_streamflow_txt(shd, iun, fname)
     !*  -   n(n): Rank or index of the grid-cell containing the location.
     !*  -   DA(n): Drainage area.
 
-    if (ro%VERBOSEMODE > 0) print 1000, trim(fname)
+    if (VERBOSEMODE) print 1000, trim(fname)
     open(iun, file = fname, status = 'old', action = 'read', err = 997)
     read(iun, *, err = 999)
     read(iun, *, err = 999) &

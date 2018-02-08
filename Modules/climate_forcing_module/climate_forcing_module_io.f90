@@ -23,9 +23,9 @@ module climate_forcing_io
     !>
     function open_data(shd, cm, vid) result(ENDDATA)
 
-        !> For: 'ShedGridParams' type, 'ro' run options for VERBOSEMODE.
+        !> For: 'ShedGridParams' type and VERBOSEMODE.
         use shd_variables
-        use control_variables
+        use sa_mesh_utilities
 
         !> Input variables.
         type(ShedGridParams) :: shd
@@ -126,7 +126,7 @@ module climate_forcing_io
 
             !> Unknown file format.
             case default
-                if (ro%VERBOSEMODE > 0) print 198, cm%dat(vid)%id_var, cm%dat(vid)%ffmt
+                if (VERBOSEMODE) print 198, cm%dat(vid)%id_var, cm%dat(vid)%ffmt
                 stop
 
         end select
@@ -150,7 +150,7 @@ module climate_forcing_io
         if (ierr /= 0) goto 997
 
         !> Flag that the file has been opened.
-        if (ro%VERBOSEMODE > 0) print 199, trim(adjustl(cm%dat(vid)%fpath))
+        if (VERBOSEMODE) print 199, trim(adjustl(cm%dat(vid)%fpath))
         cm%dat(vid)%fopen = .true.
 
         return
@@ -168,15 +168,15 @@ module climate_forcing_io
 198     format(//1x, 'The input forcing file format is not supported', &
                /2x, (a), i4/)
 
-999     if (ro%VERBOSEMODE > 0) print 699, trim(adjustl(cm%dat(vid)%fpath))
+999     if (VERBOSEMODE) print 699, trim(adjustl(cm%dat(vid)%fpath))
         ENDDATA = .true.
         stop
 
-998     if (ro%VERBOSEMODE > 0) print 698, trim(adjustl(cm%dat(vid)%fpath))
+998     if (VERBOSEMODE) print 698, trim(adjustl(cm%dat(vid)%fpath))
         ENDDATA = .true.
         stop
 
-997     if (ro%VERBOSEMODE > 0) print 697, trim(adjustl(cm%dat(vid)%id_var))
+997     if (VERBOSEMODE) print 697, trim(adjustl(cm%dat(vid)%id_var))
         stop
 
     end function !open_data
@@ -195,9 +195,9 @@ module climate_forcing_io
     !>
     function load_data(shd, cm, vid, skip_data) result(ENDDATA)
 
-        !> For: 'ShedGridParams' type, 'ro' run options for VERBOSEMODE.
+        !> For: 'ShedGridParams' type and VERBOSEMODE.
         use shd_variables
-        use control_variables
+        use sa_mesh_utilities
 
         !> Input variables.
         type(ShedGridParams) :: shd
@@ -280,7 +280,7 @@ module climate_forcing_io
 
                 !> Unknown file format.
                 case default
-                    if (ro%VERBOSEMODE > 0) print 199, cm%dat(vid)%id_var, cm%dat(vid)%ffmt
+                    if (VERBOSEMODE) print 199, cm%dat(vid)%id_var, cm%dat(vid)%ffmt
                     stop
 
             end select
@@ -309,9 +309,8 @@ module climate_forcing_io
     !>
     function update_data(shd, cm, vid, skip_data) result(ENDDATA)
 
-        !> For: 'ShedGridParams' type, 'ro' run options for VERBOSEMODE.
+        !> For: 'ShedGridParams' type.
         use shd_variables
-        use control_variables
 
         !> Input variables.
         type(ShedGridParams) :: shd

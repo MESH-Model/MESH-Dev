@@ -1,26 +1,12 @@
-!>
-!> Module for storing control variable types.
-!>
+!> Description:
+!>  Module for storing control variable types.
 module control_variables
 
     implicit none
 
-    !> *****************************************************************
-    !> Description: Variable type to store generic run options. These
-    !> run options are not tied to any one part, module, or process
-    !> module within the code.
-    !> *****************************************************************
+    !> Description:
+    !>  Global run options.
     type run_options
-
-        !* VERBOSEMODE: Flag to suppress certain model output from the console.
-        !*   VERBOSEMODE = 0: Disable most console output.
-        !*   VERBOSEMODE = 1: Enable regular output to the console (default).
-        integer :: VERBOSEMODE = 1
-
-        !* DIAGNOSEMODE: Flag to write additional diagnostic output to the console.
-        !*   DIAGNOSEMODE = 0: Disable diagnostic output (default).
-        !*   DIAGNOSEMODE = 1: Write additional diagnostic output to the console.
-        integer :: DIAGNOSEMODE = 0
 
         !> RUNFLAGS: Flags to enable or disable processes (default all: .true.).
         !*  RUNCLIM: Read meteorological forcing input.
@@ -38,6 +24,7 @@ module control_variables
 
     end type !run_options
 
+    !* ro: Instance of global run options.
     type(run_options), save :: ro
 
 end module

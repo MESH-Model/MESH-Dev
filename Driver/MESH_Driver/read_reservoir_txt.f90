@@ -13,6 +13,7 @@ subroutine read_reservoir_txt(shd, iun, fname, nb)
 
     use mpi_module
     use sa_mesh_variables
+    use sa_mesh_utilities
 
     implicit none
 
@@ -36,7 +37,7 @@ subroutine read_reservoir_txt(shd, iun, fname, nb)
     !*  -   cfn(n): Type of release curve function.
     !*  -   b(n, :): Release curve coefficients.
 
-    if (ro%VERBOSEMODE > 0) print 1000, trim(fname)
+    if (VERBOSEMODE) print 1000, trim(fname)
     open(iun, file = fname, status = 'old', action = 'read', err = 997)
     read(iun, *, err = 999) fms%rsvr%n, NR, fms%rsvr%rlsmeas%dts
     NR = fms%rsvr%n

@@ -15,6 +15,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
     use strings
     use mpi_module
     use sa_mesh_variables
+    use sa_mesh_utilities
     use ensim_io
 
     use RUNCLASS36_variables
@@ -36,18 +37,14 @@ subroutine read_parameters_r2c(shd, iun, fname)
     integer nkeyword, nattr, iattr, ilvl, i, ierr
     character(len = MAX_WORD_LENGTH) tfield, tlvl
     real, dimension(:), allocatable :: ffield
-    logical verbose
-
-    !> Local variables.
-    verbose = (ro%VERBOSEMODE > 0)
 
     !> Open the file and read the header.
-    call open_ensim_file(iun, fname, ierr, verbose)
+    call open_ensim_file(iun, fname, ierr, VERBOSEMODE)
     call parse_header_ensim(iun, fname, vkeyword, nkeyword, ierr)
     call validate_header_spatial( &
         fname, vkeyword, nkeyword, &
         shd%xCount, shd%xDelta, shd%xOrigin, shd%yCount, shd%yDelta, shd%yOrigin, &
-        verbose)
+        VERBOSEMODE)
 
     !> Read and parse attributes in the header.
     call parse_header_attribute_ensim(iun, fname, vkeyword, nkeyword, vattr, nattr, ierr)
@@ -71,7 +68,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
         end if
 
         !> Assign the data to a vector.
-        call r2c_to_rank(iun, fname, vattr, nattr, iattr, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, verbose)
+        call r2c_to_rank(iun, fname, vattr, nattr, iattr, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, VERBOSEMODE)
 
         !> Determine the variable.
         select case (adjustl(tfield))
@@ -132,7 +129,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         end do
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%sand(:, ilvl) = ffield
-                    else if (verbose) then
+                    else if (VERBOSEMODE) then
                         print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
                     end if
                 end if
@@ -144,7 +141,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         end do
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%clay(:, ilvl) = ffield
-                    else if (verbose) then
+                    else if (VERBOSEMODE) then
                         print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
                     end if
                 end if
@@ -156,7 +153,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         end do
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%orgm(:, ilvl) = ffield
-                    else if (verbose) then
+                    else if (VERBOSEMODE) then
                         print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
                     end if
                 end if
@@ -205,7 +202,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
 
             !> Print a warning if the variable name is not recognized.
             case default
-                if (verbose) print 1120, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
+                if (VERBOSEMODE) print 1120, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
 
         end select
     end do

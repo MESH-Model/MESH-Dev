@@ -16,6 +16,7 @@ subroutine read_parameters_csv(shd, iun, fname)
     use parse_utilities
     use mpi_module
     use sa_mesh_variables
+    use sa_mesh_utilities
 
     use baseflow_module
     use rte_module
@@ -38,7 +39,7 @@ subroutine read_parameters_csv(shd, iun, fname)
     integer nargs
 
     !> Open the file.
-    if (ro%VERBOSEMODE > 0) print 1010, trim(adjustl(fname))
+    if (VERBOSEMODE) print 1010, trim(adjustl(fname))
     open(iun, file = trim(adjustl(fname)), status = 'old', iostat = ierr)
     if (ierr /= 0) then
         if (ipid == 0) print 1020, trim(adjustl(fname))
@@ -73,73 +74,73 @@ subroutine read_parameters_csv(shd, iun, fname)
             !> BASEFLOWFLAG == 2 (lower zone storage).
             case ('pwr')
                 if (.not. bflm%BASEFLOWFLAG /= 2) then
-                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
+                    if (DIAGNOSEMODE .and. VERBOSEMODE) print 9160, trim(adjustl(args(1)))
                     cycle
                 else
-                    call assign_parameters(bflm%pm_iak%pwr, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
+                    call assign_parameters(bflm%pm_iak%pwr, shd%NRVR, in_line, args, nargs, ipid, iconvert, VERBOSEMODE)
                 end if
             case ('flz')
                 if (.not. bflm%BASEFLOWFLAG /= 2) then
-                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
+                    if (DIAGNOSEMODE .and. VERBOSEMODE) print 9160, trim(adjustl(args(1)))
                     cycle
                 else
-                    call assign_parameters(bflm%pm_iak%flz, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
+                    call assign_parameters(bflm%pm_iak%flz, shd%NRVR, in_line, args, nargs, ipid, iconvert, VERBOSEMODE)
                 end if
 
             !> RPN RTE (Watflood, 2007).
             case ('r2n')
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
+                    if (DIAGNOSEMODE .and. VERBOSEMODE) print 9160, trim(adjustl(args(1)))
                     cycle
                 else
-                    call assign_parameters(rtepm_iak%r2n, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
+                    call assign_parameters(rtepm_iak%r2n, shd%NRVR, in_line, args, nargs, ipid, iconvert, VERBOSEMODE)
                 end if
             case ('r1n')
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
+                    if (DIAGNOSEMODE .and. VERBOSEMODE) print 9160, trim(adjustl(args(1)))
                     cycle
                 else
-                    call assign_parameters(rtepm_iak%r1n, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
+                    call assign_parameters(rtepm_iak%r1n, shd%NRVR, in_line, args, nargs, ipid, iconvert, VERBOSEMODE)
                 end if
             case ('mndr')
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
+                    if (DIAGNOSEMODE .and. VERBOSEMODE) print 9160, trim(adjustl(args(1)))
                     cycle
                 else
-                    call assign_parameters(rtepm_iak%mndr, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
+                    call assign_parameters(rtepm_iak%mndr, shd%NRVR, in_line, args, nargs, ipid, iconvert, VERBOSEMODE)
                 end if
             case ('aa2')
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
+                    if (DIAGNOSEMODE .and. VERBOSEMODE) print 9160, trim(adjustl(args(1)))
                     cycle
                 else
-                    call assign_parameters(rtepm_iak%aa2, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
+                    call assign_parameters(rtepm_iak%aa2, shd%NRVR, in_line, args, nargs, ipid, iconvert, VERBOSEMODE)
                 end if
             case ('aa3')
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
+                    if (DIAGNOSEMODE .and. VERBOSEMODE) print 9160, trim(adjustl(args(1)))
                     cycle
                 else
-                    call assign_parameters(rtepm_iak%aa3, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
+                    call assign_parameters(rtepm_iak%aa3, shd%NRVR, in_line, args, nargs, ipid, iconvert, VERBOSEMODE)
                 end if
             case ('aa4')
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
+                    if (DIAGNOSEMODE .and. VERBOSEMODE) print 9160, trim(adjustl(args(1)))
                     cycle
                 else
-                    call assign_parameters(rtepm_iak%aa4, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
+                    call assign_parameters(rtepm_iak%aa4, shd%NRVR, in_line, args, nargs, ipid, iconvert, VERBOSEMODE)
                 end if
             case ('widep')
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) print 9160, trim(adjustl(args(1)))
+                    if (DIAGNOSEMODE .and. VERBOSEMODE) print 9160, trim(adjustl(args(1)))
                     cycle
                 else
-                    call assign_parameters(rtepm_iak%widep, shd%NRVR, in_line, args, nargs, ipid, iconvert, ro%VERBOSEMODE > 0)
+                    call assign_parameters(rtepm_iak%widep, shd%NRVR, in_line, args, nargs, ipid, iconvert, VERBOSEMODE)
                 end if
 
             !> Unrecognized.
             case default
-                if (ro%VERBOSEMODE > 0) print 9170, trim(adjustl(args(1)))
+                if (VERBOSEMODE) print 9170, trim(adjustl(args(1)))
         end select
 
     end do

@@ -52,6 +52,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
       use sa_mesh_variables
+      use sa_mesh_utilities
       use model_dates
       use model_files_variables
 
@@ -113,8 +114,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
         open(iun, file=adjustl(trim(fls%fl(indx)%fn)),
      *    status='unknown', action='write', iostat=ierr)
 !     print*,' un fn et fln(fn) ',un,fn,fln(fn)
-        if (ro%VERBOSEMODE > 0) then
-          if (ro%DIAGNOSEMODE > 0) then
+        if (VERBOSEMODE) then
+          if (DIAGNOSEMODE) then
             print 1121, iun, adjustl(trim(fls%fl(indx)%fn))
           end if
           if (ierr /= 0) then
@@ -288,7 +289,7 @@ c   endif
 
       if (frame_no == no_frames .and. class_no == no_classes) then
         close(iun)
-        if (ro%VERBOSEMODE > 0) then
+        if (VERBOSEMODE) then
           print 1291, iun, adjustl(trim(fls%fl(indx)%fn))
         end if
       end if

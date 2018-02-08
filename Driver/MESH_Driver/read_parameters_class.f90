@@ -8,6 +8,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
     !> For the 'ShedGridParams' type and SA_MESH parameters.
     use sa_mesh_variables
+    use sa_mesh_utilities
 
     !> Required for 'NRSOILAYEREADFLAG'.
     use FLAGS
@@ -47,7 +48,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
             'MESH_parameters_CLASS.ini could not be opened.', &
             'Ensure that the file exists and restart the program.'
         stop
-    else if (ro%VERBOSEMODE > 0) then
+    else if (VERBOSEMODE) then
         write(6, "(1x, 'READING: ', (a))", advance = 'no') trim(adjustl(fls%fl(mfk%f50)%fn))
     end if
 
@@ -122,7 +123,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
     !> Close the file.
     close(iun)
-    if (ro%VERBOSEMODE > 0) print *, 'READ: SUCCESSFUL, FILE: CLOSED'
+    if (VERBOSEMODE) print *, 'READ: SUCCESSFUL, FILE: CLOSED'
 
     !> Distribute soil variables to additional layers.
 !todo: Change this so that soil.ini can take more than 3 layers.

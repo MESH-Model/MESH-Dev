@@ -1,6 +1,7 @@
 module model_output
 
     use sa_mesh_variables
+    use sa_mesh_utilities
     use model_dates
     use model_files_variables
     use variablename_constants
@@ -307,7 +308,7 @@ module model_output
                         end if
 
                     case default
-                        if (ro%DIAGNOSEMODE > 0) print 1010, trim(args(i)), trim(args(1))
+                        if (DIAGNOSEMODE) print 1010, trim(args(i)), trim(args(1))
                 end select
             end if
         end do
@@ -457,9 +458,7 @@ module model_output
 
     subroutine init_out(fls, shd, ts)
 
-        !> 'control_variables' required for 'ro' options.
         !> 'strings' required for 'is_letter' function.
-        use control_variables
         use strings
 
         !> Input variables.
@@ -507,7 +506,7 @@ module model_output
             call parse(line, ' ', args, nargs)
 
             !> Output field.
-            if (ro%DIAGNOSEMODE > 0) print 1000, trim(args(1))
+            if (DIAGNOSEMODE) print 1000, trim(args(1))
             select case (args(1))
 
                 !> Meteorological forcing.

@@ -97,6 +97,7 @@ program RUNMESH
     use mpi_module
     use model_files
     use sa_mesh_variables
+    use sa_mesh_utilities
     use FLAGS
     use sa_mesh_run_within_tile
     use sa_mesh_run_within_grid
@@ -230,10 +231,10 @@ program RUNMESH
     end if
 
     !> Reset verbose flag for worker nodes.
-    if (ipid > 0) ro%VERBOSEMODE = 0
+    if (ipid > 0) VERBOSEMODE = .false.
 
 !TODO: UPDATE THIS (RELEASE(*)) WITH VERSION CHANGE
-    if (ro%VERBOSEMODE > 0) print 951, trim(RELEASE), trim(VERSION)
+    if (VERBOSEMODE) print 951, trim(RELEASE), trim(VERSION)
 
 951 format(1x, 'MESH ', a, ' ---  (', a, ')', /)
 
@@ -566,7 +567,7 @@ program RUNMESH
     !> Output diagnostic information to screen.
     !> *********************************************************************
 
-    if (ro%VERBOSEMODE > 0) then
+    if (VERBOSEMODE) then
         print *, 'NUMBER OF GRID SQUARES: ', NA
         print *, 'NUMBER OF LAND CLASSES (WITH IMPERVIOUS): ', NTYPE
         print *, 'NUMBER OF RIVER CLASSES: ', shd%NRVR
@@ -578,7 +579,7 @@ program RUNMESH
         print *
         print *
         print *
-    end if !(ro%VERBOSEMODE > 0) then
+    end if
 
     !> RESUME/SAVERESUME 1 or 2 are not supported.
     if (ipid == 0) then
@@ -947,11 +948,11 @@ program RUNMESH
     !> End of Initialization
     !> *********************************************************************
 
-    if (ro%VERBOSEMODE > 0) then
+    if (VERBOSEMODE) then
         print *
         print 2836
         print 2835
-    end if !(ro%VERBOSEMODE > 0) then
+    end if
 
 2836    format(/1x, 'DONE INTITIALIZATION')
 2835    format(/1x, 'STARTING MESH')
@@ -1084,7 +1085,7 @@ program RUNMESH
                 DAILY_EVAP = DAILY_EVAP + sum(out%grid%evap%d*shd%FRAC)*ic%dts
                 DAILY_ROF = DAILY_ROF + sum(out%grid%rof%d*shd%FRAC)*ic%dts
 
-                if (ro%VERBOSEMODE > 0) then
+                if (VERBOSEMODE) then
                     write(6, '(2i5)', advance = 'no') ic%now%year, ic%now%jday
                     if (printoutstfl) then
                         do j = 1, fms%stmg%n
@@ -1097,7 +1098,7 @@ program RUNMESH
                             DAILY_PRE/sum(shd%FRAC), DAILY_EVAP/sum(shd%FRAC), DAILY_ROF/sum(shd%FRAC)
                     end if
                     write(6, *)
-                end if !(ro%VERBOSEMODE > 0) then
+                end if
                 if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
                     call stats_update_stfl_daily(fls)
                     if (mtsflg%PREEMPTIONFLAG > 1) then
@@ -1162,7 +1163,7 @@ program RUNMESH
 
     !> End program if not the head node.
     if (ipid /= 0) then
-        if (ro%DIAGNOSEMODE > 0) print 4696, ipid
+        if (DIAGNOSEMODE) print 4696, ipid
         goto 999
 
 4696    format (1x, 'Node ', i4, ' is exiting...')
@@ -1312,7 +1313,7 @@ program RUNMESH
         TOTAL_ROFB = TOTAL_ROFB/sum(shd%FRAC)
 
         !> Write basin totals to screen.
-        if (ro%VERBOSEMODE > 0) then
+        if (VERBOSEMODE) then
 
             print *
             print 5641, 'Total Precipitation         (mm) =', TOTAL_PRE
@@ -1328,7 +1329,7 @@ program RUNMESH
 5641    format(3x, a34, 999(f11.3))
 5635    format(1x, 'Program has terminated normally.'/)
 
-        end if !(ro%VERBOSEMODE > 0) then
+        end if
 
         print 5635
 

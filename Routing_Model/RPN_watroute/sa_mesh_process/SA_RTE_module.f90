@@ -128,8 +128,9 @@ module SA_RTE_module
 
     subroutine SA_RTE_init(shd)
 
-        !> For: type(ShedGridParams) :: shd, ro%, cops%
+        !> For: type(ShedGridParams) :: shd
         use sa_mesh_variables
+        use sa_mesh_utilities
 
         !> For: type(iter_counter) :: ic
         use model_dates
@@ -143,7 +144,7 @@ module SA_RTE_module
         !> Return if the process is not active.
         if (.not. SA_RTE_flgs%PROCESS_ACTIVE) return
 
-        if (ro%VERBOSEMODE > 0) then
+        if (VERBOSEMODE) then
             print 1000
             print 1001
         end if
@@ -185,7 +186,7 @@ module SA_RTE_module
                            RFF, &
 !todo: replace source with LSS flag
                            'channel_inflow', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
-            if (ro%VERBOSEMODE > 0) print 1002, 'RFF', adjustl(trim(SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%fn))
+            if (VERBOSEMODE) print 1002, 'RFF', adjustl(trim(SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%fn))
         end if
 
         !> For: Recharge (MODELFLG = r).
@@ -195,10 +196,10 @@ module SA_RTE_module
                            RCH, &
 !todo: replace source with LSS flag
                            'recharge', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
-            if (ro%VERBOSEMODE > 0) print 1002, 'RCH', adjustl(trim(SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%fn))
+            if (VERBOSEMODE) print 1002, 'RCH', adjustl(trim(SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%fn))
         end if
 
-        if (ro%VERBOSEMODE > 0) print 1000
+        if (VERBOSEMODE) print 1000
 
 1000    format(/1x, '*****************************************************************', /)
 1001    format(1x, 'Standalone Routing is active.')

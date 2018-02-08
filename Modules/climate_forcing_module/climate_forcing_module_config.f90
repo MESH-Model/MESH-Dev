@@ -15,7 +15,7 @@ module climate_forcing_config
 
         use strings
         use EF_ParseUtilities
-        use control_variables
+        use sa_mesh_utilities
 
         type(clim_info) :: cm
 
@@ -53,7 +53,7 @@ module climate_forcing_config
         end if
 
         !> Print summary of climate file information.
-        if (ro%VERBOSEMODE > 0 .and. ro%DIAGNOSEMODE > 0) then
+        if (VERBOSEMODE .and. DIAGNOSEMODE) then
             do i = 1, cm%nclim
                 print 1071, cm%dat(i)%id_var, cm%dat(i)%fname, cm%dat(i)%ffmt, cm%dat(i)%fiun, &
                     cm%dat(i)%hf, cm%dat(i)%nblocks, cm%dat(i)%nseries

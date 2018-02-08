@@ -15,6 +15,7 @@ module RUNSVS113_config
         use mpi_module
         use model_files_variables
         use sa_mesh_variables
+        use sa_mesh_utilities
         use climate_forcing
         use FLAGS
 
@@ -309,7 +310,7 @@ module RUNSVS113_config
         end do
 
         !> Summarize what we just did.
-        if (ro%DIAGNOSEMODE > 0) then
+        if (DIAGNOSEMODE) then
             print *
             print *, '--------------------------------'
             print *, 'SVS DIAGNOSTICS'

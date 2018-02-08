@@ -1,6 +1,7 @@
       subroutine READ_SOIL_LEVELS(shd, fls)
 
       use sa_mesh_variables
+      use sa_mesh_utilities
       use model_files_variables
 
       implicit none
@@ -28,7 +29,7 @@
       if (ierr /= 0) then
         print 1002
         stop
-      else if (ro%VERBOSEMODE > 0) then
+      else if (VERBOSEMODE) then
         write(6, '(a)', advance = 'no')
      +    'READING: MESH_input_soil_levels.txt'
       end if
@@ -49,7 +50,7 @@
       rewind(iun)
 
       allocate(shd%lc%sl%DELZ(IGND), shd%lc%sl%ZBOT(IGND))
-      if (ro%DIAGNOSEMODE > 0) print 1011
+      if (DIAGNOSEMODE) print 1011
       do i = 1, IGND
         read(iun, *) DELZ_TEST
         shd%lc%sl%DELZ(i) = DELZ_TEST
@@ -58,13 +59,13 @@
         else
           shd%lc%sl%ZBOT(i) = DELZ_TEST
         end if
-        if (ro%DIAGNOSEMODE > 0) then
+        if (DIAGNOSEMODE) then
           print 1012, i, shd%lc%sl%DELZ(i), shd%lc%sl%ZBOT(i)
         end if
       end do
 
       close(iun)
-      if (ro%VERBOSEMODE > 0) then
+      if (VERBOSEMODE) then
         write(6, *) ' READ: SUCCESSFUL, FILE: CLOSED'
       end if
 
