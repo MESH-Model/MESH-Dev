@@ -238,14 +238,6 @@
         !>     1 = Save the SCA and SWE output files.
         BASINSWEOUTFLAG = 0
 
-        !> MODEL INFO OUTPUT FLAG
-        !> If enabled, saves model configuration and run information to the
-        !> echo_print.txt file.
-        !>     0 = Create no output.
-        !>     1 = Save the model configuration and run information to the
-        !>         echo_print.txt file.
-        MODELINFOOUTFLAG = 1
-
         !> The above parameter values are defaults, to change to a different
         !> value, use the MESH_input_run_options.ini file
 
@@ -353,13 +345,16 @@
                     case ('RELFLG')
                         call value(out_args(2), RELFLG, ierr)
 
-                    !> CONSOLE OUTPUT OPTIONS
+                    !> Message output options.
                     case ('VERBOSEMODE')
                         call value(out_args(2), IROVAL, ierr)
                         VERBOSEMODE = (IROVAL == 1)
                     case ('DIAGNOSEMODE')
                         call value(out_args(2), IROVAL, ierr)
                         DIAGNOSEMODE = (IROVAL == 1)
+                    case ('MODELINFOOUTFLAG', 'ECHOTXTMODE')
+                        call value(out_args(2), IROVAL, ierr)
+                        ECHOTXTMODE = (IROVAL == 1)
 
                     !> MPI OPTIONS
                     case ('MPIUSEBARRIER')
@@ -640,9 +635,6 @@
                                     exit
                             end select
                         end do
-
-                    case ('MODELINFOOUTFLAG')
-                        call value(out_args(2), MODELINFOOUTFLAG, ierr)
 
                     case ('BASINSWEOUTFLAG')
                         call value(out_args(2), BASINSWEOUTFLAG, ierr)

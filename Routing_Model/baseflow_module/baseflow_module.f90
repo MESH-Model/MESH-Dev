@@ -78,7 +78,7 @@ module baseflow_module
         NRVR = shd%NRVR
 
         !> Summarize current BASEFLOWFLAG configuration to file.
-        if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
+        if (ECHOTXTMODE) then
             iun = ECHO_TXT_IUN
             write(BASEFLOWFLAG, '(i8)') bflm%dts/60
             BASEFLOWFLAG = 'hf=' // adjustl(BASEFLOWFLAG)

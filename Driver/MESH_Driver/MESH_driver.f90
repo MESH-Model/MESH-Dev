@@ -150,6 +150,7 @@ program RUNMESH
     character(8) RELEASE
 
     integer i, j, k, l, m, u
+    character(len = DEFAULT_LINE_LENGTH) line
 
     integer FRAME_NO_NEW
 
@@ -164,14 +165,6 @@ program RUNMESH
 
     type(ShedGridParams) :: shd
     type(fl_ids) :: fls
-
-    !* printoutwb: Print components of the water balance to the
-    !*             console if enabled.
-    logical printoutwb
-
-    !* printoutstfl: Print members of the simulation hydrograph to the
-    !*               console if enabled.
-    logical printoutstfl, printoutqhyd
 
     type(dates_model) :: ts
     type(CLIM_INFO) :: cm
@@ -213,9 +206,15 @@ program RUNMESH
     !> Initialize MPI.
     call mpi_init(ierr)
     if (ierr /= mpi_success) then
-        print *, 'Failed to initialize MPI.'
+        call print_warning('Failed to initialize MPI.')
+        write(line, 1000) 'Error status:', ierr
+        call print_message_detail(line)
+        call print_message('Calling MPI abort...')
         call mpi_abort(mpi_comm_world, ierrcode, ierr)
-        print *, 'ierrcode ', ierrcode, 'ierr ', ierr
+        write(line, 1000) 'Error code:', ierrcode
+        call print_message_detail(line)
+        write(line, 1000) 'Error status:', ierr
+        call print_message_detail(line)
     end if
 
     !> Grab number of total processes and current process ID.
@@ -234,13 +233,12 @@ program RUNMESH
     if (ipid > 0) VERBOSEMODE = .false.
 
 !TODO: UPDATE THIS (RELEASE(*)) WITH VERSION CHANGE
-    if (VERBOSEMODE) print 951, trim(RELEASE), trim(VERSION)
-
-951 format(1x, 'MESH ', a, ' ---  (', a, ')', /)
+    write(line, "('MESH ', (a), ' ---  (', (a), ')')") trim(RELEASE), trim(VERSION)
+    call print_screen(line)
+    call print_screen('')
 
     !> Check if any command line arguments are found.
     narg = command_argument_count()
-    !print *, narg
     if (narg > 0) then
 
         !> File handled for variable in/out names
@@ -248,15 +246,12 @@ program RUNMESH
         VARIABLEFILESFLAG = 1
         if (narg >= 1) then
             call get_command_argument(1, fl_listMesh)
-!            print *, fl_listMesh
 !        else if (narg == 2) then
 !            call get_command_argument(1, fl_listMesh)
-!            print *, fl_listMesh
 !todo: re-instate alpha
 !            call get_command_argument(2, alphCh)
 !            call value(alphCh, alpharain, ierr)
 !            cm%dat(8)%alpha = alpha
-!            print *, cm%dat(8)%alpha
         end if
         call Init_fls(fls, trim(adjustl(fl_listMesh)))
     else
@@ -307,14 +302,7 @@ program RUNMESH
 1118 format(3x, a, ': ', i6)
 
     !>  For cacluating the subbasin grids
-!+    allocate(SUBBASIN(NML), stat = ierr)
-!+    if (ierr /= 0) then
-!+        print 1114, 'subbasin grid'
-!+        print 1118, 'Grid squares', NA
-!+        print 1118, 'GRUs', NTYPE
-!+        print 1118, 'Total tile elements', NML
-!+        stop
-!+    end if
+!+    allocate(SUBBASIN(NML))
 
     if (ipid == 0) call run_between_grid_init(shd, fls, cm)
 
@@ -388,18 +376,13 @@ program RUNMESH
 
     FRAME_NO_NEW = 1
 
-    !> Determine what output will print to the console.
-    printoutwb = ro%RUNBALWB
-    printoutstfl = (fms%stmg%n > 0)
-    printoutqhyd = (fms%stmg%n > 0)
-
     if (ipid == 0) then
 
     !> ******************************************************
     !> echo print information to MESH_output_echo_print.txt
     !> ******************************************************
 
-        if (MODELINFOOUTFLAG > 0) then
+        if (ECHOTXTMODE) then
             write(ECHO_TXT_IUN, "('Number of Soil Layers (IGND) = ', i5)") NSL
             write(ECHO_TXT_IUN, *)
             write(ECHO_TXT_IUN, "('MESH_input_run_options.ini')")
@@ -494,7 +477,7 @@ program RUNMESH
 !                    cp%RCANROW(i, m), cp%SCANROW(i, m), cp%SNOROW(i, m), cp%ALBSROW(i, m), cp%RHOSROW(i, m), cp%GROROW(i, m)
 !                write(ECHO_TXT_IUN, *)
 !            end do !m = 1, NTYPE
-        end if !(MODELINFOOUTFLAG > 0) then
+        end if
     end if !(ipid == 0) then
 
     !> Open and print header information to the output files
@@ -509,45 +492,52 @@ program RUNMESH
                 if (ierr == 0) then
                     allocate(GRD(NR2C), GAT(NR2C), GRDGAT(NR2C), R2C_ATTRIBUTES(NR2C, 3), stat = ierr)
                     if (ierr /= 0) then
-                        print *, 'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
-                            'RECORD AT THE FIRST LINE IN THE r2c_output.txt FILE. ', &
-                            'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
-                        stop
+                        call print_error('Unable to allocate variables for R2C output.')
+                        call print_message('Check the value of the first record at the first line in r2c_output.txt.')
+                        call print_message('The value should be an integer value greater than zero.')
+                        call stop_program()
                     end if
                 end if
                 if (ierr /= 0 .or. mod(DELTR2C, 30) /= 0) then
-                    print 9002
-                    stop
+                    call print_error('Configuration error in r2c_output.txt')
+                    call print_message('The first record at the first line is the number of variables.')
+                    call print_message('The second record at the first line is the time-step for output.')
+                    call print_message('The time-step should be a multiple of 30.')
+                    call stop_program()
                 end if
-                print *
-                print *, 'THE FOLLOWING R2C OUTPUT FILES WILL BE WRITTEN:'
+                call print_echo_txt('')
+                call print_echo_txt('r2c output will be written for the following fields:')
                 do i = 1, NR2C
                     read(56, *, iostat = ierr) GRD(i), GAT(i), GRDGAT(i), (R2C_ATTRIBUTES(i, j), j = 1, 3)
                     if (ierr /= 0) then
-                        print *, 'ERROR READING r2c_output.txt FILE AT LINE ', i + 1
-                        stop
+                        write(line, 1000) 'Error reading record:', i + 1
+                        call print_error(line)
+                        call print_message('The first 3 columns should contain values of 0 or 1.')
+                        call print_message('The last 3 columns should contain information about the variable.')
+                        call stop_program()
                     else
                         if (GRD(i) == 1) then
                             NR2CFILES = NR2CFILES + 1
-                            print *, NR2CFILES, ' (GRD)    : ', R2C_ATTRIBUTES(i, 3)
+                            write(line, "(i3, ' (GRD)    : ', (a))") NR2CFILES, R2C_ATTRIBUTES(i, 3)
+                            call print_echo_txt(line)
                         end if
                         if (GAT(i) == 1) then
                             NR2CFILES = NR2CFILES + 1
-                            print *, NR2CFILES, ' (GAT)    : ', R2C_ATTRIBUTES(i, 3)
+                            write(line, "(i3, ' (GRD)    : ', (a))") NR2CFILES, R2C_ATTRIBUTES(i, 3)
+                            call print_echo_txt(line)
                         end if
                         if (GRDGAT(i) == 1) then
                             NR2CFILES = NR2CFILES + 1
-                            print *, NR2CFILES, ' (GRDGAT) : ', R2C_ATTRIBUTES(i, 3)
+                            write(line, "(i3, ' (GRDGAT) : ', (a))") NR2CFILES, R2C_ATTRIBUTES(i, 3)
+                            call print_echo_txt(line)
                         end if
                     end if
                 end do
                 close(56)
             else
-                print *
-                print *, "r2c_output.txt FILE DOESN'T EXIST. ", &
-                    'R2COUTPUTFLAG SHOULD BE SET TO ZERO IF R2C OUTPUTS ARE NOT NEEDED.'
-                print *
-                stop
+                call print_error('Unable to open: r2c_output.txt')
+                call print_message('Check that the file exists or set R2COUTPUTFLAG to zero.')
+                call stop_program()
             end if
         end if
 
@@ -568,32 +558,31 @@ program RUNMESH
     !> *********************************************************************
 
     if (VERBOSEMODE) then
-        print *, 'NUMBER OF GRID SQUARES: ', NA
-        print *, 'NUMBER OF LAND CLASSES (WITH IMPERVIOUS): ', NTYPE
-        print *, 'NUMBER OF RIVER CLASSES: ', shd%NRVR
-        print *, 'MINIMUM NUMBER FOR ILG: ', shd%lc%ILG
-        print *, 'NUMBER OF GRID SQUARES IN West-East DIRECTION: ', shd%xCount
-        print *, 'NUMBER OF GRID SQUARES IN South-North DIRECTION: ', shd%yCount
-        print *, 'LENGTH OF SIDE OF GRID SQUARE IN M: ', shd%AL
-        print *, 'NUMBER OF DRAINAGE OUTLETS: ', (NA - shd%NAA)
-        print *
-        print *
-        print *
+        call print_message('')
+        call print_message('Configuration summary')
+        call print_message('')
+        write(line, 1002) 'Number of grids:', NA
+        call print_message_detail(line)
+        write(line, 1001) 'Side length of grid (m):', shd%AL
+        call print_message_detail(line)
+        write(line, 1002) 'Number of GRUs:', NTYPE
+        call print_message_detail(line)
+        write(line, 1002) 'Number of tiles:', shd%lc%NML
+        call print_message_detail(line)
+        write(line, 1002) 'Number of river classes:', shd%NRVR
+        call print_message_detail(line)
+        write(line, 1002) 'Number of outlets:', (NA - shd%NAA)
+        call print_message_detail(line)
+        call print_screen('')
     end if
 
     !> RESUME/SAVERESUME 1 or 2 are not supported.
-    if (ipid == 0) then
-        if (RESUMEFLAG == 1 .or. SAVERESUMEFLAG == 1 .or. RESUMEFLAG == 2 .or. SAVERESUMEFLAG == 2) then
-            print 679, RESUMEFLAG, SAVERESUMEFLAG
-            stop
-        end if
+    if (RESUMEFLAG == 1 .or. SAVERESUMEFLAG == 1 .or. RESUMEFLAG == 2 .or. SAVERESUMEFLAG == 2) then
+        write(line, "('RESUMEFLAG ', i1, ' and SAVERESUMEFLAG ', i1, ' are not supported.')") RESUMEFLAG, SAVERESUMEFLAG
+        call print_error(line)
+        call print_message('Use RESUMEFLAG 4 or SAVERESUMEFLAG 4 instead.')
+        call stop_program()
     end if
-
-679     format(/ &
-               /1x, 'RESUMEFLAG ', i1, ' and SAVERESUMEFLAG ', i1, ' are not supported.', &
-               /1x, 'Use RESUMEFLAG 4 or SAVERESUMEFLAG 4 instead.', &
-               /1x, 'Individual variables for RESUME/SAVERESUME or the file format', &
-               /1x, 'of the resume files cannot be configured at this time.')
 
 !> ********************************************************************
 !> RESUMEFLAG
@@ -601,7 +590,7 @@ program RUNMESH
 
       !> Check if we are reading in a resume_state.r2c file
 !+    if (RESUMEFLAG == 2) then
-!+        print *, 'Reading saved state variables'
+!+        call print_screen('Reading saved state variables')
 
           !> Allocate arrays for resume_state_r2c
 !+        open(54, file = 'resume_state_r2c.txt', action = 'read')
@@ -609,10 +598,10 @@ program RUNMESH
 !+        if (ierr == 0) then
 !+            allocate(GRD_R(NR2C_R), GAT_R(NR2C_R), GRDGAT_R(NR2C_R), R2C_ATTRIBUTES_R(NR2C_R, 3), stat = ierr)
 !+            if (ierr /= 0) then
-!+                print *, 'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
-!+                    'RECORD AT THE FIRST LINE IN THE resume_state_r2c.txt FILE. ', &
-!+                    'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
-!+                stop
+!+                call print_error('Unable to allocate variables for RESUMESTATE 2.')
+!+                call print_message('Check the value of the first record at the first line in resume_state_r2c.txt.')
+!+                call print_message('The value should be an integer value greater than zero.')
+!+                call stop_program()
 !+            end if
 !+        end if
 !+        close(54)
@@ -949,13 +938,12 @@ program RUNMESH
     !> *********************************************************************
 
     if (VERBOSEMODE) then
-        print *
-        print 2836
-        print 2835
+        call print_screen('')
+        call print_screen('')
+        call print_screen('DONE INTITIALIZATION')
+        call print_screen('')
+        call print_screen('STARTING MESH')
     end if
-
-2836    format(/1x, 'DONE INTITIALIZATION')
-2835    format(/1x, 'STARTING MESH')
 
     !> *********************************************************************
     !> Start of main loop that is run each half hour
@@ -1086,18 +1074,18 @@ program RUNMESH
                 DAILY_ROF = DAILY_ROF + sum(out%grid%rof%d*shd%FRAC)*ic%dts
 
                 if (VERBOSEMODE) then
-                    write(6, '(2i5)', advance = 'no') ic%now%year, ic%now%jday
-                    if (printoutstfl) then
+                    write(line, '(2i4)') ic%now%year, ic%now%jday
+                    if (fms%stmg%n > 0) then
                         do j = 1, fms%stmg%n
-                            if (printoutqhyd) write(6, '(f10.3)', advance = 'no') fms%stmg%qomeas%val(j)
-                            write(6, '(f10.3)', advance = 'no') out%grid%qo%d(fms%stmg%meta%rnk(j))
+                            if (fms%stmg%n > 0) write(line, '((a), f10.3)') trim(line), fms%stmg%qomeas%val(j)
+                            write(line, '((a), f10.3)') trim(line), out%grid%qo%d(fms%stmg%meta%rnk(j))
                         end do
                     end if
-                    if (printoutwb) then
-                        write(6, '(3(f10.3))', advance = 'no') &
-                            DAILY_PRE/sum(shd%FRAC), DAILY_EVAP/sum(shd%FRAC), DAILY_ROF/sum(shd%FRAC)
+                    if (ro%RUNBALWB) then
+                        write(line, '((a), 3(f10.3))') &
+                            trim(line), DAILY_PRE/sum(shd%FRAC), DAILY_EVAP/sum(shd%FRAC), DAILY_ROF/sum(shd%FRAC)
                     end if
-                    write(6, *)
+                    call print_screen(line)
                 end if
                 if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
                     call stats_update_stfl_daily(fls)
@@ -1163,10 +1151,9 @@ program RUNMESH
 
     !> End program if not the head node.
     if (ipid /= 0) then
-        if (DIAGNOSEMODE) print 4696, ipid
+        write(line, "('Node ', i4, ' is exiting...')") ipid
+        call print_diagnostic_info(line)
         goto 999
-
-4696    format (1x, 'Node ', i4, ' is exiting...')
 
     end if !(ipid /= 0) then
 
@@ -1176,7 +1163,7 @@ program RUNMESH
 
     !> Write the resume file
 !+    if (SAVERESUMEFLAG == 2) then !todo: done: use a flag
-!+        print *, 'Saving state variables in r2c file format'
+!+        call print_screen('Saving state variables in r2c file format')
 
     !> Allocate arrays for save_state_r2c
 !+        open(55, file = 'save_state_r2c.txt', action = 'read')
@@ -1184,10 +1171,10 @@ program RUNMESH
 !+        if (ierr == 0) then
 !+            allocate(GRD_S(NR2C_S), GAT_S(NR2C_S), GRDGAT_S(NR2C_S), R2C_ATTRIBUTES_S(NR2C_S, 3), stat = ierr)
 !+            if (ierr /= 0) then
-!+                print *, 'ALLOCATION ERROR: CHECK THE VALUE OF THE FIRST ', &
-!+                    'RECORD AT THE FIRST LINE IN THE save_state_r2c.txt FILE. ', &
-!+                    'IT SHOULD BE AN INTEGER VALUE (GREATER THAN 0).'
-!+                stop
+!+                call print_error('Unable to allocate variables for SAVERESUMESTATE 2.')
+!+                call print_message('Check the value of the first record at the first line in save_state_r2c.txt.')
+!+                call print_message('The value should be an integer value greater than zero.')
+!+                call stop_program()
 !+            end if
 !+        end if
 !+        close(55)
@@ -1239,12 +1226,10 @@ program RUNMESH
     !> Run is now over, print final results to the screen and close files
     !> *********************************************************************
 
-    if (ENDDATA) print *, 'Reached end of forcing data'
-    if (ENDDATE) print *, 'Reached end of simulation date'
+    if (ENDDATA) call print_screen('Reached end of forcing data')
+    if (ENDDATE) call print_screen('Reached end of simulation date')
 
 998     continue
-
-    if (len_trim(cstate) > 0) print *, trim(cstate)
 
 199 continue
 
@@ -1312,29 +1297,8 @@ program RUNMESH
         TOTAL_ROFS = TOTAL_ROFS/sum(shd%FRAC)
         TOTAL_ROFB = TOTAL_ROFB/sum(shd%FRAC)
 
-        !> Write basin totals to screen.
-        if (VERBOSEMODE) then
-
-            print *
-            print 5641, 'Total Precipitation         (mm) =', TOTAL_PRE
-            print 5641, 'Total Evaporation           (mm) =', TOTAL_EVAP
-            print 5641, 'Total Runoff                (mm) =', TOTAL_ROF
-            print 5641, 'Storage (Change/Init/Final) (mm) =', (STG_FIN - STG_INI), STG_INI, STG_FIN
-            print *
-            print 5641, 'Total Overland flow         (mm) =', TOTAL_ROFO
-            print 5641, 'Total Interflow             (mm) =', TOTAL_ROFS
-            print 5641, 'Total Baseflow              (mm) =', TOTAL_ROFB
-            print *
-
-5641    format(3x, a34, 999(f11.3))
-5635    format(1x, 'Program has terminated normally.'/)
-
-        end if
-
-        print 5635
-
         !> Write data to the output summary file.
-        if (MODELINFOOUTFLAG > 0) then
+        if (ECHOTXTMODE) then
 
             !> CLASS states for prognostic variables.
             NTYPE = shd%lc%NTYPE
@@ -1453,44 +1417,54 @@ program RUNMESH
                 end do
             end do
 
-            !> Basin vertical water balance totals.
-            write(ECHO_TXT_IUN, *)
-            write(ECHO_TXT_IUN, '(a)') 'End of run totals'
-            write(ECHO_TXT_IUN, *)
-            write(ECHO_TXT_IUN, '(a, f11.3)') '  Total Precipitation         (mm) = ', TOTAL_PRE
-            write(ECHO_TXT_IUN, '(a, f11.3)') '  Total Evaporation           (mm) = ', TOTAL_EVAP
-            write(ECHO_TXT_IUN, '(a, f11.3)') '  Total Runoff                (mm) = ', TOTAL_ROF
-            write(ECHO_TXT_IUN, '(a, 3f11.3)') '  Storage(Change/Init/Final)  (mm) = ', (STG_FIN - STG_INI), STG_INI, STG_FIN
-            write(ECHO_TXT_IUN, '(a, f11.3)') '  Total Overland flow         (mm) = ', TOTAL_ROFO
-            write(ECHO_TXT_IUN, '(a, f11.3)') '  Total Interflow             (mm) = ', TOTAL_ROFS
-            write(ECHO_TXT_IUN, '(a, f11.3)') '  Total Baseflow              (mm) = ', TOTAL_ROFB
-            write(ECHO_TXT_IUN, *)
-
-            !> Normal end of run message.
-            write(ECHO_TXT_IUN, *)
-            write(ECHO_TXT_IUN, '(a)') 'Program has terminated normally.'
-            write(ECHO_TXT_IUN, *)
-
-            call cpu_time(endprog)
-            write(ECHO_TXT_IUN, "('Time = ', e14.6, ' seconds.')") (endprog - startprog)
-
-        end if !(MODELINFOOUTFLAG > 0) then
+        end if
 
     end if !(ipid == 0 ) then
 
-999     continue
+    !> Print end of run diagnostics and information.
+    if (VERBOSEMODE) then
 
-9002    format(/1x, 'ERROR IN READING r2c_output.txt FILE.', &
-               /1x, 'THE FIRST RECORD AT THE FIRST LINE IS FOR THE NUMBER OF ALL THE', &
-               /1x, 'VARIABLES LISTED IN THE r2c_output.txt FILE.',&
-               /1x, 'THE SECOND RECORD AT THE FIRST LINE IS TIME STEP FOR R2C OUTPUT.', &
-               /1x, 'IT SHOULD BE AN INTEGER MULTIPLE OF 30.',&
-               /1x, 'THE REMAINING RECORDS SHOULD CONTAIN 3 COLUMNS FOR EACH VARIABLE WITH', &
-               /1x, 'INTEGER VALUES OF EITHER 0 OR 1,', &
-               /1x, 'AND 3 COLUMNS CONTAINING INFORMATION ABOUT THE VARIABLES.', /)
+        !> Basin vertical water balance totals.
+        call print_message('')
+        call print_message('End of run totals')
+        call print_message('')
+        write(line, 1001) 'Total Precipitation         (mm) =', TOTAL_PRE
+        call print_message_detail(line)
+        write(line, 1001) 'Total Evaporation           (mm) =', TOTAL_EVAP
+        call print_message_detail(line)
+        write(line, 1001) 'Total Runoff                (mm) =', TOTAL_ROF
+        call print_message_detail(line)
+        write(line, 1001) 'Storage(Change/Init/Final)  (mm) =', (STG_FIN - STG_INI), STG_INI, STG_FIN
+        call print_message_detail(line)
+        call print_message('')
+        write(line, 1001) 'Total Overland flow         (mm) =', TOTAL_ROFO
+        call print_message_detail(line)
+        write(line, 1001) 'Total Interflow             (mm) =', TOTAL_ROFS
+        call print_message_detail(line)
+        write(line, 1001) 'Total Baseflow              (mm) =', TOTAL_ROFB
+        call print_message_detail(line)
+        call print_message('')
+
+        !> Normal end of run message.
+        call print_message('')
+        call print_message('Program has terminated normally.')
+
+        !> Run time (to file only).
+        call print_echo_txt('')
+        call cpu_time(endprog)
+        write(line, "('Time = ', e14.6, ' seconds.')") (endprog - startprog)
+        call print_echo_txt(line)
+    end if
+
+999     continue
 
     call mpi_finalize(ierr)
 
     stop
+
+    !> Format statements.
+1000    format((a), 1x, g10.3)
+1001    format((a), 1x, 999(f12.3))
+1002    format((a), 1x, i10)
 
 end program

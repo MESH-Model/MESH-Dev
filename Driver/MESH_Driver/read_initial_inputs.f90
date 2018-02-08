@@ -29,11 +29,9 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !>
     call READ_RUN_OPTIONS(ts, cm, fls)
 
-    !> Open the status file after reading run options, in case MODELINFOOUTFLAG
-    !> has been set to zero.
-    if (ipid == 0 .and. MODELINFOOUTFLAG > 0) then
-        open(ECHO_TXT_IUN, file = './' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
-    end if
+    !> Open the status file after reading run options in case output
+    !> to the summary file is disabled.
+    call open_summary_file('./' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
 
     !>
     !> DRAINAGE DATABASE.
@@ -305,7 +303,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     end do
 
     !> Write information about tile configuration to file.
-    if (ipid == 0 .and. MODELINFOOUTFLAG > 0 .and. DIAGNOSEMODE) then
+    if (ECHOTXTMODE .and. DIAGNOSEMODE) then
 
         !> Land tiles.
         write(ECHO_TXT_IUN, 1210) 'land', 'NML', shd%lc%NML

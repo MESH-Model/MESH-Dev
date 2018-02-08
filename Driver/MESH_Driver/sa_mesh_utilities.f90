@@ -82,7 +82,7 @@ module sa_mesh_utilities
     !> Variables:
     !>  message: Message to output.
     !>  level: Offset from the leading edge of the line.
-    subroutine print_summary_file(message, level)
+    subroutine print_echo_txt(message, level)
 
         !> Input variables.
         character(len = *), intent(in) :: message
@@ -113,7 +113,7 @@ module sa_mesh_utilities
         call print_screen(message, level)
 
         !> Print to the summary file.
-        call print_summary_file(message, level)
+        call print_echo_txt(message, level)
 
     end subroutine
 
@@ -159,12 +159,14 @@ module sa_mesh_utilities
     !> Description:
     !>  Print the provided message to screen and to the summary file.
     !>  Lead the message with "ERROR: ".
+    !>  Write an extra line before the message.
     subroutine print_error(message)
 
         !> Input variables.
         character(len = *), intent(in) :: message
 
         !> Flush the message.
+        call print_message('')
         call print_message('ERROR: ' // trim(adjustl(message)))
 
     end subroutine
@@ -179,6 +181,34 @@ module sa_mesh_utilities
 
         !> Flush the message.
         call print_message(message, PAD_3)
+
+    end subroutine
+
+    !> Description:
+    !>  Open the summary file.
+    !>
+    !> Variables:
+    !*  path: Full path to the file.
+    subroutine open_summary_file(path)
+
+        !> Input variables.
+        character(len = *), intent(in) :: path
+
+        !> Local variables.
+        integer ierr
+
+        !> Return if writing output to the file is disabled.
+        !> Return if 'path' is empty.
+        !> Return if 'VERBOSEMODE' is disabled.
+        if (.not. ECHOTXTMODE .or. len_trim(path) == 0 .or. .not. VERBOSEMODE) return
+
+        !> Open the file and print an error if unsuccessful.
+        open(ECHO_TXT_IUN, file = path, status = 'replace', action = 'write', iostat = ierr)
+        if (ierr /= 0) then
+            call print_error('Unable to open file: ' // trim(adjustl(path)))
+            call print_message('Check that the path exists, that the file it is not read-protected or open in another application.')
+            call stop_program()
+        end if
 
     end subroutine
 
