@@ -55,7 +55,7 @@
 
         !> Write the current state of these variables to the file.
         write(iun) stas%sno%albs    !1 (NML)
-        write(iun) stas%cnpy%cmai   !2 (NML)
+        write(iun) stas%cnpy%cmas   !2 (NML)
         write(iun) stas%cnpy%gro    !3 (NML)
         write(iun) stas%cnpy%qac    !4 (NML)
         write(iun) stas%cnpy%rcan   !5 (NML)

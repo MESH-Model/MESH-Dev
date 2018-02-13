@@ -170,14 +170,14 @@ subroutine read_parameters(fls, shd, cm, ierr)
         call READ_SOIL_INI(shd, fls)
     end if
 
-    !> Read from the 'r2c' file.
-    if (btest(INPUTPARAMSFORMFLAG, 1)) then
-        call read_parameters_r2c(shd, 100, 'MESH_parameters.r2c')
-    end if
-
     !> Read from the 'csv' file.
     if (btest(INPUTPARAMSFORMFLAG, 2)) then
         call read_parameters_csv(shd, 100, 'MESH_parameters.csv')
+    end if
+
+    !> Read from the 'r2c' file.
+    if (btest(INPUTPARAMSFORMFLAG, 1)) then
+        call read_parameters_r2c(shd, 100, 'MESH_parameters.r2c')
     end if
 
     !>
@@ -340,6 +340,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
     if (btest(INPUTPARAMSFORMFLAG, 1)) then
         do k = il1, il2
 
+            !> Omit GRU's with mosaic ID >= 100 from being assigned grid-based values (special condition).
+            if (pm%tp%mid(k) >= 100) cycle
+
             !> Grid index.
             i = shd%lc%ILMOS(k)
 
@@ -352,6 +355,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 if (pm_grid%hp%dd(i) /= 0.0) pm%hp%dd(k) = pm_grid%hp%dd(i)
                 if (any(pm_grid%slp%sand(i, :) /= 0.0)) pm%slp%sand(k, :) = pm_grid%slp%sand(i, :)
                 if (any(pm_grid%slp%clay(i, :) /= 0.0)) pm%slp%clay(k, :) = pm_grid%slp%clay(i, :)
+                if (any(pm_grid%slp%orgm(i, :) /= 0.0)) pm%slp%orgm(k, :) = pm_grid%slp%orgm(i, :)
             end if
 
             !> RUNCLASS36.

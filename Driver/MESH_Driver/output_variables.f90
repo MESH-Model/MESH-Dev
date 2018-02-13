@@ -1,4 +1,6 @@
-module model_output_variabletypes
+module output_variables
+
+    implicit none
 
     !> Description: Type-set to store a single-record of hydrograph
     !>              values for multiple gauges or to store a

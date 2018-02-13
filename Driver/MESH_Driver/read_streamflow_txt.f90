@@ -35,7 +35,7 @@ subroutine read_streamflow_txt(shd, iun, fname)
     !*  -   n(n): Rank or index of the grid-cell containing the location.
     !*  -   DA(n): Drainage area.
 
-    if (ro%VERBOSEMODE > 0) print 1000, trim(adjustl(fname))
+    if (ro%VERBOSEMODE > 0) print 1000, trim(fname)
     open(iun, file = fname, status = 'old', action = 'read', err = 997)
     read(iun, *, err = 999)
     read(iun, *, err = 999) &
@@ -59,9 +59,9 @@ subroutine read_streamflow_txt(shd, iun, fname)
     return
 
     !> File errors.
-997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(adjustl(fname))
-998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(adjustl(fname))
-999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(adjustl(fname))
+997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(fname)
+998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(fname)
+999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(fname)
 
     stop
 
