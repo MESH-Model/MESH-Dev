@@ -1,5 +1,9 @@
 module rte_module
 
+!>>>>>>>>RBM,SED model outputs
+    use model_files_variables
+!<<<<<<<<RBM,SED model outputs
+
     implicit none
 
     !> Input variables for dynamic time-stepping.
@@ -58,6 +62,11 @@ module rte_module
 !temp: Override for irrigation
     integer, dimension(:), allocatable :: totirrigpts
 
+!>>>>>>>>RBM,SED model outputs
+    type(fl_ids), save :: SA_RTE_fls_out
+    real, dimension(:), allocatable, save :: hly_prec, hly_evap, hly_rofo
+!<<<<<<<<RBM,SED model outputs
+
     contains
 
     !>
@@ -76,10 +85,6 @@ module rte_module
         use model_files_variables
         use sa_mesh_shared_variables
         use FLAGS
-
-!>>>>>>>>RBM,SED model outputs
-        use MODEL_OUTPUT, only: SA_RTE_fls_out
-!<<<<<<<<RBM,SED model outputs
 
         type(fl_ids) :: fls
 
@@ -559,6 +564,8 @@ module rte_module
             allocate(outarray(ycount, xcount))
             outarray = 0.0
         end if
+        allocate(hly_prec(na), hly_evap(na), hly_rofo(na))
+        hly_prec = 0.0; hly_evap = 0.0; hly_rofo = 0.0
 
         allocate(SA_RTE_fls_out%fl(3))
         SA_RTE_fls_out%fl(1)%fn = 'gridflow.r2c'
@@ -618,7 +625,6 @@ module rte_module
         use sa_mesh_shared_variables
 
 !>>>>>>>>RBM,SED model outputs
-        use MODEL_OUTPUT, only: SA_RTE_fls_out
         use climate_forcing
 !<<<<<<<<RBM,SED model outputs
 
@@ -664,6 +670,15 @@ module rte_module
         end if
         qr(1:naa) = qr(1:naa) + (stas_grid%sfc%rofo(1:naa) + stas_grid%sl%rofs(1:naa))*shd%FRAC(1:naa)*ic%dts
         qr(1:naa) = qr(1:naa) + (stas_grid%lzs%rofb(1:naa) + stas_grid%dzs%rofb(1:naa))*shd%FRAC(1:naa)*ic%dts
+
+!>>>>>>>>RBM,SED model outputs
+        if (ic%ts_hourly == 1) then
+            hly_prec = 0.0; hly_evap = 0.0; hly_rofo = 0.0
+        end if
+        hly_prec = hly_prec + cm%dat(ck%RT)%GRD*ic%dts
+        hly_evap = hly_evap + stas_grid%sfc%evap*ic%dts
+        hly_rofo = hly_rofo + stas_grid%sfc%rofo*ic%dts
+!<<<<<<<<RBM,SED model outputs
 
         !> Return if no the last time-step of the hour.
         if (mod(ic%ts_hourly, 3600/ic%dts) /= 0) then
@@ -996,7 +1011,7 @@ module rte_module
                 !> Precipitation (mm h-1).
                 outarray = 0.0
                 do n = 1, naa
-                    outarray(yyy(n), xxx(n)) = cm%dat(ck%RT)%GRD(n)*ic%dts
+                    outarray(yyy(n), xxx(n)) = hly_prec(n)
                 end do
                 if (sedflg == 'y') then
                     call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
@@ -1005,7 +1020,7 @@ module rte_module
                 !> Evapotranspiration (m s-1).
                 outarray = 0.0
                 do n = 1, naa
-                    outarray(yyy(n), xxx(n)) = stas_grid%sfc%evap(n)/1000.0
+                    outarray(yyy(n), xxx(n)) = hly_evap(n)/1000.0/rteflg%RTE_TS
                 end do
                 if (sedflg == 'y') then
                     call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
@@ -1014,7 +1029,7 @@ module rte_module
                 !> Overland water depth (mm).
                 outarray = 0.0
                 do n = 1, naa
-                    outarray(yyy(n), xxx(n)) = stas_grid%sfc%rofo(n)*ic%dts
+                    outarray(yyy(n), xxx(n)) = hly_rofo(n)
                 end do
                 if (sedflg == 'y') then
                     call write_r2c(SA_RTE_fls_out, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')

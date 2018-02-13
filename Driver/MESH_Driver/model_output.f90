@@ -179,10 +179,6 @@ module model_output
         type(data_var_out), dimension(:), allocatable :: var_out
     end type
 
-!>>>>>>>>RBM,SED model outputs
-    type(fl_ids), save :: SA_RTE_fls_out
-!<<<<<<<<RBM,SED model outputs
-
     contains
 
     subroutine init_met_data(md, shd)
