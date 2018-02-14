@@ -1,6 +1,5 @@
 # ======================================================================
-#				Include or header file for SA_MESH makefile
-# ======================================================================
+# Include or header file for SA_MESH makefile
 
 # ======================================================================
 # Directory of source code
@@ -66,7 +65,7 @@ OBJECTS+=	SIMSTATS_config.o \
 			NSE.o SAE.o SORT.o SAESRT.o calc_drms.o calc_abserr.o \
 			SIMSTATS.o
 #todo: fix dependency on RUNCLASS36_constants;
-OBJECTS+=	RUNCLASS36_constants.o 
+OBJECTS+=	RUNCLASS36_constants.o
 OBJECTS+=	PBSMrates.o PBSMrun.o ProbabilityThreshold.o REDISTRIB_SNOW.o SUM.o \
 			PBSM_module.o
 
@@ -106,7 +105,9 @@ VPATH+=	$(DIR_REPO)/LSS_Model/SVS/r531/sa_mesh_process: \
 		$(DIR_REPO)/LSS_Model/SVS/r531/rmnlib_013: \
 		$(DIR_REPO)/LSS_Model/SVS/r531/src:
 # Includes.
-INC_DIRS+=
+INC_DIRS+=-I$(CHANGES2PHY) -I$(PHY) -I$(SVS)
+# Variables.
+DFLAG=-DRUNSVS
 # Core routines.
 OBJECTS+=	datec.o moduledate.o \
 			runsvs_mod_sa_mesh.o runsvs_utils.o runsvs_io_mesh.o \
