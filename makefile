@@ -3,7 +3,7 @@
 
 # ======================================================================
 # Make targets (defined below).
-.PHONY: default all clean veryclean
+.PHONY: default gfortran ifort mingw_static mpi_gcc mpi_intel debug all clean veryclean
 default: all
 
 # ======================================================================
@@ -35,6 +35,35 @@ default: all
 include makefile.def
 
 # ======================================================================
+# Pre-configured compiler options.
+ifeq ($(filter gfortran,$(MAKECMDGOALS)),gfortran)
+DIST=
+MPI=
+else ifeq ($(filter ifort,$(MAKECMDGOALS)),ifort)
+DIST=intel
+MPI=
+else ifeq ($(filter mingw_static,$(MAKECMDGOALS)),mingw_static)
+DIST=mingw
+MPI=
+else ifeq ($(filter mpi_gcc,$(MAKECMDGOALS)),mpi_gcc)
+DIST=
+MPI=ompi
+else ifeq ($(filter mpi_intel,$(MAKECMDGOALS)),mpi_intel)
+DIST=intel
+MPI=ompi
+endif
+ifeq ($(filter debug,$(MAKECMDGOALS)),debug)
+DEBUG=yes
+endif
+
+gfortran: all
+ifort: all
+mingw_static: all
+mpi_gcc: all
+mpi_intel: all
+debug: all
+
+# ======================================================================
 # Compiler and options.
 # 'FTN90PP' and 'FTN90PPOPT' required to compile 'ftn90' files.
 ifeq ($(DIST),intel)
@@ -52,7 +81,7 @@ endif
 # Override debugging options if 'DEBUG' not enabled.
 ifndef DEBUG
 LFLAG=-c -O2
-CLEANUP=@$(MAKE) -s clean
+CLEANUP=@$(MAKE) -s clean DIST=$(DIST)
 endif
 
 # Output: sa_mesh.
