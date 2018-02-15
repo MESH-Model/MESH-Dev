@@ -232,13 +232,10 @@ program RUNMESH
     !> Reset verbose flag for worker nodes.
     if (ipid > 0) VERBOSEMODE = .false.
 
-    !> Open the status file.
-    call open_summary_file('./' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
-
     !> Write MESH version to screen.
     write(line, "('MESH ', (a), ' ---  (', (a), ')')") trim(RELEASE), trim(VERSION)
-    call print_message(line)
-    call print_message('')
+    call print_screen(line)
+    call print_screen('')
 
     !> Check if any command line arguments are found.
     narg = command_argument_count()
@@ -268,8 +265,9 @@ program RUNMESH
                              ts, cm, &
                              fls)
 
-    !> Check to see if output to the status file is disabled.
-    if (.not. ECHOTXTMODE) close(ECHO_TXT_IUN, status = 'delete')
+    !> Write MESH version to file.
+    call print_echo_txt(line)
+    call print_echo_txt('')
 
     !> Assign shed values to local variables.
     NA = shd%NA

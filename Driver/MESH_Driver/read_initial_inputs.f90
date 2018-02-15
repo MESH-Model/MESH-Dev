@@ -29,6 +29,9 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !>
     call READ_RUN_OPTIONS(ts, cm, fls)
 
+    !> Open the status file.
+    call open_echo_txt('./' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
+
     !>
     !> DRAINAGE DATABASE.
     !>

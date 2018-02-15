@@ -189,7 +189,7 @@ module sa_mesh_utilities
     !>
     !> Variables:
     !*  path: Full path to the file.
-    subroutine open_summary_file(path)
+    subroutine open_echo_txt(path)
 
         !> Input variables.
         character(len = *), intent(in) :: path
