@@ -24,7 +24,7 @@ subroutine read_initial_states(fls, shd, ierr)
     type(ShedGridParams) :: shd
 
     !> Output variables.
-    integer, intent(out), optional :: ierr
+    integer, intent(out) :: ierr
 
     !> Local variables for parsing INPUTPARAMSFORM.
     character(len = 20), dimension(100) :: out_args

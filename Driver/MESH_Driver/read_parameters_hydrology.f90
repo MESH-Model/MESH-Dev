@@ -145,6 +145,13 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 rteflg%cap_shd = 1
                         end select
                     end do
+                case ('controlled_reservoir')
+                    do j = 2, nargs
+                        select case (lowercase(out_args(j)))
+                            case ('allcols')
+                                fms%rsvr%rlsmeas%readmode = 'n'
+                        end select
+                    end do
             end select
         end do
     end if

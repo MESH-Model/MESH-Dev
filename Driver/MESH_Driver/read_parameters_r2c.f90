@@ -149,6 +149,18 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
                     end if
                 end if
+            case ('orgm')
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                    if (ilvl == 0) then
+                        do ilvl = 1, shd%lc%IGND
+                            pm_grid%slp%orgm(:, ilvl) = ffield
+                        end do
+                    else if (ilvl <= shd%lc%IGND) then
+                        pm_grid%slp%orgm(:, ilvl) = ffield
+                    else
+                        print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
+                    end if
+                end if
 
             !> RUNCLASS36.
             case ('iwf')

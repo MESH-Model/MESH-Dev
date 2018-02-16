@@ -139,6 +139,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 ! 23 rlakeflg - use spatially-varying rlake coefficient to adjust (multiply) R1N and R2N coefficients (E. Gaborit)
 ! 24 nocrashflg - repeatedly reduces qo1 by .75 and resets store2 to store1 when dtmin=mindtmin to ensure the model doesn't crash (D. Durnford)
 ! 25(19) rbmflg   - create input fields for RBM stream temperature model (dbourdin)
+! 26 splrpnflg  - produce spl-rpn outputs (Y. Shin)
 !
 !***********************************************************************
 
@@ -344,6 +345,14 @@ c          read(99,*,iostat=ios)junk,frcid1flg
            rbmflg='n'
         endif
 
+! Y. Shin: added splrpnflg for spl-rpn files  
+        if(fstflg == 'y') then
+           read(99,*,iostat=ios)junk,splrpnflg
+           if(iopt .eq. 2 .or. ios .ne. 0) print *, junk, splrpnflg
+        else
+           splrpnflg='n'
+        endif
+
 !       turn these off for opt
         if(numa.ne.0)then
             trcflg='n'
@@ -424,6 +433,7 @@ c          read(99,*,iostat=ios)junk,frcid1flg
         write(51,*)':r2nflg                       ',r2nflg
         write(51,*)':rlakeflg                     ',rlakeflg
         write(51,*)':rbmflg                       ',rbmflg
+        write(51,*)':splrpnflg                    ',splrpnflg
         write(51,*)'#                             '        
         write(51,*)':intSoilMoisture              ',(smc5(i),i=1,5)         
         write(51,*)':rainConvFactor               ',conv         

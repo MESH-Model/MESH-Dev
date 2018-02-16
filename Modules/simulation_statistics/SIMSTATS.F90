@@ -191,8 +191,8 @@ module SIMSTATS
     !>
     subroutine stats_init(fls, stfl)
 
+        use sa_mesh_shared_variables
         use model_files_variables
-        use model_output_variabletypes
 
     !> Input variables.
         type(fl_ids) :: fls
@@ -251,8 +251,8 @@ module SIMSTATS
     !>
     subroutine stats_update_stfl_daily(fls, stfl)
 
+        use sa_mesh_shared_variables
         use model_files_variables
-        use model_output_variabletypes
 
         !> Input variables.
         type(fl_ids) :: fls

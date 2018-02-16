@@ -49,6 +49,9 @@ module fm_variables
     !>  Attributes of a time-series (e.g., observed/measured flow at a location)
     !>
     !> Attributes:
+    !*  type: Type of data (e.g., float).
+    !*  units: Units of data.
+    !*  readmode: Column reading mode (e.g., 'n', 'subset')
     !*  val: Time-series of data at the location.
     !*  dts: Time-step of the series. [s].
     !*  iyear: Year of the start date of data.
@@ -59,8 +62,9 @@ module fm_variables
     !*  imins: Minutes in the hour of the start date of data.
     type time_series
         type(fm_config_file) fls
+        character(len = 8) type, units, readmode
         real(kind = 4), dimension(:), allocatable :: val
-        integer :: dts, iyear, ijday, imonth, iday, ihour, imins
+        integer dts, iyear, ijday, imonth, iday, ihour, imins
     end type
 
     !> Type: release_outlet
@@ -68,10 +72,16 @@ module fm_variables
     !>
     !> Attributes:
     !*  cfn: Type of release curve function.
-    !*  b: Coefficients.
+    !*  b[1-5]: Flow release curve coefficients.
+    !*  b6: Reach area required by RPN reservoir routing in RTE. [m2].
+    !*  b7: Minimum level for zero flow required by RPN reservoir routing in RTE. [m].
+    !*  area: Reach area to derive level; separate from b6 so as to not active RPN reservoir routing in RTE. [m2].
     type release_outlet
         integer(kind = 4), dimension(:), allocatable :: cfn
-        real(kind = 4), dimension(:), allocatable :: b1, b2, b3, b4, b5, lvlz0, area
+        real(kind = 4), dimension(:), allocatable :: &
+            b1, b2, b3, b4, b5, &
+            b6, b7, &
+            area
     end type
 
     !> Type: streamflow_gauge_location
@@ -99,7 +109,7 @@ module fm_variables
         integer :: n = 0
         type(outlet_location) meta
         type(release_outlet) rls
-        type(time_series) qorls
+        type(time_series) rlsmeas
     end type
 
     !> Type: abstraction_point_location
@@ -142,15 +152,21 @@ module fm_variables
     subroutine allocate_outlet_location(meta, n, ierr)
         type(outlet_location) meta
         integer n, ierr
-        allocate(meta%name(n), meta%y(n), meta%x(n), meta%iy(n), meta%jx(n), meta%rnk(n), stat = ierr)
+        allocate( &
+            meta%name(n), meta%y(n), meta%x(n), &
+            meta%iy(n), meta%jx(n), &
+            meta%rnk(n), stat = ierr)
         if (ierr == 0) then
-            meta%name(n) = ''; meta%y(n) = 0.0; meta%x(n) = 0.0; meta%iy(n) = 0; meta%jx(n) = 0; meta%rnk(n) = 0
+            meta%name(n) = ''; meta%y(n) = 0.0; meta%x(n) = 0.0
+            meta%iy(n) = 0; meta%jx(n) = 0
+            meta%rnk(n) = 0
         end if
     end subroutine
 
     subroutine allocate_time_series(ts, n, ierr)
         type(time_series) ts
         integer n, ierr
+        ts%type = ''; ts%units = ''; ts%readmode = ''
         allocate(ts%val(n), stat = ierr)
         if (ierr == 0) ts%val = 0.0
     end subroutine
@@ -158,9 +174,16 @@ module fm_variables
     subroutine allocate_release_outlet(rls, n, ierr)
         type(release_outlet) rls
         integer n, ierr
-        allocate(rls%cfn(n), rls%b1(n), rls%b2(n), rls%b3(n), rls%b4(n), rls%b5(n), rls%lvlz0(n), rls%area(n), stat = ierr)
+        allocate( &
+            rls%cfn(n), &
+            rls%b1(n), rls%b2(n), rls%b3(n), rls%b4(n), rls%b5(n), &
+            rls%b6(n), rls%b7(n), &
+            rls%area(n), stat = ierr)
         if (ierr == 0) then
-            rls%cfn = 0; rls%b1 = 0.0; rls%b2 = 0.0; rls%b3 = 0.0; rls%b4 = 0.0; rls%b5 = 0.0; rls%lvlz0 = 0.0; rls%area = 0.0
+            rls%cfn = 0
+            rls%b1 = 0.0; rls%b2 = 0.0; rls%b3 = 0.0; rls%b4 = 0.0; rls%b5 = 0.0
+            rls%b6 = 0.0; rls%b7 = 0.0
+            rls%area = 0.0
         end if
     end subroutine
 
@@ -186,7 +209,7 @@ module fm_variables
         if (ierr /= 0) return
         call allocate_release_outlet(rsvr%rls, n, ierr)
         if (ierr /= 0) return
-        call allocate_time_series(rsvr%qorls, n, ierr)
+        call allocate_time_series(rsvr%rlsmeas, n, ierr)
     end subroutine
 
     subroutine allocate_abstraction_point_location(absp, n, ierr)

@@ -398,7 +398,7 @@ module RUNCLASS36_config
 
                     !> Assign values.
                     stas%sno%albs(k) = ALBSROW(ik, jk)
-                    stas%cnpy%cmai(k) = CMAIROW(ik, jk)
+                    stas%cnpy%cmas(k) = CMAIROW(ik, jk)
                     stas%cnpy%gro(k) = GROROW(ik, jk)
                     stas%cnpy%qac(k) = QACROW(ik, jk)
                     stas%cnpy%rcan(k) = RCANROW(ik, jk)
@@ -467,7 +467,7 @@ module RUNCLASS36_config
         csfv%SAND = pm%slp%sand
         csfv%CLAY = pm%slp%clay
         csfv%ORGM = pm%slp%orgm
-        cpv%CMAI = stas%cnpy%cmai
+        cpv%CMAI = stas%cnpy%cmas
         cpv%WSNO = stas%sno%wsno
         cpv%QAC = stas%cnpy%qac
         cpv%TCAN = stas%cnpy%tcan
@@ -656,7 +656,7 @@ module RUNCLASS36_config
 
                     !> Assign values.
                     ALBSROW(ik, jk) = stas%sno%albs(k)
-                    CMAIROW(ik, jk) = stas%cnpy%cmai(k)
+                    CMAIROW(ik, jk) = stas%cnpy%cmas(k)
                     GROROW(ik, jk) = stas%cnpy%gro(k)
                     QACROW(ik, jk) = stas%cnpy%qac(k)
                     RCANROW(ik, jk) = stas%cnpy%rcan(k)

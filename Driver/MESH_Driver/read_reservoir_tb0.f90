@@ -47,7 +47,7 @@ subroutine read_reservoir_tb0(shd, iun, fname)
     if (ierr /= 0) goto 998
 
     !> Get the time-step of the records.
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':DeltaT', fms%rsvr%qorls%dts, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':DeltaT', fms%rsvr%rlsmeas%dts, ierr, verbose)
 
     !> Populate other attributes.
     call get_keyword_value(iun, fname, vkeyword, nkeyword, ':ColumnName', fms%rsvr%meta%name, fms%rsvr%n, ierr, verbose)
@@ -58,16 +58,20 @@ subroutine read_reservoir_tb0(shd, iun, fname)
     call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff3', fms%rsvr%rls%b3, fms%rsvr%n, ierr, verbose)
     call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff4', fms%rsvr%rls%b4, fms%rsvr%n, ierr, verbose)
     call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff5', fms%rsvr%rls%b5, fms%rsvr%n, ierr, verbose)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff6', fms%rsvr%rls%area, fms%rsvr%n, ierr, verbose)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff7', fms%rsvr%rls%lvlz0, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':ReachArea', fms%rsvr%rls%area, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff6', fms%rsvr%rls%b6, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff7', fms%rsvr%rls%b7, fms%rsvr%n, ierr, verbose)
+
+    !> Replace 'area' with 'b6' if available.
+    if (any(fms%rsvr%rls%b6 > 0.0)) fms%rsvr%rls%area = fms%rsvr%rls%b6
 
     !> Get the start time of the first record in the file.
     call parse_starttime( &
         iun, fname, vkeyword, nkeyword, &
-        fms%rsvr%qorls%iyear, fms%rsvr%qorls%imonth, fms%rsvr%qorls%iday, fms%rsvr%qorls%ihour, fms%rsvr%qorls%imins, &
+        fms%rsvr%rlsmeas%iyear, fms%rsvr%rlsmeas%imonth, fms%rsvr%rlsmeas%iday, fms%rsvr%rlsmeas%ihour, fms%rsvr%rlsmeas%imins, &
         ierr, verbose)
-    if (fms%rsvr%qorls%iyear > 0 .and. fms%rsvr%qorls%imonth > 0 .and. fms%rsvr%qorls%iday > 0) then
-        fms%rsvr%qorls%ijday = get_jday(fms%rsvr%qorls%imonth, fms%rsvr%qorls%iday, fms%rsvr%qorls%iyear)
+    if (fms%rsvr%rlsmeas%iyear > 0 .and. fms%rsvr%rlsmeas%imonth > 0 .and. fms%rsvr%rlsmeas%iday > 0) then
+        fms%rsvr%rlsmeas%ijday = get_jday(fms%rsvr%rlsmeas%imonth, fms%rsvr%rlsmeas%iday, fms%rsvr%rlsmeas%iyear)
     end if
 
     !> Position the file to the first record.

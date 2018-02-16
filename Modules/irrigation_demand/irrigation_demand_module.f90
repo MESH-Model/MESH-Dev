@@ -164,16 +164,16 @@ module irrigation_module
         if (ro%RUNGRID .and. fms%absp%n > 0) then
 
             !> Minimum of available water and demand.
-            AVAIL_GRID = min(stas_grid%chnl%s, IRDMND_GRID) ! m3
+            AVAIL_GRID = min(stas_grid%chnl%stg, IRDMND_GRID) ! m3
 
             !> Apply conditions at abstraction points.
             do l = 1, fms%absp%n
                 n = fms%absp%meta%rnk(l)
-                AVAIL_GRID(n) = min(max(stas_grid%chnl%s(n) - fms%absp%smin(l), 0.0)*(1.0 - fms%absp%fsmin(l)), IRDMND_GRID(n))
+                AVAIL_GRID(n) = min(max(stas_grid%chnl%stg(n) - fms%absp%smin(l), 0.0)*(1.0 - fms%absp%fsmin(l)), IRDMND_GRID(n))
             end do
 
             !> Update storage.
-            where (AVAIL_GRID > 0.0) stas_grid%chnl%s = stas_grid%chnl%s - AVAIL_GRID
+            where (AVAIL_GRID > 0.0) stas_grid%chnl%stg = stas_grid%chnl%stg - AVAIL_GRID
         end if
 
         !> Abstraction.

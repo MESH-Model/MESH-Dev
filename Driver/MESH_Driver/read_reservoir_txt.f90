@@ -38,7 +38,7 @@ subroutine read_reservoir_txt(shd, iun, fname, nb)
 
     if (ro%VERBOSEMODE > 0) print 1000, trim(fname)
     open(iun, file = fname, status = 'old', action = 'read', err = 997)
-    read(iun, *, err = 999) fms%rsvr%n, NR, fms%rsvr%qorls%dts
+    read(iun, *, err = 999) fms%rsvr%n, NR, fms%rsvr%rlsmeas%dts
     NR = fms%rsvr%n
 
     !> Return if there are no reservoirs.

@@ -143,12 +143,12 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
         !> Allocate and initialize grid variables.
         allocate( &
-            shd%xxx(shd%NA), shd%yyy(shd%NA), &
+            shd%xxx(shd%NA), shd%yyy(shd%NA), shd%RNKGRD(shd%yCount, shd%xCount), &
             shd%NEXT(shd%NA), &
             shd%SLOPE_INT(shd%NA), &
             shd%AREA(shd%NA), shd%FRAC(shd%NA), &
             shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1), stat=ierr)
-        shd%xxx = 1; shd%yyy = 1
+        shd%xxx = 1; shd%yyy = 1; shd%RNKGRD = 1
         shd%NEXT = 0
         shd%SLOPE_INT = 1.0E-5
         shd%AREA = 1.0; shd%FRAC=shd%AREA/shd%AL/shd%AL
@@ -358,9 +358,9 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     NSL = shd%lc%IGND
 
     !> Allocate and initialize SA_MESH states.
-    call stas_init(stas, 'tile', NML, NSL, ierr)
-    call stas_init(stas_grid, 'grid', NA, NSL, ierr)
-    call stas_init(stas_gru, 'gru', NTYPE, NSL, ierr)
+    call stas_tile_init(stas, NML, NSL, ierr)
+    call stas_tile_init(stas_gru, NTYPE, NSL, ierr)
+    call stas_grid_init(stas_grid, NA, NSL, ierr)
 
     !> Call 'CLASSD' to initialize constants.
 !todo: replace this with a non-CLASS/generic version.
@@ -368,9 +368,6 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     !> Read parameters from file.
     call read_parameters(fls, shd, cm, ierr)
-
-    !> Read variable states from file.
-    call read_initial_states(fls, shd, ierr)
 
     !> Check the grid output points.
 !todo: fix this.
@@ -445,5 +442,11 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !>
 
     if (ro%RUNGRID) call read_basin_structures(shd)
+
+    !> Allocate and initialize SA_MESH states.
+    call stas_fms_init(stas_fms, fms%stmg%n, 0, fms%rsvr%n, ierr)
+
+    !> Read variable states from file.
+    call read_initial_states(fls, shd, ierr)
 
 end subroutine

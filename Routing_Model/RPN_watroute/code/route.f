@@ -76,7 +76,6 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       character*80 :: junk
       character(14) :: date
       logical :: exists      
-      INTEGER :: spl_csv_flag
       REAL :: storetest1
       REAL ovD/0.01/  ! ovD is the slope of the overbanks (set to 1% but could be read using topographic information)
       REAL conv,convthresh
@@ -152,7 +151,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                   print*,'move outlet to a grid in a lake'
 !                 note that dam locations with releases do not have to be in a lake!! 
                   print*
-!                  stop 'Program aborted in route @ 170'
+                  stop 'Program aborted in route @ 170'
                 endif
 !               rev. 8.99mm Dec. 13/2001-     added check for <= 0 init res flow
 !               check for +ve flow for res. initializations
@@ -319,15 +318,15 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !       initiate QO1 with qo2sim (simulated) due to possibility of modified qo2
 !       which could empty channel
         if (trim(strfw_option)=='streamflow_insertion') then
-        do l=1,no
-          if(iflowgrid(l).eq.n)then
-            qo1(n)=qo2sim(n)
-          end if
-        end do
+          do l=1,no
+            if(iflowgrid(l).eq.n)then
+              qo1(n)=qo2sim(n)
+            end if
+          end do
         end if
 
         repirr=0
-	do l=1,nodiv
+        do l=1,nodiv
           if (val2divyes.eq.1) then
             if (divname(l)(1:5).eq.'irrig'
      *      .or. divname(l)(1:5).eq.'Irrig') then
@@ -344,11 +343,11 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                 endif
             endif
           else
- 	  if (divstrindex(l).eq.n.or.divendindex(l).eq.n) then
+	      if (divstrindex(l).eq.n.or.divendindex(l).eq.n) then
                  qo1(n) = qo2sim(n)
               endif
-	  endif
-	enddo
+          endif
+        enddo
       enddo      
 
       qi2(na)=0.0
@@ -418,10 +417,12 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
               endif
   
+             if (iopt.eq.2) write(*,*) 'Calling rerout'
 !            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !              if (iz.eq.1)write(*,*)"REROUT ", n, res(n)
               call rerout(n,div,thr,res(n),jz,at,dtmin,date,firstpass)
 !            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             if (iopt.eq.2) write(*,*) 'Back from rerout'
 
 !     rev. 9.1.67  Oct.  21/04  - NK; added unit 80 for lake_stor & lake_outflow
 !             May   02/05  - TS: revised
@@ -470,13 +471,15 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
             lll=next(n)
             old=qo1(n)
             hold=1.0e+25
-            
+           
             do ic=1,maxic ! UP TO maxic ITERATIONS ARE ALLOWED
               if(abs(hold-store2(n)).gt.convthresh*hold)then
 !               THIS ITERATES TO CONVTHRESH OR ALLOWS UP TO MAXIC ITERATIONS
 
                 if(store2(n).lt.0.0)then
                   write(*,*) 'Stopping because store2 < 0.0'
+                  write(*,*) 'Iteration ',ic, 'point x,y',
+     *                       xxx(n), yyy(n)
                   stop
                 else
                   over(n)=(store2(n)-cap(n))/rl(n)
@@ -509,13 +512,13 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
                     if(over(n)-hwet2(n)*chawid(n).gt.0.0)then
                       qo2(n)=
-     *                  xa**1.67*slope(n)/(chawid(n)+2.0*hcha2(n))**0.667
-     *                  /r2n(n)+(over(n)-hwet2(n)*chawid(n))**1.33
-     *                               *slope(n)*ovbfact/r1n(n)
+     *                xa**1.67*slope(n)/(chawid(n)+2.0*hcha2(n))**0.667
+     *                /r2n(n)+(over(n)-hwet2(n)*chawid(n))**1.33
+     *                *slope(n)*ovbfact/r1n(n)
                     else
                       qo2(n)=
-     *                  xa**1.67*slope(n)/(chawid(n)+2.0*hcha2(n))**0.667
-     *                   /r2n(n)
+     *                xa**1.67*slope(n)/(chawid(n)+2.0*hcha2(n))**0.667
+     *                /r2n(n)
                     endif
 !                      qo2(n)=ice_fctr*qo2(n)
                   endif
@@ -676,9 +679,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
           endif
 
           repirr=0
-	  do l=1,nodiv
-		
-		  if (val2divyes.eq.1) then
+          do l=1,nodiv
+            
+            if (val2divyes.eq.1) then
 !	    diverting flow using the diversion type indicator: val2div (new way)
 
               if (divname(l)(1:5).eq.'irrig'
@@ -730,100 +733,100 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
                if (divstrindex(l).eq.n.or.divendindex(l).eq.n) then
 !              We are in the grid point where the diversion (start or end point) occurs
-		    if(ireach(n).gt.0.or.res(n).gt.0.)then
-!		    the diversion occurs in a reservoir
+                if(ireach(n).gt.0.or.res(n).gt.0.)then
+!		the diversion occurs in a reservoir
 
-	              if(res(n).eq.0.or.res(n).ne.ireach(n))then
+	          if(res(n).eq.0.or.res(n).ne.ireach(n))then
         	    write(*,*) 'Diversion is not at the reach outlet.'
                     write(*,*) 'Diversion number and name (div.tb0): ', 
      *                          l,divname(l)
                     write(*,*) 'Reservoir number and i,j location ',
      *                         '(REL.tb0): ', res(n), xxx(n), yyy(n)
                     write(*,*) 'Reach number (shed file): ', ireach(n)
-                        stop
-                      else
-			if(val2div(l).eq.1.and.divstrindex(l).eq.n.or.
-     *                  val2div(l).eq.2.and.divstrindex(l).eq.n)then
-!			source point considered: removing water
+                    stop
+                  else
+                    if(val2div(l).eq.1.and.divstrindex(l).eq.n.or.
+     *              val2div(l).eq.2.and.divstrindex(l).eq.n)then
+!                   source point considered: removing water
 
-			    if (qdiv(l,hour_offset_div+fhr).ge.0.0) then
-!			    diverted flow read from diversion file
-				qo2remtemp = qdiv(l,hour_offset_div+fhr)
-     *                          * val1div(l)
-			    else
-!				diverted flow taken from grid point outflow
+	              if (qdiv(l,hour_offset_div+fhr).ge.0.0) then
+!		      diverted flow read from diversion file
+		        qo2remtemp = qdiv(l,hour_offset_div+fhr)
+     *                  * val1div(l)
+		      else
+!		      diverted flow taken from grid point outflow
 		        qo2remtemp = qo2(n) * val1div(l)
-			    endif
+	              endif
 	              store2(n) = store2(n) - qo2remtemp * div * 2.
 
-	                    if (store2(n).lt.0.0) then
+	              if (store2(n).lt.0.0) then
 	                qo2rem(n) = (store2(n)+qo2remtemp*div*2.)/div/2.
 !		        not impossible that store2 was -ve initially, so cap qo2rem
-				qo2rem(n) = max(qo2rem(n),0.0)
-!				reset store2 to initial value minus qo2rem
+			qo2rem(n) = max(qo2rem(n),0.0)
+!			reset store2 to initial value minus qo2rem
 			store2(n) = store2(n)+qo2remtemp*div*2.-
      *                  qo2rem(n)*div*2.
-                            else
-                                qo2rem(n) = qo2remtemp
-	                    end if
+                      else
+                        qo2rem(n) = qo2remtemp
+	              end if
 
-			elseif ( val2div(l).eq.1.and.divendindex(l).eq.n.or
-     *                  .val2div(l).eq.3.and.divendindex(l).eq.n ) then
-!			end point considered : adding water
+		    elseif ( val2div(l).eq.1.and.divendindex(l).eq.n.or
+     *              .val2div(l).eq.3.and.divendindex(l).eq.n ) then
+!		    end point considered : adding water
 
-			  if (val2div(l).eq.3) then
-!				no worry about emptying source point, but still need to define qo2remtemp 
+	              if (val2div(l).eq.3) then
+!		      no worry about emptying source point, but still need to define qo2remtemp 
 			qo2remtemp = qdiv(l,hour_offset_div+fhr)*val1div(l)
-			  else
-		            qo2remtemp = qo2rem(divstrindex(l))											    
-			  endif
+		      else
+		        qo2remtemp = qo2rem(divstrindex(l))											    
+		      endif
 		      store2(n) = store2(n)+qo2remtemp*div*2.
 
-                    	end if
+                    end if
 !                   end check if removing or adding water
-		      endif
+		  endif
 !                 end check if in the reservoir of the reach
 
-	            else
+	        else
 !		we are not in a reach and diverted flow is removed from / added to stream
 
-		      if ( val2div(l).eq.1.and.divstrindex(l).eq.n.or.
-     *                val2div(l).eq.2.and.divstrindex(l).eq.n ) then
-!                     source point considered: removing water
+		  if ( val2div(l).eq.1.and.divstrindex(l).eq.n.or.
+     *            val2div(l).eq.2.and.divstrindex(l).eq.n ) then
+!                 source point considered: removing water
 			
-			if (qdiv(l,hour_offset_div+fhr).ge.0.0) then
-!                           diverted flow read from diversion file
-                                qo2remtemp = qdiv(l,hour_offset_div+fhr)
+		      if (qdiv(l,hour_offset_div+fhr).ge.0.0) then
+!                     diverted flow read from diversion file
+                        qo2remtemp = qdiv(l,hour_offset_div+fhr)
      *                  *val1div(l)
-                        else
-!                               diverted flow taken from grid point outflow
+                      else
+!                     diverted flow taken from grid point outflow
                         qo2remtemp = qo2(n) * val1div(l)
-                        endif
-		        qo2(n) = qo2(n) - qo2remtemp
+                      endif
+		      qo2(n) = qo2(n) - qo2remtemp
               	      if (qo2(n).lt.0.) then
                         qo2rem(n) = qo2(n)+qo2remtemp-0.001
-                		qo2(n) = max(0.001,qo2(n)-qo2rem(n))
-              	      	else
-                	        qo2rem(n) = qo2remtemp
-                        end if
+                	qo2(n) = max(0.001,qo2(n)-qo2rem(n))
+              	      else
+                	qo2rem(n) = qo2remtemp
+                      end if
 
-            	      elseif ( val2div(l).eq.1.and.divendindex(l).eq.n.or
-     *                .val2div(l).eq.3.and.divendindex(l).eq.n ) then
-!		      end point considered : adding water
+            	  elseif ( val2div(l).eq.1.and.divendindex(l).eq.n.or
+     *            .val2div(l).eq.3.and.divendindex(l).eq.n ) then
+!		  end point considered : adding water
 
-			if (val2div(l).eq.3) then
-!                       no worry about emptying source point, but still need to define qo2remtemp
+		      if (val2div(l).eq.3) then
+!                     no worry about emptying source point, but still need to define qo2remtemp
 		        qo2remtemp = qdiv(l,hour_offset_div+fhr)*val1div(l)
-			else
-				qo2remtemp = qo2rem(divstrindex(l))
-			endif
-			qo2(n) = qo2(n) + qo2remtemp
-			
+		      else
+			qo2remtemp = qo2rem(divstrindex(l))
 		      endif
-!                     end check if source or end point
+		      qo2(n) = qo2(n) + qo2remtemp
+			
+		  endif
+!                 end check if source or end point
 
-		    endif
-!                   end check if in a reservoir
+		endif
+!               end check if in a reservoir
 
                endif 
 !              end check if in grid point of diversion
@@ -831,17 +834,18 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
               endif
 !             end check if station is for irrigation or not           
 
-		  else
-!		  procesing diversions the old way, i.e. no val2div value is used 
+            else
+!           procesing diversions the old way, i.e. no val2div value is used 
 
              if (divstrindex(l).eq.n.or.divendindex(l).eq.n) then
 !            diversion station has an end in this grid point
 
-		    if(ireach(n).gt.0.or.res(n).gt.0.)then
-!                   the diversion occurs in a reservoir
+		if(ireach(n).gt.0.or.res(n).gt.0.)then
+!               the diversion occurs in a reservoir
 
                       if(res(n).eq.0.or.res(n).ne.ireach(n))then
-                        PRINT*,'the diversion does occur in a reach but not in its
+                        PRINT*,'the diversion does occur in a reach but
+     *                  not in its
      *                  reservoir; please verify diversion location for 
      *                  (reservoir, reach): '
                         PRINT*,res(n),ireach(n)
@@ -856,45 +860,45 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !                           with the old way, -ve diversion flows are reset to 0
                                 qo2remtemp = 0.0
                             endif
-                            store2(n) = store2(n) - qo2remtemp * div * 2.
+                            store2(n) = store2(n) - qo2remtemp*div*2.
                             if (store2(n).lt.0.0) then
                               qo2rem(n) = (store2(n)+qo2remtemp*div*2.) 
-     *                          / div / 2.
+     *                        /div/2.
 !                             not impossible that store2 was -ve initially,so cap qo2rem
-                                qo2rem(n) = max(qo2rem(n),0.0)
-!                               reset store2 to initial value minus qo2rem
-                                store2(n) = store2(n) + qo2remtemp * div * 2.
-     *                          - qo2rem(n) * div * 2.
+                              qo2rem(n) = max(qo2rem(n),0.0)
+!                             reset store2 to initial value minus qo2rem
+                              store2(n) = store2(n) +
+     *                        qo2remtemp * div * 2. - qo2rem(n)*div*2.
                             else
-                                qo2rem(n) = qo2remtemp
+                              qo2rem(n) = qo2remtemp
                             end if
                         elseif ( divendindex(l).eq.n ) then
 !                       end point considered : adding water
                             qo2remtemp = qo2rem(divstrindex(l))
-                            store2(n) = store2(n) + qo2remtemp * div * 2.
+                            store2(n) = store2(n) + qo2remtemp*div*2.
                         end if
 !                       end check if remove or add water
                       endif
 !                     end check if in the reservoir of the reach
-
-                    else
-!                   we are not in a reservoir and diverted flow is removed from / added to stream
+                      
+                else
+!               we are not in a reservoir and diverted flow is removed from / added to stream
 
                       if ( divstrindex(l).eq.n ) then
 !                     source point considered: removing water
                         if (qdiv(l,hour_offset_div+fhr).ge.0.0) then
 !                       diverted flow read from diversion file
-                                qo2remtemp = qdiv(l,hour_offset_div+fhr)
+                          qo2remtemp = qdiv(l,hour_offset_div+fhr)
                         else
 !                       old way: -ve diverted flows reset to 0.0 (only if no +ve values at all are present in diversion file).
-                                qo2remtemp = 0.0
+                          qo2remtemp = 0.0
                         endif
                         qo2(n) = qo2(n) - qo2remtemp
                         if (qo2(n).lt.0.0) then
                           qo2rem(n) = qo2(n) + qo2remtemp - 0.001
                           qo2(n) = max(0.001,qo2(n) - qo2rem(n))
                         else
-                                qo2rem(n) = qo2remtemp
+                          qo2rem(n) = qo2remtemp
                         end if
                       elseif ( divendindex(l).eq.n ) then
 !                     end point considered : adding water
@@ -903,13 +907,13 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                       endif
 !                     end check if source or end point
 
-                    endif
-!	            end check if in a reservoir
+                endif
+!	        end check if in a reservoir
 
-		  endif
+             endif
 !            end check if station is in grid point
 
-               endif
+            endif
 !           end check if processing diversion with diversion type or the old way 
 
 	  enddo
@@ -958,13 +962,13 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
 !       EG_MOD compute average flow over current hourly time step,
 !       always using the simulated flow value.
-
+ 
         if (qo2sim(n).gt.0.) then
           avr_qo(n) = avr_qo(n) + (qo1(n) + qo2sim(n))*div
-        else
+        else 
           avr_qo(n) = avr_qo(n) + (qo1(n) + qo2(n))*div
         endif
-
+        
       end do       ! closes the routing loop: do n=1,naa starting near line 315
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11!!!!!!!!!!!!!!!
@@ -976,13 +980,14 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
         end do        
       end if 
 
-      if (((trim(strfw_option)=='streamflow_comparison') .or.
-     *     (trim(strfw_option)=='streamflow_insertion'))
+!     Y. Shin : splrpnflg replacing old spl_csv_flag
+!         with y or f set from event.evt_template 
+!         y for yes, f for default to write spl-rpn files 
+ 
+      if (((splrpnflg == 'y') .or. (splrpnflg == 'f'))
      *    .and. iz .eq. no_dt) then
 
-        spl_csv_flag = 1 ! bjd - set to 1 for a csv spl file
-
-        if(spl_csv_flag == 1) then
+        if(splrpnflg == 'y') then
           if (first_run) then
             write(unit=54,fmt='(A)') 
      *        'Observed and simulated streamflows (m^3/s)'
@@ -994,7 +999,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
             write(unit=54,fmt='(A11,'//trim(nostr)
      *        //'(",",F8.3,","))')
      *        'Latitude,,,',(ystr(l),l=1,no)
-            write(unit=54,fmt='(A11,'//trim(nostr)
+            write(unit=54,fmt='(A14,'//trim(nostr)
      *        //'(",",I8,","))')
      *        'Xcoord_grid,,,',(jx(l),l=1,no)
             write(unit=54,fmt='(A14,'//trim(nostr)//'(",",I8,","))')
@@ -1004,14 +1009,14 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
             first_run = .false.
           end if
 
-!	  write(fmtfile,'("(4(i5,",a3,"),F15.3,",i4"(",a3,",F15.3))")'),
-	  write(fmtfile,'("(4(i5,",a3,"),F15.4,",i4"(",a3,",F15.4))")'),
+          write(fmtfile,'("(4(i5,",a3,"),F15.4,",i4"(",a3,",F15.4))")')
      *        "','", 2*no, "','"
           write(unit=54,fmt=fmtfile) 
      *      year1, month_now, day_now, hour_now,
      *      (qhyd(l,hour_offset+fhr),avr_qo(iflowgrid(l)),l=1,no)
 
-        else !spl_csv_flag
+      else !splrpnflg
+        if(splrpnflg == 'f') then
           if (first_run) then
             write(unit=54,fmt='(A)') 
      *        'Observed and simulated streamflows (m^3/s)'
@@ -1029,11 +1034,12 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *        'YEAR MONTH  DAY HOUR'//repeat(',OBS,SIM',no)
             first_run = .false.
           end if
+        end if
 
-          write(unit=54,fmt='I4,I6,2(I5),'//trim(nostr)//'(3F15.1)') 
+        write(unit=54,fmt='I4,I6,2(I5),'//trim(nostr)//'(3F15.1)') 
      *      year1, month_now, day_now, hour_now,
      *      (qhyd(l,hour_offset+fhr),avr_qo(iflowgrid(l)),l=1,no)
-        endif
+        end if
       end if
 
       if(iopt.eq.2)print*, 'In route after the 1-naa loop'

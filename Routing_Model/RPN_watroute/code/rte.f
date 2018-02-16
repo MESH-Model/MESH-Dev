@@ -109,9 +109,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
        elseif(buf.eq.'2')then
          iopt=2
        elseif(buf.eq.'3')then
-         iopt=3
+         iopt=2
        elseif(buf.eq.'4')then
-         iopt=4
+         iopt=2
        elseif(buf.eq.'9')then
 !       rev. 9.1.63  Sep.  29/04  - NK: Added iopt_start as an arg for quick filecheck
         iopt_start=99
@@ -360,7 +360,7 @@ c      endif
               else if (iswitch.eq.1 .and. len(trim(infln(i))).gt.2) then
                 Nreaches = Nreaches + 1
               else if (iswitch.eq.1 .and. len(trim(infln(i))).le.2) then
-!                iswitch = 2                       !bug: if 2 consecutive lines empty (::) Nreaches  not calculated!
+                iswitch = 2
               end if 
             else
               print*,'Problems on unit 99'
