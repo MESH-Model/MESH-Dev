@@ -648,9 +648,9 @@ module rte_module
         if (fms%stmg%n > 0) qhyd(:, fhr) = fms%stmg%qomeas%val
         if (fms%rsvr%n > 0) then
             if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
-                qrel(1:count(fms%rsvr%rls%b1 == 0.0), fhr) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
+                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
             else
-                qrel(:, fhr) = fms%rsvr%rlsmeas%val
+                qrel(:, 1) = fms%rsvr%rlsmeas%val
             end if
         end if
 
