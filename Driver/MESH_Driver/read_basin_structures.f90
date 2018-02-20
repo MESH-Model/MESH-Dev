@@ -12,7 +12,6 @@
 subroutine read_basin_structures(shd)
 
     use strings
-    use mpi_module
     use sa_mesh_variables
     use sa_mesh_utilities
     use model_dates
@@ -24,45 +23,37 @@ subroutine read_basin_structures(shd)
     type(ShedGridParams) :: shd
 
     !> Local variables.
-    integer iun, istop, ierr, iskip, ijday1, ijday2, r, l, n, i
-    character(len = 200) fname
+    integer iun, ierr, iskip, ijday1, ijday2, n, i
+    character(len = DEFAULT_LINE_LENGTH) fname, line
 
-    !> Initialize 'istop'
-    istop = 0
+    !> Return if routing routines are disabled.
+    if (.not. ro%RUNCHNL) return
 
-    !>
-    !> STREAMFLOW GAUGE LOCATION.
-    !>
+    !> Streamflow gauge locations.
 
-    !> File unit and name.
+    !> Initialize the time-series.
+    fms%stmg%qomeas%iyear = ic%start%year
+    fms%stmg%qomeas%ijday = ic%start%jday
+    fms%stmg%qomeas%ihour = ic%start%hour
+    fms%stmg%qomeas%imins = ic%start%mins
+
+    !> Read the configuration from file.
     fname = fms%stmg%qomeas%fls%fname
     iun = fms%stmg%qomeas%fls%iun
-
-    !> Read location from file if channel routing is enabled.
-    if (ro%RUNCHNL) then
-
-        !> Initialize time-series.
-        fms%stmg%qomeas%iyear = ic%start%year
-        fms%stmg%qomeas%ijday = ic%start%jday
-        fms%stmg%qomeas%ihour = ic%start%hour
-        fms%stmg%qomeas%imins = ic%start%mins
-
-        !> Read from file.
-        select case (lowercase(fms%stmg%qomeas%fls%ffmt))
-            case ('tb0')
-                fname = trim(adjustl(fname)) // '.tb0'
-                call read_streamflow_tb0(shd, iun, fname)
-            case default
-                fname = trim(adjustl(fname)) // '.txt'
-                call read_streamflow_txt(shd, iun, fname)
-        end select
-    else
-        fms%stmg%n = 0
-    end if
+    select case (lowercase(fms%stmg%qomeas%fls%ffmt))
+        case ('tb0')
+            fname = trim(adjustl(fname)) // '.tb0'
+            call read_streamflow_tb0(shd, iun, fname)
+        case default
+            fname = trim(adjustl(fname)) // '.txt'
+            call read_streamflow_txt(shd, iun, fname)
+    end select
 
     !> If locations exist.
-    r = fms%stmg%n
-    if (r > 0) then
+    if (fms%stmg%n > 0) then
+
+        !> Print to status file.
+        call print_echo_txt(trim(fname))
 
         !> Find the x-y cell coordinate of the location.
         fms%stmg%meta%iy = int((fms%stmg%meta%y - shd%yOrigin)/shd%yDelta) + 1
@@ -70,80 +61,77 @@ subroutine read_basin_structures(shd)
 
         !> Find the RANK of the location.
         fms%stmg%meta%rnk = 0
-        do l = 1, r
+        do i = 1, fms%stmg%n
             do n = 1, shd%NA
-                if (fms%stmg%meta%jx(l) == shd%xxx(n) .and. fms%stmg%meta%iy(l) == shd%yyy(n)) fms%stmg%meta%rnk(l) = n
+                if (fms%stmg%meta%jx(i) == shd%xxx(n) .and. fms%stmg%meta%iy(i) == shd%yyy(n)) fms%stmg%meta%rnk(i) = n
             end do
         end do
 
-        !> Print an error if any location has no RANK (is outside the basin).
+        !> Print a message if any location is missing RANK (outside the basin).
         if (minval(fms%stmg%meta%rnk) == 0) then
-            if (ipid == 0) then
-                print 1010, 'Streamflow gauge(s) are outside the basin'
-                print 1020, repeat('-', 16), repeat('-', 16), repeat ('-', 16), repeat('-', 16), repeat ('-', 16)
-                print 1020, 'GAUGE', 'Y', 'IY', 'X', 'JX'
-                print 1020, repeat('-', 16), repeat('-', 16), repeat ('-', 16), repeat('-', 16), repeat ('-', 16)
-                do l = 1, r
-                    if (fms%stmg%meta%rnk(l) == 0) then
-                        print 1020, l, fms%stmg%meta%y(l), fms%stmg%meta%iy(l), fms%stmg%meta%x(l), fms%stmg%meta%jx(l)
-                    end if
-                end do
-            end if
-            istop = 1
+            call print_error('Streamflow gauge(s) are outside the basin.')
+            call print_message_detail(line)
+            write(line, 1001) 'GAUGE', 'Y', 'IY', 'X', 'JX'
+            call print_message_detail(line)
+            do i = 1, fms%stmg%n
+                if (fms%stmg%meta%rnk(i) == 0) then
+                    write(line, 1001) i, fms%stmg%meta%y(i), fms%stmg%meta%iy(i), fms%stmg%meta%x(i), fms%stmg%meta%jx(i)
+                    call print_message_detail(line)
+                end if
+            end do
+            call stop_program()
         end if
 
-        !> Skips records to present in file.
+        !> Skip records in the file the 'now' time-step.
         call Julian_Day_ID(fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday, ijday1)
         call Julian_Day_ID(ic%start%year, ic%start%jday, ijday2)
         if (ijday2 < ijday1) then
-            if (ipid == 0) then
-                print 9994, trim(adjustl(fname)), trim(adjustl(fname)), &
-                    fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday, ic%start%year, ic%start%jday
-            end if
+            call print_warning('The first record occurs after the simulation start date.')
+            call print_message('This may cause channels to initialize with no storage.')
+            write(line, "(i5, i4)") fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday
+            write(line, 1002) 'First record occurs on:', trim(line)
+            call print_message_detail(line)
+            write(line, "(i5, i4)") ic%start%year, ic%start%jday
+            write(line, 1002) 'Simulation start date:', trim(line)
+            call print_message_detail(line)
         end if
         iskip = (ijday2 - ijday1)*24/fms%stmg%qomeas%dts
         if (iskip > 0) then
-            if (ipid == 0) print 9993, iskip
+            write(line, 1000) iskip
+            call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
             ierr = read_records_txt(iun, fms%stmg%qomeas%val, iskip)
             if (ierr /= 0) then
-                if (ipid == 0) print 9995, trim(adjustl(fname))
+                call print_warning('Reached end of file.')
             end if
-!-            do i = 1, iskip
-!-                read(iun, *, iostat = ierr)
-!-                if (ierr /= 0) then
-!-                    if (ipid == 0) print 9995, trim(adjustl(fname))
-!-                    exit
-!-                end if
-!-            end do
         end if
 
         !> Read the first record, then reposition to the first record.
-!-        read(iun, *, iostat = ierr) (stas_grid%chnl%qo(fms%stmg%rnk(l)), l = 1, r)
         ierr = read_records_txt(iun, fms%stmg%qomeas%val)
         if (ierr /= 0) fms%stmg%qomeas%val = 0.0
         backspace(iun)
 
         !> Warn if the initial value is zero.
         if (any(fms%stmg%qomeas%val == 0.0)) then
-            if (ipid == 0) print 9996, trim(adjustl(fname))
+            call print_warning('The measured value at the simulation start date is zero.')
+            call print_message('This may cause channels to initialize with no storage.')
         end if
-    end if
 
-    !> Print a summary of locations to file.
-    if (ipid == 0 .and. fms%stmg%n > 0) then
-        if (VERBOSEMODE) print 9997, 'streamflow gauges', fms%stmg%n
+        !> Print a summary of locations to file.
+        write(line, 1000) fms%stmg%n
+        call print_message_detail('Number of streamflow gauges: ' // trim(adjustl(line)))
         if (DIAGNOSEMODE) then
-!todo: Change to write to summary file.
-            print 1020, 'GAUGE', 'IY', 'JX', 'DA (km/km2)', 'RANK'
-            do l = 1, fms%stmg%n
-                print 1020, l, fms%stmg%meta%iy(l), fms%stmg%meta%jx(l), shd%DA(fms%stmg%meta%rnk(l)), fms%stmg%meta%rnk(l)
+            write(line, 1001) 'GAUGE', 'IY', 'JX', 'DA (km/km2)', 'RANK'
+            call print_message_detail(line)
+            do i = 1, fms%stmg%n
+                write(line, 1001) i, fms%stmg%meta%iy(i), fms%stmg%meta%jx(i), shd%DA(fms%stmg%meta%rnk(i)), &
+                    fms%stmg%meta%rnk(i)
+                call print_message_detail(line)
             end do
+            call print_message('')
         end if
     end if
 
-    !>
-    !> RESERVOIR OUTLET LOCATION.
-    !>
+    !> Reservoir outlet locations.
 
     !> File unit and name.
     fname = fms%rsvr%rlsmeas%fls%fname
@@ -172,14 +160,21 @@ subroutine read_basin_structures(shd)
     end if
 
     !> Print an error if no reservoirs are defined but reaches exist from the drainage database file.
-    if (fms%rsvr%n == 0 .and. maxval(shd%IREACH) > 0) then
-        if (ipid == 0) print 9992, trim(adjustl(fname))
-        istop = 1
+    if (maxval(shd%IREACH) /= fms%rsvr%n) then
+        call print_error('The number of reservoirs does not match between the drainage database (IREACH) ' // &
+            'and in: ' // trim(adjustl(fname)))
+        write(line, 1000) maxval(shd%IREACH)
+        call print_message_detail('Maximum IREACH the drainage database: ' // trim(adjustl(line)))
+        write(line, 1000) fms%rsvr%n
+        call print_message_detail('Number of reservoirs read from file: ' // trim(adjustl(line)))
+        call stop_program()
     end if
 
     !> If locations exist.
-    r = fms%rsvr%n
-    if (r > 0) then
+    if (fms%rsvr%n > 0) then
+
+        !> Print to status file.
+        call print_echo_txt(trim(fname))
 
         !> Find the x-y cell coordinate of the location.
         fms%rsvr%meta%iy = int((fms%rsvr%meta%y - shd%yOrigin)/shd%yDelta) + 1
@@ -187,35 +182,43 @@ subroutine read_basin_structures(shd)
 
         !> Find the RANK of the location.
         fms%rsvr%meta%rnk = 0
-        do l = 1, r
+        do i = 1, fms%rsvr%n
             do n = 1, shd%NAA
-                if (fms%rsvr%meta%jx(l) == shd%xxx(n) .and. fms%rsvr%meta%iy(l) == shd%yyy(n)) fms%rsvr%meta%rnk(l) = n
+                if (fms%rsvr%meta%jx(i) == shd%xxx(n) .and. fms%rsvr%meta%iy(i) == shd%yyy(n)) fms%rsvr%meta%rnk(i) = n
             end do
         end do
 
         !> Print an error if any location has no RANK (is outside the basin).
         if (minval(fms%rsvr%meta%rnk) == 0) then
-            if (ipid == 0) then
-                print 1010, 'Reservoir outlet(s) are outside the basin'
-                print 1020, repeat('-', 16), repeat('-', 16), repeat ('-', 16), repeat('-', 16), repeat ('-', 16)
-                print 1020, 'OUTLET', 'Y', 'IY', 'X', 'JX'
-                print 1020, repeat('-', 16), repeat('-', 16), repeat ('-', 16), repeat('-', 16), repeat ('-', 16)
-                do l = 1, r
-                    if (fms%rsvr%meta%rnk(l) == 0) then
-                        print 1020, l, fms%rsvr%meta%y(l), fms%rsvr%meta%iy(l), fms%rsvr%meta%x(l), fms%rsvr%meta%jx(l)
-                    end if
-                end do
-            end if
-            istop = 1
+            call print_error('Reservoir outlet(s) are outside the basin.')
+            write(line, 1001) 'OUTLET', 'Y', 'IY', 'X', 'JX'
+            call print_message_detail(line)
+            do i = 1, fms%rsvr%n
+                if (fms%rsvr%meta%rnk(i) == 0) then
+                    write(line, 1001) i, fms%rsvr%meta%y(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%x(i), fms%rsvr%meta%jx(i)
+                    call print_message_detail(line)
+                end if
+            end do
+            call stop_program()
         end if
 
         !> Print an error if any outlet location has no REACH.
-        do l = 1, r
-            if (shd%IREACH(fms%rsvr%meta%rnk(l)) /= l) then
-                if (ipid == 0) print 9991, l, fms%rsvr%meta%rnk(l), shd%IREACH(fms%rsvr%meta%rnk(l)), l
-                istop = 1
+        ierr = 0
+        do i = 1, fms%rsvr%n
+            if (fms%rsvr%meta%rnk(i) > 0) then
+                if (shd%IREACH(fms%rsvr%meta%rnk(i)) /= i) then
+                    if (ierr == 0) then
+                        call print_error('Mis-match between IREACH and reservoir IDs.')
+                        write(line, 1001) 'RANK', 'IREACH', 'EXPECTING'
+                        call print_message(line)
+                    end if
+                    write(line, 1001) fms%rsvr%meta%rnk(i), shd%IREACH(fms%rsvr%meta%rnk(i)), i
+                    call print_message(line)
+                    ierr = 1
+                end if
             end if
         end do
+        if (ierr /= 0) call stop_program()
 
         !> Initialize reservoir release values if such a type of reservoir has been defined.
         if (count(fms%rsvr%rls%b1 == 0.0) > 0) then
@@ -231,74 +234,55 @@ subroutine read_basin_structures(shd)
             call Julian_Day_ID(fms%rsvr%rlsmeas%iyear, fms%rsvr%rlsmeas%ijday, ijday1)
             call Julian_Day_ID(ic%start%year, ic%start%jday, ijday2)
             if (ijday2 < ijday1) then
-                if (ipid == 0) then
-                    print 9994, trim(adjustl(fname)), trim(adjustl(fname)), &
-                        fms%rsvr%rlsmeas%iyear, fms%rsvr%rlsmeas%ijday, ic%start%year, ic%start%jday
-                end if
+                call print_error('The first record occurs after the simulation start date.')
+                call print_message( &
+                    'The record must start on or after the simulation start date when controlled reservoirs are active.')
+                write(line, "(i5, i4)") fms%rsvr%rlsmeas%iyear, fms%rsvr%rlsmeas%ijday
+                write(line, 1002) 'First record occurs on:', trim(line)
+                call print_message_detail(line)
+                write(line, "(i5, i4)") ic%start%year, ic%start%jday
+                write(line, 1002) 'Simulation start date:', trim(line)
+                call print_message_detail(line)
+                call stop_program()
             end if
             iskip = (ijday2 - ijday1)*24/fms%rsvr%rlsmeas%dts
             if (iskip > 0) then
-                if (ipid == 0) print 9993, iskip
+                write(line, 1000) iskip
+                call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
                 ierr = read_records_txt(iun, fms%rsvr%rlsmeas%val, iskip)
                 if (ierr /= 0) then
-                    if (ipid == 0) print 9995, trim(adjustl(fname))
+                    call print_error('Reached end of file.')
+                    call stop_program()
                 end if
             end if
 
             !> Read the first record, then reposition to the first record.
-            ierr = read_records_txt(iun, fms%rsvr%rlsmeas%val)
-
             !> Stop if no releases exist.
+            ierr = read_records_txt(iun, fms%rsvr%rlsmeas%val)
             if (ierr /= 0) then
-                print 9990, trim(adjustl(fname))
-                stop
+                call print_error('Reached end of file.')
+                call stop_program()
             end if
-
-            !> Reposition to the first record in the file.
             backspace(iun)
         end if
-    end if
 
-    !> Print a summary of locations to file.
-    if (ipid == 0 .and. fms%rsvr%n > 0) then
-        if (VERBOSEMODE) print 9997, 'reservoir outlets', fms%rsvr%n
+        !> Print a summary of locations to file.
+        write(line, 1000) fms%rsvr%n
+        call print_message_detail('Number of reservoir outlets: ' // trim(adjustl(line)))
         if (DIAGNOSEMODE) then
-!todo: Change to write to summary file.
-            print 1020, 'OUTLET', 'IY', 'JX', 'RANK'
-            do l = 1, fms%rsvr%n
-                print 1020, l, fms%rsvr%meta%iy(l), fms%rsvr%meta%jx(l), fms%rsvr%meta%rnk(l)
+            write(line, 1001) 'OUTLET', 'IY', 'JX', 'RANK'
+            call print_message_detail(line)
+            do i = 1, fms%rsvr%n
+                write(line, 1001) i, fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i)
+                call print_message_detail(line)
             end do
+            call print_message('')
         end if
     end if
 
-9997    format(3x, 'Number of ', (a), ': ', i5)
-9996    format( &
-            /3x, 'WARNING: The record at the simulation start date in ', (a), ' is zero.', &
-            /8x, 'This may cause a no flow error if the channels are initialized using the observed value.')
-9995    format(3x, 'WARNING: End of file reached when reading from ', (a), '.')
-9994    format( &
-            /3x, 'WARNING: The start date in ', (a), ' occurs after the simulation start date.', &
-            /8x, 'This may cause a no flow error if the channels are initialized using the observed value.', &
-            /8x, (a), ' start date:', i5, i4, &
-            /8x, 'Simulation start date:', i5, i4)
-9993    format(3x, 'Skipping ', i8, ' registers in the file.')
-9992    format( &
-            /3x, 'ERROR: Reaches exist in the drainage database file but no reservoirs are listed in ', (a), '.', &
-            /8x, 'The numbers of reaches and reservoirs must match.')
-9991    format( &
-            /3x, 'ERROR: Reservoir ', i4, ' is not in the correct reach.', &
-            /8x, 'REACH at RANK ', i8, ' is ', i4, ' but should be ', i4)
-9990    format(3x, 'ERROR: End of file reached when reading from ', (a), '.')
-
-    !> Stop if there have been configuration errors.
-    if (istop /= 0) stop
-
-    !>
-    !> FORMAT STATEMENTS.
-    !>
-
-1010    format(/1x, 'ERROR: ', (a))
-1020    format(3x, 9(g16.9, 1x))
-1030    format(3x, (a))
+    !> Format statements.
+1000    format(i10)
+1001    format(9999(g15.6, 1x))
+1002    format(a29, 1x, g13.2)
 
 end subroutine
