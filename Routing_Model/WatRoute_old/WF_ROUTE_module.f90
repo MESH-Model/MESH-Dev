@@ -53,7 +53,11 @@ module WF_ROUTE_module
         if (fms%rsvr%n > 0) then
             stas_fms%rsvr%qo = stas_grid%chnl%qo(fms%rsvr%meta%rnk(:))
             stas_fms%rsvr%qi = stas_grid%chnl%qi(fms%rsvr%meta%rnk(:))
-            stas_fms%rsvr%stg = -1.0
+            where (wf_b1 == 1.0 .and. wf_b2 == 0.0)
+                stas_fms%rsvr%stg = stas_grid%chnl%stg(fms%rsvr%meta%rnk(:))
+            elsewhere
+                stas_fms%rsvr%stg = -1.0
+            end where
             stas_fms%rsvr%zlvl = 0.0
         end if
 

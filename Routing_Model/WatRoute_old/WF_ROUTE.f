@@ -453,14 +453,14 @@ c     and proceed to the lowest.
 
           if( wf_ireach(i).gt.0 ) then ! We are in a Reservoir
                l=wf_ireach(i)
-             if (wf_b1(l).eq.1.0 .and. wf_b2(l).eq.0.0) then !Reservoir type based on LISFLOOD
+             if (wf_b1(l).eq.1.0 .and. wf_b2(l).eq.0.0) then !Reservoir type for zone-based storage
 C Are we at the outlet
               if(wf_r(l).eq.i) then
 C yes we are at the outlet
 C Call external code to get discharge and storage
-                  wf_qi1(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
-                  call staged_reservoir_release(
-     +                    IYEAR,IDAY,i,l,wf_qi1(i),div*2.0, !input
+                  wf_qi2(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
+                  call zonebased_reservoir_release(
+     +                    IYEAR,IDAY,i,l,wf_qi2(i),div*2.0, !input
      +                    wf_qo2(i),wf_store2(i))           !output
                   wf_resstore(l)=0.0
                else

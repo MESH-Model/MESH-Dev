@@ -1,5 +1,5 @@
 !>
-subroutine staged_reservoir_release(iyear, ijday, rank, ireach, qi1, dt, qo2, store2)
+subroutine zonebased_reservoir_release(iyear, ijday, rank, ireach, qi1, dt, qo2, store2)
 
     use reservoir
     use model_dates

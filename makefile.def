@@ -86,7 +86,7 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			model_output.o
 
 #reservoir_update (reservoirs)
-OBJECTS+=	module_reservoir.o staged_reservoir_release.o
+OBJECTS+=	module_reservoir.o zonebased_reservoir_release.o
 
 #WF_ROUTE
 OBJECTS+=	WF_ROUTE_config.o WF_ROUTE.o WF_ROUTE_module.o
