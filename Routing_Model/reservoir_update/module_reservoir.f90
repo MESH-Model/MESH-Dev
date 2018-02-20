@@ -119,7 +119,7 @@ module reservoir! Variable declarations
 
         !internals
         integer  :: irsv
-        real     :: FU, LC, LN, LF, RX
+        real     :: FU, LD, LC, LN, LF, RX
         real     :: rnd
         !> get random number
         call random_number(rnd)
@@ -134,8 +134,13 @@ module reservoir! Variable declarations
         LN = resrv%nsto(mId)/resrv%SMAX
         LF = resrv%ndsto(mId)/resrv%SMAX
         RX = 2*resrv%RXN*rnd + resrv%RXN
+        LD = 0.1
 
-        if (FU <= LC) then
+        if (FU <= LD) then
+
+            resrv%flowSIM(t) = 0.0
+
+        else if (FU > LD .and. FU <= LC) then
 
             resrv%flowSIM(t) = max((min(resrv%Qmin(mId),(FU*resrv%SMAX/DT))+RX),0.0)
 
