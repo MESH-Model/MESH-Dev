@@ -109,6 +109,15 @@ program RUNMESH
 
     implicit none
 
+    !> Constants.
+    !*  VERSION: MESH_DRIVER version.
+    !*  RELEASE: PROGRAM RELEASE VERSIONS
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1263'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
+
+    !> Local variables.
+    character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
+
     !* ierr: Diagnostic error/status return from various subroutines.
     integer :: ierr = 0
 
@@ -143,11 +152,6 @@ program RUNMESH
     !* M_R: MAXIMUM ALLOWABLE NUMBER OF RESERVOIRS
     !* M_C: MAXIMUM ALLOWABLE NUMBER OF RIVER CHANNELS
     !* M_G: MAXIMUM ALLOWABLE NUMBER OF GRID OUTPUTS
-
-    !* VERSION: MESH_DRIVER VERSION
-    !* RELEASE: PROGRAM RELEASE VERSIONS
-    character(24) :: VERSION = '1263'
-    character(8) RELEASE
 
     integer i, j, k, l, m, u
     character(len = DEFAULT_LINE_LENGTH) line
@@ -193,28 +197,20 @@ program RUNMESH
 !+    real alpharain
 !+    character(50) alphCh
 
-!> ((((((((((((((((((((((((((((((((((
-!> Set the acceptable version numbers
-!> ))))))))))))))))))))))))))))))))))
-!todo: this should be input file dependent,
-!because different files will work with different releases
-!so, make them local variables inside each read subroutine.
-    RELEASE = '1.4'
-
     call cpu_time(startprog)
 
     !> Initialize MPI.
     call mpi_init(ierr)
     if (ierr /= mpi_success) then
         call print_warning('Failed to initialize MPI.')
-        write(line, 1002) 'Error status:', ierr
-        call print_message_detail(line)
+        write(line, 1001) ierr
+        call print_message_detail('Error status: ' // trim(adjustl(line)))
         call print_message('Calling MPI abort...')
         call mpi_abort(mpi_comm_world, ierrcode, ierr)
-        write(line, 1002) 'Error code:', ierrcode
-        call print_message_detail(line)
-        write(line, 1002) 'Error status:', ierr
-        call print_message_detail(line)
+        write(line, 1001) ierrcode
+        call print_message_detail('Error code: ' // trim(adjustl(line)))
+        write(line, 1001) ierr
+        call print_message_detail('Error status: ' // trim(adjustl(line)))
     end if
 
     !> Grab number of total processes and current process ID.
@@ -233,8 +229,8 @@ program RUNMESH
     if (ipid > 0) VERBOSEMODE = .false.
 
     !> Write MESH version to screen.
-    write(line, "('MESH ', (a), ' ---  (', (a), ')')") trim(RELEASE), trim(VERSION)
-    call print_screen(line)
+    write(RELEASE_STRING, "('MESH ', (a), ' ---  (', (a), ')')") trim(RELEASE), trim(VERSION)
+    call print_screen(RELEASE_STRING)
     call print_screen('')
 
     !> Check if any command line arguments are found.
@@ -261,13 +257,7 @@ program RUNMESH
 
 !-    call counter_init()
 
-    call READ_INITIAL_INPUTS(shd, &
-                             ts, cm, &
-                             fls)
-
-    !> Write MESH version to file.
-    call print_echo_txt(line)
-    call print_echo_txt('')
+    call READ_INITIAL_INPUTS(fls, shd, ts, cm, RELEASE_STRING)
 
     !> Assign shed values to local variables.
     NA = shd%NA
@@ -300,10 +290,6 @@ program RUNMESH
 !    call check_parameters(shd)
 
     !> ALLOCATE ALL VARIABLES
-
-1114 format(/1x, 'Error allocating ', a, ' variables.', &
-            /1x, 'Check that these bounds are within an acceptable range.', /)
-1118 format(3x, a, ': ', i6)
 
     !>  For cacluating the subbasin grids
 !+    allocate(SUBBASIN(NML))
@@ -513,8 +499,8 @@ program RUNMESH
                 do i = 1, NR2C
                     read(56, *, iostat = ierr) GRD(i), GAT(i), GRDGAT(i), (R2C_ATTRIBUTES(i, j), j = 1, 3)
                     if (ierr /= 0) then
-                        write(line, 1000) 'Error reading record:', i + 1
-                        call print_error(line)
+                        write(line, 1001) i + 1
+                        call print_error('Error reading record: ' // trim(line))
                         call print_message('The first 3 columns should contain values of 0 or 1.')
                         call print_message('The last 3 columns should contain information about the variable.')
                         call stop_program()
@@ -564,20 +550,20 @@ program RUNMESH
         call print_message('')
         call print_message('Configuration summary')
         call print_message('')
-        write(line, 1002) 'Number of grids:', NA
-        call print_message_detail(line)
-        write(line, 1001) 'Side length of grid (m):', shd%AL
-        call print_message_detail(line)
-        write(line, 1002) 'Number of GRUs:', NTYPE
-        call print_message_detail(line)
-        write(line, 1002) 'Number of land-based tiles:', shd%lc%NML
-        call print_message_detail(line)
-        write(line, 1002) 'Number of soil layers:', shd%lc%IGND
-        call print_message_detail(line)
-        write(line, 1002) 'Number of river classes:', shd%NRVR
-        call print_message_detail(line)
-        write(line, 1002) 'Number of outlets:', (NA - shd%NAA)
-        call print_message_detail(line)
+        write(line, 1001) NA
+        call print_message_detail('Number of grids: ' // trim(adjustl(line)))
+        write(line, 1001) shd%AL
+        call print_message_detail('Side length of grid: ' // trim(adjustl(line)) // ' m')
+        write(line, 1001) NTYPE
+        call print_message_detail('Number of GRUs: ' // trim(adjustl(line)))
+        write(line, 1001) shd%lc%NML
+        call print_message_detail('Number of land-based tiles: ' // trim(adjustl(line)))
+        write(line, 1001) shd%lc%IGND
+        call print_message_detail('Number of soil layers: ' // trim(adjustl(line)))
+        write(line, 1001) shd%NRVR
+        call print_message_detail('Number of river classes: ' // trim(adjustl(line)))
+        write(line, 1001) (NA - shd%NAA)
+        call print_message_detail('Number of outlets: ' // trim(adjustl(line)))
         call print_screen('')
     end if
 
@@ -585,7 +571,7 @@ program RUNMESH
     if (RESUMEFLAG == 1 .or. SAVERESUMEFLAG == 1 .or. RESUMEFLAG == 2 .or. SAVERESUMEFLAG == 2) then
         write(line, "('RESUMEFLAG ', i1, ' and SAVERESUMEFLAG ', i1, ' are not supported.')") RESUMEFLAG, SAVERESUMEFLAG
         call print_error(line)
-        call print_message('Use RESUMEFLAG 4 or SAVERESUMEFLAG 4 instead.')
+        call print_message('Use RESUMEFLAG 4 and SAVERESUMEFLAG 4 instead.')
         call stop_program()
     end if
 
@@ -1102,8 +1088,6 @@ program RUNMESH
             end if
         end if !(ipid == 0) then
 
-5176    format(2i5, 999(f10.3))
-
         !> Update the current time-step and counter.
         call counter_update()
 
@@ -1156,8 +1140,8 @@ program RUNMESH
 
     !> End program if not the head node.
     if (ipid /= 0) then
-        write(line, "('Node ', i4, ' is exiting...')") ipid
-        call print_diagnostic_info(line)
+        write(line, 1001) ipid
+        call print_diagnostic_info('Node ' // trim(adjustl(line)) // ' is existing.')
         goto 999
 
     end if !(ipid /= 0) then
@@ -1231,8 +1215,8 @@ program RUNMESH
     !> Run is now over, print final results to the screen and close files
     !> *********************************************************************
 
-    if (ENDDATA) call print_screen('Reached end of forcing data')
-    if (ENDDATE) call print_screen('Reached end of simulation date')
+    if (ENDDATA) call print_message('Reached end of forcing data.')
+    if (ENDDATE) call print_message('Reached simulation end date.')
 
 998     continue
 
@@ -1433,21 +1417,21 @@ program RUNMESH
         call print_message('')
         call print_message('End of run totals')
         call print_message('')
-        write(line, 1001) 'Total Precipitation         (mm) =', TOTAL_PRE
-        call print_message_detail(line)
-        write(line, 1001) 'Total Evaporation           (mm) =', TOTAL_EVAP
-        call print_message_detail(line)
-        write(line, 1001) 'Total Runoff                (mm) =', TOTAL_ROF
-        call print_message_detail(line)
-        write(line, 1001) 'Storage(Change/Init/Final)  (mm) =', (STG_FIN - STG_INI), STG_INI, STG_FIN
-        call print_message_detail(line)
+        write(line, 1001) TOTAL_PRE
+        call print_message_detail('Total Precipitation         (mm) =' // trim(line))
+        write(line, 1001) TOTAL_EVAP
+        call print_message_detail('Total Evaporation           (mm) =' // trim(line))
+        write(line, 1001) TOTAL_ROF
+        call print_message_detail('Total Runoff                (mm) =' // trim(line))
+        write(line, 1001) (STG_FIN - STG_INI), STG_INI, STG_FIN
+        call print_message_detail('Storage(Change/Init/Final)  (mm) =' // trim(line))
         call print_message('')
-        write(line, 1001) 'Total Overland flow         (mm) =', TOTAL_ROFO
-        call print_message_detail(line)
-        write(line, 1001) 'Total Interflow             (mm) =', TOTAL_ROFS
-        call print_message_detail(line)
-        write(line, 1001) 'Total Baseflow              (mm) =', TOTAL_ROFB
-        call print_message_detail(line)
+        write(line, 1001) TOTAL_ROFO
+        call print_message_detail('Total Overland flow         (mm) =' // trim(line))
+        write(line, 1001) TOTAL_ROFS
+        call print_message_detail('Total Interflow             (mm) =' // trim(line))
+        write(line, 1001) TOTAL_ROFB
+        call print_message_detail('Total Baseflow              (mm) =' // trim(line))
         call print_message('')
 
         !> Normal end of run message.
@@ -1457,8 +1441,8 @@ program RUNMESH
         !> Run time (to file only).
         call print_echo_txt('')
         call cpu_time(endprog)
-        write(line, "('Time = ', e14.6, ' seconds.')") (endprog - startprog)
-        call print_echo_txt(line)
+        write(line, 1001) (endprog - startprog)
+        call print_echo_txt('Time = ' // trim(adjustl(line)) // ' seconds.')
     end if
 
 999     continue
@@ -1468,8 +1452,6 @@ program RUNMESH
     stop
 
     !> Format statements.
-1000    format((a), 1x, g10.3)
-1001    format((a), 1x, 999(f12.3))
-1002    format((a), 1x, i10)
+1001    format(9999(g15.6, 1x))
 
 end program

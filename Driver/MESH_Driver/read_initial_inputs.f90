@@ -1,4 +1,4 @@
-subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
+subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
 
     use mpi_module
     use sa_mesh_variables
@@ -12,15 +12,17 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     implicit none
 
-    !> The types that contain allocatable values
+    !> Input variables.
+    type(fl_ids) :: fls
     type(ShedGridParams) :: shd
-    type(CLIM_INFO) :: cm
     type(dates_model) :: ts
-    type(fl_ids):: fls
+    type(CLIM_INFO) :: cm
+    character(len = *), intent(in) :: release
 
     !> Local variables.
     integer NA, NAA, NTYPE, NML, NSL, ierr, k, n, i, m, j
-    character(len = 100), dimension(:), allocatable :: list_errors, list_warnings
+    character(len = DEFAULT_LINE_LENGTH), dimension(:), allocatable :: list_errors, list_warnings
+    character(len = DEFAULT_LINE_LENGTH) line
 
     !>
     !> RUN OPTIONS.
@@ -31,6 +33,10 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     !> Open the status file.
     call open_echo_txt('./' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
+
+    !> Write MESH version to file.
+    call print_echo_txt(release)
+    call print_echo_txt('')
 
     !>
     !> DRAINAGE DATABASE.

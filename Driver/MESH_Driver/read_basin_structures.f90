@@ -89,15 +89,13 @@ subroutine read_basin_structures(shd)
             call print_warning('The first record occurs after the simulation start date.')
             call print_message('This may cause channels to initialize with no storage.')
             write(line, "(i5, i4)") fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday
-            write(line, 1002) 'First record occurs on:', trim(line)
-            call print_message_detail(line)
+            call print_message_detail('First record occurs on: ' // trim(line))
             write(line, "(i5, i4)") ic%start%year, ic%start%jday
-            write(line, 1002) 'Simulation start date:', trim(line)
-            call print_message_detail(line)
+            call print_message_detail('Simulation start date: ' // trim(line))
         end if
         iskip = (ijday2 - ijday1)*24/fms%stmg%qomeas%dts
         if (iskip > 0) then
-            write(line, 1000) iskip
+            write(line, 1001) iskip
             call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
             ierr = read_records_txt(iun, fms%stmg%qomeas%val, iskip)
             if (ierr /= 0) then
@@ -117,7 +115,7 @@ subroutine read_basin_structures(shd)
         end if
 
         !> Print a summary of locations to file.
-        write(line, 1000) fms%stmg%n
+        write(line, 1001) fms%stmg%n
         call print_message_detail('Number of streamflow gauges: ' // trim(adjustl(line)))
         if (DIAGNOSEMODE) then
             write(line, 1001) 'GAUGE', 'IY', 'JX', 'DA (km/km2)', 'RANK'
@@ -163,9 +161,9 @@ subroutine read_basin_structures(shd)
     if (maxval(shd%IREACH) /= fms%rsvr%n) then
         call print_error('The number of reservoirs does not match between the drainage database (IREACH) ' // &
             'and in: ' // trim(adjustl(fname)))
-        write(line, 1000) maxval(shd%IREACH)
+        write(line, 1001) maxval(shd%IREACH)
         call print_message_detail('Maximum IREACH the drainage database: ' // trim(adjustl(line)))
-        write(line, 1000) fms%rsvr%n
+        write(line, 1001) fms%rsvr%n
         call print_message_detail('Number of reservoirs read from file: ' // trim(adjustl(line)))
         call stop_program()
     end if
@@ -238,16 +236,14 @@ subroutine read_basin_structures(shd)
                 call print_message( &
                     'The record must start on or after the simulation start date when controlled reservoirs are active.')
                 write(line, "(i5, i4)") fms%rsvr%rlsmeas%iyear, fms%rsvr%rlsmeas%ijday
-                write(line, 1002) 'First record occurs on:', trim(line)
-                call print_message_detail(line)
+                call print_message_detail('First record occurs on: ' // trim(line))
                 write(line, "(i5, i4)") ic%start%year, ic%start%jday
-                write(line, 1002) 'Simulation start date:', trim(line)
-                call print_message_detail(line)
+                call print_message_detail('Simulation start date: ' // trim(line))
                 call stop_program()
             end if
             iskip = (ijday2 - ijday1)*24/fms%rsvr%rlsmeas%dts
             if (iskip > 0) then
-                write(line, 1000) iskip
+                write(line, 1001) iskip
                 call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
                 ierr = read_records_txt(iun, fms%rsvr%rlsmeas%val, iskip)
                 if (ierr /= 0) then
@@ -267,7 +263,7 @@ subroutine read_basin_structures(shd)
         end if
 
         !> Print a summary of locations to file.
-        write(line, 1000) fms%rsvr%n
+        write(line, 1001) fms%rsvr%n
         call print_message_detail('Number of reservoir outlets: ' // trim(adjustl(line)))
         if (DIAGNOSEMODE) then
             write(line, 1001) 'OUTLET', 'IY', 'JX', 'RANK'
@@ -281,8 +277,6 @@ subroutine read_basin_structures(shd)
     end if
 
     !> Format statements.
-1000    format(i10)
 1001    format(9999(g15.6, 1x))
-1002    format(a29, 1x, g13.2)
 
 end subroutine
