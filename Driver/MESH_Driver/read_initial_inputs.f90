@@ -335,6 +335,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
         call print_screen('Last tile: ' // trim(adjustl(line)), 3)
         write(line, 1001) iln
         call print_screen('Stride: ' // trim(adjustl(line)), 3)
+        call print_screen('')
     end if
 
     !> Open and read in soil depths from file.

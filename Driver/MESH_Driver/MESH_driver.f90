@@ -110,10 +110,10 @@ program RUNMESH
     implicit none
 
     !> Constants.
+    !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
-    !*  RELEASE: PROGRAM RELEASE VERSIONS
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1263'
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1311'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING

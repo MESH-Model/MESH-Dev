@@ -23,7 +23,7 @@ subroutine read_basin_structures(shd)
     type(ShedGridParams) :: shd
 
     !> Local variables.
-    integer iun, ierr, iskip, ijday1, ijday2, n, i
+    integer iun, iskip, ijday1, ijday2, n, i, ierr
     character(len = DEFAULT_LINE_LENGTH) fname, line
 
     !> Return if routing routines are disabled.
@@ -82,7 +82,7 @@ subroutine read_basin_structures(shd)
             call stop_program()
         end if
 
-        !> Skip records in the file the 'now' time-step.
+        !> Skip records in the file to the simulation start date.
         call Julian_Day_ID(fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday, ijday1)
         call Julian_Day_ID(ic%start%year, ic%start%jday, ijday2)
         if (ijday2 < ijday1) then
@@ -228,7 +228,7 @@ subroutine read_basin_structures(shd)
                 fms%rsvr%rlsmeas%val = 0.0
             end if
 
-            !> Skips records to present in file.
+            !> Skip records in the file to the simulation start date.
             call Julian_Day_ID(fms%rsvr%rlsmeas%iyear, fms%rsvr%rlsmeas%ijday, ijday1)
             call Julian_Day_ID(ic%start%year, ic%start%jday, ijday2)
             if (ijday2 < ijday1) then
