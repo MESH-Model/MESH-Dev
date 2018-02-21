@@ -5,7 +5,7 @@
 !>  Other variables are accessible by their respecitve process
 !>  module(s).
 !>
-subroutine read_initial_states(fls, shd, ierr)
+subroutine read_initial_states(fls, shd)
 
     use strings
     use mpi_module
@@ -23,16 +23,13 @@ subroutine read_initial_states(fls, shd, ierr)
     type(fl_ids):: fls
     type(ShedGridParams) :: shd
 
-    !> Output variables.
-    integer, intent(out) :: ierr
-
     !> Local variables for parsing INPUTPARAMSFORM.
     character(len = 20), dimension(100) :: out_args
     integer nargs
     character(1) :: delim = ' '
 
     !> Local variables.
-    integer NA, NTYPE, NML, NSL, k, i, m
+    integer NA, NTYPE, NML, NSL, k, i, m, ierr
 
     !> Assign commonly used indices to local variables.
     NA = shd%NA
@@ -80,19 +77,6 @@ subroutine read_initial_states(fls, shd, ierr)
         end if
 
     end do !k = il1, il2
-
-    !> Saul M. feb 26 2008:
-    !> Open and read initial soil moisture and temperature values
-    !> when data is available from:
-    !>  - s_moisture.txt: soil moisture in layer 1, 2 and 3
-    !>  - t_temperature.txt: soil temperature in layer 1, 2 and 3
-!todo: Replace this with reading from r2c
-    call READ_S_MOISTURE_TXT( &
-        shd%yCount, shd%xCount, NA, NTYPE, NML, NSL, shd%yyy, shd%xxx, shd%lc%ILMOS, shd%lc%JLMOS, &
-        stas%sl%thlq, il1, il2)
-    call READ_S_TEMPERATURE_TXT(&
-        shd%yCount, shd%xCount, NA, NTYPE, NML, NSL, shd%yyy, shd%xxx, shd%lc%ILMOS, shd%lc%JLMOS, &
-        stas%sl%tbar, il1, il2)
 
     !>
     !> RESUME FROM FILE.

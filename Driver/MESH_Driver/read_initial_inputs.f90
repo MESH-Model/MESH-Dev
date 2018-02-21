@@ -364,7 +364,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
     call CLASSD
 
     !> Read parameters from file.
-    call read_parameters(fls, shd, cm, ierr)
+    call read_parameters(fls, shd, cm)
 
     !> Check CLASS output points.
 !todo: fix this.
@@ -436,7 +436,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
     call stas_fms_init(stas_fms, fms%stmg%n, 0, fms%rsvr%n, ierr)
 
     !> Read variable states from file.
-    call read_initial_states(fls, shd, ierr)
+    call read_initial_states(fls, shd)
 
     !> Format statements.
 1001    format(9999(g15.6, 1x))

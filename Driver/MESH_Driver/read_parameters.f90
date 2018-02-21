@@ -4,7 +4,7 @@
 !>  by SA_MESH are accessible by 'sa_mesh_variables'. Other
 !>  parameters are accessible by their respecitve process module(s).
 !>
-subroutine read_parameters(fls, shd, cm, ierr)
+subroutine read_parameters(fls, shd, cm)
 
     use strings
     use mpi_module
@@ -28,16 +28,13 @@ subroutine read_parameters(fls, shd, cm, ierr)
     type(ShedGridParams) :: shd
     type(CLIM_INFO) :: cm
 
-    !> Output variables.
-    integer, intent(out), optional :: ierr
-
     !> Local variables for parsing INPUTPARAMSFORM.
     character(len = 20), dimension(100) :: out_args
     integer nargs
     character(1) :: delim = ' '
 
     !> Local variables.
-    integer NA, NAA, NTYPE, NRVR, NML, NSL, k, i, n
+    integer NA, NAA, NTYPE, NRVR, NML, NSL, k, i, n, ierr
 
     !> Assign commonly used indices to local variables.
     NA = shd%NA
