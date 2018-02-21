@@ -20,7 +20,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
     character(len = *), intent(in) :: release
 
     !> Local variables.
-    integer NA, NAA, NTYPE, NML, NSL, ierr, k, n, i, m, j
+    integer n, m, k, i, j, ierr
     character(len = DEFAULT_LINE_LENGTH), dimension(:), allocatable :: list_errors, list_warnings
     character(len = DEFAULT_LINE_LENGTH) line
 
@@ -44,19 +44,14 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
 
     if (SHDFILEFLAG == 1) then
 
-        open(fls%fl(mfk%f20)%iun, file=adjustl(trim(fls%fl(mfk%f20)%fn)), status='old', iostat=ierr)
+        open(fls%fl(mfk%f20)%iun, file = fls%fl(mfk%f20)%fn, status = 'old', iostat = ierr)
             if (ierr == 0) then
                 close(fls%fl(mfk%f20)%iun)
-                if (VERBOSEMODE) then
-                    print *, 'Reading Drainage Database from MESH_drainage_database.r2c'
-                end if
+                call print_screen('READING: MESH_drainage_database.r2c')
                 call READ_SHED_EF(fls, mfk%f20, shd)
-                if (VERBOSEMODE) then
-                    print *, ' READ: SUCCESSFUL, FILE: CLOSED'
-                end if
             else
-                print "(1x, 'ERROR: Opening ', (a))", adjustl(trim(fls%fl(mfk%f20)%fn))
-                stop
+                call print_error('Unable to open file.')
+                call stop_program()
             end if
 
     else if (SHDFILEFLAG == 0) then
@@ -74,14 +69,14 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
 !          print *, 'MESH_input_drainage_database.txt not found'
 !          stop
 !        end if
-!        read(20, '(i5, 50x, i5)') NA, NAA
-!        read(20, '(f10.0, 5x, 2i5)') AL, NRVR, NTYPE
+!        read(20, '(i5, 50x, i5)') shd%NA, shd%NAA
+!        read(20, '(f10.0, 5x, 2i5)') shd%AL, shd%NRVR, shd%lc%NTYPE
 !        GRDN = 0.0
 !        GRDE = 0.0
 
 !todo change the code or documentation on these variables.
 !ANDY Set ILG from the read-in values
-!        ILG = NA*NTYPE
+!        ILG = shd%NA*shd%lc%NTYPE
 
 !> Using IOSTAT allows us to try to read input that may or may not exist.
 !> If all of the values successfully get read, IOSTAT=VarName will set
@@ -101,8 +96,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
 
 !        else
 !> Define GRDN & GRDE for UTM
-!          GRDN = AL/1000.0
-!          GRDE = AL/1000.0
+!          GRDN = shd%AL/1000.0
+!          GRDE = shd%AL/1000.0
 !        end if
 !        read(20, '(2i5)') YCOUNT, XCOUNT
 
@@ -110,17 +105,17 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
 !          read(20, *)
 !        end do
 
-!        do i = 1, NA
+!        do i = 1, shd%NA
 !          read(20, '(5x, 2i5, 3f10.5, i7, 5i5, f5.2, 15f5.2)') YYY(i),
 !     &      XXX(i), WF_DA(i), WF_BNKFLL(i), WF_CHANNELSLOPE(i),
 !     &      WF_ELEV(i), WF_IBN(i), WF_IROUGH(i), WF_ICHNL(i),
 !     &      WF_NEXT(i), WF_IREACH(i), FRAC(i),
-!     &      (ACLASS(i, j), j = 1, NTYPE)
+!     &      (ACLASS(i, j), j = 1, shd%lc%NTYPE)
 !> check to make sure land cover areas sum to 100%
 !          WF_LAND_COUNT = 1
 !          WF_LAND_MAX = 0.0
 !          WF_LAND_SUM = 0.0
-!          do j = 1, NTYPE
+!          do j = 1, shd%lc%NTYPE
 !            WF_LAND_SUM = WF_LAND_SUM + ACLASS(i, j)
 !            if (ACLASS(i, j) > WF_LAND_MAX) then
 !              WF_LAND_COUNT = j
@@ -167,59 +162,57 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
     !> Check maximum number of cells and outlets, and print a warning if an adjustment is made.
     if (ro%RUNCHNL) then
         if (shd%NA /= maxval(shd%NEXT)) then
-            print 172
+            call print_remark('Total number of grids adjusted to maximum RANK. Consider checking the input files.')
             shd%NA = maxval(shd%NEXT)
         end if
         if (shd%NAA /= (maxval(shd%NEXT) - count(shd%NEXT == 0))) then
-            print 173
+            call print_remark( &
+                'Number of outlets adjusted to the number of cells where NEXT is zero. Consider checking the input files.')
             shd%NAA = maxval(shd%NEXT) - count(shd%NEXT == 0)
         end if
     end if
 
-172     format(1x, 'WARNING: Total number of grid adjusted to maximum of RANK. Consider adjusting the input files.')
-173     format(1x, 'WARNING: The number of outlets is adjusted to the number of grids where NEXT is zero.', &
-               /3x, 'Consider adjusting the input files.')
-
-    !> Assign shd values to local variables.
-    NA = shd%NA
-    NAA = shd%NAA
-
     !> Allocate temporary message variables.
-    allocate(list_errors(6*NAA), list_warnings(1*NAA))
+    allocate(list_errors(6*shd%NAA), list_warnings(1*shd%NAA))
     list_errors = ''; list_warnings = ''
 
     !> Check for values that might be incorrect, but are unlikely to stop the model.
     if (ro%RUNCHNL) then
-        forall (n = 1:NAA, shd%NEXT(n) <= n) list_warnings(n) = 'NEXT might be upstream of RANK'
+        forall (n = 1:shd%NAA, shd%NEXT(n) <= n) list_warnings(n) = 'NEXT might be upstream of RANK'
     end if
 
     !> Write warning messages to screen.
-    if (any(len_trim(list_warnings) > 0) .and. ipid == 0) then
-        print "(/1x, 'WARNING: Errors might exist in the drainage database: ', (a))", adjustl(trim(fls%fl(mfk%f20)%fn))
+    if (any(len_trim(list_warnings) > 0) .and. VERBOSEMODE) then
+        call print_warning('Errors might exist in the drainage database.')
         do i = 1, size(list_warnings)
-            if (len_trim(list_warnings(i)) > 0) print "(3x, 'WARNING: ', (a), ' at RANK ', i8)", &
-                adjustl(trim(list_warnings(i))), (i - int(i/NAA)*NAA)
+            if (len_trim(list_warnings(i)) > 0) then
+                write(line, 1001) (i - int(i/shd%NAA)*shd%NAA)
+                call print_message_detail(adjustl(trim(list_warnings(i))) // ' at RANK ' // trim(adjustl(line)))
+            end if
         end do
     end if
 
     !> Check for values that will likely stop the model.
     if (ro%RUNCHNL) then
-        forall (n = 1:NAA, shd%SLOPE_CHNL(n) <= 0) list_errors(n) = 'Invalid or negative channel slope'
-        forall (n = 1:NAA, shd%CHNL_LEN(n) <= 0.0) list_errors(NAA + n) = 'Invalid or negative channel length'
-        forall (n = 1:NAA, shd%AREA(n) <= 0.0) list_errors(2*NAA + n) = 'Invalid or negative grid area'
-        forall (n = 1:NAA, shd%DA(n) <= 0.0) list_errors(3*NAA + n) = 'Invalid or negative drainage area'
+        forall (n = 1:shd%NAA, shd%SLOPE_CHNL(n) <= 0) list_errors(n) = 'Invalid or negative channel slope'
+        forall (n = 1:shd%NAA, shd%CHNL_LEN(n) <= 0.0) list_errors(shd%NAA + n) = 'Invalid or negative channel length'
+        forall (n = 1:shd%NAA, shd%AREA(n) <= 0.0) list_errors(2*shd%NAA + n) = 'Invalid or negative grid area'
+        forall (n = 1:shd%NAA, shd%DA(n) <= 0.0) list_errors(3*shd%NAA + n) = 'Invalid or negative drainage area'
     end if
-    forall (n = 1:NA, shd%xxx(n) == 0) list_errors(4*NAA + n) = 'Invalid x-direction placement'
-    forall (n = 1:NA, shd%yyy(n) == 0) list_errors(5*NAA + n) = 'Invalid y-direction placement'
-!+   forall (n = 1:NAA, shd%SLOPE_INT(n) <= 0.0) list_errors(4*NAA + n) = 'Invalid or negative interior slope'
+    forall (n = 1:shd%NA, shd%xxx(n) == 0) list_errors(4*shd%NAA + n) = 'Invalid x-direction placement'
+    forall (n = 1:shd%NA, shd%yyy(n) == 0) list_errors(5*shd%NAA + n) = 'Invalid y-direction placement'
 
     !> Write error messages to screen.
-    if (any(len_trim(list_errors) > 0) .and. ipid == 0) then
-        print "(/1x, 'ERROR: Errors have been found in the drainage database: ', (a))", adjustl(trim(fls%fl(mfk%f20)%fn))
-        do i = 1, size(list_errors)
-            if (len_trim(list_errors(i)) > 0) print "(3x, 'ERROR: ', (a), ' at RANK ', i8)", &
-                adjustl(trim(list_errors(i))), (i - int(i/NAA)*NAA)
-        end do
+    if (any(len_trim(list_errors) > 0)) then
+        if (VERBOSEMODE) then
+            call print_error('Errors exist in the drainage database.')
+            do i = 1, size(list_errors)
+                if (len_trim(list_errors(i)) > 0) then
+                    write(line, 1001) (i - int(i/shd%NAA)*shd%NAA)
+                    call print_message_detail(adjustl(trim(list_errors(i))) // ' at RANK ' // trim(adjustl(line)))
+                end if
+            end do
+        end if
         stop
     end if
 
@@ -247,8 +240,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
     !> after that Diana uses RADJGRD (the value of latitude in radians) so
     !> after DEGLAT is used to calculate RADJGRD is it no longer used.  This
     !> is how it was in the original CLASS code.
-    allocate(shd%ylat(NA), shd%xlng(NA))
-    do i = 1, NA
+    allocate(shd%ylat(shd%NA), shd%xlng(shd%NA))
+    do i = 1, shd%NA
         !LATLENGTH = shd%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
         !LONGLENGTH = shd%AL/1000.0/(111.4172*cos((DEGLAT*PI/180.0)) - 0.094*cos(3*(DEGLAT*PI/180.0)) + 0.0002*cos(5*(DEGLAT*PI/180.0)))
         shd%ylat(i) = (shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0
@@ -268,100 +261,103 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
     shd%lc%ILG = shd%NA*shd%lc%NTYPE
     shd%wc%ILG = shd%NA*shd%lc%NTYPE
 
-    !> Determine the number of active tile elements.
-!todo: fix this.
-    NTYPE = shd%lc%NTYPE
+    !> Determine the number of active tiles.
+    !> Store callback indices in the 'IxMOS' and 'JxMOS' variables.
+!todo: Fix this for water tiles.
     allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), &
              shd%wc%ILMOS(shd%wc%ILG), shd%wc%JLMOS(shd%wc%ILG))
-
-    !> Count the number of tiles that are land 'lc' or water 'wc' and
-    !> store the respective ID's of the grid and GRU in the 'ILMOS' and
-    !> 'JLMOS' variables.
     shd%lc%NML = 0
     shd%wc%NML = 0
-    do i = 1, NA
+    do i = 1, shd%NA
+
+        !> Only count active GRUs (with > 0.0 contributing fraction).
         if (shd%FRAC(i) > 0.0) then
-            do m = 1, NTYPE
+            do m = 1, shd%lc%NTYPE
 
-                !> Only count active GRUs (with > 0.0 contributing fraction).
-!todo: fix this.
+                !> Land.
                 if (shd%lc%ACLASS(i, m) > 0.0) then
-!                    if (shd%IAK(i) > 0) then
+                    shd%lc%NML = shd%lc%NML + 1
+                    shd%lc%ILMOS(shd%lc%NML) = i
+                    shd%lc%JLMOS(shd%lc%NML) = m
 
-                        !> Land.
-                        shd%lc%NML = shd%lc%NML + 1
-                        shd%lc%ILMOS(shd%lc%NML) = i
-                        shd%lc%JLMOS(shd%lc%NML) = m
-
-!                    else
-
-                        !> Water.
-!                        shd%wc%NML = shd%wc%NML + 1
-!                        shd%wc%ILMOS(shd%wc%NML) = i
-!                        shd%wc%JLMOS(shd%wc%NML) = m
-
-!                    end if
+                !> Water.
+!                else
+!                    shd%wc%NML = shd%wc%NML + 1
+!                    shd%wc%ILMOS(shd%wc%NML) = i
+!                    shd%wc%JLMOS(shd%wc%NML) = m
                 end if
-
             end do
         end if
     end do
 
     !> Write information about tile configuration to file.
-    if (ECHOTXTMODE .and. DIAGNOSEMODE) then
+    if (DIAGNOSEMODE) then
 
         !> Land tiles.
-        write(ECHO_TXT_IUN, 1210) 'land', 'NML', shd%lc%NML
+        write(line, 1001) shd%lc%NML
+        call print_echo_txt('Number of land tiles (NML): ' // trim(adjustl(line)))
         if (shd%lc%NML > 0) then
-            write(ECHO_TXT_IUN, 1910) 'Index', 'Grid', 'GRU'
+            write(line, 1001) 'Tile ID', 'Grid', 'GRU'
+            call print_echo_txt(line)
             do k = 1, shd%lc%NML
-                write(ECHO_TXT_IUN, 1910) k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
+                write(line, 1001) k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
+                call print_echo_txt(line)
             end do
         end if
+        call print_echo_txt('')
 
         !> Water tiles.
-        write(ECHO_TXT_IUN, 1210) 'water', 'NMW', shd%wc%NML
+        write(line, 1001) shd%wc%NML
+        call print_echo_txt('Number of water tiles (NMW): ' // trim(adjustl(line)))
         if (shd%wc%NML > 0) then
-            write(ECHO_TXT_IUN, 1910) 'Index', 'Grid', 'GRU'
+            write(line, 1001) 'Tile ID', 'Grid', 'GRU'
+            call print_echo_txt(line)
             do k = 1, shd%wc%NML
-                write(ECHO_TXT_IUN, 1910) k, shd%wc%ILMOS(k), shd%wc%JLMOS(k)
+                write(line, 1001) k, shd%wc%ILMOS(k), shd%wc%JLMOS(k)
+                call print_echo_txt(line)
             end do
         end if
-
+        call print_echo_txt('')
     end if
 
-1210    format(/1x, 'Configuration of ', (a), ' tiles', &
-               /1x, 'Total number (', (a), '): ', g16.9)
-1910    format(3(g16.9))
-
-    !> Store the number of active tile elements to initialize variables.
-    NML = shd%lc%NML
-
-    !> Calculate the operational indices in the current node.
-    call mpi_split_nml(inp, izero, ipid, NML, shd%lc%ILMOS, il1, il2, iln)
-    if (DIAGNOSEMODE) print 1062, ipid, NML, iln, il1, il2
-
-1062    format(/1x, 'Configuration and distribution of the domain', &
-               /3x, 'Current process: ', i10, &
-               /3x, 'Tile land elements: ', i10, &
-               /3x, 'Length of single array: ', i10, &
-               /3x, 'Starting index: ', i10, &
-               /3x, 'Stopping index: ', i10, /)
-
-    !> Assign grid-based indices.
+    !> Calculate active tiles in the current node.
+    !> Update grid indices.
+    call mpi_split_nml(inp, izero, ipid, shd%lc%NML, shd%lc%ILMOS, il1, il2, iln)
     i1 = shd%lc%ILMOS(il1)
     i2 = shd%lc%ILMOS(il2)
 
-    !> Open and read in soil depths from file.
-    call READ_SOIL_LEVELS(shd, fls)
+    if (DIAGNOSEMODE) then
+        write(line, 1001) ipid
+        call print_screen('Node ' // trim(adjustl(line)))
+        write(line, 1001) il1
+        call print_screen('First tile: ' // trim(adjustl(line)), 3)
+        write(line, 1001) il2
+        call print_screen('Last tile: ' // trim(adjustl(line)), 3)
+        write(line, 1001) iln
+        call print_screen('Stride: ' // trim(adjustl(line)), 3)
+    end if
 
-    !> Store the number of soil layers to initialize variables.
-    NSL = shd%lc%IGND
+    !> Open and read in soil depths from file.
+    call READ_SOIL_LEVELS(fls, shd)
+
+    !> Print a summary of levels to file.
+    call print_echo_txt(trim(fls%fl(mfk%f52)%fn))
+    write(line, 1001) shd%lc%IGND
+    call print_message_detail('Number of soil layers: ' // trim(adjustl(line)))
+    if (DIAGNOSEMODE) then
+        write(line, 1001) 'Level', 'Thickness (m)', 'Bottom (m)'
+        call print_message_detail(line)
+        do i = 1, shd%lc%IGND
+            write(line, 1001) i, shd%lc%sl%DELZ(i), shd%lc%sl%ZBOT(i)
+            call print_message_detail(line)
+        end do
+        call print_message('')
+    end if
 
     !> Allocate and initialize SA_MESH states.
-    call stas_tile_init(stas, NML, NSL, ierr)
-    call stas_tile_init(stas_gru, NTYPE, NSL, ierr)
-    call stas_grid_init(stas_grid, NA, NSL, ierr)
+    call stas_tile_init(stas, shd%lc%NML, shd%lc%IGND, ierr)
+    call stas_tile_init(stas_gru, shd%lc%NTYPE, shd%lc%IGND, ierr)
+    call stas_grid_init(stas_grid, shd%NA, shd%lc%IGND, ierr)
 
     !> Call 'CLASSD' to initialize constants.
 !todo: replace this with a non-CLASS/generic version.
@@ -370,50 +366,42 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
     !> Read parameters from file.
     call read_parameters(fls, shd, cm, ierr)
 
-    !> Check the grid output points.
+    !> Check CLASS output points.
 !todo: fix this.
-    if (ipid == 0) then
-        do i = 1, WF_NUM_POINTS
+    do i = 1, WF_NUM_POINTS
+        if (i < WF_NUM_POINTS) then
 
-            !> Check that output grid points aren't repeated and that the
-            !> output directories exist.
-            if (i < WF_NUM_POINTS) then
-                do j = i + 1, WF_NUM_POINTS
-                    if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
-                        print *
-                        print *, 'Output for Grid ', op%N_OUT(i), ' and GRU ', &
-                                 op%II_OUT(i), ' is repeated in grid output point: ', j
-                        print *, 'Please adjust this grid output ', &
-                                 'point in MESH_input_run_options.ini.'
-                        stop
-                    end if
-                end do
-            else
-                open(17, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/fort.17', status = 'unknown', iostat = ierr)
-                if (ierr /= 0) then
-                    print *
-                    print *, 'Grid output point ', i
-                    print *, 'The output directory does not exist: ' // trim(adjustl(op%DIR_OUT(i)))
-                    print *, 'Please adjust this grid output point ', &
-                             'in MESH_input_run_options.ini or create the ', &
-                             'folder.'
-                    stop
-                else
-                    close(17, status = 'delete')
+            !> Check for repeated points.
+            do j = i + 1, WF_NUM_POINTS
+                if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
+                    write(line, "('Grid ', i5, ', GRU ', i4)") op%N_OUT(i), op%II_OUT(i)
+                    call print_error('Output is repeated for ' // trim(adjustl(line)))
+                    call stop_program()
                 end if
-            end if
+            end do
+        else
 
-            !> Check that grid output points are in the basin.
-            if (op%N_OUT(i) > shd%NA) then
-                write(6, *)
-                write(6, *)
-                write(6, *) 'Grids from basin watershed file: ', shd%NA
-                write(6, *) 'Grid output point ', i, ' is in Grid: ', op%N_OUT(i)
-                write(6, *) 'Please adjust this grid output point in ', 'MESH_input_run_options.ini'
-                stop
+            !> Check that the output path exists.
+            open(100, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/fort.17', status = 'unknown', iostat = ierr)
+            if (ierr /= 0) then
+                write(line, 1001) i
+                call print_error('The output folder for point ' // trim(adjustl(line)) // ' does not exist.')
+                call print_message('Location: ' // trim(adjustl(op%DIR_OUT(i))))
+                call stop_program()
+            else
+                close(100, status = 'delete')
             end if
-        end do
-    end if
+        end if
+
+        !> Check that point lies inside the basin.
+        if (op%N_OUT(i) > shd%NAA) then
+            write(line, 1001) i
+            call print_error('Output point ' // trim(adjustl(line)) // ' is outside the basin.')
+            write(line, 1001) shd%NAA
+            call print_message('Number of grids inside the basin: ' // trim(adjustl(line)))
+            call stop_program()
+        end if
+    end do
 
     !> Distribute the starting date of the forcing files.
     do n = 1, cm%nclim
@@ -449,5 +437,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
 
     !> Read variable states from file.
     call read_initial_states(fls, shd, ierr)
+
+    !> Format statements.
+1001    format(9999(g15.6, 1x))
 
 end subroutine

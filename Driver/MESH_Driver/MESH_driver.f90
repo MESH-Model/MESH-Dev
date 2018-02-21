@@ -558,8 +558,6 @@ program RUNMESH
         call print_message_detail('Number of GRUs: ' // trim(adjustl(line)))
         write(line, 1001) shd%lc%NML
         call print_message_detail('Number of land-based tiles: ' // trim(adjustl(line)))
-        write(line, 1001) shd%lc%IGND
-        call print_message_detail('Number of soil layers: ' // trim(adjustl(line)))
         write(line, 1001) shd%NRVR
         call print_message_detail('Number of river classes: ' // trim(adjustl(line)))
         write(line, 1001) (NA - shd%NAA)

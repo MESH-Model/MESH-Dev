@@ -167,7 +167,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     if (btest(INPUTPARAMSFORMFLAG, 0)) then
         call READ_PARAMETERS_CLASS(shd, fls, cm)
         call READ_PARAMETERS_HYDROLOGY(shd, fls)
-        call READ_SOIL_INI(shd, fls)
+        call READ_SOIL_INI(fls, shd)
     end if
 
     !> Read from the 'csv' file.

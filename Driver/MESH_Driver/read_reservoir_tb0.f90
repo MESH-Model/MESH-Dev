@@ -22,8 +22,8 @@ subroutine read_reservoir_tb0(shd, iun, fname)
 
     !> Input variables.
     type(ShedGridParams) :: shd
-    integer :: iun
-    character(len = *) :: fname
+    integer, intent(in) :: iun
+    character(len = *), intent(in) :: fname
 
     !> Local variables.
     type(ensim_keyword), dimension(:), allocatable :: vkeyword
@@ -76,11 +76,8 @@ subroutine read_reservoir_tb0(shd, iun, fname)
 
     return
 
-    !> File errors.
-997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(fname)
-998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(fname)
-999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(fname)
-
-    stop
+    !> Stop: Error allocating variables.
+998 call print_error('Unable to allocate variables.')
+    call stop_program()
 
 end subroutine

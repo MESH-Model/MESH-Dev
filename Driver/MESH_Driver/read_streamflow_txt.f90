@@ -19,11 +19,12 @@ subroutine read_streamflow_txt(shd, iun, fname)
 
     !> Input variables.
     type(ShedGridParams) :: shd
-    integer :: iun
-    character(len = *) :: fname
+    integer, intent(in) :: iun
+    character(len = *), intent(in) :: fname
 
     !> Local variables.
-    integer NS, l, ierr
+    integer i, ierr
+    character(len = DEFAULT_LINE_LENGTH) line
 
     !> Streamflow attributes pulled from 'fms':
     !*  stmg: Streamflow gauge structure
@@ -36,36 +37,48 @@ subroutine read_streamflow_txt(shd, iun, fname)
     !*  -   n(n): Rank or index of the grid-cell containing the location.
     !*  -   DA(n): Drainage area.
 
-    if (VERBOSEMODE) print 1000, trim(fname)
+    !> Open the file.
+    call print_screen('READING: ' // trim(fname))
     open(iun, file = fname, status = 'old', action = 'read', err = 997)
+
+    !> Read the number of locations.
     read(iun, *, err = 999)
     read(iun, *, err = 999) &
-        fms%stmg%n, NS, NS, fms%stmg%qomeas%dts, fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday, fms%stmg%qomeas%ihour
-    NS = fms%stmg%n
+        fms%stmg%n, i, i, fms%stmg%qomeas%dts, fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday, fms%stmg%qomeas%ihour
 
-    !> Return if there are no gauge locations.
-    if (NS == 0) return
+    !> Return if no locations were defined.
+    if (fms%stmg%n == 0) return
 
     !> Allocate configuration variables for the driver.
-    call allocate_streamflow_gauge_location(fms%stmg, NS, ierr)
+    call allocate_streamflow_gauge_location(fms%stmg, fms%stmg%n, ierr)
     if (ierr /= 0) goto 998
 
     !> Read gauge location and name.
-    do l = 1, NS
-        read(iun, *, err = 999) fms%stmg%meta%y(l), fms%stmg%meta%x(l), fms%stmg%meta%name(l)
+    do i = 1, fms%stmg%n
+        read(iun, *, err = 999) fms%stmg%meta%y(i), fms%stmg%meta%x(i), fms%stmg%meta%name(i)
     end do
     fms%stmg%meta%y = fms%stmg%meta%y/60.0
     fms%stmg%meta%x = fms%stmg%meta%x/60.0
 
     return
 
-    !> File errors.
-997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(fname)
-998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(fname)
-999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(fname)
+    !> Stop: File not found.
+997 call print_error('Unable to open file.')
+    call stop_program()
 
-    stop
+    !> Stop: Error allocating variables.
+998 call print_error('Unable to allocate variables.')
+    call stop_program()
 
-1000    format(1x, 'READING: ', (a))
+    !> Stop: Premature end of file.
+999 call print_error('Unable to read from file.')
+    write(line, 1001) fms%rsvr%n
+    call print_message('Number of gauge locations expected: ' // trim(adjustl(line)))
+    write(line, 1001) i
+    call print_message('Number found: ' // trim(adjustl(line)))
+    call stop_program()
+
+    !> Format statements.
+1001    format(9999(g15.6, 1x))
 
 end subroutine
