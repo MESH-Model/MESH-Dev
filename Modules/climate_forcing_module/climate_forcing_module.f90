@@ -49,7 +49,7 @@ module climate_forcing
         logical ENDDATA
 
         !> Local variables.
-        integer vid, iun, iskip, ijday1, ijday2, t, s, k, j, i, ierr
+        integer vid, iun, iskip, isteps1, isteps2, t, s, k, j, i, ierr
         character(len = DEFAULT_LINE_LENGTH) line
 
         ENDDATA = .false.
@@ -186,9 +186,11 @@ module climate_forcing
             allocate(cm%dat(vid)%GRD(shd%NA), cm%dat(vid)%GAT(shd%lc%NML), cm%dat(vid)%GRU(shd%lc%NTYPE))
 
             !> Skip records in the file to the simulation start date.
-            call Julian_Day_ID(cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday, ijday1)
-            call Julian_Day_ID(ic%start%year, ic%start%jday, ijday2)
-            if (ijday2 < ijday1) then
+            isteps1 = jday_to_tsteps( &
+                cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday, cm%dat(vid)%start_date%hour, &
+                cm%dat(vid)%start_date%mins, cm%dat(vid)%hf)
+            isteps2 = jday_to_tsteps(ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins, cm%dat(vid)%hf)
+            if (isteps2 < isteps1) then
                 call print_error('The first record occurs after the simulation start date.')
                 call print_message( &
                     'The record must start on or after the simulation start date.')
@@ -198,7 +200,7 @@ module climate_forcing
                 call print_message_detail('Simulation start date: ' // trim(line))
                 call stop_program()
             end if
-            iskip = (ijday2 - ijday1)*24*60/cm%dat(vid)%hf
+            iskip = (isteps2 - isteps1)
             if (iskip > 0) then
                 write(line, 1001) iskip
                 call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')

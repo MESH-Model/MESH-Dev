@@ -511,4 +511,75 @@ module model_dates
 
     end function
 
-end module !model_dates
+    !> Description:
+    !>  Convert given year and day of year to Julian date.
+    !>  Copied from former 'Julian_Day_ID' subroutine.
+    !>
+    !> Input variables:
+    !>  year: Year.
+    !>  jday: Day in year.
+    !>
+    !> Returns:
+    !*  jdate: Julian date.
+    integer function get_jdate(year, jday) result(jdate)
+
+        !> Input variables.
+        integer, intent(in) :: year, jday
+
+        !> Calculate and return.
+        jdate = (year - 1601)*365 + (year - 1601)/4 + jday
+
+    end function
+
+    !> Description:
+    !>  Convert given Julian date, hour of day, and minutes in the
+    !>  hour to a number of time-steps.
+    !>  Based on code to skip records in climate forcing input files.
+    !>
+    !> Input variables:
+    !*  jdate: Julian date (from year and day of year).
+    !*  hour: Hour in day. Must run 00-23.
+    !*  mins: Minutes in hour. Must be evenly divisible by 'dtmin'.
+    !*  dtmins: Smallest increment of minutes.
+    !>
+    !> Returns:
+    !*  tsteps: Number of time-steps.
+    integer function jdate_to_tsteps(jdate, hour, mins, dtmins) result(tsteps)
+
+        !> Input variables.
+        integer, intent(in) :: jdate, hour, mins, dtmins
+
+        !> Calculate and return.
+        tsteps = (jdate*24*60 + hour*60 + mins)/dtmins
+
+    end function
+
+    !> Description:
+    !>  Convert given date to a number of time-steps.
+    !>  Based on code to skip records in climate forcing input files
+    !>  and former 'Julian_Day_ID' subroutine.
+    !>
+    !> Input variables:
+    !>  year: Year.
+    !>  jday: Day in year.
+    !*  hour: Hour in day. Must run 00-23.
+    !*  mins: Minutes in hour. Must be evenly divisible by 'dtmin'.
+    !*  dtmins: Smallest increment of minutes.
+    !>
+    !> Returns:
+    !*  tsteps: Number of time-steps.
+    integer function jday_to_tsteps(year, jday, hour, mins, dtmins) result(tsteps)
+
+        !> Input variables.
+        integer, intent(in) :: year, jday, hour, mins, dtmins
+
+        !> Local variables.
+        integer jdate
+
+        !> Calculate and return.
+        jdate = get_jdate(year, jday)
+        tsteps = jdate_to_tsteps(jdate, hour, mins, dtmins)
+
+    end function
+
+end module
