@@ -205,6 +205,11 @@ module sa_mesh_utilities
         !> Open the file and print an error if unsuccessful.
         open(ECHO_TXT_IUN, file = path, status = 'replace', action = 'write', iostat = ierr)
         if (ierr /= 0) then
+
+            !> Disable output to the file.
+            ECHOTXTMODE = .false.
+
+            !> Print an error (to screen).
             call print_error('Unable to open file: ' // trim(adjustl(path)))
             call print_message('Check that the path exists, that the file it is not read-protected or open in another application.')
             call stop_program()
