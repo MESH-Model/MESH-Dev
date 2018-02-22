@@ -51,24 +51,6 @@ module climate_forcing_config
 
         end if
 
-        !> Print summary of climate forcing variables.
-        if (DIAGNOSEMODE) then
-            call print_message('Climate forcing variables')
-            write(line, 1001) 'Variable', 'Name', 'File format', 'File unit', 'Record t-step', 'Blocks in-mem.', 'No. series'
-            call print_message_detail(line)
-            do i = 1, cm%nclim
-                if (cm%dat(i)%factive) then
-                    write(line, 1001) &
-                        cm%dat(i)%id_var, cm%dat(i)%fname, cm%dat(i)%ffmt, cm%dat(i)%fiun, cm%dat(i)%hf, &
-                        cm%dat(i)%nblocks, cm%dat(i)%nseries
-                    call print_message_detail(line)
-                end if
-            end do
-        end if
-
-    !> Format statements.
-1001    format(9999(g15.6, 1x))
-
     end subroutine
 
     !> Description:

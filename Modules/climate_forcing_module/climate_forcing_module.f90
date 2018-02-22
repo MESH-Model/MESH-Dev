@@ -106,7 +106,7 @@ module climate_forcing
         end if
 
         !> Initialize climate variables.
-        call print_message('')
+        call print_message('READING: Climate forcing variables')
         do vid = 1, cm%nclim
 
             !> Cycle if the variable is not active.
@@ -210,6 +210,20 @@ module climate_forcing
             end if
         end do
 
+        !> Print summary of climate forcing variables.
+        if (DIAGNOSEMODE) then
+            write(line, 1001) 'Variable', 'Name', 'File format', 'Frame length', 'Blocks in-mem.', 'No. series'
+            call print_message_detail(line)
+            do i = 1, cm%nclim
+                if (cm%dat(i)%factive) then
+                    write(line, 1001) &
+                        cm%dat(i)%id_var, cm%dat(i)%fname, cm%dat(i)%ffmt, cm%dat(i)%hf, cm%dat(i)%nblocks, cm%dat(i)%nseries
+                    call print_message_detail(line)
+                end if
+            end do
+            call print_message('')
+        end if
+
         !> Resume states from file.
         if (RESUMEFLAG == 4) then
 
@@ -219,7 +233,7 @@ module climate_forcing
                 iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat', action = 'read', status = 'old', &
                 form = 'unformatted', access = 'sequential', iostat = ierr)
             if (ierr /= 0) then
-                call print_error('Unable to open ' // trim(fls%fl(mfk%f883)%fn) // ' to resume states.')
+                call print_error('Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat' // ' to resume states.')
                 call stop_program()
             end if
 
@@ -503,7 +517,7 @@ module climate_forcing
                 iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat', action = 'write', status = 'replace', &
                 form = 'unformatted', access = 'sequential', iostat = ierr)
             if (ierr /= 0) then
-                call print_error('Unable to open ' // trim(fls%fl(mfk%f883)%fn) // ' to save states.')
+                call print_error('Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat' // ' to save states.')
                 call stop_program()
             end if
 

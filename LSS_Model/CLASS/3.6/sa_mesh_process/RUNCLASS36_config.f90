@@ -331,7 +331,7 @@ module RUNCLASS36_config
 
         !> Initialize PBSM or allocate and initialize variables used in CLASS even if PBSM is not enabled.
         if (pbsm%PROCESS_ACTIVE) then
-            call PBSM_init(shd, fls, cm)
+            call PBSM_init(fls, shd, cm)
         else
 
             !> Variables used in CLASSZ.

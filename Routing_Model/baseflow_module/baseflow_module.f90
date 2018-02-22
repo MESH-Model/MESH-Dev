@@ -1,38 +1,33 @@
+!> Description:
+!>  BASEFLOW module.
 module baseflow_module
 
     implicit none
 
+    !> Description:
+    !>  Container for BASEFLOWFLAG parameters.
     !>
-    !> BASEFLOW module external parameter type
+    !> Variables (luo_2012):
+    !*  dgw: Delay time of the overlying soil layers in the  aquifer (hour).
+    !*  agw: Recession constant of the aquifer.
     !>
-    !> Run options:
-    !*  BASEFLOWFLAG: Flag that specifies baseflow routine.
-    !>
-    !> Initialization (states):
-    !*  WrchrgIni: Initial constant recharge for cold start (mm/hr).
-    !*  QbIni: Initial constant baseflow for cold start (mm/hr).
-    !>
-    !> Parameters (Hydrology):
-    !> Routine 1: BASEFLOWFLAG 1
-    !*  dgwsh: Delay time of the overlying soil layers in the  aquifer (hour).
-    !*  agwsh: Recession constant of the aquifer.
-    !>
-    !> Routine 2: BASEFLOWFLAG 2
+    !> Variables (wf_lzs):
     !*  flz: lower zone function (mm).
     !*  pwr: exponent on the lower zone storage in the lower zone funnction.
-    !>
     type baseflow_parameters
         real, dimension(:), allocatable :: dgw, agw
         real, dimension(:), allocatable :: pwr, flz
     end type
 
+    !> Description:
+    !>  Container for BASEFLOWFLAG variables.
+    !>
+    !> Variables:
+    !*  WrchrgIni: Initial constant recharge for cold start (mm/hr).
+    !*  QbIni: Initial constant baseflow for cold start (mm/hr).
     type baseflow_variables
         real WrchrgIni, QbIni
     end type
-
-    !>
-    !> BASEFLOW internal variables
-    !>
 
     !> BASEFLOWFLAG (1)
     real, dimension(:), allocatable :: Wseep, Wrchrg, Qb
@@ -41,6 +36,13 @@ module baseflow_module
     !> BASEFLOWFLAG (2)
     real, dimension(:), allocatable :: dlz, lzs
 
+    !> Description:
+    !>  Container for BASEFLOWFLAG variables, parameters, and options.
+    !>
+    !> Variables:
+    !*  BASEFLOWFLAG: Flag that specifies the active baseflow routine.
+    !*  BUCKETFLAG: Specifies the scale of the aquifer (e.g., tile, grid, etc.).
+    !*  dts: Time-step of the baseflow routine.
     type baseflow_container
         type(baseflow_parameters) :: pm, pm_iak, pm_gru, pm_grid
         type(baseflow_variables) :: vs
@@ -60,16 +62,19 @@ module baseflow_module
         use model_dates
         use climate_forcing
 
+        !> For: RESUMEFLAG
         use FLAGS
 
-        type(fl_ids) :: fls
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        type(clim_info), intent(in) :: cm
 
+        !> Local variables.
         integer NA, NML, NTYPE, NRVR, iun, n, i, ierr
-        character(len = 200) BASEFLOWFLAG
+        character(len = DEFAULT_LINE_LENGTH) line
 
-        !> Return if BASEFLOWFLAG is not active
+        !> Return if BASEFLOWFLAG is not active.
         if (bflm%BASEFLOWFLAG == 0) return
 
         NA = shd%NA
@@ -77,57 +82,59 @@ module baseflow_module
         NTYPE = shd%lc%NTYPE
         NRVR = shd%NRVR
 
-        !> Summarize current BASEFLOWFLAG configuration to file.
-        if (ECHOTXTMODE) then
-            iun = ECHO_TXT_IUN
-            write(BASEFLOWFLAG, '(i8)') bflm%dts/60
-            BASEFLOWFLAG = 'hf=' // adjustl(BASEFLOWFLAG)
+        !> Summarize current BASEFLOWFLAG configuration to output.
+        select case (bflm%BASEFLOWFLAG)
+            case (1, 2)
+                call print_message('BASEFLOW component ACTIVATED')
+            case default
+                write(line, 1001) bflm%BASEFLOWFLAG
+                call print_warning('BASEFLOWFLAG ' // trim(adjustl(line)) // ' not supported.')
+        end select
+        if (DIAGNOSEMODE) then
+            write(line, '(i8)') bflm%dts/60
+            line = 'hf=' // adjustl(line)
             select case (bflm%BUCKETFLAG)
                 case (1)
-                    BASEFLOWFLAG = 'grid ' // adjustl(BASEFLOWFLAG)
+                    line = 'grid ' // adjustl(line)
                 case default
-                    BASEFLOWFLAG = 'tile ' // adjustl(BASEFLOWFLAG)
+                    line = 'tile ' // adjustl(line)
             end select
-            write(iun, 1100)
             select case (bflm%BASEFLOWFLAG)
                 case (1)
-                    BASEFLOWFLAG = 'BASEFLOWFLAG  luo_2012 ' // adjustl(BASEFLOWFLAG)
-                    write(iun, 1130) BASEFLOWFLAG
-                    if (DIAGNOSEMODE) then
-                        write(iun, 1110) 'WRCHRG_INI', bflm%vs%WrchrgIni
-                        write(iun, 1110) 'QB_INI', bflm%vs%QbIni
-                        write(iun, 1110) 'DGWSH', (bflm%pm_gru%dgw(i), i = 1, NTYPE)
-                        write(iun, 1110) 'AGWSH', (bflm%pm_gru%agw(i), i = 1, NTYPE)
-                    end if
+                    line = 'BASEFLOWFLAG  luo_2012 ' // adjustl(line)
+                    call print_message_detail(line)
+                    write(line, 1001) 'WRCHRG_INI', bflm%vs%WrchrgIni
+                    call print_message_detail(line)
+                    write(line, 1001) 'QB_INI', bflm%vs%QbIni
+                    call print_message_detail(line)
+                    write(line, 1001) 'DGWSH', (bflm%pm_gru%dgw(i), i = 1, NTYPE)
+                    call print_message_detail(line)
+                    write(line, 1001) 'AGWSH', (bflm%pm_gru%agw(i), i = 1, NTYPE)
+                    call print_message_detail(line)
                 case (2)
-                    BASEFLOWFLAG = 'BASEFLOWFLAG  wf_lzs ' // adjustl(BASEFLOWFLAG)
-                    write(iun, 1130) BASEFLOWFLAG
-                    if (DIAGNOSEMODE) then
-                        if (any(bflm%pm_gru%pwr /= 0.0)) then
-                            write(iun, 1110) 'pwr_gru', (bflm%pm_gru%pwr(i), i = 1, NTYPE)
-                        else if (any(bflm%pm_iak%pwr /= 0.0)) then
-                            write(iun, 1110) 'pwr_iak', (bflm%pm_iak%pwr(i), i = 1, NRVR)
-                        else if (any(bflm%pm_grid%pwr /= 0.0)) then
-                            write(iun, 1110) 'pwr_grid (min., max.)', minval(bflm%pm_grid%pwr), maxval(bflm%pm_grid%pwr)
-                        end if
-                        if (any(bflm%pm_gru%pwr /= 0.0)) then
-                            write(iun, 1110) 'flz_gru', (bflm%pm_gru%flz(i), i = 1, NTYPE)
-                        else if (any(bflm%pm_iak%pwr /= 0.0)) then
-                            write(iun, 1110) 'flz_iak', (bflm%pm_iak%flz(i), i = 1, NRVR)
-                        else if (any(bflm%pm_grid%pwr /= 0.0)) then
-                            write(iun, 1110) 'flz_grid (min., max.)', minval(bflm%pm_grid%flz), maxval(bflm%pm_grid%flz)
-                        end if
+                    line = 'BASEFLOWFLAG  wf_lzs ' // adjustl(line)
+                    call print_message_detail(line)
+                    if (any(bflm%pm_gru%pwr /= 0.0)) then
+                        write(line, 1001) 'pwr_gru', (bflm%pm_gru%pwr(i), i = 1, NTYPE)
+                        call print_message_detail(line)
+                    else if (any(bflm%pm_iak%pwr /= 0.0)) then
+                        write(line, 1001) 'pwr_iak', (bflm%pm_iak%pwr(i), i = 1, NRVR)
+                        call print_message_detail(line)
+                    else if (any(bflm%pm_grid%pwr /= 0.0)) then
+                        write(line, 1001) 'pwr_grid (min., max.)', minval(bflm%pm_grid%pwr), maxval(bflm%pm_grid%pwr)
+                        call print_message_detail(line)
                     end if
-                case default
-                    write(iun, 1120) bflm%BASEFLOWFLAG
+                    if (any(bflm%pm_gru%pwr /= 0.0)) then
+                        write(line, 1001) 'flz_gru', (bflm%pm_gru%flz(i), i = 1, NTYPE)
+                        call print_message_detail(line)
+                    else if (any(bflm%pm_iak%pwr /= 0.0)) then
+                        write(line, 1001) 'flz_iak', (bflm%pm_iak%flz(i), i = 1, NRVR)
+                        call print_message_detail(line)
+                    else if (any(bflm%pm_grid%pwr /= 0.0)) then
+                        write(line, 1001) 'flz_grid (min., max.)', minval(bflm%pm_grid%flz), maxval(bflm%pm_grid%flz)
+                        call print_message_detail(line)
+                    end if
             end select
-            write(iun, *)
-        end if
-
-        !> Summarize current BASEFLOWFLAG configuration to screen.
-        if (VERBOSEMODE) then
-            print 1100
-            print *
         end if
 
         !> Allocate and initialize local variables.
@@ -146,33 +153,41 @@ module baseflow_module
                     lzs = stas_grid%lzs%ws
                     bflm%pm_grid%flz = 1.0 - (1.0 - bflm%pm_grid%flz)
                 end if
-            case default
-                print 1120, bflm%BASEFLOWFLAG
-                print *
         end select
 
+        !> Resume states from file.
         if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
             select case (bflm%BASEFLOWFLAG)
                 case (1)
                     iun = fls%fl(mfk%f883)%iun
-                    open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012', status = 'old', action = 'read', &
+                    open( &
+                        iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012', action = 'read', status = 'old', &
                         form = 'unformatted', access = 'sequential', iostat = ierr)
+                    if (ierr /= 0) then
+                        call print_error( &
+                            'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to resume states.')
+                        call stop_program()
+                    end if
                     read(iun) stas%lzs%ws
                     read(iun) Qb
                     close(iun)
                 case (2)
                     iun = fls%fl(mfk%f883)%iun
-                    open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz', status = 'old', action = 'read', &
+                    open( &
+                        iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz', action = 'read', status = 'old', &
                         form = 'unformatted', access = 'sequential', iostat = ierr)
+                    if (ierr /= 0) then
+                        call print_error( &
+                            'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to resume states.')
+                        call stop_program()
+                    end if
                     read(iun) stas%lzs%ws
                     close(iun)
             end select
         end if
 
-1100    format(/1x, 'BASEFLOW component ACTIVATED')
-1110    format(999(1x, g16.9))
-1120    format(3x, 'WARNING: BASEFLOWFLAG ', i3, ' not supported.')
-1130    format(3x, (a))
+        !> Format statements.
+1001    format(9999(g15.6, 1x))
 
     end subroutine
 
@@ -184,13 +199,15 @@ module baseflow_module
         use model_dates
         use climate_forcing
 
-        type(fl_ids) :: fls
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        type(clim_info), intent(in) :: cm
 
+        !> Local variables.
         integer k
 
-        !> Return if BASEFLOWFLAG is not active
+        !> Return if BASEFLOWFLAG is not active.
         if (bflm%BASEFLOWFLAG == 0) return
 
         !> Calculate contribution of baseflow to lower zone storage and redistribute runoff.
@@ -218,13 +235,15 @@ module baseflow_module
         use model_dates
         use climate_forcing
 
-        type(fl_ids) :: fls
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        type(clim_info), intent(in) :: cm
 
+        !> Local variables.
         integer k
 
-        !> Return if BASEFLOWFLAG is not active
+        !> Return if BASEFLOWFLAG is not active.
         if (bflm%BASEFLOWFLAG == 0) return
 
         !> Calculate contribution of baseflow to lower zone storage and redistribute runoff.
@@ -256,32 +275,43 @@ module baseflow_module
         !> For: SAVERESUMEFLAG
         use FLAGS
 
-        type(fl_ids) :: fls
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        type(clim_info), intent(in) :: cm
 
         !> Local variables.
         integer ierr, iun
 
-        !> Return if not the head node.
-        if (ipid /= 0) return
+        !> Return if not the head node or if BASEFLOWFLAG is not active.
+        if (ipid /= 0 .or. bflm%BASEFLOWFLAG == 0) return
 
-        !> Return if BASEFLOWFLAG is not active
-        if (bflm%BASEFLOWFLAG == 0) return
-
+        !> Save states to file.
         if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
             select case (bflm%BASEFLOWFLAG)
                 case (1)
                     iun = fls%fl(mfk%f883)%iun
-                    open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012', status = 'replace', &
-                        action = 'write', form = 'unformatted', access = 'sequential', iostat = ierr)
+                    open( &
+                        iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012', action = 'write', status = 'replace', &
+                        form = 'unformatted', access = 'sequential', iostat = ierr)
+                    if (ierr /= 0) then
+                        call print_error( &
+                            'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to save states.')
+                        call stop_program()
+                    end if
                     write(iun) stas%lzs%ws
                     write(iun) Qb
                     close(iun)
                 case (2)
                     iun = fls%fl(mfk%f883)%iun
-                    open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz', status = 'replace', &
-                        action = 'write', form = 'unformatted', access = 'sequential', iostat = ierr)
+                    open( &
+                        iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz', action = 'write', status = 'replace', &
+                        form = 'unformatted', access = 'sequential', iostat = ierr)
+                    if (ierr /= 0) then
+                        call print_error( &
+                            'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to save states.')
+                        call stop_program()
+                    end if
                     write(iun) stas%lzs%ws
                     close(iun)
             end select
@@ -289,24 +319,30 @@ module baseflow_module
 
     end subroutine
 
-    subroutine bflm_parse_flag(line)
+    !> Description:
+    !>  Parse BASEFLOWFLAG.
+    !>
+    !> Input variables:
+    !*  flag: BASEFLOWFLAG from file.
+    subroutine bflm_parse_flag(flag)
 
         use strings
         use model_dates
 
         !> Input variables.
-        !*  line: BASEFLOWFLAG read from file to be parsed.
-        character(len = *), intent(in) :: line
+        character(len = *), intent(in) :: flag
 
         !> Local variables.
         character(len = 200), dimension(20) :: args
         integer nargs, n, i, ierr
 
-        !> Parse the line into a vector of options.
-        call parse(line, ' ', args, nargs)
-
-        !> Parse the options.
+        !> Default behaviour: All baseflow routines disabled.
         bflm%BASEFLOWFLAG = 0
+
+        !> Parse the flag for options.
+        call parse(flag, ' ', args, nargs)
+
+        !> Assign options.
         do i = 2, nargs
 
             !> Old numeric option assigns presets.
@@ -327,7 +363,6 @@ module baseflow_module
                 call value(args(i)(4:), n, ierr)
                 if (ierr == 0) bflm%dts = n*60
             end if
-
         end do
 
     end subroutine
