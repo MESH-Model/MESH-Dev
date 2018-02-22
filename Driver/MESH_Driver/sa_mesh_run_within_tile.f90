@@ -1,24 +1,30 @@
 module sa_mesh_run_within_tile
 
+    !> 'model_files_variables' required for 'fls' object and file keys.
+    !> 'sa_mesh_variables' required for SA_MESH variables, parameters, and counter.
+    !> 'climate_forcing' required for 'cm' variable.
+    !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
+    use model_files_variables
+    use sa_mesh_variables
+    use climate_forcing
+    use mpi_module
+
     implicit none
 
     contains
 
-    subroutine run_within_tile_init(shd, fls, cm)
+    subroutine run_within_tile_init(fls, shd, cm)
 
-        use model_files_variables
-        use sa_mesh_variables
-        use climate_forcing
-
-        !> Required for calls to processes.
+        !> Process modules.
         use RUNCLASS36_config
         use RUNSVS113_config
         use baseflow_module
         use cropland_irrigation_init
 
-        type(ShedGridParams) :: shd
-        type(fl_ids) :: fls
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
@@ -30,38 +36,31 @@ module sa_mesh_run_within_tile
         call runci_init(shd, fls)
 
         !> Update variables.
-        call run_within_tile_stas_update(shd, cm)
+        call run_within_tile_stas_update(fls, shd, cm)
 
     end subroutine
 
-    function run_within_tile(shd, fls, cm)
+    subroutine run_within_tile(fls, shd, cm)
 
-        use model_files_variables
-        use sa_mesh_variables
-        use climate_forcing
-
-        !> Required for calls to processes.
+        !> Process modules.
         use RUNCLASS36_module
         use RUNSVS113_module
         use baseflow_module
         use cropland_irrigation_within_tile
 
-        character(100) run_within_tile
-
-        type(ShedGridParams) :: shd
-        type(fl_ids) :: fls
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
-        run_within_tile = ''
-
         !> MPI exchange.
-        call run_within_tile_mpi_irecv(shd, cm)
+        call run_within_tile_mpi_irecv(fls, shd, cm)
 
         !> Reset variables non-prognostic variables.
-        call run_within_tile_stas_reset()
+        call run_within_tile_stas_reset(fls, shd, cm)
 
         !> Call processes.
         call RUNCLASS36_within_tile(shd, fls, cm)
@@ -70,33 +69,28 @@ module sa_mesh_run_within_tile
         call runci_within_tile(shd, fls, cm)
 
         !> MPI exchange.
-        call run_within_tile_mpi_isend(shd, cm)
+        call run_within_tile_mpi_isend(fls, shd, cm)
 
         !> Update variables.
-        call run_within_tile_stas_update(shd, cm)
+        call run_within_tile_stas_update(fls, shd, cm)
 
-    end function
+    end subroutine
 
-    subroutine run_within_tile_mpi_isend(shd, cm)
+    subroutine run_within_tile_mpi_isend(fls, shd, cm)
 
-        !> For: MPI variables, barrier flag, il1:il2 parse utility.
-        use mpi_module
+        !> Process modules.
+        use baseflow_module
 
-        !> Process modules (required for variables).
-        use sa_mesh_variables
-        use model_dates
-        use climate_forcing
-        use baseflow_module, only: bflm, Qb
-
-        !> Input variables.
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Local variables.
         integer nvars, t, i, j, u, s, ii1, ii2, iin, z
         logical lstat
         integer, allocatable :: irqst(:), imstat(:, :)
-        real, dimension(:), allocatable :: cnpy, sno, sfc, sl, lzs, dzs
+        real, dimension(:), allocatable :: cnpy, sno, sfc, sl, lz, dz
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
@@ -109,7 +103,7 @@ module sa_mesh_run_within_tile
         !> Exchange variables.
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
-        allocate(irqst(nvars), imstat(mpi_status_size, nvars))
+        allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
         t = ic%ts_count*1000
 
         !> Other variables
@@ -123,7 +117,7 @@ module sa_mesh_run_within_tile
 
             !> Reset the exchange variables.
             i = 1
-            irqst = mpi_request_null
+            irqst = MPI_REQUEST_NULL
 
             !> Canopy.
             allocate(cnpy(7*iin))
@@ -134,7 +128,7 @@ module sa_mesh_run_within_tile
             cnpy((1 + iin*4):(iin*5)) = stas%cnpy%tcan(ii1:ii2)
             cnpy((1 + iin*5):(iin*6)) = stas%cnpy%qac(ii1:ii2)
             cnpy((1 + iin*6):(iin*7)) = stas%cnpy%gro(ii1:ii2)
-            call mpi_isend(cnpy, size(cnpy), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+            call MPI_Isend(cnpy, size(cnpy), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> Snow.
@@ -145,7 +139,7 @@ module sa_mesh_run_within_tile
             sno((1 + iin*3):(iin*4)) = stas%sno%rhos(ii1:ii2)
             sno((1 + iin*4):(iin*5)) = stas%sno%wsno(ii1:ii2)
             sno((1 + iin*5):(iin*6)) = stas%sno%tsno(ii1:ii2)
-            call mpi_isend(sno, size(sno), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+            call MPI_Isend(sno, size(sno), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> Surface or at near surface.
@@ -165,7 +159,7 @@ module sa_mesh_run_within_tile
             do j = 0, 3
                 sfc((1 + iin*(12 + j)):(iin*(13 + j))) = stas%sfc%tsfs(ii1:ii2, j + 1)
             end do
-            call mpi_isend(sfc, size(sfc), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+            call MPI_Isend(sfc, size(sfc), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> Soil layers.
@@ -178,37 +172,37 @@ module sa_mesh_run_within_tile
                 sl((1 + iin*(4 + j*4)):(iin*(5 + j*4))) = stas%sl%tbar(ii1:ii2, j + 1)
                 sl((1 + iin*(5 + j*4)):(iin*(6 + j*4))) = stas%sl%gflx(ii1:ii2, j + 1)
             end do
-            call mpi_isend(sl, size(sl), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+            call MPI_Isend(sl, size(sl), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> Lower zone storage.
-            allocate(lzs(2*iin))
-            lzs((1 + iin*0):(iin*1)) = stas%lzs%ws(ii1:ii2)
-            lzs((1 + iin*1):(iin*2)) = stas%lzs%rofb(ii1:ii2)
-            call mpi_isend(lzs, size(lzs), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+            allocate(lz(2*iin))
+            lz((1 + iin*0):(iin*1)) = stas%lzs%ws(ii1:ii2)
+            lz((1 + iin*1):(iin*2)) = stas%lzs%rofb(ii1:ii2)
+            call MPI_Isend(lz, size(lz), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> Deep zone storage.
-            allocate(dzs(2*iin))
-            dzs((1 + iin*0):(iin*1)) = stas%dzs%ws(ii1:ii2)
-            dzs((1 + iin*1):(iin*2)) = stas%dzs%rofb(ii1:ii2)
-            call mpi_isend(dzs, size(dzs), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+            allocate(dz(2*iin))
+            dz((1 + iin*0):(iin*1)) = stas%dzs%ws(ii1:ii2)
+            dz((1 + iin*1):(iin*2)) = stas%dzs%rofb(ii1:ii2)
+            call MPI_Isend(dz, size(dz), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> BASEFLOWFLAG.
             if (bflm%BASEFLOWFLAG == 1) then
-                call mpi_isend(Qb(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z)
+                call MPI_Isend(Qb(ii1:ii2), iin, MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
                 i = i + 1
             end if
 
             !> Wait until the exchange completes.
             lstat = .false.
             do while (.not. lstat)
-                call mpi_testall(nvars, irqst, lstat, imstat, z)
+                call MPI_Testall(nvars, irqst, lstat, imstat, z)
             end do
 
             !> Deallocate temporary arrays.
-            deallocate(cnpy, sno, sfc, sl, lzs, dzs)
+            deallocate(cnpy, sno, sfc, sl, lz, dz)
 
         else if (inp > 1) then
 
@@ -223,31 +217,31 @@ module sa_mesh_run_within_tile
                 allocate(sno(6*iin))
                 allocate(sfc((12 + 4)*iin))
                 allocate(sl((2 + 4*s)*iin))
-                allocate(lzs(2*iin))
-                allocate(dzs(2*iin))
+                allocate(lz(2*iin))
+                allocate(dz(2*iin))
 
                 !> Reset the exchange variables.
                 i = 1
-                irqst = mpi_request_null
+                irqst = MPI_REQUEST_NULL
                 imstat = 0
 
                 !> Receive variables.
-                call mpi_irecv(cnpy, size(cnpy), mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_irecv(sno, size(sno), mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_irecv(sfc, size(sfc), mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_irecv(sl, size(sl), mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_irecv(lzs, size(lzs), mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
-                call mpi_irecv(dzs, size(dzs), mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call MPI_Irecv(cnpy, size(cnpy), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(sno, size(sno), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(sfc, size(sfc), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(sl, size(sl), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(lz, size(lz), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(dz, size(dz), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
 
                 !> BASEFLOWFLAG.
                 if (bflm%BASEFLOWFLAG == 1) then
-                    call mpi_irecv(Qb(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                    call MPI_Irecv(Qb(ii1:ii2), iin, MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
                 end if
 
                 !> Wait until the exchange completes.
                 lstat = .false.
                 do while (.not. lstat)
-                    call mpi_testall(nvars, irqst, lstat, imstat, z)
+                    call MPI_Testall(nvars, irqst, lstat, imstat, z)
                 end do
 
                 !> Assign variables.
@@ -297,15 +291,15 @@ module sa_mesh_run_within_tile
                 end do
 
                 !> Lower zone storage.
-                stas%lzs%ws(ii1:ii2) = lzs((1 + iin*0):(iin*1))
-                stas%lzs%rofb(ii1:ii2) = lzs((1 + iin*1):(iin*2))
+                stas%lzs%ws(ii1:ii2) = lz((1 + iin*0):(iin*1))
+                stas%lzs%rofb(ii1:ii2) = lz((1 + iin*1):(iin*2))
 
                 !> Deep zone storage.
-                stas%dzs%ws(ii1:ii2) = dzs((1 + iin*0):(iin*1))
-                stas%dzs%rofb(ii1:ii2) = dzs((1 + iin*1):(iin*2))
+                stas%dzs%ws(ii1:ii2) = dz((1 + iin*0):(iin*1))
+                stas%dzs%rofb(ii1:ii2) = dz((1 + iin*1):(iin*2))
 
                 !> Deallocate temporary arrays.
-                deallocate(cnpy, sno, sfc, sl, lzs, dzs)
+                deallocate(cnpy, sno, sfc, sl, lz, dz)
 
             end do !u = 1, (inp - 1)
 
@@ -315,26 +309,19 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
-    subroutine run_within_tile_mpi_irecv(shd, cm)
+    subroutine run_within_tile_mpi_irecv(fls, shd, cm)
 
-        !> For: MPI variables, barrier flag, il1:il2 parse utility.
-        use mpi_module
-
-        !> Process modules (required for variables).
-        use sa_mesh_variables
-        use model_dates
-        use climate_forcing
-
-        !> Input variables.
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Local variables.
         integer nvars, t, i, j, u, ii1, ii2, iin, z
         logical lstat
         integer, allocatable :: irqst(:), imstat(:, :)
 
-        !> Return if grid processes are not active.
+        !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
         !> Count the number of active variables included in the exchange.
@@ -344,7 +331,7 @@ module sa_mesh_run_within_tile
         !> Exchange variables.
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
-        allocate(irqst(nvars), imstat(mpi_status_size, nvars))
+        allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
         t = ic%ts_count*1000 + 400
 
         !> Assign the indices.
@@ -359,13 +346,13 @@ module sa_mesh_run_within_tile
 
                 !> Reset the exchange variables.
                 i = 1
-                irqst = mpi_request_null
+                irqst = MPI_REQUEST_NULL
                 imstat = 0
 
                 !> Wait until the exchange completes.
                 lstat = .false.
                 do while (.not. lstat)
-                    call mpi_testall(nvars, irqst, lstat, imstat, z)
+                    call MPI_Testall(nvars, irqst, lstat, imstat, z)
                 end do
 
             end do !u = 1, (inp - 1)
@@ -375,12 +362,12 @@ module sa_mesh_run_within_tile
             !> Receive data from head-node.
             !> Reset the exchange variables.
             i = 1
-            irqst = mpi_request_null
+            irqst = MPI_REQUEST_NULL
 
             !> Wait until the exchange completes.
             lstat = .false.
             do while (.not. lstat)
-                call mpi_testall(nvars, irqst, lstat, imstat, z)
+                call MPI_Testall(nvars, irqst, lstat, imstat, z)
             end do
 
         end if !(inp > 1 .and. ipid /= 0) then
@@ -389,12 +376,15 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
-    subroutine run_within_tile_stas_reset()
+    subroutine run_within_tile_stas_reset(fls, shd, cm)
 
-        use sa_mesh_variables
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
-        !> Required for 'il1:il2' indices.
-        use mpi_module
+        !> Return if tile processes are not active.
+        if (.not. ro%RUNTILE) return
 
         !> Reset variables non-prognostic variables.
         stas%sno%fsno(il1:il2) = 0.0
@@ -415,19 +405,15 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
-    subroutine run_within_tile_stas_update(shd, cm)
-
-        use sa_mesh_variables
-        use climate_forcing
-
-        !> Required for 'il1:il2' indices.
-        use mpi_module
+    subroutine run_within_tile_stas_update(fls, shd, cm)
 
 !+todo: There's a dependency on CLASSBD.f.
         use RUNCLASS36_constants, only: RHOW, RHOICE
 
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
@@ -465,18 +451,15 @@ module sa_mesh_run_within_tile
 
     subroutine run_within_tile_finalize(fls, shd, cm)
 
-        use model_files_variabletypes
-        use sa_mesh_variables
-        use climate_forcing
-
-        !> Required for calls to processes.
+        !> Process modules.
         use RUNCLASS36_config
         use RUNSVS113_config
         use baseflow_module
 
-        type(fl_ids) :: fls
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return

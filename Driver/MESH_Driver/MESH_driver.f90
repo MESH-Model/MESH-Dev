@@ -158,10 +158,10 @@ program RUNMESH
 
     integer FRAME_NO_NEW
 
-    !> MAM - logical variables to control simulation runs:
-    character(100) cstate
+    !> Logicals to control simulation runs.
+    !*  ENDDATE: Signals reached simulation end date.
+    !*  ENDDATA: Signals reached end of forcing data.
     logical ENDDATE, ENDDATA
-    integer :: RUNSTATE = 0
 
     !>  For cacluating the subbasin grids
 !+    integer SUBBASINCOUNT
@@ -200,13 +200,13 @@ program RUNMESH
     call cpu_time(startprog)
 
     !> Initialize MPI.
-    call mpi_init(ierr)
-    if (ierr /= mpi_success) then
+    call MPI_Init(ierr)
+    if (ierr /= MPI_SUCCESS) then
         call print_warning('Failed to initialize MPI.')
         write(line, 1001) ierr
         call print_message_detail('Error status: ' // trim(adjustl(line)))
         call print_message('Calling MPI abort...')
-        call mpi_abort(mpi_comm_world, ierrcode, ierr)
+        call MPI_Abort(MPI_COMM_WORLD, ierrcode, ierr)
         write(line, 1001) ierrcode
         call print_message_detail('Error code: ' // trim(adjustl(line)))
         write(line, 1001) ierr
@@ -214,8 +214,8 @@ program RUNMESH
     end if
 
     !> Grab number of total processes and current process ID.
-    call mpi_comm_size(mpi_comm_world, inp, ierr)
-    call mpi_comm_rank(mpi_comm_world, ipid, ierr)
+    call MPI_Comm_size(mpi_comm_world, inp, ierr)
+    call MPI_Comm_rank(mpi_comm_world, ipid, ierr)
 
     !> izero is active if the head node is used for booking and lateral flow
     !> processes.
@@ -258,48 +258,29 @@ program RUNMESH
 !-    call counter_init()
 
     call READ_INITIAL_INPUTS(fls, shd, ts, cm, RELEASE_STRING)
+    call print_message('')
 
     !> Assign shed values to local variables.
     NA = shd%NA
     NTYPE = shd%lc%NTYPE
     NSL = shd%lc%IGND
-
-    if (ipid == 0) then
-
-        !> Basin totals for the run.
-        TOTAL_PRE = 0.0
-        TOTAL_EVAP = 0.0
-        TOTAL_ROF = 0.0
-        TOTAL_ROFO = 0.0
-        TOTAL_ROFS = 0.0
-        TOTAL_ROFB = 0.0
-        DAILY_PRE = 0.0
-        DAILY_EVAP = 0.0
-        DAILY_ROF = 0.0
-
-    end if !(ipid == 0) then
-
-    call run_within_tile_init(shd, fls, cm)
-    call run_within_grid_init(shd, fls, cm)
-
     NML = shd%lc%NML
 
-    !> MAM - Check for parameter values - all parameters should lie within the
-    !> specified ranges in the "minmax_parameters.txt" file.
-!todo: fix or remove this.
-!    call check_parameters(shd)
-
-    !> ALLOCATE ALL VARIABLES
-
-    !>  For cacluating the subbasin grids
-!+    allocate(SUBBASIN(NML))
-
-    if (ipid == 0) call run_between_grid_init(shd, fls, cm)
+    !> Initialize process modules.
+    if (ro%RUNTILE) then
+        call run_within_tile_init(fls, shd, cm)
+        call run_within_grid_init(fls, shd, cm)
+    end if
+    if (ro%RUNGRID) call run_between_grid_init(fls, shd, cm)
+    call print_message('')
 
 !> **********************************************************************
 !>  Start of section to only run on squares that make up the watersheds
 !>  that are listed in the streamflow file (subbasin)
 !> **********************************************************************
+
+    !>  For cacluating the subbasin grids
+!+    allocate(SUBBASIN(NML))
 
 !+    if (SUBBASINFLAG > 0) then
 !+        do i = 1, NA
@@ -351,12 +332,23 @@ program RUNMESH
 !>  End of subbasin section
 !> **********************************************************************
 
+    !> Initialize climate forcing module.
     if (ro%RUNCLIM) then
         ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
-        if (ENDDATA) then
-            RUNSTATE = 1
-            goto 997
-        end if
+        if (ENDDATA) goto 997
+    end if
+
+    !> Initialize basin totals for the run.
+    if (ipid == 0) then
+        TOTAL_PRE = 0.0
+        TOTAL_EVAP = 0.0
+        TOTAL_ROF = 0.0
+        TOTAL_ROFO = 0.0
+        TOTAL_ROFS = 0.0
+        TOTAL_ROFB = 0.0
+        DAILY_PRE = 0.0
+        DAILY_EVAP = 0.0
+        DAILY_ROF = 0.0
     end if
 
     !> Initialize output fields.
@@ -944,30 +936,10 @@ program RUNMESH
 
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
-        !> Pass the run state from the head to worker nodes.
-!+        if (inp > 1 .and. ipid /= 0) then
-
-            !> Receive data from the head node.
-!+            call MPI_Recv(RUNSTATE, 1, MPI_INT, 0, ipid, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
-!+        else if (inp > 1) then
-
-            !> Send data for the worker nodes.
-!+            do u = 1, (inp - 1)
-!+                call MPI_Send(RUNSTATE, 1, MPI_INT, u, u, MPI_COMM_WORLD, ierr)
-!+            end do
-!+        end if !(inp > 1 .and. ipid /= 0) then
-
-!-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
-
-        if (RUNSTATE /= 0) exit
-
         !> Load or update climate forcing input.
         if (ro%RUNCLIM) then
             ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
-            if (ENDDATA) then
-                RUNSTATE = 1
-                cycle
-            end if
+            if (ENDDATA) exit
         end if
 
         !> Reset variables that accumulate on the daily time-step.
@@ -978,21 +950,19 @@ program RUNMESH
         end if
 
         !> Distribute grid states (e.g., channel storage) to worker nodes.
-        call run_within_grid_mpi_irecv(shd, cm)
+        if (ro%RUNGRID) call run_within_grid_mpi_irecv(fls, shd, cm)
 
-        cstate = run_within_tile(shd, fls, cm)
-        cstate = ''
-!        if (len_trim(cstate) > 0) then
-!            RUNSTATE = 1
-!            cycle
-!        end if
-
-        call run_within_grid(shd, fls, cm)
+        !> Run tile-based processes.
+        if (ro%RUNTILE) then
+            call run_within_tile(fls, shd, cm)
+            call run_within_grid(fls, shd, cm)
+        end if
 
         !> Update grid states (e.g., channel storage) from worker nodes.
-        call run_within_grid_mpi_isend(shd, cm)
+        if (ro%RUNGRID) call run_within_grid_mpi_isend(fls, shd, cm)
 
-        if (ipid == 0) call run_between_grid(shd, fls, cm)
+        !> Run grid-based processes.
+        if (ro%RUNGRID) call run_between_grid(fls, shd, cm)
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.
@@ -1107,42 +1077,21 @@ program RUNMESH
         end if
 
         !> Check the run state.
-        if (ENDDATA .or. ENDDATE) then
-            RUNSTATE = 1
-            exit
-        end if
-
-        !> Pass the run state from the worker to head nodes.
-!+        if (inp > 1 .and. ipid /= 0) then
-
-            !> Receive data from the head node.
-!+            call MPI_Send(RUNSTATE, 1, MPI_INT, 0, ipid, MPI_COMM_WORLD, ierr)
-!+        else if (inp > 1) then
-
-            !> Send data for the worker nodes.
-!+            do u = 1, (inp - 1)
-!+                call MPI_Recv(irecv, 1, MPI_INT, u, u, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
-!+                RUNSTATE = max(RUNSTATE, irecv)
-!+            end do
-!+        end if !(inp > 1 .and. ipid /= 0) then
-
-!-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
+        if (ENDDATA .or. ENDDATE) exit
 
     end do !while (.not. ENDDATE .and. .not. ENDDATA)
 
-    !>
     !> ENDDATA mark
-    !>
-
 997     continue
 
     !> End program if not the head node.
     if (ipid /= 0) then
-        write(line, 1001) ipid
-        call print_diagnostic_info('Node ' // trim(adjustl(line)) // ' is existing.')
+        if (DIAGNOSEMODE) then
+            write(line, 1001) ipid
+            call print_screen('Node ' // trim(adjustl(line)) // ' is existing.')
+        end if
         goto 999
-
-    end if !(ipid /= 0) then
+    end if
 
     !> *********************************************************************
     !> SAVERESUMEFLAG
@@ -1223,14 +1172,14 @@ program RUNMESH
     if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
 
     !> Call finalization routines.
-    call run_within_tile_finalize(fls, shd, cm)
-    call run_within_grid_finalize(fls, shd, cm)
-    call climate_module_finalize(fls, shd, cm)
+    if (ro%RUNTILE) then
+        call run_within_tile_finalize(fls, shd, cm)
+        call run_within_grid_finalize(fls, shd, cm)
+    end if
+    if (ro%RUNGRID) call run_between_grid_finalize(fls, shd, cm)
+    if (ro%RUNCLIM) call climate_module_finalize(fls, shd, cm)
 
     if (ipid == 0) then
-
-        !> Call finalization routines.
-        call run_between_grid_finalize(fls, shd, cm)
 
         !> Accumulated outputs (including non-zero value read from resume file).
         TOTAL_PRE = TOTAL_PRE + sum(out%grid%pre%tot*shd%FRAC)*ic%dts
@@ -1445,9 +1394,7 @@ program RUNMESH
 
 999     continue
 
-    call mpi_finalize(ierr)
-
-    stop
+    call stop_program()
 
     !> Format statements.
 1001    format(9999(g15.6, 1x))
