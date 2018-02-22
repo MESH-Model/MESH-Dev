@@ -596,9 +596,11 @@
 
                     !> Basin output files.
                     case ('BASINBALANCEOUTFLAG')
-                        BASINAVGEBFILEFLAG = 'none'
-                        BASINAVGWBFILEFLAG = 'none'
-                        BASINAVGEVPFILEFLAG = 0
+                        call value(out_args(2), IROVAL, ierr)
+                        if (IROVAL == 0) then
+                            BASINAVGEBFILEFLAG = 'none'
+                            BASINAVGWBFILEFLAG = 'none'
+                        end if
                     case ('BASINAVGEBFILEFLAG')
                         BASINAVGEBFILEFLAG = adjustl(in_line)
                     case ('BASINAVGWBFILEFLAG')
