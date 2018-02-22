@@ -125,9 +125,20 @@ module sa_mesh_run_between_grid
         NR = fms%rsvr%n
         NS = fms%stmg%n
 
-        !> Fuad Reservoir Flag Active
+        !> For zone-based storage.
         if (RESERVOIRFLAG == 2) then
+
+            !> Read configuration from file.
             call init_reservoirs('coeff_reserv.txt')
+
+            !> Read initial storage and outflow states from file.
+            if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
+                iun = 100
+                open(iun, file = 'zone_storage_states.txt', action = 'read', status = 'old')
+                read(iun, *) (resrvs%rsvr(i)%stoSIM(1), i = 1, resrvs%nreserv)
+                read(iun, *) (resrvs%rsvr(i)%flowSIM(1), i = 1, resrvs%nreserv)
+                close(iun)
+            end if
         end if
 
         !> Allocate file object.
@@ -710,6 +721,8 @@ module sa_mesh_run_between_grid
         use sa_mesh_shared_variables
         use model_dates
         use climate_forcing
+        use reservoir
+        use FLAGS
 
         !> Required for calls to processes.
         use WF_ROUTE_config, only: WF_ROUTE_finalize
@@ -722,6 +735,9 @@ module sa_mesh_run_between_grid
         type(streamflow_hydrograph) :: stfl
         type(reservoir_release) :: rrls
 
+        !> Local variables.
+        integer iun, i
+
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
@@ -729,6 +745,19 @@ module sa_mesh_run_between_grid
         call WF_ROUTE_finalize(fls, shd, stfl, rrls)
         call run_rte_finalize(fls, shd, stfl, rrls)
         call run_save_basin_output_finalize(fls, shd, cm)
+
+        !> For zone-based storage.
+        if (RESERVOIRFLAG == 2) then
+
+            !> Save previous time-step storage and outflow states to file.
+            if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
+                iun = 100
+                open(iun, file = 'zone_storage_states.txt', action = 'write', status = 'replace')
+                write(iun, *) (resrvs%rsvr(i)%stoSIM(1), i = 1, resrvs%nreserv), '# Intstor1(1:NRESV)'
+                write(iun, *) (resrvs%rsvr(i)%flowSIM(1), i = 1, resrvs%nreserv), '# flowO1(1:NRESV)'
+                close(iun)
+            end if
+        end if
 
     end subroutine
 
