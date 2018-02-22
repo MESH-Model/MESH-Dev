@@ -23,7 +23,7 @@ subroutine read_basin_structures(shd)
     type(ShedGridParams) :: shd
 
     !> Local variables.
-    integer iun, iskip, ijday1, ijday2, n, i, ierr
+    integer iun, iskip, isteps1, isteps2, n, i, ierr
     character(len = DEFAULT_LINE_LENGTH) fname, line
 
     !> Return if routing routines are disabled.
@@ -83,9 +83,11 @@ subroutine read_basin_structures(shd)
         end if
 
         !> Skip records in the file to the simulation start date.
-        call Julian_Day_ID(fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday, ijday1)
-        call Julian_Day_ID(ic%start%year, ic%start%jday, ijday2)
-        if (ijday2 < ijday1) then
+        !> Units of the records interval is hours.
+        isteps1 = jday_to_tsteps( &
+            fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday, fms%stmg%qomeas%ihour, fms%stmg%qomeas%imins, fms%stmg%qomeas%dts*60)
+        isteps2 = jday_to_tsteps(ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins, fms%stmg%qomeas%dts*60)
+        if (isteps2 < isteps1) then
             call print_warning('The first record occurs after the simulation start date.')
             call print_message('This may cause channels to initialize with no storage.')
             write(line, "(i5, i4)") fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday
@@ -93,7 +95,7 @@ subroutine read_basin_structures(shd)
             write(line, "(i5, i4)") ic%start%year, ic%start%jday
             call print_message_detail('Simulation start date: ' // trim(line))
         end if
-        iskip = (ijday2 - ijday1)*24/fms%stmg%qomeas%dts
+        iskip = (isteps2 - isteps1)
         if (iskip > 0) then
             write(line, 1001) iskip
             call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
@@ -229,9 +231,12 @@ subroutine read_basin_structures(shd)
             end if
 
             !> Skip records in the file to the simulation start date.
-            call Julian_Day_ID(fms%rsvr%rlsmeas%iyear, fms%rsvr%rlsmeas%ijday, ijday1)
-            call Julian_Day_ID(ic%start%year, ic%start%jday, ijday2)
-            if (ijday2 < ijday1) then
+            !> Units of the records interval is hours.
+            isteps1 = jday_to_tsteps( &
+                fms%rsvr%rlsmeas%iyear, fms%rsvr%rlsmeas%ijday, fms%rsvr%rlsmeas%ihour, fms%rsvr%rlsmeas%imins, &
+                fms%rsvr%rlsmeas%dts*60)
+            isteps2 = jday_to_tsteps(ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins, fms%rsvr%rlsmeas%dts*60)
+            if (isteps2 < isteps1) then
                 call print_error('The first record occurs after the simulation start date.')
                 call print_message( &
                     'The record must start on or after the simulation start date when controlled reservoirs are active.')
@@ -241,7 +246,7 @@ subroutine read_basin_structures(shd)
                 call print_message_detail('Simulation start date: ' // trim(line))
                 call stop_program()
             end if
-            iskip = (ijday2 - ijday1)*24/fms%rsvr%rlsmeas%dts
+            iskip = (isteps2 - isteps1)
             if (iskip > 0) then
                 write(line, 1001) iskip
                 call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')

@@ -40,7 +40,7 @@ OBJECTS+=	precmod.o stringmod.o
 OBJECTS+=	txt_io.o ensim_io.o
 # Variables (common).
 OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
-			module_dates.o Julian_Day_ID.o \
+			module_dates.o \
 			EF_Module.o EF_ParseUtilities.o FLAGS.o \
 			parse_utilities.o \
 			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
