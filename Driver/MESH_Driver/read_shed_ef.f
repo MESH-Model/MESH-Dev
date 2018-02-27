@@ -86,7 +86,7 @@ C//////////////////////////////////////////////
 !     *  dffn(25), simpson(25), colum(50), canag(25), noire8k(25)
 !      integer chsm, ndam1,
       integer
-     *  iallcnt5, nrvr1,
+!     *  iallcnt5, nrvr1,
 !     *  dummy1, ntest, nchr, iallocate,
 !     *  ios,
 !     *  latdegmin, latminmin, latdegmax, latminmax, londegmin,
@@ -94,7 +94,7 @@ C//////////////////////////////////////////////
      *  n, ii
 !     *  igridflg,
 !     *  nrvr1, ntmp, l, newformat
-      real sumclass
+!      real sumclass
 !     *  cintv, conv
 !      integer(kind=2) result1, n_hdr_lines, zone
 !      logical exists
@@ -160,7 +160,7 @@ c unitNum = 31
 c flnNum = 1
 
       foundEndHeader = .false.
-      iallcnt5 = 1
+!      iallcnt5 = 1
 
 !Dan Princz changed this
 CDAN      print*,'in read_shed_ef with',unitNum,flnNum
@@ -195,9 +195,9 @@ CDAN      print*,'filename =',fln(flnnum)
 !     basin/bsnm_shd.r2c
       open(fls%fl(indx)%iun, file=adjustl(trim(fls%fl(indx)%fn)),
      +  status='old', iostat=ierr)
-      if (ierr /= 0) then
-        print *
-        print *, 'Problems in file', adjustl(trim(fls%fl(indx)%fn))
+!      if (ierr /= 0) then
+!        print *
+!        print *, 'Problems in file', adjustl(trim(fls%fl(indx)%fn))
 !        write(*, 99162) fln(flnNum)
 !        write(98, 99162) fln(flnNum)
 !99162   format(' Warning: Error opening or reading fln:', a30/
@@ -205,9 +205,9 @@ CDAN      print*,'filename =',fln(flnnum)
 !     *  ' OR: in config.sys have you set files=100 & buffers=50?'/
 !     *  ' OR: wrong number in line 2 of the event file for '/
 !     *  '     number of events listed in event file ')
-        print *, 'iostat code =', ierr
-        stop 'program aborted in read_shed_ef.for @ 130'
-      end if
+!        print *, 'iostat code =', ierr
+!        stop 'program aborted in read_shed_ef.for @ 130'
+!      end if
 
 C//////////////////////////////////////////////
 C/////////////////////////
@@ -220,10 +220,8 @@ C// Added by Dave
      &           (len_trim(line) == 0)))
         read(fls%fl(indx)%iun, fmt='((A))', iostat=ierr) line ! read a line
         if (ierr == -1) then
-        if (VERBOSEMODE) then
-          write(6,'((A))') 'ERROR: Premature EndOfFile encountered'
-        end if
-          stop
+          call print_error('End of file.')
+          call stop_program()
         end if
 
 c      print*,line
@@ -242,16 +240,8 @@ c      pause
           else
             ierr = ParseShedParam(header, keyword, keyLen, subString)
             if (ierr < 0) then
-            if (VERBOSEMODE) then
-              write(*, '(2(A))') 'ERROR parsing ',
-     *          adjustl(trim(fls%fl(indx)%fn))
-              write(*, '(2(A))') '   in line: ', line
-            end if
-              stop
-              return
-            else if (ierr == 0) then
-C     write(*,'((A), (A))')  'Unrecognized keyword line: ',
-C     &          line
+              call print_warning('Unable to parse line ' //
+     &          adjustl(trim(line)))
             end if
           end if
         end if
@@ -357,7 +347,7 @@ CDAN      print*,'avant calling program flg,328'
 !            But it is so read_shed_ef is the same for all.
 !            Probably not a good idea to change for spl because of opt.
 
-      if (iallcnt5 == 1) then
+!      if (iallcnt5 == 1) then
 
         allocate(s(shd%yCount, shd%xCount),
 !     *    dummy(shd%yCount, shd%xCount),
@@ -428,8 +418,8 @@ CDAN      print*,'avant calling program flg,328'
         if (ierr /= 0) stop
      *    'Error with allocation of area16a arrays in sheda'
 !              glacier_flag(na)      added Mar, 28/06  nk
-        iallcnt5 = 2
-      end if
+!        iallcnt5 = 2
+!      end if
 
 C//////////////////////////////////////////////
 C/////////////////////////
@@ -638,8 +628,8 @@ C// I'm not sure if we need this...check with Nick
 
 C// Deallocate the attribute data now that global attributes have been set
       do ai = 1, attCount
-        deallocate(header%r2cp%ep%attList(ai)%val, STAT=error)
-        if (error /= 0) stop 'deallocation error in read_gsm_ef()'
+        deallocate(header%r2cp%ep%attList(ai)%val)
+!        if (error /= 0) stop 'deallocation error in read_gsm_ef()'
       end do
 
 C Debug check for Dave
@@ -725,27 +715,27 @@ c endif
 
 !     REV. 8.92 - Dec.  24/89 -  CHECK FOR 100% ACLASS COVERAGE
 !      igridflg = 0
-      do n = 1, shd%NAA
-        sumclass = 0.0
-        do ii = 1, shd%lc%NTYPE + 1
-          sumclass = sumclass + shd%lc%ACLASS(n, ii)
-        end do
-        if (sumclass /= 1.0) then
+!      do n = 1, shd%NAA
+!        sumclass = 0.0
+!        do ii = 1, shd%lc%NTYPE + 1
+!          sumclass = sumclass + shd%lc%ACLASS(n, ii)
+!        end do
+!        if (sumclass /= 1.0) then
 !          igridflg = 1
-          if (DIAGNOSEMODE) then
-            print 9023, n, shd%yyy(n), shd%xxx(n), sumclass
-          end if
-          do ii = 1, shd%lc%NTYPE + 1
-            if (sumclass > 0.0) then
-              shd%lc%ACLASS(n, ii) = shd%lc%ACLASS(n, ii)/sumclass
-            else
-              if (DIAGNOSEMODE) then
-                print 9024, n, shd%yyy(n), shd%xxx(n)
-              end if
-            end if
-          end do
-        end if
-      end do
+!          if (DIAGNOSEMODE) then
+!            print 9023, n, shd%yyy(n), shd%xxx(n), sumclass
+!          end if
+!          do ii = 1, shd%lc%NTYPE + 1
+!            if (sumclass > 0.0) then
+!              shd%lc%ACLASS(n, ii) = shd%lc%ACLASS(n, ii)/sumclass
+!            else
+!              if (DIAGNOSEMODE) then
+!                print 9024, n, shd%yyy(n), shd%xxx(n)
+!              end if
+!            end if
+!          end do
+!        end if
+!      end do
 
 !     FOR SPLD ONLY:
 !     * * * * * * * * * * * * * * * * *
@@ -771,7 +761,7 @@ c endif
 !        sl2(n) = sqrt(sl1(n))     ! used for overland flow routing (runof6)
 !       check to see how many basins/river classes there are:
 !      end do
-      if (allocated(shd%IAK)) nrvr1 = maxval(shd%IAK)
+!      if (allocated(shd%IAK)) nrvr1 = maxval(shd%IAK)
 
 c      if( nrvr.ne.nrvr1)then
 c!      if(nrvr.lt.nrvr1)then
@@ -784,16 +774,16 @@ c        pause ' program paused in rd_shed_ef'
 c      endif
 c
 
-      if (shd%NRVR /= nrvr1 .and. nrvr1 /= 0) then
-        if (VERBOSEMODE) print 803, shd%NRVR, nrvr1
-        shd%NRVR = nrvr1
-      end if
+!      if (shd%NRVR /= nrvr1 .and. nrvr1 /= 0) then
+!        if (VERBOSEMODE) print 803, shd%NRVR, nrvr1
+!        shd%NRVR = nrvr1
+!      end if
 
-803   format(
-     *  /1x, 'WARNING: Total number of river classes is adjusted to',
-     *  /1x, 'match IAK.',
-     *  /3x, 'NRVR: ', i5,
-     *  /3x, 'NRVR (adjusted): ', i5, /)
+!803   format(
+!     *  /1x, 'WARNING: Total number of river classes is adjusted to',
+!     *  /1x, 'match IAK.',
+!     *  /3x, 'NRVR: ', i5,
+!     *  /3x, 'NRVR (adjusted): ', i5, /)
 
 c      print*,'nrvr=',nrvr
 c      print*
@@ -1282,9 +1272,9 @@ c     endif
 
 !9005  format(12i5, 2f5.0)
 
-9023  format(
-     *  1x, 'WARNING: Area correction in grid n(i, j): ', 3i5, f9.5)
-9024  format(1x, 'WARNING: Total area = 0.0 in grid n (i, j): ', 3i5)
+!9023  format(
+!     *  1x, 'WARNING: Area correction in grid n(i, j): ', 3i5, f9.5)
+!9024  format(1x, 'WARNING: Total area = 0.0 in grid n (i, j): ', 3i5)
 !9025  format(' Warning: no reservoirs or lakes in bsnm.str file')
 !9026  format(' Warning: no damage sites in bsnm.str file')
 

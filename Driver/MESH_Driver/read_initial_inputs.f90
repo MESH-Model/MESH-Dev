@@ -21,8 +21,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
 
     !> Local variables.
     integer n, m, k, i, j, ierr
-    character(len = DEFAULT_LINE_LENGTH), dimension(:), allocatable :: list_errors, list_warnings
-    character(len = DEFAULT_LINE_LENGTH) line
+    character(len = DEFAULT_LINE_LENGTH) line, field
 
     !>
     !> RUN OPTIONS.
@@ -162,62 +161,83 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
     !> Check maximum number of cells and outlets, and print a warning if an adjustment is made.
     if (ro%RUNCHNL) then
         if (shd%NA /= maxval(shd%NEXT)) then
-            call print_remark('Total number of grids adjusted to maximum RANK. Consider checking the input files.')
+            call print_remark('Total number of grids adjusted to maximum RANK. Consider adjusting the input files.')
             shd%NA = maxval(shd%NEXT)
         end if
         if (shd%NAA /= (maxval(shd%NEXT) - count(shd%NEXT == 0))) then
             call print_remark( &
-                'Number of outlets adjusted to the number of cells where NEXT is zero. Consider checking the input files.')
+                'Number of outlets adjusted to the number of cells where NEXT is zero. Consider adjusting the input files.')
             shd%NAA = maxval(shd%NEXT) - count(shd%NEXT == 0)
         end if
     end if
 
-    !> Allocate temporary message variables.
-    allocate(list_errors(6*shd%NAA), list_warnings(1*shd%NAA))
-    list_errors = ''; list_warnings = ''
+    !> Check for errors in the basin configuration.
+    ierr = 0
+    if (ro%RUNCHNL .and. (any(shd%SLOPE_CHNL(1:shd%NAA) <= 0) .or. any(shd%CHNL_LEN(1:shd%NAA) <= 0.0) .or. &
+        any(shd%AREA(1:shd%NAA) <= 0.0) .or. any(shd%DA(1:shd%NAA) <= 0.0) .or. &
+        maxval(shd%IAK) == 0)) ierr = 1
+    if (ro%RUNTILE .and. any(sum(shd%lc%ACLASS(1:shd%NAA, :), 2) == 0.0)) ierr = 1
+    if (any(shd%xxx(1:shd%NAA) == 0) .or. any(shd%yyy(1:shd%NAA) == 0)) ierr = 1
 
-    !> Check for values that might be incorrect, but are unlikely to stop the model.
-    if (ro%RUNCHNL) then
-        forall (n = 1:shd%NAA, shd%NEXT(n) <= n) list_warnings(n) = 'NEXT might be upstream of RANK'
-    end if
+    !> Print messages to screen (including non-critical warnings).
+    do n = 1, shd%NAA
 
-    !> Write warning messages to screen.
-    if (any(len_trim(list_warnings) > 0) .and. VERBOSEMODE) then
-        call print_warning('Errors might exist in the drainage database.')
-        do i = 1, size(list_warnings)
-            if (len_trim(list_warnings(i)) > 0) then
-                write(line, 1001) (i - int(i/shd%NAA)*shd%NAA)
-                call print_message_detail(adjustl(trim(list_warnings(i))) // ' at RANK ' // trim(adjustl(line)))
-            end if
-        end do
-    end if
+        !> Prepare 'RANK' ID for output.
+        write(line, 1001) n
+        line = 'RANK ' // trim(adjustl(line)) // ':'
 
-    !> Check for values that will likely stop the model.
-    if (ro%RUNCHNL) then
-        forall (n = 1:shd%NAA, shd%SLOPE_CHNL(n) <= 0) list_errors(n) = 'Invalid or negative channel slope'
-        forall (n = 1:shd%NAA, shd%CHNL_LEN(n) <= 0.0) list_errors(shd%NAA + n) = 'Invalid or negative channel length'
-        forall (n = 1:shd%NAA, shd%AREA(n) <= 0.0) list_errors(2*shd%NAA + n) = 'Invalid or negative grid area'
-        forall (n = 1:shd%NAA, shd%DA(n) <= 0.0) list_errors(3*shd%NAA + n) = 'Invalid or negative drainage area'
-    end if
-    forall (n = 1:shd%NA, shd%xxx(n) == 0) list_errors(4*shd%NAA + n) = 'Invalid x-direction placement'
-    forall (n = 1:shd%NA, shd%yyy(n) == 0) list_errors(5*shd%NAA + n) = 'Invalid y-direction placement'
-
-    !> Write error messages to screen.
-    if (any(len_trim(list_errors) > 0)) then
-        if (VERBOSEMODE) then
-            call print_error('Errors exist in the drainage database.')
-            do i = 1, size(list_errors)
-                if (len_trim(list_errors(i)) > 0) then
-                    write(line, 1001) (i - int(i/shd%NAA)*shd%NAA)
-                    call print_message_detail(adjustl(trim(list_errors(i))) // ' at RANK ' // trim(adjustl(line)))
-                end if
-            end do
+        !> If channel routing is enabled.
+        !>  Errors: Invalid channel slope; invalid channel length; invalid grid area; invalid drainage area.
+        !>  Warnings: NEXT <= RANK.
+        if (ro%RUNCHNL) then
+            if (shd%SLOPE_CHNL(n) <= 0) call print_message(trim(line) // ' Invalid or negative channel slope.', PAD_3)
+            if (shd%CHNL_LEN(n) <= 0.0) call print_message(trim(line) // ' Invalid or negative channel length.', PAD_3)
+            if (shd%AREA(n) <= 0.0) call print_message(trim(line) // ' Invalid or negative grid area.', PAD_3)
+            if (shd%DA(n) <= 0.0) call print_message(trim(line) // ' Invalid or negative drainage area.', PAD_3)
+            if (shd%NEXT(n) <= n) call print_message(trim(line) // ' NEXT might be upstream of RANK', PAD_3)
         end if
-        stop
+
+        !> If tile processes (i.e., LSS) is enabled.
+        !>  Errors: Sum of land covers is zero.
+        !>  Warnings: Sum of land covers not equal to one.
+        !>  Adjustments: Sum of land covers not equal to one.
+        if (ro%RUNTILE) then
+            if (sum(shd%lc%ACLASS(n, :)) == 0.0) then
+                call print_message(trim(line) // ' No cover types (GRUs) defined.', PAD_3)
+            else if (abs(sum(shd%lc%ACLASS(n, :)) - 1.0) > 0.0) then
+                write(field, 1001) sum(shd%lc%ACLASS(n, :))
+                call print_message(trim(line) // ' Area correction, land covers (GRUs) add to ' // adjustl(trim(field)))
+                shd%lc%ACLASS(n, :) = shd%lc%ACLASS(n, :)/sum(shd%lc%ACLASS(n, :))
+            end if
+        end if
+
+        !> General.
+        !>  Errors: Cell has no x/y coordinate value (e.g., outside basin).
+        if (shd%xxx(n) == 0 .or. shd%yyy(n) == 0) then
+            call print_message(trim(line) // ' RANK is assigned but cell is outside basin or not connected to any outlet.', PAD_3)
+        end if
+    end do
+    if (ro%RUNCHNL) then
+        if (maxval(shd%IAK) == 0) then
+            call print_message( &
+                'BASIN: The number of river classes (IAK) is zero.' // &
+                ' At least one river class must exist when channel routing is enabled.', PAD_3)
+        end if
     end if
 
-    !> Deallocate temporary message variables.
-    deallocate(list_errors, list_warnings)
+    !> Stop if errors exist.
+    if (ierr /= 0) then
+        call print_error('Errors exist in the drainage database.')
+        call stop_program()
+    end if
+
+    !> Check the number of river classes.
+    if (ro%RUNCHNL) then
+        if (shd%NRVR /= maxval(shd%IAK)) then
+            call print_remark('The number of river classes is adjusted to match IAK. Consider adjusting the input files.')
+            shd%NRVR = maxval(shd%IAK)
+        end if
+    end if
 
     !> Determine coordinates for intermediate grid locations.
     !> NOTE FROM FRANK
