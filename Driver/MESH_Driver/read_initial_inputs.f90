@@ -42,16 +42,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
     !>
 
     if (SHDFILEFLAG == 1) then
-
-        open(fls%fl(mfk%f20)%iun, file = fls%fl(mfk%f20)%fn, status = 'old', iostat = ierr)
-            if (ierr == 0) then
-                close(fls%fl(mfk%f20)%iun)
-                call print_screen('READING: MESH_drainage_database.r2c')
-                call READ_SHED_EF(fls, mfk%f20, shd)
-            else
-                call print_error('Unable to open file.')
-                call stop_program()
-            end if
+        call read_shed_r2c(shd, fls%fl(mfk%f20)%iun, fls%fl(mfk%f20)%fn)
 
     else if (SHDFILEFLAG == 0) then
 
@@ -173,11 +164,6 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
 
     !> Check for errors in the basin configuration.
     ierr = 0
-    if (ro%RUNCHNL .and. (any(shd%SLOPE_CHNL(1:shd%NAA) <= 0) .or. any(shd%CHNL_LEN(1:shd%NAA) <= 0.0) .or. &
-        any(shd%AREA(1:shd%NAA) <= 0.0) .or. any(shd%DA(1:shd%NAA) <= 0.0) .or. &
-        maxval(shd%IAK) == 0)) ierr = 1
-    if (ro%RUNTILE .and. any(sum(shd%lc%ACLASS(1:shd%NAA, :), 2) == 0.0)) ierr = 1
-    if (any(shd%xxx(1:shd%NAA) == 0) .or. any(shd%yyy(1:shd%NAA) == 0)) ierr = 1
 
     !> Print messages to screen (including non-critical warnings).
     do n = 1, shd%NAA
@@ -190,11 +176,14 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
         !>  Errors: Invalid channel slope; invalid channel length; invalid grid area; invalid drainage area.
         !>  Warnings: NEXT <= RANK.
         if (ro%RUNCHNL) then
+            if (shd%SLOPE_CHNL(n) <= 0 .or. shd%CHNL_LEN(n) <= 0.0 .or. shd%AREA(n) <= 0.0 .or. shd%DA(n) <= 0.0) ierr = 1
             if (shd%SLOPE_CHNL(n) <= 0) call print_message(trim(line) // ' Invalid or negative channel slope.', PAD_3)
             if (shd%CHNL_LEN(n) <= 0.0) call print_message(trim(line) // ' Invalid or negative channel length.', PAD_3)
             if (shd%AREA(n) <= 0.0) call print_message(trim(line) // ' Invalid or negative grid area.', PAD_3)
             if (shd%DA(n) <= 0.0) call print_message(trim(line) // ' Invalid or negative drainage area.', PAD_3)
-            if (shd%NEXT(n) <= n) call print_message(trim(line) // ' NEXT might be upstream of RANK', PAD_3)
+            if (DIAGNOSEMODE) then
+                if (shd%NEXT(n) <= n) call print_message(trim(line) // ' NEXT might be upstream of RANK (NEXT <= RANK).', PAD_3)
+            end if
         end if
 
         !> If tile processes (i.e., LSS) is enabled.
@@ -203,10 +192,15 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
         !>  Adjustments: Sum of land covers not equal to one.
         if (ro%RUNTILE) then
             if (sum(shd%lc%ACLASS(n, :)) == 0.0) then
-                call print_message(trim(line) // ' No cover types (GRUs) defined.', PAD_3)
+                ierr = 1
+                call print_message(trim(line) // ' Total fraction of land covers (GRUs) is zero.', PAD_3)
             else if (abs(sum(shd%lc%ACLASS(n, :)) - 1.0) > 0.0) then
-                write(field, 1001) sum(shd%lc%ACLASS(n, :))
-                call print_message(trim(line) // ' Area correction, land covers (GRUs) add to ' // adjustl(trim(field)))
+                if (DIAGNOSEMODE) then
+                    write(field, 1001) sum(shd%lc%ACLASS(n, :))
+                    line = &
+                        trim(line) // ' Total fraction of land covers (GRUs) adjusted from ' // trim(adjustl(field)) // ' to 1.0.'
+                    call print_message(line, PAD_3)
+                end if
                 shd%lc%ACLASS(n, :) = shd%lc%ACLASS(n, :)/sum(shd%lc%ACLASS(n, :))
             end if
         end if
@@ -214,11 +208,13 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
         !> General.
         !>  Errors: Cell has no x/y coordinate value (e.g., outside basin).
         if (shd%xxx(n) == 0 .or. shd%yyy(n) == 0) then
+            ierr = 1
             call print_message(trim(line) // ' RANK is assigned but cell is outside basin or not connected to any outlet.', PAD_3)
         end if
     end do
     if (ro%RUNCHNL) then
         if (maxval(shd%IAK) == 0) then
+            ierr = 1
             call print_message( &
                 'BASIN: The number of river classes (IAK) is zero.' // &
                 ' At least one river class must exist when channel routing is enabled.', PAD_3)

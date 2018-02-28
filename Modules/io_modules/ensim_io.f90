@@ -480,7 +480,7 @@ module ensim_io
 
         character(len = *), intent(in) :: fname
         integer, intent(in) :: iun, nattr, iattr, na, nfield
-        type(ensim_attr), dimension(nattr), intent(in) :: vattr
+        type(ensim_attr), dimension(:), intent(in) :: vattr
         integer, dimension(na), intent(in) :: xxx, yyy
         real, dimension(:), allocatable, intent(out) :: ffield
         logical, intent(in) :: verbose
@@ -488,7 +488,7 @@ module ensim_io
         integer n, ierr
 
         if (allocated(ffield)) deallocate(ffield)
-        if (iattr > nattr) goto 999
+        if (iattr < lbound(vattr, 1) .or. iattr > ubound(vattr, 1)) goto 999
         if (.not. allocated(vattr(iattr)%val)) goto 999
 
         allocate(ffield(nfield), stat = ierr)

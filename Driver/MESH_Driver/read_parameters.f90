@@ -318,21 +318,6 @@ subroutine read_parameters(fls, shd, cm)
         end do !k = il1, il2
     end if
 
-!todo: Formally change these to grid parameters, remove from shd
-    !> RUNCLASS36 and RUNSVS113.
-    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
-        if (allocated(shd%SLOPE_INT)) then
-            do k = il1, il2
-                pm%tp%xslp(k) = shd%SLOPE_INT(shd%lc%ILMOS(k))
-            end do
-        end if
-        if (allocated(shd%DRDN)) then
-            do k = il1, il2
-                pm%hp%dd(k) = shd%DRDN(shd%lc%ILMOS(k))
-            end do
-        end if
-    end if
-
     !> From grid.
     if (btest(INPUTPARAMSFORMFLAG, 1)) then
         do k = il1, il2
@@ -345,6 +330,8 @@ subroutine read_parameters(fls, shd, cm)
 
             !> RUNCLASS36 and RUNSVS113.
             if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                if (shd%SLOPE_INT(i) /= 0.0) pm%tp%xslp(k) = shd%SLOPE_INT(i)
+                if (shd%DRDN(i) /= 0.0) pm%hp%dd(k) = shd%DRDN(i)
                 if (any(pm_grid%cp%fcan(i, :) /= 0.0)) pm%cp%fcan(k, :) = pm_grid%cp%fcan(i, :)
                 if (any(pm_grid%cp%lnz0(i, :) /= 0.0)) pm%cp%lnz0(k, :) = pm_grid%cp%lnz0(i, :)
                 if (pm_grid%slp%sdep(i) /= 0.0) pm%slp%sdep(k) = pm_grid%slp%sdep(i)
