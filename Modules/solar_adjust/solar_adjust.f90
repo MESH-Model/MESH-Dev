@@ -33,7 +33,7 @@ subroutine calc_rsrd_adjusted( &
     Trans, Time_Offset, CalcFreq, &
     rsrd_dtmin, &
     rsrd, rsrd_direct, rsrd_diffuse, rsrd_adjusted, &
-    now_year, now_jday, now_hour)
+    now_year, now_jday, now_hour, now_mins, dtmins)
 
     implicit none
 
@@ -55,12 +55,14 @@ subroutine calc_rsrd_adjusted( &
     !*  now_year: Present year. [--].
     !*  now_jday: Present day in year. [--].
     !*  now_hour: Present hour in day (00-23). [--].
+    !*  now_mins: Present minutes in hour (00, 30). [--].
+    !*  dtmins: Model time-step. [minutes].
     !*  rsrd: Incoming shortwave radiation (input). [W m-2].
     !*  elev: Elevation. [m].
     !*  ylat: Latitude. [degrees].
     !*  slope: Slope of surface. [--].
     !*  aspect: Aspect of surface.
-    integer, intent(in) :: nvals, rsrd_dtmin, now_year, now_jday, now_hour
+    integer, intent(in) :: nvals, rsrd_dtmin, now_year, now_jday, now_hour, now_mins, dtmins
     real, dimension(nvals), intent(in) :: rsrd
     real, dimension(nvals), intent(in) :: elev, ylat, slope, aspect
 

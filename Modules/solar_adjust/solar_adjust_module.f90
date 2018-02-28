@@ -289,7 +289,7 @@ module solar_adjust_module
             cm%dat(ck%FB)%hf, &
             cm%dat(ck%FB)%GAT(il1:il2), &
             rsrd_direct(il1:il2), rsrd_diffuse(il1:il2), rsrd_adjusted(il1:il2), &
-            ic%now%year, ic%now%jday, ic%now%hour)
+            ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, ic%dtmins)
 
         !> Update radiation.
         !> Must update 'GRD' separately for output (e.g., energy_balance.csv).
