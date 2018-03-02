@@ -124,22 +124,25 @@ module irrigation_module
             if (irrm%pm%irflg(k) == 1 .and. sum(stas%sl%thic(k, :)) == 0.0 .and. &
                 (ic%now%jday >= irrm%pm%ijday1(k) .and. ic%now%jday <= irrm%pm%ijday2(k))) then
                 iractive = (ic%now%hour >= irrm%pm%t1(k) .and. ic%now%hour < irrm%pm%t2(k))
-                if (.not. iractive) cycle
-                if (irrm%pm%t1(k) == 0 .or. (ic%now%hour == irrm%pm%t1(k) .and. ic%ts_hourly == 1)) then ! calculate at beginning of irrigation period
-                    do j = 1, irrm%pm%ignd(k) ! loop for each Soil layers
-                        check = irrm%pm%thlmin(k)*pm%slp%thfc(k, j) ! calculate 50% of field capacity
-                        lqsum =  stas%sl%thlq(k, j)
-                        if (lqsum < check)then ! check if sum of soil moisture is less than 50% of FC
-                            ir = (pm%slp%thfc(k, j) - lqsum)*stas%sl%delzw(k, j) ! calculate irrigation water to field capacity for each permeable soil depth
-                        else
-                            ir = 0.0
-                        end if
-                        IRDMND_TILE(k) = IRDMND_TILE(k) + ir ! sum of complete soil depth
-                    end do !soil layer
-                    IRDMND_TILE(k) = IRDMND_TILE(k)*(1000.0/ic%dts) ! convert into mm/sec
-                    irrm%va%dmnd(k) = IRDMND_TILE(k)
+                if (iractive) then
+                    if (irrm%pm%t1(k) == 0 .or. (ic%now%hour == irrm%pm%t1(k) .and. ic%ts_hourly == 1)) then ! calculate at beginning of irrigation period
+                        do j = 1, irrm%pm%ignd(k) ! loop for each Soil layers
+                            check = irrm%pm%thlmin(k)*pm%slp%thfc(k, j) ! calculate 50% of field capacity
+                            lqsum =  stas%sl%thlq(k, j)
+                            if (lqsum < check)then ! check if sum of soil moisture is less than 50% of FC
+                                ir = (pm%slp%thfc(k, j) - lqsum)*stas%sl%delzw(k, j) ! calculate irrigation water to field capacity for each permeable soil depth
+                            else
+                                ir = 0.0
+                            end if
+                            IRDMND_TILE(k) = IRDMND_TILE(k) + ir ! sum of complete soil depth
+                        end do !soil layer
+                        IRDMND_TILE(k) = IRDMND_TILE(k)*(1000.0/ic%dts) ! convert into mm/sec
+                        irrm%va%dmnd(k) = IRDMND_TILE(k)
+                    end if
+                    irrm%va%dmnd(k) = max(irrm%va%dmnd(k) - cm%dat(ck%RT)%GAT(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
+                else
+                    irrm%va%dmnd(k) = 0.0
                 end if
-                irrm%va%dmnd(k) = max(irrm%va%dmnd(k) - cm%dat(ck%RT)%GAT(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
             end if
 
             !> Pool demand for irrigation districts.
@@ -161,7 +164,7 @@ module irrigation_module
         end do
 
         !> Determine the available water in each grid.
-        if (ro%RUNGRID .and. fms%absp%n > 0) then
+        if (ro%RUNGRID) then
 
             !> Minimum of available water and demand.
             AVAIL_GRID = min(stas_grid%chnl%stg, IRDMND_GRID) ! m3
@@ -204,6 +207,8 @@ module irrigation_module
 
                 !> Apply the abstraction to precipitation.
                 cm%dat(ck%RT)%GAT(k) = cm%dat(ck%RT)%GAT(k) + irrm%va%avail(k)
+                cm%dat(ck%RT)%GRD(shd%lc%ILMOS(k)) = &
+                    cm%dat(ck%RT)%GRD(shd%lc%ILMOS(k)) + irrm%va%avail(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
 
                 !> Preserve demand gone unsatisfied.
                 irrm%va%dmnd(k) = irrm%va%dmnd(k) - irrm%va%avail(k)
