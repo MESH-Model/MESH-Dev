@@ -145,12 +145,12 @@ subroutine read_shed_r2c(shd, iun, fname)
         call print_error('Unable to allocate grid variables (error code: ' // trim(line) // ').')
         call stop_program()
     end if
-    shd%NEXT(shd%NA) = 0
-    shd%IAK(shd%NA) = 0; shd%SLOPE_CHNL(shd%NA) = 0.0; shd%CHNL_LEN(shd%NA) = 0.0; shd%ICHNL(shd%NA) = 0; shd%IREACH(shd%NA) = 0
-    shd%DA(shd%NA) = 0.0; shd%AREA(shd%NA) = 0.0; shd%FRAC(shd%NA) = 0.0
-    shd%BNKFLL(shd%NA) = 0.0
-    shd%ELEV(shd%NA) = 0.0; shd%SLOPE_INT(shd%NA) = 0.0
-    shd%DRDN(shd%NA) = 0.0
+    shd%NEXT = 0
+    shd%IAK = 0; shd%SLOPE_CHNL = 0.0; shd%CHNL_LEN = 0.0; shd%ICHNL = 0; shd%IREACH = 0
+    shd%DA = 0.0; shd%AREA = 0.0; shd%FRAC = 0.0
+    shd%BNKFLL = 0.0
+    shd%ELEV = 0.0; shd%SLOPE_INT = 0.0
+    shd%DRDN = 0.0
 
     !> Scan and assign remaining variables.
     !> Cycle to where land cover (GRU) classes are expected.
