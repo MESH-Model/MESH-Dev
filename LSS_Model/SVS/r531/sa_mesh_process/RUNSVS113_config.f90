@@ -309,38 +309,6 @@ module RUNSVS113_config
 
         end do
 
-        !> Summarize what we just did.
-        if (DIAGNOSEMODE) then
-            print *
-            print *, '--------------------------------'
-            print *, 'SVS DIAGNOSTICS'
-            print *, '--------------------------------'
-            print *, 'CLASS INI file read successfully'
-            print *, '--------------------------------'
-            print *, 'LOCATION: (', bus(dlat)*180.0/PI, ',', bus(dlon)*180.0/PI, ')'
-            print *, 'VEGETATION COVER:'
-            print *, '% NEEDLELEAF:     ', bus(vegf + 3*NG)*100
-            print *, '% BROADLEAF:      ', bus(vegf + 6*NG)*100
-            print *, '% CROPS:          ', bus(vegf + 14*NG)*100
-            print *, '% GRASS:          ', bus(vegf + 13*NG)*100
-            print *, '% URBAN:          ', bus(vegf + 20*NG)*100
-            print *, 'ROUGHNESS LENGTH: ', bus(z0)
-            print *, 'SLOPE:            ', bus(slop)
-            print *, 'DRAIN.DENSITY     ', bus(draindens)
-            print *, 'ROOT DEPTH:       ', bus(rootdp)
-            print *, '% SAND:           ', bus(sand), bus(sand + NG), bus(sand + 2*NG)
-            print *, '% CLAY:           ', bus(clay), bus(clay + NG), bus(clay + 2*NG)
-            print *, '--------------------------------'
-            print *, 'SOIL MOISTURE:    ', bus(wdsoil), bus(wdsoil + NG), bus(wdsoil + 2*NG)
-            print *, 'SOIL TEMPERATURE: ', bus(tsoil), bus(tsoil + NG)
-            print *, 'VEGETATION TEMP.: ', bus(tvege), bus(tvege + NG)
-            print *, 'SNOW TEMPERATURE: ', bus(tsnow), bus(tsnow + NG)
-            print *, 'SNOW DENSITY:     ', bus(snoro), bus(snvro)
-            print *, 'SNOW ALBEDO:      ', bus(snoal), bus(snval)
-            print *, '--------------------------------'
-            print *
-        end if
-
         !> Time loop.
 
         !> Convert start date/hour to CMC datestamp.

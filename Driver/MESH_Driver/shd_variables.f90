@@ -179,4 +179,13 @@ module shd_variables
 
     end type
 
+    !* SHDFILEFLAG: Configuration options for reading the drainage database.
+    character(len = 100), save :: SHDFILEFLAG = ''
+
+    !* SHDFFMT: Drainage database file format (1: r2c; 2: class_ini; default: 1).
+    integer, save :: SHDFILEFMT = 1
+
+    !* SHDTOMAPFLAG: Option to create a WATFLOOD 'map' file from the drainage database.
+    logical, save  :: SHDTOMAPFLAG = .false.
+
 end module

@@ -1,6 +1,7 @@
 subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
 
     use mpi_module
+    use strings
     use sa_mesh_variables
     use sa_mesh_utilities
     use model_files_variables
@@ -20,8 +21,13 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
     character(len = *), intent(in) :: release
 
     !> Local variables.
-    integer n, m, k, i, j, ierr
+    integer iun, n, m, l, x, y, k, i, j, ierr
+    real, dimension(:, :), allocatable :: grid
     character(len = DEFAULT_LINE_LENGTH) line, field
+    character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
+
+    !> SUBBASINFLAG.
+    integer, dimension(:), allocatable :: SUBBASIN
 
     !>
     !> RUN OPTIONS.
@@ -37,14 +43,163 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
     call print_echo_txt(release)
     call print_echo_txt('')
 
-    !>
-    !> DRAINAGE DATABASE.
-    !>
+    !> Assign default configuration
+    SHDFILEFMT = 1
+    SHDTOMAPFLAG = .false.
 
-    if (SHDFILEFLAG == 1) then
-        call read_shed_r2c(shd, fls%fl(mfk%f20)%iun, fls%fl(mfk%f20)%fn)
+    !>Parse 'SHDFILEFLAG'.
+    call parse(SHDFILEFLAG, ' ', args, n)
+    if (n > 1) then
+        do i = 2, n
+            select case (lowercase(args(i)))
+                case ('1', 'r2c')
+                    SHDFILEFMT = 1
+                case ('2', 'class_ini')
+                    SHDFILEFMT = 2
+                case ('to_map')
+                    SHDTOMAPFLAG = .true.
+            end select
+        end do
+    end if
 
-    else if (SHDFILEFLAG == 0) then
+    !> Read drainage database.
+    select case (SHDFILEFMT)
+
+        !> 'r2c' format shed file.
+        case (1)
+            call read_shed_r2c(shd, fls%fl(mfk%f20)%iun, fls%fl(mfk%f20)%fn)
+
+        !> Map file (diagnostic).
+        if (SHDTOMAPFLAG .and. ipid == 0) then
+            iun = 100
+            open(iun, file = 'MESH_basin.map', status = 'replace', action = 'write')
+            write(iun, '(a)') '#'
+            write(iun, '(a)') ':Projection         ' // trim(adjustl(shd%CoordSys%Proj))
+            write(iun, '(a)') ':Ellipsoid          ' // trim(adjustl(shd%CoordSys%Ellips))
+            write(iun, '(a)') '#'
+            write(line, '(f13.6)') shd%xOrigin
+            write(iun, '(a)') ':xOrigin            ' // trim(adjustl(line))
+            write(line, '(f13.6)') shd%yOrigin
+            write(iun, '(a)') ':yOrigin            ' // trim(adjustl(line))
+            write(iun, '(a)') '#'
+            write(line, 1001) shd%xCount
+            write(iun, '(a)') ':xCount             ' // trim(adjustl(line))
+            write(line, 1001) shd%yCount
+            write(iun, '(a)') ':yCount             ' // trim(adjustl(line))
+            write(line, '(f13.6)') shd%xDelta
+            write(iun, '(a)') ':xDelta             ' // trim(adjustl(line))
+            write(line, '(f13.6)') shd%yDelta
+            write(iun, '(a)') ':yDelta             ' // trim(adjustl(line))
+            write(iun, '(a)') '#'
+            write(iun, '(a)') ':contourInterval    1.000000'
+            write(iun, '(a)') ':imperviousArea     0'
+            write(line, 1001) (shd%lc%NTYPE + 1)
+            write(iun, '(a)') ':classCount         ' // trim(adjustl(line))
+            write(iun, '(a)') ':elevConversion     1.000000'
+            write(iun, '(a)') '#------------------------------------------------------------------------'
+            write(iun, '(a)') ':endHeader'
+            write(iun, '(a)') 'Channel Elevation (ELV)'
+            allocate(grid(shd%yCount, shd%xCount))
+            grid = 0.0
+            do n = 1, shd%NA
+                grid(shd%yyy(n), shd%xxx(n)) = shd%ELEV(n)
+            end do
+            do y = shd%yCount, 1, -1
+                write(iun, *) (grid(y, x), x = 1, shd%xCount)
+            end do
+            write(iun, '(a)') 'Drainage Area (FRAC)'
+            grid = 0.0
+            do n = 1, shd%NA
+                grid(shd%yyy(n), shd%xxx(n)) = shd%AREA(n)/(shd%AL**2)*100.0
+            end do
+            do y = shd%yCount, 1, -1
+                write(iun, *) (int(grid(y, x)), x = 1, shd%xCount)
+            end do
+            write(iun, '(a)') 'Drainage direction (S)'
+            grid = 0.0
+            do y = 1, shd%yCount
+                do x = 1, shd%xCount
+                    if (shd%RNKGRD(y, x) > 0) then
+                        if (shd%NEXT(shd%RNKGRD(y, x)) > 0) then
+                            grid(y, x) = -1
+                            if (y > 1) then
+                                if (x > 1) then
+                                    !>
+                                    if (shd%RNKGRD(y - 1, x - 1) == shd%NEXT(shd%RNKGRD(y, x))) grid(y, x) = 5
+                                end if
+                                if (x < shd%xCount) then
+                                    if (shd%RNKGRD(y - 1, x + 1) == shd%NEXT(shd%RNKGRD(y, x))) grid(y, x) = 3
+                                end if
+                                if (shd%RNKGRD(y - 1, x) == shd%NEXT(shd%RNKGRD(y, x))) grid(y, x) = 4
+                            end if
+                            if (y < shd%yCount) then
+                                if (x > 1) then
+                                    if (shd%RNKGRD(y + 1, x - 1) == shd%NEXT(shd%RNKGRD(y, x))) grid(y, x) = 7
+                                end if
+                                if (x < shd%xCount) then
+                                    if (shd%RNKGRD(y + 1, x + 1) == shd%NEXT(shd%RNKGRD(y, x))) grid(y, x) = 1
+                                end if
+                                if (shd%RNKGRD(y + 1, x) == shd%NEXT(shd%RNKGRD(y, x))) grid(y, x) = 8
+                            end if
+                            if (x > 1) then
+                                if (shd%RNKGRD(y, x - 1) == shd%NEXT(shd%RNKGRD(y, x))) grid(y, x) = 6
+                            end if
+                            if (x < shd%xCount) then
+                                if (shd%RNKGRD(y, x + 1) == shd%NEXT(shd%RNKGRD(y, x))) grid(y, x) = 2
+                            end if
+                        end if
+                    end if
+                end do
+            end do
+            do y = shd%yCount, 1, -1
+                write(iun, *) (int(grid(y, x)), x = 1, shd%xCount)
+            end do
+            write(iun, '(a)') 'River Class (IBN)'
+            grid = 0.0
+            do n = 1, shd%NA
+                grid(shd%yyy(n), shd%xxx(n)) = shd%IAK(n)
+            end do
+            do y = shd%yCount, 1, -1
+                write(iun, *) (int(grid(y, x)), x = 1, shd%xCount)
+            end do
+            write(iun, '(a)') 'Contour Density (IROUGH)'
+            grid = 0.0
+            do n = 1, shd%NA
+                grid(shd%yyy(n), shd%xxx(n)) = -1 !((intslope(n)*shd%AL)/([cintv = ]1.0) - 0.0001)
+            end do
+            do y = shd%yCount, 1, -1
+                write(iun, *) (int(grid(y, x)), x = 1, shd%xCount)
+            end do
+            write(iun, '(a)') 'Channel Density (ICHNL)'
+            grid = 0.0
+            do n = 1, shd%NA
+                grid(shd%yyy(n), shd%xxx(n)) = shd%ICHNL(n)
+            end do
+            do y = shd%yCount, 1, -1
+                write(iun, *) (int(grid(y, x)), x = 1, shd%xCount)
+            end do
+            write(iun, '(a)') 'Reach Number (IREACH)'
+            grid = 0.0
+            do n = 1, shd%NA
+                grid(shd%yyy(n), shd%xxx(n)) = shd%IREACH(n)
+            end do
+            do y = shd%yCount, 1, -1
+                write(iun, *) (int(grid(y, x)), x = 1, shd%xCount)
+            end do
+            do m = 1, shd%lc%NTYPE + 1
+                write(line, 1001) m
+                write(iun, '(a)') 'gru' // trim(adjustl(line))
+                grid = 0.0
+                do n = 1, shd%NA
+                    grid(shd%yyy(n), shd%xxx(n)) = shd%lc%ACLASS(n, m)*100.0
+                end do
+                do y = shd%yCount, 1, -1
+                    write(iun, *) (int(grid(y, x)), x = 1, shd%xCount)
+                end do
+            end do
+            close(iun)
+            deallocate(grid)
+        end if
 
 !> *********************************************************************
 !> Open and read in values from MESH_input_drainage_database.txt file
@@ -120,34 +275,39 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
 
 !        close(20)
 
-    !> Point run with no routing.
-    else if (SHDFILEFLAG == 2) then
+        !> Point mode (location read from CLASS.ini).
+        case (2)
 
-        !> Assign no projection or grid properties.
-        shd%CoordSys%Proj = 'none'; shd%CoordSys%Ellips = 'none'; shd%CoordSys%Zone = 'none'
-        shd%xOrigin = 0.0; shd%xDelta = 1.0; shd%xCount = 1; shd%jxMin = 0; shd%jxMax = 1; shd%GRDE = 1.0
-        shd%yOrigin = 0.0; shd%yDelta = 1.0; shd%yCount = 1; shd%iyMin = 0; shd%iyMax = 1; shd%GRDN = 1.0
-        shd%AL = 1.0
-        shd%NA = 1; shd%NAA = 1; shd%lc%NTYPE = 1; shd%NRVR = 0
+            !> Assign no projection or grid properties.
+            shd%CoordSys%Proj = 'none'; shd%CoordSys%Ellips = 'none'; shd%CoordSys%Zone = 'none'
+            shd%xOrigin = 0.0; shd%xDelta = 1.0; shd%xCount = 1; shd%jxMin = 0; shd%jxMax = 1; shd%GRDE = 1.0
+            shd%yOrigin = 0.0; shd%yDelta = 1.0; shd%yCount = 1; shd%iyMin = 0; shd%iyMax = 1; shd%GRDN = 1.0
+            shd%AL = 1.0
+            shd%NA = 1; shd%NAA = 1; shd%lc%NTYPE = 1; shd%NRVR = 0
 
-        !> Allocate and initialize grid variables.
-        allocate( &
-            shd%xxx(shd%NA), shd%yyy(shd%NA), shd%RNKGRD(shd%yCount, shd%xCount), &
-            shd%NEXT(shd%NA), &
-            shd%SLOPE_INT(shd%NA), &
-            shd%AREA(shd%NA), shd%FRAC(shd%NA), &
-            shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1), stat=ierr)
-        shd%xxx = 1; shd%yyy = 1; shd%RNKGRD = 1
-        shd%NEXT = 0
-        shd%SLOPE_INT = 1.0E-5
-        shd%AREA = 1.0; shd%FRAC=shd%AREA/shd%AL/shd%AL
-        shd%lc%ACLASS(:, shd%lc%NTYPE) = 1.0; shd%lc%ACLASS(:, shd%lc%NTYPE + 1) = 0.0
+            !> Allocate and initialize grid variables.
+            allocate( &
+                shd%xxx(shd%NA), shd%yyy(shd%NA), shd%RNKGRD(shd%yCount, shd%xCount), &
+                shd%NEXT(shd%NA), &
+                shd%SLOPE_INT(shd%NA), &
+                shd%AREA(shd%NA), shd%FRAC(shd%NA), &
+                shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1), stat=ierr)
+            shd%xxx = 1; shd%yyy = 1; shd%RNKGRD = 1
+            shd%NEXT = 0
+            shd%SLOPE_INT = 1.0E-5
+            shd%AREA = 1.0; shd%FRAC=shd%AREA/shd%AL/shd%AL
+            shd%lc%ACLASS(:, shd%lc%NTYPE) = 1.0; shd%lc%ACLASS(:, shd%lc%NTYPE + 1) = 0.0
 
-        !> Force 'RUNMODE noroute' (overrides the run option).
-        ro%RUNCHNL = .false.
-        ro%RUNGRID = .false.
+            !> Force 'RUNMODE noroute' (overrides the run option).
+            ro%RUNCHNL = .false.
+            ro%RUNGRID = .false.
 
-    end if
+        case default
+            write(line, 1001) SHDFILEFMT
+            call print_error('Unrecognized drainage database format: ' // trim(adjustl(line)))
+            call stop_program()
+
+    end select
 
     !> Check maximum number of cells and outlets, and print a warning if an adjustment is made.
     if (ro%RUNCHNL) then
@@ -447,7 +607,69 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
     !> READ BASIN STRUCTURES.
     !>
 
-    if (ro%RUNGRID) call read_basin_structures(shd)
+    if (ro%RUNGRID) then
+
+        !> Basin structures.
+        call read_basin_structures(shd)
+
+        !> SUBBASINFLAG.
+        !>  Run only on squares that make up the watersheds listed in
+        !>  the streamflow file.
+        if (SUBBASINFLAG > 0) then
+
+            !> Print message to screen.
+            call print_message('SUBBASIN mask is ACTIVATED.')
+
+            !> Allocate and initialize local variables.
+            allocate(SUBBASIN(shd%NA))
+            SUBBASIN = 0
+
+            !> Set gauge locations to 1.
+            do l = 1, fms%stmg%n
+                SUBBASIN(fms%stmg%meta%rnk(l)) = l
+            end do
+            if (DIAGNOSEMODE) then
+                write(line, 1001) fms%stmg%n
+                call print_message_detail('Masking domains for ' // trim(adjustl(line)) // ' subbasins.')
+            end if
+
+            !> Mask grids upstream of gauge locations.
+            i = 1
+            do while (i > 0)
+                i = 0
+                do n = 1, shd%NAA
+                    if (SUBBASIN(shd%NEXT(n)) > 0 .and. SUBBASIN(n) == 0) then
+                        SUBBASIN(n) = SUBBASIN(shd%NEXT(n))
+                        i = 1
+                    end if
+                end do
+            end do
+
+!temp
+!            allocate(grid(shd%yCount, shd%xCount))
+!            grid = 0
+!            do n = 1, shd%NA
+!                grid(shd%yyy(n), shd%xxx(n)) = SUBBASIN(n)
+!            end do
+!            do y = 1, shd%yCount
+!                write(10, *) (grid(y, x), x = 1, shd%xCount)
+!            end do
+!            deallocate(grid)
+
+            !> Set 'FRAC' to zero at inactive grids.
+!?            where (SUBBASIN > 0) shd%FRAC = 0.0
+
+            !> Print diagnostic information to screen.
+            if (DIAGNOSEMODE) then
+                write(line, 1001) 'SUBBASIN', 'GRIDS'
+                call print_message_detail(line)
+                do l = 1, fms%stmg%n
+                    write(line, 1001) l, count(SUBBASIN == l)
+                    call print_message_detail(line)
+                end do
+            end if
+        end if
+    end if
 
     !> Allocate and initialize SA_MESH states.
     call stas_fms_init(stas_fms, fms%stmg%n, 0, fms%rsvr%n, ierr)

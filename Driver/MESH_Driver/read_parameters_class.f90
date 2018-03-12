@@ -1,8 +1,5 @@
 subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
-    !> Required for 'ipid'.
-    use mpi_module
-
     !> Required for file object and CLASS.ini file index.
     use model_files_variables
 
@@ -28,6 +25,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
     !> Local variables.
     integer NA, NTYPE, NSL, iun, ierr, k, ignd, i, m, j
+    character(len = DEFAULT_LINE_LENGTH) line
 
     !> Local variables (read from file).
     real DEGLAT, DEGLON
@@ -42,14 +40,12 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
          iostat = ierr)
 
     !> Check for errors from opening the file.
-    if (ierr /= 0 .and. ipid == 0) then
-        print *
-        print *, &
-            'MESH_parameters_CLASS.ini could not be opened.', &
-            'Ensure that the file exists and restart the program.'
-        stop
-    else if (VERBOSEMODE) then
-        write(6, "(1x, 'READING: ', (a))", advance = 'no') trim(adjustl(fls%fl(mfk%f50)%fn))
+    if (ierr /= 0) then
+        call print_error(trim(adjustl(fls%fl(mfk%f50)%fn)) // ' could not be opened.')
+        call print_message('Ensure that the file exists and restart the program.')
+        call stop_program()
+    else
+        call print_message('READING: ' // trim(adjustl(fls%fl(mfk%f50)%fn)))
     end if
 
     NA = shd%NA
@@ -65,23 +61,28 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     read(iun, *) DEGLAT, DEGLON, pm_gru%sfp%zrfm(1), pm_gru%sfp%zrfh(1), pm_gru%sfp%zbld(1), pm_gru%tp%gc(1), shd%wc%ILG, i, m
 
     !> Check that the number of GRUs matches the drainage database value.
-    if (NTYPE /= m .and. NTYPE > 0 .and. ipid == 0) then
-        print *
-        print *, 'GRUs from MESH_parameters_CLASS.ini: ', m
-        print *, 'GRUs from basin watershed file: ', NTYPE
-        print *, 'These values must be equal.'
-	    stop
+    ierr = 0
+    if (NTYPE /= m .and. NTYPE > 0) then
+        call print_error('The number of GRUs does not match the drainage database.')
+        write(line, 1001) NTYPE
+        call print_message_detail('Drainage database: ' // trim(adjustl(line)))
+        write(line, 1001) m
+        call print_message_detail(trim(adjustl(fls%fl(mfk%f50)%fn)) // ': ' // trim(adjustl(line)))
+        ierr = 1
     end if
 
     !> Check that the number of grid cells matches the drainage database value.
-    if (i /= NA .and. ipid == 0) then
-        print *
-        print *, &
-            'ERROR: The number of grid squares in the class ', &
-            'parameters file does not match the number of grid squares ', &
-            'from the shed file.'
-        stop
+    if (i /= NA) then
+        call print_error('The number of GRUs does not match the drainage database.')
+        write(line, 1001) NA
+        call print_message_detail('Drainage database: ' // trim(adjustl(line)))
+        write(line, 1001) i
+        call print_message_detail(trim(adjustl(fls%fl(mfk%f50)%fn)) // ': ' // trim(adjustl(line)))
+        ierr = 1
     end if
+
+    !> Stop if an error has occurred.
+    if (ierr /= 0) call stop_program()
 
     JLAT = nint(DEGLAT)
 
@@ -123,7 +124,6 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
     !> Close the file.
     close(iun)
-    if (VERBOSEMODE) print *, 'READ: SUCCESSFUL, FILE: CLOSED'
 
     !> Distribute soil variables to additional layers.
 !todo: Change this so that soil.ini can take more than 3 layers.
@@ -157,11 +157,14 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     end do
 
     !> Assign DEGLAT and DEGLON if running a point run where no shed file exists.
-    if (SHDFILEFLAG == 2) then
+    if (SHDFILEFMT == 2) then
         shd%ylat = DEGLAT
         shd%xlng = DEGLON
     end if
 
     return
+
+    !> Format statements.
+1001    format(9999(g15.6, 1x))
 
 end subroutine

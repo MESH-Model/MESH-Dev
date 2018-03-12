@@ -29,15 +29,10 @@
         type(CLIM_INFO) :: cm
         type(fl_ids) :: fls
 
-        !> Local variables for parsing control flag strings.
-        integer, parameter :: MaxLenField = 20, MaxArgs = 20, MaxLenLine = 100
-        character(MaxLenLine) in_line
-        character(MaxLenField), dimension(MaxArgs) :: out_args
-        integer nargs
-        character(1) delim
-
-        !> Temporary variables.
-        integer CONFLAGS, IROVAL, ierr, iun, n, j, i
+        !> Local variables.
+        integer CONFLAGS, IROVAL, iun, nargs, n, j, i, ierr
+        character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
         character(20) IRONAME
         character(10) GENDIR_OUT
 
@@ -126,10 +121,6 @@
         !> Set HOURLYFLAG to forcing data time step (in minutes).
         !> 30 minute forcing data should be the default
 !-        HOURLYFLAG = 30
-
-        !> set SHDFILEFLAG to 0 to use drainage_database.txt
-        !> set SHDFILEFLAG to 1 to use new_shd.r2c
-        SHDFILEFLAG = 1
 
         !> set RESUMEFLAG to 0 just as a default
         !> this will be set later by reading the run_options file
@@ -224,10 +215,6 @@
         !*                       MESH_input_reservoir.txt are read using 2F7.1 (Minutes with 1 decimal)
         LOCATIONFLAG = 0
 
-        !> SET N = 0 RESETS THE CLASS COUNTER.
-!TODO: N is not a flag, move it somewhere else
-!-        N = 0
-
         !> FLAGS FOR GEOTHERMAL FLUX FOR THE BOTTOM OF THE LAST SOIL LAYER
         !* If GGEOFLAG is GT 0,  READ UNIQUE VALUE FROM MESH_ggeo.INI FILE
         GGEOFLAG = 0
@@ -257,13 +244,11 @@
 
         !> Check for IOSTAT errors from opening the file.
         if (ierr /= 0) then
-            print *
-            print *, &
-                'MESH_input_run_options.ini could not be opened.', &
-                'Ensure that the file exists and restart the program.'
-            stop
-        else if (VERBOSEMODE) then
-            write(6, '(a)', advance = 'no') 'READING: MESH_input_run_options.ini '
+            call print_error('MESH_input_run_options.ini could not be opened.')
+            call print_message('Ensure that the file exists and restart the program.')
+            call stop_program()
+        else
+            call print_screen('READING: MESH_input_run_options.ini')
         end if
 
         !> Begin reading the control flags.
@@ -276,18 +261,18 @@
         if (CONFLAGS > 0) then
 
             !> Control flags are parsed by space.
-            delim = ' '
             do i = 1, CONFLAGS
 
                 !> Read and parse the entire line.
-                call readline(iun, in_line, ierr)
-                if (index(in_line, '#') > 2) in_line = in_line(1:index(in_line, '#') - 1)
-                if (index(in_line, '!') > 2) in_line = in_line(1:index(in_line, '!') - 1)
-                call compact(in_line)
-                call parse(in_line, delim, out_args, nargs)
+                call readline(iun, line, ierr)
+                if (index(line, '#') > 2) line = line(1:index(line, '#') - 1)
+                if (index(line, '!') > 2) line = line(1:index(line, '!') - 1)
+                call compact(line)
+                call parse(line, ' ', args, nargs)
                 if (.not. nargs > 0) then
-                    print 9358, i
-                    stop
+                    write(line, 1001) i
+                    call print_warning('Unable to read control flag # ' // trim(adjustl(line)))
+                    cycle
                 end if
 
                 !>
@@ -295,42 +280,42 @@
                 !>
 
                 !> Determine the control flag and parse additional arguments.
-                select case (trim(adjustl(out_args(1))))
+                select case (trim(adjustl(args(1))))
 
                     case ('IDISP')
-                        call value(out_args(2), IDISP, ierr)
+                        call value(args(2), IDISP, ierr)
                     case ('IZREF')
-                        call value(out_args(2), IZREF, ierr)
+                        call value(args(2), IZREF, ierr)
                     case ('ISLFD')
-                        call value(out_args(2), ISLFD, ierr)
+                        call value(args(2), ISLFD, ierr)
                     case ('IPCP')
-                        call value(out_args(2), IPCP, ierr)
+                        call value(args(2), IPCP, ierr)
                     case ('ITC')
-                        call value(out_args(2), ITC, ierr)
+                        call value(args(2), ITC, ierr)
                     case ('ITCG')
-                        call value(out_args(2), ITCG, ierr)
+                        call value(args(2), ITCG, ierr)
                     case ('ITG')
-                        call value(out_args(2), ITG, ierr)
+                        call value(args(2), ITG, ierr)
                     case ('IWF')
-                        call value(out_args(2), RUNCLASS36_flgs%INTERFLOWFLAG, ierr)
+                        call value(args(2), RUNCLASS36_flgs%INTERFLOWFLAG, ierr)
                     case ('IPAI')
-                        call value(out_args(2), IPAI, ierr)
+                        call value(args(2), IPAI, ierr)
                     case ('IHGT')
-                        call value(out_args(2), IHGT, ierr)
+                        call value(args(2), IHGT, ierr)
                     case ('IALC')
-                        call value(out_args(2), IALC, ierr)
+                        call value(args(2), IALC, ierr)
                     case ('IALS')
-                        call value(out_args(2), IALS, ierr)
+                        call value(args(2), IALS, ierr)
                     case ('IALG')
-                        call value(out_args(2), IALG, ierr)
+                        call value(args(2), IALG, ierr)
                     case ('RESUMEFLAG')
-                        call value(out_args(2), RESUMEFLAG, ierr)
+                        call value(args(2), RESUMEFLAG, ierr)
                     case ('SAVERESUMEFLAG')
-                        call value(out_args(2), SAVERESUMEFLAG, ierr)
+                        call value(args(2), SAVERESUMEFLAG, ierr)
 
                     !> Basin forcing time-step flag.
                     case ('HOURLYFLAG')
-                        call value(out_args(2), IROVAL, ierr)
+                        call value(args(2), IROVAL, ierr)
                         if (ierr == 0) then
                             do j = 1, cm%nclim
                                 cm%dat(j)%hf = IROVAL
@@ -339,32 +324,32 @@
 
                     !> Model time-step.
                     case ('TIMESTEPFLAG')
-                        call value(out_args(2), ic%dtmins, ierr)
+                        call value(args(2), ic%dtmins, ierr)
                         ic%dts = ic%dtmins*60
 
                     case ('RELFLG')
-                        call value(out_args(2), RELFLG, ierr)
+                        call value(args(2), RELFLG, ierr)
 
                     !> Message output options.
                     case ('VERBOSEMODE')
-                        call value(out_args(2), IROVAL, ierr)
+                        call value(args(2), IROVAL, ierr)
                         VERBOSEMODE = (IROVAL == 1)
                     case ('DIAGNOSEMODE')
-                        call value(out_args(2), IROVAL, ierr)
+                        call value(args(2), IROVAL, ierr)
                         DIAGNOSEMODE = (IROVAL == 1)
                     case ('MODELINFOOUTFLAG', 'ECHOTXTMODE')
-                        call value(out_args(2), IROVAL, ierr)
+                        call value(args(2), IROVAL, ierr)
                         ECHOTXTMODE = (IROVAL == 1)
 
                     !> MPI OPTIONS
                     case ('MPIUSEBARRIER')
-                        call value(out_args(2), MPIUSEBARRIER, ierr)
+                        call value(args(2), MPIUSEBARRIER, ierr)
 
                     !> BASIN FORCING DATA OPTIONS
                     !> Basin forcing data.
                     case ('BASINFORCINGFLAG')
                         do j = 2, nargs
-                            select case (lowercase(out_args(j)))
+                            select case (lowercase(args(j)))
                                 case ('met')
                                     cm%dat(ck%FB)%factive = .false.
                                     cm%dat(ck%FI)%factive = .false.
@@ -379,142 +364,142 @@
                             end select
                         end do
                     case ('BASINSHORTWAVEFLAG')
-                        call value(out_args(2), cm%dat(ck%FB)%ffmt, ierr)
+                        call value(args(2), cm%dat(ck%FB)%ffmt, ierr)
                         if (ierr == 0) cm%dat(ck%FB)%factive = .true.
                         cm%dat(ck%FB)%id_var = 'FB'
                         if (cm%dat(ck%FB)%ffmt == 5) then
-                            call value(out_args(3), cm%dat(ck%FB)%ffmt, ierr)
-                            call value(out_args(4), cm%dat(ck%FB)%nblocks, ierr)
+                            call value(args(3), cm%dat(ck%FB)%ffmt, ierr)
+                            call value(args(4), cm%dat(ck%FB)%nblocks, ierr)
                         end if
                         do j = 3, nargs
-                            if (len_trim(out_args(j)) > 3) then
-                                if (out_args(j)(1:3) == 'hf=') then
-                                    call value(out_args(j)(4:), cm%dat(ck%FB)%hf, ierr)
+                            if (len_trim(args(j)) > 3) then
+                                if (args(j)(1:3) == 'hf=') then
+                                    call value(args(j)(4:), cm%dat(ck%FB)%hf, ierr)
                                 end if
                             end if
-                            if (len_trim(out_args(j)) > 4) then
-                                if (out_args(j)(1:4) == 'nts=') then
-                                    call value(out_args(j)(5:), cm%dat(ck%FB)%nblocks, ierr)
+                            if (len_trim(args(j)) > 4) then
+                                if (args(j)(1:4) == 'nts=') then
+                                    call value(args(j)(5:), cm%dat(ck%FB)%nblocks, ierr)
                                 end if
                             end if
                         end do
                     case ('BASINLONGWAVEFLAG')
-                        call value(out_args(2), cm%dat(ck%FI)%ffmt, ierr)
+                        call value(args(2), cm%dat(ck%FI)%ffmt, ierr)
                         if (ierr == 0) cm%dat(ck%FI)%factive = .true.
                         cm%dat(ck%FI)%id_var = 'FI'
                         if (cm%dat(ck%FI)%ffmt == 5) then
-                            call value(out_args(3), cm%dat(ck%FI)%ffmt, ierr)
-                            call value(out_args(4), cm%dat(ck%FI)%nblocks, ierr)
+                            call value(args(3), cm%dat(ck%FI)%ffmt, ierr)
+                            call value(args(4), cm%dat(ck%FI)%nblocks, ierr)
                         end if
                         do j = 3, nargs
-                            if (len_trim(out_args(j)) > 3) then
-                                if (out_args(j)(1:3) == 'hf=') then
-                                    call value(out_args(j)(4:), cm%dat(ck%FI)%hf, ierr)
+                            if (len_trim(args(j)) > 3) then
+                                if (args(j)(1:3) == 'hf=') then
+                                    call value(args(j)(4:), cm%dat(ck%FI)%hf, ierr)
                                 end if
                             end if
-                            if (len_trim(out_args(j)) > 4) then
-                                if (out_args(j)(1:4) == 'nts=') then
-                                    call value(out_args(j)(5:), cm%dat(ck%FI)%nblocks, ierr)
+                            if (len_trim(args(j)) > 4) then
+                                if (args(j)(1:4) == 'nts=') then
+                                    call value(args(j)(5:), cm%dat(ck%FI)%nblocks, ierr)
                                 end if
                             end if
                         end do
                     case ('BASINRAINFLAG')
-                        call value(out_args(2), cm%dat(ck%RT)%ffmt, ierr)
+                        call value(args(2), cm%dat(ck%RT)%ffmt, ierr)
                         if (ierr == 0) cm%dat(ck%RT)%factive = .true.
                         cm%dat(ck%RT)%id_var = 'RT'
                         if (cm%dat(ck%RT)%ffmt == 5) then
-                            call value(out_args(3), cm%dat(ck%RT)%ffmt, ierr)
-                            call value(out_args(4), cm%dat(ck%RT)%nblocks, ierr)
+                            call value(args(3), cm%dat(ck%RT)%ffmt, ierr)
+                            call value(args(4), cm%dat(ck%RT)%nblocks, ierr)
                         end if
                         do j = 3, nargs
-                            if (len_trim(out_args(j)) > 3) then
-                                if (out_args(j)(1:3) == 'hf=') then
-                                    call value(out_args(j)(4:), cm%dat(ck%RT)%hf, ierr)
+                            if (len_trim(args(j)) > 3) then
+                                if (args(j)(1:3) == 'hf=') then
+                                    call value(args(j)(4:), cm%dat(ck%RT)%hf, ierr)
                                 end if
                             end if
-                            if (len_trim(out_args(j)) > 4) then
-                                if (out_args(j)(1:4) == 'nts=') then
-                                    call value(out_args(j)(5:), cm%dat(ck%RT)%nblocks, ierr)
+                            if (len_trim(args(j)) > 4) then
+                                if (args(j)(1:4) == 'nts=') then
+                                    call value(args(j)(5:), cm%dat(ck%RT)%nblocks, ierr)
                                 end if
                             end if
                         end do
                     case ('BASINTEMPERATUREFLAG')
-                        call value(out_args(2), cm%dat(ck%TT)%ffmt, ierr)
+                        call value(args(2), cm%dat(ck%TT)%ffmt, ierr)
                         if (ierr == 0) cm%dat(ck%TT)%factive = .true.
                         cm%dat(ck%TT)%id_var = 'TT'
                         if (cm%dat(ck%TT)%ffmt == 5) then
-                            call value(out_args(3), cm%dat(ck%TT)%ffmt, ierr)
-                            call value(out_args(4), cm%dat(ck%TT)%nblocks, ierr)
+                            call value(args(3), cm%dat(ck%TT)%ffmt, ierr)
+                            call value(args(4), cm%dat(ck%TT)%nblocks, ierr)
                         end if
                         do j = 3, nargs
-                            if (len_trim(out_args(j)) > 3) then
-                                if (out_args(j)(1:3) == 'hf=') then
-                                    call value(out_args(j)(4:), cm%dat(ck%TT)%hf, ierr)
+                            if (len_trim(args(j)) > 3) then
+                                if (args(j)(1:3) == 'hf=') then
+                                    call value(args(j)(4:), cm%dat(ck%TT)%hf, ierr)
                                 end if
                             end if
-                            if (len_trim(out_args(j)) > 4) then
-                                if (out_args(j)(1:4) == 'nts=') then
-                                    call value(out_args(j)(5:), cm%dat(ck%TT)%nblocks, ierr)
+                            if (len_trim(args(j)) > 4) then
+                                if (args(j)(1:4) == 'nts=') then
+                                    call value(args(j)(5:), cm%dat(ck%TT)%nblocks, ierr)
                                 end if
                             end if
                         end do
                     case ('BASINWINDFLAG')
-                        call value(out_args(2), cm%dat(ck%UV)%ffmt, ierr)
+                        call value(args(2), cm%dat(ck%UV)%ffmt, ierr)
                         if (ierr == 0) cm%dat(ck%UV)%factive = .true.
                         cm%dat(ck%UV)%id_var = 'UV'
                         if (cm%dat(ck%UV)%ffmt == 5) then
-                            call value(out_args(3), cm%dat(ck%UV)%ffmt, ierr)
-                            call value(out_args(4), cm%dat(ck%UV)%nblocks, ierr)
+                            call value(args(3), cm%dat(ck%UV)%ffmt, ierr)
+                            call value(args(4), cm%dat(ck%UV)%nblocks, ierr)
                         end if
                         do j = 3, nargs
-                            if (len_trim(out_args(j)) > 3) then
-                                if (out_args(j)(1:3) == 'hf=') then
-                                    call value(out_args(j)(4:), cm%dat(ck%UV)%hf, ierr)
+                            if (len_trim(args(j)) > 3) then
+                                if (args(j)(1:3) == 'hf=') then
+                                    call value(args(j)(4:), cm%dat(ck%UV)%hf, ierr)
                                 end if
                             end if
-                            if (len_trim(out_args(j)) > 4) then
-                                if (out_args(j)(1:4) == 'nts=') then
-                                    call value(out_args(j)(5:), cm%dat(ck%UV)%nblocks, ierr)
+                            if (len_trim(args(j)) > 4) then
+                                if (args(j)(1:4) == 'nts=') then
+                                    call value(args(j)(5:), cm%dat(ck%UV)%nblocks, ierr)
                                 end if
                             end if
                         end do
                     case ('BASINPRESFLAG')
-                        call value(out_args(2), cm%dat(ck%P0)%ffmt, ierr)
+                        call value(args(2), cm%dat(ck%P0)%ffmt, ierr)
                         if (ierr == 0) cm%dat(ck%P0)%factive = .true.
                         cm%dat(ck%P0)%id_var = 'P0'
                         if (cm%dat(ck%P0)%ffmt == 5) then
-                            call value(out_args(3), cm%dat(ck%P0)%ffmt, ierr)
-                            call value(out_args(4), cm%dat(ck%P0)%nblocks, ierr)
+                            call value(args(3), cm%dat(ck%P0)%ffmt, ierr)
+                            call value(args(4), cm%dat(ck%P0)%nblocks, ierr)
                         end if
                         do j = 3, nargs
-                            if (len_trim(out_args(j)) > 3) then
-                                if (out_args(j)(1:3) == 'hf=') then
-                                    call value(out_args(j)(4:), cm%dat(ck%P0)%hf, ierr)
+                            if (len_trim(args(j)) > 3) then
+                                if (args(j)(1:3) == 'hf=') then
+                                    call value(args(j)(4:), cm%dat(ck%P0)%hf, ierr)
                                 end if
                             end if
-                            if (len_trim(out_args(j)) > 4) then
-                                if (out_args(j)(1:4) == 'nts=') then
-                                    call value(out_args(j)(5:), cm%dat(ck%P0)%nblocks, ierr)
+                            if (len_trim(args(j)) > 4) then
+                                if (args(j)(1:4) == 'nts=') then
+                                    call value(args(j)(5:), cm%dat(ck%P0)%nblocks, ierr)
                                 end if
                             end if
                         end do
                     case ('BASINHUMIDITYFLAG')
-                        call value(out_args(2), cm%dat(ck%HU)%ffmt, ierr)
+                        call value(args(2), cm%dat(ck%HU)%ffmt, ierr)
                         if (ierr == 0) cm%dat(ck%HU)%factive = .true.
                         cm%dat(ck%HU)%id_var = 'HU'
                         if (cm%dat(ck%HU)%ffmt == 5) then
-                            call value(out_args(3), cm%dat(ck%HU)%ffmt, ierr)
-                            call value(out_args(4), cm%dat(ck%HU)%nblocks, ierr)
+                            call value(args(3), cm%dat(ck%HU)%ffmt, ierr)
+                            call value(args(4), cm%dat(ck%HU)%nblocks, ierr)
                         end if
                         do j = 3, nargs
-                            if (len_trim(out_args(j)) > 3) then
-                                if (out_args(j)(1:3) == 'hf=') then
-                                    call value(out_args(j)(4:), cm%dat(ck%HU)%hf, ierr)
+                            if (len_trim(args(j)) > 3) then
+                                if (args(j)(1:3) == 'hf=') then
+                                    call value(args(j)(4:), cm%dat(ck%HU)%hf, ierr)
                                 end if
                             end if
-                            if (len_trim(out_args(j)) > 4) then
-                                if (out_args(j)(1:4) == 'nts=') then
-                                    call value(out_args(j)(5:), cm%dat(ck%HU)%nblocks, ierr)
+                            if (len_trim(args(j)) > 4) then
+                                if (args(j)(1:4) == 'nts=') then
+                                    call value(args(j)(5:), cm%dat(ck%HU)%nblocks, ierr)
                                 end if
                             end if
                         end do
@@ -522,22 +507,23 @@
                     case ('BASINRECHARGEFLAG')
 
                     case ('STREAMFLOWFILEFLAG')
-                        fms%stmg%qomeas%fls%ffmt = adjustl(out_args(2))
+                        fms%stmg%qomeas%fls%ffmt = adjustl(args(2))
                     case ('RESERVOIRFILEFLAG')
-                        fms%rsvr%rlsmeas%fls%ffmt = adjustl(out_args(2))
+                        fms%rsvr%rlsmeas%fls%ffmt = adjustl(args(2))
 
                     case ('SHDFILEFLAG')
-                        call value(out_args(2), SHDFILEFLAG, ierr)
+                        SHDFILEFLAG = adjustl(line)
+
                     case ('SOILINIFLAG')
-                        call value(out_args(2), SOILINIFLAG, ierr)
+                        call value(args(2), SOILINIFLAG, ierr)
                     case ('NRSOILAYEREADFLAG')
-                        call value(out_args(2), NRSOILAYEREADFLAG, ierr)
+                        call value(args(2), NRSOILAYEREADFLAG, ierr)
                     case ('PREEMPTIONFLAG')
-                        call value(out_args(2), mtsflg%PREEMPTIONFLAG, ierr)
+                        call value(args(2), mtsflg%PREEMPTIONFLAG, ierr)
 
                     !> Interpolation flag for climate forcing data.
                     case ('INTERPOLATIONFLAG')
-                        call value(out_args(2), IROVAL, ierr)
+                        call value(args(2), IROVAL, ierr)
                         if (ierr == 0) then
                             cm%dat(ck%FB)%ipflg = IROVAL
                             cm%dat(ck%FI)%ipflg = IROVAL
@@ -549,72 +535,72 @@
                         end if
 
                     case ('SUBBASINFLAG')
-                        call value(out_args(2), SUBBASINFLAG, ierr)
+                        call value(args(2), SUBBASINFLAG, ierr)
                     case ('R2COUTPUTFLAG')
-                        call value(out_args(2), R2COUTPUTFLAG, ierr)
+                        call value(args(2), R2COUTPUTFLAG, ierr)
                     case ('OBJFNFLAG')
-                        call value(out_args(2), OBJFNFLAG, ierr)
+                        call value(args(2), OBJFNFLAG, ierr)
                     case ('AUTOCALIBRATIONFLAG')
-                        call value(out_args(2), mtsflg%AUTOCALIBRATIONFLAG, ierr)
+                        call value(args(2), mtsflg%AUTOCALIBRATIONFLAG, ierr)
                     case ('WINDOWSIZEFLAG')
-                        call value(out_args(2), WINDOWSIZEFLAG, ierr)
+                        call value(args(2), WINDOWSIZEFLAG, ierr)
                     case ('WINDOWSPACINGFLAG')
-                        call value(out_args(2), WINDOWSPACINGFLAG, ierr)
+                        call value(args(2), WINDOWSPACINGFLAG, ierr)
                     case ('METRICSSTATSOUTFLAG')
-                        call value(out_args(2), METRICSSTATSOUTFLAG, ierr)
+                        call value(args(2), METRICSSTATSOUTFLAG, ierr)
                     case ('METRICSFILTEROBSFLAG')
-                        call value(out_args(2), METRICSFILTEROBSFLAG, ierr)
+                        call value(args(2), METRICSFILTEROBSFLAG, ierr)
                     case ('METRICSSPINUP')
-                        call value(out_args(2), METRICSSPINUP, ierr)
+                        call value(args(2), METRICSSPINUP, ierr)
                         METRICSSPINUP = max(METRICSSPINUP, 1)
                     case ('METRICSINCLUDESPINUP')
-                        call value(out_args(2), METRICSINCLUDESPINUP, ierr)
+                        call value(args(2), METRICSINCLUDESPINUP, ierr)
                     case ('FROZENSOILINFILFLAG')
-                        call value(out_args(2), FROZENSOILINFILFLAG, ierr)
+                        call value(args(2), FROZENSOILINFILFLAG, ierr)
                     case ('PRINTRFFR2CFILEFLAG')
-                        call value(out_args(2), SA_RTE_flgs%PRINTRFFR2CFILEFLAG, ierr)
+                        call value(args(2), SA_RTE_flgs%PRINTRFFR2CFILEFLAG, ierr)
                         SA_RTE_flgs%PROCESS_ACTIVE = .true.
                     case ('PRINTRCHR2CFILEFLAG')
-                        call value(out_args(2), SA_RTE_flgs%PRINTRCHR2CFILEFLAG, ierr)
+                        call value(args(2), SA_RTE_flgs%PRINTRCHR2CFILEFLAG, ierr)
                         SA_RTE_flgs%PROCESS_ACTIVE = .true.
 !+                    case ('PRINTLKGR2CFILEFLAG')
-!+                        call value(out_args(2), SA_RTE_flgs%PRINTLKGR2CFILEFLAG, ierr)
+!+                        call value(args(2), SA_RTE_flgs%PRINTLKGR2CFILEFLAG, ierr)
 !+                        SA_RTE_flgs%PROCESS_ACTIVE = .true.
                     case ('ICTEMMOD')
-                        call value(out_args(2), ICTEMMOD, ierr)
+                        call value(args(2), ICTEMMOD, ierr)
 
                     !> PBSM (blowing snow).
                     case ('PBSMFLAG')
-                        call PBSM_parse_flag(in_line)
+                        call PBSM_parse_flag(line)
 
                     case ('LOCATIONFLAG')
-                        call value(out_args(2), LOCATIONFLAG, ierr)
+                        call value(args(2), LOCATIONFLAG, ierr)
                     case ('OUTFIELDSFLAG')
-                        call value(out_args(2), OUTFIELDSFLAG, ierr)
+                        call value(args(2), OUTFIELDSFLAG, ierr)
                     case ('GGEOFLAG')
-                        call value(out_args(2), GGEOFLAG, ierr)
+                        call value(args(2), GGEOFLAG, ierr)
 
                     !> Basin output files.
                     case ('BASINBALANCEOUTFLAG')
-                        call value(out_args(2), IROVAL, ierr)
+                        call value(args(2), IROVAL, ierr)
                         if (IROVAL == 0) then
                             BASINAVGEBFILEFLAG = 'none'
                             BASINAVGWBFILEFLAG = 'none'
                         end if
                     case ('BASINAVGEBFILEFLAG')
-                        BASINAVGEBFILEFLAG = adjustl(in_line)
+                        BASINAVGEBFILEFLAG = adjustl(line)
                     case ('BASINAVGWBFILEFLAG')
-                        BASINAVGWBFILEFLAG = adjustl(in_line)
+                        BASINAVGWBFILEFLAG = adjustl(line)
                     case ('STREAMFLOWOUTFLAG')
-                        STREAMFLOWOUTFLAG = adjustl(in_line)
+                        STREAMFLOWOUTFLAG = adjustl(line)
                     case ('REACHOUTFLAG')
-                        REACHOUTFLAG = adjustl(in_line)
+                        REACHOUTFLAG = adjustl(line)
 
                     !> Time-averaged basin PEVP-EVAP and EVPB output.
                     case ('BASINAVGEVPFILEFLAG')
                         BASINAVGEVPFILEFLAG = 0
                         do j = 2, nargs
-                            select case (lowercase(out_args(j)))
+                            select case (lowercase(args(j)))
                                 case ('daily')
                                     BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 1
                                 case ('monthly')
@@ -639,21 +625,21 @@
                         end do
 
                     case ('BASINSWEOUTFLAG')
-                        call value(out_args(2), BASINSWEOUTFLAG, ierr)
+                        call value(args(2), BASINSWEOUTFLAG, ierr)
 
                     !> BASEFLOW routing.
                     case ('BASEFLOWFLAG')
-                        call bflm_parse_flag(in_line)
+                        call bflm_parse_flag(line)
 
                     !> Reservoir Release function flag (Number of WF_B coefficients).
 !?                    case ('RESVRELSWFB')
-!?                        call value(out_args(2), WF_RTE_flgs%RESVRELSWFB, ierr)
+!?                        call value(args(2), WF_RTE_flgs%RESVRELSWFB, ierr)
 
                     !> Cropland irrigation module.
                     case ('CROPLANDIRRIGATION')
                         cifg%ts_flag = 0
                         do j = 2, nargs
-                            select case (lowercase(out_args(j)))
+                            select case (lowercase(args(j)))
                                 case ('daily')
                                     cifg%ts_flag = cifg%ts_flag + radix(civ%fk%KDLY)**civ%fk%KDLY
                                 case ('hourly')
@@ -678,7 +664,7 @@
                     !> Run mode.
                     case ('RUNMODE')
                         do j = 2, nargs
-                            select case (lowercase(out_args(j)))
+                            select case (lowercase(args(j)))
                                 case ('runsvs')
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .true.
                                     RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
@@ -719,12 +705,11 @@
 
                     !> INPUTPARAMSFORMFLAG
                     case ('INPUTPARAMSFORMFLAG')
-                        INPUTPARAMSFORM = adjustl(lowercase(in_line))
+                        INPUTPARAMSFORM = adjustl(lowercase(line))
 
                     !> Unrecognized flag.
                     case default
-                        print 9373, trim(out_args(1))
-                        stop
+                        call print_warning("'" // trim(adjustl(args(1))) // "' is an unrecognized flag.")
 
                 end select !case (trim(adjustl(out_args(1))))
 
@@ -734,21 +719,12 @@
 
                 !> Error check.
                 if (ierr /= 0) then
-                    print 9484, trim(out_args(1)), i, trim(in_line)
-                    stop
+                    call print_warning("Unable to parse the options of '" // trim(adjustl(args(1))) // "'.")
+                    call print_message_detail(trim(adjustl(line)))
                 end if
 
             end do !i = 1, CONFLAGS
         end if !(CONFLAGS > 0) then
-
-9373    format(//1x, "WARNING: An unrecognized flag '", (a), &
-               "' was found in the run options file.", &
-               /1x, 'The flag may not be supported by this version of the model.', &
-               /1x, 'Please ensure that the flag is properly named.', /)
-9358    format(//1x, 'WARNING: An error occurred parsing Control Flag #', i5, &
-               /1x, 'The flag or its arguments could not be parsed.', /)
-9484    format(//1x, "WARNING: An error occurred parsing '", (a), "'.", &
-               /1x, 'Flag #', I5, ': ', (a), /)
 
         do i = 1, 2
             read(iun, *)
@@ -757,21 +733,17 @@
         !> Output grid points.
         read(iun, '(i5)') WF_NUM_POINTS
         if (WF_NUM_POINTS > 10) then
-            print *, 'WARNING: The number of grid output points is ', &
-                'greater than ten. This may cause performance or ', &
-                'stability issues.'
+            call print_remark('The number of folders for CLASS output is greater than ten and will impact performance.')
         end if
         read (iun, *)
         if (WF_NUM_POINTS > 0) then
             allocate(op%DIR_OUT(WF_NUM_POINTS), op%N_OUT(WF_NUM_POINTS), &
                      op%II_OUT(WF_NUM_POINTS), op%K_OUT(WF_NUM_POINTS), stat = ierr)
             if (ierr /= 0) then
-                print *
-                print *, 'Error allocating grid output point ', &
-                    'variables.  Check that these bounds are within an ', &
-                    'acceptable range.'
-                print *, 'Bound 1 (grid output points): ', WF_NUM_POINTS
-                stop
+                call print_error('Unable to allocate variables for CLASS output.')
+                write(line, 1001) WF_NUM_POINTS
+                call print_message_detail('Number of points: ' // trim(adjustl(line)))
+                call stop_program()
             end if
             read(iun, '(5i10)') (op%N_OUT(i), i = 1, WF_NUM_POINTS)
             read(iun, '(5i10)') (op%II_OUT(i), i = 1, WF_NUM_POINTS)
@@ -820,6 +792,13 @@
         read(iun, '(a10)') GENDIR_OUT
         call removesp(GENDIR_OUT)
         fls%GENDIR_OUT = adjustl(GENDIR_OUT)
+        open(100, file = './' // trim(adjustl(fls%GENDIR_OUT)) // '/tmp', status = 'unknown', iostat = ierr)
+        if (ierr /= 0) then
+            call print_error('The output folder does not exist: ' // trim(adjustl(fls%GENDIR_OUT)))
+            call stop_program()
+        else
+            close(100, status = 'delete')
+        end if
 
         !> Simulation starting and stopping dates.
         read(iun, *)
@@ -831,8 +810,10 @@
 
         !> Close the file.
         close(iun)
-        if (VERBOSEMODE) print *, 'READ: SUCCESSFUL, FILE: CLOSED'
 
         return
+
+    !> Format statements.
+1001    format(9999(g15.6, 1x))
 
     end subroutine

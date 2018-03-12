@@ -163,10 +163,6 @@ program RUNMESH
     !*  ENDDATA: Signals reached end of forcing data.
     logical ENDDATE, ENDDATA
 
-    !>  For cacluating the subbasin grids
-!+    integer SUBBASINCOUNT
-!+    integer, dimension(:), allocatable :: SUBBASIN
-
     type(ShedGridParams) :: shd
     type(fl_ids) :: fls
 
@@ -274,64 +270,6 @@ program RUNMESH
     if (ro%RUNGRID) call run_between_grid_init(fls, shd, cm)
     call print_message('')
 
-!> **********************************************************************
-!>  Start of section to only run on squares that make up the watersheds
-!>  that are listed in the streamflow file (subbasin)
-!> **********************************************************************
-
-    !>  For cacluating the subbasin grids
-!+    allocate(SUBBASIN(NML))
-
-!+    if (SUBBASINFLAG > 0) then
-!+        do i = 1, NA
-!+            SUBBASIN(i) = 0
-!+        end do
-
-          !> Set values at guages to 1
-!+        do i = 1, WF_NO
-!+            SUBBASIN(WF_S(i)) = 1
-!+        end do
-
-          !> Set values of subbasin to 1 for all upstream grids
-!+        SUBBASINCOUNT = 1
-!+        do while (SUBBASINCOUNT > 0)
-!+            SUBBASINCOUNT = 0
-!+            do i = 1, NA - 1
-!+                if (SUBBASIN(shd%NEXT(i)) == 1 .and. SUBBASIN(i) == 0) then
-!+                    SUBBASIN(i) = 1
-!+                    SUBBASINCOUNT = SUBBASINCOUNT + 1
-!+                end if
-!+            end do
-!+        end do !while (SUBBASINCOUNT > 0)
-
-          !> Set values of frac to 0 for all grids non-upstream grids
-!+        SUBBASINCOUNT = 0
-!+        do i = 1, NA
-!+            if (SUBBASIN(i) == 0) then
-!+                shd%FRAC(i) = 0.0
-!+            else
-!+                SUBBASINCOUNT = SUBBASINCOUNT + 1
-!+            end if
-!+        end do
-
-          !> MAM - Write grid number, grid fractional area and percentage of GRUs in each grid
-!+        open(10, file = 'subbasin_info.txt')
-!+        write(10, '(a7, 3x, a18, 3x, a58)') &
-!+            'GRID NO', 'GRID AREA FRACTION', 'GRU FRACTIONS, GRU 1, GRU 2, GRU 3,... IN INCREASING ORDER'
-!+        do i = 1, NA
-!+            if (SUBBASIN(i) == 0) then
-!+            else
-!+                write(10, '(i5, 3x, f10.3, 8x, 50(f10.3, 3x))') i, shd%FRAC(i), (shd%lc%ACLASS(i, m), m = 1, NMTEST)
-!+            end if
-!+        end do
-!+        close(10)
-
-!+    end if !(SUBBASINFLAG > 0) then
-
-!> **********************************************************************
-!>  End of subbasin section
-!> **********************************************************************
-
     !> Initialize climate forcing module.
     if (ro%RUNCLIM) then
         ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
@@ -380,7 +318,7 @@ program RUNMESH
             write(ECHO_TXT_IUN, *) 'BASINHUMIDITYFLAG    = ', cm%dat(ck%HU)%ffmt
             write(ECHO_TXT_IUN, *) 'RESUMEFLAG           = ', RESUMEFLAG
             write(ECHO_TXT_IUN, *) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG
-            write(ECHO_TXT_IUN, *) 'SHDFILEFLAG          = ', SHDFILEFLAG
+            write(ECHO_TXT_IUN, *) 'SHDFILEFLAG          = ', SHDFILEFMT
             write(ECHO_TXT_IUN, *) 'SOILINIFLAG          = ', SOILINIFLAG
             write(ECHO_TXT_IUN, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
             write(ECHO_TXT_IUN, *) 'SUBBASINFLAG         = ', SUBBASINFLAG
