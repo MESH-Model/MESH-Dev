@@ -73,7 +73,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
     !> Check that the number of grid cells matches the drainage database value.
     if (i /= NA) then
-        call print_error('The number of GRUs does not match the drainage database.')
+        call print_error('The number of grid cells does not match the drainage database.')
         write(line, 1001) NA
         call print_message_detail('Drainage database: ' // trim(adjustl(line)))
         write(line, 1001) i

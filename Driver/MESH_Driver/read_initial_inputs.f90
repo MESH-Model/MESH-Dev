@@ -74,8 +74,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
             iun = 100
             open(iun, file = 'MESH_basin.map', status = 'replace', action = 'write')
             write(iun, '(a)') '#'
-            write(iun, '(a)') ':Projection         ' // trim(adjustl(shd%CoordSys%Proj))
-            write(iun, '(a)') ':Ellipsoid          ' // trim(adjustl(shd%CoordSys%Ellips))
+            write(iun, '(a)') ':Projection         ' // uppercase(trim(adjustl(shd%CoordSys%Proj)))
+            write(iun, '(a)') ':Ellipsoid          ' // uppercase(trim(adjustl(shd%CoordSys%Ellips)))
             write(iun, '(a)') '#'
             write(line, '(f13.6)') shd%xOrigin
             write(iun, '(a)') ':xOrigin            ' // trim(adjustl(line))
@@ -110,10 +110,10 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
             write(iun, '(a)') 'Drainage Area (FRAC)'
             grid = 0.0
             do n = 1, shd%NA
-                grid(shd%yyy(n), shd%xxx(n)) = shd%AREA(n)/(shd%AL**2)*100.0
+                grid(shd%yyy(n), shd%xxx(n)) = (shd%AREA(n)/shd%AL/shd%AL)*100.0
             end do
             do y = shd%yCount, 1, -1
-                write(iun, *) (int(grid(y, x)), x = 1, shd%xCount)
+                write(iun, *) (grid(y, x), x = 1, shd%xCount)
             end do
             write(iun, '(a)') 'Drainage direction (S)'
             grid = 0.0
@@ -165,7 +165,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
             write(iun, '(a)') 'Contour Density (IROUGH)'
             grid = 0.0
             do n = 1, shd%NA
-                grid(shd%yyy(n), shd%xxx(n)) = -1 !((intslope(n)*shd%AL)/([cintv = ]1.0) - 0.0001)
+                grid(shd%yyy(n), shd%xxx(n)) = -1.0 !((intslope(n)*shd%AL)/([cintv = ]1.0) - 0.0001)
             end do
             do y = shd%yCount, 1, -1
                 write(iun, *) (int(grid(y, x)), x = 1, shd%xCount)
@@ -194,7 +194,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, ts, cm, release)
                     grid(shd%yyy(n), shd%xxx(n)) = shd%lc%ACLASS(n, m)*100.0
                 end do
                 do y = shd%yCount, 1, -1
-                    write(iun, *) (int(grid(y, x)), x = 1, shd%xCount)
+                    write(iun, *) (grid(y, x), x = 1, shd%xCount)
                 end do
             end do
             close(iun)
