@@ -33,8 +33,6 @@
         integer CONFLAGS, IROVAL, iun, nargs, n, j, i, ierr
         character(len = DEFAULT_LINE_LENGTH) line
         character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
-        character(20) IRONAME
-        character(10) GENDIR_OUT
 
         !>
         !> SET RUN OPTIONS
@@ -789,10 +787,11 @@
         !> Output folder for basin/high-level model output.
         read(iun, *)
         read(iun, *)
-        read(iun, '(a10)') GENDIR_OUT
-        call removesp(GENDIR_OUT)
-        fls%GENDIR_OUT = adjustl(GENDIR_OUT)
-        open(100, file = './' // trim(adjustl(fls%GENDIR_OUT)) // '/tmp', status = 'unknown', iostat = ierr)
+        read(iun, '(a10)') line
+        call removesp(line)
+        fls%GENDIR_OUT = adjustl(line)
+        write(line, 1001) ipid
+        open(100, file = './' // trim(adjustl(fls%GENDIR_OUT)) // '/tmp' // trim(adjustl(line)), status = 'unknown', iostat = ierr)
         if (ierr /= 0) then
             call print_error('The output folder does not exist: ' // trim(adjustl(fls%GENDIR_OUT)))
             call stop_program()
