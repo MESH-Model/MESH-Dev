@@ -120,11 +120,10 @@ subroutine read_basin_structures(shd)
         write(line, 1001) fms%stmg%n
         call print_message_detail('Number of streamflow gauges: ' // trim(adjustl(line)))
         if (DIAGNOSEMODE) then
-            write(line, 1001) 'GAUGE', 'IY', 'JX', 'DA (km/km2)', 'RANK'
+            write(line, 1001) 'GAUGE', 'IY', 'JX', 'RANK', 'DA (km2)'
             call print_message_detail(line)
             do i = 1, fms%stmg%n
-                write(line, 1001) i, fms%stmg%meta%iy(i), fms%stmg%meta%jx(i), shd%DA(fms%stmg%meta%rnk(i)), &
-                    fms%stmg%meta%rnk(i)
+                write(line, 1001) i, fms%stmg%meta%iy(i), fms%stmg%meta%jx(i), fms%stmg%meta%rnk(i), shd%DA(fms%stmg%meta%rnk(i))
                 call print_message_detail(line)
             end do
             call print_message('')
@@ -209,7 +208,7 @@ subroutine read_basin_structures(shd)
                 if (shd%IREACH(fms%rsvr%meta%rnk(i)) /= i) then
                     if (ierr == 0) then
                         call print_error('Mis-match between IREACH and reservoir IDs.')
-                        write(line, 1001) 'RANK', 'IREACH', 'EXPECTING'
+                        write(line, 1001) 'RANK', 'IREACH VAL.', 'EXPECTING'
                         call print_message(line)
                     end if
                     write(line, 1001) fms%rsvr%meta%rnk(i), shd%IREACH(fms%rsvr%meta%rnk(i)), i
@@ -219,6 +218,11 @@ subroutine read_basin_structures(shd)
             end if
         end do
         if (ierr /= 0) call stop_program()
+
+        !> Calculate area from 'IREACH' cells if not specified.
+        do i = 1, fms%rsvr%n
+            if (fms%rsvr%rls%area(i) == 0.0) fms%rsvr%rls%area(i) = sum(shd%AREA, shd%IREACH == fms%rsvr%rls%area(i))
+        end do
 
         !> Initialize reservoir release values if such a type of reservoir has been defined.
         if (count(fms%rsvr%rls%b1 == 0.0) > 0) then
@@ -271,10 +275,10 @@ subroutine read_basin_structures(shd)
         write(line, 1001) fms%rsvr%n
         call print_message_detail('Number of reservoir outlets: ' // trim(adjustl(line)))
         if (DIAGNOSEMODE) then
-            write(line, 1001) 'OUTLET', 'IY', 'JX', 'RANK'
+            write(line, 1001) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)'
             call print_message_detail(line)
             do i = 1, fms%rsvr%n
-                write(line, 1001) i, fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i)
+                write(line, 1001) i, fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i), fms%rsvr%rls%area(i)/1.0e+6
                 call print_message_detail(line)
             end do
             call print_message('')

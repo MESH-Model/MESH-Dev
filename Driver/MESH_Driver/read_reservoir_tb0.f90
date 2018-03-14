@@ -58,6 +58,7 @@ subroutine read_reservoir_tb0(shd, iun, fname)
     call get_keyword_value(iun, fname, vkeyword, nkeyword, ':ReachArea', fms%rsvr%rls%area, fms%rsvr%n, ierr, VERBOSEMODE)
     call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff6', fms%rsvr%rls%b6, fms%rsvr%n, ierr, VERBOSEMODE)
     call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff7', fms%rsvr%rls%b7, fms%rsvr%n, ierr, VERBOSEMODE)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':InitLvl', fms%rsvr%rls%zlvl0, fms%rsvr%n, ierr, VERBOSEMODE)
 
     !> Replace 'area' with 'b6' if available.
     if (any(fms%rsvr%rls%b6 > 0.0)) fms%rsvr%rls%area = fms%rsvr%rls%b6

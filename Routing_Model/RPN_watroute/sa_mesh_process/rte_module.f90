@@ -291,41 +291,36 @@ module rte_module
         ii_water = ntype
 
         !> Reservoirs.
+        !*  noresv: Number of reservoirs/lakes.
+        !*  Nreaches: (rerout.f) Copy of noresv.
         noresv = fms%rsvr%n
-        Nreaches = noresv
+        Nreaches = fms%rsvr%n
+!todo: fix fhr use (999999).
         if (fms%rsvr%n > 0) then
-            ktr = fms%rsvr%rlsmeas%dts
+
+            !> Book-keeping variables (when fhr > 1).
+            !> Assigned but not used.
+            !*  lake_inflow: Copy of reservoir inflow. [m3 s-1].
+            !*  lake_stor: Copy of reservoir storage. [m3].
+            !*  lake_outflow: Copy of reservoir outflow. [m3 s-1].
+            !*  del_store: Storage change considering inflow minus outflow. [m3].
+            allocate(lake_inflow(noresv, 999999), lake_stor(noresv, 999999), lake_outflow(noresv, 999999), del_stor(noresv, 999999))
+            lake_inflow = 0.0; lake_stor = 0.0; lake_outflow = 0.0; del_stor = 0.0
+
+            !> Reservoir/lake meta-data (from file).
             allocate( &
-                b1(noresv), b2(noresv), b3(noresv), &
-                b4(noresv), b5(noresv), ires(noresv), jres(noresv), &
-                b6(noresv), b7(noresv), &
-                lake_area(noresv), &
-!                yres(noresv), xres(noresv), poliflg(noresv), &
-                resname(noresv), &
-!todo: fix this (999999).
-                qrel(noresv, 999999), &
-                qdwpr(noresv, 999999), lake_elv(noresv, 999999), &
-                lake_inflow(noresv, 999999), &
+                resname(noresv), ires(noresv), jres(noresv), &
 !tied to val2divyes == 1
-                resindex(noresv), &
-!tied to fhr
-!todo: fix this (999999).
-                lake_stor(noresv, 999999), lake_outflow(noresv, 999999), &
-                del_stor(noresv, 999999))
-!                qstream_sum(noresv, 999999), strloss_sum(noresv, 999999))
-            if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
-                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
-            else
-                qrel(:, 1) = fms%rsvr%rlsmeas%val
-            end if
-            qdwpr = 0.0; lake_elv = 0.0
-            lake_inflow = 0.0
-!tied to fhr
-            lake_stor = 0.0; lake_outflow = 0.0
-            del_stor = 0.0
-!            qstream_sum = 0.0; strloss_sum = 0.0
+                resindex(noresv))
+!                yres(noresv), xres(noresv)
             resname = fms%rsvr%meta%name
-            lake_area = fms%rsvr%rls%area
+            jres = fms%rsvr%meta%jx
+            ires = fms%rsvr%meta%iy
+            resindex = fms%rsvr%meta%rnk
+
+            !> Routing coefficients.
+            allocate(b1(noresv), b2(noresv), b3(noresv), b4(noresv), b5(noresv), b6(noresv), b7(noresv))
+!                poliflg(noresv)
             b1 = fms%rsvr%rls%b1
             b2 = fms%rsvr%rls%b2
             b3 = fms%rsvr%rls%b3
@@ -338,12 +333,28 @@ module rte_module
 !            elsewhere
 !                poliflg = 'y'
 !            end where
-            jres = fms%rsvr%meta%jx
-            ires = fms%rsvr%meta%iy
-            resindex = fms%rsvr%meta%rnk
 
-            !> Initial reservoir storage.
-            allocate(reach_last(noresv))
+            !> Reservoir routing time-stepping.
+            ktr = fms%rsvr%rlsmeas%dts
+
+            !> Measured outflow (from file).
+            !*  qrel: Measured outflow when reservoir releases are replaced with measured values. [m3 s-1].
+            !*  qdwpr: (Local variable in route.f) Used to accumulate flow in reaches that span multiple cells to the reservoir outlet. [m3 s-1].
+            allocate(qdwpr(noresv, 999999), qrel(noresv, 999999))
+            qdwpr = 0.0
+            if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
+                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
+            else
+                qrel(:, 1) = fms%rsvr%rlsmeas%val
+            end if
+
+            !> Initial lake level (from file).
+            !*  reach_last: (Used in Great Lakes routing) Stores level of last time-step. [m].
+            !*  lake_area: Used to convert reservoir storage to level (for diagnostic output). [m2].
+            !*  lake_elv: Lake elevation (for diagnostic output). [m].
+            allocate(reach_last(noresv), lake_area(noresv), lake_elv(noresv, 999999))
+            lake_area = fms%rsvr%rls%area
+            lake_elv(:, 1) = fms%rsvr%rls%zlvl0
         end if
 
         !> Streamflow gauge locations.
@@ -648,9 +659,9 @@ module rte_module
         if (fms%stmg%n > 0) qhyd(:, fhr) = fms%stmg%qomeas%val
         if (fms%rsvr%n > 0) then
             if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
-                qrel(1:count(fms%rsvr%rls%b1 == 0.0), fhr) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
+                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
             else
-                qrel(:, fhr) = fms%rsvr%rlsmeas%val
+                qrel(:, 1) = fms%rsvr%rlsmeas%val
             end if
         end if
 
