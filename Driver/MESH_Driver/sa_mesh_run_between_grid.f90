@@ -100,6 +100,7 @@ module sa_mesh_run_between_grid
             open(86, file = './' // trim(fls%GENDIR_OUT) // '/basin_SWE_alldays.csv')
         end if !(BASINSWEOUTFLAG > 0) then
 
+        RTE_TS = ic%dts
         if (WF_RTE_flgs%PROCESS_ACTIVE) RTE_TS = WF_RTE_flgs%RTE_TS
         if (rteflg%PROCESS_ACTIVE) RTE_TS = rteflg%RTE_TS
 

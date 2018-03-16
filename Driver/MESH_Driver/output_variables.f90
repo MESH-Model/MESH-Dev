@@ -544,7 +544,7 @@ module output_variables
 
         !> Meteorological forcing.
         if (ro%RUNCLIM) then
-            call output_variables_update_field(group%pre, 'sum')
+            call output_variables_update_field(group%pre, 'avg')
             call output_variables_update_field(group%fsin, 'avg')
             call output_variables_update_field(group%flin, 'avg')
             call output_variables_update_field(group%ta, 'avg')

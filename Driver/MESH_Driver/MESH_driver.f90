@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1329'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1330'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -805,7 +805,7 @@ program RUNMESH
 !+    end if !(RESUMEFLAG == 2) then
 
     !> Calculate initial storage.
-    if (ipid == 0) then
+    if (ro%RUNBALWB .and. ipid == 0) then
         STG_INI = sum( &
             (out%grid%rcan%ts + out%grid%sncan%ts + out%grid%sno%ts + out%grid%wsno%ts + out%grid%pndw%ts + &
              out%grid%lzs%ts + out%grid%dzs%ts)*shd%FRAC)
@@ -966,9 +966,11 @@ program RUNMESH
             if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
 
                 !> Accumulated outputs (including non-zero value read from resume file).
-                DAILY_PRE = DAILY_PRE + sum(out%grid%pre%d*shd%FRAC)*ic%dts
-                DAILY_EVAP = DAILY_EVAP + sum(out%grid%evap%d*shd%FRAC)*ic%dts
-                DAILY_ROF = DAILY_ROF + sum(out%grid%rof%d*shd%FRAC)*ic%dts
+                if (ro%RUNBALWB) then
+                    DAILY_PRE = DAILY_PRE + sum(out%grid%pre%d*shd%FRAC)*ic%dts
+                    DAILY_EVAP = DAILY_EVAP + sum(out%grid%evap%d*shd%FRAC)*ic%dts
+                    DAILY_ROF = DAILY_ROF + sum(out%grid%rof%d*shd%FRAC)*ic%dts
+                end if
 
                 if (VERBOSEMODE) then
                     write(line, '(i5, i4)') ic%now%year, ic%now%jday
@@ -1120,12 +1122,20 @@ program RUNMESH
     if (ipid == 0) then
 
         !> Accumulated outputs (including non-zero value read from resume file).
-        TOTAL_PRE = TOTAL_PRE + sum(out%grid%pre%tot*shd%FRAC)*ic%dts
-        TOTAL_EVAP = TOTAL_EVAP + sum(out%grid%evap%tot*shd%FRAC)*ic%dts
-        TOTAL_ROF = TOTAL_ROF + sum(out%grid%rof%tot*shd%FRAC)*ic%dts
-        TOTAL_ROFO = TOTAL_ROFO + sum(out%grid%rofo%tot*shd%FRAC)*ic%dts
-        TOTAL_ROFS = TOTAL_ROFS + sum(out%grid%rofs%tot*shd%FRAC)*ic%dts
-        TOTAL_ROFB = TOTAL_ROFB + sum(out%grid%rofb%tot*shd%FRAC)*ic%dts
+        if (ro%RUNBALWB) then
+            TOTAL_PRE = TOTAL_PRE + sum(out%grid%pre%tot*shd%FRAC)*ic%dts
+            TOTAL_EVAP = TOTAL_EVAP + sum(out%grid%evap%tot*shd%FRAC)*ic%dts
+            TOTAL_ROF = TOTAL_ROF + sum(out%grid%rof%tot*shd%FRAC)*ic%dts
+            TOTAL_ROFO = TOTAL_ROFO + sum(out%grid%rofo%tot*shd%FRAC)*ic%dts
+            TOTAL_ROFS = TOTAL_ROFS + sum(out%grid%rofs%tot*shd%FRAC)*ic%dts
+            TOTAL_ROFB = TOTAL_ROFB + sum(out%grid%rofb%tot*shd%FRAC)*ic%dts
+            STG_FIN = sum( &
+                (out%grid%rcan%ts + out%grid%sncan%ts + out%grid%sno%ts + out%grid%wsno%ts + out%grid%pndw%ts + &
+                 out%grid%lzs%ts + out%grid%dzs%ts)*shd%FRAC)
+            do j = 1, shd%lc%IGND
+                STG_FIN = STG_FIN + sum((out%grid%lqws(j)%ts + out%grid%fzws(j)%ts)*shd%FRAC)
+            end do
+        end if
 
         !> Save the current state of the model for SAVERESUMEFLAG.
         if (SAVERESUMEFLAG == 4) then
@@ -1154,15 +1164,6 @@ program RUNMESH
 
         end if !(SAVERESUMEFLAG == 4) then
 
-        !> Calculate final storage for the run.
-        STG_FIN = sum( &
-            (out%grid%rcan%ts + out%grid%sncan%ts + out%grid%sno%ts + out%grid%wsno%ts + out%grid%pndw%ts + &
-             out%grid%lzs%ts + out%grid%dzs%ts)*shd%FRAC)
-        do j = 1, shd%lc%IGND
-            STG_FIN = STG_FIN + sum((out%grid%lqws(j)%ts + out%grid%fzws(j)%ts)*shd%FRAC)
-        end do
-        STG_FIN = STG_FIN/sum(shd%FRAC)
-
         !> Basin totals for the run.
         TOTAL_PRE = TOTAL_PRE/sum(shd%FRAC)
         TOTAL_EVAP = TOTAL_EVAP/sum(shd%FRAC)
@@ -1170,6 +1171,7 @@ program RUNMESH
         TOTAL_ROFO = TOTAL_ROFO/sum(shd%FRAC)
         TOTAL_ROFS = TOTAL_ROFS/sum(shd%FRAC)
         TOTAL_ROFB = TOTAL_ROFB/sum(shd%FRAC)
+        STG_FIN = STG_FIN/sum(shd%FRAC)
 
         !> Write data to the output summary file.
         if (ECHOTXTMODE) then

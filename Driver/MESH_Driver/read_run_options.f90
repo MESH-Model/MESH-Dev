@@ -695,8 +695,6 @@
                                     RUNSVS113_flgs%PROCESS_ACTIVE = .false.
                                     WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                     rteflg%PROCESS_ACTIVE = .false.
-                                    ro%RUNTILE = .false.
-                                    ro%RUNGRID = .false.
                                     exit
                             end select
                         end do
