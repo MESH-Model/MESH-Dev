@@ -10,6 +10,7 @@ subroutine read_parameters(fls, shd, cm)
     use mpi_module
     use model_files_variables
     use sa_mesh_variables
+    use sa_mesh_utilities
     use FLAGS
     use climate_forcing_variabletypes
 
@@ -153,11 +154,9 @@ subroutine read_parameters(fls, shd, cm)
 
     !> Check for a bad value of INPUTPARAMSFORMFLAG.
     if (INPUTPARAMSFORMFLAG == 0) then
-        if (ipid == 0) then
-            print "(1x, 'ERROR: Bad or unsupported input parameter file format.')"
-            print "(3x, 'Revise INPUTPARAMSFORMFLAG in ', (a), '.')", trim(adjustl(fls%fl(mfk%f53)%fn))
-        end if
-        stop
+        call print_error('ERROR: Bad or unsupported input parameter file format.')
+        call print_message('Revise INPUTPARAMSFORMFLAG in ' // trim(adjustl(fls%fl(mfk%f53)%fn)) // '.')
+        call stop_program()
     end if
 
     !> Read from the 'ini' files.
