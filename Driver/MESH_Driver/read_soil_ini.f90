@@ -21,9 +21,18 @@ subroutine READ_SOIL_INI(fls, shd)
 
     !> Open the file.
     call print_screen('READING: ' // trim(fls%fl(mfk%f54)%fn))
-    call print_screen('REMARK: This file supports only 3 soil layers.', 3)
+    call print_echo_txt(trim(fls%fl(mfk%f54)%fn))
+    call print_message_detail('REMARK: This file supports only 3 soil layers.')
     iun = fls%fl(mfk%f54)%iun
-    open(iun, file = fls%fl(mfk%f54)%fn, status = 'old', action = 'read', err = 997)
+    open(iun, file = fls%fl(mfk%f54)%fn, status = 'old', action = 'read', iostat = ierr)
+    if (ierr /= 0) then
+        call print_error('Unable to open file. Check if the file exists or update SOILINIFLAG.')
+        call print_message_detail('SOILINIFLAG 1 - MESH will use the soil percentages as specified.')
+        call print_message_detail('SOILINIFLAG 2 - MESH will adjust soil percentages in favor of sand.')
+        call print_message_detail('SOILINIFLAG 3 - MESH will adjust soil percentages in favor of clay.')
+        call print_message_detail('SOILINIFLAG 4 - MESH will proportionally adjust the soil percentages.')
+        call stop_program()
+    end if
 
     !> Assign local variables.
     NTYPE = shd%lc%NTYPE
@@ -95,21 +104,8 @@ subroutine READ_SOIL_INI(fls, shd)
 
     return
 
-    !> Stop: File not found.
-997 call print_error('Unable to open file.')
-    call print_message('Set SOILINITFLAG to a value less than 5. Hydraulic properties will be calculated from soil percentages.')
-    call print_message('If the soil percentages add to greater than 100%:')
-    call print_message_detail('SOILINIFLAG set to 1 - MESH will use the soil percentages as specified.')
-    call print_message_detail('SOILINIFLAG set to 2 - MESH will adjust soil percentages in favor of sand.')
-    call print_message_detail('SOILINIFLAG set to 3 - MESH will adjust soil percentages in favor of clay.')
-    call print_message_detail('SOILINIFLAG set to 4 - MESH will proportionally adjust the soil percentages.')
-    call stop_program()
-
     !> Stop: Premature end of file.
 999 call print_error('Unable to read from file.')
     call stop_program()
-
-    !> Format statements.
-1001    format(9999(g15.6, 1x))
 
 end subroutine

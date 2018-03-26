@@ -36,25 +36,16 @@ module ensim_io
 
     contains
 
-    subroutine open_ensim_file(iun, fname, ierr, verbose)
+    subroutine open_ensim_file(iun, fname, ierr)
 
         integer, intent(in) :: iun
         character(len = *), intent(in) :: fname
-        logical, intent(in) :: verbose
         integer, intent(out) :: ierr
 
-        if (verbose) print 1000, trim(fname)
-        open(iun, file = adjustl(fname), status = 'old', iostat = ierr)
-        if (ierr /= 0) goto 999
+        ierr = 0
+        open(iun, file = fname, status = 'old', iostat = ierr)
 
         return
-
-999     if (verbose) print 1110, trim(fname)
-        stop
-
-1000    format(1x, 'READING: ', (a))
-1110    format(/1x, 'ERROR: Error opening ', (a), &
-               /3x, 'Check that the file exists or use an alternate format of file.'/)
 
     end subroutine
 

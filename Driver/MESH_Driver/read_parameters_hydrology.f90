@@ -1083,14 +1083,6 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
     !> Close the file.
     close(iun)
-    if (VERBOSEMODE) print 9998
-
-9997    format(/1x, 'READING: ', (a), ' ')
-9998    format('READ: SUCCESSFUL, FILE: CLOSED')
-9999    format('FAILED', &
-               //3x, 'The file could not be opened.', &
-                /3x, 'Ensure the file exists and restart the program.', &
-                /3x, 'Path: ', (a))
 
     goto 999
 

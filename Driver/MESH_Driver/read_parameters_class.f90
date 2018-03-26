@@ -32,20 +32,13 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     integer JOUT1, JOUT2, JAV1, JAV2, KOUT1, KOUT2, KAV1, KAV2
 
     !> Open the file.
+    call print_screen('READING: ' // trim(adjustl(fls%fl(mfk%f50)%fn)))
+    call print_echo_txt(fls%fl(mfk%f50)%fn)
     iun = fls%fl(mfk%f50)%iun
-    open(iun, &
-         file = trim(adjustl(fls%fl(mfk%f50)%fn)), &
-         status = 'old', &
-         action = 'read', &
-         iostat = ierr)
-
-    !> Check for errors from opening the file.
+    open(iun, file = fls%fl(mfk%f50)%fn, status = 'old', action = 'read', iostat = ierr)
     if (ierr /= 0) then
-        call print_error(trim(adjustl(fls%fl(mfk%f50)%fn)) // ' could not be opened.')
-        call print_message('Ensure that the file exists and restart the program.')
+        call print_error('Unable to open file. Check if the file exists.')
         call stop_program()
-    else
-        call print_message('READING: ' // trim(adjustl(fls%fl(mfk%f50)%fn)))
     end if
 
     NA = shd%NA

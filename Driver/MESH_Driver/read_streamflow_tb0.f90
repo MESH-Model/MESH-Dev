@@ -30,7 +30,13 @@ subroutine read_streamflow_tb0(shd, iun, fname)
     integer nkeyword, ierr
 
     !> Open the file and read the header.
-    call open_ensim_file(iun, fname, ierr, VERBOSEMODE)
+    call print_screen('READING: ' // trim(adjustl(fname)))
+    call print_echo_txt(fname)
+    call open_ensim_file(iun, fname, ierr)
+    if (ierr /= 0) then
+        call print_error('Unable to open file. Check if the file exists.')
+        call stop_program()
+    end if
     call parse_header_ensim(iun, fname, vkeyword, nkeyword, ierr)
 
     !> Get the number of gauge locations (i.e., columns) from the file.

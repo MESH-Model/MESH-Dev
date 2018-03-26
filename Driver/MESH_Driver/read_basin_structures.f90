@@ -52,9 +52,6 @@ subroutine read_basin_structures(shd)
     !> If locations exist.
     if (fms%stmg%n > 0) then
 
-        !> Print to status file.
-        call print_echo_txt(trim(fname))
-
         !> Find the x-y cell coordinate of the location.
         fms%stmg%meta%iy = int((fms%stmg%meta%y - shd%yOrigin)/shd%yDelta) + 1
         fms%stmg%meta%jx = int((fms%stmg%meta%x - shd%xOrigin)/shd%xDelta) + 1
@@ -70,12 +67,11 @@ subroutine read_basin_structures(shd)
         !> Print a message if any location is missing RANK (outside the basin).
         if (minval(fms%stmg%meta%rnk) == 0) then
             call print_error('Streamflow gauge(s) are outside the basin.')
-            call print_message_detail(line)
-            write(line, 1001) 'GAUGE', 'Y', 'IY', 'X', 'JX'
+            write(line, FMT_GEN) 'GAUGE', 'Y', 'IY', 'X', 'JX'
             call print_message_detail(line)
             do i = 1, fms%stmg%n
                 if (fms%stmg%meta%rnk(i) == 0) then
-                    write(line, 1001) i, fms%stmg%meta%y(i), fms%stmg%meta%iy(i), fms%stmg%meta%x(i), fms%stmg%meta%jx(i)
+                    write(line, FMT_GEN) i, fms%stmg%meta%y(i), fms%stmg%meta%iy(i), fms%stmg%meta%x(i), fms%stmg%meta%jx(i)
                     call print_message_detail(line)
                 end if
             end do
@@ -88,8 +84,8 @@ subroutine read_basin_structures(shd)
             fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday, fms%stmg%qomeas%ihour, fms%stmg%qomeas%imins, fms%stmg%qomeas%dts*60)
         isteps2 = jday_to_tsteps(ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins, fms%stmg%qomeas%dts*60)
         if (isteps2 < isteps1) then
-            call print_warning('The first record occurs after the simulation start date.')
-            call print_message('This may cause channels to initialize with no storage.')
+            call print_warning('The first record occurs after the simulation start date.', PAD_3)
+            call print_message_detail('This may cause channels to initialize with no storage.')
             write(line, "(i5, i4)") fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday
             call print_message_detail('First record occurs on: ' // trim(line))
             write(line, "(i5, i4)") ic%start%year, ic%start%jday
@@ -97,11 +93,11 @@ subroutine read_basin_structures(shd)
         end if
         iskip = (isteps2 - isteps1)
         if (iskip > 0) then
-            write(line, 1001) iskip
+            write(line, FMT_GEN) iskip
             call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
             ierr = read_records_txt(iun, fms%stmg%qomeas%val, iskip)
             if (ierr /= 0) then
-                call print_warning('Reached end of file.')
+                call print_warning('Reached end of file.', PAD_3)
             end if
         end if
 
@@ -112,18 +108,18 @@ subroutine read_basin_structures(shd)
 
         !> Warn if the initial value is zero.
         if (any(fms%stmg%qomeas%val == 0.0)) then
-            call print_warning('The measured value at the simulation start date is zero.')
-            call print_message('This may cause channels to initialize with no storage.')
+            call print_warning('The measured value at the simulation start date is zero.', PAD_3)
+            call print_message_detail('This may cause channels to initialize with no storage.')
         end if
 
         !> Print a summary of locations to file.
-        write(line, 1001) fms%stmg%n
+        write(line, FMT_GEN) fms%stmg%n
         call print_message_detail('Number of streamflow gauges: ' // trim(adjustl(line)))
         if (DIAGNOSEMODE) then
-            write(line, 1001) 'GAUGE', 'IY', 'JX', 'RANK', 'DA (km2)'
+            write(line, FMT_GEN) 'GAUGE', 'IY', 'JX', 'RANK', 'DA (km2)'
             call print_message_detail(line)
             do i = 1, fms%stmg%n
-                write(line, 1001) i, fms%stmg%meta%iy(i), fms%stmg%meta%jx(i), fms%stmg%meta%rnk(i), shd%DA(fms%stmg%meta%rnk(i))
+                write(line, FMT_GEN) i, fms%stmg%meta%iy(i), fms%stmg%meta%jx(i), fms%stmg%meta%rnk(i), shd%DA(fms%stmg%meta%rnk(i))
                 call print_message_detail(line)
             end do
             call print_message('')
@@ -160,20 +156,17 @@ subroutine read_basin_structures(shd)
 
     !> Print an error if no reservoirs are defined but reaches exist from the drainage database file.
     if (maxval(shd%IREACH) /= fms%rsvr%n) then
-        call print_error('The number of reservoirs does not match between the drainage database (IREACH) ' // &
-            'and in: ' // trim(adjustl(fname)))
-        write(line, 1001) maxval(shd%IREACH)
+        line = 'The number of reservoirs does not match between the drainage database (IREACH) and in: ' // trim(adjustl(fname))
+        call print_error(line)
+        write(line, FMT_GEN) maxval(shd%IREACH)
         call print_message_detail('Maximum IREACH the drainage database: ' // trim(adjustl(line)))
-        write(line, 1001) fms%rsvr%n
+        write(line, FMT_GEN) fms%rsvr%n
         call print_message_detail('Number of reservoirs read from file: ' // trim(adjustl(line)))
         call stop_program()
     end if
 
     !> If locations exist.
     if (fms%rsvr%n > 0) then
-
-        !> Print to status file.
-        call print_echo_txt(trim(fname))
 
         !> Find the x-y cell coordinate of the location.
         fms%rsvr%meta%iy = int((fms%rsvr%meta%y - shd%yOrigin)/shd%yDelta) + 1
@@ -190,11 +183,11 @@ subroutine read_basin_structures(shd)
         !> Print an error if any location has no RANK (is outside the basin).
         if (minval(fms%rsvr%meta%rnk) == 0) then
             call print_error('Reservoir outlet(s) are outside the basin.')
-            write(line, 1001) 'OUTLET', 'Y', 'IY', 'X', 'JX'
+            write(line, FMT_GEN) 'OUTLET', 'Y', 'IY', 'X', 'JX'
             call print_message_detail(line)
             do i = 1, fms%rsvr%n
                 if (fms%rsvr%meta%rnk(i) == 0) then
-                    write(line, 1001) i, fms%rsvr%meta%y(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%x(i), fms%rsvr%meta%jx(i)
+                    write(line, FMT_GEN) i, fms%rsvr%meta%y(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%x(i), fms%rsvr%meta%jx(i)
                     call print_message_detail(line)
                 end if
             end do
@@ -207,12 +200,12 @@ subroutine read_basin_structures(shd)
             if (fms%rsvr%meta%rnk(i) > 0) then
                 if (shd%IREACH(fms%rsvr%meta%rnk(i)) /= i) then
                     if (ierr == 0) then
-                        call print_error('Mis-match between IREACH and reservoir IDs.')
-                        write(line, 1001) 'RANK', 'IREACH VAL.', 'EXPECTING'
-                        call print_message(line)
+                        call print_error("'IREACH' of certain reservoirs does not match the reservoir order.")
+                        write(line, FMT_GEN) 'RANK', 'IREACH VAL.', 'EXPECTING'
+                        call print_message_detail(line)
                     end if
-                    write(line, 1001) fms%rsvr%meta%rnk(i), shd%IREACH(fms%rsvr%meta%rnk(i)), i
-                    call print_message(line)
+                    write(line, FMT_GEN) fms%rsvr%meta%rnk(i), shd%IREACH(fms%rsvr%meta%rnk(i)), i
+                    call print_message_detail(line)
                     ierr = 1
                 end if
             end if
@@ -252,7 +245,7 @@ subroutine read_basin_structures(shd)
             end if
             iskip = (isteps2 - isteps1)
             if (iskip > 0) then
-                write(line, 1001) iskip
+                write(line, FMT_GEN) iskip
                 call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
                 ierr = read_records_txt(iun, fms%rsvr%rlsmeas%val, iskip)
                 if (ierr /= 0) then
@@ -272,20 +265,17 @@ subroutine read_basin_structures(shd)
         end if
 
         !> Print a summary of locations to file.
-        write(line, 1001) fms%rsvr%n
+        write(line, FMT_GEN) fms%rsvr%n
         call print_message_detail('Number of reservoir outlets: ' // trim(adjustl(line)))
         if (DIAGNOSEMODE) then
-            write(line, 1001) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)'
+            write(line, FMT_GEN) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)'
             call print_message_detail(line)
             do i = 1, fms%rsvr%n
-                write(line, 1001) i, fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i), fms%rsvr%rls%area(i)/1.0e+6
+                write(line, FMT_GEN) i, fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i), fms%rsvr%rls%area(i)/1.0e+6
                 call print_message_detail(line)
             end do
             call print_message('')
         end if
     end if
-
-    !> Format statements.
-1001    format(9999(g15.6, 1x))
 
 end subroutine

@@ -1,4 +1,4 @@
-subroutine READ_RUN_OPTIONS(ts, cm, fls)
+subroutine READ_RUN_OPTIONS(fls, shd, cm)
 
     use mpi_module
     use strings
@@ -24,9 +24,9 @@ subroutine READ_RUN_OPTIONS(ts, cm, fls)
     implicit none
 
     !> Input variables.
-    type(dates_model) :: ts
-    type(CLIM_INFO) :: cm
-    type(fl_ids) :: fls
+    type(fl_ids) fls
+    type(ShedGridParams) shd
+    type(CLIM_INFO) cm
 
     !> Local variables.
     integer CONFLAGS, IROVAL, iun, nargs, n, j, i, ierr
@@ -202,14 +202,13 @@ subroutine READ_RUN_OPTIONS(ts, cm, fls)
     !> value, use the MESH_input_run_options.ini file
 
     !> Open file and print an error if unable to open the file.
+    call print_screen('READING: ' // trim(fls%fl(mfk%f53)%fn))
     iun = fls%fl(mfk%f53)%iun
     open(iun, file = fls%fl(mfk%f53)%fn, status = 'old', action = 'read', iostat = ierr)
     if (ierr /= 0) then
-        call print_error('MESH_input_run_options.ini could not be opened.')
-        call print_message('Ensure that the file exists and restart the program.')
+        call print_screen('')
+        call print_screen('ERROR: Unable to open file. Check if the file exists.')
         call stop_program()
-    else
-        call print_screen('READING: MESH_input_run_options.ini')
     end if
 
     !> Begin reading the control flags.
@@ -231,8 +230,8 @@ subroutine READ_RUN_OPTIONS(ts, cm, fls)
             call compact(line)
             call parse(line, ' ', args, nargs)
             if (.not. nargs > 0) then
-                write(line, 1001) i
-                call print_warning('Unable to read control flag # ' // trim(adjustl(line)))
+                write(line, FMT_GEN) i
+                call print_screen('WARNING: Error reading control flag ' // trim(adjustl(line)), PAD_3)
                 cycle
             end if
 
@@ -664,13 +663,12 @@ subroutine READ_RUN_OPTIONS(ts, cm, fls)
 
                 !> Unrecognized flag.
                 case default
-                    call print_warning("'" // trim(adjustl(args(1))) // "' is an unrecognized flag.")
+                    call print_screen("WARNING: '" // trim(adjustl(args(1))) // "' is not recognized as a control flag.", PAD_3)
             end select
 
             !> Check for errors.
             if (ierr /= 0) then
-                call print_warning("Unable to parse the options of '" // trim(adjustl(args(1))) // "'.")
-                call print_message_detail(trim(adjustl(line)))
+                call print_screen("WARNING: Unable to parse the options of '" // trim(adjustl(args(1))) // "'.", PAD_3)
             end if
         end do
     end if
@@ -683,21 +681,64 @@ subroutine READ_RUN_OPTIONS(ts, cm, fls)
     !> Output grid points.
     read(iun, '(i5)') WF_NUM_POINTS
     if (WF_NUM_POINTS > 10) then
-        call print_remark('The number of folders for CLASS output is greater than ten and will impact performance.')
+        call print_screen('REMARK: The number of folders for CLASS output is greater than ten and will impact performance.', PAD_3)
     end if
     read (iun, *)
     if (WF_NUM_POINTS > 0 .and. RUNCLASS36_flgs%PROCESS_ACTIVE) then
         allocate(op%DIR_OUT(WF_NUM_POINTS), op%N_OUT(WF_NUM_POINTS), &
                  op%II_OUT(WF_NUM_POINTS), op%K_OUT(WF_NUM_POINTS), stat = ierr)
         if (ierr /= 0) then
-            call print_error('Unable to allocate variables for CLASS output.')
-            write(line, 1001) WF_NUM_POINTS
-            call print_message_detail('Number of points: ' // trim(adjustl(line)))
+            call print_screen('')
+            call print_screen('ERROR: Unable to allocate variables for CLASS output.')
+            write(line, FMT_GEN) WF_NUM_POINTS
+            call print_screen('Number of points: ' // trim(adjustl(line)), PAD_3)
             call stop_program()
         end if
-        read(iun, '(5i10)') (op%N_OUT(i), i = 1, WF_NUM_POINTS)
-        read(iun, '(5i10)') (op%II_OUT(i), i = 1, WF_NUM_POINTS)
-        read(iun, '(5a10)') (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
+        read(iun, *) (op%N_OUT(i), i = 1, WF_NUM_POINTS)
+        read(iun, *) (op%II_OUT(i), i = 1, WF_NUM_POINTS)
+        read(iun, *) (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
+
+        !> Check CLASS output points.
+        do i = 1, WF_NUM_POINTS
+            if (i < WF_NUM_POINTS) then
+
+                !> Check for repeated points.
+                do j = i + 1, WF_NUM_POINTS
+                    if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
+                        write(line, "('Grid ', i5, ', GRU ', i4)") op%N_OUT(i), op%II_OUT(i)
+                        call print_screen('')
+                        call print_screen('Output is repeated for ' // trim(adjustl(line)))
+                        call stop_program()
+                    end if
+                end do
+            else
+
+                !> Check that the output path exists.
+                write(line, FMT_GEN) ipid
+                open( &
+                    100, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/tmp' // trim(adjustl(line)), status = 'unknown', &
+                    iostat = ierr)
+                if (ierr /= 0) then
+                    call print_screen('')
+                    write(line, FMT_GEN) i
+                    call print_screen('The output folder for point ' // trim(adjustl(line)) // ' does not exist.')
+                    call print_screen('Location: ' // trim(adjustl(op%DIR_OUT(i))), PAD_3)
+                    call stop_program()
+                else
+                    close(100, status = 'delete')
+                end if
+            end if
+
+            !> Check that point lies inside the basin.
+            if (op%N_OUT(i) > shd%NAA) then
+                call print_screen('')
+                write(line, FMT_GEN) i
+                call print_screen('Output point ' // trim(adjustl(line)) // ' is outside the basin.')
+                write(line, FMT_GEN) shd%NAA
+                call print_screen('Number of grids inside the basin: ' // trim(adjustl(line)), PAD_3)
+                call stop_program()
+            end if
+        end do
     else
         read(iun, *)
         read(iun, *)
@@ -711,10 +752,11 @@ subroutine READ_RUN_OPTIONS(ts, cm, fls)
     read(iun, '(a10)') line
     call removesp(line)
     fls%GENDIR_OUT = adjustl(line)
-    write(line, 1001) ipid
+    write(line, FMT_GEN) ipid
     open(100, file = './' // trim(adjustl(fls%GENDIR_OUT)) // '/tmp' // trim(adjustl(line)), status = 'unknown', iostat = ierr)
     if (ierr /= 0) then
-        call print_error('The output folder does not exist: ' // trim(adjustl(fls%GENDIR_OUT)))
+        call print_screen('')
+        call print_screen('The output folder does not exist: ' // trim(adjustl(fls%GENDIR_OUT)))
         call stop_program()
     else
         close(100, status = 'delete')
@@ -723,16 +765,12 @@ subroutine READ_RUN_OPTIONS(ts, cm, fls)
     !> Simulation start and stop dates.
     read(iun, *)
     read(iun, *)
-    read(iun, '(4i4)') ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
-    read(iun, '(4i4)') ic%stop%year, ic%stop%jday, ic%stop%hour, ic%stop%mins
-    call GET_DATES(ts)
+    read(iun, *) ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
+    read(iun, *) ic%stop%year, ic%stop%jday, ic%stop%hour, ic%stop%mins
 
     !> Close the file.
     close(iun)
 
     return
-
-    !> Format statements.
-1001    format(9999(g15.6, 1x))
 
 end subroutine

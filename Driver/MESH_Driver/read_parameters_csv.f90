@@ -43,12 +43,13 @@ subroutine read_parameters_csv(shd, iun, fname)
     call print_echo_txt(fname)
     open(iun, file = fname, status = 'old', action = 'read', iostat = ierr)
     if (ierr /= 0) then
-        call print_error('Unable to open file. Check if the file exists or use an alternate parameter file format.')
+        call print_error('Unable to open file. Check if the file exists.')
         call stop_program()
     end if
 
     !> Read and parse each line.
     ierr = 0
+    n = 0
     do while (ierr == 0)
 
         !> Compact and reduce the line to any instance of '#' or '!'.
@@ -68,9 +69,8 @@ subroutine read_parameters_csv(shd, iun, fname)
         if (nargs < 1) cycle
 
         !> Assign and distribute the field.
-        if (DIAGNOSEMODE) call print_message('Reading parameter: ' // trim(adjustl(args(1))) // '.')
+        if (DIAGNOSEMODE) call print_message_detail('Reading parameter: ' // trim(adjustl(args(1))) // '.')
         istat = 0
-        n = 0
         select case (lowercase(args(1)))
 
             !> BASEFLOWFLAG == 2 (lower zone storage).
@@ -156,28 +156,25 @@ subroutine read_parameters_csv(shd, iun, fname)
 
         !> Status flags.
         if (istat == 1 .and. DIAGNOSEMODE) then
-            call print_remark("'" // trim(adjustl(args(1))) // "' is present but inactive.")
+            call print_remark("'" // trim(adjustl(args(1))) // "' is present but inactive.", PAD_3)
         else if (istat == 2) then
-            call print_warning("'" // trim(adjustl(args(1))) // "' is not recognized.")
+            call print_warning("'" // trim(adjustl(args(1))) // "' is not recognized.", PAD_3)
         else if (istat == 3) then
-            call print_warning("'" // trim(adjustl(args(1))) // "' does not contain the expected number of values.")
+            call print_warning("'" // trim(adjustl(args(1))) // "' does not contain the expected number of values.", PAD_3)
         else if (istat /= 0) then
-            call print_warning("Error assigning '" // trim(adjustl(args(1))) // "' values.")
+            call print_warning("Error assigning '" // trim(adjustl(args(1))) // "' values.", PAD_3)
         else if (istat == 0) then
             n = n + 1
         end if
     end do
 
     !> Print number of active parameters.
-    write(line, 1001) n
+    write(line, FMT_GEN) n
     call print_message_detail('Active parameters in file: ' // trim(adjustl(line)))
 
     !> Close the file to free the unit.
     close(iun)
 
     return
-
-    !> Format statements.
-1001    format(9999(g15.6, 1x))
 
 end subroutine

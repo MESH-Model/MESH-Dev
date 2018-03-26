@@ -35,13 +35,19 @@ subroutine read_parameters_r2c(shd, iun, fname)
     !> Local variables.
     type(ensim_keyword), dimension(:), allocatable :: vkeyword
     type(ensim_attr), dimension(:), allocatable :: vattr
-    integer nkeyword, nattr, ilvl, l, i, ierr
+    integer nkeyword, nattr, ilvl, n, l, i, istat, ierr
     character(len = MAX_WORD_LENGTH) tfield, tlvl
     real, dimension(:), allocatable :: ffield
     character(len = DEFAULT_LINE_LENGTH) line
 
     !> Open the file and read the header.
-    call open_ensim_file(iun, fname, ierr, VERBOSEMODE)
+    call print_screen('READING: ' // trim(adjustl(fname)))
+    call print_echo_txt(fname)
+    call open_ensim_file(iun, fname, ierr)
+    if (ierr /= 0) then
+        call print_error('Unable to open file. Check if the file exists.')
+        call stop_program()
+    end if
     call parse_header_ensim(iun, fname, vkeyword, nkeyword, ierr)
     call validate_header_spatial( &
         fname, vkeyword, nkeyword, &
@@ -56,6 +62,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
 
     !> Distribute the data to the appropriate variable.
     allocate(ffield(shd%NA))
+    n = 0
     do l = 1, nattr
 
         !> Extract variable name and level.
@@ -73,6 +80,8 @@ subroutine read_parameters_r2c(shd, iun, fname)
         call r2c_to_rank(iun, fname, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, VERBOSEMODE)
 
         !> Determine the variable.
+        if (DIAGNOSEMODE) call print_message_detail('Reading parameter: ' // trim(tfield) // '.')
+        istat = 0
         select case (adjustl(tfield))
 
             !> RUNCLASS36 and RUNSVS113.
@@ -90,9 +99,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         case ('ur')
                             pm_grid%cp%fcan(:, 5) = ffield
                         case default
-                            write(line, 1001) ilvl
-                            call print_warning( &
-                                trim(vattr(l)%attr) // ': Unrecognized category or level out-of-bounds: ' // trim(tlvl))
+                            istat = 1
                     end select
                 end if
             case ('lnz0')
@@ -109,9 +116,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         case ('ur')
                             pm_grid%cp%lnz0(:, 5) = ffield
                         case default
-                            write(line, 1001) ilvl
-                            call print_warning( &
-                                trim(vattr(l)%attr) // ': Unrecognized category or level out-of-bounds: ' // trim(tlvl))
+                            istat = 1
                     end select
                 end if
             case ('sdep')
@@ -128,7 +133,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
 
                     !> Unit conversion if units are km km-2.
                     if (index(lowercase(vattr(l)%units), 'km') > 0) then
-                        call print_remark(trim(vattr(l)%attr) // ": Unit conversion from 'm m-2' to 'km km -2'.")
+                        call print_remark("'" // trim(vattr(l)%attr) // "' converted from 'km km -2' to 'm m-2'.", PAD_3)
                         pm_grid%hp%dd = pm_grid%hp%dd/1000.0
                     end if
                 end if
@@ -141,9 +146,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%sand(:, ilvl) = ffield
                     else
-                        write(line, 1001) ilvl
-                        call print_warning( &
-                            trim(vattr(l)%attr) // ': Unrecognized category or level out-of-bounds: ' // trim(adjustl(line)))
+                        istat = 1
                     end if
                 end if
             case ('clay')
@@ -155,9 +158,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%clay(:, ilvl) = ffield
                     else
-                        write(line, 1001) ilvl
-                        call print_warning( &
-                            trim(vattr(l)%attr) // ': Unrecognized category or level out-of-bounds: ' // trim(adjustl(line)))
+                        istat = 1
                     end if
                 end if
             case ('orgm')
@@ -169,9 +170,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%orgm(:, ilvl) = ffield
                     else
-                        write(line, 1001) ilvl
-                        call print_warning( &
-                            trim(vattr(l)%attr) // ': Unrecognized category or level out-of-bounds: ' // trim(adjustl(line)))
+                        istat = 1
                     end if
                 end if
 
@@ -217,16 +216,27 @@ subroutine read_parameters_r2c(shd, iun, fname)
             case ('distrib')
                 if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Distrib = ffield
 
-            !> Print a warning if the variable name is not recognized.
+            !> Unrecognized.
             case default
-                if (DIAGNOSEMODE) call print_remark("'" // trim(vattr(l)%attr) // "' is not a recognized named.")
+                istat = 2
         end select
+
+        !> Status flags.
+        if (istat == 1) then
+            line = "'" // trim(vattr(l)%attr) // "' has an unrecognized category or level out-of-bounds: " // trim(tlvl)
+            call print_warning(line, PAD_3)
+        else if (istat == 2) then
+            call print_warning("'" // trim(vattr(l)%attr) // "' is not recognized.", PAD_3)
+        else if (istat == 0) then
+            n = n + 1
+        end if
     end do
+
+    !> Print number of active parameters.
+    write(line, FMT_GEN) n
+    call print_message_detail('Active parameters in file: ' // trim(adjustl(line)))
 
     !> Close the file to free the unit.
     close(iun)
-
-    !> Format statements.
-1001    format(9999(g15.6, 1x))
 
 end subroutine

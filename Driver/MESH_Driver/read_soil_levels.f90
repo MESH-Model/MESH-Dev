@@ -20,8 +20,13 @@ subroutine READ_SOIL_LEVELS(fls, shd)
 
     !> Open the file.
     call print_screen('READING: ' // trim(fls%fl(mfk%f52)%fn))
+    call print_echo_txt(fls%fl(mfk%f52)%fn)
     iun = fls%fl(mfk%f52)%iun
-    open(iun, file = fls%fl(mfk%f52)%fn, status = 'old', action = 'read', err = 997)
+    open(iun, file = fls%fl(mfk%f52)%fn, status = 'old', action = 'read', iostat = ierr)
+    if (ierr /= 0) then
+        call print_error('Unable to open file. Check if the file exists.')
+        call stop_program()
+    end if
 
     !> Count the number of levels.
     DELZ_TEST = 1.0
@@ -35,7 +40,9 @@ subroutine READ_SOIL_LEVELS(fls, shd)
     !> 'i' increments an extra time when 'ierr' /= 0.
     shd%lc%IGND = i - 1
     if (shd%lc%IGND < 3) then
-        call print_error('The number of soil layers is less than 3. At least 3 layers are required.')
+        call print_error('The number of soil layers must be >= 3.')
+        write(line, FMT_GEN) shd%lc%IGND
+        call print_message_detail('Number of soil layers (from file): ' // trim(adjustl(line)))
         call stop_program()
     end if
 
@@ -57,15 +64,8 @@ subroutine READ_SOIL_LEVELS(fls, shd)
 
     return
 
-    !> Stop: File not found.
-997 call print_error('Unable to open file.')
-    call stop_program()
-
     !> Stop: Error allocating variables.
 998 call print_error('Unable to allocate variables.')
     call stop_program()
-
-    !> Format statements.
-1001    format(9999(g15.6, 1x))
 
 end subroutine

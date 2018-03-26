@@ -131,10 +131,10 @@ module climate_forcing_io
 999     call print_error('Unable to open ' // trim(cm%dat(vid)%fpath) // ' or file not found.')
         call stop_program()
 
-998     call print_error('Unable to read from ' // trim(cm%dat(vid)%fpath) // ' or end of file.')
+998     call print_error('Unable to read ' // trim(cm%dat(vid)%fpath) // ' or end of file.')
         call stop_program()
 
-997     call print_error('Unable to allocate blocks for reading ' // trim(cm%dat(vid)%fpath) // ' into memory.')
+997     call print_error('Unable to allocate blocks for reading ' // trim(cm%dat(vid)%fpath) // ' data into memory.')
         call stop_program()
 
     end function

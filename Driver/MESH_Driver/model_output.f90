@@ -299,7 +299,8 @@ module model_output
 
                     case default
                         call print_remark( &
-                            trim(args(i)) // ' (Variable ' // trim(args(1)) // ') is an unrecognized argument for output.')
+                            "'" // trim(adjustl(args(i))) // "' (Variable '" // trim(adjustl(args(1))) // &
+                            "') is an unrecognized option for output.", PAD_3)
                 end select
             end if
         end do
@@ -445,7 +446,7 @@ module model_output
 
     end subroutine
 
-    subroutine init_out(fls, shd, ts)
+    subroutine init_out(fls, shd)
 
         !> 'strings' required for 'is_letter' function.
         use strings
@@ -453,12 +454,15 @@ module model_output
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(dates_model), intent(in) :: ts
 
         !> Local variables.
+        type(dates_model) ts
         integer iun, n, j, nargs, ierr
         character(len = DEFAULT_FIELD_LENGTH) args(50)
         character(len = DEFAULT_LINE_LENGTH) line
+
+        !> Initialize 'ts' variable.
+        call GET_DATES(ts)
 
         !> Allocate output variable for time-stamps based on switch to store variables in-memory.
         if (flds%in_mem) then
@@ -657,7 +661,7 @@ module model_output
 
                 case default
                     n = n - 1
-                    call print_warning("'" // trim(args(1)) // "' is not recognized for output.")
+                    call print_warning("'" // trim(args(1)) // "' is not recognized for output.", PAD_3)
             end select
             n = n + 1
         end do

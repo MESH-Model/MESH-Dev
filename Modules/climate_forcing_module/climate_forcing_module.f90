@@ -131,7 +131,7 @@ module climate_forcing
             !> Check that the forcing record is not less than the model time-step.
 !todo: Could probably find a way to accommodate this (e.g., accumulating/averaging/etc...).
             if (cm%dat(vid)%hf < ic%dtmins) then
-                write(line, 1001) ic%dtmins
+                write(line, FMT_GEN) ic%dtmins
                 call print_error('The forcing data time-step is less than the model time-step: ' // trim(adjustl(line)) // ' mins')
                 call print_message('Aggregate the data to the model time-step.')
                 call stop_program()
@@ -140,24 +140,24 @@ module climate_forcing
             !> Check if the time-step is divisible by the model time-step.
             if (mod(cm%dat(vid)%hf, ic%dtmins) /= 0) then
                 call print_error('The forcing data time-step must be divisible by the model time-step.')
-                write(line, 1001) cm%dat(vid)%hf
+                write(line, FMT_GEN) cm%dat(vid)%hf
                 call print_message_detail('Data time-step: ' // trim(adjustl(line)) // ' mins')
-                write(line, 1001) ic%dtmins
+                write(line, FMT_GEN) ic%dtmins
                 call print_message_detail('Model time-step: ' // trim(adjustl(line)) // ' mins')
                 call stop_program()
             end if
 
             !> Warn of unsupprted interpolation flag option.
             if (cm%dat(vid)%ipflg > 1) then
-                write(line, 1001) cm%dat(vid)%ipflg
-                call print_warning('INTERPOLATIONFLAG ' // trim(adjustl(line)) // ' is not supported and has no effect.')
+                write(line, FMT_GEN) cm%dat(vid)%ipflg
+                call print_warning('INTERPOLATIONFLAG ' // trim(adjustl(line)) // ' is not supported and has no effect.', PAD_3)
                 cm%dat(vid)%ipflg = 0
             end if
 
             !> Remark on INTERPOLATIONFLAG if the data and model use the same time-step.
             if (cm%dat(vid)%ipflg == 1 .and. cm%dat(vid)%hf == ic%dtmins) then
-                call print_remark( &
-                    'INTERPOLATIONFLAG is active but has no effect. The climate forcing data and model have the same time-step.')
+                line = 'INTERPOLATIONFLAG is active but has no effect. The climate forcing data and model have the same time-step.'
+                call print_remark(line, PAD_3)
                 cm%dat(vid)%ipflg = 0
             end if
 
@@ -202,7 +202,7 @@ module climate_forcing
             end if
             iskip = (isteps2 - isteps1)
             if (iskip > 0) then
-                write(line, 1001) iskip
+                write(line, FMT_GEN) iskip
                 call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
                 do i = 1, iskip
                     if (update_data(shd, cm, vid, .true.)) goto 999
@@ -212,11 +212,11 @@ module climate_forcing
 
         !> Print summary of climate forcing variables.
         if (DIAGNOSEMODE) then
-            write(line, 1001) 'Variable', 'Name', 'File format', 'Frame length', 'Blocks in-mem.', 'No. series'
+            write(line, FMT_GEN) 'Variable', 'Name', 'File format', 'Frame length', 'Blocks in-mem.', 'No. series'
             call print_message_detail(line)
             do i = 1, cm%nclim
                 if (cm%dat(i)%factive) then
-                    write(line, 1001) &
+                    write(line, FMT_GEN) &
                         cm%dat(i)%id_var, cm%dat(i)%fname, cm%dat(i)%ffmt, cm%dat(i)%hf, cm%dat(i)%nblocks, cm%dat(i)%nseries
                     call print_message_detail(line)
                 end if
@@ -241,10 +241,10 @@ module climate_forcing
             read(iun) ierr
             if (ierr /= 7) then
                 call print_error('Incompatible ranking in climate state file.')
-                write(line, "(a40, 1x, i3)") 'Number of clim. variables read:', ierr
-                call print_message_detail(line)
-                write(line, "(a40, 1x, i3)") 'Number of clim. variables expected:', 7
-                call print_message_detail(line)
+                write(line, FMT_GEN) ierr
+                call print_message_detail('Number of clim. variables read: ' // trim(adjustl(line)))
+                write(line, FMT_GEN) 7
+                call print_message_detail('Number of clim. variables expected: ' // trim(adjustl(line)))
                 call stop_program()
             end if
 
@@ -278,9 +278,6 @@ module climate_forcing
         return
 
 999     ENDDATA = .true.
-
-    !> Format statements.
-1001    format(9999(g15.6, 1x))
 
     end function
 

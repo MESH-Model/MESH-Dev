@@ -163,11 +163,9 @@ program RUNMESH
     !*  ENDDATA: Signals reached end of forcing data.
     logical ENDDATE, ENDDATA
 
-    type(ShedGridParams) :: shd
-    type(fl_ids) :: fls
-
-    type(dates_model) :: ts
-    type(CLIM_INFO) :: cm
+    type(fl_ids) fls
+    type(ShedGridParams) shd
+    type(CLIM_INFO) cm
 
     !> Basin totals for the run.
     real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
@@ -199,13 +197,13 @@ program RUNMESH
     call MPI_Init(ierr)
     if (ierr /= MPI_SUCCESS) then
         call print_warning('Failed to initialize MPI.')
-        write(line, 1001) ierr
+        write(line, FMT_GEN) ierr
         call print_message_detail('Error status: ' // trim(adjustl(line)))
         call print_message('Calling MPI abort...')
         call MPI_Abort(MPI_COMM_WORLD, ierrcode, ierr)
-        write(line, 1001) ierrcode
+        write(line, FMT_GEN) ierrcode
         call print_message_detail('Error code: ' // trim(adjustl(line)))
-        write(line, 1001) ierr
+        write(line, FMT_GEN) ierr
         call print_message_detail('Error status: ' // trim(adjustl(line)))
     end if
 
@@ -253,7 +251,7 @@ program RUNMESH
 
 !-    call counter_init()
 
-    call READ_INITIAL_INPUTS(fls, shd, ts, cm, RELEASE_STRING)
+    call READ_INITIAL_INPUTS(fls, shd, cm, RELEASE_STRING)
     call print_message('')
 
     !> Assign shed values to local variables.
@@ -291,7 +289,7 @@ program RUNMESH
 
     !> Initialize output fields.
     if (ipid == 0) then
-        if (OUTFIELDSFLAG == 1) call init_out(fls, shd, ts)
+        if (OUTFIELDSFLAG == 1) call init_out(fls, shd)
     end if !(ipid == 0) then
 
     FRAME_NO_NEW = 1
@@ -429,7 +427,7 @@ program RUNMESH
                 do i = 1, NR2C
                     read(56, *, iostat = ierr) GRD(i), GAT(i), GRDGAT(i), (R2C_ATTRIBUTES(i, j), j = 1, 3)
                     if (ierr /= 0) then
-                        write(line, 1001) i + 1
+                        write(line, FMT_GEN) i + 1
                         call print_error('Error reading record: ' // trim(line))
                         call print_message('The first 3 columns should contain values of 0 or 1.')
                         call print_message('The last 3 columns should contain information about the variable.')
@@ -480,17 +478,17 @@ program RUNMESH
         call print_message('')
         call print_message('Configuration summary')
         call print_message('')
-        write(line, 1001) NA
+        write(line, FMT_GEN) NA
         call print_message_detail('Number of grids: ' // trim(adjustl(line)))
-        write(line, 1001) shd%AL
+        write(line, FMT_GEN) shd%AL
         call print_message_detail('Side length of grid: ' // trim(adjustl(line)) // ' m')
-        write(line, 1001) NTYPE
+        write(line, FMT_GEN) NTYPE
         call print_message_detail('Number of GRUs: ' // trim(adjustl(line)))
-        write(line, 1001) shd%lc%NML
+        write(line, FMT_GEN) shd%lc%NML
         call print_message_detail('Number of land-based tiles: ' // trim(adjustl(line)))
-        write(line, 1001) shd%NRVR
+        write(line, FMT_GEN) shd%NRVR
         call print_message_detail('Number of river classes: ' // trim(adjustl(line)))
-        write(line, 1001) (NA - shd%NAA)
+        write(line, FMT_GEN) (NA - shd%NAA)
         call print_message_detail('Number of outlets: ' // trim(adjustl(line)))
         call print_screen('')
     end if
@@ -1027,7 +1025,7 @@ program RUNMESH
     !> End program if not the head node.
     if (ipid /= 0) then
         if (DIAGNOSEMODE) then
-            write(line, 1001) ipid
+            write(line, FMT_GEN) ipid
             call print_screen('Node ' // trim(adjustl(line)) // ' is existing.')
         end if
         goto 999
@@ -1304,20 +1302,20 @@ program RUNMESH
         call print_message('')
         call print_message('End of run totals')
         call print_message('')
-        write(line, 1001) TOTAL_PRE
+        write(line, FMT_GEN) TOTAL_PRE
         call print_message_detail('Total Precipitation         (mm) =' // trim(line))
-        write(line, 1001) TOTAL_EVAP
+        write(line, FMT_GEN) TOTAL_EVAP
         call print_message_detail('Total Evaporation           (mm) =' // trim(line))
-        write(line, 1001) TOTAL_ROF
+        write(line, FMT_GEN) TOTAL_ROF
         call print_message_detail('Total Runoff                (mm) =' // trim(line))
-        write(line, 1001) (STG_FIN - STG_INI), STG_INI, STG_FIN
+        write(line, FMT_GEN) (STG_FIN - STG_INI), STG_INI, STG_FIN
         call print_message_detail('Storage(Change/Init/Final)  (mm) =' // trim(line))
         call print_message('')
-        write(line, 1001) TOTAL_ROFO
+        write(line, FMT_GEN) TOTAL_ROFO
         call print_message_detail('Total Overland flow         (mm) =' // trim(line))
-        write(line, 1001) TOTAL_ROFS
+        write(line, FMT_GEN) TOTAL_ROFS
         call print_message_detail('Total Interflow             (mm) =' // trim(line))
-        write(line, 1001) TOTAL_ROFB
+        write(line, FMT_GEN) TOTAL_ROFB
         call print_message_detail('Total Baseflow              (mm) =' // trim(line))
         call print_message('')
 
@@ -1328,15 +1326,12 @@ program RUNMESH
         !> Run time (to file only).
         call print_echo_txt('')
         call cpu_time(endprog)
-        write(line, 1001) (endprog - startprog)
+        write(line, FMT_GEN) (endprog - startprog)
         call print_echo_txt('Time = ' // trim(adjustl(line)) // ' seconds.')
     end if
 
 999     continue
 
     call stop_program()
-
-    !> Format statements.
-1001    format(9999(g15.6, 1x))
 
 end program

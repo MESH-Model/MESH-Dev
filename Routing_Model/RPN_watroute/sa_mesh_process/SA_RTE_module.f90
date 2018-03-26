@@ -146,7 +146,7 @@ module SA_RTE_module
         if (.not. SA_RTE_flgs%PROCESS_ACTIVE) return
 
         !> Print that the module is active.
-        call print_message("SA_RTE component ACTIVATED")
+        call print_message('SA_RTE component ACTIVATED')
 
         !> Allocate and initialize the appropriate variables.
         if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then

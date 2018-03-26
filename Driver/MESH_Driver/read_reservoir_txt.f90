@@ -39,8 +39,13 @@ subroutine read_reservoir_txt(shd, iun, fname, nb)
     !*  -   b(n, :): Release curve coefficients.
 
     !> Open the file.
-    call print_screen('READING: ' // trim(fname))
-    open(iun, file = fname, status = 'old', action = 'read', err = 997)
+    call print_screen('READING: ' // trim(adjustl(fname)))
+    call print_echo_txt(fname)
+    open(iun, file = fname, status = 'old', action = 'read', iostat = ierr)
+    if (ierr /= 0) then
+        call print_error('Unable to open file. Check if the file exists.')
+        call stop_program()
+    end if
 
     !> Read the number of locations.
     read(iun, *, err = 999) fms%rsvr%n, i, fms%rsvr%rlsmeas%dts
@@ -62,23 +67,16 @@ subroutine read_reservoir_txt(shd, iun, fname, nb)
 
     return
 
-    !> Stop: File not found.
-997 call print_error('Unable to open file.')
-    call stop_program()
-
     !> Stop: Error allocating variables.
 998 call print_error('Unable to allocate variables.')
     call stop_program()
 
     !> Stop: Premature end of file.
 999 call print_error('Unable to read from file.')
-    write(line, 1001) fms%rsvr%n
+    write(line, FMT_GEN) fms%rsvr%n
     call print_message('Number of reservoirs expected: ' // trim(adjustl(line)))
-    write(line, 1001) i
+    write(line, FMT_GEN) i
     call print_message('Number found: ' // trim(adjustl(line)))
     call stop_program()
-
-    !> Format statements.
-1001    format(9999(g15.6, 1x))
 
 end subroutine

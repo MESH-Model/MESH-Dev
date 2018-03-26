@@ -38,7 +38,13 @@ subroutine read_shed_r2c(shd, iun, fname)
     character(len = DEFAULT_LINE_LENGTH) line
 
     !> Open the file and read the header.
-    call open_ensim_file(iun, fname, ierr, VERBOSEMODE)
+    call print_screen('READING: ' // trim(adjustl(fname)))
+    call print_echo_txt(fname)
+    call open_ensim_file(iun, fname, ierr)
+    if (ierr /= 0) then
+        call print_error('Unable to open file. Check if the file exists.')
+        call stop_program()
+    end if
     call parse_header_ensim(iun, fname, vkeyword, nkeyword, ierr)
 
     !> Get keywords.
@@ -86,10 +92,10 @@ subroutine read_shed_r2c(shd, iun, fname)
     if (shd%NA < 1 .or. shd%NAA < 1) then
         call print_error('Bad grid configuration. At least one grid must exist inside the basin.')
         call print_message('The number of outlets should be at least 1 greater than the number of grids inside the basin.')
-        write(line, 1001) shd%NA
-        call print_message_detail('Number of grids (from file): ' // trim(line))
-        write(line, 1001) (shd%NAA - shd%NA)
-        call print_message_detail('Number of outlets (from file): ' // trim(line))
+        write(line, FMT_GEN) shd%NA
+        call print_message_detail('Number of grids (from file): ' // trim(adjustl(line)))
+        write(line, FMT_GEN) (shd%NAA - shd%NA)
+        call print_message_detail('Number of outlets (from file): ' // trim(adjustl(line)))
         call stop_program()
     end if
 
@@ -99,8 +105,8 @@ subroutine read_shed_r2c(shd, iun, fname)
         shd%IROUGH(shd%NA), &
         shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1), stat = ierr)
     if (ierr /= 0) then
-        write(line, 1001) ierr
-        call print_error('Unable to allocate grid variables (error code: ' // trim(line) // ').')
+        write(line, FMT_GEN) ierr
+        call print_error("Unable to allocate 'shd' variables (error code: " // trim(adjustl(line)) // ").")
         call stop_program()
     end if
     shd%RNKGRD = 0; shd%xxx = 0; shd%yyy = 0
@@ -141,8 +147,8 @@ subroutine read_shed_r2c(shd, iun, fname)
         shd%DRDN(shd%NA), &
         stat = ierr)
     if (ierr /= 0) then
-        write(line, 1001) ierr
-        call print_error('Unable to allocate grid variables (error code: ' // trim(line) // ').')
+        write(line, FMT_GEN) ierr
+        call print_error("Unable to allocate 'shd' variables (error code: " // trim(adjustl(line)) // ").")
         call stop_program()
     end if
     shd%NEXT = 0
@@ -204,8 +210,8 @@ subroutine read_shed_r2c(shd, iun, fname)
         !> Assign the data to a vector.
         call r2c_to_rank(iun, fname, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, VERBOSEMODE)
         if (.not. allocated(ffield)) then
-            write(line, 1001) l
-            call print_warning('Unable to read Attribute ' // trim(adjustl(line)) // '.')
+            write(line, FMT_GEN) l
+            call print_warning('Unable to read Attribute ' // trim(adjustl(line)) // '.', PAD_3)
             cycle
         end if
 
@@ -215,8 +221,5 @@ subroutine read_shed_r2c(shd, iun, fname)
 
     !> Close the file to free the unit.
     close(iun)
-
-    !> Format statements.
-1001    format(9999(g15.6, 1x))
 
 end subroutine

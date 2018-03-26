@@ -143,23 +143,20 @@ module PBSM_module
         call print_message('PBSM (blowing snow) component ACTIVE.')
         if (DIAGNOSEMODE) then
             call print_echo_txt('PBSMFLAG on')
-            write(line, 1001) 'GRUs ->', (m, m = 1, shd%lc%NTYPE)
+            write(line, FMT_GEN) 'GRUs ->', (m, m = 1, shd%lc%NTYPE)
             call print_echo_txt(line)
-            write(line, 1001) 'Fetch', (pbsm%pm_gru%fetch(m), m = 1, shd%lc%NTYPE)
+            write(line, FMT_GEN) 'Fetch', (pbsm%pm_gru%fetch(m), m = 1, shd%lc%NTYPE)
             call print_echo_txt(line)
-            write(line, 1001) 'Ht', (pbsm%pm_gru%Ht(m), m = 1, shd%lc%NTYPE)
+            write(line, FMT_GEN) 'Ht', (pbsm%pm_gru%Ht(m), m = 1, shd%lc%NTYPE)
             call print_echo_txt(line)
-            write(line, 1001) 'N_S', (pbsm%pm_gru%N_S(m), m = 1, shd%lc%NTYPE)
+            write(line, FMT_GEN) 'N_S', (pbsm%pm_gru%N_S(m), m = 1, shd%lc%NTYPE)
             call print_echo_txt(line)
-            write(line, 1001) 'A_S', (pbsm%pm_gru%A_S(m), m = 1, shd%lc%NTYPE)
+            write(line, FMT_GEN) 'A_S', (pbsm%pm_gru%A_S(m), m = 1, shd%lc%NTYPE)
             call print_echo_txt(line)
-            write(line, 1001) 'Distrib', (pbsm%pm_gru%Distrib(m), m = 1, shd%lc%NTYPE)
+            write(line, FMT_GEN) 'Distrib', (pbsm%pm_gru%Distrib(m), m = 1, shd%lc%NTYPE)
             call print_echo_txt(line)
             call print_echo_txt('')
         end if
-
-        !> Format statements.
-1001    format(9999(g15.6, 1x))
 
     end subroutine
 

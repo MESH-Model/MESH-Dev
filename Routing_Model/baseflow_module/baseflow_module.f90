@@ -87,7 +87,7 @@ module baseflow_module
             case (1, 2)
                 call print_message('BASEFLOW component ACTIVATED')
             case default
-                write(line, 1001) bflm%BASEFLOWFLAG
+                write(line, FMT_GEN) bflm%BASEFLOWFLAG
                 call print_warning('BASEFLOWFLAG ' // trim(adjustl(line)) // ' not supported.')
         end select
         if (DIAGNOSEMODE) then
@@ -103,35 +103,35 @@ module baseflow_module
                 case (1)
                     line = 'BASEFLOWFLAG  luo_2012 ' // adjustl(line)
                     call print_message_detail(line)
-                    write(line, 1001) 'WRCHRG_INI', bflm%vs%WrchrgIni
+                    write(line, FMT_GEN) 'WRCHRG_INI', bflm%vs%WrchrgIni
                     call print_message_detail(line)
-                    write(line, 1001) 'QB_INI', bflm%vs%QbIni
+                    write(line, FMT_GEN) 'QB_INI', bflm%vs%QbIni
                     call print_message_detail(line)
-                    write(line, 1001) 'DGWSH', (bflm%pm_gru%dgw(i), i = 1, NTYPE)
+                    write(line, FMT_GEN) 'DGWSH', (bflm%pm_gru%dgw(i), i = 1, NTYPE)
                     call print_message_detail(line)
-                    write(line, 1001) 'AGWSH', (bflm%pm_gru%agw(i), i = 1, NTYPE)
+                    write(line, FMT_GEN) 'AGWSH', (bflm%pm_gru%agw(i), i = 1, NTYPE)
                     call print_message_detail(line)
                 case (2)
                     line = 'BASEFLOWFLAG  wf_lzs ' // adjustl(line)
                     call print_message_detail(line)
                     if (any(bflm%pm_gru%pwr /= 0.0)) then
-                        write(line, 1001) 'pwr_gru', (bflm%pm_gru%pwr(i), i = 1, NTYPE)
+                        write(line, FMT_GEN) 'pwr_gru', (bflm%pm_gru%pwr(i), i = 1, NTYPE)
                         call print_message_detail(line)
                     else if (any(bflm%pm_iak%pwr /= 0.0)) then
-                        write(line, 1001) 'pwr_iak', (bflm%pm_iak%pwr(i), i = 1, NRVR)
+                        write(line, FMT_GEN) 'pwr_iak', (bflm%pm_iak%pwr(i), i = 1, NRVR)
                         call print_message_detail(line)
                     else if (any(bflm%pm_grid%pwr /= 0.0)) then
-                        write(line, 1001) 'pwr_grid (min., max.)', minval(bflm%pm_grid%pwr), maxval(bflm%pm_grid%pwr)
+                        write(line, FMT_GEN) 'pwr_grid (min., max.)', minval(bflm%pm_grid%pwr), maxval(bflm%pm_grid%pwr)
                         call print_message_detail(line)
                     end if
                     if (any(bflm%pm_gru%pwr /= 0.0)) then
-                        write(line, 1001) 'flz_gru', (bflm%pm_gru%flz(i), i = 1, NTYPE)
+                        write(line, FMT_GEN) 'flz_gru', (bflm%pm_gru%flz(i), i = 1, NTYPE)
                         call print_message_detail(line)
                     else if (any(bflm%pm_iak%pwr /= 0.0)) then
-                        write(line, 1001) 'flz_iak', (bflm%pm_iak%flz(i), i = 1, NRVR)
+                        write(line, FMT_GEN) 'flz_iak', (bflm%pm_iak%flz(i), i = 1, NRVR)
                         call print_message_detail(line)
                     else if (any(bflm%pm_grid%pwr /= 0.0)) then
-                        write(line, 1001) 'flz_grid (min., max.)', minval(bflm%pm_grid%flz), maxval(bflm%pm_grid%flz)
+                        write(line, FMT_GEN) 'flz_grid (min., max.)', minval(bflm%pm_grid%flz), maxval(bflm%pm_grid%flz)
                         call print_message_detail(line)
                     end if
             end select
@@ -185,9 +185,6 @@ module baseflow_module
                     close(iun)
             end select
         end if
-
-        !> Format statements.
-1001    format(9999(g15.6, 1x))
 
     end subroutine
 
