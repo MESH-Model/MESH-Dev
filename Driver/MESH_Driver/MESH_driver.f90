@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1330'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1334'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -960,15 +960,15 @@ program RUNMESH
 
         if (ipid == 0) then
 
+            !> Accumulated outputs (including non-zero value read from resume file).
+            if (ro%RUNBALWB) then
+                DAILY_PRE = DAILY_PRE + sum(out%grid%pre%ts*shd%FRAC)*ic%dts
+                DAILY_EVAP = DAILY_EVAP + sum(out%grid%evap%ts*shd%FRAC)*ic%dts
+                DAILY_ROF = DAILY_ROF + sum(out%grid%rof%ts*shd%FRAC)*ic%dts
+            end if
+
             !> Write output to the console.
             if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
-
-                !> Accumulated outputs (including non-zero value read from resume file).
-                if (ro%RUNBALWB) then
-                    DAILY_PRE = DAILY_PRE + sum(out%grid%pre%d*shd%FRAC)*ic%dts
-                    DAILY_EVAP = DAILY_EVAP + sum(out%grid%evap%d*shd%FRAC)*ic%dts
-                    DAILY_ROF = DAILY_ROF + sum(out%grid%rof%d*shd%FRAC)*ic%dts
-                end if
 
                 if (VERBOSEMODE) then
                     write(line, '(i5, i4)') ic%now%year, ic%now%jday
