@@ -15,17 +15,22 @@ module sa_mesh_utilities
     !* ECHO_TXT_IUN: Unit of summary file (for write).
     integer, parameter :: ECHO_SCN_IUN = 6, ECHO_TXT_IUN = 58
 
-    !> String constants.
-    !* DEFAULT_LINE_LENGTH: Default length of a single line.
-    !* DEFAULT_FIELD_LENGTH: Default length of a field (e.g., in a line).
+    !> Padding constants.
     !* PAD_1: Padding of '1x'.
     !* PAD_3: Padding of '3x'.
     !* PAD_NONE: No padding.
-    integer, parameter :: DEFAULT_LINE_LENGTH = 1000
-    integer, parameter :: DEFAULT_FIELD_LENGTH = 20
     integer, parameter :: PAD_1 = 1
     integer, parameter :: PAD_3 = 3
     integer, parameter :: PAD_NONE = 0
+
+    !> Line and field length constants.
+    !* DEFAULT_LINE_LENGTH: Default length of a single line.
+    !* DEFAULT_FIELD_LENGTH: Default length of a field (e.g., in a line).
+    integer, parameter :: DEFAULT_LINE_LENGTH = 1000
+    integer, parameter :: DEFAULT_FIELD_LENGTH = 20
+
+    !> Format constants.
+    character(len = *), parameter :: FMT_GEN = "(99999(g15.6, 1x))"
 
     contains
 
@@ -105,8 +110,6 @@ module sa_mesh_utilities
 
         !> Input variables.
         character(len = *), intent(in) :: message
-
-        !> Input variables (optional).
         integer, intent(in), optional :: level
 
         !> Print to screen.
@@ -120,39 +123,36 @@ module sa_mesh_utilities
     !> Description:
     !>  Print the provided message to screen and to the summary file.
     !>  Lead the message with "WARNING:".
-    subroutine print_warning(message)
+    !>
+    !> Variables:
+    !>  message: Message to output.
+    !>  level: Offset from the leading edge of the line.
+    subroutine print_warning(message, level)
 
         !> Input variables.
         character(len = *), intent(in) :: message
+        integer, intent(in), optional :: level
 
         !> Flush the message.
-        call print_message('WARNING: ' // trim(adjustl(message)))
+        call print_message('WARNING: ' // trim(adjustl(message)), level)
 
     end subroutine
 
     !> Description:
     !>  Print the provided message to screen and to the summary file.
     !>  Lead the message with "REMARK:".
-    subroutine print_remark(message)
+    !>
+    !> Variables:
+    !>  message: Message to output.
+    !>  level: Offset from the leading edge of the line.
+    subroutine print_remark(message, level)
 
         !> Input variables.
         character(len = *), intent(in) :: message
+        integer, intent(in), optional :: level
 
         !> Flush the message.
-        call print_message('REMARK: ' // trim(adjustl(message)))
-
-    end subroutine
-
-    !> Description:
-    !>  Print the provided message to screen and to the summary file
-    !>  only if 'DIAGNOSEMODE' is enabled.
-    subroutine print_diagnostic_info(message)
-
-        !> Input variables.
-        character(len = *), intent(in) :: message
-
-        !> Flush the message.
-        if (DIAGNOSEMODE) call print_message(message)
+        call print_message('REMARK: ' // trim(adjustl(message)), level)
 
     end subroutine
 
@@ -160,6 +160,9 @@ module sa_mesh_utilities
     !>  Print the provided message to screen and to the summary file.
     !>  Lead the message with "ERROR: ".
     !>  Write an extra line before the message.
+    !>
+    !> Variables:
+    !>  message: Message to output.
     subroutine print_error(message)
 
         !> Input variables.
