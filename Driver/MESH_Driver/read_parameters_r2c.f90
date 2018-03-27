@@ -1,22 +1,24 @@
-!>
 !> Description:
-!>  Subroutine to read parameters from file, in r2c format. Parameter
-!>  values are saved directly to the shared parameter object at the
-!>  grid level, accessible by sa_mesh_shared_variables.
+!>  Subroutine to read parameters from a single-frame 'r2c' format file.
+!>  Values are parsed by order of RANK and stored in variables that must
+!>  allocated 1:NA.
 !>
 !> Input:
-!*  shd: Basin shed object, containing information about the grid
-!*      definition read from MESH_drainage_database.r2c.
-!*  iun: Unit of the input file (default: 100).
+!*  shd: Basin 'shed' object (properties).
+!*  iun: Unit of the input file.
 !*  fname: Full path to the file (default: './MESH_input_parameters.r2c').
-!>
 subroutine read_parameters_r2c(shd, iun, fname)
 
+    !> strings: For 'lowercase' function.
+    !> sa_mesh_variables: Required for MESH variables, parameters.
+    !> sa_mesh_utilities: Required for printing/writing messages, VERBOSEMODE, DIAGNOSEMODE.
+    !> ensim_io: Required for read 'r2c' format file.
     use strings
-    use mpi_module
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
+    use sa_mesh_utilities
     use ensim_io
 
+    !> Process modules: Required for process variables, parameters.
     use RUNCLASS36_variables
     use RUNSVS113_variables
     use baseflow_module
@@ -26,41 +28,45 @@ subroutine read_parameters_r2c(shd, iun, fname)
     implicit none
 
     !> Input variables.
-    type(ShedGridParams) :: shd
-    integer :: iun
-    character(len = *) :: fname
+    type(ShedGridParams), intent(in) :: shd
+    integer, intent(in) :: iun
+    character(len = *), intent(in) :: fname
 
     !> Local variables.
     type(ensim_keyword), dimension(:), allocatable :: vkeyword
     type(ensim_attr), dimension(:), allocatable :: vattr
-    integer nkeyword, nattr, iattr, ilvl, i, ierr
+    integer nkeyword, nattr, ilvl, n, l, i, istat, ierr
     character(len = MAX_WORD_LENGTH) tfield, tlvl
     real, dimension(:), allocatable :: ffield
-    logical verbose
-
-    !> Local variables.
-    verbose = (ro%VERBOSEMODE > 0)
+    character(len = DEFAULT_LINE_LENGTH) line
 
     !> Open the file and read the header.
-    call open_ensim_file(iun, fname, ierr, verbose)
+    call print_screen('READING: ' // trim(adjustl(fname)))
+    call print_echo_txt(fname)
+    call open_ensim_file(iun, fname, ierr)
+    if (ierr /= 0) then
+        call print_error('Unable to open file. Check if the file exists.')
+        call stop_program()
+    end if
     call parse_header_ensim(iun, fname, vkeyword, nkeyword, ierr)
     call validate_header_spatial( &
         fname, vkeyword, nkeyword, &
         shd%xCount, shd%xDelta, shd%xOrigin, shd%yCount, shd%yDelta, shd%yOrigin, &
-        verbose)
+        VERBOSEMODE)
 
-    !> Read and parse attributes in the header.
+    !> Get the list of attributes.
     call parse_header_attribute_ensim(iun, fname, vkeyword, nkeyword, vattr, nattr, ierr)
 
-    !> Read and parse the single frame data.
+    !> Read and parse the attribute data.
     call load_data_r2c(iun, fname, vattr, nattr, shd%xCount, shd%yCount, .false., ierr)
 
     !> Distribute the data to the appropriate variable.
     allocate(ffield(shd%NA))
-    do iattr = 1, nattr
+    n = 0
+    do l = 1, nattr
 
         !> Extract variable name and level.
-        tfield = lowercase(vattr(iattr)%attr)
+        tfield = lowercase(vattr(l)%attr)
         i = index(trim(adjustl(tfield)), ' ')
         ilvl = 0
         if (i > 0) then
@@ -71,9 +77,11 @@ subroutine read_parameters_r2c(shd, iun, fname)
         end if
 
         !> Assign the data to a vector.
-        call r2c_to_rank(iun, fname, vattr, nattr, iattr, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, verbose)
+        call r2c_to_rank(iun, fname, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, VERBOSEMODE)
 
         !> Determine the variable.
+        if (DIAGNOSEMODE) call print_message_detail('Reading parameter: ' // trim(tfield) // '.')
+        istat = 0
         select case (adjustl(tfield))
 
             !> RUNCLASS36 and RUNSVS113.
@@ -90,6 +98,8 @@ subroutine read_parameters_r2c(shd, iun, fname)
                             pm_grid%cp%fcan(:, 4) = ffield
                         case ('ur')
                             pm_grid%cp%fcan(:, 5) = ffield
+                        case default
+                            istat = 1
                     end select
                 end if
             case ('lnz0')
@@ -105,6 +115,8 @@ subroutine read_parameters_r2c(shd, iun, fname)
                             pm_grid%cp%lnz0(:, 4) = ffield
                         case ('ur')
                             pm_grid%cp%lnz0(:, 5) = ffield
+                        case default
+                            istat = 1
                     end select
                 end if
             case ('sdep')
@@ -120,7 +132,8 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     pm_grid%hp%dd = ffield
 
                     !> Unit conversion if units are km km-2.
-                    if (index(lowercase(vattr(iattr)%units), 'km') > 0) then
+                    if (index(lowercase(vattr(l)%units), 'km') > 0) then
+                        call print_remark("'" // trim(vattr(l)%attr) // "' converted from 'km km -2' to 'm m-2'.", PAD_3)
                         pm_grid%hp%dd = pm_grid%hp%dd/1000.0
                     end if
                 end if
@@ -132,8 +145,8 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         end do
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%sand(:, ilvl) = ffield
-                    else if (verbose) then
-                        print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
+                    else
+                        istat = 1
                     end if
                 end if
             case ('clay')
@@ -144,8 +157,8 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         end do
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%clay(:, ilvl) = ffield
-                    else if (verbose) then
-                        print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
+                    else
+                        istat = 1
                     end if
                 end if
             case ('orgm')
@@ -156,8 +169,8 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         end do
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%orgm(:, ilvl) = ffield
-                    else if (verbose) then
-                        print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
+                    else
+                        istat = 1
                     end if
                 end if
 
@@ -203,18 +216,27 @@ subroutine read_parameters_r2c(shd, iun, fname)
             case ('distrib')
                 if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Distrib = ffield
 
-            !> Print a warning if the variable name is not recognized.
+            !> Unrecognized.
             case default
-                if (verbose) print 1120, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
-
+                istat = 2
         end select
+
+        !> Status flags.
+        if (istat == 1) then
+            line = "'" // trim(vattr(l)%attr) // "' has an unrecognized category or level out-of-bounds: " // trim(tlvl)
+            call print_warning(line, PAD_3)
+        else if (istat == 2) then
+            call print_warning("'" // trim(vattr(l)%attr) // "' is not recognized.", PAD_3)
+        else if (istat == 0) then
+            n = n + 1
+        end if
     end do
+
+    !> Print number of active parameters.
+    write(line, FMT_GEN) n
+    call print_message_detail('Active parameters in file: ' // trim(adjustl(line)))
 
     !> Close the file to free the unit.
     close(iun)
-
-1110    format(3x, 999(1x, g16.9))
-1120    format(3x, 'WARNING: Unrecognized attribute in ', (a), ': ', (a))
-1130    format(3x, 'WARNING: Unrecognized category or level out-of-bounds in ', (a), ': ', (a))
 
 end subroutine

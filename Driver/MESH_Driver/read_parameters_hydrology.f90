@@ -13,8 +13,9 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !> Required for file object and hydrology.ini file index.
     use model_files_variables
 
-    !> For the 'ShedGridParams' type, 'ro%' run options type, and SA_MESH parameters.
-    use sa_mesh_shared_variables
+    !> For the 'ShedGridParams' type and SA_MESH parameters.
+    use sa_mesh_variables
+    use sa_mesh_utilities
 
     !> Required for 'FROZENSOILINFILFLAG'.
     use FLAGS
@@ -30,17 +31,16 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     implicit none
 
     !> Local variables for parsing strings.
-    integer, parameter :: MaxLenField = 20, MaxArgs = 50, MaxLenLine = 500
-    character(MaxLenLine) in_line
-    character(MaxLenField), dimension(MaxArgs) :: out_args
+    character(len = DEFAULT_LINE_LENGTH) line
+    character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
     integer nargs
-    character(1) :: delim = ' '
 
     !> Local variables for check active variables (Version 2.0).
     integer :: ikey = 0, ikeystate = 0
 
-    type(ShedGridParams) :: shd
-    type(fl_ids):: fls
+    !> Input variables.
+    type(ShedGridParams), intent(in) :: shd
+    type(fl_ids), intent(in) :: fls
 
     !> Local variables.
     integer NTYPE, NA, NRVR, iun, ierr, n, k, i, m, j
@@ -58,15 +58,14 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     NA = shd%NA
     NTYPE = shd%lc%NTYPE
 
-    if (ro%VERBOSEMODE > 0) write(6, 9997, advance = 'no') trim(adjustl(fls%fl(mfk%f23)%fn))
-
+    !> Open the file.
+    call print_screen('READING: ' // trim(adjustl(fls%fl(mfk%f23)%fn)))
+    call print_echo_txt(fls%fl(mfk%f23)%fn)
     iun = fls%fl(mfk%f23)%iun
-    open(iun, file = trim(adjustl(fls%fl(mfk%f23)%fn)), status = 'old', action = 'read', iostat = ierr)
-
-    !> Check for errors opening the file.
-    if (ierr /= 0 .and. ipid == 0) then
-        print 9999, trim(adjustl(fls%fl(mfk%f23)%fn))
-        stop
+    open(iun, file = fls%fl(mfk%f23)%fn, status = 'old', action = 'read', iostat = ierr)
+    if (ierr /= 0) then
+        call print_error('Unable to open file. Check if the file exists.')
+        call stop_program()
     end if
 
     !> Check the file version (if RELFLG = 1.0).
@@ -114,26 +113,23 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !> READ FILE
     !>
 
-    !> Warn parameter warnings will stop the model with DIAGNOSEMODE active.
-    if (FILE_VER == '2.0' .and. ro%DIAGNOSEMODE > 0 .and. ipid == 0) print 9899
-
     !> Option flags.
-    call readline(iun, in_line, ierr)
-    call readline(iun, in_line, ierr)
-    call readline(iun, in_line, ierr)
-    read(in_line, *, iostat = ierr) n
+    call readline(iun, line, ierr)
+    call readline(iun, line, ierr)
+    call readline(iun, line, ierr)
+    read(line, *, iostat = ierr) n
     if (n > 0) then
         do i = 1, n
-            call readline(iun, in_line, ierr)
-            if (index(in_line, '#') > 2) in_line = in_line(1:index(in_line, '#') - 1)
-            if (index(in_line, '!') > 2) in_line = in_line(1:index(in_line, '!') - 1)
-            call compact(in_line)
-            call parse(in_line, delim, out_args, nargs)
+            call readline(iun, line, ierr)
+            if (index(line, '#') > 2) line = line(1:index(line, '#') - 1)
+            if (index(line, '!') > 2) line = line(1:index(line, '!') - 1)
+            call compact(line)
+            call parse(line, ' ', args, nargs)
             if (nargs < 2) cycle
-            select case (lowercase(out_args(1)))
+            select case (lowercase(args(1)))
                 case ('wf_route')
                     do j = 2, nargs
-                        select case (lowercase(out_args(j)))
+                        select case (lowercase(args(j)))
                             case ('rl_shd')
                                 WF_RTE_flgs%RLFLAG = 1
                             case ('cap_shd')
@@ -142,14 +138,14 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                     end do
                 case ('rte')
                     do j = 2, nargs
-                        select case (lowercase(out_args(j)))
+                        select case (lowercase(args(j)))
                             case ('cap_shd')
                                 rteflg%cap_shd = 1
                         end select
                     end do
                 case ('controlled_reservoir')
                     do j = 2, nargs
-                        select case (lowercase(out_args(j)))
+                        select case (lowercase(args(j)))
                             case ('allcols')
                                 fms%rsvr%rlsmeas%readmode = 'n'
                         end select
@@ -174,8 +170,8 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 !-    wfp%aa4 = 1.0
 
     !> Read variables from file.
-    call readline(iun, in_line, ierr)
-    call readline(iun, in_line, ierr)
+    call readline(iun, line, ierr)
+    call readline(iun, line, ierr)
 
     !> Switch between file version.
     select case (FILE_VER)
@@ -185,21 +181,21 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
             !> Read number of channel routing parameters.
             !* n: 'n' is the number of lines (variables) to read.
-            call readline(iun, in_line, ierr)
-            read(in_line, *, iostat = ierr) n
+            call readline(iun, line, ierr)
+            read(line, *, iostat = ierr) n
             if (n > 0) then
                 do i = 1, n
 
                     !> Read from the line.
-                    call readline(iun, in_line, ierr)
+                    call readline(iun, line, ierr)
                     if (ierr /= 0) goto 919
 
                     !> Stop if the parameter has no values.
-                    call parse(in_line, delim, out_args, nargs)
+                    call parse(line, ' ', args, nargs)
                     if (nargs < 2) goto 918
 
                     !> Switch between active values.
-                    select case (lowercase(out_args(1)))
+                    select case (lowercase(args(1)))
 
                         !> WF_R2 (r2).
                         case ('wf_r2')
@@ -207,7 +203,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), wfp%r2(j), ierr)
+                                    call value(args(j + 1), wfp%r2(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -218,7 +214,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), wfp%r1(j), ierr)
+                                    call value(args(j + 1), wfp%r1(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -229,7 +225,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), wfp%aa1(j), ierr)
+                                    call value(args(j + 1), wfp%aa1(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -240,7 +236,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), wfp%aa2(j), ierr)
+                                    call value(args(j + 1), wfp%aa2(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -251,7 +247,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), wfp%aa3(j), ierr)
+                                    call value(args(j + 1), wfp%aa3(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -262,7 +258,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), wfp%aa4(j), ierr)
+                                    call value(args(j + 1), wfp%aa4(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -273,7 +269,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), rtepm_iak%r1n(j), ierr)
+                                    call value(args(j + 1), rtepm_iak%r1n(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -284,7 +280,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), rtepm_iak%r2n(j), ierr)
+                                    call value(args(j + 1), rtepm_iak%r2n(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -295,7 +291,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), rtepm_iak%mndr(j), ierr)
+                                    call value(args(j + 1), rtepm_iak%mndr(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -306,7 +302,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), rtepm_iak%widep(j), ierr)
+                                    call value(args(j + 1), rtepm_iak%widep(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -317,7 +313,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), bflm%pm_iak%flz(j), ierr)
+                                    call value(args(j + 1), bflm%pm_iak%flz(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -328,7 +324,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), bflm%pm_iak%pwr(j), ierr)
+                                    call value(args(j + 1), bflm%pm_iak%pwr(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -339,7 +335,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), rtepm_iak%aa2(j), ierr)
+                                    call value(args(j + 1), rtepm_iak%aa2(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -350,7 +346,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), rtepm_iak%aa3(j), ierr)
+                                    call value(args(j + 1), rtepm_iak%aa3(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -361,7 +357,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), rtepm_iak%aa4(j), ierr)
+                                    call value(args(j + 1), rtepm_iak%aa4(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -376,8 +372,8 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
         !> Original format of the hydrology.ini file.
         case default
-            call readline(iun, in_line, ierr)
-            if (WF_RTE_flgs%PROCESS_ACTIVE) read(in_line, *, iostat = ierr) (wfp%r2(j), j = 1, NRVR)
+            call readline(iun, line, ierr)
+            if (WF_RTE_flgs%PROCESS_ACTIVE) read(line, *, iostat = ierr) (wfp%r2(j), j = 1, NRVR)
             if (ierr /= 0 .and. ipid == 0) then
                 print 8110, NRVR
                 goto 998
@@ -412,10 +408,10 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
     !> Read variables from file.
     !* n: 'n' is the number of lines (variables) to read.
-    call readline(iun, in_line, ierr)
-    call readline(iun, in_line, ierr)
-    call readline(iun, in_line, ierr)
-    read(in_line, *, iostat = ierr) n
+    call readline(iun, line, ierr)
+    call readline(iun, line, ierr)
+    call readline(iun, line, ierr)
+    read(line, *, iostat = ierr) n
     if (n > 0) then
 
         !> Switch between file version.
@@ -427,18 +423,18 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                 do i = 1, n
 
                     !> Read from the line.
-                    call readline(iun, in_line, ierr)
+                    call readline(iun, line, ierr)
                     if (ierr /= 0) goto 929
 
                     !> Stop if the parameter has no values.
-                    call parse(in_line, delim, out_args, nargs)
+                    call parse(line, ' ', args, nargs)
                     ikey = 0
 
                     !> Stop if the parameter has no values.
                     if (nargs < 2) goto 928
 
                     !> Switch between active values.
-                    select case (lowercase(out_args(1)))
+                    select case (lowercase(args(1)))
 
                         !> FROZENSOILINFILFLAG == 1 (infiltration into frozen soils).
 
@@ -447,7 +443,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                             if (FROZENSOILINFILFLAG == 0) then
                                 ikey = 1
                             else
-                                call value(out_args(2), SOIL_POR_MAX, ierr)
+                                call value(args(2), SOIL_POR_MAX, ierr)
                                 if (ierr /= 0) goto 921
                             end if
 
@@ -456,7 +452,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                             if (FROZENSOILINFILFLAG == 0) then
                                 ikey = 1
                             else
-                                call value(out_args(2), SOIL_DEPTH, ierr)
+                                call value(args(2), SOIL_DEPTH, ierr)
                                 if (ierr /= 0) goto 921
                             end if
 
@@ -465,7 +461,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                             if (FROZENSOILINFILFLAG == 0) then
                                 ikey = 1
                             else
-                                call value(out_args(2), S0, ierr)
+                                call value(args(2), S0, ierr)
                                 if (ierr /= 0) goto 921
                             end if
 
@@ -474,7 +470,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                             if (FROZENSOILINFILFLAG == 0) then
                                 ikey = 1
                             else
-                                call value(out_args(2), T_ICE_LENS, ierr)
+                                call value(args(2), T_ICE_LENS, ierr)
                                 if (ierr /= 0) goto 921
                             end if
 
@@ -484,7 +480,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NYEARS
-                                    call value(out_args(j + 1), t0_ACC(j), ierr)
+                                    call value(args(j + 1), t0_ACC(j), ierr)
                                     if (ierr /= 0 .and. ipid == 0) then
                                         print 8220, NYEARS
                                         goto 922
@@ -499,7 +495,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                             if (bflm%BASEFLOWFLAG == 0) then
                                 ikey = 1
                             else
-                                call value(out_args(2), bflm%vs%WrchrgIni, ierr)
+                                call value(args(2), bflm%vs%WrchrgIni, ierr)
                                 if (ierr /= 0) goto 921
                             end if
 
@@ -508,7 +504,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                             if (bflm%BASEFLOWFLAG == 0) then
                                 ikey = 1
                             else
-                                call value(out_args(2), bflm%vs%QbIni, ierr)
+                                call value(args(2), bflm%vs%QbIni, ierr)
                                 if (ierr /= 0) goto 921
                             end if
 
@@ -520,7 +516,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                     !> Print warning message for unused variables.
                     ikeystate = ikeystate + ikey
-                    if (ikey > 0 .and. ro%DIAGNOSEMODE > 0 .and. ipid == 0) print 9898, trim(adjustl(out_args(1)))
+                    if (ikey > 0 .and. DIAGNOSEMODE .and. ipid == 0) print 9898, trim(adjustl(args(1)))
 
                 end do
 
@@ -530,8 +526,8 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                 !> Allocate and distribute variables.
                 allocate(INDEPPARVAL(n))
                 do i = 1, n
-                    call readline(iun, in_line, ierr)
-                    read(in_line, *, iostat = ierr) INDEPPARVAL(i)
+                    call readline(iun, line, ierr)
+                    read(line, *, iostat = ierr) INDEPPARVAL(i)
                     if (ierr /= 0) goto 929
                 end do
 
@@ -598,8 +594,8 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !>
 
     !> Read variables from file.
-    call readline(iun, in_line, ierr)
-    call readline(iun, in_line, ierr)
+    call readline(iun, line, ierr)
+    call readline(iun, line, ierr)
 
     !> Switch between file version.
     select case (FILE_VER)
@@ -609,45 +605,45 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
             !> Read variables from file.
             !* n: 'n' is the number of lines (variables) to read.
-            call readline(iun, in_line, ierr)
-            read(in_line, *, iostat = ierr) n
+            call readline(iun, line, ierr)
+            read(line, *, iostat = ierr) n
             if (n > 0) then
                 do i = 1, n
 
                     !> Read from the line.
-                    call readline(iun, in_line, ierr)
+                    call readline(iun, line, ierr)
                     if (ierr /= 0) goto 939
 
                     !> Stop if the parameter has no values.
-                    call parse(in_line, delim, out_args, nargs)
+                    call parse(line, ' ', args, nargs)
                     ikey = 0
 
                     !> Stop if the parameter has no values.
                     if (nargs < 2) goto 938
 
                     !> Switch between active values.
-                    select case (lowercase(out_args(1)))
+                    select case (lowercase(args(1)))
 
                         !> CLASS ponding limits.
 
                         !> ZSNL.
                         case ('zsnl')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), pm_gru%snp%zsnl(j), ierr)
+                                call value(args(j + 1), pm_gru%snp%zsnl(j), ierr)
                                 if (ierr /= 0) goto 931
                             end do
 
                         !> ZPLS.
                         case ('zpls')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), pm_gru%snp%zpls(j), ierr)
+                                call value(args(j + 1), pm_gru%snp%zpls(j), ierr)
                                 if (ierr /= 0) goto 931
                             end do
 
                         !> ZPLG.
                         case ('zplg')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), pm_gru%sfp%zplg(j), ierr)
+                                call value(args(j + 1), pm_gru%sfp%zplg(j), ierr)
                                 if (ierr /= 0) goto 931
                             end do
 
@@ -659,7 +655,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), hp%FRZCROW(1, j), ierr)
+                                    call value(args(j + 1), hp%FRZCROW(1, j), ierr)
                                     if (ierr /= 0) goto 931
                                     hp%FRZCROW(:, j) = hp%FRZCROW(1, j)
                                 end do
@@ -668,7 +664,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                         !> IWF.
                         case ('iwf')
                             do j = 1, NTYPE
-                                call value(out_args(j + 1), pm_gru%tp%iwf(j), ierr)
+                                call value(args(j + 1), pm_gru%tp%iwf(j), ierr)
                                 if (ierr /= 0) goto 931
                             end do
 
@@ -680,7 +676,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), hp%CMAXROW(1, j), ierr)
+                                    call value(args(j + 1), hp%CMAXROW(1, j), ierr)
                                     if (ierr /= 0) goto 931
                                     hp%CMAXROW(:, j) = hp%CMAXROW(1, j)
                                 end do
@@ -692,7 +688,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), hp%CMINROW(1, j), ierr)
+                                    call value(args(j + 1), hp%CMINROW(1, j), ierr)
                                     if (ierr /= 0) goto 931
                                     hp%CMINROW(:, j) = hp%CMINROW(1, j)
                                 end do
@@ -704,7 +700,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), hp%BROW(1, j), ierr)
+                                    call value(args(j + 1), hp%BROW(1, j), ierr)
                                     if (ierr /= 0) goto 931
                                     hp%BROW(:, j) = hp%BROW(1, j)
                                 end do
@@ -716,7 +712,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), hp%K1ROW(1, j), ierr)
+                                    call value(args(j + 1), hp%K1ROW(1, j), ierr)
                                     if (ierr /= 0) goto 931
                                     hp%K1ROW(:, j) = hp%K1ROW(1, j)
                                 end do
@@ -728,7 +724,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), hp%K2ROW(1, j), ierr)
+                                    call value(args(j + 1), hp%K2ROW(1, j), ierr)
                                     if (ierr /= 0) goto 931
                                     hp%K2ROW(:, j) = hp%K2ROW(1, j)
                                 end do
@@ -742,7 +738,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), pbsm%pm_gru%fetch(j), ierr)
+                                    call value(args(j + 1), pbsm%pm_gru%fetch(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -753,7 +749,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), pbsm%pm_gru%Ht(j), ierr)
+                                    call value(args(j + 1), pbsm%pm_gru%Ht(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -764,7 +760,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), pbsm%pm_gru%N_S(j), ierr)
+                                    call value(args(j + 1), pbsm%pm_gru%N_S(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -775,7 +771,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), pbsm%pm_gru%A_S(j), ierr)
+                                    call value(args(j + 1), pbsm%pm_gru%A_S(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -786,7 +782,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), pbsm%pm_gru%Distrib(j), ierr)
+                                    call value(args(j + 1), pbsm%pm_gru%Distrib(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -799,7 +795,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), bflm%pm_gru%dgw(j), ierr)
+                                    call value(args(j + 1), bflm%pm_gru%dgw(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -810,7 +806,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), bflm%pm_gru%agw(j), ierr)
+                                    call value(args(j + 1), bflm%pm_gru%agw(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -823,7 +819,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), bflm%pm_gru%pwr(j), ierr)
+                                    call value(args(j + 1), bflm%pm_gru%pwr(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -834,7 +830,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), bflm%pm_gru%flz(j), ierr)
+                                    call value(args(j + 1), bflm%pm_gru%flz(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -847,7 +843,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), ciprot%jdsow(j), ierr)
+                                    call value(args(j + 1), ciprot%jdsow(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -858,7 +854,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), ciprot%ldini(j), ierr)
+                                    call value(args(j + 1), ciprot%ldini(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -869,7 +865,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), ciprot%lddev(j), ierr)
+                                    call value(args(j + 1), ciprot%lddev(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -880,7 +876,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), ciprot%ldmid(j), ierr)
+                                    call value(args(j + 1), ciprot%ldmid(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -891,7 +887,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), ciprot%ldlate(j), ierr)
+                                    call value(args(j + 1), ciprot%ldlate(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -902,7 +898,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), ciprot%Kcini(j), ierr)
+                                    call value(args(j + 1), ciprot%Kcini(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -913,7 +909,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), ciprot%Kcdev(j), ierr)
+                                    call value(args(j + 1), ciprot%Kcdev(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -924,7 +920,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), ciprot%Kcmid(j), ierr)
+                                    call value(args(j + 1), ciprot%Kcmid(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -935,7 +931,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), ciprot%Kclate(j), ierr)
+                                    call value(args(j + 1), ciprot%Kclate(j), ierr)
                                     if (ierr /= 0) goto 931
                                 end do
                             end if
@@ -948,7 +944,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                     !> Print warning message for unused variables.
                     ikeystate = ikeystate + ikey
-                    if (ikey > 0 .and. ro%DIAGNOSEMODE > 0 .and. ipid == 0) print 9898, trim(adjustl(out_args(1)))
+                    if (ikey > 0 .and. DIAGNOSEMODE .and. ipid == 0) print 9898, trim(adjustl(args(1)))
 
                 end do
 
@@ -960,10 +956,10 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
             !> Read variables from file.
             !* n: 'n' is the number of lines (variables) to read.
             !* i: 'i' is the number of GRUs.
-            call readline(iun, in_line, ierr)
-            read(in_line, *, iostat = ierr) i
-            call readline(iun, in_line, ierr)
-            read(in_line, *, iostat = ierr) n
+            call readline(iun, line, ierr)
+            read(line, *, iostat = ierr) i
+            call readline(iun, line, ierr)
+            read(line, *, iostat = ierr) n
             if (n > 0) then
 
                 !> Check that GRU count matches the GRU count from the shd file.
@@ -985,11 +981,11 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                 end if
 
                 !> Allocate and populate the temporary variable.
-                call readline(iun, in_line, ierr)
+                call readline(iun, line, ierr)
                 allocate(DEPPARVAL(n, NTYPE))
                 do i = 1, n
-                    call readline(iun, in_line, ierr)
-                    read(in_line, *, iostat = ierr) (DEPPARVAL(i, j), j = 1, NTYPE)
+                    call readline(iun, line, ierr)
+                    read(line, *, iostat = ierr) (DEPPARVAL(i, j), j = 1, NTYPE)
                     if (ierr /= 0) goto 939
                 end do
 
@@ -1084,18 +1080,9 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !>
 
 9898    format(3x, "WARNING: The parameter '", (a), "' is active but not used.")
-9899    format(//3x, "WARNING: Parameter warnings will stop the model with DIAGNOSEMODE active.")
 
     !> Close the file.
     close(iun)
-    if (ro%VERBOSEMODE > 0) print 9998
-
-9997    format(/1x, 'READING: ', (a), ' ')
-9998    format('READ: SUCCESSFUL, FILE: CLOSED')
-9999    format('FAILED', &
-               //3x, 'The file could not be opened.', &
-                /3x, 'Ensure the file exists and restart the program.', &
-                /3x, 'Path: ', (a))
 
     goto 999
 
@@ -1103,19 +1090,19 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !> STOP STATEMENTS
     !>
 
-911     print 9110, trim(out_args(1)), j, trim(out_args(j + 1)), NRVR; goto 998
-917     print 9170, trim(out_args(1)); goto 998
+911     print 9110, trim(args(1)), j, trim(args(j + 1)), NRVR; goto 998
+917     print 9170, trim(args(1)); goto 998
 918     print 9180, i, nargs; goto 998
 919     print 9190, i; goto 998
 
-921     print 9210, trim(out_args(1)), trim(out_args(2)); goto 998
-922     print 9220, trim(out_args(1)), j, trim(out_args(j + 1)); goto 998
-927     print 9270, trim(out_args(1)); goto 998
+921     print 9210, trim(args(1)), trim(args(2)); goto 998
+922     print 9220, trim(args(1)), j, trim(args(j + 1)); goto 998
+927     print 9270, trim(args(1)); goto 998
 928     print 9280, i, nargs; goto 998
 929     print 9290, i; goto 998
 
-931     print 9310, trim(out_args(1)), j, trim(out_args(j + 1)), NTYPE; goto 998
-937     print 9370, trim(out_args(1)); goto 998
+931     print 9310, trim(args(1)), j, trim(args(j + 1)), NTYPE; goto 998
+937     print 9370, trim(args(1)); goto 998
 938     print 9380, i, nargs; goto 998
 939     print 9390, i; goto 998
 

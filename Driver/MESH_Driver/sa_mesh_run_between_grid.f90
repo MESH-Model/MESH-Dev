@@ -1,5 +1,15 @@
 module sa_mesh_run_between_grid
 
+    !> 'model_files_variables' required for 'fls' object and file keys.
+    !> 'sa_mesh_variables' required for SA_MESH variables, parameters, and counter.
+    !> 'climate_forcing' required for 'cm' variable.
+    !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
+    use model_files_variables
+    use sa_mesh_variables
+    use climate_forcing
+    use mpi_module
+
+!temp: Outputs.
     use model_files_variabletypes, only: fl_ids
 
     implicit none
@@ -54,25 +64,23 @@ module sa_mesh_run_between_grid
 
     contains
 
-    subroutine run_between_grid_init(shd, fls, cm)
+    subroutine run_between_grid_init(fls, shd, cm)
 
-        use mpi_module
-        use model_files_variables
-        use sa_mesh_shared_variables
-        use FLAGS
-        use climate_forcing
-        use strings
-
-        !> Required for calls to processes.
+        !> Process modules.
         use SA_RTE_module
         use WF_ROUTE_config
         use rte_module
         use save_basin_output
         use cropland_irrigation_between_grid
 
-        type(ShedGridParams) :: shd
-        type(fl_ids) :: fls
-        type(clim_info) :: cm
+!temp: Outputs.
+        use FLAGS
+        use strings
+
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Local variables.
         integer, parameter :: MaxLenField = 20, MaxArgs = 20, MaxLenLine = 100
@@ -92,6 +100,7 @@ module sa_mesh_run_between_grid
             open(86, file = './' // trim(fls%GENDIR_OUT) // '/basin_SWE_alldays.csv')
         end if !(BASINSWEOUTFLAG > 0) then
 
+        RTE_TS = ic%dts
         if (WF_RTE_flgs%PROCESS_ACTIVE) RTE_TS = WF_RTE_flgs%RTE_TS
         if (rteflg%PROCESS_ACTIVE) RTE_TS = rteflg%RTE_TS
 
@@ -303,25 +312,23 @@ module sa_mesh_run_between_grid
 
     end subroutine
 
-    subroutine run_between_grid(shd, fls, cm)
+    subroutine run_between_grid(fls, shd, cm)
 
-        use mpi_module
-        use model_files_variables
-        use sa_mesh_shared_variables
-        use FLAGS
-        use txt_io
-        use climate_forcing
-
-        !> Required for calls to processes.
+        !> Process modules.
         use SA_RTE_module
         use WF_ROUTE_module
         use rte_module
-        use save_basin_output, only: run_save_basin_output
-        use cropland_irrigation_between_grid, only: runci_between_grid
+        use save_basin_output
+        use cropland_irrigation_between_grid
 
-        type(ShedGridParams) :: shd
-        type(fl_ids) :: fls
-        type(clim_info) :: cm
+!temp: Outputs.
+        use FLAGS
+        use txt_io
+
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Local variables.
         integer k, ki, ierr
@@ -515,20 +522,15 @@ module sa_mesh_run_between_grid
 
     subroutine run_between_grid_finalize(fls, shd, cm)
 
-        use mpi_module
-        use model_files_variabletypes
-        use sa_mesh_shared_variables
-        use model_dates
-        use climate_forcing
+        !> Process modules.
+        use WF_ROUTE_config
+        use rte_module
+        use save_basin_output
 
-        !> Required for calls to processes.
-        use WF_ROUTE_config, only: WF_ROUTE_finalize
-        use rte_module, only: run_rte_finalize
-        use save_basin_output, only: run_save_basin_output_finalize
-
-        type(fl_ids) :: fls
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return

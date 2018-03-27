@@ -11,7 +11,7 @@ module RUNCLASS36_module
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_variables
         use model_dates
         use climate_forcing
 
@@ -336,7 +336,7 @@ module RUNCLASS36_module
                 cdv%SFCT, cdv%SFCU, cdv%SFCQ, &
                 catv%ZRFM, ZOMLCS, ZOMLNS, &
                 NML, &
-                shd, fls, cm)
+                fls, shd, cm)
 
             call CLASSZ(1, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
@@ -361,7 +361,7 @@ module RUNCLASS36_module
                 WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                 cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, &
                 NML, &
-                shd, fls, cm)
+                fls, shd, cm)
 
             cdv%ROF = cdv%ROF - UMQ
 

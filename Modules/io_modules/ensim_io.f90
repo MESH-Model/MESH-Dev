@@ -36,25 +36,16 @@ module ensim_io
 
     contains
 
-    subroutine open_ensim_file(iun, fname, ierr, verbose)
+    subroutine open_ensim_file(iun, fname, ierr)
 
         integer, intent(in) :: iun
         character(len = *), intent(in) :: fname
-        logical, intent(in) :: verbose
         integer, intent(out) :: ierr
 
-        if (verbose) print 1000, trim(fname)
-        open(iun, file = adjustl(fname), status = 'old', iostat = ierr)
-        if (ierr /= 0) goto 999
+        ierr = 0
+        open(iun, file = fname, status = 'old', iostat = ierr)
 
         return
-
-999     if (verbose) print 1110, trim(fname)
-        stop
-
-1000    format(1x, 'READING: ', (a))
-1110    format(/1x, 'ERROR: Error opening ', (a), &
-               /3x, 'Check that the file exists or use an alternate format of file.'/)
 
     end subroutine
 
@@ -480,7 +471,7 @@ module ensim_io
 
         character(len = *), intent(in) :: fname
         integer, intent(in) :: iun, nattr, iattr, na, nfield
-        type(ensim_attr), dimension(nattr), intent(in) :: vattr
+        type(ensim_attr), dimension(:), intent(in) :: vattr
         integer, dimension(na), intent(in) :: xxx, yyy
         real, dimension(:), allocatable, intent(out) :: ffield
         logical, intent(in) :: verbose
@@ -488,7 +479,7 @@ module ensim_io
         integer n, ierr
 
         if (allocated(ffield)) deallocate(ffield)
-        if (iattr > nattr) goto 999
+        if (iattr < lbound(vattr, 1) .or. iattr > ubound(vattr, 1)) goto 999
         if (.not. allocated(vattr(iattr)%val)) goto 999
 
         allocate(ffield(nfield), stat = ierr)

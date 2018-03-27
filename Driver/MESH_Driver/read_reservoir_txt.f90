@@ -12,17 +12,19 @@
 subroutine read_reservoir_txt(shd, iun, fname, nb)
 
     use mpi_module
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
+    use sa_mesh_utilities
 
     implicit none
 
     !> Input variables.
     type(ShedGridParams) :: shd
-    integer :: iun, nb
-    character(len = *) :: fname
+    integer, intent(in) :: iun, nb
+    character(len = *), intent(in) :: fname
 
     !> Local variables.
-    integer NR, l, ierr
+    integer i, ierr
+    character(len = DEFAULT_LINE_LENGTH) line
 
     !> Reservoir attributes pulled from 'fms':
     !*  rsvr: Streamflow gauge structure
@@ -36,35 +38,45 @@ subroutine read_reservoir_txt(shd, iun, fname, nb)
     !*  -   cfn(n): Type of release curve function.
     !*  -   b(n, :): Release curve coefficients.
 
-    if (ro%VERBOSEMODE > 0) print 1000, trim(fname)
-    open(iun, file = fname, status = 'old', action = 'read', err = 997)
-    read(iun, *, err = 999) fms%rsvr%n, NR, fms%rsvr%rlsmeas%dts
-    NR = fms%rsvr%n
+    !> Open the file.
+    call print_screen('READING: ' // trim(adjustl(fname)))
+    call print_echo_txt(fname)
+    open(iun, file = fname, status = 'old', action = 'read', iostat = ierr)
+    if (ierr /= 0) then
+        call print_error('Unable to open file. Check if the file exists.')
+        call stop_program()
+    end if
 
-    !> Return if there are no reservoirs.
-    if (NR == 0) return
+    !> Read the number of locations.
+    read(iun, *, err = 999) fms%rsvr%n, i, fms%rsvr%rlsmeas%dts
+
+    !> Return if no locations were defined.
+    if (fms%rsvr%n == 0) return
 
     !> Allocate configuration variables for the driver.
-    call allocate_reservoir_outlet_location(fms%rsvr, NR, ierr)
+    call allocate_reservoir_outlet_location(fms%rsvr, fms%rsvr%n, ierr)
     if (ierr /= 0) goto 998
 
     !> Read information.
-    do l = 1, NR
+    do i = 1, fms%rsvr%n
         read(iun, *, err = 999) &
-            fms%rsvr%meta%y(l), fms%rsvr%meta%x(l), fms%rsvr%rls%b1(l), fms%rsvr%rls%b2(l), fms%rsvr%meta%name(l)
+            fms%rsvr%meta%y(i), fms%rsvr%meta%x(i), fms%rsvr%rls%b1(i), fms%rsvr%rls%b2(i), fms%rsvr%meta%name(i)
     end do
     fms%rsvr%meta%y = fms%rsvr%meta%y/60.0
     fms%rsvr%meta%x = fms%rsvr%meta%x/60.0
 
     return
 
-    !> File errors.
-997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(fname)
-998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(fname)
-999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(fname)
+    !> Stop: Error allocating variables.
+998 call print_error('Unable to allocate variables.')
+    call stop_program()
 
-    stop
-
-1000    format(1x, 'READING: ', (a))
+    !> Stop: Premature end of file.
+999 call print_error('Unable to read from file.')
+    write(line, FMT_GEN) fms%rsvr%n
+    call print_message('Number of reservoirs expected: ' // trim(adjustl(line)))
+    write(line, FMT_GEN) i
+    call print_message('Number found: ' // trim(adjustl(line)))
+    call stop_program()
 
 end subroutine

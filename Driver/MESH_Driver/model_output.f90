@@ -1,6 +1,7 @@
 module model_output
 
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
+    use sa_mesh_utilities
     use model_dates
     use model_files_variables
     use variablename_constants
@@ -118,20 +119,10 @@ module model_output
 
         !> Open the file.
         !> Print status to the screen if verbose.
-        if (verbose) print 1000, trim(fname)
-        open(iun, file = adjustl(fname), status = 'old', action = 'read', iostat = ierr)
-        if (ierr /= 0) goto 999
+        open(iun, file = adjustl(fname), action = 'read', status = 'old', iostat = ierr)
 
         !> Return if the file successfully opened.
         return
-
-        !> Stop if the routine failed.
-999     if (verbose) print 1110, trim(fname)
-        stop
-
-1000    format(1x, 'READING: ', (a))
-1110    format(/1x, 'ERROR: Error opening ', (a), &
-               /3x, 'Check that the file exists or use an alternate format of file.'/)
 
     end subroutine
 
@@ -307,7 +298,9 @@ module model_output
                         end if
 
                     case default
-                        if (ro%DIAGNOSEMODE > 0) print 1010, trim(args(i)), trim(args(1))
+                        call print_remark( &
+                            "'" // trim(adjustl(args(i))) // "' (Variable '" // trim(adjustl(args(1))) // &
+                            "') is an unrecognized option for output.", PAD_3)
                 end select
             end if
         end do
@@ -323,8 +316,6 @@ module model_output
             allocate(file%dat(shd%NA, t))
             file%dat = 0.0
         end if
-
-1010    format(3x, 'REMARK: ', (a), ' (Variable ', (a), ') is an unrecognized argument for output.')
 
     end subroutine
 
@@ -455,22 +446,23 @@ module model_output
 
     end subroutine
 
-    subroutine init_out(fls, shd, ts)
+    subroutine init_out(fls, shd)
 
-        !> 'control_variables' required for 'ro' options.
         !> 'strings' required for 'is_letter' function.
-        use control_variables
         use strings
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(dates_model), intent(in) :: ts
 
         !> Local variables.
+        type(dates_model) ts
         integer iun, n, j, nargs, ierr
-        character(len = 20) args(50)
-        character(len = 1000) line
+        character(len = DEFAULT_FIELD_LENGTH) args(50)
+        character(len = DEFAULT_LINE_LENGTH) line
+
+        !> Initialize 'ts' variable.
+        call GET_DATES(ts)
 
         !> Allocate output variable for time-stamps based on switch to store variables in-memory.
         if (flds%in_mem) then
@@ -489,8 +481,17 @@ module model_output
         flds%dates%iter_s = 0
 
         !> Open output fields configuration file.
+        call print_screen('READING: outputs_balance.txt')
+        call print_echo_txt('outputs_balance.txt')
         iun = 100
         call open_txt_input(iun, 'outputs_balance.txt', .true., ierr)
+
+        !> Stop if the routine failed.
+        if (ierr /= 0) then
+            call print_error('Unable to open file.')
+            call print_message('Check that outputs_balance.txt exists or disabled OUTFIELDSFLAG.')
+            call stop_program()
+        end if
 
         !> Allocate and initialize output fields.
         n = 0
@@ -507,7 +508,7 @@ module model_output
             call parse(line, ' ', args, nargs)
 
             !> Output field.
-            if (ro%DIAGNOSEMODE > 0) print 1000, trim(args(1))
+            if (DIAGNOSEMODE) call print_message_detail('Reading output variable: ' // args(1))
             select case (args(1))
 
                 !> Meteorological forcing.
@@ -660,16 +661,16 @@ module model_output
 
                 case default
                     n = n - 1
-                    print 1010, trim(args(1))
+                    call print_warning("'" // trim(args(1)) // "' is not recognized for output.", PAD_3)
             end select
             n = n + 1
         end do
         close(iun)
-        print 1110, n
+        write(line, 1001) n
+        call print_message_detail('Output variables: ' // trim(adjustl(line)))
 
-1000    format(3x, 'Reading output variable: ', (a))
-1010    format(3x, 'REMARK: Variable ', (a), ' is not recognized for output.')
-1110    format(3x, 'Output variables: ', i3)
+        !> Format statements.
+1001    format(9999(g15.6, 1x))
 
     end subroutine
 

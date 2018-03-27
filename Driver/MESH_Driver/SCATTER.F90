@@ -3,7 +3,7 @@
 !>
 subroutine SCATTER(shd, iilen, ii1, ii2, GAT, GRD)
 
-    use sa_mesh_shared_variables
+    use sa_mesh_variables
 
     !> Input variables.
     type(LandGridParams), intent(in) :: shd

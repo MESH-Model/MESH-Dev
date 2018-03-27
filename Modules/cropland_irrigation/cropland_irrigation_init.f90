@@ -14,8 +14,9 @@ module cropland_irrigation_init
         !> For 'fls%GENDIR_OUT'.
         use model_files_variables
 
-        !> For 'shd' type (basin information), 'ro%' (run options) for print options, and 'FCAN' (canopy fractions).
-        use sa_mesh_shared_variables
+        !> For 'shd' type (basin information) and 'FCAN' (canopy fractions).
+        use sa_mesh_variables
+        use sa_mesh_utilities
 
         !> For current date and counter.
         use model_dates
@@ -27,7 +28,7 @@ module cropland_irrigation_init
 
         if (.not. cifg%PROCESS_ACTIVE) return
 
-        if (ipid == 0 .and. ro%VERBOSEMODE > 0) print 9999
+        if (ipid == 0 .and. VERBOSEMODE) print 9999
 
 9999    format(/1x, '------------------------------------------------------', &
                /1x, '            CROPLAND IRRIGATION IS ACTIVE', &
