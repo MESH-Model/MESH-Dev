@@ -805,11 +805,9 @@ program RUNMESH
     !> Calculate initial storage.
     if (ro%RUNBALWB .and. ipid == 0) then
         STG_INI = sum( &
-            (out%grid%rcan%ts + out%grid%sncan%ts + out%grid%sno%ts + out%grid%wsno%ts + out%grid%pndw%ts + &
-             out%grid%lzs%ts + out%grid%dzs%ts)*shd%FRAC)
-        do j = 1, shd%lc%IGND
-            STG_INI = STG_INI + sum((out%grid%lqws(j)%ts + out%grid%fzws(j)%ts)*shd%FRAC)
-        end do
+            (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
+             out%ts%grid%lzs + out%ts%grid%dzs + &
+             sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC)
         STG_INI = STG_INI/sum(shd%FRAC)
     end if !(ipid == 0) then
 
@@ -836,7 +834,7 @@ program RUNMESH
 
             !> Daily streamflow values.
             read(iun) fms%stmg%qomeas%val
-            read(iun) out%grid%qo%d(fms%stmg%meta%rnk(:))
+            read(iun) out%d%grid%qo(fms%stmg%meta%rnk(:))
 
         end if
 
@@ -962,9 +960,9 @@ program RUNMESH
 
             !> Accumulated outputs (including non-zero value read from resume file).
             if (ro%RUNBALWB) then
-                DAILY_PRE = DAILY_PRE + sum(out%grid%pre%ts*shd%FRAC)*ic%dts
-                DAILY_EVAP = DAILY_EVAP + sum(out%grid%evap%ts*shd%FRAC)*ic%dts
-                DAILY_ROF = DAILY_ROF + sum(out%grid%rof%ts*shd%FRAC)*ic%dts
+                DAILY_PRE = DAILY_PRE + sum(out%ts%grid%pre*shd%FRAC)*ic%dts
+                DAILY_EVAP = DAILY_EVAP + sum(out%ts%grid%evap*shd%FRAC)*ic%dts
+                DAILY_ROF = DAILY_ROF + sum(out%ts%grid%rof*shd%FRAC)*ic%dts
             end if
 
             !> Write output to the console.
@@ -975,7 +973,7 @@ program RUNMESH
                     if (fms%stmg%n > 0) then
                         do j = 1, fms%stmg%n
                             if (fms%stmg%n > 0) write(line, '((a), f10.3)') trim(line), fms%stmg%qomeas%val(j)
-                            write(line, '((a), f10.3)') trim(line), out%grid%qo%d(fms%stmg%meta%rnk(j))
+                            write(line, '((a), f10.3)') trim(line), out%d%grid%qo(fms%stmg%meta%rnk(j))
                         end do
                     end if
                     if (ro%RUNBALWB) then
@@ -1121,18 +1119,16 @@ program RUNMESH
 
         !> Accumulated outputs (including non-zero value read from resume file).
         if (ro%RUNBALWB) then
-            TOTAL_PRE = TOTAL_PRE + sum(out%grid%pre%tot*shd%FRAC)*ic%dts
-            TOTAL_EVAP = TOTAL_EVAP + sum(out%grid%evap%tot*shd%FRAC)*ic%dts
-            TOTAL_ROF = TOTAL_ROF + sum(out%grid%rof%tot*shd%FRAC)*ic%dts
-            TOTAL_ROFO = TOTAL_ROFO + sum(out%grid%rofo%tot*shd%FRAC)*ic%dts
-            TOTAL_ROFS = TOTAL_ROFS + sum(out%grid%rofs%tot*shd%FRAC)*ic%dts
-            TOTAL_ROFB = TOTAL_ROFB + sum(out%grid%rofb%tot*shd%FRAC)*ic%dts
+            TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%pre*shd%FRAC)*ic%dts
+            TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%evap*shd%FRAC)*ic%dts
+            TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof*shd%FRAC)*ic%dts
+            TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%rofo*shd%FRAC)*ic%dts
+            TOTAL_ROFS = TOTAL_ROFS + sum(out%tot%grid%rofs*shd%FRAC)*ic%dts
+            TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%rofb*shd%FRAC)*ic%dts
             STG_FIN = sum( &
-                (out%grid%rcan%ts + out%grid%sncan%ts + out%grid%sno%ts + out%grid%wsno%ts + out%grid%pndw%ts + &
-                 out%grid%lzs%ts + out%grid%dzs%ts)*shd%FRAC)
-            do j = 1, shd%lc%IGND
-                STG_FIN = STG_FIN + sum((out%grid%lqws(j)%ts + out%grid%fzws(j)%ts)*shd%FRAC)
-            end do
+                (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
+                 out%ts%grid%lzs + out%ts%grid%dzs + &
+                 sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC)
         end if
 
         !> Save the current state of the model for SAVERESUMEFLAG.
@@ -1155,7 +1151,7 @@ program RUNMESH
 
             !> Daily streamflow values.
             write(iun) fms%stmg%qomeas%val
-            write(iun) out%grid%qo%d(fms%stmg%meta%rnk(:))
+            write(iun) out%d%grid%qo(fms%stmg%meta%rnk(:))
 
             !> Close the file to free the unit.
             close(iun)

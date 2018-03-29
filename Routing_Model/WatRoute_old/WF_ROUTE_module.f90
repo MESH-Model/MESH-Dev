@@ -48,9 +48,9 @@ module WF_ROUTE_module
         !> Update SA_MESH output variables.
         !> Override the output variable because 'storage' for reservoirs is an accumulation of flow
         !> and does not translate to the 'stgch' variable.
-        out%grid%stgch%ts = stas_grid%chnl%stg
+        out%ts%grid%stgch = stas_grid%chnl%stg
         if (fms%rsvr%n > 0) then
-            out%grid%stgch%ts(fms%rsvr%meta%rnk(:)) = out%NO_DATA
+            out%ts%grid%stgch(fms%rsvr%meta%rnk(:)) = out%NO_DATA
         end if
 
     end subroutine
