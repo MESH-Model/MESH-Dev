@@ -723,7 +723,7 @@ module save_basin_output
                  LQWS(NA, NSL), FRWS(NA, NSL), LZS(NA), DZS(NA))
 
         !> Accumulate variables and aggregate through neighbouring cells.
-        PRE = out%ts%grid%pre*ic%dts*shd%FRAC
+        PRE = out%ts%grid%prec*ic%dts*shd%FRAC
         EVAP = out%ts%grid%evap*ic%dts*shd%FRAC
         ROF = out%ts%grid%rof*ic%dts*shd%FRAC
         ROFO = out%ts%grid%rofo*ic%dts*shd%FRAC

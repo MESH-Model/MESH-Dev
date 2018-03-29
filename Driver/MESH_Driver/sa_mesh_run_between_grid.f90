@@ -279,7 +279,7 @@ module sa_mesh_run_between_grid
         call runci_between_grid_init(shd, fls)
 
         !> Allocate grid-based accumulated output.
-        call output_variables_allocate(out%tot%grid%pre, shd%NA)
+        call output_variables_allocate(out%tot%grid%prec, shd%NA)
         call output_variables_allocate(out%tot%grid%evap, shd%NA)
         call output_variables_allocate(out%tot%grid%rof, shd%NA)
         call output_variables_allocate(out%tot%grid%rofo, shd%NA)
@@ -287,7 +287,7 @@ module sa_mesh_run_between_grid
         call output_variables_allocate(out%tot%grid%rofb, shd%NA)
 
         !> Allocate grid-based daily output.
-        call output_variables_allocate(out%d%grid%pre, shd%NA)
+        call output_variables_allocate(out%d%grid%prec, shd%NA)
         call output_variables_allocate(out%d%grid%evap, shd%NA)
         call output_variables_allocate(out%d%grid%rof, shd%NA)
         call output_variables_allocate(out%d%grid%rofo, shd%NA)

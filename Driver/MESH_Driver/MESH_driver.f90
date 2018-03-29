@@ -169,7 +169,6 @@ program RUNMESH
 
     !> Basin totals for the run.
     real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
-    real DAILY_PRE, DAILY_EVAP, DAILY_ROF
 
     !> End of run states for prognostic variables.
     real, dimension(:, :), allocatable :: tcan, rcan, sncan, gro, zpnd, tpnd, sno, tsno, albs, rhos
@@ -282,9 +281,6 @@ program RUNMESH
         TOTAL_ROFO = 0.0
         TOTAL_ROFS = 0.0
         TOTAL_ROFB = 0.0
-        DAILY_PRE = 0.0
-        DAILY_EVAP = 0.0
-        DAILY_ROF = 0.0
     end if
 
     !> Initialize output fields.
@@ -876,13 +872,6 @@ program RUNMESH
             if (ENDDATA) exit
         end if
 
-        !> Reset variables that accumulate on the daily time-step.
-        if (ipid == 0 .and. ic%ts_daily == 1) then
-            DAILY_PRE = 0.0
-            DAILY_EVAP = 0.0
-            DAILY_ROF = 0.0
-        end if
-
         !> Distribute grid states (e.g., channel storage) to worker nodes.
         if (ro%RUNGRID) call run_within_grid_mpi_irecv(fls, shd, cm)
 
@@ -958,13 +947,6 @@ program RUNMESH
 
         if (ipid == 0) then
 
-            !> Accumulated outputs (including non-zero value read from resume file).
-            if (ro%RUNBALWB) then
-                DAILY_PRE = DAILY_PRE + sum(out%ts%grid%pre*shd%FRAC)*ic%dts
-                DAILY_EVAP = DAILY_EVAP + sum(out%ts%grid%evap*shd%FRAC)*ic%dts
-                DAILY_ROF = DAILY_ROF + sum(out%ts%grid%rof*shd%FRAC)*ic%dts
-            end if
-
             !> Write output to the console.
             if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
 
@@ -978,7 +960,10 @@ program RUNMESH
                     end if
                     if (ro%RUNBALWB) then
                         write(line, '((a), 3(f10.3))') &
-                            trim(line), DAILY_PRE/sum(shd%FRAC), DAILY_EVAP/sum(shd%FRAC), DAILY_ROF/sum(shd%FRAC)
+                            trim(line), &
+                            sum(out%d%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%d%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%d%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
                     end if
                     call print_screen(line)
                 end if
@@ -1117,18 +1102,18 @@ program RUNMESH
 
     if (ipid == 0) then
 
-        !> Accumulated outputs (including non-zero value read from resume file).
+        !> Basin totals for the run.
         if (ro%RUNBALWB) then
-            TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%pre*shd%FRAC)*ic%dts
-            TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%evap*shd%FRAC)*ic%dts
-            TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof*shd%FRAC)*ic%dts
-            TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%rofo*shd%FRAC)*ic%dts
-            TOTAL_ROFS = TOTAL_ROFS + sum(out%tot%grid%rofs*shd%FRAC)*ic%dts
-            TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%rofb*shd%FRAC)*ic%dts
+            TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%rofo*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFS = TOTAL_ROFS + sum(out%tot%grid%rofs*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%rofb*shd%FRAC)*ic%dts/sum(shd%FRAC)
             STG_FIN = sum( &
                 (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
                  out%ts%grid%lzs + out%ts%grid%dzs + &
-                 sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC)
+                 sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC)/sum(shd%FRAC)
         end if
 
         !> Save the current state of the model for SAVERESUMEFLAG.
@@ -1157,15 +1142,6 @@ program RUNMESH
             close(iun)
 
         end if !(SAVERESUMEFLAG == 4) then
-
-        !> Basin totals for the run.
-        TOTAL_PRE = TOTAL_PRE/sum(shd%FRAC)
-        TOTAL_EVAP = TOTAL_EVAP/sum(shd%FRAC)
-        TOTAL_ROF = TOTAL_ROF/sum(shd%FRAC)
-        TOTAL_ROFO = TOTAL_ROFO/sum(shd%FRAC)
-        TOTAL_ROFS = TOTAL_ROFS/sum(shd%FRAC)
-        TOTAL_ROFB = TOTAL_ROFB/sum(shd%FRAC)
-        STG_FIN = STG_FIN/sum(shd%FRAC)
 
         !> Write data to the output summary file.
         if (ECHOTXTMODE) then
