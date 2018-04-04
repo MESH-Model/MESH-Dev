@@ -118,37 +118,6 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     !> Close the file.
     close(iun)
 
-    !> Distribute soil variables to additional layers.
-!todo: Change this so that soil.ini can take more than 3 layers.
-    if (NRSOILAYEREADFLAG > 3) then
-        ignd = min(NRSOILAYEREADFLAG, NSL)
-    else if (NRSOILAYEREADFLAG == 1) then
-        ignd = 0
-    else
-        ignd = 3
-    end if
-    do j = 4, NSL
-        do m = 1, NTYPE
-
-            !> Distribute parameters and initial states to lower layers whose values might not be defined.
-            if (ignd > 0) then
-                stas_gru%sl%tbar(m, j) = stas_gru%sl%tbar(m, ignd) !note333 see read_s_temperature_txt.f for more TBAR information
-                stas_gru%sl%thlq(m, j) = stas_gru%sl%thlq(m, ignd) !note444 see read_s_moisture_txt.f for more THLQ information
-                stas_gru%sl%thic(m, j) = stas_gru%sl%thic(m, ignd)
-                pm_gru%slp%sand(m, j) = pm_gru%slp%sand(m, ignd)
-                pm_gru%slp%clay(m, j) = pm_gru%slp%clay(m, ignd)
-                pm_gru%slp%orgm(m, j) = pm_gru%slp%orgm(m, ignd)
-            end if !if (NRSOILAYEREADFLAG == 0) then
-
-            !> Impermeable soils.
-            if (pm_gru%slp%sdep(m) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pm_gru%slp%sand(m, j) > -2.5) then
-                pm_gru%slp%sand(m, j) = -3.0
-                pm_gru%slp%clay(m, j) = -3.0
-                pm_gru%slp%orgm(m, j) = -3.0
-            end if
-        end do
-    end do
-
     !> Assign DEGLAT and DEGLON if running a point run where no shed file exists.
     if (SHDFILEFMT == 2) then
         shd%ylat = DEGLAT

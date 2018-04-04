@@ -697,48 +697,6 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
         read(iun, *) (op%N_OUT(i), i = 1, WF_NUM_POINTS)
         read(iun, *) (op%II_OUT(i), i = 1, WF_NUM_POINTS)
         read(iun, *) (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
-
-        !> Check CLASS output points.
-        do i = 1, WF_NUM_POINTS
-            if (i < WF_NUM_POINTS) then
-
-                !> Check for repeated points.
-                do j = i + 1, WF_NUM_POINTS
-                    if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
-                        write(line, "('Grid ', i5, ', GRU ', i4)") op%N_OUT(i), op%II_OUT(i)
-                        call print_screen('')
-                        call print_screen('Output is repeated for ' // trim(adjustl(line)))
-                        call stop_program()
-                    end if
-                end do
-            else
-
-                !> Check that the output path exists.
-                write(line, FMT_GEN) ipid
-                open( &
-                    100, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/tmp' // trim(adjustl(line)), status = 'unknown', &
-                    iostat = ierr)
-                if (ierr /= 0) then
-                    call print_screen('')
-                    write(line, FMT_GEN) i
-                    call print_screen('The output folder for point ' // trim(adjustl(line)) // ' does not exist.')
-                    call print_screen('Location: ' // trim(adjustl(op%DIR_OUT(i))), PAD_3)
-                    call stop_program()
-                else
-                    close(100, status = 'delete')
-                end if
-            end if
-
-            !> Check that point lies inside the basin.
-            if (op%N_OUT(i) > shd%NAA) then
-                call print_screen('')
-                write(line, FMT_GEN) i
-                call print_screen('Output point ' // trim(adjustl(line)) // ' is outside the basin.')
-                write(line, FMT_GEN) shd%NAA
-                call print_screen('Number of grids inside the basin: ' // trim(adjustl(line)), PAD_3)
-                call stop_program()
-            end if
-        end do
     else
         read(iun, *)
         read(iun, *)
@@ -752,15 +710,6 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
     read(iun, '(a10)') line
     call removesp(line)
     fls%GENDIR_OUT = adjustl(line)
-    write(line, FMT_GEN) ipid
-    open(100, file = './' // trim(adjustl(fls%GENDIR_OUT)) // '/tmp' // trim(adjustl(line)), status = 'unknown', iostat = ierr)
-    if (ierr /= 0) then
-        call print_screen('')
-        call print_screen('The output folder does not exist: ' // trim(adjustl(fls%GENDIR_OUT)))
-        call stop_program()
-    else
-        close(100, status = 'delete')
-    end if
 
     !> Simulation start and stop dates.
     read(iun, *)

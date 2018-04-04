@@ -29,7 +29,7 @@ subroutine read_initial_states(fls, shd)
     character(1) :: delim = ' '
 
     !> Local variables.
-    integer NA, NTYPE, NML, NSL, k, i, m, ierr
+    integer NA, NTYPE, NML, NSL, k, j, ignd, i, m, ierr
 
     !> Assign commonly used indices to local variables.
     NA = shd%NA
@@ -96,5 +96,27 @@ subroutine read_initial_states(fls, shd)
         !> csv: From CSV by GRU.
 
     end select
+
+    !> Distribute soil states to layers lower than the "last configured layer".
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+
+        !> Determine the "last configured layer" read from file (CLASS default: 3).
+        if (NRSOILAYEREADFLAG > 3) then
+            ignd = min(NRSOILAYEREADFLAG, NSL)
+        else if (NRSOILAYEREADFLAG == 1) then
+            ignd = 0
+        else
+            ignd = 3
+        end if
+
+        !> Assign states to layers lower than the "last configured layer" read from file.
+        if (ignd > 0) then
+            do j = (ignd + 1), shd%lc%IGND
+                stas%sl%tbar(:, j) = stas%sl%tbar(:, ignd)
+                stas%sl%thlq(:, j) = stas%sl%thlq(:, ignd)
+                stas%sl%thic(:, j) = stas%sl%thic(:, ignd)
+            end do
+        end if
+    end if
 
 end subroutine
