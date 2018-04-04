@@ -55,6 +55,7 @@ do
    # Obtain mesh files from the previous gem run that need changing
    # The dates in these files need changing
    cp ${input_file_path_gem}/MESH_input_run_options.ini ${output_file_path_gem}
+   cp ${input_file_path_gem}/MESH_input_run_options_180.ini ${output_file_path_gem}
    cp ${input_file_path_gem}/MESH_parameters_CLASS.ini ${output_file_path_gem}
    # The date and streamflow values in this file needs changing
    cp ${input_file_path_gem}/MESH_input_streamflow.txt ${output_file_path_gem} 

@@ -108,7 +108,73 @@ $awk_file_path/setup_gem_forecast_mod.sh $dt
 
     ./sa_mesh
 
-    cp MESH_output_streamflow_ts.csv MESH_output_streamflow_ts_$(date -d "$dt 1 day" -u +%Y%m%d).csv
+#    cp MESH_output_streamflow_ts.csv MESH_output_streamflow_ts_$(date -d "$dt 1 day" -u +%Y%m%d).csv
+
+	# Create 'RDPS' folder and copy 'RDPS' files.
+	mkdir RDPS
+	cp basin_humidity.r2c basin_longwave.r2c basin_pres.r2c basin_shortwave.r2c basin_temperature.r2c basin_wind.r2c basin_rain.r2c RDPS/
+	cp MESH_input_run_options* RDPS/
+	cp MESH_output* RDPS/
+	cp Basin_average* RDPS/
+#Because SAVERESUMEFLAG is 0
+#	cp int_statVariables.seq* RDPS/
+   
+done
+
+#Getting GDPS forecast files.
+
+### REPLACE THIS with script to create GDPS basin_*.r2c files.
+# r2c forcing files go in same folder as RDPS ones did (overwrites them; RDPS files were copied to RDPS folder).
+$awk_file_path/####NAME OF SCRIPT THAT CREATES GDPS FILES GOES HERE####
+
+######################
+#GDPS Forecast       #
+######################
+
+    for i in ${!watersheds[*]}
+    do
+    watershed=${watersheds[$i]}
+
+#Change start and/or end dates in MESH_input_run_options.ini, MESH_input_streamflow.txt and MESH_parameters_CLASS.ini files. **need to change NR in awk files if file formats change** 
+
+# Just the run_options.ini has to change
+# Dates are the same for GDPS as RDPS
+# BUT: HOURLYFLAG has to change from 60 to 180
+    gawk -f ${awk_file_path}/'MESH_op_1_DR.awk' ${output_file_path_gem}/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/'MESH_input_run_options_180.ini' > $output_file_path_gem/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/'MESH_input_run_options_updated.ini'
+
+    cp ${output_file_path_gem}/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/MESH_input_run_options_updated.ini ${output_file_path_gem}/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/MESH_input_run_options.ini
+
+#MESH_input_streamflow.txt is same for GDPS as RDPS
+#    gawk -f ${awk_file_path}/'MESH_st.awk' ${output_file_path_gem}/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/MESH_input_streamflow.txt > ${output_file_path_gem}/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/'MESH_input_streamflow_updated.txt'
+
+#    cp ${output_file_path_gem}/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/MESH_input_streamflow_updated.txt ${output_file_path_gem}/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/MESH_input_streamflow.txt
+
+#MESH_parameters_CLASS.ini is the same for GDPS as RDPS
+#    gawk -f $awk_file_path/'MESH_cl_DR.awk' ${output_file_path_gem}/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/'MESH_parameters_CLASS.ini' > ${output_file_path_gem}/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/'MESH_parameters_CLASS_updated.ini'
+
+#    cp ${output_file_path_gem}/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/MESH_parameters_CLASS_updated.ini ${output_file_path_gem}/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/MESH_parameters_CLASS.ini
+
+
+    #Run MESH (Forecast using GEM input model data)
+    cd $output_file_path_gem/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16/
+
+	#Recopy state files for GDPS run (once inside the folder where MESH runs).
+#IF SAVERESUMEFLAG from RDPS run wasn't 0
+#      cp int_statVariables.seq.wf_route_${dt}16 int_statVariables.seq.wf_route
+#      cp int_statVariables.seq.runclass36_${dt}16 int_statVariables.seq.runclass36
+
+    ./sa_mesh
+
+#    cp MESH_output_streamflow_ts.csv MESH_output_streamflow_ts_$(date -d "$dt 1 day" -u +%Y%m%d).csv
+
+	# Create 'GDPS' folder and copy 'GDPS' files.
+	mkdir GDPS
+	cp basin_humidity.r2c basin_longwave.r2c basin_pres.r2c basin_shortwave.r2c basin_temperature.r2c basin_wind.r2c basin_rain.r2c GDPS/
+	cp MESH_input_run_options* GDPS/
+	cp MESH_output* GDPS/
+	cp Basin_average* GDPS/
+#Because SAVERESUMEFLAG is 0
+#	cp int_statVariables.seq* GDPS/
    
 done
 
