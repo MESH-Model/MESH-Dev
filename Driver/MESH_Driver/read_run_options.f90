@@ -7,6 +7,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
     use sa_mesh_utilities
     use model_dates
     use climate_forcing
+    use output_files
 
     use FLAGS
     use save_basin_output, only: BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
@@ -533,6 +534,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
                     call value(args(2), LOCATIONFLAG, ierr)
                 case ('OUTFIELDSFLAG')
                     call value(args(2), OUTFIELDSFLAG, ierr)
+                    fls_out%PROCESS_ACTIVE = .true.
                 case ('GGEOFLAG')
                     call value(args(2), GGEOFLAG, ierr)
 

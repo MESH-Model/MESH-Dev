@@ -104,7 +104,7 @@ program RUNMESH
     use sa_mesh_run_between_grid
     use model_dates
     use climate_forcing
-    use MODEL_OUTPUT
+    use output_files
     use SIMSTATS
 
     implicit none
@@ -285,7 +285,7 @@ program RUNMESH
 
     !> Initialize output fields.
     if (ipid == 0) then
-        if (OUTFIELDSFLAG == 1) call init_out(fls, shd)
+        if (OUTFIELDSFLAG == 1) call output_files_init(fls, shd)
     end if !(ipid == 0) then
 
     FRAME_NO_NEW = 1
@@ -941,7 +941,7 @@ program RUNMESH
             end if
 
             !> Update data for other outputs.
-            if (OUTFIELDSFLAG == 1) call UpdateFIELDSOUT(fls, shd)
+            if (OUTFIELDSFLAG == 1) call output_files_update(fls, shd)
 
         end if !(ipid == 0) then
 
@@ -1077,7 +1077,7 @@ program RUNMESH
 !+                            shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
 !+    end if !(SAVERESUMEFLAG == 2) then
 
-    if (OUTFIELDSFLAG == 1) call Write_Outputs(fls, shd)
+    if (OUTFIELDSFLAG == 1) call output_files_finalize(fls, shd)
 
     !> *********************************************************************
     !> Run is now over, print final results to the screen and close files

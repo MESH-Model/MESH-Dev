@@ -1,10 +1,12 @@
 module output_variables
 
+    use variablename_constants
+
     implicit none
 
     !> Description:
     !>  Container for output variables.
-    type output_group
+    type output_fields
         real, dimension(:), allocatable :: &
             pre, fsin, fsvh, fsih, fsdr, fsdf, flin, ta, qa, pres, uu, vv, uv, wdir, &
             prec, evap, pevp, evpb, arrd, gro, rof, rofo, rofs, rofb, &
@@ -19,15 +21,14 @@ module output_variables
     end type
 
     !> Description:
-    !>  Container for output at various spatial scales.
+    !>  Container for a series of output variables (e.g., at various time intervals).
     !>
     !> Variables:
     !*  tile: Elemental computational unit 1:NML.
     !*  grid: Grid combined from contributing GRUs (by ACLASS) 1:NA.
     !*  basin: Same as grid but accumulated according to drainage direction 1:NA.
-    !*  gru: Average of all tiles assigned a particular GRU 1:NTYPE.
-    type output_spatial
-        type(output_group) tile, grid, basin
+    type output_series
+        type(output_fields) tile, grid, basin
     end type
 
     !> Description:
@@ -39,7 +40,7 @@ module output_variables
     !*  NO_DATA: No data value (type: real).
     !*  NO_DATA_INT: No data value (type: integer).
     type output_variables_container
-        type(output_spatial) tot, y, m, d, h, ts
+        type(output_series) tot, y, m, d, h, ts
         integer :: NO_DATA_INT = -1
         real :: NO_DATA = -1.0
     end type
@@ -91,8 +92,144 @@ module output_variables
     end subroutine
 
     !> Description:
+    !>  Allocate the output variable to 'n' and optionally 'nsl'.
+    !>  The value is set to the NO_DATA value.
+    subroutine output_variables_allocate_val(fields, vname, n, nsl)
+
+        !> 'control_variables' required to check for active modelling components.
+        use control_variables
+
+        !> Input variables.
+        type(output_fields), intent(in) :: fields
+        character(len = *), intent(in) :: vname
+        integer, intent(in) :: n
+        integer, intent(in), optional :: nsl
+
+        !> Copy the variable.
+        select case (vname)
+
+            !> Meteorological forcing.
+            case (VN_PRE)
+                if (ro%RUNCLIM) call output_variables_allocate(fields%pre, n)
+            case (VN_FSIN)
+                if (ro%RUNCLIM) call output_variables_allocate(fields%fsin, n)
+            case (VN_FLIN)
+                if (ro%RUNCLIM) call output_variables_allocate(fields%flin, n)
+            case (VN_TA)
+                if (ro%RUNCLIM) call output_variables_allocate(fields%ta, n)
+            case (VN_QA)
+                if (ro%RUNCLIM) call output_variables_allocate(fields%qa, n)
+            case (VN_PRES)
+                if (ro%RUNCLIM) call output_variables_allocate(fields%pres, n)
+            case (VN_UV)
+                if (ro%RUNCLIM) call output_variables_allocate(fields%uv, n)
+
+            !> Water balance.
+            case (VN_PREC)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%prec, n)
+            case (VN_EVAP)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%evap, n)
+            case (VN_PEVP)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%pevp, n)
+            case (VN_EVPB)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%evpb, n)
+            case (VN_ARRD)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%arrd, n)
+            case (VN_GRO)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%gro, n)
+            case (VN_ROF)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%rof, n)
+            case (VN_ROFO)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%rofo, n)
+            case (VN_ROFS)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%rofs, n)
+            case (VN_ROFB)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%rofb, n)
+            case (VN_RCAN)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%rcan, n)
+            case (VN_SNCAN)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%sncan, n)
+            case (VN_SNO)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%sno, n)
+            case (VN_FSNO)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%fsno, n)
+            case (VN_WSNO)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%wsno, n)
+            case (VN_ZPND)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%zpnd, n)
+            case (VN_PNDW)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%pndw, n)
+            case (VN_LZS)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%lzs, n)
+            case (VN_DZS)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%dzs, n)
+            case (VN_STGW)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%stgw, n)
+            case (VN_THLQ)
+                if (ro%RUNBALWB .and. present(nsl)) call output_variables_allocate(fields%thlq, n, nsl)
+            case (VN_LQWS)
+                if (ro%RUNBALWB .and. present(nsl)) call output_variables_allocate(fields%lqws, n, nsl)
+            case (VN_THIC)
+                if (ro%RUNBALWB .and. present(nsl)) call output_variables_allocate(fields%thic, n, nsl)
+            case (VN_FZWS)
+                if (ro%RUNBALWB .and. present(nsl)) call output_variables_allocate(fields%fzws, n, nsl)
+            case (VN_ALWS)
+                if (ro%RUNBALWB .and. present(nsl)) call output_variables_allocate(fields%alws, n, nsl)
+
+            !> Energy balance.
+            case (VN_CMAS)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%cmas, n)
+            case (VN_TCAN)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%tcan, n)
+            case (VN_TSNO)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%tsno, n)
+            case (VN_TPND)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%tpnd, n)
+            case (VN_ALBT)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%albt, n)
+            case (VN_ALVS)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%alvs, n)
+            case (VN_ALIR)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%alir, n)
+            case (VN_FSOUT)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%fsout, n)
+            case (VN_GTE)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%gte, n)
+            case (VN_FLOUT)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%flout, n)
+            case (VN_QH)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%qh, n)
+            case (VN_QE)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%qe, n)
+            case (VN_GZERO)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%gzero, n)
+            case (VN_STGE)
+                if (ro%RUNBALEB) call output_variables_allocate(fields%stge, n)
+            case (VN_GFLX)
+                if (ro%RUNBALEB .and. present(nsl)) call output_variables_allocate(fields%gflx, n, nsl)
+            case (VN_TBAR)
+                if (ro%RUNBALEB .and. present(nsl)) call output_variables_allocate(fields%tbar, n, nsl)
+
+            !> Channels and routing.
+            case (VN_RFF)
+                if (ro%RUNCHNL) call output_variables_allocate(fields%rff, n)
+            case (VN_RCHG)
+                if (ro%RUNCHNL) call output_variables_allocate(fields%rchg, n)
+            case (VN_QI)
+                if (ro%RUNCHNL) call output_variables_allocate(fields%qi, n)
+            case (VN_STGCH)
+                if (ro%RUNCHNL) call output_variables_allocate(fields%stgch, n)
+            case (VN_QO)
+                if (ro%RUNCHNL) call output_variables_allocate(fields%qo, n)
+            case (VN_ZLVL)
+                if (ro%RUNCHNL) call output_variables_allocate(fields%zlvl, n)
+        end select
+
+    end subroutine
+
+    !> Description:
     !>  Allocate output variables.
-    subroutine output_variables_init_group(shd, group, n)
+    subroutine output_variables_init_fields(shd, fields, n)
 
         !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
@@ -104,76 +241,76 @@ module output_variables
         integer, intent(in) :: n
 
         !> Input/output variables.
-        type(output_group) group
+        type(output_fields) fields
 
         !> Meteorological forcing.
         if (ro%RUNCLIM) then
-            allocate(group%pre(n))
-            allocate(group%fsin(n))
-            allocate(group%flin(n))
-            allocate(group%ta(n))
-            allocate(group%qa(n))
-            allocate(group%pres(n))
-            allocate(group%uv(n))
+            allocate(fields%pre(n))
+            allocate(fields%fsin(n))
+            allocate(fields%flin(n))
+            allocate(fields%ta(n))
+            allocate(fields%qa(n))
+            allocate(fields%pres(n))
+            allocate(fields%uv(n))
         end if
 
         !> Water balance.
         if (ro%RUNBALWB) then
-            allocate(group%prec(n))
-            allocate(group%evap(n))
-            allocate(group%pevp(n))
-            allocate(group%evpb(n))
-            allocate(group%arrd(n))
-            allocate(group%gro(n))
-            allocate(group%rof(n))
-            allocate(group%rofo(n))
-            allocate(group%rofs(n))
-            allocate(group%rofb(n))
-            allocate(group%rcan(n))
-            allocate(group%sncan(n))
-            allocate(group%sno(n))
-            allocate(group%fsno(n))
-            allocate(group%wsno(n))
-            allocate(group%zpnd(n))
-            allocate(group%pndw(n))
-            allocate(group%lzs(n))
-            allocate(group%dzs(n))
-            allocate(group%stgw(n))
-            allocate(group%thlq(n, shd%lc%IGND))
-            allocate(group%lqws(n, shd%lc%IGND))
-            allocate(group%thic(n, shd%lc%IGND))
-            allocate(group%fzws(n, shd%lc%IGND))
-            allocate(group%alws(n, shd%lc%IGND))
+            allocate(fields%prec(n))
+            allocate(fields%evap(n))
+            allocate(fields%pevp(n))
+            allocate(fields%evpb(n))
+            allocate(fields%arrd(n))
+            allocate(fields%gro(n))
+            allocate(fields%rof(n))
+            allocate(fields%rofo(n))
+            allocate(fields%rofs(n))
+            allocate(fields%rofb(n))
+            allocate(fields%rcan(n))
+            allocate(fields%sncan(n))
+            allocate(fields%sno(n))
+            allocate(fields%fsno(n))
+            allocate(fields%wsno(n))
+            allocate(fields%zpnd(n))
+            allocate(fields%pndw(n))
+            allocate(fields%lzs(n))
+            allocate(fields%dzs(n))
+            allocate(fields%stgw(n))
+            allocate(fields%thlq(n, shd%lc%IGND))
+            allocate(fields%lqws(n, shd%lc%IGND))
+            allocate(fields%thic(n, shd%lc%IGND))
+            allocate(fields%fzws(n, shd%lc%IGND))
+            allocate(fields%alws(n, shd%lc%IGND))
         end if
 
         !> Energy balance.
         if (ro%RUNBALEB) then
-            allocate(group%cmas(n))
-            allocate(group%tcan(n))
-            allocate(group%tsno(n))
-            allocate(group%tpnd(n))
-            allocate(group%alvs(n))
-            allocate(group%alir(n))
-            allocate(group%albt(n))
-            allocate(group%fsout(n))
-            allocate(group%flout(n))
-            allocate(group%gte(n))
-            allocate(group%qh(n))
-            allocate(group%qe(n))
-            allocate(group%gzero(n))
-            allocate(group%stge(n))
-            allocate(group%gflx(n, shd%lc%IGND))
-            allocate(group%tbar(n, shd%lc%IGND))
+            allocate(fields%cmas(n))
+            allocate(fields%tcan(n))
+            allocate(fields%tsno(n))
+            allocate(fields%tpnd(n))
+            allocate(fields%alvs(n))
+            allocate(fields%alir(n))
+            allocate(fields%albt(n))
+            allocate(fields%fsout(n))
+            allocate(fields%flout(n))
+            allocate(fields%gte(n))
+            allocate(fields%qh(n))
+            allocate(fields%qe(n))
+            allocate(fields%gzero(n))
+            allocate(fields%stge(n))
+            allocate(fields%gflx(n, shd%lc%IGND))
+            allocate(fields%tbar(n, shd%lc%IGND))
         end if
 
         !> Channels and routing.
         if (ro%RUNCHNL) then
-            allocate(group%rff(n))
-            allocate(group%rchg(n))
-            allocate(group%qi(n))
-            allocate(group%stgch(n))
-            allocate(group%qo(n))
-            allocate(group%zlvl(n))
+            allocate(fields%rff(n))
+            allocate(fields%rchg(n))
+            allocate(fields%qi(n))
+            allocate(fields%stgch(n))
+            allocate(fields%qo(n))
+            allocate(fields%zlvl(n))
         end if
 
     end subroutine
@@ -195,16 +332,16 @@ module output_variables
 
         !> Tile-based.
         if (ro%RUNTILE) then
-            call output_variables_init_group(shd, out%ts%tile, shd%lc%NML)
-            call output_variables_reset_group(shd, out%ts%tile)
+            call output_variables_init_fields(shd, out%ts%tile, shd%lc%NML)
+            call output_variables_reset_fields(shd, out%ts%tile)
         end if
 
         !> Grid-based.
         if (ro%RUNGRID) then
-            call output_variables_init_group(shd, out%ts%grid, shd%NA)
-            call output_variables_reset_group(shd, out%ts%grid)
-            call output_variables_init_group(shd, out%ts%basin, shd%NA)
-            call output_variables_reset_group(shd, out%ts%basin)
+            call output_variables_init_fields(shd, out%ts%grid, shd%NA)
+            call output_variables_reset_fields(shd, out%ts%grid)
+            call output_variables_init_fields(shd, out%ts%basin, shd%NA)
+            call output_variables_reset_fields(shd, out%ts%basin)
         end if
 
         !> Update.
@@ -472,7 +609,7 @@ module output_variables
         type(ShedGridParams), intent(in) :: shd
 
         !> Input/output variables.
-        type(output_spatial) series
+        type(output_series) series
 
         !> Local variables.
         integer j
@@ -890,7 +1027,7 @@ module output_variables
 
     !> Description:
     !>  Allocate output variables.
-    subroutine output_variables_reset_group(shd, group)
+    subroutine output_variables_reset_fields(shd, fields)
 
         !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
@@ -901,76 +1038,76 @@ module output_variables
         type(ShedGridParams), intent(in) :: shd
 
         !> Input/output variables.
-        type(output_group) group
+        type(output_fields) fields
 
         !> Meteorological forcing.
         if (ro%RUNCLIM) then
-            group%pre = out%NO_DATA
-            group%fsin = out%NO_DATA
-            group%flin = out%NO_DATA
-            group%ta = out%NO_DATA
-            group%qa = out%NO_DATA
-            group%pres = out%NO_DATA
-            group%uv = out%NO_DATA
+            fields%pre = out%NO_DATA
+            fields%fsin = out%NO_DATA
+            fields%flin = out%NO_DATA
+            fields%ta = out%NO_DATA
+            fields%qa = out%NO_DATA
+            fields%pres = out%NO_DATA
+            fields%uv = out%NO_DATA
         end if
 
         !> Water balance.
         if (ro%RUNBALWB) then
-            group%prec = out%NO_DATA
-            group%evap = out%NO_DATA
-            group%pevp = out%NO_DATA
-            group%evpb = out%NO_DATA
-            group%arrd = out%NO_DATA
-            group%gro = out%NO_DATA
-            group%rof = out%NO_DATA
-            group%rofo = out%NO_DATA
-            group%rofs = out%NO_DATA
-            group%rofb = out%NO_DATA
-            group%rcan = out%NO_DATA
-            group%sncan = out%NO_DATA
-            group%sno = out%NO_DATA
-            group%fsno = out%NO_DATA
-            group%wsno = out%NO_DATA
-            group%zpnd = out%NO_DATA
-            group%pndw = out%NO_DATA
-            group%lzs = out%NO_DATA
-            group%dzs = out%NO_DATA
-            group%stgw = out%NO_DATA
-            group%thlq = out%NO_DATA
-            group%lqws = out%NO_DATA
-            group%thic = out%NO_DATA
-            group%fzws = out%NO_DATA
-            group%alws = out%NO_DATA
+            fields%prec = out%NO_DATA
+            fields%evap = out%NO_DATA
+            fields%pevp = out%NO_DATA
+            fields%evpb = out%NO_DATA
+            fields%arrd = out%NO_DATA
+            fields%gro = out%NO_DATA
+            fields%rof = out%NO_DATA
+            fields%rofo = out%NO_DATA
+            fields%rofs = out%NO_DATA
+            fields%rofb = out%NO_DATA
+            fields%rcan = out%NO_DATA
+            fields%sncan = out%NO_DATA
+            fields%sno = out%NO_DATA
+            fields%fsno = out%NO_DATA
+            fields%wsno = out%NO_DATA
+            fields%zpnd = out%NO_DATA
+            fields%pndw = out%NO_DATA
+            fields%lzs = out%NO_DATA
+            fields%dzs = out%NO_DATA
+            fields%stgw = out%NO_DATA
+            fields%thlq = out%NO_DATA
+            fields%lqws = out%NO_DATA
+            fields%thic = out%NO_DATA
+            fields%fzws = out%NO_DATA
+            fields%alws = out%NO_DATA
         end if
 
         !> Energy balance.
         if (ro%RUNBALEB) then
-            group%cmas = out%NO_DATA
-            group%tcan = out%NO_DATA
-            group%tsno = out%NO_DATA
-            group%tpnd = out%NO_DATA
-            group%albt = out%NO_DATA
-            group%alvs = out%NO_DATA
-            group%alir = out%NO_DATA
-            group%fsout = out%NO_DATA
-            group%gte = out%NO_DATA
-            group%flout = out%NO_DATA
-            group%qh = out%NO_DATA
-            group%qe = out%NO_DATA
-            group%gzero = out%NO_DATA
-            group%stge = out%NO_DATA
-            group%gflx = out%NO_DATA
-            group%tbar = out%NO_DATA
+            fields%cmas = out%NO_DATA
+            fields%tcan = out%NO_DATA
+            fields%tsno = out%NO_DATA
+            fields%tpnd = out%NO_DATA
+            fields%albt = out%NO_DATA
+            fields%alvs = out%NO_DATA
+            fields%alir = out%NO_DATA
+            fields%fsout = out%NO_DATA
+            fields%gte = out%NO_DATA
+            fields%flout = out%NO_DATA
+            fields%qh = out%NO_DATA
+            fields%qe = out%NO_DATA
+            fields%gzero = out%NO_DATA
+            fields%stge = out%NO_DATA
+            fields%gflx = out%NO_DATA
+            fields%tbar = out%NO_DATA
         end if
 
         !> Channels and routing.
         if (ro%RUNCHNL) then
-            group%rff = out%NO_DATA
-            group%rchg = out%NO_DATA
-            group%qi = out%NO_DATA
-            group%stgch = out%NO_DATA
-            group%qo = out%NO_DATA
-            group%zlvl = out%NO_DATA
+            fields%rff = out%NO_DATA
+            fields%rchg = out%NO_DATA
+            fields%qi = out%NO_DATA
+            fields%stgch = out%NO_DATA
+            fields%qo = out%NO_DATA
+            fields%zlvl = out%NO_DATA
         end if
 
     end subroutine
@@ -992,14 +1129,171 @@ module output_variables
 
         !> Tile-based.
         if (ro%RUNTILE) then
-            call output_variables_reset_group(shd, out%ts%tile)
+            call output_variables_reset_fields(shd, out%ts%tile)
         end if
 
         !> Grid-based.
         if (ro%RUNGRID) then
-            call output_variables_reset_group(shd, out%ts%grid)
-            call output_variables_reset_group(shd, out%ts%basin)
+            call output_variables_reset_fields(shd, out%ts%grid)
+            call output_variables_reset_fields(shd, out%ts%basin)
         end if
+
+    end subroutine
+
+    !> Description:
+    !>  Copy the output variable to the 'val' vector.
+    subroutine output_variables_val(shd, fields, vname, val, ignd)
+
+        !> 'shd_variables' required for 'shd'.
+        !> 'control_variables' required to check for active modelling components.
+        use shd_variables
+        use control_variables
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+        type(output_fields), intent(in) :: fields
+        character(len = *), intent(in) :: vname
+        integer, intent(in), optional :: ignd
+
+        !> Output variables.
+        real, dimension(:), intent(out) :: val
+
+        !> NO_DATA value.
+        val = out%NO_DATA
+
+        !> Copy the variable.
+        select case (vname)
+
+            !> Meteorological forcing.
+            case (VN_PRE)
+                if (ro%RUNCLIM) val = fields%pre
+            case (VN_FSIN)
+                if (ro%RUNCLIM) val = fields%fsin
+            case (VN_FLIN)
+                if (ro%RUNCLIM) val = fields%flin
+            case (VN_TA)
+                if (ro%RUNCLIM) val = fields%ta
+            case (VN_QA)
+                if (ro%RUNCLIM) val = fields%qa
+            case (VN_PRES)
+                if (ro%RUNCLIM) val = fields%pres
+            case (VN_UV)
+                if (ro%RUNCLIM) val = fields%uv
+
+            !> Water balance.
+            case (VN_PREC)
+                if (ro%RUNBALWB) val = fields%prec
+            case (VN_EVAP)
+                if (ro%RUNBALWB) val = fields%evap
+            case (VN_PEVP)
+                if (ro%RUNBALWB) val = fields%pevp
+            case (VN_EVPB)
+                if (ro%RUNBALWB) val = fields%evpb
+            case (VN_ARRD)
+                if (ro%RUNBALWB) val = fields%arrd
+            case (VN_GRO)
+                if (ro%RUNBALWB) val = fields%gro
+            case (VN_ROF)
+                if (ro%RUNBALWB) val = fields%rof
+            case (VN_ROFO)
+                if (ro%RUNBALWB) val = fields%rofo
+            case (VN_ROFS)
+                if (ro%RUNBALWB) val = fields%rofs
+            case (VN_ROFB)
+                if (ro%RUNBALWB) val = fields%rofb
+            case (VN_RCAN)
+                if (ro%RUNBALWB) val = fields%rcan
+            case (VN_SNCAN)
+                if (ro%RUNBALWB) val = fields%sncan
+            case (VN_SNO)
+                if (ro%RUNBALWB) val = fields%sno
+            case (VN_FSNO)
+                if (ro%RUNBALWB) val = fields%fsno
+            case (VN_WSNO)
+                if (ro%RUNBALWB) val = fields%wsno
+            case (VN_ZPND)
+                if (ro%RUNBALWB) val = fields%zpnd
+            case (VN_PNDW)
+                if (ro%RUNBALWB) val = fields%pndw
+            case (VN_LZS)
+                if (ro%RUNBALWB) val = fields%lzs
+            case (VN_DZS)
+                if (ro%RUNBALWB) val = fields%dzs
+            case (VN_STGW)
+                if (ro%RUNBALWB) val = fields%stgw
+            case (VN_THLQ)
+                if (ro%RUNBALWB .and. present(ignd)) then
+                    if (ignd > 0) val = fields%thlq(:, ignd)
+                end if
+            case (VN_LQWS)
+                if (ro%RUNBALWB .and. present(ignd)) then
+                    if (ignd > 0) val = fields%lqws(:, ignd)
+                end if
+            case (VN_THIC)
+                if (ro%RUNBALWB .and. present(ignd)) then
+                    if (ignd > 0) val = fields%thic(:, ignd)
+                end if
+            case (VN_FZWS)
+                if (ro%RUNBALWB .and. present(ignd)) then
+                    if (ignd > 0) val = fields%fzws(:, ignd)
+                end if
+            case (VN_ALWS)
+                if (ro%RUNBALWB .and. present(ignd)) then
+                    if (ignd > 0) val = fields%alws(:, ignd)
+                end if
+
+            !> Energy balance.
+            case (VN_CMAS)
+                if (ro%RUNBALEB) val = fields%cmas
+            case (VN_TCAN)
+                if (ro%RUNBALEB) val = fields%tcan
+            case (VN_TSNO)
+                if (ro%RUNBALEB) val = fields%tsno
+            case (VN_TPND)
+                if (ro%RUNBALEB) val = fields%tpnd
+            case (VN_ALBT)
+                if (ro%RUNBALEB) val = fields%albt
+            case (VN_ALVS)
+                if (ro%RUNBALEB) val = fields%alvs
+            case (VN_ALIR)
+                if (ro%RUNBALEB) val = fields%alir
+            case (VN_FSOUT)
+                if (ro%RUNBALEB) val = fields%fsout
+            case (VN_GTE)
+                if (ro%RUNBALEB) val = fields%gte
+            case (VN_FLOUT)
+                if (ro%RUNBALEB) val = fields%flout
+            case (VN_QH)
+                if (ro%RUNBALEB) val = fields%qh
+            case (VN_QE)
+                if (ro%RUNBALEB) val = fields%qe
+            case (VN_GZERO)
+                if (ro%RUNBALEB) val = fields%gzero
+            case (VN_STGE)
+                if (ro%RUNBALEB) val = fields%stge
+            case (VN_GFLX)
+                if (ro%RUNBALEB .and. present(ignd)) then
+                    if (ignd > 0) val = fields%gflx(:, ignd)
+                end if
+            case (VN_TBAR)
+                if (ro%RUNBALEB .and. present(ignd)) then
+                    if (ignd > 0) val = fields%tbar(:, ignd)
+                end if
+
+            !> Channels and routing.
+            case (VN_RFF)
+                if (ro%RUNCHNL) val = fields%rff
+            case (VN_RCHG)
+                if (ro%RUNCHNL) val = fields%rchg
+            case (VN_QI)
+                if (ro%RUNCHNL) val = fields%qi
+            case (VN_STGCH)
+                if (ro%RUNCHNL) val = fields%stgch
+            case (VN_QO)
+                if (ro%RUNCHNL) val = fields%qo
+            case (VN_ZLVL)
+                if (ro%RUNCHNL) val = fields%zlvl
+        end select
 
     end subroutine
 
