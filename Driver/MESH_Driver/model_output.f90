@@ -154,6 +154,13 @@ module output_files
     !*  fls_out: Instance of variables for output.
     type(output_fields_container), save :: fls_out
 
+    !> Description:
+    !>  Interface for 'output_files_parse_indices'.
+    interface output_files_parse_indices
+        module procedure output_files_parse_indices_real
+        module procedure output_files_parse_indices_int
+    end interface
+
     contains
 
 !>>>>temporarily_here
@@ -781,7 +788,7 @@ module output_files
 
     end subroutine
 
-    subroutine output_files_parse_indices(args, nargs, indices, startindex, ierr)
+    subroutine output_files_parse_indices_real(args, nargs, indices, startindex, ierr)
 
         !> strings: For 'is_letter' and 'value' functions.
         use strings
@@ -791,7 +798,7 @@ module output_files
         integer, intent(in) :: nargs, startindex
 
         !> Output variables.
-        integer, dimension(:), allocatable, intent(out) :: indices
+        real, dimension(:), allocatable, intent(out) :: indices
         integer, intent(out) :: ierr
 
         !> Local variables.
@@ -807,11 +814,36 @@ module output_files
         !> Allocate the vector and store the indices.
         ierr = 0
         if (n > 0) then
+            if (allocated(indices)) deallocate(indices)
             allocate(indices(n))
             do j = 1, n
                 call value(args(startindex + j), indices(j), ierr)
             end do
         end if
+
+    end subroutine
+
+    subroutine output_files_parse_indices_int(args, nargs, indices, startindex, ierr)
+
+        !> strings: For 'is_letter' and 'value' functions.
+        use strings
+
+        !> Input variables.
+        character(len = *), dimension(:), intent(in) :: args
+        integer, intent(in) :: nargs, startindex
+
+        !> Output variables.
+        integer, dimension(:), allocatable, intent(out) :: indices
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        real, dimension(:), allocatable :: r
+
+        !> Call 'real' function.
+        call output_files_parse_indices_real(args, nargs, r, startindex, ierr)
+
+        !> Convert 'r' to integer 'indices'.
+        indices = int(r)
 
     end subroutine
 
@@ -858,6 +890,9 @@ module output_files
                         field%ffreq = field%ffreq + radix(fls_out%ffreq%mly)**fls_out%ffreq%mly
                     end if
                 case ('s')
+                    if (.not. btest(field%ffreq, fls_out%ffreq%mly)) then
+                        field%ffreq = field%ffreq + radix(fls_out%ffreq%mly)**fls_out%ffreq%mly
+                    end if
                     if (.not. btest(field%ffreq, fls_out%ffreq%ssl)) then
                         field%ffreq = field%ffreq + radix(fls_out%ffreq%ssl)**fls_out%ffreq%ssl
                     end if
@@ -927,6 +962,9 @@ module output_files
 
                 !> Grid output filtered by GRU.
                 case('gru')
+                    if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
+                        field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
+                    end if
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                     end if
@@ -963,6 +1001,7 @@ module output_files
                         end do
                     end if
 
+                !> Not recognized.
                 case default
                     call print_remark( &
                         "The option '" // trim(adjustl(args(i))) // "' (Variable '" // trim(field%vname) // &
@@ -1396,9 +1435,36 @@ module output_files
 
     end subroutine
 
+    subroutine output_files_filter_group(fls, shd, field, group, t)
+
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: t
+
+        !> Input/output variables.
+        type(output_field) field
+        type(output_group) group
+
+        !> Local variables.
+        integer k
+
+        !> Return if either of the 'tile' or 'grid' groups are not activated.
+        !> Return if the 'gru' attributes of the field is not allocated.
+        if (.not. (btest(field%fgroup, fls_out%fgroup%tile) .and. btest(field%fgroup, fls_out%fgroup%grid)) .or. &
+            .not. allocated(field%gru)) return
+
+        !> Filter grid outputs by GRU (requires pulling from tile output variables).
+        group%grid%dat = 0.0
+        do k = 1, shd%lc%NML
+            if (field%gru(1) == shd%lc%JLMOS(k)) group%grid%dat(shd%lc%ILMOS(k), t) = group%tile%dat(k, t)
+        end do
+
+    end subroutine
+
     !> Description:
     !>  Update the value using transforms (if provided).
-    subroutine output_files_update_dat(fls, shd, field, out_fields, vname, val, cfactorm, cfactora)
+    subroutine output_files_update_dat(fls, shd, field, out_fields, vname, val, cfactorm, cfactora, fn)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
@@ -1406,13 +1472,15 @@ module output_files
         type(output_fields), intent(in) :: out_fields
         character(len = *), intent(in) :: vname
         real, intent(in), optional :: cfactorm, cfactora
+        character(len = *), intent(in), optional :: fn
 
         !> Input/output variables.
         type(output_field) field
         real, dimension(:) :: val
 
         !> Local variables.
-        real frac(shd%NA), m, a
+        real frac(shd%NA), v(size(val)), m, a
+        character(len = 10) f
 
         !> Optional factors.
         if (present(cfactorm)) then
@@ -1425,6 +1493,11 @@ module output_files
         else
             a = 0.0
         end if
+        if (present(fn)) then
+            f = adjustl(fn)
+        else
+            f = ''
+        end if
 
         !> Set 'frac' to 'shd%FRAC' if multiplying 'val' by the fractional area of the cell (grids only).
         if (btest(field%fgroup, fls_out%fgroup%grid) .and. field%apply_frac) then
@@ -1434,23 +1507,32 @@ module output_files
         end if
 
         !> Update value.
-        call output_variables_val(shd, out_fields, vname, val, field%ilvl)
+        call output_variables_val(shd, out_fields, vname, v, field%ilvl)
 
         !> Apply transforms to 'val'.
-        val = (m*val + a)*frac
+        select case (fn)
+            case ('max')
+                val = max(val, (m*v + a)*frac)
+            case ('min')
+                val = min(val, (m*v + a)*frac)
+            case ('sum')
+                val = val + (m*v + a)*frac
+            case default
+                val = (m*v + a)*frac
+        end select
 
     end subroutine
 
-    subroutine output_files_update_group(fls, shd, field, group, dates, out_group, vname, t, cfactorm, cfactora)
+    subroutine output_files_update_group(fls, shd, field, group, out_group, vname, t, cfactorm, cfactora, fn)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        integer, dimension(:, :), intent(in) :: dates
         type(output_series), intent(in) :: out_group
         character(len = *), intent(in) :: vname
         integer, intent(in) :: t
         real, intent(in), optional :: cfactorm, cfactora
+        character(len = *), intent(in), optional :: fn
 
         !> Input/output variables.
         type(output_field) field
@@ -1460,24 +1542,17 @@ module output_files
         integer k
         real val(shd%lc%NML)
 
-        !> Update grid variables.
-        if (btest(field%fgroup, fls_out%fgroup%grid)) then
-            if (allocated(field%gru)) then
-
-                !> Filter grid outputs by GRU (requires pulling from tile output variables).
-                call output_files_update_dat(fls, shd, field, out_group%tile, vname, val, cfactorm, cfactora)
-                group%grid%dat = 0.0
-                do k = 1, shd%lc%NML
-                    if (field%gru(1) == shd%lc%JLMOS(k)) group%grid%dat(shd%lc%ILMOS(k), t) = val(k)
-                end do
-            else
-                call output_files_update_dat(fls, shd, field, out_group%grid, vname, group%grid%dat(:, t), cfactorm, cfactora)
-            end if
-        end if
-
         !> Update tile variables.
         if (btest(field%fgroup, fls_out%fgroup%tile)) then
-            call output_files_update_dat(fls, shd, field, out_group%tile, vname, group%tile%dat(:, t), cfactorm, cfactora)
+            call output_files_update_dat(fls, shd, field, out_group%tile, vname, group%tile%dat(:, t), cfactorm, cfactora, fn)
+        end if
+
+        !> Update grid variables.
+        if (btest(field%fgroup, fls_out%fgroup%grid)) then
+            call output_files_update_dat(fls, shd, field, out_group%grid, vname, group%grid%dat(:, t), cfactorm, cfactora, fn)
+
+            !> Filter grid outputs by GRU (requires pulling from tile output variables).
+            if (allocated(field%gru)) call output_files_filter_group(fls, shd, field, group, t)
         end if
 
     end subroutine
@@ -1531,7 +1606,7 @@ module output_files
             if (ic%now%year /= ic%next%year) then
                 if (field%in_mem) t = ic%iter%year
                 call output_files_update_dates(fls_out%dates%y, t, ic%iter%year, ic%now%year, 1, 1)
-                call output_files_update_group(fls, shd, field, field%y, fls_out%dates%y, out%y, vname, t, cfactorm, cfactora)
+                call output_files_update_group(fls, shd, field, field%y, out%y, vname, t, cfactorm, cfactora)
             end if
             if ((ic%now%year /= ic%next%year .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, field, field%y, fls_out%dates%y)
@@ -1541,7 +1616,7 @@ module output_files
             if (ic%now%month /= ic%next%month) then
                 if (field%in_mem) t = ic%iter%month
                 call output_files_update_dates(fls_out%dates%m, t, ic%iter%month, ic%now%year, ic%now%month, 1)
-                call output_files_update_group(fls, shd, field, field%m, fls_out%dates%m, out%m, vname, t, cfactorm, cfactora)
+                call output_files_update_group(fls, shd, field, field%m, out%m, vname, t, cfactorm, cfactora)
             end if
             if ((ic%now%month /= ic%next%month .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, field, field%m, fls_out%dates%m)
@@ -1551,7 +1626,7 @@ module output_files
             if (ic%now%day /= ic%next%day) then
                 if (field%in_mem) t = ic%iter%day
                 call output_files_update_dates(fls_out%dates%d, t, ic%iter%day, ic%now%year, ic%now%month, ic%now%day)
-                call output_files_update_group(fls, shd, field, field%d, fls_out%dates%d, out%d, vname, t, cfactorm, cfactora)
+                call output_files_update_group(fls, shd, field, field%d, out%d, vname, t, cfactorm, cfactora)
             end if
             if ((ic%now%day /= ic%next%day .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, field, field%d, fls_out%dates%d)
@@ -1561,7 +1636,7 @@ module output_files
             if (ic%now%hour /= ic%next%hour) then
                 if (field%in_mem) t = ic%iter%hour
                 call output_files_update_dates(fls_out%dates%h, t, ic%iter%hour, ic%now%year, ic%now%month, ic%now%day, ic%now%hour)
-                call output_files_update_group(fls, shd, field, field%h, fls_out%dates%h, out%h, vname, t, cfactorm, cfactora)
+                call output_files_update_group(fls, shd, field, field%h, out%h, vname, t, cfactorm, cfactora)
             end if
             if ((ic%now%hour /= ic%next%hour .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, field, field%h, fls_out%dates%h)
@@ -1573,14 +1648,7 @@ module output_files
             if (ic%now%month /= ic%next%month) then
                 t = ic%now%month
                 call output_files_update_dates(fls_out%dates%s, t, t, ic%now%year, ic%now%month, 1)
-                if (btest(field%fgroup, fls_out%fgroup%grid)) then
-                    call output_files_update_dat(fls, shd, field, out%m%grid, vname, s_grid, cfactorm, cfactora)
-                    field%s%grid%dat(:, t) = field%s%grid%dat(:, t) + s_grid
-                end if
-                if (btest(field%fgroup, fls_out%fgroup%tile)) then
-                    call output_files_update_dat(fls, shd, field, out%m%tile, vname, s_tile, cfactorm, cfactora)
-                    field%s%tile%dat(:, t) = field%s%tile%dat(:, t) + s_tile
-                end if
+                call output_files_update_group(fls, shd, field, field%s, out%m, vname, t, cfactorm, cfactora, 'sum')
             end if
             if (fls_out%fclose) then
 

@@ -13,7 +13,6 @@ module output_variables
             rcan, sncan, sno, fsno, wsno, zpnd, pndw, lzs, dzs, stgw, &
             cmas, tcan, tsno, tpnd, &
             alvs, alir, albt, fsout, flout, gte, qh, qe, gzero, stge, &
-            ald, zod, &
             rff, rchg, qi, stgch, qo, zlvl
         real, dimension(:, :), allocatable :: &
             thlq, lqws, thic, fzws, alws, &
@@ -36,7 +35,6 @@ module output_variables
     !>
     !> Variables:
     !*  tot, y, m, d, h, ts: Output at variable time intervals.
-    !*  tile: Output variables of tiles.
     !*  NO_DATA: No data value (type: real).
     !*  NO_DATA_INT: No data value (type: integer).
     type output_variables_container
