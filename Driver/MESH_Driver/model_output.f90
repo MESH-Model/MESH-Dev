@@ -86,6 +86,9 @@ module output_files
     !> Variables:
     !*  vname: Variable name (default: none).
     !*  ilvl: Variable layer and/or level (default: none).
+    !*  cfactorm: Multiplicative transform to apply when updating the field (default: 1.0).
+    !*  cfactora: Additive transform to apply when updating the field (default: 0.0).
+    !*  fn: Function to use when updating the field (e.g., 'val', 'sum', 'min', 'max'; default: none).
     !*  ffmt: Output file formats (default: none).
     !*  fgroup: Variable groups (default: none).
     !*  ffreq: Output file frequencies (default: none).
@@ -101,6 +104,9 @@ module output_files
     type output_field
         character(len = DEFAULT_FIELD_LENGTH) :: vname = ''
         integer :: ilvl = 0
+        real :: cfactorm = 1.0
+        real :: cfactora = 0.0
+        character(len = DEFAULT_FIELD_LENGTH) :: fn = ''
         integer :: ffmt = 0
         integer :: fgroup = 0
         integer :: ffreq = 0
@@ -947,14 +953,14 @@ module output_files
 
                 !> Order of the selection being saved.
                 case ('gridorder', 'shedorder')
-                    field%order = trim(str)
+                    field%order = adjustl(str)
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                     end if
 
                 !> Point outputs for by grid or NML.
                 case('tsi')
-                    field%order = trim(str)
+                    field%order = adjustl(str)
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                     end if
@@ -963,7 +969,7 @@ module output_files
                     end if
                     call output_files_parse_indices(args, nargs, field%tsi, i, ierr)
                 case('tsk')
-                    field%order = trim(str)
+                    field%order = adjustl(str)
                     if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
                     end if
@@ -995,8 +1001,10 @@ module output_files
                     field%print_date = .true.
 
                 !> Function.
-                case ('cum', 'acc', 'avg', 'max', 'min')
+                case ('cum', 'acc', 'avg')
                     cycle
+                case ('max', 'min')
+                    field%fn = adjustl(str)
 
                 !> TTOL for ZOD.
                 case ('ttol')
@@ -1089,7 +1097,7 @@ module output_files
 
     end subroutine
 
-    subroutine output_files_append_field(fls, shd, ts, vname, args, nargs, ignd)
+    subroutine output_files_append_field(fls, shd, ts, vname, args, nargs, ignd, cfactorm, cfactora, fn)
 
         !> strings: For 'is_letter', 'lowercase', and 'uppercase' functions.
         use strings
@@ -1101,6 +1109,8 @@ module output_files
         character(len = *), intent(in) :: vname, args(:)
         integer, intent(in) :: nargs
         integer, intent(in), optional :: ignd
+        real, intent(in), optional :: cfactorm, cfactora
+        character(len = *), intent(in), optional :: fn
 
         !> Local variables.
         integer n, i
@@ -1143,6 +1153,9 @@ module output_files
         if (present(ignd)) then
             if (ignd > 0 .and. ignd <= shd%lc%IGND) fls_out%fls(n)%ilvl = ignd
         end if
+        if (present(cfactorm)) fls_out%fls(n)%cfactorm = cfactorm
+        if (present(cfactora)) fls_out%fls(n)%cfactora = cfactora
+        if (present(fn)) fls_out%fls(n)%fn = adjustl(fn)
 
         !> Assign inherited options.
         fls_out%fls(n)%in_mem = fls_out%in_mem
@@ -1224,9 +1237,9 @@ module output_files
                 case (VN_FSIN, 'FSDOWN')
                     if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSIN, args, nargs)
                 case (VN_FSVH)
-                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSVH, args, nargs)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSVH, args, nargs, -1, 0.5)
                 case (VN_FSIH)
-                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSIH, args, nargs)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSIH, args, nargs, -1, 0.5)
                 case (VN_FLIN, 'FDL')
                     if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FLIN, args, nargs)
                 case (VN_UV, 'UL')
@@ -1242,11 +1255,11 @@ module output_files
 
                 !> Water balance.
                 case (VN_PREC, 'Rainfall', 'Rain', 'Precipitation')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PREC, args, nargs)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PREC, args, nargs, -1, real(ic%dts))
                 case (VN_EVAP, 'Evapotranspiration')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_EVAP, args, nargs)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_EVAP, args, nargs, -1, real(ic%dts))
                 case (VN_ROF, 'Runoff')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ROF, args, nargs)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ROF, args, nargs, -1, real(ic%dts))
                 case (VN_RCAN)
                     if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_RCAN, args, nargs)
                 case (VN_SNCAN, 'SCAN')
@@ -1330,9 +1343,9 @@ module output_files
 
                 !> Channels and routing.
                 case (VN_RFF, 'WR_RUNOFF')
-                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RFF, args, nargs)
+                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RFF, args, nargs, -1, real(ic%dts))
                 case (VN_RCHG, 'WR_RECHARGE')
-                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RCHG, args, nargs)
+                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RCHG, args, nargs, -1, real(ic%dts))
 
                 case default
                     n = n - 1
@@ -1483,33 +1496,15 @@ module output_files
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
         integer, intent(in) :: t
-        real, intent(in), optional :: cfactorm, cfactora
-        character(len = *), intent(in), optional :: fn
+        real, intent(in) :: cfactorm, cfactora
+        character(len = *), intent(in) :: fn
 
         !> Input/output variables.
         type(output_field) field
         type(output_file) file
 
         !> Local variables.
-        real frac(shd%NA), m, a
-        character(len = 10) f
-
-        !> Optional factors.
-        if (present(cfactorm)) then
-            m = cfactorm
-        else
-            m = 1.0
-        end if
-        if (present(cfactora)) then
-            a = cfactora
-        else
-            a = 0.0
-        end if
-        if (present(fn)) then
-            f = adjustl(fn)
-        else
-            f = ''
-        end if
+        real frac(shd%NA)
 
         !> Set 'frac' to 'shd%FRAC' if multiplying 'val' by the fractional area of the cell (grids only).
         if (btest(field%fgroup, fls_out%fgroup%grid) .and. field%apply_frac) then
@@ -1521,13 +1516,13 @@ module output_files
         !> Apply transforms and update values.
         select case (fn)
             case ('max')
-                file%dat(:, t) = max(file%dat(:, t), (m*file%src + a)*frac)
+                file%dat(:, t) = max(file%dat(:, t), (cfactorm*file%src + cfactora)*frac)
             case ('min')
-                file%dat(:, t) = min(file%dat(:, t), (m*file%src + a)*frac)
+                file%dat(:, t) = min(file%dat(:, t), (cfactorm*file%src + cfactora)*frac)
             case ('sum')
-                file%dat(:, t) = file%dat(:, t) + (m*file%src + a)*frac
+                file%dat(:, t) = file%dat(:, t) + (cfactorm*file%src + cfactora)*frac
             case default
-                file%dat(:, t) = (m*file%src + a)*frac
+                file%dat(:, t) = (cfactorm*file%src + cfactora)*frac
         end select
 
     end subroutine
@@ -1538,16 +1533,12 @@ module output_files
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
         integer, intent(in) :: t
-        real, intent(in), optional :: cfactorm, cfactora
-        character(len = *), intent(in), optional :: fn
+        real, intent(in) :: cfactorm, cfactora
+        character(len = *), intent(in) :: fn
 
         !> Input/output variables.
         type(output_field) field
         type(output_group) group
-
-        !> Local variables.
-        integer k
-        real val(shd%lc%NML)
 
         !> Update tile variables.
         if (btest(field%fgroup, fls_out%fgroup%tile)) then
@@ -1590,12 +1581,11 @@ module output_files
 
     end subroutine
 
-    subroutine output_files_update_field(fls, shd, field, cfactorm, cfactora)
+    subroutine output_files_update_field(fls, shd, field)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        real, intent(in), optional :: cfactorm, cfactora
 
         !> Input/output variables.
         type(output_field) field
@@ -1612,7 +1602,7 @@ module output_files
             if (ic%now%year /= ic%next%year) then
                 if (field%in_mem) t = ic%iter%year
                 call output_files_update_dates(fls_out%dates%y, t, ic%iter%year, ic%now%year, 1, 1)
-                call output_files_update_group(fls, shd, field, field%y, t, cfactorm, cfactora)
+                call output_files_update_group(fls, shd, field, field%y, t, field%cfactorm, field%cfactora, field%fn)
             end if
             if ((ic%now%year /= ic%next%year .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, field, field%y, fls_out%dates%y)
@@ -1622,7 +1612,7 @@ module output_files
             if (ic%now%month /= ic%next%month) then
                 if (field%in_mem) t = ic%iter%month
                 call output_files_update_dates(fls_out%dates%m, t, ic%iter%month, ic%now%year, ic%now%month, 1)
-                call output_files_update_group(fls, shd, field, field%m, t, cfactorm, cfactora)
+                call output_files_update_group(fls, shd, field, field%m, t, field%cfactorm, field%cfactora, field%fn)
             end if
             if ((ic%now%month /= ic%next%month .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, field, field%m, fls_out%dates%m)
@@ -1632,7 +1622,7 @@ module output_files
             if (ic%now%day /= ic%next%day) then
                 if (field%in_mem) t = ic%iter%day
                 call output_files_update_dates(fls_out%dates%d, t, ic%iter%day, ic%now%year, ic%now%month, ic%now%day)
-                call output_files_update_group(fls, shd, field, field%d, t, cfactorm, cfactora)
+                call output_files_update_group(fls, shd, field, field%d, t, field%cfactorm, field%cfactora, field%fn)
             end if
             if ((ic%now%day /= ic%next%day .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, field, field%d, fls_out%dates%d)
@@ -1642,7 +1632,7 @@ module output_files
             if (ic%now%hour /= ic%next%hour) then
                 if (field%in_mem) t = ic%iter%hour
                 call output_files_update_dates(fls_out%dates%h, t, ic%iter%hour, ic%now%year, ic%now%month, ic%now%day, ic%now%hour)
-                call output_files_update_group(fls, shd, field, field%h, t, cfactorm, cfactora)
+                call output_files_update_group(fls, shd, field, field%h, t, field%cfactorm, field%cfactora, field%fn)
             end if
             if ((ic%now%hour /= ic%next%hour .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, field, field%h, fls_out%dates%h)
@@ -1654,7 +1644,7 @@ module output_files
             if (ic%now%month /= ic%next%month) then
                 t = ic%now%month
                 call output_files_update_dates(fls_out%dates%s, t, t, ic%now%year, ic%now%month, 1)
-                call output_files_update_group(fls, shd, field, field%s, t, cfactorm, cfactora, 'sum')
+                call output_files_update_group(fls, shd, field, field%s, t, field%cfactorm, field%cfactora, 'sum')
             end if
             if (fls_out%fclose) then
 
@@ -1690,74 +1680,7 @@ module output_files
 
         !> Update variables.
         do i = 1, size(fls_out%fls)
-            select case (fls_out%fls(i)%vname)
-
-                !> Meteorological forcing.
-                case (VN_FSIN)
-                    if (ro%RUNCLIM) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_FSVH)
-                    if (ro%RUNCLIM) call output_files_update_field(fls, shd, fls_out%fls(i), 0.5)
-                case (VN_FSIH)
-                    if (ro%RUNCLIM) call output_files_update_field(fls, shd, fls_out%fls(i), 0.5)
-                case (VN_FLIN, 'FDL')
-                    if (ro%RUNCLIM) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_UV, 'UL')
-                    if (ro%RUNCLIM) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_TA)
-                    if (ro%RUNCLIM) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_QA, 'HU')
-                    if (ro%RUNCLIM) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_PRES)
-                    if (ro%RUNCLIM) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_PRE)
-                    if (ro%RUNCLIM) call output_files_update_field(fls, shd, fls_out%fls(i))
-
-                !> Water balance.
-                case (VN_PREC)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i), real(ic%dts))
-                case (VN_EVAP)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i), real(ic%dts))
-                case (VN_ROF)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i), real(ic%dts))
-                case (VN_RCAN)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_SNCAN)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_PNDW)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_SNO)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_WSNO)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_STGW)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_DSTGW)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_THLQ)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_LQWS)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_THIC)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_FZWS)
-                    if (ro%RUNBALWB) call output_files_update_field(fls, shd, fls_out%fls(i))
-
-                !> Energy balance.
-                case (VN_QH)
-                    if (ro%RUNBALEB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_QE)
-                    if (ro%RUNBALEB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_GFLX)
-                    if (ro%RUNBALEB) call output_files_update_field(fls, shd, fls_out%fls(i))
-                case (VN_TBAR)
-                    if (ro%RUNBALEB) call output_files_update_field(fls, shd, fls_out%fls(i))
-
-                !> Channels and routing.
-                case (VN_RFF)
-                    if (ro%RUNCHNL) call output_files_update_field(fls, shd, fls_out%fls(i), real(ic%dts))
-                case (VN_RCHG)
-                    if (ro%RUNCHNL) call output_files_update_field(fls, shd, fls_out%fls(i), real(ic%dts))
-            end select
+            call output_files_update_field(fls, shd, fls_out%fls(i))
         end do
 
         !> ZOD, TMAX, TMIN, ALD.
