@@ -60,10 +60,12 @@ module output_files
     !> Variables:
     !*  iun: Unit of the file (must be unique; default: -1).
     !*  fname: Base file name (default: none).
+    !*  src: Source data (1: Index).
     !*  dat: Data (1: Index; 2: Time-series index).
     type output_file
         integer :: iun = -1
         character(len = DEFAULT_LINE_LENGTH) :: fname = ''
+        real, dimension(:), pointer :: src => null()
         real, dimension(:, :), allocatable :: dat
     end type
 
@@ -701,12 +703,12 @@ module output_files
             fname = trim(fname) // '_IG' // trim(adjustl(str))
         end if
 
-        !> Allocate data fields and open output files.
+        !> Assign the 'src' pointer, allocate the 'dat' vector, and open output files.
         ierr = 0
         if (btest(field%fgroup, fls_out%fgroup%grid)) then
             allocate(group%grid%dat(shd%NA, t))
             group%grid%dat = 0.0
-            call output_variables_allocate_val(out_group%grid, field%vname, shd%NA, shd%lc%IGND)
+            call output_variables_allocate_field_pntr(group%grid%src, out_group%grid, field%vname, shd%NA, shd%lc%IGND)
             if (allocated(field%gru)) then
                 if (size(field%gru) >= 1) then
                     write(str, '(i6)') field%gru(1)
@@ -720,7 +722,7 @@ module output_files
         if (btest(field%fgroup, fls_out%fgroup%tile)) then
             allocate(group%tile%dat(shd%lc%NML, t))
             group%tile%dat = 0.0
-            call output_variables_allocate_val(out_group%tile, field%vname, shd%lc%NML, shd%lc%IGND)
+            call output_variables_allocate_field_pntr(group%tile%src, out_group%tile, field%vname, shd%lc%NML, shd%lc%IGND)
             group%grid%fname = fname
             call output_files_open(fls, shd, field, group%tile, z)
             if (z /= 0) ierr = z
@@ -1464,7 +1466,7 @@ module output_files
 
     !> Description:
     !>  Update the value using transforms (if provided).
-    subroutine output_files_update_dat(fls, shd, field, out_fields, vname, val, cfactorm, cfactora, fn)
+    subroutine output_files_update_dat(fls, shd, field, file, out_fields, vname, val, cfactorm, cfactora, fn)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
@@ -1476,6 +1478,7 @@ module output_files
 
         !> Input/output variables.
         type(output_field) field
+        type(output_file) file
         real, dimension(:) :: val
 
         !> Local variables.
@@ -1507,7 +1510,11 @@ module output_files
         end if
 
         !> Update value.
-        call output_variables_val(shd, out_fields, vname, v, field%ilvl)
+        if (associated(file%src)) then
+            v = file%src
+        else
+            call output_variables_val(shd, out_fields, vname, v, field%ilvl)
+        end if
 
         !> Apply transforms to 'val'.
         select case (fn)
@@ -1544,12 +1551,14 @@ module output_files
 
         !> Update tile variables.
         if (btest(field%fgroup, fls_out%fgroup%tile)) then
-            call output_files_update_dat(fls, shd, field, out_group%tile, vname, group%tile%dat(:, t), cfactorm, cfactora, fn)
+            call output_files_update_dat( &
+                fls, shd, field, group%tile, out_group%tile, vname, group%tile%dat(:, t), cfactorm, cfactora, fn)
         end if
 
         !> Update grid variables.
         if (btest(field%fgroup, fls_out%fgroup%grid)) then
-            call output_files_update_dat(fls, shd, field, out_group%grid, vname, group%grid%dat(:, t), cfactorm, cfactora, fn)
+            call output_files_update_dat( &
+                fls, shd, field, group%grid, out_group%grid, vname, group%grid%dat(:, t), cfactorm, cfactora, fn)
 
             !> Filter grid outputs by GRU (requires pulling from tile output variables).
             if (allocated(field%gru)) call output_files_filter_group(fls, shd, field, group, t)
