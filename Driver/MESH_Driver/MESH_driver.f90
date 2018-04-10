@@ -105,6 +105,7 @@ program RUNMESH
     use model_dates
     use climate_forcing
     use output_files
+    use save_basin_output
     use SIMSTATS
 
     implicit none
@@ -259,6 +260,29 @@ program RUNMESH
     NSL = shd%lc%IGND
     NML = shd%lc%NML
 
+    !> Initialize climate forcing module.
+    if (ro%RUNCLIM) then
+        ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
+        if (ENDDATA) goto 997
+    end if
+
+    !> Initialize output variables.
+    call output_variables_init(shd, cm)
+
+    !> Allocate output variables for screen output.
+    call output_variables_allocate(out%d%grid%qo, shd%NA)
+    call output_variables_allocate(out%d%grid%prec, shd%NA)
+    call output_variables_allocate(out%d%grid%evap, shd%NA)
+    call output_variables_allocate(out%d%grid%rof, shd%NA)
+
+    !> Allocate output variables for run totals.
+    call output_variables_allocate(out%tot%grid%prec, shd%NA)
+    call output_variables_allocate(out%tot%grid%evap, shd%NA)
+    call output_variables_allocate(out%tot%grid%rof, shd%NA)
+    call output_variables_allocate(out%tot%grid%rofo, shd%NA)
+    call output_variables_allocate(out%tot%grid%rofs, shd%NA)
+    call output_variables_allocate(out%tot%grid%rofb, shd%NA)
+
     !> Initialize process modules.
     if (ro%RUNTILE) then
         call run_within_tile_init(fls, shd, cm)
@@ -267,11 +291,8 @@ program RUNMESH
     if (ro%RUNGRID) call run_between_grid_init(fls, shd, cm)
     call print_message('')
 
-    !> Initialize climate forcing module.
-    if (ro%RUNCLIM) then
-        ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
-        if (ENDDATA) goto 997
-    end if
+    !> Update output variables with initial states.
+    call output_variables_update(shd, cm)
 
     !> Initialize basin totals for the run.
     if (ipid == 0) then
@@ -283,10 +304,11 @@ program RUNMESH
         TOTAL_ROFB = 0.0
     end if
 
-    !> Initialize output fields.
+    !> Open output files.
     if (ipid == 0) then
         if (OUTFIELDSFLAG == 1) call output_files_init(fls, shd)
-    end if !(ipid == 0) then
+        call run_save_basin_output_init(fls, shd, cm)
+    end if
 
     FRAME_NO_NEW = 1
 
@@ -866,6 +888,9 @@ program RUNMESH
 
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
+        !> Reset output variables.
+        call output_variables_reset(shd, cm)
+
         !> Load or update climate forcing input.
         if (ro%RUNCLIM) then
             ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
@@ -886,6 +911,10 @@ program RUNMESH
 
         !> Run grid-based processes.
         if (ro%RUNGRID) call run_between_grid(fls, shd, cm)
+
+        !> Update output variables.
+!todo: Enable this when the one in 'run_between_grid' is removed.
+!+        call output_variables_update(shd, cm)
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.
@@ -940,8 +969,9 @@ program RUNMESH
                 FRAME_NO_NEW = FRAME_NO_NEW + 1 !UPDATE COUNTERS
             end if
 
-            !> Update data for other outputs.
+            !> Update output files.
             if (OUTFIELDSFLAG == 1) call output_files_update(fls, shd)
+            call run_save_basin_output(fls, shd, cm)
 
         end if !(ipid == 0) then
 
@@ -1077,7 +1107,9 @@ program RUNMESH
 !+                            shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
 !+    end if !(SAVERESUMEFLAG == 2) then
 
+    !> Close output files.
     if (OUTFIELDSFLAG == 1) call output_files_finalize(fls, shd)
+    call run_save_basin_output_finalize(fls, shd, cm)
 
     !> *********************************************************************
     !> Run is now over, print final results to the screen and close files

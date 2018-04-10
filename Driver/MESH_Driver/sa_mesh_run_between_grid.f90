@@ -70,10 +70,10 @@ module sa_mesh_run_between_grid
         use SA_RTE_module
         use WF_ROUTE_config
         use rte_module
-        use save_basin_output
         use cropland_irrigation_between_grid
 
 !temp: Outputs.
+        use save_basin_output, only: STREAMFLOWOUTFLAG, REACHOUTFLAG
         use FLAGS
         use strings
 
@@ -263,10 +263,7 @@ module sa_mesh_run_between_grid
             end do
         end if
 
-        !> Initialize output variables.
-        call output_variables_init(shd, cm)
-
-        !> Allocate grid-based output variables.
+        !> Allocate output variables.
         call output_variables_allocate(out%d%grid%qi, shd%NA)
         call output_variables_allocate(out%d%grid%stgch, shd%NA)
         call output_variables_allocate(out%d%grid%qo, shd%NA)
@@ -278,34 +275,6 @@ module sa_mesh_run_between_grid
         call run_rte_init(fls, shd)
         call runci_between_grid_init(shd, fls)
 
-        !> Allocate grid-based accumulated output.
-        call output_variables_allocate(out%tot%grid%prec, shd%NA)
-        call output_variables_allocate(out%tot%grid%evap, shd%NA)
-        call output_variables_allocate(out%tot%grid%rof, shd%NA)
-        call output_variables_allocate(out%tot%grid%rofo, shd%NA)
-        call output_variables_allocate(out%tot%grid%rofs, shd%NA)
-        call output_variables_allocate(out%tot%grid%rofb, shd%NA)
-
-        !> Allocate grid-based daily output.
-        call output_variables_allocate(out%d%grid%prec, shd%NA)
-        call output_variables_allocate(out%d%grid%evap, shd%NA)
-        call output_variables_allocate(out%d%grid%rof, shd%NA)
-        call output_variables_allocate(out%d%grid%rofo, shd%NA)
-        call output_variables_allocate(out%d%grid%rofs, shd%NA)
-        call output_variables_allocate(out%d%grid%rofb, shd%NA)
-        call output_variables_allocate(out%d%grid%rcan, shd%NA)
-        call output_variables_allocate(out%d%grid%sncan, shd%NA)
-        call output_variables_allocate(out%d%grid%sno, shd%NA)
-        call output_variables_allocate(out%d%grid%wsno, shd%NA)
-        call output_variables_allocate(out%d%grid%pndw, shd%NA)
-        call output_variables_allocate(out%d%grid%lzs, shd%NA)
-        call output_variables_allocate(out%d%grid%dzs, shd%NA)
-        call output_variables_allocate(out%d%grid%lqws, shd%NA, shd%lc%IGND)
-        call output_variables_allocate(out%d%grid%fzws, shd%NA, shd%lc%IGND)
-
-        !> Output.
-        call run_save_basin_output_init(fls, shd, cm)
-
 1010    format(9999(g15.7e2, ','))
 
     end subroutine
@@ -316,7 +285,6 @@ module sa_mesh_run_between_grid
         use SA_RTE_module
         use WF_ROUTE_module
         use rte_module
-        use save_basin_output
         use cropland_irrigation_between_grid
 
 !temp: Outputs.
@@ -339,9 +307,6 @@ module sa_mesh_run_between_grid
 
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
-
-        !> Reset output variables.
-        call output_variables_reset(shd, cm)
 
         !> Read in reservoir release values if such a type of reservoir has been defined.
         if (fms%rsvr%n > 0) then
@@ -412,6 +377,7 @@ module sa_mesh_run_between_grid
         call runci_between_grid(shd, fls, cm)
 
         !> Update output variables.
+!todo: remove this when code for output files has moved.
         call output_variables_update(shd, cm)
 
         if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0) then
@@ -511,9 +477,6 @@ module sa_mesh_run_between_grid
             end if
         end if
 
-        !> Output.
-        call run_save_basin_output(fls, shd, cm)
-
 1010    format(9999(g15.7e2, ','))
 
     end subroutine
@@ -523,7 +486,6 @@ module sa_mesh_run_between_grid
         !> Process modules.
         use WF_ROUTE_config
         use rte_module
-        use save_basin_output
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -536,7 +498,6 @@ module sa_mesh_run_between_grid
         !> Call processes.
         call WF_ROUTE_finalize(fls, shd)
         call run_rte_finalize(fls, shd)
-        call run_save_basin_output_finalize(fls, shd, cm)
 
     end subroutine
 
