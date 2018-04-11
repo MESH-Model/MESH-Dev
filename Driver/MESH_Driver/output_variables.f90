@@ -98,6 +98,14 @@ module output_variables
     type(output_variables_container), save :: out
 
     !> Description:
+    !>  Type for process modules to integrate with output fields.
+    type output_fields_surrogate
+        real, dimension(:), pointer :: &
+            y_tile => null(), m_tile => null(), d_tile => null(), h_tile => null(), &
+            y_grid => null(), m_grid => null(), d_grid => null(), h_grid => null()
+    end type
+
+    !> Description:
     !>  Interface for 'output_variables_allocate'.
     interface output_variables_allocate
         module procedure output_variables_allocate_1d_pntr
@@ -175,7 +183,7 @@ module output_variables
             !> Meteorological forcing.
             case (VN_PRE)
                 if (ro%RUNCLIM) call output_variables_allocate(fields%pre, n, pntr)
-            case (VN_FSIN)
+            case (VN_FSIN, VN_FSVH, VN_FSIH)
                 if (ro%RUNCLIM) call output_variables_allocate(fields%fsin, n, pntr)
             case (VN_FLIN)
                 if (ro%RUNCLIM) call output_variables_allocate(fields%flin, n, pntr)

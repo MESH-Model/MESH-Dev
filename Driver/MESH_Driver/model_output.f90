@@ -169,6 +169,13 @@ module output_files
         module procedure output_files_parse_indices_int
     end interface
 
+    !> Description:
+    !>  Interface for 'output_files_append_field'.
+    interface output_files_append_field
+        module procedure output_files_append_field
+        module procedure output_files_append_pfield
+    end interface
+
     contains
 
 !>>>>temporarily_here
@@ -946,9 +953,15 @@ module output_files
                     if (.not. btest(field%ffmt, fls_out%ffmt%txt)) then
                         field%ffmt = field%ffmt + radix(fls_out%ffmt%txt)**fls_out%ffmt%txt
                     end if
+                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                    end if
                 case ('csv')
                     if (.not. btest(field%ffmt, fls_out%ffmt%csv)) then
                         field%ffmt = field%ffmt + radix(fls_out%ffmt%csv)**fls_out%ffmt%csv
+                    end if
+                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                     end if
 
                 !> Order of the selection being saved.
@@ -1002,7 +1015,9 @@ module output_files
 
                 !> Function.
                 case ('cum', 'acc', 'avg')
-                    cycle
+                    call print_remark( &
+                        "The option '" // trim(adjustl(args(i))) // "' has been depreciated and has no effect" // &
+                        " (Variable '" // trim(field%vname) // "').", PAD_3)
                 case ('max', 'min')
                     field%fn = adjustl(str)
 
@@ -1024,8 +1039,8 @@ module output_files
                 !> Not recognized.
                 case default
                     call print_remark( &
-                        "The option '" // trim(adjustl(args(i))) // "' (Variable '" // trim(field%vname) // &
-                        ') is not recognized for output.', PAD_3)
+                        "The option '" // trim(adjustl(args(i))) // "' is not recognized for output" // &
+                        " (Variable '" // trim(field%vname) // "').", PAD_3)
             end select
         end do
 
@@ -1162,6 +1177,55 @@ module output_files
 
         !> Parse and interpret remaining options.
         call output_files_parse_options(fls, shd, ts, fls_out%fls(n), args, nargs)
+
+    end subroutine
+
+    subroutine output_files_append_pfield(fls, shd, ts, vname, pfld, args, nargs, ignd, cfactorm, cfactora, fn)
+
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        type(dates_model), intent(in) :: ts
+        character(len = *), intent(in) :: vname, args(:)
+        type(output_fields_surrogate) pfld
+        integer, intent(in) :: nargs
+        integer, intent(in), optional :: ignd
+        real, intent(in), optional :: cfactorm, cfactora
+        character(len = *), intent(in), optional :: fn
+
+        !> Local variables.
+        integer n
+        type (output_field) field
+
+        !> Call base routine.
+        call output_files_append_field(fls, shd, ts, vname, args, nargs, ignd, cfactorm, cfactora, fn)
+
+        !> Check to see if the field was appended.
+        n = size(fls_out%fls)
+        if (fls_out%fls(n)%vname /= adjustl(vname)) return
+        field = fls_out%fls(n)
+
+        !> Assign 'process_group' fields to 'src' variables.
+        if (btest(fls_out%fls(n)%ffreq, fls_out%ffreq%yly)) then
+            if (btest(field%fgroup, fls_out%fgroup%tile) .and. associated(pfld%y_tile)) fls_out%fls(n)%y%tile%src => pfld%y_tile
+            if (btest(field%fgroup, fls_out%fgroup%grid) .and. associated(pfld%y_grid)) fls_out%fls(n)%y%grid%src => pfld%y_grid
+        end if
+        if (btest(field%ffreq, fls_out%ffreq%mly)) then
+            if (btest(field%fgroup, fls_out%fgroup%tile) .and. associated(pfld%m_tile)) fls_out%fls(n)%m%tile%src => pfld%m_tile
+            if (btest(field%fgroup, fls_out%fgroup%grid) .and. associated(pfld%m_grid)) fls_out%fls(n)%m%grid%src => pfld%m_grid
+        end if
+        if (btest(field%ffreq, fls_out%ffreq%dly)) then
+            if (btest(field%fgroup, fls_out%fgroup%tile) .and. associated(pfld%d_tile)) fls_out%fls(n)%d%tile%src => pfld%d_tile
+            if (btest(field%fgroup, fls_out%fgroup%grid) .and. associated(pfld%d_grid)) fls_out%fls(n)%d%grid%src => pfld%d_grid
+        end if
+        if (btest(field%ffreq, fls_out%ffreq%hly)) then
+            if (btest(field%fgroup, fls_out%fgroup%tile) .and. associated(pfld%h_tile)) fls_out%fls(n)%h%tile%src => pfld%h_tile
+            if (btest(field%fgroup, fls_out%fgroup%grid) .and. associated(pfld%h_grid)) fls_out%fls(n)%h%grid%src => pfld%h_grid
+        end if
+        if (btest(field%ffreq, fls_out%ffreq%ssl)) then
+            if (btest(field%fgroup, fls_out%fgroup%tile) .and. associated(pfld%m_tile)) fls_out%fls(n)%s%tile%src => pfld%m_tile
+            if (btest(field%fgroup, fls_out%fgroup%grid) .and. associated(pfld%m_grid)) fls_out%fls(n)%s%grid%src => pfld%m_grid
+        end if
 
     end subroutine
 
@@ -1511,6 +1575,12 @@ module output_files
             frac = shd%FRAC
         else
             frac = 1.0
+        end if
+
+        !> Set 'NO_DATA' value is no 'src' is defined.
+        if (.not. associated(file%src)) then
+            file%dat(:, t) = out%NO_DATA
+            return
         end if
 
         !> Apply transforms and update values.

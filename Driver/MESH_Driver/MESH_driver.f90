@@ -265,6 +265,7 @@ program RUNMESH
         ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
         if (ENDDATA) goto 997
     end if
+    call print_message('')
 
     !> Initialize output variables.
     call output_variables_init(shd, cm)
