@@ -104,7 +104,8 @@ program RUNMESH
     use sa_mesh_run_between_grid
     use model_dates
     use climate_forcing
-    use MODEL_OUTPUT
+    use output_files
+    use save_basin_output
     use SIMSTATS
 
     implicit none
@@ -113,7 +114,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1334'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1350'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -169,7 +170,6 @@ program RUNMESH
 
     !> Basin totals for the run.
     real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
-    real DAILY_PRE, DAILY_EVAP, DAILY_ROF
 
     !> End of run states for prognostic variables.
     real, dimension(:, :), allocatable :: tcan, rcan, sncan, gro, zpnd, tpnd, sno, tsno, albs, rhos
@@ -260,6 +260,30 @@ program RUNMESH
     NSL = shd%lc%IGND
     NML = shd%lc%NML
 
+    !> Initialize climate forcing module.
+    if (ro%RUNCLIM) then
+        ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
+        if (ENDDATA) goto 997
+    end if
+    call print_message('')
+
+    !> Initialize output variables.
+    call output_variables_init(shd, cm)
+
+    !> Allocate output variables for screen output.
+    call output_variables_allocate(out%d%grid%qo, shd%NA)
+    call output_variables_allocate(out%d%grid%prec, shd%NA)
+    call output_variables_allocate(out%d%grid%evap, shd%NA)
+    call output_variables_allocate(out%d%grid%rof, shd%NA)
+
+    !> Allocate output variables for run totals.
+    call output_variables_allocate(out%tot%grid%prec, shd%NA)
+    call output_variables_allocate(out%tot%grid%evap, shd%NA)
+    call output_variables_allocate(out%tot%grid%rof, shd%NA)
+    call output_variables_allocate(out%tot%grid%rofo, shd%NA)
+    call output_variables_allocate(out%tot%grid%rofs, shd%NA)
+    call output_variables_allocate(out%tot%grid%rofb, shd%NA)
+
     !> Initialize process modules.
     if (ro%RUNTILE) then
         call run_within_tile_init(fls, shd, cm)
@@ -268,11 +292,8 @@ program RUNMESH
     if (ro%RUNGRID) call run_between_grid_init(fls, shd, cm)
     call print_message('')
 
-    !> Initialize climate forcing module.
-    if (ro%RUNCLIM) then
-        ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
-        if (ENDDATA) goto 997
-    end if
+    !> Update output variables with initial states.
+    call output_variables_update(shd, cm)
 
     !> Initialize basin totals for the run.
     if (ipid == 0) then
@@ -282,15 +303,13 @@ program RUNMESH
         TOTAL_ROFO = 0.0
         TOTAL_ROFS = 0.0
         TOTAL_ROFB = 0.0
-        DAILY_PRE = 0.0
-        DAILY_EVAP = 0.0
-        DAILY_ROF = 0.0
     end if
 
-    !> Initialize output fields.
+    !> Open output files.
     if (ipid == 0) then
-        if (OUTFIELDSFLAG == 1) call init_out(fls, shd)
-    end if !(ipid == 0) then
+        if (OUTFIELDSFLAG == 1) call output_files_init(fls, shd)
+        call run_save_basin_output_init(fls, shd, cm)
+    end if
 
     FRAME_NO_NEW = 1
 
@@ -805,11 +824,9 @@ program RUNMESH
     !> Calculate initial storage.
     if (ro%RUNBALWB .and. ipid == 0) then
         STG_INI = sum( &
-            (out%grid%rcan%ts + out%grid%sncan%ts + out%grid%sno%ts + out%grid%wsno%ts + out%grid%pndw%ts + &
-             out%grid%lzs%ts + out%grid%dzs%ts)*shd%FRAC)
-        do j = 1, shd%lc%IGND
-            STG_INI = STG_INI + sum((out%grid%lqws(j)%ts + out%grid%fzws(j)%ts)*shd%FRAC)
-        end do
+            (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
+             out%ts%grid%lzs + out%ts%grid%dzs + &
+             sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC)
         STG_INI = STG_INI/sum(shd%FRAC)
     end if !(ipid == 0) then
 
@@ -836,7 +853,7 @@ program RUNMESH
 
             !> Daily streamflow values.
             read(iun) fms%stmg%qomeas%val
-            read(iun) out%grid%qo%d(fms%stmg%meta%rnk(:))
+            read(iun) out%d%grid%qo(fms%stmg%meta%rnk(:))
 
         end if
 
@@ -872,17 +889,13 @@ program RUNMESH
 
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
+        !> Reset output variables.
+        call output_variables_reset(shd, cm)
+
         !> Load or update climate forcing input.
         if (ro%RUNCLIM) then
             ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
             if (ENDDATA) exit
-        end if
-
-        !> Reset variables that accumulate on the daily time-step.
-        if (ipid == 0 .and. ic%ts_daily == 1) then
-            DAILY_PRE = 0.0
-            DAILY_EVAP = 0.0
-            DAILY_ROF = 0.0
         end if
 
         !> Distribute grid states (e.g., channel storage) to worker nodes.
@@ -899,6 +912,10 @@ program RUNMESH
 
         !> Run grid-based processes.
         if (ro%RUNGRID) call run_between_grid(fls, shd, cm)
+
+        !> Update output variables.
+!todo: Enable this when the one in 'run_between_grid' is removed.
+!+        call output_variables_update(shd, cm)
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.
@@ -953,19 +970,13 @@ program RUNMESH
                 FRAME_NO_NEW = FRAME_NO_NEW + 1 !UPDATE COUNTERS
             end if
 
-            !> Update data for other outputs.
-            if (OUTFIELDSFLAG == 1) call UpdateFIELDSOUT(fls, shd)
+            !> Update output files.
+            if (OUTFIELDSFLAG == 1) call output_files_update(fls, shd)
+            call run_save_basin_output(fls, shd, cm)
 
         end if !(ipid == 0) then
 
         if (ipid == 0) then
-
-            !> Accumulated outputs (including non-zero value read from resume file).
-            if (ro%RUNBALWB) then
-                DAILY_PRE = DAILY_PRE + sum(out%grid%pre%ts*shd%FRAC)*ic%dts
-                DAILY_EVAP = DAILY_EVAP + sum(out%grid%evap%ts*shd%FRAC)*ic%dts
-                DAILY_ROF = DAILY_ROF + sum(out%grid%rof%ts*shd%FRAC)*ic%dts
-            end if
 
             !> Write output to the console.
             if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
@@ -975,12 +986,15 @@ program RUNMESH
                     if (fms%stmg%n > 0) then
                         do j = 1, fms%stmg%n
                             if (fms%stmg%n > 0) write(line, '((a), f10.3)') trim(line), fms%stmg%qomeas%val(j)
-                            write(line, '((a), f10.3)') trim(line), out%grid%qo%d(fms%stmg%meta%rnk(j))
+                            write(line, '((a), f10.3)') trim(line), out%d%grid%qo(fms%stmg%meta%rnk(j))
                         end do
                     end if
                     if (ro%RUNBALWB) then
                         write(line, '((a), 3(f10.3))') &
-                            trim(line), DAILY_PRE/sum(shd%FRAC), DAILY_EVAP/sum(shd%FRAC), DAILY_ROF/sum(shd%FRAC)
+                            trim(line), &
+                            sum(out%d%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%d%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%d%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
                     end if
                     call print_screen(line)
                 end if
@@ -1094,7 +1108,9 @@ program RUNMESH
 !+                            shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
 !+    end if !(SAVERESUMEFLAG == 2) then
 
-    if (OUTFIELDSFLAG == 1) call Write_Outputs(fls, shd)
+    !> Close output files.
+    if (OUTFIELDSFLAG == 1) call output_files_finalize(fls, shd)
+    call run_save_basin_output_finalize(fls, shd, cm)
 
     !> *********************************************************************
     !> Run is now over, print final results to the screen and close files
@@ -1119,20 +1135,18 @@ program RUNMESH
 
     if (ipid == 0) then
 
-        !> Accumulated outputs (including non-zero value read from resume file).
+        !> Basin totals for the run.
         if (ro%RUNBALWB) then
-            TOTAL_PRE = TOTAL_PRE + sum(out%grid%pre%tot*shd%FRAC)*ic%dts
-            TOTAL_EVAP = TOTAL_EVAP + sum(out%grid%evap%tot*shd%FRAC)*ic%dts
-            TOTAL_ROF = TOTAL_ROF + sum(out%grid%rof%tot*shd%FRAC)*ic%dts
-            TOTAL_ROFO = TOTAL_ROFO + sum(out%grid%rofo%tot*shd%FRAC)*ic%dts
-            TOTAL_ROFS = TOTAL_ROFS + sum(out%grid%rofs%tot*shd%FRAC)*ic%dts
-            TOTAL_ROFB = TOTAL_ROFB + sum(out%grid%rofb%tot*shd%FRAC)*ic%dts
+            TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%rofo*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFS = TOTAL_ROFS + sum(out%tot%grid%rofs*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%rofb*shd%FRAC)*ic%dts/sum(shd%FRAC)
             STG_FIN = sum( &
-                (out%grid%rcan%ts + out%grid%sncan%ts + out%grid%sno%ts + out%grid%wsno%ts + out%grid%pndw%ts + &
-                 out%grid%lzs%ts + out%grid%dzs%ts)*shd%FRAC)
-            do j = 1, shd%lc%IGND
-                STG_FIN = STG_FIN + sum((out%grid%lqws(j)%ts + out%grid%fzws(j)%ts)*shd%FRAC)
-            end do
+                (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
+                 out%ts%grid%lzs + out%ts%grid%dzs + &
+                 sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC)/sum(shd%FRAC)
         end if
 
         !> Save the current state of the model for SAVERESUMEFLAG.
@@ -1155,21 +1169,12 @@ program RUNMESH
 
             !> Daily streamflow values.
             write(iun) fms%stmg%qomeas%val
-            write(iun) out%grid%qo%d(fms%stmg%meta%rnk(:))
+            write(iun) out%d%grid%qo(fms%stmg%meta%rnk(:))
 
             !> Close the file to free the unit.
             close(iun)
 
         end if !(SAVERESUMEFLAG == 4) then
-
-        !> Basin totals for the run.
-        TOTAL_PRE = TOTAL_PRE/sum(shd%FRAC)
-        TOTAL_EVAP = TOTAL_EVAP/sum(shd%FRAC)
-        TOTAL_ROF = TOTAL_ROF/sum(shd%FRAC)
-        TOTAL_ROFO = TOTAL_ROFO/sum(shd%FRAC)
-        TOTAL_ROFS = TOTAL_ROFS/sum(shd%FRAC)
-        TOTAL_ROFB = TOTAL_ROFB/sum(shd%FRAC)
-        STG_FIN = STG_FIN/sum(shd%FRAC)
 
         !> Write data to the output summary file.
         if (ECHOTXTMODE) then

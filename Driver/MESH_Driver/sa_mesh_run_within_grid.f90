@@ -15,6 +15,9 @@ module sa_mesh_run_within_grid
 
     subroutine run_within_grid_init(fls, shd, cm)
 
+        !> Process modules.
+        use permafrost_outputs_module
+
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
@@ -26,12 +29,16 @@ module sa_mesh_run_within_grid
         !> Update variables.
         call run_within_grid_stas_update(fls, shd, cm)
 
+        !> Call processes.
+        call permafrost_outputs_init(fls, shd)
+
     end subroutine
 
     subroutine run_within_grid(fls, shd, cm)
 
         !> Process modules.
         use baseflow_module
+        use permafrost_outputs_module
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -46,6 +53,7 @@ module sa_mesh_run_within_grid
 
         !> Call processes.
         call bflm_within_grid(fls, shd, cm)
+        call permafrost_outputs_within_tile(fls, shd)
 
     end subroutine
 

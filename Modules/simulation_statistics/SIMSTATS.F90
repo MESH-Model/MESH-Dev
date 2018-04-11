@@ -289,7 +289,7 @@ module SIMSTATS
 
         !> Copy measured and simulated values to local arrays.
         qobs(ncal, :) = fms%stmg%qomeas%val
-        qsim(ncal, :) = out%grid%qo%d(fms%stmg%meta%rnk(:))
+        qsim(ncal, :) = out%d%grid%qo(fms%stmg%meta%rnk(:))
 
         if (objfnflag == 0) then
             ftest = sae_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
