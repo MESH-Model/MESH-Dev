@@ -56,7 +56,7 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			tile_connector.o
 # Process modules.
 OBJECTS+=	baseFlow_luo2012.o baseflow_wfqlz.o baseflow_module.o
-OBJECTS+=	permafrost_active_layer.o
+OBJECTS+=	permafrost_ald.o permafrost_zod.o permafrost_outputs_module.o
 OBJECTS+=	cropland_irrigation_variables.o \
 			cropland_irrigation_init.o \
 			cropland_irrigation_within_tile.o cropland_irrigation_between_grid.o \

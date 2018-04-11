@@ -8,9 +8,6 @@ module output_files
 
     implicit none
 
-    real, allocatable :: TBAR_dly(:, :, :), ALD_dly(:, :), TMAX_ann(:, :, :), TMIN_ann(:, :, :), ALD_ann(:, :), ZOD_ann(:, :, :)
-    real, allocatable :: ZOD_TTOL(:)
-
     !> Description:
     !>  Keys for output file formats.
     !>      To assign: += radix(key)**key
@@ -95,7 +92,7 @@ module output_files
     !*  delim: Field delimiter in supported formats (default: space-delimited).
     !*  order: Print order of elements in the field in supported formats (default: 'unknown').
     !*  in_mem: .true. to store in memory; .false. to write output continuously during the run (default: .false.).
-    !*  apply_frac: .true. to multiply grid values by fractional cell area (default: .false.).
+    !*  apply_frac: .true. to multiply grid values by fractional cell area (default: .true.).
     !*  print_date: Option to print the leading date stamp in supported formats (default: .false.).
     !*  tsi, tsk: Indices of the specific grids and tiles for output in supported formats (text format).
     !*  gru: Indices of GRUs to filter grid based outputs.
@@ -114,7 +111,7 @@ module output_files
         character(len = DEFAULT_FIELD_LENGTH) :: order = 'unknown'
         logical :: in_mem = .false.
         logical :: apply_frac = .false.
-        logical :: print_date = .false.
+        logical :: print_date = .true.
         integer, dimension(:), allocatable :: tsi, tsk
         integer, dimension(:), allocatable :: gru
         type(output_group) y, m, s, d, h
@@ -606,89 +603,6 @@ module output_files
     end subroutine
 !<<<<<temporarily_here
 
-    subroutine output_files_open(fls, shd, field, file, ierr)
-
-        !> Input variables.
-        type(fl_ids), intent(in) :: fls
-        type(ShedGridParams), intent(in) :: shd
-
-        !> Input/output variables.
-        type(output_field) field
-        type(output_file) file
-
-        !> Output variables.
-        integer, intent(out) :: ierr
-
-        !> Local variables.
-        integer iun, z
-
-        !> Base file unit.
-        fls_out%iun = fls_out%iun + 1
-        file%iun = fls_out%iun
-
-        !> Assign file unit and open files.
-        ierr = 0
-        iun = 0
-        if (btest(field%ffmt, fls_out%ffmt%r2c)) then
-            z = 0
-            call open_r2c_output(fls, shd, file%iun + iun, trim(adjustl(file%fname)) // '.r2c', field%vname, '', z)
-            if (z /= 0) then
-                call print_message_detail('ERROR: Unable to open file for output: ' // trim(adjustl(file%fname)) // '.r2c')
-                ierr = z
-            end if
-            iun = iun + 1
-        end if
-        if (btest(field%ffmt, fls_out%ffmt%seq)) then
-            z = 0
-            call open_seq_output(fls, file%iun + iun, trim(adjustl(file%fname)) // '.seq', z)
-            if (z /= 0) then
-                call print_message_detail('ERROR: Unable to open file for output: ' // trim(adjustl(file%fname)) // '.seq')
-                ierr = z
-            end if
-            iun = iun + 1
-        end if
-        if (btest(field%ffmt, fls_out%ffmt%txt)) then
-            z = 0
-            call open_txt_output(fls, file%iun + iun, trim(adjustl(file%fname)) // '.txt', z)
-            if (z /= 0) then
-                call print_message_detail('ERROR: Unable to open file for output: ' // trim(adjustl(file%fname)) // '.txt')
-                ierr = z
-            end if
-            iun = iun + 1
-        end if
-        if (btest(field%ffmt, fls_out%ffmt%csv)) then
-            z = 0
-            call open_txt_output(fls, file%iun + iun, trim(adjustl(file%fname)) // '.csv', z)
-            if (z /= 0) then
-                call print_message_detail('ERROR: Unable to open file for output: ' // trim(adjustl(file%fname)) // '.csv')
-                ierr = z
-            end if
-            iun = iun + 1
-        end if
-        if (btest(field%ffmt, fls_out%ffmt%tsi)) then
-            z = 0
-            call open_txt_output(fls, file%iun + iun, trim(adjustl(file%fname)) // '_GRD.ts', z)
-            if (z /= 0) then
-                call print_message_detail('ERROR: Unable to open file for output: ' // trim(adjustl(file%fname)) // '_GRD.ts')
-                ierr = z
-            end if
-            iun = iun + 1
-        end if
-        if (btest(field%ffmt, fls_out%ffmt%tsk)) then
-            z = 0
-            call open_txt_output(fls, file%iun + iun, trim(adjustl(file%fname)) // '_NML.ts', z)
-            if (z /= 0) then
-                call print_message_detail('ERROR: Unable to open file for output: ' // trim(adjustl(file%fname)) // '_NML.ts')
-                ierr = z
-            end if
-            iun = iun + 1
-        end if
-
-        !> Update shared file unit.
-        fls_out%iun = fls_out%iun + iun
-
-    end subroutine
-
     subroutine output_files_allocate_group(fls, shd, out_group, field, group, t, ierr)
 
         !> Input variables.
@@ -705,7 +619,7 @@ module output_files
         integer, intent(out) :: ierr
 
         !> Local variables.
-        integer z
+        integer iun, z
         character(len = DEFAULT_LINE_LENGTH) fname
         character(len = DEFAULT_FIELD_LENGTH) str
 
@@ -715,10 +629,12 @@ module output_files
             write(str, '(i6)') field%ilvl
             fname = trim(fname) // '_IG' // trim(adjustl(str))
         end if
-
-        !> Assign the 'src' pointer, allocate the 'dat' vector, and open output files.
         ierr = 0
+
+        !> Grid-based.
         if (btest(field%fgroup, fls_out%fgroup%grid)) then
+
+            !> Allocate 'dat' and assign 'src'.
             allocate(group%grid%dat(shd%NA, t))
             group%grid%dat = 0.0
             if (field%ilvl > 0) then
@@ -727,6 +643,8 @@ module output_files
             else
                 call output_variables_allocate_field_pntr(group%grid%src, out_group%grid, field%vname, shd%NA)
             end if
+
+            !> File name.
             if (allocated(field%gru)) then
                 if (size(field%gru) >= 1) then
                     write(str, '(i6)') field%gru(1)
@@ -734,10 +652,68 @@ module output_files
                 end if
             end if
             group%grid%fname = fname
-            call output_files_open(fls, shd, field, group%grid, z)
+
+            !> Assign file unit and open files.
+            fls_out%iun = fls_out%iun + 1
+            group%grid%iun = fls_out%iun
+            iun = 0
+            if (btest(field%ffmt, fls_out%ffmt%r2c)) then
+                z = 0
+                call open_r2c_output(fls, shd, group%grid%iun + iun, trim(group%grid%fname) // '.r2c', field%vname, '', z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to open file for output: ' // trim(group%grid%fname) // '.r2c')
+                    ierr = z
+                end if
+                iun = iun + 1
+            end if
+            if (btest(field%ffmt, fls_out%ffmt%seq)) then
+                z = 0
+                call open_seq_output(fls, group%grid%iun + iun, trim(group%grid%fname) // '.seq', z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to open file for output: ' // trim(group%grid%fname) // '.seq')
+                    ierr = z
+                end if
+                iun = iun + 1
+            end if
+            if (btest(field%ffmt, fls_out%ffmt%txt)) then
+                z = 0
+                call open_txt_output(fls, group%grid%iun + iun, trim(group%grid%fname) // '.txt', z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to open file for output: ' // trim(group%grid%fname) // '.txt')
+                    ierr = z
+                end if
+                iun = iun + 1
+            end if
+            if (btest(field%ffmt, fls_out%ffmt%csv)) then
+                z = 0
+                call open_txt_output(fls, group%grid%iun + iun, trim(group%grid%fname) // '.csv', z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to open file for output: ' // trim(group%grid%fname) // '.csv')
+                    ierr = z
+                end if
+                iun = iun + 1
+            end if
+            if (btest(field%ffmt, fls_out%ffmt%tsi)) then
+                z = 0
+                call open_txt_output(fls, group%grid%iun + iun, trim(group%grid%fname) // '_GRD.ts', z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to open file for output: ' // trim(group%grid%fname) // '_GRD.ts')
+                    ierr = z
+                end if
+                iun = iun + 1
+            end if
             if (z /= 0) ierr = z
+
+            !> Update shared file unit.
+            fls_out%iun = fls_out%iun + iun
         end if
+
+        !> Tile-based.
         if (btest(field%fgroup, fls_out%fgroup%tile)) then
+
+            !> Base file unit.
+
+            !> Allocate 'dat' and assign 'src'.
             allocate(group%tile%dat(shd%lc%NML, t))
             group%tile%dat = 0.0
             if (field%ilvl > 0) then
@@ -746,9 +722,27 @@ module output_files
             else
                 call output_variables_allocate_field_pntr(group%tile%src, out_group%tile, field%vname, shd%lc%NML)
             end if
-            group%grid%fname = fname
-            call output_files_open(fls, shd, field, group%tile, z)
+
+            !> File name.
+            group%tile%fname = fname
+
+            !> Assign file unit and open files.
+            fls_out%iun = fls_out%iun + 1
+            group%tile%iun = fls_out%iun
+            iun = 0
+            if (btest(field%ffmt, fls_out%ffmt%tsk)) then
+                z = 0
+                call open_txt_output(fls, group%tile%iun + iun, trim(group%tile%fname) // '_NML.ts', z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to open file for output: ' // trim(group%tile%fname) // '_NML.ts')
+                    ierr = z
+                end if
+                iun = iun + 1
+            end if
             if (z /= 0) ierr = z
+
+            !> Update shared file unit.
+            fls_out%iun = fls_out%iun + iun
         end if
 
     end subroutine
@@ -868,6 +862,8 @@ module output_files
         call output_files_parse_indices_real(args, nargs, r, startindex, ierr)
 
         !> Convert 'r' to integer 'indices'.
+        if (allocated(indices)) deallocate(indices)
+        allocate(indices(size(r)))
         indices = int(r)
 
     end subroutine
@@ -876,6 +872,9 @@ module output_files
 
         !> strings: For 'is_letter', 'lowercase', and 'value' functions.
         use strings
+
+        !> Process modules.
+        use permafrost_outputs_module
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
@@ -1012,6 +1011,8 @@ module output_files
                 !> Print leading date-stamp.
                 case ('print_date', 'printdate')
                     field%print_date = .true.
+                case ('no_date')
+                    field%print_date = .false.
 
                 !> Function.
                 case ('cum', 'acc', 'avg')
@@ -1020,21 +1021,6 @@ module output_files
                         " (Variable '" // trim(field%vname) // "').", PAD_3)
                 case ('max', 'min')
                     field%fn = adjustl(str)
-
-                !> TTOL for ZOD.
-                case ('ttol')
-                    n = 0
-                    do j = i + 1, nargs
-                        if (is_letter(args(j))) exit
-                        n = n + 1
-                    end do
-                    if (n > 0) then
-                        if (allocated(ZOD_TTOL)) deallocate(ZOD_TTOL)
-                        allocate(ZOD_TTOL(n))
-                        do j = 1, n
-                            call value(args(i + j), ZOD_TTOL(j), ierr)
-                        end do
-                    end if
 
                 !> Not recognized.
                 case default
@@ -1090,7 +1076,6 @@ module output_files
                     "The GRU option (Variable '" // trim(field%vname) // "')" // &
                     ' supports filtering grid output using 1 GRU at a time.' // &
                     ' Multiple GRUs are listed. Only the first GRU in the list is used.', PAD_3)
-                deallocate(field%gru)
             else if (size(field%gru) == 0) then
                 call print_warning( &
                     "The GRU option (Variable '" // trim(field%vname) // "')" // &
@@ -1233,6 +1218,9 @@ module output_files
 
         !> strings: For 'is_letter' function.
         use strings
+
+        !> Process modules.
+        use permafrost_outputs_module
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
@@ -1381,35 +1369,53 @@ module output_files
                         end do
                     end if
 
-                case ('ZOD', 'TMAX', 'TMIN')
-                case (VN_ALD)
-!                    fls_out%ald%name = VN_ALD
-!                    call output_field_init(fls, shd, ts, fls_out%ald, out%grid%ald, args, nargs)
-!                    fls_out%ald%m%active = .false.
-!                    fls_out%ald%s%active = .false.
-!                    fls_out%ald%d%active = .false.
-!                    fls_out%ald%h%active = .false.
-!                    fls_out%ald%ts%active = .false.
-!                    call output_field_allocate(shd, ts, fls_out%ald)
-!                    if (fls_out%ald%y%active) then
-!                        call output_variables_allocate(out%grid%tbar, shd%NA)
-!                        if (.not. allocated(TBAR_dly)) allocate(TBAR_dly(nts_d, shd%NA, shd%lc%IGND))
-!                        if (.not. allocated(ALD_dly)) allocate(ALD_dly(nts_d, shd%NA))
-!                        if (.not. allocated(TMAX_ann)) allocate(TMAX_ann(nts_y, shd%NA, shd%lc%IGND))
-!                        if (.not. allocated(TMIN_ann)) allocate(TMIN_ann(nts_y, shd%NA, shd%lc%IGND))
-!                        if (.not. allocated(ALD_ann)) allocate(ALD_ann(nts_y, shd%NA))
-!                        if (.not. allocated(ZOD_TTOL)) then
-!                            allocate(ZOD_TTOL(1)); ZOD_TTOL = 0.0
-!                        end if
-!                        if (.not. allocated(ZOD_ann)) allocate(ZOD_ann(nts_y, shd%NA, size(ZOD_TTOL)))
-!                        TBAR_dly = 0.0; ALD_dly = -1.0; TMAX_ann = 0.0; TMIN_ann = 1000.0; ALD_ann = -1.0; ZOD_ann = -1.0
-!                    end if
-
                 !> Channels and routing.
                 case (VN_RFF, 'WR_RUNOFF')
                     if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RFF, args, nargs, -1, real(ic%dts))
                 case (VN_RCHG, 'WR_RECHARGE')
                     if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RCHG, args, nargs, -1, real(ic%dts))
+
+                !> Permafrost outputs (PERMAFROSTOUTFLAG).
+                case (PMFRSTVN_ALD)
+                    if (prmfst%PROCESS_ACTIVE) then
+                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALD, prmfst%out%ald, args, nargs)
+                    end if
+                case (PMFRSTVN_TAVG)
+                    if (prmfst%PROCESS_ACTIVE) then
+                        line = trim(VN_TBAR) // '_AVG'
+                        do j = 1, shd%lc%IGND
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tavg(j), args, nargs, j)
+                        end do
+                    end if
+                case (PMFRSTVN_TMAX)
+                    if (prmfst%PROCESS_ACTIVE) then
+                        line = trim(VN_TBAR) // '_MAX'
+                        do j = 1, shd%lc%IGND
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tmax(j), args, nargs, j)
+                        end do
+                    end if
+                case (PMFRSTVN_TMIN)
+                    if (prmfst%PROCESS_ACTIVE) then
+                        line = trim(VN_TBAR) // '_MIN'
+                        do j = 1, shd%lc%IGND
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tmin(j), args, nargs, j)
+                        end do
+                    end if
+                case (PMFRSTVN_TRNG, 'TENV')
+                    if (prmfst%PROCESS_ACTIVE) then
+                        line = trim(VN_TBAR) // '_RNG'
+                        do j = 1, shd%lc%IGND
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tmin(j), args, nargs, j)
+                        end do
+                    end if
+                case (PMFRSTVN_ZOD)
+                    if (prmfst%PROCESS_ACTIVE) then
+                        do j = 1, size(prmfst%pm%zod_ttol)
+                            write(line, FMT_GEN) j
+                            line = trim(PMFRSTVN_ZOD) // '_TTOL_' // trim(adjustl(line))
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%zod(j), args, nargs)
+                        end do
+                    end if
 
                 case default
                     n = n - 1
@@ -1423,81 +1429,6 @@ module output_files
 
     end subroutine
 
-    subroutine output_files_flush(fls, shd, field, file, dates, ierr)
-
-        !> Input variables.
-        type(fl_ids), intent(in) :: fls
-        type(ShedGridParams), intent(in) :: shd
-        type(output_field), intent(in) :: field
-        type(output_file), intent(in) :: file
-        integer, dimension(:, :), intent(in) :: dates
-
-        !> Output variables.
-        integer, intent(out) :: ierr
-
-        !> Local variables.
-        integer iun, z
-
-        !> Assign file unit and open files.
-        ierr = 0
-        iun = 0
-        if (btest(field%ffmt, fls_out%ffmt%r2c)) then
-            z = 0
-            call output_files_write_r2c(fls, shd, file%iun + iun, file%dat, dates, z)
-            if (z /= 0) then
-                call print_message_detail('ERROR: Unable to write to output file: ' // trim(adjustl(file%fname)) // '.r2c')
-                ierr = z
-            end if
-            iun = iun + 1
-        end if
-        if (btest(field%ffmt, fls_out%ffmt%seq)) then
-            z = 0
-            call output_files_write_seq(fls, file%iun + iun, file%dat, dates, z)
-            if (z /= 0) then
-                call print_message_detail('ERROR: Unable to write to output file: ' // trim(adjustl(file%fname)) // '.seq')
-                ierr = z
-            end if
-            iun = iun + 1
-        end if
-        if (btest(field%ffmt, fls_out%ffmt%txt)) then
-            z = 0
-            call output_files_write_txt(fls, shd, field, file%iun + iun, file%dat, dates, z)
-            if (z /= 0) then
-                call print_message_detail('ERROR: Unable to write to output file: ' // trim(adjustl(file%fname)) // '.txt')
-                ierr = z
-            end if
-            iun = iun + 1
-        end if
-        if (btest(field%ffmt, fls_out%ffmt%csv)) then
-            z = 0
-            call output_files_write_txt(fls, shd, field, file%iun + iun, file%dat, dates, z)
-            if (z /= 0) then
-                call print_message_detail('ERROR: Unable to write to output file: ' // trim(adjustl(file%fname)) // '.csv')
-                ierr = z
-            end if
-            iun = iun + 1
-        end if
-        if (btest(field%ffmt, fls_out%ffmt%tsi)) then
-            z = 0
-            call output_files_write_txt(fls, shd, field, file%iun + iun, file%dat, dates, z)
-            if (z /= 0) then
-                call print_message_detail('ERROR: Unable to write to output file: ' // trim(adjustl(file%fname)) // '_GRD.ts')
-                ierr = z
-            end if
-            iun = iun + 1
-        end if
-        if (btest(field%ffmt, fls_out%ffmt%tsk)) then
-            z = 0
-            call output_files_write_txt(fls, shd, field, file%iun + iun, file%dat, dates, z)
-            if (z /= 0) then
-                call print_message_detail('ERROR: Unable to write to output file: ' // trim(adjustl(file%fname)) // '_NML.ts')
-                ierr = z
-            end if
-            iun = iun + 1
-        end if
-
-    end subroutine
-
     subroutine output_files_update_file(fls, shd, field, group, dates)
 
         !> Input variables.
@@ -1508,19 +1439,74 @@ module output_files
         integer, dimension(:, :), intent(in) :: dates
 
         !> Local variables.
-        integer ierr
+        integer iun, z
 
-        !> Write grid output.
-        ierr = 0
+        !> Grid-based.
         if (btest(field%fgroup, fls_out%fgroup%grid)) then
-            call output_files_flush(fls, shd, field, group%grid, dates, ierr)
-            if (ierr /= 0) call stop_program()
+
+            !> Write output.
+            iun = 0
+            if (btest(field%ffmt, fls_out%ffmt%r2c)) then
+                z = 0
+                call output_files_write_r2c(fls, shd, group%grid%iun + iun, group%grid%dat, dates, z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.r2c')
+                    call stop_program()
+                end if
+                iun = iun + 1
+            end if
+            if (btest(field%ffmt, fls_out%ffmt%seq)) then
+                z = 0
+                call output_files_write_seq(fls, group%grid%iun + iun, group%grid%dat, dates, z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.seq')
+                    call stop_program()
+                end if
+                iun = iun + 1
+            end if
+            if (btest(field%ffmt, fls_out%ffmt%txt)) then
+                z = 0
+                call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.txt')
+                    call stop_program()
+                end if
+                iun = iun + 1
+            end if
+            if (btest(field%ffmt, fls_out%ffmt%csv)) then
+                z = 0
+                call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.csv')
+                    call stop_program()
+                end if
+                iun = iun + 1
+            end if
+            if (btest(field%ffmt, fls_out%ffmt%tsi)) then
+                z = 0
+                call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_GRD.ts')
+                    call stop_program()
+                end if
+                iun = iun + 1
+            end if
         end if
 
-        !> Write tile output.
+        !> Tile-based.
         if (btest(field%fgroup, fls_out%fgroup%tile)) then
-            call output_files_flush(fls, shd, field, group%tile, dates, ierr)
-            if (ierr /= 0) call stop_program()
+
+            !> Write output.
+            iun = 0
+            if (btest(field%ffmt, fls_out%ffmt%tsk)) then
+                z = 0
+                call output_files_write_txt(fls, shd, field, group%tile%iun + iun, group%tile%dat, dates, z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%tile%fname) // '_NML.ts')
+                    call stop_program()
+                end if
+                iun = iun + 1
+            end if
         end if
 
     end subroutine
@@ -1567,16 +1553,6 @@ module output_files
         type(output_field) field
         type(output_file) file
 
-        !> Local variables.
-        real frac(shd%NA)
-
-        !> Set 'frac' to 'shd%FRAC' if multiplying 'val' by the fractional area of the cell (grids only).
-        if (btest(field%fgroup, fls_out%fgroup%grid) .and. field%apply_frac) then
-            frac = shd%FRAC
-        else
-            frac = 1.0
-        end if
-
         !> Set 'NO_DATA' value is no 'src' is defined.
         if (.not. associated(file%src)) then
             file%dat(:, t) = out%NO_DATA
@@ -1586,13 +1562,13 @@ module output_files
         !> Apply transforms and update values.
         select case (fn)
             case ('max')
-                file%dat(:, t) = max(file%dat(:, t), (cfactorm*file%src + cfactora)*frac)
+                file%dat(:, t) = max(file%dat(:, t), (cfactorm*file%src + cfactora))
             case ('min')
-                file%dat(:, t) = min(file%dat(:, t), (cfactorm*file%src + cfactora)*frac)
+                file%dat(:, t) = min(file%dat(:, t), (cfactorm*file%src + cfactora))
             case ('sum')
-                file%dat(:, t) = file%dat(:, t) + (cfactorm*file%src + cfactora)*frac
+                file%dat(:, t) = file%dat(:, t) + (cfactorm*file%src + cfactora)
             case default
-                file%dat(:, t) = (cfactorm*file%src + cfactora)*frac
+                file%dat(:, t) = (cfactorm*file%src + cfactora)
         end select
 
     end subroutine
@@ -1610,6 +1586,9 @@ module output_files
         type(output_field) field
         type(output_group) group
 
+        !> Local variables.
+        real frac(shd%NA)
+
         !> Update tile variables.
         if (btest(field%fgroup, fls_out%fgroup%tile)) then
             call output_files_update_dat(fls, shd, field, group%tile, t, cfactorm, cfactora, fn)
@@ -1621,6 +1600,9 @@ module output_files
 
             !> Filter grid outputs by GRU (requires pulling from tile output variables).
             if (allocated(field%gru)) call output_files_filter_group(fls, shd, field, group, t)
+
+            !> Apply frac.
+            if (field%apply_frac) group%grid%dat(:, t) = group%grid%dat(:, t)*shd%FRAC
         end if
 
     end subroutine
@@ -1752,40 +1734,6 @@ module output_files
         do i = 1, size(fls_out%fls)
             call output_files_update_field(fls, shd, fls_out%fls(i))
         end do
-
-        !> ZOD, TMAX, TMIN, ALD.
-!        if (fls_out%ald%y%active .and. ic%now%day /= ic%next%day) then
-!            TBAR_dly(ic%iter%day, : , :) = out%grid%tbar
-!            call active_layer_depth( &
-!                TBAR_dly(ic%iter%day, :, :), shd%lc%sl%ZBOT, &
-!                ALD_dly(ic%iter%day, :), &
-!                shd%lc%IGND, shd%NA, 1, shd%NA)
-!            ALD_ann(ic%iter%year, :) = max(ALD_ann(ic%iter%year, :), ALD_dly(id, :))
-!            TMAX_ann(ic%iter%year, :, :) = max(TMAX_ann(ic%iter%year, :, :), TBAR_dly(ic%iter%day, :, :))
-!            TMIN_ann(ic%iter%year, :, :) = min(TMIN_ann(ic%iter%year, :, :), TBAR_dly(ic%iter%day, :, :))
-!        end if
-!        if (fls_out%ald%y%active .and. ic%now%year /= ic%next%year) then
-            !> ALD.
-!            call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls)
-            !> ZOD.
-!            do j = 1, size(ZOD_TTOL)
-!                do k = 1, ts%nyears
-!                    call zero_oscillation_depth( &
-!                        TMAX_ann(k, :, :), TMIN_ann(k, :, :), shd%lc%sl%ZBOT, ZOD_TTOL(j), &
-!                        ZOD_ann(k, :, j), &
-!                        shd%lc%IGND, shd%NA, 1, shd%NA)
-!                end do
-!                call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
-!            end do
-            !> TMAX.
-!            do j = 1, shd%lc%IGND
-!                call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
-!            end do
-            !> TMIN.
-!            do j = 1, shd%lc%IGND
-!                call WriteFields_i(vr, ts, ifo, i, 'Y', shd, ts%nyears, fls, j)
-!            end do
-!        end if
 
     end subroutine
 
