@@ -30,13 +30,13 @@ subroutine permafrost_ald(tbar, zbot, ald, ilen, nsl, i1, i2)
     !> Calculate ALD, where temperature in the soil transitions from above to below freezing.
     do i = i1, i2
 
-        !> Set ALD = -1.0 in case no ALD is found.
-        ald(i) = -1.0
+        !> Set ALD = 0.0 in case no ALD is found.
+        ald(i) = 0.0
         do j = 2, nsl
             if (tbar(i, j - 1) < TFREZ) then
 
                 !> Ignore and cycle if the layer above is frozen.
-                ald(i) = -2.0
+                ald(i) = 0.0
                 exit
             else if (tbar(i, j) == TFREZ) then
 
