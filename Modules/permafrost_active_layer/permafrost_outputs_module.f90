@@ -146,7 +146,7 @@ module permafrost_outputs_module
             prmfst%out%ald%y_tile(nml), prmfst%out%ald%d_tile(nml), &
             prmfst%out%ald%y_grid(na), prmfst%out%ald%d_grid(na), &
             prmfst%out%ia%y_grid(na), prmfst%out%ia%d_grid(na))
-        prmfst%out%ald%y_tile = 0.0; prmfst%out%ald%d_tile = 0.0
+        prmfst%out%ald%y_tile = -1.0; prmfst%out%ald%d_tile = -1.0
         prmfst%out%ald%y_grid = 0.0; prmfst%out%ald%d_grid = 0.0
         prmfst%out%ia%y_grid = 0.0; prmfst%out%ia%d_grid = 0.0
         allocate(prmfst%out%tavg(nsl), prmfst%out%tmax(nsl), prmfst%out%tmin(nsl), prmfst%out%trng(nsl))
@@ -236,7 +236,7 @@ module permafrost_outputs_module
             prmfst%out%ald%d_grid = 0.0
             prmfst%out%ia%d_grid = 0.0
             do k = 1, shd%lc%NML
-                if (prmfst%out%ald%d_tile(k) > 0.0) then
+                if (prmfst%out%ald%d_tile(k) /= -1.0) then
                     n = shd%lc%ILMOS(k); frac = shd%lc%ACLASS(n, shd%lc%JLMOS(k))
                     prmfst%out%ald%d_grid(n) = prmfst%out%ald%d_grid(n) + prmfst%out%ald%d_tile(k)*frac
                     prmfst%out%ia%d_grid(n) = prmfst%out%ia%d_grid(n) + frac
