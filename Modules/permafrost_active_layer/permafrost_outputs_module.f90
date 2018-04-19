@@ -232,6 +232,7 @@ module permafrost_outputs_module
                 end do
             end do
             call permafrost_ald(tavg, zbot, prmfst%out%ald%d_tile, iln, shd%lc%IGND, 1, shd%lc%NML)
+            where (.not. prmfst%out%ald%d_tile > 0.0) prmfst%out%ald%d_tile = out%NO_DATA
             prmfst%out%ald%y_tile = max(prmfst%out%ald%y_tile, prmfst%out%ald%d_tile)
             prmfst%out%ald%d_grid = 0.0
             prmfst%out%ia%d_grid = 0.0
@@ -250,6 +251,7 @@ module permafrost_outputs_module
             do j = 1, size(prmfst%pm%zod_ttol)
                 call permafrost_zod( &
                     tmax, tmin, zbot, prmfst%pm%zod_ttol(j), prmfst%out%zod(j)%d_tile, shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
+                where (.not. prmfst%out%zod(j)%d_tile > 0.0) prmfst%out%zod(j)%d_tile = out%NO_DATA
                 prmfst%out%zod(j)%d_grid = 0.0
                 prmfst%out%iz(j)%d_grid = 0.0
                 do k = 1, shd%lc%NML
@@ -306,6 +308,7 @@ module permafrost_outputs_module
                 do j = 1, size(prmfst%pm%zod_ttol)
                     call permafrost_zod( &
                         tmax, tmin, zbot, prmfst%pm%zod_ttol(j), prmfst%out%zod(j)%y_tile, shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
+                    where (.not. prmfst%out%zod(j)%y_tile > 0.0) prmfst%out%zod(j)%y_tile = out%NO_DATA
                     prmfst%out%zod(j)%y_grid = 0.0
                     prmfst%out%iz(j)%y_grid = 0.0
                     do k = 1, shd%lc%NML

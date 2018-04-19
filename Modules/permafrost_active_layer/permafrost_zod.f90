@@ -19,22 +19,27 @@ subroutine permafrost_zod(tmax, tmin, zbot, ttol, zod, ilen, nsl, i1, i2)
     implicit none
 
     !> Input variables.
-    integer, intent(in) :: nsl, ilen, i1, i2
-    real, intent(in) :: tmax(ilen, nsl), tmin(ilen, nsl), zbot(nsl), ttol
+    integer nsl, ilen, i1, i2
+    real tmax(ilen, nsl), tmin(ilen, nsl), zbot(nsl), ttol
 
     !> Output variables.
-    real, intent(out) :: zod(ilen)
+    real zod(ilen)
 
     !> Local variables.
     integer i, j
     real trng(ilen, nsl)
 
-    !> Calculate the depth where the range of maximum to minimum temperature is within 'TTOL'.
-    !> ZOD is interpolated to a depth inside the layer.
-    trng(i1:i2, :) = tmax(i1:i2, :) - tmin(i1:i2, :)
-    zod = 0.0
+    !> Calculate ZOD, the depth where the range of maximum to minimum temperature is within 'TTOL'.
     do i = i1, i2
+
+        !> Calculate the temperature envelope.
+        trng(i, :) = tmax(i, :) - tmin(i, :)
+
+        !> Set ZOD = 0.0 in case no ZOD is found.
+        zod(i) = 0.0
         do j = 2, nsl
+
+            !> ZOD is interpolated.
             if (sign(1.0, trng(i, j) - ttol) /= sign(1.0, trng(i, j - 1) - ttol)) then
                 zod(i) = (zbot(j) - zbot(j - 1))/(trng(i, j - 1) - trng(i, j))*(trng(i, j - 1) - ttol) + zbot(j - 1)
                 exit

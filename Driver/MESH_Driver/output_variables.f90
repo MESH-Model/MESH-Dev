@@ -1005,31 +1005,31 @@ module output_variables
                     call output_variables_update_values(series%tile%rofb, out%ts%tile%rofb, its, dnts, 'sum')
                 end if
                 if (associated(series%tile%rcan)) then
-                    call output_variables_update_values(series%tile%rcan, out%ts%tile%rcan, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%rcan, out%ts%tile%rcan, its, dnts, 'avg')
                 end if
                 if (associated(series%tile%sncan)) then
-                    call output_variables_update_values(series%tile%sncan, out%ts%tile%sncan, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%sncan, out%ts%tile%sncan, its, dnts, 'avg')
                 end if
                 if (associated(series%tile%sno)) then
-                    call output_variables_update_values(series%tile%sno, out%ts%tile%sno, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%sno, out%ts%tile%sno, its, dnts, 'avg')
                 end if
                 if (associated(series%tile%fsno)) then
-                    call output_variables_update_values(series%tile%fsno, out%ts%tile%fsno, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%fsno, out%ts%tile%fsno, its, dnts, 'avg')
                 end if
                 if (associated(series%tile%wsno)) then
-                    call output_variables_update_values(series%tile%wsno, out%ts%tile%wsno, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%wsno, out%ts%tile%wsno, its, dnts, 'avg')
                 end if
                 if (associated(series%tile%zpnd)) then
                     call output_variables_update_values(series%tile%zpnd, out%ts%tile%zpnd, its, dnts, 'avg')
                 end if
                 if (associated(series%tile%pndw)) then
-                    call output_variables_update_values(series%tile%pndw, out%ts%tile%pndw, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%pndw, out%ts%tile%pndw, its, dnts, 'avg')
                 end if
                 if (associated(series%tile%lzs)) then
-                    call output_variables_update_values(series%tile%lzs, out%ts%tile%lzs, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%lzs, out%ts%tile%lzs, its, dnts, 'avg')
                 end if
                 if (associated(series%tile%dzs)) then
-                    call output_variables_update_values(series%tile%dzs, out%ts%tile%dzs, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%dzs, out%ts%tile%dzs, its, dnts, 'avg')
                 end if
                 if (associated(series%tile%stgw)) then
                     call output_variables_update_values(series%tile%stgw, out%ts%tile%stgw, its, dnts, 'avg')
@@ -1039,16 +1039,16 @@ module output_variables
                         call output_variables_update_values(series%tile%thlq(:, j), out%ts%tile%thlq(:, j), its, dnts, 'avg')
                     end if
                     if (associated(series%tile%lqws)) then
-                        call output_variables_update_values(series%tile%lqws(:, j), out%ts%tile%lqws(:, j), its, dnts, 'sum')
+                        call output_variables_update_values(series%tile%lqws(:, j), out%ts%tile%lqws(:, j), its, dnts, 'avg')
                     end if
                     if (associated(series%tile%thic)) then
                         call output_variables_update_values(series%tile%thic(:, j), out%ts%tile%thic(:, j), its, dnts, 'avg')
                     end if
                     if (associated(series%tile%fzws)) then
-                        call output_variables_update_values(series%tile%fzws(:, j), out%ts%tile%fzws(:, j), its, dnts, 'sum')
+                        call output_variables_update_values(series%tile%fzws(:, j), out%ts%tile%fzws(:, j), its, dnts, 'avg')
                     end if
                     if (associated(series%tile%alws)) then
-                        call output_variables_update_values(series%tile%alws(:, j), out%ts%tile%alws(:, j), its, dnts, 'sum')
+                        call output_variables_update_values(series%tile%alws(:, j), out%ts%tile%alws(:, j), its, dnts, 'avg')
                     end if
                 end do
             end if
@@ -1169,31 +1169,31 @@ module output_variables
                     call output_variables_update_values(series%grid%rofb, out%ts%grid%rofb, its, dnts, 'sum')
                 end if
                 if (associated(series%grid%rcan)) then
-                    call output_variables_update_values(series%grid%rcan, out%ts%grid%rcan, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%rcan, out%ts%grid%rcan, its, dnts, 'avg')
                 end if
                 if (associated(series%grid%sncan)) then
-                    call output_variables_update_values(series%grid%sncan, out%ts%grid%sncan, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%sncan, out%ts%grid%sncan, its, dnts, 'avg')
                 end if
                 if (associated(series%grid%sno)) then
-                    call output_variables_update_values(series%grid%sno, out%ts%grid%sno, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%sno, out%ts%grid%sno, its, dnts, 'avg')
                 end if
                 if (associated(series%grid%fsno)) then
-                    call output_variables_update_values(series%grid%fsno, out%ts%grid%fsno, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%fsno, out%ts%grid%fsno, its, dnts, 'avg')
                 end if
                 if (associated(series%grid%wsno)) then
-                    call output_variables_update_values(series%grid%wsno, out%ts%grid%wsno, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%wsno, out%ts%grid%wsno, its, dnts, 'avg')
                 end if
                 if (associated(series%grid%zpnd)) then
                     call output_variables_update_values(series%grid%zpnd, out%ts%grid%zpnd, its, dnts, 'avg')
                 end if
                 if (associated(series%grid%pndw)) then
-                    call output_variables_update_values(series%grid%pndw, out%ts%grid%pndw, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%pndw, out%ts%grid%pndw, its, dnts, 'avg')
                 end if
                 if (associated(series%grid%lzs)) then
-                    call output_variables_update_values(series%grid%lzs, out%ts%grid%lzs, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%lzs, out%ts%grid%lzs, its, dnts, 'avg')
                 end if
                 if (associated(series%grid%dzs)) then
-                    call output_variables_update_values(series%grid%dzs, out%ts%grid%dzs, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%dzs, out%ts%grid%dzs, its, dnts, 'avg')
                 end if
                 if (associated(series%grid%stgw)) then
                     call output_variables_update_values(series%grid%stgw, out%ts%grid%stgw, its, dnts, 'avg')
@@ -1203,16 +1203,16 @@ module output_variables
                         call output_variables_update_values(series%grid%thlq(:, j), out%ts%grid%thlq(:, j), its, dnts, 'avg')
                     end if
                     if (associated(series%grid%lqws)) then
-                        call output_variables_update_values(series%grid%lqws(:, j), out%ts%grid%lqws(:, j), its, dnts, 'sum')
+                        call output_variables_update_values(series%grid%lqws(:, j), out%ts%grid%lqws(:, j), its, dnts, 'avg')
                     end if
                     if (associated(series%grid%thic)) then
                         call output_variables_update_values(series%grid%thic(:, j), out%ts%grid%thic(:, j), its, dnts, 'avg')
                     end if
                     if (associated(series%grid%fzws)) then
-                        call output_variables_update_values(series%grid%fzws(:, j), out%ts%grid%fzws(:, j), its, dnts, 'sum')
+                        call output_variables_update_values(series%grid%fzws(:, j), out%ts%grid%fzws(:, j), its, dnts, 'avg')
                     end if
                     if (associated(series%grid%alws)) then
-                        call output_variables_update_values(series%grid%alws(:, j), out%ts%grid%alws(:, j), its, dnts, 'sum')
+                        call output_variables_update_values(series%grid%alws(:, j), out%ts%grid%alws(:, j), its, dnts, 'avg')
                     end if
                 end do
             end if
