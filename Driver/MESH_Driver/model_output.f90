@@ -91,6 +91,7 @@ module output_files
     !*  ffreq: Output file frequencies (default: none).
     !*  delim: Field delimiter in supported formats (default: space-delimited).
     !*  order: Print order of elements in the field in supported formats (default: 'unknown').
+    !*  gru_mask: Function to use when conditioning grid outputs using GRUs (default: '').
     !*  in_mem: .true. to store in memory; .false. to write output continuously during the run (default: .false.).
     !*  apply_frac: .true. to multiply grid values by fractional cell area (default: .true.).
     !*  print_date: Option to print the leading date stamp in supported formats (default: .false.).
@@ -109,6 +110,7 @@ module output_files
         integer :: ffreq = 0
         character(len = DEFAULT_FIELD_LENGTH) :: delim = ''
         character(len = DEFAULT_FIELD_LENGTH) :: order = 'unknown'
+        character(len = DEFAULT_FIELD_LENGTH) :: gru_mask = ''
         logical :: in_mem = .false.
         logical :: apply_frac = .false.
         logical :: print_date = .true.
@@ -619,7 +621,7 @@ module output_files
         integer, intent(out) :: ierr
 
         !> Local variables.
-        integer iun, z
+        integer iun, j, n, z
         character(len = DEFAULT_LINE_LENGTH) fname
         character(len = DEFAULT_FIELD_LENGTH) str
 
@@ -645,10 +647,22 @@ module output_files
             end if
 
             !> File name.
-            if (allocated(field%gru)) then
-                if (size(field%gru) >= 1) then
-                    write(str, '(i6)') field%gru(1)
-                    fname = trim(fname) // '_GRU' // trim(adjustl(str))
+            if (len_trim(field%gru_mask) > 0) then
+                n = 0
+                select case (field%gru_mask)
+                    case ('gru_include')
+                        if (size(field%gru) >= 1) n = size(field%gru)
+                    case ('gru_exclude')
+                        if (size(field%gru) >= 1) n = size(field%gru)
+                        fname = trim(fname) // '_not'
+                    case default
+                        if (size(field%gru) >= 1) n = 1
+                end select
+                if (n > 0) then
+                    do j = 1, n
+                        write(str, '(i6)') field%gru(j)
+                        fname = trim(fname) // '_GRU' // trim(adjustl(str))
+                    end do
                 end if
             end if
             group%grid%fname = fname
@@ -971,7 +985,7 @@ module output_files
                     end if
 
                 !> Point outputs for by grid or NML.
-                case('tsi')
+                case ('tsi')
                     field%order = adjustl(str)
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
@@ -980,7 +994,7 @@ module output_files
                         field%ffmt = field%ffmt + radix(fls_out%ffmt%tsi)**fls_out%ffmt%tsi
                     end if
                     call output_files_parse_indices(args, nargs, field%tsi, i, ierr)
-                case('tsk')
+                case ('tsk')
                     field%order = adjustl(str)
                     if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
@@ -990,8 +1004,27 @@ module output_files
                     end if
                     call output_files_parse_indices(args, nargs, field%tsk, i, ierr)
 
-                !> Grid output filtered by GRU.
-                case('gru')
+                !> Grid outputs conditioned by GRU.
+                case ('gru')
+                    field%gru_mask = adjustl(str)
+                    if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
+                        field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
+                    end if
+                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                    end if
+                    call output_files_parse_indices(args, nargs, field%gru, i, ierr)
+                case ('gru_include')
+                    field%gru_mask = adjustl(str)
+                    if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
+                        field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
+                    end if
+                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                    end if
+                    call output_files_parse_indices(args, nargs, field%gru, i, ierr)
+                case ('gru_exclude')
+                    field%gru_mask = adjustl(str)
                     if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
                     end if
@@ -1071,19 +1104,19 @@ module output_files
             end if
         end if
         if (allocated(field%gru)) then
-            if (size(field%gru) > 1) then
+            if (field%gru_mask == 'gru' .and. size(field%gru) > 1) then
                 call print_warning( &
-                    "The GRU option (Variable '" // trim(field%vname) // "')" // &
+                    "The option '" // trim(field%gru_mask) // "' (Variable '" // trim(field%vname) // "')" // &
                     ' supports filtering grid output using 1 GRU at a time.' // &
                     ' Multiple GRUs are listed. Only the first GRU in the list is used.', PAD_3)
             else if (size(field%gru) == 0) then
                 call print_warning( &
-                    "The GRU option (Variable '" // trim(field%vname) // "')" // &
+                    "The '" // trim(field%gru_mask) // "' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but no GRUs are listed or an error occurred parsing the values.', PAD_3)
                 deallocate(field%gru)
             else if (field%gru(1) > shd%lc%NTYPE .or. field%gru(1) < 1) then
                 call print_warning( &
-                    "The GRU option (Variable '" // trim(field%vname) // "')" // &
+                    "The '" // trim(field%gru_mask) // "' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but contains an invalid GRU number' // &
                     ' or exceeds the number of GRUs identified in the basin.', PAD_3)
                 deallocate(field%gru)
@@ -1524,6 +1557,7 @@ module output_files
 
         !> Local variables.
         integer k
+        real frac(shd%NA)
 
         !> Return if either of the 'tile' or 'grid' groups are not activated.
         !> Return if the 'gru' attributes of the field is not allocated.
@@ -1532,9 +1566,37 @@ module output_files
 
         !> Filter grid outputs by GRU (requires pulling from tile output variables).
         group%grid%dat = 0.0
-        do k = 1, shd%lc%NML
-            if (field%gru(1) == shd%lc%JLMOS(k)) group%grid%dat(shd%lc%ILMOS(k), t) = group%tile%dat(k, t)
-        end do
+        select case (field%gru_mask)
+            case ('gru_include')
+
+                !> Include only the GRUs in the list.
+                frac = 0.0
+                do k = 1, shd%lc%NML
+                    if (group%tile%dat(k, t) /= out%NO_DATA .and. any(field%gru == shd%lc%JLMOS(k))) then
+                        group%grid%dat(shd%lc%ILMOS(k), t) = group%grid%dat(shd%lc%ILMOS(k), t) + &
+                            group%tile%dat(k, t)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+                        frac(shd%lc%ILMOS(k)) = frac(shd%lc%ILMOS(k)) + shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+                    end if
+                end do
+                where (frac > 0.0) group%grid%dat(:, t) = group%grid%dat(:, t)/frac
+            case ('gru_exclude')
+
+                !> Exclude only the GRUs in the list.
+                do k = 1, shd%lc%NML
+                    if (group%tile%dat(k, t) /= out%NO_DATA .and. .not. any(field%gru == shd%lc%JLMOS(k))) then
+                        group%grid%dat(shd%lc%ILMOS(k), t) = group%grid%dat(shd%lc%ILMOS(k), t) + &
+                            group%tile%dat(k, t)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+                        frac(shd%lc%ILMOS(k)) = frac(shd%lc%ILMOS(k)) + shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+                    end if
+                end do
+                where (frac > 0.0) group%grid%dat(:, t) = group%grid%dat(:, t)/frac
+            case default
+
+                !> Only the specified GRU.
+                do k = 1, shd%lc%NML
+                    if (field%gru(1) == shd%lc%JLMOS(k)) group%grid%dat(shd%lc%ILMOS(k), t) = group%tile%dat(k, t)
+                end do
+        end select
 
     end subroutine
 
