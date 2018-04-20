@@ -1409,9 +1409,17 @@ module output_files
                     if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RCHG, args, nargs, -1, real(ic%dts))
 
                 !> Permafrost outputs (PERMAFROSTOUTFLAG).
-                case (PMFRSTVN_ALD)
+                case (PMFRSTVN_ALDD, 'ALDD')
                     if (prmfst%PROCESS_ACTIVE) then
-                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALD, prmfst%out%ald, args, nargs)
+                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALDD, prmfst%out%aldd, args, nargs)
+                        line = trim(PMFRSTVN_ALDD) // '_JDAY'
+                        call output_files_append_field(fls, shd, ts, line, prmfst%out%aldd_jday, args, nargs)
+                    end if
+                case (PMFRSTVN_ALDE)
+                    if (prmfst%PROCESS_ACTIVE) then
+                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALDE, prmfst%out%alde, args, nargs)
+                        line = trim(PMFRSTVN_ALDD) // '_JDAY'
+                        call output_files_append_field(fls, shd, ts, line, prmfst%out%alde_jday, args, nargs)
                     end if
                 case (PMFRSTVN_TAVG)
                     if (prmfst%PROCESS_ACTIVE) then

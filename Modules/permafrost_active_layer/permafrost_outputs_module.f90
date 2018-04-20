@@ -14,7 +14,8 @@ module permafrost_outputs_module
     implicit none
 
     !> Variable names.
-    character(len = 10), parameter :: PMFRSTVN_ALD = 'ALD'
+    character(len = 10), parameter :: PMFRSTVN_ALDD = 'ALD'
+    character(len = 10), parameter :: PMFRSTVN_ALDE = 'ALDE'
     character(len = 10), parameter :: PMFRSTVN_TAVG = 'TAVG'
     character(len = 10), parameter :: PMFRSTVN_TMAX = 'TMAX'
     character(len = 10), parameter :: PMFRSTVN_TMIN = 'TMIN'
@@ -34,14 +35,17 @@ module permafrost_outputs_module
     !>  Data type for variables.
     !>
     !> Variables:
-    !*  ald: Active layer depth (1: Tile index). [m].
+    !*  aldd: Active layer depth calculated using daily average temperature (1: Tile index). [m].
+    !*  alde: Active layer depth calculated using temperature envelope (1: Tile index). [m].
+    !*  ald(d/e)_jday: Day of maximum ALD for yearly output (1: Tile index). [--].
     !*  tavg: Average soil temperature of each layer (1: Tile index; 2: Soil layer). [K].
     !*  tmax: Maximum soil temperature of each layer (1: Tile index; 2: Soil layer). [K].
     !*  tmin: Minimum soil temperature of each layer (1: Tile index; 2: Soil layer). [K].
     !*  trng: Range/envlope of soil temperature of each layer (1: Tile index; 2: Soil layer). [K].
     !*  zod: Zero oscillation depths for each temperature threshold (1: Tile index; 2: TTOL). [m].
     type permafrost_outputs_fields
-        type(output_fields_surrogate) ald, ia
+        type(output_fields_surrogate) aldd, aldd_jday, iad
+        type(output_fields_surrogate) alde, alde_jday, iae
         type(output_fields_surrogate), dimension(:), allocatable :: tavg, tmax, tmin, trng, zod, iz
     end type
 
@@ -143,12 +147,18 @@ module permafrost_outputs_module
         nsl = shd%lc%IGND
         nttol = size(prmfst%pm%zod_ttol)
         allocate( &
-            prmfst%out%ald%y_tile(nml), prmfst%out%ald%d_tile(nml), &
-            prmfst%out%ald%y_grid(na), prmfst%out%ald%d_grid(na), &
-            prmfst%out%ia%y_grid(na), prmfst%out%ia%d_grid(na))
-        prmfst%out%ald%y_tile = 0.0; prmfst%out%ald%d_tile = 0.0
-        prmfst%out%ald%y_grid = 0.0; prmfst%out%ald%d_grid = 0.0
-        prmfst%out%ia%y_grid = 0.0; prmfst%out%ia%d_grid = 0.0
+            prmfst%out%aldd%y_tile(nml), prmfst%out%aldd_jday%y_tile(nml), prmfst%out%aldd%d_tile(nml), &
+            prmfst%out%aldd%y_grid(na), prmfst%out%aldd_jday%y_grid(na), prmfst%out%aldd%d_grid(na), &
+            prmfst%out%iad%y_grid(na), prmfst%out%iad%d_grid(na), &
+            prmfst%out%alde%y_tile(nml), prmfst%out%alde_jday%y_tile(nml), prmfst%out%alde%d_tile(nml), &
+            prmfst%out%alde%y_grid(na), prmfst%out%alde_jday%y_grid(na), prmfst%out%alde%d_grid(na), &
+            prmfst%out%iae%y_grid(na), prmfst%out%iae%d_grid(na))
+        prmfst%out%aldd%y_tile = 0.0; prmfst%out%aldd_jday%y_tile = 0; prmfst%out%aldd%d_tile = 0.0
+        prmfst%out%aldd%y_grid = 0.0; prmfst%out%aldd_jday%y_grid = 0; prmfst%out%aldd%d_grid = 0.0
+        prmfst%out%iad%y_grid = 0.0; prmfst%out%iad%d_grid = 0.0
+        prmfst%out%alde%y_tile = 0.0; prmfst%out%alde_jday%y_tile = 0; prmfst%out%alde%d_tile = 0.0
+        prmfst%out%alde%y_grid = 0.0; prmfst%out%alde_jday%y_grid = 0; prmfst%out%alde%d_grid = 0.0
+        prmfst%out%iae%y_grid = 0.0; prmfst%out%iae%d_grid = 0.0
         allocate(prmfst%out%tavg(nsl), prmfst%out%tmax(nsl), prmfst%out%tmin(nsl), prmfst%out%trng(nsl))
         do j = 1, nsl
             allocate( &
@@ -205,7 +215,8 @@ module permafrost_outputs_module
             end if
             if (ic%ts_yearly == 1) then
                 prmfst%out%tavg(j)%y_tile = 0.0; prmfst%out%tmax(j)%y_tile = 100.0; prmfst%out%tmin(j)%y_tile = 900.0
-                prmfst%out%ald%y_tile = 0.0
+                prmfst%out%aldd%y_tile = 0.0; prmfst%out%aldd_jday%y_tile = 0
+                prmfst%out%alde%y_tile = 0.0; prmfst%out%alde_jday%y_tile = 0
             end if
             prmfst%out%tavg(j)%d_tile = prmfst%out%tavg(j)%d_tile + stas%sl%tbar(:, j)
             prmfst%out%tmax(j)%d_tile = max(prmfst%out%tmax(j)%d_tile, stas%sl%tbar(:, j))
@@ -232,22 +243,25 @@ module permafrost_outputs_module
                     prmfst%out%trng(j)%d_grid(n) = prmfst%out%trng(j)%d_grid(n) + prmfst%out%trng(j)%d_tile(k)*frac
                 end do
             end do
-            call permafrost_ald(tavg, zbot, prmfst%out%ald%d_tile, iln, shd%lc%IGND, 1, shd%lc%NML)
-            where (.not. prmfst%out%ald%d_tile > 0.0) prmfst%out%ald%d_tile = out%NO_DATA
-            prmfst%out%ald%y_tile = max(prmfst%out%ald%y_tile, prmfst%out%ald%d_tile)
-            prmfst%out%ald%d_grid = 0.0
-            prmfst%out%ia%d_grid = 0.0
+            call permafrost_ald(tavg, zbot, prmfst%out%aldd%d_tile, iln, shd%lc%IGND, 1, shd%lc%NML)
+            where (.not. prmfst%out%aldd%d_tile > 0.0) prmfst%out%aldd%d_tile = out%NO_DATA
+            where (prmfst%out%aldd%d_tile > prmfst%out%aldd%y_tile)
+                prmfst%out%aldd%y_tile = prmfst%out%aldd%d_tile
+                prmfst%out%aldd_jday%y_tile = ic%now%jday
+            end where
+            prmfst%out%aldd%d_grid = 0.0
+            prmfst%out%iad%d_grid = 0.0
             do k = 1, shd%lc%NML
-                if (prmfst%out%ald%d_tile(k) > 0.0) then
+                if (prmfst%out%aldd%d_tile(k) > 0.0) then
                     n = shd%lc%ILMOS(k); frac = shd%lc%ACLASS(n, shd%lc%JLMOS(k))
-                    prmfst%out%ald%d_grid(n) = prmfst%out%ald%d_grid(n) + prmfst%out%ald%d_tile(k)*frac
-                    prmfst%out%ia%d_grid(n) = prmfst%out%ia%d_grid(n) + frac
+                    prmfst%out%aldd%d_grid(n) = prmfst%out%aldd%d_grid(n) + prmfst%out%aldd%d_tile(k)*frac
+                    prmfst%out%iad%d_grid(n) = prmfst%out%iad%d_grid(n) + frac
                 end if
             end do
-            where (prmfst%out%ia%d_grid > 0.0)
-                prmfst%out%ald%d_grid = prmfst%out%ald%d_grid/prmfst%out%ia%d_grid
+            where (prmfst%out%iad%d_grid > 0.0)
+                prmfst%out%aldd%d_grid = prmfst%out%aldd%d_grid/prmfst%out%iad%d_grid
             elsewhere
-                prmfst%out%ald%d_grid = out%NO_DATA
+                prmfst%out%aldd%d_grid = out%NO_DATA
             end where
             do j = 1, size(prmfst%pm%zod_ttol)
                 call permafrost_zod( &
@@ -292,19 +306,19 @@ module permafrost_outputs_module
                         prmfst%out%trng(j)%y_grid(n) = prmfst%out%trng(j)%y_grid(n) + prmfst%out%trng(j)%y_tile(k)*frac
                     end do
                 end do
-                prmfst%out%ald%y_grid = 0.0
-                prmfst%out%ia%y_grid = 0.0
+                prmfst%out%aldd%y_grid = 0.0
+                prmfst%out%iad%y_grid = 0.0
                 do k = 1, shd%lc%NML
-                    if (prmfst%out%ald%y_tile(k) > 0.0) then
+                    if (prmfst%out%aldd%y_tile(k) > 0.0) then
                         n = shd%lc%ILMOS(k); frac = shd%lc%ACLASS(n, shd%lc%JLMOS(k))
-                        prmfst%out%ald%y_grid(n) = prmfst%out%ald%y_grid(n) + prmfst%out%ald%y_tile(k)*frac
-                        prmfst%out%ia%y_grid(n) = prmfst%out%ia%y_grid(n) + frac
+                        prmfst%out%aldd%y_grid(n) = prmfst%out%aldd%y_grid(n) + prmfst%out%aldd%y_tile(k)*frac
+                        prmfst%out%iad%y_grid(n) = prmfst%out%iad%y_grid(n) + frac
                     end if
                 end do
-                where (prmfst%out%ia%y_grid > 0.0)
-                    prmfst%out%ald%y_grid = prmfst%out%ald%y_grid/prmfst%out%ia%y_grid
+                where (prmfst%out%iad%y_grid > 0.0)
+                    prmfst%out%aldd%y_grid = prmfst%out%aldd%y_grid/prmfst%out%iad%y_grid
                 elsewhere
-                    prmfst%out%ald%y_grid = out%NO_DATA
+                    prmfst%out%aldd%y_grid = out%NO_DATA
                 end where
                 do j = 1, size(prmfst%pm%zod_ttol)
                     call permafrost_zod( &
