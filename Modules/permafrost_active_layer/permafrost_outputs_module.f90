@@ -205,6 +205,7 @@ module permafrost_outputs_module
             end if
             if (ic%ts_yearly == 1) then
                 prmfst%out%tavg(j)%y_tile = 0.0; prmfst%out%tmax(j)%y_tile = 100.0; prmfst%out%tmin(j)%y_tile = 900.0
+                prmfst%out%ald%y_tile = 0.0
             end if
             prmfst%out%tavg(j)%d_tile = prmfst%out%tavg(j)%d_tile + stas%sl%tbar(:, j)
             prmfst%out%tmax(j)%d_tile = max(prmfst%out%tmax(j)%d_tile, stas%sl%tbar(:, j))
