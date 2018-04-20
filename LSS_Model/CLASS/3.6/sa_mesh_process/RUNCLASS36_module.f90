@@ -283,7 +283,7 @@ module RUNCLASS36_module
             !> WATER BUDGET CALCULATIONS.
             call CLASSW(cpv%THLQ, cpv%THIC, cpv%TBAR, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
                         cdv%ROF, cdv%TROF, cpv%SNO, cpv%TSNO, cpv%RHOS, cpv%ALBS, &
-                        cpv%WSNO, cpv%ZPND, cpv%TPND, cpv%GRO, FRZCGAT, cpv%TBAS, cdv%GFLX, &
+                        cpv%WSNO, cpv%ZPND, cpv%TPND, cpv%GRO, cpv%TBAS, cdv%GFLX, &
                         cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, cdv%QFCF, cdv%QFCL, &
                         cdv%QFN, cdv%QFG, cdv%QFC, cdv%HMFC, cdv%HMFG, cdv%HMFN, &
                         cdv%HTCC, cdv%HTCS, cdv%HTC, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
@@ -312,7 +312,7 @@ module RUNCLASS36_module
                         MANNGAT, DDGAT, ic%ts_daily, &
                         t0_ACC(NMELT), SI, TSI, INFILTYPE, SNOWMELTD, SNOWMELTD_LAST, &
                         MELTRUNOFF, SNOWINFIL, CUMSNOWINFILCS, CUMSNOWINFILGS, &
-                        SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, &
+                        SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, FRZCGAT, &
 !FOR PDMROF
                         CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
                         ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &

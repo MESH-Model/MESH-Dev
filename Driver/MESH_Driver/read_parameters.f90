@@ -35,7 +35,7 @@ subroutine read_parameters(fls, shd, cm)
     integer nargs
 
     !> Local variables.
-    integer NA, NAA, NTYPE, NRVR, NML, NSL, k, i, n, ierr
+    integer NA, NAA, NTYPE, NRVR, NML, NSL, k, j, ignd, i, n, ierr
 
     !> Assign commonly used indices to local variables.
     NA = shd%NA
@@ -362,6 +362,44 @@ subroutine read_parameters(fls, shd, cm)
             end if
 
         end do !k = il1, il2
+    end if
+
+    !> Distribute soil variables to layers lower than the "last configured layer" and check for impermeable soils.
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+
+        !> Check the first layer for impermeable soils.
+        where (pm%slp%sdep == 0.0 .and. pm%slp%sand(:, 1) > -2.5)
+            pm%slp%sand(:, 1) = -3.0
+            pm%slp%clay(:, 1) = -3.0
+            pm%slp%orgm(:, 1) = -3.0
+        end where
+
+        !> Determine the "last configured layer" read from file (CLASS default: 3).
+        if (NRSOILAYEREADFLAG > 3) then
+            ignd = min(NRSOILAYEREADFLAG, NSL)
+        else if (NRSOILAYEREADFLAG == 1) then
+            ignd = 0
+        else
+            ignd = 3
+        end if
+
+        !> Loop from layer 2 to check for impermeable soils.
+        do j = 2, shd%lc%IGND
+
+            !> Assign properties to layers lower than the "last configured layer" read from file.
+            if (j > ignd .and. ignd > 0) then
+                pm%slp%sand(:, j) = pm%slp%sand(:, ignd)
+                pm%slp%clay(:, j) = pm%slp%clay(:, ignd)
+                pm%slp%orgm(:, j) = pm%slp%orgm(:, ignd)
+            end if
+
+            !> Check for impermeable soils.
+            where (pm%slp%sdep < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pm%slp%sand(:, j) > -2.5)
+                pm%slp%sand(:, j) = -3.0
+                pm%slp%clay(:, j) = -3.0
+                pm%slp%orgm(:, j) = -3.0
+            end where
+        end do
     end if
 
 end subroutine

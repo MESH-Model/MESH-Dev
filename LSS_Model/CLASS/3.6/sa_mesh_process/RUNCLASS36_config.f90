@@ -108,6 +108,7 @@ module RUNCLASS36_config
         NTYPE = shd%lc%NTYPE
         NSL = shd%lc%IGND
         NML = shd%lc%NML
+        DELT = ic%dts
 
         !> ALLOCATE ALL VARIABLES
 

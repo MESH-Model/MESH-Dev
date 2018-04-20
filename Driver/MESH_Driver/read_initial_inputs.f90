@@ -35,6 +35,17 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     !>
     call READ_RUN_OPTIONS(fls, shd, cm)
 
+    !> Check that the output folder exists.
+    write(line, FMT_GEN) ipid
+    open(100, file = './' // trim(adjustl(fls%GENDIR_OUT)) // '/tmp' // trim(adjustl(line)), status = 'unknown', iostat = ierr)
+    if (ierr /= 0) then
+        call print_screen('')
+        call print_screen('The output folder does not exist: ' // trim(adjustl(fls%GENDIR_OUT)))
+        call stop_program()
+    else
+        close(100, status = 'delete')
+    end if
+
     !> Open the status file.
     call open_echo_txt('./' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
 
@@ -435,6 +446,47 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
         shd%ylat(i) = (shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0
         shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
     end do
+
+    !> Check CLASS output points.
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+        do i = 1, WF_NUM_POINTS
+            if (i < WF_NUM_POINTS) then
+
+                !> Check for repeated points.
+                do j = i + 1, WF_NUM_POINTS
+                    if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
+                        write(line, "('Grid ', i5, ', GRU ', i4)") op%N_OUT(i), op%II_OUT(i)
+                        call print_error('Output is repeated for ' // trim(adjustl(line)))
+                        call stop_program()
+                    end if
+                end do
+            else
+
+                !> Check that the output path exists.
+                write(line, FMT_GEN) ipid
+                open( &
+                    100, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/tmp' // trim(adjustl(line)), status = 'unknown', &
+                    iostat = ierr)
+                if (ierr /= 0) then
+                    write(line, FMT_GEN) i
+                    call print_error('The output folder for point ' // trim(adjustl(line)) // ' does not exist.')
+                    call print_message('Location: ' // trim(adjustl(op%DIR_OUT(i))), PAD_3)
+                    call stop_program()
+                else
+                    close(100, status = 'delete')
+                end if
+            end if
+
+            !> Check that point lies inside the basin.
+            if (op%N_OUT(i) > shd%NAA) then
+                write(line, FMT_GEN) i
+                call print_error('Output point ' // trim(adjustl(line)) // ' is outside the basin.')
+                write(line, FMT_GEN) shd%NAA
+                call print_message('Number of grids inside the basin: ' // trim(adjustl(line)), PAD_3)
+                call stop_program()
+            end if
+        end do
+    end if
 
     !> If no land surface scheme active.
     if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE .and. .not. RUNSVS113_flgs%PROCESS_ACTIVE) then
