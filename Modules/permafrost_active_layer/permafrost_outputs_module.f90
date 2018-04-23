@@ -347,6 +347,12 @@ module permafrost_outputs_module
                     end where
                 end do
 
+                !> Calculate ALD based on temperature envelope (assign NO_DATA value if ALD == 0.0).
+                call permafrost_ald(tmax_tile, zbot, prmfst%out%aldenv%y_tile, shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
+                where (.not. prmfst%out%aldenv%y_tile > 0.0) prmfst%out%aldenv%y_tile = out%NO_DATA
+                call permafrost_ald(tmax_grid, zbot, prmfst%out%aldenv%y_grid, shd%NA, shd%lc%IGND, 1, shd%NA)
+                where (.not. prmfst%out%aldenv%y_grid > 0.0) prmfst%out%aldenv%y_grid = out%NO_DATA
+
                 !> Calculate ZOD (assign NO_DATA value if ZOD == 0.0).
                 do j = 1, size(prmfst%pm%zod_ttol)
 
