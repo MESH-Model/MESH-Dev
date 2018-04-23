@@ -418,7 +418,7 @@ integer ptr, x, j, k
                      bus(x(TDIAG     ,1,1)),     &
                      bus(x(UDIAG     ,1,1)), bus(x(VDIAG   ,1,1)),   & 
                      bus(x(SKYVIEW   ,1,1)), bus(x(VEGTRANS,1,1)),   & 
-                     bus(x(TVEGE     ,1,2)),    &
+                     bus(x(TVEGE     ,1,2)), bus(x(EMISVH ,1,1)),    &
                      bus(x(WVEG      ,1,1)), bus(x(TSVAVG,1,1)), &
                      bus(x(RNETSV    ,1,1)), bus(x(HFLUXSV ,1,1)),  &  
                      LESVNOFRAC            , ESVNOFRAC,     & 
