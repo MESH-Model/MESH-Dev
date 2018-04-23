@@ -14,8 +14,9 @@ module permafrost_outputs_module
     implicit none
 
     !> Variable names.
-    character(len = 10), parameter :: PMFRSTVN_ALDD = 'ALD'
-    character(len = 10), parameter :: PMFRSTVN_ALDE = 'ALDE'
+    character(len = 10), parameter :: PMFRSTVN_ALD = 'ALD'
+    character(len = 10), parameter :: PMFRSTVN_ALDDOY = 'ALD_DOY'
+    character(len = 10), parameter :: PMFRSTVN_ALDENV = 'ALD_ENV'
     character(len = 10), parameter :: PMFRSTVN_TAVG = 'TAVG'
     character(len = 10), parameter :: PMFRSTVN_TMAX = 'TMAX'
     character(len = 10), parameter :: PMFRSTVN_TMIN = 'TMIN'
@@ -35,18 +36,18 @@ module permafrost_outputs_module
     !>  Data type for variables.
     !>
     !> Variables:
-    !*  aldd: Active layer depth calculated using daily average temperature (1: Tile index). [m].
-    !*  alde: Active layer depth calculated using temperature envelope (1: Tile index). [m].
-    !*  ald(d/e)_jday: Day of maximum ALD for yearly output (1: Tile index). [--].
+    !*  ald: Active layer depth calculated using daily average temperature (1: Tile index). [m].
+    !*  alddoy: Day of maximum ALD for yearly output, based on ALD (1: Tile index). [--].
+    !*  aldenv: Active layer depth (yearly) calculated using temperature envelope (1: Tile index). [m].
     !*  tavg: Average soil temperature of each layer (1: Tile index; 2: Soil layer). [K].
     !*  tmax: Maximum soil temperature of each layer (1: Tile index; 2: Soil layer). [K].
     !*  tmin: Minimum soil temperature of each layer (1: Tile index; 2: Soil layer). [K].
     !*  trng: Range/envlope of soil temperature of each layer (1: Tile index; 2: Soil layer). [K].
     !*  zod: Zero oscillation depths for each temperature threshold (1: Tile index; 2: TTOL). [m].
     type permafrost_outputs_fields
-        type(output_fields_surrogate) aldd, aldd_jday
-        type(output_fields_surrogate) alde, alde_jday
-        type(output_fields_surrogate), dimension(:), allocatable :: tavg, tmax, tmin, trng, zod
+        type(output_fields_surrogate) ald, alddoy, aldenv
+        type(output_fields_surrogate), dimension(:), allocatable :: tavg, tmax, tmin, trng
+        type(output_fields_surrogate), dimension(:), allocatable :: zod
     end type
 
     !> Description:
@@ -147,41 +148,45 @@ module permafrost_outputs_module
         nsl = shd%lc%IGND
         nttol = size(prmfst%pm%zod_ttol)
         allocate( &
-            prmfst%out%aldd%y_tile(nml), prmfst%out%aldd_jday%y_tile(nml), prmfst%out%aldd%d_tile(nml), &
-            prmfst%out%aldd%y_grid(na), prmfst%out%aldd_jday%y_grid(na), prmfst%out%aldd%d_grid(na), &
-            prmfst%out%alde%y_tile(nml), prmfst%out%alde_jday%y_tile(nml), prmfst%out%alde%d_tile(nml), &
-            prmfst%out%alde%y_grid(na), prmfst%out%alde_jday%y_grid(na), prmfst%out%alde%d_grid(na))
-        prmfst%out%aldd%y_tile = 0.0; prmfst%out%aldd_jday%y_tile = 0; prmfst%out%aldd%d_tile = 0.0
-        prmfst%out%aldd%y_grid = 0.0; prmfst%out%aldd_jday%y_grid = 0; prmfst%out%aldd%d_grid = 0.0
-        prmfst%out%alde%y_tile = 0.0; prmfst%out%alde_jday%y_tile = 0; prmfst%out%alde%d_tile = 0.0
-        prmfst%out%alde%y_grid = 0.0; prmfst%out%alde_jday%y_grid = 0; prmfst%out%alde%d_grid = 0.0
+            prmfst%out%ald%y_tile(nml), prmfst%out%ald%d_tile(nml), &
+            prmfst%out%ald%y_grid(na), prmfst%out%ald%d_grid(na), &
+            prmfst%out%alddoy%y_tile(nml), &
+            prmfst%out%alddoy%y_grid(na), &
+            prmfst%out%aldenv%y_tile(nml), &
+            prmfst%out%aldenv%y_grid(na))
+        prmfst%out%ald%y_tile = 0.0; prmfst%out%ald%d_tile = 0.0
+        prmfst%out%ald%y_grid = 0.0; prmfst%out%ald%d_grid = 0.0
+        prmfst%out%alddoy%y_tile = 0.0
+        prmfst%out%alddoy%y_grid = 0.0
+        prmfst%out%aldenv%y_tile = 0.0
+        prmfst%out%aldenv%y_grid = 0.0
         allocate(prmfst%out%tavg(nsl), prmfst%out%tmax(nsl), prmfst%out%tmin(nsl), prmfst%out%trng(nsl))
         do j = 1, nsl
             allocate( &
                 prmfst%out%tavg(j)%y_tile(nml), prmfst%out%tavg(j)%d_tile(nml), &
-                prmfst%out%tmax(j)%y_tile(nml), prmfst%out%tmax(j)%d_tile(nml), &
-                prmfst%out%tmin(j)%y_tile(nml), prmfst%out%tmin(j)%d_tile(nml), &
-                prmfst%out%trng(j)%y_tile(nml), prmfst%out%trng(j)%d_tile(nml), &
                 prmfst%out%tavg(j)%y_grid(na), prmfst%out%tavg(j)%d_grid(na), &
-                prmfst%out%tmax(j)%y_grid(na), prmfst%out%tmax(j)%d_grid(na), &
-                prmfst%out%tmin(j)%y_grid(na), prmfst%out%tmin(j)%d_grid(na), &
-                prmfst%out%trng(j)%y_grid(na), prmfst%out%trng(j)%d_grid(na))
+                prmfst%out%tmax(j)%y_tile(nml), &
+                prmfst%out%tmax(j)%y_grid(na), &
+                prmfst%out%tmin(j)%y_tile(nml), &
+                prmfst%out%tmin(j)%y_grid(na), &
+                prmfst%out%trng(j)%y_tile(nml), &
+                prmfst%out%trng(j)%y_grid(na))
             prmfst%out%tavg(j)%y_tile = 0.0; prmfst%out%tavg(j)%d_tile = 0.0
-            prmfst%out%tmax(j)%y_tile = 100.0; prmfst%out%tmax(j)%d_tile = 100.0
-            prmfst%out%tmin(j)%y_tile = 900.0; prmfst%out%tmin(j)%d_tile = 900.0
-            prmfst%out%trng(j)%y_tile = 0.0; prmfst%out%trng(j)%d_tile = 0.0
             prmfst%out%tavg(j)%y_grid = 0.0; prmfst%out%tavg(j)%d_grid = 0.0
-            prmfst%out%tmax(j)%y_grid = 100.0; prmfst%out%tmax(j)%d_grid = 100.0
-            prmfst%out%tmin(j)%y_grid = 900.0; prmfst%out%tmin(j)%d_grid = 900.0
-            prmfst%out%trng(j)%y_grid = 0.0; prmfst%out%trng(j)%d_grid = 0.0
+            prmfst%out%tmax(j)%y_tile = 100.0
+            prmfst%out%tmax(j)%y_grid = 100.0
+            prmfst%out%tmin(j)%y_tile = 900.0
+            prmfst%out%tmin(j)%y_grid = 900.0
+            prmfst%out%trng(j)%y_tile = 0.0
+            prmfst%out%trng(j)%y_grid = 0.0
         end do
         allocate(prmfst%out%zod(nttol))
         do j = 1, nttol
             allocate( &
-                prmfst%out%zod(j)%y_tile(nml), prmfst%out%zod(j)%d_tile(nml), &
-                prmfst%out%zod(j)%y_grid(na), prmfst%out%zod(j)%d_grid(na))
-            prmfst%out%zod(j)%y_tile = 0.0; prmfst%out%zod(j)%d_tile = 0.0
-            prmfst%out%zod(j)%y_grid = 0.0; prmfst%out%zod(j)%d_grid = 0.0
+                prmfst%out%zod(j)%y_tile(nml), &
+                prmfst%out%zod(j)%y_grid(na))
+            prmfst%out%zod(j)%y_tile = 0.0
+            prmfst%out%zod(j)%y_grid = 0.0
         end do
 
     end subroutine
@@ -209,23 +214,23 @@ module permafrost_outputs_module
 
             !> Reset daily and yearly values if the first time-step in the day and year.
             if (ic%ts_daily == 1) then
-                prmfst%out%tavg(j)%d_tile = 0.0; prmfst%out%tmax(j)%d_tile = 100.0; prmfst%out%tmin(j)%d_tile = 900.0
-                prmfst%out%tavg(j)%d_grid = 0.0; prmfst%out%tmax(j)%d_grid = 100.0; prmfst%out%tmin(j)%d_grid = 900.0
+                prmfst%out%tavg(j)%d_tile = 0.0
+                prmfst%out%tavg(j)%d_grid = 0.0
             end if
             if (ic%ts_yearly == 1) then
                 prmfst%out%tavg(j)%y_tile = 0.0; prmfst%out%tmax(j)%y_tile = 100.0; prmfst%out%tmin(j)%y_tile = 900.0
                 prmfst%out%tavg(j)%y_grid = 0.0; prmfst%out%tmax(j)%y_grid = 100.0; prmfst%out%tmin(j)%y_grid = 900.0
-                prmfst%out%aldd%y_tile = 0.0; prmfst%out%aldd_jday%y_tile = 0
-                prmfst%out%aldd%y_grid = 0.0; prmfst%out%aldd_jday%y_grid = 0
-                prmfst%out%alde%y_tile = 0.0; prmfst%out%alde_jday%y_tile = 0
-                prmfst%out%alde%y_grid = 0.0; prmfst%out%alde_jday%y_grid = 0
+                prmfst%out%ald%y_tile = 0.0
+                prmfst%out%ald%y_grid = 0.0
+                prmfst%out%alddoy%y_tile = 0.0
+                prmfst%out%alddoy%y_grid = 0.0
+                prmfst%out%aldenv%y_tile = 0.0
+                prmfst%out%aldenv%y_grid = 0.0
             end if
 
             !> Tile-based.
             where (stas%sl%tbar(:, j) > 173.16 .and. stas%sl%tbar(:, j) < 373.16)
                 prmfst%out%tavg(j)%d_tile = prmfst%out%tavg(j)%d_tile + stas%sl%tbar(:, j)
-                prmfst%out%tmax(j)%d_tile = max(prmfst%out%tmax(j)%d_tile, stas%sl%tbar(:, j))
-                prmfst%out%tmin(j)%d_tile = min(prmfst%out%tmin(j)%d_tile, stas%sl%tbar(:, j))
             elsewhere
                 prmfst%out%tavg(j)%d_tile = out%NO_DATA
             end where
@@ -233,8 +238,6 @@ module permafrost_outputs_module
             !> Grid-based.
             where (stas_grid%sl%tbar(:, j) > 173.16 .and. stas_grid%sl%tbar(:, j) < 373.16)
                 prmfst%out%tavg(j)%d_grid = prmfst%out%tavg(j)%d_grid + stas_grid%sl%tbar(:, j)
-                prmfst%out%tmax(j)%d_grid = max(prmfst%out%tmax(j)%d_grid, stas_grid%sl%tbar(:, j))
-                prmfst%out%tmin(j)%d_grid = min(prmfst%out%tmin(j)%d_grid, stas_grid%sl%tbar(:, j))
             elsewhere
                 prmfst%out%tavg(j)%d_grid = out%NO_DATA
             end where
@@ -249,69 +252,37 @@ module permafrost_outputs_module
                 !> Tile-based.
                 where (prmfst%out%tavg(j)%d_tile /= out%NO_DATA)
                     prmfst%out%tavg(j)%d_tile = prmfst%out%tavg(j)%d_tile/ic%ts_daily
-                    prmfst%out%trng(j)%d_tile = prmfst%out%tmax(j)%d_tile - prmfst%out%tmin(j)%d_tile
                     tavg_tile(:, j) = prmfst%out%tavg(j)%d_tile
-                    tmax_tile(:, j) = prmfst%out%tmax(j)%d_tile
-                    tmin_tile(:, j) = prmfst%out%tmin(j)%d_tile
                 elsewhere
                     tavg_tile(:, j) = 0.0
-                    tmax_tile(:, j) = 0.0
-                    tmin_tile(:, j) = 0.0
                     prmfst%out%tavg(j)%d_tile = out%NO_DATA
-                    prmfst%out%tmax(j)%d_tile = out%NO_DATA
-                    prmfst%out%tmin(j)%d_tile = out%NO_DATA
-                    prmfst%out%trng(j)%d_tile = out%NO_DATA
                 end where
 
                 !> Grid-based.
                 where (prmfst%out%tavg(j)%d_grid /= out%NO_DATA)
                     prmfst%out%tavg(j)%d_grid = prmfst%out%tavg(j)%d_grid/ic%ts_daily
-                    prmfst%out%trng(j)%d_grid = prmfst%out%tmax(j)%d_grid - prmfst%out%tmin(j)%d_grid
                     tavg_grid(:, j) = prmfst%out%tavg(j)%d_grid
-                    tmax_grid(:, j) = prmfst%out%tmax(j)%d_grid
-                    tmin_grid(:, j) = prmfst%out%tmin(j)%d_grid
                 elsewhere
                     tavg_grid(:, j) = 0.0
-                    tmax_grid(:, j) = 0.0
-                    tmin_grid(:, j) = 0.0
                     prmfst%out%tavg(j)%d_grid = out%NO_DATA
-                    prmfst%out%tmax(j)%d_grid = out%NO_DATA
-                    prmfst%out%tmin(j)%d_grid = out%NO_DATA
-                    prmfst%out%trng(j)%d_grid = out%NO_DATA
                 end where
             end do
 
             !> Calculate ALD (assign NO_DATA value if ALD == 0.0).
-            call permafrost_ald(tavg_tile, zbot, prmfst%out%aldd%d_tile, shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
-            where (.not. prmfst%out%aldd%d_tile > 0.0) prmfst%out%aldd%d_tile = out%NO_DATA
-            call permafrost_ald(tavg_grid, zbot, prmfst%out%aldd%d_grid, shd%NA, shd%lc%IGND, 1, shd%NA)
-            where (.not. prmfst%out%aldd%d_grid > 0.0) prmfst%out%aldd%d_grid = out%NO_DATA
+            call permafrost_ald(tavg_tile, zbot, prmfst%out%ald%d_tile, shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
+            where (.not. prmfst%out%ald%d_tile > 0.0) prmfst%out%ald%d_tile = out%NO_DATA
+            call permafrost_ald(tavg_grid, zbot, prmfst%out%ald%d_grid, shd%NA, shd%lc%IGND, 1, shd%NA)
+            where (.not. prmfst%out%ald%d_grid > 0.0) prmfst%out%ald%d_grid = out%NO_DATA
 
             !> Store day when ALD occurs for yearly output.
-            where (prmfst%out%aldd%d_tile > prmfst%out%aldd%y_tile)
-                prmfst%out%aldd%y_tile = prmfst%out%aldd%d_tile
-                prmfst%out%aldd_jday%y_tile = ic%now%jday
+            where (prmfst%out%ald%d_tile > prmfst%out%ald%y_tile)
+                prmfst%out%ald%y_tile = prmfst%out%ald%d_tile
+                prmfst%out%alddoy%y_tile = ic%now%jday
             end where
-            where (prmfst%out%aldd%d_grid > prmfst%out%aldd%y_grid)
-                prmfst%out%aldd%y_grid = prmfst%out%aldd%d_grid
-                prmfst%out%aldd_jday%y_grid = ic%now%jday
+            where (prmfst%out%ald%d_grid > prmfst%out%ald%y_grid)
+                prmfst%out%ald%y_grid = prmfst%out%ald%d_grid
+                prmfst%out%alddoy%y_grid = ic%now%jday
             end where
-
-            !> Calculate ZOD (assign NO_DATA value if ZOD == 0.0).
-            do j = 1, size(prmfst%pm%zod_ttol)
-
-                !> Tile-based.
-                call permafrost_zod( &
-                    tmax_tile, tmin_tile, zbot, prmfst%pm%zod_ttol(j), prmfst%out%zod(j)%d_tile, &
-                    shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
-                where (.not. prmfst%out%zod(j)%d_tile > 0.0) prmfst%out%zod(j)%d_tile = out%NO_DATA
-
-                !> Grid-based.
-                call permafrost_zod( &
-                    tmax_grid, tmin_grid, zbot, prmfst%pm%zod_ttol(j), prmfst%out%zod(j)%d_grid, &
-                    shd%NA, shd%lc%IGND, 1, shd%NA)
-                where (.not. prmfst%out%zod(j)%d_grid > 0.0) prmfst%out%zod(j)%d_grid = out%NO_DATA
-            end do
 
             !> Yearly statistics (based on daily values).
             do j = 1, shd%lc%IGND
@@ -319,8 +290,8 @@ module permafrost_outputs_module
                 !> Tile-based.
                 where (prmfst%out%tavg(j)%d_tile /= out%NO_DATA)
                     prmfst%out%tavg(j)%y_tile = prmfst%out%tavg(j)%y_tile + prmfst%out%tavg(j)%d_tile
-                    prmfst%out%tmax(j)%y_tile = max(prmfst%out%tmax(j)%y_tile, prmfst%out%tmax(j)%d_tile)
-                    prmfst%out%tmin(j)%y_tile = min(prmfst%out%tmin(j)%y_tile, prmfst%out%tmin(j)%d_tile)
+                    prmfst%out%tmax(j)%y_tile = max(prmfst%out%tmax(j)%y_tile, prmfst%out%tavg(j)%d_tile)
+                    prmfst%out%tmin(j)%y_tile = min(prmfst%out%tmin(j)%y_tile, prmfst%out%tavg(j)%d_tile)
                 elsewhere
                     prmfst%out%tavg(j)%y_tile = out%NO_DATA
                 end where
@@ -328,8 +299,8 @@ module permafrost_outputs_module
                 !> Grid-based.
                 where (prmfst%out%tavg(j)%d_grid /= out%NO_DATA)
                     prmfst%out%tavg(j)%y_grid = prmfst%out%tavg(j)%y_grid + prmfst%out%tavg(j)%d_grid
-                    prmfst%out%tmax(j)%y_grid = max(prmfst%out%tmax(j)%y_grid, prmfst%out%tmax(j)%d_grid)
-                    prmfst%out%tmin(j)%y_grid = min(prmfst%out%tmin(j)%y_grid, prmfst%out%tmin(j)%d_grid)
+                    prmfst%out%tmax(j)%y_grid = max(prmfst%out%tmax(j)%y_grid, prmfst%out%tavg(j)%d_grid)
+                    prmfst%out%tmin(j)%y_grid = min(prmfst%out%tmin(j)%y_grid, prmfst%out%tavg(j)%d_grid)
                 elsewhere
                     prmfst%out%tavg(j)%y_grid = out%NO_DATA
                 end where
