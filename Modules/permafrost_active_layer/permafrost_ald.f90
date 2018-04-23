@@ -48,11 +48,6 @@ subroutine permafrost_ald(tbar, zbot, ald, ilen, nsl, i1, i2)
                 !> Ignore and cycle if the layer above is frozen.
                 ald(i) = 0.0
                 exit
-            else if ((tbarc(i, j - 1) - tbarc(i, j)) == 0.0) then
-
-                !> Set ALD between both ZCEN if the temperature difference resolves to zero.
-                ald(i) = (zcen(j) - zcen(j - 1))/2.0 + zcen(j - 1)
-                exit
             else if (sign(1.0, tbarc(i, j)) < sign(1.0, tbarc(i, j - 1))) then
 
                 !> Transition occurs inside the layer; ALD is interpolated.
