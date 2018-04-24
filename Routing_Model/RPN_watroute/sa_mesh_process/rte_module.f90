@@ -598,7 +598,7 @@ module rte_module
         !*  5.  Channel slope (m m-1). slope = sqrt(SLOPE_CHNL)
         !*  6.  Stream velocity (m s-1). Take stream speed to be average flow (m3 s-1) divided by channel x-sec area (m2) (from rte_sub.f).
         !*  7.  Precipitation (mm h-1). Note: Accumulated over the time-step.
-        !*  8.  Evapotranspiration (m s-1). Note: Of evapotranspiration accumulated over the time-step.
+        !*  8.  Evapotranspiration (mm h-1). Note: Accumulated over the time-step.
         !*  9.  Overland water depth (mm). Note: Accumulated over the time-step.
         !*  10. Surface slope (m m-1). SLOPE_INT isn't used in CLASS, so average slope from tiles in cell?
         !*  11. Cell width (m).
@@ -999,10 +999,10 @@ module rte_module
                 end do
                 if (r2cout_sed) call write_r2c(RTE_r2cout_fls, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
 
-                !> Evapotranspiration (m s-1).
+                !> Evapotranspiration (mm h-1).
                 outarray = 0.0
                 do n = 1, naa
-                    outarray(yyy(n), xxx(n)) = hly_evap(n)/1000.0/rteflg%RTE_TS
+                    outarray(yyy(n), xxx(n)) = hly_evap(n)
                 end do
                 if (r2cout_sed) call write_r2c(RTE_r2cout_fls, 3, shd, no_frames, 1, frame_no, 1, 8, outarray, '', '', '', '', '')
 
