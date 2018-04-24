@@ -1456,7 +1456,7 @@ module output_files
                         call permafrost_outputs_init(fls, shd, PMFRSTVN_TRNG)
                         line = trim(VN_TBAR) // '_RNG'
                         do j = 1, shd%lc%IGND
-                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tmin(j), args, nargs, j)
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%trng(j), args, nargs, j)
                         end do
                     end if
                 case (PMFRSTVN_ZOD)
