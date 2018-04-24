@@ -1055,6 +1055,9 @@ module output_files
                 case ('max', 'min')
                     field%fn = adjustl(str)
 
+                !> Permafrost option (dealt with elsewhere).
+                case ('ttol')
+
                 !> Not recognized.
                 case default
                     call print_remark( &
@@ -1410,41 +1413,69 @@ module output_files
 
                 !> Permafrost outputs (PERMAFROSTOUTFLAG).
                 case (PMFRSTVN_ALD)
-                    if (prmfst%PROCESS_ACTIVE) then
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ALD)
                         call output_files_append_field(fls, shd, ts, PMFRSTVN_ALD, prmfst%out%ald, args, nargs)
                     end if
+                case (PMFRSTVN_ALDDOY, 'ALD_JDAY')
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ALDDOY)
+                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALDDOY, prmfst%out%alddoy, args, nargs)
+                    end if
+                case (PMFRSTVN_ALDENV)
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ALDENV)
+                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALDENV, prmfst%out%aldenv, args, nargs)
+                    end if
                 case (PMFRSTVN_TAVG)
-                    if (prmfst%PROCESS_ACTIVE) then
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_TAVG)
                         line = trim(VN_TBAR) // '_AVG'
                         do j = 1, shd%lc%IGND
                             call output_files_append_field(fls, shd, ts, line, prmfst%out%tavg(j), args, nargs, j)
                         end do
                     end if
                 case (PMFRSTVN_TMAX)
-                    if (prmfst%PROCESS_ACTIVE) then
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_TMAX)
                         line = trim(VN_TBAR) // '_MAX'
                         do j = 1, shd%lc%IGND
                             call output_files_append_field(fls, shd, ts, line, prmfst%out%tmax(j), args, nargs, j)
                         end do
                     end if
                 case (PMFRSTVN_TMIN)
-                    if (prmfst%PROCESS_ACTIVE) then
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_TMIN)
                         line = trim(VN_TBAR) // '_MIN'
                         do j = 1, shd%lc%IGND
                             call output_files_append_field(fls, shd, ts, line, prmfst%out%tmin(j), args, nargs, j)
                         end do
                     end if
                 case (PMFRSTVN_TRNG, 'TENV')
-                    if (prmfst%PROCESS_ACTIVE) then
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_TRNG)
                         line = trim(VN_TBAR) // '_RNG'
                         do j = 1, shd%lc%IGND
-                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tmin(j), args, nargs, j)
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%trng(j), args, nargs, j)
                         end do
                     end if
                 case (PMFRSTVN_ZOD)
-                    if (prmfst%PROCESS_ACTIVE) then
+                    if (ro%RUNBALEB) then
+
+                        !> User-defined temperature threshold(s)/tolerance(s) for ZOD.
+                        if (nargs > 1) then
+                            do j = 2, nargs
+                                if (lowercase(args(j)) == 'ttol') then
+                                    call output_files_parse_indices(args, nargs, prmfst%pm%zod_ttol, j, ierr)
+                                    exit
+                                end if
+                            end do
+                        end if
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ZOD)
                         do j = 1, size(prmfst%pm%zod_ttol)
-                            write(line, FMT_GEN) j
+                            write(line, FMT_GEN) prmfst%pm%zod_ttol(j)
+                            call trimzero(line)
+                            line(index(line, '.'):index(line, '.')) = 'p'
                             line = trim(PMFRSTVN_ZOD) // '_TTOL_' // trim(adjustl(line))
                             call output_files_append_field(fls, shd, ts, line, prmfst%out%zod(j), args, nargs)
                         end do
@@ -1779,6 +1810,9 @@ module output_files
 
     subroutine output_files_update(fls, shd)
 
+        !> Process modules.
+        use permafrost_outputs_module
+
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
@@ -1792,7 +1826,10 @@ module output_files
         !> Update counter for seasonal output.
         if (ic%now%month /= ic%next%month) fls_out%dates%iter_s(ic%now%month) = fls_out%dates%iter_s(ic%now%month) + 1
 
-        !> Update variables.
+        !> Update external outputs.
+        call permafrost_outputs_update(fls, shd)
+
+        !> Update fields and output files.
         do i = 1, size(fls_out%fls)
             call output_files_update_field(fls, shd, fls_out%fls(i))
         end do
