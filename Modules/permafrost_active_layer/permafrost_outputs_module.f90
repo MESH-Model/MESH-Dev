@@ -37,13 +37,13 @@ module permafrost_outputs_module
     !>
     !> Variables:
     !*  ald: Active layer depth calculated using daily average temperature (1: Tile index). [m].
-    !*  alddoy: Day of maximum ALD for yearly output, based on ALD (1: Tile index). [--].
-    !*  aldenv: Active layer depth (yearly) calculated using temperature envelope (1: Tile index). [m].
-    !*  tavg: Average soil temperature of each layer (1: Tile index; 2: Soil layer). [K].
-    !*  tmax: Maximum soil temperature of each layer (1: Tile index; 2: Soil layer). [K].
-    !*  tmin: Minimum soil temperature of each layer (1: Tile index; 2: Soil layer). [K].
-    !*  trng: Range/envlope of soil temperature of each layer (1: Tile index; 2: Soil layer). [K].
-    !*  zod: Zero oscillation depths for each temperature threshold (1: Tile index; 2: TTOL). [m].
+    !*  alddoy: Day of year when ALD is observed (1: Tile index). [--].
+    !*  aldenv: Active layer depth calculated using the annual temperature envelope (1: Tile index). [m].
+    !*  tavg: Average daily soil temperature (1: Tile index; 2: Soil layer). [K].
+    !*  tmax: Annual maximum of daily soil temperature (1: Tile index; 2: Soil layer). [K].
+    !*  tmin: Annual minimum of daily soil temperature (1: Tile index; 2: Soil layer). [K].
+    !*  trng: Range/envelope of the annual maximum and minimum soil temperatures (1: Tile index; 2: Soil layer). [K].
+    !*  zod: Zero oscillation depth, where the range/envelope of the annual maximum and minimum soil temperatures in within the threshold (1: Tile index; 2: TTOL). [m].
     type permafrost_outputs_fields
         type(output_fields_surrogate) ald, alddoy, aldenv
         type(output_fields_surrogate), dimension(:), allocatable :: tavg, tmax, tmin, trng
@@ -268,13 +268,13 @@ module permafrost_outputs_module
                 end where
             end do
 
-            !> Calculate ALD (assign NO_DATA value if ALD == 0.0).
+            !> Calculate ALD using daily average temperature (assign NO_DATA value if ALD == 0.0).
             call permafrost_ald(tavg_tile, zbot, prmfst%out%ald%d_tile, shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
             where (.not. prmfst%out%ald%d_tile > 0.0) prmfst%out%ald%d_tile = out%NO_DATA
             call permafrost_ald(tavg_grid, zbot, prmfst%out%ald%d_grid, shd%NA, shd%lc%IGND, 1, shd%NA)
             where (.not. prmfst%out%ald%d_grid > 0.0) prmfst%out%ald%d_grid = out%NO_DATA
 
-            !> Store day when ALD occurs for yearly output.
+            !> Store the day when ALD occurs for yearly output.
             where (prmfst%out%ald%d_tile > prmfst%out%ald%y_tile)
                 prmfst%out%ald%y_tile = prmfst%out%ald%d_tile
                 prmfst%out%alddoy%y_tile = ic%now%jday
@@ -347,13 +347,19 @@ module permafrost_outputs_module
                     end where
                 end do
 
-                !> Calculate ALD based on temperature envelope (assign NO_DATA value if ALD == 0.0).
+                !> Calculate ALD using annual temperature envelope (assign NO_DATA value if ALD == 0.0).
                 call permafrost_ald(tmax_tile, zbot, prmfst%out%aldenv%y_tile, shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
                 where (.not. prmfst%out%aldenv%y_tile > 0.0) prmfst%out%aldenv%y_tile = out%NO_DATA
                 call permafrost_ald(tmax_grid, zbot, prmfst%out%aldenv%y_grid, shd%NA, shd%lc%IGND, 1, shd%NA)
                 where (.not. prmfst%out%aldenv%y_grid > 0.0) prmfst%out%aldenv%y_grid = out%NO_DATA
 
-                !> Calculate ZOD (assign NO_DATA value if ZOD == 0.0).
+                !> Assign NO_DATA value where ALD fields based on daily temperature equal zero.
+                where (.not. prmfst%out%ald%y_tile > 0.0) prmfst%out%ald%y_tile = out%NO_DATA
+                where (.not. prmfst%out%ald%y_grid > 0.0) prmfst%out%ald%y_grid = out%NO_DATA
+                where (.not. prmfst%out%alddoy%y_tile > 0.0) prmfst%out%alddoy%y_tile = out%NO_DATA
+                where (.not. prmfst%out%alddoy%y_grid > 0.0) prmfst%out%alddoy%y_grid = out%NO_DATA
+
+                !> Calculate ZOD using annual temperature envelope (assign NO_DATA value if ZOD == 0.0).
                 do j = 1, size(prmfst%pm%zod_ttol)
 
                     !> Tile-based.
