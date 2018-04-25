@@ -4,7 +4,7 @@ module output_files
     use sa_mesh_utilities
     use model_dates
     use model_files_variables
-    use variablename_constants
+    use variable_names
 
     implicit none
 

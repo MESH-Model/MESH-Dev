@@ -437,9 +437,9 @@ module SIMSTATS
             inquire(file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)), exist = exists)
             iun = mtsfl%fl(mtsk%MC)%iun
             if (exists) then
-                open(iun, file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)), position = 'append', status = 'old')
+                open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%MC)%fn), position = 'append', status = 'old')
             else
-                open(iun, file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)))
+                open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%MC)%fn))
                 write(iun, "(9999(g15.7e2, ' '))") "BIAS ", "NSD ", "NSW ", "TPD "
             end if
             write(iun, "(9999(g15.7e2, ' '))") (bias(j), nsd(j), nsw(j), int(tpd(j)), j = 1, size(qobs, 2))
@@ -450,7 +450,7 @@ module SIMSTATS
 !todo: there's probably a better way to store a set of multiple statistics in one file.
         if (mtsfl%fl(mtsk%NSE)%init) then
             iun = mtsfl%fl(mtsk%NSE)%iun
-            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%NSE)%fn)))
+            open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%NSE)%fn))
             write(iun, "(9999(g15.7e2, ' '))") (nsd(j), j = 1, size(qobs, 2)), sum(nsd)/size(qobs, 2)
             close(iun)
         end if
@@ -458,7 +458,7 @@ module SIMSTATS
         !> Write Nash-Sutcliffe coefficient of weekly streamflow values.
         if (mtsfl%fl(mtsk%NSW)%init) then
             iun = mtsfl%fl(mtsk%NSW)%iun
-            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%NSW)%fn)))
+            open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%NSW)%fn))
             write(iun, "(9999(g15.7e2, ' '))") (nsw(j), j = 1, size(qobs, 2))
             close(iun)
         end if
@@ -466,7 +466,7 @@ module SIMSTATS
         !> Write daily root mean squared error.
         if (mtsfl%fl(mtsk%RMSE)%init) then
             iun = mtsfl%fl(mtsk%RMSE)%iun
-            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%RMSE)%fn)))
+            open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%RMSE)%fn))
             write(iun, "(9999(g15.7e2, ' '))") st_drms%value_gauge, st_drms%value_gauge_avg
             close(iun)
         end if
@@ -474,7 +474,7 @@ module SIMSTATS
         !> Write mean absolute error.
         if (mtsfl%fl(mtsk%ABSE)%init) then
             iun = mtsfl%fl(mtsk%ABSE)%iun
-            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%ABSE)%fn)))
+            open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%ABSE)%fn))
             write(iun, "(9999(g15.7e2, ' '))") st_abserr%value_gauge, st_abserr%value_gauge_avg
             close(iun)
         end if
@@ -482,7 +482,7 @@ module SIMSTATS
         !> Write the summary of the metrics to file.
         if (mtsfl%fl(mtsk%out)%init) then
             iun = mtsfl%fl(mtsk%out)%iun
-            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%out)%fn)))
+            open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%out)%fn))
             write(iun, "(9999(g15.7e2, ' '))") &
                 "Gauge", "MAE", "RMSE", "BIAS", "AbsBIAS", "NSD", "NegNSD", "lnNSD", "NeglnNSD", "TPD"
             do j = 1, size(qobs, 2)
