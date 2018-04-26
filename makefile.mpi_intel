@@ -25,7 +25,8 @@ include makefile.def
 # MPI compilers for parallel computing
 #   FC=mpifort for OpenMPI wrapper with either GNU or Intel compiler (Cygwin or plato.usask.ca)
 # COMMENT MPI STUB IF USING AN MPI COMPILER.
-FC=mpifort
+#FC=mpifort
+FC=mpif90
 
 # Flags for compiling, profiling, and debugging - comment as necessary
 #   -O2: Default optimization.
