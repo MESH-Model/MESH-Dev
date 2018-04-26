@@ -130,15 +130,17 @@ module permafrost_outputs_module
             !> Set zero tolerance if none were specified.
             if (.not. allocated(prmfst%pm%zod_ttol)) then
                 allocate(prmfst%pm%zod_ttol(1))
-                prmfst%pm%zod_ttol(1) = 0.0
+                prmfst%pm%zod_ttol(1) = 0.1
             end if
-            allocate(prmfst%out%zod(size(prmfst%pm%zod_ttol)))
-            do j = 1, size(prmfst%pm%zod_ttol)
-                if (.not. associated(prmfst%out%zod(j)%y_tile)) then
-                    allocate(prmfst%out%zod(j)%y_tile(nml), prmfst%out%zod(j)%y_grid(na))
-                    prmfst%out%zod(j)%y_tile = 0.0; prmfst%out%zod(j)%y_grid = 0.0
-                end if
-            end do
+            if (.not. allocated(prmfst%out%zod)) then
+                allocate(prmfst%out%zod(size(prmfst%pm%zod_ttol)))
+                do j = 1, size(prmfst%pm%zod_ttol)
+                    if (.not. associated(prmfst%out%zod(j)%y_tile)) then
+                        allocate(prmfst%out%zod(j)%y_tile(nml), prmfst%out%zod(j)%y_grid(na))
+                        prmfst%out%zod(j)%y_tile = 0.0; prmfst%out%zod(j)%y_grid = 0.0
+                    end if
+                end do
+            end if
         end if
 
         !> Enable the routine.

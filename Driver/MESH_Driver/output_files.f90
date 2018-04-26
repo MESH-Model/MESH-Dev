@@ -572,7 +572,11 @@ module output_files
                 !> Write for specific grids.
                 case ('tsi')
                     do i = 1, size(field%tsi)
-                        dat_tsi(i) = dat(field%tsi(i), t)
+                        if (field%tsi(i) > 0 .and. field%tsi(i) <= size(dat, 1)) then
+                            dat_tsi(i) = dat(field%tsi(i), t)
+                        else
+                            dat_tsi(i) = out%NO_DATA
+                        end if
                     end do
                     write(iun, fmt, iostat = ierr) dat_tsi
                     if (ierr /= 0) return
@@ -580,7 +584,11 @@ module output_files
                 !> Write for specific tiles.
                 case ('tsk')
                     do i = 1, size(field%tsk)
-                        dat_tsk(i) = dat(field%tsk(i), t)
+                        if (field%tsk(i) > 0 .and. field%tsk(i) <= size(dat, 1)) then
+                            dat_tsk(i) = dat(field%tsk(i), t)
+                        else
+                            dat_tsk(i) = out%NO_DATA
+                        end if
                     end do
                     write(iun, fmt, iostat = ierr) dat_tsk
                     if (ierr /= 0) return
@@ -1139,12 +1147,12 @@ module output_files
                     "The 'tsi' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but no grids are listed or an error occurred parsing the values.', PAD_3)
                 deallocate(field%tsi)
+                field%order = ''
             else if (maxval(field%tsi) > shd%NA .or. minval(field%tsi) < 1) then
                 call print_warning( &
                     "The 'tsi' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but contains an invalid grid number' // &
                     ' or exceeds the number of grids identified in the basin.', PAD_3)
-                deallocate(field%tsi)
             end if
         end if
         if (allocated(field%tsk)) then
@@ -1153,12 +1161,12 @@ module output_files
                     "The 'tsk' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but no tiles are listed or an error occurred parsing the values.', PAD_3)
                 deallocate(field%tsk)
+                field%order = ''
             else if (maxval(field%tsk) > shd%lc%NML .or. minval(field%tsk) < 1) then
                 call print_warning( &
                     "The 'tsk' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but contains an invalid tile number' // &
                     ' or exceeds the number of tiles identified in the basin.', PAD_3)
-                deallocate(field%tsk)
             end if
         end if
         if (allocated(field%gru)) then
@@ -1172,12 +1180,12 @@ module output_files
                     "The '" // trim(field%gru_mask) // "' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but no GRUs are listed or an error occurred parsing the values.', PAD_3)
                 deallocate(field%gru)
+                field%order = ''
             else if (field%gru(1) > shd%lc%NTYPE .or. field%gru(1) < 1) then
                 call print_warning( &
                     "The '" // trim(field%gru_mask) // "' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but contains an invalid GRU number' // &
                     ' or exceeds the number of GRUs identified in the basin.', PAD_3)
-                deallocate(field%gru)
             end if
         end if
 
@@ -1537,9 +1545,9 @@ module output_files
                                         call print_message_detail("ERROR:" // &
                                             " Multiple instances of the 'ttol' option exist in outputs_balance.txt" // &
                                             " or a previous entry of 'ZOD' without the 'ttol' option" // &
-                                            ' has activated its default value.' // &
+                                            " has activated the default value ('ttol 0.1')." // &
                                             " Only one instance of the 'ttol' option can exist." // &
-                                            ' Combine multiple instances into a single option and add it to the first' // &
+                                            " Combine multiple instances 'ttol' into a single option and add it to the first" // &
                                             " entry of 'ZOD' in the list.")
                                         z = 1
                                         exit
@@ -1580,7 +1588,7 @@ module output_files
 
         !> Stop if errors exist.
         if (ierr /= 0) then
-            call print_error('Errors occured while reading outputs_balance.txt.')
+            call print_error('Errors occurred while reading outputs_balance.txt.')
             call stop_program()
         end if
 
@@ -1706,10 +1714,15 @@ module output_files
                         frac(shd%lc%ILMOS(k)) = frac(shd%lc%ILMOS(k)) + shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
                     end if
                 end do
-                where (frac > 0.0) group%grid%dat(:, t) = group%grid%dat(:, t)/frac
+                where (frac > 0.0)
+                    group%grid%dat(:, t) = group%grid%dat(:, t)/frac
+                elsewhere
+                    group%grid%dat(:, t) = out%NO_DATA
+                end where
             case ('gru_exclude')
 
                 !> Exclude only the GRUs in the list.
+                frac = 0.0
                 do k = 1, shd%lc%NML
                     if (group%tile%dat(k, t) /= out%NO_DATA .and. .not. any(field%gru == shd%lc%JLMOS(k))) then
                         group%grid%dat(shd%lc%ILMOS(k), t) = group%grid%dat(shd%lc%ILMOS(k), t) + &
@@ -1717,7 +1730,11 @@ module output_files
                         frac(shd%lc%ILMOS(k)) = frac(shd%lc%ILMOS(k)) + shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
                     end if
                 end do
-                where (frac > 0.0) group%grid%dat(:, t) = group%grid%dat(:, t)/frac
+                where (frac > 0.0)
+                    group%grid%dat(:, t) = group%grid%dat(:, t)/frac
+                elsewhere
+                    group%grid%dat(:, t) = out%NO_DATA
+                end where
             case default
 
                 !> Only the specified GRU.
