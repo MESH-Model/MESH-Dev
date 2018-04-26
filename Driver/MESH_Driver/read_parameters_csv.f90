@@ -13,12 +13,10 @@
 subroutine read_parameters_csv(shd, iun, fname)
 
     !> strings: For 'readline', 'compact', 'parse', and 'lowercase' functions.
-    !> sa_mesh_variables: Required for MESH variables, parameters.
-    !> sa_mesh_utilities: Required for printing/writing messages, DIAGNOSEMODE.
+    !> sa_mesh_common: For common MESH variables and routines.
     !> parse_utilities: For 'assign_line_args_vector' function.
     use strings
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use parse_utilities
 
     !> Process modules: Required for process variables, parameters.
@@ -44,7 +42,7 @@ subroutine read_parameters_csv(shd, iun, fname)
     open(iun, file = fname, status = 'old', action = 'read', iostat = ierr)
     if (ierr /= 0) then
         call print_error('Unable to open file. Check if the file exists.')
-        call stop_program()
+        call program_abort()
     end if
 
     !> Read and parse each line.

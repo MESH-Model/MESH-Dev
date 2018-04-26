@@ -14,8 +14,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     use model_files_variables
 
     !> For the 'ShedGridParams' type and SA_MESH parameters.
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
 
     !> Required for 'FROZENSOILINFILFLAG'.
     use FLAGS
@@ -65,7 +64,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     open(iun, file = fls%fl(mfk%f23)%fn, status = 'old', action = 'read', iostat = ierr)
     if (ierr /= 0) then
         call print_error('Unable to open file. Check if the file exists.')
-        call stop_program()
+        call program_abort()
     end if
 
     !> Check the file version (if RELFLG = 1.0).

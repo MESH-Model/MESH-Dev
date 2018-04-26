@@ -3,8 +3,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
     use mpi_module
     use strings
     use model_files_variables
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use model_dates
     use climate_forcing
     use output_files
@@ -209,7 +208,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
     if (ierr /= 0) then
         call print_screen('')
         call print_screen('ERROR: Unable to open file. Check if the file exists.')
-        call stop_program()
+        call program_abort()
     end if
 
     !> Begin reading the control flags.
@@ -694,7 +693,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
             call print_screen('ERROR: Unable to allocate variables for CLASS output.')
             write(line, FMT_GEN) WF_NUM_POINTS
             call print_screen('Number of points: ' // trim(adjustl(line)), PAD_3)
-            call stop_program()
+            call program_abort()
         end if
         read(iun, *) (op%N_OUT(i), i = 1, WF_NUM_POINTS)
         read(iun, *) (op%II_OUT(i), i = 1, WF_NUM_POINTS)

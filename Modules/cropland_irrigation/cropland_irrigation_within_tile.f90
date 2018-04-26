@@ -10,7 +10,7 @@ module cropland_irrigation_within_tile
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
 

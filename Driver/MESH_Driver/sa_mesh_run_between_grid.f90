@@ -1,11 +1,11 @@
 module sa_mesh_run_between_grid
 
     !> 'model_files_variables' required for 'fls' object and file keys.
-    !> 'sa_mesh_variables' required for SA_MESH variables, parameters, and counter.
+    !> 'sa_mesh_common' required for common SA_MESH variables and routines.
     !> 'climate_forcing' required for 'cm' variable.
     !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
     use model_files_variables
-    use sa_mesh_variables
+    use sa_mesh_common
     use climate_forcing
     use mpi_module
 

@@ -1,7 +1,6 @@
 subroutine READ_SOIL_LEVELS(fls, shd)
 
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use model_files_variables
 
     implicit none
@@ -25,7 +24,7 @@ subroutine READ_SOIL_LEVELS(fls, shd)
     open(iun, file = fls%fl(mfk%f52)%fn, status = 'old', action = 'read', iostat = ierr)
     if (ierr /= 0) then
         call print_error('Unable to open file. Check if the file exists.')
-        call stop_program()
+        call program_abort()
     end if
 
     !> Count the number of levels.
@@ -43,7 +42,7 @@ subroutine READ_SOIL_LEVELS(fls, shd)
         call print_error('The number of soil layers must be >= 3.')
         write(line, FMT_GEN) shd%lc%IGND
         call print_message_detail('Number of soil layers (from file): ' // trim(adjustl(line)))
-        call stop_program()
+        call program_abort()
     end if
 
     !> Allocate the level variables.
@@ -66,6 +65,6 @@ subroutine READ_SOIL_LEVELS(fls, shd)
 
     !> Stop: Error allocating variables.
 998 call print_error('Unable to allocate variables.')
-    call stop_program()
+    call program_abort()
 
 end subroutine

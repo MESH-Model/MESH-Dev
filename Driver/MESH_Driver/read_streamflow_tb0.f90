@@ -14,8 +14,7 @@ subroutine read_streamflow_tb0(shd, iun, fname)
     use strings
     use mpi_module
     use model_dates
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use ensim_io
 
     implicit none
@@ -35,7 +34,7 @@ subroutine read_streamflow_tb0(shd, iun, fname)
     call open_ensim_file(iun, fname, ierr)
     if (ierr /= 0) then
         call print_error('Unable to open file. Check if the file exists.')
-        call stop_program()
+        call program_abort()
     end if
     call parse_header_ensim(iun, fname, vkeyword, nkeyword, ierr)
 
@@ -73,6 +72,6 @@ subroutine read_streamflow_tb0(shd, iun, fname)
 
     !> Stop: Error allocating variables.
 998 call print_error('Unable to allocate variables.')
-    call stop_program()
+    call program_abort()
 
 end subroutine

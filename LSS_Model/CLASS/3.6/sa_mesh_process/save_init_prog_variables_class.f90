@@ -29,7 +29,7 @@
     subroutine save_init_prog_variables_class(fls)
 
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
 
         implicit none
 

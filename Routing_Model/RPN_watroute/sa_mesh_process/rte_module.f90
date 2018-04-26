@@ -74,7 +74,7 @@ module rte_module
 
         !> sa_mesh_variables: Variables, parameters, and types from SA_MESH.
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use FLAGS
 
         type(fl_ids) :: fls
@@ -569,7 +569,7 @@ module rte_module
 
         !> sa_mesh_variables: Variables, parameters, and types from SA_MESH.
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
 
         !> model_dates: for 'ic' counter.
         use model_dates
@@ -852,7 +852,7 @@ module rte_module
 
         !> sa_mesh_variables: Variables, parameters, and types from SA_MESH.
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use FLAGS
 
         type(fl_ids) :: fls

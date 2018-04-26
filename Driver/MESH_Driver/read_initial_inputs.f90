@@ -2,8 +2,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
 
     use mpi_module
     use strings
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use model_files_variables
     use FLAGS
     use climate_forcing
@@ -41,7 +40,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     if (ierr /= 0) then
         call print_screen('')
         call print_screen('The output folder does not exist: ' // trim(adjustl(fls%GENDIR_OUT)))
-        call stop_program()
+        call program_abort()
     else
         close(100, status = 'delete')
     end if
@@ -315,7 +314,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
         case default
             write(line, FMT_GEN) SHDFILEFMT
             call print_error('Unrecognized drainage database format: ' // trim(adjustl(line)))
-            call stop_program()
+            call program_abort()
 
     end select
 
@@ -406,7 +405,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     !> Stop if errors exist.
     if (ierr /= 0) then
         call print_error('Errors exist in the drainage database.')
-        call stop_program()
+        call program_abort()
     end if
 
     !> Check the number of river classes.
@@ -457,7 +456,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
                     if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
                         write(line, "('Grid ', i5, ', GRU ', i4)") op%N_OUT(i), op%II_OUT(i)
                         call print_error('Output is repeated for ' // trim(adjustl(line)))
-                        call stop_program()
+                        call program_abort()
                     end if
                 end do
             else
@@ -471,7 +470,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
                     write(line, FMT_GEN) i
                     call print_error('The output folder for point ' // trim(adjustl(line)) // ' does not exist.')
                     call print_message('Location: ' // trim(adjustl(op%DIR_OUT(i))), PAD_3)
-                    call stop_program()
+                    call program_abort()
                 else
                     close(100, status = 'delete')
                 end if
@@ -483,7 +482,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
                 call print_error('Output point ' // trim(adjustl(line)) // ' is outside the basin.')
                 write(line, FMT_GEN) shd%NAA
                 call print_message('Number of grids inside the basin: ' // trim(adjustl(line)), PAD_3)
-                call stop_program()
+                call program_abort()
             end if
         end do
     end if

@@ -1,14 +1,18 @@
 !>
-!> Module for storing variables shared throughout the driver.
+!> Common modules used throughout SA_MESH.
 !>
-module sa_mesh_variables
+module sa_mesh_common
 
+    !> Parameters and variables.
     use control_variables
     use shd_variables
     use fm_variables
     use input_parameters
     use state_variables
     use output_variables
+
+    !> Utilities.
+    use print_routines
 
     implicit none
 

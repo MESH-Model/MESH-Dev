@@ -57,8 +57,7 @@ module baseflow_module
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_variables
-        use sa_mesh_utilities
+        use sa_mesh_common
         use model_dates
         use climate_forcing
 
@@ -166,7 +165,7 @@ module baseflow_module
                     if (ierr /= 0) then
                         call print_error( &
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to resume states.')
-                        call stop_program()
+                        call program_abort()
                     end if
                     read(iun) stas%lzs%ws
                     read(iun) Qb
@@ -179,7 +178,7 @@ module baseflow_module
                     if (ierr /= 0) then
                         call print_error( &
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to resume states.')
-                        call stop_program()
+                        call program_abort()
                     end if
                     read(iun) stas%lzs%ws
                     close(iun)
@@ -192,7 +191,7 @@ module baseflow_module
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
 
@@ -228,7 +227,7 @@ module baseflow_module
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
 
@@ -265,7 +264,7 @@ module baseflow_module
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
 
@@ -294,7 +293,7 @@ module baseflow_module
                     if (ierr /= 0) then
                         call print_error( &
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to save states.')
-                        call stop_program()
+                        call program_abort()
                     end if
                     write(iun) stas%lzs%ws
                     write(iun) Qb
@@ -307,7 +306,7 @@ module baseflow_module
                     if (ierr /= 0) then
                         call print_error( &
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to save states.')
-                        call stop_program()
+                        call program_abort()
                     end if
                     write(iun) stas%lzs%ws
                     close(iun)

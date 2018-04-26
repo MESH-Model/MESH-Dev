@@ -39,7 +39,7 @@ module RUNCLASS36_save_output
     subroutine CLASSOUT_open_files(shd)
 
         use mpi_module
-        use sa_mesh_variables
+        use sa_mesh_common
 
         type(ShedGridParams) :: shd
 
@@ -237,7 +237,7 @@ module RUNCLASS36_save_output
     subroutine CLASSOUT_update_files(shd)
 
         use mpi_module
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
 
         type(ShedGridParams), intent(in) :: shd

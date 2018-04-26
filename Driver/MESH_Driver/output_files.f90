@@ -1,7 +1,6 @@
 module output_files
 
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use model_dates
     use model_files_variables
     use variable_names
@@ -1371,7 +1370,7 @@ module output_files
         if (ierr /= 0) then
             call print_error('Unable to open file.')
             call print_message('Check that outputs_balance.txt exists or disabled OUTFIELDSFLAG.')
-            call stop_program(.true.)
+            call program_abort()
         end if
 
         !> Count the number of output files.
@@ -1589,7 +1588,7 @@ module output_files
         !> Stop if errors exist.
         if (ierr /= 0) then
             call print_error('Errors occurred while reading outputs_balance.txt.')
-            call stop_program(.true.)
+            call program_abort()
         end if
 
         !> Echo the number of active fields read from file.
@@ -1620,7 +1619,7 @@ module output_files
                 call output_files_write_r2c(fls, shd, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.r2c')
-                    call stop_program(.true.)
+                    call program_abort()
                 end if
                 iun = iun + 1
             end if
@@ -1629,7 +1628,7 @@ module output_files
                 call output_files_write_seq(fls, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.seq')
-                    call stop_program(.true.)
+                    call program_abort()
                 end if
                 iun = iun + 1
             end if
@@ -1638,7 +1637,7 @@ module output_files
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.txt')
-                    call stop_program(.true.)
+                    call program_abort()
                 end if
                 iun = iun + 1
             end if
@@ -1647,7 +1646,7 @@ module output_files
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.csv')
-                    call stop_program(.true.)
+                    call program_abort()
                 end if
                 iun = iun + 1
             end if
@@ -1656,7 +1655,7 @@ module output_files
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_GRD.ts')
-                    call stop_program(.true.)
+                    call program_abort()
                 end if
                 iun = iun + 1
             end if
@@ -1672,7 +1671,7 @@ module output_files
                 call output_files_write_txt(fls, shd, field, group%tile%iun + iun, group%tile%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%tile%fname) // '_NML.ts')
-                    call stop_program(.true.)
+                    call program_abort()
                 end if
                 iun = iun + 1
             end if

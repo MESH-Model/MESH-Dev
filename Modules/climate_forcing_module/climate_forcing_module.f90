@@ -6,7 +6,7 @@ module climate_forcing
     use climate_forcing_variabletypes
     use climate_forcing_config
     use climate_forcing_io
-    use sa_mesh_utilities
+    use print_routines
 
     implicit none
 
@@ -125,7 +125,7 @@ module climate_forcing
             if (cm%dat(vid)%ffmt == 0) then
                 call print_error('Forcing data in the legacy binary format (*.bin) are no longer supported.')
                 call print_message('These data must be converted to one of the supported formats.')
-                call stop_program()
+                call program_abort()
             end if
 
             !> Check that the forcing record is not less than the model time-step.
@@ -134,7 +134,7 @@ module climate_forcing
                 write(line, FMT_GEN) ic%dtmins
                 call print_error('The forcing data time-step is less than the model time-step: ' // trim(adjustl(line)) // ' mins')
                 call print_message('Aggregate the data to the model time-step.')
-                call stop_program()
+                call program_abort()
             end if
 
             !> Check if the time-step is divisible by the model time-step.
@@ -144,7 +144,7 @@ module climate_forcing
                 call print_message_detail('Data time-step: ' // trim(adjustl(line)) // ' mins')
                 write(line, FMT_GEN) ic%dtmins
                 call print_message_detail('Model time-step: ' // trim(adjustl(line)) // ' mins')
-                call stop_program()
+                call program_abort()
             end if
 
             !> Warn of unsupprted interpolation flag option.
@@ -198,7 +198,7 @@ module climate_forcing
                 call print_message_detail('First record occurs on: ' // trim(line))
                 write(line, "(i5, i4)") ic%start%year, ic%start%jday
                 call print_message_detail('Simulation start date: ' // trim(line))
-                call stop_program()
+                call program_abort()
             end if
             iskip = (isteps2 - isteps1)
             if (iskip > 0) then
@@ -234,7 +234,7 @@ module climate_forcing
                 form = 'unformatted', access = 'sequential', iostat = ierr)
             if (ierr /= 0) then
                 call print_error('Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat' // ' to resume states.')
-                call stop_program()
+                call program_abort()
             end if
 
             !> Stop if the state file does not contain the expected number of climate variables.
@@ -245,7 +245,7 @@ module climate_forcing
                 call print_message_detail('Number of clim. variables read: ' // trim(adjustl(line)))
                 write(line, FMT_GEN) 7
                 call print_message_detail('Number of clim. variables expected: ' // trim(adjustl(line)))
-                call stop_program()
+                call program_abort()
             end if
 
             !> Loop through variables in the climate forcing object and read the states from file.
@@ -410,7 +410,7 @@ module climate_forcing
 
                     case default
                         call print_error('Unable to read blocks from ' // trim(cm%dat(vid)%fpath) // '.')
-                        call stop_program()
+                        call program_abort()
 
                 end select
 
@@ -515,7 +515,7 @@ module climate_forcing
                 form = 'unformatted', access = 'sequential', iostat = ierr)
             if (ierr /= 0) then
                 call print_error('Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat' // ' to save states.')
-                call stop_program()
+                call program_abort()
             end if
 
             !> Write the number of climate variables.

@@ -9,7 +9,7 @@ module WF_ROUTE_module
     subroutine WF_ROUTE_between_grid(fls, shd)
 
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
 
         type(fl_ids) :: fls

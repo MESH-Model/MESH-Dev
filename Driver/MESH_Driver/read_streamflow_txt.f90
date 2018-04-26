@@ -12,8 +12,7 @@
 subroutine read_streamflow_txt(shd, iun, fname)
 
     use mpi_module
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
 
     implicit none
 
@@ -43,7 +42,7 @@ subroutine read_streamflow_txt(shd, iun, fname)
     open(iun, file = fname, status = 'old', action = 'read', iostat = ierr)
     if (ierr /= 0) then
         call print_error('Unable to open file. Check if the file exists.')
-        call stop_program()
+        call program_abort()
     end if
 
     !> Read the number of locations.
@@ -69,7 +68,7 @@ subroutine read_streamflow_txt(shd, iun, fname)
 
     !> Stop: Error allocating variables.
 998 call print_error('Unable to allocate variables.')
-    call stop_program()
+    call program_abort()
 
     !> Stop: Premature end of file.
 999 call print_error('Unable to read from file.')
@@ -77,6 +76,6 @@ subroutine read_streamflow_txt(shd, iun, fname)
     call print_message('Number of gauge locations expected: ' // trim(adjustl(line)))
     write(line, FMT_GEN) i
     call print_message('Number found: ' // trim(adjustl(line)))
-    call stop_program()
+    call program_abort()
 
 end subroutine

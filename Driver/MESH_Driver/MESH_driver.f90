@@ -96,8 +96,7 @@ program RUNMESH
 
     use mpi_module
     use model_files
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use FLAGS
     use sa_mesh_run_within_tile
     use sa_mesh_run_within_grid
@@ -199,12 +198,7 @@ program RUNMESH
         call print_warning('Failed to initialize MPI.')
         write(line, FMT_GEN) ierr
         call print_message_detail('Error status: ' // trim(adjustl(line)))
-        call print_message('Calling MPI abort...')
-        call MPI_Abort(MPI_COMM_WORLD, ierrcode, ierr)
-        write(line, FMT_GEN) ierrcode
-        call print_message_detail('Error code: ' // trim(adjustl(line)))
-        write(line, FMT_GEN) ierr
-        call print_message_detail('Error status: ' // trim(adjustl(line)))
+        call program_abort()
     end if
 
     !> Grab number of total processes and current process ID.
@@ -431,7 +425,7 @@ program RUNMESH
                         call print_error('Unable to allocate variables for R2C output.')
                         call print_message('Check the value of the first record at the first line in r2c_output.txt.')
                         call print_message('The value should be an integer value greater than zero.')
-                        call stop_program()
+                        call program_abort()
                     end if
                 end if
                 if (ierr /= 0 .or. mod(DELTR2C, 30) /= 0) then
@@ -439,7 +433,7 @@ program RUNMESH
                     call print_message('The first record at the first line is the number of variables.')
                     call print_message('The second record at the first line is the time-step for output.')
                     call print_message('The time-step should be a multiple of 30.')
-                    call stop_program()
+                    call program_abort()
                 end if
                 call print_echo_txt('')
                 call print_echo_txt('r2c output will be written for the following fields:')
@@ -450,7 +444,7 @@ program RUNMESH
                         call print_error('Error reading record: ' // trim(line))
                         call print_message('The first 3 columns should contain values of 0 or 1.')
                         call print_message('The last 3 columns should contain information about the variable.')
-                        call stop_program()
+                        call program_abort()
                     else
                         if (GRD(i) == 1) then
                             NR2CFILES = NR2CFILES + 1
@@ -473,7 +467,7 @@ program RUNMESH
             else
                 call print_error('Unable to open: r2c_output.txt')
                 call print_message('Check that the file exists or set R2COUTPUTFLAG to zero.')
-                call stop_program()
+                call program_abort()
             end if
         end if
 
@@ -517,7 +511,7 @@ program RUNMESH
         write(line, "('RESUMEFLAG ', i1, ' and SAVERESUMEFLAG ', i1, ' are not supported.')") RESUMEFLAG, SAVERESUMEFLAG
         call print_error(line)
         call print_message('Use RESUMEFLAG 4 and SAVERESUMEFLAG 4 instead.')
-        call stop_program()
+        call program_abort()
     end if
 
 !> ********************************************************************
@@ -537,7 +531,7 @@ program RUNMESH
 !+                call print_error('Unable to allocate variables for RESUMESTATE 2.')
 !+                call print_message('Check the value of the first record at the first line in resume_state_r2c.txt.')
 !+                call print_message('The value should be an integer value greater than zero.')
-!+                call stop_program()
+!+                call program_abort()
 !+            end if
 !+        end if
 !+        close(54)
@@ -1062,7 +1056,7 @@ program RUNMESH
 !+                call print_error('Unable to allocate variables for SAVERESUMESTATE 2.')
 !+                call print_message('Check the value of the first record at the first line in save_state_r2c.txt.')
 !+                call print_message('The value should be an integer value greater than zero.')
-!+                call stop_program()
+!+                call program_abort()
 !+            end if
 !+        end if
 !+        close(55)
@@ -1337,6 +1331,6 @@ program RUNMESH
 
 999     continue
 
-    call stop_program()
+    call program_end()
 
 end program

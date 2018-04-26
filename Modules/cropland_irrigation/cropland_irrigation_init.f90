@@ -15,8 +15,7 @@ module cropland_irrigation_init
         use model_files_variables
 
         !> For 'shd' type (basin information) and 'FCAN' (canopy fractions).
-        use sa_mesh_variables
-        use sa_mesh_utilities
+        use sa_mesh_common
 
         !> For current date and counter.
         use model_dates

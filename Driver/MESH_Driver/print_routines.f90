@@ -1,4 +1,4 @@
-module sa_mesh_utilities
+module print_routines
 
     implicit none
 
@@ -216,7 +216,7 @@ module sa_mesh_utilities
             !> Print an error (to screen).
             call print_error('Unable to open file: ' // trim(adjustl(path)))
             call print_message('Check that the path exists, that the file it is not read-protected or open in another application.')
-            call stop_program()
+            call program_abort()
         end if
 
     end subroutine

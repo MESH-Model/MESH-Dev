@@ -5,7 +5,7 @@
 subroutine tile_connector(shd, grd, r2c, accumulate)
 
     !> For: type(ShedGridParams) :: shd.
-    use sa_mesh_variables
+    use sa_mesh_common
 
     implicit none
 

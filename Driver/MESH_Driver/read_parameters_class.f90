@@ -4,8 +4,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     use model_files_variables
 
     !> For the 'ShedGridParams' type and SA_MESH parameters.
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
 
     !> Required for 'NRSOILAYEREADFLAG'.
     use FLAGS
@@ -38,7 +37,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     open(iun, file = fls%fl(mfk%f50)%fn, status = 'old', action = 'read', iostat = ierr)
     if (ierr /= 0) then
         call print_error('Unable to open file. Check if the file exists.')
-        call stop_program()
+        call program_abort()
     end if
 
     NA = shd%NA
@@ -75,7 +74,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     end if
 
     !> Stop if an error has occurred.
-    if (ierr /= 0) call stop_program()
+    if (ierr /= 0) call program_abort()
 
     JLAT = nint(DEGLAT)
 

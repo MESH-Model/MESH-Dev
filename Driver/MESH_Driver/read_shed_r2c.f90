@@ -12,12 +12,10 @@
 subroutine read_shed_r2c(shd, iun, fname)
 
     !> strings: For 'lowercase' function.
-    !> sa_mesh_variables: Required for MESH variables, parameters.
-    !> sa_mesh_utilities: Required for printing/writing messages, VERBOSEMODE, DIAGNOSEMODE.
-    !> ensim_io: Required for read 'r2c' format file.
+    !> sa_mesh_common: For common MESH variables and routines.
+    !> ensim_io: For routines to read 'r2c' format file.
     use strings
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use ensim_io
 
     implicit none
@@ -43,7 +41,7 @@ subroutine read_shed_r2c(shd, iun, fname)
     call open_ensim_file(iun, fname, ierr)
     if (ierr /= 0) then
         call print_error('Unable to open file. Check if the file exists.')
-        call stop_program()
+        call program_abort()
     end if
     call parse_header_ensim(iun, fname, vkeyword, nkeyword, ierr)
 
@@ -85,7 +83,7 @@ subroutine read_shed_r2c(shd, iun, fname)
             shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
         case default
             call print_error('Unsupported coordinate system: ' // trim(shd%CoordSys%Proj))
-            call stop_program()
+            call program_abort()
     end select
 
     !> Check grid dimension.
@@ -96,7 +94,7 @@ subroutine read_shed_r2c(shd, iun, fname)
         call print_message_detail('Number of grids (from file): ' // trim(adjustl(line)))
         write(line, FMT_GEN) (shd%NAA - shd%NA)
         call print_message_detail('Number of outlets (from file): ' // trim(adjustl(line)))
-        call stop_program()
+        call program_abort()
     end if
 
     !> Allocate and initialize variables.
@@ -107,7 +105,7 @@ subroutine read_shed_r2c(shd, iun, fname)
     if (ierr /= 0) then
         write(line, FMT_GEN) ierr
         call print_error("Unable to allocate 'shd' variables (error code: " // trim(adjustl(line)) // ").")
-        call stop_program()
+        call program_abort()
     end if
     shd%RNKGRD = 0; shd%xxx = 0; shd%yyy = 0
     shd%IROUGH = 0
@@ -149,7 +147,7 @@ subroutine read_shed_r2c(shd, iun, fname)
     if (ierr /= 0) then
         write(line, FMT_GEN) ierr
         call print_error("Unable to allocate 'shd' variables (error code: " // trim(adjustl(line)) // ").")
-        call stop_program()
+        call program_abort()
     end if
     shd%NEXT = 0
     shd%IAK = 0; shd%SLOPE_CHNL = 0.0; shd%CHNL_LEN = 0.0; shd%ICHNL = 0; shd%IREACH = 0
@@ -166,7 +164,7 @@ subroutine read_shed_r2c(shd, iun, fname)
         call r2c_to_rank(iun, fname, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, VERBOSEMODE)
         if (.not. allocated(ffield)) then
             call print_error("Could not find attribute 'RANK' in the file.")
-            call stop_program()
+            call program_abort()
         end if
 
         !> Determine and assign to the variable.

@@ -10,7 +10,7 @@ subroutine read_initial_states(fls, shd)
     use strings
     use mpi_module
     use model_files_variables
-    use sa_mesh_variables
+    use sa_mesh_common
     use FLAGS
 
     use RUNCLASS36_constants

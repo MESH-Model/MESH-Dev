@@ -65,7 +65,7 @@ module SA_RTE_module
     subroutine SA_RTE(shd)
 
         !> For: type(ShedGridParams) :: shd
-        use sa_mesh_variables
+        use sa_mesh_common
 
         !> For: type(iter_counter) :: ic
         !* ic: Active counter.
@@ -129,8 +129,7 @@ module SA_RTE_module
     subroutine SA_RTE_init(shd)
 
         !> For: type(ShedGridParams) :: shd
-        use sa_mesh_variables
-        use sa_mesh_utilities
+        use sa_mesh_common
 
         !> For: type(iter_counter) :: ic
         use model_dates
@@ -153,7 +152,7 @@ module SA_RTE_module
             allocate(RFF(shd%yCount, shd%xCount), stat = ierr)
             if (ierr /= 0) then
                 call print_error('Unable to allocate RFF variable.')
-                call stop_program()
+                call program_abort()
             end if
             RFF = 0.0
         end if
@@ -162,7 +161,7 @@ module SA_RTE_module
             allocate(RCH(shd%yCount, shd%xCount), stat = ierr)
             if (ierr /= 0) then
                 call print_error('Unable to allocate RCH variable.')
-                call stop_program()
+                call program_abort()
             end if
             RCH = 0.0
         end if

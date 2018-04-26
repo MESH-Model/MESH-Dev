@@ -98,7 +98,7 @@ module save_basin_output
     subroutine run_save_basin_output_init(fls, shd, cm)
 
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use FLAGS
         use climate_forcing
 
@@ -364,7 +364,7 @@ module save_basin_output
     subroutine run_save_basin_output(fls, shd, cm)
 
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use FLAGS
         use model_dates
         use climate_forcing
@@ -498,7 +498,7 @@ module save_basin_output
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use FLAGS
         use climate_forcing
 
@@ -588,7 +588,7 @@ module save_basin_output
     !>
     subroutine parse_basin_output_flag(shd, in_line, flg)
 
-        use sa_mesh_variables
+        use sa_mesh_common
         use strings
 
         implicit none
@@ -698,7 +698,7 @@ module save_basin_output
     subroutine update_water_balance(shd, cm)
 
         !> For 'shd' variable type and output variables.
-        use sa_mesh_variables
+        use sa_mesh_common
 
         !> For 'cm' variable type.
         use climate_forcing
@@ -786,7 +786,7 @@ module save_basin_output
 
     subroutine save_water_balance(shd, dts, ikdts)
 
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
 
         !> Input variables.
@@ -828,7 +828,7 @@ module save_basin_output
     subroutine write_water_balance_header(fls, shd, fik, dts)
 
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
 
         !> Input variables.
         type(fl_ids) :: fls
@@ -865,7 +865,7 @@ module save_basin_output
     subroutine write_water_balance(fls, shd, fik, dts, ina, ikdts)
 
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
 
         !> Input variables.
@@ -943,7 +943,7 @@ module save_basin_output
     subroutine update_evp(fls, shd, fik, dts, ikdts)
 
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
 
         !> Input variables.
@@ -984,7 +984,7 @@ module save_basin_output
     subroutine update_evp_header(fls, shd, fik, dts)
 
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
 
         !> Input variables.
         type(fl_ids) :: fls
@@ -1008,7 +1008,7 @@ module save_basin_output
     subroutine update_energy_balance(shd, cm)
 
         !> For 'shd' variable type and output variables.
-        use sa_mesh_variables
+        use sa_mesh_common
 
         !> For 'cm' variable type.
         use climate_forcing
@@ -1141,7 +1141,7 @@ module save_basin_output
 
     subroutine save_energy_balance(shd, dts, ikdts)
 
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
 
         !> Input variables.
@@ -1188,7 +1188,7 @@ module save_basin_output
     subroutine write_energy_balance_header(fls, shd, fik, dts)
 
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
 
         !> Input variables.
         type(fl_ids) :: fls
@@ -1223,7 +1223,7 @@ module save_basin_output
     subroutine write_energy_balance(fls, shd, fik, dts, ina, ikdts)
 
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
 
         !> Input variables.

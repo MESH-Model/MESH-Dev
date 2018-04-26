@@ -12,8 +12,7 @@
 subroutine read_basin_structures(shd)
 
     use strings
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use model_dates
     use txt_io
 
@@ -75,7 +74,7 @@ subroutine read_basin_structures(shd)
                     call print_message_detail(line)
                 end if
             end do
-            call stop_program()
+            call program_abort()
         end if
 
         !> Skip records in the file to the simulation start date.
@@ -162,7 +161,7 @@ subroutine read_basin_structures(shd)
         call print_message_detail('Maximum IREACH the drainage database: ' // trim(adjustl(line)))
         write(line, FMT_GEN) fms%rsvr%n
         call print_message_detail('Number of reservoirs read from file: ' // trim(adjustl(line)))
-        call stop_program()
+        call program_abort()
     end if
 
     !> If locations exist.
@@ -191,7 +190,7 @@ subroutine read_basin_structures(shd)
                     call print_message_detail(line)
                 end if
             end do
-            call stop_program()
+            call program_abort()
         end if
 
         !> Print an error if any outlet location has no REACH.
@@ -210,7 +209,7 @@ subroutine read_basin_structures(shd)
                 end if
             end if
         end do
-        if (ierr /= 0) call stop_program()
+        if (ierr /= 0) call program_abort()
 
         !> Calculate area from 'IREACH' cells if not specified.
         do i = 1, fms%rsvr%n
@@ -241,7 +240,7 @@ subroutine read_basin_structures(shd)
                 call print_message_detail('First record occurs on: ' // trim(line))
                 write(line, "(i5, i4)") ic%start%year, ic%start%jday
                 call print_message_detail('Simulation start date: ' // trim(line))
-                call stop_program()
+                call program_abort()
             end if
             iskip = (isteps2 - isteps1)
             if (iskip > 0) then
@@ -250,7 +249,7 @@ subroutine read_basin_structures(shd)
                 ierr = read_records_txt(iun, fms%rsvr%rlsmeas%val, iskip)
                 if (ierr /= 0) then
                     call print_error('Reached end of file.')
-                    call stop_program()
+                    call program_abort()
                 end if
             end if
 
@@ -259,7 +258,7 @@ subroutine read_basin_structures(shd)
             ierr = read_records_txt(iun, fms%rsvr%rlsmeas%val)
             if (ierr /= 0) then
                 call print_error('Reached end of file.')
-                call stop_program()
+                call program_abort()
             end if
             backspace(iun)
         end if

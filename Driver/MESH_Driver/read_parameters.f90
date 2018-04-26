@@ -9,8 +9,7 @@ subroutine read_parameters(fls, shd, cm)
     use strings
     use mpi_module
     use model_files_variables
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use FLAGS
     use climate_forcing_variabletypes
 
@@ -156,7 +155,7 @@ subroutine read_parameters(fls, shd, cm)
     if (INPUTPARAMSFORMFLAG == 0) then
         line = 'Unsupported parameter file format. Revise INPUTPARAMSFORMFLAG in ' // trim(adjustl(fls%fl(mfk%f53)%fn)) // '.'
         call print_error(line)
-        call stop_program()
+        call program_abort()
     end if
 
     !> Read from the 'ini' files.

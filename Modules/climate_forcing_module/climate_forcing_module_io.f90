@@ -4,7 +4,7 @@ module climate_forcing_io
 
     use climate_forcing_constants
     use climate_forcing_variabletypes
-    use sa_mesh_utilities
+    use print_routines
 
     implicit none
 
@@ -101,7 +101,7 @@ module climate_forcing_io
             !> Unknown file format.
             case default
                 call print_error(trim(cm%dat(vid)%fname) // ' (' // trim(cm%dat(vid)%id_var) // '): Unsupported file format.')
-                call stop_program()
+                call program_abort()
 
         end select
 
@@ -129,13 +129,13 @@ module climate_forcing_io
         return
 
 999     call print_error('Unable to open ' // trim(cm%dat(vid)%fpath) // ' or file not found.')
-        call stop_program()
+        call program_abort()
 
 998     call print_error('Unable to read ' // trim(cm%dat(vid)%fpath) // ' or end of file.')
-        call stop_program()
+        call program_abort()
 
 997     call print_error('Unable to allocate blocks for reading ' // trim(cm%dat(vid)%fpath) // ' data into memory.')
-        call stop_program()
+        call program_abort()
 
     end function
 
@@ -154,7 +154,6 @@ module climate_forcing_io
 
         !> 'shd_variables': For 'shd' variable.
         use shd_variables
-        use sa_mesh_utilities
 
         !> Input variables.
         type(ShedGridParams) shd
@@ -239,7 +238,7 @@ module climate_forcing_io
                 !> Unknown file format.
                 case default
                     call print_error(trim(cm%dat(vid)%fname) // ' (' // trim(cm%dat(vid)%id_var) // '): Unsupported file format.')
-                    call stop_program()
+                    call program_abort()
 
             end select
         end do

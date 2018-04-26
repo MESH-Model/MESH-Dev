@@ -5,8 +5,7 @@
 subroutine READ_SOIL_INI(fls, shd)
 
     use model_files_variables
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use FLAGS
 
     !> Input variables.
@@ -31,7 +30,7 @@ subroutine READ_SOIL_INI(fls, shd)
         call print_message_detail('SOILINIFLAG 2 - MESH will adjust soil percentages in favor of sand.')
         call print_message_detail('SOILINIFLAG 3 - MESH will adjust soil percentages in favor of clay.')
         call print_message_detail('SOILINIFLAG 4 - MESH will proportionally adjust the soil percentages.')
-        call stop_program()
+        call program_abort()
     end if
 
     !> Assign local variables.
@@ -106,6 +105,6 @@ subroutine READ_SOIL_INI(fls, shd)
 
     !> Stop: Premature end of file.
 999 call print_error('Unable to read from file.')
-    call stop_program()
+    call program_abort()
 
 end subroutine

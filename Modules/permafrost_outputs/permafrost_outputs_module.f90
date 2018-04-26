@@ -1,12 +1,10 @@
 module permafrost_outputs_module
 
-    !> 'sa_mesh_variables' required for SA_MESH variables, parameters, and counter.
-    !> 'sa_mesh_utilities' required for I/O to screen and 'echo_print.txt', and for character defaults.
+    !> 'sa_mesh_common' required for common SA_MESH variables and routines.
     !> 'model_dates' required for 'ic' counter.
     !> 'model_files_variables' required for 'fls' object and file keys.
     !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use model_dates
     use model_files_variables
     use mpi_module
