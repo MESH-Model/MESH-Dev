@@ -27,7 +27,7 @@ VPATH+=	$(DIR_REPO)/Driver/MESH_Driver: \
 		$(DIR_REPO)/Modules/climate_forcing_module: \
 		$(DIR_REPO)/Modules/simulation_statistics: \
 		$(DIR_REPO)/Modules/cropland_irrigation: \
-		$(DIR_REPO)/Modules/permafrost_active_layer: \
+		$(DIR_REPO)/Modules/permafrost_outputs: \
 		$(DIR_REPO)/Blowing_Snow: \
 		$(DIR_REPO)/Routing_Model/baseflow_module: \
 		$(DIR_REPO)/Modules/io_modules:
@@ -46,7 +46,7 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
 			control_variables.o \
 			sa_mesh_utilities.o \
-			variablename_constants.o parametername_constants.o \
+			variable_names.o parameter_names.o \
 			shd_variables.o fm_variables.o input_parameters.o state_variables.o \
 			climate_forcing_module_config.o \
 			climate_forcing_module_io.o climate_forcing_module.o \
@@ -160,8 +160,7 @@ OBJECTS+=	read_initial_inputs.o \
 			module_files.o
 # Output routines.
 OBJECTS+=	WRITE_R2C_HEADER.o write_r2c.o \
-			save_basin_output.o \
-			model_output.o
+			output_files.o save_basin_output.o
 # MESH driver.
 OBJECTS+=	read_run_options.o \
 			sa_mesh_run_within_tile.o sa_mesh_run_within_grid.o sa_mesh_run_between_grid.o \

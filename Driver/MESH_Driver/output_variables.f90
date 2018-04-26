@@ -1,6 +1,6 @@
 module output_variables
 
-    use variablename_constants
+    use variable_names
 
     implicit none
 

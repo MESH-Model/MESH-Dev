@@ -4,7 +4,7 @@ module output_files
     use sa_mesh_utilities
     use model_dates
     use model_files_variables
-    use variablename_constants
+    use variable_names
 
     implicit none
 
@@ -218,7 +218,8 @@ module output_files
     !> Output variables.
     !*  line: First data line read from file.
     !*  ierr: Returns '0' if the routine is successful.
-    subroutine read_txt_line(iun, line, ierr)
+    !*  i: Lines passed in file.
+    integer function read_txt_line(iun, line, ierr) result(i)
 
         !> Required for the 'compact' function.
         use strings
@@ -234,8 +235,10 @@ module output_files
         !> Skip blank lines and lines that lead with '#' or '!'.
         !> Clip the line to the first instance of '#' or '!' if one exists.
         line = ''
+        i = 0
         do while (ierr == 0)
             read(iun, '(a)', iostat = ierr) line
+            i = i + 1
             if (ierr /= 0) exit
             if (len_trim(line) == 0) cycle
             if (line(1:1) == '#' .or. line(1:1) == '!') cycle
@@ -247,7 +250,7 @@ module output_files
 
         return
 
-    end subroutine
+    end function
 
     subroutine open_r2c_output(fls, shd, iun, fname, attname, attunits, ierr)
 
@@ -569,7 +572,11 @@ module output_files
                 !> Write for specific grids.
                 case ('tsi')
                     do i = 1, size(field%tsi)
-                        dat_tsi(i) = dat(field%tsi(i), t)
+                        if (field%tsi(i) > 0 .and. field%tsi(i) <= size(dat, 1)) then
+                            dat_tsi(i) = dat(field%tsi(i), t)
+                        else
+                            dat_tsi(i) = out%NO_DATA
+                        end if
                     end do
                     write(iun, fmt, iostat = ierr) dat_tsi
                     if (ierr /= 0) return
@@ -577,7 +584,11 @@ module output_files
                 !> Write for specific tiles.
                 case ('tsk')
                     do i = 1, size(field%tsk)
-                        dat_tsk(i) = dat(field%tsk(i), t)
+                        if (field%tsk(i) > 0 .and. field%tsk(i) <= size(dat, 1)) then
+                            dat_tsk(i) = dat(field%tsk(i), t)
+                        else
+                            dat_tsk(i) = out%NO_DATA
+                        end if
                     end do
                     write(iun, fmt, iostat = ierr) dat_tsk
                     if (ierr /= 0) return
@@ -624,6 +635,7 @@ module output_files
         integer iun, j, n, z
         character(len = DEFAULT_LINE_LENGTH) fname
         character(len = DEFAULT_FIELD_LENGTH) str
+        logical lopen
 
         !> Create base file name for group.
         fname = trim(group%fname)
@@ -673,46 +685,86 @@ module output_files
             iun = 0
             if (btest(field%ffmt, fls_out%ffmt%r2c)) then
                 z = 0
-                call open_r2c_output(fls, shd, group%grid%iun + iun, trim(group%grid%fname) // '.r2c', field%vname, '', z)
-                if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to open file for output: ' // trim(group%grid%fname) // '.r2c')
-                    ierr = z
+                lopen = .false.
+                inquire(file = trim(fname) // '.r2c', opened = lopen)
+                if (.not. lopen) then
+                    call open_r2c_output(fls, shd, group%grid%iun + iun, trim(fname) // '.r2c', field%vname, '', z)
+                    if (z /= 0) then
+                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '.r2c')
+                        ierr = z
+                    end if
+                else
+                    call print_message_detail( &
+                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '.r2c')
+                    z = 1
                 end if
                 iun = iun + 1
             end if
             if (btest(field%ffmt, fls_out%ffmt%seq)) then
                 z = 0
-                call open_seq_output(fls, group%grid%iun + iun, trim(group%grid%fname) // '.seq', z)
-                if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to open file for output: ' // trim(group%grid%fname) // '.seq')
-                    ierr = z
+                lopen = .false.
+                inquire(file = trim(fname) // '.seq', opened = lopen)
+                if (.not. lopen) then
+                    call open_seq_output(fls, group%grid%iun + iun, trim(fname) // '.seq', z)
+                    if (z /= 0) then
+                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '.seq')
+                        ierr = z
+                    end if
+                else
+                    call print_message_detail( &
+                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '.seq')
+                    z = 1
                 end if
                 iun = iun + 1
             end if
             if (btest(field%ffmt, fls_out%ffmt%txt)) then
                 z = 0
-                call open_txt_output(fls, group%grid%iun + iun, trim(group%grid%fname) // '.txt', z)
-                if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to open file for output: ' // trim(group%grid%fname) // '.txt')
-                    ierr = z
+                lopen = .false.
+                inquire(file = trim(fname) // '.txt', opened = lopen)
+                if (.not. lopen) then
+                    call open_txt_output(fls, group%grid%iun + iun, trim(fname) // '.txt', z)
+                    if (z /= 0) then
+                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '.txt')
+                        ierr = z
+                    end if
+                else
+                    call print_message_detail( &
+                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '.txt')
+                    z = 1
                 end if
                 iun = iun + 1
             end if
             if (btest(field%ffmt, fls_out%ffmt%csv)) then
                 z = 0
-                call open_txt_output(fls, group%grid%iun + iun, trim(group%grid%fname) // '.csv', z)
-                if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to open file for output: ' // trim(group%grid%fname) // '.csv')
-                    ierr = z
+                lopen = .false.
+                inquire(file = trim(fname) // '.csv', opened = lopen)
+                if (.not. lopen) then
+                    call open_txt_output(fls, group%grid%iun + iun, trim(fname) // '.csv', z)
+                    if (z /= 0) then
+                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '.csv')
+                        ierr = z
+                    end if
+                else
+                    call print_message_detail( &
+                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '.csv')
+                    z = 1
                 end if
                 iun = iun + 1
             end if
             if (btest(field%ffmt, fls_out%ffmt%tsi)) then
                 z = 0
-                call open_txt_output(fls, group%grid%iun + iun, trim(group%grid%fname) // '_GRD.ts', z)
-                if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to open file for output: ' // trim(group%grid%fname) // '_GRD.ts')
-                    ierr = z
+                lopen = .false.
+                inquire(file = trim(fname) // '_GRD.ts', opened = lopen)
+                if (.not. lopen) then
+                    call open_txt_output(fls, group%grid%iun + iun, trim(fname) // '_GRD.ts', z)
+                    if (z /= 0) then
+                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '_GRD.ts')
+                        ierr = z
+                    end if
+                else
+                    call print_message_detail( &
+                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_GRD.ts')
+                    z = 1
                 end if
                 iun = iun + 1
             end if
@@ -746,10 +798,18 @@ module output_files
             iun = 0
             if (btest(field%ffmt, fls_out%ffmt%tsk)) then
                 z = 0
-                call open_txt_output(fls, group%tile%iun + iun, trim(group%tile%fname) // '_NML.ts', z)
-                if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to open file for output: ' // trim(group%tile%fname) // '_NML.ts')
-                    ierr = z
+                lopen = .false.
+                inquire(file = trim(fname) // '_NML.ts', opened = lopen)
+                if (.not. lopen) then
+                    call open_txt_output(fls, group%tile%iun + iun, trim(fname) // '_NML.ts', z)
+                    if (z /= 0) then
+                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '_NML.ts')
+                        ierr = z
+                    end if
+                else
+                    call print_message_detail( &
+                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_NML.ts')
+                    z = 1
                 end if
                 iun = iun + 1
             end if
@@ -882,7 +942,7 @@ module output_files
 
     end subroutine
 
-    subroutine output_files_parse_options(fls, shd, ts, field, args, nargs)
+    subroutine output_files_parse_options(fls, shd, ts, field, args, nargs, ierr)
 
         !> strings: For 'is_letter', 'lowercase', and 'value' functions.
         use strings
@@ -900,8 +960,11 @@ module output_files
         !> Input/output variables.
         type(output_field) field
 
+        !> Output variables.
+        integer, intent(out) :: ierr
+
         !> Local variables.
-        integer n, j, i, ierr
+        integer n, j, i
         character(len = DEFAULT_FIELD_LENGTH) str
 
         !> Mark the field as active and assign default attributes.
@@ -1055,6 +1118,9 @@ module output_files
                 case ('max', 'min')
                     field%fn = adjustl(str)
 
+                !> Permafrost option (dealt with elsewhere).
+                case ('ttol')
+
                 !> Not recognized.
                 case default
                     call print_remark( &
@@ -1081,12 +1147,12 @@ module output_files
                     "The 'tsi' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but no grids are listed or an error occurred parsing the values.', PAD_3)
                 deallocate(field%tsi)
+                field%order = ''
             else if (maxval(field%tsi) > shd%NA .or. minval(field%tsi) < 1) then
                 call print_warning( &
                     "The 'tsi' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but contains an invalid grid number' // &
                     ' or exceeds the number of grids identified in the basin.', PAD_3)
-                deallocate(field%tsi)
             end if
         end if
         if (allocated(field%tsk)) then
@@ -1095,12 +1161,12 @@ module output_files
                     "The 'tsk' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but no tiles are listed or an error occurred parsing the values.', PAD_3)
                 deallocate(field%tsk)
+                field%order = ''
             else if (maxval(field%tsk) > shd%lc%NML .or. minval(field%tsk) < 1) then
                 call print_warning( &
                     "The 'tsk' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but contains an invalid tile number' // &
                     ' or exceeds the number of tiles identified in the basin.', PAD_3)
-                deallocate(field%tsk)
             end if
         end if
         if (allocated(field%gru)) then
@@ -1114,23 +1180,22 @@ module output_files
                     "The '" // trim(field%gru_mask) // "' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but no GRUs are listed or an error occurred parsing the values.', PAD_3)
                 deallocate(field%gru)
+                field%order = ''
             else if (field%gru(1) > shd%lc%NTYPE .or. field%gru(1) < 1) then
                 call print_warning( &
                     "The '" // trim(field%gru_mask) // "' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but contains an invalid GRU number' // &
                     ' or exceeds the number of GRUs identified in the basin.', PAD_3)
-                deallocate(field%gru)
             end if
         end if
 
         !> Allocate output fields and open output files.
         ierr = 0
         call output_files_allocate_field(fls, shd, ts, field, ierr)
-        if (ierr /= 0) call stop_program()
 
     end subroutine
 
-    subroutine output_files_append_field(fls, shd, ts, vname, args, nargs, ignd, cfactorm, cfactora, fn)
+    subroutine output_files_append_field(fls, shd, ts, vname, args, nargs, ierr, ignd, cfactorm, cfactora, fn)
 
         !> strings: For 'is_letter', 'lowercase', and 'uppercase' functions.
         use strings
@@ -1144,6 +1209,9 @@ module output_files
         integer, intent(in), optional :: ignd
         real, intent(in), optional :: cfactorm, cfactora
         character(len = *), intent(in), optional :: fn
+
+        !> Output variables.
+        integer, intent(out) :: ierr
 
         !> Local variables.
         integer n, i
@@ -1194,11 +1262,12 @@ module output_files
         fls_out%fls(n)%in_mem = fls_out%in_mem
 
         !> Parse and interpret remaining options.
-        call output_files_parse_options(fls, shd, ts, fls_out%fls(n), args, nargs)
+        ierr = 0
+        call output_files_parse_options(fls, shd, ts, fls_out%fls(n), args, nargs, ierr)
 
     end subroutine
 
-    subroutine output_files_append_pfield(fls, shd, ts, vname, pfld, args, nargs, ignd, cfactorm, cfactora, fn)
+    subroutine output_files_append_pfield(fls, shd, ts, vname, pfld, args, nargs, ierr, ignd, cfactorm, cfactora, fn)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
@@ -1211,12 +1280,17 @@ module output_files
         real, intent(in), optional :: cfactorm, cfactora
         character(len = *), intent(in), optional :: fn
 
+        !> Output variables.
+        integer, intent(out) :: ierr
+
         !> Local variables.
         integer n
         type (output_field) field
 
         !> Call base routine.
-        call output_files_append_field(fls, shd, ts, vname, args, nargs, ignd, cfactorm, cfactora, fn)
+        ierr = 0
+        call output_files_append_field(fls, shd, ts, vname, args, nargs, ierr, ignd, cfactorm, cfactora, fn)
+        if (ierr /= 0) return
 
         !> Check to see if the field was appended.
         n = size(fls_out%fls)
@@ -1261,7 +1335,7 @@ module output_files
 
         !> Local variables.
         type(dates_model) ts
-        integer iun, n, j, nargs, ierr
+        integer iun, n, i, j, nargs, ios, ierr, z
         character(len = DEFAULT_FIELD_LENGTH) args(50)
         character(len = DEFAULT_LINE_LENGTH) line
 
@@ -1297,15 +1371,18 @@ module output_files
         if (ierr /= 0) then
             call print_error('Unable to open file.')
             call print_message('Check that outputs_balance.txt exists or disabled OUTFIELDSFLAG.')
-            call stop_program()
+            call stop_program(.true.)
         end if
 
         !> Count the number of output files.
+        ierr = 0
+        ios = 0
         n = 0
-        do while (ierr == 0)
+        i = 0
+        do while (ios == 0)
 
-            !> Read the line.
-            call read_txt_line(iun, line, ierr)
+            !> Read the line and increment the line count.
+            i = i + read_txt_line(iun, line, ios)
 
             !> Check for output field signature: character string followed by at least one space.
             if (len_trim(line) == 0 .or. scan(line, ' ') == 0) cycle
@@ -1316,138 +1393,181 @@ module output_files
 
             !> Output field.
             if (DIAGNOSEMODE) call print_message_detail('Reading output variable: ' // args(1))
+            z = 0
             select case (args(1))
 
                 !> Meteorological forcing.
                 case (VN_FSIN, 'FSDOWN')
-                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSIN, args, nargs)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSIN, args, nargs, z)
                 case (VN_FSVH)
-                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSVH, args, nargs, -1, 0.5)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSVH, args, nargs, z, -1, 0.5)
                 case (VN_FSIH)
-                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSIH, args, nargs, -1, 0.5)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSIH, args, nargs, z, -1, 0.5)
                 case (VN_FLIN, 'FDL')
-                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FLIN, args, nargs)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FLIN, args, nargs, z)
                 case (VN_UV, 'UL')
-                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_UV, args, nargs)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_UV, args, nargs, z)
                 case (VN_TA)
-                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_TA, args, nargs)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_TA, args, nargs, z)
                 case (VN_QA, 'HU')
-                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_QA, args, nargs)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_QA, args, nargs, z)
                 case (VN_PRES)
-                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_PRES, args, nargs)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_PRES, args, nargs, z)
                 case (VN_PRE)
-                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_PRE, args, nargs)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_PRE, args, nargs, z)
 
                 !> Water balance.
                 case (VN_PREC, 'Rainfall', 'Rain', 'Precipitation')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PREC, args, nargs, -1, real(ic%dts))
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PREC, args, nargs, z, -1, real(ic%dts))
                 case (VN_EVAP, 'Evapotranspiration')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_EVAP, args, nargs, -1, real(ic%dts))
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_EVAP, args, nargs, z, -1, real(ic%dts))
                 case (VN_ROF, 'Runoff')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ROF, args, nargs, -1, real(ic%dts))
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ROF, args, nargs, z, -1, real(ic%dts))
                 case (VN_RCAN)
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_RCAN, args, nargs)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_RCAN, args, nargs, z)
                 case (VN_SNCAN, 'SCAN')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_SNCAN, args, nargs)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_SNCAN, args, nargs, z)
                 case (VN_PNDW)
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PNDW, args, nargs)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PNDW, args, nargs, z)
                 case (VN_SNO)
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_SNO, args, nargs)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_SNO, args, nargs, z)
                 case (VN_WSNO)
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_WSNO, args, nargs)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_WSNO, args, nargs, z)
                 case (VN_STGW, 'STG')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_STGW, args, nargs)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_STGW, args, nargs, z)
                 case (VN_DSTGW, 'DSTG')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_DSTGW, args, nargs)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_DSTGW, args, nargs, z)
                 case (VN_THLQ)
                     if (ro%RUNBALWB) then
                         do j = 1, shd%lc%IGND
-                            call output_files_append_field(fls, shd, ts, VN_THLQ, args, nargs, j)
+                            call output_files_append_field(fls, shd, ts, VN_THLQ, args, nargs, z, j)
                         end do
                     end if
                 case (VN_LQWS)
                     if (ro%RUNBALWB) then
                         do j = 1, shd%lc%IGND
-                            call output_files_append_field(fls, shd, ts, VN_LQWS, args, nargs, j)
+                            call output_files_append_field(fls, shd, ts, VN_LQWS, args, nargs, z, j)
                         end do
                     end if
                 case (VN_THIC)
                     if (ro%RUNBALWB) then
                         do j = 1, shd%lc%IGND
-                            call output_files_append_field(fls, shd, ts, VN_THIC, args, nargs, j)
+                            call output_files_append_field(fls, shd, ts, VN_THIC, args, nargs, z, j)
                         end do
                     end if
                 case (VN_FZWS, 'FRWS')
                     if (ro%RUNBALWB) then
                         do j = 1, shd%lc%IGND
-                            call output_files_append_field(fls, shd, ts, VN_FZWS, args, nargs, j)
+                            call output_files_append_field(fls, shd, ts, VN_FZWS, args, nargs, z, j)
                         end do
                     end if
 
                 !> Energy balance.
                 case (VN_QH, 'HFS', 'SensibleHeat')
-                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_QH, args, nargs)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_QH, args, nargs, z)
                 case (VN_QE, 'QEVP', 'LatentHeat')
-                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_QE, args, nargs)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_QE, args, nargs, z)
                 case (VN_GFLX, 'HeatConduction')
                     if (ro%RUNBALEB) then
                         do j = 1, shd%lc%IGND
-                            call output_files_append_field(fls, shd, ts, VN_GFLX, args, nargs, j)
+                            call output_files_append_field(fls, shd, ts, VN_GFLX, args, nargs, z, j)
                         end do
                     end if
                 case (VN_TBAR, 'TempSoil', 'Temperature_soil_layers')
                     if (ro%RUNBALEB) then
                         do j = 1, shd%lc%IGND
-                            call output_files_append_field(fls, shd, ts, VN_TBAR, args, nargs, j)
+                            call output_files_append_field(fls, shd, ts, VN_TBAR, args, nargs, z, j)
                         end do
                     end if
 
                 !> Channels and routing.
                 case (VN_RFF, 'WR_RUNOFF')
-                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RFF, args, nargs, -1, real(ic%dts))
+                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RFF, args, nargs, z, -1, real(ic%dts))
                 case (VN_RCHG, 'WR_RECHARGE')
-                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RCHG, args, nargs, -1, real(ic%dts))
+                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RCHG, args, nargs, z, -1, real(ic%dts))
 
                 !> Permafrost outputs (PERMAFROSTOUTFLAG).
                 case (PMFRSTVN_ALD)
-                    if (prmfst%PROCESS_ACTIVE) then
-                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALD, prmfst%out%ald, args, nargs)
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ALD)
+                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALD, prmfst%out%ald, args, nargs, z)
+                    end if
+                case (PMFRSTVN_ALDDOY, 'ALD_JDAY')
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ALDDOY)
+                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALDDOY, prmfst%out%alddoy, args, nargs, z)
+                    end if
+                case (PMFRSTVN_ALDENV)
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ALDENV)
+                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALDENV, prmfst%out%aldenv, args, nargs, z)
                     end if
                 case (PMFRSTVN_TAVG)
-                    if (prmfst%PROCESS_ACTIVE) then
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_TAVG)
                         line = trim(VN_TBAR) // '_AVG'
                         do j = 1, shd%lc%IGND
-                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tavg(j), args, nargs, j)
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tavg(j), args, nargs, z, j)
                         end do
                     end if
                 case (PMFRSTVN_TMAX)
-                    if (prmfst%PROCESS_ACTIVE) then
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_TMAX)
                         line = trim(VN_TBAR) // '_MAX'
                         do j = 1, shd%lc%IGND
-                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tmax(j), args, nargs, j)
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tmax(j), args, nargs, z, j)
                         end do
                     end if
                 case (PMFRSTVN_TMIN)
-                    if (prmfst%PROCESS_ACTIVE) then
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_TMIN)
                         line = trim(VN_TBAR) // '_MIN'
                         do j = 1, shd%lc%IGND
-                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tmin(j), args, nargs, j)
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tmin(j), args, nargs, z, j)
                         end do
                     end if
                 case (PMFRSTVN_TRNG, 'TENV')
-                    if (prmfst%PROCESS_ACTIVE) then
+                    if (ro%RUNBALEB) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_TRNG)
                         line = trim(VN_TBAR) // '_RNG'
                         do j = 1, shd%lc%IGND
-                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tmin(j), args, nargs, j)
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%trng(j), args, nargs, z, j)
                         end do
                     end if
                 case (PMFRSTVN_ZOD)
-                    if (prmfst%PROCESS_ACTIVE) then
-                        do j = 1, size(prmfst%pm%zod_ttol)
-                            write(line, FMT_GEN) j
-                            line = trim(PMFRSTVN_ZOD) // '_TTOL_' // trim(adjustl(line))
-                            call output_files_append_field(fls, shd, ts, line, prmfst%out%zod(j), args, nargs)
-                        end do
+                    if (ro%RUNBALEB) then
+
+                        !> User-defined temperature threshold(s)/tolerance(s) for ZOD.
+                        if (nargs > 1) then
+                            do j = 2, nargs
+                                if (lowercase(args(j)) == 'ttol') then
+                                    if (allocated(prmfst%pm%zod_ttol)) then
+                                        call print_message_detail("ERROR:" // &
+                                            " Multiple instances of the 'ttol' option exist in outputs_balance.txt" // &
+                                            " or a previous entry of 'ZOD' without the 'ttol' option" // &
+                                            " has activated the default value ('ttol 0.1')." // &
+                                            " Only one instance of the 'ttol' option can exist." // &
+                                            " Combine multiple instances 'ttol' into a single option and add it to the first" // &
+                                            " entry of 'ZOD' in the list.")
+                                        z = 1
+                                        exit
+                                    else
+                                        call output_files_parse_indices(args, nargs, prmfst%pm%zod_ttol, j, z)
+                                        exit
+                                    end if
+                                end if
+                            end do
+                        end if
+                        if (z == 0) then
+                            call permafrost_outputs_init(fls, shd, PMFRSTVN_ZOD)
+                            do j = 1, size(prmfst%pm%zod_ttol)
+                                write(line, FMT_GEN) prmfst%pm%zod_ttol(j)
+                                call trimzero(line)
+                                line(index(line, '.'):index(line, '.')) = 'p'
+                                line = trim(PMFRSTVN_ZOD) // '_TTOL_' // trim(adjustl(line))
+                                call output_files_append_field(fls, shd, ts, line, prmfst%out%zod(j), args, nargs, z)
+                            end do
+                        end if
                     end if
 
                 case default
@@ -1455,8 +1575,24 @@ module output_files
                     call print_warning("'" // trim(args(1)) // "' is not a recognized variable for output.", PAD_3)
             end select
             n = n + 1
+
+            !> Check for errors.
+            if (z /= 0) then
+                ierr = z
+                write(line, FMT_GEN) i
+                call print_message_detail( &
+                    "ERROR: Errors occurred while reading '" // trim(args(1)) // "' (Line " // trim(adjustl(line)) // ').')
+            end if
         end do
         close(iun)
+
+        !> Stop if errors exist.
+        if (ierr /= 0) then
+            call print_error('Errors occurred while reading outputs_balance.txt.')
+            call stop_program(.true.)
+        end if
+
+        !> Echo the number of active fields read from file.
         write(line, FMT_GEN) n
         call print_message_detail('Output variables: ' // trim(adjustl(line)))
 
@@ -1484,7 +1620,7 @@ module output_files
                 call output_files_write_r2c(fls, shd, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.r2c')
-                    call stop_program()
+                    call stop_program(.true.)
                 end if
                 iun = iun + 1
             end if
@@ -1493,7 +1629,7 @@ module output_files
                 call output_files_write_seq(fls, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.seq')
-                    call stop_program()
+                    call stop_program(.true.)
                 end if
                 iun = iun + 1
             end if
@@ -1502,7 +1638,7 @@ module output_files
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.txt')
-                    call stop_program()
+                    call stop_program(.true.)
                 end if
                 iun = iun + 1
             end if
@@ -1511,7 +1647,7 @@ module output_files
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.csv')
-                    call stop_program()
+                    call stop_program(.true.)
                 end if
                 iun = iun + 1
             end if
@@ -1520,7 +1656,7 @@ module output_files
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_GRD.ts')
-                    call stop_program()
+                    call stop_program(.true.)
                 end if
                 iun = iun + 1
             end if
@@ -1536,7 +1672,7 @@ module output_files
                 call output_files_write_txt(fls, shd, field, group%tile%iun + iun, group%tile%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%tile%fname) // '_NML.ts')
-                    call stop_program()
+                    call stop_program(.true.)
                 end if
                 iun = iun + 1
             end if
@@ -1578,10 +1714,15 @@ module output_files
                         frac(shd%lc%ILMOS(k)) = frac(shd%lc%ILMOS(k)) + shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
                     end if
                 end do
-                where (frac > 0.0) group%grid%dat(:, t) = group%grid%dat(:, t)/frac
+                where (frac > 0.0)
+                    group%grid%dat(:, t) = group%grid%dat(:, t)/frac
+                elsewhere
+                    group%grid%dat(:, t) = out%NO_DATA
+                end where
             case ('gru_exclude')
 
                 !> Exclude only the GRUs in the list.
+                frac = 0.0
                 do k = 1, shd%lc%NML
                     if (group%tile%dat(k, t) /= out%NO_DATA .and. .not. any(field%gru == shd%lc%JLMOS(k))) then
                         group%grid%dat(shd%lc%ILMOS(k), t) = group%grid%dat(shd%lc%ILMOS(k), t) + &
@@ -1589,7 +1730,11 @@ module output_files
                         frac(shd%lc%ILMOS(k)) = frac(shd%lc%ILMOS(k)) + shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
                     end if
                 end do
-                where (frac > 0.0) group%grid%dat(:, t) = group%grid%dat(:, t)/frac
+                where (frac > 0.0)
+                    group%grid%dat(:, t) = group%grid%dat(:, t)/frac
+                elsewhere
+                    group%grid%dat(:, t) = out%NO_DATA
+                end where
             case default
 
                 !> Only the specified GRU.
@@ -1779,6 +1924,9 @@ module output_files
 
     subroutine output_files_update(fls, shd)
 
+        !> Process modules.
+        use permafrost_outputs_module
+
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
@@ -1792,7 +1940,10 @@ module output_files
         !> Update counter for seasonal output.
         if (ic%now%month /= ic%next%month) fls_out%dates%iter_s(ic%now%month) = fls_out%dates%iter_s(ic%now%month) + 1
 
-        !> Update variables.
+        !> Update external outputs.
+        call permafrost_outputs_update(fls, shd)
+
+        !> Update fields and output files.
         do i = 1, size(fls_out%fls)
             call output_files_update_field(fls, shd, fls_out%fls(i))
         end do

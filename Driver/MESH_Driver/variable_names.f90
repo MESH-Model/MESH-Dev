@@ -1,4 +1,4 @@
-module variablename_constants
+module variable_names
 
     !> Meteorological forcing.
     character(len = 10), parameter :: VN_PRE = 'PRE'

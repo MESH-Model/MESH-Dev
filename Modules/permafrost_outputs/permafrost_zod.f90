@@ -27,7 +27,13 @@ subroutine permafrost_zod(tmax, tmin, zbot, ttol, zod, ilen, nsl, i1, i2)
 
     !> Local variables.
     integer i, j
-    real trng(ilen, nsl)
+    real trng(ilen, nsl), zcen(nsl)
+
+    !> Calculate depth of the middle of the layer, ZCEN.
+    zcen(1) = zbot(1)/2.0
+    do j = 2, nsl
+        zcen(j) = (zbot(j) - zbot(j - 1))/2.0 + zbot(j - 1)
+    end do
 
     !> Calculate ZOD, the depth where the range of maximum to minimum temperature is within 'TTOL'.
     do i = i1, i2
@@ -41,7 +47,7 @@ subroutine permafrost_zod(tmax, tmin, zbot, ttol, zod, ilen, nsl, i1, i2)
 
             !> ZOD is interpolated.
             if (sign(1.0, trng(i, j) - ttol) /= sign(1.0, trng(i, j - 1) - ttol)) then
-                zod(i) = (zbot(j) - zbot(j - 1))/(trng(i, j - 1) - trng(i, j))*(trng(i, j - 1) - ttol) + zbot(j - 1)
+                zod(i) = (zcen(j) - zcen(j - 1))/(trng(i, j - 1) - trng(i, j))*(trng(i, j - 1) - ttol) + zcen(j - 1)
                 exit
             end if
         end do
