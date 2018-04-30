@@ -83,7 +83,7 @@ for date in $date_list_CaPA
 do
     for index in ${!FILESS[*]}
     do
-        wget -r -l1 --no-parent -nd -A *${FILESS[$index]}*${date}*.grib2 $remote_location_CaPA/
+        wget -r -l1 --no-parent -c -nd -A *${FILESS[$index]}*${date}*.grib2 $remote_location_CaPA/
     done
 done
 

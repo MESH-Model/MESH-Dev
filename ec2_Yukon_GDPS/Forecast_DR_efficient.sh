@@ -39,7 +39,7 @@ $awk_file_path/get_capa.sh $dt
 
 #Getting GEM (the files contain only modelled values) from yesterday 16:00 until tomorrow 16:00. That represents 48 hours. 54 hours are available but we do not use values from the first 6 hours of spinup.
 
-#$awk_file_path/get_gem_forecast.sh
+#$awk_file_path/get_gem_forecast.sh $(date -u +%Y%m%d)
 
 #Getting the observed streamflow data from 16:00 yesterday.
 
@@ -71,8 +71,17 @@ $awk_file_path/setup_capa_hindcast_mod.sh $dt
    ./sa_mesh
 
     #Rename the newly created state variable file .seq with yesterday's date.
-     cp ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq.runclass36 ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq.runclass36_${dt}16
-     cp ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq.wf_route ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq.wf_route_${dt}16
+     if [ -f ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq.rte ]; then
+        for name in rte runclass36 lzsp.wfqlz
+        do
+           cp ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq.${name} ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq.${name}_${dt}16
+        done
+     elif [ -f ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq.wf_route ]; then
+       cp ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq.runclass36 ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq.runclass36_${dt}16
+       cp ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq.wf_route ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq.wf_route_${dt}16
+     else
+       cp ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables.seq ${output_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16/int_statVariables_${dt}16.seq
+     fi
    done
 
 

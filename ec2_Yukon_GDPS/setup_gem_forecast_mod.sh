@@ -46,10 +46,11 @@ do
 
    # Obtain other mesh files that are unchanged from the previous gem forecast run
    cp ${input_file_path_gem}/MESH_drainage_database.r2c ${output_file_path_gem}
-   cp ${input_file_path_gem}/MESH_input_reservoir.txt ${output_file_path_gem}
+   [[ -f ${input_file_path_gem}/MESH_input_reservoir.txt ]] && cp ${input_file_path_gem}/MESH_input_reservoir.txt ${output_file_path_gem}
    cp ${input_file_path_gem}/MESH_input_soil_levels.txt ${output_file_path_gem}
    cp ${input_file_path_gem}/MESH_parameters_hydrology.ini ${output_file_path_gem}
-   cp ${input_file_path_gem}/minmax_parameters.txt ${output_file_path_gem}
+   [[ -f ${input_file_path_gem}/MESH_parameters.r2c ]] && cp ${input_file_path_gem}/MESH_parameters.r2c ${output_file_path_gem}
+   [[ -f ${input_file_path_gem}/minmax_parameters.txt ]] && cp ${input_file_path_gem}/minmax_parameters.txt ${output_file_path_gem}
    cp ${input_file_path_gem}/sa_mesh ${output_file_path_gem}
 
    # Obtain mesh files from the previous gem run that need changing
@@ -59,9 +60,15 @@ do
    cp ${input_file_path_gem}/MESH_parameters_CLASS.ini ${output_file_path_gem}
    # The date and streamflow values in this file needs changing
    cp ${input_file_path_gem}/MESH_input_streamflow.txt ${output_file_path_gem} 
-   
+
    # Obtain mesh state files from the previous capa run
-   if [ -f ${input_file_path_capa}/int_statVariables.seq.wf_route ]; then
+   if [ -f ${input_file_path_capa}/int_statVariables.seq.rte ]; then
+      for name in rte runclass36 lzsp.wfqlz
+	  do
+         cp ${input_file_path_capa}/int_statVariables.seq.${name}_${dt}16 ${output_file_path_gem}
+         cp ${output_file_path_gem}/int_statVariables.seq.${name}_${dt}16 ${output_file_path_gem}/int_statVariables.seq.${name}
+	  done
+   elif [ -f ${input_file_path_capa}/int_statVariables.seq.wf_route ]; then
       cp ${input_file_path_capa}/int_statVariables.seq.wf_route_${dt}16 ${output_file_path_gem}
       cp ${output_file_path_gem}/int_statVariables.seq.wf_route_${dt}16 ${output_file_path_gem}/int_statVariables.seq.wf_route
       cp ${input_file_path_capa}/int_statVariables.seq.runclass36_${dt}16 ${output_file_path_gem}

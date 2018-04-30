@@ -62,9 +62,23 @@ xdelta=0.125
 ydelta=0.125
 a="*"
 
-dt=$(date -u +%Y%m%d)
-yest=$(date --date='yesterday' -u +%Y%m%d)
-endt=$(date --date='1 day' -u +%Y%m%d)
+# Dates
+# Date to run is passed as argument $1
+if [ -z "$1" ]; then
+    echo 'MISSING argument $1 should equal date to run'
+    exit 1
+fi
+
+# Provided the date 20170606 the script will retrieve data from 2017060516 to 2017060616 UTC-8
+dt=$(date -d $1 -u +%Y%m%d)
+yest=$(date -d "$dt - 1 day" -u +%Y%m%d)
+endt=$(date -d "$dt + 1 day" -u +%Y%m%d)
+
+echo $dt
+
+#dt=$(date -u +%Y%m%d)
+#yest=$(date --date='yesterday' -u +%Y%m%d)
+#endt=$(date --date='1 day' -u +%Y%m%d)
 
 #dt=20180317
 #yest=20180316
@@ -79,7 +93,7 @@ echo $yest, $endt
         for variable in ${!FILESS[*]}
         do
             fvariable=${FILESS[$variable]}
-            wget -r -l1 --no-parent -nd -A $fvariable$yest'*' $remote_location'/'$run_time'/'$hour'/'
+            wget -r -l1 --no-parent -c -nd -A $fvariable$yest'*' $remote_location'/'$run_time'/'$hour'/'
         done
         echo "boo"
     done

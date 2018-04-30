@@ -37,8 +37,8 @@ echo $dt
        
        station=${stations[$i]}
        cd $strm_file_path/${station}/Archive/Gauged
-       wget -r -l1 --no-parent -nd -A '*'$station'*' $remote_location_2
-       wget -r -l1 --no-parent -nd -A '*'$station'*' $remote_location_3
+       wget -r -l1 --no-parent -c -nd -A '*'$station'*' $remote_location_2
+       wget -r -l1 --no-parent -c -nd -A '*'$station'*' $remote_location_3
 
        mv $'YT_'$station'_hourly_hydrometric.csv' $'YT_'$station'_hourly_hydrometric_'${date_today}'.csv'
        mv $'YT_'$station'_daily_hydrometric.csv' $'YT_'$station'_daily_hydrometric_'${date_today}'.csv'

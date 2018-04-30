@@ -78,7 +78,7 @@ a="*"
         for variable in ${!FILESS[*]}
         do
             fvariable=${FILESS[$variable]}
-            wget -r -l1 --no-parent -nd -A $fvariable$yest'*' $remote_location'/'$run_time'/'$hour'/'
+            wget -r -l1 --no-parent -c -nd -A $fvariable$yest'*' $remote_location'/'$run_time'/'$hour'/'
         done
         echo "boo"
     done
