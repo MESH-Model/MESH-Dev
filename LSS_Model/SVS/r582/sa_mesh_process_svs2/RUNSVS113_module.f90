@@ -49,7 +49,7 @@ module RUNSVS113_module
 
         !> Return if the process is not marked active or if not the head node.
         if (.not. RUNSVS113_flgs%PROCESS_ACTIVE) return
-
+	if (.not. (ipid /= 0 .or. izero == 0)) return
 
         dt = real(ic%dts)
         kount = ic%ts_count - 1
@@ -81,30 +81,30 @@ module RUNSVS113_module
 ! Option 1
 ! Rainfall and snowfall rate are read separetely
                
-                bus(rainrate + k) = cm%dat(ck%RR)%GAT(k+1)/1000.0
-                bus(snowrate + k) = cm%dat(ck%SR)%GAT(k+1)/1000.0
+                bus(rainrate + k) = cm%dat(ck%RR)%GAT(il1 + k)/1000.0
+                bus(snowrate + k) = cm%dat(ck%SR)%GAT(il1 + k)/1000.0
 
 ! Option 2
 ! Rainfall and snowfall rate are derived from total precipitation rate
 ! assuming a separation at 0 degC (as in GEM-Hydro)
 
-!            if(cm%dat(ck%TT)%GAT(k + 1) > tcdk) then
-!                bus(rainrate + k) = cm%dat(ck%RT)%GAT(k + 1)/1000.0
+!            if(cm%dat(ck%TT)%GAT(il1 + k) > tcdk) then
+!                bus(rainrate + k) = cm%dat(ck%RT)%GAT(il1 + k)/1000.0
 !                bus(snowrate + k) = 0.0
 !            else
 !                bus(rainrate + k) = 0.0
-!                bus(snowrate + k) = cm%dat(ck%RT)%GAT(k + 1)/1000.0
+!                bus(snowrate + k) = cm%dat(ck%RT)%GAT(il1 + k)/1000.0
 !            end if
 !################
 ! Other forcing
 
-            bus(flusolis + k) = cm%dat(ck%FB)%GAT(k + 1)
-            bus(fdsi + k) = cm%dat(ck%FI)%GAT(k + 1)
-            bus(tmoins + k) = cm%dat(ck%TT)%GAT(k + 1)
-            bus(humoins + k) = cm%dat(ck%HU)%GAT(k + 1)
-            bus(umoins + k) = cm%dat(ck%UV)%GAT(k + 1)
+            bus(flusolis + k) = cm%dat(ck%FB)%GAT(il1 + k)
+            bus(fdsi + k) = cm%dat(ck%FI)%GAT(il1 + k)
+            bus(tmoins + k) = cm%dat(ck%TT)%GAT(il1 + k)
+            bus(humoins + k) = cm%dat(ck%HU)%GAT(il1 + k)
+            bus(umoins + k) = cm%dat(ck%UV)%GAT(il1 + k)
             bus(vmoins + k) = 0.0
-            bus(pmoins + k) = cm%dat(ck%P0)%GAT(k + 1)
+            bus(pmoins + k) = cm%dat(ck%P0)%GAT(il1 + k)
         end do
 
       !  write(*,*) 'Forcing',bus(flusolis + k),bus(fdsi + k),bus(tmoins + k),bus(humoins + k), bus(umoins + k)
@@ -125,43 +125,43 @@ module RUNSVS113_module
 
         !> Transfer variables.
         do k = 0, NG - 1
-            stas%cnpy%qac(k + 1) = bus(qsurf + k)
-            stas%cnpy%rcan(k + 1) = bus(wveg + k)
-            stas%cnpy%tac(k + 1) = bus(tsurf + k)
-            stas%cnpy%tcan(k + 1) = (bus(tvege + k) + bus(tvege + NG + k) + bus(tsnowveg + k) + bus(tsnowveg + NG + k))/4.0
-            stas%sno%sno(k + 1) = bus(snoma + k)
-            stas%sno%albs(k + 1) = (bus(snoal + k) + bus(snval + k))/2.0
-            stas%sno%rhos(k + 1) = ((bus(snoro + k) + bus(snvro + k))/2.0)*900.0
-            stas%sno%tsno(k + 1) = (bus(tsnow + k) + bus(tsnow + NG + k))/2.0
+            stas%cnpy%qac(il1 + k) = bus(qsurf + k)
+            stas%cnpy%rcan(il1 + k) = bus(wveg + k)
+            stas%cnpy%tac(il1 + k) = bus(tsurf + k)
+            stas%cnpy%tcan(il1 + k) = (bus(tvege + k) + bus(tvege + NG + k) + bus(tsnowveg + k) + bus(tsnowveg + NG + k))/4.0
+            stas%sno%sno(il1 + k) = bus(snoma + k)
+            stas%sno%albs(il1 + k) = (bus(snoal + k) + bus(snval + k))/2.0
+            stas%sno%rhos(il1 + k) = ((bus(snoro + k) + bus(snvro + k))/2.0)*900.0
+            stas%sno%tsno(il1 + k) = (bus(tsnow + k) + bus(tsnow + NG + k))/2.0
             if (bus(snoma + k) > 0.0) then
-                stas%sno%wsno(k + 1) = bus(wsnow + k)
+                stas%sno%wsno(il1 + k) = bus(wsnow + k)
             else
-                stas%sno%wsno(k + 1) = 0.0
+                stas%sno%wsno(il1 + k) = 0.0
             end if
 
-            stas%sfc%evap(k + 1) = bus(wflux + k)
-            stas%sfc%qevp(k + 1) = bus(fv + k)
-            stas%sfc%hfs(k + 1) = bus(fc + k)
-            stas%sfc%rofo(k + 1) = max(0.0, bus(runofftot + k))/ic%dts
+            stas%sfc%evap(il1 + k) = bus(wflux + k)
+            stas%sfc%qevp(il1 + k) = bus(fv + k)
+            stas%sfc%hfs(il1 + k) = bus(fc + k)
+            stas%sfc%rofo(il1 + k) = max(0.0, bus(runofftot + k))/ic%dts
 
 !EG_MOD add lateral flow from all layers
-            stas%sl%rofs(k + 1) = 0.0
+            stas%sl%rofs(il1 + k) = 0.0
             do j = 0, 6
-                stas%sl%rofs(k + 1) = stas%sl%rofs(k + 1) + max(0.0, bus(latflw + j*NG + k))/ic%dts
+                stas%sl%rofs(il1 + k) = stas%sl%rofs(il1 + k) + max(0.0, bus(latflw + j*NG + k))/ic%dts
             end do
-            stas%sl%thic(k + 1, 1) = bus(isoil + k)
-!-            stas%sl%fzws(k + 1, :) =
-            stas%sl%thlq(k + 1, 1) = bus(wsoil + k)
-            stas%sl%thlq(k + 1, 2) = bus(wsoil + NG + k)
+            stas%sl%thic(il1 + k, 1) = bus(isoil + k)
+!-            stas%sl%fzws(il1 + k, :) =
+            stas%sl%thlq(il1 + k, 1) = bus(wsoil + k)
+            stas%sl%thlq(il1 + k, 2) = bus(wsoil + NG + k)
             do j = 3, shd%lc%IGND
-                stas%sl%thlq(k + 1, j) = bus(wsoil + (j-1)*NG + k)
+                stas%sl%thlq(il1 + k, j) = bus(wsoil + (j-1)*NG + k)
             end do
-!-            stas%sl%lqws(k + 1, :) =
-            stas%sl%tbar(k + 1, 1) = bus(tsoil + k)
+!-            stas%sl%lqws(il1 + k, :) =
+            stas%sl%tbar(il1 + k, 1) = bus(tsoil + k)
             do j = 2, shd%lc%IGND
-                stas%sl%tbar(k + 1, j) = bus(tsoil + NG + k)
+                stas%sl%tbar(il1 + k, j) = bus(tsoil + NG + k)
             end do
-            stas%lzs%rofb(k + 1) = max(0.0, bus(watflow + KDP*NG + k))/ic%dts
+            stas%lzs%rofb(il1 + k) = max(0.0, bus(watflow + KDP*NG + k))/ic%dts
         end do
 
 !>>>svs_output

@@ -11,10 +11,10 @@
 #include makefile.def
 
 #FOR the latest version of SVS 1, uncomment the instruction below
-include makefile_svs1.def
+#include makefile_svs1.def
 
 #FOR SVS 2, uncomment the instruction below
-#include makefile_svs2.def
+include makefile_svs2.def
 
 # ======================================================================
 # Declaring variables
@@ -84,9 +84,9 @@ FTN90PPOPT=-Tf
 #For the old version of SVS 1 (depreciated), uncomment the instruction below
 #runsvs_mod.o: runsvs_mod_sa_mesh.ftn90
 #FOR the latest version SVS 1, uncomment the instruction below
-runsvs_mod.o: runsvs1_mod_sa_mesh.ftn90
+#runsvs_mod.o: runsvs1_mod_sa_mesh.ftn90
 #FOR SVS 2, uncomment the instruction below
-#runsvs_mod.o: runsvs2_mod_sa_mesh.ftn90
+runsvs_mod.o: runsvs2_mod_sa_mesh.ftn90
 
 	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $(DFLAG) -o runsvs_mod.o $(FTN90PPOPT)$<
 

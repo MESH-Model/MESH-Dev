@@ -49,7 +49,7 @@ module RUNSVS113_config
         observed_forcing = .true.
 
 !        call svs_bus_init(xcount*ycount)
-        call svs_bus_init(shd%lc%NML)
+        call svs_bus_init(il2 - il1 + 1)
         bussiz = runsvs_busdim
         allocate(bus(bussiz))
         bus = 0.0
@@ -59,8 +59,8 @@ module RUNSVS113_config
         do k = 0, NG - 1
 
             !> Basic configuration.
-            ki = shd%lc%ILMOS(k + 1)
-            kj = shd%lc%JLMOS(k + 1)
+            ki = shd%lc%ILMOS(il1 + k)
+            kj = shd%lc%JLMOS(il1 + k)
 
             !> Convert lat, lon to radian.
             bus(dlat + k) = ((shd%yOrigin + shd%yDelta*shd%yyy(ki)) - shd%yDelta/2.0)*PI/180.0
@@ -70,13 +70,13 @@ module RUNSVS113_config
             !* zusl: Height of wind forcing.
             !* ztsl: Height of temperature forcing.
             if (observed_forcing) then
-                bus(zusl + k) = pm%sfp%zrfm(k + 1)
-                bus(ztsl + k) = pm%sfp%zrfh(k + 1)
+                bus(zusl + k) = pm%sfp%zrfm(il1 + k)
+                bus(ztsl + k) = pm%sfp%zrfh(il1 + k)
             end if
 
             write(*,*) 'Obs Forc',observed_forcing
             write(*,*) 'Hauteur Level SVS', bus(zusl + k), bus(zusl + k)
-            write(*,*) 'Hauteur Level Class', pm%sfp%zrfm(k + 1), pm%sfp%zrfh(k + 1)
+            write(*,*) 'Hauteur Level Class', pm%sfp%zrfm(il1 + k), pm%sfp%zrfh(il1 + k)
 
             !> Parameters.
             !* vegf+   3*NG: Needleleaf evergreen.
@@ -87,22 +87,22 @@ module RUNSVS113_config
             !* slop: Subgrid-scale slope.
             !* draindens: Drainage density (km/km2 converted to m/m2 but provided already by CLASS in m/m2).
             !* rootdp: Max depth of root zone.
-            bus(vegf + 3*NG + k) = pm%cp%fcan(k + 1, 1)
-            bus(vegf + 6*NG + k) = pm%cp%fcan(k + 1, 2)
-            bus(vegf + 14*NG + k) = pm%cp%fcan(k + 1, 3)
-            bus(vegf + 13*NG + k) = pm%cp%fcan(k + 1, 4)
-            bus(vegf + 20*NG + k) = pm%cp%fcan(k + 1, 5)
-            bus(slop + k) = pm%tp%xslp(k + 1)
-            bus(draindens + k) = pm%hp%dd(k + 1)!*0.001
-            bus(rootdp + k) = pm%slp%sdep(k + 1)
+            bus(vegf + 3*NG + k) = pm%cp%fcan(il1 + k, 1)
+            bus(vegf + 6*NG + k) = pm%cp%fcan(il1 + k, 2)
+            bus(vegf + 14*NG + k) = pm%cp%fcan(il1 + k, 3)
+            bus(vegf + 13*NG + k) = pm%cp%fcan(il1 + k, 4)
+            bus(vegf + 20*NG + k) = pm%cp%fcan(il1 + k, 5)
+            bus(slop + k) = pm%tp%xslp(il1 + k)
+            bus(draindens + k) = pm%hp%dd(il1 + k)!*0.001
+            bus(rootdp + k) = pm%slp%sdep(il1 + k)
 
             !> Compute weighted average of log z0 wrt vegetation
             !> (used for momentum only - local z0 used for temperature/humidity).
             bus(z0 + k) = 0.0
             sumfcanz0 = 0.0
             do j = 1, 5
-                bus(z0 + k) = bus(z0 + k) + pm%cp%fcan(k + 1, j)*pm%cp%lnz0(k + 1, j)
-                sumfcanz0 = sumfcanz0 + pm%cp%fcan(k + 1, j)
+                bus(z0 + k) = bus(z0 + k) + pm%cp%fcan(il1 + k, j)*pm%cp%lnz0(il1 + k, j)
+                sumfcanz0 = sumfcanz0 + pm%cp%fcan(il1 + k, j)
             end do
             if (sumfcanz0 > 0.0) then
                 bus(z0 + k) = bus(z0 + k)/sumfcanz0
@@ -124,25 +124,25 @@ module RUNSVS113_config
 
             !> For soil texture we ignore negative numbers
             !> which signal special soils (organic/impermeable/glaciers).
-            bus(sand + k) = max(pm%slp%sand(k + 1, 1), 0.0)
-            bus(sand + NG + k) = max(pm%slp%sand(k + 1, 1), 0.0)
-            bus(sand + 2*NG + k) = max(pm%slp%sand(k + 1, 2), 0.0)
-            bus(clay + k) = max(pm%slp%clay(k + 1, 1), 0.0)
-            bus(clay + NG + k) = max(pm%slp%clay(k + 1, 1), 0.0)
-            bus(clay + 2*NG + k) = max(pm%slp%clay(k + 1, 2), 0.0)
+            bus(sand + k) = max(pm%slp%sand(il1 + k, 1), 0.0)
+            bus(sand + NG + k) = max(pm%slp%sand(il1 + k, 1), 0.0)
+            bus(sand + 2*NG + k) = max(pm%slp%sand(il1 + k, 2), 0.0)
+            bus(clay + k) = max(pm%slp%clay(il1 + k, 1), 0.0)
+            bus(clay + NG + k) = max(pm%slp%clay(il1 + k, 1), 0.0)
+            bus(clay + 2*NG + k) = max(pm%slp%clay(il1 + k, 2), 0.0)
             if (shd%lc%IGND >= 5) then
-                bus(sand + 3*NG + k) = max(pm%slp%sand(k + 1, 2), 0.0)
-                bus(sand + 4*NG + k) = max(pm%slp%sand(k + 1, 3), 0.0)
-                bus(sand + 5*NG + k) = max(pm%slp%sand(k + 1, 4), 0.0)
-                bus(sand + 6*NG + k) = max(pm%slp%sand(k + 1, 5), 0.0)
-                bus(clay + 3*NG + k) = max(pm%slp%clay(k + 1, 2), 0.0)
-                bus(clay + 4*NG + k) = max(pm%slp%clay(k + 1, 3), 0.0)
-                bus(clay + 5*NG + k) = max(pm%slp%clay(k + 1, 4), 0.0)
-                bus(clay + 6*NG + k) = max(pm%slp%clay(k + 1, 5), 0.0)
+                bus(sand + 3*NG + k) = max(pm%slp%sand(il1 + k, 2), 0.0)
+                bus(sand + 4*NG + k) = max(pm%slp%sand(il1 + k, 3), 0.0)
+                bus(sand + 5*NG + k) = max(pm%slp%sand(il1 + k, 4), 0.0)
+                bus(sand + 6*NG + k) = max(pm%slp%sand(il1 + k, 5), 0.0)
+                bus(clay + 3*NG + k) = max(pm%slp%clay(il1 + k, 2), 0.0)
+                bus(clay + 4*NG + k) = max(pm%slp%clay(il1 + k, 3), 0.0)
+                bus(clay + 5*NG + k) = max(pm%slp%clay(il1 + k, 4), 0.0)
+                bus(clay + 6*NG + k) = max(pm%slp%clay(il1 + k, 5), 0.0)
             else
                 do j = 3, 6
-                    bus(sand + j*NG + k) = max(pm%slp%sand(k + 1, 3), 0.0)
-                    bus(clay + j*NG + k) = max(pm%slp%clay(k + 1, 3), 0.0)
+                    bus(sand + j*NG + k) = max(pm%slp%sand(il1 + k, 3), 0.0)
+                    bus(clay + j*NG + k) = max(pm%slp%clay(il1 + k, 3), 0.0)
                 end do
             end if
 
@@ -153,11 +153,11 @@ module RUNSVS113_config
             !>       1              1-2
             !>       2               3
             !>       3              4-7
-            bus(wsoil + k) = stas%sl%thlq(k + 1, 1)
-            bus(wsoil + NG + k) = stas%sl%thlq(k + 1, 2)
-            bus(wsoil + 2*NG + k) = stas%sl%thlq(k + 1, 3)
+            bus(wsoil + k) = stas%sl%thlq(il1 + k, 1)
+            bus(wsoil + NG + k) = stas%sl%thlq(il1 + k, 2)
+            bus(wsoil + 2*NG + k) = stas%sl%thlq(il1 + k, 3)
             do j = 3, 6
-                bus(wsoil + j*NG + k) = stas%sl%thlq(k + 1, 3)
+                bus(wsoil + j*NG + k) = stas%sl%thlq(il1 + k, 3)
             end do
 
             ! Ajout VV pour gel dans le sol
@@ -174,26 +174,26 @@ module RUNSVS113_config
             !>       1              1-2
             !>       2               3
             !>       3              4-7
-            bus(tsoil + k) = stas%sl%tbar(k + 1, 1)
-            bus(tsoil + NG + k) = stas%sl%tbar(k + 1, 2)
-            bus(tsoil + 2*NG + k) = stas%sl%tbar(k + 1, 3)
+            bus(tsoil + k) = stas%sl%tbar(il1 + k, 1)
+            bus(tsoil + NG + k) = stas%sl%tbar(il1 + k, 2)
+            bus(tsoil + 2*NG + k) = stas%sl%tbar(il1 + k, 3)
             do j = 3, 6
-                bus(tsoil + j*NG + k) = stas%sl%tbar(k + 1, 3)
+                bus(tsoil + j*NG + k) = stas%sl%tbar(il1 + k, 3)
             end do
-            bus(tpsoil + k) = stas%sl%tbar(k + 1, 1)
-            bus(tpsoil + NG + k) = stas%sl%tbar(k + 1, 2)
-            bus(tpsoil + 2*NG + k) = stas%sl%tbar(k + 1, 3)
+            bus(tpsoil + k) = stas%sl%tbar(il1 + k, 1)
+            bus(tpsoil + NG + k) = stas%sl%tbar(il1 + k, 2)
+            bus(tpsoil + 2*NG + k) = stas%sl%tbar(il1 + k, 3)
             do j = 3, 6
-                bus(tpsoil + j*NG + k) = stas%sl%tbar(k + 1, 3)
+                bus(tpsoil + j*NG + k) = stas%sl%tbar(il1 + k, 3)
             end do
-            bus(tpsoilv + k) = stas%sl%tbar(k + 1, 1)
-            bus(tpsoilv + NG + k) = stas%sl%tbar(k + 1, 2)
-            bus(tpsoilv + 2*NG + k) = stas%sl%tbar(k + 1, 3)
+            bus(tpsoilv + k) = stas%sl%tbar(il1 + k, 1)
+            bus(tpsoilv + NG + k) = stas%sl%tbar(il1 + k, 2)
+            bus(tpsoilv + 2*NG + k) = stas%sl%tbar(il1 + k, 3)
             do j = 3, 6
-                bus(tpsoilv + j*NG + k) = stas%sl%tbar(k + 1, 3)
+                bus(tpsoilv + j*NG + k) = stas%sl%tbar(il1 + k, 3)
             end do
-            bus(tground + k) = stas%sl%tbar(k + 1, 1)! + tcdk
-            bus(tground + NG + k) = stas%sl%tbar(k + 1, 2)! + tcdk
+            bus(tground + k) = stas%sl%tbar(il1 + k, 1)! + tcdk
+            bus(tground + NG + k) = stas%sl%tbar(il1 + k, 2)! + tcdk
 
 !           Define deep soil constant temperature use as a lower boundary 
 !           condition to solve the heat diffusioj equation
@@ -201,19 +201,19 @@ module RUNSVS113_config
 
             !> Map vegetation temperature.
             do j = 0, 1
-                bus(tvege + j*NG + k) = stas%cnpy%tcan(k + 1)! + tcdk
-                bus(tsnowveg + j*NG + k) = stas%sno%tsno(k + 1)! + tcdk
+                bus(tvege + j*NG + k) = stas%cnpy%tcan(il1 + k)! + tcdk
+                bus(tsnowveg + j*NG + k) = stas%sno%tsno(il1 + k)! + tcdk
             end do
 
             !> Map snow properties.
             !* snoro: Density (kg/m3) to relative density wrt ice.
             do j = 0, 1
-                bus(tsnow + j*NG + k) = stas%sno%tsno(k + 1)! + tcdk
+                bus(tsnow + j*NG + k) = stas%sno%tsno(il1 + k)! + tcdk
             end do
-            bus(snoro + k) = stas%sno%rhos(k + 1)/900.0
-            bus(snvro + k) = stas%sno%rhos(k + 1)/900.0
-            bus(snoal + k) = stas%sno%albs(k + 1)
-            bus(snval + k) = stas%sno%albs(k + 1)
+            bus(snoro + k) = stas%sno%rhos(il1 + k)/900.0
+            bus(snvro + k) = stas%sno%rhos(il1 + k)/900.0
+            bus(snoal + k) = stas%sno%albs(il1 + k)
+            bus(snval + k) = stas%sno%albs(il1 + k)
 
         end do
 
