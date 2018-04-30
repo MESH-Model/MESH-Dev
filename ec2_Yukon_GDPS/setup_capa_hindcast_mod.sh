@@ -8,7 +8,7 @@ set -aex
 
 # Working directories
 # The home directory is an absolute path; other directories build from this path
-home_dir='/home/ec2-user/Yukon'
+home_dir='/home/ec2-user/Yukon_GDPS'
 home_dir_tmp='/home/ec2-user/Yukon_streamline_scripts_tests'
 awk_file_path=$home_dir/scripts
 grib_file_path=$home_dir/GRIB
@@ -40,16 +40,16 @@ do
     # Assign the input and output file paths
     watershed=${watersheds[$basin]}
     input_file_path_capa="${run_file_path_capa}/${watershed}/$(date -d "$dt - 2 day" -u +%Y%m%d)16_to_$(date -d "$dt - 1 day" -u +%Y%m%d)16"
-    input_file_path_gem="${run_file_path_gem}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_$(date -d "$dt 1 day" -u +%Y%m%d)16"
+    input_file_path_gem="${run_file_path_gem}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16"
     output_file_path_capa="${run_file_path_capa_tmp}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16"
 
    # Obtain the other (non-precip) forcing files for this capa run (same files as for the previous gem forecast run)
-   cp ${input_file_path_gem}/basin_humidity.r2c ${output_file_path_capa}
-   cp ${input_file_path_gem}/basin_longwave.r2c ${output_file_path_capa}
-   cp ${input_file_path_gem}/basin_pres.r2c ${output_file_path_capa}
-   cp ${input_file_path_gem}/basin_shortwave.r2c ${output_file_path_capa}
-   cp ${input_file_path_gem}/basin_temperature.r2c ${output_file_path_capa}
-   cp ${input_file_path_gem}/basin_wind.r2c ${output_file_path_capa}
+   cp ${input_file_path_gem}/RDPS/basin_humidity.r2c ${output_file_path_capa}
+   cp ${input_file_path_gem}/RDPS/basin_longwave.r2c ${output_file_path_capa}
+   cp ${input_file_path_gem}/RDPS/basin_pres.r2c ${output_file_path_capa}
+   cp ${input_file_path_gem}/RDPS/basin_shortwave.r2c ${output_file_path_capa}
+   cp ${input_file_path_gem}/RDPS/basin_temperature.r2c ${output_file_path_capa}
+   cp ${input_file_path_gem}/RDPS/basin_wind.r2c ${output_file_path_capa}
 
    # Obtain other mesh files that are unchanged from the previous gem forecast run
    cp ${input_file_path_gem}/MESH_drainage_database.r2c ${output_file_path_capa}

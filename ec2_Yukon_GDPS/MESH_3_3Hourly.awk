@@ -1,7 +1,7 @@
 #
 # AWK script to convert frames of data to R2C format from CSV
 #
-#   ********** FOR GEM (00,12 and 18 hour forecasts) **********
+#   ********** FOR GEM GDPS 10 day forecasts (12h) *********
 #
 # Script loops through all lines in the file
 #   NR = Number of lines (records)
@@ -79,7 +79,7 @@ END {
                     #   - DSWRF [J m-2] to [W m-2]
                     #   - DLWRF [J m-2] to [W m-2]
                     #   - APCP [kg m-2] to [kg m-2 s-1]
-                    vector2[x, y] = (vector[x, y] - vector[(x - 1), y])/3600.0
+                    vector2[x, y] = (vector[x, y] - vector[(x - 1), y])/(3*3600.0)
                 }
             }
         }

@@ -10,7 +10,7 @@ set -aex
 
 # Working directories
 # The home directory is an absolute path; other directories build from this path
-home_dir='/home/ec2-user/Yukon/'
+home_dir='/home/ec2-user/Yukon_GDPS/'
 awk_file_path=$home_dir/scripts
 grib_file_path=$home_dir/GRIB
 temp_file_path=$home_dir/TempFiles

@@ -5,14 +5,21 @@ set -aex
 # define paths and other variables
 # use ABSOLUTE paths
 
+yest=$(date --date='yesterday' -u +%Y%m%d)
+#dt=$(date -u +%Y%m%d)
+#endt=$(date --date='1 day' -u +%Y%m%d)
+#yest=$(date --date='2 days ago' -u +%Y%m%d)
+#dt=$(date --date='yesterday' -u +%Y%m%d)
+#endt=$(date -u +%Y%m%d)
+
 home_dir='/home/ec2-user/Yukon_GDPS/'
-remote_location='http://dd.weatheroffice.gc.ca/model_gem_regional/10km/grib2'
-    run_time='18'
+remote_location='http://dd.weatheroffice.gc.ca/model_gem_global/25km/grib2/lat_lon/'
+    run_time='12'
 awk_file_path=$home_dir'scripts/'
 grib_file_path=$home_dir'GRIB/'
 temp_file_path=$home_dir'TempFiles/'
 run_file_path=$home_dir'gem_forecasts/'
-    maxhours=54
+    maxhours=240
 
 namess[1]="humidity"
 namess[2]="longwave"
@@ -22,17 +29,17 @@ namess[5]="shortwave"
 namess[6]="temperature"
 namess[7]="wind"
 
-FILESS[1]="*SPFH_TGL_2*"  # kg/kg
+FILESS[1]="*SPFH_SFC*"        #TGL_2*"  # kg/kg
 FILESS[2]="*DLWRF_SFC*" # J/m2
 FILESS[3]="*PRES_SFC*"  # Pa
-#FILESS[4]="*PRATE_SFC*" # kg/m2 
-FILESS[4]="*APCP_SFC*" # kg/m2 
+#FILESS[4]="*PRATE_SFC*" # kg/m2
+FILESS[4]="*APCP_SFC*" # kg/m2
 FILESS[5]="*DSWRF_SFC*" # J/m2 accumulated
 FILESS[6]="*TMP_TGL_2*"   # K
 FILESS[7]="*WIND_TGL_40*"  # m/s at 40 m
 
-runtimes[1]='18'
-maxhours[1]=54
+#runtimes[1]='12'
+#maxhours[1]=006
 
 watersheds[1]="09AB001"
 stations[1]="09AB001"
@@ -62,19 +69,11 @@ xdelta=0.125
 ydelta=0.125
 a="*"
 
-dt=$(date -u +%Y%m%d)
-yest=$(date --date='yesterday' -u +%Y%m%d)
-endt=$(date --date='1 day' -u +%Y%m%d)
 
-#dt=20180317
-#yest=20180316
-#endt=20180318
 
-echo $yest, $endt
-
-    # DOWNLOAD the GEM grib2 files from remote_location
+# DOWNLOAD the GEM grib2 files from remote_location
     cd $grib_file_path
-    for hour in `seq -f %03.0f 5 1 $maxhours`
+    for hour in `seq -f %03.0f 9 3 $maxhours`
     do
         for variable in ${!FILESS[*]}
         do
@@ -83,6 +82,7 @@ echo $yest, $endt
         done
         echo "boo"
     done
+
 
 # LOOP over the basins/watersheds
 for basin in ${!lats[*]}
@@ -93,20 +93,20 @@ do
     rm $temp_file_path/*.* -f
 
     # ASSIGN paths for Stored Files and Working folder
-    watershed=${watersheds[$basin]}        
+    watershed=${watersheds[$basin]}
     station=${stations[$basin]}
 
     # Create run directory
-    mkdir -p $run_file_path$watershed'/'$yest'16/RDPS'
- 
-  output_file_path=$run_file_path$watershed'/'$yest'16/RDPS/'
+    mkdir -p $run_file_path$watershed'/'$yest'16/GDPS/'
+
+  output_file_path=$run_file_path$watershed'/'$yest'16/GDPS/'
 
     lat=${lats[$basin]}
     lon=${lons[$basin]}
     ycount=${ycounts[$basin]}
     xcount=${xcounts[$basin]}
 
-      # ------------------- GEM -------------------------------
+  # ------------------- GEM -------------------------------
     # LOOP over each variable on the saved grib2 files to create the GEM forcing files
     for index in ${!namess[*]}
     do
@@ -115,23 +115,23 @@ do
         names=${namess[$index]}
         FILES=${FILESS[$index]}
       #  touch $awk_file_path$'header_info.txt'
-        echo "$watershed,$names,$lat,$lon,$xcount,$ycount,$xdelta,$ydelta" > $awk_file_path$'header_info.txt' 
+        echo "$watershed,$names,$lat,$lon,$xcount,$ycount,$xdelta,$ydelta" > $awk_file_path$'header_info.txt'
         gawk -f $awk_file_path'MESH_he.awk' $awk_file_path$'header_info.txt' > $awk_file_path$'basin_'$names'.r2c'
 
         # LOOP over each time-step on the grib2 files
-        for hour in `seq -f %03.0f 5 1 $maxhours`
+        for hour in `seq -f %03.0f 9 3 $maxhours`
         do
 
            # CLIP the grib2 to a basin-size rectangle and CONVERT the clipped file into a csv file
-           f=$grib_file_path$FILES$yest$run_time'_P'$hour'*.grib2'
-       
+           f=$grib_file_path$FILES'latlon*'$yest$run_time'_P'$hour'*.grib2'
+
           /home/ec2-user/grib2/wgrib2/wgrib2 $f -new_grid_interpolation neighbor -new_grid_winds earth -new_grid latlon $lon:$xcount:$xdelta $lat:$ycount:$ydelta $temp_file_path$names$hour'.tmp'
 
            /home/ec2-user/grib2/wgrib2/wgrib2 $temp_file_path$names$hour'.tmp' -csv $temp_file_path$names$hour'.csv'
-    
+
            # Restructure the data in the csv files into a single-line-per-timestep file, and append all time-steps into another file
            gawk 'BEGIN { FS = "," }; { print $2, $3, $NF }' $temp_file_path$names$hour'.csv' > $temp_file_path$names$hour'_2.csv'
-    
+
            gawk -f $awk_file_path'MESH_2.awk' $temp_file_path$names$hour'_2.csv' >> $temp_file_path$names'_3.csv'
 
         done
@@ -139,15 +139,21 @@ do
         # FORMAT the data into a matrix configuration as per r2c format
         gawk '{ print $0 }' $awk_file_path$'header_info.txt' > $temp_file_path$names'_4.csv'
         gawk '{ print $0 }' $temp_file_path$names'_3.csv' >> $temp_file_path$names'_4.csv'
-        gawk -f $awk_file_path$'MESH_3.awk' $temp_file_path$names'_4.csv' > $temp_file_path$names'_5.csv'
+        gawk -f $awk_file_path$'MESH_3_3Hourly.awk' $temp_file_path$names'_4.csv' > $temp_file_path$names'_5.csv'
 
         # APPEND the r2c body into the forcing file header
         gawk '{ print $0 }' $temp_file_path$names'_5.csv' >> $awk_file_path$'basin_'$names'.r2c'
 
-        # MOVE the newly created forcing files into the run folder 
+
+ # MOVE the newly created forcing files into the run folder
         mv $awk_file_path$'basin_'$names'.r2c' $output_file_path$'basin_'$names'.r2c'
 
      done
 
 done
+
+
+
+
+
 

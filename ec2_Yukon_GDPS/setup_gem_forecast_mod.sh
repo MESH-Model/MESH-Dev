@@ -8,7 +8,7 @@ set -aex
 
 # Working directories
 # The home directory is an absolute path; other directories build from this path
-home_dir='/home/ec2-user/Yukon'
+home_dir='/home/ec2-user/Yukon_GDPS'
 #home_dir_tmp='/home/ec2-user/Yukon_streamline_scripts_tests'
 awk_file_path=$home_dir/scripts
 grib_file_path=$home_dir/GRIB
@@ -41,8 +41,8 @@ do
     # Assign the output file path
     watershed=${watersheds[$basin]}
     input_file_path_capa="${run_file_path_capa}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_${dt}16"
-    input_file_path_gem="${run_file_path_gem}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16_to_$(date -d "$dt 1 day" -u +%Y%m%d)16"
-    output_file_path_gem="${run_file_path_gem_tmp}/${watershed}/${dt}16_to_$(date -d "$dt 2 day" -u +%Y%m%d)16"
+    input_file_path_gem="${run_file_path_gem}/${watershed}/$(date -d "$dt - 1 day" -u +%Y%m%d)16"
+    output_file_path_gem="${run_file_path_gem_tmp}/${watershed}/${dt}16"
 
    # Obtain other mesh files that are unchanged from the previous gem forecast run
    cp ${input_file_path_gem}/MESH_drainage_database.r2c ${output_file_path_gem}
@@ -54,7 +54,7 @@ do
 
    # Obtain mesh files from the previous gem run that need changing
    # The dates in these files need changing
-   cp ${input_file_path_gem}/MESH_input_run_options.ini ${output_file_path_gem}
+   cp ${input_file_path_gem}/RDPS/MESH_input_run_options.ini ${output_file_path_gem}
    cp ${input_file_path_gem}/MESH_input_run_options_180.ini ${output_file_path_gem}
    cp ${input_file_path_gem}/MESH_parameters_CLASS.ini ${output_file_path_gem}
    # The date and streamflow values in this file needs changing

@@ -5,7 +5,7 @@ dt = strftime("%Y/%m/%d %T", systime()-6*60*60)
 if ( $2 == "humidity" ) { att = "specific_humidity_40m" ; atu = "kg/kg" }
 if ( $2 == "longwave" ) { att = "longwave_down" ; atu = "W/m2" }
 if ( $2 == "pres" ) { att = "surface_pressure" ; atu = "Pa" }
-if ( $2 == "rain" ) { att = "precipitation_rate_at_40m" ; atu = "mm/s" }
+if ( $2 == "rain" ) { att = "precipitation_rate_at_40m" ; atu = "kg m-2 s-1" }
 if ( $2 == "shortwave" ) { att = "shortwave_down" ; atu = "W/m2" }
 if ( $2 == "temperature" ) { att = "surface_air_temperature" ; atu = "K" }
 if ( $2 == "wind" ) { att = "wind_speed_40m" ; atu = "m/s" }

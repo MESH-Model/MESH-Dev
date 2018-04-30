@@ -4,7 +4,8 @@ BEGIN { FS = " "
 { 
 #Changing the start date
   #Calculating the day from the day of year given in input file, e.g. day 167 is day 16 of June.
-  if ( NR == 39 ) {
+#  if ( NR == 39 ) {
+   if ( NR == 40 ) {
      split("31 28 31 30 31 30 31 31 30 31 30 31",m) #Saving # of days in months in variable  m
      yy = $1 + 0   #year from input file (1st argument of line 39)
      if (yy%4 == 0) m[2] = 29 
@@ -24,8 +25,8 @@ BEGIN { FS = " "
 
   } else {
 #Changing the end date
-  if ( NR == 40 && $1 != 0 ) {    #This logical expression makes sure to not change line if all values are 0 already.
-     
+#  if ( NR == 40 && $1 != 0 ) {    #This logical expression makes sure to not change line if all values are 0 already.
+    if ( NR == 41 && $1 != 0 ) {   
      split("31 28 31 30 31 30 31 31 30 31 30 31",m)
      yy = $1
      if (yy%4 == 0) m[2] = 29
