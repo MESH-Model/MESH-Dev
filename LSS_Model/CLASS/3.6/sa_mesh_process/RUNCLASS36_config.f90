@@ -570,17 +570,8 @@ module RUNCLASS36_config
         stas%sl%delzw = csfv%DELZW
         stas%sl%zbotw = csfv%ZBTW
 
-        if (WF_NUM_POINTS > 0) then
-
-            print *, 'Found these output locations:'
-            print *, 'Output Directory, grid number, land class number'
-            do i = 1, WF_NUM_POINTS
-                print *, op%DIR_OUT(i), op%N_OUT(i), op%II_OUT(i)
-            end do
-            print *
-
-            call CLASSOUT_open_files(shd)
-        end if
+        !> CLASS output files.
+        if (WF_NUM_POINTS > 0) call CLASSOUT_open_files(shd)
 
         do k = il1, il2
             ik = shd%lc%ILMOS(k)

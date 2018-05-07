@@ -367,10 +367,8 @@ module RUNCLASS36_module
 
         end if !(ipid /= 0 .or. izero == 0) then
 
-        !> WRITE FIELDS FROM CURRENT TIME STEP TO OUTPUT FILES.
-        if (WF_NUM_POINTS > 0) then
-            call CLASSOUT_update_files(shd)
-        end if
+        !> CLASS output files.
+        if (WF_NUM_POINTS > 0) call CLASSOUT_update_files(shd)
 
         !> Copy over state variables.
         stas%cnpy%rcan(il1:il2) = cpv%RCAN(il1:il2)

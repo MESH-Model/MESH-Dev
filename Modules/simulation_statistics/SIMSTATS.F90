@@ -205,17 +205,15 @@ module SIMSTATS
 
         if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
-!todo: replace unit number with variable.
-        write(6, *) '================================================='
-        write(6, *)
-        write(6, *) '     SA_MESH IS RUNNING IN AUTOCALIBRATION MODE'
-
-!todo: separate out pre-emption.
-        if (mtsflg%PREEMPTIONFLAG >= 1) write(6, *) '                USING PRE-EMPTION'
-
-        write(6, *)
-        write(6, *) '================================================='
-        write(6, *)
+        if (mtsflg%PREEMPTIONFLAG == 1) then
+            call print_message('=================================================')
+            call print_message('')
+            call print_message('     SA_MESH IS RUNNING IN AUTOCALIBRATION MODE')
+            call print_message('                USING PRE-EMPTION')
+            call print_message('')
+            call print_message('=================================================')
+            call print_message('')
+        end if
 
 !todo: split into stats_state_resume().
         if (mtsflg%PREEMPTIONFLAG >= 1) then
@@ -291,22 +289,21 @@ module SIMSTATS
         qobs(ncal, :) = fms%stmg%qomeas%val
         qsim(ncal, :) = out%d%grid%qo(fms%stmg%meta%rnk(:))
 
-        if (objfnflag == 0) then
-            ftest = sae_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
-        elseif (objfnflag == 1) then
-            ftest = saesrt_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
-        elseif (objfnflag == 2) then
-            write(6, *) &
-                'THE SAEMSRT (OBJECTIVE FUNCTION = 2) IS NOT ', &
-                'CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE'
-        elseif (objfnflag == 3) then
-            write(6, *) &
-                'THE NSE (OBJECTIVE FUNCTION = 3) IS NOT ', &
-                'CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE' , &
-                'TRY NEGNSE (OBJECTIVE FUNCTION = 4)'
-        elseif (objfnflag == 4) then
-            ftest = nse_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
-            ftest = -1.0 * ftest
+        if (mtsflg%PREEMPTIONFLAG == 1) then
+            if (OBJFNFLAG == 0) then
+                ftest = sae_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
+            elseif (OBJFNFLAG == 1) then
+                ftest = saesrt_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
+            elseif (OBJFNFLAG == 2) then
+                call print_warning('SAEMSRT (OBJFNFLAG 2) does not support pre-emption.')
+            elseif (OBJFNFLAG == 3) then
+                call print_error( &
+                    'NSE (OBJFNFLAG 3) does not support pre-emption. Disable pre-emption or use NegNSE (OBJFNFLAG 4) instead.')
+                call program_abort()
+            elseif (OBJFNFLAG == 4) then
+                ftest = nse_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
+                ftest = -1.0 * ftest
+            end if
         end if
 
 !        if (mtsflg%AUTOCALIBRATIONFLAG >= 1 .and. mtsflg%PREEMPTIONFLAG == 1) then
@@ -417,7 +414,7 @@ module SIMSTATS
         if (.not. allocated(mtsfl%fl)) call init_metricsout_files()
 
         !> Write the output function for pre-emption.
-        if (mtsfl%fl(mtsk%fo)%init) then
+        if (mtsflg%PREEMPTIONFLAG == 1 .and. mtsfl%fl(mtsk%fo)%init) then
             iun = mtsfl%fl(mtsk%fo)%iun
             open(iun, file = trim(adjustl(mtsfl%fl(mtsk%fo)%fn)))
             if (mtsflg%PREEMPTIONFLAG >= 1) ftest = ftest*ic%iter%jday/ncal
