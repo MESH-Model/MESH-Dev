@@ -54,13 +54,15 @@ do
    # Obtain other mesh files that are unchanged from the previous gem forecast run
    cp ${input_file_path_gem}/MESH_drainage_database.r2c ${output_file_path_capa}
    [[ -f ${input_file_path_gem}/MESH_input_reservoir.txt ]] && cp ${input_file_path_gem}/MESH_input_reservoir.txt ${output_file_path_capa}
+   [[ -f ${input_file_path_gem}/MESH_input_reservoir.tb0 ]] && cp ${input_file_path_gem}/MESH_input_reservoir.tb0 ${output_file_path_capa}
    cp ${input_file_path_gem}/MESH_input_soil_levels.txt ${output_file_path_capa}
    cp ${input_file_path_gem}/MESH_parameters_CLASS.ini ${output_file_path_capa}
    cp ${input_file_path_gem}/MESH_parameters_hydrology.ini ${output_file_path_capa}
    [[ -f ${input_file_path_gem}/MESH_parameters.r2c ]] && cp ${input_file_path_gem}/MESH_parameters.r2c ${output_file_path_capa}
    [[ -f ${input_file_path_gem}/minmax_parameters.txt ]] && cp ${input_file_path_gem}/minmax_parameters.txt ${output_file_path_capa}
    cp ${input_file_path_gem}/sa_mesh ${output_file_path_capa}
-   cp ${input_file_path_gem}/MESH_input_streamflow.txt ${output_file_path_capa} # streamflow values need changing
+   [[ -f ${input_file_path_gem}/MESH_input_streamflow.txt ]] && cp ${input_file_path_gem}/MESH_input_streamflow.txt ${output_file_path_capa} # streamflow values need changing
+   [[ -f ${input_file_path_gem}/MESH_input_streamflow.tb0 ]] && cp ${input_file_path_gem}/MESH_input_streamflow.tb0 ${output_file_path_capa} # streamflow values need changing
 
    # Obtain mesh input run options file from the previous capa run
    # The dates in this file need changing
