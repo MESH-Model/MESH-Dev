@@ -43,6 +43,9 @@ C    along with FLOWINIT.  If not, see <http://www.gnu.org/licenses/>.
 !     rev. 9.4.09  Jun.  19/07  - NK: added lake_area as a variable for iso
 !     rev. 9.4.10  Jun.  19/07  - NK: adjusted frac for channel water area
 !     rev. 9.4.13  Jul.  09/07  - NK: modified lzs to account for lake area (flowinit)
+!     rev.         May   07/18  - dgp: Modified to allow gauge in outlet,
+!                                 where 'next' may be zero; check for 'da' is zero,
+!                                 which can happen at outlet.
 !
 !     changes made to include c&g model stuff  nk  April. 26/07
 !
@@ -608,7 +611,7 @@ c      stop 'program aborted in flowinit @ 164'
             endif
             resflag=.false.
             if(inbsnflg(no+k).eq.1)then
-               do while(.not.resflag.and.n.le.naa)
+               do while(.not.resflag.and.n.le.naa.and.n.gt.0)
                   if(qda(n).gt.0.0)then
 !              WE'RE AT A GAUGE AND WE'LL SUBTRACT OUT THE RELEASE
 !              RELEASE CAN'T BE GREATER THAN THE GAUGE FLOW
@@ -685,6 +688,7 @@ c      stop 'program aborted in flowinit @ 164'
          j=xxx(n)
 !        LOCATION OF DOWNSTREAM ELEMENT:
          nnx=next(n)
+         if(nnx.eq.0) cycle
 !mesh_io         if(nnx.le.0)then
 !mesh_io            print*,' grid number',n,' does not have a recieving'
 !mesh_io            print*,' within the grid limits'
@@ -723,6 +727,7 @@ c      stop 'program aborted in flowinit @ 164'
          j=xxx(n)
 !        LOCATION OF DOWNSTREAM ELEMENT:
          nnx=next(n)
+         if(nnx.eq.0) cycle
          inx=yyy(nnx)
          jnx=xxx(nnx)
          if(nnx.gt.0)then
@@ -740,7 +745,7 @@ c      stop 'program aborted in flowinit @ 164'
 !     rev. 9.04    Jan    16/01 - fixed grid diagnosis in flowinit
 !!1111111111111                     STOP 'program stopped in flowinit @65'
 !mesh_io                  endif
-                  nxtbasin(nhyd(i,j))=nhyd(inx,jnx)
+                  if (nhyd(i,j).gt.0) nxtbasin(nhyd(i,j))=nhyd(inx,jnx)
 !mesh_io                  write(53,6043)n,i,j,nhyd(i,j),nxtbasin(nhyd(i,j))
                endif
             endif
@@ -780,6 +785,7 @@ c      stop 'program aborted in flowinit @ 164'
 !           WE'LL ONLY ASSIGN A FLOW IF IT HAS NOT DONE BEFORE
 !           THIS KEEPS FROM GOING PAST A GAUGE
             nnx=next(n)
+            if(nnx.eq.0) cycle
             i=yyy(n)
             j=xxx(n)
             inx=yyy(nnx)
@@ -872,6 +878,7 @@ c      stop 'program aborted in flowinit @ 164'
 !        FLOW MAY HAVE BEEN ROUTED DOWN A TRIBUTARY OR
 !        THERE IS A GAUGE DOWNSTREAM
             nnx=next(n)
+            if(nnx.eq.0) cycle
 
             msg1='a'
             if(iopt.ge.2)then
@@ -971,16 +978,17 @@ c      stop 'program aborted in flowinit @ 164'
          if(iset(n).eq.0)then
 !         THIS MEANS PROPER BASE FLOWS HAVEN'T BEEN ASSIGNED YET
             nnx=next(n)
+            if(nnx.eq.0) cycle
 !         GET THE BASE FLOW FROM THE DOWNSTREAM ELEMENT
 !         WHICH SHOULD HAVE BEEN DEFINED BY NOW IF THERE IS AT
 !         LEAST ONE GAUGE IN THE WATERSHED
 !         FIRST TIME IN THIS ELEMENT
-            if(qda(nnx).gt.0.0)then
+            if(qda(nnx).gt.0.0 .and. da(nnx).gt.0.0)then
 !     rev. 9.2.18  Oct.  27/05  - NK: Fixed bug in flowinit (init spike)
 !           qda(n)=qda(nnx)*da(n)/datemp(nnx)
                qda(n)=qda(nnx)*da(n)/da(nnx)
-            else
-               qda(n)=0.1       ! ok Jul. 11/02
+!dgp            else
+!dgp               qda(n)=0.1       ! ok Jul. 11/02
             endif
             qbase(n)=qda(n)
          endif
@@ -1038,7 +1046,7 @@ c      stop 'program aborted in flowinit @ 164'
             j=jres(k)
             n=s(i,j)
             resflag=.false.
-            do while(.not.resflag.and.n.le.naa)
+            do while(.not.resflag.and.n.le.naa.and.n.gt.0)
                qda(n)=qda(n)+qinit(k)
                n=next(n)
 !           CHECK TO SEE IF WE'VE RUN INTO ANOTHER RESERVOIR
