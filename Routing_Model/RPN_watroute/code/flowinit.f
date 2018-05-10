@@ -43,9 +43,11 @@ C    along with FLOWINIT.  If not, see <http://www.gnu.org/licenses/>.
 !     rev. 9.4.09  Jun.  19/07  - NK: added lake_area as a variable for iso
 !     rev. 9.4.10  Jun.  19/07  - NK: adjusted frac for channel water area
 !     rev. 9.4.13  Jul.  09/07  - NK: modified lzs to account for lake area (flowinit)
-!     rev.         May   07/18  - dgp: Modified to allow gauge in outlet,
-!                                 where 'next' may be zero; check for 'da' is zero,
-!                                 which can happen at outlet.
+!     rev.         May.  2018  - dgp: Modified to allow a gauge at the outlet
+!                                   where 'nnx' is zero,
+!                                   though resulting flow will be zero if its 'da' is zero.
+!                                   Added a check for 'da' /= zero for the case
+!                                   when 'nnx' is the outlet (where 'qda' is calculated).
 !
 !     changes made to include c&g model stuff  nk  April. 26/07
 !
@@ -611,7 +613,7 @@ c      stop 'program aborted in flowinit @ 164'
             endif
             resflag=.false.
             if(inbsnflg(no+k).eq.1)then
-               do while(.not.resflag.and.n.le.naa.and.n.gt.0)
+               do while(.not.resflag.and.n.le.naa)
                   if(qda(n).gt.0.0)then
 !              WE'RE AT A GAUGE AND WE'LL SUBTRACT OUT THE RELEASE
 !              RELEASE CAN'T BE GREATER THAN THE GAUGE FLOW
@@ -688,7 +690,6 @@ c      stop 'program aborted in flowinit @ 164'
          j=xxx(n)
 !        LOCATION OF DOWNSTREAM ELEMENT:
          nnx=next(n)
-         if(nnx.eq.0) cycle
 !mesh_io         if(nnx.le.0)then
 !mesh_io            print*,' grid number',n,' does not have a recieving'
 !mesh_io            print*,' within the grid limits'
@@ -727,7 +728,6 @@ c      stop 'program aborted in flowinit @ 164'
          j=xxx(n)
 !        LOCATION OF DOWNSTREAM ELEMENT:
          nnx=next(n)
-         if(nnx.eq.0) cycle
          inx=yyy(nnx)
          jnx=xxx(nnx)
          if(nnx.gt.0)then
@@ -785,7 +785,6 @@ c      stop 'program aborted in flowinit @ 164'
 !           WE'LL ONLY ASSIGN A FLOW IF IT HAS NOT DONE BEFORE
 !           THIS KEEPS FROM GOING PAST A GAUGE
             nnx=next(n)
-            if(nnx.eq.0) cycle
             i=yyy(n)
             j=xxx(n)
             inx=yyy(nnx)
@@ -903,7 +902,12 @@ c      stop 'program aborted in flowinit @ 164'
                   iset(nnx)=2
 !            IF ISET=2 flow can be modified by tributary
                   msg1='b'
-               else
+!dgp:   Having the check for 'iset' in the 'do' is insufficient
+!       because 'nnx' is set inside the loop.
+!       Without adding this check to the conditional statement below,
+!       'iset' of 'nnx' will be set to '2',
+!       regardless of its existing value.
+               elseif(iset(nnx).ne.1)then
 !            FLOW HAS TO BE COMBINED WITH FLOW FROM ANOTHER TRIBUTARY
 !            SUM DRAINAGE AREAS AND FLOWS
 !                  if (iset(nnx).ne.2) print *,
@@ -978,7 +982,6 @@ c      stop 'program aborted in flowinit @ 164'
          if(iset(n).eq.0)then
 !         THIS MEANS PROPER BASE FLOWS HAVEN'T BEEN ASSIGNED YET
             nnx=next(n)
-            if(nnx.eq.0) cycle
 !         GET THE BASE FLOW FROM THE DOWNSTREAM ELEMENT
 !         WHICH SHOULD HAVE BEEN DEFINED BY NOW IF THERE IS AT
 !         LEAST ONE GAUGE IN THE WATERSHED
@@ -1046,7 +1049,7 @@ c      stop 'program aborted in flowinit @ 164'
             j=jres(k)
             n=s(i,j)
             resflag=.false.
-            do while(.not.resflag.and.n.le.naa.and.n.gt.0)
+            do while(.not.resflag.and.n.le.naa)
                qda(n)=qda(n)+qinit(k)
                n=next(n)
 !           CHECK TO SEE IF WE'VE RUN INTO ANOTHER RESERVOIR
