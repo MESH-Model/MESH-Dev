@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1397'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1398'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -943,61 +943,60 @@ program RUNMESH
             if (OUTFIELDSFLAG == 1) call output_files_update(fls, shd)
             call run_save_basin_output(fls, shd, cm)
 
-        end if !(ipid == 0) then
-
-        !> Metrics and pre-emption.
-        if (ic%now%day /= ic%next%day .and. mtsflg%AUTOCALIBRATIONFLAG > 0) then
-            call stats_update_stfl_daily(fls)
-            if (mtsflg%PREEMPTIONFLAG > 1) then
-                if (FTEST > FBEST) goto 199
-            end if
-        end if
-
-        !> Write output to the console.
-        if (PRINTSIMSTATUS /= OUT_NONE) then
-
-            !> Daily.
-            if ((PRINTSIMSTATUS == OUT_JDATE_DLY .or. PRINTSIMSTATUS == OUT_DATE_DLY) .and. &
-                ic%now%day /= ic%next%day) then
-                select case (PRINTSIMSTATUS)
-                    case (OUT_DATE_DLY)
-                        write(line, "(i5, '/', i2.2, '/', i2.2)") ic%now%year, ic%now%month, ic%now%day
-                    case default
-                        write(line, '(i5, i4)') ic%now%year, ic%now%jday
-                end select
-                if (fms%stmg%n > 0) then
-                    do j = 1, fms%stmg%n
-                        if (fms%stmg%n > 0) write(line, '((a), f10.3)') trim(line), fms%stmg%qomeas%val(j)
-                        write(line, '((a), f10.3)') trim(line), out%d%grid%qo(fms%stmg%meta%rnk(j))
-                    end do
+            !> Metrics and pre-emption.
+            if (ic%now%day /= ic%next%day .and. mtsflg%AUTOCALIBRATIONFLAG > 0) then
+                call stats_update_stfl_daily(fls)
+                if (mtsflg%PREEMPTIONFLAG > 1) then
+                    if (FTEST > FBEST) goto 199
                 end if
-                if (ro%RUNBALWB) then
-                    write(line, '((a), 3(f10.3))') &
-                        trim(line), &
-                        sum(out%d%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
-                        sum(out%d%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
-                        sum(out%d%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
-                end if
-                call print_screen(line)
             end if
 
-            !> Monthly.
-            if ((PRINTSIMSTATUS == OUT_JDATE_MLY .or. PRINTSIMSTATUS == OUT_DATE_MLY) .and. &
-                ic%now%month /= ic%next%month) then
-                select case (PRINTSIMSTATUS)
-                    case (OUT_DATE_MLY)
-                        write(line, "(i5, '/', i2.2, '/', i2.2)") ic%now%year, ic%now%month, ic%now%day
-                    case default
-                        write(line, '(i5, i4)') ic%now%year, ic%now%jday
-                end select
-                if (ro%RUNBALWB) then
-                    write(line, '((a), 3(f10.3))') &
-                        trim(line), &
-                        sum(out%m%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
-                        sum(out%m%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
-                        sum(out%m%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            !> Write output to the console.
+            if (PRINTSIMSTATUS /= OUT_NONE) then
+
+                !> Daily.
+                if ((PRINTSIMSTATUS == OUT_JDATE_DLY .or. PRINTSIMSTATUS == OUT_DATE_DLY) .and. &
+                    ic%now%day /= ic%next%day) then
+                    select case (PRINTSIMSTATUS)
+                        case (OUT_DATE_DLY)
+                            write(line, "(i5, '/', i2.2, '/', i2.2)") ic%now%year, ic%now%month, ic%now%day
+                        case default
+                            write(line, '(i5, i4)') ic%now%year, ic%now%jday
+                    end select
+                    if (fms%stmg%n > 0) then
+                        do j = 1, fms%stmg%n
+                            if (fms%stmg%n > 0) write(line, '((a), f10.3)') trim(line), fms%stmg%qomeas%val(j)
+                            write(line, '((a), f10.3)') trim(line), out%d%grid%qo(fms%stmg%meta%rnk(j))
+                        end do
+                    end if
+                    if (ro%RUNBALWB) then
+                        write(line, '((a), 3(f10.3))') &
+                            trim(line), &
+                            sum(out%d%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%d%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%d%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
+                    end if
+                    call print_screen(line)
                 end if
-                call print_screen(line)
+
+                !> Monthly.
+                if ((PRINTSIMSTATUS == OUT_JDATE_MLY .or. PRINTSIMSTATUS == OUT_DATE_MLY) .and. &
+                    ic%now%month /= ic%next%month) then
+                    select case (PRINTSIMSTATUS)
+                        case (OUT_DATE_MLY)
+                            write(line, "(i5, '/', i2.2, '/', i2.2)") ic%now%year, ic%now%month, ic%now%day
+                        case default
+                            write(line, '(i5, i4)') ic%now%year, ic%now%jday
+                    end select
+                    if (ro%RUNBALWB) then
+                        write(line, '((a), 3(f10.3))') &
+                            trim(line), &
+                            sum(out%m%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%m%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%m%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
+                    end if
+                    call print_screen(line)
+                end if
             end if
         end if
 

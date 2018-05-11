@@ -551,8 +551,6 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     call print_message_detail('Number of land-based tiles: ' // trim(adjustl(line)))
     write(line, FMT_GEN) shd%NRVR
     call print_message_detail('Number of river classes: ' // trim(adjustl(line)))
-    write(line, FMT_GEN) (shd%NA - shd%NAA)
-    call print_message_detail('Number of outlets: ' // trim(adjustl(line)))
 
     !> Open and read in soil depths from file.
     call READ_SOIL_LEVELS(fls, shd)
