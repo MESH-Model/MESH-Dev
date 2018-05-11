@@ -330,12 +330,16 @@ module ensim_io
 
         !> Initialize the return status.
         ierr = 0
+        ffield = 0.0
 
         !> Call base routine.
         call get_keyword_value_cfield(iun, vkeyword, nkeyword, cname, cfield, ncol, ierr)
+        if (ierr /= 0) return
+
+        !> Check for blank fields (if the field was not found).
+        if (all(cfield == '')) return
 
         !> Convert values.
-        ffield = 0.0
         do j = 1, ncol
             z = 0
             call value(cfield(j), ffield(j), z)
@@ -369,9 +373,11 @@ module ensim_io
 
         !> Initialize the return status.
         ierr = 0
+        ifield = 0
 
         !> Call base routine.
         call get_keyword_value_ffield(iun, vkeyword, nkeyword, cname, ffield, ncol, ierr)
+        if (ierr /= 0) return
 
         !> Convert values.
         ifield = int(ffield)
@@ -488,6 +494,7 @@ module ensim_io
         ierr = 0
 
         !> Find and convert the keywords.
+        p = ''
         do n = 1, nkeyword
             select case (lowercase(vkeyword(n)%keyword))
                 case (':projection')
@@ -543,6 +550,7 @@ module ensim_io
         ierr = 0
 
         !> Find and convert the keywords.
+        p = ''
         do n = 1, nkeyword
             z = 0
             select case (lowercase(vkeyword(n)%keyword))
@@ -668,10 +676,13 @@ module ensim_io
         integer, intent(out) :: year, month, day, hour, mins, ierr
 
         character(len = MAX_WORD_LENGTH) ctmp
-        integer n, j
+        integer n, j, z
 
         !> Initially set the values to zero.
         year = 0; month = 0; day = 0; hour = 0; mins = 0
+
+        !> Initialize the return status.
+        ierr = 0
 
         !> Find start time in the list of attributes.
         do n = 1, nkeyword
@@ -682,13 +693,14 @@ module ensim_io
 
                     !> Scan for a date signature (e.g., 2003/01/31).
                     ctmp = adjustl(vkeyword(n)%words(1))
-                    ierr = 0
+                    z = 0
                     if (index(ctmp, '/') > 1 .and. index(ctmp, '/') /= index(ctmp, '/', back = .true.)) then
-                        call value(ctmp(1:(index(ctmp, '/') - 1)), year, ierr)
-                        if (ierr == 0) call value(ctmp((index(ctmp, '/') + 1):(index(ctmp, '/', back = .true.) - 1)), month, ierr)
-                        if (ierr == 0) call value(ctmp((index(ctmp, '/', back = .true.) + 1):len(ctmp)), day, ierr)
-                    else
-                        ierr = 1
+                        call value(ctmp(1:(index(ctmp, '/') - 1)), year, z)
+                        if (z == 0) call value(ctmp((index(ctmp, '/') + 1):(index(ctmp, '/', back = .true.) - 1)), month, z)
+                        if (z == 0) call value(ctmp((index(ctmp, '/', back = .true.) + 1):len(ctmp)), day, z)
+                    end if
+                    if (z /= 0) then
+                        ierr = z
                         call print_warning( &
                             "Invalid format or missing component in date '" // trim(ctmp) // "'," // &
                             " expecting format 'YYYY/MM/DD'.", PAD_3)
@@ -701,14 +713,15 @@ module ensim_io
                     else if (size(vkeyword(n)%words) == 1) then
                         ctmp = adjustl(vkeyword(n)%words(1))
                     end if
-                    ierr = 0
+                    z = 0
                     if (index(ctmp, ':') > 1) then
-                        call value(ctmp(1:(index(ctmp, ':') - 1)), hour, ierr)
-                        if (ierr == 0 .and. index(ctmp, ':') /= index(ctmp, ':', back = .true.)) then
-                            call value(ctmp((index(ctmp, ':') + 1):(index(ctmp, ':', back = .true.) - 1)), mins, ierr)
+                        call value(ctmp(1:(index(ctmp, ':') - 1)), hour, z)
+                        if (z == 0 .and. index(ctmp, ':') /= index(ctmp, ':', back = .true.)) then
+                            call value(ctmp((index(ctmp, ':') + 1):(index(ctmp, ':', back = .true.) - 1)), mins, z)
                         end if
-                    else
-                        ierr = 1
+                    end if
+                    if (z /= 0) then
+                        ierr = z
                         call print_warning( &
                             "Invalid format or missing component in time '" // trim(ctmp) // "'," // &
                             " expecting format 'HH:MM', 'HH:MM:SS', or 'HH:MM:SS.000'.", PAD_3)

@@ -512,13 +512,13 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
                     call value(args(2), FROZENSOILINFILFLAG, ierr)
                 case ('PRINTRFFR2CFILEFLAG')
                     call value(args(2), SA_RTE_flgs%PRINTRFFR2CFILEFLAG, ierr)
-                    SA_RTE_flgs%PROCESS_ACTIVE = .true.
+                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1)
                 case ('PRINTRCHR2CFILEFLAG')
                     call value(args(2), SA_RTE_flgs%PRINTRCHR2CFILEFLAG, ierr)
-                    SA_RTE_flgs%PROCESS_ACTIVE = .true.
+                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1)
 !+                case ('PRINTLKGR2CFILEFLAG')
 !+                    call value(args(2), SA_RTE_flgs%PRINTLKGR2CFILEFLAG, ierr)
-!+                    SA_RTE_flgs%PROCESS_ACTIVE = .true.
+!+                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTLKGR2CFILEFLAG == 1)
                 case ('ICTEMMOD')
                     call value(args(2), ICTEMMOD, ierr)
 

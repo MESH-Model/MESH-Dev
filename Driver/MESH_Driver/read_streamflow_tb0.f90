@@ -59,25 +59,25 @@ subroutine read_streamflow_tb0(shd, iun, fname)
     ierr = 0
 
     !> Get the time-step of the records.
-    call get_keyword_value(iun, vkeyword, nkeyword, ':DeltaT', fms%stmg%qomeas%dts, ierr); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':DeltaT', fms%stmg%qomeas%dts, z); if (z /= 0) ierr = z
 
     !> Populate other attributes.
-    call get_keyword_value(iun, vkeyword, nkeyword, ':ColumnName', fms%stmg%meta%name, fms%stmg%n, ierr); if (z /= 0) ierr = z
-    call get_keyword_value(iun, vkeyword, nkeyword, ':ColumnLocationY', fms%stmg%meta%y, fms%stmg%n, ierr); if (z /= 0) ierr = z
-    call get_keyword_value(iun, vkeyword, nkeyword, ':ColumnLocationX', fms%stmg%meta%x, fms%stmg%n, ierr); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':ColumnName', fms%stmg%meta%name, fms%stmg%n, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':ColumnLocationY', fms%stmg%meta%y, fms%stmg%n, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':ColumnLocationX', fms%stmg%meta%x, fms%stmg%n, z); if (z /= 0) ierr = z
 
     !> Get the start time of the first record in the file.
     call parse_starttime( &
         iun, vkeyword, nkeyword, &
         fms%stmg%qomeas%iyear, fms%stmg%qomeas%imonth, fms%stmg%qomeas%iday, fms%stmg%qomeas%ihour, fms%stmg%qomeas%imins, &
-        ierr)
+        z)
     if (z /= 0) ierr = z
     if (fms%stmg%qomeas%iyear > 0 .and. fms%stmg%qomeas%imonth > 0 .and. fms%stmg%qomeas%iday > 0) then
         fms%stmg%qomeas%ijday = get_jday(fms%stmg%qomeas%imonth, fms%stmg%qomeas%iday, fms%stmg%qomeas%iyear)
     end if
 
     !> Check for errors.
-    if (ierr /= 0) call print_warning('Errors occured parsing attributes in the file.', PAD_3)
+    if (ierr /= 0) call print_warning('Errors occurred parsing attributes in the file.', PAD_3)
 
     !> Position the file to the first record.
     call advance_past_header(iun, fname, ierr)

@@ -33,7 +33,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
     !> Local variables.
     type(ensim_keyword), dimension(:), allocatable :: vkeyword
     type(ensim_attr), dimension(:), allocatable :: vattr
-    integer nkeyword, nattr, ilvl, n, l, i, istat, ierr
+    integer nkeyword, nattr, ilvl, n, l, i, ierr, z
     character(len = MAX_WORD_LENGTH) tfield, tlvl
     real, dimension(:), allocatable :: ffield
     character(len = DEFAULT_LINE_LENGTH) line
@@ -99,7 +99,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
         end if
 
         !> Determine the variable.
-        istat = 0
+        z = 0
         select case (adjustl(tfield))
 
             !> RUNCLASS36 and RUNSVS113.
@@ -117,7 +117,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         case ('ur')
                             pm_grid%cp%fcan(:, 5) = ffield
                         case default
-                            istat = 1
+                            z = 1
                     end select
                 end if
             case ('lnz0')
@@ -134,7 +134,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                         case ('ur')
                             pm_grid%cp%lnz0(:, 5) = ffield
                         case default
-                            istat = 1
+                            z = 1
                     end select
                 end if
             case ('sdep')
@@ -164,7 +164,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%sand(:, ilvl) = ffield
                     else
-                        istat = 1
+                        z = 1
                     end if
                 end if
             case ('clay')
@@ -176,7 +176,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%clay(:, ilvl) = ffield
                     else
-                        istat = 1
+                        z = 1
                     end if
                 end if
             case ('orgm')
@@ -188,7 +188,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%orgm(:, ilvl) = ffield
                     else
-                        istat = 1
+                        z = 1
                     end if
                 end if
 
@@ -236,16 +236,16 @@ subroutine read_parameters_r2c(shd, iun, fname)
 
             !> Unrecognized.
             case default
-                istat = 2
+                z = 2
         end select
 
         !> Status flags.
-        if (istat == 1) then
+        if (z == 1) then
             line = "'" // trim(vattr(l)%attr) // "' has an unrecognized category or level out-of-bounds: " // trim(tlvl)
             call print_warning(line, PAD_3)
-        else if (istat == 2) then
+        else if (z == 2) then
             call print_warning("'" // trim(vattr(l)%attr) // "' is not recognized.", PAD_3)
-        else if (istat == 0) then
+        else if (z == 0) then
             n = n + 1
         end if
     end do
