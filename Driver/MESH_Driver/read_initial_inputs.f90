@@ -38,8 +38,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     write(line, FMT_GEN) ipid
     open(100, file = './' // trim(adjustl(fls%GENDIR_OUT)) // '/tmp' // trim(adjustl(line)), status = 'unknown', iostat = ierr)
     if (ierr /= 0) then
-        call print_screen('')
-        call print_screen('ERROR: The output folder does not exist: ' // trim(adjustl(fls%GENDIR_OUT)))
+        ECHOTXTMODE = .false.
+        call print_error('The output folder does not exist: ' // trim(adjustl(fls%GENDIR_OUT)))
         call program_abort()
     else
         close(100, status = 'delete')
@@ -376,7 +376,9 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
                 ierr = 1
                 call print_message_detail('ERROR: Total fraction of land covers (GRUs) is zero at ' // trim(adjustl(line)) // '.')
             else if (abs(sum(shd%lc%ACLASS(n, :)) - 1.0) > 0.0) then
-                if (DIAGNOSEMODE) then
+
+                !> Print a warning if the missing fraction is significant (> 1%).
+                if (abs(sum(shd%lc%ACLASS(n, :)) - 1.0) > 0.1) then
                     write(field, FMT_GEN) sum(shd%lc%ACLASS(n, :))
                     line = &
                         'Total fraction of land covers (GRUs) at ' // trim(adjustl(line)) // ' adjusted from ' // &
@@ -535,6 +537,22 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
         call print_screen('Stride: ' // trim(adjustl(line)), PAD_3)
         call print_screen('')
     end if
+
+    !> Print summary.
+    write(line, FMT_GEN) shd%NA
+    call print_message_detail('Total number of grids: ' // trim(adjustl(line)))
+    write(line, FMT_GEN) shd%NAA
+    call print_message_detail('Total number of grids inside the basin: ' // trim(adjustl(line)))
+    write(line, FMT_GEN) shd%AL
+    call print_message_detail('Side length of grid: ' // trim(adjustl(line)) // ' m')
+    write(line, FMT_GEN) shd%lc%NTYPE
+    call print_message_detail('Number of GRUs: ' // trim(adjustl(line)))
+    write(line, FMT_GEN) shd%lc%NML
+    call print_message_detail('Number of land-based tiles: ' // trim(adjustl(line)))
+    write(line, FMT_GEN) shd%NRVR
+    call print_message_detail('Number of river classes: ' // trim(adjustl(line)))
+    write(line, FMT_GEN) (shd%NA - shd%NAA)
+    call print_message_detail('Number of outlets: ' // trim(adjustl(line)))
 
     !> Open and read in soil depths from file.
     call READ_SOIL_LEVELS(fls, shd)

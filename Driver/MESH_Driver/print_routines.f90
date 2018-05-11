@@ -2,13 +2,29 @@ module print_routines
 
     implicit none
 
-    !> Flags.
-    !* VERBOSEMODE: .true. to print messages to screen; .false. otherwise (default: .true.).
-    !* DIAGNOSEMODE: .true. to print diagnostic and excess information to screen; .false. otherwise (default: .false.).
-    !* ECHOTXTMODE: .true. to print message to summary file; .false. otherwise (default: .true.).
-    logical :: VERBOSEMODE = .true.
+    !> Control flag constants.
+    character(len = *), parameter :: DIAGNOSEMODE_NAME = 'DIAGNOSEMODE'
+    character(len = *), parameter :: ECHOTXTMODE_NAME = 'ECHOTXTMODE'
+    character(len = *), parameter :: PRINTSIMSTATUS_NAME = 'PRINTSIMSTATUS'
+
+    !> Control flags.
+    !* ISHEADNODE: .true. if node passes messages to output (default: .true.; .false. for worker nodes).
+    !* DIAGNOSEMODE: .true. to print diagnostic and excess information (default: .false.).
+    !* ECHOTXTMODE: .true. to echo screen output to the output file (default: .true.).
+    logical :: ISHEADNODE = .true.
     logical :: DIAGNOSEMODE = .false.
     logical :: ECHOTXTMODE = .true.
+
+    !> Flag constants.
+    integer, parameter :: OUT_NONE = 0
+    integer, parameter :: OUT_JDATE_DLY = 1
+    integer, parameter :: OUT_JDATE_MLY = 2
+    integer, parameter :: OUT_DATE_DLY = 3
+    integer, parameter :: OUT_DATE_MLY = 4
+
+    !> Options.
+    !* PRINTSIMSTATUS: Flag to control how frequently the model prints simulation status messages to screen (default: OUT_DLY).
+    integer :: PRINTSIMSTATUS = OUT_JDATE_DLY
 
     !> File units.
     !* ECHO_SCN_IUN: Unit of screen (for print).
@@ -78,7 +94,7 @@ module print_routines
         integer, intent(in), optional :: level
 
         !> Print to screen.
-        if (VERBOSEMODE) write(ECHO_SCN_IUN, get_format(level)) trim(message)
+        if (ISHEADNODE) write(ECHO_SCN_IUN, get_format(level)) trim(message)
 
     end subroutine
 
@@ -95,7 +111,7 @@ module print_routines
         integer, intent(in), optional :: level
 
         !> Print to the summary file.
-        if (VERBOSEMODE .and. ECHOTXTMODE) write(ECHO_TXT_IUN, get_format(level)) trim(message)
+        if (ISHEADNODE .and. ECHOTXTMODE) write(ECHO_TXT_IUN, get_format(level)) trim(message)
 
     end subroutine
 
@@ -164,13 +180,17 @@ module print_routines
     !>
     !> Variables:
     !>  message: Message to output.
-    subroutine print_error(message)
+    !>  level: Offset from the leading edge of the line.
+    subroutine print_error(message, level)
 
         !> Input variables.
         character(len = *), intent(in) :: message
+        integer, intent(in), optional :: level
+
+        !> Print a leading line if the indent level is not present.
+        if (.not. present(level)) call print_message('')
 
         !> Flush the message.
-        call print_message('')
         call print_message('ERROR: ' // trim(adjustl(message)))
 
     end subroutine
@@ -204,7 +224,7 @@ module print_routines
         !> Return if writing output to the file is disabled.
         !> Return if 'path' is empty.
         !> Return if 'VERBOSEMODE' is disabled.
-        if (.not. ECHOTXTMODE .or. len_trim(path) == 0 .or. .not. VERBOSEMODE) return
+        if (.not. ECHOTXTMODE .or. len_trim(path) == 0 .or. .not. ISHEADNODE) return
 
         !> Open the file and print an error if unsuccessful.
         open(ECHO_TXT_IUN, file = path, status = 'replace', action = 'write', iostat = ierr)
@@ -218,6 +238,51 @@ module print_routines
             call print_message('Check that the path exists, that the file it is not read-protected or open in another application.')
             call program_abort()
         end if
+
+    end subroutine
+
+    !> Description:
+    !>  Update options for printing messages.
+    !>
+    !> Variables:
+    !*  option: Option to update.
+    !*  values: Vector of configuration options.
+    subroutine parse_options(option, values)
+
+        use strings
+
+        !> Input variables.
+        character(len = *), intent(in) :: option, values(:)
+
+        !> Local variables.
+        integer i
+
+        !> Update options.
+        select case(option)
+            case (DIAGNOSEMODE_NAME)
+                do i = 1, size(values)
+                    DIAGNOSEMODE = (values(i) == '1' .or. lowercase(values(i)) == 'on')
+                end do
+            case (ECHOTXTMODE_NAME)
+                do i = 1, size(values)
+                    ECHOTXTMODE = (values(i) == '1' .or. lowercase(values(i)) == 'on')
+                end do
+            case (PRINTSIMSTATUS_NAME)
+                do i = 1, size(values)
+                    select case (lowercase(values(i)))
+                        case ('monthly')
+                            PRINTSIMSTATUS = OUT_JDATE_MLY
+                        case ('date_daily')
+                            PRINTSIMSTATUS = OUT_DATE_DLY
+                        case ('date_monthly')
+                            PRINTSIMSTATUS = OUT_DATE_MLY
+                        case ('1', 'on', 'default')
+                            PRINTSIMSTATUS = OUT_JDATE_DLY
+                        case ('0', 'off')
+                            PRINTSIMSTATUS = OUT_NONE
+                    end select
+                end do
+        end select
 
     end subroutine
 

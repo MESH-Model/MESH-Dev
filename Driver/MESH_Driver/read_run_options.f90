@@ -206,8 +206,8 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
     iun = fls%fl(mfk%f53)%iun
     open(iun, file = fls%fl(mfk%f53)%fn, status = 'old', action = 'read', iostat = ierr)
     if (ierr /= 0) then
-        call print_screen('')
-        call print_screen('ERROR: Unable to open file. Check if the file exists.')
+        ECHOTXTMODE = .false.
+        call print_error('Unable to open file. Check if the file exists.')
         call program_abort()
     end if
 
@@ -287,15 +287,12 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
                     call value(args(2), RELFLG, ierr)
 
                 !> Message output options.
-                case ('VERBOSEMODE')
-                    call value(args(2), IROVAL, ierr)
-                    VERBOSEMODE = (IROVAL == 1)
-                case ('DIAGNOSEMODE')
-                    call value(args(2), IROVAL, ierr)
-                    DIAGNOSEMODE = (IROVAL == 1)
-                case ('MODELINFOOUTFLAG', 'ECHOTXTMODE')
-                    call value(args(2), IROVAL, ierr)
-                    ECHOTXTMODE = (IROVAL == 1)
+                case (PRINTSIMSTATUS_NAME, 'VERBOSEMODE')
+                    call parse_options(PRINTSIMSTATUS_NAME, args(2:nargs))
+                case (DIAGNOSEMODE_NAME)
+                    call parse_options(DIAGNOSEMODE_NAME, args(2:nargs))
+                case (ECHOTXTMODE_NAME, 'MODELINFOOUTFLAG')
+                    call parse_options(ECHOTXTMODE_NAME, args(2:nargs))
 
                 !> MPI OPTIONS
                 case ('MPIUSEBARRIER')
@@ -689,10 +686,10 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
         allocate(op%DIR_OUT(WF_NUM_POINTS), op%N_OUT(WF_NUM_POINTS), &
                  op%II_OUT(WF_NUM_POINTS), op%K_OUT(WF_NUM_POINTS), stat = ierr)
         if (ierr /= 0) then
-            call print_screen('')
-            call print_screen('ERROR: Unable to allocate variables for CLASS output.')
+            ECHOTXTMODE = .false.
+            call print_error('Unable to allocate variables for CLASS output.')
             write(line, FMT_GEN) WF_NUM_POINTS
-            call print_screen('Number of points: ' // trim(adjustl(line)), PAD_3)
+            call print_message_detail('Number of points: ' // trim(adjustl(line)))
             call program_abort()
         end if
         read(iun, *) (op%N_OUT(i), i = 1, WF_NUM_POINTS)

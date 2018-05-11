@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1381'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1396'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -214,7 +214,7 @@ program RUNMESH
     end if
 
     !> Reset verbose flag for worker nodes.
-    if (ipid > 0) VERBOSEMODE = .false.
+    if (ipid > 0) ISHEADNODE = .false.
 
     !> Write MESH version to screen.
     write(RELEASE_STRING, "('MESH ', (a), ' ---  (', (a), ')')") trim(RELEASE), trim(VERSION)
@@ -482,29 +482,6 @@ program RUNMESH
         wfo_seq = 0
 
     end if !(ipid == 0) then
-
-    !> *********************************************************************
-    !> Output diagnostic information to screen.
-    !> *********************************************************************
-
-    if (VERBOSEMODE) then
-        call print_message('')
-        call print_message('Configuration summary')
-        call print_message('')
-        write(line, FMT_GEN) NA
-        call print_message_detail('Number of grids: ' // trim(adjustl(line)))
-        write(line, FMT_GEN) shd%AL
-        call print_message_detail('Side length of grid: ' // trim(adjustl(line)) // ' m')
-        write(line, FMT_GEN) NTYPE
-        call print_message_detail('Number of GRUs: ' // trim(adjustl(line)))
-        write(line, FMT_GEN) shd%lc%NML
-        call print_message_detail('Number of land-based tiles: ' // trim(adjustl(line)))
-        write(line, FMT_GEN) shd%NRVR
-        call print_message_detail('Number of river classes: ' // trim(adjustl(line)))
-        write(line, FMT_GEN) (NA - shd%NAA)
-        call print_message_detail('Number of outlets: ' // trim(adjustl(line)))
-        call print_screen('')
-    end if
 
     !> RESUME/SAVERESUME 1 or 2 are not supported.
     if (RESUMEFLAG == 1 .or. SAVERESUMEFLAG == 1 .or. RESUMEFLAG == 2 .or. SAVERESUMEFLAG == 2) then
@@ -865,13 +842,11 @@ program RUNMESH
     !> End of Initialization
     !> *********************************************************************
 
-    if (VERBOSEMODE) then
-        call print_screen('')
-        call print_screen('')
-        call print_screen('DONE INTITIALIZATION')
-        call print_screen('')
-        call print_screen('STARTING MESH')
-    end if
+    call print_screen('')
+    call print_screen('')
+    call print_screen('DONE INTITIALIZATION')
+    call print_screen('')
+    call print_screen('STARTING MESH')
 
     !> *********************************************************************
     !> Start of main loop that is run each half hour
@@ -970,37 +945,61 @@ program RUNMESH
 
         end if !(ipid == 0) then
 
-        if (ipid == 0) then
-
-            !> Write output to the console.
-            if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
-
-                if (VERBOSEMODE) then
-                    write(line, '(i5, i4)') ic%now%year, ic%now%jday
-                    if (fms%stmg%n > 0) then
-                        do j = 1, fms%stmg%n
-                            if (fms%stmg%n > 0) write(line, '((a), f10.3)') trim(line), fms%stmg%qomeas%val(j)
-                            write(line, '((a), f10.3)') trim(line), out%d%grid%qo(fms%stmg%meta%rnk(j))
-                        end do
-                    end if
-                    if (ro%RUNBALWB) then
-                        write(line, '((a), 3(f10.3))') &
-                            trim(line), &
-                            sum(out%d%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
-                            sum(out%d%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
-                            sum(out%d%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
-                    end if
-                    call print_screen(line)
-                end if
-                if (mtsflg%AUTOCALIBRATIONFLAG > 0) then
-                    call stats_update_stfl_daily(fls)
-                    if (mtsflg%PREEMPTIONFLAG > 1) then
-                        if (FTEST > FBEST) goto 199
-                    end if
-                end if
-
+        !> Metrics and pre-emption.
+        if (ic%now%day /= ic%next%day .and. mtsflg%AUTOCALIBRATIONFLAG > 0) then
+            call stats_update_stfl_daily(fls)
+            if (mtsflg%PREEMPTIONFLAG > 1) then
+                if (FTEST > FBEST) goto 199
             end if
-        end if !(ipid == 0) then
+        end if
+
+        !> Write output to the console.
+        if (PRINTSIMSTATUS /= OUT_NONE) then
+
+            !> Daily.
+            if ((PRINTSIMSTATUS == OUT_JDATE_DLY .or. PRINTSIMSTATUS == OUT_DATE_DLY) .and. &
+                ic%now%day /= ic%next%day) then
+                select case (PRINTSIMSTATUS)
+                    case (OUT_DATE_DLY)
+                        write(line, "(i5, '/', i2.2, '/', i2.2)") ic%now%year, ic%now%month, ic%now%day
+                    case default
+                        write(line, '(i5, i4)') ic%now%year, ic%now%jday
+                end select
+                if (fms%stmg%n > 0) then
+                    do j = 1, fms%stmg%n
+                        if (fms%stmg%n > 0) write(line, '((a), f10.3)') trim(line), fms%stmg%qomeas%val(j)
+                        write(line, '((a), f10.3)') trim(line), out%d%grid%qo(fms%stmg%meta%rnk(j))
+                    end do
+                end if
+                if (ro%RUNBALWB) then
+                    write(line, '((a), 3(f10.3))') &
+                        trim(line), &
+                        sum(out%d%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                        sum(out%d%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                        sum(out%d%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
+                end if
+                call print_screen(line)
+            end if
+
+            !> Monthly.
+            if ((PRINTSIMSTATUS == OUT_JDATE_MLY .or. PRINTSIMSTATUS == OUT_DATE_MLY) .and. &
+                ic%now%month /= ic%next%month) then
+                select case (PRINTSIMSTATUS)
+                    case (OUT_DATE_MLY)
+                        write(line, "(i5, '/', i2.2, '/', i2.2)") ic%now%year, ic%now%month, ic%now%day
+                    case default
+                        write(line, '(i5, i4)') ic%now%year, ic%now%jday
+                end select
+                if (ro%RUNBALWB) then
+                    write(line, '((a), 3(f10.3))') &
+                        trim(line), &
+                        sum(out%m%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                        sum(out%m%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                        sum(out%m%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
+                end if
+                call print_screen(line)
+            end if
+        end if
 
         !> Update the current time-step and counter.
         call counter_update()
@@ -1295,39 +1294,37 @@ program RUNMESH
     end if !(ipid == 0 ) then
 
     !> Print end of run diagnostics and information.
-    if (VERBOSEMODE) then
 
-        !> Basin vertical water balance totals.
-        call print_message('')
-        call print_message('End of run totals')
-        call print_message('')
-        write(line, FMT_GEN) TOTAL_PRE
-        call print_message_detail('Total Precipitation         (mm) =' // trim(line))
-        write(line, FMT_GEN) TOTAL_EVAP
-        call print_message_detail('Total Evaporation           (mm) =' // trim(line))
-        write(line, FMT_GEN) TOTAL_ROF
-        call print_message_detail('Total Runoff                (mm) =' // trim(line))
-        write(line, FMT_GEN) (STG_FIN - STG_INI), STG_INI, STG_FIN
-        call print_message_detail('Storage(Change/Init/Final)  (mm) =' // trim(line))
-        call print_message('')
-        write(line, FMT_GEN) TOTAL_ROFO
-        call print_message_detail('Total Overland flow         (mm) =' // trim(line))
-        write(line, FMT_GEN) TOTAL_ROFS
-        call print_message_detail('Total Interflow             (mm) =' // trim(line))
-        write(line, FMT_GEN) TOTAL_ROFB
-        call print_message_detail('Total Baseflow              (mm) =' // trim(line))
-        call print_message('')
+    !> Basin vertical water balance totals.
+    call print_message('')
+    call print_message('End of run totals')
+    call print_message('')
+    write(line, FMT_GEN) TOTAL_PRE
+    call print_message_detail('Total Precipitation         (mm) =' // trim(line))
+    write(line, FMT_GEN) TOTAL_EVAP
+    call print_message_detail('Total Evaporation           (mm) =' // trim(line))
+    write(line, FMT_GEN) TOTAL_ROF
+    call print_message_detail('Total Runoff                (mm) =' // trim(line))
+    write(line, FMT_GEN) (STG_FIN - STG_INI), STG_INI, STG_FIN
+    call print_message_detail('Storage(Change/Init/Final)  (mm) =' // trim(line))
+    call print_message('')
+    write(line, FMT_GEN) TOTAL_ROFO
+    call print_message_detail('Total Overland flow         (mm) =' // trim(line))
+    write(line, FMT_GEN) TOTAL_ROFS
+    call print_message_detail('Total Interflow             (mm) =' // trim(line))
+    write(line, FMT_GEN) TOTAL_ROFB
+    call print_message_detail('Total Baseflow              (mm) =' // trim(line))
+    call print_message('')
 
-        !> Normal end of run message.
-        call print_message('')
-        call print_message('Program has terminated normally.')
+    !> Normal end of run message.
+    call print_message('')
+    call print_message('Program has terminated normally.')
 
-        !> Run time (to file only).
-        call print_echo_txt('')
-        call cpu_time(endprog)
-        write(line, FMT_GEN) (endprog - startprog)
-        call print_echo_txt('Time = ' // trim(adjustl(line)) // ' seconds.')
-    end if
+    !> Run time (to file only).
+    call print_echo_txt('')
+    call cpu_time(endprog)
+    write(line, FMT_GEN) (endprog - startprog)
+    call print_echo_txt('Time = ' // trim(adjustl(line)) // ' seconds.')
 
 999     continue
 

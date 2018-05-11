@@ -241,7 +241,8 @@ module ensim_io
         end if
 
         do n = 1, nkeyword
-            if (.not. allocated(vkeyword(n)%words) .or. size(vkeyword(n)%words) < 2) cycle
+            if (len_trim(vkeyword(n)%keyword) < 10 .or. size(vkeyword(n)%words) < 2) cycle
+            if (lowercase(vkeyword(n)%keyword(1:10)) /= ':attribute') cycle
             call value(vkeyword(n)%words(1), j, ierr)
             if (ierr /= 0) then
                 call print_warning("Bad attribute definition in '" // trim(vkeyword(n)%keyword) // "'.", PAD_3)
