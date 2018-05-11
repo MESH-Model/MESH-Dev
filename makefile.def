@@ -37,7 +37,8 @@ OBJECTS+=	mpi_flags.o mpi_shared_variables.o mpi_utilities.o \
 # String parsing primitives.
 OBJECTS+=	precmod.o stringmod.o
 # I/O primitives.
-OBJECTS+=	txt_io.o ensim_io.o
+OBJECTS+=	print_routines.o program_end.o program_abort.o \
+			txt_io.o ensim_io.o
 # Variables (common).
 OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			module_dates.o \
@@ -45,7 +46,6 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			parse_utilities.o \
 			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
 			control_variables.o \
-			print_routines.o \
 			variable_names.o parameter_names.o \
 			shd_variables.o fm_variables.o input_parameters.o state_variables.o \
 			climate_forcing_module_config.o \
@@ -164,4 +164,4 @@ OBJECTS+=	WRITE_R2C_HEADER.o write_r2c.o \
 # MESH driver.
 OBJECTS+=	read_run_options.o \
 			sa_mesh_run_within_tile.o sa_mesh_run_within_grid.o sa_mesh_run_between_grid.o \
-			program_end.o program_abort.o MESH_driver.o
+			MESH_driver.o

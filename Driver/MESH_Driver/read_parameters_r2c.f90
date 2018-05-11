@@ -39,24 +39,40 @@ subroutine read_parameters_r2c(shd, iun, fname)
     character(len = DEFAULT_LINE_LENGTH) line
 
     !> Open the file and read the header.
-    call print_screen('READING: ' // trim(adjustl(fname)))
-    call print_echo_txt(fname)
-    call open_ensim_file(iun, fname, ierr)
-    if (ierr /= 0) then
-        call print_error('Unable to open file. Check if the file exists.')
-        call program_abort()
-    end if
-    call parse_header_ensim(iun, fname, vkeyword, nkeyword, ierr)
+    call print_message('READING: ' // trim(adjustl(fname)))
+    call open_ensim_input(iun, fname, ierr)
+    if (ierr /= 0) call program_abort()
+    call parse_header_ensim(iun, vkeyword, nkeyword, ierr)
+    if (ierr /= 0) call program_abort()
+
+    !> Check the spatial definition in the header.
     call validate_header_spatial( &
-        fname, vkeyword, nkeyword, &
-        shd%xCount, shd%xDelta, shd%xOrigin, shd%yCount, shd%yDelta, shd%yOrigin, &
-        VERBOSEMODE)
+        vkeyword, nkeyword, &
+        shd%CoordSys%Proj, shd%xCount, shd%xDelta, shd%xOrigin, shd%yCount, shd%yDelta, shd%yOrigin, &
+        ierr)
+    if (ierr /= 0) call program_abort()
 
     !> Get the list of attributes.
-    call parse_header_attribute_ensim(iun, fname, vkeyword, nkeyword, vattr, nattr, ierr)
+    call parse_header_attribute_ensim(iun, vkeyword, nkeyword, vattr, nattr, ierr)
+    if (ierr /= 0) then
+        call print_error('Error reading attributes from the header in the file.')
+        call program_abort()
+    end if
+    if (nattr == 0) call print_warning('No attributes were found in the file.', PAD_3)
+
+    !> Advance past the end of the header.
+    call advance_past_header(iun, fname, ierr)
+    if (ierr /= 0) then
+        call print_error('Encountered premature end of file.')
+        call program_abort()
+    end if
 
     !> Read and parse the attribute data.
     call load_data_r2c(iun, fname, vattr, nattr, shd%xCount, shd%yCount, .false., ierr)
+    if (ierr /= 0) then
+        call print_error('Error reading attribute values in the file.')
+        call program_abort()
+    end if
 
     !> Distribute the data to the appropriate variable.
     allocate(ffield(shd%NA))
@@ -73,12 +89,16 @@ subroutine read_parameters_r2c(shd, iun, fname)
             call value(tlvl, ilvl, ierr)
             if (ierr /= 0) ilvl = 0
         end if
+        if (DIAGNOSEMODE) call print_message_detail("Reading '" // trim(tfield) // "'.")
 
         !> Assign the data to a vector.
-        call r2c_to_rank(iun, fname, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, VERBOSEMODE)
+        call r2c_to_rank(iun, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, ierr)
+        if (ierr /= 0) then
+            call print_error("Unable to read the '" // trim(vattr(l)%attr) // "' attribute.")
+            call program_abort()
+        end if
 
         !> Determine the variable.
-        if (DIAGNOSEMODE) call print_message_detail('Reading parameter: ' // trim(tfield) // '.')
         istat = 0
         select case (adjustl(tfield))
 

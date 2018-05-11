@@ -55,11 +55,20 @@ subroutine read_basin_structures(shd)
         fms%stmg%meta%iy = int((fms%stmg%meta%y - shd%yOrigin)/shd%yDelta) + 1
         fms%stmg%meta%jx = int((fms%stmg%meta%x - shd%xOrigin)/shd%xDelta) + 1
 
-        !> Find the RANK of the location.
+        !> Find the RANK of the location and create friendly name (if one does not exist).
         fms%stmg%meta%rnk = 0
         do i = 1, fms%stmg%n
+            if (len_trim(fms%stmg%meta%name(i)) == 0) then
+                write(line, FMT_GEN) i
+                fms%stmg%meta%name(i) = 'Gauge' // trim(adjustl(line))
+            end if
             do n = 1, shd%NA
-                if (fms%stmg%meta%jx(i) == shd%xxx(n) .and. fms%stmg%meta%iy(i) == shd%yyy(n)) fms%stmg%meta%rnk(i) = n
+                if (fms%stmg%meta%jx(i) == shd%xxx(n) .and. fms%stmg%meta%iy(i) == shd%yyy(n)) then
+                    fms%stmg%meta%rnk(i) = n
+                    if (shd%DA(n) == 0.0) then
+                        call print_warning('Drainage area (DA) is zero at ' // trim(fms%stmg%meta%name(i)) // '.', PAD_3)
+                    end if
+                end if
             end do
         end do
 
@@ -114,15 +123,13 @@ subroutine read_basin_structures(shd)
         !> Print a summary of locations to file.
         write(line, FMT_GEN) fms%stmg%n
         call print_message_detail('Number of streamflow gauges: ' // trim(adjustl(line)))
-        if (DIAGNOSEMODE) then
-            write(line, FMT_GEN) 'GAUGE', 'IY', 'JX', 'RANK', 'DA (km2)'
-            call print_message_detail(line)
-            do i = 1, fms%stmg%n
-                write(line, FMT_GEN) i, fms%stmg%meta%iy(i), fms%stmg%meta%jx(i), fms%stmg%meta%rnk(i), shd%DA(fms%stmg%meta%rnk(i))
-                call print_message_detail(line)
-            end do
-            call print_message('')
-        end if
+        write(line, FMT_GEN) 'GAUGE', 'IY', 'JX', 'RANK', 'DA (km2)'
+        call print_echo_txt(line, PAD_3)
+        do i = 1, fms%stmg%n
+            write(line, FMT_GEN) i, fms%stmg%meta%iy(i), fms%stmg%meta%jx(i), fms%stmg%meta%rnk(i), shd%DA(fms%stmg%meta%rnk(i))
+            call print_echo_txt(line, PAD_3)
+        end do
+        call print_echo_txt('')
     end if
 
     !> Reservoir outlet locations.
@@ -171,9 +178,13 @@ subroutine read_basin_structures(shd)
         fms%rsvr%meta%iy = int((fms%rsvr%meta%y - shd%yOrigin)/shd%yDelta) + 1
         fms%rsvr%meta%jx = int((fms%rsvr%meta%x - shd%xOrigin)/shd%xDelta) + 1
 
-        !> Find the RANK of the location.
+        !> Find the RANK of the location and create friendly name (if one does not exist).
         fms%rsvr%meta%rnk = 0
         do i = 1, fms%rsvr%n
+            if (len_trim(fms%rsvr%meta%name(i)) == 0) then
+                write(line, FMT_GEN) i
+                fms%rsvr%meta%name(i) = 'Reach' // trim(adjustl(line))
+            end if
             do n = 1, shd%NAA
                 if (fms%rsvr%meta%jx(i) == shd%xxx(n) .and. fms%rsvr%meta%iy(i) == shd%yyy(n)) fms%rsvr%meta%rnk(i) = n
             end do
@@ -264,17 +275,17 @@ subroutine read_basin_structures(shd)
         end if
 
         !> Print a summary of locations to file.
-        write(line, FMT_GEN) fms%rsvr%n
-        call print_message_detail('Number of reservoir outlets: ' // trim(adjustl(line)))
-        if (DIAGNOSEMODE) then
-            write(line, FMT_GEN) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)'
-            call print_message_detail(line)
-            do i = 1, fms%rsvr%n
-                write(line, FMT_GEN) i, fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i), fms%rsvr%rls%area(i)/1.0e+6
-                call print_message_detail(line)
-            end do
-            call print_message('')
-        end if
+        write(line, FMT_GEN) (fms%rsvr%n - count(fms%rsvr%rls%b1 == 0.0))
+        call print_message_detail('Number of reservoir outlets with routing: ' // trim(adjustl(line)))
+        write(line, FMT_GEN) count(fms%rsvr%rls%b1 == 0.0)
+        call print_message_detail('Number of reservoir outlets with insertion: ' // trim(adjustl(line)))
+        write(line, FMT_GEN) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)'
+        call print_echo_txt(line, PAD_3)
+        do i = 1, fms%rsvr%n
+            write(line, FMT_GEN) i, fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i), fms%rsvr%rls%area(i)/1.0e+6
+            call print_echo_txt(line, PAD_3)
+        end do
+        call print_echo_txt('')
     end if
 
 end subroutine
