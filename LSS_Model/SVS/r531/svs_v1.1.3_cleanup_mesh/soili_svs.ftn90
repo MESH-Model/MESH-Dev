@@ -278,12 +278,14 @@ include "thermoconsts.inc"
 !                          First calculate the conductivity of snow
 !
       DO I=1,N
+      IF(RHOS(I).GT.0.0) THEN
         LAMS(I) = LAMI * RHOS(I)**1.88
         ZCS(I) = 2.0 * SQRT( PI/( LAMS(I) * 1000* RHOS(I) *CI*DAY) )
 !
         LAMSV(I) = LAMI * RHOSV(I)**1.88
         ZCSV(I) = 2.0 * SQRT( PI/(LAMSV(I)* 1000*RHOSV(I) *CI*DAY) )
 !
+      ENDIF
       END DO    
 !
 !
@@ -294,7 +296,7 @@ include "thermoconsts.inc"
 !
       DO I=1,N
 
-         IF((1-VEGH(I)).GT.0.0) THEN
+         IF((1-VEGH(I)).GT.0.0 .AND. RHOS(I).GT.0.0) THEN
          
 !
 !                        fraction of ground covered by snow
@@ -321,7 +323,7 @@ include "thermoconsts.inc"
 !                        by snow (need the if, as variables for high vegetation
 !                        only defined if high vegetation is present)
 !
-        IF(VEGH(I).GT.0.0) THEN
+        IF(VEGH(I).GT.0.0 .AND. RHOS(I).GT.0.0) THEN
 
 !
 !                       SNOW FRACTION AS SEEN FROM THE GROUND
@@ -432,8 +434,13 @@ include "thermoconsts.inc"
 !                       CNOLEAF = thermal coefficient for the leafless   
 !                       portion of vegetation areas
               CNOLEAF(I) = (VEGL(I)*(1.-PSNGRVL(I)) +  &
-                          VEGH(I)*(1.-PSNVH(I))) / CG(I) + PSNGRVL(I)/ZCS(I) & 
-                         + PSNVH(I)/ZCSV(I)
+                          VEGH(I)*(1.-PSNVH(I))) / CG(I)
+              IF(ZCS(I).GT.0.0) THEN
+                 CNOLEAF(I) = CNOLEAF(I) + PSNGRVL(I)/ZCS(I)
+              ENDIF
+              IF(ZCSV(I).GT.0.0) THEN
+                 CNOLEAF(I) = CNOLEAF(I) + PSNVH(I)/ZCSV(I)
+              ENDIF
 !
 !                       CVPA = thermal coefficient of vegetation that
 !                       considers the effect of LAI
