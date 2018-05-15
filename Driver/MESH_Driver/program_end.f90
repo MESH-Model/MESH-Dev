@@ -2,7 +2,7 @@
 !>  Stop the program with normal exit.
 subroutine program_end()
 
-    !> 'mpi_module': For call to 'MPI_Finalize', 'ipid', and 'inp'.
+    !> 'mpi_module': For call to 'MPI_Finalize' and 'inp'.
     !> 'print_routines: For print routines.
     use mpi_module
     use print_routines

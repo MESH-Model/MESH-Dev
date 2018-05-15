@@ -5,7 +5,7 @@
 !>  Other variables are accessible by their respecitve process
 !>  module(s).
 !>
-subroutine read_initial_states(fls, shd)
+subroutine read_initial_states(fls, shd, ierr)
 
     use strings
     use mpi_module
@@ -23,13 +23,22 @@ subroutine read_initial_states(fls, shd)
     type(fl_ids):: fls
     type(ShedGridParams) :: shd
 
+    !> Output variables.
+    integer, intent(out) :: ierr
+
     !> Local variables for parsing INPUTPARAMSFORM.
     character(len = 20), dimension(100) :: out_args
     integer nargs
     character(1) :: delim = ' '
 
     !> Local variables.
-    integer NA, NTYPE, NML, NSL, k, j, ignd, i, m, ierr
+    integer NA, NTYPE, NML, NSL, k, j, ignd, i, m
+
+    !> Initialize the return status.
+    ierr = 0
+
+    !> Reset spacing for screen output.
+    call reset_tab()
 
     !> Assign commonly used indices to local variables.
     NA = shd%NA

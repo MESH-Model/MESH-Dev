@@ -4,7 +4,7 @@
 !>  by SA_MESH are accessible by 'sa_mesh_variables'. Other
 !>  parameters are accessible by their respecitve process module(s).
 !>
-subroutine read_parameters(fls, shd, cm)
+subroutine read_parameters(fls, shd, cm, ierr)
 
     use strings
     use mpi_module
@@ -28,13 +28,22 @@ subroutine read_parameters(fls, shd, cm)
     type(ShedGridParams) :: shd
     type(CLIM_INFO) :: cm
 
+    !> Output variables.
+    integer, intent(out) :: ierr
+
     !> Local variables for parsing INPUTPARAMSFORM.
     character(len = DEFAULT_LINE_LENGTH) line
     character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
     integer nargs
 
     !> Local variables.
-    integer NA, NAA, NTYPE, NRVR, NML, NSL, k, j, ignd, i, n, ierr
+    integer NA, NAA, NTYPE, NRVR, NML, NSL, k, j, ignd, i, n, z
+
+    !> Initialize the return status.
+    ierr = 0
+
+    !> Reset spacing for screen output.
+    call reset_tab()
 
     !> Assign commonly used indices to local variables.
     NA = shd%NA
@@ -49,21 +58,25 @@ subroutine read_parameters(fls, shd, cm)
     !>
 
     !> Allocate instances of SA_MESH parameters.
-    call pm_init(pm, 'tile', NML, NSL, 4, 5, ierr)
-    call pm_init(pm_grid, 'grid', NA, NSL, 4, 5, ierr)
-    call pm_init(pm_gru, 'gru', NTYPE, NSL, 4, 5, ierr)
+    z = 0
+    call pm_init(pm, 'tile', NML, NSL, 4, 5, ierr); if (z /= 0) ierr = z
+    call pm_init(pm_grid, 'grid', NA, NSL, 4, 5, ierr); if (z /= 0) ierr = z
+    call pm_init(pm_gru, 'gru', NTYPE, NSL, 4, 5, ierr); if (z /= 0) ierr = z
+    if (ierr /= 0) goto 97
 
     !> RUNCLASS36 (interflow flag).
     if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
         pm_gru%tp%iwf = RUNCLASS36_flgs%INTERFLOWFLAG
         allocate( &
             hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE), hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE), hp%K2ROW(NA, NTYPE), stat = ierr)
+        if (ierr /= 0) goto 97
         hp%CMAXROW = 0.0; hp%CMINROW = 0.0; hp%BROW = 0.0; hp%K1ROW = 0.0; hp%K2ROW = 0.0
     end if
 
     !> WF_ROUTE (Watflood, 1988).
     if (WF_RTE_flgs%PROCESS_ACTIVE) then
         allocate(wfp%r1(NRVR), wfp%r2(NRVR), wfp%aa1(NRVR), wfp%aa2(NRVR), wfp%aa3(NRVR), wfp%aa4(NRVR), stat = ierr)
+        if (ierr /= 0) goto 97
         wfp%r1 = 2.0; wfp%r2 = 0.0; wfp%aa1 = 1.0; wfp%aa2 = 11.0; wfp%aa3 = 0.43; wfp%aa4 = 1.0
     end if
 
@@ -74,6 +87,7 @@ subroutine read_parameters(fls, shd, cm)
                  rtepm_iak%r1n(NRVR), rtepm_iak%r2n(NRVR), rtepm_iak%mndr(NRVR), rtepm_iak%widep(NRVR), &
                  rtepm_iak%aa2(NRVR), rtepm_iak%aa3(NRVR), rtepm_iak%aa4(NRVR), &
                  stat = ierr)
+        if (ierr /= 0) goto 97
         rtepm%r1n = 0.0; rtepm%r2n = 0.0; rtepm%mndr = 1.0; rtepm%widep = 10.0
         rtepm%aa2 = 1.1; rtepm%aa3 = 0.043; rtepm%aa4 = 1.0
         rtepm_iak%r1n = 0.0; rtepm_iak%r2n = 0.0; rtepm_iak%mndr = 0.0; rtepm_iak%widep = 0.0
@@ -86,7 +100,8 @@ subroutine read_parameters(fls, shd, cm)
             pbsm%pm_gru%fetch(NTYPE), pbsm%pm_gru%Ht(NTYPE), pbsm%pm_gru%N_S(NTYPE), pbsm%pm_gru%A_S(NTYPE), &
             pbsm%pm_gru%Distrib(NTYPE), &
             pbsm%pm_grid%fetch(NA), pbsm%pm_grid%Ht(NA), pbsm%pm_grid%N_S(NA), pbsm%pm_grid%A_S(NA), pbsm%pm_grid%Distrib(NA), &
-            pbsm%pm%fetch(NML), pbsm%pm%Ht(NML), pbsm%pm%N_S(NML), pbsm%pm%A_S(NML), pbsm%pm%Distrib(NML))
+            pbsm%pm%fetch(NML), pbsm%pm%Ht(NML), pbsm%pm%N_S(NML), pbsm%pm%A_S(NML), pbsm%pm%Distrib(NML), stat = ierr)
+        if (ierr /= 0) goto 97
         pbsm%pm_gru%fetch = 0.0; pbsm%pm_gru%Ht = 0.0; pbsm%pm_gru%N_S = 0.0; pbsm%pm_gru%A_S = 0.0
         pbsm%pm_gru%Distrib = 0.0
         pbsm%pm_grid%fetch = 0.0; pbsm%pm_grid%Ht = 0.0; pbsm%pm_grid%N_S = 0.0; pbsm%pm_grid%A_S = 0.0; pbsm%pm_grid%Distrib = 0.0
@@ -96,6 +111,7 @@ subroutine read_parameters(fls, shd, cm)
     !> FROZENSOILINFILFLAG 1.
     if (FROZENSOILINFILFLAG == 1) then
         allocate(hp%FRZCROW(NA, NTYPE), stat = ierr)
+        if (ierr /= 0) goto 97
         hp%FRZCROW = 0.0
         NYEARS = max(ic%stop%year - ic%start%year + 1, 1)
         allocate(t0_ACC(NYEARS))
@@ -104,7 +120,8 @@ subroutine read_parameters(fls, shd, cm)
 
     !> BASEFLOWFLAG 1 (Luo, 2012).
     if (bflm%BASEFLOWFLAG == 1) then
-        allocate(bflm%pm%dgw(NML), bflm%pm%agw(NML), bflm%pm_gru%dgw(NTYPE), bflm%pm_gru%agw(NTYPE))
+        allocate(bflm%pm%dgw(NML), bflm%pm%agw(NML), bflm%pm_gru%dgw(NTYPE), bflm%pm_gru%agw(NTYPE), stat = ierr)
+        if (ierr /= 0) goto 97
         bflm%pm%dgw = 0.0; bflm%pm%agw = 0.0; bflm%pm_gru%dgw = 0.0; bflm%pm_gru%agw = 0.0
     end if
 
@@ -112,7 +129,8 @@ subroutine read_parameters(fls, shd, cm)
     if (bflm%BASEFLOWFLAG == 2) then
         allocate(bflm%pm%pwr(NML), bflm%pm%flz(NML), &
                  bflm%pm_iak%pwr(NRVR), bflm%pm_iak%flz(NRVR), bflm%pm_gru%pwr(NTYPE), bflm%pm_gru%flz(NTYPE), &
-                 bflm%pm_grid%pwr(NA), bflm%pm_grid%flz(NA))
+                 bflm%pm_grid%pwr(NA), bflm%pm_grid%flz(NA), stat = ierr)
+        if (ierr /= 0) goto 97
         bflm%pm%pwr = 0.0; bflm%pm%flz = 0.0
         bflm%pm_iak%pwr = 0.0; bflm%pm_iak%flz = 0.0; bflm%pm_gru%pwr = 0.0; bflm%pm_gru%flz = 0.0
         bflm%pm_grid%pwr = 0.0; bflm%pm_grid%flz = 0.0
@@ -122,12 +140,14 @@ subroutine read_parameters(fls, shd, cm)
     if (cifg%PROCESS_ACTIVE) then
         allocate( &
             ciprot%jdsow(NTYPE), ciprot%ldini(NTYPE), ciprot%lddev(NTYPE), ciprot%ldmid(NTYPE), ciprot%ldlate(NTYPE), &
-            ciprot%Kcini(NTYPE), ciprot%Kcdev(NTYPE), ciprot%Kcmid(NTYPE), ciprot%Kclate(NTYPE))
+            ciprot%Kcini(NTYPE), ciprot%Kcdev(NTYPE), ciprot%Kcmid(NTYPE), ciprot%Kclate(NTYPE), stat = ierr)
+        if (ierr /= 0) goto 97
         ciprot%jdsow = 0; ciprot%ldini = 0; ciprot%lddev = 0; ciprot%ldmid = 0; ciprot%ldlate = 0
         ciprot%Kcini = 0.0; ciprot%Kcdev = 0.0; ciprot%Kcmid = 0.0; ciprot%Kclate = 0.0
         allocate( &
             cip%jdsow(NML), cip%ldini(NML), cip%lddev(NML), cip%ldmid(NML), cip%ldlate(NML), &
-            cip%Kcini(NML), cip%Kcdev(NML), cip%Kcmid(NML), cip%Kclate(NML))
+            cip%Kcini(NML), cip%Kcdev(NML), cip%Kcmid(NML), cip%Kclate(NML), stat = ierr)
+        if (ierr /= 0) goto 97
         cip%jdsow = 0; cip%ldini = 0; cip%lddev = 0; cip%ldmid = 0; cip%ldlate = 0
         cip%Kcini = 0.0; cip%Kcdev = 0.0; cip%Kcmid = 0.0; cip%Kclate = 0.0
     end if
@@ -153,26 +173,30 @@ subroutine read_parameters(fls, shd, cm)
 
     !> Check for a bad value of INPUTPARAMSFORMFLAG.
     if (INPUTPARAMSFORMFLAG == 0) then
-        line = 'Unsupported parameter file format. Revise INPUTPARAMSFORMFLAG in ' // trim(adjustl(fls%fl(mfk%f53)%fn)) // '.'
-        call print_error(line)
-        call program_abort()
+        ierr = 1
+        call print_error('Unrecognized parameter file format. Revise INPUTPARAMSFORMFLAG in ' // trim(fls%fl(mfk%f53)%fn) // '.')
+        return
     end if
 
     !> Read from the 'ini' files.
     if (btest(INPUTPARAMSFORMFLAG, 0)) then
-        call READ_PARAMETERS_CLASS(shd, fls, cm)
-        call READ_PARAMETERS_HYDROLOGY(shd, fls)
-        call READ_SOIL_INI(fls, shd)
+        z = 0
+        call READ_PARAMETERS_CLASS(shd, fls, cm, z); if (z /= 0) ierr = z
+        call READ_PARAMETERS_HYDROLOGY(shd, fls, z); if (z /= 0) ierr = z
+        call READ_SOIL_INI(fls, shd, z); if (z /= 0) ierr = z
+        if (ierr /= 0) return
     end if
 
     !> Read from the 'csv' file.
     if (btest(INPUTPARAMSFORMFLAG, 2)) then
-        call read_parameters_csv(shd, 100, 'MESH_parameters.csv')
+        call read_parameters_csv(shd, 100, 'MESH_parameters.csv', ierr)
+        if (ierr /= 0) return
     end if
 
     !> Read from the 'r2c' file.
     if (btest(INPUTPARAMSFORMFLAG, 1)) then
-        call read_parameters_r2c(shd, 100, 'MESH_parameters.r2c')
+        call read_parameters_r2c(shd, 100, 'MESH_parameters.r2c', ierr)
+        if (ierr /= 0) return
     end if
 
     !>
@@ -400,5 +424,10 @@ subroutine read_parameters(fls, shd, cm)
             end where
         end do
     end if
+
+    return
+
+97  call print_error('Unable to allocate model parameters.')
+    return
 
 end subroutine

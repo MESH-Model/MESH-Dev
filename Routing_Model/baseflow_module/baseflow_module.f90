@@ -84,7 +84,7 @@ module baseflow_module
         !> Summarize current BASEFLOWFLAG configuration to output.
         select case (bflm%BASEFLOWFLAG)
             case (1, 2)
-                call print_message('BASEFLOW component ACTIVATED')
+                call print_message('BASEFLOW component is ACTIVE.')
             case default
                 write(line, FMT_GEN) bflm%BASEFLOWFLAG
                 call print_warning('BASEFLOWFLAG ' // trim(adjustl(line)) // ' not supported.')
