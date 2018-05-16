@@ -45,7 +45,9 @@ module output_variables
         real, dimension(:, :), pointer :: thic => null()
         real, dimension(:, :), pointer :: fzws => null()
         real, dimension(:, :), pointer :: alws => null()
+        real, dimension(:), pointer :: stg0w => null()
         real, dimension(:), pointer :: stgw => null()
+        real, dimension(:), pointer :: dstgw => null()
         real, dimension(:), pointer :: cmas => null()
         real, dimension(:), pointer :: tcan => null()
         real, dimension(:), pointer :: tsno => null()
@@ -61,7 +63,9 @@ module output_variables
         real, dimension(:), pointer :: gzero => null()
         real, dimension(:, :), pointer :: gflx => null()
         real, dimension(:, :), pointer :: tbar => null()
+        real, dimension(:), pointer :: stg0e => null()
         real, dimension(:), pointer :: stge => null()
+        real, dimension(:), pointer :: dstge => null()
         real, dimension(:), pointer :: rff => null()
         real, dimension(:), pointer :: rchg => null()
         real, dimension(:), pointer :: qi => null()
@@ -235,8 +239,6 @@ module output_variables
                 if (ro%RUNBALWB) call output_variables_allocate(fields%lzs, n, pntr)
             case (VN_DZS)
                 if (ro%RUNBALWB) call output_variables_allocate(fields%dzs, n, pntr)
-            case (VN_STGW)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%stgw, n, pntr)
             case (VN_THLQ)
                 if (ro%RUNBALWB .and. present(nsl) .and. present(ig)) call output_variables_allocate(fields%thlq, n, nsl, pntr, ig)
             case (VN_LQWS)
@@ -247,6 +249,18 @@ module output_variables
                 if (ro%RUNBALWB .and. present(nsl) .and. present(ig)) call output_variables_allocate(fields%fzws, n, nsl, pntr, ig)
             case (VN_ALWS)
                 if (ro%RUNBALWB .and. present(nsl) .and. present(ig)) call output_variables_allocate(fields%alws, n, nsl, pntr, ig)
+            case (VN_STGW)
+                if (ro%RUNBALWB) then
+                    call output_variables_allocate(fields%stgw, n, pntr)
+                    call output_variables_allocate(fields%stg0w, n)
+                    call output_variables_allocate(fields%dstgw, n)
+                end if
+            case (VN_DSTGW)
+                if (ro%RUNBALWB) then
+                    call output_variables_allocate(fields%stgw, n)
+                    call output_variables_allocate(fields%stg0w, n)
+                    call output_variables_allocate(fields%dstgw, n, pntr)
+                end if
 
             !> Energy balance.
             case (VN_CMAS)
@@ -275,12 +289,22 @@ module output_variables
                 if (ro%RUNBALEB) call output_variables_allocate(fields%qe, n, pntr)
             case (VN_GZERO)
                 if (ro%RUNBALEB) call output_variables_allocate(fields%gzero, n, pntr)
-            case (VN_STGE)
-                if (ro%RUNBALEB) call output_variables_allocate(fields%stge, n, pntr)
             case (VN_GFLX)
                 if (ro%RUNBALEB .and. present(nsl) .and. present(ig)) call output_variables_allocate(fields%gflx, n, nsl, pntr, ig)
             case (VN_TBAR)
                 if (ro%RUNBALEB .and. present(nsl) .and. present(ig)) call output_variables_allocate(fields%tbar, n, nsl, pntr, ig)
+            case (VN_STGE)
+                if (ro%RUNBALEB) then
+                    call output_variables_allocate(fields%stge, n, pntr)
+                    call output_variables_allocate(fields%stg0e, n)
+                    call output_variables_allocate(fields%dstge, n)
+                end if
+            case (VN_DSTGE)
+                if (ro%RUNBALEB) then
+                    call output_variables_allocate(fields%stge, n)
+                    call output_variables_allocate(fields%stg0e, n)
+                    call output_variables_allocate(fields%dstge, n, pntr)
+                end if
 
             !> Channels and routing.
             case (VN_RFF)
@@ -366,7 +390,7 @@ module output_variables
                 if (allocated(stas%sl%thic)) allocate(series%tile%thic(n, nsl))
                 if (allocated(stas%sl%fzws)) allocate(series%tile%fzws(n, nsl))
                 if (allocated(stas%sl%lqws) .or. allocated(stas%sl%fzws)) allocate(series%tile%alws(n, shd%lc%IGND))
-                allocate(series%tile%stgw(n))
+                allocate(series%tile%stgw(n), series%tile%stg0w(n), series%tile%dstgw(n))
             end if
 
             !> Energy balance.
@@ -386,7 +410,7 @@ module output_variables
                 if (allocated(stas%sfc%gzero)) allocate(series%tile%gzero(n))
                 if (allocated(stas%sl%gflx)) allocate(series%tile%gflx(n, nsl))
                 if (allocated(stas%sl%tbar)) allocate(series%tile%tbar(n, nsl))
-                allocate(series%tile%stge(n))
+                allocate(series%tile%stge(n), series%tile%stg0e(n), series%tile%dstge(n))
             end if
         end if
 
@@ -432,7 +456,8 @@ module output_variables
                 if (allocated(stas_grid%sl%thic)) allocate(series%grid%thic(n, nsl))
                 if (allocated(stas_grid%sl%fzws)) allocate(series%grid%fzws(n, nsl))
                 if (allocated(stas_grid%sl%lqws) .or. allocated(stas_grid%sl%fzws)) allocate(series%grid%alws(n, shd%lc%IGND))
-                allocate(series%grid%stgw(n))
+                allocate(series%grid%stgw(n), series%grid%stg0w(n), series%grid%dstgw(n))
+                series%grid%stg0w = 0.0; series%grid%dstgw = 0.0
             end if
 
             !> Energy balance.
@@ -452,7 +477,8 @@ module output_variables
                 if (allocated(stas_grid%sfc%gzero)) allocate(series%grid%gzero(n))
                 if (allocated(stas_grid%sl%gflx)) allocate(series%grid%gflx(n, nsl))
                 if (allocated(stas_grid%sl%tbar)) allocate(series%grid%tbar(n, nsl))
-                allocate(series%grid%stge(n))
+                allocate(series%grid%stge(n), series%grid%stg0e(n), series%grid%dstge(n))
+                series%grid%stg0e = 0.0; series%grid%dstge = 0.0
             end if
 
             !> Channels and routing.
@@ -547,6 +573,8 @@ module output_variables
 
             !> Water balance.
             if (ro%RUNBALWB) then
+                if (all(out%ts%tile%stgw /= out%NO_DATA)) out%ts%tile%stg0w = out%ts%tile%stgw
+                out%ts%tile%stgw = 0.0
                 if (associated(out%ts%tile%prec)) then
                     if (all(out%ts%tile%prec == out%NO_DATA)) out%ts%tile%prec = cm%dat(ck%RT)%GAT
                 end if
@@ -586,31 +614,52 @@ module output_variables
                     end if
                 end if
                 if (associated(out%ts%tile%rcan)) then
-                    if (all(out%ts%tile%rcan == out%NO_DATA)) out%ts%tile%rcan = stas%cnpy%rcan
+                    if (all(out%ts%tile%rcan == out%NO_DATA)) then
+                        out%ts%tile%rcan = stas%cnpy%rcan
+                        out%ts%tile%stgw = out%ts%tile%stgw + stas%cnpy%rcan
+                    end if
                 end if
                 if (associated(out%ts%tile%sncan)) then
-                    if (all(out%ts%tile%sncan == out%NO_DATA)) out%ts%tile%sncan = stas%cnpy%sncan
+                    if (all(out%ts%tile%sncan == out%NO_DATA)) then
+                        out%ts%tile%sncan = stas%cnpy%sncan
+                        out%ts%tile%stgw = out%ts%tile%stgw + stas%cnpy%sncan
+                    end if
                 end if
                 if (associated(out%ts%tile%sno)) then
-                    if (all(out%ts%tile%sno == out%NO_DATA)) out%ts%tile%sno = stas%sno%sno
+                    if (all(out%ts%tile%sno == out%NO_DATA)) then
+                        out%ts%tile%sno = stas%sno%sno
+                        out%ts%tile%stgw = out%ts%tile%stgw + stas%sno%sno
+                    end if
                 end if
                 if (associated(out%ts%tile%fsno)) then
                     if (all(out%ts%tile%fsno == out%NO_DATA)) out%ts%tile%fsno = stas%sno%fsno
                 end if
                 if (associated(out%ts%tile%wsno)) then
-                    if (all(out%ts%tile%wsno == out%NO_DATA)) out%ts%tile%wsno = stas%sno%wsno
+                    if (all(out%ts%tile%wsno == out%NO_DATA)) then
+                        out%ts%tile%wsno = stas%sno%wsno
+                        out%ts%tile%stgw = out%ts%tile%stgw + stas%sno%wsno
+                    end if
                 end if
                 if (associated(out%ts%tile%zpnd)) then
                     if (all(out%ts%tile%zpnd == out%NO_DATA)) out%ts%tile%zpnd = stas%sfc%zpnd
                 end if
                 if (associated(out%ts%tile%pndw)) then
-                    if (all(out%ts%tile%pndw == out%NO_DATA)) out%ts%tile%pndw = stas%sfc%pndw
+                    if (all(out%ts%tile%pndw == out%NO_DATA)) then
+                        out%ts%tile%pndw = stas%sfc%pndw
+                        out%ts%tile%stgw = out%ts%tile%stgw + stas%sfc%pndw
+                    end if
                 end if
                 if (associated(out%ts%tile%lzs)) then
-                    if (all(out%ts%tile%lzs == out%NO_DATA)) out%ts%tile%lzs = stas%lzs%ws
+                    if (all(out%ts%tile%lzs == out%NO_DATA)) then
+                        out%ts%tile%lzs = stas%lzs%ws
+                        out%ts%tile%stgw = out%ts%tile%stgw + stas%lzs%ws
+                    end if
                 end if
                 if (associated(out%ts%tile%dzs)) then
-                    if (all(out%ts%tile%dzs == out%NO_DATA)) out%ts%tile%dzs = stas%dzs%ws
+                    if (all(out%ts%tile%dzs == out%NO_DATA)) then
+                        out%ts%tile%dzs = stas%dzs%ws
+                        out%ts%tile%stgw = out%ts%tile%stgw + stas%dzs%ws
+                    end if
                 end if
                 if (associated(out%ts%tile%thlq)) then
                     if (all(out%ts%tile%thlq == out%NO_DATA)) out%ts%tile%thlq = stas%sl%thlq
@@ -627,18 +676,22 @@ module output_variables
                     end if
                     if (associated(out%ts%tile%lqws)) then
                         if (all(out%ts%tile%lqws == out%NO_DATA)) out%ts%tile%lqws = stas%sl%lqws
+                        out%ts%tile%stgw = out%ts%tile%stgw + sum(stas%sl%lqws, 2)
                         if (lcheck) out%ts%tile%alws = out%ts%tile%alws + stas%sl%lqws
                     end if
                     if (associated(out%ts%tile%fzws)) then
                         if (all(out%ts%tile%fzws == out%NO_DATA)) out%ts%tile%fzws = stas%sl%fzws
+                        out%ts%tile%stgw = out%ts%tile%stgw + sum(stas%sl%fzws, 2)
                         if (lcheck) out%ts%tile%alws = out%ts%tile%alws + stas%sl%fzws
                     end if
                 end if
-!                if (all(out%ts%tile%stgw == out%NO_DATA)) out%ts%tile%stgw =
+                where (out%ts%tile%stgw /= out%NO_DATA) out%ts%tile%dstgw = out%ts%tile%stgw - out%ts%tile%stg0w
             end if
 
             !> Energy balance.
             if (ro%RUNBALEB) then
+                if (all(out%ts%tile%stge /= out%NO_DATA)) out%ts%tile%stg0e = out%ts%tile%stge
+                out%ts%tile%stge = 0.0
                 if (associated(out%ts%tile%cmas)) then
                     if (all(out%ts%tile%cmas == out%NO_DATA)) out%ts%tile%cmas = stas%cnpy%cmas
                 end if
@@ -684,7 +737,7 @@ module output_variables
                 if (associated(out%ts%tile%tbar)) then
                     if (all(out%ts%tile%tbar == out%NO_DATA)) out%ts%tile%tbar = stas%sl%tbar
                 end if
-!                if (all(out%ts%tile%stge == out%NO_DATA)) out%ts%tile%stge =
+                where (out%ts%tile%stge /= out%NO_DATA) out%ts%tile%dstge = out%ts%tile%stge - out%ts%tile%stg0e
             end if
         end if
 
@@ -718,6 +771,8 @@ module output_variables
 
             !> Water balance.
             if (ro%RUNBALWB) then
+                if (all(out%ts%grid%stgw /= out%NO_DATA)) out%ts%grid%stg0w = out%ts%grid%stgw
+                out%ts%grid%stgw = 0.0
                 if (associated(out%ts%grid%prec)) then
                     if (all(out%ts%grid%prec == out%NO_DATA)) out%ts%grid%prec = cm%dat(ck%RT)%GRD
                 end if
@@ -757,31 +812,52 @@ module output_variables
                     end if
                 end if
                 if (associated(out%ts%grid%rcan)) then
-                    if (all(out%ts%grid%rcan == out%NO_DATA)) out%ts%grid%rcan = stas_grid%cnpy%rcan
+                    if (all(out%ts%grid%rcan == out%NO_DATA)) then
+                        out%ts%grid%rcan = stas_grid%cnpy%rcan
+                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%cnpy%rcan
+                    end if
                 end if
                 if (associated(out%ts%grid%sncan)) then
-                    if (all(out%ts%grid%sncan == out%NO_DATA)) out%ts%grid%sncan = stas_grid%cnpy%sncan
+                    if (all(out%ts%grid%sncan == out%NO_DATA)) then
+                        out%ts%grid%sncan = stas_grid%cnpy%sncan
+                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%cnpy%sncan
+                    end if
                 end if
                 if (associated(out%ts%grid%sno)) then
-                    if (all(out%ts%grid%sno == out%NO_DATA)) out%ts%grid%sno = stas_grid%sno%sno
+                    if (all(out%ts%grid%sno == out%NO_DATA)) then
+                        out%ts%grid%sno = stas_grid%sno%sno
+                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%sno%sno
+                    end if
                 end if
                 if (associated(out%ts%grid%fsno)) then
                     if (all(out%ts%grid%fsno == out%NO_DATA)) out%ts%grid%fsno = stas_grid%sno%fsno
                 end if
                 if (associated(out%ts%grid%wsno)) then
-                    if (all(out%ts%grid%wsno == out%NO_DATA)) out%ts%grid%wsno = stas_grid%sno%wsno
+                    if (all(out%ts%grid%wsno == out%NO_DATA)) then
+                        out%ts%grid%wsno = stas_grid%sno%wsno
+                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%sno%wsno
+                    end if
                 end if
                 if (associated(out%ts%grid%zpnd)) then
                     if (all(out%ts%grid%zpnd == out%NO_DATA)) out%ts%grid%zpnd = stas_grid%sfc%zpnd
                 end if
                 if (associated(out%ts%grid%pndw)) then
-                    if (all(out%ts%grid%pndw == out%NO_DATA)) out%ts%grid%pndw = stas_grid%sfc%pndw
+                    if (all(out%ts%grid%pndw == out%NO_DATA)) then
+                        out%ts%grid%pndw = stas_grid%sfc%pndw
+                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%sfc%pndw
+                    end if
                 end if
                 if (associated(out%ts%grid%lzs)) then
-                    if (all(out%ts%grid%lzs == out%NO_DATA)) out%ts%grid%lzs = stas_grid%lzs%ws
+                    if (all(out%ts%grid%lzs == out%NO_DATA)) then
+                        out%ts%grid%lzs = stas_grid%lzs%ws
+                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%lzs%ws
+                    end if
                 end if
                 if (associated(out%ts%grid%dzs)) then
-                    if (all(out%ts%grid%dzs == out%NO_DATA)) out%ts%grid%dzs = stas_grid%dzs%ws
+                    if (all(out%ts%grid%dzs == out%NO_DATA)) then
+                        out%ts%grid%dzs = stas_grid%dzs%ws
+                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%dzs%ws
+                    end if
                 end if
                 if (associated(out%ts%grid%thlq)) then
                     if (all(out%ts%grid%thlq == out%NO_DATA)) out%ts%grid%thlq = stas_grid%sl%thlq
@@ -798,18 +874,22 @@ module output_variables
                     end if
                     if (associated(out%ts%grid%lqws)) then
                         if (all(out%ts%grid%lqws == out%NO_DATA)) out%ts%grid%lqws = stas_grid%sl%lqws
+                        out%ts%grid%stgw = out%ts%grid%stgw + sum(stas_grid%sl%lqws, 2)
                         if (lcheck) out%ts%grid%alws = out%ts%grid%alws + stas_grid%sl%lqws
                     end if
                     if (associated(out%ts%grid%fzws)) then
                         if (all(out%ts%grid%fzws == out%NO_DATA)) out%ts%grid%fzws = stas_grid%sl%fzws
+                        out%ts%grid%stgw = out%ts%grid%stgw + sum(stas_grid%sl%fzws, 2)
                         if (lcheck) out%ts%grid%alws = out%ts%grid%alws + stas_grid%sl%fzws
                     end if
                 end if
-!                if (all(out%ts%grid%stgw == out%NO_DATA)) out%ts%grid%stgw =
+                where (out%ts%grid%stgw /= out%NO_DATA) out%ts%grid%dstgw = out%ts%grid%stgw - out%ts%grid%stg0w
             end if
 
             !> Energy balance.
             if (ro%RUNBALEB) then
+                if (all(out%ts%grid%stge /= out%NO_DATA)) out%ts%grid%stg0e = out%ts%grid%stge
+                out%ts%grid%stge = 0.0
                 if (associated(out%ts%grid%cmas)) then
                     if (all(out%ts%grid%cmas == out%NO_DATA)) out%ts%grid%cmas = stas_grid%cnpy%cmas
                 end if
@@ -855,7 +935,7 @@ module output_variables
                 if (associated(out%ts%grid%tbar)) then
                     if (all(out%ts%grid%tbar == out%NO_DATA)) out%ts%grid%tbar = stas_grid%sl%tbar
                 end if
-!                if (all(out%ts%grid%stge == out%NO_DATA)) out%ts%grid%stge =
+                where (out%ts%grid%stge /= out%NO_DATA) out%ts%grid%dstge = out%ts%grid%stge - out%ts%grid%stg0e
             end if
 
             !> Channels and routing.
@@ -875,9 +955,9 @@ module output_variables
                 if (associated(out%ts%grid%qo)) then
                     if (all(out%ts%grid%qo == out%NO_DATA)) out%ts%grid%qo = stas_grid%chnl%qo
                 end if
-!                if (associated(out%ts%grid%zlvl)) then
-!                    if (all(out%ts%grid%zlvl == out%NO_DATA)) out%ts%grid%zlvl = stas_grid%chnl%zlvl
-!                end if
+                if (associated(out%ts%grid%zlvl)) then
+                    if (all(out%ts%grid%zlvl == out%NO_DATA)) out%ts%grid%zlvl = stas_grid%chnl%zlvl
+                end if
             end if
         end if
 
@@ -890,33 +970,42 @@ module output_variables
     !>  time-steps to divide the number "dnts" by is greater than zero.
     !>  Override calculations where 'val' is equal to the 'NO_DATA'
     !>  value with the 'NO_DATA' value in 'dat'.
-    subroutine output_variables_update_values(dat, val, its, dnts, fn)
+    subroutine output_variables_update_values(dat, val, its, dnts, fn, cfactorm, cfactora)
 
         !> Input variables.
         integer, intent(in) :: its, dnts
         real, dimension(:), intent(in) :: val
         character(len = *), intent(in) :: fn
+        real, intent(in), optional :: cfactorm, cfactora
 
         !> Input/output variables.
         real, dimension(:) :: dat
 
+        !> Local variables.
+        real, dimension(size(val)) :: v
+
         !> Reset the variable if this is the first time-step in the series.
         if (its == 1) dat = 0.0
 
+        !> Apply transforms to local variable.
+        v = val
+        if (present(cfactorm)) v = v*cfactorm
+        if (present(cfactora)) v = v + cfactora
+
         !> Apply the 'fn' function.
-        !> The default case is to set 'dat' to 'val'.
+        !> The default case is to set 'dat' to 'v'.
         select case (fn)
             case ('sum')
-                dat = dat + val
+                dat = dat + v
             case ('avg')
-                dat = dat + val
+                dat = dat + v
                 if (dnts > 0) dat = dat/dnts
             case ('max')
-                dat = max(dat, val)
+                dat = max(dat, v)
             case ('min')
-                dat = min(dat, val)
+                dat = min(dat, v)
             case default
-                dat = val
+                dat = v
         end select
 
         !> Assign the 'NO_DATA' value where 'NO_DATA' existed in 'val'.
@@ -1031,9 +1120,6 @@ module output_variables
                 if (associated(series%tile%dzs)) then
                     call output_variables_update_values(series%tile%dzs, out%ts%tile%dzs, its, dnts, 'avg')
                 end if
-                if (associated(series%tile%stgw)) then
-                    call output_variables_update_values(series%tile%stgw, out%ts%tile%stgw, its, dnts, 'avg')
-                end if
                 do j = 1, shd%lc%IGND
                     if (associated(series%tile%thlq)) then
                         call output_variables_update_values(series%tile%thlq(:, j), out%ts%tile%thlq(:, j), its, dnts, 'avg')
@@ -1051,6 +1137,16 @@ module output_variables
                         call output_variables_update_values(series%tile%alws(:, j), out%ts%tile%alws(:, j), its, dnts, 'avg')
                     end if
                 end do
+                if (associated(series%tile%stgw)) then
+                    if (its == 1) then
+                        call output_variables_update_values(series%tile%stg0w, series%tile%stgw, its, dnts, 'val')
+                    end if
+                    call output_variables_update_values(series%tile%stgw, out%ts%tile%stgw, its, dnts, 'avg')
+                end if
+                if (associated(series%tile%dstgw) .and. dnts > 0) then
+                    call output_variables_update_values(series%tile%dstgw, series%tile%stg0w, its, dnts, 'val', -1.0)
+                    call output_variables_update_values(series%tile%dstgw, series%tile%stgw, its, dnts, 'sum')
+                end if
             end if
 
             !> Energy balance.
@@ -1094,9 +1190,6 @@ module output_variables
                 if (associated(series%tile%gzero)) then
                     call output_variables_update_values(series%tile%gzero, out%ts%tile%gzero, its, dnts, 'avg')
                 end if
-                if (associated(series%tile%stge)) then
-                    call output_variables_update_values(series%tile%stge, out%ts%tile%stge, its, dnts, 'avg')
-                end if
                 do j = 1, shd%lc%IGND
                     if (associated(series%tile%gflx)) then
                         call output_variables_update_values(series%tile%gflx(:, j), out%ts%tile%gflx(:, j), its, dnts, 'avg')
@@ -1105,6 +1198,16 @@ module output_variables
                         call output_variables_update_values(series%tile%tbar(:, j), out%ts%tile%tbar(:, j), its, dnts, 'avg')
                     end if
                 end do
+                if (associated(series%tile%stge)) then
+                    if (its == 1) then
+                        call output_variables_update_values(series%tile%stg0e, series%tile%stge, its, dnts, 'val')
+                    end if
+                    call output_variables_update_values(series%tile%stge, out%ts%tile%stge, its, dnts, 'avg')
+                end if
+                if (associated(series%tile%dstge) .and. dnts > 0) then
+                    call output_variables_update_values(series%tile%dstge, series%tile%stg0e, its, dnts, 'val', -1.0)
+                    call output_variables_update_values(series%tile%dstge, series%tile%stge, its, dnts, 'sum')
+                end if
             end if
         end if
 
@@ -1195,9 +1298,6 @@ module output_variables
                 if (associated(series%grid%dzs)) then
                     call output_variables_update_values(series%grid%dzs, out%ts%grid%dzs, its, dnts, 'avg')
                 end if
-                if (associated(series%grid%stgw)) then
-                    call output_variables_update_values(series%grid%stgw, out%ts%grid%stgw, its, dnts, 'avg')
-                end if
                 do j = 1, shd%lc%IGND
                     if (associated(series%grid%thlq)) then
                         call output_variables_update_values(series%grid%thlq(:, j), out%ts%grid%thlq(:, j), its, dnts, 'avg')
@@ -1215,6 +1315,16 @@ module output_variables
                         call output_variables_update_values(series%grid%alws(:, j), out%ts%grid%alws(:, j), its, dnts, 'avg')
                     end if
                 end do
+                if (associated(series%grid%stgw)) then
+                    if (its == 1) then
+                        call output_variables_update_values(series%grid%stg0w, series%grid%stgw, its, dnts, 'val')
+                    end if
+                    call output_variables_update_values(series%grid%stgw, out%ts%grid%stgw, its, dnts, 'avg')
+                end if
+                if (associated(series%grid%dstgw) .and. dnts > 0) then
+                    call output_variables_update_values(series%grid%dstgw, series%grid%stg0w, its, dnts, 'val', -1.0)
+                    call output_variables_update_values(series%grid%dstgw, series%grid%stgw, its, dnts, 'sum')
+                end if
             end if
 
             !> Energy balance.
@@ -1258,9 +1368,6 @@ module output_variables
                 if (associated(series%grid%gzero)) then
                     call output_variables_update_values(series%grid%gzero, out%ts%grid%gzero, its, dnts, 'avg')
                 end if
-                if (associated(series%grid%stge)) then
-                    call output_variables_update_values(series%grid%stge, out%ts%grid%stge, its, dnts, 'avg')
-                end if
                 do j = 1, shd%lc%IGND
                     if (associated(series%grid%gflx)) then
                         call output_variables_update_values(series%grid%gflx(:, j), out%ts%grid%gflx(:, j), its, dnts, 'avg')
@@ -1269,6 +1376,16 @@ module output_variables
                         call output_variables_update_values(series%grid%tbar(:, j), out%ts%grid%tbar(:, j), its, dnts, 'avg')
                     end if
                 end do
+                if (associated(series%grid%stge)) then
+                    if (its == 1) then
+                        call output_variables_update_values(series%grid%stg0e, series%grid%stge, its, dnts, 'val')
+                    end if
+                    call output_variables_update_values(series%grid%stge, out%ts%grid%stge, its, dnts, 'avg')
+                end if
+                if (associated(series%grid%dstge) .and. dnts > 0) then
+                    call output_variables_update_values(series%grid%dstge, series%grid%stg0e, its, dnts, 'val', -1.0)
+                    call output_variables_update_values(series%grid%dstge, series%grid%stge, its, dnts, 'sum')
+                end if
             end if
 
             !> Channels and routing.
@@ -1405,12 +1522,12 @@ module output_variables
                 series%tile%pndw = out%NO_DATA
                 series%tile%lzs = out%NO_DATA
                 series%tile%dzs = out%NO_DATA
-                series%tile%stgw = out%NO_DATA
                 series%tile%thlq = out%NO_DATA
                 series%tile%lqws = out%NO_DATA
                 series%tile%thic = out%NO_DATA
                 series%tile%fzws = out%NO_DATA
                 series%tile%alws = out%NO_DATA
+                series%tile%stgw = out%NO_DATA
             end if
 
             !> Energy balance.
@@ -1428,9 +1545,9 @@ module output_variables
                 series%tile%qh = out%NO_DATA
                 series%tile%qe = out%NO_DATA
                 series%tile%gzero = out%NO_DATA
-                series%tile%stge = out%NO_DATA
                 series%tile%gflx = out%NO_DATA
                 series%tile%tbar = out%NO_DATA
+                series%tile%stge = out%NO_DATA
             end if
         end if
 

@@ -281,9 +281,6 @@ program RUNMESH
     if (ro%RUNGRID) call run_between_grid_init(fls, shd, cm)
     call print_message('')
 
-    !> Update output variables with initial states.
-    call output_variables_update(shd, cm)
-
     !> Initialize basin totals for the run.
     if (ISHEADNODE) then
         TOTAL_PRE = 0.0
@@ -781,6 +778,9 @@ program RUNMESH
 !220     continue
 !230     continue
 !+    end if !(RESUMEFLAG == 2) then
+
+    !> Update output variables with initial states.
+    call output_variables_update(shd, cm)
 
     !> Calculate initial storage.
     if (ro%RUNBALWB .and. ISHEADNODE) then
