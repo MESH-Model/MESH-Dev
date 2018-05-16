@@ -29,15 +29,23 @@ module output_files
 
     !> Description:
     !>  Keys for output file frequency.
+    !* STA: Static (once; for fields that do not change in time).
+    !* TOT: Accrued over the simulation.
+    !* DLY: Daily.
+    !* MLY: Monthly.
+    !* HLY: Hourly.
+    !* PTS: Per time-step.
+    !* YLY: Yearly.
+    !* SSL: Seasonal.
     type output_file_freqs
-        integer :: ACC = 1
+        integer :: STA = 0
+        integer :: TOT = 1
         integer :: DLY = 2
         integer :: MLY = 3
         integer :: HLY = 4
         integer :: PTS = 5
         integer :: YLY = 6
         integer :: SSL = 7
-        integer :: TOT = 8
     end type
 
     interface write_r2c_grid
@@ -1944,7 +1952,7 @@ module output_files
 
         !> Update fields and output files.
         do i = 1, size(fls_out%fls)
-            call output_files_update_field(fls, shd, fls_out%fls(i))
+            if (fls_out%fls(i)%ffreq /= fls_out%ffreq%sta) call output_files_update_field(fls, shd, fls_out%fls(i))
         end do
 
     end subroutine

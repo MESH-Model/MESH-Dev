@@ -189,11 +189,6 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     !* and direct runoff based on the parameteric equation developed by Gray et al, 2001.
     FROZENSOILINFILFLAG = 0
 
-    !* If LOCATIONFLAG is 0, gauge coordinates are read using 2I5 (Minutes) {Default}
-    !* If LOCATIONFLAG is 1, gauge coordinates for BOTH MESH_input_streamflow.txt AND
-    !*                       MESH_input_reservoir.txt are read using 2F7.1 (Minutes with 1 decimal)
-    LOCATIONFLAG = 0
-
     !> FLAGS FOR GEOTHERMAL FLUX FOR THE BOTTOM OF THE LAST SOIL LAYER
     !* If GGEOFLAG is GT 0,  READ UNIQUE VALUE FROM MESH_ggeo.INI FILE
     GGEOFLAG = 0
@@ -539,17 +534,15 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                     call PBSM_parse_flag(line)
 
                 case ('LOCATIONFLAG')
-                    call value(args(2), LOCATIONFLAG, z)
-                case ('OUTFIELDSFLAG')
-                    call value(args(2), OUTFIELDSFLAG, z)
-                    fls_out%PROCESS_ACTIVE = .true.
+                    !> Flag has no effect.
+                case ('OUTFIELDSFLAG', 'OUTFILESFLAG')
+                    fls_out%PROCESS_ACTIVE = (args(2) == '1' .or. lowercase(args(2)) == 'on')
                 case ('GGEOFLAG')
                     call value(args(2), GGEOFLAG, z)
 
                 !> Basin output files.
                 case ('BASINBALANCEOUTFLAG')
-                    call value(args(2), IROVAL, z)
-                    if (IROVAL == 0) then
+                    if (args(2) == '0' .or. lowercase(args(2)) == 'off' .or. lowercase(args(2)) == 'none') then
                         BASINAVGEBFILEFLAG = 'none'
                         BASINAVGWBFILEFLAG = 'none'
                     end if

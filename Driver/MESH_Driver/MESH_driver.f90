@@ -213,7 +213,6 @@ program RUNMESH
 
         !> File handled for variable in/out names
         !> At the moment only class, hydro parameters and some outputs
-        VARIABLEFILESFLAG = 1
         if (narg >= 1) then
             call get_command_argument(1, fl_listMesh)
         end if
@@ -297,7 +296,7 @@ program RUNMESH
 
     !> Open output files.
     if (ISHEADNODE) then
-        if (OUTFIELDSFLAG == 1) call output_files_init(fls, shd)
+        call output_files_init(fls, shd)
         call run_save_basin_output_init(fls, shd, cm)
     end if
 
@@ -335,7 +334,6 @@ program RUNMESH
             write(ECHO_TXT_IUN, *) 'WINDOWSIZEFLAG       = ', WINDOWSIZEFLAG
             write(ECHO_TXT_IUN, *) 'WINDOWSPACINGFLAG    = ', WINDOWSPACINGFLAG
             write(ECHO_TXT_IUN, *) 'FROZENSOILINFILFLAG  = ', FROZENSOILINFILFLAG
-            write(ECHO_TXT_IUN, *) 'LOCATIONFLAG         = ', LOCATIONFLAG
 
 !todo: restore this.
 !            write(ECHO_TXT_IUN, *)
@@ -932,7 +930,7 @@ program RUNMESH
             end if
 
             !> Update output files.
-            if (OUTFIELDSFLAG == 1) call output_files_update(fls, shd)
+            call output_files_update(fls, shd)
             call run_save_basin_output(fls, shd, cm)
 
             !> Metrics and pre-emption.
@@ -1093,7 +1091,7 @@ program RUNMESH
 !+    end if !(SAVERESUMEFLAG == 2) then
 
     !> Close output files.
-    if (OUTFIELDSFLAG == 1) call output_files_finalize(fls, shd)
+    call output_files_finalize(fls, shd)
     call run_save_basin_output_finalize(fls, shd, cm)
 
     !> *********************************************************************
