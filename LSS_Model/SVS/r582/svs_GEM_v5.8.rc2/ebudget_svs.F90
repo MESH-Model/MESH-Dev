@@ -461,7 +461,6 @@ include "fintern.inc"
                 + CVP(I) *  & 
                 ( RORAVG(I) * CPD * THETAA(I)  &  
                 + RG(I) * (1. - ALVGLAI(I)) + EMVG(I)*RAT(I)  & 
-                + FRACH(I) * (1. - SKYVIEW(I))* EMISSN * STEFAN * (TSVS(I)**4)  &    
                 - RORAVG(I)  & 
                 * CHLC * HV(I) * (ZQSATVG(I)-HU(I)) )
 !
