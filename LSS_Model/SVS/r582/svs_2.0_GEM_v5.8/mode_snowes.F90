@@ -62,6 +62,22 @@ INTERFACE SNOW3LHOLD
   MODULE PROCEDURE SNOW3LHOLD_0D
 END INTERFACE
 !
+INTERFACE SNOWCROHOLD
+  MODULE PROCEDURE SNOWCROHOLD_3D
+  MODULE PROCEDURE SNOWCROHOLD_2D
+  MODULE PROCEDURE SNOWCROHOLD_1D
+  MODULE PROCEDURE SNOWCROHOLD_0D
+END INTERFACE
+! Cluzet et al 2016
+INTERFACE SNOWSPKHOLD
+  MODULE PROCEDURE SNOWSPKHOLD_0D
+END INTERFACE
+!
+INTERFACE SNOWO04HOLD
+  MODULE PROCEDURE SNOWO04HOLD_0D
+END INTERFACE
+! fin Cluzet et al 2016
+!
 INTERFACE SNOW3LSCAP
   MODULE PROCEDURE SNOW3LSCAP_3D
   MODULE PROCEDURE SNOW3LSCAP_2D
@@ -256,6 +272,231 @@ ZHOLDMAXR = XWSNOWHOLDMAX1 + (XWSNOWHOLDMAX2-XWSNOWHOLDMAX1) *     &
 PWHOLDMAX = ZHOLDMAXR*PSNOWDZ*ZSNOWRHO/XRHOLW              
 !
 END FUNCTION SNOW3LHOLD_0D
+!####################################################################
+      FUNCTION SNOWCROHOLD_3D(PSNOWRHO,PSNOWLIQ,PSNOWDZ) RESULT(PWHOLDMAX)
+!
+!!    PURPOSE
+!!    -------
+!     Calculate the maximum liquid water holding capacity of
+!     snow layer(s).
+!
+USE MODD_CSTS_SNOWES,     ONLY : XRHOLW,XRHOLI
+USE MODD_SNOWES_PAR, ONLY : XPERCENTAGEPORE
+!
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+REAL, DIMENSION(:,:,:), INTENT(IN)                 :: PSNOWDZ, PSNOWLIQ, PSNOWRHO
+!
+REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2),SIZE(PSNOWRHO,3)) :: PWHOLDMAX
+!-------------------------------------------------------------------------------
+! computation of water holding capacity based on Crocus, 
+!taking into account the conversion between wet and dry density - 
+!S. Morin/V. Vionnet 2010 12 09
+
+! PWHOLDMAX is expressed in m water for each layer
+! In short, PWHOLDMAX = XPERCENTAGEPORE_B92 * porosity * PSNOWDZ .
+! The porosity is computed as (rho_ice - (rho_snow - lwc))/(rho_ice)
+! where everything has to be in kg m-3 units. In practice, since
+! PSNOWLIQ is expressed in m water, expressing the lwc in kg m-3
+! is achieved as PSNOWLIQ*XRHOLW/PSNOWDZ. After some rearranging one
+! obtains the equation given above.
+! Note that equation (19) in Vionnet et al., GMD 2012, is wrong,
+! because it does not take into account the fact that liquid water
+! content has to be substracted from total density to compute the
+! porosity.
+
+
+PWHOLDMAX(:,:,:) = XPERCENTAGEPORE/XRHOLI * (PSNOWDZ * (XRHOLI-PSNOWRHO) + PSNOWLIQ*XRHOLW)
+!
+END FUNCTION SNOWCROHOLD_3D
+!####################################################################
+      FUNCTION SNOWCROHOLD_2D(PSNOWRHO,PSNOWLIQ,PSNOWDZ) RESULT(PWHOLDMAX)
+!
+!!    PURPOSE
+!!    -------
+!     Calculate the maximum liquid water holding capacity of
+!     snow layer(s).
+!
+USE MODD_CSTS_SNOWES,     ONLY : XRHOLW,XRHOLI
+USE MODD_SNOWES_PAR, ONLY : XPERCENTAGEPORE
+!
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+REAL, DIMENSION(:,:), INTENT(IN)                   :: PSNOWDZ, PSNOWRHO, PSNOWLIQ
+!
+REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: PWHOLDMAX
+!-------------------------------------------------------------------------------
+! computation of water holding capacity based on Crocus, 
+!taking into account the conversion between wet and dry density - 
+!S. Morin/V. Vionnet 2010 12 09
+
+! PWHOLDMAX is expressed in m water for each layer
+! In short, PWHOLDMAX = XPERCENTAGEPORE * porosity * PSNOWDZ .
+! The porosity is computed as (rho_ice - (rho_snow - lwc))/(rho_ice)
+! where everything has to be in kg m-3 units. In practice, since
+! PSNOWLIQ is expressed in m water, expressing the lwc in kg m-3
+! is achieved as PSNOWLIQ*XRHOLW/PSNOWDZ. After some rearranging one
+! obtains the equation given above.
+! Note that equation (19) in Vionnet et al., GMD 2012, is wrong,
+! because it does not take into account the fact that liquid water
+! content has to be substracted from total density to compute the
+! porosity.
+
+PWHOLDMAX(:,:) = XPERCENTAGEPORE/XRHOLI * (PSNOWDZ * (XRHOLI-PSNOWRHO) + PSNOWLIQ*XRHOLW)
+!
+END FUNCTION SNOWCROHOLD_2D
+!####################################################################
+!####################################################################
+!####################################################################
+      FUNCTION SNOWCROHOLD_1D(PSNOWRHO,PSNOWLIQ,PSNOWDZ) RESULT(PWHOLDMAX)
+!
+!!    PURPOSE
+!!    -------
+!     Calculate the maximum liquid water holding capacity of
+!     snow layer(s).
+!
+USE MODD_CSTS_SNOWES,     ONLY : XRHOLW,XRHOLI
+USE MODD_SNOWES_PAR, ONLY : XPERCENTAGEPORE
+!
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+REAL, DIMENSION(:), INTENT(IN)                     :: PSNOWDZ, PSNOWRHO, PSNOWLIQ
+!
+REAL, DIMENSION(SIZE(PSNOWRHO))                    :: PWHOLDMAX
+!-------------------------------------------------------------------------------
+! computation of water holding capacity based on Crocus, 
+!taking into account the conversion between wet and dry density -
+!S. Morin/V. Vionnet 2010 12 09
+
+! PWHOLDMAX is expressed in m water for each layer
+! In short, PWHOLDMAX = XPERCENTAGEPORE * porosity * PSNOWDZ .
+! The porosity is computed as (rho_ice - (rho_snow - lwc))/(rho_ice)
+! where everything has to be in kg m-3 units. In practice, since
+! PSNOWLIQ is expressed in m water, expressing the lwc in kg m-3
+! is achieved as PSNOWLIQ*XRHOLW/PSNOWDZ. After some rearranging one
+! obtains the equation given above.
+! Note that equation (19) in Vionnet et al., GMD 2012, is wrong,
+! because it does not take into account the fact that liquid water
+! content has to be substracted from total density to compute the
+! porosity.
+
+PWHOLDMAX(:) = XPERCENTAGEPORE/XRHOLI * (PSNOWDZ * (XRHOLI-PSNOWRHO) + PSNOWLIQ*XRHOLW)
+!
+END FUNCTION SNOWCROHOLD_1D
+!####################################################################
+      FUNCTION SNOWCROHOLD_0D(PSNOWRHO,PSNOWLIQ,PSNOWDZ) RESULT(PWHOLDMAX)
+!
+!!    PURPOSE
+!!    -------
+!     Calculate the maximum liquid water holding capacity of
+!     snow layer(s).
+!
+USE MODD_CSTS_SNOWES,     ONLY : XRHOLW,XRHOLI
+USE MODD_SNOWES_PAR, ONLY : XPERCENTAGEPORE
+!
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+REAL, INTENT(IN)        :: PSNOWDZ, PSNOWRHO, PSNOWLIQ
+!
+REAL                    :: PWHOLDMAX
+!-------------------------------------------------------------------------------
+! computation of water holding capacity based on Crocus, 
+!taking into account the conversion between wet and dry density - 
+!S. Morin/V. Vionnet 2010 12 09
+
+! PWHOLDMAX is expressed in m water for each layer
+! In short, PWHOLDMAX = XPERCENTAGEPORE * porosity * PSNOWDZ .
+! The porosity is computed as (rho_ice - (rho_snow - lwc))/(rho_ice)
+! where everything has to be in kg m-3 units. In practice, since
+! PSNOWLIQ is expressed in m water, expressing the lwc in kg m-3
+! is achieved as PSNOWLIQ*XRHOLW/PSNOWDZ. After some rearranging one
+! obtains the equation given above.
+! Note that equation (19) in Vionnet et al., GMD 2012, is wrong,
+! because it does not take into account the fact that liquid water
+! content has to be substracted from total density to compute the
+! porosity.
+
+PWHOLDMAX = XPERCENTAGEPORE/XRHOLI * (PSNOWDZ * (XRHOLI-PSNOWRHO) + PSNOWLIQ*XRHOLW)
+!
+END FUNCTION SNOWCROHOLD_0D
+!####################################################################
+      FUNCTION SNOWO04HOLD_0D(PSNOWRHO,PSNOWLIQ,PSNOWDZ) RESULT(PWHOLDMAX)
+!     Cluzet et al 2016
+!!    PURPOSE
+!!    -------
+!     Calculate the maximum liquid water holding capacity of
+!     snow layer(s), with the CLM model for max lwc (similar SNOWCROHOLD_0D) 
+!     see Oleson et al. 2004
+!
+USE MODD_CSTS_SNOWES,     ONLY : XRHOLW,XRHOLI
+USE MODD_SNOWES_PAR, ONLY : XPERCENTAGEPORE_O04
+!
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+REAL, INTENT(IN)        :: PSNOWDZ, PSNOWRHO, PSNOWLIQ
+!
+REAL                    :: PWHOLDMAX
+
+PWHOLDMAX = XPERCENTAGEPORE_O04/XRHOLI * (PSNOWDZ * (XRHOLI-PSNOWRHO) + PSNOWLIQ*XRHOLW)
+!
+END FUNCTION SNOWO04HOLD_0D
+!####################################################################
+        FUNCTION SNOWSPKHOLD_0D(PSNOWRHO,PSNOWLIQ,PSNOWDZ) RESULT(PWHOLDMAX)
+!     Lafaysse et al 2017
+!!    PURPOSE
+!!    -------
+!     Calculate the maximum liquid water holding capacity of
+!     snow layer(s), with the SNOWPACK model for maximum volumetric water content
+!     see Wever 
+!
+USE MODD_CSTS_SNOWES,     ONLY: XRHOLW,XRHOLI
+USE MODD_SNOW_METAMO, ONLY : XUEPSI
+
+
+
+IMPLICIT NONE
+
+REAL, INTENT(IN)        :: PSNOWDZ, PSNOWRHO, PSNOWLIQ
+REAL                    :: PWHOLDMAX
+
+REAL                    :: ZTHETAI
+
+! PSNOWLIQ in m
+! PSNOWLIQ*XRHOLW/PSNOWDZ liquid water content in kg/m3
+IF (PSNOWDZ>XUEPSI) THEN
+  ZTHETAI=(PSNOWRHO-PSNOWLIQ*XRHOLW/PSNOWDZ)/XRHOLI
+ELSE
+  ZTHETAI=PSNOWRHO/XRHOLI
+END IF
+! In equation 12 Lafaysse et al 2017, capacity in kg m-3
+! Here capacity in m, so eq 12 is multiplied by PSNOWDZ/XRHOLW
+! 
+IF (ZTHETAI<=0.23) THEN
+  PWHOLDMAX = PSNOWDZ * ( 0.08- 0.1023 * (ZTHETAI - 0.03))
+ELSEIF(ZTHETAI>0.812) THEN
+  PWHOLDMAX = 0.
+ELSE
+  PWHOLDMAX = PSNOWDZ * ( 0.0264+0.0099*(1-ZTHETAI)/ZTHETAI )
+
+ENDIF
+
+
+END FUNCTION SNOWSPKHOLD_0D
 !####################################################################
 !####################################################################
       FUNCTION SNOW3LSCAP_3D(PSNOWRHO) RESULT(PSCAP)
@@ -608,13 +849,26 @@ REAL, PARAMETER                   ::  ZDZ2=0.05
 REAL, PARAMETER                   ::  ZDZ3=0.15
 REAL, PARAMETER                   ::  ZDZ4=0.50
 REAL, PARAMETER                   ::  ZDZ5=1.00
+
+!Test Modif VV
+!REAL, PARAMETER                   ::  ZDZ1=0.003
+!REAL, PARAMETER                   ::  ZDZ2=0.02
+!REAL, PARAMETER                   ::  ZDZ3=0.10
+!REAL, PARAMETER                   ::  ZDZ4=0.25
+!REAL, PARAMETER                   ::  ZDZ5=0.50
+
 REAL, PARAMETER                   ::  ZDZN0=0.02
 REAL, PARAMETER                   ::  ZDZN1=0.1
 REAL, PARAMETER                   ::  ZDZN2=0.5
 REAL, PARAMETER                   ::  ZDZN3=1.0
 !
-REAL, PARAMETER                   ::  ZCOEF1 = 0.5
+!REAL, PARAMETER                   ::  ZCOEF1 = 0.5
+!REAL, PARAMETER                   ::  ZCOEF2 = 1.5
+
+!Test Modif VV
+REAL, PARAMETER                   ::  ZCOEF1 = 0.05
 REAL, PARAMETER                   ::  ZCOEF2 = 1.5
+
 !
 !
 !-------------------------------------------------------------------------------
@@ -715,8 +969,7 @@ ELSEIF(INLVLS == 9)THEN
 !
   IF(PRESENT(PSNOWDZ_OLD))THEN
     GREGRID(:) = PSNOWDZ_OLD(:,1) < ZCOEF1 * MIN(ZDZ1 ,PSNOW(:)/INLVLS) .OR. &
-               & PSNOWDZ_OLD(:,1) > ZCOEF2 * MIN(ZDZ1 ,PSNOW(:)/INLVLS) .OR. &
-               & PSNOWDZ_OLD(:,2) < ZCOEF1 * MIN(ZDZ2 ,PSNOW(:)/INLVLS) .OR. &
+               & PSNOWDZ_OLD(:,1) > ZCOEF2 * MIN(ZDZ1 ,PSNOW(:)/INLVLS) .OR. & & PSNOWDZ_OLD(:,2) < ZCOEF1 * MIN(ZDZ2 ,PSNOW(:)/INLVLS) .OR. &
                & PSNOWDZ_OLD(:,2) > ZCOEF2 * MIN(ZDZ2 ,PSNOW(:)/INLVLS) .OR. &
                & PSNOWDZ_OLD(:,9) < ZCOEF1 * MIN(ZDZN0,PSNOW(:)/INLVLS) .OR. &
                & PSNOWDZ_OLD(:,9) > ZCOEF2 * MIN(ZDZN0,PSNOW(:)/INLVLS) 
@@ -1391,6 +1644,9 @@ ZDIAM(:) = SNOW3LDOPT(PSNOWRHO(:),ZAGE(:))
 !
 !Snow age effect limited to 1 year
 ZAGE(:) = MIN(365.,PSNOWAGE(:))
+!ZAGE(:) = MIN(35.,PSNOWAGE(:))
+
+
 !
 ZWORK(:)=SQRT(ZDIAM(:))
 !

@@ -279,6 +279,9 @@ module RUNSVS113_config
     open(iout_hly_isoil, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs2_out_isoil_hourly.csv', status = 'unknown', action = 'write')
     write(iout_hly_isoil, 1010) 'YEAR', 'DAY', 'HOUR', 'IG1', 'IG2','IG3','IG4','IG5','IG6','IG7'
 
+    open(iout_snw_age, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs2_out_snow_age_hourly.csv', status = 'unknown', action = 'write')
+    write(iout_snw_age, 1010) 'YEAR', 'DAY', 'HOUR', 'AGE1', 'AGE2','AGE3','AGE4','AGE5','AGE6','AGE7'
+
     open(iout_wat_bal, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs2_out_watbal_hourly.csv', status = 'unknown', action = 'write')
     write(iout_wat_bal, 1010) 'YEAR', 'DAY', 'HOUR', 'PCP_ACC','EVP_ACC','LATF_ACC','DRAI_ACC','RUNO_ACC','WSOIL_TOT','ISOIL_TOT','SWE','SWE_VEG','WVEG','VEGH','VEGL'
 

@@ -356,6 +356,9 @@ REAL, DIMENSION(SIZE(PSNOWRHO,1),NSPEC_BAND_SNOW)  :: ZSPECTRALALBEDO, ZSPECTRAL
 !                                                     ZSPECTRALALBEDO=spectral albedo 
 !
 REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: ZSNOWHEAT0
+
+CHARACTER(3)          :: CSNOWHOLD
+
 !
 !
 ! - - ---------------------------------------------------
@@ -382,6 +385,10 @@ ZGRNDFLUX  = PGRNDFLUX
 ZSNOWHEAT0(:,:)  = PSNOWHEAT(:,:) ! save initial heat content
 !
 ZSNOWTEMPO(:,:)  = PSNOWTEMP(:,:) ! for MEB, this is the updated T profile
+!
+! Parameterization for maximal water holding capacity
+CSNOWHOLD= 'B92'
+!
 !
 !*       1.     Snow total depth
 !               ----------------
@@ -1131,8 +1138,29 @@ ZSMASS(:,1) = 0.5 * PSNOWDZ(:,1) * PSNOWRHO(:,1)
 !
 !Liquid water effect
 !
-ZWHOLDMAX(:,:) = SNOW3LHOLD(PSNOWRHO,PSNOWDZ)
-ZF1(:,:) = 1.0/(XVVISC5+10.*MIN(1.0,PSNOWLIQ(:,:)/ZWHOLDMAX(:,:)))
+!ZWHOLDMAX(:,:) = SNOW3LHOLD(PSNOWRHO,PSNOWDZ)
+DO JJ=1,INLVLS
+   DO JI=1,INI
+    IF ( CSNOWHOLD == 'B02' ) THEN
+       ZWHOLDMAX(JI,JJ) = SNOW3LHOLD(PSNOWRHO(JI,JJ),PSNOWDZ(JI,JJ))
+    ELSE IF ( CSNOWHOLD == 'B92' ) THEN 
+       ZWHOLDMAX(JI,JJ) = SNOWCROHOLD(PSNOWRHO(JI,JJ),PSNOWLIQ(JI,JJ),PSNOWDZ(JI,JJ))
+    ELSE IF ( CSNOWHOLD == 'SPK' ) THEN
+       ZWHOLDMAX(JI,JJ) = SNOWSPKHOLD(PSNOWRHO(JI,JJ),PSNOWLIQ(JI,JJ),PSNOWDZ(JI,JJ))
+   ENDIF
+ENDDO
+ENDDO
+
+!ZF1(:,:) = 1.0/(XVVISC5+10.*MIN(1.0,PSNOWLIQ(:,:)/ZWHOLDMAX(:,:)))
+DO JJ=1,INLVLS
+   DO JI=1,INI
+   ZF1(JI,JJ) = 1.0/(XVVISC5+10.*MIN(1.0,PSNOWLIQ(JI,JJ)/ZWHOLDMAX(JI,JJ)))
+ ! Same parameter as in Crocus
+ !  ZF1(JI,JJ) = 1.0/( XVVISC5 + XVVISC6*PSNOWLIQ(JI,JJ)/PSNOWDZ(JI,JJ) ) 
+ENDDO
+ENDDO
+
+
 !
 !Snow viscocity, density and grid thicknesses
 !
@@ -2426,7 +2454,19 @@ END WHERE
 ! thickness ONLY, causing a loss of SWE (outside
 ! of this routine).
 !
-ZWHOLDMAX(:,:)  = SNOW3LHOLD(PSNOWRHO,PSNOWDZ)
+!ZWHOLDMAX(:,:)  = SNOW3LHOLD(PSNOWRHO,PSNOWDZ)
+DO JJ=1,INLVLS
+   DO JI=1,INI
+    IF ( CSNOWHOLD == 'B02' ) THEN
+       ZWHOLDMAX(JI,JJ) = SNOW3LHOLD(PSNOWRHO(JI,JJ),PSNOWDZ(JI,JJ))
+    ELSE IF ( CSNOWHOLD == 'B92' ) THEN 
+       ZWHOLDMAX(JI,JJ) = SNOWCROHOLD(PSNOWRHO(JI,JJ),PSNOWLIQ(JI,JJ),PSNOWDZ(JI,JJ))
+    ELSE IF ( CSNOWHOLD == 'SPK' ) THEN
+      ZWHOLDMAX(JI,JJ) = SNOWSPKHOLD(PSNOWRHO(JI,JJ),PSNOWLIQ(JI,JJ),PSNOWDZ(JI,JJ))
+   ENDIF
+ENDDO
+ENDDO
+
 !
 WHERE(PSNOWDZ > 0.0)
 !
@@ -2562,8 +2602,20 @@ ZSNOWTEMP(:,:) = MIN(XTT,ZSNOWTEMP(:,:))
 ! decrease in both liq and thickness (and the fact that T=Tf when liquid present), 
 ! enthalpy is conserved.
 !
-ZWHOLDMAX(:,:) = SNOW3LHOLD(PSNOWRHO,PSNOWDZ)
-!
+!ZWHOLDMAX(:,:) = SNOW3LHOLD(PSNOWRHO,PSNOWDZ)
+
+DO JJ=1,INLVLS
+   DO JI=1,INI
+    IF ( CSNOWHOLD == 'B02' ) THEN
+       ZWHOLDMAX(JI,JJ) = SNOW3LHOLD(PSNOWRHO(JI,JJ),PSNOWDZ(JI,JJ))
+    ELSE IF ( CSNOWHOLD == 'B92' ) THEN 
+       ZWHOLDMAX(JI,JJ) = SNOWCROHOLD(PSNOWRHO(JI,JJ),PSNOWLIQ(JI,JJ),PSNOWDZ(JI,JJ))
+    ELSE IF ( CSNOWHOLD == 'SPK' ) THEN
+      ZWHOLDMAX(JI,JJ) = SNOWSPKHOLD(PSNOWRHO(JI,JJ),PSNOWLIQ(JI,JJ),PSNOWDZ(JI,JJ))
+   ENDIF
+ENDDO
+ENDDO
+
 ZFLOWLIQ(:,:)  = MAX(0.,ZSNOWLIQ(:,:)-ZWHOLDMAX(:,:))
 !
 ZSNOWLIQ(:,:)  = ZSNOWLIQ(:,:) - ZFLOWLIQ(:,:)

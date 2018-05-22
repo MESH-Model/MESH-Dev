@@ -338,7 +338,7 @@ INLVLG          = MIN(SIZE(PD_G(:,:),2),SIZE(PTG(:,:),2))  ! on pourrait lire NL
 !########       Temporary variables during phasing with SVS
 !###########################################################################################
 CSNOWRES='RIL'
-LSNOWDRIFT = .FALSE.
+LSNOWDRIFT = .TRUE.
 LSNOWDRIFT_SUBLIM = .FALSE.
 LMEB=.FALSE.
 CIMPLICIT_WIND = 'NEW'

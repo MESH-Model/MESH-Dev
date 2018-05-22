@@ -203,7 +203,17 @@ REAL, PARAMETER      :: XSNOWDMIN = 0.000001  ! (m)
 ! Maximum Richardson number limit for very stable conditions using the ISBA-ES 'RIL' option
 !
 REAL, PARAMETER       :: X_RI_MAX = 0.20
-!                                       
+!                
+!Cluzet et al 2016 liquid water content options parameters
+
+! percentage of the total pore volume to compute the max liquid water holding capacity
+REAL, PARAMETER      :: XPERCENTAGEPORE_B92 = 0.05 !(%) original parameter value from Crocus, according to Brun et al. 1992 
+REAL, PARAMETER      :: XPERCENTAGEPORE_O04 = 0.033!(%) different value used in CLM from Oleson et al. 2004
+
+REAL, PARAMETER      :: XPERCENTAGEPORE = 0.05
+
+!
+REAL, PARAMETER      :: XWHOLDMAX_S02 = 0.08 !(-)        fixed value for the maximum liquid water mass fracton in SNOWPACK (Lehning et al. 2002)                       
 ! ISBA-ES Maximum snow liquid water holding capacity (fraction by mass) parameters:
 !
 REAL, PARAMETER       :: XWSNOWHOLDMAX2   = 0.10  ! (-) 

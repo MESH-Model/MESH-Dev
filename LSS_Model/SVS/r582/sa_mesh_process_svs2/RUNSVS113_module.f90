@@ -201,8 +201,12 @@ module RUNSVS113_module
         write(iout_hly_wsoil, 1010) ic%now%year, ic%now%jday, ic%now%hour, bus(wsoil), bus(wsoil+1),bus(wsoil+2), &
                         bus(wsoil+3), bus(wsoil+4),bus(wsoil+5),bus(wsoil+6)  !daily acc.
 
+        write(iout_snw_age, 1010) ic%now%year, ic%now%jday, ic%now%hour, bus(snoage_es), bus(snoage_es+1),bus(snoage_es+2), &
+                        bus(snoage_es+3), bus(snoage_es+4),bus(snoage_es+5),bus(snoage_es+6),bus(snoal)  !daily acc.
+
         write(iout_hly_isoil, 1010) ic%now%year, ic%now%jday, ic%now%hour, bus(isoil), bus(isoil+1),bus(isoil+2), &
                         bus(isoil+3), bus(isoil+4),bus(isoil+5),bus(isoil+6)  !daily acc.
+
 
         write(iout_wat_bal, 1010) ic%now%year, ic%now%jday, ic%now%hour, preacc_tot, bus(accevap),bus(latflaf), &
                         bus(drainaf),runoff_acc,wsoil_tot,isoil_tot,bus(snoma),bus(snvma),bus(wveg),bus(vegh),bus(vegl)
