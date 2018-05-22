@@ -1,3 +1,10 @@
+###########################################
+###########################################
+Use of the land surface schemes
+SVS1 and SVS2 in MESH
+###########################################
+###########################################
+
 ## list of files-directories required in an experiment  /  description of file
 # for more info, consult https://wiki.usask.ca/display/MESH/MESH+Input+Files
 
@@ -121,7 +128,32 @@ are affected to SVS internal variables (the user is referred to the code itself.
 to initial conditions, no further info is given here. However, keep in mind that the soil moisture
 for the deep and thick soil layers may take a long time to warm-up, i.e. not depend on the initial condition values.
 
+#######
+Height of the atmospheric forcing (wind and temperature)
+#######
+    - Atmospheric forcing from GEM
+If MESH is driven gy GEM files the key observed_forcing must be set to False in RUNSVS113_config.f90
+The height of the levels is then computed by surflayerheight() in RUNSVS113_module.f90
 
+    - Observed atmospheric forcing at a prescribed height (data from a met station or an atmopheric reanalysis such as ERA-I)
+observed_forcing must be set to True in RUNSVS113_config.f90 
+The heights of the wind speed and temperature/humidity forcing are taken from MESH_parameters_CLASS.ini. 
+
+#######
+Precipitation partitioning between rain and snow (l 78-98 in RUNSVS113_module)
+#######
+2 options exist to determine the phase of precipitation when SVS is used in MESH: 
+
+   - Option 1:  rainfall and snowfall rate are read separetely in the atmospheric forcing
+
+This option can be used if SA-MESH is applied in point mode. In this case, rainfall and snowfall rates are directly read from the csv file 
+basin_forcing.met. They correspond to additional colomns in the file basin_forcing compared to the standard version of MESH: 
+the 11th column is the rainfall rate and the 12th column is the snowfall rate. 
+
+   - Option 2 Rainfall and snowfall rate are derived from total precipitation rate assuming a separation at 0 degC (as in GEM-Hydro)
+
+
+#####################
 # SVS1.0 code:
 in ${PATH_TO_SA_MESH_CODE_DIRECTORY}/LSS_Model/SVS/r531/svs_GEM_v5.8.rc2 is located the SVS1.0 code.
 in this folder, the two main scripts a user may want to modify are (the same applies for SVS2.0):
@@ -268,7 +300,11 @@ at https://wiki.usask.ca/display/MESH/MESH+Input+Files
 Remember that CLASS can use the varying values specified in the file MESH_parameters.r2c,
 but that it has to use the vegetation parameters defined in MESH_parameters_CLASS.ini.
 
-#### list of flags required or used by SVS:
+##########################################
+##########################################
+
+#### list of flags required for or having an impact on SVS:
+
 for flags in official SA-MESH documentation, see this page:
 https://wiki.usask.ca/display/MESH/MESH_input_run_options.ini
 for others, values typically used are specified
