@@ -35,7 +35,6 @@ module RUNSVS113_variables
     integer :: iout_dly = 151, iout_hly = 152, iout_hly_soil=154, iout_hly_wsoil=155, iout_hly_isoil=156
     integer :: iout_ts = 154 !150+N is output unit number for CLASS output; should be able to recycle its use
     integer :: iout_wat_bal = 157
-    integer :: iout_snw_age = 158
     real preacc_dly, preacc_hly,preacc_tot,runoff_acc,wsoil_tot,isoil_tot
     real bal_in_out,stock,bal_tot,bal_pre,wsoil_ini
 

@@ -8,14 +8,13 @@ module svs_configs
   ! Number of soil ("GROUND") layers for SVS land scheme
 !VV DEBUT MODIFICATION POUR MESH
 !  integer, save :: nl_svs
-  integer, parameter :: nl_svs = 7
-!  integer , parameter :: nl_svs = 11
+!  integer, parameter :: nl_svs = 7
+  integer , parameter :: nl_svs = 7
 
   ! Depth of deep soil layers in METERS   
 !  real, allocatable, save :: dl_svs(:)
   !=  (/ 0.05, 0.1, 0.2, 0.4, 1.0, 2.0, 3.0 /) 
   real, parameter, dimension(nl_svs) :: dl_svs =  (/ 0.05, 0.1, 0.2, 0.4, 1.0, 2.0, 3.0 /) 
-  !real, parameter, dimension(nl_svs) :: dl_svs =  (/ 0.05, 0.1, 0.17, 0.28, 0.5, 0.8, 1.4, 2.3, 3.5, 4.7, 6.0 /) 
 
   ! Number of last active (permeable) layer
   !integer, parameter :: kdp = 7

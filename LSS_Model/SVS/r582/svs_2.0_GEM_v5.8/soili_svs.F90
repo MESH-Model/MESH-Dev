@@ -290,7 +290,7 @@ include "isbapar.cdk"
 !          PSNLOWVEG(I)  = MIN ( SNM(I) / (SNM(I)+RHOS(I)*5000.*Z0MVL(I)), 1.0)
           PSNLOWVEG(I)  = MIN ( SNM(I)/(SNM(I)+RHOS(I)*5000.*0.01) , 1.0)  !Z0MVL=0.01 pour tests
 
-          PSNLOWVEG(I) =  PSNGROUND(I)
+!          PSNLOWVEG(I) =  PSNGROUND(I)
 !          PSNLOWVEG(I) = MIN( SNM(I)/(SNM(I)+10.0) , 1.0 )        ! SVS new formulation inspired from SURFEX
 !!$          RHOSNOW(I) = RHOS(I) * 1000.0
 !!$          SNOWD(I) = SNM(I)/RHOSNOW(I)
@@ -321,8 +321,8 @@ include "isbapar.cdk"
 !                       SNOW FRACTION AS SEEN FROM THE GROUND
 !
 !           PSNVH(I) = MIN( SVM(I) / (SVM(I)+RHOSV(I)*5000.*Z0MVH(I)), 1.0)
-           PSNVH(I) = MIN( SVM(I)/(SVM(I)+RHOSV(I)*5000.*0.01) , 1.0)  ! ZOMH=0.01 for tests -- not bad!
-           PSNVH(I) =  PSNGROUND(I)
+           PSNVH(I) = MIN( SVM(I)/(SVM(I)+RHOSV(I)*5000.*0.01) , 1.0)  ! ZOMH=0.01 for tests -- not bad
+!           PSNVH(I) =  PSNGROUND(I)
 !           PSNVH(I) = MIN( SVM(I)/(SVM(I)+1.0) , 1.0 )        ! SVS new formulation inspired from SURFEX
 !           PSNVH(I) = MIN( SVM(I)/1.0 , 1.0 )                 ! SURFEX formulation 
 !!$          RHOSNOWV(I) = RHOSV(I) * 1000.0

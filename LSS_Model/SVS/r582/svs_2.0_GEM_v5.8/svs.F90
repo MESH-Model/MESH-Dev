@@ -184,20 +184,10 @@ integer ptr, x, j, k
 !  on look-up table (values are quite weak...)
 !
 !     Conversion factor to convert from momemtum roughness to thermal roughness
-
-! Default value in ISBA-ES
-      REAL, PARAMETER :: Z0M_TO_Z0H = 0.1
-
-! Default value in SVS 1
-!      REAL, PARAMETER :: Z0M_TO_Z0H = 0.2
+      REAL, PARAMETER :: Z0M_TO_Z0H = 0.2
 !
 !     Thermal roughness for snow
-! Default value in ISBA-ES
-      REAL, PARAMETER :: Z0HSNOW = 0.0001
-
-! Default value in SVS 1
-!      REAL, PARAMETER :: Z0HSNOW = 0.010
-
+      REAL, PARAMETER :: Z0HSNOW = 0.010
 !
 !     Momentum roughness for bare ground 
       REAL, PARAMETER :: Z0MBG = 0.05

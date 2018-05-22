@@ -1,3 +1,3 @@
 ! Number of layers for snow variables in SNOWES
 
-      integer, parameter :: nsl = 12
+      integer, parameter :: nsl = 9
