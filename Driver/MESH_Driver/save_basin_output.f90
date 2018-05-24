@@ -1,5 +1,7 @@
 module save_basin_output
 
+    use output_variables
+
     implicit none
 
     !> String read from run_options.ini.
@@ -122,31 +124,32 @@ module save_basin_output
         NSL = shd%lc%IGND
 
         !> Allocate and zero variables for accumulations.
-        allocate(bno%wb(NKEY), bno%eb(NKEY))
+!-        allocate(bno%wb(NKEY))
+        allocate(bno%eb(NKEY))
         do ikey = 1, NKEY
-            allocate(bno%wb(ikey)%PRE(NA), bno%wb(ikey)%EVAP(NA), bno%wb(ikey)%ROF(NA), &
-                     bno%wb(ikey)%ROFO(NA), bno%wb(ikey)%ROFS(NA), bno%wb(ikey)%ROFB(NA), &
-                     bno%wb(ikey)%RCAN(NA), bno%wb(ikey)%SNCAN(NA), &
-                     bno%wb(ikey)%SNO(NA), bno%wb(ikey)%WSNO(NA), bno%wb(ikey)%PNDW(NA), &
-                     bno%wb(ikey)%LQWS(NA, NSL), bno%wb(ikey)%FRWS(NA, NSL), &
-                     bno%wb(ikey)%LZS(NA), bno%wb(ikey)%DZS(NA), &
-                     bno%wb(ikey)%STG_INI(NA), bno%wb(ikey)%STG_FIN(NA))
-            bno%wb(ikey)%PRE = 0.0
-            bno%wb(ikey)%EVAP = 0.0
-            bno%wb(ikey)%ROF = 0.0
-            bno%wb(ikey)%ROFO = 0.0
-            bno%wb(ikey)%ROFS = 0.0
-            bno%wb(ikey)%ROFB = 0.0
-            bno%wb(ikey)%RCAN = 0.0
-            bno%wb(ikey)%SNCAN = 0.0
-            bno%wb(ikey)%SNO = 0.0
-            bno%wb(ikey)%WSNO = 0.0
-            bno%wb(ikey)%PNDW = 0.0
-            bno%wb(ikey)%LQWS = 0.0
-            bno%wb(ikey)%FRWS = 0.0
-            bno%wb(ikey)%LZS = 0.0
-            bno%wb(ikey)%DZS = 0.0
-            bno%wb(ikey)%STG_INI = 0.0
+!-            allocate(bno%wb(ikey)%PRE(NA), bno%wb(ikey)%EVAP(NA), bno%wb(ikey)%ROF(NA), &
+!-                     bno%wb(ikey)%ROFO(NA), bno%wb(ikey)%ROFS(NA), bno%wb(ikey)%ROFB(NA), &
+!-                     bno%wb(ikey)%RCAN(NA), bno%wb(ikey)%SNCAN(NA), &
+!-                     bno%wb(ikey)%SNO(NA), bno%wb(ikey)%WSNO(NA), bno%wb(ikey)%PNDW(NA), &
+!-                     bno%wb(ikey)%LQWS(NA, NSL), bno%wb(ikey)%FRWS(NA, NSL), &
+!-                     bno%wb(ikey)%LZS(NA), bno%wb(ikey)%DZS(NA), &
+!-                     bno%wb(ikey)%STG_INI(NA), bno%wb(ikey)%STG_FIN(NA))
+!-            bno%wb(ikey)%PRE = 0.0
+!-            bno%wb(ikey)%EVAP = 0.0
+!-            bno%wb(ikey)%ROF = 0.0
+!-            bno%wb(ikey)%ROFO = 0.0
+!-            bno%wb(ikey)%ROFS = 0.0
+!-            bno%wb(ikey)%ROFB = 0.0
+!-            bno%wb(ikey)%RCAN = 0.0
+!-            bno%wb(ikey)%SNCAN = 0.0
+!-            bno%wb(ikey)%SNO = 0.0
+!-            bno%wb(ikey)%WSNO = 0.0
+!-            bno%wb(ikey)%PNDW = 0.0
+!-            bno%wb(ikey)%LQWS = 0.0
+!-            bno%wb(ikey)%FRWS = 0.0
+!-            bno%wb(ikey)%LZS = 0.0
+!-            bno%wb(ikey)%DZS = 0.0
+!-            bno%wb(ikey)%STG_INI = 0.0
             allocate( &
                 bno%eb(ikey)%IFS(NA), bno%eb(ikey)%ICAN(NA), bno%eb(ikey)%ISNOW(NA), bno%eb(ikey)%IPOND(NA), &
                 bno%eb(ikey)%FSIN(NA), bno%eb(ikey)%ALBT(NA), bno%eb(ikey)%FSOUT(NA), &
@@ -173,6 +176,7 @@ module save_basin_output
             open(fls%fl(mfk%f900)%iun, &
                  file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
                  iostat = ierr)
+            call output_variables_init_fields(shd, cm, out%d)
             call write_water_balance_header(fls, shd, fls%fl(mfk%f900)%iun, 86400)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
@@ -189,12 +193,14 @@ module save_basin_output
         end if
         if (btest(bnoflg%eb%t, 0)) then
             open(901, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance.csv')
+            call output_variables_init_fields(shd, cm, out%d)
             call write_energy_balance_header(fls, shd, 901, 86400)
         end if
 
         !> Monthly.
         if (btest(bnoflg%wb%t, 1)) then
             open(902, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Monthly.csv')
+            call output_variables_init_fields(shd, cm, out%m)
             call write_water_balance_header(fls, shd, 902, 86400)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
@@ -211,12 +217,14 @@ module save_basin_output
         end if
         if (btest(bnoflg%eb%t, 1)) then
             open(905, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance_Monthly.csv')
+            call output_variables_init_fields(shd, cm, out%m)
             call write_energy_balance_header(fls, shd, 905, 86400)
         end if
 
         !> Hourly.
         if (btest(bnoflg%wb%t, 2)) then
             open(903, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Hourly.csv')
+            call output_variables_init_fields(shd, cm, out%h)
             call write_water_balance_header(fls, shd, 903, 3600)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
@@ -233,6 +241,7 @@ module save_basin_output
         end if
         if (btest(bnoflg%eb%t, 2)) then
             open(906, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance_Hourly.csv')
+            call output_variables_init_fields(shd, cm, out%h)
             call write_energy_balance_header(fls, shd, 906, 3600)
         end if
 
@@ -259,20 +268,20 @@ module save_basin_output
         end if
 
         !> Calculate initial storage and aggregate through neighbouring cells.
-        do ikey = 1, NKEY
-            bno%wb(ikey)%STG_INI = &
-                (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
-                 out%ts%grid%lzs + out%ts%grid%dzs + &
-                 sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC
-        end do
-        do i = 1, shd%NAA
-            ii = shd%NEXT(i)
-            if (ii > 0) then
-                do ikey = 1, NKEY
-                    bno%wb(ikey)%STG_INI(ii) = bno%wb(ikey)%STG_INI(ii) + bno%wb(ikey)%STG_INI(i)
-                end do
-            end if
-        end do
+!-        do ikey = 1, NKEY
+!-            bno%wb(ikey)%STG_INI = &
+!-                (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
+!-                 out%ts%grid%lzs + out%ts%grid%dzs + &
+!-                 sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC
+!-        end do
+!-        do i = 1, shd%NAA
+!-            ii = shd%NEXT(i)
+!-            if (ii > 0) then
+!-                do ikey = 1, NKEY
+!-                    bno%wb(ikey)%STG_INI(ii) = bno%wb(ikey)%STG_INI(ii) + bno%wb(ikey)%STG_INI(i)
+!-                end do
+!-            end if
+!-        end do
 
         !> Allocate and zero variables for accumulations.
         allocate(bno%evpdts(NKEY))
@@ -315,38 +324,38 @@ module save_basin_output
 !todo: condition for ierr.
 
             !> Basin totals for the water balance (old accumulated).
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
+!-            read(iun)
+!-            read(iun)
+!-            read(iun)
+!-            read(iun)
+!-            read(iun)
+!-            read(iun)
+!-            read(iun)
+!-            read(iun)
+!-            read(iun)
+!-            read(iun)
+!-            read(iun)
+!-            read(iun)
+!-            read(iun)
+!-            read(iun)
 
             !> Basin totals for the water balance (for all time-step intervals).
-            do ikey = 1, NKEY
-                read(iun) bno%wb(ikey)%PRE(shd%NAA)
-                read(iun) bno%wb(ikey)%EVAP(shd%NAA)
-                read(iun) bno%wb(ikey)%ROF(shd%NAA)
-                read(iun) bno%wb(ikey)%ROFO(shd%NAA)
-                read(iun) bno%wb(ikey)%ROFS(shd%NAA)
-                read(iun) bno%wb(ikey)%ROFB(shd%NAA)
-                read(iun) bno%wb(ikey)%RCAN(shd%NAA)
-                read(iun) bno%wb(ikey)%SNCAN(shd%NAA)
-                read(iun) bno%wb(ikey)%SNO(shd%NAA)
-                read(iun) bno%wb(ikey)%WSNO(shd%NAA)
-                read(iun) bno%wb(ikey)%PNDW(shd%NAA)
-                read(iun) bno%wb(ikey)%LQWS(shd%NAA, :)
-                read(iun) bno%wb(ikey)%FRWS(shd%NAA, :)
-                read(iun) bno%wb(ikey)%STG_INI(shd%NAA)
-            end do
+!-            do ikey = 1, NKEY
+!-                read(iun) bno%wb(ikey)%PRE(shd%NAA)
+!-                read(iun) bno%wb(ikey)%EVAP(shd%NAA)
+!-                read(iun) bno%wb(ikey)%ROF(shd%NAA)
+!-                read(iun) bno%wb(ikey)%ROFO(shd%NAA)
+!-                read(iun) bno%wb(ikey)%ROFS(shd%NAA)
+!-                read(iun) bno%wb(ikey)%ROFB(shd%NAA)
+!-                read(iun) bno%wb(ikey)%RCAN(shd%NAA)
+!-                read(iun) bno%wb(ikey)%SNCAN(shd%NAA)
+!-                read(iun) bno%wb(ikey)%SNO(shd%NAA)
+!-                read(iun) bno%wb(ikey)%WSNO(shd%NAA)
+!-                read(iun) bno%wb(ikey)%PNDW(shd%NAA)
+!-                read(iun) bno%wb(ikey)%LQWS(shd%NAA, :)
+!-                read(iun) bno%wb(ikey)%FRWS(shd%NAA, :)
+!-                read(iun) bno%wb(ikey)%STG_INI(shd%NAA)
+!-            end do
 
             !> Energy balance.
 !            read(iun) bno%eb%QEVP
@@ -382,7 +391,7 @@ module save_basin_output
 !-        if (BASINBALANCEOUTFLAG == 0) return
 
         !> Update the water balance.
-        call update_water_balance(shd, cm)
+!-        call update_water_balance(shd, cm)
 
         !> For PEVP-EVAP and EVPB output
         bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%ts%grid%evap*ic%dts*shd%FRAC)/sum(shd%FRAC)
@@ -397,16 +406,16 @@ module save_basin_output
         if (ic%now%hour /= ic%next%hour) then
 !todo: change this to pass the index of the file object.
             if (btest(bnoflg%wb%t, 2)) then
-                call save_water_balance(shd, 3600, IKEY_HLY)
-                call write_water_balance(fls, shd, 903, 3600, shd%NAA, IKEY_HLY)
+!-                call save_water_balance(shd, 3600, IKEY_HLY)
+                call write_water_balance(fls, shd, 903, 3600, shd%NAA, out%h)
                 if (allocated(bnoflg%wb%ns)) then
                     do n = 1, size(bnoflg%wb%ns)
                         if (bnoflg%wb%ns(n) > 0) then
-                            call write_water_balance(fls, shd, (903*1000 + n), 3600, fms%stmg%meta%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                            call write_water_balance(fls, shd, (903*1000 + n), 3600, fms%stmg%meta%rnk(bnoflg%wb%ns(n)), out%h)
                         end if
                     end do
                 end if
-                call reset_water_balance(IKEY_HLY)
+!-                call reset_water_balance(IKEY_HLY)
             end if
             if (btest(BASINAVGEVPFILEFLAG, 2)) call update_evp(fls, shd, 912, 3600, IKEY_HLY)
             if (btest(bnoflg%eb%t, 2)) then
@@ -419,17 +428,17 @@ module save_basin_output
         !> Daily: IKEY_DLY
         if (ic%now%day /= ic%next%day) then
             if (btest(bnoflg%wb%t, 0)) then
-                call save_water_balance(shd, 86400, IKEY_DLY)
-                call write_water_balance(fls, shd, fls%fl(mfk%f900)%iun, 86400, shd%NAA, IKEY_DLY)
+!-                call save_water_balance(shd, 86400, IKEY_DLY)
+                call write_water_balance(fls, shd, fls%fl(mfk%f900)%iun, 86400, shd%NAA, out%d)
                 if (allocated(bnoflg%wb%ns)) then
                     do n = 1, size(bnoflg%wb%ns)
                         if (bnoflg%wb%ns(n) > 0) then
                             call write_water_balance(fls, shd, (fls%fl(mfk%f900)%iun*1000 + n), 86400, &
-                                                     fms%stmg%meta%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                                                     fms%stmg%meta%rnk(bnoflg%wb%ns(n)), out%d)
                         end if
                     end do
                 end if
-                call reset_water_balance(IKEY_DLY)
+!-                call reset_water_balance(IKEY_DLY)
             end if
             if (btest(BASINAVGEVPFILEFLAG, 0)) call update_evp(fls, shd, 910, 86400, IKEY_DLY)
             if (btest(bnoflg%eb%t, 0)) then
@@ -449,17 +458,17 @@ module save_basin_output
             if (ndy == 1 .or. (ic%now%jday + 1) > leap_year(ic%now%year)) then
                 call Julian2MonthDay(ic%now%jday, ic%now%year, nmth, ndy)
                 if (btest(bnoflg%wb%t, 1)) then
-                    call save_water_balance(shd, (86400*ndy), IKEY_MLY)
-                    call write_water_balance(fls, shd, 902, (86400*ndy), shd%NAA, IKEY_MLY)
+!-                    call save_water_balance(shd, (86400*ndy), IKEY_MLY)
+                    call write_water_balance(fls, shd, 902, (86400*ndy), shd%NAA, out%m)
                     if (allocated(bnoflg%wb%ns)) then
                         do n = 1, size(bnoflg%wb%ns)
                             if (bnoflg%wb%ns(n) > 0) then
                                 call write_water_balance(fls, shd, (902*1000 + n), (86400*ndy), &
-                                                         fms%stmg%meta%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                                                         fms%stmg%meta%rnk(bnoflg%wb%ns(n)), out%m)
                             end if
                         end do
                     end if
-                    call reset_water_balance(IKEY_MLY)
+!-                    call reset_water_balance(IKEY_MLY)
                 end if
                 if (btest(BASINAVGEVPFILEFLAG, 1)) call update_evp(fls, shd, 911, (86400*ndy), IKEY_MLY)
                 if (btest(bnoflg%eb%t, 1)) then
@@ -472,16 +481,16 @@ module save_basin_output
 
         !> Time-step: IKEY_TSP
         if (btest(bnoflg%wb%t, 3)) then
-            call save_water_balance(shd, ic%dts, IKEY_TSP)
-            call write_water_balance(fls, shd, 904, ic%dts, shd%NAA, IKEY_TSP)
+!-            call save_water_balance(shd, ic%dts, IKEY_TSP)
+            call write_water_balance(fls, shd, 904, ic%dts, shd%NAA, out%ts)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
-                        call write_water_balance(fls, shd, (904*1000 + n), ic%dts, fms%stmg%meta%rnk(bnoflg%wb%ns(n)), IKEY_DLY)
+                        call write_water_balance(fls, shd, (904*1000 + n), ic%dts, fms%stmg%meta%rnk(bnoflg%wb%ns(n)), out%ts)
                     end if
                 end do
             end if
-            call reset_water_balance(IKEY_TSP)
+!-            call reset_water_balance(IKEY_TSP)
         end if
         if (btest(BASINAVGEVPFILEFLAG, 3)) call update_evp(fls, shd, 913, ic%dts, IKEY_TSP)
         if (btest(bnoflg%eb%t, 3)) then
@@ -525,48 +534,48 @@ module save_basin_output
 !todo: condition for ierr.
 
             !> Basin totals for the water balance.
-            write(iun) bno%wb(IKEY_ACC)%PRE(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%EVAP(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%ROF(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%ROFO(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%ROFS(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%ROFB(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%LQWS(shd%NAA, :)
-            write(iun) bno%wb(IKEY_ACC)%FRWS(shd%NAA, :)
-            write(iun) bno%wb(IKEY_ACC)%RCAN(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%SNCAN(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%SNO(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%WSNO(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%PNDW(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%STG_INI(shd%NAA)
+!-            write(iun) bno%wb(IKEY_ACC)%PRE(shd%NAA)
+!-            write(iun) bno%wb(IKEY_ACC)%EVAP(shd%NAA)
+!-            write(iun) bno%wb(IKEY_ACC)%ROF(shd%NAA)
+!-            write(iun) bno%wb(IKEY_ACC)%ROFO(shd%NAA)
+!-            write(iun) bno%wb(IKEY_ACC)%ROFS(shd%NAA)
+!-            write(iun) bno%wb(IKEY_ACC)%ROFB(shd%NAA)
+!-            write(iun) bno%wb(IKEY_ACC)%LQWS(shd%NAA, :)
+!-            write(iun) bno%wb(IKEY_ACC)%FRWS(shd%NAA, :)
+!-            write(iun) bno%wb(IKEY_ACC)%RCAN(shd%NAA)
+!-            write(iun) bno%wb(IKEY_ACC)%SNCAN(shd%NAA)
+!-            write(iun) bno%wb(IKEY_ACC)%SNO(shd%NAA)
+!-            write(iun) bno%wb(IKEY_ACC)%WSNO(shd%NAA)
+!-            write(iun) bno%wb(IKEY_ACC)%PNDW(shd%NAA)
+!-            write(iun) bno%wb(IKEY_ACC)%STG_INI(shd%NAA)
 
             !> Other accumulators for the water balance.
-            do i = 1, NKEY
-                write(iun) bno%wb(i)%PRE(shd%NAA)
-                write(iun) bno%wb(i)%EVAP(shd%NAA)
-                write(iun) bno%wb(i)%ROF(shd%NAA)
-                write(iun) bno%wb(i)%ROFO(shd%NAA)
-                write(iun) bno%wb(i)%ROFS(shd%NAA)
-                write(iun) bno%wb(i)%ROFB(shd%NAA)
-                write(iun) bno%wb(i)%RCAN(shd%NAA)
-                write(iun) bno%wb(i)%SNCAN(shd%NAA)
-                write(iun) bno%wb(i)%SNO(shd%NAA)
-                write(iun) bno%wb(i)%WSNO(shd%NAA)
-                write(iun) bno%wb(i)%PNDW(shd%NAA)
-                write(iun) bno%wb(i)%LQWS(shd%NAA, :)
-                write(iun) bno%wb(i)%FRWS(shd%NAA, :)
-                write(iun) bno%wb(i)%STG_INI(shd%NAA)
-            end do
+!-            do i = 1, NKEY
+!-                write(iun) bno%wb(i)%PRE(shd%NAA)
+!-                write(iun) bno%wb(i)%EVAP(shd%NAA)
+!-                write(iun) bno%wb(i)%ROF(shd%NAA)
+!-                write(iun) bno%wb(i)%ROFO(shd%NAA)
+!-                write(iun) bno%wb(i)%ROFS(shd%NAA)
+!-                write(iun) bno%wb(i)%ROFB(shd%NAA)
+!-                write(iun) bno%wb(i)%RCAN(shd%NAA)
+!-                write(iun) bno%wb(i)%SNCAN(shd%NAA)
+!-                write(iun) bno%wb(i)%SNO(shd%NAA)
+!-                write(iun) bno%wb(i)%WSNO(shd%NAA)
+!-                write(iun) bno%wb(i)%PNDW(shd%NAA)
+!-                write(iun) bno%wb(i)%LQWS(shd%NAA, :)
+!-                write(iun) bno%wb(i)%FRWS(shd%NAA, :)
+!-                write(iun) bno%wb(i)%STG_INI(shd%NAA)
+!-            end do
 
             !> Energy balance.
-            write(iun) !bno%eb(2)%QEVP
-            write(iun) !bno%eb(2)%QH
+!-            write(iun) !bno%eb(2)%QEVP
+!-            write(iun) !bno%eb(2)%QH
 
             !> Other accumulators for the water balance.
-            do i = 1, NKEY
-                write(iun) bno%wb(i)%LZS(shd%NAA)
-                write(iun) bno%wb(i)%DZS(shd%NAA)
-            end do
+!-            do i = 1, NKEY
+!-                write(iun) bno%wb(i)%LZS(shd%NAA)
+!-                write(iun) bno%wb(i)%DZS(shd%NAA)
+!-            end do
 
             !> Close the file to free the unit.
             close(iun)
@@ -711,76 +720,76 @@ module save_basin_output
         type(clim_info) :: cm
 
         !> Local variables.
-        real, dimension(:), allocatable :: PRE, EVAP, ROF, ROFO, ROFS, ROFB, RCAN, SNCAN, SNO, WSNO, PNDW, LZS, DZS
-        real, dimension(:, :), allocatable :: LQWS, FRWS
-        integer NA, NSL, ikey, j, ii, i
+!-        real, dimension(:), allocatable :: PRE, EVAP, ROF, ROFO, ROFS, ROFB, RCAN, SNCAN, SNO, WSNO, PNDW, LZS, DZS
+!-        real, dimension(:, :), allocatable :: LQWS, FRWS
+!-        integer NA, NSL, ikey, j, ii, i
 
         !> Allocate temporary variables.
-        NA = shd%NA
-        NSL = shd%lc%IGND
-        allocate(PRE(NA), EVAP(NA), ROF(NA), ROFO(NA), ROFS(NA), ROFB(NA), &
-                 RCAN(NA), SNCAN(NA), SNO(NA), WSNO(NA), PNDW(NA), &
-                 LQWS(NA, NSL), FRWS(NA, NSL), LZS(NA), DZS(NA))
+!-        NA = shd%NA
+!-        NSL = shd%lc%IGND
+!-        allocate(PRE(NA), EVAP(NA), ROF(NA), ROFO(NA), ROFS(NA), ROFB(NA), &
+!-                 RCAN(NA), SNCAN(NA), SNO(NA), WSNO(NA), PNDW(NA), &
+!-                 LQWS(NA, NSL), FRWS(NA, NSL), LZS(NA), DZS(NA))
 
         !> Accumulate variables and aggregate through neighbouring cells.
-        PRE = out%ts%grid%prec*ic%dts*shd%FRAC
-        EVAP = out%ts%grid%evap*ic%dts*shd%FRAC
-        ROF = out%ts%grid%rof*ic%dts*shd%FRAC
-        ROFO = out%ts%grid%rofo*ic%dts*shd%FRAC
-        ROFS = out%ts%grid%rofs*ic%dts*shd%FRAC
-        ROFB = out%ts%grid%rofb*ic%dts*shd%FRAC
-        RCAN = out%ts%grid%rcan*shd%FRAC
-        SNCAN = out%ts%grid%sncan*shd%FRAC
-        SNO = out%ts%grid%sno*shd%FRAC
-        WSNO = out%ts%grid%wsno*shd%FRAC
-        PNDW = out%ts%grid%pndw*shd%FRAC
-        do j = 1, shd%lc%IGND
-            LQWS(:, j) = out%ts%grid%lqws(:, j)*shd%FRAC
-            FRWS(:, j) = out%ts%grid%fzws(:, j)*shd%FRAC
-        end do
-        LZS = out%ts%grid%lzs*shd%FRAC
-        DZS = out%ts%grid%dzs*shd%FRAC
+!-        PRE = out%ts%grid%prec*ic%dts*shd%FRAC
+!-        EVAP = out%ts%grid%evap*ic%dts*shd%FRAC
+!-        ROF = out%ts%grid%rof*ic%dts*shd%FRAC
+!-        ROFO = out%ts%grid%rofo*ic%dts*shd%FRAC
+!-        ROFS = out%ts%grid%rofs*ic%dts*shd%FRAC
+!-        ROFB = out%ts%grid%rofb*ic%dts*shd%FRAC
+!-        RCAN = out%ts%grid%rcan*shd%FRAC
+!-        SNCAN = out%ts%grid%sncan*shd%FRAC
+!-        SNO = out%ts%grid%sno*shd%FRAC
+!-        WSNO = out%ts%grid%wsno*shd%FRAC
+!-        PNDW = out%ts%grid%pndw*shd%FRAC
+!-        do j = 1, shd%lc%IGND
+!-            LQWS(:, j) = out%ts%grid%lqws(:, j)*shd%FRAC
+!-            FRWS(:, j) = out%ts%grid%fzws(:, j)*shd%FRAC
+!-        end do
+!-        LZS = out%ts%grid%lzs*shd%FRAC
+!-        DZS = out%ts%grid%dzs*shd%FRAC
 
         !> Aggregate through neighbouring cells.
-        do i = 1, shd%NAA
-            ii = shd%NEXT(i)
-            if (ii > 0) then
-                PRE(ii) = PRE(ii) + PRE(i)
-                EVAP(ii) = EVAP(ii) + EVAP(i)
-                ROF(ii) = ROF(ii) + ROF(i)
-                ROFO(ii) = ROFO(ii) + ROFO(i)
-                ROFS(ii) = ROFS(ii) + ROFS(i)
-                ROFB(ii) = ROFB(ii) + ROFB(i)
-                RCAN(ii) = RCAN(ii) + RCAN(i)
-                SNCAN(ii) = SNCAN(ii) + SNCAN(i)
-                SNO(ii) = SNO(ii) + SNO(i)
-                WSNO(ii) = WSNO(ii) + WSNO(i)
-                PNDW(ii) = PNDW(ii) + PNDW(i)
-                LQWS(ii, :) = LQWS(ii, :) + LQWS(i, :)
-                FRWS(ii, :) = FRWS(ii, :) + FRWS(i, :)
-                LZS(ii) = LZS(ii) + LZS(i)
-                DZS(ii) = DZS(ii) + DZS(i)
-            end if
-        end do
+!-        do i = 1, shd%NAA
+!-            ii = shd%NEXT(i)
+!-            if (ii > 0) then
+!-                PRE(ii) = PRE(ii) + PRE(i)
+!-                EVAP(ii) = EVAP(ii) + EVAP(i)
+!-                ROF(ii) = ROF(ii) + ROF(i)
+!-                ROFO(ii) = ROFO(ii) + ROFO(i)
+!-                ROFS(ii) = ROFS(ii) + ROFS(i)
+!-                ROFB(ii) = ROFB(ii) + ROFB(i)
+!-                RCAN(ii) = RCAN(ii) + RCAN(i)
+!-                SNCAN(ii) = SNCAN(ii) + SNCAN(i)
+!-                SNO(ii) = SNO(ii) + SNO(i)
+!-                WSNO(ii) = WSNO(ii) + WSNO(i)
+!-                PNDW(ii) = PNDW(ii) + PNDW(i)
+!-                LQWS(ii, :) = LQWS(ii, :) + LQWS(i, :)
+!-                FRWS(ii, :) = FRWS(ii, :) + FRWS(i, :)
+!-                LZS(ii) = LZS(ii) + LZS(i)
+!-                DZS(ii) = DZS(ii) + DZS(i)
+!-            end if
+!-        end do
 
         !> Update run total.
-        do ikey = 1, NKEY
-            bno%wb(ikey)%PRE = bno%wb(ikey)%PRE + PRE
-            bno%wb(ikey)%EVAP = bno%wb(ikey)%EVAP + EVAP
-            bno%wb(ikey)%ROF = bno%wb(ikey)%ROF + ROF
-            bno%wb(ikey)%ROFO = bno%wb(ikey)%ROFO + ROFO
-            bno%wb(ikey)%ROFS = bno%wb(ikey)%ROFS + ROFS
-            bno%wb(ikey)%ROFB = bno%wb(ikey)%ROFB + ROFB
-            bno%wb(ikey)%RCAN = bno%wb(ikey)%RCAN + RCAN
-            bno%wb(ikey)%SNCAN = bno%wb(ikey)%SNCAN + SNCAN
-            bno%wb(ikey)%SNO = bno%wb(ikey)%SNO + SNO
-            bno%wb(ikey)%WSNO = bno%wb(ikey)%WSNO + WSNO
-            bno%wb(ikey)%PNDW = bno%wb(ikey)%PNDW + PNDW
-            bno%wb(ikey)%LQWS = bno%wb(ikey)%LQWS + LQWS
-            bno%wb(ikey)%FRWS = bno%wb(ikey)%FRWS + FRWS
-            bno%wb(ikey)%LZS = bno%wb(ikey)%LZS + LZS
-            bno%wb(ikey)%DZS = bno%wb(ikey)%DZS + DZS
-        end do
+!-        do ikey = 1, NKEY
+!-            bno%wb(ikey)%PRE = bno%wb(ikey)%PRE + PRE
+!-            bno%wb(ikey)%EVAP = bno%wb(ikey)%EVAP + EVAP
+!-            bno%wb(ikey)%ROF = bno%wb(ikey)%ROF + ROF
+!-            bno%wb(ikey)%ROFO = bno%wb(ikey)%ROFO + ROFO
+!-            bno%wb(ikey)%ROFS = bno%wb(ikey)%ROFS + ROFS
+!-            bno%wb(ikey)%ROFB = bno%wb(ikey)%ROFB + ROFB
+!-            bno%wb(ikey)%RCAN = bno%wb(ikey)%RCAN + RCAN
+!-            bno%wb(ikey)%SNCAN = bno%wb(ikey)%SNCAN + SNCAN
+!-            bno%wb(ikey)%SNO = bno%wb(ikey)%SNO + SNO
+!-            bno%wb(ikey)%WSNO = bno%wb(ikey)%WSNO + WSNO
+!-            bno%wb(ikey)%PNDW = bno%wb(ikey)%PNDW + PNDW
+!-            bno%wb(ikey)%LQWS = bno%wb(ikey)%LQWS + LQWS
+!-            bno%wb(ikey)%FRWS = bno%wb(ikey)%FRWS + FRWS
+!-            bno%wb(ikey)%LZS = bno%wb(ikey)%LZS + LZS
+!-            bno%wb(ikey)%DZS = bno%wb(ikey)%DZS + DZS
+!-        end do
 
     end subroutine
 
@@ -794,34 +803,34 @@ module save_basin_output
         integer dts, ikdts
 
         !> Local variables.
-        real dnts
+!-        real dnts
 
         !> Denominator for time-step averaged variables.
-        dnts = real(dts/ic%dts)
+!-        dnts = real(dts/ic%dts)
 
         !> Time-average storage components.
-        bno%wb(ikdts)%RCAN = bno%wb(ikdts)%RCAN/dnts
-        bno%wb(ikdts)%SNCAN = bno%wb(ikdts)%SNCAN/dnts
-        bno%wb(ikdts)%SNO = bno%wb(ikdts)%SNO/dnts
-        bno%wb(ikdts)%WSNO = bno%wb(ikdts)%WSNO/dnts
-        bno%wb(ikdts)%PNDW = bno%wb(ikdts)%PNDW/dnts
-        bno%wb(ikdts)%LQWS = bno%wb(ikdts)%LQWS/dnts
-        bno%wb(ikdts)%FRWS = bno%wb(ikdts)%FRWS/dnts
-        bno%wb(ikdts)%LZS = bno%wb(ikdts)%LZS/dnts
-        bno%wb(ikdts)%DZS = bno%wb(ikdts)%DZS/dnts
+!-        bno%wb(ikdts)%RCAN = bno%wb(ikdts)%RCAN/dnts
+!-        bno%wb(ikdts)%SNCAN = bno%wb(ikdts)%SNCAN/dnts
+!-        bno%wb(ikdts)%SNO = bno%wb(ikdts)%SNO/dnts
+!-        bno%wb(ikdts)%WSNO = bno%wb(ikdts)%WSNO/dnts
+!-        bno%wb(ikdts)%PNDW = bno%wb(ikdts)%PNDW/dnts
+!-        bno%wb(ikdts)%LQWS = bno%wb(ikdts)%LQWS/dnts
+!-        bno%wb(ikdts)%FRWS = bno%wb(ikdts)%FRWS/dnts
+!-        bno%wb(ikdts)%LZS = bno%wb(ikdts)%LZS/dnts
+!-        bno%wb(ikdts)%DZS = bno%wb(ikdts)%DZS/dnts
 
         !> Calculate storage for the period.
-        bno%wb(ikdts)%STG_FIN = sum(bno%wb(ikdts)%LQWS, 2) + sum(bno%wb(ikdts)%FRWS, 2) + &
-                                bno%wb(ikdts)%RCAN + bno%wb(ikdts)%SNCAN + bno%wb(ikdts)%SNO + &
-                                bno%wb(ikdts)%WSNO + bno%wb(ikdts)%PNDW + &
-                                bno%wb(ikdts)%LZS + bno%wb(ikdts)%DZS
+!-        bno%wb(ikdts)%STG_FIN = sum(bno%wb(ikdts)%LQWS, 2) + sum(bno%wb(ikdts)%FRWS, 2) + &
+!-                                bno%wb(ikdts)%RCAN + bno%wb(ikdts)%SNCAN + bno%wb(ikdts)%SNO + &
+!-                                bno%wb(ikdts)%WSNO + bno%wb(ikdts)%PNDW + &
+!-                                bno%wb(ikdts)%LZS + bno%wb(ikdts)%DZS
 
         !> Calculate storage for the run.
-        bno%wb(IKEY_ACC)%STG_FIN = (sum(bno%wb(IKEY_ACC)%LQWS, 2) + sum(bno%wb(IKEY_ACC)%FRWS, 2) + &
-                                    bno%wb(IKEY_ACC)%RCAN + bno%wb(IKEY_ACC)%SNCAN + &
-                                    bno%wb(IKEY_ACC)%SNO + bno%wb(IKEY_ACC)%WSNO + bno%wb(IKEY_ACC)%PNDW +&
-                                    bno%wb(IKEY_ACC)%LZS + bno%wb(IKEY_ACC)%DZS) &
-                                   /ic%ts_count
+!-        bno%wb(IKEY_ACC)%STG_FIN = (sum(bno%wb(IKEY_ACC)%LQWS, 2) + sum(bno%wb(IKEY_ACC)%FRWS, 2) + &
+!-                                    bno%wb(IKEY_ACC)%RCAN + bno%wb(IKEY_ACC)%SNCAN + &
+!-                                    bno%wb(IKEY_ACC)%SNO + bno%wb(IKEY_ACC)%WSNO + bno%wb(IKEY_ACC)%PNDW +&
+!-                                    bno%wb(IKEY_ACC)%LZS + bno%wb(IKEY_ACC)%DZS) &
+!-                                   /ic%ts_count
 
     end subroutine
 
@@ -862,7 +871,7 @@ module save_basin_output
 
     end subroutine
 
-    subroutine write_water_balance(fls, shd, fik, dts, ina, ikdts)
+    subroutine write_water_balance(fls, shd, fik, dts, ina, series)
 
         use model_files_variables
         use sa_mesh_common
@@ -873,17 +882,14 @@ module save_basin_output
         type(ShedGridParams) :: shd
 !todo: change this to the unit attribute of the file object.
         integer fik
-        integer dts, ina, ikdts
+        integer dts, ina
+        type(output_series) series
 
         !> Local variables.
-        integer NSL, j
-        real dnar
+        integer j
 
         !> Make sure the cell is inside the basin.
         ina = min(ina, shd%NAA)
-
-        !> Contributing drainage area.
-        dnar = shd%DA(ina)/((shd%AL/1000.0)**2)
 
         !> Write the time-stamp for the period.
         write(fik, 1010, advance = 'no') ic%now%year
@@ -892,24 +898,23 @@ module save_basin_output
         if (dts < 3600) write(fik, 1010, advance = 'no') ic%now%mins
 
         !> Write the water balance to file.
-        NSL = shd%lc%IGND
         write(fik, 1010) &
-            bno%wb(IKEY_ACC)%PRE(ina)/dnar, bno%wb(IKEY_ACC)%EVAP(ina)/dnar, bno%wb(IKEY_ACC)%ROF(ina)/dnar, &
-            bno%wb(IKEY_ACC)%ROFO(ina)/dnar, bno%wb(IKEY_ACC)%ROFS(ina)/dnar, bno%wb(IKEY_ACC)%ROFB(ina)/dnar, &
-            (bno%wb(IKEY_ACC)%STG_FIN(ina) - bno%wb(IKEY_ACC)%STG_INI(ina))/dnar, &
-            bno%wb(ikdts)%PRE(ina)/dnar, bno%wb(ikdts)%EVAP(ina)/dnar, bno%wb(ikdts)%ROF(ina)/dnar, &
-            bno%wb(ikdts)%ROFO(ina)/dnar, bno%wb(ikdts)%ROFS(ina)/dnar, bno%wb(ikdts)%ROFB(ina)/dnar, &
-            bno%wb(ikdts)%SNCAN(ina)/dnar, bno%wb(ikdts)%RCAN(ina)/dnar, &
-            bno%wb(ikdts)%SNO(ina)/dnar, bno%wb(ikdts)%WSNO(ina)/dnar, &
-            bno%wb(ikdts)%PNDW(ina)/dnar, &
-            (bno%wb(ikdts)%LQWS(ina, j)/dnar, bno%wb(ikdts)%FRWS(ina, j)/dnar, &
-             (bno%wb(ikdts)%LQWS(ina, j) + bno%wb(ikdts)%FRWS(ina, j))/dnar, j = 1, NSL), &
-            sum(bno%wb(ikdts)%LQWS(ina, :))/dnar, &
-            sum(bno%wb(ikdts)%FRWS(ina, :))/dnar, &
-            (sum(bno%wb(ikdts)%LQWS(ina, :)) + sum(bno%wb(ikdts)%FRWS(ina, :)))/dnar, &
-            bno%wb(ikdts)%LZS(ina)/dnar, bno%wb(ikdts)%DZS(ina)/dnar, &
-            bno%wb(ikdts)%STG_FIN(ina)/dnar, &
-            (bno%wb(ikdts)%STG_FIN(ina) - bno%wb(ikdts)%STG_INI(ina))/dnar
+            out%tot%basin%prec(ina)*ic%dts, out%tot%basin%evap(ina)*ic%dts, out%tot%basin%rof(ina)*ic%dts, &
+            out%tot%basin%rofo(ina)*ic%dts, out%tot%basin%rofs(ina)*ic%dts, out%tot%basin%rofb(ina)*ic%dts, &
+            out%tot%basin%dstgw(ina), &
+            series%basin%prec(ina)*ic%dts, series%basin%evap(ina)*ic%dts, series%basin%rof(ina)*ic%dts, &
+            series%basin%rofo(ina)*ic%dts, series%basin%rofs(ina)*ic%dts, series%basin%rofb(ina)*ic%dts, &
+            series%basin%sncan(ina), series%basin%rcan(ina), &
+            series%basin%sno(ina), series%basin%wsno(ina), &
+            series%basin%pndw(ina), &
+            (series%basin%lqws(ina, j), series%basin%fzws(ina, j), &
+             series%basin%alws(ina, j), j = 1, shd%lc%IGND), &
+            sum(series%basin%lqws(ina, :)), &
+            sum(series%basin%fzws(ina, :)), &
+            sum(series%basin%alws(ina, :)), &
+            series%basin%lzs(ina), series%basin%dzs(ina), &
+            series%basin%stgw(ina), &
+            series%basin%dstgw(ina)
 
 1010    format(9999(g15.7e2, ','))
 
@@ -921,22 +926,22 @@ module save_basin_output
         integer ikdts
 
         !> Update the final storage.
-        bno%wb(ikdts)%STG_INI = bno%wb(ikdts)%STG_FIN
+!-        bno%wb(ikdts)%STG_INI = bno%wb(ikdts)%STG_FIN
 
         !> Reset the accumulation for time-averaged output.
-        bno%wb(ikdts)%PRE = 0.0
-        bno%wb(ikdts)%EVAP = 0.0
-        bno%wb(ikdts)%ROF = 0.0
-        bno%wb(ikdts)%ROFO = 0.0
-        bno%wb(ikdts)%ROFS = 0.0
-        bno%wb(ikdts)%ROFB = 0.0
-        bno%wb(ikdts)%RCAN = 0.0
-        bno%wb(ikdts)%SNCAN = 0.0
-        bno%wb(ikdts)%SNO = 0.0
-        bno%wb(ikdts)%WSNO = 0.0
-        bno%wb(ikdts)%PNDW = 0.0
-        bno%wb(ikdts)%LQWS = 0.0
-        bno%wb(ikdts)%FRWS = 0.0
+!-        bno%wb(ikdts)%PRE = 0.0
+!-        bno%wb(ikdts)%EVAP = 0.0
+!-        bno%wb(ikdts)%ROF = 0.0
+!-        bno%wb(ikdts)%ROFO = 0.0
+!-        bno%wb(ikdts)%ROFS = 0.0
+!-        bno%wb(ikdts)%ROFB = 0.0
+!-        bno%wb(ikdts)%RCAN = 0.0
+!-        bno%wb(ikdts)%SNCAN = 0.0
+!-        bno%wb(ikdts)%SNO = 0.0
+!-        bno%wb(ikdts)%WSNO = 0.0
+!-        bno%wb(ikdts)%PNDW = 0.0
+!-        bno%wb(ikdts)%LQWS = 0.0
+!-        bno%wb(ikdts)%FRWS = 0.0
 
     end subroutine
 

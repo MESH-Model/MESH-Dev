@@ -254,24 +254,14 @@ program RUNMESH
 
     !> Allocate output variables for screen output.
     if (PRINTSIMSTATUS == OUT_JDATE_DLY .or. PRINTSIMSTATUS == OUT_DATE_DLY) then
-        call output_variables_allocate(out%d%grid%qo, shd%NA)
-        call output_variables_allocate(out%d%grid%prec, shd%NA)
-        call output_variables_allocate(out%d%grid%evap, shd%NA)
-        call output_variables_allocate(out%d%grid%rof, shd%NA)
+        call output_variables_init_fields(shd, cm, out%d)
     end if
     if (PRINTSIMSTATUS == OUT_JDATE_MLY .or. PRINTSIMSTATUS == OUT_DATE_MLY) then
-        call output_variables_allocate(out%m%grid%prec, shd%NA)
-        call output_variables_allocate(out%m%grid%evap, shd%NA)
-        call output_variables_allocate(out%m%grid%rof, shd%NA)
+        call output_variables_init_fields(shd, cm, out%m)
     end if
 
     !> Allocate output variables for run totals.
-    call output_variables_allocate(out%tot%grid%prec, shd%NA)
-    call output_variables_allocate(out%tot%grid%evap, shd%NA)
-    call output_variables_allocate(out%tot%grid%rof, shd%NA)
-    call output_variables_allocate(out%tot%grid%rofo, shd%NA)
-    call output_variables_allocate(out%tot%grid%rofs, shd%NA)
-    call output_variables_allocate(out%tot%grid%rofb, shd%NA)
+    call output_variables_init_fields(shd, cm, out%tot)
 
     !> Initialize process modules.
     if (ro%RUNTILE) then
