@@ -801,8 +801,6 @@ module output_variables
 
             !> Water balance.
             if (ro%RUNBALWB) then
-                if (all(out%ts%tile%stgw /= out%NO_DATA)) out%ts%tile%stg0w = out%ts%tile%stgw
-                out%ts%tile%stgw = 0.0
                 if (associated(out%ts%tile%prec)) then
                     if (all(out%ts%tile%prec == out%NO_DATA)) out%ts%tile%prec = cm%dat(ck%RT)%GAT
                 end if
@@ -913,13 +911,17 @@ module output_variables
                         if (lcheck) out%ts%tile%alws = out%ts%tile%alws + stas%sl%fzws
                     end if
                 end if
-                if (all(out%ts%tile%stg0w /= out%NO_DATA)) out%ts%tile%dstgw = out%ts%tile%stgw - out%ts%tile%stg0w
+                if (all(out%ts%tile%stgw == 0.0)) then
+                    out%ts%tile%stg0w = out%NO_DATA
+                    out%ts%tile%stgw = out%NO_DATA
+                    out%ts%tile%dstgw = out%NO_DATA
+                else
+                    out%ts%tile%dstgw = out%ts%tile%stgw - out%ts%tile%stg0w
+                end if
             end if
 
             !> Energy balance.
             if (ro%RUNBALEB) then
-                if (all(out%ts%tile%stge /= out%NO_DATA)) out%ts%tile%stg0e = out%ts%tile%stge
-                out%ts%tile%stge = 0.0
                 if (associated(out%ts%tile%cmas)) then
                     if (all(out%ts%tile%cmas == out%NO_DATA)) out%ts%tile%cmas = stas%cnpy%cmas
                 end if
@@ -965,7 +967,13 @@ module output_variables
                 if (associated(out%ts%tile%tbar)) then
                     if (all(out%ts%tile%tbar == out%NO_DATA)) out%ts%tile%tbar = stas%sl%tbar
                 end if
-                if (all(out%ts%tile%stg0e /= out%NO_DATA)) out%ts%tile%dstge = out%ts%tile%stge - out%ts%tile%stg0e
+                if (all(out%ts%tile%stge == 0.0)) then
+                    out%ts%tile%stg0e = out%NO_DATA
+                    out%ts%tile%stge = out%NO_DATA
+                    out%ts%tile%dstge = out%NO_DATA
+                else
+                    out%ts%tile%dstge = out%ts%tile%stge - out%ts%tile%stg0e
+                end if
             end if
         end if
 
@@ -999,7 +1007,6 @@ module output_variables
 
             !> Water balance.
             if (ro%RUNBALWB) then
-                if (all(out%ts%grid%stgw /= out%NO_DATA)) out%ts%grid%stg0w = out%ts%grid%stgw
                 if (associated(out%ts%grid%prec)) then
                     if (all(out%ts%grid%prec == out%NO_DATA)) out%ts%grid%prec = cm%dat(ck%RT)%GRD
                 end if
@@ -1112,13 +1119,17 @@ module output_variables
                         if (lcheck) out%ts%grid%alws = out%ts%grid%alws + stas_grid%sl%fzws
                     end if
                 end if
-                if (all(out%ts%grid%stg0w /= out%NO_DATA)) out%ts%grid%dstgw = out%ts%grid%stgw - out%ts%grid%stg0w
+                if (all(out%ts%grid%stgw == 0.0)) then
+                    out%ts%grid%stg0w = out%NO_DATA
+                    out%ts%grid%stgw = out%NO_DATA
+                    out%ts%grid%dstgw = out%NO_DATA
+                else
+                    out%ts%grid%dstgw = out%ts%grid%stgw - out%ts%grid%stg0w
+                end if
             end if
 
             !> Energy balance.
             if (ro%RUNBALEB) then
-                if (all(out%ts%grid%stge /= out%NO_DATA)) out%ts%grid%stg0e = out%ts%grid%stge
-                out%ts%grid%stge = 0.0
                 if (associated(out%ts%grid%cmas)) then
                     if (all(out%ts%grid%cmas == out%NO_DATA)) out%ts%grid%cmas = stas_grid%cnpy%cmas
                 end if
@@ -1164,7 +1175,13 @@ module output_variables
                 if (associated(out%ts%grid%tbar)) then
                     if (all(out%ts%grid%tbar == out%NO_DATA)) out%ts%grid%tbar = stas_grid%sl%tbar
                 end if
-                if (all(out%ts%grid%stg0e /= out%NO_DATA)) out%ts%grid%dstge = out%ts%grid%stge - out%ts%grid%stg0e
+                if (all(out%ts%grid%stge == 0.0)) then
+                    out%ts%grid%stg0e = out%NO_DATA
+                    out%ts%grid%stge = out%NO_DATA
+                    out%ts%grid%dstge = out%NO_DATA
+                else
+                    out%ts%grid%dstge = out%ts%grid%stge - out%ts%grid%stg0e
+                end if
             end if
 
             !> Channels and routing.
@@ -1593,14 +1610,14 @@ module output_variables
     !> Description:
     !>  Update the 'dat' vector using the 'val' vector.
     !>  Reset 'dat' if the time-step of the current interval "its" is 1.
-    !>  Calculate an average if the function "fn" is 'avg' and the
-    !>  time-steps to divide the number "dnts" by is greater than zero.
-    !>  Override calculations where 'val' is equal to the 'NO_DATA'
-    !>  value with the 'NO_DATA' value in 'dat'.
-    subroutine output_variables_update_values(dat, val, its, dnts, fn, cfactorm, cfactora)
+    !>  Calculate an average if the function "fn" is 'avg' using the
+    !>  number of time-steps elapsed "its".
+    !>  Override calculations where 'val' was originally equal to the
+    !>  'NO_DATA' value.
+    subroutine output_variables_update_values(dat, val, its, fn, cfactorm, cfactora)
 
         !> Input variables.
-        integer, intent(in) :: its, dnts
+        integer, intent(in) :: its
         real, dimension(:), intent(in) :: val
         character(len = *), intent(in) :: fn
         real, intent(in), optional :: cfactorm, cfactora
@@ -1626,7 +1643,6 @@ module output_variables
                 dat = dat + v
             case ('avg')
                 dat = (dat*(its - 1) + v)/its
-!                if (dnts > 0) dat = dat/dnts
             case ('max')
                 dat = max(dat, v)
             case ('min')
@@ -1643,7 +1659,7 @@ module output_variables
     !> Description:
     !>  Update output variables of larger time intervals from the 'ts'
     !>  values.
-    subroutine output_variables_update_series(shd, series, its, dnts)
+    subroutine output_variables_update_series(shd, series, its)
 
         !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
@@ -1651,7 +1667,7 @@ module output_variables
         use control_variables
 
         !> Input variables.
-        integer, intent(in) :: its, dnts
+        integer, intent(in) :: its
         type(ShedGridParams), intent(in) :: shd
 
         !> Input/output variables.
@@ -1666,112 +1682,111 @@ module output_variables
             !> Meteorological forcing.
             if (ro%RUNCLIM) then
                 if (associated(series%tile%fsin)) then
-                    call output_variables_update_values(series%tile%fsin, out%ts%tile%fsin, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%fsin, out%ts%tile%fsin, its, 'avg')
                 end if
                 if (associated(series%tile%flin)) then
-                    call output_variables_update_values(series%tile%flin, out%ts%tile%flin, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%flin, out%ts%tile%flin, its, 'avg')
                 end if
                 if (associated(series%tile%ta)) then
-                    call output_variables_update_values(series%tile%ta, out%ts%tile%ta, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%ta, out%ts%tile%ta, its, 'avg')
                 end if
                 if (associated(series%tile%qa)) then
-                    call output_variables_update_values(series%tile%qa, out%ts%tile%qa, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%qa, out%ts%tile%qa, its, 'avg')
                 end if
                 if (associated(series%tile%pres)) then
-                    call output_variables_update_values(series%tile%pres, out%ts%tile%pres, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%pres, out%ts%tile%pres, its, 'avg')
                 end if
                 if (associated(series%tile%uv)) then
-                    call output_variables_update_values(series%tile%uv, out%ts%tile%uv, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%uv, out%ts%tile%uv, its, 'avg')
                 end if
                 if (associated(series%tile%pre)) then
-                    call output_variables_update_values(series%tile%pre, out%ts%tile%pre, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%pre, out%ts%tile%pre, its, 'avg')
                 end if
             end if
 
             !> Water balance.
             if (ro%RUNBALWB) then
                 if (associated(series%tile%prec)) then
-                    call output_variables_update_values(series%tile%prec, out%ts%tile%prec, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%prec, out%ts%tile%prec, its, 'sum')
                 end if
                 if (associated(series%tile%evap)) then
-                    call output_variables_update_values(series%tile%evap, out%ts%tile%evap, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%evap, out%ts%tile%evap, its, 'sum')
                 end if
                 if (associated(series%tile%pevp)) then
-                    call output_variables_update_values(series%tile%pevp, out%ts%tile%pevp, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%pevp, out%ts%tile%pevp, its, 'sum')
                 end if
                 if (associated(series%tile%evpb)) then
-                    call output_variables_update_values(series%tile%evpb, out%ts%tile%evpb, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%evpb, out%ts%tile%evpb, its, 'avg')
                 end if
                 if (associated(series%tile%arrd)) then
-                    call output_variables_update_values(series%tile%arrd, out%ts%tile%arrd, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%arrd, out%ts%tile%arrd, its, 'avg')
                 end if
                 if (associated(series%tile%gro)) then
-                    call output_variables_update_values(series%tile%gro, out%ts%tile%gro, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%gro, out%ts%tile%gro, its, 'avg')
                 end if
                 if (associated(series%tile%rof)) then
-                    call output_variables_update_values(series%tile%rof, out%ts%tile%rof, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%rof, out%ts%tile%rof, its, 'sum')
                 end if
                 if (associated(series%tile%rofo)) then
-                    call output_variables_update_values(series%tile%rofo, out%ts%tile%rofo, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%rofo, out%ts%tile%rofo, its, 'sum')
                 end if
                 if (associated(series%tile%rofs)) then
-                    call output_variables_update_values(series%tile%rofs, out%ts%tile%rofs, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%rofs, out%ts%tile%rofs, its, 'sum')
                 end if
                 if (associated(series%tile%rofb)) then
-                    call output_variables_update_values(series%tile%rofb, out%ts%tile%rofb, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%rofb, out%ts%tile%rofb, its, 'sum')
                 end if
                 if (associated(series%tile%rcan)) then
-                    call output_variables_update_values(series%tile%rcan, out%ts%tile%rcan, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%rcan, out%ts%tile%rcan, its, 'avg')
                 end if
                 if (associated(series%tile%sncan)) then
-                    call output_variables_update_values(series%tile%sncan, out%ts%tile%sncan, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%sncan, out%ts%tile%sncan, its, 'avg')
                 end if
                 if (associated(series%tile%sno)) then
-                    call output_variables_update_values(series%tile%sno, out%ts%tile%sno, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%sno, out%ts%tile%sno, its, 'avg')
                 end if
                 if (associated(series%tile%fsno)) then
-                    call output_variables_update_values(series%tile%fsno, out%ts%tile%fsno, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%fsno, out%ts%tile%fsno, its, 'avg')
                 end if
                 if (associated(series%tile%wsno)) then
-                    call output_variables_update_values(series%tile%wsno, out%ts%tile%wsno, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%wsno, out%ts%tile%wsno, its, 'avg')
                 end if
                 if (associated(series%tile%zpnd)) then
-                    call output_variables_update_values(series%tile%zpnd, out%ts%tile%zpnd, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%zpnd, out%ts%tile%zpnd, its, 'avg')
                 end if
                 if (associated(series%tile%pndw)) then
-                    call output_variables_update_values(series%tile%pndw, out%ts%tile%pndw, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%pndw, out%ts%tile%pndw, its, 'avg')
                 end if
                 if (associated(series%tile%lzs)) then
-                    call output_variables_update_values(series%tile%lzs, out%ts%tile%lzs, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%lzs, out%ts%tile%lzs, its, 'avg')
                 end if
                 if (associated(series%tile%dzs)) then
-                    call output_variables_update_values(series%tile%dzs, out%ts%tile%dzs, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%dzs, out%ts%tile%dzs, its, 'avg')
                 end if
                 do j = 1, shd%lc%IGND
                     if (associated(series%tile%thlq)) then
-                        call output_variables_update_values(series%tile%thlq(:, j), out%ts%tile%thlq(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%tile%thlq(:, j), out%ts%tile%thlq(:, j), its, 'avg')
                     end if
                     if (associated(series%tile%lqws)) then
-                        call output_variables_update_values(series%tile%lqws(:, j), out%ts%tile%lqws(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%tile%lqws(:, j), out%ts%tile%lqws(:, j), its, 'avg')
                     end if
                     if (associated(series%tile%thic)) then
-                        call output_variables_update_values(series%tile%thic(:, j), out%ts%tile%thic(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%tile%thic(:, j), out%ts%tile%thic(:, j), its, 'avg')
                     end if
                     if (associated(series%tile%fzws)) then
-                        call output_variables_update_values(series%tile%fzws(:, j), out%ts%tile%fzws(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%tile%fzws(:, j), out%ts%tile%fzws(:, j), its, 'avg')
                     end if
                     if (associated(series%tile%alws)) then
-                        call output_variables_update_values(series%tile%alws(:, j), out%ts%tile%alws(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%tile%alws(:, j), out%ts%tile%alws(:, j), its, 'avg')
                     end if
                 end do
                 if (associated(series%tile%stgw)) then
                     if (associated(series%tile%stg0w) .and. its == 1) then
-                        call output_variables_update_values(series%tile%stg0w, series%tile%stgw, its, dnts, 'val')
+                        call output_variables_update_values(series%tile%stg0w, series%tile%stgw, its, 'val')
                     end if
-                    call output_variables_update_values(series%tile%stgw, out%ts%tile%stgw, its, dnts, 'avg')
-                    if (associated(series%tile%dstgw) .and. associated(series%tile%stg0w) .and. its > 0) then
-                        call output_variables_update_values(series%tile%dstgw, series%tile%stg0w, its, dnts, 'val', -1.0)
-                        call output_variables_update_values(series%tile%dstgw, series%tile%stgw, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%stgw, out%ts%tile%stgw, its, 'avg')
+                    if (associated(series%tile%dstgw) .and. associated(series%tile%stg0w)) then
+                        where (series%tile%stgw /= out%NO_DATA) series%tile%dstgw = series%tile%stgw - series%tile%stg0w
                     end if
                 end if
             end if
@@ -1779,60 +1794,59 @@ module output_variables
             !> Energy balance.
             if (ro%RUNBALEB) then
                 if (associated(series%tile%cmas)) then
-                    call output_variables_update_values(series%tile%cmas, out%ts%tile%cmas, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%cmas, out%ts%tile%cmas, its, 'sum')
                 end if
                 if (associated(series%tile%tcan)) then
-                    call output_variables_update_values(series%tile%tcan, out%ts%tile%tcan, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%tcan, out%ts%tile%tcan, its, 'avg')
                 end if
                 if (associated(series%tile%tsno)) then
-                    call output_variables_update_values(series%tile%tsno, out%ts%tile%tsno, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%tsno, out%ts%tile%tsno, its, 'avg')
                 end if
                 if (associated(series%tile%tpnd)) then
-                    call output_variables_update_values(series%tile%tpnd, out%ts%tile%tpnd, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%tpnd, out%ts%tile%tpnd, its, 'avg')
                 end if
                 if (associated(series%tile%albt)) then
-                    call output_variables_update_values(series%tile%albt, out%ts%tile%albt, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%albt, out%ts%tile%albt, its, 'avg')
                 end if
                 if (associated(series%tile%alvs)) then
-                    call output_variables_update_values(series%tile%alvs, out%ts%tile%alvs, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%alvs, out%ts%tile%alvs, its, 'avg')
                 end if
                 if (associated(series%tile%alir)) then
-                    call output_variables_update_values(series%tile%alir, out%ts%tile%alir, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%alir, out%ts%tile%alir, its, 'avg')
                 end if
                 if (associated(series%tile%fsout)) then
-                    call output_variables_update_values(series%tile%fsout, out%ts%tile%fsout, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%fsout, out%ts%tile%fsout, its, 'avg')
                 end if
                 if (associated(series%tile%gte)) then
-                    call output_variables_update_values(series%tile%gte, out%ts%tile%gte, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%gte, out%ts%tile%gte, its, 'avg')
                 end if
                 if (associated(series%tile%flout)) then
-                    call output_variables_update_values(series%tile%flout, out%ts%tile%flout, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%flout, out%ts%tile%flout, its, 'avg')
                 end if
                 if (associated(series%tile%qh)) then
-                    call output_variables_update_values(series%tile%qh, out%ts%tile%qh, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%qh, out%ts%tile%qh, its, 'avg')
                 end if
                 if (associated(series%tile%qe)) then
-                    call output_variables_update_values(series%tile%qe, out%ts%tile%qe, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%qe, out%ts%tile%qe, its, 'avg')
                 end if
                 if (associated(series%tile%gzero)) then
-                    call output_variables_update_values(series%tile%gzero, out%ts%tile%gzero, its, dnts, 'avg')
+                    call output_variables_update_values(series%tile%gzero, out%ts%tile%gzero, its, 'avg')
                 end if
                 do j = 1, shd%lc%IGND
                     if (associated(series%tile%gflx)) then
-                        call output_variables_update_values(series%tile%gflx(:, j), out%ts%tile%gflx(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%tile%gflx(:, j), out%ts%tile%gflx(:, j), its, 'avg')
                     end if
                     if (associated(series%tile%tbar)) then
-                        call output_variables_update_values(series%tile%tbar(:, j), out%ts%tile%tbar(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%tile%tbar(:, j), out%ts%tile%tbar(:, j), its, 'avg')
                     end if
                 end do
                 if (associated(series%tile%stge)) then
                     if (associated(series%tile%stg0e) .and. its == 1) then
-                        call output_variables_update_values(series%tile%stg0e, series%tile%stge, its, dnts, 'val')
+                        call output_variables_update_values(series%tile%stg0e, series%tile%stge, its, 'val')
                     end if
-                    call output_variables_update_values(series%tile%stge, out%ts%tile%stge, its, dnts, 'avg')
-                    if (associated(series%tile%dstge) .and. associated(series%tile%stg0e) .and. its > 0) then
-                        call output_variables_update_values(series%tile%dstge, series%tile%stg0e, its, dnts, 'val', -1.0)
-                        call output_variables_update_values(series%tile%dstge, series%tile%stge, its, dnts, 'sum')
+                    call output_variables_update_values(series%tile%stge, out%ts%tile%stge, its, 'avg')
+                    if (associated(series%tile%dstge) .and. associated(series%tile%stg0e)) then
+                        where (series%tile%stge /= out%NO_DATA) series%tile%dstge = series%tile%stge - series%tile%stg0e
                     end if
                 end if
             end if
@@ -1844,112 +1858,111 @@ module output_variables
             !> Meteorological forcing.
             if (ro%RUNCLIM) then
                 if (associated(series%grid%fsin)) then
-                    call output_variables_update_values(series%grid%fsin, out%ts%grid%fsin, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%fsin, out%ts%grid%fsin, its, 'avg')
                 end if
                 if (associated(series%grid%flin)) then
-                    call output_variables_update_values(series%grid%flin, out%ts%grid%flin, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%flin, out%ts%grid%flin, its, 'avg')
                 end if
                 if (associated(series%grid%ta)) then
-                    call output_variables_update_values(series%grid%ta, out%ts%grid%ta, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%ta, out%ts%grid%ta, its, 'avg')
                 end if
                 if (associated(series%grid%qa)) then
-                    call output_variables_update_values(series%grid%qa, out%ts%grid%qa, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%qa, out%ts%grid%qa, its, 'avg')
                 end if
                 if (associated(series%grid%pres)) then
-                    call output_variables_update_values(series%grid%pres, out%ts%grid%pres, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%pres, out%ts%grid%pres, its, 'avg')
                 end if
                 if (associated(series%grid%uv)) then
-                    call output_variables_update_values(series%grid%uv, out%ts%grid%uv, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%uv, out%ts%grid%uv, its, 'avg')
                 end if
                 if (associated(series%grid%pre)) then
-                    call output_variables_update_values(series%grid%pre, out%ts%grid%pre, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%pre, out%ts%grid%pre, its, 'avg')
                 end if
             end if
 
             !> Water balance.
             if (ro%RUNBALWB) then
                 if (associated(series%grid%prec)) then
-                    call output_variables_update_values(series%grid%prec, out%ts%grid%prec, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%prec, out%ts%grid%prec, its, 'sum')
                 end if
                 if (associated(series%grid%evap)) then
-                    call output_variables_update_values(series%grid%evap, out%ts%grid%evap, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%evap, out%ts%grid%evap, its, 'sum')
                 end if
                 if (associated(series%grid%pevp)) then
-                    call output_variables_update_values(series%grid%pevp, out%ts%grid%pevp, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%pevp, out%ts%grid%pevp, its, 'sum')
                 end if
                 if (associated(series%grid%evpb)) then
-                    call output_variables_update_values(series%grid%evpb, out%ts%grid%evpb, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%evpb, out%ts%grid%evpb, its, 'avg')
                 end if
                 if (associated(series%grid%arrd)) then
-                    call output_variables_update_values(series%grid%arrd, out%ts%grid%arrd, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%arrd, out%ts%grid%arrd, its, 'avg')
                 end if
                 if (associated(series%grid%gro)) then
-                    call output_variables_update_values(series%grid%gro, out%ts%grid%gro, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%gro, out%ts%grid%gro, its, 'avg')
                 end if
                 if (associated(series%grid%rof)) then
-                    call output_variables_update_values(series%grid%rof, out%ts%grid%rof, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%rof, out%ts%grid%rof, its, 'sum')
                 end if
                 if (associated(series%grid%rofo)) then
-                    call output_variables_update_values(series%grid%rofo, out%ts%grid%rofo, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%rofo, out%ts%grid%rofo, its, 'sum')
                 end if
                 if (associated(series%grid%rofs)) then
-                    call output_variables_update_values(series%grid%rofs, out%ts%grid%rofs, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%rofs, out%ts%grid%rofs, its, 'sum')
                 end if
                 if (associated(series%grid%rofb)) then
-                    call output_variables_update_values(series%grid%rofb, out%ts%grid%rofb, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%rofb, out%ts%grid%rofb, its, 'sum')
                 end if
                 if (associated(series%grid%rcan)) then
-                    call output_variables_update_values(series%grid%rcan, out%ts%grid%rcan, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%rcan, out%ts%grid%rcan, its, 'avg')
                 end if
                 if (associated(series%grid%sncan)) then
-                    call output_variables_update_values(series%grid%sncan, out%ts%grid%sncan, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%sncan, out%ts%grid%sncan, its, 'avg')
                 end if
                 if (associated(series%grid%sno)) then
-                    call output_variables_update_values(series%grid%sno, out%ts%grid%sno, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%sno, out%ts%grid%sno, its, 'avg')
                 end if
                 if (associated(series%grid%fsno)) then
-                    call output_variables_update_values(series%grid%fsno, out%ts%grid%fsno, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%fsno, out%ts%grid%fsno, its, 'avg')
                 end if
                 if (associated(series%grid%wsno)) then
-                    call output_variables_update_values(series%grid%wsno, out%ts%grid%wsno, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%wsno, out%ts%grid%wsno, its, 'avg')
                 end if
                 if (associated(series%grid%zpnd)) then
-                    call output_variables_update_values(series%grid%zpnd, out%ts%grid%zpnd, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%zpnd, out%ts%grid%zpnd, its, 'avg')
                 end if
                 if (associated(series%grid%pndw)) then
-                    call output_variables_update_values(series%grid%pndw, out%ts%grid%pndw, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%pndw, out%ts%grid%pndw, its, 'avg')
                 end if
                 if (associated(series%grid%lzs)) then
-                    call output_variables_update_values(series%grid%lzs, out%ts%grid%lzs, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%lzs, out%ts%grid%lzs, its, 'avg')
                 end if
                 if (associated(series%grid%dzs)) then
-                    call output_variables_update_values(series%grid%dzs, out%ts%grid%dzs, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%dzs, out%ts%grid%dzs, its, 'avg')
                 end if
                 do j = 1, shd%lc%IGND
                     if (associated(series%grid%thlq)) then
-                        call output_variables_update_values(series%grid%thlq(:, j), out%ts%grid%thlq(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%grid%thlq(:, j), out%ts%grid%thlq(:, j), its, 'avg')
                     end if
                     if (associated(series%grid%lqws)) then
-                        call output_variables_update_values(series%grid%lqws(:, j), out%ts%grid%lqws(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%grid%lqws(:, j), out%ts%grid%lqws(:, j), its, 'avg')
                     end if
                     if (associated(series%grid%thic)) then
-                        call output_variables_update_values(series%grid%thic(:, j), out%ts%grid%thic(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%grid%thic(:, j), out%ts%grid%thic(:, j), its, 'avg')
                     end if
                     if (associated(series%grid%fzws)) then
-                        call output_variables_update_values(series%grid%fzws(:, j), out%ts%grid%fzws(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%grid%fzws(:, j), out%ts%grid%fzws(:, j), its, 'avg')
                     end if
                     if (associated(series%grid%alws)) then
-                        call output_variables_update_values(series%grid%alws(:, j), out%ts%grid%alws(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%grid%alws(:, j), out%ts%grid%alws(:, j), its, 'avg')
                     end if
                 end do
                 if (associated(series%grid%stgw)) then
                     if (associated(series%grid%stg0w) .and. its == 1) then
-                        call output_variables_update_values(series%grid%stg0w, series%grid%stgw, its, dnts, 'val')
+                        call output_variables_update_values(series%grid%stg0w, series%grid%stgw, its, 'val')
                     end if
-                    call output_variables_update_values(series%grid%stgw, out%ts%grid%stgw, its, dnts, 'avg')
-                    if (associated(series%grid%dstgw) .and. associated(series%grid%stg0w) .and. its > 0) then
-                        call output_variables_update_values(series%grid%dstgw, series%grid%stg0w, its, dnts, 'val', -1.0)
-                        call output_variables_update_values(series%grid%dstgw, series%grid%stgw, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%stgw, out%ts%grid%stgw, its, 'avg')
+                    if (associated(series%grid%dstgw) .and. associated(series%grid%stg0w)) then
+                        where (series%grid%stgw /= out%NO_DATA) series%grid%dstgw = series%grid%stgw - series%grid%stg0w
                     end if
                 end if
             end if
@@ -1957,60 +1970,59 @@ module output_variables
             !> Energy balance.
             if (ro%RUNBALEB) then
                 if (associated(series%grid%cmas)) then
-                    call output_variables_update_values(series%grid%cmas, out%ts%grid%cmas, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%cmas, out%ts%grid%cmas, its, 'sum')
                 end if
                 if (associated(series%grid%tcan)) then
-                    call output_variables_update_values(series%grid%tcan, out%ts%grid%tcan, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%tcan, out%ts%grid%tcan, its, 'avg')
                 end if
                 if (associated(series%grid%tsno)) then
-                    call output_variables_update_values(series%grid%tsno, out%ts%grid%tsno, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%tsno, out%ts%grid%tsno, its, 'avg')
                 end if
                 if (associated(series%grid%tpnd)) then
-                    call output_variables_update_values(series%grid%tpnd, out%ts%grid%tpnd, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%tpnd, out%ts%grid%tpnd, its, 'avg')
                 end if
                 if (associated(series%grid%albt)) then
-                    call output_variables_update_values(series%grid%albt, out%ts%grid%albt, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%albt, out%ts%grid%albt, its, 'avg')
                 end if
                 if (associated(series%grid%alvs)) then
-                    call output_variables_update_values(series%grid%alvs, out%ts%grid%alvs, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%alvs, out%ts%grid%alvs, its, 'avg')
                 end if
                 if (associated(series%grid%alir)) then
-                    call output_variables_update_values(series%grid%alir, out%ts%grid%alir, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%alir, out%ts%grid%alir, its, 'avg')
                 end if
                 if (associated(series%grid%fsout)) then
-                    call output_variables_update_values(series%grid%fsout, out%ts%grid%fsout, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%fsout, out%ts%grid%fsout, its, 'avg')
                 end if
                 if (associated(series%grid%gte)) then
-                    call output_variables_update_values(series%grid%gte, out%ts%grid%gte, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%gte, out%ts%grid%gte, its, 'avg')
                 end if
                 if (associated(series%grid%flout)) then
-                    call output_variables_update_values(series%grid%flout, out%ts%grid%flout, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%flout, out%ts%grid%flout, its, 'avg')
                 end if
                 if (associated(series%grid%qh)) then
-                    call output_variables_update_values(series%grid%qh, out%ts%grid%qh, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%qh, out%ts%grid%qh, its, 'avg')
                 end if
                 if (associated(series%grid%qe)) then
-                    call output_variables_update_values(series%grid%qe, out%ts%grid%qe, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%qe, out%ts%grid%qe, its, 'avg')
                 end if
                 if (associated(series%grid%gzero)) then
-                    call output_variables_update_values(series%grid%gzero, out%ts%grid%gzero, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%gzero, out%ts%grid%gzero, its, 'avg')
                 end if
                 do j = 1, shd%lc%IGND
                     if (associated(series%grid%gflx)) then
-                        call output_variables_update_values(series%grid%gflx(:, j), out%ts%grid%gflx(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%grid%gflx(:, j), out%ts%grid%gflx(:, j), its, 'avg')
                     end if
                     if (associated(series%grid%tbar)) then
-                        call output_variables_update_values(series%grid%tbar(:, j), out%ts%grid%tbar(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%grid%tbar(:, j), out%ts%grid%tbar(:, j), its, 'avg')
                     end if
                 end do
                 if (associated(series%grid%stge)) then
                     if (associated(series%grid%stg0e) .and. its == 1) then
-                        call output_variables_update_values(series%grid%stg0e, series%grid%stge, its, dnts, 'val')
+                        call output_variables_update_values(series%grid%stg0e, series%grid%stge, its, 'val')
                     end if
-                    call output_variables_update_values(series%grid%stge, out%ts%grid%stge, its, dnts, 'avg')
-                    if (associated(series%grid%dstge) .and. associated(series%grid%stg0e) .and. its > 0) then
-                        call output_variables_update_values(series%grid%dstge, series%grid%stg0e, its, dnts, 'val', -1.0)
-                        call output_variables_update_values(series%grid%dstge, series%grid%stge, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%stge, out%ts%grid%stge, its, 'avg')
+                    if (associated(series%grid%dstge) .and. associated(series%grid%stg0e)) then
+                        where (series%grid%stge /= out%NO_DATA) series%grid%dstge = series%grid%stge - series%grid%stg0e
                     end if
                 end if
             end if
@@ -2018,212 +2030,210 @@ module output_variables
             !> Channels and routing.
             if (ro%RUNCHNL) then
                 if (associated(series%grid%rff)) then
-                    call output_variables_update_values(series%grid%rff, out%ts%grid%rff, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%rff, out%ts%grid%rff, its, 'sum')
                 end if
                 if (associated(series%grid%rchg)) then
-                    call output_variables_update_values(series%grid%rchg, out%ts%grid%rchg, its, dnts, 'sum')
+                    call output_variables_update_values(series%grid%rchg, out%ts%grid%rchg, its, 'sum')
                 end if
                 if (associated(series%grid%qi)) then
-                    call output_variables_update_values(series%grid%qi, out%ts%grid%qi, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%qi, out%ts%grid%qi, its, 'avg')
                 end if
                 if (associated(series%grid%stgch)) then
-                    call output_variables_update_values(series%grid%stgch, out%ts%grid%stgch, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%stgch, out%ts%grid%stgch, its, 'avg')
                 end if
                 if (associated(series%grid%qo)) then
-                    call output_variables_update_values(series%grid%qo, out%ts%grid%qo, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%qo, out%ts%grid%qo, its, 'avg')
                 end if
                 if (associated(series%grid%zlvl)) then
-                    call output_variables_update_values(series%grid%zlvl, out%ts%grid%zlvl, its, dnts, 'avg')
+                    call output_variables_update_values(series%grid%zlvl, out%ts%grid%zlvl, its, 'avg')
                 end if
             end if
 
             !> DA averaged.
             if (ro%RUNCLIM) then
                 if (associated(series%basin%fsin)) then
-                    call output_variables_update_values(series%basin%fsin, out%ts%basin%fsin, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%fsin, out%ts%basin%fsin, its, 'avg')
                 end if
                 if (associated(series%basin%flin)) then
-                    call output_variables_update_values(series%basin%flin, out%ts%basin%flin, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%flin, out%ts%basin%flin, its, 'avg')
                 end if
                 if (associated(series%basin%ta)) then
-                    call output_variables_update_values(series%basin%ta, out%ts%basin%ta, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%ta, out%ts%basin%ta, its, 'avg')
                 end if
                 if (associated(series%basin%qa)) then
-                    call output_variables_update_values(series%basin%qa, out%ts%basin%qa, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%qa, out%ts%basin%qa, its, 'avg')
                 end if
                 if (associated(series%basin%pres)) then
-                    call output_variables_update_values(series%basin%pres, out%ts%basin%pres, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%pres, out%ts%basin%pres, its, 'avg')
                 end if
                 if (associated(series%basin%uv)) then
-                    call output_variables_update_values(series%basin%uv, out%ts%basin%uv, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%uv, out%ts%basin%uv, its, 'avg')
                 end if
                 if (associated(series%basin%pre)) then
-                    call output_variables_update_values(series%basin%pre, out%ts%basin%pre, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%pre, out%ts%basin%pre, its, 'avg')
                 end if
             end if
             if (ro%RUNBALWB) then
                 if (associated(series%basin%prec)) then
-                    call output_variables_update_values(series%basin%prec, out%ts%basin%prec, its, dnts, 'sum')
+                    call output_variables_update_values(series%basin%prec, out%ts%basin%prec, its, 'sum')
                 end if
                 if (associated(series%basin%evap)) then
-                    call output_variables_update_values(series%basin%evap, out%ts%basin%evap, its, dnts, 'sum')
+                    call output_variables_update_values(series%basin%evap, out%ts%basin%evap, its, 'sum')
                 end if
                 if (associated(series%basin%pevp)) then
-                    call output_variables_update_values(series%basin%pevp, out%ts%basin%pevp, its, dnts, 'sum')
+                    call output_variables_update_values(series%basin%pevp, out%ts%basin%pevp, its, 'sum')
                 end if
                 if (associated(series%basin%evpb)) then
-                    call output_variables_update_values(series%basin%evpb, out%ts%basin%evpb, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%evpb, out%ts%basin%evpb, its, 'avg')
                 end if
                 if (associated(series%basin%arrd)) then
-                    call output_variables_update_values(series%basin%arrd, out%ts%basin%arrd, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%arrd, out%ts%basin%arrd, its, 'avg')
                 end if
                 if (associated(series%basin%gro)) then
-                    call output_variables_update_values(series%basin%gro, out%ts%basin%gro, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%gro, out%ts%basin%gro, its, 'avg')
                 end if
                 if (associated(series%basin%rof)) then
-                    call output_variables_update_values(series%basin%rof, out%ts%basin%rof, its, dnts, 'sum')
+                    call output_variables_update_values(series%basin%rof, out%ts%basin%rof, its, 'sum')
                 end if
                 if (associated(series%basin%rofo)) then
-                    call output_variables_update_values(series%basin%rofo, out%ts%basin%rofo, its, dnts, 'sum')
+                    call output_variables_update_values(series%basin%rofo, out%ts%basin%rofo, its, 'sum')
                 end if
                 if (associated(series%basin%rofs)) then
-                    call output_variables_update_values(series%basin%rofs, out%ts%basin%rofs, its, dnts, 'sum')
+                    call output_variables_update_values(series%basin%rofs, out%ts%basin%rofs, its, 'sum')
                 end if
                 if (associated(series%basin%rofb)) then
-                    call output_variables_update_values(series%basin%rofb, out%ts%basin%rofb, its, dnts, 'sum')
+                    call output_variables_update_values(series%basin%rofb, out%ts%basin%rofb, its, 'sum')
                 end if
                 if (associated(series%basin%rcan)) then
-                    call output_variables_update_values(series%basin%rcan, out%ts%basin%rcan, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%rcan, out%ts%basin%rcan, its, 'avg')
                 end if
                 if (associated(series%basin%sncan)) then
-                    call output_variables_update_values(series%basin%sncan, out%ts%basin%sncan, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%sncan, out%ts%basin%sncan, its, 'avg')
                 end if
                 if (associated(series%basin%sno)) then
-                    call output_variables_update_values(series%basin%sno, out%ts%basin%sno, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%sno, out%ts%basin%sno, its, 'avg')
                 end if
                 if (associated(series%basin%fsno)) then
-                    call output_variables_update_values(series%basin%fsno, out%ts%basin%fsno, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%fsno, out%ts%basin%fsno, its, 'avg')
                 end if
                 if (associated(series%basin%wsno)) then
-                    call output_variables_update_values(series%basin%wsno, out%ts%basin%wsno, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%wsno, out%ts%basin%wsno, its, 'avg')
                 end if
                 if (associated(series%basin%zpnd)) then
-                    call output_variables_update_values(series%basin%zpnd, out%ts%basin%zpnd, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%zpnd, out%ts%basin%zpnd, its, 'avg')
                 end if
                 if (associated(series%basin%pndw)) then
-                    call output_variables_update_values(series%basin%pndw, out%ts%basin%pndw, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%pndw, out%ts%basin%pndw, its, 'avg')
                 end if
                 if (associated(series%basin%lzs)) then
-                    call output_variables_update_values(series%basin%lzs, out%ts%basin%lzs, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%lzs, out%ts%basin%lzs, its, 'avg')
                 end if
                 if (associated(series%basin%dzs)) then
-                    call output_variables_update_values(series%basin%dzs, out%ts%basin%dzs, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%dzs, out%ts%basin%dzs, its, 'avg')
                 end if
                 do j = 1, shd%lc%IGND
                     if (associated(series%basin%thlq)) then
-                        call output_variables_update_values(series%basin%thlq(:, j), out%ts%basin%thlq(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%basin%thlq(:, j), out%ts%basin%thlq(:, j), its, 'avg')
                     end if
                     if (associated(series%basin%lqws)) then
-                        call output_variables_update_values(series%basin%lqws(:, j), out%ts%basin%lqws(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%basin%lqws(:, j), out%ts%basin%lqws(:, j), its, 'avg')
                     end if
                     if (associated(series%basin%thic)) then
-                        call output_variables_update_values(series%basin%thic(:, j), out%ts%basin%thic(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%basin%thic(:, j), out%ts%basin%thic(:, j), its, 'avg')
                     end if
                     if (associated(series%basin%fzws)) then
-                        call output_variables_update_values(series%basin%fzws(:, j), out%ts%basin%fzws(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%basin%fzws(:, j), out%ts%basin%fzws(:, j), its, 'avg')
                     end if
                     if (associated(series%basin%alws)) then
-                        call output_variables_update_values(series%basin%alws(:, j), out%ts%basin%alws(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%basin%alws(:, j), out%ts%basin%alws(:, j), its, 'avg')
                     end if
                 end do
                 if (associated(series%basin%stgw)) then
                     if (associated(series%basin%stg0w) .and. its == 1) then
-                        call output_variables_update_values(series%basin%stg0w, series%basin%stgw, its, dnts, 'val')
+                        call output_variables_update_values(series%basin%stg0w, series%basin%stgw, its, 'val')
                     end if
-                    call output_variables_update_values(series%basin%stgw, out%ts%basin%stgw, its, dnts, 'avg')
-                    if (associated(series%basin%dstgw) .and. associated(series%basin%stg0w) .and. its > 0) then
-                        call output_variables_update_values(series%basin%dstgw, series%basin%stg0w, its, dnts, 'val', -1.0)
-                        call output_variables_update_values(series%basin%dstgw, series%basin%stgw, its, dnts, 'sum')
+                    call output_variables_update_values(series%basin%stgw, out%ts%basin%stgw, its, 'avg')
+                    if (associated(series%basin%dstgw) .and. associated(series%basin%stg0w)) then
+                        where (series%basin%stgw /= out%NO_DATA) series%basin%dstgw = series%basin%stgw - series%basin%stg0w
                     end if
                 end if
             end if
             if (ro%RUNBALEB) then
                 if (associated(series%basin%cmas)) then
-                    call output_variables_update_values(series%basin%cmas, out%ts%basin%cmas, its, dnts, 'sum')
+                    call output_variables_update_values(series%basin%cmas, out%ts%basin%cmas, its, 'sum')
                 end if
                 if (associated(series%basin%tcan)) then
-                    call output_variables_update_values(series%basin%tcan, out%ts%basin%tcan, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%tcan, out%ts%basin%tcan, its, 'avg')
                 end if
                 if (associated(series%basin%tsno)) then
-                    call output_variables_update_values(series%basin%tsno, out%ts%basin%tsno, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%tsno, out%ts%basin%tsno, its, 'avg')
                 end if
                 if (associated(series%basin%tpnd)) then
-                    call output_variables_update_values(series%basin%tpnd, out%ts%basin%tpnd, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%tpnd, out%ts%basin%tpnd, its, 'avg')
                 end if
                 if (associated(series%basin%albt)) then
-                    call output_variables_update_values(series%basin%albt, out%ts%basin%albt, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%albt, out%ts%basin%albt, its, 'avg')
                 end if
                 if (associated(series%basin%alvs)) then
-                    call output_variables_update_values(series%basin%alvs, out%ts%basin%alvs, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%alvs, out%ts%basin%alvs, its, 'avg')
                 end if
                 if (associated(series%basin%alir)) then
-                    call output_variables_update_values(series%basin%alir, out%ts%basin%alir, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%alir, out%ts%basin%alir, its, 'avg')
                 end if
                 if (associated(series%basin%fsout)) then
-                    call output_variables_update_values(series%basin%fsout, out%ts%basin%fsout, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%fsout, out%ts%basin%fsout, its, 'avg')
                 end if
                 if (associated(series%basin%gte)) then
-                    call output_variables_update_values(series%basin%gte, out%ts%basin%gte, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%gte, out%ts%basin%gte, its, 'avg')
                 end if
                 if (associated(series%basin%flout)) then
-                    call output_variables_update_values(series%basin%flout, out%ts%basin%flout, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%flout, out%ts%basin%flout, its, 'avg')
                 end if
                 if (associated(series%basin%qh)) then
-                    call output_variables_update_values(series%basin%qh, out%ts%basin%qh, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%qh, out%ts%basin%qh, its, 'avg')
                 end if
                 if (associated(series%basin%qe)) then
-                    call output_variables_update_values(series%basin%qe, out%ts%basin%qe, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%qe, out%ts%basin%qe, its, 'avg')
                 end if
                 if (associated(series%basin%gzero)) then
-                    call output_variables_update_values(series%basin%gzero, out%ts%basin%gzero, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%gzero, out%ts%basin%gzero, its, 'avg')
                 end if
                 do j = 1, shd%lc%IGND
                     if (associated(series%basin%gflx)) then
-                        call output_variables_update_values(series%basin%gflx(:, j), out%ts%basin%gflx(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%basin%gflx(:, j), out%ts%basin%gflx(:, j), its, 'avg')
                     end if
                     if (associated(series%basin%tbar)) then
-                        call output_variables_update_values(series%basin%tbar(:, j), out%ts%basin%tbar(:, j), its, dnts, 'avg')
+                        call output_variables_update_values(series%basin%tbar(:, j), out%ts%basin%tbar(:, j), its, 'avg')
                     end if
                 end do
                 if (associated(series%basin%stge)) then
                     if (associated(series%basin%stg0e) .and. its == 1) then
-                        call output_variables_update_values(series%basin%stg0e, series%basin%stge, its, dnts, 'val')
+                        call output_variables_update_values(series%basin%stg0e, series%basin%stge, its, 'val')
                     end if
-                    call output_variables_update_values(series%basin%stge, out%ts%basin%stge, its, dnts, 'avg')
-                    if (associated(series%basin%dstge) .and. associated(series%basin%stg0e) .and. its > 0) then
-                        call output_variables_update_values(series%basin%dstge, series%basin%stg0e, its, dnts, 'val', -1.0)
-                        call output_variables_update_values(series%basin%dstge, series%basin%stge, its, dnts, 'sum')
+                    call output_variables_update_values(series%basin%stge, out%ts%basin%stge, its, 'avg')
+                    if (associated(series%basin%dstge) .and. associated(series%basin%stg0e)) then
+                        where (series%basin%stge /= out%NO_DATA) series%basin%dstge = series%basin%stge - series%basin%stg0e
                     end if
                 end if
             end if
             if (ro%RUNCHNL) then
                 if (associated(series%basin%rff)) then
-                    call output_variables_update_values(series%basin%rff, out%ts%basin%rff, its, dnts, 'sum')
+                    call output_variables_update_values(series%basin%rff, out%ts%basin%rff, its, 'sum')
                 end if
                 if (associated(series%basin%rchg)) then
-                    call output_variables_update_values(series%basin%rchg, out%ts%basin%rchg, its, dnts, 'sum')
+                    call output_variables_update_values(series%basin%rchg, out%ts%basin%rchg, its, 'sum')
                 end if
                 if (associated(series%basin%qi)) then
-                    call output_variables_update_values(series%basin%qi, out%ts%basin%qi, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%qi, out%ts%basin%qi, its, 'avg')
                 end if
                 if (associated(series%basin%stgch)) then
-                    call output_variables_update_values(series%basin%stgch, out%ts%basin%stgch, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%stgch, out%ts%basin%stgch, its, 'avg')
                 end if
                 if (associated(series%basin%qo)) then
-                    call output_variables_update_values(series%basin%qo, out%ts%basin%qo, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%qo, out%ts%basin%qo, its, 'avg')
                 end if
                 if (associated(series%basin%zlvl)) then
-                    call output_variables_update_values(series%basin%zlvl, out%ts%basin%zlvl, its, dnts, 'avg')
+                    call output_variables_update_values(series%basin%zlvl, out%ts%basin%zlvl, its, 'avg')
                 end if
             end if
         end if
@@ -2245,47 +2255,23 @@ module output_variables
         type(ShedGridParams), intent(in) :: shd
         type(clim_info), intent(in) :: cm
 
-        !> Local variables.
-        integer dnts
-
-        !> Update.
+        !> Update 'ts' values.
         call output_variables_update_ts(shd, cm)
 
         !> Totals (e.g., accumulated).
-        dnts = 0
-        call output_variables_update_series(shd, out%tot, ic%ts_count, dnts)
+        call output_variables_update_series(shd, out%tot, ic%ts_count)
 
         !> Yearly.
-        if (ic%now%year /= ic%next%year) then
-            dnts = ic%ts_yearly
-        else
-            dnts = 0
-        end if
-        call output_variables_update_series(shd, out%y, ic%ts_yearly, dnts)
+        call output_variables_update_series(shd, out%y, ic%ts_yearly)
 
         !> Monthly.
-        if (ic%now%month /= ic%next%month) then
-            dnts = ic%ts_monthly
-        else
-            dnts = 0
-        end if
-        call output_variables_update_series(shd, out%m, ic%ts_monthly, dnts)
+        call output_variables_update_series(shd, out%m, ic%ts_monthly)
 
         !> Daily.
-        if (ic%now%day /= ic%next%day) then
-            dnts = ic%ts_daily
-        else
-            dnts = 0
-        end if
-        call output_variables_update_series(shd, out%d, ic%ts_daily, dnts)
+        call output_variables_update_series(shd, out%d, ic%ts_daily)
 
         !> Hourly.
-        if (ic%now%hour /= ic%next%hour) then
-            dnts = ic%ts_hourly
-        else
-            dnts = 0
-        end if
-        call output_variables_update_series(shd, out%h, ic%ts_hourly, dnts)
+        call output_variables_update_series(shd, out%h, ic%ts_hourly)
 
     end subroutine
 
@@ -2310,7 +2296,7 @@ module output_variables
             !> Meteorological forcing.
             if (ro%RUNCLIM) then
                 series%tile%fsin = out%NO_DATA
-                series%tile%ifsin = 0
+                series%tile%ifsin = 0.0
                 series%tile%flin = out%NO_DATA
                 series%tile%ta = out%NO_DATA
                 series%tile%qa = out%NO_DATA
@@ -2334,11 +2320,11 @@ module output_variables
                 series%tile%rcan = out%NO_DATA
                 series%tile%sncan = out%NO_DATA
                 series%tile%sno = out%NO_DATA
-                series%tile%isno = 0
+                series%tile%isno = 0.0
                 series%tile%fsno = out%NO_DATA
                 series%tile%wsno = out%NO_DATA
                 series%tile%zpnd = out%NO_DATA
-                series%tile%ipnd = 0
+                series%tile%ipnd = 0.0
                 series%tile%pndw = out%NO_DATA
                 series%tile%lzs = out%NO_DATA
                 series%tile%dzs = out%NO_DATA
@@ -2347,14 +2333,16 @@ module output_variables
                 series%tile%thic = out%NO_DATA
                 series%tile%fzws = out%NO_DATA
                 series%tile%alws = out%NO_DATA
-                series%tile%stgw = out%NO_DATA
+                series%tile%stg0w = series%tile%stgw
+                series%tile%stgw = 0.0
+                series%tile%dstgw = 0.0
             end if
 
             !> Energy balance.
             if (ro%RUNBALEB) then
                 series%tile%cmas = out%NO_DATA
                 series%tile%tcan = out%NO_DATA
-                series%tile%ican = 0
+                series%tile%ican = 0.0
                 series%tile%tsno = out%NO_DATA
                 series%tile%tpnd = out%NO_DATA
                 series%tile%albt = out%NO_DATA
@@ -2368,7 +2356,9 @@ module output_variables
                 series%tile%gzero = out%NO_DATA
                 series%tile%gflx = out%NO_DATA
                 series%tile%tbar = out%NO_DATA
-                series%tile%stge = out%NO_DATA
+                series%tile%stg0e = series%tile%stge
+                series%tile%stge = 0.0
+                series%tile%dstge = 0.0
             end if
         end if
 
@@ -2379,7 +2369,7 @@ module output_variables
             if (ro%RUNCLIM) then
                 series%grid%pre = out%NO_DATA
                 series%grid%fsin = out%NO_DATA
-                series%grid%ifsin = 0
+                series%grid%ifsin = 0.0
                 series%grid%flin = out%NO_DATA
                 series%grid%ta = out%NO_DATA
                 series%grid%qa = out%NO_DATA
@@ -2402,27 +2392,29 @@ module output_variables
                 series%grid%rcan = out%NO_DATA
                 series%grid%sncan = out%NO_DATA
                 series%grid%sno = out%NO_DATA
-                series%grid%isno = 0
+                series%grid%isno = 0.0
                 series%grid%fsno = out%NO_DATA
                 series%grid%wsno = out%NO_DATA
                 series%grid%zpnd = out%NO_DATA
-                series%grid%ipnd = 0
+                series%grid%ipnd = 0.0
                 series%grid%pndw = out%NO_DATA
                 series%grid%lzs = out%NO_DATA
                 series%grid%dzs = out%NO_DATA
-                series%grid%stgw = out%NO_DATA
                 series%grid%thlq = out%NO_DATA
                 series%grid%lqws = out%NO_DATA
                 series%grid%thic = out%NO_DATA
                 series%grid%fzws = out%NO_DATA
                 series%grid%alws = out%NO_DATA
+                series%grid%stg0w = series%grid%stgw
+                series%grid%stgw = 0.0
+                series%grid%dstgw = 0.0
             end if
 
             !> Energy balance.
             if (ro%RUNBALEB) then
                 series%grid%cmas = out%NO_DATA
                 series%grid%tcan = out%NO_DATA
-                series%grid%ican = 0
+                series%grid%ican = 0.0
                 series%grid%tsno = out%NO_DATA
                 series%grid%tpnd = out%NO_DATA
                 series%grid%albt = out%NO_DATA
@@ -2434,9 +2426,11 @@ module output_variables
                 series%grid%qh = out%NO_DATA
                 series%grid%qe = out%NO_DATA
                 series%grid%gzero = out%NO_DATA
-                series%grid%stge = out%NO_DATA
                 series%grid%gflx = out%NO_DATA
                 series%grid%tbar = out%NO_DATA
+                series%grid%stg0e = series%grid%stge
+                series%grid%stge = 0.0
+                series%grid%dstge = 0.0
             end if
 
             !> Channels and routing.
@@ -2453,7 +2447,7 @@ module output_variables
             if (ro%RUNCLIM) then
                 series%basin%pre = out%NO_DATA
                 series%basin%fsin = out%NO_DATA
-                series%basin%ifsin = 0
+                series%basin%ifsin = 0.0
                 series%basin%flin = out%NO_DATA
                 series%basin%ta = out%NO_DATA
                 series%basin%qa = out%NO_DATA
@@ -2476,27 +2470,29 @@ module output_variables
                 series%basin%rcan = out%NO_DATA
                 series%basin%sncan = out%NO_DATA
                 series%basin%sno = out%NO_DATA
-                series%basin%isno = 0
+                series%basin%isno = 0.0
                 series%basin%fsno = out%NO_DATA
                 series%basin%wsno = out%NO_DATA
                 series%basin%zpnd = out%NO_DATA
-                series%basin%ipnd = 0
+                series%basin%ipnd = 0.0
                 series%basin%pndw = out%NO_DATA
                 series%basin%lzs = out%NO_DATA
                 series%basin%dzs = out%NO_DATA
-                series%basin%stgw = out%NO_DATA
                 series%basin%thlq = out%NO_DATA
                 series%basin%lqws = out%NO_DATA
                 series%basin%thic = out%NO_DATA
                 series%basin%fzws = out%NO_DATA
                 series%basin%alws = out%NO_DATA
+                series%basin%stg0w = series%basin%stgw
+                series%basin%stgw = 0.0
+                series%basin%dstgw = 0.0
             end if
 
             !> Energy balance.
             if (ro%RUNBALEB) then
                 series%basin%cmas = out%NO_DATA
                 series%basin%tcan = out%NO_DATA
-                series%basin%ican = 0
+                series%basin%ican = 0.0
                 series%basin%tsno = out%NO_DATA
                 series%basin%tpnd = out%NO_DATA
                 series%basin%albt = out%NO_DATA
@@ -2508,9 +2504,11 @@ module output_variables
                 series%basin%qh = out%NO_DATA
                 series%basin%qe = out%NO_DATA
                 series%basin%gzero = out%NO_DATA
-                series%basin%stge = out%NO_DATA
                 series%basin%gflx = out%NO_DATA
                 series%basin%tbar = out%NO_DATA
+                series%basin%stg0e = series%basin%stge
+                series%basin%stge = 0.0
+                series%basin%dstge = 0.0
             end if
 
             !> Channels and routing.
