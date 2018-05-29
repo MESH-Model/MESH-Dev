@@ -145,6 +145,9 @@
       DO K=1,NL_SVS
          DO I=1,N
             DWD(I,K)=(F(I,K)-F(I,K+1))/DELZ(K)-DT*ETR_GRID(I,K)
+	    ! Make sure DWD doesn't lead to WDT exceeding [CRITWATER,WSATC] range
+            DWD(I,K)= MIN(MAX(DWD(I,K),CRITWATER-WD(I,K)),WSATC(I,K)-WD(I,K))
+
             WDT(I,K)=WD(I,K)+DWD(I,K)
          END DO
       END DO
