@@ -243,6 +243,7 @@ module sa_mesh_run_within_grid
         stas_grid%sfc%zpnd(i1:i2) = 0.0
         stas_grid%sfc%pndw(i1:i2) = 0.0
         stas_grid%sfc%tpnd(i1:i2) = 0.0
+        stas_grid%sfc%fstr(i1:i2) = 0.0
         stas_grid%sfc%pevp(i1:i2) = 0.0
         stas_grid%sfc%evap(i1:i2) = 0.0
         stas_grid%sfc%evpb(i1:i2) = 0.0
@@ -293,6 +294,7 @@ module sa_mesh_run_within_grid
             if (stas%sfc%zpnd(k) > 0.0) then
                 stas_grid%sfc%pndw(ki) = stas_grid%sfc%pndw(ki) + stas%sfc%pndw(k)*frac
                 stas_grid%sfc%tpnd(ki) = stas_grid%sfc%tpnd(ki) + stas%sfc%tpnd(k)*frac
+                stas_grid%sfc%fstr(ki) = stas_grid%sfc%fstr(ki) + stas%sfc%fstr(k)*frac
                 fpnd(ki) = fpnd(ki) + frac
             end if
             stas_grid%sfc%pevp(ki) = stas_grid%sfc%pevp(ki) + stas%sfc%pevp(k)*frac

@@ -389,6 +389,9 @@ module RUNCLASS36_module
         stas%sfc%gte(il1:il2) = cdv%GTE(il1:il2)
         stas%sfc%zpnd(il1:il2) = cpv%ZPND(il1:il2)
         stas%sfc%tpnd(il1:il2) = cpv%TPND(il1:il2)
+        stas%sfc%fstr(il1:il2) = &
+            FSTRCS(il1:il2)*cdv%FCS(il1:il2) + FSTRC(il1:il2)*cdv%FC(il1:il2) + &
+            FSTRG(il1:il2)*cdv%FG(il1:il2) + FSTRGS(il1:il2)*cdv%FGS(il1:il2)
         stas%sfc%pevp(il1:il2) = cdv%PET(il1:il2)
         stas%sfc%evap(il1:il2) = cdv%QFS(il1:il2)
         stas%sfc%rofo(il1:il2) = cdv%ROFO(il1:il2)
