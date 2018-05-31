@@ -431,7 +431,7 @@ module SIMSTATS
 
         !> Results for Monte-Carlo style analysis are appended to results in an existing file.
         if (mtsfl%fl(mtsk%MC)%init) then
-            inquire(file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)), exist = exists)
+            inquire(file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%MC)%fn), exist = exists)
             iun = mtsfl%fl(mtsk%MC)%iun
             if (exists) then
                 open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%MC)%fn), position = 'append', status = 'old')
