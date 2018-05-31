@@ -81,6 +81,7 @@ module state_variables
     !*  zpnd: Depth of ponded water on surface. [m].
     !*  pndw: Ponded water storage on the surface. [kg m-2].
     !*  tpnd: Temperature of ponded water. [K].
+    !*  fstr: Contributing fraction of ponded water (PDMROF). [--].
     !*  pevp: Diagnosed potential evapotranspiration. [kg m-2 s-1].
     !*  evap: Evapotranspiration. [kg m-2].
     !*  evpb: Evaporation efficiency (EVP to PEVP) of the canopy. [--].
@@ -93,7 +94,7 @@ module state_variables
     type surface_interface
         real(kind = 4), dimension(:), allocatable :: &
             albt, alvs, alir, gte, &
-            zpnd, pndw, tpnd, &
+            zpnd, pndw, tpnd, fstr, &
             pevp, evap, evpb, arrd, &
             rofo, &
             qevp, hfs, gzero
@@ -239,7 +240,7 @@ module state_variables
 
             !> Surface or at near surface.
             stas%sfc%albt(n), stas%sfc%alvs(n), stas%sfc%alir(n), stas%sfc%gte(n), &
-            stas%sfc%zpnd(n), stas%sfc%pndw(n), stas%sfc%tpnd(n), &
+            stas%sfc%zpnd(n), stas%sfc%pndw(n), stas%sfc%tpnd(n), stas%sfc%fstr(n), &
             stas%sfc%pevp(n), stas%sfc%evap(n), stas%sfc%evpb(n), stas%sfc%arrd(n), &
             stas%sfc%rofo(n), &
             stas%sfc%qevp(n), stas%sfc%hfs(n), stas%sfc%gzero(n), &
@@ -274,7 +275,7 @@ module state_variables
 
             !> Surface or at near surface.
             stas%sfc%albt = 0.0; stas%sfc%alvs = 0.0; stas%sfc%alir = 0.0; stas%sfc%gte = 0.0
-            stas%sfc%zpnd = 0.0; stas%sfc%pndw = 0.0; stas%sfc%tpnd = 0.0
+            stas%sfc%zpnd = 0.0; stas%sfc%pndw = 0.0; stas%sfc%tpnd = 0.0; stas%sfc%fstr = 0.0
             stas%sfc%pevp = 0.0; stas%sfc%evap = 0.0; stas%sfc%evpb = 0.0; stas%sfc%arrd = 0.0
             stas%sfc%rofo = 0.0
             stas%sfc%qevp = 0.0; stas%sfc%hfs = 0.0; stas%sfc%gzero = 0.0
@@ -323,7 +324,7 @@ module state_variables
 
             !> Surface or at near surface.
             stas%sfc%albt(n), stas%sfc%alvs(n), stas%sfc%alir(n), stas%sfc%gte(n), &
-            stas%sfc%zpnd(n), stas%sfc%pndw(n), stas%sfc%tpnd(n), &
+            stas%sfc%zpnd(n), stas%sfc%pndw(n), stas%sfc%tpnd(n), stas%sfc%fstr(n), &
             stas%sfc%pevp(n), stas%sfc%evap(n), stas%sfc%evpb(n), stas%sfc%arrd(n), &
             stas%sfc%rofo(n), &
             stas%sfc%qevp(n), stas%sfc%hfs(n), stas%sfc%gzero(n), &
@@ -363,7 +364,7 @@ module state_variables
 
             !> Surface or at near surface.
             stas%sfc%albt = 0.0; stas%sfc%alvs = 0.0; stas%sfc%alir = 0.0; stas%sfc%gte = 0.0
-            stas%sfc%zpnd = 0.0; stas%sfc%pndw = 0.0; stas%sfc%tpnd = 0.0
+            stas%sfc%zpnd = 0.0; stas%sfc%pndw = 0.0; stas%sfc%tpnd = 0.0; stas%sfc%fstr = 0.0
             stas%sfc%pevp = 0.0; stas%sfc%evap = 0.0; stas%sfc%evpb = 0.0; stas%sfc%arrd = 0.0
             stas%sfc%rofo = 0.0
             stas%sfc%qevp = 0.0; stas%sfc%hfs = 0.0; stas%sfc%gzero = 0.0

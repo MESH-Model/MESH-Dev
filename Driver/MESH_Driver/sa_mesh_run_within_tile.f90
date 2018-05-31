@@ -143,21 +143,22 @@ module sa_mesh_run_within_tile
             i = i + 1
 
             !> Surface or at near surface.
-            allocate(sfc((12 + 4)*iin))
+            allocate(sfc((13 + 4)*iin))
             sfc((1 + iin*0):(iin*1)) = stas%sfc%albt(ii1:ii2)
             sfc((1 + iin*1):(iin*2)) = stas%sfc%alvs(ii1:ii2)
             sfc((1 + iin*2):(iin*3)) = stas%sfc%alir(ii1:ii2)
             sfc((1 + iin*3):(iin*4)) = stas%sfc%gte(ii1:ii2)
             sfc((1 + iin*4):(iin*5)) = stas%sfc%zpnd(ii1:ii2)
             sfc((1 + iin*5):(iin*6)) = stas%sfc%tpnd(ii1:ii2)
-            sfc((1 + iin*6):(iin*7)) = stas%sfc%pevp(ii1:ii2)
-            sfc((1 + iin*7):(iin*8)) = stas%sfc%evap(ii1:ii2)
-            sfc((1 + iin*8):(iin*9)) = stas%sfc%rofo(ii1:ii2)
-            sfc((1 + iin*9):(iin*10)) = stas%sfc%qevp(ii1:ii2)
-            sfc((1 + iin*10):(iin*11)) = stas%sfc%hfs(ii1:ii2)
-            sfc((1 + iin*11):(iin*12)) = stas%sfc%gzero(ii1:ii2)
+            sfc((1 + iin*6):(iin*7)) = stas%sfc%fstr(ii1:ii2)
+            sfc((1 + iin*7):(iin*8)) = stas%sfc%pevp(ii1:ii2)
+            sfc((1 + iin*8):(iin*9)) = stas%sfc%evap(ii1:ii2)
+            sfc((1 + iin*9):(iin*10)) = stas%sfc%rofo(ii1:ii2)
+            sfc((1 + iin*10):(iin*11)) = stas%sfc%qevp(ii1:ii2)
+            sfc((1 + iin*11):(iin*12)) = stas%sfc%hfs(ii1:ii2)
+            sfc((1 + iin*12):(iin*13)) = stas%sfc%gzero(ii1:ii2)
             do j = 0, 3
-                sfc((1 + iin*(12 + j)):(iin*(13 + j))) = stas%sfc%tsfs(ii1:ii2, j + 1)
+                sfc((1 + iin*(13 + j)):(iin*(14 + j))) = stas%sfc%tsfs(ii1:ii2, j + 1)
             end do
             call MPI_Isend(sfc, size(sfc), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
@@ -215,7 +216,7 @@ module sa_mesh_run_within_tile
                 !> Allocate temporary arrays.
                 allocate(cnpy(7*iin))
                 allocate(sno(6*iin))
-                allocate(sfc((12 + 4)*iin))
+                allocate(sfc((13 + 4)*iin))
                 allocate(sl((2 + 4*s)*iin))
                 allocate(lz(2*iin))
                 allocate(dz(2*iin))
@@ -270,14 +271,15 @@ module sa_mesh_run_within_tile
                 stas%sfc%gte(ii1:ii2) = sfc((1 + iin*3):(iin*4))
                 stas%sfc%zpnd(ii1:ii2) = sfc((1 + iin*4):(iin*5))
                 stas%sfc%tpnd(ii1:ii2) = sfc((1 + iin*5):(iin*6))
-                stas%sfc%pevp(ii1:ii2) = sfc((1 + iin*6):(iin*7))
-                stas%sfc%evap(ii1:ii2) = sfc((1 + iin*7):(iin*8))
-                stas%sfc%rofo(ii1:ii2) = sfc((1 + iin*8):(iin*9))
-                stas%sfc%qevp(ii1:ii2) = sfc((1 + iin*9):(iin*10))
-                stas%sfc%hfs(ii1:ii2) = sfc((1 + iin*10):(iin*11))
-                stas%sfc%gzero(ii1:ii2) = sfc((1 + iin*11):(iin*12))
+                stas%sfc%fstr(ii1:ii2) = sfc((1 + iin*6):(iin*7))
+                stas%sfc%pevp(ii1:ii2) = sfc((1 + iin*7):(iin*8))
+                stas%sfc%evap(ii1:ii2) = sfc((1 + iin*8):(iin*9))
+                stas%sfc%rofo(ii1:ii2) = sfc((1 + iin*9):(iin*10))
+                stas%sfc%qevp(ii1:ii2) = sfc((1 + iin*10):(iin*11))
+                stas%sfc%hfs(ii1:ii2) = sfc((1 + iin*11):(iin*12))
+                stas%sfc%gzero(ii1:ii2) = sfc((1 + iin*12):(iin*13))
                 do j = 0, 3
-                    stas%sfc%tsfs(ii1:ii2, j + 1) = sfc((1 + iin*(12 + j)):(iin*(13 + j)))
+                    stas%sfc%tsfs(ii1:ii2, j + 1) = sfc((1 + iin*(13 + j)):(iin*(14 + j)))
                 end do
 
                 !> Soil layers.
@@ -396,6 +398,7 @@ module sa_mesh_run_within_tile
         stas%sfc%evap(il1:il2) = 0.0
         stas%sfc%rofo(il1:il2) = 0.0
         stas%sfc%qevp(il1:il2) = 0.0
+        stas%sfc%fstr(il1:il2) = 0.0
         stas%sfc%hfs(il1:il2) = 0.0
         stas%sfc%gzero(il1:il2) = 0.0
         stas%sl%rofs(il1:il2) = 0.0
