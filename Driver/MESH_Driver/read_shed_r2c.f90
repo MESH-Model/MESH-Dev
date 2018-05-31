@@ -158,7 +158,7 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
     !> Find and assign 'RANK'.
     do l = 1, nattr
         if (lowercase(vattr(l)%attr) == 'rank') then
-            shd%RNKGRD = transpose(vattr(l)%val)
+            shd%RNKGRD = transpose(int(vattr(l)%val))
             exit
         end if
     end do

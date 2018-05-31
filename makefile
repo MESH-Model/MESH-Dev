@@ -73,7 +73,7 @@ FTN90PP=-fpp -free
 FTN90PPOPT=-Tf
 else
 FC=gfortran
-LFLAG=-c -g -fbacktrace -fbounds-check -ffpe-trap=invalid,zero,overflow
+LFLAG=-c -g -fbacktrace -fbounds-check -ffpe-trap=invalid,zero,overflow -Wconversion -Winteger-division -Wsurprising -Wintrinsic-shadow -Wtarget-lifetime
 FTN90PP=-x f95 -cpp -ffree-form -ffree-line-length-none -fcray-pointer
 FTN90PPOPT=
 endif

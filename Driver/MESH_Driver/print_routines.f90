@@ -49,8 +49,8 @@ module print_routines
     integer, parameter :: DEFAULT_FIELD_LENGTH = 20
 
     !> Format constants.
-    character(len = *), parameter :: FMT_GEN = '(99999(g15.6, 1x))'
-    character(len = *), parameter :: FMT_CSV = "(99999(g15.6, ','))"
+    character(len = *), parameter :: FMT_GEN = '(99999(g15.6e2, 1x))'
+    character(len = *), parameter :: FMT_CSV = "(99999(g15.6e2, ','))"
 
     contains
 
