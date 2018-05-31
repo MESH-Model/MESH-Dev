@@ -549,9 +549,9 @@ module rte_module
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.
-        stas_grid%chnl%qi = qi2
-        stas_grid%chnl%stg = store2
-        stas_grid%chnl%qo = qo2
+        vs%grid%qi = qi2
+        vs%grid%stg = store2
+        vs%grid%qo = qo2
 
     end subroutine
 
@@ -602,8 +602,8 @@ module rte_module
         if (ic%ts_hourly == 1) then
             qr(1:naa) = 0.0
         end if
-        qr(1:naa) = qr(1:naa) + stas_grid%chnl%rff(1:naa)*shd%FRAC(1:naa)
-        qr(1:naa) = qr(1:naa) + stas_grid%chnl%rchg(1:naa)*shd%FRAC(1:naa)
+        qr(1:naa) = qr(1:naa) + vs%grid%rff(1:naa)*shd%FRAC(1:naa)
+        qr(1:naa) = qr(1:naa) + vs%grid%rchg(1:naa)*shd%FRAC(1:naa)
 
         !> Reset SA_MESH output variables (for averaging).
         !> Setting these to zero also prevents updating from the state variables upon return.
@@ -648,9 +648,9 @@ module rte_module
         qr(1:naa) = qr(1:naa)*1000.0*step2/3600.0
 
         !> Update from SA_MESH variables.
-        qi2 = stas_grid%chnl%qi
-        store2 = stas_grid%chnl%stg
-        qo2 = stas_grid%chnl%qo
+        qi2 = vs%grid%qi
+        store2 = vs%grid%stg
+        qo2 = vs%grid%qo
 
         !> Remember the input values from the start of the time step.
         qi2_strt(1:naa) = qi2(1:naa)
@@ -833,9 +833,9 @@ module rte_module
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.
-        stas_grid%chnl%qi = qi2
-        stas_grid%chnl%stg = store2
-        stas_grid%chnl%qo = qo2
+        vs%grid%qi = qi2
+        vs%grid%stg = store2
+        vs%grid%qo = qo2
         if (fms%rsvr%n > 0) then
             reach_last = lake_elv(:, fhr)
         end if

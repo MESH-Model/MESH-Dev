@@ -126,7 +126,7 @@ module PBSM_module
 
         !> Set initial SnowAge & DrySnow values for PBSM calculations.
         do k = il1, il2
-            if (stas%sno%sno(k) <= 0.0) then
+            if (vs%tile%sno(k) <= 0.0) then
                 pbsm%vs%DrySnow(k) = 0.0   !1 = snowpack is dry (i.e. cold)
                 pbsm%vs%SnowAge(k) = 0.0   !hours since last snowfall
             else if (cm%dat(ck%TT)%GAT(k) >= TFREZ) then

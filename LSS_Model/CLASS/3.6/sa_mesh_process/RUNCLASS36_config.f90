@@ -398,25 +398,25 @@ module RUNCLASS36_config
                     jk = shd%lc%JLMOS(k)
 
                     !> Assign values.
-                    stas%sno%albs(k) = ALBSROW(ik, jk)
-                    stas%cnpy%cmas(k) = CMAIROW(ik, jk)
-                    stas%cnpy%gro(k) = GROROW(ik, jk)
-                    stas%cnpy%qac(k) = QACROW(ik, jk)
-                    stas%cnpy%rcan(k) = RCANROW(ik, jk)
-                    stas%sno%rhos(k) = RHOSROW(ik, jk)
-                    stas%cnpy%sncan(k) = SCANROW(ik, jk)
-                    stas%sno%sno(k) = SNOROW(ik, jk)
-                    stas%cnpy%tac(k) = TACROW(ik, jk)
-                    stas%sl%tbar(k, :) = TBARROW(ik, jk, :)
-                    stas%sl%tbas(k) = TBASROW(ik, jk)
-                    stas%cnpy%tcan(k) = TCANROW(ik, jk)
-                    stas%sl%thic(k, :) = THICROW(ik, jk, :)
-                    stas%sl%thlq(k, :) = THLQROW(ik, jk, :)
-                    stas%sfc%tpnd(k) = TPNDROW(ik, jk)
-                    stas%sfc%tsfs(k, :) = TSFSROW(ik, jk, :)
-                    stas%sno%tsno(k) = TSNOROW(ik, jk)
-                    stas%sno%wsno(k) = WSNOROW(ik, jk)
-                    stas%sfc%zpnd(k) = ZPNDROW(ik, jk)
+                    vs%tile%albs(k) = ALBSROW(ik, jk)
+                    vs%tile%cmas(k) = CMAIROW(ik, jk)
+                    vs%tile%gro(k) = GROROW(ik, jk)
+                    vs%tile%qac(k) = QACROW(ik, jk)
+                    vs%tile%rcan(k) = RCANROW(ik, jk)
+                    vs%tile%rhos(k) = RHOSROW(ik, jk)
+                    vs%tile%sncan(k) = SCANROW(ik, jk)
+                    vs%tile%sno(k) = SNOROW(ik, jk)
+                    vs%tile%tac(k) = TACROW(ik, jk)
+                    vs%tile%tbar(k, :) = TBARROW(ik, jk, :)
+                    vs%tile%tbas(k) = TBASROW(ik, jk)
+                    vs%tile%tcan(k) = TCANROW(ik, jk)
+                    vs%tile%thic(k, :) = THICROW(ik, jk, :)
+                    vs%tile%thlq(k, :) = THLQROW(ik, jk, :)
+                    vs%tile%tpnd(k) = TPNDROW(ik, jk)
+                    vs%tile%tsfs(k, :) = TSFSROW(ik, jk, :)
+                    vs%tile%tsno(k) = TSNOROW(ik, jk)
+                    vs%tile%wsno(k) = WSNOROW(ik, jk)
+                    vs%tile%zpnd(k) = ZPNDROW(ik, jk)
 
                 end do
 
@@ -468,25 +468,25 @@ module RUNCLASS36_config
         csfv%SAND = pm%slp%sand
         csfv%CLAY = pm%slp%clay
         csfv%ORGM = pm%slp%orgm
-        cpv%CMAI = stas%cnpy%cmas
-        cpv%WSNO = stas%sno%wsno
-        cpv%QAC = stas%cnpy%qac
-        cpv%TCAN = stas%cnpy%tcan
-        cpv%TAC = stas%cnpy%tac
-        cpv%TSNO = stas%sno%tsno
-        cpv%TPND = stas%sfc%tpnd
-        cpv%ZPND = stas%sfc%zpnd
-        cpv%RCAN = stas%cnpy%rcan
-        cpv%SNCAN = stas%cnpy%sncan
-        cpv%SNO = stas%sno%sno
-        cpv%ALBS = stas%sno%albs
-        cpv%RHOS = stas%sno%rhos
-        cpv%GRO = stas%cnpy%gro
-        cpv%TSFS = stas%sfc%tsfs
-        cpv%TBAR = stas%sl%tbar
-        cpv%THLQ = stas%sl%thlq
-        cpv%THIC = stas%sl%thic
-        cpv%TBAS = stas%sl%tbas
+        cpv%CMAI = vs%tile%cmas
+        cpv%WSNO = vs%tile%wsno
+        cpv%QAC = vs%tile%qac
+        cpv%TCAN = vs%tile%tcan
+        cpv%TAC = vs%tile%tac
+        cpv%TSNO = vs%tile%tsno
+        cpv%TPND = vs%tile%tpnd
+        cpv%ZPND = vs%tile%zpnd
+        cpv%RCAN = vs%tile%rcan
+        cpv%SNCAN = vs%tile%sncan
+        cpv%SNO = vs%tile%sno
+        cpv%ALBS = vs%tile%albs
+        cpv%RHOS = vs%tile%rhos
+        cpv%GRO = vs%tile%gro
+        cpv%TSFS = vs%tile%tsfs
+        cpv%TBAR = vs%tile%tbar
+        cpv%THLQ = vs%tile%thlq
+        cpv%THIC = vs%tile%thic
+        cpv%TBAS = vs%tile%tbas
         csfv%ZSNL = pm%snp%zsnl
         csfv%ZPLG = pm%sfp%zplg
         csfv%ZPLS = pm%snp%zpls
@@ -567,8 +567,8 @@ module RUNCLASS36_config
         pm%slp%tcs = csfv%TCS
         pm%slp%thfc = csfv%THFC
         pm%slp%psiwlt = csfv%PSIW
-        stas%sl%delzw = csfv%DELZW
-        stas%sl%zbotw = csfv%ZBTW
+        vs%tile%delzw = csfv%DELZW
+        vs%tile%zbotw = csfv%ZBTW
 
         !> CLASS output files.
         if (WF_NUM_POINTS > 0) call CLASSOUT_open_files(shd)
@@ -647,25 +647,25 @@ module RUNCLASS36_config
                     jk = shd%lc%JLMOS(k)
 
                     !> Assign values.
-                    ALBSROW(ik, jk) = stas%sno%albs(k)
-                    CMAIROW(ik, jk) = stas%cnpy%cmas(k)
-                    GROROW(ik, jk) = stas%cnpy%gro(k)
-                    QACROW(ik, jk) = stas%cnpy%qac(k)
-                    RCANROW(ik, jk) = stas%cnpy%rcan(k)
-                    RHOSROW(ik, jk) = stas%sno%rhos(k)
-                    SCANROW(ik, jk) = stas%cnpy%sncan(k)
-                    SNOROW(ik, jk) = stas%sno%sno(k)
-                    TACROW(ik, jk) = stas%cnpy%tac(k)
-                    TBARROW(ik, jk, :) = stas%sl%tbar(k, :)
-                    TBASROW(ik, jk) = stas%sl%tbas(k)
-                    TCANROW(ik, jk) = stas%cnpy%tcan(k)
-                    THICROW(ik, jk, :) = stas%sl%thic(k, :)
-                    THLQROW(ik, jk, :) = stas%sl%thlq(k, :)
-                    TPNDROW(ik, jk) = stas%sfc%tpnd(k)
-                    TSFSROW(ik, jk, :) = stas%sfc%tsfs(k, :)
-                    TSNOROW(ik, jk) = stas%sno%tsno(k)
-                    WSNOROW(ik, jk) = stas%sno%wsno(k)
-                    ZPNDROW(ik, jk) = stas%sfc%zpnd(k)
+                    ALBSROW(ik, jk) = vs%tile%albs(k)
+                    CMAIROW(ik, jk) = vs%tile%cmas(k)
+                    GROROW(ik, jk) = vs%tile%gro(k)
+                    QACROW(ik, jk) = vs%tile%qac(k)
+                    RCANROW(ik, jk) = vs%tile%rcan(k)
+                    RHOSROW(ik, jk) = vs%tile%rhos(k)
+                    SCANROW(ik, jk) = vs%tile%sncan(k)
+                    SNOROW(ik, jk) = vs%tile%sno(k)
+                    TACROW(ik, jk) = vs%tile%tac(k)
+                    TBARROW(ik, jk, :) = vs%tile%tbar(k, :)
+                    TBASROW(ik, jk) = vs%tile%tbas(k)
+                    TCANROW(ik, jk) = vs%tile%tcan(k)
+                    THICROW(ik, jk, :) = vs%tile%thic(k, :)
+                    THLQROW(ik, jk, :) = vs%tile%thlq(k, :)
+                    TPNDROW(ik, jk) = vs%tile%tpnd(k)
+                    TSFSROW(ik, jk, :) = vs%tile%tsfs(k, :)
+                    TSNOROW(ik, jk) = vs%tile%tsno(k)
+                    WSNOROW(ik, jk) = vs%tile%wsno(k)
+                    ZPNDROW(ik, jk) = vs%tile%zpnd(k)
 
                 end do
 

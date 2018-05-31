@@ -59,30 +59,30 @@ subroutine read_initial_states(fls, shd, ierr)
 
         !> RUNCLASS36 and RUNSVS113.
         if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
-            stas%cnpy%tcan(k) = stas_gru%cnpy%tcan(m) + TFREZ
-            stas%sno%tsno(k) = stas_gru%sno%tsno(m) + TFREZ
-            stas%sno%rhos(k) = stas_gru%sno%rhos(m)
-            stas%sno%albs(k) = stas_gru%sno%albs(m)
-            stas%sl%tbar(k, :) = stas_gru%sl%tbar(m, :) + TFREZ
-            stas%sl%thlq(k, :) = stas_gru%sl%thlq(m, :)
+            vs%tile%tcan(k) = vs%gru%tcan(m) + TFREZ
+            vs%tile%tsno(k) = vs%gru%tsno(m) + TFREZ
+            vs%tile%rhos(k) = vs%gru%rhos(m)
+            vs%tile%albs(k) = vs%gru%albs(m)
+            vs%tile%tbar(k, :) = vs%gru%tbar(m, :) + TFREZ
+            vs%tile%thlq(k, :) = vs%gru%thlq(m, :)
         end if
 
         !> RUNCLASS36.
         if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-            stas%cnpy%tac(k) = stas_gru%cnpy%tcan(m) + TFREZ
-            stas%cnpy%qac = 0.5e-2
-            stas%sfc%tpnd(k) = stas_gru%sfc%tpnd(m) + TFREZ
-            stas%sfc%zpnd(k) = stas_gru%sfc%zpnd(m)
-            stas%cnpy%rcan(k) = stas_gru%cnpy%rcan(m)
-            stas%cnpy%sncan(k) = stas_gru%cnpy%sncan(m)
-            stas%sno%sno(k) = stas_gru%sno%sno(m)
-            stas%cnpy%gro(k) = stas_gru%cnpy%gro(m)
-            stas%sfc%tsfs(k, 1) = TFREZ
-            stas%sfc%tsfs(k, 2) = TFREZ
-            stas%sfc%tsfs(k, 3) = stas_gru%sl%tbar(m, 1) + TFREZ
-            stas%sfc%tsfs(k, 4) = stas_gru%sl%tbar(m, 1) + TFREZ
-            stas%sl%tbas(k) = stas_gru%sl%tbar(m, NSL) + TFREZ
-            stas%sl%thic(k, :) = stas_gru%sl%thic(m, :)
+            vs%tile%tac(k) = vs%gru%tcan(m) + TFREZ
+            vs%tile%qac = 0.5e-2
+            vs%tile%tpnd(k) = vs%gru%tpnd(m) + TFREZ
+            vs%tile%zpnd(k) = vs%gru%zpnd(m)
+            vs%tile%rcan(k) = vs%gru%rcan(m)
+            vs%tile%sncan(k) = vs%gru%sncan(m)
+            vs%tile%sno(k) = vs%gru%sno(m)
+            vs%tile%gro(k) = vs%gru%gro(m)
+            vs%tile%tsfs(k, 1) = TFREZ
+            vs%tile%tsfs(k, 2) = TFREZ
+            vs%tile%tsfs(k, 3) = vs%gru%tbar(m, 1) + TFREZ
+            vs%tile%tsfs(k, 4) = vs%gru%tbar(m, 1) + TFREZ
+            vs%tile%tbas(k) = vs%gru%tbar(m, NSL) + TFREZ
+            vs%tile%thic(k, :) = vs%gru%thic(m, :)
         end if
 
     end do !k = il1, il2
@@ -121,9 +121,9 @@ subroutine read_initial_states(fls, shd, ierr)
         !> Assign states to layers lower than the "last configured layer" read from file.
         if (ignd > 0) then
             do j = (ignd + 1), shd%lc%IGND
-                stas%sl%tbar(:, j) = stas%sl%tbar(:, ignd)
-                stas%sl%thlq(:, j) = stas%sl%thlq(:, ignd)
-                stas%sl%thic(:, j) = stas%sl%thic(:, ignd)
+                vs%tile%tbar(:, j) = vs%tile%tbar(:, ignd)
+                vs%tile%thlq(:, j) = vs%tile%thlq(:, ignd)
+                vs%tile%thic(:, j) = vs%tile%thic(:, ignd)
             end do
         end if
     end if

@@ -353,8 +353,8 @@ module sa_mesh_run_between_grid
                 do k = 1, shd%lc%NML
                     ki = shd%lc%ILMOS(k)
                     FRAC = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%FRAC(shd%lc%ILMOS(k))
-                    basin_SCA = basin_SCA + stas%sno%fsno(k)*FRAC
-                    basin_SWE = basin_SWE + stas%sno%sno(k)*FRAC
+                    basin_SCA = basin_SCA + vs%tile%fsno(k)*FRAC
+                    basin_SWE = basin_SWE + vs%tile%sno(k)*FRAC
                 end do
                 basin_SCA = basin_SCA/TOTAL_AREA
                 basin_SWE = basin_SWE/TOTAL_AREA
@@ -367,8 +367,8 @@ module sa_mesh_run_between_grid
         end if !(ipid == 0) then
 
         !> Update variables.
-        stas_grid%chnl%rff = (stas_grid%sfc%rofo + stas_grid%sl%rofs)*ic%dts
-        stas_grid%chnl%rchg = (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*ic%dts
+        vs%grid%rff = (vs%grid%rofo + vs%grid%rofs)*ic%dts
+        vs%grid%rchg = vs%grid%rofb*ic%dts
 
         !> Call processes.
         call SA_RTE(shd)
@@ -383,8 +383,8 @@ module sa_mesh_run_between_grid
         if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0) then
 
             where (shd%DA > 0.0)
-                WF_QO2_ACC_MM = WF_QO2_ACC_MM + stas_grid%chnl%qo/shd%DA/1000.0*RTE_TS
-                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + stas_grid%chnl%stg/shd%DA/1000.0
+                WF_QO2_ACC_MM = WF_QO2_ACC_MM + vs%grid%qo/shd%DA/1000.0*RTE_TS
+                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + vs%grid%stg/shd%DA/1000.0
             elsewhere
                 WF_QO2_ACC_MM = out%NO_DATA
                 WF_STORE2_ACC_MM = out%NO_DATA

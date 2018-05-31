@@ -1167,70 +1167,70 @@ program RUNMESH
                 if (count(shd%lc%JLMOS(1:NML) == m) == 0) cycle
 
                 !> Canopy.
-                tcan(3, m) = maxval(stas%cnpy%tcan, shd%lc%JLMOS(1:NML) == m)
+                tcan(3, m) = maxval(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m)
                 if (tcan(3, m) > 0.0) then
-                    tcan(1, m) = sum(stas%cnpy%tcan, shd%lc%JLMOS(1:NML) == m .and. &
-                                     stas%cnpy%tcan /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. stas%cnpy%tcan /= 0.0)
-                    tcan(2, m) = minval(stas%cnpy%tcan, shd%lc%JLMOS(1:NML) == m .and. stas%cnpy%tcan /= 0.0)
+                    tcan(1, m) = sum(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%tcan /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%tcan /= 0.0)
+                    tcan(2, m) = minval(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tcan /= 0.0)
                 end if
                 where (tcan < 173.16 .or. tcan > 373.16 .or. tcan == 0.0) tcan = 273.16
-                rcan(2, m) = minval(stas%cnpy%rcan, shd%lc%JLMOS(1:NML) == m)
-                rcan(3, m) = maxval(stas%cnpy%rcan, shd%lc%JLMOS(1:NML) == m)
-                rcan(1, m) = sum(stas%cnpy%rcan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                sncan(2, m) = minval(stas%cnpy%sncan, shd%lc%JLMOS(1:NML) == m)
-                sncan(3, m) = maxval(stas%cnpy%sncan, shd%lc%JLMOS(1:NML) == m)
-                sncan(1, m) = sum(stas%cnpy%sncan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                gro(2, m) = minval(stas%cnpy%gro, shd%lc%JLMOS(1:NML) == m)
-                gro(3, m) = maxval(stas%cnpy%gro, shd%lc%JLMOS(1:NML) == m)
-                gro(1, m) = sum(stas%cnpy%gro, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                rcan(2, m) = minval(vs%tile%rcan, shd%lc%JLMOS(1:NML) == m)
+                rcan(3, m) = maxval(vs%tile%rcan, shd%lc%JLMOS(1:NML) == m)
+                rcan(1, m) = sum(vs%tile%rcan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                sncan(2, m) = minval(vs%tile%sncan, shd%lc%JLMOS(1:NML) == m)
+                sncan(3, m) = maxval(vs%tile%sncan, shd%lc%JLMOS(1:NML) == m)
+                sncan(1, m) = sum(vs%tile%sncan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                gro(2, m) = minval(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)
+                gro(3, m) = maxval(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)
+                gro(1, m) = sum(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
 
                 !> Ponded water at surface.
-                zpnd(2, m) = minval(stas%sfc%zpnd, shd%lc%JLMOS(1:NML) == m)
-                zpnd(3, m) = maxval(stas%sfc%zpnd, shd%lc%JLMOS(1:NML) == m)
-                zpnd(1, m) = sum(stas%sfc%zpnd, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                tpnd(3, m) = maxval(stas%sfc%tpnd, shd%lc%JLMOS(1:NML) == m)
+                zpnd(2, m) = minval(vs%tile%zpnd, shd%lc%JLMOS(1:NML) == m)
+                zpnd(3, m) = maxval(vs%tile%zpnd, shd%lc%JLMOS(1:NML) == m)
+                zpnd(1, m) = sum(vs%tile%zpnd, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                tpnd(3, m) = maxval(vs%tile%tpnd, shd%lc%JLMOS(1:NML) == m)
                 if (tpnd(3, m) > 0.0) then
-                    tpnd(1, m) = sum(stas%sfc%tpnd, shd%lc%JLMOS(1:NML) == m .and. &
-                                     stas%sfc%tpnd /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. stas%sfc%tpnd /= 0.0)
-                    tpnd(2, m) = minval(stas%sfc%tpnd, shd%lc%JLMOS(1:NML) == m .and. stas%sfc%tpnd /= 0.0)
+                    tpnd(1, m) = sum(vs%tile%tpnd, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%tpnd /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%tpnd /= 0.0)
+                    tpnd(2, m) = minval(vs%tile%tpnd, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tpnd /= 0.0)
                 end if
                 where (tpnd < 173.16 .or. tpnd > 373.16 .or. tpnd == 0.0) tpnd = 273.16
 
                 !> Snow.
-                sno(2, m) = minval(stas%sno%sno, shd%lc%JLMOS(1:NML) == m)
-                sno(3, m) = maxval(stas%sno%sno, shd%lc%JLMOS(1:NML) == m)
-                sno(1, m) = sum(stas%sno%sno, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                tsno(3, m) = maxval(stas%sno%tsno, shd%lc%JLMOS(1:NML) == m)
+                sno(2, m) = minval(vs%tile%sno, shd%lc%JLMOS(1:NML) == m)
+                sno(3, m) = maxval(vs%tile%sno, shd%lc%JLMOS(1:NML) == m)
+                sno(1, m) = sum(vs%tile%sno, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                tsno(3, m) = maxval(vs%tile%tsno, shd%lc%JLMOS(1:NML) == m)
                 if (tsno(3, m) > 0.0) then
-                    tsno(1, m) = sum(stas%sno%tsno, shd%lc%JLMOS(1:NML) == m .and. &
-                                     stas%sno%tsno /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. stas%sno%tsno /= 0.0)
-                    tsno(2, m) = minval(stas%sno%tsno, shd%lc%JLMOS(1:NML) == m .and. stas%sno%tsno /= 0.0)
+                    tsno(1, m) = sum(vs%tile%tsno, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%tsno /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%tsno /= 0.0)
+                    tsno(2, m) = minval(vs%tile%tsno, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tsno /= 0.0)
                 end if
                 where (tsno < 173.16 .or. tsno > 373.16 .or. tsno == 0.0) tsno = 273.16
                 if (sno(3, m) > 0.0) then
-                    albs(1, m) = sum(stas%sno%albs, shd%lc%JLMOS(1:NML) == m .and. &
-                                     stas%sno%sno > 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. stas%sno%sno > 0.0)
-                    albs(2, m) = minval(stas%sno%albs, shd%lc%JLMOS(1:NML) == m .and. stas%sno%sno > 0.0)
-                    albs(3, m) = maxval(stas%sno%albs, shd%lc%JLMOS(1:NML) == m .and. stas%sno%sno > 0.0)
+                    albs(1, m) = sum(vs%tile%albs, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%sno > 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+                    albs(2, m) = minval(vs%tile%albs, shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+                    albs(3, m) = maxval(vs%tile%albs, shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
                 end if
-                rhos(3, m) = maxval(stas%sno%rhos, shd%lc%JLMOS(1:NML) == m)
+                rhos(3, m) = maxval(vs%tile%rhos, shd%lc%JLMOS(1:NML) == m)
                 if (rhos(3, m) > 0.0) then
-                    rhos(1, m) = sum(stas%sno%rhos, shd%lc%JLMOS(1:NML) == m .and. &
-                                     stas%sno%rhos /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. stas%sno%rhos /= 0.0)
-                    rhos(2, m) = minval(stas%sno%rhos, shd%lc%JLMOS(1:NML) == m .and. stas%sno%rhos /= 0.0)
+                    rhos(1, m) = sum(vs%tile%rhos, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%rhos /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%rhos /= 0.0)
+                    rhos(2, m) = minval(vs%tile%rhos, shd%lc%JLMOS(1:NML) == m .and. vs%tile%rhos /= 0.0)
                 end if
 
                 !> Soil.
                 do j = 1, NSL
-                    tbar(1, m, j) = sum(stas%sl%tbar(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                    tbar(2, m, j) = minval(stas%sl%tbar(:, j), shd%lc%JLMOS(1:NML) == m)
-                    tbar(3, m, j) = maxval(stas%sl%tbar(:, j), shd%lc%JLMOS(1:NML) == m)
-                    thlq(1, m, j) = sum(stas%sl%thlq(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                    thlq(2, m, j) = minval(stas%sl%thlq(:, j), shd%lc%JLMOS(1:NML) == m)
-                    thlq(3, m, j) = maxval(stas%sl%thlq(:, j), shd%lc%JLMOS(1:NML) == m)
-                    thic(1, m, j) = sum(stas%sl%thic(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                    thic(2, m, j) = minval(stas%sl%thic(:, j), shd%lc%JLMOS(1:NML) == m)
-                    thic(3, m, j) = maxval(stas%sl%thic(:, j), shd%lc%JLMOS(1:NML) == m)
+                    tbar(1, m, j) = sum(vs%tile%tbar(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                    tbar(2, m, j) = minval(vs%tile%tbar(:, j), shd%lc%JLMOS(1:NML) == m)
+                    tbar(3, m, j) = maxval(vs%tile%tbar(:, j), shd%lc%JLMOS(1:NML) == m)
+                    thlq(1, m, j) = sum(vs%tile%thlq(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                    thlq(2, m, j) = minval(vs%tile%thlq(:, j), shd%lc%JLMOS(1:NML) == m)
+                    thlq(3, m, j) = maxval(vs%tile%thlq(:, j), shd%lc%JLMOS(1:NML) == m)
+                    thic(1, m, j) = sum(vs%tile%thic(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                    thic(2, m, j) = minval(vs%tile%thic(:, j), shd%lc%JLMOS(1:NML) == m)
+                    thic(3, m, j) = maxval(vs%tile%thic(:, j), shd%lc%JLMOS(1:NML) == m)
                 end do
             end do
 

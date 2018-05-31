@@ -47,7 +47,7 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
 			control_variables.o \
 			variable_names.o parameter_names.o \
-			shd_variables.o fm_variables.o input_parameters.o state_variables.o \
+			shd_variables.o fm_variables.o input_parameters.o model_variables.o \
 			climate_forcing_module_config.o \
 			climate_forcing_module_io.o climate_forcing_module.o \
 			output_variables.o \

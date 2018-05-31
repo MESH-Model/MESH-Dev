@@ -371,11 +371,11 @@ module output_variables
         !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
         !> 'climate_forcing' required for 'cm'.
-        !> 'state_variables' required for 'stas'.
+        !> 'model_variables' required for 'vs'.
         use shd_variables
         use control_variables
         use climate_forcing
-        use state_variables
+        use model_variables
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
@@ -409,44 +409,43 @@ module output_variables
             !> Water balance.
             if (ro%RUNBALWB) then
                 if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%tile%prec, n)
-                if (allocated(stas%sfc%evap)) call output_variables_allocate(series%tile%evap, n)
-                if (allocated(stas%sfc%pevp)) call output_variables_allocate(series%tile%pevp, n)
-                if (allocated(stas%sfc%evpb)) call output_variables_allocate(series%tile%evpb, n)
-                if (allocated(stas%sfc%arrd)) call output_variables_allocate(series%tile%arrd, n)
-                if (allocated(stas%cnpy%gro)) call output_variables_allocate(series%tile%gro, n)
-                if (allocated(stas%sfc%rofo) .or. allocated(stas%sl%rofs) .or. allocated(stas%lzs%rofb) .or. &
-                    allocated(stas%dzs%rofb)) then
+                if (allocated(vs%tile%evap)) call output_variables_allocate(series%tile%evap, n)
+                if (allocated(vs%tile%pevp)) call output_variables_allocate(series%tile%pevp, n)
+                if (allocated(vs%tile%evpb)) call output_variables_allocate(series%tile%evpb, n)
+                if (allocated(vs%tile%arrd)) call output_variables_allocate(series%tile%arrd, n)
+                if (allocated(vs%tile%gro)) call output_variables_allocate(series%tile%gro, n)
+                if (allocated(vs%tile%rofo) .or. allocated(vs%tile%rofs) .or. allocated(vs%tile%rofb)) then
                     call output_variables_allocate(series%tile%rof, n)
                 end if
-                if (allocated(stas%sfc%rofo)) call output_variables_allocate(series%tile%rofo, n)
-                if (allocated(stas%sl%rofs)) call output_variables_allocate(series%tile%rofs, n)
-                if (allocated(stas%lzs%rofb) .and. allocated(stas%dzs%rofb)) call output_variables_allocate(series%tile%rofb, n)
-                if (allocated(stas%cnpy%rcan)) call output_variables_allocate(series%tile%rcan, n)
-                if (allocated(stas%cnpy%sncan)) call output_variables_allocate(series%tile%sncan, n)
-                if (allocated(stas%sno%sno)) then
+                if (allocated(vs%tile%rofo)) call output_variables_allocate(series%tile%rofo, n)
+                if (allocated(vs%tile%rofs)) call output_variables_allocate(series%tile%rofs, n)
+                if (allocated(vs%tile%rofb)) call output_variables_allocate(series%tile%rofb, n)
+                if (allocated(vs%tile%rcan)) call output_variables_allocate(series%tile%rcan, n)
+                if (allocated(vs%tile%sncan)) call output_variables_allocate(series%tile%sncan, n)
+                if (allocated(vs%tile%sno)) then
                     call output_variables_allocate(series%tile%sno, n)
                     call output_variables_allocate(series%tile%isno, n)
                 end if
-                if (allocated(stas%sno%fsno)) call output_variables_allocate(series%tile%fsno, n)
-                if (allocated(stas%sno%wsno)) then
+                if (allocated(vs%tile%fsno)) call output_variables_allocate(series%tile%fsno, n)
+                if (allocated(vs%tile%wsno)) then
                     call output_variables_allocate(series%tile%wsno, n)
                     call output_variables_allocate(series%tile%isno, n)
                 end if
-                if (allocated(stas%sfc%zpnd)) then
+                if (allocated(vs%tile%zpnd)) then
                     call output_variables_allocate(series%tile%zpnd, n)
                     call output_variables_allocate(series%tile%ipnd, n)
                 end if
-                if (allocated(stas%sfc%pndw)) then
+                if (allocated(vs%tile%pndw)) then
                     call output_variables_allocate(series%tile%pndw, n)
                     call output_variables_allocate(series%tile%ipnd, n)
                 end if
-                if (allocated(stas%lzs%ws)) call output_variables_allocate(series%tile%lzs, n)
-                if (allocated(stas%dzs%ws)) call output_variables_allocate(series%tile%dzs, n)
-                if (allocated(stas%sl%thlq)) call output_variables_allocate(series%tile%thlq, n, nsl)
-                if (allocated(stas%sl%lqws)) call output_variables_allocate(series%tile%lqws, n, nsl)
-                if (allocated(stas%sl%thic)) call output_variables_allocate(series%tile%thic, n, nsl)
-                if (allocated(stas%sl%fzws)) call output_variables_allocate(series%tile%fzws, n, nsl)
-                if (allocated(stas%sl%lqws) .or. allocated(stas%sl%fzws)) call output_variables_allocate(series%tile%alws, n, nsl)
+                if (allocated(vs%tile%lzs)) call output_variables_allocate(series%tile%lzs, n)
+                if (allocated(vs%tile%dzs)) call output_variables_allocate(series%tile%dzs, n)
+                if (allocated(vs%tile%thlq)) call output_variables_allocate(series%tile%thlq, n, nsl)
+                if (allocated(vs%tile%lqws)) call output_variables_allocate(series%tile%lqws, n, nsl)
+                if (allocated(vs%tile%thic)) call output_variables_allocate(series%tile%thic, n, nsl)
+                if (allocated(vs%tile%fzws)) call output_variables_allocate(series%tile%fzws, n, nsl)
+                if (allocated(vs%tile%lqws) .or. allocated(vs%tile%fzws)) call output_variables_allocate(series%tile%alws, n, nsl)
                 call output_variables_allocate(series%tile%stgw, n)
                 call output_variables_allocate(series%tile%stg0w, n)
                 call output_variables_allocate(series%tile%dstgw, n)
@@ -454,41 +453,41 @@ module output_variables
 
             !> Energy balance.
             if (ro%RUNBALEB) then
-                if (allocated(stas%cnpy%cmas)) call output_variables_allocate(series%tile%cmas, n)
-                if (allocated(stas%cnpy%tcan)) then
+                if (allocated(vs%tile%cmas)) call output_variables_allocate(series%tile%cmas, n)
+                if (allocated(vs%tile%tcan)) then
                     call output_variables_allocate(series%tile%tcan, n)
                     call output_variables_allocate(series%tile%ican, n)
                 end if
-                if (allocated(stas%sno%tsno)) then
+                if (allocated(vs%tile%tsno)) then
                     call output_variables_allocate(series%tile%tsno, n)
                     call output_variables_allocate(series%tile%isno, n)
                 end if
-                if (allocated(stas%sfc%tpnd)) then
+                if (allocated(vs%tile%tpnd)) then
                     call output_variables_allocate(series%tile%tpnd, n)
                     call output_variables_allocate(series%tile%ipnd, n)
                 end if
-                if (allocated(stas%sfc%alvs)) then
+                if (allocated(vs%tile%alvs)) then
                     call output_variables_allocate(series%tile%alvs, n)
                 end if
-                if (allocated(stas%sfc%alir)) then
+                if (allocated(vs%tile%alir)) then
                     call output_variables_allocate(series%tile%alir, n)
                     call output_variables_allocate(series%tile%ifsin, n)
                 end if
-                if (allocated(stas%sfc%albt)) then
+                if (allocated(vs%tile%albt)) then
                     call output_variables_allocate(series%tile%albt, n)
                     call output_variables_allocate(series%tile%ifsin, n)
                 end if
-                if (allocated(stas%sfc%gte)) call output_variables_allocate(series%tile%gte, n)
-                if (allocated(cm%dat(ck%FB)%GAT) .and. allocated(stas%sfc%albt)) then
+                if (allocated(vs%tile%gte)) call output_variables_allocate(series%tile%gte, n)
+                if (allocated(cm%dat(ck%FB)%GAT) .and. allocated(vs%tile%albt)) then
                     call output_variables_allocate(series%tile%fsout, n)
                     call output_variables_allocate(series%tile%ifsin, n)
                 end if
-                if (allocated(stas%sfc%gte)) call output_variables_allocate(series%tile%flout, n)
-                if (allocated(stas%sfc%hfs)) call output_variables_allocate(series%tile%qh, n)
-                if (allocated(stas%sfc%qevp)) call output_variables_allocate(series%tile%qe, n)
-                if (allocated(stas%sfc%gzero)) call output_variables_allocate(series%tile%gzero, n)
-                if (allocated(stas%sl%gflx)) call output_variables_allocate(series%tile%gflx, n, nsl)
-                if (allocated(stas%sl%tbar)) call output_variables_allocate(series%tile%tbar, n, nsl)
+                if (allocated(vs%tile%gte)) call output_variables_allocate(series%tile%flout, n)
+                if (allocated(vs%tile%hfs)) call output_variables_allocate(series%tile%qh, n)
+                if (allocated(vs%tile%qevp)) call output_variables_allocate(series%tile%qe, n)
+                if (allocated(vs%tile%gzero)) call output_variables_allocate(series%tile%gzero, n)
+                if (allocated(vs%tile%gflx)) call output_variables_allocate(series%tile%gflx, n, nsl)
+                if (allocated(vs%tile%tbar)) call output_variables_allocate(series%tile%tbar, n, nsl)
                 call output_variables_allocate(series%tile%stge, n)
                 call output_variables_allocate(series%tile%stg0e, n)
                 call output_variables_allocate(series%tile%dstge, n)
@@ -516,44 +515,43 @@ module output_variables
             !> Water balance.
             if (ro%RUNBALWB) then
                 if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%grid%prec, n)
-                if (allocated(stas%sfc%evap)) call output_variables_allocate(series%grid%evap, n)
-                if (allocated(stas%sfc%pevp)) call output_variables_allocate(series%grid%pevp, n)
-                if (allocated(stas%sfc%evpb)) call output_variables_allocate(series%grid%evpb, n)
-                if (allocated(stas%sfc%arrd)) call output_variables_allocate(series%grid%arrd, n)
-                if (allocated(stas%cnpy%gro)) call output_variables_allocate(series%grid%gro, n)
-                if (allocated(stas%sfc%rofo) .or. allocated(stas%sl%rofs) .or. allocated(stas%lzs%rofb) .or. &
-                    allocated(stas%dzs%rofb)) then
+                if (allocated(vs%grid%evap)) call output_variables_allocate(series%grid%evap, n)
+                if (allocated(vs%grid%pevp)) call output_variables_allocate(series%grid%pevp, n)
+                if (allocated(vs%grid%evpb)) call output_variables_allocate(series%grid%evpb, n)
+                if (allocated(vs%grid%arrd)) call output_variables_allocate(series%grid%arrd, n)
+                if (allocated(vs%grid%gro)) call output_variables_allocate(series%grid%gro, n)
+                if (allocated(vs%grid%rofo) .or. allocated(vs%grid%rofs) .or. allocated(vs%grid%rofb)) then
                     call output_variables_allocate(series%grid%rof, n)
                 end if
-                if (allocated(stas%sfc%rofo)) call output_variables_allocate(series%grid%rofo, n)
-                if (allocated(stas%sl%rofs)) call output_variables_allocate(series%grid%rofs, n)
-                if (allocated(stas%lzs%rofb) .and. allocated(stas%dzs%rofb)) call output_variables_allocate(series%grid%rofb, n)
-                if (allocated(stas%cnpy%rcan)) call output_variables_allocate(series%grid%rcan, n)
-                if (allocated(stas%cnpy%sncan)) call output_variables_allocate(series%grid%sncan, n)
-                if (allocated(stas%sno%sno)) then
+                if (allocated(vs%grid%rofo)) call output_variables_allocate(series%grid%rofo, n)
+                if (allocated(vs%grid%rofs)) call output_variables_allocate(series%grid%rofs, n)
+                if (allocated(vs%grid%rofb)) call output_variables_allocate(series%grid%rofb, n)
+                if (allocated(vs%grid%rcan)) call output_variables_allocate(series%grid%rcan, n)
+                if (allocated(vs%grid%sncan)) call output_variables_allocate(series%grid%sncan, n)
+                if (allocated(vs%grid%sno)) then
                     call output_variables_allocate(series%grid%sno, n)
                     call output_variables_allocate(series%grid%isno, n)
                 end if
-                if (allocated(stas%sno%fsno)) call output_variables_allocate(series%grid%fsno, n)
-                if (allocated(stas%sno%wsno)) then
+                if (allocated(vs%grid%fsno)) call output_variables_allocate(series%grid%fsno, n)
+                if (allocated(vs%grid%wsno)) then
                     call output_variables_allocate(series%grid%wsno, n)
                     call output_variables_allocate(series%grid%isno, n)
                 end if
-                if (allocated(stas%sfc%zpnd)) then
+                if (allocated(vs%grid%zpnd)) then
                     call output_variables_allocate(series%grid%zpnd, n)
                     call output_variables_allocate(series%grid%ipnd, n)
                 end if
-                if (allocated(stas%sfc%pndw)) then
+                if (allocated(vs%grid%pndw)) then
                     call output_variables_allocate(series%grid%pndw, n)
                     call output_variables_allocate(series%grid%ipnd, n)
                 end if
-                if (allocated(stas%lzs%ws)) call output_variables_allocate(series%grid%lzs, n)
-                if (allocated(stas%dzs%ws)) call output_variables_allocate(series%grid%dzs, n)
-                if (allocated(stas%sl%thlq)) call output_variables_allocate(series%grid%thlq, n, nsl)
-                if (allocated(stas%sl%lqws)) call output_variables_allocate(series%grid%lqws, n, nsl)
-                if (allocated(stas%sl%thic)) call output_variables_allocate(series%grid%thic, n, nsl)
-                if (allocated(stas%sl%fzws)) call output_variables_allocate(series%grid%fzws, n, nsl)
-                if (allocated(stas%sl%lqws) .or. allocated(stas%sl%fzws)) call output_variables_allocate(series%grid%alws, n, nsl)
+                if (allocated(vs%grid%lzs)) call output_variables_allocate(series%grid%lzs, n)
+                if (allocated(vs%grid%dzs)) call output_variables_allocate(series%grid%dzs, n)
+                if (allocated(vs%grid%thlq)) call output_variables_allocate(series%grid%thlq, n, nsl)
+                if (allocated(vs%grid%lqws)) call output_variables_allocate(series%grid%lqws, n, nsl)
+                if (allocated(vs%grid%thic)) call output_variables_allocate(series%grid%thic, n, nsl)
+                if (allocated(vs%grid%fzws)) call output_variables_allocate(series%grid%fzws, n, nsl)
+                if (allocated(vs%grid%lqws) .or. allocated(vs%grid%fzws)) call output_variables_allocate(series%grid%alws, n, nsl)
                 call output_variables_allocate(series%grid%stgw, n)
                 call output_variables_allocate(series%grid%stg0w, n)
                 call output_variables_allocate(series%grid%dstgw, n)
@@ -561,41 +559,41 @@ module output_variables
 
             !> Energy balance.
             if (ro%RUNBALEB) then
-                if (allocated(stas%cnpy%cmas)) call output_variables_allocate(series%grid%cmas, n)
-                if (allocated(stas%cnpy%tcan)) then
+                if (allocated(vs%grid%cmas)) call output_variables_allocate(series%grid%cmas, n)
+                if (allocated(vs%grid%tcan)) then
                     call output_variables_allocate(series%grid%tcan, n)
                     call output_variables_allocate(series%grid%ican, n)
                 end if
-                if (allocated(stas%sno%tsno)) then
+                if (allocated(vs%grid%tsno)) then
                     call output_variables_allocate(series%grid%tsno, n)
                     call output_variables_allocate(series%grid%isno, n)
                 end if
-                if (allocated(stas%sfc%tpnd)) then
+                if (allocated(vs%grid%tpnd)) then
                     call output_variables_allocate(series%grid%tpnd, n)
                     call output_variables_allocate(series%grid%ipnd, n)
                 end if
-                if (allocated(stas%sfc%alvs)) then
+                if (allocated(vs%grid%alvs)) then
                     call output_variables_allocate(series%grid%alvs, n)
                 end if
-                if (allocated(stas%sfc%alir)) then
+                if (allocated(vs%grid%alir)) then
                     call output_variables_allocate(series%grid%alir, n)
                     call output_variables_allocate(series%grid%ifsin, n)
                 end if
-                if (allocated(stas%sfc%albt)) then
+                if (allocated(vs%grid%albt)) then
                     call output_variables_allocate(series%grid%albt, n)
                     call output_variables_allocate(series%grid%ifsin, n)
                 end if
-                if (allocated(stas%sfc%gte)) call output_variables_allocate(series%grid%gte, n)
-                if (allocated(cm%dat(ck%FB)%GAT) .and. allocated(stas%sfc%albt)) then
+                if (allocated(vs%grid%gte)) call output_variables_allocate(series%grid%gte, n)
+                if (allocated(cm%dat(ck%FB)%GAT) .and. allocated(vs%grid%albt)) then
                     call output_variables_allocate(series%grid%fsout, n)
                     call output_variables_allocate(series%grid%ifsin, n)
                 end if
-                if (allocated(stas%sfc%gte)) call output_variables_allocate(series%grid%flout, n)
-                if (allocated(stas%sfc%hfs)) call output_variables_allocate(series%grid%qh, n)
-                if (allocated(stas%sfc%qevp)) call output_variables_allocate(series%grid%qe, n)
-                if (allocated(stas%sfc%gzero)) call output_variables_allocate(series%grid%gzero, n)
-                if (allocated(stas%sl%gflx)) call output_variables_allocate(series%grid%gflx, n, nsl)
-                if (allocated(stas%sl%tbar)) call output_variables_allocate(series%grid%tbar, n, nsl)
+                if (allocated(vs%grid%gte)) call output_variables_allocate(series%grid%flout, n)
+                if (allocated(vs%grid%hfs)) call output_variables_allocate(series%grid%qh, n)
+                if (allocated(vs%grid%qevp)) call output_variables_allocate(series%grid%qe, n)
+                if (allocated(vs%grid%gzero)) call output_variables_allocate(series%grid%gzero, n)
+                if (allocated(vs%grid%gflx)) call output_variables_allocate(series%grid%gflx, n, nsl)
+                if (allocated(vs%grid%tbar)) call output_variables_allocate(series%grid%tbar, n, nsl)
                 call output_variables_allocate(series%grid%stge, n)
                 call output_variables_allocate(series%grid%stg0e, n)
                 call output_variables_allocate(series%grid%dstge, n)
@@ -603,12 +601,12 @@ module output_variables
 
             !> Channels and routing.
             if (ro%RUNCHNL) then
-                if (allocated(stas_grid%chnl%rff)) call output_variables_allocate(series%grid%rff, n)
-                if (allocated(stas_grid%chnl%rchg)) call output_variables_allocate(series%grid%rchg, n)
-                if (allocated(stas_grid%chnl%qi)) call output_variables_allocate(series%grid%qi, n)
-                if (allocated(stas_grid%chnl%stg)) call output_variables_allocate(series%grid%stgch, n)
-                if (allocated(stas_grid%chnl%qo)) call output_variables_allocate(series%grid%qo, n)
-                if (allocated(stas_grid%chnl%zlvl)) call output_variables_allocate(series%grid%zlvl, n)
+                if (allocated(vs%grid%rff)) call output_variables_allocate(series%grid%rff, n)
+                if (allocated(vs%grid%rchg)) call output_variables_allocate(series%grid%rchg, n)
+                if (allocated(vs%grid%qi)) call output_variables_allocate(series%grid%qi, n)
+                if (allocated(vs%grid%stg)) call output_variables_allocate(series%grid%stgch, n)
+                if (allocated(vs%grid%qo)) call output_variables_allocate(series%grid%qo, n)
+                if (allocated(vs%grid%zlvl)) call output_variables_allocate(series%grid%zlvl, n)
             end if
 
             !> DA averaged.
@@ -626,95 +624,94 @@ module output_variables
             end if
             if (ro%RUNBALWB) then
                 if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%basin%prec, n)
-                if (allocated(stas%sfc%evap)) call output_variables_allocate(series%basin%evap, n)
-                if (allocated(stas%sfc%pevp)) call output_variables_allocate(series%basin%pevp, n)
-                if (allocated(stas%sfc%evpb)) call output_variables_allocate(series%basin%evpb, n)
-                if (allocated(stas%sfc%arrd)) call output_variables_allocate(series%basin%arrd, n)
-                if (allocated(stas%cnpy%gro)) call output_variables_allocate(series%basin%gro, n)
-                if (allocated(stas%sfc%rofo) .or. allocated(stas%sl%rofs) .or. allocated(stas%lzs%rofb) .or. &
-                    allocated(stas%dzs%rofb)) then
+                if (allocated(vs%grid%evap)) call output_variables_allocate(series%basin%evap, n)
+                if (allocated(vs%grid%pevp)) call output_variables_allocate(series%basin%pevp, n)
+                if (allocated(vs%grid%evpb)) call output_variables_allocate(series%basin%evpb, n)
+                if (allocated(vs%grid%arrd)) call output_variables_allocate(series%basin%arrd, n)
+                if (allocated(vs%grid%gro)) call output_variables_allocate(series%basin%gro, n)
+                if (allocated(vs%grid%rofo) .or. allocated(vs%grid%rofs) .or. allocated(vs%grid%rofb)) then
                     call output_variables_allocate(series%basin%rof, n)
                 end if
-                if (allocated(stas%sfc%rofo)) call output_variables_allocate(series%basin%rofo, n)
-                if (allocated(stas%sl%rofs)) call output_variables_allocate(series%basin%rofs, n)
-                if (allocated(stas%lzs%rofb) .and. allocated(stas%dzs%rofb)) call output_variables_allocate(series%basin%rofb, n)
-                if (allocated(stas%cnpy%rcan)) call output_variables_allocate(series%basin%rcan, n)
-                if (allocated(stas%cnpy%sncan)) call output_variables_allocate(series%basin%sncan, n)
-                if (allocated(stas%sno%sno)) then
+                if (allocated(vs%grid%rofo)) call output_variables_allocate(series%basin%rofo, n)
+                if (allocated(vs%grid%rofs)) call output_variables_allocate(series%basin%rofs, n)
+                if (allocated(vs%grid%rofb)) call output_variables_allocate(series%basin%rofb, n)
+                if (allocated(vs%grid%rcan)) call output_variables_allocate(series%basin%rcan, n)
+                if (allocated(vs%grid%sncan)) call output_variables_allocate(series%basin%sncan, n)
+                if (allocated(vs%grid%sno)) then
                     call output_variables_allocate(series%basin%sno, n)
                     call output_variables_allocate(series%basin%isno, n)
                 end if
-                if (allocated(stas%sno%fsno)) call output_variables_allocate(series%basin%fsno, n)
-                if (allocated(stas%sno%wsno)) then
+                if (allocated(vs%grid%fsno)) call output_variables_allocate(series%basin%fsno, n)
+                if (allocated(vs%grid%wsno)) then
                     call output_variables_allocate(series%basin%wsno, n)
                     call output_variables_allocate(series%basin%isno, n)
                 end if
-                if (allocated(stas%sfc%zpnd)) then
+                if (allocated(vs%grid%zpnd)) then
                     call output_variables_allocate(series%basin%zpnd, n)
                     call output_variables_allocate(series%basin%ipnd, n)
                 end if
-                if (allocated(stas%sfc%pndw)) then
+                if (allocated(vs%grid%pndw)) then
                     call output_variables_allocate(series%basin%pndw, n)
                     call output_variables_allocate(series%basin%ipnd, n)
                 end if
-                if (allocated(stas%lzs%ws)) call output_variables_allocate(series%basin%lzs, n)
-                if (allocated(stas%dzs%ws)) call output_variables_allocate(series%basin%dzs, n)
-                if (allocated(stas%sl%thlq)) call output_variables_allocate(series%basin%thlq, n, nsl)
-                if (allocated(stas%sl%lqws)) call output_variables_allocate(series%basin%lqws, n, nsl)
-                if (allocated(stas%sl%thic)) call output_variables_allocate(series%basin%thic, n, nsl)
-                if (allocated(stas%sl%fzws)) call output_variables_allocate(series%basin%fzws, n, nsl)
-                if (allocated(stas%sl%lqws) .or. allocated(stas%sl%fzws)) call output_variables_allocate(series%basin%alws, n, nsl)
+                if (allocated(vs%grid%lzs)) call output_variables_allocate(series%basin%lzs, n)
+                if (allocated(vs%grid%dzs)) call output_variables_allocate(series%basin%dzs, n)
+                if (allocated(vs%grid%thlq)) call output_variables_allocate(series%basin%thlq, n, nsl)
+                if (allocated(vs%grid%lqws)) call output_variables_allocate(series%basin%lqws, n, nsl)
+                if (allocated(vs%grid%thic)) call output_variables_allocate(series%basin%thic, n, nsl)
+                if (allocated(vs%grid%fzws)) call output_variables_allocate(series%basin%fzws, n, nsl)
+                if (allocated(vs%grid%lqws) .or. allocated(vs%grid%fzws)) call output_variables_allocate(series%basin%alws, n, nsl)
                 call output_variables_allocate(series%basin%stgw, n)
                 call output_variables_allocate(series%basin%stg0w, n)
                 call output_variables_allocate(series%basin%dstgw, n)
             end if
             if (ro%RUNBALEB) then
-                if (allocated(stas%cnpy%cmas)) call output_variables_allocate(series%basin%cmas, n)
-                if (allocated(stas%cnpy%tcan)) then
+                if (allocated(vs%grid%cmas)) call output_variables_allocate(series%basin%cmas, n)
+                if (allocated(vs%grid%tcan)) then
                     call output_variables_allocate(series%basin%tcan, n)
                     call output_variables_allocate(series%basin%ican, n)
                 end if
-                if (allocated(stas%sno%tsno)) then
+                if (allocated(vs%grid%tsno)) then
                     call output_variables_allocate(series%basin%tsno, n)
                     call output_variables_allocate(series%basin%isno, n)
                 end if
-                if (allocated(stas%sfc%tpnd)) then
+                if (allocated(vs%grid%tpnd)) then
                     call output_variables_allocate(series%basin%tpnd, n)
                     call output_variables_allocate(series%basin%ipnd, n)
                 end if
-                if (allocated(stas%sfc%alvs)) then
+                if (allocated(vs%grid%alvs)) then
                     call output_variables_allocate(series%basin%alvs, n)
                 end if
-                if (allocated(stas%sfc%alir)) then
+                if (allocated(vs%grid%alir)) then
                     call output_variables_allocate(series%basin%alir, n)
                     call output_variables_allocate(series%basin%ifsin, n)
                 end if
-                if (allocated(stas%sfc%albt)) then
+                if (allocated(vs%grid%albt)) then
                     call output_variables_allocate(series%basin%albt, n)
                     call output_variables_allocate(series%basin%ifsin, n)
                 end if
-                if (allocated(stas%sfc%gte)) call output_variables_allocate(series%basin%gte, n)
-                if (allocated(cm%dat(ck%FB)%GAT) .and. allocated(stas%sfc%albt)) then
+                if (allocated(vs%grid%gte)) call output_variables_allocate(series%basin%gte, n)
+                if (allocated(cm%dat(ck%FB)%GAT) .and. allocated(vs%grid%albt)) then
                     call output_variables_allocate(series%basin%fsout, n)
                     call output_variables_allocate(series%basin%ifsin, n)
                 end if
-                if (allocated(stas%sfc%gte)) call output_variables_allocate(series%basin%flout, n)
-                if (allocated(stas%sfc%hfs)) call output_variables_allocate(series%basin%qh, n)
-                if (allocated(stas%sfc%qevp)) call output_variables_allocate(series%basin%qe, n)
-                if (allocated(stas%sfc%gzero)) call output_variables_allocate(series%basin%gzero, n)
-                if (allocated(stas%sl%gflx)) call output_variables_allocate(series%basin%gflx, n, nsl)
-                if (allocated(stas%sl%tbar)) call output_variables_allocate(series%basin%tbar, n, nsl)
+                if (allocated(vs%grid%gte)) call output_variables_allocate(series%basin%flout, n)
+                if (allocated(vs%grid%hfs)) call output_variables_allocate(series%basin%qh, n)
+                if (allocated(vs%grid%qevp)) call output_variables_allocate(series%basin%qe, n)
+                if (allocated(vs%grid%gzero)) call output_variables_allocate(series%basin%gzero, n)
+                if (allocated(vs%grid%gflx)) call output_variables_allocate(series%basin%gflx, n, nsl)
+                if (allocated(vs%grid%tbar)) call output_variables_allocate(series%basin%tbar, n, nsl)
                 call output_variables_allocate(series%basin%stge, n)
                 call output_variables_allocate(series%basin%stg0e, n)
                 call output_variables_allocate(series%basin%dstge, n)
             end if
             if (ro%RUNCHNL) then
-                if (allocated(stas_grid%chnl%rff)) call output_variables_allocate(series%basin%rff, n)
-                if (allocated(stas_grid%chnl%rchg)) call output_variables_allocate(series%basin%rchg, n)
-                if (allocated(stas_grid%chnl%qi)) call output_variables_allocate(series%basin%qi, n)
-                if (allocated(stas_grid%chnl%stg)) call output_variables_allocate(series%basin%stgch, n)
-                if (allocated(stas_grid%chnl%qo)) call output_variables_allocate(series%basin%qo, n)
-                if (allocated(stas_grid%chnl%zlvl)) call output_variables_allocate(series%basin%zlvl, n)
+                if (allocated(vs%grid%rff)) call output_variables_allocate(series%basin%rff, n)
+                if (allocated(vs%grid%rchg)) call output_variables_allocate(series%basin%rchg, n)
+                if (allocated(vs%grid%qi)) call output_variables_allocate(series%basin%qi, n)
+                if (allocated(vs%grid%stg)) call output_variables_allocate(series%basin%stgch, n)
+                if (allocated(vs%grid%qo)) call output_variables_allocate(series%basin%qo, n)
+                if (allocated(vs%grid%zlvl)) call output_variables_allocate(series%basin%zlvl, n)
             end if
         end if
 
@@ -756,11 +753,11 @@ module output_variables
         !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
         !> 'climate_forcing' required for 'cm'.
-        !> 'state_variables' required for 'stas'.
+        !> 'model_variables' required for 'vs'.
         use shd_variables
         use control_variables
         use climate_forcing
-        use state_variables
+        use model_variables
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
@@ -805,19 +802,19 @@ module output_variables
                     if (all(out%ts%tile%prec == out%NO_DATA)) out%ts%tile%prec = cm%dat(ck%RT)%GAT
                 end if
                 if (associated(out%ts%tile%evap)) then
-                    if (all(out%ts%tile%evap == out%NO_DATA)) out%ts%tile%evap = stas%sfc%evap
+                    if (all(out%ts%tile%evap == out%NO_DATA)) out%ts%tile%evap = vs%tile%evap
                 end if
                 if (associated(out%ts%tile%pevp)) then
-                    if (all(out%ts%tile%pevp == out%NO_DATA)) out%ts%tile%pevp = stas%sfc%pevp
+                    if (all(out%ts%tile%pevp == out%NO_DATA)) out%ts%tile%pevp = vs%tile%pevp
                 end if
                 if (associated(out%ts%tile%evpb)) then
-                    if (all(out%ts%tile%evpb == out%NO_DATA)) out%ts%tile%evpb = stas%sfc%evpb
+                    if (all(out%ts%tile%evpb == out%NO_DATA)) out%ts%tile%evpb = vs%tile%evpb
                 end if
                 if (associated(out%ts%tile%arrd)) then
-                    if (all(out%ts%tile%arrd == out%NO_DATA)) out%ts%tile%arrd = stas%sfc%arrd
+                    if (all(out%ts%tile%arrd == out%NO_DATA)) out%ts%tile%arrd = vs%tile%arrd
                 end if
                 if (associated(out%ts%tile%gro)) then
-                    if (all(out%ts%tile%gro == out%NO_DATA)) out%ts%tile%gro = stas%cnpy%gro
+                    if (all(out%ts%tile%gro == out%NO_DATA)) out%ts%tile%gro = vs%tile%gro
                 end if
                 if (associated(out%ts%tile%rof)) then
                     if (all(out%ts%tile%rof == out%NO_DATA)) then
@@ -827,71 +824,71 @@ module output_variables
                         lcheck = .false.
                     end if
                     if (associated(out%ts%tile%rofo)) then
-                        if (all(out%ts%tile%rofo == out%NO_DATA)) out%ts%tile%rofo = stas%sfc%rofo
-                        if (lcheck) out%ts%tile%rof = out%ts%tile%rof + stas%sfc%rofo
+                        if (all(out%ts%tile%rofo == out%NO_DATA)) out%ts%tile%rofo = vs%tile%rofo
+                        if (lcheck) out%ts%tile%rof = out%ts%tile%rof + vs%tile%rofo
                     end if
                     if (associated(out%ts%tile%rofs)) then
-                        if (all(out%ts%tile%rofs == out%NO_DATA)) out%ts%tile%rofs = stas%sl%rofs
-                        if (lcheck) out%ts%tile%rof = out%ts%tile%rof + stas%sl%rofs
+                        if (all(out%ts%tile%rofs == out%NO_DATA)) out%ts%tile%rofs = vs%tile%rofs
+                        if (lcheck) out%ts%tile%rof = out%ts%tile%rof + vs%tile%rofs
                     end if
                     if (associated(out%ts%tile%rofb)) then
-                        if (all(out%ts%tile%rofb == out%NO_DATA)) out%ts%tile%rofb = stas%lzs%rofb + stas%dzs%rofb
-                        if (lcheck) out%ts%tile%rof = out%ts%tile%rof + stas%lzs%rofb + stas%dzs%rofb
+                        if (all(out%ts%tile%rofb == out%NO_DATA)) out%ts%tile%rofb = vs%tile%rofb
+                        if (lcheck) out%ts%tile%rof = out%ts%tile%rof + vs%tile%rofb
                     end if
                 end if
                 if (associated(out%ts%tile%rcan)) then
                     if (all(out%ts%tile%rcan == out%NO_DATA)) then
-                        out%ts%tile%rcan = stas%cnpy%rcan
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%cnpy%rcan
+                        out%ts%tile%rcan = vs%tile%rcan
+                        out%ts%tile%stgw = out%ts%tile%stgw + vs%tile%rcan
                     end if
                 end if
                 if (associated(out%ts%tile%sncan)) then
                     if (all(out%ts%tile%sncan == out%NO_DATA)) then
-                        out%ts%tile%sncan = stas%cnpy%sncan
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%cnpy%sncan
+                        out%ts%tile%sncan = vs%tile%sncan
+                        out%ts%tile%stgw = out%ts%tile%stgw + vs%tile%sncan
                     end if
                 end if
                 if (associated(out%ts%tile%sno)) then
                     if (all(out%ts%tile%sno == out%NO_DATA)) then
-                        out%ts%tile%sno = stas%sno%sno
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%sno%sno
+                        out%ts%tile%sno = vs%tile%sno
+                        out%ts%tile%stgw = out%ts%tile%stgw + vs%tile%sno
                     end if
                 end if
                 if (associated(out%ts%tile%fsno)) then
-                    if (all(out%ts%tile%fsno == out%NO_DATA)) out%ts%tile%fsno = stas%sno%fsno
+                    if (all(out%ts%tile%fsno == out%NO_DATA)) out%ts%tile%fsno = vs%tile%fsno
                 end if
                 if (associated(out%ts%tile%wsno)) then
                     if (all(out%ts%tile%wsno == out%NO_DATA)) then
-                        out%ts%tile%wsno = stas%sno%wsno
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%sno%wsno
+                        out%ts%tile%wsno = vs%tile%wsno
+                        out%ts%tile%stgw = out%ts%tile%stgw + vs%tile%wsno
                     end if
                 end if
                 if (associated(out%ts%tile%zpnd)) then
-                    if (all(out%ts%tile%zpnd == out%NO_DATA)) out%ts%tile%zpnd = stas%sfc%zpnd
+                    if (all(out%ts%tile%zpnd == out%NO_DATA)) out%ts%tile%zpnd = vs%tile%zpnd
                 end if
                 if (associated(out%ts%tile%pndw)) then
                     if (all(out%ts%tile%pndw == out%NO_DATA)) then
-                        out%ts%tile%pndw = stas%sfc%pndw
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%sfc%pndw
+                        out%ts%tile%pndw = vs%tile%pndw
+                        out%ts%tile%stgw = out%ts%tile%stgw + vs%tile%pndw
                     end if
                 end if
                 if (associated(out%ts%tile%lzs)) then
                     if (all(out%ts%tile%lzs == out%NO_DATA)) then
-                        out%ts%tile%lzs = stas%lzs%ws
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%lzs%ws
+                        out%ts%tile%lzs = vs%tile%lzs
+                        out%ts%tile%stgw = out%ts%tile%stgw + vs%tile%lzs
                     end if
                 end if
                 if (associated(out%ts%tile%dzs)) then
                     if (all(out%ts%tile%dzs == out%NO_DATA)) then
-                        out%ts%tile%dzs = stas%dzs%ws
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%dzs%ws
+                        out%ts%tile%dzs = vs%tile%dzs
+                        out%ts%tile%stgw = out%ts%tile%stgw + vs%tile%dzs
                     end if
                 end if
                 if (associated(out%ts%tile%thlq)) then
-                    if (all(out%ts%tile%thlq == out%NO_DATA)) out%ts%tile%thlq = stas%sl%thlq
+                    if (all(out%ts%tile%thlq == out%NO_DATA)) out%ts%tile%thlq = vs%tile%thlq
                 end if
                 if (associated(out%ts%tile%thic)) then
-                    if (all(out%ts%tile%thic == out%NO_DATA)) out%ts%tile%thic = stas%sl%thic
+                    if (all(out%ts%tile%thic == out%NO_DATA)) out%ts%tile%thic = vs%tile%thic
                 end if
                 if (associated(out%ts%tile%alws)) then
                     if (all(out%ts%tile%alws == out%NO_DATA)) then
@@ -901,14 +898,14 @@ module output_variables
                         lcheck = .false.
                     end if
                     if (associated(out%ts%tile%lqws)) then
-                        if (all(out%ts%tile%lqws == out%NO_DATA)) out%ts%tile%lqws = stas%sl%lqws
-                        out%ts%tile%stgw = out%ts%tile%stgw + sum(stas%sl%lqws, 2)
-                        if (lcheck) out%ts%tile%alws = out%ts%tile%alws + stas%sl%lqws
+                        if (all(out%ts%tile%lqws == out%NO_DATA)) out%ts%tile%lqws = vs%tile%lqws
+                        out%ts%tile%stgw = out%ts%tile%stgw + sum(vs%tile%lqws, 2)
+                        if (lcheck) out%ts%tile%alws = out%ts%tile%alws + vs%tile%lqws
                     end if
                     if (associated(out%ts%tile%fzws)) then
-                        if (all(out%ts%tile%fzws == out%NO_DATA)) out%ts%tile%fzws = stas%sl%fzws
-                        out%ts%tile%stgw = out%ts%tile%stgw + sum(stas%sl%fzws, 2)
-                        if (lcheck) out%ts%tile%alws = out%ts%tile%alws + stas%sl%fzws
+                        if (all(out%ts%tile%fzws == out%NO_DATA)) out%ts%tile%fzws = vs%tile%fzws
+                        out%ts%tile%stgw = out%ts%tile%stgw + sum(vs%tile%fzws, 2)
+                        if (lcheck) out%ts%tile%alws = out%ts%tile%alws + vs%tile%fzws
                     end if
                 end if
                 if (all(out%ts%tile%stgw == 0.0)) then
@@ -923,49 +920,49 @@ module output_variables
             !> Energy balance.
             if (ro%RUNBALEB) then
                 if (associated(out%ts%tile%cmas)) then
-                    if (all(out%ts%tile%cmas == out%NO_DATA)) out%ts%tile%cmas = stas%cnpy%cmas
+                    if (all(out%ts%tile%cmas == out%NO_DATA)) out%ts%tile%cmas = vs%tile%cmas
                 end if
                 if (associated(out%ts%tile%tcan)) then
-                    if (all(out%ts%tile%tcan == out%NO_DATA)) out%ts%tile%tcan = stas%cnpy%tcan
+                    if (all(out%ts%tile%tcan == out%NO_DATA)) out%ts%tile%tcan = vs%tile%tcan
                 end if
                 if (associated(out%ts%tile%tsno)) then
-                    if (all(out%ts%tile%tsno == out%NO_DATA)) out%ts%tile%tsno = stas%sno%tsno
+                    if (all(out%ts%tile%tsno == out%NO_DATA)) out%ts%tile%tsno = vs%tile%tsno
                 end if
                 if (associated(out%ts%tile%tpnd)) then
-                    if (all(out%ts%tile%tpnd == out%NO_DATA)) out%ts%tile%tpnd = stas%sfc%tpnd
+                    if (all(out%ts%tile%tpnd == out%NO_DATA)) out%ts%tile%tpnd = vs%tile%tpnd
                 end if
                 if (associated(out%ts%tile%alvs)) then
-                    if (all(out%ts%tile%alvs == out%NO_DATA)) out%ts%tile%alvs = stas%sfc%alvs
+                    if (all(out%ts%tile%alvs == out%NO_DATA)) out%ts%tile%alvs = vs%tile%alvs
                 end if
                 if (associated(out%ts%tile%alir)) then
-                    if (all(out%ts%tile%alir == out%NO_DATA)) out%ts%tile%alir = stas%sfc%alir
+                    if (all(out%ts%tile%alir == out%NO_DATA)) out%ts%tile%alir = vs%tile%alir
                 end if
                 if (associated(out%ts%tile%albt)) then
-                    if (all(out%ts%tile%albt == out%NO_DATA)) out%ts%tile%albt = stas%sfc%albt
+                    if (all(out%ts%tile%albt == out%NO_DATA)) out%ts%tile%albt = vs%tile%albt
                 end if
                 if (associated(out%ts%tile%gte)) then
-                    if (all(out%ts%tile%gte == out%NO_DATA)) out%ts%tile%gte = stas%sfc%gte
+                    if (all(out%ts%tile%gte == out%NO_DATA)) out%ts%tile%gte = vs%tile%gte
                 end if
                 if (associated(out%ts%tile%fsout)) then
-                    if (all(out%ts%tile%fsout == out%NO_DATA)) out%ts%tile%fsout = cm%dat(ck%FB)%GAT*(1.0 - stas%sfc%albt)
+                    if (all(out%ts%tile%fsout == out%NO_DATA)) out%ts%tile%fsout = cm%dat(ck%FB)%GAT*(1.0 - vs%tile%albt)
                 end if
                 if (associated(out%ts%tile%flout)) then
-                    if (all(out%ts%tile%flout == out%NO_DATA)) out%ts%tile%flout = 5.66796E-8*stas%sfc%gte**4
+                    if (all(out%ts%tile%flout == out%NO_DATA)) out%ts%tile%flout = 5.66796E-8*vs%tile%gte**4
                 end if
                 if (associated(out%ts%tile%qh)) then
-                    if (all(out%ts%tile%qh == out%NO_DATA)) out%ts%tile%qh = stas%sfc%hfs
+                    if (all(out%ts%tile%qh == out%NO_DATA)) out%ts%tile%qh = vs%tile%hfs
                 end if
                 if (associated(out%ts%tile%qe)) then
-                    if (all(out%ts%tile%qe == out%NO_DATA)) out%ts%tile%qe = stas%sfc%qevp
+                    if (all(out%ts%tile%qe == out%NO_DATA)) out%ts%tile%qe = vs%tile%qevp
                 end if
                 if (associated(out%ts%tile%gzero)) then
-                    if (all(out%ts%tile%gzero == out%NO_DATA)) out%ts%tile%gzero = stas%sfc%gzero
+                    if (all(out%ts%tile%gzero == out%NO_DATA)) out%ts%tile%gzero = vs%tile%gzero
                 end if
                 if (associated(out%ts%tile%gflx)) then
-                    if (all(out%ts%tile%gflx == out%NO_DATA)) out%ts%tile%gflx = stas%sl%gflx
+                    if (all(out%ts%tile%gflx == out%NO_DATA)) out%ts%tile%gflx = vs%tile%gflx
                 end if
                 if (associated(out%ts%tile%tbar)) then
-                    if (all(out%ts%tile%tbar == out%NO_DATA)) out%ts%tile%tbar = stas%sl%tbar
+                    if (all(out%ts%tile%tbar == out%NO_DATA)) out%ts%tile%tbar = vs%tile%tbar
                 end if
                 if (all(out%ts%tile%stge == 0.0)) then
                     out%ts%tile%stg0e = out%NO_DATA
@@ -1011,19 +1008,19 @@ module output_variables
                     if (all(out%ts%grid%prec == out%NO_DATA)) out%ts%grid%prec = cm%dat(ck%RT)%GRD
                 end if
                 if (associated(out%ts%grid%evap)) then
-                    if (all(out%ts%grid%evap == out%NO_DATA)) out%ts%grid%evap = stas_grid%sfc%evap
+                    if (all(out%ts%grid%evap == out%NO_DATA)) out%ts%grid%evap = vs%grid%evap
                 end if
                 if (associated(out%ts%grid%pevp)) then
-                    if (all(out%ts%grid%pevp == out%NO_DATA)) out%ts%grid%pevp = stas_grid%sfc%pevp
+                    if (all(out%ts%grid%pevp == out%NO_DATA)) out%ts%grid%pevp = vs%grid%pevp
                 end if
                 if (associated(out%ts%grid%evpb)) then
-                    if (all(out%ts%grid%evpb == out%NO_DATA)) out%ts%grid%evpb = stas_grid%sfc%evpb
+                    if (all(out%ts%grid%evpb == out%NO_DATA)) out%ts%grid%evpb = vs%grid%evpb
                 end if
                 if (associated(out%ts%grid%arrd)) then
-                    if (all(out%ts%grid%arrd == out%NO_DATA)) out%ts%grid%arrd = stas_grid%sfc%arrd
+                    if (all(out%ts%grid%arrd == out%NO_DATA)) out%ts%grid%arrd = vs%grid%arrd
                 end if
                 if (associated(out%ts%grid%gro)) then
-                    if (all(out%ts%grid%gro == out%NO_DATA)) out%ts%grid%gro = stas_grid%cnpy%gro
+                    if (all(out%ts%grid%gro == out%NO_DATA)) out%ts%grid%gro = vs%grid%gro
                 end if
                 if (associated(out%ts%grid%rof)) then
                     if (all(out%ts%grid%rof == out%NO_DATA)) then
@@ -1033,73 +1030,73 @@ module output_variables
                         lcheck = .false.
                     end if
                     if (associated(out%ts%grid%rofo)) then
-                        if (all(out%ts%grid%rofo == out%NO_DATA)) out%ts%grid%rofo = stas_grid%sfc%rofo
-                        if (lcheck) out%ts%grid%rof = out%ts%grid%rof + stas_grid%sfc%rofo
+                        if (all(out%ts%grid%rofo == out%NO_DATA)) out%ts%grid%rofo = vs%grid%rofo
+                        if (lcheck) out%ts%grid%rof = out%ts%grid%rof + vs%grid%rofo
                     end if
                     if (associated(out%ts%grid%rofs)) then
-                        if (all(out%ts%grid%rofs == out%NO_DATA)) out%ts%grid%rofs = stas_grid%sl%rofs
-                        if (lcheck) out%ts%grid%rof = out%ts%grid%rof + stas_grid%sl%rofs
+                        if (all(out%ts%grid%rofs == out%NO_DATA)) out%ts%grid%rofs = vs%grid%rofs
+                        if (lcheck) out%ts%grid%rof = out%ts%grid%rof + vs%grid%rofs
                     end if
                     if (associated(out%ts%grid%rofb)) then
-                        if (all(out%ts%grid%rofb == out%NO_DATA)) out%ts%grid%rofb = stas_grid%lzs%rofb + stas_grid%dzs%rofb
-                        if (lcheck) out%ts%grid%rof = out%ts%grid%rof + stas_grid%lzs%rofb + stas_grid%dzs%rofb
+                        if (all(out%ts%grid%rofb == out%NO_DATA)) out%ts%grid%rofb = vs%grid%rofb
+                        if (lcheck) out%ts%grid%rof = out%ts%grid%rof + vs%grid%rofb
                     end if
                 end if
                 if (associated(out%ts%grid%rcan)) then
                     if (all(out%ts%grid%rcan == out%NO_DATA)) then
-                        out%ts%grid%rcan = stas_grid%cnpy%rcan
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%cnpy%rcan
+                        out%ts%grid%rcan = vs%grid%rcan
+                        out%ts%grid%stgw = out%ts%grid%stgw + vs%grid%rcan
                     end if
                 end if
                 if (associated(out%ts%grid%sncan)) then
                     if (all(out%ts%grid%sncan == out%NO_DATA)) then
-                        out%ts%grid%sncan = stas_grid%cnpy%sncan
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%cnpy%sncan
+                        out%ts%grid%sncan = vs%grid%sncan
+                        out%ts%grid%stgw = out%ts%grid%stgw + vs%grid%sncan
                     end if
                 end if
                 if (associated(out%ts%grid%sno)) then
                     if (all(out%ts%grid%sno == out%NO_DATA)) then
-                        out%ts%grid%sno = stas_grid%sno%sno
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%sno%sno
+                        out%ts%grid%sno = vs%grid%sno
+                        out%ts%grid%stgw = out%ts%grid%stgw + vs%grid%sno
                     end if
                 end if
                 if (associated(out%ts%grid%fsno)) then
-                    if (all(out%ts%grid%fsno == out%NO_DATA)) out%ts%grid%fsno = stas_grid%sno%fsno
+                    if (all(out%ts%grid%fsno == out%NO_DATA)) out%ts%grid%fsno = vs%grid%fsno
                 end if
                 if (associated(out%ts%grid%wsno)) then
                     if (all(out%ts%grid%wsno == out%NO_DATA)) then
-                        out%ts%grid%wsno = stas_grid%sno%wsno
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%sno%wsno
+                        out%ts%grid%wsno = vs%grid%wsno
+                        out%ts%grid%stgw = out%ts%grid%stgw + vs%grid%wsno
                     end if
                 end if
                 if (associated(out%ts%grid%zpnd)) then
                     if (all(out%ts%grid%zpnd == out%NO_DATA)) then
-                        out%ts%grid%zpnd = stas_grid%sfc%zpnd
+                        out%ts%grid%zpnd = vs%grid%zpnd
                     end if
                 end if
                 if (associated(out%ts%grid%pndw)) then
                     if (all(out%ts%grid%pndw == out%NO_DATA)) then
-                        out%ts%grid%pndw = stas_grid%sfc%pndw
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%sfc%pndw
+                        out%ts%grid%pndw = vs%grid%pndw
+                        out%ts%grid%stgw = out%ts%grid%stgw + vs%grid%pndw
                     end if
                 end if
                 if (associated(out%ts%grid%lzs)) then
                     if (all(out%ts%grid%lzs == out%NO_DATA)) then
-                        out%ts%grid%lzs = stas_grid%lzs%ws
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%lzs%ws
+                        out%ts%grid%lzs = vs%grid%lzs
+                        out%ts%grid%stgw = out%ts%grid%stgw + vs%grid%lzs
                     end if
                 end if
                 if (associated(out%ts%grid%dzs)) then
                     if (all(out%ts%grid%dzs == out%NO_DATA)) then
-                        out%ts%grid%dzs = stas_grid%dzs%ws
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%dzs%ws
+                        out%ts%grid%dzs = vs%grid%dzs
+                        out%ts%grid%stgw = out%ts%grid%stgw + vs%grid%dzs
                     end if
                 end if
                 if (associated(out%ts%grid%thlq)) then
-                    if (all(out%ts%grid%thlq == out%NO_DATA)) out%ts%grid%thlq = stas_grid%sl%thlq
+                    if (all(out%ts%grid%thlq == out%NO_DATA)) out%ts%grid%thlq = vs%grid%thlq
                 end if
                 if (associated(out%ts%grid%thic)) then
-                    if (all(out%ts%grid%thic == out%NO_DATA)) out%ts%grid%thic = stas_grid%sl%thic
+                    if (all(out%ts%grid%thic == out%NO_DATA)) out%ts%grid%thic = vs%grid%thic
                 end if
                 if (associated(out%ts%grid%alws)) then
                     if (all(out%ts%grid%alws == out%NO_DATA)) then
@@ -1109,14 +1106,14 @@ module output_variables
                         lcheck = .false.
                     end if
                     if (associated(out%ts%grid%lqws)) then
-                        if (all(out%ts%grid%lqws == out%NO_DATA)) out%ts%grid%lqws = stas_grid%sl%lqws
-                        out%ts%grid%stgw = out%ts%grid%stgw + sum(stas_grid%sl%lqws, 2)
-                        if (lcheck) out%ts%grid%alws = out%ts%grid%alws + stas_grid%sl%lqws
+                        if (all(out%ts%grid%lqws == out%NO_DATA)) out%ts%grid%lqws = vs%grid%lqws
+                        out%ts%grid%stgw = out%ts%grid%stgw + sum(vs%grid%lqws, 2)
+                        if (lcheck) out%ts%grid%alws = out%ts%grid%alws + vs%grid%lqws
                     end if
                     if (associated(out%ts%grid%fzws)) then
-                        if (all(out%ts%grid%fzws == out%NO_DATA)) out%ts%grid%fzws = stas_grid%sl%fzws
-                        out%ts%grid%stgw = out%ts%grid%stgw + sum(stas_grid%sl%fzws, 2)
-                        if (lcheck) out%ts%grid%alws = out%ts%grid%alws + stas_grid%sl%fzws
+                        if (all(out%ts%grid%fzws == out%NO_DATA)) out%ts%grid%fzws = vs%grid%fzws
+                        out%ts%grid%stgw = out%ts%grid%stgw + sum(vs%grid%fzws, 2)
+                        if (lcheck) out%ts%grid%alws = out%ts%grid%alws + vs%grid%fzws
                     end if
                 end if
                 if (all(out%ts%grid%stgw == 0.0)) then
@@ -1131,49 +1128,49 @@ module output_variables
             !> Energy balance.
             if (ro%RUNBALEB) then
                 if (associated(out%ts%grid%cmas)) then
-                    if (all(out%ts%grid%cmas == out%NO_DATA)) out%ts%grid%cmas = stas_grid%cnpy%cmas
+                    if (all(out%ts%grid%cmas == out%NO_DATA)) out%ts%grid%cmas = vs%grid%cmas
                 end if
                 if (associated(out%ts%grid%tcan)) then
-                    if (all(out%ts%grid%tcan == out%NO_DATA)) out%ts%grid%tcan = stas_grid%cnpy%tcan
+                    if (all(out%ts%grid%tcan == out%NO_DATA)) out%ts%grid%tcan = vs%grid%tcan
                 end if
                 if (associated(out%ts%grid%tsno)) then
-                    if (all(out%ts%grid%tsno == out%NO_DATA)) out%ts%grid%tsno = stas_grid%sno%tsno
+                    if (all(out%ts%grid%tsno == out%NO_DATA)) out%ts%grid%tsno = vs%grid%tsno
                 end if
                 if (associated(out%ts%grid%tpnd)) then
-                    if (all(out%ts%grid%tpnd == out%NO_DATA)) out%ts%grid%tpnd = stas_grid%sfc%tpnd
+                    if (all(out%ts%grid%tpnd == out%NO_DATA)) out%ts%grid%tpnd = vs%grid%tpnd
                 end if
                 if (associated(out%ts%grid%alvs)) then
-                    if (all(out%ts%grid%alvs == out%NO_DATA)) out%ts%grid%alvs = stas_grid%sfc%alvs
+                    if (all(out%ts%grid%alvs == out%NO_DATA)) out%ts%grid%alvs = vs%grid%alvs
                 end if
                 if (associated(out%ts%grid%alir)) then
-                    if (all(out%ts%grid%alir == out%NO_DATA)) out%ts%grid%alir = stas_grid%sfc%alir
+                    if (all(out%ts%grid%alir == out%NO_DATA)) out%ts%grid%alir = vs%grid%alir
                 end if
                 if (associated(out%ts%grid%albt)) then
-                    if (all(out%ts%grid%albt == out%NO_DATA)) out%ts%grid%albt = stas_grid%sfc%albt
+                    if (all(out%ts%grid%albt == out%NO_DATA)) out%ts%grid%albt = vs%grid%albt
                 end if
                 if (associated(out%ts%grid%gte)) then
-                    if (all(out%ts%grid%gte == out%NO_DATA)) out%ts%grid%gte = stas_grid%sfc%gte
+                    if (all(out%ts%grid%gte == out%NO_DATA)) out%ts%grid%gte = vs%grid%gte
                 end if
                 if (associated(out%ts%grid%fsout)) then
-                    if (all(out%ts%grid%fsout == out%NO_DATA)) out%ts%grid%fsout = cm%dat(ck%FB)%GRD*(1.0 - stas_grid%sfc%albt)
+                    if (all(out%ts%grid%fsout == out%NO_DATA)) out%ts%grid%fsout = cm%dat(ck%FB)%GRD*(1.0 - vs%grid%albt)
                 end if
                 if (associated(out%ts%grid%flout)) then
-                    if (all(out%ts%grid%flout == out%NO_DATA)) out%ts%grid%flout = 5.66796E-8*stas_grid%sfc%gte**4
+                    if (all(out%ts%grid%flout == out%NO_DATA)) out%ts%grid%flout = 5.66796E-8*vs%grid%gte**4
                 end if
                 if (associated(out%ts%grid%qh)) then
-                    if (all(out%ts%grid%qh == out%NO_DATA)) out%ts%grid%qh = stas_grid%sfc%hfs
+                    if (all(out%ts%grid%qh == out%NO_DATA)) out%ts%grid%qh = vs%grid%hfs
                 end if
                 if (associated(out%ts%grid%qe)) then
-                    if (all(out%ts%grid%qe == out%NO_DATA)) out%ts%grid%qe = stas_grid%sfc%qevp
+                    if (all(out%ts%grid%qe == out%NO_DATA)) out%ts%grid%qe = vs%grid%qevp
                 end if
                 if (associated(out%ts%grid%gzero)) then
-                    if (all(out%ts%grid%gzero == out%NO_DATA)) out%ts%grid%gzero = stas_grid%sfc%gzero
+                    if (all(out%ts%grid%gzero == out%NO_DATA)) out%ts%grid%gzero = vs%grid%gzero
                 end if
                 if (associated(out%ts%grid%gflx)) then
-                    if (all(out%ts%grid%gflx == out%NO_DATA)) out%ts%grid%gflx = stas_grid%sl%gflx
+                    if (all(out%ts%grid%gflx == out%NO_DATA)) out%ts%grid%gflx = vs%grid%gflx
                 end if
                 if (associated(out%ts%grid%tbar)) then
-                    if (all(out%ts%grid%tbar == out%NO_DATA)) out%ts%grid%tbar = stas_grid%sl%tbar
+                    if (all(out%ts%grid%tbar == out%NO_DATA)) out%ts%grid%tbar = vs%grid%tbar
                 end if
                 if (all(out%ts%grid%stge == 0.0)) then
                     out%ts%grid%stg0e = out%NO_DATA
@@ -1187,22 +1184,22 @@ module output_variables
             !> Channels and routing.
             if (ro%RUNCHNL) then
                 if (associated(out%ts%grid%rff)) then
-                    if (all(out%ts%grid%rff == out%NO_DATA)) out%ts%grid%rff = stas_grid%chnl%rff
+                    if (all(out%ts%grid%rff == out%NO_DATA)) out%ts%grid%rff = vs%grid%rff
                 end if
                 if (associated(out%ts%grid%rchg)) then
-                    if (all(out%ts%grid%rchg == out%NO_DATA)) out%ts%grid%rchg = stas_grid%chnl%rchg
+                    if (all(out%ts%grid%rchg == out%NO_DATA)) out%ts%grid%rchg = vs%grid%rchg
                 end if
                 if (associated(out%ts%grid%qi)) then
-                    if (all(out%ts%grid%qi == out%NO_DATA)) out%ts%grid%qi = stas_grid%chnl%qi
+                    if (all(out%ts%grid%qi == out%NO_DATA)) out%ts%grid%qi = vs%grid%qi
                 end if
                 if (associated(out%ts%grid%stgch)) then
-                    if (all(out%ts%grid%stgch == out%NO_DATA)) out%ts%grid%stgch = stas_grid%chnl%stg
+                    if (all(out%ts%grid%stgch == out%NO_DATA)) out%ts%grid%stgch = vs%grid%stg
                 end if
                 if (associated(out%ts%grid%qo)) then
-                    if (all(out%ts%grid%qo == out%NO_DATA)) out%ts%grid%qo = stas_grid%chnl%qo
+                    if (all(out%ts%grid%qo == out%NO_DATA)) out%ts%grid%qo = vs%grid%qo
                 end if
                 if (associated(out%ts%grid%zlvl)) then
-                    if (all(out%ts%grid%zlvl == out%NO_DATA)) out%ts%grid%zlvl = stas_grid%chnl%zlvl
+                    if (all(out%ts%grid%zlvl == out%NO_DATA)) out%ts%grid%zlvl = vs%grid%zlvl
                 end if
             end if
 

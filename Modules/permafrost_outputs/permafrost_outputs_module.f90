@@ -188,15 +188,15 @@ module permafrost_outputs_module
             end if
 
             !> Tile-based.
-            where (stas%sl%tbar(:, j) > 173.16 .and. stas%sl%tbar(:, j) < 373.16)
-                prmfst%out%tavg(j)%d_tile = prmfst%out%tavg(j)%d_tile + stas%sl%tbar(:, j)
+            where (vs%tile%tbar(:, j) > 173.16 .and. vs%tile%tbar(:, j) < 373.16)
+                prmfst%out%tavg(j)%d_tile = prmfst%out%tavg(j)%d_tile + vs%tile%tbar(:, j)
             elsewhere
                 prmfst%out%tavg(j)%d_tile = out%NO_DATA
             end where
 
             !> Grid-based.
-            where (stas_grid%sl%tbar(:, j) > 173.16 .and. stas_grid%sl%tbar(:, j) < 373.16)
-                prmfst%out%tavg(j)%d_grid = prmfst%out%tavg(j)%d_grid + stas_grid%sl%tbar(:, j)
+            where (vs%grid%tbar(:, j) > 173.16 .and. vs%grid%tbar(:, j) < 373.16)
+                prmfst%out%tavg(j)%d_grid = prmfst%out%tavg(j)%d_grid + vs%grid%tbar(:, j)
             elsewhere
                 prmfst%out%tavg(j)%d_grid = out%NO_DATA
             end where

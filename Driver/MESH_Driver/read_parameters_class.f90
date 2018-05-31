@@ -107,11 +107,11 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
         read(iun, *, err = 98) (pm_gru%slp%clay(m, j), j = 1, ignd)
         read(iun, *, err = 98) (pm_gru%slp%orgm(m, j), j = 1, ignd)
         read(iun, *, err = 98) &
-            (stas_gru%sl%tbar(m, j), j = 1, ignd), stas_gru%cnpy%tcan(m), stas_gru%sno%tsno(m), stas_gru%sfc%tpnd(m)
-        read(iun, *, err = 98) (stas_gru%sl%thlq(m, j), j = 1, ignd), (stas_gru%sl%thic(m, j), j = 1, ignd), stas_gru%sfc%zpnd(m)
+            (vs%gru%tbar(m, j), j = 1, ignd), vs%gru%tcan(m), vs%gru%tsno(m), vs%gru%tpnd(m)
+        read(iun, *, err = 98) (vs%gru%thlq(m, j), j = 1, ignd), (vs%gru%thic(m, j), j = 1, ignd), vs%gru%zpnd(m)
         read(iun, *, err = 98) &
-            stas_gru%cnpy%rcan(m), stas_gru%cnpy%sncan(m), stas_gru%sno%sno(m), stas_gru%sno%albs(m), &
-            stas_gru%sno%rhos(m), stas_gru%cnpy%gro(m)
+            vs%gru%rcan(m), vs%gru%sncan(m), vs%gru%sno(m), vs%gru%albs(m), &
+            vs%gru%rhos(m), vs%gru%gro(m)
     end do
 
 !todo: Make sure these variables are documented properly (for CLASS output, not currently used)

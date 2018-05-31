@@ -142,25 +142,25 @@ module RUNSVS113_config
                     kj = shd%lc%JLMOS(k)
 
                     !> Assign values.
-                    stas%sno%albs(k) = ALBSROW(ki, kj)
-                    stas%cnpy%cmas(k) = CMAIROW(ki, kj)
-                    stas%cnpy%gro(k) = GROROW(ki, kj)
-                    stas%cnpy%qac(k) = QACROW(ki, kj)
-                    stas%cnpy%rcan(k) = RCANROW(ki, kj)
-                    stas%sno%rhos(k) = RHOSROW(ki, kj)
-                    stas%cnpy%sncan(k) = SCANROW(ki, kj)
-                    stas%sno%sno(k) = SNOROW(ki, kj)
-                    stas%cnpy%tac(k) = TACROW(ki, kj)
-                    stas%sl%tbar(k, :) = TBARROW(ki, kj, :)
-                    stas%sl%tbas(k) = TBASROW(ki, kj)
-                    stas%cnpy%tcan(k) = TCANROW(ki, kj)
-                    stas%sl%thic(k, :) = THICROW(ki, kj, :)
-                    stas%sl%thlq(k, :) = THLQROW(ki, kj, :)
-                    stas%sfc%tpnd(k) = TPNDROW(ki, kj)
-                    stas%sfc%tsfs(k, :) = TSFSROW(ki, kj, :)
-                    stas%sno%tsno(k) = TSNOROW(ki, kj)
-                    stas%sno%wsno(k) = WSNOROW(ki, kj)
-                    stas%sfc%zpnd(k) = ZPNDROW(ki, kj)
+                    vs%tile%albs(k) = ALBSROW(ki, kj)
+                    vs%tile%cmas(k) = CMAIROW(ki, kj)
+                    vs%tile%gro(k) = GROROW(ki, kj)
+                    vs%tile%qac(k) = QACROW(ki, kj)
+                    vs%tile%rcan(k) = RCANROW(ki, kj)
+                    vs%tile%rhos(k) = RHOSROW(ki, kj)
+                    vs%tile%sncan(k) = SCANROW(ki, kj)
+                    vs%tile%sno(k) = SNOROW(ki, kj)
+                    vs%tile%tac(k) = TACROW(ki, kj)
+                    vs%tile%tbar(k, :) = TBARROW(ki, kj, :)
+                    vs%tile%tbas(k) = TBASROW(ki, kj)
+                    vs%tile%tcan(k) = TCANROW(ki, kj)
+                    vs%tile%thic(k, :) = THICROW(ki, kj, :)
+                    vs%tile%thlq(k, :) = THLQROW(ki, kj, :)
+                    vs%tile%tpnd(k) = TPNDROW(ki, kj)
+                    vs%tile%tsfs(k, :) = TSFSROW(ki, kj, :)
+                    vs%tile%tsno(k) = TSNOROW(ki, kj)
+                    vs%tile%wsno(k) = WSNOROW(ki, kj)
+                    vs%tile%zpnd(k) = ZPNDROW(ki, kj)
 
                 end do
 
@@ -274,37 +274,37 @@ module RUNSVS113_config
             !>       1              1-2
             !>       2               3
             !>       3              4-7
-            bus(wdsoil + k) = stas%sl%thlq(il1 + k, 1)
-            bus(wdsoil + NG + k) = stas%sl%thlq(il1 + k, 2)
-            bus(wdsoil + 2*NG + k) = stas%sl%thlq(il1 + k, 3)
+            bus(wdsoil + k) = vs%tile%thlq(il1 + k, 1)
+            bus(wdsoil + NG + k) = vs%tile%thlq(il1 + k, 2)
+            bus(wdsoil + 2*NG + k) = vs%tile%thlq(il1 + k, 3)
             do j = 3, 6
-                bus(wdsoil + j*NG + k) = stas%sl%thlq(il1 + k, 3)
+                bus(wdsoil + j*NG + k) = vs%tile%thlq(il1 + k, 3)
             end do
 
             !> Map soil temperature.
             !> CLASS layer  <->  SVS layer
             !>       1               1
             !>       2               2
-            bus(tsoil + k) = stas%sl%tbar(il1 + k, 1)! + tcdk
-            bus(tsoil + NG + k) = stas%sl%tbar(il1 + k, 2)! + tcdk
-            bus(tground + k) = stas%sl%tbar(il1 + k, 1)! + tcdk
-            bus(tground + NG + k) = stas%sl%tbar(il1 + k, 2)! + tcdk
+            bus(tsoil + k) = vs%tile%tbar(il1 + k, 1)! + tcdk
+            bus(tsoil + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
+            bus(tground + k) = vs%tile%tbar(il1 + k, 1)! + tcdk
+            bus(tground + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
 
             !> Map vegetation temperature.
             do j = 0, 1
-                bus(tvege + j*NG + k) = stas%cnpy%tcan(il1 + k)! + tcdk
-                bus(tsnowveg + j*NG + k) = stas%cnpy%tcan(il1 + k)! + tcdk
+                bus(tvege + j*NG + k) = vs%tile%tcan(il1 + k)! + tcdk
+                bus(tsnowveg + j*NG + k) = vs%tile%tcan(il1 + k)! + tcdk
             end do
 
             !> Map snow properties.
             !* snoro: Density (kg/m3) to relative density wrt ice.
             do j = 0, 1
-                bus(tsnow + j*NG + k) = stas%sno%tsno(il1 + k)! + tcdk
+                bus(tsnow + j*NG + k) = vs%tile%tsno(il1 + k)! + tcdk
             end do
-            bus(snoro + k) = stas%sno%rhos(il1 + k)/900.0
-            bus(snvro + k) = stas%sno%rhos(il1 + k)/900.0
-            bus(snoal + k) = stas%sno%albs(il1 + k)
-            bus(snval + k) = stas%sno%albs(il1 + k)
+            bus(snoro + k) = vs%tile%rhos(il1 + k)/900.0
+            bus(snvro + k) = vs%tile%rhos(il1 + k)/900.0
+            bus(snoal + k) = vs%tile%albs(il1 + k)
+            bus(snval + k) = vs%tile%albs(il1 + k)
 
         end do
 
@@ -425,25 +425,25 @@ module RUNSVS113_config
                     kj = shd%lc%JLMOS(k)
 
                     !> Assign values.
-                    ALBSROW(ki, kj) = stas%sno%albs(k)
-                    CMAIROW(ki, kj) = stas%cnpy%cmas(k)
-                    GROROW(ki, kj) = stas%cnpy%gro(k)
-                    QACROW(ki, kj) = stas%cnpy%qac(k)
-                    RCANROW(ki, kj) = stas%cnpy%rcan(k)
-                    RHOSROW(ki, kj) = stas%sno%rhos(k)
-                    SCANROW(ki, kj) = stas%cnpy%sncan(k)
-                    SNOROW(ki, kj) = stas%sno%sno(k)
-                    TACROW(ki, kj) = stas%cnpy%tac(k)
-                    TBARROW(ki, kj, :) = stas%sl%tbar(k, :)
-                    TBASROW(ki, kj) = stas%sl%tbas(k)
-                    TCANROW(ki, kj) = stas%cnpy%tcan(k)
-                    THICROW(ki, kj, :) = stas%sl%thic(k, :)
-                    THLQROW(ki, kj, :) = stas%sl%thlq(k, :)
-                    TPNDROW(ki, kj) = stas%sfc%tpnd(k)
-                    TSFSROW(ki, kj, :) = stas%sfc%tsfs(k, :)
-                    TSNOROW(ki, kj) = stas%sno%tsno(k)
-                    WSNOROW(ki, kj) = stas%sno%wsno(k)
-                    ZPNDROW(ki, kj) = stas%sfc%zpnd(k)
+                    ALBSROW(ki, kj) = vs%tile%albs(k)
+                    CMAIROW(ki, kj) = vs%tile%cmas(k)
+                    GROROW(ki, kj) = vs%tile%gro(k)
+                    QACROW(ki, kj) = vs%tile%qac(k)
+                    RCANROW(ki, kj) = vs%tile%rcan(k)
+                    RHOSROW(ki, kj) = vs%tile%rhos(k)
+                    SCANROW(ki, kj) = vs%tile%sncan(k)
+                    SNOROW(ki, kj) = vs%tile%sno(k)
+                    TACROW(ki, kj) = vs%tile%tac(k)
+                    TBARROW(ki, kj, :) = vs%tile%tbar(k, :)
+                    TBASROW(ki, kj) = vs%tile%tbas(k)
+                    TCANROW(ki, kj) = vs%tile%tcan(k)
+                    THICROW(ki, kj, :) = vs%tile%thic(k, :)
+                    THLQROW(ki, kj, :) = vs%tile%thlq(k, :)
+                    TPNDROW(ki, kj) = vs%tile%tpnd(k)
+                    TSFSROW(ki, kj, :) = vs%tile%tsfs(k, :)
+                    TSNOROW(ki, kj) = vs%tile%tsno(k)
+                    WSNOROW(ki, kj) = vs%tile%wsno(k)
+                    ZPNDROW(ki, kj) = vs%tile%zpnd(k)
 
                 end do
 

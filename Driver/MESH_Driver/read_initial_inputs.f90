@@ -583,10 +583,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     end if
 
     !> Allocate and initialize SA_MESH states.
-    z = 0
-    call stas_tile_init(stas, shd%lc%NML, shd%lc%IGND, z); if (z /= 0) ierr = z
-    call stas_tile_init(stas_gru, shd%lc%NTYPE, shd%lc%IGND, z); if (z /= 0) ierr = z
-    call stas_grid_init(stas_grid, shd%NA, shd%lc%IGND, z); if (z /= 0) ierr = z
+    call model_variables_init(shd, ierr)
     if (ierr /= 0) then
         call print_error('Unable to allocate variables.')
         return
@@ -693,10 +690,6 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
             end if
         end if
     end if
-
-    !> Allocate and initialize SA_MESH states.
-    call stas_fms_init(stas_fms, fms%stmg%n, 0, fms%rsvr%n, ierr)
-    if (ierr /= 0) return
 
     !> Read variable states from file.
     call read_initial_states(fls, shd, ierr)
