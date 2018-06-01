@@ -220,7 +220,7 @@ module WF_ROUTE_config
                 read(iun)
                 read(iun)
                 read(iun) vs%grid%qo
-                read(iun) vs%grid%stg
+                read(iun) vs%grid%stgch
                 read(iun) vs%grid%qi
                 read(iun)
                 read(iun)
@@ -234,7 +234,7 @@ module WF_ROUTE_config
                 read(iun)
                 read(iun)
                 read(iun) vs%grid%qo
-                read(iun) vs%grid%stg
+                read(iun) vs%grid%stgch
                 read(iun) vs%grid%qi
                 read(iun)
                 read(iun)
@@ -285,7 +285,7 @@ module WF_ROUTE_config
             write(iun)
             write(iun)
             write(iun) vs%grid%qo
-            write(iun) vs%grid%stg
+            write(iun) vs%grid%stgch
             write(iun) vs%grid%qi
             write(iun)
             write(iun)

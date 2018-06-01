@@ -33,7 +33,7 @@ module WF_ROUTE_module
                       WF_B1, WF_B2, WF_B3, WF_B4, WF_B5, fms%rsvr%rlsmeas%val, WF_QR, &
                       WF_TIMECOUNT, WF_NHYD, WF_QBASE, WF_QI1, vs%grid%qi, WF_QO1, vs%grid%qo, &
                       wfp%aa1, wfp%aa2, wfp%aa3, wfp%aa4, &
-                      WF_STORE1, vs%grid%stg, &
+                      WF_STORE1, vs%grid%stgch, &
                       ic%dts, &
                       (vs%grid%rff + vs%grid%rchg)/ic%dts*shd%FRAC, &
                       shd%NA, shd%NRVR, fms%rsvr%n, fms%stmg%n, shd%NA, &
@@ -48,7 +48,7 @@ module WF_ROUTE_module
         !> Update SA_MESH output variables.
         !> Override the output variable because 'storage' for reservoirs is an accumulation of flow
         !> and does not translate to the 'stgch' variable.
-        out%ts%grid%stgch = vs%grid%stg
+        out%ts%grid%stgch = vs%grid%stgch
         if (fms%rsvr%n > 0) then
             out%ts%grid%stgch(fms%rsvr%meta%rnk(:)) = out%NO_DATA
         end if

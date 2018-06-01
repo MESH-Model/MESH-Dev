@@ -384,7 +384,7 @@ module sa_mesh_run_between_grid
 
             where (shd%DA > 0.0)
                 WF_QO2_ACC_MM = WF_QO2_ACC_MM + vs%grid%qo/shd%DA/1000.0*RTE_TS
-                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + vs%grid%stg/shd%DA/1000.0
+                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + vs%grid%stgch/shd%DA/1000.0
             elsewhere
                 WF_QO2_ACC_MM = out%NO_DATA
                 WF_STORE2_ACC_MM = out%NO_DATA

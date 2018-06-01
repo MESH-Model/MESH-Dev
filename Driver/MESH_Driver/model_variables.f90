@@ -53,7 +53,7 @@ module model_variables
         !* rchg: Contributing recharge. [kg m-2].
         !* qi: Flow in to the element. [m3 s-1].
         !* qo: Flow from the element. [m3 s-1].
-        !* stg: Channel storage held in the element. [m3].
+        !* stgch: Channel storage held in the element. [m3].
         !* zlvl: Stage level from the element. [m].
         !* div: Volume diverted to the channel. [m3].
         !* ab: Volume abstracted from the channel. [m3].
@@ -61,7 +61,7 @@ module model_variables
         real, dimension(:), allocatable :: rchg
         real, dimension(:), allocatable :: qi
         real, dimension(:), allocatable :: qo
-        real, dimension(:), allocatable :: stg
+        real, dimension(:), allocatable :: stgch
         real, dimension(:), allocatable :: zlvl
         real, dimension(:), allocatable :: div
         real, dimension(:), allocatable :: ab
@@ -218,7 +218,7 @@ module model_variables
         group%rchg = 0.0
         group%qi = 0.0
         group%qo = 0.0
-        group%stg = 0.0
+        group%stgch = 0.0
         group%zlvl = 0.0
         group%div = 0.0
         group%ab = 0.0
@@ -351,7 +351,7 @@ module model_variables
         allocate(group%rchg(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qi(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qo(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%stg(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%stgch(n), stat = z); if (z /= 0) ierr = z
         allocate(group%zlvl(n), stat = z); if (z /= 0) ierr = z
         allocate(group%div(n), stat = z); if (z /= 0) ierr = z
         allocate(group%ab(n), stat = z); if (z /= 0) ierr = z

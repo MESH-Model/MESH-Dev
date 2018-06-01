@@ -550,7 +550,7 @@ module rte_module
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.
         vs%grid%qi = qi2
-        vs%grid%stg = store2
+        vs%grid%stgch = store2
         vs%grid%qo = qo2
 
     end subroutine
@@ -649,7 +649,7 @@ module rte_module
 
         !> Update from SA_MESH variables.
         qi2 = vs%grid%qi
-        store2 = vs%grid%stg
+        store2 = vs%grid%stgch
         qo2 = vs%grid%qo
 
         !> Remember the input values from the start of the time step.
@@ -834,7 +834,7 @@ module rte_module
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.
         vs%grid%qi = qi2
-        vs%grid%stg = store2
+        vs%grid%stgch = store2
         vs%grid%qo = qo2
         if (fms%rsvr%n > 0) then
             reach_last = lake_elv(:, fhr)

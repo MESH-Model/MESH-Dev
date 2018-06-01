@@ -604,7 +604,7 @@ module output_variables
                 if (allocated(vs%grid%rff)) call output_variables_allocate(series%grid%rff, n)
                 if (allocated(vs%grid%rchg)) call output_variables_allocate(series%grid%rchg, n)
                 if (allocated(vs%grid%qi)) call output_variables_allocate(series%grid%qi, n)
-                if (allocated(vs%grid%stg)) call output_variables_allocate(series%grid%stgch, n)
+                if (allocated(vs%grid%stgch)) call output_variables_allocate(series%grid%stgch, n)
                 if (allocated(vs%grid%qo)) call output_variables_allocate(series%grid%qo, n)
                 if (allocated(vs%grid%zlvl)) call output_variables_allocate(series%grid%zlvl, n)
             end if
@@ -709,7 +709,7 @@ module output_variables
                 if (allocated(vs%grid%rff)) call output_variables_allocate(series%basin%rff, n)
                 if (allocated(vs%grid%rchg)) call output_variables_allocate(series%basin%rchg, n)
                 if (allocated(vs%grid%qi)) call output_variables_allocate(series%basin%qi, n)
-                if (allocated(vs%grid%stg)) call output_variables_allocate(series%basin%stgch, n)
+                if (allocated(vs%grid%stgch)) call output_variables_allocate(series%basin%stgch, n)
                 if (allocated(vs%grid%qo)) call output_variables_allocate(series%basin%qo, n)
                 if (allocated(vs%grid%zlvl)) call output_variables_allocate(series%basin%zlvl, n)
             end if
@@ -1193,7 +1193,7 @@ module output_variables
                     if (all(out%ts%grid%qi == out%NO_DATA)) out%ts%grid%qi = vs%grid%qi
                 end if
                 if (associated(out%ts%grid%stgch)) then
-                    if (all(out%ts%grid%stgch == out%NO_DATA)) out%ts%grid%stgch = vs%grid%stg
+                    if (all(out%ts%grid%stgch == out%NO_DATA)) out%ts%grid%stgch = vs%grid%stgch
                 end if
                 if (associated(out%ts%grid%qo)) then
                     if (all(out%ts%grid%qo == out%NO_DATA)) out%ts%grid%qo = vs%grid%qo
