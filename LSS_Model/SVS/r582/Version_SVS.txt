@@ -12,4 +12,4 @@ Update
 
 The present version of SVS in MESH corresponds to the following version of SVS on the SVS official svn repository at ECCC : svn://mrbsvn/mesh/sps/branches/
     - SVS 1:  svn://mrbsvn/mesh/sps/branches/svs_GEM_v5.8.rc2 ; Revision 711
-    - SVS 2: svn://mrbsvn/mesh/sps/branches/svs_2.0_GEM_v5.8  ; Revision 711
+    - SVS 2: svn://mrbsvn/mesh/sps/branches/svs_2.0_GEM_v5.8  ; Revision 712
