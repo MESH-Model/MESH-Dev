@@ -19,6 +19,36 @@ module model_variables
     !> Description:
     !>  Container for variables.
     type model_variables_fields
+
+        !* fsin: Incoming shortwave radiation at the surface. [W m-2].
+        !* fsdr: Direct component of incoming shortwave radiation at the surface. [W m-2].
+        !* fsdff: Diffuse component of incoming shortwave radiation at the surface. [W m-2].
+        !* flin: Incoming longwave radiation at the surface. [W m-2].
+        !* ta: Air temperature (at user-specified reference height). [K].
+        !* qa: Specific humidity (at user-specificed reference height). [kg kg-1].
+        !* pres: Air pressure at the surface. [Pa].
+        !* uv: Wind speed (at user-specified reference height). [m s-1].
+        !* wdir: Wind direction (at user-specified referenced height). [--].
+        !* uu: U-component of wind speed (at user-specified reference height). [m s-1].
+        !* vv: V-component of wind speed (at user-specified reference height). [m s-1].
+        !* pre: Total incoming precipitation rate. [kg m-2 s-1].
+        !* prern: Total incoming liquid precipitation rate. [kg m-2 s-1].
+        !* presn: Total incoming solid precipitation rate. [kg m-2 s-1].
+        real, dimension(:), allocatable :: fsin
+        real, dimension(:), allocatable :: fsdr
+        real, dimension(:), allocatable :: fsdff
+        real, dimension(:), allocatable :: flin
+        real, dimension(:), allocatable :: ta
+        real, dimension(:), allocatable :: qa
+        real, dimension(:), allocatable :: pres
+        real, dimension(:), allocatable :: uv
+        real, dimension(:), allocatable :: wdir
+        real, dimension(:), allocatable :: uu
+        real, dimension(:), allocatable :: vv
+        real, dimension(:), allocatable :: pre
+        real, dimension(:), allocatable :: prern
+        real, dimension(:), allocatable :: presn
+
         !* rff: Contributing runoff. [kg m-2].
         !* rchg: Contributing recharge. [kg m-2].
         !* qi: Flow in to the element. [m3 s-1].
@@ -128,6 +158,11 @@ module model_variables
         real, dimension(:), allocatable :: lzs
         real, dimension(:), allocatable :: dzs
         real, dimension(:), allocatable :: rofb
+
+        !* stgw: Total liquid water storage in the land surface. [kg m-2].
+        !* stge: Total energy stored in the system. [W m-2].
+        real, dimension(:), allocatable :: stgw
+        real, dimension(:), allocatable :: stge
     end type
 
     !> Description:
@@ -165,6 +200,20 @@ module model_variables
         ierr = 0
 
         !> Initialize variables.
+        group%fsin = 0.0
+        group%fsdr = 0.0
+        group%fsdff = 0.0
+        group%flin = 0.0
+        group%ta = 0.0
+        group%qa = 0.0
+        group%pres = 0.0
+        group%uv = 0.0
+        group%wdir = 0.0
+        group%uu = 0.0
+        group%vv = 0.0
+        group%pre = 0.0
+        group%prern = 0.0
+        group%presn = 0.0
         group%rff = 0.0
         group%rchg = 0.0
         group%qi = 0.0
@@ -217,6 +266,8 @@ module model_variables
         group%lzs = 0.0
         group%dzs = 0.0
         group%rofb = 0.0
+        group%stgw = 0.0
+        group%stge = 0.0
 
     end subroutine
 
@@ -282,6 +333,20 @@ module model_variables
         z = 0
 
         !> Allocate variables.
+        allocate(group%fsin(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%fsdr(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%fsdff(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%flin(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%ta(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%qa(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%pres(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%uv(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%wdir(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%uu(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%vv(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%pre(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%prern(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%presn(n), stat = z); if (z /= 0) ierr = z
         allocate(group%rff(n), stat = z); if (z /= 0) ierr = z
         allocate(group%rchg(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qi(n), stat = z); if (z /= 0) ierr = z
@@ -334,6 +399,8 @@ module model_variables
         allocate(group%lzs(n), stat = z); if (z /= 0) ierr = z
         allocate(group%dzs(n), stat = z); if (z /= 0) ierr = z
         allocate(group%rofb(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%stgw(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%stge(n), stat = z); if (z /= 0) ierr = z
 
     end subroutine
 
