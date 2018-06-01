@@ -34,7 +34,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
   REAL, PARAMETER :: GRKSAT_C2=5.0
 
 
-  REAL DT
+  REAL DT, W
 
   ! input
   real, dimension(n)        :: eg, er, etr, rr, impervu
@@ -169,6 +169,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
   real, dimension(n)          :: wrt_vl,wrt_vh,rveg_vl,rveg_vh
   ! For the Runge-Kutta method
   real, dimension(n,nl_svs)   :: wd_rk, dwd_rk1, dwd_rk2, dwd_rk3, dwd_rk4
+  real, dimension(n,nl_svs)   :: over_rk1, over_rk2, over_rk3, over_rk4
   real, dimension(n,nl_svs+1) :: f_rk
 
   !***********************************************************************
@@ -437,33 +438,38 @@ SUBROUTINE HYDRO_SVS ( DT, &
      ! First-order forward method       
      CALL SOIL_FLUXES( DT, &
           WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD, &
-          F, WDT, DWD_RK1, KHC, PSI, N)
+          F, WDT, DWD_RK1, OVER_RK1, KHC, PSI, N)
+     DO I=1,N
+        DO K=1,NL_SVS
+	  WDT(I,K)=WDT(I,K)-OVER_RK1(I,K)
+        END DO
+     END DO
+
   ELSE !hydro_svs_method=1
      ! Runge-Kutta 4th order method
      ! see for example http://lpsa.swarthmore.edu/NumInt/NumIntFourth.html
      ! Divide the source/sink terms by half to estimate WD at midpoint
      DO I=1,N
         DO K=1,NL_SVS+1
-
            F_RK(I,K) = F(I,K)/2.
         END DO
      END DO
      ! k1=f(y*(t0),t0)
      CALL SOIL_FLUXES( DT/2., &
           WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD, &
-          F_RK, WD_RK, DWD_RK1, KHC, PSI, N)      
+          F_RK, WD_RK, DWD_RK1, OVER_RK1, KHC, PSI, N)      
      ! k2=(f(y*(t0)+k1*h/2,t0+h/2)
      CALL SOIL_FLUXES( DT/2., &
           WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD_RK, &
-          F_RK, WD_RK, DWD_RK2, KHC, PSI, N)
+          F_RK, WD_RK, DWD_RK2, OVER_RK2, KHC, PSI, N)
      ! k3=f(y*(t0)+k2*h/2,t0+h/2)
      CALL SOIL_FLUXES( DT, &
           WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD_RK, &
-          F, WD_RK, DWD_RK3, KHC, PSI, N)
+          F, WD_RK, DWD_RK3, OVER_RK3, KHC, PSI, N)
      ! k4=f(y*(t0)+k3*h,t0+h)
      CALL SOIL_FLUXES( DT, &
           WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD_RK, &
-          F, WD_RK, DWD_RK4, KHC, PSI, N)
+          F, WD_RK, DWD_RK4, OVER_RK4, KHC, PSI, N)
      ! y*(t0+h)=y*(t0)+(k1*h/6+k2*h/3+k3*h/3+k4*h/6)
      ! careful: DWD_RK1 and DWD_RK2 were calculated with a timestep h=DT/2
      ! whereas DWD_RK3 and DWD_RK4 was calculated with h=DT
@@ -476,6 +482,11 @@ SUBROUTINE HYDRO_SVS ( DT, &
                 DWD_RK2(I,K)*2./3.+ &
                 DWD_RK3(I,K)/3.+ &
                 DWD_RK4(I,K)/6.)
+	   WDT(I,K)=WDT(I,K)-( &
+                OVER_RK1(I,K)/3.+ &
+                OVER_RK2(I,K)*2./3.+ &
+                OVER_RK3(I,K)/3.+ &
+                OVER_RK4(I,K)/6.)
         END DO
      END DO
   END IF
@@ -498,10 +509,15 @@ SUBROUTINE HYDRO_SVS ( DT, &
         ELSEIF (WDT(I,K).GT.WSATC(I,K))  THEN
 
            IF (K.NE.KDP) THEN
-              ! excess water removal via downward flux
-              F(I,K+1)=F(I,K+1)+(WDT(I,K)-WSATC(I,K))*DELZ(K)
+              ! excess water removal via a combination of a downward and a lateral flux
+              ! fraction of excess water going into layer below
+              W = KSATC(I,K)/(KSATC(I,K)+GRKEFL(I,K)*DELZ(K))
+              ! adding this fraction of excess water to the layer below
+              F(I,K+1)=F(I,K+1)+W*(WDT(I,K)-WSATC(I,K))*DELZ(K)
+              ! the rest of the excess water goes to lateral flow
+              LATFLW(I,K)=(1.0-W)*(WDT(I,K)-WSATC(I,K))*DELZ(K)
               ! if we are in the last soil layer, soil water content of the layer below cannot be updated
-              IF(K.NE.NL_SVS) WDT(I,K+1)=WDT(I,K+1)+(WDT(I,K)-WSATC(I,K))*DELZ(K)/DELZ(K+1)
+              IF(K.NE.NL_SVS) WDT(I,K+1)=WDT(I,K+1)+W*(WDT(I,K)-WSATC(I,K))*DELZ(K)/DELZ(K+1)
            ELSEIF (K.EQ.KDP) THEN
               ! excess water removal via lateral flow
               LATFLW(I,K)=(WDT(I,K)-WSATC(I,K))*DELZ(K)

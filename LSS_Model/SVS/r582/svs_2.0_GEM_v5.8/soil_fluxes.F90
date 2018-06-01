@@ -17,7 +17,7 @@
 !
       SUBROUTINE SOIL_FLUXES ( DT, &
          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD, &
-         F, WDT, DWD, KHC, PSI, N)
+         F, WDT, DWD, OVRSHT, KHC, PSI, N)
 !
         use sfc_options
         use svs_configs
@@ -35,7 +35,7 @@
       ! input/output
       real, dimension(n,nl_svs+1) :: f
       ! output
-      real, dimension(n,nl_svs) :: wdt, dwd
+      real, dimension(n,nl_svs) :: wdt, dwd, ovrsht
       real, dimension(n,nl_svs-1):: khc, psi
      
 !
@@ -87,6 +87,8 @@
 !
 ! WDT (NL_SVS)      water content in each layer at the end of the time step [m3/m3]
 ! DWD (NL_SVS)      change in storage in each layer based on flux F for a time step DT [m3/m3]
+! OVRSHT (NL_SVS)   overshoot correction required to keep WDT within physical bounds [m3/m3]
+!                   this amount of water needs to be reallocated to maintain the water balance
 !
 !          ---  Diagnostic Soil Parameters (used only for testing SVS) ---
 !
@@ -145,6 +147,10 @@
       DO K=1,NL_SVS
          DO I=1,N
             DWD(I,K)=(F(I,K)-F(I,K+1))/DELZ(K)-DT*ETR_GRID(I,K)
+	    ! Make sure DWD doesn't lead to WDT exceeding [CRITWATER,WSATC] range
+	    ! but keep track of the overshoot in order to be able to close the water balance
+            OVRSHT(I,K)= MIN(MAX(DWD(I,K),CRITWATER-WD(I,K)),WSATC(I,K)-WD(I,K)) - DWD(I,K)
+            DWD(I,K) = OVRSHT(I,K) + DWD(I,K)
             WDT(I,K)=WD(I,K)+DWD(I,K)
          END DO
       END DO
