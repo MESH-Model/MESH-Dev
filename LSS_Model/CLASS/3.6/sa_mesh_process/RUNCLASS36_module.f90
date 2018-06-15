@@ -54,14 +54,14 @@ module RUNCLASS36_module
         if (ipid /= 0 .or. izero == 0) then
 
             !> Grab climate data.
-            cfi%FSVH(il1:il2) = cm%dat(ck%FB)%GAT(il1:il2)/2.0
-            cfi%FSIH(il1:il2) = cm%dat(ck%FB)%GAT(il1:il2)/2.0
-            cfi%FDL(il1:il2) = cm%dat(ck%FI)%GAT(il1:il2)
-            cfi%PRE(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)
-            cfi%TA(il1:il2) = cm%dat(ck%TT)%GAT(il1:il2)
-            cfi%UL(il1:il2) = cm%dat(ck%UV)%GAT(il1:il2)
-            cfi%PRES(il1:il2) = cm%dat(ck%P0)%GAT(il1:il2)
-            cfi%QA(il1:il2) = cm%dat(ck%HU)%GAT(il1:il2)
+            cfi%FSVH(il1:il2) = vs%tile%fsin(il1:il2)/2.0
+            cfi%FSIH(il1:il2) = vs%tile%fsin(il1:il2)/2.0
+            cfi%FDL(il1:il2) = vs%tile%flin(il1:il2)
+            cfi%PRE(il1:il2) = vs%tile%pre(il1:il2)
+            cfi%TA(il1:il2) = vs%tile%ta(il1:il2)
+            cfi%UL(il1:il2) = vs%tile%uv(il1:il2)
+            cfi%PRES(il1:il2) = vs%tile%pres(il1:il2)
+            cfi%QA(il1:il2) = vs%tile%qa(il1:il2)
 
             cfi%VMOD = max(VMIN, cfi%UL)
 

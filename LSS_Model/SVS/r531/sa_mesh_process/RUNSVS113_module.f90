@@ -114,20 +114,20 @@ module RUNSVS113_module
 !            end if
 
         do k = 0, NG - 1
-            if(cm%dat(ck%TT)%GAT(il1 + k) > tcdk) then
-                bus(rainrate + k) = cm%dat(ck%RT)%GAT(il1 + k)/1000.0
+            if(vs%tile%ta(il1 + k) > tcdk) then
+                bus(rainrate + k) = vs%tile%pre(il1 + k)/1000.0
                 bus(snowrate + k) = 0.0
             else
                 bus(rainrate + k) = 0.0
-                bus(snowrate + k) = cm%dat(ck%RT)%GAT(il1 + k)/1000.0
+                bus(snowrate + k) = vs%tile%pre(il1 + k)/1000.0
             end if
-            bus(flusolis + k) = cm%dat(ck%FB)%GAT(il1 + k)
-            bus(fdsi + k) = cm%dat(ck%FI)%GAT(il1 + k)
-            bus(tmoins + k) = cm%dat(ck%TT)%GAT(il1 + k)
-            bus(humoins + k) = cm%dat(ck%HU)%GAT(il1 + k)
-            bus(umoins + k) = cm%dat(ck%UV)%GAT(il1 + k)
+            bus(flusolis + k) = vs%tile%fsin(il1 + k)
+            bus(fdsi + k) = vs%tile%flin(il1 + k)
+            bus(tmoins + k) = vs%tile%ta(il1 + k)
+            bus(humoins + k) = vs%tile%qa(il1 + k)
+            bus(umoins + k) = vs%tile%uv(il1 + k)
             bus(vmoins + k) = 0.0
-            bus(pmoins + k) = cm%dat(ck%P0)%GAT(il1 + k)
+            bus(pmoins + k) = vs%tile%pres(il1 + k)
         end do
 
                 call compvirttemp(sigma_t, bus, bussiz)

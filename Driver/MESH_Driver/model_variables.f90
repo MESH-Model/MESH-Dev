@@ -34,20 +34,20 @@ module model_variables
         !* pre: Total incoming precipitation rate. [kg m-2 s-1].
         !* prern: Total incoming liquid precipitation rate. [kg m-2 s-1].
         !* presn: Total incoming solid precipitation rate. [kg m-2 s-1].
-        real, dimension(:), allocatable :: fsin
-        real, dimension(:), allocatable :: fsdr
-        real, dimension(:), allocatable :: fsdff
-        real, dimension(:), allocatable :: flin
-        real, dimension(:), allocatable :: ta
-        real, dimension(:), allocatable :: qa
-        real, dimension(:), allocatable :: pres
-        real, dimension(:), allocatable :: uv
-        real, dimension(:), allocatable :: wdir
-        real, dimension(:), allocatable :: uu
-        real, dimension(:), allocatable :: vv
-        real, dimension(:), allocatable :: pre
-        real, dimension(:), allocatable :: prern
-        real, dimension(:), allocatable :: presn
+        real, dimension(:), pointer :: fsin
+        real, dimension(:), pointer :: fsdr
+        real, dimension(:), pointer :: fsdff
+        real, dimension(:), pointer :: flin
+        real, dimension(:), pointer :: ta
+        real, dimension(:), pointer :: qa
+        real, dimension(:), pointer :: pres
+        real, dimension(:), pointer :: uv
+        real, dimension(:), pointer :: wdir
+        real, dimension(:), pointer :: uu
+        real, dimension(:), pointer :: vv
+        real, dimension(:), pointer :: pre
+        real, dimension(:), pointer :: prern
+        real, dimension(:), pointer :: presn
 
         !* rff: Contributing runoff. [kg m-2].
         !* rchg: Contributing recharge. [kg m-2].
@@ -57,14 +57,14 @@ module model_variables
         !* zlvl: Stage level from the element. [m].
         !* div: Volume diverted to the channel. [m3].
         !* ab: Volume abstracted from the channel. [m3].
-        real, dimension(:), allocatable :: rff
-        real, dimension(:), allocatable :: rchg
-        real, dimension(:), allocatable :: qi
-        real, dimension(:), allocatable :: qo
-        real, dimension(:), allocatable :: stgch
-        real, dimension(:), allocatable :: zlvl
-        real, dimension(:), allocatable :: div
-        real, dimension(:), allocatable :: ab
+        real, dimension(:), pointer :: rff
+        real, dimension(:), pointer :: rchg
+        real, dimension(:), pointer :: qi
+        real, dimension(:), pointer :: qo
+        real, dimension(:), pointer :: stgch
+        real, dimension(:), pointer :: zlvl
+        real, dimension(:), pointer :: div
+        real, dimension(:), pointer :: ab
 
         !* rcan: Intercepted liquid water stored on canopy. [kg m-2].
         !* sncan: Intercepted frozen water stored on canopy. [kg m-2].
@@ -73,13 +73,13 @@ module model_variables
         !* tcan: Vegetation canopy temperature. [K].
         !* qac: Specific humidity of air within vegetation canopy space. [kg kg-1].
         !* gro: Vegetation growth index.
-        real, dimension(:), allocatable :: rcan
-        real, dimension(:), allocatable :: sncan
-        real, dimension(:), allocatable :: cmas
-        real, dimension(:), allocatable :: tac
-        real, dimension(:), allocatable :: tcan
-        real, dimension(:), allocatable :: qac
-        real, dimension(:), allocatable :: gro
+        real, dimension(:), pointer :: rcan
+        real, dimension(:), pointer :: sncan
+        real, dimension(:), pointer :: cmas
+        real, dimension(:), pointer :: tac
+        real, dimension(:), pointer :: tcan
+        real, dimension(:), pointer :: qac
+        real, dimension(:), pointer :: gro
 
         !* sno: Mass of snow pack. [kg m-2].
         !* fsno: Diagnosed fractional snow coverage. [ ].
@@ -87,12 +87,12 @@ module model_variables
         !* rhos: Density of snow. [kg m-3].
         !* wsno: Liquid water content of snow pack. [kg m-2].
         !* tsno: Snowpack temperature. [K].
-        real, dimension(:), allocatable :: sno
-        real, dimension(:), allocatable :: fsno
-        real, dimension(:), allocatable :: albs
-        real, dimension(:), allocatable :: rhos
-        real, dimension(:), allocatable :: wsno
-        real, dimension(:), allocatable :: tsno
+        real, dimension(:), pointer :: sno
+        real, dimension(:), pointer :: fsno
+        real, dimension(:), pointer :: albs
+        real, dimension(:), pointer :: rhos
+        real, dimension(:), pointer :: wsno
+        real, dimension(:), pointer :: tsno
 
         !* albt: Total albedo of the surface (visible and near-infrared). [--].
         !* alvs: Visible albedo of the surface. [--].
@@ -111,23 +111,23 @@ module model_variables
         !* hfs: Sensible heat flux at the surface. [W m-2].
         !* gzero: Heat flux into the soil at the surface. [W m-2].
         !* tsfs: Ground surface temperature over subarea. [K].
-        real, dimension(:), allocatable :: albt
-        real, dimension(:), allocatable :: alvs
-        real, dimension(:), allocatable :: alir
-        real, dimension(:), allocatable :: gte
-        real, dimension(:), allocatable :: zpnd
-        real, dimension(:), allocatable :: pndw
-        real, dimension(:), allocatable :: tpnd
-        real, dimension(:), allocatable :: fstr
-        real, dimension(:), allocatable :: pevp
-        real, dimension(:), allocatable :: evap
-        real, dimension(:), allocatable :: evpb
-        real, dimension(:), allocatable :: arrd
-        real, dimension(:), allocatable :: rofo
-        real, dimension(:), allocatable :: qevp
-        real, dimension(:), allocatable :: hfs
-        real, dimension(:), allocatable :: gzero
-        real, dimension(:, :), allocatable :: tsfs
+        real, dimension(:), pointer :: albt
+        real, dimension(:), pointer :: alvs
+        real, dimension(:), pointer :: alir
+        real, dimension(:), pointer :: gte
+        real, dimension(:), pointer :: zpnd
+        real, dimension(:), pointer :: pndw
+        real, dimension(:), pointer :: tpnd
+        real, dimension(:), pointer :: fstr
+        real, dimension(:), pointer :: pevp
+        real, dimension(:), pointer :: evap
+        real, dimension(:), pointer :: evpb
+        real, dimension(:), pointer :: arrd
+        real, dimension(:), pointer :: rofo
+        real, dimension(:), pointer :: qevp
+        real, dimension(:), pointer :: hfs
+        real, dimension(:), pointer :: gzero
+        real, dimension(:, :), pointer :: tsfs
 
         !* ggeo: Geothermal heat flux. [W m-2].
         !* rofs: Interflow component of total runoff. [kg m-2 s-1].
@@ -140,29 +140,29 @@ module model_variables
         !* lqws: Liquid water storage. [kg m-2].
         !* tbar: Temperature of soil layers. [K].
         !* gflx: Heat conduction between soil layers. [W m-2].
-        real, dimension(:), allocatable :: ggeo
-        real, dimension(:), allocatable :: rofs
-        real, dimension(:), allocatable :: tbas
-        real, dimension(:, :), allocatable :: delzw
-        real, dimension(:, :), allocatable :: zbotw
-        real, dimension(:, :), allocatable :: thic
-        real, dimension(:, :), allocatable :: fzws
-        real, dimension(:, :), allocatable :: thlq
-        real, dimension(:, :), allocatable :: lqws
-        real, dimension(:, :), allocatable :: tbar
-        real, dimension(:, :), allocatable :: gflx
+        real, dimension(:), pointer :: ggeo
+        real, dimension(:), pointer :: rofs
+        real, dimension(:), pointer :: tbas
+        real, dimension(:, :), pointer :: delzw
+        real, dimension(:, :), pointer :: zbotw
+        real, dimension(:, :), pointer :: thic
+        real, dimension(:, :), pointer :: fzws
+        real, dimension(:, :), pointer :: thlq
+        real, dimension(:, :), pointer :: lqws
+        real, dimension(:, :), pointer :: tbar
+        real, dimension(:, :), pointer :: gflx
 
         !* lzs: Liquid water storage in the lower zone. [kg m-2].
         !* dzs: Liquid water storage in the deep zone. [kg m-2].
         !* rofb: Baseflow component of total runoff. [kg m-2 s-1].
-        real, dimension(:), allocatable :: lzs
-        real, dimension(:), allocatable :: dzs
-        real, dimension(:), allocatable :: rofb
+        real, dimension(:), pointer :: lzs
+        real, dimension(:), pointer :: dzs
+        real, dimension(:), pointer :: rofb
 
         !* stgw: Total liquid water storage in the land surface. [kg m-2].
         !* stge: Total energy stored in the system. [W m-2].
-        real, dimension(:), allocatable :: stgw
-        real, dimension(:), allocatable :: stge
+        real, dimension(:), pointer :: stgw
+        real, dimension(:), pointer :: stge
     end type
 
     !> Description:
@@ -173,7 +173,7 @@ module model_variables
     !*  gru: By GRU 1:NTYPE.
     !*  grid: Grid combined from contributing GRUs (by ACLASS) 1:NA.
     type model_variables_groups
-        type(model_variables_fields) tile, gru, grid
+        type(model_variables_fields) tile, gru, grid, basin
     end type
 
     !> State of SA_MESH variables in the current time-step.

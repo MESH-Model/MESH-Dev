@@ -31,10 +31,12 @@ module climate_forcing
         !> model_files_variables: 'fls' variable.
         !> shd_variables: 'shd' variable.
         !> model_dates: 'ic' counter variable.
+        !> model_variables: 'vs' variable.
         !> FLAGS: 'SAVERESUMEFLAG'.
         use model_files_variables
         use shd_variables
         use model_dates
+        use model_variables
         use FLAGS
 
         !> Input variables.
@@ -61,12 +63,33 @@ module climate_forcing
 
         !> Set the default file name.
         cm%dat(ck%FB)%fname = 'basin_shortwave'
+        cm%dat(ck%FB)%GRD => vs%grid%fsin
+        cm%dat(ck%FB)%GAT => vs%tile%fsin
+        cm%dat(ck%FB)%GRU => vs%gru%fsin
         cm%dat(ck%FI)%fname = 'basin_longwave'
+        cm%dat(ck%FI)%GRD => vs%grid%flin
+        cm%dat(ck%FI)%GAT => vs%tile%flin
+        cm%dat(ck%FI)%GRU => vs%gru%flin
         cm%dat(ck%RT)%fname = 'basin_rain'
+        cm%dat(ck%RT)%GRD => vs%grid%pre
+        cm%dat(ck%RT)%GAT => vs%tile%pre
+        cm%dat(ck%RT)%GRU => vs%gru%pre
         cm%dat(ck%TT)%fname = 'basin_temperature'
+        cm%dat(ck%TT)%GRD => vs%grid%ta
+        cm%dat(ck%TT)%GAT => vs%tile%ta
+        cm%dat(ck%TT)%GRU => vs%gru%ta
         cm%dat(ck%UV)%fname = 'basin_wind'
+        cm%dat(ck%UV)%GRD => vs%grid%uv
+        cm%dat(ck%UV)%GAT => vs%tile%uv
+        cm%dat(ck%UV)%GRU => vs%gru%uv
         cm%dat(ck%P0)%fname = 'basin_pres'
+        cm%dat(ck%P0)%GRD => vs%grid%pres
+        cm%dat(ck%P0)%GAT => vs%tile%pres
+        cm%dat(ck%P0)%GRU => vs%gru%pres
         cm%dat(ck%HU)%fname = 'basin_humidity'
+        cm%dat(ck%HU)%GRD => vs%grid%qa
+        cm%dat(ck%HU)%GAT => vs%tile%qa
+        cm%dat(ck%HU)%GRU => vs%gru%qa
         cm%dat(ck%N0)%fname = 'WR_runoff'
         cm%dat(ck%O1)%fname = 'WR_recharge'
 
@@ -76,31 +99,31 @@ module climate_forcing
         !> Preparation for CLASS format MET file.
         if (cm%dat(ck%MET)%factive) then
             if (.not. cm%dat(ck%FB)%factive) then
-                allocate(cm%dat(ck%FB)%GRD(shd%NA), cm%dat(ck%FB)%GAT(shd%lc%NML), cm%dat(ck%FB)%GRU(shd%lc%NTYPE))
+!-                allocate(cm%dat(ck%FB)%GRD(shd%NA), cm%dat(ck%FB)%GAT(shd%lc%NML), cm%dat(ck%FB)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%FB)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%FI)%factive) then
-                allocate(cm%dat(ck%FI)%GRD(shd%NA), cm%dat(ck%FI)%GAT(shd%lc%NML), cm%dat(ck%FI)%GRU(shd%lc%NTYPE))
+!-                allocate(cm%dat(ck%FI)%GRD(shd%NA), cm%dat(ck%FI)%GAT(shd%lc%NML), cm%dat(ck%FI)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%FI)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%RT)%factive) then
-                allocate(cm%dat(ck%RT)%GRD(shd%NA), cm%dat(ck%RT)%GAT(shd%lc%NML), cm%dat(ck%RT)%GRU(shd%lc%NTYPE))
+!-                allocate(cm%dat(ck%RT)%GRD(shd%NA), cm%dat(ck%RT)%GAT(shd%lc%NML), cm%dat(ck%RT)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%RT)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%TT)%factive) then
-                allocate(cm%dat(ck%TT)%GRD(shd%NA), cm%dat(ck%TT)%GAT(shd%lc%NML), cm%dat(ck%TT)%GRU(shd%lc%NTYPE))
+!-                allocate(cm%dat(ck%TT)%GRD(shd%NA), cm%dat(ck%TT)%GAT(shd%lc%NML), cm%dat(ck%TT)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%TT)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%UV)%factive) then
-                allocate(cm%dat(ck%UV)%GRD(shd%NA), cm%dat(ck%UV)%GAT(shd%lc%NML), cm%dat(ck%UV)%GRU(shd%lc%NTYPE))
+!-                allocate(cm%dat(ck%UV)%GRD(shd%NA), cm%dat(ck%UV)%GAT(shd%lc%NML), cm%dat(ck%UV)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%UV)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%P0)%factive) then
-                allocate(cm%dat(ck%P0)%GRD(shd%NA), cm%dat(ck%P0)%GAT(shd%lc%NML), cm%dat(ck%P0)%GRU(shd%lc%NTYPE))
+!-                allocate(cm%dat(ck%P0)%GRD(shd%NA), cm%dat(ck%P0)%GAT(shd%lc%NML), cm%dat(ck%P0)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%P0)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%HU)%factive) then
-                allocate(cm%dat(ck%HU)%GRD(shd%NA), cm%dat(ck%HU)%GAT(shd%lc%NML), cm%dat(ck%HU)%GRU(shd%lc%NTYPE))
+!-                allocate(cm%dat(ck%HU)%GRD(shd%NA), cm%dat(ck%HU)%GAT(shd%lc%NML), cm%dat(ck%HU)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%HU)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
         end if
@@ -183,7 +206,7 @@ module climate_forcing
 !?            end if
 
             !> Allocate the data series.
-            allocate(cm%dat(vid)%GRD(shd%NA), cm%dat(vid)%GAT(shd%lc%NML), cm%dat(vid)%GRU(shd%lc%NTYPE))
+!-            allocate(cm%dat(vid)%GRD(shd%NA), cm%dat(vid)%GAT(shd%lc%NML), cm%dat(vid)%GRU(shd%lc%NTYPE))
 
             !> Skip records in the file to the simulation start date.
             isteps1 = jday_to_tsteps( &

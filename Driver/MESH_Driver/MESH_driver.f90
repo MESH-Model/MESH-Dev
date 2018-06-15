@@ -543,10 +543,10 @@ program RUNMESH
 !                     cp%DRNROW, cp%XSLPROW, cp%XDROW, WFSFROW, cp%KSROW, &
 !                     ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
 !                     AGIDROW, ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
-!                     cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, cm%dat(ck%FB)%GRD/2.0, &
-!                     cm%dat(ck%FB)%GRD/2.0, CSZGRD, cm%dat(ck%FI)%GRD, cm%dat(ck%UV)%GRD, VLGRD, &
-!                     cm%dat(ck%TT)%GRD, cm%dat(ck%HU)%GRD, cm%dat(ck%P0)%GRD, &
-!                     cm%dat(ck%RT)%GRD, PADRGRD, &
+!                     cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, vs%grid%fsin/2.0, &
+!                     vs%grid%fsin/2.0, CSZGRD, vs%grid%flin, vs%grid%uv, VLGRD, &
+!                     vs%grid%ta, vs%grid%qa, vs%grid%pres, &
+!                     vs%grid%pre, PADRGRD, &
 !                     VPDGRD, TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, &
 !                     SPCPGRD, TSPCGRD, RHSIGRD, FCLOGRD, DLONGRD, &
 !                     GGEOGRD, cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &

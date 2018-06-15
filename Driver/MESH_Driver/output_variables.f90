@@ -394,58 +394,60 @@ module output_variables
 
             !> Meteorological forcing.
             if (ro%RUNCLIM) then
-                if (allocated(cm%dat(ck%FB)%GAT)) then
+                if (associated(vs%tile%fsin)) then
                     call output_variables_allocate(series%tile%fsin, n)
                     call output_variables_allocate(series%tile%ifsin, n)
                 end if
-                if (allocated(cm%dat(ck%FI)%GAT)) call output_variables_allocate(series%tile%flin, n)
-                if (allocated(cm%dat(ck%TT)%GAT)) call output_variables_allocate(series%tile%ta, n)
-                if (allocated(cm%dat(ck%HU)%GAT)) call output_variables_allocate(series%tile%qa, n)
-                if (allocated(cm%dat(ck%P0)%GAT)) call output_variables_allocate(series%tile%pres, n)
-                if (allocated(cm%dat(ck%UV)%GAT)) call output_variables_allocate(series%tile%uv, n)
-                if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%tile%pre, n)
+                if (associated(vs%tile%flin)) call output_variables_allocate(series%tile%flin, n)
+                if (associated(vs%tile%ta)) call output_variables_allocate(series%tile%ta, n)
+                if (associated(vs%tile%qa)) call output_variables_allocate(series%tile%qa, n)
+                if (associated(vs%tile%pres)) call output_variables_allocate(series%tile%pres, n)
+                if (associated(vs%tile%uv)) call output_variables_allocate(series%tile%uv, n)
+                if (associated(vs%tile%pre)) call output_variables_allocate(series%tile%pre, n)
             end if
 
             !> Water balance.
             if (ro%RUNBALWB) then
-                if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%tile%prec, n)
-                if (allocated(vs%tile%evap)) call output_variables_allocate(series%tile%evap, n)
-                if (allocated(vs%tile%pevp)) call output_variables_allocate(series%tile%pevp, n)
-                if (allocated(vs%tile%evpb)) call output_variables_allocate(series%tile%evpb, n)
-                if (allocated(vs%tile%arrd)) call output_variables_allocate(series%tile%arrd, n)
-                if (allocated(vs%tile%gro)) call output_variables_allocate(series%tile%gro, n)
-                if (allocated(vs%tile%rofo) .or. allocated(vs%tile%rofs) .or. allocated(vs%tile%rofb)) then
+                if (associated(vs%tile%pre)) call output_variables_allocate(series%tile%prec, n)
+                if (associated(vs%tile%evap)) call output_variables_allocate(series%tile%evap, n)
+                if (associated(vs%tile%pevp)) call output_variables_allocate(series%tile%pevp, n)
+                if (associated(vs%tile%evpb)) call output_variables_allocate(series%tile%evpb, n)
+                if (associated(vs%tile%arrd)) call output_variables_allocate(series%tile%arrd, n)
+                if (associated(vs%tile%gro)) call output_variables_allocate(series%tile%gro, n)
+                if (associated(vs%tile%rofo) .or. associated(vs%tile%rofs) .or. associated(vs%tile%rofb)) then
                     call output_variables_allocate(series%tile%rof, n)
                 end if
-                if (allocated(vs%tile%rofo)) call output_variables_allocate(series%tile%rofo, n)
-                if (allocated(vs%tile%rofs)) call output_variables_allocate(series%tile%rofs, n)
-                if (allocated(vs%tile%rofb)) call output_variables_allocate(series%tile%rofb, n)
-                if (allocated(vs%tile%rcan)) call output_variables_allocate(series%tile%rcan, n)
-                if (allocated(vs%tile%sncan)) call output_variables_allocate(series%tile%sncan, n)
-                if (allocated(vs%tile%sno)) then
+                if (associated(vs%tile%rofo)) call output_variables_allocate(series%tile%rofo, n)
+                if (associated(vs%tile%rofs)) call output_variables_allocate(series%tile%rofs, n)
+                if (associated(vs%tile%rofb)) call output_variables_allocate(series%tile%rofb, n)
+                if (associated(vs%tile%rcan)) call output_variables_allocate(series%tile%rcan, n)
+                if (associated(vs%tile%sncan)) call output_variables_allocate(series%tile%sncan, n)
+                if (associated(vs%tile%sno)) then
                     call output_variables_allocate(series%tile%sno, n)
                     call output_variables_allocate(series%tile%isno, n)
                 end if
-                if (allocated(vs%tile%fsno)) call output_variables_allocate(series%tile%fsno, n)
-                if (allocated(vs%tile%wsno)) then
+                if (associated(vs%tile%fsno)) call output_variables_allocate(series%tile%fsno, n)
+                if (associated(vs%tile%wsno)) then
                     call output_variables_allocate(series%tile%wsno, n)
                     call output_variables_allocate(series%tile%isno, n)
                 end if
-                if (allocated(vs%tile%zpnd)) then
+                if (associated(vs%tile%zpnd)) then
                     call output_variables_allocate(series%tile%zpnd, n)
                     call output_variables_allocate(series%tile%ipnd, n)
                 end if
-                if (allocated(vs%tile%pndw)) then
+                if (associated(vs%tile%pndw)) then
                     call output_variables_allocate(series%tile%pndw, n)
                     call output_variables_allocate(series%tile%ipnd, n)
                 end if
-                if (allocated(vs%tile%lzs)) call output_variables_allocate(series%tile%lzs, n)
-                if (allocated(vs%tile%dzs)) call output_variables_allocate(series%tile%dzs, n)
-                if (allocated(vs%tile%thlq)) call output_variables_allocate(series%tile%thlq, n, nsl)
-                if (allocated(vs%tile%lqws)) call output_variables_allocate(series%tile%lqws, n, nsl)
-                if (allocated(vs%tile%thic)) call output_variables_allocate(series%tile%thic, n, nsl)
-                if (allocated(vs%tile%fzws)) call output_variables_allocate(series%tile%fzws, n, nsl)
-                if (allocated(vs%tile%lqws) .or. allocated(vs%tile%fzws)) call output_variables_allocate(series%tile%alws, n, nsl)
+                if (associated(vs%tile%lzs)) call output_variables_allocate(series%tile%lzs, n)
+                if (associated(vs%tile%dzs)) call output_variables_allocate(series%tile%dzs, n)
+                if (associated(vs%tile%thlq)) call output_variables_allocate(series%tile%thlq, n, nsl)
+                if (associated(vs%tile%lqws)) call output_variables_allocate(series%tile%lqws, n, nsl)
+                if (associated(vs%tile%thic)) call output_variables_allocate(series%tile%thic, n, nsl)
+                if (associated(vs%tile%fzws)) call output_variables_allocate(series%tile%fzws, n, nsl)
+                if (associated(vs%tile%lqws) .or. associated(vs%tile%fzws)) then
+                    call output_variables_allocate(series%tile%alws, n, nsl)
+                end if
                 call output_variables_allocate(series%tile%stgw, n)
                 call output_variables_allocate(series%tile%stg0w, n)
                 call output_variables_allocate(series%tile%dstgw, n)
@@ -453,41 +455,41 @@ module output_variables
 
             !> Energy balance.
             if (ro%RUNBALEB) then
-                if (allocated(vs%tile%cmas)) call output_variables_allocate(series%tile%cmas, n)
-                if (allocated(vs%tile%tcan)) then
+                if (associated(vs%tile%cmas)) call output_variables_allocate(series%tile%cmas, n)
+                if (associated(vs%tile%tcan)) then
                     call output_variables_allocate(series%tile%tcan, n)
                     call output_variables_allocate(series%tile%ican, n)
                 end if
-                if (allocated(vs%tile%tsno)) then
+                if (associated(vs%tile%tsno)) then
                     call output_variables_allocate(series%tile%tsno, n)
                     call output_variables_allocate(series%tile%isno, n)
                 end if
-                if (allocated(vs%tile%tpnd)) then
+                if (associated(vs%tile%tpnd)) then
                     call output_variables_allocate(series%tile%tpnd, n)
                     call output_variables_allocate(series%tile%ipnd, n)
                 end if
-                if (allocated(vs%tile%alvs)) then
+                if (associated(vs%tile%alvs)) then
                     call output_variables_allocate(series%tile%alvs, n)
                 end if
-                if (allocated(vs%tile%alir)) then
+                if (associated(vs%tile%alir)) then
                     call output_variables_allocate(series%tile%alir, n)
                     call output_variables_allocate(series%tile%ifsin, n)
                 end if
-                if (allocated(vs%tile%albt)) then
+                if (associated(vs%tile%albt)) then
                     call output_variables_allocate(series%tile%albt, n)
                     call output_variables_allocate(series%tile%ifsin, n)
                 end if
-                if (allocated(vs%tile%gte)) call output_variables_allocate(series%tile%gte, n)
-                if (allocated(cm%dat(ck%FB)%GAT) .and. allocated(vs%tile%albt)) then
+                if (associated(vs%tile%gte)) call output_variables_allocate(series%tile%gte, n)
+                if (associated(vs%tile%fsin) .and. associated(vs%tile%albt)) then
                     call output_variables_allocate(series%tile%fsout, n)
                     call output_variables_allocate(series%tile%ifsin, n)
                 end if
-                if (allocated(vs%tile%gte)) call output_variables_allocate(series%tile%flout, n)
-                if (allocated(vs%tile%hfs)) call output_variables_allocate(series%tile%qh, n)
-                if (allocated(vs%tile%qevp)) call output_variables_allocate(series%tile%qe, n)
-                if (allocated(vs%tile%gzero)) call output_variables_allocate(series%tile%gzero, n)
-                if (allocated(vs%tile%gflx)) call output_variables_allocate(series%tile%gflx, n, nsl)
-                if (allocated(vs%tile%tbar)) call output_variables_allocate(series%tile%tbar, n, nsl)
+                if (associated(vs%tile%gte)) call output_variables_allocate(series%tile%flout, n)
+                if (associated(vs%tile%hfs)) call output_variables_allocate(series%tile%qh, n)
+                if (associated(vs%tile%qevp)) call output_variables_allocate(series%tile%qe, n)
+                if (associated(vs%tile%gzero)) call output_variables_allocate(series%tile%gzero, n)
+                if (associated(vs%tile%gflx)) call output_variables_allocate(series%tile%gflx, n, nsl)
+                if (associated(vs%tile%tbar)) call output_variables_allocate(series%tile%tbar, n, nsl)
                 call output_variables_allocate(series%tile%stge, n)
                 call output_variables_allocate(series%tile%stg0e, n)
                 call output_variables_allocate(series%tile%dstge, n)
@@ -500,58 +502,60 @@ module output_variables
 
             !> Meteorological forcing.
             if (ro%RUNCLIM) then
-                if (allocated(cm%dat(ck%FB)%GAT)) then
+                if (associated(vs%grid%fsin)) then
                     call output_variables_allocate(series%grid%fsin, n)
                     call output_variables_allocate(series%grid%ifsin, n)
                 end if
-                if (allocated(cm%dat(ck%FI)%GAT)) call output_variables_allocate(series%grid%flin, n)
-                if (allocated(cm%dat(ck%TT)%GAT)) call output_variables_allocate(series%grid%ta, n)
-                if (allocated(cm%dat(ck%HU)%GAT)) call output_variables_allocate(series%grid%qa, n)
-                if (allocated(cm%dat(ck%P0)%GAT)) call output_variables_allocate(series%grid%pres, n)
-                if (allocated(cm%dat(ck%UV)%GAT)) call output_variables_allocate(series%grid%uv, n)
-                if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%grid%pre, n)
+                if (associated(vs%grid%flin)) call output_variables_allocate(series%grid%flin, n)
+                if (associated(vs%grid%ta)) call output_variables_allocate(series%grid%ta, n)
+                if (associated(vs%grid%qa)) call output_variables_allocate(series%grid%qa, n)
+                if (associated(vs%grid%pres)) call output_variables_allocate(series%grid%pres, n)
+                if (associated(vs%grid%uv)) call output_variables_allocate(series%grid%uv, n)
+                if (associated(vs%grid%pre)) call output_variables_allocate(series%grid%pre, n)
             end if
 
             !> Water balance.
             if (ro%RUNBALWB) then
-                if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%grid%prec, n)
-                if (allocated(vs%grid%evap)) call output_variables_allocate(series%grid%evap, n)
-                if (allocated(vs%grid%pevp)) call output_variables_allocate(series%grid%pevp, n)
-                if (allocated(vs%grid%evpb)) call output_variables_allocate(series%grid%evpb, n)
-                if (allocated(vs%grid%arrd)) call output_variables_allocate(series%grid%arrd, n)
-                if (allocated(vs%grid%gro)) call output_variables_allocate(series%grid%gro, n)
-                if (allocated(vs%grid%rofo) .or. allocated(vs%grid%rofs) .or. allocated(vs%grid%rofb)) then
+                if (associated(vs%grid%pre)) call output_variables_allocate(series%grid%prec, n)
+                if (associated(vs%grid%evap)) call output_variables_allocate(series%grid%evap, n)
+                if (associated(vs%grid%pevp)) call output_variables_allocate(series%grid%pevp, n)
+                if (associated(vs%grid%evpb)) call output_variables_allocate(series%grid%evpb, n)
+                if (associated(vs%grid%arrd)) call output_variables_allocate(series%grid%arrd, n)
+                if (associated(vs%grid%gro)) call output_variables_allocate(series%grid%gro, n)
+                if (associated(vs%grid%rofo) .or. associated(vs%grid%rofs) .or. associated(vs%grid%rofb)) then
                     call output_variables_allocate(series%grid%rof, n)
                 end if
-                if (allocated(vs%grid%rofo)) call output_variables_allocate(series%grid%rofo, n)
-                if (allocated(vs%grid%rofs)) call output_variables_allocate(series%grid%rofs, n)
-                if (allocated(vs%grid%rofb)) call output_variables_allocate(series%grid%rofb, n)
-                if (allocated(vs%grid%rcan)) call output_variables_allocate(series%grid%rcan, n)
-                if (allocated(vs%grid%sncan)) call output_variables_allocate(series%grid%sncan, n)
-                if (allocated(vs%grid%sno)) then
+                if (associated(vs%grid%rofo)) call output_variables_allocate(series%grid%rofo, n)
+                if (associated(vs%grid%rofs)) call output_variables_allocate(series%grid%rofs, n)
+                if (associated(vs%grid%rofb)) call output_variables_allocate(series%grid%rofb, n)
+                if (associated(vs%grid%rcan)) call output_variables_allocate(series%grid%rcan, n)
+                if (associated(vs%grid%sncan)) call output_variables_allocate(series%grid%sncan, n)
+                if (associated(vs%grid%sno)) then
                     call output_variables_allocate(series%grid%sno, n)
                     call output_variables_allocate(series%grid%isno, n)
                 end if
-                if (allocated(vs%grid%fsno)) call output_variables_allocate(series%grid%fsno, n)
-                if (allocated(vs%grid%wsno)) then
+                if (associated(vs%grid%fsno)) call output_variables_allocate(series%grid%fsno, n)
+                if (associated(vs%grid%wsno)) then
                     call output_variables_allocate(series%grid%wsno, n)
                     call output_variables_allocate(series%grid%isno, n)
                 end if
-                if (allocated(vs%grid%zpnd)) then
+                if (associated(vs%grid%zpnd)) then
                     call output_variables_allocate(series%grid%zpnd, n)
                     call output_variables_allocate(series%grid%ipnd, n)
                 end if
-                if (allocated(vs%grid%pndw)) then
+                if (associated(vs%grid%pndw)) then
                     call output_variables_allocate(series%grid%pndw, n)
                     call output_variables_allocate(series%grid%ipnd, n)
                 end if
-                if (allocated(vs%grid%lzs)) call output_variables_allocate(series%grid%lzs, n)
-                if (allocated(vs%grid%dzs)) call output_variables_allocate(series%grid%dzs, n)
-                if (allocated(vs%grid%thlq)) call output_variables_allocate(series%grid%thlq, n, nsl)
-                if (allocated(vs%grid%lqws)) call output_variables_allocate(series%grid%lqws, n, nsl)
-                if (allocated(vs%grid%thic)) call output_variables_allocate(series%grid%thic, n, nsl)
-                if (allocated(vs%grid%fzws)) call output_variables_allocate(series%grid%fzws, n, nsl)
-                if (allocated(vs%grid%lqws) .or. allocated(vs%grid%fzws)) call output_variables_allocate(series%grid%alws, n, nsl)
+                if (associated(vs%grid%lzs)) call output_variables_allocate(series%grid%lzs, n)
+                if (associated(vs%grid%dzs)) call output_variables_allocate(series%grid%dzs, n)
+                if (associated(vs%grid%thlq)) call output_variables_allocate(series%grid%thlq, n, nsl)
+                if (associated(vs%grid%lqws)) call output_variables_allocate(series%grid%lqws, n, nsl)
+                if (associated(vs%grid%thic)) call output_variables_allocate(series%grid%thic, n, nsl)
+                if (associated(vs%grid%fzws)) call output_variables_allocate(series%grid%fzws, n, nsl)
+                if (associated(vs%grid%lqws) .or. associated(vs%grid%fzws)) then
+                    call output_variables_allocate(series%grid%alws, n, nsl)
+                end if
                 call output_variables_allocate(series%grid%stgw, n)
                 call output_variables_allocate(series%grid%stg0w, n)
                 call output_variables_allocate(series%grid%dstgw, n)
@@ -559,41 +563,41 @@ module output_variables
 
             !> Energy balance.
             if (ro%RUNBALEB) then
-                if (allocated(vs%grid%cmas)) call output_variables_allocate(series%grid%cmas, n)
-                if (allocated(vs%grid%tcan)) then
+                if (associated(vs%grid%cmas)) call output_variables_allocate(series%grid%cmas, n)
+                if (associated(vs%grid%tcan)) then
                     call output_variables_allocate(series%grid%tcan, n)
                     call output_variables_allocate(series%grid%ican, n)
                 end if
-                if (allocated(vs%grid%tsno)) then
+                if (associated(vs%grid%tsno)) then
                     call output_variables_allocate(series%grid%tsno, n)
                     call output_variables_allocate(series%grid%isno, n)
                 end if
-                if (allocated(vs%grid%tpnd)) then
+                if (associated(vs%grid%tpnd)) then
                     call output_variables_allocate(series%grid%tpnd, n)
                     call output_variables_allocate(series%grid%ipnd, n)
                 end if
-                if (allocated(vs%grid%alvs)) then
+                if (associated(vs%grid%alvs)) then
                     call output_variables_allocate(series%grid%alvs, n)
                 end if
-                if (allocated(vs%grid%alir)) then
+                if (associated(vs%grid%alir)) then
                     call output_variables_allocate(series%grid%alir, n)
                     call output_variables_allocate(series%grid%ifsin, n)
                 end if
-                if (allocated(vs%grid%albt)) then
+                if (associated(vs%grid%albt)) then
                     call output_variables_allocate(series%grid%albt, n)
                     call output_variables_allocate(series%grid%ifsin, n)
                 end if
-                if (allocated(vs%grid%gte)) call output_variables_allocate(series%grid%gte, n)
-                if (allocated(cm%dat(ck%FB)%GAT) .and. allocated(vs%grid%albt)) then
+                if (associated(vs%grid%gte)) call output_variables_allocate(series%grid%gte, n)
+                if (associated(vs%grid%fsin) .and. associated(vs%grid%albt)) then
                     call output_variables_allocate(series%grid%fsout, n)
                     call output_variables_allocate(series%grid%ifsin, n)
                 end if
-                if (allocated(vs%grid%gte)) call output_variables_allocate(series%grid%flout, n)
-                if (allocated(vs%grid%hfs)) call output_variables_allocate(series%grid%qh, n)
-                if (allocated(vs%grid%qevp)) call output_variables_allocate(series%grid%qe, n)
-                if (allocated(vs%grid%gzero)) call output_variables_allocate(series%grid%gzero, n)
-                if (allocated(vs%grid%gflx)) call output_variables_allocate(series%grid%gflx, n, nsl)
-                if (allocated(vs%grid%tbar)) call output_variables_allocate(series%grid%tbar, n, nsl)
+                if (associated(vs%grid%gte)) call output_variables_allocate(series%grid%flout, n)
+                if (associated(vs%grid%hfs)) call output_variables_allocate(series%grid%qh, n)
+                if (associated(vs%grid%qevp)) call output_variables_allocate(series%grid%qe, n)
+                if (associated(vs%grid%gzero)) call output_variables_allocate(series%grid%gzero, n)
+                if (associated(vs%grid%gflx)) call output_variables_allocate(series%grid%gflx, n, nsl)
+                if (associated(vs%grid%tbar)) call output_variables_allocate(series%grid%tbar, n, nsl)
                 call output_variables_allocate(series%grid%stge, n)
                 call output_variables_allocate(series%grid%stg0e, n)
                 call output_variables_allocate(series%grid%dstge, n)
@@ -601,117 +605,119 @@ module output_variables
 
             !> Channels and routing.
             if (ro%RUNCHNL) then
-                if (allocated(vs%grid%rff)) call output_variables_allocate(series%grid%rff, n)
-                if (allocated(vs%grid%rchg)) call output_variables_allocate(series%grid%rchg, n)
-                if (allocated(vs%grid%qi)) call output_variables_allocate(series%grid%qi, n)
-                if (allocated(vs%grid%stgch)) call output_variables_allocate(series%grid%stgch, n)
-                if (allocated(vs%grid%qo)) call output_variables_allocate(series%grid%qo, n)
-                if (allocated(vs%grid%zlvl)) call output_variables_allocate(series%grid%zlvl, n)
+                if (associated(vs%grid%rff)) call output_variables_allocate(series%grid%rff, n)
+                if (associated(vs%grid%rchg)) call output_variables_allocate(series%grid%rchg, n)
+                if (associated(vs%grid%qi)) call output_variables_allocate(series%grid%qi, n)
+                if (associated(vs%grid%stgch)) call output_variables_allocate(series%grid%stgch, n)
+                if (associated(vs%grid%qo)) call output_variables_allocate(series%grid%qo, n)
+                if (associated(vs%grid%zlvl)) call output_variables_allocate(series%grid%zlvl, n)
             end if
 
             !> DA averaged.
             if (ro%RUNCLIM) then
-                if (allocated(cm%dat(ck%FB)%GAT)) then
+                if (associated(vs%grid%fsin)) then
                     call output_variables_allocate(series%basin%fsin, n)
                     call output_variables_allocate(series%basin%ifsin, n)
                 end if
-                if (allocated(cm%dat(ck%FI)%GAT)) call output_variables_allocate(series%basin%flin, n)
-                if (allocated(cm%dat(ck%TT)%GAT)) call output_variables_allocate(series%basin%ta, n)
-                if (allocated(cm%dat(ck%HU)%GAT)) call output_variables_allocate(series%basin%qa, n)
-                if (allocated(cm%dat(ck%P0)%GAT)) call output_variables_allocate(series%basin%pres, n)
-                if (allocated(cm%dat(ck%UV)%GAT)) call output_variables_allocate(series%basin%uv, n)
-                if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%basin%pre, n)
+                if (associated(vs%grid%flin)) call output_variables_allocate(series%basin%flin, n)
+                if (associated(vs%grid%ta)) call output_variables_allocate(series%basin%ta, n)
+                if (associated(vs%grid%qa)) call output_variables_allocate(series%basin%qa, n)
+                if (associated(vs%grid%pres)) call output_variables_allocate(series%basin%pres, n)
+                if (associated(vs%grid%uv)) call output_variables_allocate(series%basin%uv, n)
+                if (associated(vs%grid%pre)) call output_variables_allocate(series%basin%pre, n)
             end if
             if (ro%RUNBALWB) then
-                if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%basin%prec, n)
-                if (allocated(vs%grid%evap)) call output_variables_allocate(series%basin%evap, n)
-                if (allocated(vs%grid%pevp)) call output_variables_allocate(series%basin%pevp, n)
-                if (allocated(vs%grid%evpb)) call output_variables_allocate(series%basin%evpb, n)
-                if (allocated(vs%grid%arrd)) call output_variables_allocate(series%basin%arrd, n)
-                if (allocated(vs%grid%gro)) call output_variables_allocate(series%basin%gro, n)
-                if (allocated(vs%grid%rofo) .or. allocated(vs%grid%rofs) .or. allocated(vs%grid%rofb)) then
+                if (associated(vs%grid%pre)) call output_variables_allocate(series%basin%prec, n)
+                if (associated(vs%grid%evap)) call output_variables_allocate(series%basin%evap, n)
+                if (associated(vs%grid%pevp)) call output_variables_allocate(series%basin%pevp, n)
+                if (associated(vs%grid%evpb)) call output_variables_allocate(series%basin%evpb, n)
+                if (associated(vs%grid%arrd)) call output_variables_allocate(series%basin%arrd, n)
+                if (associated(vs%grid%gro)) call output_variables_allocate(series%basin%gro, n)
+                if (associated(vs%grid%rofo) .or. associated(vs%grid%rofs) .or. associated(vs%grid%rofb)) then
                     call output_variables_allocate(series%basin%rof, n)
                 end if
-                if (allocated(vs%grid%rofo)) call output_variables_allocate(series%basin%rofo, n)
-                if (allocated(vs%grid%rofs)) call output_variables_allocate(series%basin%rofs, n)
-                if (allocated(vs%grid%rofb)) call output_variables_allocate(series%basin%rofb, n)
-                if (allocated(vs%grid%rcan)) call output_variables_allocate(series%basin%rcan, n)
-                if (allocated(vs%grid%sncan)) call output_variables_allocate(series%basin%sncan, n)
-                if (allocated(vs%grid%sno)) then
+                if (associated(vs%grid%rofo)) call output_variables_allocate(series%basin%rofo, n)
+                if (associated(vs%grid%rofs)) call output_variables_allocate(series%basin%rofs, n)
+                if (associated(vs%grid%rofb)) call output_variables_allocate(series%basin%rofb, n)
+                if (associated(vs%grid%rcan)) call output_variables_allocate(series%basin%rcan, n)
+                if (associated(vs%grid%sncan)) call output_variables_allocate(series%basin%sncan, n)
+                if (associated(vs%grid%sno)) then
                     call output_variables_allocate(series%basin%sno, n)
                     call output_variables_allocate(series%basin%isno, n)
                 end if
-                if (allocated(vs%grid%fsno)) call output_variables_allocate(series%basin%fsno, n)
-                if (allocated(vs%grid%wsno)) then
+                if (associated(vs%grid%fsno)) call output_variables_allocate(series%basin%fsno, n)
+                if (associated(vs%grid%wsno)) then
                     call output_variables_allocate(series%basin%wsno, n)
                     call output_variables_allocate(series%basin%isno, n)
                 end if
-                if (allocated(vs%grid%zpnd)) then
+                if (associated(vs%grid%zpnd)) then
                     call output_variables_allocate(series%basin%zpnd, n)
                     call output_variables_allocate(series%basin%ipnd, n)
                 end if
-                if (allocated(vs%grid%pndw)) then
+                if (associated(vs%grid%pndw)) then
                     call output_variables_allocate(series%basin%pndw, n)
                     call output_variables_allocate(series%basin%ipnd, n)
                 end if
-                if (allocated(vs%grid%lzs)) call output_variables_allocate(series%basin%lzs, n)
-                if (allocated(vs%grid%dzs)) call output_variables_allocate(series%basin%dzs, n)
-                if (allocated(vs%grid%thlq)) call output_variables_allocate(series%basin%thlq, n, nsl)
-                if (allocated(vs%grid%lqws)) call output_variables_allocate(series%basin%lqws, n, nsl)
-                if (allocated(vs%grid%thic)) call output_variables_allocate(series%basin%thic, n, nsl)
-                if (allocated(vs%grid%fzws)) call output_variables_allocate(series%basin%fzws, n, nsl)
-                if (allocated(vs%grid%lqws) .or. allocated(vs%grid%fzws)) call output_variables_allocate(series%basin%alws, n, nsl)
+                if (associated(vs%grid%lzs)) call output_variables_allocate(series%basin%lzs, n)
+                if (associated(vs%grid%dzs)) call output_variables_allocate(series%basin%dzs, n)
+                if (associated(vs%grid%thlq)) call output_variables_allocate(series%basin%thlq, n, nsl)
+                if (associated(vs%grid%lqws)) call output_variables_allocate(series%basin%lqws, n, nsl)
+                if (associated(vs%grid%thic)) call output_variables_allocate(series%basin%thic, n, nsl)
+                if (associated(vs%grid%fzws)) call output_variables_allocate(series%basin%fzws, n, nsl)
+                if (associated(vs%grid%lqws) .or. associated(vs%grid%fzws)) then
+                    call output_variables_allocate(series%basin%alws, n, nsl)
+                end if
                 call output_variables_allocate(series%basin%stgw, n)
                 call output_variables_allocate(series%basin%stg0w, n)
                 call output_variables_allocate(series%basin%dstgw, n)
             end if
             if (ro%RUNBALEB) then
-                if (allocated(vs%grid%cmas)) call output_variables_allocate(series%basin%cmas, n)
-                if (allocated(vs%grid%tcan)) then
+                if (associated(vs%grid%cmas)) call output_variables_allocate(series%basin%cmas, n)
+                if (associated(vs%grid%tcan)) then
                     call output_variables_allocate(series%basin%tcan, n)
                     call output_variables_allocate(series%basin%ican, n)
                 end if
-                if (allocated(vs%grid%tsno)) then
+                if (associated(vs%grid%tsno)) then
                     call output_variables_allocate(series%basin%tsno, n)
                     call output_variables_allocate(series%basin%isno, n)
                 end if
-                if (allocated(vs%grid%tpnd)) then
+                if (associated(vs%grid%tpnd)) then
                     call output_variables_allocate(series%basin%tpnd, n)
                     call output_variables_allocate(series%basin%ipnd, n)
                 end if
-                if (allocated(vs%grid%alvs)) then
+                if (associated(vs%grid%alvs)) then
                     call output_variables_allocate(series%basin%alvs, n)
                 end if
-                if (allocated(vs%grid%alir)) then
+                if (associated(vs%grid%alir)) then
                     call output_variables_allocate(series%basin%alir, n)
                     call output_variables_allocate(series%basin%ifsin, n)
                 end if
-                if (allocated(vs%grid%albt)) then
+                if (associated(vs%grid%albt)) then
                     call output_variables_allocate(series%basin%albt, n)
                     call output_variables_allocate(series%basin%ifsin, n)
                 end if
-                if (allocated(vs%grid%gte)) call output_variables_allocate(series%basin%gte, n)
-                if (allocated(cm%dat(ck%FB)%GAT) .and. allocated(vs%grid%albt)) then
+                if (associated(vs%grid%gte)) call output_variables_allocate(series%basin%gte, n)
+                if (associated(vs%grid%fsin) .and. associated(vs%grid%albt)) then
                     call output_variables_allocate(series%basin%fsout, n)
                     call output_variables_allocate(series%basin%ifsin, n)
                 end if
-                if (allocated(vs%grid%gte)) call output_variables_allocate(series%basin%flout, n)
-                if (allocated(vs%grid%hfs)) call output_variables_allocate(series%basin%qh, n)
-                if (allocated(vs%grid%qevp)) call output_variables_allocate(series%basin%qe, n)
-                if (allocated(vs%grid%gzero)) call output_variables_allocate(series%basin%gzero, n)
-                if (allocated(vs%grid%gflx)) call output_variables_allocate(series%basin%gflx, n, nsl)
-                if (allocated(vs%grid%tbar)) call output_variables_allocate(series%basin%tbar, n, nsl)
+                if (associated(vs%grid%gte)) call output_variables_allocate(series%basin%flout, n)
+                if (associated(vs%grid%hfs)) call output_variables_allocate(series%basin%qh, n)
+                if (associated(vs%grid%qevp)) call output_variables_allocate(series%basin%qe, n)
+                if (associated(vs%grid%gzero)) call output_variables_allocate(series%basin%gzero, n)
+                if (associated(vs%grid%gflx)) call output_variables_allocate(series%basin%gflx, n, nsl)
+                if (associated(vs%grid%tbar)) call output_variables_allocate(series%basin%tbar, n, nsl)
                 call output_variables_allocate(series%basin%stge, n)
                 call output_variables_allocate(series%basin%stg0e, n)
                 call output_variables_allocate(series%basin%dstge, n)
             end if
             if (ro%RUNCHNL) then
-                if (allocated(vs%grid%rff)) call output_variables_allocate(series%basin%rff, n)
-                if (allocated(vs%grid%rchg)) call output_variables_allocate(series%basin%rchg, n)
-                if (allocated(vs%grid%qi)) call output_variables_allocate(series%basin%qi, n)
-                if (allocated(vs%grid%stgch)) call output_variables_allocate(series%basin%stgch, n)
-                if (allocated(vs%grid%qo)) call output_variables_allocate(series%basin%qo, n)
-                if (allocated(vs%grid%zlvl)) call output_variables_allocate(series%basin%zlvl, n)
+                if (associated(vs%grid%rff)) call output_variables_allocate(series%basin%rff, n)
+                if (associated(vs%grid%rchg)) call output_variables_allocate(series%basin%rchg, n)
+                if (associated(vs%grid%qi)) call output_variables_allocate(series%basin%qi, n)
+                if (associated(vs%grid%stgch)) call output_variables_allocate(series%basin%stgch, n)
+                if (associated(vs%grid%qo)) call output_variables_allocate(series%basin%qo, n)
+                if (associated(vs%grid%zlvl)) call output_variables_allocate(series%basin%zlvl, n)
             end if
         end if
 
@@ -774,32 +780,32 @@ module output_variables
             !> Meteorological forcing.
             if (ro%RUNCLIM) then
                 if (associated(out%ts%tile%fsin)) then
-                    if (all(out%ts%tile%fsin == out%NO_DATA)) out%ts%tile%fsin = cm%dat(ck%FB)%GAT
+                    if (all(out%ts%tile%fsin == out%NO_DATA)) out%ts%tile%fsin = vs%tile%fsin
                 end if
                 if (associated(out%ts%tile%flin)) then
-                    if (all(out%ts%tile%flin == out%NO_DATA)) out%ts%tile%flin = cm%dat(ck%FI)%GAT
+                    if (all(out%ts%tile%flin == out%NO_DATA)) out%ts%tile%flin = vs%tile%flin
                 end if
                 if (associated(out%ts%tile%ta)) then
-                    if (all(out%ts%tile%ta == out%NO_DATA)) out%ts%tile%ta = cm%dat(ck%TT)%GAT
+                    if (all(out%ts%tile%ta == out%NO_DATA)) out%ts%tile%ta = vs%tile%ta
                 end if
                 if (associated(out%ts%tile%qa)) then
-                    if (all(out%ts%tile%qa == out%NO_DATA)) out%ts%tile%qa = cm%dat(ck%HU)%GAT
+                    if (all(out%ts%tile%qa == out%NO_DATA)) out%ts%tile%qa = vs%tile%qa
                 end if
                 if (associated(out%ts%tile%pres)) then
-                    if (all(out%ts%tile%pres == out%NO_DATA)) out%ts%tile%pres = cm%dat(ck%P0)%GAT
+                    if (all(out%ts%tile%pres == out%NO_DATA)) out%ts%tile%pres = vs%tile%pres
                 end if
                 if (associated(out%ts%tile%uv)) then
-                    if (all(out%ts%tile%uv == out%NO_DATA)) out%ts%tile%uv = cm%dat(ck%UV)%GAT
+                    if (all(out%ts%tile%uv == out%NO_DATA)) out%ts%tile%uv = vs%tile%uv
                 end if
                 if (associated(out%ts%tile%pre)) then
-                    if (all(out%ts%tile%pre == out%NO_DATA)) out%ts%tile%pre = cm%dat(ck%RT)%GAT
+                    if (all(out%ts%tile%pre == out%NO_DATA)) out%ts%tile%pre = vs%tile%pre
                 end if
             end if
 
             !> Water balance.
             if (ro%RUNBALWB) then
                 if (associated(out%ts%tile%prec)) then
-                    if (all(out%ts%tile%prec == out%NO_DATA)) out%ts%tile%prec = cm%dat(ck%RT)%GAT
+                    if (all(out%ts%tile%prec == out%NO_DATA)) out%ts%tile%prec = vs%tile%pre
                 end if
                 if (associated(out%ts%tile%evap)) then
                     if (all(out%ts%tile%evap == out%NO_DATA)) out%ts%tile%evap = vs%tile%evap
@@ -944,7 +950,7 @@ module output_variables
                     if (all(out%ts%tile%gte == out%NO_DATA)) out%ts%tile%gte = vs%tile%gte
                 end if
                 if (associated(out%ts%tile%fsout)) then
-                    if (all(out%ts%tile%fsout == out%NO_DATA)) out%ts%tile%fsout = cm%dat(ck%FB)%GAT*(1.0 - vs%tile%albt)
+                    if (all(out%ts%tile%fsout == out%NO_DATA)) out%ts%tile%fsout = vs%tile%fsin*(1.0 - vs%tile%albt)
                 end if
                 if (associated(out%ts%tile%flout)) then
                     if (all(out%ts%tile%flout == out%NO_DATA)) out%ts%tile%flout = 5.66796E-8*vs%tile%gte**4
@@ -980,32 +986,32 @@ module output_variables
             !> Meteorological forcing.
             if (ro%RUNCLIM) then
                 if (associated(out%ts%grid%fsin)) then
-                    if (all(out%ts%grid%fsin == out%NO_DATA)) out%ts%grid%fsin = cm%dat(ck%FB)%GRD
+                    if (all(out%ts%grid%fsin == out%NO_DATA)) out%ts%grid%fsin = vs%grid%fsin
                 end if
                 if (associated(out%ts%grid%flin)) then
-                    if (all(out%ts%grid%flin == out%NO_DATA)) out%ts%grid%flin = cm%dat(ck%FI)%GRD
+                    if (all(out%ts%grid%flin == out%NO_DATA)) out%ts%grid%flin = vs%grid%flin
                 end if
                 if (associated(out%ts%grid%ta)) then
-                    if (all(out%ts%grid%ta == out%NO_DATA)) out%ts%grid%ta = cm%dat(ck%TT)%GRD
+                    if (all(out%ts%grid%ta == out%NO_DATA)) out%ts%grid%ta = vs%grid%ta
                 end if
                 if (associated(out%ts%grid%qa)) then
-                    if (all(out%ts%grid%qa == out%NO_DATA)) out%ts%grid%qa = cm%dat(ck%HU)%GRD
+                    if (all(out%ts%grid%qa == out%NO_DATA)) out%ts%grid%qa = vs%grid%qa
                 end if
                 if (associated(out%ts%grid%pres)) then
-                    if (all(out%ts%grid%pres == out%NO_DATA)) out%ts%grid%pres = cm%dat(ck%P0)%GRD
+                    if (all(out%ts%grid%pres == out%NO_DATA)) out%ts%grid%pres = vs%grid%pres
                 end if
                 if (associated(out%ts%grid%uv)) then
-                    if (all(out%ts%grid%uv == out%NO_DATA)) out%ts%grid%uv = cm%dat(ck%UV)%GRD
+                    if (all(out%ts%grid%uv == out%NO_DATA)) out%ts%grid%uv = vs%grid%uv
                 end if
                 if (associated(out%ts%grid%pre)) then
-                    if (all(out%ts%grid%pre == out%NO_DATA)) out%ts%grid%pre = cm%dat(ck%RT)%GRD
+                    if (all(out%ts%grid%pre == out%NO_DATA)) out%ts%grid%pre = vs%grid%pre
                 end if
             end if
 
             !> Water balance.
             if (ro%RUNBALWB) then
                 if (associated(out%ts%grid%prec)) then
-                    if (all(out%ts%grid%prec == out%NO_DATA)) out%ts%grid%prec = cm%dat(ck%RT)%GRD
+                    if (all(out%ts%grid%prec == out%NO_DATA)) out%ts%grid%prec = vs%grid%pre
                 end if
                 if (associated(out%ts%grid%evap)) then
                     if (all(out%ts%grid%evap == out%NO_DATA)) out%ts%grid%evap = vs%grid%evap
@@ -1152,7 +1158,7 @@ module output_variables
                     if (all(out%ts%grid%gte == out%NO_DATA)) out%ts%grid%gte = vs%grid%gte
                 end if
                 if (associated(out%ts%grid%fsout)) then
-                    if (all(out%ts%grid%fsout == out%NO_DATA)) out%ts%grid%fsout = cm%dat(ck%FB)%GRD*(1.0 - vs%grid%albt)
+                    if (all(out%ts%grid%fsout == out%NO_DATA)) out%ts%grid%fsout = vs%grid%fsin*(1.0 - vs%grid%albt)
                 end if
                 if (associated(out%ts%grid%flout)) then
                     if (all(out%ts%grid%flout == out%NO_DATA)) out%ts%grid%flout = 5.66796E-8*vs%grid%gte**4

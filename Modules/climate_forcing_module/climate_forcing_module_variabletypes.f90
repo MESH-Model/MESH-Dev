@@ -49,9 +49,9 @@ module climate_forcing_variabletypes
         !>      with data at the GRU- or GAT-level.
         !* GRU: Values for forcing data (Bounds: 1: GRU).
         !* GAT: Values for forcing data (Bounds: 1: Land Element).
-        real, dimension(:), allocatable :: GRD
-        real, dimension(:), allocatable :: GRU
-        real, dimension(:), allocatable :: GAT
+        real, dimension(:), pointer :: GRD
+        real, dimension(:), pointer :: GRU
+        real, dimension(:), pointer :: GAT
 
         !* nblocks: Number of frames of blocks of data to read into memory.
         !* blocktype: Type of data being stored (1 = GRD; 2 = GRU; 3 = GAT).

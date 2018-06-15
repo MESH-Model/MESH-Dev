@@ -437,13 +437,11 @@ module sa_mesh_run_within_tile
         elsewhere
             vs%tile%evpb(il1:il2) = 0.0
         end where
-        if (allocated(cm%dat(ck%RT)%GAT)) then
-            where (vs%tile%pevp(il1:il2) /= 0.0)
-                vs%tile%arrd(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)/vs%tile%pevp(il1:il2)
-            elsewhere
-                vs%tile%arrd(il1:il2) = 0.0
-            end where
-        end if
+        where (vs%tile%pevp(il1:il2) /= 0.0)
+            vs%tile%arrd(il1:il2) = vs%tile%pre(il1:il2)/vs%tile%pevp(il1:il2)
+        elsewhere
+            vs%tile%arrd(il1:il2) = 0.0
+        end where
         vs%tile%fzws(il1:il2, :) = vs%tile%thic(il1:il2, :)*vs%tile%delzw(il1:il2, :)*RHOICE
         vs%tile%lqws(il1:il2, :) = vs%tile%thlq(il1:il2, :)*vs%tile%delzw(il1:il2, :)*RHOW
 

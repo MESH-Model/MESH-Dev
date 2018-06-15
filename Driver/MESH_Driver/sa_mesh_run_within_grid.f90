@@ -235,7 +235,7 @@ module sa_mesh_run_within_grid
         vs%grid%gro(i1:i2) = 0.0
         vs%grid%sno(i1:i2) = 0.0
         vs%grid%wsno(i1:i2) = 0.0
-        vs%grid%tsno(i1:i2)  = 0.0
+        vs%grid%tsno(i1:i2) = 0.0
         vs%grid%albt(i1:i2) = 0.0
         vs%grid%alvs(i1:i2) = 0.0
         vs%grid%alir(i1:i2) = 0.0
