@@ -167,7 +167,7 @@ module irrigation_module
         if (ro%RUNGRID) then
 
             !> Minimum of available water and demand.
-            AVAIL_GRID = min(stas_grid%chnl%stg, IRDMND_GRID) ! m3
+            AVAIL_GRID = max(min(stas_grid%chnl%stg, IRDMND_GRID), 0.05*stas_grid%chnl%stg) ! m3
 
             !> Apply conditions at abstraction points.
             do l = 1, fms%absp%n
