@@ -11,7 +11,7 @@ module RUNCLASS36_module
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
 
@@ -283,7 +283,7 @@ module RUNCLASS36_module
             !> WATER BUDGET CALCULATIONS.
             call CLASSW(cpv%THLQ, cpv%THIC, cpv%TBAR, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
                         cdv%ROF, cdv%TROF, cpv%SNO, cpv%TSNO, cpv%RHOS, cpv%ALBS, &
-                        cpv%WSNO, cpv%ZPND, cpv%TPND, cpv%GRO, FRZCGAT, cpv%TBAS, cdv%GFLX, &
+                        cpv%WSNO, cpv%ZPND, cpv%TPND, cpv%GRO, cpv%TBAS, cdv%GFLX, &
                         cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, cdv%QFCF, cdv%QFCL, &
                         cdv%QFN, cdv%QFG, cdv%QFC, cdv%HMFC, cdv%HMFG, cdv%HMFN, &
                         cdv%HTCC, cdv%HTCS, cdv%HTC, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
@@ -312,7 +312,7 @@ module RUNCLASS36_module
                         MANNGAT, DDGAT, ic%ts_daily, &
                         t0_ACC(NMELT), SI, TSI, INFILTYPE, SNOWMELTD, SNOWMELTD_LAST, &
                         MELTRUNOFF, SNOWINFIL, CUMSNOWINFILCS, CUMSNOWINFILGS, &
-                        SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, &
+                        SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, FRZCGAT, &
 !FOR PDMROF
                         CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
                         ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &
@@ -336,7 +336,7 @@ module RUNCLASS36_module
                 cdv%SFCT, cdv%SFCU, cdv%SFCQ, &
                 catv%ZRFM, ZOMLCS, ZOMLNS, &
                 NML, &
-                shd, fls, cm)
+                fls, shd, cm)
 
             call CLASSZ(1, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
@@ -361,16 +361,14 @@ module RUNCLASS36_module
                 WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                 cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, &
                 NML, &
-                shd, fls, cm)
+                fls, shd, cm)
 
             cdv%ROF = cdv%ROF - UMQ
 
         end if !(ipid /= 0 .or. izero == 0) then
 
-        !> WRITE FIELDS FROM CURRENT TIME STEP TO OUTPUT FILES.
-        if (WF_NUM_POINTS > 0) then
-            call CLASSOUT_update_files(shd)
-        end if
+        !> CLASS output files.
+        if (WF_NUM_POINTS > 0) call CLASSOUT_update_files(shd)
 
         !> Copy over state variables.
         stas%cnpy%rcan(il1:il2) = cpv%RCAN(il1:il2)

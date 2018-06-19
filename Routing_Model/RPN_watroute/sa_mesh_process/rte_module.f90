@@ -64,7 +64,7 @@ module rte_module
     !> _init() adapted from read_shed_fst_mod.f90.
     !>
 
-    subroutine run_rte_init(fls, shd, stfl, rrls)
+    subroutine run_rte_init(fls, shd)
 
         !> area_watflood: Shared variables used throughout rte code.
         use area_watflood
@@ -72,19 +72,15 @@ module rte_module
         !> mpi_module: Required for 'ipid'.
         use mpi_module
 
-        !> sa_mesh_shared_variables: Variables, parameters, and types from SA_MESH.
+        !> sa_mesh_variables: Variables, parameters, and types from SA_MESH.
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use FLAGS
 
         type(fl_ids) :: fls
 
         !> Basin properties from SA_MESH.
         type(ShedGridParams) :: shd
-
-        !> Streamflow and reservoir output variables for SA_MESH.
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> Local variables.
         integer n, l, ierr, iun
@@ -295,41 +291,36 @@ module rte_module
         ii_water = ntype
 
         !> Reservoirs.
+        !*  noresv: Number of reservoirs/lakes.
+        !*  Nreaches: (rerout.f) Copy of noresv.
         noresv = fms%rsvr%n
-        Nreaches = noresv
+        Nreaches = fms%rsvr%n
+!todo: fix fhr use (999999).
         if (fms%rsvr%n > 0) then
-            ktr = fms%rsvr%rlsmeas%dts
+
+            !> Book-keeping variables (when fhr > 1).
+            !> Assigned but not used.
+            !*  lake_inflow: Copy of reservoir inflow. [m3 s-1].
+            !*  lake_stor: Copy of reservoir storage. [m3].
+            !*  lake_outflow: Copy of reservoir outflow. [m3 s-1].
+            !*  del_store: Storage change considering inflow minus outflow. [m3].
+            allocate(lake_inflow(noresv, 999999), lake_stor(noresv, 999999), lake_outflow(noresv, 999999), del_stor(noresv, 999999))
+            lake_inflow = 0.0; lake_stor = 0.0; lake_outflow = 0.0; del_stor = 0.0
+
+            !> Reservoir/lake meta-data (from file).
             allocate( &
-                b1(noresv), b2(noresv), b3(noresv), &
-                b4(noresv), b5(noresv), ires(noresv), jres(noresv), &
-                b6(noresv), b7(noresv), &
-                lake_area(noresv), &
-!                yres(noresv), xres(noresv), poliflg(noresv), &
-                resname(noresv), &
-!todo: fix this (999999).
-                qrel(noresv, 999999), &
-                qdwpr(noresv, 999999), lake_elv(noresv, 999999), &
-                lake_inflow(noresv, 999999), &
+                resname(noresv), ires(noresv), jres(noresv), &
 !tied to val2divyes == 1
-                resindex(noresv), &
-!tied to fhr
-!todo: fix this (999999).
-                lake_stor(noresv, 999999), lake_outflow(noresv, 999999), &
-                del_stor(noresv, 999999))
-!                qstream_sum(noresv, 999999), strloss_sum(noresv, 999999))
-            if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
-                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
-            else
-                qrel(:, 1) = fms%rsvr%rlsmeas%val
-            end if
-            qdwpr = 0.0; lake_elv = 0.0
-            lake_inflow = 0.0
-!tied to fhr
-            lake_stor = 0.0; lake_outflow = 0.0
-            del_stor = 0.0
-!            qstream_sum = 0.0; strloss_sum = 0.0
+                resindex(noresv))
+!                yres(noresv), xres(noresv)
             resname = fms%rsvr%meta%name
-            lake_area = fms%rsvr%rls%area
+            jres = fms%rsvr%meta%jx
+            ires = fms%rsvr%meta%iy
+            resindex = fms%rsvr%meta%rnk
+
+            !> Routing coefficients.
+            allocate(b1(noresv), b2(noresv), b3(noresv), b4(noresv), b5(noresv), b6(noresv), b7(noresv))
+!                poliflg(noresv)
             b1 = fms%rsvr%rls%b1
             b2 = fms%rsvr%rls%b2
             b3 = fms%rsvr%rls%b3
@@ -342,12 +333,28 @@ module rte_module
 !            elsewhere
 !                poliflg = 'y'
 !            end where
-            jres = fms%rsvr%meta%jx
-            ires = fms%rsvr%meta%iy
-            resindex = fms%rsvr%meta%rnk
 
-            !> Initial reservoir storage.
-            allocate(reach_last(noresv))
+            !> Reservoir routing time-stepping.
+            ktr = fms%rsvr%rlsmeas%dts
+
+            !> Measured outflow (from file).
+            !*  qrel: Measured outflow when reservoir releases are replaced with measured values. [m3 s-1].
+            !*  qdwpr: (Local variable in route.f) Used to accumulate flow in reaches that span multiple cells to the reservoir outlet. [m3 s-1].
+            allocate(qdwpr(noresv, 999999), qrel(noresv, 999999))
+            qdwpr = 0.0
+            if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
+                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
+            else
+                qrel(:, 1) = fms%rsvr%rlsmeas%val
+            end if
+
+            !> Initial lake level (from file).
+            !*  reach_last: (Used in Great Lakes routing) Stores level of last time-step. [m].
+            !*  lake_area: Used to convert reservoir storage to level (for diagnostic output). [m2].
+            !*  lake_elv: Lake elevation (for diagnostic output). [m].
+            allocate(reach_last(noresv), lake_area(noresv), lake_elv(noresv, 999999))
+            lake_area = fms%rsvr%rls%area
+            lake_elv(:, 1) = fms%rsvr%rls%zlvl0
         end if
 
         !> Streamflow gauge locations.
@@ -532,17 +539,19 @@ module rte_module
 
         end if
 
-        !> Update MESH variables.
+        !> Update SA_MESH output variables.
+        out%ts%grid%qi = qi2
+        out%ts%grid%stgch = store2
+        out%ts%grid%qo = qo2
+        if (fms%rsvr%n > 0) then
+            reach_last = lake_elv(:, 1)
+        end if
+
+        !> Update SA_MESH variables.
+        !> Used by other processes and/or for resume file.
         stas_grid%chnl%qi = qi2
         stas_grid%chnl%stg = store2
         stas_grid%chnl%qo = qo2
-        do l = 1, noresv
-            stas_fms%rsvr%zlvl(l) = lake_elv(l, 1)
-            reach_last(l) = lake_elv(l, 1)
-            stas_fms%rsvr%qi(l) = stas_grid%chnl%qi(fms%rsvr%meta%rnk(l))
-            stas_fms%rsvr%stg(l) = stas_grid%chnl%stg(fms%rsvr%meta%rnk(l))
-            stas_fms%rsvr%qo(l) = stas_grid%chnl%qo(fms%rsvr%meta%rnk(l))
-        end do
 
     end subroutine
 
@@ -550,7 +559,7 @@ module rte_module
     !> _between_grid() adapted from rte_sub.f.
     !>
 
-    subroutine run_rte_between_grid(fls, shd, stfl, rrls)
+    subroutine run_rte_between_grid(fls, shd)
 
         !> area_watflood: Shared variables used throughout rte code.
         use area_watflood
@@ -558,9 +567,9 @@ module rte_module
         !> mpi_module: Required for 'ipid'.
         use mpi_module
 
-        !> sa_mesh_shared_variables: Variables, parameters, and types from SA_MESH.
+        !> sa_mesh_variables: Variables, parameters, and types from SA_MESH.
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
 
         !> model_dates: for 'ic' counter.
         use model_dates
@@ -569,10 +578,6 @@ module rte_module
 
         !> Basin properties from SA_MESH.
         type(ShedGridParams) :: shd
-
-        !> Streamflow and reservoir output variables for SA_MESH.
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> Local variables for dynamic time-stepping.
         real(kind = 4) qi2_strt(naa), qo2_strt(naa), route_dt, hr_div, sec_div, dtmin
@@ -597,13 +602,17 @@ module rte_module
         if (ic%ts_hourly == 1) then
             qr(1:naa) = 0.0
         end if
-        qr(1:naa) = qr(1:naa) + (stas_grid%sfc%rofo(1:naa) + stas_grid%sl%rofs(1:naa))*shd%FRAC(1:naa)*ic%dts
-        qr(1:naa) = qr(1:naa) + (stas_grid%lzs%rofb(1:naa) + stas_grid%dzs%rofb(1:naa))*shd%FRAC(1:naa)*ic%dts
+        qr(1:naa) = qr(1:naa) + stas_grid%chnl%rff(1:naa)*shd%FRAC(1:naa)
+        qr(1:naa) = qr(1:naa) + stas_grid%chnl%rchg(1:naa)*shd%FRAC(1:naa)
 
-        !> Return if no the last time-step of the hour.
-        if (mod(ic%ts_hourly, 3600/ic%dts) /= 0) then
-            return
-        end if
+        !> Reset SA_MESH output variables (for averaging).
+        !> Setting these to zero also prevents updating from the state variables upon return.
+        out%ts%grid%qi = 0.0
+        out%ts%grid%stgch = 0.0
+        out%ts%grid%qo = 0.0
+
+        !> Return if not the last time-step of the hour.
+        if (ic%now%hour == ic%next%hour) return
 
         !> Increment counters.
         fhr = fhr + 1
@@ -639,7 +648,9 @@ module rte_module
         qr(1:naa) = qr(1:naa)*1000.0*step2/3600.0
 
         !> Update from SA_MESH variables.
+        qi2 = stas_grid%chnl%qi
         store2 = stas_grid%chnl%stg
+        qo2 = stas_grid%chnl%qo
 
         !> Remember the input values from the start of the time step.
         qi2_strt(1:naa) = qi2(1:naa)
@@ -758,15 +769,13 @@ module rte_module
         !> Prepare arrays for storing output (averaged over the routing time-step).
         if (.not. allocated(avr_qo)) allocate(avr_qo(na))
         avr_qo = 0.0
-        stas_grid%chnl%qi = 0.0
-        stas_grid%chnl%qo = 0.0
 
         !> ROUTE ROUTES WATER THROUGH EACH SQUARE USING STORAGE ROUTING.
         !> rev. 9.3.11  Feb.  17/07  - NK: force hourly time steps for runoff
         !> rev. 9.3.12  Feb.  20/07  - NK: changed dtmin & call to route
         do n = 1, no_dt
 
-            call route(sec_div, hr_div, dtmin, mindtmin, convthreshusr, (ic%count_hour + 1), n, real(ic%ts_count - 1), &
+            call route(sec_div, hr_div, dtmin, mindtmin, convthreshusr, (ic%iter%hour + 1), n, real(ic%ts_count - 1), &
                        date, exitstatus)
 
             if (exitstatus /= 0) then
@@ -802,9 +811,10 @@ module rte_module
                 end if
             end if
 
-            !> Update variables for storing average values.
-            stas_grid%chnl%qi = stas_grid%chnl%qi + qi2
-            stas_grid%chnl%qo = stas_grid%chnl%qo + qo2
+            !> Update MESH output variables (for averaging).
+            out%ts%grid%qi = out%ts%grid%qi + qi2
+            out%ts%grid%stgch = out%ts%grid%stgch + store2
+            out%ts%grid%qo = out%ts%grid%qo + qo2
 
         end do !n = 1, no_dt
 
@@ -814,21 +824,25 @@ module rte_module
 !        day_last = day_now
 !        hour_last = hour_now
 
+        !> Update SA_MESH output variables.
+        !> Output variables are updated at every model time-step; multiply averages
+        !> by the number of model time-steps in the routing time-step
+        out%ts%grid%qi = out%ts%grid%qi/no_dt*(3600/ic%dts)
+        out%ts%grid%stgch = out%ts%grid%stgch/no_dt*(3600/ic%dts)
+        out%ts%grid%qo = out%ts%grid%qo/no_dt*(3600/ic%dts) !same as avr_qo
+
         !> Update SA_MESH variables.
-        stas_grid%chnl%qi = stas_grid%chnl%qi/no_dt
+        !> Used by other processes and/or for resume file.
+        stas_grid%chnl%qi = qi2
         stas_grid%chnl%stg = store2
-        stas_grid%chnl%qo = stas_grid%chnl%qo/no_dt !same as avr_qo
+        stas_grid%chnl%qo = qo2
         if (fms%rsvr%n > 0) then
-            stas_fms%rsvr%qo = stas_grid%chnl%qo(fms%rsvr%meta%rnk(:))
-            stas_fms%rsvr%stg = stas_grid%chnl%stg(fms%rsvr%meta%rnk(:))
-            stas_fms%rsvr%qi = stas_grid%chnl%qi(fms%rsvr%meta%rnk(:))
-            stas_fms%rsvr%zlvl = lake_elv(:, fhr)
             reach_last = lake_elv(:, fhr)
         end if
 
     end subroutine
 
-    subroutine run_rte_finalize(fls, shd, stfl, rrls)
+    subroutine run_rte_finalize(fls, shd)
 
         !> area_watflood: Shared variables used throughout rte code.
         use area_watflood
@@ -836,19 +850,15 @@ module rte_module
         !> mpi_module: Required for 'ipid'.
         use mpi_module
 
-        !> sa_mesh_shared_variables: Variables, parameters, and types from SA_MESH.
+        !> sa_mesh_variables: Variables, parameters, and types from SA_MESH.
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use FLAGS
 
         type(fl_ids) :: fls
 
         !> Basin properties from SA_MESH.
         type(ShedGridParams) :: shd
-
-        !> Streamflow and reservoir output variables for SA_MESH.
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         !> Local variables.
         integer ierr, iun

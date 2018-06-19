@@ -56,7 +56,7 @@ module irrigation_module
     subroutine irrigation_init(fls, shd, cm)
 
         use model_files_variabletypes
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use climate_forcing
 
         type(fl_ids) :: fls
@@ -96,7 +96,7 @@ module irrigation_module
 
         use mpi_module
         use model_files_variabletypes
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use climate_forcing
 
         type(fl_ids) :: fls
@@ -221,7 +221,7 @@ module irrigation_module
 
         use mpi_module
         use model_files_variabletypes
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use climate_forcing
 
         type(fl_ids) :: fls
@@ -255,7 +255,7 @@ module irrigation_module
 
         use mpi_module
         use model_files_variabletypes
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use climate_forcing
 
         type(fl_ids) :: fls

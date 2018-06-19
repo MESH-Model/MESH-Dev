@@ -1,5 +1,15 @@
 module sa_mesh_run_between_grid
 
+    !> 'model_files_variables' required for 'fls' object and file keys.
+    !> 'sa_mesh_common' required for common SA_MESH variables and routines.
+    !> 'climate_forcing' required for 'cm' variable.
+    !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
+    use model_files_variables
+    use sa_mesh_common
+    use climate_forcing
+    use mpi_module
+
+!temp: Outputs.
     use model_files_variabletypes, only: fl_ids
 
     implicit none
@@ -45,18 +55,12 @@ module sa_mesh_run_between_grid
     type(WF_RTE_fout_stfl), save :: WF_RTE_fstflout
     type(WF_RTE_fout_rsvr), save :: WF_RTE_frsvrout
 
-    real, dimension(:), allocatable :: WF_QHYD_AVG, WF_QHYD_CUM
-    real, dimension(:), allocatable :: WF_QSYN_AVG, WF_QSYN_CUM
-
-    !* WF_NODATA_VALUE: No data value for when the streamflow record does not exist.
-    real :: WF_NODATA_VALUE = -1.0
+    real, dimension(:), allocatable :: WF_QHYD_CUM
 
 !todo: Move to ro%?
     integer RTE_TS
 
-    real, dimension(:), allocatable :: WF_QO2_ACC_MM, WF_STORE2_ACC_MM
-
-    real, dimension(:), allocatable :: lake_elv_avg, reach_qi_avg, reach_s_avg, reach_qo_avg
+    real, dimension(:), allocatable :: WF_QO2_ACC, WF_QO2_ACC_MM, WF_STORE2_ACC_MM
 
 !>>>temp_diversion
     integer :: iun_div = 64, n_div, dt_div, iyear_div, ijday_div
@@ -69,32 +73,27 @@ module sa_mesh_run_between_grid
 
     contains
 
-    subroutine run_between_grid_init(shd, fls, cm, stfl, rrls)
+    subroutine run_between_grid_init(fls, shd, cm)
 
-        use mpi_module
-        use model_files_variables
-        use sa_mesh_shared_variables
-        use FLAGS
-        use climate_forcing
-        use strings
-
-        !> Required for calls to processes.
+        !> Process modules.
         use SA_RTE_module
         use WF_ROUTE_config
         use reservoir
         use rte_module
-        use save_basin_output
         use cropland_irrigation_between_grid
 
 !>>>temp_diversion
         use txt_io
 !<<<temp_diversion
+!temp: Outputs.
+        use save_basin_output, only: STREAMFLOWOUTFLAG, REACHOUTFLAG
+        use FLAGS
+        use strings
 
-        type(ShedGridParams) :: shd
-        type(fl_ids) :: fls
-        type(clim_info) :: cm
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Local variables.
         integer, parameter :: MaxLenField = 20, MaxArgs = 20, MaxLenLine = 100
@@ -107,7 +106,8 @@ module sa_mesh_run_between_grid
         integer nargs
 
 !>>>temp_diversion
-        integer n, ijday1, ijday2, iskip
+        integer n, isteps1, isteps2, iskip
+        character(len = DEFAULT_LINE_LENGTH) line
 !<<<temp_diversion
 
         !> Return if not the head node or if grid processes are not active.
@@ -118,6 +118,7 @@ module sa_mesh_run_between_grid
             open(86, file = './' // trim(fls%GENDIR_OUT) // '/basin_SWE_alldays.csv')
         end if !(BASINSWEOUTFLAG > 0) then
 
+        RTE_TS = ic%dts
         if (WF_RTE_flgs%PROCESS_ACTIVE) RTE_TS = WF_RTE_flgs%RTE_TS
         if (rteflg%PROCESS_ACTIVE) RTE_TS = rteflg%RTE_TS
 
@@ -150,7 +151,8 @@ module sa_mesh_run_between_grid
         WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%fn = 'MESH_output_streamflow_ts.csv'
         WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun = 71
 
-        allocate(WF_QO2_ACC_MM(NA), WF_STORE2_ACC_MM(NA))
+        allocate(WF_QO2_ACC(NA), WF_QO2_ACC_MM(NA), WF_STORE2_ACC_MM(NA))
+        WF_QO2_ACC = 0.0
         WF_QO2_ACC_MM = 0.0
         WF_STORE2_ACC_MM = 0.0
 
@@ -160,18 +162,8 @@ module sa_mesh_run_between_grid
             WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun = 708
             WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%fn = 'MESH_output_reach_ts.csv'
             WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun = 708+NR
-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%fn = 'MESH_output_reach_ts.csv'
-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%iun = 708+(NR*2)
-
-            !> Allocate output variable for the driver.
-            rrls%nr = NR
-            allocate(rrls%rls(NR), rrls%store(NR), rrls%abst(NR))
-            rrls%rls = 0.0
-            rrls%store = 0.0
-            rrls%abst = 0.0
-
-            allocate(lake_elv_avg(NR), reach_qi_avg(NR), reach_s_avg(NR), reach_qo_avg(NR))
-            lake_elv_avg = 0.0; reach_qi_avg = 0.0; reach_s_avg = 0.0; reach_qo_avg = 0.0
+!            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%fn = 'MESH_output_reach_Hourly.csv'
+!            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%iun = 708+(NR*2)
 
             if (len_trim(REACHOUTFLAG) == 0) REACHOUTFLAG = 'REACHOUTFLAG default'
             call parse(REACHOUTFLAG, ' ', out_args, nargs)
@@ -203,6 +195,8 @@ module sa_mesh_run_between_grid
 
             !> Open output files for reaches.
             do j = WF_RTE_frsvrout%kmin, WF_RTE_frsvrout%kmax
+!temp: Code missing to write hourly values
+                if (j == WF_RTE_frsvrout%KHLY) cycle
                 if (btest(WF_RTE_frsvrout%freq, j)) then
                     do i = 1, fms%rsvr%n
                         iun = WF_RTE_frsvrout%fls%fl(j)%iun + i
@@ -236,18 +230,8 @@ module sa_mesh_run_between_grid
         end if
 
         if (NS > 0) then
-            allocate(WF_QHYD_AVG(NS), WF_QHYD_CUM(NS), &
-                     WF_QSYN_AVG(NS), WF_QSYN_CUM(NS))
-            WF_QSYN_AVG = 0.0
-            WF_QHYD_AVG = 0.0
-            WF_QSYN_CUM = 0.0
+            allocate(WF_QHYD_CUM(NS))
             WF_QHYD_CUM = 0.0
-
-            !> Allocate output variable for the driver.
-            stfl%ns = NS
-            allocate(stfl%qhyd(NS), stfl%qsyn(NS))
-            stfl%qhyd = 0.0
-            stfl%qsyn = 0.0
 
             if (len_trim(STREAMFLOWOUTFLAG) == 0) STREAMFLOWOUTFLAG = 'STREAMFLOWOUTFLAG default'
             call parse(STREAMFLOWOUTFLAG, ' ', out_args, nargs)
@@ -313,11 +297,16 @@ module sa_mesh_run_between_grid
             end do
         end if
 
+        !> Allocate output variables.
+        call output_variables_allocate(out%d%grid%qi, shd%NA)
+        call output_variables_allocate(out%d%grid%stgch, shd%NA)
+        call output_variables_allocate(out%d%grid%qo, shd%NA)
+        call output_variables_allocate(out%d%grid%zlvl, shd%NA)
+
         !> Call processes.
         call SA_RTE_init(shd)
-        call WF_ROUTE_init(fls, shd, stfl, rrls)
-        call run_rte_init(fls, shd, stfl, rrls)
-        call run_save_basin_output_init(fls, shd, cm)
+        call WF_ROUTE_init(fls, shd)
+        call run_rte_init(fls, shd)
         call runci_between_grid_init(shd, fls)
 
 !>>>temp_diversion
@@ -358,45 +347,39 @@ module sa_mesh_run_between_grid
                 end do
             end do
 
-            !> Skips records to present in file.
-            call Julian_Day_ID(iyear_div, ijday_div, ijday1)
-            call Julian_Day_ID(ic%start%year, ic%start%jday, ijday2)
-            if (ijday2 < ijday1) then
-                if (ipid == 0) then
-                    print 9994, trim(fn_div), trim(fn_div), iyear_div, ijday_div, ic%start%year, ic%start%jday
-                end if
+            !> Skip records in the file to the simulation start date.
+            !> Units of the records interval is hours.
+            isteps1 = jday_to_tsteps(iyear_div, ijday_div, 0, 0, dt_div*60)
+            isteps2 = jday_to_tsteps(ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins, dt_div*60)
+            if (isteps2 < isteps1) then
+                call print_warning('The first record occurs after the simulation start date.', PAD_3)
+                call print_message_detail('This may cause channels to initialize with no storage.')
+                write(line, "(i5, i4)") iyear_div, ijday_div
+                call print_message_detail('First record occurs on: ' // trim(line))
+                write(line, "(i5, i4)") ic%start%year, ic%start%jday
+                call print_message_detail('Simulation start date: ' // trim(line))
             end if
-            iskip = (ijday2 - ijday1)*24/dt_div
+            iskip = (isteps2 - isteps1)
             if (iskip > 0) then
-                if (ipid == 0) print 9993, iskip
+                write(line, FMT_GEN) iskip
+                call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
                 ierr = read_records_txt(iun_div, in_div_m3s, iskip)
                 if (ierr /= 0) then
-                    if (ipid == 0) print 9990, trim(fn_div)
+                    call print_warning('Reached end of file.', PAD_3)
                 end if
             end if
 
-9997    format(3x, 'Number of ', (a), ': ', i5)
-9994    format( &
-            /3x, 'WARNING: The start date in ', (a), ' occurs after the simulation start date.', &
-            /8x, 'This may cause a no flow error if the channels are initialized using the observed value.', &
-            /8x, (a), ' start date:', i5, i4, &
-            /8x, 'Simulation start date:', i5, i4)
-9993    format(3x, 'Skipping ', i8, ' registers in the file.')
-9990    format(3x, 'ERROR: End of file reached when reading from ', (a), '.')
-
             !> Print a summary of locations to file.
-            if (ipid == 0) then
-                if (ro%VERBOSEMODE > 0) print 9997, 'diversion point sets', n_div
-!                if (ro%DIAGNOSEMODE > 0) then
-                    print 1020, 'SET', 'SOURCE', 'IY', 'JX', 'RANK', 'SINK', 'IY', 'JX', 'RANK'
-                    do l = 1, n_div
-                        print 1020, l, '', iy_src(l), jx_src(l), rnk_src(l), '', iy_snk(l), jx_snk(l), rnk_snk(l)
-                    end do
-!                end if
-            end if
-
-1020    format(3x, 9(g16.9, 1x))
-
+            write(line, FMT_GEN) n_div
+            call print_message_detail('Number of diversion point sets: ' // trim(adjustl(line)))
+            write(line, FMT_GEN) 'SET', 'SOURCE', 'IY', 'JX', 'RANK', 'SINK', 'IY', 'JX', 'RANK'
+            call print_echo_txt(line, PAD_3)
+            do l = 1, n_div
+                write(line, FMT_GEN) &
+                    l, '', iy_src(l), jx_src(l), rnk_src(l), '', iy_snk(l), jx_snk(l), rnk_snk(l)
+                call print_echo_txt(line, PAD_3)
+            end do
+            call print_echo_txt('')
         end if
 !<<<temp_diversion
 
@@ -404,34 +387,28 @@ module sa_mesh_run_between_grid
 
     end subroutine
 
-    subroutine run_between_grid(shd, fls, cm, stfl, rrls)
+    subroutine run_between_grid(fls, shd, cm)
 
-        use mpi_module
-        use model_files_variables
-        use sa_mesh_shared_variables
-        use FLAGS
-        use txt_io
-        use climate_forcing
-
-        !> Required for calls to processes.
+        !> Process modules.
         use SA_RTE_module
         use WF_ROUTE_module
         use rte_module
-        use save_basin_output, only: run_save_basin_output
-        use cropland_irrigation_between_grid, only: runci_between_grid
+        use cropland_irrigation_between_grid
 
-        type(ShedGridParams) :: shd
-        type(fl_ids) :: fls
-        type(clim_info) :: cm
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
+!temp: Outputs.
+        use FLAGS
+        use txt_io
+
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Local variables.
         integer k, ki, ierr
 
         !> Local variables.
         integer l, i, iun
-        logical writeout
 
 !>>>temp_diversion
         character(len = 4) ffmti
@@ -472,10 +449,9 @@ module sa_mesh_run_between_grid
 
                 !> Assign a dummy value if no flow record exists.
                 if (ierr /= 0) then
-                    fms%stmg%qomeas%val = -1.0
+                    fms%stmg%qomeas%val = out%NO_DATA
                 end if
             end if
-            stfl%qhyd = fms%stmg%qomeas%val
         end if
 
 !>>>temp_diversion
@@ -569,171 +545,133 @@ module sa_mesh_run_between_grid
 
         end if !(ipid == 0) then
 
+        !> Update variables.
+        stas_grid%chnl%rff = (stas_grid%sfc%rofo + stas_grid%sl%rofs)*ic%dts
+        stas_grid%chnl%rchg = (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*ic%dts
+
         !> Call processes.
         call SA_RTE(shd)
-        call WF_ROUTE_between_grid(fls, shd, stfl, rrls)
-        call run_rte_between_grid(fls, shd, stfl, rrls)
+        call WF_ROUTE_between_grid(fls, shd)
+        call run_rte_between_grid(fls, shd)
         call runci_between_grid(shd, fls, cm)
-        call run_save_basin_output(fls, shd, cm)
 
-        if (ic%ts_daily == 1) then
-            WF_QSYN_AVG = 0.0
-        end if
+        !> Update output variables.
+!todo: remove this when code for output files has moved.
+        call output_variables_update(shd, cm)
 
         if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0) then
 
-            do i = 1, fms%stmg%n
-                stas_fms%stmg%qo(i) = stas_grid%chnl%qo(fms%stmg%meta%rnk(i))
-                if (stas_fms%stmg%qo(i) > 0.0) then
-                    WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + stas_grid%chnl%qo(fms%stmg%meta%rnk(i))
-                    WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + stas_grid%chnl%qo(fms%stmg%meta%rnk(i))
-                    WF_QHYD_AVG(i) = fms%stmg%qomeas%val(i) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
-                else
-                    WF_QSYN_AVG(i) = WF_NODATA_VALUE
-                    WF_QSYN_CUM(i) = WF_NODATA_VALUE
-                    WF_QHYD_AVG(i) = WF_NODATA_VALUE
-                end if
-            end do
             where (shd%DA > 0.0)
                 WF_QO2_ACC_MM = WF_QO2_ACC_MM + stas_grid%chnl%qo/shd%DA/1000.0*RTE_TS
                 WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + stas_grid%chnl%stg/shd%DA/1000.0
             elsewhere
-                WF_QO2_ACC_MM = WF_NODATA_VALUE
-                WF_STORE2_ACC_MM = WF_NODATA_VALUE
+                WF_QO2_ACC_MM = out%NO_DATA
+                WF_STORE2_ACC_MM = out%NO_DATA
             end where
 
-            if (fms%rsvr%n > 0) then
-                if (all(stas_fms%rsvr%zlvl == 0.0)) then
-                    where (stas_fms%rsvr%stg > 0.0 .and. fms%rsvr%rls%area > 0.0)
-                        stas_fms%rsvr%zlvl = stas_fms%rsvr%stg/fms%rsvr%rls%area
-                        lake_elv_avg = lake_elv_avg + stas_fms%rsvr%zlvl
-                    elsewhere
-                        stas_fms%rsvr%zlvl = WF_NODATA_VALUE
-                        lake_elv_avg = WF_NODATA_VALUE
-                    end where
-                else
-                    lake_elv_avg = lake_elv_avg + stas_fms%rsvr%zlvl
-                end if
-                reach_qi_avg = reach_qi_avg + stas_fms%rsvr%qi
-                if (all(stas_fms%rsvr%stg == WF_NODATA_VALUE)) then
-                    reach_s_avg = WF_NODATA_VALUE
-                else
-                    reach_s_avg = reach_s_avg + stas_fms%rsvr%stg
-                end if
-                reach_qo_avg = reach_qo_avg + stas_fms%rsvr%qo
-            end if
-
             !> Write per time-step output for reaches.
+            !> Divide by number of time-steps in routing time-step to resolve issues when RTE_TS > ic%dts.
             if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KTS)) then
                 do l = 1, fms%rsvr%n
                     iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun + l
                     write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
-                    write(iun, 1010, advance = 'no') stas_fms%rsvr%qi(l), stas_fms%rsvr%stg(l), stas_fms%rsvr%qo(l)
+                    write(iun, 1010, advance = 'no') &
+                        out%ts%grid%qi(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
+                        out%ts%grid%stgch(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
+                        out%ts%grid%qo(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts)
                     write(iun, *)
                 end do
             end if
 
             !> Write per time-step output for streamflow.
+            !> Divide by number of time-steps in routing time-step to resolve issues when RTE_TS > ic%dts.
             if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KTS)) then
                 iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
                 do i = 1, fms%stmg%n
 !todo
-                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') WF_NODATA_VALUE, WF_NODATA_VALUE
-                    if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') fms%stmg%qomeas%val(i), stas_fms%stmg%qo(i)
+                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
+                    if (WF_RTE_fstflout%fout_hyd) then
+                        write(iun, 1010, advance = 'no') &
+                            fms%stmg%qomeas%val(i), &
+                            out%ts%grid%qo(fms%stmg%meta%rnk(i))/real(RTE_TS/ic%dts)
+                    end if
 !todo
-                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') WF_NODATA_VALUE, WF_NODATA_VALUE
+                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
                 end do
                 write(iun, *)
             end if
 
         end if
 
-        !> Determine if this is the last time-step of the hour in the day.
-        writeout = (mod(ic%ts_daily, 3600/ic%dts*24) == 0)
-
         !> This occurs the last time-step of the day.
-        if (writeout) then
+        if (ic%now%day /= ic%next%day) then
 
             if (fms%rsvr%n > 0) then
-                where (lake_elv_avg /= -1.0) lake_elv_avg = lake_elv_avg/real(ic%ts_daily/(RTE_TS/ic%dts))
+                where (out%d%grid%stgch(fms%rsvr%meta%rnk(:)) > 0.0 .and. fms%rsvr%rls%area > 0.0)
+                    out%d%grid%zlvl(fms%rsvr%meta%rnk(:)) = out%d%grid%stgch(fms%rsvr%meta%rnk(:))/fms%rsvr%rls%area
+                elsewhere
+                    out%d%grid%zlvl(fms%rsvr%meta%rnk(:)) = out%NO_DATA
+                end where
                 iun = 707
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
-                write(iun, 1010, advance = 'no') (lake_elv_avg(l), l = 1, fms%rsvr%n)
+                write(iun, 1010, advance = 'no') (out%d%grid%zlvl(fms%rsvr%meta%rnk(l)), l = 1, fms%rsvr%n)
                 write(iun, *)
-                lake_elv_avg = 0.0
-                reach_qi_avg = reach_qi_avg/real(ic%ts_daily/(RTE_TS/ic%dts))
-                where (reach_s_avg /= -1.0) reach_s_avg = reach_s_avg/real(ic%ts_daily/(RTE_TS/ic%dts))
-                reach_qo_avg = reach_qo_avg/real(ic%ts_daily/(RTE_TS/ic%dts))
                 if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KDLY)) then
                     do l = 1, fms%rsvr%n
                         iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun + l
                         write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
-                        write(iun, 1010, advance = 'no') reach_qi_avg(l), reach_s_avg(l), reach_qo_avg(l)
+                        write(iun, 1010, advance = 'no') &
+                            out%d%grid%qi(fms%rsvr%meta%rnk(l)), &
+                            out%d%grid%stgch(fms%rsvr%meta%rnk(l)), &
+                            out%d%grid%qo(fms%rsvr%meta%rnk(l))
                         write(iun, *)
                     end do
                 end if
-                reach_qi_avg = 0.0
-                reach_s_avg = 0.0
-                reach_qo_avg = 0.0
             end if
 
             do i = 1, fms%stmg%n
-                if (WF_QHYD_AVG(i) /= WF_QHYD_AVG(i)) then
-                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + WF_QHYD_AVG(i)
+                if (fms%stmg%qomeas%val(i) /= fms%stmg%qomeas%val(i)) then
+                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + fms%stmg%qomeas%val(i)
                 else
-                    WF_QHYD_CUM(i) = WF_NODATA_VALUE
+                    WF_QHYD_CUM(i) = out%NO_DATA
                 end if
             end do
 
             !> Write daily output for streamflow.
             if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KDLY)) then
-                where (WF_QSYN_CUM /= WF_NODATA_VALUE) WF_QSYN_CUM = WF_QSYN_CUM/real(ic%ts_daily/(RTE_TS/ic%dts))
-                where (WF_QSYN_AVG /= WF_NODATA_VALUE) WF_QSYN_AVG = WF_QSYN_AVG/real(ic%ts_daily/(RTE_TS/ic%dts))
-                where (WF_STORE2_ACC_MM /= WF_NODATA_VALUE) WF_STORE2_ACC_MM = WF_STORE2_ACC_MM/ic%ts_count
+                WF_QO2_ACC = WF_QO2_ACC + out%d%grid%qo
+                where (WF_STORE2_ACC_MM /= out%NO_DATA) WF_STORE2_ACC_MM = WF_STORE2_ACC_MM/ic%ts_count
                 iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
                 do i = 1, fms%stmg%n
                     if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') &
-                        WF_QHYD_CUM(i), WF_QSYN_CUM(i)
+                        WF_QHYD_CUM(i), WF_QO2_ACC(fms%stmg%meta%rnk(i))
                     if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') &
-                        WF_QHYD_AVG(i), WF_QSYN_AVG(i)
+                        fms%stmg%qomeas%val(i), out%d%grid%qo(fms%stmg%meta%rnk(i))
                     if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') &
                         WF_QO2_ACC_MM(fms%stmg%meta%rnk(i)), WF_STORE2_ACC_MM(fms%stmg%meta%rnk(i))
                 end do
                 write(iun, *)
             end if
-
-            !> Assign to the output variables.
-            stfl%qhyd = WF_QHYD_AVG
-            stfl%qsyn = WF_QSYN_AVG
-
         end if
 
 1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
-    subroutine run_between_grid_finalize(fls, shd, cm, stfl, rrls)
+    subroutine run_between_grid_finalize(fls, shd, cm)
 
-        use mpi_module
-        use model_files_variabletypes
-        use sa_mesh_shared_variables
-        use model_dates
-        use climate_forcing
+        !> Process modules.
+        use WF_ROUTE_config
+        use rte_module
         use reservoir
         use FLAGS
 
-        !> Required for calls to processes.
-        use WF_ROUTE_config, only: WF_ROUTE_finalize
-        use rte_module, only: run_rte_finalize
-        use save_basin_output, only: run_save_basin_output_finalize
-
-        type(fl_ids) :: fls
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Local variables.
         integer iun, i
@@ -742,9 +680,8 @@ module sa_mesh_run_between_grid
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
         !> Call processes.
-        call WF_ROUTE_finalize(fls, shd, stfl, rrls)
-        call run_rte_finalize(fls, shd, stfl, rrls)
-        call run_save_basin_output_finalize(fls, shd, cm)
+        call WF_ROUTE_finalize(fls, shd)
+        call run_rte_finalize(fls, shd)
 
         !> For zone-based storage.
         if (RESERVOIRFLAG == 2) then

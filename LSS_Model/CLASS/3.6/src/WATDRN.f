@@ -1,5 +1,5 @@
       SUBROUTINE WATDRN(
-     1    delzw,bcoef,thpora,grksat,grkeff,asatfc,asat0,iwf,
+     1    delzw,bcoef,thpora,grksat,grkeff,asat0,iwf,
      2    asat1,subflw,basflw,satsfc,
      3    ilg,il1,il2,wfk,delt)
 c
@@ -29,20 +29,6 @@ c         when tc is small
 c       - Simplify calculation of baseflow rate
 c       - Bugfix: move satsfc calculation after computation of tc/t0
 c       - Change variable name from thpor to thpora
-c
-c     * February 25, 2014, Vincent Fortin and Nasim Alavi
-c
-c       - asatfc (saturation at field capacity) added as an input 
-c         to WATDRN in order to ensure that lateral flow does not make
-c         water content drop below field capacity
-c         if asatfc is set to zero this change has no impact
-c       - computations now done in REAL*8 instead of REAL
-c         this change has no impact if REAL already defined as REAL*8
-c
-c     * August 1, 2014, Vincent Fortin
-c
-c       - compute 1/tc instead of tc so that WATDRN does not crash
-c         when grkeff=0
 c
 c     Summary:
 c
@@ -122,12 +108,6 @@ c     is used to estimate baseflow, and the fraction of the surface
 c     that is saturated, which can be used to separate runoff and
 c     infiltration.
 c
-c     This parameterization does not take suction into account.
-c     Hence, water content can drop to non-physical values during
-c     a drought. As a sanity check, water content at the end of
-c     the time step is not allowed to drop below lateral field
-c     capacity.
-c
       IMPLICIT NONE
 *
 c     Input parameters
@@ -149,7 +129,6 @@ c     Input arrays
                           ! controlling the time scale of interflow process
                           ! ksat * (tile slope / tile length) (1/s)
       REAL    asat0(ilg)  ! bulk saturation at initial time
-      REAL    asatfc(ilg) ! saturation at field capacity
       INTEGER iwf(ilg)    ! IWF flag (runs if == wfk)
 *
 c     Output arrays
@@ -158,15 +137,14 @@ c     Output arrays
       REAL    basflw(ilg) ! baseflow rate during the time step (m)
       REAL    satsfc(ilg) ! saturated fraction of the surface (0 to 1)
 *
-c     Work arrays in double precision
-      REAL*8  c(ilg)      ! Clapp-Hornberger connectivity index (c>1)
-      REAL*8  cm1(ilg)    ! c-1
-      REAL*8  c2m1(ilg)   ! 2*c-1
-      REAL*8  asatc(ilg)  ! bulk saturation at the critical time tc
-      REAL*8  asat0d(ilg) ! MIN(1,asat0) because we don't handle supersaturated soils
-      REAL*8  asat1d(ilg) ! value of asat1 in double precision
-      REAL*8  tcinv(ilg)  ! inverse of critical time at which seepage face becomes unsaturated
-      REAL*8  ratiot(ilg) ! ratio tc/t (t0 or t1) if t>tc and t/tc if t<=tc
+c     Work arrays
+      REAL    c(ilg)      ! Clapp-Hornberger connectivity index (c>1)
+      REAL    cm1(ilg)    ! c-1
+      REAL    c2m1(ilg)   ! 2*c-1
+      REAL    asatc(ilg)  ! bulk saturation at the critical time tc
+      REAL    asat00(ilg) ! MIN(1,asat0) because we don't handle supersaturated soils
+      REAL    tc(ilg)     ! critical time at which the seepage face becomes unsaturated
+      REAL    ratiot(ilg) ! ratio tc/t (t0 or t1) if t>tc and t/tc if t<=tc
       LOGICAL satspf(ilg) ! indicates if seepage face is saturated
                           ! equivalent to knowing if t<=tc
 *
@@ -194,9 +172,9 @@ c        (just before the seepage face becomes unsaturated)
          asatc(i) = 1.-1./c(i)
 c        layer average saturation asat0 may be greater than 1
 c        e.g. frost heave but it is not possible for wat_drain
-         asat0d(i) = MIN(1.,asat0(i))
+         asat00(i) = MIN(1.,asat0(i))
 c        assess if seepage face is saturated at initial time
-         satspf(i) = asat0d(i) .GE. asatc(i)
+         satspf(i) = asat00(i) .GE. asatc(i)
       ENDDO
 *
 c**********************************************************************
@@ -208,8 +186,8 @@ c**********************************************************************
       DO i=il1,il2
 c        cycle if not using watrof or latflow
          IF (iwf(i) /= wfk) CYCLE
-c        determine inverse of time at which seepage face becomes unsaturated
-         tcinv(i) = (c(i)*grkeff(i))/thpora(i)
+c        determine time at which seepage face becomes unsaturated
+         tc(i) = thpora(i)/(c(i)*grkeff(i))
       ENDDO
 *
       DO i=il1,il2
@@ -220,18 +198,18 @@ c        and at the same time estimate baseflow based on rate at t0
          IF (satspf(i)) THEN
 c           saturated seepage face at initial time:
 c           compute t0/tc
-            ratiot(i) = c(i)*(1.-asat0d(i))
+            ratiot(i) = c(i)*(1.-asat00(i))
 c           normalized baseflow rate
-            basflw(i) = 1.-c(i)*c(i)/c2m1(i)*(1.-asat0d(i))
+            basflw(i) = 1.-c(i)*c(i)/c2m1(i)*(1.-asat00(i))
 c           the fraction of the surface that is saturated at t0
 c           varies linearly with t0/tc
             satsfc(i) = 1.-ratiot(i)
          ELSE
 c           unsaturated seepage face at initial time:
 c           calculate tc/t0 instead of t0 to avoid overflow
-            ratiot(i) = (asat0d(i)/asatc(i))**cm1(i)
+            ratiot(i) = (asat00(i)/asatc(i))**cm1(i)
 c           normalized baseflow rate
-            basflw(i) = cm1(i)/c2m1(i)*ratiot(i)*asat0d(i)/asatc(i)
+            basflw(i) = cm1(i)/c2m1(i)*ratiot(i)*asat00(i)/asatc(i)
 c           the fraction of the surface that is saturated at t0 is zero
             satsfc(i) = 0.
          ENDIF
@@ -252,19 +230,20 @@ c**********************************************************************
 c        cycle if not using watrof or latflow
          IF (iwf(i) /= wfk) CYCLE
          IF (satspf(i)) THEN
-c           Compute t1/tc
-            ratiot(i) = ratiot(i)+delt*tcinv(i)
 c           Assess if seepage face will still be saturated at the
 c           end of the time step
-            satspf(i) = ratiot(i) .LE. 1.
-            IF (.NOT.satspf(i)) THEN
+            satspf(i) = tc(i)*ratiot(i)+delt .LE. tc(i)
+            IF (satspf(i)) THEN
+c              Seepage face still saturated, compute t1/tc from t0/tc
+               ratiot(i) = (tc(i)*ratiot(i)+delt)/tc(i)
+            ELSE
 c              Seepage face not saturated anymore, compute tc/t1
-               ratiot(i) = 1./ratiot(i)
+               ratiot(i) = tc(i)/(tc(i)*ratiot(i)+delt)
             END IF
          ELSE
 c           If seepage face was not saturated initially, we compute
 c           tc/t1=tc/(t0+delt) from tc/t0
-            ratiot(i) = ratiot(i)/(1.+tcinv(i)*delt*ratiot(i))
+            ratiot(i) = tc(i)*ratiot(i)/(tc(i)+delt*ratiot(i))
          END IF
       ENDDO
 *
@@ -278,10 +257,10 @@ c        cycle if not using watrof or latflow
          IF (iwf(i) /= wfk) CYCLE
          IF (satspf(i)) THEN
 c           saturated seepage face at the end of the time step
-            asat1d(i) = 1.-ratiot(i)/c(i)
+            asat1(i) = 1.-ratiot(i)/c(i)
          ELSE
 c           unsaturated seepage face at the end of the time step
-            asat1d(i) = asatc(i)*ratiot(i)**(1./cm1(i))
+            asat1(i) = asatc(i)*ratiot(i)**(1./cm1(i))
          ENDIF
       ENDDO
 *
@@ -289,15 +268,9 @@ c           unsaturated seepage face at the end of the time step
 c        cycle if not using watrof or latflow
          IF (iwf(i) /= wfk) CYCLE
 c        Sanity check: bulk saturation should not increase with time
-         asat1d(i) = MIN(asat0d(i),asat1d(i))
-c        Ensure that bulk saturation does not drop below field capacity
-         IF (asat1d(i).LT.asatfc(i)) THEN
-            asat1d(i) = asatfc(i)
-         END IF
+         asat1(i) = MIN(asat00(i),asat1(i))
 c        Obtain interflow from the difference in bulk saturation
-         subflw(i) = (asat0d(i)-asat1d(i))*thpora(i)*delzw(i)
-c        Change output precision for asat1d from REAL*8 to REAL
-         asat1(i) = asat1d(i)
+         subflw(i) = (asat00(i)-asat1(i))*thpora(i)*delzw(i)
       ENDDO
 *
       RETURN

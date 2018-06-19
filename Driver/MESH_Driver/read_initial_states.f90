@@ -1,16 +1,16 @@
 !>
 !> Description:
 !>  Subroutine to read initial states of variables from file. Variables
-!>  shared by SA_MESH are accessible by sa_mesh_shared_variables module.
+!>  shared by SA_MESH are accessible by 'sa_mesh_variables'.
 !>  Other variables are accessible by their respecitve process
 !>  module(s).
 !>
-subroutine read_initial_states(fls, shd, ierr)
+subroutine read_initial_states(fls, shd)
 
     use strings
     use mpi_module
     use model_files_variables
-    use sa_mesh_shared_variables
+    use sa_mesh_common
     use FLAGS
 
     use RUNCLASS36_constants
@@ -23,16 +23,13 @@ subroutine read_initial_states(fls, shd, ierr)
     type(fl_ids):: fls
     type(ShedGridParams) :: shd
 
-    !> Output variables.
-    integer, intent(out) :: ierr
-
     !> Local variables for parsing INPUTPARAMSFORM.
     character(len = 20), dimension(100) :: out_args
     integer nargs
     character(1) :: delim = ' '
 
     !> Local variables.
-    integer NA, NTYPE, NML, NSL, k, i, m
+    integer NA, NTYPE, NML, NSL, k, j, ignd, i, m, ierr
 
     !> Assign commonly used indices to local variables.
     NA = shd%NA
@@ -81,19 +78,6 @@ subroutine read_initial_states(fls, shd, ierr)
 
     end do !k = il1, il2
 
-    !> Saul M. feb 26 2008:
-    !> Open and read initial soil moisture and temperature values
-    !> when data is available from:
-    !>  - s_moisture.txt: soil moisture in layer 1, 2 and 3
-    !>  - t_temperature.txt: soil temperature in layer 1, 2 and 3
-!todo: Replace this with reading from r2c
-    call READ_S_MOISTURE_TXT( &
-        shd%yCount, shd%xCount, NA, NTYPE, NML, NSL, shd%yyy, shd%xxx, shd%lc%ILMOS, shd%lc%JLMOS, &
-        stas%sl%thlq, il1, il2)
-    call READ_S_TEMPERATURE_TXT(&
-        shd%yCount, shd%xCount, NA, NTYPE, NML, NSL, shd%yyy, shd%xxx, shd%lc%ILMOS, shd%lc%JLMOS, &
-        stas%sl%tbar, il1, il2)
-
     !>
     !> RESUME FROM FILE.
     !>
@@ -112,5 +96,27 @@ subroutine read_initial_states(fls, shd, ierr)
         !> csv: From CSV by GRU.
 
     end select
+
+    !> Distribute soil states to layers lower than the "last configured layer".
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+
+        !> Determine the "last configured layer" read from file (CLASS default: 3).
+        if (NRSOILAYEREADFLAG > 3) then
+            ignd = min(NRSOILAYEREADFLAG, NSL)
+        else if (NRSOILAYEREADFLAG == 1) then
+            ignd = 0
+        else
+            ignd = 3
+        end if
+
+        !> Assign states to layers lower than the "last configured layer" read from file.
+        if (ignd > 0) then
+            do j = (ignd + 1), shd%lc%IGND
+                stas%sl%tbar(:, j) = stas%sl%tbar(:, ignd)
+                stas%sl%thlq(:, j) = stas%sl%thlq(:, ignd)
+                stas%sl%thic(:, j) = stas%sl%thic(:, ignd)
+            end do
+        end if
+    end if
 
 end subroutine

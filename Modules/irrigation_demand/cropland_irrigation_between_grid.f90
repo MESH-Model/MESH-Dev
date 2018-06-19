@@ -10,7 +10,7 @@ module cropland_irrigation_between_grid
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
@@ -49,7 +49,7 @@ module cropland_irrigation_between_grid
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
 
@@ -61,13 +61,13 @@ module cropland_irrigation_between_grid
         if (.not. cifg%PROCESS_ACTIVE .or. ipid /= 0) return
 
         !> Daily.
-        if (btest(cifg%ts_flag, civ%fk%KDLY) .and. ic%ts_daily == (3600.0/ic%dts)*24) then
+        if (btest(cifg%ts_flag, civ%fk%KDLY) .and. ic%now%day /= ic%next%day) then
             call runci_between_grid_process(shd, civ%fk%KDLY)
             write(950, 1010) ic%now%year, ic%now%jday, ciago%icu_frac_mm(shd%NAA)
         end if
 
         !> Hourly.
-        if (btest(cifg%ts_flag, civ%fk%KHLY) .and. ic%ts_hourly == (3600.0/ic%dts)) then
+        if (btest(cifg%ts_flag, civ%fk%KHLY) .and. ic%now%hour /= ic%next%hour) then
             call runci_between_grid_process(shd, civ%fk%KHLY)
             write(952, 1010) ic%now%year, ic%now%jday, ic%now%hour, ciago%icu_frac_mm(shd%NAA)
         end if
@@ -84,7 +84,7 @@ module cropland_irrigation_between_grid
 
     subroutine runci_between_grid_process(shd, fk)
 
-        use sa_mesh_shared_variables
+        use sa_mesh_common
 
         !> Input variables.
         type(ShedGridParams) :: shd

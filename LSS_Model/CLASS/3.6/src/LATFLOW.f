@@ -133,7 +133,7 @@ C     * INTERNAL SCALARS AND VECTORS
      2     BIJ(ILG),THPORJ(ILG),ASAT0(ILG),ASAT1(ILG),SATFC(ILG),
      3     DAVAIL,DTOT,SUBFLWJ(ILG),TSUBFL(ILG),THLIQ_AVAIL(ILG),
      4     THPOR_AVAIL(ilg),BASFLWJ(ILG),XLAMBDA,ktop,kl,h0,c1,c2,
-     +     ztop(ilg,ig),asatfc(ilg)
+     +     ztop(ilg,ig)
       
       INTEGER IG,ILG,IL1,IL2,I,J
       INTEGER IWF(ILG)
@@ -172,7 +172,7 @@ C ----INITIALIZE WORKING VARIABLES - RUNOFF GENERATION-----
       do i = IL1,IL2
 
 C-----------------------------------------------------------------------------------------
-C     Cycle if not using latflow
+C     Cycle if using flat class
       if(iwf(i) /= 3) cycle
 
       if(fi(I) .gt. 0.0)then
@@ -270,7 +270,7 @@ C        loop through each element
 
 C        ---------------------------------------------------------------------------------
 C        cycle if not using latflow
-           if(iwf(i) /= 3) cycle
+         if(iwf(i) /= 3) cycle
 
 C        ---------------------------------------------------------------------------------
 C        form vecotors for the layer - to be compatible with WATDRN arguments 
@@ -315,22 +315,15 @@ c*       Integration of k across the layer -> kl
             kl        = ktop * exav(xlambda*delzw(i,j))
             grkeff(i) = kl*xslope(i)*2.0*dd(i)/(1+xslope(i)**2)
             thpor_avail(i) = max(thlmin(i,j),thpor_avail(i))
-C>>>RPN_MOD
-            asatfc(i) = bulk_fc(i,j)/thpor(i,j)
-C<<<RPN_MOD
-C>>>OLD_BEHAVIOUR
-C            asatfc(i) = 0.0
-C<<<OLD_BEHAVIOUR
          enddo
 
 C        ---------------------------------------------------------------------------------
 C        compute interflow from the layer (subflowj). Baseflow from the layer (basflwj) is
 C        also computed but is not used at present.
 C        ---------------------------------------------------------------------------------
-         call watdrn(
-     1      delzwj,bij,thpor_avail,ksat,grkeff,asatfc,asat_t0,iwf,
-     2      asat_t1,subflwj,basflwj,satfc,
-     3      ilg,il1,il2,3,delt)
+         call watdrn (delzwj,bij,thpor_avail,ksat,grkeff,asat_t0,iwf,
+     1                asat_t1,subflwj,basflwj,satfc,
+     2                ilg,il1,il2,3,delt)
 
 C        ---------------------------------------------------------------------------------
 C        loop through each element

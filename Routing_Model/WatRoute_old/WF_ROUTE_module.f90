@@ -6,16 +6,14 @@ module WF_ROUTE_module
 
     contains
 
-    subroutine WF_ROUTE_between_grid(fls, shd, stfl, rrls)
+    subroutine WF_ROUTE_between_grid(fls, shd)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
 
         type(fl_ids) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
 
         if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
 
@@ -37,7 +35,7 @@ module WF_ROUTE_module
                       wfp%aa1, wfp%aa2, wfp%aa3, wfp%aa4, &
                       WF_STORE1, stas_grid%chnl%stg, &
                       ic%dts, &
-                      (stas_grid%sfc%rofo + stas_grid%sl%rofs + stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC, &
+                      (stas_grid%chnl%rff + stas_grid%chnl%rchg)/ic%dts*shd%FRAC, &
                       shd%NA, shd%NRVR, fms%rsvr%n, fms%stmg%n, shd%NA, &
                       fms%stmg%meta%rnk, JAN, ic%now%jday, ic%now%hour, ic%now%mins)
 
@@ -47,18 +45,12 @@ module WF_ROUTE_module
             JAN = 2
         end if
 
-        !> Update SA_MESH variables.
-
-        !> For reservoirs in WF_ROUTE, storage is an accumulation of flow over time and does not translate to the 'stg' variable.
+        !> Update SA_MESH output variables.
+        !> Override the output variable because 'storage' for reservoirs is an accumulation of flow
+        !> and does not translate to the 'stgch' variable.
+        out%ts%grid%stgch = stas_grid%chnl%stg
         if (fms%rsvr%n > 0) then
-            stas_fms%rsvr%qo = stas_grid%chnl%qo(fms%rsvr%meta%rnk(:))
-            stas_fms%rsvr%qi = stas_grid%chnl%qi(fms%rsvr%meta%rnk(:))
-            where (wf_b1 == 1.0 .and. wf_b2 == 0.0)
-                stas_fms%rsvr%stg = stas_grid%chnl%stg(fms%rsvr%meta%rnk(:))
-            elsewhere
-                stas_fms%rsvr%stg = -1.0
-            end where
-            stas_fms%rsvr%zlvl = 0.0
+            out%ts%grid%stgch(fms%rsvr%meta%rnk(:)) = out%NO_DATA
         end if
 
     end subroutine

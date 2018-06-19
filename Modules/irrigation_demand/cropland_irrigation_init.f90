@@ -14,8 +14,8 @@ module cropland_irrigation_init
         !> For 'fls%GENDIR_OUT'.
         use model_files_variables
 
-        !> For 'shd' type (basin information), 'ro%' (run options) for print options, and 'FCAN' (canopy fractions).
-        use sa_mesh_shared_variables
+        !> For 'shd' type (basin information) and 'FCAN' (canopy fractions).
+        use sa_mesh_common
 
         !> For current date and counter.
         use model_dates
@@ -24,20 +24,11 @@ module cropland_irrigation_init
         type(fl_ids) :: fls
 
         integer NML, k, m, ikey, ierr
+        character(len = DEFAULT_LINE_LENGTH) fmt1, fmt2
 
         if (.not. cifg%PROCESS_ACTIVE) return
 
-        if (ipid == 0 .and. ro%VERBOSEMODE > 0) print 9999
-
-9999    format(/1x, '------------------------------------------------------', &
-               /1x, '            CROPLAND IRRIGATION IS ACTIVE', &
-               /1x, '------------------------------------------------------'/)
-9998    format(/1x, 'Please correct these parameterization errors.'/)
-9997    format( 3x, 'Bad parameter value: ', (a8), ' = ', i5)
-9996    format( 3x, 'Bad parameter value: ', (a8), ' = ', f6.3)
-9995    format( 1x, (a), " is zero. Sow date will be determined by the growth index 'GRO'.")
-9994    format( 1x, 'GRU: ', i3, '    (no crops active)')
-9993    format( 1x, 'GRU: ', i3, ' - Contributing fraction of crops: ', f5.3)
+        call print_message('CROPLANDIRRIGATION P-EVP component is ACTIVE.')
 
         !> Local variables.
         NML = shd%lc%NML
@@ -56,54 +47,65 @@ module cropland_irrigation_init
         end do
 
         !> Check the parameter values.
-        if (ipid == 0) then
-            ierr = 0
-            do m = 1, shd%lc%NTYPE
-                if (pm_gru%cp%fcan(m, 3) > 0.0) then
-                    print 9993, m, pm_gru%cp%fcan(m, 3)
-                    if (ciprot%jdsow(m) <= 0) print 9995, 'jdsow'
-                    if (ciprot%ldini(m) <= 0) then
-                        print 9997, 'ldini', ciprot%ldini(m)
-                        ierr = ierr + 1
-                    end if
-                    if (ciprot%lddev(m) <= 0) then
-                        print 9997, 'lddev', ciprot%lddev(m)
-                        ierr = ierr + 1
-                    end if
-                    if (ciprot%ldmid(m) <= 0) then
-                        print 9997, 'ldmid', ciprot%ldmid(m)
-                        ierr = ierr + 1
-                    end if
-                    if (ciprot%ldlate(m) <= 0) then
-                        print 9997, 'ldlate', ciprot%ldlate(m)
-                        ierr = ierr + 1
-                    end if
-                    if (ciprot%Kcini(m) <= 0) then
-                        print 9996, 'Kcini', ciprot%Kcini(m)
-                        ierr = ierr + 1
-                    end if
-                    if (ciprot%Kcdev(m) <= 0) then
-                        print 9996, 'Kcdev', ciprot%Kcdev(m)
-                        ierr = ierr + 1
-                    end if
-                    if (ciprot%Kcmid(m) <= 0) then
-                        print 9996, 'Kcmid', ciprot%Kcmid(m)
-                        ierr = ierr + 1
-                    end if
-                    if (ciprot%Kclate(m) <= 0) then
-                        print 9996, 'Kclate', ciprot%Kclate(m)
-                        ierr = ierr + 1
-                    end if
-                else
-                    print 9994, m
+        ierr = 0
+        do m = 1, shd%lc%NTYPE
+            write(fmt1, FMT_GEN) m
+            if (pm_gru%cp%fcan(m, 3) > 0.0) then
+                write(fmt2, FMT_GEN) pm_gru%cp%fcan(m, 3)
+                call print_message( &
+                    'GRU ' // trim(adjustl(fmt1)) // ' has ' // trim(adjustl(fmt2)) // ' contributing fraction of crops.')
+                if (ciprot%jdsow(m) <= 0) then
+                    call print_remark("'jdsow' is zero. Sow date will be determined by the growth index 'GRO'.", PAD_3)
                 end if
-            end do
-            if (ierr > 0) then
-                print 9998
-                stop
+                if (ciprot%ldini(m) <= 0) then
+                    write(fmt2, FMT_GEN) ciprot%ldini(m)
+                    call print_message("ERROR: Parameter has bad value, 'ldini' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    ierr = ierr + 1
+                end if
+                if (ciprot%lddev(m) <= 0) then
+                    write(fmt2, FMT_GEN) ciprot%lddev(m)
+                    call print_message("ERROR: Parameter has bad value, 'lddev' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    ierr = ierr + 1
+                end if
+                if (ciprot%ldmid(m) <= 0) then
+                    write(fmt2, FMT_GEN) ciprot%ldmid(m)
+                    call print_message("ERROR: Parameter has bad value, 'ldmid' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    ierr = ierr + 1
+                end if
+                if (ciprot%ldlate(m) <= 0) then
+                    write(fmt2, FMT_GEN) ciprot%ldlate(m)
+                    call print_message("ERROR: Parameter has bad value, 'ldlate' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    ierr = ierr + 1
+                end if
+                if (ciprot%Kcini(m) <= 0) then
+                    write(fmt2, FMT_GEN) ciprot%Kcini(m)
+                    call print_message("ERROR: Parameter has bad value, 'Kcini' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    ierr = ierr + 1
+                end if
+                if (ciprot%Kcdev(m) <= 0) then
+                    write(fmt2, FMT_GEN) ciprot%Kcdev(m)
+                    call print_message("ERROR: Parameter has bad value, 'Kcdev' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    ierr = ierr + 1
+                end if
+                if (ciprot%Kcmid(m) <= 0) then
+                    write(fmt2, FMT_GEN) ciprot%Kcmid(m)
+                    call print_message("ERROR: Parameter has bad value, 'Kcmid' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    ierr = ierr + 1
+                end if
+                if (ciprot%Kclate(m) <= 0) then
+                    write(fmt2, FMT_GEN) ciprot%Kclate(m)
+                    call print_message("ERROR: Parameter has bad value, 'Kclate' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    ierr = ierr + 1
+                end if
             else
-                print *
+                call print_message('GRU ' // trim(adjustl(fmt1)) // ' has no crops active.')
             end if
+        end do
+        if (ierr > 0) then
+            call print_error('Errors exist in the configuration.')
+            call program_abort()
+        else
+            call print_message('')
         end if
 
         !> Identify crop GRUs.
@@ -118,9 +120,7 @@ module cropland_irrigation_init
 
                 !> Reset the starting day of the growing season.
                 civ%jdini(k) = 0
-
             end if
-
         end do
 
     end subroutine

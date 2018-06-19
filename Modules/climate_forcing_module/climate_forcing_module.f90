@@ -1,65 +1,56 @@
-!>
-!> Description: Module to manage input climate forcing data.
-!>
+!> Description:
+!>  Module to manage input climate forcing data.
 module climate_forcing
 
     use climate_forcing_constants
     use climate_forcing_variabletypes
     use climate_forcing_config
     use climate_forcing_io
+    use print_routines
 
     implicit none
 
-    !* YEAR_START_CLIM: Year at the start of the simulation.
-    !* JDAY_START_CLIM: Julian day at the start of the simulation.
-    !* HOUR_START_CLIM: Hour at the start of the simulation.
-    !* MINS_START_CLIM: Minute (in 30-min. increment; either 0 or 30) at the start of the simulation.
-!-    integer YEAR_START_CLIM, JDAY_START_CLIM, HOUR_START_CLIM, MINS_START_CLIM
-
     contains
 
+    !> Description:
+    !>  Initializes the climate forcing object, including the allocation
+    !>  of variables, and opens the climate files for forcing data.
+    !>  Resumes states from the climate forcing state file, if enabled.
     !>
-    !> Description: Initialize the climate forcing object, allocate variables in the object to store data, and open input climate forcing files.
+    !> Input/output variables.
+    !*  fls: Contains file unit information.
+    !*  shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
+    !*  ii1: Start index in the GAT vector.
+    !*  ii2: Stop index in the GAT vector.
+    !*  cm: Climate forcing object. Contains the file name, format, and unit.
     !>
-    !> Inputs:
-    !>  - shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
-    !>  - ii1: Starting index in the GAT vector.
-    !>  - ii2: Stopping index in the GAT vector.
-    !>  - cm: Climate forcing object. Contains the file name, format, and its unit.
-    !>
-    !> Outputs:
-    !>  - ENDDATA: Returns .true. if there was an error occurred intializing the climate object or its variables.
-    !>
+    !> Returns:
+    !*  ENDDATA: Returns .true. if there was an error occurred intializing the climate object or its variables.
     function climate_module_init(fls, shd, ii1, ii2, cm) result(ENDDATA)
 
-
-        !> Required for 'fls', 'mfk' variables.
+        !> model_files_variables: 'fls' variable.
+        !> shd_variables: 'shd' variable.
+        !> model_dates: 'ic' counter variable.
+        !> FLAGS: 'SAVERESUMEFLAG'.
         use model_files_variables
-
-        !> Required for 'shd', 'ro' variables.
-        use sa_mesh_shared_variables
-
-        !> Required for 'RESUMEFLAG'.
+        use shd_variables
+        use model_dates
         use FLAGS
 
         !> Input variables.
-        type(fl_ids) :: fls
-!-        type(dates_model) :: ts
-        type(ShedGridParams) :: shd
-        integer ii1, ii2
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams) shd
+        integer, intent(in) :: ii1, ii2
 
-        !> Input/Output variables.
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(clim_info) cm
 
         !> Output variables.
         logical ENDDATA
 
         !> Local variables.
-        !* toskip: The number of variables in the file per timestep
-!        integer nyy, ndy,
-        integer JDAY_IND_MET, ISTEP_START, nmy, nhy, nrs, Jday_IND2, Jday_IND3, toskip
-!-        integer nts, rts, timeStepClimF
-        integer vid, t, s, k, j, i, iun, ierr
+        integer vid, iun, iskip, isteps1, isteps2, t, s, k, j, i, ierr
+        character(len = DEFAULT_LINE_LENGTH) line
 
         ENDDATA = .false.
 
@@ -115,156 +106,65 @@ module climate_forcing
         end if
 
         !> Initialize climate variables.
+        call print_message('READING: Climate forcing variables')
         do vid = 1, cm%nclim
 
             !> Cycle if the variable is not active.
             if (.not. cm%dat(vid)%factive) cycle
 
+            !> Assign a unit number to the file.
+            cm%dat(vid)%fiun = cm%basefileunit + vid
+
+            !> Open the file.
+            if (open_data(shd, cm, vid)) goto 999
+
+            !> Print field to screen.
+            call print_message(cm%dat(vid)%fpath)
+
             !> Check if the file is in the legacy binary format.
             if (cm%dat(vid)%ffmt == 0) then
-                print 8900, adjustl(trim(cm%dat(vid)%id_var))
-                stop
+                call print_error('Forcing data in the legacy binary format (*.bin) are no longer supported.')
+                call print_message('These data must be converted to one of the supported formats.')
+                call program_abort()
             end if
 
-8900    format(/1x, 'Forcing data in the legacy binary format (*.bin) are no longer', &
-               /1x, 'supported by the model.', &
-               /3x, 'Forcing field: ', a, &
-               /1x, 'Please convert these data to one of the supported formats.', /)
-
-            !> Forcing data time step should not be less than 30 min - there is no
-            !> any increase in accuracy as delt (CLASS model time step) is 30 min.
-            if (cm%dat(vid)%hf < 30) then
-                print 1028
-                stop
+            !> Check that the forcing record is not less than the model time-step.
+!todo: Could probably find a way to accommodate this (e.g., accumulating/averaging/etc...).
+            if (cm%dat(vid)%hf < ic%dtmins) then
+                write(line, FMT_GEN) ic%dtmins
+                call print_error('The forcing data time-step is less than the model time-step: ' // trim(adjustl(line)) // ' mins')
+                call print_message('Aggregate the data to the model time-step.')
+                call program_abort()
             end if
 
-1028    format(/1x, 'FORCING DATA TIME STEP IS LESS THAN 30 MIN', &
-               /1x, 'AGGREGATE THE FORCING DATA TO 30 MIN INTERVAL AND TRY AGAIN', /)
+            !> Check if the time-step is divisible by the model time-step.
+            if (mod(cm%dat(vid)%hf, ic%dtmins) /= 0) then
+                call print_error('The forcing data time-step must be divisible by the model time-step.')
+                write(line, FMT_GEN) cm%dat(vid)%hf
+                call print_message_detail('Data time-step: ' // trim(adjustl(line)) // ' mins')
+                write(line, FMT_GEN) ic%dtmins
+                call print_message_detail('Model time-step: ' // trim(adjustl(line)) // ' mins')
+                call program_abort()
+            end if
 
-            !> MAM - ALLOCATE AND INITIALIZE INTERPOLATION VARIABLES:
-            !> For 30 minute forcing data there is no need for interpolation and
-            !> hence no need to assign PRE and PST variables
-            if (cm%dat(vid)%ipflg > 1 .or. (cm%dat(vid)%ipflg == 1 .and. cm%dat(vid)%hf == 30)) then
-                print 9000
+            !> Warn of unsupprted interpolation flag option.
+            if (cm%dat(vid)%ipflg > 1) then
+                write(line, FMT_GEN) cm%dat(vid)%ipflg
+                call print_warning('INTERPOLATIONFLAG ' // trim(adjustl(line)) // ' is not supported and has no effect.', PAD_3)
                 cm%dat(vid)%ipflg = 0
             end if
 
-9000    format(/1x, 'INTERPOLATIONFLAG IS NOT SPECIFIED CORRECTLY AND IS SET TO 0 BY THE MODEL.', &
-               /1x, '0: NO INTERPOLATION OF FORCING DATA.', &
-               /1x, '1: LINEARLY INTERPOLATES FORCING DATA FOR INTERMEDIATE TIME STEPS.', &
-               /1x, 'NOTE: INTERPOLATIONFLAG SHOULD BE SET TO 0 FOR 30 MINUTE FORCING DATA.', /)
-
-            !> Determine the number of time-steps in the run.
-    !todo: This doesn't work if run start and stop days are set to zeros;
-    !todo: The above should be reflected in module_dates where nr_days is determined;
-!-            timeStepClimF = ts%nr_days*24*(60/TIME_STEP_MINS)/real(cm%dat(vid)%hf)*TIME_STEP_MINS
-
-            !> Determine the time-stepping if data is read into memory.
-!-            if (timeStepClimF <= cm%dat(vid)%nblocks) then
-!-                allocate(cm%dat(vid)%ntimes(1))
-!-                cm%dat(vid)%ntimes(1) = timeStepClimF
-!-            else
-!-                nts = timeStepClimF/cm%dat(vid)%nblocks
-!-                rts = timeStepClimF - cm%dat(vid)%nblocks*nts
-!-                if (rts == 0) then
-!-                    allocate(cm%dat(vid)%ntimes(nts))
-!-                    cm%dat(vid)%ntimes = cm%dat(vid)%nblocks
-!-                else
-!-                    allocate(cm%dat(vid)%ntimes(nts + 1))
-!-                    cm%dat(vid)%ntimes = cm%dat(vid)%nblocks
-!-                    cm%dat(vid)%ntimes(nts + 1) = rts
-!-                end if
-!-            end if
-
-            !> Set the unit number and allocate the default number of source files.
-            cm%dat(vid)%fiun = cm%basefileunit + vid
-
-            !> Allocate the gridded series.
-            allocate(cm%dat(vid)%GRD(shd%NA), cm%dat(vid)%GAT(shd%lc%NML), cm%dat(vid)%GRU(shd%lc%NTYPE))
-
-            !> Open the forcing files.
-            if (open_data(shd, cm, vid)) goto 999
-
-!todo - leave these in for event based runs
-            !> IYEAR is set in the MESH_parameters_CLASS.ini file
-            !> YEAR_START is set in the MESH_input_run_options.ini file
-!            nyy = ic%start%year - cm%dat(vid)%start_date%year
-!            ndy = ic%start%jday - cm%dat(vid)%start_date%jday
-            nmy = ic%start%mins - cm%dat(vid)%start_date%mins
-            nhy = ic%start%hour - cm%dat(vid)%start_date%hour
-
-            ! set ISTEP_START based on HOURLYFLAG
-            !  (could be optimised as ISTEP_START = 2 - HOURLYFLAG)
-            !HOURLYFLAG is 1 if the data is every hour, and 0 if the data is every half-hour
-            !ISTEP_START is used to calculate nrs, and doubles the effect of the hours and
-            ! minutes if the data is in half-hourly format
-!            if (HOURLYFLAG == 1) then
-!                ISTEP_START = 1
-!            else
-!                ISTEP_START = 2
-!            end if
-            !Note added by M. Mekonnen
-            !ISTEP_START is used to count the number of records in one hour,
-            !hence a 30 minute interval forcing data will have 2 records per hour (ISTEP_START = 2)
-            !and a 1 hour interval forcing data will have 1 record per hour (ISTEP_START = 1). To
-            !accomodate forcing data with time intervals greater than 1 hour,
-            !it is better to count the number of records in a day:
-            ISTEP_START = 24*60/cm%dat(vid)%hf
-            if (mod(24*60, cm%dat(vid)%hf) /= 0) then
-                print 2334
-                stop
-            end if
-
-2334    format(//1x, 'Forcing data time interval needs to be in either', &
-               /1x, 'of the following values:', &
-               /1x, '30 or n*60 where n can be either 1, 2, 3, 4, 6, 8 or 12.', /)
-
-            call Julian_Day_ID(ic%start%year, ic%start%jday, Jday_IND2)
-            call Julian_Day_ID(cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday, Jday_IND3)
-            if ((Jday_IND2 < Jday_IND3) .and. (ic%start%year /= 0)) then
-                print 2442
-                stop
-            end if
-
-2442    format(//1x, 'ERROR: Simulation start date too early. The start date in the', &
-               /3x, 'run options file may occur before the start date of the met.', &
-               /3x, 'forcing input data in the CLASS parameter file.', /)
-
-            !Notes added by M. Mekonnen - To keep nrs calculation as before
-            !(and to be compatible with the above modification) we need to
-            !divide ISTEP_START by 24.
-            !nrs = JDAY_IND_MET*ISTEP_START*24 + nhy*ISTEP_START + nmy/30  !aLIU
-            JDAY_IND_MET = Jday_IND2 - Jday_IND3
-            nrs = JDAY_IND_MET*ISTEP_START + nhy*ISTEP_START/24 + nmy/30
-!-            if (ro%VERBOSEMODE > 0) print *, 'NRS=', nrs
-            ! FIX BUG IN JULIAN DAY CALCULATION FOR NRS ---ALIU FEB2009
-            if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%mins == 0 .and. ic%start%hour == 0) then
-                nrs = 0
-            elseif (nrs < 0) then
-                print *, 'The start date in MESH_input_run_options.ini occurs before' // &
-                    ' the first record of the meteorological input data.'
-                print *, 'Change the start date in MESH_input_run_options.ini to occur on or after the first record of these data.'
-                stop
-            end if
-
-            !> the following code is used to skip entries at the start
-            !> of the bin file
-            if (nrs > 0 .and. ro%VERBOSEMODE > 0) then
-                print "(3x, 'Skipping ', i8, ' registers in ', (a), '.')", nrs, trim(adjustl(cm%dat(vid)%fpath))
+            !> Remark on INTERPOLATIONFLAG if the data and model use the same time-step.
+            if (cm%dat(vid)%ipflg == 1 .and. cm%dat(vid)%hf == ic%dtmins) then
+                line = 'INTERPOLATIONFLAG is active but has no effect. The climate forcing data and model have the same time-step.'
+                call print_remark(line, PAD_3)
+                cm%dat(vid)%ipflg = 0
             end if
 
             !> Preserve the last record skipped with INTERPOLATIONFLAG 2.
 !?            if (INTERPOLATIONFLAG == 2) nrs = nrs - 1
 
-            !> Skip records of forcing data.
-            do i = 1, nrs
-
-                !> Call skip data for the climate forcing variable.
-                if (update_data(shd, cm, vid, .true.)) goto 999
-
-            end do !i = 1, nrs
-
-            !> Activate fields for interpolation.
+            !> Activate fields for INTERPOLATIONFLAG.
             if (cm%dat(vid)%ipflg == 1) then
                 if (allocated(cm%dat(vid)%ipdat)) deallocate(cm%dat(vid)%ipdat)
                 allocate(cm%dat(vid)%ipdat(size(cm%dat(vid)%blocks, 1), 2))
@@ -276,33 +176,79 @@ module climate_forcing
 
         !> Special case two sources of precipitation with alpha constant.
 !todo generalize this
-!?        if (vid == ck%RT .and. cm%dat(ck%RT)%ffmt == 6) then
-!?            call Init_clim_data(ck%RT, 921, cm)
-!?            call Init_clim_data(8, 922, cm)
-!?            return
-!?        end if
+!?            if (vid == ck%RT .and. cm%dat(ck%RT)%ffmt == 6) then
+!?                call Init_clim_data(ck%RT, 921, cm)
+!?                call Init_clim_data(8, 922, cm)
+!?                return
+!?            end if
 
-        end do !vid = 1, cm%nclim
+            !> Allocate the data series.
+            allocate(cm%dat(vid)%GRD(shd%NA), cm%dat(vid)%GAT(shd%lc%NML), cm%dat(vid)%GRU(shd%lc%NTYPE))
 
-        !> Read the state of these variables.
+            !> Skip records in the file to the simulation start date.
+            isteps1 = jday_to_tsteps( &
+                cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday, cm%dat(vid)%start_date%hour, &
+                cm%dat(vid)%start_date%mins, cm%dat(vid)%hf)
+            isteps2 = jday_to_tsteps(ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins, cm%dat(vid)%hf)
+            if (isteps2 < isteps1) then
+                call print_error('The first record occurs after the simulation start date.')
+                call print_message( &
+                    'The record must start on or after the simulation start date.')
+                write(line, "(i5, i4)") cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday
+                call print_message_detail('First record occurs on: ' // trim(line))
+                write(line, "(i5, i4)") ic%start%year, ic%start%jday
+                call print_message_detail('Simulation start date: ' // trim(line))
+                call program_abort()
+            end if
+            iskip = (isteps2 - isteps1)
+            if (iskip > 0) then
+                write(line, FMT_GEN) iskip
+                call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
+                do i = 1, iskip
+                    if (update_data(shd, cm, vid, .true.)) goto 999
+                end do
+            end if
+        end do
+
+        !> Print summary of climate forcing variables.
+        if (DIAGNOSEMODE) then
+            write(line, FMT_GEN) 'Variable', 'Name', 'File format', 'Frame length', 'Blocks in-mem.', 'No. series'
+            call print_message_detail(line)
+            do i = 1, cm%nclim
+                if (cm%dat(i)%factive) then
+                    write(line, FMT_GEN) &
+                        cm%dat(i)%id_var, cm%dat(i)%fname, cm%dat(i)%ffmt, cm%dat(i)%hf, cm%dat(i)%nblocks, cm%dat(i)%nseries
+                    call print_message_detail(line)
+                end if
+            end do
+            call print_message('')
+        end if
+
+        !> Resume states from file.
         if (RESUMEFLAG == 4) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
-            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat', status = 'old', action = 'read', &
-                 form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
-
-            !> Stop if the state file does not contain the same number of climate variables.
-            read(iun) ierr
-            if (ierr /= 7) then
-                print *, 'Incompatible ranking in climate state file: ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat'
-                print *, ' Number of clim. variables read: ', ierr
-                print *, ' Number of clim. variabels expected: ', 7
-                stop
+            open( &
+                iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat', action = 'read', status = 'old', &
+                form = 'unformatted', access = 'sequential', iostat = ierr)
+            if (ierr /= 0) then
+                call print_error('Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat' // ' to resume states.')
+                call program_abort()
             end if
 
-            !> Loop through variables in the climate forcing object and populate their state from file.
+            !> Stop if the state file does not contain the expected number of climate variables.
+            read(iun) ierr
+            if (ierr /= 7) then
+                call print_error('Incompatible ranking in climate state file.')
+                write(line, FMT_GEN) ierr
+                call print_message_detail('Number of clim. variables read: ' // trim(adjustl(line)))
+                write(line, FMT_GEN) 7
+                call print_message_detail('Number of clim. variables expected: ' // trim(adjustl(line)))
+                call program_abort()
+            end if
+
+            !> Loop through variables in the climate forcing object and read the states from file.
             do vid = 1, 7
 
                 !> Read the state of the climate variable (in case reading into memory).
@@ -323,54 +269,51 @@ module climate_forcing
                         cm%dat(vid)%ipdat(:, 2) = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
                     end if
                 end if
-
-            end do !vid = 1, 7
+            end do
 
             !> Close the file to free the unit.
             close(iun)
-
-        end if !(RESUMEFLAG == 4) then
+        end if
 
         return
 
 999     ENDDATA = .true.
 
-    end function !climate_module_init
+    end function
 
+    !> Description:
+    !>  Updates climate forcing data, either from memory or from file.
     !>
-    !> Description: Update climate data, either from memory or from input climate forcing files.
+    !> Input/output variables:
+    !*  fls: Contains file unit information.
+    !*  shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
+    !*  ii1: Start index in the GAT vector.
+    !*  ii2: Stopp index in the GAT vector.
+    !*  cm: Climate forcing object. Contains the file name, format, and unit.
     !>
-    !> Inputs:
-    !>  - shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
-    !>  - ic: Simulation counter object.
-    !>  - ii1: Starting index in the GAT vector.
-    !>  - ii2: Stopping index in the GAT vector.
-    !>  - cm: Climate forcing object. Contains the file name, format, and its unit.
-    !>
-    !> Outputs:
-    !>  - ENDDATA: Returns .true. if there was an error occurred intializing the climate object or its variables.
-    !>
+    !> Returns:
+    !*  ENDDATA: Returns .true. if there was an error occurred intializing the climate object or its variables.
     function climate_module_update_data(fls, shd, ii1, ii2, cm) result(ENDDATA)
 
-        !> Required for 'fls' variable.
+        !> model_files_variables: 'fls' variable.
+        !> shd_variables: 'shd' variable.
+        !> model_dates: 'ic' counter variable.
+        !> FLAGS: 'SAVERESUMEFLAG'.
         use model_files_variables
-
-        !> Required for 'shd' variable.
-        use sa_mesh_shared_variables
-
-        !> Required for 'ic' variable.
+        use shd_variables
         use model_dates
+        use FLAGS
 
         !> Required for 'value' function.
         use strings
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
-        type(ShedGridParams), intent(in) :: shd
+        type(ShedGridParams) shd
         integer, intent(in) :: ii1, ii2
 
-        !> Input/Output variables.
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(clim_info) cm
 
         !> Output variables.
         logical ENDDATA
@@ -466,19 +409,18 @@ module climate_forcing
                         end do
 
                     case default
-                        stop 'blocktype error'
+                        call print_error('Unable to read blocks from ' // trim(cm%dat(vid)%fpath) // '.')
+                        call program_abort()
 
                 end select
 
                 !> Increment the time-step of the variable.
-                cm%dat(vid)%itimestep = cm%dat(vid)%itimestep + (ic%dts/60)
+                cm%dat(vid)%itimestep = cm%dat(vid)%itimestep + ic%dtmins
                 if (cm%dat(vid)%itimestep >= cm%dat(vid)%hf) then
                     cm%dat(vid)%itimestep = 0
                 end if
-
-            end if !cm%dat(vid)%factive) then
-
-        end do !vid = 1, cm%nclim
+            end if
+        end do
 
         !> Distribute data from CLASS format MET file for variables not already active.
         if (cm%dat(ck%MET)%factive) then
@@ -529,25 +471,33 @@ module climate_forcing
 
 999     ENDDATA = .true.
 
-    end function !climate_module_update_data
+    end function
 
+    !> Description:
+    !>  Saves states to the climate forcing state file, if enabled.
+    !>
+    !> Input/output variables:
+    !*  fls: Contains file unit information.
+    !*  shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
+    !*  cm: Climate forcing object. Contains the file name, format, and unit.
     subroutine climate_module_finalize(fls, shd, cm)
 
-        !> Required for 'ipid' variable.
-        use mpi_module
-
-        !> Required for 'fls', 'mfk' variables.
+        !> model_files_variables: 'fls' variable.
+        !> shd_variables: 'shd' variable.
+        !> FLAGS: 'SAVERESUMEFLAG'.
         use model_files_variables
-
-        !> Required for 'shd' variable.
-        use sa_mesh_shared_variables
-
-        !> Required for 'SAVERESUMEFLAG'.
+        use shd_variables
         use FLAGS
 
-        type(fl_ids) :: fls
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> mpi_module: 'ipid' variable to identify node.
+        use mpi_module
+
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams) shd
+
+        !> Input/output variables.
+        type(clim_info) cm
 
         !> Local variables.
         integer vid, ierr, iun
@@ -555,19 +505,23 @@ module climate_forcing
         !> Return if not the head node.
         if (ipid /= 0) return
 
-        !> Save the state of these variables.
+        !> Save states to file.
         if (SAVERESUMEFLAG == 4) then
 
             !> Open the resume file.
             iun = fls%fl(mfk%f883)%iun
-            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat', status = 'replace', action = 'write', &
-                 form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
+            open( &
+                iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat', action = 'write', status = 'replace', &
+                form = 'unformatted', access = 'sequential', iostat = ierr)
+            if (ierr /= 0) then
+                call print_error('Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat' // ' to save states.')
+                call program_abort()
+            end if
 
-            !> Write the current number of climate variables.
+            !> Write the number of climate variables.
             write(iun) 7
 
-            !> Loop through variables in the climate forcing object and write the current state to file.
+            !> Loop through variables in the climate forcing object and write the states to file.
             do vid = 1, 7
 
                 !> Save the state of the climate variable (in case reading into memory).
@@ -582,14 +536,12 @@ module climate_forcing
                 if (cm%dat(vid)%ipflg == 1) then
                     write(iun) cm%dat(vid)%ipdat
                 end if
-
-            end do !vid = 1, 7
+            end do
 
             !> Close the file to free the unit.
             close(iun)
-
-        end if !(SAVERESUMEFLAG == 4) then
+        end if
 
     end subroutine
 
-end module !climate_forcing
+end module

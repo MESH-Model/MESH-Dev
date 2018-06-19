@@ -10,7 +10,7 @@ module cropland_irrigation_within_tile
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
 
@@ -133,7 +133,7 @@ module cropland_irrigation_within_tile
                         end if
 
                         !> Daily.
-                        if (btest(cifg%ts_flag, 0) .and. ic%ts_daily == (3600.0/ic%dts)*24) then
+                        if (btest(cifg%ts_flag, 0) .and. ic%now%day /= ic%next%day) then
                             civ%vars(civ%fk%KDLY)%lqws1_mm(k) = civ%vars(civ%fk%KDLY)%lqws1_mm(k)/ic%ts_daily
                             civ%vars(civ%fk%KDLY)%icu_mm(k) = (105.0*Kc*civ%vars(civ%fk%KDLY)%pevp_mm(k)) - &
                                 civ%vars(civ%fk%KDLY)%pre_mm(k) - &
@@ -145,7 +145,7 @@ module cropland_irrigation_within_tile
                         end if
 
                         !> Hourly.
-                        if (btest(cifg%ts_flag, 2) .and. ic%ts_hourly == (3600.0/ic%dts)) then
+                        if (btest(cifg%ts_flag, 2) .and. ic%now%hour /= ic%next%hour) then
                             civ%vars(civ%fk%KHLY)%lqws1_mm(k) = civ%vars(civ%fk%KHLY)%lqws1_mm(k)/ic%ts_hourly
                             civ%vars(civ%fk%KHLY)%icu_mm(k) = (105.0*Kc*civ%vars(civ%fk%KHLY)%pevp_mm(k)) - &
                                 civ%vars(civ%fk%KHLY)%pre_mm(k) - &

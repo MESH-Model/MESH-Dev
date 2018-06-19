@@ -1,71 +1,67 @@
 module sa_mesh_run_within_grid
 
+    !> 'model_files_variables' required for 'fls' object and file keys.
+    !> 'sa_mesh_common' required for common SA_MESH variables and routines.
+    !> 'climate_forcing' required for 'cm' variable.
+    !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
+    use model_files_variables
+    use sa_mesh_common
+    use climate_forcing
+    use mpi_module
+
     implicit none
 
     contains
 
-    subroutine run_within_grid_init(shd, fls, cm)
+    subroutine run_within_grid_init(fls, shd, cm)
 
-        use model_files_variables
-        use sa_mesh_shared_variables
-        use climate_forcing
-
-        type(ShedGridParams) :: shd
-        type(fl_ids) :: fls
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return
 
         !> Update variables.
-        call run_within_grid_stas_update(shd, cm)
+        call run_within_grid_stas_update(fls, shd, cm)
 
     end subroutine
 
-    subroutine run_within_grid(shd, fls, cm)
+    subroutine run_within_grid(fls, shd, cm)
 
-        use model_files_variables
-        use sa_mesh_shared_variables
-        use climate_forcing
-
-        !> Required for calls to processes.
+        !> Process modules.
         use baseflow_module
 
-        type(ShedGridParams) :: shd
-        type(fl_ids) :: fls
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return
 
         !> Update variables.
-        call run_within_grid_stas_update(shd, cm)
+        call run_within_grid_stas_update(fls, shd, cm)
 
         !> Call processes.
         call bflm_within_grid(fls, shd, cm)
 
     end subroutine
 
-    subroutine run_within_grid_mpi_isend(shd, cm)
+    subroutine run_within_grid_mpi_isend(fls, shd, cm)
 
-        !> For: MPI variables, barrier flag, il1:il2 parse utility.
-        use mpi_module
-
-        !> Process modules (required for variables).
-        use sa_mesh_shared_variables
-        use model_dates
-        use climate_forcing
-
-        !> Input variables.
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Local variables.
         integer nvars, t, i, j, u, ii1, ii2, iin, z
         logical lstat
         integer, allocatable :: irqst(:), imstat(:, :)
 
-        !> Return if grid processes are not active.
+        !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return
 
         !> Count the number of active variables included in the exchange.
@@ -75,7 +71,7 @@ module sa_mesh_run_within_grid
         !> Exchange variables.
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
-        allocate(irqst(nvars), imstat(mpi_status_size, nvars))
+        allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
         t = ic%ts_count*1000 + 200
 
         if (inp > 1 .and. ipid /= 0) then
@@ -88,12 +84,12 @@ module sa_mesh_run_within_grid
 
             !> Reset the exchange variables.
             i = 1
-            irqst = mpi_request_null
+            irqst = MPI_REQUEST_NULL
 
             !> Wait until the exchange completes.
             lstat = .false.
             do while (.not. lstat)
-                call mpi_testall(nvars, irqst, lstat, imstat, z)
+                call MPI_Testall(nvars, irqst, lstat, imstat, z)
             end do
 
         else if (inp > 1) then
@@ -109,13 +105,13 @@ module sa_mesh_run_within_grid
 
                 !> Reset the exchange variables.
                 i = 1
-                irqst = mpi_request_null
+                irqst = MPI_REQUEST_NULL
                 imstat = 0
 
                 !> Wait until the exchange completes.
                 lstat = .false.
                 do while (.not. lstat)
-                    call mpi_testall(nvars, irqst, lstat, imstat, z)
+                    call MPI_Testall(nvars, irqst, lstat, imstat, z)
                 end do
 
             end do !u = 1, (inp - 1)
@@ -126,19 +122,12 @@ module sa_mesh_run_within_grid
 
     end subroutine
 
-    subroutine run_within_grid_mpi_irecv(shd, cm)
+    subroutine run_within_grid_mpi_irecv(fls, shd, cm)
 
-        !> For: MPI variables, barrier flag, il1:il2 parse utility.
-        use mpi_module
-
-        !> Process modules (required for variables).
-        use sa_mesh_shared_variables
-        use model_dates
-        use climate_forcing
-
-        !> Input variables.
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Local variables.
         integer nvars, t, i, j, u, ii1, ii2, iin, z
@@ -146,7 +135,7 @@ module sa_mesh_run_within_grid
         integer, allocatable :: irqst(:), imstat(:, :)
         real, dimension(:), allocatable :: chnl
 
-        !> Return if grid processes are not active.
+        !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return
 
         !> Count the number of active variables included in the exchange.
@@ -156,7 +145,7 @@ module sa_mesh_run_within_grid
         !> Exchange variables.
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
-        allocate(irqst(nvars), imstat(mpi_status_size, nvars))
+        allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
         t = ic%ts_count*1000 + 400
 
         !> Assign the indices.
@@ -174,20 +163,20 @@ module sa_mesh_run_within_grid
 
                 !> Reset exchange variables.
                 i = 1
-                irqst = mpi_request_null
+                irqst = MPI_REQUEST_NULL
                 imstat = 0
 
                 !> Channel routing.
 !                chnl((1 + iin*0):(iin*1)) = stas_grid%chnl%s(ii1:ii2)
 !                chnl((1 + iin*1):(iin*2)) = stas_grid%chnl%div(ii1:ii2)
 !                chnl((1 + iin*2):(iin*3)) = stas_grid%chnl%ab(ii1:ii2)
-!                call mpi_isend(chnl, size(chnl), mpi_real, u, t + i, mpi_comm_world, irqst(i), z)
+!                call MPI_Isend(chnl, size(chnl), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z)
 !                i = i + 1
 
                 !> Wait until the exchange completes.
                 lstat = .false.
                 do while (.not. lstat)
-                    call mpi_testall(nvars, irqst, lstat, imstat, z)
+                    call MPI_Testall(nvars, irqst, lstat, imstat, z)
                 end do
 
             end do !u = 1, (inp - 1)
@@ -197,15 +186,15 @@ module sa_mesh_run_within_grid
             !> Receive data from head-node.
             !> Reset exchange variables.
             i = 1
-            irqst = mpi_request_null
+            irqst = MPI_REQUEST_NULL
 
             !> Receive variables.
-!            call mpi_irecv(chnl, size(chnl), mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+!            call MPI_Irecv(chnl, size(chnl), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
 
             !> Wait until the exchange completes.
             lstat = .false.
             do while (.not. lstat)
-                call mpi_testall(nvars, irqst, lstat, imstat, z)
+                call MPI_Testall(nvars, irqst, lstat, imstat, z)
             end do
 
             !> Assign variables.
@@ -224,20 +213,14 @@ module sa_mesh_run_within_grid
 
     end subroutine
 
-    subroutine run_within_grid_stas_update(shd, cm)
+    subroutine run_within_grid_stas_update(fls, shd, cm)
 
-        use sa_mesh_shared_variables
-        use climate_forcing
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
-        !> Required for 'il1:il2' and 'i1:i2' indexing.
-        use mpi_module
-
-!+todo: There's a dependency on CLASSBD.f.
-        use RUNCLASS36_constants, only: RHOW, RHOICE
-
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
-
+        !> Local variables.
         integer k, ki, kj
         real fcan(i1:i2), fsno(i1:i2), fpnd(i1:i2), frac
 
@@ -253,6 +236,7 @@ module sa_mesh_run_within_grid
         stas_grid%sno%sno(i1:i2) = 0.0
         stas_grid%sno%wsno(i1:i2) = 0.0
         stas_grid%sno%tsno(i1:i2)  = 0.0
+        stas_grid%sfc%albt(i1:i2) = 0.0
         stas_grid%sfc%alvs(i1:i2) = 0.0
         stas_grid%sfc%alir(i1:i2) = 0.0
         stas_grid%sfc%gte(i1:i2) = 0.0
@@ -301,11 +285,13 @@ module sa_mesh_run_within_grid
                 stas_grid%sno%tsno(ki) = stas_grid%sno%tsno(ki) + stas%sno%tsno(k)*frac
                 fsno(ki) = fsno(ki) + frac
             end if
+            stas_grid%sfc%albt(ki) = stas_grid%sfc%albt(ki) + stas%sfc%albt(k)*frac
             stas_grid%sfc%alvs(ki) = stas_grid%sfc%alvs(ki) + stas%sfc%alvs(k)*frac
             stas_grid%sfc%alir(ki) = stas_grid%sfc%alir(ki) + stas%sfc%alir(k)*frac
             stas_grid%sfc%gte(ki) = stas_grid%sfc%gte(ki) + stas%sfc%gte(k)*frac
             stas_grid%sfc%zpnd(ki) = stas_grid%sfc%zpnd(ki) + stas%sfc%zpnd(k)*frac
             if (stas%sfc%zpnd(k) > 0.0) then
+                stas_grid%sfc%pndw(ki) = stas_grid%sfc%pndw(ki) + stas%sfc%pndw(k)*frac
                 stas_grid%sfc%tpnd(ki) = stas_grid%sfc%tpnd(ki) + stas%sfc%tpnd(k)*frac
                 fpnd(ki) = fpnd(ki) + frac
             end if
@@ -319,9 +305,9 @@ module sa_mesh_run_within_grid
             stas_grid%sfc%gzero(ki) = stas_grid%sfc%gzero(ki) + stas%sfc%gzero(k)*frac
             stas_grid%sl%rofs(ki) = stas_grid%sl%rofs(ki) + stas%sl%rofs(k)*frac
             stas_grid%sl%thic(ki, :) = stas_grid%sl%thic(ki, :) + stas%sl%thic(k, :)*frac
-            stas_grid%sl%fzws(ki, :) = stas_grid%sl%fzws(ki, :) + stas%sl%thic(k, :)*stas%sl%delzw(k, :)*frac*RHOICE
+            stas_grid%sl%fzws(ki, :) = stas_grid%sl%fzws(ki, :) + stas%sl%fzws(k, :)*frac
             stas_grid%sl%thlq(ki, :) = stas_grid%sl%thlq(ki, :) + stas%sl%thlq(k, :)*frac
-            stas_grid%sl%lqws(ki, :) = stas_grid%sl%lqws(ki, :) + stas%sl%thlq(k, :)*stas%sl%delzw(k, :)*frac*RHOW
+            stas_grid%sl%lqws(ki, :) = stas_grid%sl%lqws(ki, :) + stas%sl%lqws(k, :)*frac
             stas_grid%sl%tbar(ki, :) = stas_grid%sl%tbar(ki, :) + stas%sl%tbar(k, :)*frac
             stas_grid%sl%gflx(ki, :) = stas_grid%sl%gflx(ki, :) + stas%sl%gflx(k, :)*frac
             stas_grid%lzs%ws(ki) = stas_grid%lzs%ws(ki) + stas%lzs%ws(k)*frac
@@ -337,31 +323,16 @@ module sa_mesh_run_within_grid
         where (fsno(i1:i2) > 0.0)
             stas_grid%sno%tsno(i1:i2) = stas_grid%sno%tsno(i1:i2)/fsno(i1:i2)
         end where
-        where (stas_grid%sfc%alvs(i1:i2) > 0.0 .and. stas_grid%sfc%alir(i1:i2) > 0.0)
-            stas_grid%sfc%albt(i1:i2) = (stas_grid%sfc%alvs(i1:i2) + stas_grid%sfc%alir(i1:i2))/2.0
-        end where
-        stas_grid%sfc%pndw(i1:i2) = stas_grid%sfc%zpnd(i1:i2)*RHOW
         where (fpnd(i1:i2) > 0.0) stas_grid%sfc%tpnd(i1:i2) = stas_grid%sfc%tpnd(i1:i2)/fpnd(i1:i2)
-        where (stas_grid%sfc%evap(i1:i2) > 0.0 .and. stas_grid%sfc%pevp(i1:i2) /= 0.0)
-            stas_grid%sfc%evpb(i1:i2) = stas_grid%sfc%evap(i1:i2)/stas_grid%sfc%pevp(i1:i2)
-        end where
-        if (allocated(cm%dat(ck%RT)%GRD)) then
-            where (stas_grid%sfc%pevp(i1:i2) /= 0.0)
-                stas_grid%sfc%arrd(i1:i2) = cm%dat(ck%RT)%GRD(i1:i2)/stas_grid%sfc%pevp(i1:i2)
-            end where
-        end if
 
     end subroutine
 
     subroutine run_within_grid_finalize(fls, shd, cm)
 
-        use model_files_variables
-        use sa_mesh_shared_variables
-        use climate_forcing
-
-        type(fl_ids) :: fls
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return

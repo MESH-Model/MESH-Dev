@@ -32,7 +32,7 @@
 subroutine check_parameters(shd)
 
     !> Required for 'ShedGridParams' type and SA_MESH parameters.
-    use sa_mesh_shared_variables
+    use sa_mesh_common
 
     !> Required for 'FROZENSOILINFILFLAG' and 'SOILINIFLAG'
     use FLAGS

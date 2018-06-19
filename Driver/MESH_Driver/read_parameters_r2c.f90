@@ -1,22 +1,22 @@
-!>
 !> Description:
-!>  Subroutine to read parameters from file, in r2c format. Parameter
-!>  values are saved directly to the shared parameter object at the
-!>  grid level, accessible by sa_mesh_shared_variables.
+!>  Subroutine to read parameters from a single-frame 'r2c' format file.
+!>  Values are parsed by order of RANK and stored in variables that must
+!>  allocated 1:NA.
 !>
 !> Input:
-!*  shd: Basin shed object, containing information about the grid
-!*      definition read from MESH_drainage_database.r2c.
-!*  iun: Unit of the input file (default: 100).
+!*  shd: Basin 'shed' object (properties).
+!*  iun: Unit of the input file.
 !*  fname: Full path to the file (default: './MESH_input_parameters.r2c').
-!>
 subroutine read_parameters_r2c(shd, iun, fname)
 
+    !> strings: For 'lowercase' function.
+    !> sa_mesh_common: For common MESH variables and routines.
+    !> ensim_io: For routines to read 'r2c' format file.
     use strings
-    use mpi_module
-    use sa_mesh_shared_variables
+    use sa_mesh_common
     use ensim_io
 
+    !> Process modules: Required for process variables, parameters.
     use RUNCLASS36_variables
     use RUNSVS113_variables
     use irrigation_module
@@ -27,41 +27,61 @@ subroutine read_parameters_r2c(shd, iun, fname)
     implicit none
 
     !> Input variables.
-    type(ShedGridParams) :: shd
-    integer :: iun
-    character(len = *) :: fname
+    type(ShedGridParams), intent(in) :: shd
+    integer, intent(in) :: iun
+    character(len = *), intent(in) :: fname
 
     !> Local variables.
     type(ensim_keyword), dimension(:), allocatable :: vkeyword
     type(ensim_attr), dimension(:), allocatable :: vattr
-    integer nkeyword, nattr, iattr, ilvl, i, ierr
+    integer nkeyword, nattr, ilvl, n, l, i, ierr, z
     character(len = MAX_WORD_LENGTH) tfield, tlvl
     real, dimension(:), allocatable :: ffield
-    logical verbose
-
-    !> Local variables.
-    verbose = (ro%VERBOSEMODE > 0)
+    character(len = DEFAULT_LINE_LENGTH) line
 
     !> Open the file and read the header.
-    call open_ensim_file(iun, fname, ierr, verbose)
-    call parse_header_ensim(iun, fname, vkeyword, nkeyword, ierr)
+    call print_message('READING: ' // trim(adjustl(fname)))
+    call open_ensim_input(iun, fname, ierr)
+    if (ierr /= 0) call program_abort()
+    call parse_header_ensim(iun, vkeyword, nkeyword, ierr)
+    if (ierr /= 0) call program_abort()
+
+    !> Check the spatial definition in the header.
     call validate_header_spatial( &
-        fname, vkeyword, nkeyword, &
-        shd%xCount, shd%xDelta, shd%xOrigin, shd%yCount, shd%yDelta, shd%yOrigin, &
-        verbose)
+        vkeyword, nkeyword, &
+        shd%CoordSys%Proj, shd%xCount, shd%xDelta, shd%xOrigin, shd%yCount, shd%yDelta, shd%yOrigin, &
+        ierr)
+    if (ierr /= 0) call program_abort()
 
-    !> Read and parse attributes in the header.
-    call parse_header_attribute_ensim(iun, fname, vkeyword, nkeyword, vattr, nattr, ierr)
+    !> Get the list of attributes.
+    call parse_header_attribute_ensim(iun, vkeyword, nkeyword, vattr, nattr, ierr)
+    if (ierr /= 0) then
+        call print_error('Error reading attributes from the header in the file.')
+        call program_abort()
+    end if
+    if (nattr == 0) call print_warning('No attributes were found in the file.', PAD_3)
 
-    !> Read and parse the single frame data.
+    !> Advance past the end of the header.
+    call advance_past_header(iun, fname, ierr)
+    if (ierr /= 0) then
+        call print_error('Encountered premature end of file.')
+        call program_abort()
+    end if
+
+    !> Read and parse the attribute data.
     call load_data_r2c(iun, fname, vattr, nattr, shd%xCount, shd%yCount, .false., ierr)
+    if (ierr /= 0) then
+        call print_error('Error reading attribute values in the file.')
+        call program_abort()
+    end if
 
     !> Distribute the data to the appropriate variable.
     allocate(ffield(shd%NA))
-    do iattr = 1, nattr
+    n = 0
+    do l = 1, nattr
 
         !> Extract variable name and level.
-        tfield = lowercase(vattr(iattr)%attr)
+        tfield = lowercase(vattr(l)%attr)
         i = index(trim(adjustl(tfield)), ' ')
         ilvl = 0
         if (i > 0) then
@@ -70,11 +90,17 @@ subroutine read_parameters_r2c(shd, iun, fname)
             call value(tlvl, ilvl, ierr)
             if (ierr /= 0) ilvl = 0
         end if
+        if (DIAGNOSEMODE) call print_message_detail("Reading '" // trim(tfield) // "'.")
 
         !> Assign the data to a vector.
-        call r2c_to_rank(iun, fname, vattr, nattr, iattr, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, verbose)
+        call r2c_to_rank(iun, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, ierr)
+        if (ierr /= 0) then
+            call print_error("Unable to read the '" // trim(vattr(l)%attr) // "' attribute.")
+            call program_abort()
+        end if
 
         !> Determine the variable.
+        z = 0
         select case (adjustl(tfield))
 
             !> RUNCLASS36 and RUNSVS113.
@@ -91,6 +117,8 @@ subroutine read_parameters_r2c(shd, iun, fname)
                             pm_grid%cp%fcan(:, 4) = ffield
                         case ('ur')
                             pm_grid%cp%fcan(:, 5) = ffield
+                        case default
+                            z = 1
                     end select
                 end if
             case ('lnz0')
@@ -106,6 +134,8 @@ subroutine read_parameters_r2c(shd, iun, fname)
                             pm_grid%cp%lnz0(:, 4) = ffield
                         case ('ur')
                             pm_grid%cp%lnz0(:, 5) = ffield
+                        case default
+                            z = 1
                     end select
                 end if
             case ('sdep')
@@ -121,7 +151,8 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     pm_grid%hp%dd = ffield
 
                     !> Unit conversion if units are km km-2.
-                    if (index(lowercase(vattr(iattr)%units), 'km') > 0) then
+                    if (index(lowercase(vattr(l)%units), 'km') > 0) then
+                        call print_remark("'" // trim(vattr(l)%attr) // "' converted from 'km km -2' to 'm m-2'.", PAD_3)
                         pm_grid%hp%dd = pm_grid%hp%dd/1000.0
                     end if
                 end if
@@ -134,7 +165,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%sand(:, ilvl) = ffield
                     else
-                        print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
+                        z = 1
                     end if
                 end if
             case ('clay')
@@ -146,7 +177,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%clay(:, ilvl) = ffield
                     else
-                        print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
+                        z = 1
                     end if
                 end if
             case ('orgm')
@@ -158,7 +189,7 @@ subroutine read_parameters_r2c(shd, iun, fname)
                     else if (ilvl <= shd%lc%IGND) then
                         pm_grid%slp%orgm(:, ilvl) = ffield
                     else
-                        print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
+                        z = 1
                     end if
                 end if
 
@@ -224,18 +255,27 @@ subroutine read_parameters_r2c(shd, iun, fname)
             case ('distrib')
                 if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Distrib = ffield
 
-            !> Print a warning if the variable name is not recognized.
+            !> Unrecognized.
             case default
-                if (verbose) print 1120, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
-
+                z = 2
         end select
+
+        !> Status flags.
+        if (z == 1) then
+            line = "'" // trim(vattr(l)%attr) // "' has an unrecognized category or level out-of-bounds: " // trim(tlvl)
+            call print_warning(line, PAD_3)
+        else if (z == 2) then
+            call print_warning("'" // trim(vattr(l)%attr) // "' is not recognized.", PAD_3)
+        else if (z == 0) then
+            n = n + 1
+        end if
     end do
+
+    !> Print number of active parameters.
+    write(line, FMT_GEN) n
+    call print_message_detail('Active parameters in file: ' // trim(adjustl(line)))
 
     !> Close the file to free the unit.
     close(iun)
-
-1110    format(3x, 999(1x, g16.9))
-1120    format(3x, 'WARNING: Unrecognized attribute in ', (a), ': ', (a))
-1130    format(3x, 'WARNING: Unrecognized category or level out-of-bounds in ', (a), ': ', (a))
 
 end subroutine
