@@ -34,9 +34,9 @@ module svs_configs
 
   !---------------------------------------------------------------
   ! SOIL TEXTURE OPTIONS: 
-  !  1:   "CLASSIC"  --  3 layers of sand, clay info... use the mean to initialize all variables
-  !  2:   "GSDE"      --  8 layers of soil texture from CHINESE DATASET !!!
-  !  3:   "SLC"      --  5 layers of soil texture:  SOIL LANDSCAPE of CANADA
+  !  1:   "GSDE"      --  8 layers of soil texture from CHINESE DATASET !!!
+  !  2:   "SLC"      --  5 layers of soil texture:  SOIL LANDSCAPE of CANADA
+  !  3:   "SOILGRIDS" --  7  layers of soil texture:  ISRIC — World Soil Information
   ! ENTRY  bus number of levels for clay & sand variables
   integer,  save :: nl_ste
   ! PERMANENT PHYSICS bus number of levels for clay & sand variables
@@ -52,10 +52,14 @@ module svs_configs
   integer,  parameter :: nl_slc = 6
   ! SLC SOIL DEPTH in METERS... ( 0-5cm, 15-30cm, 30-60cm, 60-100cm, 100-200cm ) 
   real, parameter , dimension(nl_slc):: dl_slc =  (/ 0.05, 0.15, 0.3, 0.6, 1.0, 2.0 /) 
-  
-  !  WEIGHTS TO MAP soil parameters calculated on GSDE or SLC  layers unto model soil_layers
-  real, allocatable, save :: weights(:,:)       !(max_nl_svs,nl_soil_texture)
 
+  ! SOILGRIDS NUMBER OF LAYERS 
+  integer,  parameter :: nl_soilgrids = 7 
+  ! SOILGRIDS SOIL DEPTH in METERS... 
+  real, parameter , dimension(nl_soilgrids):: dl_soilgrids =  (/ 0.025, 0.1, 0.225, 0.45, 0.8, 1.5, 2.0 /) 
+  
+  !  WEIGHTS TO MAP soil parameters calculated on SOIL TEXTURE LAYERS  layers unto MODEL SOIL LAYERS
+  real, allocatable, save :: weights(:,:)       !(max_nl_svs,nl_soil_texture)
 
   !------------------------------------------------------------------
   ! NUMERICAL METHOD HYDRO
@@ -63,6 +67,18 @@ module svs_configs
   ! hydro_svs_method=0: Euler, forward, 1st order
   ! hydro_svs_method=1: Runge-Kutta 4th order (RK4)
   integer, parameter :: hydro_svs_method = 1
+
+  !---------------------------------------------------------
+  ! OPTION FOR CALCULATION of AVERAGE LAND SURFACE TEMPERATURE AND HUMIDITY
+  ! D. Deacu 06/2018
+  logical, parameter :: use_eff_surf_tq = .FALSE.
+  ! use_eff_surf_tq=.FALSE. :  Area-average only calculation for sfc T and Hum.
+  ! use_eff_surf_tq=.TRUE.  :  NEW OPTION that uses effective surface temperature
+  !                            and specific humidity instead of composite (area-averaged only) 
+  !                            counterparts in surface flux calculations
+  !           Reference: Chehbouni, A., E.G. Njoku, J. Lhomme, and Y.H. Kerr, 1995: Approaches for Averaging 
+  !                      Surface Parameters and Fluxes over Heterogeneous Terrain. J. Climate, 8, 1386–1393
+  !---------------------------------------------------------
 
   !-----------------------------------------------------------------
   ! VEG HIGH/LOW SPLIT 
@@ -105,16 +121,7 @@ contains
     nl_stp = 3
 
     ! number of levels of entry and bus clay, sand variables
-    if ( soiltext == "CLASSIC" ) then
-
-       ! CLASSIC:
-
-       ! ENTRY  bus number of levels for clay & sand variables
-       nl_ste = 3
-       ! PERMANENT PHYSICS bus number of levels for clay & sand variables
-       nl_stp = nl_svs
-
-    else if ( soiltext == "GSDE" ) then
+    if ( soiltext == "GSDE" ) then
 
        ! GSDE:
 
@@ -126,10 +133,18 @@ contains
        call weights_soil_texture()
 
     else  if ( soiltext == "SLC" ) then
-    	  ! ENTRY  bus number of levels for clay & sand variables
-       	  nl_ste = nl_slc
-       	  ! PERMANENT PHYSICS bus number of levels for clay & sand variables
-       	  nl_stp = nl_slc
+       ! ENTRY  bus number of levels for clay & sand variables
+       nl_ste = nl_slc
+       ! PERMANENT PHYSICS bus number of levels for clay & sand variables
+       nl_stp = nl_slc
+       call weights_soil_texture()	
+
+    else if ( soiltext == "SOILGRIDS" ) then
+
+       ! ENTRY  bus number of levels for clay & sand variables
+       nl_ste = nl_soilgrids
+       ! PERMANENT PHYSICS bus number of levels for clay & sand variables
+       nl_stp = nl_soilgrids
        call weights_soil_texture()	
 
     endif
@@ -181,6 +196,16 @@ contains
        ! last depth of soil texture database set to max depth of SVS 
        ! i.e, deepest soil texture measured extends to the bottom of last SVS layer
        d_soil_texture(nl_stp+1)=max( dl_svs(nl_svs) , dl_slc(nl_stp) )
+
+    else if ( soiltext == "SOILGRIDS" ) then
+     
+       do k=2,nl_stp
+          d_soil_texture(k)=dl_soilgrids(k-1)
+       enddo
+       ! last depth of soil texture database set to max depth of SVS 
+       ! i.e, deepest soil texture measured extends to the bottom of last SVS layer
+       d_soil_texture(nl_stp+1)=max( dl_svs(nl_svs) , dl_slc(nl_stp) )    
+
     endif
     
     
@@ -207,6 +232,8 @@ contains
           write(unout, *) ' ****** GSDE SOIL TEXTURE ******* '
        else if (soiltext == "SLC" ) then
           write(unout, *) ' ****** SLC SOIL TEXTURE ******* '
+       else if (soiltext == "SOILGRIDS" ) then
+          write(unout, *) ' ****** SOILGRIDS SOIL TEXTURE ******* '
        endif
           
        write(unout, *) ' ****** SOIL MAPPING WEIGHTS [METERS] ******* '
@@ -222,6 +249,10 @@ contains
              do kk = 1, nl_stp ! database layers
                 write(unout, *) 'for SLC layer kk=', kk,' depth=', dl_slc(kk),' weight=', weights(k,kk)
              enddo
+	  else if (soiltext == "SOILGRIDS" ) then
+             do kk = 1, nl_stp ! database layers
+                write(unout, *) 'for SOILGRIDS layer kk=', kk,' depth=', dl_soilgrids(kk),' weight=', weights(k,kk)
+	     enddo
           endif
        enddo
     endif

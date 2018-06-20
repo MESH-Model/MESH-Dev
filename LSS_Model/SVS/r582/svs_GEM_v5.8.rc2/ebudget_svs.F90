@@ -9,7 +9,7 @@
                    RHOA, WTA, Z0, Z0H,  & 
                    HRSURF, HV, DEL, RS, & 
                    CG,CVP, EMIS, PSNG, &  
-                   RESAGR, RESAVG,  &
+                   RESAGR, RESAVG, RESASA, RESASV, &
                    RNETSN, HFLUXSN, LESNOFRAC, ESNOFRAC, & 
                    ALPHAS, &  
                    TSNS, & 
@@ -21,7 +21,7 @@
                    ALBT, & 
                    RNET, HFLUX, LE, LEG, LEV, LES,LESV, & 
                    LER, LETR, EG, ER, ETR, GFLUX, EFLUX, & 
-                   BM, FQ, BT, & 
+                   BM, FQ, BT, RESAEF, & 
                    LEFF, DWATERDT, & 
                    FTEMP, FVAP, ZQS, FRV, & 
                    ALFAT, ALFAQ, ILMO, HST, TRAD, N)
@@ -52,7 +52,7 @@
       REAL FTEMP(N), FVAP(N), ER(N), ETR(N)
       REAL LEFF(N), DWATERDT(N), ZQS(N), FRV(N)
       REAL EG(N), HRSURF(N)
-      REAL RESAGR(N), RESAVG(N)
+      REAL RESAGR(N), RESAVG(N), RESASA(N), RESASV(N), RESAEF(N)
       REAL RNETSN(N), HFLUXSN(N), LESNOFRAC(N), ESNOFRAC(N)
       REAL RNETSV(N), HFLUXSV(N), LESVNOFRAC(N), ESVNOFRAC(N)
       REAL TSVS(N), ALPHASV(N)
@@ -195,7 +195,8 @@
 ! PSNG      fraction of bare ground or low veg. covered by snow
 ! RESAGR    aerodynamical surface resistance for bare ground
 ! RESAVG    aerodynamical surface resistance for vegetation
-!
+! RESASA    aerodynamical surface resistance for snow on bare ground/low veg
+! RESASV    aerodynamical surface resistance for snow under high veg.
 ! RNETSN    net radiation over snow 
 ! HFLUXSN   sensible heat flux over snow 
 ! ESNOFRAC  water vapor flux from the snow surface
@@ -252,6 +253,7 @@
 ! BT         homogeneous boundary condition term in the
 !            diffusion equation for T and Q
 ! FQ         land sfc average momentum flux
+! RESAEF     effective aerodynamic resistance for land sfc
 ! ALFAT      inhomogeneous boundary term in the diffusion equation for Theta
 ! ALFAQ      inhomogeneous boundary term in the diffusion equation for Q
 ! ZQS       area-averaged specific  humidity of a model tile
@@ -727,7 +729,7 @@ include "fintern.inc"
 !
 !
 !
-!*       8.     NEW GRID-AVERAGED QUANTITIES  (FRV, ZQS, BM, FQ)
+!*       8.     NEW "land-tile"-AVERAGED QUANTITIES  (FRV, ZQS, BM, FQ)
 !               -----------------------------------------------  
 !
 !
@@ -741,21 +743,54 @@ include "fintern.inc"
         ZQSATSNO(I)=FOQST( TSNS(I), PS(I) )
         ZQSATSNV(I)=FOQST( TSVS(I), PS(I) )
 !
-!                                             Calculate grid-averaged specific humidity
+
+        IF ( .NOT. use_eff_surf_tq  ) THEN
+           !  Area-average weighted mean calculation for land sfc temperature and humidity
+
 !
-        ZQS(I) =     WTA(I,indx_svs_bg)      *    HRSURF(I)        * ZQSATGRT(I) & 
-                   + WTA(I,indx_svs_sn)                            * ZQSATSNO(I) &  
-                   + WTA(I,indx_svs_sv)                            * ZQSATSNV(I) &  
-                   + WTA(I,indx_svs_vg)      *        HV(I)        * ZQSATVGT(I) & 
-                   + WTA(I,indx_svs_vg)      *    (1.-HV(I))       * HU(I)
+!                                             Calculate land-tile-averaged specific humidity
 !
-!                                             Calculate grid-averaged surface temperature
+	  ZQS(I) =     WTA(I,indx_svs_bg)      *    HRSURF(I)        * ZQSATGRT(I) & 
+		     + WTA(I,indx_svs_sn)                            * ZQSATSNO(I) &  
+                     + WTA(I,indx_svs_sv)                            * ZQSATSNV(I) &  
+                     + WTA(I,indx_svs_vg)      *        HV(I)        * ZQSATVGT(I) & 
+                     + WTA(I,indx_svs_vg)      *    (1.-HV(I))       * HU(I)
+!
+!                                             Calculate land-tile-averaged surface temperature
 !                                             i.e., aggregate skin temperatures of diff.
 !                                             surfaces 
 !
-        TSA(I) = AG( WTA(I,indx_svs_bg), WTA(I,indx_svs_vg), &
+          TSA(I) = AG( WTA(I,indx_svs_bg), WTA(I,indx_svs_vg), &
                      WTA(I,indx_svs_sn), WTA(I,indx_svs_sv), &
                      TGRST(I),TVGST(I),TSNS(I),TSVS(I) )
+
+        ELSE
+
+           ! Consider aerodynamic resistance in calc. of effective ("land-tile-averaged") land sfc 
+           ! temperature and humidity (see svs_configs.ftn90)
+
+!
+!                                             Calculate effective areodynamic resistance
+!         
+           RESAEF(I) = 1. / ( WTA(I,indx_svs_bg)/RESAGR(I) + WTA(I,indx_svs_vg)/RESAVG(I) + &
+                              WTA(I,indx_svs_sn)/RESASA(I) + WTA(I,indx_svs_sv)/RESASV(I) )
+!
+!                                             Calculate effective land sfc specific humdity
+!         
+           ZQS(I) = RESAEF(I) *                                                             &
+                (  WTA(I,indx_svs_bg)      *    HRSURF(I)        * ZQSATGRT(I)/RESAGR(I) & 
+                +  WTA(I,indx_svs_sn)                            * ZQSATSNO(I)/RESASA(I) &  
+                +  WTA(I,indx_svs_sv)                            * ZQSATSNV(I)/RESASV(I) &  
+                + (WTA(I,indx_svs_vg)      *        HV(I)        * ZQSATVGT(I)           & 
+                +  WTA(I,indx_svs_vg)      *    (1.-HV(I))       * HU(I) )/RESAVG(I) )
+!
+!                                             Calculate effective land sfc temperature
+!         
+           TSA(I) = RESAEF(I) *  AG( WTA(I,indx_svs_bg), WTA(I,indx_svs_vg), &
+                                     WTA(I,indx_svs_sn), WTA(I,indx_svs_sv), &
+                                     TGRST(I)/RESAGR(I), TVGST(I)/RESAVG(I), &
+                                      TSNS(I)/RESASA(I),  TSVS(I)/RESASV(I) )
+        endif
 
 !            Calculated averaged radiative Temperature
 

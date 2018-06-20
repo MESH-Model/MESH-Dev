@@ -84,7 +84,7 @@ FTN90PPOPT=-Tf
 
 #For the old version of SVS 1 (depreciated), uncomment the instruction below
 #runsvs_mod.o: runsvs_mod_sa_mesh.ftn90
-#FOR teh latest version SVS 1, uncomment the instruction below
+#FOR the latest version SVS 1, uncomment the instruction below
 runsvs_mod.o: runsvs1_mod_sa_mesh.ftn90
 #FOR SVS 2, uncomment the instruction below
 #runsvs_mod.o: runsvs2_mod_sa_mesh.ftn90

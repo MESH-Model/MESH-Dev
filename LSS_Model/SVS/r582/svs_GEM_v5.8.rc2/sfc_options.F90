@@ -169,15 +169,13 @@ module sfc_options
         /)
 
    !#  Soil texture database/calculations for SVS land surface scheme
-   !# * 'CLASSIC' : 3 layers of sand & clay info
    !# * 'GSDE' : 8 layers of sand & clay info
    character(len=16) :: soiltext    = 'GSDE'
    namelist /surface_cfgs/ soiltext
    character(len=*), parameter :: SOILTEXT_OPT(3) = (/ &
-        'CLASSIC', &
         'GSDE   ', &
-        'SLC    '  &
-        /)
+        'SLC    ', &
+	'SOILGRIDS' /)
 
    !# Use snow albedo "I6" directly if .true.;
    !# Use snow age "XA" to calculate snow albedo if .false.
@@ -189,7 +187,7 @@ module sfc_options
    namelist /surface_cfgs/ tdiaglim
 
    !# OPTION TO USE PHOTOSYNTHESIS CODE FOR STOMATAL RESISTANCE in SVS
-   logical           :: use_photo = .true.
+   logical           :: use_photo = .false.
    namelist /surface_cfgs/ use_photo
  
    !# Factor multiplying stomatal resistance in ISBA

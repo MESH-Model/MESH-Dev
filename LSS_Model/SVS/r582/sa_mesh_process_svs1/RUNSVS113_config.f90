@@ -21,6 +21,8 @@ module RUNSVS113_config
         use RUNSVS_mod
         use runsvs_utils
         use phy_options
+	use svs_configs
+        use sfc_options
 !        use runsvs_io
 
         type(ShedGridParams) :: shd
@@ -48,7 +50,7 @@ module RUNSVS113_config
 
         sigma_u = 0.995
         sigma_t = 0.995
-        observed_forcing = .true.
+        observed_forcing = .false.
 
         call svs_bus_init(il2 - il1 + 1)
         bussiz = runsvs_busdim
@@ -220,6 +222,7 @@ module RUNSVS113_config
         !> Time loop.
 
 	!> Initialize surface parameters.
+	call init_soil_text_levels()
 	call inisoili_svs(bus, bussiz, NG)
 	!call inisoili_svs(NG, 1)
 

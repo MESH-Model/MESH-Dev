@@ -399,7 +399,7 @@ integer ptr, x, j, k
                      bus(x(MELTS,1,1)), bus(x(MELTSR,1,1)),   &    
                      bus(x(RNETSA,1,1)), bus(x(HFLUXSA,1,1)),  &     
                      LESNOFRAC, ESNOFRAC,   &      
-                     bus(x(RSNOWSA,1,1)), bus(x(SNODEN,1,1)),   &    
+                     bus(x(RSNOWSA,1,1)), bus(x(SNODEN,1,1)), bus(x(RESASA,1,1)),  &    
                      DT, bus(x(Z0,1,indx_soil)), Z0HSNOW, bus(x(FCOR,1,1)),  &     
                      bus(x(zusl,1,1)), bus(x(ztsl,1,1)), &
                      bus(x (DLAT,1,1)), bus(x(PSNGRVL ,1,1)), N)     
@@ -422,7 +422,7 @@ integer ptr, x, j, k
                      bus(x(WVEG      ,1,1)), bus(x(TSVAVG,1,1)), &
                      bus(x(RNETSV    ,1,1)), bus(x(HFLUXSV ,1,1)),  &  
                      LESVNOFRAC            , ESVNOFRAC,     & 
-                     bus(x(RSNOWSV   ,1,1)), bus(x(SNVDEN  ,1,1)),  &  
+                     bus(x(RSNOWSV   ,1,1)), bus(x(SNVDEN  ,1,1)), bus(x(RESASV ,1,1)), &  
                      DT,    &
                      bus(x(Z0,1,indx_soil)),  Z0HSNOW, &
                      bus(x(FCOR   ,1,1)), bus(x (DLAT,1,1)),  & 
@@ -444,7 +444,8 @@ integer ptr, x, j, k
                   HRSURF,       & 
                   bus(x(HV         ,1,1)) , DEL, STOM_RS ,& 
                   CG,CVPA,EVA,bus(x(PSNGRVL    ,1,1)) ,    &    
-                  bus(x(RESAGR,1,1)), bus(x(RESAVG,1,1)),   &        
+                  bus(x(RESAGR,1,1)), bus(x(RESAVG,1,1)),   &
+		  bus(x(RESASA,1,1)), bus(x(RESASV,1,1)),   &        
                   bus(x(RNETSA     ,1,1)) , bus(x(HFLUXSA,1,1)),   &   
                   LESNOFRAC               , ESNOFRAC,   &   
                   bus(x(SNOAL      ,1,1)) ,    &  
@@ -468,7 +469,7 @@ integer ptr, x, j, k
                   bus(x(ER         ,1,1)) , bus(x(ETR    ,1,1)),    &  
                   bus(x(FL         ,1,1)),  bus(x(EFLUX      ,1,1)) ,    &  
                   bus(x(BM         ,1,1)) , bus(x(FQ   ,1,1)),    &  
-                  bus(x(bt, 1,indx_soil)) ,    &  
+                  bus(x(bt, 1,indx_soil)) , bus(x(RESAEF,1,1)),   &  
                   LEFF                    , DWATERDT,     & 
                   bus(x(FTEMP,1,indx_soil)), BUS(x(FVAP,1,indx_soil)),   &   
                   bus(x(qsurf,1,indx_soil)), bus(x(frv ,1,indx_soil)),   &   

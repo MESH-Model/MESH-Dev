@@ -6,7 +6,7 @@
                            U10M,V10M,SKYVIEW,VTR, &  
                            TVGD, EMISVH, WR,TAVG, &  
                            RNET,HFLUX,LE,EFLUX,RSNOW, &  
-                           RHOSNO, &  
+                           RHOSNO, RESA, &  
                            DT,Z0,Z0HSNOW,FCOR,LAT,ZUSL,ZTSL,PSNVHA, N)
 !
       use sfclayer_mod, only: sl_sfclayer,SL_OK
@@ -26,7 +26,7 @@
       REAL HU(N), RR(N), SR(N), T(N), T2M(N)
       REAL U10M(N), V10M(N)
       REAL RNET(N), HFLUX(N), LE(N), EFLUX(N), RSNOW(N)
-      REAL RHOSNO(N), WR(N), TAVG(N)
+      REAL RHOSNO(N), WR(N), TAVG(N), RESA(N)
       REAL DT, Z0HSNOW, Z0(N), FCOR(N), LAT(N), ZUSL(N), ZTSL(N),PSNVHA(N)
 
 !
@@ -110,6 +110,7 @@
 ! LE          latent heat flux from the snow-unde-veg surface 
 ! RSNOW       liquid water out of the snow pack
 ! RHOSNO      density of snow-under-veg (kg/m3) for output only
+! RESA        aerodynamical surface resistance for snow
 !
 include "thermoconsts.inc"
 include "isbapar.cdk"
@@ -132,7 +133,7 @@ include "isbapar.cdk"
       real, dimension(n) :: lams, zcs, zqs, ctu, zqsat, zdqsat, zqsatt, &
            rora, a, b, c, tsnst, tsndt, rhomax, fmltrain, &
            smt, wlt, alphast, rhosfall, rhoslt, smx, rvrun, kdiffu, &
-           dampd, z0h, bcoef, dmelt, dsnowdt, ftemp, wlmax, resa, &
+           dampd, z0h, bcoef, dmelt, dsnowdt, ftemp, wlmax, &
            freez_l1, work_l1, work_l2, melt_l1, melt_l2, melt_rain
       
 !
