@@ -42,6 +42,15 @@ module climate_forcing_variabletypes
         integer fiun
         logical :: fopen = .false.
 
+        !* ncol_var: Name of column in input file.
+        !* ncol_lat: Name of column in input file.
+        !* ncol_lon: Name of column in input file.
+        !* ncol_time: Name of column in input file.
+        character(200) :: ncol_var = ''
+        character(200) :: ncol_lat = ''
+        character(200) :: ncol_lon = ''
+        character(200) :: ncol_time = ''
+
         !* GRD: Values for forcing data (Bounds: 1: Grid).
         !>      Values are averaged to the grid-level for grid-based
         !>      processing and certain output. These gridded values are
@@ -61,6 +70,11 @@ module climate_forcing_variabletypes
         integer :: blocktype = 1
         real, dimension(:, :), allocatable :: blocks
         integer :: iblock = 1
+
+        !* cm: Multiplicative conversion factor.
+        !* ca: Additive conversion factor.
+        real :: cm = 1.0
+        real :: ca = 0.0
 
         !* start_date: Starting date of the data in the file.
         !* hf: Increment of minutes passed in each frame of data [mins].

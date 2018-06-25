@@ -98,6 +98,16 @@ module climate_forcing_io
                 open(cm%dat(vid)%fiun, file = cm%dat(vid)%fpath, action = 'read', status = 'old', iostat = ierr)
                 if (ierr /= 0) goto 999
 
+            !> netCDF format.
+            case(7)
+                !open file
+                !if the routine returns integer status, can use ierr: if (ierr /= 0) goto 999
+                cm%dat(vid)%blocktype = cbk%GRD
+                !can load/save information about columns, etc., at this point and
+                !  save to attributes of climate variable
+                !'vid' is the index of the climate variable passed from the calling routine
+                !MESH will skip records if necessary in 'climate_forcing_module.f90'
+
             !> Unknown file format.
             case default
                 call print_error(trim(cm%dat(vid)%fname) // ' (' // trim(cm%dat(vid)%id_var) // '): Unsupported file format.')
@@ -234,6 +244,14 @@ module climate_forcing_io
                     else
                         read(cm%dat(vid)%fiun, *, end = 999)
                     end if
+
+                !> netCDF format.
+                case(7)
+                    !extract grid from file
+                    !if the routine returns integer status, can use ierr: if (ierr /= 0) goto 999
+                    !mask/assign data -> blocks(i, t) = nc_array()
+                    !  i = grid/RANK
+                    !  t = without some other options set, this is 1
 
                 !> Unknown file format.
                 case default

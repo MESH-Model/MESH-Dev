@@ -62,31 +62,31 @@ module climate_forcing
 !?        allocate(cm%dat(cm%nclim))
 
         !> Set the default file name.
-        cm%dat(ck%FB)%fname = 'basin_shortwave'
+        if (len_trim(cm%dat(ck%FB)%fname) == 0) cm%dat(ck%FB)%fname = 'basin_shortwave'
         cm%dat(ck%FB)%GRD => vs%grid%fsin
         cm%dat(ck%FB)%GAT => vs%tile%fsin
         cm%dat(ck%FB)%GRU => vs%gru%fsin
-        cm%dat(ck%FI)%fname = 'basin_longwave'
+        if (len_trim(cm%dat(ck%FI)%fname) == 0) cm%dat(ck%FI)%fname = 'basin_longwave'
         cm%dat(ck%FI)%GRD => vs%grid%flin
         cm%dat(ck%FI)%GAT => vs%tile%flin
         cm%dat(ck%FI)%GRU => vs%gru%flin
-        cm%dat(ck%RT)%fname = 'basin_rain'
+        if (len_trim(cm%dat(ck%RT)%fname) == 0) cm%dat(ck%RT)%fname = 'basin_rain'
         cm%dat(ck%RT)%GRD => vs%grid%pre
         cm%dat(ck%RT)%GAT => vs%tile%pre
         cm%dat(ck%RT)%GRU => vs%gru%pre
-        cm%dat(ck%TT)%fname = 'basin_temperature'
+        if (len_trim(cm%dat(ck%TT)%fname) == 0) cm%dat(ck%TT)%fname = 'basin_temperature'
         cm%dat(ck%TT)%GRD => vs%grid%ta
         cm%dat(ck%TT)%GAT => vs%tile%ta
         cm%dat(ck%TT)%GRU => vs%gru%ta
-        cm%dat(ck%UV)%fname = 'basin_wind'
+        if (len_trim(cm%dat(ck%UV)%fname) == 0) cm%dat(ck%UV)%fname = 'basin_wind'
         cm%dat(ck%UV)%GRD => vs%grid%uv
         cm%dat(ck%UV)%GAT => vs%tile%uv
         cm%dat(ck%UV)%GRU => vs%gru%uv
-        cm%dat(ck%P0)%fname = 'basin_pres'
+        if (len_trim(cm%dat(ck%P0)%fname) == 0) cm%dat(ck%P0)%fname = 'basin_pres'
         cm%dat(ck%P0)%GRD => vs%grid%pres
         cm%dat(ck%P0)%GAT => vs%tile%pres
         cm%dat(ck%P0)%GRU => vs%gru%pres
-        cm%dat(ck%HU)%fname = 'basin_humidity'
+        if (len_trim(cm%dat(ck%HU)%fname) == 0) cm%dat(ck%HU)%fname = 'basin_humidity'
         cm%dat(ck%HU)%GRD => vs%grid%qa
         cm%dat(ck%HU)%GAT => vs%tile%qa
         cm%dat(ck%HU)%GRU => vs%gru%qa

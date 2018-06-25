@@ -55,6 +55,9 @@ endif
 ifeq ($(filter debug,$(MAKECMDGOALS)),debug)
 DEBUG=yes
 endif
+ifeq ($(filter netcdf,$(MAKECMDGOALS)),netcdf)
+LIBNC=-lnetcdf
+endif
 
 gfortran: all
 ifort: all
@@ -138,7 +141,7 @@ RUNSVS113_module.o: RUNSVS113_module.f90
 # Make target: all
 # Deletes object and modules files unless 'DEBUG' has a value.
 all: ${OBJECTS}
-	$(FC) $(OBJECTS) -o $(OUT) $(LLINK)
+	$(FC) $(OBJECTS) -o $(OUT) $(LLINK) $(LIBNC)
 	$(CLEANUP)
 
 # ======================================================================
