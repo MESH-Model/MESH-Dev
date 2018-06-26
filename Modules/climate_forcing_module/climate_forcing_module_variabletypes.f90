@@ -6,8 +6,8 @@ module climate_forcing_variabletypes
 
     type clim_info_series
 
-        integer nattr
-        character(20) attrtype
+        integer                                   :: nattr
+        character(20)                             :: attrtype
         character(200), dimension(:), allocatable :: attr
 
     end type
@@ -34,18 +34,18 @@ module climate_forcing_variabletypes
         !* fpath: Full path to the forcing input file, including extension.
         !* fiun: Input file unit.
         !* fopen: Returns .true. if an input file for the variable has been opened.
-        character(20) :: id_var = ''
-        logical :: factive = .false.
-        integer :: ffmt = 1
+        character(20)  :: id_var = ''
+        logical        :: factive = .false.
+        integer        :: ffmt = 1
         character(200) :: fname = ''
         character(200) :: fpath = ''
-        integer fiun
-        logical :: fopen = .false.
+        integer        :: fiun
+        logical        :: fopen = .false.
 
-        !* ncol_var: Name of column in input file.
-        !* ncol_lat: Name of column in input file.
-        !* ncol_lon: Name of column in input file.
-        !* ncol_time: Name of column in input file.
+        !* ncol_var:  Name of variable                in (netcdf) input file.
+        !* ncol_lat:  Name of latitude  (y) dimension in (netcdf) input file.
+        !* ncol_lon:  Name of longitude (x) dimension in (netcdf) input file.
+        !* ncol_time: Name of time      (t) dimension in (netcdf) input file.
         character(200) :: ncol_var = ''
         character(200) :: ncol_lat = ''
         character(200) :: ncol_lon = ''
@@ -66,11 +66,12 @@ module climate_forcing_variabletypes
         !* blocktype: Type of data being stored (1 = GRD; 2 = GRU; 3 = GAT).
         !* blocks: Forcing data (Bounds: 1: Element; 2: nblocks).
         !* iblock: Index of the current block in data to memory [-].
-        integer :: nblocks = 1
-        integer :: blocktype = 1
+        integer                            :: nblocks = 1
+        integer                            :: blocktype = 1
         real, dimension(:, :), allocatable :: blocks
-        integer :: iblock = 1
+        integer                            :: iblock = 1
 
+        !* unit conversion: new_value = cm * old_value + ca
         !* cm: Multiplicative conversion factor.
         !* ca: Additive conversion factor.
         real :: cm = 1.0
@@ -80,19 +81,19 @@ module climate_forcing_variabletypes
         !* hf: Increment of minutes passed in each frame of data [mins].
         !* itimestep: Current time-step [mins].
         type(counter_date) :: start_date
-        integer :: hf = 30
-        integer :: itimestep = 0
+        integer            :: hf = 30
+        integer            :: itimestep = 0
 
         !* ipflg: INTERPOLATIONFLAG (0: none, 1: active).
         !* ipwgt: Interpolation type (1: arithmetic mean; 2: harmonic mean).
         !* ipdat: Array to store the states of the forcing data [-] (Bounds: 1: Element; 2: interpolation/previous time-step state).
-        integer :: ipflg = 0
-        integer :: ipwgt = 1
+        integer                            :: ipflg = 0
+        integer                            :: ipwgt = 1
         real, dimension(:, :), allocatable :: ipdat
 
         !* nseries: Number of series in the definition.
         !* series: Definitions for the series.
-        integer :: nseries = 0
+        integer                                           :: nseries = 0
         type(clim_info_series), dimension(:), allocatable :: series
 
     end type
@@ -104,9 +105,9 @@ module climate_forcing_variabletypes
         !* nclim: Number of climate variables.
         !* start_date: Starting date of the data (general).
         !* dat: Climate variables.
-        integer :: nclim = 10
+        integer            :: nclim = 10
         type(counter_date) :: start_date
-        type(clim_series) :: dat(10)
+        type(clim_series)  :: dat(10)
 
     end type !clim_info
 
