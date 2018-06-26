@@ -56,7 +56,8 @@ ifeq ($(filter debug,$(MAKECMDGOALS)),debug)
 DEBUG=yes
 endif
 ifeq ($(filter netcdf,$(MAKECMDGOALS)),netcdf)
-LIBNC=-lnetcdf
+LIBNCO=-I/usr/local/include -I/usr/local/netcdf-fortran-4.4.4-gfortran/include
+LIBNCL=-L/usr/local/lib -lnetcdf -L/usr/local/netcdf-fortran-4.4.4-gfortran/lib -lnetcdff -L/usr/local/lib -lhdf5_hl -lhdf5 -L/usr/local/lib -lsz -L/usr/lib -lcurl -lz
 endif
 
 gfortran: all
@@ -112,13 +113,13 @@ endif
 # ======================================================================
 # General rules.
 %.o: %.f
-	$(FC) $(LFLAG) $<
+	$(FC) $(LFLAG) $(LIBNCO) $<
 %.o: %.F90
-	$(FC) $(LFLAG) $<
+	$(FC) $(LFLAG) $(LIBNCO) $<
 %.o: %.f90
-	$(FC) $(LFLAG) $<
+	$(FC) $(LFLAG) $(LIBNCO) $<
 %.o: %.for
-	$(FC) $(LFLAG) $<
+	$(FC) $(LFLAG) $(LIBNCO) $<
 
 # ======================================================================
 # Special rules.
@@ -141,7 +142,7 @@ RUNSVS113_module.o: RUNSVS113_module.f90
 # Make target: all
 # Deletes object and modules files unless 'DEBUG' has a value.
 all: ${OBJECTS}
-	$(FC) $(OBJECTS) -o $(OUT) $(LLINK) $(LIBNC)
+	$(FC) $(OBJECTS) -o $(OUT) $(LLINK) $(LIBNCL)
 	$(CLEANUP)
 
 # ======================================================================
