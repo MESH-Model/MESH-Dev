@@ -24,16 +24,16 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     implicit none
 
     !> Input variables.
-    type(fl_ids) fls
-    type(ShedGridParams) shd
-    type(CLIM_INFO) cm
+    type(fl_ids)         :: fls
+    type(ShedGridParams) :: shd
+    type(CLIM_INFO)      :: cm
 
     !> Output variables.
     integer, intent(out) :: ierr
 
     !> Local variables.
-    integer CONFLAGS, IROVAL, iun, nargs, n, j, i, z
-    character(len = DEFAULT_LINE_LENGTH) line
+    integer              :: CONFLAGS, IROVAL, iun, nargs, n, j, i, z
+    character(len = DEFAULT_LINE_LENGTH)                 :: line
     character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
 
     !> Initialize the return status.
