@@ -42,14 +42,17 @@ module climate_forcing_variabletypes
         integer        :: fiun
         logical        :: fopen = .false.
 
-        !* ncol_var:  Name of variable                in (netcdf) input file.
-        !* ncol_lat:  Name of latitude  (y) dimension in (netcdf) input file.
-        !* ncol_lon:  Name of longitude (x) dimension in (netcdf) input file.
-        !* ncol_time: Name of time      (t) dimension in (netcdf) input file.
-        character(200) :: ncol_var = ''
-        character(200) :: ncol_lat = ''
-        character(200) :: ncol_lon = ''
-        character(200) :: ncol_time = ''
+        !* name_var:  Name of variable                in (netcdf) input file.
+        !* name_lat:  Name of latitude  (y) dimension in (netcdf) input file.
+        !* name_lon:  Name of longitude (x) dimension in (netcdf) input file.
+        !* name_time: Name of time      (t) dimension in (netcdf) input file.
+        character(200) :: name_var  = ''
+        character(200) :: name_lat  = ''
+        integer        :: ncol_lat  = 0
+        character(200) :: name_lon  = ''
+        integer        :: ncol_lon  = 0
+        character(200) :: name_time = ''
+        integer        :: ncol_time = 0
 
         !* GRD: Values for forcing data (Bounds: 1: Grid).
         !>      Values are averaged to the grid-level for grid-based

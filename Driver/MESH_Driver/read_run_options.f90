@@ -349,23 +349,23 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_var=') then
-                                cm%dat(n)%ncol_var = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%name_var = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lat=') then
-                                cm%dat(n)%ncol_lat = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lon=') then
-                                cm%dat(n)%ncol_lon = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'ncol_time=') then
-                                cm%dat(n)%ncol_time = trim(args(j)(11:))
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = trim(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
@@ -405,23 +405,23 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_var=') then
-                                cm%dat(n)%ncol_var = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%name_var = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lat=') then
-                                cm%dat(n)%ncol_lat = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lon=') then
-                                cm%dat(n)%ncol_lon = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'ncol_time=') then
-                                cm%dat(n)%ncol_time = trim(args(j)(11:))
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = trim(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
@@ -461,23 +461,23 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_var=') then
-                                cm%dat(n)%ncol_var = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%name_var = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lat=') then
-                                cm%dat(n)%ncol_lat = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lon=') then
-                                cm%dat(n)%ncol_lon = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'ncol_time=') then
-                                cm%dat(n)%ncol_time = trim(args(j)(11:))
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = trim(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
@@ -517,23 +517,23 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_var=') then
-                                cm%dat(n)%ncol_var = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%name_var = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lat=') then
-                                cm%dat(n)%ncol_lat = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lon=') then
-                                cm%dat(n)%ncol_lon = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'ncol_time=') then
-                                cm%dat(n)%ncol_time = trim(args(j)(11:))
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = trim(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
@@ -573,23 +573,23 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_var=') then
-                                cm%dat(n)%ncol_var = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%name_var = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lat=') then
-                                cm%dat(n)%ncol_lat = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lon=') then
-                                cm%dat(n)%ncol_lon = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'ncol_time=') then
-                                cm%dat(n)%ncol_time = trim(args(j)(11:))
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = trim(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
@@ -629,23 +629,23 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_var=') then
-                                cm%dat(n)%ncol_var = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%name_var = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lat=') then
-                                cm%dat(n)%ncol_lat = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lon=') then
-                                cm%dat(n)%ncol_lon = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'ncol_time=') then
-                                cm%dat(n)%ncol_time = trim(args(j)(11:))
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = trim(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
@@ -685,23 +685,23 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_var=') then
-                                cm%dat(n)%ncol_var = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%name_var = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lat=') then
-                                cm%dat(n)%ncol_lat = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'ncol_lon=') then
-                                cm%dat(n)%ncol_lon = trim(args(j)(10:))
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = trim(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'ncol_time=') then
-                                cm%dat(n)%ncol_time = trim(args(j)(11:))
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = trim(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then

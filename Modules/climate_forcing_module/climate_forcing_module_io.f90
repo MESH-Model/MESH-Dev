@@ -24,20 +24,28 @@ module climate_forcing_io
 
         !> 'shd_variables': For 'shd' variable.
         use shd_variables
+        use mo_ncread, only: NcOpen, NcClose, Get_NcDimAtt
 
         !> Input variables.
-        type(ShedGridParams) shd
-        integer, intent(in) :: vid
+        type(ShedGridParams), intent(in)     :: shd
+        integer,              intent(in)     :: vid
 
         !> Input/Output variables.
-        type(clim_info) cm
+        type(clim_info),      intent(inout)  :: cm
 
         !> Output variables.
-        logical ENDDATA
+        logical                              :: ENDDATA
 
         !> Local variables.
-        integer ierr
-        character(len = DEFAULT_LINE_LENGTH) line
+        integer                                  :: ierr
+        character(len = DEFAULT_LINE_LENGTH)     :: line
+        
+        !> Local variables for NetCDF support 
+        integer                                   :: ncid        ! netcdf file unit
+        character(200), dimension(:), allocatable :: nc_dimname  ! names of dimensions of a variable
+        integer,        dimension(:), allocatable :: nc_dimlen   ! length of dimension of a variable
+        logical                                   :: dim_found   ! true if dimension is listed in options.ini
+        integer :: ii
 
         ENDDATA = .false.
 
@@ -100,13 +108,75 @@ module climate_forcing_io
 
             !> netCDF format.
             case(7)
-                !open file
-                !if the routine returns integer status, can use ierr: if (ierr /= 0) goto 999
+                cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname))   ! no file ending (*.nc) needs to be appended
+                !> open and close file to see if it exists
+                ncid = NcOpen(cm%dat(vid)%fpath)
+                call NcClose(ncid)
+
+                !> get dimensions (name and length)
+                if ( allocated(nc_dimname) ) deallocate(nc_dimname)
+                if ( allocated(nc_dimlen) )  deallocate(nc_dimlen)
+                call Get_NcDimAtt(cm%dat(vid)%fpath, cm%dat(vid)%name_var, nc_dimname, nc_dimlen)
+                
+                !> check that there are only three dimensions (lon, lat, time) present
+                if (size(nc_dimname,1) /= 3) then
+                   call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // '): '// &
+                        ' Does not have three dimensions.'//&
+                        ' Dimensions must be latitude, longitude and time.')
+                   call program_abort()
+                end if
+                
+                do ii=1,size(nc_dimname,1)
+
+                   dim_found = .false.
+
+                   if ( trim(nc_dimname(ii)) == trim(cm%dat(vid)%name_lon) ) then
+                      !> set position of longitude dimension
+                      dim_found = .true.
+                      cm%dat(vid)%ncol_lon = ii
+                      !
+                      !> check if longitude dimension is same as xCount
+                      if ( nc_dimlen(ii) /= shd%xCount ) then
+                         call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
+                              '): Longitude dimension ('//trim(nc_dimname(ii))//') does not match '// &
+                              'shed files xCount .')
+                         call program_abort()
+                      end if
+                   end if
+                   
+                   if ( trim(nc_dimname(ii)) == trim(cm%dat(vid)%name_lat) ) then
+                      !> set position of longitude dimension
+                      dim_found = .true.
+                      cm%dat(vid)%ncol_lat = ii
+                      !
+                      !> check if latitude dimension is same as yCount
+                      if ( nc_dimlen(ii) /= shd%yCount ) then
+                         call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
+                              '): Latitude dimension ('//trim(nc_dimname(ii))//') does not match '// &
+                              'shed files yCount .')
+                         call program_abort()
+                      end if
+                   end if
+
+                   if ( trim(nc_dimname(ii)) == trim(cm%dat(vid)%name_time) ) then
+                      !> set position of time dimension
+                      dim_found = .true.
+                      cm%dat(vid)%ncol_time = ii
+                   end if
+
+                   !> check if dimension name is existing
+                   if (.not.(dim_found)) then
+                      call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
+                              '): Dimension ('//trim(nc_dimname(ii))//') not known. '//&
+                              'Must match names given in MESH_input_run_options.ini')
+                      call program_abort()
+                   end if
+                       
+                end do
+                
                 cm%dat(vid)%blocktype = cbk%GRD
-                !can load/save information about columns, etc., at this point and
-                !  save to attributes of climate variable
-                !'vid' is the index of the climate variable passed from the calling routine
-                !MESH will skip records if necessary in 'climate_forcing_module.f90'
+                
+                ! MESH will skip records if necessary in 'climate_forcing_module.f90'
 
             !> Unknown file format.
             case default
@@ -252,6 +322,7 @@ module climate_forcing_io
                     !mask/assign data -> blocks(i, t) = nc_array()
                     !  i = grid/RANK
                     !  t = without some other options set, this is 1
+                   
 
                 !> Unknown file format.
                 case default
