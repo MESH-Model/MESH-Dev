@@ -15,6 +15,8 @@ module reservoir! Variable declarations
         real    :: flowO1                          !# Initial discharge (m3 s-1)
         real    :: Intstor1                        !# Initial storage (m3)
         real    :: qmaxmax                         !# Downstream channel capacity
+        real    :: inflowcorr                      !# Inflow correction factor for evaporation
+        real    :: deadst                          !# Dead storage fraction of maximum storage ( 0.1 means 10% of max storage)
         real    :: RXN                             !# Random term variance or range
         real    :: dsto(12)                        !# Monthly min storage 12 values one per month (m3)
         real    :: nsto(12)                        !# Monthly normal upper storage (m3)
@@ -67,6 +69,8 @@ module reservoir! Variable declarations
             read(75,*) resrvs%rsvr(i)%flowO1
             read(75,*) resrvs%rsvr(i)%Intstor1
             read(75,*) resrvs%rsvr(i)%qmaxmax
+            read(75,*) resrvs%rsvr(i)%inflowcorr
+            read(75,*) resrvs%rsvr(i)%deadst
             read(75,*) resrvs%rsvr(i)%RXN
 
             read(75,*) (resrvs%rsvr(i)%dsto(j)   , j= 1,12)
@@ -118,23 +122,25 @@ module reservoir! Variable declarations
         real, intent(in)     :: dt
 
         !internals
-        integer  :: irsv
-        real     :: FU, LD, LC, LN, LF, RX
+        integer  :: irsv, MT
+        real     :: FU, LD, LC, LN, LF, RX, ICORR
         real     :: rnd
         !> get random number
         call random_number(rnd)
         !rnd sould be between 0.0 and 1.0
 
         ! Water Balance computation S_t-S_t-1 = I - O
+        ICORR = resrv%inflowcorr
         resrv%stoSIM(t) = resrv%stoSIM(t-1) + &
-                                      DT*(flowIn - resrv%flowSIM(t-1))
+                                      DT*(flowIn*ICORR - resrv%flowSIM(t-1))
 
         FU = resrv%stoSIM(t)/resrv%SMAX
         LC = resrv%dsto(mId)/resrv%SMAX
         LN = resrv%nsto(mId)/resrv%SMAX
         LF = resrv%ndsto(mId)/resrv%SMAX
+        MT = resrv%modeltype
+        LD = resrv%deadst
         RX = 2*resrv%RXN*rnd + resrv%RXN
-        LD = 0.1
 
         if (FU <= LD) then
 
@@ -142,7 +148,7 @@ module reservoir! Variable declarations
 
         else if (FU > LD .and. FU <= LC) then
 
-            resrv%flowSIM(t) = max((min(resrv%Qmin(mId),(FU*resrv%SMAX/DT))+RX),0.0)
+            resrv%flowSIM(t) = max((min(resrv%Qmin(mId),((FU-LD)*resrv%SMAX/DT))+RX),0.0)
 
         else if (FU > LC .and. FU <= LN) then
 
@@ -151,9 +157,17 @@ module reservoir! Variable declarations
 
         else if (FU > LN .and. FU <= LF) then
 
-            resrv%flowSIM(t) = max((resrv%Qnor(mId) + &
-                                           ((FU-LN)/(LF-LN))*max((flowIn-resrv%Qnor(mId)), &
-                                           (resrv%Qnd(mId)-resrv%Qnor(mId))) + RX),0.0)
+            if (MT==1) then
+
+                resrv%flowSIM(t) = max((resrv%Qnor(mId) + &
+                                            ((FU-LN)/(LF-LN))*(resrv%Qnd(mId)-resrv%Qnor(mId)) + RX),0.0)
+
+            else
+
+                resrv%flowSIM(t) = max((resrv%Qnor(mId) + &
+                                            ((FU-LN)/(LF-LN))*max((flowIn-resrv%Qnor(mId)), &
+                                            (resrv%Qnd(mId)-resrv%Qnor(mId))) + RX),0.0)
+            end if
 
         else
 
