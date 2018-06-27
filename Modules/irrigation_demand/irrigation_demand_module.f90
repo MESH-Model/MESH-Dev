@@ -166,8 +166,8 @@ module irrigation_module
         !> Determine the available water in each grid.
         if (ro%RUNGRID) then
 
-            !> Minimum of available water and demand.
-            AVAIL_GRID = max(min(stas_grid%chnl%stg, IRDMND_GRID), 0.05*stas_grid%chnl%stg) ! m3
+            !> Minimum of available water and demand, with absolute minimum %5 storage preserved in channel.
+            where (pm_grid%tp%iabsp == 0) AVAIL_GRID = min(stas_grid%chnl%stg*(1.0 - 0.05), IRDMND_GRID) ! m3
 
             !> Apply conditions at abstraction points.
             do l = 1, fms%absp%n
