@@ -27,13 +27,13 @@ module climate_forcing_variabletypes
 
     type clim_series
 
-        !* id_var: Climate variable name and ID.
+        !* id_var:  Climate variable name and ID.
         !* factive: Returns .true. if the variable is active.
-        !* ffmt: Input file format.
-        !* fname: Input file name.
-        !* fpath: Full path to the forcing input file, including extension.
-        !* fiun: Input file unit.
-        !* fopen: Returns .true. if an input file for the variable has been opened.
+        !* ffmt:    Input file format.
+        !* fname:   Input file name.
+        !* fpath:   Full path to the forcing input file, including extension.
+        !* fiun:    Input file unit.
+        !* fopen:   Returns .true. if an input file for the variable has been opened.
         character(20)  :: id_var = ''
         logical        :: factive = .false.
         integer        :: ffmt = 1
