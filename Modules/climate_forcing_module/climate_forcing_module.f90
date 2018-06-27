@@ -224,6 +224,7 @@ module climate_forcing
                 call program_abort()
             end if
             iskip = (isteps2 - isteps1)
+            cm%dat(vid)%skip = iskip
             if (iskip > 0) then
                 write(line, FMT_GEN) iskip
                 call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')

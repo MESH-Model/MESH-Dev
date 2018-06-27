@@ -24,7 +24,18 @@ module climate_forcing_io
 
         !> 'shd_variables': For 'shd' variable.
         use shd_variables
-        use mo_ncread, only: NcOpen, NcClose, Get_NcDimAtt
+        use mo_julian, only: &
+             date2dec, & ! converts date into fractional julian date
+             dec2date    ! converts fractional julian date into date
+#ifdef NETCDF
+        use mo_ncread, only: &
+             NcOpen,        & ! Open NetCDF
+             NcClose,       & ! Close NetCDF
+             Get_NcDimAtt,  & ! Get dimension name and length
+             Get_NcVarAtt,  & ! Get attributes of a variable
+             Get_NcVarType, & ! get type of a variable
+             Get_NcVar        ! Get variable
+#endif
 
         !> Input variables.
         type(ShedGridParams), intent(in)     :: shd
@@ -39,14 +50,31 @@ module climate_forcing_io
         !> Local variables.
         integer                                  :: ierr
         character(len = DEFAULT_LINE_LENGTH)     :: line
-        
+
+#ifdef NETCDF
         !> Local variables for NetCDF support 
         integer                                   :: ncid        ! netcdf file unit
         character(200), dimension(:), allocatable :: nc_dimname  ! names of dimensions of a variable
         integer,        dimension(:), allocatable :: nc_dimlen   ! length of dimension of a variable
         logical                                   :: dim_found   ! true if dimension is listed in options.ini
-        integer :: ii
-
+        character(200)                            :: time_unit   ! units attribute of time,
+        !                                                        ! e.g. 'seconds since 1970-01-01 00:00:00.0'
+        integer                                   :: dtype       ! type of variable 'time'
+        character(10)                             :: tunit, tdummy, tdate, thour  ! splits of time_unit
+        integer                                   :: yy, mm, dd  ! year, minute, day of time_unit
+        integer                                   :: hh, mi, ss  ! hour, minute, second of time_unit
+        real(8)                                   :: jdate       ! fractional julian date
+        real(8)                                   :: jdate_jan1  ! fractional julian date of Jan 1st
+        integer                                   :: ii          ! counter
+        integer, dimension(:), allocatable        :: tt_i4       ! first two value of time variable (integer)
+        real,    dimension(:), allocatable        :: tt_sp       ! first two value of time variable (single)
+        real(8), dimension(:), allocatable        :: tt_dp       ! first two value of time variable (double)
+        real(8)                                   :: tt_1, tt_2  ! first two value of time variable (used)
+        integer, dimension(1)                     :: start, a_count
+        integer                                   :: tstep       ! time step in netcdf file
+        integer                                   :: jday        ! julian day of first timestep in NetCDF
+#endif
+        
         ENDDATA = .false.
 
         !> Return if the variable is not marked active.
@@ -99,7 +127,7 @@ module climate_forcing_io
 
             !> CLASS format MET file.
             case (6)
-                if (vid /= ck%MET) return
+                 if (vid /= ck%MET) return
                 cm%dat(vid)%fname = 'basin_forcing'
                 cm%dat(vid)%fpath = 'basin_forcing.met'
                 cm%dat(vid)%blocktype = cbk%GRD
@@ -108,6 +136,7 @@ module climate_forcing_io
 
             !> netCDF format.
             case(7)
+#ifdef NETCDF                
                 cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname))   ! no file ending (*.nc) needs to be appended
                 !> open and close file to see if it exists
                 ncid = NcOpen(cm%dat(vid)%fpath)
@@ -162,6 +191,104 @@ module climate_forcing_io
                       !> set position of time dimension
                       dim_found = .true.
                       cm%dat(vid)%ncol_time = ii
+
+                      ! check if consistent with settings in
+                      ! - "MESH_parameters_CLASS.ini" (start date) and
+                      ! - "MESH_input_run_options.ini" (time step) 
+
+                      ! time unit, e.g. 'seconds since 1970-01-01 00:00:00.0'
+                      ! dtype      1 = NF90_BYTE
+                      !            2 = NF90_CHAR
+                      !            3 = NF90_SHORT
+                      !            4 = NF90_INT      integer
+                      !            5 = NF90_FLOAT    real(4)
+                      !            6 = NF90_DOUBLE   real(8)
+                      call Get_NcVarAtt(cm%dat(vid)%fpath, 'time', 'units', time_unit)
+                      call Get_NcVarType(cm%dat(vid)%fpath, 'time', dtype)
+
+                      ! grep information from time unit string
+                      read(time_unit, *)  tunit, tdummy, tdate, thour
+                      read(tdate(1:4),*)  yy
+                      read(tdate(6:7),*)  mm
+                      read(tdate(9:10),*) dd
+                      read(thour(1:2),*)  hh
+                      read(thour(4:5),*)  mi
+                      read(thour(7:8),*)  ss
+
+                      ! convert date in time unit string to julian date
+                      jdate = date2dec(dd=dd, mm=mm, yy=yy, hh=hh, nn=mi, ss=ss)
+
+                      ! read first two time values (for initial day and timestep)
+                      start(1)   = 1
+                      a_count(1) = 2
+                      select case (dtype)
+                      case(1:3)
+                         call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
+                              '): Datatype of variable is not supported (NF90_BYTE, NF90_CHAR, or NF90_SHORT).')
+                         call program_abort()
+                      case(4)
+                         call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_i4, start=start, a_count=a_count)  ! read only first value
+                      case(5)
+                         call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_sp, start=start, a_count=a_count)  ! read only first value
+                      case(6)
+                         call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_dp, start=start, a_count=a_count)  ! read only first value
+                      case default
+                         call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
+                              '): Datatype of variable is unknown.')
+                         call program_abort()
+                      end select
+                      tt_1 = real(tt_dp(1),8)
+                      tt_2 = real(tt_dp(2),8)
+                      if (trim(tunit) == 'seconds') then
+                         jdate = jdate + tt_1/60./60./24.
+                         tstep = int((tt_2-tt_1) / 60. + 0.5)        ! 0.5 takes care of correct rounding
+                      else if (trim(tunit) == 'minutes') then
+                         jdate = jdate + tt_1/60./24.
+                         tstep = int(tt_2-tt_1 + 0.5)                ! 0.5 takes care of correct rounding
+                      else if (trim(tunit) == 'hours') then
+                         jdate = jdate + tt_1/24.
+                         tstep = int((tt_2-tt_1) * 60. + 0.5)        ! 0.5 takes care of correct rounding
+                      else if (trim(tunit) == 'days') then
+                         jdate = jdate + tt_1
+                         tstep = int((tt_2-tt_1) * 24. * 60. + 0.5)  ! 0.5 takes care of correct rounding
+                      end if
+
+                      ! convert julian day back to year, day, month, hour, minutes, seconds
+                      call dec2date(jdate, dd, mm, yy, hh, mi, ss)
+                      write(*,'(A,A,A2,I4,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2)') &
+                              "first timestep in ",trim(cm%dat(vid)%fpath),": ",yy,"-",mm,"-",dd," ",hh,":",mi,":",ss
+
+                      ! julian date of first day of that year (to determine julian day)
+                      jdate_jan1 = date2dec(dd=1, mm=1, yy=yy)
+                      jday = int(jdate - (jdate_jan1 - 1.))
+
+                      ! check if consistent with settings                                    
+                      if ( yy   /= cm%dat(vid)%start_date%year .or. &
+                           jday /= cm%dat(vid)%start_date%jday .or. &
+                           hh   /= cm%dat(vid)%start_date%hour .or. &
+                           mi   /= cm%dat(vid)%start_date%mins) then
+                         write(*,'(A40,I4,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2)') &
+                              "first timestep in NetCDF: ",yy,"-",mm,"-",dd," ",hh,":",mi,":",ss
+                         write(*,'(A40,I4)') "year       of first time step in NetCDF: ",yy
+                         write(*,'(A40,I4)') "year       of first time step in setup:  ",cm%dat(vid)%start_date%year
+                         write(*,'(A40,I3)') "julian day of first time step in NetCDF: ",jday
+                         write(*,'(A40,I3)') "julian day of first time step in setup:  ",cm%dat(vid)%start_date%jday
+                         write(*,'(A40,I2)') "hour       of first time step in NetCDF: ",hh
+                         write(*,'(A40,I2)') "hour       of first time step in setup:  ",cm%dat(vid)%start_date%hour
+                         write(*,'(A40,I2)') "minutes    of first time step in NetCDF: ",mi
+                         write(*,'(A40,I2)') "minutes    of first time step in setup:  ",cm%dat(vid)%start_date%mins
+                         call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
+                              '): The first timestep in NetCDF file does not match '// &
+                              'the first timestep specified in MESH_parameters_CLASS.ini.')
+                         call program_abort()
+                      end if
+
+                      if ( tstep /= cm%dat(vid)%hf) then
+                         call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
+                              '): Time step in forcing file does not match HOURLYFLAG given in '// &
+                              'MESH_input_run_options.ini.')
+                         call program_abort()
+                      end if       
                    end if
 
                    !> check if dimension name is existing
@@ -173,9 +300,31 @@ module climate_forcing_io
                    end if
                        
                 end do
+
+                ! determine the case of the dimension order
+                if (cm%dat(vid)%ncol_lon == 1 .and. cm%dat(vid)%ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 3) then
+                   cm%dat(vid)%dim_order_case = 1
+                else if (cm%dat(vid)%ncol_lon == 2 .and. cm%dat(vid)%ncol_lat == 1 .and. cm%dat(vid)%ncol_time == 3) then
+                   cm%dat(vid)%dim_order_case = 2
+                else if (cm%dat(vid)%ncol_lon == 1 .and. cm%dat(vid)%ncol_lat == 3 .and. cm%dat(vid)%ncol_time == 2) then
+                   cm%dat(vid)%dim_order_case = 3
+                else if (cm%dat(vid)%ncol_lon == 3 .and. cm%dat(vid)%ncol_lat == 1 .and. cm%dat(vid)%ncol_time == 2) then
+                   cm%dat(vid)%dim_order_case = 4
+                else if (cm%dat(vid)%ncol_lon == 2 .and. cm%dat(vid)%ncol_lat == 3 .and. cm%dat(vid)%ncol_time == 1) then
+                   cm%dat(vid)%dim_order_case = 5
+                else if (cm%dat(vid)%ncol_lon == 3 .and. cm%dat(vid)%ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 1) then
+                   cm%dat(vid)%dim_order_case = 6
+                else
+                   call print_error(trim(cm%dat(vid)%fname) // ' (' // trim(cm%dat(vid)%name_var) // &
+                        '): Weird order of dimensions.')
+                   call program_abort()
+                end if
                 
                 cm%dat(vid)%blocktype = cbk%GRD
-                
+#else
+                call print_error('NetCDF files can only be read when MESH is compiled with "make netcdf"')
+                call program_abort()
+#endif
                 ! MESH will skip records if necessary in 'climate_forcing_module.f90'
 
             !> Unknown file format.
@@ -223,34 +372,50 @@ module climate_forcing_io
     !>  Load data for the climate forcing variable from file.
     !>
     !> Input/output variables:
-    !*  shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
-    !*  cm: Climate forcing object. Contains the file name, format, and its unit.
-    !*  vid: Index of the climate forcing variable.
+    !*  shd:       Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
+    !*  cm:        Climate forcing object. Contains the file name, format, and its unit.
+    !*  vid:       Index of the climate forcing variable.
     !*  skip_data: .true. to skip data; .false. to store data.
     !>
     !> Returns:
     !*  ENDDATA: Returns .true. if there was an error reading from the file.
     function load_data(shd, cm, vid, skip_data) result(ENDDATA)
 
-        !> 'shd_variables': For 'shd' variable.
-        use shd_variables
+      !> 'shd_variables': For 'shd' variable.
+      use shd_variables
+#ifdef NETCDF
+      use mo_ncread, only: &
+             NcOpen,        & ! Open NetCDF
+             NcClose,       & ! Close NetCDF
+             Get_NcDim,     & ! Get length of dimensions for variable
+             Get_NcDimAtt,  & ! Get dimension name and length
+             Get_NcVarAtt,  & ! Get attributes of a variable
+             Get_NcVarType, & ! get type of a variable
+             Get_NcVar        ! Get variable
+#endif
 
         !> Input variables.
-        type(ShedGridParams) shd
-        integer, intent(in) :: vid
-        logical, intent(in) :: skip_data
+        type(ShedGridParams) :: shd
+        integer, intent(in)  :: vid
+        logical, intent(in)  :: skip_data
 
         !> Input/Output variables.
-        type(clim_info) cm
+        type(clim_info)      :: cm
 
         !> Output variables.
-        logical ENDDATA
+        logical              :: ENDDATA
 
         !> Local variables.
-        integer t, j, i, ierr
-        real GRD(shd%yCount, shd%xCount)
-        character(len = DEFAULT_LINE_LENGTH) line
-        logical storedata
+        integer                              :: t, j, i, ierr
+        real                                 :: GRD(shd%yCount, shd%xCount)
+        character(len = DEFAULT_LINE_LENGTH) :: line
+        logical                              :: storedata
+
+        !> Local variables for NetCDF
+        real, dimension(:,:,:), allocatable  :: GRD_tmp  ! same as GRD but with mixed order of three dimensions
+        integer, dimension(3)                :: start    ! where to start reading NetCDF variable
+        integer, dimension(3)                :: a_count  ! how much to read from NetCDF variable
+        integer                              :: tt
 
         !> Return if the file is not open or if it is not time to read new blocks.
         if (.not. cm%dat(vid)%fopen .or. cm%dat(vid)%iblock > 1) return
@@ -317,13 +482,73 @@ module climate_forcing_io
 
                 !> netCDF format.
                 case(7)
-                    !extract grid from file
-                    !if the routine returns integer status, can use ierr: if (ierr /= 0) goto 999
-                    !mask/assign data -> blocks(i, t) = nc_array()
-                    !  i = grid/RANK
-                    !  t = without some other options set, this is 1
-                   
+#ifdef NETCDF
+                   if (storedata) then
 
+                      ! make order of dimensions flexible
+                      select case(cm%dat(vid)%dim_order_case)
+                      case(1)
+                         allocate( GRD_tmp(shd%xCount,shd%yCount,cm%dat(vid)%nblocks) )
+                         start = (/ 1,1,cm%dat(vid)%skip /)
+                      case(2)
+                         allocate( GRD_tmp(shd%yCount,shd%xCount,cm%dat(vid)%nblocks) )
+                         start = (/ 1,1,cm%dat(vid)%skip /)
+                      case(3)
+                         allocate( GRD_tmp(shd%xCount,cm%dat(vid)%nblocks,shd%yCount) )
+                         start = (/ 1,cm%dat(vid)%skip,1 /)
+                      case(4)
+                         allocate( GRD_tmp(shd%yCount,cm%dat(vid)%nblocks,shd%xCount) )
+                         start = (/ 1,cm%dat(vid)%skip,1 /)
+                      case(5)
+                         allocate( GRD_tmp(cm%dat(vid)%nblocks,shd%xCount,shd%yCount) )
+                         start = (/ cm%dat(vid)%skip,1,1 /)
+                      case(6)
+                         allocate( GRD_tmp(cm%dat(vid)%nblocks,shd%yCount,shd%xCount) )
+                         start = (/ cm%dat(vid)%skip,1,1 /)
+                      case default
+                         call print_error(trim(cm%dat(vid)%fname) // ' (' // trim(cm%dat(vid)%name_var) // &
+                              '): Weird order of dimensions.')
+                         call program_abort()
+                      end select
+                      
+                      ! read data from NetCDF
+                      a_count = (/ size(GRD_tmp,1), size(GRD_tmp,2), size(GRD_tmp,3) /)  ! read <cm%dat(vid)%nblocks> timesteps of whole domain
+                      call Get_NcVar(trim(cm%dat(vid)%fpath), trim(cm%dat(vid)%name_var), GRD_tmp, start, a_count)
+                      cm%dat(vid)%skip = cm%dat(vid)%skip + cm%dat(vid)%nblocks
+
+                      ! bring GRD_tmp with flexible dimension order to GRD(nlat,nlon)
+                      do tt=1,cm%dat(vid)%nblocks
+                         
+                         select case(cm%dat(vid)%dim_order_case)
+                         case(1)
+                            GRD = transpose( GRD_tmp(:,:,tt) )
+                         case(2)
+                            GRD = GRD_tmp(:,:,tt)
+                         case(3)
+                            GRD = transpose( GRD_tmp(:,tt,:) )
+                         case(4)
+                            GRD = GRD_tmp(:,tt,:)
+                         case(5)
+                            GRD = transpose( GRD_tmp(tt,:,:) )
+                         case(6)
+                            GRD = GRD_tmp(tt,:,:)
+                         case default
+                            call print_error(trim(cm%dat(vid)%fname) // ' (' // trim(cm%dat(vid)%name_var) // &
+                                 '): Weird order of dimensions.')
+                            call program_abort()
+                         end select
+                         
+                         ! bring data in right shape
+                         do i = 1, shd%NA
+                            cm%dat(vid)%blocks(i, tt) = GRD(shd%yyy(i), shd%xxx(i))
+                         end do
+                      end do
+                   end if ! end if store_data
+                   exit ! dont loop over time steps (NetCDF reads all blocks at once
+#else
+                   call print_error('NetCDF files can only be read when MESH is compiled with "make netcdf"')
+                   call program_abort()
+#endif
                 !> Unknown file format.
                 case default
                     call print_error(trim(cm%dat(vid)%fname) // ' (' // trim(cm%dat(vid)%id_var) // '): Unsupported file format.')

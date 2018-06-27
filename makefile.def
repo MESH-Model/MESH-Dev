@@ -39,7 +39,7 @@ OBJECTS+=	precmod.o stringmod.o
 # I/O primitives.
 OBJECTS+=	print_routines.o program_end.o program_abort.o \
 			txt_io.o ensim_io.o \
-			mo_kind.o mo_ncread.o
+			mo_kind.o mo_julian.o mo_ncread.o 
 # Variables (common).
 OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			module_dates.o \

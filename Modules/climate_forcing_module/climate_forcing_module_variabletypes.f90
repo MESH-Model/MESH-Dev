@@ -46,13 +46,20 @@ module climate_forcing_variabletypes
         !* name_lat:  Name of latitude  (y) dimension in (netcdf) input file.
         !* name_lon:  Name of longitude (x) dimension in (netcdf) input file.
         !* name_time: Name of time      (t) dimension in (netcdf) input file.
-        character(200) :: name_var  = ''
-        character(200) :: name_lat  = ''
-        integer        :: ncol_lat  = 0
-        character(200) :: name_lon  = ''
-        integer        :: ncol_lon  = 0
-        character(200) :: name_time = ''
-        integer        :: ncol_time = 0
+        !* ncol_lat:  Position of latitude  dimension for variable, ie. if var(time,lat,lon) --> ncol_lat  = 2.
+        !* ncol_lon:  Position of longitude dimension for variable, ie. if var(time,lat,lon) --> ncol_lon  = 3.
+        !* ncol_time: Position of time      dimension for variable, ie. if var(time,lat,lon) --> ncol_time = 1.
+        !* dim_order_case: which order of dimensions: case 1 = (lon,lat,time), 2 = (lat,lon,time),
+        !*                                                 3 = (lon,time,lat), 4 = (lat,time,lon),
+        !*                                                 5 = (time,lon,lat), 6 = (time,lat,lon)
+        character(200) :: name_var       = ''
+        character(200) :: name_lat       = ''
+        integer        :: ncol_lat       = 0
+        character(200) :: name_lon       = ''
+        integer        :: ncol_lon       = 0
+        character(200) :: name_time      = ''
+        integer        :: ncol_time      = 0  
+        integer        :: dim_order_case = 0
 
         !* GRD: Values for forcing data (Bounds: 1: Grid).
         !>      Values are averaged to the grid-level for grid-based
@@ -65,14 +72,16 @@ module climate_forcing_variabletypes
         real, dimension(:), pointer :: GRU
         real, dimension(:), pointer :: GAT
 
-        !* nblocks: Number of frames of blocks of data to read into memory.
+        !* nblocks:   Number of frames of blocks of data to read into memory.
         !* blocktype: Type of data being stored (1 = GRD; 2 = GRU; 3 = GAT).
-        !* blocks: Forcing data (Bounds: 1: Element; 2: nblocks).
-        !* iblock: Index of the current block in data to memory [-].
+        !* blocks:    Forcing data (Bounds: 1: Element; 2: nblocks).
+        !* iblock:    Index of the current block in data to memory [-].
+        !* skip:      Number of frames that have been skipped at the start
         integer                            :: nblocks = 1
         integer                            :: blocktype = 1
         real, dimension(:, :), allocatable :: blocks
         integer                            :: iblock = 1
+        integer                            :: skip = 0
 
         !* unit conversion: new_value = cm * old_value + ca
         !* cm: Multiplicative conversion factor.

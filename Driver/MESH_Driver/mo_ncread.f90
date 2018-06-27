@@ -24,22 +24,23 @@ module mo_NcRead
 
   use mo_kind, only: i4, i8, sp, dp
 
+#ifdef NETCDF
+
   ! functions and constants of netcdf4 library
   use netcdf,  only: nf90_open, nf90_get_var, nf90_close, NF90_MAX_NAME , &
        nf90_get_att,  nf90_inq_varid, nf90_inquire_variable, &
-       nf90_inquire_dimension, NF90_NOWRITE, &
+       nf90_inquire_dimension, NF90_NOWRITE, nf90_max_var_dims, &
        nf90_noerr, nf90_strerror, nf90_inquire_attribute
 
   implicit none
 
-  public :: Get_NcDim    ! get the dimensions of a Variable
-#ifndef ABSOFT
-  public :: Get_NcDimAtt ! get the attributes of the dimensions
-  public :: Get_NcVarAtt ! get attributes of a variable
-#endif
-  public :: Get_NcVar    ! get the data of a Variable in a nc file
-  public :: NcOpen       ! Open a file and get a handle back
-  public :: NcClose      ! Close a file
+  public :: Get_NcDim     ! get the dimensions of a Variable
+  public :: Get_NcDimAtt  ! get the attributes of the dimensions
+  public :: Get_NcVarAtt  ! get attributes of a variable
+  public :: Get_NcVarType ! get type of a variable
+  public :: Get_NcVar     ! get the data of a Variable in a nc file
+  public :: NcOpen        ! Open a file and get a handle back
+  public :: NcClose       ! Close a file
 
   ! ------------------------------------------------------------------------------
 
@@ -250,6 +251,7 @@ contains
     integer(i4)                                    :: vartype ! type of variable
     integer(i4)                                    :: NumDims ! # of dimensions
     integer(i4)                                    :: dimid
+    integer, dimension(nf90_max_var_dims)          :: dimIDs
     integer(i4)                                    :: len
     !
     ! Open NetCDF filename
@@ -263,8 +265,9 @@ contains
     allocate(DimName(NumDims))
     if (present(DimLen)) allocate(DimLen(NumDims))
     !
+    call check(nf90_inquire_variable(ncid, varid, dimids = dimIDs))
     do dimid = 1, NumDims
-       call check(nf90_inquire_dimension(ncid, dimid, DimName(dimid), len))
+       call check(nf90_inquire_dimension(ncid, dimIDs(dimid), name=DimName(dimid), len=len))
        if (present(DimLen)) DimLen(dimid) = len
     end do
     ! close File
@@ -391,6 +394,84 @@ contains
     if (.not. present(fid)) call check(nf90_close(ncid))
     !
   end subroutine Get_NcVarAtt
+
+  ! ------------------------------------------------------------------
+
+  !     NAME
+  !         Get_NcVarType
+
+  !     PURPOSE
+  !         gets the type of a particular variable
+
+  !     CALLING SEQUENCE
+  !         Get_NcVarType(FileName, VarName, dtype, fid)
+
+  !     INTENT(IN)
+  !         character(len=*), intent(in)      :: FileName  - Filename of netcdf file
+  !         character(len=*), intent(in)      :: VarName   - Variable name exactly as specified in the file
+
+  !     INTENT(INOUT)
+  !         None
+
+  !     INTENT(OUT)
+  !         character(len=*), intent(out)     :: dtype     - datatype (integer,float) see NetCDF convention (unidata.ucar)
+  !                                                          1 = NF90_BYTE                                 
+  !                                                          2 = NF90_CHAR
+  !                                                          3 = NF90_SHORT
+  !                                                          4 = NF90_INT      integer
+  !                                                          5 = NF90_FLOAT    real(4)
+  !                                                          6 = NF90_DOUBLE   real(8)                     
+
+  !     INTENT(IN), OPTIONAL
+  !         integer(i4), optional, intent(in) :: fid   ! file handle of opened netcdf file
+
+  !     INTENT(INOUT), OPTIONAL
+  !         None
+
+  !     INTENT(OUT), OPTIONAL
+  !         None
+
+  !     RESTRICTIONS
+  !         The name of the variable (VarName) has to be known beforehand
+
+  !     EXAMPLE
+  !         Filename = 'test.nc'
+  !         VarName  = 'data'
+  !         call Get_NcVarType(Filename, Varname, dtype)
+  !         -> see example in test directory
+
+  !     LITERATURE
+  !         http://www.unidata.ucar.edu/software/netcdf/docs/netcdf-f90.html
+
+  !     HISTORY
+  !         Written,  Juliane Mai, Jun 2018
+
+  subroutine Get_NcVarType(FileName, VarName, dtype, fid)
+    !
+    implicit none
+    !
+    character(len=*),                        intent(in)    :: FileName
+    character(len=*),                        intent(in)    :: VarName
+    integer(i4),                             intent(out)   :: dtype
+    integer(i4),                   optional, intent(in)    :: fid
+    !
+    integer(i4)                                            :: ncid
+    integer(i4)                                            :: varid
+    !
+    if (present(fid)) then
+       ncid = fid
+    else
+       call check(nf90_open(trim(Filename),NF90_NOWRITE, ncid))
+    end if
+    !
+    ! Inquire file, check if VarName exists and get the id
+    call check(nf90_inq_varid(ncid, trim(VarName), varid))
+    ! get type of the attribute
+    call check(nf90_inquire_variable(ncid, varid, xtype=dtype))
+    !
+    if (.not. present(fid)) call check(nf90_close(ncid))
+    !
+  end subroutine Get_NcVarType
 #endif
 
   ! ------------------------------------------------------------------------------
@@ -2235,5 +2316,7 @@ contains
     end if
     !
   end subroutine check
+
+#endif
 
 end module mo_NcRead

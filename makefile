@@ -52,11 +52,13 @@ else ifeq ($(filter mpi_intel,$(MAKECMDGOALS)),mpi_intel)
 DIST=intel
 MPI=ompi
 endif
+
 ifeq ($(filter debug,$(MAKECMDGOALS)),debug)
 DEBUG=yes
 endif
+
 ifeq ($(filter netcdf,$(MAKECMDGOALS)),netcdf)
-LIBNCO=-I/usr/local/include -I/usr/local/netcdf-fortran-4.4.4-gfortran/include
+LIBNCO=-DNETCDF -I/usr/local/include -I/usr/local/netcdf-fortran-4.4.4-gfortran/include
 LIBNCL=-L/usr/local/lib -lnetcdf -L/usr/local/netcdf-fortran-4.4.4-gfortran/lib -lnetcdff -L/usr/local/lib -lhdf5_hl -lhdf5 -L/usr/local/lib -lsz -L/usr/lib -lcurl -lz
 endif
 
@@ -66,6 +68,7 @@ mingw_static: all
 mpi_gcc: all
 mpi_intel: all
 debug: all
+netcdf: all
 
 # ======================================================================
 # Compiler and options.
@@ -77,14 +80,14 @@ FTN90PP=-fpp -free
 FTN90PPOPT=-Tf
 else
 FC=gfortran
-LFLAG=-c -g -fbacktrace -fbounds-check -ffpe-trap=invalid,zero,overflow -Wconversion -Winteger-division -Wsurprising -Wintrinsic-shadow -Wtarget-lifetime
+LFLAG=-c -g -cpp -fbacktrace -fbounds-check -ffpe-trap=invalid,zero,overflow -Wconversion -Winteger-division -Wsurprising -Wintrinsic-shadow -Wtarget-lifetime
 FTN90PP=-x f95 -cpp -ffree-form -ffree-line-length-none -fcray-pointer
 FTN90PPOPT=
 endif
 
 # Override debugging options if 'DEBUG' not enabled.
 ifndef DEBUG
-LFLAG=-c -O2
+LFLAG=-c -cpp -O2
 CLEANUP=@$(MAKE) -s clean DIST=$(DIST)
 endif
 
