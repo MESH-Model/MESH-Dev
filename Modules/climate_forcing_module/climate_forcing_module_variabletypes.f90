@@ -42,16 +42,20 @@ module climate_forcing_variabletypes
         integer        :: fiun
         logical        :: fopen = .false.
 
-        !* name_var:  Name of variable                in (netcdf) input file.
-        !* name_lat:  Name of latitude  (y) dimension in (netcdf) input file.
-        !* name_lon:  Name of longitude (x) dimension in (netcdf) input file.
-        !* name_time: Name of time      (t) dimension in (netcdf) input file.
-        !* ncol_lat:  Position of latitude  dimension for variable, ie. if var(time,lat,lon) --> ncol_lat  = 2.
-        !* ncol_lon:  Position of longitude dimension for variable, ie. if var(time,lat,lon) --> ncol_lon  = 3.
-        !* ncol_time: Position of time      dimension for variable, ie. if var(time,lat,lon) --> ncol_time = 1.
+        !* name_var:       Name of variable                in (netcdf) input file.
+        !* name_lat:       Name of latitude  (y) dimension in (netcdf) input file.
+        !* name_lon:       Name of longitude (x) dimension in (netcdf) input file.
+        !* name_time:      Name of time      (t) dimension in (netcdf) input file.
+        !* ncol_lat:       Position of latitude  dimension for variable, ie. if var(time,lat,lon) --> ncol_lat  = 2.
+        !* ncol_lon:       Position of longitude dimension for variable, ie. if var(time,lat,lon) --> ncol_lon  = 3.
+        !* ncol_time:      Position of time      dimension for variable, ie. if var(time,lat,lon) --> ncol_time = 1.
         !* dim_order_case: which order of dimensions: case 1 = (lon,lat,time), 2 = (lat,lon,time),
         !*                                                 3 = (lon,time,lat), 4 = (lat,time,lon),
         !*                                                 5 = (time,lon,lat), 6 = (time,lat,lon)
+        !* time_shift:     time shift of forcing data relative to UTC, i.e
+        !*                 forcing data in local Central Standard Time (CST  = UTC+3.5): Saskatoon  --> time_shift = -6.0
+        !*                 forcing data in local Eastern Standard Time (EST  = UTC-5):   Toronto    --> time_shift = -5.0
+        !*                 forcing data in local Iran Standard Time    (IRST = UTC+3.5): Teheran    --> time_shift = +3.5
         character(200) :: name_var       = ''
         character(200) :: name_lat       = ''
         integer        :: ncol_lat       = 0
@@ -60,6 +64,7 @@ module climate_forcing_variabletypes
         character(200) :: name_time      = ''
         integer        :: ncol_time      = 0  
         integer        :: dim_order_case = 0
+        real           :: time_shift     = 0.0
 
         !* GRD: Values for forcing data (Bounds: 1: Grid).
         !>      Values are averaged to the grid-level for grid-based

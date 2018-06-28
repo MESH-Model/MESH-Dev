@@ -378,6 +378,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(4:), cm%dat(n)%ca, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if
                     end do
                 case ('BASINLONGWAVEFLAG')
                     n = ck%FI
@@ -434,6 +439,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(4:), cm%dat(n)%ca, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if 
                     end do
                 case ('BASINRAINFLAG')
                     n = ck%RT
@@ -490,6 +500,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(4:), cm%dat(n)%ca, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if 
                     end do
                 case ('BASINTEMPERATUREFLAG')
                     n = ck%TT
@@ -546,6 +561,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(4:), cm%dat(n)%ca, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if 
                     end do
                 case ('BASINWINDFLAG')
                     n = ck%UV
@@ -602,6 +622,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(4:), cm%dat(n)%ca, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if 
                     end do
                 case ('BASINPRESFLAG')
                     n = ck%P0
@@ -658,6 +683,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(4:), cm%dat(n)%ca, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if 
                     end do
                 case ('BASINHUMIDITYFLAG')
                     n = ck%HU
@@ -714,6 +744,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(4:), cm%dat(n)%ca, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if 
                     end do
                 case ('BASINRUNOFFFLAG')
                 case ('BASINRECHARGEFLAG')

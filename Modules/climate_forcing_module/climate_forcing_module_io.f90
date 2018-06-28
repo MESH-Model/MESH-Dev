@@ -30,7 +30,7 @@ module climate_forcing_io
 #ifdef NETCDF
         use mo_ncread, only: &
              NcOpen,        & ! Open NetCDF
-             NcClose,       & ! Close NetCDF
+             ! NcClose,       & ! Close NetCDF
              Get_NcDimAtt,  & ! Get dimension name and length
              Get_NcVarAtt,  & ! Get attributes of a variable
              Get_NcVarType, & ! get type of a variable
@@ -38,18 +38,18 @@ module climate_forcing_io
 #endif
 
         !> Input variables.
-        type(ShedGridParams), intent(in)     :: shd
-        integer,              intent(in)     :: vid
+        type(ShedGridParams), intent(in)          :: shd
+        integer,              intent(in)          :: vid
 
         !> Input/Output variables.
-        type(clim_info),      intent(inout)  :: cm
+        type(clim_info),      intent(inout)       :: cm
 
         !> Output variables.
-        logical                              :: ENDDATA
+        logical                                   :: ENDDATA
 
         !> Local variables.
-        integer                                  :: ierr
-        character(len = DEFAULT_LINE_LENGTH)     :: line
+        integer                                   :: ierr
+        character(len = DEFAULT_LINE_LENGTH)      :: line
 
 #ifdef NETCDF
         !> Local variables for NetCDF support 
@@ -140,12 +140,14 @@ module climate_forcing_io
                 cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname))   ! no file ending (*.nc) needs to be appended
                 !> open and close file to see if it exists
                 ncid = NcOpen(cm%dat(vid)%fpath)
-                call NcClose(ncid)
+                !> overwrite pre-assigned unit number of file.
+                cm%dat(vid)%fiun = ncid
+                ! call NcClose(ncid)
 
                 !> get dimensions (name and length)
                 if ( allocated(nc_dimname) ) deallocate(nc_dimname)
                 if ( allocated(nc_dimlen) )  deallocate(nc_dimlen)
-                call Get_NcDimAtt(cm%dat(vid)%fpath, cm%dat(vid)%name_var, nc_dimname, nc_dimlen)
+                call Get_NcDimAtt(cm%dat(vid)%fpath, cm%dat(vid)%name_var, nc_dimname, dimlen=nc_dimlen, fid=cm%dat(vid)%fiun)
                 
                 !> check that there are only three dimensions (lon, lat, time) present
                 if (size(nc_dimname,1) /= 3) then
@@ -203,8 +205,8 @@ module climate_forcing_io
                       !            4 = NF90_INT      integer
                       !            5 = NF90_FLOAT    real(4)
                       !            6 = NF90_DOUBLE   real(8)
-                      call Get_NcVarAtt(cm%dat(vid)%fpath, 'time', 'units', time_unit)
-                      call Get_NcVarType(cm%dat(vid)%fpath, 'time', dtype)
+                      call Get_NcVarAtt(cm%dat(vid)%fpath, 'time', 'units', time_unit, fid=cm%dat(vid)%fiun)
+                      call Get_NcVarType(cm%dat(vid)%fpath, 'time', dtype, fid=cm%dat(vid)%fiun)
 
                       ! grep information from time unit string
                       read(time_unit, *)  tunit, tdummy, tdate, thour
@@ -218,6 +220,9 @@ module climate_forcing_io
                       ! convert date in time unit string to julian date
                       jdate = date2dec(dd=dd, mm=mm, yy=yy, hh=hh, nn=mi, ss=ss)
 
+                      ! apply time shift
+                      jdate = jdate + cm%dat(vid)%time_shift / 24.
+
                       ! read first two time values (for initial day and timestep)
                       start(1)   = 1
                       a_count(1) = 2
@@ -227,11 +232,11 @@ module climate_forcing_io
                               '): Datatype of variable is not supported (NF90_BYTE, NF90_CHAR, or NF90_SHORT).')
                          call program_abort()
                       case(4)
-                         call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_i4, start=start, a_count=a_count)  ! read only first value
+                         call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_i4, start=start, a_count=a_count, fid=cm%dat(vid)%fiun)  ! read only first value
                       case(5)
-                         call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_sp, start=start, a_count=a_count)  ! read only first value
+                         call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_sp, start=start, a_count=a_count, fid=cm%dat(vid)%fiun)  ! read only first value
                       case(6)
-                         call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_dp, start=start, a_count=a_count)  ! read only first value
+                         call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_dp, start=start, a_count=a_count, fid=cm%dat(vid)%fiun)  ! read only first value
                       case default
                          call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
                               '): Datatype of variable is unknown.')
@@ -255,8 +260,9 @@ module climate_forcing_io
 
                       ! convert julian day back to year, day, month, hour, minutes, seconds
                       call dec2date(jdate, dd, mm, yy, hh, mi, ss)
-                      write(*,'(A,A,A2,I4,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2)') &
-                              "first timestep in ",trim(cm%dat(vid)%fpath),": ",yy,"-",mm,"-",dd," ",hh,":",mi,":",ss
+                      write(*,*) "  "
+                      write(*,'(A,A,A2,I4,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2,A6)') &
+                              "   first timestep in ",trim(cm%dat(vid)%fpath),": ",yy,"-",mm,"-",dd," ",hh,":",mi,":",ss," (UTC)"
 
                       ! julian date of first day of that year (to determine julian day)
                       jdate_jan1 = date2dec(dd=1, mm=1, yy=yy)
@@ -267,8 +273,9 @@ module climate_forcing_io
                            jday /= cm%dat(vid)%start_date%jday .or. &
                            hh   /= cm%dat(vid)%start_date%hour .or. &
                            mi   /= cm%dat(vid)%start_date%mins) then
-                         write(*,'(A40,I4,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2)') &
-                              "first timestep in NetCDF: ",yy,"-",mm,"-",dd," ",hh,":",mi,":",ss
+                         ! write(*,'(A40,I4,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2)') &
+                         !      "first timestep in NetCDF: ",yy,"-",mm,"-",dd," ",hh,":",mi,":",ss
+                         write(*,*)          "  "
                          write(*,'(A40,I4)') "year       of first time step in NetCDF: ",yy
                          write(*,'(A40,I4)') "year       of first time step in setup:  ",cm%dat(vid)%start_date%year
                          write(*,'(A40,I3)') "julian day of first time step in NetCDF: ",jday
@@ -386,7 +393,7 @@ module climate_forcing_io
 #ifdef NETCDF
       use mo_ncread, only: &
              NcOpen,        & ! Open NetCDF
-             NcClose,       & ! Close NetCDF
+             ! NcClose,       & ! Close NetCDF
              Get_NcDim,     & ! Get length of dimensions for variable
              Get_NcDimAtt,  & ! Get dimension name and length
              Get_NcVarAtt,  & ! Get attributes of a variable
@@ -511,12 +518,22 @@ module climate_forcing_io
                          call program_abort()
                       end select
                       
-                      ! read data from NetCDF
-                      a_count = (/ size(GRD_tmp,1), size(GRD_tmp,2), size(GRD_tmp,3) /)  ! read <cm%dat(vid)%nblocks> timesteps of whole domain
-                      call Get_NcVar(trim(cm%dat(vid)%fpath), trim(cm%dat(vid)%name_var), GRD_tmp, start, a_count)
+                      !> set how much data will be read in each dimension
+                      a_count = (/ size(GRD_tmp,1), size(GRD_tmp,2), size(GRD_tmp,3) /)
+                      
+                      !> read <cm%dat(vid)%nblocks> timesteps of whole domain
+                      call Get_NcVar(                  &
+                           trim(cm%dat(vid)%fpath),    &  !          in:  filename
+                           trim(cm%dat(vid)%name_var), &  !          in:  variable name
+                           GRD_tmp,                    &  !          out: data
+                           start,                      &  ! optional in:  where to start reading
+                           a_count,                    &  ! optional in:  how much to read
+                           fid=cm%dat(vid)%fiun)          ! optional in:  file handle of opened file
+                      
+                      !> increase skip for next read
                       cm%dat(vid)%skip = cm%dat(vid)%skip + cm%dat(vid)%nblocks
 
-                      ! bring GRD_tmp with flexible dimension order to GRD(nlat,nlon)
+                      !> bring GRD_tmp with flexible dimension order to GRD(nlat,nlon)
                       do tt=1,cm%dat(vid)%nblocks
                          
                          select case(cm%dat(vid)%dim_order_case)
@@ -538,13 +555,13 @@ module climate_forcing_io
                             call program_abort()
                          end select
                          
-                         ! bring data in right shape
+                         !> bring data in right shape
                          do i = 1, shd%NA
                             cm%dat(vid)%blocks(i, tt) = GRD(shd%yyy(i), shd%xxx(i))
                          end do
                       end do
                    end if ! end if store_data
-                   exit ! dont loop over time steps (NetCDF reads all blocks at once
+                   exit   ! don't loop over time steps (NetCDF reads all blocks at once)
 #else
                    call print_error('NetCDF files can only be read when MESH is compiled with "make netcdf"')
                    call program_abort()

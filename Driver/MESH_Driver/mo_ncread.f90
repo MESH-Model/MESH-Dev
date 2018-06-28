@@ -194,7 +194,7 @@ contains
   !         gets the name and size of the dimensions of a variable in a netcdf file
 
   !     CALLING SEQUENCE
-  !         Get_NcDimAtt(Filename, Variable, DimName, DimLen)
+  !         Get_NcDimAtt(Filename, Variable, DimName, DimLen=DimLen, fid=fid)
 
   !     INTENT(IN)
   !         character(len=*),  intent(in) :: Filename  - Filename of netcdf file
@@ -233,16 +233,15 @@ contains
   !     HISTORY
   !         Written,  Matthias Zink, Oct 2012
 
-  subroutine Get_NcDimAtt(Filename, Variable, DimName, DimLen)
+  subroutine Get_NcDimAtt(Filename, Variable, DimName, fid, DimLen)
     !
     implicit none
     !
-    character(len=*),                  intent(in)  :: Filename
-    character(len=*),                  intent(in)  :: Variable
-    character(len=*), dimension(:), allocatable, &
-         intent(out) :: DimName
-    integer(i4)     , dimension(:), allocatable, &
-         optional, intent(out) :: DimLen
+    character(len=*),                                      intent(in)  :: Filename
+    character(len=*),                                      intent(in)  :: Variable
+    character(len=*), dimension(:), allocatable,           intent(out) :: DimName
+    integer(i4)     ,                            optional, intent(in)  :: fid
+    integer(i4)     , dimension(:), allocatable, optional, intent(out) :: DimLen
     !
     integer(i4), dimension(5)                      :: Get_NcDim
     !
@@ -255,7 +254,11 @@ contains
     integer(i4)                                    :: len
     !
     ! Open NetCDF filename
-    call check(nf90_open(Filename, NF90_NOWRITE, ncid))
+    if (present(fid)) then
+       ncid = fid
+    else
+       call check(nf90_open(trim(Filename),NF90_NOWRITE, ncid))
+    end if
     !
     ! Inquire file and check if VarName exists in the dataset,
     ! get number of dimensions and
@@ -270,8 +273,9 @@ contains
        call check(nf90_inquire_dimension(ncid, dimIDs(dimid), name=DimName(dimid), len=len))
        if (present(DimLen)) DimLen(dimid) = len
     end do
+    !
     ! close File
-    call check(nf90_close(ncid))
+    if (.not. present(fid)) call check(nf90_close(ncid))
     !
   end subroutine Get_NcDimAtt
 
