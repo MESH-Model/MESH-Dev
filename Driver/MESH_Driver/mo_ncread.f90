@@ -41,6 +41,7 @@ module mo_NcRead
   public :: Get_NcVar     ! get the data of a Variable in a nc file
   public :: NcOpen        ! Open a file and get a handle back
   public :: NcClose       ! Close a file
+  public :: check         ! check for feasible NetCDF calls
 
   ! ------------------------------------------------------------------------------
 

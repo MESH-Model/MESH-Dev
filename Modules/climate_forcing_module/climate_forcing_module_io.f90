@@ -29,12 +29,14 @@ module climate_forcing_io
              dec2date    ! converts fractional julian date into date
 #ifdef NETCDF
         use mo_ncread, only: &
-             NcOpen,        & ! Open NetCDF
-             ! NcClose,       & ! Close NetCDF
-             Get_NcDimAtt,  & ! Get dimension name and length
-             Get_NcVarAtt,  & ! Get attributes of a variable
-             Get_NcVarType, & ! get type of a variable
-             Get_NcVar        ! Get variable
+             NcOpen,         & ! Open NetCDF
+             Get_NcDimAtt,   & ! Get dimension name and length
+             Get_NcVarAtt,   & ! Get attributes of a variable
+             Get_NcVarType,  & ! get type of a variable
+             Get_NcVar,      & ! Get variable
+             check             ! check if NetCDF call was feasible
+        use netcdf,  only:   & 
+           nf90_inq_varid      ! request variable ID in NetCDF file     
 #endif
 
         !> Input variables.
@@ -310,22 +312,33 @@ module climate_forcing_io
 
                 ! determine the case of the dimension order
                 if (cm%dat(vid)%ncol_lon == 1 .and. cm%dat(vid)%ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 3) then
+                   call print_message('   dim order case #1 --> (lon,lat,time)')
                    cm%dat(vid)%dim_order_case = 1
                 else if (cm%dat(vid)%ncol_lon == 2 .and. cm%dat(vid)%ncol_lat == 1 .and. cm%dat(vid)%ncol_time == 3) then
+                   call print_message('   dim order case #2 --> (lat,lon,time)')
                    cm%dat(vid)%dim_order_case = 2
                 else if (cm%dat(vid)%ncol_lon == 1 .and. cm%dat(vid)%ncol_lat == 3 .and. cm%dat(vid)%ncol_time == 2) then
+                   call print_message('   dim order case #3 --> (lon,time,lat)')
                    cm%dat(vid)%dim_order_case = 3
                 else if (cm%dat(vid)%ncol_lon == 3 .and. cm%dat(vid)%ncol_lat == 1 .and. cm%dat(vid)%ncol_time == 2) then
+                   call print_message('   dim order case #4 --> (lat,time,lon)')
                    cm%dat(vid)%dim_order_case = 4
                 else if (cm%dat(vid)%ncol_lon == 2 .and. cm%dat(vid)%ncol_lat == 3 .and. cm%dat(vid)%ncol_time == 1) then
+                   call print_message('   dim order case #5 --> (time,lon,lat)')
                    cm%dat(vid)%dim_order_case = 5
                 else if (cm%dat(vid)%ncol_lon == 3 .and. cm%dat(vid)%ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 1) then
+                   call print_message('   dim order case #6 --> (time,lat,lon)')
                    cm%dat(vid)%dim_order_case = 6
                 else
                    call print_error(trim(cm%dat(vid)%fname) // ' (' // trim(cm%dat(vid)%name_var) // &
                         '): Weird order of dimensions.')
                    call program_abort()
                 end if
+
+                !> retrieve variable ID
+                call check(nf90_inq_varid(cm%dat(vid)%fiun, & ! in:  file handle of opened file
+                     trim(cm%dat(vid)%name_var),            & ! in:  variable name
+                     cm%dat(vid)%varid))                      ! out: variable ID
                 
                 cm%dat(vid)%blocktype = cbk%GRD
 #else
@@ -391,14 +404,17 @@ module climate_forcing_io
       !> 'shd_variables': For 'shd' variable.
       use shd_variables
 #ifdef NETCDF
-      use mo_ncread, only: &
-             NcOpen,        & ! Open NetCDF
-             ! NcClose,       & ! Close NetCDF
-             Get_NcDim,     & ! Get length of dimensions for variable
-             Get_NcDimAtt,  & ! Get dimension name and length
-             Get_NcVarAtt,  & ! Get attributes of a variable
-             Get_NcVarType, & ! get type of a variable
-             Get_NcVar        ! Get variable
+      use mo_ncread, only:        &
+           NcOpen,                & ! Open NetCDF
+           ! NcClose,             & ! Close NetCDF
+           Get_NcDim,             & ! Get length of dimensions for variable
+           Get_NcDimAtt,          & ! Get dimension name and length
+           Get_NcVarAtt,          & ! Get attributes of a variable
+           Get_NcVarType,         & ! get type of a variable
+           Get_NcVar,             & ! Get variable
+           check                    ! check if NetCDF call was feasible
+      use netcdf,  only:          &     
+           nf90_get_var             ! read data from NetCDF
 #endif
 
         !> Input variables.
@@ -492,7 +508,7 @@ module climate_forcing_io
 #ifdef NETCDF
                    if (storedata) then
 
-                      ! make order of dimensions flexible
+                      ! make order of dimensions flexible                     
                       select case(cm%dat(vid)%dim_order_case)
                       case(1)
                          allocate( GRD_tmp(shd%xCount,shd%yCount,cm%dat(vid)%nblocks) )
@@ -521,15 +537,23 @@ module climate_forcing_io
                       !> set how much data will be read in each dimension
                       a_count = (/ size(GRD_tmp,1), size(GRD_tmp,2), size(GRD_tmp,3) /)
                       
-                      !> read <cm%dat(vid)%nblocks> timesteps of whole domain
-                      call Get_NcVar(                  &
-                           trim(cm%dat(vid)%fpath),    &  !          in:  filename
-                           trim(cm%dat(vid)%name_var), &  !          in:  variable name
-                           GRD_tmp,                    &  !          out: data
-                           start,                      &  ! optional in:  where to start reading
-                           a_count,                    &  ! optional in:  how much to read
-                           fid=cm%dat(vid)%fiun)          ! optional in:  file handle of opened file
+                      ! !> read <cm%dat(vid)%nblocks> timesteps of whole domain
+                      ! call Get_NcVar(                  &
+                      !      trim(cm%dat(vid)%fpath),    &  !          in:  filename
+                      !      trim(cm%dat(vid)%name_var), &  !          in:  variable name
+                      !      GRD_tmp,                    &  !          out: data
+                      !      start,                      &  ! optional in:  where to start reading
+                      !      a_count,                    &  ! optional in:  how much to read
+                      !      fid=cm%dat(vid)%fiun)          ! optional in:  file handle of opened file
                       
+                      !> retrieve data
+                      call check(nf90_get_var( &
+                           cm%dat(vid)%fiun,   & ! in:           file handle of opened file
+                           cm%dat(vid)%varid,  & ! in:           variable id
+                           GRD_tmp,            & ! out:          data                 
+                           start=start,        & ! optional in:  where to start reading
+                           count=a_count))       ! optional in:  how much to read
+
                       !> increase skip for next read
                       cm%dat(vid)%skip = cm%dat(vid)%skip + cm%dat(vid)%nblocks
 
@@ -538,29 +562,45 @@ module climate_forcing_io
                          
                          select case(cm%dat(vid)%dim_order_case)
                          case(1)
-                            GRD = transpose( GRD_tmp(:,:,tt) )
+                            ! GRD = transpose( GRD_tmp(:,:,tt) )
+                            do i = 1, shd%NA
+                               cm%dat(vid)%blocks(i, tt) = GRD_tmp(shd%xxx(i), shd%yyy(i), tt)
+                            end do
                          case(2)
-                            GRD = GRD_tmp(:,:,tt)
+                            ! GRD = GRD_tmp(:,:,tt)
+                            do i = 1, shd%NA
+                               cm%dat(vid)%blocks(i, tt) = GRD_tmp(shd%yyy(i), shd%xxx(i), tt)
+                            end do
                          case(3)
-                            GRD = transpose( GRD_tmp(:,tt,:) )
+                            ! GRD = transpose( GRD_tmp(:,tt,:) )
+                            do i = 1, shd%NA
+                               cm%dat(vid)%blocks(i, tt) = GRD_tmp(shd%xxx(i), tt, shd%yyy(i))
+                            end do
                          case(4)
-                            GRD = GRD_tmp(:,tt,:)
+                            ! GRD = GRD_tmp(:,tt,:)
+                            do i = 1, shd%NA
+                               cm%dat(vid)%blocks(i, tt) = GRD_tmp(shd%yyy(i), tt, shd%xxx(i))
+                            end do
                          case(5)
-                            GRD = transpose( GRD_tmp(tt,:,:) )
+                            ! GRD = transpose( GRD_tmp(tt,:,:) )
+                            do i = 1, shd%NA
+                               cm%dat(vid)%blocks(i, tt) = GRD_tmp(tt, shd%xxx(i), shd%yyy(i))
+                            end do
                          case(6)
-                            GRD = GRD_tmp(tt,:,:)
+                            ! GRD = GRD_tmp(tt,:,:)
+                            do i = 1, shd%NA
+                               cm%dat(vid)%blocks(i, tt) = GRD_tmp(tt, shd%yyy(i), shd%xxx(i))
+                            end do
                          case default
                             call print_error(trim(cm%dat(vid)%fname) // ' (' // trim(cm%dat(vid)%name_var) // &
                                  '): Weird order of dimensions.')
                             call program_abort()
                          end select
-                         
-                         !> bring data in right shape
-                         do i = 1, shd%NA
-                            cm%dat(vid)%blocks(i, tt) = GRD(shd%yyy(i), shd%xxx(i))
-                         end do
-                      end do
+
+                      end do                     
+                      
                    end if ! end if store_data
+                   
                    exit   ! don't loop over time steps (NetCDF reads all blocks at once)
 #else
                    call print_error('NetCDF files can only be read when MESH is compiled with "make netcdf"')
