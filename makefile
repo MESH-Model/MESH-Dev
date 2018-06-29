@@ -58,8 +58,10 @@ DEBUG=yes
 endif
 
 ifeq ($(filter netcdf,$(MAKECMDGOALS)),netcdf)
-LIBNCO=-DNETCDF -I/usr/local/include -I/usr/local/netcdf-fortran-4.4.4-gfortran/include
-LIBNCL=-L/usr/local/lib -lnetcdf -L/usr/local/netcdf-fortran-4.4.4-gfortran/lib -lnetcdff -L/usr/local/lib -lhdf5_hl -lhdf5 -L/usr/local/lib -lsz -L/usr/lib -lcurl -lz
+# LIBNCO=-DNETCDF -I/usr/local/include -I/usr/local/netcdf-fortran-4.4.4-gfortran/include
+# LIBNCL=-L/usr/local/lib -lnetcdf -L/usr/local/netcdf-fortran-4.4.4-gfortran/lib -lnetcdff -L/usr/local/lib -lhdf5_hl -lhdf5 -L/usr/local/lib -lsz -L/usr/lib -lcurl -lz
+LIBNCO=-DNETCDF 
+LIBNCL=-lnetcdf -lnetcdff -lhdf5_hl -lhdf5 -lsz -lcurl -lz
 endif
 
 gfortran: all
