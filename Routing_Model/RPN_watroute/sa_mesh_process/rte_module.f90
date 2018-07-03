@@ -17,7 +17,6 @@ module rte_module
     type rte_params
         real, dimension(:), allocatable :: r1n, r2n, mndr, aa2, aa3, aa4, widep
     end type
-    real, dimension(:), allocatable :: avr_qo2
 
     !> Instances of the input parameters.
     !*  rtepm: Grid-based (GRD, NA/NAA).
@@ -27,7 +26,7 @@ module rte_module
     !> Configuration flags.
     type rte_flags
         logical :: PROCESS_ACTIVE = .false.
-        integer :: cap_shd = 0
+        integer :: RTE_TS = 3600, cap_shd = 0
     end type
 
     !> Instance of control flags.
@@ -92,19 +91,19 @@ module rte_module
 
         !> Local variables.
         integer n, l
-        real ry, rx
 
 !temp: for overrides
-        real, dimension(:, :), allocatable :: datarr
-        integer j, i
-        character(len = 40) in_line
-        character(len = 4) ffmti
-        integer, dimension(4) :: jstrdiv, istrdiv, jenddiv, ienddiv
-        integer, dimension(:), allocatable :: iminirr, imaxirr, jminirr, jmaxirr
-        integer irindex, irpt
+!        integer, dimension(4) :: jstrdiv, istrdiv, jenddiv, ienddiv
+!        integer, dimension(:), allocatable :: iminirr, imaxirr, jminirr, jmaxirr
+!        integer irindex, irpt
+!        character(len = 40) in_line
+!        integer j, i
 
         !> Return if not the head node or if the process is not active.
         if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
+
+        !> Suppress diagnostic output throughout RTE.
+        iopt = 0
 
         !> Transfer grid properties.
         ycount = shd%yCount
@@ -122,7 +121,6 @@ module rte_module
         na = shd%NA
         naa = shd%NAA
         ntype = shd%lc%NTYPE + 1
-        no = fms%stmg%n
 
         !> Allocate and transfer grid variables.
         allocate(xxx(na), yyy(na), s(ycount, xcount), &
@@ -131,10 +129,11 @@ module rte_module
                  rl(na), ibn(na), &
 !                 sl1(na), sl2(na)
                  ichnl(na), ireach(na), &
-                 grid_area(na), frac(na), aclass(na, ntype), &
+                 grid_area(na), frac(na), aclass(na, ntype + 1), &
                  glacier_flag(na))
         xxx = shd%xxx
         yyy = shd%yyy
+        s = shd%RNKGRD
         next = shd%NEXT
         da = shd%DA
         bnkfll = shd%BNKFLL
@@ -148,7 +147,7 @@ module rte_module
         Nreaches = maxval(shd%IREACH)
         grid_area = shd%AREA
         frac = shd%FRAC
-        aclass = shd%lc%ACLASS
+        aclass = 0.0; aclass(:, 1:ntype) = shd%lc%ACLASS
         glacier_flag = 'n'
 
         !> Allocate and assign parameter values.
@@ -158,30 +157,8 @@ module rte_module
         mndr = rtepm%mndr; aa2 = rtepm%aa2; aa3 = rtepm%aa3; aa4 = rtepm%aa4; widep = rtepm%widep
         rlake = 0.0; theta = 0.0; kcond = 0.0
 
-!temp: Override
-!        aa2 = 0.1; aa3 = 0.9; aa4 = 0.67
-!        widep = 20.0
-!        naa = 5980
-!        allocate(datarr(shd%xCount, shd%yCount))
-!        datarr = 0.0
-!        open(600, file = 'r1n_running_avg.grid')
-!        do i = 1, shd%yCount
-!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
-!        end do
-!        close(600)
-!        do n = 1, naa
-!            r1n(n) = datarr(shd%xxx(n), shd%yyy(n))
-!        end do
-!        datarr = 0.0
-!        open(600, file = 'r2n_running_avg.grid')
-!        do i = 1, shd%yCount
-!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
-!        end do
-!        close(600)
-!        do n = 1, naa
-!            r2n(n) = datarr(shd%xxx(n), shd%yyy(n))
-!        end do
-!        deallocate(datarr)
+        !> Force use of Manning's coefficients (e.g., r2n, r1n).
+        manningflg = 'y'
 
         !> Adjust the calculated channel length by the degree of meandering.
         rl = rl*mndr
@@ -228,15 +205,16 @@ module rte_module
         qo2remirr = 0.0
 
         !> Allocate and assign other variables.
-        allocate(store2_strt(naa), nhyd(ycount, xcount), iflowgrid(no), nopt(no))
+        allocate(store2_strt(naa))
         store2_strt = 0.0
-        iflowgrid = fms%stmg%meta%rnk
-        nopt = -1
 
-        !> rev. 9.1.60  Jul.  27/04  - NK: reversed definitions for sl1 & sl2 Int. Slope
+        !> Calculate channel physical properties.
         do n = 1, naa
 
+            !> rev. 9.1.60  Jul.  27/04  - NK: reversed definitions for sl1 & sl2 Int. Slope
 !+            sl2(n) = sqrt(sl1(n))
+
+            !> Disable use of 'Excel compatible equation'.
             if (a4 == 0) a4 = 1.0
 
             !> CAP IS THE VOLUME OF WATER IN A REACH FOR THE MEAN ANNUAL FLOW.
@@ -315,119 +293,38 @@ module rte_module
 
         end do !n = 1, naa
 
-        !> What class is the water class?
+        !> Identify the water class (not used).
+!todo: water class for lakes.
         ii_water = ntype
 
-!temp: override for initial states
-!        allocate(datarr(shd%xCount, shd%yCount))
-
-!        datarr = 0.0
-!        open(600, file = 'QI1_012.grid')
-!        do i = 1, shd%yCount
-!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
-!        end do
-!        close(600)
-!        do n = 1, naa
-!            qi1(n) = datarr(shd%xxx(n), shd%yyy(n))
-!        end do
-!        qi2 = qi1
-!        datarr = 0.0
-!        open(600, file = 'QO1_012.grid')
-!        do i = 1, shd%yCount
-!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
-!        end do
-!        close(600)
-!        do n = 1, naa
-!            qo1(n) = datarr(shd%xxx(n), shd%yyy(n))
-!        end do
-!        qo2 = qo1
-!        datarr = 0.0
-!        open(600, file = 'STOR_012.grid')
-!        do i = 1, shd%yCount
-!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
-!        end do
-!        close(600)
-!        do n = 1, naa
-!            store1(n) = datarr(shd%xxx(n), shd%yyy(n))
-!        end do
-!        store2 = store1
-
-!        datarr = 0.0
-!        open(600, file = 'OVER_012.grid')
-!        do i = 1, shd%yCount
-!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
-!        end do
-!        close(600)
-!        do n = 1, naa
-!            over(n) = datarr(shd%xxx(n), shd%yyy(n))
-!        end do
-!        datarr = 0.0
-!        open(600, file = 'LZS_012.grid')
-!        do i = 1, shd%yCount
-!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
-!        end do
-!        close(600)
-!        do n = 1, naa
-!            lzs(n) = datarr(shd%xxx(n), shd%yyy(n))
-!        end do
-
-!        datarr = 0.0
-!        open(600, file = 'QO1_012_10.grid')
-!        do i = 1, shd%yCount
-!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
-!        end do
-!        close(600)
-!        do n = 1, naa
-!            qo2sim(n) = datarr(shd%xxx(n), shd%yyy(n))
-!        end do
-!        datarr = 0.0
-!        open(600, file = 'QO1_012_20.grid')
-!        do i = 1, shd%yCount
-!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
-!        end do
-!        close(600)
-!        do n = 1, naa
-!            qo2rem(n) = datarr(shd%xxx(n), shd%yyy(n))
-!        end do
-!        datarr = 0.0
-!        open(600, file = 'QO1_012_30.grid')
-!        do i = 1, shd%yCount
-!            read(600, *) (datarr(j, i), j = 1, shd%xCount)
-!        end do
-!        close(600)
-!        do n = 1, naa
-!            qo2remirr(n) = datarr(shd%xxx(n), shd%yyy(n))
-!        end do
-
-!        deallocate(datarr)
-
-!        resumflg = 'y'
-
-!temp: override to read from file
-!        open(602, file = 'RFF.grid')
-!        open(603, file = 'RCH.grid')
-
-        ! Reservoirs.
+        !> Reservoirs.
         noresv = fms%rsvr%n
         Nreaches = noresv
         if (fms%rsvr%n > 0) then
-            ktr = fms%rsvr%qorls%dts
+            ktr = fms%rsvr%rlsmeas%dts
             allocate( &
                 b1(noresv), b2(noresv), b3(noresv), &
                 b4(noresv), b5(noresv), ires(noresv), jres(noresv), &
                 b6(noresv), b7(noresv), &
+                lake_area(noresv), &
 !                yres(noresv), xres(noresv), poliflg(noresv), &
                 resname(noresv), &
+!todo: fix this (999999).
                 qrel(noresv, 999999), &
                 qdwpr(noresv, 999999), lake_elv(noresv, 999999), &
                 lake_inflow(noresv, 999999), &
-    !tied to val2divyes == 1
+!tied to val2divyes == 1
                 resindex(noresv), &
-    !tied to fhr
+!tied to fhr
+!todo: fix this (999999).
                 lake_stor(noresv, 999999), lake_outflow(noresv, 999999), &
                 del_stor(noresv, 999999))
 !                qstream_sum(noresv, 999999), strloss_sum(noresv, 999999))
-            qrel(:, 1) = fms%rsvr%qorls%val
+            if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
+                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
+            else
+                qrel(:, 1) = fms%rsvr%rlsmeas%val
+            end if
             qdwpr = 0.0; lake_elv = 0.0
             lake_inflow = 0.0
 !tied to fhr
@@ -435,13 +332,14 @@ module rte_module
             del_stor = 0.0
 !            qstream_sum = 0.0; strloss_sum = 0.0
             resname = fms%rsvr%meta%name
+            lake_area = fms%rsvr%rls%area
             b1 = fms%rsvr%rls%b1
             b2 = fms%rsvr%rls%b2
             b3 = fms%rsvr%rls%b3
             b4 = fms%rsvr%rls%b4
             b5 = fms%rsvr%rls%b5
-            b6 = fms%rsvr%rls%area
-            b7 = fms%rsvr%rls%lvlz0
+            b6 = fms%rsvr%rls%b6
+            b7 = fms%rsvr%rls%b7
 !            where (b3 == 0.0)
 !                poliflg = 'n'
 !            elsewhere
@@ -453,11 +351,45 @@ module rte_module
 
             !> Initial reservoir storage.
             allocate(reach_last(noresv))
+            reach_last = lake_elv(:, 1)
+
+        end if
+
+        !> Streamflow gauge locations.
+        no = fms%stmg%n
+        if (fms%stmg%n > 0) then
+            allocate( &
+                iflowgrid(no), nopt(no), &
+!todo: fix this (999999).
+                qhyd(no, 999999))
+            iflowgrid = fms%stmg%meta%rnk
+            nopt = -1
+            qhyd(:, 1) = fms%stmg%qomeas%val
+        end if
+
+        !> Channel and reservoir initialization.
+        if (fms%rsvr%n > 0 .or. fms%stmg%n > 0) then
+            allocate(nbasin(ycount, xcount), r(na, ntype + 1), p(ycount,xcount), inbsnflg(no + noresv))
+            nbasin = 0; p = 0.0; inbsnflg = 1
+            if (fms%stmg%n > 0) then
+                allocate(iy(no), jx(no), nhyd(ycount, xcount), nlow(no), nxtbasin(no), area(no))
+                iy = fms%stmg%meta%iy
+                jx = fms%stmg%meta%jx
+                nxtbasin = 0
+            end if
+            kt = 1
+            call flowinit()
+            if (fms%stmg%n > 0) deallocate(iy, jx, nlow, nxtbasin, area)
+            deallocate(nbasin, r, p, inbsnflg)
+            stas_grid%chnl%qi = qi2
+            stas_grid%chnl%s = store2
+            stas_grid%chnl%qo = qo2
             do l = 1, noresv
+                stas_fms%rsvr%zlvl(l) = lake_elv(l, 1)
                 reach_last(l) = lake_elv(l, 1)
-                n = resindex(l)
-                if (b6(l) > 0.0) store1(n) = max(0.0, reach_last(l) - b7(l))*b6(l)
-                store2(n) = store1(n)
+                stas_fms%rsvr%qi(l) = stas_grid%chnl%qi(fms%rsvr%meta%rnk(l))
+                stas_fms%rsvr%s(l) = stas_grid%chnl%s(fms%rsvr%meta%rnk(l))
+                stas_fms%rsvr%qo(l) = stas_grid%chnl%qo(fms%rsvr%meta%rnk(l))
             end do
 
         end if
@@ -583,79 +515,13 @@ module rte_module
 !            end do
 !        end if
 
-        !> Allocate output variable for the driver.
-!todo: move this
-        stfl%ns = no
-        allocate(stfl%qhyd(no), stfl%qsyn(no))
-        stfl%qhyd = 0.0
-        stfl%qsyn = 0.0
-
-!        strfw_option = 'streamflow_comparison'
-!todo: fix this.
-        allocate(qhyd(no, 999999)); qhyd = 0.0
-!        open(54, file = './spl_rpn.rte.csv', action = 'write')
-!        write(54, '(a)') 'Observed and simulated streamflows (m^3/s)'
-!        write(54, '(a)') 'Station,,,,05GG001 ,,05HG001 ,,05KD003 ,,05KJ001 ,,05KL001 ,,05MH005 ,,05MJ001 ,,05OC001 ,,' // &
-!                         '05OC012 ,,05OJ005 ,,05PF063 ,,05PF068 ,,05PF069 ,,05UE005 ,,05UF006 ,,05UF007 ,,05LM001 ,,05PE020 ,,' // &
-!                         '05LH005 ,,05UB008 ,,05AJ001 ,,05AA024 ,,05AB021 ,,05AD007 ,,05AE027 ,,05AG006 ,,05BA001 ,,05BB001 ,,' // &
-!                         '05BE004 ,,05BH004 ,,05BH008 ,,05BL024 ,,05BL024 ,,05BM002 ,,05BM004 ,,05BM004 ,,05BN012 ,,05CA009 ,,' // &
-!                         '05CA009 ,,05CC002 ,,05CC007 ,,05CE001 ,,05CK004 ,,05DA009 ,,05DB006 ,,05DC001 ,,05DC010 ,,05DC011 ,,' // &
-!                         '05DD005 ,,05DD007 ,,05DF001 ,,05EA001 ,,05EE007 ,,05EE009 ,,05EF001 ,,05FA001 ,,05FC001 ,,05FE004 ,,' // &
-!                         '05HD036 ,,05HD039 ,,05KE010 ,'
-!        write(54, '(a)') 'Longitude,,,,-105.631,,-106.504,,-103.157,,-101.068,, -99.231,, -98.749,, -97.265,, -97.074,,' // &
-!                         ' -97.045,, -96.724,, -95.430,, -95.856,, -96.037,, -96.576,, -94.493,, -94.229,, -98.537,, -94.603,,' // &
-!                         ' -99.379,, -97.976,,-111.056,,-113.860,,-113.578,,-112.876,,-113.302,,-111.755,,-116.112,,-115.546,,' // &
-!                         '-114.992,,-114.001,,-114.001,,-113.714,,-113.714,,-113.582,,-112.452,,-112.452,,-111.468,,-115.010,,' // &
-!                         '-115.010,,-113.716,,-114.139,,-112.602,,-110.205,,-116.530,,-114.702,,-114.844,,-116.329,,-115.990,,' // &
-!                         '-115.407,,-116.674,,-113.584,,-113.300,,-110.481,,-111.888,,-109.500,,-113.575,,-112.310,,-109.931,,' // &
-!                         '-108.367,,-107.524,,-104.575,'
-!        write(54, '(a)') 'Latitude,,,,  53.384,,  52.321,,  53.883,,  54.018,,  53.268,,  49.879,,  50.049,,  49.189,,' // &
-!                         '  49.734,,  50.326,,  50.405,,  50.578,,  50.748,,  56.146,,  56.561,,  56.578,,  51.824,,  50.198,,' // &
-!                         '  52.001,,  54.351,,  50.204,,  49.668,,  50.201,,  49.843,,  48.949,,  50.032,,  51.654,,  51.289,,' // &
-!                         '  51.288,,  51.290,,  51.290,,  50.930,,  50.930,,  50.926,,  50.932,,  50.932,,  50.211,,  51.812,,' // &
-!                         '  51.812,,  52.376,,  52.374,,  51.650,,  51.106,,  52.013,,  52.375,,  52.556,,  52.194,,  52.369,,' // &
-!                         '  53.088,,  52.915,,  53.632,,  53.990,,  53.632,,  53.454,,  53.812,,  52.912,,  52.917,,  53.092,,' // &
-!                         '  49.846,,  50.574,,  53.991,'
-!        write(54, '(a)') 'Xcoord_grid,      86,,      80,,     104,,     119,,     132,,     135,,     146,,     147,,' // &
-!                         '     147,,     150,,     159,,     156,,     155,,     151,,     166,,     167,,     137,,     165,,' // &
-!                         '     131,,     141,,      48,,      28,,      30,,      35,,      32,,      43,,      12,,      16,,' // &
-!                         '      20,,      27,,      27,,      29,,      29,,      30,,      38,,      38,,      45,,      20,,' // &
-!                         '      20,,      29,,      26,,      37,,      54,,       9,,      22,,      21,,      10,,      13,,' // &
-!                         '      17,,       8,,      30,,      32,,      52,,      42,,      59,,      30,,      39,,      56,,' // &
-!                         '      67,,      73,,      94,'
-!        write(54, '(a)') 'Ycoord_grid,,,,      47,,      41,,      49,,      50,,      46,,      27,,      28,,      23,,' // &
-!                         '      26,,      30,,      30,,      31,,      32,,      62,,      64,,      64,,      38,,      29,,' // &
-!                         '      39,,      52,,      29,,      26,,      29,,      27,,      22,,      28,,      37,,      35,,' // &
-!                         '      35,,      35,,      35,,      33,,      33,,      33,,      33,,      33,,      29,,      38,,' // &
-!                         '      38,,      41,,      41,,      37,,      34,,      39,,      41,,      42,,      40,,      41,,' // &
-!                         '      45,,      44,,      48,,      50,,      48,,      47,,      49,,      44,,      44,,      45,,' // &
-!                         '      27,,      31,,      50,'
-!        write(54, '(a)') 'YEAR,MONTH,DAY,HOUR,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,' // &
-!                         'SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,' // &
-!                         'OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,' // &
-!                         'SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,' // &
-!                         'OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,OBS,SIM,' // &
-!                         'OBS,SIM,OBS,SIM'
-
-        !> Open output files for streamflow.
-!todo: move this.
-        open(70, file = './' // trim(fls%GENDIR_OUT) // '/' // 'MESH_output_streamflow.csv', status = 'unknown', action = 'write')
-        write(70, 1010, advance = 'no') 'YEAR', 'DAY'
-        do l = 1, fms%stmg%n
-            write(ffmti, '(i3)') l
-            write(70, 1010, advance = 'no') 'QOMEAS' // trim(adjustl(ffmti)), 'QOSIM' // trim(adjustl(ffmti))
-        end do
-        write(70, *)
-
-1010    format(9999(g15.7e2, ','))
-
     end subroutine
 
     !>
     !> _between_grid() adapted from rte_sub.f.
     !>
 
-    subroutine run_rte_between_grid(fls, shd, wb, stfl, rrls)
+    subroutine run_rte_between_grid(fls, shd, stfl, rrls)
 
         !> area_watflood: Shared variables used throughout rte code.
         use area_watflood
@@ -667,19 +533,16 @@ module rte_module
         use model_files_variables
         use sa_mesh_shared_variables
 
-        !> MODEL_OUTPUT: water_balance type for 'wb'.
-        use MODEL_OUTPUT
-
         !> model_output_variabletypes: Streamflow and reservoir output variables for SA_MESH.
         use model_output_variabletypes
+
+        !> model_dates: for 'ic' counter.
+        use model_dates
 
         type(fl_ids) :: fls
 
         !> Basin properties from SA_MESH.
         type(ShedGridParams) :: shd
-
-        !> Water balance from SA_MESH (includes runoff).
-        type(water_balance) :: wb
 
         !> Streamflow and reservoir output variables for SA_MESH.
         type(streamflow_hydrograph) :: stfl
@@ -696,54 +559,25 @@ module rte_module
 
         !> Local variables.
         integer n, l
+        integer irindex
 
-!temp: override to read from file
-        real, dimension(:, :, :), allocatable :: datarr
-        integer j, i, irindex
-
-        !> Local variables not used.
+        !> Local variables not used (passed to route.f).
         character(len = 14) :: date = ''
 
         !> Return if not the head node or if the process is not active.
         if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
 
-!todo: move this
-!-        if (mod(ic%now%hour, fms%stmg%qomeas%dts) == 0 .and. ic%now%mins == 0) then
-!-            read(22, *) (fms%stmg%qomeas%val(l), l = 1, fms%stmg%n)
-!-            stfl%qhyd = fms%stmg%qomeas%val
-!-        end if
-
         !> Accumulate runoff to the routing time-step.
         if (ic%ts_hourly == 1) then
             qr(1:naa) = 0.0
         end if
-        qr(1:naa) = qr(1:naa) + (wb%rofo(1:naa) + wb%rofs(1:naa) + wb%rofb(1:naa))
+        qr(1:naa) = qr(1:naa) + (stas_grid%sfc%rofo(1:naa) + stas_grid%sl%rofs(1:naa))*shd%FRAC(1:naa)*ic%dts
+        qr(1:naa) = qr(1:naa) + (stas_grid%lzs%rofb(1:naa) + stas_grid%dzs%rofb(1:naa))*shd%FRAC(1:naa)*ic%dts
 
         !> Return if no the last time-step of the hour.
         if (mod(ic%ts_hourly, 3600/ic%dts) /= 0) then
             return
         end if
-
-!temp: override to read from file
-!        allocate(datarr(shd%xCount, shd%yCount, 2))
-!        read(602, *)
-!        read(603, *)
-!        do i = 1, shd%yCount
-!            read(602, *) (datarr(j, i, 1), j = 1, shd%xCount)
-!            read(603, *) (datarr(j, i, 2), j = 1, shd%xCount)
-!        end do
-!        do n = 1, naa
-
-            !> Pass all values of surface runoff (RFF) within a reach and positive values elsewhere to qr.
-            !> Remember negative values of RFF outside of reaches and add to lzs.
-!            if (ireach(n) <= 0 .and. datarr(shd%xxx(n), shd%yyy(n), 1) < 0.0) then
-!                qr(n) = 0.0
-!                lzs(n) = lzs(n) + datarr(shd%xxx(n), shd%yyy(n), 2) + datarr(shd%xxx(n), shd%yyy(n), 1)
-!            else
-!                qr(n) = datarr(shd%xxx(n), shd%yyy(n), 1)
-!                lzs(n) = lzs(n) + datarr(shd%xxx(n), shd%yyy(n), 2)
-!            end if
-!        end do
 
         !> Increment counters.
         fhr = fhr + 1
@@ -778,12 +612,21 @@ module rte_module
         !> Convert surface runoff from [kg/m^2] to [cms].
         qr(1:naa) = qr(1:naa)*1000.0*step2/3600.0
 
+        !> Update from SA_MESH variables.
+        store2 = stas_grid%chnl%s
+
         !> Remember the input values from the start of the time step.
         qi2_strt(1:naa) = qi2(1:naa)
         qo2_strt(1:naa) = qo2(1:naa)
         store2_strt(1:naa) = store2(1:naa)
         if (fms%stmg%n > 0) qhyd(:, fhr) = fms%stmg%qomeas%val
-        if (fms%rsvr%n > 0) qrel(:, fhr) = fms%rsvr%qorls%val
+        if (fms%rsvr%n > 0) then
+            if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
+                qrel(1:count(fms%rsvr%rls%b1 == 0.0), fhr) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
+            else
+                qrel(:, fhr) = fms%rsvr%rlsmeas%val
+            end if
+        end if
 
         !> If flow insertion, use simulated instead of flow inserted value at gauge location.
         if (trim(strfw_option) == 'streamflow_insertion') then
@@ -886,10 +729,11 @@ module rte_module
         !> times route is called. Route will determine a new dtmin
         !> for the next time step.
 
-!EG_MOD prepare arrays for storing average flows
+        !> Prepare arrays for storing output (averaged over the routing time-step).
         if (.not. allocated(avr_qo)) allocate(avr_qo(na))
-        if (.not. allocated(avr_qo2)) allocate(avr_qo2(na))
         avr_qo = 0.0
+        stas_grid%chnl%qi = 0.0
+        stas_grid%chnl%qo = 0.0
 
         !> ROUTE ROUTES WATER THROUGH EACH SQUARE USING STORAGE ROUTING.
         !> rev. 9.3.11  Feb.  17/07  - NK: force hourly time steps for runoff
@@ -932,6 +776,10 @@ module rte_module
                 end if
             end if
 
+            !> Update variables for storing average values.
+            stas_grid%chnl%qi = stas_grid%chnl%qi + qi2
+            stas_grid%chnl%qo = stas_grid%chnl%qo + qo2
+
         end do !n = 1, no_dt
 
         !> Remember the last processed date/time in case need to output flow ICs after the time loop.
@@ -940,32 +788,17 @@ module rte_module
 !        day_last = day_now
 !        hour_last = hour_now
 
-        !> Accumulate.
-        avr_qo2 = avr_qo2 + avr_qo
-
-        !> Return the daily average value of streamflow value to SA_MESH in the last time-step of the day.
-!todo: preserve per time-step value.
-        if (mod(ic%ts_daily, 3600/ic%dts*24) == 0) then
-            avr_qo2 = avr_qo2/24.0
-            do l = 1, fms%stmg%n
-                stfl%qsyn(l) = avr_qo2(fms%stmg%meta%rnk(l))
-            end do
-            avr_qo2 = 0.0
-
-            !> Preserve last reach state.
-            do l = 1, noresv
-               reach_last(l) = lake_elv(l, fhr)
-            end do
-
-            !> Write daily output for streamflow.
-!todo: move this
-            write(70, 1010, advance = 'no') ic%now%year, ic%now%jday
-            write(70, 1010, advance = 'no') (stfl%qhyd(l), stfl%qsyn(l), l = 1, fms%stmg%n)
-            write(70, *)
-
+        !> Update SA_MESH variables.
+        stas_grid%chnl%qi = stas_grid%chnl%qi/no_dt
+        stas_grid%chnl%s = store2
+        stas_grid%chnl%qo = stas_grid%chnl%qo/no_dt !same as avr_qo
+        if (fms%rsvr%n > 0) then
+            stas_fms%rsvr%qo = stas_grid%chnl%qo(fms%rsvr%meta%rnk(:))
+            stas_fms%rsvr%s = stas_grid%chnl%s(fms%rsvr%meta%rnk(:))
+            stas_fms%rsvr%qi = stas_grid%chnl%qi(fms%rsvr%meta%rnk(:))
+            stas_fms%rsvr%zlvl = lake_elv(:, fhr)
+            reach_last = lake_elv(:, fhr)
         end if
-
-1010    format(9999(g15.7e2, ','))
 
     end subroutine
 

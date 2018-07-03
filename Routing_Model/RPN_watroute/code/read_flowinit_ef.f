@@ -202,14 +202,20 @@
                     qo1(n)=p(i,j)
                     qo2(n)=p(i,j)
 !       print*,n,qo2(n)
-                 elseif(ai.eq.3)then
+                elseif(ai.eq.3)then
+                    qo2sim(n)=p(i,j)
+!       print*,n,qo2sim(n)
+                elseif(ai.eq.4)then
+                    qo2rem(n)=p(i,j)
+!       print*,n,qo2rem(n)
+                 elseif(ai.eq.5)then
                     store1(n)=p(i,j)
                     store2(n)=p(i,j)
 !       print*,n,store2(n)
-                elseif(ai.eq.4)then
+                elseif(ai.eq.6)then
                     over(n)=p(i,j)
 !       print*,n,over(n)
-                elseif(ai.eq.5)then
+                elseif(ai.eq.7)then
                     lzs(n)=p(i,j)
                 endif
            end do

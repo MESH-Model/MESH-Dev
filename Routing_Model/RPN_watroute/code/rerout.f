@@ -297,85 +297,99 @@ c     *      183.2,175.98,174.8,174.01,74.61/
         lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
 
+!     natural lake or uncontrolled reservoir routing:
+!     NOTE: the lake level is not calculated for reaches other than the Great Lakes and Lake Champlain;
       elseif(b1(l).ne.0.0)then
 
-!!!!!!!! NEW WAY: lake area and 0-flow level are read from reservoir template file
+!!!!!!!! NEW WAY: non-zero values of lake area and 0-flow level are read from reservoir template file
+        if (b6(l).ne.0.0 .or. b7(l).ne.0.0) then
+          if(firstpass.eq.'y' .and. iopt.gt.0)then ! Advise the user
+            write(*,'(a21,a51,a48,a15,a12)') 'ARE using the values ',
+     1         'of lake area (Coeff6) and zero-flow level (Coeff7) ',
+     2         'provided in the reservoir release template file ',
+     3         'for reservoir ',resname(l)
+          end if
 
-        zflow=b7(l)            !m
-        reacharea=b6(l)        !m2   the surface area of the reach
-        levdiff = max(0.0, niv(l)-zflow)
+          zflow=b7(l)            !m
+          reacharea=b6(l)        !m2   the surface area of the reach
+          levdiff = max(0.0, niv(l)-zflow)
 
-        if(firstpass.eq.'y'.and.resumflg.eq.'y')then
-          if (reacharea > 0.0) store1(n)=levdiff*reacharea
-          store2(n)=store1(n)
-          store2_strt(n)=store2(n)
-        endif
+          if(firstpass.eq.'y'.and.resumflg.eq.'y')then
+            store1(n)=levdiff*reacharea
+            store2(n)=store1(n)
+            store2_strt(n)=store2(n)
+          endif
 
-
-        if(store2(n).gt.0.0)then
-	   if(b3(l).eq.0.0)then
-        qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
-           else
+          if(store2(n).gt.0.0)then
+            if(b3(l).eq.0.0)then
+              qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
+            else
               qo2(n)=max(0.0,store2(n)*(b1(l)+store2(n)*
      *        (b2(l)+store2(n)*
      *        (b3(l)+store2(n)*(b4(l)+b5(l)*store2(n))))))
-           end if
+            end if
+          else
+            qo2(n) = 0.0
+          end if
+
+          store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
+          lake_inflow(l,fhr)=qi2(n)
+
+          niv(l)=store1(n)/reacharea+zflow
+          lake_elv(l,fhr)=niv(l)
+
+!!!!!!!! OLD WAY: lake area and 0-flow level are both zero-valued in the reservoir template file
         else
-           qo2(n) = 0.0
+          if(firstpass.eq.'y' .and. iopt.gt.0)then ! Advise the user
+            write(*,'(a25,a51,a48,a15,a12)')'Are NOT using the values ',
+     1         'of lake area (Coeff6) and zero-flow level (Coeff7) ',
+     2         'provided in the reservoir release template file',
+     3         'for reservoir ',resname(l)
+          end if
+
+!         the lake level will be written in output files as zero-valued
+          store2(n)=store1(n)+qi2(n)*div
+          if(store2(n).gt.0.0)then
+            if(b3(l).eq.0.0)then
+              qo2(n)=b1(l)*store2(n)**b2(l)
+            else
+              old=qo1(n)
+              hold=1.0e+25
+              do ic=1,20 
+                if(abs(hold-store2(n)).gt.0.003*hold)then
+!                 rev  9.1.03  July  24/01  - added polinomial 
+                  qo2(n)=store2(n)*(b1(l)+store2(n)*(b2(l)+store2(n)*
+     *               (b3(l)+store2(n)*(b4(l)+b5(l)*store2(n)))))
+      
+                  wt=amax1(0.5,float(ic)/21.0)
+                  qo2(n)=(1.0-wt)*qo2(n)+wt*old
+                  old=qo2(n)
+                  hold=store2(n)
+                  store2(n)=store1(n)+(qi2(n)-qo2(n))*div
+                else
+                  go to 26
+                endif   ! hold-store
+              end do    !ic=1,20
+26            continue  ! sorry about that
+            end if      ! flow distribution type
+          else  ! Let store2 remain negative to conserve water and shut off the outflow
+            if(store2(n).lt.0.0) write(98,9801)l,n,store2(n)
+            qo2(n)=0.0
+          end if       ! store2.gt.0.0
+          store2(n)=store1(n)+(qi2(n)-qo2(n))*div
+          if(store2(n).le.0.0)then
+            qo2(n)=0.0
+            write(52,6804)n,l
+          endif
+          lake_inflow(l,fhr)=qi2(n)
+!          net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
+          if(iopt.ge.2)then
+            write(52,6004)
+     *           qi1(n),qi2(n),store1(n),store2(n),qo1(n),qo2(n)
+          endif
         end if
 
-        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        lake_inflow(l,fhr)=qi2(n)
-
-        if (reacharea > 0.0) niv(l)=store1(n)/reacharea+zflow
-        lake_elv(l,fhr)=niv(l)
-
-
-!!!!!!!! OLD WAY
-
-!       natural lake or uncontrolled reservoir routing:
-! NOTE:  the lake level is not calculated for reaches other than the Great Lakes and Lake Champlain;
-!        the lake level will be written in output files as zero-valued
-!        store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-!        if(store2(n).gt.0.0)then
-!          if(b3(l).eq.0.0)then
-!            qo2(n)=b1(l)*store2(n)**b2(l)
-!          else
-!            old=qo1(n)
-!            hold=1.0e+25
-!            do ic=1,20 
-!              if(abs(hold-store2(n)).gt.0.003*hold)then
-!               rev  9.1.03  July  24/01  - added polinomial 
-!                qo2(n)=store2(n)*(b1(l)+store2(n)*(b2(l)+store2(n)*
-!     *             (b3(l)+store2(n)*(b4(l)+b5(l)*store2(n)))))
-!      
-!                wt=amax1(0.5,float(ic)/21.0)
-!                qo2(n)=(1.0-wt)*qo2(n)+wt*old
-!                old=qo2(n)
-!                hold=store2(n)
-!                store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-!              else
-!                go to 26
-!              endif   ! hold-store
-!            end do    !ic=1,20
-!26          continue  ! sorry about that
-!          end if      ! flow distribution type
-!        else  ! Let store2 remain negative to conserve water and shut off the outflow
-!          if(store2(n).lt.0.0) write(98,9801)l,n,store2(n)
-!          qo2(n)=0.0
-!        end if       ! store2.gt.0.0
-!        if(store2(n).le.0.0)then
-!          qo2(n)=0.0
-!          write(52,6804)n,l
-!        endif
-!	lake_inflow(l,fhr)=qi2(n)
-!        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
-!        if(iopt.ge.2)then
-!          write(52,6004)
-!     *           qi1(n),qi2(n),store1(n),store2(n),qo1(n),qo2(n)
-!        endif
-      
-! END OLD OR NEW WAY FOR HANDLING RESERVOIRS
+! END OLD AND NEW WAY FOR HANDLING RESERVOIRS
         
 !       CALCULATE THE DETENTION TIME
 !        if(qo1(n).gt.0.001) at=store2(n)/qo1(n)
@@ -430,7 +444,7 @@ c        dtmin=amin1(at,dtmin)
 ! We do not expect to conserve water when imposing dam outflows upstream of observation stations
 ! Nor do we expect the cell to contain sufficient water to supply the prescribed reservoir release
         if(b1(l).eq.0.0 .and. b2(l).eq.0.0
-     *          .and. resname(i)(1:1)=="0") then
+     *          .and. resname(l)(1:1)=="0") then
           store2(n)=store1(n)
         else
           store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
