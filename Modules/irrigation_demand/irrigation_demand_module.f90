@@ -143,6 +143,8 @@ module irrigation_module
                 else
                     irrm%va%dmnd(k) = 0.0
                 end if
+            else
+                irrm%va%dmnd(k) = 0.0
             end if
 
             !> Pool demand for irrigation districts.
@@ -164,19 +166,30 @@ module irrigation_module
         end do
 
         !> Determine the available water in each grid.
+        AVAIL_GRID = 0.0
         if (ro%RUNGRID) then
+            do n = 1, shd%NA
 
-            !> Minimum of available water and demand, with absolute minimum %5 storage preserved in channel.
-            where (pm_grid%tp%iabsp == 0) AVAIL_GRID = min(stas_grid%chnl%stg*(1.0 - 0.05), IRDMND_GRID) ! m3
+                !> Calculate available storage.
+                if (IRDMND_GRID(n) > 0.0) then
+                    if (any(fms%absp%meta%rnk == n)) then
 
-            !> Apply conditions at abstraction points.
-            do l = 1, fms%absp%n
-                n = fms%absp%meta%rnk(l)
-                AVAIL_GRID(n) = min(max(stas_grid%chnl%stg(n) - fms%absp%smin(l), 0.0)*(1.0 - fms%absp%fsmin(l)), IRDMND_GRID(n))
+                        !> Apply minimum storage conditions at abstraction points.
+                        l = maxloc(fms%absp%meta%rnk, 1, fms%absp%meta%rnk <= n)
+                        AVAIL_GRID(n) = &
+                            min(max(stas_grid%chnl%stg(n) - fms%absp%smin(l), 0.0)*(1.0 - fms%absp%fsmin(l)), IRDMND_GRID(n))
+                    else if (pm_grid%tp%iabsp(n) == 0) then
+
+                        !> Minimum of available water and demand, with absolute minimum %5 storage preserved in channel.
+                        AVAIL_GRID(n) = min(stas_grid%chnl%stg(n)*(1.0 - 0.05), IRDMND_GRID(n)) ! m3
+                    end if
+
+                    !> Update storage.
+                    if (AVAIL_GRID(n) > 0.0) then
+                        stas_grid%chnl%stg(n) = stas_grid%chnl%stg(n) - AVAIL_GRID(n)
+                    end if
+                end if
             end do
-
-            !> Update storage.
-            where (AVAIL_GRID > 0.0) stas_grid%chnl%stg = stas_grid%chnl%stg - AVAIL_GRID
         end if
 
         !> Abstraction.
