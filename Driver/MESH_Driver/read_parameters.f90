@@ -86,11 +86,16 @@ subroutine read_parameters(fls, shd, cm)
             pbsm%pm_gru%fetch(NTYPE), pbsm%pm_gru%Ht(NTYPE), pbsm%pm_gru%N_S(NTYPE), pbsm%pm_gru%A_S(NTYPE), &
             pbsm%pm_gru%Distrib(NTYPE), &
             pbsm%pm_grid%fetch(NA), pbsm%pm_grid%Ht(NA), pbsm%pm_grid%N_S(NA), pbsm%pm_grid%A_S(NA), pbsm%pm_grid%Distrib(NA), &
-            pbsm%pm%fetch(NML), pbsm%pm%Ht(NML), pbsm%pm%N_S(NML), pbsm%pm%A_S(NML), pbsm%pm%Distrib(NML))
+            pbsm%pm%fetch(NML), pbsm%pm%Ht(NML), pbsm%pm%N_S(NML), pbsm%pm%A_S(NML), pbsm%pm%Distrib(NML), &
+            pbsm%gru_order(NTYPE))
         pbsm%pm_gru%fetch = 0.0; pbsm%pm_gru%Ht = 0.0; pbsm%pm_gru%N_S = 0.0; pbsm%pm_gru%A_S = 0.0
         pbsm%pm_gru%Distrib = 0.0
         pbsm%pm_grid%fetch = 0.0; pbsm%pm_grid%Ht = 0.0; pbsm%pm_grid%N_S = 0.0; pbsm%pm_grid%A_S = 0.0; pbsm%pm_grid%Distrib = 0.0
         pbsm%pm%fetch = 0.0; pbsm%pm%Ht = 0.0; pbsm%pm%N_S = 0.0; pbsm%pm%A_S = 0.0; pbsm%pm%Distrib = 0.0
+        do i = 1, NTYPE - 1
+            pbsm%gru_order(i) = i + 1
+        end do
+        pbsm%gru_order(NTYPE) = NTYPE
     end if
 
     !> FROZENSOILINFILFLAG 1.

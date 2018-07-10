@@ -38,6 +38,7 @@ module PBSM_module
     type pbsm_container
         type(pbsm_parameters) :: pm_gru, pm_grid, pm
         type(pbsm_variables) :: vs
+        integer, dimension(:), allocatable :: gru_order
         logical :: PROCESS_ACTIVE = .false.
     end type
 
@@ -138,11 +139,23 @@ module PBSM_module
             end if
         end do
 
+        !> Check GRU order.
+        if (any(pbsm%gru_order < 1) .or. any(pbsm%gru_order > shd%lc%NTYPE)) then
+            call print_error('Invalid indices exist in the GRU order for redistribution.')
+            write(line, FMT_GEN) 'GRUs ->', (m, m = 1, shd%lc%NTYPE)
+            call print_message_detail(line)
+            write(line, FMT_GEN) 'Dist. Order', (pbsm%gru_order(m), m = 1, shd%lc%NTYPE)
+            call print_message_detail(line)
+            call program_abort()
+        end if
+
         !> Write summary to output file.
         call print_message('PBSM (blowing snow) component ACTIVE.')
         if (DIAGNOSEMODE) then
             call print_echo_txt('PBSMFLAG on')
             write(line, FMT_GEN) 'GRUs ->', (m, m = 1, shd%lc%NTYPE)
+            call print_echo_txt(line)
+            write(line, FMT_GEN) 'Dist. Order', (pbsm%gru_order(m), m = 1, shd%lc%NTYPE)
             call print_echo_txt(line)
             write(line, FMT_GEN) 'Fetch', (pbsm%pm_gru%fetch(m), m = 1, shd%lc%NTYPE)
             call print_echo_txt(line)
@@ -249,7 +262,7 @@ module PBSM_module
             shd%NA, shd%lc%NTYPE, shd%NA*shd%lc%NTYPE, NML, il1, il2, TSNO, ZSNOW, &
             RHOS, SNO, TSNOCS, ZSNOCS, HCPSCS, RHOSCS, TSNOGS, &
             ZSNOGS, HCPSGS, RHOSGS, TSNOWC, ZSNOWC, HCPSC, RHOSC, TSNOWG, &
-            ZSNOWG, HCPSG, RHOSG, GC, shd%lc%ILMOS, pbsm%vs%Drift, FARE, &
+            ZSNOWG, HCPSG, RHOSG, GC, shd%lc%ILMOS, pbsm%vs%Drift, FARE, pbsm%gru_order, &
             pbsm%vs%TSNOds, pbsm%pm%Distrib, WSNOCS, WSNOGS, FCS, FGS, FC, FG, pbsm%vs%Deposition, &
             TROO, ROFO, TROF, ROF, ROFN, PCPG, HTCS, WSNO, ic%ts_count)
 

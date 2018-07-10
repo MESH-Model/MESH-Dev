@@ -1,10 +1,11 @@
       SUBROUTINE REDISTRIB_SNOW(NA,NTYPE,ILG,NML,IL1,IL2,TSNOW,ZSNOW,
      1     RHOSNO,SNO,TSNOCS,ZSNOCS,HCPSCS,RHOSCS,TSNOGS,
      2     ZSNOGS,HCPSGS,RHOSGS,TSNOWC,ZSNOWC,HCPSC,RHOSC,TSNOWG,
-     3     ZSNOWG,HCPSG,RHOSG,GC,GRID_SQUARE,Drift,FARE,
+     3     ZSNOWG,HCPSG,RHOSG,GC,GRID_SQUARE,Drift,FARE,gru_order,
      4     TSNOWds,distrib,WSNOCS,WSNOGS,FCS,FGS,FC,FG,Deposition,
      5     TOVRFL,OVRFLW,TRUNOF,RUNOFF,ROFN,PCPG,HTCS,WSNOW,N)
 C
+C     * JUL 2018 - D.PRINCZ. Added user-specified order to redistribute.
 C     * MAY 2017 - D.PRINCZ. Changed order of initial variables in
 C     *                      subroutine call because not all should be
 C     *                      allocated to ILG or NML. Most variables
@@ -35,6 +36,7 @@ C
      1     FARE(NML),TSNOWds(NML),distrib(NML),WSNOCS(NML),
      2     WSNOGS(NML),FCS(NML),FGS(NML),FC(NML),FG(NML),
      3     DistribLoss(NML)
+      INTEGER gru_order(NTYPE)
       INTEGER GRID_SQUARE(ILG)
 C
 C     * OUTPUT ARRAYS
