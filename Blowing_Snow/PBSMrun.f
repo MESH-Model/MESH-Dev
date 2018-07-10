@@ -71,6 +71,7 @@ C     * COMMON BLOCK PARAMETERS.
 C
       REAL DELT,TFREZ,HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,SPHW,
      1     SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,TCGLAC,CLHMLT,CLHVAP
+      REAL VMIN
 C
 C!    * PBSM PARAMETERS
  !    REAL rhoo, Qstar, MMM, RR, LATH, DICE, ZD, XD, gg,
@@ -78,6 +79,7 @@ C!    * PBSM PARAMETERS
  !   2     DegToRad
 !
       COMMON /CLASS1/ DELT,TFREZ
+      COMMON /CLASS2/ VMIN
       COMMON /CLASS4/ HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,
      1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
      2                TCGLAC,CLHMLT,CLHVAP
@@ -137,7 +139,7 @@ C
          else
            z0=E_StubHt*2/3
          endif
-         u10=SU(I)*log(10./z0)/log(ZREFM(I)/z0)
+         u10=max(SU(I)*log(10./z0)/log(ZREFM(I)/z0),VMIN)
          
            !> Eq. 6.2 rev. Pomeroy thesis, Ustar over fallow
            Ustar=0.02264*u10**1.295 !friction velocity
