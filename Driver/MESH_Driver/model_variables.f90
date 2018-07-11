@@ -302,7 +302,10 @@ module model_variables
             call model_variables_group_reset(vs%tile, z); if (z /= 0) ierr = z
             call model_variables_group_reset(vs%gru, z); if (z /= 0) ierr = z
         end if
-        if (ro%RUNGRID) call model_variables_group_reset(vs%grid, z); if (z /= 0) ierr = z
+        if (ro%RUNGRID) then
+            call model_variables_group_reset(vs%grid, z); if (z /= 0) ierr = z
+            call model_variables_group_reset(vs%basin, z); if (z /= 0) ierr = z
+        end if
 
     end subroutine
 
@@ -440,6 +443,8 @@ module model_variables
         if (ro%RUNGRID) then
             call model_variables_group_allocate(vs%grid, shd%NA, shd%lc%IGND, z); if (z /= 0) ierr = z
             call model_variables_group_reset(vs%grid, z); if (z /= 0) ierr = z
+            call model_variables_group_allocate(vs%basin, shd%NA, shd%lc%IGND, z); if (z /= 0) ierr = z
+            call model_variables_group_reset(vs%basin, z); if (z /= 0) ierr = z
         end if
 
     end subroutine
