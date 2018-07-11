@@ -275,32 +275,46 @@ module irrigation_module
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
 
-        real, dimension(:), allocatable :: SUMIRDMND, SUMIRAVAI, SUMOLDPRE, SUMNEWPRE
+        real, dimension(:), allocatable :: SUMIRDMND, SUMIRAVAI, SUMOLDPRE, SUMNEWPRE, SUMDSCTAR
+        real frac
         integer iun, l, k
 
         !> Return if the irrigation module is not active or if not the head node.
         if (.not. irrm%PROCESS_ACTIVE .or. ipid /= 0) return
 
         !> Aggregate outputs.
+        !> Apply weight by contributing area (irrigated GRU).
         if (.not. allocated(SUMIRDMND)) allocate(SUMIRDMND(0:fms%absp%n))
         if (.not. allocated(SUMIRAVAI)) allocate(SUMIRAVAI(0:fms%absp%n))
         if (.not. allocated(SUMOLDPRE)) allocate(SUMOLDPRE(0:fms%absp%n))
         if (.not. allocated(SUMNEWPRE)) allocate(SUMNEWPRE(0:fms%absp%n))
-        SUMIRDMND = 0.0; SUMIRAVAI = 0.0; SUMOLDPRE = 0.0; SUMNEWPRE = 0.0
+        if (.not. allocated(SUMDSCTAR)) allocate(SUMDSCTAR(0:fms%absp%n))
+        SUMIRDMND = 0.0; SUMIRAVAI = 0.0; SUMOLDPRE = 0.0; SUMNEWPRE = 0.0; SUMDSCTAR = 0.0
         do k = 1, shd%lc%NML
+            frac = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%AREA(shd%lc%ILMOS(k))
             if (irrm%va%avail(k) > 0.0) then
                 if (pm%tp%iabsp(k) > 0 .and. pm%tp%iabsp(k) <= fms%absp%n) then
-                    SUMIRDMND(pm%tp%iabsp(k)) = SUMIRDMND(pm%tp%iabsp(k)) + (irrm%va%dmnd(k) + irrm%va%avail(k))*ic%dts
-                    SUMIRAVAI(pm%tp%iabsp(k)) = SUMIRAVAI(pm%tp%iabsp(k)) + irrm%va%avail(k)*ic%dts
-                    SUMOLDPRE(pm%tp%iabsp(k)) = SUMOLDPRE(pm%tp%iabsp(k)) + (cm%dat(ck%RT)%GAT(k) - irrm%va%avail(k))*ic%dts
-                    SUMNEWPRE(pm%tp%iabsp(k)) = SUMNEWPRE(pm%tp%iabsp(k)) + cm%dat(ck%RT)%GAT(k)*ic%dts
+                    SUMIRDMND(pm%tp%iabsp(k)) = SUMIRDMND(pm%tp%iabsp(k)) + (irrm%va%dmnd(k) + irrm%va%avail(k))*ic%dts*frac
+                    SUMIRAVAI(pm%tp%iabsp(k)) = SUMIRAVAI(pm%tp%iabsp(k)) + irrm%va%avail(k)*ic%dts*frac
+                    SUMOLDPRE(pm%tp%iabsp(k)) = SUMOLDPRE(pm%tp%iabsp(k)) + (cm%dat(ck%RT)%GAT(k) - irrm%va%avail(k))*ic%dts*frac
+                    SUMNEWPRE(pm%tp%iabsp(k)) = SUMNEWPRE(pm%tp%iabsp(k)) + cm%dat(ck%RT)%GAT(k)*ic%dts*frac
+                    SUMDSCTAR(pm%tp%iabsp(k)) = SUMDSCTAR(pm%tp%iabsp(k)) + frac
                 end if
-                SUMIRDMND(0) = SUMIRDMND(0) + (irrm%va%dmnd(k) + irrm%va%avail(k))*ic%dts
-                SUMIRAVAI(0) = SUMIRAVAI(0) + irrm%va%avail(k)*ic%dts
-                SUMOLDPRE(0) = SUMOLDPRE(0) + (cm%dat(ck%RT)%GAT(k) - irrm%va%avail(k))*ic%dts
-                SUMNEWPRE(0) = SUMNEWPRE(0) + cm%dat(ck%RT)%GAT(k)*ic%dts
+                SUMIRDMND(0) = SUMIRDMND(0) + (irrm%va%dmnd(k) + irrm%va%avail(k))*ic%dts*frac
+                SUMIRAVAI(0) = SUMIRAVAI(0) + irrm%va%avail(k)*ic%dts*frac
+                SUMOLDPRE(0) = SUMOLDPRE(0) + (cm%dat(ck%RT)%GAT(k) - irrm%va%avail(k))*ic%dts*frac
+                SUMNEWPRE(0) = SUMNEWPRE(0) + cm%dat(ck%RT)%GAT(k)*ic%dts*frac
+                SUMDSCTAR(0) = SUMDSCTAR(0) + frac
             end if
         end do
+
+        !> Normalize to district area.
+        where (SUMDSCTAR > 0.0)
+            SUMIRDMND = SUMIRDMND/SUMDSCTAR
+            SUMIRAVAI = SUMIRAVAI/SUMDSCTAR
+            SUMOLDPRE = SUMOLDPRE/SUMDSCTAR
+            SUMNEWPRE = SUMNEWPRE/SUMDSCTAR
+        end where
 
         !> Write outputs.
         write(1981, 1010) &

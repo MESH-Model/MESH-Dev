@@ -499,7 +499,7 @@ module sa_mesh_run_between_grid
                 do l = 1, n_div
                     iun = 2080 + l
                     write(ffmti, '(i4)') l
-                    fn = 'MESH_output_diversion' // trim(adjustl(ffmti)) // '.csv'
+                    fn = './' // trim(fls%GENDIR_OUT) // '/' // 'MESH_output_diversion' // trim(adjustl(ffmti)) // '.csv'
                     open(unit = iun, file = fn)
                     write(iun, 1010) 'YEAR', 'DAY', 'QODIV', 'QADIV'
                 end do
